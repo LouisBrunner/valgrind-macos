@@ -17,4 +17,4 @@ stage2.lds: Makefile
 		-e '1,/^=====\+$$/d' \
 		-e '/^=====\+$$/d' \
 		-e 's/ENTRY(_start)/ENTRY(_ume_entry)/' \
-		-e 's/0x08048000/kickstart_base/' > $@ || rm -f $@
+		-e 's/0x08048000/kickstart_base/g' > $@ || rm -f $@

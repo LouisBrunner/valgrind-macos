@@ -1,8 +1,0 @@
-#! /bin/sh
-
-# Same as for MemCheck
-
-dir=`dirname $0`
-
-$dir/../../memcheck/tests/filter_stderr
-

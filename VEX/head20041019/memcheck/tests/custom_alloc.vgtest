@@ -1,2 +1,0 @@
-prog: custom_alloc
-vgopts: -q

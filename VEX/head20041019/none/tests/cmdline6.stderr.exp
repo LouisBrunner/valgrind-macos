@@ -1,1 +1,0 @@
-valgrind: do_exec(./cmdline6.vgtest) failed: Permission denied

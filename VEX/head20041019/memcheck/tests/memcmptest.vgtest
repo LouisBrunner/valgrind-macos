@@ -1,2 +1,0 @@
-prog: memcmptest
-vgopts: -q

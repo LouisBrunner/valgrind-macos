@@ -1,3 +1,0 @@
-vgopts: --leak-check=yes -q
-prog: trivialleak
-stderr_filter: filter_leak_check_size

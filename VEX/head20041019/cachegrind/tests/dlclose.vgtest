@@ -1,3 +1,0 @@
-prog: dlclose
-stderr_filter: filter_cachesim_discards
-delete: cachegrind.out.*

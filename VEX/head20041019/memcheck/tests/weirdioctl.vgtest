@@ -1,3 +1,0 @@
-vgopts: --weird-hacks=ioctl-VTIME -q
-prog:   weirdioctl
-args:   < weirdioctl.vgtest

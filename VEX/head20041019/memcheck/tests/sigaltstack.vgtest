@@ -1,3 +1,0 @@
-prog: sigaltstack
-stderr_filter: ./filter_stderr_backtrace
-vgopts: -q

@@ -1,2 +1,0 @@
-prog: execve2
-vgopts: -q --trace-children=yes

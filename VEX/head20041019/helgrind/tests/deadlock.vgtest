@@ -1,2 +1,0 @@
-prog: deadlock
-vgopts: --optimise=no

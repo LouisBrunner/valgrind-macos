@@ -1,8 +1,0 @@
-#! /bin/sh
-
-dir=`dirname $0`
-
-$dir/filter_stderr | 
-
-# Anonymise paths like "/local/foo/bar/tests/baz/quux" (note "tests" is there)
-sed "s/\/.*\/tests\//\/...\/tests\//"

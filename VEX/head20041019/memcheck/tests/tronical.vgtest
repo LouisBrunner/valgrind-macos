@@ -1,3 +1,0 @@
-prog: tronical
-stderr_filter: filter_tronical
-vgopts: -q

@@ -1,2 +1,0 @@
-prog: insn_mmxext
-cpu_test: mmxext

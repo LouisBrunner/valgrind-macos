@@ -1,4 +1,0 @@
-prog: fdleak_open
-vgopts: --track-fds=yes
-stderr_filter: filter_fdleak
-args: < /dev/null

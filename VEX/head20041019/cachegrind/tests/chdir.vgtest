@@ -1,2 +1,0 @@
-prog: chdir
-delete: cachegrind.out.*

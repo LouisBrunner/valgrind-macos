@@ -1,2 +1,0 @@
-prog: mempool
-vgopts: -q --leak-check=yes

@@ -1,2 +1,0 @@
-Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (manuel1.c:7)

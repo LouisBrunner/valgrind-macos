@@ -1,6 +1,0 @@
-#! /bin/sh
-
-./filter_stderr | \
-sed "s/: get ([^)]*)/: get (...)/" |
-sed "s/: main ([^)]*)/: main (...)/"
-

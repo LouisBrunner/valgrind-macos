@@ -1,6 +1,0 @@
-Makefile.in
-Makefile
-*.stdout.diff
-*.stderr.diff
-*.stdout.out
-*.stderr.out

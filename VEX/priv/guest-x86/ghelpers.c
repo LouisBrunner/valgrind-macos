@@ -344,7 +344,7 @@ static inline int lshift(int x, int n)
 
 static UInt tabc[CC_OP_NUMBER];
 static UInt tab[CC_OP_NUMBER][16];
-static Bool initted      = False;
+static Bool initted     = False;
 static UInt n_calc_cond = 0;
 static UInt n_calc_all  = 0;
 static UInt n_calc_c    = 0;
@@ -353,7 +353,7 @@ static void showCounts ( void )
 {
    Int op, co;
    Char ch;
-   vex_printf("\nALL=%d   COND=%d   C=%d\n",
+   vex_printf("\nALL=%d  COND=%d   C=%d\n",
               n_calc_all-n_calc_cond-n_calc_c, n_calc_cond, n_calc_c);
    vex_printf("      CARRY    O   NO    B   NB    Z   NZ   BE  NBE"
               "    S   NS    P   NP    L   NL   LE  NLE\n");
@@ -473,6 +473,12 @@ static void initCounts ( void )
 /* Calculate just the carry flag from the supplied thunk parameters. */
 static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
+   /* Fast-case some common ones. */
+   if (cc_op == CC_OP_LOGICL)
+      return 0;
+   if (cc_op == CC_OP_DECL)
+      return cc_src;
+
 #  if PROFILE_EFLAGS
    if (!initted)
       initCounts();
@@ -480,72 +486,7 @@ static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
 
    n_calc_c++;
 #  endif
-   if (cc_op == CC_OP_LOGICL)
-     return 0;
    return calculate_eflags_all(cc_op,cc_src,cc_dst) & CC_MASK_C;
-#if 0
-   switch (cc_op) {
-      case CC_OP_COPY:   return cc_src & CC_MASK_C;
-
-      case CC_OP_ADDB:   C_ACTIONS_ADD( 8,  UChar  );
-      case CC_OP_ADDW:   C_ACTIONS_ADD( 16, UShort );
-      case CC_OP_ADDL:   C_ACTIONS_ADD( 32, UInt   );
-
-      case CC_OP_ADCB:   C_ACTIONS_ADC( 8,  UChar  );
-      case CC_OP_ADCW:   C_ACTIONS_ADC( 16, UShort );
-      case CC_OP_ADCL:   C_ACTIONS_ADC( 32, UInt   );
-
-      case CC_OP_SUBB:   C_ACTIONS_SUB(  8, UChar  );
-      case CC_OP_SUBW:   C_ACTIONS_SUB( 16, UShort );
-      case CC_OP_SUBL:   C_ACTIONS_SUB( 32, UInt   );
-
-      case CC_OP_SBBB:   C_ACTIONS_SBB(  8, UChar  );
-      case CC_OP_SBBW:   C_ACTIONS_SBB( 16, UShort );
-      case CC_OP_SBBL:   C_ACTIONS_SBB( 32, UInt   );
-
-      case CC_OP_LOGICB: C_ACTIONS_LOGIC(  8, UChar  );
-      case CC_OP_LOGICW: C_ACTIONS_LOGIC( 16, UShort );
-      case CC_OP_LOGICL: C_ACTIONS_LOGIC( 32, UInt   );
-
-      case CC_OP_INCB:   C_ACTIONS_INC(  8, UChar  );
-      case CC_OP_INCW:   C_ACTIONS_INC( 16, UShort );
-      case CC_OP_INCL:   C_ACTIONS_INC( 32, UInt   );
-
-      case CC_OP_DECB:   C_ACTIONS_DEC(  8, UChar  );
-      case CC_OP_DECW:   C_ACTIONS_DEC( 16, UShort );
-      case CC_OP_DECL:   C_ACTIONS_DEC( 32, UInt   );
-
-      case CC_OP_SHLB:   C_ACTIONS_SHL(  8, UChar  );
-      case CC_OP_SHLW:   C_ACTIONS_SHL( 16, UShort );
-      case CC_OP_SHLL:   C_ACTIONS_SHL( 32, UInt   );
-
-      case CC_OP_SARB:   C_ACTIONS_SAR(  8, UChar  );
-      case CC_OP_SARW:   C_ACTIONS_SAR( 16, UShort );
-      case CC_OP_SARL:   C_ACTIONS_SAR( 32, UInt   );
-
-      case CC_OP_ROLB:   C_ACTIONS_ROL(  8, UChar  );
-      case CC_OP_ROLW:   C_ACTIONS_ROL( 16, UShort );
-      case CC_OP_ROLL:   C_ACTIONS_ROL( 32, UInt   );
-
-      case CC_OP_RORB:   C_ACTIONS_ROR(  8, UChar  );
-      case CC_OP_RORW:   C_ACTIONS_ROR( 16, UShort );
-      case CC_OP_RORL:   C_ACTIONS_ROR( 32, UInt   );
-
-      case CC_OP_UMULB:  C_ACTIONS_UMUL(  8, UChar,  UShort );
-      case CC_OP_UMULW:  C_ACTIONS_UMUL( 16, UShort, UInt   );
-      case CC_OP_UMULL:  C_ACTIONS_UMUL( 32, UInt,   ULong  );
-
-      case CC_OP_SMULB:  C_ACTIONS_SMUL(  8, Char,  Short );
-      case CC_OP_SMULW:  C_ACTIONS_SMUL( 16, Short, Int   );
-      case CC_OP_SMULL:  C_ACTIONS_SMUL( 32, Int,   Long  );
-
-      default:
-         /* shouldn't really make these calls from generated code */
-         vex_printf("calculate_eflags_c( %d, 0x%x, 0x%x )\n",
-                    cc_op, cc_src, cc_dst );
-         vpanic("calculate_eflags_c");
-   }
-#endif
 }
 
 

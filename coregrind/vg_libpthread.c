@@ -2043,11 +2043,18 @@ init_global_thread_specific_state ( void )
    /* assert that we are the root thread. */
    my_assert(pthread_self() == 1);
 
+   /* Signify init done - we shouldn't really do this until after
+      the call to init_thread_specific_state() but that routine makes
+      a call to __uselocale() that may bring us back here as that
+      routine will call __libc_tsd_set() which will call us.
+
+      We can get away with marking the init as done now because
+      the important bits of init_thread_specific_state() are done
+      before the call to __uselocale() is made. */
+   global_init_done = 1;
+
    /* Initialise thread specific data for the root thread. */
    init_thread_specific_state();
-
-   /* Signify init done. */
-   global_init_done = 1;
 
    /* Install a cleanup routine to handle the root thread exiting */
    _pthread_cleanup_push(NULL, cleanup_root, NULL);

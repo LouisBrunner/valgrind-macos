@@ -10705,7 +10705,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          putIReg(sz, eregOfRM(modrm), mkU(szToITy(sz), d32));
          DIP("mov%c $0x%x, %s\n", nameISize(sz), d32, 
                                   nameIReg(sz,eregOfRM(modrm)));
-         vassert(0);
       } else {
          addr = disAMode ( &alen, sorb, delta, dis_buf );
          delta += alen;

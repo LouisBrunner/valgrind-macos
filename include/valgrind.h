@@ -194,9 +194,11 @@ typedef
 
 #ifndef NVALGRIND
 
+int VALGRIND_PRINTF(const char *format, ...)
+   __attribute__((format(__printf__, 1, 2)));
 __attribute__((weak))
 int
-VALGRIND_PRINTF(char *format, ...)
+VALGRIND_PRINTF(const char *format, ...)
 {
    unsigned int _qzz_res;
    va_list vargs;
@@ -207,9 +209,11 @@ VALGRIND_PRINTF(char *format, ...)
    return _qzz_res;
 }
 
+int VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
+   __attribute__((format(__printf__, 1, 2)));
 __attribute__((weak))
 int
-VALGRIND_PRINTF_BACKTRACE(char *format, ...)
+VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 {
    unsigned int _qzz_res;
    va_list vargs;

@@ -1389,7 +1389,6 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
 {
    Int			sigNo = info->si_signo;
    vki_ksigset_t	handlermask;
-   enum ThreadStatus	status;
    SCSS_Per_Signal	*handler = &vg_scss.scss_per_sig[sigNo];
    ThreadState		*tst = VG_(get_ThreadState)(tid);
 
@@ -1418,6 +1417,15 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
       state to make it happen. */
    if (tst->status == VgTs_WaitSys) {
       vg_assert(tst->syscallno != -1);
+
+      /* OK, the thread was waiting for a syscall to complete.  This
+	 means that the proxy has either not yet processed the
+	 RunSyscall request, or was processing it when the signal
+	 came.  Either way, it is going to give us some syscall
+	 results right now, so wait for them to appear.  This makes
+	 the thread runnable again, so we're in the right state to run
+	 the handler, and resume the syscall when we're done. */
+      VG_(proxy_wait_sys)(tid);
 
       if (0)
 	 VG_(printf)("signal %d interrupting syscall %d\n",
@@ -1459,31 +1467,23 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
 	 VG_(handle_SCSS_change)( False /* lazy update */ );
       }
    
-      status = tst->status;
-
-      switch(status) {
+      switch(tst->status) {
       case VgTs_Runnable:
 	 break;
 
       case VgTs_WaitSys:
-	 /* don't change status yet, because we're about to get a
-	    message telling us the syscall was interrupted */
-	 break;
-
       case VgTs_WaitJoiner:
       case VgTs_WaitJoinee:
       case VgTs_WaitMX:
       case VgTs_WaitCV:
       case VgTs_Sleeping:
-	 status = VgTs_Runnable;
+	 tst->status = VgTs_Runnable;
 	 break;
 
       case VgTs_Empty:
 	 VG_(core_panic)("unexpected thread state");
 	 break;
       }
-
-      tst->status = status;
 
       /* handler gets the union of the signal's mask and the thread's
 	 mask */

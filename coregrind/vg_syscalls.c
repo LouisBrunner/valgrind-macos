@@ -4173,7 +4173,6 @@ static const struct sys_info sys_info[] = {
    SYSBA(getpmsg,		True),
    SYSB_(putpmsg,		True),
 
-   SYSBA(getitimer,		False),
    SYSBA(syslog,		True),
    SYSB_(personality,		False),
    SYSB_(chroot,		False),
@@ -4291,7 +4290,6 @@ static const struct sys_info sys_info[] = {
    SYSBA(sched_getparam,	False),	/* ??? */
    SYSB_(sched_yield,		False),	/* ??? */
    SYSB_(select,		True),
-   SYSBA(setitimer,		False),
    SYSB_(setfsgid32,		False),
    SYSB_(setgid32,		False),
    SYSB_(setgid,		False),
@@ -4332,9 +4330,12 @@ static const struct sys_info sys_info[] = {
    SYSB_(rt_sigsuspend,		True),
    SYSBA(rt_sigtimedwait,	True),
    SYSBA(rt_sigqueueinfo,	False),
+
    SYSBA(sigpending,		True), /* not blocking, but must run in LWP context */
    SYSBA(rt_sigpending,		True), /* not blocking, but must run in LWP context */
    SYSB_(alarm,			True), /* not blocking, but must run in LWP context */
+   SYSBA(setitimer,		True), /* not blocking, but must run in LWP context */
+   SYSBA(getitimer,		True), /* not blocking, but must run in LWP context */
 
 #if !SIGNAL_SIMULATION
    SYSBA(sigaltstack,		False),
@@ -4524,6 +4525,22 @@ void VG_(restart_syscall)(ThreadId tid)
 
    tst->m_eax = tst->syscallno;
    tst->m_eip -= 2;		/* sizeof(int $0x80) */
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      int $0x80 == CD 80 
+   */
+   {
+      UChar *p = (UChar *)tst->m_eip;
+      
+      if (p[0] != 0xcd || p[1] != 0x80)
+	 VG_(message)(Vg_DebugMsg, 
+		      "?! restarting over syscall at %p %02x %02x\n",
+		      tst->m_eip, p[0], p[1]);
+
+      vg_assert(p[0] == 0xcd && p[1] == 0x80);
+   }
 }
 
 /*--------------------------------------------------------------------*/

@@ -1053,11 +1053,10 @@ Bool VG_(string_match) ( Char* pat, Char* str )
 static inline ExeContext *get_real_execontext(Addr ret)
 {
    ExeContext *ec;
-   Addr ebp;
+   Addr esp, ebp;
    Addr stacktop;
-   Addr esp = (Addr)&esp;
 
-   asm("movl %%ebp, %0" : "=r" (ebp));
+   asm("movl %%ebp, %0; movl %%esp, %1" : "=r" (ebp), "=r" (esp));
    stacktop = (Addr)&VG_(stack)[VG_STACK_SIZE_W];
    if (esp >= (Addr)&VG_(sigstack)[0] && esp < (Addr)&VG_(sigstack)[VG_STACK_SIZE_W])
       stacktop = (Addr)&VG_(sigstack)[VG_STACK_SIZE_W];

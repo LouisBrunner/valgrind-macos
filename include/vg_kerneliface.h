@@ -365,9 +365,7 @@ struct vki_ucontext {
 #define VKI_EMFILE	    24	    /* Too many open files */
 #define VKI_ENOSYS          38      /* Function not implemented */
 
-#define VKI_ERESTARTSYS	    512
-#define VKI_ERESTARTNOINTR  513
-#define VKI_ERESTARTNOHAND  514
+#define VKI_ERESTARTSYS	    512	    /* Restart the syscall */
 
 
 /* Gawd ... hack ... */

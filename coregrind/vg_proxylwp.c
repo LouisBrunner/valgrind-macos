@@ -558,7 +558,7 @@ static Int proxylwp(void *v)
 		  XXX how to distunguish between restartable and
 		  non-restartable syscalls?  Does it matter?
 	       */
-	       reply.syscallno = tst->m_eax;
+	       reply.syscallno = tst->syscallno;
 
 	       tst->m_eax = -VKI_ERESTARTSYS;
 	       px->state = PXS_IntReply;
@@ -1181,6 +1181,15 @@ void VG_(proxy_results)(void)
    sys_wait_results(False, 0, PX_BAD);
 }
 
+void VG_(proxy_wait_sys)(ThreadId tid)
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+
+   vg_assert(tst->status == VgTs_WaitSys);
+
+   sys_wait_results(True, tid, PX_RunSyscall);
+}
+
 /* Tell proxy about it's thread's updated signal mask */
 void VG_(proxy_setsigmask)(ThreadId tid)
 {
@@ -1266,20 +1275,33 @@ Int VG_(sys_issue)(int tid)
 
    vg_assert(proxy != NULL);
    vg_assert(proxy->tid == tid);
+   vg_assert(tst->status == VgTs_WaitSys);
+
+   /* Clear the results pipe before we try to write to a proxy to
+      prevent a deadlock (the proxyLWP may be trying to write a result
+      back to the scheduler LWP, and therefore not be reading its
+      input pipe, which would then block the write below).
+
+      XXX I think this can't happen - the pipe has 4k of buffering,
+      and can therefore fit many messages, but we can only have one
+      outstanding - the write below will not block forever.  Fetching
+      results here can cause all kinds of confusion, because we
+      definitely don't want the complexity of trying to deliver a
+      signal right now.
+   */
+   if (0)
+      VG_(proxy_results)();
 
    req.request = PX_RunSyscall;
 
    tst->syscallno = tst->m_eax;
    tst->m_eax = -VKI_ERESTARTSYS;
 
-   /* clear the results pipe before we try to write to a proxy to
-      prevent a deadlock */
-   VG_(proxy_results)();
    res = VG_(write)(proxy->topx, &req, sizeof(req));
 
    if (res != sizeof(req)) {
-      VG_(printf)("sys_issue: write to tid %d failed %d (not %d)\n",
-		  tid, res, sizeof(req));
+      VG_(message)(Vg_DebugMsg, "sys_issue: write to tid %d failed %d (not %d)\n",
+		   tid, res, sizeof(req));
    }
    return 0;
 }

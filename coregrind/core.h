@@ -1050,11 +1050,11 @@ __attribute__((weak))
 int
 VALGRIND_INTERNAL_PRINTF(char *format, ...)
 {
-   unsigned int _qzz_res = 0;
+   UWord _qzz_res = 0;
    va_list vargs;
    va_start(vargs, format);
    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
-                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+                           (UWord)format, (UWord)vargs, 0, 0);
    va_end(vargs);
    return _qzz_res;
 }
@@ -1063,11 +1063,11 @@ __attribute__((weak))
 int
 VALGRIND_INTERNAL_PRINTF_BACKTRACE(char *format, ...)
 {
-   unsigned int _qzz_res = 0;
+   UWord _qzz_res = 0;
    va_list vargs;
    va_start(vargs, format);
    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF_BACKTRACE,
-                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+                           (UWord)format, (UWord)vargs, 0, 0);
    va_end(vargs);
    return _qzz_res;
 }

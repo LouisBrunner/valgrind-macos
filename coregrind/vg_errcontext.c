@@ -169,6 +169,10 @@ static UInt vg_n_errs_found = 0;
 /* Running count of suppressed errors detected. */
 static UInt vg_n_errs_suppressed = 0;
 
+/* Used to disable further error reporting once some huge number of
+   errors have already been logged. */
+static Bool vg_ignore_errors = False;
+
 /* forwards ... */
 static Suppression* is_suppressible_error ( ErrContext* ec );
 
@@ -474,6 +478,7 @@ static void VG_(maybe_add_context) ( ErrContext* ec )
             "Final error counts may be inaccurate.  Go fix your program!");
          VG_(message)(Vg_UserMsg, "");
          stopping_message = True;
+         vg_ignore_errors = True;
       }
       return;
    }
@@ -566,6 +571,7 @@ static void VG_(maybe_add_context) ( ErrContext* ec )
 void VG_(record_value_error) ( Int size )
 {
    ErrContext ec;
+   if (vg_ignore_errors) return;
    clear_ErrContext( &ec );
    ec.count = 1;
    ec.next  = NULL;
@@ -583,6 +589,7 @@ void VG_(record_value_error) ( Int size )
 void VG_(record_address_error) ( Addr a, Int size, Bool isWrite )
 {
    ErrContext ec;
+   if (vg_ignore_errors) return;
 
    /* If this is caused by an access immediately below %ESP, and the
       user asks nicely, we just ignore it. */
@@ -615,6 +622,7 @@ void VG_(record_address_error) ( Addr a, Int size, Bool isWrite )
 void VG_(record_free_error) ( ThreadState* tst, Addr a )
 {
    ErrContext ec;
+   if (vg_ignore_errors) return;
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
@@ -632,6 +640,7 @@ void VG_(record_free_error) ( ThreadState* tst, Addr a )
 void VG_(record_freemismatch_error) ( ThreadState* tst, Addr a )
 {
    ErrContext ec;
+   if (vg_ignore_errors) return;
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
@@ -649,6 +658,7 @@ void VG_(record_freemismatch_error) ( ThreadState* tst, Addr a )
 void VG_(record_jump_error) ( ThreadState* tst, Addr a )
 {
    ErrContext ec;
+   if (vg_ignore_errors) return;
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
@@ -668,6 +678,7 @@ void VG_(record_param_err) ( ThreadState* tst, Addr a, Bool isWriteLack,
                              Char* msg )
 {
    ErrContext ec;
+   if (vg_ignore_errors) return;
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
@@ -687,6 +698,7 @@ void VG_(record_param_err) ( ThreadState* tst, Addr a, Bool isWriteLack,
 void VG_(record_user_err) ( ThreadState* tst, Addr a, Bool isWriteLack )
 {
    ErrContext ec;
+   if (vg_ignore_errors) return;
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;

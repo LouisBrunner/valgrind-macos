@@ -77,13 +77,21 @@ extern Bool eqIRConst ( IRConst*, IRConst* );
    end that the callee has been declared
    "__attribute__((regparm(n)))".  On some targets (x86) the back end
    will need to construct a non-standard sequence to call a function
-   declared like this. */
+   declared like this. 
+
+   mcx_mask is a sop to Memcheck.  It indicates which args should be
+   considered 'always defined' when lazily computing definedness of
+   the result.  Bit 0 of mcx_mask corresponds to args[0], bit 1 to
+   args[1], etc.  If a bit is set, the corresponding arg is excluded
+   (hence "x" in "mcx") from definedness checking.  
+*/
 
 typedef
    struct {
       Int   regparms;
       Char* name;
       void* addr;
+      UInt  mcx_mask;
    }
    IRCallee;
 

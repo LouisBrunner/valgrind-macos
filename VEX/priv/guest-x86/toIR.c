@@ -615,28 +615,17 @@ static IRExpr* mk_calculate_eflags_all ( void )
       = mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,  Ity_I32),
                        IRExpr_Get(OFFB_CC_RES, Ity_I32),
                        IRExpr_Get(OFFB_CC_AUX, Ity_I32) );
-   return mkIRExprCCall(
-             Ity_I32,
-             0/*regparm*/, 
-             "calculate_eflags_all", &calculate_eflags_all,
-             args
-          );
-}
-
-/* Build IR to calculate just the carry flag from stored
-   CC_OP/CC_RES/CC_AUX.  Returns an expression :: Ity_I32. */
-static IRExpr* mk_calculate_eflags_c ( void )
-{
-   IRExpr** args
-      = mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,  Ity_I32),
-                       IRExpr_Get(OFFB_CC_RES, Ity_I32),
-                       IRExpr_Get(OFFB_CC_AUX, Ity_I32) );
-   return mkIRExprCCall(
-             Ity_I32,
-             0/*regparm*/, 
-             "calculate_eflags_c", &calculate_eflags_c,
-             args
-          );
+   IRExpr* call
+      = mkIRExprCCall(
+           Ity_I32,
+           0/*regparm*/, 
+           "calculate_eflags_all", &calculate_eflags_all,
+           args
+        );
+   /* Exclude OP and AUX from definedness checking.  We're only
+      interested in RES. */
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<2);
+   return call;
 }
 
 /* Build IR to calculate some particular condition from stored
@@ -648,14 +637,38 @@ static IRExpr* mk_calculate_condition ( Condcode cond )
                        IRExpr_Get(OFFB_CC_OP,  Ity_I32),
                        IRExpr_Get(OFFB_CC_RES, Ity_I32),
                        IRExpr_Get(OFFB_CC_AUX, Ity_I32) );
-   return unop(Iop_32to1, 
-               mkIRExprCCall(
-                  Ity_I32,
-                  0/*regparm*/, 
-                  "calculate_condition", &calculate_condition,
-                  args
-               )
-          );
+   IRExpr* call
+      = mkIRExprCCall(
+           Ity_I32,
+           0/*regparm*/, 
+           "calculate_condition", &calculate_condition,
+           args
+        );
+   /* Exclude the requested condition, OP and AUX from definedness
+      checking.  We're only interested in RES. */
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<1) | (1 << 3);
+   return unop(Iop_32to1, call);
+}
+
+/* Build IR to calculate just the carry flag from stored
+   CC_OP/CC_RES/CC_AUX.  Returns an expression :: Ity_I32. */
+static IRExpr* mk_calculate_eflags_c ( void )
+{
+   IRExpr** args
+      = mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,  Ity_I32),
+                       IRExpr_Get(OFFB_CC_RES, Ity_I32),
+                       IRExpr_Get(OFFB_CC_AUX, Ity_I32) );
+   IRExpr* call
+      = mkIRExprCCall(
+           Ity_I32,
+           0/*regparm*/, 
+           "calculate_eflags_c", &calculate_eflags_c,
+           args
+        );
+   /* Exclude OP and AUX from definedness checking.  We're only
+      interested in RES. */
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<2);
+   return call;
 }
 
 

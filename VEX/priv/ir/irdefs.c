@@ -52,7 +52,9 @@ void ppIRCallee ( IRCallee* ce )
 {
    vex_printf("%s", ce->name);
    if (ce->regparms > 0)
-      vex_printf("[%d]", ce->regparms);
+      vex_printf("[rp=%d]", ce->regparms);
+   if (ce->mcx_mask > 0)
+      vex_printf("[mcx=0x%x]", ce->mcx_mask);
    vex_printf("{%p}", (void*)ce->addr);
 }
 
@@ -479,6 +481,7 @@ IRCallee* mkIRCallee ( Int regparms, Char* name, void* addr )
    ce->regparms = regparms;
    ce->name     = name;
    ce->addr     = addr;
+   ce->mcx_mask = 0;
    vassert(regparms >= 0 && regparms <= 3);
    vassert(name != NULL);
    vassert(addr != 0);
@@ -762,7 +765,9 @@ IRConst* dopyIRConst ( IRConst* c )
 
 IRCallee* dopyIRCallee ( IRCallee* ce )
 {
-   return mkIRCallee(ce->regparms, ce->name, ce->addr);
+   IRCallee* ce2 = mkIRCallee(ce->regparms, ce->name, ce->addr);
+   ce2->mcx_mask = ce->mcx_mask;
+   return ce2;
 }
 
 IRArray* dopyIRArray ( IRArray* d )
@@ -1441,8 +1446,11 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
             sanityCheckFail(bb,stmt,"Iex.CCall.cee: bad IRCallee");
          if (expr->Iex.CCall.cee->regparms > countArgs(expr->Iex.CCall.args)) 
             sanityCheckFail(bb,stmt,"Iex.CCall.cee: #regparms > #args");
-         for (i = 0; expr->Iex.CCall.args[i]; i++)
+         for (i = 0; expr->Iex.CCall.args[i]; i++) {
+            if (i >= 32)
+               sanityCheckFail(bb,stmt,"Iex.CCall: > 32 args");
             tcExpr(bb,stmt, expr->Iex.CCall.args[i], gWordTy);
+         }
          if (expr->Iex.CCall.retty == Ity_Bit)
             sanityCheckFail(bb,stmt,"Iex.CCall.retty: cannot return :: Ity_Bit");
          for (i = 0; expr->Iex.CCall.args[i]; i++)
@@ -1535,6 +1543,8 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
              && typeOfIRTemp(tyenv, d->tmp) == Ity_Bit)
             sanityCheckFail(bb,stmt,"IRStmt.Dirty.dst :: Ity_Bit");
          for (i = 0; d->args[i] != NULL; i++) {
+            if (i >= 32)
+               sanityCheckFail(bb,stmt,"IRStmt.Dirty: > 32 args");
             if (typeOfIRExpr(tyenv, d->args[i]) == Ity_Bit)
                sanityCheckFail(bb,stmt,"IRStmt.Dirty.arg[i] :: Ity_Bit");
          }

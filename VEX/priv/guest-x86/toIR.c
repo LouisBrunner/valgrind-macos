@@ -1804,7 +1804,6 @@ UInt dis_op2_E_G ( UChar       sorb,
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else
       if (addSubCarry && op8 == Iop_Sub8) {
-         vassert(0);
          helper_SBB( size, dst1, dst0, src );
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else {
@@ -8966,6 +8965,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          d->fxState[3].size   = 4;
          /* execute the dirty call, side-effecting guest state */
          stmt( IRStmt_Dirty(d) );
+         DIP("cpuid\n");
          break;
       }
 

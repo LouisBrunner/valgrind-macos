@@ -471,6 +471,8 @@ void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
       }
    }
 #undef IS_
+#undef INV
+
    // Setup 1st arg: CC addr
    do_details( i_node, bb_seen_before, instr_addr, instr_size, data_size );
    t_CC_addr = newTemp(cb);

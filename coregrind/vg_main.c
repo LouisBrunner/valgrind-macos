@@ -99,7 +99,6 @@ Int VGOFF_(helper_fstsw_AX) = INVALID_OFFSET;
 Int VGOFF_(helper_SAHF) = INVALID_OFFSET;
 Int VGOFF_(helper_DAS) = INVALID_OFFSET;
 Int VGOFF_(helper_DAA) = INVALID_OFFSET;
-Int VGOFF_(handle_esp_assignment) = INVALID_OFFSET;
 Int VGOFF_(helper_undefined_instruction) = INVALID_OFFSET;
 
 /* MAX_NONCOMPACT_HELPERS can be increased easily.  If MAX_COMPACT_HELPERS is
@@ -142,8 +141,7 @@ static Int alloc_BaB_1_set ( Addr a )
 }
 
 /* Registers a function in compact_helper_addrs;  compact_helper_offsets is
- * filled in later.
- */
+   filled in later. */
 void VG_(register_compact_helper)(Addr a)
 {
    if (MAX_COMPACT_HELPERS <= VG_(n_compact_helpers)) {
@@ -177,13 +175,21 @@ static void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
    for (i = 0; i < n; i++) offsets[i] = alloc_BaB_1_set( addrs[i] );
 }
 
-/* Will we need to call VG_(handle_esp_assignment)() ? */
 Bool VG_(need_to_handle_esp_assignment)(void)
 {
-   return (VG_(track_events).new_mem_stack         || 
-           VG_(track_events).new_mem_stack_aligned || 
-           VG_(track_events).die_mem_stack         ||
-           VG_(track_events).die_mem_stack_aligned);
+   return ( VG_(track_events).new_mem_stack_4  ||
+            VG_(track_events).die_mem_stack_4  ||
+            VG_(track_events).new_mem_stack_8  ||
+            VG_(track_events).die_mem_stack_8  ||
+            VG_(track_events).new_mem_stack_12 ||
+            VG_(track_events).die_mem_stack_12 ||
+            VG_(track_events).new_mem_stack_16 ||
+            VG_(track_events).die_mem_stack_16 ||
+            VG_(track_events).new_mem_stack_32 ||
+            VG_(track_events).die_mem_stack_32 ||
+            VG_(track_events).new_mem_stack    ||
+            VG_(track_events).die_mem_stack
+          );
 }
 
 /* Here we assign actual offsets.  It's important to get the most
@@ -222,11 +228,15 @@ static void vg_init_baseBlock ( void )
    /* 9,10,11 or 18,19,20... depends on number whether shadow regs are used
     * and on compact helpers registered */ 
 
-   /* (9 or 18) + n_compact_helpers  */
-   /* Register VG_(handle_esp_assignment) if needed. */
-   if (VG_(need_to_handle_esp_assignment)())
-      VG_(register_compact_helper)( (Addr) & VG_(handle_esp_assignment) );
+   /* Make these most-frequently-called specialised ones compact, if they
+      are used. */
+   if (VG_(track_events).new_mem_stack_4)
+      VG_(register_compact_helper)( (Addr) VG_(track_events).new_mem_stack_4);
 
+   if (VG_(track_events).die_mem_stack_4)
+      VG_(register_compact_helper)( (Addr) VG_(track_events).die_mem_stack_4);
+
+   /* (9 or 18) + n_compact_helpers  */
    /* Allocate slots for compact helpers */
    assign_helpers_in_baseBlock(VG_(n_compact_helpers), 
                                VG_(compact_helper_offsets), 
@@ -258,6 +268,26 @@ static void vg_init_baseBlock ( void )
    VGOFF_(m_gs)  = alloc_BaB(1);
 
    VG_(register_noncompact_helper)( (Addr) & VG_(do_useseg) );
+
+#define REG(kind, size) \
+   if (VG_(track_events).kind##_mem_stack##size) \
+      VG_(register_noncompact_helper)(           \
+          (Addr) VG_(track_events).kind##_mem_stack##size );
+
+   REG(new, _8);
+   REG(new, _12);
+   REG(new, _16);
+   REG(new, _32);
+   REG(new, );
+   REG(die, _8);
+   REG(die, _12);
+   REG(die, _16);
+   REG(die, _32);
+   REG(die, );
+#undef REG
+
+   if (VG_(need_to_handle_esp_assignment)())
+      VG_(register_noncompact_helper)((Addr) VG_(unknown_esp_update));
 
    /* Helper functions. */
    VGOFF_(helper_idiv_64_32)

@@ -36,6 +36,10 @@
 #include "vg_skin.h"
 #include "mc_constants.h"
 
+/*------------------------------------------------------------*/
+/*--- Errors and suppressions                              ---*/
+/*------------------------------------------------------------*/
+
 /* The classification of a faulting address. */
 typedef 
    enum { Undescribed,  /* as-yet unclassified */
@@ -110,19 +114,40 @@ typedef
    }
    MemCheckError;
 
+/*------------------------------------------------------------*/
+/*--- Profiling of skins and memory events                 ---*/
+/*------------------------------------------------------------*/
+
+typedef 
+   enum { 
+      VgpCheckMem = VgpFini+1,
+      VgpSetMem,
+      VgpESPAdj
+   } 
+   VgpSkinCC;
+
+/* Define to collect detailed performance info. */
+/* #define VG_PROFILE_MEMORY */
 
 #ifdef VG_PROFILE_MEMORY
+#  define N_PROF_EVENTS 150
 
-#define PROF_EVENT(ev)                                  \
+extern UInt MC_(event_ctr)[N_PROF_EVENTS];
+
+#  define PROF_EVENT(ev)                                  \
    do { sk_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);   \
         MC_(event_ctr)[ev]++;                           \
    } while (False);
 
 #else
 
-#define PROF_EVENT(ev) /* */
+#  define PROF_EVENT(ev) /* */
 
 #endif   /* VG_PROFILE_MEMORY */
+
+/*------------------------------------------------------------*/
+/*--- V and A bits                                         ---*/
+/*------------------------------------------------------------*/
 
 #define IS_DISTINGUISHED_SM(smap) \
    ((smap) == &distinguished_secondary_map)
@@ -232,6 +257,191 @@ extern Int          MC_(count_freelist)  ( void ) __attribute__ ((unused));
 extern void         MC_(freelist_sanity) ( void ) __attribute__ ((unused));
 extern ShadowChunk* MC_(any_matching_freed_ShadowChunks) 
                            ( Bool (*p)(ShadowChunk*) );
+
+extern __attribute__((regparm(1))) void MC_(new_mem_stack_4)  ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MC_(die_mem_stack_4)  ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MC_(new_mem_stack_8)  ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MC_(die_mem_stack_8)  ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MC_(new_mem_stack_12) ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MC_(die_mem_stack_12) ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MC_(new_mem_stack_16) ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MC_(die_mem_stack_16) ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MC_(new_mem_stack_32) ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MC_(die_mem_stack_32) ( Addr old_ESP );
+extern                             void MC_(die_mem_stack) ( Addr a, UInt len );
+extern                             void MC_(new_mem_stack) ( Addr a, UInt len );
+
+
+/*------------------------------------------------------------*/
+/*--- Stack pointer adjustment                             ---*/
+/*------------------------------------------------------------*/
+
+/* Some noble preprocessor abuse, to enable Memcheck and Addrcheck to
+   share this code, but not call the same functions.
+
+   Note that this code is executed very frequently and must be highly
+   optimised, which is why I resort to the preprocessor to achieve the
+   factoring, rather than eg. using function pointers.
+*/
+
+#define ESP_UPDATE_HANDLERS(ALIGNED4_NEW,  ALIGNED4_DIE,                      \
+                            ALIGNED8_NEW,  ALIGNED8_DIE,                      \
+                            UNALIGNED_NEW, UNALIGNED_DIE)                     \
+                                                                              \
+void __attribute__((regparm(1))) MC_(new_mem_stack_4)(Addr new_ESP)           \
+{                                                                             \
+   PROF_EVENT(110);                                                           \
+   if (IS_ALIGNED4_ADDR(new_ESP)) {                                           \
+      ALIGNED4_NEW  ( new_ESP );                                              \
+   } else {                                                                   \
+      UNALIGNED_NEW ( new_ESP, 4 );                                           \
+   }                                                                          \
+}                                                                             \
+                                                                              \
+void __attribute__((regparm(1))) MC_(die_mem_stack_4)(Addr new_ESP)           \
+{                                                                             \
+   PROF_EVENT(120);                                                           \
+   if (IS_ALIGNED4_ADDR(new_ESP)) {                                           \
+      ALIGNED4_DIE  ( new_ESP-4 );                                            \
+   } else {                                                                   \
+      UNALIGNED_DIE ( new_ESP-4, 4 );                                         \
+   }                                                                          \
+}                                                                             \
+                                                                              \
+void __attribute__((regparm(1))) MC_(new_mem_stack_8)(Addr new_ESP)           \
+{                                                                             \
+   PROF_EVENT(111);                                                           \
+   if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
+      ALIGNED8_NEW  ( new_ESP );                                              \
+   } else if (IS_ALIGNED4_ADDR(new_ESP)) {                                    \
+      ALIGNED4_NEW  ( new_ESP   );                                            \
+      ALIGNED4_NEW  ( new_ESP+4 );                                            \
+   } else {                                                                   \
+      UNALIGNED_NEW ( new_ESP, 8 );                                           \
+   }                                                                          \
+}                                                                             \
+                                                                              \
+void __attribute__((regparm(1))) MC_(die_mem_stack_8)(Addr new_ESP)           \
+{                                                                             \
+   PROF_EVENT(121);                                                           \
+   if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
+      ALIGNED8_DIE  ( new_ESP-8 );                                            \
+   } else if (IS_ALIGNED4_ADDR(new_ESP)) {                                    \
+      ALIGNED4_DIE  ( new_ESP-8 );                                            \
+      ALIGNED4_DIE  ( new_ESP-4 );                                            \
+   } else {                                                                   \
+      UNALIGNED_DIE ( new_ESP-8, 8 );                                         \
+   }                                                                          \
+}                                                                             \
+                                                                              \
+void __attribute__((regparm(1))) MC_(new_mem_stack_12)(Addr new_ESP)          \
+{                                                                             \
+   PROF_EVENT(112);                                                           \
+   if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
+      ALIGNED8_NEW  ( new_ESP   );                                            \
+      ALIGNED4_NEW  ( new_ESP+8 );                                            \
+   } else if (IS_ALIGNED4_ADDR(new_ESP)) {                                    \
+      ALIGNED4_NEW  ( new_ESP   );                                            \
+      ALIGNED8_NEW  ( new_ESP+4 );                                            \
+   } else {                                                                   \
+      UNALIGNED_NEW ( new_ESP, 12 );                                          \
+   }                                                                          \
+}                                                                             \
+                                                                              \
+void __attribute__((regparm(1))) MC_(die_mem_stack_12)(Addr new_ESP)          \
+{                                                                             \
+   PROF_EVENT(122);                                                           \
+   /* Note the -12 in the test */                                             \
+   if (IS_ALIGNED8_ADDR(new_ESP-12)) {                                        \
+      ALIGNED8_DIE  ( new_ESP-12 );                                           \
+      ALIGNED4_DIE  ( new_ESP-4  );                                           \
+   } else if (IS_ALIGNED4_ADDR(new_ESP)) {                                    \
+      ALIGNED4_DIE  ( new_ESP-12 );                                           \
+      ALIGNED8_DIE  ( new_ESP-8  );                                           \
+   } else {                                                                   \
+      UNALIGNED_DIE ( new_ESP-12, 12 );                                       \
+   }                                                                          \
+}                                                                             \
+                                                                              \
+void __attribute__((regparm(1))) MC_(new_mem_stack_16)(Addr new_ESP)          \
+{                                                                             \
+   PROF_EVENT(113);                                                           \
+   if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
+      ALIGNED8_NEW  ( new_ESP   );                                            \
+      ALIGNED8_NEW  ( new_ESP+8 );                                            \
+   } else if (IS_ALIGNED4_ADDR(new_ESP)) {                                    \
+      ALIGNED4_NEW  ( new_ESP    );                                           \
+      ALIGNED8_NEW  ( new_ESP+4  );                                           \
+      ALIGNED4_NEW  ( new_ESP+12 );                                           \
+   } else {                                                                   \
+      UNALIGNED_NEW ( new_ESP, 16 );                                          \
+   }                                                                          \
+}                                                                             \
+                                                                              \
+void __attribute__((regparm(1))) MC_(die_mem_stack_16)(Addr new_ESP)          \
+{                                                                             \
+   PROF_EVENT(123);                                                           \
+   if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
+      ALIGNED8_DIE  ( new_ESP-16 );                                           \
+      ALIGNED8_DIE  ( new_ESP-8  );                                           \
+   } else if (IS_ALIGNED4_ADDR(new_ESP)) {                                    \
+      ALIGNED4_DIE  ( new_ESP-16 );                                           \
+      ALIGNED8_DIE  ( new_ESP-12 );                                           \
+      ALIGNED4_DIE  ( new_ESP-4  );                                           \
+   } else {                                                                   \
+      UNALIGNED_DIE ( new_ESP-16, 16 );                                       \
+   }                                                                          \
+}                                                                             \
+                                                                              \
+void __attribute__((regparm(1))) MC_(new_mem_stack_32)(Addr new_ESP)          \
+{                                                                             \
+   PROF_EVENT(114);                                                           \
+   if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
+      ALIGNED8_NEW  ( new_ESP    );                                           \
+      ALIGNED8_NEW  ( new_ESP+8  );                                           \
+      ALIGNED8_NEW  ( new_ESP+16 );                                           \
+      ALIGNED8_NEW  ( new_ESP+24 );                                           \
+   } else if (IS_ALIGNED4_ADDR(new_ESP)) {                                    \
+      ALIGNED4_NEW  ( new_ESP    );                                           \
+      ALIGNED8_NEW  ( new_ESP+4  );                                           \
+      ALIGNED8_NEW  ( new_ESP+12 );                                           \
+      ALIGNED8_NEW  ( new_ESP+20 );                                           \
+      ALIGNED4_NEW  ( new_ESP+28 );                                           \
+   } else {                                                                   \
+      UNALIGNED_NEW ( new_ESP, 32 );                                          \
+   }                                                                          \
+}                                                                             \
+                                                                              \
+void __attribute__((regparm(1))) MC_(die_mem_stack_32)(Addr new_ESP)          \
+{                                                                             \
+   PROF_EVENT(124);                                                           \
+   if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
+      ALIGNED8_DIE  ( new_ESP-32 );                                           \
+      ALIGNED8_DIE  ( new_ESP-24 );                                           \
+      ALIGNED8_DIE  ( new_ESP-16 );                                           \
+      ALIGNED8_DIE  ( new_ESP- 8 );                                           \
+   } else if (IS_ALIGNED4_ADDR(new_ESP)) {                                    \
+      ALIGNED4_DIE  ( new_ESP-32 );                                           \
+      ALIGNED8_DIE  ( new_ESP-28 );                                           \
+      ALIGNED8_DIE  ( new_ESP-20 );                                           \
+      ALIGNED8_DIE  ( new_ESP-12 );                                           \
+      ALIGNED4_DIE  ( new_ESP-4  );                                           \
+   } else {                                                                   \
+      UNALIGNED_DIE ( new_ESP-32, 32 );                                       \
+   }                                                                          \
+}                                                                             \
+                                                                              \
+void MC_(new_mem_stack) ( Addr a, UInt len )                                  \
+{                                                                             \
+   PROF_EVENT(115);                                                           \
+   UNALIGNED_NEW ( a, len );                                                  \
+}                                                                             \
+                                                                              \
+void MC_(die_mem_stack) ( Addr a, UInt len )                                  \
+{                                                                             \
+   PROF_EVENT(125);                                                           \
+   UNALIGNED_DIE ( a, len );                                                  \
+}
 
 #endif   /* __MC_COMMON_H */
 

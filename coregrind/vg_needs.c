@@ -66,11 +66,16 @@ VgTrackEvents VG_(track_events) = {
    /* Memory events */
    .new_mem_startup              = NULL,
    .new_mem_heap                 = NULL,
-   .new_mem_stack                = NULL,
-   .new_mem_stack_aligned        = NULL,
    .new_mem_stack_signal         = NULL,
    .new_mem_brk                  = NULL,
    .new_mem_mmap                 = NULL,
+
+   .new_mem_stack_4              = NULL,
+   .new_mem_stack_8              = NULL,
+   .new_mem_stack_12             = NULL,
+   .new_mem_stack_16             = NULL,
+   .new_mem_stack_32             = NULL,
+   .new_mem_stack                = NULL,
 
    .copy_mem_heap                = NULL,
    .copy_mem_remap               = NULL,
@@ -80,11 +85,16 @@ VgTrackEvents VG_(track_events) = {
    .ban_mem_stack                = NULL,
 
    .die_mem_heap                 = NULL,
-   .die_mem_stack                = NULL,
-   .die_mem_stack_aligned        = NULL,
    .die_mem_stack_signal         = NULL,
    .die_mem_brk                  = NULL,
    .die_mem_munmap               = NULL,
+
+   .die_mem_stack_4              = NULL,
+   .die_mem_stack_8              = NULL,
+   .die_mem_stack_12             = NULL,
+   .die_mem_stack_16             = NULL,
+   .die_mem_stack_32             = NULL,
+   .die_mem_stack                = NULL,
 
    .bad_free                     = NULL,
    .mismatched_free              = NULL,
@@ -122,6 +132,28 @@ void VG_(sanity_check_needs) ( void)
    CHECK_NOT(VG_(details).description,      NULL);
    CHECK_NOT(VG_(details).copyright_author, NULL);
    CHECK_NOT(VG_(details).bug_reports_to,   NULL);
+
+   if ( (VG_(track_events).new_mem_stack_4  ||
+         VG_(track_events).new_mem_stack_8  ||
+         VG_(track_events).new_mem_stack_12 ||
+         VG_(track_events).new_mem_stack_16 ||
+         VG_(track_events).new_mem_stack_32) &&
+       ! VG_(track_events).new_mem_stack) {
+      VG_(printf)("\nSkin error: one of the specialised `new_mem_stack_n'\n"
+                  "events tracked, but not the generic `new_mem_stack' one.\n");
+      VG_(skin_panic)("`new_mem_stack' should be defined\n");
+   }
+
+   if ( (VG_(track_events).die_mem_stack_4  ||
+         VG_(track_events).die_mem_stack_8  ||
+         VG_(track_events).die_mem_stack_12 ||
+         VG_(track_events).die_mem_stack_16 ||
+         VG_(track_events).die_mem_stack_32) &&
+       ! VG_(track_events).die_mem_stack) {
+      VG_(printf)("\nSkin error: one of the specialised `die_mem_stack_n'\n"
+                  "events tracked, but not the generic `die_mem_stack' one.\n");
+      VG_(skin_panic)("`die_mem_stack' should be defined\n");
+   }
 
 #undef CHECK_NOT
 #undef INVALID_Bool
@@ -182,11 +214,16 @@ NEEDS(data_syms)
 
 TRACK(new_mem_startup,       Addr a, UInt len, Bool rr, Bool ww, Bool xx)
 TRACK(new_mem_heap,          Addr a, UInt len, Bool is_inited)
-TRACK(new_mem_stack,         Addr a, UInt len)
-TRACK(new_mem_stack_aligned, Addr a, UInt len)
 TRACK(new_mem_stack_signal,  Addr a, UInt len)
 TRACK(new_mem_brk,           Addr a, UInt len)
 TRACK(new_mem_mmap,          Addr a, UInt len, Bool rr, Bool ww, Bool xx)
+
+TRACK(new_mem_stack_4,       Addr new_ESP)
+TRACK(new_mem_stack_8,       Addr new_ESP)
+TRACK(new_mem_stack_12,      Addr new_ESP)
+TRACK(new_mem_stack_16,      Addr new_ESP)
+TRACK(new_mem_stack_32,      Addr new_ESP)
+TRACK(new_mem_stack,         Addr a, UInt len)
 
 TRACK(copy_mem_heap,       Addr from, Addr to, UInt len)
 TRACK(copy_mem_remap,      Addr from, Addr to, UInt len)
@@ -196,11 +233,16 @@ TRACK(ban_mem_heap,  Addr a, UInt len)
 TRACK(ban_mem_stack, Addr a, UInt len)
 
 TRACK(die_mem_heap,          Addr a, UInt len)
-TRACK(die_mem_stack,         Addr a, UInt len)
-TRACK(die_mem_stack_aligned, Addr a, UInt len)
 TRACK(die_mem_stack_signal,  Addr a, UInt len)
 TRACK(die_mem_brk,           Addr a, UInt len)
 TRACK(die_mem_munmap,        Addr a, UInt len)
+
+TRACK(die_mem_stack_4,       Addr new_ESP)
+TRACK(die_mem_stack_8,       Addr new_ESP)
+TRACK(die_mem_stack_12,      Addr new_ESP)
+TRACK(die_mem_stack_16,      Addr new_ESP)
+TRACK(die_mem_stack_32,      Addr new_ESP)
+TRACK(die_mem_stack,         Addr a, UInt len)
 
 TRACK(bad_free,        ThreadState* tst, Addr a)
 TRACK(mismatched_free, ThreadState* tst, Addr a)

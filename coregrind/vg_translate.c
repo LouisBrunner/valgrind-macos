@@ -1645,6 +1645,92 @@ static void vg_improve ( UCodeBlock* cb )
    }
 }
 
+/*------------------------------------------------------------*/
+/*--- %ESP-update pass                                     ---*/
+/*------------------------------------------------------------*/
+
+/* For skins that want to know about %ESP changes, this pass adds
+   in the appropriate hooks.  We have to do it after the skin's
+   instrumentation, so the skin doesn't have to worry about the CCALLs
+   it adds in, and we must do it before register allocation because
+   spilled temps make it much harder to work out the %esp deltas.
+   Thus we have it as an extra phase between the two. */
+static 
+UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
+{
+   UCodeBlock* cb;
+   UInstr*     u;
+   Int         delta = 0;
+   UInt        t_ESP = INVALID_TEMPREG;
+   UInt        i;
+
+   cb = VG_(setup_UCodeBlock)(cb_in);
+
+   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
+      u = VG_(get_instr)(cb_in, i);
+
+      if (GET == u->opcode && R_ESP == u->val1) {
+         t_ESP = u->val2;
+         delta = 0;
+
+      } else if (PUT == u->opcode && R_ESP == u->val2 && 4 == u->size) {
+
+#           define DO_GENERIC                                                 \
+               if (VG_(track_events).new_mem_stack ||                         \
+                   VG_(track_events).die_mem_stack) {                         \
+                  uInstr1(cb, CCALL, 0, TempReg, u->val1);                    \
+                  uCCall(cb, (Addr) VG_(unknown_esp_update),                  \
+                         1, 1, False);                                        \
+               } 
+
+#           define DO(kind, size)                                             \
+               if (VG_(track_events).kind##_mem_stack_##size) {               \
+                  uInstr1(cb, CCALL, 0, TempReg, u->val1);                    \
+                  uCCall(cb, (Addr) VG_(track_events).kind##_mem_stack_##size,\
+                         1, 1, False);                                        \
+                                                                              \
+               } else                                                         \
+                  DO_GENERIC                                                  \
+               break
+
+         if (u->val1 == t_ESP) {
+            /* Known delta, common cases handled specially. */
+            switch (delta) {
+            case   4: DO(die, 4);
+            case  -4: DO(new, 4);
+            case   8: DO(die, 8);
+            case  -8: DO(new, 8);
+            case  12: DO(die, 12);
+            case -12: DO(new, 12);
+            case  16: DO(die, 16);
+            case -16: DO(new, 16);
+            case  32: DO(die, 32);
+            case -32: DO(new, 32);
+            default:  DO_GENERIC;   break;
+            }           
+         } else {
+            /* Unknown delta */
+            DO_GENERIC;
+         }
+         delta = 0;
+
+#        undef DO
+#        undef DO_GENERIC
+
+      } else if (Literal == u->tag1 && t_ESP == u->val2) {
+         if (ADD == u->opcode) delta += u->lit32;
+         if (SUB == u->opcode) delta -= u->lit32;
+
+      } else if (MOV == u->opcode && TempReg == u->tag1 && t_ESP == u->val1 &&
+                                     TempReg == u->tag2) {
+         t_ESP = u->val2;
+      }
+      VG_(copy_UInstr) ( cb, u );
+   }
+
+   VG_(free_UCodeBlock)(cb_in);
+   return cb;
+}
 
 /*------------------------------------------------------------*/
 /*--- The new register allocator.                          ---*/
@@ -2136,6 +2222,14 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
       VG_(pp_UCodeBlock) ( cb, "Instrumented UCode:" );
    VG_(saneUCodeBlock)( cb );
    VGP_POPCC(VgpInstrument);
+
+   /* Add %ESP-update hooks if the skin requires them */
+   /* Nb: We don't print out this phase, because it doesn't do much */
+   if (VG_(need_to_handle_esp_assignment)()) {
+      VGP_PUSHCC(VgpESPUpdate);
+      cb = vg_ESP_update_pass ( cb );
+      VGP_POPCC(VgpESPUpdate);
+   }
 
    /* Allocate registers. */
    VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(4);

@@ -3115,7 +3115,6 @@ void SK_(pre_clo_init)(void)
 
    VG_(track_die_mem_heap)         (NULL);
    VG_(track_die_mem_stack)        (NULL);
-   VG_(track_die_mem_stack_aligned)(NULL);
    VG_(track_die_mem_stack_signal) (NULL);
    VG_(track_die_mem_brk)          (NULL);
    VG_(track_die_mem_munmap)       (NULL);
@@ -3244,7 +3243,6 @@ void SK_(post_clo_init)(void)
       stack_tracker = & eraser_new_mem_stack;
 
    VG_(track_new_mem_stack)        (stack_tracker);
-   VG_(track_new_mem_stack_aligned)(stack_tracker);
    VG_(track_new_mem_stack_signal) (stack_tracker);
 }
 

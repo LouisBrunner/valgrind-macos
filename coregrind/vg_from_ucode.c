@@ -2894,7 +2894,7 @@ UInt VG_(get_thread_archreg) ( ThreadId tid, UInt arch )
 }
 
 /* Return the baseBlock index for the specified shadow register */
-Int shadow_reg_index ( Int arch )
+static Int shadow_reg_index ( Int arch )
 {
    switch (arch) {
       case R_EAX: return VGOFF_(sh_eax);
@@ -2993,18 +2993,6 @@ static void synth_WIDEN_signed ( Int sz_src, Int sz_dst, Int reg )
    }
    else
       VG_(core_panic)("synth_WIDEN");
-}
-
-
-static void synth_handle_esp_assignment ( Int i, Int reg,
-                                          RRegSet regs_live_before,
-                                          RRegSet regs_live_after )
-{
-   UInt argv[] = { reg };
-   Tag  tagv[] = { RealReg };
-
-   VG_(synth_ccall) ( (Addr) VG_(handle_esp_assignment), 1, 1, argv, tagv, 
-                      INVALID_REALREG, regs_live_before, regs_live_after);
 }
 
 
@@ -3135,22 +3123,12 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
       case PUT: {
          vg_assert(u->tag2 == ArchReg || u->tag2 == SpillNo);
          vg_assert(u->tag1 == RealReg);
-         if (u->tag2 == ArchReg 
-             && u->val2 == R_ESP
-             && u->size == 4
-             && VG_(need_to_handle_esp_assignment)())
-         {
-            synth_handle_esp_assignment ( i, u->val1, regs_live_before,
-                                          u->regs_live_after );
-	 }
-         else {
-            synth_mov_reg_offregmem ( 
-               u->size, 
-               u->val1, 
-               spillOrArchOffset( u->size, u->tag2, u->val2 ),
-               R_EBP
-            );
-         }
+         synth_mov_reg_offregmem ( 
+            u->size, 
+            u->val1, 
+            spillOrArchOffset( u->size, u->tag2, u->val2 ),
+            R_EBP
+         );
          break;
       }
 

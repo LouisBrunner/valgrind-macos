@@ -132,6 +132,7 @@ extern void MC_(show_client_block_stats) ( void );
 extern void MC_(record_value_error) ( Int size );
 extern void MC_(record_user_error)  ( ThreadState* tst, Addr a, Bool isWrite );
 
+
 #endif
 
 /*--------------------------------------------------------------------*/

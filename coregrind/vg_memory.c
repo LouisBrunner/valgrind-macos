@@ -222,7 +222,6 @@ void VG_(init_memory) ( void )
 
 }
 
-
 /*------------------------------------------------------------*/
 /*--- Tracking permissions around %esp changes.            ---*/
 /*------------------------------------------------------------*/
@@ -258,173 +257,40 @@ void VG_(init_memory) ( void )
    addresses below %esp are not live; those at and above it are.  
 */
 
-/* Does this address look like something in or vaguely near the
-   current thread's stack? */
-static __attribute__((unused))
-Bool is_plausible_stack_addr ( ThreadState* tst, Addr aa )
-{
-   UInt a = (UInt)aa;
-   //PROF_EVENT(100);   PPP
-   if (a <= tst->stack_highest_word && 
-       a > tst->stack_highest_word - VG_PLAUSIBLE_STACK_SIZE)
-      return True;
-   else
-      return False;
-}
-
-
 /* Kludgey ... how much does %esp have to change before we reckon that
    the application is switching stacks ? */
-#define VG_HUGE_DELTA (VG_PLAUSIBLE_STACK_SIZE / 4)
+#define VG_PLAUSIBLE_STACK_SIZE  8000000
+#define VG_HUGE_DELTA            (VG_PLAUSIBLE_STACK_SIZE / 4)
 
-static  __attribute__((unused))
-Addr get_page_base ( Addr a )
+/* This function gets called if new_mem_stack and/or die_mem_stack are
+   tracked by the skin, and one of the specialised cases (eg. new_mem_stack_4)
+   isn't used in preference */
+__attribute__((regparm(1)))
+void VG_(unknown_esp_update)(Addr new_ESP)
 {
-   return a & ~(VKI_BYTES_PER_PAGE-1);
-}
+   Addr old_ESP = VG_(get_archreg)(R_ESP);
+   Int  delta   = (Int)new_ESP - (Int)old_ESP;
 
-static void vg_handle_esp_assignment_SLOWLY ( Addr old_esp, Addr new_esp );
+   if (delta < -(VG_HUGE_DELTA) || VG_HUGE_DELTA < delta) {
+      /* %esp has changed by more than HUGE_DELTA.  We take this to mean
+         that the application is switching to a new stack, for whatever
+         reason. 
+       
+         JRS 20021001: following discussions with John Regehr, if a stack
+         switch happens, it seems best not to mess at all with memory
+         permissions.  Seems to work well with Netscape 4.X.  Really the
+         only remaining difficulty is knowing exactly when a stack switch is
+         happening. */
+      if (VG_(clo_verbosity) > 1)
+           VG_(message)(Vg_UserMsg, "Warning: client switching stacks?  "
+                                    "%%esp: %p --> %p", old_ESP, new_ESP);
+   } else if (delta < 0) {
+      VG_TRACK( new_mem_stack, new_ESP, -delta );
 
-__attribute__ ((regparm (1)))
-void VG_(handle_esp_assignment) ( Addr new_esp )
-{
-   UInt old_esp;
-   Int  delta;
-
-   VGP_MAYBE_PUSHCC(VgpStack);
-
-   old_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   delta = ((Int)new_esp) - ((Int)old_esp);
-
-   /* Update R_ESP */
-   VG_(baseBlock)[VGOFF_(m_esp)] = new_esp;
-
-   //PROF_EVENT(101);   PPP
-
-#  ifndef VG_DEBUG_MEMORY
-
-   /* if (IS_ALIGNED4_ADDR(old_esp) && IS_ALIGNED4_ADDR(new_esp)) { */
-   if (IS_ALIGNED4_ADDR((old_esp|new_esp))) {
-
-      /* Deal with the most common cases fast.  These are ordered in
-         the sequence most common first. */
-
-#     ifdef VG_PROFILE_MEMORY
-      // PPP
-      if      (delta == - 4) PROF_EVENT(102);
-      else if (delta ==   4) PROF_EVENT(103);
-      else if (delta == -12) PROF_EVENT(104);
-      else if (delta == - 8) PROF_EVENT(105);
-      else if (delta ==  16) PROF_EVENT(106);
-      else if (delta ==  12) PROF_EVENT(107);
-      else if (delta ==   0) PROF_EVENT(108);
-      else if (delta ==   8) PROF_EVENT(109);
-      else if (delta == -16) PROF_EVENT(110);
-      else if (delta ==  20) PROF_EVENT(111);
-      else if (delta == -20) PROF_EVENT(112);
-      else if (delta ==  24) PROF_EVENT(113);
-      else if (delta == -24) PROF_EVENT(114);
-      else if (delta > 0)    PROF_EVENT(115); // PPP: new: aligned_big_pos
-      else                   PROF_EVENT(116); // PPP: new: aligned_big_neg
-#     endif
-      
-      if (delta < 0 && delta > -2000) {
-         VG_TRACK(new_mem_stack_aligned, new_esp, -delta);
-         VGP_MAYBE_POPCC(VgpStack);
-         return;
-      } 
-      else 
-      if (delta > 0 && delta < 2000) {
-         VG_TRACK(die_mem_stack_aligned, old_esp, delta);
-         VGP_MAYBE_POPCC(VgpStack);
-         return;
-      }
-      if (delta == 0) {
-         VGP_MAYBE_POPCC(VgpStack);
-         return;
-      }
-      /* otherwise fall onto the slow-but-general case */
-   }
-
-#  endif
-
-   /* The above special cases handle 90% to 95% of all the stack
-      adjustments.  The rest we give to the slow-but-general
-      mechanism. */
-   /* VG_(printf)("big delta %d\n", delta); */
-   vg_handle_esp_assignment_SLOWLY ( old_esp, new_esp );
-   VGP_MAYBE_POPCC(VgpStack);
-}
-
-
-static void vg_handle_esp_assignment_SLOWLY ( Addr old_esp, Addr new_esp )
-{
-   Int  delta;
-   
-   delta = ((Int)new_esp) - ((Int)old_esp);
-   //VG_(printf)("delta %d (%x) %x --> %x\n", delta, delta, old_esp, new_esp);
-   //PROF_EVENT(120);   PPP
-   if (-(VG_HUGE_DELTA) < delta && delta < VG_HUGE_DELTA) {
-      /* "Ordinary" stack change. */
-      if (new_esp < old_esp) {
-         /* Moving down; the stack is growing. */
-         //PROF_EVENT(121); PPP
-         VG_TRACK( new_mem_stack, new_esp, -delta );
-      
-      } else if (new_esp > old_esp) {
-         /* Moving up; the stack is shrinking. */
-         //PROF_EVENT(122); PPP
-         VG_TRACK( die_mem_stack, old_esp, delta );
-
-      } else {
-         /* when old_esp == new_esp */
-         //PROF_EVENT(123);    PPP
-      }
-      return;
-   }
-
-   /* %esp has changed by more than HUGE_DELTA.  We take this to mean
-      that the application is switching to a new stack, for whatever
-      reason, and we attempt to initialise the permissions around the
-      new stack in some plausible way.  All pretty kludgey; needed to
-      make netscape-4.07 run without generating thousands of error
-      contexts.
-
-      If we appear to be switching back to the main stack, don't mess
-      with the permissions in the area at and above the stack ptr.
-      Otherwise, we're switching to an alternative stack; make the
-      area above %esp readable -- this doesn't seem right -- the right
-      thing to do would be to make it writable -- but is needed to
-      avoid huge numbers of errs in netscape.  To be investigated. */
-
-   { 
-#    if 0
-     Addr invalid_down_to = get_page_base(new_esp) 
-                            - 0 * VKI_BYTES_PER_PAGE;
-     Addr valid_up_to     = get_page_base(new_esp) + VKI_BYTES_PER_PAGE
-                            + 0 * VKI_BYTES_PER_PAGE;
-     ThreadState* tst     = VG_(get_current_thread_state)();
-#    endif
-     //PROF_EVENT(124); PPP
-     if (VG_(clo_verbosity) > 1)
-        VG_(message)(Vg_UserMsg, "Warning: client switching stacks?  "
-                                 "%%esp: %p --> %p", old_esp, new_esp);
-     /* VG_(printf)("na %p,   %%esp %p,   wr %p\n",
-                    invalid_down_to, new_esp, valid_up_to ); */
-#    if 0
-     /* JRS 20021001: following discussions with John Regehr, just
-        remove this.  If a stack switch happens, it seems best not to
-        mess at all with memory permissions.  Seems to work well with
-        Netscape 4.X.  Really the only remaining difficulty is knowing
-        exactly when a stack switch is happening. */
-     VG_TRACK( die_mem_stack, invalid_down_to, new_esp - invalid_down_to );
-     if (!is_plausible_stack_addr(tst, new_esp)) {
-        VG_TRACK( post_mem_write, new_esp, valid_up_to - new_esp );
-     }
-#    endif
+   } else if (delta > 0) {
+      VG_TRACK( die_mem_stack, old_ESP,  delta );
    }
 }
-
 
 /*--------------------------------------------------------------------*/
 /*--- Support for memory leak detectors                            ---*/

@@ -39,21 +39,7 @@ VG_DETERMINE_INTERFACE_VERSION
 /* Define to debug the mem audit system. */
 /* #define VG_DEBUG_MEMORY */
 
-/* Define to collect detailed performance info. */
-/* #define VG_PROFILE_MEMORY */
-
 #define DEBUG(fmt, args...) //VG_(printf)(fmt, ## args)
-
-/*------------------------------------------------------------*/
-/*--- Profiling events                                     ---*/
-/*------------------------------------------------------------*/
-
-typedef 
-   enum { 
-      VgpCheckMem = VgpFini+1,
-      VgpSetMem
-   } 
-   VgpSkinCC;
 
 /*------------------------------------------------------------*/
 /*--- Low-level support for memory checking.               ---*/
@@ -415,8 +401,87 @@ void MC_(make_readable) ( Addr a, UInt len )
    set_address_range_perms ( a, len, VGM_BIT_VALID, VGM_BIT_VALID );
 }
 
-/* Block-copy permissions (needed for implementing realloc()). */
+static __inline__
+void make_aligned_word_writable(Addr a)
+{
+   SecMap* sm;
+   UInt    sm_off;
+   UChar   mask;
 
+   VGP_PUSHCC(VgpESPAdj);
+   ENSURE_MAPPABLE(a, "make_aligned_word_writable");
+   sm     = primary_map[a >> 16];
+   sm_off = a & 0xFFFF;
+   ((UInt*)(sm->vbyte))[sm_off >> 2] = VGM_WORD_INVALID;
+   mask = 0x0F;
+   mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
+   /* mask now contains 1s where we wish to make address bits invalid (0s). */
+   sm->abits[sm_off >> 3] &= ~mask;
+   VGP_POPCC(VgpESPAdj);
+}
+
+static __inline__
+void make_aligned_word_noaccess(Addr a)
+{
+   SecMap* sm;
+   UInt    sm_off;
+   UChar   mask;
+
+   VGP_PUSHCC(VgpESPAdj);
+   ENSURE_MAPPABLE(a, "make_aligned_word_noaccess");
+   sm     = primary_map[a >> 16];
+   sm_off = a & 0xFFFF;
+   ((UInt*)(sm->vbyte))[sm_off >> 2] = VGM_WORD_INVALID;
+   mask = 0x0F;
+   mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
+   /* mask now contains 1s where we wish to make address bits invalid (1s). */
+   sm->abits[sm_off >> 3] |= mask;
+   VGP_POPCC(VgpESPAdj);
+}
+
+/* Nb: by "aligned" here we mean 8-byte aligned */
+static __inline__
+void make_aligned_doubleword_writable(Addr a)
+{
+   SecMap* sm;
+   UInt    sm_off;
+
+   VGP_PUSHCC(VgpESPAdj);
+   ENSURE_MAPPABLE(a, "make_aligned_doubleword_writable");
+   sm = primary_map[a >> 16];
+   sm_off = a & 0xFFFF;
+   sm->abits[sm_off >> 3] = VGM_BYTE_VALID;
+   ((UInt*)(sm->vbyte))[(sm_off >> 2) + 0] = VGM_WORD_INVALID;
+   ((UInt*)(sm->vbyte))[(sm_off >> 2) + 1] = VGM_WORD_INVALID;
+   VGP_POPCC(VgpESPAdj);
+}
+
+static __inline__
+void make_aligned_doubleword_noaccess(Addr a)
+{
+   SecMap* sm;
+   UInt    sm_off;
+
+   VGP_PUSHCC(VgpESPAdj);
+   ENSURE_MAPPABLE(a, "make_aligned_doubleword_noaccess");
+   sm = primary_map[a >> 16];
+   sm_off = a & 0xFFFF;
+   sm->abits[sm_off >> 3] = VGM_BYTE_INVALID;
+   ((UInt*)(sm->vbyte))[(sm_off >> 2) + 0] = VGM_WORD_INVALID;
+   ((UInt*)(sm->vbyte))[(sm_off >> 2) + 1] = VGM_WORD_INVALID;
+   VGP_POPCC(VgpESPAdj);
+}
+
+/* The %esp update handling functions */
+ESP_UPDATE_HANDLERS ( make_aligned_word_writable,
+                      make_aligned_word_noaccess,
+                      make_aligned_doubleword_writable,
+                      make_aligned_doubleword_noaccess,
+                      MC_(make_writable),
+                      MC_(make_noaccess) 
+                    );
+
+/* Block-copy permissions (needed for implementing realloc()). */
 static void mc_copy_address_range_state ( Addr src, Addr dst, UInt len )
 {
    UInt i;
@@ -481,7 +546,7 @@ Bool MC_(check_readable) ( Addr a, UInt len, Addr* bad_addr )
    examine the actual bytes, to find the end, until we're sure it is
    safe to do so. */
 
-Bool mc_check_readable_asciiz ( Addr a, Addr* bad_addr )
+static Bool mc_check_readable_asciiz ( Addr a, Addr* bad_addr )
 {
    UChar abit;
    UChar vbyte;
@@ -505,68 +570,6 @@ Bool mc_check_readable_asciiz ( Addr a, Addr* bad_addr )
 /*------------------------------------------------------------*/
 /*--- Memory event handlers                                ---*/
 /*------------------------------------------------------------*/
-
-/* Setting permissions for aligned words.  This supports fast stack
-   operations. */
-
-static void mc_make_noaccess_aligned ( Addr a, UInt len )
-{
-   SecMap* sm;
-   UInt    sm_off;
-   UChar   mask;
-   Addr    a_past_end = a + len;
-
-   VGP_PUSHCC(VgpSetMem);
-
-   PROF_EVENT(50);
-#  ifdef VG_DEBUG_MEMORY
-   sk_assert(IS_ALIGNED4_ADDR(a));
-   sk_assert(IS_ALIGNED4_ADDR(len));
-#  endif
-
-   for ( ; a < a_past_end; a += 4) {
-      ENSURE_MAPPABLE(a, "mc_make_noaccess_aligned");
-      sm     = primary_map[a >> 16];
-      sm_off = a & 0xFFFF;
-      ((UInt*)(sm->vbyte))[sm_off >> 2] = VGM_WORD_INVALID;
-      mask = 0x0F;
-      mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
-      /* mask now contains 1s where we wish to make address bits
-         invalid (1s). */
-      sm->abits[sm_off >> 3] |= mask;
-   }
-   VGP_POPCC(VgpSetMem);
-}
-
-static void mc_make_writable_aligned ( Addr a, UInt len )
-{
-   SecMap* sm;
-   UInt    sm_off;
-   UChar   mask;
-   Addr    a_past_end = a + len;
-
-   VGP_PUSHCC(VgpSetMem);
-
-   PROF_EVENT(51);
-#  ifdef VG_DEBUG_MEMORY
-   sk_assert(IS_ALIGNED4_ADDR(a));
-   sk_assert(IS_ALIGNED4_ADDR(len));
-#  endif
-
-   for ( ; a < a_past_end; a += 4) {
-      ENSURE_MAPPABLE(a, "mc_make_writable_aligned");
-      sm     = primary_map[a >> 16];
-      sm_off = a & 0xFFFF;
-      ((UInt*)(sm->vbyte))[sm_off >> 2] = VGM_WORD_INVALID;
-      mask = 0x0F;
-      mask <<= (a & 4 /* 100b */);   /* a & 4 is either 0 or 4 */
-      /* mask now contains 1s where we wish to make address bits
-         invalid (0s). */
-      sm->abits[sm_off >> 3] &= ~mask;
-   }
-   VGP_POPCC(VgpSetMem);
-}
-
 
 static
 void mc_check_is_writable ( CorePart part, ThreadState* tst,
@@ -1549,12 +1552,17 @@ void SK_(pre_clo_init)(void)
 
    VG_(track_new_mem_startup)      ( & mc_new_mem_startup );
    VG_(track_new_mem_heap)         ( & mc_new_mem_heap );
-   VG_(track_new_mem_stack)        ( & MC_(make_writable) );
-   VG_(track_new_mem_stack_aligned)( & mc_make_writable_aligned );
    VG_(track_new_mem_stack_signal) ( & MC_(make_writable) );
    VG_(track_new_mem_brk)          ( & MC_(make_writable) );
    VG_(track_new_mem_mmap)         ( & mc_set_perms );
    
+   VG_(track_new_mem_stack_4)      ( & MC_(new_mem_stack_4)  );
+   VG_(track_new_mem_stack_8)      ( & MC_(new_mem_stack_8)  );
+   VG_(track_new_mem_stack_12)     ( & MC_(new_mem_stack_12) );
+   VG_(track_new_mem_stack_16)     ( & MC_(new_mem_stack_16) );
+   VG_(track_new_mem_stack_32)     ( & MC_(new_mem_stack_32) );
+   VG_(track_new_mem_stack)        ( & MC_(new_mem_stack)    );
+
    VG_(track_copy_mem_heap)        ( & mc_copy_address_range_state );
    VG_(track_copy_mem_remap)       ( & mc_copy_address_range_state );
    VG_(track_change_mem_mprotect)  ( & mc_set_perms );
@@ -1563,12 +1571,17 @@ void SK_(pre_clo_init)(void)
    VG_(track_ban_mem_stack)        ( & MC_(make_noaccess) );
 
    VG_(track_die_mem_heap)         ( & MC_(make_noaccess) );
-   VG_(track_die_mem_stack)        ( & MC_(make_noaccess) );
-   VG_(track_die_mem_stack_aligned)( & mc_make_noaccess_aligned ); 
    VG_(track_die_mem_stack_signal) ( & MC_(make_noaccess) ); 
    VG_(track_die_mem_brk)          ( & MC_(make_noaccess) );
    VG_(track_die_mem_munmap)       ( & MC_(make_noaccess) ); 
 
+   VG_(track_die_mem_stack_4)      ( & MC_(die_mem_stack_4)  );
+   VG_(track_die_mem_stack_8)      ( & MC_(die_mem_stack_8)  );
+   VG_(track_die_mem_stack_12)     ( & MC_(die_mem_stack_12) );
+   VG_(track_die_mem_stack_16)     ( & MC_(die_mem_stack_16) );
+   VG_(track_die_mem_stack_32)     ( & MC_(die_mem_stack_32) );
+   VG_(track_die_mem_stack)        ( & MC_(die_mem_stack)    );
+   
    VG_(track_bad_free)             ( & MC_(record_free_error) );
    VG_(track_mismatched_free)      ( & MC_(record_freemismatch_error) );
 
@@ -1577,23 +1590,25 @@ void SK_(pre_clo_init)(void)
    VG_(track_pre_mem_write)        ( & mc_check_is_writable );
    VG_(track_post_mem_write)       ( & MC_(make_readable) );
 
+   /* Three compact slots taken up by stack memory helpers */
    VG_(register_compact_helper)((Addr) & MC_(helper_value_check4_fail));
    VG_(register_compact_helper)((Addr) & MC_(helper_value_check0_fail));
    VG_(register_compact_helper)((Addr) & MC_(helper_value_check2_fail));
    VG_(register_compact_helper)((Addr) & MC_(helperc_STOREV4));
-   VG_(register_compact_helper)((Addr) & MC_(helperc_STOREV1));
    VG_(register_compact_helper)((Addr) & MC_(helperc_LOADV4));
-   VG_(register_compact_helper)((Addr) & MC_(helperc_LOADV1));
 
    /* These two made non-compact because 2-byte transactions are rare. */
    VG_(register_noncompact_helper)((Addr) & MC_(helperc_STOREV2));
+   VG_(register_noncompact_helper)((Addr) & MC_(helperc_STOREV1));
    VG_(register_noncompact_helper)((Addr) & MC_(helperc_LOADV2));
+   VG_(register_noncompact_helper)((Addr) & MC_(helperc_LOADV1));
    VG_(register_noncompact_helper)((Addr) & MC_(fpu_write_check));
    VG_(register_noncompact_helper)((Addr) & MC_(fpu_read_check));
    VG_(register_noncompact_helper)((Addr) & MC_(helper_value_check1_fail));
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
+   VGP_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
 
    init_shadow_memory();
    MC_(init_prof_mem)();

@@ -29,10 +29,6 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-// SSS: should this file should eventually not be in core, but included in
-// skins that use it??  Reduces size of core, but increases size of every
-// skin that uses it...
-
 /* We only import vg_skin.h here, because this file only provides functions
    for doing things that could be done directly by the skin -- it's just to
    make skins' lives easier, rather than let them do something they

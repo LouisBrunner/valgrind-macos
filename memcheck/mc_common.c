@@ -501,13 +501,25 @@ M  89   fpu_write 10/28/108
 
    100  fpu_access_check_SLOWLY
    101  fpu_access_check_SLOWLY(byte loop)
+
+   110  new_mem_stack_4
+   111  new_mem_stack_8
+   112  new_mem_stack_12
+   113  new_mem_stack_16
+   114  new_mem_stack_32
+   115  new_mem_stack
+
+   120  die_mem_stack_4
+   121  die_mem_stack_8
+   122  die_mem_stack_12
+   123  die_mem_stack_16
+   124  die_mem_stack_32
+   125  die_mem_stack
 */
 
 #ifdef VG_PROFILE_MEMORY
 
-#define N_PROF_EVENTS 150
-
-extern UInt MC_(event_ctr)[N_PROF_EVENTS];
+UInt MC_(event_ctr)[N_PROF_EVENTS];
 
 void MC_(init_prof_mem) ( void )
 {
@@ -532,8 +544,6 @@ void MC_(done_prof_mem) ( void )
 
 void MC_(init_prof_mem) ( void ) { }
 void MC_(done_prof_mem) ( void ) { }
-
-#define PROF_EVENT(ev) /* */
 
 #endif
 
@@ -676,7 +686,6 @@ void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
       VG_(skin_panic)("aborting due to the above ... bye!");
    }
 }
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                              mc_common.c ---*/

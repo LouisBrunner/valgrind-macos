@@ -11,9 +11,7 @@ valdir = $(libdir)/valgrind
 
 val_PROGRAMS = vgskin_addrcheck.so
 
-vgskin_addrcheck_so_SOURCES = \
-	ac_main.c \
-	ac_common.c
+vgskin_addrcheck_so_SOURCES = ac_main.c
 vgskin_addrcheck_so_LDFLAGS = -shared
 
 ##vgskin_addrcheck.so$(EXEEXT): $(vgskin_addrcheck_so_OBJECTS)

@@ -45,7 +45,7 @@
 #define VG_TC_N_SECTORS 8
 
 /* Calculated once at startup and never changed. */
-/* const */ Int vg_tc_sector_szB = 0;
+static /* const */ Int vg_tc_sector_szB = 0;
 
 /* Number of entries in the translation table.  This must be a prime
    number in order to make the hashing work properly. */

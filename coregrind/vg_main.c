@@ -622,17 +622,18 @@ static Addr vg_foundstack_start = (Addr)NULL;
 static UInt vg_foundstack_size  = 0;
 
 static void vg_findstack_callback ( Addr start, UInt size, 
-                              Char r, Char w, Char x, 
-                              UInt foffset, UChar* filename )
+                                    Char r, Char w, Char x, 
+                                    UInt foffset, UChar* filename )
 {
    Addr lastword;
    if (size == 0) return;
    if (r != 'r' || w != 'w' || x != 'x') return;
    lastword = start + size - 4;
-   if (start <= VG_(esp_at_startup) && VG_(esp_at_startup) <= lastword) {
-     vg_foundstack_start = start;
-     vg_foundstack_size = size;
-  vg_assert(vg_foundstack_size > 0);
+   if (start <= VG_(esp_at_startup) 
+       && VG_(esp_at_startup) <= lastword) {
+      vg_foundstack_start = start;
+      vg_foundstack_size = size;
+      vg_assert(vg_foundstack_size > 0);
    }
 }
 
@@ -667,56 +668,33 @@ static void process_cmd_line_options ( void )
       envc & envp. It is not fool-proof, but these structures should
       change less often than the libc ones. */
    {
-       UInt* sp = 0; /* bogus init to keep gcc -O happy */
-#if 0
-       /* locate the top of the stack */
-       if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
-                                  VG_STARTUP_STACK_BASE_1 )) {
-          sp = (UInt*)VG_STARTUP_STACK_BASE_1;
-       } else
-       if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
-                                  VG_STARTUP_STACK_BASE_2 )) {
-          sp = (UInt*)VG_STARTUP_STACK_BASE_2;
-       } else 
-       if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
-                                  VG_STARTUP_STACK_BASE_3 )) {
-          sp = (UInt*)VG_STARTUP_STACK_BASE_3;
-       } else 
-       if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
-                                  VG_STARTUP_STACK_BASE_4 )) {
-          sp = (UInt*)VG_STARTUP_STACK_BASE_4;
-       } else {
-          args_grok_error(
-             "startup %esp is not near any VG_STARTUP_STACK_BASE_*\n   "
-             "constants defined in vg_include.h.  You should investigate."
-          );
-       }
- #endif
-       /* we locate: NEW_AUX_ENT(1, AT_PAGESZ, ELF_EXEC_PAGESIZE) in
-          the elf interpreter table */
+       UInt* sp;
 
-
-       /* Look for the stack by reading /proc/self/maps and looking
-	  for a section bracketing VG_(esp_at_startup) which has rwx
-	  permissions. */
-
-       /* Appalling hack for Gentoo; round up to the next page. */
-       sp = (UInt*)VG_(esp_at_startup);
+       /* Look for the stack segment by reading /proc/self/maps and
+	  looking for a section bracketing VG_(esp_at_startup) which
+	  has rwx permissions and no associated file. */
 
        VG_(read_procselfmaps)( vg_findstack_callback );
-       /* make vg_foundstack_start  and 
-static UInt vg_foundstack_size  = 0;
-be the stack. */
-       if (vg_foundstack_size == 0)
-	 args_grok_error("Cannot determine stack segment "
-                         "from /proc/self/maps");
+
+       /* Now vg_foundstack_start and vg_foundstack_size
+          should delimit the stack. */
+       if (vg_foundstack_size == 0) {
+          args_grok_error("Cannot determine stack segment "
+                          "from /proc/self/maps");
+       }
 
        if (0)
-       VG_(printf)("stack segment is %p .. %p\n", vg_foundstack_start, vg_foundstack_start + vg_foundstack_size - 4 );
+          VG_(printf)("stack segment is %p .. %p\n", 
+                      vg_foundstack_start, 
+                      vg_foundstack_start + vg_foundstack_size - 4 );
 
-       sp = (UInt*)(vg_foundstack_start+ vg_foundstack_size);
-       vg_assert((((UInt)(sp)) %  VKI_BYTES_PER_PAGE) == 0);
+       sp = (UInt*)(vg_foundstack_start + vg_foundstack_size);
+       if ((((UInt)(sp)) % VKI_BYTES_PER_PAGE) != 0) {
+          args_grok_error("Stack segment is not page aligned?!");
+       }
 
+       /* we locate: NEW_AUX_ENT(1, AT_PAGESZ, ELF_EXEC_PAGESIZE) in
+          the elf interpreter table */
 
        sp -= 2;
        while (sp[0] != VKI_AT_PAGESZ || sp[1] != 4096) {

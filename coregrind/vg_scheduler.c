@@ -626,25 +626,6 @@ void VG_(scheduler_init) ( void )
 
    startup_esp = VG_(baseBlock)[VGOFF_(m_esp)];
 
-#if 0
-   if (VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_1)
-       || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_2) 
-       || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_3)
-       || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_4)) {
-      /* Jolly good! */
-   } else {
-      VG_(printf)(
-         "%%esp at startup = %p is not near %p, %p, %p or %p; aborting\n", 
-         (void*)startup_esp, 
-         (void*)VG_STARTUP_STACK_BASE_1,
-         (void*)VG_STARTUP_STACK_BASE_2,
-         (void*)VG_STARTUP_STACK_BASE_3,
-         (void*)VG_STARTUP_STACK_BASE_4 
-      );
-      VG_(core_panic)("unexpected %esp at startup");
-   }
-#endif
-
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
       mostly_clear_thread_record(i);
       VG_(threads)[i].stack_size           = 0;

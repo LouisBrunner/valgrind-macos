@@ -880,28 +880,6 @@ extern Bool    VG_(scheduler_jmpbuf_valid);
 extern Int     VG_(longjmpd_on_signal);
 
 
-/* Possible places where the main stack might be based.  We check that
-   the initial stack, which we can't move, is allocated here.
-   VG_(scheduler_init) checks this.  Andrea Archelangi's 2.4 kernels
-   have been rumoured to start stacks at 0x80000000, so that too is
-   considered.  It seems systems with longer uptimes tend to to use
-   stacks which start at 0x40000000 sometimes.  JRS 2002-Aug-21: I
-   also have reports of stacks starting at 0xE0000000.*/
-
-#define VG_STARTUP_STACK_BASE_1  (Addr)0xC0000000
-#define VG_STARTUP_STACK_BASE_2  (Addr)0x80000000
-#define VG_STARTUP_STACK_BASE_3  (Addr)0x40000000
-#define VG_STARTUP_STACK_BASE_4  (Addr)0xE0000000
-#define VG_STARTUP_STACK_SMALLERTHAN  0x100000 /* 1024k */
-
-#define VG_STACK_MATCHES_BASE(zzstack, zzbase)                 \
-   (                                                           \
-      ((zzstack) & ((zzbase) - VG_STARTUP_STACK_SMALLERTHAN))  \
-      ==                                                       \
-      ((zzbase) - VG_STARTUP_STACK_SMALLERTHAN)                \
-   )
-
-
 /* The red-zone size which we put at the bottom (highest address) of
    thread stacks, for paranoia reasons.  This can be arbitrary, and
    doesn't really need to be set at compile time. */

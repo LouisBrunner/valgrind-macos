@@ -17,4 +17,5 @@ chdir_SOURCES		= chdir.c
 dlclose_SOURCES		= dlclose.c
 dlclose_LDADD		= -ldl
 myprint_so_SOURCES	= myprint.c
-myprint_so_LDFLAGS	= -shared
+myprint_so_LDFLAGS	= -shared -fPIC
+myprint_so_CFLAGS	= -fPIC

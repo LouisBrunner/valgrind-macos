@@ -2521,19 +2521,39 @@ static void add_redirect_addr(const Char *from_lib, const Char *from_sym,
    }
 }
 
+
+/* HACK! This should be done properly (see ~/NOTES.txt) */
+#ifdef __amd64__
+/* Rerouted entry points for __NR_vgettimeofday and __NR_vtime.
+     96 == __NR_gettimeofday
+    201 == __NR_time
+*/
+asm(
+"amd64_linux_rerouted__vgettimeofday:\n"
+"	movq	$96, %rax\n"
+"	syscall\n"
+"	ret\n"
+"amd64_linux_rerouted__vtime:\n"
+"	movq	$201, %rax\n"
+"	syscall\n"
+"	ret\n"
+);
+#endif
+
 Addr VG_(code_redirect)(Addr a)
 {
    CodeRedirect *r = VG_(SkipList_Find)(&sk_resolved_redir, &a);
 
 #ifdef __amd64__
-   /* HACK.  0xFFFFFFFFFF600000 is the entry point for 
-      __NR_vgettimeofday.  Therefore the code at 
-      VG_(client_trampoline_code)+VG_(tramp_syscall_offset)
-      must be the magic conversion code to turn it into a normal
-      __NR_gettimeofday call. 
+   /* HACK.  Reroute the amd64-linux vsyscalls.  This should be moved
+      out of here into an amd64-linux specific initialisation routine.
    */
+   extern void amd64_linux_rerouted__vgettimeofday;
+   extern void amd64_linux_rerouted__vtime;
    if (a == 0xFFFFFFFFFF600000ULL)
-      return VG_(client_trampoline_code)+VG_(tramp_syscall_offset);
+      return (Addr)&amd64_linux_rerouted__vgettimeofday;
+   if (a == 0xFFFFFFFFFF600400ULL)
+      return (Addr)&amd64_linux_rerouted__vtime;
 #endif
 
    if (r == NULL || r->from_addr != a)

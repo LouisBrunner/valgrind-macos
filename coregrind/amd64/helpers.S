@@ -69,10 +69,7 @@ sigreturn_start:
 	# We can point our sysinfo stuff here
 	.align 16
 syscall_start:
-	/* Rerouted entry point for __NR_vgettimeofday */
-	movq	$96 /*__NR_gettimeofday*/, %rax
-	syscall
-	ret
+	/* unused on amd64 */
 tramp_code_end:
 			
 .data

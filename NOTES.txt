@@ -37,6 +37,14 @@ mapping.
 There's a whole big #ifdef TEST section in vg_symtab2.c which has
 no apparent purpose.
 
+The redirecting-symtab-loader seems like a good idea on the face
+of it: you can write functions whose name says, in effect
+  "i_am_a_replacement_for_FOO"
+and then all jumps/calls to FOO get redirected there.  Problem is
+that nameing mechanism involves $ signs etc in symbol names, which
+makes it very fragile.  TODO: (1) figure out if we still need
+this, and if so (2) fix.
+
 
 System call handlers
 ~~~~~~~~~~~~~~~~~~~~
@@ -59,5 +67,6 @@ without handing it off to the kernel need to be cleaned up.  The
 "Special" syscall designation no longer really makes sense (it never
 did) and should be removed.
 
-
+Sockets: move the socketcall marshaller from vg_syscalls.c into
+x86-linux/syscalls.c; it is in the wrong place.
 

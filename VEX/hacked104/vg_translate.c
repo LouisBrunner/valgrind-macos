@@ -3127,7 +3127,7 @@ void VG_(translate) ( ThreadState* tst,
    if (!vex_init_done) {
       LibVEX_Init ( &failure_exit, &log_bytes, 
                     1,  /* debug_paranoia */ 
-                    0,  /* verbosity */
+                    1,  /* verbosity */
                     False, 
 		    //True, 
                     20 /* max insns per bb */ );

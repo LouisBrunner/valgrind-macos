@@ -65,7 +65,7 @@
  */
 
 #include "valgrind.h"
-#include "vg_include.h"
+#include "core.h"
 #include <unistd.h>
 #include <signal.h>
 

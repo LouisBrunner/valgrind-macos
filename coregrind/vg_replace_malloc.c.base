@@ -42,7 +42,7 @@
    ------------------------------------------------------------------ */
 
 #include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */
-#include "vg_include.h"
+#include "core.h"
 #include "vg_skin.h"
 
 #define LIBALIAS(ret, name, args) \

@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*--- A header file for all private parts of Valgrind's core.      ---*/
 /*--- Include no other!                                            ---*/
-/*---                                                 vg_include.h ---*/
+/*---                                                       core.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,8 +30,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __VG_INCLUDE_H
-#define __VG_INCLUDE_H
+#ifndef __CORE_H
+#define __CORE_H
 
 /* ---------------------------------------------------------------------
    Build options and table sizes.  You should be able to change these
@@ -45,7 +45,7 @@
 
 /* All stuff visible to core and tools goes in vg_skin.h.  Things
  * visible to core but not visible to any tools should go in this
- * file, vg_include.h. */
+ * file, core.h. */
 #include "vg_skin.h"
 #include "valgrind.h"
 
@@ -1623,7 +1623,7 @@ extern Int VGOFF_(tls_ptr);
 
 extern Int VGOFF_(helper_undefined_instruction);
 
-#endif /* ndef __VG_INCLUDE_H */
+#endif /* ndef __CORE_H */
 
 
 /* ---------------------------------------------------------------------
@@ -1633,5 +1633,5 @@ extern Int VGOFF_(helper_undefined_instruction);
 #include "config.h"
 
 /*--------------------------------------------------------------------*/
-/*--- end                                             vg_include.h ---*/
+/*--- end                                                   core.h ---*/
 /*--------------------------------------------------------------------*/

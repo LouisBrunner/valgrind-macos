@@ -37,7 +37,7 @@
    Types and globals for the scheduler.
    ------------------------------------------------------------------ */
 
-/* ThreadId and ThreadState are defined in vg_include.h. */
+/* ThreadId and ThreadState are defined in core.h. */
 
 /* Globals.  A statically allocated array of threads.  NOTE: [0] is
    never used, to simplify the simulation of initialisers for
@@ -2024,7 +2024,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    MUTEXes
    -------------------------------------------------------- */
 
-/* vg_pthread_mutex_t is defined in vg_include.h.
+/* vg_pthread_mutex_t is defined in core.h.
 
    The initializers zero everything, except possibly the fourth word,
    which in vg_pthread_mutex_t is the __vg_m_kind field.  It gets set to one
@@ -2299,7 +2299,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    CONDITION VARIABLES
    -------------------------------------------------------- */
 
-/* The relevant type (vg_pthread_cond_t) is in vg_include.h.
+/* The relevant type (vg_pthread_cond_t) is in core.h.
 
    We don't use any fields of vg_pthread_cond_t for anything at all.
    Only the identity of the CVs is important.  (Actually, we initialise
@@ -3449,7 +3449,7 @@ void scheduler_sanity ( void )
                "Terminating Valgrind.  If thread(s) "
                "really need more stack, increase");
             VG_(message)(Vg_UserMsg,
-               "VG_PTHREAD_STACK_SIZE in vg_include.h and recompile.");
+               "VG_PTHREAD_STACK_SIZE in core.h and recompile.");
             VG_(exit)(1);
 	 }
       }

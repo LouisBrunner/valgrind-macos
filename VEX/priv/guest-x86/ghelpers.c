@@ -1836,6 +1836,40 @@ static inline UChar qnarrow16Uto8 ( Int xx )
    return (UChar)xx;
 }
 
+static inline UShort shl16 ( UShort v, UShort n )
+{
+   return n > 15 ? 0 : v << n;
+}
+
+static inline UShort shr16U ( UShort v, UShort n )
+{
+   return n > 15 ? 0 : (((UShort)v) >> n);
+}
+
+static inline UShort shr16S ( UShort v, UShort n )
+{
+   if (n <= 15) 
+      return ((Short)v) >> n;
+   return (v & 0x8000) ? 0xFFFF : 0;
+}
+
+static inline UInt shl32 ( UInt v, UInt n )
+{
+   return n > 31 ? 0 : v << n;
+}
+
+static inline UInt shr32U ( UInt v, UInt n )
+{
+   return n > 31 ? 0 : (((UInt)v) >> n);
+}
+
+static inline UInt shr32S ( UInt v, UInt n )
+{
+   if (n <= 31) 
+      return ((Int)v) >> n;
+   return (v & 0x80000000) ? 0xFFFFFFFF : 0;
+}
+
 
 /* ------------ Normal addition ------------ */
 
@@ -2227,6 +2261,77 @@ ULong calculate_punpckldq ( ULong dst, ULong src )
             sel32x2_0(dst)
          );
 }
+
+/* ------------ Shifting ------------ */
+
+ULong calculate_shl16x4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             shl16( sel16x4_3(xx), sel16x4_3(yy) ),
+             shl16( sel16x4_2(xx), sel16x4_2(yy) ),
+             shl16( sel16x4_1(xx), sel16x4_1(yy) ),
+             shl16( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong calculate_shl32x2 ( ULong xx, ULong yy )
+{
+   return mk32x2(
+             shl32( sel32x2_1(xx), sel32x2_1(yy) ),
+             shl32( sel32x2_0(xx), sel32x2_0(yy) )
+          );
+}
+
+
+ULong calculate_shl64x1 ( ULong xx, ULong yy )
+{
+   if (yy > 63) return 0;
+   return xx << yy;
+}
+
+ULong calculate_shr16Ux4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             shr16U( sel16x4_3(xx), sel16x4_3(yy) ),
+             shr16U( sel16x4_2(xx), sel16x4_2(yy) ),
+             shr16U( sel16x4_1(xx), sel16x4_1(yy) ),
+             shr16U( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong calculate_shr32Ux2 ( ULong xx, ULong yy )
+{
+   return mk32x2(
+             shr32U( sel32x2_1(xx), sel32x2_1(yy) ),
+             shr32U( sel32x2_0(xx), sel32x2_0(yy) )
+          );
+}
+
+ULong calculate_shr64Ux1 ( ULong xx, ULong yy )
+{
+   if (yy > 63) return 0;
+   return xx >> yy;
+}
+
+
+ULong calculate_shr16Sx4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             shr16S( sel16x4_3(xx), sel16x4_3(yy) ),
+             shr16S( sel16x4_2(xx), sel16x4_2(yy) ),
+             shr16S( sel16x4_1(xx), sel16x4_1(yy) ),
+             shr16S( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong calculate_shr32Sx2 ( ULong xx, ULong yy )
+{
+   return mk32x2(
+             shr32S( sel32x2_1(xx), sel32x2_1(yy) ),
+             shr32S( sel32x2_0(xx), sel32x2_0(yy) )
+          );
+}
+
 
 
 /*-----------------------------------------------------------*/

@@ -134,6 +134,17 @@ extern ULong calculate_punpcklwd ( ULong, ULong );
 extern ULong calculate_punpckhdq ( ULong, ULong );
 extern ULong calculate_punpckldq ( ULong, ULong );
 
+extern ULong calculate_shl16x4 ( ULong, ULong );
+extern ULong calculate_shl32x2 ( ULong, ULong );
+extern ULong calculate_shl64x1 ( ULong, ULong );
+
+extern ULong calculate_shr16Ux4 ( ULong, ULong );
+extern ULong calculate_shr32Ux2 ( ULong, ULong );
+extern ULong calculate_shr64Ux1 ( ULong, ULong );
+
+extern ULong calculate_shr16Sx4 ( ULong, ULong );
+extern ULong calculate_shr32Sx2 ( ULong, ULong );
+
 
 /* --- DIRTY HELPERS --- */
 

@@ -4692,6 +4692,17 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
       case 0x61: XXX(calculate_punpcklwd); break;
       case 0x62: XXX(calculate_punpckldq); break;
 
+      case 0xF1: XXX(calculate_shl16x4); break;
+      case 0xF2: XXX(calculate_shl32x2); break;
+      case 0xF3: XXX(calculate_shl64x1); break;
+
+      case 0xD1: XXX(calculate_shr16Ux4); break;
+      case 0xD2: XXX(calculate_shr32Ux2); break;
+      case 0xD3: XXX(calculate_shr64Ux1); break;
+
+      case 0xE1: XXX(calculate_shr16Sx4); break;
+      case 0xE2: XXX(calculate_shr32Sx2); break;
+
       case 0xDB: break; /* AND */
       case 0xDF: break; /* ANDN */
       case 0xEB: break; /* OR */
@@ -4927,6 +4938,26 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
       case 0xEF: /* PXOR (src)mmxreg-or-mem, (dst)mmxreg */
          vassert(sz == 4);
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pxor", False );
+         break;
+
+      case 0xF1:
+      case 0xF2:
+      case 0xF3: /* PSLLgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psll", True );
+         break;
+
+      case 0xD1:
+      case 0xD2:
+      case 0xD3: /* PSRLgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psrl", True );
+         break;
+
+      case 0xE1: 
+      case 0xE2: /* PSRAgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psra", True );
          break;
 
       default:
@@ -9478,12 +9509,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--          break;
 //--       }
 //-- 
-//--       case 0x77: /* EMMS */
-//--          vg_assert(sz == 4);
-//--          uInstr1(cb, MMX1, 0, Lit16, ((UShort)(opc)) );
-//--          DIP("emms\n");
-//--          break;
-//-- 
 //--       case 0x7E: /* MOVD (src)mmxreg, (dst)ireg-or-mem */
 //--          vg_assert(sz == 4);
 //--          modrm = getUChar(eip);
@@ -9589,6 +9614,17 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       case 0xEB: /* POR (src)mmxreg-or-mem, (dst)mmxreg */
       case 0xEF: /* PXOR (src)mmxreg-or-mem, (dst)mmxreg */
 
+      case 0xF1: 
+      case 0xF2: 
+      case 0xF3: /* PSLLgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0xD1: 
+      case 0xD2: 
+      case 0xD3: /* PSRLgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0xE1: 
+      case 0xE2: /* PSRAgg (src)mmxreg-or-mem, (dst)mmxreg */
+
       case 0x6F: /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
       {
          UInt delta0    = delta-1;
@@ -9600,6 +9636,12 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          }
          break;
       }
+
+      case 0x77: /* EMMS */
+         vassert(sz == 4);
+         do_EMMS_boilerplate();
+         DIP("emms\n");
+         break;
 
 //--       case 0x7F: /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
 //--       case 0xE7: /* MOVNTQ (src)mmxreg, (dst)mmxreg-or-mem */

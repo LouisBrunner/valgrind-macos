@@ -4298,7 +4298,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 5: { /* FLD extended-real */
                /* Uses dirty helper: 
-                     ULong loadF80le ( VexGuestX86State*, UInt )
+                     ULong x86g_loadF80le ( UInt )
                   addr holds the address.  First, do a dirty call to
                   get hold of the data. */
                IRTemp   val  = newTemp(Ity_I64);

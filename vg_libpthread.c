@@ -107,6 +107,13 @@ void ensure_valgrind ( char* caller )
    VG_(startup)();
 }
 
+/* While we're at it ... hook our own startup function into this
+   game. */
+__asm__ (
+   ".section .init\n"
+   "\tcall vgPlain_startup"
+);
+
 
 static
 __attribute__((noreturn))
@@ -703,9 +710,7 @@ int __pthread_atfork ( void (*prepare)(void),
 __attribute__((weak)) 
 void __pthread_initialize ( void )
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("__pthread_initialize");
+   ensure_valgrind("__pthread_initialize");
 }
 
 

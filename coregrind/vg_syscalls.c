@@ -311,6 +311,9 @@ void record_fd_close(Int tid, Int fd)
 {
    OpenFd *i = allocated_fds;
 
+   if (fd > VG_MAX_FD)
+      return;			/* Valgrind internal */
+
    while(i) {
       if(i->fd == fd) {
          if(i->prev)

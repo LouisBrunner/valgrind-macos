@@ -2030,7 +2030,9 @@ void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
       = unsafeIRDirty_0_N( 1/*regparms*/, 
                            "MC_(helperc_complain_undef)",
                            &MC_(helperc_complain_undef),
-                           mkIRExprVec_1( mkIRExpr_HWord( /*sz*/ zzz++ ) ));
+                           mkIRExprVec_1( mkIRExpr_HWord( sz 
+                                                          // zzz++
+                        ) ));
    di->guard = cond;
    setHelperAnns( mce, di );
    stmt( mce->bb, IRStmt_Dirty(di));
@@ -2052,15 +2054,27 @@ void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
 static
 IRAtom* doLazyApproximation ( MCEnv* mce, 
                               IRAtom** exprvec,
-                              IRType finalVtype )
+                              IRType finalVtype,
+                              IRCallee* cee )
 {
    Int i;
    IRAtom* here;
    IRAtom* curr = definedOfType(Ity_I32);
    for (i = 0; exprvec[i]; i++) {
+      sk_assert(i < 32);
       sk_assert(isOriginalAtom(mce, exprvec[i]));
-      here = mkPCastTo( mce, Ity_I32, expr2vbits(mce, exprvec[i]) );
-      curr = mkUifU32(mce, here, curr);
+      /* Only take notice of this arg if the callee's mc-exclusion
+         mask does not say it is to be excluded. */
+      if (cee->mcx_mask & (1<<i)) {
+         /* the arg is to be excluded from definedness checking.  Do
+            nothing. */
+//VG_(printf)("excluding %s(%d)\n", cee->name, i);
+      } else {
+         /* calculate the arg's definedness, and pessimistically merge
+            it in. */
+         here = mkPCastTo( mce, Ity_I32, expr2vbits(mce, exprvec[i]) );
+         curr = mkUifU32(mce, here, curr);
+      }
    }
    return mkPCastTo(mce, finalVtype, curr );
 }
@@ -2081,7 +2095,7 @@ void do_shadow_PUT ( MCEnv* mce, Int offset, IRAtom* atom )
    sk_assert(ty != Ity_Bit);
    if (isAlwaysDefd(mce, offset, sizeofIRType(ty))) {
       /* emit code to emit a complaint if any of the vbits are 1. */
-      complainIfUndefined(mce, atom);
+ //        complainIfUndefined(mce, atom);
    } else {
       /* Do a plain shadow Put. */
       stmt( mce->bb, IRStmt_Put( offset + mce->layout->total_sizeB, vatom ) );
@@ -2175,6 +2189,58 @@ IRAtom* lazy2 ( MCEnv* mce, IRType finalVty, IRAtom* va1, IRAtom* va2 )
    return at;
 }
 
+
+static
+IRAtom* expensiveAdd32 ( MCEnv* mce, IRAtom* qaa, IRAtom* qbb, 
+                                     IRAtom* aa,  IRAtom* bb )
+{
+   sk_assert(isShadowAtom(mce,qaa));
+   sk_assert(isShadowAtom(mce,qbb));
+   sk_assert(isOriginalAtom(mce,aa));
+   sk_assert(isOriginalAtom(mce,bb));
+   sk_assert(sameKindedAtoms(qaa,aa));
+   sk_assert(sameKindedAtoms(qbb,bb));
+
+   IRType ty  = Ity_I32;
+   IROp opAND = Iop_And32;
+   IROp opOR  = Iop_Or32;
+   IROp opXOR = Iop_Xor32;
+   IROp opNOT = Iop_Not32;
+   IROp opADD = Iop_Add32;
+
+   IRAtom *a_min, *b_min, *a_max, *b_max;
+
+   // a_min = aa & ~qaa
+   a_min = assignNew(mce,ty, 
+                     binop(opAND, aa,
+                                  assignNew(mce,ty, unop(opNOT, qaa))));
+
+   // b_min = bb & ~qbb
+   b_min = assignNew(mce,ty, 
+                     binop(opAND, bb,
+                                  assignNew(mce,ty, unop(opNOT, qbb))));
+
+   // a_max = aa | qaa
+   a_max = assignNew(mce,ty, binop(opOR, aa, qaa));
+
+   // b_max = bb | qbb
+   b_max = assignNew(mce,ty, binop(opOR, bb, qbb));
+
+   // result = (qaa | qbb) | ((a_min + b_min) ^ (a_max + b_max))
+   return
+   assignNew(mce,ty,
+      binop( opOR,
+             assignNew(mce,ty, binop(opOR, qaa, qbb)),
+             assignNew(mce,ty, 
+                binop(opXOR, assignNew(mce,ty, binop(opADD, a_min, b_min)),
+                             assignNew(mce,ty, binop(opADD, a_max, b_max))
+                )
+             )
+      )
+   );
+}
+
+
 static 
 IRAtom* expr2vbits_Binop ( MCEnv* mce,
                            IROp op,
@@ -2222,11 +2288,15 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return assignNew(mce, Ity_I64, binop(Iop_32HLto64, vHi32, vLo32));
       }
 
-      case Iop_Sub32:
       case Iop_Add32:
+#if 0
+         return expensiveAdd32(mce, vatom1,vatom2, atom1,atom2);
+#endif
+      case Iop_Sub32:
       case Iop_Mul32:
          return mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
 
+      case Iop_Add16:
       case Iop_Sub16:
          return mkLeft16(mce, mkUifU16(mce, vatom1,vatom2));
 
@@ -2458,7 +2528,9 @@ IRExpr* expr2vbits ( MCEnv* mce, IRExpr* e )
          return expr2vbits_LDle( mce, e->Iex.LDle.ty, e->Iex.LDle.addr );
 
       case Iex_CCall:
-         return doLazyApproximation( mce, e->Iex.CCall.args, e->Iex.CCall.retty );
+         return doLazyApproximation( mce, e->Iex.CCall.args, 
+                                          e->Iex.CCall.retty,
+                                          e->Iex.CCall.cee );
 
       case Iex_Mux0X:
          return expr2vbits_Mux0X( mce, e->Iex.Mux0X.cond, e->Iex.Mux0X.expr0, 
@@ -2543,7 +2615,8 @@ void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
 
 IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
-   Bool verbose = False; //True; 
+   Bool verbose = False;
+     //True; 
 
    Int i, j, n_types, first_stmt;
    IRStmt* st;
@@ -2560,8 +2633,8 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
       n_types .. 2*n_types-1 are the shadow IRTemps. 
    */
    n_types = bb->tyenv->types_used;
-   for (i = 0; i < n_types; i++)
-      newIRTemp(bb->tyenv, shadowType(bb->tyenv->types[i]));
+   //   for (i = 0; i < n_types; i++)
+   //      newIRTemp(bb->tyenv, shadowType(bb->tyenv->types[i]));
 
    /* Set up the running environment.  Only .bb is modified as we go
       along. */

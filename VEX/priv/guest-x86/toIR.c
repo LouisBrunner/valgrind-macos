@@ -2586,13 +2586,11 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
             DIP("test%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
             break;
          }
-#if 0
          /* probably OK, but awaiting test case */
          case 2: /* NOT */
             storeLE( mkexpr(addr), unop(mkSizedOp(ty,Iop_Not8), mkexpr(t1)));
             DIP("not%c %s\n", nameISize(sz), dis_buf);
             break;
-#endif
          case 3: /* NEG */
             dst0 = newTemp(ty);
             src  = newTemp(ty);
@@ -6752,9 +6750,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       break;
 
    case 0xB0: /* MOV imm,AL */
-#if 0
    case 0xB1: /* MOV imm,CL */
-#endif
    case 0xB2: /* MOV imm,DL */
 #if 0
    case 0xB3: /* MOV imm,BL */
@@ -7667,26 +7663,45 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       case 0xBD: /* BSR Gv,Ev */
 //--          eip = dis_bs_E_G ( cb, sorb, sz, eip, False );
 //--          break;
-//-- 
-//--       /* =-=-=-=-=-=-=-=-=- BSWAP -=-=-=-=-=-=-=-=-=-=-= */
-//-- 
-//--       case 0xC8: /* BSWAP %eax */
-//--       case 0xC9:
-//--       case 0xCA:
+
+      /* =-=-=-=-=-=-=-=-=- BSWAP -=-=-=-=-=-=-=-=-=-=-= */
+
+      case 0xC8: /* BSWAP %eax */
+      case 0xC9:
+      case 0xCA:
 //--       case 0xCB:
 //--       case 0xCC:
 //--       case 0xCD:
-//--       case 0xCE:
+      case 0xCE:
 //--       case 0xCF: /* BSWAP %edi */
-//--          /* AFAICS from the Intel docs, this only exists at size 4. */
-//--          vg_assert(sz == 4);
+         /* AFAICS from the Intel docs, this only exists at size 4. */
+         vassert(sz == 4);
+         t1 = newTemp(Ity_I32);
+         t2 = newTemp(Ity_I32);
+         assign( t1, getIReg(4, opc-0xC8) );
+
+         assign( t2,
+            binop(Iop_Or32,
+               binop(Iop_Shl32, mkexpr(t1), mkU8(24)),
+            binop(Iop_Or32,
+               binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)), 
+                                mkU32(0x00FF0000)),
+            binop(Iop_Or32,
+               binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(8)),
+                                mkU32(0x0000FF00)),
+               binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(24)),
+                                mkU32(0x000000FF) )
+            )))
+         );
+
+         putIReg(4, opc-0xC8, mkexpr(t2));
 //--          t1 = newTemp(cb);
 //--          uInstr2(cb, GET,   4, ArchReg, opc-0xC8, TempReg, t1);
-//-- 	 uInstr1(cb, BSWAP, 4, TempReg, t1);
+//--          uInstr1(cb, BSWAP, 4, TempReg, t1);
 //--          uInstr2(cb, PUT,   4, TempReg, t1, ArchReg, opc-0xC8);
-//--          DIP("bswapl %s\n", nameIReg(4, opc-0xC8));
-//--          break;
-//-- 
+         DIP("bswapl %s\n", nameIReg(4, opc-0xC8));
+         break;
+
 //--       /* =-=-=-=-=-=-=-=-=- BT/BTS/BTR/BTC =-=-=-=-=-=-= */
 //-- 
 //--       case 0xA3: /* BT Gv,Ev */

@@ -824,11 +824,16 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (!VG_(clo_trace_children)) {
             Int i;
             Char** envp = (Char**)arg3;
+            Char*  ld_preload_str = NULL;
+            Char*  ld_library_path_str = NULL;
             for (i = 0; envp[i] != NULL; i++) {
-               if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0) {
-                  VG_(mash_LD_PRELOAD_string)(&envp[i][11]);
-               }
+               if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0)
+                  ld_preload_str = &envp[i][11];
+               if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0)
+                  ld_library_path_str = &envp[i][16];
             }
+            VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH)(
+	       ld_preload_str, ld_library_path_str );
          }
          KERNEL_DO_SYSCALL(tid,res);
          /* Should we still be alive here?  Don't think so. */

@@ -1100,11 +1100,14 @@ void VG_(main) ( void )
 
    VG_(shutdown_logging)();
 
-   /* In LD_PRELOAD, convert "valgrind.so" into "valgrinq.so", so that
-      child processes don't get traced into.  Also done on simulated
-      execve system call. */
+   /* Remove valgrind.so from a LD_PRELOAD=... string so child
+      processes don't get traced into.  Also mess up $libdir/valgrind
+      so that our libpthread.so disappears from view. */
    if (!VG_(clo_trace_children)) { 
-      VG_(mash_LD_PRELOAD_string)(VG_(getenv)("LD_PRELOAD"));
+      VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH)(
+         VG_(getenv)("LD_PRELOAD"),
+         VG_(getenv)("LD_LIBRARY_PATH") 
+      );
    }
 
    /* Decide how to exit.  This depends on what the scheduler
@@ -1162,16 +1165,38 @@ void VG_(oynk) ( Int n )
    tracing into child processes.  To make this work the build system
    also supplies a dummy file, "valgrinq.so". 
 */
-void VG_(mash_LD_PRELOAD_string)( Char* ld_preload_str )
+void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
+                                                Char* ld_library_path_str )
 {
    Char* p;
-   if (ld_preload_str == NULL)
-      return;
+   vg_assert(ld_preload_str != NULL);
+   vg_assert(ld_library_path_str != NULL);
+   /* VG_(printf)("%s %s\n", ld_preload_str, ld_library_path_str); */
+   /* in LD_PRELOAD, turn valgrind.so into valgrinq.so. */
    p = VG_(strstr)(ld_preload_str, "valgrind.so");
-   if (p == NULL)
+
+   if (p == NULL) {
+      /* perhaps already happened? */
+      vg_assert(VG_(strstr)(ld_preload_str, "valgrinq.so") != NULL);
+      vg_assert(VG_(strstr)(ld_library_path_str, "lib/valgrinq") != NULL);
       return;
+   }
+
+   vg_assert(p[7] == 'd');
    p[7] = 'q';
+
+   /* in LD_LIBRARY_PATH, turn $libdir/valgrind (as configure'd) from 
+      .../lib/valgrind .../lib/valgrinq, which doesn't exist,
+      so that our own libpthread.so goes out of scope. */
+   p = VG_(strstr)(ld_library_path_str, VG_LIBDIR);
+   vg_assert(NULL != p);
+   p += VG_(strlen)(VG_LIBDIR);
+   p += VG_(strlen)("/valgrind");
+   p --;
+   vg_assert(p[0] == 'd');
+   p[0] = 'q';
 }
+
 
 /* RUNS ON THE CLIENT'S STACK, but on the real CPU.  Start GDB and get
    it to attach to this process.  Called if the user requests this

@@ -785,12 +785,12 @@ extern void VG_(strncpy) ( Char* dest, const Char* src, Int ndest );
 extern Bool VG_(stringMatch) ( Char* pat, Char* str );
 
 
-#define __STRING(x)  #x
+#define VG__STRING(__str)  #__str
 
 /* Asserts are permanently enabled.  Hurrah! */
 #define vg_assert(expr)                                               \
   ((void) ((expr) ? 0 :						      \
-	   (VG_(assert_fail) (__STRING(expr),			      \
+	   (VG_(assert_fail) (VG__STRING(expr),			      \
 			      __FILE__, __LINE__,                     \
                               __PRETTY_FUNCTION__), 0)))
 
@@ -1388,8 +1388,10 @@ extern Char** VG_(client_argv);
 extern Char** VG_(client_envp);
 
 /* Remove valgrind.so from a LD_PRELOAD=... string so child processes
-   don't get traced into. */
-extern void   VG_(mash_LD_PRELOAD_string)( Char* ld_preload_str );
+   don't get traced into.  Also mess up $libdir/valgrind so that our
+   libpthread.so disappears from view. */
+void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
+                                                Char* ld_library_path_str );
 
 /* Something of a function looking for a home ... start up GDB.  This
    is called from VG_(swizzle_esp_then_start_GDB) and so runs on the

@@ -77,7 +77,7 @@ CommaPrint(fp,n)
         fprintf(fp, "%d", (int)n);
     } else {
         CommaPrint(fp, n / ONETHOUSAND);
-        fprintf(fp, ",%03d", (int)n % ONETHOUSAND);
+        fprintf(fp, ",%03d", (int)(n % ONETHOUSAND));
     }
 }
 

@@ -4540,7 +4540,6 @@ UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
    assign( t_bitno0, widenUto32(getIReg(sz, gregOfRM(modrm))) );
    
    if (epartIsReg(modrm)) {
-      vassert(0); /* awaiting test case */
       delta++;
       /* Get it onto the client's stack. */
       t_esp = newTemp(Ity_I32);
@@ -4589,6 +4588,7 @@ UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
       t_mask = newTemp(Ity_I8);
       assign( t_mask, binop(Iop_Shl8, mkU8(1), mkexpr(t_bitno2)) );
    }
+
    /* t_mask is now a suitable byte mask */
 
    assign( t_fetched, loadLE(Ity_I8, mkexpr(t_addr1)) );
@@ -4631,7 +4631,7 @@ UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
    /* Move reg operand from stack back to reg */
    if (epartIsReg(modrm)) {
       /* t_esp still points at it. */
-      putIReg(sz, eregOfRM(modrm), loadLE(sz, mkexpr(t_esp)) );
+      putIReg(sz, eregOfRM(modrm), loadLE(szToITy(sz), mkexpr(t_esp)) );
       putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t_esp), mkU32(sz)) );
    }
 
@@ -8486,9 +8486,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       case 0xAB: /* BTS Gv,Ev */
          delta = dis_bt_G_E ( sorb, sz, delta, BtOpSet );
          break;
-//--       case 0xBB: /* BTC Gv,Ev */
-//--          eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpComp );
-//--          break;
+      case 0xBB: /* BTC Gv,Ev */
+         delta = dis_bt_G_E ( sorb, sz, delta, BtOpComp );
+         break;
 
       /* =-=-=-=-=-=-=-=-=- CMOV =-=-=-=-=-=-=-=-=-=-=-= */
  

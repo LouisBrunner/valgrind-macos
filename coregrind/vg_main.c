@@ -2885,12 +2885,6 @@ int main(int argc, char **argv)
    VGP_PUSHCC(VgpStartup);
 
    //--------------------------------------------------------------
-   // Start calibration of our RDTSC-based clock
-   //   p: n/a
-   //--------------------------------------------------------------
-   VG_(start_rdtsc_calibration)();
-
-   //--------------------------------------------------------------
    // Reserve Valgrind's kickstart, heap and stack
    //   p: XXX ???
    //--------------------------------------------------------------
@@ -2942,14 +2936,6 @@ int main(int argc, char **argv)
    //--------------------------------------------------------------
    if (VG_(needs).core_errors || VG_(needs).skin_errors)
       VG_(load_suppressions)();
-
-   //--------------------------------------------------------------
-   // End calibrating our RDTSC-based clock, having waited a while.
-   //   p: VG_(start_rdtsc_calibration)()  [obviously]
-   //--------------------------------------------------------------
-   // Nb: Don't have to wait very long;  it does pretty well even if
-   // start_rdtsc_calibration() is immediately before this.
-   VG_(end_rdtsc_calibration)();
 
    //--------------------------------------------------------------
    // Initialise translation table and translation cache

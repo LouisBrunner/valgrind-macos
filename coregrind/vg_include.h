@@ -1058,10 +1058,6 @@ extern void* VG_(brk) ( void* end_data_segment );
 /* Skins use VG_(strdup)() which doesn't expose ArenaId */
 extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);
 
-/* Skins shouldn't need these...(?) */
-extern void VG_(start_rdtsc_calibration) ( void );
-extern void VG_(end_rdtsc_calibration) ( void );
-
 extern Int VG_(fcntl) ( Int fd, Int cmd, Int arg );
 extern Int VG_(select)( Int n, 
                         vki_fd_set* readfds, 

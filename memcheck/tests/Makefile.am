@@ -76,7 +76,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
 	threadederrno.vgtest \
 	writev.stderr.exp writev.vgtest \
-	zeropage.stderr.exp zeropage.vgtest
+	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.vgtest
 
 check_PROGRAMS = \
 	badaddrvalue badfree badjump badjump2 \

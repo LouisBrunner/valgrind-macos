@@ -4401,18 +4401,33 @@ POST(sys_poll)
    }
 }
 
-PRE(sys_readlink, 0)
+PRE(sys_readlink, Special)
 {
+   char name[25];
+
    PRINT("sys_readlink ( %p, %p, %llu )", arg1,arg2,(ULong)arg3);
    PRE_REG_READ3(long, "readlink",
                  const char *, path, char *, buf, int, bufsiz);
    PRE_MEM_RASCIIZ( "readlink(path)", arg1 );
    PRE_MEM_WRITE( "readlink(buf)", arg2,arg3 );
-}
 
-POST(sys_readlink)
-{
-   POST_MEM_WRITE( arg2, res );
+   /*
+    * Handle the single case where readlink failed reading /proc/self/exe.
+    */
+
+   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   
+   if (VG_(strcmp)((Char *)arg1, name) == 0 ||
+      VG_(strcmp)((Char *)arg1, "/proc/self/exe") == 0) {
+      VG_(sprintf)(name, "/proc/self/fd/%d", VG_(clexecfd));
+      res = VG_(do_syscall)(SYSNO, name, arg2, arg3);
+   }
+   else {
+      res = VG_(do_syscall)(SYSNO, arg1, arg2, arg3);
+   }
+
+   if (res > 0)
+      POST_MEM_WRITE( arg2, res );
 }
 
 PRE(sys_readv, MayBlock)

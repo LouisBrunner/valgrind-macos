@@ -449,7 +449,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_symlink,           sys_symlink),        // 83
    //   (__NR_oldlstat,          sys_lstat),          // 84 -- obsolete
 
-   GENXY(__NR_readlink,          sys_readlink),       // 85
+   GENX_(__NR_readlink,          sys_readlink),       // 85
    //   (__NR_uselib,            sys_uselib),         // 86 */Linux
    //   (__NR_swapon,            sys_swapon),         // 87 */Linux
    //   (__NR_reboot,            sys_reboot),         // 88 */Linux

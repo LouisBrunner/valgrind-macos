@@ -1,11 +1,10 @@
 EXTRA_DIST = \
-	vg_constants_skin.h \
-	vg_profile.c \
-	vg_skin.h
+	vg_profile.c
 
 incincdir = $(includedir)/valgrind
 
 incinc_HEADERS = \
-	valgrind.h
-
-
+	valgrind.h \
+	vg_constants_skin.h \
+	vg_skin.h \
+	../coregrind/vg_kerneliface.h

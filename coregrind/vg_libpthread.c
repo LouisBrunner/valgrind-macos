@@ -1355,6 +1355,8 @@ int __pthread_mutex_timedlock(pthread_mutex_t *mutex,
    struct  timeval timeval_now;
    unsigned long long int ull_ms_now_after_1970;
    unsigned long long int ull_ms_end_after_1970;
+   unsigned long long int ull_ms_now;
+   unsigned long long int ull_ms_end;
    vg_pthread_mutex_t* vg_mutex;
    CONVERT(mutex, mutex, vg_mutex);
    
@@ -1373,8 +1375,15 @@ int __pthread_mutex_timedlock(pthread_mutex_t *mutex,
         + ((unsigned long long int)(abstime->tv_nsec / 1000000));
    if (ull_ms_end_after_1970 < ull_ms_now_after_1970)
       ull_ms_end_after_1970 = ull_ms_now_after_1970;
-   ms_end 
-      = ms_now + (unsigned int)(ull_ms_end_after_1970 - ull_ms_now_after_1970);
+   if (ull_ms_end >= (unsigned long long int)(0xFFFFFFFFUL)) {
+      /* use 0xFFFFFFFEUL because 0xFFFFFFFFUL is reserved for no timeout
+         (the fine difference between a long wait and a possible abort
+         due to a detected deadlock). 
+      */
+      ms_end = 0xFFFFFFFEUL; 
+   } else {
+      ms_end = (unsigned int)(ull_ms_end);
+   }
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__PTHREAD_MUTEX_TIMEDLOCK,
                            vg_mutex, ms_end, 0, 0);
@@ -1518,6 +1527,8 @@ int pthread_cond_timedwait ( pthread_cond_t *cond,
    struct  timeval timeval_now;
    unsigned long long int ull_ms_now_after_1970;
    unsigned long long int ull_ms_end_after_1970;
+   unsigned long long int ull_ms_now;
+   unsigned long long int ull_ms_end;
    vg_pthread_mutex_t* vg_mutex;
    CONVERT(mutex, mutex, vg_mutex);
 
@@ -1537,8 +1548,17 @@ int pthread_cond_timedwait ( pthread_cond_t *cond,
         + ((unsigned long long int)(abstime->tv_nsec / 1000000));
    if (ull_ms_end_after_1970 < ull_ms_now_after_1970)
       ull_ms_end_after_1970 = ull_ms_now_after_1970;
-   ms_end 
-      = ms_now + (unsigned int)(ull_ms_end_after_1970 - ull_ms_now_after_1970);
+   ull_ms_now = ((unsigned long long int)(ms_now));
+   ull_ms_end = ull_ms_now + (ull_ms_end_after_1970 - ull_ms_now_after_1970);
+   if (ull_ms_end >= (unsigned long long int)(0xFFFFFFFFUL)) {
+      /* use 0xFFFFFFFEUL because 0xFFFFFFFFUL is reserved for no timeout
+         (the fine difference between a long wait and a possible abort
+         due to a detected deadlock). 
+      */
+      ms_end = 0xFFFFFFFEUL; 
+   } else {
+      ms_end = (unsigned int)(ull_ms_end);
+   }
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__PTHREAD_COND_TIMEDWAIT,
 			   cond, vg_mutex, ms_end, 0);

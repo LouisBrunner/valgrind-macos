@@ -614,8 +614,13 @@ void idle ( void )
       }
 
       if (tp != NULL) {
-	 delta = tp->time - now;
-	 vg_assert(delta >= 0);
+         vg_assert(tp->time >= now);
+         /* limit the signed int delta to INT_MAX */
+         if ((tp->time - now) <= 0x7FFFFFFFU) {
+            delta = tp->time - now;
+         } else {
+            delta = 0x7FFFFFFF;
+         }
       }
       if (wicked)
 	 delta = 0;

@@ -4,7 +4,9 @@ SUBDIRS = . tests docs
 INCLUDES = -I$(top_srcdir)/include
 
 CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
-		-Winline -Wall -Wshadow -O -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -g
+		-Winline -Wall -Wshadow -O -fomit-frame-pointer \
+		@PREFERRED_STACK_BOUNDARY@ -g \
+		$(INCLUDES)
 
 valdir = $(libdir)/valgrind
 

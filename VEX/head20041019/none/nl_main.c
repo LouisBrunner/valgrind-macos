@@ -29,6 +29,7 @@
 */
 
 #include "tool.h"
+#include "../../../pub/libvex.h"
 
 void SK_(pre_clo_init)(void)
 {
@@ -46,9 +47,9 @@ void SK_(post_clo_init)(void)
 {
 }
 
-UCodeBlock* SK_(instrument)(UCodeBlock* cb, Addr a)
+IRBB* SK_(instrument)(IRBB* bb)
 {
-    return cb;
+    return bb;
 }
 
 void SK_(fini)(Int exitcode)

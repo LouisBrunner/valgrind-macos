@@ -30,6 +30,7 @@
 */
 
 #include "tool.h"
+#include "../../../pub/libvex.h"
 
 /* Nb: use ULongs because the numbers can get very big */
 static ULong n_dlrr_calls   = 0;
@@ -82,17 +83,31 @@ void SK_(pre_clo_init)(void)
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 175 );
 
+#if 0
    VG_(register_compact_helper)((Addr) & add_one_dlrr_call);
    VG_(register_compact_helper)((Addr) & add_one_BB);
    VG_(register_compact_helper)((Addr) & add_one_x86_instr);
    VG_(register_compact_helper)((Addr) & add_one_UInstr);
    VG_(register_compact_helper)((Addr) & add_one_Jcc);
    VG_(register_compact_helper)((Addr) & add_one_Jcc_untaken);
+#endif
 }
 
 void SK_(post_clo_init)(void)
 {
 }
+
+HWord SK_(tool_findhelper) ( Char* function_name )
+{
+   if (0 == VG_(strcmp)(function_name, "add_one_BB"))
+      return (HWord) & add_one_BB;
+   if (0 == VG_(strcmp)(function_name, "add_one_Jcc"))
+      return (HWord) & add_one_Jcc;
+   if (0 == VG_(strcmp)(function_name, "add_one_Jcc_untaken"))
+      return (HWord) & add_one_Jcc_untaken;
+   return 0; /* not found */
+}
+
 
 /* Note: x86 instructions are marked by an INCEIP at the end of each one,
    except for the final one in the basic block which ends in an
@@ -136,21 +151,73 @@ void SK_(post_clo_init)(void)
    Which gives us the right answer.  And just to avoid two C calls, we fold
    the basic-block-beginning call in with add_one_BB().  Phew.
 */ 
-UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
+IRBB* SK_(instrument)(IRBB* bb_in)
 {
+   IRDirty* di;
+   Int      i;
+
+   /* Set up BB */
+   IRBB* bb     = emptyIRBB();
+   bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
+   bb->next     = dopyIRExpr(bb_in->next);
+   bb->jumpkind = bb_in->jumpkind;
+
+#if 0
+   /* We need to know the entry point for this bb to do this.  In any
+      case it's pretty meaningless in the presence of bb chasing since
+      we may enter this function part way through an IRBB. */
+   /* Count call to dlrr(), if this BB is dlrr()'s entry point */
+   if (VG_(get_fnname_if_entry)(orig_addr, fnname, 100) &&
+       0 == VG_(strcmp)(fnname, "_dl_runtime_resolve")) 
+   {
+      addStmtToIRBB( 
+         bb,
+         IRStmt_Dirty(
+            unsafeIRDirty_0_N( "add_one_dlrr_call", mkIRExprVec_0() )
+      ));
+   }
+#endif
+
+   /* Count this basic block */
+   di = unsafeIRDirty_0_N( "add_one_BB", mkIRExprVec_0() );
+   addStmtToIRBB( bb, IRStmt_Dirty(di) );
+
+   for (i = 0; i < bb_in->stmts_used; i++) {
+      IRStmt* st = bb_in->stmts[i];
+      if (!st) continue;
+
+      switch (st->tag) {
+         case Ist_Exit:
+            /* Count Jcc */
+            addStmtToIRBB( 
+               bb,
+               IRStmt_Dirty(
+                  unsafeIRDirty_0_N( "add_one_Jcc", mkIRExprVec_0() )
+            ));
+            addStmtToIRBB( bb, dopyIRStmt(st) );
+            /* Count non-taken Jcc */
+            addStmtToIRBB( 
+               bb,
+               IRStmt_Dirty(
+                  unsafeIRDirty_0_N( "add_one_Jcc_untaken", mkIRExprVec_0() )
+            ));
+            break;
+
+         default:
+            addStmtToIRBB( bb, dopyIRStmt(st));
+      }
+   }
+
+   return bb;
+   
+
+#if 0
    UCodeBlock* cb;
    Int         i;
    UInstr*     u;
    Char        fnname[100];
 
    cb = VG_(setup_UCodeBlock)(cb_in);
-
-   /* Count call to dlrr(), if this BB is dlrr()'s entry point */
-   if (VG_(get_fnname_if_entry)(orig_addr, fnname, 100) &&
-       0 == VG_(strcmp)(fnname, "_dl_runtime_resolve")) 
-   {
-      VG_(call_helper_0_0)(cb, (Addr) & add_one_dlrr_call);
-   }
 
    /* Count basic block */
    VG_(call_helper_0_0)(cb, (Addr) & add_one_BB);
@@ -190,6 +257,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 
    VG_(free_UCodeBlock)(cb_in);
    return cb;
+#endif
 }
 
 void SK_(fini)(Int exitcode)
@@ -207,7 +275,8 @@ void SK_(fini)(Int exitcode)
     VG_(message)(Vg_UserMsg, "Jccs:");
     VG_(message)(Vg_UserMsg, "  total:       %u", n_Jccs);
     VG_(message)(Vg_UserMsg, "  %% taken:     %u%%",
-                             (n_Jccs - n_Jccs_untaken)*100 / n_Jccs);
+                             (n_Jccs - n_Jccs_untaken)*100 / 
+                             (n_Jccs ? n_Jccs : 1));
 
     VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg, "Ratios:");

@@ -4875,7 +4875,7 @@ PRE(socketcall)
        arg2, 3*sizeof(Addr) );
       */
 
-      struct vki_msghdr *msg = (struct vki_msghdr *)((UInt *)arg2)[ 1 ];
+      struct vki_msghdr *msg = (struct vki_msghdr *)((UWord*)arg2)[ 1 ];
       msghdr_foreachfield ( tid, msg, pre_mem_read_sendmsg );
 
       break;
@@ -4890,7 +4890,7 @@ PRE(socketcall)
        arg2, 3*sizeof(Addr) );
       */
 
-      struct vki_msghdr *msg = (struct vki_msghdr *)((UInt *)arg2)[ 1 ];
+      struct vki_msghdr *msg = (struct vki_msghdr *)((UWord*)arg2)[ 1 ];
       msghdr_foreachfield ( tid, msg, pre_mem_write_recvmsg );
 
       break;
@@ -5039,7 +5039,7 @@ POST(socketcall)
 
    case VKI_SYS_RECVMSG:
    {
-      struct vki_msghdr *msg = (struct vki_msghdr *)((UInt *)arg2)[ 1 ];
+      struct vki_msghdr *msg = (struct vki_msghdr *)((UWord*)arg2)[ 1 ];
 
       msghdr_foreachfield( tid, msg, post_mem_write_recvmsg );
       check_cmsg_for_fds( tid, msg );

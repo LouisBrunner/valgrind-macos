@@ -124,7 +124,7 @@ typedef  unsigned long HWord;
 
 #undef VEX_HOST_WORDSIZE
 
-#if defined(__amd64__)
+#if defined(__x86_64__)
 #   define VEX_HOST_WORDSIZE 8
 #elif defined(__i386__)
 #   define VEX_HOST_WORDSIZE 4

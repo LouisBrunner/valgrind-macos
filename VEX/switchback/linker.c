@@ -18,7 +18,7 @@
 static int debug_linker = 0;
 
 
-#if defined(__amd64__)
+#if defined(__x86_64__)
 #   define x86_64_TARGET_ARCH
 #elif defined(__i386__)
 #   define i386_TARGET_ARCH
@@ -1175,7 +1175,7 @@ ocGetNames_ELF ( ObjectCode* oc )
 
          if (secno == SHN_COMMON) {
             isLocal = FALSE;
-#           if defined(__amd64__)
+#           if defined(__x86_64__)
             ad = calloc_below2G(1, stab[j].st_size);
 #           else
             ad = calloc(1, stab[j].st_size);

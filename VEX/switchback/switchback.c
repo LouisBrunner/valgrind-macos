@@ -35,7 +35,7 @@ static Int   n_translations_made = 0;
 #  define VexArch                   VexArchX86
 #  define VexSubArch                VexSubArchX86_sse1
 #  define GuestPC                   guest_EIP
-#elif defined(__amd64__)
+#elif defined(__x86_64__)
 #  define VexGuestState             VexGuestAMD64State
 #  define LibVEX_Guest_initialise   LibVEX_GuestAMD64_initialise
 #  define VexArch                   VexArchAMD64
@@ -143,7 +143,7 @@ void switchback ( void )
    switchback_asm(); // never returns
 }
 
-#elif defined(__amd64__)
+#elif defined(__x86_64__)
 
 asm(
 "switchback_asm:\n"
@@ -340,7 +340,7 @@ asm(
 "   ret\n"
 );
 
-#elif defined(__amd64__)
+#elif defined(__x86_64__)
 asm(
 "run_translation_asm:\n"
 
@@ -656,7 +656,7 @@ static void run_simulator ( void )
             gst.guest_ESP = esp+4;
             next_guest = gst.guest_EIP;
          }
-#        elif defined(__amd64__)
+#        elif defined(__x86_64__)
          {
             HWord esp = gst.guest_RSP;
             gst.guest_RIP = *(UInt*)(esp+0);
@@ -772,7 +772,7 @@ int main ( Int argc, HChar** argv )
    gst.guest_ESP = (UInt)&gstack[25000];
    *(UInt*)(gst.guest_ESP+4) = (UInt)serviceFn;
    *(UInt*)(gst.guest_ESP+0) = 0x12345678;
-#  elif defined(__amd64__)
+#  elif defined(__x86_64__)
    gst.guest_RIP = (ULong)entry;
    gst.guest_RSP = (ULong)&gstack[25000];
    gst.guest_RDI = (ULong)serviceFn;

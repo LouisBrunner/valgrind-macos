@@ -2508,8 +2508,7 @@ Some odd things that can occur during annotation:
       <code>mov %esi,%esi</code> to it.<p>
   </li>
 
-  <li>
-      Inlined functions can cause strange results in the function-by-function
+  <li>Inlined functions can cause strange results in the function-by-function
       summary.  If a function <code>inline_me()</code> is defined in
       <code>foo.h</code> and inlined in the functions <code>f1()</code>,
       <code>f2()</code> and <code>f3()</code> in <code>bar.c</code>, there will
@@ -2524,12 +2523,20 @@ Some odd things that can occur during annotation:
       doesn't indicate the name of the function in <code>foo.h</code>, so
       Valgrind keeps using the old one.<p>
 
-  <li>
-      Sometimes, the same filename might be represented with a relative name
+  <li>Sometimes, the same filename might be represented with a relative name
       and with an absolute name in different parts of the debug info, eg:
       <code>/home/user/proj/proj.h</code> and <code>../proj.h</code>.  In this
       case, if you use auto-annotation, the file will be annotated twice with
       the counts split between the two.<p>
+  </li>
+
+  <li>Files with more than 65,535 lines cause difficulties for the stabs debug
+      info reader.  This is because the line number in the <code>struct
+      nlist</code> defined in <code>a.out.h</code> under Linux is only a 16-bit
+      number.  Valgrind can handle some files with more than 65,535 lines
+      correctly by making some guesses to identify line number overflows.  But
+      some cases are beyond it, in which case you'll get a warning message
+      explaining that annotations for the file might be incorrect.
   </li>
 </ul>
 
@@ -2584,7 +2591,6 @@ hopefully they should be close enough to be useful.<p>
       interesting and just complicate the output.  Would be nice to exclude
       these somehow.</li>
   <p>
-  <li>Handle files with more than 65535 lines.</li><p>
 </ul> 
 <hr width="100%">
 </body>

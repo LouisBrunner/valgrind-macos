@@ -1067,8 +1067,11 @@ void vg_read_lib_symbols ( SegInfo* si )
 
          case N_SOL:
             if (lineno_overflows != 0) {
-               VG_(panic)("Can't currently handle include files in very long "
-                          "(> 65535 lines) files.  Sorry.");
+               VG_(message)(Vg_UserMsg, 
+                            "Warning: file %s is very big (> 65535 lines) "
+                            "Line numbers and annotation for this file might "
+                            "be wrong.  Sorry",
+                            curr_file_name);
             }
             /* fall through! */
          case N_SO: 

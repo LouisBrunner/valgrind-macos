@@ -3,11 +3,10 @@
 
 Compile test file (eg test_hello.c) to a .o
 
-It must have an entry point called "entry" immediately preceded by the
-bytes 0x11 0x22 0x33 0x44 0x55 0x66 0x77 0x88, so the entry point can
-be found.
+It must have an entry point called "entry", which expects to 
+take a single argument which is a function pointer (to "serviceFn").
 
-It must have ***NO RELOCATIONS*** -  objdump -r file.o shows none
+Test file may not reference any other symbols.
 
 */
 
@@ -22,7 +21,7 @@ It must have ***NO RELOCATIONS*** -  objdump -r file.o shows none
 #include "../pub/libvex_guest_x86.h"
 #include "../pub/libvex_guest_amd64.h"
 #include "../pub/libvex.h"
-
+#include "linker.h"
 
 static Int n_bbs_done = 0;
 
@@ -77,8 +76,8 @@ HWord sb_helper1 = 0;
 HWord sb_helper2 = 0;
 
 /* translation cache */
-#define N_TRANS_CACHE 100000
-#define N_TRANS_TABLE 1000
+#define N_TRANS_CACHE 1000000
+#define N_TRANS_TABLE 10000
 
 ULong trans_cache[N_TRANS_CACHE];
 VexGuestExtents trans_table [N_TRANS_TABLE];
@@ -394,48 +393,15 @@ int main ( Int argc, HChar** argv )
       return 1;
    }
 
-   imageSz = (Int)buf.st_size;
-   printf("stopAfter = %d\n", stopAfter);
-   printf("file size is %d\n", imageSz);
-
-   /* Get the file aboard and find the entry point */
-   image = malloc(imageSz);
-   assert(image);
-
-   f = fopen(oname, "r");
-   assert(f);
-   n = fread(image, 1, imageSz, f);
-   assert(n == imageSz);
-   fclose(f);
-
-   assert(imageSz > 12);
-   entry = NULL;
-   for (n = 0; n < imageSz - 8; n++) {
-     if (image[n+0] == 0x11 
-         && image[n+1] == 0x22
-         && image[n+2] == 0x33
-         && image[n+3] == 0x44
-         && image[n+4] == 0x55
-         && image[n+5] == 0x66
-         && image[n+6] == 0x77
-         && image[n+7] == 0x88
-	 ) {
-       entry = &image[n+8];
-       break;
-     }
-   }
+   entry = linker_top_level_LINK( 1, &argv[1] );
 
    if (!entry) {
       printf("switchback: can't find entry point\n");
       exit(1);
    }
 
-   printf("switchback: entry bytes are: ");
-   for (i = 0; i < 4; i++)
-     printf("0x%02x ", (Int)entry[i]);
-
    LibVEX_default_VexControl(&vcon);
-   vcon.guest_max_insns=1; //50;
+   vcon.guest_max_insns=1;
    vcon.guest_chase_thresh=0;
    LibVEX_Init( failure_exit, log_bytes, 1, False, &vcon );
    LibVEX_Guest_initialise(&gst);

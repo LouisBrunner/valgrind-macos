@@ -720,8 +720,8 @@ IRExpr* x86guest_spechelper ( Char* function_name,
             --> test src <=u dst */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32U, 
-                           binop(Iop_And32,cc_src,mkU32(0xFFFF)),
-			   binop(Iop_And32,cc_dst,mkU32(0xFFFF))));
+                           binop(Iop_And32,cc_src,mkU32(0xFF)),
+			   binop(Iop_And32,cc_dst,mkU32(0xFF))));
       }
 
       /*---------------- LOGICL ----------------*/

@@ -136,7 +136,7 @@ typedef
                          // of which lo half is div and hi half is mod
       Iop_DivModS64to32, // ditto, signed
       /* Widening conversions */
-      Iop_8Uto16, Iop_8Uto32, Iop_16Uto32,
+      Iop_8Uto16, Iop_8Uto32, Iop_16Uto32, Iop_32Uto64,
       Iop_8Sto16, Iop_8Sto32, Iop_16Sto32, Iop_32Sto64,
       /* Narrowing conversions */
       Iop_32to8,

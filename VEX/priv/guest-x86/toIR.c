@@ -11,6 +11,7 @@
    is Iop_Neg* used?
    MOVAPS fix (vg_to_ucode rev 1.143)
    check flag settings for cmpxchg
+   check 16/8 bit div/idiv
    FUCOMI(P): what happens to A and S flags?  Currently are forced
       to zero.
 */
@@ -1999,16 +2000,26 @@ UInt dis_movx_E_G ( UChar       sorb,
 static
 void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
 {
+   IROp   op    = signed_divide ? Iop_DivModS64to32 : Iop_DivModU64to32;
+   IRTemp src64 = newTemp(Ity_I64);
+   IRTemp dst64 = newTemp(Ity_I64);
    switch (sz) {
-      case 4: {
-         IROp   op    = signed_divide ? Iop_DivModS64to32 : Iop_DivModU64to32;
-         IRTemp src64 = newTemp(Ity_I64);
-         IRTemp dst64 = newTemp(Ity_I64);
+      case 4:
          assign( src64, binop(Iop_32HLto64, 
-                 getIReg(4,R_EDX), getIReg(4,R_EAX)) );
+                              getIReg(4,R_EDX), getIReg(4,R_EAX)) );
          assign( dst64, binop(op, mkexpr(src64), mkexpr(t)) );
          putIReg( 4, R_EAX, unop(Iop_64to32,mkexpr(dst64)) );
          putIReg( 4, R_EDX, unop(Iop_64HIto32,mkexpr(dst64)) );
+         break;
+      case 2: {
+         IROp widen3264 = signed_divide ? Iop_32Sto64 : Iop_32Uto64;
+         IROp widen1632 = signed_divide ? Iop_16Sto32 : Iop_16Uto32;
+         assign( src64, unop(widen3264,
+                             binop(Iop_16HLto32, 
+                                   getIReg(2,R_EDX), getIReg(2,R_EAX))) );
+         assign( dst64, binop(op, mkexpr(src64), unop(widen1632,mkexpr(t))) );
+         putIReg( 2, R_EAX, unop(Iop_32to16,unop(Iop_64to32,mkexpr(dst64))) );
+         putIReg( 2, R_EDX, unop(Iop_32to16,unop(Iop_64HIto32,mkexpr(dst64))) );
          break;
       }
       default: vpanic("codegen_div(x86)");

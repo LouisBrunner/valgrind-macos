@@ -1305,6 +1305,19 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
+   /* 32Uto64(e) */
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.op == Iop_32Uto64) {
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
+      HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+      addInstr(env, mk_MOVsd_RR(src,tLo));
+      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tHi));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
    /* 64-bit shifts */
    if (e->tag == Iex_Binop
        && e->Iex.Binop.op == Iop_Shl64) {

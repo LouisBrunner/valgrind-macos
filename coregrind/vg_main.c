@@ -1068,7 +1068,7 @@ static void process_cmd_line_options ( const KickstartParams *kp )
 			   VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
 			   VKI_S_IRUSR|VKI_S_IWUSR);
 	    if (eventually_logfile_fd >= 0) {
-	       VG_(clo_logfile_fd) = eventually_logfile_fd;
+	       VG_(clo_logfile_fd) = VG_(safe_fd)(eventually_logfile_fd);
 	       break;
 	    } else {
 	       if (eventually_logfile_fd != -VKI_EEXIST) {

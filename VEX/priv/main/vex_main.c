@@ -46,6 +46,7 @@
 #include "ir/iropt.h"
 
 #include "host-x86/hdefs.h"
+#include "host-amd64/hdefs.h"
 
 #include "guest-x86/gdefs.h"
 #include "guest-amd64/gdefs.h"
@@ -265,6 +266,23 @@ VexTranslateResult LibVEX_Translate (
                  || subarch_host == VexSubArchX86_sse2);
          break;
 
+      case VexArchAMD64:
+         getAllocableRegs_AMD64 ( &n_available_real_regs,
+                                  &available_real_regs );
+         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_AMD64Instr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*)) getRegUsage_AMD64Instr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*)) mapRegs_AMD64Instr;
+         genSpill    = (HInstr*(*)(HReg,Int)) genSpill_AMD64;
+         genReload   = (HInstr*(*)(HReg,Int)) genReload_AMD64;
+         ppInstr     = (void(*)(HInstr*)) ppAMD64Instr;
+         ppReg       = (void(*)(HReg)) ppHRegAMD64;
+         iselBB      = iselBB_AMD64;
+         emit        = (Int(*)(UChar*,Int,HInstr*)) emit_AMD64Instr;
+         host_is_bigendian = False;
+         host_word_type    = Ity_I64;
+         vassert(subarch_host == VexSubArch_NONE);
+         break;
+
       default:
          vpanic("LibVEX_Translate: unsupported target insn set");
    }
@@ -432,6 +450,8 @@ VexTranslateResult LibVEX_Translate (
       ppIRBB ( irbb );
       vex_printf("\n");
    }
+
+   if (0) { *host_bytes_used = 0; return VexTransOK; }
 
    if (vex_traceflags & VEX_TRACE_VCODE)
       vex_printf("\n------------------------" 

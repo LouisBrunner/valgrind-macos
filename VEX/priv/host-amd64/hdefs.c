@@ -37,15 +37,15 @@
 #include "libvex.h"
 #include "libvex_trc_values.h"
 
-//.. #include "main/vex_util.h"
-//.. #include "host-generic/h_generic_regs.h"
-//.. #include "host-x86/hdefs.h"
-//.. 
-//.. 
-//.. /* --------- Registers. --------- */
-//.. 
-//.. void ppHRegX86 ( HReg reg ) 
-//.. {
+#include "main/vex_util.h"
+#include "host-generic/h_generic_regs.h"
+#include "host-amd64/hdefs.h"
+
+
+/* --------- Registers. --------- */
+
+void ppHRegAMD64 ( HReg reg ) 
+{ vassert(0);
 //..    Int r;
 //..    static HChar* ireg32_names[8] 
 //..      = { "%eax", "%ecx", "%edx", "%ebx", "%esp", "%ebp", "%esi", "%edi" };
@@ -74,8 +74,8 @@
 //..       default:
 //..          vpanic("ppHRegX86");
 //..    }
-//.. }
-//.. 
+}
+
 //.. HReg hregX86_EAX ( void ) { return mkHReg(0, HRcInt32, False); }
 //.. HReg hregX86_ECX ( void ) { return mkHReg(1, HRcInt32, False); }
 //.. HReg hregX86_EDX ( void ) { return mkHReg(2, HRcInt32, False); }
@@ -100,10 +100,10 @@
 //.. HReg hregX86_XMM5 ( void ) { return mkHReg(5, HRcVec128, False); }
 //.. HReg hregX86_XMM6 ( void ) { return mkHReg(6, HRcVec128, False); }
 //.. HReg hregX86_XMM7 ( void ) { return mkHReg(7, HRcVec128, False); }
-//.. 
-//.. 
-//.. void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
-//.. {
+
+
+void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
+{ *nregs= 0; *arr=NULL;
 //..    *nregs = 20;
 //..    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
 //..    (*arr)[0] = hregX86_EAX();
@@ -126,9 +126,9 @@
 //..    (*arr)[17] = hregX86_XMM5();
 //..    (*arr)[18] = hregX86_XMM6();
 //..    (*arr)[19] = hregX86_XMM7();
-//.. }
-//.. 
-//.. 
+}
+
+
 //.. /* --------- Condition codes, Intel encoding. --------- */
 //.. 
 //.. HChar* showX86CondCode ( X86CondCode cond )
@@ -878,9 +878,10 @@
 //..    vassert(order >= 0 && order <= 0xFF);
 //..    return i;
 //.. }
-//.. 
-//.. void ppX86Instr ( X86Instr* i ) {
-//..    switch (i->tag) {
+
+void ppAMD64Instr ( AMD64Instr* i ) 
+{
+   switch (i->tag) {
 //..       case Xin_Alu32R:
 //..          vex_printf("%sl ", showX86AluOp(i->Xin.Alu32R.op));
 //..          ppX86RMI(i->Xin.Alu32R.src);
@@ -1128,19 +1129,19 @@
 //..          vex_printf(",");
 //..          ppHRegX86(i->Xin.SseShuf.dst);
 //..          return;
-//.. 
-//..       default:
-//..          vpanic("ppX86Instr");
-//..    }
-//.. }
-//.. 
-//.. /* --------- Helpers for register allocation. --------- */
-//.. 
-//.. void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
-//.. {
-//..    Bool unary;
-//..    initHRegUsage(u);
-//..    switch (i->tag) {
+
+      default:
+         vpanic("ppAMD64Instr");
+   }
+}
+
+/* --------- Helpers for register allocation. --------- */
+
+void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
+{
+  //   Bool unary;
+   initHRegUsage(u);
+   switch (i->tag) {
 //..       case Xin_Alu32R:
 //..          addRegUsage_X86RMI(u, i->Xin.Alu32R.src);
 //..          if (i->Xin.Alu32R.op == Xalu_MOV) {
@@ -1355,21 +1356,21 @@
 //..          addHRegUse(u, HRmRead,  i->Xin.SseShuf.src);
 //..          addHRegUse(u, HRmWrite, i->Xin.SseShuf.dst);
 //..          return;
-//..       default:
-//..          ppX86Instr(i);
-//..          vpanic("getRegUsage_X86Instr");
-//..    }
-//.. }
+      default:
+         ppAMD64Instr(i);
+         vpanic("getRegUsage_AMD64Instr");
+   }
+}
 //.. 
 //.. /* local helper */
 //.. static void mapReg(HRegRemap* m, HReg* r)
 //.. {
 //..    *r = lookupHRegRemap(m, *r);
 //.. }
-//.. 
-//.. void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
-//.. {
-//..    switch (i->tag) {
+
+void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
+{
+   switch (i->tag) {
 //..       case Xin_Alu32R:
 //..          mapRegs_X86RMI(m, i->Xin.Alu32R.src);
 //..          mapReg(m, &i->Xin.Alu32R.dst);
@@ -1501,18 +1502,18 @@
 //..          mapReg(m, &i->Xin.SseShuf.src);
 //..          mapReg(m, &i->Xin.SseShuf.dst);
 //..          return;
-//..       default:
-//..          ppX86Instr(i);
-//..          vpanic("mapRegs_X86Instr");
-//..    }
-//.. }
-//.. 
-//.. /* Figure out if i represents a reg-reg move, and if so assign the
-//..    source and destination to *src and *dst.  If in doubt say No.  Used
-//..    by the register allocator to do move coalescing. 
-//.. */
-//.. Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
-//.. {
+      default:
+         ppAMD64Instr(i);
+         vpanic("mapRegs_AMD64Instr");
+   }
+}
+
+/* Figure out if i represents a reg-reg move, and if so assign the
+   source and destination to *src and *dst.  If in doubt say No.  Used
+   by the register allocator to do move coalescing. 
+*/
+Bool isMove_AMD64Instr ( AMD64Instr* i, HReg* src, HReg* dst )
+{
 //..    /* Moves between integer regs */
 //..    if (i->tag == Xin_Alu32R) {
 //..       if (i->Xin.Alu32R.op != Xalu_MOV)
@@ -1538,16 +1539,16 @@
 //..       *dst = i->Xin.SseReRg.dst;
 //..       return True;
 //..    }
-//..    return False;
-//.. }
-//.. 
-//.. 
-//.. /* Generate x86 spill/reload instructions under the direction of the
-//..    register allocator.  Note it's critical these don't write the
-//..    condition codes. */
-//.. 
-//.. X86Instr* genSpill_X86 ( HReg rreg, Int offsetB )
-//.. {
+   return False;
+}
+
+
+/* Generate amd64 spill/reload instructions under the direction of the
+   register allocator.  Note it's critical these don't write the
+   condition codes. */
+
+AMD64Instr* genSpill_AMD64 ( HReg rreg, Int offsetB )
+{vassert(0);
 //..    X86AMode* am;
 //..    vassert(offsetB >= 0);
 //..    vassert(!hregIsVirtual(rreg));
@@ -1564,10 +1565,10 @@
 //..          ppHRegClass(hregClass(rreg));
 //..          vpanic("genSpill_X86: unimplemented regclass");
 //..    }
-//.. }
-//.. 
-//.. X86Instr* genReload_X86 ( HReg rreg, Int offsetB )
-//.. {
+}
+
+AMD64Instr* genReload_AMD64 ( HReg rreg, Int offsetB )
+{vassert(0);
 //..    X86AMode* am;
 //..    vassert(offsetB >= 0);
 //..    vassert(!hregIsVirtual(rreg));
@@ -1583,9 +1584,9 @@
 //..          ppHRegClass(hregClass(rreg));
 //..          vpanic("genReload_X86: unimplemented regclass");
 //..    }
-//.. }
-//.. 
-//.. 
+}
+
+
 //.. /* --------- The x86 assembler (bleh.) --------- */
 //.. 
 //.. static UInt iregNo ( HReg r )
@@ -1827,17 +1828,17 @@
 //..    }
 //..    return p;
 //.. }
-//.. 
-//.. /* Emit an instruction into buf and return the number of bytes used.
-//..    Note that buf is not the insn's final place, and therefore it is
-//..    imperative to emit position-independent code. */
-//.. 
-//.. Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
-//.. {
-//..    UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
+
+/* Emit an instruction into buf and return the number of bytes used.
+   Note that buf is not the insn's final place, and therefore it is
+   imperative to emit position-independent code. */
+
+Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
+{
+  //   UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
 //.. 
 //..    UInt   xtra;
-//..    UChar* p = &buf[0];
+   UChar* p = &buf[0];
 //..    UChar* ptmp;
 //..    vassert(nbuf >= 32);
 //.. 
@@ -1847,9 +1848,9 @@
 //.. #  define fake(_n) mkHReg((_n), HRcInt32, False)
 //.. 
 //..    /* vex_printf("asm  ");ppX86Instr(i); vex_printf("\n"); */
-//.. 
-//..    switch (i->tag) {
-//.. 
+
+   switch (i->tag) {
+
 //..    case Xin_Alu32R:
 //..       /* Deal specially with MOV */
 //..       if (i->Xin.Alu32R.op == Xalu_MOV) {
@@ -2839,21 +2840,21 @@
 //..       *p++ = (UChar)(i->Xin.SseShuf.order);
 //..       goto done;
 //.. 
-//..    default: 
-//..       goto bad;
-//..    }
-//.. 
-//..   bad:
-//..    ppX86Instr(i);
-//..    vpanic("emit_X86Instr");
-//..    /*NOTREACHED*/
-//..    
-//..   done:
-//..    vassert(p - &buf[0] <= 32);
-//..    return p - &buf[0];
-//.. 
-//.. #  undef fake
-//.. }
+   default: 
+      goto bad;
+   }
+
+  bad:
+   ppAMD64Instr(i);
+   vpanic("emit_AMD64Instr");
+   /*NOTREACHED*/
+   
+   //  done:
+   vassert(p - &buf[0] <= 32);
+   return p - &buf[0];
+
+#  undef fake
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                                  host-amd64/hdefs.c ---*/

@@ -36,206 +36,222 @@
 #ifndef __LIBVEX_HOST_AMD64_HDEFS_H
 #define __LIBVEX_HOST_AMD64_HDEFS_H
 
-//.. 
-//.. /* --------- Registers. --------- */
-//.. 
-//.. /* The usual HReg abstraction.  There are 8 real int regs,
-//..    6 real float regs, and 0 real vector regs. 
-//.. */
-//.. 
-//.. extern void ppHRegX86 ( HReg );
-//.. 
-//.. extern HReg hregX86_EAX ( void );
-//.. extern HReg hregX86_EBX ( void );
-//.. extern HReg hregX86_ECX ( void );
-//.. extern HReg hregX86_EDX ( void );
-//.. extern HReg hregX86_ESP ( void );
-//.. extern HReg hregX86_EBP ( void );
-//.. extern HReg hregX86_ESI ( void );
-//.. extern HReg hregX86_EDI ( void );
-//.. 
-//.. extern HReg hregX86_FAKE0 ( void );
-//.. extern HReg hregX86_FAKE1 ( void );
-//.. extern HReg hregX86_FAKE2 ( void );
-//.. extern HReg hregX86_FAKE3 ( void );
-//.. extern HReg hregX86_FAKE4 ( void );
-//.. extern HReg hregX86_FAKE5 ( void );
-//.. 
-//.. extern HReg hregX86_XMM0 ( void );
-//.. extern HReg hregX86_XMM1 ( void );
-//.. extern HReg hregX86_XMM2 ( void );
-//.. extern HReg hregX86_XMM3 ( void );
-//.. extern HReg hregX86_XMM4 ( void );
-//.. extern HReg hregX86_XMM5 ( void );
-//.. extern HReg hregX86_XMM6 ( void );
-//.. extern HReg hregX86_XMM7 ( void );
-//.. 
-//.. 
-//.. /* --------- Condition codes, Intel encoding. --------- */
-//.. 
-//.. typedef
-//..    enum {
-//..       Xcc_O      = 0,  /* overflow           */
-//..       Xcc_NO     = 1,  /* no overflow        */
-//.. 
-//..       Xcc_B      = 2,  /* below              */
-//..       Xcc_NB     = 3,  /* not below          */
-//.. 
-//..       Xcc_Z      = 4,  /* zero               */
-//..       Xcc_NZ     = 5,  /* not zero           */
-//.. 
-//..       Xcc_BE     = 6,  /* below or equal     */
-//..       Xcc_NBE    = 7,  /* not below or equal */
-//.. 
-//..       Xcc_S      = 8,  /* negative           */
-//..       Xcc_NS     = 9,  /* not negative       */
-//.. 
-//..       Xcc_P      = 10, /* parity even        */
-//..       Xcc_NP     = 11, /* not parity even    */
-//.. 
-//..       Xcc_L      = 12, /* jump less          */
-//..       Xcc_NL     = 13, /* not less           */
-//.. 
-//..       Xcc_LE     = 14, /* less or equal      */
-//..       Xcc_NLE    = 15, /* not less or equal  */
-//.. 
-//..       Xcc_ALWAYS = 16  /* the usual hack     */
-//..    }
-//..    X86CondCode;
-//.. 
-//.. extern HChar* showX86CondCode ( X86CondCode );
-//.. 
-//.. 
-//.. /* --------- Memory address expressions (amodes). --------- */
-//.. 
-//.. typedef
-//..    enum {
-//..      Xam_IR,        /* Immediate + Reg */
-//..      Xam_IRRS       /* Immediate + Reg1 + (Reg2 << Shift) */
-//..    }
-//..    X86AModeTag;
-//.. 
-//.. typedef
-//..    struct {
-//..       X86AModeTag tag;
-//..       union {
-//..          struct {
-//..             UInt imm;
-//..             HReg reg;
-//..          } IR;
-//..          struct {
-//..             UInt imm;
-//..             HReg base;
-//..             HReg index;
-//..             Int  shift; /* 0, 1, 2 or 3 only */
-//..          } IRRS;
-//..       } Xam;
-//..    }
-//..    X86AMode;
-//.. 
-//.. extern X86AMode* X86AMode_IR   ( UInt, HReg );
-//.. extern X86AMode* X86AMode_IRRS ( UInt, HReg, HReg, Int );
-//.. 
-//.. extern X86AMode* dopyX86AMode ( X86AMode* );
-//.. 
-//.. extern void ppX86AMode ( X86AMode* );
-//.. 
-//.. 
-//.. /* --------- Operand, which can be reg, immediate or memory. --------- */
-//.. 
-//.. typedef 
-//..    enum {
-//..       Xrmi_Imm,
-//..       Xrmi_Reg,
-//..       Xrmi_Mem
-//..    }
-//..    X86RMITag;
-//.. 
-//.. typedef
-//..    struct {
-//..       X86RMITag tag;
-//..       union {
-//..          struct {
-//..             UInt imm32;
-//..          } Imm;
-//..          struct {
-//..             HReg reg;
-//..          } Reg;
-//..          struct {
-//..             X86AMode* am;
-//..          } Mem;
-//..       }
-//..       Xrmi;
-//..    }
-//..    X86RMI;
-//.. 
-//.. extern X86RMI* X86RMI_Imm ( UInt );
-//.. extern X86RMI* X86RMI_Reg ( HReg );
-//.. extern X86RMI* X86RMI_Mem ( X86AMode* );
-//.. 
-//.. extern void ppX86RMI ( X86RMI* );
-//.. 
-//.. 
-//.. /* --------- Operand, which can be reg or immediate only. --------- */
-//.. 
-//.. typedef 
-//..    enum {
-//..       Xri_Imm,
-//..       Xri_Reg
-//..    }
-//..    X86RITag;
-//.. 
-//.. typedef
-//..    struct {
-//..       X86RITag tag;
-//..       union {
-//..          struct {
-//..             UInt imm32;
-//..          } Imm;
-//..          struct {
-//..             HReg reg;
-//..          } Reg;
-//..       }
-//..       Xri;
-//..    }
-//..    X86RI;
-//.. 
-//.. extern X86RI* X86RI_Imm ( UInt );
-//.. extern X86RI* X86RI_Reg ( HReg );
-//.. 
-//.. extern void ppX86RI ( X86RI* );
-//.. 
-//.. 
-//.. /* --------- Operand, which can be reg or memory only. --------- */
-//.. 
-//.. typedef 
-//..    enum {
-//..       Xrm_Reg,
-//..       Xrm_Mem
-//..    }
-//..    X86RMTag;
-//.. 
-//.. typedef
-//..    struct {
-//..       X86RMTag tag;
-//..       union {
-//..          struct {
-//..             HReg reg;
-//..          } Reg;
-//..          struct {
-//..             X86AMode* am;
-//..          } Mem;
-//..       }
-//..       Xrm;
-//..    }
-//..    X86RM;
-//.. 
-//.. extern X86RM* X86RM_Reg ( HReg );
-//.. extern X86RM* X86RM_Mem ( X86AMode* );
-//.. 
-//.. extern void ppX86RM ( X86RM* );
-//.. 
-//.. 
+
+/* --------- Registers. --------- */
+
+/* The usual HReg abstraction.  There are 16 real int regs, 6 real
+   float regs, and 16 real vector regs.
+*/
+
+extern void ppHRegAMD64 ( HReg );
+
+extern HReg hregAMD64_RAX ( void );
+extern HReg hregAMD64_RBX ( void );
+extern HReg hregAMD64_RCX ( void );
+extern HReg hregAMD64_RDX ( void );
+extern HReg hregAMD64_RSP ( void );
+extern HReg hregAMD64_RBP ( void );
+extern HReg hregAMD64_RSI ( void );
+extern HReg hregAMD64_RDI ( void );
+extern HReg hregAMD64_R8  ( void );
+extern HReg hregAMD64_R9  ( void );
+extern HReg hregAMD64_R10 ( void );
+extern HReg hregAMD64_R11 ( void );
+extern HReg hregAMD64_R12 ( void );
+extern HReg hregAMD64_R13 ( void );
+extern HReg hregAMD64_R14 ( void );
+extern HReg hregAMD64_R15 ( void );
+
+extern HReg hregAMD64_FAKE0 ( void );
+extern HReg hregAMD64_FAKE1 ( void );
+extern HReg hregAMD64_FAKE2 ( void );
+extern HReg hregAMD64_FAKE3 ( void );
+extern HReg hregAMD64_FAKE4 ( void );
+extern HReg hregAMD64_FAKE5 ( void );
+
+extern HReg hregAMD64_XMM0  ( void );
+extern HReg hregAMD64_XMM1  ( void );
+extern HReg hregAMD64_XMM2  (  void );
+extern HReg hregAMD64_XMM3  ( void );
+extern HReg hregAMD64_XMM4  ( void );
+extern HReg hregAMD64_XMM5  ( void );
+extern HReg hregAMD64_XMM6  ( void );
+extern HReg hregAMD64_XMM7  ( void );
+extern HReg hregAMD64_XMM8  ( void );
+extern HReg hregAMD64_XMM9  ( void );
+extern HReg hregAMD64_XMM10 ( void );
+extern HReg hregAMD64_XMM11 ( void );
+extern HReg hregAMD64_XMM12 ( void );
+extern HReg hregAMD64_XMM13 ( void );
+extern HReg hregAMD64_XMM14 ( void );
+extern HReg hregAMD64_XMM15 ( void );
+
+
+/* --------- Condition codes, AMD encoding. --------- */
+
+typedef
+   enum {
+      Acc_O      = 0,  /* overflow           */
+      Acc_NO     = 1,  /* no overflow        */
+
+      Acc_B      = 2,  /* below              */
+      Acc_NB     = 3,  /* not below          */
+
+      Acc_Z      = 4,  /* zero               */
+      Acc_NZ     = 5,  /* not zero           */
+
+      Acc_BE     = 6,  /* below or equal     */
+      Acc_NBE    = 7,  /* not below or equal */
+
+      Acc_S      = 8,  /* negative           */
+      Acc_NS     = 9,  /* not negative       */
+
+      Acc_P      = 10, /* parity even        */
+      Acc_NP     = 11, /* not parity even    */
+
+      Acc_L      = 12, /* jump less          */
+      Acc_NL     = 13, /* not less           */
+
+      Acc_LE     = 14, /* less or equal      */
+      Acc_NLE    = 15, /* not less or equal  */
+
+      Acc_ALWAYS = 16  /* the usual hack     */
+   }
+   AMD64CondCode;
+
+extern HChar* showAMD64CondCode ( AMD64CondCode );
+
+
+/* --------- Memory address expressions (amodes). --------- */
+
+typedef
+   enum {
+     Aam_IR,        /* Immediate + Reg */
+     Aam_IRRS       /* Immediate + Reg1 + (Reg2 << Shift) */
+   }
+   AMD64AModeTag;
+
+typedef
+   struct {
+      AMD64AModeTag tag;
+      union {
+         struct {
+            UInt imm;
+            HReg reg;
+         } IR;
+         struct {
+            UInt imm;
+            HReg base;
+            HReg index;
+            Int  shift; /* 0, 1, 2 or 3 only */
+         } IRRS;
+      } Aam;
+   }
+   AMD64AMode;
+
+extern AMD64AMode* AMD64AMode_IR   ( UInt, HReg );
+extern AMD64AMode* AMD64AMode_IRRS ( UInt, HReg, HReg, Int );
+
+extern AMD64AMode* dopyAMD64AMode ( AMD64AMode* );
+
+extern void ppAMD64AMode ( AMD64AMode* );
+
+
+/* --------- Operand, which can be reg, immediate or memory. --------- */
+
+typedef 
+   enum {
+      Armi_Imm,
+      Armi_Reg,
+      Armi_Mem
+   }
+   AMD64RMITag;
+
+typedef
+   struct {
+      AMD64RMITag tag;
+      union {
+         struct {
+            UInt imm32;
+         } Imm;
+         struct {
+            HReg reg;
+         } Reg;
+         struct {
+            AMD64AMode* am;
+         } Mem;
+      }
+      Armi;
+   }
+   AMD64RMI;
+
+extern AMD64RMI* AMD64RMI_Imm ( UInt );
+extern AMD64RMI* AMD64RMI_Reg ( HReg );
+extern AMD64RMI* AMD64RMI_Mem ( AMD64AMode* );
+
+extern void ppAMD64RMI ( AMD64RMI* );
+
+
+/* --------- Operand, which can be reg or immediate only. --------- */
+
+typedef 
+   enum {
+      Ari_Imm,
+      Ari_Reg
+   }
+   AMD64RITag;
+
+typedef
+   struct {
+      AMD64RITag tag;
+      union {
+         struct {
+            UInt imm32;
+         } Imm;
+         struct {
+            HReg reg;
+         } Reg;
+      }
+      Ari;
+   }
+   AMD64RI;
+
+extern AMD64RI* AMD64RI_Imm ( UInt );
+extern AMD64RI* AMD64RI_Reg ( HReg );
+
+extern void ppAMD64RI ( AMD64RI* );
+
+
+/* --------- Operand, which can be reg or memory only. --------- */
+
+typedef 
+   enum {
+      Arm_Reg,
+      Arm_Mem
+   }
+   AMD64RMTag;
+
+typedef
+   struct {
+      AMD64RMTag tag;
+      union {
+         struct {
+            HReg reg;
+         } Reg;
+         struct {
+            AMD64AMode* am;
+         } Mem;
+      }
+      Arm;
+   }
+   AMD64RM;
+
+extern AMD64RM* AMD64RM_Reg ( HReg );
+extern AMD64RM* AMD64RM_Mem ( AMD64AMode* );
+
+extern void ppAMD64RM ( AMD64RM* );
+
+
 //.. /* --------- Instructions. --------- */
 //.. 
 //.. /* --------- */
@@ -344,13 +360,13 @@
 //..    X86SseOp;
 //.. 
 //.. extern HChar* showX86SseOp ( X86SseOp );
-//.. 
-//.. 
-//.. /* --------- */
-//.. typedef
-//..    enum {
-//..       Xin_Alu32R,    /* 32-bit mov/arith/logical, dst=REG */
-//..       Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
+
+
+/* --------- */
+typedef
+   enum {
+      Ain_Alu64R,    /* 64-bit mov/arith/logical, dst=REG */
+      Ain_Alu64M,    /* 64-bit mov/arith/logical, dst=MEM */
 //..       Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
 //..       Xin_Test32,    /* 32-bit test (AND, set flags, discard result) */
 //..       Xin_Unary32,   /* 32-bit not and neg */
@@ -387,14 +403,14 @@
 //..       Xin_SseReRg,   /* SSE binary general reg-reg, Re, Rg */
 //..       Xin_SseCMov,   /* SSE conditional move */
 //..       Xin_SseShuf    /* SSE2 shuffle (pshufd) */
-//..    }
-//..    X86InstrTag;
-//.. 
-//.. /* Destinations are on the RIGHT (second operand) */
-//.. 
-//.. typedef
-//..    struct {
-//..       X86InstrTag tag;
+   }
+   AMD64InstrTag;
+
+/* Destinations are on the RIGHT (second operand) */
+
+typedef
+   struct {
+      AMD64InstrTag tag;
 //..       union {
 //..          struct {
 //..             X86AluOp op;
@@ -615,9 +631,9 @@
 //..          } SseShuf;
 //.. 
 //..       } Xin;
-//..    }
-//..    X86Instr;
-//.. 
+   }
+   AMD64Instr;
+
 //.. extern X86Instr* X86Instr_Alu32R    ( X86AluOp, X86RMI*, HReg );
 //.. extern X86Instr* X86Instr_Alu32M    ( X86AluOp, X86RI*,  X86AMode* );
 //.. extern X86Instr* X86Instr_Unary32   ( X86UnaryOp op, X86RM* dst );
@@ -657,20 +673,20 @@
 //.. extern X86Instr* X86Instr_SseReRg   ( X86SseOp, HReg, HReg );
 //.. extern X86Instr* X86Instr_SseCMov   ( X86CondCode, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_SseShuf   ( Int order, HReg src, HReg dst );
-//.. 
-//.. 
-//.. extern void ppX86Instr ( X86Instr* );
-//.. 
-//.. /* Some functions that insulate the register allocator from details
-//..    of the underlying instruction set. */
-//.. extern void         getRegUsage_X86Instr ( HRegUsage*, X86Instr* );
-//.. extern void         mapRegs_X86Instr     ( HRegRemap*, X86Instr* );
-//.. extern Bool         isMove_X86Instr      ( X86Instr*, HReg*, HReg* );
-//.. extern Int          emit_X86Instr        ( UChar* buf, Int nbuf, X86Instr* );
-//.. extern X86Instr*    genSpill_X86         ( HReg rreg, Int offset );
-//.. extern X86Instr*    genReload_X86        ( HReg rreg, Int offset );
-//.. extern void         getAllocableRegs_X86 ( Int*, HReg** );
-//.. extern HInstrArray* iselBB_X86           ( IRBB*, VexSubArch );
+
+
+extern void ppAMD64Instr ( AMD64Instr* );
+
+/* Some functions that insulate the register allocator from details
+   of the underlying instruction set. */
+extern void         getRegUsage_AMD64Instr ( HRegUsage*, AMD64Instr* );
+extern void         mapRegs_AMD64Instr     ( HRegRemap*, AMD64Instr* );
+extern Bool         isMove_AMD64Instr      ( AMD64Instr*, HReg*, HReg* );
+extern Int          emit_AMD64Instr        ( UChar* buf, Int nbuf, AMD64Instr* );
+extern AMD64Instr*  genSpill_AMD64         ( HReg rreg, Int offset );
+extern AMD64Instr*  genReload_AMD64        ( HReg rreg, Int offset );
+extern void         getAllocableRegs_AMD64 ( Int*, HReg** );
+extern HInstrArray* iselBB_AMD64           ( IRBB*, VexSubArch );
 
 #endif /* ndef __LIBVEX_HOST_AMD64_HDEFS_H */
 

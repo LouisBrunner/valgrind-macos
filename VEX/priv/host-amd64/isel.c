@@ -38,11 +38,11 @@
 #include "libvex.h"
 
 //.. #include "ir/irmatch.h"
-//.. #include "main/vex_util.h"
-//.. #include "main/vex_globals.h"
-//.. #include "host-generic/h_generic_regs.h"
+#include "main/vex_util.h"
+#include "main/vex_globals.h"
+#include "host-generic/h_generic_regs.h"
 //.. #include "host-generic/h_generic_simd64.h"
-//.. #include "host-x86/hdefs.h"
+#include "host-amd64/hdefs.h"
 //.. 
 //.. 
 //.. /*---------------------------------------------------------*/
@@ -95,64 +95,59 @@
 //.. {
 //..    return IRExpr_Binder(binder);
 //.. }
-//.. 
-//.. 
-//.. 
-//.. /*---------------------------------------------------------*/
-//.. /*--- ISelEnv                                           ---*/
-//.. /*---------------------------------------------------------*/
-//.. 
-//.. /* This carries around:
-//.. 
-//..    - A mapping from IRTemp to IRType, giving the type of any IRTemp we
-//..      might encounter.  This is computed before insn selection starts,
-//..      and does not change.
-//.. 
-//..    - A mapping from IRTemp to HReg.  This tells the insn selector
-//..      which virtual register(s) are associated with each IRTemp
-//..      temporary.  This is computed before insn selection starts, and
-//..      does not change.  We expect this mapping to map precisely the
-//..      same set of IRTemps as the type mapping does.
-//.. 
-//..         - vregmap   holds the primary register for the IRTemp.
-//..         - vregmapHI is only used for 64-bit integer-typed
-//..              IRTemps.  It holds the identity of a second
-//..              32-bit virtual HReg, which holds the high half
-//..              of the value.
-//.. 
-//..    - The code array, that is, the insns selected so far.
-//.. 
-//..    - A counter, for generating new virtual registers.
-//.. 
-//..    - The host subarchitecture we are selecting insns for.  
-//..      This is set at the start and does not change.
-//.. 
-//..    Note, this is all host-independent.  */
-//.. 
-//.. typedef
-//..    struct {
-//..       IRTypeEnv*   type_env;
-//.. 
-//..       HReg*        vregmap;
-//..       HReg*        vregmapHI;
-//..       Int          n_vregmap;
-//.. 
-//..       HInstrArray* code;
-//.. 
-//..       Int          vreg_ctr;
-//.. 
-//..       VexSubArch   subarch;
-//..    }
-//..    ISelEnv;
-//.. 
-//.. 
-//.. static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
-//.. {
-//..    vassert(tmp >= 0);
-//..    vassert(tmp < env->n_vregmap);
-//..    return env->vregmap[tmp];
-//.. }
-//.. 
+
+
+
+/*---------------------------------------------------------*/
+/*--- ISelEnv                                           ---*/
+/*---------------------------------------------------------*/
+
+/* This carries around:
+
+   - A mapping from IRTemp to IRType, giving the type of any IRTemp we
+     might encounter.  This is computed before insn selection starts,
+     and does not change.
+
+   - A mapping from IRTemp to HReg.  This tells the insn selector
+     which virtual register is associated with each IRTemp
+     temporary.  This is computed before insn selection starts, and
+     does not change.  We expect this mapping to map precisely the
+     same set of IRTemps as the type mapping does.
+
+   - The code array, that is, the insns selected so far.
+
+   - A counter, for generating new virtual registers.
+
+   - The host subarchitecture we are selecting insns for.  
+     This is set at the start and does not change.
+
+   Note, this is all host-independent.  (JRS 20050201: well, kinda
+   ... not completely.  Compare with ISelEnv for X86.)
+*/
+
+typedef
+   struct {
+      IRTypeEnv*   type_env;
+
+      HReg*        vregmap;
+      Int          n_vregmap;
+
+      HInstrArray* code;
+
+      Int          vreg_ctr;
+
+      VexSubArch   subarch;
+   }
+   ISelEnv;
+
+
+static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
+{
+   vassert(tmp >= 0);
+   vassert(tmp < env->n_vregmap);
+   return env->vregmap[tmp];
+}
+
 //.. static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
 //.. {
 //..    vassert(tmp >= 0);
@@ -3123,22 +3118,22 @@
 //.. #  undef REQUIRE_SSE1
 //.. #  undef REQUIRE_SSE2
 //.. }
-//.. 
-//.. 
-//.. /*---------------------------------------------------------*/
-//.. /*--- ISEL: Statements                                  ---*/
-//.. /*---------------------------------------------------------*/
-//.. 
-//.. static void iselStmt ( ISelEnv* env, IRStmt* stmt )
-//.. {
-//..    if (vex_traceflags & VEX_TRACE_VCODE) {
-//..       vex_printf("\n-- ");
-//..       ppIRStmt(stmt);
-//..       vex_printf("\n");
-//..    }
-//.. 
-//..    switch (stmt->tag) {
-//.. 
+
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Statements                                  ---*/
+/*---------------------------------------------------------*/
+
+static void iselStmt ( ISelEnv* env, IRStmt* stmt )
+{
+   if (vex_traceflags & VEX_TRACE_VCODE) {
+      vex_printf("\n-- ");
+      ppIRStmt(stmt);
+      vex_printf("\n");
+   }
+
+   switch (stmt->tag) {
+
 //..    /* --------- STORE --------- */
 //..    case Ist_STle: {
 //..       X86AMode* am;
@@ -3369,20 +3364,20 @@
 //..       addInstr(env, X86Instr_Goto(stmt->Ist.Exit.jk, cc, dst));
 //..       return;
 //..    }
-//.. 
-//..    default: break;
-//..    }
-//..    ppIRStmt(stmt);
-//..    vpanic("iselStmt");
-//.. }
-//.. 
-//.. 
-//.. /*---------------------------------------------------------*/
-//.. /*--- ISEL: Basic block terminators (Nexts)             ---*/
-//.. /*---------------------------------------------------------*/
-//.. 
-//.. static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
-//.. {
+
+   default: break;
+   }
+   ppIRStmt(stmt);
+   vpanic("iselStmt(amd64)");
+}
+
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Basic block terminators (Nexts)             ---*/
+/*---------------------------------------------------------*/
+
+static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
+{vassert(0);
 //..    X86RI* ri;
 //..    if (vex_traceflags & VEX_TRACE_VCODE) {
 //..       vex_printf("\n-- goto {");
@@ -3393,78 +3388,73 @@
 //..    }
 //..    ri = iselIntExpr_RI(env, next);
 //..    addInstr(env, X86Instr_Goto(jk, Xcc_ALWAYS,ri));
-//.. }
-//.. 
-//.. 
-//.. /*---------------------------------------------------------*/
-//.. /*--- Insn selector top-level                           ---*/
-//.. /*---------------------------------------------------------*/
-//.. 
-//.. /* Translate an entire BB to x86 code. */
-//.. 
-//.. HInstrArray* iselBB_X86 ( IRBB* bb, VexSubArch subarch_host )
-//.. {
-//..    Int     i, j;
-//..    HReg    hreg, hregHI;
-//.. 
-//..    /* sanity ... */
-//..    vassert(subarch_host == VexSubArchX86_sse0
-//..            || subarch_host == VexSubArchX86_sse1
-//..            || subarch_host == VexSubArchX86_sse2);
-//.. 
-//..    /* Make up an initial environment to use. */
-//..    ISelEnv* env = LibVEX_Alloc(sizeof(ISelEnv));
-//..    env->vreg_ctr = 0;
-//.. 
-//..    /* Set up output code array. */
-//..    env->code = newHInstrArray();
-//.. 
-//..    /* Copy BB's type env. */
-//..    env->type_env = bb->tyenv;
-//.. 
-//..    /* Make up an IRTemp -> virtual HReg mapping.  This doesn't
-//..       change as we go along. */
-//..    env->n_vregmap = bb->tyenv->types_used;
-//..    env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
-//..    env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
-//.. 
-//..    /* and finally ... */
-//..    env->subarch = subarch_host;
-//.. 
-//..    /* For each IR temporary, allocate a suitably-kinded virtual
-//..       register. */
-//..    j = 0;
-//..    for (i = 0; i < env->n_vregmap; i++) {
-//..       hregHI = hreg = INVALID_HREG;
-//..       switch (bb->tyenv->types[i]) {
-//..          case Ity_I1:
-//..          case Ity_I8:
-//..          case Ity_I16:
-//..          case Ity_I32:  hreg   = mkHReg(j++, HRcInt32, True); break;
-//..          case Ity_I64:  hreg   = mkHReg(j++, HRcInt32, True);
-//..                         hregHI = mkHReg(j++, HRcInt32, True); break;
-//..          case Ity_F32:
-//..          case Ity_F64:  hreg   = mkHReg(j++, HRcFlt64, True); break;
-//..          case Ity_V128: hreg   = mkHReg(j++, HRcVec128, True); break;
-//..          default: ppIRType(bb->tyenv->types[i]);
-//..                   vpanic("iselBB: IRTemp type");
-//..       }
-//..       env->vregmap[i]   = hreg;
-//..       env->vregmapHI[i] = hregHI;
-//..    }
-//..    env->vreg_ctr = j;
-//.. 
-//..    /* Ok, finally we can iterate over the statements. */
-//..    for (i = 0; i < bb->stmts_used; i++)
-//..       if (bb->stmts[i])
-//..          iselStmt(env,bb->stmts[i]);
-//.. 
-//..    iselNext(env,bb->next,bb->jumpkind);
-//.. 
-//..    /* record the number of vregs we used. */
-//..    env->code->n_vregs = env->vreg_ctr;
-//..    return env->code;
-//.. }
+}
+
+
+/*---------------------------------------------------------*/
+/*--- Insn selector top-level                           ---*/
+/*---------------------------------------------------------*/
+
+/* Translate an entire BB to amd64 code. */
+
+HInstrArray* iselBB_AMD64 ( IRBB* bb, VexSubArch subarch_host )
+{
+   Int     i, j;
+   HReg    hreg;
+
+   /* sanity ... */
+   vassert(subarch_host == VexSubArch_NONE);
+
+   /* Make up an initial environment to use. */
+   ISelEnv* env = LibVEX_Alloc(sizeof(ISelEnv));
+   env->vreg_ctr = 0;
+
+   /* Set up output code array. */
+   env->code = newHInstrArray();
+
+   /* Copy BB's type env. */
+   env->type_env = bb->tyenv;
+
+   /* Make up an IRTemp -> virtual HReg mapping.  This doesn't
+      change as we go along. */
+   env->n_vregmap = bb->tyenv->types_used;
+   env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
+
+   /* and finally ... */
+   env->subarch = subarch_host;
+
+   /* For each IR temporary, allocate a suitably-kinded virtual
+      register. */
+   j = 0;
+   for (i = 0; i < env->n_vregmap; i++) {
+      hreg = INVALID_HREG;
+      switch (bb->tyenv->types[i]) {
+         case Ity_I1:
+         case Ity_I8:
+         case Ity_I16:
+         case Ity_I32:
+         case Ity_I64:  hreg = mkHReg(j++, HRcInt64, True); break;
+         case Ity_F32:
+         case Ity_F64:  hreg = mkHReg(j++, HRcFlt64, True); break;
+         case Ity_V128: hreg = mkHReg(j++, HRcVec128, True); break;
+         default: ppIRType(bb->tyenv->types[i]);
+                  vpanic("iselBB(amd64): IRTemp type");
+      }
+      env->vregmap[i]   = hreg;
+   }
+   env->vreg_ctr = j;
+
+   /* Ok, finally we can iterate over the statements. */
+   for (i = 0; i < bb->stmts_used; i++)
+      if (bb->stmts[i])
+         iselStmt(env,bb->stmts[i]);
+
+   iselNext(env,bb->next,bb->jumpkind);
+
+   /* record the number of vregs we used. */
+   env->code->n_vregs = env->vreg_ctr;
+   return env->code;
+}
 
 
 /*---------------------------------------------------------------*/

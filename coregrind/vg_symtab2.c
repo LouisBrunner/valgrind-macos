@@ -2106,6 +2106,11 @@ void VG_(add_redirect_sym)(const Char *from_lib, const Char *from_sym,
    redir->to_sym = VG_(arena_strdup)(VG_AR_SYMTAB, to_sym);
    redir->to_addr = 0;
 
+   if (VG_(clo_verbosity) >= 2)
+      VG_(message)(Vg_UserMsg, 
+                   "REDIRECT %s(%s) to %s(%s)",
+                   from_lib, from_sym, to_lib, to_sym);
+
    if (!resolve_redir_allsegs(redir)) {
       /* can't resolve immediately; add to list */
       redir->next = unresolved_redir;
@@ -2163,13 +2168,14 @@ void VG_(setup_code_redirect_table) ( void )
    for(i = 0; i < sizeof(redirects)/sizeof(*redirects); i++) {
       VG_(add_redirect_sym)("soname:libc.so.6",		redirects[i].from,
 			    "soname:libpthread.so.0",	redirects[i].to);
-
-      if (VG_(clo_verbosity) >= 2)
-         VG_(message)(Vg_UserMsg, 
-		      "REPLACING libc(%s) with libpthread(%s)",
-		      redirects[i].from, redirects[i].to);
    }
 
+   /* Overenthusiastic use of PLT bypassing by the glibc people also
+      means we need to patch the following functions to our own
+      implementations of said, in mac_replace_strmem.c.
+    */
+   VG_(add_redirect_sym)("soname:libc.so.6", "stpcpy",
+			 "*vgpreload_memcheck.so*", "stpcpy");
 }
 
 /*------------------------------------------------------------*/

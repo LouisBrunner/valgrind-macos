@@ -107,21 +107,39 @@ void exec_opb(int s0, int s1, int iflags)
 
 void exec_op(int s2, int s0, int s1)
 {
-    exec_opl(s2, s0, s1, 0);
+  int o,s,z,a,c,p,flags_in;
+  for (o = 0; o < 2; o++) {
+  for (s = 0; s < 2; s++) {
+  for (z = 0; z < 2; z++) {
+  for (a = 0; a < 2; a++) {
+  for (c = 0; c < 2; c++) {
+  for (p = 0; p < 2; p++) {
+
+    flags_in = (o ? CC_O : 0)
+             | (s ? CC_S : 0)
+             | (z ? CC_Z : 0)
+             | (a ? CC_A : 0)
+             | (c ? CC_C : 0)
+             | (p ? CC_P : 0);
+ 
+    exec_opl(s2, s0, s1, flags_in);
 #ifdef OP_SHIFTD
     if (s1 <= 15)
-        exec_opw(s2, s0, s1, 0);
+        exec_opw(s2, s0, s1, flags_in);
 #else
-    exec_opw(s2, s0, s1, 0);
+    exec_opw(s2, s0, s1, flags_in);
 #endif
 #ifndef OP_NOBYTE
-    exec_opb(s0, s1, 0);
+    exec_opb(s0, s1, flags_in);
 #endif
 #ifdef OP_CC
-    exec_opl(s2, s0, s1, CC_C);
-    exec_opw(s2, s0, s1, CC_C);
-    exec_opb(s0, s1, CC_C);
+    exec_opl(s2, s0, s1, flags_in);
+    exec_opw(s2, s0, s1, flags_in);
+    exec_opb(s0, s1, flags_in);
 #endif
+
+  }}}}}}
+
 }
 
 void glue(test_, OP)(void)

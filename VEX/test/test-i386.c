@@ -824,6 +824,7 @@ void test_bcd(void)
     TEST_BCD(aam, 0x12340547, CC_A, (CC_C | CC_P | CC_Z | CC_S | CC_O | CC_A));
     TEST_BCD(aad, 0x12340407, CC_A, (CC_C | CC_P | CC_Z | CC_S | CC_O | CC_A));
 }
+#endif /* 0 */
 
 #define TEST_XCHG(op, size, opconst)\
 {\
@@ -859,6 +860,7 @@ void test_xchg(void)
     TEST_XCHG(xchgw, "w", "=m");
     TEST_XCHG(xchgb, "b", "=m");
 
+#if 0
     TEST_XCHG(xaddl, "", "=q");
     TEST_XCHG(xaddw, "w", "=q");
     TEST_XCHG(xaddb, "b", "=q");
@@ -873,7 +875,7 @@ void test_xchg(void)
     TEST_XCHG(xaddl, "", "=m");
     TEST_XCHG(xaddw, "w", "=m");
     TEST_XCHG(xaddb, "b", "=m");
-
+#endif
     TEST_CMPXCHG(cmpxchgl, "", "=q", 0xfbca7654);
     TEST_CMPXCHG(cmpxchgw, "w", "=q", 0xfbca7654);
     TEST_CMPXCHG(cmpxchgb, "b", "=q", 0xfbca7654);
@@ -889,7 +891,7 @@ void test_xchg(void)
     TEST_CMPXCHG(cmpxchgl, "", "=m", 0xfffefdfc);
     TEST_CMPXCHG(cmpxchgw, "w", "=m", 0xfffefdfc);
     TEST_CMPXCHG(cmpxchgb, "b", "=m", 0xfffefdfc);
-
+#if 0
     {
         uint64_t op0, op1, op2;
         int i, eflags;
@@ -910,8 +912,8 @@ void test_xchg(void)
                     op0, op1, eflags & CC_Z);
         }
     }
-}
 #endif
+}
 
 /**********************************************/
 /* segmentation tests */
@@ -1649,7 +1651,7 @@ int main(int argc, char **argv)
     test_jcc(); //-------------
     //    test_floats();
     //test_bcd();
-    //test_xchg();
+    test_xchg();
     //    test_string();  // REINSTATE
     // test_misc();  // REINSTATE
     test_lea();  //------------------

@@ -163,7 +163,7 @@ void glue(test_, OP)(void)
     exec_op(0x12348080, 1);
     exec_op(0x12348080, -2);
 
-    if (0)
+    if (1)
     for (i = 0; i < NVALS; i++)
       for (j = 0; j < NVALS; j++)
 	exec_op(val[i], val[j]);

@@ -80,10 +80,6 @@ typedef __vki_restorefn_t __user *__vki_sigrestore_t;
 #define VKI_SIG_DFL	((__vki_sighandler_t)0)	/* default signal handling */
 #define VKI_SIG_IGN	((__vki_sighandler_t)1)	/* ignore signal */
 
-//#ifdef __KERNEL__
-/* Most things should be clean enough to redefine this at will, if care
-   is taken to make libc match.  */
-
 #define _VKI_NSIG	64
 #define _VKI_NSIG_BPW	32
 #define _VKI_NSIG_WORDS	(_VKI_NSIG / _VKI_NSIG_BPW)
@@ -93,7 +89,6 @@ typedef unsigned long vki_old_sigset_t;		/* at least 32 bits */
 typedef struct {
 	unsigned long sig[_VKI_NSIG_WORDS];
 } vki_sigset_t;
-//#endif
 
 #define VKI_SIGHUP		 1
 #define VKI_SIGINT		 2

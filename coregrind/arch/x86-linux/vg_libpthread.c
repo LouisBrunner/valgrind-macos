@@ -2555,6 +2555,17 @@ int pthread_rwlock_destroy ( pthread_rwlock_t *orig )
 }
 
 
+/* Copied directly from LinuxThreads. */
+int
+pthread_rwlockattr_init (pthread_rwlockattr_t *attr)
+{
+  attr->__lockkind = 0;
+  attr->__pshared = PTHREAD_PROCESS_PRIVATE;
+
+  return 0;
+}
+
+
 /* ---------------------------------------------------------------------
    B'stard.
    ------------------------------------------------------------------ */

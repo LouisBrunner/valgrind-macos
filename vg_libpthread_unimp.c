@@ -142,7 +142,7 @@ void pthread_rwlock_timedwrlock ( void )  { unimp("pthread_rwlock_timedwrlock");
 void pthread_rwlockattr_destroy ( void )  { unimp("pthread_rwlockattr_destroy"); }
 void pthread_rwlockattr_getkind_np ( void )  { unimp("pthread_rwlockattr_getkind_np"); }
 void pthread_rwlockattr_getpshared ( void )  { unimp("pthread_rwlockattr_getpshared"); }
-void pthread_rwlockattr_init ( void )  { unimp("pthread_rwlockattr_init"); }
+//void pthread_rwlockattr_init ( void )  { unimp("pthread_rwlockattr_init"); }
 void pthread_rwlockattr_setkind_np ( void )  { unimp("pthread_rwlockattr_setkind_np"); }
 void pthread_rwlockattr_setpshared ( void )  { unimp("pthread_rwlockattr_setpshared"); }
 //void pthread_self ( void )  { unimp("pthread_self"); }

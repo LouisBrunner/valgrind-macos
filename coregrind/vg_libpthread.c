@@ -164,7 +164,11 @@ int  pthread_attr_getschedparam(const  pthread_attr_t  *attr,
                                 struct sched_param *param)
 {
    kludged("pthread_attr_getschedparam");
+#  ifdef GLIBC_2_1
+   if (param) param->sched_priority = 0; /* who knows */
+#  else
    if (param) param->__sched_priority = 0; /* who knows */
+#  endif
    return 0;
 }
 
@@ -957,6 +961,10 @@ int select ( int n,
 
 
 #include <sys/poll.h>
+
+#ifdef GLIBC_2_1
+typedef unsigned long int nfds_t;
+#endif
 
 int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 {

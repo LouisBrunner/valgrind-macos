@@ -17,6 +17,9 @@
 ## ------------------------------------------------------------------
 ## Fundamental template functions
 
+## Do initialisation that can be done before command line processing.
+void,		pre_clo_init
+
 ## Do initialisation that can only be done after command line processing.
 void,		post_clo_init
 

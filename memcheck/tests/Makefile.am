@@ -23,7 +23,7 @@ EXTRA_DIST = \
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
-	error_counts.stderr.exp error_counts.stdout.exp error_count.vgtest \
+	error_counts.stderr.exp error_counts.stdout.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
 	fprw.stderr.exp fprw.vgtest \

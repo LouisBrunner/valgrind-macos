@@ -331,7 +331,7 @@ AC_SUBST(PREFERRED_STACK_BOUNDARY)
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h sys/statfs.h sys/time.h sys/endian.h endian.h termios.h unistd.h utime.h linux/fb.h])
+AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h sys/statfs.h sys/time.h sys/endian.h endian.h termios.h unistd.h utime.h linux/fb.h linux/mii.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UID_T
@@ -339,6 +339,7 @@ AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_CHECK_TYPES(__pthread_unwind_buf_t,,,[#include <pthread.h>])
+AC_CHECK_TYPES(u16,,,[#include <linux/mii.h>])
 
 # Checks for library functions.
 AC_FUNC_MEMCMP

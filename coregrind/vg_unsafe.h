@@ -66,6 +66,12 @@
 #ifdef HAVE_LINUX_FB_H
 #include <linux/fb.h>     /* for fb_* structs */
 #endif
+#ifdef HAVE_LINUX_MII_H
+#ifndef HAVE_U16
+typedef unsigned short u16;
+#endif
+#include <linux/mii.h>    /* for mii_* structs */
+#endif
 
 #define __USE_LARGEFILE64
 #include <sys/stat.h>     /* for struct stat */

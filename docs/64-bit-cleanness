@@ -20,8 +20,6 @@ Addrcheck has similar problems.  Helgrind too, especially the 32-bit specific
 "OTHER_BITS".
 
 Symbol table stuff:
-- is vg_dwarf.h 32-bit specific?
-- Elf32_* constants everywhere in vg_symtab2.c, blecch
 - symtab -- 32-bit specific stuff in here?  eg. search for
   "(UInt)sym->st_value"
 - stabtype_parser -- all those literal 4's as args to VG_(st_mkint) -- are they

@@ -798,7 +798,8 @@ int pthread_cond_timedwait ( pthread_cond_t *cond,
    ull_ms_end_after_1970
       = 1000ULL * ((unsigned long long int)(abstime->tv_sec))
         + ((unsigned long long int)(abstime->tv_nsec / 1000000));
-   assert(ull_ms_end_after_1970 >= ull_ms_now_after_1970);
+   if (ull_ms_end_after_1970 < ull_ms_now_after_1970)
+      ull_ms_end_after_1970 = ull_ms_now_after_1970;
    ms_end 
       = ms_now + (unsigned int)(ull_ms_end_after_1970 - ull_ms_now_after_1970);
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,

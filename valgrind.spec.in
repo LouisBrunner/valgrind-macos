@@ -29,7 +29,7 @@ tools have been built with Valgrind.
 make
 
 %install
-make install prefix=$RPM_BUILD_ROOT/usr
+make install DESTDIR=$RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)

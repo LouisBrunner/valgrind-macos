@@ -406,13 +406,6 @@ UInt VG_(stack_snapshot) ( ThreadId tid, Addr* ips, UInt n_ips )
    return stack_snapshot2(ips, n_ips, ip, fp, sp, stack_highest_word);
 }
 
-
-Addr VG_(get_EIP) ( ThreadId tid )
-{
-   return INSTR_PTR(VG_(threads)[ tid ].arch);
-}
-
-
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

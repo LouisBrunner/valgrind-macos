@@ -329,6 +329,11 @@ Addr VG_(get_stack_pointer) ( ThreadId tid )
    return STACK_PTR( VG_(threads)[tid].arch );
 }
 
+Addr VG_(get_EIP) ( ThreadId tid )
+{
+   return INSTR_PTR( VG_(threads)[tid].arch );
+}
+
 
 /*====================================================================*/
 /*=== Check we were launched by stage 1                            ===*/

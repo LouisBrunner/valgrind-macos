@@ -390,7 +390,12 @@ asm(
 
 // save LR
 "   mflr %r0\n"
-"   stw  %r0,  4(%r1)\n"
+"   stw  %r0,260(%r1)\n"
+
+// leave hole @ 4(%r1) for a caller to save it's LR
+// no params
+// no local vars
+// no need to save non-volatile CR fields
 
 // store registers to stack: just the callee-saved regs
 "   stw %r13,  8(%r1)\n"
@@ -427,10 +432,6 @@ asm(
 "   lis %r5,res@ha\n"
 "   stw %r3,res@l(%r5)\n"
 
-// restore LR
-"   lwz  %r0,  4(%r1)\n"
-"   mtlr %r0\n"
-
 // reload registers from stack
 "   lwz %r13,  8(%r1)\n"
 "   lwz %r14, 12(%r1)\n"
@@ -452,10 +453,14 @@ asm(
 "   lwz %r30, 76(%r1)\n"
 "   lwz %r31, 80(%r1)\n"
 
-// restore stack pointer
-"   lwz %r1,0(%r1)\n"
+// restore LR
+"   lwz  %r0,260(%r1)\n"
+"   mtlr %r0\n"
 
-// return in usual way
+// restore previous stack pointer
+"   addi %r1,%r1,256\n"
+
+// return
 "   blr"
 );
 

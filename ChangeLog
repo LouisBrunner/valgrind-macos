@@ -1,5 +1,13 @@
 2002-03-24  Julian Seward  <sewardj@localhost.localdomain>
 
+	* vg_errcontext.c (pp_ErrContext): Change message "Use of
+	uninitialized CPU condition code" to "Conditional jump or move
+	depends on uninitialised value(s)", since that will be more
+	meaningful to most programmers.  Also change the suppression-kind
+	to Cond in .supp files.  The old Value0 descriptor means the same
+	and is still accepted.  Suggested by Joe Buck
+	<Joe.Buck@synopsys.com>.
+
 	* vg_syscall_mem.c: Add syscall setresgid32, from "Arkadi
 	E. Shishlov" <arkadi@it.lv>
 

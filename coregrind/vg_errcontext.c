@@ -313,8 +313,9 @@ static void pp_ErrContext ( ErrContext* ec, Bool printCount )
    switch (ec->ekind) {
       case ValueErr:
          if (ec->size == 0) {
-             VG_(message)(Vg_UserMsg,
-                          "Use of uninitialised CPU condition code");
+             VG_(message)(
+                Vg_UserMsg,
+                "Conditional jump or move depends on uninitialised value(s)");
          } else {
              VG_(message)(Vg_UserMsg,
                           "Use of uninitialised value of size %d",
@@ -841,7 +842,8 @@ static void load_one_suppressions_file ( Char* filename )
       eof = getLine ( fd, buf, N_BUF );
       if (eof) goto syntax_error;
       else if (STREQ(buf, "Param"))  supp->skind = Param;
-      else if (STREQ(buf, "Value0")) supp->skind = Value0;
+      else if (STREQ(buf, "Value0")) supp->skind = Value0; /* backwards compat */
+      else if (STREQ(buf, "Cond"))   supp->skind = Value0;
       else if (STREQ(buf, "Value1")) supp->skind = Value1;
       else if (STREQ(buf, "Value2")) supp->skind = Value2;
       else if (STREQ(buf, "Value4")) supp->skind = Value4;

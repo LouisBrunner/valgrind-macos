@@ -9,6 +9,7 @@
 #     name_of_suppression
 #     kind: one of Param Value1 Value2 Value4 Value8
 #                   Free Addr1 Addr2 Addr4 Addr8
+#                   Cond (previously known as Value0)
 #     (if Param: name of system call param, if Free: name of free-ing fn)
 #     caller0 name, or /name/of/so/file.so
 #     caller1 name, or ditto
@@ -19,8 +20,8 @@
 
 # even more glibc suppressions ?
 {
-   libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Value0)
-   Value0
+   libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Cond)
+   Cond
    obj:*libc-2.2.4.so
    obj:*libc-2.2.4.so
    obj:*libc-2.2.4.so
@@ -36,26 +37,26 @@
 ##### glibc 2.2.5 stuff perhaps?
 ##### suppressions for coolo
 {
-   strchr/dl_open_worker(Value0)
-   Value0
+   strchr/dl_open_worker(Cond)
+   Cond
    fun:strchr
    fun:dl_open_worker
 }
 { 
-   __rawmemchr/internal_getgrgid_r(Value0)
-   Value0 
+   __rawmemchr/internal_getgrgid_r(Cond)
+   Cond 
    fun:__rawmemchr
    fun:internal_getgrgid_r
 } 
 { 
-   _IO_vfprintf/__strnlen(Value0)
-   Value0 
+   _IO_vfprintf/__strnlen(Cond)
+   Cond 
    fun:__strnlen
    fun:_IO_vfprintf
 } 
 { 
-   __strchrnul/gethostbyname*(Value0)
-   Value0 
+   __strchrnul/gethostbyname*(Cond)
+   Cond 
    fun:__strchrnul
    fun:gethostbyname*
 } 
@@ -63,29 +64,29 @@
 
 ##----
 {
-   strlen/*dl_map_object*(Value0)
-   Value0
+   strlen/*dl_map_object*(Cond)
+   Cond
    fun:strlen
    fun:*dl_map_object*
 }
 
 {
-   strlen/*dl_open_worker*(Value0)
-   Value0
+   strlen/*dl_open_worker*(Cond)
+   Cond
    fun:strlen
    fun:*dl_open_worker*
 }
 
 {
-   *rawmemchr*/*nss*(Value0)
-   Value0
+   *rawmemchr*/*nss*(Cond)
+   Cond
    fun:*rawmemchr*
    fun:*nss*
 }
 
 {
-   *strchrnul*/*nss*(Value0)
-   Value0
+   *strchrnul*/*nss*(Cond)
+   Cond
    fun:*strchrnul*
    fun:*nss*
 }
@@ -137,8 +138,8 @@
 # More glibc stuff, AFAICS
 
 {
-   __strnlen/__argz_stringify/_nl_make_l10nflist(Value0)
-   Value0
+   __strnlen/__argz_stringify/_nl_make_l10nflist(Cond)
+   Cond
    fun:__strnlen
    fun:__argz_stringify
    fun:_nl_make_l10nflist
@@ -146,23 +147,23 @@
 
 #--------------
 {
-   _dl_relocate_object/dl_open_worker/_dl_catch_error(Value0)
-   Value0
+   _dl_relocate_object/dl_open_worker/_dl_catch_error(Cond)
+   Cond
    fun:_dl_relocate_object
    fun:dl_open_worker
    fun:_dl_catch_error
 }
 {
-   _dl_relocate_object/libc-2.2.4.so/_dl_catch_error(Value0)
-   Value0
+   _dl_relocate_object/libc-2.2.4.so/_dl_catch_error(Cond)
+   Cond
    fun:_dl_relocate_object
    obj:*libc-2.2.4.so
    fun:_dl_catch_error
 }
 
 {
-   strrchr/_dl_map_object_from_fd/_dl_map_object(Value0)
-   Value0
+   strrchr/_dl_map_object_from_fd/_dl_map_object(Cond)
+   Cond
    fun:strrchr
    fun:_dl_map_object_from_fd
    fun:_dl_map_object
@@ -185,16 +186,16 @@
 }
 
 {
-   libX11.so.6.2/libX11.so.6.2/libX11.so.6.2(Value0)
-   Value0
+   libX11.so.6.2/libX11.so.6.2/libX11.so.6.2(Cond)
+   Cond
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
 }
 
 {
-   libXt.so.6.2/libXt.so.6.2/libXt.so.6.2(Value0)
-   Value0
+   libXt.so.6.2/libXt.so.6.2/libXt.so.6.2(Cond)
+   Cond
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -202,24 +203,24 @@
 
 
 {
-   libXaw.so.7.0/libXaw.so.7.0/libXaw.so.7.0(Value0)
-   Value0
+   libXaw.so.7.0/libXaw.so.7.0/libXaw.so.7.0(Cond)
+   Cond
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
 }
 
 {
-   libXmu.so.6.2/libXmu.so.6.2/libXmu.so.6.2(Value0)
-   Value0
+   libXmu.so.6.2/libXmu.so.6.2/libXmu.so.6.2(Cond)
+   Cond
    obj:/usr/X11R6/lib/libXmu.so.6.2
    obj:/usr/X11R6/lib/libXmu.so.6.2
    obj:/usr/X11R6/lib/libXmu.so.6.2
 }
 
 {
-   libXt.so.6.0/libXt.so.6.0/libXaw.so.7.0(Value0)
-   Value0
+   libXt.so.6.0/libXt.so.6.0/libXaw.so.7.0(Cond)
+   Cond
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
@@ -234,8 +235,8 @@
 }
 
 {
-   libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0(Value0)
-   Value0
+   libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0(Cond)
+   Cond
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libXaw.so.7.0
@@ -279,14 +280,14 @@
 #----------------
 {
    __rawmemchr/libXt.so.6.0/libXt.so.6.0
-   Value0
+   Cond
    fun:__rawmemchr
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
 }
 {
    libc-2.2.4.so/libXt.so.6.0/libXt.so.6.0
-   Value0
+   Cond
    obj:*libc-2.2.4.so
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0

@@ -24,7 +24,7 @@
 <body bgcolor="#ffffff">
 
 <a name="title">&nbsp;</a>
-<h1 align=center>Valgrind, snapshot 20020317</h1>
+<h1 align=center>Valgrind, snapshot 20020324</h1>
 
 <center>
 <a href="mailto:jseward@acm.org">jseward@acm.org<br>
@@ -737,7 +737,7 @@ non-fatal, and the program stays alive.
 <h4>2.6.2&nbsp; Use of uninitialised values</h4>
 For example:
 <pre>
-  ==19146== Use of uninitialised CPU condition code
+  ==19146== Conditional jump or move depends on uninitialised value(s)
   ==19146==    at 0x402DFA94: _IO_vfprintf (_itoa.h:49)
   ==19146==    by 0x402E8476: _IO_printf (printf.c:36)
   ==19146==    by 0x8048472: main (tests/manuel1.c:8)
@@ -958,12 +958,13 @@ You can ask to add suppressions from another file, by specifying
   <li>The nature of the error to suppress.  Either: 
       <code>Value1</code>, 
       <code>Value2</code>,
-      <code>Value4</code>,
-      <code>Value8</code> or 
-      <code>Value0</code>,
+      <code>Value4</code> or
+      <code>Value8</code>,
       meaning an uninitialised-value error when
-      using a value of 1, 2, 4 or 8 bytes, 
-      or the CPU's condition codes, respectively.  Or: 
+      using a value of 1, 2, 4 or 8 bytes.
+      Or
+      <code>Cond</code> (or its old name, <code>Value0</code>),
+      meaning use of an uninitialised CPU condition code.  Or: 
       <code>Addr1</code>,
       <code>Addr2</code>, 
       <code>Addr4</code> or 

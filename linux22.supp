@@ -9,6 +9,7 @@
 #     name_of_suppression
 #     kind: one of Param Value1 Value2 Value4 Value8
 #                   Free Addr1 Addr2 Addr4 Addr8
+#                   Cond (previously known as Value0)
 #     (if Param: name of system call param, if Free: name of free-ing fn)
 #     caller0 name, or /name/of/so/file.so
 #     caller1 name, or ditto
@@ -60,45 +61,45 @@
 
 # new ones for RH62 ls -l 
 {
-   __strchrnul/__nss_database_lookup(Value0)
-   Value0
+   __strchrnul/__nss_database_lookup(Cond)
+   Cond
    fun:__strchrnul
    fun:__nss_database_lookup
 }
 {
-   __strchrnul/__gethostbyname_r(Value0)
-   Value0
+   __strchrnul/__gethostbyname_r(Cond)
+   Cond
    fun:__strchrnul
    fun:__gethostbyname_r
 }
 
 {
-   strrchr/_dl_map*/_dl_map*(Value0)
-   Value0
+   strrchr/_dl_map*/_dl_map*(Cond)
+   Cond
    fun:strrchr
    fun:_dl_map*
    fun:_dl_map*
 }
 
 {
-   strchr/dl_open_worker/_dl_catch_error(Value0)
-   Value0
+   strchr/dl_open_worker/_dl_catch_error(Cond)
+   Cond
    fun:strchr
    fun:dl_open_worker
    fun:_dl_catch_error
 }
 
 {
-   __rawmemchr/???/__getgrgid_r(Value0)
-   Value0
+   __rawmemchr/???/__getgrgid_r(Cond)
+   Cond
    fun:__rawmemchr
    fun:*
    fun:__getgrgid_r
 }
 
 {
-   __rawmemchr/_nl_*/*locale*(Value0)
-   Value0
+   __rawmemchr/_nl_*/*locale*(Cond)
+   Cond
    fun:__rawmemchr
    fun:_nl_*
    fun:*locale*
@@ -110,23 +111,23 @@
 ## Debian stripped their libc-2.1.3
 
 {
-   libc-2.1.3.so/libc-2.1.3.so/libc-2.1.3.so(Value0)
-   Value0
+   libc-2.1.3.so/libc-2.1.3.so/libc-2.1.3.so(Cond)
+   Cond
    obj:*libc-2.1.3.so
    obj:*libc-2.1.3.so
    obj:*libc-2.1.3.so
 }
 
 {
-   strchr/libc-2.1.3.so(Value0)
-   Value0
+   strchr/libc-2.1.3.so(Cond)
+   Cond
    fun:*strchr*
    obj:*libc-2.1.3.so
 }
 
 {
-   libc-2.1.3.so/libXt.so(Value0)
-   Value0
+   libc-2.1.3.so/libXt.so(Cond)
+   Cond
    obj:*libc-2.1.3.so
    obj:*libXt.so*
 }
@@ -143,15 +144,15 @@
 ##----------------------------------------------------------------------##
 
 {
-   X11-Value0-0
-   Value0
+   X11-Cond-0
+   Cond
    obj:*libXt.so.6.0
    obj:*libXt.so.6.0
    obj:*libXt.so.6.0
 }
 {
-   X11-Value0-1
-   Value0
+   X11-Cond-1
+   Cond
    fun:__rawmemchr
    obj:*libXt.so.6.0
    obj:*libXt.so.6.0

@@ -30,10 +30,6 @@
 #ifndef __X86_TOOL_ARCH_H
 #define __X86_TOOL_ARCH_H
 
-// XXX: eventually a lot of the stuff in this file can be made private to
-// the x86/ subdir, and not visible to the core.  But as long as the core
-// still refers to them, they'll have to stay in here.
-
 /*====================================================================*/
 /*=== Registers, etc                                               ===*/
 /*====================================================================*/

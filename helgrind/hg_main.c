@@ -859,8 +859,8 @@ static void copy_address_range_state(Addr src, Addr dst, UInt len)
 }
 
 // SSS: put these somewhere better
-static void eraser_mem_read (Addr a, UInt data_size, ThreadId tid);
-static void eraser_mem_write(Addr a, UInt data_size, ThreadId tid);
+static void eraser_mem_read (Addr a, UInt data_size, ThreadState *tst);
+static void eraser_mem_write(Addr a, UInt data_size, ThreadState *tst);
 static void eraser_mem_read_notid (Addr a, UInt data_size);
 static void eraser_mem_write_notid(Addr a, UInt data_size);
 
@@ -868,21 +868,21 @@ static
 void eraser_pre_mem_read(CorePart part, ThreadState* tst,
                          Char* s, UInt base, UInt size )
 {
-   eraser_mem_read(base, size, VG_(get_tid_from_ThreadState)(tst));
+   eraser_mem_read(base, size, tst);
 }
 
 static
 void eraser_pre_mem_read_asciiz(CorePart part, ThreadState* tst,
                                 Char* s, UInt base )
 {
-   eraser_mem_read(base, VG_(strlen)((Char*)base), VG_(get_tid_from_ThreadState)(tst));
+   eraser_mem_read(base, VG_(strlen)((Char*)base), tst);
 }
 
 static
 void eraser_pre_mem_write(CorePart part, ThreadState* tst,
                           Char* s, UInt base, UInt size )
 {
-   eraser_mem_write(base, size, VG_(get_tid_from_ThreadState)(tst));
+   eraser_mem_write(base, size, tst);
 }
 
 
@@ -1252,7 +1252,8 @@ void SK_(dup_extra_and_update)(SkinError* err)
    err->extra = err_extra;
 }
 
-static void record_eraser_error ( ThreadId tid, Addr a, Bool is_write, shadow_word prevstate )
+static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
+				  shadow_word prevstate )
 {
    HelgrindError err_extra;
 
@@ -1261,7 +1262,7 @@ static void record_eraser_error ( ThreadId tid, Addr a, Bool is_write, shadow_wo
    err_extra.addrinfo.akind = Undescribed;
    err_extra.prevstate = prevstate;
 
-   VG_(maybe_record_error)( VG_(get_ThreadState)(tid), EraserErr, a, 
+   VG_(maybe_record_error)( tst, EraserErr, a, 
                             (is_write ? "writing" : "reading"),
                             &err_extra);
 
@@ -1659,11 +1660,14 @@ Int compute_num_words_accessed(Addr a, UInt size)
 #endif
 
 
-static void eraser_mem_read(Addr a, UInt size, ThreadId tid)
+static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
 {
+   ThreadId tid;
    shadow_word* sword;
    Addr     end = a + 4*compute_num_words_accessed(a, size);
    shadow_word  prevstate;
+
+   tid = (tst == NULL) ? VG_(get_current_tid)() : VG_(get_tid_from_ThreadState)(tst);
 
    for ( ; a < end; a += 4) {
 
@@ -1718,7 +1722,7 @@ static void eraser_mem_read(Addr a, UInt size, ThreadId tid)
          sword->other = intersect(sword->other, thread_locks[tid]);
 
          if (lockset_table[sword->other] == NULL) {
-            record_eraser_error(tid, a, False /* !is_write */, prevstate);
+            record_eraser_error(tst, a, False /* !is_write */, prevstate);
             n_eraser_warnings++;
          }
          break;
@@ -1730,11 +1734,14 @@ static void eraser_mem_read(Addr a, UInt size, ThreadId tid)
 }
 
 
-static void eraser_mem_write(Addr a, UInt size, ThreadId tid)
+static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
 {
+   ThreadId tid;
    shadow_word* sword;
    Addr     end = a + 4*compute_num_words_accessed(a, size);
    shadow_word  prevstate;
+
+   tid = (tst == NULL) ? VG_(get_current_tid)() : VG_(get_tid_from_ThreadState)(tst);
 
    for ( ; a < end; a += 4) {
 
@@ -1784,7 +1791,7 @@ static void eraser_mem_write(Addr a, UInt size, ThreadId tid)
          sword->other = intersect(sword->other, thread_locks[tid]);
          SHARED_MODIFIED:
          if (lockset_table[sword->other] == NULL) {
-            record_eraser_error(tid, a, True /* is_write */, prevstate);
+            record_eraser_error(tst, a, True /* is_write */, prevstate);
             n_eraser_warnings++;
          }
          break;
@@ -1799,12 +1806,12 @@ static void eraser_mem_write(Addr a, UInt size, ThreadId tid)
 
 static void eraser_mem_read_notid(Addr a, UInt size)
 {
-   eraser_mem_read(a, size, VG_(get_current_tid)());
+   eraser_mem_read(a, size, NULL);
 }
 
 static void eraser_mem_write_notid(Addr a, UInt size)
 {
-   eraser_mem_write(a, size, VG_(get_current_tid)());
+   eraser_mem_write(a, size, NULL);
 }
 
 /*--------------------------------------------------------------------*/

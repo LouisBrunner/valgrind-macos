@@ -1658,6 +1658,10 @@ static HReg iselFltExpr ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_F32);
 
+   if (e->tag == Iex_Tmp) {
+      return lookupIRTemp(env, e->Iex.Tmp.tmp);
+   }
+
    if (e->tag == Iex_LDle) {
       X86AMode* am;
       HReg res = newVRegF(env);
@@ -2060,6 +2064,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (ty == Ity_F64) {
          HReg dst = lookupIRTemp(env, tmp);
          HReg src = iselDblExpr(env, stmt->Ist.Tmp.data);
+         addInstr(env, X86Instr_FpUnary(Xfp_MOV,src,dst));
+         return;
+      }
+      if (ty == Ity_F32) {
+         HReg dst = lookupIRTemp(env, tmp);
+         HReg src = iselFltExpr(env, stmt->Ist.Tmp.data);
          addInstr(env, X86Instr_FpUnary(Xfp_MOV,src,dst));
          return;
       }

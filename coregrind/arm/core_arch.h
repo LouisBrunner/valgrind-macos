@@ -38,6 +38,18 @@
 
 
 /* ---------------------------------------------------------------------
+   Basic properties
+   ------------------------------------------------------------------ */
+
+#define VG_ELF_ENDIANNESS     ELFDATA2LSB
+#define VG_ELF_MACHINE        EM_ARM
+#define VG_ELF_CLASS          ELFCLASS32
+
+#define InsnSetArch           InsnSetARM
+
+#define VGA_WORD_SIZE         4
+
+/* ---------------------------------------------------------------------
    Interesting registers
    ------------------------------------------------------------------ */
 // Vex field names
@@ -73,14 +85,6 @@
 #define ARCH_GET_REAL_FRAME_PTR(ebp) do {   \
    I_die_here; \
 } while (0)
-
-/* ---------------------------------------------------------------------
-   Elf stuff
-   ------------------------------------------------------------------ */
-
-#define VG_ELF_ENDIANNESS     ELFDATA2LSB
-#define VG_ELF_MACHINE        EM_ARM
-#define VG_ELF_CLASS          ELFCLASS32
 
 /* ---------------------------------------------------------------------
    Architecture-specific part of a ThreadState

@@ -36,6 +36,17 @@
 
 #include "libvex_guest_x86.h"
 
+/* ---------------------------------------------------------------------
+   Basic properties
+   ------------------------------------------------------------------ */
+
+#define VG_ELF_ENDIANNESS     ELFDATA2LSB
+#define VG_ELF_MACHINE        EM_386
+#define VG_ELF_CLASS          ELFCLASS32
+
+#define InsnSetArch           InsnSetX86
+
+#define VGA_WORD_SIZE         4
 
 /* ---------------------------------------------------------------------
    Interesting registers
@@ -67,15 +78,6 @@
 #define ARCH_GET_REAL_FRAME_PTR(ebp) do {   \
    asm("movl %%ebp, %0" : "=r" (ebp));       \
 } while (0)
-
-/* ---------------------------------------------------------------------
-   Elf stuff
-   ------------------------------------------------------------------ */
-
-#define VG_ELF_ENDIANNESS     ELFDATA2LSB
-#define VG_ELF_MACHINE        EM_386
-#define VG_ELF_CLASS          ELFCLASS32
-
 
 /* ---------------------------------------------------------------------
    LDT type             

@@ -37,6 +37,18 @@
 #include "libvex_guest_amd64.h"
 
 /* ---------------------------------------------------------------------
+   Basic properties
+   ------------------------------------------------------------------ */
+
+#define VG_ELF_ENDIANNESS     ELFDATA2LSB
+#define VG_ELF_MACHINE        EM_X86_64
+#define VG_ELF_CLASS          ELFCLASS64
+
+#define InsnSetArch           InsnSetAMD64
+
+#define VGA_WORD_SIZE         8
+
+/* ---------------------------------------------------------------------
    Interesting registers
    ------------------------------------------------------------------ */
 
@@ -66,14 +78,6 @@
 #define ARCH_GET_REAL_FRAME_PTR(ebp) do {   \
    I_die_here; \
 } while (0)
-
-/* ---------------------------------------------------------------------
-   Elf stuff
-   ------------------------------------------------------------------ */
-
-#define VG_ELF_ENDIANNESS     ELFDATA2LSB
-#define VG_ELF_MACHINE        EM_X86_64
-#define VG_ELF_CLASS          ELFCLASS64
 
 /* ---------------------------------------------------------------------
    LDT type             

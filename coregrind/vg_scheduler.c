@@ -30,7 +30,7 @@
 
 #include "valgrind.h" /* for VG_USERREQ__RUNNING_ON_VALGRIND and
                              VG_USERREQ__DISCARD_TRANSLATIONS, and others */
-#include "vg_include.h"
+#include "core.h"
 
 
 /* ---------------------------------------------------------------------

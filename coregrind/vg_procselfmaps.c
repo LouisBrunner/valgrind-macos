@@ -30,7 +30,7 @@
 */
 
 
-#include "vg_include.h"
+#include "core.h"
 
 
 /* static ... to keep it out of the stack frame. */

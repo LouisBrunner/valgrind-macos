@@ -30,7 +30,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_include.h"
+#include "core.h"
 
 /* ---------------------------------------------------------------------
    Wrappers around system calls, and other stuff, to do with signals.

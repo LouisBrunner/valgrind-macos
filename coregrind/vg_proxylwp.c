@@ -29,7 +29,7 @@
 */
 
 
-#include "vg_include.h"
+#include "core.h"
 
 /* We need our own copy of VG_(do_syscall)() to handle a special
    race-condition.  If we've got signals unblocked, and we take a

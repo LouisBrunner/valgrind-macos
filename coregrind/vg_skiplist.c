@@ -82,7 +82,7 @@
    won't be accidentally used.
  */
 
-#include "vg_include.h"
+#include "core.h"
 
 #include <stdlib.h>
 

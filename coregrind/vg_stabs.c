@@ -27,7 +27,7 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_include.h"
+#include "core.h"
 #include "vg_symtab2.h"
 
 #include <a.out.h>        /* stabs defns                    */

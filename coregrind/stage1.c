@@ -40,7 +40,7 @@
 #include <errno.h>
 #include <sys/resource.h>
 
-#include "vg_include.h"
+#include "core.h"
 
 #include "ume.h"
 #include "ume_arch.h"

@@ -30,7 +30,7 @@
 
 #define _FILE_OFFSET_BITS 64
 
-#include "vg_include.h"
+#include "core.h"
 #include "ume.h"
 #include "ume_arch.h"
 #include "ume_archdefs.h"
@@ -1442,7 +1442,7 @@ Int    VG_(clo_verbosity)      = 1;
 Bool   VG_(clo_demangle)       = True;
 Bool   VG_(clo_trace_children) = False;
 
-/* See big comment in vg_include.h for meaning of these three.
+/* See big comment in core.h for meaning of these three.
    fd is initially stdout, for --help, but gets moved to stderr by default
    immediately afterwards. */
 VgLogTo VG_(clo_log_to)        = VgLogTo_Fd;

@@ -83,7 +83,7 @@
    am not sure what is and isn't allowed in user-mode.
 */
 
-#include "vg_include.h"
+#include "core.h"
 /* Allocate and deallocate LDTs for threads. */
 
 /* Create an LDT.  If the parent_ldt is NULL, zero out the

@@ -139,9 +139,9 @@ vg_inject_so_LDFLAGS = \
 	-Wl,-z,initfirst
 
 noinst_HEADERS = \
+	core.h			\
 	ume.h			\
 	ume_arch.h		\
-        vg_include.h            \
         vg_constants.h          \
 	vg_symtab2.h		\
         vg_unistd.h             \

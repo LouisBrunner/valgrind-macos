@@ -37,7 +37,7 @@ Boston, MA 02111-1307, USA.  */
 #endif
 
 #include "safe-ctype.h"
-#include "vg_include.h"
+#include "core.h"
 
 /*#include <sys/types.h>
 #include <string.h>

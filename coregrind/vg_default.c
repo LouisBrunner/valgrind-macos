@@ -31,7 +31,7 @@
 */
 
 
-#include "vg_include.h"
+#include "core.h"
 
 /* ---------------------------------------------------------------------
    Error messages (for malformed tools)

@@ -69,7 +69,7 @@ sub getargtypes(@) {
 
 # Different output modes
 if ($output eq "callwrap") {
-    $include = "vg_include.h";
+    $include = "core.h";
     $generate = sub ($$$@) {
 	my ($pfx, $ret, $func, @args) = @_;
 	my $args = join ", ", @args;
@@ -79,7 +79,7 @@ if ($output eq "callwrap") {
 	print "}\n";
     }
 } elsif ($output eq "proto") {
-    $include = "vg_include.h";
+    $include = "core.h";
     $generate = sub ($$$@) {
 	my ($pfx, $ret, $func, @args) = @_;
 	my $args = join ', ', @args;
@@ -95,7 +95,7 @@ if ($output eq "callwrap") {
 	print "$ret $pfxmap{$pfx}($func)($args);\n";
     }
 } elsif ($output eq "missingfuncs") {
-    $include = "vg_include.h";
+    $include = "core.h";
     $generate = sub ($$$@) {
 	my ($pfx, $ret, $func, @args) = @_;
 	my $args = join ", ", @args;
@@ -109,7 +109,7 @@ if ($output eq "callwrap") {
     };
     $indent = "   ";
 } elsif ($output eq "struct") {
-    $include = "vg_include.h";
+    $include = "core.h";
     $pre = sub () {
 	print "typedef struct {\n";
     };

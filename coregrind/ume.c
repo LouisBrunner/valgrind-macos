@@ -32,7 +32,7 @@
 #define _GNU_SOURCE
 #define _FILE_OFFSET_BITS 64
 
-#include "vg_include.h"
+#include "core.h"
 
 #include <stddef.h>
 #include <sys/mman.h>
@@ -48,7 +48,6 @@
 #include <assert.h>
 
 #include "ume.h"
-#include "vg_include.h"
 
 struct elfinfo
 {

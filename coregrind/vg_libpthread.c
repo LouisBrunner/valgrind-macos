@@ -53,7 +53,7 @@
 */
 
 #include "valgrind.h"    /* For the request-passing mechanism */
-#include "vg_include.h"  /* For the VG_USERREQ__* constants */
+#include "core.h"        /* For the VG_USERREQ__* constants */
 
 #define __USE_UNIX98
 #include <sys/types.h>

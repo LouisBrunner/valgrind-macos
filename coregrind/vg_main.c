@@ -903,9 +903,9 @@ static void process_cmd_line_options ( void )
        while (True) {
            sp --;
            if (*sp == 0) break;
-           if (++ctr >= 1000)
+           if (++ctr >= 2000)
               args_grok_error(
-                 "suspiciously many (1000) env[] entries; giving up");
+                 "suspiciously many (2000) env[] entries; giving up");
            
        }
        /* sp now points to NULL at the end of argv[] */

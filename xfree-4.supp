@@ -67,10 +67,26 @@
 }
 
 {
+   libXaw.so.7.0/libXaw.so.7.0/libXt.so.6.0(Cond)
+   Cond
+   obj:/usr/X11R6/lib/libXaw.so.7.0
+   obj:/usr/X11R6/lib/libXaw.so.7.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
    libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0(Cond)
    Cond
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
+   obj:/usr/X11R6/lib/libXaw.so.7.0
+}
+
+{
+   libX11.so.6.2/libXaw.so.7.0/libXaw.so.7.0(Cond)
+   Cond
+   obj:/usr/X11R6/lib/libX11.so.6.2
+   obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
 }
 

@@ -34,6 +34,46 @@
 
 #include <elf.h>          /* ELF defns                      */
 
+/*------------------------------------------------------------*/
+/*--- 32/64-bit parameterisation                           ---*/
+/*------------------------------------------------------------*/
+
+/* For all the ELF macros and types which specify '32' or '64',
+   select the correct variant for this platform and give it
+   an 'XX' name.  Then use the 'XX' variant consistently in
+   the rest of this file. 
+*/
+#if VGA_WORD_SIZE == 4
+#  define  ElfXX_Ehdr     Elf32_Ehdr
+#  define  ElfXX_Shdr     Elf32_Shdr
+#  define  ElfXX_Phdr     Elf32_Phdr
+#  define  ElfXX_Sym      Elf32_Sym
+#  define  ElfXX_Word     Elf32_Word
+#  define  ElfXX_Addr     Elf32_Addr
+#  define  ElfXX_Dyn      Elf32_Dyn
+#  define  ELFXX_ST_BIND  ELF32_ST_BIND
+#  define  ELFXX_ST_TYPE  ELF32_ST_TYPE
+
+#elif VGA_WORD_SIZE == 8
+#  define  ElfXX_Ehdr     Elf64_Ehdr
+#  define  ElfXX_Shdr     Elf64_Shdr
+#  define  ElfXX_Phdr     Elf64_Phdr
+#  define  ElfXX_Sym      Elf64_Sym
+#  define  ElfXX_Word     Elf64_Word
+#  define  ElfXX_Addr     Elf64_Addr
+#  define  ElfXX_Dyn      Elf64_Dyn
+#  define  ELFXX_ST_BIND  ELF64_ST_BIND
+#  define  ELFXX_ST_TYPE  ELF64_ST_TYPE
+
+#else
+# error "VGA_WORD_SIZE should be 4 or 8"
+#endif
+
+
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
+
 static Bool
 intercept_demangle(const Char*, Char*, Int);
 
@@ -753,7 +793,7 @@ void canonicaliseLoctab ( SegInfo* si )
 Bool VG_(is_object_file)(const void *buf)
 {
    {
-      Elf32_Ehdr *ehdr = (Elf32_Ehdr *)buf;
+      ElfXX_Ehdr *ehdr = (ElfXX_Ehdr *)buf;
       Int ok = 1;
 
       ok &= (ehdr->e_ident[EI_MAG0] == 0x7F
@@ -837,7 +877,7 @@ static void add_redirect_addr(const Char *from_lib, const Char *from_sym,
 			      Addr to_addr);
 
 static
-void handle_intercept( SegInfo* si, Char* symbol, Elf32_Sym* sym)
+void handle_intercept( SegInfo* si, Char* symbol, ElfXX_Sym* sym)
 {
    int len = VG_(strlen)(symbol) + 1 - VG_INTERCEPT_PREFIX_LEN;
    char *lib = VG_(malloc)(len);
@@ -854,7 +894,7 @@ void handle_intercept( SegInfo* si, Char* symbol, Elf32_Sym* sym)
 }
 
 static
-void handle_wrapper( SegInfo* si, Char* symbol, Elf32_Sym* sym)
+void handle_wrapper( SegInfo* si, Char* symbol, ElfXX_Sym* sym)
 {
    VG_(intercept_libc_freeres_wrapper)((Addr)(si->offset + sym->st_value));
 }
@@ -862,7 +902,7 @@ void handle_wrapper( SegInfo* si, Char* symbol, Elf32_Sym* sym)
 /* Read a symbol table (normal or dynamic) */
 static
 void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
-                  Elf32_Sym* o_symtab, UInt o_symtab_sz,
+                  ElfXX_Sym* o_symtab, UInt o_symtab_sz,
                   UChar*     o_strtab, UInt o_strtab_sz )
 {
    Int   i;
@@ -880,18 +920,18 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
    }
 
    TRACE_SYMTAB("Reading %s (%d entries)\n", tab_name, 
-                o_symtab_sz/sizeof(Elf32_Sym) );
+                o_symtab_sz/sizeof(ElfXX_Sym) );
 
    /* Perhaps should start at i = 1; ELF docs suggest that entry
       0 always denotes `unknown symbol'. */
-   for (i = 1; i < (Int)(o_symtab_sz/sizeof(Elf32_Sym)); i++) {
-      Elf32_Sym* sym = & o_symtab[i];
+   for (i = 1; i < (Int)(o_symtab_sz/sizeof(ElfXX_Sym)); i++) {
+      ElfXX_Sym* sym = & o_symtab[i];
 #     if 1
       sym_addr = si->offset + (UInt)sym->st_value;
 
       if (VG_(clo_trace_symtab)) {
          VG_(printf)("raw symbol [%d]: ", i);
-         switch (ELF32_ST_BIND(sym->st_info)) {
+         switch (ELFXX_ST_BIND(sym->st_info)) {
          case STB_LOCAL:  VG_(printf)("LOC "); break;
          case STB_GLOBAL: VG_(printf)("GLO "); break;
          case STB_WEAK:   VG_(printf)("WEA "); break;
@@ -899,7 +939,7 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
          case STB_HIPROC: VG_(printf)("hip "); break;
          default:         VG_(printf)("??? "); break;
          }
-         switch (ELF32_ST_TYPE(sym->st_info)) {
+         switch (ELFXX_ST_TYPE(sym->st_info)) {
          case STT_NOTYPE:  VG_(printf)("NOT "); break;
          case STT_OBJECT:  VG_(printf)("OBJ "); break;
          case STT_FUNC:    VG_(printf)("FUN "); break;
@@ -936,13 +976,13 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
 
       /* Figure out if we're interested in the symbol.
          Firstly, is it of the right flavour?  */
-      if ( ! ( (ELF32_ST_BIND(sym->st_info) == STB_GLOBAL ||
-                ELF32_ST_BIND(sym->st_info) == STB_LOCAL ||
-                ELF32_ST_BIND(sym->st_info) == STB_WEAK)
+      if ( ! ( (ELFXX_ST_BIND(sym->st_info) == STB_GLOBAL ||
+                ELFXX_ST_BIND(sym->st_info) == STB_LOCAL ||
+                ELFXX_ST_BIND(sym->st_info) == STB_WEAK)
              &&
-               (ELF32_ST_TYPE(sym->st_info) == STT_FUNC ||
+               (ELFXX_ST_TYPE(sym->st_info) == STT_FUNC ||
                 (VG_(needs).data_syms 
-                 && ELF32_ST_TYPE(sym->st_info) == STT_OBJECT))
+                 && ELFXX_ST_TYPE(sym->st_info) == STT_OBJECT))
              )
          )
          continue;
@@ -963,7 +1003,7 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
       }
 
       /* Don't bother if nameless, or zero-sized. */
-      if (sym->st_name == (Elf32_Word)NULL
+      if (sym->st_name == (ElfXX_Word)NULL
           || /* VG_(strlen)(o_strtab+sym->st_name) == 0 */
              /* equivalent but cheaper ... */
              * ((UChar*)(o_strtab+sym->st_name)) == 0
@@ -1163,8 +1203,8 @@ static
 Bool vg_read_lib_symbols ( SegInfo* si )
 {
    Bool          res;
-   Elf32_Ehdr*   ehdr;       /* The ELF header                          */
-   Elf32_Shdr*   shdr;       /* The section table                       */
+   ElfXX_Ehdr*   ehdr;       /* The ELF header                          */
+   ElfXX_Shdr*   shdr;       /* The section table                       */
    UChar*        sh_strtab;  /* The section table's string table        */
    Int           fd;
    Int           i;
@@ -1214,8 +1254,8 @@ Bool vg_read_lib_symbols ( SegInfo* si )
       Now verify that it is a valid ELF .so or executable image.
    */
    res = False;
-   ok = (n_oimage >= sizeof(Elf32_Ehdr));
-   ehdr = (Elf32_Ehdr*)oimage;
+   ok = (n_oimage >= sizeof(ElfXX_Ehdr));
+   ehdr = (ElfXX_Ehdr*)oimage;
 
    if (ok)
       ok &= VG_(is_object_file)(ehdr);
@@ -1229,25 +1269,25 @@ Bool vg_read_lib_symbols ( SegInfo* si )
       include them all, so that this segment also contains data and
       bss memory.  Also computes correct symbol offset value for this
       ELF file. */
-   if (ehdr->e_phoff + ehdr->e_phnum*sizeof(Elf32_Phdr) > n_oimage) {
+   if (ehdr->e_phoff + ehdr->e_phnum*sizeof(ElfXX_Phdr) > n_oimage) {
       VG_(symerr)("ELF program header is beyond image end?!");
       goto out;
    }
    {
       Bool offset_set = False;
-      Elf32_Addr prev_addr = 0;
+      ElfXX_Addr prev_addr = 0;
       Addr baseaddr = 0;
 
       si->offset = 0;
 
       for (i = 0; i < ehdr->e_phnum; i++) {
-	 Elf32_Phdr *o_phdr;
-	 Elf32_Addr mapped, mapped_end;
+	 ElfXX_Phdr *o_phdr;
+	 ElfXX_Addr mapped, mapped_end;
 
-	 o_phdr = &((Elf32_Phdr *)(oimage + ehdr->e_phoff))[i];
+	 o_phdr = &((ElfXX_Phdr *)(oimage + ehdr->e_phoff))[i];
 
 	 if (o_phdr->p_type == PT_DYNAMIC && si->soname == NULL) {
-	    const Elf32_Dyn *dyn = (const Elf32_Dyn *)(oimage + o_phdr->p_offset);
+	    const ElfXX_Dyn *dyn = (const ElfXX_Dyn *)(oimage + o_phdr->p_offset);
 	    Int stroff = -1;
 	    Char *strtab = NULL;
 	    Int j;
@@ -1339,14 +1379,14 @@ Bool vg_read_lib_symbols ( SegInfo* si )
    }
 
    TRACE_SYMTAB("shoff = %d,  shnum = %d,  size = %d,  n_vg_oimage = %d\n",
-                ehdr->e_shoff, ehdr->e_shnum, sizeof(Elf32_Shdr), n_oimage );
+                ehdr->e_shoff, ehdr->e_shnum, sizeof(ElfXX_Shdr), n_oimage );
 
-   if (ehdr->e_shoff + ehdr->e_shnum*sizeof(Elf32_Shdr) > n_oimage) {
+   if (ehdr->e_shoff + ehdr->e_shnum*sizeof(ElfXX_Shdr) > n_oimage) {
       VG_(symerr)("ELF section header is beyond image end?!");
       goto out;
    }
 
-   shdr = (Elf32_Shdr*)(oimage + ehdr->e_shoff);
+   shdr = (ElfXX_Shdr*)(oimage + ehdr->e_shoff);
    sh_strtab = (UChar*)(oimage + shdr[ehdr->e_shstrndx].sh_offset);
 
    /* Find interesting sections, read the symbol table(s), read any debug
@@ -1354,9 +1394,9 @@ Bool vg_read_lib_symbols ( SegInfo* si )
    {
       /* Pointers to start of sections */
       UChar*     o_strtab     = NULL; /* .strtab */
-      Elf32_Sym* o_symtab     = NULL; /* .symtab */
+      ElfXX_Sym* o_symtab     = NULL; /* .symtab */
       UChar*     o_dynstr     = NULL; /* .dynstr */
-      Elf32_Sym* o_dynsym     = NULL; /* .dynsym */
+      ElfXX_Sym* o_dynsym     = NULL; /* .dynsym */
       Char*      debuglink    = NULL; /* .gnu_debuglink */
       UChar*     stab         = NULL; /* .stab         (stabs)  */
       UChar*     stabstr      = NULL; /* .stabstr      (stabs)  */
@@ -1399,9 +1439,9 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
          /* Nb: must find where .got and .plt sections will be in the
           * executable image, not in the object image transiently loaded. */
-              FIND(".dynsym",       o_dynsym,     o_dynsym_sz,   0, Elf32_Sym*)
+              FIND(".dynsym",       o_dynsym,     o_dynsym_sz,   0, ElfXX_Sym*)
          else FIND(".dynstr",       o_dynstr,     o_dynstr_sz,   0, UChar*)
-         else FIND(".symtab",       o_symtab,     o_symtab_sz,   0, Elf32_Sym*)
+         else FIND(".symtab",       o_symtab,     o_symtab_sz,   0, ElfXX_Sym*)
          else FIND(".strtab",       o_strtab,     o_strtab_sz,   0, UChar*)
 
          else FIND(".gnu_debuglink", debuglink,   debuglink_sz,  0, Char*)
@@ -1418,8 +1458,8 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 #        undef FIND
          
          /* Check some sizes */
-         vg_assert((o_dynsym_sz % sizeof(Elf32_Sym)) == 0);
-         vg_assert((o_symtab_sz % sizeof(Elf32_Sym)) == 0);
+         vg_assert((o_dynsym_sz % sizeof(ElfXX_Sym)) == 0);
+         vg_assert((o_symtab_sz % sizeof(ElfXX_Sym)) == 0);
       }
 
       read_symtab(si, "symbol table", False,
@@ -1442,11 +1482,11 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
          /* See if we can find a matching debug file */
          if ((dimage = find_debug_file(si->filename, debuglink, crc, &n_dimage)) != 0) {
-            ehdr = (Elf32_Ehdr*)dimage;
+            ehdr = (ElfXX_Ehdr*)dimage;
 
-            if (n_dimage >= sizeof(Elf32_Ehdr) && VG_(is_object_file)(ehdr))
+            if (n_dimage >= sizeof(ElfXX_Ehdr) && VG_(is_object_file)(ehdr))
             {
-               shdr = (Elf32_Shdr*)(dimage + ehdr->e_shoff);
+               shdr = (ElfXX_Shdr*)(dimage + ehdr->e_shoff);
                sh_strtab = (UChar*)(dimage + shdr[ehdr->e_shstrndx].sh_offset);
 
                /* Find all interesting sections */
@@ -1476,8 +1516,8 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 #                 undef FIND
          
                   /* Check some sizes */
-                  vg_assert((o_dynsym_sz % sizeof(Elf32_Sym)) == 0);
-                  vg_assert((o_symtab_sz % sizeof(Elf32_Sym)) == 0);
+                  vg_assert((o_dynsym_sz % sizeof(ElfXX_Sym)) == 0);
+                  vg_assert((o_symtab_sz % sizeof(ElfXX_Sym)) == 0);
                }
             }
          }
@@ -1489,7 +1529,7 @@ Bool vg_read_lib_symbols ( SegInfo* si )
          VG_(read_debuginfo_stabs) ( si, stab, stab_sz, 
                                          stabstr, stabstr_sz );
       }
-      if (debug_line) {
+      if (debug_line && VGA_WORD_SIZE==4/*hack*/) {
          has_debuginfo = True;
          VG_(read_debuginfo_dwarf2) ( si, debug_line, debug_line_sz );
       }

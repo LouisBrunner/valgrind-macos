@@ -136,7 +136,7 @@
 
 /* Max number of callers for context in a suppression. */
 #define VG_N_SUPP_CALLERS  4
-   
+
 
 /* ---------------------------------------------------------------------
    Basic types
@@ -151,6 +151,11 @@
    Command-line-settable options
    ------------------------------------------------------------------ */
 
+/* Default socket to be used in logging over a network, if none
+   specified. */
+#define VG_CLO_DEFAULT_LOGSOCKET 1500
+
+/* The max number of suppression files. */
 #define VG_CLO_MAX_SFILES 10
 
 /* Describes where logging output is to be sent. */
@@ -870,6 +875,11 @@ extern Int VG_(select)( Int n,
 extern Int VG_(nanosleep)( const struct vki_timespec *req, 
                            struct vki_timespec *rem );
 
+extern Int  VG_(write_socket)( Int sd, void *msg, Int count );
+
+/* --- Connecting over the network --- */
+extern Int VG_(connect_via_socket)( UChar* str );
+
 /* ---------------------------------------------------------------------
    Definitions for the JITter (vg_translate.c, vg_to_ucode.c,
    vg_from_ucode.c).
@@ -1076,6 +1086,10 @@ extern void* VG_(client_realloc)  ( ThreadState* tst,
 /* ---------------------------------------------------------------------
    Exports of vg_main.c
    ------------------------------------------------------------------ */
+
+/* Tell the logging mechanism whether we are logging to a file
+   descriptor or a socket descriptor. */
+extern Bool VG_(logging_to_filedes);
 
 /* Sanity checks which may be done at any time.  The scheduler decides when. */
 extern void VG_(do_sanity_checks) ( Bool force_expensive );

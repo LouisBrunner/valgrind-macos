@@ -86,7 +86,12 @@ void VG_(end_msg) ( void )
 {
    if (VG_(clo_logfile_fd) >= 0) {
       add_to_buf('\n');
-      VG_(write)(VG_(clo_logfile_fd), vg_mbuf, VG_(strlen)(vg_mbuf));
+      if (VG_(logging_to_filedes))
+         VG_(write)(
+            VG_(clo_logfile_fd), vg_mbuf, VG_(strlen)(vg_mbuf));
+      else
+         VG_(write_socket)(
+            VG_(clo_logfile_fd), vg_mbuf, VG_(strlen)(vg_mbuf));
    }
 }
 

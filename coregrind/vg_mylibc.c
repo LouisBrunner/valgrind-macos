@@ -630,9 +630,14 @@ static int  n_myprintf_buf;
 static void add_to_myprintf_buf ( Char c )
 {
    if (n_myprintf_buf >= 100-10 /*paranoia*/ ) {
-      if (VG_(clo_logfile_fd) >= 0)
-         VG_(write)
-           (VG_(clo_logfile_fd), myprintf_buf, VG_(strlen)(myprintf_buf));
+      if (VG_(clo_logfile_fd) >= 0) {
+         if (VG_(logging_to_filedes))
+            VG_(write)
+              (VG_(clo_logfile_fd), myprintf_buf, VG_(strlen)(myprintf_buf));
+         else
+            VG_(write_socket)
+              (VG_(clo_logfile_fd), myprintf_buf, VG_(strlen)(myprintf_buf));
+      }
       n_myprintf_buf = 0;
       myprintf_buf[n_myprintf_buf] = 0;      
    }
@@ -650,9 +655,14 @@ UInt VG_(printf) ( const char *format, ... )
    myprintf_buf[n_myprintf_buf] = 0;      
    ret = VG_(vprintf) ( add_to_myprintf_buf, format, vargs );
 
-   if (n_myprintf_buf > 0 && VG_(clo_logfile_fd) >= 0)
-      VG_(write)
-         ( VG_(clo_logfile_fd), myprintf_buf, n_myprintf_buf);
+   if (n_myprintf_buf > 0 && VG_(clo_logfile_fd) >= 0) {
+      if (VG_(logging_to_filedes))
+         VG_(write)
+            ( VG_(clo_logfile_fd), myprintf_buf, n_myprintf_buf);
+      else
+         VG_(write_socket)
+            ( VG_(clo_logfile_fd), myprintf_buf, n_myprintf_buf);
+   }
 
    va_end(vargs);
 
@@ -1421,6 +1431,212 @@ Int VG_(log2) ( Int x )
    return -1;
 }
 
+
+/* ---------------------------------------------------------------------
+   Gruesome hackery for connecting to a logging server over the network.
+   This is all very Linux-kernel specific.
+   ------------------------------------------------------------------ */
+
+/* Various needed constants from the kernel iface (2.4),
+   /usr/src/linux-2.4.9-31 */
+
+/* kernel, ./include/linux/net.h */
+#define SYS_SOCKET     1               /* sys_socket(2)        */
+#define SYS_CONNECT    3               /* sys_connect(2)       */
+#define SYS_SEND       9               /* sys_send(2)          */
+
+typedef UInt __u32;
+
+/* Internet address. */
+struct vki_in_addr {
+        __u32   s_addr;
+};
+
+/* kernel, include/linux/socket.h */
+typedef unsigned short  vki_sa_family_t;
+#define AF_INET                2       /* Internet IP Protocol        */
+
+/* kernel, ./include/asm-i386/socket.h */
+#define SOCK_STREAM 1                  /* stream (connection) socket  */
+
+/* kernel, /usr/src/linux-2.4.9-31/linux/include/in.h */
+/* Structure describing an Internet (IP) socket address. */
+#define __SOCK_SIZE__   16              /* sizeof(struct sockaddr)      */
+struct vki_sockaddr_in {
+  vki_sa_family_t       sin_family;     /* Address family               */
+  unsigned short int    sin_port;       /* Port number                  */
+  struct vki_in_addr    sin_addr;       /* Internet address             */
+
+  /* Pad to size of `struct sockaddr'. */
+  unsigned char         __pad[__SOCK_SIZE__ - sizeof(short int) -
+                        sizeof(unsigned short int) - 
+                        sizeof(struct vki_in_addr)];
+};
+
+
+static
+Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port );
+
+static
+Int my_socket ( Int domain, Int type, Int protocol );
+
+static
+Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, 
+                 Int addrlen );
+
+static 
+UInt my_htonl ( UInt x )
+{
+   return
+      (((x >> 24) & 0xFF) << 0) | (((x >> 16) & 0xFF) << 8)
+      | (((x >> 8) & 0xFF) << 16) | (((x >> 0) & 0xFF) << 24);
+}
+
+static
+UShort my_htons ( UShort x )
+{
+   return
+      (((x >> 8) & 0xFF) << 0) | (((x >> 0) & 0xFF) << 8);
+}
+
+
+/* The main function. 
+
+   Supplied string contains either an ip address "192.168.0.1" or
+   an ip address and port pair, "192.168.0.1:1500".  Parse these,
+   and return:
+     -1 if there is a parse error
+     -2 if no parse error, but specified host:port cannot be opened
+     the relevant file (socket) descriptor, otherwise.
+   If no socket is specified, VG_CLO_DEFAULT_LOGSOCKET is used.
+*/
+Int VG_(connect_via_socket)( UChar* str )
+{
+   Int sd, res;
+   struct vki_sockaddr_in servAddr;
+   UInt   ip   = 0;
+   UShort port = VG_CLO_DEFAULT_LOGSOCKET;
+   Bool   ok   = parse_inet_addr_and_port(str, &ip, &port);
+   if (!ok) 
+      return -1;
+
+   if (0)
+      VG_(printf)("ip = %d.%d.%d.%d, port %d\n",
+                  (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, 
+                  (ip >> 8) & 0xFF, ip & 0xFF, 
+	          (UInt)port );
+
+   servAddr.sin_family = AF_INET;
+   servAddr.sin_addr.s_addr = my_htonl(ip);
+   servAddr.sin_port = my_htons(port);
+
+   /* create socket */
+   sd = my_socket(AF_INET, SOCK_STREAM, 0 /* IPPROTO_IP ? */);
+   if (sd < 0) {
+     /* this shouldn't happen ... nevertheless */
+     return -2;
+   }
+			
+   /* connect to server */
+   res = my_connect(sd, (struct vki_sockaddr_in *) &servAddr, 
+                        sizeof(servAddr));
+   if (res < 0) {
+     /* connection failed */
+     return -2;
+   }
+
+   return sd;
+}
+
+
+/* Let d = one or more digits.  Accept either:
+   d.d.d.d  or  d.d.d.d:d
+*/
+Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port )
+{
+#  define GET_CH ((*str) ? (*str++) : 0)
+   UInt ipa, i, j, c, any;
+   ipa = 0;
+   for (i = 0; i < 4; i++) {
+      j = 0;
+      any = 0;
+      while (1) {
+         c = GET_CH; 
+         if (c < '0' || c > '9') break;
+         j = 10 * j + (int)(c - '0');
+         any = 1;
+      }
+      if (any == 0 || j > 255) goto syntaxerr;
+      ipa = (ipa << 8) + j;
+      if (i <= 2 && c != '.') goto syntaxerr;
+   }
+   if (c == 0 || c == ':') 
+      *ip_addr = ipa;
+   if (c == 0) goto ok;
+   if (c != ':') goto syntaxerr;
+   j = 0;
+   any = 0;
+   while (1) {
+      c = GET_CH; 
+      if (c < '0' || c > '9') break;
+      j = j * 10 + (int)(c - '0');
+      any = 1;
+      if (j > 65535) goto syntaxerr;
+   }
+   if (any == 0 || c != 0) goto syntaxerr;
+   *port = (UShort)j;
+ ok:
+   return 1;
+ syntaxerr:
+   return 0;
+#  undef GET_CH
+}
+
+
+static
+Int my_socket ( Int domain, Int type, Int protocol )
+{
+   Int res;
+   UInt args[3];
+   args[0] = domain;
+   args[1] = type;
+   args[2] = protocol;
+   res = vg_do_syscall2(__NR_socketcall, SYS_SOCKET, (UInt)&args);
+   if (VG_(is_kerror)(res)) 
+      res = -1;
+   return res;
+}
+
+static
+Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, 
+                 Int addrlen )
+{
+   Int res;
+   UInt args[3];
+   args[0] = sockfd;
+   args[1] = (UInt)serv_addr;
+   args[2] = addrlen;
+   res = vg_do_syscall2(__NR_socketcall, SYS_CONNECT, (UInt)&args);
+   if (VG_(is_kerror)(res)) 
+      res = -1;
+   return res;
+}
+
+Int VG_(write_socket)( Int sd, void *msg, Int count )
+{
+   /* This is actually send(). */
+   Int flags = 0;
+   Int res;
+   UInt args[4];
+   args[0] = sd;
+   args[1] = (UInt)msg;
+   args[2] = count;
+   args[3] = flags;
+   res = vg_do_syscall2(__NR_socketcall, SYS_SEND, (UInt)&args);
+   if (VG_(is_kerror)(res)) 
+      res = -1;
+   return res;
+}
 
 
 /*--------------------------------------------------------------------*/

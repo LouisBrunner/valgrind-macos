@@ -284,7 +284,7 @@ static void vg_init_baseBlock ( void )
 
    VGOFF_(helper_CLC)
       = alloc_BaB_1_set( (Addr) & VG_(helper_CLC) );
-    VGOFF_(helper_STC)
+   VGOFF_(helper_STC)
       = alloc_BaB_1_set( (Addr) & VG_(helper_STC) );
 
    VGOFF_(helper_shldl)
@@ -382,6 +382,10 @@ ThreadId VG_(last_run_tid) = 0;
    call that syscall.  We eventually pass that to __NR_exit() for
    real. */
 UInt VG_(exitcode) = 0;
+
+/* Tell the logging mechanism whether we are logging to a file
+   descriptor or a socket descriptor. */
+Bool VG_(logging_to_filedes) = True;
 
 
 /* ---------------------------------------------------------------------
@@ -637,6 +641,7 @@ static void usage ( void )
 "    --run-libc-freeres=no|yes Free up glibc memory at exit? [yes]\n"
 "    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
 "    --logfile=<file>          log messages to <file>.pid<pid>\n"
+"    --logsocket=ipaddr:port   log messages to socket ipaddr:port\n"
 "    --suppressions=<filename> suppress errors described in\n"
 "                              suppressions file <filename>\n"
 "    --weird-hacks=hack1,hack2,...  [no hacks selected]\n"
@@ -907,6 +912,11 @@ static void process_cmd_line_options ( void )
          VG_(clo_logfile_name) = &argv[i][10];
       }
 
+      else if (STREQN(12, argv[i], "--logsocket=")) {
+         VG_(clo_log_to)       = VgLogTo_Socket;
+         VG_(clo_logfile_name) = &argv[i][12];
+      }
+
       else if (STREQN(15, argv[i], "--suppressions=")) {
          if (VG_(clo_n_suppressions) >= VG_CLO_MAX_SFILES) {
             VG_(message)(Vg_UserMsg, "Too many suppression files specified.");
@@ -1047,15 +1057,15 @@ static void process_cmd_line_options ( void )
       the terminal any problems to do with processing command line
       opts. */
    vg_assert(VG_(clo_logfile_fd) == 2 /* stderr */);
+   vg_assert(VG_(logging_to_filedes) == True);
 
    switch (VG_(clo_log_to)) {
-      case VgLogTo_Socket: 
-         VG_(core_panic)("VgLogTo_Socket ?!"); 
-         break;
+
       case VgLogTo_Fd: 
          vg_assert(VG_(clo_logfile_name) == NULL);
          VG_(clo_logfile_fd) = eventually_logfile_fd;
          break;
+
       case VgLogTo_File: {
          Char logfilename[1000];
          vg_assert(VG_(clo_logfile_name) != NULL);
@@ -1075,7 +1085,34 @@ static void process_cmd_line_options ( void )
                "--logfile=<file> didn't work out for some reason.");
          }
          break;
+      }
+
+      case VgLogTo_Socket: {
+         vg_assert(VG_(clo_logfile_name) != NULL);
+         vg_assert(VG_(strlen)(VG_(clo_logfile_name)) <= 900); /* paranoia */
+         eventually_logfile_fd 
+            = VG_(connect_via_socket)( VG_(clo_logfile_name) );
+         if (eventually_logfile_fd == -1) {
+            VG_(message)(Vg_UserMsg, 
+               "Invalid --logsocket=ipaddr or --logsocket=ipaddr:port spec"); 
+            VG_(message)(Vg_UserMsg, 
+               "of `%s'; giving up!", VG_(clo_logfile_name) );
+            VG_(bad_option)(
+               "--logsocket=");
 	 }
+         if (eventually_logfile_fd == -2) {
+            VG_(message)(Vg_UserMsg, 
+               "Failed to connect to logging server `%s'; giving up",
+               VG_(clo_logfile_name) ); 
+            VG_(bad_option)(
+               "--logsocket= (timeout during connect)");
+	 }
+	 vg_assert(eventually_logfile_fd > 0);
+         VG_(clo_logfile_fd) = eventually_logfile_fd;
+         VG_(logging_to_filedes) = False;
+         break;
+      }
+
    }
 
    /* Ok, the logging sink is running now.  Print a suitable preamble.

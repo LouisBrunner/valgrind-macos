@@ -1393,12 +1393,14 @@ struct __res_state* __res_state ( void )
 /* The allowable keys (indices) (all 3 of them). 
    From sysdeps/pthread/bits/libc-tsd.h
 */
-#define N_LIBC_TSD_EXTRA_KEYS 0
-
+/* as per glibc anoncvs HEAD of 20021001. */
 enum __libc_tsd_key_t { _LIBC_TSD_KEY_MALLOC = 0,
                         _LIBC_TSD_KEY_DL_ERROR,
                         _LIBC_TSD_KEY_RPC_VARS,
-                        _LIBC__SOME_OTHER_KEY_NEEDED_FOR_RH_NULL,
+                        _LIBC_TSD_KEY_LOCALE,
+                        _LIBC_TSD_KEY_CTYPE_B,
+                        _LIBC_TSD_KEY_CTYPE_TOLOWER,
+                        _LIBC_TSD_KEY_CTYPE_TOUPPER,
                         _LIBC_TSD_KEY_N };
 
 /* Auto-initialising subsystem.  libc_specifics_inited is set 
@@ -1407,10 +1409,9 @@ static int             libc_specifics_inited    = 0;
 static pthread_mutex_t libc_specifics_inited_mx = PTHREAD_MUTEX_INITIALIZER;
 
 /* These are the keys we must initialise the first time. */
-static pthread_key_t libc_specifics_keys[_LIBC_TSD_KEY_N
-                                         + N_LIBC_TSD_EXTRA_KEYS];
+static pthread_key_t libc_specifics_keys[_LIBC_TSD_KEY_N];
 
-/* Initialise the keys, if they are not already initialise. */
+/* Initialise the keys, if they are not already initialised. */
 static
 void init_libc_tsd_keys ( void )
 {
@@ -1423,7 +1424,7 @@ void init_libc_tsd_keys ( void )
    if (libc_specifics_inited == 0) {
       /* printf("INIT libc specifics\n"); */
       libc_specifics_inited = 1;
-      for (i = 0; i < _LIBC_TSD_KEY_N + N_LIBC_TSD_EXTRA_KEYS; i++) {
+      for (i = 0; i < _LIBC_TSD_KEY_N; i++) {
          res = pthread_key_create(&k, NULL);
 	 if (res != 0) barf("init_libc_tsd_keys: create");
          libc_specifics_keys[i] = k;
@@ -1439,16 +1440,10 @@ static int
 libc_internal_tsd_set ( enum __libc_tsd_key_t key, 
                         const void * pointer )
 {
-   int        res;
-   static int moans = N_MOANS;
+   int res;
    /* printf("SET SET SET key %d ptr %p\n", key, pointer); */
-   if (key < _LIBC_TSD_KEY_MALLOC 
-       || key >= _LIBC_TSD_KEY_N + N_LIBC_TSD_EXTRA_KEYS)
+   if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
       barf("libc_internal_tsd_set: invalid key");
-   if (key >= _LIBC_TSD_KEY_N && moans-- > 0)
-      fprintf(stderr, 
-         "valgrind's libpthread.so: libc_internal_tsd_set: "
-         "dubious key %d\n", key);
    init_libc_tsd_keys();
    res = pthread_setspecific(libc_specifics_keys[key], pointer);
    if (res != 0) barf("libc_internal_tsd_set: setspecific failed");
@@ -1458,22 +1453,15 @@ libc_internal_tsd_set ( enum __libc_tsd_key_t key,
 static void *
 libc_internal_tsd_get ( enum __libc_tsd_key_t key )
 {
-   void*      v;
-   static int moans = N_MOANS;
+   void* v;
    /* printf("GET GET GET key %d\n", key); */
-   if (key < _LIBC_TSD_KEY_MALLOC 
-       || key >= _LIBC_TSD_KEY_N + N_LIBC_TSD_EXTRA_KEYS)
+   if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
       barf("libc_internal_tsd_get: invalid key");
-   if (key >= _LIBC_TSD_KEY_N && moans-- > 0)
-      fprintf(stderr, 
-         "valgrind's libpthread.so: libc_internal_tsd_get: "
-         "dubious key %d\n", key);
    init_libc_tsd_keys();
    v = pthread_getspecific(libc_specifics_keys[key]);
    /* if (v == NULL) barf("libc_internal_tsd_set: getspecific failed"); */
    return v;
 }
-
 
 
 

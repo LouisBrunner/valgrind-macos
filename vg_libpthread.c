@@ -707,6 +707,15 @@ int __pthread_atfork ( void (*prepare)(void),
 }
 
 
+__attribute__((weak)) 
+void __pthread_initialize ( void )
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("__pthread_initialize");
+}
+
+
 /* ---------------------------------------------------
    LIBRARY-PRIVATE THREAD SPECIFIC STATE
    ------------------------------------------------ */

@@ -258,9 +258,6 @@ __attribute__((weak)) void pthread_spin_unlock ( void )
 __attribute__((weak)) void pthread_yield ( void )
                       { vgPlain_unimp("pthread_yield"); }
 
-__attribute__((weak)) void __pthread_initialize ( void )
-                      { vgPlain_unimp("__pthread_initialize"); }
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                    vg_libpthread_unimp.c ---*/

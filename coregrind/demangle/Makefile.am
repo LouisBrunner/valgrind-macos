@@ -1,10 +1,10 @@
-INCLUDES += -I$(top_srcdir)
+INCLUDES = -I$(top_srcdir)
 
 noinst_HEADERS = \
 	ansidecl.h     \
-        dyn-string.h   \
-        demangle.h     \
-        safe-ctype.h 
+	dyn-string.h   \
+	demangle.h     \
+	safe-ctype.h 
 
 noinst_LIBRARIES = libdemangle.a
 

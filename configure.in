@@ -16,6 +16,11 @@ if test "${GCC}" != "yes" ; then
    AC_MSG_ERROR([Valgrind relies on GCC to be compiled])
 fi
 
+AS="${CC}"
+AC_SUBST(AS)
+ASFLAGS=""
+AC_SUBST(ASFLAGS)
+
 # We don't want gcc 2.7
 AC_MSG_CHECKING([for a supported version of gcc])
 

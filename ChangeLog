@@ -1,3 +1,11 @@
+2002-03-26  Simon Hausmann <hausmann@kde.org>
+
+	* configure.in: Substitute AS and ASFLAGS.
+	* demangle/Makefile.am: Don't use INCLUDES += when it's the first
+	assignment to it.
+	* Makefile.am: Don't use INCLUDES += when it's the first assignment to
+	it. Use $(EXEEXT) for the explicit valgrin[d,q].so targets.
+
 2002-03-24  Frederic Gobry  <gobry@puck.ch>
 
 	* Makefile.am: added a bzdist target that creates a bzip2 archive

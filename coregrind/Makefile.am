@@ -4,7 +4,7 @@ valdir = $(libdir)/valgrind
 
 LDFLAGS = -Wl,-z -Wl,initfirst
 
-INCLUDES += -I$(srcdir)/demangle
+INCLUDES = -I$(srcdir)/demangle
 
 bin_SCRIPTS = valgrind
 

@@ -3945,7 +3945,7 @@ static void rlwnm_cb (const unsigned char *name, test_func_t func)
                     xer = r18;
                     res = r17;
                     vex_printf("%s %08x, %08x, %d, %d => %08x (%08x %08x)\n",
-                           name, iargs[i], iargs[j], k, l, res, flags, xer);
+                           name, iargs[i], j, k, l, res, flags, xer);
                 }
                 vex_printf("\n");
             }

@@ -42,9 +42,6 @@ static Error* vg_errors = NULL;
    suppressions file. */
 static Supp* vg_suppressions = NULL;
 
-/* And a helper function so the leak detector can get hold of it. */
-Supp* VG_(get_suppressions) ( void ) { return vg_suppressions; }
-
 /* Running count of unsuppressed errors detected. */
 UInt VG_(n_errs_found) = 0;
 
@@ -218,7 +215,7 @@ void VG_(gen_suppression)(Error* err)
       return;
    }
 
-   if (stop_at > 3) stop_at = 3;    /* At most three names */
+   if (stop_at > 4) stop_at = 4;    /* At most four names */
    vg_assert(stop_at > 0);
 
    VG_(printf)("{\n");
@@ -734,10 +731,12 @@ static void load_one_suppressions_file ( Char* filename )
          goto syntax_error;
 
       /* "i > 0" ensures at least one caller read. */
-      for (i = 0; i < VG_N_SUPP_CALLERS; i++) {
+      for (i = 0; i <= VG_N_SUPP_CALLERS; i++) {
          eof = VG_(get_line) ( fd, buf, N_BUF );
          if (eof) goto syntax_error;
          if (i > 0 && VG_STREQ(buf, "}")) 
+            break;
+         if (i == VG_N_SUPP_CALLERS)
             break;
          supp->caller[i] = VG_(arena_strdup)(VG_AR_CORE, buf);
          if (!setLocationTy(&(supp->caller[i]), &(supp->caller_ty[i])))
@@ -818,7 +817,7 @@ Bool supp_matches_callers(Supp* su, Char caller_obj[][M_VG_ERRTXT],
 {
    Int i;
 
-   for (i = 0; su->caller[i] != NULL; i++) {
+   for (i = 0; i < VG_N_SUPP_CALLERS && su->caller[i] != NULL; i++) {
       switch (su->caller_ty[i]) {
          case ObjName: if (VG_(string_match)(su->caller[i],
                                              caller_obj[i])) break;

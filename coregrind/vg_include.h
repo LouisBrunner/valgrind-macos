@@ -1221,10 +1221,6 @@ extern void VG_(record_pthread_error) ( ThreadId tid, Char* msg );
 
 extern void VG_(show_all_errors)      ( void );
 
-/* Get hold of the suppression list ... just so we don't have to
-   make it global. */
-extern Supp* VG_(get_suppressions) ( void );
-
 extern Bool VG_(is_action_requested) ( Char* action, Bool* clo );
 
 extern void VG_(gen_suppression) ( Error* err );
@@ -1356,7 +1352,7 @@ extern ThreadId VG_(last_run_tid);
 /* This is the argument to __NR_exit() supplied by the first thread to
    call that syscall.  We eventually pass that to __NR_exit() for
    real. */
-extern UInt VG_(exitcode);
+extern Int VG_(exitcode);
 
 
 /* --- Counters, for informational purposes only. --- */

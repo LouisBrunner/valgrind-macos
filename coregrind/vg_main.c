@@ -438,7 +438,7 @@ ThreadId VG_(last_run_tid) = 0;
 /* This is the argument to __NR_exit() supplied by the first thread to
    call that syscall.  We eventually pass that to __NR_exit() for
    real. */
-UInt VG_(exitcode) = 0;
+Int VG_(exitcode) = 0;
 
 /* Tell the logging mechanism whether we are logging to a file
    descriptor or a socket descriptor. */

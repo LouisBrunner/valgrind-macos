@@ -1064,11 +1064,16 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
    XXX: some of these are arch-specific, and should be factored out.
 */
 
-#define MayBlock   (1 << 0)
-#define PostOnFail (1 << 1)
+#define Special    (1 << 0)
+#define MayBlock   (1 << 1)
+#define PostOnFail (1 << 2)
 
-#define PRE(x)	static void before_##x(ThreadId tid, ThreadState *tst)
-#define POST(x)	static void  after_##x(ThreadId tid, ThreadState *tst)
+#define PRE(x)  static void before_##x(ThreadId tid, ThreadState *tst)
+#define POST(x) static void  after_##x(ThreadId tid, ThreadState *tst)
+
+#define PREx(x,f) \
+   static UInt flags_##x = f; \
+   static void before_##x(ThreadId tid, ThreadState *tst)
 
 #define PREALIAS(new, old)	\
 	PRE(new) __attribute__((alias(STR(before_##old))))
@@ -1093,12 +1098,12 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 // Combine two 32-bit values into a 64-bit value
 #define LOHI64(lo,hi)   ( (lo) | ((ULong)(hi) << 32) )
 
-PRE(exit_group)
+PREx(sys_exit_group, Special)
 {
    VG_(core_panic)("syscall exit_group() not caught by the scheduler?!");
 }
 
-PRE(exit)
+PREx(sys_exit, Special)
 {
    VG_(core_panic)("syscall exit() not caught by the scheduler?!");
 }
@@ -1162,7 +1167,7 @@ POST(ptrace)
    }
 }
 
-PRE(sys_mount)
+PREx(sys_mount, MayBlock)
 {
    // Nb: depending on 'flags', the 'type' and 'data' args may be ignored.
    // We are conservative and check everything, except the memory pointed to
@@ -2269,7 +2274,7 @@ PRE(getgid32)
    PRINT("getgid32 ()");
 }
 
-PRE(sys_getpid)
+PREx(sys_getpid, 0)
 {
    PRINT("sys_getpid ()");
    PRE_REG_READ0(long, "getpid");
@@ -2287,7 +2292,7 @@ PRE(getpgrp)
    PRINT("getpgrp ()");
 }
 
-PRE(sys_getppid)
+PREx(sys_getppid, 0)
 {
    PRINT("sys_getppid ()");
    PRE_REG_READ0(long, "getppid");
@@ -4134,7 +4139,7 @@ PRE(_newselect)
       PRE_MEM_READ( "newselect(timeout)", arg5, sizeof(struct vki_timeval) );
 }
 
-PRE(sys_open)
+PREx(sys_open, MayBlock)
 {
    if (arg2 & VKI_O_CREAT) {
       // 3-arg version
@@ -4161,7 +4166,7 @@ POST(sys_open)
    }
 }
 
-PRE(sys_read)
+PREx(sys_read, MayBlock)
 {
    PRINT("sys_read ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
    PRE_REG_READ3(ssize_t, "read",
@@ -4178,7 +4183,7 @@ POST(sys_read)
    POST_MEM_WRITE( arg2, res );
 }
 
-PRE(sys_write)
+PREx(sys_write, MayBlock)
 {
    PRINT("sys_write ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
    PRE_REG_READ3(ssize_t, "write",
@@ -5233,8 +5238,6 @@ PRE(acct)
    PRE_MEM_RASCIIZ( "acct(filename)", arg1 );
 }
 
-#define SIGNAL_SIMULATION	1
-
 PRE(pause)
 {
    /* int pause(void); */
@@ -5288,6 +5291,14 @@ POST(rt_sigqueueinfo)
       VG_(proxy_waitsig)();
    }
 }
+
+#define SIGNAL_SIMULATION	1
+
+#if SIGNAL_SIMULATION
+#define SIG_SIM   Special
+#else
+#define SIG_SIM   0
+#endif
 
 PRE(sigaltstack)
 {
@@ -5729,15 +5740,16 @@ POST(clock_getres)
 */
 
 struct sys_info {
-   UInt	flags;
+   UInt flags;    // XXX: remove this once every syscall has been converted
+   UInt *flags_ptr;
    void	(*before)(ThreadId tid, ThreadState *tst);
-   void	(*after)(ThreadId tid, ThreadState *tst);
+   void	(*after) (ThreadId tid, ThreadState *tst);
 };
-#define SYSB_(name, flags)	[__NR_##name] = { flags, before_##name, NULL }
-#define SYSBA(name, flags)	[__NR_##name] = { flags, before_##name, after_##name }
+#define SYSB_(name, flags)	[__NR_##name] = { flags, NULL, before_##name, NULL }
+#define SYSBA(name, flags)	[__NR_##name] = { flags, NULL, before_##name, after_##name }
 
-#define SYSX_(const, name, flags)   [const] = { flags, before_##name, NULL }
-#define SYSXY(const, name, flags)   [const] = { flags, before_##name, after_##name }
+#define SYSX_(const, name)   [const] = { 0, &flags_##name, before_##name, NULL }
+#define SYSXY(const, name)   [const] = { 0, &flags_##name, before_##name, after_##name }
 
 static void bad_before(ThreadId tid, ThreadState *tst)
 {
@@ -5755,13 +5767,7 @@ static void bad_before(ThreadId tid, ThreadState *tst)
    set_result( -VKI_ENOSYS );
 }
 
-static void bad_after(ThreadId tid, ThreadState *tst)
-{
-}
-
-static const struct sys_info bad_sys = { False, bad_before, bad_after };
-
-
+static const struct sys_info bad_sys = { Special, NULL, bad_before, NULL };
 
 // XXX: temporary: I've started labelled each entry with the target of its
 // __NR_foo-->sys_foo() mapping, and the __NR_foo number (for x86), and
@@ -5774,51 +5780,23 @@ static const struct sys_info bad_sys = { False, bad_before, bad_after };
 // XXX: this does duplicate the vki_unistd.h file somewhat -- could make
 // this table replace that somehow...
 
-static const struct sys_info special_sys[] = {
-   /* special */
-   SYSB_(exit,			0), // 1   sys_exit *
-   SYSB_(execve,		0), // 11  sys_execve
-   SYSB_(brk,			0), // 45  sys_brk *
-   SYSB_(mmap,			0), // 90  old_mmap
-   SYSB_(clone,			0), // 120 sys_clone (very non-gen)
-
-   SYSB_(modify_ldt,		0), // 123 sys_modify_ldt (x86,amd64)
-   SYSB_(mremap,		0), // 163  sys_mremap *
-   SYSB_(set_thread_area,	0), // 243 sys_set_thread_area
-   SYSB_(get_thread_area,	0), // 244  sys_get_thread_area
-   SYSB_(io_setup,              0), // 245  sys_io_setup *
-
-   SYSB_(io_destroy,            0), // 246 sys_io_destroy *
-   SYSB_(exit_group,		0), // 252 sys_exit_group *
-   SYSB_(set_tid_address,	0), // 258 sys_set_tid_address *
-
-#if SIGNAL_SIMULATION
-   SYSBA(sigaction,		0), // 67 sys_sigaction
-   SYSBA(sigprocmask,		0), // 126 sys_sigprocmask *
-   SYSBA(rt_sigaction,		0), // 174 sys_rt_sigaction
-   SYSBA(rt_sigprocmask,	0), // 175 sys_rt_sigprocmask *
-   SYSBA(sigaltstack,		0), // 186 sys_sigaltstack
-#endif /* SIGNAL_SIMULATION */
-};
-#define MAX_SPECIAL_SYS		(sizeof(special_sys)/sizeof(special_sys[0]))
-
 // This table maps from __NR_xxx syscall numbers to the appropriate
 // PRE/POST sys_foo() wrappers on x86.
 static const struct sys_info sys_info[] = {
    // 0 is restart_syscall
-   // 1 exit special
+   SYSX_(__NR_exit,             sys_exit), // 1 *
    SYSBA(fork,			0), // 2 sys_fork
-   SYSXY(__NR_read,             sys_read,       MayBlock), // 3 *
-   SYSX_(__NR_write,            sys_write,      MayBlock), // 4 *
+   SYSXY(__NR_read,             sys_read), // 3 *
+   SYSX_(__NR_write,            sys_write), // 4 *
 
-   SYSXY(__NR_open,             sys_open,       MayBlock), // 5 *
+   SYSXY(__NR_open,             sys_open), // 5 *
    SYSBA(close,			0), // 6 sys_close *
    SYSBA(waitpid,		MayBlock), // 7 sys_waitpid *
    SYSBA(creat,			MayBlock), // 8 sys_creat *
    SYSB_(link,			MayBlock), // 9 sys_link *
 
    SYSB_(unlink,		MayBlock), // 10 sys_unlink *
-   // 11 execve special
+   SYSB_(execve,		Special), // 11  sys_execve
    SYSB_(chdir,			0), // 12 sys_chdir *
    SYSBA(time,			0), // 13 sys_time *
    SYSB_(mknod,			0), // 14 sys_mknod *
@@ -5829,8 +5807,8 @@ static const struct sys_info sys_info[] = {
    // oldstat		               18 sys_stat *
    SYSB_(lseek,			0), // 19 sys_lseek *
 
-   SYSX_(__NR_getpid,           sys_getpid,     0), // 20 sys_getpid *
-   SYSX_(__NR_mount,            sys_mount,      MayBlock), // 21 sys_mount *
+   SYSX_(__NR_getpid,           sys_getpid), // 20 *
+   SYSX_(__NR_mount,            sys_mount), // 21 *
    SYSB_(umount,		0), // 22 sys_oldumount *
    SYSB_(setuid,		0), // 23 sys_setuid16 ##
    SYSB_(getuid,		0), // 24 sys_getuid16 ##
@@ -5858,7 +5836,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(pipe,			0), // 42 sys_pipe
    SYSBA(times,			0), // 43 sys_times *
    // prof		               44  sys_ni_syscall
-   // 45 brk special
+   SYSB_(brk,			Special), // 45  sys_brk *
 
    SYSB_(setgid,		0), // 46 sys_setgid16 ##
    SYSB_(getgid,		0), // 47 sys_getgid16 ##
@@ -5881,11 +5859,11 @@ static const struct sys_info sys_info[] = {
    SYSB_(chroot,		0), // 61 sys_chroot *
    // ustat		               62 sys_ustat *
    SYSBA(dup2,			0), // 63 sys_dup2 *
-   SYSX_(__NR_getppid,		sys_getppid,    0), // 64 sys_getppid *
+   SYSX_(__NR_getppid,		sys_getppid), // 64 *
 
    SYSB_(getpgrp,		0), // 65 sys_getpgrp *
    SYSB_(setsid,		0), // 66 sys_setsid *
-   // 67 sigaction SIG
+   SYSBA(sigaction,		SIG_SIM), // 67 sys_sigaction
    // sgetmask		               68 sys_sgetmask *
    // ssetmask		               69 sys_ssetmask *
 
@@ -5913,7 +5891,7 @@ static const struct sys_info sys_info[] = {
    // reboot		               88 sys_reboot *
    // readdir		               89 old_readdir
 
-   // mmap 90 special
+   SYSB_(mmap,			Special), // 90  old_mmap
    SYSBA(munmap,		0), // 91 sys_munmap *
    SYSB_(truncate,		MayBlock), // 92 sys_truncate *
    SYSB_(ftruncate,		MayBlock), // 93 sys_ftruncate *
@@ -5949,14 +5927,14 @@ static const struct sys_info sys_info[] = {
    SYSB_(fsync,			MayBlock), // 118 sys_fsync *
    // sigreturn		               119 sys_sigreturn
 
-   // 120 clone special
+   SYSB_(clone,			Special), // 120 sys_clone (very non-gen)
    // setdomainname                    121 sys_setdomainname *
    SYSBA(uname,			0), // 122 sys_newuname *
-   // 123 modify_ldt special
+   SYSB_(modify_ldt,		Special), // 123 sys_modify_ldt (x86,amd64)
    SYSBA(adjtimex,		0), // 124 sys_adjtimex *
    SYSBA(mprotect,		0), // 125 sys_mprotect *
 
-   // 126 sigprocmask SIG
+   SYSBA(sigprocmask,		SIG_SIM), // 126 sys_sigprocmask *
    // XXX: create_module was removed 2.4-->2.6
    // create_module	               127 sys_ni_syscall
    SYSB_(init_module,		MayBlock), // 128 sys_init_module *
@@ -6002,7 +5980,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(sched_get_priority_min,	0),	/* ??? */ // 160 sys_sched_get_priority_min *
    // sched_rr_get_interval	       161 sys_sched_rr_get_interval *
    SYSBA(nanosleep,		MayBlock|PostOnFail), // 162 sys_nanosleep *
-   // 163 mremap special
+   SYSB_(mremap,		Special), // 163  sys_mremap *
    SYSB_(setresuid,		0), // 164 sys_setresuid16 ##
 
    SYSBA(getresuid,		0), // 165 sys_getresuid16 ##
@@ -6015,9 +5993,9 @@ static const struct sys_info sys_info[] = {
    SYSBA(getresgid,		0), // 171 sys_getresgid16 ##
    SYSB_(prctl,			MayBlock), // 172 sys_prctl *
    // rt_sigreturn	               173 sys_rt_sigreturn
-   // 174 SIG
+   SYSBA(rt_sigaction,		SIG_SIM), // 174 sys_rt_sigaction
 
-   // 175 SIG
+   SYSBA(rt_sigprocmask,	SIG_SIM), // 175 sys_rt_sigprocmask *
    SYSBA(rt_sigpending,		MayBlock), /* not blocking, but must run in LWP context */ // 176 sys_rt_sigpending *
    SYSBA(rt_sigtimedwait,	MayBlock), // 177 sys_rt_sigtimedwait *
    SYSBA(rt_sigqueueinfo,	0), // 178 sys_rt_sigqueueinfo *
@@ -6030,7 +6008,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(capget,		0), // 184 sys_capget *
 
    SYSB_(capset,		0), // 185 sys_capset *
-   // 186 SIG
+   SYSBA(sigaltstack,		SIG_SIM), // 186 sys_sigaltstack
    SYSBA(sendfile,		MayBlock), // 187 sys_sendfile *
    SYSBA(getpmsg,		MayBlock), // 188 sys_ni_syscall ...
    SYSB_(putpmsg,		MayBlock), // 189 sys_ni_syscall ...
@@ -6102,23 +6080,25 @@ static const struct sys_info sys_info[] = {
    SYSBA(futex,                 MayBlock), // 240 sys_futex *
    SYSB_(sched_setaffinity,     0), // 241 sys_sched_setaffinity *
    SYSBA(sched_getaffinity,     0), // 242 sys_sched_getaffinity *
-   // 243, 244 special
+   SYSB_(set_thread_area,	Special), // 243 sys_set_thread_area
+   SYSB_(get_thread_area,	Special), // 244  sys_get_thread_area
 
-   // 245, 246 special
+   SYSB_(io_setup,              Special), // 245  sys_io_setup *
+   SYSB_(io_destroy,            Special), // 246 sys_io_destroy *
    SYSBA(io_getevents,          MayBlock), // 247 sys_io_getevents *
    SYSB_(io_submit,             0), // 248 sys_io_submit *
    SYSBA(io_cancel,             0), // 249 sys_io_cancel *
 
    // fadvise64		               250 sys_fadvise64 *
    // 251 is empty...   // sys_ni_syscall
-   // 252 exit_group special
+   SYSX_(__NR_exit_group,       sys_exit_group), // 252 *
    SYSBA(lookup_dcookie,	0), // 253 sys_lookup_dcookie *
    SYSBA(epoll_create,          0), // 254 sys_epoll_create *
 
    SYSB_(epoll_ctl,             0), // 255 sys_epoll_ctl *
    SYSBA(epoll_wait,		MayBlock), // 256 sys_epoll_wait *
    // remap_file_pages	               257 sys_remap_file_pages *
-   // 258 set_tid_address special
+   SYSB_(set_tid_address,	Special), // 258 sys_set_tid_address *
    SYSBA(timer_create,		0), // 259 sys_timer_create
 
    SYSBA(timer_settime,		0), // (timer_create+1) sys_timer_settime *
@@ -6150,14 +6130,6 @@ static const struct sys_info sys_info[] = {
    SYSB_(mq_notify,             0), // (mq_open+4) sys_mq_notify *
    SYSBA(mq_getsetattr,         0), // (mq_open+5) sys_mq_getsetarr *
    // sys_kexec_load	               283 sys_ni_syscall *
-
-#if !SIGNAL_SIMULATION
-   SYSBA(sigaction,		0), // 67
-   SYSBA(sigprocmask,		0), // 126
-   SYSBA(rt_sigaction,		0), // 174
-   SYSBA(rt_sigprocmask,	0), // 175
-   SYSBA(sigaltstack,		0), // 186
-#endif /* !SIGNAL_SIMULATION */
 };
 #define MAX_SYS_INFO		(sizeof(sys_info)/sizeof(sys_info[0]))
 
@@ -6175,9 +6147,10 @@ static const struct sys_info sys_info[] = {
 Bool VG_(pre_syscall) ( ThreadId tid )
 {
    ThreadState* tst;
-   UInt         syscallno;
+   UInt         syscallno, flags;
    const struct sys_info *sys;
-   Bool special = False;
+   Bool isSpecial = False;
+   Bool mayBlock  = False;
    Bool syscall_done = False;	/* we actually ran the syscall */
 
    VGP_PUSHCC(VgpCoreSysWrap);
@@ -6216,41 +6189,47 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    tst->syscallno = syscallno;
    vg_assert(tst->status == VgTs_Runnable);
 
-   if (syscallno < MAX_SPECIAL_SYS && special_sys[syscallno].before != NULL) {
-      sys = &special_sys[syscallno];
-      special = True;
-   } else if (syscallno < MAX_SYS_INFO && sys_info[syscallno].before != NULL) {
+   if (syscallno < MAX_SYS_INFO && sys_info[syscallno].before != NULL) {
       sys = &sys_info[syscallno];
    } else {
       sys = &bad_sys;
-      special = True;
+   }
+   // XXX: remove once all syscalls are converted
+   if (sys->flags_ptr) {
+      flags = *(sys->flags_ptr);
+   } else {
+      flags = sys->flags;
    }
 
-   tst->sys_flags = sys->flags;
+   isSpecial = flags & Special;
+   mayBlock  = flags & MayBlock;
+
+   tst->sys_flags = flags;
+
 
    /* Do any pre-syscall actions */
    if (VG_(needs).syscall_wrapper) {
       VGP_PUSHCC(VgpSkinSysWrap);
-      tst->sys_pre_res = SK_(pre_syscall)(tid, syscallno, /*isBlocking*/(sys->flags & MayBlock) != 0);
+      tst->sys_pre_res = SK_(pre_syscall)(tid, syscallno, mayBlock);
       VGP_POPCC(VgpSkinSysWrap);
    }
 
    PRINT("SYSCALL[%d,%d](%3d)%s%s:", 
          VG_(getpid)(), tid, syscallno, 
-         special ? " special" : "",
-         (sys->flags & MayBlock) != 0 ? " blocking" : "");
+         isSpecial ? " special"  : "",
+         mayBlock  ? " blocking" : "");
 
-   if (special) {
+   if (isSpecial) {
       /* "Special" syscalls are implemented by Valgrind internally,
 	 and do not generate real kernel calls.  The expectation,
 	 therefore, is that the "before" function not only does the
 	 appropriate tests, but also performs the syscall itself and
 	 sets the result.  Special syscalls cannot block. */
-      vg_assert((tst->sys_flags & MayBlock) == 0);
+      vg_assert(mayBlock == 0);
 
       (sys->before)(tst->tid, tst);
 
-      vg_assert(tst->sys_flags == sys->flags);
+      vg_assert(tst->sys_flags == flags);
 
       PRINT(" --> %lld (0x%llx)\n", (Long)(Word)res, (ULong)res);
       syscall_done = True;
@@ -6262,7 +6241,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	    anything - just pretend the syscall happened. */
          PRINT(" ==> %lld (0x%llx)\n", (Long)(Word)res, (ULong)res);
 	 syscall_done = True;
-      } else if ((tst->sys_flags & MayBlock) != 0) {
+      } else if (mayBlock) {
 	 /* Issue to worker.  If we're waiting on the syscall because
 	    it's in the hands of the ProxyLWP, then set the thread
 	    state to WaitSys. */
@@ -6301,9 +6280,9 @@ static void restart_syscall(ThreadId tid)
 void VG_(post_syscall) ( ThreadId tid, Bool restart )
 {
    ThreadState* tst;
-   UInt syscallno;
+   UInt syscallno, flags;
    const struct sys_info *sys;
-   Bool special = False;
+   Bool isSpecial = False;
    Bool restarted = False;
    void *pre_res;
 
@@ -6320,15 +6299,19 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
 
    vg_assert(syscallno != -1);			/* must be a current syscall */
 
-   if (syscallno < MAX_SPECIAL_SYS && special_sys[syscallno].before != NULL) {
-      sys = &special_sys[syscallno];
-      special = True;
-   } else if (syscallno < MAX_SYS_INFO && sys_info[syscallno].before != NULL) {
+   if (syscallno < MAX_SYS_INFO && sys_info[syscallno].before != NULL) {
       sys = &sys_info[syscallno];
    } else {
       sys = &bad_sys;
-      special = True;
    }
+   // XXX: remove once all syscalls are converted
+   if (sys->flags_ptr) {
+      flags = *(sys->flags_ptr);
+   } else {
+      flags = sys->flags;
+   }
+
+   isSpecial = flags & Special;
 
    if (res == -VKI_ERESTARTSYS) {
       /* Applications never expect to see this, so we should either

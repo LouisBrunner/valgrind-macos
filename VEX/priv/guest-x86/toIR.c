@@ -125,10 +125,13 @@ static void stmt ( IRStmt* st );
 
 /* disInstr disassembles an instruction located at &guest_code[delta],
    and sets *size to its size.  If the returned value is Dis_Resteer,
-   the next guest address is assigned to *whereNext.  If chaseJumps
-   is False, disInstr may not return Dis_Resteer. */
+   the next guest address is assigned to *whereNext.  disInstr is not
+   permitted to return Dis_Resteer if either (1) resteerOK is False,
+   or (2) resteerOkFn, when applied to the address which it wishes to
+   resteer into, returns False.  */
    
 static DisResult disInstr ( /*IN*/  Bool    resteerOK,
+                            /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
                             /*IN*/  UInt    delta, 
                             /*OUT*/ UInt*   size,
                             /*OUT*/ Addr64* whereNext );
@@ -143,6 +146,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
                         Addr64 guest_eip_start, 
                         Int*   guest_bytes_read, 
                         Bool   (*byte_accessible)(Addr64),
+                        Bool   (*chase_into_ok)(Addr64),
                         Bool   host_bigendian )
 {
    UInt       delta;
@@ -182,11 +186,12 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
 
       if (n_instrs > 0) {
          /* for the first insn, the dispatch loop will have set
-	    %EIP, but for all the others we have to do it ourselves. */
+            %EIP, but for all the others we have to do it ourselves. */
          stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_eip_bbstart + delta)) );
       }
 
-      dres = disInstr( resteerOK, delta, &size, &guest_next );
+      dres = disInstr( resteerOK, chase_into_ok, 
+                       delta, &size, &guest_next );
 
       /* Print the resulting IR, if needed. */
       if (vex_traceflags & VEX_TRACE_FE) {
@@ -236,12 +241,13 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
          case Dis_Resteer:
             vassert(irbb->next == NULL);
             /* figure out a new delta to continue at. */
+            vassert(chase_into_ok(guest_next));
             delta = (UInt)(guest_next - guest_eip_start);
             n_resteers++;
             d_resteers++;
             if (0 && (n_resteers & 0xFF) == 0)
-	    vex_printf("resteer[%d,%d] to %p (delta = %d)\n",
-		       n_resteers, d_resteers,
+            vex_printf("resteer[%d,%d] to %p (delta = %d)\n",
+                       n_resteers, d_resteers,
                        (void*)(UInt)(guest_next), delta);
             break;
       }
@@ -470,7 +476,7 @@ static IRExpr* getIReg ( Int sz, UInt archreg )
    vassert(sz == 1 || sz == 2 || sz == 4);
    vassert(archreg < 8);
    return IRExpr_Get( integerGuestRegOffset(sz,archreg),
-		      szToITy(sz) );
+                      szToITy(sz) );
 }
 
 /* Ditto, but write to a reg instead. */
@@ -558,7 +564,7 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
    vassert(op8 == Iop_Add8 || op8 == Iop_Sub8 
            || op8 == Iop_Mul8 
            || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
-	   || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
+           || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
            || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
            || op8 == Iop_Not8 || op8 == Iop_Neg8 );
    adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
@@ -892,7 +898,7 @@ static Condcode positiveIse_Condcode ( Condcode  cond,
    appropriately.
 */
 static void helper_ADC ( Int sz,
-			 IRTemp tres, IRTemp ta1, IRTemp ta2 )
+                         IRTemp tres, IRTemp ta1, IRTemp ta2 )
 {
    UInt    thunkOp;
    IRType  ty    = szToITy(sz);
@@ -907,7 +913,7 @@ static void helper_ADC ( Int sz,
    /* oldc = old carry flag, 0 or 1 */
    assign( oldc,  binop(Iop_And32,
                         mk_calculate_eflags_c(),
-		        mkU32(1)) );
+                        mkU32(1)) );
 
    assign( oldcn, narrowTo(ty, mkexpr(oldc)) );
 
@@ -926,7 +932,7 @@ static void helper_ADC ( Int sz,
    appropriately.
 */
 static void helper_SBB ( Int sz,
-			 IRTemp tres, IRTemp ta1, IRTemp ta2 )
+                         IRTemp tres, IRTemp ta1, IRTemp ta2 )
 {
    UInt    thunkOp;
    IRType  ty    = szToITy(sz);
@@ -941,7 +947,7 @@ static void helper_SBB ( Int sz,
    /* oldc = old carry flag, 0 or 1 */
    assign( oldc, binop(Iop_And32,
                        mk_calculate_eflags_c(),
-		       mkU32(1)) );
+                       mkU32(1)) );
 
    assign( oldcn, narrowTo(ty, mkexpr(oldc)) );
 
@@ -964,19 +970,19 @@ static void helper_SBB ( Int sz,
 //-- 
 //-- #define VG_CPU_VENDOR_GENERIC        0
 //-- #define VG_CPU_VENDOR_INTEL        1
-//-- #define VG_CPU_VENDOR_AMD	2
+//-- #define VG_CPU_VENDOR_AMD        2
 //-- 
 //-- static Int cpu_vendor = VG_CPU_VENDOR_GENERIC;
 //-- 
 //-- static const struct cpu_vendor {
-//-- 	const Char *vendorstr;
-//-- 	Int	    vendorid;
+//--         const Char *vendorstr;
+//--         Int            vendorid;
 //-- } cpu_vendors[] = {
-//-- 	{ "GenuineIntel", VG_CPU_VENDOR_INTEL },
-//-- 	{ "AuthenticAMD", VG_CPU_VENDOR_AMD },
+//--         { "GenuineIntel", VG_CPU_VENDOR_INTEL },
+//--         { "AuthenticAMD", VG_CPU_VENDOR_AMD },
 //-- };
 //-- 
-//-- static Int cpuid_level = -2;	/* -2 -> not initialized */
+//-- static Int cpuid_level = -2;        /* -2 -> not initialized */
 //-- static UInt cpu_features[VG_N_FEATURE_WORDS];
 //-- 
 //-- /* Standard macro to see if a specific flag is changeable */
@@ -1024,8 +1030,8 @@ static void helper_SBB ( Int sz,
 //-- 
 //--    for(i = 0; i < sizeof(cpu_vendors)/sizeof(*cpu_vendors); i++)
 //--       if (VG_(memcmp)(vendorstr, cpu_vendors[i].vendorstr, 12) == 0) {
-//-- 	 cpu_vendor = cpu_vendors[i].vendorid;
-//-- 	 break;
+//--          cpu_vendor = cpu_vendors[i].vendorid;
+//--          break;
 //--       }
 //-- 
 //--    if (cpuid_level >= 1)
@@ -1061,72 +1067,72 @@ static void helper_SBB ( Int sz,
 //--    extensions which don't have any user-mode visible effect (but the
 //--    client may find interesting).
 //--  */
-#define VG_X86_SUPPORTED_FEATURES		\
-	 ((1 << VG_X86_FEAT_FPU)	|	\
-	  (1 << VG_X86_FEAT_VME)	|	\
-	  (1 << VG_X86_FEAT_DE)		|	\
-	  (1 << VG_X86_FEAT_PSE)	|	\
-	  (1 << VG_X86_FEAT_TSC)	|	\
-	  (0 << VG_X86_FEAT_MSR)	|	\
-	  (1 << VG_X86_FEAT_PAE)	|	\
-	  (1 << VG_X86_FEAT_MCE)	|	\
-	  (1 << VG_X86_FEAT_CX8)	|	\
-	  (1 << VG_X86_FEAT_APIC)	|	\
-	  (0 << VG_X86_FEAT_SEP)	|	\
-	  (1 << VG_X86_FEAT_MTRR)	|	\
-	  (1 << VG_X86_FEAT_PGE)	|	\
-	  (1 << VG_X86_FEAT_MCA)	|	\
-	  (1 << VG_X86_FEAT_CMOV)	|	\
-	  (1 << VG_X86_FEAT_PAT)	|	\
-	  (1 << VG_X86_FEAT_PSE36)	|	\
-	  (0 << VG_X86_FEAT_CLFSH)	|	\
-	  (1 << VG_X86_FEAT_DS)		|	\
-	  (1 << VG_X86_FEAT_ACPI)	|	\
-	  (1 << VG_X86_FEAT_MMX)	|	\
-	  (1 << VG_X86_FEAT_FXSR)	|	\
-	  (1 << VG_X86_FEAT_SSE)	|	\
-	  (1 << VG_X86_FEAT_SSE2)	|	\
-	  (1 << VG_X86_FEAT_SS)		|	\
-	  (1 << VG_X86_FEAT_HT)		|	\
-	  (1 << VG_X86_FEAT_TM)		|	\
-	  (0 << VG_X86_FEAT_IA64)	|	\
-	  (1 << VG_X86_FEAT_PBE))
+#define VG_X86_SUPPORTED_FEATURES                \
+         ((1 << VG_X86_FEAT_FPU)        |        \
+          (1 << VG_X86_FEAT_VME)        |        \
+          (1 << VG_X86_FEAT_DE)                |        \
+          (1 << VG_X86_FEAT_PSE)        |        \
+          (1 << VG_X86_FEAT_TSC)        |        \
+          (0 << VG_X86_FEAT_MSR)        |        \
+          (1 << VG_X86_FEAT_PAE)        |        \
+          (1 << VG_X86_FEAT_MCE)        |        \
+          (1 << VG_X86_FEAT_CX8)        |        \
+          (1 << VG_X86_FEAT_APIC)        |        \
+          (0 << VG_X86_FEAT_SEP)        |        \
+          (1 << VG_X86_FEAT_MTRR)        |        \
+          (1 << VG_X86_FEAT_PGE)        |        \
+          (1 << VG_X86_FEAT_MCA)        |        \
+          (1 << VG_X86_FEAT_CMOV)        |        \
+          (1 << VG_X86_FEAT_PAT)        |        \
+          (1 << VG_X86_FEAT_PSE36)        |        \
+          (0 << VG_X86_FEAT_CLFSH)        |        \
+          (1 << VG_X86_FEAT_DS)                |        \
+          (1 << VG_X86_FEAT_ACPI)        |        \
+          (1 << VG_X86_FEAT_MMX)        |        \
+          (1 << VG_X86_FEAT_FXSR)        |        \
+          (1 << VG_X86_FEAT_SSE)        |        \
+          (1 << VG_X86_FEAT_SSE2)        |        \
+          (1 << VG_X86_FEAT_SS)                |        \
+          (1 << VG_X86_FEAT_HT)                |        \
+          (1 << VG_X86_FEAT_TM)                |        \
+          (0 << VG_X86_FEAT_IA64)        |        \
+          (1 << VG_X86_FEAT_PBE))
 
-#define VG_AMD_SUPPORTED_FEATURES					\
-	((0 << (VG_AMD_FEAT_SYSCALL % 32))	|			\
-	 (0 << (VG_AMD_FEAT_NXP % 32))		|			\
-	 (1 << (VG_AMD_FEAT_MMXEXT % 32))	|			\
-	 (0 << (VG_AMD_FEAT_FFXSR % 32))	|			\
-	 (0 << (VG_AMD_FEAT_LONGMODE % 32))	|			\
-	 (0 << (VG_AMD_FEAT_3DNOWEXT % 32))	|			\
-	 (0 << (VG_AMD_FEAT_3DNOW % 32))	|			\
-	 /* Common bits between standard features and AMD features */	\
-	 (1 << VG_X86_FEAT_FPU)		|				\
-	 (1 << VG_X86_FEAT_VME)		|				\
-	 (1 << VG_X86_FEAT_DE)		|				\
-	 (1 << VG_X86_FEAT_PSE)		|				\
-	 (1 << VG_X86_FEAT_TSC)		|				\
-	 (0 << VG_X86_FEAT_MSR)		|				\
-	 (1 << VG_X86_FEAT_PAE)		|				\
-	 (1 << VG_X86_FEAT_MCE)		|				\
-	 (1 << VG_X86_FEAT_CX8)		|				\
-	 (1 << VG_X86_FEAT_APIC)	|				\
-	 (1 << VG_X86_FEAT_MTRR)	|				\
-	 (1 << VG_X86_FEAT_PGE)		|				\
-	 (1 << VG_X86_FEAT_MCA)		|				\
-	 (1 << VG_X86_FEAT_CMOV)	|				\
-	 (1 << VG_X86_FEAT_PAT)		|				\
-	 (1 << VG_X86_FEAT_PSE36)	|				\
-	 (1 << VG_X86_FEAT_MMX)		|				\
-	 (1 << VG_X86_FEAT_FXSR))
+#define VG_AMD_SUPPORTED_FEATURES                                        \
+        ((0 << (VG_AMD_FEAT_SYSCALL % 32))        |                        \
+         (0 << (VG_AMD_FEAT_NXP % 32))                |                        \
+         (1 << (VG_AMD_FEAT_MMXEXT % 32))        |                        \
+         (0 << (VG_AMD_FEAT_FFXSR % 32))        |                        \
+         (0 << (VG_AMD_FEAT_LONGMODE % 32))        |                        \
+         (0 << (VG_AMD_FEAT_3DNOWEXT % 32))        |                        \
+         (0 << (VG_AMD_FEAT_3DNOW % 32))        |                        \
+         /* Common bits between standard features and AMD features */        \
+         (1 << VG_X86_FEAT_FPU)                |                                \
+         (1 << VG_X86_FEAT_VME)                |                                \
+         (1 << VG_X86_FEAT_DE)                |                                \
+         (1 << VG_X86_FEAT_PSE)                |                                \
+         (1 << VG_X86_FEAT_TSC)                |                                \
+         (0 << VG_X86_FEAT_MSR)                |                                \
+         (1 << VG_X86_FEAT_PAE)                |                                \
+         (1 << VG_X86_FEAT_MCE)                |                                \
+         (1 << VG_X86_FEAT_CX8)                |                                \
+         (1 << VG_X86_FEAT_APIC)        |                                \
+         (1 << VG_X86_FEAT_MTRR)        |                                \
+         (1 << VG_X86_FEAT_PGE)                |                                \
+         (1 << VG_X86_FEAT_MCA)                |                                \
+         (1 << VG_X86_FEAT_CMOV)        |                                \
+         (1 << VG_X86_FEAT_PAT)                |                                \
+         (1 << VG_X86_FEAT_PSE36)        |                                \
+         (1 << VG_X86_FEAT_MMX)                |                                \
+         (1 << VG_X86_FEAT_FXSR))
 
 
-//-- /*	
+//-- /*        
 //--    For simulating the cpuid instruction, we will
 //--    issue a "real" cpuid instruction and then mask out
 //--    the bits of the features we do not support currently (3dnow mostly).
 //--    We also claim to not support most CPUID operations.
-//-- 	
+//--         
 //--    Dirk Mueller <mueller@kde.org>
 //-- 
 //--    http://www.sandpile.org/ia32/cpuid.htm
@@ -1146,7 +1152,7 @@ static void helper_SBB ( Int sz,
 //--    UInt eax, ebx, ecx, edx;
 //-- 
 //--    if (cpuid_level == -2)
-//--       get_cpu_features();	/* for cpu_vendor */
+//--       get_cpu_features();        /* for cpu_vendor */
 //-- 
 //--    VG_(cpuid)(op, &eax, &ebx, &ecx, &edx);
 //-- 
@@ -1160,7 +1166,7 @@ static void helper_SBB ( Int sz,
 //--       /* Implement some private information at 0xd8000000 */
 //--       static const Char valgrind_vendor[] = "ValgrindVCPU";
 //-- 
-//--       eax = 0xd8000000;		/* max request */
+//--       eax = 0xd8000000;                /* max request */
 //--       ebx = *(UInt *)&valgrind_vendor[0];
 //--       ecx = *(UInt *)&valgrind_vendor[8];
 //--       edx = *(UInt *)&valgrind_vendor[4];
@@ -1173,20 +1179,20 @@ static void helper_SBB ( Int sz,
 //--    case VG_CPU_VENDOR_INTEL:
 //--       switch(op) {
 //--       case 1:
-//-- 	 ecx = 0;		/* mask out all extended features for now */
-//-- 	 break;
+//--          ecx = 0;                /* mask out all extended features for now */
+//--          break;
 //-- 
 //--       case 0x80000001:
-//-- 	 ebx = ecx = edx = 0;
-//-- 	 break;
+//--          ebx = ecx = edx = 0;
+//--          break;
 //--       }
 //--       break;
 //-- 
 //--    case VG_CPU_VENDOR_AMD:
 //--       switch(op) {
 //--       case 0x80000001:
-//-- 	 edx &= VG_AMD_SUPPORTED_FEATURES;
-//-- 	 break;
+//--          edx &= VG_AMD_SUPPORTED_FEATURES;
+//--          break;
 //--       }
 //--       break;
 //--    }
@@ -1352,7 +1358,7 @@ static Char nameISize ( Int size )
 //--       case ADC: case SBB: 
 //--          uFlagsRWU(cb, FlagC,      FlagsOSZACP, FlagsEmpty); break;
 //--       case MUL: case UMUL:
-//-- 	 uFlagsRWU(cb, FlagsEmpty, FlagsOC,     FlagsSZAP); break;
+//--          uFlagsRWU(cb, FlagsEmpty, FlagsOC,     FlagsSZAP); break;
 //--       case ADD: case SUB: case NEG: 
 //--          uFlagsRWU(cb, FlagsEmpty, FlagsOSZACP, FlagsEmpty); break;
 //--       case INC: case DEC:
@@ -1497,7 +1503,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          { UChar rm = mod_reg_rm;
            DIS(buf, "%s(%s)", sorbTxt(sorb), nameIReg(4,rm));
            *len = 1;
-	   return disAMode_copy2tmp(
+           return disAMode_copy2tmp(
                   handleSegOverride(sorb, getIReg(4,rm)));
          }
 
@@ -1509,8 +1515,8 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          { UChar rm = mod_reg_rm & 7;
            UInt  d  = getSDisp8(delta);
            DIS(buf, "%s%d(%s)", sorbTxt(sorb), d, nameIReg(4,rm));
-	   *len = 2;
-	   return disAMode_copy2tmp(
+           *len = 2;
+           return disAMode_copy2tmp(
                   handleSegOverride(sorb,
                      binop(Iop_Add32,getIReg(4,rm),mkU32(d))));
          }
@@ -1523,8 +1529,8 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          { UChar rm = mod_reg_rm & 7;
            UInt  d  = getUDisp32(delta);
            DIS(buf, "%s0x%x(%s)", sorbTxt(sorb), d, nameIReg(4,rm));
-	   *len = 5;
-	   return disAMode_copy2tmp(
+           *len = 5;
+           return disAMode_copy2tmp(
                   handleSegOverride(sorb,
                      binop(Iop_Add32,getIReg(4,rm),mkU32(d))));
          }
@@ -1569,16 +1575,16 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          UChar scale   = (sib >> 6) & 3;
          UChar index_r = (sib >> 3) & 7;
          UChar base_r  = sib & 7;
-	 delta++;
+         delta++;
 
          if (index_r != R_ESP && base_r != R_EBP) {
             DIS(buf, "%s(%s,%s,%d)", sorbTxt(sorb), 
                       nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
-	    *len = 2;
+            *len = 2;
             return
                disAMode_copy2tmp( 
-	       handleSegOverride(sorb,
-	          binop(Iop_Add32, 
+               handleSegOverride(sorb,
+                  binop(Iop_Add32, 
                         getIReg(4,base_r),
                         binop(Iop_Shl32, getIReg(4,index_r),
                               mkU8(scale)))));
@@ -1592,24 +1598,24 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
             return
                disAMode_copy2tmp(
                handleSegOverride(sorb, 
-	          binop(Iop_Add32,
-		        binop(Iop_Shl32, getIReg(4,index_r), mkU8(scale)),
+                  binop(Iop_Add32,
+                        binop(Iop_Shl32, getIReg(4,index_r), mkU8(scale)),
                         mkU32(d))));
          }
 
          if (index_r == R_ESP && base_r != R_EBP) {
             DIS(buf, "%s(%s,,)", sorbTxt(sorb), nameIReg(4,base_r));
-	    *len = 2;
-	    return disAMode_copy2tmp(
+            *len = 2;
+            return disAMode_copy2tmp(
                    handleSegOverride(sorb, getIReg(4,base_r)));
          }
 
          if (index_r == R_ESP && base_r == R_EBP) {
             UInt d = getUDisp32(delta);
             DIS(buf, "%s0x%x()", sorbTxt(sorb), d);
-	    *len = 6;
-	    vpanic("amode 8");
-	    return disAMode_copy2tmp(
+            *len = 6;
+            vpanic("amode 8");
+            return disAMode_copy2tmp(
                    handleSegOverride(sorb, mkU32(d)));
          }
 
@@ -1634,15 +1640,15 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
 
          if (index_r == R_ESP) {
             DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), d, nameIReg(4,base_r));
-	    *len = 3;
-	    return disAMode_copy2tmp(
+            *len = 3;
+            return disAMode_copy2tmp(
                    handleSegOverride(sorb, 
                       binop(Iop_Add32, getIReg(4,base_r), mkU32(d)) ));
          } else {
             DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), d, 
                      nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
-	    *len = 3;
-	    return 
+            *len = 3;
+            return 
                 disAMode_copy2tmp(
                 handleSegOverride(sorb,
                   binop(Iop_Add32,
@@ -1673,15 +1679,15 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
 
          if (index_r == R_ESP) {
             DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), d, nameIReg(4,base_r));
-	    *len = 6;
-	    return disAMode_copy2tmp(
+            *len = 6;
+            return disAMode_copy2tmp(
                    handleSegOverride(sorb, 
                       binop(Iop_Add32, getIReg(4,base_r), mkU32(d)) ));
          } else {
             DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), d, 
                       nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
-	    *len = 6;
-	    return 
+            *len = 6;
+            return 
                 disAMode_copy2tmp(
                 handleSegOverride(sorb,
                   binop(Iop_Add32,
@@ -1851,7 +1857,7 @@ UInt dis_op2_E_G ( UChar       sorb,
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-	 if (isAddSub(op8))
+         if (isAddSub(op8))
             setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
             setFlags_DEP1(op8, dst1, ty);
@@ -1878,7 +1884,7 @@ UInt dis_op2_E_G ( UChar       sorb,
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-	 if (isAddSub(op8))
+         if (isAddSub(op8))
             setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
             setFlags_DEP1(op8, dst1, ty);
@@ -1959,7 +1965,7 @@ UInt dis_op2_G_E ( UChar       sorb,
          putIReg(size, eregOfRM(rm), mkexpr(dst1));
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-	 if (isAddSub(op8))
+         if (isAddSub(op8))
             setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
             setFlags_DEP1(op8, dst1, ty);
@@ -1988,7 +1994,7 @@ UInt dis_op2_G_E ( UChar       sorb,
          storeLE(mkexpr(addr), mkexpr(dst1));
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-	 if (isAddSub(op8))
+         if (isAddSub(op8))
             setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
             setFlags_DEP1(op8, dst1, ty);
@@ -2132,8 +2138,8 @@ UInt dis_movx_E_G ( UChar       sorb,
    UChar rm = getIByte(delta);
    if (epartIsReg(rm)) {
       putIReg(szd, gregOfRM(rm),
-	           unop(mkWidenOp(szs,szd,sign_extend), 
-		        getIReg(szs,eregOfRM(rm))));
+                   unop(mkWidenOp(szs,szd,sign_extend), 
+                        getIReg(szs,eregOfRM(rm))));
       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
                                nameISize(szs), nameISize(szd),
                                nameIReg(szs,eregOfRM(rm)),
@@ -2148,7 +2154,7 @@ UInt dis_movx_E_G ( UChar       sorb,
       IRTemp addr = disAMode ( &len, sorb, delta, dis_buf );
 
       putIReg(szd, gregOfRM(rm),
-	           unop(mkWidenOp(szs,szd,sign_extend), 
+                   unop(mkWidenOp(szs,szd,sign_extend), 
                         loadLE(szToITy(szs),mkexpr(addr))));
       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
                                nameISize(szs), nameISize(szd),
@@ -2288,7 +2294,7 @@ UInt dis_Grp1 ( UChar sorb,
          helper_SBB( sz, dst1, dst0, src );
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-	 if (isAddSub(op8))
+         if (isAddSub(op8))
             setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
             setFlags_DEP1(op8, dst1, ty);
@@ -2313,7 +2319,7 @@ UInt dis_Grp1 ( UChar sorb,
          helper_SBB( sz, dst1, dst0, src );
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-	 if (isAddSub(op8))
+         if (isAddSub(op8))
             setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
             setFlags_DEP1(op8, dst1, ty);
@@ -2564,28 +2570,28 @@ UInt dis_Grp2 ( UChar  sorb,
 //--                    Addr eip, UChar modrm,
 //--                    Int am_sz, Int sz, UInt src_val )
 //-- {
-#  define MODIFY_t2_AND_SET_CARRY_FLAG					\
-      /* t2 is the value to be op'd on.  Copy to t_fetched, then	\
-         modify t2, if non-BT. */					\
-      uInstr2(cb, MOV,   4,  TempReg, t2, TempReg, t_fetched);		\
-      uInstr2(cb, MOV,  sz,  Literal, 0,  TempReg, t_mask);		\
-      uLiteral(cb, v_mask);						\
-      switch (gregOfRM(modrm)) {					\
-         case 4: /* BT */  break;					\
-         case 5: /* BTS */ 						\
-            uInstr2(cb, OR, sz, TempReg, t_mask, TempReg, t2); break;	\
-         case 6: /* BTR */						\
-            uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t2); break;	\
-         case 7: /* BTC */ 						\
-            uInstr2(cb, XOR, sz, TempReg, t_mask, TempReg, t2); break;	\
-      }									\
-      /* Copy relevant bit from t_fetched into carry flag. */		\
-      uInstr2(cb, SHR, sz, Literal, 0, TempReg, t_fetched);		\
-      uLiteral(cb, src_val);						\
-      uInstr2(cb, MOV, sz, Literal, 0, TempReg, t_mask);		\
-      uLiteral(cb, 1);							\
-      uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t_fetched);	\
-      uInstr1(cb, NEG, sz, TempReg, t_fetched);				\
+#  define MODIFY_t2_AND_SET_CARRY_FLAG                                        \
+      /* t2 is the value to be op'd on.  Copy to t_fetched, then        \
+         modify t2, if non-BT. */                                        \
+      uInstr2(cb, MOV,   4,  TempReg, t2, TempReg, t_fetched);                \
+      uInstr2(cb, MOV,  sz,  Literal, 0,  TempReg, t_mask);                \
+      uLiteral(cb, v_mask);                                                \
+      switch (gregOfRM(modrm)) {                                        \
+         case 4: /* BT */  break;                                        \
+         case 5: /* BTS */                                                 \
+            uInstr2(cb, OR, sz, TempReg, t_mask, TempReg, t2); break;        \
+         case 6: /* BTR */                                                \
+            uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t2); break;        \
+         case 7: /* BTC */                                                 \
+            uInstr2(cb, XOR, sz, TempReg, t_mask, TempReg, t2); break;        \
+      }                                                                        \
+      /* Copy relevant bit from t_fetched into carry flag. */                \
+      uInstr2(cb, SHR, sz, Literal, 0, TempReg, t_fetched);                \
+      uLiteral(cb, src_val);                                                \
+      uInstr2(cb, MOV, sz, Literal, 0, TempReg, t_mask);                \
+      uLiteral(cb, 1);                                                        \
+      uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t_fetched);        \
+      uInstr1(cb, NEG, sz, TempReg, t_fetched);                                \
       setFlagsFromUOpcode(cb, NEG);
 
 
@@ -2748,11 +2754,11 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
       switch (gregOfRM(modrm)) {
          case 0: { /* TEST */
             delta++; d32 = getUDisp(sz, delta); delta += sz;
-	    dst1 = newTemp(ty);
-	    assign(dst1, binop(mkSizedOp(ty,Iop_And8),
-			       getIReg(sz,eregOfRM(modrm)),
+            dst1 = newTemp(ty);
+            assign(dst1, binop(mkSizedOp(ty,Iop_And8),
+                               getIReg(sz,eregOfRM(modrm)),
                                mkU(ty,d32)));
-	    setFlags_DEP1( Iop_And8, dst1, ty );
+            setFlags_DEP1( Iop_And8, dst1, ty );
             DIP("test%c $0x%x, %s\n", nameISize(sz), d32, 
                                       nameIReg(sz, eregOfRM(modrm)));
             break;
@@ -2769,23 +2775,23 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
             dst0 = newTemp(ty);
             src  = newTemp(ty);
             dst1 = newTemp(ty);
-	    assign(dst0, mkU(ty,0));
+            assign(dst0, mkU(ty,0));
             assign(src,  getIReg(sz,eregOfRM(modrm)));
-	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
+            assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
             setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
-	    putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
+            putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
             DIP("neg%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
             break;
          case 4: /* MUL (unsigned widening) */
             delta++;
             src = newTemp(ty);
-	    assign(src, getIReg(sz,eregOfRM(modrm)));
+            assign(src, getIReg(sz,eregOfRM(modrm)));
             codegen_mulL_A_D ( sz, False, src, nameIReg(sz,eregOfRM(modrm)) );
             break;
          case 5: /* IMUL (signed widening) */
             delta++;
             src = newTemp(ty);
-	    assign(src, getIReg(sz,eregOfRM(modrm)));
+            assign(src, getIReg(sz,eregOfRM(modrm)));
             codegen_mulL_A_D ( sz, True, src, nameIReg(sz,eregOfRM(modrm)) );
             break;
          case 6: /* DIV */
@@ -2813,10 +2819,10 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
       switch (gregOfRM(modrm)) {
          case 0: { /* TEST */
             d32 = getUDisp(sz, delta); delta += sz;
-	    dst1 = newTemp(ty);
-	    assign(dst1, binop(mkSizedOp(ty,Iop_And8),
-			       mkexpr(t1), mkU(ty,d32)));
-	    setFlags_DEP1( Iop_And8, dst1, ty );
+            dst1 = newTemp(ty);
+            assign(dst1, binop(mkSizedOp(ty,Iop_And8),
+                               mkexpr(t1), mkU(ty,d32)));
+            setFlags_DEP1( Iop_And8, dst1, ty );
             DIP("test%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
             break;
          }
@@ -2829,11 +2835,11 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
             dst0 = newTemp(ty);
             src  = newTemp(ty);
             dst1 = newTemp(ty);
-	    assign(dst0, mkU(ty,0));
+            assign(dst0, mkU(ty,0));
             assign(src,  mkexpr(t1));
-	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
+            assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
             setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
-	    storeLE( mkexpr(addr), mkexpr(dst1) );
+            storeLE( mkexpr(addr), mkexpr(dst1) );
             DIP("neg%c %s\n", nameISize(sz), dis_buf);
             break;
          case 4: /* MUL */
@@ -2950,8 +2956,8 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* whatNext )
             t2 = newTemp(Ity_I32);
             assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
             putIReg(4, R_ESP, mkexpr(t2));
-	    storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+1));
-	    jmp_treg(Ijk_Call,t1);
+            storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+1));
+            jmp_treg(Ijk_Call,t1);
             *whatNext = Dis_StopHere;
             break;
          case 4: /* jmp Ev */
@@ -2990,8 +2996,8 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* whatNext )
             t2 = newTemp(Ity_I32);
             assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
             putIReg(4, R_ESP, mkexpr(t2));
-	    storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+len));
-	    jmp_treg(Ijk_Call,t1);
+            storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+len));
+            jmp_treg(Ijk_Call,t1);
             *whatNext = Dis_StopHere;
             break;
          case 4: /* JMP Ev */
@@ -3004,7 +3010,7 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* whatNext )
             t2 = newTemp(Ity_I32);
             assign( t2, binop(Iop_Sub32,getIReg(4,R_ESP),mkU32(sz)) );
             putIReg(4, R_ESP, mkexpr(t2) );
-	    storeLE( mkexpr(t2), mkexpr(t1) );
+            storeLE( mkexpr(t2), mkexpr(t1) );
             break;
          default: 
             vex_printf(
@@ -3204,7 +3210,7 @@ void dis_REP_op ( Condcode cond,
       jmp_lit(Ijk_Boring,eip);
    } else {
       stmt( IRStmt_Exit( mk_calculate_condition(cond),
-	                 IRConst_U32(eip) ) );
+                         IRConst_U32(eip) ) );
       jmp_lit(Ijk_Boring,eip_next);
    }
    DIP("%s%c\n", name, nameISize(sz));
@@ -3750,13 +3756,13 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 2: /* FST single-real */
                DIP("fstS %s", dis_buf);
-	       storeLE(mkexpr(addr), unop(Iop_F64toF32, get_ST(0)));
+               storeLE(mkexpr(addr), unop(Iop_F64toF32, get_ST(0)));
                break;
 
             case 3: /* FSTP single-real */
                DIP("fstpS %s", dis_buf);
-	       storeLE(mkexpr(addr), unop(Iop_F64toF32, get_ST(0)));
-	       fp_pop();
+               storeLE(mkexpr(addr), unop(Iop_F64toF32, get_ST(0)));
+               fp_pop();
                break;
 
             case 5: /* FLDCW */
@@ -3782,10 +3788,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
             case 0xC0 ... 0xC7: /* FLD %st(?) */
                r_src = (UInt)modrm - 0xC0;
                DIP("fld %%st(%d)\n", r_src);
-	       t1 = newTemp(Ity_F64);
-	       assign(t1, get_ST(r_src));
-	       fp_push();
-	       put_ST(0, mkexpr(t1));
+               t1 = newTemp(Ity_F64);
+               assign(t1, get_ST(r_src));
+               fp_push();
+               put_ST(0, mkexpr(t1));
                break;
 
             case 0xC8 ... 0xCF: /* FXCH %st(?) */
@@ -3983,33 +3989,33 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0: /* FIADD m32int */ /* ST(0) += m32int */
                DIP("fiaddl %s", dis_buf);
-	       fop = Iop_AddF64;
-	       goto do_fop_m32;
+               fop = Iop_AddF64;
+               goto do_fop_m32;
 
             case 1: /* FIMUL m32int */ /* ST(0) *= m32int */
                DIP("fimull %s", dis_buf);
-	       fop = Iop_MulF64;
-	       goto do_fop_m32;
+               fop = Iop_MulF64;
+               goto do_fop_m32;
 
             case 4: /* FISUB m32int */ /* ST(0) -= m32int */
                DIP("fisubl %s", dis_buf);
-	       fop = Iop_SubF64;
-	       goto do_fop_m32;
+               fop = Iop_SubF64;
+               goto do_fop_m32;
 
             case 5: /* FISUBR m32int */ /* ST(0) = m32int - ST(0) */
                DIP("fisubrl %s", dis_buf);
-	       fop = Iop_SubF64;
-	       goto do_foprev_m32;
+               fop = Iop_SubF64;
+               goto do_foprev_m32;
 
             case 6: /* FIDIV m32int */ /* ST(0) /= m32int */
                DIP("fisubl %s", dis_buf);
-	       fop = Iop_DivF64;
-	       goto do_fop_m32;
+               fop = Iop_DivF64;
+               goto do_fop_m32;
 
             case 7: /* FIDIVR m32int */ /* ST(0) = m32int / ST(0) */
                DIP("fidivrl %s", dis_buf);
-	       fop = Iop_DivF64;
-	       goto do_foprev_m32;
+               fop = Iop_DivF64;
+               goto do_foprev_m32;
 
             do_fop_m32:
                put_ST_UNCHECKED(0, 
@@ -4039,8 +4045,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC8 ... 0xCF: /* FCMOVE(Z) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
-	       DIP("fcmovz %%st(%d), %%st(0)", r_src);
-	       put_ST_UNCHECKED(0, 
+               DIP("fcmovz %%st(%d), %%st(0)", r_src);
+               put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,mk_calculate_condition(CondZ)), 
                                     get_ST(0), get_ST(r_src)) );
@@ -4060,9 +4066,9 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_pop();
                break;
 
-	    default:
+            default:
                goto decode_fail;
-	 }
+         }
 
       }
    }
@@ -4096,7 +4102,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                DIP("fistpl %s", dis_buf);
                storeLE( mkexpr(addr), 
                         binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
-	       fp_pop();
+               fp_pop();
                break;
 
             case 5: { /* FLD extended-real */
@@ -4163,8 +4169,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC8 ... 0xCF: /* FCMOVNE(NZ) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
-	       DIP("fcmovnz %%st(%d), %%st(0)", r_src);
-	       put_ST_UNCHECKED(0, 
+               DIP("fcmovnz %%st(%d), %%st(0)", r_src);
+               put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,mk_calculate_condition(CondNZ)), 
                                     get_ST(0), get_ST(r_src)) );
@@ -4286,7 +4292,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             default:
                goto decode_fail;
-	 }
+         }
 
       }
    }
@@ -4312,13 +4318,13 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 2: /* FST double-real */
                DIP("fstD %s", dis_buf);
-	       storeLE(mkexpr(addr), get_ST(0));
+               storeLE(mkexpr(addr), get_ST(0));
                break;
 
             case 3: /* FSTP double-real */
                DIP("fstpD %s", dis_buf);
-	       storeLE(mkexpr(addr), get_ST(0));
-	       fp_pop();
+               storeLE(mkexpr(addr), get_ST(0));
+               fp_pop();
                break;
 
             default:
@@ -4333,7 +4339,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
             case 0xD0 ... 0xD7: /* FST %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xD0;
                DIP("fst %%st(0),%%st(%d)\n", r_dst);
-	       /* P4 manual says: "If the destination operand is a
+               /* P4 manual says: "If the destination operand is a
                   non-empty register, the invalid-operation exception
                   is not generated.  Hence put_ST_UNCHECKED. */
                put_ST_UNCHECKED(r_dst, get_ST(0));
@@ -4342,7 +4348,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
             case 0xD8 ... 0xDF: /* FSTP %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xD8;
                DIP("fstp %%st(0),%%st(%d)\n", r_dst);
-	       /* P4 manual says: "If the destination operand is a
+               /* P4 manual says: "If the destination operand is a
                   non-empty register, the invalid-operation exception
                   is not generated.  Hence put_ST_UNCHECKED. */
                put_ST_UNCHECKED(r_dst, get_ST(0));
@@ -4376,9 +4382,9 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_pop();
                break;
 
-	    default:
+            default:
                goto decode_fail;
-	 }
+         }
       }
    }
 
@@ -4392,7 +4398,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
       } else {
 
          delta++;
-	 switch (modrm) {
+         switch (modrm) {
 
             case 0xC0 ... 0xC7: /* FADDP %st(0),%st(?) */
                fp_do_op_ST_ST ( "add", Iop_AddF64, 0, modrm - 0xC0, True );
@@ -4434,7 +4440,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             default: 
                goto decode_fail;
-	 }
+         }
 
       }
    }
@@ -4496,7 +4502,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
       } else {
 
          delta++;
-	 switch (modrm) {
+         switch (modrm) {
 
             case 0xE0: /* FNSTSW %ax */
                DIP("fnstsw %%ax\n");
@@ -4520,7 +4526,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             default: 
                goto decode_fail;
-	 }
+         }
       }
 
    }
@@ -5071,8 +5077,8 @@ UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
             binop(Iop_And32,
                   binop(Iop_Shr32, 
                         unop(Iop_8Uto32, mkexpr(t_fetched)),
-		        mkexpr(t_bitno2)),
-	          mkU32(1)))
+                        mkexpr(t_bitno2)),
+                  mkU32(1)))
        );
 
    /* Move reg operand from stack back to reg */
@@ -5688,8 +5694,8 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //-- static
 //-- Addr dis_SSE3_reg_or_mem ( UCodeBlock* cb, 
 //--                            UChar sorb, 
-//--         		   Addr eip,
-//-- 			   Int sz,
+//--                            Addr eip,
+//--                            Int sz,
 //--                            Char* name, 
 //--                            UChar opc1, 
 //--                            UChar opc2, 
@@ -5778,11 +5784,11 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //-- static
 //-- Addr dis_SSE2_reg_or_mem_Imm8 ( UCodeBlock* cb, 
 //--                                 UChar sorb, 
-//-- 				Addr eip,
+//--                                 Addr eip,
 //--                                 Int sz, 
 //--                                 Char* name,
-//-- 				UChar opc1, 
-//-- 				UChar opc2 )
+//--                                 UChar opc1, 
+//--                                 UChar opc2 )
 //-- {
 //--     Char dis_buf[50];
 //--    UChar modrm = getUChar(eip);
@@ -5825,11 +5831,11 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //-- static
 //-- Addr dis_SSE3_reg_or_mem_Imm8 ( UCodeBlock* cb, 
 //--                                 UChar sorb, 
-//-- 				Addr eip,
+//--                                 Addr eip,
 //--                                 Int sz, 
 //--                                 Char* name,
-//-- 				UChar opc1, 
-//-- 				UChar opc2,
+//--                                 UChar opc1, 
+//--                                 UChar opc2,
 //--                                 UChar opc3 )
 //-- {
 //--     Char dis_buf[50];
@@ -5874,7 +5880,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                                   UChar sorb,
 //--                                   Addr eip, 
 //--                                   Int sz,
-//-- 				  Bool is_store, 
+//--                                   Bool is_store, 
 //--                                   Char* name,
 //--                                   UChar insn0, 
 //--                                   UChar insn1, 
@@ -5925,7 +5931,7 @@ UInt dis_mov_Sw_Ew ( UChar sorb,
 //--                                   UChar sorb,
 //--                                   Addr eip, 
 //--                                   Int sz,
-//-- 				  Bool is_store, 
+//--                                   Bool is_store, 
 //--                                   Char* name,
 //--                                   UChar insn0, 
 //--                                   UChar insn1 )
@@ -6180,6 +6186,7 @@ void dis_ret ( UInt d32 )
    is False, disInstr may not return Dis_Resteer. */
    
 static DisResult disInstr ( /*IN*/  Bool    resteerOK,
+                            /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
                             /*IN*/  UInt    delta, 
                             /*OUT*/ UInt*   size,
                             /*OUT*/ Addr64* whereNext )
@@ -6413,7 +6420,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--       if (epartIsReg(modrm)) {
 //--          /* We're moving a value in an xmm reg to an ireg. */
 //--          eip += 4;
-//-- 	 t1 = newTemp(cb);
+//--          t1 = newTemp(cb);
 //--          /* sz is 4 for all 4 insns. */
 //--          vg_assert(epartIsReg(modrm));
 //--          uInstr3(cb, SSE3g_RegWr, 4,
@@ -6430,8 +6437,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--             kind of conversion on the way, which we need to have
 //--             happen too.  So our only choice is to re-emit a suitably
 //--             rehashed version of the instruction. */
-//--  	 /* Destination ireg is GREG.  Address goes as EREG as
-//-- 	    usual. */
+//--           /* Destination ireg is GREG.  Address goes as EREG as
+//--             usual. */
 //--          t1 = newTemp(cb); /* t1 holds value on its way to ireg */
 //--          pair = disAMode ( cb, sorb, eip+3, dis_buf );
 //--          t2   = LOW24(pair); /* t2 holds addr */
@@ -6474,7 +6481,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--          pair = disAMode ( cb, sorb, eip+3, dis_buf );
 //--          t2   = LOW24(pair);
 //--          eip += 3+HI8(pair);
-//-- 	 uInstr3(cb, SSE3a_MemRd, 4,
+//--          uInstr3(cb, SSE3a_MemRd, 4,
 //--                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
 //--                      Lit16, (((UShort)insn[2]) << 8) | (UShort)modrm,
 //--                      TempReg, t2 );
@@ -7162,7 +7169,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--       vg_assert(sz == 4);
 //--       eip = dis_SSE3_load_store_or_mov 
 //--                ( cb, sorb, eip+3, 8, insn[2]==0x11, "movsd",
-//-- 		 insn[0], insn[1], insn[2] );
+//--                  insn[0], insn[1], insn[2] );
 //--       goto decode_success;
 //--    }
 //-- 
@@ -7328,19 +7335,19 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--                      Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
 //--                      Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
 //--                      TempReg, t1 );
-//-- 	 uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, eregOfRM(modrm));
-//-- 	 DIP("movd %s, %s\n", 
+//--          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, eregOfRM(modrm));
+//--          DIP("movd %s, %s\n", 
 //--              nameXMMReg(gregOfRM(modrm)), nameIReg(4,eregOfRM(modrm)));
 //--          eip += 3;
 //--       } else
 //--       if (epartIsReg(modrm) && !is_store) {
 //--          t1 = newTemp(cb);
-//-- 	 uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
+//--          uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
 //--          uInstr3(cb, SSE3e_RegRd, 4,
 //--                      Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
 //--                      Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
 //--                      TempReg, t1 );
-//-- 	 DIP("movd %s, %s\n", 
+//--          DIP("movd %s, %s\n", 
 //--              nameIReg(4,eregOfRM(modrm)), nameXMMReg(gregOfRM(modrm)));
 //--          eip += 3;
 //--       } else {
@@ -7387,7 +7394,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--              nameXMMReg(gregOfRM(modrm)));
 //--          eip += 4;
 //--       } else {
-//-- 	 VG_(core_panic)("PINSRW mem");
+//--          VG_(core_panic)("PINSRW mem");
 //--       }
 //--       goto decode_success;
 //--    }
@@ -7436,7 +7443,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--       vg_assert(sz == 4 || sz == 2);
 //--       modrm = insn[2];
 //--       /* Intel docs don't say anything about a memory source being
-//-- 	 allowed here. */
+//--          allowed here. */
 //--       vg_assert(epartIsReg(modrm));
 //--       t1 = newTemp(cb);
 //--       if (sz == 4) {
@@ -7529,7 +7536,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD7) {
 //--       modrm = insn[2];
 //--       /* Intel docs don't say anything about a memory source being
-//-- 	 allowed here. */
+//--          allowed here. */
 //--       vg_assert(epartIsReg(modrm));
 //--       t1 = newTemp(cb);
 //--       uInstr3(cb, SSE3g_RegWr, 4,
@@ -7622,8 +7629,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          t1 = newTemp(Ity_I32); 
          assign(t1, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
          putIReg(4, R_ESP, mkexpr(t1));
-	 storeLE( mkexpr(t1), mkU32(guest_eip_bbstart+delta));
-         if (resteerOK) {
+         storeLE( mkexpr(t1), mkU32(guest_eip_bbstart+delta));
+         if (resteerOK && resteerOkFn((Addr64)(Addr32)d32)) {
             /* follow into the call target. */
             whatNext = Dis_Resteer;
             *whereNext = d32;
@@ -7652,8 +7659,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--       uInstr2(cb, PUT,    4, TempReg, t2,    ArchReg, R_EBP);
 //--       if (d32) {
 //--          uInstr2(cb, SUB,    4, Literal, 0,     TempReg, t2);
-//-- 	 uLiteral(cb, d32);
-//-- 	 uInstr2(cb, PUT,    4, TempReg, t2,    ArchReg, R_ESP);
+//--          uLiteral(cb, d32);
+//--          uInstr2(cb, PUT,    4, TempReg, t2,    ArchReg, R_ESP);
 //--       }
 //--       DIP("enter 0x%x, 0x%x", d32, abyte);
 //--       break;
@@ -7747,7 +7754,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       putIReg(sz, R_EDX,
                   binop(mkSizedOp(ty,Iop_Sar8), 
                         getIReg(sz, R_EAX),
-			mkU8(sz == 2 ? 15  : 31)) );
+                        mkU8(sz == 2 ? 15  : 31)) );
       DIP(sz == 2 ? "cwdq\n" : "cdqq\n");
       break;
 
@@ -7844,7 +7851,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0xEB: /* Jb (jump, byte offset) */
       d32 = (((Addr32)guest_eip_bbstart)+delta+1) + getSDisp8(delta); 
       delta++;
-      if (resteerOK) {
+      if (resteerOK && resteerOkFn((Addr64)(Addr32)d32)) {
          whatNext   = Dis_Resteer;
          *whereNext = d32;
       } else {
@@ -7858,7 +7865,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       vassert(sz == 4); /* JRS added 2004 July 11 */
       d32 = (((Addr32)guest_eip_bbstart)+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
-      if (resteerOK) {
+      if (resteerOK && resteerOkFn((Addr64)(Addr32)d32)) {
          whatNext   = Dis_Resteer;
          *whereNext = d32;
       } else {
@@ -8043,15 +8050,15 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       if (epartIsReg(modrm)) {
          delta++; /* mod/rm byte */
          d32 = getUDisp(sz,delta); delta += sz;
-	 putIReg(sz, eregOfRM(modrm), mkU(szToITy(sz), d32));
+         putIReg(sz, eregOfRM(modrm), mkU(szToITy(sz), d32));
          DIP("mov%c $0x%x, %s\n", nameISize(sz), d32, 
                                   nameIReg(sz,eregOfRM(modrm)));
-	 vassert(0);
+         vassert(0);
       } else {
          addr = disAMode ( &alen, sorb, delta, dis_buf );
          delta += alen;
          d32 = getUDisp(sz,delta); delta += sz;
-	 storeLE(mkexpr(addr), mkU(szToITy(sz), d32));
+         storeLE(mkexpr(addr), mkU(szToITy(sz), d32));
          DIP("mov%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
       }
       break;
@@ -8271,17 +8278,17 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       assign(t1, widenUto32(loadLE(szToITy(sz),mkexpr(t2))));
       putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t2), mkU32(sz)));
       /* t1 is the flag word.  Mask out everything except OSZACP and 
-	 set the flags thunk to CC_OP_COPY. */
+         set the flags thunk to CC_OP_COPY. */
       stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(CC_OP_COPY) ));
       stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
       stmt( IRStmt_Put( OFFB_CC_DEP1, 
-			binop(Iop_And32,
-			      mkexpr(t1), 
-			      mkU32( CC_MASK_C | CC_MASK_P | CC_MASK_A 
+                        binop(Iop_And32,
+                              mkexpr(t1), 
+                              mkU32( CC_MASK_C | CC_MASK_P | CC_MASK_A 
                                      | CC_MASK_Z | CC_MASK_S| CC_MASK_O )
-			     )
-		       )
-	  );
+                             )
+                       )
+          );
 
       /* Also need to set the D flag, which is held in bit 10 of t1.
          If zero, put 1 in OFFB_DFLAG, else -1 in OFFB_DFLAG. */
@@ -8450,13 +8457,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       assign( t2, mk_calculate_eflags_all() );
 
       /* Patch in the D flag.  This can simply be the inversion
-	 of bit 10 of baseBlock[OFFB_DFLAG]. */
+         of bit 10 of baseBlock[OFFB_DFLAG]. */
       t3 = newTemp(Ity_I32);
       assign( t3, binop(Iop_Or32,
                         mkexpr(t2),
                         binop(Iop_And32,
-			      unop(Iop_Not32, IRExpr_Get(OFFB_DFLAG,Ity_I32)),
-			      mkU32(1<<10))) 
+                              unop(Iop_Not32, IRExpr_Get(OFFB_DFLAG,Ity_I32)),
+                              mkU32(1<<10))) 
             );
 
       /* And patch in the ID flag. */
@@ -8464,16 +8471,16 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       assign( t4, binop(Iop_Or32,
                         mkexpr(t3),
                         binop(Iop_And32,
-			      binop(Iop_Shl32, IRExpr_Get(OFFB_IDFLAG,Ity_I32), 
+                              binop(Iop_Shl32, IRExpr_Get(OFFB_IDFLAG,Ity_I32), 
                                                mkU8(21)),
-			      mkU32(1<<21)))
+                              mkU32(1<<21)))
             );
 
       /* if sz==2, the stored value needs to be narrowed. */
       if (sz == 2)
-	storeLE( mkexpr(t1), unop(Iop_32to16,mkexpr(t4)) );
+        storeLE( mkexpr(t1), unop(Iop_32to16,mkexpr(t4)) );
       else 
-	storeLE( mkexpr(t1), mkexpr(t4) );
+        storeLE( mkexpr(t1), mkexpr(t4) );
 
       DIP("pushf%c\n", nameISize(sz));
       break;
@@ -8606,11 +8613,11 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       /* According to the Intel manual, "repne movs" should never occur, but
        * in practice it has happened, so allow for it here... */
       case 0xA4: sz = 1;   /* REPNE MOVS<sz> */
-	vassert(0);
+        vassert(0);
 //--       case 0xA5: 
-	//         dis_REP_op ( CondNZ, dis_MOVS, sz, eip_orig,
-	//                              guest_eip_bbstart+delta, "repne movs" );
-	//         break;
+        //         dis_REP_op ( CondNZ, dis_MOVS, sz, eip_orig,
+        //                              guest_eip_bbstart+delta, "repne movs" );
+        //         break;
 //-- 
 //--       case 0xA6: sz = 1;   /* REPNE CMPS<sz> */
 //--       case 0xA7:
@@ -8692,21 +8699,21 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       ty = szToITy(sz);
       t1 = newTemp(ty); t2 = newTemp(ty);
       if (epartIsReg(modrm)) {
-	 assign(t1, getIReg(sz, eregOfRM(modrm)));
-	 assign(t2, getIReg(sz, gregOfRM(modrm)));
-	 putIReg(sz, gregOfRM(modrm), mkexpr(t1));
-	 putIReg(sz, eregOfRM(modrm), mkexpr(t2));
+         assign(t1, getIReg(sz, eregOfRM(modrm)));
+         assign(t2, getIReg(sz, gregOfRM(modrm)));
+         putIReg(sz, gregOfRM(modrm), mkexpr(t1));
+         putIReg(sz, eregOfRM(modrm), mkexpr(t2));
          delta++;
          DIP("xchg%c %s, %s\n", 
              nameISize(sz), nameIReg(sz,gregOfRM(modrm)), 
                             nameIReg(sz,eregOfRM(modrm)));
       } else {
          addr = disAMode ( &alen, sorb, delta, dis_buf );
-	 assign( t1, loadLE(ty,mkexpr(addr)) );
-	 assign( t2, getIReg(sz,gregOfRM(modrm)) );
-	 storeLE( mkexpr(addr), mkexpr(t2) );
-	 putIReg( sz, gregOfRM(modrm), mkexpr(t1) );
-	 delta += alen;
+         assign( t1, loadLE(ty,mkexpr(addr)) );
+         assign( t2, getIReg(sz,gregOfRM(modrm)) );
+         storeLE( mkexpr(addr), mkexpr(t2) );
+         putIReg( sz, gregOfRM(modrm), mkexpr(t1) );
+         delta += alen;
          DIP("xchg%c %s, %s\n", nameISize(sz), 
                                 nameIReg(sz,gregOfRM(modrm)), dis_buf);
       }
@@ -9058,8 +9065,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          break;
       }
 
-//-- 	 if (!VG_(cpu_has_feature)(VG_X86_FEAT_CPUID))
-//-- 	    goto decode_failure;
+//--          if (!VG_(cpu_has_feature)(VG_X86_FEAT_CPUID))
+//--             goto decode_failure;
 //-- 
 //--          t1 = newTemp(cb);
 //--          t2 = newTemp(cb);
@@ -9210,12 +9217,12 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       case 0x9D: /* set-GEb/set-NLb (jump greater or equal) */
       case 0x9E: /* set-LEb/set-NGb (jump less or equal) */
       case 0x9F: /* set-Gb/set-NLEb (jump greater) */
-	 t1 = newTemp(Ity_I8);
-	 assign( t1, unop(Iop_1Uto8,mk_calculate_condition(opc-0x90)) );
+         t1 = newTemp(Ity_I8);
+         assign( t1, unop(Iop_1Uto8,mk_calculate_condition(opc-0x90)) );
          modrm = getIByte(delta);
          if (epartIsReg(modrm)) {
             delta++;
-	    putIReg(1, eregOfRM(modrm), mkexpr(t1));
+            putIReg(1, eregOfRM(modrm), mkexpr(t1));
             DIP("set%s %s\n", name_Condcode(opc-0x90), 
                               nameIReg(1,eregOfRM(modrm)));
          } else {
@@ -9331,7 +9338,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--          }
 //--          if (sz == 4) {
 //--             /* The leading 0x0F is implied for MMX*, so we don't
-//-- 	       include it. */
+//--                include it. */
 //--             uInstr2(cb, MMX3, 0, 
 //--                         Lit16, (((UShort)byte1) << 8) | ((UShort)byte2),
 //--                         Lit16, ((UShort)byte3) );
@@ -9341,7 +9348,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--                 : subopc == 4 ? "ra"
 //--                 : "??"),
 //--                 nameMMXGran(opc & 3), (Int)byte3, nameMMXReg(mmreg) );
-//-- 	 } else {
+//--          } else {
 //--             /* Whereas we have to include it for SSE. */
 //--             uInstr3(cb, SSE5, 0, 
 //--                         Lit16, (((UShort)0x66) << 8) | ((UShort)0x0F),
@@ -9355,7 +9362,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--                 : subopc == 7 ? "(PSLLDQ)"
 //--                 : "??"),
 //--                 nameMMXGran(opc & 3), (Int)byte3, nameXMMReg(mmreg) );
-//-- 	 }
+//--          }
 //--          break;
 //--       }
 //-- 

@@ -24,6 +24,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
                         Addr64 eip, 
                         Int*   guest_bytes_read, 
                         Bool   (*byte_accessible)(Addr64),
+                        Bool   (*resteerOkFn)(Addr64),
                         Bool   host_bigendian );
 
 /* Used by the optimiser to specialise calls to helpers. */

@@ -118,6 +118,7 @@ TranslateResult LibVEX_Translate (
    /* IN: the block to translate, and its guest address. */
    UChar* guest_bytes,
    Addr64 guest_bytes_addr,
+   Bool   (*chase_into_ok) ( Addr64 ),
    /* OUT: the number of bytes actually read */
    Int* guest_bytes_read,
    /* IN: a place to put the resulting code, and its size */
@@ -149,7 +150,8 @@ TranslateResult LibVEX_Translate (
    void         (*ppReg)       ( HReg );
    HInstrArray* (*iselBB)      ( IRBB* );
    IRBB*        (*bbToIR)      ( UChar*, Addr64, Int*, 
-                                         Bool(*)(Addr64), Bool );
+                                 Bool(*)(Addr64), 
+                                 Bool(*)(Addr64), Bool );
    Int          (*emit)        ( UChar*, Int, HInstr* );
    IRExpr*      (*specHelper)  ( Char*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
@@ -231,6 +233,7 @@ TranslateResult LibVEX_Translate (
 		   guest_bytes_addr,
 		   guest_bytes_read,
 		   byte_accessible,
+                   chase_into_ok,
 		   host_is_bigendian );
 
    if (irbb == NULL) {

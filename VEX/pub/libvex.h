@@ -140,6 +140,7 @@ TranslateResult LibVEX_Translate (
    /* IN: the block to translate, and its guest address. */
    UChar* guest_bytes,
    Addr64 guest_bytes_addr,
+   Bool   (*chase_into_ok) ( Addr64 ),
    /* OUT: the number of bytes actually read */
    Int* guest_bytes_read,
    /* IN: a place to put the resulting code, and its size */

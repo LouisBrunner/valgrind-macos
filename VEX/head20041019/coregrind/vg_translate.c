@@ -1629,6 +1629,21 @@ void log_bytes ( Char* bytes, Int nbytes )
    'tid' is the identity of the thread needing this block.
 */
 
+/* This stops Vex from chasing into function entry points that we wish
+   to redirect.  Chasing across them obviously defeats the redirect
+   mechanism, with bad effects for Memcheck, Addrcheck, and possibly
+   others. */
+static Bool chase_into_ok ( Addr64 addr64 )
+{
+  Addr addr = (Addr)addr64;
+  if (addr != VG_(code_redirect)(addr)) {
+     if (0) VG_(printf)("not chasing into 0x%x\n", addr);
+     return False;
+  } else {
+     return True; /* ok to chase into 'addr' */
+  }
+}
+
 Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
                       Bool debugging_translation )
 {
@@ -1725,7 +1740,9 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    /* Actually do the translation. */
    tres = LibVEX_Translate ( 
              InsnSetX86, InsnSetX86,
-             (Char*)orig_addr, (Addr64)orig_addr, &orig_size,
+             (Char*)orig_addr, (Addr64)orig_addr, 
+             chase_into_ok,
+             &orig_size,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
              SK_(instrument),
              VG_(need_to_handle_esp_assignment)()

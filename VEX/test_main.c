@@ -51,6 +51,7 @@ static Bool verbose = True;
 static IRBB* ac_instrument ( IRBB*, VexGuestLayout*, IRType );
 static IRBB* mc_instrument ( IRBB*, VexGuestLayout*, IRType );
 
+static Bool chase_into_not_ok ( Addr64 dst ) { return False; }
 
 int main ( int argc, char** argv )
 {
@@ -75,9 +76,10 @@ int main ( int argc, char** argv )
 
    /* Run with default params.  However, we can't allow bb chasing
       since that causes the front end to get segfaults when it tries
-      to read code outside the initial BB we hand it. */
+      to read code outside the initial BB we hand it.  So when calling
+      LibVEX_Translate, send in a chase-into predicate that always
+      returns False. */
    LibVEX_default_VexControl ( &vcon );
-   vcon.guest_chase_thresh = 0;
    vcon.iropt_level = 2;
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
@@ -120,7 +122,8 @@ int main ( int argc, char** argv )
          tres
             = LibVEX_Translate ( 
                  InsnSetX86, InsnSetX86,
-                 origbuf, (Addr64)orig_addr, &orig_used,
+                 origbuf, (Addr64)orig_addr, chase_into_not_ok,
+                 &orig_used,
                  transbuf, N_TRANSBUF, &trans_used,
 #if 0 /* addrcheck */
                  ac_instrument, /* instrument1 */

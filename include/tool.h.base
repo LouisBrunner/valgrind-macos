@@ -955,11 +955,11 @@ extern UInt VG_(get_exit_status_shadow) ( ThreadId );
 /* Arena size for valgrind's own malloc();  default value is 0, but can
    be overridden by tool -- but must be done so *statically*, eg:
 
-     UInt VG_(vg_malloc_redzone_szB) = 4;
+     SizeT VG_(vg_malloc_redzone_szB) = 4;
 
    It can't be done from a function like TL_(pre_clo_init)().  So it can't,
    for example, be controlled with a command line option, unfortunately. */
-extern UInt VG_(vg_malloc_redzone_szB);
+extern SizeT VG_(vg_malloc_redzone_szB);
 
 /* Can be called from TL_(malloc) et al to do the actual alloc/freeing. */
 extern void* VG_(cli_malloc) ( SizeT align, SizeT nbytes );

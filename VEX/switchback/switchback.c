@@ -52,6 +52,12 @@ static HWord serviceFn ( HWord arg1, HWord arg2 )
 #  define VexArch                   VexArchX86
 #  define VexSubArch                VexSubArchX86_sse1
 #  define GuestPC                   guest_EIP
+#elif defined(__amd64__)
+#  define VexGuestState             VexGuestAMD64State
+#  define LibVEX_Guest_initialise   LibVEX_GuestAMD64_initialise
+#  define VexArch                   VexArchAMD64
+#  define VexSubArch                VexSubArch_NONE
+#  define GuestPC                   guest_RIP
 #else
 #   error "Unknown arch"
 #endif
@@ -65,7 +71,8 @@ VexGuestState gst;
 VexControl vcon;
 
 /* only used for the switchback transition */
-/* i386: helper1 = &gst, helper2 = %EFLAGS */
+/* i386:  helper1 = &gst, helper2 = %EFLAGS */
+/* amd64: helper1 = &gst, helper2 = %EFLAGS */
 HWord sb_helper1 = 0;
 HWord sb_helper2 = 0;
 
@@ -83,10 +90,11 @@ Int trans_table_used = 0;
 static Bool chase_into_not_ok ( Addr64 dst ) { return False; }
 
 /* -------------------- */
-#if defined(__i386__)
-
 /* continue execution on the real CPU (never returns) */
 extern void switchback_asm(void);
+
+#if defined(__i386__)
+
 asm(
 "switchback_asm:\n"
 "   movl sb_helper1, %eax\n"  // eax = guest state ptr
@@ -112,6 +120,43 @@ void switchback ( void )
    switchback_asm(); // never returns
 }
 
+#elif defined(__amd64__)
+
+asm(
+"switchback_asm:\n"
+"   movq sb_helper1, %rax\n"  // rax = guest state ptr
+"   movq  32(%rax), %rsp\n"   // switch stacks
+"   pushq 168(%rax)\n"        // push continuation addr
+"   movq sb_helper2, %rbx\n"  // get eflags
+"   pushq %rbx\n"             // eflags:CA
+"   pushq 0(%rax)\n"          // RAX:eflags:CA
+"   movq 8(%rax), %rcx\n" 
+"   movq 16(%rax), %rdx\n" 
+"   movq 24(%rax), %rbx\n" 
+"   movq 40(%rax), %rbp\n"
+"   movq 48(%rax), %rsi\n"
+"   movq 56(%rax), %rdi\n"
+
+"   movq 64(%rax), %r8\n"
+"   movq 72(%rax), %r9\n"
+"   movq 80(%rax), %r10\n"
+"   movq 88(%rax), %r11\n"
+"   movq 96(%rax), %r12\n"
+"   movq 104(%rax), %r13\n"
+"   movq 112(%rax), %r14\n"
+"   movq 120(%rax), %r15\n"
+
+"   popq %rax\n"
+"   popfq\n"
+"   ret\n"
+);
+void switchback ( void )
+{
+   sb_helper1 = (HWord)&gst;
+   sb_helper2 = LibVEX_GuestAMD64_get_rflags(&gst);
+   switchback_asm(); // never returns
+}
+
 #else
 #   error "Unknown arch (switchback)"
 #endif
@@ -119,6 +164,8 @@ void switchback ( void )
 /* -------------------- */
 static HWord f, gp, res;
 extern void run_translation_asm(void);
+
+#if defined(__i386__)
 asm(
 "run_translation_asm:\n"
 "   pushal\n"
@@ -129,6 +176,54 @@ asm(
 "   popal\n"
 "   ret\n"
 );
+
+#elif defined(__amd64__)
+asm(
+"run_translation_asm:\n"
+
+"   pushq %rax\n"
+"   pushq %rbx\n"
+"   pushq %rcx\n"
+"   pushq %rdx\n"
+"   pushq %rbp\n"
+"   pushq %rsi\n"
+"   pushq %rdi\n"
+"   pushq %r8\n"
+"   pushq %r9\n"
+"   pushq %r10\n"
+"   pushq %r11\n"
+"   pushq %r12\n"
+"   pushq %r13\n"
+"   pushq %r14\n"
+"   pushq %r15\n"
+
+"   movq gp, %rbp\n"
+"   movq f, %rax\n"
+"   call *%rax\n"
+"   movq %rax, res\n"
+
+"   popq  %r15\n"
+"   popq  %r14\n"
+"   popq  %r13\n"
+"   popq  %r12\n"
+"   popq  %r11\n"
+"   popq  %r10\n"
+"   popq  %r9\n"
+"   popq  %r8\n"
+"   popq  %rdi\n"
+"   popq  %rsi\n"
+"   popq  %rbp\n"
+"   popq  %rdx\n"
+"   popq  %rcx\n"
+"   popq  %rbx\n"
+"   popq  %rax\n"
+
+"   ret\n"
+);
+#else
+
+#   error "Unknown arch"
+#endif
 
 void run_translation ( HWord translation )
 {
@@ -249,6 +344,14 @@ static void run_simulator ( void )
             gst.guest_ESP = esp+4;
             next_guest = gst.guest_EIP;
          }
+#        elif defined(__amd64__)
+         {
+            HWord esp = gst.guest_RSP;
+            gst.guest_RIP = *(UInt*)(esp+0);
+            gst.guest_RAX = serviceFn( gst.guest_RDI, gst.guest_RSI );
+            gst.guest_RSP = esp+8;
+            next_guest = gst.guest_RIP;
+         }
 #        else
 #        error "Unknown arch"
 #        endif
@@ -344,6 +447,11 @@ int main ( Int argc, HChar** argv )
    gst.guest_ESP = (UInt)&gstack[25000];
    *(UInt*)(gst.guest_ESP+4) = (UInt)serviceFn;
    *(UInt*)(gst.guest_ESP+0) = 0x12345678;
+#  elif defined(__amd64__)
+   gst.guest_RIP = (ULong)entry;
+   gst.guest_RSP = (ULong)&gstack[25000];
+   gst.guest_RDI = (ULong)serviceFn;
+   *(ULong*)(gst.guest_RSP+0) = 0x12345678AABBCCDDULL;
 #  else
 #  error "Unknown arch"
 #  endif

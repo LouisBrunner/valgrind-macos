@@ -576,7 +576,14 @@ void ppIRJumpKind ( IRJumpKind kind )
 
 void ppIRStmt ( IRStmt* s )
 {
+   if (!s) {
+      vex_printf("!!! IRStmt* which is NULL !!!");
+      return;
+   }
    switch (s->tag) {
+      case Ist_NoOp:
+         vex_printf("IR-NoOp");
+         break;
       case Ist_IMark:
          vex_printf( "------ IMark(0x%llx, %d) ------", 
                      s->Ist.IMark.addr, s->Ist.IMark.len);
@@ -608,7 +615,7 @@ void ppIRStmt ( IRStmt* s )
          ppIRDirty(s->Ist.Dirty.details);
          break;
       case Ist_MFence:
-         vex_printf("IRMemoryFence");
+         vex_printf("IR-MFence");
          break;
       case Ist_Exit:
          vex_printf( "if (" );
@@ -647,10 +654,8 @@ void ppIRBB ( IRBB* bb )
    ppIRTypeEnv(bb->tyenv);
    vex_printf("\n");
    for (i = 0; i < bb->stmts_used; i++) {
-      if (bb->stmts[i]) {
-         vex_printf( "   ");
-         ppIRStmt(bb->stmts[i]);
-      }
+      vex_printf( "   ");
+      ppIRStmt(bb->stmts[i]);
       vex_printf( "\n");
    }
    vex_printf( "   goto {");
@@ -904,6 +909,13 @@ IRDirty* emptyIRDirty ( void ) {
 
 /* Constructors -- IRStmt */
 
+IRStmt* IRStmt_NoOp ( void )
+{
+   /* Just use a single static closure. */
+   static IRStmt static_closure;
+   static_closure.tag = Ist_NoOp;
+   return &static_closure;
+}
 IRStmt* IRStmt_IMark ( Addr64 addr, Int len ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
    s->tag            = Ist_IMark;
@@ -951,9 +963,10 @@ IRStmt* IRStmt_Dirty ( IRDirty* d )
 }
 IRStmt* IRStmt_MFence ( void )
 {
-   IRStmt* s = LibVEX_Alloc(sizeof(IRStmt));
-   s->tag    = Ist_MFence;
-   return s;
+   /* Just use a single static closure. */
+   static IRStmt static_closure;
+   static_closure.tag = Ist_MFence;
+   return &static_closure;
 }
 IRStmt* IRStmt_Exit ( IRExpr* guard, IRJumpKind jk, IRConst* dst ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
@@ -1113,6 +1126,8 @@ IRDirty* dopyIRDirty ( IRDirty* d )
 IRStmt* dopyIRStmt ( IRStmt* s )
 {
    switch (s->tag) {
+      case Ist_NoOp:
+         return IRStmt_NoOp();
       case Ist_IMark:
          return IRStmt_IMark(s->Ist.IMark.addr, s->Ist.IMark.len);
       case Ist_Put: 
@@ -1131,6 +1146,8 @@ IRStmt* dopyIRStmt ( IRStmt* s )
                             dopyIRExpr(s->Ist.STle.data));
       case Ist_Dirty: 
          return IRStmt_Dirty(dopyIRDirty(s->Ist.Dirty.details));
+      case Ist_MFence:
+         return IRStmt_MFence();
       case Ist_Exit: 
          return IRStmt_Exit(dopyIRExpr(s->Ist.Exit.guard),
                             s->Ist.Exit.jk,
@@ -1161,7 +1178,7 @@ IRBB* dopyIRBB ( IRBB* bb )
    bb2->stmts_used = bb2->stmts_size = bb->stmts_used;
    sts2 = LibVEX_Alloc(bb2->stmts_used * sizeof(IRStmt*));
    for (i = 0; i < bb2->stmts_used; i++)
-      sts2[i] = bb->stmts[i]==NULL ? NULL : dopyIRStmt(bb->stmts[i]);
+      sts2[i] = dopyIRStmt(bb->stmts[i]);
    bb2->stmts    = sts2;
    bb2->next     = dopyIRExpr(bb->next);
    bb2->jumpkind = bb->jumpkind;
@@ -1625,6 +1642,7 @@ Bool isFlatIRStmt ( IRStmt* st )
          if (di->mAddr && !isIRAtom(di->mAddr)) 
             return False;
          return True;
+      case Ist_NoOp:
       case Ist_IMark:
       case Ist_MFence:
          return True;
@@ -1786,6 +1804,7 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
          if (d->mFx != Ifx_None)
             useBeforeDef_Expr(bb,stmt,d->mAddr,def_counts);
          break;
+      case Ist_NoOp:
       case Ist_MFence:
          break;
       case Ist_Exit:
@@ -1981,6 +2000,7 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          break;
          bad_dirty:
          sanityCheckFail(bb,stmt,"IRStmt.Dirty: ill-formed");
+      case Ist_NoOp:
       case Ist_MFence:
          break;
       case Ist_Exit:
@@ -2031,7 +2051,7 @@ void sanityCheckIRBB ( IRBB* bb,          HChar* caller,
       for (i = 0; i < bb->stmts_used; i++) {
          stmt = bb->stmts[i];
          if (!stmt)
-            continue;
+            sanityCheckFail(bb, stmt, "IRStmt: is NULL");
          if (!isFlatIRStmt(stmt))
             sanityCheckFail(bb, stmt, "IRStmt: is not flat");
       }
@@ -2047,8 +2067,6 @@ void sanityCheckIRBB ( IRBB* bb,          HChar* caller,
 
    for (i = 0; i < bb->stmts_used; i++) {
       stmt = bb->stmts[i];
-      if (!stmt)
-         continue;
       useBeforeDef_Stmt(bb,stmt,def_counts);
 
       if (stmt->tag == Ist_Tmp) {

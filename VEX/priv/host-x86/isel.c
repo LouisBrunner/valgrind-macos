@@ -3377,6 +3377,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_IMark:
        return;
 
+   /* --------- NO-OP --------- */
+   /* Fairly self-explanatory, wouldn't you say? */
+   case Ist_NoOp:
+       return;
+
    /* --------- EXIT --------- */
    case Ist_Exit: {
       X86RI*      dst;
@@ -3476,8 +3481,7 @@ HInstrArray* iselBB_X86 ( IRBB* bb, VexSubArch subarch_host )
 
    /* Ok, finally we can iterate over the statements. */
    for (i = 0; i < bb->stmts_used; i++)
-      if (bb->stmts[i])
-         iselStmt(env,bb->stmts[i]);
+      iselStmt(env,bb->stmts[i]);
 
    iselNext(env,bb->next,bb->jumpkind);
 

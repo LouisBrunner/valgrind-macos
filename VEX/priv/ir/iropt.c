@@ -359,9 +359,6 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
    IRExpr  *e1, *e2;
    IRDirty *d,  *d2;
    switch (st->tag) {
-      case Ist_IMark:
-         addStmtToIRBB(bb, st);
-         break;
       case Ist_Put:
          if (isIRAtom(st->Ist.Put.data)) {
             /* optimisation to reduce the amount of heap wasted
@@ -412,7 +409,9 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
             d2->args[i] = flatten_Expr(bb, d2->args[i]);
          addStmtToIRBB(bb, IRStmt_Dirty(d2));
          break;
+      case Ist_NoOp:
       case Ist_MFence:
+      case Ist_IMark:
          addStmtToIRBB(bb, st);
          break;
       case Ist_Exit:
@@ -695,6 +694,7 @@ static void handle_gets_Stmt (
          vassert(isIRAtom(st->Ist.PutI.data));
          break;
 
+      case Ist_NoOp:
       case Ist_IMark:
          break;
 
@@ -804,7 +804,7 @@ static void redundant_put_removal_BB (
                vex_printf("rPUT: "); ppIRStmt(st);
                vex_printf("\n");
             }
-            bb->stmts[i] = NULL;
+            bb->stmts[i] = IRStmt_NoOp();
          } else {
             /* We can't demonstrate that this Put is redundant, so add it
                to the running collection. */
@@ -1381,9 +1381,9 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
 
 
 /* Apply the subst to stmt, then fold the result as much as possible.
-   Much simplified due to stmt being previously flattened.  Returning
-   NULL means the statement has been turned into a no-op. */
-
+   Much simplified due to stmt being previously flattened.  As a
+   result of this, the stmt may wind up being turned into a no-op.  
+*/
 static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
 {
 #  if 0
@@ -1449,6 +1449,9 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
       case Ist_IMark:
          return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
 
+      case Ist_NoOp:
+         return IRStmt_NoOp();
+
       case Ist_MFence:
          return IRStmt_MFence();
 
@@ -1464,7 +1467,7 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                     || fcond->Iex.Const.con->Ico.U1 == True);
             if (fcond->Iex.Const.con->Ico.U1 == False) {
                /* exit is never going to happen, so dump the statement. */
-               return NULL;
+               return IRStmt_NoOp();
             } else {
                vassert(fcond->Iex.Const.con->Ico.U1 == True);
                /* Hmmm.  The exit has become unconditional.  Leave it as
@@ -1637,6 +1640,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          for (i = 0; d->args[i] != NULL; i++)
             addUses_Expr(set, d->args[i]);
          return;
+      case Ist_NoOp:
       case Ist_IMark:
       case Ist_MFence:
          return;
@@ -1693,14 +1697,15 @@ static Bool isZeroU1 ( IRExpr* e )
             ppIRStmt(st);
             vex_printf("\n");
          }
-         bb->stmts[i] = NULL;
+         bb->stmts[i] = IRStmt_NoOp();
       }
       else
       if (st->tag == Ist_Dirty
           && st->Ist.Dirty.details->guard
           && isZeroU1(st->Ist.Dirty.details->guard)) {
-         /* This is a dirty helper which will never get called.  Delete it. */
-         bb->stmts[i] = NULL;
+         /* This is a dirty helper which will never get called.
+            Delete it. */
+         bb->stmts[i] = IRStmt_NoOp();
        }
        else {
          /* Note any IRTemp uses made by the current statement. */
@@ -2449,6 +2454,7 @@ Bool guestAccessWhichMightOverlapPutI (
    getArrayBounds(pi->Ist.PutI.descr, &minoffP, &maxoffP);
    switch (s2->tag) {
 
+      case Ist_NoOp:
       case Ist_IMark:
          return False;
 
@@ -2621,7 +2627,7 @@ void do_redundant_PutI_elimination ( IRBB* bb )
             ppIRStmt(st); 
             vex_printf("\n");
          }
-         bb->stmts[i] = NULL;
+         bb->stmts[i] = IRStmt_NoOp();
       }
 
    }
@@ -2681,6 +2687,7 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
    Int      i;
    IRDirty* d;
    switch (st->tag) {
+      case Ist_NoOp:
       case Ist_IMark:
          break;
       case Ist_Put:
@@ -3068,6 +3075,7 @@ static void occCount_Stmt ( TmpInfo** env, IRStmt* st )
          for (i = 0; d->args[i]; i++)
             occCount_Expr(env, d->args[i]);
          return;
+      case Ist_NoOp:
       case Ist_IMark:
       case Ist_MFence:
          return;
@@ -3203,6 +3211,8 @@ static IRStmt* tbSubst_Stmt ( TmpInfo** env, IRStmt* st )
                 );
       case Ist_IMark:
          return IRStmt_IMark(st->Ist.IMark.addr, st->Ist.IMark.len);
+      case Ist_NoOp:
+         return IRStmt_NoOp();
       case Ist_MFence:
          return IRStmt_MFence();
       case Ist_Dirty:
@@ -3594,6 +3604,7 @@ static Bool hasGetIorPutI ( IRBB* bb )
             if (d->mFx != Ifx_None)
                vassert(isIRAtom(d->mAddr));
             break;
+         case Ist_NoOp:
          case Ist_IMark:
          case Ist_MFence:
             break;

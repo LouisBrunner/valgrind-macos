@@ -865,7 +865,8 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 
 /* The possible kinds of statements are as follows: */
 typedef 
-   enum { 
+   enum {
+      Ist_NoOp,   /* no-op (usually resulting from IR optimisation) */
       Ist_IMark,  /* instruction mark: describe addr/len of guest insn
                      whose IR follows */
       Ist_Put,    /* write guest state, fixed offset */
@@ -882,6 +883,8 @@ typedef
    struct _IRStmt {
       IRStmtTag tag;
       union {
+         struct {
+	 } NoOp;
          struct {
             Addr64 addr;
             Int    len;
@@ -918,6 +921,7 @@ typedef
    }
    IRStmt;
 
+extern IRStmt* IRStmt_NoOp   ( void );
 extern IRStmt* IRStmt_IMark  ( Addr64 addr, Int len );
 extern IRStmt* IRStmt_Put    ( Int off, IRExpr* data );
 extern IRStmt* IRStmt_PutI   ( IRArray* descr, IRExpr* ix, Int bias, 

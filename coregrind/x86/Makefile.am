@@ -18,6 +18,10 @@ BUILT_SOURCES = stage2.lds
 CLEANFILES = stage2.lds
 
 libarch_a_SOURCES = \
+	cpuid.S \
+	helpers.S \
+	dispatch.S \
+	syscall.S \
 	signal.c \
 	state.c
 

@@ -1,7 +1,6 @@
 
 ##--------------------------------------------------------------------##
-##--- Support for determining CPU characteristics.                 ---##
-##---                                                   vg_cpuid.S ---##
+##--- Support for determining CPU characteristics.     x86/cpuid.S ---##
 ##--------------------------------------------------------------------##
 
 /*
@@ -30,7 +29,6 @@
 */
 
 #include "core_asm.h"
-#include "vki_unistd.h"
 
 /*
     int VG_(cpuid)(UInt eax,
@@ -80,5 +78,5 @@ VG_(cpuid):
 .section .note.GNU-stack,"",@progbits
 
 ##--------------------------------------------------------------------##
-##--- end                                    	        vg_cpuid.S ---##
+##--- end                                    	                   ---##
 ##--------------------------------------------------------------------##

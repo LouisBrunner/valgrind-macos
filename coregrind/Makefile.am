@@ -8,7 +8,6 @@ AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
 		-DVG_PLATFORM="\"$(VG_PLATFORM)"\"
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g -DELFSZ=32
-AM_CCASFLAGS = $(add_includes) -I..
 
 default.supp: $(SUPP_FILES)
 
@@ -49,12 +48,10 @@ stage2_SOURCES = \
 	vg_scheduler.c \
 	vg_default.c \
 	vg_demangle.c \
-	vg_dispatch.S \
 	vg_errcontext.c \
 	vg_execontext.c \
 	vg_from_ucode.c \
 	vg_hashtable.c \
-	vg_helpers.S \
 	vg_instrument.c \
 	vg_main.c \
 	vg_malloc2.c \
@@ -72,12 +69,10 @@ stage2_SOURCES = \
 	vg_skiplist.c \
 	vg_symtypes.c \
 	vg_syscalls.c \
-	vg_syscall.S \
 	vg_to_ucode.c \
 	vg_toolint.c \
 	vg_translate.c \
-	vg_transtab.c \
-	vg_cpuid.S
+	vg_transtab.c
 stage2_DEPENDENCIES = $(srcdir)/valgrind.vs ${VG_ARCH}/stage2.lds
 stage2_LDFLAGS=-Wl,--export-dynamic -g \
 	-Wl,-defsym,kickstart_base=$(KICKSTART_BASE) \
@@ -116,7 +111,7 @@ vg_toolint.h:  $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile
 libpthread_so_SOURCES = \
 	vg_libpthread.c \
 	vg_libpthread_unimp.c \
-	vg_syscall.S \
+	${VG_ARCH}/syscall.S \
 	${VG_ARCH}/libpthread.c 
 libpthread_so_DEPENDENCIES = $(srcdir)/vg_libpthread.vs
 libpthread_so_LDFLAGS	   = -Werror -fno-omit-frame-pointer -UVG_LIBDIR \

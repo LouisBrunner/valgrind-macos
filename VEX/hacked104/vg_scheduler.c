@@ -550,7 +550,7 @@ void increment_epoch ( void )
       UInt tt_used, tc_used;
       VG_(get_tt_tc_used) ( &tt_used, &tc_used );
       VG_(message)(Vg_UserMsg,
-         "%lu bbs, in: %d (%d -> %d), out %d (%d -> %d), TT %d, TC %d",
+         "%lu bbs, in: %4d (%5d -> %6d), out %d (%d -> %d), TT %d, TC %d",
           VG_(bbs_done), 
           VG_(this_epoch_in_count),
           VG_(this_epoch_in_osize),

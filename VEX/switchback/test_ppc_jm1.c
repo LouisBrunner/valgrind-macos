@@ -5,6 +5,11 @@
 
 */
 
+#undef  HAS_ALTIVEC
+#define NO_FLOAT
+#undef  IS_PPC405
+
+
 /*
  * test-ppc.c:
  * PPC tests for qemu-PPC CPU emulation checks
@@ -3670,7 +3675,7 @@ static void build_iargs_table (void)
 
     iargs = my_malloc(400 * sizeof(uint32_t));
     i = 0;
-    for (tmp = 0; ; tmp = tmp + 1 + (tmp >> 1)) {
+    for (tmp = 0; ; tmp = tmp + 1 + (tmp>>1)+(tmp>>2)+(tmp>>3)) {
         if (tmp >= 0x100000000ULL)
             tmp = 0xFFFFFFFF;
         iargs[i++] = tmp;
@@ -4011,6 +4016,7 @@ static void test_special (special_t *table,
 }
 
 static special_t special_int_ops[] = {
+#if 0
     {
         "rlwimi", /* One register + 3 5 bits immediate arguments */
         &rlwi_cb,
@@ -4043,6 +4049,7 @@ static special_t special_int_ops[] = {
         "srawi.",  /* One register + 1 5 bits immediate arguments */
         &srawi_cb,
     },
+#endif
 #if 0
     {
         "mcrf",  /* 2 3 bits immediate arguments */
@@ -4581,4 +4588,5 @@ void entry ( HWord(*service)(HWord,HWord) )
    char* argv[2] = { NULL, NULL };
    serviceFn = service;
    main(0, argv);
+   (*service)(0,0);
 }

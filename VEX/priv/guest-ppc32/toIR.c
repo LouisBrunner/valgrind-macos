@@ -35,6 +35,14 @@
 
 /* Translates PPC32 code to IR. */
 
+/* References
+   All page references, unless otherwise indicated, refer to IBM's
+   "PowerPC Microprocessor Family:
+    Programming Environments Manual for 64 and 32-Bit Microprocessors
+    Version 2.0"
+   http://www-3.ibm.com/chips/techlib/techlib.nsf/techdocs/F6153E213FDD912E87256D49006C6541
+*/
+
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
 #include "libvex.h"
@@ -785,7 +793,7 @@ void setFlags_CR0_Flags ( IRTemp flags_cr0 )
 /*
   Integer Arithmetic Instructions
 */
-static Bool dis_int_arith ( UInt theInstr, UChar form )
+static Bool dis_int_arith ( UInt theInstr )
 {
     UChar opc1    = (theInstr >> 26) & 0x3F;    /* theInstr[26:31] */
     UChar Rd_addr = (theInstr >> 21) & 0x1F;    /* theInstr[21:25] */
@@ -806,77 +814,77 @@ static Bool dis_int_arith ( UInt theInstr, UChar form )
     IRTemp tmp = newTemp(Ity_I32);
 
     assign( Ra, getIReg(Ra_addr) );
-
-    if (form == 0) { // D-Form:  rA, rD, EXTS(SIMM)
-	EXTS_SIMM = extend_s_16to32(SIMM_16);
-    } else {         // XO-Form: rA, rB, rD
-	assign( Rb, getIReg(Rb_addr) );
-    }
+    assign( Rb, getIReg(Rb_addr) );         // XO-Form: Rd, Ra, Rb
+    EXTS_SIMM = extend_s_16to32(SIMM_16);   // D-Form:  Rd, Ra, EXTS(SIMM)
 
     switch (opc1) {
 
     /* D-Form */
-    case 0x0C: // addi   (Add Immediate)  (li rD,val == addi Rd,0,val)
+    case 0x0C: // addi   (Add Immediate, p380)
+	// li rD,val   == addi rD,0,val
+	// la disp(rA) == addi rD,rA,disp
+	DIP("addi %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	if ( Ra_addr == 0 ) {
 	    assign( Rd, mkU32(EXTS_SIMM) );
 	} else {
 	    assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
 	}
-
-	DIP("addi %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	break;
 
-    case 0x0D: // addic  (Add Immediate Carrying)  (lis rD,val == addi Rd,0,val) 
+    case 0x0D: // addic  (Add Immediate Carrying, p381)
+	DIP("addic %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
 	mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
-
-	DIP("addic %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	break;
 	
-    case 0x0E: // addic. (Add Immediate Carrying and Record)
+    case 0x0E: // addic. (Add Immediate Carrying and Record, p382)
+	DIP("addic. %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
 	mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
 	setFlags_CR0_Result( Rd );
-
-	DIP("addic. %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	break;
 
-    case 0x0F: // addis  (Add Immediate Shifted)
+    case 0x0F: // addis  (Add Immediate Shifted, p383)
+	// lis rD,val == addis rD,0,val
+	DIP("addis %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	if ( Ra_addr == 0 ) {
 	    assign( Rd, mkU32(EXTS_SIMM << 16) );
 	} else {
-	    assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM << 16) ) );
+	    assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM << 16) ));
 	}
-
-	DIP("addis %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	break;
 
 
     /* XO-Form */
     case 0x1F:
        switch (opc2) {
-       case 0x10A: // add  (Add)
-	   assign( Rd, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
-	   if (flag_Rc)	{ setFlags_CR0_Result( Rd ); }
-	   if (flag_OE) { mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb ); }
-
+       case 0x10A: // add  (Add, p377)
 	   DIP("add%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
-	   break;
-
-       case 0x00A: // addc      (Add Carrying)
 	   assign( Rd, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
 	   if (flag_Rc)	{ setFlags_CR0_Result( Rd ); }
-	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
-	   if (flag_OE) { mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb ); }
+	   if (flag_OE) {
+	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
+	   }
+	   break;
 
+       case 0x00A: // addc      (Add Carrying, p378)
 	   DIP("addc%s%s %d,%d,%d\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
+	   assign( Rd, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
+	   if (flag_Rc)	{ setFlags_CR0_Result( Rd ); }
+	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
+	   if (flag_OE) {
+	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
+	   }
 	   break;
 
-       case 0x08A: // adde      (Add Extended)
+       case 0x08A: // adde      (Add Extended, p379)
+	   DIP("adde%s%s %d,%d,%d\n",
+	       flag_OE ? "o" : "", flag_Rc ? "." : "",
+	       Rd_addr, Ra_addr, Rb_addr);
 	   // rD = rA + rB + XER[CA]
 	   assign( tmp, IRExpr_Get(OFFB_XER_CA, Ity_I32) );
 	   assign( Rd, binop(Iop_Add32,
@@ -885,35 +893,31 @@ static Bool dis_int_arith ( UInt theInstr, UChar form )
 
 	   if (flag_Rc)	{ setFlags_CR0_Result( Rd ); }
 	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADDE, Rd, Ra, Rb );
-	   if (flag_OE) { mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADDE, Rd, Ra, Rb ); }
-
-	   DIP("adde%s%s %d,%d,%d\n",
-	       flag_OE ? "o" : "", flag_Rc ? "." : "",
-	       Rd_addr, Ra_addr, Rb_addr);
+	   if (flag_OE) {
+	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADDE, Rd, Ra, Rb );
+	   }
 	   break;
 
-       case 0x0EA: // addme      (Add to Minus One Extended)
+       case 0x0EA: // addme      (Add to Minus One Extended, p384)
+	   DIP("addme%s%s %d,%d,%d\n",
+	       flag_OE ? "o" : "", flag_Rc ? "." : "",
+	       Rd_addr, Ra_addr, Rb_addr);
 	   // B=0
 	   // rD = rA + XER[CA] - 1   (-1 == 0xFFFF_FFFF_FFFF_FFFF)
 	   // if (Rc=1) { set guest_result }
 	   // set XER[CA]
 	   // if (OE=1) { XER[SO,OV] }
-
-	   DIP("addme%s%s %d,%d,%d\n",
-	       flag_OE ? "o" : "", flag_Rc ? "." : "",
-	       Rd_addr, Ra_addr, Rb_addr);
 	   return False;
 
-       case 0x0CA: // addze      (Add to Zero Extended)
+       case 0x0CA: // addze      (Add to Zero Extended, p385)
+	   DIP("addze%s%s %d,%d,%d\n",
+	       flag_OE ? "o" : "", flag_Rc ? "." : "",
+	       Rd_addr, Ra_addr, Rb_addr);
 	   // B=0
 	   // rD = rA + XER[CA]
 	   // if (Rc=1) { set guest_result }
 	   // set XER[CA]
 	   // if (OE=1) { XER[SO,OV] }
-
-	   DIP("addze%s%s %d,%d,%d\n",
-	       flag_OE ? "o" : "", flag_Rc ? "." : "",
-	       Rd_addr, Ra_addr, Rb_addr);
 	   return False;
 
        default:
@@ -964,6 +968,8 @@ static Bool dis_int_cmp ( UInt theInstr )
 
     switch (opc1) {
     case 0x0B: // cmpi (Compare Immediate, p398)
+	DIP("cmpi %d,%d,%d,%d\n", crfD, flag_L, Ra_addr, SIMM_16);
+
 	EXTS_SIMM = extend_s_16to32(SIMM_16);
 
 	// CAB: This right?  Don't need a 'mkS32(EXTS_SIMM)' ?
@@ -974,11 +980,10 @@ static Bool dis_int_cmp ( UInt theInstr )
 				  mkU32(2), mkU32(4) ), mkU32(8) ));
 
 	assign( cr_flags, binop(Iop_Or32, mkexpr(tmp), mkexpr(xer_so)) );
-
-	DIP("cmpi %d,%d,%d,%d\n", crfD, flag_L, Ra_addr, SIMM_16);
 	break;
 
     case 0x0A: // cmpli (Compare Logical Immediate, p400)
+	DIP("cmpli %d,%d,%d,%d\n", crfD, flag_L, Ra_addr, UIMM_16);
 	assign( tmp, IRExpr_Mux0X(
 		    binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(UIMM_16)),
 		    IRExpr_Mux0X( binop(Iop_CmpLT32U, mkU32(UIMM_16), mkexpr(Ra)),
@@ -986,7 +991,6 @@ static Bool dis_int_cmp ( UInt theInstr )
 
 	assign( cr_flags, binop(Iop_Or32, mkexpr(tmp), mkexpr(xer_so)) );
 
-	DIP("cmpli %d,%d,%d,%d\n", crfD, flag_L, Ra_addr, UIMM_16);
 	break;
 
     /* X Form */
@@ -995,6 +999,7 @@ static Bool dis_int_cmp ( UInt theInstr )
 
 	switch (opc2) {
 	case 0x000: // cmp (Compare, p397)
+	    DIP("cmp %d,%d,%d,%d\n", crfD, flag_L, Ra_addr, Rb_addr);
 	    assign( Rb, getIReg(Rb_addr) );
 	    assign( tmp, IRExpr_Mux0X(
 			binop(Iop_CmpEQ32, mkexpr(Ra), mkexpr(Rb)),
@@ -1002,10 +1007,10 @@ static Bool dis_int_cmp ( UInt theInstr )
 				      mkU32(2), mkU32(4) ), mkU32(8) ));
 	    assign( cr_flags, binop(Iop_Or32, mkexpr(tmp), mkexpr(xer_so)) );
 
-	    DIP("cmp %d,%d,%d,%d\n", crfD, flag_L, Ra_addr, Rb_addr);
 	    break;
 
         case 0x020: // cmpl (Compare Logical, p399)
+	    DIP("cmpl %d,%d,%d,%d\n", crfD, flag_L, Ra_addr, Rb_addr);
 	    assign( Rb, getIReg(Rb_addr) );
 	    assign( tmp, IRExpr_Mux0X(
 			binop(Iop_CmpEQ32, mkexpr(Ra), mkexpr(Rb)),
@@ -1013,7 +1018,6 @@ static Bool dis_int_cmp ( UInt theInstr )
 				      mkU32(2), mkU32(4) ), mkU32(8) ));
 	    assign( cr_flags, binop(Iop_Or32, mkexpr(tmp), mkexpr(xer_so)) );
 
-	    DIP("cmpl %d,%d,%d,%d\n", crfD, flag_L, Ra_addr, Rb_addr);
 	    break;
 
 	default:
@@ -1055,79 +1059,230 @@ static Bool dis_int_logic ( UInt theInstr )
     assign( Rs, getIReg(Ra_addr) );
 
     switch (opc1) {
-    case 0x1C: // andi.
+    case 0x1C: // andi. (AND Immediate, p388)
+	DIP("andi %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
 	return False;
 
-    case 0x1D: // andis.
+    case 0x1D: // andis. (AND Immediate Shifted, p389)
+	DIP("andis %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
 	return False;
 
     case 0x18: // ori (OR Immediate, p551)
-	putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs), mkU32(UIMM_16)) );
 	DIP("ori %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
+	putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs), mkU32(UIMM_16)) );
 	break;
 
     case 0x19: // oris (OR Immediate Shifted, p552)
+	DIP("oris %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
 	putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs),
 				binop(Iop_Shl32, mkU32(UIMM_16), mkU32(16))) );
-	DIP("oris %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
 	break;
 
-    case 0x1A: // xori
+    case 0x1A: // xori (XOR Immediate, p625)
+	DIP("xori %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
 	return False;
 
-    case 0x1B: // xoris
+    case 0x1B: // xoris (XOR Immediate Shifted, p626)
+	DIP("xoris %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
 	return False;
 
     /* X Form */
     case 0x1F:
 	switch (opc2) {
-	case 0x01C: // and
+	case 0x01C: // and (AND, p386)
+	    DIP("and%s %d,%d,%d\n",
+		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
 	    return False;
 
-	case 0x03C: // andc
+	case 0x03C: // andc (AND with Complement, p387)
+	    DIP("andc%s %d,%d,%d\n",
+		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
 	    return False;
 
-	case 0x01A: // cntlzw, B=0
+	case 0x01A: // cntlzw (Count Leading Zeros Word, p402)
 	    if (Rb_addr!=0) { return False; }
+	    DIP("cntlzw%s %d,%d\n", flag_Rc ? "." : "", Ra_addr, Rs_addr);
 	    return False;
 
-	case 0x11C: // eqv
+	case 0x11C: // eqv (Equivalent, p427)
+	    DIP("eqv%s %d,%d,%d\n",
+		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
 	    return False;
 
-	case 0x3BA: // extsb
+	case 0x3BA: // extsb (Extend Sign Byte, p428)
 	    if (Rb_addr!=0) { return False; }
+	    DIP("extsb%s %d,%d\n", flag_Rc ? "." : "", Ra_addr, Rs_addr);
 	    return False;
 
-	case 0x39A: // extsh
+	case 0x39A: // extsh (Extend Sign Half Word, p429)
 	    if (Rb_addr!=0) { return False; }
+	    DIP("extsh%s %d,%d\n", flag_Rc ? "." : "", Ra_addr, Rs_addr);
 	    return False;
 
-	case 0x1DA: // nand
+	case 0x1DA: // nand (NAND, p546)
+	    DIP("nand%s %d,%d,%d\n",
+		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
 	    return False;
 
-	case 0x07C: // nor
+	case 0x07C: // nor (NOR, p548)
+	    DIP("nor%s %d,%d,%d\n",
+		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
 	    return False;
 
 	case 0x1BC: // or (OR, p549)
+	    DIP("or%s %d,%d,%d\n",
+		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
 	    putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs), getIReg(Rb_addr)) );
   	    if (flag_Rc==1) {
 		// CAB: CR0 affected how?
 	    }
-	    DIP("or%s %d,%d,%d\n",
-		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
 	    break;
 
-	case 0x19C: // orc  (OR with Compement, p550)
+	case 0x19C: // orc  (OR with Complement, p550)
+	    DIP("orc%s %d,%d,%d\n",
+		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
 	    putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs),
 				    unop(Iop_Not32, getIReg(Rb_addr))) );
   	    if (flag_Rc==1) {
 		// CAB: ?
 	    }
-	    DIP("orc%s %d,%d,%d\n",
-		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
 	    break;
 
-	case 0x13C: // xor
+	case 0x13C: // xor (XOR, p624)
+	    DIP("xor%s %d,%d,%d\n",
+		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
+	    return False;
+
+	default:
+	    return False;
+	}
+	break;
+    default:
+	return False;
+    }
+    return True;
+}
+
+
+
+static Bool dis_int_rot ( UInt theInstr )
+{
+    /* M-Form */
+    UChar opc1      = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar Rs_addr   = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr   = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar Rb_addr   = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UChar Shift_Imm = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UChar MaskBegin = (theInstr >>  6) & 0x1F;      /* theInstr[6:10]  */
+    UChar MaskEnd   = (theInstr >>  1) & 0x1F;      /* theInstr[1:5]   */
+    UChar flag_Rc   = (theInstr >>  0) & 1;         /* theInstr[0]     */
+
+    switch (opc1) {
+    case 0x14: // rlwimi (Rotate Left Word Immediate then Mask Insert, p561)
+	DIP("rlwimi%s %d,%d,%d,%d,%d\n", flag_Rc ? "." : "",
+	    Ra_addr, Rs_addr, Shift_Imm, MaskBegin, MaskEnd);
+	return False;
+
+    case 0x15: // rlwinm (Rotate Left Word Immediate then AND with Mask, p562)
+	DIP("rlwimi%s %d,%d,%d,%d,%d\n", flag_Rc ? "." : "",
+	    Ra_addr, Rs_addr, Shift_Imm, MaskBegin, MaskEnd);
+	return False;
+
+    case 0x17: // rlwnm (Rotate Left Word then AND with Mask, p564)
+	DIP("rlwimi%s %d,%d,%d,%d,%d\n", flag_Rc ? "." : "",
+	    Ra_addr, Rs_addr, Rb_addr, MaskBegin, MaskEnd);
+	return False;
+
+    default:
+	return False;
+    }
+    return True;
+}
+
+
+
+static Bool dis_int_load ( UInt theInstr )
+{
+    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar Rd_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr  = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+
+    /* D-Form */
+    UInt  d_offset = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15] */
+
+    /* X-Form */
+    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UChar b0      = (theInstr >>  0) & 1;         /* theInstr[0]     */
+
+
+    switch (opc1) {
+    case 0x22: // lbz (Load B & Zero, p468)
+	DIP("lbz %d,%d(%d)\n", Rd_addr, d_offset, Ra_addr);
+	return False;
+
+    case 0x23: // lbzu (Load B & Zero with Update, p469)
+	DIP("lbzu %d,%d(%d)\n", Rd_addr, d_offset, Ra_addr);
+	return False;
+
+    case 0x2A: // lha (Load HW Algebraic, p485)
+	DIP("lha %d,%d(%d)\n", Rd_addr, d_offset, Ra_addr);
+	return False;
+
+    case 0x2B: // lhau (Load HW Algebraic with Update, p486)
+	DIP("lhau %d,%d(%d)\n", Rd_addr, d_offset, Ra_addr);
+	return False;
+
+    case 0x28: // lhz (Load HW & Zero, p490)
+	DIP("lhz %d,%d(%d)\n", Rd_addr, d_offset, Ra_addr);
+	return False;
+
+    case 0x29: // lhzu (Load HW & and Zero with Update, p491)
+	DIP("lhzu %d,%d(%d)\n", Rd_addr, d_offset, Ra_addr);
+	return False;
+
+    case 0x20: // lwz (Load W & Zero, p504)
+	DIP("lwz %d,%d(%d)\n", Rd_addr, d_offset, Ra_addr);
+	return False;
+
+    case 0x21: // lwzu (Load W & Zero with Update, p505))
+	DIP("lwzu %d,%d(%d)\n", Rd_addr, d_offset, Ra_addr);
+	return False;
+
+    /* X Form */
+    case 0x1F:
+	if (b0 != 0) { return False; }
+	switch (opc2) {
+        case 0x077: // lbzux (Load B & Zero with Update Indexed, p470)
+	    DIP("lbzux %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	    return False;
+
+        case 0x057: // lbzx (Load B & Zero Indexed, p471)
+	    DIP("lbzx %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	    return False;
+
+        case 0x177: // lhaux (Load HW Algebraic with Update Indexed, p487)
+	    DIP("lhaux %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	    return False;
+
+        case 0x157: // lhax (Load HW Algebraic Indexed, p488)
+	    DIP("lhax %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	    return False;
+
+        case 0x137: // lhzux (Load HW & Zero with Update Indexed, p492)
+	    DIP("lhzux %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	    return False;
+
+        case 0x117: // lhzx (Load HW & Zero Indexed, p493)
+	    DIP("lhzx %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	    return False;
+
+        case 0x037: // lwzux (Load W & Zero with Update Indexed, p506)
+	    DIP("lwzux %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	    return False;
+
+        case 0x017: // lwzx (Load W & Zero Indexed, p507)
+	    DIP("lwzx %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
 	    return False;
 
 	default:
@@ -1144,12 +1299,12 @@ static Bool dis_int_logic ( UInt theInstr )
 
 static Bool dis_int_store ( UInt theInstr )
 {
-    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar Rs_addr = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar Rs_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr  = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
 
     /* D-Form */
-    UInt  d_16    = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15]  */
+    UInt  d_offset = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15] */
 
     /* X-Form */
     UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
@@ -1161,20 +1316,24 @@ static Bool dis_int_store ( UInt theInstr )
     IRTemp tmp2 = newTemp(Ity_I32);
 
     switch (opc1) {
-    case 0x26: // stb
+    case 0x26: // stb (Store B, p576)
+	DIP("stb %d,%d(%d)\n", Rs_addr, d_offset, Ra_addr);
 	return False;
 
-    case 0x27: // stbu
+    case 0x27: // stbu (Store B with Update, p577)
+	DIP("stbu %d,%d(%d)\n", Rs_addr, d_offset, Ra_addr);
 	return False;
 
-    case 0x2C: // sth
+    case 0x2C: // sth (Store HW, p595)
+	DIP("sth %d,%d(%d)\n", Rs_addr, d_offset, Ra_addr);
 	return False;
 
-    case 0x2D: // sthu
+    case 0x2D: // sthu (Store HW with Update, p597)
+	DIP("sthu %d,%d(%d)\n", Rs_addr, d_offset, Ra_addr);
 	return False;
 
-    case 0x24: // stw
-	DIP("stw %d,%d(%d)\n", Rs_addr, d_16, Ra_addr);
+    case 0x24: // stw (Store W, p603)
+	DIP("stw %d,%d(%d)\n", Rs_addr, d_offset, Ra_addr);
 	assign( Rs, mkexpr(Rs_addr) );
 	if (Ra_addr == 0) {
 	    assign( tmp1, mkU32(0) );
@@ -1182,39 +1341,112 @@ static Bool dis_int_store ( UInt theInstr )
 	    assign( tmp1, getIReg(Ra_addr) );
 	}
 	assign( tmp2, binop(Iop_Add32, mkexpr(tmp1),
-			    mkU32(extend_s_16to32(d_16))) );
+			    mkU32(extend_s_16to32(d_offset))) );
 	storeBE( mkexpr(tmp2), mkexpr(Rs_addr) );
 	break;
 
-    case 0x25: // stwu
+    case 0x25: // stwu (Store W with Update, p607)
+	DIP("stwu %d,%d(%d)\n", Rs_addr, d_offset, Ra_addr);
 	return False;
 
     /* X Form */
     case 0x1F:
 	if (b0 != 0) { return False; }
 	switch (opc2) {
-	case 0x0F7: // stbux
+	case 0x0F7: // stbux (Store B with Update Indexed, p578)
+	    DIP("stbux %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
 	    return False;
 
-	case 0x0D7: // stbx
+	case 0x0D7: // stbx (Store B Indexed, p579)
+	    DIP("stbx %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
 	    return False;
 
-	case 0x1B7: // sthux
+	case 0x1B7: // sthux (Store HW with Update Indexed, p598)
+	    DIP("sthux %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
 	    return False;
 
-	case 0x197: // sthx
+	case 0x197: // sthx (Store HW Indexed, p599)
+	    DIP("sthx %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
 	    return False;
 
-	case 0x0B7: // stwux
+	case 0x0B7: // stwux (Store W with Update Indexed, p608)
+	    DIP("stwux %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
 	    return False;
 
-	case 0x097: // stwx
+	case 0x097: // stwx (Store W Indexed, p609)
+	    DIP("stwx %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
 	    return False;
 
 	default:
 	    return False;
 	}
 	break;
+    default:
+	return False;
+    }
+    return True;
+}
+
+
+
+static Bool dis_int_ldst_mult ( UInt theInstr )
+{
+    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar Rd_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Rs_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr  = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+
+    /* D-Form */
+    UInt  d_offset = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15] */
+
+    switch (opc1) {
+    /* D Form */
+    case 0x2E: // lmw (Load Multiple Word, p494)
+	DIP("lmw %d,%d(%d)\n", Rd_addr, d_offset, Ra_addr);
+	return False;
+
+    case 0x2F: // stmw (Store Multiple Word, p600)
+	DIP("stmw %d,%d(%d)\n", Rs_addr, d_offset, Ra_addr);
+	return False;
+
+    default:
+	return False;
+    }
+    return True;
+}
+
+
+
+static Bool dis_int_ldst_str ( UInt theInstr )
+{
+    /* X-Form */
+    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar Rd_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Rs_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr  = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar NumBytes = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UChar Rb_addr  = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UChar b0       = (theInstr >>  0) & 1;         /* theInstr[0]     */
+
+    if (opc1 != 0x1F || b0 != 0) { return False; }
+    switch (opc2) {
+    case 0x255: // lswi (Load String Word Immediate, p495)
+	DIP("lswi %d,%d,%d\n", Rd_addr, Ra_addr, NumBytes);
+	return False;
+
+    case 0x215: // lswx (Load String Word Indexed, p497)
+	DIP("lswx %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	return False;
+
+    case 0x2D5: // stswi (Store String Word Immediate, p601)
+	DIP("stswi %d,%d,%d\n", Rs_addr, Ra_addr, NumBytes);
+	return False;
+
+    case 0x295: // stswx (Store String Word Indexed, p602)
+	DIP("stswx %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
+	return False;
+
     default:
 	return False;
     }
@@ -1256,7 +1488,8 @@ static Bool dis_branch ( theInstr )
 //    vex_printf("disInstr(ppc32): LI: %,031b\n", extend_s_24to32(LI_24 << 2));
 
     switch (opc1) {
-    case 0x12: // b                  (Branch)
+    case 0x12: // b     (Branch, p390)
+	DIP("b%s%s 0x%x\n", flag_LK ? "l" : "", flag_AA ? "a" : "", LI_24);
 	assign( tmp, mkU32(extend_s_24to32(LI_24 << 2)) );
 	if (flag_AA) {
 	    assign( nia, mkexpr(tmp) );
@@ -1269,11 +1502,11 @@ static Bool dis_branch ( theInstr )
 
 	irbb->jumpkind = flag_LK ? Ijk_Call : Ijk_Boring;
 	irbb->next     = mkexpr(nia);
-
-	DIP("b%s%s 0x%x\n", flag_LK ? "l" : "", flag_AA ? "a" : "", LI_24);
 	break;
 
-    case 0x10: // bc                 (Branch Conditional)
+    case 0x10: // bc    (Branch Conditional, p391)
+	DIP("bc%s%s 0x%x, 0x%x, 0x%x\n",
+	    flag_LK ? "l" : "", flag_AA ? "a" : "", BO, BI, BD);
 
 	// Need to assert any of the bits of B0 ?
 
@@ -1335,16 +1568,14 @@ static Bool dis_branch ( theInstr )
 	    irbb->next     = mkexpr(nia);
 	}
 */
-
-	DIP("bc%s%s 0x%x, 0x%x, 0x%x\n",
-	    flag_LK ? "l" : "", flag_AA ? "a" : "", BO, BI, BD);
 	return False;
 
     case 0x13:
 	if (b11to15!=0) { return False; }
 
 	switch (opc2) {
-        case 0x210: // bcctr         (Branch Conditional to Count Register) 
+        case 0x210: // bcctr (Branch Cond. to Count Register, p393) 
+	    DIP("bcctr%s 0x%x, 0x%x,\n", flag_LK ? "l" : "", BO, BI);
 /*
 	    cond_ok = BO[0] | (CR[BI] == BO[1])
 	    if (cond_ok) {
@@ -1354,10 +1585,10 @@ static Bool dis_branch ( theInstr )
 		}
 	    }
 */
-	    DIP("bcctr%s 0x%x, 0x%x,\n", flag_LK ? "l" : "", BO, BI);
 	    return False;
 
-        case 0x010: // bclr          (Branch Conditional to Link Register) 
+        case 0x010: // bclr (Branch Cond. to Link Register, p395) 
+	    DIP("bclr%s 0x%x, 0x%x,\n", flag_LK ? "l" : "", BO, BI);
 /*
 	    if (!BO[2]) {
 		CTR -= 1
@@ -1370,7 +1601,6 @@ static Bool dis_branch ( theInstr )
 		    LR = CIA + 4
 		}
 */
-	    DIP("bclr%s 0x%x, 0x%x,\n", flag_LK ? "l" : "", BO, BI);
 	    return False;
 
         default:
@@ -1381,6 +1611,88 @@ static Bool dis_branch ( theInstr )
 	return False;
     }
     
+    return True;
+}
+
+
+
+static Bool dis_int_shift ( UInt theInstr )
+{
+    /* X-Form */
+    UChar opc1      = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar Rs_addr   = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr   = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar Rb_addr   = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UChar Shift_Imm = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  opc2      = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UChar flag_Rc   = (theInstr >>  0) & 1;         /* theInstr[0]     */
+
+    if (opc1 == 0x1F) {
+	switch (opc2) {
+        case 0x018: // slw (Shift Left Word, p569)
+	    DIP("slw%s %d,%d,%d\n", flag_Rc ? "." : "",
+		Ra_addr, Rs_addr, Rb_addr);
+	    return False;
+
+        case 0x318: // sraw (Shift Right Algebraic Word, p572)
+	    DIP("sraw%s %d,%d,%d\n", flag_Rc ? "." : "",
+		Ra_addr, Rs_addr, Rb_addr);
+	    return False;
+
+        case 0x338: // srawi (Shift Right Algebraic Word Immediate, p573)
+	    DIP("srawi%s %d,%d,%d\n", flag_Rc ? "." : "",
+		Ra_addr, Rs_addr, Shift_Imm);
+	    return False;
+
+        case 0x218: // srw (Shift Right Word, p575)
+	    DIP("srw%s %d,%d,%d\n", flag_Rc ? "." : "",
+		Ra_addr, Rs_addr, Rb_addr);
+	    return False;
+
+        default:
+	    return False;
+	}
+    }
+    return True;
+}
+
+
+
+static Bool dis_int_ldst_rev ( UInt theInstr )
+{
+    /* X-Form */
+    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar Rd_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Rs_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr  = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar Rb_addr  = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UChar b0       = (theInstr >>  0) & 1;         /* theInstr[0]     */
+
+    if (opc1 != 0x1F || b0 != 0) {
+	return False;
+    }
+
+    switch (opc2) {
+    case 0x316: // lhbrx (Load Half Word Byte-Reverse Indexed, p489)
+	DIP("lhbrx %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	return False;
+
+    case 0x216: // lwbrx (Load Word Byte-Reverse Indexed, p503)
+	DIP("lwbrx %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	return False;
+
+    case 0x396: // sthbrx (Store Half Word Byte-Reverse Indexed, p596)
+	DIP("sthbrx %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
+	return False;
+
+    case 0x296: // stwbrx (Store Word Byte-Reverse Indexed, p604)
+	DIP("stwbrx %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
+	return False;
+
+    default:
+	return False;
+    }
     return True;
 }
 
@@ -1505,7 +1817,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0x0F: // addis
    case 0x07: // mulli
    case 0x08: // subfic
-       if (dis_int_arith(theInstr, 0)) break;
+       if (dis_int_arith(theInstr)) break;
        goto decode_failure;
 
    /*
@@ -1529,6 +1841,29 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        goto decode_failure;
 
    /*
+     Integer Rotate Instructions
+   */
+   case 0x14: // rlwimi
+   case 0x15: // rlwinm
+   case 0x17: // rlwnm
+       if (dis_int_rot(theInstr)) break;
+       goto decode_failure;
+
+   /*
+     Integer Load Instructions
+   */
+   case 0x22: // lbz
+   case 0x23: // lbzu
+   case 0x2A: // lha
+   case 0x2B: // lhau
+   case 0x28: // lhz
+   case 0x29: // lhzu
+   case 0x20: // lwz
+   case 0x21: // lwzu
+       if (dis_int_load(theInstr)) break;
+       goto decode_failure;
+
+   /*
      Integer Store Instructions
    */
    case 0x26: // stb
@@ -1538,6 +1873,14 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    case 0x24: // stw
    case 0x25: // stwu
        if (dis_int_store(theInstr)) break;
+       goto decode_failure;
+
+   /*
+     Integer Load and Store Multiple Instructions
+   */
+   case 0x2E: // lmw
+   case 0x2F: // stmw
+       if (dis_int_ldst_mult(theInstr)) break;
        goto decode_failure;
 
    /*
@@ -1578,7 +1921,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x08A: // adde
        case 0x0EA: // addme
        case 0x0CA: // addze
-	   if (dis_int_arith(theInstr, 1)) goto decode_success;
+	   if (dis_int_arith(theInstr)) goto decode_success;
 	   goto decode_failure;
 
        default:
@@ -1615,6 +1958,32 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 	   goto decode_failure;
 
        /*
+	 Integer Shift Instructions
+	 No OE, yes Rc:
+       */
+       case 0x018: // slw
+       case 0x318: // sraw
+       case 0x338: // srawi
+       case 0x218: // srw
+	   if (dis_int_shift(theInstr)) break;
+	   goto decode_failure;
+
+       /*
+	 Integer Load Instructions
+	 Rc=0
+       */
+       case 0x057: // lbzx
+       case 0x077: // lbzux
+       case 0x157: // lhax
+       case 0x177: // lhaux
+       case 0x117: // lhzx
+       case 0x137: // lhzux
+       case 0x017: // lwzx
+       case 0x037: // lwzux
+	   if (dis_int_load(theInstr)) break;
+	   goto decode_failure;
+
+       /*
 	 Integer Store Instructions
        */
        case 0x0F7: // stbux
@@ -1624,6 +1993,27 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x0B7: // stwux
        case 0x097: // stwx
 	   if (dis_int_store(theInstr)) break;
+	   goto decode_failure;
+
+       /*
+	 Integer Load and Store with Byte Reverse Instructions
+	 Rc=0
+       */
+       case 0x316: // lhbrx
+       case 0x216: // lwbrx
+       case 0x396: // sthbrx
+       case 0x296: // stwbrx
+	   if (dis_int_ldst_rev(theInstr)) break;
+	   goto decode_failure;
+
+       /*
+	 Integer Load and Store String Instructions
+       */
+       case 0x255: // lswi
+       case 0x215: // lswx
+       case 0x2D5: // stswi
+       case 0x295: // stswx
+	   if (dis_int_ldst_str(theInstr)) break;
 	   goto decode_failure;
 
        default:

@@ -33,6 +33,8 @@ Int main ( void )
   printf("#define OFFSET_x86_ESP %d\n", 
          offsetof(VexGuestX86State,guest_ESP));
 
+  printf("#define OFFSET_x86_EIP %d\n", 
+         offsetof(VexGuestX86State,guest_EIP));
 
 
   printf("#define OFFSET_amd64_RAX %d\n", 
@@ -55,6 +57,9 @@ Int main ( void )
 
   printf("#define OFFSET_amd64_R10 %d\n", 
          offsetof(VexGuestAMD64State,guest_R10));
+
+  printf("#define OFFSET_amd64_RIP %d\n", 
+         offsetof(VexGuestAMD64State,guest_RIP));
 
   return 0;
 }

@@ -156,8 +156,8 @@ static void vg_init_baseBlock ( void )
    /* Now the spill area. */
    VGOFF_(spillslots) = alloc_BaB(LibVEX_N_SPILL_BYTES/4);
    VG_(printf)("1.0.4:  state at %d\n", 4* VGOFF_(m_vex));
-   VG_(printf)("1.0.4:  spill at %d\n", 4* VGOFF_(spillslots));
    VG_(printf)("1.0.4: shadow at %d\n", 4* shadow );
+   VG_(printf)("1.0.4:  spill at %d\n", 4* VGOFF_(spillslots));
 
    LibVEX_GuestX86_initialise( (VexGuestX86State*)
                                & VG_(baseBlock)[ VGOFF_(m_vex) ] );

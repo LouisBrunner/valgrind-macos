@@ -161,11 +161,6 @@ Char** VG_(client_envp);
 /* Our signal delivery stack. */
 UInt VG_(sigstack)[VG_SIGSTACK_SIZE_W];
 
-/* Saving stuff across system calls. */
-__attribute__ ((aligned (16)))
-UInt VG_(real_sse_state_saved_over_syscall)[VG_SIZE_OF_SSESTATE_W];
-Addr VG_(esp_saved_over_syscall);
-
 /* jmp_buf for fatal signals */
 Int	VG_(fatal_sigNo) = -1;
 Bool	VG_(fatal_signal_set) = False;

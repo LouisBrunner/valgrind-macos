@@ -15,6 +15,7 @@ foreign import ccall "linker_top_level_ADD"
 foreign import ccall "linker_top_level_LINK"
                      linker_top_level_LINK :: IO (Ptr ())
 
+
 linkObjects :: [String] -> IO (Ptr ())
 linkObjects objs
    = do linker_top_level_INIT

@@ -255,16 +255,16 @@ __attribute__((weak)) void pthread_mutexattr_setkind_np ( void )
 //                      { vgPlain_unimp("pthread_mutexattr_setpshared"); }
 //__attribute__((weak)) void pthread_setconcurrency ( void )
 //                      { vgPlain_unimp("pthread_setconcurrency"); }
-__attribute__((weak)) void pthread_spin_destroy ( void )
-                      { vgPlain_unimp("pthread_spin_destroy"); }
-__attribute__((weak)) void pthread_spin_init ( void )
-                      { vgPlain_unimp("pthread_spin_init"); }
-__attribute__((weak)) void pthread_spin_lock ( void )
-                      { vgPlain_unimp("pthread_spin_lock"); }
-__attribute__((weak)) void pthread_spin_trylock ( void )
-                      { vgPlain_unimp("pthread_spin_trylock"); }
-__attribute__((weak)) void pthread_spin_unlock ( void )
-                      { vgPlain_unimp("pthread_spin_unlock"); }
+//__attribute__((weak)) void pthread_spin_destroy ( void )
+//                      { vgPlain_unimp("pthread_spin_destroy"); }
+//__attribute__((weak)) void pthread_spin_init ( void )
+//                      { vgPlain_unimp("pthread_spin_init"); }
+//__attribute__((weak)) void pthread_spin_lock ( void )
+//                      { vgPlain_unimp("pthread_spin_lock"); }
+//__attribute__((weak)) void pthread_spin_trylock ( void )
+//                      { vgPlain_unimp("pthread_spin_trylock"); }
+//__attribute__((weak)) void pthread_spin_unlock ( void )
+//                      { vgPlain_unimp("pthread_spin_unlock"); }
 
 
 /*--------------------------------------------------------------------*/

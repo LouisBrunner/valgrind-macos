@@ -1,13 +1,13 @@
+
 /*--------------------------------------------------------------------*/
-/*--- Part of the MemCheck skin: Maintain bitmaps of memory,       ---*/
-/*--- tracking the accessibility (A) and validity (V) status of    ---*/
-/*--- each byte.                                                   ---*/
+/*--- MemCheck: Maintain bitmaps of memory, tracking the           ---*/
+/*--- accessibility (A) and validity (V) status of each byte.      ---*/
 /*---                                                    mc_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Valgrind, an x86 protected-mode emulator 
-   designed for debugging and profiling binaries on x86-Unixes.
+   This file is part of MemCheck, a heavyweight Valgrind skin for
+   detecting memory errors.
 
    Copyright (C) 2000-2002 Julian Seward 
       jseward@acm.org

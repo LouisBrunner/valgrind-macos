@@ -5,8 +5,8 @@
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Valgrind, an x86 protected-mode emulator 
-   designed for debugging and profiling binaries on x86-Unixes.
+   This file is part of Cachegrind, a Valgrind skin for cache
+   profiling programs.
 
    Copyright (C) 2002 Nicholas Nethercote
       njn25@cam.ac.uk

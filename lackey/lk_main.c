@@ -1,11 +1,12 @@
+
 /*--------------------------------------------------------------------*/
 /*--- Simple skin for counting UInstrs, using a C helper.          ---*/
 /*---                                                    lk_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Valgrind, an x86 protected-mode emulator 
-   designed for debugging and profiling binaries on x86-Unixes.
+   This file is part of Lackey, an example Valgrind skin that does
+   some simple program measurement.
 
    Copyright (C) 2002 Nicholas Nethercote
       njn25@cam.ac.uk

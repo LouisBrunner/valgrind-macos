@@ -1,3 +1,4 @@
+
 /*--------------------------------------------------------------------*/
 /*--- Default panicky definitions of template functions that skins ---*/
 /*--- should override.                                             ---*/
@@ -5,8 +6,8 @@
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Valgrind, an x86 protected-mode emulator 
-   designed for debugging and profiling binaries on x86-Unixes.
+   This file is part of Valgrind, an extensible x86 protected-mode
+   emulator for monitoring program execution on x86-Unixes.
 
    Copyright (C) 2000-2002 Nicholas Nethercote
       njn25@cam.ac.uk

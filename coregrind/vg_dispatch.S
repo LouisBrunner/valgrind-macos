@@ -1,12 +1,12 @@
 
-/*--------------------------------------------------------------------*/
-/*--- The core dispatch loop, for jumping to a code address.       ---*/
-/*---                                                vg_dispatch.S ---*/
-/*--------------------------------------------------------------------*/
+##--------------------------------------------------------------------##
+##--- The core dispatch loop, for jumping to a code address.       ---##
+##---                                                vg_dispatch.S ---##
+##--------------------------------------------------------------------##
 
 /*
-  This file is part of Valgrind, an x86 protected-mode emulator 
-  designed for debugging and profiling binaries on x86-Unixes.
+  This file is part of Valgrind, an extensible x86 protected-mode
+  emulator for monitoring program execution on x86-Unixes.
 
   Copyright (C) 2000-2002 Julian Seward 
      jseward@acm.org
@@ -213,6 +213,6 @@ panic_msg_ebp:
 .text	
 
 
-/*--------------------------------------------------------------------*/
-/*--- end                                            vg_dispatch.S ---*/
-/*--------------------------------------------------------------------*/
+##--------------------------------------------------------------------##
+##--- end                                            vg_dispatch.S ---##
+##--------------------------------------------------------------------##

@@ -1,11 +1,12 @@
+
 ##--------------------------------------------------------------------##
 ##--- Support routines for the memory checker.                     ---##
 ##---                                        	      mc_helpers.S ---##
 ##--------------------------------------------------------------------##
 
 /*
-  This file is part of Valgrind, an x86 protected-mode emulator 
-  designed for debugging and profiling binaries on x86-Unixes.
+  This file is part of MemCheck, a heavyweight Valgrind skin for
+  detecting memory errors.
 
   Copyright (C) 2000-2002 Julian Seward 
      jseward@acm.org

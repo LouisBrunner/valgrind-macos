@@ -3137,8 +3137,8 @@ Addr dis_xadd_G_E ( UCodeBlock* cb,
       uInstr2(cb, GET, sz, ArchReg, gregOfRM(rm), TempReg, tmpt);
       uInstr2(cb, ADD, sz, TempReg, tmpd, TempReg, tmpt);
       setFlagsFromUOpcode(cb, ADD);
-      uInstr2(cb, PUT, sz, TempReg, tmpt, ArchReg, eregOfRM(rm));
       uInstr2(cb, PUT, sz, TempReg, tmpd, ArchReg, gregOfRM(rm));
+      uInstr2(cb, PUT, sz, TempReg, tmpt, ArchReg, eregOfRM(rm));
       DIP("xadd%c %s, %s\n", 
           nameISize(sz), nameIReg(sz,gregOfRM(rm)), nameIReg(sz,eregOfRM(rm)));
       return 1+eip0;

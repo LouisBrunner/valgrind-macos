@@ -92,5 +92,6 @@ libpthread.so$(EXEEXT): $(libpthread_so_OBJECTS)
 	$(CC) -Wall -g -O -shared -fpic -o libpthread.so $(libpthread_so_OBJECTS)
 
 install-exec-hook:
+	$(mkinstalldirs) $(DESTDIR)$(valdir)
 	rm -f $(DESTDIR)$(valdir)/libpthread.so.0
-	cd $(DESTDIR)$(valdir) && $(LN_S) libpthread.so libpthread.so.0
+	$(LN_S) libpthread.so $(DESTDIR)$(valdir)/libpthread.so.0

@@ -55,7 +55,7 @@ static struct stat padstat;
 
 extern int kickstart_base;	/* linker created */
 
-void check_mmap(void* res, void* base, int len)
+static void check_mmap(void* res, void* base, int len)
 {
    if ((void*)-1 == res) {
       fprintf(stderr, "valgrind: mmap(%p, %d) failed during startup.\n"  

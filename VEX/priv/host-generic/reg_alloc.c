@@ -697,7 +697,7 @@ HInstrArray* doRegisterAllocation (
          for (k = 0; k < rreg_info_used; k++) 
             if (rreg_info[k].rreg == state[j].rreg
                 && rreg_info[k].live_after < ii 
-                && ii <= rreg_info[k].dead_before) 
+                && ii < rreg_info[k].dead_before) 
                break;
          /* If this vassertion fails, we couldn't find a corresponding
             HLR. */
@@ -1049,7 +1049,7 @@ HInstrArray* doRegisterAllocation (
          after this instruction, and if so mark them as free. */
      post_insn_actions:
       for (j = 0; j < rreg_info_used; j++) {
-         if (rreg_info[j].dead_before == ii) {
+         if (rreg_info[j].dead_before == ii+1) {
             /* rreg_info[j].rreg is exiting a hard live range.  Mark
                it as such in the main state array. */
             for (k = 0; k < n_state; k++)

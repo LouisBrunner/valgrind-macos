@@ -513,14 +513,27 @@ int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize)
    return 0;
 }  
 
+/* Again, like LinuxThreads. */
+
+static int concurrency_current_level = 0;
+
 __attribute__((weak)) 
 int pthread_setconcurrency(int new_level)
 {
    if (new_level < 0)
       return EINVAL;
-   else
+   else {
+      concurrency_current_level = new_level;
       return 0;
+   }
 }
+
+__attribute__((weak)) 
+int pthread_getconcurrency(void)
+{
+   return concurrency_current_level;
+}
+
 
 
 /* --------------------------------------------------- 

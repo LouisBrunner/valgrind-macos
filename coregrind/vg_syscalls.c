@@ -5698,7 +5698,7 @@ void VG_(client_syscall) ( ThreadId tid )
             will end up back in the scheduler via the signal
             machinery. */
          VG_(set_running)(tid);
-         PRINT("SYSCALL[%d,%d](%3d) --> %ld (0x%lx)\n",
+         PRINT("SYSCALL[%d,%d](%3d) --> %lld (0x%llx)\n",
                VG_(getpid)(), tid, syscallno, (Long)(Word)RES, (ULong)RES);
       } else {
 	 /* run the syscall directly */

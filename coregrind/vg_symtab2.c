@@ -2085,10 +2085,12 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/SegInfo** psi,
    call has come from vg_what_fn_or_object_is_this. */
 static
 Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
-                  Bool match_anywhere_in_fun )
+                  Bool match_anywhere_in_fun, Bool show_offset)
 {
    SegInfo* si;
    Int      sno;
+   Int      offset;
+
    search_all_symtabs ( a, &si, &sno, match_anywhere_in_fun );
    if (si == NULL) 
       return False;
@@ -2098,6 +2100,25 @@ Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
       VG_(strncpy_safely) 
          ( buf, & si->strtab[si->symtab[sno].nmoff], nbuf );
    }
+
+   offset = a - si->symtab[sno].addr;
+   if (show_offset && offset != 0) {
+      Char     buf2[12];
+      Char*    symend = buf + VG_(strlen)(buf);
+      Char*    end = buf + nbuf;
+      Int      len;
+
+      len = VG_(sprintf)(buf2, "%c%d",
+			 offset < 0 ? '-' : '+',
+			 offset < 0 ? -offset : offset);
+      vg_assert(len < sizeof(buf2));
+
+      if (len < (end - symend)) {
+	 Char *cp = buf2;
+	 VG_(memcpy)(symend, cp, len+1);
+      }
+   }
+
    return True;
 }
 
@@ -2105,7 +2126,7 @@ Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
 Bool VG_(get_fnname) ( Addr a, Char* buf, Int nbuf )
 {
    return get_fnname ( /*demangle*/True, a, buf, nbuf,
-                       /*match_anywhere_in_fun*/True );
+                       /*match_anywhere_in_fun*/True, True );
 }
 
 /* This is available to skins... always demangle C++ names,
@@ -2113,14 +2134,14 @@ Bool VG_(get_fnname) ( Addr a, Char* buf, Int nbuf )
 Bool VG_(get_fnname_if_entry) ( Addr a, Char* buf, Int nbuf )
 {
    return get_fnname ( /*demangle*/True, a, buf, nbuf,
-                       /*match_anywhere_in_fun*/False );
+                       /*match_anywhere_in_fun*/False, False );
 }
 
 /* This is only available to core... don't demangle C++ names */
 Bool VG_(get_fnname_nodemangle) ( Addr a, Char* buf, Int nbuf )
 {
    return get_fnname ( /*demangle*/False, a, buf, nbuf,
-                       /*match_anywhere_in_fun*/True );
+                       /*match_anywhere_in_fun*/True, False );
 }
 
 /* Map a code address to the name of a shared object file or the executable.
@@ -2217,7 +2238,7 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
    i = 0;
    do {
       n = 0;
-      know_fnname  = VG_(get_fnname) (ec->eips[i], buf_fn,  M_VG_ERRTXT);
+      know_fnname  = get_fnname (True, ec->eips[i], buf_fn,  M_VG_ERRTXT, True, False);
       know_objname = VG_(get_objname)(ec->eips[i], buf_obj, M_VG_ERRTXT);
       know_srcloc  = VG_(get_filename_linenum)(ec->eips[i], 
                                                buf_srcloc, M_VG_ERRTXT, 

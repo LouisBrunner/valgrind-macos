@@ -662,21 +662,18 @@ UInt VG_(printf) ( const char *format, ... )
 
 
 /* A general replacement for sprintf(). */
-static Char* vg_sprintf_ptr;
-
-static void add_to_vg_sprintf_buf ( Char c )
-{
-   *vg_sprintf_ptr++ = c;
-}
-
 UInt VG_(sprintf) ( Char* buf, Char *format, ... )
 {
    UInt ret;
-
    va_list vargs;
+   Char *ptr = buf;
+   static void add_to_vg_sprintf_buf ( Char c )
+   {
+      *ptr++ = c;
+   }
+   
    va_start(vargs,format);
 
-   vg_sprintf_ptr = buf;
    ret = VG_(vprintf) ( add_to_vg_sprintf_buf, format, vargs );
    add_to_vg_sprintf_buf(0);
 

@@ -5235,6 +5235,7 @@ PRE(sys_sigprocmask, Special)
                              ARG1 /*how*/, 
                              set ? &bigger_set : NULL,
                              oldset ? &bigger_oldset : NULL);
+   SET_RESULT(RES);
 
    if (oldset)
       *oldset = bigger_oldset.sig[0];

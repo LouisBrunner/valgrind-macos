@@ -1222,7 +1222,7 @@ void SK_(pre_clo_init)(void)
    VG_(details_copyright_author)(
       "Copyright (C) 2002, and GNU GPL'd, by Julian Seward.");
    VG_(details_bug_reports_to)  ("jseward@acm.org");
-   VG_(details_avg_translation_sizeB) ( 106 );
+   VG_(details_avg_translation_sizeB) ( 135 );
 
    VG_(needs_core_errors)         ();
    VG_(needs_skin_errors)         ();

@@ -59,7 +59,7 @@
 
 /*------------------ TYPES ------------------*/
 
-#define CODE_ALIGNMENT	16	/* alignment of TCEntries */
+#define CODE_ALIGNMENT	4	/* alignment of TCEntries */
 #define CODE_ALIGN(a)	(((a)+CODE_ALIGNMENT-1) & ~(CODE_ALIGNMENT-1))
 #define IS_ALIGNED(a)	(((a) & (CODE_ALIGNMENT-1)) == 0)
 
@@ -506,7 +506,10 @@ void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
    vg_assert(IS_ALIGNED(nBytes));
 
    tce = (TCEntry*)allocate(nBytes);
-   /* VG_(printf)("allocate returned %p\n", tce); */
+   /*
+   VG_(printf)("allocate returned %p (code start %p)\n", 
+               tce, &tce->payload[0]);
+   */
    vg_assert(vg_tc_current >= 0 && vg_tc_current < VG_TC_N_SECTORS);
 
    tce->orig_addr  = orig_addr;
@@ -631,7 +634,10 @@ void VG_(init_tt_tc) ( void )
    /* Figure out how big each sector should be.  */
    vg_tc_sector_szB 
       = (VG_TT_LIMIT /* max TT entries we expect */
-         * VG_(details).avg_translation_sizeB)
+         * (VG_(details).avg_translation_sizeB 
+            + sizeof(TCEntry)
+            + (CODE_ALIGNMENT/2) /* avg alignment loss */)
+        )
         / VG_TC_N_SECTORS;
    /* Ensure the calculated value is not way crazy. */
    vg_assert(vg_tc_sector_szB >= 200000);

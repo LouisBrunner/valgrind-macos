@@ -19,6 +19,9 @@ if test "${GCC}" != "yes" ; then
    AC_MSG_ERROR([Valgrind relies on GCC to be compiled])
 fi
 
+# figure out where perl lives
+AC_PATH_PROG(PERL, perl)
+
 # some older automake's don't have it so try something on our own
 ifdef([AM_PROG_AS],[AM_PROG_AS],
 [

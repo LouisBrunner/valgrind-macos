@@ -760,7 +760,7 @@ static
 void set_address_range_state ( Addr a, UInt len /* in bytes */, 
                                VgeInitStatus status )
 {
-   Addr aligned_a, end, aligned_end;
+   Addr end;
 
 #  if DEBUG_MAKE_ACCESSES
    VG_(printf)("make_access: 0x%x, %u, status=%u\n", a, len, status);
@@ -782,12 +782,8 @@ void set_address_range_state ( Addr a, UInt len /* in bytes */,
     * len/4+1 words.  This works out which it is by aligning the block and
     * seeing if the end byte is in the same word as it is for the unaligned
     * block; if not, it's the awkward case. */
-   aligned_a   = a & 0xc;                       /* zero bottom two bits */
-   end         = a + len;
-   aligned_end = aligned_a + len;
-   if ((end & 0xc) != (aligned_end & 0xc)) {
-       end += 4;    /* len/4 + 1 case */
-   }
+   end = (a + len + 3) & ~3;	/* round up */
+   a   &= ~3;			/* round down */
 
    /* Do it ... */
    switch (status) {
@@ -1256,6 +1252,7 @@ static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
 				  shadow_word prevstate )
 {
    HelgrindError err_extra;
+   static const shadow_word err_sw = { TID_INDICATING_ALL, Vge_Excl };
 
    clear_HelgrindError(&err_extra);
    err_extra.isWrite = is_write;
@@ -1266,12 +1263,7 @@ static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
                             (is_write ? "writing" : "reading"),
                             &err_extra);
 
-   /* Put location into error state to suppress future warnings */
-   {
-      shadow_word *sword = get_sword_addr(a);
-      sword->state = Vge_Excl;
-      sword->other = TID_INDICATING_ALL;
-   }
+   set_sword(a, err_sw);
 }
 
 static void record_mutex_error(ThreadId tid, hg_mutex_t *mutex, 

@@ -86,10 +86,10 @@ void mmap_segment ( Addr a, UInt len, UInt prot, Int fd )
    Bool nn, rr, ww, xx;
 
    /* Records segment, reads debug symbols if necessary */
-   if (prot & PROT_EXEC && fd != -1)
+   if ((prot & PROT_EXEC) && fd != -1)
       VG_(new_exe_segment) ( a, len );
 
-   nn = prot & PROT_NONE;
+   nn = False; /* PROT_NONE == 0; was = prot & PROT_NONE. */
    rr = prot & PROT_READ;
    ww = prot & PROT_WRITE;
    xx = prot & PROT_EXEC;
@@ -1778,7 +1778,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                      if ( segmentSize > 0 ) {
                         /* we don't distinguish whether it's read-only or
                          * read-write -- it doesn't matter really. */
-                        VG_TRACK( post_mem_write, addr, segmentSize );
+                        VG_TRACK( new_mem_mmap, addr, segmentSize, False, True, True, False );
                      }
                   }
                   break;

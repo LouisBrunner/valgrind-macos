@@ -176,6 +176,13 @@ char* strncat ( char* dst, const char* src, int n )
    return dst_orig;
 }
 
+unsigned int strnlen ( const char* str, unsigned int n )
+{
+   UInt i = 0;
+   while (i < n && str[i] != 0) i++;
+   return i;
+}
+
 unsigned int strlen ( const char* str )
 {
    UInt i = 0;

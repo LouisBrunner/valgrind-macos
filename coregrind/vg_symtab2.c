@@ -301,8 +301,8 @@ void VG_(addScopeInfo) ( SegInfo* si,
    Int size = next - this;
    ScopeRange range;
 
-   /* Ignore zero-sized scopes */
-   if (this == next) {
+   /* Ignore zero-sized or negative scopes */
+   if (size <= 0) {
       if (debug)
 	 VG_(printf)("ignoring zero-sized range, scope %p at %p\n", scope, this);
       return;

@@ -2608,6 +2608,31 @@ int sem_destroy(sem_t * sem)
    return 0;
 }
 
+  
+int sem_timedwait(sem_t* sem, const struct timespec *abstime) 
+{ 
+   int       res; 
+   vg_sem_t* vg_sem; 
+   ensure_valgrind("sem_timedwait"); 
+   vg_sem = se_remap(sem); 
+   res = __pthread_mutex_lock(&vg_sem->se_mx); 
+   my_assert(res == 0); 
+   while ( vg_sem->count == 0 && res != ETIMEDOUT ) { 
+      res = pthread_cond_timedwait(&vg_sem->se_cv, &vg_sem->se_mx, abstime); 
+   } 
+   if ( vg_sem->count > 0 ) { 
+      vg_sem->count--; 
+      res = __pthread_mutex_unlock(&vg_sem->se_mx); 
+      my_assert(res == 0 ); 
+      return 0; 
+   } else { 
+      res = __pthread_mutex_unlock(&vg_sem->se_mx); 
+      my_assert(res == 0 ); 
+      *(__errno_location()) = ETIMEDOUT; 
+      return -1; 
+   } 
+} 
+ 
 
 /* ---------------------------------------------------------------------
    Reader-writer locks.

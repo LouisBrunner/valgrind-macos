@@ -157,7 +157,7 @@ void pthread_rwlockattr_setkind_np ( void )  { unimp("pthread_rwlockattr_setkind
 //void raise ( void )  { unimp("raise"); }
 void sem_close ( void )  { unimp("sem_close"); }
 void sem_open ( void )  { unimp("sem_open"); }
-void sem_timedwait ( void )  { unimp("sem_timedwait"); }
+//void sem_timedwait ( void )  { unimp("sem_timedwait"); }
 void sem_unlink ( void )  { unimp("sem_unlink"); }
 //void sigaction ( void )  { unimp("sigaction"); }
 //void siglongjmp ( void )  { unimp("siglongjmp"); }

@@ -115,6 +115,26 @@
    obj:/usr/X11R6/lib/libXpm.so.4.11
 }
 
+{
+   struct with uninitialized paddings
+   Memcheck:Param
+   writev(vector[...])
+   fun:vgAllRoadsLeadToRome_writev
+   fun:__writev
+   fun:_X11TransSocketWritev
+   fun:_X11TransWritev
+}
+
+{
+   another struct with uninitialized paddings
+   Memcheck:Param
+   write(buf)
+   fun:*
+   fun:_IceTransSocketWrite
+   fun:_IceTransWrite
+   fun:_IceWrite
+}
+
 
 ##----------------------------------------------------------------------##
 

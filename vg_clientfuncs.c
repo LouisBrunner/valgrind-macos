@@ -82,20 +82,25 @@
 */
 
 /* ALL calls to malloc wind up here. */
-void* malloc ( UInt n )
+void* malloc ( Int n )
 {
    void* v;
 
    if (VG_(clo_trace_malloc))
       VG_(printf)("malloc[simd=%d](%d)", 
                   (UInt)VG_(running_on_simd_CPU), n );
-
-   if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
-
-   if (VG_(running_on_simd_CPU)) {
-      v = (void*)SIMPLE_REQUEST1(VG_USERREQ__MALLOC, n);
+   if (n < 0) {
+      v = NULL;
+      VG_(message)(Vg_UserMsg, 
+         "Warning: silly arg (%d) to malloc()", n );
    } else {
-      v = VG_(malloc)(VG_AR_CLIENT, n);
+      if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
+
+      if (VG_(running_on_simd_CPU)) {
+         v = (void*)SIMPLE_REQUEST1(VG_USERREQ__MALLOC, n);
+      } else {
+         v = VG_(malloc)(VG_AR_CLIENT, n);
+      }
    }
    if (VG_(clo_trace_malloc)) 
       VG_(printf)(" = %p\n", v );
@@ -103,20 +108,25 @@ void* malloc ( UInt n )
 }
 
 
-void* __builtin_new ( UInt n )
+void* __builtin_new ( Int n )
 {
    void* v;
 
    if (VG_(clo_trace_malloc))
       VG_(printf)("__builtin_new[simd=%d](%d)", 
                   (UInt)VG_(running_on_simd_CPU), n );
-
-   if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
-
-   if (VG_(running_on_simd_CPU)) {
-      v = (void*)SIMPLE_REQUEST1(VG_USERREQ__BUILTIN_NEW, n);
+   if (n < 0) {
+      v = NULL;
+      VG_(message)(Vg_UserMsg, 
+         "Warning: silly arg (%d) to __builtin_new()", n );
    } else {
-      v = VG_(malloc)(VG_AR_CLIENT, n);
+      if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
+
+      if (VG_(running_on_simd_CPU)) {
+         v = (void*)SIMPLE_REQUEST1(VG_USERREQ__BUILTIN_NEW, n);
+      } else {
+         v = VG_(malloc)(VG_AR_CLIENT, n);
+      }
    }
    if (VG_(clo_trace_malloc)) 
       VG_(printf)(" = %p\n", v );
@@ -131,13 +141,18 @@ void* __builtin_vec_new ( Int n )
    if (VG_(clo_trace_malloc))
       VG_(printf)("__builtin_vec_new[simd=%d](%d)", 
                   (UInt)VG_(running_on_simd_CPU), n );
-
-   if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
-
-   if (VG_(running_on_simd_CPU)) {
-      v = (void*)SIMPLE_REQUEST1(VG_USERREQ__BUILTIN_VEC_NEW, n);
+   if (n < 0) {
+      v = NULL;
+      VG_(message)(Vg_UserMsg, 
+         "Warning: silly arg (%d) to __builtin_vec_new()", n );
    } else {
-      v = VG_(malloc)(VG_AR_CLIENT, n);
+      if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
+
+      if (VG_(running_on_simd_CPU)) {
+         v = (void*)SIMPLE_REQUEST1(VG_USERREQ__BUILTIN_VEC_NEW, n);
+      } else {
+         v = VG_(malloc)(VG_AR_CLIENT, n);
+      }
    }
    if (VG_(clo_trace_malloc)) 
       VG_(printf)(" = %p\n", v );
@@ -190,18 +205,23 @@ void __builtin_vec_delete ( void* p )
 }
 
 
-void* calloc ( UInt nmemb, UInt size )
+void* calloc ( Int nmemb, Int size )
 {
    void* v;
 
    if (VG_(clo_trace_malloc))
       VG_(printf)("calloc[simd=%d](%d,%d)", 
                   (UInt)VG_(running_on_simd_CPU), nmemb, size );
-
-   if (VG_(running_on_simd_CPU)) {
-      v = (void*)SIMPLE_REQUEST2(VG_USERREQ__CALLOC, nmemb, size);
+   if (nmemb < 0 || size < 0) {
+      v = NULL;
+      VG_(message)(Vg_UserMsg, "Warning: silly args (%d,%d) to calloc()", 
+                               nmemb, size );
    } else {
-      v = VG_(calloc)(VG_AR_CLIENT, nmemb, size);
+      if (VG_(running_on_simd_CPU)) {
+         v = (void*)SIMPLE_REQUEST2(VG_USERREQ__CALLOC, nmemb, size);
+      } else {
+         v = VG_(calloc)(VG_AR_CLIENT, nmemb, size);
+      }
    }
    if (VG_(clo_trace_malloc)) 
       VG_(printf)(" = %p\n", v );
@@ -209,7 +229,7 @@ void* calloc ( UInt nmemb, UInt size )
 }
 
 
-void* realloc ( void* ptrV, UInt new_size )
+void* realloc ( void* ptrV, Int new_size )
 {
    void* v;
 
@@ -222,7 +242,7 @@ void* realloc ( void* ptrV, UInt new_size )
 
    if (ptrV == NULL)
       return malloc(new_size);
-   if (new_size == 0) {
+   if (new_size <= 0) {
       free(ptrV);
       if (VG_(clo_trace_malloc)) 
          VG_(printf)(" = 0\n" );
@@ -246,13 +266,16 @@ void* memalign ( Int alignment, Int n )
    if (VG_(clo_trace_malloc))
       VG_(printf)("memalign[simd=%d](al %d, size %d)", 
                   (UInt)VG_(running_on_simd_CPU), alignment, n );
-
-   if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
-
-   if (VG_(running_on_simd_CPU)) {
-      v = (void*)SIMPLE_REQUEST2(VG_USERREQ__MEMALIGN, alignment, n);
+   if (n < 0) {
+      v = NULL;
    } else {
-      v = VG_(malloc_aligned)(VG_AR_CLIENT, alignment, n);
+      if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
+
+      if (VG_(running_on_simd_CPU)) {
+         v = (void*)SIMPLE_REQUEST2(VG_USERREQ__MEMALIGN, alignment, n);
+      } else {
+         v = VG_(malloc_aligned)(VG_AR_CLIENT, alignment, n);
+      }
    }
    if (VG_(clo_trace_malloc)) 
       VG_(printf)(" = %p\n", v );

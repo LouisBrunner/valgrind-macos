@@ -6,6 +6,56 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
+#ifndef HAVE_SEMTIMEDOP
+
+#include <signal.h>
+#include <sys/time.h>
+
+static int semtimedop(int  semid, struct sembuf *sops, unsigned nsops,
+                      struct timespec *timeout)
+{
+   struct sigaction act;
+   struct sigaction oldact;
+   struct itimerval itv;
+   int rv;
+
+   act.sa_handler = SIG_IGN;
+   sigemptyset( &act.sa_mask );
+   act.sa_flags = 0;
+   
+   if (sigaction(SIGALRM, &act, &oldact) < 0)
+   {
+      perror("sigaction");
+      exit(1);
+   }
+   
+   itv.it_interval.tv_sec = 0;
+   itv.it_interval.tv_usec = 0;
+   itv.it_value.tv_sec = timeout->tv_sec;
+   itv.it_value.tv_usec = timeout->tv_nsec / 1000;
+   
+   if (setitimer(ITIMER_REAL, &itv, NULL) < 0)
+   {
+      perror("setitimer");
+      exit(1);
+   }
+   
+   if ((rv = semop(semid, sops, nsops)) < 0 && errno == EINTR)
+   {
+      errno = EAGAIN;
+   }
+
+   if (sigaction(SIGALRM, &oldact, NULL) < 0)
+   {
+      perror("sigaction");
+      exit(1);
+   }
+   
+   return rv;
+}
+
+#endif
+
 int main(int argc, char **argv)
 {
    int semid;

@@ -345,7 +345,7 @@ AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 
-AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr])
+AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr semtimedop])
 
 AC_OUTPUT(
    Makefile 

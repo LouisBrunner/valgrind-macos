@@ -411,4 +411,13 @@
 }
 
 ##----------------------------------------------------------------------##
+## For a leak in Valgrind's own libpthread.so :(
+{
+   my_malloc/get_or_allocate_specifics_ptr/__pthread_key_create(Leak)
+   Memcheck:Leak
+   fun:my_malloc
+   fun:get_or_allocate_specifics_ptr
+   fun:__pthread_key_create
+}
+
 

@@ -285,8 +285,25 @@ void addLineInfo ( SegInfo* si,
        return;
    }
 
-   vg_assert(this < si->start + si->size && next-1 >= si->start);
-   vg_assert(lineno >= 0 && lineno <= MAX_LINENO);
+   //vg_assert(this < si->start + si->size && next-1 >= si->start);
+   if (this >= si->start + si->size || next-1 < si->start) {
+       VG_(message)(Vg_DebugMsg, "warning: ignoring stabs entry falling "
+                                 "outside current SegInfo: %x %x %x %x\n",
+                                 si->start, si->start + si->size, 
+                                 this, next-1);
+       return;
+   }
+
+   vg_assert(lineno >= 0);
+   if (lineno > MAX_LINENO) {
+       VG_(message)(Vg_UserMsg, 
+                    "warning: ignoring stabs entry with "
+                    "huge line number (%d)\n", lineno);
+       VG_(message)(Vg_UserMsg, 
+                    "         Can't handle line numbers "
+                    "greater than %d, sorry\n", MAX_LINENO);
+       return;
+   }
 
    loc.addr      = this;
    loc.size      = (UShort)size;

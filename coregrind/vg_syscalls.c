@@ -2487,6 +2487,9 @@ POST(getrlimit)
 {
    if (res == 0)
       VG_TRACK( post_mem_write, arg2, sizeof(struct rlimit) );
+
+   if (res == 0 && arg1 == VKI_RLIMIT_NOFILE)
+      ((struct rlimit *)arg2)->rlim_cur = VG_(max_fd);
 }
 
 PREALIAS(ugetrlimit, getrlimit);

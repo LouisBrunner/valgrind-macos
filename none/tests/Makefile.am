@@ -7,6 +7,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bt_everything.stdout.exp bt_everything.vgtest \
 	bt_literal.stderr.exp bt_literal.stdout.exp \
 	bt_literal.vgtest \
+	closeall.stderr.exp closeall.vgtest \
 	coolo_sigaction.stderr.exp \
 	coolo_sigaction.stdout.exp coolo_sigaction.vgtest \
 	coolo_strlen.stderr.exp coolo_strlen.vgtest \
@@ -52,7 +53,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	yield.stdout.exp yield.vgtest
 
 check_PROGRAMS = \
-	args bitfield1 bt_everything bt_literal coolo_strlen \
+	args bitfield1 bt_everything bt_literal closeall coolo_strlen \
 	cpuid dastest discard exec-sigmask floored fork fpu_lazy_eflags \
 	fucomip insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2 \
 	munmap_exe map_unmap mremap rcl_assert \
@@ -69,6 +70,7 @@ args_SOURCES 		= args.c
 bitfield1_SOURCES 	= bitfield1.c
 bt_everything_SOURCES 	= bt_everything.c
 bt_literal_SOURCES 	= bt_literal.c
+closeall_SOURCES	= closeall.c
 cpuid_SOURCES 		= cpuid_c.c cpuid_s.s
 coolo_strlen_SOURCES 	= coolo_strlen.c
 dastest_SOURCES 	= dastest_c.c dastest_s.s

@@ -2007,21 +2007,21 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
    if (VG_(clo_verbosity) > 1) {
       Int fd;
       if (VG_(clo_log_to) != VgLogTo_Fd)
-         VG_(message)(Vg_UserMsg, "");
-      VG_(message)(Vg_UserMsg, "Valgrind library directory: %s", VG_(libdir));
-      VG_(message)(Vg_UserMsg, "Command line");
+         VG_(message)(Vg_DebugMsg, "");
+      VG_(message)(Vg_DebugMsg, "Valgrind library directory: %s", VG_(libdir));
+      VG_(message)(Vg_DebugMsg, "Command line");
       for (i = 0; i < VG_(client_argc); i++)
-         VG_(message)(Vg_UserMsg, "   %s", VG_(client_argv)[i]);
+         VG_(message)(Vg_DebugMsg, "   %s", VG_(client_argv)[i]);
 
-      VG_(message)(Vg_UserMsg, "Startup, with flags:");
+      VG_(message)(Vg_DebugMsg, "Startup, with flags:");
       for (i = 1; i < vg_argc; i++) {
-         VG_(message)(Vg_UserMsg, "   %s", vg_argv[i]);
+         VG_(message)(Vg_DebugMsg, "   %s", vg_argv[i]);
       }
 
-      VG_(message)(Vg_UserMsg, "Contents of /proc/version:");
+      VG_(message)(Vg_DebugMsg, "Contents of /proc/version:");
       fd = VG_(open) ( "/proc/version", VKI_O_RDONLY, 0 );
       if (fd < 0) {
-         VG_(message)(Vg_UserMsg, "  can't open /proc/version");
+         VG_(message)(Vg_DebugMsg, "  can't open /proc/version");
       } else {
          #define BUF_LEN    256
          Char version_buf[BUF_LEN];
@@ -2029,9 +2029,9 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          vg_assert(n <= 256);
          if (n > 0) {
             version_buf[n-1] = '\0';
-            VG_(message)(Vg_UserMsg, "  %s", version_buf);
+            VG_(message)(Vg_DebugMsg, "  %s", version_buf);
          } else {
-            VG_(message)(Vg_UserMsg, "  (empty?)");
+            VG_(message)(Vg_DebugMsg, "  (empty?)");
          }
          VG_(close)(fd);
          #undef BUF_LEN

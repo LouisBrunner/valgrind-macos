@@ -374,7 +374,7 @@ void VG_(addScopeInfo) ( SegInfo* si,
 void VG_(symerr) ( Char* msg )
 {
    if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_UserMsg,"%s", msg );
+      VG_(message)(Vg_DebugMsg,"%s", msg );
 }
 
 
@@ -1137,7 +1137,7 @@ Addr open_debug_file( Char* name, UInt crc, UInt* size )
    }
 
    if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_UserMsg, "Reading debug info from %s...", name);
+      VG_(message)(Vg_DebugMsg, "Reading debug info from %s...", name);
 
    *size = stat_buf.st_size;
    
@@ -1156,7 +1156,7 @@ Addr open_debug_file( Char* name, UInt crc, UInt* size )
       int res = VG_(munmap)((void*)addr, *size);
       vg_assert(0 == res);
       if (VG_(clo_verbosity) > 1)
-	 VG_(message)(Vg_UserMsg, "... CRC mismatch (computed %08x wanted %08x)", calccrc, crc);
+	 VG_(message)(Vg_DebugMsg, "... CRC mismatch (computed %08x wanted %08x)", calccrc, crc);
       return 0;
    }
    
@@ -1215,7 +1215,7 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_UserMsg, "Reading syms from %s (%p)", si->filename, si->start );
+      VG_(message)(Vg_DebugMsg, "Reading syms from %s (%p)", si->filename, si->start );
 
    /* mmap the object image aboard, so that we can read symbols and
       line number info out of it.  It will be munmapped immediately
@@ -1241,10 +1241,8 @@ Bool vg_read_lib_symbols ( SegInfo* si )
    VG_(close)(fd);
 
    if (oimage == ((Addr)(-1))) {
-      VG_(message)(Vg_UserMsg,
-                   "warning: mmap failed on %s", si->filename );
-      VG_(message)(Vg_UserMsg,
-                   "         no symbols or debug info loaded" );
+      VG_(message)(Vg_UserMsg, "warning: mmap failed on %s", si->filename );
+      VG_(message)(Vg_UserMsg, "         no symbols or debug info loaded" );
       return False;
    }
 
@@ -1659,7 +1657,7 @@ static void unload_symbols ( Addr start, SizeT length )
    }
 
    if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_UserMsg, 
+      VG_(message)(Vg_DebugMsg, 
                    "discard syms at %p-%p in %s due to munmap()", 
                    start, start+length, curr->filename ? curr->filename : (Char *)"???");
 

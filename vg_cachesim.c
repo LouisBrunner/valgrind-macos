@@ -959,7 +959,8 @@ void percentify(Int n, Int pow, Int field_width, char buf[])
 void VG_(show_cachesim_results)(Int client_argc, Char** client_argv)
 {
    CC D_total;
-   ULong L2_total_m, L2_total_mr, L2_total_mw; 
+   ULong L2_total_m, L2_total_mr, L2_total_mw,
+         L2_total, L2_total_r, L2_total_w;
    char buf1[RESULTS_BUF], 
         buf2[RESULTS_BUF], 
         buf3[RESULTS_BUF];
@@ -994,9 +995,9 @@ void VG_(show_cachesim_results)(Int client_argc, Char** client_argv)
    D_total.m1 = Dr_total.m1 + Dw_total.m1;
    D_total.m2 = Dr_total.m2 + Dw_total.m2;
        
-        commify( D_total.a, 0, buf1);
-   l2 = commify(Dr_total.a, 0, buf2);
-   l3 = commify(Dw_total.a, 0, buf3);
+        commify( D_total.a, l1, buf1);
+   l2 = commify(Dr_total.a, 0,  buf2);
+   l3 = commify(Dw_total.a, 0,  buf3);
    VG_(message)(Vg_UserMsg, "D   refs:      %s  (%s rd + %s wr)",
                 buf1,  buf2,  buf3);
 
@@ -1026,10 +1027,19 @@ void VG_(show_cachesim_results)(Int client_argc, Char** client_argv)
    VG_(message)(Vg_UserMsg, "");
 
    /* L2 overall results */
+
+   L2_total   = Dr_total.m1 + Dw_total.m1 + Ir_total.m1;
+   L2_total_r = Dr_total.m1 + Ir_total.m1;
+   L2_total_w = Dw_total.m1;
+   commify(L2_total,   l1, buf1);
+   commify(L2_total_r, l2, buf2);
+   commify(L2_total_w, l3, buf3);
+   VG_(message)(Vg_UserMsg, "L2 refs:       %s  (%s rd + %s wr)",
+                buf1, buf2, buf3);
+
    L2_total_m  = Dr_total.m2 + Dw_total.m2 + Ir_total.m2;
    L2_total_mr = Dr_total.m2 + Ir_total.m2;
    L2_total_mw = Dw_total.m2;
-
    commify(L2_total_m,  l1, buf1);
    commify(L2_total_mr, l2, buf2);
    commify(L2_total_mw, l3, buf3);

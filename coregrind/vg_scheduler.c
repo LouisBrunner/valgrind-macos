@@ -1703,12 +1703,17 @@ void release_one_thread_waiting_on_mutex ( pthread_mutex_t* mutex,
 
 
 static
-void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
+void do_pthread_mutex_lock( ThreadId tid, 
+                            Bool is_trylock, 
+                            pthread_mutex_t *mutex )
 {
-   Char msg_buf[100];
+   Char  msg_buf[100];
+   Char* caller
+      = is_trylock ? "pthread_mutex_lock   "
+                   : "pthread_mutex_trylock";
 
    if (VG_(clo_trace_pthread_level) >= 2) {
-      VG_(sprintf)(msg_buf, "pthread_mutex_lock       mx %p ...", mutex );
+      VG_(sprintf)(msg_buf, "%s    mx %p ...", caller, mutex );
       print_pthread_event(tid, msg_buf);
    }
 
@@ -1750,21 +1755,29 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
                         tid, mutex, mutex->__m_count);
             return;
          } else {
-            vg_threads[tid].m_edx = EDEADLK;
+            if (is_trylock)
+               vg_threads[tid].m_edx = EBUSY;
+            else
+               vg_threads[tid].m_edx = EDEADLK;
             return;
          }
       } else {
          /* Someone else has it; we have to wait.  Mark ourselves
             thusly. */
          /* GUARD: __m_count > 0 && __m_owner is valid */
-         vg_threads[tid].status        = VgTs_WaitMX;
-         vg_threads[tid].associated_mx = mutex;
-         /* No assignment to %EDX, since we're blocking. */
-         if (VG_(clo_trace_pthread_level) >= 1) {
-            VG_(sprintf)(msg_buf, "pthread_mutex_lock       mx %p: BLOCK", 
-                                  mutex );
-            print_pthread_event(tid, msg_buf);
-         }
+         if (is_trylock) {
+            /* caller is polling; so return immediately. */
+            vg_threads[tid].m_edx = EBUSY;
+         } else {
+            vg_threads[tid].status        = VgTs_WaitMX;
+            vg_threads[tid].associated_mx = mutex;
+            /* No assignment to %EDX, since we're blocking. */
+            if (VG_(clo_trace_pthread_level) >= 1) {
+               VG_(sprintf)(msg_buf, "%s    mx %p: BLOCK", 
+                                     caller, mutex );
+               print_pthread_event(tid, msg_buf);
+            }
+	 }
          return;
       }
 
@@ -2064,7 +2077,11 @@ void do_nontrivial_clientreq ( ThreadId tid )
          break;
 
       case VG_USERREQ__PTHREAD_MUTEX_LOCK:
-         do_pthread_mutex_lock( tid, (pthread_mutex_t *)(arg[1]) );
+         do_pthread_mutex_lock( tid, False, (pthread_mutex_t *)(arg[1]) );
+         break;
+
+      case VG_USERREQ__PTHREAD_MUTEX_TRYLOCK:
+         do_pthread_mutex_lock( tid, True, (pthread_mutex_t *)(arg[1]) );
          break;
 
       case VG_USERREQ__PTHREAD_MUTEX_UNLOCK:

@@ -113,6 +113,17 @@ static void ignored ( char* msg )
    }
 }
 
+static void kludged ( char* msg )
+{
+   if (get_pt_trace_level() >= 1) {
+      char* ig = "vg_libpthread.so: KLUDGED call to: ";
+      write(2, ig, strlen(ig));
+      write(2, msg, strlen(msg));
+      ig = "\n";
+      write(2, ig, strlen(ig));
+   }
+}
+
 
 /* ---------------------------------------------------------------------
    Pass pthread_ calls to Valgrind's request mechanism.
@@ -138,7 +149,33 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
    return 0;
 }
 
+int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit)
+{
+   ignored("pthread_attr_setinheritsched");
+   return 0;
+}
 
+/* This is completely bogus. */
+int  pthread_attr_getschedparam(const  pthread_attr_t  *attr,  
+                                struct sched_param *param)
+{
+   kludged("pthread_attr_getschedparam");
+   if (param) param->__sched_priority = 0; /* who knows */
+   return 0;
+}
+
+int  pthread_attr_setschedparam(pthread_attr_t  *attr,
+                                const  struct sched_param *param)
+{
+   ignored("pthread_attr_setschedparam");
+   return 0;
+}
+
+int pthread_attr_destroy(pthread_attr_t *attr)
+{
+   ignored("pthread_attr_destroy");
+   return 0;
+}
 
 /* ---------------------------------------------------
    THREADs
@@ -268,6 +305,22 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
    }
 }
 
+int pthread_mutex_trylock(pthread_mutex_t *mutex)
+{
+   int res;
+   static int moans = 3;
+   if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
+      char* str = "pthread_mutex_trylock-NOT-INSIDE-VALGRIND\n";
+      write(2, str, strlen(str));
+      return 0;
+   } else {
+      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                              VG_USERREQ__PTHREAD_MUTEX_TRYLOCK,
+                              mutex, 0, 0, 0);
+      return res;
+   }
+}
+
 int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
    int res;
@@ -330,6 +383,7 @@ int   pthread_getschedparam(pthread_t  target_thread,
                             int  *policy,
                             struct sched_param *param)
 {
+   kludged("pthread_getschedparam");
    if (policy) *policy = SCHED_OTHER;
    if (param) param->__sched_priority = 0; /* who knows */
    return 0;

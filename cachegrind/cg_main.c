@@ -791,7 +791,6 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    UInt        x86_instr_size, data_size = INVALID_DATA_SIZE;
    Addr        helper;
    Int         argc;
-   UInt        stack_used;
    Bool        BB_seen_before     = False;
    Bool        instrumented_Jcond = False;
    Bool        has_rep_prefix     = False;
@@ -1010,8 +1009,6 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             /* Initialise the CC in the BBCC array appropriately if it
              * hasn't been initialised before.  Then call appropriate sim
              * function, passing it the CC address. */
-            stack_used = 0;
-
             sk_assert(x86_instr_size >= 1 && 
                       x86_instr_size <= MAX_x86_INSTR_SIZE);
 

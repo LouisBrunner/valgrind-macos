@@ -3494,9 +3494,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* SFENCE -- flush all pending store operations to memory */
-   if (insn[0] == 0x0F && insn[1] == 0xAE 
-       && (gregOfRM(insn[2]) == 7)) {
+   /* LFENCE/MFENCE/SFENCE -- flush pending operations to memory */
+   if (insn[0] == 0x0F && insn[1] == 0xAE
+       && (epartIsReg(insn[2]))
+       && (gregOfRM(insn[2]) >= 5 && gregOfRM(insn[2]) <= 7))
+   {
       vg_assert(sz == 4);
       eip += 3;
       uInstr2(cb, SSE3, 0,  /* ignore sz for internal ops */

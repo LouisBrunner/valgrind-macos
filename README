@@ -1,16 +1,17 @@
 
 Release notes for Valgrind, version 1.0.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> We're well past 1.0.0.  I propose removing the version number here;
+> it doesn't contribute anything, and just gets out-of-date.
+
 KDE3 developers: please read also README_KDE3_FOLKS for guidance
 about how to debug KDE3 applications with Valgrind.
 
-If you are building a binary package of Valgrind for distribution,
-please read README_PACKAGERS.  It contains some important information.
+> I propose removing README_KDE3_FOLKS, and this reference to it;  I
+> think Valgrind has been around long enough that KDE developers don't
+> need separate instructions.
 
-If you are developing Valgrind, please read README_DEVELOPERS.  It contains
-some useful information.
-
-For instructions on how to build/install, see the end of this file.
+[snip]
 
 Valgrind works best on systems with glibc-2.1.X or 2.2.X, and with gcc
 versions prior to 3.1.  gcc-3.1 works, but generates code which causes
@@ -18,30 +19,15 @@ valgrind to report many false errors.  For now, try to use a gcc prior
 to 3.1; if you can't, at least compile your application without
 optimisation.  Valgrind-1.0.X also can't handle glibc-2.3.X systems.
 
+> Out of date:  I think glibc-2.3.X is ok, right?  Also gcc-3.1 is ok?
 
 Executive Summary
 ~~~~~~~~~~~~~~~~~
-Valgrind is a tool to help you find memory-management problems in your
-programs. When a program is run under Valgrind's supervision, all
-reads and writes of memory are checked, and calls to
-malloc/new/free/delete are intercepted. As a result, Valgrind can
-detect problems such as:
 
-   Use of uninitialised memory 
-   Reading/writing memory after it has been free'd 
-   Reading/writing off the end of malloc'd blocks 
-   Reading/writing inappropriate areas on the stack 
-   Memory leaks -- where pointers to malloc'd blocks are lost forever
-   Passing of uninitialised and/or unaddressible memory to system calls
-   Mismatched use of malloc/new/new [] vs free/delete/delete [] 
-   Some abuses of the POSIX pthread API
+> This summary doesn't account for the core/tool split.  Should be
+> similar to the overview on the website.
 
-Problems like these can be difficult to find by other means, often
-lying undetected for long periods, then causing occasional,
-difficult-to-diagnose crashes.
-
-When Valgrind detects such a problem, it can, if you like, attach GDB
-to your program, so you can poke around and see what's going on.
+[snip]
 
 Valgrind is closely tied to details of the CPU, operating system and
 to a less extent, compiler and basic C libraries. This makes it
@@ -52,6 +38,9 @@ difficulty on other x86 GNU/Linux systems which use the 2.4 kernel and
 GNU libc 2.2.X, for example SuSE 7.1 and Mandrake 8.0.  This version
 1.0 release is known to work on Red Hats 6.2, 7.2 and 7.3, at the very
 least.
+
+> Out of date... could make more generic, eg. works on most/all common
+> Linux distros
 
 Valgrind is licensed under the GNU General Public License, version 2. 
 Read the file COPYING in the source distribution for details.
@@ -65,40 +54,13 @@ instead at docs/manual.html.  There's also detailed, although somewhat
 out of date, documentation of how valgrind works, in
 docs/techdocs.html.
 
+> These paths are incorrect.
 
-Building and installing it
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-To install from CVS :
-
-  0. Check out the code from CVS, following the instructions at
-     http://developer.kde.org/source/anoncvs.html. The 'modulename' is
-     "valgrind".
-
-  1. cd into the source directory.
-
-  2. Run ./autogen.sh to setup the environment (you need the standard
-     autoconf tools to do so).
-
-To install from a tar.gz archive:
-
-  3. Run ./configure, with some options if you wish. The standard
-     options are documented in the INSTALL file.  The only interesting
-     one is the usual --prefix=/where/you/want/it/installed.
-
-  4. Do "make".
-
-  5. Do "make install", possibly as root if the destination permissions
-     require that.
-
-  6. See if it works.  Try "valgrind ls -l".  Either this works,
-     or it bombs out complaining it can't find argc/argv/envp.
-     In that case, mail me a bug report.
-
-Important!  Do not move the valgrind installation into a place
-different from that specified by --prefix at build time.  This will
-cause things to break in subtle ways, mostly when Valgrind handles
-fork/exec calls.
-
+[snip]
 
 Julian Seward (jseward@acm.org)
 1 July 2002
+
+> out of date, I suggest removing the date, and saying "report bugs to
+> valgrind.kde.org" or similar.
+

@@ -5794,7 +5794,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    /* Do any pre-syscall actions */
    if (VG_(needs).syscall_wrapper) {
       VGP_PUSHCC(VgpToolSysWrap);
-      tst->sys_pre_res = TL_(pre_syscall)(tid, syscallno, mayBlock);
+      TL_(pre_syscall)(tid, syscallno);
       VGP_POPCC(VgpToolSysWrap);
    }
 
@@ -5868,7 +5868,6 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
    const struct SyscallTableEntry *sys;
    Bool isSpecial = False;
    Bool restarted = False;
-   void *pre_res;
 
    VGP_PUSHCC(VgpCoreSysWrap);
 
@@ -5879,7 +5878,6 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
    SET_SYSCALL_RETVAL(tst->tid, res);
 
    syscallno = tst->syscallno;
-   pre_res = tst->sys_pre_res;
 
    vg_assert(syscallno != -1);			/* must be a current syscall */
 
@@ -5927,7 +5925,7 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
        */
       if (VG_(needs).syscall_wrapper) {
 	 VGP_PUSHCC(VgpToolSysWrap);
-	 TL_(post_syscall)(tid, syscallno, pre_res, res, /*isBlocking*/True); // did block
+	 TL_(post_syscall)(tid, syscallno, res);
 	 VGP_POPCC(VgpToolSysWrap);
       }
    }

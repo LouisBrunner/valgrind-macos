@@ -937,31 +937,6 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
    }
 }
 
-/*------------------------------------------------------------*/
-/*--- Syscall wrappers                                     ---*/
-/*------------------------------------------------------------*/
-
-void* TL_(pre_syscall)  ( ThreadId tid, UInt syscallno, Bool isBlocking )
-{
-   Int sane = TL_(cheap_sanity_check)();
-   return (void*)sane;
-}
-
-void  TL_(post_syscall) ( ThreadId tid, UInt syscallno,
-                           void* pre_result, Int res, Bool isBlocking )
-{
-   Int  sane_before_call = (Int)pre_result;
-   Bool sane_after_call  = TL_(cheap_sanity_check)();
-
-   if ((Int)sane_before_call && (!sane_after_call)) {
-      VG_(message)(Vg_DebugMsg, "post-syscall: ");
-      VG_(message)(Vg_DebugMsg,
-                   "probable sanity check failure for syscall number %d\n",
-                   syscallno );
-      VG_(tool_panic)("aborting due to the above ... bye!");
-   }
-}
-
 /*--------------------------------------------------------------------*/
 /*--- end                                              mac_needs.c ---*/
 /*--------------------------------------------------------------------*/

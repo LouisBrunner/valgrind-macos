@@ -136,8 +136,8 @@ Bool, handle_client_request, ThreadId tid, UWord* arg_block, UWord* ret
 ## If either of the pre_ functions malloc() something to return, the
 ## corresponding post_ function had better free() it!
 
-void *, pre_syscall, ThreadId tid, UInt syscallno, Bool is_blocking
-void, post_syscall, ThreadId tid, UInt syscallno, void* pre_result, Int res, Bool is_blocking
+void,  pre_syscall, ThreadId tid, UInt syscallno
+void, post_syscall, ThreadId tid, UInt syscallno, Int res
 
 
 ## ---------------------------------------------------------------------

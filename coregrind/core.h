@@ -756,9 +756,6 @@ typedef struct ProxyLWP ProxyLWP;
    void**   joiner_thread_return;
    ThreadId joiner_jee_tid;      
 
-   /* If VgTs_WaitSys, this is the result of the pre-syscall check */
-   void *sys_pre_res;
-
    /* If VgTs_WaitSys, this is the syscall we're currently running */
    Int syscallno;
 

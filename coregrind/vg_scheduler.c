@@ -388,7 +388,6 @@ void mostly_clear_thread_record ( ThreadId tid )
 
    VG_(threads)[tid].syscallno		  = -1;
    VG_(threads)[tid].sys_flags		  = 0;
-   VG_(threads)[tid].sys_pre_res	  = NULL;
 
    VG_(threads)[tid].proxy		  = NULL;
 

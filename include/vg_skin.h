@@ -812,8 +812,12 @@ extern void VG_(call_helper_2_0) ( UCodeBlock* cb, Addr f, UInt arg1, UInt arg2,
                                    UInt regparms_n);
 
 /* One way around the 3-arg C function limit is to pass args via global
- * variables... ugly, but it works. */
+ * variables... ugly, but it works.  This one puts a literal in there. */
 extern void VG_(set_global_var) ( UCodeBlock* cb, Addr globvar_ptr, UInt val);
+
+/* This one puts the contents of a TempReg in the global variable. */
+extern void VG_(set_global_var_tempreg) ( UCodeBlock* cb, Addr globvar_ptr,
+                                          UInt t_val);
 
 /* ------------------------------------------------------------------ */
 /* Allocating/freeing basic blocks of UCode */

@@ -84,6 +84,15 @@ void VG_(set_global_var)(UCodeBlock* cb, Addr globvar_ptr, UInt val)
    uInstr2(cb, STORE, 4, TempReg, t_val, TempReg, t_gv);
 }
 
+void VG_(set_global_var_tempreg)(UCodeBlock* cb, Addr globvar_ptr, UInt t_val)
+{
+   Int t_gv  = newTemp(cb);        
+
+   uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_gv);
+   uLiteral(cb, globvar_ptr);
+   uInstr2(cb, STORE, 4, TempReg, t_val, TempReg, t_gv);
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                          vg_instrument.c ---*/
 /*--------------------------------------------------------------------*/

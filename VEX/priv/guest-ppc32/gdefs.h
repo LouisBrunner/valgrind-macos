@@ -82,11 +82,32 @@ extern UInt ppc32g_calculate_cr0_bit2 ( UChar op, UInt word1, UInt word2 );
 extern UInt ppc32g_calculate_cr0_bit3 ( UChar op, UInt word1, UInt word2 );
 
 // Calculate XER flags
-extern UInt ppc32g_calculate_xer_ov  ( UInt theInstr, UInt Ra, UInt Rb, UInt Rd, UChar ov );
-extern UInt ppc32g_calculate_xer_ca  ( UInt theInstr, UInt Ra, UInt Rb, UInt Rd, UChar ca );
+extern UInt ppc32g_calculate_xer_ov  ( UInt op, UInt res, UInt arg1, UInt arg2, UChar ca );
+extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt arg1, UInt arg2, UChar ca );
 
 
 
+
+/*
+  Handy enumeration for flag calculation helper functions (xer_ca, ov)
+ */
+enum {
+    PPC_FLAG_OP_ADD,     // addc, addo, addic
+    PPC_FLAG_OP_ADDE,    // adde, addeo
+    PPC_FLAG_OP_ADDME,   // addme, addmeo
+    PPC_FLAG_OP_ADDZE,   // addze, addzeo
+    PPC_FLAG_OP_DIVW,    // divwo
+    PPC_FLAG_OP_DIVWU,   // divwuo
+    PPC_FLAG_OP_MULLW,   // mullwo
+    PPC_FLAG_OP_NEG,     // nego
+    PPC_FLAG_OP_SUBF,    // subfo
+    PPC_FLAG_OP_SUBFC,   // subfc, subfco
+    PPC_FLAG_OP_SUBFE,   // subfe, subfeo
+    PPC_FLAG_OP_SUBFI,   // subfic
+    PPC_FLAG_OP_SUBFME,  // subfme, subfmeo
+    PPC_FLAG_OP_SUBZE,   // subfze, subfzeo
+    PPC_FLAG_OP_SHR      // srawi
+};
 
 
 

@@ -3,7 +3,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_ir.h				\
 		pub/libvex.h
 
-PRIV_HEADERS = 	priv/host-x86/x86host_defs.h		\
+PRIV_HEADERS = 	priv/host-x86/hdefs.h		\
 		priv/host-generic/host_regs.h		\
 		priv/main/vex_globals.h			\
 		priv/main/vex_util.h			\
@@ -13,8 +13,8 @@ LIB_OBJS = 	priv/ir/ir_defs.o			\
 		priv/main/vex_main.o			\
 		priv/main/vex_globals.o			\
 		priv/main/vex_util.o			\
-		priv/host-x86/x86host_defs.o		\
-		priv/host-x86/isel_x86.o		\
+		priv/host-x86/hdefs.o		\
+		priv/host-x86/isel.o		\
 		priv/host-generic/host_regs.o		\
 		priv/host-generic/reg_alloc.o		\
 		priv/guest-x86/x86helpers.o		\
@@ -84,13 +84,13 @@ priv/main/vex_util.o: $(ALL_HEADERS) priv/main/vex_util.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main/vex_util.o \
 					 -c priv/main/vex_util.c
 
-priv/host-x86/x86host_defs.o: $(ALL_HEADERS) priv/host-x86/x86host_defs.c
-	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-x86/x86host_defs.o \
-					 -c priv/host-x86/x86host_defs.c
+priv/host-x86/hdefs.o: $(ALL_HEADERS) priv/host-x86/hdefs.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-x86/hdefs.o \
+					 -c priv/host-x86/hdefs.c
 
-priv/host-x86/isel_x86.o: $(ALL_HEADERS) priv/host-x86/isel_x86.c
-	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-x86/isel_x86.o \
-					 -c priv/host-x86/isel_x86.c
+priv/host-x86/isel.o: $(ALL_HEADERS) priv/host-x86/isel.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-x86/isel.o \
+					 -c priv/host-x86/isel.c
 
 priv/host-generic/host_regs.o: $(ALL_HEADERS) priv/host-generic/host_regs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-generic/host_regs.o \

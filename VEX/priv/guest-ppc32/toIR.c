@@ -557,6 +557,21 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
 #endif
 
 
+// ROTL(src, rot_amt)
+static IRExpr* ROTL ( IRTemp src, IRTemp rot_amt )
+{
+    /* By masking the rotate amount thusly, the IR-level Shl/Shr
+       expressions never shift beyond the word size and thus remain
+       well defined. */
+    IRTemp rot_amt32 = newTemp(Ity_I32);    
+    assign(rot_amt32, binop(Iop_And32, mkexpr(rot_amt), mkU32(0x1F)));
+
+    // (src << rot_amt) | (src >> (32-rot_amt))
+    return binop(Iop_Or32,
+		 binop(Iop_Shl32, mkexpr(src), mkexpr(rot_amt32)),
+		 binop(Iop_Shr32, mkexpr(src),
+		       binop(Iop_Sub8, mkU8(32), mkexpr(rot_amt32))));
+}
 
 
 
@@ -775,6 +790,21 @@ void setFlags_CR0_Flags ( IRTemp flags_cr0 )
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU8(1)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(flags_cr0)) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU8(0)) );
+}
+
+
+
+/*------------------------------------------------------------*/
+/*--- Misc Helpers                                         ---*/
+/*------------------------------------------------------------*/
+
+static UInt CreateMask( UInt begin, UInt end )
+{
+    UInt m1 = ((UInt)(-1)) << begin;
+    UInt m2 = ((UInt)(-1)) << (end + 1);
+    UInt mask = m1 ^ m2;
+    if (begin > end) mask = ~mask;  // wrap mask
+    return mask;
 }
 
 
@@ -1220,25 +1250,52 @@ static Bool dis_int_rot ( UInt theInstr )
     UChar MaskEnd   = (theInstr >>  1) & 0x1F;      /* theInstr[1:5]   */
     UChar flag_Rc   = (theInstr >>  0) & 1;         /* theInstr[0]     */
 
+    IRTemp mask = newTemp(Ity_I32);
+    IRTemp rot_amt = newTemp(Ity_I32);
+    IRTemp Rs = newTemp(Ity_I32);
+    IRTemp Ra = newTemp(Ity_I32);
+    IRTemp Rb = newTemp(Ity_I32);
+    
+    assign( Rs, getIReg(Rb_addr) );
+    assign( Ra, getIReg(Ra_addr) );
+    assign( Rb, getIReg(Rb_addr) );
+
+    assign( mask, mkU32(CreateMask(MaskBegin, MaskEnd)) );
+
     switch (opc1) {
     case 0x14: // rlwimi (Rotate Left Word Immediate then Mask Insert, p561)
 	DIP("rlwimi%s %d,%d,%d,%d,%d\n", flag_Rc ? "." : "",
 	    Ra_addr, Rs_addr, Shift_Imm, MaskBegin, MaskEnd);
-	return False;
+	// Ra = (ROTL(Rs, Imm) & mask) | (Ra & ~mask);
+	assign( rot_amt, mkU32(Shift_Imm) );
+	assign( Ra, binop(Iop_Or32,
+			  binop(Iop_And32, ROTL(Rs, rot_amt),
+				mkexpr(mask)),
+			  binop(Iop_And32, mkexpr(Ra),
+				unop(Iop_Not32,mkexpr(mask)))) );
+	break;
 
     case 0x15: // rlwinm (Rotate Left Word Immediate then AND with Mask, p562)
 	DIP("rlwimi%s %d,%d,%d,%d,%d\n", flag_Rc ? "." : "",
 	    Ra_addr, Rs_addr, Shift_Imm, MaskBegin, MaskEnd);
-	return False;
+	// Ra = ROTL(Rs, Imm) & mask
+	assign( rot_amt, mkU32(Shift_Imm) );
+	assign( Ra, binop(Iop_And32, ROTL(Rs,rot_amt), mkexpr(mask)) );
+	break;
 
     case 0x17: // rlwnm (Rotate Left Word then AND with Mask, p564)
 	DIP("rlwimi%s %d,%d,%d,%d,%d\n", flag_Rc ? "." : "",
 	    Ra_addr, Rs_addr, Rb_addr, MaskBegin, MaskEnd);
-	return False;
+	// Ra = ROTL(Rs, Rb[0-4]) & mask
+	assign( rot_amt, binop(Iop_And32, mkexpr(Rb), mkU32(0x1F)) );
+	assign( Ra, binop(Iop_And32, ROTL(Rs,rot_amt), mkexpr(mask)) );
+	break;
 
     default:
 	return False;
     }
+    putIReg( Ra_addr, mkexpr(Ra) );
+    if (flag_Rc) { setFlags_CR0_Result( Ra ); }
     return True;
 }
 

@@ -1317,6 +1317,8 @@ void LibVEX_GuestX86_put_eflags ( UInt eflags_native,
 {
    vex_state->guest_DFLAG
       = (eflags_native & (1<<10)) ? 0xFFFFFFFF : 0x00000001;
+   vex_state->guest_IDFLAG
+      = (eflags_native & (1<<21)) ? 1 : 0;
 
    /* Mask out everything except O S Z A C P. */
    eflags_native
@@ -1341,6 +1343,8 @@ UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state )
    vassert(dflag == 1 || dflag == 0xFFFFFFFF);
    if (dflag == 0xFFFFFFFF)
       eflags |= (1<<10);
+   if (vex_state->guest_IDFLAG == 1)
+      eflags |= (1<<21);
 					     
    return eflags;
 }
@@ -1363,6 +1367,7 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_CC_SRC = 0;
    vex_state->guest_CC_DST = 0;
    vex_state->guest_DFLAG  = 1; /* forwards */
+   vex_state->guest_IDFLAG = 0;
 
    vex_state->guest_EIP = 0;
 

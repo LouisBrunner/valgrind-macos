@@ -214,6 +214,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
 #define OFFB_CC_SRC  offsetof(VexGuestX86State,guest_CC_SRC)
 #define OFFB_CC_DST  offsetof(VexGuestX86State,guest_CC_DST)
 #define OFFB_DFLAG   offsetof(VexGuestX86State,guest_DFLAG)
+#define OFFB_IDFLAG  offsetof(VexGuestX86State,guest_IDFLAG)
 #define OFFB_FTOP    offsetof(VexGuestX86State,guest_FTOP)
 #define OFFB_FC3210  offsetof(VexGuestX86State,guest_FC3210)
 #define OFFB_FPUCW   offsetof(VexGuestX86State,guest_FPUCW)
@@ -8218,6 +8219,18 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                   mkU32(0xFFFFFFFF))) 
           );
 
+      /* And set the ID flag */
+      stmt( IRStmt_Put( 
+               OFFB_IDFLAG,
+               IRExpr_Mux0X( 
+                  unop(Iop_32to8,
+                       binop(Iop_And32, 
+                             binop(Iop_Shr32, mkexpr(t1), mkU8(21)), 
+                             mkU32(1))),
+                  mkU32(0), 
+                  mkU32(1))) 
+          );
+
       DIP("popf%c\n", nameISize(sz));
       break;
 
@@ -8348,7 +8361,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       break;
 
    case 0x9C: /* PUSHF */ {
-      IRTemp t3;
+      IRTemp t3, t4;
       vassert(sz == 2 || sz == 4);
       vassert(sz == 4);  // wait for sz==2 test case
 
@@ -8368,11 +8381,22 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 			      unop(Iop_Not32, IRExpr_Get(OFFB_DFLAG,Ity_I32)),
 			      mkU32(1<<10))) 
             );
+
+      /* And patch in the ID flag. */
+      t4 = newTemp(Ity_I32);
+      assign( t4, binop(Iop_Or32,
+                        mkexpr(t3),
+                        binop(Iop_And32,
+			      binop(Iop_Shl32, IRExpr_Get(OFFB_IDFLAG,Ity_I32), 
+                                               mkU8(21)),
+			      mkU32(1<<21)))
+            );
+
       /* if sz==2, the stored value needs to be narrowed. */
       if (sz == 2)
-	storeLE( mkexpr(t1), unop(Iop_32to16,mkexpr(t3)) );
+	storeLE( mkexpr(t1), unop(Iop_32to16,mkexpr(t4)) );
       else 
-	storeLE( mkexpr(t1), mkexpr(t3) );
+	storeLE( mkexpr(t1), mkexpr(t4) );
 
       DIP("pushf%c\n", nameISize(sz));
       break;

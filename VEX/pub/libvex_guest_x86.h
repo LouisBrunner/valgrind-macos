@@ -87,6 +87,8 @@ typedef
       UInt  guest_CC_DST;
       /* The D flag is stored here, as either -1 or +1 */
       UInt  guest_DFLAG;
+      /* Bit 21 (ID) of eflags stored here, as either 0 or 1. */
+      UInt  guest_IDFLAG;
       /* EIP */
       UInt  guest_EIP;
       /* FPU */
@@ -103,7 +105,7 @@ typedef
       UShort guest_GS;
       UShort guest_SS;
       /* Padding to make it have an 8-aligned size */
-      UInt   padding;
+      /* UInt   padding; */
    }
    VexGuestX86State;
 

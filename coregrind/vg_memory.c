@@ -311,7 +311,7 @@ void VG_(handle_esp_assignment) ( Addr new_esp )
 
 #  ifndef VG_DEBUG_MEMORY
 
-   if (IS_ALIGNED4_ADDR(old_esp) &&  IS_ALIGNED4_ADDR(new_esp)) {
+   if (IS_ALIGNED4_ADDR(old_esp) && IS_ALIGNED4_ADDR(new_esp)) {
 
       /* Deal with the most common cases fast.  These are ordered in
          the sequence most common first. */
@@ -335,15 +335,18 @@ void VG_(handle_esp_assignment) ( Addr new_esp )
       else                  PROF_EVENT(116); // PPP: new: aligned_big_neg
 #     endif
       
-      if (delta < 0) {
+      if (delta < 0 && delta > -2000) {
          VG_TRACK(new_mem_stack_aligned, new_esp, -delta);
-      } else if (delta > 0) {
+         VGP_MAYBE_POPCC(VgpStack);
+         return;
+      } 
+      else 
+      if (delta > 0 && delta < 2000) {
          VG_TRACK(die_mem_stack_aligned, old_esp, delta);
+         VGP_MAYBE_POPCC(VgpStack);
+         return;
       }
-      /* Do nothing if (delta==0) */
-
-      VGP_MAYBE_POPCC(VgpStack);
-      return;
+      /* otherwise fall onto the slow-but-general case */
    }
 
 #  endif
@@ -351,6 +354,7 @@ void VG_(handle_esp_assignment) ( Addr new_esp )
    /* The above special cases handle 90% to 95% of all the stack
       adjustments.  The rest we give to the slow-but-general
       mechanism. */
+   /* VG_(printf)("big delta %d\n", delta); */
    vg_handle_esp_assignment_SLOWLY ( old_esp, new_esp );
    VGP_MAYBE_POPCC(VgpStack);
 }

@@ -61,7 +61,8 @@
 
 #include <stdarg.h>
 
-#define __@VG_ARCH@__   // Architecture we're installed on
+#undef __@VG_ARCH@__
+#define __@VG_ARCH@__   1	// Architecture we're installed on
 
 /* This file is for inclusion into client (your!) code.
 

@@ -348,7 +348,7 @@ int main(void)
 
    // __NR_readlink 85
    GO(__NR_readlink, "3s 2m");
-   SY(__NR_readlink);
+   SY(__NR_readlink, x0+1, x0+1, x0+1);
 
    // __NR_uselib 86
    // (Not yet handled by Valgrind)
@@ -613,7 +613,7 @@ int main(void)
 
    // __NR_mlockall 152 --> sys_mlockall()
    GO(__NR_mlockall, "2s 0m");
-   SY(__NR_mlockall);
+   SY(__NR_mlockall, x0, x0);
 
    // __NR_munlockall 153 --> sys_munlockall()
    GO(__NR_munlockall, "0e");

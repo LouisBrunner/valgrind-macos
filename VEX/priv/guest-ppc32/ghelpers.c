@@ -62,38 +62,38 @@
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculates CR0[LT,GT,EQ,SO] flags from the supplied
    thunk parameters. */
-UInt ppc32g_calculate_cr0_all ( UChar op, UInt word1, UInt word2 )
+UChar ppc32g_calculate_cr0_all ( UChar op, UInt word1, UChar xer_so )
 {
     Int sword1 = (Int)word1;
     if (op) {
 	return (word1 & 0x0000000F);
     } else {
 	return
-	    ((word2 & 1) << 3)
+	    ((xer_so & 1) << 3)
 	    | (((sword1 == 0) ? 1:0) << 2)
 	    | (((sword1 >  0) ? 1:0) << 1)
 	    | (((sword1 <  0) ? 1:0) << 0);
     }
 }
 
-UInt ppc32g_calculate_cr0_bit0 ( UChar op, UInt word1, UInt word2 )
+UChar ppc32g_calculate_cr0_bit0 ( UChar op, UInt word1, UChar xer_so )
 {
-    return (ppc32g_calculate_cr0_all(op,word1,word2) >> 0) & 1;
+    return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 0) & 1;
 }
 
-UInt ppc32g_calculate_cr0_bit1 ( UChar op, UInt word1, UInt word2 )
+UChar ppc32g_calculate_cr0_bit1 ( UChar op, UInt word1, UChar xer_so )
 {
-    return (ppc32g_calculate_cr0_all(op,word1,word2) >> 1) & 1;
+    return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 1) & 1;
 }
 
-UInt ppc32g_calculate_cr0_bit2 ( UChar op, UInt word1, UInt word2 )
+UChar ppc32g_calculate_cr0_bit2 ( UChar op, UInt word1, UChar xer_so )
 {
-    return (ppc32g_calculate_cr0_all(op,word1,word2) >> 2) & 1;
+    return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 2) & 1;
 }
 
-UInt ppc32g_calculate_cr0_bit3 ( UChar op, UInt word1, UInt word2 )
+UChar ppc32g_calculate_cr0_bit3 ( UChar op, UInt word1, UChar xer_so )
 {
-    return (ppc32g_calculate_cr0_all(op,word1,word2) >> 3) & 1;
+    return (ppc32g_calculate_cr0_all(op,word1,xer_so) >> 3) & 1;
 }
 
 
@@ -102,8 +102,8 @@ UInt ppc32g_calculate_cr0_bit3 ( UChar op, UInt word1, UInt word2 )
 
 
 // Calculate XER_OV
-UInt ppc32g_calculate_xer_ov ( UInt op, UInt res,
-			       UInt arg1, UInt arg2, UChar ov )
+UChar ppc32g_calculate_xer_ov ( UInt op, UInt res,
+				UInt arg1, UInt arg2, UChar ov )
 {
     ULong ul_tmp=0;
 
@@ -154,8 +154,8 @@ UInt ppc32g_calculate_xer_ov ( UInt op, UInt res,
 }
 
 // Calculate XER_CA
-UInt ppc32g_calculate_xer_ca ( UInt op, UInt res,
-			       UInt arg1, UInt arg2, UChar ca )
+UChar ppc32g_calculate_xer_ca ( UInt op, UInt res,
+				UInt arg1, UInt arg2, UChar ca )
 {
     switch (op) {
     case PPC32G_FLAG_OP_ADD:     // addc, addco, addic
@@ -283,7 +283,7 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_CC_DEP1 = 0;
    vex_state->guest_CC_DEP2 = 0;
 
-   vex_state->guest_CR2to7 = 0;
+   vex_state->guest_CR1to7 = 0;
 
    vex_state->guest_XER_SO = 0;
    vex_state->guest_XER_OV = 0;

@@ -130,7 +130,7 @@ static IRBB* irbb;
 #define OFFB_CC_DEP1   offsetof(VexGuestPPC32State,guest_CC_DEP1)
 #define OFFB_CC_DEP2   offsetof(VexGuestPPC32State,guest_CC_DEP2)
 
-#define OFFB_CR2to7      offsetof(VexGuestPPC32State,guest_CR2to7)
+#define OFFB_CR1to7      offsetof(VexGuestPPC32State,guest_CR1to7)
 
 #define OFFB_XER_SO     offsetof(VexGuestPPC32State,guest_XER_SO)
 #define OFFB_XER_OV     offsetof(VexGuestPPC32State,guest_XER_OV)
@@ -448,12 +448,10 @@ static void storeBE ( IRExpr* addr, IRExpr* data )
 }
 #endif
 
-#if 0
 static IRExpr* unop ( IROp op, IRExpr* a )
 {
    return IRExpr_Unop(op, a);
 }
-#endif
 
 static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
 {
@@ -558,7 +556,7 @@ static IRExpr** get_ppc32g_cr0_args ( void )
 {
     return mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,   Ity_I8),
 			  IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
-			  IRExpr_Get(OFFB_CC_DEP2, Ity_I32) );
+			  IRExpr_Get(OFFB_CC_DEP2, Ity_I8) );
 }
 
 static IRExpr* mk_ppc32g_calculate_cr0_all ( void )
@@ -675,10 +673,10 @@ static IRExpr* mk_ppc32g_calculate_xer_ca ( UInt op, IRTemp res,
 static void mk_ppc32g_set_xer_ov_so( UInt op, IRTemp res,
 				     IRTemp arg1, IRTemp arg2 )
 {
-    IRTemp ir_tmp = newTemp(Ity_I32);
-    assign( ir_tmp, mk_ppc32g_calculate_xer_ov( op, res, arg1, arg2 ) );
-    stmt( IRStmt_Put( OFFB_XER_OV, mkexpr(ir_tmp) ));
-    stmt( IRStmt_Put( OFFB_XER_SO, mkexpr(ir_tmp) ));
+    IRTemp ov = newTemp(Ity_I8);
+    assign( ov, mk_ppc32g_calculate_xer_ov( op, res, arg1, arg2 ) );
+    stmt( IRStmt_Put( OFFB_XER_OV, mkexpr(ov) ));
+    stmt( IRStmt_Put( OFFB_XER_SO, mkexpr(ov) ));
 }
 
 // Helper to set XER_CA flag
@@ -703,7 +701,6 @@ static void mk_ppc32g_set_xer_ca( UInt op, IRTemp res,
 */
 
 #if 0
-
 /* U-widen 8/16/32 bit int expr to 32. */
 static IRExpr* widenUto32 ( IRExpr* e )
 {
@@ -714,6 +711,7 @@ static IRExpr* widenUto32 ( IRExpr* e )
       default: vpanic("widenUto32");
    }
 }
+
 
 /* Narrow 8/16/32 bit int expr to 8/16/32.  Clearly only some
    of these combinations make sense. */
@@ -744,19 +742,17 @@ void setFlags_CR0_Result ( IRTemp result )
 {
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU8(0)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(result)) );
-   stmt( IRStmt_Put( OFFB_CC_DEP2, IRExpr_Get(OFFB_XER_SO, Ity_I32) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, IRExpr_Get(OFFB_XER_SO, Ity_I8) ) );
 }
 
-#if 0  // Used by 'stwcx.' only, methinks...
 /* Set the flags thunk OP, DEP1 fields, write 0 to DEP2. */
 static 
 void setFlags_CR0_Flags ( IRTemp flags_cr0 )
 {
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU8(1)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(flags_cr0)) );
-   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU8(0)) );
 }
-#endif
 
 
 
@@ -918,13 +914,199 @@ static Bool dis_int_arith ( UInt theInstr, UChar form )
 
 
 
+static Bool dis_int_cmp ( UInt theInstr )
+{
+    UChar opc1    = (theInstr) & 0x3F;            /* theInstr[0:5]   */
+    UChar crfD    = (theInstr >> 6 ) & 0x1F;      /* theInstr[6:8]   */
+    UChar b9      = (theInstr >> 9 ) & 0x1;       /* theInstr[9]     */
+    UChar flag_L  = (theInstr >> 10) & 0x1;       /* theInstr[10]    */
+    UChar Ra_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+
+    /* D-Form */
+    UInt  SIMM_16 = (theInstr >> 16) & 0xFFFF;    /* theInstr[16:31] */
+    UInt  UIMM_16 = (theInstr >> 16) & 0xFFFF;    /* theInstr[16:31] */
+
+    /* X-Form */
+    UChar Rb_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UInt  opc2    = (theInstr >> 21) & 0x3F;      /* theInstr[21:30] */
+    UChar b31     = (theInstr >> 31) & 1;         /* theInstr[31]    */
+
+    UInt EXTS_SIMM = 0;
+    IRTemp Ra = newTemp(Ity_I32);
+    IRTemp Rb = newTemp(Ity_I32);
+    IRTemp cr_flags = newTemp(Ity_I32);
+    IRTemp tmp = newTemp(Ity_I32);
+    IRTemp xer_so = newTemp(Ity_I32);
+	
+    assign( Ra, getIReg(Ra_addr) );
+    assign( xer_so, unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_SO, Ity_I8)) );
+
+    if (flag_L==1) { return False; }  // L==1 invalid for 32 bit.
+
+    if (b9 != 0) { return False; }
+
+    switch (opc1) {
+    case 0x0B: // cmpi (Compare Immediate, p398)
+	EXTS_SIMM = extend_s_16to32(SIMM_16);
+
+	// CAB: This right?  Don't need a 'mkS32(EXTS_SIMM)' ?
+
+	assign( tmp, IRExpr_Mux0X(
+		    binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(EXTS_SIMM)),
+		    IRExpr_Mux0X( binop(Iop_CmpLT32S, mkU32(EXTS_SIMM), mkexpr(Ra)),
+				  mkU32(2), mkU32(4) ), mkU32(8) ));
+
+	assign( cr_flags, binop(Iop_Or32, mkexpr(tmp), mkexpr(xer_so)) );
+
+	DIP("cmpi %i,%i,%i,%i\n", crfD, flag_L, Ra_addr, SIMM_16);
+	break;
+
+    case 0x0A: // cmpli (Compare Logical Immediate, p400)
+	assign( tmp, IRExpr_Mux0X(
+		    binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(SIMM_16)),
+		    IRExpr_Mux0X( binop(Iop_CmpLT32U, mkU32(SIMM_16), mkexpr(Ra)),
+				  mkU32(2), mkU32(4) ), mkU32(8) ));
+
+	assign( cr_flags, binop(Iop_Or32, mkexpr(tmp), mkexpr(xer_so)) );
+
+	DIP("cmpli %i,%i,%i,%i\n", crfD, flag_L, Ra_addr, SIMM_16);
+	break;
+
+    /* X Form */
+    case 0x1F:
+	if (b31 != 0) { return False; }
+
+	switch (opc2) {
+	case 0x000: // cmp (Compare, p397)
+	    assign( Rb, getIReg(Rb_addr) );
+	    assign( tmp, IRExpr_Mux0X(
+			binop(Iop_CmpEQ32, mkexpr(Ra), mkexpr(Rb)),
+			IRExpr_Mux0X( binop(Iop_CmpLT32S, mkexpr(Rb), mkexpr(Ra)),
+				      mkU32(2), mkU32(4) ), mkU32(8) ));
+	    assign( cr_flags, binop(Iop_Or32, mkexpr(tmp), mkexpr(xer_so)) );
+
+	    DIP("cmp %i,%i,%i,%i\n", crfD, flag_L, Ra_addr, Rb_addr);
+	    break;
+
+        case 0x020: // cmpl (Compare Logical, p399)
+	    assign( Rb, getIReg(Rb_addr) );
+	    assign( tmp, IRExpr_Mux0X(
+			binop(Iop_CmpEQ32, mkexpr(Ra), mkexpr(Rb)),
+			IRExpr_Mux0X( binop(Iop_CmpLT32U, mkexpr(Rb), mkexpr(Ra)),
+				      mkU32(2), mkU32(4) ), mkU32(8) ));
+	    assign( cr_flags, binop(Iop_Or32, mkexpr(tmp), mkexpr(xer_so)) );
+
+	    DIP("cmpl %i,%i,%i,%i\n", crfD, flag_L, Ra_addr, Rb_addr);
+	    break;
+
+	default:
+	    return False;
+	}
+    default:
+	return False;
+    }
+
+    if (crfD == 0) {
+	setFlags_CR0_Flags( cr_flags );
+    } else {
+	stmt( IRStmt_Put( OFFB_CR1to7,
+			  binop(Iop_Shl32, mkexpr(cr_flags), mkU32(crfD * 4)) ));
+    }
+    return True;
+}
+
+
+
+static Bool dis_int_logic ( UInt theInstr )
+{
+    UChar opc1    = (theInstr) & 0x3F;            /* theInstr[0:5]   */
+
+    /* D-Form */
+    UChar S       = (theInstr >> 6 ) & 0x1F;      /* theInstr[6:10]  */
+    UChar A       = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  UIMM    = (theInstr >> 16) & 0xFFFF;    /* theInstr[16:31] */
+
+    /* X-Form */
+    UChar B       = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UInt  opc2    = (theInstr >> 21) & 0x3F;      /* theInstr[21:30] */
+    UChar Rc      = (theInstr >> 31) & 1;         /* theInstr[31]    */
+
+    switch (opc1) {
+    case 0x1C: // andi.
+	return False;
+
+    case 0x1D: // andis.
+	return False;
+
+    case 0x18: // ori
+	return False;
+
+    case 0x19: // oris
+	return False;
+
+    case 0x1A: // xori
+	return False;
+
+    case 0x1B: // xoris
+	return False;
+
+    /* X Form */
+    case 0x1F:
+	switch (opc2) {
+	case 0x01C: // and
+	    return False;
+
+	case 0x03C: // andc
+	    return False;
+
+	case 0x01A: // cntlzw, B=0
+	    if (B!=0) { return False; }
+	    return False;
+
+	case 0x11C: // eqv
+	    return False;
+
+	case 0x3BA: // extsb, B=0
+	    if (B!=0) { return False; }
+	    return False;
+
+	case 0x39A: // extsh, B=0
+	    if (B!=0) { return False; }
+	    return False;
+
+	case 0x1DA: // nand
+	    return False;
+
+	case 0x07C: // nor
+	    return False;
+
+	case 0x1BC: // or
+	    return False;
+
+	case 0x19C: // orc
+	    return False;
+
+	case 0x13C: // xor
+	    return False;
+
+	default:
+	    return False;
+	}
+    default:
+	return False;
+    }
+    return True;
+}
+
+
+
 static Bool dis_branch ( theInstr )
 {
     UChar opc1     = (theInstr) & 0x3F;            /* opcode1: theInstr[0:5]   */
     UChar BO       = (theInstr >> 6 ) & 0x1F;      /* BO:      theInstr[6:10]  */
     UChar BI       = (theInstr >> 11) & 0x1F;      /* BI:      theInstr[11:15] */
     UInt  BD       = (theInstr >> 16) & 0x3FFF;    /* BD:      theInstr[16:29] */
-    UChar ins16_20 = (theInstr >> 16) & 0x1F;      /* zeros:   theInstr[16:20] */
+    UChar b16to20  = (theInstr >> 16) & 0x1F;      /* zeros:   theInstr[16:20] */
     UChar opc2     = (theInstr >> 21) & 0x3F;      /* opcode2: theInstr[21:30] */
     UInt  LI       = (theInstr >> 6 ) & 0xFFFFFF;  /* LI:      theInstr[6:29]  */
     UChar flag_AA  = (theInstr >> 30) & 1;         /* AA:      theInstr[30]    */
@@ -936,7 +1118,7 @@ static Bool dis_branch ( theInstr )
     IRTemp nia = newTemp(Ity_I32);
     IRTemp ctr_ok  = newTemp(Ity_I32);
     IRTemp cond_ok = newTemp(Ity_I32);
-    IRTemp cr_bi = newTemp(Ity_I32);
+    IRTemp cr_bit = newTemp(Ity_I32);
     IRTemp tmp = newTemp(Ity_I32);
 //    IRTemp tmp2 = newTemp(Ity_I32);
 
@@ -983,19 +1165,19 @@ static Bool dis_branch ( theInstr )
 					    mkU32(1<<31) )))));
 	    
 	// cond_ok = BO[0] | (CR[BI] == BO[1])
-	if (BI < 4) {  // Get CR[BI] from guest_state
-	    assign( cr_bi, binop(Iop_And32, mkU32(1),
-				 binop(Iop_Shr32,
-				       mk_ppc32g_calculate_cr0_all(),
-				       mkU32(BI))) );
-	} else {
-	    assign( cr_bi, binop(Iop_And32, mkU32(1),
-				 binop(Iop_Shr32,
-				       IRExpr_Get(OFFB_CR2to7, Ity_I32),
-				       mkU32(BI))) );
+	if (BI < 4) { // Get from guest_CC_OP etc.
+	    assign( cr_bit, binop(Iop_And32, mkU32(1),
+				  binop(Iop_Shr32,
+					mk_ppc32g_calculate_cr0_all(),
+					mkU32(BI))) );
+	} else {      // Get from guest_CR1to7
+	    assign( cr_bit, binop(Iop_And32, mkU32(1),
+				  binop(Iop_Shr32,
+					IRExpr_Get(OFFB_CR1to7, Ity_I32),
+					mkU32(BI))) );
 	}
 	assign( cond_ok, binop( Iop_Or32, mkexpr(BO & 1),
-				binop( Iop_CmpEQ8, mkexpr(cr_bi),
+				binop( Iop_CmpEQ8, mkexpr(cr_bit),
 				       mkU32((BO>>1)&1) )));
 
 
@@ -1032,9 +1214,10 @@ static Bool dis_branch ( theInstr )
 	return False;
 
     case 0x13:
+	if (b16to20!=0) { return False; }
+
 	switch (opc2) {
         case 0x210: // bcctr         (Branch Conditional to Count Register) 
-	    vassert(ins16_20==0);
 /*
 	    cond_ok = BO[0] | (CR[BI] == BO[1])
 	    if (cond_ok) {
@@ -1048,7 +1231,6 @@ static Bool dis_branch ( theInstr )
 	    return False;
 
         case 0x010: // bclr          (Branch Conditional to Link Register) 
-	    vassert(ins16_20==0);
 /*
 	    if (!BO[2]) {
 		CTR -= 1
@@ -1172,9 +1354,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
 
-
-   
-
    opc1 = (theInstr) & 0x3F;           /* opcode1: [0:5] */
    opc2 = (theInstr >> 21) & 0x3FF;    /* opcode2: [21:30] */
 
@@ -1183,6 +1362,38 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    // Note: all 'reserved' bits must be cleared, else invalid
    switch (opc1) {
+
+   /*
+     Integer Arithmetic Instructions
+   */
+   case 0x0C: // addi
+   case 0x0D: // addic
+   case 0x0E: // addic.
+   case 0x0F: // addis
+   case 0x07: // mulli
+   case 0x08: // subfic
+       if (dis_int_arith(theInstr, 0)) break;
+       goto decode_failure;
+
+   /*
+     Integer Compare Instructions
+   */
+   case 0x0B: // cmpi
+   case 0x0A: // cmpli
+       if (dis_int_cmp(theInstr)) break;
+       goto decode_failure;
+
+   /*
+     Integer Logical Instructions
+   */
+   case 0x1C: // andi.
+   case 0x1D: // andis.
+   case 0x18: // ori
+   case 0x19: // oris
+   case 0x1A: // xori
+   case 0x1B: // xoris
+       if (dis_int_logic(theInstr)) break;
+       goto decode_failure;
 
    /*
       Branch Instructions
@@ -1212,7 +1423,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
     case 0x1F:
 
-       opc2 = (theInstr >> 22) & 0x1FF;    /* opcode2: [22:30] */
+       opc2 = (theInstr >> 22) & 0x1FF;    /* [22:30] */
        switch (opc2) {
 
        /*
@@ -1223,12 +1434,47 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x08A: // adde
        case 0x0EA: // addme
        case 0x0CA: // addze
-	   if (dis_int_arith(theInstr, 1)) break;
+	   if (dis_int_arith(theInstr, 1)) goto decode_success;
+	   goto decode_failure;
+
+       default:
+	   break;
+       }
+
+       opc2 = (theInstr >> 21) & 0x3FF;    /* [21:30] */	
+       switch (opc2) {
+
+       /*
+	 Integer Compare Instructions
+	 Rc=0
+       */
+       case 0x000: // cmp, b9=0
+       case 0x020: // cmpl, b9=0
+	   if (dis_int_cmp(theInstr)) break;
+	   goto decode_failure;
+
+       /*
+	 Integer Logical Instructions
+	 No OE, have Rc:
+       */
+       case 0x01C: // and
+       case 0x03C: // andc
+       case 0x01A: // cntlzw, B=0
+       case 0x11C: // eqv
+       case 0x3BA: // extsb, B=0
+       case 0x39A: // extsh, B=0
+       case 0x1DA: // nand
+       case 0x07C: // nor
+       case 0x1BC: // or
+       case 0x19C: // orc
+       case 0x13C: // xor
+	   if (dis_int_logic(theInstr)) break;
 	   goto decode_failure;
 
        default:
 	   goto decode_failure;
        }
+
 
 
    default:

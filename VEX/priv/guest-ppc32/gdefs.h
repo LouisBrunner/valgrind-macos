@@ -75,15 +75,15 @@ VexGuestLayout ppc32Guest_layout;
 /* --- CLEAN HELPERS --- */
 
 // Calculate CR0 flags
-extern UInt ppc32g_calculate_cr0_all  ( UChar op, UInt word1, UInt word2 );
-extern UInt ppc32g_calculate_cr0_bit0 ( UChar op, UInt word1, UInt word2 );
-extern UInt ppc32g_calculate_cr0_bit1 ( UChar op, UInt word1, UInt word2 );
-extern UInt ppc32g_calculate_cr0_bit2 ( UChar op, UInt word1, UInt word2 );
-extern UInt ppc32g_calculate_cr0_bit3 ( UChar op, UInt word1, UInt word2 );
+extern UChar ppc32g_calculate_cr0_all  ( UChar op, UInt word1, UChar xer_so );
+extern UChar ppc32g_calculate_cr0_bit0 ( UChar op, UInt word1, UChar xer_so );
+extern UChar ppc32g_calculate_cr0_bit1 ( UChar op, UInt word1, UChar xer_so );
+extern UChar ppc32g_calculate_cr0_bit2 ( UChar op, UInt word1, UChar xer_so );
+extern UChar ppc32g_calculate_cr0_bit3 ( UChar op, UInt word1, UChar xer_so );
 
 // Calculate XER flags
-extern UInt ppc32g_calculate_xer_ov  ( UInt op, UInt res, UInt arg1, UInt arg2, UChar ca );
-extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt arg1, UInt arg2, UChar ca );
+extern UChar ppc32g_calculate_xer_ov  ( UInt op, UInt res, UInt arg1, UInt arg2, UChar ca );
+extern UChar ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt arg1, UInt arg2, UChar ca );
 
 
 

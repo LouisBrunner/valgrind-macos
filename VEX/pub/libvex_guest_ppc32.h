@@ -89,9 +89,8 @@ typedef
       UInt  guest_CC_DEP1;  // Result of last op | flags
       UInt  guest_CC_DEP2;  // XER_SO
 
-      // CR1: Used for FP - don't need yet.
-      // CR2:7: Used for 'compare' instructions (bits 0:8 not used)
-      UInt guest_CR2to7;
+      // CR1:7: Used for 'compare' ops (bits 0:4 not used - thunk used for this)
+      UInt guest_CR1to7;
 
       /* XER */
       UChar guest_XER_SO;  // Summary Overflow

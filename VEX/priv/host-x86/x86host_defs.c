@@ -589,7 +589,7 @@ void ppX86Instr ( X86Instr* i ) {
          }
          return;
       case Xin_CMov32:
-         vex_printf("cmovl%s ", showX86CondCode(i->Xin.CMov32.cond));
+         vex_printf("cmov%s ", showX86CondCode(i->Xin.CMov32.cond));
          ppX86RM(i->Xin.CMov32.src);
          vex_printf(",");
          ppHRegX86(i->Xin.CMov32.dst);
@@ -1088,7 +1088,8 @@ case Xrmi_Reg:
      opc_cl = opc_imm = subopc = 0;
      switch (i->Xin.Sh32.op) {
      case Xsh_SHR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 5; break;
-     case Xsh_SHL: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 4; break;
+     case Xsh_SAR: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 5; break;
+     case Xsh_SHL: opc_cl = 0xD3; opc_imm = 0xC1; subopc = 7; break;
      default: goto bad;
      }
      if (i->Xin.Sh32.src == 0) {
@@ -1125,6 +1126,56 @@ case Xrmi_Reg:
        } else {
 	 goto bad;
        }
+     }
+     break;
+
+   case Xin_MulL:
+     subopc = i->Xin.MulL.syned ? 5 : 4;
+     if (i->Xin.MulL.ssz == Xss_32) {
+       vassert(!i->Xin.MulL.syned); // remove when a test case appears
+       *p++ = 0xF7;
+       switch (i->Xin.MulL.src->tag)  {
+       case Xrm_Mem:
+	 p = doAMode_M(p, fake(subopc),
+		     i->Xin.MulL.src->Xrm.Mem.am);
+       goto bad;
+       case Xrm_Reg:
+	 p = doAMode_R(p, fake(subopc), 
+		       i->Xin.MulL.src->Xrm.Reg.reg);
+	 goto done;
+       default: goto bad;
+       }
+     }
+     break;
+
+   case Xin_Div:
+     subopc = i->Xin.Div.syned ? 7 : 6;
+     if (i->Xin.Div.ssz == Xss_32) {
+       vassert(!i->Xin.Div.syned); // remove when a test case appears
+       *p++ = 0xF7;
+       switch (i->Xin.Div.src->tag)  {
+       case Xrm_Mem:
+	 p = doAMode_M(p, fake(subopc),
+		     i->Xin.Div.src->Xrm.Mem.am);
+       goto bad;
+       case Xrm_Reg:
+	 p = doAMode_R(p, fake(subopc), 
+		       i->Xin.Div.src->Xrm.Reg.reg);
+	 goto done;
+       default: goto bad;
+       }
+     }
+     break;
+
+   case Xin_Sh3232:
+     vassert(i->Xin.Sh3232.op == Xsh_SHL || i->Xin.Sh3232.op == Xsh_SHR);
+     if (i->Xin.Sh3232.amt == 0) {
+       /* shldl/shrdl by %cl */
+       *p++ = 0x0F;
+       *p++ = i->Xin.Sh3232.op == Xsh_SHL ? 0xA5 : 0xAD;
+       p = doAMode_R(p, i->Xin.Sh3232.rLo, i->Xin.Sh3232.rHi);
+       if (i->Xin.Sh3232.op == Xsh_SHR) goto bad; // await test case
+       goto done;
      }
      break;
 
@@ -1182,7 +1233,8 @@ case Xrmi_Reg:
      *p++ = 0x0F;
      *p++ = 0x40 + i->Xin.CMov32.cond;
      if (i->Xin.CMov32.src->tag == Xrm_Reg) {
-       goto bad;
+       p = doAMode_R(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Reg.reg);
+       goto done;
      }
      if (i->Xin.CMov32.src->tag == Xrm_Mem) {
        p = doAMode_M(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Mem.am);
@@ -1208,6 +1260,13 @@ case Xrmi_Reg:
      break;
 
    case Xin_Store:
+     if (i->Xin.Store.sz == 2) {
+	 *p++ = 0x66;
+	 *p++ = 0x89;
+	 p = doAMode_M(p, i->Xin.Store.src, i->Xin.Store.dst);
+	 goto done;
+     }
+
      if (i->Xin.Store.sz == 1) {
        /* we have to do complex dodging and weaving if
 	  src is not the low 8 bits of %eax/%ebx/%ecx/%edx. */

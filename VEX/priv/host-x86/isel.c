@@ -2669,9 +2669,14 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
               goto vec_fail;                            \
       } while (0)
 
-   Bool     arg1isEReg = False;
-   X86SseOp op = Xsse_INVALID;
-   IRType   ty = typeOfIRExpr(env->type_env,e);
+#  define SSE2_OR_ABOVE                                 \
+      (env->subarch != VexSubArchX86_sse0               \
+       && env->subarch != VexSubArchX86_sse1)
+
+   MatchInfo mi;
+   Bool      arg1isEReg = False;
+   X86SseOp  op = Xsse_INVALID;
+   IRType    ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
    vassert(ty == Ity_V128);
 
@@ -2707,6 +2712,20 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Unop) {
+
+   if (SSE2_OR_ABOVE) { 
+      /* 64UtoV128(LDle:I64(addr)) */
+      DECLARE_PATTERN(p_zwiden_load64);
+      DEFINE_PATTERN(p_zwiden_load64,
+                     unop(Iop_64UtoV128, IRExpr_LDle(Ity_I64,bind(0))));
+      if (matchIRExpr(&mi, p_zwiden_load64, e)) {
+         X86AMode* am = iselIntExpr_AMode(env, mi.bindee[0]);
+         HReg dst = newVRegV(env);
+         addInstr(env, X86Instr_SseLdzLO(8, dst, am));
+         return dst;
+      }
+   }
+
    switch (e->Iex.Unop.op) {
 
       case Iop_NotV128: {
@@ -3139,6 +3158,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 
 #  undef REQUIRE_SSE1
 #  undef REQUIRE_SSE2
+#  undef SSE2_OR_ABOVE
 }
 
 

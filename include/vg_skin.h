@@ -1094,14 +1094,18 @@ extern Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf );
 /*=== Obtaining debug information                                  ===*/
 /*====================================================================*/
 
-/* Get the file/function/line number of the instruction at address 'a'. 
-   For these four, if debug info for the address is found, it copies the
-   info into the buffer/UInt and returns True.  If not, it returns False and
-   nothing is copied.  VG_(get_fnname) always demangles C++ function names.
+/* Get the file/function/line number of the instruction at address
+   'a'.  For these four, if debug info for the address is found, it
+   copies the info into the buffer/UInt and returns True.  If not, it
+   returns False and nothing is copied.  VG_(get_fnname) always
+   demangles C++ function names.  VG_(get_fnname_w_offset) is the
+   same, except it appends "+N" to symbol names to indicate offsets.  
 */
 extern Bool VG_(get_filename) ( Addr a, Char* filename, Int n_filename );
 extern Bool VG_(get_fnname)   ( Addr a, Char* fnname,   Int n_fnname   );
 extern Bool VG_(get_linenum)  ( Addr a, UInt* linenum );
+extern Bool VG_(get_fnname_w_offset)   
+                              ( Addr a, Char* fnname,   Int n_fnname   );
 
 /* This one is more efficient if getting both filename and line number,
    because the two lookups are done together. */

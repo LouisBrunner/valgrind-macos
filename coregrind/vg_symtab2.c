@@ -2123,26 +2123,41 @@ Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
    return True;
 }
 
-/* This is available to skins... always demangle C++ names */
+/* This is available to skins... always demangle C++ names,
+   match anywhere in function, but don't show offsets. */
 Bool VG_(get_fnname) ( Addr a, Char* buf, Int nbuf )
 {
    return get_fnname ( /*demangle*/True, a, buf, nbuf,
-                       /*match_anywhere_in_fun*/True, True );
+                       /*match_anywhere_in_fun*/True, 
+                       /*show offset?*/False );
 }
 
 /* This is available to skins... always demangle C++ names,
-   only succeed if 'a' matches first instruction of function. */
+   match anywhere in function, and show offset if nonzero. */
+Bool VG_(get_fnname_w_offset) ( Addr a, Char* buf, Int nbuf )
+{
+   return get_fnname ( /*demangle*/True, a, buf, nbuf,
+                       /*match_anywhere_in_fun*/True, 
+                       /*show offset?*/True );
+}
+
+/* This is available to skins... always demangle C++ names,
+   only succeed if 'a' matches first instruction of function,
+   and don't show offsets. */
 Bool VG_(get_fnname_if_entry) ( Addr a, Char* buf, Int nbuf )
 {
    return get_fnname ( /*demangle*/True, a, buf, nbuf,
-                       /*match_anywhere_in_fun*/False, False );
+                       /*match_anywhere_in_fun*/False, 
+                       /*show offset?*/False );
 }
 
-/* This is only available to core... don't demangle C++ names */
+/* This is only available to core... don't demangle C++ names,
+   match anywhere in function, and don't show offsets. */
 Bool VG_(get_fnname_nodemangle) ( Addr a, Char* buf, Int nbuf )
 {
    return get_fnname ( /*demangle*/False, a, buf, nbuf,
-                       /*match_anywhere_in_fun*/True, False );
+                       /*match_anywhere_in_fun*/True, 
+                       /*show offset?*/False );
 }
 
 /* Map a code address to the name of a shared object file or the executable.

@@ -601,7 +601,7 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
 
 	    if (flags & VG_MSG_PAREN)
 	       *cp++ = '(';
-	    if (VG_(get_fnname)(a, cp, sizeof(buf)-2)) {
+	    if (VG_(get_fnname_w_offset)(a, cp, sizeof(buf)-4)) {
 	       if (flags & VG_MSG_PAREN) {
 		  cp += VG_(strlen)(cp);
 		  *cp++ = ')';

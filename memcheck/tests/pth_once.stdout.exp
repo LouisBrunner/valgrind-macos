@@ -1,12 +1,12 @@
 welcome: Welcome
-identify_yourself: Hi, I'm thread # 0
-identify_yourself: Hi, I'm thread # 1
-identify_yourself: Hi, I'm thread # 2
-identify_yourself: Hi, I'm thread # 3
-identify_yourself: Hi, I'm thread # 4
-identify_yourself: Hi, I'm thread # 5
-identify_yourself: Hi, I'm thread # 6
-identify_yourself: Hi, I'm thread # 7
-identify_yourself: Hi, I'm thread # 8
-identify_yourself: Hi, I'm thread # 9
+identify_yourself: Hi, I'm a thread
+identify_yourself: Hi, I'm a thread
+identify_yourself: Hi, I'm a thread
+identify_yourself: Hi, I'm a thread
+identify_yourself: Hi, I'm a thread
+identify_yourself: Hi, I'm a thread
+identify_yourself: Hi, I'm a thread
+identify_yourself: Hi, I'm a thread
+identify_yourself: Hi, I'm a thread
+identify_yourself: Hi, I'm a thread
 main: Goodbye

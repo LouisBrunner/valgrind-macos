@@ -184,9 +184,9 @@ extern void VG_(swizzle_esp_then_start_GDB) ( Addr m_eip_at_error,
 /*--- This is clearly not re-entrant! ---*/
 .data
 vg_ebp_saved_over_GDB_start:
-	.word	0
+	.long	0
 vg_esp_saved_over_GDB_start:
-	.word	0
+	.long	0
 .text
 	
 .global VG_(swizzle_esp_then_start_GDB)	
@@ -202,7 +202,7 @@ VG_(swizzle_esp_then_start_GDB):
 	movl	40(%esp), %ebx		# client %ESP
 	movl	36(%esp), %ecx		# client %EIP
 
-	# Now thatn we dont need to refer to simulators stack any more,
+	# Now that we dont need to refer to simulators stack any more,
 	# put %ESP into %esp
 	movl	%ebx, %esp
 

@@ -33,6 +33,9 @@
    Helpers.  We have to be pretty self-sufficient.
    ------------------------------------------------------------------ */
 
+/* Number of times any given error message is printed. */
+#define N_MOANS 3
+
 /* Extract from Valgrind the value of VG_(clo_trace_pthread_level).
    Returns 0 (none) if not running on Valgrind. */
 static
@@ -44,7 +47,6 @@ int get_pt_trace_level ( void )
                            0, 0, 0, 0);
    return res;
 }
-
 
 
 static
@@ -106,7 +108,7 @@ void barf ( char* str )
 
 static void ignored ( char* msg )
 {
-   if (get_pt_trace_level() >= 1) {
+   if (get_pt_trace_level() >= 0) {
       char* ig = "vg_libpthread.so: IGNORED call to: ";
       write(2, ig, strlen(ig));
       write(2, msg, strlen(msg));
@@ -117,7 +119,7 @@ static void ignored ( char* msg )
 
 static void kludged ( char* msg )
 {
-   if (get_pt_trace_level() >= 1) {
+   if (get_pt_trace_level() >= 0) {
       char* ig = "vg_libpthread.so: KLUDGED call to: ";
       write(2, ig, strlen(ig));
       write(2, msg, strlen(msg));
@@ -153,19 +155,25 @@ void vgPlain_unimp ( char* what )
 
 int pthread_attr_init(pthread_attr_t *attr)
 {
-   ignored("pthread_attr_init");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_attr_init");
    return 0;
 }
 
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
 {
-   ignored("pthread_attr_setdetachstate");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_attr_setdetachstate");
    return 0;
 }
 
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit)
 {
-   ignored("pthread_attr_setinheritsched");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_attr_setinheritsched");
    return 0;
 }
 
@@ -173,7 +181,9 @@ int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit)
 int  pthread_attr_getschedparam(const  pthread_attr_t  *attr,  
                                 struct sched_param *param)
 {
-   kludged("pthread_attr_getschedparam");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      kludged("pthread_attr_getschedparam");
 #  ifdef GLIBC_2_1
    if (param) param->sched_priority = 0; /* who knows */
 #  else
@@ -185,13 +195,17 @@ int  pthread_attr_getschedparam(const  pthread_attr_t  *attr,
 int  pthread_attr_setschedparam(pthread_attr_t  *attr,
                                 const  struct sched_param *param)
 {
-   ignored("pthread_attr_setschedparam");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_attr_setschedparam");
    return 0;
 }
 
 int pthread_attr_destroy(pthread_attr_t *attr)
 {
-   ignored("pthread_attr_destroy");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_attr_destroy");
    return 0;
 }
 
@@ -261,7 +275,9 @@ pthread_t pthread_self(void)
 
 int pthread_detach(pthread_t th)
 {
-   ignored("pthread_detach");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_detach");
    return 0;
 }
 
@@ -316,7 +332,7 @@ int __pthread_mutex_init(pthread_mutex_t *mutex,
 int __pthread_mutex_lock(pthread_mutex_t *mutex)
 {
    int res;
-   static int moans = 3;
+   static int moans = N_MOANS;
    if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
       char* str = "pthread_mutex_lock-NOT-INSIDE-VALGRIND\n";
       write(2, str, strlen(str));
@@ -332,7 +348,7 @@ int __pthread_mutex_lock(pthread_mutex_t *mutex)
 int __pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
    int res;
-   static int moans = 3;
+   static int moans = N_MOANS;
    if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
       char* str = "pthread_mutex_trylock-NOT-INSIDE-VALGRIND\n";
       write(2, str, strlen(str));
@@ -348,7 +364,7 @@ int __pthread_mutex_trylock(pthread_mutex_t *mutex)
 int __pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
    int res;
-   static int moans = 3;
+   static int moans = N_MOANS;
    if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
       char* str = "pthread_mutex_unlock-NOT-INSIDE-VALGRIND\n";
       write(2, str, strlen(str));
@@ -400,7 +416,9 @@ int pthread_cond_init( pthread_cond_t *cond,
 int pthread_cond_destroy(pthread_cond_t *cond)
 {
    /* should check that no threads are waiting on this CV */
-   kludged("pthread_cond_destroy");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      kludged("pthread_cond_destroy");
    return 0;
 }
 
@@ -413,7 +431,9 @@ int   pthread_getschedparam(pthread_t  target_thread,
                             int  *policy,
                             struct sched_param *param)
 {
-   kludged("pthread_getschedparam");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      kludged("pthread_getschedparam");
    if (policy) *policy = SCHED_OTHER;
 #  ifdef GLIBC_2_1
    if (param) param->sched_priority = 0; /* who knows */
@@ -427,7 +447,9 @@ int pthread_setschedparam(pthread_t target_thread,
                           int policy, 
                           const struct sched_param *param)
 {
-   ignored("pthread_setschedparam");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_setschedparam");
    return 0;
 }
 
@@ -502,13 +524,17 @@ int pthread_cond_broadcast(pthread_cond_t *cond)
 
 int pthread_setcancelstate(int state, int *oldstate)
 {
-   ignored("pthread_setcancelstate");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_setcancelstate");
    return 0;
 }
 
 int pthread_setcanceltype(int type, int *oldtype)
 {
-   ignored("pthread_setcanceltype");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_setcanceltype");
    return 0;
 }
 
@@ -537,7 +563,7 @@ void __pthread_kill_other_threads_np ( void )
    for (i = 1; i < VG_N_THREADS; i++) {
       if (i == me) continue;
       res = pthread_cancel(i);
-      if (res == 0)
+      if (0 && res == 0)
          printf("----------- NUKED %d\n", i);
    }
    pthread_mutex_unlock(&massacre_mx);
@@ -561,7 +587,9 @@ int __pthread_key_create(pthread_key_t *key,
 
 int pthread_key_delete(pthread_key_t key)
 {
-   ignored("pthread_key_delete");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_key_delete");
    return 0;
 }
 
@@ -624,7 +652,9 @@ int __pthread_atfork ( void (*prepare)(void),
                        void (*parent)(void),
                        void (*child)(void) )
 {
-   ignored("pthread_atfork");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      ignored("pthread_atfork");
    return 0;
 }
 
@@ -944,6 +974,17 @@ __attribute__((weak))
 int recv(int s, void *buf, size_t len, int flags)
 {
    return __libc_recv(s, buf, len, flags);
+}
+
+
+extern
+int __libc_recvfrom(int s, void *buf, size_t len, int flags,
+                    struct sockaddr *from, socklen_t *fromlen);
+__attribute__((weak))
+int recvfrom(int s, void *buf, size_t len, int flags,
+             struct sockaddr *from, socklen_t *fromlen)
+{
+   return __libc_recvfrom(s, buf, len, flags, from, fromlen);
 }
 
 
@@ -1336,7 +1377,9 @@ weak_alias(__fork, fork)
 int
 pthread_rwlock_rdlock (void* /* pthread_rwlock_t* */ rwlock)
 {
-   kludged("pthread_rwlock_rdlock");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      kludged("pthread_rwlock_rdlock");
    return 0;
 }
 
@@ -1346,7 +1389,9 @@ weak_alias(pthread_rwlock_rdlock, __pthread_rwlock_rdlock)
 int
 pthread_rwlock_unlock (void* /* pthread_rwlock_t* */ rwlock)
 {
-   kludged("pthread_rwlock_unlock");
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      kludged("pthread_rwlock_unlock");
    return 0;
 }
 

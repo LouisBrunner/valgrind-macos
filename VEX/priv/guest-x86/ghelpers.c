@@ -1392,7 +1392,7 @@ typedef
    Extract from it the required FPROUND value and any resulting
    emulation warning, and return (warn << 32) | fpround value. 
 */
-ULong x86h_check_fldcw ( UInt fpucw )
+ULong x86g_check_fldcw ( UInt fpucw )
 {
    /* Decide on a rounding mode.  fpucw[11:10] holds it. */
    /* NOTE, encoded exactly as per enum IRRoundingMode. */
@@ -1417,7 +1417,7 @@ ULong x86h_check_fldcw ( UInt fpucw )
 /* CLEAN HELPER */
 /* Given fpround as an IRRoundingMode value, create a suitable x87
    native format FPU control word. */
-UInt x86h_create_fpucw ( UInt fpround )
+UInt x86g_create_fpucw ( UInt fpround )
 {
    fpround &= 3;
    return 0x037F | (fpround << 10);
@@ -1429,7 +1429,7 @@ UInt x86h_create_fpucw ( UInt fpround )
    Extract from it the required SSEROUND value and any resulting
    emulation warning, and return (warn << 32) | sseround value.
 */
-ULong x86h_check_ldmxcsr ( UInt mxcsr )
+ULong x86g_check_ldmxcsr ( UInt mxcsr )
 {
    /* Decide on a rounding mode.  mxcsr[14:13] holds it. */
    /* NOTE, encoded exactly as per enum IRRoundingMode. */
@@ -1455,7 +1455,7 @@ ULong x86h_check_ldmxcsr ( UInt mxcsr )
 /* CLEAN HELPER */
 /* Given sseround as an IRRoundingMode value, create a suitable SSE
    native format MXCSR value. */
-UInt x86h_create_mxcsr ( UInt sseround )
+UInt x86g_create_mxcsr ( UInt sseround )
 {
    sseround &= 3;
    return 0x1F80 | (sseround << 13);
@@ -1507,7 +1507,7 @@ VexEmWarn put_x87 ( Bool moveRegs,
 
    /* handle the control word, setting FPROUND and detecting any
       emulation warnings. */
-   pair    = x86h_check_fldcw ( (UInt)fpucw );
+   pair    = x86g_check_fldcw ( (UInt)fpucw );
    fpround = (UInt)pair;
    ew      = (VexEmWarn)(pair >> 32);
    
@@ -1544,7 +1544,7 @@ void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state,
    x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
    x87->env[FP_ENV_STAT] = ((ftop & 7) << 11) | (c3210 & 0x4700);
    x87->env[FP_ENV_CTRL] 
-      = (UShort)x86h_create_fpucw( vex_state->guest_FPROUND );
+      = (UShort)x86g_create_fpucw( vex_state->guest_FPROUND );
 
    tagw = 0;
    for (r = 0; r < 8; r++) {
@@ -1647,12 +1647,14 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
 
 #  undef SSEZERO
 
-   vex_state->guest_CS = 0;
-   vex_state->guest_DS = 0;
-   vex_state->guest_ES = 0;
-   vex_state->guest_FS = 0;
-   vex_state->guest_GS = 0;
-   vex_state->guest_SS = 0;
+   vex_state->guest_CS  = 0;
+   vex_state->guest_DS  = 0;
+   vex_state->guest_ES  = 0;
+   vex_state->guest_FS  = 0;
+   vex_state->guest_GS  = 0;
+   vex_state->guest_SS  = 0;
+   vex_state->guest_LDT = 0;
+   vex_state->guest_GDT = 0;
 
    vex_state->guest_EMWARN = EmWarn_NONE;
 }
@@ -2702,6 +2704,115 @@ UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
 }
 
 
+/*----------------------------------------------*/
+/*--- Helpers for segment overrides          ---*/
+/*----------------------------------------------*/
+
+static inline 
+UInt get_segdescr_base ( VexGuestX86SegDescr* ent )
+{
+   UInt lo  = 0xFFFF & (UInt)ent->LdtEnt.Bits.BaseLow;
+   UInt mid =   0xFF & (UInt)ent->LdtEnt.Bits.BaseMid;
+   UInt hi  =   0xFF & (UInt)ent->LdtEnt.Bits.BaseHi;
+   return (hi << 24) | (mid << 16) | lo;
+}
+
+static inline
+UInt get_segdescr_limit ( VexGuestX86SegDescr* ent )
+{
+    UInt lo    = 0xFFFF & (UInt)ent->LdtEnt.Bits.LimitLow;
+    UInt hi    =    0xF & (UInt)ent->LdtEnt.Bits.LimitHi;
+    UInt limit = (hi << 16) | lo;
+    if (ent->LdtEnt.Bits.Granularity) 
+       limit = (limit << 12) | 0xFFF;
+    return limit;
+}
+
+ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
+                              UInt seg_selector, UInt virtual_addr )
+{
+   UInt tiBit, base, limit;
+   VexGuestX86SegDescr* the_descrs;
+
+   Bool verboze = False;
+
+   /* If this isn't true, we're in Big Trouble. */
+   vassert(8 == sizeof(VexGuestX86SegDescr));
+
+   if (verboze) 
+      vex_printf("x86h_use_seg_selector: "
+                 "seg_selector = 0x%x, vaddr = 0x%x\n", 
+                 seg_selector, virtual_addr);
+
+   /* Check for wildly invalid selector. */
+   if (seg_selector & ~0xFFFF)
+      goto bad;
+
+   seg_selector &= 0x0000FFFF;
+  
+   /* Sanity check the segment selector.  Ensure that RPL=11b (least
+      privilege).  This forms the bottom 2 bits of the selector. */
+   if ((seg_selector & 3) != 3)
+      goto bad;
+
+   /* Extract the TI bit (0 means GDT, 1 means LDT) */
+   tiBit = (seg_selector >> 2) & 1;
+
+   /* Convert the segment selector onto a table index */
+   seg_selector >>= 3;
+   vassert(seg_selector >= 0 && seg_selector < 8192);
+
+   if (tiBit == 0) {
+
+      /* GDT access. */
+      /* Do we actually have a GDT to look at? */
+      if (gdt == 0)
+         goto bad;
+
+      /* Check for access to non-existent entry. */
+      if (seg_selector >= VEX_GUEST_X86_GDT_NENT)
+         goto bad;
+
+      the_descrs = (VexGuestX86SegDescr*)gdt;
+      base  = get_segdescr_base (&the_descrs[seg_selector]);
+      limit = get_segdescr_limit(&the_descrs[seg_selector]);
+
+   } else {
+
+      /* All the same stuff, except for the LDT. */
+      if (ldt == 0)
+         goto bad;
+
+      if (seg_selector >= VEX_GUEST_X86_LDT_NENT)
+         goto bad;
+
+      the_descrs = (VexGuestX86SegDescr*)ldt;
+      base  = get_segdescr_base (&the_descrs[seg_selector]);
+      limit = get_segdescr_limit(&the_descrs[seg_selector]);
+
+   }
+
+   /* Do the limit check.  Note, this check is just slightly too
+      slack.  Really it should be "if (virtual_addr + size - 1 >=
+      limit)," but we don't have the size info to hand.  Getting it
+      could be significantly complex.  */
+   if (virtual_addr >= limit)
+      goto bad;
+
+   if (verboze) 
+      vex_printf("x86h_use_seg_selector: "
+                 "base = 0x%x, addr = 0x%x\n", 
+                 base, base + virtual_addr);
+
+   /* High 32 bits are zero, indicating success. */
+   return (ULong)( ((UInt)virtual_addr) + base );
+
+ bad:
+   return 1ULL << 32;
+}
+
+
+
 /*-----------------------------------------------------------*/
 /*--- Describing the x86 guest state, for the benefit     ---*/
 /*--- of iropt and instrumenters.                         ---*/
@@ -2757,11 +2868,11 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 16,
+          .n_alwaysDefd = 18,
+
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
              gdefs.h on meaning of thunk fields. */
-
           .alwaysDefd 
              = { /*  0 */ ALWAYSDEFD(guest_CC_OP),
                  /*  1 */ ALWAYSDEFD(guest_CC_NDEP),
@@ -2777,8 +2888,10 @@ VexGuestLayout
                  /* 11 */ ALWAYSDEFD(guest_ES),
                  /* 12 */ ALWAYSDEFD(guest_FS),
                  /* 13 */ ALWAYSDEFD(guest_GS),
-	         /* 14 */ ALWAYSDEFD(guest_SS),
-	         /* 15 */ ALWAYSDEFD(guest_EMWARN)
+                 /* 14 */ ALWAYSDEFD(guest_SS),
+                 /* 15 */ ALWAYSDEFD(guest_LDT),
+                 /* 16 */ ALWAYSDEFD(guest_GDT),
+                 /* 17 */ ALWAYSDEFD(guest_EMWARN)
                }
         };
 

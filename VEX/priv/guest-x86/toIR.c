@@ -133,6 +133,8 @@ static IRBB* irbb;
 #define OFFB_FS        offsetof(VexGuestX86State,guest_FS)
 #define OFFB_GS        offsetof(VexGuestX86State,guest_GS)
 #define OFFB_SS        offsetof(VexGuestX86State,guest_SS)
+#define OFFB_LDT       offsetof(VexGuestX86State,guest_LDT)
+#define OFFB_GDT       offsetof(VexGuestX86State,guest_GDT)
 
 #define OFFB_SSEROUND  offsetof(VexGuestX86State,guest_SSEROUND)
 #define OFFB_XMM0      offsetof(VexGuestX86State,guest_XMM0)
@@ -1546,14 +1548,14 @@ UChar* sorbTxt ( UChar sorb )
 static
 IRExpr* handleSegOverride ( UChar sorb, IRExpr* virtual )
 {
-  //IRTemp tsreg; //Int sreg, tsreg;
+   Int    sreg;
+   IRType hWordTy;
+   IRTemp ldt_ptr, gdt_ptr, seg_selector, r64;
 
    if (sorb == 0)
       /* the common case - no override */
       return virtual;
 
-   unimplemented("vex x86->IR: segment override prefix");
-#if 0
    switch (sorb) {
       case 0x3E: sreg = R_DS; break;
       case 0x26: sreg = R_ES; break;
@@ -1562,18 +1564,35 @@ IRExpr* handleSegOverride ( UChar sorb, IRExpr* virtual )
       default: vpanic("handleSegOverride(x86,guest)");
    }
 
-   tsreg = newTemp(Ity_I32);
+   hWordTy = sizeof(HWord)==4 ? Ity_I32 : Ity_I64;
 
-   /* tsreg becomes the relevant LDT descriptor */
-   assign( tsreg, unop(Iop_16Uto32, getSReg(sreg)) );
+   seg_selector = newTemp(Ity_I32);
+   ldt_ptr      = newTemp(hWordTy);
+   gdt_ptr      = newTemp(hWordTy);
+   r64          = newTemp(Ity_I64);
 
-   /* virtual += segment_base(ldt[tsreg]); also do limit check */
-return 
-  binop(Iop_Add32, mkexpr(virtual),
+   assign( seg_selector, unop(Iop_16Uto32, getSReg(sreg)) );
+   assign( ldt_ptr, IRExpr_Get( OFFB_LDT, hWordTy ));
+   assign( gdt_ptr, IRExpr_Get( OFFB_GDT, hWordTy ));
 
+   /*
+   Call this to do the translation and limit checks: 
+   ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
+                                 UInt seg_selector, UInt virtual_addr )
+   */
+   assign( 
+      r64, 
+      mkIRExprCCall( 
+         Ity_I64, 
+         0/*regparms*/, 
+         "x86g_use_seg_selector", 
+         &x86g_use_seg_selector, 
+         mkIRExprVec_4( mkexpr(ldt_ptr), mkexpr(gdt_ptr), 
+                        mkexpr(seg_selector), virtual)
+      )
+   );
 
-   uInstr2(cb, USESEG, 0, TempReg, tsreg, TempReg, tmp );
-#endif
+   return unop(Iop_64to32, mkexpr(r64));
 }
 
 
@@ -3918,8 +3937,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                DIP("fldcw %s", dis_buf);
                assign( t64, mkIRExprCCall(
                                Ity_I64, 0/*regparms*/, 
-                               "x86h_check_fldcw",
-                               &x86h_check_fldcw, 
+                               "x86g_check_fldcw",
+                               &x86g_check_fldcw, 
                                mkIRExprVec_1( 
                                   unop( Iop_16Uto32, 
                                         loadLE(Ity_I16, mkexpr(addr)))
@@ -3994,7 +4013,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                   unop( Iop_32to16, 
                         mkIRExprCCall(
                            Ity_I32, 0/*regp*/,
-                           "x86h_create_fpucw", &x86h_create_fpucw, 
+                           "x86g_create_fpucw", &x86g_create_fpucw, 
                            mkIRExprVec_1( get_fpround() ) 
                         ) 
                   ) 
@@ -7287,8 +7306,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       /* ULong x86h_check_ldmxcsr ( UInt ); */
       assign( t64, mkIRExprCCall(
                       Ity_I64, 0/*regparms*/, 
-                      "x86h_check_ldmxcsr",
-                      &x86h_check_ldmxcsr, 
+                      "x86g_check_ldmxcsr",
+                      &x86g_check_ldmxcsr, 
                       mkIRExprVec_1( loadLE(Ity_I32, mkexpr(addr)) )
                    )
             );
@@ -7916,7 +7935,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       storeLE( mkexpr(addr), 
                mkIRExprCCall(
                   Ity_I32, 0/*regp*/,
-                  "x86h_create_mxcsr", &x86h_create_mxcsr, 
+                  "x86g_create_mxcsr", &x86g_create_mxcsr, 
                   mkIRExprVec_1( get_fpround() ) 
                ) 
              );

@@ -95,13 +95,23 @@ extern ULong x86g_calculate_RCR  (
                 UInt arg, UInt rot_amt, UInt eflags_in, UInt sz 
              );
 
-extern ULong x86h_check_fldcw ( UInt fpucw );
+extern ULong x86g_check_fldcw ( UInt fpucw );
 
-extern UInt x86h_create_fpucw ( UInt fpround );
+extern UInt x86g_create_fpucw ( UInt fpround );
 
-extern ULong x86h_check_ldmxcsr ( UInt mxcsr );
+extern ULong x86g_check_ldmxcsr ( UInt mxcsr );
 
-extern UInt x86h_create_mxcsr ( UInt sseround );
+extern UInt x86g_create_mxcsr ( UInt sseround );
+
+/* Translate a guest virtual_addr into a guest linear address by
+   consulting the supplied LDT/GDT structures.  Their representation
+   must be as specified in pub/libvex_guest_x86.h.  To indicate a
+   translation failure, 1<<32 is returned.  On success, the lower 32
+   bits of the returned result indicate the linear address.  
+*/
+extern 
+ULong x86g_use_seg_selector ( HWord ldt, HWord gdt, 
+                              UInt seg_selector, UInt virtual_addr );
 
 /* --- Clean helpers for MMX --- */
 

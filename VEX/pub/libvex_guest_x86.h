@@ -120,8 +120,25 @@
    0x1F80, 0x3F80, 0x5F80 or 0x7F80.  Vex will emit an emulation
    warning if you try and load a control word which either (1) unmasks
    any exceptions, (2) sets FZ (flush-to-zero) to 1, or (3) sets DAZ
-   (denormals-are-zeroes) to 1. */
+   (denormals-are-zeroes) to 1. 
 
+   Segments: initial prefixes of local and global segment descriptor
+   tables are modelled.  guest_LDT is either zero (NULL) or points in
+   the host address space to an array of VEX_GUEST_X86_LDT_NENT
+   descriptors, which have the type VexGuestX86SegDescr, defined
+   below.  Similarly, guest_GDT is either zero or points in the host
+   address space to an array of VEX_GUEST_X86_GDT_NENT descriptors.
+   The only place where these are used are in the helper function
+   x86g_use_seg().  LibVEX's client is responsible for pointing
+   guest_LDT and guest_GDT at suitable tables.  The contents of these
+   tables are expected not to change during the execution of any given
+   superblock, but they may validly be changed by LibVEX's client in
+   between superblock executions.
+
+   Since x86g_use_seg() only expects these tables to have
+   VEX_GUEST_X86_{LDT,GDT}_NENT entries, LibVEX's client should not
+   attempt to write entries beyond those limits.
+*/
 typedef
    struct {
       UInt  guest_EAX;         /* 0 */
@@ -166,6 +183,9 @@ typedef
       UShort guest_FS;
       UShort guest_GS;
       UShort guest_SS;
+      /* LDT/GDT stuff. */
+      HWord  guest_LDT; /* host addr, a VexGuestX86SegDescr* */
+      HWord  guest_GDT; /* host addr, a VexGuestX86SegDescr* */
       /* Emulation warnings */
       UInt   guest_EMWARN;
       /* Padding to make it have an 8-aligned size */
@@ -173,6 +193,42 @@ typedef
    }
    VexGuestX86State;
 
+#define VEX_GUEST_X86_LDT_NENT 64
+#define VEX_GUEST_X86_GDT_NENT 16
+
+
+/*---------------------------------------------------------------*/
+/*--- Types for x86 guest stuff.                              ---*/
+/*---------------------------------------------------------------*/
+
+/* VISIBLE TO LIBRARY CLIENT */
+
+/* This is the hardware-format for a segment descriptor, ie what the
+   x86 actually deals with.  It is 8 bytes long.  It's ugly. */
+
+typedef struct {
+    union {
+       struct {
+          UShort  LimitLow;
+          UShort  BaseLow;
+          UInt    BaseMid         : 8;
+          UInt    Type            : 5;
+          UInt    Dpl             : 2;
+          UInt    Pres            : 1;
+          UInt    LimitHi         : 4;
+          UInt    Sys             : 1;
+          UInt    Reserved_0      : 1;
+          UInt    Default_Big     : 1;
+          UInt    Granularity     : 1;
+          UInt    BaseHi          : 8;
+       } Bits;
+       struct {
+          UInt word1;
+          UInt word2;
+       } Words;
+    }
+    LdtEnt;
+} VexGuestX86SegDescr;
 
 
 /*---------------------------------------------------------------*/

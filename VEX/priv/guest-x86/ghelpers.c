@@ -1543,7 +1543,7 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
 
 
 /*----------------------------------------------*/
-/*--- Misc integer helpers                   ---*/
+/*--- Misc integer/fp helpers                ---*/
 /*----------------------------------------------*/
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
@@ -1619,6 +1619,20 @@ void x86g_dirtyhelper_CPUID ( VexGuestX86State* st )
    }
 }
 
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (reads guest state, writes guest mem) */
+void x86g_dirtyhelper_FSAVE ( VexGuestX86State* gst, HWord addr )
+{
+   LibVEX_GuestX86_get_x87( gst, (UChar*)addr );
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (writes guest state, reads guest mem) */
+void x86g_dirtyhelper_FRSTOR ( VexGuestX86State* gst, HWord addr )
+{
+   LibVEX_GuestX86_put_x87( (UChar*)addr, gst );
+}
 
 
 /*----------------------------------------------*/

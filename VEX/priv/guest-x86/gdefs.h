@@ -160,6 +160,10 @@ extern void  x86g_storeF80le ( UInt, ULong );
 
 extern void  x86g_dirtyhelper_CPUID ( VexGuestX86State* );
 
+extern void  x86g_dirtyhelper_FSAVE ( VexGuestX86State*, HWord );
+
+extern void x86g_dirtyhelper_FRSTOR ( VexGuestX86State*, HWord );
+
 
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/

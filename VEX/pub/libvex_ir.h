@@ -537,7 +537,7 @@ inline static Bool isAtom ( IRExpr* e ) {
    evaluation.
 */
 
-#define VEX_N_FXSTATE  4   /* enough for CPUID on x86 */
+#define VEX_N_FXSTATE  5   /* enough for FSAVE/FRSTOR on x86 */
 
 typedef
    enum {

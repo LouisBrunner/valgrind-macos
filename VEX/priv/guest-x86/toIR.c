@@ -4171,7 +4171,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
             }
 
             case 7: { /* FSTP extended-real */
-               /* Uses dirty helper: void storeF80le ( UInt, ULong ) */
+               /* Uses dirty helper: void x86g_storeF80le ( UInt, ULong ) */
                IRExpr** args 
                   = mkIRExprVec_2( mkexpr(addr), 
                                    unop(Iop_ReinterpF64asI64, get_ST(0)) );
@@ -4365,6 +4365,92 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                storeLE(mkexpr(addr), get_ST(0));
                fp_pop();
                break;
+
+            case 4: { /* FRSTOR m108 */
+               /* Uses dirty helper: x86g_do_FRSTOR ( VexGuestX86State*, UInt ) */
+               IRDirty* d = unsafeIRDirty_0_N ( 
+                               0/*regparms*/, 
+                               "x86g_dirtyhelper_FRSTOR", 
+                               &x86g_dirtyhelper_FRSTOR,
+                               mkIRExprVec_1( mkexpr(addr) )
+                            );
+               d->needsBBP = True;
+               /* declare we're reading memory */
+               d->mFx   = Ifx_Read;
+               d->mAddr = mkexpr(addr);
+               d->mSize = 108;
+
+               /* declare we're writing guest state */
+	       d->nFxState = 5;
+
+               d->fxState[0].fx     = Ifx_Write;
+               d->fxState[0].offset = offsetof(VexGuestX86State,guest_FTOP);
+               d->fxState[0].size   = sizeof(UInt);
+
+               d->fxState[1].fx     = Ifx_Write;
+               d->fxState[1].offset = offsetof(VexGuestX86State,guest_FPREG);
+               d->fxState[1].size   = 8 * sizeof(ULong);
+
+               d->fxState[2].fx     = Ifx_Write;
+               d->fxState[2].offset = offsetof(VexGuestX86State,guest_FPTAG);
+               d->fxState[2].size   = 8 * sizeof(UChar);
+
+               d->fxState[3].fx     = Ifx_Write;
+               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPUCW);
+               d->fxState[3].size   = sizeof(UInt);
+
+               d->fxState[4].fx     = Ifx_Write;
+               d->fxState[4].offset = offsetof(VexGuestX86State,guest_FC3210);
+               d->fxState[4].size   = sizeof(UInt);
+
+               stmt( IRStmt_Dirty(d) );
+
+               DIP("frstor %s", dis_buf);
+               break;
+            }
+
+            case 6: { /* FNSAVE m108 */
+               /* Uses dirty helper: x86g_do_FSAVE ( VexGuestX86State*, UInt ) */
+               IRDirty* d = unsafeIRDirty_0_N ( 
+                               0/*regparms*/, 
+                               "x86g_dirtyhelper_FSAVE", 
+                               &x86g_dirtyhelper_FSAVE,
+                               mkIRExprVec_1( mkexpr(addr) )
+                            );
+               d->needsBBP = True;
+               /* declare we're writing memory */
+               d->mFx   = Ifx_Write;
+               d->mAddr = mkexpr(addr);
+               d->mSize = 108;
+
+               /* declare we're reading guest state */
+	       d->nFxState = 5;
+
+               d->fxState[0].fx     = Ifx_Read;
+               d->fxState[0].offset = offsetof(VexGuestX86State,guest_FTOP);
+               d->fxState[0].size   = sizeof(UInt);
+
+               d->fxState[1].fx     = Ifx_Read;
+               d->fxState[1].offset = offsetof(VexGuestX86State,guest_FPREG);
+               d->fxState[1].size   = 8 * sizeof(ULong);
+
+               d->fxState[2].fx     = Ifx_Read;
+               d->fxState[2].offset = offsetof(VexGuestX86State,guest_FPTAG);
+               d->fxState[2].size   = 8 * sizeof(UChar);
+
+               d->fxState[3].fx     = Ifx_Read;
+               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPUCW);
+               d->fxState[3].size   = sizeof(UInt);
+
+               d->fxState[4].fx     = Ifx_Read;
+               d->fxState[4].offset = offsetof(VexGuestX86State,guest_FC3210);
+               d->fxState[4].size   = sizeof(UInt);
+
+               stmt( IRStmt_Dirty(d) );
+
+               DIP("fnsave %s", dis_buf);
+               break;
+            }
 
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));

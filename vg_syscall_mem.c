@@ -278,6 +278,63 @@ void msghdr_foreachfield (
                      (Addr)msg->msg_control, msg->msg_controllen );
 }
 
+static
+void must_be_readable_sockaddr ( ThreadState* tst,
+                                 Char *description,
+                                 struct sockaddr *sa, UInt salen )
+{
+   Char *outmsg = VG_(malloc) ( VG_AR_TRANSIENT, strlen( description ) + 30 );
+
+   VG_(sprintf) ( outmsg, description, ".sa_family" );
+   must_be_readable( tst, outmsg, (UInt) &sa->sa_family, sizeof (sa_family_t));
+               
+   switch (sa->sa_family) {
+                  
+      case AF_UNIX:
+         VG_(sprintf) ( outmsg, description, ".sun_path" );
+         must_be_readable_asciiz( tst, outmsg,
+            (UInt) ((struct sockaddr_un *) sa)->sun_path);
+         break;
+                     
+      case AF_INET:
+         VG_(sprintf) ( outmsg, description, ".sin_port" );
+         must_be_readable( tst, outmsg,
+            (UInt) &((struct sockaddr_in *) sa)->sin_port,
+            sizeof (in_port_t));
+         VG_(sprintf) ( outmsg, description, ".sin_addr" );
+         must_be_readable( tst, outmsg,
+            (UInt) &((struct sockaddr_in *) sa)->sin_addr,
+            sizeof (struct in_addr));
+         break;
+                           
+      case AF_INET6:
+         VG_(sprintf) ( outmsg, description, ".sin6_port" );
+         must_be_readable( tst, outmsg,
+            (UInt) &((struct sockaddr_in6 *) sa)->sin6_port,
+            sizeof (in_port_t));
+         VG_(sprintf) ( outmsg, description, ".sin6_flowinfo" );
+         must_be_readable( tst, outmsg,
+            (UInt) &((struct sockaddr_in6 *) sa)->sin6_flowinfo,
+            sizeof (uint32_t));
+         VG_(sprintf) ( outmsg, description, ".sin6_addr" );
+         must_be_readable( tst, outmsg,
+            (UInt) &((struct sockaddr_in6 *) sa)->sin6_addr,
+            sizeof (struct in6_addr));
+         VG_(sprintf) ( outmsg, description, ".sin6_scope_id" );
+         must_be_readable( tst, outmsg,
+            (UInt) &((struct sockaddr_in6 *) sa)->sin6_scope_id,
+            sizeof (uint32_t));
+         break;
+               
+      default:
+         VG_(sprintf) ( outmsg, description, "" );
+         must_be_readable( tst, outmsg, (UInt) sa, salen );
+         break;
+   }
+   
+   VG_(free) ( VG_AR_TRANSIENT, outmsg );
+}
+
 
 /* Records the current end of the data segment so we can make sense of
    calls to brk().  Initial value set by hdm_init_memory_audit(). */
@@ -2290,11 +2347,11 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                            int addrlen); */
                must_be_readable( tst, "socketcall.bind(args)", 
                                  arg2, 3*sizeof(Addr) );
-               must_be_readable( tst, "socketcall.bind(my_addr)", 
-                                 ((UInt*)arg2)[1], ((UInt*)arg2)[2] );
+               must_be_readable_sockaddr( tst, "socketcall.bind(my_addr.%s)",
+                  (struct sockaddr *) (((UInt*)arg2)[1]), ((UInt*)arg2)[2]);
                KERNEL_DO_SYSCALL(tid,res);
                break;
-
+               
             case SYS_LISTEN:
                /* int listen(int s, int backlog); */
                must_be_readable( tst, "socketcall.listen(args)", 
@@ -2336,9 +2393,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                must_be_readable( tst, "socketcall.sendto(msg)",
                                  ((UInt*)arg2)[1], /* msg */
                                  ((UInt*)arg2)[2]  /* len */ );
-               must_be_readable( tst, "socketcall.sendto(to)",
-                                 ((UInt*)arg2)[4], /* to */
-                                 ((UInt*)arg2)[5]  /* tolen */ );
+               must_be_readable_sockaddr( tst, "socketcall.sendto(to.%s)",
+                  (struct sockaddr *) (((UInt*)arg2)[4]), ((UInt*)arg2)[5]);
                KERNEL_DO_SYSCALL(tid,res);
                break;
 
@@ -2402,8 +2458,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                }
                break;
 
-            case SYS_CONNECT: {
-               struct sockaddr *sa;
+            case SYS_CONNECT:
                /* int connect(int sockfd, 
                               struct sockaddr *serv_addr, int addrlen ); */
                must_be_readable( tst, "socketcall.connect(args)", 
@@ -2411,21 +2466,11 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                must_be_readable( tst, "socketcall.connect(serv_addr.sa_family)",
                                  ((UInt*)arg2)[1], /* serv_addr */
                                  sizeof (sa_family_t));
-               sa = (struct sockaddr *) (((UInt*)arg2)[1]);
-               if (sa->sa_family == AF_UNIX)
-                  must_be_readable_asciiz( tst, 
-                     "socketcall.connect(serv_addr.sun_path)",
-                     (UInt) ((struct sockaddr_un *) sa)->sun_path);
-               /* XXX There probably should be more cases here since not
-                  all of the struct sockaddr_XXX must be initialized.  But
-                  wait until something pops up.  */
-               else
-                  must_be_readable( tst, "socketcall.connect(serv_addr)",
-                                    ((UInt*)arg2)[1], /* serv_addr */
-                                    ((UInt*)arg2)[2]  /* addrlen */ );
+               must_be_readable_sockaddr( tst,
+                  "socketcall.connect(serv_addr.%s)",
+                  (struct sockaddr *) (((UInt*)arg2)[1]), ((UInt*)arg2)[2]);
                KERNEL_DO_SYSCALL(tid,res);
                break;
-           }
 
             case SYS_SETSOCKOPT:
                /* int setsockopt(int s, int level, int optname, 

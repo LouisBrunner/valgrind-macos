@@ -43,12 +43,13 @@ static ULong storage_count_allocs_TOT = 0;
 void* LibVEX_Alloc ( Int nbytes ) 
 {
    vassert(vex_initdone);
-   vassert(nbytes > 0);
+   vassert(nbytes >= 0);
    if (vex_valgrind_support) {
       /* ugly hack */
       extern void* malloc ( int );
       return malloc(nbytes);
    } else {
+      if (nbytes == 0) nbytes = 8;
       nbytes = (nbytes + 7) & ~7;
       if (storage_used + nbytes > N_STORAGE_BYTES)
          vpanic("VEX storage exhausted.\n"

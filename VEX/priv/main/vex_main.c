@@ -138,6 +138,7 @@ TranslateResult LibVEX_Translate (
       LibVEX_Clear(False);
       return TransAccessFail;
    }
+   sanityCheckIRBB(irbb, Ity_I32);
 return TransOK;
    /* Get the thing instrumented. */
    if (instrument)

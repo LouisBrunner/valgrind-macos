@@ -235,7 +235,9 @@ void ppIRTypeEnv ( IRTypeEnv* env ) {
 void ppIRBB ( IRBB* bb )
 {
    IRStmt* s;
+   vex_printf("IRBB {\n");
    ppIRTypeEnv(bb->tyenv);
+   vex_printf("\n");
    for (s = bb->stmts; s; s = s->link) {
       vex_printf( "   ");
       ppIRStmt(s);
@@ -245,7 +247,7 @@ void ppIRBB ( IRBB* bb )
    ppIRJumpKind(bb->jumpkind);
    vex_printf( "} ");
    ppIRExpr( bb->next );
-   vex_printf( "\n");
+   vex_printf( "\n}\n");
 }
 
 
@@ -474,14 +476,118 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
 /* Checks:
 
    Everything is type-consistent.  No ill-typed anything.
+   The target address at the end of the BB is a 32- or 64-
+   bit expression, depending on the guest's word size.
 
    Each temp is assigned only once, before its uses.
-
-
  */
 
-void sanityCheckIRBB ( IRBB* bb )
+static
+__attribute((noreturn))
+void sanityCheckFail ( IRBB* bb, IRStmt* stmt, Char* what )
 {
+   vex_printf("\nIR SANITY CHECK FAILURE\n\n");
+   ppIRBB(bb);
+   if (stmt) {
+      vex_printf("\nIN STATEMENT:\n\n");
+      ppIRStmt(stmt);
+   }
+   vex_printf("\n\nERROR = %s\n\n", what );
+   vpanic("sanityCheckFail: exiting due to bad IR");
+}
+
+
+/* Traverse a Stmt/Expr, inspecting IRTemp uses.  Report any out of
+   range ones.  Report any which are read and for which the current
+   def_count is zero. */
+
+static
+void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
+{
+   Int i;
+   switch (expr->tag) {
+      case Iex_Get: 
+         break;
+      case Iex_Tmp: 
+         if (expr->Iex.Tmp.tmp < 0 || expr->Iex.Tmp.tmp >= bb->tyenv->types_used)
+            sanityCheckFail(bb,stmt, "out of range Temp in IRExpr");
+         if (def_counts[expr->Iex.Tmp.tmp] < 1)
+            sanityCheckFail(bb,stmt, "IRTemp def before use in IRExpr");
+         break;
+      case Iex_Binop:
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Binop.arg1,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Binop.arg2,def_counts);
+         break;
+      case Iex_Unop:
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Unop.arg,def_counts);
+         break;
+      case Iex_LDle:
+         useBeforeDef_Expr(bb,stmt,expr->Iex.LDle.addr,def_counts);
+         break;
+      case Iex_Const:
+         break;
+      case Iex_CCall:
+         for (i = 0; expr->Iex.CCall.args[i]; i++)
+            useBeforeDef_Expr(bb,stmt,expr->Iex.CCall.args[i],def_counts);
+         break;
+   }
+}
+
+static
+void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
+{
+   switch (stmt->tag) {
+      case Ist_Put:
+         if (stmt->Ist.Put.guard)
+            useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.guard,def_counts);
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.expr,def_counts);
+         break;
+      case Ist_Tmp:
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.Tmp.expr,def_counts);
+         break;
+      case Ist_STle:
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.STle.addr,def_counts);
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.STle.data,def_counts);
+         break;
+      case Ist_Exit:
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.Exit.cond,def_counts);
+         break;
+      default: 
+         vpanic("useBeforeDef_Stmt");
+   }
+}
+
+
+void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
+{
+   Int     i;
+   IRStmt* stmt;
+   Int     n_temps    = bb->tyenv->types_used;
+   Int*    def_counts = LibVEX_Alloc(n_temps * sizeof(Int));
+
+   vassert(guest_word_size == Ity_I32
+	   || guest_word_size == Ity_I64);
+
+   for (i = 0; i < n_temps; i++)
+      def_counts[i] = 0;
+
+   /* Count the defs of each temp.  Only one def is allowed.
+      Also, check that each used temp has already been defd. */
+   for (stmt = bb->stmts; stmt; stmt=stmt->link) {
+      useBeforeDef_Stmt(bb,stmt,def_counts);
+      if (stmt->tag == Ist_Tmp) {
+         if (stmt->Ist.Tmp.tmp < 0 || stmt->Ist.Tmp.tmp >= n_temps)
+            sanityCheckFail(bb, stmt, "Invalid temp in Tmp assignment");
+         def_counts[stmt->Ist.Tmp.tmp]++;
+         if (def_counts[stmt->Ist.Tmp.tmp] > 1)
+            sanityCheckFail(bb, stmt, "Tmp assigned more than once");
+      }
+   }
+
+   for (i = 0; i < n_temps; i++)
+     vex_printf("%d ", def_counts[i]);
+   vex_printf("\n");
+
 }
 
 /*---------------------------------------------------------------*/

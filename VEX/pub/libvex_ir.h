@@ -310,6 +310,8 @@ extern IRType     lookupIRTypeEnv ( IRTypeEnv*, IRTemp );
 /* What is the type of this expression? */
 extern IRType typeOfIRExpr ( IRTypeEnv*, IRExpr* );
 
+/* Sanity check a BB of IR */
+extern void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size );
 
 #endif /* ndef __LIBVEX_IR_H */
 

@@ -27,6 +27,13 @@
 #include <unistd.h>
 #include <string.h>
 
+/* ---------------------------------------------------------------------
+   Mini-configuration.
+   ------------------------------------------------------------------ */
+
+/* Set to 1 to see IGNORED debugging messages. */
+static int show_IGNORED = 0;
+
 
 /* ---------------------------------------------------------------------
    Helpers.  We have to be pretty self-sufficient.
@@ -85,6 +92,16 @@ void barf ( char* str )
    myexit(1);
 }
 
+
+static void ignored ( char* msg )
+{
+   char* ig = "vg_libpthread.so: IGNORED call to: ";
+   if (!show_IGNORED) return;
+   write(2, ig, strlen(ig));
+   write(2, msg, strlen(msg));
+   ig = "\n";
+   write(2, ig, strlen(ig));
+}
 
 
 /* ---------------------------------------------------------------------
@@ -152,8 +169,7 @@ int* __errno_location ( void )
 
 int pthread_mutexattr_init(pthread_mutexattr_t *attr)
 {
-   char* str = "IGNORED pthread_mutexattr_init\n";
-   write(2, str, strlen(str));
+   ignored("pthread_mutexattr_init");
    return 0;
 }
 
@@ -172,8 +188,7 @@ int pthread_mutex_init(pthread_mutex_t *mutex,
 
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 {
-  char* str = "IGNORED pthread_mutexattr_destroy\n";
-  write(2, str, strlen(str));
+  ignored("pthread_mutexattr_destroy");
   return 0;
 }
 
@@ -237,8 +252,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
 
 int pthread_setcanceltype(int type, int *oldtype)
 {
-   char* str = "IGNORED pthread_setcanceltype\n";
-   write(2, str, strlen(str));
+   ignored("pthread_setcanceltype");
    return 0;
 }
 
@@ -258,29 +272,25 @@ int pthread_cancel(pthread_t thread)
 int pthread_key_create(pthread_key_t *key,  
                        void  (*destr_function)  (void *))
 {
-   char* str = "IGNORED pthread_key_create\n";
-   write(2, str, strlen(str));
+   ignored("pthread_key_create");
    return 0;
 }
 
 int pthread_key_delete(pthread_key_t key)
 {
-   char* str = "IGNORED pthread_key_delete\n";
-   write(2, str, strlen(str));
+   ignored("pthread_key_delete");
    return 0;
 }
 
 int pthread_setspecific(pthread_key_t key, const void *pointer)
 {
-   char* str = "IGNORED pthread_setspecific\n";
-   write(2, str, strlen(str));
+   ignored("pthread_setspecific");
    return 0;
 }
 
 void * pthread_getspecific(pthread_key_t key)
 {
-   char* str = "IGNORED pthread_setspecific\n";
-   write(2, str, strlen(str));
+   ignored("pthread_setspecific");
    return NULL;
 }
 

@@ -2028,6 +2028,129 @@ static Bool collapseChain ( IRBB* bb, Int startHere,
 }
 
 
+static 
+IRExpr* findPutI ( IRBB* bb, Int startHere,
+                   IRArray* descrG, IRTemp tmpG, Int biasG )
+{
+  Int j, iters;
+  UInt minoffP, maxoffP, minoffG, maxoffG;
+  IRArray* descrP;
+  IRStmt* st;
+  IRTemp tmpP;
+  Int biasP;
+
+  if (0) {
+  vex_printf("\nfindPutI ");
+  ppIRArray(descrG);
+  vex_printf(" ");
+  ppIRTemp(tmpG);
+  vex_printf(" %d\n", biasG);
+  }
+
+  /* Scan backwards in bb from startHere to find a suitable
+     PutI binding for (descr, tmp, bias), if any. */
+   minoffG = descrG->base;
+   maxoffG = minoffG + descrG->nElems*sizeofIRType(descrG->elemTy) - 1;
+   vassert((minoffG & 0xFFFF0000) == 0);
+   vassert((maxoffG & 0xFFFF0000) == 0);
+   vassert(minoffG < maxoffG);
+
+  for (j = startHere; j >= 0; j--) {
+    st = bb->stmts[j];
+    if (!st) continue;
+
+    if (st->tag == Ist_Put) {
+      /* Non-indexed Put.  This can't give a binding, but we do need
+      to check it doesn't invalidate the search by overlapping any
+      part of the indexed guest state. */
+      minoffP = st->Ist.Put.offset;
+      maxoffP = minoffP + sizeofIRType(typeOfIRExpr(bb->tyenv,st->Ist.Put.data)) - 1;
+   vassert((minoffP & 0xFFFF0000) == 0);
+   vassert((maxoffP & 0xFFFF0000) == 0);
+   vassert(minoffP < maxoffP);
+   if (maxoffP < minoffG || maxoffG < minoffP) {
+     /* we're OK; keep going */
+     continue;
+   } else {
+     /* This Put potentially writes guest state that the GetI reads;
+	we must fail. */
+     return NULL;
+   }
+    }
+
+    if (st->tag == Ist_PutI) {
+
+      /* Indexed Put.  First off, do an invalidation check. */
+      descrP = st->Ist.PutI.descr;
+ minoffP = descrP->base;
+ maxoffP = minoffP + descrP->nElems*sizeofIRType(descrP->elemTy) - 1;
+   vassert((minoffP & 0xFFFF0000) == 0);
+   vassert((maxoffP & 0xFFFF0000) == 0);
+   vassert(minoffP < maxoffP);
+   if (maxoffP < minoffG || maxoffG < minoffP) {
+     /* This PutI definitely doesn't overlap.  Ignore it and keep going. */
+     continue;
+   }
+   /* This PutI potentially writes the same array that the GetI reads.
+It's safe to keep going provided we can show the PutI writes some 
+*other* element in the same array -- not this one. */
+   if (!eqIRArray(descrG, descrP))
+     /* The written array has different base, type or size from
+	the read array.  Better give up. */
+     return NULL;
+
+   if (st->Ist.PutI.off->tag != Iex_Tmp) {
+     ppIRStmt(st);
+     vpanic("vex iropt: findPutI: .off is not Tmp");
+   }
+   tmpP = st->Ist.PutI.off->Iex.Tmp.tmp;
+   if (tmpP != tmpG) 
+     /* We can't show that the base offsets are different.  Prior CSE and
+	Add/Sub-chain collapsing passes should have made them the same wherever possible.  Give up. */
+     return NULL;
+
+   biasP = st->Ist.PutI.bias;
+   /* So now we know that the GetI and PutI index the same array with the same base.  Are the offsets the same, modulo the array size?  Do this paranoidly. */
+   vassert(descrP->nElems == descrG->nElems);
+   iters = 0;
+   while (biasP < 0 || biasG < 0) {
+     biasP += descrP->nElems;
+     biasG += descrP->nElems;
+     iters++;
+     if (iters > 10)
+       vpanic("findPutI: iters");
+   }
+   vassert(biasP >= 0 && biasG >= 0);
+   biasP %= descrP->nElems;
+   biasG %= descrP->nElems;
+
+   /* Finally, biasP and biasG are normalised into the range
+      0 .. descrP/G->nElems - 1.  And so we can establish equality/non-equality. */
+
+   /* Now we know the PutI doesn't invalidate the search.  But does it
+      supply a binding for the GetI ? */
+   if (0) {
+   vex_printf("considering P ");
+   ppIRStmt(st);
+   vex_printf("\n");
+   }
+   if (biasP == biasG) {
+     /* Yup, found a replacement. */
+     return st->Ist.PutI.data;
+   }
+
+   /* else ... no, they don't match.  Keep going. */
+
+
+    }
+
+
+  } /* for */
+
+  return NULL;
+}
+
+
 /* The main function.  Needs renaming. */
 
 static void track_deltas_BB ( IRBB* bb )
@@ -2127,6 +2250,36 @@ static void track_deltas_BB ( IRBB* bb )
 
    } /* for */
 
+   /* ----------------------- */
+   /* PutI -> GetI forwarding */
+
+   for (i = bb->stmts_used-1; i >= 0; i--) {
+      st = bb->stmts[i];
+      if (!st)
+         continue;
+
+      if (st->tag == Ist_Tmp
+          && st->Ist.Tmp.data->tag == Iex_GetI
+          && st->Ist.Tmp.data->Iex.GetI.off->tag == Iex_Tmp) {
+	IRArray* descr = st->Ist.Tmp.data->Iex.GetI.descr;
+	IRTemp   tmp   = st->Ist.Tmp.data->Iex.GetI.off->Iex.Tmp.tmp;
+	Int      bias  = st->Ist.Tmp.data->Iex.GetI.bias;
+	IRExpr* replacement
+	  = findPutI(bb, i-1, descr, tmp, bias);
+	if (replacement && isAtom(replacement)) {
+	  if (DEBUG_IROPT) {
+	  vex_printf("PiGi: "); 
+          ppIRExpr(st->Ist.Tmp.data);
+	  vex_printf(" -> ");
+	  ppIRExpr(replacement);
+	  vex_printf("\n");
+	  }
+	  bb->stmts[i] = IRStmt_Tmp(st->Ist.Tmp.tmp,
+				    replacement);
+	}
+      }
+   }
+   
 }
 
 /*---------------------------------------------------------------*/

@@ -1288,6 +1288,13 @@ Bool eqIRConst ( IRConst* c1, IRConst* c2 )
    }
 }
 
+Bool eqIRArray ( IRArray* descr1, IRArray* descr2 )
+{
+   return descr1->base == descr2->base 
+          && descr1->elemTy == descr2->elemTy
+          && descr1->nElems == descr2->nElems;
+}
+
 Int sizeofIRType ( IRType ty )
 {
    switch (ty) {

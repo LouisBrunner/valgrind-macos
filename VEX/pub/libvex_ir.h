@@ -81,6 +81,7 @@ typedef
 extern IRArray* mkIRArray ( Int, IRType, Int );
 
 extern void ppIRArray ( IRArray* );
+extern Bool eqIRArray ( IRArray*, IRArray* );
 
 
 /* ------------------ Temporaries ------------------ */

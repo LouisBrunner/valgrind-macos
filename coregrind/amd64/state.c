@@ -94,11 +94,11 @@ void VGA_(cleanup_thread) ( ThreadArchState *arch )
 void VGA_(setup_child) ( /*OUT*/ ThreadArchState *child, 
                          /*IN*/  ThreadArchState *parent )
 {  
-   I_die_here;
-#if 0
    /* We inherit our parent's guest state. */
    child->vex = parent->vex;
    child->vex_shadow = parent->vex_shadow;
+#if 0
+   /* TODO: inherit the thread's LDT / GDT ? */
    /* We inherit our parent's LDT. */
    if (parent->vex.guest_LDT == (HWord)NULL) {
       /* We hope this is the common case. */

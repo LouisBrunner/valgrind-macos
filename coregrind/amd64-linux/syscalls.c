@@ -182,26 +182,6 @@ void VGA_(client_syscall)(Int syscallno, ThreadState *tst,
  */
 #define FILL	0xdeadbeef
 
-
-/* NB: this is identical the the x86 version. */
-/* Return how many bytes of this stack have not been used */
-Int VGA_(stack_unused)(ThreadId tid)
-{
-   ThreadState *tst = VG_(get_ThreadState)(tid);
-   UInt *p;
-
-   for (p = tst->os_state.stack; 
-	p && (p < (tst->os_state.stack + tst->os_state.stacksize)); 
-	p++)
-      if (*p != FILL)
-	 break;
-
-   if (0)
-      VG_(printf)("p=%p %x tst->os_state.stack=%p\n", p, *p, tst->os_state.stack);
-
-   return (p - tst->os_state.stack) * sizeof(*p);
-}
-
 static ULong *allocstack(ThreadId tid)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
@@ -231,11 +211,30 @@ static ULong *allocstack(ThreadId tid)
    rsp = (ULong*)pUInt;
 
    if (0)
-      VG_(printf)("stack for tid %d at %p (%x); esp=%p\n",
+      VG_(printf)("stack for tid %d at %p (%x); rsp=%p\n",
 		  tid, tst->os_state.stack, *tst->os_state.stack,
 		  rsp);
 
    return rsp;
+}
+
+/* NB: this is identical the the x86 version. */
+/* Return how many bytes of this stack have not been used */
+Int VGA_(stack_unused)(ThreadId tid)
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   UInt *p;
+
+   for (p = tst->os_state.stack; 
+	p && (p < (tst->os_state.stack + tst->os_state.stacksize)); 
+	p++)
+      if (*p != FILL)
+	 break;
+
+   if (0)
+      VG_(printf)("p=%p %x tst->os_state.stack=%p\n", p, *p, tst->os_state.stack);
+
+   return (p - tst->os_state.stack) * sizeof(*p);
 }
 
 
@@ -259,6 +258,193 @@ void VGA_(main_thread_wrapper)(ThreadId tid)
    vg_assert(0);
 }
 
+static Int start_thread(void *arg)
+{
+   ThreadState *tst = (ThreadState *)arg;
+   ThreadId tid = tst->tid;
+
+   VGA_(thread_wrapper)(tid);
+
+   /* OK, thread is dead; this releases the run lock */
+   VG_(exit_thread)(tid);
+
+   vg_assert(tst->status == VgTs_Zombie);
+
+   /* Poke the reaper */
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "Sending SIGVGCHLD to master tid=%d lwp=%d", 
+		   VG_(master_tid), VG_(threads)[VG_(master_tid)].os_state.lwpid);
+
+   VG_(tkill)(VG_(threads)[VG_(master_tid)].os_state.lwpid, VKI_SIGVGCHLD);
+
+   /* We have to use this sequence to terminate the thread to prevent
+      a subtle race.  If VG_(exit_thread)() had left the ThreadState
+      as Empty, then it could have been reallocated, reusing the stack
+      while we're doing these last cleanups.  Instead,
+      VG_(exit_thread) leaves it as Zombie to prevent reallocation.
+      We need to make sure we don't touch the stack between marking it
+      Empty and exiting.  Hence the assembler. */
+   asm volatile (
+      "movl	%1, %0\n"	/* set tst->status = VgTs_Empty */
+      "movq	%2, %%rax\n"    /* set %rax = __NR_exit */
+      "movq	%3, %%rdi\n"    /* set %rdi = tst->os_state.exitcode */
+      "syscall\n"		/* exit(tst->os_state.exitcode) */
+      : "=m" (tst->status)
+      : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
+
+   VG_(core_panic)("Thread exit failed?\n");
+}
+
+/* 
+   clone() handling
+
+   When a client clones, we need to keep track of the new thread.  This means:
+   1. allocate a ThreadId+ThreadState+stack for the the thread
+
+   2. initialize the thread's new VCPU state
+
+   3. create the thread using the same args as the client requested,
+   but using the scheduler entrypoint for EIP, and a separate stack
+   for ESP.
+ */
+static Int do_clone(ThreadId ptid, 
+		    UInt flags, Addr rsp, 
+		    Int *parent_tidptr, 
+		    Int *child_tidptr, 
+		    Addr tlsaddr)
+{
+   static const Bool debug = False;
+
+   ThreadId ctid = VG_(alloc_ThreadState)();
+   ThreadState *ptst = VG_(get_ThreadState)(ptid);
+   ThreadState *ctst = VG_(get_ThreadState)(ctid);
+   ULong *stack;
+   Segment *seg;
+   Int ret;
+   vki_sigset_t blockall, savedmask;
+
+   VG_(sigfillset)(&blockall);
+
+   vg_assert(VG_(is_running_thread)(ptid));
+   vg_assert(VG_(is_valid_tid)(ctid));
+
+   stack = allocstack(ctid);
+
+   /* Copy register state
+
+      Both parent and child return to the same place, and the code
+      following the clone syscall works out which is which, so we
+      don't need to worry about it.
+
+      The parent gets the child's new tid returned from clone, but the
+      child gets 0.
+
+      If the clone call specifies a NULL rsp for the new thread, then
+      it actually gets a copy of the parent's rsp.
+   */
+   VGA_(setup_child)( &ctst->arch, &ptst->arch );
+
+   PLATFORM_SET_SYSCALL_RESULT(ctst->arch, 0);
+   if (rsp != 0)
+      ctst->arch.vex.guest_RSP = rsp;
+
+   ctst->os_state.parent = ptid;
+   ctst->os_state.clone_flags = flags;
+   ctst->os_state.parent_tidptr = parent_tidptr;
+   ctst->os_state.child_tidptr = child_tidptr;
+
+   /* inherit signal mask */
+   ctst->sig_mask = ptst->sig_mask;
+   ctst->tmp_sig_mask = ptst->sig_mask;
+
+   /* We don't really know where the client stack is, because its
+      allocated by the client.  The best we can do is look at the
+      memory mappings and try to derive some useful information.  We
+      assume that esp starts near its highest possible value, and can
+      only go down to the start of the mmaped segment. */
+   seg = VG_(find_segment)((Addr)rsp);
+   if (seg) {
+      ctst->stack_base = seg->addr;
+      ctst->stack_highest_word = (Addr)PGROUNDUP(rsp);
+      ctst->stack_size = ctst->stack_highest_word - ctst->stack_base;
+
+      if (debug)
+	 VG_(printf)("tid %d: guessed client stack range %p-%p\n",
+		     ctid, seg->addr, PGROUNDUP(rsp));
+   } else {
+      VG_(message)(Vg_UserMsg, "!? New thread %d starts with RSP(%p) unmapped\n",
+		   ctid, rsp);
+      ctst->stack_base = 0;
+      ctst->stack_size = 0;
+   }
+
+   if (flags & VKI_CLONE_SETTLS) {
+      if (debug)
+	 VG_(printf)("clone child has SETTLS: tls at %p\n", tlsaddr);
+      ctst->arch.vex.guest_FS_ZERO = tlsaddr;
+   }
+
+   flags &= ~VKI_CLONE_SETTLS;
+
+   /* start the thread with everything blocked */
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, &savedmask);
+
+   /* Create the new thread */
+   ret = VG_(clone)(start_thread, stack, flags, &VG_(threads)[ctid],
+		    child_tidptr, parent_tidptr, NULL);
+
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &savedmask, NULL);
+
+   if (ret < 0) {
+      /* clone failed */
+      VGA_(cleanup_thread)(&ctst->arch);
+      ctst->status = VgTs_Empty;
+   }
+
+   return ret;
+}
+
+/* Do a clone which is really a fork() */
+static Int do_fork_clone(ThreadId tid, UInt flags, Addr rsp, Int *parent_tidptr, Int *child_tidptr)
+{
+   vki_sigset_t fork_saved_mask;
+   vki_sigset_t mask;
+   Int ret;
+
+   if (flags & (VKI_CLONE_SETTLS | VKI_CLONE_FS | VKI_CLONE_VM | VKI_CLONE_FILES | VKI_CLONE_VFORK))
+      return -VKI_EINVAL;
+
+   /* Block all signals during fork, so that we can fix things up in
+      the child without being interrupted. */
+   VG_(sigfillset)(&mask);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
+
+   VG_(do_atfork_pre)(tid);
+
+   /* Since this is the fork() form of clone, we don't need all that
+      VG_(clone) stuff */
+   ret = VG_(do_syscall5)(__NR_clone, flags, (UWord)NULL, (UWord)parent_tidptr, 
+                                             (UWord)NULL, (UWord)child_tidptr);
+
+   if (ret == 0) {
+      /* child */
+      VG_(do_atfork_child)(tid);
+
+      /* restore signal mask */
+      VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
+   } else if (ret > 0) {
+      /* parent */
+      if (VG_(clo_trace_syscalls))
+	  VG_(printf)("   clone(fork): process %d created child %d\n", VG_(getpid)(), ret);
+
+      VG_(do_atfork_parent)(tid);
+
+      /* restore signal mask */
+      VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
+   }
+
+   return ret;
+}
 
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for AMD64/Linux-specific syscalls
@@ -269,6 +455,84 @@ void VGA_(main_thread_wrapper)(ThreadId tid)
 
 #define PRE(name, f)     PRE_TEMPLATE(static, amd64_linux, name, f)
 #define POST(name)      POST_TEMPLATE(static, amd64_linux, name)
+
+PRE(sys_clone, Special)
+{
+   UInt cloneflags;
+
+   PRINT("sys_clone ( %x, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(int, "clone",
+                 unsigned long, flags,
+                 void *, child_stack,
+                 int *, parent_tidptr,
+                 int *, child_tidptr,
+                 void *, tlsaddr);
+
+   if (ARG1 & VKI_CLONE_PARENT_SETTID) {
+      PRE_MEM_WRITE("clone(parent_tidptr)", ARG3, sizeof(Int));
+      if (!VG_(is_addressable)(ARG3, sizeof(Int), VKI_PROT_WRITE)) {
+         SET_RESULT( -VKI_EFAULT );
+         return;
+      }
+   }
+   if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID)) {
+      PRE_MEM_WRITE("clone(child_tidptr)", ARG4, sizeof(Int));
+      if (!VG_(is_addressable)(ARG4, sizeof(Int), VKI_PROT_WRITE)) {
+         SET_RESULT( -VKI_EFAULT );
+         return;
+      }
+   }
+
+   cloneflags = ARG1;
+
+   if (!VG_(client_signal_OK)(ARG1 & VKI_CSIGNAL)) {
+      SET_RESULT( -VKI_EINVAL );
+      return;
+   }
+
+   /* Only look at the flags we really care about */
+   switch(cloneflags & (VKI_CLONE_VM | VKI_CLONE_FS | VKI_CLONE_FILES | VKI_CLONE_VFORK)) {
+   case VKI_CLONE_VM | VKI_CLONE_FS | VKI_CLONE_FILES:
+      /* thread creation */
+      SET_RESULT(do_clone(tid,
+                          ARG1,         /* flags */
+                          (Addr)ARG2,   /* child ESP */
+                          (Int *)ARG3,  /* parent_tidptr */
+                          (Int *)ARG4,  /* child_tidptr */
+                          (Addr)ARG5)); /* set_tls */
+      break;
+
+   case VKI_CLONE_VFORK | VKI_CLONE_VM: /* vfork */
+      /* FALLTHROUGH - assume vfork == fork */
+      cloneflags &= ~(VKI_CLONE_VFORK | VKI_CLONE_VM);
+
+   case 0: /* plain fork */
+      SET_RESULT(do_fork_clone(tid,
+                               cloneflags,              /* flags */
+                               (Addr)ARG2,      /* child ESP */
+                               (Int *)ARG3,     /* parent_tidptr */
+                               (Int *)ARG4));   /* child_tidptr */
+      break;
+
+   default:
+      /* should we just ENOSYS? */
+      VG_(message)(Vg_UserMsg, "Unsupported clone() flags: %x", ARG1);
+      VG_(unimplemented)
+         ("Valgrind does not support general clone().  The only supported uses "
+          "are via a threads library, fork, or vfork.");
+   }
+
+   if (!VG_(is_kerror)(RES)) {
+      if (ARG1 & VKI_CLONE_PARENT_SETTID)
+         POST_MEM_WRITE(ARG3, sizeof(Int));
+      if (ARG1 & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID))
+         POST_MEM_WRITE(ARG4, sizeof(Int));
+
+      /* Thread creation was successful; let the child have the chance
+         to run */
+      VG_(vg_yield)();
+   }
+}
 
 PRE(sys_arch_prctl, 0)
 {
@@ -540,7 +804,7 @@ POST(sys_socketcall)
 PRE(sys_setsockopt, 0)
 {
    PRINT("sys_setsockopt ( %d, %d, %d, %p, %d ",ARG1,ARG2,ARG3,ARG4,ARG5);
-   PRE_REG_READ5(int, "setsockopt",
+   PRE_REG_READ5(long, "setsockopt",
                  int, s, int, level, int, optname,
                  const void *, optval, int, optlen);
    VG_(generic_PRE_sys_setsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
@@ -549,15 +813,29 @@ PRE(sys_setsockopt, 0)
 PRE(sys_connect, MayBlock)
 {
    PRINT("sys_connect ( %d, %p, %d )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "connect",
+   PRE_REG_READ3(long, "connect",
                  int, sockfd, struct sockaddr *, serv_addr, int, addrlen);
    VG_(generic_PRE_sys_connect)(tid, ARG1,ARG2,ARG3);
+}
+
+PRE(sys_accept, MayBlock)
+{
+   PRINT("sys_accept ( %d, %p, %d )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "accept",
+                 int, s, struct sockaddr *, addr, int, *addrlen);
+   VG_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
+}
+
+POST(sys_accept)
+{
+   UWord r = VG_(generic_POST_sys_accept)(tid, RES,ARG1,ARG2,ARG3);
+   SET_RESULT(r);
 }
 
 PRE(sys_sendto, MayBlock)
 {
    PRINT("sys_sendto ( %d, %s, %d, %u, %p, %d )",ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
-   PRE_REG_READ6(int, "sendto",
+   PRE_REG_READ6(long, "sendto",
                  int, s, const void *, msg, int, len, 
                  unsigned int, flags, 
                  const struct sockaddr *, to, int, tolen);
@@ -567,7 +845,7 @@ PRE(sys_sendto, MayBlock)
 PRE(sys_recvfrom, MayBlock)
 {
    PRINT("sys_recvfrom ( %d, %p, %d, %u, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
-   PRE_REG_READ6(int, "recvfrom",
+   PRE_REG_READ6(long, "recvfrom",
                  int, s, void *, buf, int, len, unsigned int, flags,
                  struct sockaddr *, from, int *, fromlen);
    VG_(generic_PRE_sys_recvfrom)(tid, ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
@@ -580,7 +858,7 @@ POST(sys_recvfrom)
 PRE(sys_sendmsg, MayBlock)
 {
    PRINT("sys_sendmsg ( %d, %p, %d )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "sendmsg",
+   PRE_REG_READ3(long, "sendmsg",
                  int, s, const struct msghdr *, msg, int, flags);
    VG_(generic_PRE_sys_sendmsg)(tid, ARG1,ARG2);
 }
@@ -588,7 +866,7 @@ PRE(sys_sendmsg, MayBlock)
 PRE(sys_recvmsg, MayBlock)
 {
    PRINT("sys_recvmsg ( %d, %p, %d )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "recvmsg", int, s, struct msghdr *, msg, int, flags);
+   PRE_REG_READ3(long, "recvmsg", int, s, struct msghdr *, msg, int, flags);
    VG_(generic_PRE_sys_recvmsg)(tid, ARG1,ARG2);
 }
 POST(sys_recvmsg)
@@ -602,10 +880,24 @@ PRE(sys_shutdown, MayBlock)
    PRE_REG_READ2(int, "shutdown", int, s, int, how);
 }
 
-PRE(sys_getsockname, MayBlock)
+PRE(sys_bind, 0)
+{
+   PRINT("sys_bind ( %d, %p, %d )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "bind",
+                 int, sockfd, struct sockaddr *, my_addr, int, addrlen);
+   VG_(generic_PRE_sys_bind)(tid, ARG1,ARG2,ARG3);
+}
+
+PRE(sys_listen, 0)
+{
+   PRINT("sys_listen ( %d, %d )",ARG1,ARG2);
+   PRE_REG_READ2(long, "listen", int, s, int, backlog);
+}
+
+PRE(sys_getsockname, 0)
 {
    PRINT("sys_getsockname ( %d, %p, %p )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "getsockname",
+   PRE_REG_READ3(long, "getsockname",
                  int, s, struct sockaddr *, name, int *, namelen);
    VG_(generic_PRE_sys_getsockname)(tid, ARG1,ARG2,ARG3);
 }
@@ -614,10 +906,10 @@ POST(sys_getsockname)
    VG_(generic_POST_sys_getsockname)(tid, RES,ARG1,ARG2,ARG3);
 }
 
-PRE(sys_getpeername, MayBlock)
+PRE(sys_getpeername, 0)
 {
    PRINT("sys_getpeername ( %d, %p, %p )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "getpeername",
+   PRE_REG_READ3(long, "getpeername",
                  int, s, struct sockaddr *, name, int *, namelen);
    VG_(generic_PRE_sys_getpeername)(tid, ARG1,ARG2,ARG3);
 }
@@ -626,10 +918,10 @@ POST(sys_getpeername)
    VG_(generic_POST_sys_getpeername)(tid, RES,ARG1,ARG2,ARG3);
 }
 
-PRE(sys_socketpair, MayBlock)
+PRE(sys_socketpair, 0)
 {
    PRINT("sys_socketpair ( %d, %d, %d, %p )",ARG1,ARG2,ARG3,ARG4);
-   PRE_REG_READ4(int, "socketpair",
+   PRE_REG_READ4(long, "socketpair",
                  int, d, int, type, int, protocol, int [2], sv);
    VG_(generic_PRE_sys_socketpair)(tid, ARG1,ARG2,ARG3,ARG4);
 }
@@ -641,13 +933,13 @@ POST(sys_socketpair)
 PRE(sys_semget, 0)
 {
    PRINT("sys_semget ( %d, %d, %d )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "semget", key_t, key, int, nsems, int, semflg);
+   PRE_REG_READ3(long, "semget", key_t, key, int, nsems, int, semflg);
 }
 
 PRE(sys_semop, MayBlock)
 {
    PRINT("sys_semop ( %d, %p, %u )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "semop",
+   PRE_REG_READ3(long, "semop",
                  int, semid, struct sembuf *, sops, unsigned, nsoops);
    VG_(generic_PRE_sys_semop)(tid, ARG1,ARG2,ARG3);
 }
@@ -655,7 +947,7 @@ PRE(sys_semop, MayBlock)
 PRE(sys_semtimedop, MayBlock)
 {
    PRINT("sys_semtimedop ( %d, %p, %u, %p )",ARG1,ARG2,ARG3,ARG4);
-   PRE_REG_READ4(int, "semtimedop",
+   PRE_REG_READ4(long, "semtimedop",
                  int, semid, struct sembuf *, sops, unsigned, nsoops,
                  struct timespec *, timeout);
    VG_(generic_PRE_sys_semtimedop)(tid, ARG1,ARG2,ARG3,ARG4);
@@ -667,25 +959,25 @@ PRE(sys_semctl, 0)
    case VKI_IPC_INFO:
    case VKI_SEM_INFO:
       PRINT("sys_semctl ( %d, %d, %d, %p )",ARG1,ARG2,ARG3,ARG4);
-      PRE_REG_READ4(int, "semctl",
+      PRE_REG_READ4(long, "semctl",
                     int, semid, int, semnum, int, cmd, struct seminfo *, arg);
       break;
    case VKI_IPC_STAT:
    case VKI_SEM_STAT:
    case VKI_IPC_SET:
       PRINT("sys_semctl ( %d, %d, %d, %p )",ARG1,ARG2,ARG3,ARG4);
-      PRE_REG_READ4(int, "semctl",
+      PRE_REG_READ4(long, "semctl",
                     int, semid, int, semnum, int, cmd, struct semid_ds *, arg);
       break;
    case VKI_GETALL:
    case VKI_SETALL:
       PRINT("sys_semctl ( %d, %d, %d, %p )",ARG1,ARG2,ARG3,ARG4);
-      PRE_REG_READ4(int, "semctl",
+      PRE_REG_READ4(long, "semctl",
                     int, semid, int, semnum, int, cmd, unsigned short *, arg);
       break;
    default:
       PRINT("sys_semctl ( %d, %d, %d )",ARG1,ARG2,ARG3);
-      PRE_REG_READ3(int, "semctl",
+      PRE_REG_READ3(long, "semctl",
                     int, semid, int, semnum, int, cmd);
       break;
    }
@@ -700,13 +992,13 @@ POST(sys_semctl)
 PRE(sys_msgget, 0)
 {
    PRINT("sys_msgget ( %d, %d )",ARG1,ARG2);
-   PRE_REG_READ2(int, "msgget", key_t, key, int, msgflg);
+   PRE_REG_READ2(long, "msgget", key_t, key, int, msgflg);
 }
 
 PRE(sys_msgsnd, 0)
 {
    PRINT("sys_msgsnd ( %d, %p, %d, %d )",ARG1,ARG2,ARG3,ARG4);
-   PRE_REG_READ4(int, "msgsnd",
+   PRE_REG_READ4(long, "msgsnd",
                  int, msqid, struct msgbuf *, msgp, size_t, msgsz, int, msgflg);
    VG_(generic_PRE_sys_msgsnd)(tid, ARG1,ARG2,ARG3,ARG4);
       /* if ((ARG4 & VKI_IPC_NOWAIT) == 0)
@@ -717,7 +1009,7 @@ PRE(sys_msgsnd, 0)
 PRE(sys_msgrcv, 0)
 {
    PRINT("sys_msgrcv ( %d, %p, %d, %d, %d )",ARG1,ARG2,ARG3,ARG4,ARG5);
-   PRE_REG_READ5(ssize_t, "msgrcv",
+   PRE_REG_READ5(long, "msgrcv",
                  int, msqid, struct msgbuf *, msgp, size_t, msgsz,
                  long, msgytp, int, msgflg);
    VG_(generic_PRE_sys_msgrcv)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
@@ -734,7 +1026,7 @@ POST(sys_msgrcv)
 PRE(sys_msgctl, 0)
 {
    PRINT("sys_msgctl ( %d, %d, %p )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "msgctl",
+   PRE_REG_READ3(long, "msgctl",
                  int, msqid, int, cmd, struct msqid_ds *, buf);
    VG_(generic_PRE_sys_msgctl)(tid, ARG1,ARG2,ARG3);
 }
@@ -747,13 +1039,13 @@ POST(sys_msgctl)
 PRE(sys_shmget, 0)
 {
    PRINT("sys_shmget ( %d, %d, %d )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "shmget", key_t, key, size_t, size, int, shmflg);
+   PRE_REG_READ3(long, "shmget", key_t, key, size_t, size, int, shmflg);
 }
 
 PRE(wrap_sys_shmat, 0)
 {
    PRINT("wrap_sys_shmat ( %d, %p, %d )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(void *, "shmat",
+   PRE_REG_READ3(long, "shmat",
                  int, shmid, const void *, shmaddr, int, shmflg);
    ARG2 = VG_(generic_PRE_sys_shmat)(tid, ARG1,ARG2,ARG3);
    if (ARG2 == 0)
@@ -768,7 +1060,7 @@ POST(wrap_sys_shmat)
 PRE(sys_shmdt, 0)
 {
    PRINT("sys_shmdt ( %p )",ARG1);
-   PRE_REG_READ1(int, "shmdt", const void *, shmaddr);
+   PRE_REG_READ1(long, "shmdt", const void *, shmaddr);
    if (!VG_(generic_PRE_sys_shmdt)(tid, ARG1))
       SET_RESULT( -VKI_EINVAL );
 }
@@ -781,7 +1073,7 @@ POST(sys_shmdt)
 PRE(sys_shmctl, 0)
 {
    PRINT("sys_shmctl ( %d, %d, %p )",ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "shmctl",
+   PRE_REG_READ3(long, "shmctl",
                  int, shmid, int, cmd, struct shmid_ds *, buf);
    VG_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
 }
@@ -852,9 +1144,9 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    PLAXY(__NR_shmctl,            sys_shmctl),         // 31 
    GENXY(__NR_dup,               sys_dup),            // 32 
    GENXY(__NR_dup2,              sys_dup2),           // 33 
-   //   (__NR_pause,             sys_pause),          // 34 
+   GENX_(__NR_pause,             sys_pause),          // 34 
 
-   //   (__NR_nanosleep,         sys_nanosleep),      // 35 
+   GENXY(__NR_nanosleep,         sys_nanosleep),      // 35 
    //   (__NR_getitimer,         sys_getitimer),      // 36 
    GENX_(__NR_alarm,             sys_alarm),          // 37 
    //   (__NR_setitimer,         sys_setitimer),      // 38 
@@ -863,25 +1155,25 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_sendfile,          sys_sendfile64),     // 40 
    PLAXY(__NR_socket,            sys_socketcall),     // 41 
    PLAX_(__NR_connect,           sys_connect),        // 42
-   //   (__NR_accept,            sys_accept),         // 43 
+   PLAXY(__NR_accept,            sys_accept),         // 43 
    PLAX_(__NR_sendto,            sys_sendto),         // 44 
 
    PLAXY(__NR_recvfrom,          sys_recvfrom),       // 45 
    PLAX_(__NR_sendmsg,           sys_sendmsg),        // 46 
    PLAXY(__NR_recvmsg,           sys_recvmsg),        // 47
    PLAX_(__NR_shutdown,          sys_shutdown),       // 48 
-   //   (__NR_bind,              sys_bind),           // 49 
+   PLAX_(__NR_bind,              sys_bind),           // 49 
 
-   //   (__NR_listen,            sys_listen),         // 50 
+   PLAX_(__NR_listen,            sys_listen),         // 50 
    PLAXY(__NR_getsockname,       sys_getsockname),    // 51 
    PLAXY(__NR_getpeername,       sys_getpeername),    // 52 
    PLAXY(__NR_socketpair,        sys_socketpair),     // 53 
    PLAX_(__NR_setsockopt,        sys_setsockopt),     // 54
 
    //   (__NR_getsockopt,        sys_getsockopt),     // 55 
-   //   (__NR_clone,             stub_clone),         // 56 
-   //   (__NR_fork,              stub_fork),          // 57 
-   //   (__NR_vfork,             stub_vfork),         // 58 
+   PLAX_(__NR_clone,             sys_clone),          // 56 
+   GENX_(__NR_fork,              sys_fork),           // 57 
+   GENX_(__NR_vfork,             sys_fork),           // 58 treat as fork
    GENX_(__NR_execve,            sys_execve),         // 59 
 
    GENX_(__NR_exit,              sys_exit),           // 60

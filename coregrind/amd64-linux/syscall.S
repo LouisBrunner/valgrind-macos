@@ -79,6 +79,16 @@ VG_(do_syscall):
 	    void*  arg		in %rcx
 	    pid_t* child_tid	in %r8
 	    pid_t* parent_tid	in %r9
+	    void*  tls_ptr      at 8(%rsp)
+
+	System call requires:
+
+	    int    flags	in %rdi
+	    void*  child_stack	in %rsi
+	    pid_t* parent_tid	in %rdx
+	    pid_t* child_tid	in %r10
+	    void*  tls_ptr      in %r8
+        
  */
 .globl VG_(clone)
 VG_(clone):
@@ -88,11 +98,12 @@ VG_(clone):
         movq    %rdi, 0(%rsi)           // save fn 
         
         // setup syscall
-        movl    $__NR_clone, %eax       // syscall number
-        movq    %rdx, %rdi              // syscall arg1: flags
+        movq    $__NR_clone, %rax       // syscall number
+        movq    %rdx,     %rdi          // syscall arg1: flags
         // %rsi already setup           // syscall arg2: child_stack
-        movq    %r9,  %rdx              // syscall arg3: parent_tid
-        movq    %r8,  %rcx              // syscall arg4: child_tid
+        movq    %r9,      %rdx          // syscall arg3: parent_tid
+        movq    %r8,      %r10          // syscall arg4: child_tid
+        movq    8(%rsp),  %r8           // syscall arg5: tls_ptr
 
         syscall                         // clone()
 

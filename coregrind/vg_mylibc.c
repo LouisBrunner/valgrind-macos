@@ -85,7 +85,7 @@ Int VG_(sigaddset)( vki_sigset_t* set, Int signum )
    if (signum < 1 || signum > _VKI_NSIG)
       return -1;
    signum--;
-   set->sig[signum / _VKI_NSIG_BPW] |= (1 << (signum % _VKI_NSIG_BPW));
+   set->sig[signum / _VKI_NSIG_BPW] |= (1UL << (signum % _VKI_NSIG_BPW));
    return 0;
 }
 
@@ -96,7 +96,7 @@ Int VG_(sigdelset)( vki_sigset_t* set, Int signum )
    if (signum < 1 || signum > _VKI_NSIG)
       return -1;
    signum--;
-   set->sig[signum / _VKI_NSIG_BPW] &= ~(1 << (signum % _VKI_NSIG_BPW));
+   set->sig[signum / _VKI_NSIG_BPW] &= ~(1UL << (signum % _VKI_NSIG_BPW));
    return 0;
 }
 

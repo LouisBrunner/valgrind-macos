@@ -471,10 +471,12 @@ void VG_(save_thread_state) ( ThreadId tid )
    /* We don't copy out the LDT entry, because it can never be changed
       by the normal actions of the thread, only by the modify_ldt
       syscall, in which case we will correctly be updating
-      VG_(threads)[tid].ldt. */
+      VG_(threads)[tid].ldt.  This printf happens iff the following
+      assertion fails. */
    if ((void*)VG_(threads)[tid].ldt != (void*)VG_(baseBlock)[VGOFF_(ldt)])
       VG_(printf)("VG_(threads)[%d].ldt=%p  VG_(baseBlock)[VGOFF_(ldt)]=%p\n",
-		  tid, (void*)VG_(threads)[tid].ldt, (void*)VG_(baseBlock)[VGOFF_(ldt)]);
+		  tid, (void*)VG_(threads)[tid].ldt, 
+                       (void*)VG_(baseBlock)[VGOFF_(ldt)]);
 
    vg_assert((void*)VG_(threads)[tid].ldt 
              == (void*)VG_(baseBlock)[VGOFF_(ldt)]);

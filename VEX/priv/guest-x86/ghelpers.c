@@ -739,7 +739,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
       }
 
       if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNZ)) {
-         /* byte sub/cmp, then Z --> test dst!=src */
+         /* byte sub/cmp, then NZ --> test dst!=src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpNE8, 
                            unop(Iop_32to8,cc_dep1), 
@@ -748,10 +748,11 @@ IRExpr* x86guest_spechelper ( Char* function_name,
       if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNBE)) {
          /* long sub/cmp, then NBE (unsigned greater than)
             --> test src <=u dst */
+         /* Note, args are opposite way round from the usual */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32U, 
-                           binop(Iop_And32,cc_dep1,mkU32(0xFF)),
-			   binop(Iop_And32,cc_dep2,mkU32(0xFF))));
+                           binop(Iop_And32,cc_dep2,mkU32(0xFF)),
+			   binop(Iop_And32,cc_dep1,mkU32(0xFF))));
       }
 
       /*---------------- LOGICL ----------------*/

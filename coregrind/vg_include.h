@@ -137,11 +137,11 @@
    scheduler algorithms is surely O(N) in the number of threads, since
    that's simple, at least.  And (in practice) we hope that most
    programs do not need many threads. */
-#define VG_N_THREADS 20
+#define VG_N_THREADS 50
 
 /* Maximum number of pthread keys available.  Again, we start low until
    the need for a higher number presents itself. */
-#define VG_N_THREAD_KEYS 10
+#define VG_N_THREAD_KEYS 50
 
 /* Number of file descriptors that can simultaneously be waited on for
    I/O to complete.  Perhaps this should be the same as VG_N_THREADS

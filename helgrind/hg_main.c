@@ -128,6 +128,11 @@ typedef enum
  * Must be different to virgin_word.other */
 #define TID_INDICATING_NONVIRGIN    1
 
+/* Magic TID used for error suppression; if word state is Excl and tid
+   is this, then it means all access are OK without changing state and
+   without raising any more errors  */
+#define TID_INDICATING_ALL          ((1 << OTHER_BITS) - 1)
+
 /* Number of entries must fit in STATE_BITS bits */
 typedef enum { Vge_Virgin, Vge_Excl, Vge_Shar, Vge_SharMod } pth_state;
 
@@ -312,12 +317,24 @@ void init_magically_inited_sword(Addr a)
 
 typedef struct _LockSet LockSet; /* forward declaration */
 
+typedef enum MutexState {
+   MxUnknown,			/* don't know */
+   MxUnlocked,			/* unlocked */
+   MxLocked,			/* locked */
+   MxDead			/* destroyed */
+} MutexState;
+
 typedef struct hg_mutex {
    void              *mutexp;
-   Int	              order;	/* graph ordering */
-   LockSet           *priors;	/* set of mutexes this one depends on */
    struct hg_mutex   *next;
+
+   MutexState         state;	/* mutex state */
+   ThreadId           tid;	/* owner */
+   ExeContext	     *location;	/* where the last change happened */
 } hg_mutex_t;
+
+static void record_mutex_error(ThreadId tid, hg_mutex_t *mutex, 
+			       Char *str, ExeContext *ec);
 
 static hg_mutex_t *mutex_hash[M_MUTEX_HASHSZ];
 
@@ -338,12 +355,68 @@ static hg_mutex_t *get_mutex(void *mutexp)
 
    mp = VG_(malloc)(sizeof(*mp));
    mp->mutexp = mutexp;
-   mp->order = -1;		/* uninitialized */
-   mp->priors = NULL;
    mp->next = mutex_hash[bucket];
    mutex_hash[bucket] = mp;
 
+   mp->state = MxUnknown;
+   mp->tid = VG_INVALID_THREADID;
+   mp->location = NULL;
+
    return mp;
+}
+
+static const char *pp_MutexState(MutexState st)
+{
+   switch(st) {
+   case MxLocked:	return "Locked";
+   case MxUnlocked:	return "Unlocked";
+   case MxDead:		return "Dead";
+   case MxUnknown:	return "Unknown";
+   }
+   return "???";
+}
+
+/* catch bad mutex state changes (though the common ones are handled
+   by core) */
+static void set_mutex_state(hg_mutex_t *mutex, MutexState state,
+			    ThreadId tid, ThreadState *tst)
+{
+   if (0)
+      VG_(printf)("tid %d changing mutex (%p)->%p state %s -> %s\n",
+		  tid, mutex, mutex->mutexp, pp_MutexState(mutex->state), pp_MutexState(state));
+
+   if (mutex->state == MxDead) {
+      /* can't do anything legal to a destroyed mutex */
+      record_mutex_error(tid, mutex, 
+			 "operate on dead mutex", mutex->location);
+      return;
+   }
+
+   switch(state) {
+   case MxLocked:
+      if (mutex->state == MxLocked && mutex->tid != tid)
+	 record_mutex_error(tid, mutex, "take already held lock", mutex->location);
+      mutex->tid = tid;
+      break;
+
+   case MxUnlocked:
+      if (mutex->state != MxLocked) {
+	 record_mutex_error(tid, mutex, 
+			    "unlock non-locked mutex", mutex->location);
+      }
+      if (mutex->tid != tid) {
+	 record_mutex_error(tid, mutex, 
+			    "unlock someone else's mutex", mutex->location);
+      }
+      mutex->tid = VG_INVALID_THREADID;
+      break;
+
+   default:
+      break;
+   }
+
+   mutex->location = VG_(get_ExeContext)(tst);
+   mutex->state = state;
 }
 
 /*------------------------------------------------------------*/
@@ -959,6 +1032,42 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 }
 
 
+/*------------------------------------------------------------*/
+/*--- Shadow chunks info                                   ---*/
+/*------------------------------------------------------------*/
+
+#define SHADOW_EXTRA	2
+
+static __inline__
+void set_sc_where( ShadowChunk* sc, ExeContext* ec )
+{
+   sc->skin_extra[0] = (UInt)ec;
+}
+
+static __inline__
+ExeContext *get_sc_where( ShadowChunk* sc )
+{
+   return (ExeContext*)sc->skin_extra[0];
+}
+
+static __inline__
+void set_sc_tid(ShadowChunk *sc, ThreadId tid)
+{
+   sc->skin_extra[1] = (UInt)tid;
+}
+
+static __inline__
+ThreadId get_sc_tid(ShadowChunk *sc)
+{
+   return (ThreadId)sc->skin_extra[1];
+}
+
+void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
+{
+   set_sc_where( sc, VG_(get_ExeContext) ( tst ) );
+   set_sc_tid(sc, VG_(get_tid_from_ThreadState(tst)));
+}
+
 /*--------------------------------------------------------------------*/
 /*--- Error and suppression handling                               ---*/
 /*--------------------------------------------------------------------*/
@@ -973,52 +1082,353 @@ typedef
 /* What kind of error it is. */
 typedef
    enum { 
-      EraserErr 
+      EraserErr,		/* data-race */
+      MutexErr,			/* mutex operations */
    }
    EraserErrorKind;
 
+/* The classification of a faulting address. */
+typedef 
+   enum { Undescribed, /* as-yet unclassified */
+          Stack, 
+          Unknown, /* classification yielded nothing useful */
+          Mallocd, 
+	  Segment
+   }
+   AddrKind;
+/* Records info about a faulting address. */
+typedef
+   struct {
+      /* ALL */
+      AddrKind akind;
+      /* Freed, Mallocd */
+      Int blksize;
+      /* Freed, Mallocd */
+      Int rwoffset;
+      /* Freed, Mallocd */
+      ExeContext* lastchange;
+      ThreadId lasttid;
+      /* Stack */
+      ThreadId stack_tid;
+      /* Segment */
+      const Char* filename;
+      const Char* section;
+      /* True if is just-below %esp -- could be a gcc bug. */
+      Bool maybe_gcc;
+   }
+   AddrInfo;
 
-static void record_eraser_error ( ThreadId tid, Addr a, Bool is_write )
+/* What kind of memory access is involved in the error? */
+typedef
+   enum { ReadAxs, WriteAxs, ExecAxs }
+   AxsKind;
+
+/* Extra context for memory errors */
+typedef
+   struct {
+      AxsKind axskind;
+      Int size;
+      AddrInfo addrinfo;
+      Bool isWrite;
+      shadow_word prevstate;
+      /* MutexErr */
+      hg_mutex_t *mutex;
+      ExeContext *lasttouched;
+      ThreadId    lasttid;
+   }
+   HelgrindError;
+
+static __inline__
+void clear_AddrInfo ( AddrInfo* ai )
 {
-   VG_(maybe_record_error)( VG_(get_ThreadState)(tid), EraserErr, a, 
-                            (is_write ? "writing" : "reading"),
-                            /*extra*/NULL);
+   ai->akind      = Unknown;
+   ai->blksize    = 0;
+   ai->rwoffset   = 0;
+   ai->lastchange = NULL;
+   ai->lasttid    = VG_INVALID_THREADID;
+   ai->filename   = NULL;
+   ai->section    = "???";
+   ai->stack_tid  = VG_INVALID_THREADID;
+   ai->maybe_gcc  = False;
 }
 
+static __inline__
+void clear_HelgrindError ( HelgrindError* err_extra )
+{
+   err_extra->axskind    = ReadAxs;
+   err_extra->size       = 0;
+   err_extra->mutex      = NULL;
+   err_extra->lasttouched= NULL;
+   err_extra->lasttid    = VG_INVALID_THREADID;
+   err_extra->prevstate.state  = Vge_Virgin;
+   err_extra->prevstate.other  = 0;
+   clear_AddrInfo ( &err_extra->addrinfo );
+   err_extra->isWrite    = False;
+}
+
+
+
+/* Describe an address as best you can, for error messages,
+   putting the result in ai. */
+
+static void describe_addr ( Addr a, AddrInfo* ai )
+{
+   ShadowChunk* sc;
+
+   /* Nested functions, yeah.  Need the lexical scoping of 'a'. */ 
+
+   /* Closure for searching thread stacks */
+   Bool addr_is_in_bounds(Addr stack_min, Addr stack_max)
+   {
+      return (stack_min <= a && a <= stack_max);
+   }
+   /* Closure for searching malloc'd and free'd lists */
+   Bool addr_is_in_block(ShadowChunk *sh_ch)
+   {
+      return VG_(addr_is_in_block) ( a, sh_ch->data, sh_ch->size );
+   }
+
+   /* Search for it in segments */
+   {
+      const SegInfo *seg;
+
+      for(seg = VG_(next_seginfo)(NULL); 
+	  seg != NULL; 
+	  seg = VG_(next_seginfo)(seg)) {
+	 Addr base = VG_(seg_start)(seg);
+	 UInt size = VG_(seg_size)(seg);
+	 const UChar *filename = VG_(seg_filename)(seg);
+
+	 if (a >= base && a < base+size) {
+	    ai->akind = Segment;
+	    ai->blksize = size;
+	    ai->rwoffset = a - base;
+	    ai->filename = filename;
+
+	    switch(VG_(seg_sect_kind)(a)) {
+	    case Vg_SectText:	ai->section = "text"; break;
+	    case Vg_SectData:	ai->section = "data"; break;
+	    case Vg_SectBSS:	ai->section = "BSS"; break;
+	    case Vg_SectGOT:	ai->section = "GOT"; break;
+	    case Vg_SectPLT:	ai->section = "PLT"; break;
+	    case Vg_SectUnknown:
+	    default:
+	       ai->section = "???"; break;
+	    }
+
+	    return;
+	 }
+      }
+   }
+
+   /* Search for a currently malloc'd block which might bracket it. */
+   sc = VG_(any_matching_mallocd_ShadowChunks)(addr_is_in_block);
+   if (NULL != sc) {
+      ai->akind      = Mallocd;
+      ai->blksize    = sc->size;
+      ai->rwoffset   = (Int)(a) - (Int)(sc->data);
+      ai->lastchange = get_sc_where(sc);
+      ai->lasttid    = get_sc_tid(sc);
+      return;
+   } 
+   /* Clueless ... */
+   ai->akind = Unknown;
+   return;
+}
+
+
+/* Creates a copy of the err_extra, updates the copy with address info if
+   necessary, sticks the copy into the SkinError. */
+void SK_(dup_extra_and_update)(SkinError* err)
+{
+   HelgrindError* err_extra;
+
+   err_extra  = VG_(malloc)(sizeof(HelgrindError));
+   *err_extra = *((HelgrindError*)err->extra);
+
+   if (err_extra->addrinfo.akind == Undescribed)
+      describe_addr ( err->addr, &(err_extra->addrinfo) );
+
+   err->extra = err_extra;
+}
+
+static void record_eraser_error ( ThreadId tid, Addr a, Bool is_write, shadow_word prevstate )
+{
+   HelgrindError err_extra;
+
+   clear_HelgrindError(&err_extra);
+   err_extra.isWrite = is_write;
+   err_extra.addrinfo.akind = Undescribed;
+   err_extra.prevstate = prevstate;
+
+   VG_(maybe_record_error)( VG_(get_ThreadState)(tid), EraserErr, a, 
+                            (is_write ? "writing" : "reading"),
+                            &err_extra);
+
+   /* Put location into error state to suppress future warnings */
+   {
+      shadow_word *sword = get_sword_addr(a);
+      sword->state = Vge_Excl;
+      sword->other = TID_INDICATING_ALL;
+   }
+}
+
+static void record_mutex_error(ThreadId tid, hg_mutex_t *mutex, 
+			       Char *str, ExeContext *ec)
+{
+   HelgrindError err_extra;
+
+   clear_HelgrindError(&err_extra);
+   err_extra.addrinfo.akind = Undescribed;
+   err_extra.mutex = mutex;
+   err_extra.lasttouched = ec;
+   err_extra.lasttid = tid;
+
+   VG_(maybe_record_error)(VG_(get_ThreadState)(tid), MutexErr, 
+			   (Addr)mutex->mutexp, str, &err_extra);
+}
 
 Bool SK_(eq_SkinError) ( VgRes not_used,
                           SkinError* e1, SkinError* e2 )
 {
-   sk_assert(EraserErr == e1->ekind && EraserErr == e2->ekind);
+   sk_assert(e1->ekind == e2->ekind);
+
+   switch(e1->ekind) {
+   case EraserErr:
+      return e1->addr == e2->addr;
+
+   case MutexErr:
+      return e1->addr == e2->addr;
+   }
+
    if (e1->string != e2->string) return False;
    if (0 != VG_(strcmp)(e1->string, e2->string)) return False;
    return True;
 }
 
-
-void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
+static void pp_AddrInfo ( Addr a, AddrInfo* ai )
 {
-   Char buf[100];
-   sk_assert(EraserErr == err->ekind);
+   switch (ai->akind) {
+      case Stack: 
+         VG_(message)(Vg_UserMsg, 
+                      "  Address %p is on thread %d's stack", 
+                      a, ai->stack_tid);
+         break;
+      case Unknown:
+         if (ai->maybe_gcc) {
+            VG_(message)(Vg_UserMsg, 
+               "  Address %p is just below %%esp.  Possibly a bug in GCC/G++",
+               a);
+            VG_(message)(Vg_UserMsg, 
+               "   v 2.96 or 3.0.X.  To suppress, use: --workaround-gcc296-bugs=yes");
+	 } else {
+            VG_(message)(Vg_UserMsg, 
+               "  Address %p is not stack'd, malloc'd or free'd", a);
+         }
+         break;
+      case Segment:
+	VG_(message)(Vg_UserMsg,
+		     "  Address %p is in %s section of %s", 
+		     a, ai->section, ai->filename);
+	break;
+      case Mallocd: {
+         UInt delta;
+         UChar* relative;
+         if (ai->rwoffset < 0) {
+            delta    = (UInt)(- ai->rwoffset);
+            relative = "before";
+         } else if (ai->rwoffset >= ai->blksize) {
+            delta    = ai->rwoffset - ai->blksize;
+            relative = "after";
+         } else {
+            delta    = ai->rwoffset;
+            relative = "inside";
+         }
+	 VG_(message)(Vg_UserMsg, 
+		      "  Address %p is %d bytes %s a block of size %d alloc'd by thread %d at",
+		      a, delta, relative, 
+		      ai->blksize,
+		      ai->lasttid);
 
-   buf[0] = ' ';
-   buf[1] = '(';
-   if (VG_(get_fnname)(err->addr, buf+2, sizeof(buf)-4)) {
-      Int len = VG_(strlen)(buf);
-      buf[len] = ')';
-      buf[len+1] = '\0';
-   } else
-      buf[0] = '\0';
-
-   VG_(message)(Vg_UserMsg, "Possible data race %s variable at 0x%x%s",
-                err->string, err->addr, buf );
-   pp_ExeContext();
+         VG_(pp_ExeContext)(ai->lastchange);
+         break;
+      }   
+      default:
+         VG_(skin_panic)("pp_AddrInfo");
+   }
 }
 
 
-void SK_(dup_extra_and_update)(SkinError* err)
+void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 {
-   /* do nothing -- extra field not used, and no need to update */
+   HelgrindError *extra = (HelgrindError *)err->extra;
+   Char buf[100];
+   Char *msg = buf;
+
+   *msg = '\0';
+
+   switch(err->ekind) {
+   case EraserErr:
+      VG_(message)(Vg_UserMsg, "Possible data race %s variable at %p %(y",
+		   err->string, err->addr, err->addr );
+      pp_ExeContext();
+
+      switch(extra->prevstate.state) {
+      case Vge_Virgin:
+	 /* shouldn't be possible to go directly from virgin -> error */
+	 VG_(sprintf)(buf, "virgin!?");
+	 break;
+
+      case Vge_Excl:
+	 sk_assert(extra->prevstate.other != TID_INDICATING_ALL);
+	 VG_(sprintf)(buf, "exclusively owned by thread %d", extra->prevstate.other);
+	 break;
+
+      case Vge_Shar:
+      case Vge_SharMod: {
+	 LockSet *ls;
+	 UInt count;
+	 Char *cp;
+
+	 if (lockset_table[extra->prevstate.other] == NULL) {
+	    VG_(sprintf)(buf, "shared %s, no locks", 
+			 extra->prevstate.state == Vge_Shar ? "RO" : "RW");
+	    break;
+	 }
+
+	 for(count = 0, ls = lockset_table[extra->prevstate.other]; ls != NULL; ls = ls->next)
+	    count++;
+	 msg = VG_(malloc)(25 + (120 * count));
+
+	 cp = msg;
+	 cp += VG_(sprintf)(cp, "shared %s, locked by: ", 
+			    extra->prevstate.state == Vge_Shar ? "RO" : "RW");
+	 for(ls = lockset_table[extra->prevstate.other]; ls != NULL; ls = ls->next)
+	    cp += VG_(sprintf)(cp, "%p%(y, ", ls->mutex->mutexp, ls->mutex->mutexp);
+	 cp[-2] = '\0';
+	 break;
+      }
+      }
+
+      if (*msg) {
+	 VG_(message)(Vg_UserMsg, "  Previous state: %s", msg);
+	 if (msg != buf)
+	    VG_(free)(msg);
+      }
+      pp_AddrInfo(err->addr, &extra->addrinfo);
+      break;
+
+   case MutexErr:
+      VG_(message)(Vg_UserMsg, "Mutex problem at %p%(y trying to %s at",
+		   err->addr, err->addr, err->string );
+      pp_ExeContext();
+      if (extra->lasttouched) {
+	 VG_(message)(Vg_UserMsg, "  last touched by thread %d at", extra->lasttid);
+	 VG_(pp_ExeContext)(extra->lasttouched);
+      }
+      pp_AddrInfo(err->addr, &extra->addrinfo);
+      break;
+   }
 }
 
 
@@ -1060,6 +1470,8 @@ static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
    LockSet** q;
    hg_mutex_t *mutex = get_mutex(void_mutex);
    
+   set_mutex_state(mutex, MxLocked, tid, VG_(get_ThreadState)(tid));
+
 #  if DEBUG_LOCKS
    VG_(printf)("lock  (%u, %x)\n", tid, mutex->mutexp);
 #  endif
@@ -1149,6 +1561,8 @@ static void eraser_post_mutex_unlock(ThreadId tid, void* void_mutex)
    Int i = 0;
    hg_mutex_t *mutex = get_mutex(void_mutex);
    
+   set_mutex_state(mutex, MxUnlocked, tid, VG_(get_ThreadState)(tid));
+
 #  if DEBUG_LOCKS
    VG_(printf)("unlock(%u, %x)\n", tid, mutex->mutexp);
 #  endif
@@ -1249,6 +1663,7 @@ static void eraser_mem_read(Addr a, UInt size, ThreadId tid)
 {
    shadow_word* sword;
    Addr     end = a + 4*compute_num_words_accessed(a, size);
+   shadow_word  prevstate;
 
    for ( ; a < end; a += 4) {
 
@@ -1257,6 +1672,8 @@ static void eraser_mem_read(Addr a, UInt size, ThreadId tid)
          VG_(printf)("read distinguished 2ndary map! 0x%x\n", a);
          continue;
       }
+
+      prevstate = *sword;
 
       switch (sword->state) {
 
@@ -1279,8 +1696,9 @@ static void eraser_mem_read(Addr a, UInt size, ThreadId tid)
       case Vge_Excl:
          if (tid == sword->other) {
             DEBUG_STATE("Read  EXCL:              %8x, %u\n", a, tid);
-
-         } else {
+         } else if (TID_INDICATING_ALL == sword->other) {
+            DEBUG_STATE("Read  EXCL/ERR:          %8x, %u\n", a, tid);
+	 } else {
             DEBUG_STATE("Read  EXCL(%u) --> SHAR:  %8x, %u\n", sword->other, a, tid);
             sword->state = Vge_Shar;
             sword->other = thread_locks[tid];
@@ -1300,7 +1718,7 @@ static void eraser_mem_read(Addr a, UInt size, ThreadId tid)
          sword->other = intersect(sword->other, thread_locks[tid]);
 
          if (lockset_table[sword->other] == NULL) {
-            record_eraser_error(tid, a, False /* !is_write */);
+            record_eraser_error(tid, a, False /* !is_write */, prevstate);
             n_eraser_warnings++;
          }
          break;
@@ -1316,6 +1734,7 @@ static void eraser_mem_write(Addr a, UInt size, ThreadId tid)
 {
    shadow_word* sword;
    Addr     end = a + 4*compute_num_words_accessed(a, size);
+   shadow_word  prevstate;
 
    for ( ; a < end; a += 4) {
 
@@ -1324,6 +1743,8 @@ static void eraser_mem_write(Addr a, UInt size, ThreadId tid)
          VG_(printf)("read distinguished 2ndary map! 0x%x\n", a);
          continue;
       }
+
+      prevstate = *sword;
 
       switch (sword->state) {
       case Vge_Virgin:
@@ -1339,7 +1760,9 @@ static void eraser_mem_write(Addr a, UInt size, ThreadId tid)
          if (tid == sword->other) {
             DEBUG_STATE("Write EXCL:              %8x, %u\n", a, tid);
             break;
-
+         } else if (TID_INDICATING_ALL == sword->other) {
+            DEBUG_STATE("Write EXCL/ERR:          %8x, %u\n", a, tid);
+	    break;
          } else {
             DEBUG_STATE("Write EXCL(%u) --> SHAR_MOD: %8x, %u\n", sword->other, a, tid);
             sword->state = Vge_SharMod;
@@ -1361,7 +1784,7 @@ static void eraser_mem_write(Addr a, UInt size, ThreadId tid)
          sword->other = intersect(sword->other, thread_locks[tid]);
          SHARED_MODIFIED:
          if (lockset_table[sword->other] == NULL) {
-            record_eraser_error(tid, a, True /* is_write */);
+            record_eraser_error(tid, a, True /* is_write */, prevstate);
             n_eraser_warnings++;
          }
          break;
@@ -1402,6 +1825,7 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    needs->core_errors           = True;
    needs->skin_errors           = True;
    needs->data_syms             = True;
+   needs->sizeof_shadow_block	= SHADOW_EXTRA;
 
    track->new_mem_startup       = & eraser_new_mem_startup;
    track->new_mem_heap          = & eraser_new_mem_heap;

@@ -40,7 +40,7 @@
 /*--- Main types                                           ---*/
 /*------------------------------------------------------------*/
 
-#define VG_N_MALLOC_LISTS     16    // do not change this
+#define N_MALLOC_LISTS     16    // do not change this
 
 // The amount you can ask for is limited only by sizeof(SizeT)...
 #define MAX_PSZB              (~((SizeT)0x0))
@@ -117,7 +117,7 @@ typedef
       Bool        clientmem;        // Allocates in the client address space?
       SizeT       rz_szB;           // Red zone size in bytes
       SizeT       min_sblock_szB;   // Minimum superblock size in bytes
-      Block*      freelist[VG_N_MALLOC_LISTS];
+      Block*      freelist[N_MALLOC_LISTS];
       Superblock* sblocks;
       // Stats only.
       SizeT bytes_on_loan;
@@ -358,7 +358,7 @@ void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
    vg_assert(overhead_szB_lo(a) == overhead_szB_hi(a));
 
    a->min_sblock_szB = min_sblock_szB;
-   for (i = 0; i < VG_N_MALLOC_LISTS; i++) a->freelist[i] = NULL;
+   for (i = 0; i < N_MALLOC_LISTS; i++) a->freelist[i] = NULL;
    a->sblocks           = NULL;
    a->bytes_on_loan     = 0;
    a->bytes_mmaped      = 0;
@@ -599,7 +599,7 @@ static
 SizeT listNo_to_pszB_min ( UInt listNo )
 {
    SizeT pszB = 0;
-   vg_assert(listNo <= VG_N_MALLOC_LISTS);
+   vg_assert(listNo <= N_MALLOC_LISTS);
    while (pszB_to_listNo(pszB) < listNo) pszB += VG_MIN_MALLOC_SZB;
    return pszB;
 }
@@ -608,8 +608,8 @@ SizeT listNo_to_pszB_min ( UInt listNo )
 static
 SizeT listNo_to_pszB_max ( UInt listNo )
 {
-   vg_assert(listNo <= VG_N_MALLOC_LISTS);
-   if (listNo == VG_N_MALLOC_LISTS-1) {
+   vg_assert(listNo <= N_MALLOC_LISTS);
+   if (listNo == N_MALLOC_LISTS-1) {
       return MAX_PSZB;
    } else {
       return listNo_to_pszB_min(listNo+1) - 1;
@@ -652,8 +652,8 @@ void swizzle ( Arena* a, UInt lno )
 /*--- Sanity-check/debugging machinery.                    ---*/
 /*------------------------------------------------------------*/
 
-#define VG_REDZONE_LO_MASK    0x31
-#define VG_REDZONE_HI_MASK    0x7c
+#define REDZONE_LO_MASK    0x31
+#define REDZONE_HI_MASK    0x7c
 
 // Do some crude sanity checks on a Block.
 static 
@@ -666,10 +666,10 @@ Bool blockSane ( Arena* a, Block* b )
    if (!a->clientmem && is_inuse_bszB(get_bszB_lo(b))) {
       for (i = 0; i < a->rz_szB; i++) {
          if (get_rz_lo_byte(a, b, i) != 
-            (UByte)(((Addr)b&0xff) ^ VG_REDZONE_LO_MASK))
+            (UByte)(((Addr)b&0xff) ^ REDZONE_LO_MASK))
                {BLEAT("redzone-lo");return False;}
          if (get_rz_hi_byte(a, b, i) != 
-            (UByte)(((Addr)b&0xff) ^ VG_REDZONE_HI_MASK))
+            (UByte)(((Addr)b&0xff) ^ REDZONE_HI_MASK))
                {BLEAT("redzone-hi");return False;}
       }      
    }
@@ -771,7 +771,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
       sense, counting blocks encountered, and checking that each block
       is an appropriate size for this list. */
    blockctr_li = 0;
-   for (listno = 0; listno < VG_N_MALLOC_LISTS; listno++) {
+   for (listno = 0; listno < N_MALLOC_LISTS; listno++) {
       list_min_pszB = listNo_to_pszB_min(listno);
       list_max_pszB = listNo_to_pszB_max(listno);
       b = a->freelist[listno];
@@ -877,8 +877,8 @@ void mkInuseBlock ( Arena* a, Block* b, SizeT bszB )
    set_next_b(b, NULL);    // ditto
    if (!a->clientmem) {
       for (i = 0; i < a->rz_szB; i++) {
-         set_rz_lo_byte(a, b, i, (UByte)(((Addr)b&0xff) ^ VG_REDZONE_LO_MASK));
-         set_rz_hi_byte(a, b, i, (UByte)(((Addr)b&0xff) ^ VG_REDZONE_HI_MASK));
+         set_rz_lo_byte(a, b, i, (UByte)(((Addr)b&0xff) ^ REDZONE_LO_MASK));
+         set_rz_hi_byte(a, b, i, (UByte)(((Addr)b&0xff) ^ REDZONE_HI_MASK));
       }
    }
 #  ifdef DEBUG_MALLOC
@@ -890,7 +890,7 @@ void mkInuseBlock ( Arena* a, Block* b, SizeT bszB )
 static
 void unlinkBlock ( Arena* a, Block* b, UInt listno )
 {
-   vg_assert(listno < VG_N_MALLOC_LISTS);
+   vg_assert(listno < N_MALLOC_LISTS);
    if (get_prev_b(b) == b) {
       // Only one element in the list; treat it specially.
       vg_assert(get_next_b(b) == b);
@@ -939,7 +939,7 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
    req_bszB = pszB_to_bszB(a, req_pszB);
 
    // Scan through all the big-enough freelists for a block.
-   for (lno = pszB_to_listNo(req_pszB); lno < VG_N_MALLOC_LISTS; lno++) {
+   for (lno = pszB_to_listNo(req_pszB); lno < N_MALLOC_LISTS; lno++) {
       b = a->freelist[lno];
       if (NULL == b) continue;   // If this list is empty, try the next one.
       while (True) {
@@ -951,7 +951,7 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
    }
 
    // If we reach here, no suitable block found, allocate a new superblock
-   vg_assert(lno == VG_N_MALLOC_LISTS);
+   vg_assert(lno == N_MALLOC_LISTS);
    new_sb = newSuperblock(a, req_bszB);
    if (NULL == new_sb) {
       // Should only fail if for client, otherwise, should have aborted
@@ -969,7 +969,7 @@ void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
   obtained_block:
    // Ok, we can allocate from b, which lives in list lno.
    vg_assert(b != NULL);
-   vg_assert(lno < VG_N_MALLOC_LISTS);
+   vg_assert(lno < N_MALLOC_LISTS);
    vg_assert(a->freelist[lno] != NULL);
    b_bszB = mk_plain_bszB(get_bszB_lo(b));
    // req_bszB is the size of the block we are after.  b_bszB is the

@@ -1708,17 +1708,6 @@ extern void VGA_(push_signal_frame) ( ThreadId tid, Addr sp_top_of_frame,
 				      void *restorer );
 
 ////typedef struct _ThreadArchAux ThreadArchAux;
-#define MY__STRING(__str)  #__str
-
-// Assertion to use in code running on the simulated CPU.
-#define my_assert(expr)                                               \
-  ((void) ((expr) ? 0 :						      \
-	   (VG_(user_assert_fail) (MY__STRING(expr),		      \
-			      __FILE__, __LINE__,                     \
-                              __PRETTY_FUNCTION__), 0)))
-
-extern void VG_(user_assert_fail) ( const Char* expr, const Char* file,
-                                    Int line, const Char* fn );
 
 
 // ---------------------------------------------------------------------

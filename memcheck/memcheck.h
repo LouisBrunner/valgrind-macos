@@ -177,7 +177,6 @@ typedef
    the address of the first offending byte.  Otherwise it returns
    zero. */
 #define VALGRIND_CHECK_DEFINED(__lvalue)                           \
-   (void)                                                          \
    VALGRIND_CHECK_READABLE(                                        \
       (volatile unsigned char *)&(__lvalue),                       \
                       (unsigned int)(sizeof (__lvalue)))

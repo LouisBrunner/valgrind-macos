@@ -1660,6 +1660,8 @@ int recvfrom(int s, void *buf, size_t len, int flags,
              struct sockaddr *from, socklen_t *fromlen)
 {
    __my_pthread_testcancel();
+   wait_for_fd_to_be_readable_or_erring(s);
+   __my_pthread_testcancel();
    return __libc_recvfrom(s, buf, len, flags, from, fromlen);
 }
 

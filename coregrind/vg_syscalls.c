@@ -972,7 +972,8 @@ Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 
 /* ------ */
 
-void generic_PRE_sys_socketpair ( ThreadId tid,
+void 
+VG_(generic_PRE_sys_socketpair) ( ThreadId tid,
                                   UWord arg0, UWord arg1, 
                                   UWord arg2, UWord arg3 )
 {
@@ -981,10 +982,11 @@ void generic_PRE_sys_socketpair ( ThreadId tid,
                   arg3, 2*sizeof(int) );
 }
 
-UWord generic_POST_sys_socketpair ( ThreadId tid,
-                                    UWord res,
-                                    UWord arg0, UWord arg1, 
-                                    UWord arg2, UWord arg3 )
+UWord 
+VG_(generic_POST_sys_socketpair) ( ThreadId tid,
+                                   UWord res,
+                                   UWord arg0, UWord arg1, 
+                                   UWord arg2, UWord arg3 )
 {
    UWord r = res;
    Int fd1 = ((Int*)arg3)[0];
@@ -1007,7 +1009,8 @@ UWord generic_POST_sys_socketpair ( ThreadId tid,
 
 /* ------ */
 
-UWord generic_POST_sys_socket ( ThreadId tid, UWord res )
+UWord 
+VG_(generic_POST_sys_socket) ( ThreadId tid, UWord res )
 {
    UWord r = res;
    if (!VG_(fd_allowed)(res, "socket", tid, True)) {
@@ -1022,7 +1025,8 @@ UWord generic_POST_sys_socket ( ThreadId tid, UWord res )
 
 /* ------ */
 
-void generic_PRE_sys_bind ( ThreadId tid,
+void 
+VG_(generic_PRE_sys_bind) ( ThreadId tid,
                             UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int bind(int sockfd, struct sockaddr *my_addr, 
@@ -1035,7 +1039,8 @@ void generic_PRE_sys_bind ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_accept ( ThreadId tid,
+void 
+VG_(generic_PRE_sys_accept) ( ThreadId tid,
                               UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int accept(int s, struct sockaddr *addr, int *addrlen); */
@@ -1047,9 +1052,10 @@ void generic_PRE_sys_accept ( ThreadId tid,
                               "socketcall.accept(addrlen_in)" );
 }
 
-UWord generic_POST_sys_accept ( ThreadId tid,
-                                UWord res,
-                                UWord arg0, UWord arg1, UWord arg2 )
+UWord 
+VG_(generic_POST_sys_accept) ( ThreadId tid,
+                               UWord res,
+                               UWord arg0, UWord arg1, UWord arg2 )
 {
    UWord r = res;
    if (!VG_(fd_allowed)(res, "accept", tid, True)) {
@@ -1069,7 +1075,8 @@ UWord generic_POST_sys_accept ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_sendto ( ThreadId tid, 
+void 
+VG_(generic_PRE_sys_sendto) ( ThreadId tid, 
                               UWord arg0, UWord arg1, UWord arg2,
                               UWord arg3, UWord arg4, UWord arg5 )
 {
@@ -1087,7 +1094,8 @@ void generic_PRE_sys_sendto ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_send ( ThreadId tid,
+void 
+VG_(generic_PRE_sys_send) ( ThreadId tid,
                             UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int send(int s, const void *msg, size_t len, int flags); */
@@ -1099,7 +1107,8 @@ void generic_PRE_sys_send ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_recvfrom ( ThreadId tid, 
+void 
+VG_(generic_PRE_sys_recvfrom) ( ThreadId tid, 
                                 UWord arg0, UWord arg1, UWord arg2,
                                 UWord arg3, UWord arg4, UWord arg5 )
 {
@@ -1116,7 +1125,8 @@ void generic_PRE_sys_recvfrom ( ThreadId tid,
                               "socketcall.recvfrom(fromlen_in)" );
 }
 
-void generic_POST_sys_recvfrom ( ThreadId tid,
+void 
+VG_(generic_POST_sys_recvfrom) ( ThreadId tid,
                                  UWord res,
                                  UWord arg0, UWord arg1, UWord arg2,
                                  UWord arg3, UWord arg4, UWord arg5 )
@@ -1134,7 +1144,8 @@ void generic_POST_sys_recvfrom ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_recv ( ThreadId tid,
+void 
+VG_(generic_PRE_sys_recv) ( ThreadId tid,
                             UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int recv(int s, void *buf, int len, unsigned int flags); */
@@ -1148,7 +1159,8 @@ void generic_PRE_sys_recv ( ThreadId tid,
                   arg2  /* len */ );
 }
 
-void generic_POST_sys_recv ( ThreadId tid, 
+void 
+VG_(generic_POST_sys_recv) ( ThreadId tid, 
                              UWord res,
                              UWord arg0, UWord arg1, UWord arg2 )
 {
@@ -1160,7 +1172,8 @@ void generic_POST_sys_recv ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_connect ( ThreadId tid,
+void 
+VG_(generic_PRE_sys_connect) ( ThreadId tid,
                                UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int connect(int sockfd, 
@@ -1175,7 +1188,8 @@ void generic_PRE_sys_connect ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_setsockopt ( ThreadId tid, 
+void 
+VG_(generic_PRE_sys_setsockopt) ( ThreadId tid, 
                                   UWord arg0, UWord arg1, UWord arg2,
                                   UWord arg3, UWord arg4 )
 {
@@ -1188,7 +1202,8 @@ void generic_PRE_sys_setsockopt ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_getsockopt ( ThreadId tid, 
+void 
+VG_(generic_PRE_sys_getsockopt) ( ThreadId tid, 
                                   UWord arg0, UWord arg1, UWord arg2,
                                   UWord arg3, UWord arg4 )
 {
@@ -1203,7 +1218,8 @@ void generic_PRE_sys_getsockopt ( ThreadId tid,
                               "socketcall.getsockopt(optlen)" );
 }
 
-void generic_POST_sys_getsockopt ( ThreadId tid,
+void 
+VG_(generic_POST_sys_getsockopt) ( ThreadId tid,
                                    UWord res,
                                    UWord arg0, UWord arg1, UWord arg2,
                                    UWord arg3, UWord arg4 )
@@ -1217,7 +1233,8 @@ void generic_POST_sys_getsockopt ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_getsockname ( ThreadId tid,
+void 
+VG_(generic_PRE_sys_getsockname) ( ThreadId tid,
                                    UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int getsockname(int s, struct sockaddr* name, int* namelen) */
@@ -1229,7 +1246,8 @@ void generic_PRE_sys_getsockname ( ThreadId tid,
                            "socketcall.getsockname(namelen_in)" );
 }
 
-void generic_POST_sys_getsockname ( ThreadId tid,
+void 
+VG_(generic_POST_sys_getsockname) ( ThreadId tid,
                                     UWord res,
                                     UWord arg0, UWord arg1, UWord arg2 )
 {
@@ -1241,7 +1259,8 @@ void generic_POST_sys_getsockname ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_getpeername ( ThreadId tid,
+void 
+VG_(generic_PRE_sys_getpeername) ( ThreadId tid,
                                    UWord arg0, UWord arg1, UWord arg2 )
 {
    /* int getpeername(int s, struct sockaddr* name, int* namelen) */
@@ -1253,7 +1272,8 @@ void generic_PRE_sys_getpeername ( ThreadId tid,
                            "socketcall.getpeername(namelen_in)" );
 }
 
-void generic_POST_sys_getpeername ( ThreadId tid,
+void 
+VG_(generic_POST_sys_getpeername) ( ThreadId tid,
                                     UWord res,
                                     UWord arg0, UWord arg1, UWord arg2 )
 {
@@ -1265,7 +1285,8 @@ void generic_POST_sys_getpeername ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_sendmsg ( ThreadId tid,
+void 
+VG_(generic_PRE_sys_sendmsg) ( ThreadId tid,
                                UWord arg0, UWord arg1 )
 {
    /* int sendmsg(int s, const struct msghdr *msg, int flags); */
@@ -1275,7 +1296,8 @@ void generic_PRE_sys_sendmsg ( ThreadId tid,
 
 /* ------ */
 
-void generic_PRE_sys_recvmsg ( ThreadId tid,
+void
+VG_(generic_PRE_sys_recvmsg) ( ThreadId tid,
                                UWord arg0, UWord arg1 )
 {
    /* int recvmsg(int s, struct msghdr *msg, int flags); */
@@ -1283,7 +1305,8 @@ void generic_PRE_sys_recvmsg ( ThreadId tid,
    msghdr_foreachfield ( tid, msg, pre_mem_write_recvmsg );
 }
 
-void generic_POST_sys_recvmsg ( ThreadId tid,
+void 
+VG_(generic_POST_sys_recvmsg) ( ThreadId tid,
                                 UWord res,
                                 UWord arg0, UWord arg1 )
 {
@@ -4536,7 +4559,7 @@ PRE(sys_socketcall, MayBlock)
    case VKI_SYS_SOCKETPAIR:
       /* int socketpair(int d, int type, int protocol, int sv[2]); */
       PRE_MEM_READ( "socketcall.socketpair(args)", ARG2, 4*sizeof(Addr) );
-      generic_PRE_sys_socketpair( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
+      VG_(generic_PRE_sys_socketpair)( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
       break;
 
    case VKI_SYS_SOCKET:
@@ -4548,7 +4571,7 @@ PRE(sys_socketcall, MayBlock)
       /* int bind(int sockfd, struct sockaddr *my_addr, 
 	 int addrlen); */
       PRE_MEM_READ( "socketcall.bind(args)", ARG2, 3*sizeof(Addr) );
-      generic_PRE_sys_bind( tid, ARG2_0, ARG2_1, ARG2_2 );
+      VG_(generic_PRE_sys_bind)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
                
    case VKI_SYS_LISTEN:
@@ -4559,7 +4582,7 @@ PRE(sys_socketcall, MayBlock)
    case VKI_SYS_ACCEPT: {
       /* int accept(int s, struct sockaddr *addr, int *addrlen); */
       PRE_MEM_READ( "socketcall.accept(args)", ARG2, 3*sizeof(Addr) );
-      generic_PRE_sys_accept( tid, ARG2_0, ARG2_1, ARG2_2 );
+      VG_(generic_PRE_sys_accept)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
    }
 
@@ -4568,21 +4591,21 @@ PRE(sys_socketcall, MayBlock)
                     unsigned int flags, 
                     const struct sockaddr *to, int tolen); */
       PRE_MEM_READ( "socketcall.sendto(args)", ARG2, 6*sizeof(Addr) );
-      generic_PRE_sys_sendto( tid, ARG2_0, ARG2_1, ARG2_2, 
+      VG_(generic_PRE_sys_sendto)( tid, ARG2_0, ARG2_1, ARG2_2, 
                                    ARG2_3, ARG2_4, ARG2_5 );
       break;
 
    case VKI_SYS_SEND:
       /* int send(int s, const void *msg, size_t len, int flags); */
       PRE_MEM_READ( "socketcall.send(args)", ARG2, 4*sizeof(Addr) );
-      generic_PRE_sys_send( tid, ARG2_0, ARG2_1, ARG2_2 );
+      VG_(generic_PRE_sys_send)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_RECVFROM:
       /* int recvfrom(int s, void *buf, int len, unsigned int flags,
 	 struct sockaddr *from, int *fromlen); */
       PRE_MEM_READ( "socketcall.recvfrom(args)", ARG2, 6*sizeof(Addr) );
-      generic_PRE_sys_recvfrom( tid, ARG2_0, ARG2_1, ARG2_2, 
+      VG_(generic_PRE_sys_recvfrom)( tid, ARG2_0, ARG2_1, ARG2_2, 
                                      ARG2_3, ARG2_4, ARG2_5 );
       break;
    
@@ -4594,21 +4617,21 @@ PRE(sys_socketcall, MayBlock)
 	 from parameter.
       */
       PRE_MEM_READ( "socketcall.recv(args)", ARG2, 4*sizeof(Addr) );
-      generic_PRE_sys_recv( tid, ARG2_0, ARG2_1, ARG2_2 );
+      VG_(generic_PRE_sys_recv)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_CONNECT:
       /* int connect(int sockfd, 
                      struct sockaddr *serv_addr, int addrlen ); */
       PRE_MEM_READ( "socketcall.connect(args)", ARG2, 3*sizeof(Addr) );
-      generic_PRE_sys_connect( tid, ARG2_0, ARG2_1, ARG2_2 );
+      VG_(generic_PRE_sys_connect)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_SETSOCKOPT:
       /* int setsockopt(int s, int level, int optname, 
                         const void *optval, int optlen); */
       PRE_MEM_READ( "socketcall.setsockopt(args)", ARG2, 5*sizeof(Addr) );
-      generic_PRE_sys_setsockopt( tid, ARG2_0, ARG2_1, ARG2_2, 
+      VG_(generic_PRE_sys_setsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
                                        ARG2_3, ARG2_4 );
       break;
 
@@ -4616,20 +4639,20 @@ PRE(sys_socketcall, MayBlock)
       /* int getsockopt(int s, int level, int optname, 
                         void *optval, socklen_t *optlen); */
       PRE_MEM_READ( "socketcall.getsockopt(args)", ARG2, 5*sizeof(Addr) );
-      generic_PRE_sys_getsockopt( tid, ARG2_0, ARG2_1, ARG2_2, 
+      VG_(generic_PRE_sys_getsockopt)( tid, ARG2_0, ARG2_1, ARG2_2, 
                                        ARG2_3, ARG2_4 );
       break;
 
    case VKI_SYS_GETSOCKNAME:
       /* int getsockname(int s, struct sockaddr* name, int* namelen) */
       PRE_MEM_READ( "socketcall.getsockname(args)", ARG2, 3*sizeof(Addr) );
-      generic_PRE_sys_getsockname( tid, ARG2_0, ARG2_1, ARG2_2 );
+      VG_(generic_PRE_sys_getsockname)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_GETPEERNAME:
       /* int getpeername(int s, struct sockaddr* name, int* namelen) */
       PRE_MEM_READ( "socketcall.getpeername(args)", ARG2, 3*sizeof(Addr) );
-      generic_PRE_sys_getpeername( tid, ARG2_0, ARG2_1, ARG2_2 );
+      VG_(generic_PRE_sys_getpeername)( tid, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_SHUTDOWN:
@@ -4644,7 +4667,7 @@ PRE(sys_socketcall, MayBlock)
        * (after all it's glibc providing the arguments array)
        PRE_MEM_READ( "socketcall.sendmsg(args)", ARG2, 3*sizeof(Addr) );
       */
-      generic_PRE_sys_sendmsg( tid, ARG2_0, ARG2_1 );
+      VG_(generic_PRE_sys_sendmsg)( tid, ARG2_0, ARG2_1 );
       break;
    }
       
@@ -4655,7 +4678,7 @@ PRE(sys_socketcall, MayBlock)
        * (after all it's glibc providing the arguments array)
        PRE_MEM_READ("socketcall.recvmsg(args)", ARG2, 3*sizeof(Addr) );
       */
-      generic_PRE_sys_recvmsg( tid, ARG2_0, ARG2_1 );
+      VG_(generic_PRE_sys_recvmsg)( tid, ARG2_0, ARG2_1 );
       break;
    }
 
@@ -4685,12 +4708,12 @@ POST(sys_socketcall)
    switch (ARG1 /* request */) {
 
    case VKI_SYS_SOCKETPAIR:
-      generic_POST_sys_socketpair( tid, RES, ARG2_0, 
+      VG_(generic_POST_sys_socketpair)( tid, RES, ARG2_0, 
                                         ARG2_1, ARG2_2, ARG2_3 );
       break;
 
    case VKI_SYS_SOCKET:
-     r = generic_POST_sys_socket( tid, RES );
+     r = VG_(generic_POST_sys_socket)( tid, RES );
      SET_RESULT(r);
      break;
 
@@ -4705,7 +4728,7 @@ POST(sys_socketcall)
 
    case VKI_SYS_ACCEPT:
       /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-     r = generic_POST_sys_accept( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
+     r = VG_(generic_POST_sys_accept)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
      SET_RESULT(r);
      break;
 
@@ -4716,12 +4739,12 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_RECVFROM:
-      generic_POST_sys_recvfrom( tid, RES, ARG2_0, ARG2_1, ARG2_2,
+      VG_(generic_POST_sys_recvfrom)( tid, RES, ARG2_0, ARG2_1, ARG2_2,
                                            ARG2_3, ARG2_4, ARG2_5 );
       break;
 
    case VKI_SYS_RECV:
-      generic_POST_sys_recv( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
+      VG_(generic_POST_sys_recv)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_CONNECT:
@@ -4731,16 +4754,16 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_GETSOCKOPT:
-      generic_POST_sys_getsockopt( tid, RES, ARG2_0, ARG2_1, 
+      VG_(generic_POST_sys_getsockopt)( tid, RES, ARG2_0, ARG2_1, 
                                              ARG2_2, ARG2_3, ARG2_4 );
       break;
 
    case VKI_SYS_GETSOCKNAME:
-      generic_POST_sys_getsockname( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
+      VG_(generic_POST_sys_getsockname)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_GETPEERNAME:
-      generic_POST_sys_getpeername( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
+      VG_(generic_POST_sys_getpeername)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
       break;
 
    case VKI_SYS_SHUTDOWN:
@@ -4750,7 +4773,7 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_RECVMSG:
-     generic_POST_sys_recvmsg( tid, RES, ARG2_0, ARG2_1 );
+     VG_(generic_POST_sys_recvmsg)( tid, RES, ARG2_0, ARG2_1 );
      break;
 
    default:

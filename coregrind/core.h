@@ -1727,6 +1727,40 @@ GEN_SYSCALL_WRAPPER(sys_mq_getsetattr);         // * P?
 #define POST_MEM_WRITE(zzaddr, zzlen) \
    VG_TRACK( post_mem_write, Vg_CoreSysCall, tid, zzaddr, zzlen)
 
+
+//////////////////////////////////////////////////////////
+
+#define TId ThreadId
+#define UW  UWord
+
+extern void  VG_(generic_PRE_sys_socketpair)   ( TId, UW, UW, UW, UW );
+extern UWord VG_(generic_POST_sys_socketpair)  ( TId, UW, UW, UW, UW, UW );
+extern UWord VG_(generic_POST_sys_socket)      ( TId, UW );
+extern void  VG_(generic_PRE_sys_bind)         ( TId, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_accept)       ( TId, UW, UW, UW );
+extern UWord VG_(generic_POST_sys_accept)      ( TId, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_sendto)       ( TId, UW, UW, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_send)         ( TId, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_recvfrom)     ( TId, UW, UW, UW, UW, UW, UW );
+extern void  VG_(generic_POST_sys_recvfrom)    ( TId, UW, UW, UW, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_recv)         ( TId, UW, UW, UW );
+extern void  VG_(generic_POST_sys_recv)        ( TId, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_connect)      ( TId, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_setsockopt)   ( TId, UW, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_getsockopt)   ( TId, UW, UW, UW, UW, UW );
+extern void  VG_(generic_POST_sys_getsockopt)  ( TId, UW, UW, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_getsockname)  ( TId, UW, UW, UW );
+extern void  VG_(generic_POST_sys_getsockname) ( TId, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_getpeername)  ( TId, UW, UW, UW );
+extern void  VG_(generic_POST_sys_getpeername) ( TId, UW, UW, UW, UW );
+extern void  VG_(generic_PRE_sys_sendmsg)      ( TId, UW, UW );
+extern void  VG_(generic_PRE_sys_recvmsg)      ( TId, UW, UW );
+extern void  VG_(generic_POST_sys_recvmsg)     ( TId, UW, UW, UW );
+
+#undef TID
+#undef UW
+
+
 /* ---------------------------------------------------------------------
    Exports of vg_transtab.c
    ------------------------------------------------------------------ */

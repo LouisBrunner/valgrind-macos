@@ -19,6 +19,7 @@ inits
 inline
 malloc1
 malloc2
+malloc3
 manuel1
 manuel2
 manuel3
@@ -28,6 +29,7 @@ mismatches
 mmaptest
 nanoleak
 new_override
+overlap
 pushfpopf
 realloc1
 realloc2

@@ -172,8 +172,8 @@ typedef struct {
    ThreadId parent;		/* parent tid (if any) */
 
    /* runtime details */
-   UInt *stack;			/* stack base */
-   UInt stacksize;		/* stack size in UInts */
+   Addr  valgrind_stack_base;	/* Valgrind's stack base */
+   SizeT valgrind_stack_szB;	/* stack size in bytes */
 
    /* exit details */
    Int  exitcode;		/* in the case of exitgroup, set by someone else */

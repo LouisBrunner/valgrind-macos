@@ -180,13 +180,13 @@ void VGA_(client_syscall)(Int syscallno, ThreadState *tst,
  */
 #define FILL	0xdeadbeef
 
-static UInt *allocstack(ThreadId tid)
+static UWord* allocstack(ThreadId tid)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
-   UInt *esp;
+   UWord *esp;
 
-   if (tst->os_state.stack == NULL) {
-      void *stk = VG_(mmap)(0, VGA_STACK_SIZE_W * sizeof(Int) + VKI_PAGE_SIZE,
+   if (tst->os_state.valgrind_stack_base == 0) {
+      void *stk = VG_(mmap)(0, VGA_STACK_SIZE_W * sizeof(UWord) + VKI_PAGE_SIZE,
 			    VKI_PROT_READ|VKI_PROT_WRITE,
 			    VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS,
 			    SF_VALGRIND,
@@ -194,41 +194,46 @@ static UInt *allocstack(ThreadId tid)
 
       if (stk != (void *)-1) {
 	 VG_(mprotect)(stk, VKI_PAGE_SIZE, VKI_PROT_NONE); /* guard page */
-	 tst->os_state.stack = (UInt *)stk + VKI_PAGE_SIZE/sizeof(UInt);
-	 tst->os_state.stacksize = VGA_STACK_SIZE_W;
+	 tst->os_state.valgrind_stack_base = ((Addr)stk) + VKI_PAGE_SIZE;
+	 tst->os_state.valgrind_stack_szB  = VGA_STACK_SIZE_W * sizeof(UWord);
       } else 
-	 return (UInt *)-1;
+	 return (UWord*)-1;
    }
 
-   for(esp = tst->os_state.stack; esp < (tst->os_state.stack + tst->os_state.stacksize); esp++)
+   for (esp = (UWord*) tst->os_state.valgrind_stack_base;
+        esp < (UWord*)(tst->os_state.valgrind_stack_base + 
+                       tst->os_state.valgrind_stack_szB); 
+        esp++)
       *esp = FILL;
    /* esp is left at top of stack */
 
    if (0)
       VG_(printf)("stack for tid %d at %p (%x); esp=%p\n",
-		  tid, tst->os_state.stack, *tst->os_state.stack,
-		  esp);
+		  tid, tst->os_state.valgrind_stack_base, 
+                  *(UWord*)(tst->os_state.valgrind_stack_base), esp);
 
    return esp;
 }
 
 /* NB: this is identical the the amd64 version. */
 /* Return how many bytes of this stack have not been used */
-Int VGA_(stack_unused)(ThreadId tid)
+SSizeT VGA_(stack_unused)(ThreadId tid)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
-   UInt *p;
+   UWord* p;
 
-   for (p = tst->os_state.stack; 
-	p && (p < (tst->os_state.stack + tst->os_state.stacksize)); 
+   for (p = (UWord*)tst->os_state.valgrind_stack_base; 
+	p && (p < (UWord*)(tst->os_state.valgrind_stack_base +
+                           tst->os_state.valgrind_stack_szB)); 
 	p++)
       if (*p != FILL)
 	 break;
 
    if (0)
-      VG_(printf)("p=%p %x tst->os_state.stack=%p\n", p, *p, tst->os_state.stack);
+      VG_(printf)("p=%p %x tst->os_state.valgrind_stack_base=%p\n",
+                  p, *p, tst->os_state.valgrind_stack_base);
 
-   return (p - tst->os_state.stack) * sizeof(*p);
+   return ((Addr)p) - tst->os_state.valgrind_stack_base;
 }
 
 /*
@@ -237,7 +242,7 @@ Int VGA_(stack_unused)(ThreadId tid)
  */
 void VGA_(main_thread_wrapper)(ThreadId tid)
 {
-   UInt *esp = allocstack(tid);
+   UWord* esp = allocstack(tid);
 
    vg_assert(tid == VG_(master_tid));
 
@@ -312,7 +317,7 @@ static Int do_clone(ThreadId ptid,
    ThreadId ctid = VG_(alloc_ThreadState)();
    ThreadState *ptst = VG_(get_ThreadState)(ptid);
    ThreadState *ctst = VG_(get_ThreadState)(ctid);
-   UInt *stack;
+   UWord *stack;
    Segment *seg;
    Int ret;
    vki_sigset_t blockall, savedmask;

@@ -2317,7 +2317,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 
       /* Look for stack overruns.  Visit all threads. */
       for(tid = 1; tid < VG_N_THREADS; tid++) {
-	 Int remains;
+	 SSizeT remains;
 
 	 if (VG_(threads)[tid].status == VgTs_Empty ||
 	     VG_(threads)[tid].status == VgTs_Zombie)

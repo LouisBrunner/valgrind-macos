@@ -8,8 +8,8 @@ void VGA_(os_state_clear)(ThreadState *tst)
 
 void VGA_(os_state_init)(ThreadState *tst)
 {
-   tst->os_state.stack = 0;
-   tst->os_state.stacksize = 0;
+   tst->os_state.valgrind_stack_base = 0;
+   tst->os_state.valgrind_stack_szB  = 0;
 
    VGA_(os_state_clear)(tst);
 }

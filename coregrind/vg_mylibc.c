@@ -1153,7 +1153,8 @@ static inline void get_and_pp_real_StackTrace(Addr ret)
    VGA_GET_REAL_STACK_PTR(sp);
    VGA_GET_REAL_FRAME_PTR(fp);
 
-   stacktop = (Addr)(tst->os_state.stack + tst->os_state.stacksize);
+   stacktop = tst->os_state.valgrind_stack_base + 
+              tst->os_state.valgrind_stack_szB;
 
    VG_(get_StackTrace2)(ips, VG_(clo_backtrace_size),
                         ret, fp, sp, stacktop);

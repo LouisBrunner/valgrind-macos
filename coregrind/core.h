@@ -1681,7 +1681,7 @@ void VGA_(thread_wrapper)(Word /*ThreadId*/ tid);
 void VGA_(main_thread_wrapper)(ThreadId tid) __attribute__ ((__noreturn__));
 
 // Return how many bytes of a thread's Valgrind stack are unused
-Int VGA_(stack_unused)(ThreadId tid);
+SSizeT VGA_(stack_unused)(ThreadId tid);
 
 // Terminate the process.  Does not return.
 void VGA_(terminate)(ThreadId tid, VgSchedReturnCode src) __attribute__((__noreturn__));

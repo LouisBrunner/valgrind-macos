@@ -1940,7 +1940,8 @@ void sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *u
                            VGP_UCONTEXT_INSTR_PTR(uc),
                            VGP_UCONTEXT_FRAME_PTR(uc),
                            VGP_UCONTEXT_STACK_PTR(uc),
-                           (Addr)(tst->os_state.stack + tst->os_state.stacksize));
+                           tst->os_state.valgrind_stack_base + 
+                           tst->os_state.valgrind_stack_szB);
       VG_(core_panic_at)("Killed by fatal signal", ips);
    }
 }

@@ -1189,8 +1189,9 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          return;
       case Xin_Call:
          /* This is a bit subtle. */
-         /* First off, claim it trashes all the callee-saved regs */
-         /* which I believe to be %eax,%ecx,%edx. */
+         /* First off, claim it trashes all the caller-saved regs
+            which fall within the register allocator's jurisdiction.
+            These I believe to be %eax,%ecx,%edx. */
          addHRegUse(u, HRmWrite, hregX86_EAX());
          addHRegUse(u, HRmWrite, hregX86_ECX());
          addHRegUse(u, HRmWrite, hregX86_EDX());

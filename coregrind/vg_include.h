@@ -1221,9 +1221,9 @@ extern void VG_(record_pthread_error) ( ThreadId tid, Char* msg );
 
 extern void VG_(show_all_errors)      ( void );
 
-extern Bool VG_(is_action_requested) ( Char* action, Bool* clo );
+extern Bool VG_(is_action_requested)  ( Char* action, Bool* clo );
 
-extern UInt VG_(n_errs_found);
+extern UInt VG_(get_n_errs_found)     ( void );
 
 /* ---------------------------------------------------------------------
    Exports of vg_procselfmaps.c

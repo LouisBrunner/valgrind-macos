@@ -43,10 +43,10 @@ static Error* vg_errors = NULL;
 static Supp* vg_suppressions = NULL;
 
 /* Running count of unsuppressed errors detected. */
-UInt VG_(n_errs_found) = 0;
+static UInt n_errs_found = 0;
 
 /* Running count of suppressed errors detected. */
-static UInt vg_n_errs_suppressed = 0;
+static UInt n_errs_suppressed = 0;
 
 /* forwards ... */
 static Supp* is_suppressible_error ( Error* err );
@@ -111,6 +111,11 @@ Char* VG_(get_error_string) ( Error* err )
 void* VG_(get_error_extra)  ( Error* err )
 {
    return err->extra;
+}
+
+UInt VG_(get_n_errs_found)( void )
+{
+   return n_errs_found;
 }
 
 /*------------------------------------------------------------*/
@@ -423,7 +428,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
       pointless to continue the Valgrind run after this point. */
    if (VG_(clo_error_limit) 
        && (vg_n_errs_shown >= M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN
-           || VG_(n_errs_found) >= M_VG_COLLECT_NO_ERRORS_AFTER_FOUND)) {
+           || n_errs_found >= M_VG_COLLECT_NO_ERRORS_AFTER_FOUND)) {
       if (!stopping_message) {
          VG_(message)(Vg_UserMsg, "");
 
@@ -482,9 +487,9 @@ void VG_(maybe_record_error) ( ThreadId tid,
 	 if (p->supp != NULL) {
             /* Deal correctly with suppressed errors. */
             p->supp->count++;
-            vg_n_errs_suppressed++;	 
+            n_errs_suppressed++;	 
          } else {
-            VG_(n_errs_found)++;
+            n_errs_found++;
          }
 
          /* Move p to the front of the list so that future searches
@@ -539,7 +544,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    p->supp = is_suppressible_error(&err);
    vg_errors = p;
    if (p->supp == NULL) {
-      VG_(n_errs_found)++;
+      n_errs_found++;
       if (!is_first_shown_context)
          VG_(message)(Vg_UserMsg, "");
       pp_Error(p, False);
@@ -547,7 +552,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
       vg_n_errs_shown++;
       do_actions_on_error(p, /*allow_db_attach*/True);
    } else {
-      vg_n_errs_suppressed++;
+      n_errs_suppressed++;
       p->supp->count++;
    }
 }
@@ -557,7 +562,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    guaranteed to only happen once.  This avoids all the recording and
    comparing stuff.  But they can be suppressed;  returns True if it is
    suppressed.  Bool `print_error' dictates whether to print the error. 
-   Bool `count_error' dictates whether to count the error in VG_(n_errs_found)
+   Bool `count_error' dictates whether to count the error in n_errs_found.
 */
 Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
                          void* extra, ExeContext* where, Bool print_error,
@@ -578,7 +583,7 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
 
    if (NULL == is_suppressible_error(&err)) {
       if (count_error)
-         VG_(n_errs_found)++;
+         n_errs_found++;
 
       if (print_error) {
          if (!is_first_shown_context)
@@ -591,7 +596,7 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
       return False;
 
    } else {
-      vg_n_errs_suppressed++;
+      n_errs_suppressed++;
       return True;
    }
 }
@@ -608,8 +613,6 @@ void VG_(record_pthread_error) ( ThreadId tid, Char* msg )
    if (! VG_(needs).core_errors) return;
    VG_(maybe_record_error)( tid, PThreadErr, /*addr*/0, msg, /*extra*/NULL );
 }
-
-/*------------------------------*/
 
 void VG_(show_all_errors) ( void )
 {
@@ -636,8 +639,8 @@ void VG_(show_all_errors) ( void )
    VG_(message)(Vg_UserMsg,
                 "ERROR SUMMARY: "
                 "%d errors from %d contexts (suppressed: %d from %d)",
-                VG_(n_errs_found), n_err_contexts, 
-                vg_n_errs_suppressed, n_supp_contexts );
+                n_errs_found, n_err_contexts, 
+                n_errs_suppressed, n_supp_contexts );
 
    if (VG_(clo_verbosity) <= 1)
       return;
@@ -685,8 +688,7 @@ void VG_(show_all_errors) ( void )
       VG_(message)(Vg_UserMsg,
                    "IN SUMMARY: "
                    "%d errors from %d contexts (suppressed: %d from %d)",
-                   VG_(n_errs_found), n_err_contexts, 
-                   vg_n_errs_suppressed,
+                   n_errs_found, n_err_contexts, n_errs_suppressed,
                    n_supp_contexts );
       VG_(message)(Vg_UserMsg, "");
    }

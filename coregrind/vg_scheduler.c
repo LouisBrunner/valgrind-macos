@@ -3344,7 +3344,7 @@ void do_client_request ( ThreadId tid )
 	 break;
 
       case VG_USERREQ__COUNT_ERRORS:  
-         SET_CLREQ_RETVAL( tid, VG_(n_errs_found) );
+         SET_CLREQ_RETVAL( tid, VG_(get_n_errs_found)() );
          break;
 
       default:

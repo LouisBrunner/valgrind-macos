@@ -1,0 +1,29 @@
+Invalid read of size 4
+   at 0x........: main (realloc3.c:23)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+   Address 0x........ is 15 bytes after a block of size 5 alloc'd
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (realloc3.c:19)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Invalid read of size 4
+   at 0x........: main (realloc3.c:24)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+   Address 0x........ is 15 bytes after a block of size 5 alloc'd
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (realloc3.c:20)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Invalid read of size 4
+   at 0x........: main (realloc3.c:25)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+   Address 0x........ is 15 bytes after a block of size 5 alloc'd
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (realloc3.c:21)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...

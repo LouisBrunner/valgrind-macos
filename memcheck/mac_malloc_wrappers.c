@@ -354,6 +354,7 @@ void* SK_(realloc) ( void* p, Int new_size )
 
    if (mc->size == new_size) {
       /* size unchanged */
+      mc->where = VG_(get_ExeContext)(tid);
       VGP_POPCC(VgpCliMalloc);
       return p;
       
@@ -361,6 +362,7 @@ void* SK_(realloc) ( void* p, Int new_size )
       /* new size is smaller */
       MAC_(die_mem_heap)( mc->data+new_size, mc->size-new_size );
       mc->size = new_size;
+      mc->where = VG_(get_ExeContext)(tid);
       VGP_POPCC(VgpCliMalloc);
       return p;
 

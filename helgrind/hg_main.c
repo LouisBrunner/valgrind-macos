@@ -1965,11 +1965,13 @@ void* SK_(realloc) ( void* p, Int new_size )
   
    if (hc->size == new_size) {
       /* size unchanged */
+      hc->where = VG_(get_ExeContext)(tid);
       return p;
       
    } else if (hc->size > new_size) {
       /* new size is smaller */
       hc->size = new_size;
+      hc->where = VG_(get_ExeContext)(tid);
       return p;
 
    } else {

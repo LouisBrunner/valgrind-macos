@@ -44,6 +44,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
+	realloc3.stderr.exp realloc3.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
 	signal2.stderr.exp \
 	signal2.stdout.exp signal2.vgtest \
@@ -64,7 +65,7 @@ check_PROGRAMS = \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	memalign_test memcmptest mmaptest nanoleak null_socket \
 	overlap pushfpopf \
-	realloc1 realloc2 sigaltstack signal2 supp1 supp2 suppfree \
+	realloc1 realloc2 realloc3 sigaltstack signal2 supp1 supp2 suppfree \
 	trivialleak tronical weirdioctl	\
 	mismatches new_override metadata threadederrno
 
@@ -103,6 +104,7 @@ overlap_SOURCES 	= overlap.c
 pushfpopf_SOURCES 	= pushfpopf_c.c pushfpopf_s.s
 realloc1_SOURCES 	= realloc1.c
 realloc2_SOURCES 	= realloc2.c
+realloc3_SOURCES 	= realloc3.c
 signal2_SOURCES 	= signal2.c
 supp1_SOURCES 		= supp.c
 supp2_SOURCES 		= supp.c

@@ -291,6 +291,8 @@ int main(void)
    SY(__NR_setregid, x0, x0);
 
    // __NR_sigsuspend 72 --> sys_sigsuspend()
+ //GO(__NR_sigsuspend, ".s .m");
+ //SY(__NR_sigsuspend);
 
    // __NR_sigpending 73 --> sys_sigpending()
    GO(__NR_sigpending, "1s 1m");
@@ -374,9 +376,9 @@ int main(void)
  //GO(__NR_fchmod, ".s .m");
  //SY(__NR_fchmod);
 
-   // __NR_fchown 95
- //GO(__NR_fchown, ".s .m");
- //SY(__NR_fchown);
+   // __NR_fchown 95 --> sys_fchown16
+   GO(__NR_fchown, "3s 0m");
+   SY(__NR_fchown, x0, x0, x0);
 
    // __NR_getpriority 96
  //GO(__NR_getpriority, ".s .m");
@@ -418,17 +420,17 @@ int main(void)
  //GO(__NR_getitimer, ".s .m");
  //SY(__NR_getitimer);
 
-   // __NR_stat 106
- //GO(__NR_stat, ".s .m");
- //SY(__NR_stat);
+   // __NR_stat 106 --> sys_newstat()
+   GO(__NR_stat, "2s 2m");
+   SY(__NR_stat, x0, x0);
 
-   // __NR_lstat 107
- //GO(__NR_lstat, ".s .m");
- //SY(__NR_lstat);
+   // __NR_lstat 107 --> sys_newlstat()
+   GO(__NR_lstat, "2s 2m");
+   SY(__NR_lstat, x0, x0);
 
-   // __NR_fstat 108
- //GO(__NR_fstat, ".s .m");
- //SY(__NR_fstat);
+   // __NR_fstat 108 --> sys_newfstat()
+   GO(__NR_fstat, "2s 1m");
+   SY(__NR_fstat, x0, x0);
 
    // __NR_olduname 109
    // (obsolete, not handled by Valgrind)
@@ -546,12 +548,12 @@ int main(void)
    SY(__NR_afs_syscall);
 
    // __NR_setfsuid 138
- //GO(__NR_setfsuid, ".s .m");
- //SY(__NR_setfsuid);
+   GO(__NR_setfsuid, "1s 0m");
+   SY(__NR_setfsuid);
 
    // __NR_setfsgid 139
- //GO(__NR_setfsgid, ".s .m");
- //SY(__NR_setfsgid);
+   GO(__NR_setfsgid, "1s 0m");
+   SY(__NR_setfsgid);
 
    // __NR__llseek 140
  //GO(__NR__llseek, ".s .m");
@@ -721,9 +723,9 @@ int main(void)
  //GO(__NR_pwrite64, ".s .m");
  //SY(__NR_pwrite64);
 
-   // __NR_chown 182
- //GO(__NR_chown, ".s .m");
- //SY(__NR_chown);
+   // __NR_chown 182 --> sys_chown16()
+   GO(__NR_chown, "3s 1m");
+   SY(__NR_chown, x0, x0, x0);
 
    // __NR_getcwd 183
  //GO(__NR_getcwd, ".s .m");
@@ -774,20 +776,20 @@ int main(void)
  //SY(__NR_ftruncate64);
 
    // __NR_stat64 195
- //GO(__NR_stat64, ".s .m");
- //SY(__NR_stat64);
+   GO(__NR_stat64, "2s 2m");
+   SY(__NR_stat64, x0, x0);
 
    // __NR_lstat64 196
- //GO(__NR_lstat64, ".s .m");
- //SY(__NR_lstat64);
+   GO(__NR_lstat64, "2s 2m");
+   SY(__NR_lstat64, x0, x0);
 
    // __NR_fstat64 197
- //GO(__NR_fstat64, ".s .m");
- //SY(__NR_fstat64);
+   GO(__NR_fstat64, "2s 1m");
+   SY(__NR_fstat64, x0, x0);
 
-   // __NR_lchown32 198
- //GO(__NR_lchown32, ".s .m");
- //SY(__NR_lchown32);
+   // __NR_lchown32 198 --> sys_chown()
+   GO(__NR_lchown32, "3s 1m");
+   SY(__NR_lchown32, x0, x0, x0);
 
    // __NR_getuid32 199 --> sys_getuid()
    GO(__NR_getuid32, "0e");
@@ -821,9 +823,9 @@ int main(void)
  //GO(__NR_setgroups32, ".s .m");
  //SY(__NR_setgroups32);
 
-   // __NR_fchown32 207
- //GO(__NR_fchown32, ".s .m");
- //SY(__NR_fchown32);
+   // __NR_fchown32 207 --> sys_fchown()
+   GO(__NR_fchown32, "3s 0m");
+   SY(__NR_fchown32, x0, x0, x0);
 
    // __NR_setresuid32 208
  //GO(__NR_setresuid32, ".s .m");
@@ -841,9 +843,9 @@ int main(void)
  //GO(__NR_getresgid32, ".s .m");
  //SY(__NR_getresgid32);
 
-   // __NR_chown32 212
- //GO(__NR_chown32, ".s .m");
- //SY(__NR_chown32);
+   // __NR_chown32 212 --> sys_chown()
+   GO(__NR_chown32, "3s 1m");
+   SY(__NR_chown32, x0, x0, x0);
 
    // __NR_setuid32 213 --> sys_setuid()
    GO(__NR_setuid32, "1s 0m");
@@ -853,13 +855,13 @@ int main(void)
    GO(__NR_setgid32, "1s 0m");
    SY(__NR_setgid32);
 
-   // __NR_setfsuid32 215
- //GO(__NR_setfsuid32, ".s .m");
- //SY(__NR_setfsuid32);
+   // __NR_setfsuid32 215 --> sys_setfsuid()
+   GO(__NR_setfsuid32, "1s 0m");
+   SY(__NR_setfsuid32, x0);
 
-   // __NR_setfsgid32 216
- //GO(__NR_setfsgid32, ".s .m");
- //SY(__NR_setfsgid32);
+   // __NR_setfsgid32 216 --> sys_setfsgid()
+   GO(__NR_setfsgid32, "1s 0m");
+   SY(__NR_setfsgid32, x0);
 
    // __NR_pivot_root 217
  //GO(__NR_pivot_root, ".s .m");
@@ -897,53 +899,53 @@ int main(void)
  //GO(__NR_readahead, ".s .m");
  //SY(__NR_readahead);
 
-   // __NR_setxattr 226
- //GO(__NR_setxattr, ".s .m");
- //SY(__NR_setxattr);
+   // __NR_setxattr 226 --> sys_xattr()
+   GO(__NR_setxattr, "5s 3m");
+   SY(__NR_setxattr, x0, x0, x0, x0+1, x0);
 
-   // __NR_lsetxattr 227
- //GO(__NR_lsetxattr, ".s .m");
- //SY(__NR_lsetxattr);
+   // __NR_lsetxattr 227 --> sys_lsetxattr()
+   GO(__NR_lsetxattr, "5s 3m");
+   SY(__NR_lsetxattr, x0, x0, x0, x0+1, x0);
 
-   // __NR_fsetxattr 228
- //GO(__NR_fsetxattr, ".s .m");
- //SY(__NR_fsetxattr);
+   // __NR_fsetxattr 228 --> sys_fsetxattr()
+   GO(__NR_fsetxattr, "5s 2m");
+   SY(__NR_fsetxattr, x0, x0, x0, x0+1, x0);
 
-   // __NR_getxattr 229
- //GO(__NR_getxattr, ".s .m");
- //SY(__NR_getxattr);
+   // __NR_getxattr 229 --> sys_getxattr()
+   GO(__NR_getxattr, "4s 3m");
+   SY(__NR_getxattr, x0, x0, x0, x0+1);
 
-   // __NR_lgetxattr 230
- //GO(__NR_lgetxattr, ".s .m");
- //SY(__NR_lgetxattr);
+   // __NR_lgetxattr 230 --> sys_lgetxattr()
+   GO(__NR_lgetxattr, "4s 3m");
+   SY(__NR_lgetxattr, x0, x0, x0, x0+1);
 
-   // __NR_fgetxattr 231
- //GO(__NR_fgetxattr, ".s .m");
- //SY(__NR_fgetxattr);
+   // __NR_fgetxattr 231 --> sys_fgetxattr()
+   GO(__NR_fgetxattr, "4s 2m");
+   SY(__NR_fgetxattr, x0, x0, x0, x0+1);
 
-   // __NR_listxattr 232
- //GO(__NR_listxattr, ".s .m");
- //SY(__NR_listxattr);
+   // __NR_listxattr 232 --> sys_listxattr()
+   GO(__NR_listxattr, "3s 2m");
+   SY(__NR_listxattr, x0, x0, x0+1);
 
-   // __NR_llistxattr 233
- //GO(__NR_llistxattr, ".s .m");
- //SY(__NR_llistxattr);
+   // __NR_llistxattr 233 --> sys_llistxattr()
+   GO(__NR_llistxattr, "3s 2m");
+   SY(__NR_llistxattr, x0, x0, x0+1);
 
-   // __NR_flistxattr 234
- //GO(__NR_flistxattr, ".s .m");
- //SY(__NR_flistxattr);
+   // __NR_flistxattr 234 --> sys_flistxattr()
+   GO(__NR_flistxattr, "3s 1m");
+   SY(__NR_flistxattr, x0, x0, x0+1);
 
-   // __NR_removexattr 235
- //GO(__NR_removexattr, ".s .m");
- //SY(__NR_removexattr);
+   // __NR_removexattr 235 --> sys_removexattr()
+   GO(__NR_removexattr, "2s 2m");
+   SY(__NR_removexattr, x0, x0);
 
-   // __NR_lremovexattr 236
- //GO(__NR_lremovexattr, ".s .m");
- //SY(__NR_lremovexattr);
+   // __NR_lremovexattr 236 --> sys_lremovexattr()
+   GO(__NR_lremovexattr, "2s 2m");
+   SY(__NR_lremovexattr, x0, x0);
 
-   // __NR_fremovexattr 237
- //GO(__NR_fremovexattr, ".s .m");
- //SY(__NR_fremovexattr);
+   // __NR_fremovexattr 237 --> sys_fremovexattr()
+   GO(__NR_fremovexattr, "2s 1m");
+   SY(__NR_fremovexattr, x0, x0);
 
    // __NR_tkill 238
  //GO(__NR_tkill, ".s .m");

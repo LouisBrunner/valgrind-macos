@@ -1288,100 +1288,155 @@ PRE(iopl)
    PRINT("iopl ( %d )", arg1);
 }
 
-PRE(setxattr)
+PREx(sys_setxattr, MayBlock)
 {
-   PRINT("setxattr ( %p, %p, %p, %llu, %d )",
+   PRINT("sys_setxattr ( %p, %p, %p, %llu, %d )",
          arg1, arg2, arg3, (ULong)arg4, arg5);
+   PRE_REG_READ5(long, "setxattr",
+                 char *, path, char *, name,
+                 void *, value, vki_size_t, size, int, flags);
    PRE_MEM_RASCIIZ( "setxattr(path)", arg1 );
    PRE_MEM_RASCIIZ( "setxattr(name)", arg2 );
    PRE_MEM_READ( "setxattr(value)", arg3, arg4 );
 }
 
-PREALIAS(lsetxattr, setxattr);
-
-PRE(fsetxattr)
+PREx(sys_lsetxattr, MayBlock)
 {
-   /* int fsetxattr (int filedes, const char *name,
-      const void *value, size_t size, int flags); */
-   PRINT("fsetxattr ( %d, %p, %p, %llu, %d )",
+   PRINT("sys_lsetxattr ( %p, %p, %p, %llu, %d )",
          arg1, arg2, arg3, (ULong)arg4, arg5);
+   PRE_REG_READ5(long, "lsetxattr",
+                 char *, path, char *, name,
+                 void *, value, vki_size_t, size, int, flags);
+   PRE_MEM_RASCIIZ( "lsetxattr(path)", arg1 );
+   PRE_MEM_RASCIIZ( "lsetxattr(name)", arg2 );
+   PRE_MEM_READ( "lsetxattr(value)", arg3, arg4 );
+}
+
+PREx(sys_fsetxattr, MayBlock)
+{
+   PRINT("sys_fsetxattr ( %d, %p, %p, %llu, %d )",
+         arg1, arg2, arg3, (ULong)arg4, arg5);
+   PRE_REG_READ5(long, "fsetxattr",
+                 int, fd, char *, name, void *, value,
+                 vki_size_t, size, int, flags);
    PRE_MEM_RASCIIZ( "fsetxattr(name)", arg2 );
    PRE_MEM_READ( "fsetxattr(value)", arg3, arg4 );
 }
 
-PRE(getxattr)
+PREx(sys_getxattr, MayBlock)
 {
-   PRINT("getxattr ( %p, %p, %p, %llu )", arg1,arg2,arg3, (ULong)arg4);
+   PRINT("sys_getxattr ( %p, %p, %p, %llu )", arg1,arg2,arg3, (ULong)arg4);
+   PRE_REG_READ4(ssize_t, "getxattr",
+                 char *, path, char *, name, void *, value, vki_size_t, size);
    PRE_MEM_RASCIIZ( "getxattr(path)", arg1 );
    PRE_MEM_RASCIIZ( "getxattr(name)", arg2 );
    PRE_MEM_WRITE( "getxattr(value)", arg3, arg4 );
 }
 
-POST(getxattr)
+POSTx(sys_getxattr)
 {
    if (res > 0 && arg3 != (Addr)NULL) {
       POST_MEM_WRITE( arg3, res );
    }
 }
 
-PREALIAS(lgetxattr, getxattr);
-POSTALIAS(lgetxattr, getxattr);
-
-PRE(fgetxattr)
+PREx(sys_lgetxattr, MayBlock)
 {
-   PRINT("fgetxattr ( %d, %p, %p, %llu )", arg1, arg2, arg3, (ULong)arg4);
+   PRINT("sys_lgetxattr ( %p, %p, %p, %llu )", arg1,arg2,arg3, (ULong)arg4);
+   PRE_REG_READ4(ssize_t, "lgetxattr",
+                 char *, path, char *, name, void *, value, vki_size_t, size);
+   PRE_MEM_RASCIIZ( "lgetxattr(path)", arg1 );
+   PRE_MEM_RASCIIZ( "lgetxattr(name)", arg2 );
+   PRE_MEM_WRITE( "lgetxattr(value)", arg3, arg4 );
+}
+
+POSTx(sys_lgetxattr)
+{
+   if (res > 0 && arg3 != (Addr)NULL) {
+      POST_MEM_WRITE( arg3, res );
+   }
+}
+
+PREx(sys_fgetxattr, MayBlock)
+{
+   PRINT("sys_fgetxattr ( %d, %p, %p, %llu )", arg1, arg2, arg3, (ULong)arg4);
+   PRE_REG_READ4(ssize_t, "fgetxattr",
+                 int, fd, char *, name, void *, value, vki_size_t, size);
    PRE_MEM_RASCIIZ( "fgetxattr(name)", arg2 );
    PRE_MEM_WRITE( "fgetxattr(value)", arg3, arg4 );
 }
 
-POST(fgetxattr)
+POSTx(sys_fgetxattr)
 {
    if (res > 0 && arg3 != (Addr)NULL)
       POST_MEM_WRITE( arg3, res );
 }
 
-PRE(listxattr)
+PREx(sys_listxattr, MayBlock)
 {
-   PRINT("listxattr ( %p, %p, %llu )", arg1, arg2, (ULong)arg3);
+   PRINT("sys_listxattr ( %p, %p, %llu )", arg1, arg2, (ULong)arg3);
+   PRE_REG_READ3(ssize_t, "listxattr",
+                 char *, path, char *, list, vki_size_t, size);
    PRE_MEM_RASCIIZ( "listxattr(path)", arg1 );
    PRE_MEM_WRITE( "listxattr(list)", arg2, arg3 );
 }
 
-POST(listxattr)
+POSTx(sys_listxattr)
 {
    if (res > 0 && arg2 != (Addr)NULL)
       POST_MEM_WRITE( arg2, res );
 }
 
-PREALIAS(llistxattr, listxattr);
-POSTALIAS(llistxattr, listxattr);
-
-PRE(flistxattr)
+PREx(sys_llistxattr, MayBlock)
 {
-   /* ssize_t flistxattr (int filedes, char *list, size_t size); */
-   PRINT("flistxattr ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
-   PRE_MEM_WRITE( "listxattr(list)", arg2, arg3 );
+   PRINT("sys_llistxattr ( %p, %p, %llu )", arg1, arg2, (ULong)arg3);
+   PRE_REG_READ3(ssize_t, "llistxattr",
+                 char *, path, char *, list, vki_size_t, size);
+   PRE_MEM_RASCIIZ( "llistxattr(path)", arg1 );
+   PRE_MEM_WRITE( "llistxattr(list)", arg2, arg3 );
 }
 
-POST(flistxattr)
+POSTx(sys_llistxattr)
 {
    if (res > 0 && arg2 != (Addr)NULL)
       POST_MEM_WRITE( arg2, res );
 }
 
-PRE(removexattr)
+PREx(sys_flistxattr, MayBlock)
 {
-   PRINT("removexattr ( %p, %p )", arg1, arg2);
-   PRE_MEM_RASCIIZ( "listxattr(path)", arg1 );
-   PRE_MEM_RASCIIZ( "listxattr(name)", arg2 );
+   PRINT("sys_flistxattr ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
+   PRE_REG_READ3(ssize_t, "flistxattr",
+                 int, fd, char *, list, vki_size_t, size);
+   PRE_MEM_WRITE( "flistxattr(list)", arg2, arg3 );
 }
 
-PREALIAS(lremovexattr, removexattr);
-
-PRE(fremovexattr)
+POSTx(sys_flistxattr)
 {
-   PRINT("removexattr ( %d, %p )", arg1, arg2);
-   PRE_MEM_RASCIIZ( "listxattr(name)", arg2 );
+   if (res > 0 && arg2 != (Addr)NULL)
+      POST_MEM_WRITE( arg2, res );
+}
+
+PREx(sys_removexattr, MayBlock)
+{
+   PRINT("sys_removexattr ( %p, %p )", arg1, arg2);
+   PRE_REG_READ2(long, "removexattr", char *, path, char *, name);
+   PRE_MEM_RASCIIZ( "removexattr(path)", arg1 );
+   PRE_MEM_RASCIIZ( "removexattr(name)", arg2 );
+}
+
+PREx(sys_lremovexattr, MayBlock)
+{
+   PRINT("sys_lremovexattr ( %p, %p )", arg1, arg2);
+   PRE_REG_READ2(long, "lremovexattr", char *, path, char *, name);
+   PRE_MEM_RASCIIZ( "lremovexattr(path)", arg1 );
+   PRE_MEM_RASCIIZ( "lremovexattr(name)", arg2 );
+}
+
+PREx(sys_fremovexattr, MayBlock)
+{
+   PRINT("sys_fremovexattr ( %d, %p )", arg1, arg2);
+   PRE_REG_READ2(long, "fremovexattr", int, fd, char *, name);
+   PRE_MEM_RASCIIZ( "fremovexattr(name)", arg2 );
 }
 
 PRE(quotactl)
@@ -1567,10 +1622,10 @@ PRE(setresgid32)
    PRINT("setresgid32 ( %d, %d, %d )", arg1, arg2, arg3);
 }
 
-PRE(setfsuid32)
+PREx(sys_setfsuid, 0)
 {
-   /* int setfsuid(uid_t fsuid); */
-   PRINT("setfsuid ( %d )", arg1);
+   PRINT("sys_setfsuid ( %d )", arg1);
+   PRE_REG_READ1(long, "setfsuid", vki_uid_t, uid);
 }
 
 PRE(_sysctl)
@@ -1650,10 +1705,10 @@ PRE(getpriority)
    PRINT("getpriority ( %d, %d )", arg1, arg2);
 }
 
-PRE(setfsgid)
+PREx(sys_setfsgid16, 0)
 {
-   /* int setfsgid(gid_t gid); */
-   PRINT("setfsgid ( %d )", arg1);
+   PRINT("sys_setfsgid16 ( %d )", arg1);
+   PRE_REG_READ1(long, "setfsgid16", vki_old_gid_t, gid);
 }
 
 PREx(sys_setregid16, 0)
@@ -1668,10 +1723,10 @@ PRE(setresuid)
    PRINT("setresuid ( %d, %d, %d )", arg1, arg2, arg3);
 }
 
-PRE(setfsuid)
+PREx(sys_setfsuid16, 0)
 {
-   /* int setfsuid(uid_t uid); */
-   PRINT("setfsuid ( %d )", arg1);
+   PRINT("sys_setfsuid16 ( %d )", arg1);
+   PRE_REG_READ1(long, "setfsuid16", vki_old_uid_t, uid);
 }
 
 PRE(sendfile)
@@ -2006,15 +2061,31 @@ PREx(sys_chmod, 0)
    PRE_MEM_RASCIIZ( "chmod(path)", arg1 );
 }
 
-PRE(chown)
+PREx(sys_chown16, 0)
+{
+   PRINT("sys_chown16 ( %p, 0x%x, 0x%x )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "chown16",
+                 const char *, path,
+                 vki_old_uid_t, owner, vki_old_gid_t, group);
+   PRE_MEM_RASCIIZ( "chown16(path)", arg1 );
+}
+
+PREx(sys_chown, 0)
 {
    /* int chown(const char *path, uid_t owner, gid_t group); */
-   PRINT("chown ( %p, 0x%x, 0x%x )", arg1,arg2,arg3);
+   PRINT("sys_chown ( %p, 0x%x, 0x%x )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "chown",
+                 const char *, path, vki_uid_t, owner, vki_gid_t, group);
    PRE_MEM_RASCIIZ( "chown(path)", arg1 );
 }
 
-PREALIAS(chown32, chown);
-PREALIAS(lchown32, chown);
+PREx(sys_lchown, 0)
+{
+   PRINT("sys_lchown ( %p, 0x%x, 0x%x )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "lchown",
+                 const char *, path, vki_uid_t, owner, vki_gid_t, group);
+   PRE_MEM_RASCIIZ( "lchown(path)", arg1 );
+}
 
 PREx(sys_close, 0)
 {
@@ -2090,13 +2161,19 @@ PRE(fchdir)
    PRINT("fchdir ( %d )", arg1);
 }
 
-PRE(fchown)
+PREx(sys_fchown16, 0)
 {
-   /* int fchown(int filedes, uid_t owner, gid_t group); */
-   PRINT("fchown ( %d, %d, %d )", arg1,arg2,arg3);
+   PRINT("sys_fchown16 ( %d, %d, %d )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "fchown16",
+                 unsigned int, fd, vki_old_uid_t, owner, vki_old_gid_t, group);
 }
 
-PREALIAS(fchown32, fchown);
+PREx(sys_fchown, 0)
+{
+   PRINT("sys_fchown ( %d, %d, %d )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "fchown",
+                 unsigned int, fd, vki_uid_t, owner, vki_gid_t, group);
+}
 
 PRE(fchmod)
 {
@@ -2125,14 +2202,14 @@ POST(fcntl64)
    }
 }
 
-PRE(fstat)
+PREx(sys_newfstat, 0)
 {
-   /* int fstat(int filedes, struct stat *buf); */
-   PRINT("fstat ( %d, %p )",arg1,arg2);
-   PRE_MEM_WRITE( "fstat", arg2, sizeof(struct vki_stat) );
+   PRINT("sys_newfstat ( %d, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "fstat", unsigned int, fd, struct stat *, buf);
+   PRE_MEM_WRITE( "fstat(buf)", arg2, sizeof(struct vki_stat) );
 }
 
-POST(fstat)
+POSTx(sys_newfstat)
 {
    POST_MEM_WRITE( arg2, sizeof(struct vki_stat) );
 }
@@ -2938,6 +3015,7 @@ POST(ipc)
    }
 }
 
+// XXX: I reckon some of these cases must be x86-specific
 PREx(sys_ioctl, MayBlock)
 {
    PRINT("sys_ioctl ( %d, 0x%x, %p )",arg1,arg2,arg3);
@@ -4268,30 +4346,30 @@ POST(_llseek)
       POST_MEM_WRITE( arg4, sizeof(vki_loff_t) );
 }
 
-PRE(lstat)
+PREx(sys_newlstat, 0)
 {
-   /* int lstat(const char *file_name, struct stat *buf); */
-   PRINT("lstat ( %p(%s), %p )",arg1,arg1,arg2);
+   PRINT("sys_newlstat ( %p(%s), %p )", arg1,arg1,arg2);
+   PRE_REG_READ2(long, "lstat", char *, file_name, struct stat *, buf);
    PRE_MEM_RASCIIZ( "lstat(file_name)", arg1 );
    PRE_MEM_WRITE( "lstat(buf)", arg2, sizeof(struct vki_stat) );
 }
 
-POST(lstat)
+POSTx(sys_newlstat)
 {
    if (res == 0) {
       POST_MEM_WRITE( arg2, sizeof(struct vki_stat) );
    }
 }
 
-PRE(lstat64)
+PREx(sys_lstat64, 0)
 {
-   /* int lstat64(const char *file_name, struct stat64 *buf); */
    PRINT("lstat64 ( %p(%s), %p )",arg1,arg1,arg2);
+   PRE_REG_READ2(long, "lstat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "lstat64(file_name)", arg1 );
    PRE_MEM_WRITE( "lstat64(buf)", arg2, sizeof(struct vki_stat64) );
 }
 
-POST(lstat64)
+POSTx(sys_lstat64)
 {
    if (res == 0) {
       POST_MEM_WRITE( arg2, sizeof(struct vki_stat64) );
@@ -4787,10 +4865,10 @@ POST(setitimer)
    }
 }
 
-PRE(setfsgid32)
+PREx(sys_setfsgid, 0)
 {
-   /* int setfsgid(uid_t fsgid); */
-   PRINT("setfsgid ( %d )", arg1);
+   PRINT("sys_setfsgid ( %d )", arg1);
+   PRE_REG_READ1(long, "setfsgid", vki_gid_t, gid);
 }
 
 PREx(sys_setgid16, 0)
@@ -5274,15 +5352,15 @@ POST(socketcall)
    }
 }
 
-PRE(stat)
+PREx(sys_newstat, 0)
 {
-   /* int stat(const char *file_name, struct stat *buf); */
-   PRINT("stat ( %p, %p )",arg1,arg2);
+   PRINT("sys_newstat ( %p(%s), %p )", arg1,arg1,arg2);
+   PRE_REG_READ2(long, "stat", char *, file_name, struct stat *, buf);
    PRE_MEM_RASCIIZ( "stat(file_name)", arg1 );
    PRE_MEM_WRITE( "stat(buf)", arg2, sizeof(struct vki_stat) );
 }
 
-POST(stat)
+POSTx(sys_newstat)
 {
    POST_MEM_WRITE( arg2, sizeof(struct vki_stat) );
 }
@@ -5321,27 +5399,27 @@ PRE(symlink)
    PRE_MEM_RASCIIZ( "symlink(newpath)", arg2 );
 }
 
-PRE(stat64)
+PREx(sys_stat64, 0)
 {
-   /* int stat64(const char *file_name, struct stat64 *buf); */
-   PRINT("stat64 ( %p, %p )",arg1,arg2);
+   PRINT("sys_stat64 ( %p, %p )",arg1,arg2);
+   PRE_REG_READ2(long, "stat64", char *, file_name, struct stat64 *, buf);
    PRE_MEM_RASCIIZ( "stat64(file_name)", arg1 );
    PRE_MEM_WRITE( "stat64(buf)", arg2, sizeof(struct vki_stat64) );
 }
 
-POST(stat64)
+POSTx(sys_stat64)
 {
    POST_MEM_WRITE( arg2, sizeof(struct vki_stat64) );
 }
 
-PRE(fstat64)
+PREx(sys_fstat64, 0)
 {
-   /* int fstat64(int filedes, struct stat64 *buf); */
-   PRINT("fstat64 ( %d, %p )",arg1,arg2);
+   PRINT("sys_fstat64 ( %d, %p )",arg1,arg2);
+   PRE_REG_READ2(long, "fstat64", unsigned long, fd, struct stat64 *, buf);
    PRE_MEM_WRITE( "fstat64(buf)", arg2, sizeof(struct vki_stat64) );
 }
 
-POST(fstat64)
+POSTx(sys_fstat64)
 {
    POST_MEM_WRITE( arg2, sizeof(struct vki_stat64) );
 }
@@ -6195,7 +6273,7 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_acct,             sys_acct),         // 51 * (SVR4, non-POSIX)
    SYSX_(__NR_umount2,          sys_umount),       // 52 * L
    SYSX_(__NR_lock,             sys_ni_syscall),   // 53 * P -- unimplemented
-   SYSXY(__NR_ioctl,            sys_ioctl),        // 54 * (varying)
+   SYSXY(__NR_ioctl,            sys_ioctl),        // 54 */x86 (varying)
 
    SYSXY(__NR_fcntl,            sys_fcntl),        // 55 * (P...complex)
    SYSX_(__NR_mpx,              sys_ni_syscall),   // 56 * P -- unimplemented
@@ -6245,7 +6323,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(__NR_ftruncate,        sys_ftruncate, MayBlock), // 93 *
    SYSB_(__NR_fchmod,           sys_fchmod, 0),    // 94 *
 
-   SYSB_(__NR_fchown,           sys_fchown16, 0), // 95 ##
+   SYSX_(__NR_fchown,           sys_fchown16),     // 95 ## (SVr4,BSD4.3)
    SYSB_(__NR_getpriority,      sys_getpriority, 0), // 96 *
    SYSB_(__NR_setpriority,      sys_setpriority, 0), // 97 *
    //   (__NR_profil,           sys_ni_syscall),   // 98 * P -- unimplemented
@@ -6258,9 +6336,9 @@ static const struct sys_info sys_info[] = {
    SYSBA(__NR_setitimer,        sys_setitimer, NBRunInLWP), // 104 *
 
    SYSBA(__NR_getitimer,        sys_getitimer, NBRunInLWP), // 105 *
-   SYSBA(__NR_stat,             sys_newstat, 0),   // 106 *
-   SYSBA(__NR_lstat,            sys_newlstat, 0),  // 107 *
-   SYSBA(__NR_fstat,            sys_newfstat, 0),  // 108 *
+   SYSXY(__NR_stat,             sys_newstat),      // 106 * P
+   SYSXY(__NR_lstat,            sys_newlstat),     // 107 *
+   SYSXY(__NR_fstat,            sys_newfstat),     // 108 * P (SVr4,BSD4.3)
    //   (__NR_olduname,         sys_uname),        // 109 (?) L -- obsolete
 
    SYSB_(__NR_iopl,             sys_iopl, 0),      // 110 
@@ -6298,8 +6376,8 @@ static const struct sys_info sys_info[] = {
    //   (__NR_sysfs,            sys_sysfs),        // 135 * (SVr4)
    SYSB_(__NR_personality,      sys_personality, 0),  // 135 * (SVr4)
    SYSX_(__NR_afs_syscall,      sys_ni_syscall),   // 137 * P
-   SYSB_(__NR_setfsuid,         sys_setfsuid16, 0), // 138 ##
-   SYSB_(__NR_setfsgid,         sys_setfsgid16, 0), // 139 ##
+   SYSX_(__NR_setfsuid,         sys_setfsuid16),   // 138 ## L
+   SYSX_(__NR_setfsgid,         sys_setfsgid16),   // 139 ## L
 
    SYSBA(__NR__llseek,          sys_llseek, 0),    // 140 *
    SYSBA(__NR_getdents,         sys_getdents, MayBlock), // 141 *
@@ -6351,7 +6429,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(__NR_pread64,          sys_pread64, MayBlock), // 180 *
 
    SYSB_(__NR_pwrite64,         sys_pwrite64, MayBlock), // 181 *
-   SYSB_(__NR_chown,            sys_chown16, 0),   // 182 
+   SYSX_(__NR_chown,            sys_chown16),      // 182 * P
    SYSBA(__NR_getcwd,           sys_getcwd, 0),    // 183 *
    SYSBA(__NR_capget,           sys_capget, 0),    // 184 *
 
@@ -6368,10 +6446,10 @@ static const struct sys_info sys_info[] = {
    SYSB_(__NR_truncate64,       sys_truncate64, MayBlock),   // 193 %%
    SYSB_(__NR_ftruncate64,      sys_ftruncate64, MayBlock), // 194 %%
    
-   SYSBA(__NR_stat64,           sys_stat64, 0),    // 195 %%
-   SYSBA(__NR_lstat64,          sys_lstat64, 0),   // 196 %%
-   SYSBA(__NR_fstat64,          sys_fstat64, 0),   // 197 %%
-   SYSB_(__NR_lchown32,         sys_lchown, 0),    // 198 *
+   SYSXY(__NR_stat64,           sys_stat64),       // 195 %% (?)
+   SYSXY(__NR_lstat64,          sys_lstat64),      // 196 %% (?)
+   SYSXY(__NR_fstat64,          sys_fstat64),      // 197 %% (?)
+   SYSX_(__NR_lchown32,         sys_lchown),       // 198 * (L?)
    SYSX_(__NR_getuid32,         sys_getuid),       // 199 *
 
    SYSX_(__NR_getgid32,         sys_getgid),       // 200 *
@@ -6382,18 +6460,18 @@ static const struct sys_info sys_info[] = {
 
    SYSBA(__NR_getgroups32,      sys_getgroups, 0), // 205 *
    SYSB_(__NR_setgroups32,      sys_setgroups, 0), // 206 *
-   SYSB_(__NR_fchown32,         sys_fchown, 0),    // 207 *
+   SYSX_(__NR_fchown32,         sys_fchown),       // 207 * (SVr4,BSD4.3)
    SYSB_(__NR_setresuid32,      sys_setresuid, 0), // 208 *
    SYSBA(__NR_getresuid32,      sys_getresuid, 0), // 209 *
 
    SYSB_(__NR_setresgid32,      sys_setresgid, 0), // 210 *
    SYSBA(__NR_getresgid32,      sys_getresgid, 0), // 211 *
-   SYSB_(__NR_chown32,          sys_chown, 0),     // 212 *
+   SYSX_(__NR_chown32,          sys_chown),        // 212 * P
    SYSX_(__NR_setuid32,         sys_setuid),       // 213 *
    SYSX_(__NR_setgid32,         sys_setgid),       // 214 * (SVr4,SVID)
 
-   SYSB_(__NR_setfsuid32,       sys_setfsuid, 0),  // 215 *
-   SYSB_(__NR_setfsgid32,       sys_setfsgid, 0),  // 216 *
+   SYSX_(__NR_setfsuid32,       sys_setfsuid),     // 215 * L
+   SYSX_(__NR_setfsgid32,       sys_setfsgid),     // 216 * L
    //   (__NR_pivot_root,       sys_pivot_root),   // 217 * L
    SYSBA(__NR_mincore,          sys_mincore, 0),   // 218 *
    SYSB_(__NR_madvise,          sys_madvise, MayBlock), // 219 *
@@ -6408,20 +6486,20 @@ static const struct sys_info sys_info[] = {
    //   (__NR_gettid,           sys_gettid),       // 224 * L
 
    //   (__NR_readahead,        sys_readahead),    // 225 * ()
-   SYSB_(__NR_setxattr,         sys_setxattr, MayBlock),         // 226 * L?
-   SYSB_(__NR_lsetxattr,        sys_lsetxattr, MayBlock),         // 227 * L?
-   SYSB_(__NR_fsetxattr,        sys_fsetxattr, MayBlock),         // 228 * L?
-   SYSBA(__NR_getxattr,         sys_getxattr, MayBlock),         // 229 * L?
+   SYSX_(__NR_setxattr,         sys_setxattr),     // 226 * L?
+   SYSX_(__NR_lsetxattr,        sys_lsetxattr),    // 227 * L?
+   SYSX_(__NR_fsetxattr,        sys_fsetxattr),    // 228 * L?
+   SYSXY(__NR_getxattr,         sys_getxattr),     // 229 * L?
 
-   SYSBA(__NR_lgetxattr,        sys_lgetxattr, MayBlock),         // 230 * L?
-   SYSBA(__NR_fgetxattr,        sys_fgetxattr, MayBlock),         // 231 * L?
-   SYSBA(__NR_listxattr,        sys_listxattr, MayBlock),         // 232 * L?
-   SYSBA(__NR_llistxattr,       sys_llistxattr, MayBlock),         // 233 * L?
-   SYSBA(__NR_flistxattr,       sys_flistxattr, MayBlock),         // 234 * L?
+   SYSXY(__NR_lgetxattr,        sys_lgetxattr),    // 230 * L?
+   SYSXY(__NR_fgetxattr,        sys_fgetxattr),    // 231 * L?
+   SYSXY(__NR_listxattr,        sys_listxattr),    // 232 * L?
+   SYSXY(__NR_llistxattr,       sys_llistxattr),   // 233 * L?
+   SYSXY(__NR_flistxattr,       sys_flistxattr),   // 234 * L?
 
-   SYSB_(__NR_removexattr,      sys_removexattr, MayBlock),         // 235 * L?
-   SYSB_(__NR_lremovexattr,     sys_lremovexattr, MayBlock),         // 236 * L?
-   SYSB_(__NR_fremovexattr,     sys_fremovexattr, MayBlock),         // 237 * L?
+   SYSX_(__NR_removexattr,      sys_removexattr),  // 235 * L?
+   SYSX_(__NR_lremovexattr,     sys_lremovexattr), // 236 * L?
+   SYSX_(__NR_fremovexattr,     sys_fremovexattr), // 237 * L?
    //   (__NR_tkill,            sys_tkill),        // 238 * L
    SYSBA(__NR_sendfile64,       sys_sendfile64, MayBlock), // 239 *
 

@@ -1111,20 +1111,21 @@ void VG_(mash_LD_PRELOAD_string)( Char* ld_preload_str )
    continue the program, though; to continue, quit GDB.  */
 extern void VG_(start_GDB_whilst_on_client_stack) ( void )
 {
+   Int   res;
    UChar buf[100];
    VG_(sprintf)(buf,
                 "/usr/bin/gdb -nw /proc/%d/exe %d", 
                 VG_(getpid)(), VG_(getpid)());
-   VG_(printf)("starting GDB with cmd: %s\n", buf);
-   VG_(mash_LD_PRELOAD_string)(VG_(getenv)("LD_PRELOAD"));
-   { /* HACK ALERT */
-     extern int system ( const char * );
-     system(buf);
-     /* end of HACK ALERT */
+   VG_(message)(Vg_UserMsg, "starting GDB with cmd: %s", buf);
+   res = VG_(system)(buf);
+   if (res == 0) {      
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, 
+         "GDB has detached.  Valgrind regains control.  We continue.");
+   } else {
+      VG_(message)(Vg_UserMsg, "Apparently failed!");
+      VG_(message)(Vg_UserMsg, "");
    }
-   VG_(message)(Vg_UserMsg, "");
-   VG_(message)(Vg_UserMsg, 
-      "GDB has detached.  Valgrind regains control.  We continue.");
 }
 
 

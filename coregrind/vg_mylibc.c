@@ -947,6 +947,40 @@ ULong VG_(read_microsecond_timer)( void )
    return (1000000ULL * (ULong)(tv.tv_sec)) + (ULong)(tv.tv_usec);
 }
 
+/* Return -1 if error, else 0.  NOTE does not indicate return code of
+   child! */
+Int VG_(system) ( Char* cmd )
+{
+   Int pid, res;
+   void* environ[1] = { NULL };
+   if (cmd == NULL)
+      return 1;
+   pid = vg_do_syscall0(__NR_fork);
+   if (VG_(is_kerror)(pid))
+      return -1;
+   if (pid == 0) {
+      /* child */
+      Char* argv[4];
+      argv[0] = "/bin/sh";
+      argv[1] = "-c";
+      argv[2] = cmd;
+      argv[3] = 0;
+      (void)vg_do_syscall3(__NR_execve, 
+                           (UInt)"/bin/sh", (UInt)argv, (UInt)&environ);
+      /* If we're still alive here, execve failed. */
+      return -1;
+   } else {
+      /* parent */
+      res = vg_do_syscall3(__NR_waitpid, pid, (UInt)NULL, 0);
+      if (VG_(is_kerror)(res)) {
+         return -1;
+      } else {
+	return 0;
+      }
+   }
+}
+
+
 /* ---------------------------------------------------------------------
    Primitive support for bagging memory via mmap.
    ------------------------------------------------------------------ */

@@ -716,7 +716,11 @@ extern void VG_(panic) ( Char* str )
             __attribute__ ((__noreturn__));
 
 /* Get memory by anonymous mmap. */
-void* VG_(get_memory_from_mmap) ( Int nBytes );
+extern void* VG_(get_memory_from_mmap) ( Int nBytes );
+
+/* Crude stand-in for the glibc system() call. */
+extern Int VG_(system) ( Char* cmd );
+
 
 /* Signal stuff.  Note that these use the vk_ (kernel) structure
    definitions, which are different in places from those that glibc

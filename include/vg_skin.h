@@ -609,7 +609,10 @@ typedef
       76543210
        DOSZACP
    and bit 7 must always be zero since it is unused.
-*/
+
+   Note: these Flag? values are **not** the positions in the actual
+   %eflags register.  */
+
 typedef UChar FlagSet;
 
 #define FlagD (1<<6)
@@ -632,6 +635,14 @@ typedef UChar FlagSet;
 
 #define FlagsALL    (FlagsOSZACP | FlagD)
 #define FlagsEmpty  (FlagSet)0
+
+
+/* flag positions in eflags */
+#define EFlagC  (1 <<  0)       /* carry */
+#define EFlagP  (1 <<  2)       /* parity */
+#define EFlagZ  (1 <<  6)       /* zero */
+#define EFlagS  (1 <<  7)       /* sign */
+#define EFlagO  (1 << 11)       /* overflow */
 
 
 /* Liveness of general purpose registers, useful for code generation.

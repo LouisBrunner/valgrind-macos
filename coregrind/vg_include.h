@@ -246,6 +246,8 @@ extern Char* VG_(clo_weird_hacks);
 extern Bool  VG_(clo_run_libc_freeres);
 /* Use the basic-block chaining optimisation */
 extern Bool VG_(clo_chain_bb);
+/* Generate code for fast conditional jumps (not using pushf/popf) */
+extern Bool VG_(clo_fast_jcc);
 
 
 /* ---------------------------------------------------------------------

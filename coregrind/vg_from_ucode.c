@@ -1535,8 +1535,16 @@ static void synth_jmp_lit ( Addr addr, JmpKind jmpkind )
 }
 
 
+static void synth_mov_offregmem_reg ( Int size, Int off, Int areg, Int reg );
+static void synth_nonshiftop_lit_reg ( Bool upd_cc,
+                                       Opcode opcode, Int size, 
+                                       UInt lit, Int reg );
+
 static void synth_jcond_lit ( Condcode cond, Addr addr )
 {
+   UInt mask;
+   Int delta;
+
   /* Do the following:
         get eflags
         jmp short if not cond to xyxyxy
@@ -1550,7 +1558,6 @@ static void synth_jcond_lit ( Condcode cond, Addr addr )
    5 0008 FFE3                  jmp     *%ebx
    6                    xyxyxy:
   */
-   emit_get_eflags();
    if (VG_(clo_chain_bb)) {
       /* When using BB chaining, the jump sequence is:
         jmp short if not cond to xyxyxy
@@ -1562,14 +1569,63 @@ static void synth_jcond_lit ( Condcode cond, Addr addr )
 		mov    $0x4000d190,%eax			// 5
 		mov    %eax, VGOFF_(m_eip)(%ebp)	// 3
 		call   0x40050f9a <vgPlain_patch_me>	// 5
+		$01					// 1
 	1:	mov    $0x4000d042,%eax
 		call   0x40050f9a <vgPlain_patch_me>
       */
-      VG_(emit_jcondshort_delta) ( invertCondition(cond), 5+3+5 );
+      delta = 5+3+5+1 -1;
    } else
-      VG_(emit_jcondshort_delta) ( invertCondition(cond), 5+1 );
+      delta = 5+1;
+   
+   if (!VG_(clo_fast_jcc)) {
+      /* We're forced to do it the slow way. */
+      emit_get_eflags();
+      cond = invertCondition(cond);
+   } else {
+      switch (cond & ~1) {
+         case CondB:  mask = EFlagC;          goto common;  /* C=1        */
+         case CondZ:  mask = EFlagZ;          goto common;  /* Z=1        */
+         case CondBE: mask = EFlagC | EFlagZ; goto common;  /* C=1 || Z=1 */
+         case CondS:  mask = EFlagS;          goto common;  /* S=1        */
+         case CondP:  mask = EFlagP;          goto common;  /* P=1        */
+         default:
+            /* Too complex .. we have to do it the slow way. */
+            emit_get_eflags();
+            cond = invertCondition(cond);
+            break;
+
+        common:
+            VG_(new_emit)();
+            if ((mask & 0xff) == mask) {
+               VG_(emitB) ( 0xF6 );   /* Grp3 */
+               VG_(emit_amode_offregmem_reg)(
+                  VGOFF_(m_eflags) * 4, R_EBP, 0 /* subcode for TEST */);
+               VG_(emitB) (mask);
+               if (dis)
+                  VG_(printf)("\n\t\ttestb $%x, %d(%%ebp)\n", 
+                              mask, VGOFF_(m_eflags) * 4);
+            } else {
+               VG_(emitB) ( 0xF7 );
+               VG_(emit_amode_offregmem_reg)(
+                  VGOFF_(m_eflags) * 4, R_EBP, 0 /* subcode for TEST */);
+               VG_(emitB) (mask);
+               if (dis)
+                  VG_(printf)("\n\t\ttestx $%x, %d(%%ebp)\n", 
+                              mask, VGOFF_(m_eflags) * 4);
+            }
+
+            if (cond & 1)
+               cond = CondNZ;
+            else
+               cond = CondZ;
+            break;
+      }
+   }
+
+   VG_(emit_jcondshort_delta) ( cond, delta );
    synth_jmp_lit ( addr, JmpBoring );
 }
+
 
 
 static void synth_jmp_ifzero_reg_lit ( Int reg, Addr addr )

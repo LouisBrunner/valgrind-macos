@@ -196,7 +196,7 @@ struct PX_Reply {
    union {
       Int		syscallno;	/* system call completed */
       vki_ksiginfo_t	siginfo;	/* signal */
-   };
+   } u;
 };
 
 /* results pipe */
@@ -511,7 +511,7 @@ static Int proxylwp(void *v)
 	    /* First, send the signal info */
 	    sigreply.tid = px->tid;
 	    sigreply.req = PX_Signal;
-	    sigreply.siginfo = px->siginfo;
+	    sigreply.u.siginfo = px->siginfo;
 
 	    if (!send_reply(&sigreply)) {
 	       ret = 44;		/* incomplete or failed write */
@@ -553,7 +553,7 @@ static Int proxylwp(void *v)
 		  XXX how to distunguish between restartable and
 		  non-restartable syscalls?  Does it matter?
 	       */
-	       reply.syscallno = tst->syscallno;
+	       reply.u.syscallno = tst->syscallno;
 
 	       tst->m_eax = -VKI_ERESTARTSYS;
 	       px->state = PXS_IntReply;
@@ -598,7 +598,7 @@ static Int proxylwp(void *v)
 	    /* We were actually running the syscall when interrupted.
 	       reply should already be set up, including return in eax. */
 	    vg_assert(reply.req == PX_RunSyscall);
-	    vg_assert(reply.syscallno == tst->syscallno);
+	    vg_assert(reply.u.syscallno == tst->syscallno);
 	    vg_assert(tst->status == VgTs_WaitSys);
 	    px->state = PXS_IntReply;
 	    break;
@@ -607,7 +607,7 @@ static Int proxylwp(void *v)
 	    /* The syscall is done; we just need to send the results
 	       back. */
 	    vg_assert(reply.req == PX_RunSyscall);
-	    vg_assert(reply.syscallno == tst->syscallno);
+	    vg_assert(reply.u.syscallno == tst->syscallno);
 	    px->state = PXS_IntReply;
 	    break;
 
@@ -711,7 +711,7 @@ static Int proxylwp(void *v)
 	 case PX_RunSyscall:
 	    /* Run a syscall for our thread; results will be poked
 	       back into tst */
-	    reply.syscallno = tst->syscallno;
+	    reply.u.syscallno = tst->syscallno;
 
 	    vg_assert(px->state == PXS_WaitReq || 
 		      px->state == PXS_SigACK);
@@ -722,7 +722,7 @@ static Int proxylwp(void *v)
 		  on the way to us as we got the signal.  
 	       */
 	       px_printf("RunSyscall in SigACK: rejecting syscall %d with ERESTARTSYS\n",
-			 reply.syscallno);
+			 reply.u.syscallno);
 	       tst->m_eax = -VKI_ERESTARTSYS;
 	    } else {
 	       Int syscallno = tst->syscallno;
@@ -1150,7 +1150,7 @@ static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype)
 	       VG_(printf)("tid %d in status %d\n",
 			   tst->tid, tst->status);
 	 
-	    vg_assert(res.syscallno == tst->syscallno);
+	    vg_assert(res.u.syscallno == tst->syscallno);
 	    vg_assert(tst->status == VgTs_WaitSys);
 
 	    VG_(post_syscall)(res.tid);
@@ -1159,12 +1159,12 @@ static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype)
 	 case PX_Signal:
 	    if (VG_(clo_trace_signals) || VG_(clo_trace_syscalls))
 	       VG_(message)(Vg_DebugMsg, "sys_wait_results: got PX_Signal for TID %d, signal %d",
-			    res.tid, res.siginfo.si_signo);
+			    res.tid, res.u.siginfo.si_signo);
 
-	    vg_assert(res.siginfo.si_signo != 0);
+	    vg_assert(res.u.siginfo.si_signo != 0);
 	    if (VG_(threads)[res.tid].proxy && 
 		!VG_(threads)[res.tid].proxy->terminating)
-	       VG_(deliver_signal)(res.tid, &res.siginfo, True);
+	       VG_(deliver_signal)(res.tid, &res.u.siginfo, True);
 	    break;
 
 	 case PX_Ping:

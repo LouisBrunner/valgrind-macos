@@ -99,7 +99,7 @@ typedef
           AddrErr, 
           ParamErr, UserErr,  /* behaves like an anonymous ParamErr */
           FreeErr, FreeMismatchErr,
-          OverlapErr,   /* Memcheck only */
+          OverlapErr,
           LeakErr
    }
    MAC_ErrorKind;

@@ -1121,6 +1121,22 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 #     endif
 
+      /* !!!!!!!!!! New, untested syscall, 3 Jun 03 !!!!!!!!!!! */
+#     if defined(__NR_sendfile64)
+      case __NR_sendfile64: /* syscall 239 */
+          /* ssize_t sendfile64(int out_df, int in_fd, loff_t *offset,
+                                size_t count); */
+         MAYBE_PRINTF("sendfile64 ( %d, %d, %p, %d )\n",arg1,arg2,arg3,arg4);
+         if (arg3 != (UInt)NULL)
+            SYSCALL_TRACK( pre_mem_write, tst, "sendfile64(offset)",
+                           arg3, sizeof(loff_t) );
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res) && arg3 != (UInt)NULL ) {
+            VG_TRACK( post_mem_write, arg3, sizeof(loff_t) );
+         }
+         break;
+#     endif
+
       /* !!!!!!!!!! New, untested syscalls, 7 Mar 02 !!!!!!!!!!! */
 
 #     if defined(__NR_pwrite)
@@ -1210,6 +1226,19 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 #     endif
 
+#     if defined(__NR_rt_sigtimedwait)
+      case __NR_rt_sigtimedwait: /* syscall 177 */
+          /* int sigtimedwait(const  sigset_t  *set,  siginfo_t  *info,
+                              const struct timespec timeout); */
+         if (arg2 != (UInt)NULL)
+            SYSCALL_TRACK( pre_mem_write, tst, "sigtimedwait(info)", arg2,
+                           sizeof(siginfo_t) );
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res) && arg2 != (UInt)NULL)
+            VG_TRACK( post_mem_write, arg2, sizeof(siginfo_t) );
+         break;
+#     endif
+                
       case __NR_init_module: /* syscall 128 */
          /* int init_module(const char *name, struct module *image); */
          MAYBE_PRINTF("init_module ( %p, %p )\n", arg1, arg2 );

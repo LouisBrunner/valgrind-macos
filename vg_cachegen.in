@@ -229,8 +229,8 @@ static void cachesim_${L}_initcache(void)
 static __inline__ 
 void cachesim_${L}_doref($L_args)
 {
-   register UInt set1 = ( a         >> $n_line_bits) & ($n_sets-1);
-   register UInt set2 = ((a + size) >> $n_line_bits) & ($n_sets-1);
+   register UInt set1 = ( a             >> $n_line_bits) & ($n_sets-1);
+   register UInt set2 = ((a + size - 1) >> $n_line_bits) & ($n_sets-1);
    register UInt tag  = a >> ($n_line_bits + $n_set_bits);
 
    if (set1 == set2) {

@@ -34,6 +34,7 @@
 #include <elf.h>          /* ELF defns                      */
 #include <a.out.h>        /* stabs defns                    */
 
+
 /* Majorly rewritten Sun 3 Feb 02 to enable loading symbols from
    dlopen()ed libraries, which is something that KDE3 does a lot.
    Still kludgey, though less than before:
@@ -929,45 +930,50 @@ void vg_read_lib_symbols ( SegInfo* si )
             Int this_addr = (UInt)stab[i].n_value;
 
             LOOP:
-            vg_assert(i+1 < n_stab_entries);    /* Haven't reached end */
-            switch (stab[i+1].n_type) {
-               /* Easy, common case: use address of next entry */
-               case N_SLINE: case N_SO:
-                  next_addr = (UInt)stab[i+1].n_value;
-                  break;
-
-               /* Boring one: skip, look for something more useful. */
-               case N_RSYM: case N_LSYM: case N_LBRAC: case N_RBRAC: 
-               case N_STSYM: case N_LCSYM:
-                  i++;
-                  goto LOOP;
-                  
-               /* Should be an end of fun entry, use its address */
-               case N_FUN: 
-                  if ('\0' == * (stabstr + stab[i+1].n_un.n_strx) ) {
+            if (i+1 >= n_stab_entries) {
+               /* If it's the last entry, just guess the range is four;  can't
+                * do any better */
+               next_addr = 4;
+            } else {    
+               switch (stab[i+1].n_type) {
+                  /* Easy, common case: use address of next entry */
+                  case N_SLINE: case N_SO:
                      next_addr = (UInt)stab[i+1].n_value;
-                  } else {
-                     VG_(printf)("unhandled stabs case: N_FUN start %d %s\n",
-                                i, (stabstr + stab[i+1].n_un.n_strx) );
-                     VG_(panic)("argh");
-                  }
-                  break;
-
-               /* N_SOL should be followed by an N_SLINE which can be used */
-               case N_SOL:
-                  if (i+2 < n_stab_entries && N_SLINE == stab[i+2].n_type) {
-                     next_addr = (UInt)stab[i+2].n_value;
                      break;
-                  } else {
-                     VG_(printf)("unhandled N_SOL stabs case: %d %d %d", 
-                                 stab[i+1].n_type, i, n_stab_entries);
-                     VG_(panic)("argh");
-                  }
 
-               default:
-                  VG_(printf)("unhandled stabs case: %d %d", 
-                              stab[i+1].n_type,i);
-                  VG_(panic)("argh");
+                  /* Boring one: skip, look for something more useful. */
+                  case N_RSYM: case N_LSYM: case N_LBRAC: case N_RBRAC: 
+                  case N_STSYM: case N_LCSYM:
+                     i++;
+                     goto LOOP;
+                     
+                  /* Should be an end of fun entry, use its address */
+                  case N_FUN: 
+                     if ('\0' == * (stabstr + stab[i+1].n_un.n_strx) ) {
+                        next_addr = (UInt)stab[i+1].n_value;
+                     } else {
+                        VG_(printf)("unhandled stabs case: N_FUN start %d %s\n",
+                                   i, (stabstr + stab[i+1].n_un.n_strx) );
+                        VG_(panic)("argh");
+                     }
+                     break;
+
+                  /* N_SOL should be followed by an N_SLINE which can be used */
+                  case N_SOL:
+                     if (i+2 < n_stab_entries && N_SLINE == stab[i+2].n_type) {
+                        next_addr = (UInt)stab[i+2].n_value;
+                        break;
+                     } else {
+                        VG_(printf)("unhandled N_SOL stabs case: %d %d %d", 
+                                    stab[i+1].n_type, i, n_stab_entries);
+                        VG_(panic)("argh");
+                     }
+
+                  default:
+                     VG_(printf)("unhandled stabs case: %d %d", 
+                                 stab[i+1].n_type,i);
+                     VG_(panic)("argh");
+               }
             }
             
             //Int offset2 = (i+1 < n_stab_entries && 68 == stab[i+1].n_type

@@ -136,7 +136,7 @@ static void init_idCC(CC_type X_CC, idCC* cc, Addr instr_addr,
 static __inline__ void sprint_iCC(Char buf[BUF_LEN], UInt ln, iCC* cc)
 {
    VG_(sprintf)(buf, "%u %llu %llu %llu\n",
-                      ln, cc->I.a, cc->I.m1, cc->I.m2/*, cc->instr_addr*/);
+                      ln, cc->I.a, cc->I.m1, cc->I.m2);
 }
 
 static __inline__ void sprint_read_or_mod_CC(Char buf[BUF_LEN], UInt ln, 
@@ -144,14 +144,14 @@ static __inline__ void sprint_read_or_mod_CC(Char buf[BUF_LEN], UInt ln,
 {
    VG_(sprintf)(buf, "%u %llu %llu %llu %llu %llu %llu\n",
                       ln, cc->I.a, cc->I.m1, cc->I.m2, 
-                          cc->D.a, cc->D.m1, cc->D.m2/*, cc->instr_addr*/);
+                          cc->D.a, cc->D.m1, cc->D.m2);
 }
 
 static __inline__ void sprint_write_CC(Char buf[BUF_LEN], UInt ln, idCC* cc)
 {
    VG_(sprintf)(buf, "%u %llu %llu %llu . . . %llu %llu %llu\n",
                       ln, cc->I.a, cc->I.m1, cc->I.m2, 
-                          cc->D.a, cc->D.m1, cc->D.m2/*, cc->instr_addr*/);
+                          cc->D.a, cc->D.m1, cc->D.m2);
 }
 
 /*------------------------------------------------------------*/
@@ -399,6 +399,7 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
 
          case LOAD:
             /* Two LDBs are possible for a single instruction */
+            /* Also, a STORE can come after a LOAD for bts/btr/btc */
             vg_assert(/*!is_LOAD &&*/ /* !is_STORE && */ 
                       !is_FPU_R && !is_FPU_W);
             is_LOAD = True;

@@ -22,8 +22,8 @@ static void cachesim_I1_initcache(void)
 static __inline__ 
 void cachesim_I1_doref(Addr a, UChar size, ULong* m1, ULong *m2)
 {
-   register UInt set1 = ( a         >> 6) & (512-1);
-   register UInt set2 = ((a + size) >> 6) & (512-1);
+   register UInt set1 = ( a             >> 6) & (512-1);
+   register UInt set2 = ((a + size - 1) >> 6) & (512-1);
    register UInt tag  = a >> (6 + 9);
 
    if (set1 == set2) {

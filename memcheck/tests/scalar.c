@@ -291,8 +291,9 @@ int main(void)
    SY(__NR_setregid, x0, x0);
 
    // __NR_sigsuspend 72 --> sys_sigsuspend()
- //GO(__NR_sigsuspend, ".s .m");
- //SY(__NR_sigsuspend);
+   // XXX: how do you use this function?
+// GO(__NR_sigsuspend, ".s .m");
+// SY(__NR_sigsuspend);
 
    // __NR_sigpending 73 --> sys_sigpending()
    GO(__NR_sigpending, "1s 1m");

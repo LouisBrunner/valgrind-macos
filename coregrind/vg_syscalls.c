@@ -5681,17 +5681,33 @@ PREx(sys_pause, MayBlock)
    PRE_REG_READ0(long, "pause");
 }
 
-PRE(rt_sigsuspend)
+// XXX: x86-specific
+PREx(sys_sigsuspend, MayBlock)
 {
-   /* int sigsuspend(const sigset_t *mask); */
-   PRINT("sigsuspend ( %p )", arg1 );
+   // XXX: is this right?  sys_sigsuspend prototype looks like this:
+   //
+   //   int sys_sigsuspend(int history0, int history1, old_sigset_t mask)
+   //
+   PRINT("sys_sigsuspend ( %p )", arg1 );
+   PRE_REG_READ1(int, "sigsuspend",    // XXX: is this right?
+                 vki_old_sigset_t, mask);
    if (arg1 != (Addr)NULL) {
-      /* above NULL test is paranoia */
-      PRE_MEM_READ( "sigsuspend(mask)", arg1, sizeof(vki_sigset_t) );
+      PRE_MEM_READ( "sigsuspend(mask)", arg1, sizeof(vki_old_sigset_t) );
    }
 }
 
-PREALIAS(sigsuspend, rt_sigsuspend);
+// XXX: x86-specific
+PREx(sys_rt_sigsuspend, MayBlock)
+{
+   // XXX: is this right?  sys_rt_sigsuspend prototype looks like this:
+   //
+   // int sys_rt_sigsuspend(struct pt_regs regs)
+   PRINT("sys_rt_sigsuspend ( %p, %d )", arg1,arg2 );
+   PRE_REG_READ2(int, "rt_sigsuspend", vki_sigset_t *, mask, vki_size_t, size)
+   if (arg1 != (Addr)NULL) {
+      PRE_MEM_READ( "rt_sigsuspend(mask)", arg1, sizeof(vki_sigset_t) );
+   }
+}
 
 PRE(rt_sigtimedwait)
 {
@@ -6332,7 +6348,7 @@ static const struct sys_info sys_info[] = {
 
    SYSX_(__NR_setreuid,         sys_setreuid16),   // 70 ## (BSD4.3)
    SYSX_(__NR_setregid,         sys_setregid16),   // 71 ## (BSD4.3)
-   SYSB_(__NR_sigsuspend,       sys_sigsuspend, MayBlock), // 72 
+   SYSX_(__NR_sigsuspend,       sys_sigsuspend),   // 72 () P
    SYSXY(__NR_sigpending,       sys_sigpending),   // 73 * P
    //   (__NR_sethostname,      sys_sethostname),  // 74 * (almost P)
 
@@ -6462,7 +6478,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(__NR_rt_sigpending,    sys_rt_sigpending, NBRunInLWP), // 176 *
    SYSBA(__NR_rt_sigtimedwait,  sys_rt_sigtimedwait, MayBlock), // 177 *
    SYSBA(__NR_rt_sigqueueinfo,  sys_rt_sigqueueinfo, 0), // 178 *
-   SYSB_(__NR_rt_sigsuspend,    sys_sigsuspend, MayBlock), // 179 
+   SYSX_(__NR_rt_sigsuspend,    sys_rt_sigsuspend),   // 179 () ()
    SYSBA(__NR_pread64,          sys_pread64, MayBlock), // 180 *
 
    SYSB_(__NR_pwrite64,         sys_pwrite64, MayBlock), // 181 *

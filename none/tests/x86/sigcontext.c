@@ -29,7 +29,7 @@ static void handler2(int sig, struct sigcontext sc)
 	/* Since the handler will be called as kill leaves the kernel,
 	   this is replacing the kill syscall's return value. */
 	if (sc.eax != 0)
-		printf("FAILED: handler2 expected eax == 0, not %d\n", sc.eax);
+		printf("FAILED: handler2 expected eax == 0, not %p\n", (void*)sc.eax);
 
 	sc.eax = VAL2;
 
@@ -44,7 +44,7 @@ int main()
 {
 	struct sigaction sa;
 	int ret;
-	int v1, v2, v3, v4;
+	int v2, v3, v4;
 
 	sa.sa_handler = handler1;
 	sa.sa_flags = SA_SIGINFO;

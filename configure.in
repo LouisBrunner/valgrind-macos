@@ -340,6 +340,7 @@ AC_CHECK_FUNCS([floor memchr memset mkdir strchr strdup strpbrk strrchr strstr])
 AC_OUTPUT(
    Makefile 
    valgrind.spec
+   valgrind.pc
    docs/Makefile 
    tests/Makefile 
    tests/vg_regtest 

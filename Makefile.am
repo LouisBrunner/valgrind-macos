@@ -25,7 +25,10 @@ SUPP_FILES = \
 
 val_DATA = $(SUPP_FILES) default.supp
 
-BUILT_SOURCES = default.supp
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = valgrind.pc
+
+BUILT_SOURCES = default.supp valgrind.pc
 
 DISTCLEANFILES = default.supp
 
@@ -40,7 +43,7 @@ EXTRA_DIST = $(val_DATA) \
 	PATCHES_APPLIED ACKNOWLEDGEMENTS \
 	README_KDE3_FOLKS README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO \
-	valgrind.spec valgrind.spec.in
+	valgrind.spec valgrind.spec.in valgrind.pc.in
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)

@@ -300,35 +300,41 @@ static StabType *getStabType(StabTypeTab *tab, Int file, Int sym)
    return &sf->types[sym];
 }
 
-static Bool isdigit(Char c, Int base, Int *v)
+static Bool isdigit(Char c, Int base, Int *vp)
 {
+   Bool ret = False;
+   Int v = 0;
+
    switch(base) {
    case 10:
    case 0:
-      *v = c - '0';
-      return c >= '0' && c <= '9';
+      v = c - '0';
+      ret = (c >= '0' && c <= '9');
+      break;
 
    case 8:
-      *v = c - '0';
-      return c >= '0' && c <= '7';
+      v = c - '0';
+      ret = (c >= '0' && c <= '7');
+      break;
 
    case 16:
       if (c >= '0' && c <= '9') {
-	 *v = c - '0';
-	 return True;
+	 v = c - '0';
+	 ret = True;
+      } else if (c >= 'a' && c <= 'f') {
+	 v = c - 'a';
+	 ret = True;
+      } else if (c >= 'A' && c <= 'F') {
+	 v = c - 'F';
+	 ret = True;
       }
-      if (c >= 'a' && c <= 'f') {
-	 *v = c - 'a';
-	 return True;
-      }
-      if (c >= 'A' && c <= 'F') {
-	 *v = c - 'F';
-	 return True;
-      }
-      return False;
+      break;
    }
 
-   return False;
+   if (vp && ret)
+      *vp = v;
+
+   return ret;
 }
 
 static inline Int getbase(Char **pp)
@@ -534,8 +540,11 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	 if (debug)
 	    VG_(printf)("defining type %p (%d,%d) = %s\n", symtype, file, sym, p);
 
-	 /* skip type attributes */
-	 while(*p == '@')
+	 /* Skip type attributes
+	    '@' could also be pointer-to-member, so we need to see if
+	    the following character looks like a type reference or not.
+	  */
+	 while(*p == '@' && !(VG_(isdigit)(p[1]) || p[1] == '-' || p[1] == '(') )
 	    p = SKIPPAST(p+1, ';', "type attrib");
 
 	 prev = p;
@@ -644,7 +653,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 
    case '&':			/* reference */
    case '*': {			/* pointer */
-      /* '*' TYPE */
+      /* ('*' | '&') TYPE */
       type = stabtype_parser(si, NULL, &p);
       type = VG_(st_mkpointer)(def, type);
       break;
@@ -652,7 +661,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 
    case 'k':                    /* const */
    case 'B': {                  /* volatile */
-      /* 'k' TYPE */
+      /* ('k' | 'B') TYPE */
       type = stabtype_parser(si, NULL, &p);
       break;
    }
@@ -701,7 +710,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 
    case 'P':			/* packed array */
    case 'a': {			/* array */
-      /* a IDX-TYPE TYPE */
+      /* ( 'a' | 'P' ) IDX-TYPE TYPE */
       SymType *idxtype;
       SymType *artype;
 
@@ -732,7 +741,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
    case 's': {			/* struct */
       /* Gad.  Here we go:
 
-	 's' SIZE
+	 ( 's' | 'u' ) SIZE
 		( '!' NBASE ',' ( VIRT PUB OFF ',' BASE-TYPE ){NBASE} )?
 
 		( NAME ( ':' ( '/' [0-9] )? TYPE ',' OFFSET ( ',' SIZE )?
@@ -929,6 +938,15 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       }
 
       EXPECT(';', "method definition");
+      break;
+
+   case '@':			/* pointer to member */
+      /* '@' CLASS-TYPE ',' MEMBER-TYPE */
+      type = VG_(st_mkint)(def, sizeof(int), False); /* make it an int for our use */
+      
+      stabtype_parser(si, NULL, &p); /* CLASS-TYPE */
+      EXPECT(',', "member-pointer CLASS-TYPE");
+      stabtype_parser(si, NULL, &p); /* MEMBER-TYPE */
       break;
 
    default:

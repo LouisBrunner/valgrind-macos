@@ -24,6 +24,9 @@ AC_PATH_PROG(PERL, perl)
 
 # figure out where gdb lives
 AC_PATH_PROG(GDB, gdb)
+# autoheader tries to execute the 3rd string or something;  I get warnings when
+# it's defined.  So just leave it undefined.  --njn 2002-Apr-18
+AC_DEFINE_UNQUOTED(GDB_PATH, "$GDB", "")
 
 # some older automake's don't have it so try something on our own
 ifdef([AM_PROG_AS],[AM_PROG_AS],

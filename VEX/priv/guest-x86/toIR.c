@@ -2573,12 +2573,13 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
             DIP("test%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
             break;
          }
-//--          case 2: /* NOT */
-//--             uInstr1(cb, NOT, sz, TempReg, t1);
-//--             setFlagsFromUOpcode(cb, NOT);
-//--             uInstr2(cb, STORE, sz, TempReg, t1, TempReg, t2);
-//--             DIP("not%c %s\n", nameISize(sz), dis_buf);
-//--             break;
+#if 0
+         /* probably OK, but awaiting test case */
+         case 2: /* NOT */
+            storeLE( mkexpr(addr), unop(mkSizedOp(ty,Iop_Not8), mkexpr(t1)));
+            DIP("not%c %s\n", nameISize(sz), dis_buf);
+            break;
+#endif
          case 3: /* NEG */
             dst0 = newTemp(ty);
             src  = newTemp(ty);

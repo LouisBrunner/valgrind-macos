@@ -2206,6 +2206,16 @@ int __pause(void)
 
 
 extern
+int __libc_tcdrain(int fd);
+WEAK
+int __tcdrain(int fd)
+{
+   __my_pthread_testcancel();
+   return __libc_tcdrain(fd);
+}
+
+
+extern
 int __libc_fsync(int fd);
 WEAK
 int fsync(int fd)
@@ -2383,6 +2393,7 @@ weak_alias (__pread64, pread64)
 weak_alias (__pwrite64, pwrite64)
 weak_alias(__nanosleep, nanosleep)
 weak_alias(__pause, pause)
+weak_alias(__tcdrain, tcdrain)
 
 
 extern  

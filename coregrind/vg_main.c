@@ -969,6 +969,7 @@ static Addr setup_client_stack(void* init_sp,
       ROUNDUP(stringsize, sizeof(int)) +/* strings (aligned) */
       VKI_PAGE_SIZE;			/* page for trampoline code */
 
+VG_(printf)("stacksize = %d\n", stacksize);
    // decide where stack goes!
    VG_(clstk_end) = VG_(client_end);
 
@@ -983,7 +984,7 @@ static Addr setup_client_stack(void* init_sp,
 
    VG_(clstk_base) = PGROUNDDN(cl_esp);
 
-   if (0)
+   if (1)
       printf("stringsize=%d auxsize=%d stacksize=%d\n"
              "clstk_base %p\n"
              "clstk_end  %p\n",
@@ -994,9 +995,17 @@ static Addr setup_client_stack(void* init_sp,
    /* ==================== allocate space ==================== */
 
    /* allocate a stack - mmap enough space for the stack */
+#if 1
    res = mmap((void *)PGROUNDDN(cl_esp), VG_(clstk_end) - PGROUNDDN(cl_esp),
 	      PROT_READ | PROT_WRITE | PROT_EXEC, 
 	      MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
+#else
+   /* Debug hack -- do not use. */
+   res = mmap((void *)(PGROUNDDN(cl_esp) - 0x10000), 
+                      (0x10000 + VG_(clstk_end) - PGROUNDDN(cl_esp)),
+	      PROT_READ | PROT_WRITE | PROT_EXEC, 
+	      MAP_PRIVATE | MAP_ANON | MAP_FIXED, -1, 0);
+#endif
    vg_assert((void*)-1 != res); 
 
    /* ==================== copy client stack ==================== */
@@ -1131,6 +1140,7 @@ static Addr setup_client_stack(void* init_sp,
    VG_(client_argc) = *(Int*)cl_esp;
    VG_(client_argv) = (Char**)(cl_esp + sizeof(HWord));
 
+   VG_(printf)("startup SP = %p\n", cl_esp);
    return cl_esp;
 }
 

@@ -435,24 +435,24 @@ typedef
 
       /* --- pack / unpack --- */
 
-      /* 64 <-> 128 bit */
-      Iop_128to64,     // :: V128 -> I64, low half
-      Iop_128HIto64,   // :: V128 -> I64, high half
-      Iop_64HLto128,   // :: (I64,I64) -> V128
+      /* 64 <-> 128 bit vector */
+      Iop_V128to64,     // :: V128 -> I64, low half
+      Iop_V128HIto64,   // :: V128 -> I64, high half
+      Iop_64HLtoV128,   // :: (I64,I64) -> V128
 
-      Iop_64Uto128,
-      Iop_Set128lo64,
+      Iop_64UtoV128,
+      Iop_SetV128lo64,
 
-      /* 32 <-> 128 bit */
-      Iop_32Uto128,
-      Iop_128to32,     // :: V128 -> I32, lowest lane
-      Iop_Set128lo32,  // :: (V128,I32) -> V128
+      /* 32 <-> 128 bit vector */
+      Iop_32UtoV128,
+      Iop_V128to32,     // :: V128 -> I32, lowest lane
+      Iop_SetV128lo32,  // :: (V128,I32) -> V128
 
       /* ------------------ 128-bit SIMD Integer. ------------------ */
 
       /* BITWISE OPS */
-      Iop_Not128,
-      Iop_And128, Iop_Or128, Iop_Xor128, 
+      Iop_NotV128,
+      Iop_AndV128, Iop_OrV128, Iop_XorV128, 
 
       /* MISC (vector integer cmp != 0) */
       Iop_CmpNEZ8x16, Iop_CmpNEZ16x8, Iop_CmpNEZ32x4, Iop_CmpNEZ64x2,

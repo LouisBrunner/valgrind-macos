@@ -6334,7 +6334,7 @@ static UInt dis_SSE_E_to_G_all_wrk (
    IRTemp  addr;
    UChar   rm = getIByte(delta);
    IRExpr* gpart
-      = invertG ? unop(Iop_Not128, getXMMReg(gregOfRM(rm)))
+      = invertG ? unop(Iop_NotV128, getXMMReg(gregOfRM(rm)))
                 : getXMMReg(gregOfRM(rm));
    if (epartIsReg(rm)) {
       putXMMReg( gregOfRM(rm), 
@@ -6398,7 +6398,7 @@ static UInt dis_SSE_E_to_G_lo32 ( UChar sorb, UInt delta,
          E operand needs to be made simply of zeroes. */
       IRTemp epart = newTemp(Ity_V128);
       addr = disAMode ( &alen, sorb, delta, dis_buf );
-      assign( epart, unop( Iop_32Uto128,
+      assign( epart, unop( Iop_32UtoV128,
                            loadLE(Ity_I32, mkexpr(addr))) );
       putXMMReg( gregOfRM(rm), 
                  binop(op, gpart, mkexpr(epart)) );
@@ -6433,7 +6433,7 @@ static UInt dis_SSE_E_to_G_lo64 ( UChar sorb, UInt delta,
          E operand needs to be made simply of zeroes. */
       IRTemp epart = newTemp(Ity_V128);
       addr = disAMode ( &alen, sorb, delta, dis_buf );
-      assign( epart, unop( Iop_64Uto128,
+      assign( epart, unop( Iop_64UtoV128,
                            loadLE(Ity_I64, mkexpr(addr))) );
       putXMMReg( gregOfRM(rm), 
                  binop(op, gpart, mkexpr(epart)) );
@@ -6495,7 +6495,7 @@ static UInt dis_SSE_E_to_G_unary_lo32 (
 
    if (epartIsReg(rm)) {
       assign( oldG1, 
-              binop( Iop_Set128lo32,
+              binop( Iop_SetV128lo32,
                      mkexpr(oldG0),
                      getXMMRegLane32(eregOfRM(rm), 0)) );
       putXMMReg( gregOfRM(rm), unop(op, mkexpr(oldG1)) );
@@ -6506,7 +6506,7 @@ static UInt dis_SSE_E_to_G_unary_lo32 (
    } else {
       addr = disAMode ( &alen, sorb, delta, dis_buf );
       assign( oldG1, 
-              binop( Iop_Set128lo32,
+              binop( Iop_SetV128lo32,
                      mkexpr(oldG0),
                      loadLE(Ity_I32, mkexpr(addr)) ));
       putXMMReg( gregOfRM(rm), unop(op, mkexpr(oldG1)) );
@@ -6538,7 +6538,7 @@ static UInt dis_SSE_E_to_G_unary_lo64 (
 
    if (epartIsReg(rm)) {
       assign( oldG1, 
-              binop( Iop_Set128lo64,
+              binop( Iop_SetV128lo64,
                      mkexpr(oldG0),
                      getXMMRegLane64(eregOfRM(rm), 0)) );
       putXMMReg( gregOfRM(rm), unop(op, mkexpr(oldG1)) );
@@ -6549,7 +6549,7 @@ static UInt dis_SSE_E_to_G_unary_lo64 (
    } else {
       addr = disAMode ( &alen, sorb, delta, dis_buf );
       assign( oldG1, 
-              binop( Iop_Set128lo64,
+              binop( Iop_SetV128lo64,
                      mkexpr(oldG0),
                      loadLE(Ity_I64, mkexpr(addr)) ));
       putXMMReg( gregOfRM(rm), unop(op, mkexpr(oldG1)) );
@@ -6689,13 +6689,13 @@ static UInt dis_SSEcmp_E_to_G ( UChar sorb, UInt delta,
 
    if (needNot && all_lanes) {
       putXMMReg( gregOfRM(rm), 
-                 unop(Iop_Not128, mkexpr(plain)) );
+                 unop(Iop_NotV128, mkexpr(plain)) );
    }
    else
    if (needNot && !all_lanes) {
       mask = toUShort( sz==4 ? 0x000F : 0x00FF );
       putXMMReg( gregOfRM(rm), 
-                 binop(Iop_Xor128, mkexpr(plain), mkV128(mask)) );
+                 binop(Iop_XorV128, mkexpr(plain), mkV128(mask)) );
    }
    else {
       putXMMReg( gregOfRM(rm), mkexpr(plain) );
@@ -6857,8 +6857,8 @@ static void breakup128to32s ( IRTemp t128,
 {
    IRTemp hi64 = newTemp(Ity_I64);
    IRTemp lo64 = newTemp(Ity_I64);
-   assign( hi64, unop(Iop_128HIto64, mkexpr(t128)) );
-   assign( lo64, unop(Iop_128to64,   mkexpr(t128)) );
+   assign( hi64, unop(Iop_V128HIto64, mkexpr(t128)) );
+   assign( lo64, unop(Iop_V128to64,   mkexpr(t128)) );
 
    vassert(t0 && *t0 == IRTemp_INVALID);
    vassert(t1 && *t1 == IRTemp_INVALID);
@@ -6881,7 +6881,7 @@ static IRExpr* mk128from32s ( IRTemp t3, IRTemp t2,
                               IRTemp t1, IRTemp t0 )
 {
    return
-      binop( Iop_64HLto128,
+      binop( Iop_64HLtoV128,
              binop(Iop_32HLto64, mkexpr(t3), mkexpr(t2)),
              binop(Iop_32HLto64, mkexpr(t1), mkexpr(t0))
    );
@@ -7184,13 +7184,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* 0F 55 = ANDNPS -- G = (not G) and E */
    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x55) {
-      delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "andnps", Iop_And128 );
+      delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "andnps", Iop_AndV128 );
       goto decode_success;
    }
 
    /* 0F 54 = ANDPS -- G = G and E */
    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x54) {
-      delta = dis_SSE_E_to_G_all( sorb, delta+2, "andps", Iop_And128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "andps", Iop_AndV128 );
       goto decode_success;
    }
 
@@ -7735,7 +7735,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* 0F 56 = ORPS -- G = G and E */
    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x56) {
-      delta = dis_SSE_E_to_G_all( sorb, delta+2, "orps", Iop_Or128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "orps", Iop_OrV128 );
       goto decode_success;
    }
 
@@ -8156,7 +8156,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* 0F 57 = XORPS -- G = G and E */
    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x57) {
-      delta = dis_SSE_E_to_G_all( sorb, delta+2, "xorps", Iop_Xor128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "xorps", Iop_XorV128 );
       goto decode_success;
    }
 
@@ -8190,13 +8190,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* 66 0F 55 = ANDNPD -- G = (not G) and E */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x55) {
-      delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "andnpd", Iop_And128 );
+      delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "andnpd", Iop_AndV128 );
       goto decode_success;
    }
 
    /* 66 0F 54 = ANDPD -- G = G and E */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x54) {
-      delta = dis_SSE_E_to_G_all( sorb, delta+2, "andpd", Iop_And128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "andpd", Iop_AndV128 );
       goto decode_success;
    }
 
@@ -8340,9 +8340,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       t0 = newTemp(Ity_F64);
       t1 = newTemp(Ity_F64);
       assign( t0, unop(Iop_ReinterpI64asF64, 
-                       unop(Iop_128to64, mkexpr(argV))) );
+                       unop(Iop_V128to64, mkexpr(argV))) );
       assign( t1, unop(Iop_ReinterpI64asF64, 
-                       unop(Iop_128HIto64, mkexpr(argV))) );
+                       unop(Iop_V128HIto64, mkexpr(argV))) );
       
 #     define CVT(_t)  binop( Iop_F64toI32,                    \
                              mkexpr(rmode),                   \
@@ -8436,9 +8436,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       t0 = newTemp(Ity_F64);
       t1 = newTemp(Ity_F64);
       assign( t0, unop(Iop_ReinterpI64asF64, 
-                       unop(Iop_128to64, mkexpr(argV))) );
+                       unop(Iop_V128to64, mkexpr(argV))) );
       assign( t1, unop(Iop_ReinterpI64asF64, 
-                       unop(Iop_128HIto64, mkexpr(argV))) );
+                       unop(Iop_V128HIto64, mkexpr(argV))) );
       
 #     define CVT(_t)  binop( Iop_F64toF32,                    \
                              mkexpr(rmode),                   \
@@ -8706,9 +8706,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       t0 = newTemp(Ity_F64);
       t1 = newTemp(Ity_F64);
       assign( t0, unop(Iop_ReinterpI64asF64, 
-                       unop(Iop_128to64, mkexpr(argV))) );
+                       unop(Iop_V128to64, mkexpr(argV))) );
       assign( t1, unop(Iop_ReinterpI64asF64, 
-                       unop(Iop_128HIto64, mkexpr(argV))) );
+                       unop(Iop_V128HIto64, mkexpr(argV))) );
       
 #     define CVT(_t)  binop( Iop_F64toI32,                    \
                              mkexpr(rmode),                   \
@@ -8866,7 +8866,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          delta += 2+1;
          putXMMReg(
             gregOfRM(modrm),
-            unop( Iop_32Uto128, getIReg(4, eregOfRM(modrm)) ) 
+            unop( Iop_32UtoV128, getIReg(4, eregOfRM(modrm)) ) 
          );
          DIP("movd %s, %s\n", 
              nameIReg(4,eregOfRM(modrm)), nameXMMReg(gregOfRM(modrm)));
@@ -8875,7 +8875,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          delta += 2+alen;
          putXMMReg(
             gregOfRM(modrm),
-            unop( Iop_32Uto128,loadLE(Ity_I32, mkexpr(addr)) ) 
+            unop( Iop_32UtoV128,loadLE(Ity_I32, mkexpr(addr)) ) 
          );
          DIP("movd %s, %s\n", dis_buf, nameXMMReg(gregOfRM(modrm)));
       }
@@ -9128,7 +9128,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       if (epartIsReg(modrm)) {
          do_MMX_preamble();
          putXMMReg( gregOfRM(modrm), 
-                    unop(Iop_64Uto128, getMMXReg( eregOfRM(modrm) )) );
+                    unop(Iop_64UtoV128, getMMXReg( eregOfRM(modrm) )) );
          DIP("movq2dq %s,%s\n", nameMMXReg(eregOfRM(modrm)),
                                 nameXMMReg(gregOfRM(modrm)));
          delta += 3+1;
@@ -9198,7 +9198,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* 66 0F 56 = ORPD -- G = G and E */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x56) {
-      delta = dis_SSE_E_to_G_all( sorb, delta+2, "orpd", Iop_Or128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "orpd", Iop_OrV128 );
       goto decode_success;
    }
 
@@ -9232,17 +9232,17 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                                    nameXMMReg(gregOfRM(modrm)));
       }
 
-      assign( d1, unop(Iop_128HIto64, mkexpr(dV)) );
-      assign( d0, unop(Iop_128to64,   mkexpr(dV)) );
-      assign( s1, unop(Iop_128HIto64, mkexpr(sV)) );
-      assign( s0, unop(Iop_128to64,   mkexpr(sV)) );
+      assign( d1, unop(Iop_V128HIto64, mkexpr(dV)) );
+      assign( d0, unop(Iop_V128to64,   mkexpr(dV)) );
+      assign( s1, unop(Iop_V128HIto64, mkexpr(sV)) );
+      assign( s0, unop(Iop_V128to64,   mkexpr(sV)) );
 
 #     define SELD(n) mkexpr((n)==0 ? d0 : d1)
 #     define SELS(n) mkexpr((n)==0 ? s0 : s1)
 
       putXMMReg(
          gregOfRM(modrm), 
-         binop(Iop_64HLto128, SELS((select>>1)&1), SELD((select>>0)&1) )
+         binop(Iop_64HLtoV128, SELS((select>>1)&1), SELD((select>>0)&1) )
       );
 
 #     undef SELD
@@ -9309,17 +9309,17 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                                   nameXMMReg(gregOfRM(modrm)));
       }
 
-      assign( d1, unop(Iop_128HIto64, mkexpr(dV)) );
-      assign( d0, unop(Iop_128to64,   mkexpr(dV)) );
-      assign( s1, unop(Iop_128HIto64, mkexpr(sV)) );
-      assign( s0, unop(Iop_128to64,   mkexpr(sV)) );
+      assign( d1, unop(Iop_V128HIto64, mkexpr(dV)) );
+      assign( d0, unop(Iop_V128to64,   mkexpr(dV)) );
+      assign( s1, unop(Iop_V128HIto64, mkexpr(sV)) );
+      assign( s0, unop(Iop_V128to64,   mkexpr(sV)) );
 
       if (hi) {
          putXMMReg( gregOfRM(modrm), 
-                    binop(Iop_64HLto128, mkexpr(s1), mkexpr(d1)) );
+                    binop(Iop_64HLtoV128, mkexpr(s1), mkexpr(d1)) );
       } else {
          putXMMReg( gregOfRM(modrm), 
-                    binop(Iop_64HLto128, mkexpr(s0), mkexpr(d0)) );
+                    binop(Iop_64HLtoV128, mkexpr(s0), mkexpr(d0)) );
       }
 
       goto decode_success;
@@ -9327,7 +9327,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* 66 0F 57 = XORPD -- G = G and E */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x57) {
-      delta = dis_SSE_E_to_G_all( sorb, delta+2, "xorpd", Iop_Xor128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "xorpd", Iop_XorV128 );
       goto decode_success;
    }
 
@@ -9419,13 +9419,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* 66 0F DB = PAND */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xDB) {
-      delta = dis_SSE_E_to_G_all( sorb, delta+2, "pand", Iop_And128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "pand", Iop_AndV128 );
       goto decode_success;
    }
 
    /* 66 0F DF = PANDN */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xDF) {
-      delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "pandn", Iop_And128 );
+      delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "pandn", Iop_AndV128 );
       goto decode_success;
    }
 
@@ -9688,7 +9688,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* 66 0F EB = POR */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xEB) {
-      delta = dis_SSE_E_to_G_all( sorb, delta+2, "por", Iop_Or128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "por", Iop_OrV128 );
       goto decode_success;
    }
 
@@ -9756,7 +9756,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                                     dis_buf,
                                     nameXMMReg(gregOfRM(modrm)));
       }
-      assign( sVhi, unop(Iop_128HIto64, mkexpr(sV)) );
+      assign( sVhi, unop(Iop_V128HIto64, mkexpr(sV)) );
       breakup64to16s( sVhi, &s3, &s2, &s1, &s0 );
 
 #     define SEL(n) \
@@ -9765,9 +9765,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 	     mk64from16s( SEL((order>>6)&3), SEL((order>>4)&3),
                           SEL((order>>2)&3), SEL((order>>0)&3) )
       );
-      assign(dV, binop( Iop_64HLto128, 
+      assign(dV, binop( Iop_64HLtoV128, 
                         mkexpr(dVhi),
-                        unop(Iop_128to64, mkexpr(sV))) );
+                        unop(Iop_V128to64, mkexpr(sV))) );
       putXMMReg(gregOfRM(modrm), mkexpr(dV));
 #     undef SEL
       goto decode_success;
@@ -9800,7 +9800,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                                     dis_buf,
                                     nameXMMReg(gregOfRM(modrm)));
       }
-      assign( sVlo, unop(Iop_128to64, mkexpr(sV)) );
+      assign( sVlo, unop(Iop_V128to64, mkexpr(sV)) );
       breakup64to16s( sVlo, &s3, &s2, &s1, &s0 );
 
 #     define SEL(n) \
@@ -9809,8 +9809,8 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 	     mk64from16s( SEL((order>>6)&3), SEL((order>>4)&3),
                           SEL((order>>2)&3), SEL((order>>0)&3) )
       );
-      assign(dV, binop( Iop_64HLto128,
-                        unop(Iop_128HIto64, mkexpr(sV)),
+      assign(dV, binop( Iop_64HLtoV128,
+                        unop(Iop_V128HIto64, mkexpr(sV)),
                         mkexpr(dVlo) ) );
       putXMMReg(gregOfRM(modrm), mkexpr(dV));
 #     undef SEL
@@ -9856,8 +9856,8 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       }
 
       assign( sV, getXMMReg(reg) );
-      assign( hi64, unop(Iop_128HIto64, mkexpr(sV)) );
-      assign( lo64, unop(Iop_128to64, mkexpr(sV)) );
+      assign( hi64, unop(Iop_V128HIto64, mkexpr(sV)) );
+      assign( lo64, unop(Iop_V128to64, mkexpr(sV)) );
 
       if (imm == 8) {
          assign( lo64r, mkU64(0) );
@@ -9883,7 +9883,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                       )
                );
       }
-      assign( dV, binop(Iop_64HLto128, mkexpr(hi64r), mkexpr(lo64r)) );
+      assign( dV, binop(Iop_64HLtoV128, mkexpr(hi64r), mkexpr(lo64r)) );
       putXMMReg(reg, mkexpr(dV));
       goto decode_success;
    }
@@ -9983,8 +9983,8 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       }
 
       assign( sV, getXMMReg(reg) );
-      assign( hi64, unop(Iop_128HIto64, mkexpr(sV)) );
-      assign( lo64, unop(Iop_128to64, mkexpr(sV)) );
+      assign( hi64, unop(Iop_V128HIto64, mkexpr(sV)) );
+      assign( lo64, unop(Iop_V128to64, mkexpr(sV)) );
 
       if (imm == 8) {
          assign( hi64r, mkU64(0) );
@@ -10011,7 +10011,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                );
       }
 
-      assign( dV, binop(Iop_64HLto128, mkexpr(hi64r), mkexpr(lo64r)) );
+      assign( dV, binop(Iop_64HLtoV128, mkexpr(hi64r), mkexpr(lo64r)) );
       putXMMReg(reg, mkexpr(dV));
       goto decode_success;
    }
@@ -10175,7 +10175,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* 66 0F EF = PXOR */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xEF) {
-      delta = dis_SSE_E_to_G_all( sorb, delta+2, "pxor", Iop_Xor128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "pxor", Iop_XorV128 );
       goto decode_success;
    }
 

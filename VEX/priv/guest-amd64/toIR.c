@@ -2632,6 +2632,7 @@ void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
 {
    /* special-case the 64-bit case */
    if (sz == 8) {
+#if 0
       IROp   op     = signed_divide ? Iop_DivModS128to64 
                                     : Iop_DivModU128to64;
       IRTemp src128 = newTemp(Ity_V128);
@@ -2642,6 +2643,7 @@ void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
       assign( dst128, binop(op, mkexpr(src128), mkexpr(t)) );
       putIRegR( PFX_EMPTY, 8, R_RAX, unop(Iop_128to64,mkexpr(dst128)) );
       putIRegR( PFX_EMPTY, 8, R_RDX, unop(Iop_128HIto64,mkexpr(dst128)) );
+#endif
    } else {
       IROp   op    = signed_divide ? Iop_DivModS64to32 
                                    : Iop_DivModU64to32;

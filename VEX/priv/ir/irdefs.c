@@ -341,21 +341,21 @@ void ppIROp ( IROp op )
       case Iop_CmpLE64F0x2: vex_printf("CmpLE64F0x2"); return;
       case Iop_CmpUN64F0x2: vex_printf("CmpUN64F0x2"); return;
 
-      case Iop_128to64:   vex_printf("128to64");   return;
-      case Iop_128HIto64: vex_printf("128HIto64"); return;
-      case Iop_64HLto128: vex_printf("64HLto128"); return;
+      case Iop_V128to64:   vex_printf("V128to64");   return;
+      case Iop_V128HIto64: vex_printf("V128HIto64"); return;
+      case Iop_64HLtoV128: vex_printf("64HLtoV128"); return;
 
-      case Iop_64Uto128:   vex_printf("64Uto128"); return;
-      case Iop_Set128lo64: vex_printf("Set128lo64"); return;
+      case Iop_64UtoV128:   vex_printf("64UtoV128"); return;
+      case Iop_SetV128lo64: vex_printf("SetV128lo64"); return;
 
-      case Iop_32Uto128:   vex_printf("32Uto128"); return;
-      case Iop_128to32:    vex_printf("128to32"); return;
-      case Iop_Set128lo32: vex_printf("Set128lo32"); return;
+      case Iop_32UtoV128:   vex_printf("32UtoV128"); return;
+      case Iop_V128to32:    vex_printf("V128to32"); return;
+      case Iop_SetV128lo32: vex_printf("SetV128lo32"); return;
 
-      case Iop_Not128:     vex_printf("Not128"); return;
-      case Iop_And128:     vex_printf("And128"); return;
-      case Iop_Or128:      vex_printf("Or128");  return;
-      case Iop_Xor128:     vex_printf("Xor128"); return;
+      case Iop_NotV128:    vex_printf("NotV128"); return;
+      case Iop_AndV128:    vex_printf("AndV128"); return;
+      case Iop_OrV128:     vex_printf("OrV128");  return;
+      case Iop_XorV128:    vex_printf("XorV128"); return;
 
       case Iop_CmpNEZ8x16: vex_printf("CmpNEZ8x16"); return;
       case Iop_CmpNEZ16x8: vex_printf("CmpNEZ16x8"); return;
@@ -1318,15 +1318,15 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
 
       case Iop_RoundF64: BINARY(Ity_F64, Ity_I32,Ity_F64);
 
-      case Iop_64HLto128: BINARY(Ity_V128, Ity_I64,Ity_I64);
-      case Iop_128to64: case Iop_128HIto64: 
+      case Iop_64HLtoV128: BINARY(Ity_V128, Ity_I64,Ity_I64);
+      case Iop_V128to64: case Iop_V128HIto64: 
          UNARY(Ity_I64, Ity_V128);
 
-      case Iop_128to32:    UNARY(Ity_I32, Ity_V128);
-      case Iop_32Uto128:   UNARY(Ity_V128, Ity_I32);
-      case Iop_64Uto128:   UNARY(Ity_V128, Ity_I64);
-      case Iop_Set128lo32: BINARY(Ity_V128, Ity_V128,Ity_I32);
-      case Iop_Set128lo64: BINARY(Ity_V128, Ity_V128,Ity_I64);
+      case Iop_V128to32:    UNARY(Ity_I32, Ity_V128);
+      case Iop_32UtoV128:   UNARY(Ity_V128, Ity_I32);
+      case Iop_64UtoV128:   UNARY(Ity_V128, Ity_I64);
+      case Iop_SetV128lo32: BINARY(Ity_V128, Ity_V128,Ity_I32);
+      case Iop_SetV128lo64: BINARY(Ity_V128, Ity_V128,Ity_I64);
 
       case Iop_CmpEQ32Fx4: case Iop_CmpLT32Fx4:
       case Iop_CmpEQ64Fx2: case Iop_CmpLT64Fx2:
@@ -1348,7 +1348,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_Mul64Fx2: case Iop_Mul64F0x2:
       case Iop_Sub32Fx4: case Iop_Sub32F0x4:
       case Iop_Sub64Fx2: case Iop_Sub64F0x2:
-      case Iop_And128: case Iop_Or128: case Iop_Xor128:
+      case Iop_AndV128: case Iop_OrV128: case Iop_XorV128:
       case Iop_Add8x16:   case Iop_Add16x8:   
       case Iop_Add32x4:   case Iop_Add64x2:
       case Iop_QAdd8Ux16: case Iop_QAdd16Ux8:
@@ -1376,7 +1376,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_InterleaveLO32x4: case Iop_InterleaveLO64x2:
          BINARY(Ity_V128, Ity_V128,Ity_V128);
 
-      case Iop_Not128:
+      case Iop_NotV128:
       case Iop_Recip32Fx4: case Iop_Recip32F0x4:
       case Iop_Recip64Fx2: case Iop_Recip64F0x2:
       case Iop_RSqrt32Fx4: case Iop_RSqrt32F0x4:

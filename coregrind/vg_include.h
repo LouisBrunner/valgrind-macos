@@ -1048,7 +1048,7 @@ extern void VG_(core_assert_fail) ( const Char* expr, const Char* file,
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic)      ( Char* str );
 
-/* Skins use VG_(strdup)() which doesn't expose ArenaId */
+/* Tools use VG_(strdup)() which doesn't expose ArenaId */
 extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);
 
 extern Int VG_(fcntl) ( Int fd, Int cmd, Int arg );

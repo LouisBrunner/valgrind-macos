@@ -58,40 +58,31 @@ typedef
 
 /* Records info about a faulting address. */
 typedef
-   struct {
-      /* ALL */
-      AddrKind akind;
-      /* Freed, Mallocd */
-      Int blksize;
-      /* Freed, Mallocd */
-      Int rwoffset;
-      /* Freed, Mallocd */
-      ExeContext* lastchange;
-      /* Stack */
-      ThreadId stack_tid;
-      /* True if is just-below %esp -- could be a gcc bug. */
-      Bool maybe_gcc;
+   struct {                   // Used by:
+      AddrKind akind;         //   ALL
+      Int blksize;            //   Freed, Mallocd
+      Int rwoffset;           //   Freed, Mallocd
+      ExeContext* lastchange; //   Freed, Mallocd
+      ThreadId stack_tid;     //   Stack
+      Bool maybe_gcc;         // True if just below %esp -- could be a gcc bug.
    }
    AddrInfo;
 
 typedef 
    enum { 
-      /* Bad syscall params */
-      ParamSupp,
-      /* Memory errors in core (pthread ops, signal handling) */
-      CoreMemSupp,
-      /* Use of invalid values of given size (MemCheck only) */
+      ParamSupp,     // Bad syscall params
+      CoreMemSupp,   // Memory errors in core (pthread ops, signal handling)
+
+      // Use of invalid values of given size (MemCheck only)
       Value0Supp, Value1Supp, Value2Supp, Value4Supp, Value8Supp, Value16Supp,
-      /* Invalid read/write attempt at given size */
+
+      // Invalid read/write attempt at given size
       Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp, Addr16Supp,
-      /* Invalid or mismatching free */
-      FreeSupp,
-      /* Overlapping blocks in memcpy(), strcpy(), etc */
-      OverlapSupp,
-      /* Something to be suppressed in a leak check. */
-      LeakSupp,
-      /* Memory pool suppression. */
-      MempoolSupp,
+
+      FreeSupp,      // Invalid or mismatching free
+      OverlapSupp,   // Overlapping blocks in memcpy(), strcpy(), etc
+      LeakSupp,      // Something to be suppressed in a leak check.
+      MempoolSupp,   // Memory pool suppression.
    } 
    MAC_SuppKind;
 
@@ -115,15 +106,11 @@ typedef
 
 /* Extra context for memory errors */
 typedef
-   struct {
-      /* AddrErr */
-      AxsKind axskind;
-      /* AddrErr, ValueErr */
-      Int size;
-      /* AddrErr, FreeErr, FreeMismatchErr, ParamErr, UserErr */
-      AddrInfo addrinfo;
-      /* ParamErr, UserErr, CoreMemErr */
-      Bool isWrite;
+   struct {                // Used by:
+      AxsKind axskind;     //   AddrErr
+      Int size;            //   AddrErr, ValueErr
+      AddrInfo addrinfo;   //   {Addr,Free,FreeMismatch,Param,User}Err
+      Bool isWrite;        //   ParamErr, UserErr, CoreMemErr
    }
    MAC_Error;
 
@@ -150,10 +137,10 @@ typedef
 typedef
    struct _MAC_Chunk {
       struct _MAC_Chunk* next;
-      Addr          data;           /* ptr to actual block              */
-      UInt          size : 30;      /* size requested                   */
-      MAC_AllocKind allockind : 2;  /* which wrapper did the allocation */
-      ExeContext*   where;          /* where it was allocated           */
+      Addr          data;           // ptr to actual block
+      UInt          size : 30;      // size requested
+      MAC_AllocKind allockind : 2;  // which wrapper did the allocation
+      ExeContext*   where;          // where it was allocated
    }
    MAC_Chunk;
 
@@ -161,10 +148,10 @@ typedef
 typedef
    struct _MAC_Mempool {
       struct _MAC_Mempool* next;
-      Addr          pool;           /* pool identifier                       */
-      UInt          rzB;            /* pool red-zone size                    */
-      Bool          is_zeroed;      /* allocations from this pool are zeroed */
-      VgHashTable   chunks;         /* chunks associated with this pool      */
+      Addr          pool;           // pool identifier
+      UInt          rzB;            // pool red-zone size
+      Bool          is_zeroed;      // allocations from this pool are zeroed
+      VgHashTable   chunks;         // chunks associated with this pool
    }
    MAC_Mempool;
 

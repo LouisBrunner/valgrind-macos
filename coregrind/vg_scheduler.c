@@ -97,6 +97,7 @@ static Addr __libc_freeres_wrapper;
 static void do_client_request ( ThreadId tid );
 static void scheduler_sanity ( void );
 static void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid );
+static void maybe_rendezvous_joiners_and_joinees ( void );
 
 /* Stats. */
 static UInt n_scheduling_events_MINOR = 0;
@@ -617,6 +618,14 @@ void handle_signal_return ( ThreadId tid )
    vg_assert(VG_(is_valid_tid)(tid));
 
    restart_blocked_syscalls = VG_(signal_returns)(tid);
+
+   /* If we were interrupted in the middle of a rendezvous
+      then check the rendezvous hasn't completed while we
+      were busy handling the signal. */
+   if (VG_(threads)[tid].status == VgTs_WaitJoiner ||
+       VG_(threads)[tid].status == VgTs_WaitJoinee ) {
+      maybe_rendezvous_joiners_and_joinees();
+   }
 
    if (restart_blocked_syscalls)
       /* Easy; we don't have to do anything. */

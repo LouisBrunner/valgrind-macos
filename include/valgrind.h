@@ -76,6 +76,7 @@
 
 
 
+#ifndef NVALGRIND
 /* This defines the magic code sequence which the JITter spots and
    handles magically.  Don't look too closely at this; it will rot
    your brain.  Valgrind dumps the result value in %EDX, so we first
@@ -111,7 +112,22 @@
                  : "eax", "edx", "cc", "memory"                         \
                 );                                                      \
   }
-
+#else  /* NVALGRIND */
+/* Define NVALGRIND to completely remove the Valgrind magic sequence
+   from the compiled code (analogous to NDEBUG's effects on
+   assert())  */
+#define VALGRIND_MAGIC_SEQUENCE(					\
+        _zzq_rlval,   /* result lvalue */				\
+        _zzq_default, /* result returned when running on real CPU */	\
+        _zzq_request, /* request code */				\
+        _zzq_arg1,    /* request first param */				\
+        _zzq_arg2,    /* request second param */			\
+        _zzq_arg3,    /* request third param */				\
+        _zzq_arg4     /* request fourth param */ )			\
+   {									\
+      (_zzq_rlval) = (_zzq_default);					\
+   }
+#endif /* NVALGRIND */
 
 /* Some request codes.  There are many more of these, but most are not
    exposed to end-user view.  These are the public ones, all of the

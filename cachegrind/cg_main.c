@@ -407,8 +407,8 @@ static UInt hash(Char *s, UInt table_size)
  * In all cases prepends new nodes to their chain.  Returns a pointer to the
  * cost centre.  Also sets BB_seen_before by reference. 
  */ 
-static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb, 
-                                 Bool remove, Bool *BB_seen_before)
+static BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb, 
+                      Bool remove, Bool *BB_seen_before)
 {
    file_node *curr_file_node;
    fn_node   *curr_fn_node;

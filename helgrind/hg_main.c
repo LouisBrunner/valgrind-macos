@@ -509,7 +509,7 @@ ESecMap* alloc_secondary_map ( __attribute__ ((unused)) Char* caller )
 
 /* Set a word.  The byte give by 'a' could be anywhere in the word -- the whole
  * word gets set. */
-static __inline__ 
+static /* __inline__ */
 void set_sword ( Addr a, shadow_word sword )
 {
    ESecMap* sm;
@@ -694,9 +694,9 @@ static void print_LockSet(const Char *s, const LockSet *ls)
 }
 
 /* Compute the hash of a LockSet */
-static inline UInt hash_LockSet_w_wo(const LockSet *ls, 
-				     const Mutex *with,
-				     const Mutex *without)
+static UInt hash_LockSet_w_wo(const LockSet *ls, 
+			      const Mutex *with,
+			      const Mutex *without)
 {
    Int  i;
    UInt hash = ls->setsize + (with != NULL) - (without != NULL);

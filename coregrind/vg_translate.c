@@ -1341,7 +1341,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
 
 /* Change temp regs in u into real regs, as directed by the
  * temps[i]-->reals[i] mapping. */
-static __inline__
+static
 void patchUInstr ( UInstr* u, Int temps[], UInt reals[], Int n_tmap )
 {
    Int i;
@@ -1389,7 +1389,7 @@ Int containingArchRegOf ( Int sz, Int aregno )
    reg.  Otherwise return -1.  Used in redundant-PUT elimination.
    Note that this is not required for skins extending UCode because
    this happens before instrumentation. */
-static __inline__ 
+static
 Int maybe_uinstrReadsArchReg ( UInstr* u )
 {
    switch (u->opcode) {

@@ -198,7 +198,7 @@ static __inline__ UChar get_vbyte ( Addr a )
    return sm->vbyte[sm_off];
 }
 
-static __inline__ void set_abit ( Addr a, UChar abit )
+static /* __inline__ */ void set_abit ( Addr a, UChar abit )
 {
    SecMap* sm;
    UInt    sm_off;

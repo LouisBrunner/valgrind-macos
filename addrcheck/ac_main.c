@@ -217,7 +217,7 @@ static __inline__ UChar get_abit ( Addr a )
              ? VGM_BIT_INVALID : VGM_BIT_VALID;
 }
 
-static __inline__ void set_abit ( Addr a, UChar abit )
+static /* __inline__ */ void set_abit ( Addr a, UChar abit )
 {
    AcSecMap* sm;
    UInt    sm_off;
@@ -257,7 +257,7 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
 /*--- Setting permissions over address ranges.             ---*/
 /*------------------------------------------------------------*/
 
-static __inline__ 
+static /* __inline__ */
 void set_address_range_perms ( Addr a, UInt len, 
                                UInt example_a_bit )
 {
@@ -841,7 +841,7 @@ static void ac_ACCESS1_SLOWLY ( Addr a, Bool isWrite)
    FPU load and store checks, called from generated code.
    ------------------------------------------------------------------ */
 
-static __inline__ 
+static 
 void ac_fpu_ACCESS_check ( Addr addr, Int size, Bool isWrite )
 {
    /* Ensure the read area is both addressible and valid (ie,

@@ -206,7 +206,8 @@ __inline__ void VG_(emitW) ( UInt l )
    VG_(emitB) ( (l >> 8) & 0x000000FF );
 }
 
-__inline__ void VG_(emitL) ( UInt l )
+/* __inline__ */
+void VG_(emitL) ( UInt l )
 {
    VG_(emitB) ( (l) & 0x000000FF );
    VG_(emitB) ( (l >> 8) & 0x000000FF );
@@ -473,7 +474,6 @@ void VG_(new_emit) ( Bool upds_simd_flags,
    use_flags: set of (real) flags the instruction uses
    set_flags: set of (real) flags the instruction sets
 */
-__inline__ 
 void VG_(new_emit) ( Bool interacts_with_simd_flags, 
                      FlagSet use_flags, FlagSet set_flags )
 {

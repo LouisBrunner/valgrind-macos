@@ -148,7 +148,7 @@ static void freeSegInfo ( SegInfo* si )
    recently, in which case we find the old index and return that.
    This avoids the most egregious duplications. */
 
-static __inline__
+static
 Int addStr ( SegInfo* si, Char* str )
 {
 #  define EMPTY    0xffffffff
@@ -269,7 +269,7 @@ void addLoc ( SegInfo* si, RiLoc* loc )
 
 /* Top-level place to call to add a source-location mapping entry. */
 
-static __inline__
+static 
 void addLineInfo ( SegInfo* si,
                    Int      fnmoff,
                    Addr     this,

@@ -1972,8 +1972,8 @@ ssize_t read(int fd, void *buf, size_t count)
  * this logic will become even more tortured.  Wait until we really
  * need it.
  */ 
-static inline int _open(const char *pathname, int flags, mode_t mode,
-			int (*openp)(const char *, int, mode_t))
+static int _open(const char *pathname, int flags, mode_t mode,
+	         int (*openp)(const char *, int, mode_t))
 {
    int fd;
    struct stat st;

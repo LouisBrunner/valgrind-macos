@@ -5391,6 +5391,25 @@ POST(futex)
    }
 }
 
+PRE(sched_setaffinity)
+{
+   /* int sched_setaffinity(pid_t pid, unsigned int len, unsigned long *mask) */
+   MAYBE_PRINTF("sched_setaffinity ( %d, %d, %p )\n", arg1, arg2, arg3);
+   SYSCALL_TRACK(pre_mem_read, tid, "sched_setaffinity(mask)", arg3, arg2);
+}
+
+PRE(sched_getaffinity)
+{
+   /* int sched_setaffinity(pid_t pid, unsigned int len, unsigned long *mask) */
+   MAYBE_PRINTF("sched_getaffinity ( %d, %d, %p )\n", arg1, arg2, arg3);
+   SYSCALL_TRACK(pre_mem_write, tid, "sched_getaffinity(mask)", arg3, arg2);
+}
+
+POST(sched_getaffinity)
+{
+   VG_TRACK(post_mem_write, arg3, arg2);
+}
+
 PRE(acct)
 {
    /* int acct(const char *filename); */
@@ -6137,6 +6156,8 @@ static const struct sys_info sys_info[] = {
    SYSBA(adjtimex,		0),
    SYSBA(mmap2,			0),
    SYSBA(futex,                 MayBlock),
+   SYSB_(sched_setaffinity,     0),
+   SYSBA(sched_getaffinity,     0),
    SYSB_(acct,                  0),
 
    /* new signal handling makes these normal blocking syscalls */

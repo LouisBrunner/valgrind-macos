@@ -48,9 +48,6 @@
 #define ARCH_CLREQ_RET(regs)           ((regs).m_edx)
 
 // Accessors for the baseBlock
-#define R_STACK_PTR                    R_ESP
-#define R_FRAME_PTR                    R_EBP
-
 #define R_CLREQ_RET                    R_EDX
 #define R_PTHREQ_RET                   R_EDX
 

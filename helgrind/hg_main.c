@@ -224,19 +224,19 @@ static const shadow_word error_sword = SW(Vge_Excl, TLSP_INDICATING_ALL);
 /* Parallel map which contains execution contexts when words last
   changed state (if required) */
 
-typedef struct EC_EIP {
-   union u_ec_eip {
-      Addr		eip;
+typedef struct EC_IP {
+   union u_ec_ip {
+      Addr		ip;
       ExeContext	*ec;
-   } uu_ec_eip;
+   } uu_ec_ip;
    UInt			state:STATE_BITS;
    UInt			tls:OTHER_BITS;		/* packed TLS */
-} EC_EIP;
+} EC_IP;
 
-#define NULL_EC_EIP	((EC_EIP){ { 0 }, 0, 0})
+#define NULL_EC_IP	((EC_IP){ { 0 }, 0, 0})
 
-#define EIP(eip, prev, tls) ((EC_EIP) { (union u_ec_eip)(eip), (prev).state, packTLS(tls) })
-#define EC(ec, prev, tls)   ((EC_EIP) { (union u_ec_eip)(ec), (prev).state, packTLS(tls) })
+#define IP(ip, prev, tls) ((EC_IP) { (union u_ec_ip)(ip), (prev).state, packTLS(tls) })
+#define EC(ec, prev, tls)   ((EC_IP) { (union u_ec_ip)(ec), (prev).state, packTLS(tls) })
 
 static inline UInt packEC(ExeContext *ec)
 {
@@ -249,24 +249,24 @@ static inline ExeContext *unpackEC(UInt i)
    return (ExeContext *)(i << STATE_BITS);
 }
 
-/* Lose 2 LSB of eip */
-static inline UInt packEIP(Addr eip)
+/* Lose 2 LSB of IP */
+static inline UInt packIP(Addr ip)
 {
-   return ((UInt)eip) >> STATE_BITS;
+   return ((UInt)ip) >> STATE_BITS;
 }
 
-static inline Addr unpackEIP(UInt i)
+static inline Addr unpackIP(UInt i)
 {
    return (Addr)(i << STATE_BITS);
 }
 
 typedef struct {
-   EC_EIP execontext[ESEC_MAP_WORDS];
+   EC_IP execontext[ESEC_MAP_WORDS];
 } ExeContextMap;
 
 static ExeContextMap** execontext_map;
 
-static inline void setExeContext(Addr a, EC_EIP ec)
+static inline void setExeContext(Addr a, EC_IP ec)
 {
    UInt idx = (a >> 16) & 0xffff;
    UInt off = (a >>  2) & 0x3fff;
@@ -279,11 +279,11 @@ static inline void setExeContext(Addr a, EC_EIP ec)
    execontext_map[idx]->execontext[off] = ec;
 }
 
-static inline EC_EIP getExeContext(Addr a)
+static inline EC_IP getExeContext(Addr a)
 {
    UInt idx = (a >> 16) & 0xffff;
    UInt off = (a >>  2) & 0x3fff;
-   EC_EIP ec = NULL_EC_EIP;
+   EC_IP ec = NULL_EC_IP;
 
    if (execontext_map[idx] != NULL)
       ec = execontext_map[idx]->execontext[off];
@@ -562,7 +562,7 @@ static __inline__
 void init_virgin_sword(Addr a)
 {
    if (clo_execontext != EC_None)
-      setExeContext(a, NULL_EC_EIP);
+      setExeContext(a, NULL_EC_IP);
    set_sword(a, virgin_sword);
 }
 
@@ -2044,8 +2044,8 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 
    /* stackref[] is used for super-simple value tracking to keep note
       of which tempregs currently hold a value which is derived from
-      ESP or EBP, and is therefore likely stack-relative if used as
-      the address for LOAD or STORE. */
+      the stack pointer or frame pointer, and is therefore likely
+      stack-relative if used as the address for LOAD or STORE. */
    ntemps = VG_(get_num_temps)(cb);
    stackref = VG_(malloc)(sizeof(*stackref) * ntemps);
    VG_(memset)(stackref, 0, sizeof(*stackref) * ntemps);
@@ -2079,7 +2079,8 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    sk_assert(u_in->val2 < ntemps);
 
 	    stackref[u_in->val2] = (u_in->size == 4 &&
-				    (u_in->val1 == R_ESP || u_in->val1 == R_EBP));
+				    (u_in->val1 == R_STACK_PTR ||
+                                     u_in->val1 == R_FRAME_PTR));
 	    VG_(copy_UInstr)(cb, u_in);
 	    break;
 
@@ -2315,7 +2316,7 @@ typedef
       /* Segment */
       const Char* filename;
       const Char* section;
-      /* True if is just-below %esp -- could be a gcc bug. */
+      /* True if is just-below the stack pointer -- could be a gcc bug. */
       Bool maybe_gcc;
       /* symbolic address description */
       Char *expr;
@@ -2337,7 +2338,7 @@ typedef
       shadow_word prevstate;
       /* MutexErr, LockGraphErr */
       Mutex      *mutex;
-      EC_EIP      lasttouched;
+      EC_IP      lasttouched;
       ThreadId    lasttid;
       /* LockGraphErr */
       const LockSet    *held_lockset;
@@ -2366,7 +2367,7 @@ void clear_HelgrindError ( HelgrindError* err_extra )
    err_extra->axskind    = ReadAxs;
    err_extra->size       = 0;
    err_extra->mutex      = NULL;
-   err_extra->lasttouched= NULL_EC_EIP;
+   err_extra->lasttouched= NULL_EC_IP;
    err_extra->lasttid    = VG_INVALID_THREADID;
    err_extra->prev_lockset = 0;
    err_extra->held_lockset = 0;
@@ -2576,7 +2577,7 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
             in Memcheck */
          if (ai->maybe_gcc) {
             VG_(message)(Vg_UserMsg, 
-               " Address %p is just below %%esp.  Possibly a bug in GCC/G++",
+               " Address %p is just below the stack pointer.  Possibly a bug in GCC/G++",
                a);
             VG_(message)(Vg_UserMsg, 
                "   v 2.96 or 3.0.X.  To suppress, use: --workaround-gcc296-bugs=yes");
@@ -2697,32 +2698,32 @@ void SK_(pp_SkinError) ( Error* err )
 	 VG_(message)(Vg_UserMsg, " Previous state: %s", msg);
 
       if (clo_execontext == EC_Some 
-          && extra->lasttouched.uu_ec_eip.eip != 0) {
+          && extra->lasttouched.uu_ec_ip.ip != 0) {
 	 Char file[100];
 	 UInt line;
-	 Addr eip = extra->lasttouched.uu_ec_eip.eip;
+	 Addr ip = extra->lasttouched.uu_ec_ip.ip;
 	 
 	 VG_(message)(Vg_UserMsg, " Word at %p last changed state from %s by thread %u",
 		      err_addr,
 		      pp_state(extra->lasttouched.state),
 		      unpackTLS(extra->lasttouched.tls)->tid);
 	 
-	 if (VG_(get_filename_linenum)(eip, file, sizeof(file), &line)) {
+	 if (VG_(get_filename_linenum)(ip, file, sizeof(file), &line)) {
 	    VG_(message)(Vg_UserMsg, "   at %p: %y (%s:%u)",
-			 eip, eip, file, line);
-	 } else if (VG_(get_objname)(eip, file, sizeof(file))) {
+			 ip, ip, file, line);
+	 } else if (VG_(get_objname)(ip, file, sizeof(file))) {
 	    VG_(message)(Vg_UserMsg, "   at %p: %y (in %s)",
-			 eip, eip, file);
+			 ip, ip, file);
 	 } else {
-	    VG_(message)(Vg_UserMsg, "   at %p: %y", eip, eip);
+	    VG_(message)(Vg_UserMsg, "   at %p: %y", ip, ip);
 	 }
       } else if (clo_execontext == EC_All 
-                 && extra->lasttouched.uu_ec_eip.ec != NULL) {
+                 && extra->lasttouched.uu_ec_ip.ec != NULL) {
 	 VG_(message)(Vg_UserMsg, " Word at %p last changed state from %s in tid %u",
 		      err_addr,
 		      pp_state(extra->lasttouched.state),
 		      unpackTLS(extra->lasttouched.tls)->tid);
-	 VG_(pp_ExeContext)(extra->lasttouched.uu_ec_eip.ec);
+	 VG_(pp_ExeContext)(extra->lasttouched.uu_ec_ip.ec);
       }
       break;
    }
@@ -2733,9 +2734,9 @@ void SK_(pp_SkinError) ( Error* err )
 		   VG_(get_error_address)(err),
 		   VG_(get_error_string)(err));
       VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-      if (extra->lasttouched.uu_ec_eip.ec != NULL) {
+      if (extra->lasttouched.uu_ec_ip.ec != NULL) {
 	 VG_(message)(Vg_UserMsg, " last touched by thread %d", extra->lasttid);
-	 VG_(pp_ExeContext)(extra->lasttouched.uu_ec_eip.ec);
+	 VG_(pp_ExeContext)(extra->lasttouched.uu_ec_ip.ec);
       }
       pp_AddrInfo(VG_(get_error_address)(err), &extra->addrinfo);
       break;
@@ -3023,13 +3024,13 @@ static void eraser_mem_read_word(Addr a, ThreadId tid)
 
   done:
    if (clo_execontext != EC_None && statechange) {
-      EC_EIP eceip;
+      EC_IP ecip;
 
       if (clo_execontext == EC_Some)
-	 eceip = EIP(VG_(get_EIP)(tid), prevstate, tls);
+	 ecip = IP(VG_(get_EIP)(tid), prevstate, tls);
       else
-	 eceip = EC(VG_(get_ExeContext)(tid), prevstate, tls);
-      setExeContext(a, eceip);
+	 ecip = EC(VG_(get_ExeContext)(tid), prevstate, tls);
+      setExeContext(a, ecip);
    }
 }
 
@@ -3128,13 +3129,13 @@ static void eraser_mem_write_word(Addr a, ThreadId tid)
 
   done:
    if (clo_execontext != EC_None && statechange) {
-      EC_EIP eceip;
+      EC_IP ecip;
 
       if (clo_execontext == EC_Some)
-	 eceip = EIP(VG_(get_EIP)(tid), prevstate, tls);
+	 ecip = IP(VG_(get_EIP)(tid), prevstate, tls);
       else
-	 eceip = EC(VG_(get_ExeContext)(tid), prevstate, tls);
-      setExeContext(a, eceip);
+	 ecip = EC(VG_(get_ExeContext)(tid), prevstate, tls);
+      setExeContext(a, ecip);
    }
 }
 

@@ -40,6 +40,10 @@
 
 #define REGPARM(n)      __attribute__((regparm(n)))
 
+// Accessors for the baseBlock
+#define R_STACK_PTR                    R_ESP
+#define R_FRAME_PTR                    R_EBP
+
 #define FIRST_ARCH_REG  R_EAX
 #define LAST_ARCH_REG   R_EDI
 

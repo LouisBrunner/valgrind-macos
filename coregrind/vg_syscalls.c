@@ -163,7 +163,7 @@ static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *s
    This is also careful to mop up any excess ':'s, since empty strings
    delimited by ':' are considered to be '.' in a path.
 */
-static void mash_colon_env(Char *varp, const Char *remove_pattern)
+void VG_(mash_colon_env)(Char *varp, const Char *remove_pattern)
 {
    Char *const start = varp;
    Char *entry_start = varp;
@@ -1868,16 +1868,16 @@ PRE(execve)
 
 	 buf = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(VG_(libdir)) + 20);
 
-	 VG_(sprintf)(buf, "%s*/vg_inject.so", VG_(libdir));
-	 mash_colon_env(ld_preload_str, buf);
+         VG_(sprintf)(buf, "%s*/vg_inject.so", VG_(libdir));
+         VG_(mash_colon_env)(ld_preload_str, buf);
 
-	 VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
-	 mash_colon_env(ld_preload_str, buf);
+         VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
+         VG_(mash_colon_env)(ld_preload_str, buf);
 
-	 VG_(sprintf)(buf, "%s*", VG_(libdir));
-	 mash_colon_env(ld_library_path_str, buf);
+         VG_(sprintf)(buf, "%s*", VG_(libdir));
+         VG_(mash_colon_env)(ld_library_path_str, buf);
 
-	 VG_(env_unsetenv)(envp, VALGRINDCLO);
+         VG_(env_unsetenv)(envp, VALGRINDCLO);
 
 	 /* XXX if variable becomes empty, remove it completely? */
       }

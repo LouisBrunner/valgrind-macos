@@ -1087,6 +1087,7 @@ extern Int VG_(write_socket)( Int sd, void *msg, Int count );
 extern Int VG_(connect_via_socket)( UChar* str );
 
 /* Environment manipulations */
+extern Char **VG_(env_clone) ( Char **oldenv );
 extern Char* VG_(env_getenv) ( Char **env, Char* varname );
 extern Char **VG_(env_setenv) ( Char ***envp, const Char* varname, const Char *val );
 extern void  VG_(env_unsetenv) ( Char **env, const Char *varname );
@@ -1412,6 +1413,10 @@ extern Char **VG_(vg_argv);
    feature of some modern kernels used to provide vsyscalls, etc. */
 extern Bool VG_(sysinfo_page_exists);
 extern Addr VG_(sysinfo_page_addr);
+
+/* Walk through a colon separated list variable, removing entries
+   which match pattern. */
+extern void VG_(mash_colon_env)(Char *varp, const Char *pattern);
 
 /* Something of a function looking for a home ... start up debugger. */
 extern void VG_(start_debugger) ( Int tid );

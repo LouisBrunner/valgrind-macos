@@ -1343,6 +1343,32 @@ Bool VG_(getcwd_alloc) ( Char** out )
    Misc functions looking for a proper home.
    ------------------------------------------------------------------ */
 
+/* clone the environment */
+Char **VG_(env_clone) ( Char **oldenv )
+{
+   Char **oldenvp;
+   Char **newenvp;
+   Char **newenv;
+   Int  envlen;
+
+   for (oldenvp = oldenv; oldenvp && *oldenvp; oldenvp++);
+
+   envlen = oldenvp - oldenv + 1;
+   
+   newenv = VG_(arena_malloc)(VG_AR_CORE, envlen * sizeof(Char **));
+
+   oldenvp = oldenv;
+   newenvp = newenv;
+   
+   while (oldenvp && *oldenvp) {
+      *newenvp++ = *oldenvp++;
+   }
+   
+   *newenvp = *oldenvp;
+
+   return newenv;
+}
+
 void  VG_(env_unsetenv) ( Char **env, const Char *varname )
 {
    Char **from;
@@ -1496,7 +1522,6 @@ Int VG_(setpgid) ( Int pid, Int pgrp )
 Int VG_(system) ( Char* cmd )
 {
    Int pid, res;
-   void* environ[1] = { NULL };
    if (cmd == NULL)
       return 1;
    pid = VG_(do_syscall)(__NR_fork);
@@ -1504,13 +1529,48 @@ Int VG_(system) ( Char* cmd )
       return -1;
    if (pid == 0) {
       /* child */
+      static Char** envp = NULL;
       Char* argv[4];
+
+      if (envp == NULL) {
+         Int i;
+         Char* ld_preload_str = NULL;
+         Char* ld_library_path_str = NULL;
+         Char* buf;
+
+         envp = VG_(env_clone)(VG_(client_envp));
+         
+         for (i = 0; envp[i] != NULL; i++) {
+            if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0)
+               ld_preload_str = &envp[i][11];
+            if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0)
+               ld_library_path_str = &envp[i][16];
+         }
+
+         buf = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(VG_(libdir)) + 20);
+
+         VG_(sprintf)(buf, "%s*/vg_inject.so", VG_(libdir));
+         VG_(mash_colon_env)(ld_preload_str, buf);
+
+         VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
+         VG_(mash_colon_env)(ld_preload_str, buf);
+
+         VG_(sprintf)(buf, "%s*", VG_(libdir));
+         VG_(mash_colon_env)(ld_library_path_str, buf);
+
+         VG_(env_unsetenv)(envp, VALGRINDCLO);
+
+         VG_(arena_free)(VG_AR_CORE, buf);
+      }
+
       argv[0] = "/bin/sh";
       argv[1] = "-c";
       argv[2] = cmd;
       argv[3] = 0;
+
       (void)VG_(do_syscall)(__NR_execve, 
-			    (UInt)"/bin/sh", (UInt)argv, (UInt)&environ);
+                            (UInt)"/bin/sh", (UInt)argv, (UInt)envp);
+
       /* If we're still alive here, execve failed. */
       return -1;
    } else {

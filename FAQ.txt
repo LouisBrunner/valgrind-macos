@@ -206,14 +206,14 @@ Q12. My program dies like this (often at exit):
      VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH): internal error:
      (loads of text)
 
-A12. We're not entirely sure about this, and would appreciate
-     someone sending a simple test case for us to look at.
-     One possible cause is that your program modifies its
+A12. One possible cause is that your program modifies its
      environment variables, possibly including zeroing them
-     all.  Avoid this if you can.
+     all.  Valgrind relies on the LD_PRELOAD and LD_LIBRARY_PATH
+     variables, so zeroing them will break things.
 
-     1.9.6 contains a fix which hopefully reduces the chances
-     of your program bombing out like this.
+     As of 1.9.6, Valgrind only uses these variables with 
+     --trace-children=yes, which should reduce the potential for
+     problems.
 
 -----------------------------------------------------------------
 

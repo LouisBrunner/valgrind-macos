@@ -85,5 +85,5 @@ of Valgrind.  The following notes may save you some trouble.
    valgrind -v --trace-children=yes --workaround-gcc296-bugs=yes soffice
 
 
-If you find any more hints/tips for packaging, please let me know
-(jseward@acm.org).  Thanks.
+If you find any more hints/tips for packaging, please report
+it as a bugreport. See http://valgrind.kde.org/bugs.html for details.

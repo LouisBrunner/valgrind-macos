@@ -176,7 +176,7 @@ static void flush_cache(void *ptr, int nbytes)
    unsigned long startaddr = (unsigned long) ptr;
    unsigned long endaddr = startaddr + nbytes;
    unsigned long addr;
-   unsigned long cls = VG_(cache_line_size);
+   unsigned long cls = 16; //VG_(cache_line_size);
 
    startaddr &= ~(cls - 1);
    for (addr = startaddr; addr < endaddr; addr += cls)
@@ -278,8 +278,8 @@ void switchback ( void )
 {
    UInt* p = &nop_start_point;
 
-   Addr32 addr_of_nop = p;
-   Addr32 where_to_go = gst->guest_CIA;
+   Addr32 addr_of_nop = (Addr32)p;
+   Addr32 where_to_go = gst.guest_CIA;
    Int    diff = ((Int)addr_of_nop) - ((Int)where_to_go);
 
    if (diff < -0x2000000 || diff >= 0x2000000) {
@@ -292,10 +292,12 @@ void switchback ( void )
    /* stay sane ... */
    assert(p[0] == 0 /* whatever the encoding for nop is */);
 
+   /*
    p[0] = (0<<31) // no link
      | (0 << 30) // AA=0
      | ((diff >> 2) & 0xFFFFFF)
      | (bits 0 through 5)
+   */
 
    /*
 p[0] = "goto ..."

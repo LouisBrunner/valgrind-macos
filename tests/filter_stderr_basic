@@ -12,6 +12,9 @@ sed "/^.*, .* for x86-linux\./ , /./ d"                                |
 
 # Remove other introductory lines
 sed "/Estimated CPU clock rate is [0-9]\+ MHz/d"                       |
-sed "/For more details, rerun with: -v/d"
+sed "/For more details, rerun with: -v/d"                              |
 
-
+# Reduce some libc incompatibility
+sed "s/ __getsockname / getsockname /"                                 |
+sed "s/ __sigaction / sigaction /"                                     |
+sed "s/ __GI___/ __/"

@@ -1153,8 +1153,7 @@ static Bool dis_int_arith ( UInt theInstr )
 
    case 0x08: // subfic   (Subtract from Immediate Carrying, p613)
       DIP("subfic r%d,r%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
-      assign( Rd, binop(Iop_Add32, unop(Iop_Not32, mkexpr(Ra)),
-                        mkU32(EXTS_SIMM)) );
+      assign( Rd, binop(Iop_Sub32, mkU32(EXTS_SIMM), mkexpr(Ra)) );
       op = PPC32G_FLAG_OP_SUBFI;
       do_ca = True;
       break;

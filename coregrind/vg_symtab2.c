@@ -917,7 +917,7 @@ void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
    for (i = 1; i < (Int)(o_symtab_sz/sizeof(ElfXX_Sym)); i++) {
       ElfXX_Sym* sym = & o_symtab[i];
 #     if 1
-      sym_addr = si->offset + (UInt)sym->st_value;
+      sym_addr = si->offset + sym->st_value;
 
       if (VG_(clo_trace_symtab)) {
          VG_(printf)("raw symbol [%d]: ", i);

@@ -3465,6 +3465,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
                break;
 
+            case 0xE9: /* FLDL2T */
+               DIP("fldl2t");
+               fp_push();
+               put_ST(0, IRExpr_Const(IRConst_F64(3.32192809488736234781)));
+               break;
+
             case 0xEA: /* FLDL2E */
                DIP("fldl2e");
                fp_push();
@@ -3765,6 +3771,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, False );
                break;
 
+            case 0xF0 ... 0xF7: /* FCOMI %st(0),%st(?) */
+               fp_do_ucomi_ST0_STi( (UInt)modrm - 0xF0, False );
+               break;
+
             default:
                goto decode_fail;
          }
@@ -4017,6 +4027,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST(0, unop(Iop_I32toF64,
                               unop(Iop_16Sto32,
                                    loadLE(Ity_I16, mkexpr(addr)))));
+               break;
+
+            case 2: /* FIST m16 */
+               DIP("fistp %s", dis_buf);
+               storeLE( mkexpr(addr), 
+                        binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
                break;
 
             case 3: /* FISTP m16 */
@@ -4661,7 +4677,6 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, UInt delta, Bool fwds )
    IRTemp src8  = newTemp(Ity_I8);
 
    vassert(sz == 4 || sz == 2);
-   vassert(sz == 4);
 
    modrm = getIByte(delta);
 
@@ -4715,6 +4730,9 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, UInt delta, Bool fwds )
           bsr16:  if src == 0 then 0 else  31 - Clz32(16Uto32(src))
 
       First, widen src to 32 bits if it is not already.
+
+      Postscript 15 Oct 04: it seems that at least VIA Nehemiah leaves the
+      dst register unchanged when src == 0.  Hence change accordingly.
    */
    if (sz == 2)
       assign( src32, unop(Iop_16Uto32, mkexpr(src)) );
@@ -4725,8 +4743,8 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, UInt delta, Bool fwds )
    assign( dst32,   
            IRExpr_Mux0X( 
               mkexpr(src8),
-              /* src == 0 */
-              mkU32(0),
+              /* src == 0 -- leave dst unchanged */
+              widenUto32( getIReg( sz, gregOfRM(modrm) ) ),
               /* src != 0 */
               fwds ? unop(Iop_Ctz32, mkexpr(src32))
                    : binop(Iop_Sub32, 

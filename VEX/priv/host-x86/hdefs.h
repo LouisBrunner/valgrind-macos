@@ -449,10 +449,7 @@ typedef
             Int         regparms; /* 0 .. 3 */
          } Call;
          /* Pseudo-insn.  Goto dst, on given condition (which could be
-            Xcc_ALWAYS).  Note importantly that if the jump is 
-            conditional (not Xcc_ALWAYS) the jump kind *must* be
-            Ijk_Boring.  Ie non-Boring conditional jumps are
-            not allowed. */
+            Xcc_ALWAYS). */
          struct {
             IRJumpKind  jk;
             X86CondCode cond;

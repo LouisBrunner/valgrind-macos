@@ -1045,16 +1045,18 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    cl_esp = VG_(client_end) - stacksize;
    cl_esp = ROUNDDN(cl_esp, 16); /* make stack 16 byte aligned */
 
-   if (0)
-      printf("stringsize=%d auxsize=%d stacksize=%d\n",
-	     stringsize, auxsize, stacksize);
-
-
    /* base of the string table (aligned) */
    stringbase = strtab = (char *)(VG_(client_trampoline_code) - ROUNDUP(stringsize, sizeof(int)));
 
    VG_(clstk_base) = PGROUNDDN(cl_esp);
    VG_(clstk_end)  = VG_(client_end);
+
+   if (0)
+      printf("stringsize=%d auxsize=%d stacksize=%d\n"
+             "clstk_base %x\n"
+             "clstk_end  %x\n",
+	     stringsize, auxsize, stacksize, VG_(clstk_base), VG_(clstk_end));
+
 
    /* ==================== allocate space ==================== */
 
@@ -1184,6 +1186,10 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    vg_assert(auxv->a_type == AT_NULL);
 
    vg_assert((strtab-stringbase) == stringsize);
+
+   /* We know the initial ESP is pointing at argc/argv */
+   VG_(client_argc) = *(Int*)cl_esp;
+   VG_(client_argv) = (Char**)(cl_esp + sizeof(Int));
 
    return cl_esp;
 }
@@ -1633,8 +1639,7 @@ static void pre_process_cmd_line_options
    }
 }
 
-static void process_cmd_line_options
-      ( UInt* client_auxv, Addr esp_at_startup, const char* toolname )
+static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 {
    Int  i, eventually_log_fd;
    Int *auxp;
@@ -1657,10 +1662,6 @@ static void process_cmd_line_options
 	 break;
       }
    } 
-
-   /* We know the initial ESP is pointing at argc/argv */
-   VG_(client_argc) = *(Int *)esp_at_startup;
-   VG_(client_argv) = (Char **)(esp_at_startup + sizeof(Int));
 
    for (i = 1; i < VG_(vg_argc); i++) {
 
@@ -2749,7 +2750,7 @@ int main(int argc, char **argv)
    env = fix_environment(environ, preload);
 
    //--------------------------------------------------------------
-   // Setup client stack and eip 
+   // Setup client stack, eip, and VG_(client_arg[cv])
    //   p: load_client()     [for 'info']
    //   p: fix_environment() [for 'env']
    //--------------------------------------------------------------
@@ -2791,6 +2792,7 @@ int main(int argc, char **argv)
    // XXX: is that necessary, now that we look for V's segments separately?
    // XXX: alternatively, if sk_pre_clo_init does use VG_(malloc)(), is it
    //      wrong to ignore any segments that might add in parse_procselfmaps?
+   //   p: setup_client_stack() [for 'VG_(client_arg[cv]']
    //--------------------------------------------------------------
    (*toolinfo->sk_pre_clo_init)();
    VG_(tool_init_dlsym)(tool_dlhandle);
@@ -2811,7 +2813,7 @@ int main(int argc, char **argv)
    //   p: setup_file_descriptors()  [for 'VG_(max_fd)']
    //   p: sk_pre_clo_init           [to set 'command_line_options' need]
    //--------------------------------------------------------------
-   process_cmd_line_options(client_auxv, esp_at_startup, tool);
+   process_cmd_line_options(client_auxv, tool);
 
    //--------------------------------------------------------------
    // Allow GDB attach

@@ -96,6 +96,13 @@ nearly useless.  With <code>-g</code>, you'll hopefully get messages
 which point directly to the relevant source code lines.
 
 <p>
+Another flag you might like to consider, if you are working with 
+C++, is <code>-fno-inline</code>.  That makes it easier to see the
+function-call chain, which can help reduce confusion when navigating
+around large C++ apps.  For whatever it's worth, debugging
+OpenOffice.org with Valgrind is a bit easier when using this flag.
+
+<p>
 You don't have to do this, but doing so helps Valgrind produce more
 accurate and less confusing error reports.  Chances are you're set up
 like this already, if you intended to debug your program with GNU gdb,

@@ -300,7 +300,7 @@ void must_be_readable_sockaddr ( ThreadState* tst,
          VG_(sprintf) ( outmsg, description, ".sin_port" );
          must_be_readable( tst, outmsg,
             (UInt) &((struct sockaddr_in *) sa)->sin_port,
-            sizeof (in_port_t));
+            sizeof (((struct sockaddr_in *) sa)->sin_port));
          VG_(sprintf) ( outmsg, description, ".sin_addr" );
          must_be_readable( tst, outmsg,
             (UInt) &((struct sockaddr_in *) sa)->sin_addr,
@@ -311,7 +311,7 @@ void must_be_readable_sockaddr ( ThreadState* tst,
          VG_(sprintf) ( outmsg, description, ".sin6_port" );
          must_be_readable( tst, outmsg,
             (UInt) &((struct sockaddr_in6 *) sa)->sin6_port,
-            sizeof (in_port_t));
+            sizeof (((struct sockaddr_in6 *) sa)->sin6_port));
          VG_(sprintf) ( outmsg, description, ".sin6_flowinfo" );
          must_be_readable( tst, outmsg,
             (UInt) &((struct sockaddr_in6 *) sa)->sin6_flowinfo,
@@ -320,10 +320,12 @@ void must_be_readable_sockaddr ( ThreadState* tst,
          must_be_readable( tst, outmsg,
             (UInt) &((struct sockaddr_in6 *) sa)->sin6_addr,
             sizeof (struct in6_addr));
+#        ifndef GLIBC_2_1
          VG_(sprintf) ( outmsg, description, ".sin6_scope_id" );
          must_be_readable( tst, outmsg,
             (UInt) &((struct sockaddr_in6 *) sa)->sin6_scope_id,
             sizeof (uint32_t));
+#        endif
          break;
                
       default:

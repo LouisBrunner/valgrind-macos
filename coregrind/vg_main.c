@@ -926,13 +926,13 @@ static Addr setup_client_stack(void* init_sp,
 
    /* OK, now we know how big the client stack is */
    stacksize =
-      sizeof(int) +			/* argc */
+      sizeof(Word) +			/* argc */
       sizeof(char **)*argc +		/* argv */
       sizeof(char **) +			/* terminal NULL */
       sizeof(char **)*envc +		/* envp */
       sizeof(char **) +			/* terminal NULL */
       auxsize +				/* auxv */
-      ROUNDUP(stringsize, sizeof(int)) +/* strings (aligned) */
+      ROUNDUP(stringsize, sizeof(Word)) +/* strings (aligned) */
       VKI_PAGE_SIZE;			/* page for trampoline code */
 
    if (0) VG_(printf)("stacksize = %d\n", stacksize);

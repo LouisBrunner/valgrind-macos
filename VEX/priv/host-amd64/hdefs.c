@@ -1795,16 +1795,20 @@ static Bool fits8bits ( UInt w32 )
 
 /* Forming mod-reg-rm bytes and scale-index-base bytes.
 
-     greg,  0(ereg)    |  ereg != RSP && ereg != RBP
+     greg,  0(ereg)    |  ereg is not any of: RSP RBP R12 R13
                        =  00 greg ereg
 
-     greg,  d8(ereg)   |  ereg != RSP
+     greg,  d8(ereg)   |  ereg is neither of: RSP R12
                        =  01 greg ereg, d8
 
-     greg,  d32(ereg)  |  ereg != RSP
+     greg,  d32(ereg)  |  ereg is neither of: RSP R12
                        =  10 greg ereg, d32
 
-     greg,  d8(%rsp)   =  01 greg 100, 0x24, d8
+     greg,  d8(ereg)   |  ereg is either: RSP R12
+                       =  01 greg 100, 0x24, d8
+                       (lowest bit of rex distinguishes R12/RSP)
+
+     There's also a d32 version of the above rule should we need it.
 
      -----------------------------------------------
 
@@ -1821,22 +1825,30 @@ static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am )
    if (am->tag == Aam_IR) {
       if (am->Aam.IR.imm == 0 
           && am->Aam.IR.reg != hregAMD64_RSP()
-          && am->Aam.IR.reg != hregAMD64_RBP() ) {
+          && am->Aam.IR.reg != hregAMD64_RBP() 
+          && am->Aam.IR.reg != hregAMD64_R12() 
+          && am->Aam.IR.reg != hregAMD64_R13() 
+         ) {
          *p++ = mkModRegRM(0, iregNo(greg), iregNo(am->Aam.IR.reg));
          return p;
       }
       if (fits8bits(am->Aam.IR.imm)
-          && am->Aam.IR.reg != hregAMD64_RSP()) {
+          && am->Aam.IR.reg != hregAMD64_RSP()
+          && am->Aam.IR.reg != hregAMD64_R12()
+         ) {
          *p++ = mkModRegRM(1, iregNo(greg), iregNo(am->Aam.IR.reg));
          *p++ = am->Aam.IR.imm & 0xFF;
          return p;
       }
-      if (am->Aam.IR.reg != hregAMD64_RSP()) {
+      if (am->Aam.IR.reg != hregAMD64_RSP()
+          && am->Aam.IR.reg != hregAMD64_R12()
+         ) {
          *p++ = mkModRegRM(2, iregNo(greg), iregNo(am->Aam.IR.reg));
          p = emit32(p, am->Aam.IR.imm);
          return p;
       }
-      if (am->Aam.IR.reg == hregAMD64_RSP()
+      if ((am->Aam.IR.reg == hregAMD64_RSP()
+           || am->Aam.IR.reg == hregAMD64_R12())
           && fits8bits(am->Aam.IR.imm)) {
  	 *p++ = mkModRegRM(1, iregNo(greg), 4);
          *p++ = 0x24;

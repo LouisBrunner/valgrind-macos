@@ -10,3 +10,5 @@ inherit
 race
 race2
 readshared
+inherit.stderr.diff
+inherit.stderr.out

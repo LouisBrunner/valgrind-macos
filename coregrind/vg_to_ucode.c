@@ -3607,6 +3607,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_op2_E_G ( cb, OR, True, sz, eip, "or" );
       break;
 
+   case 0x12: /* ADC Eb,Gb */
+      eip = dis_op2_E_G ( cb, ADC, True, 1, eip, "adc" );
+      break;
    case 0x13: /* ADC Ev,Gv */
       eip = dis_op2_E_G ( cb, ADC, True, sz, eip, "adc" );
       break;

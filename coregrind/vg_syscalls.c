@@ -2240,7 +2240,9 @@ PRE(clone)
    MAYBE_PRINTF("clone ( %d, %p, %p, %p, %p )\n",arg1,arg2,arg3,arg4,arg5);
 
    if (arg2 == 0 &&
-       arg1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)) {
+       (arg1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
+     || arg1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
+   {
       before_fork(tid, tst);
       res = VG_(do_syscall)(SYSNO, arg1, arg2, arg3, arg4, arg5);
       after_fork(tid, tst);

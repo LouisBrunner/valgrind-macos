@@ -9,6 +9,9 @@
 <sect1 id="cg-tech-docs.profiling" xreflabel="Cache profiling">
 <title>Cache profiling</title>
 
+<para>[Note: this document is now very old, and a lot of its contents are out
+of date, and misleading.]</para>
+
 <para>Valgrind is a very nice platform for doing cache profiling
 and other kinds of simulation, because it converts horrible x86
 instructions into nice clean RISC-like UCode.  For example, for

@@ -1,22 +1,21 @@
 
-Julian Seward, jseward@acm.org, was the original author, creating the
+Julian Seward was the original author, creating the
 dynamic translation framework, memcheck stuff, and the
 signal/syscall/threads support gunk.
 
-Nicholas Nethercote, njn25@cam.ac.uk, did the core/tool
-generalisation, and wrote Cachegrind and some of the other tools, and
-tons of other stuff, including code generation improvments.
+Nicholas Nethercote did the core/tool generalisation, and wrote
+Cachegrind and some of the other tools, and tons of other stuff.
 
-Jeremy Fitzhardinge, jeremy@goop.org, wrote Helgrind, and lots of
-syscall/signal simulation stuff, including a complete redesign of how
-syscalls and signals are handled.  Also code generation improvements.
+Jeremy Fitzhardinge wrote Helgrind, and lots of syscall/signal
+simulation stuff, including a complete redesign of how syscalls and
+signals are handled.  Also code generation improvements.
 
-Tom Hughes, thh@cyberscience.com, did a vast number of bug fixes, and
-helped out with support for more recent Linux/glibc versions.
+Tom Hughes did a vast number of bug fixes, and helped out with support
+for more recent Linux/glibc versions.
 
-Robert Walsh, rjwalsh@durables.org, added file descriptor leakage
-checking, new library interception machinery, support for client
-allocation pools, and minor other tweakage.
+Robert Walsh added file descriptor leakage checking, new library
+interception machinery, support for client allocation pools, and minor
+other tweakage.
 
 readelf's dwarf2 source line reader, written by Nick Clifton, was
 modified to be used in Valgrind by Daniel Berlin.

@@ -291,7 +291,7 @@ object <computeroutput>valgrind.so</computeroutput>, using the
 dynamic linker's <computeroutput>LD_PRELOAD</computeroutput>
 variable.  Any functions defined in the tool that share the name
 with a function defined in core (such as the instrumentation
-function <computeroutput>SK_(instrument)()</computeroutput>)
+function <computeroutput>TL_(instrument)()</computeroutput>)
 override the core's definition.  Thus the core can call the
 necessary tool functions.</para>
 
@@ -373,7 +373,7 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
   trying to understand this file, at least a little; you might
   have to do more complicated things with it later on.  In
   particular, the name of the
-  <computeroutput>vgskin_foobar_so_SOURCES</computeroutput>
+  <computeroutput>vgtool_foobar_so_SOURCES</computeroutput>
   variable determines the name of the tool's shared object, which
   determines what name must be passed to the
   <computeroutput>--tool</computeroutput> option to use the
@@ -384,7 +384,7 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
   <para>Copy <filename>none/nl_main.c</filename> into
   <computeroutput>foobar/</computeroutput>, renaming it as
   <filename>fb_main.c</filename>.  Edit it by changing the lines
-  in <computeroutput>SK_(pre_clo_init)()</computeroutput> to
+  in <computeroutput>TL_(pre_clo_init)()</computeroutput> to
   something appropriate for the tool.  These fields are used in
   the startup message, except for
   <computeroutput>bug_reports_to</computeroutput> which is used
@@ -413,7 +413,7 @@ top-level directory <computeroutput>valgrind/</computeroutput>.</para>
 
    <para>It should automake, configure and compile without
    errors, putting copies of the tool's shared object
-   <computeroutput>vgskin_foobar.so</computeroutput> in
+   <computeroutput>vgtool_foobar.so</computeroutput> in
    <computeroutput>foobar/</computeroutput> and
    <computeroutput>inst/lib/valgrind/</computeroutput>.</para>
   </listitem>
@@ -459,16 +459,16 @@ possible tool, onto the interesting stuff...</para>
 
 <para>A tool must define at least these four functions:</para>
 <programlisting><![CDATA[
-  SK_(pre_clo_init)()
-  SK_(post_clo_init)()
-  SK_(instrument)()
-  SK_(fini)()]]></programlisting>
+  TL_(pre_clo_init)()
+  TL_(post_clo_init)()
+  TL_(instrument)()
+  TL_(fini)()]]></programlisting>
 
 <para>Also, it must use the macro
 <computeroutput>VG_DETERMINE_INTERFACE_VERSION</computeroutput>
 exactly once in its source code.  If it doesn't, you will get a
 link error involving
-<computeroutput>VG_(skin_interface_major_version)</computeroutput>.
+<computeroutput>VG_(tool_interface_major_version)</computeroutput>.
 This macro is used to ensure the core/tool interface used by the
 core and a plugged-in tool are binary compatible.</para>
 
@@ -484,8 +484,8 @@ functions.</para>
 <title>Initialisation</title>
 
 <para>Most of the initialisation should be done in
-<computeroutput>SK_(pre_clo_init)()</computeroutput>.  Only use
-<computeroutput>SK_(post_clo_init)()</computeroutput> if a tool
+<computeroutput>TL_(pre_clo_init)()</computeroutput>.  Only use
+<computeroutput>TL_(post_clo_init)()</computeroutput> if a tool
 provides command line options and must do some initialisation
 after option processing takes place
 (<computeroutput>"clo"</computeroutput> stands for "command line
@@ -497,7 +497,7 @@ using the functions
 compulsory, some aren't.  Some are used when constructing the
 startup message,
 <computeroutput>detail_bug_reports_to</computeroutput> is used if
-<computeroutput>VG_(skin_panic)()</computeroutput> is ever
+<computeroutput>VG_(tool_panic)()</computeroutput> is ever
 called, or a tool assertion fails.  Others have other uses.</para>
 
 <para>Second, various "needs" can be set for a tool, using the
@@ -510,7 +510,7 @@ extra information about malloc'd blocks, etc.</para>
 
 <para>For example, if a tool wants the core's help in recording
 and reporting errors, it must set the
-<computeroutput>skin_errors</computeroutput> need to
+<computeroutput>tool_errors</computeroutput> need to
 <computeroutput>True</computeroutput>, and then provide
 definitions of six functions for comparing errors, printing out
 errors, reading suppressions from a suppressions file, etc.
@@ -518,7 +518,7 @@ While writing these functions requires some work, it's much less
 than doing error handling from scratch because the core is doing
 most of the work.  See the type
 <computeroutput>VgNeeds</computeroutput> in
-<filename>include/vg_skin.h</filename> for full details of all
+<filename>include/tool.h</filename> for full details of all
 the needs.</para>
 
 <para>Third, the tool can indicate which events in core it wants
@@ -538,7 +538,7 @@ be called each time this happens.</para>
 
 <para>More information about "details", "needs" and "trackable
 events" can be found in
-<filename>include/vg_skin.h</filename>.</para>
+<filename>include/tool.h</filename>.</para>
 
 </sect2>
 
@@ -547,7 +547,7 @@ events" can be found in
 <sect2 id="writing-tools.instr" xreflabel="Instrumentation">
 <title>Instrumentation</title>
 
-<para><computeroutput>SK_(instrument)()</computeroutput> is the
+<para><computeroutput>TL_(instrument)()</computeroutput> is the
 interesting one.  It allows you to instrument
 <emphasis>UCode</emphasis>, which is Valgrind's RISC-like
 intermediate language.  UCode is described in 
@@ -587,7 +587,7 @@ quite complex and not brilliantly documented.  Here are some
 important points, but there are undoubtedly many others that I
 should note but haven't thought of.</para>
 
-<para>The file <filename>include/vg_skin.h</filename> contains
+<para>The file <filename>include/tool.h</filename> contains
 all the types, macros, functions, etc. that a tool should
 (hopefully) need, and is the only <filename>.h</filename> file a
 tool should need to
@@ -597,23 +597,23 @@ tool should need to
 C library (there are deep reasons for this, trust us).  Valgrind
 provides an implementation of a reasonable subset of the C
 library, details of which are in
-<filename>vg_skin.h</filename>.</para>
+<filename>tool.h</filename>.</para>
 
 <para>Similarly, when writing a tool, you shouldn't need to look
 at any of the code in Valgrind's core.  Although it might be
 useful sometimes to help understand something.</para>
 
-<para><filename>vg_skin.h</filename> has a reasonable amount of
+<para><filename>tool.h</filename> has a reasonable amount of
 documentation in it that should hopefully be enough to get you
 going.  But ultimately, the tools distributed (Memcheck,
 Addrcheck, Cachegrind, Lackey, etc.) are probably the best
 documentation of all, for the moment.</para>
 
 <para>Note that the <computeroutput>VG_</computeroutput> and
-<computeroutput>SK_</computeroutput> macros are used heavily.
+<computeroutput>TL_</computeroutput> macros are used heavily.
 These just prepend longer strings in front of names to avoid
 potential namespace clashes.  We strongly recommend using the
-<computeroutput>SK_</computeroutput> macro for any global
+<computeroutput>TL_</computeroutput> macro for any global
 functions and variables in your tool, or writing a similar
 macro.</para>
 
@@ -703,7 +703,7 @@ instrumentation.</para>
 
 <para>If you just want to know whether a program point has been
 reached, using the <computeroutput>OINK</computeroutput> macro
-(in <filename>include/vg_skin.h</filename>) can be easier than
+(in <filename>include/tool.h</filename>) can be easier than
 using GDB.</para>
 
 <para>The other debugging command line options can be useful too
@@ -1136,7 +1136,7 @@ and then use the <computeroutput>VGP_PUSHCC</computeroutput> and
 <computeroutput>VGP_POPCC</computeroutput> macros to record time
 spent doing certain things.  New profiling event numbers must not
 overlap with the core profiling event numbers.  See
-<filename>include/vg_skin.h</filename> for details and Memcheck
+<filename>include/tool.h</filename> for details and Memcheck
 for an example.</para>
 
 </sect2>

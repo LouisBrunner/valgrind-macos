@@ -1807,8 +1807,7 @@ void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu )
    vg_assert(VG_(is_valid_tid)(tid));
    sp = VG_(threads)[tid].custack_used;
    if (VG_(clo_trace_sched)) {
-      VG_(sprintf)(msg_buf, 
-         "cleanup_pop from slot %d", sp-1);
+      VG_(sprintf)(msg_buf, "cleanup_pop from slot %d", sp-1);
       print_sched_event(tid, msg_buf);
    }
    vg_assert(sp >= 0 && sp <= VG_N_CLEANUPSTACK);
@@ -1817,8 +1816,9 @@ void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu )
      return;
    }
    sp--;
+   VG_TRACK( pre_mem_write, Vg_CorePThread, & VG_(threads)[tid],
+                            "cleanup pop", (Addr)cu, sizeof(CleanupEntry) );
    *cu = VG_(threads)[tid].custack[sp];
-   // JJJ: no corresponding pre_mem_write check??
    VG_TRACK( post_mem_write, (Addr)cu, sizeof(CleanupEntry) );
    VG_(threads)[tid].custack_used = sp;
    SET_EDX(tid, 0);
@@ -2935,12 +2935,13 @@ void do__get_key_destr_and_spec ( ThreadId tid,
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(key >= 0 && key < VG_N_THREAD_KEYS);
 
-   // JJJ: no pre_mem_write check??
-   
    if (!vg_thread_keys[key].inuse) {
       SET_EDX(tid, -1);
       return;
    }
+   VG_TRACK( pre_mem_write, Vg_CorePThread, & VG_(threads)[tid], 
+                            "get_key_destr_and_spec", (Addr)cu,
+                            sizeof(CleanupEntry) );
    cu->fn = vg_thread_keys[key].destructor;
    cu->arg = VG_(threads)[tid].specifics[key];
    VG_TRACK( post_mem_write, (Addr)cu, sizeof(CleanupEntry) );

@@ -179,7 +179,7 @@ static Bool sameKindedAtoms ( IRAtom* a1, IRAtom* a2 )
 /* Shadow state is always accessed using integer types.  This returns
    an integer type with the same size (as per sizeofIRType) as the
    given type.  The only valid shadow types are Bit, I8, I16, I32,
-   I64. */
+   I64, V128. */
 
 static IRType shadowType ( IRType ty )
 {
@@ -188,9 +188,10 @@ static IRType shadowType ( IRType ty )
       case Ity_I8:
       case Ity_I16:
       case Ity_I32: 
-      case Ity_I64: return ty;
-      case Ity_F32: return Ity_I32;
-      case Ity_F64: return Ity_I64;
+      case Ity_I64:  return ty;
+      case Ity_F32:  return Ity_I32;
+      case Ity_F64:  return Ity_I64;
+      case Ity_V128: return Ity_V128;
       default: ppIRType(ty); 
                VG_(tool_panic)("memcheck:shadowType");
    }
@@ -295,6 +296,12 @@ static IRAtom* mkUifU64 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
    tl_assert(isShadowAtom(mce,a1));
    tl_assert(isShadowAtom(mce,a2));
    return assignNew(mce, Ity_I64, binop(Iop_Or64, a1, a2));
+}
+
+static IRAtom* mkUifU128 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
+   tl_assert(isShadowAtom(mce,a1));
+   tl_assert(isShadowAtom(mce,a2));
+   return assignNew(mce, Ity_V128, binop(Iop_Or128, a1, a2));
 }
 
 static IRAtom* mkUifU ( MCEnv* mce, IRType vty,  IRAtom* a1, IRAtom* a2 ) {
@@ -841,6 +848,92 @@ IRAtom* expensiveAdd32 ( MCEnv* mce, IRAtom* qaa, IRAtom* qbb,
 
 
 /*------------------------------------------------------------*/
+/*--- Helpers for dealing with vector primops.            ---*/
+/*------------------------------------------------------------*/
+
+/* Here's a simple scheme capable of handling ops derived from SSE1
+   code and while only generating ops that can be efficiently
+   implemented in SSE1. */
+
+/* All-lanes versions are straightforward:
+
+   binary32Fx4(x,y)   ==> PCast32x4(UifU128(x#,y#))
+
+   unary32Fx4(x,y)    ==> PCast32x4(x#)
+
+   Lowest-lane-only versions are more complex:
+
+   binary32F0x4(x,y)  ==> Set128lo32(
+                             x#, 
+                             PCast32(128to32(UifU128(x#,y#))) 
+                          )
+
+   This is perhaps not so obvious.  In particular, it's faster to
+   do a 128-bit UifU and then take the bottom 32 bits than the more
+   obvious scheme of taking the bottom 32 bits of each operand
+   and doing a 32-bit UifU.  Basically since UifU is fast and 
+   chopping lanes off vector values is slow.
+
+   Finally:
+
+   unary32F0x4(x)     ==> Set128lo32(
+                             x#, 
+                             PCast32(128to32(x#)) 
+                          )
+
+   Where:
+
+   PCast32(v#)   = 1Sto32(CmpNE32(v#,0))
+   PCast32x4(v#) = CmpNEZ32x4(v#)
+*/
+
+static
+IRAtom* binary32Fx4 ( MCEnv* mce, IRAtom* vatomX, IRAtom* vatomY )
+{
+   IRAtom* at;
+   tl_assert(isShadowAtom(mce, vatomX));
+   tl_assert(isShadowAtom(mce, vatomY));
+   at = mkUifU128(mce, vatomX, vatomY);
+   at = assignNew(mce, Ity_V128, unop(Iop_CmpNEZ32x4, at));
+   return at;
+}
+
+static
+IRAtom* unary32Fx4 ( MCEnv* mce, IRAtom* vatomX )
+{
+   IRAtom* at;
+   tl_assert(isShadowAtom(mce, vatomX));
+   at = assignNew(mce, Ity_V128, unop(Iop_CmpNEZ32x4, vatomX));
+   return at;
+}
+
+static
+IRAtom* binary32F0x4 ( MCEnv* mce, IRAtom* vatomX, IRAtom* vatomY )
+{
+   IRAtom* at;
+   tl_assert(isShadowAtom(mce, vatomX));
+   tl_assert(isShadowAtom(mce, vatomY));
+   at = mkUifU128(mce, vatomX, vatomY);
+   at = assignNew(mce, Ity_I32, unop(Iop_128to32, at));
+   at = mkPCastTo(mce, Ity_I32, at);
+   at = assignNew(mce, Ity_V128, binop(Iop_Set128lo32, vatomX, at));
+   return at;
+}
+
+static
+IRAtom* unary32F0x4 ( MCEnv* mce, IRAtom* vatomX )
+{
+   IRAtom* at;
+   tl_assert(isShadowAtom(mce, vatomX));
+   at = assignNew(mce, Ity_I32, unop(Iop_128to32, vatomX));
+   at = mkPCastTo(mce, Ity_I32, at);
+   at = assignNew(mce, Ity_V128, binop(Iop_Set128lo32, vatomX, at));
+   return at;
+}
+
+
+
+/*------------------------------------------------------------*/
 /*--- Generate shadow values from all kinds of IRExprs.    ---*/
 /*------------------------------------------------------------*/
 
@@ -864,6 +957,13 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
    tl_assert(sameKindedAtoms(atom1,vatom1));
    tl_assert(sameKindedAtoms(atom2,vatom2));
    switch (op) {
+
+      /* 128-bit SIMD */
+
+      case Iop_Add32Fx4:
+         return binary32Fx4(mce, vatom1, vatom2);      
+
+      /* Scalar floating point */
 
       case Iop_RoundF64:
       case Iop_F64toI64:

@@ -827,6 +827,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          switch (e->Iex.Binop.op) {
             case Iop_Shr64: case Iop_Shl64: case Iop_Sar64: 
                break;
+            case Iop_Shl32:
+               break;
 //..             case Iop_Shr8:
 //..                addInstr(env, X86Instr_Alu32R(
 //..                                 Xalu_AND, X86RMI_Imm(0xFF), dst));
@@ -835,6 +837,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..                addInstr(env, X86Instr_Alu32R(
 //..                                 Xalu_AND, X86RMI_Imm(0xFFFF), dst));
 //..                break;
+            case Iop_Shr32:
+               addInstr(env, AMD64Instr_Alu64R(
+                                Aalu_AND, AMD64RMI_Imm(0xFFFFFFFF), dst));
+               break;
 //..             case Iop_Sar8:
 //..                addInstr(env, X86Instr_Sh32(Xsh_SHL, 24, X86RM_Reg(dst)));
 //..                addInstr(env, X86Instr_Sh32(Xsh_SAR, 24, X86RM_Reg(dst)));

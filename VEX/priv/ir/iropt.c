@@ -1022,6 +1022,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         * e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
+
             case Iop_Shl32:
                vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
                shift = (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8);
@@ -1030,6 +1031,15 @@ static IRExpr* fold_Expr ( IRExpr* e )
                           (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                            << shift)));
                break;
+            case Iop_Shl64:
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               shift = (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8);
+               if (shift >= 0 && shift <= 63)
+                  e2 = IRExpr_Const(IRConst_U64(
+                          (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
+                           << shift)));
+               break;
+
             case Iop_Sar32: {
                /* paranoid ... */
                /*signed*/ Int s32;

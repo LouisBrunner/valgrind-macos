@@ -11307,19 +11307,21 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       DIP("mov%c %s, %s0x%x\n", nameISize(sz), nameIReg(sz,R_EAX),
 //..                                 sorbTxt(sorb), d32);
 //..       break;
-//.. 
+
+/* XXXX be careful here with moves to AH/BH/CH/DH */
 //..    case 0xB0: /* MOV imm,AL */
 //..    case 0xB1: /* MOV imm,CL */
-//..    case 0xB2: /* MOV imm,DL */
+   case 0xB2: /* MOV imm,DL */
 //..    case 0xB3: /* MOV imm,BL */
 //..    case 0xB4: /* MOV imm,AH */
 //..    case 0xB5: /* MOV imm,CH */
 //..    case 0xB6: /* MOV imm,DH */
 //..    case 0xB7: /* MOV imm,BH */
-//..       d32 = getUChar(delta); delta += 1;
-//..       putIReg(1, opc-0xB0, mkU8(d32));
-//..       DIP("movb $0x%x,%s\n", d32, nameIReg(1,opc-0xB0));
-//..       break;
+      d64 = getUChar(delta); 
+      delta += 1;
+      putIRegB(pfx, 1, opc-0xB0, mkU8(d64));
+      DIP("movb $%lld,%s\n", d64, nameIRegB(pfx,1,opc-0xB0));
+      break;
 
    case 0xB8: /* MOV imm,eAX */
    case 0xB9: /* MOV imm,eCX */
@@ -11536,9 +11538,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_op2_E_G ( pfx, False, Iop_Xor8, True, sz, delta, "xor" );
       break;
 
-//..    case 0x3A: /* CMP Eb,Gb */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_Sub8, False, 1, delta, "cmp" );
-//..       break;
+   case 0x3A: /* CMP Eb,Gb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_E_G ( pfx, False, Iop_Sub8, False, 1, delta, "cmp" );
+      break;
    case 0x3B: /* CMP Ev,Gv */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_E_G ( pfx, False, Iop_Sub8, False, sz, delta, "cmp" );
@@ -11603,9 +11606,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_op2_G_E ( pfx, False, Iop_Sub8, True, sz, delta, "sub" );
       break;
 
-//..    case 0x30: /* XOR Gb,Eb */
-//..       delta = dis_op2_G_E ( sorb, False, Iop_Xor8, True, 1, delta, "xor" );
-//..       break;
+   case 0x30: /* XOR Gb,Eb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_G_E ( pfx, False, Iop_Xor8, True, 1, delta, "xor" );
+      break;
    case 0x31: /* XOR Gv,Ev */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_G_E ( pfx, False, Iop_Xor8, True, sz, delta, "xor" );

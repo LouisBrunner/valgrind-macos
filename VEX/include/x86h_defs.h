@@ -18,6 +18,10 @@
 
 extern void ppHRegX86 ( FILE*, HReg );
 
+extern HReg hregX86_EAX ( void );
+extern HReg hregX86_ECX ( void );
+extern HReg hregX86_EBP ( void );
+
 
 /* --------- Memory address expressions (amodes). --------- */
 
@@ -216,5 +220,8 @@ extern X86Instr* X86Instr_RET    ( void );
 
 extern void ppX86Instr ( FILE*, X86Instr* );
 
+extern void getRegUsage_X86Instr ( HRegUsage*, X86Instr* );
+
+extern void mapRegs_X86Instr ( HRegRemap*, X86Instr* );
 
 #endif /* ndef __X86H_DEFS_H */

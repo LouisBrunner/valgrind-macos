@@ -100,7 +100,7 @@ void initHRegUsage ( HRegUsage* tab )
    existing write uses into a modify use, and vice versa.  Do not
    create duplicate entries -- each reg should only be mentioned once.  
 */
-void addHRegUsage ( HRegUsage* tab, HReg reg, HRegMode mode )
+void addHRegUse ( HRegUsage* tab, HRegMode mode, HReg reg )
 {
    Int i;
    /* Find it ... */

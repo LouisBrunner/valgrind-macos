@@ -101,7 +101,7 @@ extern void initHRegUsage ( HRegUsage* );
    existing write uses into a modify use, and vice versa.  Do not
    create duplicate entries -- each reg should only be mentioned once.  
 */
-extern void addToHRegUsage ( HRegUsage*, HReg, HRegMode );
+extern void addHRegUse ( HRegUsage*, HRegMode, HReg );
 
 
 

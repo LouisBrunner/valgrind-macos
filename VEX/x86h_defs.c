@@ -45,6 +45,10 @@ void ppHRegX86 ( FILE* f, HReg reg )
    }
 }
 
+HReg hregX86_EAX ( void ) { return mkHReg(0, HRcInt, False); }
+HReg hregX86_ECX ( void ) { return mkHReg(1, HRcInt, False); }
+HReg hregX86_EBP ( void ) { return mkHReg(5, HRcInt, False); }
+
 
 /* --------- X86AMode: memory address expressions. --------- */
 
@@ -86,6 +90,33 @@ void ppX86AMode ( FILE* f, X86AMode* am ) {
    }
 }
 
+static void addRegUsage_X86AMode ( HRegUsage* u, X86AMode* am ) {
+   switch (am->tag) {
+      case Xam_IR: 
+         addHRegUse(u, HRmRead, am->Xam.IR.reg);
+         return;
+      case Xam_IRRS:
+         addHRegUse(u, HRmRead, am->Xam.IRRS.base);
+         addHRegUse(u, HRmRead, am->Xam.IRRS.index);
+         return;
+      default:
+         panic("addRegUsage_X86AMode");
+   }
+}
+
+static void mapRegs_X86AMode ( HRegRemap* m, X86AMode* am ) {
+   switch (am->tag) {
+      case Xam_IR: 
+         am->Xam.IR.reg = lookupHRegRemap(m, am->Xam.IR.reg);
+         return;
+      case Xam_IRRS:
+         am->Xam.IRRS.base = lookupHRegRemap(m, am->Xam.IRRS.base);
+         am->Xam.IRRS.index = lookupHRegRemap(m, am->Xam.IRRS.index);
+         return;
+      default:
+         panic("mapRegs_X86AMode");
+   }
+}
 
 /* --------- Operand, which can be reg, immediate or memory. --------- */
 
@@ -126,6 +157,39 @@ void ppX86RMI ( FILE* f, X86RMI* op ) {
    }
 }
 
+/* An X86RMI can only be used in a "read" context (what would it mean
+   to write or modify a literal?) and so we enumerate its registers
+   accordingly. */
+static void addRegUsage_X86RMI ( HRegUsage* u, X86RMI* op ) {
+   switch (op->tag) {
+      case Xrmi_Imm: 
+         return;
+      case Xrmi_Reg: 
+         addHRegUse(u, HRmRead, op->Xrmi.Reg.reg);
+         return;
+      case Xrmi_Mem: 
+         addRegUsage_X86AMode(u, op->Xrmi.Mem.am);
+         return;
+      default: 
+         panic("addRegUsage_X86RMI");
+   }
+}
+
+static void mapRegs_X86RMI ( HRegRemap* m, X86RMI* op ) {
+   switch (op->tag) {
+      case Xrmi_Imm: 
+         return;
+      case Xrmi_Reg: 
+         op->Xrmi.Reg.reg = lookupHRegRemap(m, op->Xrmi.Reg.reg);
+         return;
+      case Xrmi_Mem: 
+         mapRegs_X86AMode(m, op->Xrmi.Mem.am);
+         return;
+      default: 
+         panic("mapRegs_X86RMI");
+   }
+}
+
 
 /* --------- Operand, which can be reg or immediate only. --------- */
 
@@ -156,6 +220,33 @@ void ppX86RI ( FILE* f, X86RI* op ) {
    }
 }
 
+/* An X86RI can only be used in a "read" context (what would it mean
+   to write or modify a literal?) and so we enumerate its registers
+   accordingly. */
+static void addRegUsage_X86RI ( HRegUsage* u, X86RI* op ) {
+   switch (op->tag) {
+      case Xri_Imm: 
+         return;
+      case Xri_Reg: 
+         addHRegUse(u, HRmRead, op->Xri.Reg.reg);
+         return;
+      default: 
+         panic("addRegUsage_X86RI");
+   }
+}
+
+static void mapRegs_X86RI ( HRegRemap* m, X86RI* op ) {
+   switch (op->tag) {
+      case Xri_Imm: 
+         return;
+      case Xri_Reg: 
+         op->Xri.Reg.reg = lookupHRegRemap(m, op->Xri.Reg.reg);
+         return;
+      default: 
+         panic("mapRegs_X86RI");
+   }
+}
+
 
 /* --------- Operand, which can be reg or memory only. --------- */
 
@@ -183,6 +274,40 @@ void ppX86RM ( FILE* f, X86RM* op ) {
          return;
      default: 
          panic("ppX86RM");
+   }
+}
+
+/* Because an X86RM can be both a source or destination operand, we
+   have to supply a mode -- pertaining to the operand as a whole --
+   indicating how it's being used. */
+static void addRegUsage_X86RM ( HRegUsage* u, X86RM* op, HRegMode mode ) {
+   switch (op->tag) {
+      case Xrm_Mem: 
+         /* Memory is read, written or modified.  So we just want to
+            know the regs read by the amode. */
+         addRegUsage_X86AMode(u, op->Xrm.Mem.am);
+         return;
+      case Xrm_Reg: 
+         /* reg is read, written or modified.  Add it in the
+            appropriate way. */
+         addHRegUse(u, mode, op->Xrm.Reg.reg);
+         return;
+     default: 
+         panic("addRegUsage_X86RM");
+   }
+}
+
+static void mapRegs_X86RM ( HRegRemap* m, X86RM* op )
+{
+   switch (op->tag) {
+      case Xrm_Mem: 
+         mapRegs_X86AMode(m, op->Xrm.Mem.am);
+         return;
+      case Xrm_Reg: 
+         op->Xrm.Reg.reg = lookupHRegRemap(m, op->Xrm.Reg.reg);
+         return;
+     default: 
+         panic("mapRegs_X86RM");
    }
 }
 
@@ -251,7 +376,6 @@ X86Instr* X86Instr_RET ( void ) {
    return i;
 }
 
-
 void ppX86Instr ( FILE* f, X86Instr* i ) {
    switch (i->tag) {
       case Xin_Alu32R:
@@ -284,3 +408,48 @@ void ppX86Instr ( FILE* f, X86Instr* i ) {
          panic("ppX86Instr");
    }
 }
+
+void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
+{
+   initHRegUsage(u);
+   switch (i->tag) {
+      case Xin_Alu32R:
+         addRegUsage_X86RMI(u, i->Xin.Alu32R.src);
+         if (i->Xin.Alu32R.op == Xalu_MOV)
+            addHRegUse(u, HRmWrite,  i->Xin.Alu32R.dst);
+         else
+            addHRegUse(u, HRmModify, i->Xin.Alu32R.dst);
+         return;
+      case Xin_Alu32M:
+         addRegUsage_X86RI(u, i->Xin.Alu32M.src);
+         addRegUsage_X86AMode(u, i->Xin.Alu32M.dst);
+         return;
+      case Xin_Sh32:
+         addRegUsage_X86RM(u, i->Xin.Sh32.dst, HRmModify);
+         if (i->Xin.Sh32.src == 0)
+            addHRegUse(u, HRmRead, hregX86_ECX());
+         return;
+      default:
+         panic("getRegUsage_X86Instr");
+   }
+}
+
+void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
+{
+   switch (i->tag) {
+      case Xin_Alu32R:
+         mapRegs_X86RMI(m, i->Xin.Alu32R.src);
+         i->Xin.Alu32R.dst = lookupHRegRemap(m, i->Xin.Alu32R.dst);
+         return;
+      case Xin_Alu32M:
+         mapRegs_X86RI(m, i->Xin.Alu32M.src);
+         mapRegs_X86AMode(m, i->Xin.Alu32M.dst);
+         return;
+      case Xin_Sh32:
+         mapRegs_X86RM(m, i->Xin.Sh32.dst);
+         return;
+      default:
+         panic("mapRegs_X86Instr");
+   }
+}
+

@@ -263,13 +263,12 @@ void iselStmt ( ISelEnv* env, IRStmt* stmt )
      if (stmt->Ist.Put.size == 4) {
        /* We're going to write to memory, so compute the
 	  RHS into an X86RI. */
-       HReg   ebp = mkHReg(5, HRcInt, False);
        X86RI* ri  = iselIntExpr_RI(env, stmt->Ist.Put.expr);
        addInstr(env,
 		X86Instr_Alu32M(
                    Xalu_MOV,
                    ri,
-		   X86AMode_IR(stmt->Ist.Put.offset,ebp)
+		   X86AMode_IR(stmt->Ist.Put.offset,hregX86_EBP())
 	       ));
        return;
      }
@@ -293,12 +292,11 @@ void iselNext ( ISelEnv* env, IRNext* next )
 
    switch (next->tag) {
    case Inx_UJump: {
-      HReg eax = mkHReg(0, HRcInt, False);
       assert(next->Inx.UJump.dst->tag == Ico_U32);
       addInstr(env, X86Instr_Alu32R(
                        Xalu_MOV, 
                        X86RMI_Imm(next->Inx.UJump.dst->Ico.U32),
-                       eax));
+                       hregX86_EAX()));
       addInstr(env, X86Instr_RET());
       return;
    }

@@ -125,7 +125,7 @@ HInstr** doRegisterAllocation (
    void (*getRegUsage) (HInstr*, HRegUsage*),
 
    /* Apply a reg-reg mapping to an insn. */
-   void (*mapRegs) (HRegRemap*, HInstr*),
+   void (*mapRegs) (HInstr*, HRegRemap*),
 
    /* Return an insn to spill/restore a real reg to a spill slot
       offset. */
@@ -684,7 +684,7 @@ HInstr** doRegisterAllocation (
       */
 
       /* NOTE, DESTRUCTIVELY MODIFIES instrs[ii]. */
-      (*mapRegs)( &remap, instrs[ii] );
+      (*mapRegs)( instrs[ii], &remap );
       EMIT_INSTR( instrs[ii] );
 
    } /* iterate over insns */

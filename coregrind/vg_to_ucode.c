@@ -6363,7 +6363,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
       /* =-=-=-=-=-=-=-=-=- MMXery =-=-=-=-=-=-=-=-=-=-= */
 
+      case 0x0D: /* PREFETCH / PREFETCHW - 3Dnow!ery*/
       case 0x18: /* PREFETCHT0/PREFETCHT1/PREFETCHT2/PREFETCHNTA */
+      
          vg_assert(sz == 4);
          modrm = getUChar(eip);
          if (epartIsReg(modrm)) {
@@ -6375,12 +6377,21 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          eip += lengthAMode(eip);
          if (dis) {
             UChar* hintstr;
-            switch (gregOfRM(modrm)) {
-               case 0: hintstr = "nta"; break;
-               case 1: hintstr = "t0"; break;
-               case 2: hintstr = "t1"; break;
-               case 3: hintstr = "t2"; break;
-               default: goto decode_failure;
+            if(opc == 0x0D) {
+               switch (gregOfRM(modrm)) {
+                  case 0: hintstr = ""; break;
+                  case 1: hintstr = "w"; break;
+                  default: goto decode_failure;
+               }
+            }
+            else {
+               switch (gregOfRM(modrm)) {
+                  case 0: hintstr = "nta"; break;
+                  case 1: hintstr = "t0"; break;
+                  case 2: hintstr = "t1"; break;
+                  case 3: hintstr = "t2"; break;
+                 default: goto decode_failure;
+               }
             }
             VG_(printf)("prefetch%s ...\n", hintstr);
          }

@@ -13,9 +13,9 @@ EXTRA_DIST = cg_sim.c
 
 noinst_HEADERS = cg_arch.h
 
-val_PROGRAMS = vgskin_cachegrind.so
+val_PROGRAMS = vgtool_cachegrind.so
 
-vgskin_cachegrind_so_SOURCES = cg_main.c
-vgskin_cachegrind_so_LDFLAGS = -shared
-vgskin_cachegrind_so_LDADD   = ${VG_ARCH}/libcgarch.a
+vgtool_cachegrind_so_SOURCES = cg_main.c
+vgtool_cachegrind_so_LDFLAGS = -shared
+vgtool_cachegrind_so_LDADD   = ${VG_ARCH}/libcgarch.a
 

@@ -3,7 +3,7 @@ include $(top_srcdir)/Makefile.tool.am
 ## Build Memcheck at a higher optimisation level
 AM_CFLAGS += -O2
 
-val_PROGRAMS = vgskin_memcheck.so vgpreload_memcheck.so
+val_PROGRAMS = vgtool_memcheck.so vgpreload_memcheck.so
 
 vgpreload_memcheck_so_SOURCES = \
 	mac_replace_strmem.c
@@ -13,7 +13,7 @@ vgpreload_memcheck_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst \
 	$(top_builddir)/coregrind/lib_replace_malloc.a \
 	-Wl,--no-whole-archive
 
-vgskin_memcheck_so_SOURCES = \
+vgtool_memcheck_so_SOURCES = \
 	mac_leakcheck.c \
 	mac_malloc_wrappers.c \
 	mac_needs.c \
@@ -22,7 +22,7 @@ vgskin_memcheck_so_SOURCES = \
 	mc_from_ucode.c \
 	mc_translate.c \
 	mc_helpers.S
-vgskin_memcheck_so_LDFLAGS = -shared
+vgtool_memcheck_so_LDFLAGS = -shared
 
 mcincludedir = $(includedir)/valgrind
 

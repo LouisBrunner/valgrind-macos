@@ -1205,9 +1205,9 @@ static void list_tools(void)
    while ((de = readdir(dir)) != NULL) {
       int len = strlen(de->d_name);
 
-      /* look for vgskin_TOOL.so names */
-      if (len > (7+1+3) &&   /* "vgskin_" + at least 1-char toolname + ".so" */
-         strncmp(de->d_name, "vgskin_", 7) == 0 &&
+      /* look for vgtool_TOOL.so names */
+      if (len > (7+1+3) &&   /* "vgtool_" + at least 1-char toolname + ".so" */
+         strncmp(de->d_name, "vgtool_", 7) == 0 &&
          VG_STREQ(de->d_name + len - 3, ".so")) {
          if (first) {
             fprintf(stderr, "Available tools:\n");
@@ -1247,7 +1247,7 @@ static void load_tool( const char *toolname, void** handle_out,
       handle = dlopen(toolname, RTLD_NOW);
    } else {
       /* just try in the libdir */
-      snprintf(buf, len, "%s/vgskin_%s.so", VG_(libdir), toolname);
+      snprintf(buf, len, "%s/vgtool_%s.so", VG_(libdir), toolname);
       handle = dlopen(buf, RTLD_NOW);
 
       if (handle != NULL) {

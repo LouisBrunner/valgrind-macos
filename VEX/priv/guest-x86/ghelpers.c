@@ -843,7 +843,7 @@ static UInt calculate_FXAM ( UInt tag, ULong dbl )
    UInt   c1;
    UChar* f64;
 
-   if (!host_is_little_endian) {
+   if (!host_is_little_endian()) {
       vassert(0);
    }
 

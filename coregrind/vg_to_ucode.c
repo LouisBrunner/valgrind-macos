@@ -2208,7 +2208,7 @@ void codegen_LODS ( UCodeBlock* cb, Int sz )
 }
 
 
-/* Template for REPNE SCAS<sz>, _not_ preceded by a REP prefix. */
+/* Template for SCAS<sz>, _not_ preceded by a REP prefix. */
 static 
 void codegen_SCAS ( UCodeBlock* cb, Int sz )
 {

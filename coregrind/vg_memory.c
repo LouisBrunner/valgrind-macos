@@ -1089,14 +1089,6 @@ void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
    }
 }
 
-static jmp_buf segv_jmpbuf;
-
-static void segv_handler(Int seg)
-{
-   __builtin_longjmp(segv_jmpbuf, 1);
-   VG_(core_panic)("longjmp failed");
-}
-
 /* 
    Test if a piece of memory is addressable with at least the "prot"
    protection permissions by examining the underlying segments.

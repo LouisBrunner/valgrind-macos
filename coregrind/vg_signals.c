@@ -593,13 +593,14 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    return;
 
   bad_signo_reserved:
-   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1)
+   if (VG_(needs).core_errors && VG_(clo_verbosity) >= 1) {
       VG_(message)(Vg_UserMsg,
 		   "Warning: ignored attempt to set %s handler in sigaction();",
 		   signame(signo));
       VG_(message)(Vg_UserMsg,
 		   "         the %s signal is used internally by Valgrind", 
 		   signame(signo));
+   }
    SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
    return;
 

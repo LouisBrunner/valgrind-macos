@@ -8,15 +8,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
-
+#include "libvex_basictypes.h"
+#include "libvex.h"
 
 /*---------------------------------------------------------------*/
 /*--- Test                                                    ---*/
 /*---------------------------------------------------------------*/
 
-#include "libvex_basictypes.h"
-#include "libvex.h"
 
 __attribute__ ((noreturn))
 void failure_exit ( void )
@@ -30,8 +30,74 @@ void log_bytes ( Char* bytes, Int nbytes )
    fwrite ( bytes, 1, nbytes, stdout );
 }
 
-int main ( void )
+#define N_LINEBUF 10000
+Char linebuf[N_LINEBUF];
+
+#define N_ORIGBUF 200
+#define N_TRANSBUF 1000
+
+UChar origbuf[N_ORIGBUF];
+UChar transbuf[N_TRANSBUF];
+
+
+int main ( int argc, char** argv )
 {
+   FILE* f;
+   Int i;
+   UInt u;
+   Addr32 orig_addr;
+   Int bb_number;
+   Int orig_nbytes, trans_used, orig_used;
+   TranslateResult tres;
+
+   if (argc != 2) {
+      fprintf(stderr, "usage: vex file.org\n");
+      exit(1);
+   }
+   f = fopen(argv[1], "r");
+   if (!f) {
+      fprintf(stderr, "can't open `%s'\n", argv[1]);
+      exit(1);
+   }
+
+   LibVEX_Init ( &failure_exit, &log_bytes, 
+                 1, 1, False, 100 );
+
+   while (!feof(f)) {
+      fgets(linebuf, N_LINEBUF,f);
+      //printf("%s", linebuf);
+      assert(linebuf[0] != 0);
+      if (linebuf[0] != '.') continue;
+      /* first line is:   . bb-number bb-addr n-bytes */
+      assert(3 == sscanf(&linebuf[1], " %d %x %d\n", 
+                                 & bb_number,
+                    		 & orig_addr, & orig_nbytes ));
+      assert(orig_nbytes >= 1);
+      assert(!feof(f));
+      fgets(linebuf, N_LINEBUF,f);
+      assert(linebuf[0] == '.');
+      /* second line is:   . byte byte byte etc */
+      //printf("%s", linebuf);
+      printf("Basic Block %d, Start %x, nbytes %d\n", 
+             bb_number, orig_addr, orig_nbytes);
+      assert(orig_nbytes >= 1 && orig_nbytes <= N_ORIGBUF);
+      for (i = 0; i < orig_nbytes; i++) {
+	 assert(1 == sscanf(&linebuf[2 + 3*i], "%x", &u));
+	 origbuf[i] = (UChar)u;
+      }
+
+      tres =
+      LibVEX_Translate ( InsnSetX86, InsnSetX86,
+			 origbuf, (Addr64)orig_addr, &orig_used,
+			 transbuf, N_TRANSBUF, &trans_used,
+			 NULL, NULL );
+      assert(tres == TransOK);
+      assert(orig_used == orig_nbytes);
+   }
+
+   fclose(f);
+
+#if 0
    Int* p;
    Int i, j, n = 0;
    LibVEX_Init ( &failure_exit, &log_bytes, 
@@ -46,6 +112,7 @@ int main ( void )
    }
    LibVEX_Clear(True);
    printf("Did %d allocs\n", n);
+#endif
    return 0;
 }
 

@@ -339,7 +339,7 @@ void VG_(unimplemented) ( Char* msg )
 
 Addr VG_(get_stack_pointer) ( void )
 {
-   return VG_(baseBlock)[VGOFF_(m_esp)];
+   return VG_(baseBlock)[VGOFF_STACK_PTR];
 }
 
 /* Debugging thing .. can be called from assembly with OYNK macro. */

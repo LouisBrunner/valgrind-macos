@@ -1,0 +1,15 @@
+Makefile.in
+Makefile
+erringfds
+malloc3
+sigkill
+pth_atfork1
+pth_cancel2
+pth_cvsimple
+pth_empty
+pth_mutexspeed
+pth_once
+*.stdout.diff
+*.stderr.diff
+*.stdout.out
+*.stderr.out

@@ -825,9 +825,16 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          values are on the second operand. */
       if (aluOp != Palu_INVALID) {
          HReg dst    = newVRegI(env);
+         HReg tmp    = newVRegI(env);
          HReg src    = iselIntExpr_R(env, e->Iex.Binop.arg1);
          PPC32RI* ri = iselIntExpr_RI(env, e->Iex.Binop.arg2);
-         addInstr(env, PPC32Instr_Alu32(aluOp, dst, src, ri));
+
+         if (ri->tag == Pri_Imm && ri->Pri.Imm.imm32 < 0x10000) {
+            addInstr(env, PPC32Instr_Alu32(aluOp, dst, src, ri));
+         } else {
+            addInstr(env, mk_iMOVds_RRI(env, tmp, ri));
+            addInstr(env, PPC32Instr_Alu32(aluOp, dst, src, PPC32RI_Reg(tmp)));
+         }
          return dst;
       }
 //..       /* Could do better here; forcing the first arg into a reg
@@ -850,17 +857,31 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
       /* How about a div? */
       if (e->Iex.Binop.op == Iop_DivU32) {
-         HReg dst         = newVRegI(env);
-         HReg src1        = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         PPC32RI* ri_src2 = iselIntExpr_RI(env, e->Iex.Binop.arg2);
-         addInstr(env, PPC32Instr_Div(False, dst, src1, ri_src2));
+         HReg dst    = newVRegI(env);
+         HReg src1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         PPC32RI* ri = iselIntExpr_RI(env, e->Iex.Binop.arg2);
+         HReg src2;
+         if (ri->tag == Pri_Imm) {
+            src2 = newVRegI(env);
+            addInstr(env, mk_iMOVds_RRI(env, src2, ri));
+         } else {
+            src2 = ri->Pri.Reg.reg;
+         }
+         addInstr(env, PPC32Instr_Div(False, dst, src1, src2));
          return dst;
       }
       if (e->Iex.Binop.op == Iop_DivS32) {
-         HReg dst         = newVRegI(env);
-         HReg src1        = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         PPC32RI* ri_src2 = iselIntExpr_RI(env, e->Iex.Binop.arg2);
-         addInstr(env, PPC32Instr_Div(True, dst, src1, ri_src2));
+         HReg dst    = newVRegI(env);
+         HReg src1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         PPC32RI* ri = iselIntExpr_RI(env, e->Iex.Binop.arg2);
+         HReg src2;
+         if (ri->tag == Pri_Imm) {
+            src2 = newVRegI(env);
+            addInstr(env, mk_iMOVds_RRI(env, src2, ri));
+         } else {
+            src2 = ri->Pri.Reg.reg;
+         }
+         addInstr(env, PPC32Instr_Div(True, dst, src1, src2));
          return dst;
       }
 
@@ -900,9 +921,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          default: break;
          }
 
-         /* Now consider the shift amount.  If it's a literal, we
+         /* Now consider the shift amount.  If it's a small literal, we
             can do a much better job than the general case. */
-         if (e->Iex.Binop.arg2->tag == Iex_Const) {
+         if (e->Iex.Binop.arg2->tag == Iex_Const &&
+             e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 < 32) {
             /* assert that the IR is well-typed */
             Int nshift;
             vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
@@ -1339,7 +1361,7 @@ static PPC32AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
       return PPC32AMode_IR(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32,
                            iselIntExpr_R(env,  e->Iex.Binop.arg1));
    }
-
+      
    /* Add32(expr,expr) */
    if (e->tag == Iex_Binop 
        && e->Iex.Binop.op == Iop_Add32) {
@@ -1446,7 +1468,7 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       /* Generate code for the arg, and negate the test condition */
       PPC32CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
       vassert(cond.test != Pct_ALWAYS);
-      cond.test = cond.test ^ 1;
+      cond.test = invertCondTest(cond.test);
       return cond;
    }
 

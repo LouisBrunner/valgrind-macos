@@ -227,6 +227,13 @@ HChar* showPPC32CondCode ( PPC32CondCode cond )
    }
 }
 
+PPC32CondTest invertCondTest ( PPC32CondTest ct )
+{
+   vassert(ct != Pct_ALWAYS);
+   return (ct == Pct_TRUE) ? Pct_FALSE : Pct_TRUE;
+}
+
+
 /* --------- PPCAMode: memory address expressions. --------- */
 
 PPC32AMode* PPC32AMode_IR ( UInt idx, HReg base ) {
@@ -436,6 +443,8 @@ HChar* showPPC32CmpOp ( PPC32CmpOp op ) {
 //.. }
 
 PPC32Instr* PPC32Instr_Alu32 ( PPC32AluOp op, HReg dst, HReg src1, PPC32RI* src2 ) {
+   if (src2->tag == Pri_Imm)
+      vassert(src2->Pri.Imm.imm32 < 0x10000);
    PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag            = Pin_Alu32;
    i->Pin.Alu32.op   = op;
@@ -492,8 +501,7 @@ PPC32Instr* PPC32Instr_MulL ( Bool syned, Bool word, HReg dst,
    i->Pin.MulL.src2  = src2;
    return i;
 }
-PPC32Instr* PPC32Instr_Div ( Bool syned, HReg dst,
-                             HReg src1, PPC32RI* src2 ) {
+PPC32Instr* PPC32Instr_Div ( Bool syned, HReg dst, HReg src1, HReg src2 ) {
    PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag             = Pin_Div;
    i->Pin.Div.syned   = syned;
@@ -740,11 +748,11 @@ void ppPPC32Instr ( PPC32Instr* i )
    case Pin_Div:
       vex_printf("divw%s ",
                  i->Pin.Div.syned ? "" : "u");
-      ppHRegPPC32(i->Pin.MulL.dst);
+      ppHRegPPC32(i->Pin.Div.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.MulL.src1);
+      ppHRegPPC32(i->Pin.Div.src1);
       vex_printf(",");
-      ppPPC32RI(i->Pin.MulL.src2);
+      ppHRegPPC32(i->Pin.Div.src2);
       return;
 //..       case Xin_Sh3232:
 //..          vex_printf("%sdl ", showX86ShiftOp(i->Xin.Sh3232.op));
@@ -761,19 +769,13 @@ void ppPPC32Instr ( PPC32Instr* i )
 //..          ppX86RMI(i->Xin.Push.src);
 //..          return;
    case Pin_Call:
-// CAB: Add representation of BO to Pin_Call...
-// 001xx => branch if false
-// 011xx => branch if true
-// 1x100 => branch always
-      
-// bcl false|true,cond,target
-      vex_printf("bcl (%s)[%d] ",
-                 showPPC32CondCode(i->Pin.Call.cond), 
-                 i->Pin.Call.regparms);
-      vex_printf("0x%x", i->Pin.Call.target);
+      vex_printf("call: la r12, 0x%x ; mtctr r12 ; bcctrl[%d] %s,reg",
+                 i->Pin.Call.target,
+                 i->Pin.Call.regparms,
+                 showPPC32CondCode(i->Pin.Call.cond));
       break;
    case Pin_Goto:
-// bc false|true,cond,target
+      vex_printf("goto: ");
       if (i->Pin.Goto.cond.test != Pct_ALWAYS) {
          vex_printf("if (%%CR.%s) { ", 
                     showPPC32CondCode(i->Pin.Goto.cond));
@@ -783,8 +785,7 @@ void ppPPC32Instr ( PPC32Instr* i )
          ppIRJumpKind(i->Pin.Goto.jk);
          vex_printf(" ; ");
       }
-      vex_printf("bc ");
-      vex_printf("%%r4, ");
+      vex_printf("bca %s,%%r4, ", showPPC32CondCode(i->Pin.Goto.cond));
       ppPPC32RI(i->Pin.Goto.dst);
       vex_printf(" ; ret");
       if (i->Pin.Goto.cond.test != Pct_ALWAYS) {
@@ -1030,7 +1031,7 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
    case Pin_Div:
       addHRegUse(u, HRmWrite, i->Pin.Div.dst);
       addHRegUse(u, HRmRead, i->Pin.Div.src1);
-      addRegUsage_PPC32RI(u, i->Pin.Div.src2);
+      addHRegUse(u, HRmRead, i->Pin.Div.src2);
       return;
 //..       case Xin_Sh3232:
 //..          addHRegUse(u, HRmRead, i->Xin.Sh3232.src);
@@ -1261,7 +1262,7 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
    case Pin_Div:
       mapReg(m, &i->Pin.Div.dst);
       mapReg(m, &i->Pin.Div.src1);
-      mapRegs_PPC32RI(m, i->Pin.Div.src2);
+      mapReg(m, &i->Pin.Div.src2);
       return;
 //..       case Xin_Sh3232:
 //..          mapReg(m, &i->Xin.Sh3232.src);
@@ -1734,12 +1735,93 @@ static UChar* mkFormXO ( UChar* p, UInt op1, UInt r1, UInt r2,
    vassert(r2  < 0x20);
    vassert(r3  < 0x20);
    vassert(b10 < 0x2);
-   vassert(op2 < 0x400);
+   vassert(op2 < 0x200);
    vassert(b0  < 0x2);
    UInt theInstr = ((op1<<26) | (r1<<21) | (r2<<16) |
                     (r3<<11) | (b10 << 10) | (op2<<1) | (b0));
    return emit32(p, theInstr);
 }
+
+static UChar* mkFormXL ( UChar* p, UInt op1, UInt f1, UInt f2,
+                         UInt f3, UInt op2, UInt b0 )
+{
+   vassert(op1 < 0x40);
+   vassert(f1  < 0x20);
+   vassert(f2  < 0x20);
+   vassert(f3  < 0x20);
+   vassert(op2 < 0x400);
+   vassert(b0  < 0x2);
+   UInt theInstr = ((op1<<26) | (f1<<21) | (f2<<16) |
+                    (f3<<11) | (op2<<1) | (b0));
+   return emit32(p, theInstr);
+}
+
+// Note: for split field ops, give mnemonic arg
+static UChar* mkFormXFX ( UChar* p, UInt r1, UInt f2, UInt op2 )
+{
+   vassert(r1  < 0x20);
+   vassert(f2  < 0x20);
+   vassert(op2 < 0x400);
+   switch (op2) {
+   case 144:  // mtcrf
+      vassert(f2 < 0x100);
+      f2 = f2 << 1;
+      break;
+   case 339:  // mfspr
+   case 371:  // mftb
+   case 467:  // mtspr
+      vassert(f2 < 0x400);
+      f2 = ((f2>>5) & 0x1F) | ((f2 & 0x1F)<<5);  // re-arrange split field
+      break;
+   default: vpanic("mkFormXFX(PPC32)");
+   }
+   UInt theInstr = ((31<<26) | (r1<<21) | (f2<<11) | (op2<<1));
+   return emit32(p, theInstr);
+}
+
+#if 0
+// 'b'
+static UChar* mkFormI ( UChar* p, UInt LI, UInt AA, UInt LK )
+{
+   vassert(LI  < 0x1000000);
+   vassert(AA  < 0x2);
+   vassert(LK  < 0x2);
+   UInt theInstr = ((18<<26) | (LI<<2) | (AA<<1) | (LK));
+   return emit32(p, theInstr);
+}
+#endif
+
+// 'bc'
+static UChar* mkFormB ( UChar* p, UInt BO, UInt BI,
+                        UInt BD, UInt AA, UInt LK )
+{
+   vassert(BO  < 0x20);
+   vassert(BI  < 0x20);
+   vassert(BD  < 0x4000);
+   vassert(AA  < 0x2);
+   vassert(LK  < 0x2);
+   UInt theInstr = ((16<<26) | (BO<<21) | (BI<<16) |
+                    (BD<<2) | (AA<<1) | (LK));
+   return emit32(p, theInstr);
+}
+
+#if 0
+// rotates
+static UChar* mkFormM ( UChar* p, UInt op1, UInt r1, UInt r2,
+                        UInt f3, UInt MB, UInt ME, UInt Rc )
+{
+   vassert(op1 < 0x40);
+   vassert(r1  < 0x20);
+   vassert(r2  < 0x20);
+   vassert(f3  < 0x20);
+   vassert(MB  < 0x20);
+   vassert(ME  < 0x20);
+   vassert(Rc  < 0x2);
+   UInt theInstr = ((op1<<26) | (r1<<21) | (r2<<16) |
+                    (f3<<11) | (MB<<6) | (ME<<1) | (Rc));
+   return emit32(p, theInstr);
+}
+#endif
 
 static UChar* doAMode_IR ( UChar* p, UInt op1, HReg hrSD, PPC32AMode* am )
 {
@@ -1881,30 +1963,30 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    }
 
    case Pin_Sh32: {
-      UInt op1 = 31, op2, rB, imm;
+      UInt opc1 = 31, opc2, rB, sh;
       UInt op = i->Pin.Sh32.op;
-      UInt rD = iregNo(i->Pin.Alu32.dst);
-      UInt rA = iregNo(i->Pin.Alu32.src1);
-      PPC32RITag ri_tag = i->Pin.Alu32.src2->tag;
+      UInt rS = iregNo(i->Pin.Sh32.dst);
+      UInt rA = iregNo(i->Pin.Sh32.src);
+      PPC32RITag ri_tag = i->Pin.Sh32.shft->tag;
 
       if ((op == Psh_SHL || op == Psh_SHR) && ri_tag == Pri_Imm)
          goto bad;  // No imm versions of these
 
       switch (op) {
-      case Psh_SHL: op2 = 24;  break;
-      case Psh_SHR: op2 = 536; break;
-      case Psh_SAR: op2 = (ri_tag == Pri_Reg) ? 792 : 824; break;
+      case Psh_SHL: opc2 = 24;  break;
+      case Psh_SHR: opc2 = 536; break;
+      case Psh_SAR: opc2 = (ri_tag == Pri_Reg) ? 792 : 824; break;
       default: goto bad;
       }
 
       switch (i->Pin.Sh32.shft->tag) {
       case Pri_Reg:
-         rB = iregNo(i->Pin.Alu32.src2->Pri.Reg.reg);
-         p = mkFormX(p, op1, rD, rA, rB, op2, 0);
+         rB = iregNo(i->Pin.Sh32.shft->Pri.Reg.reg);
+         p = mkFormX(p, opc1, rS, rA, rB, opc2, 0);
          break;
       case Pri_Imm:
-         imm = i->Pin.Alu32.src2->Pri.Imm.imm32;
-         p = mkFormX(p, op1, rD, rA, imm, op2, 0);
+         sh = i->Pin.Sh32.shft->Pri.Imm.imm32;
+         p = mkFormX(p, opc1, rS, rA, sh, opc2, 0);
          break;
       default:
          goto bad;
@@ -1923,9 +2005,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..       }
 //..       break;
 
-//..   case Pin_Cmp32:
-//..      //...
-//..      break;
+//..    case Pin_Cmp32:
+//..       goto done;
 
 //..    case Xin_Unary32:
 //..       if (i->Xin.Unary32.op == Xun_NOT) {
@@ -2018,99 +2099,104 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..             goto bad;
 //..       }
 
-   case Pin_Call:
+   case Pin_Call: {
+      Addr32 target;
+
       /* As per detailed comment for Ain_Call in
          getRegUsage_PPC32Instr above, %r12 is used as an address
          temporary. */
       /* jump over the following two insns if the condition does not
          hold */
       if (i->Pin.Call.cond.test != Pct_ALWAYS) {
-
-//..          *p++ = 0x70 + (0xF & (i->Pin.Call.cond ^ 1));
-//..          *p++ = 16; /* 16 bytes in the next two insns */
+         target = 16; /* num bytes in next insts */
+         /* bca ct,cf,target */
+         p = mkFormB(p, invertCondTest(i->Pin.Call.cond.test),
+                     (31 - i->Pin.Call.cond.flag),
+                     target, 1, 0);
       }
 
-      /* la $target, %r12 */
-//..       *p++ = 0x49;
-//..       *p++ = 0xBB;
-//..       p = emit32(p, i->Ain.Call.target);
+      /* addi r12,0,(target & 0xFFFF)
+         addis r12,r12,((target >> 16) & 0xFFFF) => load target to r12 */
+      target = i->Pin.Call.target;
+      p = mkFormD(p, 14, 12, 0, (target & 0xFFFF));
+      p = mkFormD(p, 15, 12, 12, ((target>>16) & 0xFFFF) );
 
-      /* call *%r12 */
-//..       *p++ = 0x41;
-//..       *p++ = 0xFF;
-//..       *p++ = 0xD3;
+      /* mtspr 9,r12 => move r12 to count register */
+      p = mkFormXFX(p, 12, 9, 467);
+      
+      /* bcctrl 20,0 => branch w. link to count register */
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);
 
-//      goto done;
-      goto bad;
+/* CAB: Hmm...
+   "When possible, independent instructions should separate the load
+   of the Count Register from the branch to prevent pipeline stalls." */
 
-//..    case Xin_Goto:
-//..       /* Use ptmp for backpatching conditional jumps. */
-//..       ptmp = NULL;
-//.. 
-//..       /* First off, if this is conditional, create a conditional
-//..          jump over the rest of it. */
-//..       if (i->Xin.Goto.cond != Xcc_ALWAYS) {
-//..          /* jmp fwds if !condition */
-//..          *p++ = 0x70 + (i->Xin.Goto.cond ^ 1);
-//..          ptmp = p; /* fill in this bit later */
-//..          *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
-//..       }
-//.. 
-//..       /* If a non-boring, set %ebp (the guest state pointer)
-//..          appropriately. */
-//..       /* movl $magic_number, %ebp */
-//..       switch (i->Xin.Goto.jk) {
-//..          case Ijk_ClientReq: 
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_CLIENTREQ); break;
-//..          case Ijk_Syscall: 
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_SYSCALL); break;
-//..          case Ijk_Yield: 
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_YIELD); break;
-//..          case Ijk_EmWarn:
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_EMWARN); break;
-//..          case Ijk_MapFail:
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_MAPFAIL); break;
-//..          case Ijk_NoDecode:
-//..             *p++ = 0xBD;
-//..             p = emit32(p, VEX_TRC_JMP_NODECODE); break;
-//..          case Ijk_Ret:
-//..    case Ijk_Call:
-//..          case Ijk_Boring:
-//..             break;
-//..          default: 
-//..             ppIRJumpKind(i->Xin.Goto.jk);
-//..             vpanic("emit_X86Instr.Xin_Goto: unknown jump kind");
-//..       }
-//.. 
-//..       /* Get the destination address into %eax */
-//..       if (i->Xin.Goto.dst->tag == Xri_Imm) {
-//..          /* movl $immediate, %eax ; ret */
-//..          *p++ = 0xB8;
-//..          p = emit32(p, i->Xin.Goto.dst->Xri.Imm.imm32);
-//..       } else {
-//..          vassert(i->Xin.Goto.dst->tag == Xri_Reg);
-//..          /* movl %reg, %eax ; ret */
-//..          if (i->Xin.Goto.dst->Xri.Reg.reg != hregX86_EAX()) {
-//..             *p++ = 0x89;
-//..             p = doAMode_R(p, i->Xin.Goto.dst->Xri.Reg.reg, hregX86_EAX());
-//..          }
-//..       }
-//.. 
-//..       /* ret */
-//..       *p++ = 0xC3;
-//.. 
-//..       /* Fix up the conditional jump, if there was one. */
-//..       if (i->Xin.Goto.cond != Xcc_ALWAYS) {
-//..          Int delta = p - ptmp;
-//..          vassert(delta > 0 && delta < 20);
-//..          *ptmp = (UChar)(delta-1);
-//..       }
-//..       goto done;
+      goto done;
+   }
+
+   case Pin_Goto: {
+      UInt magic_num = 0;
+      UChar r_dst, r_src;
+      PPC32CondCode cond = i->Pin.Goto.cond;
+      UInt imm;
+      
+      /* First off, if this is conditional, create a conditional
+         jump over the rest of it. */
+      if (cond.test != Pct_ALWAYS) {
+         /* jmp fwds if !condition */
+         imm = 8; /* num bytes in next insts */
+         /* bca ct,cf,imm */
+         p = mkFormB(p, invertCondTest(cond.test),
+                     (31 - cond.flag), imm, 1, 0);
+      }
+
+      /* If a non-boring, set GuestStatePtr appropriately. */
+      /* addi r31,0,magic_num */
+      switch (i->Pin.Goto.jk) {
+      case Ijk_ClientReq: magic_num = VEX_TRC_JMP_CLIENTREQ; break;
+      case Ijk_Syscall:   magic_num = VEX_TRC_JMP_SYSCALL;   break;
+      case Ijk_Yield:     magic_num = VEX_TRC_JMP_YIELD;     break;
+      case Ijk_EmWarn:    magic_num = VEX_TRC_JMP_EMWARN;    break;
+      case Ijk_MapFail:   magic_num = VEX_TRC_JMP_MAPFAIL;   break;
+      case Ijk_NoDecode:  magic_num = VEX_TRC_JMP_NODECODE;  break;
+      case Ijk_Ret:
+      case Ijk_Call:
+      case Ijk_Boring:
+         break;
+      default: 
+         ppIRJumpKind(i->Pin.Goto.jk);
+         vpanic("emit_PPC32Instr.Pin_Goto: unknown jump kind");
+      }
+      if (magic_num !=0) {
+         vassert(magic_num < 0x10000);
+         p = mkFormD(p, 14, 31, 0, magic_num);
+      }
+
+
+      /* Get the destination address into %r4 */
+// CAB: Which reg?  On amd64,x86, does 'ret' use rax,eax somehow?
+      r_dst = 4;
+      if (i->Pin.Goto.dst->tag == Pri_Imm) {
+         /* addi r_dst,0,(imm & 0xFFFF)
+            addis r_dst,r_dst,((imm >> 16) & 0xFFFF) */
+         imm = i->Pin.Goto.dst->Pri.Imm.imm32;
+         p = mkFormD(p, 14, r_dst, 0, (imm & 0xFFFF));
+         p = mkFormD(p, 15, r_dst, r_dst, ((imm>>16) & 0xFFFF));
+      } else {
+         vassert(i->Pin.Goto.dst->tag == Pri_Reg);
+         if (i->Pin.Goto.dst->Pri.Reg.reg != hregPPC32_GPR4()) {
+            /* add r_dst, 0, r_src */
+            r_src = iregNo(i->Pin.Goto.dst->Pri.Reg.reg);
+            p = mkFormXO(p, 31, r_dst, 0, r_src, 0, 266, 0);
+            /* noop */
+            p = mkFormD(p, 24, 0, 0, 0);
+         }
+      }
+
+      /* ret => bclr (always),0 */
+      p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 16, 0);
+      goto done;
+   }
 
 //..    case Xin_CMov32:
 //..       vassert(i->Xin.CMov32.cond != Xcc_ALWAYS);

@@ -179,11 +179,13 @@ typedef
 
 typedef
    enum {   /* Reflects bc bitfield BO */
-      Pct_TRUE   = 0,
-      Pct_FALSE  = 1,
-      Pct_ALWAYS = 2
+      Pct_FALSE  = 0x4,
+      Pct_TRUE   = 0xC,
+      Pct_ALWAYS = 0x14
    }
    PPC32CondTest;
+
+extern PPC32CondTest invertCondTest ( PPC32CondTest );
 
 typedef
    struct {
@@ -193,6 +195,7 @@ typedef
    PPC32CondCode;
 
 extern HChar* showPPC32CondCode ( PPC32CondCode );
+
 
 
 
@@ -415,10 +418,10 @@ typedef
          } MulL;
          /* ppc32 div/idiv instruction.  Modifies EDX and EAX and reads src. */
          struct {
-            Bool     syned;
-            HReg     dst;
-            HReg     src1;
-            PPC32RI* src2;
+            Bool syned;
+            HReg dst;
+            HReg src1;
+            HReg src2;
          } Div;
 //..          /* shld/shrd.  op may only be Xsh_SHL or Xsh_SHR */
 //..          struct {
@@ -559,7 +562,7 @@ extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Cmp32     ( PPC32CmpOp, UInt, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_MulL      ( Bool syned, Bool word, HReg, HReg, PPC32RI* );
-extern PPC32Instr* PPC32Instr_Div       ( Bool syned, HReg, HReg, PPC32RI* );
+extern PPC32Instr* PPC32Instr_Div       ( Bool syned, HReg dst, HReg src1, HReg src2 );
 //.. extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_Push      ( X86RMI* );
 extern PPC32Instr* PPC32Instr_Call      ( PPC32CondCode, Addr32, Int );

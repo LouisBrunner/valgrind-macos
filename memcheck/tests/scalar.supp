@@ -3,7 +3,7 @@
    foo2
    Memcheck:Param
    write(buf)
-   fun:__write_nocancel
+   fun:syscall
    fun:__libc_start_main
 }
 

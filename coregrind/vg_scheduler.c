@@ -2076,9 +2076,7 @@ void do_pthread_join ( ThreadId tid,
    maybe_rendezvous_joiners_and_joinees();
 
    /* Is this a sane request? */
-   if (jee < 0 
-       || jee >= VG_N_THREADS
-       || VG_(threads)[jee].status == VgTs_Empty) {
+   if ( ! VG_(is_valid_tid)(jee) ) {
       /* Invalid thread to join to. */
       VG_(record_pthread_error)( tid, 
          "pthread_join: target thread does not exist, or invalid");

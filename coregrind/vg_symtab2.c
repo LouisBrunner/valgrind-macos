@@ -2045,9 +2045,33 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
 		      redir->to_lib, redir->to_sym, redir->to_addr);
       }
       
-      if (VG_(search_transtab)(redir->from_addr) != 0)
-	 VG_(message)(Vg_DebugMsg, "!!!! adding redirect to already called function %s (%p -> %p)!!!",
-		      redir->from_sym, redir->from_addr, redir->to_addr);
+      if (VG_(search_transtab)(redir->from_addr) != 0) {
+	/* For some given (from, to) redir, the "from" function got
+           called before the .so containing "to" became available.  We
+           know this because there is already a translation for the
+           entry point of the original "from".  So the redirect will
+           never actually take effect unless that translation is
+           discarded.  
+
+           Note, we only really need to discard the first bb of the
+           old entry point, and so we avoid the problem of having to
+           figure out how big that bb was -- since it is at least 1
+           byte of original code, we can just pass 1 as the original
+           size to invalidate_translations() and it will indeed get
+           rid of the translation. 
+
+           Note, this is potentially expensive -- discarding
+           translations causes complete unchaining.  
+         */
+         if (VG_(clo_verbosity) > 2) {
+            VG_(message)(Vg_UserMsg,   
+	       "Discarding translation due to redirect of already called function" );
+            VG_(message)(Vg_UserMsg,
+                "   %s (%p -> %p)",
+                redir->from_sym, redir->from_addr, redir->to_addr );
+         }
+	 VG_(invalidate_translations)(redir->from_addr, 1, True);
+      }
 
       VG_(SkipList_Insert)(&sk_resolved_redir, redir);
    }

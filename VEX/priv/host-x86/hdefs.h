@@ -61,6 +61,15 @@ extern HReg hregX86_FAKE3 ( void );
 extern HReg hregX86_FAKE4 ( void );
 extern HReg hregX86_FAKE5 ( void );
 
+extern HReg hregX86_XMM0 ( void );
+extern HReg hregX86_XMM1 ( void );
+extern HReg hregX86_XMM2 ( void );
+extern HReg hregX86_XMM3 ( void );
+extern HReg hregX86_XMM4 ( void );
+extern HReg hregX86_XMM5 ( void );
+extern HReg hregX86_XMM6 ( void );
+extern HReg hregX86_XMM7 ( void );
+
 
 /* --------- Condition codes, Intel encoding. --------- */
 
@@ -237,7 +246,7 @@ typedef
    }
    X86ScalarSz;
 
-extern Char* showX86ScalarSz ( X86ScalarSz );
+extern HChar* showX86ScalarSz ( X86ScalarSz );
 
 
 /* --------- */
@@ -248,7 +257,7 @@ typedef
    }
    X86UnaryOp;
 
-extern Char* showX86UnaryOp ( X86UnaryOp );
+extern HChar* showX86UnaryOp ( X86UnaryOp );
 
 
 /* --------- */
@@ -263,7 +272,7 @@ typedef
    }
    X86AluOp;
 
-extern Char* showX86AluOp ( X86AluOp );
+extern HChar* showX86AluOp ( X86AluOp );
 
 
 /* --------- */
@@ -275,7 +284,7 @@ typedef
    }
    X86ShiftOp;
 
-extern Char* showX86ShiftOp ( X86ShiftOp );
+extern HChar* showX86ShiftOp ( X86ShiftOp );
 
 
 /* --------- */
@@ -291,7 +300,19 @@ typedef
    }
    X86FpOp;
 
-extern Char* showX86FpOp ( X86FpOp );
+extern HChar* showX86FpOp ( X86FpOp );
+
+
+/* --------- */
+typedef
+   enum {
+      Xsse_INVALID,
+      Xsse_MOV, Xsse_AND, Xsse_OR, Xsse_XOR, Xsse_ANDN,
+      Xsse_ADDF, Xsse_SUBF, Xsse_MULF
+   }
+   X86SseOp;
+
+extern HChar* showX86SseOp ( X86SseOp );
 
 
 /* --------- */
@@ -313,6 +334,7 @@ typedef
       Xin_Store,     /* store 16/8 bit value in memory */
       Xin_Set32,     /* convert condition code to 32-bit value */
       Xin_Bsfr32,    /* 32-bit bsf/bsr */
+
       Xin_FpUnary,   /* FP fake unary op */
       Xin_FpBinary,  /* FP fake binary op */
       Xin_FpLdSt,    /* FP fake load/store */
@@ -320,7 +342,15 @@ typedef
       Xin_FpCMov,    /* FP fake floating point (un)conditional move */
       Xin_FpLdStCW,  /* fldcw / fstcw */
       Xin_FpStSW_AX, /* fstsw %ax */
-      Xin_FpCmp      /* FP compare, generating a C320 value into int reg */
+      Xin_FpCmp,     /* FP compare, generating a C320 value into int reg */
+
+      Xin_SseLdSt,   /* SSE load/store, no alignment constraints */
+      Xin_Sse128,    /* SSE binary typeless (and/or/xor/andn) */
+      Xin_Sse32Fx4,  /* SSE binary, 32Fx4 */
+      Xin_Sse32FLo   /* SSE binary, 32F in lowest lane only */
+      //      Xin_Sse64Fx2,  /* SSE binary, 64Fx2 */
+      //      Xin_Sse64FLo,  /* SSE binary, 64F in lowest lane only */
+      /* Xin_SseUn32Fx4 */
    }
    X86InstrTag;
 
@@ -425,6 +455,7 @@ typedef
             HReg src;
             HReg dst;
          } Bsfr32;
+
          /* X86 Floating point (fake 3-operand, "flat reg file" insns) */
          struct {
             X86FpOp op;
@@ -475,6 +506,29 @@ typedef
             HReg    srcR;
             HReg    dst;
          } FpCmp;
+
+         /* Simplistic SSE[123] */
+         struct {
+            Bool      isLoad;
+            HReg      reg;
+            X86AMode* addr;
+         } SseLdSt;
+         struct {
+            X86SseOp op;  /* MOV/AND/OR/XOR/ANDN only */
+            HReg     src;
+            HReg     dst;
+         } Sse128;
+         struct {
+            X86SseOp op;
+            HReg     src;
+            HReg     dst;
+         } Sse32Fx4;
+         struct {
+            X86SseOp op;
+            HReg     src;
+            HReg     dst;
+         } Sse32FLo;
+
       } Xin;
    }
    X86Instr;
@@ -496,6 +550,7 @@ extern X86Instr* X86Instr_LoadEX    ( UChar szSmall, Bool syned,
 extern X86Instr* X86Instr_Store     ( UChar sz, HReg src, X86AMode* dst );
 extern X86Instr* X86Instr_Set32     ( X86CondCode cond, HReg dst );
 extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
+
 extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
 extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );
 extern X86Instr* X86Instr_FpLdSt    ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
@@ -504,6 +559,11 @@ extern X86Instr* X86Instr_FpCMov    ( X86CondCode, HReg src, HReg dst );
 extern X86Instr* X86Instr_FpLdStCW  ( Bool isLoad, X86AMode* );
 extern X86Instr* X86Instr_FpStSW_AX ( void );
 extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
+
+extern X86Instr* X86Instr_SseLdSt   ( Bool isLoad, HReg, X86AMode* );
+extern X86Instr* X86Instr_Sse128    ( X86SseOp, HReg, HReg );
+extern X86Instr* X86Instr_Sse32Fx4  ( X86SseOp, HReg, HReg );
+extern X86Instr* X86Instr_Sse32FLo  ( X86SseOp, HReg, HReg );
 
 
 extern void ppX86Instr ( X86Instr* );

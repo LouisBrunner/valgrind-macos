@@ -431,9 +431,11 @@ HInstrArray* doRegisterAllocation (
          /* Now consider live ranges. */
          switch (reg_usage.mode[j]) {
             case HRmRead: 
-               if (vreg_info[k].live_after == INVALID_INSTRNO)
+               if (vreg_info[k].live_after == INVALID_INSTRNO) {
+                  vex_printf("\n\nOFFENDING VREG = %d\n", k);
                   vpanic("doRegisterAllocation: "
                          "first event for vreg is Read");
+               }
                vreg_info[k].dead_before = ii + 1;
                break;
             case HRmWrite:
@@ -625,20 +627,43 @@ HInstrArray* doRegisterAllocation (
          continue;
       }
 
-      /* Need to allocate two 64-bit spill slots for this. */
-      if (vreg_info[j].reg_class == HRcVec128)
-         vpanic("can't deal with spilling 128-bit values (yet)");
+      /* The spill slots are 64 bits in size.  That means, to spill a
+         Vec128-class vreg, we'll need to find two adjacent spill
+         slots to use.  */
 
-      /* Find the lowest-numbered spill slot which is available at the
-         start point of this interval, and assign the interval to
-         it. */
-      for (k = 0; k < N_SPILL64S; k++)
-         if (ss_busy_until_before[k] <= vreg_info[j].live_after)
-            break;
-      if (k == N_SPILL64S) {
-         vpanic("LibVEX_N_SPILL_BYTES is too low.  Increase and recompile.");
+      if (vreg_info[j].reg_class != HRcVec128) {
+
+         /* The ordinary case -- just find a single spill slot. */
+
+         /* Find the lowest-numbered spill slot which is available at
+            the start point of this interval, and assign the interval
+            to it. */
+         for (k = 0; k < N_SPILL64S; k++)
+            if (ss_busy_until_before[k] <= vreg_info[j].live_after)
+               break;
+         if (k == N_SPILL64S) {
+            vpanic("LibVEX_N_SPILL_BYTES is too low.  " 
+                   "Increase and recompile.");
+         }
+         ss_busy_until_before[k] = vreg_info[j].dead_before;
+
+      } else {
+
+	/* Find two adjacent free slots in which to spill a 128-bit
+           vreg. */
+
+         for (k = 0; k < N_SPILL64S-1; k++)
+            if (ss_busy_until_before[k] <= vreg_info[j].live_after
+                && ss_busy_until_before[k+1] <= vreg_info[j].live_after)
+               break;
+         if (k == N_SPILL64S-1) {
+            vpanic("LibVEX_N_SPILL_BYTES is too low.  " 
+                   "Increase and recompile.");
+         }
+         ss_busy_until_before[k+0] = vreg_info[j].dead_before;
+         ss_busy_until_before[k+1] = vreg_info[j].dead_before;
+
       }
-      ss_busy_until_before[k] = vreg_info[j].dead_before;
 
       /* This reflects LibVEX's hard-wired knowledge of the baseBlock
          layout: the guest state, then an equal sized area following

@@ -47,7 +47,7 @@
 void ppHRegX86 ( HReg reg ) 
 {
    Int r;
-   static Char* ireg32_names[8] 
+   static HChar* ireg32_names[8] 
      = { "%eax", "%ecx", "%edx", "%ebx", "%esp", "%ebp", "%esi", "%edi" };
    /* Be generic for all virtual regs. */
    if (hregIsVirtual(reg)) {
@@ -67,8 +67,11 @@ void ppHRegX86 ( HReg reg )
          vex_printf("%%fake%d", r);
          return;
       case HRcVec128:
-         vpanic("ppHRegX86: real vector reg");
-     default:
+         r = hregNumber(reg);
+         vassert(r >= 0 && r < 8);
+         vex_printf("%%xmm%d", r);
+         return;
+      default:
          vpanic("ppHRegX86");
    }
 }
@@ -89,9 +92,19 @@ HReg hregX86_FAKE3 ( void ) { return mkHReg(3, HRcFlt64, False); }
 HReg hregX86_FAKE4 ( void ) { return mkHReg(4, HRcFlt64, False); }
 HReg hregX86_FAKE5 ( void ) { return mkHReg(5, HRcFlt64, False); }
 
+HReg hregX86_XMM0 ( void ) { return mkHReg(0, HRcVec128, False); }
+HReg hregX86_XMM1 ( void ) { return mkHReg(1, HRcVec128, False); }
+HReg hregX86_XMM2 ( void ) { return mkHReg(2, HRcVec128, False); }
+HReg hregX86_XMM3 ( void ) { return mkHReg(3, HRcVec128, False); }
+HReg hregX86_XMM4 ( void ) { return mkHReg(4, HRcVec128, False); }
+HReg hregX86_XMM5 ( void ) { return mkHReg(5, HRcVec128, False); }
+HReg hregX86_XMM6 ( void ) { return mkHReg(6, HRcVec128, False); }
+HReg hregX86_XMM7 ( void ) { return mkHReg(7, HRcVec128, False); }
+
+
 void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
 {
-   *nregs = 12;
+   *nregs = 20;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    (*arr)[0] = hregX86_EAX();
    (*arr)[1] = hregX86_EBX();
@@ -105,6 +118,14 @@ void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
    (*arr)[9] = hregX86_FAKE3();
    (*arr)[10] = hregX86_FAKE4();
    (*arr)[11] = hregX86_FAKE5();
+   (*arr)[12] = hregX86_XMM0();
+   (*arr)[13] = hregX86_XMM1();
+   (*arr)[14] = hregX86_XMM2();
+   (*arr)[15] = hregX86_XMM3();
+   (*arr)[16] = hregX86_XMM4();
+   (*arr)[17] = hregX86_XMM5();
+   (*arr)[18] = hregX86_XMM6();
+   (*arr)[19] = hregX86_XMM7();
 }
 
 
@@ -409,7 +430,7 @@ static void mapRegs_X86RM ( HRegRemap* m, X86RM* op )
 
 /* --------- Instructions. --------- */
 
-Char* showX86ScalarSz ( X86ScalarSz sz ) {
+HChar* showX86ScalarSz ( X86ScalarSz sz ) {
    switch (sz) {
       case Xss_16: return "w";
       case Xss_32: return "l";
@@ -417,7 +438,7 @@ Char* showX86ScalarSz ( X86ScalarSz sz ) {
    }
 }
 
-Char* showX86UnaryOp ( X86UnaryOp op ) {
+HChar* showX86UnaryOp ( X86UnaryOp op ) {
    switch (op) {
       case Xun_NOT: return "not";
       case Xun_NEG: return "neg";
@@ -425,7 +446,7 @@ Char* showX86UnaryOp ( X86UnaryOp op ) {
    }
 }
 
-Char* showX86AluOp ( X86AluOp op ) {
+HChar* showX86AluOp ( X86AluOp op ) {
    switch (op) {
       case Xalu_MOV:  return "mov";
       case Xalu_CMP:  return "cmp";
@@ -441,7 +462,7 @@ Char* showX86AluOp ( X86AluOp op ) {
    }
 }
 
-Char* showX86ShiftOp ( X86ShiftOp op ) {
+HChar* showX86ShiftOp ( X86ShiftOp op ) {
    switch (op) {
       case Xsh_SHL: return "shl";
       case Xsh_SHR: return "shr";
@@ -452,7 +473,7 @@ Char* showX86ShiftOp ( X86ShiftOp op ) {
    }
 }
 
-Char* showX86FpOp ( X86FpOp op ) {
+HChar* showX86FpOp ( X86FpOp op ) {
    switch (op) {
       case Xfp_ADD:    return "add";
       case Xfp_SUB:    return "sub";
@@ -474,6 +495,20 @@ Char* showX86FpOp ( X86FpOp op ) {
       case Xfp_ROUND:  return "round";
       case Xfp_2XM1:   return "2xm1";
       default: vpanic("showX86FpOp");
+   }
+}
+
+HChar* showX86SseOp ( X86SseOp op ) {
+   switch (op) {
+      case Xsse_MOV:  return "mov(?!)";
+      case Xsse_AND:  return "add";
+      case Xsse_OR:   return "or";
+      case Xsse_XOR:  return "xor";
+      case Xsse_ANDN: return "andn";
+      case Xsse_ADDF: return "add";
+      case Xsse_SUBF: return "sub";
+      case Xsse_MULF: return "mul";
+      default: vpanic("showX86SseOp");
    }
 }
 
@@ -601,8 +636,7 @@ X86Instr* X86Instr_Set32 ( X86CondCode cond, HReg dst ) {
    i->Xin.Set32.dst  = dst;
    return i;
 }
-X86Instr* X86Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst )
-{
+X86Instr* X86Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst ) {
    X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
    i->tag               = Xin_Bsfr32;
    i->Xin.Bsfr32.isFwds = isFwds;
@@ -637,7 +671,8 @@ X86Instr* X86Instr_FpLdSt ( Bool isLoad, UChar sz, HReg reg, X86AMode* addr ) {
    vassert(sz == 4 || sz == 8);
    return i;
 }
-X86Instr* X86Instr_FpLdStI ( Bool isLoad, UChar sz, HReg reg, X86AMode* addr ) {
+X86Instr* X86Instr_FpLdStI ( Bool isLoad, UChar sz,  
+                             HReg reg, X86AMode* addr ) {
    X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
    i->tag                = Xin_FpLdStI;
    i->Xin.FpLdStI.isLoad = isLoad;
@@ -656,22 +691,19 @@ X86Instr* X86Instr_FpCMov ( X86CondCode cond, HReg src, HReg dst ) {
    vassert(cond != Xcc_ALWAYS);
    return i;
 }
-X86Instr* X86Instr_FpLdStCW ( Bool isLoad, X86AMode* addr )
-{
+X86Instr* X86Instr_FpLdStCW ( Bool isLoad, X86AMode* addr ) {
    X86Instr* i            = LibVEX_Alloc(sizeof(X86Instr));
    i->tag                 = Xin_FpLdStCW;
    i->Xin.FpLdStCW.isLoad = isLoad;
    i->Xin.FpLdStCW.addr   = addr;
    return i;
 }
-X86Instr* X86Instr_FpStSW_AX ( void )
-{
+X86Instr* X86Instr_FpStSW_AX ( void ) {
    X86Instr* i = LibVEX_Alloc(sizeof(X86Instr));
    i->tag      = Xin_FpStSW_AX;
    return i;
 }
-X86Instr* X86Instr_FpCmp ( HReg srcL, HReg srcR, HReg dst )
-{
+X86Instr* X86Instr_FpCmp ( HReg srcL, HReg srcR, HReg dst ) {
    X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
    i->tag            = Xin_FpCmp;
    i->Xin.FpCmp.srcL = srcL;
@@ -680,6 +712,40 @@ X86Instr* X86Instr_FpCmp ( HReg srcL, HReg srcR, HReg dst )
    return i;
 }
 
+X86Instr* X86Instr_SseLdSt ( Bool isLoad, HReg reg, X86AMode* addr ) {
+   X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                = Xin_SseLdSt;
+   i->Xin.SseLdSt.isLoad = isLoad;
+   i->Xin.SseLdSt.reg    = reg;
+   i->Xin.SseLdSt.addr   = addr;
+   return i;
+}
+X86Instr* X86Instr_Sse128 ( X86SseOp op, HReg src, HReg dst ) {
+   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag            = Xin_Sse128;
+   i->Xin.Sse128.op  = op;
+   i->Xin.Sse128.src = src;
+   i->Xin.Sse128.dst = dst;
+   vassert(op == Xsse_MOV || op == Xsse_AND || op == Xsse_OR
+           || op == Xsse_XOR || op == Xsse_ANDN);
+   return i;
+}
+X86Instr* X86Instr_Sse32Fx4  ( X86SseOp op, HReg src, HReg dst ) {
+   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag              = Xin_Sse32Fx4;
+   i->Xin.Sse32Fx4.op  = op;
+   i->Xin.Sse32Fx4.src = src;
+   i->Xin.Sse32Fx4.dst = dst;
+   return i;
+}
+X86Instr* X86Instr_Sse32FLo  ( X86SseOp op, HReg src, HReg dst ) {
+   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag              = Xin_Sse32FLo;
+   i->Xin.Sse32FLo.op  = op;
+   i->Xin.Sse32FLo.src = src;
+   i->Xin.Sse32FLo.dst = dst;
+   return i;
+}
 
 void ppX86Instr ( X86Instr* i ) {
    switch (i->tag) {
@@ -856,6 +922,41 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppHRegX86(i->Xin.FpCmp.dst);
          break;
+      case Xin_SseLdSt:
+         vex_printf("movups ");
+         if (i->Xin.SseLdSt.isLoad) {
+            ppX86AMode(i->Xin.SseLdSt.addr);
+            vex_printf(",");
+            ppHRegX86(i->Xin.SseLdSt.reg);
+         } else {
+            ppHRegX86(i->Xin.SseLdSt.reg);
+            vex_printf(",");
+            ppX86AMode(i->Xin.SseLdSt.addr);
+         }
+         return;
+      case Xin_Sse128:
+         if (i->Xin.Sse128.op == Xsse_MOV) {
+            vex_printf("mov ");
+         } else {
+            vex_printf("p%s ", showX86SseOp(i->Xin.Sse128.op));
+         }
+         ppHRegX86(i->Xin.Sse128.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.Sse128.dst);
+         return;
+      case Xin_Sse32Fx4:
+         vex_printf("%sps ", showX86SseOp(i->Xin.Sse32Fx4.op));
+         ppHRegX86(i->Xin.Sse32Fx4.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.Sse32Fx4.dst);
+         return;
+      case Xin_Sse32FLo:
+         vex_printf("%sss ", showX86SseOp(i->Xin.Sse32FLo.op));
+         ppHRegX86(i->Xin.Sse32FLo.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.Sse32FLo.dst);
+         return;
+
       default:
          vpanic("ppX86Instr");
    }
@@ -1006,6 +1107,21 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmWrite, i->Xin.FpCmp.dst);
          addHRegUse(u, HRmWrite, hregX86_EAX());
          return;
+      case Xin_SseLdSt:
+         addRegUsage_X86AMode(u, i->Xin.SseLdSt.addr);
+         addHRegUse(u, i->Xin.SseLdSt.isLoad ? HRmWrite : HRmRead,
+                       i->Xin.SseLdSt.reg);
+         return;
+      case Xin_Sse128:
+         addHRegUse(u, HRmRead, i->Xin.Sse128.src);
+         addHRegUse(u, i->Xin.Sse128.op==Xsse_MOV ? HRmWrite : HRmModify,
+                       i->Xin.Sse128.dst);
+         return;
+      case Xin_Sse32Fx4:
+         vassert(i->Xin.Sse32Fx4.op != Xsse_MOV);
+         addHRegUse(u, HRmRead,   i->Xin.Sse32Fx4.src);
+         addHRegUse(u, HRmModify, i->Xin.Sse32Fx4.dst);
+         return;
       default:
          ppX86Instr(i);
          vpanic("getRegUsage_X86Instr");
@@ -1107,6 +1223,18 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapReg(m, &i->Xin.FpCmp.srcR);
          mapReg(m, &i->Xin.FpCmp.dst);
          return;
+      case Xin_SseLdSt:
+         mapReg(m, &i->Xin.SseLdSt.reg);
+         mapRegs_X86AMode(m, i->Xin.SseLdSt.addr);
+         break;
+      case Xin_Sse128:
+         mapReg(m, &i->Xin.Sse128.src);
+         mapReg(m, &i->Xin.Sse128.dst);
+         return;
+      case Xin_Sse32Fx4:
+         mapReg(m, &i->Xin.Sse32Fx4.src);
+         mapReg(m, &i->Xin.Sse32Fx4.dst);
+         return;
       default:
          ppX86Instr(i);
          vpanic("mapRegs_X86Instr");
@@ -1135,6 +1263,13 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
          return False;
       *src = i->Xin.FpUnary.src;
       *dst = i->Xin.FpUnary.dst;
+      return True;
+   }
+   if (i->tag == Xin_Sse128) {
+      if (i->Xin.Sse128.op != Xsse_MOV)
+         return False;
+      *src = i->Xin.Sse128.src;
+      *dst = i->Xin.Sse128.dst;
       return True;
    }
    return False;
@@ -1200,6 +1335,16 @@ static UInt fregNo ( HReg r )
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
    vassert(n <= 5);
+   return n;
+}
+
+static UInt vregNo ( HReg r )
+{
+   UInt n;
+   vassert(hregClass(r) == HRcVec128);
+   vassert(!hregIsVirtual(r));
+   n = hregNumber(r);
+   vassert(n <= 7);
    return n;
 }
 
@@ -2115,6 +2260,19 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       /*  movl %eax, %dst */
       *p++ = 0x89;
       p = doAMode_R(p, hregX86_EAX(), i->Xin.FpCmp.dst);
+      goto done;
+
+   case Xin_SseLdSt:
+      *p++ = 0x0F; 
+      *p++ = i->Xin.SseLdSt.isLoad ? 0x10 : 0x11;
+      p = doAMode_M(p, fake(vregNo(i->Xin.SseLdSt.reg)), i->Xin.SseLdSt.addr);
+      goto done;
+
+   case Xin_Sse32Fx4:
+      *p++ = 0x0F;
+      *p++ = 0x58;
+      p = doAMode_R(p, fake(vregNo(i->Xin.Sse32Fx4.dst)),
+                       fake(vregNo(i->Xin.Sse32Fx4.src)) );
       goto done;
 
    default: 

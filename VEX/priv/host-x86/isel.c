@@ -59,6 +59,13 @@ static Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
       case Iex_Binder: /* aha, what we were looking for. */
          setBindee(mi, p->Iex.Binder.binder, e);
          return True;
+      case Iex_GetI:
+         if (e->tag != Iex_GetI) return False;
+         if (p->Iex.GetI.ty != e->Iex.GetI.ty) return False;
+         /* we ignore the offset limit hints .. */
+         if (!matchWrk(mi, p->Iex.GetI.offset, e->Iex.GetI.offset))
+            return False;
+         return True;
       case Iex_Unop:
          if (e->tag != Iex_Unop) return False;
          if (p->Iex.Unop.op != e->Iex.Unop.op) return False;
@@ -131,12 +138,16 @@ static IRExpr* unop ( IROp op, IRExpr* a )
    return IRExpr_Unop(op, a);
 }
 
-#if 0
 static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
 {
    return IRExpr_Binop(op, a1, a2);
 }
-#endif
+
+static IRExpr* mkU8 ( UInt i )
+{
+   vassert(i < 256);
+   return IRExpr_Const(IRConst_U8(i));
+}
 
 static IRExpr* bind ( Int binder )
 {
@@ -740,6 +751,33 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    }
 
    case Iex_GetI: {
+      /* special-case: GetI( Add32(y,const:I32) ):I8 */
+      { DECLARE_PATTERN(p_Get_FP_tag);
+        DEFINE_PATTERN(p_Get_FP_tag,
+           IRExpr_GetI(
+              binop(Iop_Add32, bind(0), bind(1)),
+              Ity_I8,120,127
+           )
+        );
+        if (matchIRExpr(&mi, p_Get_FP_tag, e)) {
+           /* partial match, but we have to ensure bind(1) is a 32-bit
+	      literal. */
+           IRExpr* y = mi.bindee[0];
+           IRExpr* c = mi.bindee[1];
+           if (c->tag == Iex_Const && c->Iex.Const.con->tag == Ico_U32) {
+              UInt c32 = c->Iex.Const.con->Ico.U32;
+              HReg dst = newVRegI(env);
+              HReg ry = iselIntExpr_R(env, y);
+              addInstr(env, 
+                 X86Instr_LoadEX( 
+                    1, False,
+                    X86AMode_IRRS(c32, hregX86_EBP(), ry, 0),
+                    dst ));
+              return dst;
+           }
+        }
+      }
+
       /* First off, compute the index expression into an integer reg.
          The referenced address will then be 0 + ebp + reg*1, that is,
          an X86AMode_IRRS. */
@@ -1567,7 +1605,7 @@ static HReg iselFltExpr ( ISelEnv* env, IRExpr* e )
 
 static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
 {
-   //   MatchInfo mi;
+   MatchInfo mi;
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
    vassert(ty == Ity_F64);
@@ -1618,6 +1656,33 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
       return res;
    }
 
+   /* special-case: GetI( Add32(Shl32(y,3),const:I32) ):F64 */
+   { DECLARE_PATTERN(p_Get_FP_reg);
+     DEFINE_PATTERN(p_Get_FP_reg,
+        IRExpr_GetI(
+           binop(Iop_Add32, binop(Iop_Shl32,bind(0),mkU8(3)), bind(1)),
+           Ity_F64,56,119
+        )
+     );
+     if (matchIRExpr(&mi, p_Get_FP_reg, e)) {
+        /* partial match, but we have to ensure bind(1) is a 32-bit
+	   literal. */
+        IRExpr* y = mi.bindee[0];
+        IRExpr* c = mi.bindee[1];
+        if (c->tag == Iex_Const && c->Iex.Const.con->tag == Ico_U32) {
+           UInt c32 = c->Iex.Const.con->Ico.U32;
+           HReg res = newVRegF(env);
+           HReg ry = iselIntExpr_R(env, y);
+           addInstr(env, 
+                    X86Instr_FpLdSt( 
+                       True/*load*/, 8, res,
+                       X86AMode_IRRS(c32, hregX86_EBP(), ry, 3)) );
+           return res;
+        }
+     }
+   }
+
+   /* GetI, default case */
    if (e->tag == Iex_GetI) {
       /* First off, compute the index expression into an integer reg.
          The referenced address will then be 0 + ebp + reg*1, that is,

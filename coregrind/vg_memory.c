@@ -346,6 +346,10 @@ void VG_(handle_esp_assignment) ( Addr new_esp )
          VGP_MAYBE_POPCC(VgpStack);
          return;
       }
+      if (delta == 0) {
+         VGP_MAYBE_POPCC(VgpStack);
+         return;
+      }
       /* otherwise fall onto the slow-but-general case */
    }
 
@@ -411,10 +415,17 @@ static void vg_handle_esp_assignment_SLOWLY ( Addr old_esp, Addr new_esp )
                                  "%%esp: %p --> %p", old_esp, new_esp);
      /* VG_(printf)("na %p,   %%esp %p,   wr %p\n",
                     invalid_down_to, new_esp, valid_up_to ); */
+#    if 0
+     /* JRS 20021001: following discussions with John Regehr, just
+        remove this.  If a stack switch happens, it seems best not to
+        mess at all with memory permissions.  Seems to work well with
+        Netscape 4.X.  Really the only remaining difficulty is knowing
+        exactly when a stack switch is happening. */
      VG_TRACK( die_mem_stack, invalid_down_to, new_esp - invalid_down_to );
      if (!is_plausible_stack_addr(tst, new_esp)) {
         VG_TRACK( post_mem_write, new_esp, valid_up_to - new_esp );
      }
+#    endif
    }
 }
 

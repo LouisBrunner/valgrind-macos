@@ -547,7 +547,7 @@ int pthread_equal(pthread_t thread1, pthread_t thread2)
 /* Bundle up the args into a malloc'd block and create a new thread
    consisting of thread_wrapper() applied to said malloc'd block. */
 int
-pthread_create (pthread_t *__restrict __thread,
+pthread_create (pthread_t *__restrict __thredd,
                 __const pthread_attr_t *__restrict __attr,
                 void *(*__start_routine) (void *),
                 void *__restrict __arg)
@@ -576,8 +576,8 @@ pthread_create (pthread_t *__restrict __thread,
                            &thread_wrapper, info, 0, 0);
    my_assert(tid_child != VG_INVALID_THREADID);
 
-   if (__thread)
-      *__thread = tid_child;
+   if (__thredd)
+      *__thredd = tid_child;
    return 0; /* success */
 }
 

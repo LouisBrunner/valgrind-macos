@@ -1,317 +1,324 @@
 -----------------------------------------------------
-  3:           __NR_read 1+3s 1m
+200:       __NR_getgid32 0e
 -----------------------------------------------------
-Syscall param (syscallno) contains uninitialised byte(s)
+-----------------------------------------------------
+201:      __NR_geteuid32 0e
+-----------------------------------------------------
+-----------------------------------------------------
+202:      __NR_getegid32 0e
+-----------------------------------------------------
+-----------------------------------------------------
+203:     __NR_setreuid32 2s 0m
+-----------------------------------------------------
+Syscall param setreuid(ruid) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param read(fd) contains uninitialised byte(s)
+Syscall param setreuid(euid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+204:     __NR_setregid32 2s 0m
+-----------------------------------------------------
+
+Syscall param setregid(rgid) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param read(buf) contains uninitialised byte(s)
+Syscall param setregid(egid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+205:    __NR_getgroups32 2s 1m
+-----------------------------------------------------
+
+Syscall param getgroups(size) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param read(count) contains uninitialised byte(s)
+Syscall param getgroups(list) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param read(buf) points to unaddressable byte(s)
+Syscall param getgroups(list) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-  4:          __NR_write 3s 1m
+206:    __NR_setgroups32 2s 1m
 -----------------------------------------------------
 
-Syscall param write(fd) contains uninitialised byte(s)
+Syscall param setgroups(size) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param write(buf) contains uninitialised byte(s)
+Syscall param setgroups(list) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param write(count) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param write(buf) points to unaddressable byte(s)
+Syscall param setgroups(list) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
-  5:           __NR_open (2-args) 2s 1m
+207:       __NR_fchown32 3s 0m
 -----------------------------------------------------
 
-Syscall param open(filename) contains uninitialised byte(s)
+Syscall param fchown(fd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param open(flags) contains uninitialised byte(s)
+Syscall param fchown(owner) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param open(filename) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
------------------------------------------------------
-  5:           __NR_open (3-args) 1s 0m
------------------------------------------------------
-
-Syscall param open(mode) contains uninitialised byte(s)
+Syscall param fchown(group) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 -----------------------------------------------------
-  6:          __NR_close 1s 0m
+208:    __NR_setresuid32 3s 0m
 -----------------------------------------------------
 
-Syscall param close(fd) contains uninitialised byte(s)
+Syscall param setresuid(ruid) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
-Warning: invalid file descriptor -1 in syscall close()
+
+Syscall param setresuid(euid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param setresuid(suid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
 -----------------------------------------------------
-  7:        __NR_waitpid 3s 1m
------------------------------------------------------
-
-Syscall param waitpid(pid) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param waitpid(status) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param waitpid(options) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param waitpid(status) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
------------------------------------------------------
-  8:          __NR_creat 2s 1m
+209:    __NR_getresuid32 3s 3m
 -----------------------------------------------------
 
-Syscall param creat(pathname) contains uninitialised byte(s)
+Syscall param getresuid(ruid) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param creat(mode) contains uninitialised byte(s)
+Syscall param getresuid(euid) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param creat(pathname) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
------------------------------------------------------
-  9:           __NR_link 2s 2m
------------------------------------------------------
-
-Syscall param link(oldpath) contains uninitialised byte(s)
+Syscall param getresuid(suid) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param link(newpath) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param link(oldpath) points to unaddressable byte(s)
+Syscall param getresuid(ruid) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param link(newpath) points to unaddressable byte(s)
+Syscall param getresuid(euid) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param getresuid(suid) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 10:         __NR_unlink 1s 1m
+210:    __NR_setresgid32 3s 0m
 -----------------------------------------------------
 
-Syscall param unlink(pathname) contains uninitialised byte(s)
+Syscall param setresgid(rgid) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param unlink(pathname) points to unaddressable byte(s)
+Syscall param setresgid(egid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param setresgid(sgid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+211:    __NR_getresgid32 3s 3m
+-----------------------------------------------------
+
+Syscall param getresgid(rgid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param getresgid(egid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param getresgid(sgid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param getresgid(rgid) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param getresgid(egid) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param getresgid(sgid) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 11:         __NR_execve 3s 1m
+212:        __NR_chown32 3s 1m
 -----------------------------------------------------
 
-Syscall param execve(filename) contains uninitialised byte(s)
+Syscall param chown(path) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param execve(argv) contains uninitialised byte(s)
+Syscall param chown(owner) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param execve(envp) contains uninitialised byte(s)
+Syscall param chown(group) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param execve(filename) points to unaddressable byte(s)
+Syscall param chown(path) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 12:          __NR_chdir 1s 1m
+213:       __NR_setuid32 1s 0m
 -----------------------------------------------------
 
-Syscall param chdir(path) contains uninitialised byte(s)
+Syscall param setuid(uid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+214:       __NR_setgid32 1s 0m
+-----------------------------------------------------
+
+Syscall param setgid(gid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+215:     __NR_setfsuid32 1s 0m
+-----------------------------------------------------
+
+Syscall param setfsuid(uid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+216:     __NR_setfsgid32 1s 0m
+-----------------------------------------------------
+
+Syscall param setfsgid(gid) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+222:                 222 0e
+-----------------------------------------------------
+-----------------------------------------------------
+223:                 223 0e
+-----------------------------------------------------
+-----------------------------------------------------
+226:       __NR_setxattr 5s 3m
+-----------------------------------------------------
+
+Syscall param setxattr(path) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param chdir(path) points to unaddressable byte(s)
+Syscall param setxattr(name) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param setxattr(value) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param setxattr(size) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param setxattr(flags) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param setxattr(path) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param setxattr(name) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param setxattr(value) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 13:           __NR_time 1s 1m
+227:      __NR_lsetxattr 5s 3m
 -----------------------------------------------------
 
-Syscall param time(t) contains uninitialised byte(s)
+Syscall param lsetxattr(path) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param time(t) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
------------------------------------------------------
- 14:          __NR_mknod 3s 1m
------------------------------------------------------
-
-Syscall param mknod(pathname) contains uninitialised byte(s)
+Syscall param lsetxattr(name) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param mknod(mode) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param mknod(dev) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param mknod(pathname) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
------------------------------------------------------
- 15:          __NR_chmod 2s 1m
------------------------------------------------------
-
-Syscall param chmod(path) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param chmod(mode) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param chmod(path) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
------------------------------------------------------
- 17:          __NR_break 0e
------------------------------------------------------
------------------------------------------------------
- 19:          __NR_lseek 3s 0m
------------------------------------------------------
-
-Syscall param lseek(fd) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param lseek(offset) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param lseek(whence) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
------------------------------------------------------
- 20:         __NR_getpid 0s 0m
------------------------------------------------------
------------------------------------------------------
- 21:          __NR_mount 5s 3m
------------------------------------------------------
-
-Syscall param mount(source) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param mount(target) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param mount(type) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param mount(flags) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param mount(data) contains uninitialised byte(s)
+Syscall param lsetxattr(value) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
@@ -319,286 +326,340 @@ Syscall param mount(data) contains uninitialised byte(s)
 More than 50 errors detected.  Subsequent errors
 will still be recorded, but in less detail than before.
 
-Syscall param mount(source) points to unaddressable byte(s)
+Syscall param lsetxattr(size) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param lsetxattr(flags) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param lsetxattr(path) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param mount(target) points to unaddressable byte(s)
+Syscall param lsetxattr(name) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param mount(type) points to unaddressable byte(s)
+Syscall param lsetxattr(value) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 22:         __NR_umount 1s 1m
+228:      __NR_fsetxattr 5s 2m
 -----------------------------------------------------
 
-Syscall param umount(path) contains uninitialised byte(s)
+Syscall param fsetxattr(fd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param umount(path) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
------------------------------------------------------
- 23:         __NR_setuid 1s 0m
------------------------------------------------------
-
-Syscall param setuid16(uid) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
------------------------------------------------------
- 24:         __NR_getuid 0e
------------------------------------------------------
------------------------------------------------------
- 26:         __NR_ptrace 4s 2m
------------------------------------------------------
-
-Syscall param ptrace(request) contains uninitialised byte(s)
+Syscall param fsetxattr(name) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param ptrace(pid) contains uninitialised byte(s)
+Syscall param fsetxattr(value) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param ptrace(addr) contains uninitialised byte(s)
+Syscall param fsetxattr(size) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param ptrace(data) contains uninitialised byte(s)
+Syscall param fsetxattr(flags) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param ptrace(getregs) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
------------------------------------------------------
- 27:          __NR_alarm 1s 0m
------------------------------------------------------
-
-Syscall param alarm(seconds) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
------------------------------------------------------
- 30:          __NR_utime 2s 2m
------------------------------------------------------
-
-Syscall param utime(filename) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param utime(buf) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param utime(filename) points to unaddressable byte(s)
+Syscall param fsetxattr(name) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param utime(buf) points to unaddressable byte(s)
+Syscall param fsetxattr(value) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 31:           __NR_stty 0e
------------------------------------------------------
------------------------------------------------------
- 32:           __NR_gtty 0e
------------------------------------------------------
------------------------------------------------------
- 33:         __NR_access 2s 1m
+229:       __NR_getxattr 4s 3m
 -----------------------------------------------------
 
-Syscall param access(pathname) contains uninitialised byte(s)
+Syscall param getxattr(path) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param access(mode) contains uninitialised byte(s)
+Syscall param getxattr(name) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param access(pathname) points to unaddressable byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
------------------------------------------------------
- 34:           __NR_nice 1s 0m
------------------------------------------------------
-
-Syscall param nice(inc) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
------------------------------------------------------
- 35:          __NR_ftime 0e
------------------------------------------------------
------------------------------------------------------
- 36:           __NR_sync 0e
------------------------------------------------------
------------------------------------------------------
- 37:           __NR_kill 2s 0m
------------------------------------------------------
-
-Syscall param kill(pid) contains uninitialised byte(s)
+Syscall param getxattr(value) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param kill(sig) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
------------------------------------------------------
- 38:         __NR_rename 2s 2m
------------------------------------------------------
-
-Syscall param rename(oldpath) contains uninitialised byte(s)
+Syscall param getxattr(size) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param rename(newpath) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
-
-Syscall param rename(oldpath) points to unaddressable byte(s)
+Syscall param getxattr(path) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param rename(newpath) points to unaddressable byte(s)
+Syscall param getxattr(name) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param getxattr(value) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 39:          __NR_mkdir 2s 1m
+230:      __NR_lgetxattr 4s 3m
 -----------------------------------------------------
 
-Syscall param mkdir(pathname) contains uninitialised byte(s)
+Syscall param lgetxattr(path) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param mkdir(mode) contains uninitialised byte(s)
+Syscall param lgetxattr(name) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param mkdir(pathname) points to unaddressable byte(s)
+Syscall param lgetxattr(value) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param lgetxattr(size) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param lgetxattr(path) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lgetxattr(name) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lgetxattr(value) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 40:          __NR_rmdir 1s 1m
+231:      __NR_fgetxattr 4s 2m
 -----------------------------------------------------
 
-Syscall param rmdir(pathname) contains uninitialised byte(s)
+Syscall param fgetxattr(fd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param rmdir(pathname) points to unaddressable byte(s)
+Syscall param fgetxattr(name) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param fgetxattr(value) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param fgetxattr(size) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param fgetxattr(name) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param fgetxattr(value) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 41:            __NR_dup 1s 0m
+232:      __NR_listxattr 3s 2m
 -----------------------------------------------------
 
-Syscall param dup(oldfd) contains uninitialised byte(s)
-   at 0x........: syscall (in /...libc...)
-   by 0x........: __libc_start_main (...libc...)
-   by 0x........: ...
------------------------------------------------------
- 42:           __NR_pipe 1s 1m
------------------------------------------------------
-
-Syscall param pipe(filedes) contains uninitialised byte(s)
+Syscall param listxattr(path) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param pipe(filedes) points to unaddressable byte(s)
+Syscall param listxattr(list) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param listxattr(size) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param listxattr(path) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param listxattr(list) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 43:          __NR_times 1s 1m
+233:     __NR_llistxattr 3s 2m
 -----------------------------------------------------
 
-Syscall param times(buf) contains uninitialised byte(s)
+Syscall param llistxattr(path) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
-Syscall param times(buf) points to unaddressable byte(s)
+Syscall param llistxattr(list) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param llistxattr(size) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param llistxattr(path) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param llistxattr(list) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
- 44:           __NR_prof 0e
------------------------------------------------------
------------------------------------------------------
- 45:            __NR_brk 1s 0m
+234:     __NR_flistxattr 3s 1m
 -----------------------------------------------------
 
-Syscall param brk(end_data_segment) contains uninitialised byte(s)
+Syscall param flistxattr(fd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
------------------------------------------------------
- 46:         __NR_setgid 1s 0m
------------------------------------------------------
 
-Syscall param setgid16(gid) contains uninitialised byte(s)
+Syscall param flistxattr(list) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
------------------------------------------------------
- 47:         __NR_getgid 0e
------------------------------------------------------
------------------------------------------------------
- 49:        __NR_geteuid 0e
------------------------------------------------------
------------------------------------------------------
-  1:           __NR_exit 1s 0m
------------------------------------------------------
 
-Syscall param exit(error_code) contains uninitialised byte(s)
+Syscall param flistxattr(size) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
+
+Syscall param flistxattr(list) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+235:    __NR_removexattr 2s 2m
+-----------------------------------------------------
+
+Syscall param removexattr(path) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param removexattr(name) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param removexattr(path) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param removexattr(name) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+236:   __NR_lremovexattr 2s 2m
+-----------------------------------------------------
+
+Syscall param lremovexattr(path) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param lremovexattr(name) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param lremovexattr(path) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param lremovexattr(name) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+237:   __NR_fremovexattr 2s 1m
+-----------------------------------------------------
+
+Syscall param fremovexattr(fd) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param fremovexattr(name) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param fremovexattr(name) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd

@@ -1271,10 +1271,18 @@ PRE(set_tid_address)
    PRINT("set_tid_address ( %p )", arg1);
 }
 
-PRE(setresgid)
+PREx(sys_setresgid16, 0)
 {
-   /* int setresgid(gid_t rgid, gid_t egid, gid_t sgid); */
-   PRINT("setresgid ( %d, %d, %d )", arg1, arg2, arg3);
+   PRINT("sys_setresgid16 ( %d, %d, %d )", arg1, arg2, arg3);
+   PRE_REG_READ3(long, "setresgid16",
+                 vki_old_gid_t, rgid, vki_old_gid_t, egid, vki_old_gid_t, sgid);
+}
+
+PREx(sys_setresgid, 0)
+{
+   PRINT("sys_setresgid ( %d, %d, %d )", arg1, arg2, arg3);
+   PRE_REG_READ3(long, "setresgid",
+                 vki_gid_t, rgid, vki_gid_t, egid, vki_gid_t, sgid);
 }
 
 PREx(sys_vhangup, 0)
@@ -1616,12 +1624,6 @@ PREx(sys_nice, 0)
    PRE_REG_READ1(long, "nice", int, inc);
 }
 
-PRE(setresgid32)
-{
-   /* int setresgid(gid_t rgid, gid_t egid, gid_t sgid); */
-   PRINT("setresgid32 ( %d, %d, %d )", arg1, arg2, arg3);
-}
-
 PREx(sys_setfsuid, 0)
 {
    PRINT("sys_setfsuid ( %d )", arg1);
@@ -1717,10 +1719,18 @@ PREx(sys_setregid16, 0)
    PRE_REG_READ2(long, "setregid16", vki_old_gid_t, rgid, vki_old_gid_t, egid);
 }
 
-PRE(setresuid)
+PREx(sys_setresuid16, 0)
 {
-   /* int setresuid(uid_t ruid, uid_t euid, uid_t suid); */
-   PRINT("setresuid ( %d, %d, %d )", arg1, arg2, arg3);
+   PRINT("sys_setresuid16 ( %d, %d, %d )", arg1, arg2, arg3);
+   PRE_REG_READ3(long, "setresuid16",
+                 vki_old_uid_t, ruid, vki_old_uid_t, euid, vki_old_uid_t, suid);
+}
+
+PREx(sys_setresuid, 0)
+{
+   PRINT("sys_setresuid ( %d, %d, %d )", arg1, arg2, arg3);
+   PRE_REG_READ3(long, "setresuid",
+                 vki_uid_t, ruid, vki_uid_t, euid, vki_uid_t, suid);
 }
 
 PREx(sys_setfsuid16, 0)
@@ -2428,16 +2438,37 @@ PREx(sys_getppid, 0)
    PRE_REG_READ0(long, "getppid");
 }
 
-PRE(getresgid)
+PREx(sys_getresgid16, 0)
 {
-   /* int getresgid(gid_t *rgid, gid_t *egid, gid_t *sgid); */
-   PRINT("getresgid ( %p, %p, %p )", arg1,arg2,arg3);
+   PRINT("sys_getresgid16 ( %p, %p, %p )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "getresgid16",
+                 vki_old_gid_t *, rgid, vki_old_gid_t *, egid,
+                 vki_old_gid_t *, sgid);
+   PRE_MEM_WRITE( "getresgid16(rgid)", arg1, sizeof(vki_old_gid_t) );
+   PRE_MEM_WRITE( "getresgid16(egid)", arg2, sizeof(vki_old_gid_t) );
+   PRE_MEM_WRITE( "getresgid16(sgid)", arg3, sizeof(vki_old_gid_t) );
+}
+
+POSTx(sys_getresgid16)
+{
+   if (res == 0) {
+      POST_MEM_WRITE( arg1, sizeof(vki_old_gid_t) );
+      POST_MEM_WRITE( arg2, sizeof(vki_old_gid_t) );
+      POST_MEM_WRITE( arg3, sizeof(vki_old_gid_t) );
+   }
+}
+
+PREx(sys_getresgid, 0)
+{
+   PRINT("sys_getresgid ( %p, %p, %p )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "getresgid", 
+                 vki_gid_t *, rgid, vki_gid_t *, egid, vki_gid_t *, sgid);
    PRE_MEM_WRITE( "getresgid(rgid)", arg1, sizeof(vki_gid_t) );
    PRE_MEM_WRITE( "getresgid(egid)", arg2, sizeof(vki_gid_t) );
    PRE_MEM_WRITE( "getresgid(sgid)", arg3, sizeof(vki_gid_t) );
 }
 
-POST(getresgid)
+POSTx(sys_getresgid)
 {
    if (res == 0) {
       POST_MEM_WRITE( arg1, sizeof(vki_gid_t) );
@@ -2446,52 +2477,37 @@ POST(getresgid)
    }
 }
 
-PRE(getresgid32)
+PREx(sys_getresuid16, 0)
 {
-   /* int getresgid(gid_t *rgid, gid_t *egid, gid_t *sgid); */
-   PRINT("getresgid32 ( %p, %p, %p )", arg1,arg2,arg3);
-   PRE_MEM_WRITE( "getresgid32(rgid)", arg1, sizeof(vki_gid_t) );
-   PRE_MEM_WRITE( "getresgid32(egid)", arg2, sizeof(vki_gid_t) );
-   PRE_MEM_WRITE( "getresgid32(sgid)", arg3, sizeof(vki_gid_t) );
+   PRINT("sys_getresuid16 ( %p, %p, %p )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "getresuid16",
+                 vki_old_uid_t *, ruid, vki_old_uid_t *, euid,
+                 vki_old_uid_t *, suid);
+   PRE_MEM_WRITE( "getresuid16(ruid)", arg1, sizeof(vki_old_uid_t) );
+   PRE_MEM_WRITE( "getresuid16(euid)", arg2, sizeof(vki_old_uid_t) );
+   PRE_MEM_WRITE( "getresuid16(suid)", arg3, sizeof(vki_old_uid_t) );
 }
 
-POST(getresgid32)
+POSTx(sys_getresuid16)
 {
    if (res == 0) {
-      POST_MEM_WRITE( arg1, sizeof(vki_gid_t) );
-      POST_MEM_WRITE( arg2, sizeof(vki_gid_t) );
-      POST_MEM_WRITE( arg3, sizeof(vki_gid_t) );
+      POST_MEM_WRITE( arg1, sizeof(vki_old_uid_t) );
+      POST_MEM_WRITE( arg2, sizeof(vki_old_uid_t) );
+      POST_MEM_WRITE( arg3, sizeof(vki_old_uid_t) );
    }
 }
 
-PRE(getresuid)
+PREx(sys_getresuid, 0)
 {
-   /* int getresuid(uid_t *ruid, uid_t *euid, uid_t *suid); */
-   PRINT("getresuid ( %p, %p, %p )", arg1,arg2,arg3);
+   PRINT("sys_getresuid ( %p, %p, %p )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "getresuid", 
+                 vki_uid_t *, ruid, vki_uid_t *, euid, vki_uid_t *, suid);
    PRE_MEM_WRITE( "getresuid(ruid)", arg1, sizeof(vki_uid_t) );
    PRE_MEM_WRITE( "getresuid(euid)", arg2, sizeof(vki_uid_t) );
    PRE_MEM_WRITE( "getresuid(suid)", arg3, sizeof(vki_uid_t) );
 }
 
-POST(getresuid)
-{
-   if (res == 0) {
-      POST_MEM_WRITE( arg1, sizeof(vki_uid_t) );
-      POST_MEM_WRITE( arg2, sizeof(vki_uid_t) );
-      POST_MEM_WRITE( arg3, sizeof(vki_uid_t) );
-   }
-}
-
-PRE(getresuid32)
-{
-   /* int getresuid(uid_t *ruid, uid_t *euid, uid_t *suid); */
-   PRINT("getresuid32 ( %p, %p, %p )", arg1,arg2,arg3);
-   PRE_MEM_WRITE( "getresuid32(ruid)", arg1, sizeof(vki_uid_t) );
-   PRE_MEM_WRITE( "getresuid32(euid)", arg2, sizeof(vki_uid_t) );
-   PRE_MEM_WRITE( "getresuid32(suid)", arg3, sizeof(vki_uid_t) );
-}
-
-POST(getresuid32)
+POSTx(sys_getresuid)
 {
    if (res == 0) {
       POST_MEM_WRITE( arg1, sizeof(vki_uid_t) );
@@ -4947,12 +4963,6 @@ PREx(sys_setregid, 0)
    PRE_REG_READ2(long, "setregid", vki_gid_t, rgid, vki_gid_t, egid);
 }
 
-PRE(setresuid32)
-{
-   /* int setresuid(uid_t ruid, uid_t euid, uid_t suid); */
-   PRINT("setresuid32(?) ( %d, %d, %d )", arg1, arg2, arg3);
-}
-
 PREx(sys_setreuid16, 0)
 {
    PRINT("setreuid16 ( 0x%x, 0x%x )", arg1, arg2);
@@ -6461,16 +6471,16 @@ static const struct sys_info sys_info[] = {
    //   (__NR_sched_rr_get_interval,   sys_sched_rr_get_interval), // 161 *
    SYSBA(__NR_nanosleep,        sys_nanosleep, MayBlock|PostOnFail), // 162 *
    SYSB_(__NR_mremap,           sys_mremap, Special), // 163  *
-   SYSB_(__NR_setresuid,        sys_setresuid16, 0), // 164 ##
+   SYSX_(__NR_setresuid,        sys_setresuid16),  // 164 ## (non-standard)
 
-   SYSBA(__NR_getresuid,        sys_getresuid16, 0), // 165 ##
+   SYSXY(__NR_getresuid,        sys_getresuid16),  // 165 ## L
    //   (__NR_vm86,             sys_vm86),         // 166 (x86) L
    SYSX_(__NR_query_module,     sys_ni_syscall),   // 167 * P -- unimplemented
    SYSBA(__NR_poll,             sys_poll, MayBlock), // 168 *
    //   (__NR_nfsservctl,       sys_nfsservctl),   // 169 * L
 
-   SYSB_(__NR_setresgid,        sys_setresgid16, 0), // 170 ##
-   SYSBA(__NR_getresgid,        sys_getresgid16, 0), // 171 ##
+   SYSX_(__NR_setresgid,        sys_setresgid16),  // 170 ## (non-standard)
+   SYSXY(__NR_getresgid,        sys_getresgid16),  // 171 ## L
    SYSB_(__NR_prctl,            sys_prctl, MayBlock), // 172 *
    //   (__NR_rt_sigreturn,     sys_rt_sigreturn), // 173 (x86) ()
    SYSXY(__NR_rt_sigaction,     sys_rt_sigaction), // 174 (x86) ()
@@ -6515,11 +6525,11 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_getgroups32,      sys_getgroups),    // 205 * P
    SYSX_(__NR_setgroups32,      sys_setgroups),    // 206 * almost-P
    SYSX_(__NR_fchown32,         sys_fchown),       // 207 * (SVr4,BSD4.3)
-   SYSB_(__NR_setresuid32,      sys_setresuid, 0), // 208 *
-   SYSBA(__NR_getresuid32,      sys_getresuid, 0), // 209 *
+   SYSX_(__NR_setresuid32,      sys_setresuid),    // 208 * (non-standard)
+   SYSXY(__NR_getresuid32,      sys_getresuid),    // 209 * L
 
-   SYSB_(__NR_setresgid32,      sys_setresgid, 0), // 210 *
-   SYSBA(__NR_getresgid32,      sys_getresgid, 0), // 211 *
+   SYSX_(__NR_setresgid32,      sys_setresgid),    // 210 * (non-standard)
+   SYSXY(__NR_getresgid32,      sys_getresgid),    // 211 * L
    SYSX_(__NR_chown32,          sys_chown),        // 212 * P
    SYSX_(__NR_setuid32,         sys_setuid),       // 213 *
    SYSX_(__NR_setgid32,         sys_setgid),       // 214 * (SVr4,SVID)

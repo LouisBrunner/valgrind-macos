@@ -49,6 +49,11 @@ realloc1
 realloc2
 realloc3
 scalar
+scalar2
+scalar3
+scalar4
+scalar5
+scalar6
 scalar_fork
 scalar_supp
 scalar_vfork

@@ -53,9 +53,14 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
-	scalar.stderr.exp scalar.vgtest scalar.supp \
+	scalar.stderr.exp  scalar.vgtest  \
+	scalar2.stderr.exp scalar2.vgtest \
+	scalar3.stderr.exp scalar3.vgtest \
+	scalar4.stderr.exp scalar4.vgtest \
+	scalar5.stderr.exp scalar5.vgtest \
+	scalar6.stderr.exp scalar6.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \
-	scalar_supp.stderr.exp scalar_supp.vgtest \
+	scalar_supp.stderr.exp scalar_supp.vgtest scalar_supp.supp \
 	scalar_vfork.stderr.exp scalar_vfork.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
 	signal2.stderr.exp \
@@ -85,8 +90,9 @@ check_PROGRAMS = \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak new_nothrow \
 	null_socket overlap \
-	realloc1 realloc2 realloc3 scalar scalar_fork \
-	scalar_supp scalar_vfork sigaltstack signal2 \
+	realloc1 realloc2 realloc3 \
+	scalar scalar2 scalar3 scalar4 scalar5 scalar6 \
+	scalar_fork scalar_supp scalar_vfork sigaltstack signal2 \
 	str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
 	mismatches new_override metadata threadederrno \
@@ -139,6 +145,11 @@ realloc1_SOURCES 	= realloc1.c
 realloc2_SOURCES 	= realloc2.c
 realloc3_SOURCES 	= realloc3.c
 scalar_SOURCES 		= scalar.c
+scalar2_SOURCES 	= scalar2.c
+scalar3_SOURCES 	= scalar3.c
+scalar4_SOURCES 	= scalar4.c
+scalar5_SOURCES 	= scalar5.c
+scalar6_SOURCES 	= scalar6.c
 scalar_fork_SOURCES 	= scalar_fork.c
 scalar_supp_SOURCES 	= scalar_supp.c
 scalar_vfork_SOURCES 	= scalar_vfork.c

@@ -147,8 +147,19 @@ new_override_SOURCES 	= new_override.cpp
 
 # Valgrind unit self-tests
 hello_SOURCES		= hello.c
+## If we support PIE, build hello as a PIE, otherwise vgtest_ume cannot load
+## (I'm not completely sure why, since stage2 can load both PIEs and non-PIEs,
+## maybe it's because stage2 is loaded up high;  anyway, it doesn't really
+## matter so long as vgtest_ume can load hello ok.  --njn)
+if USE_PIE
+hello_CFLAGS		= $(AM_CFLAGS) -fpie
+hello_LDFLAGS		= -pie
+else
 hello_LDFLAGS		= -Wl,-defsym,kickstart_base=0x50000000 \
 			  -Wl,-T,../../coregrind/${VG_ARCH}/stage2.lds
+hello_DEPENDENCIES 	= ../../coregrind/${VG_ARCH}/stage2.lds
+endif
+
 vgtest_ume_SOURCES	= vgtest_ume.c
 vgtest_ume_LDADD	= ../../coregrind/ume.o \
 			  ../../coregrind/jmp_with_stack.o

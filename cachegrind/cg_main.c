@@ -546,12 +546,43 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
             is_FPU_R = True;
             break;
 
+         case SSE2a_MemRd:
+         case SSE2a1_MemRd:
+            sk_assert(u_in->size == 4 || u_in->size == 16);
+            t_read = u_in->val3;
+            is_FPU_R = True;
+            break;
+
+         case SSE3a_MemRd:
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            t_read = u_in->val3;
+            is_FPU_R = True;
+            break;
+
+         case SSE3ag_MemRd_RegWr:
+            sk_assert(u_in->size == 4 || u_in->size == 8);
+            t_read = u_in->val1;
+            is_FPU_R = True;
+            break;
+
          case MMX2_MemWr:
             sk_assert(u_in->size == 4 || u_in->size == 8);
             /* fall through */
          case FPU_W:
             sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
             t_write = u_in->val2;
+            is_FPU_W = True;
+            break;
+
+         case SSE2a_MemWr:
+            sk_assert(u_in->size == 4 || u_in->size == 16);
+            t_write = u_in->val3;
+            is_FPU_W = True;
+            break;
+
+         case SSE3a_MemWr:
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            t_write = u_in->val3;
             is_FPU_W = True;
             break;
 
@@ -763,6 +794,34 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+         case SSE2a_MemRd:
+         case SSE2a1_MemRd:
+            sk_assert(u_in->size == 4 || u_in->size == 16);
+            t_read = u_in->val3;
+            t_read_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
+            data_size = u_in->size;
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case SSE3a_MemRd:
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            t_read = u_in->val3;
+            t_read_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
+            data_size = u_in->size;
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case SSE3ag_MemRd_RegWr:
+            sk_assert(u_in->size == 4 || u_in->size == 8);
+            t_read = u_in->val1;
+            t_read_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val1,  TempReg, t_read_addr);
+            data_size = u_in->size;
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
          /* Note that we must set t_write_addr even for mod instructions;
           * That's how the code above determines whether it does a write.
           * Without it, it would think a mod instruction is a read.
@@ -785,6 +844,17 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+         case SSE2a_MemWr:
+            sk_assert(u_in->size == 4 || u_in->size == 16);
+           /* fall through */
+         case SSE3a_MemWr:
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            t_write = u_in->val3;
+            t_write_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val3, TempReg, t_write_addr);
+            data_size = u_in->size;
+            VG_(copy_UInstr)(cb, u_in);
+            break;
 
          /* For rep-prefixed instructions, log a single I-cache access
           * before the UCode loop that implements the repeated part, which

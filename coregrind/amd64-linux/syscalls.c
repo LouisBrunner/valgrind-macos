@@ -943,9 +943,9 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_pause,             sys_pause),          // 34 
 
    GENXY(__NR_nanosleep,         sys_nanosleep),      // 35 
-   //   (__NR_getitimer,         sys_getitimer),      // 36 
+   GENXY(__NR_getitimer,         sys_getitimer),      // 36 
    GENX_(__NR_alarm,             sys_alarm),          // 37 
-   //   (__NR_setitimer,         sys_setitimer),      // 38 
+   GENXY(__NR_setitimer,         sys_setitimer),      // 38 
    GENX_(__NR_getpid,            sys_getpid),         // 39 
 
    //   (__NR_sendfile,          sys_sendfile64),     // 40 
@@ -1034,7 +1034,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    GENX_(__NR_getppid,           sys_getppid),        // 110 
    GENX_(__NR_getpgrp,           sys_getpgrp),        // 111 
-   //   (__NR_setsid,            sys_setsid),         // 112 
+   GENX_(__NR_setsid,            sys_setsid),         // 112 
    //   (__NR_setreuid,          sys_setreuid),       // 113 
    //   (__NR_setregid,          sys_setregid),       // 114 
 
@@ -1045,7 +1045,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    LINX_(__NR_setresgid,         sys_setresgid),      // 119 
 
    LINXY(__NR_getresgid,         sys_getresgid),      // 120 
-   //   (__NR_getpgid,           sys_getpgid),        // 121 
+   GENX_(__NR_getpgid,           sys_getpgid),        // 121 
    //   (__NR_setfsuid,          sys_setfsuid),       // 122 
    //   (__NR_setfsgid,          sys_setfsgid),       // 123 
    //   (__NR_getsid,            sys_getsid),         // 124 

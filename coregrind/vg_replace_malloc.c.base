@@ -103,7 +103,7 @@ LIBALIAS(void *, fff, (SizeT n)) \
    MAYBE_SLOPPIFY(n); \
    if (!init_done) init(); \
  \
-   v = (void*)VALGRIND_NON_SIMD_CALL1( info.sk_##vgfff, n ); \
+   v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vgfff, n ); \
    MALLOC_TRACE(" = %p", v ); \
    return v; \
 }
@@ -117,7 +117,7 @@ LIBALIAS(void *, fff, (SizeT n)) \
    MAYBE_SLOPPIFY(n); \
    if (!init_done) init(); \
  \
-   v = (void*)VALGRIND_NON_SIMD_CALL1( info.sk_##vgfff, n ); \
+   v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vgfff, n ); \
    MALLOC_TRACE(" = %p", v ); \
    if (NULL == v) { \
       VALGRIND_PRINTF_BACKTRACE( \
@@ -147,7 +147,7 @@ LIBALIAS(void, fff, (void *p)) \
    if (p == NULL)  \
       return; \
    if (!init_done) init(); \
-   (void)VALGRIND_NON_SIMD_CALL1( info.sk_##vgfff, p ); \
+   (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vgfff, p ); \
 }
 FREE( free,                 free                 );
 FREE( cfree,                free                 );
@@ -172,7 +172,7 @@ LIBALIAS(void*, calloc, ( SizeT nmemb, SizeT size ))
    MAYBE_SLOPPIFY(size);
 
    if (!init_done) init();
-   v = (void*)VALGRIND_NON_SIMD_CALL2( info.sk_calloc, nmemb, size );
+   v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_calloc, nmemb, size );
    MALLOC_TRACE(" = %p", v );
    return v;
 }
@@ -193,7 +193,7 @@ LIBALIAS(void*, realloc, ( void* ptrV, SizeT new_size ))
       return NULL;
    }   
    if (!init_done) init();
-   v = (void*)VALGRIND_NON_SIMD_CALL2( info.sk_realloc, ptrV, new_size );
+   v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size );
    MALLOC_TRACE(" = %p", v );
    return v;
 }
@@ -213,7 +213,7 @@ LIBALIAS(void*, memalign, ( SizeT alignment, SizeT n ))
    while (0 != (alignment & (alignment - 1))) alignment++;
 
    if (!init_done) init();
-   v = (void*)VALGRIND_NON_SIMD_CALL2( info.sk_memalign, alignment, n );
+   v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, alignment, n );
    MALLOC_TRACE(" = %p", v );
    return v;
 }

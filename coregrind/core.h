@@ -589,15 +589,15 @@ In core_asm.h:
 
 struct vg_mallocfunc_info {
    /* things vg_replace_malloc.o needs to know about */
-   Addr	sk_malloc;
-   Addr	sk_calloc;
-   Addr	sk_realloc;
-   Addr	sk_memalign;
-   Addr	sk___builtin_new;
-   Addr	sk___builtin_vec_new;
-   Addr	sk_free;
-   Addr	sk___builtin_delete;
-   Addr	sk___builtin_vec_delete;
+   Addr	tl_malloc;
+   Addr	tl_calloc;
+   Addr	tl_realloc;
+   Addr	tl_memalign;
+   Addr	tl___builtin_new;
+   Addr	tl___builtin_vec_new;
+   Addr	tl_free;
+   Addr	tl___builtin_delete;
+   Addr	tl___builtin_vec_delete;
 
    Addr	arena_payload_szB;
 
@@ -609,7 +609,7 @@ struct vg_mallocfunc_info {
    Exports of vg_defaults.c
    ------------------------------------------------------------------ */
 
-extern Bool VG_(sk_malloc_called_by_scheduler);
+extern Bool VG_(tl_malloc_called_by_scheduler);
 
 /* ---------------------------------------------------------------------
    Exports of vg_libpthread.c

@@ -105,7 +105,7 @@ typedef struct _ToolInfo {
       - register any tool-specific profiling events
       - any other tool-specific initialisation
    */
-   void        (*sk_pre_clo_init) ( void );
+   void        (*tl_pre_clo_init) ( void );
 
    /* Specifies how big the shadow segment should be as a ratio to the
       client address space.  0 for no shadow segment. */
@@ -118,7 +118,7 @@ typedef struct _ToolInfo {
       .sizeof_ToolInfo         = sizeof(ToolInfo),			\
       .interface_major_version = VG_CORE_INTERFACE_MAJOR_VERSION,	\
       .interface_minor_version = VG_CORE_INTERFACE_MINOR_VERSION,	\
-      .sk_pre_clo_init         = pre_clo_init,				\
+      .tl_pre_clo_init         = pre_clo_init,				\
       .shadow_ratio	       = shadow,				\
    };
 

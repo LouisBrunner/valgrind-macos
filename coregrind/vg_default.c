@@ -70,7 +70,7 @@ void malloc_panic ( const Char* fn )
 __attribute__ ((weak))
 UInt VG_(vg_malloc_redzone_szB) = 8;
 
-Bool VG_(sk_malloc_called_by_scheduler) = False;
+Bool VG_(tl_malloc_called_by_scheduler) = False;
 
 /* If the tool hasn't replaced malloc(), this one can be called from the
    scheduler, for the USERREQ__MALLOC user request used by vg_libpthread.c. 
@@ -81,7 +81,7 @@ Bool VG_(sk_malloc_called_by_scheduler) = False;
 __attribute__ ((weak))
 void* TL_(malloc)( ThreadId tid, SizeT size )
 {
-   if (VG_(sk_malloc_called_by_scheduler))
+   if (VG_(tl_malloc_called_by_scheduler))
       return VG_(cli_malloc)(VG_MIN_MALLOC_SZB, size);
    else 
       malloc_panic(__PRETTY_FUNCTION__);
@@ -91,7 +91,7 @@ __attribute__ ((weak))
 void  TL_(free)( ThreadId tid, void* p )
 {
    /* see comment for TL_(malloc)() above */
-   if (VG_(sk_malloc_called_by_scheduler))
+   if (VG_(tl_malloc_called_by_scheduler))
       VG_(cli_free)(p);
    else 
       malloc_panic(__PRETTY_FUNCTION__);

@@ -1258,7 +1258,7 @@ static void load_tool( const char *toolname, void** handle_out,
 
    ok = (toolinfo->sizeof_ToolInfo == sizeof(*toolinfo) &&
      toolinfo->interface_major_version == VG_CORE_INTERFACE_MAJOR_VERSION &&
-     toolinfo->sk_pre_clo_init != NULL);
+     toolinfo->tl_pre_clo_init != NULL);
    if (!ok) { 
       fprintf(stderr, "Error:\n"
               "  Tool and core interface versions do not match.\n"
@@ -2527,7 +2527,7 @@ int main(int argc, char **argv)
    //--------------------------------------------------------------
    // Build segment map (Valgrind segments only)
    //   p: read proc/self/maps
-   //   p: sk_pre_clo_init()  [to setup new_mem_startup tracker]
+   //   p: tl_pre_clo_init()  [to setup new_mem_startup tracker]
    //--------------------------------------------------------------
    VG_(parse_procselfmaps) ( build_valgrind_map_callback );
 
@@ -2543,7 +2543,7 @@ int main(int argc, char **argv)
    //   p: parse_procselfmaps        [so VG segments are setup so tool can
    //                                 call VG_(malloc)]
    //--------------------------------------------------------------
-   (*toolinfo->sk_pre_clo_init)();
+   (*toolinfo->tl_pre_clo_init)();
    VG_(tool_init_dlsym)(tool_dlhandle);
    VG_(sanity_check_needs)();
 

@@ -306,7 +306,7 @@ void* VG_(mmap)( void* start, UInt length,
 Int VG_(munmap)( void* start, Int length )
 {
    Int res = VG_(do_syscall)(__NR_munmap, (UInt)start, (UInt)length );
-   if (!VG_(is_kerror))
+   if (!VG_(is_kerror)(res))
       VG_(unmap_range)((Addr)start, length);
    return VG_(is_kerror)(res) ? -1 : 0;
 }

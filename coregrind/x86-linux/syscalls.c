@@ -1017,7 +1017,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    GENX_(__NR_ftime,             sys_ni_syscall),     // 35
    GENX_(__NR_sync,              sys_sync),           // 36
-   GENXY(__NR_kill,              sys_kill),           // 37
+   GENX_(__NR_kill,              sys_kill),           // 37
    GENX_(__NR_rename,            sys_rename),         // 38
    GENX_(__NR_mkdir,             sys_mkdir),          // 39
 
@@ -1049,7 +1049,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_chroot,            sys_chroot),         // 61
    //   (__NR_ustat,             sys_ustat)           // 62 SVr4 -- deprecated
    GENXY(__NR_dup2,              sys_dup2),           // 63
-   GENX_(__NR_getppid,           sys_getppid),        // 64
+   GENXY(__NR_getppid,           sys_getppid),        // 64
 
    GENX_(__NR_getpgrp,           sys_getpgrp),        // 65
    GENX_(__NR_setsid,            sys_setsid),         // 66
@@ -1261,7 +1261,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_removexattr,       sys_removexattr),    // 235
    GENX_(__NR_lremovexattr,      sys_lremovexattr),   // 236
    GENX_(__NR_fremovexattr,      sys_fremovexattr),   // 237
-   //   (__NR_tkill,             sys_tkill),          // 238 */Linux
+   LINX_(__NR_tkill,             sys_tkill),          // 238 */Linux
    LINXY(__NR_sendfile64,        sys_sendfile64),     // 239
 
    LINXY(__NR_futex,             sys_futex),             // 240
@@ -1300,7 +1300,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_statfs64,          sys_statfs64),       // 268
    GENXY(__NR_fstatfs64,         sys_fstatfs64),      // 269
 
-   LINXY(__NR_tgkill,            sys_tgkill),         // 270 */Linux
+   LINX_(__NR_tgkill,            sys_tgkill),         // 270 */Linux
    GENX_(__NR_utimes,            sys_utimes),         // 271
    //   (__NR_fadvise64_64,      sys_fadvise64_64),   // 272 */(Linux?)
    GENX_(__NR_vserver,           sys_ni_syscall),     // 273

@@ -503,13 +503,52 @@ POST(sys_epoll_wait)
       POST_MEM_WRITE( ARG2, sizeof(struct epoll_event)*RES ) ;
 }
 
-PRE(sys_tgkill, 0)
+PRE(sys_tkill, Special)
+{
+   /* int tkill(pid_t tid, int sig); */
+   PRINT("sys_tkill ( %d, %d )", ARG1,ARG2);
+   PRE_REG_READ2(long, "tkill", int, tid, int, sig);
+   if (!VG_(client_signal_OK)(ARG2)) {
+      SET_RESULT( -VKI_EINVAL );
+      return;
+   }
+
+   /* If we're sending SIGKILL, check to see if the target is one of
+      our threads and handle it specially. */
+   if (ARG2 == VKI_SIGKILL && VG_(do_sigkill)(ARG1, -1))
+      SET_RESULT(0);
+   else
+      SET_RESULT(VG_(do_syscall2)(SYSNO, ARG1, ARG2));
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "tkill: sent signal %d to pid %d",
+		   ARG2, ARG1);
+   // Check to see if this kill gave us a pending signal
+   VG_(poll_signals)(tid);
+}
+
+PRE(sys_tgkill, Special)
 {
    /* int tgkill(pid_t tgid, pid_t tid, int sig); */
    PRINT("sys_tgkill ( %d, %d, %d )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "tgkill", int, tgid, int, tid, int, sig);
-   if (!VG_(client_signal_OK)(ARG3))
+   if (!VG_(client_signal_OK)(ARG3)) {
       SET_RESULT( -VKI_EINVAL );
+      return;
+   }
+   
+   /* If we're sending SIGKILL, check to see if the target is one of
+      our threads and handle it specially. */
+   if (ARG3 == VKI_SIGKILL && VG_(do_sigkill)(ARG2, ARG1))
+      SET_RESULT(0);
+   else
+      SET_RESULT(VG_(do_syscall3)(SYSNO, ARG1, ARG2, ARG3));
+
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "tgkill: sent signal %d to pid %d/%d",
+		   ARG3, ARG1, ARG2);
+   // Check to see if this kill gave us a pending signal
+   VG_(poll_signals)(tid);
 }
 
 POST(sys_tgkill)

@@ -2946,6 +2946,16 @@ PRE(sys_getppid, 0)
    PRE_REG_READ0(long, "getppid");
 }
 
+POST(sys_getppid)
+{
+   /* If the master thread has already exited, and it is this thread's
+      parent, then force getppid to return 1 (init) rather than the
+      real ppid, so that it thinks its parent has exited. */
+   if (VG_(threads)[VG_(master_tid)].os_state.lwpid == RES &&
+       VG_(is_exiting)(VG_(master_tid)))
+      RES = 1;
+}
+
 static void common_post_getrlimit(ThreadId tid, UWord a1, UWord a2)
 {
    POST_MEM_WRITE( a2, sizeof(struct vki_rlimit) );
@@ -4319,20 +4329,76 @@ POST(sys_ioctl)
    }
 }
 
-PRE(sys_kill, 0)
+/* 
+   If we're sending a SIGKILL to one of our own threads, then simulate
+   it rather than really sending the signal, so that the target thread
+   gets a chance to clean up.  Returns True if we did the killing (or
+   no killing is necessary), and False if the caller should use the
+   normal kill syscall.
+   
+   "pid" is any pid argument which can be passed to kill; group kills
+   (< -1, 0), and owner kills (-1) are ignored, on the grounds that
+   they'll most likely hit all the threads and we won't need to worry
+   about cleanup.  In truth, we can't fully emulate these multicast
+   kills.
+
+   "tgid" is a thread group id.  If it is not -1, then the target
+   thread must be in that thread group.
+ */
+Bool VG_(do_sigkill)(Int pid, Int tgid)
+{
+   ThreadState *tst;
+   ThreadId tid;
+
+   if (pid <= 0)
+      return False;
+
+   tid = VG_(get_lwp_tid)(pid);
+   if (tid == VG_INVALID_THREADID)
+      return False;		/* none of our threads */
+
+   tst = VG_(get_ThreadState)(tid);
+   if (tst == NULL || tst->status == VgTs_Empty)
+      return False;		/* hm, shouldn't happen */
+
+   if (tgid != -1 && tst->os_state.threadgroup != tgid)
+      return False;		/* not the right thread group */
+
+   /* Check to see that the target isn't already exiting. */
+   if (!VG_(is_exiting)(tid)) {
+      if (VG_(clo_trace_signals))
+	 VG_(message)(Vg_DebugMsg, "Thread %d being killed with SIGKILL", tst->tid);
+      
+      tst->exitreason = VgSrc_FatalSig;
+      tst->os_state.fatalsig = VKI_SIGKILL;
+      
+      if (!VG_(is_running_thread)(tid))
+	 VG_(kill_thread)(tid);
+   }
+   
+   return True;
+}
+
+PRE(sys_kill, Special)
 {
    /* int kill(pid_t pid, int sig); */
    PRINT("sys_kill ( %d, %d )", ARG1,ARG2);
    PRE_REG_READ2(long, "kill", int, pid, int, sig);
-   if (!VG_(client_signal_OK)(ARG2))
+   if (!VG_(client_signal_OK)(ARG2)) {
       SET_RESULT( -VKI_EINVAL );
-}
+      return;
+   }
 
-POST(sys_kill)
-{
+   /* If we're sending SIGKILL, check to see if the target is one of
+      our threads and handle it specially. */
+   if (ARG2 == VKI_SIGKILL && VG_(do_sigkill)(ARG1, -1))
+      SET_RESULT(0);
+   else
+      SET_RESULT(VG_(do_syscall2)(SYSNO, ARG1, ARG2));
+
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, "kill: sent signal %d to pid %d",
-                   ARG2, ARG1);
+		   ARG2, ARG1);
    // Check to see if this kill gave us a pending signal
    VG_(poll_signals)(tid);
 }

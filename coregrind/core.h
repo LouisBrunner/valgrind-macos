@@ -1134,6 +1134,10 @@ Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
 Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft);
 
 void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname);
+
+// Used when killing threads -- we must not kill a thread if it's the thread
+// that would do Valgrind's final cleanup and output.
+Bool VG_(do_sigkill)(Int pid, Int tgid);
    
 // Flags describing syscall wrappers
 #define Special    (1 << 0)	/* handled specially			*/
@@ -1413,8 +1417,6 @@ GEN_SYSCALL_WRAPPER(sys_mq_timedsend);          // * P?
 GEN_SYSCALL_WRAPPER(sys_mq_timedreceive);       // * P?
 GEN_SYSCALL_WRAPPER(sys_mq_notify);             // * P?
 GEN_SYSCALL_WRAPPER(sys_mq_getsetattr);         // * P?
-GEN_SYSCALL_WRAPPER(sys_tkill);			// * L
-GEN_SYSCALL_WRAPPER(sys_tgkill);		// * L
 GEN_SYSCALL_WRAPPER(sys_gettid);		// * L?
 
 #undef GEN_SYSCALL_WRAPPER

@@ -5504,6 +5504,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          if (subopc == 2 || subopc == 6 || subopc == 4) {  
             /* 2 == 010 == SRL, 6 == 110 == SLL, 4 == 100 == SRA */
             /* ok */
+         } else
+         if (sz == 2 && opc == 0x73 && (subopc == 7 || subopc == 3)) {
+            /* 3 == PSRLDQ, 7 == PSLLDQ */
+            /* This is allowable in SSE.  Because sz==2 we fall thru to
+               SSE5 below. */
          } else {
             eip -= (sz==2 ? 3 : 2);
             goto decode_failure;
@@ -5534,6 +5539,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                            (subopc == 2 ? "rl" 
                             : subopc == 6 ? "ll" 
                             : subopc == 4 ? "ra"
+                            : subopc == 3 ? "(PSRLDQ)"
+                            : subopc == 7 ? "(PSLLDQ)"
                             : "??"),
                            nameMMXGran(opc & 3),
                            (Int)byte3,

@@ -307,11 +307,39 @@ extern HChar* showX86FpOp ( X86FpOp );
 typedef
    enum {
       Xsse_INVALID,
-      Xsse_MOV, Xsse_AND, Xsse_OR, Xsse_XOR, Xsse_ANDN,
+      /* mov */
+      Xsse_MOV,
+      /* Floating point binary */
       Xsse_ADDF, Xsse_SUBF, Xsse_MULF, Xsse_DIVF,
       Xsse_MAXF, Xsse_MINF,
+      Xsse_CMPEQF, Xsse_CMPLTF, Xsse_CMPLEF, Xsse_CMPUNF,
+      /* Floating point unary */
       Xsse_RCPF, Xsse_RSQRTF, Xsse_SQRTF, 
-      Xsse_CMPEQF, Xsse_CMPLTF, Xsse_CMPLEF, Xsse_CMPUNF
+      /* Bitwise */
+      Xsse_AND, Xsse_OR, Xsse_XOR, Xsse_ANDN,
+      /* Integer binary */
+      Xsse_ADD8,   Xsse_ADD16,   Xsse_ADD32,   Xsse_ADD64,
+      Xsse_QADD8U, Xsse_QADD16U,
+      Xsse_QADD8S, Xsse_QADD16S,
+      Xsse_SUB8,   Xsse_SUB16,   Xsse_SUB32,   Xsse_SUB64,
+      Xsse_QSUB8U, Xsse_QSUB16U,
+      Xsse_QSUB8S, Xsse_QSUB16S,
+      Xsse_MUL16,
+      Xsse_MULHI16U,
+      Xsse_MULHI16S,
+      Xsse_AVG8U, Xsse_AVG16U,
+      Xsse_MAX16S,
+      Xsse_MAX8U,
+      Xsse_MIN16S,
+      Xsse_MIN8U,
+      Xsse_CMPEQ8,  Xsse_CMPEQ16,  Xsse_CMPEQ32,
+      Xsse_CMPGT8S, Xsse_CMPGT16S, Xsse_CMPGT32S,
+      Xsse_SHL16, Xsse_SHL32, Xsse_SHL64,
+      Xsse_SHR16, Xsse_SHR32, Xsse_SHR64,
+      Xsse_SAR16, Xsse_SAR32, 
+      Xsse_PACKSSD,  Xsse_PACKSSW, Xsse_PACKUSW,
+      Xsse_PUNPCKHB, Xsse_PUNPCKHW, Xsse_PUNPCKHD,
+      Xsse_PUNPCKLB, Xsse_PUNPCKLW, Xsse_PUNPCKLD
    }
    X86SseOp;
 
@@ -355,8 +383,8 @@ typedef
       Xin_Sse32Fx4,  /* SSE binary, 32Fx4 */
       Xin_Sse32FLo,  /* SSE binary, 32F in lowest lane only */
       Xin_Sse64Fx2,  /* SSE binary, 64Fx2 */
-      Xin_Sse64FLo   /* SSE binary, 64F in lowest lane only */
-      /* Xin_SseUn32Fx4 */
+      Xin_Sse64FLo,  /* SSE binary, 64F in lowest lane only */
+      Xin_SseReRg    /* SSE binary general reg-reg, Re, Rg */
    }
    X86InstrTag;
 
@@ -561,6 +589,11 @@ typedef
             HReg     src;
             HReg     dst;
          } Sse64FLo;
+         struct {
+            X86SseOp op;
+            HReg     src;
+            HReg     dst;
+         } SseReRg;
 
       } Xin;
    }
@@ -602,6 +635,7 @@ extern X86Instr* X86Instr_Sse32Fx4  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse32FLo  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse64Fx2  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse64FLo  ( X86SseOp, HReg, HReg );
+extern X86Instr* X86Instr_SseReRg   ( X86SseOp, HReg, HReg );
 
 
 extern void ppX86Instr ( X86Instr* );

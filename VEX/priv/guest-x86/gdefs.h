@@ -105,6 +105,7 @@ extern UInt x86h_create_mxcsr ( UInt sseround );
 
 /* --- Clean helpers for MMX --- */
 
+extern ULong x86g_calculate_add64x1 ( ULong, ULong );
 extern ULong x86g_calculate_add32x2 ( ULong, ULong );
 extern ULong x86g_calculate_add16x4 ( ULong, ULong );
 extern ULong x86g_calculate_add8x8  ( ULong, ULong );

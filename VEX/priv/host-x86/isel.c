@@ -2412,6 +2412,7 @@ static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY */
 static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
+   Bool     arg1isEReg = False;
    X86SseOp op = Xsse_INVALID;
    IRType   ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
@@ -2673,6 +2674,36 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg dst = newVRegV(env);
          addInstr(env, mk_vMOVsd_RR(argL, dst));
          addInstr(env, X86Instr_Sse64FLo(op, argR, dst));
+         return dst;
+      }
+
+      case Iop_QNarrow32Sx4: op = Xsse_PACKSSD; 
+                             arg1isEReg = True; goto do_SseReRg;
+      case Iop_QNarrow16Sx8: op = Xsse_PACKSSW; 
+                             arg1isEReg = True; goto do_SseReRg;
+      case Iop_QNarrow16Ux8: op = Xsse_PACKUSW; 
+                             arg1isEReg = True; goto do_SseReRg;
+      case Iop_Add8x16:   op = Xsse_ADD8;    goto do_SseReRg;
+      case Iop_Add16x8:   op = Xsse_ADD16;   goto do_SseReRg;
+      case Iop_Add32x4:   op = Xsse_ADD32;   goto do_SseReRg;
+      case Iop_Add64x2:   op = Xsse_ADD64;   goto do_SseReRg;
+      case Iop_QAdd8Sx16: op = Xsse_QADD8S;  goto do_SseReRg;
+      case Iop_QAdd16Sx8: op = Xsse_QADD16S; goto do_SseReRg;
+      case Iop_QAdd8Ux16: op = Xsse_QADD8U;  goto do_SseReRg;
+      case Iop_QAdd16Ux8: op = Xsse_QADD16U; goto do_SseReRg;
+      case Iop_Avg8Ux16:  op = Xsse_AVG8U;   goto do_SseReRg;
+      case Iop_Avg16Ux8:  op = Xsse_AVG16U;  goto do_SseReRg;
+      do_SseReRg: {
+         HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         if (arg1isEReg) {
+            addInstr(env, mk_vMOVsd_RR(arg2, dst));
+            addInstr(env, X86Instr_SseReRg(op, arg1, dst));
+         } else {
+            addInstr(env, mk_vMOVsd_RR(arg1, dst));
+            addInstr(env, X86Instr_SseReRg(op, arg2, dst));
+         }
          return dst;
       }
 

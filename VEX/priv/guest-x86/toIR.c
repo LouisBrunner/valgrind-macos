@@ -5084,6 +5084,9 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
       case 0xE4: XXX(x86g_calculate_mull16uHIx4); break;
       case 0xF6: XXX(x86g_calculate_psadbw); break;
 
+      /* Introduced in SSE2 */
+      case 0xD4: XXX(x86g_calculate_add64x1); break;
+
       default: 
          vex_printf("\n0x%x\n", (Int)opc);
          vpanic("dis_MMXop_regmem_to_reg");
@@ -6307,6 +6310,7 @@ UInt dis_SSE_E_to_G_all_invG ( UChar sorb, UInt delta,
    return dis_SSE_E_to_G_all_wrk( sorb, delta, opname, op, True );
 }
 
+
 /* Lowest 32-bit lane only SSE binary operation, G = G `op` E. */
 
 static UInt dis_SSE_E_to_G_lo32 ( UChar sorb, UInt delta, 
@@ -6340,6 +6344,7 @@ static UInt dis_SSE_E_to_G_lo32 ( UChar sorb, UInt delta,
       return delta+alen;
    }
 }
+
 
 /* Lower 64-bit lane only SSE binary operation, G = G `op` E. */
 
@@ -6375,6 +6380,7 @@ static UInt dis_SSE_E_to_G_lo64 ( UChar sorb, UInt delta,
    }
 }
 
+
 /* All lanes unary SSE operation, G = op(E). */
 
 static UInt dis_SSE_E_to_G_unary_all ( 
@@ -6403,6 +6409,7 @@ static UInt dis_SSE_E_to_G_unary_all (
       return delta+alen;
    }
 }
+
 
 /* Lowest 32-bit lane only unary SSE operation, G = op(E). */
 
@@ -6446,6 +6453,7 @@ static UInt dis_SSE_E_to_G_unary_lo32 (
    }
 }
 
+
 /* Lowest 64-bit lane only unary SSE operation, G = op(E). */
 
 static UInt dis_SSE_E_to_G_unary_lo64 ( 
@@ -6487,6 +6495,44 @@ static UInt dis_SSE_E_to_G_unary_lo64 (
       return delta+alen;
    }
 }
+
+
+/* SSE integer binary operation:
+      G = G `op` E   (eLeft == False)
+      G = E `op` G   (eLeft == True)
+*/
+static UInt dis_SSEint_E_to_G( 
+               UChar sorb, UInt delta, 
+               HChar* opname, IROp op,
+               Bool   eLeft
+            )
+{
+   HChar   dis_buf[50];
+   Int     alen;
+   IRTemp  addr;
+   UChar   rm = getIByte(delta);
+   IRExpr* gpart = getXMMReg(gregOfRM(rm));
+   IRExpr* epart = NULL;
+   if (epartIsReg(rm)) {
+      epart = getXMMReg(eregOfRM(rm));
+      DIP("%s %s,%s\n", opname,
+                        nameXMMReg(eregOfRM(rm)),
+                        nameXMMReg(gregOfRM(rm)) );
+      delta += 1;
+   } else {
+      addr  = disAMode ( &alen, sorb, delta, dis_buf );
+      epart = loadLE(Ity_V128, mkexpr(addr));
+      DIP("%s %s,%s\n", opname,
+                        dis_buf,
+                        nameXMMReg(gregOfRM(rm)) );
+      delta += alen;
+   }
+   putXMMReg( gregOfRM(rm), 
+              eLeft ? binop(op, epart, gpart)
+	            : binop(op, gpart, epart) );
+   return delta;
+}
+
 
 /* Helper for doing SSE FP comparisons. */
 
@@ -7332,8 +7378,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F E0 = PAVGB -- 8x8 unsigned Packed Average, with rounding */
-   if (insn[0] == 0x0F && insn[1] == 0xE0) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xE0) {
       do_MMX_preamble();
       delta = dis_MMXop_regmem_to_reg ( 
                 sorb, delta+2, insn[1], "pavgb", False );
@@ -7342,8 +7387,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
    /* 0F E3 = PAVGW -- 16x4 unsigned Packed Average, with rounding */
-   if (insn[0] == 0x0F && insn[1] == 0xE3) {
-      vassert(sz == 4);
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xE3) {
       do_MMX_preamble();
       delta = dis_MMXop_regmem_to_reg ( 
                 sorb, delta+2, insn[1], "pavgw", False );
@@ -8940,6 +8984,121 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       delta = dis_SSE_E_to_G_all( sorb, delta+2, "xorpd", Iop_Xor128 );
       goto decode_success;
    }
+
+   ///////////////////////////////////////////////////////////////////
+
+   /* 66 0F 6B = PACKSSDW */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6B) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "packssdw", Iop_QNarrow32Sx4, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 63 = PACKSSWB */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x63) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "packsswb", Iop_QNarrow16Sx8, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 67 = PACKUSWB */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x67) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "packuswb", Iop_QNarrow16Ux8, True );
+      goto decode_success;
+   }
+
+   /* 66 0F FC = PADDB */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xFC) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "paddb", Iop_Add8x16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F FE = PADDD */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xFE) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "paddd", Iop_Add32x4, False );
+      goto decode_success;
+   }
+
+   /* ***--- this is an MMX class insn introduced in SSE2 ---*** */
+   /* 0F D4 = PADDQ -- add 64x1 */
+   if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xD4) {
+      do_MMX_preamble();
+      delta = dis_MMXop_regmem_to_reg ( 
+                sorb, delta+2, insn[1], "paddq", False );
+      goto decode_success;
+   }
+
+   /* 66 0F D4 = PADDQ */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD4) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "paddq", Iop_Add64x2, False );
+      goto decode_success;
+   }
+
+   /* 66 0F FD = PADDW */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xFD) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "paddw", Iop_Add16x8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F EC = PADDSB */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xEC) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "paddsb", Iop_QAdd8Sx16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F ED = PADDSW */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xED) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "paddsw", Iop_QAdd16Sx8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F DC = PADDUSB */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xDC) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "paddusb", Iop_QAdd8Ux16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F DD = PADDUSW */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xDD) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "paddusw", Iop_QAdd16Ux8, False );
+      goto decode_success;
+   }
+
+   /* 66 0F DB = PAND */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xDB) {
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "pand", Iop_And128 );
+      goto decode_success;
+   }
+
+   /* 66 0F DF = PANDN */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xDF) {
+      delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "pandn", Iop_And128 );
+      goto decode_success;
+   }
+
+   /* 66 0F E0 = PAVGB */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xE0) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pavgb", Iop_Avg8Ux16, False );
+      goto decode_success;
+   }
+
+   /* 66 0F E3 = PAVGW */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xE3) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "pavgw", Iop_Avg16Ux8, False );
+      goto decode_success;
+   }
+
 
 //-- 
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */

@@ -2095,6 +2095,12 @@ static inline UChar abdU8 ( UChar xx, UChar yy )
 
 /* ------------ Normal addition ------------ */
 
+ULong x86g_calculate_add64x1 ( ULong xx, ULong yy )
+{
+   /* uh, why, exactly, is this not done in-line??? */
+   return xx + yy;
+}
+
 ULong x86g_calculate_add32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(

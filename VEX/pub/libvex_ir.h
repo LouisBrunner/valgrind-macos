@@ -327,10 +327,7 @@ typedef
       Iop_ReinterpF64asI64, Iop_ReinterpI64asF64,
       Iop_ReinterpF32asI32, Iop_ReinterpI32asF32,
 
-      /* ------------------ 128-bit SIMD. ------------------ */
-
-      /* 128-bit ops */
-      Iop_And128, Iop_Or128, Iop_Xor128, 
+      /* ------------------ 128-bit SIMD FP. ------------------ */
 
       /* --- 32x4 vector FP --- */
 
@@ -389,11 +386,58 @@ typedef
       Iop_64Uto128,
       Iop_Set128lo32,
       Iop_Set128lo64,
-      /* 128 -> 32 bit unpack */
-      //Iop_128W3to32,   // :: V128 -> I32, bits 127-96
-      //Iop_128W2to32,   // :: V128 -> I32, bits 95-64
-      //Iop_128W1to32,   // :: V128 -> I32, bits 63-32
-      //Iop_128W0to32    // :: V128 -> I32, bits 31-0
+
+      /* ------------------ 128-bit SIMD Integer. ------------------ */
+
+      /* BITWISE OPS */
+      Iop_And128, Iop_Or128, Iop_Xor128, 
+
+      /* ADDITION (normal / unsigned sat / signed sat) */
+      Iop_Add8x16,   Iop_Add16x8,   Iop_Add32x4,  Iop_Add64x2,
+      Iop_QAdd8Ux16, Iop_QAdd16Ux8,
+      Iop_QAdd8Sx16, Iop_QAdd16Sx8,
+
+      /* SUBTRACTION (normal / unsigned sat / signed sat) */
+      Iop_Sub8x16,   Iop_Sub16x8,   Iop_Sub32x4,  Iop_Sub64x2,
+      Iop_QSub8Ux16, Iop_QSub16Ux8,
+      Iop_QSub8Sx16, Iop_QSub16Sx8,
+
+      /* MULTIPLICATION (normal / high half of signed/unsigned) */
+      Iop_Mul16x8,
+      Iop_MulHi16Ux8,
+      Iop_MulHi16Sx8,
+
+      /* AVERAGING: note: (arg1 + arg2 + 1) >> 1 */
+      Iop_Avg8Ux16,
+      Iop_Avg16Ux8,
+
+      /* MIN/MAX */
+      Iop_Max16Sx8,
+      Iop_Max8Ux16,
+      Iop_Min16Sx8,
+      Iop_Min8Ux16,
+
+      /* COMPARISON */
+      Iop_CmpEQ8x16,  Iop_CmpEQ16x8,  Iop_CmpEQ32x4,
+      Iop_CmpGT8Sx16, Iop_CmpGT16Sx8, Iop_CmpGT32Sx4,
+
+      /* VECTOR x SCALAR SHIFT (shift amt :: Ity_I8) */
+      Iop_ShlN16x8, Iop_ShlN32x4, Iop_ShlN64x2,
+      Iop_ShrN16x8, Iop_ShrN32x4, Iop_ShrN64x2,
+      Iop_SarN16x8, Iop_SarN32x4,
+
+      /* NARROWING -- narrow 2xV128 into 1xV128, hi half from left arg */
+      Iop_QNarrow16Ux8,
+      Iop_QNarrow16Sx8,
+      Iop_QNarrow32Sx4,
+
+      /* INTERLEAVING -- interleave lanes from low or high halves of
+         operands.  Most-significant result lane is from the left
+         arg. */
+      Iop_InterleaveHI8x16, Iop_InterleaveHI16x8,
+      Iop_InterleaveHI32x4, Iop_InterleaveHI64x2,
+      Iop_InterleaveLO8x16, Iop_InterleaveLO16x8, 
+      Iop_InterleaveLO32x4, Iop_InterleaveLO64x2
    }
    IROp;
 

@@ -672,7 +672,7 @@ Bool VG_(is_addressable)(Addr p, Int size)
 }
 
 /*--------------------------------------------------------------------*/
-/*--- manage allocation of memory on behalf of the client          ---*/
+/*--- Manage allocation of memory on behalf of the client          ---*/
 /*--------------------------------------------------------------------*/
 
 // Returns 0 on failure.
@@ -708,6 +708,10 @@ void VG_(client_free)(Addr addr)
 
    VG_(munmap)((void *)s->addr, s->len);
 }
+
+/*--------------------------------------------------------------------*/
+/*--- Querying memory layout                                       ---*/
+/*--------------------------------------------------------------------*/
 
 Bool VG_(is_client_addr)(Addr a)
 {
@@ -754,6 +758,9 @@ Addr VG_(get_shadow_size)(void)
    return VG_(shadow_end)-VG_(shadow_base);
 }
 
+/*--------------------------------------------------------------------*/
+/*--- manage allocation of memory on behalf of the client          ---*/
+/*--------------------------------------------------------------------*/
 
 void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init)
 {

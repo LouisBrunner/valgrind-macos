@@ -63,6 +63,10 @@ typedef
       IRTemp* tmpMap;
       Int     n_originalTmps; /* for range checking */
 
+      /* MODIFIED: indicates whether "bogus" literals have so far been
+         found.  Starts off False, and may change to True. */
+      Bool    bogusLiterals;
+
       /* READONLY: the guest layout.  This indicates which parts of
          the guest state should be regarded as 'always defined'. */
       VexGuestLayout* layout;
@@ -518,6 +522,82 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
    }
 }
 
+/* --------- Accurate interpretation of CmpEQ/CmpNE. --------- */
+/* 
+   Normally, we can do CmpEQ/CmpNE by doing UifU on the arguments, and
+   PCasting to Ity_U1.  However, sometimes it is necessary to be more
+   accurate.  The insight is that the result is defined if two
+   corresponding bits can be found, one from each argument, so that
+   both bits are defined but are different -- that makes EQ say "No"
+   and NE say "Yes".  Hence, we compute an improvement term and DifD
+   it onto the "normal" (UifU) result.
+
+   The result is:
+
+   PCastTo<1> (
+      PCastTo<sz>( UifU<sz>(vxx, vyy) )  -- naive version
+      `DifD<sz>`
+      PCastTo<sz>( CmpEQ<sz>( vec, 1....1 ) ) -- improvement term
+   )
+   where
+     vec contains 0 (defined) bits where the corresponding arg bits 
+     are defined but different, and 1 bits otherwise:
+
+     vec = UifU<sz>( vxx, vyy, Not<sz>(Xor<sz>( xx, yy )) )
+*/
+static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
+                                    IRType  ty,
+                                    IRAtom* vxx, IRAtom* vyy, 
+                                    IRAtom* xx,  IRAtom* yy )
+{
+   IRAtom *naive, *vec, *vec_cmpd, *improved, *final_cast, *top;
+   IROp   opDIFD, opUIFU, opXOR, opNOT, opCMP;
+
+   tl_assert(isShadowAtom(mce,vxx));
+   tl_assert(isShadowAtom(mce,vyy));
+   tl_assert(isOriginalAtom(mce,xx));
+   tl_assert(isOriginalAtom(mce,yy));
+   tl_assert(sameKindedAtoms(vxx,xx));
+   tl_assert(sameKindedAtoms(vyy,yy));
+ 
+   switch (ty) {
+      case Ity_I32:
+         opDIFD = Iop_And32;
+         opUIFU = Iop_Or32;
+         opNOT  = Iop_Not32;
+         opXOR  = Iop_Xor32;
+         opCMP  = Iop_CmpEQ32;
+         top    = mkU32(0xFFFFFFFF);
+         break;
+      default:
+         VG_(tool_panic)("expensiveCmpEQorNE");
+   }
+
+   naive 
+      = mkPCastTo(mce,ty, assignNew(mce, ty, binop(opUIFU, vxx, vyy)));
+
+   vec 
+      = assignNew(
+           mce,ty, 
+           binop( opUIFU,
+                  assignNew(mce,ty, binop(opUIFU, vxx, vyy)),
+                  assignNew(
+                     mce,ty, 
+                     unop( opNOT,
+                           assignNew(mce,ty, binop(opXOR, xx, yy))))));
+
+   vec_cmpd
+      = mkPCastTo( mce,ty, assignNew(mce,Ity_I1, binop(opCMP, vec, top)));
+
+   improved
+      = assignNew( mce,ty, binop(opDIFD, naive, vec_cmpd) );
+
+   final_cast
+      = mkPCastTo( mce, Ity_I1, improved );
+
+   return final_cast;
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Emit a test and complaint if something is undefined. ---*/
@@ -829,12 +909,14 @@ IRAtom* mkLazyN ( MCEnv* mce,
 /*------------------------------------------------------------*/
 
 static
-IRAtom* expensiveAdd32 ( MCEnv* mce, IRAtom* qaa, IRAtom* qbb, 
-                                     IRAtom* aa,  IRAtom* bb )
+IRAtom* expensiveAddSub ( MCEnv*  mce,
+                          Bool    add,
+                          IRType  ty,
+                          IRAtom* qaa, IRAtom* qbb, 
+                          IRAtom* aa,  IRAtom* bb )
 {
    IRAtom *a_min, *b_min, *a_max, *b_max;
-   IRType ty;
-   IROp   opAND, opOR, opXOR, opNOT, opADD;
+   IROp   opAND, opOR, opXOR, opNOT, opADD, opSUB;
 
    tl_assert(isShadowAtom(mce,qaa));
    tl_assert(isShadowAtom(mce,qbb));
@@ -843,12 +925,18 @@ IRAtom* expensiveAdd32 ( MCEnv* mce, IRAtom* qaa, IRAtom* qbb,
    tl_assert(sameKindedAtoms(qaa,aa));
    tl_assert(sameKindedAtoms(qbb,bb));
 
-   ty    = Ity_I32;
-   opAND = Iop_And32;
-   opOR  = Iop_Or32;
-   opXOR = Iop_Xor32;
-   opNOT = Iop_Not32;
-   opADD = Iop_Add32;
+   switch (ty) {
+      case Ity_I32:
+         opAND = Iop_And32;
+         opOR  = Iop_Or32;
+         opXOR = Iop_Xor32;
+         opNOT = Iop_Not32;
+         opADD = Iop_Add32;
+         opSUB = Iop_Sub32;
+         break;
+      default:
+         VG_(tool_panic)("expensiveAddSub");
+   }
 
    // a_min = aa & ~qaa
    a_min = assignNew(mce,ty, 
@@ -866,18 +954,36 @@ IRAtom* expensiveAdd32 ( MCEnv* mce, IRAtom* qaa, IRAtom* qbb,
    // b_max = bb | qbb
    b_max = assignNew(mce,ty, binop(opOR, bb, qbb));
 
-   // result = (qaa | qbb) | ((a_min + b_min) ^ (a_max + b_max))
-   return
-   assignNew(mce,ty,
-      binop( opOR,
-             assignNew(mce,ty, binop(opOR, qaa, qbb)),
-             assignNew(mce,ty, 
-                binop(opXOR, assignNew(mce,ty, binop(opADD, a_min, b_min)),
-                             assignNew(mce,ty, binop(opADD, a_max, b_max))
+   if (add) {
+      // result = (qaa | qbb) | ((a_min + b_min) ^ (a_max + b_max))
+      return
+      assignNew(mce,ty,
+         binop( opOR,
+                assignNew(mce,ty, binop(opOR, qaa, qbb)),
+                assignNew(mce,ty, 
+                   binop( opXOR, 
+                          assignNew(mce,ty, binop(opADD, a_min, b_min)),
+                          assignNew(mce,ty, binop(opADD, a_max, b_max))
+                   )
                 )
-             )
-      )
-   );
+         )
+      );
+   } else {
+      // result = (qaa | qbb) | ((a_min - b_max) ^ (a_max + b_min))
+      return
+      assignNew(mce,ty,
+         binop( opOR,
+                assignNew(mce,ty, binop(opOR, qaa, qbb)),
+                assignNew(mce,ty, 
+                   binop( opXOR, 
+                          assignNew(mce,ty, binop(opSUB, a_min, b_max)),
+                          assignNew(mce,ty, binop(opSUB, a_max, b_min))
+                   )
+                )
+         )
+      );
+   }
+
 }
 
 
@@ -1333,10 +1439,19 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       }
 
       case Iop_Add32:
-#        if 0
-         return expensiveAdd32(mce, vatom1,vatom2, atom1,atom2);
-#        endif
+         if (mce->bogusLiterals)
+            return expensiveAddSub(mce,True,Ity_I32, 
+                                   vatom1,vatom2, atom1,atom2);
+         else
+            goto cheap_AddSub32;
       case Iop_Sub32:
+         if (mce->bogusLiterals)
+            return expensiveAddSub(mce,False,Ity_I32, 
+                                   vatom1,vatom2, atom1,atom2);
+         else
+            goto cheap_AddSub32;
+
+      cheap_AddSub32:
       case Iop_Mul32:
          return mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
 
@@ -1349,9 +1464,16 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Add8:
          return mkLeft8(mce, mkUifU8(mce, vatom1,vatom2));
 
+      case Iop_CmpEQ32: 
+         if (mce->bogusLiterals)
+            return expensiveCmpEQorNE(mce,Ity_I32, vatom1,vatom2, atom1,atom2 );
+         else
+            goto cheap_cmp32;
+
+      cheap_cmp32:
       case Iop_CmpLE32S: case Iop_CmpLE32U: 
       case Iop_CmpLT32U: case Iop_CmpLT32S:
-      case Iop_CmpEQ32: case Iop_CmpNE32:
+      case Iop_CmpNE32:
          return mkPCastTo(mce, Ity_I1, mkUifU32(mce, vatom1,vatom2));
 
       case Iop_CmpEQ16: case Iop_CmpNE16:
@@ -2026,7 +2148,6 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
 /*--- Memcheck main                                        ---*/
 /*------------------------------------------------------------*/
 
-#if 0 /* UNUSED */
 static Bool isBogusAtom ( IRAtom* at )
 {
    ULong n = 0;
@@ -2037,23 +2158,28 @@ static Bool isBogusAtom ( IRAtom* at )
    tl_assert(at->tag == Iex_Const);
    con = at->Iex.Const.con;
    switch (con->tag) {
-      case Ico_U8:  n = (ULong)con->Ico.U8; break;
-      case Ico_U16: n = (ULong)con->Ico.U16; break;
-      case Ico_U32: n = (ULong)con->Ico.U32; break;
-      case Ico_U64: n = (ULong)con->Ico.U64; break;
+      case Ico_U1:   return False;
+      case Ico_U8:   n = (ULong)con->Ico.U8; break;
+      case Ico_U16:  n = (ULong)con->Ico.U16; break;
+      case Ico_U32:  n = (ULong)con->Ico.U32; break;
+      case Ico_U64:  n = (ULong)con->Ico.U64; break;
+      case Ico_F64:  return False;
+      case Ico_F64i: return False;
+      case Ico_V128: return False;
       default: ppIRExpr(at); tl_assert(0);
    }
    /* VG_(printf)("%llx\n", n); */
    return (n == 0xFEFEFEFF
-           || n == 0x80808080
-           || n == 0x1010101
-           || n == 1010100);
+           || n == 0x80808080 /*
+           || n == 0x01010101
+           || n == 0x01010100*/);
 }
 
 static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
 {
-   Int     i;
-   IRExpr* e;
+   Int      i;
+   IRExpr*  e;
+   IRDirty* d;
    switch (st->tag) {
       case Ist_Tmp:
          e = st->Ist.Tmp.data;
@@ -2061,8 +2187,12 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
             case Iex_Get:
             case Iex_Tmp:
                return False;
+            case Iex_Const:
+               return isBogusAtom(e);
             case Iex_Unop: 
                return isBogusAtom(e->Iex.Unop.arg);
+            case Iex_GetI:
+               return isBogusAtom(e->Iex.GetI.ix);
             case Iex_Binop: 
                return isBogusAtom(e->Iex.Binop.arg1)
                       || isBogusAtom(e->Iex.Binop.arg2);
@@ -2080,31 +2210,41 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
             default: 
                goto unhandled;
          }
+      case Ist_Dirty:
+         d = st->Ist.Dirty.details;
+         for (i = 0; d->args[i]; i++)
+            if (isBogusAtom(d->args[i]))
+               return True;
+         if (d->guard && isBogusAtom(d->guard))
+            return True;
+         if (d->mAddr && isBogusAtom(d->mAddr))
+            return True;
+         return False;
       case Ist_Put:
          return isBogusAtom(st->Ist.Put.data);
+      case Ist_PutI:
+         return isBogusAtom(st->Ist.PutI.ix) 
+                || isBogusAtom(st->Ist.PutI.data);
       case Ist_STle:
          return isBogusAtom(st->Ist.STle.addr) 
                 || isBogusAtom(st->Ist.STle.data);
       case Ist_Exit:
-         return isBogusAtom(st->Ist.Exit.cond);
+         return isBogusAtom(st->Ist.Exit.guard);
       default: 
       unhandled:
          ppIRStmt(st);
          VG_(tool_panic)("hasBogusLiterals");
    }
 }
-#endif /* UNUSED */
 
 
 IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
    Bool verboze = False; //True; 
 
-   /* Bool hasBogusLiterals = False; */
-
-   Int i, j, first_stmt;
+   Int     i, j, first_stmt;
    IRStmt* st;
-   MCEnv mce;
+   MCEnv   mce;
 
    /* Set up BB */
    IRBB* bb     = emptyIRBB();
@@ -2118,6 +2258,7 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
    mce.layout         = layout;
    mce.n_originalTmps = bb->tyenv->types_used;
    mce.hWordTy        = hWordTy;
+   mce.bogusLiterals  = False;
    mce.tmpMap         = LibVEX_Alloc(mce.n_originalTmps * sizeof(IRTemp));
    for (i = 0; i < mce.n_originalTmps; i++)
       mce.tmpMap[i] = IRTemp_INVALID;
@@ -2130,16 +2271,15 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
       tl_assert(isFlatIRStmt(st));
 
-      /*
-      if (!hasBogusLiterals) {
-         hasBogusLiterals = checkForBogusLiterals(st);
-         if (hasBogusLiterals) {
+      if (!mce.bogusLiterals) {
+         mce.bogusLiterals = checkForBogusLiterals(st);
+         if (0&& mce.bogusLiterals) {
             VG_(printf)("bogus: ");
             ppIRStmt(st);
             VG_(printf)("\n");
          }
       }
-      */
+
       first_stmt = bb->stmts_used;
 
       if (verboze) {
@@ -2176,8 +2316,7 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             break;
 
          case Ist_Exit:
-            /* if (!hasBogusLiterals) */
-               complainIfUndefined( &mce, st->Ist.Exit.guard );
+            complainIfUndefined( &mce, st->Ist.Exit.guard );
             break;
 
          case Ist_Dirty:

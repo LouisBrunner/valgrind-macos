@@ -1706,8 +1706,9 @@ void VG_(nuke_all_threads_except) ( ThreadId me )
       if (tid == me
           || VG_(threads)[tid].status == VgTs_Empty) 
          continue;
-      VG_(printf)(
-         "VG_(nuke_all_threads_except): nuking tid %d\n", tid);
+      if (0)
+         VG_(printf)(
+            "VG_(nuke_all_threads_except): nuking tid %d\n", tid);
       VG_(threads)[tid].status = VgTs_Empty;
       cleanup_after_thread_exited( tid );
    }
@@ -3042,6 +3043,11 @@ void do_nontrivial_clientreq ( ThreadId tid )
          do__get_key_destr_and_spec ( tid, 
                                       (pthread_key_t)arg[1],
                                       (CleanupEntry*)arg[2] );
+         break;
+
+      case VG_USERREQ__NUKE_OTHER_THREADS:
+         VG_(nuke_all_threads_except) ( tid );
+         SET_EDX(tid, 0);
          break;
 
       case VG_USERREQ__MAKE_NOACCESS:

@@ -897,28 +897,19 @@ void pthread_testcancel ( void )
 }
 
 
-/*-------------------*/
-/* If this is indeed used by LinuxThreads to implement thread nuking
-   post fork and pre exec, we should really nuke em, not do
-   pthread_cancel. */
-static pthread_mutex_t massacre_mx = PTHREAD_MUTEX_INITIALIZER;
-
+/* Not really sure what this is for.  I suspect for doing the POSIX
+   requirements for fork() and exec().  We do this internally anyway
+   whenever those syscalls are observed, so this could be superfluous,
+   but hey ... 
+*/
 void __pthread_kill_other_threads_np ( void )
 {
-   /* If we need this, implement it properly! */
-   vgPlain_unimp("__pthread_kill_other_threads_np");
-#if 0
-   int i, res, me;
-   __pthread_mutex_lock(&massacre_mx);
-   me = pthread_self();
-   for (i = 1; i < VG_N_THREADS; i++) {
-      if (i == me) continue;
-      res = pthread_cancel(i);
-      if (0 && res == 0)
-         printf("----------- NUKED %d\n", i);
-   }
-   __pthread_mutex_unlock(&massacre_mx);
-#endif
+   int res;
+   ensure_valgrind("__pthread_kill_other_threads_np");
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__NUKE_OTHER_THREADS,
+                           0, 0, 0, 0);
+   assert(res == 0);
 }
 
 

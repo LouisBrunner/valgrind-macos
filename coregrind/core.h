@@ -93,6 +93,8 @@ typedef struct _ThreadState ThreadState;
                            //   eg. x86-linux/core_platform.h
 #include "core_os.h"       // OS-specific stuff,    eg. linux/core_os.h
 
+#include "pub_core_stacktrace.h"  // for type 'StackTrace'
+
 #include "valgrind.h"
 
 #undef TL_
@@ -809,7 +811,7 @@ extern void VG_(core_assert_fail) ( const Char* expr, const Char* file,
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic)      ( Char* str );
 __attribute__ ((__noreturn__))
-extern void  VG_(core_panic_at)   ( Char* str, ExeContext *ec );
+extern void  VG_(core_panic_at)   ( Char* str, StackTrace ips );
 
 /* Tools use VG_(strdup)() which doesn't expose ArenaId */
 extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);
@@ -865,31 +867,6 @@ Bool VG_(translate) ( ThreadId tid,
                       Addr64   orig_addr,
                       Bool     debugging_translation,
                       Int      debugging_verbosity );
-
-/* ---------------------------------------------------------------------
-   Exports of vg_execontext.c.
-   ------------------------------------------------------------------ */
-
-/* Records the PC and a bit of the call chain.  The first 4 IP
-   values are used in comparisons do remove duplicate errors, and for
-   comparing against suppression specifications.  The rest are purely
-   informational (but often important). */
-
-struct _ExeContext {
-   struct _ExeContext * next;
-   /* Variable-length array.  The size is VG_(clo_backtrace_size); at
-      least 1, at most VG_DEEPEST_BACKTRACE.  [0] is the current IP,
-      [1] is its caller, [2] is the caller of [1], etc. */
-   Addr ips[0];
-};
-
-
-/* Print stats (informational only). */
-extern void VG_(print_ExeContext_stats) ( void );
-
-/* Like VG_(get_ExeContext), but with a slightly different type */
-extern ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
-                                          Addr fp_min, Addr fp_max );
 
 /* ---------------------------------------------------------------------
    Exports of vg_errcontext.c.

@@ -141,7 +141,7 @@ void add_MAC_Chunk ( ThreadId tid,
    mc->data      = p;
    mc->size      = size;
    mc->allockind = kind;
-   mc->where     = VG_(get_ExeContext)(tid);
+   mc->where     = VG_(record_ExeContext)(tid);
 
    /* Paranoia ... ensure this area is off-limits to the client, so
       the mc->data field isn't visible to the leak checker.  If memory
@@ -290,7 +290,7 @@ void die_and_free_mem ( ThreadId tid,
    /* Put it out of harm's way for a while, if not from a client request */
    if (MAC_AllocCustom != mc->allockind) {
       /* Record where freed */
-      mc->where = VG_(get_ExeContext) ( tid );
+      mc->where = VG_(record_ExeContext) ( tid );
       add_to_freed_queue ( mc );
    } else
       VG_(free) ( mc );
@@ -376,7 +376,7 @@ void* TL_(realloc) ( ThreadId tid, void* p, SizeT new_size )
 
    if (mc->size == new_size) {
       /* size unchanged */
-      mc->where = VG_(get_ExeContext)(tid);
+      mc->where = VG_(record_ExeContext)(tid);
       VGP_POPCC(VgpCliMalloc);
       return p;
       
@@ -384,7 +384,7 @@ void* TL_(realloc) ( ThreadId tid, void* p, SizeT new_size )
       /* new size is smaller */
       MAC_(die_mem_heap)( mc->data+new_size, mc->size-new_size );
       mc->size = new_size;
-      mc->where = VG_(get_ExeContext)(tid);
+      mc->where = VG_(record_ExeContext)(tid);
       VGP_POPCC(VgpCliMalloc);
       return p;
 

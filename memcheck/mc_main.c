@@ -1808,7 +1808,7 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
 	    vg_cgbs[i].start = arg[1];
 	    vg_cgbs[i].size  = arg[2];
 	    vg_cgbs[i].desc  = VG_(strdup)((Char *)arg[3]);
-	    vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
+	    vg_cgbs[i].where = VG_(record_ExeContext) ( tid );
 
 	    *ret = i;
 	 } else

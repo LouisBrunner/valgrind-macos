@@ -1571,7 +1571,7 @@ static void set_mutex_state(Mutex *mutex, MutexState state, ThreadId tid)
       break;
    }
 
-   mutex->location = VG_(get_ExeContext)(tid);
+   mutex->location = VG_(record_ExeContext)(tid);
    mutex->state = state;
 }
 
@@ -1818,7 +1818,7 @@ static void add_HG_Chunk ( ThreadId tid, Addr p, SizeT size )
    hc            = VG_(malloc)(sizeof(HG_Chunk));
    hc->data      = p;
    hc->size      = size;
-   hc->where     = VG_(get_ExeContext)(tid);
+   hc->where     = VG_(record_ExeContext)(tid);
    hc->tid       = tid;
 
    VG_(HT_add_node)( hg_malloc_list, (VgHashNode*)hc );
@@ -1894,7 +1894,7 @@ void die_and_free_mem ( ThreadId tid, HG_Chunk* hc,
    *prev_chunks_next_ptr = hc->next;
 
    /* Record where freed */
-   hc->where = VG_(get_ExeContext) ( tid );
+   hc->where = VG_(record_ExeContext) ( tid );
 
    /* maintain a small window so that the error reporting machinery
       knows about this memory */
@@ -1961,13 +1961,13 @@ void* TL_(realloc) ( ThreadId tid, void* p, SizeT new_size )
   
    if (hc->size == new_size) {
       /* size unchanged */
-      hc->where = VG_(get_ExeContext)(tid);
+      hc->where = VG_(record_ExeContext)(tid);
       return p;
       
    } else if (hc->size > new_size) {
       /* new size is smaller */
       hc->size = new_size;
-      hc->where = VG_(get_ExeContext)(tid);
+      hc->where = VG_(record_ExeContext)(tid);
       return p;
 
    } else {
@@ -3035,7 +3035,7 @@ static void eraser_mem_read_word(Addr a, ThreadId tid)
       if (clo_execontext == EC_Some)
 	 ecip = IP(VG_(get_IP)(tid), prevstate, tls);
       else
-	 ecip = EC(VG_(get_ExeContext)(tid), prevstate, tls);
+	 ecip = EC(VG_(record_ExeContext)(tid), prevstate, tls);
       setExeContext(a, ecip);
    }
 }
@@ -3140,7 +3140,7 @@ static void eraser_mem_write_word(Addr a, ThreadId tid)
       if (clo_execontext == EC_Some)
 	 ecip = IP(VG_(get_IP)(tid), prevstate, tls);
       else
-	 ecip = EC(VG_(get_ExeContext)(tid), prevstate, tls);
+	 ecip = EC(VG_(record_ExeContext)(tid), prevstate, tls);
       setExeContext(a, ecip);
    }
 }

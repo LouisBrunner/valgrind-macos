@@ -1373,8 +1373,7 @@ static void vg_default_action(const vki_siginfo_t *info, ThreadId tid)
       }
 
       if (tid != VG_INVALID_THREADID) {
-	 ExeContext *ec = VG_(get_ExeContext)(tid);
-	 VG_(pp_ExeContext)(ec);
+         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
       }
    }
 
@@ -1879,6 +1878,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
       from the client's code, then we can jump back into the scheduler
       and have it delivered.  Otherwise it's a Valgrind bug. */
    {   
+      Addr ips[ VG_(clo_backtrace_size) ];
       Addr context_ip;
       Char buf[1024];
       ThreadState *tst = VG_(get_ThreadState)(VG_(get_lwp_tid)(VG_(gettid)()));
@@ -1936,11 +1936,12 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
       if (tid == 0)            /* could happen after everyone has exited */
         tid = VG_(master_tid);
       tst = VG_(get_ThreadState)(tid);
-      VG_(core_panic_at)("Killed by fatal signal",
-                         VG_(get_ExeContext2)(UCONTEXT_INSTR_PTR(uc),
-                                              UCONTEXT_FRAME_PTR(uc),
-                                              UCONTEXT_STACK_PTR(uc),
-                                              (Addr)(tst->os_state.stack + tst->os_state.stacksize)));
+      VG_(get_StackTrace2)(ips, VG_(clo_backtrace_size), 
+                           UCONTEXT_INSTR_PTR(uc),
+                           UCONTEXT_FRAME_PTR(uc),
+                           UCONTEXT_STACK_PTR(uc),
+                           (Addr)(tst->os_state.stack + tst->os_state.stacksize));
+      VG_(core_panic_at)("Killed by fatal signal", ips);
    }
 }
 

@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_stacktrace.h"
 
 /* All system calls are channelled through here, doing two things:
 
@@ -134,8 +135,7 @@ Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
 		   syscallname, start, end);
 
       if (VG_(clo_verbosity) > 1) {
-	 ExeContext *ec = VG_(get_ExeContext)(tid);
-	 VG_(pp_ExeContext)(ec);
+         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
       }
    }
 
@@ -479,7 +479,7 @@ void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname)
 
    i->fd = fd;
    i->pathname = pathname;
-   i->where = (tid == -1) ? NULL : VG_(get_ExeContext)(tid);
+   i->where = (tid == -1) ? NULL : VG_(record_ExeContext)(tid);
 }
 
 static
@@ -954,8 +954,7 @@ Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 	 VG_(message)(Vg_UserMsg, 
             "   Use --log-fd=<number> to select an alternative log fd.");
       if (VG_(clo_verbosity) > 1) {
-	 ExeContext *ec = VG_(get_ExeContext)(tid);
-	 VG_(pp_ExeContext)(ec);
+         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
       }
       return False;
    }
@@ -5907,8 +5906,7 @@ static void bad_before(ThreadId tid, ThreadState *tst)
    VG_(message)
       (Vg_DebugMsg,"WARNING: unhandled syscall: %u", (UInt)SYSNO);
    if (VG_(clo_verbosity) > 1) {
-      ExeContext *ec = VG_(get_ExeContext)(tid);
-      VG_(pp_ExeContext)(ec);
+      VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
    }
    VG_(message)
       (Vg_DebugMsg,"Do not panic.  You may be able to fix this easily.");

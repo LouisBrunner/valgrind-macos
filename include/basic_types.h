@@ -32,7 +32,7 @@
 #define __BASIC_TYPES_H
 
 /* ---------------------------------------------------------------------
-   Basic types
+   builtin types
    ------------------------------------------------------------------ */
 
 #include "libvex_basictypes.h"
@@ -57,6 +57,14 @@ typedef  Word                 SSizeT;     // 32             64
 
 typedef  Word                   OffT;     // 32             64
 
+/* ---------------------------------------------------------------------
+   non-builtin types
+   ------------------------------------------------------------------ */
+
+/* ThreadIds are simply indices into the VG_(threads)[] array. */
+typedef
+   UInt
+   ThreadId;
 
 /* ---------------------------------------------------------------------
    Where to send bug reports to.

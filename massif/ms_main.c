@@ -35,6 +35,7 @@
 // structures below for more info on how things work.
 
 #include "tool.h"
+#include "pub_tool_stacktrace.h"
 //#include "vg_profile.c"
 
 #include "valgrind.h"           // For {MALLOC,FREE}LIKE_BLOCK
@@ -90,7 +91,7 @@
 typedef struct _XPt XPt;
 
 struct _XPt {
-   Addr  eip;              // code address
+   Addr  ip;              // code address
 
    // Bottom-XPts: space for the precise context.
    // Other XPts:  space of all the descendent bottom-XPts.
@@ -362,10 +363,10 @@ static void* perm_malloc(SizeT n_bytes)
 
 
 
-static XPt* new_XPt(Addr eip, XPt* parent, Bool is_bottom)
+static XPt* new_XPt(Addr ip, XPt* parent, Bool is_bottom)
 {
    XPt* xpt          = perm_malloc(sizeof(XPt));
-   xpt->eip          = eip;
+   xpt->ip           = ip;
 
    xpt->curr_space    = 0;
    xpt->approx_ST     = 0;
@@ -396,11 +397,11 @@ static XPt* new_XPt(Addr eip, XPt* parent, Bool is_bottom)
    return xpt;
 }
 
-static Bool is_alloc_fn(Addr eip)
+static Bool is_alloc_fn(Addr ip)
 {
    Int i;
 
-   if ( VG_(get_fnname)(eip, buf, BUF_LEN) ) {
+   if ( VG_(get_fnname)(ip, buf, BUF_LEN) ) {
       for (i = 0; i < n_alloc_fns; i++) {
          if (VG_STREQ(buf, alloc_fns[i]))
             return True;
@@ -414,11 +415,11 @@ static Bool is_alloc_fn(Addr eip)
 // to ensure this in certain cases.  See comments below.
 static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
 {
-   // Static to minimise stack size.  +1 for added ~0 %eip.
-   static Addr eips[MAX_DEPTH + MAX_ALLOC_FNS + 1];
+   // Static to minimise stack size.  +1 for added ~0 IP
+   static Addr ips[MAX_DEPTH + MAX_ALLOC_FNS + 1];
 
    XPt* xpt = alloc_xpt;
-   UInt n_eips, L, A, B, nC;
+   UInt n_ips, L, A, B, nC;
    UInt overestimate;
    Bool reached_bottom;
 
@@ -431,25 +432,25 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
    // it is enough.
    overestimate = 2;
    while (True) {
-      n_eips = VG_(stack_snapshot)( tid, eips, clo_depth + overestimate );
+      n_ips = VG_(get_StackTrace)( tid, ips, clo_depth + overestimate );
 
-      // Now we add a dummy "unknown" %eip at the end.  This is only used if we
-      // run out of %eips before hitting clo_depth.  It's done to ensure the
+      // Now we add a dummy "unknown" IP at the end.  This is only used if we
+      // run out of IPs before hitting clo_depth.  It's done to ensure the
       // XPt we return is (now and forever) a bottom-XPt.  If the returned XPt
       // wasn't a bottom-XPt (now or later) it would cause problems later (eg.
       // the parent's approx_ST wouldn't be equal [or almost equal] to the
       // total of the childrens' approx_STs).  
-      eips[ n_eips++ ] = ~((Addr)0);
+      ips[ n_ips++ ] = ~((Addr)0);
 
-      // Skip over alloc functions in eips[]. 
-      for (L = 0; is_alloc_fn(eips[L]) && L < n_eips; L++) { }
+      // Skip over alloc functions in ips[]. 
+      for (L = 0; is_alloc_fn(ips[L]) && L < n_ips; L++) { }
 
       // Must be at least one alloc function, unless client used
       // MALLOCLIKE_BLOCK
       if (!custom_malloc) tl_assert(L > 0);    
 
       // Should be at least one non-alloc function.  If not, try again.
-      if (L == n_eips) {
+      if (L == n_ips) {
          overestimate += 2;
          if (overestimate > MAX_ALLOC_FNS)
             VG_(tool_panic)("No stk snapshot big enough to find non-alloc fns");
@@ -458,15 +459,15 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
       }
    }
    A = L;
-   B = n_eips - 1;
+   B = n_ips - 1;
    reached_bottom = False;
 
-   // By this point, the eips we care about are in eips[A]..eips[B]
+   // By this point, the IPs we care about are in ips[A]..ips[B]
 
    // Now do the search/insertion of the XCon. 'L' is the loop counter,
-   // being the index into eips[].
+   // being the index into ips[].
    while (True) {
-      // Look for %eip in xpt's children.
+      // Look for IP in xpt's children.
       // XXX: linear search, ugh -- about 10% of time for konqueror startup
       // XXX: tried cacheing last result, only hit about 4% for konqueror
       // Nb:  this search hits about 98% of the time for konqueror
@@ -490,12 +491,12 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
                                              xpt->max_children * sizeof(XPt*) );
                n_children_reallocs++;
             }
-            // Make new XPt for %eip, insert in list
+            // Make new XPt for IP, insert in list
             xpt->children[ xpt->n_children++ ] = 
-               new_XPt(eips[L], xpt, reached_bottom);
+               new_XPt(ips[L], xpt, reached_bottom);
             break;
          }
-         if (eips[L] == xpt->children[nC]->eip) break;   // found the %eip
+         if (ips[L] == xpt->children[nC]->ip) break;   // found the IP
          nC++;                                           // keep looking
       }
       VGP_POPCC(VgpGetXPtSearch);
@@ -1430,10 +1431,10 @@ static void write_hp_file(void)
          for (j = 0; NULL != census->xtree_snapshots[j]; j++) {
             // Grab the jth top-XPt
             XTreeSnapshot xtree_snapshot = & census->xtree_snapshots[j][0];
-            if ( ! VG_(get_fnname)(xtree_snapshot->xpt->eip, buf2, 16)) {
+            if ( ! VG_(get_fnname)(xtree_snapshot->xpt->ip, buf2, 16)) {
                VG_(sprintf)(buf2, "???");
             }
-            SPRINTF(buf, "x%x:%s %d\n", xtree_snapshot->xpt->eip,
+            SPRINTF(buf, "x%x:%s %d\n", xtree_snapshot->xpt->ip,
                          clean_fnname(buf3, buf2), xtree_snapshot->space);
          }
 
@@ -1512,11 +1513,11 @@ static Char* make_perc(ULong spacetime, ULong total_spacetime)
    return mbuf;
 }
 
-// Nb: passed in XPt is a lower-level XPt;  %eips are grabbed from
+// Nb: passed in XPt is a lower-level XPt;  IPs are grabbed from
 // bottom-to-top of XCon, and then printed in the reverse order.
 static UInt pp_XCon(Int fd, XPt* xpt)
 {
-   Addr  rev_eips[clo_depth+1];
+   Addr  rev_ips[clo_depth+1];
    Int   i = 0;
    Int   n = 0;
    Bool  is_HTML      = ( XHTML == clo_format );
@@ -1526,7 +1527,7 @@ static UInt pp_XCon(Int fd, XPt* xpt)
    tl_assert(NULL != xpt);
 
    while (True) {
-      rev_eips[i] = xpt->eip;
+      rev_ips[i] = xpt->ip;
       n++;
       if (alloc_xpt == xpt->parent) break;
       i++;
@@ -1535,7 +1536,7 @@ static UInt pp_XCon(Int fd, XPt* xpt)
 
    for (i = n-1; i >= 0; i--) {
       // -1 means point to calling line
-      VG_(describe_eip)(rev_eips[i]-1, buf2, BUF_LEN);
+      VG_(describe_IP)(rev_ips[i]-1, buf2, BUF_LEN);
       SPRINTF(buf, "  %s%s%s\n", maybe_indent, buf2, maybe_br);
    }
 
@@ -1543,7 +1544,7 @@ static UInt pp_XCon(Int fd, XPt* xpt)
 }
 
 // Important point:  for HTML, each XPt must be identified uniquely for the
-// HTML links to all match up correctly.  Using xpt->eip is not
+// HTML links to all match up correctly.  Using xpt->ip is not
 // sufficient, because function pointers mean that you can call more than
 // one other function from a single code location.  So instead we use the
 // address of the xpt struct itself, which is guaranteed to be unique.
@@ -1558,7 +1559,7 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
    UInt  c2  = 0;
    ULong sum = 0;
    UInt  n;
-   Char *eip_desc, *perc;
+   Char *ip_desc, *perc;
    Bool  is_HTML   = ( XHTML == clo_format );
    Char* maybe_br  = ( is_HTML ?  "<br>" : "" );
    Char* maybe_p   = ( is_HTML ?   "<p>" : "" );
@@ -1642,8 +1643,8 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
          }
 
          // Remember: exact_ST_dbld is space.time *doubled*
-         perc     = make_perc(child->exact_ST_dbld / 2, total_spacetime);
-         eip_desc = VG_(describe_eip)(child->eip-1, buf2, BUF_LEN);
+         perc    = make_perc(child->exact_ST_dbld / 2, total_spacetime);
+         ip_desc = VG_(describe_IP)(child->ip-1, buf2, BUF_LEN);
          if (is_HTML) {
             SPRINTF(buf, "<li><a name=\"a%x\"></a>", child );
 
@@ -1652,9 +1653,9 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
             } else {
                SPRINTF(buf, "%s", perc);
             }
-            SPRINTF(buf, ": %s\n", eip_desc);
+            SPRINTF(buf, ": %s\n", ip_desc);
          } else {
-            SPRINTF(buf, "  %6s: %s\n\n", perc, eip_desc);
+            SPRINTF(buf, "  %6s: %s\n\n", perc, ip_desc);
          }
 
          if (child->n_children > 0) {

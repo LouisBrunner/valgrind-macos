@@ -31,6 +31,7 @@
 */
 
 #include "core.h"
+#include "pub_core_stacktrace.h"
 
 /* ---------------------------------------------------------------------
    Wrappers around system calls, and other stuff, to do with signals.
@@ -1128,9 +1129,9 @@ Bool VG_(string_match) ( const Char* pat, const Char* str )
    into the signal handler.  Also, it could be somewhat risky if we
    actully got the panic/exception within the execontext/stack
    dump/symtab code.  But it's better than nothing. */
-static inline ExeContext *get_real_execontext(Addr ret)
+static inline void get_and_pp_real_StackTrace(Addr ret)
 {
-   ExeContext *ec;
+   Addr ips[VG_DEEPEST_BACKTRACE];
    Addr sp, fp;
    Addr stacktop;
    ThreadId tid = VG_(get_lwp_tid)(VG_(gettid)());
@@ -1141,18 +1142,18 @@ static inline ExeContext *get_real_execontext(Addr ret)
 
    stacktop = (Addr)(tst->os_state.stack + tst->os_state.stacksize);
 
-   ec = VG_(get_ExeContext2)(ret, fp, sp, stacktop);
-
-   return ec;
+   VG_(get_StackTrace2)(ips, VG_(clo_backtrace_size),
+                        ret, fp, sp, stacktop);
+   VG_(pp_StackTrace)  (ips, VG_(clo_backtrace_size));
 }
 
 __attribute__ ((noreturn))
-static void report_and_quit ( const Char* report, ExeContext *ec )
+static void report_and_quit ( const Char* report, StackTrace ips )
 {
-   if (ec == NULL)
-      ec = get_real_execontext((Addr)__builtin_return_address(0));
-
-   VG_(pp_ExeContext)(ec);
+   if (ips == NULL)
+      get_and_pp_real_StackTrace((Addr)__builtin_return_address(0));
+   else
+      VG_(pp_StackTrace)(ips, VG_(clo_backtrace_size));
    
    VG_(pp_sched_status)();
    VG_(printf)("\n");
@@ -1191,11 +1192,11 @@ void VG_(core_assert_fail) ( const Char* expr, const Char* file, Int line, const
 }
 
 __attribute__ ((noreturn))
-static void panic ( Char* name, Char* report, Char* str, ExeContext *ec )
+static void panic ( Char* name, Char* report, Char* str, StackTrace ips )
 {
    VG_(printf)("\n%s: the `impossible' happened:\n   %s\n", name, str);
    VG_(printf)("Basic block ctr is approximately %llu\n", VG_(bbs_done) );
-   report_and_quit(report, ec);
+   report_and_quit(report, ips);
 }
 
 void VG_(core_panic) ( Char* str )
@@ -1203,9 +1204,9 @@ void VG_(core_panic) ( Char* str )
    panic("valgrind", VG_BUGS_TO, str, NULL);
 }
 
-void VG_(core_panic_at) ( Char* str, ExeContext *ec )
+void VG_(core_panic_at) ( Char* str, StackTrace ips )
 {
-   panic("valgrind", VG_BUGS_TO, str, ec);
+   panic("valgrind", VG_BUGS_TO, str, ips);
 }
 
 void VG_(tool_panic) ( Char* str )

@@ -2170,7 +2170,7 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
 #endif /* TEST */
 
 /* Print into buf info on code address, function name and filename */
-Char* VG_(describe_eip)(Addr eip, Char* buf, Int n_buf)
+Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
 {
 #define APPEND(str)                                         \
    { UChar* sss;                                            \

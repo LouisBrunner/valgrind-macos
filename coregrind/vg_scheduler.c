@@ -60,6 +60,8 @@
                              VG_USERREQ__DISCARD_TRANSLATIONS, and others */
 #include "core.h"
 
+#include "pub_core_stacktrace.h"
+
 
 /* ---------------------------------------------------------------------
    Types and globals for the scheduler.
@@ -168,7 +170,7 @@ void VG_(pp_sched_status) ( void )
    for (i = 1; i < VG_N_THREADS; i++) {
       if (VG_(threads)[i].status == VgTs_Empty) continue;
       VG_(printf)("\nThread %d: status = %s\n", i, name_of_thread_state(VG_(threads)[i].status));
-      VG_(pp_ExeContext)( VG_(get_ExeContext)( i ) );
+      VG_(get_and_pp_StackTrace)( i, VG_(clo_backtrace_size) );
    }
    VG_(printf)("\n");
 }
@@ -844,7 +846,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
             VG_(message)( Vg_UserMsg,
                           "Emulation warning: unsupported action:");
             VG_(message)( Vg_UserMsg, "  %s", what);
-            VG_(pp_ExeContext) (  VG_(get_ExeContext) ( tid ) );
+            VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
          }
          break;
       }
@@ -1047,10 +1049,9 @@ void do_client_request ( ThreadId tid )
          break; }
 
       case VG_USERREQ__PRINTF_BACKTRACE: {
-         ExeContext *e = VG_(get_ExeContext)( tid );
          int count =
             VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
-            VG_(pp_ExeContext)(e);
+            VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
             SET_CLREQ_RETVAL( tid, count );
          break; }
 

@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "pub_core_execontext.h"
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
@@ -326,7 +327,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    err->count    = 1;
    err->tid      = tid;
    if (NULL == where)
-      err->where = VG_(get_ExeContext)( tid );
+      err->where = VG_(record_ExeContext)( tid );
    else
       err->where = where;
 
@@ -381,7 +382,7 @@ static void gen_suppression(Error* err)
    }
 
    // Print stack trace elements
-   VG_(apply_ExeContext)(printSuppForIp, ec, stop_at);
+   VG_(apply_StackTrace)(printSuppForIp, VG_(extract_StackTrace)(ec), stop_at);
 
    VG_(printf)("}\n");
 }
@@ -675,9 +676,9 @@ void VG_(show_all_errors) ( void )
       pp_Error( p_min, False );
 
       if ((i+1 == VG_(clo_dump_error))) {
+         StackTrace ips = VG_(extract_StackTrace)(p_min->where);
          VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to debugging*/,
-                          p_min->where->ips[0], /*debugging*/True, 
-                          0xFE/*verbosity*/);
+                          ips[0], /*debugging*/True, 0xFE/*verbosity*/);
       }
 
       p_min->count = 1 << 30;
@@ -982,9 +983,10 @@ Bool supp_matches_callers(Error* err, Supp* su)
 {
    Int i;
    Char caller_name[M_VG_ERRTXT];
+   StackTrace ips = VG_(extract_StackTrace)(err->where);
 
    for (i = 0; i < su->n_callers; i++) {
-      Addr a = err->where->ips[i];
+      Addr a = ips[i];
       vg_assert(su->callers[i].name != NULL);
       switch (su->callers[i].ty) {
          case ObjName: 

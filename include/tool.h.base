@@ -1,6 +1,5 @@
 /*-*- c -*- ----------------------------------------------------------*/
-/*--- The only header your tool will ever need to #include...      ---*/
-/*---                                                       tool.h ---*/
+/*--- Header for lots of tool stuff.                        tool.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -37,6 +36,8 @@
 #include "tool_asm.h"           /* asm stuff */
 #include "tool_arch.h"          /* arch-specific tool stuff */
 #include "vki.h"
+
+#include "pub_tool_execontext.h"    // needed for type 'ExeContext'
 
 #include "libvex.h"
 #include "libvex_ir.h"
@@ -281,11 +282,6 @@ extern ULong VG_(bbs_done);
    LinuxThreads using zero as the initial value for
    pthread_mutex_t.__m_owner and pthread_cond_t.__c_waiting. */
 #define VG_INVALID_THREADID ((ThreadId)(0))
-
-/* ThreadIds are simply indices into the VG_(threads)[] array. */
-typedef
-   UInt
-   ThreadId;
 
 /* Get the TID of the thread which currently has the CPU. */
 extern ThreadId VG_(get_running_tid) ( void );
@@ -571,53 +567,6 @@ extern void VG_(cpuid) ( UInt eax,
                          UInt *ecx_ret, UInt *edx_ret );
 
 /*====================================================================*/
-/*=== Execution contexts                                           ===*/
-/*====================================================================*/
-
-/* Generic resolution type used in a few different ways, such as deciding
-   how closely to compare two errors for equality. */
-typedef
-   enum { Vg_LowRes, Vg_MedRes, Vg_HighRes }
-   VgRes;
-
-typedef
-   struct _ExeContext
-   ExeContext;
-
-/* Compare two ExeContexts.  Number of callers considered depends on `res':
-     Vg_LowRes:  2
-     Vg_MedRes:  4
-     Vg_HighRes: all */
-extern Bool VG_(eq_ExeContext) ( VgRes res,
-                                 ExeContext* e1, ExeContext* e2 );
-
-/* Print an ExeContext. */
-extern void VG_(pp_ExeContext) ( ExeContext* );
-
-/* Take a snapshot of the client's stack.  Search our collection of
-   ExeContexts to see if we already have it, and if not, allocate a
-   new one.  Either way, return a pointer to the context.  Context size
-   controlled by --num-callers option.
-
-   If called from generated code, use VG_(get_VCPU_tid)() to get the
-   current ThreadId.  If called from non-generated code, the current
-   ThreadId should be passed in by the core.
-*/
-extern ExeContext* VG_(get_ExeContext) ( ThreadId tid );
-
-/* Apply a function to every element in the ExeContext.  The parameter 'n'
-   gives the index of the passed ip.  Doesn't go below main() unless
-   --show-below-main=yes is set. */
-extern void VG_(apply_ExeContext)( void(*action)(UInt n, Addr ip),
-                                   ExeContext* ec, UInt n_ips );
-
-/* For tools needing more control over stack traces:  walks the stack to get
-   instruction pointers from the top stack frames for thread 'tid'.  Maximum of
-   'n_ips' addresses put into 'ips';  0 is the top of the stack, 1 is its
-   caller, etc. */
-extern UInt VG_(stack_snapshot) ( ThreadId tid, Addr* ips, UInt n_ips );
-
-/*====================================================================*/
 /*=== Error reporting                                              ===*/
 /*====================================================================*/
 
@@ -686,7 +635,7 @@ void*       VG_(get_error_extra)   ( Error* err );
    seen before.  If it has, the existing error record will have its count
    incremented.
 
-   'tid' can be found as for VG_(get_ExeContext)().  The `extra' field can
+   'tid' can be found as for VG_(record_ExeContext)().  The `extra' field can
    be stack-allocated;  it will be copied by the core if needed (but it
    won't be copied if it's NULL).
 
@@ -755,7 +704,7 @@ extern Bool VG_(get_objname)  ( Addr a, Char* objname,  Int n_objname  );
 
    'n_buf' gives length of 'buf'.  Returns 'buf'.
 */
-extern Char* VG_(describe_eip)(Addr eip, Char* buf, Int n_buf);
+extern Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf);
 
 /* Returns a string containing an expression for the given
    address. String is malloced with VG_(malloc)() */

@@ -180,7 +180,7 @@
 //::    if (th->state == state)
 //::       return;
 //:: 
-//::    ec = VG_(get_ExeContext)(th->tid);
+//::    ec = VG_(record_ExeContext)(th->tid);
 //:: 
 //::    switch(state) {
 //::    case TS_Alive:
@@ -607,7 +607,7 @@
 //:: 
 //:: static void mutex_setstate(ThreadId tid, struct mutex *mx, enum mutex_state st)
 //:: {
-//::    ExeContext *ec = VG_(get_ExeContext)(tid);
+//::    ExeContext *ec = VG_(record_ExeContext)(tid);
 //:: 
 //::    switch(st) {
 //::    case MX_Init:

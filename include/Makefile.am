@@ -10,9 +10,11 @@ EXTRA_DIST = \
 incincdir = $(includedir)/valgrind
 
 incinc_HEADERS = \
-	basic_types.h \
-	tool.h \
-	tool_asm.h \
+	basic_types.h 		\
+	tool.h 			\
+	tool_asm.h 		\
+	pub_tool_stacktrace.h 	\
+	pub_tool_execontext.h 	\
 	valgrind.h
 
 BUILT_SOURCES = tool.h valgrind.h

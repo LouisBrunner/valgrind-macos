@@ -79,7 +79,7 @@ typedef
 /*--- Output file related stuff                            ---*/
 /*------------------------------------------------------------*/
 
-Char cachegrind_out_file[FILENAME_LEN];
+static Char cachegrind_out_file[FILENAME_LEN];
 
 static void file_err ( void )
 {

@@ -913,6 +913,7 @@ void free_LockSet(LockSet *p)
    VG_(free)(p);
 }
 
+static
 void pp_all_LockSets ( void )
 {
    Int i;
@@ -1804,7 +1805,7 @@ void init_shadow_memory(void)
 /*--- malloc() et al replacements                          ---*/
 /*------------------------------------------------------------*/
 
-VgHashTable hg_malloc_list = NULL;
+static VgHashTable hg_malloc_list = NULL;
 
 #define N_FREED_CHUNKS	2
 static Int freechunkptr = 0;

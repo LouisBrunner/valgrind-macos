@@ -247,6 +247,7 @@ void VG_(gen_suppression)(Error* err)
    VG_(printf)("}\n");
 }
 
+static 
 void do_actions_on_error(Error* err, Bool allow_GDB_attach,
                          Addr m_eip, Addr m_esp, Addr m_ebp )
 {

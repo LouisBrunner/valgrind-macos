@@ -704,14 +704,14 @@ M  89   fpu_write 10/28/108
 
 UInt MAC_(event_ctr)[N_PROF_EVENTS];
 
-void init_prof_mem ( void )
+static void init_prof_mem ( void )
 {
    Int i;
    for (i = 0; i < N_PROF_EVENTS; i++)
       MAC_(event_ctr)[i] = 0;
 }
 
-void done_prof_mem ( void )
+static void done_prof_mem ( void )
 {
    Int i;
    for (i = 0; i < N_PROF_EVENTS; i++) {
@@ -725,8 +725,8 @@ void done_prof_mem ( void )
 
 #else
 
-void init_prof_mem ( void ) { }
-void done_prof_mem ( void ) { }
+static void init_prof_mem ( void ) { }
+static void done_prof_mem ( void ) { }
 
 #endif
 

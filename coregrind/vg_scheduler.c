@@ -2903,6 +2903,7 @@ void do_pthread_key_delete ( ThreadId tid, pthread_key_t key )
    }
 
    vg_thread_keys[key].inuse = False;
+   vg_thread_keys[key].destructor = NULL;
    SET_EDX(tid, 0);
 }
 

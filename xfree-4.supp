@@ -119,10 +119,10 @@
    struct with uninitialized paddings
    Memcheck:Param
    writev(vector[...])
-   fun:vgAllRoadsLeadToRome_writev
-   fun:__writev
+   fun:*_writev
    fun:_X11TransSocketWritev
    fun:_X11TransWritev
+   fun:*
 }
 
 {
@@ -135,6 +135,53 @@
    fun:_IceWrite
 }
 
+{
+   Xorg 6.8.1 uninit _write* padding
+   Memcheck:Param
+   write(buf)
+   fun:*
+   fun:_X11TransWrite
+   obj:/usr/X11R6/lib/libX11.so.6.2
+}
+
+{
+   Xorg 6.8.1 uninit write padding
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_X11TransWrite
+   obj:/usr/X11R6/lib/libX11.so.6.2
+}
+
+{
+   Xorg 6.8.1 ICE uninit __write* padding
+   Memcheck:Param
+   write(buf)
+   fun:__write*
+   fun:_IceTransWrite
+   fun:_IceWrite
+   fun:IceFlush
+}
+
+{
+   Xorg 6.8.1 ICE uninit write padding
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_IceTransWrite
+   fun:_IceWrite
+   fun:IceFlush
+}
+
+{
+   Xorg 6.8.1 writev uninit padding
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   obj:/usr/X11R6/lib/libX11.so.6.2
+   fun:_X11TransWritev
+   fun:_XSend
+}
 
 ##----------------------------------------------------------------------##
 

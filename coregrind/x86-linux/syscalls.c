@@ -280,9 +280,11 @@ static Int start_thread(void *arg)
       Empty and exiting.  Hence the assembler. */
    asm volatile (
       "movl	%1, %0\n"	/* set tst->status = VgTs_Empty */
+      "movl	%2, %%eax\n"    /* set %eax = __NR_exit */
+      "movl	%3, %%ebx\n"    /* set %ebx = tst->os_state.exitcode */
       "int	$0x80\n"	/* exit(tst->os_state.exitcode) */
       : "=m" (tst->status)
-      : "n" (VgTs_Empty), "a" (__NR_exit), "b" (tst->os_state.exitcode));
+      : "n" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode));
 
    VG_(core_panic)("Thread exit failed?\n");
 }

@@ -605,6 +605,13 @@ HChar* showAMD64ShiftOp ( AMD64ShiftOp op ) {
 //..    }
 //.. }
 
+AMD64Instr* AMD64Instr_Imm64 ( ULong imm64, HReg dst ) {
+   AMD64Instr* i      = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag             = Ain_Imm64;
+   i->Ain.Imm64.imm64 = imm64;
+   i->Ain.Imm64.dst   = dst;
+   return i;
+}
 AMD64Instr* AMD64Instr_Alu64R ( AMD64AluOp op, AMD64RMI* src, HReg dst ) {
    AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag            = Ain_Alu64R;
@@ -922,6 +929,10 @@ AMD64Instr* AMD64Instr_Store ( UChar sz, HReg src, AMD64AMode* dst ) {
 void ppAMD64Instr ( AMD64Instr* i ) 
 {
    switch (i->tag) {
+      case Ain_Imm64: 
+         vex_printf("movabsq 0x%llx,", i->Ain.Imm64.imm64);
+         ppHRegAMD64(i->Ain.Imm64.dst);
+         return;
       case Ain_Alu64R:
          vex_printf("%sq ", showAMD64AluOp(i->Ain.Alu64R.op));
          ppAMD64RMI(i->Ain.Alu64R.src);
@@ -1191,6 +1202,9 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
   //   Bool unary;
    initHRegUsage(u);
    switch (i->tag) {
+      case Ain_Imm64:
+         addHRegUse(u, HRmWrite, i->Ain.Imm64.dst);
+         return;
       case Ain_Alu64R:
          addRegUsage_AMD64RMI(u, i->Ain.Alu64R.src);
          if (i->Ain.Alu64R.op == Aalu_MOV) {
@@ -1429,6 +1443,9 @@ static void mapReg(HRegRemap* m, HReg* r)
 void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
 {
    switch (i->tag) {
+      case Ain_Imm64:
+         mapReg(m, &i->Ain.Imm64.dst);
+         return;
       case Ain_Alu64R:
          mapRegs_AMD64RMI(m, i->Ain.Alu64R.src);
          mapReg(m, &i->Ain.Alu64R.dst);
@@ -1649,18 +1666,31 @@ AMD64Instr* genReload_AMD64 ( HReg rreg, Int offsetB )
 }
 
 
-//.. /* --------- The x86 assembler (bleh.) --------- */
-//.. 
-//.. static UInt iregNo ( HReg r )
-//.. {
-//..    UInt n;
-//..    vassert(hregClass(r) == HRcInt32);
-//..    vassert(!hregIsVirtual(r));
-//..    n = hregNumber(r);
-//..    vassert(n <= 7);
-//..    return n;
-//.. }
-//.. 
+/* --------- The amd64 assembler (bleh.) --------- */
+
+/* Produce the low three bits of an integer register number. */
+static UInt iregNo ( HReg r )
+{
+   UInt n;
+   vassert(hregClass(r) == HRcInt64);
+   vassert(!hregIsVirtual(r));
+   n = hregNumber(r);
+   vassert(n <= 15);
+   return n & 7;
+}
+
+/* Produce bit 3 of an integer register number. */
+static UInt iregBit3 ( HReg r )
+{
+   UInt n;
+   vassert(hregClass(r) == HRcInt64);
+   vassert(!hregIsVirtual(r));
+   n = hregNumber(r);
+   vassert(n <= 15);
+   return (n >> 3) & 1;
+}
+
+
 //.. static UInt fregNo ( HReg r )
 //.. {
 //..    UInt n;
@@ -1680,122 +1710,142 @@ AMD64Instr* genReload_AMD64 ( HReg rreg, Int offsetB )
 //..    vassert(n <= 7);
 //..    return n;
 //.. }
-//.. 
-//.. static UChar mkModRegRM ( UChar mod, UChar reg, UChar regmem )
-//.. {
-//..    return ((mod & 3) << 6) | ((reg & 7) << 3) | (regmem & 7);
-//.. }
-//.. 
-//.. static UChar mkSIB ( Int shift, Int regindex, Int regbase )
-//.. {
-//..    return ((shift & 3) << 6) | ((regindex & 7) << 3) | (regbase & 7);
-//.. }
-//.. 
-//.. static UChar* emit32 ( UChar* p, UInt w32 )
-//.. {
-//..    *p++ = (w32)       & 0x000000FF;
-//..    *p++ = (w32 >>  8) & 0x000000FF;
-//..    *p++ = (w32 >> 16) & 0x000000FF;
-//..    *p++ = (w32 >> 24) & 0x000000FF;
-//..    return p;
-//.. }
-//.. 
-//.. /* Does a sign-extend of the lowest 8 bits give 
-//..    the original number? */
-//.. static Bool fits8bits ( UInt w32 )
-//.. {
-//..    Int i32 = (Int)w32;
-//..    return i32 == ((i32 << 24) >> 24);
-//.. }
-//.. 
-//.. 
-//.. /* Forming mod-reg-rm bytes and scale-index-base bytes.
-//.. 
-//..      greg,  0(ereg)    |  ereg != ESP && ereg != EBP
-//..                        =  00 greg ereg
-//.. 
-//..      greg,  d8(ereg)   |  ereg != ESP
-//..                        =  01 greg ereg, d8
-//.. 
-//..      greg,  d32(ereg)  |  ereg != ESP
-//..                        =  10 greg ereg, d32
-//.. 
-//..      greg,  d8(%esp)   =  01 greg 100, 0x24, d8
-//.. 
-//..      -----------------------------------------------
-//.. 
-//..      greg,  d8(base,index,scale)  
-//..                |  index != ESP
-//..                =  01 greg 100, scale index base, d8
-//.. 
-//..      greg,  d32(base,index,scale)
-//..                |  index != ESP
-//..                =  10 greg 100, scale index base, d32
-//.. */
-//.. static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am ) 
-//.. {
-//..    if (am->tag == Xam_IR) {
-//..       if (am->Xam.IR.imm == 0 
-//..           && am->Xam.IR.reg != hregAMD64_ESP()
-//..           && am->Xam.IR.reg != hregAMD64_EBP() ) {
-//..          *p++ = mkModRegRM(0, iregNo(greg), iregNo(am->Xam.IR.reg));
-//..          return p;
-//..       }
-//..       if (fits8bits(am->Xam.IR.imm)
-//..           && am->Xam.IR.reg != hregAMD64_ESP()) {
-//..          *p++ = mkModRegRM(1, iregNo(greg), iregNo(am->Xam.IR.reg));
-//..          *p++ = am->Xam.IR.imm & 0xFF;
-//..          return p;
-//..       }
-//..       if (am->Xam.IR.reg != hregAMD64_ESP()) {
-//..          *p++ = mkModRegRM(2, iregNo(greg), iregNo(am->Xam.IR.reg));
-//..          p = emit32(p, am->Xam.IR.imm);
-//..          return p;
-//..       }
-//..       if (am->Xam.IR.reg == hregAMD64_ESP()
-//..           && fits8bits(am->Xam.IR.imm)) {
-//..  	 *p++ = mkModRegRM(1, iregNo(greg), 4);
-//..          *p++ = 0x24;
-//..          *p++ = am->Xam.IR.imm & 0xFF;
-//..          return p;
-//..       }
-//..       ppAMD64AMode(am);
-//..       vpanic("doAMode_M: can't emit amode IR");
-//..       /*NOTREACHED*/
-//..    }
-//..    if (am->tag == Xam_IRRS) {
-//..       if (fits8bits(am->Xam.IRRS.imm)
-//..           && am->Xam.IRRS.index != hregAMD64_ESP()) {
-//..          *p++ = mkModRegRM(1, iregNo(greg), 4);
-//..          *p++ = mkSIB(am->Xam.IRRS.shift, am->Xam.IRRS.index, 
-//..                                           am->Xam.IRRS.base);
-//..          *p++ = am->Xam.IRRS.imm & 0xFF;
-//..          return p;
-//..       }
-//..       if (am->Xam.IRRS.index != hregAMD64_ESP()) {
-//..          *p++ = mkModRegRM(2, iregNo(greg), 4);
-//..          *p++ = mkSIB(am->Xam.IRRS.shift, am->Xam.IRRS.index,
-//..                                           am->Xam.IRRS.base);
-//..          p = emit32(p, am->Xam.IRRS.imm);
-//..          return p;
-//..       }
-//..       ppAMD64AMode(am);
-//..       vpanic("doAMode_M: can't emit amode IRRS");
-//..       /*NOTREACHED*/
-//..    }
-//..    vpanic("doAMode_M: unknown amode");
-//..    /*NOTREACHED*/
-//.. }
-//.. 
-//.. 
-//.. /* Emit a mod-reg-rm byte when the rm bit denotes a reg. */
-//.. static UChar* doAMode_R ( UChar* p, HReg greg, HReg ereg ) 
-//.. {
-//..    *p++ = mkModRegRM(3, iregNo(greg), iregNo(ereg));
-//..    return p;
-//.. }
-//.. 
-//.. 
+
+static UChar mkModRegRM ( UChar mod, UChar reg, UChar regmem )
+{
+   return ((mod & 3) << 6) | ((reg & 7) << 3) | (regmem & 7);
+}
+
+static UChar mkSIB ( Int shift, Int regindex, Int regbase )
+{
+   return ((shift & 3) << 6) | ((regindex & 7) << 3) | (regbase & 7);
+}
+
+static UChar* emit32 ( UChar* p, UInt w32 )
+{
+   *p++ = (w32)       & 0x000000FF;
+   *p++ = (w32 >>  8) & 0x000000FF;
+   *p++ = (w32 >> 16) & 0x000000FF;
+   *p++ = (w32 >> 24) & 0x000000FF;
+   return p;
+}
+
+/* Does a sign-extend of the lowest 8 bits give 
+   the original number? */
+static Bool fits8bits ( UInt w32 )
+{
+   Int i32 = (Int)w32;
+   return i32 == ((i32 << 24) >> 24);
+}
+
+
+/* Forming mod-reg-rm bytes and scale-index-base bytes.
+
+     greg,  0(ereg)    |  ereg != RSP && ereg != RBP
+                       =  00 greg ereg
+
+     greg,  d8(ereg)   |  ereg != RSP
+                       =  01 greg ereg, d8
+
+     greg,  d32(ereg)  |  ereg != RSP
+                       =  10 greg ereg, d32
+
+     greg,  d8(%rsp)   =  01 greg 100, 0x24, d8
+
+     -----------------------------------------------
+
+     greg,  d8(base,index,scale)  
+               |  index != RSP
+               =  01 greg 100, scale index base, d8
+
+     greg,  d32(base,index,scale)
+               |  index != RSP
+               =  10 greg 100, scale index base, d32
+*/
+static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am ) 
+{
+   if (am->tag == Aam_IR) {
+      if (am->Aam.IR.imm == 0 
+          && am->Aam.IR.reg != hregAMD64_RSP()
+          && am->Aam.IR.reg != hregAMD64_RBP() ) {
+         *p++ = mkModRegRM(0, iregNo(greg), iregNo(am->Aam.IR.reg));
+         return p;
+      }
+      if (fits8bits(am->Aam.IR.imm)
+          && am->Aam.IR.reg != hregAMD64_RSP()) {
+         *p++ = mkModRegRM(1, iregNo(greg), iregNo(am->Aam.IR.reg));
+         *p++ = am->Aam.IR.imm & 0xFF;
+         return p;
+      }
+      if (am->Aam.IR.reg != hregAMD64_RSP()) {
+         *p++ = mkModRegRM(2, iregNo(greg), iregNo(am->Aam.IR.reg));
+         p = emit32(p, am->Aam.IR.imm);
+         return p;
+      }
+      if (am->Aam.IR.reg == hregAMD64_RSP()
+          && fits8bits(am->Aam.IR.imm)) {
+ 	 *p++ = mkModRegRM(1, iregNo(greg), 4);
+         *p++ = 0x24;
+         *p++ = am->Aam.IR.imm & 0xFF;
+         return p;
+      }
+      ppAMD64AMode(am);
+      vpanic("doAMode_M: can't emit amode IR");
+      /*NOTREACHED*/
+   }
+   if (am->tag == Aam_IRRS) {
+      if (fits8bits(am->Aam.IRRS.imm)
+          && am->Aam.IRRS.index != hregAMD64_RSP()) {
+         *p++ = mkModRegRM(1, iregNo(greg), 4);
+         *p++ = mkSIB(am->Aam.IRRS.shift, am->Aam.IRRS.index, 
+                                          am->Aam.IRRS.base);
+         *p++ = am->Aam.IRRS.imm & 0xFF;
+         return p;
+      }
+      if (am->Aam.IRRS.index != hregAMD64_RSP()) {
+         *p++ = mkModRegRM(2, iregNo(greg), 4);
+         *p++ = mkSIB(am->Aam.IRRS.shift, am->Aam.IRRS.index,
+                                          am->Aam.IRRS.base);
+         p = emit32(p, am->Aam.IRRS.imm);
+         return p;
+      }
+      ppAMD64AMode(am);
+      vpanic("doAMode_M: can't emit amode IRRS");
+      /*NOTREACHED*/
+   }
+   vpanic("doAMode_M: unknown amode");
+   /*NOTREACHED*/
+}
+
+
+/* Emit a mod-reg-rm byte when the rm bit denotes a reg. */
+static UChar* doAMode_R ( UChar* p, HReg greg, HReg ereg ) 
+{
+   *p++ = mkModRegRM(3, iregNo(greg), iregNo(ereg));
+   return p;
+}
+
+
+static UChar rexOfAMode ( HReg greg, AMD64AMode* am )
+{
+   if (am->tag == Aam_IR) {
+      UChar W = 1;  /* we want 64-bit mode */
+      UChar R = 1 & iregBit3(greg);
+      UChar X = 0; /* not relevant */
+      UChar B = 1 & iregBit3(am->Aam.IR.reg);
+      return 0x40 + ((W << 3) | (R << 2) | (X << 1) | (B << 0));
+   }
+   if (am->tag == Aam_IRRS) {
+      UChar W = 1;  /* we want 64-bit mode */
+      UChar R = 1 & iregBit3(greg);
+      UChar X = 1 & iregBit3(am->Aam.IRRS.index);
+      UChar B = 1 & iregBit3(am->Aam.IRRS.base);
+      return 0x40 + ((W << 3) | (R << 2) | (X << 1) | (B << 0));
+   }
+   vassert(0);
+}
+
+
 //.. /* Emit ffree %st(7) */
 //.. static UChar* do_ffree_st7 ( UChar* p )
 //.. {
@@ -1913,28 +1963,32 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 
    switch (i->tag) {
 
-//..    case Xin_Alu32R:
-//..       /* Deal specially with MOV */
-//..       if (i->Xin.Alu32R.op == Xalu_MOV) {
-//..          switch (i->Xin.Alu32R.src->tag) {
-//..             case Xrmi_Imm:
-//..                *p++ = 0xB8 + iregNo(i->Xin.Alu32R.dst);
-//..                p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
-//..                goto done;
-//..             case Xrmi_Reg:
-//..                *p++ = 0x89;
-//..                p = doAMode_R(p, i->Xin.Alu32R.src->Xrmi.Reg.reg,
-//..                                 i->Xin.Alu32R.dst);
-//..                goto done;
-//..             case Xrmi_Mem:
-//..                *p++ = 0x8B;
-//..                p = doAMode_M(p, i->Xin.Alu32R.dst, 
-//..                                 i->Xin.Alu32R.src->Xrmi.Mem.am);
-//..                goto done;
-//..             default:
-//..                goto bad;
-//..          }
-//..       }
+   case Ain_Alu64R:
+      /* Deal specially with MOV */
+      if (i->Ain.Alu64R.op == Aalu_MOV) {
+         switch (i->Ain.Alu64R.src->tag) {
+            case Armi_Imm:
+vassert(0);
+               *p++ = 0xB8 + iregNo(i->Ain.Alu64R.dst);
+               p = emit32(p, i->Ain.Alu64R.src->Armi.Imm.imm32);
+               goto done;
+            case Armi_Reg:
+vassert(0);
+               *p++ = 0x89;
+               p = doAMode_R(p, i->Ain.Alu64R.src->Armi.Reg.reg,
+                                i->Ain.Alu64R.dst);
+               goto done;
+            case Armi_Mem:
+               *p++ = rexOfAMode(i->Ain.Alu64R.dst,
+                                 i->Ain.Alu64R.src->Armi.Mem.am);
+               *p++ = 0x8B;
+               p = doAMode_M(p, i->Ain.Alu64R.dst, 
+                                i->Ain.Alu64R.src->Armi.Mem.am);
+               goto done;
+            default:
+               goto bad;
+         }
+      }
 //..       /* MUL */
 //..       if (i->Xin.Alu32R.op == Xalu_MUL) {
 //..          switch (i->Xin.Alu32R.src->tag) {
@@ -2016,8 +2070,8 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 //..          default: 
 //..             goto bad;
 //..       }
-//..       break;
-//.. 
+      break;
+
 //..    case Xin_Alu32M:
 //..       /* Deal specially with MOV */
 //..       if (i->Xin.Alu32M.op == Xalu_MOV) {
@@ -2911,7 +2965,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
    vpanic("emit_AMD64Instr");
    /*NOTREACHED*/
    
-   //  done:
+  done:
    vassert(p - &buf[0] <= 32);
    return p - &buf[0];
 

@@ -2956,7 +2956,7 @@ void codegen_LAHF ( UCodeBlock* cb )
    uInstr0(cb, CALLM_S, 0);
    uInstr1(cb, PUSH,  4, TempReg, t);
    uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_LAHF));
-   uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
+   uFlagsRWU(cb, FlagsSZACP, FlagsEmpty, FlagsEmpty);
    uInstr1(cb, POP,   4, TempReg, t);
    uInstr0(cb, CALLM_E, 0);
 

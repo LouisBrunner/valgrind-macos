@@ -2002,40 +2002,10 @@ static UInt *regaddr(ThreadId tid, Int regno)
 {
    UInt *ret = 0;
 
-   if (VG_(is_running_thread)(tid)) {
-      Int idx;
-
-      switch(regno) {
-      case R_EAX:	idx = VGOFF_(m_eax); break;
-      case R_ECX:	idx = VGOFF_(m_ecx); break;
-      case R_EDX:	idx = VGOFF_(m_edx); break;
-      case R_EBX:	idx = VGOFF_(m_ebx); break;
-      case R_ESP:	idx = VGOFF_(m_esp); break;
-      case R_EBP:	idx = VGOFF_(m_ebp); break;
-      case R_ESI:	idx = VGOFF_(m_esi); break;
-      case R_EDI:	idx = VGOFF_(m_edi); break;
-      default:		
-	 idx = -1;
-	 break;
-      }
-      if (idx != -1)
-	 ret = &VG_(baseBlock)[idx];
-   } else {
-      ThreadState *tst = &VG_(threads)[tid];
-
-      switch(regno) {
-      case R_EAX:	ret = &tst->arch.m_eax; break;
-      case R_ECX:	ret = &tst->arch.m_ecx; break;
-      case R_EDX:	ret = &tst->arch.m_edx; break;
-      case R_EBX:	ret = &tst->arch.m_ebx; break;
-      case R_ESP:	ret = &tst->arch.m_esp; break;
-      case R_EBP:	ret = &tst->arch.m_ebp; break;
-      case R_ESI:	ret = &tst->arch.m_esi; break;
-      case R_EDI:	ret = &tst->arch.m_edi; break;
-      default:	
-	 break;
-      }
-   }	       
+   if (VG_(is_running_thread)(tid))
+      ret = VGA_(reg_addr_from_BB)(regno);
+   else
+      ret = VGA_(reg_addr_from_tst)(regno, &VG_(threads)[tid].arch);
 
    if (ret == 0) {
       Char file[100];
@@ -2132,7 +2102,8 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
 
 	 case SyEBPrel:
 	 case SyESPrel:
-	    reg = *regaddr(tid, sym->kind == SyESPrel ? R_ESP : R_EBP);
+	    reg = *regaddr(tid, sym->kind == SyESPrel ? 
+                                R_STACK_PTR : R_FRAME_PTR);
 	    if (debug)
 	       VG_(printf)("reg=%p+%d=%p\n", reg, sym->u.offset, reg+sym->u.offset);
 	    v->valuep = (Addr)(reg + sym->u.offset);

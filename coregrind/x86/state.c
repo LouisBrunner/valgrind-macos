@@ -491,6 +491,43 @@ void VGA_(setup_child) ( arch_thread_t *regs, arch_thread_t *parent_regs )
 }  
 
 /*------------------------------------------------------------*/
+/*--- Symtab stuff                                         ---*/
+/*------------------------------------------------------------*/
+
+UInt *VGA_(reg_addr_from_BB)(Int regno)
+{
+   Int r;
+   switch (regno) {
+   case R_EAX: r = VGOFF_(m_eax); break;
+   case R_ECX: r = VGOFF_(m_ecx); break;
+   case R_EDX: r = VGOFF_(m_edx); break;
+   case R_EBX: r = VGOFF_(m_ebx); break;
+   case R_ESP: r = VGOFF_(m_esp); break;
+   case R_EBP: r = VGOFF_(m_ebp); break;
+   case R_ESI: r = VGOFF_(m_esi); break;
+   case R_EDI: r = VGOFF_(m_edi); break;
+   default:
+      return NULL;
+   }
+   return &VG_(baseBlock)[r];
+}
+
+UInt *VGA_(reg_addr_from_tst)(Int regno, arch_thread_t *arch)
+{
+   switch (regno) {
+   case R_EAX: return &arch->m_eax;
+   case R_ECX: return &arch->m_ecx;
+   case R_EDX: return &arch->m_edx;
+   case R_EBX: return &arch->m_ebx;
+   case R_ESP: return &arch->m_esp;
+   case R_EBP: return &arch->m_ebp;
+   case R_ESI: return &arch->m_esi;
+   case R_EDI: return &arch->m_edi;
+   default:    return NULL;
+   }
+}
+
+/*------------------------------------------------------------*/
 /*--- pointercheck                                         ---*/
 /*------------------------------------------------------------*/
 

@@ -121,7 +121,9 @@ data Expr
    | CONST Const           -- 8/16/32/64-bit int constant
 */
 typedef
-   enum { Iex_Get, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, 
+     enum { Iex_Binder, /* Used only in pattern matching.  
+                           Not an expression. */
+          Iex_Get, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, 
           Iex_Const, Iex_CCall, Iex_Mux0X }
    IRExprTag;
 
@@ -129,6 +131,9 @@ typedef
    struct _IRExpr {
       IRExprTag tag;
       union {
+	 struct {
+            Int binder;
+         } Binder;
          struct {
             Int    offset;
             IRType ty;
@@ -166,14 +171,15 @@ typedef
    }
    IRExpr;
 
-extern IRExpr* IRExpr_Get   ( Int off, IRType ty );
-extern IRExpr* IRExpr_Tmp   ( IRTemp tmp );
-extern IRExpr* IRExpr_Binop ( IROp op, IRExpr* arg1, IRExpr* arg2 );
-extern IRExpr* IRExpr_Unop  ( IROp op, IRExpr* arg );
-extern IRExpr* IRExpr_LDle  ( IRType ty, IRExpr* addr );
-extern IRExpr* IRExpr_Const ( IRConst* con );
-extern IRExpr* IRExpr_CCall ( Char* name, IRType retty, IRExpr** args );
-extern IRExpr* IRExpr_Mux0X ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
+extern IRExpr* IRExpr_Binder ( Int binder );
+extern IRExpr* IRExpr_Get    ( Int off, IRType ty );
+extern IRExpr* IRExpr_Tmp    ( IRTemp tmp );
+extern IRExpr* IRExpr_Binop  ( IROp op, IRExpr* arg1, IRExpr* arg2 );
+extern IRExpr* IRExpr_Unop   ( IROp op, IRExpr* arg );
+extern IRExpr* IRExpr_LDle   ( IRType ty, IRExpr* addr );
+extern IRExpr* IRExpr_Const  ( IRConst* con );
+extern IRExpr* IRExpr_CCall  ( Char* name, IRType retty, IRExpr** args );
+extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
 
 extern void ppIRExpr ( IRExpr* );
 
@@ -224,7 +230,7 @@ typedef
             IRExpr* data;
          } STle;
          struct {
-            IRExpr* cond;
+            IRExpr*  cond;
             IRConst* dst;
          } Exit;
       } Ist;

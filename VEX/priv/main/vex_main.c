@@ -39,17 +39,19 @@ void LibVEX_Init (
 {
    vassert(!vex_initdone);
    vassert(failure_exit);
-   vex_failure_exit = failure_exit;
    vassert(log_bytes);
-   vex_log_bytes = log_bytes;
    vassert(debuglevel >= 0);
-   vex_debuglevel = debuglevel;
    vassert(verbosity >= 0);
-   vex_verbosity = verbosity;
-   vex_valgrind_support = valgrind_support;
    vassert(guest_insns_per_bb >= 1 && guest_insns_per_bb <= 100);
+
+   vex_failure_exit       = failure_exit;
+   vex_log_bytes          = log_bytes;
+   vex_debuglevel         = debuglevel;
+   vex_verbosity          = verbosity;
+   vex_valgrind_support   = valgrind_support;
    vex_guest_insns_per_bb = guest_insns_per_bb;
-   vex_initdone = True;
+   vex_initdone           = True;
+   LibVEX_SetAllocMode ( AllocModeTEMPORARY );
 }
 
 
@@ -80,15 +82,16 @@ TranslateResult LibVEX_Translate (
    /* Stuff we need to know for reg-alloc. */
    HReg* available_real_regs;
    Int   n_available_real_regs;
-   Bool (*isMove) (HInstr*, HReg*, HReg*);
-   void (*getRegUsage) (HRegUsage*, HInstr*);
-   void (*mapRegs) (HRegRemap*, HInstr*);
-   HInstr* (*genSpill) ( HReg, Int );
-   HInstr* (*genReload) ( HReg, Int );
-   void (*ppInstr) ( HInstr* );
-   void (*ppReg) ( HReg );
-   HInstrArray* (*iselBB) ( IRBB* );
-   IRBB* (*bbToIR) ( UChar*, Addr64, Int*, Bool(*)(Addr64), Bool );
+   Bool         (*isMove)      (HInstr*, HReg*, HReg*);
+   void         (*getRegUsage) (HRegUsage*, HInstr*);
+   void         (*mapRegs)     (HRegRemap*, HInstr*);
+   HInstr*      (*genSpill)    ( HReg, Int );
+   HInstr*      (*genReload)   ( HReg, Int );
+   void         (*ppInstr)     ( HInstr* );
+   void         (*ppReg)       ( HReg );
+   HInstrArray* (*iselBB)      ( IRBB* );
+   IRBB*        (*bbToIR)      ( UChar*, Addr64, Int*, 
+                                         Bool(*)(Addr64), Bool );
 
    Bool         host_is_bigendian = False;
    IRBB*        irbb;
@@ -97,7 +100,7 @@ TranslateResult LibVEX_Translate (
    Int          i;
 
    vassert(vex_initdone);
-   LibVEX_Clear(False);
+   LibVEX_ClearTemporary(False);
 
    /* First off, check that the guest and host insn sets
       are supported. */
@@ -135,7 +138,7 @@ TranslateResult LibVEX_Translate (
 
    if (irbb == NULL) {
       /* Access failure. */
-      LibVEX_Clear(False);
+      LibVEX_ClearTemporary(False);
       return TransAccessFail;
    }
    sanityCheckIRBB(irbb, Ity_I32);
@@ -146,7 +149,7 @@ TranslateResult LibVEX_Translate (
 
    /* Turn it into virtual-registerised code. */
    vcode = iselBB ( irbb );
-LibVEX_Clear(True); return TransOK;
+LibVEX_ClearTemporary(True); return TransOK;
 
    vex_printf("\n-------- Virtual registerised code --------\n");
    for (i = 0; i < vcode->arr_used; i++) {
@@ -170,7 +173,7 @@ LibVEX_Clear(True); return TransOK;
    vex_printf("\n");
 
    /* Assemble, etc. */
-   LibVEX_Clear(True);
+   LibVEX_ClearTemporary(True);
 
    return TransOK;
 }

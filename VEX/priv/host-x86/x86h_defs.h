@@ -28,6 +28,41 @@ extern HReg hregX86_ESI ( void );
 extern HReg hregX86_EDI ( void );
 
 
+/* --------- Condition codes, Intel encoding. --------- */
+
+typedef
+   enum {
+      Xcc_O      = 0,  /* overflow           */
+      Xcc_NO     = 1,  /* no overflow        */
+
+      Xcc_B      = 2,  /* below              */
+      Xcc_NB     = 3,  /* not below          */
+
+      Xcc_Z      = 4,  /* zero               */
+      Xcc_NZ     = 5,  /* not zero           */
+
+      Xcc_BE     = 6,  /* below or equal     */
+      Xcc_NBE    = 7,  /* not below or equal */
+
+      Xcc_S      = 8,  /* negative           */
+      Xcc_NS     = 9,  /* not negative       */
+
+      Xcc_P      = 10, /* parity even        */
+      Xcc_NP     = 11, /* not parity even    */
+
+      Xcc_L      = 12, /* jump less          */
+      Xcc_NL     = 13, /* not less           */
+
+      Xcc_LE     = 14, /* less or equal      */
+      Xcc_NLE    = 15, /* not less or equal  */
+
+      Xcc_ALWAYS = 16  /* the usual hack     */
+   }
+   X86CondCode;
+
+extern void ppX86CondCode ( X86CondCode );
+
+
 /* --------- Memory address expressions (amodes). --------- */
 
 typedef
@@ -190,12 +225,14 @@ typedef
    enum {
       Xin_Alu32R,    /* 32-bit mov/arith/logical, dst=REG */
       Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
+      Xin_Not32,     /* 32-bit not */
       Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
       Xin_Push,      /* push (32-bit?) value on stack */
       Xin_Call,      /* call to address in register */
-      Xin_GotoNZ,    /* conditional/unconditional jmp to dst */
+      Xin_Goto,      /* conditional/unconditional jmp to dst */
       Xin_CMovZ,     /* conditional move when Z flag set */
-      Xin_LoadEX     /* mov{s,z}{b,w}l from mem to reg */
+      Xin_LoadEX,    /* mov{s,z}{b,w}l from mem to reg */
+      Xin_Store      /* store 16/8 bit value in memory */
    }
    X86InstrTag;
 
@@ -216,6 +253,9 @@ typedef
             X86AMode* dst;
          } Alu32M;
          struct {
+            X86RM* dst;
+         } Not32;
+         struct {
             X86ShiftOp op;
             UInt       src;  /* shift amount, or 0 means %cl */
             X86RM*     dst;
@@ -226,12 +266,12 @@ typedef
          struct {
             HReg target;
          } Call;
-         /* Pseudo-insn.  Goto dst, optionally only when Z flag is
-            clear. */
+         /* Pseudo-insn.  Goto dst, on given condition (which could be
+            Xcc_ALWAYS). */
          struct {
-            Bool   onlyWhenNZ;
-            X86RI* dst;
-         } GotoNZ;
+            X86CondCode cond;
+            X86RI*      dst;
+         } Goto;
          /* Mov src to dst (both 32-bit regs?) when the Z flag is
             set. */
          struct {
@@ -245,20 +285,28 @@ typedef
             X86AMode* src;
             HReg      dst;
          } LoadEX;
+         /* 16/8 bit stores, which are troublesome (particularly
+            8-bit) */
+         struct {
+            UChar sz; /* only 1 or 2 */
+            HReg src;
+            X86AMode* dst;
+         } Store;
       } Xin;
    }
    X86Instr;
 
 extern X86Instr* X86Instr_Alu32R ( X86AluOp, X86RMI*, HReg );
 extern X86Instr* X86Instr_Alu32M ( X86AluOp, X86RI*,  X86AMode* );
+extern X86Instr* X86Instr_Not32  ( X86RM* dst );
 extern X86Instr* X86Instr_Sh32   ( X86ShiftOp, UInt, X86RM* );
 extern X86Instr* X86Instr_Push   ( X86RMI* );
 extern X86Instr* X86Instr_Call   ( HReg );
-extern X86Instr* X86Instr_GotoNZ ( Bool onlyWhenNZ, X86RI* dst );
+extern X86Instr* X86Instr_Goto   ( X86CondCode cond, X86RI* dst );
 extern X86Instr* X86Instr_CMovZ  ( X86RM* src, HReg dst );
 extern X86Instr* X86Instr_LoadEX ( UChar szSmall, Bool syned,
                                    X86AMode* src, HReg dst );
-
+extern X86Instr* X86Instr_Store  ( UChar sz, HReg src, X86AMode* dst );
 
 extern void ppX86Instr ( X86Instr* );
 

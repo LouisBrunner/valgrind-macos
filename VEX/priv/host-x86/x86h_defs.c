@@ -67,6 +67,33 @@ void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
 }
 
 
+/* --------- Condition codes, Intel encoding. --------- */
+
+void ppX86CondCode ( X86CondCode cond )
+{
+   switch (cond) {
+      case Xcc_O:      vex_printf("o"); break;
+      case Xcc_NO:     vex_printf("no"); break;
+      case Xcc_B:      vex_printf("b"); break;
+      case Xcc_NB:     vex_printf("nb"); break;
+      case Xcc_Z:      vex_printf("z"); break;
+      case Xcc_NZ:     vex_printf("nz"); break;
+      case Xcc_BE:     vex_printf("be"); break;
+      case Xcc_NBE:    vex_printf("nbe"); break;
+      case Xcc_S:      vex_printf("s"); break;
+      case Xcc_NS:     vex_printf("ns"); break;
+      case Xcc_P:      vex_printf("p"); break;
+      case Xcc_NP:     vex_printf("np"); break;
+      case Xcc_L:      vex_printf("l"); break;
+      case Xcc_NL:     vex_printf("nl"); break;
+      case Xcc_LE:     vex_printf("le"); break;
+      case Xcc_NLE:    vex_printf("nle"); break;
+      case Xcc_ALWAYS: vex_printf("ALWAYS"); break;
+      default: vpanic("ppX86CondCode");
+   }
+}
+
+
 /* --------- X86AMode: memory address expressions. --------- */
 
 X86AMode* X86AMode_IR ( UInt imm32, HReg reg ) {
@@ -76,7 +103,6 @@ X86AMode* X86AMode_IR ( UInt imm32, HReg reg ) {
    am->Xam.IR.reg = reg;
    return am;
 }
-
 X86AMode* X86AMode_IRRS ( UInt imm32, HReg base, HReg index, Int shift ) {
    X86AMode* am = LibVEX_Alloc(sizeof(X86AMode));
    am->tag = Xam_IRRS;
@@ -143,14 +169,12 @@ X86RMI* X86RMI_Imm ( UInt imm32 ) {
    op->Xrmi.Imm.imm32 = imm32;
    return op;
 }
-
 X86RMI* X86RMI_Reg ( HReg reg ) {
    X86RMI* op       = LibVEX_Alloc(sizeof(X86RMI));
    op->tag          = Xrmi_Reg;
    op->Xrmi.Reg.reg = reg;
    return op;
 }
-
 X86RMI* X86RMI_Mem ( X86AMode* am ) {
    X86RMI* op      = LibVEX_Alloc(sizeof(X86RMI));
    op->tag         = Xrmi_Mem;
@@ -216,7 +240,6 @@ X86RI* X86RI_Imm ( UInt imm32 ) {
    op->Xri.Imm.imm32 = imm32;
    return op;
 }
-
 X86RI* X86RI_Reg ( HReg reg ) {
    X86RI* op       = LibVEX_Alloc(sizeof(X86RI));
    op->tag         = Xri_Reg;
@@ -273,7 +296,6 @@ X86RM* X86RM_Reg ( HReg reg ) {
    op->Xrm.Reg.reg = reg;
    return op;
 }
-
 X86RM* X86RM_Mem ( X86AMode* am ) {
    X86RM* op      = LibVEX_Alloc(sizeof(X86RM));
    op->tag        = Xrm_Mem;
@@ -370,7 +392,6 @@ X86Instr* X86Instr_Alu32R ( X86AluOp op, X86RMI* src, HReg dst ) {
    i->Xin.Alu32R.dst = dst;
    return i;
 }
-
 X86Instr* X86Instr_Alu32M ( X86AluOp op, X86RI* src, X86AMode* dst ) {
    X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
    i->tag            = Xin_Alu32M;
@@ -379,7 +400,12 @@ X86Instr* X86Instr_Alu32M ( X86AluOp op, X86RI* src, X86AMode* dst ) {
    i->Xin.Alu32M.dst = dst;
    return i;
 }
-
+X86Instr* X86Instr_Not32  ( X86RM* dst ) {
+   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag           = Xin_Not32;
+   i->Xin.Not32.dst = dst;
+   return i;
+}
 X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
    X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
    i->tag          = Xin_Sh32;
@@ -388,29 +414,25 @@ X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
    i->Xin.Sh32.dst = dst;
    return i;
 }
-
 X86Instr* X86Instr_Push( X86RMI* src ) {
    X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
    i->tag          = Xin_Push;
    i->Xin.Push.src = src;
    return i;
 }
-
 X86Instr* X86Instr_Call ( HReg target ) {
    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
    i->tag             = Xin_Call;
    i->Xin.Call.target = target;
    return i;
 }
-
-X86Instr* X86Instr_GotoNZ ( Bool onlyWhenNZ, X86RI* dst ) {
-   X86Instr* i              = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag                   = Xin_GotoNZ;
-   i->Xin.GotoNZ.onlyWhenNZ = onlyWhenNZ;
-   i->Xin.GotoNZ.dst        = dst;
+X86Instr* X86Instr_Goto ( X86CondCode cond, X86RI* dst ) {
+   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag           = Xin_Goto;
+   i->Xin.Goto.cond = cond;
+   i->Xin.Goto.dst  = dst;
    return i;
 }
-
 X86Instr* X86Instr_CMovZ  ( X86RM* src, HReg dst ) {
    X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
    i->tag           = Xin_CMovZ;
@@ -418,7 +440,6 @@ X86Instr* X86Instr_CMovZ  ( X86RM* src, HReg dst ) {
    i->Xin.CMovZ.dst = dst;
    return i;
 }
-
 X86Instr* X86Instr_LoadEX ( UChar szSmall, Bool syned,
                             X86AMode* src, HReg dst ) {
    X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
@@ -428,6 +449,15 @@ X86Instr* X86Instr_LoadEX ( UChar szSmall, Bool syned,
    i->Xin.LoadEX.src     = src;
    i->Xin.LoadEX.dst     = dst;
    vassert(szSmall == 1 || szSmall == 2);
+   return i;
+}
+X86Instr* X86Instr_Store  ( UChar sz, HReg src, X86AMode* dst ) {
+   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag           = Xin_Store;
+   i->Xin.Store.sz  = sz;
+   i->Xin.Store.src = src;
+   i->Xin.Store.dst = dst;
+   vassert(sz == 1 || sz == 2);
    return i;
 }
 
@@ -448,6 +478,10 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppX86AMode(i->Xin.Alu32M.dst);
          return;
+      case Xin_Not32:
+         vex_printf("notl ");
+         ppX86RM(i->Xin.Not32.dst);
+         return;
       case Xin_Sh32:
          ppX86ShiftOp(i->Xin.Sh32.op);
          vex_printf("l ");
@@ -465,15 +499,17 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf("call *");
          ppHRegX86(i->Xin.Call.target);
          break;
-      case Xin_GotoNZ:
-         if (i->Xin.GotoNZ.onlyWhenNZ) {
-            vex_printf("if (%%eflags.Z) { movl ");
-            ppX86RI(i->Xin.GotoNZ.dst);
-            vex_printf(",%%eax ; ret }");
-         } else {
+      case Xin_Goto:
+         if (i->Xin.Goto.cond == Xcc_ALWAYS) {
             vex_printf("movl ");
-            ppX86RI(i->Xin.GotoNZ.dst);
+            ppX86RI(i->Xin.Goto.dst);
             vex_printf(",%%eax ; ret");
+         } else {
+            vex_printf("if (%%eflags.");
+	    ppX86CondCode(i->Xin.Goto.cond);
+            vex_printf(") { movl ");
+            ppX86RI(i->Xin.Goto.dst);
+            vex_printf(",%%eax ; ret }");
          }
          return;
       case Xin_CMovZ:
@@ -489,6 +525,12 @@ void ppX86Instr ( X86Instr* i ) {
          ppX86AMode(i->Xin.LoadEX.src);
          vex_printf(",");
          ppHRegX86(i->Xin.LoadEX.dst);
+         return;
+      case Xin_Store:
+         vex_printf("mov%c ", i->Xin.Store.sz==1 ? 'b' : 'w');
+         ppHRegX86(i->Xin.Store.src);
+         vex_printf(",");
+         ppX86AMode(i->Xin.Store.dst);
          return;
       default:
          vpanic("ppX86Instr");
@@ -535,8 +577,8 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmWrite, hregX86_ECX());
          addHRegUse(u, HRmWrite, hregX86_EDX());
          return;
-      case Xin_GotoNZ:
-         addRegUsage_X86RI(u, i->Xin.GotoNZ.dst);
+      case Xin_Goto:
+         addRegUsage_X86RI(u, i->Xin.Goto.dst);
          addHRegUse(u, HRmWrite, hregX86_EAX());
          return;
       default:
@@ -559,8 +601,8 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_Sh32:
          mapRegs_X86RM(m, i->Xin.Sh32.dst);
          return;
-      case Xin_GotoNZ:
-         mapRegs_X86RI(m, i->Xin.GotoNZ.dst);
+      case Xin_Goto:
+         mapRegs_X86RI(m, i->Xin.Goto.dst);
          return;
       default:
          ppX86Instr(i);

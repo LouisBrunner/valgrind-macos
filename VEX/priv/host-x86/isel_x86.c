@@ -16,6 +16,119 @@
 
 
 /*---------------------------------------------------------*/
+/*--- Stuff for pattern matching on IR.  This isn't     ---*/
+/*--- x86 specific, and should be moved elsewhere.      ---*/
+/*---------------------------------------------------------*/
+
+#define DECLARE_PATTERN(_patt) \
+   static IRExpr* _patt = NULL
+
+#define DEFINE_PATTERN(_patt,_expr)                            \
+   do {                                                        \
+      if (!(_patt)) {                                          \
+         vassert(LibVEX_GetAllocMode() == AllocModeTEMPORARY); \
+         LibVEX_SetAllocMode(AllocModePERMANENT);              \
+         _patt = (_expr);                                      \
+         LibVEX_SetAllocMode(AllocModeTEMPORARY);              \
+         vassert(LibVEX_GetAllocMode() == AllocModeTEMPORARY); \
+      }                                                        \
+   } while (0)
+
+
+#define N_MATCH_BINDERS 4
+typedef
+   struct {
+      IRExpr* bindee[N_MATCH_BINDERS];
+   }
+   MatchInfo;
+
+
+static void setBindee ( MatchInfo* mi, Int n, IRExpr* bindee )
+{
+   if (n < 0 || n >= N_MATCH_BINDERS)
+      vpanic("setBindee: out of range index");
+   if (mi->bindee[n] != NULL)
+      vpanic("setBindee: bindee already set");
+   mi->bindee[n] = bindee;
+}
+
+static Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
+{
+   switch (p->tag) {
+      case Iex_Binder: /* aha, what we were looking for. */
+         setBindee(mi, p->Iex.Binder.binder, e);
+         return True;
+      case Iex_Unop:
+         if (e->tag != Iex_Unop) return False;
+         if (p->Iex.Unop.op != e->Iex.Unop.op) return False;
+         if (!matchWrk(mi, p->Iex.Unop.arg, e->Iex.Unop.arg))
+            return False;
+         return True;
+      case Iex_Binop:
+         if (e->tag != Iex_Binop) return False;
+         if (p->Iex.Binop.op != e->Iex.Binop.op) return False;
+	 if (!matchWrk(mi, p->Iex.Binop.arg1, e->Iex.Binop.arg1))
+            return False;
+	 if (!matchWrk(mi, p->Iex.Binop.arg2, e->Iex.Binop.arg2))
+            return False;
+         return True;
+      case Iex_Const:
+	if (e->tag != Iex_Const) return False;
+	switch (p->Iex.Const.con->tag) {
+           case Ico_U8: return e->Iex.Const.con->tag==Ico_U8 
+                                  ? (p->Iex.Const.con->Ico.U8 
+                                     == e->Iex.Const.con->Ico.U8) 
+                                  : False;
+           case Ico_U16: return e->Iex.Const.con->tag==Ico_U16 
+                                   ? (p->Iex.Const.con->Ico.U16 
+                                      == e->Iex.Const.con->Ico.U16) 
+                                   : False;
+           case Ico_U32: return e->Iex.Const.con->tag==Ico_U32 
+                                   ? (p->Iex.Const.con->Ico.U32 
+                                      == e->Iex.Const.con->Ico.U32) 
+                                   : False;
+           case Ico_U64: return e->Iex.Const.con->tag==Ico_U64 
+                                   ? (p->Iex.Const.con->Ico.U64 
+                                      == e->Iex.Const.con->Ico.U64) 
+                                   : False;
+	}
+        vpanic("matchIRExpr.Iex_Const");
+        /*NOTREACHED*/
+      default: 
+         ppIRExpr(p);
+         vpanic("match");
+   }
+}
+
+static Bool matchIRExpr ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
+{
+   Int i;
+   for (i = 0; i < N_MATCH_BINDERS; i++)
+      mi->bindee[i] = NULL;
+   return matchWrk(mi, p, e);
+}
+
+/*-----*/
+/* These are duplicated in x86toIR.c */
+static IRExpr* unop ( IROp op, IRExpr* a )
+{
+   return IRExpr_Unop(op, a);
+}
+
+static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
+{
+   return IRExpr_Binop(op, a1, a2);
+}
+
+static IRExpr* bind ( Int binder )
+{
+   return IRExpr_Binder(binder);
+}
+
+
+
+
+/*---------------------------------------------------------*/
 /*--- ISelEnv                                           ---*/
 /*---------------------------------------------------------*/
 
@@ -98,7 +211,7 @@ static X86RM*    iselIntExpr_RM    ( ISelEnv* env, IRExpr* e );
 static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e );
 
 
-static X86Instr* mk_MOV_RR ( HReg src, HReg dst )
+static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
 {
    vassert(hregClass(src) == HRcInt);
    vassert(hregClass(dst) == HRcInt);
@@ -120,16 +233,21 @@ static X86Instr* mk_MOV_RR ( HReg src, HReg dst )
 */
 static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 {
+   MatchInfo mi;
+   DECLARE_PATTERN(p_32to1_then_1Uto8);     
+
    vassert(e);
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
 
    switch (e->tag) {
 
+   /* --------- TEMPs --------- */
    case Iex_Tmp: {
       return lookupIRTemp(env, e->Iex.Tmp.tmp);
    }
 
+   /* --------- LOADs --------- */
    case Iex_LDle: {
       HReg dst = newVRegI(env);
       X86AMode* amode = iselIntExpr_AMode ( env, e->Iex.LDle.addr );
@@ -142,9 +260,14 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_LoadEX(2,False,amode,dst));
          return dst;
       }
+      if (ty == Ity_I8) {
+         addInstr(env, X86Instr_LoadEX(1,False,amode,dst));
+         return dst;
+      }
       break;
    }
 
+   /* --------- BINARY OPs --------- */
    case Iex_Binop: {
       X86AluOp   aluOp;
       X86ShiftOp shOp;
@@ -167,7 +290,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          HReg dst    = newVRegI(env);
          HReg reg    = iselIntExpr_R(env, e->Iex.Binop.arg1);
          X86RMI* rmi = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
-         addInstr(env, mk_MOV_RR(reg,dst));
+         addInstr(env, mk_MOVsd_RR(reg,dst));
          addInstr(env, X86Instr_Alu32R(aluOp, rmi, dst));
          return dst;
       }
@@ -182,22 +305,45 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          HReg dst    = newVRegI(env);
          HReg regL   = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg regR   = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, mk_MOV_RR(regL,dst));
-         addInstr(env, mk_MOV_RR(regR,hregX86_ECX()));
+         addInstr(env, mk_MOVsd_RR(regL,dst));
+         addInstr(env, mk_MOVsd_RR(regR,hregX86_ECX()));
          addInstr(env, X86Instr_Sh32(shOp, 0/* %cl */, X86RM_Reg(dst)));
          return dst;
       }
       break;
    }
 
+   /* --------- UNARY OPs --------- */
    case Iex_Unop: {
+      /* 1Uto8(32to1(expr32)) */
+      DEFINE_PATTERN(p_32to1_then_1Uto8,
+	             unop(Iop_1Uto8,unop(Iop_32to1,bind(0))));
+      if (matchIRExpr(&mi,p_32to1_then_1Uto8,e)) {
+         IRExpr* expr32 = mi.bindee[0];
+	 HReg dst = newVRegI(env);
+         HReg src = iselIntExpr_R(env, expr32);
+         addInstr(env, mk_MOVsd_RR(src,dst) );
+         addInstr(env, X86Instr_Alu32R(Xalu_AND,
+                                       X86RMI_Imm(1), dst));
+         return dst;
+      }
+
       switch (e->Iex.Unop.op) {
-         case Iop_8Uto32: {
+         case Iop_8Uto32:
+         case Iop_16Uto32: {
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-            addInstr(env, mk_MOV_RR(src,dst) );
+            UInt mask = e->Iex.Unop.op==Iop_8Uto32 ? 0xFF : 0xFFFF;
+            addInstr(env, mk_MOVsd_RR(src,dst) );
             addInstr(env, X86Instr_Alu32R(Xalu_AND,
-                                          X86RMI_Imm(0xFF), dst));
+                                          X86RMI_Imm(mask), dst));
+            return dst;
+         }
+         case Iop_Not32: {
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, mk_MOVsd_RR(src,dst) );
+            addInstr(env, X86Instr_Not32(X86RM_Reg(dst)));
             return dst;
          }
          default: 
@@ -206,6 +352,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       break;
    }
 
+   /* --------- GETs --------- */
    case Iex_Get: {
       if (ty == Ity_I32) {
          HReg dst = newVRegI(env);
@@ -227,6 +374,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       break;
    }
 
+   /* --------- CCALLs --------- */
    case Iex_CCall: {
       Int i, nargs;
       UInt target;
@@ -258,6 +406,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       return hregX86_EAX();
    }
 
+   /* --------- LITERALs --------- */
    /* 32/16/8-bit literals */
    case Iex_Const: {
       X86RMI* rmi = iselIntExpr_RMI ( env, e );
@@ -266,13 +415,14 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       return r;
    }
 
+   /* --------- MULTIPLEXes --------- */
    case Iex_Mux0X: {
       if (ty == Ity_I32 
          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
 	HReg rX   = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
 	X86RM* r0 = iselIntExpr_RM(env, e->Iex.Mux0X.expr0);
 	HReg dst = newVRegI(env);
-	addInstr(env, mk_MOV_RR(rX,dst));
+	addInstr(env, mk_MOVsd_RR(rX,dst));
 	HReg r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
 	addInstr(env, X86Instr_Alu32R(Xalu_TEST,
 				      X86RMI_Imm(0xFF), r8));
@@ -431,6 +581,46 @@ static X86RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
 }
 
 
+/* Generate code to evaluated a bit-typed expression, returning the
+   condition code which would correspond when the expression would
+   notionally have returned 1. */
+
+static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
+{
+   MatchInfo mi;
+   DECLARE_PATTERN(p_32to1);
+   DECLARE_PATTERN(p_eq32_zero);
+
+   vassert(e);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_Bit);
+
+   /* pattern: 32to1(expr32) */
+   DEFINE_PATTERN(p_32to1, 
+      unop(Iop_32to1,bind(0))
+   );
+   if (matchIRExpr(&mi,p_32to1,e)) {
+      HReg src = iselIntExpr_R(env, mi.bindee[0]);
+      HReg dst = newVRegI(env);
+      addInstr(env, mk_MOVsd_RR(src,dst));
+      addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(1),dst));
+      return Xcc_NZ;
+   }
+
+   /* pattern: CmpEQ32(expr32,0) */
+   DEFINE_PATTERN(p_eq32_zero, 
+      binop( Iop_CmpEQ32, bind(0), IRExpr_Const(IRConst_U32(0)) ) 
+   );
+   if (matchIRExpr(&mi,p_eq32_zero,e)) {
+      HReg src = iselIntExpr_R(env, mi.bindee[0]);
+      addInstr(env, X86Instr_Alu32R(Xalu_CMP,X86RMI_Imm(0),src));
+      return Xcc_NZ;
+   }
+
+   ppIRExpr(e);
+   vpanic("iselCondCode");
+}
+
+
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Statements                                  ---*/
@@ -450,10 +640,17 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       vassert(tya == Ity_I32);
       if (tyd == Ity_I32) {
          X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
-         X86RI* ri = iselIntExpr_RI(env, stmt->Ist.STle.data);
+         X86RI* ri    = iselIntExpr_RI(env, stmt->Ist.STle.data);
          addInstr(env, X86Instr_Alu32M(Xalu_MOV,ri,am));
          return;
       }
+      if (tyd == Ity_I8) {
+         X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
+         HReg r       = iselIntExpr_R(env, stmt->Ist.STle.data);
+         addInstr(env, X86Instr_Store(1,r,am));
+         return;
+      }
+
       break;
    }
 
@@ -469,6 +666,16 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
                      ri,
                      X86AMode_IR(stmt->Ist.Put.offset,hregX86_EBP())
                  ));
+         return;
+      }
+      if (ty == Ity_I8) {
+         /* We're going to write to memory, so compute the RHS into an
+            X86RI. */
+         HReg r  = iselIntExpr_R(env, stmt->Ist.Put.expr);
+         addInstr(env, X86Instr_Store(
+                          1,r,
+                          X86AMode_IR(stmt->Ist.Put.offset,
+                                      hregX86_EBP())));
          return;
       }
       break;
@@ -489,19 +696,10 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_Exit: {
      if (stmt->Ist.Exit.dst->tag != Ico_U32)
         vpanic("isel_x86: Ist_Exit: dst is not a 32-bit value");
-     /* For the moment, only handle conditions of the form
-        32to1(...). */
-     IRExpr* cond = stmt->Ist.Exit.cond;
-     if (cond->tag == Iex_Unop && cond->Iex.Unop.op == Iop_32to1) {
-        cond = cond->Iex.Unop.arg;
-     } else {
-        break; /* give up */
-     }
-     HReg reg = iselIntExpr_R( env, cond );
-     /* Set the Z flag -- as the inverse of the lowest bit of cond */
-     addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(1),reg));
-     addInstr(env, X86Instr_GotoNZ(
-                      True, X86RI_Imm(stmt->Ist.Exit.dst->Ico.U32)));
+
+     X86RI* dst     = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
+     X86CondCode cc = iselCondCode(env,stmt->Ist.Exit.cond);
+     addInstr(env, X86Instr_Goto(cc, dst));
      return;
    }
 
@@ -524,7 +722,7 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
    vex_printf("\n");
 
    ri = iselIntExpr_RI(env, next);
-   addInstr(env, X86Instr_GotoNZ(False,ri));
+   addInstr(env, X86Instr_Goto(Xcc_ALWAYS,ri));
 }
 
 

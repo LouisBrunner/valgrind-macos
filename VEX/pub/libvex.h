@@ -40,7 +40,18 @@ extern void LibVEX_Init (
 
 /* Storage management: clear the area, and allocate from it. */
 
-extern void LibVEX_Clear ( Bool show_stats );
+/* By default allocation occurs in the temporary area.  However, it is
+   possible to switch to permanent area allocation if that's what you
+   want.  Permanent area allocation is very limited, tho. */
+
+typedef
+   enum { AllocModeTEMPORARY, AllocModePERMANENT }
+   AllocMode;
+
+extern void      LibVEX_SetAllocMode ( AllocMode );
+extern AllocMode LibVEX_GetAllocMode ( void );
+
+extern void LibVEX_ClearTemporary ( Bool show_stats );
 
 extern void* LibVEX_Alloc ( Int nbytes );
 

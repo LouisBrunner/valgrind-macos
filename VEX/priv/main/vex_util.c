@@ -24,19 +24,41 @@
    MByte/sec.  Once the size increases enough to fall out of the cache
    into memory, the rate falls by about a factor of 3. 
 */
-#define N_STORAGE_BYTES 50000
+#define N_TEMPORARY_BYTES 50000
 
-static Char storage[N_STORAGE_BYTES];
-static Int  storage_used = 0;
+static Char temporary[N_TEMPORARY_BYTES];
+static Int  temporary_used = 0;
+
+#define N_PERMANENT_BYTES 1000
+
+static Char permanent[N_TEMPORARY_BYTES];
+static Int  permanent_used = 0;
+
 
 /* Gather statistics. */
-static Int storage_bytes_allocd = 0;
-static Int storage_count_allocs = 0;
+static Int temporary_bytes_allocd = 0;
+static Int temporary_count_allocs = 0;
 
-static ULong storage_bytes_allocd_TOT = 0;
-static ULong storage_count_allocs_TOT = 0;
+static ULong temporary_bytes_allocd_TOT = 0;
+static ULong temporary_count_allocs_TOT = 0;
+
+/* The current allocation mode. */
+static AllocMode mode = AllocModeTEMPORARY;
 
 
+/* Exported to library client. */
+
+void LibVEX_SetAllocMode ( AllocMode m )
+{
+   mode = m;
+}
+
+/* Exported to library client. */
+
+AllocMode LibVEX_GetAllocMode ( void )
+{
+   return mode;
+}
 
 /* Exported to library client. */
 
@@ -51,32 +73,41 @@ void* LibVEX_Alloc ( Int nbytes )
    } else {
       if (nbytes == 0) nbytes = 8;
       nbytes = (nbytes + 7) & ~7;
-      if (storage_used + nbytes > N_STORAGE_BYTES)
-         vpanic("VEX storage exhausted.\n"
-                "Increase N_STORAGE_BYTES and recompile.");
-      storage_count_allocs++;
-      storage_bytes_allocd += nbytes;
-      storage_used += nbytes;
-      return (void*)(&storage[storage_used - nbytes]);
+      if (mode == AllocModeTEMPORARY) {
+         if (temporary_used + nbytes > N_TEMPORARY_BYTES)
+            vpanic("VEX temporary storage exhausted.\n"
+                   "Increase N_TEMPORARY_BYTES and recompile.");
+         temporary_count_allocs++;
+         temporary_bytes_allocd += nbytes;
+         temporary_used += nbytes;
+         return (void*)(&temporary[temporary_used - nbytes]);
+      } else {
+         if (permanent_used + nbytes > N_PERMANENT_BYTES)
+            vpanic("VEX permanent storage exhausted.\n"
+                   "Increase N_PERMANENT_BYTES and recompile.");
+         permanent_used += nbytes;
+         return (void*)(&permanent[permanent_used - nbytes]);
+      }
    }
 }
 
 /* Exported to library client. */
 
-void LibVEX_Clear ( Bool verb )
+void LibVEX_ClearTemporary ( Bool verb )
 {
    vassert(vex_initdone);
-   storage_bytes_allocd_TOT += (ULong)storage_bytes_allocd;
-   storage_count_allocs_TOT += (ULong)storage_count_allocs;
+   temporary_bytes_allocd_TOT += (ULong)temporary_bytes_allocd;
+   temporary_count_allocs_TOT += (ULong)temporary_count_allocs;
    if (verb) {
-      vex_printf("vex storage: total %lld (%lld), curr %d (%d)\n",
-	 	 (Long)storage_bytes_allocd_TOT, 
-                 (Long)storage_count_allocs_TOT,
-		 storage_bytes_allocd, storage_count_allocs );
+      vex_printf("vex storage:  P %d,  T total %lld (%lld),  T curr %d (%d)\n",
+                 permanent_used,
+	 	 (Long)temporary_bytes_allocd_TOT, 
+                 (Long)temporary_count_allocs_TOT,
+		 temporary_bytes_allocd, temporary_count_allocs );
    }
-   storage_used = 0;
-   storage_bytes_allocd = 0;
-   storage_count_allocs = 0;
+   temporary_used = 0;
+   temporary_bytes_allocd = 0;
+   temporary_count_allocs = 0;
 }
 
 

@@ -120,6 +120,9 @@ void ppIRExpr ( IRExpr* e )
 {
   Int i;
   switch (e->tag) {
+    case Iex_Binder:
+      vex_printf("BIND-%d", e->Iex.Binder.binder);
+      break;
     case Iex_Get:
       vex_printf( "GET(%d,", e->Iex.Get.offset);
       ppIRType(e->Iex.Get.ty);
@@ -294,6 +297,12 @@ IRConst* IRConst_U64 ( ULong u64 )
 
 /* Constructors -- IRExpr */
 
+IRExpr* IRExpr_Binder ( Int binder ) {
+   IRExpr* e            = LibVEX_Alloc(sizeof(IRExpr));
+   e->tag               = Iex_Binder;
+   e->Iex.Binder.binder = binder;
+   return e;
+}
 IRExpr* IRExpr_Get ( Int off, IRType ty ) {
    IRExpr* e         = LibVEX_Alloc(sizeof(IRExpr));
    e->tag            = Iex_Get;
@@ -566,6 +575,8 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
          return e->Iex.CCall.retty;
       case Iex_Mux0X:
          return typeOfIRExpr(tyenv, e->Iex.Mux0X.expr0);
+      case Iex_Binder:
+         vpanic("typeOfIRExpr: Binder is not a valid expression");
       default:
          ppIRExpr(e);
          vpanic("typeOfIRExpr");

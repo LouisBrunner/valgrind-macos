@@ -389,6 +389,17 @@ static IRExpr* mk_calculate_eflags_c ( void )
    Ity_Bit, and the thunk is only updated iff guard evaluates to 1 at
    run-time.  If guard is NULL, the update is always done. */
 
+static IRExpr* widenUTo32 ( IRExpr* e )
+{
+   switch (typeOfIRExpr(irbb->tyenv,e)) {
+      case Ity_I32: return e;
+      case Ity_I16: return unop(Iop_16Uto32,e);
+      case Ity_I8:  return unop(Iop_8Uto32,e);
+      default: vpanic("widenUto32");
+   }
+}
+
+
 /* This is for add/sub/adc/sbb/and/or/xor, where we need to
    store the result value and the non-lvalue operand. */
 
@@ -413,8 +424,8 @@ static void setFlags_SRC_DST1 ( IROp    op8,
    }
    stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(ccOp)) );
    stmt( IRStmt_Put( OFFB_CC_SRC, logic ? mkU32(0) 
-                                              : mkexpr(src)) );
-   stmt( IRStmt_Put( OFFB_CC_DST, mkexpr(dst1)) );
+                                        : widenUTo32(mkexpr(src))) );
+   stmt( IRStmt_Put( OFFB_CC_DST, widenUTo32(mkexpr(dst1))) );
 }
 
 
@@ -422,23 +433,13 @@ static void setFlags_SRC_DST1 ( IROp    op8,
    result except shifted one bit less.  And then only when the guard
    says we can. */
 
-static IRExpr* widenUTo32 ( IRExpr* e )
-{
-   switch (typeOfIRExpr(irbb->tyenv,e)) {
-      case Ity_I32: return e;
-      case Ity_I16: return unop(Iop_16Uto32,e);
-      case Ity_I8:  return unop(Iop_8Uto32,e);
-      default: vpanic("widenUto32");
-   }
-}
-
 static void setFlags_DSTus_DST1 ( IROp    op8,
                                   IRTemp  dstUS,
                                   IRTemp  dst1,
                                   IRType  ty,
                                   IRTemp  guard )
 {
-   Int ccOp  = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+   Int ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
 
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
    vassert(guard);

@@ -3345,8 +3345,8 @@ PRE(ioctl)
    case VKI_CDROMSUBCHNL:
       SYSCALL_TRACK( pre_mem_read,tid, 
 		     "ioctl(CDROMSUBCHNL (cdsc_format, char))",
-		     (int) &(((struct vki_cdrom_subchnl *) arg3)->cdsc_format), 
-		     sizeof(((struct vki_cdrom_subchnl *) arg3)->cdsc_format));
+		     (Addr) &(((struct vki_cdrom_subchnl*) arg3)->cdsc_format),
+		     sizeof(((struct vki_cdrom_subchnl*) arg3)->cdsc_format));
       SYSCALL_TRACK( pre_mem_write,tid, 
 		     "ioctl(CDROMSUBCHNL)", arg3, 
 		     sizeof(struct vki_cdrom_subchnl));
@@ -3363,12 +3363,12 @@ PRE(ioctl)
    case VKI_CDROMREADTOCENTRY:
       SYSCALL_TRACK( pre_mem_read,tid, 
 		     "ioctl(CDROMREADTOCENTRY (cdte_format, char))",
-		     (int) &(((struct vki_cdrom_tocentry *) arg3)->cdte_format), 
-		     sizeof(((struct vki_cdrom_tocentry *) arg3)->cdte_format));
+		     (Addr) &(((struct vki_cdrom_tocentry*) arg3)->cdte_format),
+		     sizeof(((struct vki_cdrom_tocentry*) arg3)->cdte_format));
       SYSCALL_TRACK( pre_mem_read,tid, 
 		     "ioctl(CDROMREADTOCENTRY (cdte_track, char))",
-		     (int) &(((struct vki_cdrom_tocentry *) arg3)->cdte_track), 
-		     sizeof(((struct vki_cdrom_tocentry *) arg3)->cdte_track));
+		     (Addr) &(((struct vki_cdrom_tocentry*) arg3)->cdte_track), 
+		     sizeof(((struct vki_cdrom_tocentry*) arg3)->cdte_track));
       SYSCALL_TRACK( pre_mem_write,tid, 
 		     "ioctl(CDROMREADTOCENTRY)", arg3, 
 		     sizeof(struct vki_cdrom_tocentry));

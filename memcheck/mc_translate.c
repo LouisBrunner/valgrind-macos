@@ -265,6 +265,12 @@ static IRAtom* mkDifD32 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
    return assignNew(mce, Ity_I32, binop(Iop_And32, a1, a2));
 }
 
+static IRAtom* mkDifD64 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
+   tl_assert(isShadowAtom(mce,a1));
+   tl_assert(isShadowAtom(mce,a2));
+   return assignNew(mce, Ity_I64, binop(Iop_And64, a1, a2));
+}
+
 /* --------- Undefined-if-either-undefined --------- */
 
 static IRAtom* mkUifU8 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
@@ -363,6 +369,14 @@ static IRAtom* mkImproveAND32 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
    return assignNew(mce, Ity_I32, binop(Iop_Or32, data, vbits));
 }
 
+static IRAtom* mkImproveAND64 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
+{
+   tl_assert(isOriginalAtom(mce, data));
+   tl_assert(isShadowAtom(mce, vbits));
+   tl_assert(sameKindedAtoms(data, vbits));
+   return assignNew(mce, Ity_I64, binop(Iop_Or64, data, vbits));
+}
+
 /* ImproveOR(data, vbits) = ~data OR vbits.  Defined (0) data 1s give
    defined (0); all other -> undefined (1).
 */
@@ -399,6 +413,18 @@ static IRAtom* mkImproveOR32 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
              mce, Ity_I32, 
              binop(Iop_Or32, 
                    assignNew(mce, Ity_I32, unop(Iop_Not32, data)), 
+                   vbits) );
+}
+
+static IRAtom* mkImproveOR64 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
+{
+   tl_assert(isOriginalAtom(mce, data));
+   tl_assert(isShadowAtom(mce, vbits));
+   tl_assert(sameKindedAtoms(data, vbits));
+   return assignNew(
+             mce, Ity_I64, 
+             binop(Iop_Or64, 
+                   assignNew(mce, Ity_I64, unop(Iop_Not64, data)), 
                    vbits) );
 }
 
@@ -954,6 +980,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_I64, binop(op, vatom1, atom2));
 
+      case Iop_And64:
+         uifu = mkUifU64; difd = mkDifD64; 
+         and_or_ty = Ity_I64; improve = mkImproveAND64; goto do_And_Or;
       case Iop_And32:
          uifu = mkUifU32; difd = mkDifD32; 
          and_or_ty = Ity_I32; improve = mkImproveAND32; goto do_And_Or;
@@ -964,6 +993,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          uifu = mkUifU8; difd = mkDifD8; 
          and_or_ty = Ity_I8; improve = mkImproveAND8; goto do_And_Or;
 
+      case Iop_Or64:
+         uifu = mkUifU64; difd = mkDifD64; 
+         and_or_ty = Ity_I64; improve = mkImproveOR64; goto do_And_Or;
       case Iop_Or32:
          uifu = mkUifU32; difd = mkDifD32; 
          and_or_ty = Ity_I32; improve = mkImproveOR32; goto do_And_Or;
@@ -989,6 +1021,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return mkUifU16(mce, vatom1, vatom2);
       case Iop_Xor32:
          return mkUifU32(mce, vatom1, vatom2);
+      case Iop_Xor64:
+         return mkUifU64(mce, vatom1, vatom2);
 
       default:
          ppIROp(op);
@@ -1048,11 +1082,13 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
 
       case Iop_ReinterpF64asI64:
       case Iop_ReinterpI64asF64:
+      case Iop_Not64:
       case Iop_Not32:
       case Iop_Not16:
       case Iop_Not8:
       case Iop_Not1:
          return vatom;
+
       default:
          ppIROp(op);
          VG_(tool_panic)("memcheck:expr2vbits_Unop");

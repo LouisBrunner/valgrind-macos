@@ -1277,24 +1277,25 @@ SizeT VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
 /*--- Services layered on top of malloc/free.              ---*/
 /*------------------------------------------------------------*/
 
-void* VG_(arena_calloc) ( ArenaId aid, SizeT alignB, SizeT nmemb, SizeT nbytes )
+void* VG_(arena_calloc) ( ArenaId aid, SizeT alignB, SizeT nmemb,
+                          SizeT bytes_per_memb )
 {
    SizeT  size;
    UChar* p;
 
    VGP_PUSHCC(VgpMalloc);
 
-   size = nmemb * nbytes;
-   vg_assert(size >= nmemb && size >= nbytes);  // check against overflow
+   size = nmemb * bytes_per_memb;
+   vg_assert(size >= nmemb && size >= bytes_per_memb);// check against overflow
 
    if (alignB == VG_MIN_MALLOC_SZB)
       p = VG_(arena_malloc) ( aid, size );
    else
       p = VG_(arena_malloc_aligned) ( aid, alignB, size );
 
-   VG_(memset)(p, 0, nbytes);
+   VG_(memset)(p, 0, size);
 
-   VALGRIND_MALLOCLIKE_BLOCK(p, nbytes, 0, True);
+   VALGRIND_MALLOCLIKE_BLOCK(p, size, 0, True);
 
    VGP_POPCC(VgpMalloc);
    
@@ -1361,9 +1362,10 @@ void  VG_(free) ( void* ptr )
    VG_(arena_free) ( VG_AR_TOOL, ptr );
 }
 
-void* VG_(calloc) ( SizeT nmemb, SizeT nbytes )
+void* VG_(calloc) ( SizeT nmemb, SizeT bytes_per_memb )
 {
-   return VG_(arena_calloc) ( VG_AR_TOOL, VG_MIN_MALLOC_SZB, nmemb, nbytes );
+   return VG_(arena_calloc) ( VG_AR_TOOL, VG_MIN_MALLOC_SZB, nmemb,
+                              bytes_per_memb );
 }
 
 void* VG_(realloc) ( void* ptr, SizeT size )

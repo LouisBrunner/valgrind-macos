@@ -438,7 +438,7 @@ typedef Int ArenaId;
 extern void* VG_(arena_malloc)  ( ArenaId arena, SizeT nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
 extern void* VG_(arena_calloc)  ( ArenaId arena, SizeT alignment,
-                                  SizeT nmemb, SizeT nbytes );
+                                  SizeT nmemb, SizeT bytes_per_memb );
 extern void* VG_(arena_realloc) ( ArenaId arena, void* ptr, SizeT alignment,
                                   SizeT size );
 extern void* VG_(arena_malloc_aligned) ( ArenaId aid, SizeT req_alignB, 

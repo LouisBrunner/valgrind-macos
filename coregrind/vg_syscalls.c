@@ -2861,11 +2861,11 @@ PRE(ioctl)
    case VKI_TCSETSW:
    case VKI_TCSETSF:
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(TCSET{S,SW,SF})", arg3, 
-		     VKI_SIZEOF_STRUCT_TERMIOS );
+		     sizeof(struct vki_termios) );
       break; 
    case VKI_TCGETS:
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(TCGETS)", arg3, 
-		     VKI_SIZEOF_STRUCT_TERMIOS );
+		     sizeof(struct vki_termios) );
       break;
    case VKI_TCSETA:
    case VKI_TCSETAW:
@@ -3571,7 +3571,7 @@ POST(ioctl)
    case VKI_TCSETSF:
       break; 
    case VKI_TCGETS:
-      VG_TRACK( post_mem_write, arg3, VKI_SIZEOF_STRUCT_TERMIOS );
+      VG_TRACK( post_mem_write, arg3, sizeof(struct vki_termios) );
       break;
    case VKI_TCSETA:
    case VKI_TCSETAW:

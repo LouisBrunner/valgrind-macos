@@ -406,7 +406,18 @@ struct vki_termio {
 // From linux-2.6.8.1/include/asm-i386/termbits.h
 //----------------------------------------------------------------------
 
-#define VKI_SIZEOF_STRUCT_TERMIOS	17
+typedef unsigned char   vki_cc_t;
+typedef unsigned int    vki_tcflag_t;
+
+#define VKI_NCCS 19
+struct vki_termios {
+	vki_tcflag_t c_iflag;		/* input mode flags */
+	vki_tcflag_t c_oflag;		/* output mode flags */
+	vki_tcflag_t c_cflag;		/* control mode flags */
+	vki_tcflag_t c_lflag;		/* local mode flags */
+	vki_cc_t c_line;		/* line discipline */
+	vki_cc_t c_cc[VKI_NCCS];	/* control characters */
+};
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/ioctl.h

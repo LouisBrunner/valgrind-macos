@@ -1203,7 +1203,6 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          { UInt d = getUDisp32(delta);
            *len = 5;
            DIS(buf, "%s(0x%x)", sorbTxt(sorb), d);
-	   vpanic("amode 4");
            return disAMode_copy2tmp( 
                      handleSegOverride(sorb, mkU32(d)));
          }
@@ -2256,12 +2255,17 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 //--             uInstr2(cb, STORE, sz, TempReg, t1, TempReg, t2);
 //--             DIP("not%c %s\n", nameISize(sz), dis_buf);
 //--             break;
-//--          case 3: /* NEG */
-//--             uInstr1(cb, NEG, sz, TempReg, t1);
-//--             setFlagsFromUOpcode(cb, NEG);
-//--             uInstr2(cb, STORE, sz, TempReg, t1, TempReg, t2);
-//--             DIP("neg%c %s\n", nameISize(sz), dis_buf);
-//--             break;
+         case 3: /* NEG */
+            dst0 = newTemp(ty);
+            src  = newTemp(ty);
+            dst1 = newTemp(ty);
+            assign(dst0, mkexpr(t1));
+	    assign(src,  mkU(ty,0));
+	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8),mkexpr(src), mkexpr(dst0)));
+            setFlags_SRC_DST1(Iop_Sub8, src, dst1, ty);
+	    storeLE( mkexpr(addr), mkexpr(dst1) );
+            DIP("neg%c %s\n", nameISize(sz), dis_buf);
+            break;
 //--          case 4: /* MUL */
 //--             codegen_mul_A_D_Temp ( cb, sz, t1, False, 
 //--                                    dis_buf );
@@ -2366,8 +2370,6 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
 
    modrm = getIByte(delta);
    if (epartIsReg(modrm)) {
-//--       t1 = newTemp(cb);
-//--       uInstr2(cb, GET, sz, ArchReg, eregOfRM(modrm), TempReg, t1);
       assign(t1, getIReg(sz,eregOfRM(modrm)));
       switch (gregOfRM(modrm)) {
 //--          case 0: /* INC */
@@ -2405,9 +2407,6 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
                        nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
    } else {
       addr = disAMode ( &len, sorb, delta, dis_buf );
-//--       t2   = LOW24(pair);
-//--       t1   = newTemp(cb);
-//--       uInstr2(cb, LOAD, sz, TempReg, t2, TempReg, t1);
       assign(t1, loadLE(ty,mkexpr(addr)));
       switch (gregOfRM(modrm)) {
          case 0: /* INC */ 
@@ -2439,14 +2438,13 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
             jmp_treg(t1);
             *isEnd = True;
             break;
-//--          case 6: /* PUSH Ev */
-//--             t3 = newTemp(cb);
-//--             uInstr2(cb, GET,    4, ArchReg, R_ESP, TempReg, t3);
-//--             uInstr2(cb, SUB,    4, Literal, 0,     TempReg, t3);
-//-- 	    uLiteral(cb, sz);
-//--             uInstr2(cb, PUT,    4, TempReg, t3,    ArchReg, R_ESP);
-//--             uInstr2(cb, STORE, sz, TempReg, t1,    TempReg, t3);
-//--             break;
+         case 6: /* PUSH Ev */
+            vassert(sz == 4 || sz == 2);
+            t2 = newTemp(Ity_I32);
+            assign( t2, binop(Iop_Sub32,getIReg(4,R_ESP),mkU32(sz)) );
+            putIReg(4, R_ESP, mkexpr(t2) );
+	    storeLE( mkexpr(t2), mkexpr(t1) );
+            break;
          default: 
             vex_printf(
                "unhandled Grp5(M) case %d\n", (UInt)gregOfRM(modrm));
@@ -4258,14 +4256,13 @@ void dis_ret ( UInt d32 )
 
 static UInt disInstr ( UInt delta, Bool* isEnd )
 {
-   IRTemp  addr;
+   IRType  ty;
+   IRTemp  addr, t1, t2;
    Int     alen;
    UChar   opc, modrm /* , abyte*/;
    UInt    d32 /*, pair*/;
    UChar   dis_buf[50];
    Int     am_sz, d_sz;
-   IRTemp  t1, t2; //, t3, t4;
-   IRType  ty;
    //Char  loc_buf[M_VG_ERRTXT];
 
    /* Holds eip at the start of the insn, so that we can print
@@ -6037,18 +6034,16 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0xA0: /* MOV Ob,AL */
 //--       sz = 1;
 //--       /* Fall through ... */
-//--    case 0xA1: /* MOV Ov,eAX */
-//--       d32 = getUDisp32(eip); eip += 4;
-//--       t1 = newTemp(cb); t2 = newTemp(cb);
-//--       uInstr2(cb, MOV,   4, Literal, 0,   TempReg, t2);
-//--       uLiteral(cb, d32);
-//--       handleSegOverride(cb, sorb, t2);
-//--       uInstr2(cb, LOAD, sz, TempReg, t2,  TempReg, t1);
-//--       uInstr2(cb, PUT,  sz, TempReg, t1,  ArchReg, R_EAX);
-//--       DIP("mov%c %s0x%x, %s\n", nameISize(sz), sorbTxt(sorb),
-//--                                 d32, nameIReg(sz,R_EAX));
-//--       break;
-//-- 
+   case 0xA1: /* MOV Ov,eAX */
+      d32 = getUDisp32(delta); delta += 4;
+      ty = szToITy(sz);
+      addr = newTemp(Ity_I32);
+      assign( addr, handleSegOverride(sorb, mkU32(d32)) );
+      putIReg(sz, R_EAX, loadLE(ty, mkexpr(addr)));
+      DIP("mov%c %s0x%x, %s\n", nameISize(sz), sorbTxt(sorb),
+                                d32, nameIReg(sz,R_EAX));
+      break;
+
 //--    case 0xA2: /* MOV AL,Ob */
 //--       sz = 1;
 //--       /* Fall through ... */
@@ -6447,24 +6442,21 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       break;
 
 
-//--    case 0x68: /* PUSH Iv */
-//--       d32 = getUDisp(sz,eip); eip += sz;
-//--       goto do_push_I;
+   case 0x68: /* PUSH Iv */
+      d32 = getUDisp(sz,delta); delta += sz;
+      goto do_push_I;
 //--    case 0x6A: /* PUSH Ib, sign-extended to sz */
 //--       d32 = getSDisp8(eip); eip += 1;
 //--       goto do_push_I;
-//--    do_push_I:
-//--       t1 = newTemp(cb); t2 = newTemp(cb);
-//--       uInstr2(cb, GET,    4, ArchReg, R_ESP, TempReg, t1);
-//--       uInstr2(cb, SUB,    4, Literal, 0,     TempReg, t1);
-//--       uLiteral(cb, sz);
-//--       uInstr2(cb, PUT,    4, TempReg, t1,    ArchReg, R_ESP);
-//--       uInstr2(cb, MOV,   sz, Literal, 0,     TempReg, t2);
-//--       uLiteral(cb, d32);
-//--       uInstr2(cb, STORE, sz, TempReg, t2,    TempReg, t1);
-//--       DIP("push%c $0x%x\n", nameISize(sz), d32);
-//--       break;
-//-- 
+   do_push_I:
+      ty = szToITy(sz);
+      t1 = newTemp(Ity_I32); t2 = newTemp(ty);
+      assign( t1, binop(Iop_Sub32,getIReg(4,R_ESP),mkU32(sz)) );
+      putIReg(4, R_ESP, mkexpr(t1) );
+      storeLE( mkexpr(t1), mkU(ty,d32) );
+      DIP("push%c $0x%x\n", nameISize(sz), d32);
+      break;
+
 //--    case 0x9C: /* PUSHF */
 //--       vg_assert(sz == 2 || sz == 4);
 //--       t1 = newTemp(cb); t2 = newTemp(cb); t3 = newTemp(cb);
@@ -6702,18 +6694,14 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
              nameISize(sz), nameIReg(sz,gregOfRM(modrm)), 
                             nameIReg(sz,eregOfRM(modrm)));
       } else {
-         vassert( 0);
-#if 0
-         pair = disAMode ( cb, sorb, eip, dis_buf );
-         t3   = LOW24(pair);
-         uInstr2(cb, LOAD, sz, TempReg, t3, TempReg, t1);
-         uInstr2(cb, GET, sz, ArchReg, gregOfRM(modrm), TempReg, t2);
-         uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t3);
-         uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, gregOfRM(modrm));
-         eip += HI8(pair);
+         addr = disAMode ( &alen, sorb, delta, dis_buf );
+	 assign( t1, loadLE(ty,mkexpr(addr)) );
+	 assign( t2, getIReg(sz,gregOfRM(modrm)) );
+	 storeLE( mkexpr(addr), mkexpr(t2) );
+	 putIReg( sz, gregOfRM(modrm), mkexpr(t1) );
+	 delta += alen;
          DIP("xchg%c %s, %s\n", nameISize(sz), 
                                 nameIReg(sz,gregOfRM(modrm)), dis_buf);
-#endif
       }
       break;
 

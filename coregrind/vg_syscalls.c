@@ -4403,8 +4403,7 @@ POST(sys_poll)
 
 PRE(sys_readlink, Special)
 {
-   char name[25];
-
+   int saved = SYSNO;
    PRINT("sys_readlink ( %p, %p, %llu )", arg1,arg2,(ULong)arg3);
    PRE_REG_READ3(long, "readlink",
                  const char *, path, char *, buf, int, bufsiz);
@@ -4412,21 +4411,24 @@ PRE(sys_readlink, Special)
    PRE_MEM_WRITE( "readlink(buf)", arg2,arg3 );
 
    /*
-    * Handle the single case where readlink failed reading /proc/self/exe.
+    * Handle the case where readlink is looking at /proc/self/exe or
+    * /proc/<pid>/exe.
     */
 
-   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   set_result( VG_(do_syscall)(saved, arg1, arg2, arg3));
+   if ((Int)res == -2) {
+      char name[25];
+
+      VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
    
-   if (VG_(strcmp)((Char *)arg1, name) == 0 ||
-      VG_(strcmp)((Char *)arg1, "/proc/self/exe") == 0) {
-      VG_(sprintf)(name, "/proc/self/fd/%d", VG_(clexecfd));
-      res = VG_(do_syscall)(SYSNO, name, arg2, arg3);
-   }
-   else {
-      res = VG_(do_syscall)(SYSNO, arg1, arg2, arg3);
+      if (VG_(strcmp)((Char *)arg1, name) == 0 ||
+          VG_(strcmp)((Char *)arg1, "/proc/self/exe") == 0) {
+         VG_(sprintf)(name, "/proc/self/fd/%d", VG_(clexecfd));
+         set_result( VG_(do_syscall)(saved, name, arg2, arg3));
+      }
    }
 
-   if (res > 0)
+   if ((Int)res > 0)
       POST_MEM_WRITE( arg2, res );
 }
 

@@ -32,7 +32,7 @@ Detailed technical notes for hackers, maintainers and the
 overly-curious<br>
 These notes pertain to snapshot 20020306<br>
 <p>
-<a href="mailto:jseward@acm.org">jseward@acm.org<br>
+<a href="mailto:jseward@acm.org">jseward@acm.org</a><br>
 <a href="http://developer.kde.org/~sewardj">http://developer.kde.org/~sewardj</a><br>
 Copyright &copy; 2000-2002 Julian Seward
 <p>
@@ -363,7 +363,7 @@ performance or functionality.  As a result:
     <li>The main dispatch loop, in <code>VG_(dispatch)</code>, checks
         that translations do not set <code>%ebp</code> to any value
         different from <code>VG_EBP_DISPATCH_CHECKED</code> or
-        <code>& VG_(baseBlock)</code>.  In effect this test is free,
+        <code>&amp; VG_(baseBlock)</code>.  In effect this test is free,
         and is permanently engaged.
     <p>
     <li>There are a couple of ifdefed-out consistency checks I
@@ -762,7 +762,7 @@ junk faster than you can possibly imagine.
 <h3>UCode operand tags: type <code>Tag</code></h3>
 
 UCode is, more or less, a simple two-address RISC-like code.  In
-keeping with the x86 AT&T assembly syntax, generally speaking the
+keeping with the x86 AT&amp;T assembly syntax, generally speaking the
 first operand is the source operand, and the second is the destination
 operand, which is modified when the uinstr is notionally executed.
 
@@ -1725,7 +1725,7 @@ Every 1000 basic blocks, we see if more signals have arrived.  If so,
 <code>VG_(deliver_signals)</code> builds signal delivery frames on the
 client's stack, and allows their handlers to be run.  Valgrind places
 in these signal delivery frames a bogus return address,
-</code>VG_(signalreturn_bogusRA)</code>, and checks all jumps to see
+<code>VG_(signalreturn_bogusRA)</code>, and checks all jumps to see
 if any jump to it.  If so, this is a sign that a signal handler is
 returning, and if so Valgrind removes the relevant signal frame from
 the client's stack, restores the from the signal frame the simulated
@@ -2051,9 +2051,9 @@ void fooble ( void )
    int spacer1;
    int b[10];
    int spacer2;
-   VALGRIND_MAKE_NOACCESS(&spacer0, sizeof(int));
-   VALGRIND_MAKE_NOACCESS(&spacer1, sizeof(int));
-   VALGRIND_MAKE_NOACCESS(&spacer2, sizeof(int));
+   VALGRIND_MAKE_NOACCESS(&amp;spacer0, sizeof(int));
+   VALGRIND_MAKE_NOACCESS(&amp;spacer1, sizeof(int));
+   VALGRIND_MAKE_NOACCESS(&amp;spacer2, sizeof(int));
    a[10] = 99;
 }
 </pre>

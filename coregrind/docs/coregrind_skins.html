@@ -175,7 +175,7 @@ three spaces in which program code executes:
 <a name="writingaskin"></a>
 <h2>2&nbsp; Writing a Skin</h2>
 
-<a name="whywriteaskin"</a>
+<a name="whywriteaskin"></a>
 <h3>2.1&nbsp; Why write a skin?</h3>
 
 Before you write a skin, you should have some idea of what it should do.  What
@@ -209,7 +209,7 @@ the number of times a particular function is called) to very intrusive (e.g.
 memcheck's memory checking).
 
 
-<a name="suggestedskins"</a>
+<a name="suggestedskins"></a>
 <h3>2.2&nbsp; Suggested skins</h3>
 
 Here is a list of ideas we have had for skins that should not be too hard to
@@ -279,7 +279,7 @@ implement.
 
 We would love to hear from anyone who implements these or other skins.
 
-<a name="howskinswork"</a>
+<a name="howskinswork"></a>
 <h3>2.3&nbsp; How skins work</h3>
 
 Skins must define various functions for instrumenting programs that are called
@@ -299,7 +299,7 @@ This magic is all done for you;  the shared object used is chosen with the
 <code>--skin</code> option to the <code>valgrind</code> startup script.  The
 default skin used is <code>memcheck</code>, Valgrind's original memory checker.
 
-<a name="gettingcode"</a>
+<a name="gettingcode"></a>
 <h3>2.4&nbsp; Getting the code</h3>
 
 To write your own skin, you'll need to check out a copy of Valgrind from the
@@ -325,7 +325,7 @@ cvs -z3 -d:pserver:anonymous@cvs.valgrind.sourceforge.net:/cvsroot/valgrind co -
 where <code><i>TAG</i></code> has the form <code>VALGRIND_X_Y_Z</code> for
 version X.Y.Z.
 
-<a name="gettingstarted"</a>
+<a name="gettingstarted"></a>
 <h3>2.5&nbsp; Getting started</h3>
 
 Valgrind uses GNU <code>automake</code> and <code>autoconf</code> for the
@@ -532,7 +532,7 @@ These just prepend longer strings in front of names to avoid potential
 namespace clashes.  We strongly recommend using the <code>SK_</code> macro
 for any global functions and variables in your skin.<p>
 
-<a name="wordsofadvice"</a>
+<a name="wordsofadvice"></a>
 <h3>2.11&nbsp; Words of Advice</h3>
 
 Writing and debugging skins is not trivial.  Here are some suggestions for
@@ -556,6 +556,7 @@ Valgrind with some effort:
       for (p = 0; p < 50000; p++)
          for (q = 0; q < 50000; q++) ;
    }
+</pre>
       </li><p>
       and rebuild Valgrind.
 
@@ -594,7 +595,7 @@ The other debugging command line options can be useful too (run <code>valgrind
 Once a skin becomes more complicated, there are some extra things you may
 want/need to do.
 
-<a name="suppressions"</a>
+<a name="suppressions"></a>
 <h3>3.1&nbsp; Suppressions</h3>
 
 If your skin reports errors and you want to suppress some common ones, you can
@@ -603,7 +604,7 @@ add suppressions to the suppression files.  The relevant files are
 these files by combining the relevant <code>.supp</code> files depending on the
 versions of linux, X and glibc on a system.
 
-<a name="documentation"</a>
+<a name="documentation"></a>
 <h3>3.2&nbsp; Documentation</h3>
 
 If you are feeling conscientious and want to write some HTML documentation for
@@ -636,7 +637,7 @@ name again):
   </li><p>
 </ol>
 
-<a name="regressiontests"</a>
+<a name="regressiontests"></a>
 <h3>3.3&nbsp; Regression tests</h3>
 
 Valgrind has some support for regression tests.  If you want to write
@@ -673,7 +674,7 @@ regression tests for your skin:
   </li><p>
 </ol>
 
-<a name="profiling"</a>
+<a name="profiling"></a>
 <h3>3.4&nbsp; Profiling</h3>
 
 To do simple tick-based profiling of a skin, include the line 
@@ -691,7 +692,7 @@ core profiling event numbers.  See <code>include/vg_skin.h</code> for details
 and the ``memcheck'' skin for an example.
 
 
-<a name="othermakefilehackery"</a>
+<a name="othermakefilehackery"></a>
 <h3>3.5&nbsp; Other makefile hackery</h3>
 
 If you add any directories under <code>valgrind/foobar/</code>, you will
@@ -704,7 +705,7 @@ add them to the <code>bin_SCRIPTS</code> variable in
 <code>valgrind/foobar/Makefile.am</code>.<p>
 
 
-<a name="interfaceversions"</a>
+<a name="interfaceversions"></a>
 <h3>3.5&nbsp; Core/skin interface versions</h3>
 
 In order to allow for the core/skin interface to evolve over time, Valgrind

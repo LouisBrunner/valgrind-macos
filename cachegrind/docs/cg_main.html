@@ -54,8 +54,7 @@ The two steps are:
       This step should be done every time you want to collect
       information about a new program, a changed program, or about the
       same program with different input.
-  </li>
-  <p>
+  </li><p>
   <li>Generate a function-by-function summary, and possibly annotate
       source files, using the supplied
       <code>cg_annotate</code> program. Source files to annotate can be
@@ -66,14 +65,14 @@ The two steps are:
       <p>
       This step can be performed as many times as you like for each
       Step 2.  You may want to do multiple annotations showing
-      different information each time.<p>
-  </li>
+      different information each time.
+  </li><p>
 </ol>
 
-The steps are described in detail in the following sections.<p>
+The steps are described in detail in the following sections.
 
 
-<h4>4.3&nbsp; Cache simulation specifics</h3>
+<h3>4.3&nbsp; Cache simulation specifics</h3>
 
 Cachegrind uses a simulation for a machine with a split L1 cache and a unified
 L2 cache.  This configuration is used for all (modern) x86-based machines we
@@ -85,20 +84,22 @@ The more specific characteristics of the simulation are as follows.
 <ul>
   <li>Write-allocate: when a write miss occurs, the block written to
       is brought into the D1 cache.  Most modern caches have this
-      property.</li><p>
-
+      property.<p>
+  </li>
+  <p>
   <li>Bit-selection hash function: the line(s) in the cache to which a
       memory block maps is chosen by the middle bits M--(M+N-1) of the
       byte address, where:
       <ul>
         <li>&nbsp;line size = 2^M bytes&nbsp;</li>
         <li>(cache size / line size) = 2^N bytes</li>
-      </ul> </li><p>
-
+      </ul> 
+  </li>
+  <p>
   <li>Inclusive L2 cache: the L2 cache replicates all the entries of
       the L1 cache.  This is standard on Pentium chips, but AMD
       Athlons use an exclusive L2 cache that only holds blocks evicted
-      from L1.  Ditto AMD Durons and most modern VIAs.</li><p>
+      from L1.  Ditto AMD Durons and most modern VIAs.</li>
 </ul>
 
 The cache configuration simulated (cache size, associativity and line size) is
@@ -108,8 +109,9 @@ an early incarnation that doesn't give any cache information, then Cachegrind
 will fall back to using a default configuration (that of a model 3/4 Athlon).
 Cachegrind will tell you if this happens.  You can manually specify one, two or
 all three levels (I1/D1/L2) of the cache from the command line using the
-<code>--I1</code>, <code>--D1</code> and <code>--L2</code> options.<p>
+<code>--I1</code>, <code>--D1</code> and <code>--L2</code> options.
 
+<p>
 Other noteworthy behaviour:
 
 <ul>
@@ -118,14 +120,15 @@ Other noteworthy behaviour:
     <li>If both blocks hit --&gt; counted as one hit</li>
     <li>If one block hits, the other misses --&gt; counted as one miss</li>
     <li>If both blocks miss --&gt; counted as one miss (not two)</li>
-  </ul><p></li>
+  </ul>
+  </li>
 
   <li>Instructions that modify a memory location (eg. <code>inc</code> and
       <code>dec</code>) are counted as doing just a read, ie. a single data
       reference.  This may seem strange, but since the write can never cause a
       miss (the read guarantees the block is in the cache) it's not very
-      interesting.<p>
-
+      interesting.
+      <p>
       Thus it measures not the number of times the data cache is accessed, but
       the number of times a data cache miss could occur.<p>
       </li>
@@ -170,14 +173,14 @@ that look like this will be printed:
 Cache accesses for instruction fetches are summarised first, giving the
 number of fetches made (this is the number of instructions executed, which
 can be useful to know in its own right), the number of I1 misses, and the
-number of L2 instruction (<code>L2i</code>) misses.<p>
-
+number of L2 instruction (<code>L2i</code>) misses.
+<p>
 Cache accesses for data follow. The information is similar to that of the
 instruction fetches, except that the values are also shown split between reads
 and writes (note each row's <code>rd</code> and <code>wr</code> values add up
-to the row's total).<p>
-
-Combined instruction and data figures for the L2 cache follow that.<p>
+to the row's total).
+<p>
+Combined instruction and data figures for the L2 cache follow that.
 
 
 <h3>4.5&nbsp; Output file</h3>
@@ -194,8 +197,7 @@ Things to note about the <code>cachegrind.out.<i>pid</i></code> file:
       is run, and will overwrite any existing
       <code>cachegrind.out.<i>pid</i></code> in the current directory (but
       that won't happen very often because it takes some time for process ids
-      to be recycled).</li>
-  <p>
+      to be recycled).</li><p>
   <li>It can be huge: <code>ls -l</code> generates a file of about
       350KB.  Browsing a few files and web pages with a Konqueror
       built with full debugging information generates a file

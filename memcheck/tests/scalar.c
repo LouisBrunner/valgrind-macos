@@ -135,8 +135,8 @@ int main(void)
  //SY(__NR_stime); // (Not yet handled by Valgrind) FAIL;
 
    // __NR_ptrace 26
-   // XXX: memory pointed to be arg3 is never checked...
-   GO(__NR_ptrace, "4s 2m");
+   // XXX: memory pointed to be arg3 goes unchecked... otherwise would be 2m
+   GO(__NR_ptrace, "4s 1m");
    SY(__NR_ptrace, x0+PTRACE_GETREGS, x0, x0, x0); FAIL;
 
    // __NR_alarm 27
@@ -1191,7 +1191,7 @@ int main(void)
  //SY(__NR_set_mempolicy); // (Not yet handled by Valgrind) FAIL;
 
    // __NR_mq_open 277
-   GO(__NR_mq_open, "4s 2m");
+   GO(__NR_mq_open, "4s 3m");
    SY(__NR_mq_open, x0, x0+O_CREAT, x0, x0+1); FAIL;
 
    // __NR_mq_unlink (__NR_mq_open+1)

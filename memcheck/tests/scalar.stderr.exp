@@ -377,7 +377,7 @@ Syscall param setuid16(uid) contains uninitialised byte(s)
  25:          __NR_stime n/a
 -----------------------------------------------------
 -----------------------------------------------------
- 26:         __NR_ptrace 4s 2m
+ 26:         __NR_ptrace 4s 1m
 -----------------------------------------------------
 
 Syscall param ptrace(request) contains uninitialised byte(s)
@@ -4364,7 +4364,7 @@ Syscall param utimes(tvp) points to unaddressable byte(s)
 276:  __NR_set_mempolicy n/a
 -----------------------------------------------------
 -----------------------------------------------------
-277:        __NR_mq_open 4s 2m
+277:        __NR_mq_open 4s 3m
 -----------------------------------------------------
 
 Syscall param mq_open(name) contains uninitialised byte(s)

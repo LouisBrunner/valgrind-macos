@@ -1619,7 +1619,7 @@ static void fprint_BBCC_table_and_calc_totals(void)
 
    fd = VG_(open)(cachegrind_out_file, VKI_O_CREAT|VKI_O_TRUNC|VKI_O_WRONLY,
                                        VKI_S_IRUSR|VKI_S_IWUSR);
-   if (-1 == fd) {
+   if (fd < 0) {
       /* If the file can't be opened for whatever reason (conflict
          between multiple cachegrinded processes?), give up now. */
       file_err(); 

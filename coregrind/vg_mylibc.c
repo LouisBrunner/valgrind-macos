@@ -1229,18 +1229,7 @@ Int VG_(safe_fd)(Int oldfd)
 /* Returns -1 on failure. */
 Int VG_(open) ( const Char* pathname, Int flags, Int mode )
 {  
-   Int fd;
-
-   /* (old comment, not sure if it still applies  NJN 2002-sep-09) */
-   /* This gets a segmentation fault if pathname isn't a valid file.
-      I don't know why.  It seems like the call to open is getting
-      intercepted and messed with by glibc ... */
-   /* fd = open( pathname, O_RDONLY ); */
-   /* ... so we go direct to the horse's mouth, which seems to work
-      ok: */
-   fd = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
-   /* VG_(printf)("result = %d\n", fd); */
-   /* return -ve error code */
+   Int fd = VG_(do_syscall3)(__NR_open, (UWord)pathname, flags, mode);
    return fd;
 }
 
@@ -1259,25 +1248,20 @@ void VG_(close) ( Int fd )
 Int VG_(read) ( Int fd, void* buf, Int count)
 {
    Int res;
-   /* res = read( fd, buf, count ); */
    res = VG_(do_syscall3)(__NR_read, fd, (UWord)buf, count);
-   /* return -ERRNO on error */
    return res;
 }
 
 Int VG_(write) ( Int fd, const void* buf, Int count)
 {
    Int res;
-   /* res = write( fd, buf, count ); */
    res = VG_(do_syscall3)(__NR_write, fd, (UWord)buf, count);
-   /* return -ERRNO on error */
    return res;
 }
 
 OffT VG_(lseek) ( Int fd, OffT offset, Int whence)
 {
    Int res;
-   /* res = lseek( fd, offset, whence ); */
    res = VG_(do_syscall3)(__NR_lseek, fd, offset, whence);
    if (VG_(is_kerror)(res)) res = -1;
    return res;

@@ -74,6 +74,11 @@ static UChar* guest_code;
 /* CONST */
 static Addr32 guest_pc_bbstart;
 
+/* The guest address for the instruction currently being
+   translated. */
+/* CONST for any specific insn, not for the entire BB */
+static Addr32 guest_cia_curr_instr;
+
 /* The IRBB* into which we're generating code. */
 static IRBB* irbb;
 
@@ -246,10 +251,12 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
       resteerOK = n_instrs < vex_control.guest_chase_thresh;
       first_stmt_idx = irbb->stmts_used;
 
+      guest_cia_curr_instr = guest_pc_bbstart + delta;
+
       if (n_instrs > 0) {
          /* for the first insn, the dispatch loop will have set
             GPR1, but for all the others we have to do it ourselves. */
-         stmt( IRStmt_Put( OFFB_GPR1, mkU32(guest_pc_bbstart + delta)) );
+         stmt( IRStmt_Put( OFFB_GPR1, mkU32(guest_cia_curr_instr)) );
       }
 
       dres = disInstr( resteerOK, chase_into_ok, 
@@ -281,7 +288,7 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
       n_instrs++;
       DIP("\n");
 
-      vassert(size > 0 && size <= 18);
+      vassert(size == 0 || size == 4);
       if (!resteerOK) 
          vassert(dres != Dis_Resteer);
       if (dres != Dis_Resteer) 
@@ -3048,7 +3055,18 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* All decode failures end up here. */
    vex_printf("disInstr(ppc32): unhandled instruction: "
               "0x%x\n", theInstr);
-   vpanic("ppc32ToIR: unimplemented insn");
+
+   /* Tell the dispatcher that this insn cannot be decoded, and so has
+      not been executed, and (is currently) the next to be executed.
+      CIA should be up-to-date since it made so at the start of each
+      insn, but nevertheless be paranoid and update it again right
+      now. */
+   stmt( IRStmt_Put( OFFB_CIA, mkU32(guest_cia_curr_instr) ) );
+   irbb->next = mkU32(guest_cia_curr_instr);
+   irbb->jumpkind = Ijk_NoDecode;
+   whatNext = Dis_StopHere;
+   *size = 0;
+   return whatNext;
 
    } /* switch (opc) for the main (primary) opcode switch. */
 

@@ -11,6 +11,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
 		priv/host-arm/hdefs.h			\
 		priv/host-generic/h_generic_regs.h	\
+		priv/host-generic/h_generic_simd64.h	\
 		priv/main/vex_globals.h			\
 		priv/main/vex_util.h			\
 		priv/guest-x86/gdefs.h			\
@@ -29,6 +30,7 @@ LIB_OBJS = 	priv/ir/irdefs.o			\
 		priv/host-x86/isel.o			\
 		priv/host-arm/isel.o			\
 		priv/host-generic/h_generic_regs.o	\
+		priv/host-generic/h_generic_simd64.o	\
 		priv/host-generic/reg_alloc2.o		\
 		priv/guest-x86/ghelpers.o		\
 		priv/guest-amd64/ghelpers.o		\
@@ -143,6 +145,10 @@ priv/host-arm/isel.o: $(ALL_HEADERS) priv/host-arm/isel.c
 priv/host-generic/h_generic_regs.o: $(ALL_HEADERS) priv/host-generic/h_generic_regs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-generic/h_generic_regs.o \
 					 -c priv/host-generic/h_generic_regs.c
+
+priv/host-generic/h_generic_simd64.o: $(ALL_HEADERS) priv/host-generic/h_generic_simd64.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-generic/h_generic_simd64.o \
+					 -c priv/host-generic/h_generic_simd64.c
 
 priv/host-generic/reg_alloc2.o: $(ALL_HEADERS) priv/host-generic/reg_alloc2.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-generic/reg_alloc2.o \

@@ -327,6 +327,56 @@ typedef
       Iop_ReinterpF64asI64, Iop_ReinterpI64asF64,
       Iop_ReinterpF32asI32, Iop_ReinterpI32asF32,
 
+      /* ------------------ 64-bit SIMD Integer. ------------------ */
+
+      /* MISC (vector integer cmp != 0) */
+      //      Iop_CmpNEZ8x8, Iop_CmpNEZ16x4, Iop_CmpNEZ32x2,
+
+      /* ADDITION (normal / unsigned sat / signed sat) */
+      Iop_Add8x8,   Iop_Add16x4,   Iop_Add32x2,
+      Iop_QAdd8Ux8, Iop_QAdd16Ux4,
+      Iop_QAdd8Sx8, Iop_QAdd16Sx4,
+
+      /* SUBTRACTION (normal / unsigned sat / signed sat) */
+      Iop_Sub8x8,   Iop_Sub16x4,   Iop_Sub32x2,
+      Iop_QSub8Ux8, Iop_QSub16Ux4,
+      Iop_QSub8Sx8, Iop_QSub16Sx4,
+
+      /* MULTIPLICATION (normal / high half of signed/unsigned) */
+      Iop_Mul16x4,
+      Iop_MulHi16Ux4,
+      Iop_MulHi16Sx4,
+
+      /* AVERAGING: note: (arg1 + arg2 + 1) >> 1 */
+      Iop_Avg8Ux8,
+      Iop_Avg16Ux4,
+
+      /* MIN/MAX */
+      Iop_Max16Sx4,
+      Iop_Max8Ux8,
+      Iop_Min16Sx4,
+      Iop_Min8Ux8,
+
+      /* COMPARISON */
+      Iop_CmpEQ8x8,  Iop_CmpEQ16x4,  Iop_CmpEQ32x2,
+      Iop_CmpGT8Sx8, Iop_CmpGT16Sx4, Iop_CmpGT32Sx2,
+
+      /* VECTOR x SCALAR SHIFT (shift amt :: Ity_I8) */
+      Iop_ShlN16x4, Iop_ShlN32x2,
+      Iop_ShrN16x4, Iop_ShrN32x2,
+      Iop_SarN16x4, Iop_SarN32x2,
+
+      /* NARROWING -- narrow 2xI64 into 1xI64, hi half from left arg */
+      Iop_QNarrow16Ux4,
+      Iop_QNarrow16Sx4,
+      Iop_QNarrow32Sx2,
+
+      /* INTERLEAVING -- interleave lanes from low or high halves of
+         operands.  Most-significant result lane is from the left
+         arg. */
+      Iop_InterleaveHI8x8, Iop_InterleaveHI16x4, Iop_InterleaveHI32x2,
+      Iop_InterleaveLO8x8, Iop_InterleaveLO16x4, Iop_InterleaveLO32x2,
+
       /* ------------------ 128-bit SIMD FP. ------------------ */
 
       /* --- 32x4 vector FP --- */

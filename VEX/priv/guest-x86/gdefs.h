@@ -98,11 +98,11 @@ extern ULong x86g_calculate_RCR  (
 
 extern ULong x86g_check_fldcw ( UInt fpucw );
 
-extern UInt x86g_create_fpucw ( UInt fpround );
+extern UInt  x86g_create_fpucw ( UInt fpround );
 
 extern ULong x86g_check_ldmxcsr ( UInt mxcsr );
 
-extern UInt x86g_create_mxcsr ( UInt sseround );
+extern UInt  x86g_create_mxcsr ( UInt sseround );
 
 /* Translate a guest virtual_addr into a guest linear address by
    consulting the supplied LDT/GDT structures.  Their representation
@@ -114,78 +114,11 @@ extern
 ULong x86g_use_seg_selector ( HWord ldt, HWord gdt, 
                               UInt seg_selector, UInt virtual_addr );
 
-/* --- Clean helpers for MMX --- */
-
-extern ULong x86g_calculate_add64x1 ( ULong, ULong );
-extern ULong x86g_calculate_add32x2 ( ULong, ULong );
-extern ULong x86g_calculate_add16x4 ( ULong, ULong );
-extern ULong x86g_calculate_add8x8  ( ULong, ULong );
-
-extern ULong x86g_calculate_qadd16Sx4 ( ULong, ULong );
-extern ULong x86g_calculate_qadd8Sx8  ( ULong, ULong );
-
-extern ULong x86g_calculate_qadd16Ux4 ( ULong, ULong );
-extern ULong x86g_calculate_qadd8Ux8  ( ULong, ULong );
-
-extern ULong x86g_calculate_sub64x1 ( ULong, ULong );
-extern ULong x86g_calculate_sub32x2 ( ULong, ULong );
-extern ULong x86g_calculate_sub16x4 ( ULong, ULong );
-extern ULong x86g_calculate_sub8x8  ( ULong, ULong );
-
-extern ULong x86g_calculate_qsub16Sx4 ( ULong, ULong );
-extern ULong x86g_calculate_qsub8Sx8  ( ULong, ULong );
-
-extern ULong x86g_calculate_qsub16Ux4 ( ULong, ULong );
-extern ULong x86g_calculate_qsub8Ux8  ( ULong, ULong );
-
-extern ULong x86g_calculate_mulhi16x4 ( ULong, ULong );
-extern ULong x86g_calculate_mullo16x4 ( ULong, ULong );
-
-extern ULong x86g_calculate_pmaddwd ( ULong, ULong );
-
-extern ULong x86g_calculate_cmpeq32x2  ( ULong, ULong );
-extern ULong x86g_calculate_cmpeq16x4  ( ULong, ULong );
-extern ULong x86g_calculate_cmpeq8x8   ( ULong, ULong );
-extern ULong x86g_calculate_cmpge32Sx2 ( ULong, ULong );
-extern ULong x86g_calculate_cmpge16Sx4 ( ULong, ULong );
-extern ULong x86g_calculate_cmpge8Sx8  ( ULong, ULong );
-
-extern ULong x86g_calculate_packssdw ( ULong, ULong );
-extern ULong x86g_calculate_packsswb ( ULong, ULong );
-extern ULong x86g_calculate_packuswb ( ULong, ULong );
-
-extern ULong x86g_calculate_punpckhbw ( ULong, ULong );
-extern ULong x86g_calculate_punpcklbw ( ULong, ULong );
-extern ULong x86g_calculate_punpckhwd ( ULong, ULong );
-extern ULong x86g_calculate_punpcklwd ( ULong, ULong );
-extern ULong x86g_calculate_punpckhdq ( ULong, ULong );
-extern ULong x86g_calculate_punpckldq ( ULong, ULong );
-
-extern ULong x86g_calculate_shl16x4 ( ULong, ULong );
-extern ULong x86g_calculate_shl32x2 ( ULong, ULong );
-extern ULong x86g_calculate_shl64x1 ( ULong, ULong );
-
-extern ULong x86g_calculate_shr16Ux4 ( ULong, ULong );
-extern ULong x86g_calculate_shr32Ux2 ( ULong, ULong );
-extern ULong x86g_calculate_shr64Ux1 ( ULong, ULong );
-
-extern ULong x86g_calculate_shr16Sx4 ( ULong, ULong );
-extern ULong x86g_calculate_shr32Sx2 ( ULong, ULong );
-
-extern ULong x86g_calculate_avg8Ux8  ( ULong, ULong );
-extern ULong x86g_calculate_avg16Ux4 ( ULong, ULong );
-
-extern ULong x86g_calculate_max16Sx4 ( ULong, ULong );
-extern ULong x86g_calculate_max8Ux8  ( ULong, ULong );
-extern ULong x86g_calculate_min16Sx4 ( ULong, ULong );
-extern ULong x86g_calculate_min8Ux8  ( ULong, ULong );
-
-extern UInt  x86g_calculate_pmovmskb ( ULong xx );
-extern ULong x86g_calculate_psadbw ( ULong, ULong );
-
-extern ULong x86g_calculate_mull16uHIx4 ( ULong, ULong );
-
+extern ULong x86g_calculate_mmx_pmaddwd  ( ULong, ULong );
+extern ULong x86g_calculate_mmx_psadbw   ( ULong, ULong );
+extern UInt  x86g_calculate_mmx_pmovmskb ( ULong );
 extern UInt  x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
+
 
 /* --- DIRTY HELPERS --- */
 

@@ -1485,9 +1485,9 @@ void x86g_dirtyhelper_FINIT ( VexGuestX86State* gst )
    appears to differ from the former only in that the 8 FP registers
    themselves are not transferred into the guest state. */
 static
-VexEmWarn put_x87 ( Bool moveRegs,
-                    /*IN*/UChar* x87_state,
-                    /*OUT*/VexGuestX86State* vex_state )
+VexEmWarn do_put_x87 ( Bool moveRegs,
+                       /*IN*/UChar* x87_state,
+                       /*OUT*/VexGuestX86State* vex_state )
 {
    Int        stno, preg;
    UInt       tag;
@@ -1543,19 +1543,11 @@ VexEmWarn put_x87 ( Bool moveRegs,
 }
 
 
-/* VISIBLE TO LIBVEX CLIENT */
-VexEmWarn LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
-                                    /*OUT*/VexGuestX86State* vex_state )
-{
-   return put_x87(True, x87_state, vex_state);
-}
-
-
-/* VISIBLE TO LIBVEX CLIENT */
 /* Create an x87 FPU state from the guest state, as close as
    we can approximate it. */
-void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state,
-                               /*OUT*/UChar* x87_state )
+static
+void do_get_x87 ( /*IN*/VexGuestX86State* vex_state,
+                  /*OUT*/UChar* x87_state )
 {
    Int        i, stno, preg;
    UInt       tagw;
@@ -1590,27 +1582,6 @@ void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state,
       }
    }
    x87->env[FP_ENV_TAG] = tagw;
-}
-
-
-/* VISIBLE TO LIBVEX CLIENT */
-void LibVEX_GuestX86_put_eflags ( UInt eflags_native,
-                                  /*OUT*/VexGuestX86State* vex_state )
-{
-   vex_state->guest_DFLAG
-      = (eflags_native & (1<<10)) ? 0xFFFFFFFF : 0x00000001;
-   vex_state->guest_IDFLAG
-      = (eflags_native & (1<<21)) ? 1 : 0;
-
-   /* Mask out everything except O S Z A C P. */
-   eflags_native
-      &= (X86G_CC_MASK_C | X86G_CC_MASK_P | X86G_CC_MASK_A 
-          | X86G_CC_MASK_Z | X86G_CC_MASK_S | X86G_CC_MASK_O);
-
-   vex_state->guest_CC_OP   = X86G_CC_OP_COPY;
-   vex_state->guest_CC_DEP1 = eflags_native;
-   vex_state->guest_CC_DEP2 = 0;
-   vex_state->guest_CC_NDEP = 0; /* unnecessary paranoia */
 }
 
 
@@ -1849,7 +1820,7 @@ void x86g_dirtyhelper_FXSAVE ( VexGuestX86State* gst, HWord addr )
    Int       r, stno;
    UShort    *srcS, *dstS;
 
-   LibVEX_GuestX86_get_x87( gst, (UChar*)&tmp );
+   do_get_x87( gst, (UChar*)&tmp );
    mxcsr = x86g_create_mxcsr( gst->guest_SSEROUND );
 
    /* Now build the proper fxsave image from the x87 image we just
@@ -1929,14 +1900,14 @@ void x86g_dirtyhelper_FXSAVE ( VexGuestX86State* gst, HWord addr )
 /* DIRTY HELPER (reads guest state, writes guest mem) */
 void x86g_dirtyhelper_FSAVE ( VexGuestX86State* gst, HWord addr )
 {
-   LibVEX_GuestX86_get_x87( gst, (UChar*)addr );
+   do_get_x87( gst, (UChar*)addr );
 }
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest state, reads guest mem) */
 VexEmWarn x86g_dirtyhelper_FRSTOR ( VexGuestX86State* gst, HWord addr )
 {
-   return LibVEX_GuestX86_put_x87( (UChar*)addr, gst );
+   return do_put_x87( True/*regs too*/, (UChar*)addr, gst );
 }
 
 /* CALLED FROM GENERATED CODE */
@@ -1947,7 +1918,7 @@ void x86g_dirtyhelper_FSTENV ( VexGuestX86State* gst, HWord addr )
    Int       i;
    UShort*   addrP = (UShort*)addr;
    Fpu_State tmp;
-   LibVEX_GuestX86_get_x87( gst, (UChar*)&tmp );
+   do_get_x87( gst, (UChar*)&tmp );
    for (i = 0; i < 14; i++)
       addrP[i] = tmp.env[i];
 }
@@ -1956,535 +1927,74 @@ void x86g_dirtyhelper_FSTENV ( VexGuestX86State* gst, HWord addr )
 /* DIRTY HELPER (writes guest state, reads guest mem) */
 VexEmWarn x86g_dirtyhelper_FLDENV ( VexGuestX86State* gst, HWord addr )
 {
-   return put_x87(False, (UChar*)addr, gst);
+   return do_put_x87( False/*don't move regs*/, (UChar*)addr, gst);
 }
 
 
 /*----------------------------------------------*/
-/*--- Helpers for MMX                        ---*/
+/*--- Helpers for MMX/SSE                    ---*/
 /*----------------------------------------------*/
 
-/* Tuple/select functions for 32x2 vectors. */
+static inline UChar abdU8 ( UChar xx, UChar yy ) {
+   return xx>yy ? xx-yy : yy-xx;
+}
 
-static inline ULong mk32x2 ( UInt w1, UInt w0 ) 
-{
+static inline ULong mk32x2 ( UInt w1, UInt w0 ) {
    return (((ULong)w1) << 32) | ((ULong)w0);
 }
-static inline UInt sel32x2_1 ( ULong w64 ) 
-{
-   return 0xFFFFFFFF & (UInt)(w64 >> 32);
-}
-static inline UInt sel32x2_0 ( ULong w64 ) 
-{
-   return 0xFFFFFFFF & (UInt)w64;
-}
 
-
-/* Tuple/select functions for 16x4 vectors.  gcc is pretty hopeless
-   with 64-bit shifts so we give it a hand. */
-
-static inline ULong mk16x4 ( UShort w3, UShort w2, 
-                             UShort w1, UShort w0 ) 
-{
-   UInt hi32 = (((UInt)w3) << 16) | ((UInt)w2);
-   UInt lo32 = (((UInt)w1) << 16) | ((UInt)w0);
-   return mk32x2(hi32, lo32);
-}
-static inline UShort sel16x4_3 ( ULong w64 ) 
-{
+static inline UShort sel16x4_3 ( ULong w64 ) {
    UInt hi32 = (UInt)(w64 >> 32);
    return 0xFFFF & (UShort)(hi32 >> 16);
 }
-static inline UShort sel16x4_2 ( ULong w64 ) 
-{
+static inline UShort sel16x4_2 ( ULong w64 ) {
    UInt hi32 = (UInt)(w64 >> 32);
    return 0xFFFF & (UShort)hi32;
 }
-static inline UShort sel16x4_1 ( ULong w64 ) 
-{
+static inline UShort sel16x4_1 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
    return 0xFFFF & (UShort)(lo32 >> 16);
 }
-static inline UShort sel16x4_0 ( ULong w64 ) 
-{
+static inline UShort sel16x4_0 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
    return 0xFFFF & (UShort)lo32;
 }
 
-
-/* Tuple/select functions for 8x8 vectors. */
-
-static inline ULong mk8x8 ( UChar w7, UChar w6,
-                            UChar w5, UChar w4,
-                            UChar w3, UChar w2,
-			    UChar w1, UChar w0 )
-{
-   UInt hi32 =   (((UInt)w7) << 24) | (((UInt)w6) << 16)
-               | (((UInt)w5) << 8)  | (((UInt)w4) << 0);
-   UInt lo32 =   (((UInt)w3) << 24) | (((UInt)w2) << 16)
-               | (((UInt)w1) << 8)  | (((UInt)w0) << 0);
-   return mk32x2(hi32, lo32);
-}
-
-static inline UChar sel8x8_7 ( ULong w64 ) 
-{
+static inline UChar sel8x8_7 ( ULong w64 ) {
    UInt hi32 = (UInt)(w64 >> 32);
    return 0xFF & (UChar)(hi32 >> 24);
 }
-static inline UChar sel8x8_6 ( ULong w64 ) 
-{
+static inline UChar sel8x8_6 ( ULong w64 ) {
    UInt hi32 = (UInt)(w64 >> 32);
    return 0xFF & (UChar)(hi32 >> 16);
 }
-static inline UChar sel8x8_5 ( ULong w64 ) 
-{
+static inline UChar sel8x8_5 ( ULong w64 ) {
    UInt hi32 = (UInt)(w64 >> 32);
    return 0xFF & (UChar)(hi32 >> 8);
 }
-static inline UChar sel8x8_4 ( ULong w64 ) 
-{
+static inline UChar sel8x8_4 ( ULong w64 ) {
    UInt hi32 = (UInt)(w64 >> 32);
    return 0xFF & (UChar)(hi32 >> 0);
 }
-static inline UChar sel8x8_3 ( ULong w64 ) 
-{
+static inline UChar sel8x8_3 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
    return 0xFF & (UChar)(lo32 >> 24);
 }
-static inline UChar sel8x8_2 ( ULong w64 ) 
-{
+static inline UChar sel8x8_2 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
    return 0xFF & (UChar)(lo32 >> 16);
 }
-static inline UChar sel8x8_1 ( ULong w64 ) 
-{
+static inline UChar sel8x8_1 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
    return 0xFF & (UChar)(lo32 >> 8);
 }
-static inline UChar sel8x8_0 ( ULong w64 ) 
-{
+static inline UChar sel8x8_0 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
    return 0xFF & (UChar)(lo32 >> 0);
 }
 
-
-/* Scalar helpers. */
-
-static inline Short qadd16S ( Short xx, Short yy )
-{
-   Int t = ((Int)xx) + ((Int)yy);
-   if (t < -32768) t = -32768;
-   if (t > 32767)  t = 32767;
-   return (Short)t;
-}
-
-static inline Char qadd8S ( Char xx, Char yy )
-{
-   Int t = ((Int)xx) + ((Int)yy);
-   if (t < -128) t = -128;
-   if (t > 127)  t = 127;
-   return (Char)t;
-}
-
-static inline UShort qadd16U ( UShort xx, UShort yy )
-{
-   UInt t = ((UInt)xx) + ((UInt)yy);
-   if (t > 0xFFFF) t = 0xFFFF;
-   return (UShort)t;
-}
-
-static inline UChar qadd8U ( UChar xx, UChar yy )
-{
-   UInt t = ((UInt)xx) + ((UInt)yy);
-   if (t > 0xFF) t = 0xFF;
-   return (UChar)t;
-}
-
-static inline Short qsub16S ( Short xx, Short yy )
-{
-   Int t = ((Int)xx) - ((Int)yy);
-   if (t < -32768) t = -32768;
-   if (t > 32767)  t = 32767;
-   return (Short)t;
-}
-
-static inline Char qsub8S ( Char xx, Char yy )
-{
-   Int t = ((Int)xx) - ((Int)yy);
-   if (t < -128) t = -128;
-   if (t > 127)  t = 127;
-   return (Char)t;
-}
-
-static inline UShort qsub16U ( UShort xx, UShort yy )
-{
-   Int t = ((Int)xx) - ((Int)yy);
-   if (t < 0)      t = 0;
-   if (t > 0xFFFF) t = 0xFFFF;
-   return (UShort)t;
-}
-
-static inline UChar qsub8U ( UChar xx, UChar yy )
-{
-   Int t = ((Int)xx) - ((Int)yy);
-   if (t < 0)    t = 0;
-   if (t > 0xFF) t = 0xFF;
-   return (UChar)t;
-}
-
-static inline Short mulhi16S ( Short xx, Short yy )
-{
-   Int t = ((Int)xx) * ((Int)yy);
-   t >>=/*s*/ 16;
-   return (Short)t;
-}
-
-static inline Short mullo16S ( Short xx, Short yy )
-{
-   Int t = ((Int)xx) * ((Int)yy);
-   return (Short)t;
-}
-
-static inline UInt cmpeq32 ( UInt xx, UInt yy )
-{
-   return xx==yy ? 0xFFFFFFFF : 0;
-}
-
-static inline UShort cmpeq16 ( UShort xx, UShort yy )
-{
-   return xx==yy ? 0xFFFF : 0;
-}
-
-static inline UChar cmpeq8 ( UChar xx, UChar yy )
-{
-   return xx==yy ? 0xFF : 0;
-}
-
-static inline UInt cmpge32S ( Int xx, Int yy )
-{
-   return xx>yy ? 0xFFFFFFFF : 0;
-}
-
-static inline UShort cmpge16S ( Short xx, Short yy )
-{
-   return xx>yy ? 0xFFFF : 0;
-}
-
-static inline UChar cmpge8S ( Char xx, Char yy )
-{
-   return xx>yy ? 0xFF : 0;
-}
-
-static inline Short qnarrow32Sto16 ( UInt xx0 )
-{
-   Int xx = (Int)xx0;
-   if (xx < -32768) xx = -32768;
-   if (xx > 32767)  xx = 32767;
-   return (Short)xx;
-}
-
-static inline Char qnarrow16Sto8 ( UShort xx0 )
-{
-   Short xx = (Short)xx0;
-   if (xx < -128) xx = -128;
-   if (xx > 127)  xx = 127;
-   return (Char)xx;
-}
-
-static inline UChar qnarrow16Uto8 ( UShort xx0 )
-{
-   Short xx = (Short)xx0;
-   if (xx < 0)   xx = 0;
-   if (xx > 255) xx = 255;
-   return (UChar)xx;
-}
-
-static inline UShort shl16 ( UShort v, ULong n )
-{
-   return n > 15 ? 0 : v << n;
-}
-
-static inline UShort shr16U ( UShort v, ULong n )
-{
-   return n > 15 ? 0 : (((UShort)v) >> n);
-}
-
-static inline UShort shr16S ( UShort v, ULong n )
-{
-   if (n <= 15) 
-      return ((Short)v) >> n;
-   return (v & 0x8000) ? 0xFFFF : 0;
-}
-
-static inline UInt shl32 ( UInt v, ULong n )
-{
-   return n > 31 ? 0 : v << n;
-}
-
-static inline UInt shr32U ( UInt v, ULong n )
-{
-   return n > 31 ? 0 : (((UInt)v) >> n);
-}
-
-static inline UInt shr32S ( UInt v, ULong n )
-{
-   if (n <= 31) 
-      return ((Int)v) >> n;
-   return (v & 0x80000000) ? 0xFFFFFFFF : 0;
-}
-
-static inline UChar avg8U ( UChar xx, UChar yy )
-{
-   UInt xxi = (UInt)xx;
-   UInt yyi = (UInt)yy;
-   UInt r   = (xxi + yyi + 1) >> 1;
-   return (UChar)r;
-}
-
-static inline UShort avg16U ( UShort xx, UShort yy )
-{
-   UInt xxi = (UInt)xx;
-   UInt yyi = (UInt)yy;
-   UInt r   = (xxi + yyi + 1) >> 1;
-   return (UShort)r;
-}
-
-static inline Short max16S ( Short xx, Short yy )
-{
-   return (xx > yy) ? xx : yy;
-}
-
-static inline UChar max8U ( UChar xx, UChar yy )
-{
-   return (xx > yy) ? xx : yy;
-}
-
-static inline Short min16S ( Short xx, Short yy )
-{
-   return (xx < yy) ? xx : yy;
-}
-
-static inline UChar min8U ( UChar xx, UChar yy )
-{
-   return (xx < yy) ? xx : yy;
-}
-
-static inline UShort mull16uHI ( UShort xx, UShort yy )
-{
-   UInt xxi = (UInt)xx;
-   UInt yyi = (UInt)yy;
-   UInt r   = (xxi * yyi) >> 16;
-   return (UShort)r;
-}
-
-static inline UChar abdU8 ( UChar xx, UChar yy )
-{
-   return xx>yy ? xx-yy : yy-xx;
-}
-
-/* ------------ Normal addition ------------ */
-
-ULong x86g_calculate_add64x1 ( ULong xx, ULong yy )
-{
-   /* uh, why, exactly, is this not done in-line??? */
-   return xx + yy;
-}
-
-ULong x86g_calculate_add32x2 ( ULong xx, ULong yy )
-{
-   return mk32x2(
-             sel32x2_1(xx) + sel32x2_1(yy),
-             sel32x2_0(xx) + sel32x2_0(yy)
-          );
-}
-
-ULong x86g_calculate_add16x4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             sel16x4_3(xx) + sel16x4_3(yy),
-             sel16x4_2(xx) + sel16x4_2(yy),
-             sel16x4_1(xx) + sel16x4_1(yy),
-             sel16x4_0(xx) + sel16x4_0(yy)
-          );
-}
-
-ULong x86g_calculate_add8x8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             sel8x8_7(xx) + sel8x8_7(yy),
-             sel8x8_6(xx) + sel8x8_6(yy),
-             sel8x8_5(xx) + sel8x8_5(yy),
-             sel8x8_4(xx) + sel8x8_4(yy),
-             sel8x8_3(xx) + sel8x8_3(yy),
-             sel8x8_2(xx) + sel8x8_2(yy),
-             sel8x8_1(xx) + sel8x8_1(yy),
-             sel8x8_0(xx) + sel8x8_0(yy)
-          );
-}
-
-/* ------------ Saturating addition ------------ */
-
-ULong x86g_calculate_qadd16Sx4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             qadd16S( sel16x4_3(xx), sel16x4_3(yy) ),
-             qadd16S( sel16x4_2(xx), sel16x4_2(yy) ),
-             qadd16S( sel16x4_1(xx), sel16x4_1(yy) ),
-             qadd16S( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-ULong x86g_calculate_qadd8Sx8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             qadd8S( sel8x8_7(xx), sel8x8_7(yy) ),
-             qadd8S( sel8x8_6(xx), sel8x8_6(yy) ),
-             qadd8S( sel8x8_5(xx), sel8x8_5(yy) ),
-             qadd8S( sel8x8_4(xx), sel8x8_4(yy) ),
-             qadd8S( sel8x8_3(xx), sel8x8_3(yy) ),
-             qadd8S( sel8x8_2(xx), sel8x8_2(yy) ),
-             qadd8S( sel8x8_1(xx), sel8x8_1(yy) ),
-             qadd8S( sel8x8_0(xx), sel8x8_0(yy) )
-          );
-}
-
-ULong x86g_calculate_qadd16Ux4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             qadd16U( sel16x4_3(xx), sel16x4_3(yy) ),
-             qadd16U( sel16x4_2(xx), sel16x4_2(yy) ),
-             qadd16U( sel16x4_1(xx), sel16x4_1(yy) ),
-             qadd16U( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-ULong x86g_calculate_qadd8Ux8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             qadd8U( sel8x8_7(xx), sel8x8_7(yy) ),
-             qadd8U( sel8x8_6(xx), sel8x8_6(yy) ),
-             qadd8U( sel8x8_5(xx), sel8x8_5(yy) ),
-             qadd8U( sel8x8_4(xx), sel8x8_4(yy) ),
-             qadd8U( sel8x8_3(xx), sel8x8_3(yy) ),
-             qadd8U( sel8x8_2(xx), sel8x8_2(yy) ),
-             qadd8U( sel8x8_1(xx), sel8x8_1(yy) ),
-             qadd8U( sel8x8_0(xx), sel8x8_0(yy) )
-          );
-}
-
-/* ------------ Normal subtraction ------------ */
-
-ULong x86g_calculate_sub64x1 ( ULong xx, ULong yy )
-{
-   /* should really be done in-line */
-   return xx - yy;
-}
-
-ULong x86g_calculate_sub32x2 ( ULong xx, ULong yy )
-{
-   return mk32x2(
-             sel32x2_1(xx) - sel32x2_1(yy),
-             sel32x2_0(xx) - sel32x2_0(yy)
-          );
-}
-
-ULong x86g_calculate_sub16x4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             sel16x4_3(xx) - sel16x4_3(yy),
-             sel16x4_2(xx) - sel16x4_2(yy),
-             sel16x4_1(xx) - sel16x4_1(yy),
-             sel16x4_0(xx) - sel16x4_0(yy)
-          );
-}
-
-ULong x86g_calculate_sub8x8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             sel8x8_7(xx) - sel8x8_7(yy),
-             sel8x8_6(xx) - sel8x8_6(yy),
-             sel8x8_5(xx) - sel8x8_5(yy),
-             sel8x8_4(xx) - sel8x8_4(yy),
-             sel8x8_3(xx) - sel8x8_3(yy),
-             sel8x8_2(xx) - sel8x8_2(yy),
-             sel8x8_1(xx) - sel8x8_1(yy),
-             sel8x8_0(xx) - sel8x8_0(yy)
-          );
-}
-
-/* ------------ Saturating subtraction ------------ */
-
-ULong x86g_calculate_qsub16Sx4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             qsub16S( sel16x4_3(xx), sel16x4_3(yy) ),
-             qsub16S( sel16x4_2(xx), sel16x4_2(yy) ),
-             qsub16S( sel16x4_1(xx), sel16x4_1(yy) ),
-             qsub16S( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-ULong x86g_calculate_qsub8Sx8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             qsub8S( sel8x8_7(xx), sel8x8_7(yy) ),
-             qsub8S( sel8x8_6(xx), sel8x8_6(yy) ),
-             qsub8S( sel8x8_5(xx), sel8x8_5(yy) ),
-             qsub8S( sel8x8_4(xx), sel8x8_4(yy) ),
-             qsub8S( sel8x8_3(xx), sel8x8_3(yy) ),
-             qsub8S( sel8x8_2(xx), sel8x8_2(yy) ),
-             qsub8S( sel8x8_1(xx), sel8x8_1(yy) ),
-             qsub8S( sel8x8_0(xx), sel8x8_0(yy) )
-          );
-}
-
-ULong x86g_calculate_qsub16Ux4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             qsub16U( sel16x4_3(xx), sel16x4_3(yy) ),
-             qsub16U( sel16x4_2(xx), sel16x4_2(yy) ),
-             qsub16U( sel16x4_1(xx), sel16x4_1(yy) ),
-             qsub16U( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-ULong x86g_calculate_qsub8Ux8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             qsub8U( sel8x8_7(xx), sel8x8_7(yy) ),
-             qsub8U( sel8x8_6(xx), sel8x8_6(yy) ),
-             qsub8U( sel8x8_5(xx), sel8x8_5(yy) ),
-             qsub8U( sel8x8_4(xx), sel8x8_4(yy) ),
-             qsub8U( sel8x8_3(xx), sel8x8_3(yy) ),
-             qsub8U( sel8x8_2(xx), sel8x8_2(yy) ),
-             qsub8U( sel8x8_1(xx), sel8x8_1(yy) ),
-             qsub8U( sel8x8_0(xx), sel8x8_0(yy) )
-          );
-}
-
-/* ------------ Multiplication ------------ */
-
-ULong x86g_calculate_mulhi16x4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             mulhi16S( sel16x4_3(xx), sel16x4_3(yy) ),
-             mulhi16S( sel16x4_2(xx), sel16x4_2(yy) ),
-             mulhi16S( sel16x4_1(xx), sel16x4_1(yy) ),
-             mulhi16S( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-ULong x86g_calculate_mullo16x4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             mullo16S( sel16x4_3(xx), sel16x4_3(yy) ),
-             mullo16S( sel16x4_2(xx), sel16x4_2(yy) ),
-             mullo16S( sel16x4_1(xx), sel16x4_1(yy) ),
-             mullo16S( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-ULong x86g_calculate_pmaddwd ( ULong xx, ULong yy )
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong x86g_calculate_mmx_pmaddwd ( ULong xx, ULong yy )
 {
    return
       mk32x2( 
@@ -2495,352 +2005,8 @@ ULong x86g_calculate_pmaddwd ( ULong xx, ULong yy )
       );
 }
 
-/* ------------ Comparison ------------ */
-
-ULong x86g_calculate_cmpeq32x2 ( ULong xx, ULong yy )
-{
-   return mk32x2(
-             cmpeq32( sel32x2_1(xx), sel32x2_1(yy) ),
-             cmpeq32( sel32x2_0(xx), sel32x2_0(yy) )
-          );
-}
-
-ULong x86g_calculate_cmpeq16x4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             cmpeq16( sel16x4_3(xx), sel16x4_3(yy) ),
-             cmpeq16( sel16x4_2(xx), sel16x4_2(yy) ),
-             cmpeq16( sel16x4_1(xx), sel16x4_1(yy) ),
-             cmpeq16( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-ULong x86g_calculate_cmpeq8x8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             cmpeq8( sel8x8_7(xx), sel8x8_7(yy) ),
-             cmpeq8( sel8x8_6(xx), sel8x8_6(yy) ),
-             cmpeq8( sel8x8_5(xx), sel8x8_5(yy) ),
-             cmpeq8( sel8x8_4(xx), sel8x8_4(yy) ),
-             cmpeq8( sel8x8_3(xx), sel8x8_3(yy) ),
-             cmpeq8( sel8x8_2(xx), sel8x8_2(yy) ),
-             cmpeq8( sel8x8_1(xx), sel8x8_1(yy) ),
-             cmpeq8( sel8x8_0(xx), sel8x8_0(yy) )
-          );
-}
-
-ULong x86g_calculate_cmpge32Sx2 ( ULong xx, ULong yy )
-{
-   return mk32x2(
-             cmpge32S( sel32x2_1(xx), sel32x2_1(yy) ),
-             cmpge32S( sel32x2_0(xx), sel32x2_0(yy) )
-          );
-}
-
-ULong x86g_calculate_cmpge16Sx4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             cmpge16S( sel16x4_3(xx), sel16x4_3(yy) ),
-             cmpge16S( sel16x4_2(xx), sel16x4_2(yy) ),
-             cmpge16S( sel16x4_1(xx), sel16x4_1(yy) ),
-             cmpge16S( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-ULong x86g_calculate_cmpge8Sx8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             cmpge8S( sel8x8_7(xx), sel8x8_7(yy) ),
-             cmpge8S( sel8x8_6(xx), sel8x8_6(yy) ),
-             cmpge8S( sel8x8_5(xx), sel8x8_5(yy) ),
-             cmpge8S( sel8x8_4(xx), sel8x8_4(yy) ),
-             cmpge8S( sel8x8_3(xx), sel8x8_3(yy) ),
-             cmpge8S( sel8x8_2(xx), sel8x8_2(yy) ),
-             cmpge8S( sel8x8_1(xx), sel8x8_1(yy) ),
-             cmpge8S( sel8x8_0(xx), sel8x8_0(yy) )
-          );
-}
-
-/* ------------ Pack / unpack ------------ */
-
-ULong x86g_calculate_packssdw ( ULong dst, ULong src )
-{
-   UInt d = sel32x2_1(dst);
-   UInt c = sel32x2_0(dst);
-   UInt b = sel32x2_1(src);
-   UInt a = sel32x2_0(src);
-   /* This just doesn't seem to match what the Intel documentation
-      says -- that implies that the new word should be made in the
-      sequence d c b a. */
-   return mk16x4( 
-             qnarrow32Sto16(b),
-             qnarrow32Sto16(a),
-             qnarrow32Sto16(d),
-             qnarrow32Sto16(c)
-          );
-}
-
-ULong x86g_calculate_packsswb ( ULong dst, ULong src )
-{
-   UShort h = sel16x4_3(dst);
-   UShort g = sel16x4_2(dst);
-   UShort f = sel16x4_1(dst);
-   UShort e = sel16x4_0(dst);
-   UShort d = sel16x4_3(src);
-   UShort c = sel16x4_2(src);
-   UShort b = sel16x4_1(src);
-   UShort a = sel16x4_0(src);
-   /* As per packssdw, this sequence also seems to contradict the
-      Intel docs. */
-   return mk8x8( 
-             qnarrow16Sto8(d),
-             qnarrow16Sto8(c),
-             qnarrow16Sto8(b),
-             qnarrow16Sto8(a),
-             qnarrow16Sto8(h),
-             qnarrow16Sto8(g),
-             qnarrow16Sto8(f),
-             qnarrow16Sto8(e)
-          );
-}
-
-ULong x86g_calculate_packuswb ( ULong dst, ULong src )
-{
-   UShort h = sel16x4_3(dst);
-   UShort g = sel16x4_2(dst);
-   UShort f = sel16x4_1(dst);
-   UShort e = sel16x4_0(dst);
-   UShort d = sel16x4_3(src);
-   UShort c = sel16x4_2(src);
-   UShort b = sel16x4_1(src);
-   UShort a = sel16x4_0(src);
-   /* As per packssdw, this sequence also seems to contradict the
-      Intel docs. */
-   return mk8x8( 
-             qnarrow16Uto8(d),
-             qnarrow16Uto8(c),
-             qnarrow16Uto8(b),
-             qnarrow16Uto8(a),
-             qnarrow16Uto8(h),
-             qnarrow16Uto8(g),
-             qnarrow16Uto8(f),
-             qnarrow16Uto8(e)
-          );
-}
-
-ULong x86g_calculate_punpckhbw ( ULong dst, ULong src )
-{
-  return mk8x8(
-            sel8x8_7(src),
-            sel8x8_7(dst),
-            sel8x8_6(src),
-            sel8x8_6(dst),
-            sel8x8_5(src),
-            sel8x8_5(dst),
-            sel8x8_4(src),
-            sel8x8_4(dst)
-         );
-}
-
-ULong x86g_calculate_punpcklbw ( ULong dst, ULong src )
-{
-  return mk8x8(
-            sel8x8_3(src),
-            sel8x8_3(dst),
-            sel8x8_2(src),
-            sel8x8_2(dst),
-            sel8x8_1(src),
-            sel8x8_1(dst),
-            sel8x8_0(src),
-            sel8x8_0(dst)
-         );
-}
-
-ULong x86g_calculate_punpckhwd ( ULong dst, ULong src )
-{
-  return mk16x4(
-            sel16x4_3(src),
-            sel16x4_3(dst),
-            sel16x4_2(src),
-            sel16x4_2(dst)
-         );
-}
-
-ULong x86g_calculate_punpcklwd ( ULong dst, ULong src )
-{
-  return mk16x4(
-            sel16x4_1(src),
-            sel16x4_1(dst),
-            sel16x4_0(src),
-            sel16x4_0(dst)
-         );
-}
-
-ULong x86g_calculate_punpckhdq ( ULong dst, ULong src )
-{
-  return mk32x2(
-            sel32x2_1(src),
-            sel32x2_1(dst)
-         );
-}
-
-ULong x86g_calculate_punpckldq ( ULong dst, ULong src )
-{
-  return mk32x2(
-            sel32x2_0(src),
-            sel32x2_0(dst)
-         );
-}
-
-/* ------------ Shifting ------------ */
-
-ULong x86g_calculate_shl16x4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             shl16( sel16x4_3(xx), yy ),
-             shl16( sel16x4_2(xx), yy ),
-             shl16( sel16x4_1(xx), yy ),
-             shl16( sel16x4_0(xx), yy )
-          );
-}
-
-ULong x86g_calculate_shl32x2 ( ULong xx, ULong yy )
-{
-   return mk32x2(
-             shl32( sel32x2_1(xx), yy ),
-             shl32( sel32x2_0(xx), yy )
-          );
-}
-
-
-ULong x86g_calculate_shl64x1 ( ULong xx, ULong yy )
-{
-   if (yy > 63) return 0;
-   return xx << yy;
-}
-
-ULong x86g_calculate_shr16Ux4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             shr16U( sel16x4_3(xx), yy ),
-             shr16U( sel16x4_2(xx), yy ),
-             shr16U( sel16x4_1(xx), yy ),
-             shr16U( sel16x4_0(xx), yy )
-          );
-}
-
-ULong x86g_calculate_shr32Ux2 ( ULong xx, ULong yy )
-{
-   return mk32x2(
-             shr32U( sel32x2_1(xx), yy ),
-             shr32U( sel32x2_0(xx), yy )
-          );
-}
-
-ULong x86g_calculate_shr64Ux1 ( ULong xx, ULong yy )
-{
-   if (yy > 63) return 0;
-   return xx >> yy;
-}
-
-
-ULong x86g_calculate_shr16Sx4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             shr16S( sel16x4_3(xx), yy ),
-             shr16S( sel16x4_2(xx), yy ),
-             shr16S( sel16x4_1(xx), yy ),
-             shr16S( sel16x4_0(xx), yy )
-          );
-}
-
-ULong x86g_calculate_shr32Sx2 ( ULong xx, ULong yy )
-{
-   return mk32x2(
-             shr32S( sel32x2_1(xx), yy ),
-             shr32S( sel32x2_0(xx), yy )
-          );
-}
-
-/* ------------ MMX insns from SSE1: averaging ------------ */
-
-ULong x86g_calculate_avg8Ux8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             avg8U( sel8x8_7(xx), sel8x8_7(yy) ),
-             avg8U( sel8x8_6(xx), sel8x8_6(yy) ),
-             avg8U( sel8x8_5(xx), sel8x8_5(yy) ),
-             avg8U( sel8x8_4(xx), sel8x8_4(yy) ),
-             avg8U( sel8x8_3(xx), sel8x8_3(yy) ),
-             avg8U( sel8x8_2(xx), sel8x8_2(yy) ),
-             avg8U( sel8x8_1(xx), sel8x8_1(yy) ),
-             avg8U( sel8x8_0(xx), sel8x8_0(yy) )
-          );
-}
-
-ULong x86g_calculate_avg16Ux4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             avg16U( sel16x4_3(xx), sel16x4_3(yy) ),
-             avg16U( sel16x4_2(xx), sel16x4_2(yy) ),
-             avg16U( sel16x4_1(xx), sel16x4_1(yy) ),
-             avg16U( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-/* ------------ MMX insns from SSE1: max/min ------------ */
-
-ULong x86g_calculate_max16Sx4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             max16S( sel16x4_3(xx), sel16x4_3(yy) ),
-             max16S( sel16x4_2(xx), sel16x4_2(yy) ),
-             max16S( sel16x4_1(xx), sel16x4_1(yy) ),
-             max16S( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-ULong x86g_calculate_max8Ux8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             max8U( sel8x8_7(xx), sel8x8_7(yy) ),
-             max8U( sel8x8_6(xx), sel8x8_6(yy) ),
-             max8U( sel8x8_5(xx), sel8x8_5(yy) ),
-             max8U( sel8x8_4(xx), sel8x8_4(yy) ),
-             max8U( sel8x8_3(xx), sel8x8_3(yy) ),
-             max8U( sel8x8_2(xx), sel8x8_2(yy) ),
-             max8U( sel8x8_1(xx), sel8x8_1(yy) ),
-             max8U( sel8x8_0(xx), sel8x8_0(yy) )
-          );
-}
-
-ULong x86g_calculate_min16Sx4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             min16S( sel16x4_3(xx), sel16x4_3(yy) ),
-             min16S( sel16x4_2(xx), sel16x4_2(yy) ),
-             min16S( sel16x4_1(xx), sel16x4_1(yy) ),
-             min16S( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-ULong x86g_calculate_min8Ux8 ( ULong xx, ULong yy )
-{
-   return mk8x8(
-             min8U( sel8x8_7(xx), sel8x8_7(yy) ),
-             min8U( sel8x8_6(xx), sel8x8_6(yy) ),
-             min8U( sel8x8_5(xx), sel8x8_5(yy) ),
-             min8U( sel8x8_4(xx), sel8x8_4(yy) ),
-             min8U( sel8x8_3(xx), sel8x8_3(yy) ),
-             min8U( sel8x8_2(xx), sel8x8_2(yy) ),
-             min8U( sel8x8_1(xx), sel8x8_1(yy) ),
-             min8U( sel8x8_0(xx), sel8x8_0(yy) )
-          );
-}
-
-/* ------------ MMX insns from SSE1: misc ------------ */
-
-UInt x86g_calculate_pmovmskb ( ULong xx )
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+UInt x86g_calculate_mmx_pmovmskb ( ULong xx )
 {
    UInt r = 0;
    if (xx & (1ULL << (64-1))) r |= (1<<7);
@@ -2854,7 +2020,8 @@ UInt x86g_calculate_pmovmskb ( ULong xx )
    return r;
 }
 
-ULong x86g_calculate_psadbw ( ULong xx, ULong yy )
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong x86g_calculate_mmx_psadbw ( ULong xx, ULong yy )
 {
    UInt t = 0;
    t += (UInt)abdU8( sel8x8_7(xx), sel8x8_7(yy) );
@@ -2869,24 +2036,11 @@ ULong x86g_calculate_psadbw ( ULong xx, ULong yy )
    return (ULong)t;
 }
 
-/* ------------ MMX insns from SSE1: multiply ------------ */
-
-ULong x86g_calculate_mull16uHIx4 ( ULong xx, ULong yy )
-{
-   return mk16x4(
-             mull16uHI( sel16x4_3(xx), sel16x4_3(yy) ),
-             mull16uHI( sel16x4_2(xx), sel16x4_2(yy) ),
-             mull16uHI( sel16x4_1(xx), sel16x4_1(yy) ),
-             mull16uHI( sel16x4_0(xx), sel16x4_0(yy) )
-          );
-}
-
-/* ------------ SSE2 misc helpers ------------ */
-
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 UInt x86g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo )
 {
-   UInt rHi8 = x86g_calculate_pmovmskb ( w64hi );
-   UInt rLo8 = x86g_calculate_pmovmskb ( w64lo );
+   UInt rHi8 = x86g_calculate_mmx_pmovmskb ( w64hi );
+   UInt rLo8 = x86g_calculate_mmx_pmovmskb ( w64lo );
    return ((rHi8 & 0xFF) << 8) | (rLo8 & 0xFF);
 }
 
@@ -2915,6 +2069,7 @@ UInt get_segdescr_limit ( VexGuestX86SegDescr* ent )
     return limit;
 }
 
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
                               UInt seg_selector, UInt virtual_addr )
 {
@@ -2997,7 +2152,6 @@ ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
  bad:
    return 1ULL << 32;
 }
-
 
 
 /*-----------------------------------------------------------*/

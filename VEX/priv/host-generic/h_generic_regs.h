@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (host_regs.h) is                              ---*/
+/*--- This file (h_generic_regs.h) is                         ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -33,8 +33,8 @@
    USA.
 */
 
-#ifndef __HOST_REGS_H
-#define __HOST_REGS_H
+#ifndef __H_GENERIC_REGS_H
+#define __H_GENERIC_REGS_H
 
 #include "libvex_basictypes.h"
 
@@ -224,9 +224,6 @@ extern HInstrArray* newHInstrArray ( void );
 extern void         addHInstr ( HInstrArray*, HInstr* );
 
 
-#endif /* ndef __HOST_REGS_H */
-
-
 /*---------------------------------------------------------*/
 /*--- Reg alloc: TODO: move somewhere else              ---*/
 /*---------------------------------------------------------*/
@@ -264,7 +261,8 @@ HInstrArray* doRegisterAllocation (
 );
 
 
+#endif /* ndef __H_GENERIC_REGS_H */
 
 /*---------------------------------------------------------------*/
-/*---                                             host_regs.h ---*/
+/*---                                        h_generic_regs.h ---*/
 /*---------------------------------------------------------------*/

@@ -235,45 +235,18 @@ typedef struct {
 /*--- Utility functions for x86 guest stuff.                  ---*/
 /*---------------------------------------------------------------*/
 
-
 /* ALL THE FOLLOWING ARE VISIBLE TO LIBRARY CLIENT */
-
 
 /* Initialise all guest x86 state.  The FPU is put in default mode. */
 extern
 void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state );
 
 
-/* Convert a saved x87 FPU image (as created by fsave) and write it
-   into the supplied VexGuestX86State structure.  The non-FP parts of
-   said structure are left unchanged.  May return an emulation warning
-   value.
-*/
-extern 
-VexEmWarn
-     LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state, 
-                               /*OUT*/VexGuestX86State* vex_state );
-
-/* Extract from the supplied VexGuestX86State structure, an x87 FPU
-   image. */
-extern 
-void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state, 
-                               /*OUT*/UChar* x87_state );
-
-
-/* Given a 32-bit word containing native x86 %eflags values, set the
-   eflag-related fields in the supplied VexGuestX86State accordingly.
-   All other fields are left unchanged.  */
-
-extern
-void LibVEX_GuestX86_put_eflags ( UInt eflags_native,
-                                  /*OUT*/VexGuestX86State* vex_state );
-
 /* Extract from the supplied VexGuestX86State structure the
    corresponding native %eflags value. */
-
 extern 
 UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state );
+
 
 
 #endif /* ndef __LIBVEX_PUB_GUEST_X86_H */

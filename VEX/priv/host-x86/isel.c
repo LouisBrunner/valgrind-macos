@@ -41,6 +41,7 @@
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
 #include "host-generic/h_generic_regs.h"
+#include "host-generic/h_generic_simd64.h"
 #include "host-x86/hdefs.h"
 
 
@@ -1659,9 +1660,11 @@ static void iselInt64Expr ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY ! */
 static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 {
+   HWord fn = 0; /* helper fn for most SIMD64 stuff */
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I64);
 
+   /* 64-bit literal */
    if (e->tag == Iex_Const) {
       ULong w64 = e->Iex.Const.con->Ico.U64;
       UInt  wHi = ((UInt)(w64 >> 32)) & 0xFFFFFFFF;
@@ -1746,323 +1749,480 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
-   /* 32 x 32 -> 64 multiply */
-   if (e->tag == Iex_Binop
-       && (e->Iex.Binop.op == Iop_MullU32
-           || e->Iex.Binop.op == Iop_MullS32)) {
-      /* get one operand into %eax, and the other into a R/M.  Need to
-         make an educated guess about which is better in which. */
-      HReg   tLo    = newVRegI(env);
-      HReg   tHi    = newVRegI(env);
-      Bool   syned  = e->Iex.Binop.op == Iop_MullS32;
-      X86RM* rmLeft = iselIntExpr_RM(env, e->Iex.Binop.arg1);
-      HReg   rRight = iselIntExpr_R(env, e->Iex.Binop.arg2);
-      addInstr(env, mk_iMOVsd_RR(rRight, hregX86_EAX()));
-      addInstr(env, X86Instr_MulL(syned, Xss_32, rmLeft));
-      /* Result is now in EDX:EAX.  Tell the caller. */
-      addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
-      addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
+   /* --------- BINARY ops --------- */
+   if (e->tag == Iex_Binop) {
+      switch (e->Iex.Binop.op) {
+         /* 32 x 32 -> 64 multiply */
+         case Iop_MullU32:
+         case Iop_MullS32: {
+            /* get one operand into %eax, and the other into a R/M.
+               Need to make an educated guess about which is better in
+               which. */
+            HReg   tLo    = newVRegI(env);
+            HReg   tHi    = newVRegI(env);
+            Bool   syned  = e->Iex.Binop.op == Iop_MullS32;
+            X86RM* rmLeft = iselIntExpr_RM(env, e->Iex.Binop.arg1);
+            HReg   rRight = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            addInstr(env, mk_iMOVsd_RR(rRight, hregX86_EAX()));
+            addInstr(env, X86Instr_MulL(syned, Xss_32, rmLeft));
+            /* Result is now in EDX:EAX.  Tell the caller. */
+            addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
+            addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
 
-   /* 64 x 32 -> (32(rem),32(div)) division */
-   if (e->tag == Iex_Binop
-      && (e->Iex.Binop.op == Iop_DivModU64to32
-          || e->Iex.Binop.op == Iop_DivModS64to32)) {
-      /* Get the 64-bit operand into edx:eax, and the other
-         into any old R/M. */
-      HReg sHi, sLo;
-      HReg   tLo     = newVRegI(env);
-      HReg   tHi     = newVRegI(env);
-      Bool   syned   = e->Iex.Binop.op == Iop_DivModS64to32;
-      X86RM* rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
-      iselInt64Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
-      addInstr(env, mk_iMOVsd_RR(sHi, hregX86_EDX()));
-      addInstr(env, mk_iMOVsd_RR(sLo, hregX86_EAX()));
-      addInstr(env, X86Instr_Div(syned, Xss_32, rmRight));
-      addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
-      addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
+         /* 64 x 32 -> (32(rem),32(div)) division */
+         case Iop_DivModU64to32:
+         case Iop_DivModS64to32: {
+            /* Get the 64-bit operand into edx:eax, and the other into
+               any old R/M. */
+            HReg sHi, sLo;
+            HReg   tLo     = newVRegI(env);
+            HReg   tHi     = newVRegI(env);
+            Bool   syned   = e->Iex.Binop.op == Iop_DivModS64to32;
+            X86RM* rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
+            iselInt64Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
+            addInstr(env, mk_iMOVsd_RR(sHi, hregX86_EDX()));
+            addInstr(env, mk_iMOVsd_RR(sLo, hregX86_EAX()));
+            addInstr(env, X86Instr_Div(syned, Xss_32, rmRight));
+            addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
+            addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
 
-   /* Iop_Or64/And64/Xor64 */
-   if (e->tag == Iex_Binop
-       && (e->Iex.Binop.op == Iop_Or64
-           || e->Iex.Binop.op == Iop_And64
-           || e->Iex.Binop.op == Iop_Xor64)) {
-      HReg xLo, xHi, yLo, yHi;
-      HReg tLo = newVRegI(env);
-      HReg tHi = newVRegI(env);
-      X86AluOp op = e->Iex.Binop.op==Iop_Or64 ? Xalu_OR
-                    : e->Iex.Binop.op==Iop_And64 ? Xalu_AND
-                    : Xalu_XOR;
-      iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
-      addInstr(env, mk_iMOVsd_RR(xHi, tHi));
-      addInstr(env, mk_iMOVsd_RR(xLo, tLo));
-      iselInt64Expr(&yHi, &yLo, env, e->Iex.Binop.arg2);
-      addInstr(env, X86Instr_Alu32R(op, X86RMI_Reg(yHi), tHi));
-      addInstr(env, X86Instr_Alu32R(op, X86RMI_Reg(yLo), tLo));
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
+         /* Iop_Or64/And64/Xor64 */
+         case Iop_Or64:
+         case Iop_And64:
+         case Iop_Xor64: {
+            HReg xLo, xHi, yLo, yHi;
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            X86AluOp op = e->Iex.Binop.op==Iop_Or64 ? Xalu_OR
+                          : e->Iex.Binop.op==Iop_And64 ? Xalu_AND
+                          : Xalu_XOR;
+            iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
+            addInstr(env, mk_iMOVsd_RR(xHi, tHi));
+            addInstr(env, mk_iMOVsd_RR(xLo, tLo));
+            iselInt64Expr(&yHi, &yLo, env, e->Iex.Binop.arg2);
+            addInstr(env, X86Instr_Alu32R(op, X86RMI_Reg(yHi), tHi));
+            addInstr(env, X86Instr_Alu32R(op, X86RMI_Reg(yLo), tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
 
-   /* 32HLto64(e1,e2) */
-   if (e->tag == Iex_Binop
-       && e->Iex.Binop.op == Iop_32HLto64) {
-      *rHi = iselIntExpr_R(env, e->Iex.Binop.arg1);
-      *rLo = iselIntExpr_R(env, e->Iex.Binop.arg2);
-      return;
-   }
+         /* 32HLto64(e1,e2) */
+         case Iop_32HLto64:
+            *rHi = iselIntExpr_R(env, e->Iex.Binop.arg1);
+            *rLo = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            return;
 
-   /* 32Sto64(e) */
-   if (e->tag == Iex_Unop
-       && e->Iex.Unop.op == Iop_32Sto64) {
-      HReg tLo = newVRegI(env);
-      HReg tHi = newVRegI(env);
-      HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-      addInstr(env, mk_iMOVsd_RR(src,tHi));
-      addInstr(env, mk_iMOVsd_RR(src,tLo));
-      addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(tHi)));
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
-
-   /* 128{HI}to64 */
-   if (e->tag == Iex_Unop
-       && (e->Iex.Unop.op == Iop_128HIto64 
-           || e->Iex.Unop.op == Iop_128to64)) {
-      Int  off = e->Iex.Unop.op==Iop_128HIto64 ? 8 : 0;
-      HReg tLo = newVRegI(env);
-      HReg tHi = newVRegI(env);
-      HReg vec = iselVecExpr(env, e->Iex.Unop.arg);
-      X86AMode* esp0  = X86AMode_IR(0,     hregX86_ESP());
-      X86AMode* espLO = X86AMode_IR(off,   hregX86_ESP());
-      X86AMode* espHI = X86AMode_IR(off+4, hregX86_ESP());
-      sub_from_esp(env, 16);
-      addInstr(env, X86Instr_SseLdSt(False/*store*/, vec, esp0));
-      addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(espLO), tLo ));
-      addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(espHI), tHi ));
-      add_to_esp(env, 16);
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
-
-   /* 32Uto64(e) */
-   if (e->tag == Iex_Unop
-       && e->Iex.Unop.op == Iop_32Uto64) {
-      HReg tLo = newVRegI(env);
-      HReg tHi = newVRegI(env);
-      HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-      addInstr(env, mk_iMOVsd_RR(src,tLo));
-      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tHi));
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
-
-   /* could do better than this, but for now ... */
-   if (e->tag == Iex_Unop
-       && e->Iex.Unop.op == Iop_1Sto64) {
-      HReg tLo = newVRegI(env);
-      HReg tHi = newVRegI(env);
-      X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
-      addInstr(env, X86Instr_Set32(cond,tLo));
-      addInstr(env, X86Instr_Sh32(Xsh_SHL, 31, X86RM_Reg(tLo)));
-      addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(tLo)));
-      addInstr(env, mk_iMOVsd_RR(tLo, tHi));
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
-
-   /* Not64(e) */
-   if (e->tag == Iex_Unop
-       && e->Iex.Unop.op == Iop_Not64) {
-      HReg tLo = newVRegI(env);
-      HReg tHi = newVRegI(env);
-      HReg sHi, sLo;
-      iselInt64Expr(&sHi, &sLo, env, e->Iex.Unop.arg);
-      addInstr(env, mk_iMOVsd_RR(sHi, tHi));
-      addInstr(env, mk_iMOVsd_RR(sLo, tLo));
-      addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(tHi)));
-      addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(tLo)));
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
-
-   /* ReinterpF64asI64(e) */
-   /* Given an IEEE754 double, produce an I64 with the same bit
-      pattern. */
-   if (e->tag == Iex_Unop
-       && e->Iex.Unop.op == Iop_ReinterpF64asI64) {
-      HReg rf   = iselDblExpr(env, e->Iex.Unop.arg);
-      HReg tLo  = newVRegI(env);
-      HReg tHi  = newVRegI(env);
-      X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
-      X86AMode* four_esp = X86AMode_IR(4, hregX86_ESP());
-      /* paranoia */
-      set_FPU_rounding_default(env);
-      /* subl $8, %esp */
-      sub_from_esp(env, 8);
-      /* gstD %rf, 0(%esp) */
-      addInstr(env,
-               X86Instr_FpLdSt(False/*store*/, 8, rf, zero_esp));
-      /* movl 0(%esp), %tLo */
-      addInstr(env, 
-               X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(zero_esp), tLo));
-      /* movl 4(%esp), %tHi */
-      addInstr(env, 
-               X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(four_esp), tHi));
-      /* addl $8, %esp */
-      add_to_esp(env, 8);
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
-
-   /* 64-bit shifts */
-   if (e->tag == Iex_Binop
-       && e->Iex.Binop.op == Iop_Shl64) {
-      /* We use the same ingenious scheme as gcc.  Put the value
-         to be shifted into %hi:%lo, and the shift amount into %cl.
-         Then (dsts on right, a la ATT syntax):
+         /* 64-bit shifts */
+         case Iop_Shl64: {
+            /* We use the same ingenious scheme as gcc.  Put the value
+               to be shifted into %hi:%lo, and the shift amount into
+               %cl.  Then (dsts on right, a la ATT syntax):
  
-            shldl %cl, %lo, %hi   -- make %hi be right for the shift amt
-                                  -- %cl % 32
-            shll  %cl, %lo        -- make %lo be right for the shift amt
-                                  -- %cl % 32
+               shldl %cl, %lo, %hi   -- make %hi be right for the
+                                     -- shift amt %cl % 32
+               shll  %cl, %lo        -- make %lo be right for the
+                                     -- shift amt %cl % 32
 
-         Now, if (shift amount % 64) is in the range 32 .. 63, we have 
-         to do a fixup, which puts the result low half into the result
-         high half, and zeroes the low half:
+               Now, if (shift amount % 64) is in the range 32 .. 63,
+               we have to do a fixup, which puts the result low half
+               into the result high half, and zeroes the low half:
 
-            testl $32, %ecx
+               testl $32, %ecx
 
-            cmovnz %lo, %hi
-            movl $0, %tmp         -- sigh; need yet another reg
-            cmovnz %tmp, %lo
-      */
-      HReg rAmt, sHi, sLo, tHi, tLo, tTemp;
-      tLo = newVRegI(env);
-      tHi = newVRegI(env);
-      tTemp = newVRegI(env);
-      rAmt = iselIntExpr_R(env, e->Iex.Binop.arg2);
-      iselInt64Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
-      addInstr(env, mk_iMOVsd_RR(rAmt, hregX86_ECX()));
-      addInstr(env, mk_iMOVsd_RR(sHi, tHi));
-      addInstr(env, mk_iMOVsd_RR(sLo, tLo));
-      /* Ok.  Now shift amt is in %ecx, and value is in tHi/tLo and
-         those regs are legitimately modifiable. */
-      addInstr(env, X86Instr_Sh3232(Xsh_SHL, 0/*%cl*/, tLo, tHi));
-      addInstr(env, X86Instr_Sh32(Xsh_SHL, 0/*%cl*/, X86RM_Reg(tLo)));
-      addInstr(env, X86Instr_Test32(X86RI_Imm(32), X86RM_Reg(hregX86_ECX())));
-      addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tLo), tHi));
-      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tTemp));
-      addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tTemp), tLo));
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
+               cmovnz %lo, %hi
+               movl $0, %tmp         -- sigh; need yet another reg
+               cmovnz %tmp, %lo 
+            */
+            HReg rAmt, sHi, sLo, tHi, tLo, tTemp;
+            tLo = newVRegI(env);
+            tHi = newVRegI(env);
+            tTemp = newVRegI(env);
+            rAmt = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            iselInt64Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
+            addInstr(env, mk_iMOVsd_RR(rAmt, hregX86_ECX()));
+            addInstr(env, mk_iMOVsd_RR(sHi, tHi));
+            addInstr(env, mk_iMOVsd_RR(sLo, tLo));
+            /* Ok.  Now shift amt is in %ecx, and value is in tHi/tLo
+               and those regs are legitimately modifiable. */
+            addInstr(env, X86Instr_Sh3232(Xsh_SHL, 0/*%cl*/, tLo, tHi));
+            addInstr(env, X86Instr_Sh32(Xsh_SHL, 0/*%cl*/, X86RM_Reg(tLo)));
+            addInstr(env, X86Instr_Test32(X86RI_Imm(32), 
+                          X86RM_Reg(hregX86_ECX())));
+            addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tLo), tHi));
+            addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tTemp));
+            addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tTemp), tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
 
-   if (e->tag == Iex_Binop
-       && e->Iex.Binop.op == Iop_Shr64) {
-      /* We use the same ingenious scheme as gcc.  Put the value
-         to be shifted into %hi:%lo, and the shift amount into %cl.
-         Then:
+         case Iop_Shr64: {
+            /* We use the same ingenious scheme as gcc.  Put the value
+               to be shifted into %hi:%lo, and the shift amount into
+               %cl.  Then:
  
-            shrdl %cl, %hi, %lo   -- make %lo be right for the shift amt
-                                  -- %cl % 32
-            shrl  %cl, %hi        -- make %hi be right for the shift amt
-                                  -- %cl % 32
+               shrdl %cl, %hi, %lo   -- make %lo be right for the
+                                     -- shift amt %cl % 32
+               shrl  %cl, %hi        -- make %hi be right for the
+                                     -- shift amt %cl % 32
 
-         Now, if (shift amount % 64) is in the range 32 .. 63, we have 
-         to do a fixup, which puts the result high half into the result
-         low half, and zeroes the high half:
+               Now, if (shift amount % 64) is in the range 32 .. 63,
+               we have to do a fixup, which puts the result high half
+               into the result low half, and zeroes the high half:
 
-            testl $32, %ecx
+               testl $32, %ecx
 
-            cmovnz %hi, %lo
-            movl $0, %tmp         -- sigh; need yet another reg
-            cmovnz %tmp, %hi
-      */
-      HReg rAmt, sHi, sLo, tHi, tLo, tTemp;
-      tLo = newVRegI(env);
-      tHi = newVRegI(env);
-      tTemp = newVRegI(env);
-      rAmt = iselIntExpr_R(env, e->Iex.Binop.arg2);
-      iselInt64Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
-      addInstr(env, mk_iMOVsd_RR(rAmt, hregX86_ECX()));
-      addInstr(env, mk_iMOVsd_RR(sHi, tHi));
-      addInstr(env, mk_iMOVsd_RR(sLo, tLo));
-      /* Ok.  Now shift amt is in %ecx, and value is in tHi/tLo and
-         those regs are legitimately modifiable. */
-      addInstr(env, X86Instr_Sh3232(Xsh_SHR, 0/*%cl*/, tHi, tLo));
-      addInstr(env, X86Instr_Sh32(Xsh_SHR, 0/*%cl*/, X86RM_Reg(tHi)));
-      addInstr(env, X86Instr_Test32(X86RI_Imm(32), X86RM_Reg(hregX86_ECX())));
-      addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tHi), tLo));
-      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tTemp));
-      addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tTemp), tHi));
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
+               cmovnz %hi, %lo
+               movl $0, %tmp         -- sigh; need yet another reg
+               cmovnz %tmp, %hi
+            */
+            HReg rAmt, sHi, sLo, tHi, tLo, tTemp;
+            tLo = newVRegI(env);
+            tHi = newVRegI(env);
+            tTemp = newVRegI(env);
+            rAmt = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            iselInt64Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
+            addInstr(env, mk_iMOVsd_RR(rAmt, hregX86_ECX()));
+            addInstr(env, mk_iMOVsd_RR(sHi, tHi));
+            addInstr(env, mk_iMOVsd_RR(sLo, tLo));
+            /* Ok.  Now shift amt is in %ecx, and value is in tHi/tLo
+               and those regs are legitimately modifiable. */
+            addInstr(env, X86Instr_Sh3232(Xsh_SHR, 0/*%cl*/, tHi, tLo));
+            addInstr(env, X86Instr_Sh32(Xsh_SHR, 0/*%cl*/, X86RM_Reg(tHi)));
+            addInstr(env, X86Instr_Test32(X86RI_Imm(32), 
+                          X86RM_Reg(hregX86_ECX())));
+            addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tHi), tLo));
+            addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tTemp));
+            addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tTemp), tHi));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
 
-   /* F64 -> I64 */
-   /* Sigh, this is an almost exact copy of the F64 -> I32/I16 case.
-      Unfortunately I see no easy way to avoid the duplication. */
-   if (e->tag == Iex_Binop
-       && e->Iex.Binop.op == Iop_F64toI64) {
-      HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
-      HReg tLo = newVRegI(env);
-      HReg tHi = newVRegI(env);
+         /* F64 -> I64 */
+         /* Sigh, this is an almost exact copy of the F64 -> I32/I16
+            case.  Unfortunately I see no easy way to avoid the
+            duplication. */
+         case Iop_F64toI64: {
+            HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
 
-      /* Used several times ... */
-      /* Careful ... this sharing is only safe because
-	 zero_esp/four_esp do not hold any registers which the
-	 register allocator could attempt to swizzle later. */
-      X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
-      X86AMode* four_esp = X86AMode_IR(4, hregX86_ESP());
+            /* Used several times ... */
+            /* Careful ... this sharing is only safe because
+	       zero_esp/four_esp do not hold any registers which the
+	       register allocator could attempt to swizzle later. */
+            X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+            X86AMode* four_esp = X86AMode_IR(4, hregX86_ESP());
 
-      /* rf now holds the value to be converted, and rrm holds the
-         rounding mode value, encoded as per the IRRoundingMode enum.
-         The first thing to do is set the FPU's rounding mode
-         accordingly. */
+            /* rf now holds the value to be converted, and rrm holds
+               the rounding mode value, encoded as per the
+               IRRoundingMode enum.  The first thing to do is set the
+               FPU's rounding mode accordingly. */
 
-      /* Create a space for the format conversion. */
-      /* subl $8, %esp */
-      sub_from_esp(env, 8);
+            /* Create a space for the format conversion. */
+            /* subl $8, %esp */
+            sub_from_esp(env, 8);
 
-      /* Set host rounding mode */
-      set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
+            /* Set host rounding mode */
+            set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
 
-      /* gistll %rf, 0(%esp) */
-      addInstr(env, X86Instr_FpLdStI(False/*store*/, 8, rf, zero_esp));
+            /* gistll %rf, 0(%esp) */
+            addInstr(env, X86Instr_FpLdStI(False/*store*/, 8, rf, zero_esp));
 
-      /* movl 0(%esp), %dstLo */
-      /* movl 4(%esp), %dstHi */
-      addInstr(env, X86Instr_Alu32R(
-                       Xalu_MOV, X86RMI_Mem(zero_esp), tLo));
-      addInstr(env, X86Instr_Alu32R(
-                       Xalu_MOV, X86RMI_Mem(four_esp), tHi));
+            /* movl 0(%esp), %dstLo */
+            /* movl 4(%esp), %dstHi */
+            addInstr(env, X86Instr_Alu32R(
+                             Xalu_MOV, X86RMI_Mem(zero_esp), tLo));
+            addInstr(env, X86Instr_Alu32R(
+                             Xalu_MOV, X86RMI_Mem(four_esp), tHi));
 
-      /* Restore default FPU rounding. */
-      set_FPU_rounding_default( env );
+            /* Restore default FPU rounding. */
+            set_FPU_rounding_default( env );
 
-      /* addl $8, %esp */
-      add_to_esp(env, 8);
+            /* addl $8, %esp */
+            add_to_esp(env, 8);
 
-      *rHi = tHi;
-      *rLo = tLo;
-      return;
-   }
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         case Iop_Add8x8:
+            fn = (HWord)h_generic_calc_Add8x8; goto binnish;
+         case Iop_Add16x4:
+            fn = (HWord)h_generic_calc_Add16x4; goto binnish;
+         case Iop_Add32x2:
+            fn = (HWord)h_generic_calc_Add32x2; goto binnish;
+
+         case Iop_Avg8Ux8:
+            fn = (HWord)h_generic_calc_Avg8Ux8; goto binnish;
+         case Iop_Avg16Ux4:
+            fn = (HWord)h_generic_calc_Avg16Ux4; goto binnish;
+
+         case Iop_CmpEQ8x8:
+            fn = (HWord)h_generic_calc_CmpEQ8x8; goto binnish;
+         case Iop_CmpEQ16x4:
+            fn = (HWord)h_generic_calc_CmpEQ16x4; goto binnish;
+         case Iop_CmpEQ32x2:
+            fn = (HWord)h_generic_calc_CmpEQ32x2; goto binnish;
+
+         case Iop_CmpGT8Sx8:
+            fn = (HWord)h_generic_calc_CmpGT8Sx8; goto binnish;
+         case Iop_CmpGT16Sx4:
+            fn = (HWord)h_generic_calc_CmpGT16Sx4; goto binnish;
+         case Iop_CmpGT32Sx2:
+            fn = (HWord)h_generic_calc_CmpGT32Sx2; goto binnish;
+
+         case Iop_InterleaveHI8x8:
+            fn = (HWord)h_generic_calc_InterleaveHI8x8; goto binnish;
+         case Iop_InterleaveLO8x8:
+            fn = (HWord)h_generic_calc_InterleaveLO8x8; goto binnish;
+         case Iop_InterleaveHI16x4:
+            fn = (HWord)h_generic_calc_InterleaveHI16x4; goto binnish;
+         case Iop_InterleaveLO16x4:
+            fn = (HWord)h_generic_calc_InterleaveLO16x4; goto binnish;
+         case Iop_InterleaveHI32x2:
+            fn = (HWord)h_generic_calc_InterleaveHI32x2; goto binnish;
+         case Iop_InterleaveLO32x2:
+            fn = (HWord)h_generic_calc_InterleaveLO32x2; goto binnish;
+
+         case Iop_Max8Ux8:
+            fn = (HWord)h_generic_calc_Max8Ux8; goto binnish;
+         case Iop_Max16Sx4:
+            fn = (HWord)h_generic_calc_Max16Sx4; goto binnish;
+         case Iop_Min8Ux8:
+            fn = (HWord)h_generic_calc_Min8Ux8; goto binnish;
+         case Iop_Min16Sx4:
+            fn = (HWord)h_generic_calc_Min16Sx4; goto binnish;
+
+         case Iop_Mul16x4:
+            fn = (HWord)h_generic_calc_Mul16x4; goto binnish;
+         case Iop_MulHi16Sx4:
+            fn = (HWord)h_generic_calc_MulHi16Sx4; goto binnish;
+         case Iop_MulHi16Ux4:
+            fn = (HWord)h_generic_calc_MulHi16Ux4; goto binnish;
+
+         case Iop_QAdd8Sx8:
+            fn = (HWord)h_generic_calc_QAdd8Sx8; goto binnish;
+         case Iop_QAdd16Sx4:
+            fn = (HWord)h_generic_calc_QAdd16Sx4; goto binnish;
+         case Iop_QAdd8Ux8:
+            fn = (HWord)h_generic_calc_QAdd8Ux8; goto binnish;
+         case Iop_QAdd16Ux4:
+            fn = (HWord)h_generic_calc_QAdd16Ux4; goto binnish;
+
+         case Iop_QNarrow32Sx2:
+            fn = (HWord)h_generic_calc_QNarrow32Sx2; goto binnish;
+         case Iop_QNarrow16Sx4:
+            fn = (HWord)h_generic_calc_QNarrow16Sx4; goto binnish;
+         case Iop_QNarrow16Ux4:
+            fn = (HWord)h_generic_calc_QNarrow16Ux4; goto binnish;
+
+         case Iop_QSub8Sx8:
+            fn = (HWord)h_generic_calc_QSub8Sx8; goto binnish;
+         case Iop_QSub16Sx4:
+            fn = (HWord)h_generic_calc_QSub16Sx4; goto binnish;
+         case Iop_QSub8Ux8:
+            fn = (HWord)h_generic_calc_QSub8Ux8; goto binnish;
+         case Iop_QSub16Ux4:
+            fn = (HWord)h_generic_calc_QSub16Ux4; goto binnish;
+
+         case Iop_Sub8x8:
+            fn = (HWord)h_generic_calc_Sub8x8; goto binnish;
+         case Iop_Sub16x4:
+            fn = (HWord)h_generic_calc_Sub16x4; goto binnish;
+         case Iop_Sub32x2:
+            fn = (HWord)h_generic_calc_Sub32x2; goto binnish;
+
+         binnish: {
+            /* Note: the following assumes all helpers are of
+               signature 
+                  ULong fn ( ULong, ULong ), and they are
+               not marked as regparm functions. 
+            */
+            HReg xLo, xHi, yLo, yHi;
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            iselInt64Expr(&yHi, &yLo, env, e->Iex.Binop.arg2);
+            addInstr(env, X86Instr_Push(X86RMI_Reg(yHi)));
+            addInstr(env, X86Instr_Push(X86RMI_Reg(yLo)));
+            iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
+            addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
+            addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            add_to_esp(env, 4*4);
+            addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
+            addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         case Iop_ShlN32x2:
+            fn = (HWord)h_generic_calc_ShlN32x2; goto shifty;
+         case Iop_ShlN16x4:
+            fn = (HWord)h_generic_calc_ShlN16x4; goto shifty;
+         case Iop_ShrN32x2:
+            fn = (HWord)h_generic_calc_ShrN32x2; goto shifty;
+         case Iop_ShrN16x4:
+            fn = (HWord)h_generic_calc_ShrN16x4; goto shifty;
+         case Iop_SarN32x2:
+            fn = (HWord)h_generic_calc_SarN32x2; goto shifty;
+         case Iop_SarN16x4:
+            fn = (HWord)h_generic_calc_SarN16x4; goto shifty;
+         shifty: {
+            /* Note: the following assumes all helpers are of
+               signature 
+                  ULong fn ( ULong, UInt ), and they are
+               not marked as regparm functions. 
+            */
+            HReg xLo, xHi;
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            X86RMI* y = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+            addInstr(env, X86Instr_Push(y));
+            iselInt64Expr(&xHi, &xLo, env, e->Iex.Binop.arg1);
+            addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
+            addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            add_to_esp(env, 3*4);
+            addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
+            addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         default: 
+            break;
+      }
+   } /* if (e->tag == Iex_Binop) */
+
+
+   /* --------- UNARY ops --------- */
+   if (e->tag == Iex_Unop) {
+      switch (e->Iex.Unop.op) {
+
+         /* 32Sto64(e) */
+         case Iop_32Sto64: {
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, mk_iMOVsd_RR(src,tHi));
+            addInstr(env, mk_iMOVsd_RR(src,tLo));
+            addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(tHi)));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         /* 32Uto64(e) */
+         case Iop_32Uto64: {
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, mk_iMOVsd_RR(src,tLo));
+            addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tHi));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         /* 128{HI}to64 */
+         case Iop_128HIto64:
+         case Iop_128to64: {
+            Int  off = e->Iex.Unop.op==Iop_128HIto64 ? 8 : 0;
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            HReg vec = iselVecExpr(env, e->Iex.Unop.arg);
+            X86AMode* esp0  = X86AMode_IR(0,     hregX86_ESP());
+            X86AMode* espLO = X86AMode_IR(off,   hregX86_ESP());
+            X86AMode* espHI = X86AMode_IR(off+4, hregX86_ESP());
+            sub_from_esp(env, 16);
+            addInstr(env, X86Instr_SseLdSt(False/*store*/, vec, esp0));
+            addInstr(env, X86Instr_Alu32R( Xalu_MOV, 
+                                           X86RMI_Mem(espLO), tLo ));
+            addInstr(env, X86Instr_Alu32R( Xalu_MOV, 
+                                           X86RMI_Mem(espHI), tHi ));
+            add_to_esp(env, 16);
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         /* could do better than this, but for now ... */
+         case Iop_1Sto64: {
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
+            addInstr(env, X86Instr_Set32(cond,tLo));
+            addInstr(env, X86Instr_Sh32(Xsh_SHL, 31, X86RM_Reg(tLo)));
+            addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(tLo)));
+            addInstr(env, mk_iMOVsd_RR(tLo, tHi));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         /* Not64(e) */
+         case Iop_Not64: {
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            HReg sHi, sLo;
+            iselInt64Expr(&sHi, &sLo, env, e->Iex.Unop.arg);
+            addInstr(env, mk_iMOVsd_RR(sHi, tHi));
+            addInstr(env, mk_iMOVsd_RR(sLo, tLo));
+            addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(tHi)));
+            addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(tLo)));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         /* ReinterpF64asI64(e) */
+         /* Given an IEEE754 double, produce an I64 with the same bit
+            pattern. */
+         case Iop_ReinterpF64asI64: {
+            HReg rf   = iselDblExpr(env, e->Iex.Unop.arg);
+            HReg tLo  = newVRegI(env);
+            HReg tHi  = newVRegI(env);
+            X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+            X86AMode* four_esp = X86AMode_IR(4, hregX86_ESP());
+            /* paranoia */
+            set_FPU_rounding_default(env);
+            /* subl $8, %esp */
+            sub_from_esp(env, 8);
+            /* gstD %rf, 0(%esp) */
+            addInstr(env,
+                     X86Instr_FpLdSt(False/*store*/, 8, rf, zero_esp));
+            /* movl 0(%esp), %tLo */
+            addInstr(env, 
+                     X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(zero_esp), tLo));
+            /* movl 4(%esp), %tHi */
+            addInstr(env, 
+                     X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(four_esp), tHi));
+            /* addl $8, %esp */
+            add_to_esp(env, 8);
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         default: 
+            break;
+      }
+   } /* if (e->tag == Iex_Unop) */
+
 
    /* --------- CCALL --------- */
    if (e->tag == Iex_CCall) {

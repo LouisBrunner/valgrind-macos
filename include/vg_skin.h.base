@@ -1775,22 +1775,32 @@ struct _SkipList {
 	}
 
 /* List operations:
-   SkipList_Find searchs a list.  If it can't find an exact match, it either returns NULL
-      or a pointer to the element before where k would go
-   SkipList_Insert inserts a new element into the list.  Duplicates are forbidden.
-   SkipList_Remove removes an element from the list and returns it.  It doesn't free the memory.
- */
+   SkipList_Find searchs a list.  If it can't find an exact match, it either
+      returns NULL or a pointer to the element before where k would go
+   SkipList_Insert inserts a new element into the list.  Duplicates are
+      forbidden.  The element must have been created with SkipList_Alloc!
+   SkipList_Remove removes an element from the list and returns it.  It
+      doesn't free the memory.
+*/
 extern void *VG_(SkipList_Find)  (const SkipList *l, void *key);
 extern void  VG_(SkipList_Insert)(      SkipList *l, void *data);
 extern void *VG_(SkipList_Remove)(      SkipList *l, void *key);
 
 /* Node (element) operations:
-   SkipNode_Alloc: allocate memory for a new element on the list
+   SkipNode_Alloc: allocate memory for a new element on the list.  Must be
+      used before an element can be inserted!  Returns NULL if not enough
+      memory.
    SkipNode_Free: free memory allocated above
    SkipNode_First: return the first element on the list
    SkipNode_Next: return the next element after "data" on the list - 
       NULL for none
- */
+
+   You can iterate through a SkipList like this:
+
+      for(x = VG_(SkipNode_First)(&list);
+	  x != NULL;
+	  x = VG_(SkipNode_Next)(&list, x)) { ... }
+*/
 extern void *VG_(SkipNode_Alloc) (const SkipList *l);
 extern void  VG_(SkipNode_Free)  (const SkipList *l, void *p);
 extern void *VG_(SkipNode_First) (const SkipList *l);

@@ -294,6 +294,22 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       X86AluOp   aluOp;
       X86ShiftOp shOp;
 
+#if 0
+      { DECLARE_PATTERN(p_rol32);
+        DEFINE_PATTERN(p_rol32,
+           binop(Iop_Or32,
+                 binop(Iop_Shl32,bind(0),bind(1)),
+                 binop(Iop_Shr32,
+                       bind(2),
+                       binop(Iop_Sub8,IRConst_U8(32),bind(3)))));
+        if (matchIRExpr(&mi,p_rol32,e)
+            && eqIRExpr(mi.bindee[0], mi.bindee[2])
+            && eqIRExpr(mi.bindee[1], mi.bindee[3])) {
+           /* emit roll */
+        }
+      }
+#endif
+
       /* Is it an addition or logical style op? */
       switch (e->Iex.Binop.op) {
          case Iop_Add8: case Iop_Add16: case Iop_Add32:

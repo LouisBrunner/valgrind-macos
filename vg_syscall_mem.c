@@ -354,6 +354,33 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+#     if defined(__NR_mremap)
+      /* Is this really right?  Perhaps it should copy the permissions
+         from the old area into the new.  Unclear from the Linux man
+         pages what this really does.  Also, the flags don't look like
+         they mean the same as the standard mmap flags, so that's
+         probably wrong too. */
+      case __NR_mremap: /* syscall 163 */
+         /* void* mremap(void * old_address, size_t old_size, 
+                         size_t new_size, unsigned long flags); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("mremap ( %p, %d, %d, 0x%x )\n", 
+                        arg1, arg2, arg3, arg4);
+         must_be_writable ( tst, "mremap(old_address)", arg1, arg2 );
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res)) {
+            /* Copied from munmap() wrapper. */
+            Addr start  = arg1;
+            Addr length = arg2;
+            while ((start % VKI_BYTES_PER_PAGE) > 0) { start--; length++; }
+            while (((start+length) % VKI_BYTES_PER_PAGE) > 0) { length++; }
+            make_noaccess( start, length );
+            VG_(symtab_notify_munmap) ( start, length );
+            approximate_mmap_permissions( (Addr)res, arg3, arg4 );
+         }
+         break;         
+#     endif
+
       case __NR_nice: /* syscall 34 */
          /* int nice(int inc); */
          if (VG_(clo_trace_syscalls))

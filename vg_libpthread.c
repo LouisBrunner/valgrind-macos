@@ -32,7 +32,7 @@
    ------------------------------------------------------------------ */
 
 /* Set to 1 to see IGNORED debugging messages. */
-static int show_IGNORED = 0;
+static int show_IGNORED = 1;
 
 
 /* ---------------------------------------------------------------------
@@ -107,6 +107,19 @@ static void ignored ( char* msg )
 /* ---------------------------------------------------------------------
    Pass pthread_ calls to Valgrind's request mechanism.
    ------------------------------------------------------------------ */
+
+int pthread_attr_init(pthread_attr_t *attr)
+{
+   ignored("pthread_attr_init");
+   return 0;
+}
+
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
+{
+   ignored("pthread_attr_setdetachstate");
+   return 0;
+}
+
 
 int
 pthread_create (pthread_t *__restrict __thread,
@@ -188,8 +201,14 @@ int pthread_mutex_init(pthread_mutex_t *mutex,
 
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 {
-  ignored("pthread_mutexattr_destroy");
-  return 0;
+   ignored("pthread_mutexattr_destroy");
+   return 0;
+}
+
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+{
+   ignored("pthread_mutexattr_settype");
+   return 0;
 }
 
 int pthread_mutex_lock(pthread_mutex_t *mutex)
@@ -435,6 +454,20 @@ off_t __libc_lseek(int fildes, off_t offset, int whence);
 off_t lseek(int fildes, off_t offset, int whence)
 {
   return __libc_lseek(fildes, offset, whence);
+}
+
+extern  
+void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
+void longjmp(jmp_buf env, int val)
+{
+   __libc_longjmp(env, val);
+}
+
+extern
+int __libc_send(int s, const void *msg, size_t len, int flags);
+int send(int s, const void *msg, size_t len, int flags)
+{
+   return __libc_send(s, msg, len, flags);
 }
 
 /*--------------------------------------------------*/

@@ -381,10 +381,12 @@ typedef
 //..       Xin_FpCMov,    /* FP fake floating point conditional move */
 //..       Xin_FpLdStCW,  /* fldcw / fstcw */
 //..       Xin_FpStSW_AX, /* fstsw %ax */
-//..       Xin_FpCmp,     /* FP compare, generating a C320 value into int reg */
+      Ain_SseUComIS, /* ucomisd/ucomiss, then get %rflags into int
+                        register */
 //.. 
 //..       Xin_SseConst,  /* Generate restricted SSE literal */
-      Ain_SseLdSt,   /* SSE load/store, no alignment constraints */
+      Ain_SseLdSt,   /* SSE load/store 32/64/128 bits, no alignment
+                        constraints, upper 96/64/0 bits arbitrary */
       Ain_SseLdzLO,  /* SSE load low 32/64 bits, zero remainder of reg */
 //..       Xin_Sse32Fx4,  /* SSE binary, 32Fx4 */
 //..       Xin_Sse32FLo,  /* SSE binary, 32F in lowest lane only */
@@ -482,7 +484,7 @@ typedef
          } MovZLQ;
          /* Sign/Zero extending loads.  Dst size is always 64 bits. */
          struct {
-            UChar       szSmall;
+            UChar       szSmall; /* only 1, 2 or 4 */
             Bool        syned;
             AMD64AMode* src;
             HReg        dst;
@@ -562,12 +564,13 @@ typedef
 //..             /* no fields */
 //..          }
 //..          FpStSW_AX;
-//..          /* Do a compare, generating the C320 bits into the dst. */
-//..          struct {
-//..             HReg    srcL;
-//..             HReg    srcR;
-//..             HReg    dst;
-//..          } FpCmp;
+         /* ucomisd/ucomiss, then get %rflags into int register */
+         struct {
+            UChar   sz;   /* 4 or 8 only */
+            HReg    srcL; /* xmm */
+            HReg    srcR; /* xmm */
+            HReg    dst;  /* int */
+         } SseUComIS;
 //.. 
 //..          /* Simplistic SSE[123] */
 //..          struct {
@@ -576,6 +579,7 @@ typedef
 //..          } SseConst;
          struct {
             Bool        isLoad;
+            UChar       sz; /* 4, 8 or 16 only */
             HReg        reg;
             AMD64AMode* addr;
          } SseLdSt;
@@ -655,10 +659,10 @@ extern AMD64Instr* AMD64Instr_MFence    ( void );
 //.. extern AMD64Instr* AMD64Instr_FpCMov    ( AMD64CondCode, HReg src, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_FpLdStCW  ( Bool isLoad, AMD64AMode* );
 //.. extern AMD64Instr* AMD64Instr_FpStSW_AX ( void );
-//.. extern AMD64Instr* AMD64Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
+extern AMD64Instr* AMD64Instr_SseUComIS ( Int sz, HReg srcL, HReg srcR, HReg dst );
 //.. 
 //.. extern AMD64Instr* AMD64Instr_SseConst  ( UShort con, HReg dst );
-extern AMD64Instr* AMD64Instr_SseLdSt   ( Bool isLoad, HReg, AMD64AMode* );
+extern AMD64Instr* AMD64Instr_SseLdSt   ( Bool isLoad, Int sz, HReg, AMD64AMode* );
 extern AMD64Instr* AMD64Instr_SseLdzLO  ( Int sz, HReg, AMD64AMode* );
 //.. extern AMD64Instr* AMD64Instr_Sse32Fx4  ( AMD64SseOp, HReg, HReg );
 //.. extern AMD64Instr* AMD64Instr_Sse32FLo  ( AMD64SseOp, HReg, HReg );

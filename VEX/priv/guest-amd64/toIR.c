@@ -1197,11 +1197,11 @@ static IRExpr* getXMMRegLane64 ( UInt xmmreg, Int laneno )
    return IRExpr_Get( xmmGuestRegLane64offset(xmmreg,laneno), Ity_I64 );
 }
 
-//.. static IRExpr* getXMMRegLane64F ( UInt xmmreg, Int laneno )
-//.. {
-//..    return IRExpr_Get( xmmGuestRegLane64offset(xmmreg,laneno), Ity_F64 );
-//.. }
-//.. 
+static IRExpr* getXMMRegLane64F ( UInt xmmreg, Int laneno )
+{
+   return IRExpr_Get( xmmGuestRegLane64offset(xmmreg,laneno), Ity_F64 );
+}
+
 //.. static IRExpr* getXMMRegLane32 ( UInt xmmreg, Int laneno )
 //.. {
 //..    return IRExpr_Get( xmmGuestRegLane32offset(xmmreg,laneno), Ity_I32 );
@@ -8932,39 +8932,45 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSEcmp_E_to_G( sorb, delta+3, "cmpsd", False, 8 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 66 0F 2F = COMISD  -- 64F0x2 comparison G,E, and set ZCP */
-//..    /* 66 0F 2E = UCOMISD -- 64F0x2 comparison G,E, and set ZCP */
-//..    if (sz == 2 && insn[0] == 0x0F && (insn[1] == 0x2F || insn[1] == 0x2E)) {
-//..       IRTemp argL = newTemp(Ity_F64);
-//..       IRTemp argR = newTemp(Ity_F64);
-//..       modrm = getUChar(delta+2);
-//..       if (epartIsReg(modrm)) {
-//..          assign( argR, getXMMRegLane64F( eregOfRM(modrm), 0/*lowest lane*/ ) );
-//..          delta += 2+1;
-//..          DIP("[u]comisd %s,%s\n", nameXMMReg(eregOfRM(modrm)),
-//..                                   nameXMMReg(gregOfRM(modrm)) );
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//.. 	 assign( argR, loadLE(Ity_F64, mkexpr(addr)) );
-//..          delta += 2+alen;
-//..          DIP("[u]comisd %s,%s\n", dis_buf,
-//..                                   nameXMMReg(gregOfRM(modrm)) );
-//..       }
-//..       assign( argL, getXMMRegLane64F( gregOfRM(modrm), 0/*lowest lane*/ ) );
-//.. 
-//..       stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-//..       stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-//..       stmt( IRStmt_Put( 
-//..                OFFB_CC_DEP1,
-//..                binop( Iop_And32,
-//..                       binop(Iop_CmpF64, mkexpr(argL), mkexpr(argR)),
-//..                       mkU32(0x45)
-//..           )));
-//.. 
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* 66 0F 2F = COMISD  -- 64F0x2 comparison G,E, and set ZCP */
+   /* 66 0F 2E = UCOMISD -- 64F0x2 comparison G,E, and set ZCP */
+   if (have66noF2noF3(pfx) 
+       && insn[0] == 0x0F && (insn[1] == 0x2F || insn[1] == 0x2E)) {
+      IRTemp argL = newTemp(Ity_F64);
+      IRTemp argR = newTemp(Ity_F64);
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         assign( argR, getXMMRegLane64F( eregOfRexRM(pfx,modrm), 
+                                         0/*lowest lane*/ ) );
+         delta += 2+1;
+         DIP("%scomisd %s,%s\n", insn[1]==0x2E ? "u" : "",
+                                 nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                 nameXMMReg(gregOfRexRM(pfx,modrm)) );
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         assign( argR, loadLE(Ity_F64, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("%scomisd %s,%s\n", insn[1]==0x2E ? "u" : "",
+                                 dis_buf,
+                                 nameXMMReg(gregOfRexRM(pfx,modrm)) );
+      }
+      assign( argL, getXMMRegLane64F( gregOfRexRM(pfx,modrm), 
+                                      0/*lowest lane*/ ) );
+
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+      stmt( IRStmt_Put( 
+               OFFB_CC_DEP1,
+               binop( Iop_And64,
+                      unop( Iop_32Uto64, 
+                            binop(Iop_CmpF64, mkexpr(argL), mkexpr(argR)) ),
+                      mkU64(0x45)
+          )));
+
+      goto decode_success;
+   }
+
 //..    /* F3 0F E6 = CVTDQ2PD -- convert 2 x I32 in mem/lo half xmm to 2 x
 //..       F64 in xmm(G) */
 //..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xE6) {

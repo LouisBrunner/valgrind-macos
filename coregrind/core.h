@@ -1769,14 +1769,12 @@ extern void VGA_(set_arg_and_bogus_ret) ( ThreadId tid, UWord arg, Addr ret );
 extern void VGA_(thread_initial_stack)  ( ThreadId tid, UWord arg, Addr ret );
 
 // Symtab stuff
-extern UInt* VGA_(reg_addr_from_BB)  ( Int reg );
 extern UInt* VGA_(reg_addr_from_tst) ( Int reg, ThreadArchState* );
 
 // Pointercheck
 extern Bool VGA_(setup_pointercheck) ( void );
 
 // For attaching the debugger
-extern Int  VGA_(ptrace_setregs_from_BB)  ( Int pid );
 extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );
 
 // Making coredumps

@@ -155,13 +155,12 @@ Bool, expensive_sanity_check
 
 ## Events happening in core to track.  To be notified, pass a callback
 ## function to the appropriate function.  To ignore an event, don't do
-## anything (default is for events to be ignored).
+## anything (the default is for events to be ignored).
 
-## Note that most events aren't passed a ThreadId.  To find out the ThreadId
-## of the affected thread, use VG_(get_current_or_recent_tid)().  For the
-## ones passed a ThreadId, use that instead, since
-## VG_(get_current_or_recent_tid)() might not give the right ThreadId in
-## that case.
+## Note that most events aren't passed a ThreadId.  If the event is one called
+## from generated code (eg. new_mem_stack_*), you can use
+## VG_(get_current_tid)() to find it.  Otherwise, it has to be passed in,
+## as in pre_mem_read, and so the event signature will require changing.
 
 ## Memory events (Nb: to track heap allocation/freeing, a tool must replace
 ## malloc() et al.  See above how to do this.)

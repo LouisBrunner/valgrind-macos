@@ -1,5 +1,6 @@
 Invalid read of size 1
    at 0x........: ddd (errs1.c:7)
+   by 0x........: ccc (errs1.c:8)
    by 0x........: bbb (errs1.c:9)
    by 0x........: aaa (errs1.c:10)
    by 0x........: main (errs1.c:17)
@@ -13,6 +14,7 @@ Invalid read of size 1
 
 Invalid write of size 1
    at 0x........: ddd (errs1.c:7)
+   by 0x........: ccc (errs1.c:8)
    by 0x........: bbb (errs1.c:9)
    by 0x........: aaa (errs1.c:10)
    by 0x........: main (errs1.c:17)

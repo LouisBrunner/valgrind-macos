@@ -1159,8 +1159,8 @@ struct _ExeContext {
 extern void VG_(print_ExeContext_stats) ( void );
 
 /* Like VG_(get_ExeContext), but with a slightly different type */
-extern ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
-                                          Addr ebp_min, Addr ebp_max );
+extern ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
+                                          Addr fp_min, Addr fp_max );
 
 
 /* ---------------------------------------------------------------------

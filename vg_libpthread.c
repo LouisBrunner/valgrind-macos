@@ -499,6 +499,13 @@ int send(int s, const void *msg, size_t len, int flags)
    return __libc_send(s, msg, len, flags);
 }
 
+extern
+int __libc_recv(int s, void *buf, size_t len, int flags);
+int recv(int s, void *buf, size_t len, int flags)
+{
+   return __libc_recv(s, buf, len, flags);
+}
+
 
 /*--------------------------------------------------*/
 

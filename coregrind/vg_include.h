@@ -135,7 +135,7 @@
 #define VG_N_WAITING_FDS 10
 
 /* Maximum number of mutexes allowed. */
-#define VG_N_MUTEXES 10
+#define VG_N_MUTEXES 30
 
 
 /* ---------------------------------------------------------------------
@@ -461,7 +461,11 @@ typedef
    struct {
       /* The thread identity is simply the index in vg_threads[].
          ThreadId == 0 is the root thread and has the special property
-         that we don't try and allocate or deallocate its stack.  */
+         that we don't try and allocate or deallocate its stack.  For
+         convenience of generating error message, we also put the
+         ThreadId in this tid field, but be aware that it should
+         ALWAYS just == the index in vg_threads[]. */
+      ThreadId tid;
 
       /* Current scheduling status. */
       ThreadStatus status;
@@ -497,6 +501,12 @@ typedef
          not allocated yet.
       */
       Addr stack_base;
+
+     /* Address of the highest legitimate word in this stack.  This is
+        used for error messages only -- not critical for execution
+        correctness.  Is is set for all stacks, specifically including
+        ThreadId == 0 (the main thread). */
+      Addr stack_highest_word;
 
       /* Saved machine context. */
       UInt m_eax;
@@ -535,10 +545,16 @@ extern void VG_(save_thread_state)( ThreadId );
 /* Get the thread state block for the specified thread. */
 extern ThreadState* VG_(get_thread_state)( ThreadId );
 
+/* And for the currently running one, if valid. */
+extern ThreadState* VG_(get_current_thread_state) ( void );
 
-/* Create, and add to TT/TC, the translation of a client basic
-   block. */
-extern void VG_(create_translation_for) ( Addr orig_addr );
+/* Similarly ... */
+extern ThreadId VG_(get_current_tid) ( void );
+
+/* Which thread is this address in the stack of, if any?  Used for
+   error message generation. */
+extern ThreadId VG_(identify_stack_addr)( Addr a );
+
 
 /* Return codes from the scheduler. */
 typedef
@@ -959,7 +975,8 @@ extern Int   VG_(getNewShadow)   ( UCodeBlock* cb );
    Exports of vg_translate.c
    ------------------------------------------------------------------ */
 
-extern void  VG_(translate)  ( Addr  orig_addr,
+extern void  VG_(translate)  ( ThreadState* tst,
+                               Addr  orig_addr,
                                UInt* orig_size,
                                Addr* trans_addr,
                                UInt* trans_size );
@@ -1054,7 +1071,8 @@ extern void VG_(record_free_error)    ( Addr a );
 extern void VG_(record_freemismatch_error)    ( Addr a );
 extern void VG_(record_address_error) ( Addr a, Int size, 
                                         Bool isWrite );
-extern void VG_(record_jump_error) ( Addr a );
+
+extern void VG_(record_jump_error) ( ThreadState* tst, Addr a );
 
 extern void VG_(record_param_err) ( ThreadState* tst,
                                     Addr a, 
@@ -1080,6 +1098,8 @@ typedef
       Int rwoffset;
       /* Freed, Mallocd */
       ExeContext* lastchange;
+      /* Stack */
+      ThreadId stack_tid;
    }
    AddrInfo;
 
@@ -1357,10 +1377,7 @@ extern Bool VG_(is_just_below_ESP)( Addr esp, Addr aa );
 
 /* Nasty kludgery to deal with applications which switch stacks,
    like netscape. */
-#define VG_STACK_STARTS_AT      0xC0000000
 #define VG_PLAUSIBLE_STACK_SIZE 8000000
-
-extern Bool VG_(is_plausible_stack_addr) ( Addr );
 
 
 /* ---------------------------------------------------------------------

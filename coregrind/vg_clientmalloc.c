@@ -529,15 +529,17 @@ void VG_(describe_addr) ( Addr a, AddrInfo* ai )
    ShadowChunk* sc;
    UInt         ml_no;
    Bool         ok;
+   ThreadId     tid;
 
    /* Perhaps it's a user-def'd block ? */
    ok = VG_(client_perm_maybe_describe)( a, ai );
    if (ok)
       return;
-   /* Perhaps it's on the stack? */
-   if (VG_(is_plausible_stack_addr)(a)
-       && a >= (Addr)VG_(baseBlock)[VGOFF_(m_esp)]) {
-      ai->akind = Stack;
+   /* Perhaps it's on a thread's stack? */
+   tid = VG_(identify_stack_addr)(a);
+   if (tid != VG_INVALID_THREADID) {
+      ai->akind     = Stack;
+      ai->stack_tid = tid;
       return;
    }
    /* Search for a freed block which might bracket it. */

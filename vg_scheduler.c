@@ -73,6 +73,9 @@ suitable for use by anyone at all!
 /* Private globals.  A statically allocated array of threads. */
 static ThreadState vg_threads[VG_N_THREADS];
 
+/* The tid of the thread currently in VG_(baseBlock). */
+static Int vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
+
 
 /* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
 jmp_buf VG_(scheduler_jmpbuf);
@@ -130,6 +133,39 @@ static void do_nontrivial_clientreq ( ThreadId tid );
 /* ---------------------------------------------------------------------
    Helper functions for the scheduler.
    ------------------------------------------------------------------ */
+
+/* For constructing error messages only: try and identify a thread
+   whose stack this address currently falls within, or return
+   VG_INVALID_THREADID if it doesn't.  A small complication is dealing
+   with any currently VG_(baseBlock)-resident thread. 
+*/
+ThreadId VG_(identify_stack_addr)( Addr a )
+{
+   ThreadId tid, tid_to_skip;
+
+   tid_to_skip = VG_INVALID_THREADID;
+
+   /* First check to see if there's a currently-loaded thread in
+      VG_(baseBlock). */
+   if (vg_tid_currently_in_baseBlock != VG_INVALID_THREADID) {
+      tid = vg_tid_currently_in_baseBlock;
+      if (VG_(baseBlock)[VGOFF_(m_esp)] <= a
+          && a <= vg_threads[tid].stack_highest_word) 
+         return tid;
+      else
+         tid_to_skip = tid;
+   }
+
+   for (tid = 0; tid < VG_N_THREADS; tid++) {
+      if (vg_threads[tid].status == VgTs_Empty) continue;
+      if (tid == tid_to_skip) continue;
+      if (vg_threads[tid].m_esp <= a 
+          && a <= vg_threads[tid].stack_highest_word)
+         return tid;
+   }
+   return VG_INVALID_THREADID;
+}
+ 
 
 /* Print the scheduler status. */
 void VG_(pp_sched_status) ( void )
@@ -212,14 +248,16 @@ Char* name_of_sched_event ( UInt event )
    orig_addr, and add it to the translation cache & translation table.
    This probably doesn't really belong here, but, hey ... 
 */
-void VG_(create_translation_for) ( Addr orig_addr )
+static
+void create_translation_for ( ThreadId tid, Addr orig_addr )
 {
    Addr    trans_addr;
    TTEntry tte;
    Int orig_size, trans_size;
    /* Ensure there is space to hold a translation. */
    VG_(maybe_do_lru_pass)();
-   VG_(translate)( orig_addr, &orig_size, &trans_addr, &trans_size );
+   VG_(translate)( &vg_threads[tid],
+                   orig_addr, &orig_size, &trans_addr, &trans_size );
    /* Copy data at trans_addr into the translation cache.
       Returned pointer is to the code, not to the 4-byte
       header. */
@@ -273,6 +311,20 @@ ThreadState* VG_(get_thread_state) ( ThreadId tid )
 }
 
 
+ThreadState* VG_(get_current_thread_state) ( void )
+{
+   vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
+   return VG_(get_thread_state) ( VG_INVALID_THREADID );
+}
+
+
+ThreadId VG_(get_current_tid) ( void )
+{
+   vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
+   return vg_tid_currently_in_baseBlock;
+}
+
+
 /* Find an unused VgMutex record. */
 static
 MutexId vg_alloc_VgMutex ( void )
@@ -295,6 +347,8 @@ __inline__
 void VG_(load_thread_state) ( ThreadId tid )
 {
    Int i;
+   vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
+
    VG_(baseBlock)[VGOFF_(m_eax)] = vg_threads[tid].m_eax;
    VG_(baseBlock)[VGOFF_(m_ebx)] = vg_threads[tid].m_ebx;
    VG_(baseBlock)[VGOFF_(m_ecx)] = vg_threads[tid].m_ecx;
@@ -318,6 +372,8 @@ void VG_(load_thread_state) ( ThreadId tid )
    VG_(baseBlock)[VGOFF_(sh_ebp)] = vg_threads[tid].sh_ebp;
    VG_(baseBlock)[VGOFF_(sh_esp)] = vg_threads[tid].sh_esp;
    VG_(baseBlock)[VGOFF_(sh_eflags)] = vg_threads[tid].sh_eflags;
+
+   vg_tid_currently_in_baseBlock = tid;
 }
 
 
@@ -332,6 +388,8 @@ void VG_(save_thread_state) ( ThreadId tid )
 {
    Int i;
    const UInt junk = 0xDEADBEEF;
+
+   vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
 
    vg_threads[tid].m_eax = VG_(baseBlock)[VGOFF_(m_eax)];
    vg_threads[tid].m_ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
@@ -371,6 +429,8 @@ void VG_(save_thread_state) ( ThreadId tid )
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
       VG_(baseBlock)[VGOFF_(m_fpustate) + i] = junk;
+
+   vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 }
 
 
@@ -450,6 +510,7 @@ void VG_(scheduler_init) ( void )
    for (i = 0; i < VG_N_THREADS; i++) {
       vg_threads[i].stack_size = 0;
       vg_threads[i].stack_base = (Addr)NULL;
+      vg_threads[i].tid        = i;
    }
 
    for (i = 0; i < VG_N_WAITING_FDS; i++)
@@ -466,9 +527,15 @@ void VG_(scheduler_init) ( void )
    vg_threads[tid_main].status      = VgTs_Runnable;
    vg_threads[tid_main].joiner      = VG_INVALID_THREADID;
    vg_threads[tid_main].retval      = NULL; /* not important */
+   vg_threads[tid_main].stack_highest_word 
+      = vg_threads[tid_main].m_esp /* -4  ??? */;
 
    /* Copy VG_(baseBlock) state to tid_main's slot. */
+   vg_tid_currently_in_baseBlock = tid_main;
    VG_(save_thread_state) ( tid_main );
+
+   /* So now ... */
+   vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
 }
 
 
@@ -1037,6 +1104,9 @@ VgSchedReturnCode VG_(scheduler) ( void )
       /* ... and remember what we asked for. */
       dispatch_ctr_SAVED = VG_(dispatch_ctr);
 
+      /* paranoia ... */
+      vg_assert(vg_threads[tid].tid == tid);
+
       /* Actually run thread tid. */
       while (True) {
 
@@ -1061,7 +1131,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
                = VG_(search_transtab) ( vg_threads[tid].m_eip );
             if (trans_addr == (Addr)0) {
                /* Not found; we need to request a translation. */
-               VG_(create_translation_for)( vg_threads[tid].m_eip ); 
+               create_translation_for( tid, vg_threads[tid].m_eip ); 
                trans_addr = VG_(search_transtab) ( vg_threads[tid].m_eip ); 
                if (trans_addr == (Addr)0)
                   VG_(panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
@@ -1191,7 +1261,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
       throwing away the result. */
    VG_(printf)(
       "======vvvvvvvv====== LAST TRANSLATION ======vvvvvvvv======\n");
-   VG_(translate)( vg_threads[tid].m_eip, NULL, NULL, NULL );
+   VG_(translate)( &vg_threads[tid], vg_threads[tid].m_eip, NULL, NULL, NULL );
    VG_(printf)("\n");
    VG_(printf)(
       "======^^^^^^^^====== LAST TRANSLATION ======^^^^^^^^======\n");
@@ -1388,7 +1458,7 @@ void do_pthread_create ( ThreadId parent_tid,
 
    vg_assert(vg_threads[parent_tid].status != VgTs_Empty);
 
-   tid         = vg_alloc_ThreadState();
+   tid = vg_alloc_ThreadState();
 
    /* If we've created the main thread's tid, we're in deep trouble :) */
    vg_assert(tid != 0);
@@ -1413,10 +1483,16 @@ void do_pthread_create ( ThreadId parent_tid,
       new_stack = (Addr)VG_(get_memory_from_mmap)( new_stk_szb );
       vg_threads[tid].stack_base = new_stack;
       vg_threads[tid].stack_size = new_stk_szb;
-      vg_threads[tid].m_esp 
+      vg_threads[tid].stack_highest_word
          = new_stack + new_stk_szb 
-                     - VG_AR_CLIENT_STACKBASE_REDZONE_SZB;
+                     - VG_AR_CLIENT_STACKBASE_REDZONE_SZB; /* -4  ??? */;
    }
+
+   vg_threads[tid].m_esp 
+      = vg_threads[tid].stack_base 
+        + vg_threads[tid].stack_size
+        - VG_AR_CLIENT_STACKBASE_REDZONE_SZB;
+
    if (VG_(clo_instrument))
       VGM_(make_noaccess)( vg_threads[tid].m_esp, 
                            VG_AR_CLIENT_STACKBASE_REDZONE_SZB );

@@ -3039,7 +3039,9 @@ static void vg_cleanup ( UCodeBlock* cb )
    throw away the translation once it is made, and (b) produce a load
    of debugging output. 
 */
-void VG_(translate) ( Addr  orig_addr,
+void VG_(translate) ( ThreadState* tst, 
+                         /* Identity of thread needing this block */
+                      Addr  orig_addr,
                       UInt* orig_size,
                       Addr* trans_addr,
                       UInt* trans_size )
@@ -3063,7 +3065,7 @@ void VG_(translate) ( Addr  orig_addr,
       Addr bad_addr;
       Bool ok = VGM_(check_readable) ( orig_addr, 1, &bad_addr );
       if (!ok) {
-         VG_(record_jump_error)(bad_addr);
+         VG_(record_jump_error)(tst, bad_addr);
       }
    }
 

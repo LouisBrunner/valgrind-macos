@@ -1314,14 +1314,15 @@ void fpu_write_check_SLOWLY ( Addr addr, Int size )
    addresses below %esp are not live; those at and above it are.  
 */
 
-/* Does this address look like something in the program's main 
-   stack ? */
-Bool VG_(is_plausible_stack_addr) ( Addr aa )
+/* Does this address look like something in or vaguely near the
+   current thread's stack? */
+static
+Bool is_plausible_stack_addr ( ThreadState* tst, Addr aa )
 {
    UInt a = (UInt)aa;
    PROF_EVENT(100);
-   if (a < VG_STACK_STARTS_AT && 
-       a > VG_STACK_STARTS_AT - VG_PLAUSIBLE_STACK_SIZE)
+   if (a <= tst->stack_highest_word && 
+       a > tst->stack_highest_word - VG_PLAUSIBLE_STACK_SIZE)
       return True;
    else
       return False;
@@ -1466,6 +1467,7 @@ static void vg_handle_esp_assignment_SLOWLY ( Addr new_espA )
                             - 0 * VKI_BYTES_PER_PAGE;
      Addr valid_up_to     = get_page_base(new_esp) + VKI_BYTES_PER_PAGE
                             + 0 * VKI_BYTES_PER_PAGE;
+     ThreadState* tst     = VG_(get_current_thread_state)();
      PROF_EVENT(114);
      if (VG_(clo_verbosity) > 1)
         VG_(message)(Vg_UserMsg, "Warning: client switching stacks?  "
@@ -1474,7 +1476,7 @@ static void vg_handle_esp_assignment_SLOWLY ( Addr new_espA )
      /* VG_(printf)("na %p,   %%esp %p,   wr %p\n",
                     invalid_down_to, new_esp, valid_up_to ); */
      VGM_(make_noaccess) ( invalid_down_to, new_esp - invalid_down_to );
-     if (!VG_(is_plausible_stack_addr)(new_esp)) {
+     if (!is_plausible_stack_addr(tst, new_esp)) {
         VGM_(make_readable) ( new_esp, valid_up_to - new_esp );
      }
    }

@@ -142,6 +142,8 @@ typedef
       Char* syscall_param;
       /* Param, User */
       Bool isWriteableLack;
+      /* ALL */
+      ThreadId tid;
    } 
    ErrContext;
 
@@ -174,6 +176,7 @@ static void clear_AddrInfo ( AddrInfo* ai )
    ai->blksize    = 0;
    ai->rwoffset   = 0;
    ai->lastchange = NULL;
+   ai->stack_tid  = VG_INVALID_THREADID;
 }
 
 static void clear_ErrContext ( ErrContext* ec )
@@ -189,6 +192,7 @@ static void clear_ErrContext ( ErrContext* ec )
    clear_AddrInfo ( &ec->addrinfo );
    ec->syscall_param   = NULL;
    ec->isWriteableLack = False;
+   ec->tid     = VG_INVALID_THREADID;
 }
 
 
@@ -264,7 +268,9 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
 {
    switch (ai->akind) {
       case Stack: 
-         VG_(message)(Vg_UserMsg, "   Address 0x%x is on the stack", a);
+         VG_(message)(Vg_UserMsg, 
+                      "   Address 0x%x is on thread %d's stack", 
+                      ai->stack_tid, a);
          break;
       case Unknown:
          VG_(message)(Vg_UserMsg, 
@@ -309,6 +315,8 @@ static void pp_ErrContext ( ErrContext* ec, Bool printCount )
 {
    if (printCount)
       VG_(message)(Vg_UserMsg, "Observed %d times:", ec->count );
+   if (ec->tid > 0)
+      VG_(message)(Vg_UserMsg, "Thread %d:", ec->tid );
    switch (ec->ekind) {
       case ValueErr:
          if (ec->size == 0) {
@@ -441,6 +449,8 @@ static void VG_(maybe_add_context) ( ErrContext* ec )
    static Bool slowdown_message       = False;
    static Int  vg_n_errs_shown        = 0;
 
+   vg_assert(ec->tid >= 0 && ec->tid < VG_N_THREADS);
+
    /* After M_VG_COLLECT_NO_ERRORS_AFTER different errors have been
       found, just refuse to collect any more. */
    if (vg_n_errs_shown >= M_VG_COLLECT_NO_ERRORS_AFTER) {
@@ -551,6 +561,7 @@ void VG_(record_value_error) ( Int size )
                                           VG_(baseBlock)[VGOFF_(m_ebp)] );
    ec.ekind = ValueErr;
    ec.size  = size;
+   ec.tid   = VG_(get_current_tid)();
    VG_(maybe_add_context) ( &ec );
 }
 
@@ -573,21 +584,7 @@ void VG_(record_address_error) ( Addr a, Int size, Bool isWrite )
    ec.axskind = isWrite ? WriteAxs : ReadAxs;
    ec.size    = size;
    ec.addr    = a;
-   VG_(describe_addr) ( a, &ec.addrinfo );
-   VG_(maybe_add_context) ( &ec );
-}
-
-void VG_(record_jump_error) ( Addr a )
-{
-   ErrContext ec;
-   clear_ErrContext( &ec );
-   ec.count   = 1;
-   ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False, VG_(baseBlock)[VGOFF_(m_eip)], 
-                                            VG_(baseBlock)[VGOFF_(m_ebp)] );
-   ec.ekind   = AddrErr;
-   ec.axskind = ExecAxs;
-   ec.addr    = a;
+   ec.tid     = VG_(get_current_tid)();
    VG_(describe_addr) ( a, &ec.addrinfo );
    VG_(maybe_add_context) ( &ec );
 }
@@ -602,6 +599,7 @@ void VG_(record_free_error) ( Addr a )
                                            VG_(baseBlock)[VGOFF_(m_ebp)] );
    ec.ekind   = FreeErr;
    ec.addr    = a;
+   ec.tid     = VG_(get_current_tid)();
    VG_(describe_addr) ( a, &ec.addrinfo );
    VG_(maybe_add_context) ( &ec );
 }
@@ -616,13 +614,30 @@ void VG_(record_freemismatch_error) ( Addr a )
                                            VG_(baseBlock)[VGOFF_(m_ebp)] );
    ec.ekind   = FreeMismatchErr;
    ec.addr    = a;
+   ec.tid     = VG_(get_current_tid)();
    VG_(describe_addr) ( a, &ec.addrinfo );
    VG_(maybe_add_context) ( &ec );
 }
 
-/* These two are called not from generated code but in response to
+
+/* These three are called not from generated code but in response to
    requests passed back to the scheduler.  So we pick up %EIP/%EBP
    values from the stored thread state, not from VG_(baseBlock).  */
+
+void VG_(record_jump_error) ( ThreadState* tst, Addr a )
+{
+   ErrContext ec;
+   clear_ErrContext( &ec );
+   ec.count   = 1;
+   ec.next    = NULL;
+   ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
+   ec.ekind   = AddrErr;
+   ec.axskind = ExecAxs;
+   ec.addr    = a;
+   ec.tid     = tst->tid;
+   VG_(describe_addr) ( a, &ec.addrinfo );
+   VG_(maybe_add_context) ( &ec );
+}
 
 void VG_(record_param_err) ( ThreadState* tst, Addr a, Bool isWriteLack, 
                              Char* msg )
@@ -634,12 +649,12 @@ void VG_(record_param_err) ( ThreadState* tst, Addr a, Bool isWriteLack,
    ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
    ec.ekind   = ParamErr;
    ec.addr    = a;
+   ec.tid     = tst->tid;
    VG_(describe_addr) ( a, &ec.addrinfo );
    ec.syscall_param = msg;
    ec.isWriteableLack = isWriteLack;
    VG_(maybe_add_context) ( &ec );
 }
-
 
 void VG_(record_user_err) ( ThreadState* tst, Addr a, Bool isWriteLack )
 {
@@ -650,6 +665,7 @@ void VG_(record_user_err) ( ThreadState* tst, Addr a, Bool isWriteLack )
    ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
    ec.ekind   = UserErr;
    ec.addr    = a;
+   ec.tid     = tst->tid;
    VG_(describe_addr) ( a, &ec.addrinfo );
    ec.isWriteableLack = isWriteLack;
    VG_(maybe_add_context) ( &ec );
@@ -710,7 +726,8 @@ void VG_(show_all_errors) ( void )
       pp_ErrContext( p_min, False );
 
       if ((i+1 == VG_(clo_dump_error))) {
-         VG_(translate) ( p_min->where->eips[0], NULL, NULL, NULL );
+	VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to below NULLs */,
+                         p_min->where->eips[0], NULL, NULL, NULL );
       }
 
       p_min->count = 1 << 30;

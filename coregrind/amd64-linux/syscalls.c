@@ -200,7 +200,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_stat,              sys_newstat),        // 4 
 
    GENXY(__NR_fstat,             sys_newfstat),       // 5 
-   //   (__NR_lstat,             sys_newlstat),       // 6 
+   GENXY(__NR_lstat,             sys_newlstat),       // 6 
    //   (__NR_poll,              sys_poll),           // 7 
    GENX_(__NR_lseek,             sys_lseek),          // 8 
    GENXY(__NR_mmap,              sys_mmap2),          // 9 
@@ -212,7 +212,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 14 
 
    //   (__NR_rt_sigreturn,      stub_rt_sigreturn),  // 15 
-   //   (__NR_ioctl,             sys_ioctl),          // 16 
+   GENXY(__NR_ioctl,             sys_ioctl),          // 16 
    //   (__NR_pread64,           sys_pread64),        // 17 
    //   (__NR_pwrite64,          sys_pwrite64),       // 18 
    //   (__NR_readv,             sys_readv),          // 19 
@@ -279,7 +279,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    //   (__NR_msgrcv,            sys_msgrcv),         // 70 
    //   (__NR_msgctl,            sys_msgctl),         // 71 
-   //   (__NR_fcntl,             sys_fcntl),          // 72 
+   GENXY(__NR_fcntl,             sys_fcntl),          // 72 
    //   (__NR_flock,             sys_flock),          // 73 
    //   (__NR_fsync,             sys_fsync),          // 74 
 
@@ -297,13 +297,13 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    //   (__NR_creat,             sys_creat),          // 85 
    //   (__NR_link,              sys_link),           // 86 
-   //   (__NR_unlink,            sys_unlink),         // 87 
+   GENX_(__NR_unlink,            sys_unlink),         // 87 
    //   (__NR_symlink,           sys_symlink),        // 88 
    //   (__NR_readlink,          sys_readlink),       // 89 
 
-   //   (__NR_chmod,             sys_chmod),          // 90 
+   GENX_(__NR_chmod,             sys_chmod),          // 90 
    //   (__NR_fchmod,            sys_fchmod),         // 91 
-   //   (__NR_chown,             sys_chown),          // 92 
+   GENX_(__NR_chown,             sys_chown),          // 92 
    //   (__NR_fchown,            sys_fchown),         // 93 
    //   (__NR_lchown,            sys_lchown),         // 94 
 
@@ -351,7 +351,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    //   (__NR_rt_sigsuspend,     stub_rt_sigsuspend), // 130 
    //   (__NR_sigaltstack,       stub_sigaltstack),   // 131 
-   //   (__NR_utime,             sys_utime),          // 132 
+   GENX_(__NR_utime,             sys_utime),          // 132 
    //   (__NR_mknod,             sys_mknod),          // 133 
    //   (__NR_uselib,            sys_uselib),         // 134 
 

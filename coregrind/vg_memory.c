@@ -1650,10 +1650,6 @@ void init_memory_audit_callback (
 }
 
 
-
-/* ONLY HERE for sbrk() */
-#include <unistd.h>
-
 /* Initialise the memory audit system. */
 void VGM_(init_memory_audit) ( void )
 {
@@ -1697,7 +1693,7 @@ void VGM_(init_memory_audit) ( void )
    /* Record the end of the data segment, so that vg_syscall_mem.c
       can make sense of calls to brk(). 
    */
-   VGM_(curr_dataseg_end) = (Addr)sbrk(0);
+   VGM_(curr_dataseg_end) = (Addr)VG_(brk)(0);
    if (VGM_(curr_dataseg_end) == (Addr)(-1))
       VG_(panic)("vgm_init_memory_audit: can't determine data-seg end");
 

@@ -744,6 +744,7 @@ extern Int  VG_(create_and_write) ( Char* pathname );
 extern void VG_(close)     ( Int fd );
 extern Int  VG_(read)      ( Int fd, void* buf, Int count);
 extern Int  VG_(write)     ( Int fd, void* buf, Int count);
+extern Int  VG_(stat) ( Char* file_name, struct vki_stat* buf );
 
 extern Int  VG_(fcntl) ( Int fd, Int cmd, Int arg );
 
@@ -761,6 +762,8 @@ extern void* VG_(mmap)( void* start, UInt length,
                         UInt prot, UInt flags, UInt fd, UInt offset );
 
 extern Int  VG_(munmap)( void* start, Int length );
+
+extern void* VG_(brk) ( void* end_data_segment );
 
 
 /* Print a (panic) message, and abort. */

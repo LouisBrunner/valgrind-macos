@@ -29,7 +29,6 @@
 */
 
 #include "vg_include.h"
-#include "vg_unsafe.h"
 
 #include <elf.h>          /* ELF defns                      */
 #include <a.out.h>        /* stabs defns                    */
@@ -625,7 +624,7 @@ void vg_read_lib_symbols ( SegInfo* si )
    Bool          ok;
    Addr          oimage;
    Int           n_oimage;
-   struct stat   stat_buf;
+   struct vki_stat stat_buf;
 
    /* for the .stabs reader */
    Int    curr_filenmoff;
@@ -644,7 +643,7 @@ void vg_read_lib_symbols ( SegInfo* si )
       line number info out of it.  It will be munmapped immediately
       thereafter; it is only aboard transiently. */
 
-   i = stat(si->filename, &stat_buf);
+   i = VG_(stat)(si->filename, &stat_buf);
    if (i != 0) {
       vg_symerr("Can't stat .so/.exe (to determine its size)?!");
       return;
@@ -657,7 +656,8 @@ void vg_read_lib_symbols ( SegInfo* si )
       return;
    }
 
-   oimage = (Addr)VG_(mmap)( NULL, n_oimage, PROT_READ, MAP_PRIVATE, fd, 0 );
+   oimage = (Addr)VG_(mmap)( NULL, n_oimage, 
+                             VKI_PROT_READ, VKI_MAP_PRIVATE, fd, 0 );
    if (oimage == ((Addr)(-1))) {
       VG_(message)(Vg_UserMsg,
                    "mmap failed on %s", si->filename );

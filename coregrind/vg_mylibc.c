@@ -288,7 +288,6 @@ Int VG_(select)( Int n,
    args[4] = (UInt)timeout;
    res = vg_do_syscall1(__NR_select, (UInt)(&(args[0])) );
    return VG_(is_kerror)(res) ? -1 : res;
-   return res;
 }
 
 /* Returns -1 on error, 0 if ok, 1 if interrupted. */
@@ -300,6 +299,13 @@ Int VG_(nanosleep)( const struct vki_timespec *req,
    if (res == -VKI_EINVAL) return -1;
    if (res == -VKI_EINTR)  return 1;
    return 0;
+}
+
+void* VG_(brk) ( void* end_data_segment )
+{
+   Int res;
+   res = vg_do_syscall1(__NR_brk, (UInt)end_data_segment);
+   return (void*)(  VG_(is_kerror)(res) ? -1 : res  );
 }
 
 
@@ -951,6 +957,14 @@ Int VG_(write) ( Int fd, void* buf, Int count)
    res = vg_do_syscall3(__NR_write, fd, (UInt)buf, count);
    if (VG_(is_kerror)(res)) res = -1;
    return res;
+}
+
+Int VG_(stat) ( Char* file_name, struct vki_stat* buf )
+{
+   Int res;
+   res = vg_do_syscall2(__NR_stat, (UInt)file_name, (UInt)buf);
+   return
+      VG_(is_kerror)(res) ? (-1) : 0;
 }
 
 /* Misc functions looking for a proper home. */

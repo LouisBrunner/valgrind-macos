@@ -1656,6 +1656,7 @@ extern void VG_(helper_get_dirflag);
 
 extern void VG_(helper_CLC);
 extern void VG_(helper_STC);
+extern void VG_(helper_CMC);
 
 extern void VG_(helper_shldl);
 extern void VG_(helper_shldw);
@@ -1668,14 +1669,20 @@ extern void VG_(helper_OUT);
 extern void VG_(helper_RDTSC);
 extern void VG_(helper_CPUID);
 
-extern void VG_(helper_bsf);
-extern void VG_(helper_bsr);
+extern void VG_(helper_bsfw);
+extern void VG_(helper_bsfl);
+extern void VG_(helper_bsrw);
+extern void VG_(helper_bsrl);
 
 extern void VG_(helper_fstsw_AX);
 extern void VG_(helper_SAHF);
 extern void VG_(helper_LAHF);
 extern void VG_(helper_DAS);
 extern void VG_(helper_DAA);
+extern void VG_(helper_AAS);
+extern void VG_(helper_AAA);
+extern void VG_(helper_AAD);
+extern void VG_(helper_AAM);
 
 extern void VG_(helper_cmpxchg8b);
 

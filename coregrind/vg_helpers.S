@@ -315,13 +315,66 @@ VG_(helper_DAA):
        ret
 	
 
+/* Similarly, do %ax = AAS(%ax). */
+.global VG_(helper_AAS)
+VG_(helper_AAS):
+       pushl   %eax
+       movl    8(%esp), %eax
+       aas
+       movl    %eax, 8(%esp)
+       popl    %eax
+       ret
+
+
+/* Similarly, do %ax = AAA(%ax). */
+.global VG_(helper_AAA)
+VG_(helper_AAA):
+       pushl   %eax
+       movl    8(%esp), %eax
+       aaa
+       movl    %eax, 8(%esp)
+       popl    %eax
+       ret
+
+
+/* Similarly, do %ax = AAD(%ax). */
+.global VG_(helper_AAD)
+VG_(helper_AAD):
+       pushl   %eax
+       movl    8(%esp), %eax
+       aad
+       movl    %eax, 8(%esp)
+       popl    %eax
+       ret
+
+
+/* Similarly, do %ax = AAM(%ax). */
+.global VG_(helper_AAM)
+VG_(helper_AAM):
+       pushl   %eax
+       movl    8(%esp), %eax
+       aam
+       movl    %eax, 8(%esp)
+       popl    %eax
+       ret
+	
+
 /* Bit scan forwards/reverse.  Sets flags (??).
    On entry:
 	value, replaced by result
 	RA   <- %esp
 */
-.global VG_(helper_bsr)
-VG_(helper_bsr):
+.global VG_(helper_bsrw)
+VG_(helper_bsrw):
+	pushl	%eax
+	movw	12(%esp), %ax
+	bsrw	8(%esp), %ax
+	movw	%ax, 12(%esp)
+	popl	%eax
+	ret
+
+.global VG_(helper_bsrl)
+VG_(helper_bsrl):
 	pushl	%eax
 	movl	12(%esp), %eax
 	bsrl	8(%esp), %eax
@@ -329,8 +382,17 @@ VG_(helper_bsr):
 	popl	%eax
 	ret
 
-.global VG_(helper_bsf)
-VG_(helper_bsf):
+.global VG_(helper_bsfw)
+VG_(helper_bsfw):
+	pushl	%eax
+	movw	12(%esp), %ax
+	bsfw	8(%esp), %ax
+	movw	%ax, 12(%esp)
+	popl	%eax
+	ret
+
+.global VG_(helper_bsfl)
+VG_(helper_bsfl):
 	pushl	%eax
 	movl	12(%esp), %eax
 	bsfl	8(%esp), %eax
@@ -448,7 +510,7 @@ VG_(helper_STD):
 	popl	%eax
 	ret
 
-/* Clear/set the carry flag. */
+/* Clear/set/complement the carry flag. */
 .global VG_(helper_CLC)
 VG_(helper_CLC):
         clc
@@ -457,6 +519,11 @@ VG_(helper_CLC):
 .global VG_(helper_STC)  
 VG_(helper_STC):
         stc
+        ret
+
+.global VG_(helper_CMC)
+VG_(helper_CMC):
+        cmc
         ret
 
 /* Signed 32-to-64 multiply. */

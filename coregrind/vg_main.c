@@ -2143,6 +2143,7 @@ Int VGOFF_(helper_STD) = INVALID_OFFSET;
 Int VGOFF_(helper_get_dirflag) = INVALID_OFFSET;
 Int VGOFF_(helper_CLC) = INVALID_OFFSET;
 Int VGOFF_(helper_STC) = INVALID_OFFSET;
+Int VGOFF_(helper_CMC) = INVALID_OFFSET;
 Int VGOFF_(helper_shldl) = INVALID_OFFSET;
 Int VGOFF_(helper_shldw) = INVALID_OFFSET;
 Int VGOFF_(helper_shrdl) = INVALID_OFFSET;
@@ -2152,13 +2153,19 @@ Int VGOFF_(helper_OUT) = INVALID_OFFSET;
 Int VGOFF_(helper_RDTSC) = INVALID_OFFSET;
 Int VGOFF_(helper_CPUID) = INVALID_OFFSET;
 Int VGOFF_(helper_BSWAP) = INVALID_OFFSET;
-Int VGOFF_(helper_bsf) = INVALID_OFFSET;
-Int VGOFF_(helper_bsr) = INVALID_OFFSET;
+Int VGOFF_(helper_bsfw) = INVALID_OFFSET;
+Int VGOFF_(helper_bsfl) = INVALID_OFFSET;
+Int VGOFF_(helper_bsrw) = INVALID_OFFSET;
+Int VGOFF_(helper_bsrl) = INVALID_OFFSET;
 Int VGOFF_(helper_fstsw_AX) = INVALID_OFFSET;
 Int VGOFF_(helper_SAHF) = INVALID_OFFSET;
 Int VGOFF_(helper_LAHF) = INVALID_OFFSET;
 Int VGOFF_(helper_DAS) = INVALID_OFFSET;
 Int VGOFF_(helper_DAA) = INVALID_OFFSET;
+Int VGOFF_(helper_AAS) = INVALID_OFFSET;
+Int VGOFF_(helper_AAA) = INVALID_OFFSET;
+Int VGOFF_(helper_AAD) = INVALID_OFFSET;
+Int VGOFF_(helper_AAM) = INVALID_OFFSET;
 Int VGOFF_(helper_cmpxchg8b) = INVALID_OFFSET;
 Int VGOFF_(helper_undefined_instruction) = INVALID_OFFSET;
 
@@ -2437,17 +2444,21 @@ static void init_baseBlock ( Addr client_eip, Addr esp_at_startup )
    HELPER(get_dirflag);
 
    HELPER(CLC);            HELPER(STC);
+   HELPER(CMC);
 
    HELPER(shldl);          HELPER(shldw);
    HELPER(shrdl);          HELPER(shrdw);
 
    HELPER(RDTSC);          HELPER(CPUID);
 
-   HELPER(bsf);            HELPER(bsr);
+   HELPER(bsfw);           HELPER(bsfl);
+   HELPER(bsrw);           HELPER(bsrl);
 
    HELPER(fstsw_AX);
    HELPER(SAHF);           HELPER(LAHF);
    HELPER(DAS);            HELPER(DAA);
+   HELPER(AAS);            HELPER(AAA);
+   HELPER(AAD);            HELPER(AAM);
    HELPER(IN);             HELPER(OUT);
    HELPER(cmpxchg8b);
 

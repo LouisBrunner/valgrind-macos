@@ -24,7 +24,10 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fpu_lazy_eflags.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
+	insn_basic.stderr.exp insn_basic.stdout.exp insn_basic.vgtest \
+	insn_cmov.stderr.exp insn_cmov.stdout.exp insn_cmov.vgtest \
 	insn_mmx.stderr.exp insn_mmx.stdout.exp insn_mmx.vgtest \
+	insn_mmxext.stderr.exp insn_mmxext.stdout.exp insn_mmxext.vgtest \
 	insn_sse.stderr.exp insn_sse.stdout.exp insn_sse.vgtest \
 	insn_sse2.stderr.exp insn_sse2.stdout.exp insn_sse2.vgtest \
 	map_unmap.stdout.exp map_unmap.vgtest \
@@ -51,7 +54,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	args bitfield1 bt_everything bt_literal coolo_strlen \
 	cpuid dastest discard exec-sigmask floored fork fpu_lazy_eflags \
-	fucomip insn_mmx insn_sse insn_sse2 \
+	fucomip insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2 \
 	munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	tls.so tls2.so tls pth_blockedsig \
@@ -76,8 +79,14 @@ floored_SOURCES 	= floored.c
 floored_LDADD 		= -lm
 fpu_lazy_eflags_SOURCES	= fpu_lazy_eflags.c
 fucomip_SOURCES 	= fucomip.c
+insn_basic_SOURCES	= insn_basic.def
+insn_basic_LDADD	= -lm
+insn_cmov_SOURCES	= insn_cmov.def
+insn_cmov_LDADD		= -lm
 insn_mmx_SOURCES	= insn_mmx.def
 insn_mmx_LDADD		= -lm
+insn_mmxext_SOURCES	= insn_mmxext.def
+insn_mmxext_LDADD	= -lm
 insn_sse_SOURCES	= insn_sse.def
 insn_sse_LDADD		= -lm
 insn_sse2_SOURCES	= insn_sse2.def
@@ -121,6 +130,14 @@ gxx304_SOURCES		= gxx304.cpp
 
 # must be built with these flags -- bug only occurred with them
 fpu_lazy_eflags.o: CFLAGS += -O2 -mcpu=pentiumpro -march=pentiumpro
+
+# rebuild instruction tests if test generator changes
+insn_basic.c: gen_insn_test.pl
+insn_cmov.c: gen_insn_test.pl
+insn_mmx.c: gen_insn_test.pl
+insn_mmxext.c: gen_insn_test.pl
+insn_sse.c: gen_insn_test.pl
+insn_sse2.c: gen_insn_test.pl
 
 .def.c:
 	$(PERL) gen_insn_test.pl < $< > $@

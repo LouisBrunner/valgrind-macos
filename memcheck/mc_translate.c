@@ -718,9 +718,9 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                Noticed by Kevin Ryde <user42@zip.com.au>
             */
 	    /* sk_assert(u_in->flags_w != FlagsEmpty); */
-            qs = getOperandShadow(cb, u_in->size, u_in->tag1, u_in->val1);
+            qs = getOperandShadow(cb, 1, u_in->tag1, u_in->val1);
             /* We can safely modify qs; cast it to 0-size. */
-            create_PCast(cb, u_in->size, 0, qs);
+            create_PCast(cb, 1, 0, qs);
             qd = SHADOW(u_in->val2);
             create_PCast(cb, u_in->size, 0, qd);
             /* qs is cast-to-0(shift count#), and qd is cast-to-0(value#). */
@@ -1086,7 +1086,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          case SSE3e1_RegRd:
             sk_assert(u_in->tag3 == TempReg);
 
-            if (u_in->opcode == SSE3e1_RegRd) {
+            if (u_in->opcode == SSE2e1_RegRd || u_in->opcode == SSE3e1_RegRd) {
                sk_assert(u_in->size == 2);
             } else {
                sk_assert(u_in->size == 4);
@@ -1111,7 +1111,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          case SSE3a_MemWr:
          case SSE2a_MemWr:
          case SSE2a_MemRd:
-         case SSE3a1_MemRd: { 
+         case SSE3a1_MemRd:
+         case SSE2a1_MemRd: { 
             Bool is_load;
             Int t_size;
 
@@ -1121,6 +1122,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             t_size = INVALID_TEMPREG;
             is_load = u_in->opcode==SSE2a_MemRd 
                       || u_in->opcode==SSE3a_MemRd
+                      || u_in->opcode==SSE2a1_MemRd
                       || u_in->opcode==SSE3a1_MemRd;
 
             sk_assert(u_in->tag3 == TempReg);

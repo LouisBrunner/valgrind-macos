@@ -4,13 +4,17 @@ use strict;
 use warnings;
 
 our %ArgTypes = (
-                 r => "reg_t",
+                 r8 => "reg8_t",
+                 r16 => "reg16_t",
+                 r32 => "reg32_t",
                  mm => "mm_reg_t",
                  xmm => "xmm_reg_t",
-                 m32 => "reg_t",
+                 m8 => "reg8_t",
+                 m16 => "reg16_t",
+                 m32 => "reg32_t",
                  m64 => "mm_reg_t",
                  m128 => "xmm_reg_t",
-                 eflags => "reg_t"
+                 eflags => "reg32_t"
                  );
 
 our %SubTypeFormats = (
@@ -39,7 +43,34 @@ our %SubTypeSuffixes = (
                         pd => ""
                         );
 
-our @IntRegs = ( "eax", "ebx", "ecx", "edx" );
+our %RegNums = (
+                al => 0, ax => 0, eax => 0,
+                bl => 1, bx => 1, ebx => 1,
+                cl => 2, cx => 2, ecx => 2,
+                dl => 3, dx => 3, edx => 3,
+                ah => 4,
+                bh => 5,
+                ch => 6,
+                dh => 7
+                );
+
+our %RegTypes = (
+                 al => "r8", ah => "r8", ax => "r16", eax => "r32",
+                 bl => "r8", bh => "r8", bx => "r16", ebx => "r32",
+                 cl => "r8", ch => "r8", cx => "r16", ecx => "r32",
+                 dl => "r8", dh => "r8", dx => "r16", edx => "r32"
+                 );
+
+our @IntRegs = (
+                { r8 => "al", r16 => "ax", r32 => "eax" },
+                { r8 => "bl", r16 => "bx", r32 => "ebx" },
+                { r8 => "cl", r16 => "cx", r32 => "ecx" },
+                { r8 => "dl", r16 => "dx", r32 => "edx" },
+                { r8 => "ah" },
+                { r8 => "bh" },
+                { r8 => "ch" },
+                { r8 => "dh" }
+                );
 
 print <<EOF;
 #include <math.h>
@@ -49,10 +80,26 @@ print <<EOF;
 #include <stdlib.h>
 
 typedef union {
+  char sb[1];
+  unsigned char ub[1];
+} reg8_t;
+
+typedef union {
+  char sb[2];
+  unsigned char ub[2];
+  short sw[1];
+  unsigned short uw[1];
+} reg16_t;
+
+typedef union {
+  char sb[4];
+  unsigned char ub[4];
+  short sw[2];
+  unsigned short uw[2];
   long int sd[1];
   unsigned long int ud[1];
   float ps[1];
-} reg_t;
+} reg32_t;
 
 typedef union {
   char sb[8];
@@ -106,9 +153,22 @@ while (<>)
 {
     next if /^#/;
 
-    my @args = split(/\s+/, $_);
-    my $insn = shift @args;
-    my $result = pop @args;
+    my $insn;
+    my $presets;
+    my $args;
+    my $results;
+
+    if (/^(\S+)\s+(?:(\S+(?:\s+\S+)*)\s+:\s+)?((?:\S+\s+)*)=>\s+(\S+(?:\s+\S+)*)$/)
+    {
+        $insn = $1;
+        $presets = $2 || "";
+        $args = $3;
+        $results = $4;
+    }
+    else
+    {
+        die "Can't parse test $_";
+    }
     
     $tests{$insn}++;
     
@@ -119,25 +179,103 @@ while (<>)
     print qq|static void $test(void)\n|;
     print qq|\{\n|;
 
-    my $argc = 0;
-    my @argtypes;
-    my @argsubtypes;
-    my @argindexes;
-    my @argvalues;
+    my @intregs = @IntRegs;
+    my @mmregs = map { "mm$_" } (0 .. 7);
+    my @xmmregs = map { "xmm$_" } (0 .. 7);
+
+    my @presets;
+    my $presetc = 0;
+    my $eflagsmask;
+    my $eflagsset;
     
-    foreach my $arg (@args)
+    foreach my $preset (split(/\s+/, $presets))
     {
-        if ($arg =~ /^(r|mm|xmm|m32|m64|m128)\.(sb|ub|sw|uw|sd|ud|sq|uq|ps|pd)\[([^\]]+)\]$/)
+        if ($preset =~ /^([abcd][lh]|[abcd]x|e[abcd]x)\.(sb|ub|sw|uw|sd|ud|sq|uq|ps|pd)\[([^\]]+)\]$/)
+        {
+            my $name = "preset$presetc";
+            my $type = $RegTypes{$1};
+            my $regnum = $RegNums{$1};
+            my $register = $intregs[$regnum];
+            my $subtype = $2;
+            my @values = split(/,/, $3);
+    
+            die "Register $1 already used" unless defined($register);
+
+            my $preset = {
+                name => $name,
+                type => $type,
+                subtype => $subtype,
+                register => $register
+            };
+
+            delete($intregs[$regnum]);
+
+            push @presets, $preset;
+            
+            print qq|   $ArgTypes{$type} $name = \{|;
+            
+            my $valuec = 0;
+            
+            foreach my $value (@values)
+    {
+                print qq|,| if $valuec > 0;
+                print qq| .$subtype\[$valuec\] = $value$SubTypeSuffixes{$subtype}|;
+                $valuec++;
+            }
+            
+            print qq| \};\n|;
+
+            $presetc++;
+        }
+        elsif ($preset =~ /^(eflags)\[([^\]]+)\]$/)
         {
             my $type = $1;
+            my @values = split(/,/, $2);
+
+            $values[0] = oct($values[0]) if $values[0] =~ /^0/;
+            $values[1] = oct($values[1]) if $values[1] =~ /^0/;
+
+            $eflagsmask = sprintf "0x%x", ~$values[0];
+            $eflagsset = sprintf "0x%x", $values[1];
+        }
+        else
+        {
+            die "Can't parse preset $preset";
+        }
+    }
+
+    my @args;
+    my $argc = 0;
+    
+    foreach my $arg (split(/\s+/, $args))
+    {
+        my $name = "arg$argc";
+
+        if ($arg =~ /^([abcd]l|[abcd]x|e[abcd]x|r8|r16|r32|mm|xmm|m8|m16|m32|m64|m128)\.(sb|ub|sw|uw|sd|ud|sq|uq|ps|pd)\[([^\]]+)\]$/)
+        {
+            my $type = $RegTypes{$1} || $1;
+            my $regnum = $RegNums{$1};
+            my $register = $intregs[$regnum] if defined($regnum);
             my $subtype = $2;
             my @values = split(/,/, $3);
             
-            push @argtypes, $type;
-            push @argsubtypes, $subtype;
-            push @argvalues, undef;
+            die "Register $1 already used" if defined($regnum) && !defined($register);
 
-            print qq|   $ArgTypes{$type} arg$argc = \{|;
+            my $arg = {
+                name => $name,
+                type => $type,
+                subtype => $subtype
+            };
+
+            if (defined($register))
+            {
+                $arg->{register} = $register;
+                delete($intregs[$regnum]);
+            }
+
+            push @args, $arg;
+            
+            print qq|   $ArgTypes{$type} $name = \{|;
             
             my $valuec = 0;
             
@@ -150,14 +288,17 @@ while (<>)
 
             print qq| \};\n|;
         }
-        elsif ($arg =~ /^(imm8)\[([^\]]+)\]$/)
+        elsif ($arg =~ /^(imm8|imm16|imm32)\[([^\]]+)\]$/)
         {
             my $type = $1;
             my $value = $2;
             
-            push @argtypes, $type;
-            push @argsubtypes, undef;
-            push @argvalues, $value;
+            my $arg = {
+                type => $type,
+                value => $value
+            };
+
+            push @args, $arg;
         }
         else
         {
@@ -167,31 +308,111 @@ while (<>)
         $argc++;
     }
     
-    my $resultarg;
-    my $resulttype;
-    my $resultsubtype;
-    my @resultvalues;
+    foreach my $arg (@presets, @args)
+    {
+        if ($arg->{type} =~ /^(r8|r16|r32|m8|m16|m32)$/)
+        {
+            while (!exists($arg->{register}) || !defined($arg->{register}))
+            {
+                $arg->{register} = shift @intregs;
+            }
+
+            $arg->{register} = $arg->{register}->{$arg->{type}};
+        }
+        elsif ($arg->{type} =~ /^(mm|m64)$/)
+        {
+            $arg->{register} = shift @mmregs;
+        }
+        elsif ($arg->{type} =~ /^(xmm|m128)$/)
+        {
+            $arg->{register} = shift @xmmregs;
+        }
+    }
+
+    my @results;
+    my $resultc = 0;
+    
+    foreach my $result (split(/\s+/, $results))
+    {
+        my $name = "result$resultc";
     
     if ($result =~ /^(\d+)\.(sb|ub|sw|uw|sd|ud|sq|uq|ps|pd)\[([^\]]+)\]$/)
     {
-        $resultarg = $1;
-        $resulttype = $argtypes[$resultarg];
-        $resultsubtype = $2;
-        @resultvalues = split(/,/, $3);
+            my $index = $1;
+            my $type = $args[$index]->{type};
+            my $subtype = $2;
+            my @values = split(/,/, $3);
+            
+            die "Argument $index not specified" unless exists($args[$index]);
+
+            my $result = {
+                name => $name,
+                type => $type,
+                subtype => $subtype,
+                arg => $args[$index],
+                register => $args[$index]->{register},
+                values => [ @values ]
+            };
+
+            push @results, $result;
+
+            print qq|   $ArgTypes{$type} $name|;
+            print qq| = arg$index| if $type =~ /^m(8|16|32|64|128)$/;
+            print qq|;\n|;
+
+            $args[$index]->{result} = $result;
+        }
+        elsif ($result =~ /^([abcd][lh]|[abcd]x|e[abcd]x)\.(sb|ub|sw|uw|sd|ud|sq|uq|ps|pd)\[([^\]]+)\]$/)
+        {
+            my $register = $1;
+            my $type = $RegTypes{$register};
+            my $subtype = $2;
+            my @values = split(/,/, $3);
+                        
+            my $result = {
+                name => $name,
+                type => $type,
+                subtype => $subtype,
+                register => $register,
+                values => [ @values ]
+            };
+
+            push @results, $result;
+
+            print qq|   $ArgTypes{$type} $name;\n|;
     }
     elsif ($result =~ /^eflags\[([^\]]+)\]$/)
     {
-        $resultarg = -1;
-        $resulttype = "eflags";
-        $resultsubtype = "ud";
-        @resultvalues = split(/,/, $1);
+            my @values = split(/,/, $1);
+
+            $values[0] = oct($values[0]) if $values[0] =~ /^0/;
+            $values[1] = oct($values[1]) if $values[1] =~ /^0/;
+
+            my $result = {
+                name => $name,
+                type => "eflags",
+                subtype => "ud",
+                values => [ map { sprintf "0x%x", $_ } @values ]
+            };
+
+            push @results, $result;
+            
+            print qq|   $ArgTypes{eflags} $name;\n|;
+
+            if (!defined($eflagsmask) && !defined($eflagsset))
+            {
+                $eflagsmask = sprintf "0x%x", ~$values[0];
+                $eflagsset = sprintf "0x%x", $values[0] & ~$values[1];
+            }
     }
     else
     {
         die "Can't parse result $result";
     }
     
-    print qq|   $ArgTypes{$resulttype} result;\n|;
+        $resultc++;
+    }
+    
     print qq|   char state\[108\];\n|;
     print qq|\n|;
     print qq|   if (sigsetjmp(catchpoint, 1) == 0)\n|;
@@ -199,73 +420,65 @@ while (<>)
     print qq|      asm\(\n|;
     print qq|         \"fsave %\[state\]\\n\"\n|;
     
-    foreach my $arg (0 .. $#args)
+    foreach my $arg (@presets, @args)
     {
-        if ($argtypes[$arg] eq "r")
+        if ($arg->{type} eq "r8")
         {
-            print qq|         \"movl %\[arg$arg\], %%$IntRegs[$arg]\\n\"\n|;
+            print qq|         \"movb %\[$arg->{name}\], %%$arg->{register}\\n\"\n|;
         }
-        elsif ($argtypes[$arg] eq "mm")
+        elsif ($arg->{type} eq "r16")
         {
-            print qq|         \"movq %\[arg$arg\], %%mm$arg\\n\"\n|;
+            print qq|         \"movw %\[$arg->{name}\], %%$arg->{register}\\n\"\n|;
         }
-        elsif ($argtypes[$arg] eq "xmm")
+        elsif ($arg->{type} eq "r32")
         {
-            print qq|         \"movlps 0%\[arg$arg\], %%xmm$arg\\n\"\n|;
-            print qq|         \"movhps 8%\[arg$arg\], %%xmm$arg\\n\"\n|;
+            print qq|         \"movl %\[$arg->{name}\], %%$arg->{register}\\n\"\n|;
         }
+        elsif ($arg->{type} eq "mm")
+    {
+            print qq|         \"movq %\[$arg->{name}\], %%$arg->{register}\\n\"\n|;
+    }
+        elsif ($arg->{type} eq "xmm")
+    {
+            print qq|         \"movlps 0%\[$arg->{name}\], %%$arg->{register}\\n\"\n|;
+            print qq|         \"movhps 8%\[$arg->{name}\], %%$arg->{register}\\n\"\n|;
+    }
     }
     
-    if ($resulttype eq "m32")
+    if (defined($eflagsmask) || defined($eflagsset))
     {
-        print qq|         \"movl %\[arg$resultarg\], %%$IntRegs[$resultarg]\\n\"\n|;
-        print qq|         \"movl %%$IntRegs[$resultarg], %\[result\]\\n\"\n|;
-    }
-    elsif ($resulttype eq "m64")
-    {
-        print qq|         \"movq %\[arg$resultarg\], %%mm$resultarg\\n\"\n|;
-        print qq|         \"movq %%mm$resultarg, %\[result\]\\n\"\n|;
-    }
-    elsif ($resulttype eq "m128")
-    {
-        print qq|         \"movlps 0%\[arg$resultarg\], %%xmm$resultarg\\n\"\n|;
-        print qq|         \"movhps 8%\[arg$resultarg\], %%xmm$resultarg\\n\"\n|;
-        print qq|         \"movlps %%xmm$resultarg, 0%\[result\]\\n\"\n|;
-        print qq|         \"movhps %%xmm$resultarg, 8%\[result\]\\n\"\n|;
+        print qq|         \"pushfl\\n\"\n|;
+        print qq|         \"andl \$$eflagsmask, (%%esp)\\n\"\n| if defined($eflagsmask);
+        print qq|         \"orl \$$eflagsset, (%%esp)\\n\"\n| if defined($eflagsset);
+        print qq|         \"popfl\\n\"\n|;
     }
 
     print qq|         \"$insn|;
     
     my $prefix = " ";
     
-    foreach my $arg (0 .. $#args)
-    {
-        if ($argtypes[$arg] eq "r")
+    foreach my $arg (@args)
         {
-            print qq|$prefix%%$IntRegs[$arg]|;
+        next if $arg->{type} eq "eflags";
+
+        if ($arg->{type} =~ /^(r8|r16|r32|mm|xmm)$/)
+        {
+            print qq|$prefix%%$arg->{register}|;
         }
-        elsif ($argtypes[$arg] eq "mm")
+        elsif ($arg->{type} =~ /^(m(8|16|32|64|128))$/)
         {
-            print qq|$prefix%%mm$arg|;
-        }
-        elsif ($argtypes[$arg] eq "xmm")
-        {
-            print qq|$prefix%%xmm$arg|;
-        }
-        elsif ($argtypes[$arg] eq "m32" || $argtypes[$arg] eq "m64" || $argtypes[$arg] eq "m128")
-        {
-            if ($arg == $resultarg)
+            if (exists($arg->{result}))
             {
-                print qq|$prefix%\[result\]|;
+                print qq|$prefix%\[$arg->{result}->{name}\]|;
             }
             else
             {
-                print qq|$prefix%\[arg$arg\]|;
+                print qq|$prefix%\[$arg->{name}\]|;
             }
         }
-        elsif ($argtypes[$arg] eq "imm8")
+        elsif ($arg->{type} =~ /^imm(8|16|32)$/)
         {
-            print qq|$prefix\$$argvalues[$arg]|;
+            print qq|$prefix\$$arg->{value}|;
         }
 
         $prefix = ", ";
@@ -273,77 +486,82 @@ while (<>)
 
     print qq|\\n\"\n|;
 
-    if ($resulttype eq "r")
+    foreach my $result (@results)
     {
-        print qq|         \"movl %%$IntRegs[$resultarg], %\[result\]\\n\"\n|;
-    }
-    elsif ($resulttype eq "mm")
+        if ($result->{type} eq "r8")
+        {
+            print qq|         \"movb %%$result->{register}, %\[$result->{name}\]\\n\"\n|;
+        }
+        elsif ($result->{type} eq "r16")
     {
-        print qq|         \"movq %%mm$resultarg, %\[result\]\\n\"\n|;
+            print qq|         \"movw %%$result->{register}, %\[$result->{name}\]\\n\"\n|;
     }
-    elsif ($resulttype eq "xmm")
+        elsif ($result->{type} eq "r32")
     {
-        print qq|         \"movlps %%xmm$resultarg, 0%\[result\]\\n\"\n|;
-        print qq|         \"movhps %%xmm$resultarg, 8%\[result\]\\n\"\n|;
+            print qq|         \"movl %%$result->{register}, %\[$result->{name}\]\\n\"\n|;
     }
-    elsif ($resulttype eq "eflags")
+        elsif ($result->{type} eq "mm")
+    {
+            print qq|         \"movq %%$result->{register}, %\[$result->{name}\]\\n\"\n|;
+    }
+        elsif ($result->{type} eq "xmm")
+        {
+            print qq|         \"movlps %%$result->{register}, 0%\[$result->{name}\]\\n\"\n|;
+            print qq|         \"movhps %%$result->{register}, 8%\[$result->{name}\]\\n\"\n|;
+        }
+        elsif ($result->{type} eq "eflags")
     {
         print qq|         \"pushfl\\n\"\n|;
-        print qq|         \"popl %\[result\]\\n\"\n|;
+            print qq|         \"popl %\[$result->{name}\]\\n\"\n|;
+        }
     }
 
-    print qq|         \"emms\\n\"\n|;
     print qq|         \"frstor %\[state\]\\n\"\n|;
 
     print qq|         :|;
 
-    if ($resulttype eq "m32" || $resulttype eq "m64" || 
-        $resulttype eq "m128" || $resulttype eq "eflags")
+    $prefix = " ";
+
+    foreach my $result (@results)
     {
-        print qq| \[result\] \"=m\" \(result\)|;
+        if ($result->{type} =~ /^(m(8|16|32|64|128)|eflags)$/)
+    {
+            print qq|$prefix\[$result->{name}\] \"=m\" \($result->{name}\)|;
+            $prefix = ", ";
+        }
     }
 
     print qq|\n|;
     
     $prefix = "         : ";
     
-    foreach my $arg (0 .. $#args)
+    foreach my $arg (@presets, @args)
     {
-        if (!defined($argvalues[$arg]))
+        if (defined($arg->{name}))
         {
-            print qq|$prefix\[arg$arg\] \"m\" \(arg$arg\)|;
+            print qq|$prefix\[$arg->{name}\] \"m\" \($arg->{name}\)|;
             $prefix = ", ";
         }
     }
     
-    if ($resulttype eq "r" || $resulttype eq "mm" ||
-        $resulttype eq "xmm" || $resulttype eq "elags")
+    foreach my $result (@results)
     {
-        print qq|$prefix\[result\] \"m\" \(result\)|;
+        if ($result->{type} =~ /^(r(8|16|32)|mm|xmm)$/)
+        {
+            print qq|$prefix\[$result->{name}\] \"m\" \($result->{name}\)|;
+            $prefix = ", ";
+        }
     }
 
-    print qq|, \[state\] \"m\" \(state[0]\)\n|;
+    print qq|$prefix\[state\] \"m\" \(state[0]\)\n|;
 
     $prefix = "         : ";
 
-    foreach my $arg (0 .. $#args)
-    {
-        if ($argtypes[$arg] eq "r" ||
-            ($arg == $resultarg && $argtypes[$arg] eq "m32"))
+    foreach my $arg (@presets, @args)
         {
-            print qq|$prefix\"$IntRegs[$arg]\"|;
-            $prefix = ", ";
-        }
-        elsif ($argtypes[$arg] eq "mm" ||
-               ($arg == $resultarg && $argtypes[$arg] eq "m64"))
+        if ($arg->{register})
         {
-            print qq|$prefix\"mm$arg\"|;
-            $prefix = ", ";
-        }
-        elsif ($argtypes[$arg] eq "xmm" ||
-               ($arg == $resultarg && $argtypes[$arg] eq "m128"))
-        {
-            print qq|$prefix\"xmm$arg\"|;
+            print qq|$prefix\"$arg->{register}\"|;
             $prefix = ", ";
         }
     }
@@ -355,31 +573,41 @@ while (<>)
     
     print qq|      if \(|;
     
-    if ($resulttype eq "eflags")
+    $prefix = "";
+            
+    foreach my $result (@results)
     {
-        print qq|\(result.ud[0] & $resultvalues[0]UL\) == $resultvalues[1]UL|;
+        my $type = $result->{type};
+        my $subtype = $result->{subtype};
+        my $suffix = $SubTypeSuffixes{$subtype};
+        my @values = @{$result->{values}};
+
+        if ($type eq "eflags")
+    {
+            print qq|${prefix}\($result->{name}.ud[0] & $values[0]UL\) == $values[1]UL|;
     }
     else
     {
-        $prefix = " ";
-    
-        foreach my $value (0 .. $#resultvalues)
+            foreach my $value (0 .. $#values)
         {
-            if ($resultsubtype eq "ps")
+                if ($subtype eq "ps")
             {
-                print qq|${prefix}eq_float(result.$resultsubtype\[$value\], $resultvalues[$value]$SubTypeSuffixes{$resultsubtype})|;
+                    print qq|${prefix}eq_float($result->{name}.$subtype\[$value\], $values[$value]$suffix)|;
             }
-            elsif ($resultsubtype eq "pd")
+                elsif ($subtype eq "pd")
             {
-                print qq|${prefix}eq_double(result.$resultsubtype\[$value\], $resultvalues[$value]$SubTypeSuffixes{$resultsubtype})|;
+                    print qq|${prefix}eq_double($result->{name}.$subtype\[$value\], $values[$value]$suffix)|;
             }
             else
             {
-                print qq|${prefix}result.$resultsubtype\[$value\] == $resultvalues[$value]$SubTypeSuffixes{$resultsubtype}|;
+                    print qq|${prefix}$result->{name}.$subtype\[$value\] == $values[$value]$suffix|;
             }
 
             $prefix = " && ";
         }
+    }
+    
+        $prefix = " &&\n          ";
     }
     
     print qq| \)\n|;
@@ -390,15 +618,23 @@ while (<>)
     print qq|      \{\n|;
     print qq|         printf("$test ... not ok\\n");\n|;
     
-    if ($resulttype eq "eflags")
+    foreach my $result (@results)
     {
-        print qq|         printf("  eflags & 0x%lx = 0x%lx (expected 0x%lx)\\n", $resultvalues[0]UL, result.ud\[0\] & $resultvalues[0]UL, $resultvalues[1]UL);\n|;
+        my $type = $result->{type};
+        my $subtype = $result->{subtype};
+        my $suffix = $SubTypeSuffixes{$subtype};
+        my @values = @{$result->{values}};
+
+        if ($type eq "eflags")
+    {
+            print qq|         printf("  eflags & 0x%lx = 0x%lx (expected 0x%lx)\\n", $values[0]UL, $result->{name}.ud\[0\] & $values[0]UL, $values[1]UL);\n|;
     }
     else
     {
-        foreach my $value (0 .. $#resultvalues)
+            foreach my $value (0 .. $#values)
         {
-            print qq|         printf("  $resultsubtype\[$value\] = $SubTypeFormats{$resultsubtype} (expected $SubTypeFormats{$resultsubtype})\\n", result.$resultsubtype\[$value\], $resultvalues[$value]$SubTypeSuffixes{$resultsubtype});\n|;
+                print qq|         printf("  $result->{name}.$subtype\[$value\] = $SubTypeFormats{$subtype} (expected $SubTypeFormats{$subtype})\\n", $result->{name}.$subtype\[$value\], $values[$value]$suffix);\n|;
+            }
         }
     }
 

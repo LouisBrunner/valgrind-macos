@@ -2687,10 +2687,7 @@ Addr dis_bt_G_E ( UCodeBlock* cb,
 
    Int t_addr, t_bitno, t_mask, t_fetched, t_esp, temp, lit;
 
-   /* 2 and 4 are actually possible. */
    vg_assert(sz == 2 || sz == 4);
-   /* We only handle 4. */
-   vg_assert(sz == 4);
 
    t_addr = t_bitno = t_mask 
           = t_fetched = t_esp = temp = INVALID_TEMPREG;
@@ -2704,18 +2701,24 @@ Addr dis_bt_G_E ( UCodeBlock* cb,
 
    uInstr2(cb, GET,  sz, ArchReg, gregOfRM(modrm), TempReg, t_bitno);
 
+   if (sz == 2) {
+      uInstr1(cb, WIDEN, 4, TempReg, t_bitno);
+      LAST_UINSTR(cb).extra4b = 2;
+      LAST_UINSTR(cb).signed_widen = False;
+   }
+   
    if (epartIsReg(modrm)) {
       eip++;
       /* Get it onto the client's stack. */
       t_esp = newTemp(cb);
       t_addr = newTemp(cb);
       uInstr2(cb, GET,   4, ArchReg,  R_ESP, TempReg, t_esp);
-      uInstr2(cb, SUB,  sz, Literal,  0,     TempReg, t_esp);
+      uInstr2(cb, SUB,   4, Literal,  0,     TempReg, t_esp);
       uLiteral(cb, sz);
       uInstr2(cb, PUT,   4, TempReg,  t_esp, ArchReg, R_ESP);
       uInstr2(cb, GET,   sz, ArchReg, eregOfRM(modrm), TempReg, temp);
       uInstr2(cb, STORE, sz, TempReg, temp, TempReg, t_esp);
-      /* Make ta point at it. */
+      /* Make t_addr point at it. */
       uInstr2(cb, MOV,   4,  TempReg, t_esp, TempReg, t_addr);
       /* Mask out upper bits of the shift amount, since we're doing a
          reg. */
@@ -2728,7 +2731,7 @@ Addr dis_bt_G_E ( UCodeBlock* cb,
       eip   += HI8(pair);
    }
   
-   /* At this point: ta points to the address being operated on.  If
+   /* At this point: t_addr points to the address being operated on.  If
       it was a reg, we will have pushed it onto the client's stack.
       t_bitno is the bit number, suitable masked in the case of a reg.  */
    
@@ -2738,12 +2741,12 @@ Addr dis_bt_G_E ( UCodeBlock* cb,
    uInstr2(cb, SAR, 4, Literal, 0, TempReg, temp);
    uLiteral(cb, 3);
    uInstr2(cb, ADD, 4, TempReg, temp, TempReg, t_addr);
-   /* ta now holds effective address */
+   /* t_addr now holds effective address */
 
    uInstr2(cb, MOV, 4, Literal, 0, TempReg, lit);
    uLiteral(cb, 7);
    uInstr2(cb, AND, 4, TempReg, lit, TempReg, t_bitno);
-   /* bitno contains offset of bit within byte */
+   /* t_bitno contains offset of bit within byte */
 
    if (op != BtOpNone) {
       t_mask = newTemp(cb);
@@ -2751,7 +2754,7 @@ Addr dis_bt_G_E ( UCodeBlock* cb,
       uLiteral(cb, 1);
       uInstr2(cb, SHL, 4, TempReg, t_bitno, TempReg, t_mask);
    }
-   /* mask is now a suitable byte mask */
+   /* t_mask is now a suitable byte mask */
 
    uInstr2(cb, LOAD, 1, TempReg, t_addr, TempReg, t_fetched);
    if (op != BtOpNone) {
@@ -2781,20 +2784,20 @@ Addr dis_bt_G_E ( UCodeBlock* cb,
    uInstr2(cb, MOV, 4, Literal, 0, TempReg, lit);
    uLiteral(cb, 1);
    uInstr2(cb, AND, 4, TempReg, lit, TempReg, t_fetched);
-   /* fetched is now 1 or 0 */
+   /* t_fetched is now 1 or 0 */
 
    /* NEG is a handy way to convert zero/nonzero into the carry
       flag. */
    uInstr1(cb, NEG, 4, TempReg, t_fetched);
    setFlagsFromUOpcode(cb, NEG);
-   /* fetched is now in carry flag */
+   /* t_fetched is now in carry flag */
 
    /* Move reg operand from stack back to reg */
    if (epartIsReg(modrm)) {
       /* t_esp still points at it. */
       uInstr2(cb, LOAD, sz, TempReg, t_esp, TempReg, temp);
       uInstr2(cb, PUT,  sz, TempReg, temp, ArchReg, eregOfRM(modrm));
-      uInstr2(cb, ADD,  sz, Literal, 0, TempReg, t_esp);
+      uInstr2(cb, ADD,  4,  Literal, 0, TempReg, t_esp);
       uLiteral(cb, sz);
       uInstr2(cb, PUT,  4,  TempReg, t_esp, ArchReg, R_ESP);
    }
@@ -2821,9 +2824,12 @@ Addr dis_bs_E_G ( UCodeBlock* cb,
    Bool  isReg;
 
    vg_assert(sz == 2 || sz == 4);
-   vg_assert(sz==4);
 
-   helper = fwds ? VGOFF_(helper_bsf) : VGOFF_(helper_bsr);
+   if (fwds)
+      helper = sz == 2 ? VGOFF_(helper_bsfw) : VGOFF_(helper_bsfl);
+   else
+      helper = sz == 2 ? VGOFF_(helper_bsrw) : VGOFF_(helper_bsrl);
+   
    modrm  = getUChar(eip);
    t1     = newTemp(cb);
    t      = newTemp(cb);
@@ -4201,7 +4207,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* PSHUFW */
    if (sz == 4
        && insn[0] == 0x0F && insn[1] == 0x70) {
-      eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, 
+      eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, eip+2, 8, 
                                            "pshufw",
                                            insn[0], insn[1] );
       goto decode_success;
@@ -5289,11 +5295,51 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr1(cb, PUSH, 4, TempReg, t1);
       uInstr1(cb, CALLM, 0, Lit16, 
                   opc == 0x27 ? VGOFF_(helper_DAA) : VGOFF_(helper_DAS) );
-      uFlagsRWU(cb, FlagsAC, FlagsOSZACP, FlagsEmpty);
+      uFlagsRWU(cb, FlagsAC, FlagsSZACP, FlagO);
       uInstr1(cb, POP, 4, TempReg, t1);
       uInstr0(cb, CALLM_E, 0);
       uInstr2(cb, PUT, 1, TempReg, t1, ArchReg, R_AL);
       DIP(opc == 0x27 ? "daa\n" : "das\n");
+      break;
+
+   case 0x37: /* AAA */
+   case 0x3F: /* AAS */
+      t1 = newTemp(cb);
+      uInstr2(cb, GET, 2, ArchReg, R_EAX, TempReg, t1);
+      /* Widen %AL to 32 bits, so it's all defined when we push it. */
+      uInstr1(cb, WIDEN, 4, TempReg, t1);
+      LAST_UINSTR(cb).extra4b = 2;
+      LAST_UINSTR(cb).signed_widen = False;
+      uInstr0(cb, CALLM_S, 0);
+      uInstr1(cb, PUSH, 4, TempReg, t1);
+      uInstr1(cb, CALLM, 0, Lit16, 
+                  opc == 0x37 ? VGOFF_(helper_AAA) : VGOFF_(helper_AAS) );
+      uFlagsRWU(cb, FlagA, FlagsAC, FlagsEmpty);
+      uInstr1(cb, POP, 4, TempReg, t1);
+      uInstr0(cb, CALLM_E, 0);
+      uInstr2(cb, PUT, 2, TempReg, t1, ArchReg, R_EAX);
+      DIP(opc == 0x37 ? "aaa\n" : "aas\n");
+      break;
+
+   case 0xD4: /* AAM */
+   case 0xD5: /* AAD */
+      d32 = getUChar(eip); eip++;
+      if (d32 != 10) VG_(core_panic)("disInstr: AAM/AAD but base not 10 !");
+      t1 = newTemp(cb);
+      uInstr2(cb, GET, 2, ArchReg, R_EAX, TempReg, t1);
+      /* Widen %AX to 32 bits, so it's all defined when we push it. */
+      uInstr1(cb, WIDEN, 4, TempReg, t1);
+      LAST_UINSTR(cb).extra4b = 2;
+      LAST_UINSTR(cb).signed_widen = False;
+      uInstr0(cb, CALLM_S, 0);
+      uInstr1(cb, PUSH, 4, TempReg, t1);
+      uInstr1(cb, CALLM, 0, Lit16, 
+                  opc == 0xD4 ? VGOFF_(helper_AAM) : VGOFF_(helper_AAD) );
+      uFlagsRWU(cb, FlagsEmpty, FlagsSZP, FlagsEmpty);
+      uInstr1(cb, POP, 4, TempReg, t1);
+      uInstr0(cb, CALLM_E, 0);
+      uInstr2(cb, PUT, 2, TempReg, t1, ArchReg, R_EAX);
+      DIP(opc == 0xD4 ? "aam\n" : "aad\n");
       break;
 
    /* ------------------------ CWD/CDQ -------------------- */
@@ -5654,6 +5700,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x1C: /* SBB Ib, AL */
       eip = dis_op_imm_A(cb, 1, SBB, True, eip, "sbb" );
       break;
+   case 0x1D: /* SBB Iv, eAX */
+      eip = dis_op_imm_A(cb, sz, SBB, True, eip, "sbb" );
+      break;
 
    case 0x24: /* AND Ib, AL */
       eip = dis_op_imm_A(cb, 1, AND, True, eip, "and" );
@@ -5778,6 +5827,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_op2_G_E ( cb, sorb, ADC, True, sz, eip, "adc" );
       break;
 
+   case 0x18: /* SBB Gb,Eb */
+      eip = dis_op2_G_E ( cb, sorb, SBB, True, 1, eip, "sbb" );
+      break;
    case 0x19: /* SBB Gv,Ev */
       eip = dis_op2_G_E ( cb, sorb, SBB, True, sz, eip, "sbb" );
       break;
@@ -6095,9 +6147,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0xF9: /* STC */
       uInstr0(cb, CALLM_S, 0);
       uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_STC));
-      uFlagsRWU(cb, FlagsEmpty, FlagC, FlagsOSZCP);
+      uFlagsRWU(cb, FlagsEmpty, FlagC, FlagsOSZAP);
       uInstr0(cb, CALLM_E, 0);
       DIP("stc\n");
+      break;
+
+   case 0xF5: /* CMC */
+      uInstr0(cb, CALLM_S, 0);
+      uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_CMC));
+      uFlagsRWU(cb, FlagC, FlagC, FlagsOSZAP);
+      uInstr0(cb, CALLM_E, 0);
+      DIP("cmc\n");
       break;
 
    case 0xF2: { /* REPNE prefix insn */
@@ -6685,6 +6745,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
       /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
 
+      case 0xC0: /* XADD Gb,Eb */
+         eip = dis_xadd_G_E ( cb, sorb, 1, eip );
+         break;
       case 0xC1: /* XADD Gv,Ev */
          eip = dis_xadd_G_E ( cb, sorb, sz, eip );
          break;

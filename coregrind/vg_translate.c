@@ -567,7 +567,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    /* Fields checked:        lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
    case SSE2a_MemWr:  return LIT0 && SZsse2 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE2a_MemRd:  return LIT0 && SZsse2 && CCa  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE2a1_MemRd: return LIT0 && SZ416  && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE2a1_MemRd: return LIT0 && SZsse3 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE2g_RegWr:  return LIT0 && SZ4    && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE2g1_RegWr: return LIT8 && SZ4    && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE2e1_RegRd: return LIT8 && SZ2    && CC0  && Ls1 && Ls2 && TR3 && XOTHER;

@@ -931,6 +931,7 @@ typedef UChar FlagSet;
 #define FlagsOSACP  (FlagO | FlagS |         FlagA | FlagC | FlagP)
 #define FlagsSZACP  (        FlagS | FlagZ | FlagA | FlagC | FlagP)
 #define FlagsSZAP   (        FlagS | FlagZ | FlagA |         FlagP)
+#define FlagsSZP    (        FlagS | FlagZ |                 FlagP)
 #define FlagsZCP    (                FlagZ         | FlagC | FlagP)
 #define FlagsOC     (FlagO |                         FlagC        )
 #define FlagsAC     (                        FlagA | FlagC        )
@@ -1185,6 +1186,7 @@ extern Int VGOFF_(helper_get_dirflag);
 
 extern Int VGOFF_(helper_CLC);
 extern Int VGOFF_(helper_STC);
+extern Int VGOFF_(helper_CMC);
 
 extern Int VGOFF_(helper_shldl);
 extern Int VGOFF_(helper_shldw);
@@ -1197,14 +1199,20 @@ extern Int VGOFF_(helper_CPUID);
 extern Int VGOFF_(helper_IN);
 extern Int VGOFF_(helper_OUT);
 
-extern Int VGOFF_(helper_bsf);
-extern Int VGOFF_(helper_bsr);
+extern Int VGOFF_(helper_bsfw);
+extern Int VGOFF_(helper_bsfl);
+extern Int VGOFF_(helper_bsrw);
+extern Int VGOFF_(helper_bsrl);
 
 extern Int VGOFF_(helper_fstsw_AX);
 extern Int VGOFF_(helper_SAHF);
 extern Int VGOFF_(helper_LAHF);
 extern Int VGOFF_(helper_DAS);
 extern Int VGOFF_(helper_DAA);
+extern Int VGOFF_(helper_AAS);
+extern Int VGOFF_(helper_AAA);
+extern Int VGOFF_(helper_AAD);
+extern Int VGOFF_(helper_AAM);
 
 extern Int VGOFF_(helper_cmpxchg8b);
 

@@ -187,9 +187,7 @@ Char* SK_(name_XUOpcode)(Opcode opc)
 void SK_(pp_XUInstr)(UInstr* u)
 {
    switch (u->opcode) {
-
       case TAG1:
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, 4, False);
          VG_(printf)(" = %s ( ", nameOfTagOp( u->val3 ));
          VG_(pp_UOperand)(u, 1, 4, False);
@@ -197,7 +195,6 @@ void SK_(pp_XUInstr)(UInstr* u)
          break;
 
       case TAG2:
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 2, 4, False);
          VG_(printf)(" = %s ( ", nameOfTagOp( u->val3 ));
          VG_(pp_UOperand)(u, 1, 4, False);
@@ -207,26 +204,22 @@ void SK_(pp_XUInstr)(UInstr* u)
          break;
 
       case STOREV: case LOADV:
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, u->size, u->opcode==LOADV);
          VG_(printf)(", ");
          VG_(pp_UOperand)(u, 2, u->size, u->opcode==STOREV);
          break;
 
       case PUTVF: case GETVF:
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, 0, False);
          break;
 
       case GETV: case PUTV:
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, u->opcode==PUTV ? 4 : u->size, False);
          VG_(printf)(", ");
          VG_(pp_UOperand)(u, 2, u->opcode==GETV ? 4 : u->size, False);
          break;
 
       case TESTV: case SETV:
-         VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, u->size, False);
          break;
 

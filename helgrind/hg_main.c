@@ -2503,6 +2503,7 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    needs->sizeof_shadow_block	= SHADOW_EXTRA;
    needs->alternative_free      = True;
    needs->client_requests       = True;
+   needs->command_line_options  = True;
 
    track->new_mem_startup       = & eraser_new_mem_startup;
    track->new_mem_heap          = & eraser_new_mem_heap;
@@ -2555,6 +2556,59 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
       thread_locks[i] = empty;
 
    init_shadow_memory();
+}
+
+#if 0
+static Bool match_Bool(Char *arg, Char *argstr, Bool *ret)
+{
+   Int len = VG_(strlen)(argstr);
+
+   if (VG_(strncmp)(arg, argstr, len) == 0) {
+      if (VG_(strcmp)(arg+len, "yes") == 0) {
+	 *ret = True;
+	 return True;
+      } else if (VG_(strcmp)(arg+len, "no") == 0) {
+	 *ret = False;
+	 return True;
+      } else
+	 VG_(bad_option)(arg);
+   }
+   return False;
+}
+
+static Bool match_Int(Char *arg, Char *argstr, Int *ret)
+{
+   Int len = VG_(strlen)(argstr);
+
+   if (VG_(strncmp)(arg, argstr, len) == 0) {
+      *ret = (Int)VG_(atoll)(arg+len);
+	 return True;
+   }
+   return False;
+}
+
+static Bool match_str(Char *arg, Char *argstr, Char **ret)
+{
+   Int len = VG_(strlen)(argstr);
+
+   if (VG_(strncmp)(arg, argstr, len) == 0) {
+      *ret = VG_(strdup)(arg+len);
+      return True;
+   }
+
+   return False;
+}
+#endif
+
+Bool SK_(process_cmd_line_option)(Char* arg)
+{
+   return False;
+}
+
+Char *SK_(usage)(void)
+{
+   return ""
+      ;
 }
 
 

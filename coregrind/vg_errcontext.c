@@ -191,7 +191,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    vg_assert( tid < VG_N_THREADS );
 }
 
-void VG_(gen_suppression)(Error* err)
+void gen_suppression(Error* err)
 {
    Int         i;
    UChar       buf[M_VG_ERRTXT];
@@ -259,7 +259,7 @@ void do_actions_on_error(Error* err, Bool allow_GDB_attach)
    /* Or maybe we want to generate the error's suppression? */
    if (VG_(is_action_requested)( "Print suppression",
                                  & VG_(clo_gen_suppressions) )) {
-      VG_(gen_suppression)(err);
+      gen_suppression(err);
    }
 }
 

@@ -34,7 +34,9 @@ file.  Eg:
 
 Debugging Valgrind with GDB
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To debug Valgrind itself with GDB, start Valgrind like this:
+To debug stage 1 just run it under GDB in the normal way.
+
+To debug Valgrind proper (stage 2) with GDB, start Valgrind like this:
 
   valgrind --tool=none --wait-for-gdb=yes <prog>
 
@@ -47,3 +49,7 @@ you want and do this in gdb:
 
   jump *$eip
 
+Code that runs in the target program such as the pthread replacement
+code or the malloc replacement code would have to be debugged as part
+of the target program, probably by attaching a debugger after it has
+started.  We are not sure if this would work, however.

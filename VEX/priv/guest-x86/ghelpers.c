@@ -1727,18 +1727,89 @@ ULong x86g_calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (modifies guest state) */
 /* Claim to be a P55C (Intel Pentium/MMX) */
-void x86g_dirtyhelper_CPUID ( VexGuestX86State* st )
+void x86g_dirtyhelper_CPUID_sse0 ( VexGuestX86State* st )
 {
-   if (st->guest_EAX == 0) {
-      st->guest_EAX = 0x1;
-      st->guest_EBX = 0x756e6547;
-      st->guest_ECX = 0x6c65746e;
-      st->guest_EDX = 0x49656e69;
-   } else {
-      st->guest_EAX = 0x543;
-      st->guest_EBX = 0x0;
-      st->guest_ECX = 0x0;
-      st->guest_EDX = 0x8001bf;
+   switch (st->guest_EAX) {
+      case 0: 
+         st->guest_EAX = 0x1;
+         st->guest_EBX = 0x756e6547;
+         st->guest_ECX = 0x6c65746e;
+         st->guest_EDX = 0x49656e69;
+         break;
+      default:
+         st->guest_EAX = 0x543;
+         st->guest_EBX = 0x0;
+         st->guest_ECX = 0x0;
+         st->guest_EDX = 0x8001bf;
+         break;
+   }
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (modifies guest state) */
+/* Claim to be the following SSE1-capable CPU:
+   vendor_id       : GenuineIntel
+   cpu family      : 6
+   model           : 11
+   model name      : Intel(R) Pentium(R) III CPU family      1133MHz
+   stepping        : 1
+   cpu MHz         : 1131.013
+   cache size      : 512 KB
+*/
+void x86g_dirtyhelper_CPUID_sse1 ( VexGuestX86State* st )
+{
+   switch (st->guest_EAX) {
+      case 0: 
+         st->guest_EAX = 0x00000002;
+         st->guest_EBX = 0x756e6547;
+         st->guest_ECX = 0x6c65746e;
+         st->guest_EDX = 0x49656e69;
+         break;
+      case 1: 
+         st->guest_EAX = 0x000006b1;
+         st->guest_EBX = 0x00000004;
+         st->guest_ECX = 0x00000000;
+         st->guest_EDX = 0x0383fbff;
+         break;
+      default:
+         st->guest_EAX = 0x03020101;
+         st->guest_EBX = 0x00000000;
+         st->guest_ECX = 0x00000000;
+         st->guest_EDX = 0x0c040883;
+         break;
+   }
+}
+
+/* Claim to be the following SSE2-capable CPU:
+   vendor_id       : GenuineIntel
+   cpu family      : 15
+   model           : 2
+   model name      : Intel(R) Pentium(R) 4 CPU 2.40GHz
+   stepping        : 7
+   cpu MHz         : 2394.234
+   cache size      : 512 KB
+*/
+void x86g_dirtyhelper_CPUID_sse2 ( VexGuestX86State* st )
+{
+   switch (st->guest_EAX) {
+      case 0: 
+         st->guest_EAX = 0x00000002;
+         st->guest_EBX = 0x756e6547;
+         st->guest_ECX = 0x6c65746e;
+         st->guest_EDX = 0x49656e69;
+         break;
+      case 1: 
+         st->guest_EAX = 0x00000f27;
+         st->guest_EBX = 0x00010809;
+         st->guest_ECX = 0x00004400;
+         st->guest_EDX = 0xbfebfbff;
+         break;
+      default:
+         st->guest_EAX = 0x665b5101;
+         st->guest_EBX = 0x00000000;
+         st->guest_ECX = 0x00000000;
+         st->guest_EDX = 0x007b7040;
+         break;
    }
 }
 

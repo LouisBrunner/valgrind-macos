@@ -102,6 +102,9 @@ static IRExpr* bind ( Int binder )
 
    - A counter, for generating new virtual registers.
 
+   - The host subarchitecture we are selecting insns for.  
+     This is set at the start and does not change.
+
    Note, this is all host-independent.  */
 
 typedef
@@ -115,6 +118,8 @@ typedef
       HInstrArray* code;
 
       Int          vreg_ctr;
+
+      VexSubArch   subarch;
    }
    ISelEnv;
 
@@ -2380,11 +2385,25 @@ static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY */
 static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
+
+#  define REQUIRE_SSE1                                  \
+      do { if (env->subarch == VexSubArchX86_sse0)      \
+              goto vec_fail;                            \
+      } while (0)
+
+#  define REQUIRE_SSE2                                  \
+      do { if (env->subarch == VexSubArchX86_sse0       \
+               || env->subarch == VexSubArchX86_sse1)   \
+              goto vec_fail;                            \
+      } while (0)
+
    Bool     arg1isEReg = False;
    X86SseOp op = Xsse_INVALID;
    IRType   ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
    vassert(ty == Ity_V128);
+
+   REQUIRE_SSE1;
 
    if (e->tag == Iex_Tmp) {
       return lookupIRTemp(env, e->Iex.Tmp.tmp);
@@ -2442,6 +2461,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
          HReg tmp  = newVRegV(env);
          HReg dst  = newVRegV(env);
+         REQUIRE_SSE2;
          addInstr(env, X86Instr_SseReRg(Xsse_XOR, tmp, tmp));
          addInstr(env, X86Instr_SseReRg(Xsse_CMPEQ32, arg, tmp));
          tmp = do_sse_Not128(env, tmp);
@@ -2488,6 +2508,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          X86SseOp cmpOp 
             = e->Iex.Unop.op==Iop_CmpNEZ16x8 ? Xsse_CMPEQ16
                                              : Xsse_CMPEQ8;
+         REQUIRE_SSE2;
          addInstr(env, X86Instr_SseReRg(Xsse_XOR, vec0, vec0));
          addInstr(env, mk_vMOVsd_RR(vec0, vec1));
          addInstr(env, X86Instr_Sse32Fx4(Xsse_CMPEQF, vec1, vec1));
@@ -2521,6 +2542,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       {
          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
          HReg dst = newVRegV(env);
+         REQUIRE_SSE2;
          addInstr(env, X86Instr_Sse64Fx2(op, arg, dst));
          return dst;
       }
@@ -2556,6 +2578,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
             argument. */
          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
          HReg dst = newVRegV(env);
+         REQUIRE_SSE2;
          addInstr(env, mk_vMOVsd_RR(arg, dst));
          addInstr(env, X86Instr_Sse64FLo(op, arg, dst));
          return dst;
@@ -2676,6 +2699,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
          HReg dst = newVRegV(env);
+         REQUIRE_SSE2;
          addInstr(env, mk_vMOVsd_RR(argL, dst));
          addInstr(env, X86Instr_Sse64Fx2(op, argR, dst));
          return dst;
@@ -2712,6 +2736,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
          HReg dst = newVRegV(env);
+         REQUIRE_SSE2;
          addInstr(env, mk_vMOVsd_RR(argL, dst));
          addInstr(env, X86Instr_Sse64FLo(op, argR, dst));
          return dst;
@@ -2780,6 +2805,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
          HReg dst = newVRegV(env);
+         if (op != Xsse_OR && op != Xsse_AND && op != Xsse_XOR)
+            REQUIRE_SSE2;
          if (arg1isEReg) {
             addInstr(env, mk_vMOVsd_RR(arg2, dst));
             addInstr(env, X86Instr_SseReRg(op, arg1, dst));
@@ -2804,6 +2831,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
          HReg      ereg = newVRegV(env);
          HReg      dst  = newVRegV(env);
+         REQUIRE_SSE2;
          addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
          addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
          addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
@@ -2831,8 +2859,14 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
+   vec_fail:
+   vex_printf("iselVecExpr (subarch = %s): can't reduce\n",
+              LibVEX_ppVexSubArch(env->subarch));
    ppIRExpr(e);
    vpanic("iselVecExpr_wrk");
+
+#  undef REQUIRE_SSE1
+#  undef REQUIRE_SSE2
 }
 
 
@@ -3108,10 +3142,15 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 /* Translate an entire BB to x86 code. */
 
-HInstrArray* iselBB_X86 ( IRBB* bb )
+HInstrArray* iselBB_X86 ( IRBB* bb, VexSubArch subarch_host )
 {
    Int     i, j;
    HReg    hreg, hregHI;
+
+   /* sanity ... */
+   vassert(subarch_host == VexSubArchX86_sse0
+           || subarch_host == VexSubArchX86_sse1
+           || subarch_host == VexSubArchX86_sse2);
 
    /* Make up an initial environment to use. */
    ISelEnv* env = LibVEX_Alloc(sizeof(ISelEnv));
@@ -3128,6 +3167,9 @@ HInstrArray* iselBB_X86 ( IRBB* bb )
    env->n_vregmap = bb->tyenv->types_used;
    env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
    env->vregmapHI = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
+
+   /* and finally ... */
+   env->subarch = subarch_host;
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */

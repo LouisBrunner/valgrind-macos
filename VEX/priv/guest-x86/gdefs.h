@@ -47,12 +47,13 @@
 /*---------------------------------------------------------*/
 
 extern
-IRBB* bbToIR_X86 ( UChar* x86code, 
-                   Addr64 eip, 
-                   Int*   guest_bytes_read, 
-                   Bool   (*byte_accessible)(Addr64),
-                   Bool   (*resteerOkFn)(Addr64),
-                   Bool   host_bigendian );
+IRBB* bbToIR_X86 ( UChar*     x86code, 
+                   Addr64     eip, 
+                   Int*       guest_bytes_read, 
+                   Bool       (*byte_accessible)(Addr64),
+                   Bool       (*resteerOkFn)(Addr64),
+                   Bool       host_bigendian,
+                   VexSubArch subarch_guest );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
@@ -192,7 +193,9 @@ extern ULong x86g_loadF80le  ( UInt );
 
 extern void  x86g_storeF80le ( UInt, ULong );
 
-extern void  x86g_dirtyhelper_CPUID ( VexGuestX86State* );
+extern void  x86g_dirtyhelper_CPUID_sse0 ( VexGuestX86State* );
+extern void  x86g_dirtyhelper_CPUID_sse1 ( VexGuestX86State* );
+extern void  x86g_dirtyhelper_CPUID_sse2 ( VexGuestX86State* );
 
 extern void  x86g_dirtyhelper_FSAVE ( VexGuestX86State*, HWord );
 

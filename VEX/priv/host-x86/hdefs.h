@@ -658,7 +658,7 @@ extern Int          emit_X86Instr        ( UChar* buf, Int nbuf, X86Instr* );
 extern X86Instr*    genSpill_X86         ( HReg rreg, Int offset );
 extern X86Instr*    genReload_X86        ( HReg rreg, Int offset );
 extern void         getAllocableRegs_X86 ( Int*, HReg** );
-extern HInstrArray* iselBB_X86           ( IRBB* );
+extern HInstrArray* iselBB_X86           ( IRBB*, VexSubArch );
 
 #endif /* ndef __LIBVEX_X86H_DEFS_H */
 

@@ -161,12 +161,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    dumping the IR into global irbb.  Returns the size, in bytes, of
    the basic block.  
 */
-IRBB* bbToIR_ARM ( UChar* armCode, 
-                   Addr64 guest_pc_start, 
-                   Int*   guest_bytes_read, 
-                   Bool   (*byte_accessible)(Addr64),
-                   Bool   (*chase_into_ok)(Addr64),
-                   Bool   host_bigendian )
+IRBB* bbToIR_ARM ( UChar*     armCode, 
+                   Addr64     guest_pc_start, 
+                   Int*       guest_bytes_read, 
+                   Bool       (*byte_accessible)(Addr64),
+                   Bool       (*chase_into_ok)(Addr64),
+                   Bool       host_bigendian,
+                   VexSubArch subarch_guest )
 {
    UInt       delta;
    Int        i, n_instrs, size, first_stmt_idx;
@@ -181,6 +182,8 @@ IRBB* bbToIR_ARM ( UChar* armCode,
    vassert(vex_control.guest_max_insns < 1000);
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
+
+   vassert(subarch_guest == VexSubArchARM_v4);
 
    /* Set up globals. */
    host_is_bigendian = host_bigendian;

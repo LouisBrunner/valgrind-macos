@@ -197,11 +197,13 @@ static void stmt ( IRStmt* st );
    or (2) resteerOkFn, when applied to the address which it wishes to
    resteer into, returns False.  */
    
-static DisResult disInstr ( /*IN*/  Bool    resteerOK,
-                            /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
-                            /*IN*/  UInt    delta, 
-                            /*OUT*/ UInt*   size,
-                            /*OUT*/ Addr64* whereNext );
+static 
+DisResult disInstr ( /*IN*/  Bool       resteerOK,
+                     /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
+                     /*IN*/  UInt       delta, 
+                     /*IN*/  VexSubArch subarch,
+                     /*OUT*/ UInt*      size,
+                     /*OUT*/ Addr64*    whereNext );
 
 
 /* This is the main (only, in fact) entry point for this module. */
@@ -209,12 +211,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 /* Disassemble a complete basic block, starting at eip, and dumping
    the ucode into cb.  Returns the size, in bytes, of the basic
    block. */
-IRBB* bbToIR_X86 ( UChar* x86code, 
-                   Addr64 guest_eip_start, 
-                   Int*   guest_bytes_read, 
-                   Bool   (*byte_accessible)(Addr64),
-                   Bool   (*chase_into_ok)(Addr64),
-                   Bool   host_bigendian )
+IRBB* bbToIR_X86 ( UChar*     x86code, 
+                   Addr64     guest_eip_start, 
+                   Int*       guest_bytes_read, 
+                   Bool       (*byte_accessible)(Addr64),
+                   Bool       (*chase_into_ok)(Addr64),
+                   Bool       host_bigendian,
+                   VexSubArch subarch_guest )
 {
    UInt       delta;
    Int        i, n_instrs, size, first_stmt_idx;
@@ -229,6 +232,10 @@ IRBB* bbToIR_X86 ( UChar* x86code,
    vassert(vex_control.guest_max_insns < 1000);
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
+
+   vassert(subarch_guest == VexSubArchX86_sse0
+           || subarch_guest == VexSubArchX86_sse1
+           || subarch_guest == VexSubArchX86_sse2);
 
    /* Set up globals. */
    host_is_bigendian = host_bigendian;
@@ -260,7 +267,7 @@ IRBB* bbToIR_X86 ( UChar* x86code,
       guest_eip_curr_instr = guest_eip_bbstart + delta;
 
       dres = disInstr( resteerOK, chase_into_ok, 
-                       delta, &size, &guest_next );
+                       delta, subarch_guest, &size, &guest_next );
 
       /* Print the resulting IR, if needed. */
       if (vex_traceflags & VEX_TRACE_FE) {
@@ -5282,7 +5289,8 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
 
       case 0x6E: 
          /* MOVD (src)ireg-or-mem (E), (dst)mmxreg (G)*/
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          modrm = getIByte(delta);
          if (epartIsReg(modrm)) {
             delta++;
@@ -5306,7 +5314,8 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
          break;
 
       case 0x7E: /* MOVD (src)mmxreg (G), (dst)ireg-or-mem (E) */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          modrm = getIByte(delta);
          if (epartIsReg(modrm)) {
             delta++;
@@ -5325,7 +5334,8 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
 
       case 0x6F:
          /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          modrm = getIByte(delta);
          if (epartIsReg(modrm)) {
             delta++;
@@ -5343,7 +5353,8 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
 
       case 0x7F:
          /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          modrm = getIByte(delta);
          if (epartIsReg(modrm)) {
             /* Fall through.  The assembler doesn't appear to generate
@@ -5361,48 +5372,56 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
       case 0xFC: 
       case 0xFD: 
       case 0xFE: /* PADDgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "padd", True );
          break;
 
       case 0xEC: 
       case 0xED: /* PADDSgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "padds", True );
          break;
 
       case 0xDC: 
       case 0xDD: /* PADDUSgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "paddus", True );
          break;
 
       case 0xF8: 
       case 0xF9: 
       case 0xFA: /* PSUBgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psub", True );
          break;
 
       case 0xE8: 
       case 0xE9: /* PSUBSgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psubs", True );
          break;
 
       case 0xD8: 
       case 0xD9: /* PSUBUSgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psubus", True );
          break;
 
       case 0xE5: /* PMULHW (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pmulhw", False );
          break;
 
       case 0xD5: /* PMULLW (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pmullw", False );
          break;
 
@@ -5414,83 +5433,97 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
       case 0x74: 
       case 0x75: 
       case 0x76: /* PCMPEQgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pcmpeq", True );
          break;
 
       case 0x64: 
       case 0x65: 
       case 0x66: /* PCMPGTgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pcmpgt", True );
          break;
 
       case 0x6B: /* PACKSSDW (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "packssdw", False );
          break;
 
       case 0x63: /* PACKSSWB (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "packsswb", False );
          break;
 
       case 0x67: /* PACKUSWB (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "packuswb", False );
          break;
 
       case 0x68: 
       case 0x69: 
       case 0x6A: /* PUNPCKHgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "punpckh", True );
          break;
 
       case 0x60: 
       case 0x61: 
       case 0x62: /* PUNPCKLgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "punpckl", True );
          break;
 
       case 0xDB: /* PAND (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pand", False );
          break;
 
       case 0xDF: /* PANDN (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pandn", False );
          break;
 
       case 0xEB: /* POR (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "por", False );
          break;
 
       case 0xEF: /* PXOR (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pxor", False );
          break;
 
       case 0xF1:
       case 0xF2:
       case 0xF3: /* PSLLgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psll", True );
          break;
 
       case 0xD1:
       case 0xD2:
       case 0xD3: /* PSRLgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psrl", True );
          break;
 
       case 0xE1: 
       case 0xE2: /* PSRAgg (src)mmxreg-or-mem, (dst)mmxreg */
-         vassert(sz == 4);
+         if (sz != 4) 
+            goto mmx_decode_failure;
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psra", True );
          break;
 
@@ -6953,11 +6986,13 @@ static IRExpr* mk64from16s ( IRTemp t3, IRTemp t2,
    the next guest address is assigned to *whereNext.  If resteerOK
    is False, disInstr may not return Dis_Resteer. */
    
-static DisResult disInstr ( /*IN*/  Bool    resteerOK,
-                            /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
-                            /*IN*/  UInt    delta, 
-                            /*OUT*/ UInt*   size,
-                            /*OUT*/ Addr64* whereNext )
+static 
+DisResult disInstr ( /*IN*/  Bool       resteerOK,
+                     /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
+                     /*IN*/  UInt       delta, 
+                     /*IN*/  VexSubArch subarch,
+                     /*OUT*/ UInt*      size,
+                     /*OUT*/ Addr64*    whereNext )
 {
    IRType    ty;
    IRTemp    addr, t0, t1, t2, t3, t4, t5, t6;
@@ -6968,8 +7003,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    Int       am_sz, d_sz;
    DisResult whatNext = Dis_Continue;
    UChar*    insn; /* used in SSE decoders */
-
-   //Char  loc_buf[M_VG_ERRTXT];
 
    /* Holds eip at the start of the insn, so that we can print
       consistent error messages for unimplemented insns. */
@@ -7068,7 +7101,16 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* What did I do to deserve SSE ?  Perhaps I was really bad in a
       previous life? */
 
-   /* Note, this doesn't handle SSE2 or SSE3. */
+   /* Note, this doesn't handle SSE2 or SSE3.  That is handled in a
+      later section, further on. */
+
+   /* Skip parts of the decoder which don't apply given the stated
+      guest subarchitecture. */
+   if (subarch == VexSubArchX86_sse0)
+      goto after_sse_decoders;
+   
+   /* Otherwise we must be doing sse1 or sse2, so we can at least try
+      for SSE1 here. */
 
    insn = (UChar*)&guest_code[delta];
 
@@ -8068,6 +8110,11 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* ---------------------------------------------------- */
    /* --- start of the SSE2 decoder.                   --- */
    /* ---------------------------------------------------- */
+
+   /* Skip parts of the decoder which don't apply given the stated
+      guest subarchitecture. */
+   if (subarch == VexSubArchX86_sse0 || subarch == VexSubArchX86_sse1)
+      goto after_sse_decoders;
 
    insn = (UChar*)&guest_code[delta];
 
@@ -10029,7 +10076,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
 
-//-- 
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */
 //--    if (insn[0] == 0x0F && insn[1] == 0xAE 
 //--        && (!epartIsReg(insn[2]))
@@ -10094,1223 +10140,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--       DIP("clflush %s\n", dis_buf);
 //--       goto decode_success;
 //--    }
-//-- 
-//--    /* CVTPI2PS (0x0F,0x2A) -- mm/m64, xmm */
-//--    /* CVTPI2PD (0x66,0x0F,0x2A) -- mm/m64, xmm */
-//--    if (insn[0] == 0x0F && insn[1] == 0x2A) {
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_from_MMX
-//--                   ( cb, sorb, eip+2, 8, "cvtpi2ps",
-//--                         insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_from_MMX
-//--                   ( cb, sorb, eip+2, 8, "cvtpi2pd",
-//--                         0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTTPS2PI (0x0F,0x2C) -- xmm/m64, mm */
-//--    /* CVTPS2PI (0x0F,0x2D) -- xmm/m64, mm */
-//--    /* CVTTPD2PI (0x66,0x0F,0x2C) -- xmm/m128, mm */
-//--    /* CVTPD2PI (0x66,0x0F,0x2D) -- xmm/m128, mm */
-//--    if (insn[0] == 0x0F
-//--        && (insn[1] == 0x2C || insn[1] == 0x2D)) {
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_to_MMX
-//--                   ( cb, sorb, eip+2, 8, "cvt{t}ps2pi",
-//--                         insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_to_MMX
-//--                   ( cb, sorb, eip+2, 16, "cvt{t}pd2pi",
-//--                         0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTTSD2SI (0xF2,0x0F,0x2C) -- convert a double-precision float
-//--       value in memory or xmm reg to int and put it in an ireg.
-//--       Truncate. */
-//--    /* CVTTSS2SI (0xF3,0x0F,0x2C) -- convert a single-precision float
-//--       value in memory or xmm reg to int and put it in an ireg.
-//--       Truncate. */
-//--    /* CVTSD2SI (0xF2,0x0F,0x2D) -- convert a double-precision float
-//--       value in memory or xmm reg to int and put it in an ireg.  Round
-//--       as per MXCSR. */
-//--    /* CVTSS2SI (0xF3,0x0F,0x2D) -- convert a single-precision float
-//--       value in memory or xmm reg to int and put it in an ireg.  Round
-//--       as per MXCSR. */
-//--    if ((insn[0] == 0xF2 || insn[0] == 0xF3)
-//--        && insn[1] == 0x0F 
-//--        && (insn[2] == 0x2C || insn[2] == 0x2D)) {
-//--       vg_assert(sz == 4);
-//--       modrm = insn[3];
-//--       if (epartIsReg(modrm)) {
-//--          /* We're moving a value in an xmm reg to an ireg. */
-//--          eip += 4;
-//--          t1 = newTemp(cb);
-//--          /* sz is 4 for all 4 insns. */
-//--          vg_assert(epartIsReg(modrm));
-//--          uInstr3(cb, SSE3g_RegWr, 4,
-//--                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
-//--                      Lit16, (((UShort)insn[2]) << 8) | (UShort)modrm,
-//--                      TempReg, t1 );
-//--          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
-//--          DIP("cvt{t}s{s,d}2si %s, %s\n", 
-//--              nameXMMReg(eregOfRM(modrm)), nameIReg(4,gregOfRM(modrm)) );
-//--       } else {
-//--          /* So, we're reading memory and writing an ireg.  This calls
-//--             for the ultra-horrible SSE3ag_MemRd_RegWr uinstr.  We
-//--             can't do it in a roundabout route because it does some
-//--             kind of conversion on the way, which we need to have
-//--             happen too.  So our only choice is to re-emit a suitably
-//--             rehashed version of the instruction. */
-//--           /* Destination ireg is GREG.  Address goes as EREG as
-//--             usual. */
-//--          t1 = newTemp(cb); /* t1 holds value on its way to ireg */
-//--          pair = disAMode ( cb, sorb, eip+3, dis_buf );
-//--          t2   = LOW24(pair); /* t2 holds addr */
-//--          eip += 3+HI8(pair);
-//--          uInstr2(cb, SSE3ag_MemRd_RegWr, insn[0]==0xF2 ? 8 : 4,
-//--                      TempReg, t2, /* address */
-//--                      TempReg, t1 /* dest */);
-//--          uLiteral(cb  , (((UInt)insn[0]) << 24)
-//--                       | (((UInt)insn[1]) << 16)
-//--                       | (((UInt)insn[2]) << 8) 
-//--                       | ((UInt)modrm) );
-//--          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
-//--          DIP("cvt{t}s{s,d}2si %s, %s\n", 
-//--              dis_buf, nameIReg(4,gregOfRM(modrm)) );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTSI2SS -- convert int reg, or int value in memory, to low 4
-//--       bytes of XMM reg. */
-//--    /* CVTSI2SD -- convert int reg, or int value in memory, to low 8
-//--       bytes of XMM reg. */
-//--    if ((insn[0] == 0xF3 /*CVTSI2SS*/ || insn[0] == 0xF2 /* CVTSI2SD*/)
-//--        && insn[1] == 0x0F && insn[2] == 0x2A) {
-//--       Char* s_or_d = insn[0]==0xF3 ? "s" : "d";
-//--       vg_assert(sz == 4);
-//--       modrm = insn[3];
-//--       t1 = newTemp(cb);
-//--       if (epartIsReg(modrm)) { 
-//--          uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
-//--          vg_assert(epartIsReg(modrm));
-//--          uInstr3(cb, SSE3e_RegRd, 4,
-//--                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
-//--                      Lit16, (((UShort)insn[2]) << 8) | (UShort)modrm,
-//--                      TempReg, t1 );
-//--          eip += 4;
-//--          DIP("cvtsi2s%s %s, %s\n", s_or_d,
-//--              nameIReg(4,eregOfRM(modrm)), nameXMMReg(gregOfRM(modrm)));
-//--       } else {
-//--          pair = disAMode ( cb, sorb, eip+3, dis_buf );
-//--          t2   = LOW24(pair);
-//--          eip += 3+HI8(pair);
-//--          uInstr3(cb, SSE3a_MemRd, 4,
-//--                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
-//--                      Lit16, (((UShort)insn[2]) << 8) | (UShort)modrm,
-//--                      TempReg, t2 );
-//--          DIP("cvtsi2s%s %s, %s\n",
-//--              s_or_d, dis_buf, nameXMMReg(gregOfRM(modrm)));
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTPS2PD -- convert two packed floats to two packed doubles. */
-//--    /* 0x66: CVTPD2PS -- convert two packed doubles to two packed floats. */
-//--    if (insn[0] == 0x0F && insn[1] == 0x5A) {
-//--       vg_assert(sz == 2 || sz == 4);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 8, "cvtps2pd",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "cvtpd2ps",
-//--                                      0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTSS2SD -- convert one single float to double. */
-//--    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5A) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4, "cvtss2sd",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTSD2SS -- convert one single double. to float. */
-//--    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x5A) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "cvtsd2ss",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTDQ2PS -- convert four ints to four packed floats. */
-//--    /* 0x66: CVTPS2DQ -- convert four packed floats to four ints. */
-//--    if (insn[0] == 0x0F && insn[1] == 0x5B) {
-//--       vg_assert(sz == 2 || sz == 4);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "cvtdq2ps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "cvtps2dq",
-//--                                          0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTPD2DQ -- convert two packed doubles to two ints. */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F && insn[1] == 0xE6) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 8, "cvtpd2dq",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTTPD2DQ -- convert two packed doubles to two ints with truncation. */
-//--    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0xE6) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "cvttpd2dq",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTDQ2PD -- convert two ints to two packed doubles. */
-//--    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xE6) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "cvtdq2pd",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CVTTPS2DQ -- convert four packed floats to four ints with truncation. */
-//--    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5B) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 16, "cvttps2dq",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CMPSS -- compare scalar floats. */
-//--    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xC2) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+3, 8, "cmpss",
-//--                                        insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* CMPSD -- compare scalar doubles. */
-//--    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0xC2) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+3, 8, "cmpsd",
-//--                                        insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* sz==4: CMPPS -- compare packed floats */
-//--    /* sz==2: CMPPD -- compare packed doubles */
-//--    if (insn[0] == 0x0F && insn[1] == 0xC2) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, "cmpps",
-//--                                           insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, "cmppd",
-//--                                           0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* PSHUFD */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F && insn[1] == 0x70) {
-//--       eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, 
-//--                                            "pshufd",
-//--                                            0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* PSHUFLW */
-//--    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x70) {
-//--       eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+3, 16, 
-//--                                            "pshuflw",
-//--                                            insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* PSHUFHW */
-//--    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x70) {
-//--       eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+3, 16, 
-//--                                            "pshufhw",
-//--                                            insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* SHUFPD */
-//--    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC6) {
-//--       eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, "shufpd",
-//--                                            0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* SHUFPS */
-//--    if (insn[0] == 0x0F && insn[1] == 0xC6) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, "shufps",
-//--                                            insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xF2: MULSD */
-//--    /* 0xF3: MULSS -- multiply low 4 bytes of XMM reg. */
-//--    if ((insn[0] == 0xF2 || insn[0] == 0xF3)
-//--        && insn[1] == 0x0F && insn[2] == 0x59) {
-//--       Bool sz8 = insn[0] == 0xF2;
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, sz8 ? 8 : 4, 
-//--                                       sz8 ? "mulss" : "mulsd",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MULPS */
-//--    /* 0x66: MULPD */
-//--    if (insn[0] == 0x0F && insn[1] == 0x59) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "mulps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "mulpd",
-//--                                          0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xF2: DIVSD */
-//--    /* 0xF3: DIVSS -- divide low 4 bytes of XMM reg. */
-//--    if ((insn[0] == 0xF2 || insn[0] == 0xF3)
-//--        && insn[1] == 0x0F && insn[2] == 0x5E) {
-//--       Bool sz8 = insn[0] == 0xF2;
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, sz8 ? 8 : 4, 
-//--                                       sz8 ? "divsd" : "divss",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* DIVPS */
-//--    /* 0x66: DIVPD */
-//--    if (insn[0] == 0x0F && insn[1] == 0x5E) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "divps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "divpd",
-//--                                          0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xF2: SUBSD */
-//--    /* 0xF3: SUBSS */
-//--    if ((insn[0] == 0xF2 || insn[0] == 0xF3)
-//--        && insn[1] == 0x0F && insn[2] == 0x5C) {
-//--       Bool sz8 = insn[0] == 0xF2;
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, sz8 ? 8 : 4, 
-//--                                       sz8 ? "subsd" : "subss",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* SUBPS */
-//--    /* 0x66: SUBPD */
-//--    if (insn[0] == 0x0F && insn[1] == 0x5C) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "subps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "subpd",
-//--                                          0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xF2: ADDSD */
-//--    /* 0xF3: ADDSS */
-//--    if ((insn[0] == 0xF2 || insn[0] == 0xF3)
-//--        && insn[1] == 0x0F && insn[2] == 0x58) {
-//--       Bool sz8 = insn[0] == 0xF2;
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, sz8 ? 8 : 4, 
-//--                                       sz8 ? "addsd" : "addss",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* ADDPS */
-//--    /* 0x66: ADDPD */
-//--    if (insn[0] == 0x0F && insn[1] == 0x58) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "addps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "addpd",
-//--                                          0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xF2: MINSD */
-//--    /* 0xF3: MINSS */
-//--    if ((insn[0] == 0xF2 || insn[0] == 0xF3) 
-//--        && insn[1] == 0x0F && insn[2] == 0x5D) {
-//--       Bool sz8 = insn[0] == 0xF2;
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, sz8 ? 8 : 4, 
-//--                                       sz8 ? "minsd" : "minss",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MINPS */
-//--    /* 0x66: MINPD */
-//--    if (insn[0] == 0x0F && insn[1] == 0x5D) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "minps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "minpd",
-//--                                          0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xF3: MAXSD */
-//--    /* 0xF3: MAXSS */
-//--    if ((insn[0] == 0xF2 || insn[0] == 0xF3) 
-//--        && insn[1] == 0x0F && insn[2] == 0x5F) {
-//--       Bool sz8 = insn[0] == 0xF2;
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, sz8 ? 8 : 4, 
-//--                                       sz8 ? "maxsd" : "maxss",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MAXPS */
-//--    /* 0x66: MAXPD */
-//--    if (insn[0] == 0x0F && insn[1] == 0x5F) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "maxps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "maxpd",
-//--                                          0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* RCPPS -- reciprocal of packed floats */
-//--    if (insn[0] == 0x0F && insn[1] == 0x53) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "rcpps",
-//--                                       insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* XORPS */
-//--    /* 0x66: XORPD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (insn[0] == 0x0F && insn[1] == 0x57) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "xorps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "xorpd",
-//--                                          0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* ANDPS */
-//--    /* 0x66: ANDPD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (insn[0] == 0x0F && insn[1] == 0x54) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "andps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "andpd",
-//--                                          0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* ORPS */
-//--    /* 0x66: ORPD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (insn[0] == 0x0F && insn[1] == 0x56) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "orps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "orpd",
-//--                                       0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* PXOR (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F && insn[1] == 0xEF) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pxor",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* PAND (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F && insn[1] == 0xDB) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pand",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* PANDN (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F && insn[1] == 0xDF) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pandn",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* POR (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F && insn[1] == 0xEB) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "por",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xDA: PMINUB(src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xEA: PMINSW(src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xDA || insn[1] == 0xEA)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmin{ub,sw}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xDE: PMAXUB(src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xEE: PMAXSW(src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xDE || insn[1] == 0xEE)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmax{ub,sw}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xE0: PAVGB(src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xE3: PAVGW(src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xE0 || insn[1] == 0xE3)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pavg{b,w}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//--  
-//--    /* 0xF6: PSADBW(src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F && insn[1] == 0xF6) {
-//--      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psadbw",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//--  
-//--    /* 0x60: PUNPCKLBW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x61: PUNPCKLWD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x62: PUNPCKLDQ (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x6C: PUNPCKQLQDQ (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0x60 || insn[1] == 0x61
-//--            || insn[1] == 0x62 || insn[1] == 0x6C)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
-//--                                       "punpckl{bw,wd,dq,qdq}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0x68: PUNPCKHBW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x69: PUNPCKHWD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x6A: PUNPCKHDQ (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x6D: PUNPCKHQDQ (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0x68 || insn[1] == 0x69
-//--            || insn[1] == 0x6A || insn[1] == 0x6D)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
-//--                                       "punpckh{bw,wd,dq,qdq}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0x14: UNPCKLPD (src)xmmreg-or-mem, (dst)xmmreg.  Reads a+0
-//--       .. a+7, so we can say size 8 */
-//--    /* 0x15: UNPCKHPD (src)xmmreg-or-mem, (dst)xmmreg.  Reads a+8
-//--       .. a+15, but we have no way to express this, so better say size
-//--       16.  Sigh. */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0x14 || insn[1] == 0x15)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 
-//--                                       insn[1]==0x14 ? 8 : 16, 
-//--                                       "unpck{l,h}pd",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0x14: UNPCKLPS (src)xmmreg-or-mem, (dst)xmmreg  Reads a+0
-//--       .. a+7, so we can say size 8 */
-//--    /* 0x15: UNPCKHPS (src)xmmreg-or-mem, (dst)xmmreg  Reads a+8
-//--       .. a+15, but we have no way to express this, so better say size
-//--       16.  Sigh.  */
-//--    if (sz == 4
-//--        && insn[0] == 0x0F
-//--        && (insn[1] == 0x14 || insn[1] == 0x15)) {
-//--       eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 
-//--                                       insn[1]==0x14 ? 8 : 16, 
-//--                                       "unpck{l,h}ps",
-//--                                       insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xFC: PADDB (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xFD: PADDW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xFE: PADDD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xD4: PADDQ (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xFC || insn[1] == 0xFD 
-//--            || insn[1] == 0xFE || insn[1] == 0xD4)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "padd{b,w,d,q}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xEC: PADDSB (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xED: PADDSW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xEC || insn[1] == 0xED)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "padds{b,w}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xDC: PADDUSB (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xDD: PADDUSW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xDC || insn[1] == 0xDD)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "paddus{b,w}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xF8: PSUBB (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xF9: PSUBW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xFA: PSUBD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xFB: PSUBQ (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xF8 || insn[1] == 0xF9 
-//--            || insn[1] == 0xFA || insn[1] == 0xFB)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psub{b,w,d,q}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xE8: PSUBSB (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xE9: PSUBSW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xE8 || insn[1] == 0xE9)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psubs{b,w}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xD8: PSUBUSB (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xD9: PSUBUSW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xD8 || insn[1] == 0xD9)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psubus{b,w}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xE4: PMULHUW(src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xE5: PMULHW(src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xD5: PMULLW(src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xE4 || insn[1] == 0xE5 || insn[1] == 0xD5)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmul{hu,h,l}w",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xD5: PMULUDQ(src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F && insn[1] == 0xF4) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmuludq",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xF5: PMADDWD(src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && insn[1] == 0xF5) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmaddwd",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0x74: PCMPEQB (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x75: PCMPEQW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x76: PCMPEQD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0x74 || insn[1] == 0x75 || insn[1] == 0x76)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pcmpeq{b,w,d}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0x64: PCMPGTB (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x65: PCMPGTW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x66: PCMPGTD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0x64 || insn[1] == 0x65 || insn[1] == 0x66)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pcmpgt{b,w,d}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0x63: PACKSSWB (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0x6B: PACKSSDW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0x63 || insn[1] == 0x6B)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "packss{wb,dw}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0x67: PACKUSWB (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && insn[1] == 0x67) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "packuswb",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xF1: PSLLW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xF2: PSLLD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xF3: PSLLQ (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xF1 || insn[1] == 0xF2 || insn[1] == 0xF3)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psll{b,w,d}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xD1: PSRLW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xD2: PSRLD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xD3: PSRLQ (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xD1 || insn[1] == 0xD2 || insn[1] == 0xD3)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psrl{b,w,d}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xE1: PSRAW (src)xmmreg-or-mem, (dst)xmmreg */
-//--    /* 0xE2: PSRAD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0xE1 || insn[1] == 0xE2)) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psra{w,d}",
-//--                                       0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* (U)COMISD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F
-//--        && ( insn[1] == 0x2E || insn[1] == 0x2F ) ) {
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 8, "{u}comisd",
-//--                                       0x66, insn[0], insn[1] );
-//--       vg_assert(LAST_UINSTR(cb).opcode == SSE3a_MemRd 
-//--                 || LAST_UINSTR(cb).opcode == SSE4);
-//--       uFlagsRWU(cb, FlagsEmpty, FlagsOSZACP, FlagsEmpty);
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* (U)COMISS (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (sz == 4
-//--        && insn[0] == 0x0F
-//--        && ( insn[1] == 0x2E || insn[ 1 ] == 0x2F )) {
-//--       eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 4, "{u}comiss",
-//--                                       insn[0], insn[1] );
-//--       vg_assert(LAST_UINSTR(cb).opcode == SSE2a_MemRd 
-//--                 || LAST_UINSTR(cb).opcode == SSE3);
-//--       uFlagsRWU(cb, FlagsEmpty, FlagsOSZACP, FlagsEmpty);
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVSD -- move 8 bytes of XMM reg to/from XMM reg or mem. */
-//--    if (insn[0] == 0xF2
-//--        && insn[1] == 0x0F 
-//--        && (insn[2] == 0x11 || insn[2] == 0x10)) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_load_store_or_mov 
-//--                ( cb, sorb, eip+3, 8, insn[2]==0x11, "movsd",
-//--                  insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVQ -- move 8 bytes of XMM reg to XMM reg or mem.  How
-//--       does this differ from MOVSD ?? */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F
-//--        && insn[1] == 0xD6) {
-//--       eip = dis_SSE3_load_store_or_mov 
-//--                ( cb, sorb, eip+2, 8, True /*store*/, "movq",
-//--                      0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVQ -- move 8 bytes of XMM reg or mem to XMM reg.  How
-//--       does this differ from MOVSD ?? */
-//--    if (insn[0] == 0xF3
-//--        && insn[1] == 0x0F
-//--        && insn[2] == 0x7E) {
-//--       eip = dis_SSE3_load_store_or_mov
-//--                ( cb, sorb, eip+3, 8, False /*load*/, "movq",
-//--                      insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVDQ2Q -- move low 4 bytes of XMM reg to MMX reg. */
-//--    if (insn[0] == 0xF2
-//--        && insn[1] == 0x0F
-//--        && insn[2] == 0xD6) {
-//--       eip = dis_SSE3_to_MMX
-//--                ( cb, sorb, eip+3, 8, "movdq2q",
-//--                      insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVQ2DQ -- move MMX reg to low 4 bytes of XMM reg. */
-//--    if (insn[0] == 0xF3
-//--        && insn[1] == 0x0F
-//--        && insn[2] == 0xD6) {
-//--       eip = dis_SSE3_from_MMX
-//--                ( cb, sorb, eip+3, 8, "movq2dq",
-//--                      insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVSS -- move 4 bytes of XMM reg to/from XMM reg or mem. */
-//--    if (insn[0] == 0xF3
-//--        && insn[1] == 0x0F 
-//--        && (insn[2] == 0x11 || insn[2] == 0x10)) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_load_store_or_mov 
-//--                ( cb, sorb, eip+3, 4, insn[2]==0x11, "movss",
-//--                      insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* I don't understand how MOVAPD differs from MOVAPS. */
-//--    /* MOVAPD (28,29) -- aligned load/store of xmm reg, or xmm-xmm reg
-//--       move */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F && insn[1] == 0x28) {
-//--       UChar* name = "movapd";
-//--                     //(insn[1] == 0x10 || insn[1] == 0x11)
-//--                     // ? "movups" : "movaps";
-//--       Bool store = False; //insn[1] == 0x29 || insn[1] == 11;
-//--       eip = dis_SSE3_load_store_or_mov
-//--                ( cb, sorb, eip+2, 16, store, name,
-//--                      0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* sz==4: MOVAPS (28,29) -- aligned load/store of xmm reg, or
-//--       xmm-xmm reg move */
-//--    /* sz==4: MOVUPS (10,11) -- unaligned load/store of xmm reg, or
-//--       xmm-xmm reg move */
-//--    /* sz==2: MOVAPD (28,29) -- aligned load/store of xmm reg, or
-//--       xmm-xmm reg move */
-//--    /* sz==2: MOVUPD (10,11) -- unaligned load/store of xmm reg, or
-//--       xmm-xmm reg move */
-//--    if (insn[0] == 0x0F && (insn[1] == 0x28
-//--                            || insn[1] == 0x29
-//--                            || insn[1] == 0x10
-//--                            || insn[1] == 0x11)) {
-//--       UChar* name = (insn[1] == 0x10 || insn[1] == 0x11)
-//--                     ? "movups" : "movaps";
-//--       Bool store = insn[1] == 0x29 || insn[1] == 11;
-//--       vg_assert(sz == 2 || sz == 4);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_load_store_or_mov
-//--                   ( cb, sorb, eip+2, 16, store, name,
-//--                         insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_load_store_or_mov
-//--                   ( cb, sorb, eip+2, 16, store, name,
-//--                         0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVDQA -- aligned 16-byte load/store. */
-//--    if (sz == 2 
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0x6F || insn[1] == 0x7F)) {
-//--       Bool is_store = insn[1]==0x7F;
-//--       eip = dis_SSE3_load_store_or_mov
-//--                (cb, sorb, eip+2, 16, is_store, "movdqa", 
-//--                     0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVDQU -- unaligned 16-byte load/store. */
-//--    if (insn[0] == 0xF3
-//--        && insn[1] == 0x0F 
-//--        && (insn[2] == 0x6F || insn[2] == 0x7F)) {
-//--       Bool is_store = insn[2]==0x7F;
-//--       eip = dis_SSE3_load_store_or_mov
-//--                (cb, sorb, eip+3, 16, is_store, "movdqu", 
-//--                     insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVNTDQ -- 16-byte store with temporal hint (which we
-//--       ignore). */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F
-//--        && insn[1] == 0xE7) {
-//--       eip = dis_SSE3_load_store_or_mov 
-//--                (cb, sorb, eip+2, 16, True /* is_store */, "movntdq",
-//--                     0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVNTPS -- 16-byte store with temporal hint (which we
-//--       ignore). */
-//--    if (insn[0] == 0x0F
-//--        && insn[1] == 0x2B) {
-//--       eip = dis_SSE2_load_store_or_mov 
-//--                (cb, sorb, eip+2, 16, True /* is_store */, "movntps",
-//--                     insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVNTPD -- 16-byte store with temporal hint (which we
-//--       ignore). */
-//--    if (sz == 2
-//--        && insn[0] == 0x0F
-//--        && insn[1] == 0x2B) {
-//--       eip = dis_SSE3_load_store_or_mov 
-//--                (cb, sorb, eip+2, 16, True /* is_store */, "movntpd",
-//--                     0x66, insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVD -- 4-byte move between xmmregs and (ireg or memory). */
-//--    if (sz == 2 
-//--        && insn[0] == 0x0F 
-//--        && (insn[1] == 0x6E || insn[1] == 0x7E)) {
-//--       Bool is_store = insn[1]==0x7E;
-//--       modrm = insn[2];
-//--       if (epartIsReg(modrm) && is_store) {
-//--          t1 = newTemp(cb);
-//--          uInstr3(cb, SSE3e_RegWr, 4,
-//--                      Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
-//--                      Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
-//--                      TempReg, t1 );
-//--          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, eregOfRM(modrm));
-//--          DIP("movd %s, %s\n", 
-//--              nameXMMReg(gregOfRM(modrm)), nameIReg(4,eregOfRM(modrm)));
-//--          eip += 3;
-//--       } else
-//--       if (epartIsReg(modrm) && !is_store) {
-//--          t1 = newTemp(cb);
-//--          uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
-//--          uInstr3(cb, SSE3e_RegRd, 4,
-//--                      Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
-//--                      Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
-//--                      TempReg, t1 );
-//--          DIP("movd %s, %s\n", 
-//--              nameIReg(4,eregOfRM(modrm)), nameXMMReg(gregOfRM(modrm)));
-//--          eip += 3;
-//--       } else {
-//--          eip = dis_SSE3_load_store_or_mov
-//--                   (cb, sorb, eip+2, 4, is_store, "movd", 
-//--                        0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* PEXTRW from SSE register; writes ireg */
-//--    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC5) {
-//--       t1 = newTemp(cb);
-//--       modrm = insn[2];
-//--       vg_assert(epartIsReg(modrm));
-//--       vg_assert((modrm & 0xC0) == 0xC0);
-//--       uInstr3(cb, SSE3g1_RegWr, 4,
-//--                   Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
-//--                   Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
-//--                   TempReg, t1 );
-//--       uLiteral(cb, insn[3]);
-//--       uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
-//--       DIP("pextrw %s, %d, %s\n",
-//--           nameXMMReg(eregOfRM(modrm)), (Int)insn[3], 
-//--           nameIReg(4, gregOfRM(modrm)));
-//--       eip += 4;
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* PINSRW to SSE register; reads mem or ireg */
-//--    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xC4) {
-//--       t1 = newTemp(cb);
-//--       modrm = insn[2];
-//--       if (epartIsReg(modrm)) {
-//--          uInstr2(cb, GET, 2, ArchReg, eregOfRM(modrm), TempReg, t1);
-//--          vg_assert(epartIsReg(modrm));
-//--          uInstr3(cb, SSE3e1_RegRd, 2,
-//--                      Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
-//--                      Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
-//--                      TempReg, t1 );
-//--          uLiteral(cb, insn[3]);
-//--          DIP("pinsrw %s, %d, %s\n",
-//--              nameIReg(2, eregOfRM(modrm)), (Int)insn[3],
-//--              nameXMMReg(gregOfRM(modrm)));
-//--          eip += 4;
-//--       } else {
-//--          VG_(core_panic)("PINSRW mem");
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* SQRTSD: square root of scalar double. */
-//--    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x51) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, 
-//--                                       "sqrtsd",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* SQRTSS: square root of scalar float. */
-//--    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x51) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4,
-//--                                       "sqrtss",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* RSQRTSS: square root reciprocal of scalar float. */
-//--    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x52) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4,
-//--                                       "sqrtss",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* 0xF3: RCPSS -- reciprocal of scalar float */
-//--    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x53) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 4, 
-//--                                       "rcpss",
-//--                                       insn[0], insn[1], insn[2] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVMSKPD -- extract 2 sign bits from a xmm reg and copy them to 
-//--       an ireg.  Top 30 bits of ireg are set to zero. */
-//--    /* MOVMSKPS -- extract 4 sign bits from a xmm reg and copy them to 
-//--       an ireg.  Top 28 bits of ireg are set to zero. */
-//--    if (insn[0] == 0x0F && insn[1] == 0x50) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       modrm = insn[2];
-//--       /* Intel docs don't say anything about a memory source being
-//--          allowed here. */
-//--       vg_assert(epartIsReg(modrm));
-//--       t1 = newTemp(cb);
-//--       if (sz == 4) {
-//--          uInstr3(cb, SSE2g_RegWr, 4,
-//--                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
-//--                      Lit16, (UShort)modrm,
-//--                      TempReg, t1 );
-//--          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
-//--       } else {
-//--          uInstr3(cb, SSE3g_RegWr, 4,
-//--                      Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
-//--                      Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
-//--                      TempReg, t1 );
-//--          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
-//--       }
-//--       DIP("movmskp%c %s, %s\n", sz == 4 ? 's' : 'd',
-//--           nameXMMReg(eregOfRM(modrm)), nameIReg(4,gregOfRM(modrm)));
-//--       eip += 3;
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* ANDNPS */
-//--    /* 0x66: ANDNPD (src)xmmreg-or-mem, (dst)xmmreg */
-//--    if (insn[0] == 0x0F && insn[1] == 0x55) {
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "andnps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "andnpd",
-//--                                          0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVHLPS -- move two packed floats from high quadword to low quadword */
-//--    /* MOVLPS -- load/store two packed floats to/from low quadword. */
-//--    /* MOVLPD -- load/store packed double to/from low quadword. */
-//--    if (insn[0] == 0x0F 
-//--        && (insn[1] == 0x12 || insn[1] == 0x13)) {
-//--       Bool is_store = insn[1]==0x13;
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          if (epartIsReg(insn[2])) {
-//--             vg_assert(insn[1]==0x12);
-//--             eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "movhlps",
-//--                                             insn[0], insn[1] );
-//--          } else {
-//--             eip = dis_SSE2_load_store_or_mov
-//--                      (cb, sorb, eip+2, 8, is_store, "movlps", 
-//--                           insn[0], insn[1] );
-//--          }
-//--       } else {
-//--          vg_assert(!epartIsReg(insn[2]));
-//--          eip = dis_SSE3_load_store_or_mov
-//--                   (cb, sorb, eip+2, 8, is_store, "movlpd", 
-//--                        0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* MOVLHPS -- move two packed floats from low quadword to high quadword */
-//--    /* MOVHPS -- load/store two packed floats to/from high quadword. */
-//--    /* MOVHPD -- load/store packed double to/from high quadword. */
-//--    if (insn[0] == 0x0F 
-//--        && (insn[1] == 0x16 || insn[1] == 0x17)) {
-//--       Bool is_store = insn[1]==0x17;
-//--       vg_assert(sz == 4 || sz == 2);
-//--       if (sz == 4) {
-//--          if (epartIsReg(insn[2])) {
-//--             vg_assert(insn[1]==0x16);
-//--             eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "movlhps",
-//--                                             insn[0], insn[1] );
-//--          } else {
-//--             eip = dis_SSE2_load_store_or_mov
-//--                      (cb, sorb, eip+2, 8, is_store, "movhps", 
-//--                           insn[0], insn[1] );
-//--          }
-//--       } else {
-//--       vg_assert(!epartIsReg(insn[2]));
-//--       eip = dis_SSE3_load_store_or_mov
-//--                (cb, sorb, eip+2, 8, is_store, "movhpd", 
-//--                     0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* PMOVMSKB -- extract 16 sign bits from a xmm reg and copy them to 
-//--       an ireg.  Top 16 bits of ireg are set to zero. */
-//--    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD7) {
-//--       modrm = insn[2];
-//--       /* Intel docs don't say anything about a memory source being
-//--          allowed here. */
-//--       vg_assert(epartIsReg(modrm));
-//--       t1 = newTemp(cb);
-//--       uInstr3(cb, SSE3g_RegWr, 4,
-//--                   Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
-//--                   Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
-//--                   TempReg, t1 );
-//--       uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
-//--       DIP("pmovmskb %s, %s\n", 
-//--           nameXMMReg(eregOfRM(modrm)), nameIReg(4,gregOfRM(modrm)));
-//--       eip += 3;
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* sz==4: SQRTPS: square root of packed float. */
-//--    /* sz==2: SQRTPD: square root of packed double. */
-//--    if (insn[0] == 0x0F && insn[1] == 0x51) {
-//--       vg_assert(sz == 2 || sz == 4);
-//--       if (sz == 4) {
-//--          eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, 
-//--                                          "sqrtps",
-//--                                          insn[0], insn[1] );
-//--       } else {
-//--          eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
-//--                                          "sqrtpd",
-//--                                  0x66, insn[0], insn[1] );
-//--       }
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* RSQRTPS: square root reciprocal of packed float. */
-//--    if (insn[0] == 0x0F && insn[1] == 0x52) {
-//--       vg_assert(sz == 4);
-//--       eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, 
-//--                                       "rsqrtps",
-//--                                       insn[0], insn[1] );
-//--       goto decode_success;
-//--    }
-//-- 
-//--    /* Fall through into the non-SSE decoder. */
-//-- 
-//--    } /* if (VG_(have_ssestate)) */
 
 
    /* ---------------------------------------------------- */
-   /* --- end of the SSE decoder.                      --- */
+   /* --- end of the SSE/SSE2 decoder.                 --- */
    /* ---------------------------------------------------- */
+
+   after_sse_decoders:
 
    /* Get the primary opcode. */
    opc = getIByte(delta); delta++;
@@ -12732,15 +11568,31 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
       case 0xA2: { /* CPUID */
          /* Uses dirty helper: 
-               void dirtyhelper_CPUID ( VexGuestX86State* )
+               void dirtyhelper_CPUID_sse[012] ( VexGuestX86State* )
             declared to mod eax, wr ebx, ecx, edx
          */
-         IRDirty* d = unsafeIRDirty_0_N ( 
-                         0/*regparms*/, 
-                         "x86g_dirtyhelper_CPUID", 
-                         &x86g_dirtyhelper_CPUID, 
-                         mkIRExprVec_0()
-                      );
+         IRDirty* d     = NULL;
+         HChar*   fName = NULL;
+         void*    fAddr = NULL;
+         switch (subarch) {
+            case VexSubArchX86_sse0:
+               fName = "x86g_dirtyhelper_CPUID_sse0";
+               fAddr = &x86g_dirtyhelper_CPUID_sse0; 
+               break;
+            case VexSubArchX86_sse1:
+               fName = "x86g_dirtyhelper_CPUID_sse1";
+               fAddr = &x86g_dirtyhelper_CPUID_sse1; 
+               break;
+            case VexSubArchX86_sse2:
+               fName = "x86g_dirtyhelper_CPUID_sse2";
+               fAddr = &x86g_dirtyhelper_CPUID_sse2; 
+               break;
+            default:
+               vpanic("disInstr(x86)(cpuid)");
+         }
+         vassert(fName); vassert(fAddr);
+         d = unsafeIRDirty_0_N ( 0/*regparms*/, 
+                                 fName, fAddr, mkIRExprVec_0() );
          /* declare guest state effects */
          d->needsBBP = True;
          d->nFxState = 4;
@@ -13110,22 +11962,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    whatNext = Dis_StopHere;
    *size = 0;
    return whatNext;
-
-   /* Print address of failing instruction. */
-   //VG_(describe_eip)((Addr)eip_start, loc_buf, M_VG_ERRTXT);
-   //VG_(printf)("          at %s\n", loc_buf);
-
-   //uInstr0(cb, CALLM_S, 0);
-   //uInstr1(cb, CALLM,   0, Lit16, 
-   //            VGOFF_(helper_undefined_instruction));
-   //uInstr0(cb, CALLM_E, 0);
-
-   /* just because everything else insists the last instruction of
-      a BB is a jmp */
-   //jmp_lit(cb, eip);
-   //whatNext = Dis_StopHere;
-   //break;
-   //return eip;
 
    } /* switch (opc) for the main (primary) opcode switch. */
 

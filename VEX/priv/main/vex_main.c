@@ -193,10 +193,10 @@ TranslateResult LibVEX_Translate (
    HInstr*      (*genReload)   ( HReg, Int );
    void         (*ppInstr)     ( HInstr* );
    void         (*ppReg)       ( HReg );
-   HInstrArray* (*iselBB)      ( IRBB* );
+   HInstrArray* (*iselBB)      ( IRBB*, VexSubArch );
    IRBB*        (*bbToIR)      ( UChar*, Addr64, Int*, 
                                  Bool(*)(Addr64), 
-                                 Bool(*)(Addr64), Bool );
+                                 Bool(*)(Addr64), Bool, VexSubArch );
    Int          (*emit)        ( UChar*, Int, HInstr* );
    IRExpr*      (*specHelper)  ( Char*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
@@ -254,6 +254,9 @@ TranslateResult LibVEX_Translate (
          emit        = (Int(*)(UChar*,Int,HInstr*)) emit_X86Instr;
 	 host_is_bigendian = False;
          host_word_type    = Ity_I32;
+         vassert(subarch_host == VexSubArchX86_sse0
+                 || subarch_host == VexSubArchX86_sse1
+                 || subarch_host == VexSubArchX86_sse2);
          break;
 
       default:
@@ -270,6 +273,9 @@ TranslateResult LibVEX_Translate (
          guest_sizeB      = sizeof(VexGuestX86State);
          guest_word_type  = Ity_I32;
          guest_layout     = &x86guest_layout;
+         vassert(subarch_guest == VexSubArchX86_sse0
+                 || subarch_guest == VexSubArchX86_sse1
+                 || subarch_guest == VexSubArchX86_sse2);
          break;
 
       case VexArchARM:
@@ -285,6 +291,13 @@ TranslateResult LibVEX_Translate (
          vpanic("LibVEX_Translate: unsupported guest insn set");
    }
 
+   /* yet more sanity checks ... */
+   if (arch_guest == VexArchX86 && arch_host == VexArchX86) {
+      /* doesn't necessarily have to be true, but if it isn't it means
+         we are simulating one flavour of x86 on a different one, which
+         is pretty strange. */
+      vassert(subarch_guest == subarch_host);
+   }
 
    if (vex_traceflags & VEX_TRACE_FE)
       vex_printf("\n------------------------" 
@@ -296,7 +309,8 @@ TranslateResult LibVEX_Translate (
 		   guest_bytes_read,
 		   byte_accessible,
                    chase_into_ok,
-		   host_is_bigendian );
+		   host_is_bigendian,
+                   subarch_guest );
 
    if (irbb == NULL) {
       /* Access failure. */
@@ -384,7 +398,7 @@ TranslateResult LibVEX_Translate (
                    " Instruction selection "
                    "------------------------\n");
 
-   vcode = iselBB ( irbb );
+   vcode = iselBB ( irbb, subarch_host );
 
    if (vex_traceflags & VEX_TRACE_VCODE)
       vex_printf("\n");

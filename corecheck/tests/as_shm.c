@@ -18,14 +18,14 @@ int main()
 	if (addr == (void *)-1)
 		perror("shmat @ 0");
 	else
-		printf("shmat 0: addr=%p\n", addr);
+		printf("shmat 0: addr=...\n");
 
 	addr = shmat(shmid, top, 0);
 
 	if (addr == (void *)-1)
 		perror("shmat @ top");
 	else
-		printf("shmat 2: addr=%p\n", addr);
+		printf("shmat 2: addr=...\n");
 
 	shmctl(shmid, IPC_RMID, NULL);
 

@@ -4,27 +4,27 @@
 # startup stuff and pid numbers.
 
 # Remove ==pid== and --pid-- and ++pid++ and **pid** strings 
-sed "s/\(==\|--\|\+\+\|\*\*\)[0-9]\{1,5\}\1 //"                            |
+sed -E "s/(==|--|\+\+|\*\*)[0-9]{1,5}(==|--|\+\+|\*\*) //"             |
 
 # Remove "<name>, a <description> for x86-linux." line and the following
 # copyright notice line.  Works for skin and core intro lines.
 sed "/^.*, .* for x86-linux\./ , /./ d"                                | 
 
 # Remove other introductory lines
-sed "/Estimated CPU clock rate is [0-9]\+ MHz/d"                       |
+sed "/Estimated CPU clock rate is [0-9]* MHz/d"                       |
 sed "/For more details, rerun with: -v/d"                              |
 
 # Anonymise line numbers in vg_replace_malloc.c
-sed "s/vg_replace_malloc.c:[0-9]\+/vg_replace_malloc.c:.../"           |
+sed "s/vg_replace_malloc.c:[0-9]*/vg_replace_malloc.c:.../"           |
 
 # Anonymise vg_intercept lines
-sed "s/vg_intercept.c:[0-9]\+/vg_intercept.c:.../"                     |
+sed "s/vg_intercept.c:[0-9]*/vg_intercept.c:.../"                     |
 
 # Anonymise vg_libpthread lines
-sed "s/vg_libpthread.c:[0-9]\+/vg_libpthread.c:.../"                   |
+sed "s/vg_libpthread.c:[0-9]*/vg_libpthread.c:.../"                   |
 
 # Hide suppressed error counts
-sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]\+\( from \)[0-9]\+)$/\10\20)/" |
+sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]*\( from \)[0-9]*)$/\10\20)/" |
 
 
 # Reduce some libc incompatibility

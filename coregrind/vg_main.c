@@ -413,10 +413,10 @@ static void vg_init_baseBlock ( void )
 
 /* The stack on which Valgrind runs.  We can't use the same stack as
    the simulatee -- that's an important design decision.  */
-UInt VG_(stack)[10000];
+UInt VG_(stack)[VG_STACK_SIZE];
 
 /* Ditto our signal delivery stack. */
-UInt VG_(sigstack)[10000];
+UInt VG_(sigstack)[VG_SIGSTACK_SIZE];
 
 /* Saving stuff across system calls. */
 __attribute__ ((aligned (16)))
@@ -1422,8 +1422,9 @@ void VG_(main) ( void )
 
    /* Set up our stack sanity-check words. */
    for (i = 0; i < 10; i++) {
-      VG_(stack)[i]         = (UInt)(&VG_(stack)[i])         ^ 0xA4B3C2D1;
-      VG_(stack)[10000-1-i] = (UInt)(&VG_(stack)[10000-i-1]) ^ 0xABCD4321;
+      VG_(stack)[i] = (UInt)(&VG_(stack)[i])                 ^ 0xA4B3C2D1;
+      VG_(stack)[VG_STACK_SIZE-1-i] 
+                    = (UInt)(&VG_(stack)[VG_STACK_SIZE-i-1]) ^ 0xABCD4321;
    }
 
    /* Read /proc/self/maps into a buffer.  Must be before:
@@ -1810,8 +1811,8 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
    for (i = 0; i < 10; i++) {
       vg_assert(VG_(stack)[i]
                 == ((UInt)(&VG_(stack)[i]) ^ 0xA4B3C2D1));
-      vg_assert(VG_(stack)[10000-1-i] 
-                == ((UInt)(&VG_(stack)[10000-i-1]) ^ 0xABCD4321));
+      vg_assert(VG_(stack)[VG_STACK_SIZE-1-i] 
+                == ((UInt)(&VG_(stack)[VG_STACK_SIZE-i-1]) ^ 0xABCD4321));
    }
 
    /* Check stuff pertaining to the memory check system. */

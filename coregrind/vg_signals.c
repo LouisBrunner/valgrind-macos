@@ -1324,9 +1324,9 @@ void vg_oursignalhandler ( Int sigNo )
    /* Sanity check.  Ensure we're really running on the signal stack
       we asked for. */
    if ( !(
-            ((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&dummy_local))
-            &&
-            ((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[10000])))
+          ((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&dummy_local))
+          &&
+          ((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[VG_SIGSTACK_SIZE])))
          )
         ) {
      VG_(message)(Vg_DebugMsg, 
@@ -1341,7 +1341,7 @@ void vg_oursignalhandler ( Int sigNo )
    }
 
    vg_assert((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&dummy_local));
-   vg_assert((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[10000])));
+   vg_assert((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[VG_SIGSTACK_SIZE])));
 
    VG_(block_all_host_signals)( &saved_procmask );
 
@@ -1493,10 +1493,9 @@ void VG_(sigstartup_actions) ( void )
       vg_dcss.dcss_destthread[i] = VG_INVALID_THREADID;
    }
 
-   /* Register an alternative stack for our own signal handler to run
-      on. */
+   /* Register an alternative stack for our own signal handler to run on. */
    altstack_info.ss_sp = &(VG_(sigstack)[0]);
-   altstack_info.ss_size = 10000 * sizeof(UInt);
+   altstack_info.ss_size = VG_SIGSTACK_SIZE * sizeof(UInt);
    altstack_info.ss_flags = 0;
    ret = VG_(ksigaltstack)(&altstack_info, NULL);
    if (ret != 0) {

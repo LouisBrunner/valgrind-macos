@@ -1317,10 +1317,10 @@ void addrcheck_new_mem_heap ( Addr a, UInt len, Bool is_inited )
 
 static
 void addrcheck_set_perms (Addr a, UInt len, 
-                         Bool nn, Bool rr, Bool ww, Bool xx)
+                         Bool rr, Bool ww, Bool xx)
 {
-   DEBUG("addrcheck_set_perms(%p, %u, nn=%u, rr=%u ww=%u, xx=%u)\n",
-                              a, len, nn, rr, ww, xx);
+   DEBUG("addrcheck_set_perms(%p, %u, rr=%u ww=%u, xx=%u)\n",
+                              a, len, rr, ww, xx);
    if (rr || ww || xx) {
       SK_(make_accessible)(a, len);
    } else {

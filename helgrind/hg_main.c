@@ -915,7 +915,7 @@ void eraser_new_mem_heap ( Addr a, UInt len, Bool is_inited )
 
 static
 void eraser_set_perms (Addr a, UInt len,
-                       Bool nn, Bool rr, Bool ww, Bool xx)
+                       Bool rr, Bool ww, Bool xx)
 {
    if      (rr) make_readable(a, len);
    else if (ww) make_writable(a, len);
@@ -1916,7 +1916,7 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    track->new_mem_stack_aligned = & make_writable_aligned;
    track->new_mem_stack_signal  = & make_writable;
    track->new_mem_brk           = & make_writable;
-   track->new_mem_mmap          = & eraser_set_perms;
+   track->new_mem_mmap          = & eraser_new_mem_startup;
 
    track->copy_mem_heap         = & copy_address_range_state;
    track->change_mem_mprotect   = & eraser_set_perms;

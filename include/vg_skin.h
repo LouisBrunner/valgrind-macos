@@ -1277,13 +1277,11 @@ typedef
       void (*new_mem_stack_aligned) ( Addr a, UInt len );
       void (*new_mem_stack_signal)  ( Addr a, UInt len );
       void (*new_mem_brk)    ( Addr a, UInt len );
-      void (*new_mem_mmap)   ( Addr a, UInt len, 
-                               Bool nn, Bool rr, Bool ww, Bool xx );
+      void (*new_mem_mmap)   ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
 
       void (*copy_mem_heap)  ( Addr from, Addr to, UInt len );
       void (*copy_mem_remap) ( Addr from, Addr to, UInt len );
-      void (*change_mem_mprotect) ( Addr a, UInt len,  
-                                    Bool nn, Bool rr, Bool ww, Bool xx );
+      void (*change_mem_mprotect) ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
       
       /* Used on redzones around malloc'd blocks and at end of stack */
       void (*ban_mem_heap)   ( Addr a, UInt len );

@@ -889,10 +889,10 @@ void memcheck_new_mem_heap ( Addr a, UInt len, Bool is_inited )
 
 static
 void memcheck_set_perms (Addr a, UInt len, 
-                         Bool nn, Bool rr, Bool ww, Bool xx)
+                         Bool rr, Bool ww, Bool xx)
 {
-   DEBUG("memcheck_set_perms(%p, %u, nn=%u, rr=%u ww=%u, xx=%u)\n",
-                             a, len, nn, rr, ww, xx);
+   DEBUG("memcheck_set_perms(%p, %u, rr=%u ww=%u, xx=%u)\n",
+                             a, len, rr, ww, xx);
    if      (rr) SK_(make_readable)(a, len);
    else if (ww) SK_(make_writable)(a, len);
    else         SK_(make_noaccess)(a, len);

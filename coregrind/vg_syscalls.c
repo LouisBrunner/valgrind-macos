@@ -83,18 +83,17 @@ void mash_addr_and_len( Addr* a, UInt* len)
 static
 void mmap_segment ( Addr a, UInt len, UInt prot, Int fd )
 {
-   Bool nn, rr, ww, xx;
+   Bool rr, ww, xx;
 
    /* Records segment, reads debug symbols if necessary */
    if ((prot & PROT_EXEC) && fd != -1)
       VG_(new_exe_segment) ( a, len );
 
-   nn = False; /* PROT_NONE == 0; was = prot & PROT_NONE. */
    rr = prot & PROT_READ;
    ww = prot & PROT_WRITE;
    xx = prot & PROT_EXEC;
 
-   VG_TRACK( new_mem_mmap, a, len, nn, rr, ww, xx );
+   VG_TRACK( new_mem_mmap, a, len, rr, ww, xx );
 }
 
 static
@@ -123,8 +122,8 @@ void munmap_segment ( Addr a, UInt len )
 static 
 void mprotect_segment ( Addr a, UInt len, Int prot )
 {
-   Bool nn, rr, ww, xx;
-   nn = prot & PROT_NONE;
+   Bool rr, ww, xx;
+
    rr = prot & PROT_READ;
    ww = prot & PROT_WRITE;
    xx = prot & PROT_EXEC;
@@ -133,7 +132,7 @@ void mprotect_segment ( Addr a, UInt len, Int prot )
    // if adding, should check and add to exe_seg list
    // easier to ignore both cases -- both v. unlikely?
    mash_addr_and_len(&a, &len);
-   VG_TRACK( change_mem_mprotect, a, len, nn, rr, ww, xx );
+   VG_TRACK( change_mem_mprotect, a, len, rr, ww, xx );
 }
 
 static 
@@ -162,7 +161,7 @@ void mremap_segment ( old_addr, old_size, new_addr, new_size )
       // what should the permissions on the new extended part be??
       // using 'rwx'
       VG_TRACK( new_mem_mmap,   new_addr+old_size, new_size-old_size,
-                                False, True, True, True );
+                                True, True, True );
    }
 }
 
@@ -1778,7 +1777,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                      if ( segmentSize > 0 ) {
                         /* we don't distinguish whether it's read-only or
                          * read-write -- it doesn't matter really. */
-                        VG_TRACK( new_mem_mmap, addr, segmentSize, False, True, True, False );
+                        VG_TRACK( new_mem_mmap, addr, segmentSize, True, True, False );
                      }
                   }
                   break;

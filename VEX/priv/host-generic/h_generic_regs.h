@@ -144,7 +144,7 @@ typedef
    This can get quite large, but we don't expect to allocate them
    dynamically, so there's no problem. 
 */
-#define N_HREG_USAGE 11
+#define N_HREG_USAGE 25
 
 typedef
    struct {

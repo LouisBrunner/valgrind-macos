@@ -5,7 +5,7 @@ Release: 1
 Copyright: GPL
 Group: Development/Debuggers
 Packager: Frederic Gobry  <frederic.gobry@smartdata.ch>
-Source: @PACKAGE@-@VERSION@.tar.gz
+Source: @PACKAGE@-@VERSION@.tar.bz2
 
 Buildroot: %{_tmppath}/@PACKAGE@
 
@@ -40,6 +40,8 @@ make install prefix=$RPM_BUILD_ROOT/usr
 %defattr(-,root,root)
 /usr/include/valgrind.h
 /usr/bin/valgrind
+/usr/bin/cachegrind
+/usr/bin/vg_annotate
 /usr/lib/valgrind/*
 
 %doc

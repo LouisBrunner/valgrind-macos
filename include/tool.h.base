@@ -816,7 +816,8 @@ typedef
    VgHashNode**
    VgHashTable;
 
-/* Make a new table. */
+/* Make a new table.  Allocates the memory with VG_(calloc)(), so can be freed
+ * with VG_(free)(). */
 extern VgHashTable VG_(HT_construct) ( void );
 
 /* Count the number of nodes in a table. */

@@ -1760,10 +1760,13 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
       Segment *seg;
 
       seg = VG_(find_segment)(fault);
-      if (seg != NULL)
-	 seg = VG_(next_segment)(seg);
-      else 
-         seg = VG_(first_segment)();
+      if (seg == NULL)
+         seg = VG_(find_segment_above_unmapped)(fault);
+
+      //      if (seg != NULL)
+      // seg = VG_(next_segment)(seg);
+      //else 
+      //   seg = VG_(first_segment)();
 
       if (VG_(clo_trace_signals)) {
 	 if (seg == NULL)

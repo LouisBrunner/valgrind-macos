@@ -847,20 +847,22 @@ void buf_and_len_post_check( ThreadId tid, Int res,
 static Addr do_brk(Addr newbrk)
 {
    Addr ret = VG_(brk_limit);
-   static const Bool debug = False;
+   static const Bool debug = True; //False;
    Segment *seg;
    Addr current, newaddr;
 
 
    if (debug)
-      VG_(printf)("do_brk: brk_base=%p brk_limit=%p newbrk=%p\n",
+      VG_(printf)("\ndo_brk: brk_base=%p brk_limit=%p newbrk=%p\n",
 		  VG_(brk_base), VG_(brk_limit), newbrk);
+
+   show_segments("in_brk");
 
    if (newbrk < VG_(brk_base) || newbrk >= VG_(client_end))
       return VG_(brk_limit);
 
    /* brk isn't allowed to grow over anything else */
-   seg = VG_(find_segment)(VG_(brk_limit));
+   seg = VG_(find_segment)(VG_(brk_limit) -1);
 
    vg_assert(seg != NULL);
 
@@ -869,7 +871,8 @@ static Addr do_brk(Addr newbrk)
 		  VG_(brk_limit), seg->addr, seg->addr+seg->len);
    vg_assert(VG_(brk_limit) >= seg->addr && VG_(brk_limit) <= (seg->addr + seg->len));
 
-   seg = VG_(next_segment)(seg);
+   seg = VG_(find_segment_above_mapped)(VG_(brk_limit)-1); //VG_(next_segment)(seg);
+   if (seg) VG_(printf)("NEXT addr = %p\n", seg->addr);
    if (seg != NULL && newbrk > seg->addr)
       return VG_(brk_limit);
 

@@ -1300,7 +1300,17 @@ extern void VG_(unmap_range)   (Addr addr, SizeT len);
 extern void VG_(mprotect_range)(Addr addr, SizeT len, UInt prot);
 extern Addr VG_(find_map_space)(Addr base, SizeT len, Bool for_client);
 
+/* Find the segment containing a, or NULL if none. */
 extern Segment *VG_(find_segment)(Addr a);
+
+/* a is an unmapped address (is checked).  Find the next segment 
+   along in the address space, or NULL if none. */
+extern Segment *VG_(find_segment_above_unmapped)(Addr a);
+
+/* a is a mapped address (in a segment, is checked).  Find the
+   next segment along. */
+extern Segment *VG_(find_segment_above_mapped)(Addr a);
+
 extern Segment *VG_(first_segment)(void);
 extern Segment *VG_(next_segment)(Segment *);
 

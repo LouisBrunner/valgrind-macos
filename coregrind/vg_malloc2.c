@@ -448,7 +448,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
 {
    // The extra VG_MIN_MALLOC_SZB bytes are for possible alignment up.
    static UByte bootstrap_superblock[CORE_ARENA_MIN_SZB+VG_MIN_MALLOC_SZB];
-   static Bool  called_before = False;
+   static Bool  called_before = True; //False;
    Superblock* sb;
 
    // Take into account admin bytes in the Superblock.

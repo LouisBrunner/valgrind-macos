@@ -13,6 +13,7 @@ dastest
 discard
 exec-sigmask
 execve
+fcntl_setown
 floored
 fork
 fpu_lazy_eflags

@@ -546,6 +546,12 @@ struct vki_timeval {
 #define VKI_F_SETFD	    2	    /* set/clear close_on_exec */
 #define VKI_F_GETFL         3       /* get file->f_flags */
 #define VKI_F_SETFL         4       /* set file->f_flags */
+#define VKI_F_GETLK         5
+#define VKI_F_SETLK         6
+#define VKI_F_SETLKW        7
+#define VKI_F_GETLK64       12      /*  using 'struct flock64' */
+#define VKI_F_SETLK64       13
+#define VKI_F_SETLKW64      14
 
 /* for F_[GET|SET]FL */
 #define VKI_FD_CLOEXEC	    1	    /* actually anything with low bit set goes */

@@ -2117,6 +2117,8 @@ PRE(fcntl)
 {
    /* int fcntl(int fd, int cmd, int arg); */
    MAYBE_PRINTF("fcntl ( %d, %d, %d )\n",arg1,arg2,arg3);
+   if (arg2 == VKI_F_SETLKW)
+      tst->sys_flags |= MayBlock;
 }
 
 POST(fcntl)
@@ -2156,6 +2158,8 @@ PRE(fcntl64)
 {
    /* int fcntl64(int fd, int cmd, int arg); */
    MAYBE_PRINTF("fcntl64 ( %d, %d, %d )\n", arg1,arg2,arg3);
+   if (arg2 == VKI_F_SETLKW || arg2 == VKI_F_SETLKW64)
+      tst->sys_flags |= MayBlock;
 }
 
 POST(fcntl64)
@@ -5644,12 +5648,12 @@ static const struct sys_info sys_info[] = {
    SYSBA(close,			0),
    SYSBA(dup,			0),
    SYSBA(dup2,			0),
-   SYSBA(fcntl,			MayBlock),
+   SYSBA(fcntl,			0),
    SYSB_(fchdir,		0),
    SYSB_(fchown32,		0),
    SYSB_(fchown,		0),
    SYSB_(fchmod,		0),
-   SYSBA(fcntl64,		MayBlock),
+   SYSBA(fcntl64,		0),
    SYSBA(fstat,			0),
    SYSBA(fork,			0),
    SYSB_(fsync,			MayBlock),

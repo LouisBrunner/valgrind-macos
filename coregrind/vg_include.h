@@ -274,6 +274,9 @@ extern Bool VG_(clo_show_below_main);
    client address space bounds */
 extern Bool VG_(clo_pointercheck);
 
+/* Set up the libc freeres wrapper */
+extern void VG_(intercept_libc_freeres_wrapper)(Addr);
+
 /* ---------------------------------------------------------------------
    Debugging and profiling stuff
    ------------------------------------------------------------------ */
@@ -480,7 +483,6 @@ extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
 
 /* Denote the finish of VG_(__libc_freeres_wrapper). */
 #define VG_USERREQ__LIBC_FREERES_DONE       0x3029
-#define VG_USERREQ__REGISTER_LIBC_FREERES   0x302A
 
 /* Allocate RT signals */
 #define VG_USERREQ__GET_SIGRT_MIN	    0x302B
@@ -489,10 +491,6 @@ extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
 
 /* Hook for replace_malloc.o to get malloc functions */
 #define VG_USERREQ__GET_MALLOCFUNCS	    0x3030
-
-/* Hook for interface to vg_inject.so */
-#define VG_USERREQ__REGISTER_REDIRECT_SYM   0x3031
-#define VG_USERREQ__REGISTER_REDIRECT_ADDR  0x3032
 
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
@@ -507,6 +505,16 @@ extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
 In vg_constants.h:
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 */
+
+#define VG_INTERCEPT_PREFIX "_vgi__"
+#define VG_INTERCEPT_PREFIX_LEN 6
+#define VG_INTERCEPT(name) _vgi__##name
+#define VG_INTERCEPT_ALIAS(name) "_vgi__" #name
+
+#define VG_WRAPPER_PREFIX "_vgw__"
+#define VG_WRAPPER_PREFIX_LEN 6
+#define VG_WRAPPER(name) _vgw__##name
+#define VG_WRAPPER_ALIAS(name) "_vgw__" #name
 
 
 struct vg_mallocfunc_info {

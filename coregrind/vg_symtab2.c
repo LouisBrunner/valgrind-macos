@@ -34,6 +34,8 @@
 
 #include <elf.h>          /* ELF defns                      */
 
+static Bool
+VG_(intercept_demangle)(const Char*, Char*, Int);
 
 /* Majorly rewritten Sun 3 Feb 02 to enable loading symbols from
    dlopen()ed libraries, which is something that KDE3 does a lot.
@@ -441,6 +443,17 @@ static RiSym *prefersym(RiSym *a, RiSym *b)
       lenb = lt;
    }
 
+   /* Ugh.  If we get a "free", always choose it.  This is because
+      normally, this function would choose "cfree" over free.  cfree is
+      an alias for free.  If there's any more symbols like this, we may
+      want to consider making this mechanism more generic.
+    */
+   if(VG_(strcmp)(a->name, "free") == 0)
+       return a;
+
+   if(VG_(strcmp)(b->name, "free") == 0)
+       return b;
+
    for(i = pfx = 0; i < sizeof(prefixes)/sizeof(*prefixes); i++) {
       Int pfxlen = prefixes[i].len;
 
@@ -470,6 +483,18 @@ void canonicaliseSymtab ( SegInfo* si )
       return;
 
    VG_(ssort)(si->symtab, si->symtab_used, sizeof(*si->symtab), compare_RiSym);
+
+   for (i = 0; i < si->symtab_used; i++) {
+      if(VG_(strncmp)(si->symtab[i].name, VG_INTERCEPT_PREFIX,
+                      VG_INTERCEPT_PREFIX_LEN) == 0) {
+         int len = VG_(strlen)(si->symtab[i].name);
+         char *buf = VG_(malloc)(len), *colon;
+         VG_(intercept_demangle)(si->symtab[i].name, buf, len);
+	 colon = buf + VG_(strlen)(buf) - 1;
+	 while(*colon != ':') colon--;
+	 VG_(strncpy_safely)(si->symtab[i].name, colon+1, len);
+      }
+   }
 
   cleanup_more:
  
@@ -746,9 +771,85 @@ Bool VG_(is_object_file)(const void *buf)
    return False;
 }
 
+/*
+ * Demangle an intercept symbol into library:func form
+ */
+
+static Bool
+VG_(intercept_demangle)(const Char* symbol, Char* result, Int nbytes)
+{
+   int i, j = 0;
+   int len = VG_(strlen)(symbol);
+
+   for(i = VG_INTERCEPT_PREFIX_LEN; i < len; i++) {
+      if(symbol[i] == '$') {
+         i++;
+         if(symbol[i] == '$') {
+            result[j] = '$';
+         } else if((symbol[i] >= '0' && symbol[i] <= '9') ||
+                   (symbol[i] >= 'a' && symbol[i] <= 'f') ||
+                   (symbol[i] >= 'A' && symbol[i] <= 'F')) {
+            int x = symbol[i++];
+            int y = symbol[i];
+            if(x >= '0' && x <= '9') {
+               x -= '0';
+            } else if(x >= 'a' && x <= 'f') {
+               x -= 'a';
+            } else if(x >= 'A' && x <= 'F') {
+               x -= 'A';
+            }
+            if(y >= '0' && y <= '9') {
+               y -= '0';
+            } else if(y >= 'a' && y <= 'f') {
+               y = y - 'a' + 10;
+            } else if(y >= 'A' && y <= 'F') {
+               y = y - 'A' + 10;
+            } else {
+               return False;
+            }
+            result[j] = (x << 4) | y;
+         } else {
+            return False;
+         }
+      } else {
+         result[j] = symbol[i];
+      }
+      if(j >= nbytes) {
+         result[j] = '\0';
+         return True;
+      }
+      j++;
+   }
+   result[j] = '\0';
+   return True;
+}
+
+static
+void handle_intercept( SegInfo* si, Char* symbol, Elf32_Sym* sym)
+{
+   int len = VG_(strlen)(symbol) + 1 - VG_INTERCEPT_PREFIX_LEN;
+   char *lib = VG_(malloc)(len);
+   Char *func;
+
+   VG_(intercept_demangle)(symbol, lib, len);
+   func = lib + VG_(strlen)(lib)-1;
+
+   while(*func != ':') func--;
+   *func = '\0';
+
+   VG_(add_redirect_addr)(lib, func+1, si->offset + sym->st_value);
+   VG_(free)(lib);
+}
+
+static
+void handle_wrapper( SegInfo* si, Char* symbol, Elf32_Sym* sym)
+{
+   VG_(intercept_libc_freeres_wrapper)((Addr)(si->offset + sym->st_value));
+}
+
 /* Read a symbol table (normal or dynamic) */
 static
-void read_symtab( SegInfo* si, Char* tab_name,
+void read_symtab( SegInfo* si, Char* tab_name, Bool do_intercepts,
                   Elf32_Sym* o_symtab, UInt o_symtab_sz,
                   UChar*     o_strtab, UInt o_strtab_sz )
 {
@@ -804,6 +905,22 @@ void read_symtab( SegInfo* si, Char* tab_name,
             : (Char*)"NONAME" ) ); 
       }               
 #     endif
+
+      /*
+       * Is this symbol a magic valgrind-intercept symbol?  If so,
+       * hand this off to the interceptinator.
+       */
+      if (do_intercepts) {
+         if (VG_(strncmp)((Char*)o_strtab+sym->st_name,
+                          VG_INTERCEPT_PREFIX,
+			  VG_INTERCEPT_PREFIX_LEN) == 0) {
+           handle_intercept(si, (Char*)o_strtab+sym->st_name, sym);
+         } else if (VG_(strncmp)((Char*)o_strtab+sym->st_name,
+                                 VG_WRAPPER_PREFIX,
+				 VG_WRAPPER_PREFIX_LEN) == 0) {
+           handle_wrapper(si, (Char*)o_strtab+sym->st_name, sym);
+         }
+      }
 
       /* Figure out if we're interested in the symbol.
          Firstly, is it of the right flavour?  */
@@ -1143,11 +1260,11 @@ Bool vg_read_lib_symbols ( SegInfo* si )
          vg_assert((o_symtab_sz % sizeof(Elf32_Sym)) == 0);
       }
 
-      read_symtab(si, "symbol table", 
+      read_symtab(si, "symbol table", False,
                   o_symtab, o_symtab_sz,
                   o_strtab, o_strtab_sz);
 
-      read_symtab(si, "dynamic symbol table",
+      read_symtab(si, "dynamic symbol table", True,
                   o_dynsym, o_dynsym_sz,
                   o_dynstr, o_dynstr_sz);
 

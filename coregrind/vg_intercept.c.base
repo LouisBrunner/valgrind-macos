@@ -34,42 +34,82 @@
    ALL THE CODE IN THIS FILE RUNS ON THE SIMULATED CPU.  It is
    intended for various reasons as drop-in replacements for libc
    functions.  These functions are not called directly - they're the
-   targets of code redirection.  They're named the same as the library
-   functions they replace so that messages printing their names are
-   sensible, but the we don't really require the dynamic linker to find
-   them.
+   targets of code redirection.  They're named weirdly so that the
+   intercept code can find them when the shared object is initially
+   loaded.
    ------------------------------------------------------------------ */
+
+/*
+   The gory details: Symbols in this file are mangled by a preprocessor
+   to produce a special symbol name.  All symbols that need this handling
+   should be passed to a special VG_INTERCEPT macro.  This macro takes
+   two arguments: a library name and a function name.  These specify the
+   function and the library that contains it that we need to intercept.
+   For example:
+   
+     int VG_INTERCEPT(soname:libc.so.6, raise)(int sig) { ... }
+
+   This example says that the "raise" function in the shared object
+   libc.so.6 should be intercepted and redirected to the following piece
+   of code.
+
+   Internally, what's happening here is that this intercept gets turned
+   into a special magic symbol name, with the ':' and '.' parts replaced
+   by escapes, and a special prefix stuck on front.  When we slurp in
+   an object file, we scan the symbol table for the magic prefixes,
+   demangle any symbols found and set up the intercepts that way.
+
+   This is the safest way to do this, because we're not relying on
+   intercepts being set up by code that may be called after other code
+   that need the intercepts has had a chance to run.
+ */
 
 #include "valgrind.h"
 #include "vg_include.h"
 #include <unistd.h>
 #include <signal.h>
 
-static void init(void) __attribute__((constructor));
-static int init_done;
-
-int raise(int sig)
+int VG_INTERCEPT(soname:libc.so.6, raise)(int sig)
 {
-   if (!init_done)
-      init();
-
    return kill(getpid(), sig);
 }
-int __libc_raise(int) __attribute__((alias("raise"), visibility("protected")));
-int __GI_raise(int) __attribute__((alias("raise"), visibility("protected")));
+
+int VG_INTERCEPT(soname:libc.so.6, __libc_raise)(int)
+   __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, raise)),
+                  visibility("protected")));
+
+int VG_INTERCEPT(soname:libc.so.6, __GI_raise)(int)
+   __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, raise)),
+                  visibility("protected")));
+
+int VG_INTERCEPT(soname:libc.so.6, __raise)(int)
+   __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, raise)),
+                  visibility("protected")));
 
 /* Don't alias, so there's no chance that "gsignal" will appear in a
    message instead of "raise" */
-int gsignal(int sig)
+int VG_INTERCEPT(soname:libc.so.6, gsignal)(int sig)
 {
-   return raise(sig);
+   return VG_INTERCEPT(soname:libc.so.6, raise)(sig);
 }
+
+int VG_INTERCEPT(soname:libc.so.6, __libc_gsignal)(int)
+   __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, gsignal)),
+                  visibility("protected")));
+
+int VG_INTERCEPT(soname:libc.so.6, __GI_gsignal)(int)
+   __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, gsignal)),
+                  visibility("protected")));
+
+int VG_INTERCEPT(soname:libc.so.6, __gsignal)(int)
+   __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, gsignal)),
+                  visibility("protected")));
 
 /* ---------------------------------------------------------------------
    Hook for running __libc_freeres once the program exits.
    ------------------------------------------------------------------ */
 
-static void VGINJ_(__libc_freeres_wrapper)( void )
+void VG_WRAPPER(freeres)( void )
 {
    int res;
 #ifndef __UCLIBC__
@@ -81,44 +121,6 @@ static void VGINJ_(__libc_freeres_wrapper)( void )
    /*NOTREACHED*/
    *(int *)0 = 'x';
 }
-
-static const struct {
-   const char *fromlib, *fromsym;
-   const void *toaddr;
-} redirects[] = {
-#define _S(x)	#x
-#define S(x)	_S(x)
-#define E(l, pfx, s)	{ "soname:" l, pfx #s, (void *)s }
-#define R(l, s)						\
-   E(l, "", s),						\
-   E(l, "__", s),					\
-   E(l, "__libc_", s),					\
-   E(l, "__GI_", s)
-
-   R("libc.so.6", raise),
-   R("libc.so.6", gsignal),
-#undef R
-};
-
-static void init(void)
-{
-   int i;
-   int res;
-
-   if (init_done)
-      return;
-   init_done = 1;
-
-   VALGRIND_MAGIC_SEQUENCE(res, -1, VG_USERREQ__REGISTER_LIBC_FREERES,
-			   (Addr)VGINJ_(__libc_freeres_wrapper), 0, 0, 0);
-
-   for(i = 0; i < sizeof(redirects)/sizeof(*redirects); i++) {
-      VALGRIND_MAGIC_SEQUENCE(res, -1, VG_USERREQ__REGISTER_REDIRECT_ADDR,
-			      redirects[i].fromlib, redirects[i].fromsym,
-			      redirects[i].toaddr, 0);
-   }
-}
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                           vg_intercept.c ---*/

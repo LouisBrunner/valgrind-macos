@@ -27,7 +27,7 @@ EXTRA_DIST = \
 	vg_replace_malloc.c
 
 BUILT_SOURCES = vg_toolint.c vg_toolint.h
-CLEANFILES = vg_toolint.c vg_toolint.h
+CLEANFILES = vg_toolint.c vg_toolint.h vg_replace_malloc.c vg_intercept.c
 
 valgrind_SOURCES = \
 	stage1.c \
@@ -87,6 +87,14 @@ stage2_LDADD= \
 	demangle/dyn-string.o \
 	demangle/safe-ctype.o \
 	-ldl
+
+vg_intercept.c: $(srcdir)/gen_intercepts.pl vg_intercept.c.base
+	rm -f $@
+	$(PERL) $(srcdir)/gen_intercepts.pl < vg_intercept.c.base > $@
+
+vg_replace_malloc.c: $(srcdir)/gen_intercepts.pl vg_replace_malloc.c.base
+	rm -f $@
+	$(PERL) $(srcdir)/gen_intercepts.pl < vg_replace_malloc.c.base > $@
 
 vg_toolint.c: $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def $(srcdir)/Makefile
 	rm -f $@

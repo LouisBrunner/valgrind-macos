@@ -2849,6 +2849,10 @@ UInt VG_(get_exit_status_shadow) ( void )
    return VG_(get_shadow_archreg)(R_EBX);
 }
 
+void VG_(intercept_libc_freeres_wrapper)(Addr addr)
+{
+   VG_(__libc_freeres_wrapper) = addr;
+}
 
 /* ---------------------------------------------------------------------
    Handle client requests.
@@ -3149,11 +3153,6 @@ void do_client_request ( ThreadId tid )
             SET_CLREQ_RETVAL( tid, count );
          break; }
 
-      case VG_USERREQ__REGISTER_LIBC_FREERES:
-	 VG_(__libc_freeres_wrapper)	= arg[1];
-         SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
-	 break;
-
       case VG_USERREQ__GET_MALLOCFUNCS: {
 	 struct vg_mallocfunc_info *info = (struct vg_mallocfunc_info *)arg[1];
 
@@ -3174,18 +3173,6 @@ void do_client_request ( ThreadId tid )
 
          SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
 
-	 break;
-      }
-
-      case VG_USERREQ__REGISTER_REDIRECT_SYM: {
-	 VG_(add_redirect_sym)((const Char *)arg[1], (const Char *)arg[2],
-			       (const Char *)arg[3], (const Char *)arg[4]);
-	 break;
-      }
-
-      case VG_USERREQ__REGISTER_REDIRECT_ADDR: {
-	 VG_(add_redirect_addr)((const Char *)arg[1], (const Char *)arg[2],
-				(Addr)arg[3]);
 	 break;
       }
 

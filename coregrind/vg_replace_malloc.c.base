@@ -30,30 +30,38 @@
 */
 
 /* ---------------------------------------------------------------------
-   All the code in this file runs on the SIMULATED CPU.  It is
-   intended for various reasons as drop-in replacements for malloc()
-   and friends.  These functions have global visibility (obviously) and
-   have no prototypes in vg_include.h, since they are not intended to
-   be called from within Valgrind.
+   All the code in this file runs on the SIMULATED CPU.  It is intended
+   for various reasons as drop-in replacements for malloc() and friends.
+   These functions have global scope, but are not intended to be called
+   directly.  See the comments in coregrind/vg_intercept.c.base for the
+   gory details.
 
-   This file can be #included into a tool that wishes to know about
-   calls to malloc().  It should define functions SK_(malloc) et al
-   that will be called.
+   This file can be linked into the injected so file for any tool that
+   wishes to know about calls to malloc().  It should define functions
+   SK_(malloc) et al that will be called.
    ------------------------------------------------------------------ */
 
 #include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */
 #include "vg_include.h"
 #include "vg_skin.h"
 
-/* Create an alias */
-#define ALIAS(ret, name, args, toname)					\
-   ret name args __attribute__((alias(#toname), visibility("protected")))
-
-/* Declare a function, along with libc's various aliases */
-#define LIBALIAS(ret, name, args)		\
-	ALIAS(ret, __##name, args, name);	\
-	ALIAS(ret, __libc_##name, args, name);	\
-	ret name args
+#define LIBALIAS(ret, name, args) \
+   ret VG_INTERCEPT(soname:libstdc++*, __libc_##name) args \
+      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
+                     visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libc.so.6, __libc_##name) args \
+      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
+                     visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libstdc++*, __##name) args \
+      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
+                     visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libc.so.6, __##name) args \
+      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
+                     visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libstdc++*, ##name) args \
+      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
+                     visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libc.so.6, ##name) args
 
 /*------------------------------------------------------------*/
 /*--- Replacing malloc() et al                             ---*/
@@ -72,11 +80,7 @@ static void init(void) __attribute__((constructor));
    be found by the dynamic linker.  They get called because
    vg_replace_malloc installs a bunch of code redirects which causes
    Valgrind to use these functions rather than the ones they're
-   replacing.  That said, we certainly don't mind if the linker finds
-   them, because it makes our life easier with respect to startup
-   initialization order (we can't guarantee that our init routine will
-   necessarily be called early enough to do the redirects before
-   someone wants to allocate).
+   replacing.
 */
 
 #define MALLOC_TRACE(format, args...)  \
@@ -85,12 +89,12 @@ static void init(void) __attribute__((constructor));
 
 #define MAYBE_SLOPPIFY(n)           \
    if (info.clo_sloppy_malloc) {    \
-      n = (n+3) & ~3;		    \
+      n = (n+3) & ~3;               \
    }
 
 /* ALL calls to malloc() and friends wind up here. */
 #define ALLOC(fff, vgfff) \
-LIBALIAS(void *, fff, (Int n))			\
+LIBALIAS(void *, fff, (Int n)) \
 { \
    void* v; \
  \
@@ -116,7 +120,7 @@ ALLOC( _Znaj,               __builtin_vec_new );
 ALLOC( _ZnajRKSt9nothrow_t, __builtin_vec_new );
 
 #define FREE(fff, vgfff) \
-LIBALIAS(void, fff, (void *p))			\
+LIBALIAS(void, fff, (void *p)) \
 { \
    MALLOC_TRACE(#fff "(%p)", p ); \
    if (p == NULL)  \
@@ -125,6 +129,7 @@ LIBALIAS(void, fff, (void *p))			\
    (void)VALGRIND_NON_SIMD_CALL1( info.sk_##vgfff, p ); \
 }
 FREE( free,                 free                 );
+FREE( cfree,                free                 );
 FREE( __builtin_delete,     __builtin_delete     );
 FREE( _ZdlPv,               __builtin_delete     );
 FREE( __builtin_vec_delete, __builtin_vec_delete );
@@ -151,9 +156,9 @@ LIBALIAS(void*, realloc, ( void* ptrV, Int new_size ))
    MAYBE_SLOPPIFY(new_size);
 
    if (ptrV == NULL)
-      return malloc(new_size);
+      return VG_INTERCEPT(soname:libc.so.6, malloc)(new_size);
    if (new_size <= 0) {
-      free(ptrV);
+      VG_INTERCEPT(soname:libc.so.6, free)(ptrV);
       if (info.clo_trace_malloc) 
          VALGRIND_INTERNAL_PRINTF(" = 0" );
       return NULL;
@@ -181,18 +186,11 @@ LIBALIAS(void*, memalign, ( Int alignment, Int n ))
 
 LIBALIAS(void*, valloc, ( Int size ))
 {
-   return memalign(VKI_BYTES_PER_PAGE, size);
+   return VG_INTERCEPT(soname:libc.so.6, memalign)(VKI_BYTES_PER_PAGE, size);
 }
 
 
 /* Various compatibility wrapper functions, for glibc and libstdc++. */
-
-/* Don't just alias free, otherwise people could get confused seeing
-   cfree rather than free in error output */
-LIBALIAS(void, cfree, ( void* p ) )
-{
-   free(p);
-}
 
 LIBALIAS(int, mallopt, ( int cmd, int value ))
 {
@@ -210,7 +208,7 @@ LIBALIAS(int, posix_memalign, ( void **memptr, UInt alignment, UInt size ))
     if (alignment % sizeof (void *) != 0 || (alignment & (alignment - 1)) != 0)
        return VKI_EINVAL /*22*/ /*EINVAL*/;
 
-    mem = memalign (alignment, size);
+    mem = VG_INTERCEPT(soname:libc.so.6, memalign)(alignment, size);
 
     if (mem != NULL) {
        *memptr = mem;
@@ -230,7 +228,7 @@ LIBALIAS(int, malloc_usable_size, ( void* p ))
 
    if (!init_done) init();
    pszB = (Int)VALGRIND_NON_SIMD_CALL2( info.arena_payload_szB, 
-					VG_AR_CLIENT, p );
+                                        VG_AR_CLIENT, p );
    MALLOC_TRACE(" = %d", pszB );
 
    return pszB;
@@ -249,10 +247,10 @@ static void panic(const char *str)
    *(int *)0 = 'x';
 }
 
-#define PANIC(x)				\
-   void x(void)					\
-   {						\
-      panic(#x);				\
+#define PANIC(x) \
+   void VG_INTERCEPT(soname:libc.so.6, ## x)(void) \
+   { \
+      panic(#x); \
    }
 
 PANIC(pvalloc);
@@ -291,57 +289,10 @@ LIBALIAS(struct mallinfo, mallinfo, ( void ))
    return mi;
 }
 
-static const struct {
-   const Char *libname;
-   Addr		func;
-} replacements[] =
-{
-#define E(pfx, x)	{ pfx #x, (Addr)x }
-#define R(x)		E("", x), E("__libc_", x), E("__", x)
-
-   /* alloc */
-   R(malloc),
-   R(__builtin_new),
-   R(_Znwj),
-   R(_ZnwjRKSt9nothrow_t),	/* operator new(unsigned, std::nothrow_t const&) */
-   R(__builtin_vec_new),
-   R(_Znaj),
-   R(_ZnajRKSt9nothrow_t),	/* operator new[](unsigned, std::nothrow_t const& */
-   R(calloc),
-   R(realloc),
-   R(memalign),
-   R(valloc),
-   R(cfree),
-   R(posix_memalign),
-
-   /* free */
-   R(free),
-   R(__builtin_delete),
-   R(_ZdlPv),
-   R(__builtin_vec_delete),
-   R(_ZdaPv),
-
-   /* misc */
-   R(mallopt),
-   R(malloc_usable_size),
-   R(mallinfo),
-
-   /* bad */
-   R(pvalloc),
-   R(malloc_stats),
-   R(malloc_trim),
-   R(malloc_get_state),
-   R(malloc_set_state),   
-#undef R
-#undef S
-#undef E
-};
-
 /* All the code in here is unused until this function is called */
 
 static void init(void)
 {
-   int i;
    int res;
 
    if (init_done)
@@ -349,23 +300,8 @@ static void init(void)
 
    init_done = 1;
 
-   VALGRIND_MAGIC_SEQUENCE(res, -1, VG_USERREQ__GET_MALLOCFUNCS, &info, 0, 0, 0);
-
-   for(i = 0; i < sizeof(replacements)/sizeof(*replacements); i++) {
-#if 0
-      /* doesn't seem much point - ld-linux.so will have already used
-	 malloc/free before we run */
-      VALGRIND_MAGIC_SEQUENCE(res, 0, VG_USERREQ__REGISTER_REDIRECT_ADDR, 
-			      "soname:ld-linux.so.2", replacements[i].libname,
-			      replacements[i].func, 0);
-#endif
-      VALGRIND_MAGIC_SEQUENCE(res, 0, VG_USERREQ__REGISTER_REDIRECT_ADDR, 
-			      "soname:libc.so.6", replacements[i].libname,
-			      replacements[i].func, 0);
-      VALGRIND_MAGIC_SEQUENCE(res, 0, VG_USERREQ__REGISTER_REDIRECT_ADDR, 
-			      "soname:libstdc++*", replacements[i].libname,
-			      replacements[i].func, 0);
-   }
+   VALGRIND_MAGIC_SEQUENCE(res, -1, VG_USERREQ__GET_MALLOCFUNCS, &info,
+                           0, 0, 0);
 }
 
 /*--------------------------------------------------------------------*/

@@ -1377,7 +1377,7 @@ Bool uInstrMentionsTempReg ( UInstr* u, Int tempreg )
 /*------------------------------------------------------------*/
 
 static
-IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout )
+IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
    Int      i, j, minoff_ST, maxoff_ST;
    IRDirty  *dcall, *d;
@@ -1636,7 +1636,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    Int         orig_size, tmpbuf_used;
    Bool        notrace_until_done;
    UInt        notrace_until_limit = 0;
-   UInt        FULLTRACE_LIMIT = 1; //21068;
+   //UInt        FULLTRACE_LIMIT = 1; //21068;
    Segment     *seg;
 
    /* Make sure Vex is initialised right. */

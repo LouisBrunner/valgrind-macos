@@ -661,7 +661,7 @@ static void load_one_suppressions_file ( Char* filename )
    Char* supp_name;
 
    fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
-   if (fd == -1) {
+   if (fd < 0) {
       VG_(message)(Vg_UserMsg, "FATAL: can't open suppressions file `%s'", 
                    filename );
       VG_(exit)(1);

@@ -359,6 +359,7 @@ struct vki_ucontext {
 #define VKI_EWOULDBLOCK     VKI_EAGAIN  /* Operation would block */
 #define VKI_EAGAIN          11      /* Try again */
 #define	VKI_EFAULT          14      /* Bad address */
+#define VKI_EEXIST	    17	    /* File exists */
 #define VKI_EINVAL          22      /* Invalid argument */
 #define VKI_EMFILE	    24	    /* Too many open files */
 #define VKI_ENOSYS          38      /* Function not implemented */

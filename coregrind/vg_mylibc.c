@@ -1171,7 +1171,7 @@ Int VG_(open) ( const Char* pathname, Int flags, Int mode )
       ok: */
    fd = VG_(do_syscall)(__NR_open, (UInt)pathname, flags, mode);
    /* VG_(printf)("result = %d\n", fd); */
-   if (VG_(is_kerror)(fd)) fd = -1;
+   /* return -ve error code */
    return fd;
 }
 

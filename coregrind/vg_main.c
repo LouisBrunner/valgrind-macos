@@ -1161,22 +1161,39 @@ static void process_cmd_line_options ( void )
 
       case VgLogTo_File: {
          Char logfilename[1000];
+	 Int seq = 0;
+	 Int pid = VG_(getpid)();
+
          vg_assert(VG_(clo_logfile_name) != NULL);
          vg_assert(VG_(strlen)(VG_(clo_logfile_name)) <= 900); /* paranoia */
-         VG_(sprintf)(logfilename, "%s.pid%d",
-                      VG_(clo_logfile_name), VG_(getpid)() );
-         eventually_logfile_fd 
-            = VG_(open)(logfilename, VKI_O_CREAT|VKI_O_WRONLY, 
-                                     VKI_S_IRUSR|VKI_S_IWUSR);
-         if (eventually_logfile_fd != -1) {
-            VG_(clo_logfile_fd) = eventually_logfile_fd;
-         } else {
-            VG_(message)(Vg_UserMsg, 
-               "Can't create/open log file `%s.pid%d'; giving up!", 
-               VG_(clo_logfile_name), VG_(getpid)());
-            VG_(bad_option)(
-               "--logfile=<file> didn't work out for some reason.");
-         }
+
+	 for(;;) {
+	    if (seq == 0)
+	       VG_(sprintf)(logfilename, "%s.pid%d",
+			    VG_(clo_logfile_name), pid );
+	    else
+	       VG_(sprintf)(logfilename, "%s.pid%d.%d",
+			    VG_(clo_logfile_name), pid, seq );
+	    seq++;
+
+	    eventually_logfile_fd 
+	       = VG_(open)(logfilename, 
+			   VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
+			   VKI_S_IRUSR|VKI_S_IWUSR);
+	    if (eventually_logfile_fd >= 0) {
+	       VG_(clo_logfile_fd) = eventually_logfile_fd;
+	       break;
+	    } else {
+	       if (eventually_logfile_fd != -VKI_EEXIST) {
+		  VG_(message)(Vg_UserMsg, 
+			       "Can't create/open log file `%s.pid%d'; giving up!", 
+			       VG_(clo_logfile_name), pid);
+		  VG_(bad_option)(
+		     "--logfile=<file> didn't work out for some reason.");
+		  break;
+	       }
+	    }
+	 }
          break;
       }
 

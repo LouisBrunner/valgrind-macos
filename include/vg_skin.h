@@ -1489,6 +1489,9 @@ typedef
 /* Make a new table. */
 extern VgHashTable VG_(HT_construct) ( void );
 
+/* Count the number of nodes in a table. */
+extern Int VG_(HT_count_nodes) ( VgHashTable table );
+
 /* Add a node to the table. */
 extern void VG_(HT_add_node) ( VgHashTable t, VgHashNode* node );
 

@@ -2487,14 +2487,14 @@ Addr dis_fpu ( UCodeBlock* cb,
 
       case 0xDA:
          switch ((second_byte >> 3) & 7) {
-            case 0: /* FIADD */
-            case 1: /* FIMUL */
-            case 2: /* FICOM */
-            case 3: /* FICOMP */
-            case 4: /* FISUB */
-            case 5: /* FISUBR */
-            case 6: /* FIDIV */
-            case 7: /* FIDIVR */
+            case 0: /* FIADD dword-integer */
+            case 1: /* FIMUL dword-integer */
+            case 2: /* FICOM dword-integer */
+            case 3: /* FICOMP dword-integer */
+            case 4: /* FISUB dword-integer */
+            case 5: /* FISUBR dword-integer */
+            case 6: /* FIDIV dword-integer */
+            case 7: /* FIDIVR dword-integer */
                return dis_fpu_mem(cb, sorb, 4, rd, eip, first_byte); 
             default: 
                goto unhandled;
@@ -2547,6 +2547,22 @@ Addr dis_fpu ( UCodeBlock* cb,
                return dis_fpu_mem(cb, sorb, 108, wr, eip, first_byte);
             case 7: /* FSTSW */
                return dis_fpu_mem(cb, sorb, 2, wr, eip, first_byte);
+            default: 
+               goto unhandled;
+         }
+         break;
+
+      case 0xDE:
+         switch ((second_byte >> 3) & 7) {
+            case 0: /* FIADD word-integer */
+            case 1: /* FIMUL word-integer */
+            case 2: /* FICOM word-integer */
+            case 3: /* FICOMP word-integer */
+            case 4: /* FISUB word-integer */
+            case 5: /* FISUBR word-integer */
+            case 6: /* FIDIV word-integer */
+            case 7: /* FIDIVR word-integer */
+               return dis_fpu_mem(cb, sorb, 2, rd, eip, first_byte); 
             default: 
                goto unhandled;
          }

@@ -519,6 +519,9 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__SET_FHSTACK_ENTRY       0x3027
 #define VG_USERREQ__GET_FHSTACK_ENTRY       0x3028
 
+/* Denote the finish of VG_(__libc_freeres_wrapper). */
+#define VG_USERREQ__LIBC_FREERES_DONE       0x3029
+
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
 /* Log a pthread error from client-space.  Cosmetic. */
@@ -528,6 +531,10 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 In vg_constants.h:
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 */
+
+/* The scheduler does need to know the address of it so it can be
+   called at program exit. */
+extern void VG_(__libc_freeres_wrapper)( void );
 
 
 /* ---------------------------------------------------------------------

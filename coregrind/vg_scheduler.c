@@ -1337,6 +1337,16 @@ VgSchedReturnCode VG_(scheduler) ( void )
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
             UInt reqno = *(UInt*)(VG_(threads)[tid].m_eax);
             /* VG_(printf)("request 0x%x\n", reqno); */
+
+            /* Are we really absolutely totally quitting? */
+            if (reqno == VG_USERREQ__LIBC_FREERES_DONE) {
+               if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
+                  VG_(message)(Vg_DebugMsg, 
+                     "__libc_freeres() done; really quitting!");
+               }
+               return VgSrc_ExitSyscall;
+            }
+
             do_client_request(tid);
             /* Following the request, we try and continue with the
                same thread if still runnable.  If not, go back to
@@ -1362,9 +1372,22 @@ VgSchedReturnCode VG_(scheduler) ( void )
             }
 #           endif
 
-            /* Is the client exiting for good? */
-            if (VG_(threads)[tid].m_eax == __NR_exit)
-               return VgSrc_ExitSyscall;
+            /* Deal with calling __libc_freeres() at exit.  When the
+               client does __NR_exit, it's exiting for good.  So we
+               then run VG_(__libc_freeres_wrapper).  That quits by
+               doing VG_USERREQ__LIBC_FREERES_DONE, and at that point
+               we really exit.  To be safe we nuke all other threads
+               currently running. */
+            if (VG_(threads)[tid].m_eax == __NR_exit) {
+               if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
+                  VG_(message)(Vg_DebugMsg, 
+                     "Caught __NR_exit; running __libc_freeres()");
+               }
+               VG_(nuke_all_threads_except) ( tid );
+               VG_(threads)[tid].m_eip = (UInt)(&VG_(__libc_freeres_wrapper));
+	       vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+               goto stage1; /* party on, dudes (but not for much longer :) */
+            }
 
             /* Trap syscalls to __NR_sched_yield and just have this
                thread yield instead.  Not essential, just an

@@ -552,6 +552,23 @@ int sigsuspend ( /* const sigset_t * */ void* mask)
    return -1;
 }
 
+
+/* ---------------------------------------------------------------------
+   Hook for running __libc_freeres once the program exits.
+   ------------------------------------------------------------------ */
+
+void VG_(__libc_freeres_wrapper)( void )
+{
+   int res;
+   extern void __libc_freeres(void);
+   __libc_freeres();
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__LIBC_FREERES_DONE, 0, 0, 0, 0);
+   /*NOTREACHED*/
+   vg_assert(12345+54321 == 999999);
+}
+
+
 /*--------------------------------------------------------------------*/
 /*--- end                                         vg_clientfuncs.c ---*/
 /*--------------------------------------------------------------------*/

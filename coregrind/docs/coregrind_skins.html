@@ -28,13 +28,13 @@
 <h1 align=center>Valgrind Skins</h1>
 <center>
   A guide to writing new skins for Valgrind<br>
-  This guide was last updated on 20020926
+  This guide was last updated on 20030325
 </center>
 <p>
 
 <center>
 <a href="mailto:njn25@cam.ac.uk">njn25@cam.ac.uk</a><br>
-Nick Nethercote, October 2002
+Nick Nethercote
 <p>
 Valgrind is licensed under the GNU General Public License, 
 version 2<br>
@@ -54,15 +54,16 @@ An open-source tool for supervising execution of Linux-x86 executables.
 
 <h4>2&nbsp; <a href="#writingaskin">Writing a Skin</a></h4>
     2.1&nbsp; <a href="#whywriteaskin">Why write a skin?</a><br>
-    2.2&nbsp; <a href="#howskinswork">How skins work</a><br>
-    2.3&nbsp; <a href="#gettingcode">Getting the code</a><br>
-    2.4&nbsp; <a href="#gettingstarted">Getting started</a><br>
-    2.5&nbsp; <a href="#writingcode">Writing the code</a><br>
-    2.6&nbsp; <a href="#init">Initialisation</a><br>
-    2.7&nbsp; <a href="#instr">Instrumentation</a><br>
-    2.8&nbsp; <a href="#fini">Finalisation</a><br>
-    2.9&nbsp; <a href="#otherimportantinfo">Other important information</a><br>
-    2.10&nbsp; <a href="#wordsofadvice">Words of advice</a><br>
+    2.2&nbsp; <a href="#suggestedskins">Suggested skins</a><br>
+    2.3&nbsp; <a href="#howskinswork">How skins work</a><br>
+    2.4&nbsp; <a href="#gettingcode">Getting the code</a><br>
+    2.5&nbsp; <a href="#gettingstarted">Getting started</a><br>
+    2.6&nbsp; <a href="#writingcode">Writing the code</a><br>
+    2.7&nbsp; <a href="#init">Initialisation</a><br>
+    2.8&nbsp; <a href="#instr">Instrumentation</a><br>
+    2.9&nbsp; <a href="#fini">Finalisation</a><br>
+    2.10&nbsp; <a href="#otherimportantinfo">Other important information</a><br>
+    2.11&nbsp; <a href="#wordsofadvice">Words of advice</a><br>
 
 <h4>3&nbsp; <a href="#advancedtopics">Advanced Topics</a></h4>
     3.1&nbsp; <a href="#suppressions">Suppressions</a><br>
@@ -207,8 +208,79 @@ used for.  The instrumentation can range from very lightweight (e.g. counting
 the number of times a particular function is called) to very intrusive (e.g.
 memcheck's memory checking).
 
+
+<a name="suggestedskins"</a>
+<h3>2.2&nbsp; Suggested skins</h3>
+
+Here is a list of ideas we have had for skins that should not be too hard to
+implement.
+
+<ul>
+  <li>branch profiler: A machine's branch prediction hardware could be
+      simulated, and each branch annotated with the number of predicted and
+      mispredicted branches.  Would be implemented quite similarly to
+      Cachegrind, and could reuse the <code>cg_annotate</code> script to
+      annotate source code.<p>
+
+      The biggest difficulty with this is the simulation;  the chip-makers
+      are very cagey about how their chips do branch prediction.  But
+      implementing one or more of the basic algorithms could still give good
+      information.
+      </li><p>
+
+  <li>coverage tool:  Cachegrind can already be used for doing test coverage,
+      but it's massive overkill to use it just for that.<p>
+
+      It would be easy to write a coverage tool that records how many times
+      each basic block was recorded.  Again, the <code>cg_annotate</code>
+      script could be used for annotating source code with the gathered
+      information.  Although, <code>cg_annotate</code> is only designed for
+      working with single program runs.  It could be extended relatively easily
+      to deal with multiple runs of a program, so that the coverage of a whole
+      test suite could be determined.<p>
+
+      In addition to the standard coverage information, such a tool could
+      record extra information that would help a user generate test cases to
+      exercise unexercised paths.  For example, for each conditional branch,
+      the skin could record all inputs to the conditional test, and print these
+      out when annotating.<p>
+  
+  <li>run-time type checking: A nice example of a dynamic checker is given
+      in this paper:
+
+      <blockquote>
+      Debugging via Run-Time Type Checking<br>
+      Alexey Loginov, Suan Hsi Yong, Susan Horwitz and Thomas Reps<br>
+      Proceedings of Proceedings of Fundamental Approaches to Software 
+      Engineering<br>
+      April 2001.
+      </blockquote>
+
+      This approach can find quite a range of bugs in C and C++ programs.<p>
+
+      This could be implemented quite nicely as a Valgrind skin.  One
+      complication is that the described tool works directly on C code, and
+      Valgrind skins work on UCode, but the approach can hopefully still be
+      used with only minor modifications.<p>
+
+      Ways to speed up this run-time type checking are described in this paper:
+
+      <blockquote>
+      Reducing the Overhead of Dynamic Analysis<br>
+      Suan Hsi Yong and Susan Horwitz<br>
+      Proceedings of Runtime Verification '02<br>
+      July 2002.
+      </blockquote>
+
+      Valgrind's client requests could be used to pass information to a skin
+      about which elements need instrumentation and which don't.
+      </li><p>
+</ul>
+
+We would love to hear from anyone who implements these or other skins.
+
 <a name="howskinswork"</a>
-<h3>2.2&nbsp; How skins work</h3>
+<h3>2.3&nbsp; How skins work</h3>
 
 Skins must define various functions for instrumenting programs that are called
 by Valgrind's core, yet they must be implemented in such a way that they can be
@@ -228,7 +300,7 @@ This magic is all done for you;  the shared object used is chosen with the
 default skin used is <code>memcheck</code>, Valgrind's original memory checker.
 
 <a name="gettingcode"</a>
-<h3>2.3&nbsp; Getting the code</h3>
+<h3>2.4&nbsp; Getting the code</h3>
 
 To write your own skin, you'll need to check out a copy of Valgrind from the
 CVS repository, rather than using a packaged distribution.  This is because it
@@ -254,7 +326,7 @@ where <code><i>TAG</i></code> has the form <code>VALGRIND_X_Y_Z</code> for
 version X.Y.Z.
 
 <a name="gettingstarted"</a>
-<h3>2.4&nbsp; Getting started</h3>
+<h3>2.5&nbsp; Getting started</h3>
 
 Valgrind uses GNU <code>automake</code> and <code>autoconf</code> for the
 creation of Makefiles and configuration.  But don't worry, these instructions
@@ -342,7 +414,7 @@ interesting stuff...
 
 
 <a name="writingcode"></a>
-<h3>2.5&nbsp; Writing the code</h3>
+<h3>2.6&nbsp; Writing the code</h3>
 
 A skin must define at least these four functions:
 <pre>
@@ -362,7 +434,7 @@ In addition, if a skin wants to use some of the optional services provided by
 the core, it may have to define other functions.
 
 <a name="init"></a>
-<h3>2.6&nbsp; Initialisation</h3>
+<h3>2.7&nbsp; Initialisation</h3>
 
 Most of the initialisation should be done in <code>SK_(pre_clo_init)()</code>.
 Only use <code>SK_(post_clo_init)()</code> if a skin provides command line
@@ -407,7 +479,7 @@ More information about ``details'', ``needs'' and ``trackable events'' can be
 found in <code>include/vg_skin.h</code>.<p>
 
 <a name="instr"></a>
-<h3>2.7&nbsp; Instrumentation</h3>
+<h3>2.8&nbsp; Instrumentation</h3>
 
 <code>SK_(instrument)()</code> is the interesting one.  It allows you to
 instrument <i>UCode</i>, which is Valgrind's RISC-like intermediate language.
@@ -425,13 +497,13 @@ instructions.  This is recommended for advanced Valgrind hackers only!  See the
 ``memcheck'' skin for an example.
 
 <a name="fini"></a>
-<h3>2.8&nbsp; Finalisation</h3>
+<h3>2.9&nbsp; Finalisation</h3>
 
 This is where you can present the final results, such as a summary of the
 information collected.  Any log files should be written out at this point.
 
 <a name="otherimportantinfo"></a>
-<h3>2.9&nbsp; Other important information</h3>
+<h3>2.10&nbsp; Other important information</h3>
 
 Please note that the core/skin split infrastructure is all very new, and not
 very well documented.  Here are some important points, but there are
@@ -461,7 +533,7 @@ namespace clashes.  We strongly recommend using the <code>SK_</code> macro
 for any global functions and variables in your skin.<p>
 
 <a name="wordsofadvice"</a>
-<h3>2.10&nbsp; Words of Advice</h3>
+<h3>2.11&nbsp; Words of Advice</h3>
 
 Writing and debugging skins is not trivial.  Here are some suggestions for
 solving common problems.<p>

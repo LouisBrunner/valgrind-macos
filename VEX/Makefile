@@ -78,6 +78,19 @@ version:
 	svnversion -n . >> priv/main/vex_svnversion.h
 	echo "\""  >> priv/main/vex_svnversion.h
 
+minidist: version
+	rm -f vex--minidist-2005MMDD.tar
+	tar cf vex--minidist-2005MMDD.tar $(PUB_HEADERS) $(PRIV_HEADERS) \
+		priv/main/vex_svnversion.h			\
+		test_main.c test_main.h				\
+		Makefile					\
+		`echo $(LIB_OBJS) | sed "s/\.o/\.c/g"`
+	@echo 
+	@echo minidist done, size and svnversion follow:
+	@ls -l vex--minidist-2005MMDD.tar
+	@cat priv/main/vex_svnversion.h
+	@echo
+
 
 ALL_HEADERS  = $(PUB_HEADERS) $(PRIV_HEADERS)
 ALL_INCLUDES = $(PUB_INCLUDES) $(PRIV_INCLUDES)

@@ -293,8 +293,7 @@ typedef
       Palu_INVALID,
       Palu_ADD, Palu_SUB,
 //      Palu_ADC, Palu_SBB,
-      Palu_AND, Palu_OR, Palu_XOR,
-      Palu_MUL
+      Palu_AND, Palu_OR, Palu_XOR
    }
    PPC32AluOp;
 
@@ -411,7 +410,7 @@ typedef
          /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
          struct {
             Bool     syned;
-            Bool     word;   /* low=0, hi=1 */
+            Bool     word;   /* low=0, high=1 */
             HReg     dst;
             HReg     src1;
             PPC32RI* src2;
@@ -481,15 +480,10 @@ typedef
 //..             HReg src;
 //..             HReg dst;
 //..          } Bsfr32;
-         /* Mem fence (not just sse2, but sse0 and 1 too).  In short,
-            an insn which flushes all preceding loads and stores as
-            much as possible before continuing.  On SSE2 we emit a
-            real "mfence", on SSE1 "sfence ; lock addl $0,0(%esp)" and
-            on SSE0 "lock addl $0,0(%esp)".  This insn therefore
-            carries the subarch so the assembler knows what to
-            emit. */
+         /* Mem fence.  In short, an insn which flushes all preceding
+            loads and stores as much as possible before continuing.
+            On PPC32 we emit a "sync". */
          struct {
-            VexSubArch subarch;
          } MFence;
 
 //..          /* X86 Floating point (fake 3-operand, "flat reg file" insns) */
@@ -573,7 +567,7 @@ extern PPC32Instr* PPC32Instr_LoadEX    ( UChar sz, Bool syned,
 extern PPC32Instr* PPC32Instr_Store     ( UChar sz, PPC32AMode* dst, HReg src );
 extern PPC32Instr* PPC32Instr_Set32     ( PPC32CondCode cond, HReg dst );
 //.. extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
-extern PPC32Instr* PPC32Instr_MFence    ( VexSubArch );
+extern PPC32Instr* PPC32Instr_MFence    ( void );
 //.. 
 //.. extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );

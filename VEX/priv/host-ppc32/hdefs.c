@@ -394,7 +394,6 @@ HChar* showPPC32AluOp ( PPC32AluOp op ) {
    case Palu_AND:  return "and";
    case Palu_OR:   return "or";
    case Palu_XOR:  return "xor";
-   case Palu_MUL:  return "mull";
    default: vpanic("showPPC32AluOp");
    }
 }
@@ -492,6 +491,14 @@ PPC32Instr* PPC32Instr_Unary32  ( PPC32UnaryOp op, HReg dst, HReg src ) {
 }
 PPC32Instr* PPC32Instr_MulL ( Bool syned, Bool word, HReg dst,
                               HReg src1, PPC32RI* src2 ) {
+   if (word == 1) { // high
+      vassert(src2->tag == Pri_Reg);
+   } else {         // low
+      if (src2->tag == Pri_Imm) {
+         vassert(syned == True);
+         vassert(src2->Pri.Imm.imm32 < 0x10000);
+      }
+   }
    PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag            = Pin_MulL;
    i->Pin.MulL.syned = syned;
@@ -587,13 +594,10 @@ PPC32Instr* PPC32Instr_Set32 ( PPC32CondCode cond, HReg dst ) {
 //..    i->Xin.Bsfr32.dst    = dst;
 //..    return i;
 //.. }
-PPC32Instr* PPC32Instr_MFence ( VexSubArch subarch )
+PPC32Instr* PPC32Instr_MFence ( void )
 {
    PPC32Instr* i         = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag                = Pin_MFence;
-   i->Pin.MFence.subarch = subarch;
-   vassert(subarch == VexSubArchPPC32_AV
-           || subarch == VexSubArchPPC32_noAV);
    return i;
 }
 
@@ -769,7 +773,7 @@ void ppPPC32Instr ( PPC32Instr* i )
 //..          ppX86RMI(i->Xin.Push.src);
 //..          return;
    case Pin_Call:
-      vex_printf("call: la r12, 0x%x ; mtctr r12 ; bcctrl[%d] %s,reg",
+      vex_printf("call: la r12, 0x%x ; mtctr r12 ; bcctrl[%d] %s",
                  i->Pin.Call.target,
                  i->Pin.Call.regparms,
                  showPPC32CondCode(i->Pin.Call.cond));
@@ -841,8 +845,7 @@ void ppPPC32Instr ( PPC32Instr* i )
 //..          ppHRegX86(i->Xin.Bsfr32.dst);
 //..          return;
    case Pin_MFence:
-      vex_printf("mfence(%s)",
-                 LibVEX_ppVexSubArch(i->Pin.MFence.subarch));
+      vex_printf("mfence (=sync)");
       return;
 //..       case Xin_FpUnary:
 //..          vex_printf("g%sD ", showX86FpOp(i->Xin.FpUnary.op));
@@ -1805,7 +1808,6 @@ static UChar* mkFormB ( UChar* p, UInt BO, UInt BI,
    return emit32(p, theInstr);
 }
 
-#if 0
 // rotates
 static UChar* mkFormM ( UChar* p, UInt op1, UInt r1, UInt r2,
                         UInt f3, UInt MB, UInt ME, UInt Rc )
@@ -1821,7 +1823,6 @@ static UChar* mkFormM ( UChar* p, UInt op1, UInt r1, UInt r2,
                     (f3<<11) | (MB<<6) | (ME<<1) | (Rc));
    return emit32(p, theInstr);
 }
-#endif
 
 static UChar* doAMode_IR ( UChar* p, UInt op1, HReg hrSD, PPC32AMode* am )
 {
@@ -1876,33 +1877,6 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt op1 = 31, op2, rB, imm;
       UInt r_dst  = iregNo(i->Pin.Alu32.dst);
       UInt r_src1 = iregNo(i->Pin.Alu32.src1);
-
-#if 0
-      /* MUL */
-      if (i->Pin.Alu32.op == Palu_MUL) {
-         switch (i->Pin.Alu32.src->tag) {
-            case Pri_Reg:
-               *p++ = 0x0F;
-               *p++ = 0xAF;
-               p = doAMode_R(p, i->Pin.Alu32.dst,
-                                i->Pin.Alu32.src->Pri.Reg.reg);
-               goto done;
-            case Pri_Imm:
-               if (fits8bits(i->Pin.Alu32.src->Pri.Imm.imm32)) {
-                  *p++ = 0x6B;
-                  p = doAMode_R(p, i->Pin.Alu32.dst, i->Pin.Alu32.dst);
-                  *p++ = 0xFF & i->Pin.Alu32.src->Pri.Imm.imm32;
-               } else {
-                  *p++ = 0x69;
-                  p = doAMode_R(p, i->Pin.Alu32.dst, i->Pin.Alu32.dst);
-                  p = emit32(p, i->Pin.Alu32.src->Pri.Imm.imm32);
-               }
-               goto done;
-            default:
-               goto bad;
-         }
-      }
-#endif
 
       /* ADD/SUB/ADC/SBB/AND/OR/XOR */
       if (i->Pin.Alu32.src2->tag == Pri_Reg) {
@@ -2005,48 +1979,90 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..       }
 //..       break;
 
-//..    case Pin_Cmp32:
-//..       goto done;
+   case Pin_Cmp32: {
+      UInt opc1, opc2=0;
+      UInt op = i->Pin.Cmp32.op;
+      UInt fld1 = i->Pin.Cmp32.crfD << 2;
+      UInt r1 = iregNo(i->Pin.Cmp32.src1);
+      UInt r2, imm;
 
-//..    case Xin_Unary32:
-//..       if (i->Xin.Unary32.op == Xun_NOT) {
-//..          *p++ = 0xF7;
-//..          if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
-//..             p = doAMode_R(p, fake(2), i->Xin.Unary32.dst->Xrm.Reg.reg);
-//..             goto done;
-//..          } else {
-//..             goto bad;
-//..          }
-//..       }
-//..       if (i->Xin.Unary32.op == Xun_NEG) {
-//..          *p++ = 0xF7;
-//..          if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
-//..             p = doAMode_R(p, fake(3), i->Xin.Unary32.dst->Xrm.Reg.reg);
-//..             goto done;
-//..          } else {
-//..             goto bad;
-//..          }
-//..       }
-//..       break;
+      switch (i->Pin.Cmp32.src2->tag) {
+      case Pri_Imm:
+         opc1 = (op == Pcmp_U) ? 10 : 11;
+         imm = i->Pin.Cmp32.src2->Pri.Imm.imm32;
+         p = mkFormD(p, opc1, fld1, r1, imm);
+         break;
+      case Pri_Reg:
+         opc1 = 31;
+         opc2 = (op == Pcmp_U) ? 32 : 0;
+         r2 = iregNo(i->Pin.Cmp32.src2->Pri.Reg.reg);
+         p = mkFormX(p, opc1, fld1, r1, r2, opc2, 0);
+         break;
+      default: goto bad;
+      }        
+      goto done;
+   }
 
-//..    case Xin_MulL:
-//..       subopc = i->Xin.MulL.syned ? 5 : 4;
-//..       if (i->Xin.MulL.ssz == Xss_32) {
-//..          *p++ = 0xF7;
-//..          switch (i->Xin.MulL.src->tag)  {
-//..             case Xrm_Mem:
-//..                p = doAMode_M(p, fake(subopc),
-//..                                 i->Xin.MulL.src->Xrm.Mem.am);
-//..                goto done;
-//..             case Xrm_Reg:
-//..                p = doAMode_R(p, fake(subopc), 
-//..                                 i->Xin.MulL.src->Xrm.Reg.reg);
-//..                goto done;
-//..             default:
-//..                goto bad;
-//..          }
-//..       }
-//..       break;
+   case Pin_Unary32: {
+      UInt r_dst = iregNo(i->Pin.Unary32.dst);
+      UInt r_src = iregNo(i->Pin.Unary32.src);
+
+      switch (i->Pin.Unary32.op) {
+      case Pun_NOT:  // nor r_dst,r_src,r_src
+         p = mkFormX(p, 31, r_src, r_dst, r_src, 124, 0);
+         break;
+      case Pun_NEG:  // neg r_dst,r_src
+         p = mkFormXO(p, 31, r_dst, r_src, 0, 0, 104, 0);
+         break;
+      case Pun_CLZ:  // cntlzw r_dst, r_src
+         p = mkFormX(p, 31, r_dst, r_src, 0, 26, 0);
+         break;
+      default: goto bad;
+      }
+      goto done;
+   }
+
+   case Pin_MulL: {
+      Bool syned  = i->Pin.MulL.syned;
+      UInt r_dst  = iregNo(i->Pin.MulL.dst);
+      UInt r_src1 = iregNo(i->Pin.MulL.src1);
+      UInt r_src2, imm;
+
+      switch (i->Pin.MulL.word) {
+      case 0:       // multiply low word
+         switch (i->Pin.MulL.src2->tag) {
+         case Pri_Reg:
+            // mullw r_dst,r_src1,r_src2
+            // sign makes no difference.
+            r_src2 = iregNo(i->Pin.MulL.src2->Pri.Reg.reg);
+            p = mkFormXO(p, 31, r_dst, r_src1, r_src2, 0, 235, 0);
+            break;
+         case Pri_Imm:
+            // mulli r_dst,r_src,imm
+            vassert(syned == True);  // always signed
+            imm = i->Pin.MulL.src2->Pri.Imm.imm32;
+            p = mkFormD(p, 07, r_dst, r_src1, imm);
+            break;
+         default:
+            goto bad;
+         }
+         break;
+      case 1:       // multiply high word
+         vassert(i->Pin.MulL.src2->tag == Pri_Reg);
+         r_src2 = iregNo(i->Pin.MulL.src2->Pri.Reg.reg);
+         if (syned == True) {
+            // mulhw r_dst,r_src1,r_src2
+            p = mkFormXO(p, 31, r_dst, r_src1, r_src2, 0, 75, 0);
+         } else {
+            // mulhwu r_dst,r_src1,r_src2
+            p = mkFormXO(p, 31, r_dst, r_src1, r_src2, 0, 11, 0);
+         }
+         break;
+      default:
+         goto bad;
+      }
+      goto done;
+   }
 
 //..    case Xin_Div:
 //..       subopc = i->Xin.Div.syned ? 7 : 6;
@@ -2177,11 +2193,16 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 // CAB: Which reg?  On amd64,x86, does 'ret' use rax,eax somehow?
       r_dst = 4;
       if (i->Pin.Goto.dst->tag == Pri_Imm) {
-         /* addi r_dst,0,(imm & 0xFFFF)
-            addis r_dst,r_dst,((imm >> 16) & 0xFFFF) */
          imm = i->Pin.Goto.dst->Pri.Imm.imm32;
-         p = mkFormD(p, 14, r_dst, 0, (imm & 0xFFFF));
-         p = mkFormD(p, 15, r_dst, r_dst, ((imm>>16) & 0xFFFF));
+         if (imm < 0x10000) {
+            // addi r_dst,0,(imm & 0xFFFF)
+            p = mkFormD(p, 14, r_dst, 0, imm);
+         } else {
+            // addi r_dst,0,(imm & 0xFFFF)
+            // addis r_dst,r_dst,((imm >> 16) & 0xFFFF)
+            p = mkFormD(p, 14, r_dst, 0, (imm & 0xFFFF));
+            p = mkFormD(p, 15, r_dst, r_dst, ((imm>>16) & 0xFFFF));
+         }
       } else {
          vassert(i->Pin.Goto.dst->tag == Pri_Reg);
          if (i->Pin.Goto.dst->Pri.Reg.reg != hregPPC32_GPR4()) {
@@ -2198,52 +2219,41 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       goto done;
    }
 
-//..    case Xin_CMov32:
-//..       vassert(i->Xin.CMov32.cond != Xcc_ALWAYS);
-//.. #if 0
-//..       /* This generates cmov, which is illegal on P54/P55. */
-//..       *p++ = 0x0F;
-//..       *p++ = 0x40 + i->Xin.CMov32.cond;
-//..       if (i->Xin.CMov32.src->tag == Xrm_Reg) {
-//..          p = doAMode_R(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Reg.reg);
-//..          goto done;
-//..       }
-//..       if (i->Xin.CMov32.src->tag == Xrm_Mem) {
-//..          p = doAMode_M(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Mem.am);
-//..          goto done;
-//..       }
-//.. #else
-//..       /* P5 friendly version: conditional jump over an unconditional
-//..          move. */
-//..       /* jmp fwds if !condition */
-//..       *p++ = 0x70 + (i->Xin.CMov32.cond ^ 1);
-//..       *p++ = 0; /* # of bytes in the next bit, which we don't know yet */
-//..       ptmp = p;
-//.. 
-//..       switch (i->Xin.CMov32.src->tag) {
-//..          case Xrm_Reg:
-//..             /* Big sigh.  This is movl E -> G ... */
-//..             *p++ = 0x89;
-//..             p = doAMode_R(p, i->Xin.CMov32.src->Xrm.Reg.reg,
-//..                              i->Xin.CMov32.dst);
-//..                              
-//..             break;
-//..          case Xrm_Mem:
-//..             /* ... whereas this is movl G -> E.  That's why the args
-//..                to doAMode_R appear to be the wrong way round in the
-//..                Xrm_Reg case. */
-//..             *p++ = 0x8B;
-//..             p = doAMode_M(p, i->Xin.CMov32.dst, 
-//..                              i->Xin.CMov32.src->Xrm.Mem.am);
-//..             break;
-//..          default:
-//..             goto bad;
-//..       }
-//..       /* Fill in the jump offset. */
-//..       *(ptmp-1) = p - ptmp;
-//..       goto done;
-//.. #endif
-//..       break;
+   case Pin_CMov32: {
+      vassert(i->Pin.CMov32.cond.test != Pct_ALWAYS);
+      UInt r_dst = iregNo(i->Pin.CMov32.dst);
+      PPC32CondCode cond = i->Pin.CMov32.cond;
+      UInt imm, r_src;
+
+      // branch (if cond false) over next instr
+      // bc false,cond,8
+      p = mkFormB(p, invertCondTest(cond.test), cond.flag, 8, 0, 0);
+
+      // cond true: move src => dst
+      switch (i->Pin.CMov32.src->tag) {
+      case Pri_Imm:
+         imm = i->Pin.CMov32.src->Pri.Imm.imm32;
+         if (imm < 0x10000) {
+            // addi r_dst,0,imm
+            p = mkFormD(p, 14, r_dst, 0, imm);
+         } else {
+            // addi r_dst,0,(imm & 0xFFFF)
+            // addis r_dst,r_dst,((imm >> 16) & 0xFFFF)
+            p = mkFormD(p, 14, r_dst, 0, (imm & 0xFFFF));
+            p = mkFormD(p, 15, r_dst, r_dst, ((imm>>16) & 0xFFFF));
+         }
+         break;
+      case Pri_Reg:
+         r_src = iregNo(i->Pin.CMov32.src->Pri.Reg.reg);
+         if (r_src != r_dst) {
+            /* add r_dst, 0, r_src */
+            p = mkFormXO(p, 31, r_dst, 0, r_src, 0, 266, 0);
+         }
+         break;
+      default: goto bad;
+      }
+      goto done;
+   }
 
    case Pin_LoadEX: {
       UInt op1, op2, sz = i->Pin.LoadEX.sz;
@@ -2274,24 +2284,33 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
    case Pin_Set32: {
       /* Make the destination register be 1 or 0, depending on whether
-         the relevant condition holds. Yay - mfcr doesn't change CR. */
- /*
-      HReg rD = i->Xin.Set32.dst;
-      if (i->Xin.Set32.cond.test == Pct_ALWAYS) {
-         // just load 1 to i->Xin.Set32.dst
-         // addi rD,r0,1
+         the relevant condition holds. Yay! - mfcr doesn't change CR. */
+      UInt r_dst = iregNo(i->Pin.Set32.dst);
+      PPC32CondCode cond = i->Pin.Set32.cond;
+      UInt shft;
+      UInt r_tmp;
+
+      if (cond.test == Pct_ALWAYS) {
+         // just load 1 to dst => li dst,1
+         p = mkFormD(p, 14, r_dst, 0, 1);
       } else {
-         UInt shft = 32 - cond.flag;
-// CAB: how choose r1 so don't kill anything else?
-         // mfcr r1                      // r1 = CR
-         // rlwinm rD,r1,shft,31,31      // r2 = flag (rotate left and mask)
-         if (cond.test == Pct_False) {
-            // xori rD,rD,1              // flip bit
+         shft = 32 - cond.flag;
+         r_tmp = 1;
+// CAB: how choose r_tmp so don't kill anything else?
+
+         // r_tmp = CR  => mfcr r_tmp
+         p = mkFormX(p, 31, r_tmp, 0, 0, 19, 0);
+
+         // r_dst = flag (rotate left and mask)
+         //  => rlwinm r_dst,r_tmp,shft,31,31
+         p = mkFormM(p, 21, r_dst, r_tmp, shft, 31, 31, 0);
+
+         if (cond.test == Pct_FALSE) {
+            // flip bit  => xori rD,rD,1
+            p = mkFormD(p, 26, r_dst, r_dst, 1);
          }
       }
       goto done;
-*/
-      goto bad;
    }
 
 //..    case Xin_Bsfr32:
@@ -2304,31 +2323,15 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..       p = doAMode_R(p, i->Xin.Bsfr32.dst, i->Xin.Bsfr32.src);
 //..       goto done;
 
-//..    case Xin_MFence:
-//..       /* see comment in hdefs.h re this insn */
-//..       if (0) vex_printf("EMIT FENCE\n");
-//..       switch (i->Xin.MFence.subarch) {
-//..          case VexSubArchX86_sse0:
-//..             vassert(0); /* awaiting test case */
-//..             /* lock addl $0,0(%esp) */
-//..             *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
-//..             *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
-//..             goto done;
-//..          case VexSubArchX86_sse1:
-//..             /* sfence */
-//..             *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF8;
-//..             /* lock addl $0,0(%esp) */
-//..             *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
-//..             *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
-//..             goto done;
-//..          case VexSubArchX86_sse2:
-//..             /* mfence */
-//..             *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
-//..             goto done;
-//..          default: 
-//..             vpanic("emit_X86Instr:mfence:subarch");
-//..       }
-//..       break;
+   case Pin_MFence: {
+// CAB: choose...
+#if 1  // sync (Synchronise, p616)
+      p = mkFormX(p, 31, 0, 0, 0, 598, 0);
+#else  // isync (instruction synchronise, p467)
+      p = mkFormXL(p, 19, 0, 0, 0, 150, 0);
+#endif
+      goto done;
+   }
 
    case Pin_Store: {
       UInt op1, op2, sz = i->Pin.Store.sz;

@@ -64,11 +64,14 @@ valgrind_already_initted:
 
 .global VG_(startup)
 VG_(startup):
+	pushfl
 	cmpl	$0, valgrind_already_initted
 	je	really_start_up
+	popfl
 	ret
 
 really_start_up:
+	popfl
 	movl	$1, valgrind_already_initted
 	
         # Record %esp as it was when we got here.  This is because argv/c

@@ -134,7 +134,16 @@ void capture_convert_show ( /* preallocated storage */
    printf("\n\n");
    printVexState(vex_state);
    printf("\n\n");
+#if 0
+   asm volatile("frstor (%0) ; fsave (%0)"
+                 :
+                 : "r" (x87_state1)
+                 : "memory" );
+#endif
    printFpuState(x87_state1);
+   printf("\n\n");
+   x87_to_vex(x87_state1, vex_state);
+   printVexState(vex_state);
    printf("\n\n");
 }
 
@@ -148,6 +157,7 @@ int main ( void )
   asm volatile ("fldpi");
   capture_convert_show(x87_state0, x87_state1, vex_state);
   asm volatile ("fldz ; fld1 ; fdiv %st(1)");
+  asm volatile ("fldln2 ; fldlg2 ; fchs ; fsqrt");
   capture_convert_show(x87_state0, x87_state1, vex_state);
   return 1;
 }

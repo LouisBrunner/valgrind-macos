@@ -1790,7 +1790,7 @@ void do_pthread_create ( ThreadId parent_tid,
       vg_threads[tid].specifics[i] = NULL;
 
    /* return zero */
-   SET_EDX(tid, 0); /* success */
+   SET_EDX(parent_tid, 0); /* success */
 }
 
 

@@ -17,6 +17,7 @@ pth_blockedsig
 rcl_assert
 rcrl
 readline1
+resolv
 sha1_test
 shortpush
 shorts

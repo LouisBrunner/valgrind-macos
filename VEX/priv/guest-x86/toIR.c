@@ -13,6 +13,7 @@
    check flag settings for cmpxchg
    FUCOMI(P): what happens to A and S flags?  Currently are forced
       to zero.
+   Fix CPUID, or more precisely, eflags bit 21 so it is changeable.
 
    x87 FP Limitations:
    * no FP exceptions, except for handling stack over/underflow
@@ -20,6 +21,8 @@
    * FP sin/cos/tan/sincos: C2 flag is always cleared.  IOW the
      simulation claims the argument is in-range (-2^63 <= arg <= 2^63)
      even when it isn't.
+   * some of the FCOM cases could do with testing -- not convinced
+     that the args are the right way round.
 */
 
 /* Translates x86 code to IR. */
@@ -34,7 +37,7 @@
 #include "guest-x86/gdefs.h"
 
 
-#define RESTEER_THRESH 0; //10
+#define RESTEER_THRESH 10
 
 
 /*------------------------------------------------------------*/
@@ -2267,7 +2270,7 @@ UInt dis_Grp1 ( UChar sorb,
          helper_ADC( sz, dst1, dst0, src );
       } else 
       if (gregOfRM(modrm) == 3 /* SBB */) {
-         vassert(0);
+         helper_SBB( sz, dst1, dst0, src );
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 	 if (isAddSub(op8))
@@ -3546,6 +3549,22 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, False );
                break;
 
+            case 3: /* FCOM single-real */
+               DIP("fcomps %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, 
+                                      get_ST(0),
+                                      unop(Iop_F32toF64, 
+                                           loadLE(Ity_F32,mkexpr(addr)))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               fp_pop();
+               break;  
+
             case 4: /* FSUB single-real */
                fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, False );
                break;
@@ -3579,7 +3598,22 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_ST_ST ( "mul", Iop_MulF64, modrm - 0xC8, 0, False );
                break;
 
-#if 0
+#if 1
+            /* Dunno if this is right */
+            case 0xD0 ... 0xD7: /* FCOM %st(?),%st(0) */
+               r_dst = (UInt)modrm - 0xD0;
+               DIP("fcom %%st(0),%%st(%d)\n", r_dst);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               break;
+#endif
+#if 1
             /* Dunno if this is right */
             case 0xD8 ... 0xDF: /* FCOMP %st(?),%st(0) */
                r_dst = (UInt)modrm - 0xD8;
@@ -4089,8 +4123,22 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, True );
                break;
 
+            case 2: /* FCOM double-real */
+               DIP("fcoml %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, 
+                                      get_ST(0),
+                                      loadLE(Ity_F64,mkexpr(addr))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               break;  
+
             case 3: /* FCOMP double-real */
-               DIP("fcomp %s\n", dis_buf);
+               DIP("fcompl %s\n", dis_buf);
                /* This forces C1 to zero, which isn't right. */
                put_C3210( 
                    binop( Iop_And32,
@@ -4271,6 +4319,20 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC8 ... 0xCF: /* FMULP %st(0),%st(?) */
                fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, True );
+               break;
+
+            case 0xD9: /* FCOMPP %st(0),%st(1) */
+               DIP("fuompp %%st(0),%%st(1)\n");
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, get_ST(0), get_ST(1)),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               fp_pop();
+               fp_pop();
                break;
 
             case 0xE0 ... 0xE7: /* FSUBRP %st(0),%st(?) */

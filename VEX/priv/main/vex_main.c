@@ -173,6 +173,18 @@ TranslateResult LibVEX_Translate (
       vex_verbosity = saved_verbosity;
       return TransAccessFail;
    }
+
+   /* If debugging, show the raw guest bytes for this bb. */
+   if (vex_verbosity >= 2) {
+      UChar* p = guest_bytes;
+      vex_printf("\n");
+      vex_printf(". 0 %llx %d\n.", guest_bytes_addr, *guest_bytes_read );
+      for (i = 0; i < *guest_bytes_read; i++)
+         vex_printf(" %02x", (Int)p[i] );
+      vex_printf("\n");
+   }
+
+   /* Sanity check the initial IR. */
    sanityCheckIRBB(irbb, Ity_I32);
 
    /* Clean it up, hopefully a lot. */

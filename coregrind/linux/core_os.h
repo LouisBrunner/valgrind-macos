@@ -34,61 +34,61 @@
 
 // Macros for adding Linux-specific, arch-independent wrappers to a syscall
 // table.
-#define LINX_(const, name)    SYS_WRAPPER_ENTRY_X_(vgArch_linux, const, name) 
-#define LINXY(const, name)    SYS_WRAPPER_ENTRY_XY(vgArch_linux, const, name)
+#define LINX_(const, name)    SYS_WRAPPER_ENTRY_X_(vgOS_linux, const, name) 
+#define LINXY(const, name)    SYS_WRAPPER_ENTRY_XY(vgOS_linux, const, name)
 
 // The following syscall wrappers are Linux-specific, but arch-independent.
-#define LINUX_SYSCALL_WRAPPER(x) \
-   extern UInt VGA_(linux_##x##_flags); \
-   extern void VGA_(linux_##x##_before)(ThreadId tid, ThreadState *tst); \
-   extern void VGA_(linux_##x##_after) (ThreadId tid, ThreadState *tst)
+#define VGO_LINUX_SYSCALL_WRAPPER(x) \
+   extern UInt VGO_(linux_##x##_flags); \
+   extern void VGO_(linux_##x##_before)(ThreadId tid, ThreadState *tst); \
+   extern void VGO_(linux_##x##_after) (ThreadId tid, ThreadState *tst)
 
-LINUX_SYSCALL_WRAPPER(sys_exit_group);
+VGO_LINUX_SYSCALL_WRAPPER(sys_exit_group);
 
-LINUX_SYSCALL_WRAPPER(sys_mount);
-LINUX_SYSCALL_WRAPPER(sys_oldumount);
-LINUX_SYSCALL_WRAPPER(sys_umount);
+VGO_LINUX_SYSCALL_WRAPPER(sys_mount);
+VGO_LINUX_SYSCALL_WRAPPER(sys_oldumount);
+VGO_LINUX_SYSCALL_WRAPPER(sys_umount);
 
-LINUX_SYSCALL_WRAPPER(sys_llseek);
-LINUX_SYSCALL_WRAPPER(sys_adjtimex);
+VGO_LINUX_SYSCALL_WRAPPER(sys_llseek);
+VGO_LINUX_SYSCALL_WRAPPER(sys_adjtimex);
 
-LINUX_SYSCALL_WRAPPER(sys_setfsuid16);
-LINUX_SYSCALL_WRAPPER(sys_setfsgid16);
-LINUX_SYSCALL_WRAPPER(sys_setresuid16);  // man page says "non-standard";
-LINUX_SYSCALL_WRAPPER(sys_getresuid16);
-LINUX_SYSCALL_WRAPPER(sys_setresgid16);  // man page says "non-standard"
-LINUX_SYSCALL_WRAPPER(sys_getresgid16);
+VGO_LINUX_SYSCALL_WRAPPER(sys_setfsuid16);
+VGO_LINUX_SYSCALL_WRAPPER(sys_setfsgid16);
+VGO_LINUX_SYSCALL_WRAPPER(sys_setresuid16);  // man page says "non-standard";
+VGO_LINUX_SYSCALL_WRAPPER(sys_getresuid16);
+VGO_LINUX_SYSCALL_WRAPPER(sys_setresgid16);  // man page says "non-standard"
+VGO_LINUX_SYSCALL_WRAPPER(sys_getresgid16);
 
-LINUX_SYSCALL_WRAPPER(sys_setfsuid);
-LINUX_SYSCALL_WRAPPER(sys_setfsgid);
-LINUX_SYSCALL_WRAPPER(sys_setresuid);    // man page says "non-standard"
-LINUX_SYSCALL_WRAPPER(sys_getresuid);
-LINUX_SYSCALL_WRAPPER(sys_setresgid);    // man page says "non-standard"
-LINUX_SYSCALL_WRAPPER(sys_getresgid);
+VGO_LINUX_SYSCALL_WRAPPER(sys_setfsuid);
+VGO_LINUX_SYSCALL_WRAPPER(sys_setfsgid);
+VGO_LINUX_SYSCALL_WRAPPER(sys_setresuid);    // man page says "non-standard"
+VGO_LINUX_SYSCALL_WRAPPER(sys_getresuid);
+VGO_LINUX_SYSCALL_WRAPPER(sys_setresgid);    // man page says "non-standard"
+VGO_LINUX_SYSCALL_WRAPPER(sys_getresgid);
 
-LINUX_SYSCALL_WRAPPER(sys_ioperm);
-LINUX_SYSCALL_WRAPPER(sys_syslog);
-LINUX_SYSCALL_WRAPPER(sys_vhangup);
-LINUX_SYSCALL_WRAPPER(sys_sysinfo);
-LINUX_SYSCALL_WRAPPER(sys_personality);
-LINUX_SYSCALL_WRAPPER(sys_sysctl);
-LINUX_SYSCALL_WRAPPER(sys_prctl);
+VGO_LINUX_SYSCALL_WRAPPER(sys_ioperm);
+VGO_LINUX_SYSCALL_WRAPPER(sys_syslog);
+VGO_LINUX_SYSCALL_WRAPPER(sys_vhangup);
+VGO_LINUX_SYSCALL_WRAPPER(sys_sysinfo);
+VGO_LINUX_SYSCALL_WRAPPER(sys_personality);
+VGO_LINUX_SYSCALL_WRAPPER(sys_sysctl);
+VGO_LINUX_SYSCALL_WRAPPER(sys_prctl);
 
-LINUX_SYSCALL_WRAPPER(sys_sendfile);
-LINUX_SYSCALL_WRAPPER(sys_sendfile64);
-LINUX_SYSCALL_WRAPPER(sys_futex);
+VGO_LINUX_SYSCALL_WRAPPER(sys_sendfile);
+VGO_LINUX_SYSCALL_WRAPPER(sys_sendfile64);
+VGO_LINUX_SYSCALL_WRAPPER(sys_futex);
 
-LINUX_SYSCALL_WRAPPER(sys_epoll_create);
-LINUX_SYSCALL_WRAPPER(sys_epoll_ctl);
-LINUX_SYSCALL_WRAPPER(sys_epoll_wait);
+VGO_LINUX_SYSCALL_WRAPPER(sys_epoll_create);
+VGO_LINUX_SYSCALL_WRAPPER(sys_epoll_ctl);
+VGO_LINUX_SYSCALL_WRAPPER(sys_epoll_wait);
 
-LINUX_SYSCALL_WRAPPER(sys_tgkill);
+VGO_LINUX_SYSCALL_WRAPPER(sys_tgkill);
 
-LINUX_SYSCALL_WRAPPER(sys_io_setup);
-LINUX_SYSCALL_WRAPPER(sys_io_destroy);
-LINUX_SYSCALL_WRAPPER(sys_io_getevents);
-LINUX_SYSCALL_WRAPPER(sys_io_submit);
-LINUX_SYSCALL_WRAPPER(sys_io_cancel);
+VGO_LINUX_SYSCALL_WRAPPER(sys_io_setup);
+VGO_LINUX_SYSCALL_WRAPPER(sys_io_destroy);
+VGO_LINUX_SYSCALL_WRAPPER(sys_io_getevents);
+VGO_LINUX_SYSCALL_WRAPPER(sys_io_submit);
+VGO_LINUX_SYSCALL_WRAPPER(sys_io_cancel);
 
 #define FUTEX_SEMA	0
 
@@ -105,12 +105,12 @@ typedef struct {
 extern Int __futex_down_slow(vg_sema_t *, int, struct vki_timespec *);
 extern Int __futex_up_slow(vg_sema_t *);
 
-void VG_(sema_init)(vg_sema_t *);
-static inline void VG_(sema_deinit)(vg_sema_t *) 
+void VGO_(sema_init)(vg_sema_t *);
+static inline void VGO_(sema_deinit)(vg_sema_t *) 
 {
 }
 
-static inline void VG_(sema_down)(vg_sema_t *futx)
+static inline void VGO_(sema_down)(vg_sema_t *futx)
 {
    Int val, woken = 0;
 
@@ -135,7 +135,7 @@ static inline void VG_(sema_down)(vg_sema_t *futx)
 
 /* If __futex_up increments count from 0 -> 1, noone was waiting.
    Otherwise, set to 1 and tell kernel to wake them up. */
-static inline void VG_(sema_up)(vg_sema_t *futx)
+static inline void VGO_(sema_up)(vg_sema_t *futx)
 {
    if (!__futex_up(&futx->count))
       __futex_up_slow(futx);
@@ -149,10 +149,10 @@ typedef struct {
    Int owner_thread;		/* who currently has it */
 } vg_sema_t;
 
-void VG_(sema_init)(vg_sema_t *);
-void VG_(sema_deinit)(vg_sema_t *);
-void VG_(sema_down)(vg_sema_t *sema);
-void VG_(sema_up)(vg_sema_t *sema);
+void VGO_(sema_init)(vg_sema_t *);
+void VGO_(sema_deinit)(vg_sema_t *);
+void VGO_(sema_down)(vg_sema_t *sema);
+void VGO_(sema_up)(vg_sema_t *sema);
 
 #endif	/* FUTEX_SEMA */
 

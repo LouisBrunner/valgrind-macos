@@ -1154,9 +1154,9 @@ void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname);
 
 // Templates for generating the PRE and POST macros.  For ones that must be
 // publically visible, use an empty 'qual', 'prefix' should start with
-// "vgArch_", and there should be corresponding global declarations (like
-// the GEN_SYSCALL_WRAPPER ones below).  Otherwise, use "static" for 'qual',
-// and "vgArch_" should not be in the 'prefix'.
+// "vgArch_" or similar, and there should be corresponding global
+// declarations (like the GEN_SYSCALL_WRAPPER ones below).  Otherwise, use
+// "static" for 'qual', and "vgArch_" should not be in the 'prefix'.
 #define PRE_TEMPLATE(qual, prefix, name, f) \
    qual UInt prefix##_##name##_flags = f; \
    qual void prefix##_##name##_before(ThreadId tid, ThreadState *tst)

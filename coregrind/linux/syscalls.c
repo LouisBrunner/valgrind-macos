@@ -37,8 +37,8 @@
 // Nb: See the comment above the generic PRE/POST wrappers in
 // coregrind/vg_syscalls.c for notes about how they work.
 
-#define PRE(name, f)     PRE_TEMPLATE( , vgArch_linux, name, f)
-#define POST(name)      POST_TEMPLATE( , vgArch_linux, name)
+#define PRE(name, f)     PRE_TEMPLATE( , vgOS_linux, name, f)
+#define POST(name)      POST_TEMPLATE( , vgOS_linux, name)
 
 PRE(sys_exit_group, Special)
 {

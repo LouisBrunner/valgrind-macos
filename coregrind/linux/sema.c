@@ -43,7 +43,7 @@ int __futex_up_slow(vg_sema_t *futx)
    return sys_futex(&futx->count, VKI_FUTEX_WAKE, 1, NULL);
 }
 
-void VG_(sema_init)(vg_sema_t *sema)
+void VGO_(sema_init)(vg_sema_t *sema)
 {
    sema->count = 1;
    __futex_commit();
@@ -55,7 +55,7 @@ void VG_(sema_init)(vg_sema_t *sema)
    Slower but more portable pipe-based token passing scheme.
  */
 
-void VG_(sema_init)(vg_sema_t *sema)
+void VGO_(sema_init)(vg_sema_t *sema)
 {
    VG_(pipe)(sema->pipe);
    sema->pipe[0] = VG_(safe_fd)(sema->pipe[0]);
@@ -67,7 +67,7 @@ void VG_(sema_init)(vg_sema_t *sema)
    VG_(write)(sema->pipe[1], "T", 1);
 }
 
-void VG_(sema_deinit)(vg_sema_t *sema)
+void VGO_(sema_deinit)(vg_sema_t *sema)
 {
    VG_(close)(sema->pipe[0]);
    VG_(close)(sema->pipe[1]);
@@ -75,7 +75,7 @@ void VG_(sema_deinit)(vg_sema_t *sema)
 }
 
 /* get a token */
-void VG_(sema_down)(vg_sema_t *sema)
+void VGO_(sema_down)(vg_sema_t *sema)
 {
    Char buf[2] = { 'x' };
    Int ret;
@@ -96,7 +96,7 @@ void VG_(sema_down)(vg_sema_t *sema)
 }
 
 /* put token back */
-void VG_(sema_up)(vg_sema_t *sema)
+void VGO_(sema_up)(vg_sema_t *sema)
 {
    Int ret;
 

@@ -592,6 +592,20 @@ PRE(sys_setsockopt, 0)
    VG_(generic_PRE_sys_setsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
 }
 
+PRE(sys_getsockopt, 0)
+{
+   PRINT("sys_getsockopt ( %d, %d, %d, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRE_REG_READ5(long, "getsockopt",
+                 int, s, int, level, int, optname,
+                 void *, optval, int, *optlen);
+   VG_(generic_PRE_sys_getsockopt)(tid, ARG1,ARG2,ARG3,ARG4,ARG5);
+}
+
+POST(sys_getsockopt)
+{
+   VG_(generic_POST_sys_getsockopt)(tid, RES,ARG1,ARG2,ARG3,ARG4,ARG5);
+}
+
 PRE(sys_connect, MayBlock)
 {
    PRINT("sys_connect ( %d, %p, %d )",ARG1,ARG2,ARG3);
@@ -952,7 +966,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    PLAXY(__NR_socketpair,        sys_socketpair),     // 53 
    PLAX_(__NR_setsockopt,        sys_setsockopt),     // 54
 
-   //   (__NR_getsockopt,        sys_getsockopt),     // 55 
+   PLAXY(__NR_getsockopt,        sys_getsockopt),     // 55 
    PLAX_(__NR_clone,             sys_clone),          // 56 
    GENX_(__NR_fork,              sys_fork),           // 57 
    GENX_(__NR_vfork,             sys_fork),           // 58 treat as fork
@@ -984,14 +998,14 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    GENX_(__NR_chdir,             sys_chdir),          // 80 
    GENX_(__NR_fchdir,            sys_fchdir),         // 81 
-   //   (__NR_rename,            sys_rename),         // 82 
-   //   (__NR_mkdir,             sys_mkdir),          // 83 
-   //   (__NR_rmdir,             sys_rmdir),          // 84 
+   GENX_(__NR_rename,            sys_rename),         // 82 
+   GENX_(__NR_mkdir,             sys_mkdir),          // 83 
+   GENX_(__NR_rmdir,             sys_rmdir),          // 84 
 
    GENXY(__NR_creat,             sys_creat),          // 85 
-   //   (__NR_link,              sys_link),           // 86 
+   GENX_(__NR_link,              sys_link),           // 86 
    GENX_(__NR_unlink,            sys_unlink),         // 87 
-   //   (__NR_symlink,           sys_symlink),        // 88 
+   GENX_(__NR_symlink,           sys_symlink),        // 88 
    GENX_(__NR_readlink,          sys_readlink),       // 89 
 
    GENX_(__NR_chmod,             sys_chmod),          // 90 
@@ -1016,7 +1030,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_setgid,            sys_setgid),         // 106 
    GENX_(__NR_geteuid,           sys_geteuid),        // 107 
    GENX_(__NR_getegid,           sys_getegid),        // 108 
-   //   (__NR_setpgid,           sys_setpgid),        // 109 
+   GENX_(__NR_setpgid,           sys_setpgid),        // 109 
 
    GENX_(__NR_getppid,           sys_getppid),        // 110 
    GENX_(__NR_getpgrp,           sys_getpgrp),        // 111 
@@ -1025,7 +1039,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_setregid,          sys_setregid),       // 114 
 
    GENXY(__NR_getgroups,         sys_getgroups),      // 115 
-   //   (__NR_setgroups,         sys_setgroups),      // 116 
+   GENX_(__NR_setgroups,         sys_setgroups),      // 116 
    //   (__NR_setresuid,         sys_setresuid),      // 117 
    //   (__NR_getresuid,         sys_getresuid),      // 118 
    //   (__NR_setresgid,         sys_setresgid),      // 119 
@@ -1045,7 +1059,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),  // 130 
    GENXY(__NR_sigaltstack,       sys_sigaltstack),    // 131 
    GENX_(__NR_utime,             sys_utime),          // 132 
-   //   (__NR_mknod,             sys_mknod),          // 133 
+   GENX_(__NR_mknod,             sys_mknod),          // 133 
    //   (__NR_uselib,            sys_uselib),         // 134 
 
    //   (__NR_personality,       sys_personality),    // 135 
@@ -1079,7 +1093,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_adjtimex,          sys_adjtimex),       // 159 
 
    GENX_(__NR_setrlimit,         sys_setrlimit),      // 160 
-   //   (__NR_chroot,            sys_chroot),         // 161 
+   GENX_(__NR_chroot,            sys_chroot),         // 161 
    //   (__NR_sync,              sys_sync),           // 162 
    //   (__NR_acct,              sys_acct),           // 163 
    //   (__NR_settimeofday,      sys_settimeofday),   // 164 

@@ -18,7 +18,7 @@
    Boston, MA 02111-1307, USA.  */
 
 
-#if !defined (DEMANGLE_H)
+#ifndef DEMANGLE_H
 #define DEMANGLE_H
 
 #include <ansidecl.h>

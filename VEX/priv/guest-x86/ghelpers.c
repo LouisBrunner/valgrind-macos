@@ -256,17 +256,38 @@ static inline int lshift(int x, int n)
     return fl;							\
 }
 
-#define ACTIONS_MUL(DATA_BITS,DATA_UTYPE,DATA_S2TYPE)			\
+#define ACTIONS_SMUL(DATA_BITS,DATA_STYPE,DATA_S2TYPE)			\
 {									\
     PREAMBLE(DATA_BITS);						\
     int cf, pf, af, zf, sf, of;						\
-    DATA_UTYPE  r  = ((DATA_UTYPE)CC_SRC)  * ((DATA_UTYPE)CC_DST);	\
-    DATA_S2TYPE rr = ((DATA_S2TYPE)CC_SRC) * ((DATA_S2TYPE)CC_DST);	\
-    cf = (r == (DATA_UTYPE)(rr >>/*signed*/ DATA_BITS));	       	\
-    pf = parity_table[(uint8_t)r];					\
+    DATA_STYPE  hi;                                                     \
+    DATA_STYPE  lo = ((DATA_STYPE)CC_SRC) * ((DATA_STYPE)CC_DST);       \
+    DATA_S2TYPE rr = ((DATA_S2TYPE)((DATA_STYPE)CC_SRC))                \
+                     * ((DATA_S2TYPE)((DATA_STYPE)CC_DST));	        \
+    hi = (DATA_STYPE)(rr >>/*s*/ DATA_BITS);	                        \
+    cf = (hi != (lo >>/*s*/ (DATA_BITS-1)));                            \
+    pf = parity_table[(uint8_t)lo];					\
     af = 0; /* undefined */						\
-    zf = (r == 0) << 6;							\
-    sf = lshift(r, 8 - DATA_BITS) & 0x80;				\
+    zf = (lo == 0) << 6;						\
+    sf = lshift(lo, 8 - DATA_BITS) & 0x80;				\
+    of = cf << 11;							\
+    return cf | pf | af | zf | sf | of;					\
+}
+
+#define ACTIONS_UMUL(DATA_BITS,DATA_UTYPE,DATA_U2TYPE)			\
+{									\
+    PREAMBLE(DATA_BITS);						\
+    int cf, pf, af, zf, sf, of;						\
+    DATA_UTYPE  hi;                                                     \
+    DATA_UTYPE  lo = ((DATA_UTYPE)CC_SRC) * ((DATA_UTYPE)CC_DST);       \
+    DATA_U2TYPE rr = ((DATA_U2TYPE)((DATA_UTYPE)CC_SRC))                \
+                     * ((DATA_U2TYPE)((DATA_UTYPE)CC_DST));             \
+    hi = (DATA_UTYPE)(rr >>/*u*/ DATA_BITS);	                        \
+    cf = (hi != 0);                                                     \
+    pf = parity_table[(uint8_t)lo];					\
+    af = 0; /* undefined */						\
+    zf = (lo == 0) << 6;				       		\
+    sf = lshift(lo, 8 - DATA_BITS) & 0x80;				\
     of = cf << 11;							\
     return cf | pf | af | zf | sf | of;					\
 }
@@ -324,7 +345,9 @@ static inline int lshift(int x, int n)
       case CC_OP_RORW:   ACTIONS_ROR( 16, UShort );
       case CC_OP_RORL:   ACTIONS_ROR( 32, UInt   );
 
-      case CC_OP_MULL:   ACTIONS_MUL( 32, UInt, Long );
+      case CC_OP_UMULL:  ACTIONS_UMUL( 32, UInt, ULong );
+
+      case CC_OP_SMULL:  ACTIONS_SMUL( 32, Int,  Long );
 
       default:
          /* shouldn't really make these calls from generated code */

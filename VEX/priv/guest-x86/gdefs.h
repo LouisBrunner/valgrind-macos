@@ -92,17 +92,13 @@ enum {
     CC_OP_RORW,
     CC_OP_RORL, /* 33 */
 
-    CC_OP_MULB, /* modify all flags, CC_DST = one arg */
-    CC_OP_MULW, /* CC_SRC = the other arg */
-    CC_OP_MULL, /* 36 */
+    CC_OP_UMULB, /* modify all flags, CC_DST = one arg */
+    CC_OP_UMULW, /* CC_SRC = the other arg */
+    CC_OP_UMULL, /* 36 */
 
-    CC_OP_MULLSB, /* modify all flags, CC_DST = one arg */
-    CC_OP_MULLSW, /* CC_SRC = the other arg */
-    CC_OP_MULLSL, /* 39 */
-
-    CC_OP_MULLUB, /* modify all flags, CC_DST = one arg */
-    CC_OP_MULLUW, /* CC_SRC = the other arg */
-    CC_OP_MULLUL, /* 42 */
+    CC_OP_SMULB, /* modify all flags, CC_DST = one arg */
+    CC_OP_SMULW, /* CC_SRC = the other arg */
+    CC_OP_SMULL, /* 39 */
 
     CC_OP_NUMBER
 };

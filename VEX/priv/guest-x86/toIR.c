@@ -653,6 +653,10 @@ static IRExpr* calculate_condition ( Condcode cond )
                                  : mk_calculate_eflags_all() );
  
    switch (cond) {
+      case CondNO:
+      case CondO: /* OF == 1 */
+         e = flag_to_bit0( CC_MASK_O, eflags );
+         break;
       case CondNZ:
       case CondZ: /* ZF == 1 */
          e = flag_to_bit0( CC_MASK_Z, eflags );
@@ -671,6 +675,7 @@ static IRExpr* calculate_condition ( Condcode cond )
       case CondS: /* SF == 1 */
          e = flag_to_bit0( CC_MASK_S, eflags );
          break;
+      case CondNP:
       case CondP: /* PF == 1 */
          e = flag_to_bit0( CC_MASK_P, eflags );
          break;
@@ -2457,13 +2462,25 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
    case Ity_I32: {
       IRTemp res64   = newTemp(Ity_I64);
       IROp   mulOp   = syned ? Iop_MullS32 : Iop_MullU32;
-      UInt   thunkOp = syned ? CC_OP_MULLSB : CC_OP_MULLUB;
+      UInt   thunkOp = syned ? CC_OP_SMULB : CC_OP_UMULB;
       setFlags_MUL ( Ity_I32, t1, tmp, thunkOp );
       assign( res64, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
       putIReg(4, R_EDX, unop(Iop_64HIto32,mkexpr(res64)));
       putIReg(4, R_EAX, unop(Iop_64to32,mkexpr(res64)));
       break;
    }
+#if 0
+   case Ity_I16: {
+      IRTemp res32   = newTemp(Ity_I32);
+      IROp   mulOp   = syned ? Iop_MullS16 : Iop_MullU16;
+      UInt   thunkOp = syned ? CC_OP_MULLSB : CC_OP_MULLUB;
+      setFlags_MUL ( Ity_I16, t1, tmp, thunkOp );
+      assign( res32, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
+      putIReg(2, R_EDX, unop(Iop_32HIto16,mkexpr(res32)));
+      putIReg(2, R_EAX, unop(Iop_32to16,mkexpr(res32)));
+      break;
+   }
+#endif
    default:
       vpanic("codegen_mulL_A_D(x86)");
    }
@@ -2964,7 +2981,7 @@ static
 UInt dis_mul_E_G ( UChar       sorb,
                    Int         size, 
                    UInt        delta0,
-                   Bool        signed_multiply )
+                   Bool        syned )
 {
    Int    alen;
    UChar  dis_buf[50];
@@ -2973,17 +2990,17 @@ UInt dis_mul_E_G ( UChar       sorb,
    IRTemp te = newTemp(ty);
    IRTemp tg = newTemp(ty);
 
-   vassert(signed_multiply);
+   vassert(syned);
 
    if (epartIsReg(rm)) {
       assign( tg, getIReg(size, gregOfRM(rm)) );
       assign( te, getIReg(size, eregOfRM(rm)) );
-      setFlags_MUL ( ty, te, tg, CC_OP_MULB );
+      setFlags_MUL ( ty, te, tg, syned ? CC_OP_SMULB : CC_OP_UMULB );
       putIReg(size, gregOfRM(rm), 
 	      binop(mkSizedOp(ty,Iop_Mul8),
 		    mkexpr(te), mkexpr(tg)));
 
-      DIP("%smul%c %s, %s\n", signed_multiply ? "i" : "",
+      DIP("%smul%c %s, %s\n", syned ? "i" : "",
                               nameISize(size), 
                               nameIReg(size,eregOfRM(rm)),
                               nameIReg(size,gregOfRM(rm)));
@@ -2992,12 +3009,12 @@ UInt dis_mul_E_G ( UChar       sorb,
       IRTemp addr = disAMode( &alen, sorb, delta0, dis_buf );
       assign( tg, getIReg(size, gregOfRM(rm)) );
       assign( te, loadLE(ty,mkexpr(addr)) );
-      setFlags_MUL ( ty, te, tg, CC_OP_MULB );
+      setFlags_MUL ( ty, te, tg, syned ? CC_OP_SMULB : CC_OP_UMULB );
       putIReg(size, gregOfRM(rm), 
 	      binop(mkSizedOp(ty,Iop_Mul8),
 		    mkexpr(te), mkexpr(tg)));
 
-      DIP("%smul%c %s, %s\n", signed_multiply ? "i" : "",
+      DIP("%smul%c %s, %s\n", syned ? "i" : "",
                               nameISize(size), 
                               dis_buf, nameIReg(size,gregOfRM(rm)));
       return alen+delta0;
@@ -3036,7 +3053,7 @@ UInt dis_imul_I_E_G ( UChar       sorb,
    delta += litsize;
 
    assign(tl, mkU(ty,d32));
-   setFlags_MUL ( ty, te, tl, CC_OP_MULB );
+   setFlags_MUL ( ty, te, tl, CC_OP_SMULB );
    putIReg(size, gregOfRM(rm), 
            binop(mkSizedOp(ty,Iop_Mul8),
                  mkexpr(te), mkexpr(tl)));

@@ -2686,9 +2686,13 @@ int main(int argc, char **argv)
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
    if (VG_(clo_wait_for_gdb)) {
-      VG_(printf)("pid=%d\n", VG_(getpid)());
-      /* do "jump *$eip" to skip this in gdb */
-      VG_(do_syscall0)(__NR_pause);
+      VG_(printf)("pid=%d, entering delay loop\n", VG_(getpid)());
+      /* jrs 20050206: I don't understand why this works on x86.  On
+         amd64 the obvious analogues (jump *$rip or jump *$rcx) don't
+         work. */
+      /* do "jump *$eip" to skip this in gdb (x86) */
+      //VG_(do_syscall0)(__NR_pause);
+      { Long q; for (q = 0; q < 10ULL *1000*1000*1000; q++) ; }
    }
 
    //--------------------------------------------------------------

@@ -312,8 +312,9 @@ static IRAtom* mkUifU128 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
    return assignNew(mce, Ity_V128, binop(Iop_Or128, a1, a2));
 }
 
-static IRAtom* mkUifU ( MCEnv* mce, IRType vty,  IRAtom* a1, IRAtom* a2 ) {
+static IRAtom* mkUifU ( MCEnv* mce, IRType vty, IRAtom* a1, IRAtom* a2 ) {
    switch (vty) {
+      case Ity_I8:   return mkUifU8(mce, a1, a2);
       case Ity_I16:  return mkUifU16(mce, a1, a2);
       case Ity_I32:  return mkUifU32(mce, a1, a2);
       case Ity_I64:  return mkUifU64(mce, a1, a2);

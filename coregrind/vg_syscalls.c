@@ -2111,9 +2111,14 @@ POST(fstat)
 
 static vki_sigset_t fork_saved_mask;
 
-PRE(fork)
+// In Linux, the sys_fork() function varies across architectures, but we
+// ignore the various args it gets, and so it looks arch-neutral.  Hmm.
+PREx(sys_fork, 0)
 {
    vki_sigset_t mask;
+
+   PRINT("sys_fork ( )");
+   PRE_REG_READ0(long, "fork");
 
    vg_assert(VG_(gettid)() == VG_(main_pid));
 
@@ -2122,13 +2127,10 @@ PRE(fork)
    VG_(sigfillset)(&mask);
    VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &fork_saved_mask);
 
-   /* pid_t fork(void); */
-   PRINT("fork ()");
-
    do_atfork_pre(tid);
 }
 
-POST(fork)
+POST(sys_fork)
 {
    if (res == 0) {
       do_atfork_child(tid);
@@ -2160,9 +2162,9 @@ PRE(clone)
        (arg1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
      || arg1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
    {
-      before_fork(tid, tst);
+      before_sys_fork(tid, tst);
       set_result( VG_(do_syscall)(SYSNO, arg1, arg2, arg3, arg4, arg5) );
-      after_fork(tid, tst);
+      after_sys_fork(tid, tst);
    } else {
       VG_(unimplemented)
          ("clone(): not supported by Valgrind.\n   "
@@ -5806,7 +5808,7 @@ static const struct sys_info bad_sys = { Special, NULL, bad_before, NULL };
 static const struct sys_info sys_info[] = {
    // 0 is restart_syscall
    SYSX_(__NR_exit,             sys_exit), // 1 * P
-   SYSBA(fork,			0), // 2 sys_fork P
+   SYSXY(__NR_fork,             sys_fork), // 2 (quasi-generic...) P
    SYSXY(__NR_read,             sys_read), // 3 * P
    SYSX_(__NR_write,            sys_write), // 4 * P
 

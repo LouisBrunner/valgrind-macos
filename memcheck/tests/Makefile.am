@@ -3,6 +3,8 @@ SUBDIRS =  ${VG_ARCH} .
 noinst_SCRIPTS = filter_allocs filter_leak_check_size \
 		 filter_stderr filter_stderr_backtrace
 
+noinst_HEADERS = scalar.h
+
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
@@ -52,7 +54,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
 	scalar.stderr.exp scalar.vgtest scalar.supp \
-	scalar_supp.stderr.exp scalar_supp.vgtest scalar_supp.c \
+	scalar_fork.stderr.exp scalar_fork.vgtest \
+	scalar_supp.stderr.exp scalar_supp.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
 	signal2.stderr.exp \
 	signal2.stdout.exp signal2.vgtest \
@@ -81,7 +84,8 @@ check_PROGRAMS = \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak new_nothrow \
 	null_socket overlap \
-	realloc1 realloc2 realloc3 scalar scalar_supp sigaltstack signal2 \
+	realloc1 realloc2 realloc3 scalar scalar_fork \
+	scalar_supp sigaltstack signal2 \
 	str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
 	mismatches new_override metadata threadederrno \
@@ -134,6 +138,7 @@ realloc1_SOURCES 	= realloc1.c
 realloc2_SOURCES 	= realloc2.c
 realloc3_SOURCES 	= realloc3.c
 scalar_SOURCES 		= scalar.c
+scalar_fork_SOURCES 	= scalar_fork.c
 scalar_supp_SOURCES 	= scalar_supp.c
 signal2_SOURCES 	= signal2.c
 supp1_SOURCES 		= supp.c

@@ -142,6 +142,7 @@ static void addToH64 ( Hash64* h, ULong key, ULong val )
 /*--- Flattening out a BB into pure SSA form                  ---*/
 /*---------------------------------------------------------------*/
 
+inline
 static Bool isAtom ( IRExpr* e )
 {
    return e->tag == Iex_Tmp || e->tag == Iex_Const;

@@ -806,6 +806,7 @@ IRTemp newIRTemp ( IRTypeEnv* env, IRType ty )
 /*--- Helper functions for the IR -- finding types of exprs   ---*/
 /*---------------------------------------------------------------*/
 
+inline 
 IRType typeOfIRTemp ( IRTypeEnv* env, IRTemp tmp )
 {
    vassert(tmp >= 0);
@@ -831,6 +832,7 @@ IRType typeOfIRConst ( IRConst* con )
 IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
 {
    IRType t_dst, t_arg1, t_arg2;
+ start:
    switch (e->tag) {
       case Iex_LDle:
          return e->Iex.LDle.ty;
@@ -851,7 +853,9 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
       case Iex_CCall:
          return e->Iex.CCall.retty;
       case Iex_Mux0X:
-         return typeOfIRExpr(tyenv, e->Iex.Mux0X.expr0);
+         e = e->Iex.Mux0X.expr0;
+         goto start;
+         /* return typeOfIRExpr(tyenv, e->Iex.Mux0X.expr0); */
       case Iex_Binder:
          vpanic("typeOfIRExpr: Binder is not a valid expression");
       default:

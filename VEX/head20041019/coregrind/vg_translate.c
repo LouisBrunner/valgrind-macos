@@ -1423,10 +1423,9 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
 {
    Addr        redir, orig_addr0 = orig_addr;
    Int         orig_size, tmpbuf_used;
-   UCodeBlock* cb;
    Bool        notrace_until_done;
    UInt        notrace_until_limit = 0;
-   UInt        FULLTRACE_LIMIT = 21068;
+   UInt        FULLTRACE_LIMIT = 1; //21068;
    Segment     *seg;
 
    /* Make sure Vex is initialised right. */
@@ -1486,8 +1485,6 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    } else
       seg->flags |= SF_CODE;	/* contains cached code */
 
-   cb = alloc_UCodeBlock( orig_addr );
-
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_codegen)) {
       Char fnname[64] = "";
@@ -1516,7 +1513,9 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
              InsnSetX86, InsnSetX86,
              (Char*)orig_addr, (Addr64)orig_addr, &orig_size,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
-             NULL, NULL,
+             SK_(instrument),
+             SK_(tool_findhelper),
+             NULL,
              0+ DECIDE_IF_PRINTING_CODEGEN ? 2 : 0
           );
 

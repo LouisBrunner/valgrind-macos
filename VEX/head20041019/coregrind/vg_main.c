@@ -1655,7 +1655,6 @@ static void pre_process_cmd_line_options
       }
    }
 
-#if 0
    /* If no tool specified, can act appropriately without loading tool */
    if (*tool == NULL) {
       if (0 == *need_help) {
@@ -1666,9 +1665,6 @@ static void pre_process_cmd_line_options
          usage(/*help-debug?*/2 == *need_help);
       }
    }
-#endif
-   /* hardwire the only currently supported tool. */
-   *tool = "none";
 }
 
 static void process_cmd_line_options( UInt* client_auxv, const char* toolname )

@@ -37,6 +37,8 @@
 #include "tool_asm.h"           // asm stuff
 
 #include "../../../pub/libvex_basictypes.h"
+#include "../../../pub/libvex_ir.h"
+
 
 /*====================================================================*/
 /*=== Basic types                                                  ===*/

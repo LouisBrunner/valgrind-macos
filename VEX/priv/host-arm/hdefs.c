@@ -45,8 +45,8 @@
 
 /* --------- Registers. --------- */
 
-/* The usual HReg abstraction.  There are 8 real int regs,
-   6 real float regs, and 0 real vector regs. 
+/* The usual HReg abstraction.
+   There are 16 general purpose regs.
 */
 
 
@@ -138,6 +138,8 @@ HChar* showARMCondCode ( ARMCondCode cond ) {
        default: vpanic("showARMCondCode");
    }
 }
+
+
 
 
 /* --------- ARMAMode1: memory address expressions. --------- */
@@ -232,6 +234,62 @@ void ppARMAMode1 ( ARMAMode1* am ) {
 static void addRegUsage_ARMAMode1 ( HRegUsage* u, ARMAMode1* am ) {
 static void mapRegs_ARMAMode1 ( HRegRemap* m, ARMAMode1* am ) {
 */
+
+
+/* ------ ARMAMode1_I12A Helper function ------
+  Given imm32, find immed_8, rotate_imm.
+  ARM ARM A5-6: imm32 = immed_8 ROR (rotate_imm * 2)
+*/
+Bool mk_ARMImm12A ( UInt imm32, ARMImm12A* imm12a ) {
+//    UInt imm32_orig = imm32;
+    UInt shr=0, rot=0;
+    imm12a->imm = 0;
+    imm12a->rot = 0;
+    
+    // Easiest case: no shift needed
+    if (imm32 > 0xFF) {
+	// Next easiest: just a shift to the right needed
+	while ((imm32 & 1) == 0) { imm32 = imm32 >> 1;  shr++; }
+	rot = 32 - shr;
+
+	if (imm32 > 0xFF) {
+	    // Hardest: Need to rol (some minimum amount)
+	    // valid byte could be split over first and last bytes...
+	    
+	    // ROL 7 (worst case for still valid imm32):
+	    imm32 = (imm32 << 7) | (imm32 << (32-7));
+	    // ShR (reverse rol) if went too far:
+	    while ((imm32 & 1) == 0) { imm32 = imm32 >> 1; shr++; }
+	    rot = 7 - shr;   // if valid imm32, shr < 7
+	    
+	    if (imm32 > 0xFF) {  // Can't represent this value
+//		vex_printf("Error: Can't represent imm32: 0x%x", imm32_orig);
+		return False;
+	    }
+	}
+    }
+    // Valid imm32 so far...
+
+    if (rot & 1) {
+	rot--;
+	imm32 = imm32 << 1;
+	if (imm32 > 0xFF) {
+	    // Can't represent this value (can only shift even n)
+//	    vex_printf("Error: Can't represent imm32: 0x%x\n", imm32_orig);
+	    return False;
+	}
+    }
+
+    imm12a->imm = imm32;
+    imm12a->rot = rot / 2;
+    
+    vassert((imm12a->imm & 0xFF) == imm12a->imm);
+    vassert((imm12a->rot & 0xF ) == imm12a->rot);
+    return True;
+}
+
+
+
 
 
 /* --------- ARMAMode2: memory address expressions. --------- */
@@ -368,29 +426,29 @@ void ppARMBranchDest ( ARMBranchDest* branch_dest ) {
 
 HChar* showARMAluOp ( ARMAluOp op ) {
     switch (op) {
-    case ARMalu_And:  return "and";
-    case ARMalu_Orr:  return "orr";
-    case ARMalu_Eor:  return "eor";
-    case ARMalu_Sub:  return "sub";
-    case ARMalu_Rsb:  return "rsb";
-    case ARMalu_Add:  return "add";
-    case ARMalu_Adc:  return "adc";
-    case ARMalu_Sbc:  return "sbc";
-    case ARMalu_Rsc:  return "rsc";
-    case ARMalu_Tst:  return "tst";
-    case ARMalu_Teq:  return "teq";
-    case ARMalu_Cmp:  return "cmp";
-    case ARMalu_Cmn:  return "cmn";
-    case ARMalu_Mov:  return "mov";
-    case ARMalu_Mvn:  return "mvn";
-    case ARMalu_Bic:  return "vic";
+    case ARMalu_AND:  return "and";
+    case ARMalu_ORR:  return "orr";
+    case ARMalu_EOR:  return "eor";
+    case ARMalu_SUB:  return "sub";
+    case ARMalu_RSB:  return "rsb";
+    case ARMalu_ADD:  return "add";
+    case ARMalu_ADC:  return "adc";
+    case ARMalu_SBC:  return "sbc";
+    case ARMalu_RSC:  return "rsc";
+    case ARMalu_TST:  return "tst";
+    case ARMalu_TEQ:  return "teq";
+    case ARMalu_CMP:  return "cmp";
+    case ARMalu_CMN:  return "cmn";
+    case ARMalu_MOV:  return "mov";
+    case ARMalu_MVN:  return "mvn";
+    case ARMalu_BIC:  return "bic";
     default: vpanic("showARMAluOp");
     }
 }
 
 /* --- Addressing Mode 1 --- */
 ARMInstr* ARMInstr_DPCmp ( ARMAluOp op, HReg Rn,
-			   ARMAMode1 shifter_op ) {
+			   ARMAMode1* shifter_op ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_DPCmp;
     i->ARMin.DPCmp.op = op;
@@ -400,7 +458,7 @@ ARMInstr* ARMInstr_DPCmp ( ARMAluOp op, HReg Rn,
 }
 
 ARMInstr* ARMInstr_DPInstr1 ( ARMAluOp op, HReg Rd,
-			      ARMAMode1 shifter_op ) {
+			      ARMAMode1* shifter_op ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_DPInstr1;
     i->ARMin.DPInstr1.op = op;
@@ -410,7 +468,7 @@ ARMInstr* ARMInstr_DPInstr1 ( ARMAluOp op, HReg Rd,
 }
 
 ARMInstr* ARMInstr_DPInstr2 ( ARMAluOp op, HReg Rd, HReg Rn,
-			      ARMAMode1 shifter_op ) {
+			      ARMAMode1* shifter_op ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_DPInstr2;
     i->ARMin.DPInstr2.op = op;
@@ -421,7 +479,7 @@ ARMInstr* ARMInstr_DPInstr2 ( ARMAluOp op, HReg Rd, HReg Rn,
 }
 
 /* --- Addressing Mode 2 --- */
-ARMInstr* ARMInstr_LoadUB ( HReg Rd, ARMAMode2 addr_mode ) {
+ARMInstr* ARMInstr_LoadUB ( HReg Rd, ARMAMode2* addr_mode ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_LoadUB;
     i->ARMin.LoadUB.Rd = Rd;
@@ -429,7 +487,7 @@ ARMInstr* ARMInstr_LoadUB ( HReg Rd, ARMAMode2 addr_mode ) {
     return i;
 }
 
-ARMInstr* ARMInstr_StoreB ( HReg Rd, ARMAMode2 addr_mode ) {
+ARMInstr* ARMInstr_StoreB ( HReg Rd, ARMAMode2* addr_mode ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_StoreB;
     i->ARMin.StoreB.Rd = Rd;
@@ -437,7 +495,7 @@ ARMInstr* ARMInstr_StoreB ( HReg Rd, ARMAMode2 addr_mode ) {
     return i;
 }
 
-ARMInstr* ARMInstr_LoadW ( HReg Rd, ARMAMode2 addr_mode ) {
+ARMInstr* ARMInstr_LoadW ( HReg Rd, ARMAMode2* addr_mode ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_LoadW;
     i->ARMin.LoadW.Rd = Rd;
@@ -445,7 +503,7 @@ ARMInstr* ARMInstr_LoadW ( HReg Rd, ARMAMode2 addr_mode ) {
     return i;
 }
 
-ARMInstr* ARMInstr_StoreW ( HReg Rd, ARMAMode2 addr_mode ) {
+ARMInstr* ARMInstr_StoreW ( HReg Rd, ARMAMode2* addr_mode ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_StoreW;
     i->ARMin.StoreW.Rd = Rd;
@@ -454,7 +512,7 @@ ARMInstr* ARMInstr_StoreW ( HReg Rd, ARMAMode2 addr_mode ) {
 }
 
 /* --- Addressing Mode 3 --- */
-ARMInstr* ARMInstr_LoadSB ( HReg Rd, ARMAMode3 addr_mode ) {
+ARMInstr* ARMInstr_LoadSB ( HReg Rd, ARMAMode3* addr_mode ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_LoadSB;
     i->ARMin.LoadSB.Rd = Rd;
@@ -462,7 +520,7 @@ ARMInstr* ARMInstr_LoadSB ( HReg Rd, ARMAMode3 addr_mode ) {
     return i;
 }
 
-ARMInstr* ARMInstr_LoadUH ( HReg Rd, ARMAMode3 addr_mode ) {
+ARMInstr* ARMInstr_LoadUH ( HReg Rd, ARMAMode3* addr_mode ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_LoadUH;
     i->ARMin.LoadUH.Rd = Rd;
@@ -470,7 +528,7 @@ ARMInstr* ARMInstr_LoadUH ( HReg Rd, ARMAMode3 addr_mode ) {
     return i;
 }
 
-ARMInstr* ARMInstr_LoadSH ( HReg Rd, ARMAMode3 addr_mode ) {
+ARMInstr* ARMInstr_LoadSH ( HReg Rd, ARMAMode3* addr_mode ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_LoadSH;
     i->ARMin.LoadSH.Rd = Rd;
@@ -478,7 +536,7 @@ ARMInstr* ARMInstr_LoadSH ( HReg Rd, ARMAMode3 addr_mode ) {
     return i;
 }
 
-ARMInstr* ARMInstr_StoreH ( HReg Rd, ARMAMode3 addr_mode ) {
+ARMInstr* ARMInstr_StoreH ( HReg Rd, ARMAMode3* addr_mode ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_StoreH;
     i->ARMin.StoreH.Rd = Rd;
@@ -487,7 +545,7 @@ ARMInstr* ARMInstr_StoreH ( HReg Rd, ARMAMode3 addr_mode ) {
 }
 
 /* --- Branch --- */
-ARMInstr* ARMInstr_Branch ( ARMCondCode cond, ARMBranchDest dest ) {
+ARMInstr* ARMInstr_Branch ( ARMCondCode cond, ARMBranchDest* dest ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_Branch;
     i->ARMin.Branch.cond = cond;
@@ -495,7 +553,7 @@ ARMInstr* ARMInstr_Branch ( ARMCondCode cond, ARMBranchDest dest ) {
     return i;
 }
 
-ARMInstr* ARMInstr_BranchL ( ARMBranchDest dest ) {
+ARMInstr* ARMInstr_BranchL ( ARMCondCode cond, ARMBranchDest* dest ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_BranchL;
     i->ARMin.BranchL.dest = dest;
@@ -503,11 +561,11 @@ ARMInstr* ARMInstr_BranchL ( ARMBranchDest dest ) {
 }
 
 /* --- Literal --- */
-ARMInstr* ARMInstr_Literal ( HReg reg, ARMImm12A imm12a ) {
+ARMInstr* ARMInstr_Literal ( HReg reg, UInt imm ) {
     ARMInstr* i       = LibVEX_Alloc(sizeof(ARMInstr));
     i->tag = ARMin_Literal;
     i->ARMin.Literal.reg = reg;
-    i->ARMin.Literal.imm12a = imm12a;
+    i->ARMin.Literal.imm = imm;
     return i;
 }
 

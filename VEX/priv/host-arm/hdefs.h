@@ -63,6 +63,12 @@ extern HReg hregARM_R14 ( void );
 extern HReg hregARM_R15 ( void );
 
 
+#define GET_BP_REG() hregARM_R12()  // x86 ebp
+#define GET_SP_REG() hregARM_R13()  // x86 esp
+#define GET_LN_REG() hregARM_R14()
+#define GET_PC_REG() hregARM_R15()
+
+
 
 
 /* --------- Condition codes, Intel encoding. --------- */
@@ -106,6 +112,7 @@ typedef UInt ARMImm4;
 typedef UInt ARMImm5;
 typedef UInt ARMImm8;
 typedef UInt ARMImm12;
+typedef UInt ARMImm24; // Branch imm
 typedef
   struct {
       ARMImm8 imm;
@@ -113,7 +120,8 @@ typedef
   }
   ARMImm12A;   /* extended (rotated) immedate */
 
-typedef UInt ARMImm24; // Branch imm
+extern Bool mk_ARMImm12A ( UInt, ARMImm12A*);
+
 
 
 /* --------- Memory address expressions (amodes). --------- */
@@ -288,10 +296,10 @@ extern void ppARMBranchDest ( ARMBranchDest* );
 /* --- DPI's --- */
 typedef
    enum {
-       ARMalu_And, ARMalu_Orr, ARMalu_Eor, ARMalu_Bic, // Logic
-       ARMalu_Sub, ARMalu_Rsb, ARMalu_Add, ARMalu_Adc, ARMalu_Sbc, ARMalu_Rsc,  // Arith
-       ARMalu_Tst, ARMalu_Teq, ARMalu_Cmp, ARMalu_Cmn,  // test
-       ARMalu_Mov, ARMalu_Mvn  // Move
+       ARMalu_AND, ARMalu_ORR, ARMalu_EOR, ARMalu_BIC, // Logic
+       ARMalu_SUB, ARMalu_RSB, ARMalu_ADD, ARMalu_ADC, ARMalu_SBC, ARMalu_RSC, // Arith
+       ARMalu_TST, ARMalu_TEQ, ARMalu_CMP, ARMalu_CMN, // Test
+       ARMalu_MOV, ARMalu_MVN  // Move
    }
    ARMAluOp;
 
@@ -330,92 +338,94 @@ typedef
 	  struct {
 	      ARMAluOp op;
 	      HReg Rn;
-	      ARMAMode1 shifter_op;
+	      ARMAMode1* shifter_op;
 	  } DPCmp;        // test instrs - compare Rd with RIS and set flags
 	  struct {
 	      ARMAluOp op;
 	      HReg Rd;
-	      ARMAMode1 shifter_op;
+	      ARMAMode1* shifter_op;
 	  } DPInstr1;      // 1 reg: Mov
 	  struct {
 	      ARMAluOp op;
 	      HReg Rd;
 	      HReg Rn;
-	      ARMAMode1 shifter_op;
+	      ARMAMode1* shifter_op;
 	  } DPInstr2;      // 2 regs: Logic, Arith, Bic
 
 	  /* Addressing Mode 2 */
 	  struct {
 	      HReg Rd;
-	      ARMAMode2 addr_mode;
+	      ARMAMode2* addr_mode;
 	  } LoadUB;
 	  struct {
 	      HReg Rd;
-	      ARMAMode2 addr_mode;
+	      ARMAMode2* addr_mode;
 	  } StoreB;
 	  struct {
 	      HReg Rd;
-	      ARMAMode2 addr_mode;
+	      ARMAMode2* addr_mode;
 	  } LoadW;
 	  struct {
 	      HReg Rd;
-	      ARMAMode2 addr_mode;
+	      ARMAMode2* addr_mode;
 	  } StoreW;
 
 	  /* Addressing Mode 3 */
 	  struct {
 	      HReg Rd;
-	      ARMAMode3 addr_mode;
+	      ARMAMode3* addr_mode;
 	  } LoadSB;
 	  struct {
 	      HReg Rd;
-	      ARMAMode3 addr_mode;
+	      ARMAMode3* addr_mode;
 	  } LoadUH;
 	  struct {
 	      HReg Rd;
-	      ARMAMode3 addr_mode;
+	      ARMAMode3* addr_mode;
 	  } LoadSH;
 	  struct {
 	      HReg Rd;
-	      ARMAMode3 addr_mode;
+	      ARMAMode3* addr_mode;
 	  } StoreH;
 
 
 	  /* Branch */
 	  struct {
 	      ARMCondCode cond;
-	      ARMBranchDest dest;
+	      ARMBranchDest* dest;
 	  } Branch;
 	  struct {
-	      ARMBranchDest dest;
-	  } BranchL;       // -- don't want to do conditional BLs
+	      ARMCondCode cond;
+	      ARMBranchDest* dest;
+	  } BranchL;
 
 	  /* Literal */
 	  struct {
 	      HReg reg;
-	      ARMImm12A imm12a;
-	  } Literal;       // -- reg = Imm12A
+	      UInt imm;
+	  } Literal;       // -- reg = imm
 
       } ARMin;
    }
    ARMInstr;
 
-extern ARMInstr* ARMInstr_DPCmp     ( ARMAluOp, HReg, ARMAMode1 );
-extern ARMInstr* ARMInstr_DPInstr1  ( ARMAluOp, HReg, ARMAMode1 );
-extern ARMInstr* ARMInstr_DPInstr2  ( ARMAluOp, HReg, HReg, ARMAMode1 );
+extern ARMInstr* ARMInstr_DPCmp     ( ARMAluOp, HReg, ARMAMode1* );
+extern ARMInstr* ARMInstr_DPInstr1  ( ARMAluOp, HReg, ARMAMode1* );
+extern ARMInstr* ARMInstr_DPInstr2  ( ARMAluOp, HReg, HReg, ARMAMode1* );
 
-extern ARMInstr* ARMInstr_LoadUB    ( HReg, ARMAMode2 );
-extern ARMInstr* ARMInstr_StoreB    ( HReg, ARMAMode2 );
-extern ARMInstr* ARMInstr_LoadW     ( HReg, ARMAMode2 );
-extern ARMInstr* ARMInstr_StoreW    ( HReg, ARMAMode2 );
-extern ARMInstr* ARMInstr_LoadSB    ( HReg, ARMAMode3 );
-extern ARMInstr* ARMInstr_LoadUH    ( HReg, ARMAMode3 );
-extern ARMInstr* ARMInstr_LoadSH    ( HReg, ARMAMode3 );
-extern ARMInstr* ARMInstr_StoreH    ( HReg, ARMAMode3 );
+extern ARMInstr* ARMInstr_LoadUB    ( HReg, ARMAMode2* );
+extern ARMInstr* ARMInstr_StoreB    ( HReg, ARMAMode2* );
+extern ARMInstr* ARMInstr_LoadW     ( HReg, ARMAMode2* );
+extern ARMInstr* ARMInstr_StoreW    ( HReg, ARMAMode2* );
+extern ARMInstr* ARMInstr_LoadSB    ( HReg, ARMAMode3* );
+extern ARMInstr* ARMInstr_LoadUH    ( HReg, ARMAMode3* );
+extern ARMInstr* ARMInstr_LoadSH    ( HReg, ARMAMode3* );
+extern ARMInstr* ARMInstr_StoreH    ( HReg, ARMAMode3* );
 
-extern ARMInstr* ARMInstr_Branch    ( ARMCondCode, ARMBranchDest );
-extern ARMInstr* ARMInstr_BranchL   ( ARMBranchDest );
-extern ARMInstr* ARMInstr_Literal   ( HReg, ARMImm12A );
+extern ARMInstr* ARMInstr_Branch    ( ARMCondCode, ARMBranchDest* );
+extern ARMInstr* ARMInstr_BranchL   ( ARMCondCode, ARMBranchDest* );
+
+extern ARMInstr* ARMInstr_Literal   ( HReg, UInt );
 
 extern void ppARMInstr ( ARMInstr* );
 

@@ -25,6 +25,7 @@ LIB_OBJS = 	priv/ir/irdefs.o			\
 		priv/host-x86/hdefs.o			\
 		priv/host-arm/hdefs.o			\
 		priv/host-x86/isel.o			\
+		priv/host-arm/isel.o			\
 		priv/host-generic/h_generic_regs.o	\
 		priv/host-generic/reg_alloc2.o		\
 		priv/guest-x86/ghelpers.o		\
@@ -115,6 +116,10 @@ priv/host-arm/hdefs.o: $(ALL_HEADERS) priv/host-arm/hdefs.c
 priv/host-x86/isel.o: $(ALL_HEADERS) priv/host-x86/isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-x86/isel.o \
 					 -c priv/host-x86/isel.c
+
+priv/host-arm/isel.o: $(ALL_HEADERS) priv/host-arm/isel.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-arm/isel.o \
+					 -c priv/host-arm/isel.c
 
 priv/host-generic/h_generic_regs.o: $(ALL_HEADERS) priv/host-generic/h_generic_regs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-generic/h_generic_regs.o \

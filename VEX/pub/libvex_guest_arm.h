@@ -61,6 +61,8 @@ typedef
       UInt  guest_R10;
       UInt  guest_R11;
       UInt  guest_R12;
+
+      /* aka the stack pointer */
       UInt  guest_R13;
 
       /* aka the link register */

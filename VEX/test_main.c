@@ -69,10 +69,11 @@ int main ( int argc, char** argv )
       to read code outside the initial BB we hand it. */
    LibVEX_default_VexControl ( &vcon );
    vcon.guest_chase_thresh = 0;
+   vcon.iropt_level = 2;
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
-                 0,  /* verbosity */
+                 1,  /* verbosity */
                  //False, 
 		 True, /* valgrind support */
                  &vcon );

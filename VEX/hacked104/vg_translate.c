@@ -3121,8 +3121,8 @@ void VG_(translate) ( ThreadState* tst,
    UChar* final;
    Bool debugging_translation;
 
-   static Int v0thresh = 6000;
-   static Int v2thresh = 6140;
+   static Int v0thresh = 87000;
+   static Int v2thresh = 87000;
 
    TranslateResult tres;
    static Bool vex_init_done = False;
@@ -3137,7 +3137,10 @@ void VG_(translate) ( ThreadState* tst,
       vex_init_done = True;
    }
 
-   if (VG_(overall_in_count) > v2thresh) {
+   debugging_translation
+      = orig_size == NULL || trans_addr == NULL || trans_size == NULL;
+
+   if (debugging_translation || VG_(overall_in_count) > v2thresh) {
      VG_(printf)("\n\n");
          VG_(message)(Vg_UserMsg,
                      "=======================================================");
@@ -3161,7 +3164,8 @@ void VG_(translate) ( ThreadState* tst,
              (Char*)orig_addr, (Addr64)orig_addr, &t_orig_size,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
              NULL, NULL,
-             VG_(overall_in_count) > v2thresh ? 2 : 0
+             debugging_translation ? 1 :
+                (VG_(overall_in_count) > v2thresh ? 2 : 0)
           );
 
    vg_assert(tres == TransOK);
@@ -3172,8 +3176,6 @@ void VG_(translate) ( ThreadState* tst,
    for (i = 0; i < tmpbuf_used; i++)
       final[i] = tmpbuf[i];
 
-   debugging_translation
-      = orig_size == NULL || trans_addr == NULL || trans_size == NULL;
    if (debugging_translation) {
       /* Only done for debugging -- throw away final result. */
       VG_(jitfree)(final);

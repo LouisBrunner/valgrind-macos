@@ -1,1 +1,2 @@
 prog: fork
+vgopts: -q

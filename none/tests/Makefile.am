@@ -45,6 +45,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
 	seg_override.stderr.exp \
 	seg_override.stdout.exp seg_override.vgtest \
+	susphello.stdout.exp susphello.stderr.exp susphello.vgtest \
 	sha1_test.stderr.exp sha1_test.vgtest \
 	shortpush.stderr.exp shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \
@@ -61,7 +62,7 @@ check_PROGRAMS = \
 	fucomip $(INSN_TESTS) \
 	int munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
-	pth_blockedsig pushpopseg \
+	susphello pth_blockedsig pushpopseg \
 	syscall-restart1 syscall-restart2 system \
 	coolo_sigaction gxx304 yield
 
@@ -111,6 +112,8 @@ smc1_SOURCES 		= smc1.c
 sha1_test_SOURCES 	= sha1_test.c
 shortpush_SOURCES 	= shortpush.c
 shorts_SOURCES 		= shorts.c
+susphello_SOURCES	= susphello.c
+susphello_LDADD		= -lpthread
 syscall_restart1_SOURCES = syscall-restart1.c
 syscall_restart2_SOURCES = syscall-restart2.c
 system_SOURCES 		= system.c

@@ -1224,6 +1224,7 @@ extern void VG_(emit_testb_lit_reg)      ( Bool upd_cc, UInt lit, Int reg );
 /* zero-extended load emitters */
 extern void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg );
 extern void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg );
+extern void VG_(emit_movzwl_regmem_reg)    ( Int reg1, Int reg2 );
 
 /* misc instruction emitters */
 extern void VG_(emit_call_reg)         ( Int reg );

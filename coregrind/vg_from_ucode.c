@@ -1320,7 +1320,7 @@ void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg )
                    off, nameIReg(4,areg), nameIReg(4,reg));
 }
 
-static void emit_movzwl_regmem_reg ( Int reg1, Int reg2 )
+void VG_( emit_movzwl_regmem_reg ) ( Int reg1, Int reg2 )
 {
    VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB7 ); /* MOVZWL */
@@ -2648,7 +2648,7 @@ static void synth_mov_regmem_reg ( Int size, Int reg1, Int reg2 )
 {
    switch (size) {
       case 4: emit_movv_regmem_reg ( 4, reg1, reg2 ); break;
-      case 2: emit_movzwl_regmem_reg ( reg1, reg2 ); break;
+      case 2: VG_(emit_movzwl_regmem_reg) ( reg1, reg2 ); break;
       case 1: emit_movzbl_regmem_reg ( reg1, reg2 ); break;
       default: VG_(core_panic)("synth_mov_regmem_reg");
    }  

@@ -2291,8 +2291,11 @@ static
 Addr dis_fpu_no_mem ( UCodeBlock* cb, Addr eip, UChar first_byte )
 {
    Bool  sets_ZCP    = False;
+   Bool  uses_ZCP    = False;
    UChar second_byte = getUChar(eip); eip++;
    vg_assert(second_byte >= 0xC0);
+
+   /* Does the insn write any integer condition codes (%EIP) ? */
 
    if (first_byte == 0xDB && second_byte >= 0xF0 && second_byte <= 0xF7) {
       /* FCOMI */
@@ -2311,17 +2314,43 @@ Addr dis_fpu_no_mem ( UCodeBlock* cb, Addr eip, UChar first_byte )
       sets_ZCP = True;
    } 
 
+   /* Dually, does the insn read any integer condition codes (%EIP) ? */
+
+   if (first_byte == 0xDA && second_byte >= 0xC0 && second_byte <= 0xDF) {
+      /* FCMOVB  %st(n), %st(0)
+         FCMOVE  %st(n), %st(0)
+         FCMOVBE %st(n), %st(0)
+         FCMOVU  %st(n), %st(0)
+      */
+      uses_ZCP = True;
+   } else
+   if (first_byte == 0xDB && second_byte >= 0xC0 && second_byte <= 0xDF) {
+      /* FCMOVNB  %st(n), %st(0)
+         FCMOVNE  %st(n), %st(0)
+         FCMOVNBE %st(n), %st(0)
+         FCMOVNU  %st(n), %st(0)
+      */
+      uses_ZCP = True;
+   }
+
    uInstr1(cb, FPU, 0,
                Lit16,
                (((UShort)first_byte) << 8) | ((UShort)second_byte)
           );
+   if (uses_ZCP) {
+      /* VG_(printf)("!!! --- FPU insn which reads %EFLAGS\n"); */
+      uFlagsRWU(cb, FlagsZCP, FlagsEmpty, FlagsEmpty);
+      vg_assert(!sets_ZCP);
+   }
    if (sets_ZCP) {
       /* VG_(printf)("!!! --- FPU insn which writes %EFLAGS\n"); */
       uFlagsRWU(cb, FlagsEmpty, FlagsZCP, FlagsEmpty);
+      vg_assert(!uses_ZCP);
    }
 
-   if (dis) VG_(printf)("fpu 0x%x:0x%x%s\n",
+   if (dis) VG_(printf)("fpu 0x%x:0x%x%s%s\n",
                         (UInt)first_byte, (UInt)second_byte,
+                        uses_ZCP ? " -rZCP" : "",
                         sets_ZCP ? " -wZCP" : "" );
    return eip;
 }

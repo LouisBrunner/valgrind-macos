@@ -476,8 +476,10 @@ Bool VG_(saneUInstr) ( Bool beforeRA, UInstr* u )
 #  define CC0 (u->flags_r == FlagsEmpty && u->flags_w == FlagsEmpty)
 #  define FLG_RD (u->flags_r == FlagsALL && u->flags_w == FlagsEmpty)
 #  define FLG_WR (u->flags_r == FlagsEmpty && u->flags_w == FlagsALL)
-#  define FLG_WR_MAYBE (u->flags_r == FlagsEmpty && \
-                    (u->flags_w == FlagsEmpty || u->flags_w == FlagsZCP))
+#  define FLG_RD_WR_MAYBE                                         \
+       ((u->flags_r == FlagsEmpty && u->flags_w == FlagsEmpty)    \
+        || (u->flags_r == FlagsEmpty && u->flags_w == FlagsZCP)   \
+        || (u->flags_r == FlagsZCP && u->flags_w == FlagsEmpty))
 #  define CC1 (!(CC0))
 #  define SZ4_IF_TR1 ((u->tag1 == TempReg || u->tag1 == RealReg) \
                       ? (u->size == 4) : True)
@@ -491,9 +493,9 @@ Bool VG_(saneUInstr) ( Bool beforeRA, UInstr* u )
 
    switch (u->opcode) {
       case GETF:
-	return (SZ2 || SZ4) && TR1 && N2 && N3 && FLG_RD;
+         return (SZ2 || SZ4) && TR1 && N2 && N3 && FLG_RD;
       case PUTF:
-	return (SZ2 || SZ4) && TR1 && N2 && N3 && FLG_WR;
+         return (SZ2 || SZ4) && TR1 && N2 && N3 && FLG_WR;
       case CALLM_S: case CALLM_E:
          return SZ0 && N1 && N2 && N3;
       case INCEIP:
@@ -540,7 +542,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, UInstr* u )
       case FPU_R:  case FPU_W: 
          return CC0 && Ls1 && TR2 && N3;
       case FPU: 
-         return SZ0 && FLG_WR_MAYBE && Ls1 && N2 && N3;
+         return SZ0 && FLG_RD_WR_MAYBE && Ls1 && N2 && N3;
       case LOADV:
          return CC0 && TR1 && TR2 && N3;
       case STOREV:
@@ -590,7 +592,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, UInstr* u )
 #  undef N3
 #  undef FLG_RD
 #  undef FLG_WR
-#  undef FLG_WR_MAYBE
+#  undef FLG_RD_WR_MAYBE 
 }
 
 

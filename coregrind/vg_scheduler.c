@@ -1004,8 +1004,8 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          non-completely-trivial reason. First, update basic-block
          counters. */
 
-      done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 1;
-      vg_assert(done_this_time >= 0);
+      done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr);
+      vg_assert(done_this_time > 0);
       VG_(bbs_done)    += (ULong)done_this_time;
 
       if (0 && trc != VG_TRC_INNER_FASTMISS)

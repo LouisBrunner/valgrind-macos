@@ -1787,11 +1787,6 @@ extern void VGA_(init_high_baseBlock) ( Addr client_ip, Addr sp_at_startup );
 extern void VGA_(load_state) ( arch_thread_t*, ThreadId tid );
 extern void VGA_(save_state) ( arch_thread_t*, ThreadId tid );
 
-// Register state access
-extern void VGA_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg, UInt val );
-extern UInt VGA_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg );
-extern UInt VGA_(get_shadow_archreg) ( UInt archreg );
-
 // Thread stuff
 extern void VGA_(clear_thread)   ( arch_thread_t* );
 extern void VGA_(init_thread)    ( arch_thread_t* );

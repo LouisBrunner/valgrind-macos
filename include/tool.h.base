@@ -578,14 +578,12 @@ extern void VG_(cpuid) ( UInt eax,
 
 /* ------------------------------------------------------------------ */
 /* Accessing archregs and their shadows */
-/* ToDo: is this still needed ? */
+
 extern UInt VGA_(get_archreg)            ( UInt archreg );
 extern UInt VGA_(get_thread_archreg)     ( ThreadId tid, UInt archreg );
 
 extern UInt VGA_(get_shadow_archreg)     ( UInt archreg );
 extern void VGA_(set_shadow_archreg)     ( UInt archreg, UInt val );
-
-extern Addr VGA_(shadow_archreg_address) ( UInt archreg );
 
 extern UInt VGA_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg );
 extern void VGA_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg,

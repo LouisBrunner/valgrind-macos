@@ -202,7 +202,7 @@ VG_(swizzle_esp_then_start_GDB):
 	movl	40(%esp), %ebx		# client %ESP
 	movl	36(%esp), %ecx		# client %EIP
 
-	# Now thatn we don't need to refer to simulators stack any more,
+	# Now thatn we dont need to refer to simulators stack any more,
 	# put %ESP into %esp
 	movl	%ebx, %esp
 

@@ -2020,6 +2020,7 @@ static void process_cmd_line_options
    }
 
    if (VG_(clo_verbosity) > 1) {
+      Int fd;
       if (VG_(clo_log_to) != VgLogTo_Fd)
          VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "Valgrind library directory: %s", VG_(libdir));
@@ -2030,6 +2031,25 @@ static void process_cmd_line_options
       VG_(message)(Vg_UserMsg, "Startup, with flags:");
       for (i = 1; i < VG_(vg_argc); i++) {
          VG_(message)(Vg_UserMsg, "   %s", VG_(vg_argv)[i]);
+      }
+
+      VG_(message)(Vg_UserMsg, "Contents of /proc/version:");
+      fd = VG_(open) ( "/proc/version", VKI_O_RDONLY, 0 );
+      if (fd < 0) {
+         VG_(message)(Vg_UserMsg, "  can't open /proc/version");
+      } else {
+         #define BUF_LEN    256
+         Char version_buf[BUF_LEN];
+         Int n = VG_(read) ( fd, version_buf, BUF_LEN );
+         vg_assert(n <= 256);
+         if (n > 0) {
+            version_buf[n-1] = '\0';
+            VG_(message)(Vg_UserMsg, "  %s", version_buf);
+         } else {
+            VG_(message)(Vg_UserMsg, "  (empty?)");
+         }
+         VG_(close)(fd);
+         #undef BUF_LEN
       }
    }
 

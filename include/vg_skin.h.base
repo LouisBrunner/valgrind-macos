@@ -431,6 +431,7 @@ extern Int   VG_(strcmp)         ( const Char* s1, const Char* s2 );
 extern Int   VG_(strncmp)        ( const Char* s1, const Char* s2, Int nmax );
 extern Char* VG_(strstr)         ( const Char* haystack, Char* needle );
 extern Char* VG_(strchr)         ( const Char* s, Char c );
+extern Char* VG_(strrchr)        ( const Char* s, Char c );
 extern Char* VG_(strdup)         ( const Char* s);
 extern void* VG_(memcpy)         ( void *d, const void *s, Int sz );
 extern void* VG_(memset)         ( void *s, Int c, Int sz );

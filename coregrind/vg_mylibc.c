@@ -1013,6 +1013,16 @@ Char* VG_(strchr) ( const Char* s, Char c )
 }
 
 
+Char* VG_(strrchr) ( const Char* s, Char c )
+{
+   Int n = VG_(strlen)(s);
+   while (--n > 0) {
+      if (s[n] == c) return (Char*)s + n;
+   }
+   return NULL;
+}
+
+
 void* VG_(memcpy) ( void *dest, const void *src, Int sz )
 {
    const Char *s = (const Char *)src;

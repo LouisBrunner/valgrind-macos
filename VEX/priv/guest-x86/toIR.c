@@ -4175,7 +4175,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                goto do_foprev_m32;
 
             case 6: /* FIDIV m32int */ /* ST(0) /= m32int */
-               DIP("fisubl %s\n", dis_buf);
+               DIP("fidivl %s\n", dis_buf);
                fop = Iop_DivF64;
                goto do_fop_m32;
 

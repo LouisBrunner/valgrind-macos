@@ -2368,9 +2368,16 @@ void do_pthread_cond_wait ( ThreadId tid,
    vg_assert(VG_(is_valid_tid)(tid) 
              && VG_(threads)[tid].status == VgTs_Runnable);
 
-   if (mutex == NULL || cond == NULL) {
+   if (mutex == NULL) {
       VG_(record_pthread_error)( tid, 
-         "pthread_cond_wait/timedwait: cond or mutex is NULL");
+         "pthread_cond_wait/timedwait: mutex is NULL");
+      SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
+      return;
+   }
+
+   if (cond == NULL) {
+      VG_(record_pthread_error)( tid, 
+         "pthread_cond_wait/timedwait: cond is NULL");
       SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
       return;
    }
@@ -2396,12 +2403,17 @@ void do_pthread_cond_wait ( ThreadId tid,
    }
 
    /* Barf if we don't currently hold the mutex. */
-   if (mutex->__vg_m_count == 0 /* nobody holds it */
-       || (ThreadId)mutex->__vg_m_owner != tid /* we don't hold it */) {
+   if (mutex->__vg_m_count == 0 /* nobody holds it */) {
          VG_(record_pthread_error)( tid, 
-            "pthread_cond_wait/timedwait: mutex is unlocked "
-            "or is locked but not owned by thread");
-      SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
+            "pthread_cond_wait/timedwait: mutex is unlocked");
+      SET_PTHREQ_RETVAL(tid, VKI_EPERM);
+      return;
+   }
+
+   if ((ThreadId)mutex->__vg_m_owner != tid /* we don't hold it */) {
+         VG_(record_pthread_error)( tid, 
+            "pthread_cond_wait/timedwait: mutex is locked by another thread");
+      SET_PTHREQ_RETVAL(tid, VKI_EPERM);
       return;
    }
 

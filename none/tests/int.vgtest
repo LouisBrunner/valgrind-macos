@@ -1,0 +1,2 @@
+prog: int
+stderr_filter: filter_int

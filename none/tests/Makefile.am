@@ -31,6 +31,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	insn_mmxext.stderr.exp insn_mmxext.stdout.exp insn_mmxext.vgtest \
 	insn_sse.stderr.exp insn_sse.stdout.exp insn_sse.vgtest \
 	insn_sse2.stderr.exp insn_sse2.stdout.exp insn_sse2.vgtest \
+	int.stderr.exp int.stdout.exp int.vgtest \
 	map_unmap.stdout.exp map_unmap.vgtest \
 	mremap.stdout.exp mremap.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
@@ -58,7 +59,7 @@ check_PROGRAMS = \
 	args bitfield1 bt_everything bt_literal closeall coolo_strlen \
 	cpuid dastest discard exec-sigmask floored fork fpu_lazy_eflags \
 	fucomip insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2 \
-	munmap_exe map_unmap mremap rcl_assert \
+	int munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	pth_blockedsig pushpopseg \
 	syscall-restart1 syscall-restart2 system \
@@ -95,6 +96,7 @@ insn_sse_SOURCES	= insn_sse.def
 insn_sse_LDADD		= -lm
 insn_sse2_SOURCES	= insn_sse2.def
 insn_sse2_LDADD		= -lm
+int_SOURCES		= int.c
 map_unmap_SOURCES	= map_unmap.c
 mremap_SOURCES		= mremap.c
 munmap_exe_SOURCES 	= munmap_exe.c

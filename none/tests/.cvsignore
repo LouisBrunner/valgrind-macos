@@ -28,6 +28,7 @@ insn_sse
 insn_sse.c
 insn_sse2
 insn_sse2.c
+int
 map_unmap
 munmap_exe
 mremap

@@ -1,0 +1,8 @@
+
+disInstr: unhandled instruction bytes: 0x........ 0x........ 0x........ 0x........
+          at 0x........: main (int.c:5)
+
+Process terminating with default action of signal 4 (SIGILL): dumping core
+ Illegal operand at address 0x........
+   at 0x........: main (int.c:5)
+

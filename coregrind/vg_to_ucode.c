@@ -5446,7 +5446,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
    case 0xCD: /* INT imm8 */
       d32 = getUChar(eip); eip++;
-      if (d32 != 0x80) VG_(core_panic)("disInstr: INT but not 0x80 !");
+      if (d32 != 0x80) goto decode_failure;
       /* It's important that all ArchRegs carry their up-to-date value
          at this point.  So we declare an end-of-block here, which
          forces any TempRegs caching ArchRegs to be flushed. */

@@ -479,19 +479,21 @@ PPC32Instr* PPC32Instr_MulL ( Bool syned, Bool word, HReg dst,
    i->tag            = Pin_MulL;
    i->Pin.MulL.syned = syned;
    i->Pin.MulL.word  = word;
-   i->Pin.MulL.dst  = dst;
+   i->Pin.MulL.dst   = dst;
    i->Pin.MulL.src1  = src1;
    i->Pin.MulL.src2  = src2;
    return i;
 }
-//.. X86Instr* X86Instr_Div ( Bool syned, X86ScalarSz ssz, X86RM* src ) {
-//..    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
-//..    i->tag             = Xin_Div;
-//..    i->Xin.Div.syned   = syned;
-//..    i->Xin.Div.ssz     = ssz;
-//..    i->Xin.Div.src     = src;
-//..    return i;
-//.. }
+PPC32Instr* PPC32Instr_Div ( Bool syned, HReg dst,
+			     HReg src1, PPC32RI* src2 ) {
+   PPC32Instr* i        = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag             = Pin_Div;
+   i->Pin.Div.syned   = syned;
+   i->Pin.Div.dst     = dst;
+   i->Pin.Div.src1    = src1;
+   i->Pin.Div.src2    = src2;
+   return i;
+}
 //.. X86Instr* X86Instr_Sh3232  ( X86ShiftOp op, UInt amt, HReg src, HReg dst ) {
 //..    X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
 //..    i->tag            = Xin_Sh3232;
@@ -717,12 +719,15 @@ void ppPPC32Instr ( PPC32Instr* i )
          vex_printf(",");
          ppPPC32RI(i->Pin.MulL.src2);
          return;
-//..       case Xin_Div:
-//..          vex_printf("%cdiv%s ",
-//..                     i->Xin.Div.syned ? 's' : 'u',
-//..                     showX86ScalarSz(i->Xin.Div.ssz));
-//..          ppX86RM(i->Xin.Div.src);
-//..          return;
+      case Pin_Div:
+         vex_printf("divw%s ",
+                    i->Pin.Div.syned ? "" : "u");
+         ppHRegPPC32(i->Pin.MulL.dst);
+         vex_printf(",");
+         ppHRegPPC32(i->Pin.MulL.src1);
+         vex_printf(",");
+         ppPPC32RI(i->Pin.MulL.src2);
+         return;
 //..       case Xin_Sh3232:
 //..          vex_printf("%sdl ", showX86ShiftOp(i->Xin.Sh3232.op));
 //..          if (i->Xin.Sh3232.amt == 0)
@@ -993,11 +998,11 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
 	 addHRegUse(u, HRmRead, i->Pin.MulL.src1);
          addRegUsage_PPC32RI(u, i->Pin.MulL.src2);
          return;
-//..       case Xin_Div:
-//..          addRegUsage_X86RM(u, i->Xin.Div.src, HRmRead);
-//..          addHRegUse(u, HRmModify, hregX86_EAX());
-//..          addHRegUse(u, HRmModify, hregX86_EDX());
-//..          return;
+      case Pin_Div:
+	 addHRegUse(u, HRmWrite, i->Pin.Div.dst);
+	 addHRegUse(u, HRmRead, i->Pin.Div.src1);
+         addRegUsage_PPC32RI(u, i->Pin.Div.src2);
+         return;
 //..       case Xin_Sh3232:
 //..          addHRegUse(u, HRmRead, i->Xin.Sh3232.src);
 //..          addHRegUse(u, HRmModify, i->Xin.Sh3232.dst);
@@ -1221,9 +1226,11 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
          mapReg(m, &i->Pin.MulL.src1);
          mapRegs_PPC32RI(m, i->Pin.MulL.src2);
          return;
-//..       case Xin_Div:
-//..          mapRegs_X86RM(m, i->Xin.Div.src);
-//..          return;
+      case Pin_Div:
+         mapReg(m, &i->Pin.Div.dst);
+         mapReg(m, &i->Pin.Div.src1);
+         mapRegs_PPC32RI(m, i->Pin.Div.src2);
+         return;
 //..       case Xin_Sh3232:
 //..          mapReg(m, &i->Xin.Sh3232.src);
 //..          mapReg(m, &i->Xin.Sh3232.dst);

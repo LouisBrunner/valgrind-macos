@@ -290,9 +290,9 @@ typedef
       Pin_Alu32,     /* 32-bit mov/arith/logical */
       Pin_Sh32,      /* 32-bit shift/rotate */
       Pin_Test32,    /* 32-bit test (AND, set flags, discard result) */
-      Pin_Unary32,   /* 32-bit not and neg */
+      Pin_Unary32,   /* 32-bit not, neg, clz */
       Pin_MulL,      /* widening multiply */
-//..       Xin_Div,       /* div and mod */
+      Pin_Div,       /* div */
 //..       Xin_Sh3232,    /* shldl or shrdl */
 //..       Xin_Push,      /* push (32-bit?) value on stack */
       Pin_Call,      /* call to address in register */
@@ -353,12 +353,13 @@ typedef
             HReg     src1;
             PPC32RI* src2;
          } MulL;
-//..          /* x86 div/idiv instruction.  Modifies EDX and EAX and reads src. */
-//..          struct {
-//..             Bool        syned;
-//..             X86ScalarSz ssz;
-//..             X86RM*      src;
-//..          } Div;
+         /* ppc32 div/idiv instruction.  Modifies EDX and EAX and reads src. */
+         struct {
+            Bool     syned;
+            HReg     dst;
+            HReg     src1;
+            PPC32RI* src2;
+         } Div;
 //..          /* shld/shrd.  op may only be Xsh_SHL or Xsh_SHR */
 //..          struct {
 //..             X86ShiftOp op;
@@ -497,7 +498,7 @@ extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Test32    ( HReg dst, PPC32RI* src );
 extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_MulL      ( Bool syned, Bool word, HReg, HReg, PPC32RI* );
-//.. extern X86Instr* X86Instr_Div       ( Bool syned, X86ScalarSz, X86RM* );
+extern PPC32Instr* PPC32Instr_Div       ( Bool syned, HReg, HReg, PPC32RI* );
 //.. extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_Push      ( X86RMI* );
 extern PPC32Instr* PPC32Instr_Call      ( PPC32CondCode, Addr32, Int );

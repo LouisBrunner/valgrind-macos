@@ -816,6 +816,23 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..             movl %vr104,%vr70
 //..       */
 
+      /* How about a div? */
+      if (e->Iex.Binop.op == Iop_DivU32) {
+	  vex_printf(" *HERE\n\n");
+         HReg dst         = newVRegI(env);
+         HReg src1        = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         PPC32RI* ri_src2 = iselIntExpr_RI(env, e->Iex.Binop.arg2);
+         addInstr(env, PPC32Instr_Div(False, dst, src1, ri_src2));
+	 return dst;
+      }
+      if (e->Iex.Binop.op == Iop_DivS32) {
+         HReg dst         = newVRegI(env);
+         HReg src1        = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         PPC32RI* ri_src2 = iselIntExpr_RI(env, e->Iex.Binop.arg2);
+         addInstr(env, PPC32Instr_Div(True, dst, src1, ri_src2));
+	 return dst;
+      }
+
       /* Perhaps a shift op? */
       switch (e->Iex.Binop.op) {
          case Iop_Shl32: case Iop_Shl16: case Iop_Shl8:

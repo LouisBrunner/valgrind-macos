@@ -720,6 +720,16 @@ void ppPPC32Instr ( PPC32Instr* i )
          ppPPC32RI(i->Pin.Alu32.src2);
          return;
       }
+      if (i->Pin.Alu32.op == Palu_AND &&     // 'andi.' - always has the '.'
+          i->Pin.Alu32.src2->tag == Pri_Imm) {
+         vex_printf("andi. ");
+         ppHRegPPC32(i->Pin.Alu32.dst);
+         vex_printf(",");
+         ppHRegPPC32(i->Pin.Alu32.src1);
+         vex_printf(",");
+         ppPPC32RI(i->Pin.Alu32.src2);
+         return;
+      }
       vex_printf("%s%s ", showPPC32AluOp(i->Pin.Alu32.op),
                  i->Pin.Alu32.src2->tag == Pri_Imm ? "i" : "" );
       ppHRegPPC32(i->Pin.Alu32.dst);
@@ -746,7 +756,7 @@ void ppPPC32Instr ( PPC32Instr* i )
       ppPPC32RI(i->Pin.Sh32.shft);
       return;
    case Pin_Cmp32:
-      vex_printf("cmp%s %%crf%d,",
+      vex_printf("%s%s %%crf%d,", showPPC32CmpOp(i->Pin.Cmp32.op),
                  i->Pin.Cmp32.src2->tag == Pri_Imm ? "i" : "",
                  (7 - i->Pin.Cmp32.crfD));
       ppHRegPPC32(i->Pin.Cmp32.src1);
@@ -806,7 +816,7 @@ void ppPPC32Instr ( PPC32Instr* i )
          vex_printf("li %%r12, 0x%x ;", i->Pin.Call.target);
       } else {
          vex_printf("lis %%r12,0x%x ; ", i->Pin.Call.target >> 16);
-         vex_printf("ori %%r12,%%r3,0x%x ; ", i->Pin.Call.target & 0xFFFF);
+         vex_printf("ori %%r12,%%r12,0x%x ; ", i->Pin.Call.target & 0xFFFF);
       }
       vex_printf("mtctr r12 ; bctrl[%d] }",i->Pin.Call.regparms);
       break;
@@ -853,7 +863,7 @@ void ppPPC32Instr ( PPC32Instr* i )
          if (imm32 < 0x10000) {
             vex_printf("li ");
             ppHRegPPC32(i->Pin.CMov32.dst);
-            vex_printf(" 0x%x", imm32);
+            vex_printf(",0x%x", imm32);
          } else {
             vex_printf("lis ");
             ppHRegPPC32(i->Pin.CMov32.dst);

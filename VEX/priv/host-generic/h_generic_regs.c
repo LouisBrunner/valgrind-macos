@@ -94,7 +94,7 @@ void addHRegUse ( HRegUsage* tab, HRegMode mode, HReg reg )
          break;
    if (i == tab->n_used) {
       /* Not found, add new entry. */
-      vassert(tab->n_used+1 < N_HREG_USAGE);
+      vassert(tab->n_used < N_HREG_USAGE);
       tab->hreg[tab->n_used] = reg;
       tab->mode[tab->n_used] = mode;
       tab->n_used++;

@@ -730,20 +730,6 @@ void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid,
 }
 
 
-void VG_(send_signal_to_thread) ( ThreadId thread, Int sig )
-{
-   ThreadState *tst;
-
-   vg_assert(VG_(is_valid_tid)(thread));
-   vg_assert(sig >= 1 && sig <= VKI_KNSIG);
-   
-   tst = VG_(get_ThreadState)(thread);
-   vg_assert(tst->proxy != NULL);
-
-   VG_(proxy_sendsig)(thread, sig);
-}
-
-
 /* ---------------------------------------------------------------------
    LOW LEVEL STUFF TO DO WITH SIGNALS: IMPLEMENTATION
    ------------------------------------------------------------------ */

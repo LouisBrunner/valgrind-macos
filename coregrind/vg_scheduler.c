@@ -2825,6 +2825,7 @@ void do_pthread_kill ( ThreadId tid, /* me */
                        ThreadId thread, /* thread to signal */
                        Int sig )
 {
+   ThreadState* tst;
    Char msg_buf[100];
 
    if (VG_(clo_trace_signals) || VG_(clo_trace_pthread_level) >= 1) {
@@ -2855,7 +2856,9 @@ void do_pthread_kill ( ThreadId tid, /* me */
       return;
    }
 
-   VG_(send_signal_to_thread)( thread, sig );
+   tst = VG_(get_ThreadState)(thread);
+   vg_assert(NULL != tst->proxy);
+   VG_(proxy_sendsig)(thread, sig);
    SET_PTHREQ_RETVAL(tid, 0);
 }
 

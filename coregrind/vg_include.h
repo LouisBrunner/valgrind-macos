@@ -1059,8 +1059,6 @@ extern void VG_(do__NR_sigprocmask)   ( ThreadId tid, Int how,
 extern void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid, Int how, 
                                                vki_ksigset_t* set,
                                                vki_ksigset_t* oldset );
-extern void VG_(send_signal_to_thread) ( ThreadId thread, Int signo );
-
 
 /* Modify the current thread's state once we have detected it is
    returning from a signal handler. */

@@ -78,12 +78,12 @@
 
    The resulting executables will still run without Valgrind, just a
    little bit more slowly than they otherwise would, but otherwise
-   unchanged.  
-
-   When run on Valgrind with --client-perms=yes, Valgrind observes
-   these macro calls and takes appropriate action.  When run on
-   Valgrind with --client-perms=no (the default), Valgrind observes
-   these macro calls but does not take any action as a result.  */
+   unchanged.  When not running on valgrind, each client request
+   consumes about 9 x86 instructions, so the resulting performance
+   loss is negligible unless you plan to execute client requests
+   millions of times per second.  Nevertheless, if that is still a
+   problem, you can compile with the NVALGRIND symbol defined (gcc
+   -DNVALGRIND) so that client requests are not even compiled in.  */
 
 
 

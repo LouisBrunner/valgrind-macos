@@ -251,8 +251,8 @@ __attribute__((weak)) void pthread_mutexattr_gettype ( void )
                       { vgPlain_unimp("pthread_mutexattr_gettype"); }
 __attribute__((weak)) void pthread_mutexattr_setkind_np ( void )
                       { vgPlain_unimp("pthread_mutexattr_setkind_np"); }
-__attribute__((weak)) void pthread_mutexattr_setpshared ( void )
-                      { vgPlain_unimp("pthread_mutexattr_setpshared"); }
+//__attribute__((weak)) void pthread_mutexattr_setpshared ( void )
+//                      { vgPlain_unimp("pthread_mutexattr_setpshared"); }
 //__attribute__((weak)) void pthread_setconcurrency ( void )
 //                      { vgPlain_unimp("pthread_setconcurrency"); }
 __attribute__((weak)) void pthread_spin_destroy ( void )

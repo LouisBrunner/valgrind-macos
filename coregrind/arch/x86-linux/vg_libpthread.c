@@ -906,6 +906,18 @@ int __pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
    return 0;
 }
 
+int pthread_mutexattr_setpshared ( pthread_mutexattr_t* attr, int pshared)
+{
+  if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_SHARED)
+    return EINVAL;
+
+  /* For now it is not possible to shared a conditional variable.  */
+  if (pshared != PTHREAD_PROCESS_PRIVATE)
+    return ENOSYS;
+
+  return 0;
+}
+
 
 /* ---------------------------------------------------
    MUTEXes

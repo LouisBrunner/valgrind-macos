@@ -975,14 +975,30 @@ UInt calculate_FXAM ( UInt tag, ULong dbl )
 }
 
 
+/////////////////////////////////////////////////////////////////
+
+static inline
+UInt read_bit_array ( UChar* arr, UInt n )
+{
+   UChar c = arr[n >> 3];
+   c >>= (n&7);
+   return c & 1;
+}
+
+static inline
+void write_bit_array ( UChar* arr, UInt n, UInt b )
+{
+   UChar c = arr[n >> 3];
+   c &= ~(1 << (n&7));
+   c |= ((b&1) << (n&7));
+   arr[n >> 3] = c;
+}
+
+
 /* Convert a IEEE754 double (64-bit) into an x87 extended double
    (80-bit), mimicing the hardware fairly closely.  Both numbers are
    stored little-endian.  Limitations, all of which could be fixed,
    given some level of hassle:
-
-   * Does not handle double precision denormals.  As a result, values
-     with magnitudes less than 1e-308 are flushed to zero when they
-     need not be.
 
    * Identity of NaNs is not preserved.
 
@@ -990,13 +1006,24 @@ UInt calculate_FXAM ( UInt tag, ULong dbl )
 */
 static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
 {
-   Bool  isInf;
-   Int   bexp;
+   Bool  mantissaIsZero;
+   Int   bexp, i, j, shift;
    UChar sign;
 
    sign = (f64[7] >> 7) & 1;
    bexp = (f64[7] << 4) | ((f64[6] >> 4) & 0x0F);
    bexp &= 0x7FF;
+
+   mantissaIsZero = False;
+   if (bexp == 0 || bexp == 0x7FF) {
+      /* We'll need to know whether or not the mantissa (bits 51:0) is
+         all zeroes in order to handle these cases.  So figure it
+         out. */
+      mantissaIsZero
+         = (f64[6] & 0x0F) == 0 
+           && f64[5] == 0 && f64[4] == 0 && f64[3] == 0 
+           && f64[2] == 0 && f64[1] == 0 && f64[0] == 0;
+   }
 
    /* If the exponent is zero, either we have a zero or a denormal.
       Produce a zero.  This is a hack in that it forces denormals to
@@ -1005,9 +1032,39 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
       f80[9] = sign << 7;
       f80[8] = f80[7] = f80[6] = f80[5] = f80[4]
              = f80[3] = f80[2] = f80[1] = f80[0] = 0;
+
+      if (mantissaIsZero)
+         /* It really is zero, so that's all we can do. */
+         return;
+
+      /* There is at least one 1-bit in the mantissa.  So it's a
+         potentially denormalised double -- but we can produce a
+         normalised long double.  Count the leading zeroes in the
+         mantissa so as to decide how much to bump the exponent down
+         by.  Note, this is SLOW. */
+      shift = 0;
+      for (i = 51; i >= 0; i--) {
+        if (read_bit_array(f64, i))
+           break;
+        shift++;
+      }
+
+      /* and copy into place as many bits as we can get our hands on. */
+      j = 63;
+      for (i = 51 - shift; i >= 0; i--) {
+         write_bit_array( f80, j,
+     	 read_bit_array( f64, i ) );
+         j--;
+      }
+
+      /* Set the exponent appropriately, and we're done. */
+      bexp -= shift;
+      bexp += (16383 - 1023);
+      f80[9] = (sign << 7) | ((bexp >> 8) & 0xFF);
+      f80[8] = bexp & 0xFF;
       return;
    }
-   
+
    /* If the exponent is 7FF, this is either an Infinity, a SNaN or
       QNaN, as determined by examining bits 51:0, thus:
           0  ... 0    Inf
@@ -1016,10 +1073,7 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
       where at least one of the Xs is not zero.
    */
    if (bexp == 0x7FF) {
-      isInf = (f64[6] & 0x0F) == 0 
-              && f64[5] == 0 && f64[4] == 0 && f64[3] == 0 
-              && f64[2] == 0 && f64[1] == 0 && f64[0] == 0;
-      if (isInf) {
+      if (mantissaIsZero) {
          /* Produce an appropriately signed infinity:
             S 1--1 (15)  1  0--0 (63)
          */
@@ -1080,24 +1134,20 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
 /////////////////////////////////////////////////////////////////
 
 /* Convert a x87 extended double (80-bit) into an IEEE 754 double
-   (64-bit), mimicing the hardware fairly closely.  Both numbers are
-   stored little-endian.  Limitations, all of which could be fixed,
+   (64-bit), mimicking the hardware fairly closely.  Both numbers are
+   stored little-endian.  Limitations, both of which could be fixed,
    given some level of hassle:
-
-   * Does not create double precision denormals.  As a result, values
-     with magnitudes less than 1e-308 are flushed to zero when they
-     need not be.
 
    * Rounding following truncation could be a bit better.
 
    * Identity of NaNs is not preserved.
 
-   See comments in the code for more details.  
+   See comments in the code for more details.
 */
 static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
 {
    Bool  isInf;
-   Int   bexp;
+   Int   bexp, i, j;
    UChar sign;
 
    sign = (f80[9] >> 7) & 1;
@@ -1188,16 +1238,33 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
       return;
    }
 
-   if (bexp < 0) {
-   /* It's too small for a double.  Construct a zero.  Note, this
-      is a kludge since we could conceivably create a
-      denormalised number for bexp in -1 to -51, but we don't
-      bother.  This means the conversion flushes values
-      approximately in the range 1e-309 to 1e-324 ish to zero
-      when it doesn't actually need to.  This could be
-      improved. */
+   if (bexp <= 0) {
+      /* It's too small for a normalised double.  First construct a
+         zero and then see if it can be improved into a denormal.  */
       f64[7] = sign << 7;
       f64[6] = f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
+
+      if (bexp < -52)
+         /* Too small even for a denormal. */
+         return;
+
+      /* Ok, let's make a denormal.  Note, this is SLOW. */
+      /* Copy bits 63, 62, 61, etc of the src mantissa into the dst, 
+         indexes 52+bexp, 51+bexp, etc, until k+bexp < 0. */
+      /* bexp is in range -52 .. 0 inclusive */
+      for (i = 63; i >= 0; i--) {
+         j = i - 12 + bexp;
+         if (j < 0) break;
+         /* We shouldn't really call vassert from generated code. */
+         vassert(j >= 0 && j < 52);
+         write_bit_array ( f64,
+                           j,
+                           read_bit_array ( f80, i ) );
+      }
+      /* and now we might have to round ... */
+      if (read_bit_array(f80, 10+1 - bexp) == 1) 
+         goto do_rounding;
+
       return;
    }
 
@@ -1223,8 +1290,20 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
    /* Now consider any rounding that needs to happen as a result of
       truncating the mantissa. */
    if (f80[1] & 4) /* read_bit_array(f80, 10) == 1) */ {
-      /* Round upwards.  This is a kludge.  Once in every 64k
-         roundings (statistically) the bottom two bytes are both 0xFF
+
+      /* If the bottom bits of f80 are "100 0000 0000", then the
+         infinitely precise value is deemed to be mid-way between the
+         two closest representable values.  Since we're doing
+         round-to-nearest (the default mode), in that case it is the
+         bit immediately above which indicates whether we should round
+         upwards or not -- if 0, we don't.  All that is encapsulated
+         in the following simple test. */
+      if ((f80[1] & 0xF) == 4/*0100b*/ && f80[0] == 0)
+         return;
+
+      do_rounding:
+      /* Round upwards.  This is a kludge.  Once in every 2^24
+         roundings (statistically) the bottom three bytes are all 0xFF
          and so we don't round at all.  Could be improved. */
       if (f64[0] != 0xFF) { 
          f64[0]++; 
@@ -1234,9 +1313,16 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
          f64[0] = 0;
          f64[1]++;
       }
+      else      
+      if (f64[0] == 0xFF && f64[1] == 0xFF && f64[2] != 0xFF) {
+         f64[0] = 0;
+         f64[1] = 0;
+         f64[2]++;
+      }
       /* else we don't round, but we should. */
    }
 }
+
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest memory) */

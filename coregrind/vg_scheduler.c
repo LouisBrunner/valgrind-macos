@@ -1339,24 +1339,18 @@ static
 void cleanup_after_thread_exited ( ThreadId tid, Bool forcekill )
 {
    Segment *seg;
-VG_(printf)("OINK 40\n");
    vg_assert(is_valid_or_empty_tid(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Empty);
-VG_(printf)("OINK 41\n");
    /* Its stack is now off-limits */
    if (VG_(threads)[tid].stack_base) {
       seg = VG_(find_segment)( VG_(threads)[tid].stack_base );
       VG_TRACK( die_mem_stack, seg->addr, seg->len );
    }
-VG_(printf)("OINK 42\n");
    VGA_(cleanup_thread)( &VG_(threads)[tid].arch );
-VG_(printf)("OINK 43\n");
    /* Not interested in the timeout anymore */
    VG_(threads)[tid].awaken_at = 0xFFFFFFFF;
-VG_(printf)("OINK 44\n");
    /* Delete proxy LWP */
    VG_(proxy_delete)(tid, forcekill);
-VG_(printf)("OINK 45\n");
 }
 
 

@@ -406,7 +406,6 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    // VG_(valgrind_base) should have been set by scan_auxv, but if not,
    // this is a workable approximation
    if (VG_(valgrind_base) == 0) {
-      OINK(1);
       VG_(valgrind_base) = PGROUNDDN(&_start);
    }
 

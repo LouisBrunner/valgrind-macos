@@ -40,72 +40,56 @@
 #define PRE(name, f)     PRE_TEMPLATE( , vgArch_linux, name, f)
 #define POST(name)      POST_TEMPLATE( , vgArch_linux, name)
 
-#define SYSNO   SYSCALL_NUM(tst->arch)    // in PRE(x)
-#define res     SYSCALL_RET(tst->arch)    // in POST(x)
-#define arg1    SYSCALL_ARG1(tst->arch)
-#define arg2    SYSCALL_ARG2(tst->arch)
-#define arg3    SYSCALL_ARG3(tst->arch)
-#define arg4    SYSCALL_ARG4(tst->arch)
-#define arg5    SYSCALL_ARG5(tst->arch)
-#define arg6    SYSCALL_ARG6(tst->arch)
-
-#define set_result(val) PLATFORM_SET_SYSCALL_RESULT(tst->arch, (val))
-
-#define PRINT(format, args...)  \
-   if (VG_(clo_trace_syscalls))        \
-      VG_(printf)(format, ## args)
-
-
 PRE(sys_mount, MayBlock)
 {
    // Nb: depending on 'flags', the 'type' and 'data' args may be ignored.
    // We are conservative and check everything, except the memory pointed to
    // by 'data'.
-   PRINT( "sys_mount( %p, %p, %p, %p, %p )" ,arg1,arg2,arg3);
+   PRINT( "sys_mount( %p, %p, %p, %p, %p )" ,ARG1,ARG2,ARG3);
    PRE_REG_READ5(long, "mount",
                  char *, source, char *, target, char *, type,
                  unsigned long, flags, void *, data);
-   PRE_MEM_RASCIIZ( "mount(source)", arg1);
-   PRE_MEM_RASCIIZ( "mount(target)", arg2);
-   PRE_MEM_RASCIIZ( "mount(type)", arg3);
+   PRE_MEM_RASCIIZ( "mount(source)", ARG1);
+   PRE_MEM_RASCIIZ( "mount(target)", ARG2);
+   PRE_MEM_RASCIIZ( "mount(type)", ARG3);
 }
 
 PRE(sys_oldumount, 0)
 {
-   PRINT("sys_oldumount( %p )", arg1);
+   PRINT("sys_oldumount( %p )", ARG1);
    PRE_REG_READ1(long, "umount", char *, path);
-   PRE_MEM_RASCIIZ( "umount(path)", arg1);
+   PRE_MEM_RASCIIZ( "umount(path)", ARG1);
 }
 
 PRE(sys_umount, 0)
 {
-   PRINT("sys_umount( %p )", arg1);
+   PRINT("sys_umount( %p )", ARG1);
    PRE_REG_READ2(long, "umount2", char *, path, int, flags);
-   PRE_MEM_RASCIIZ( "umount2(path)", arg1);
+   PRE_MEM_RASCIIZ( "umount2(path)", ARG1);
 }
 
 PRE(sys_llseek, 0)
 {
-   PRINT("sys_llseek ( %d, 0x%x, 0x%x, %p, %d )", arg1,arg2,arg3,arg4,arg5);
+   PRINT("sys_llseek ( %d, 0x%x, 0x%x, %p, %d )", ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "llseek",
                  unsigned int, fd, unsigned long, offset_high,
                  unsigned long, offset_low, vki_loff_t *, result,
                  unsigned int, whence);
-   PRE_MEM_WRITE( "llseek(result)", arg4, sizeof(vki_loff_t));
+   PRE_MEM_WRITE( "llseek(result)", ARG4, sizeof(vki_loff_t));
 }
 
 POST(sys_llseek)
 {
-   if (res == 0)
-      POST_MEM_WRITE( arg4, sizeof(vki_loff_t) );
+   if (RES == 0)
+      POST_MEM_WRITE( ARG4, sizeof(vki_loff_t) );
 }
 
 PRE(sys_adjtimex, 0)
 {
-   struct vki_timex *tx = (struct vki_timex *)arg1;
-   PRINT("sys_adjtimex ( %p )", arg1);
+   struct vki_timex *tx = (struct vki_timex *)ARG1;
+   PRINT("sys_adjtimex ( %p )", ARG1);
    PRE_REG_READ1(long, "adjtimex", struct timex *, buf);
-   PRE_MEM_READ( "adjtimex(timex->modes)", arg1, sizeof(tx->modes));
+   PRE_MEM_READ( "adjtimex(timex->modes)", ARG1, sizeof(tx->modes));
 
 #define ADJX(bit,field) 				\
    if (tx->modes & bit)					\
@@ -119,158 +103,158 @@ PRE(sys_adjtimex, 0)
    ADJX(ADJ_TICK, tick);
 #undef ADJX
    
-   PRE_MEM_WRITE( "adjtimex(timex)", arg1, sizeof(struct vki_timex));
+   PRE_MEM_WRITE( "adjtimex(timex)", ARG1, sizeof(struct vki_timex));
 }
 
 POST(sys_adjtimex)
 {
-   POST_MEM_WRITE( arg1, sizeof(struct vki_timex) );
+   POST_MEM_WRITE( ARG1, sizeof(struct vki_timex) );
 }
 
 PRE(sys_setfsuid16, 0)
 {
-   PRINT("sys_setfsuid16 ( %d )", arg1);
+   PRINT("sys_setfsuid16 ( %d )", ARG1);
    PRE_REG_READ1(long, "setfsuid16", vki_old_uid_t, uid);
 }
 
 PRE(sys_setfsuid, 0)
 {
-   PRINT("sys_setfsuid ( %d )", arg1);
+   PRINT("sys_setfsuid ( %d )", ARG1);
    PRE_REG_READ1(long, "setfsuid", vki_uid_t, uid);
 }
 
 PRE(sys_setfsgid16, 0)
 {
-   PRINT("sys_setfsgid16 ( %d )", arg1);
+   PRINT("sys_setfsgid16 ( %d )", ARG1);
    PRE_REG_READ1(long, "setfsgid16", vki_old_gid_t, gid);
 }
 
 PRE(sys_setfsgid, 0)
 {
-   PRINT("sys_setfsgid ( %d )", arg1);
+   PRINT("sys_setfsgid ( %d )", ARG1);
    PRE_REG_READ1(long, "setfsgid", vki_gid_t, gid);
 }
 
 PRE(sys_setresuid16, 0)
 {
-   PRINT("sys_setresuid16 ( %d, %d, %d )", arg1, arg2, arg3);
+   PRINT("sys_setresuid16 ( %d, %d, %d )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "setresuid16",
                  vki_old_uid_t, ruid, vki_old_uid_t, euid, vki_old_uid_t, suid);
 }
 
 PRE(sys_setresuid, 0)
 {
-   PRINT("sys_setresuid ( %d, %d, %d )", arg1, arg2, arg3);
+   PRINT("sys_setresuid ( %d, %d, %d )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "setresuid",
                  vki_uid_t, ruid, vki_uid_t, euid, vki_uid_t, suid);
 }
 
 PRE(sys_getresuid16, 0)
 {
-   PRINT("sys_getresuid16 ( %p, %p, %p )", arg1,arg2,arg3);
+   PRINT("sys_getresuid16 ( %p, %p, %p )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getresuid16",
                  vki_old_uid_t *, ruid, vki_old_uid_t *, euid,
                  vki_old_uid_t *, suid);
-   PRE_MEM_WRITE( "getresuid16(ruid)", arg1, sizeof(vki_old_uid_t) );
-   PRE_MEM_WRITE( "getresuid16(euid)", arg2, sizeof(vki_old_uid_t) );
-   PRE_MEM_WRITE( "getresuid16(suid)", arg3, sizeof(vki_old_uid_t) );
+   PRE_MEM_WRITE( "getresuid16(ruid)", ARG1, sizeof(vki_old_uid_t) );
+   PRE_MEM_WRITE( "getresuid16(euid)", ARG2, sizeof(vki_old_uid_t) );
+   PRE_MEM_WRITE( "getresuid16(suid)", ARG3, sizeof(vki_old_uid_t) );
 }
 
 POST(sys_getresuid16)
 {
-   if (res == 0) {
-      POST_MEM_WRITE( arg1, sizeof(vki_old_uid_t) );
-      POST_MEM_WRITE( arg2, sizeof(vki_old_uid_t) );
-      POST_MEM_WRITE( arg3, sizeof(vki_old_uid_t) );
+   if (RES == 0) {
+      POST_MEM_WRITE( ARG1, sizeof(vki_old_uid_t) );
+      POST_MEM_WRITE( ARG2, sizeof(vki_old_uid_t) );
+      POST_MEM_WRITE( ARG3, sizeof(vki_old_uid_t) );
    }
 }
 
 PRE(sys_getresuid, 0)
 {
-   PRINT("sys_getresuid ( %p, %p, %p )", arg1,arg2,arg3);
+   PRINT("sys_getresuid ( %p, %p, %p )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getresuid", 
                  vki_uid_t *, ruid, vki_uid_t *, euid, vki_uid_t *, suid);
-   PRE_MEM_WRITE( "getresuid(ruid)", arg1, sizeof(vki_uid_t) );
-   PRE_MEM_WRITE( "getresuid(euid)", arg2, sizeof(vki_uid_t) );
-   PRE_MEM_WRITE( "getresuid(suid)", arg3, sizeof(vki_uid_t) );
+   PRE_MEM_WRITE( "getresuid(ruid)", ARG1, sizeof(vki_uid_t) );
+   PRE_MEM_WRITE( "getresuid(euid)", ARG2, sizeof(vki_uid_t) );
+   PRE_MEM_WRITE( "getresuid(suid)", ARG3, sizeof(vki_uid_t) );
 }
 
 POST(sys_getresuid)
 {
-   if (res == 0) {
-      POST_MEM_WRITE( arg1, sizeof(vki_uid_t) );
-      POST_MEM_WRITE( arg2, sizeof(vki_uid_t) );
-      POST_MEM_WRITE( arg3, sizeof(vki_uid_t) );
+   if (RES == 0) {
+      POST_MEM_WRITE( ARG1, sizeof(vki_uid_t) );
+      POST_MEM_WRITE( ARG2, sizeof(vki_uid_t) );
+      POST_MEM_WRITE( ARG3, sizeof(vki_uid_t) );
    }
 }
 
 PRE(sys_setresgid16, 0)
 {
-   PRINT("sys_setresgid16 ( %d, %d, %d )", arg1, arg2, arg3);
+   PRINT("sys_setresgid16 ( %d, %d, %d )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "setresgid16",
                  vki_old_gid_t, rgid, vki_old_gid_t, egid, vki_old_gid_t, sgid);
 }
 
 PRE(sys_setresgid, 0)
 {
-   PRINT("sys_setresgid ( %d, %d, %d )", arg1, arg2, arg3);
+   PRINT("sys_setresgid ( %d, %d, %d )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "setresgid",
                  vki_gid_t, rgid, vki_gid_t, egid, vki_gid_t, sgid);
 }
 
 PRE(sys_getresgid16, 0)
 {
-   PRINT("sys_getresgid16 ( %p, %p, %p )", arg1,arg2,arg3);
+   PRINT("sys_getresgid16 ( %p, %p, %p )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getresgid16",
                  vki_old_gid_t *, rgid, vki_old_gid_t *, egid,
                  vki_old_gid_t *, sgid);
-   PRE_MEM_WRITE( "getresgid16(rgid)", arg1, sizeof(vki_old_gid_t) );
-   PRE_MEM_WRITE( "getresgid16(egid)", arg2, sizeof(vki_old_gid_t) );
-   PRE_MEM_WRITE( "getresgid16(sgid)", arg3, sizeof(vki_old_gid_t) );
+   PRE_MEM_WRITE( "getresgid16(rgid)", ARG1, sizeof(vki_old_gid_t) );
+   PRE_MEM_WRITE( "getresgid16(egid)", ARG2, sizeof(vki_old_gid_t) );
+   PRE_MEM_WRITE( "getresgid16(sgid)", ARG3, sizeof(vki_old_gid_t) );
 }
 
 POST(sys_getresgid16)
 {
-   if (res == 0) {
-      POST_MEM_WRITE( arg1, sizeof(vki_old_gid_t) );
-      POST_MEM_WRITE( arg2, sizeof(vki_old_gid_t) );
-      POST_MEM_WRITE( arg3, sizeof(vki_old_gid_t) );
+   if (RES == 0) {
+      POST_MEM_WRITE( ARG1, sizeof(vki_old_gid_t) );
+      POST_MEM_WRITE( ARG2, sizeof(vki_old_gid_t) );
+      POST_MEM_WRITE( ARG3, sizeof(vki_old_gid_t) );
    }
 }
 
 PRE(sys_getresgid, 0)
 {
-   PRINT("sys_getresgid ( %p, %p, %p )", arg1,arg2,arg3);
+   PRINT("sys_getresgid ( %p, %p, %p )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "getresgid", 
                  vki_gid_t *, rgid, vki_gid_t *, egid, vki_gid_t *, sgid);
-   PRE_MEM_WRITE( "getresgid(rgid)", arg1, sizeof(vki_gid_t) );
-   PRE_MEM_WRITE( "getresgid(egid)", arg2, sizeof(vki_gid_t) );
-   PRE_MEM_WRITE( "getresgid(sgid)", arg3, sizeof(vki_gid_t) );
+   PRE_MEM_WRITE( "getresgid(rgid)", ARG1, sizeof(vki_gid_t) );
+   PRE_MEM_WRITE( "getresgid(egid)", ARG2, sizeof(vki_gid_t) );
+   PRE_MEM_WRITE( "getresgid(sgid)", ARG3, sizeof(vki_gid_t) );
 }
 
 POST(sys_getresgid)
 {
-   if (res == 0) {
-      POST_MEM_WRITE( arg1, sizeof(vki_gid_t) );
-      POST_MEM_WRITE( arg2, sizeof(vki_gid_t) );
-      POST_MEM_WRITE( arg3, sizeof(vki_gid_t) );
+   if (RES == 0) {
+      POST_MEM_WRITE( ARG1, sizeof(vki_gid_t) );
+      POST_MEM_WRITE( ARG2, sizeof(vki_gid_t) );
+      POST_MEM_WRITE( ARG3, sizeof(vki_gid_t) );
    }
 }
 
 PRE(sys_ioperm, 0)
 {
-   PRINT("sys_ioperm ( %d, %d, %d )", arg1, arg2, arg3 );
+   PRINT("sys_ioperm ( %d, %d, %d )", ARG1, ARG2, ARG3 );
    PRE_REG_READ3(long, "ioperm",
                  unsigned long, from, unsigned long, num, int, turn_on);
 }
 
 PRE(sys_syslog, MayBlock)
 {
-   PRINT("sys_syslog (%d, %p, %d)", arg1,arg2,arg3);
+   PRINT("sys_syslog (%d, %p, %d)", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "syslog", int, type, char *, bufp, int, len);
-   switch (arg1) {
+   switch (ARG1) {
    case 2: case 3: case 4:
-      PRE_MEM_WRITE( "syslog(bufp)", arg2, arg3);
+      PRE_MEM_WRITE( "syslog(bufp)", ARG2, ARG3);
       break;
    default: 
       break;
@@ -279,9 +263,9 @@ PRE(sys_syslog, MayBlock)
 
 POST(sys_syslog)
 {
-   switch (arg1) {
+   switch (ARG1) {
    case 2: case 3: case 4:
-      POST_MEM_WRITE( arg2, arg3 );
+      POST_MEM_WRITE( ARG2, ARG3 );
       break;
    default:
       break;
@@ -296,39 +280,39 @@ PRE(sys_vhangup, 0)
 
 PRE(sys_sysinfo, 0)
 {
-   PRINT("sys_sysinfo ( %p )",arg1);
+   PRINT("sys_sysinfo ( %p )",ARG1);
    PRE_REG_READ1(long, "sysinfo", struct sysinfo *, info);
-   PRE_MEM_WRITE( "sysinfo(info)", arg1, sizeof(struct vki_sysinfo) );
+   PRE_MEM_WRITE( "sysinfo(info)", ARG1, sizeof(struct vki_sysinfo) );
 }
 
 POST(sys_sysinfo)
 {
-   POST_MEM_WRITE( arg1, sizeof(struct vki_sysinfo) );
+   POST_MEM_WRITE( ARG1, sizeof(struct vki_sysinfo) );
 }
 
 PRE(sys_personality, 0)
 {
-   PRINT("sys_personality ( %llu )", (ULong)arg1);
+   PRINT("sys_personality ( %llu )", (ULong)ARG1);
    PRE_REG_READ1(long, "personality", vki_u_long, persona);
 }
 
 PRE(sys_sysctl, 0)
 {
-   PRINT("sys_sysctl ( %p )", arg1 );
+   PRINT("sys_sysctl ( %p )", ARG1 );
    PRE_REG_READ1(long, "sysctl", struct __sysctl_args *, args);
-   PRE_MEM_WRITE( "sysctl(args)", arg1, sizeof(struct __vki_sysctl_args) );
+   PRE_MEM_WRITE( "sysctl(args)", ARG1, sizeof(struct __vki_sysctl_args) );
 }
 
 POST(sys_sysctl)
 {
-   POST_MEM_WRITE( arg1, sizeof(struct __vki_sysctl_args) );
+   POST_MEM_WRITE( ARG1, sizeof(struct __vki_sysctl_args) );
 }
 
 PRE(sys_prctl, MayBlock)
 {
-   PRINT( "prctl ( %d, %d, %d, %d, %d )", arg1, arg2, arg3, arg4, arg5 );
+   PRINT( "prctl ( %d, %d, %d, %d, %d )", ARG1, ARG2, ARG3, ARG4, ARG5 );
    // XXX: too simplistic, often not all args are used
-   // Nb: can't use "arg2".."arg5" here because that's our own macro...
+   // Nb: can't use "ARG2".."ARG5" here because that's our own macro...
    PRE_REG_READ5(long, "prctl",
                  int, option, unsigned long, parg2, unsigned long, parg3,
                  unsigned long, parg4, unsigned long, parg5);
@@ -338,77 +322,77 @@ PRE(sys_prctl, MayBlock)
 
 PRE(sys_sendfile, MayBlock)
 {
-   PRINT("sys_sendfile ( %d, %d, %p, %llu )", arg1,arg2,arg3,(ULong)arg4);
+   PRINT("sys_sendfile ( %d, %d, %p, %llu )", ARG1,ARG2,ARG3,(ULong)ARG4);
    PRE_REG_READ4(ssize_t, "sendfile",
                  int, out_fd, int, in_fd, vki_off_t *, offset,
                  vki_size_t, count);
-   if (arg3 != 0)
-      PRE_MEM_WRITE( "sendfile(offset)", arg3, sizeof(vki_off_t) );
+   if (ARG3 != 0)
+      PRE_MEM_WRITE( "sendfile(offset)", ARG3, sizeof(vki_off_t) );
 }
 
 POST(sys_sendfile)
 {
-   POST_MEM_WRITE( arg3, sizeof( vki_off_t ) );
+   POST_MEM_WRITE( ARG3, sizeof( vki_off_t ) );
 }
 
 PRE(sys_sendfile64, MayBlock)
 {
-   PRINT("sendfile64 ( %d, %d, %p, %llu )",arg1,arg2,arg3,(ULong)arg4);
+   PRINT("sendfile64 ( %d, %d, %p, %llu )",ARG1,ARG2,ARG3,(ULong)ARG4);
    PRE_REG_READ4(ssize_t, "sendfile64",
                  int, out_fd, int, in_fd, vki_loff_t *, offset,
                  vki_size_t, count);
-   if (arg3 != 0)
-      PRE_MEM_WRITE( "sendfile64(offset)", arg3, sizeof(vki_loff_t) );
+   if (ARG3 != 0)
+      PRE_MEM_WRITE( "sendfile64(offset)", ARG3, sizeof(vki_loff_t) );
 }
 
 POST(sys_sendfile64)
 {
-   if (arg3 != 0 ) {
-      POST_MEM_WRITE( arg3, sizeof(vki_loff_t) );
+   if (ARG3 != 0 ) {
+      POST_MEM_WRITE( ARG3, sizeof(vki_loff_t) );
    }
 }
 
 PRE(sys_futex, MayBlock)
 {
-   PRINT("sys_futex ( %p, %d, %d, %p, %p )", arg1,arg2,arg3,arg4,arg5);
+   PRINT("sys_futex ( %p, %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ6(long, "futex", 
                  vki_u32 *, futex, int, op, int, val,
                  struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
-   PRE_MEM_READ( "futex(futex)", arg1, sizeof(int) );
-   if (arg2 == VKI_FUTEX_WAIT && arg4 != 0)
-      PRE_MEM_READ( "futex(timeout)", arg4, sizeof(struct vki_timespec) );
-   if (arg2 == VKI_FUTEX_REQUEUE)
-      PRE_MEM_READ( "futex(futex2)", arg4, sizeof(int) );
+   PRE_MEM_READ( "futex(futex)", ARG1, sizeof(int) );
+   if (ARG2 == VKI_FUTEX_WAIT && ARG4 != 0)
+      PRE_MEM_READ( "futex(timeout)", ARG4, sizeof(struct vki_timespec) );
+   if (ARG2 == VKI_FUTEX_REQUEUE)
+      PRE_MEM_READ( "futex(futex2)", ARG4, sizeof(int) );
 }
 
 POST(sys_futex)
 {
-   POST_MEM_WRITE( arg1, sizeof(int) );
-   if (arg2 == VKI_FUTEX_FD) {
-      if (!VG_(fd_allowed)(res, "futex", tid, True)) {
-         VG_(close)(res);
-         set_result( -VKI_EMFILE );
+   POST_MEM_WRITE( ARG1, sizeof(int) );
+   if (ARG2 == VKI_FUTEX_FD) {
+      if (!VG_(fd_allowed)(RES, "futex", tid, True)) {
+         VG_(close)(RES);
+         SET_RESULT( -VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            VG_(record_fd_open)(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
+            VG_(record_fd_open)(tid, RES, VG_(arena_strdup)(VG_AR_CORE, (Char*)ARG1));
       }
    }
 }
 
 PRE(sys_epoll_create, 0)
 {
-   PRINT("sys_epoll_create ( %d )", arg1);
+   PRINT("sys_epoll_create ( %d )", ARG1);
    PRE_REG_READ1(long, "epoll_create", int, size);
 }
 
 POST(sys_epoll_create)
 {
-   if (!VG_(fd_allowed)(res, "epoll_create", tid, True)) {
-      VG_(close)(res);
-      set_result( -VKI_EMFILE );
+   if (!VG_(fd_allowed)(RES, "epoll_create", tid, True)) {
+      VG_(close)(RES);
+      SET_RESULT( -VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         VG_(record_fd_open) (tid, res, NULL);
+         VG_(record_fd_open) (tid, RES, NULL);
    }
 }
 
@@ -420,25 +404,25 @@ PRE(sys_epoll_ctl, 0)
       "EPOLL_CTL_MOD"
    };
    PRINT("sys_epoll_ctl ( %d, %s, %d, %p )", 
-         arg1, ( arg2<3 ? epoll_ctl_s[arg2] : "?" ), arg3, arg4);
+         ARG1, ( ARG2<3 ? epoll_ctl_s[ARG2] : "?" ), ARG3, ARG4);
    PRE_REG_READ4(long, "epoll_ctl",
                  int, epfd, int, op, int, fd, struct epoll_event *, event);
-   PRE_MEM_READ( "epoll_ctl(event)", arg4, sizeof(struct epoll_event) );
+   PRE_MEM_READ( "epoll_ctl(event)", ARG4, sizeof(struct epoll_event) );
 }
 
 PRE(sys_epoll_wait, MayBlock)
 {
-   PRINT("sys_epoll_wait ( %d, %p, %d, %d )", arg1, arg2, arg3, arg4);
+   PRINT("sys_epoll_wait ( %d, %p, %d, %d )", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "epoll_wait",
                  int, epfd, struct epoll_event *, events,
                  int, maxevents, int, timeout);
-   PRE_MEM_WRITE( "epoll_wait(events)", arg2, sizeof(struct epoll_event)*arg3);
+   PRE_MEM_WRITE( "epoll_wait(events)", ARG2, sizeof(struct epoll_event)*ARG3);
 }
 
 POST(sys_epoll_wait)
 {
-   if (res > 0)
-      POST_MEM_WRITE( arg2, sizeof(struct epoll_event)*res ) ;
+   if (RES > 0)
+      POST_MEM_WRITE( ARG2, sizeof(struct epoll_event)*RES ) ;
 }
 
 // Nb: this wrapper is "Special" because we have to pad/unpad memory around
@@ -449,28 +433,28 @@ PRE(sys_io_setup, Special)
    SizeT size;
    Addr addr;
 
-   PRINT("sys_io_setup ( %u, %p )", arg1,arg2);
+   PRINT("sys_io_setup ( %u, %p )", ARG1,ARG2);
    PRE_REG_READ2(long, "io_setup",
                  unsigned, nr_events, vki_aio_context_t *, ctxp);
-   PRE_MEM_WRITE( "io_setup(ctxp)", arg2, sizeof(vki_aio_context_t) );
+   PRE_MEM_WRITE( "io_setup(ctxp)", ARG2, sizeof(vki_aio_context_t) );
    
    size = PGROUNDUP(sizeof(struct vki_aio_ring) +
-                    arg1*sizeof(struct vki_io_event));
+                    ARG1*sizeof(struct vki_io_event));
    addr = VG_(find_map_space)(0, size, True);
    VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_EXEC, SF_FIXED);
    
    VG_(pad_address_space)();
-   set_result( VG_(do_syscall)(SYSNO, arg1, arg2) );
+   SET_RESULT( VG_(do_syscall)(SYSNO, ARG1, ARG2) );
    VG_(unpad_address_space)();
 
-   if (res == 0) {
-      struct vki_aio_ring *r = *(struct vki_aio_ring **)arg2;
+   if (RES == 0) {
+      struct vki_aio_ring *r = *(struct vki_aio_ring **)ARG2;
         
       vg_assert(addr == (Addr)r);
       vg_assert(VG_(valid_client_addr)(addr, size, tid, "io_setup"));
                 
       VG_TRACK( new_mem_mmap, addr, size, True, True, False );
-      POST_MEM_WRITE( arg2, sizeof(vki_aio_context_t) );
+      POST_MEM_WRITE( ARG2, sizeof(vki_aio_context_t) );
    }
    else {
       VG_(unmap_range)(addr, size);
@@ -484,51 +468,51 @@ PRE(sys_io_setup, Special)
 // kernel and glibc sources to see what they do, yuk.)
 PRE(sys_io_destroy, Special)
 {     
-   Segment *s = VG_(find_segment)(arg1);
+   Segment *s = VG_(find_segment)(ARG1);
    struct vki_aio_ring *r;
    SizeT size;
       
-   PRINT("sys_io_destroy ( %llu )", (ULong)arg1);
+   PRINT("sys_io_destroy ( %llu )", (ULong)ARG1);
    PRE_REG_READ1(long, "io_destroy", vki_aio_context_t, ctx);
 
-   // If we are going to seg fault (due to a bogus arg1) do it as late as
+   // If we are going to seg fault (due to a bogus ARG1) do it as late as
    // possible...
-   r = *(struct vki_aio_ring **)arg1;
+   r = *(struct vki_aio_ring **)ARG1;
    size = PGROUNDUP(sizeof(struct vki_aio_ring) + 
                     r->nr*sizeof(struct vki_io_event));
 
-   set_result( VG_(do_syscall)(SYSNO, arg1) );
+   SET_RESULT( VG_(do_syscall)(SYSNO, ARG1) );
 
-   if (res == 0 && s != NULL && VG_(seg_contains)(s, arg1, size)) { 
-      VG_TRACK( die_mem_munmap, arg1, size );
-      VG_(unmap_range)(arg1, size);
+   if (RES == 0 && s != NULL && VG_(seg_contains)(s, ARG1, size)) { 
+      VG_TRACK( die_mem_munmap, ARG1, size );
+      VG_(unmap_range)(ARG1, size);
    }  
 }  
 
 PRE(sys_io_getevents, MayBlock)
 {
    PRINT("sys_io_getevents ( %llu, %lld, %lld, %p, %p )",
-         (ULong)arg1,(Long)arg2,(Long)arg3,arg4,arg5);
+         (ULong)ARG1,(Long)ARG2,(Long)ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "io_getevents",
                  vki_aio_context_t, ctx_id, long, min_nr, long, nr,
                  struct io_event *, events,
                  struct timespec *, timeout);
-   if (arg3 > 0)
+   if (ARG3 > 0)
       PRE_MEM_WRITE( "io_getevents(events)",
-                     arg4, sizeof(struct vki_io_event)*arg3 );
-   if (arg5 != 0)
+                     ARG4, sizeof(struct vki_io_event)*ARG3 );
+   if (ARG5 != 0)
       PRE_MEM_READ( "io_getevents(timeout)",
-                     arg5, sizeof(struct vki_timespec));
+                     ARG5, sizeof(struct vki_timespec));
 }
 
 POST(sys_io_getevents)
 {
    int i;
 
-   if (res > 0) {
-      POST_MEM_WRITE( arg4, sizeof(struct vki_io_event)*res );
-      for (i = 0; i < res; i++) {
-         const struct vki_io_event *vev = ((struct vki_io_event *)arg4) + i;
+   if (RES > 0) {
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_io_event)*RES );
+      for (i = 0; i < RES; i++) {
+         const struct vki_io_event *vev = ((struct vki_io_event *)ARG4) + i;
          const struct vki_iocb *cb = (struct vki_iocb *)(Addr)vev->obj;
 
          switch (cb->aio_lio_opcode) {
@@ -552,14 +536,14 @@ PRE(sys_io_submit, 0)
 {
    int i;
 
-   PRINT("sys_io_submit( %llu, %lld, %p )", (ULong)arg1,(Long)arg2,arg3);
+   PRINT("sys_io_submit( %llu, %lld, %p )", (ULong)ARG1,(Long)ARG2,ARG3);
    PRE_REG_READ3(long, "io_submit",
                  vki_aio_context_t, ctx_id, long, nr,
                  struct iocb **, iocbpp);
-   PRE_MEM_READ( "io_submit(iocbpp)", arg3, arg2*sizeof(struct vki_iocb *) );
-   if (arg3 != 0) {
-      for (i = 0; i < arg2; i++) {
-         struct vki_iocb *cb = ((struct vki_iocb **)arg3)[i];
+   PRE_MEM_READ( "io_submit(iocbpp)", ARG3, ARG2*sizeof(struct vki_iocb *) );
+   if (ARG3 != 0) {
+      for (i = 0; i < ARG2; i++) {
+         struct vki_iocb *cb = ((struct vki_iocb **)ARG3)[i];
          PRE_MEM_READ( "io_submit(iocb)", (Addr)cb, sizeof(struct vki_iocb) );
          switch (cb->aio_lio_opcode) {
          case VKI_IOCB_CMD_PREAD:
@@ -581,17 +565,17 @@ PRE(sys_io_submit, 0)
 
 PRE(sys_io_cancel, 0)
 {
-   PRINT("sys_io_cancel( %llu, %p, %p )", (ULong)arg1,arg2,arg3);
+   PRINT("sys_io_cancel( %llu, %p, %p )", (ULong)ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "io_cancel",
                  vki_aio_context_t, ctx_id, struct iocb *, iocb,
                  struct io_event *, result);
-   PRE_MEM_READ( "io_cancel(iocb)", arg2, sizeof(struct vki_iocb) );
-   PRE_MEM_WRITE( "io_cancel(result)", arg3, sizeof(struct vki_io_event) );
+   PRE_MEM_READ( "io_cancel(iocb)", ARG2, sizeof(struct vki_iocb) );
+   PRE_MEM_WRITE( "io_cancel(result)", ARG3, sizeof(struct vki_io_event) );
 }
 
 POST(sys_io_cancel)
 {
-   POST_MEM_WRITE( arg3, sizeof(struct vki_io_event) );
+   POST_MEM_WRITE( ARG3, sizeof(struct vki_io_event) );
 }
 
 #undef PRE

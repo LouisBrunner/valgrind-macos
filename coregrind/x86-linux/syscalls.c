@@ -54,7 +54,7 @@ asm(
 ".vgArch_sys_restarted:\n"
 "	int	$0x80\n"
 ".vgArch_sys_after:\n"
-"	movl	16+32(%esp),%ebx\n"	/* ebx = Int *res */
+"	movl	16+32(%esp),%ebx\n"	/* ebx = Int *RES */
 "	movl	%eax, (%ebx)\n"		/* write the syscall retval */
 
 "	movl	16+36(%esp),%ebx\n"	/* ebx = enum PXState * */
@@ -117,21 +117,6 @@ void VGA_(restart_syscall)(ThreadArchState *arch)
 #define PRE(name, f)     PRE_TEMPLATE(static, x86_linux, name, f)
 #define POST(name)      POST_TEMPLATE(static, x86_linux, name)
 
-#define SYSNO   SYSCALL_NUM(tst->arch)    // in PRE(x)
-#define res     SYSCALL_RET(tst->arch)    // in POST(x)
-#define arg1    SYSCALL_ARG1(tst->arch)
-#define arg2    SYSCALL_ARG2(tst->arch)
-#define arg3    SYSCALL_ARG3(tst->arch)
-#define arg4    SYSCALL_ARG4(tst->arch)
-#define arg5    SYSCALL_ARG5(tst->arch)
-#define arg6    SYSCALL_ARG6(tst->arch)
-
-#define set_result(val) PLATFORM_SET_SYSCALL_RESULT(tst->arch, (val))
-
-#define PRINT(format, args...)  \
-   if (VG_(clo_trace_syscalls))        \
-      VG_(printf)(format, ## args)
-
 PRE(old_select, MayBlock)
 {
    /* struct sel_arg_struct {
@@ -141,10 +126,10 @@ PRE(old_select, MayBlock)
       };
    */
    PRE_REG_READ1(long, "old_select", struct sel_arg_struct *, args);
-   PRE_MEM_READ( "old_select(args)", arg1, 5*sizeof(UWord) );
+   PRE_MEM_READ( "old_select(args)", ARG1, 5*sizeof(UWord) );
 
    {
-      UInt* arg_struct = (UInt*)arg1;
+      UInt* arg_struct = (UInt*)ARG1;
       UInt a1, a2, a3, a4, a5;
 
       a1 = arg_struct[0];
@@ -167,19 +152,19 @@ PRE(old_select, MayBlock)
 
 PRE(sys_clone, Special)
 {
-   PRINT("sys_clone ( %d, %p, %p, %p, %p )",arg1,arg2,arg3,arg4,arg5);
+   PRINT("sys_clone ( %d, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
    // XXX: really not sure about the last two args... if they are really
    // there, we should do PRE_MEM_READs for both of them...
    PRE_REG_READ4(int, "clone",
                  unsigned long, flags, void *, child_stack,
                  int *, parent_tidptr, int *, child_tidptr);
 
-   if (arg2 == 0 &&
-       (arg1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
-     || arg1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
+   if (ARG2 == 0 &&
+       (ARG1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
+     || ARG1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
    {
       VGA_(gen_sys_fork_before)(tid, tst);
-      set_result( VG_(do_syscall)(SYSNO, arg1, arg2, arg3, arg4, arg5) );
+      SET_RESULT( VG_(do_syscall)(SYSNO, ARG1, ARG2, ARG3, ARG4, ARG5) );
       VGA_(gen_sys_fork_after) (tid, tst);
    } else {
       VG_(unimplemented)
@@ -192,86 +177,86 @@ PRE(sys_clone, Special)
 
 PRE(sys_modify_ldt, Special)
 {
-   PRINT("sys_modify_ldt ( %d, %p, %d )", arg1,arg2,arg3);
+   PRINT("sys_modify_ldt ( %d, %p, %d )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "modify_ldt", int, func, void *, ptr,
                  unsigned long, bytecount);
    
-   if (arg1 == 0) {
+   if (ARG1 == 0) {
       /* read the LDT into ptr */
-      PRE_MEM_WRITE( "modify_ldt(ptr)", arg2, arg3 );
+      PRE_MEM_WRITE( "modify_ldt(ptr)", ARG2, ARG3 );
    }
-   if (arg1 == 1 || arg1 == 0x11) {
+   if (ARG1 == 1 || ARG1 == 0x11) {
       /* write the LDT with the entry pointed at by ptr */
-      PRE_MEM_READ( "modify_ldt(ptr)", arg2, sizeof(vki_modify_ldt_t) );
+      PRE_MEM_READ( "modify_ldt(ptr)", ARG2, sizeof(vki_modify_ldt_t) );
    }
    /* "do" the syscall ourselves; the kernel never sees it */
-   res = VG_(sys_modify_ldt)( tid, arg1, (void*)arg2, arg3 );
+   RES = VG_(sys_modify_ldt)( tid, ARG1, (void*)ARG2, ARG3 );
 
-   if (arg1 == 0 && !VG_(is_kerror)(res) && res > 0) {
-      POST_MEM_WRITE( arg2, res );
+   if (ARG1 == 0 && !VG_(is_kerror)(RES) && RES > 0) {
+      POST_MEM_WRITE( ARG2, RES );
    }
 }
 
 PRE(sys_set_thread_area, Special)
 {
-   PRINT("sys_set_thread_area ( %p )", arg1);
+   PRINT("sys_set_thread_area ( %p )", ARG1);
    PRE_REG_READ1(int, "set_thread_area", struct user_desc *, u_info)
-   PRE_MEM_READ( "set_thread_area(u_info)", arg1, sizeof(vki_modify_ldt_t) );
+   PRE_MEM_READ( "set_thread_area(u_info)", ARG1, sizeof(vki_modify_ldt_t) );
 
    /* "do" the syscall ourselves; the kernel never sees it */
-   set_result( VG_(sys_set_thread_area)( tid, (void *)arg1 ) );
+   SET_RESULT( VG_(sys_set_thread_area)( tid, (void *)ARG1 ) );
 }
 
 PRE(sys_get_thread_area, Special)
 {
-   PRINT("sys_get_thread_area ( %p )", arg1);
+   PRINT("sys_get_thread_area ( %p )", ARG1);
    PRE_REG_READ1(int, "get_thread_area", struct user_desc *, u_info)
-   PRE_MEM_WRITE( "get_thread_area(u_info)", arg1, sizeof(vki_modify_ldt_t) );
+   PRE_MEM_WRITE( "get_thread_area(u_info)", ARG1, sizeof(vki_modify_ldt_t) );
 
    /* "do" the syscall ourselves; the kernel never sees it */
-   set_result( VG_(sys_get_thread_area)( tid, (void *)arg1 ) );
+   SET_RESULT( VG_(sys_get_thread_area)( tid, (void *)ARG1 ) );
 
-   if (!VG_(is_kerror)(res)) {
-      POST_MEM_WRITE( arg1, sizeof(vki_modify_ldt_t) );
+   if (!VG_(is_kerror)(RES)) {
+      POST_MEM_WRITE( ARG1, sizeof(vki_modify_ldt_t) );
    }
 }
 
 // Parts of this are x86-specific, but the *PEEK* cases are generic.
-// XXX: Why is the memory pointed to by arg3 never checked?
+// XXX: Why is the memory pointed to by ARG3 never checked?
 PRE(sys_ptrace, 0)
 {
-   PRINT("sys_ptrace ( %d, %d, %p, %p )", arg1,arg2,arg3,arg4);
+   PRINT("sys_ptrace ( %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4);
    PRE_REG_READ4(int, "ptrace", 
                  long, request, long, pid, long, addr, long, data);
-   switch (arg1) {
+   switch (ARG1) {
    case VKI_PTRACE_PEEKTEXT:
    case VKI_PTRACE_PEEKDATA:
    case VKI_PTRACE_PEEKUSR:
-      PRE_MEM_WRITE( "ptrace(peek)", arg4, 
+      PRE_MEM_WRITE( "ptrace(peek)", ARG4, 
 		     sizeof (long));
       break;
    case VKI_PTRACE_GETREGS:
-      PRE_MEM_WRITE( "ptrace(getregs)", arg4, 
+      PRE_MEM_WRITE( "ptrace(getregs)", ARG4, 
 		     sizeof (struct vki_user_regs_struct));
       break;
    case VKI_PTRACE_GETFPREGS:
-      PRE_MEM_WRITE( "ptrace(getfpregs)", arg4, 
+      PRE_MEM_WRITE( "ptrace(getfpregs)", ARG4, 
 		     sizeof (struct vki_user_i387_struct));
       break;
    case VKI_PTRACE_GETFPXREGS:
-      PRE_MEM_WRITE( "ptrace(getfpxregs)", arg4, 
+      PRE_MEM_WRITE( "ptrace(getfpxregs)", ARG4, 
                      sizeof(struct vki_user_fxsr_struct) );
       break;
    case VKI_PTRACE_SETREGS:
-      PRE_MEM_READ( "ptrace(setregs)", arg4, 
+      PRE_MEM_READ( "ptrace(setregs)", ARG4, 
 		     sizeof (struct vki_user_regs_struct));
       break;
    case VKI_PTRACE_SETFPREGS:
-      PRE_MEM_READ( "ptrace(setfpregs)", arg4, 
+      PRE_MEM_READ( "ptrace(setfpregs)", ARG4, 
 		     sizeof (struct vki_user_i387_struct));
       break;
    case VKI_PTRACE_SETFPXREGS:
-      PRE_MEM_READ( "ptrace(setfpxregs)", arg4, 
+      PRE_MEM_READ( "ptrace(setfpxregs)", ARG4, 
                      sizeof(struct vki_user_fxsr_struct) );
       break;
    default:
@@ -281,20 +266,20 @@ PRE(sys_ptrace, 0)
 
 POST(sys_ptrace)
 {
-   switch (arg1) {
+   switch (ARG1) {
    case VKI_PTRACE_PEEKTEXT:
    case VKI_PTRACE_PEEKDATA:
    case VKI_PTRACE_PEEKUSR:
-      POST_MEM_WRITE( arg4, sizeof (long));
+      POST_MEM_WRITE( ARG4, sizeof (long));
       break;
    case VKI_PTRACE_GETREGS:
-      POST_MEM_WRITE( arg4, sizeof (struct vki_user_regs_struct));
+      POST_MEM_WRITE( ARG4, sizeof (struct vki_user_regs_struct));
       break;
    case VKI_PTRACE_GETFPREGS:
-      POST_MEM_WRITE( arg4, sizeof (struct vki_user_i387_struct));
+      POST_MEM_WRITE( ARG4, sizeof (struct vki_user_i387_struct));
       break;
    case VKI_PTRACE_GETFPXREGS:
-      POST_MEM_WRITE( arg4, sizeof(struct vki_user_fxsr_struct) );
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_user_fxsr_struct) );
       break;
    default:
       break;

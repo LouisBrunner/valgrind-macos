@@ -39,8 +39,8 @@
 const Addr VGA_(sys_before), VGA_(sys_restarted),
            VGA_(sys_after),  VGA_(sys_done);
 void VGA_(do_thread_syscall)(UWord sys,
-                             UWord arg1, UWord arg2, UWord arg3,
-                             UWord arg4, UWord arg5, UWord arg6,
+                             UWord ARG1, UWord ARG2, UWord ARG3,
+                             UWord ARG4, UWord ARG5, UWord ARG6,
                              UWord *result, /*enum PXState*/Int *statep,
                              /*enum PXState*/Int poststate)
 {
@@ -83,21 +83,6 @@ void VGA_(restart_syscall)(ThreadArchState *arch)
 #define PRE(name, f)     PRE_TEMPLATE(static, arm_linux, name, f)
 #define POST(name)      POST_TEMPLATE(static, arm_linux, name)
 
-#define SYSNO	PLATFORM_SYSCALL_NUM(tst->arch)    // in PRE(x)
-#define res	PLATFORM_SYSCALL_RET(tst->arch)	   // in POST(x)
-#define arg1	PLATFORM_SYSCALL_ARG1(tst->arch)
-#define arg2	PLATFORM_SYSCALL_ARG2(tst->arch)
-#define arg3	PLATFORM_SYSCALL_ARG3(tst->arch)
-#define arg4	PLATFORM_SYSCALL_ARG4(tst->arch)
-#define arg5	PLATFORM_SYSCALL_ARG5(tst->arch)
-#define arg6	PLATFORM_SYSCALL_ARG6(tst->arch)
-
-#define set_result(val) PLATFORM_SET_SYSCALL_RESULT(tst->arch, (val))
-
-#define PRINT(format, args...)  \
-   if (VG_(clo_trace_syscalls))        \
-      VG_(printf)(format, ## args)
-
 PRE(sys_syscall, Special)
 {
    // Nb!!!
@@ -114,19 +99,19 @@ PRE(sys_clone, Special)
    I_die_here;
    // XXX: maybe this clone stuff could be factored out
 #if 0
-   PRINT("sys_clone ( %d, %p, %p, %p, %p )",arg1,arg2,arg3,arg4,arg5);
+   PRINT("sys_clone ( %d, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
    // XXX: really not sure about the last two args... if they are really
    // there, we should do PRE_MEM_READs for both of them...
    PRE_REG_READ4(int, "clone",
                  unsigned long, flags, void *, child_stack,
                  int *, parent_tidptr, int *, child_tidptr);
 
-   if (arg2 == 0 &&
-       (arg1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
-     || arg1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
+   if (ARG2 == 0 &&
+       (ARG1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
+     || ARG1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
    {
       VGA_(gen_sys_fork_before)(tid, tst);
-      set_result( VG_(do_syscall)(SYSNO, arg1, arg2, arg3, arg4, arg5) );
+      SET_RESULT( VG_(do_syscall)(SYSNO, ARG1, ARG2, ARG3, ARG4, ARG5) );
       VGA_(gen_sys_fork_after) (tid, tst);
    } else {
       VG_(unimplemented)

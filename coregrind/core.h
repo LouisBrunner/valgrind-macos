@@ -1413,6 +1413,22 @@ void VG_(record_fd_open)(Int tid, Int fd, char *pathname);
 #define GENX_(const, name)    SYS_WRAPPER_ENTRY_X_(vgArch_gen, const, name)
 #define GENXY(const, name)    SYS_WRAPPER_ENTRY_XY(vgArch_gen, const, name)
 
+// Space-saving macros for syscall wrappers
+#define SYSNO   SYSCALL_NUM(tst->arch)    // in PRE(x)
+#define RES     SYSCALL_RET(tst->arch)    // in POST(x)
+#define ARG1    SYSCALL_ARG1(tst->arch)
+#define ARG2    SYSCALL_ARG2(tst->arch)
+#define ARG3    SYSCALL_ARG3(tst->arch)
+#define ARG4    SYSCALL_ARG4(tst->arch)
+#define ARG5    SYSCALL_ARG5(tst->arch)
+#define ARG6    SYSCALL_ARG6(tst->arch)
+
+#define SET_RESULT(val) PLATFORM_SET_SYSCALL_RESULT(tst->arch, (val))
+
+#define PRINT(format, args...)  \
+   if (VG_(clo_trace_syscalls))        \
+      VG_(printf)(format, ## args)
+
 // Generic (platform-independent) syscall wrappers.  These are generally
 // POSIX or something like that;  those that are not POSIX are annotated
 // with what standards they are part of, as stated in the Linux man pages.

@@ -119,7 +119,7 @@ void VG_(sanity_check_needs) ( void)
 	 VG_(printf)("\nTool error: tool allocated shadow memory, but apparently doesn't "
 		     "need it.\n");
       else
-	 VG_(printf)("\nTool error: tool didn't allocated shadow memory, but apparently "
+	 VG_(printf)("\nTool error: tool didn't allocate shadow memory, but apparently "
 		     "needs it.\n");
       VG_(skin_panic)("VG_(needs).shadow_memory need should be set to match SK_(shadow_ratio)\n");
    }

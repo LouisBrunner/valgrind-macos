@@ -1897,15 +1897,15 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 //..          default: vpanic("iselCondCode(x86): CmpXX64");
 //..       }
 //..    }
-//.. 
-//..    /* var */
-//..    if (e->tag == Iex_Tmp) {
-//..       HReg r32 = lookupIRTemp(env, e->Iex.Tmp.tmp);
-//..       HReg dst = newVRegI(env);
-//..       addInstr(env, mk_iMOVsd_RR(r32,dst));
-//..       addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(1),dst));
-//..       return Xcc_NZ;
-//..    }
+
+   /* var */
+   if (e->tag == Iex_Tmp) {
+      HReg r64 = lookupIRTemp(env, e->Iex.Tmp.tmp);
+      HReg dst = newVRegI(env);
+      addInstr(env, mk_iMOVsd_RR(r64,dst));
+      addInstr(env, AMD64Instr_Alu64R(Aalu_AND,AMD64RMI_Imm(1),dst));
+      return Acc_NZ;
+   }
 
    ppIRExpr(e);
    vpanic("iselCondCode(amd64)");
@@ -3545,12 +3545,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, mk_iMOVsd_RR(rLo,dstLo) );
          return;
       }
-//..       if (ty == Ity_I1) {
-//..          X86CondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
-//..          HReg dst = lookupIRTemp(env, tmp);
-//..          addInstr(env, X86Instr_Set32(cond, dst));
-//..          return;
-//..       }
+      if (ty == Ity_I1) {
+         AMD64CondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
+         HReg dst = lookupIRTemp(env, tmp);
+         addInstr(env, AMD64Instr_Set64(cond, dst));
+         return;
+      }
       if (ty == Ity_F64) {
          HReg dst = lookupIRTemp(env, tmp);
          HReg src = iselDblExpr(env, stmt->Ist.Tmp.data);

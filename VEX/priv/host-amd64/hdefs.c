@@ -772,13 +772,13 @@ AMD64Instr* AMD64Instr_Store ( UChar sz, HReg src, AMD64AMode* dst ) {
    vassert(sz == 1 || sz == 2 || sz == 4);
    return i;
 }
-//.. AMD64Instr* AMD64Instr_Set32 ( AMD64CondCode cond, HReg dst ) {
-//..    AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag            = Xin_Set32;
-//..    i->Xin.Set32.cond = cond;
-//..    i->Xin.Set32.dst  = dst;
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_Set64 ( AMD64CondCode cond, HReg dst ) {
+   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag            = Ain_Set64;
+   i->Ain.Set64.cond = cond;
+   i->Ain.Set64.dst  = dst;
+   return i;
+}
 //.. AMD64Instr* AMD64Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst ) {
 //..    AMD64Instr* i          = LibVEX_Alloc(sizeof(AMD64Instr));
 //..    i->tag               = Xin_Bsfr32;
@@ -1116,10 +1116,10 @@ void ppAMD64Instr ( AMD64Instr* i )
          vex_printf(",");
          ppAMD64AMode(i->Ain.Store.dst);
          return;
-//..       case Xin_Set32:
-//..          vex_printf("setl%s ", showAMD64CondCode(i->Xin.Set32.cond));
-//..          ppHRegAMD64(i->Xin.Set32.dst);
-//..          return;
+      case Ain_Set64:
+         vex_printf("setq%s ", showAMD64CondCode(i->Ain.Set64.cond));
+         ppHRegAMD64(i->Ain.Set64.dst);
+         return;
 //..       case Xin_Bsfr32:
 //..          vex_printf("bs%cl ", i->Xin.Bsfr32.isFwds ? 'f' : 'r');
 //..          ppHRegAMD64(i->Xin.Bsfr32.src);
@@ -1430,9 +1430,9 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          addHRegUse(u, HRmRead, i->Ain.Store.src);
          addRegUsage_AMD64AMode(u, i->Ain.Store.dst);
          return;
-//..       case Xin_Set32:
-//..          addHRegUse(u, HRmWrite, i->Xin.Set32.dst);
-//..          return;
+      case Ain_Set64:
+         addHRegUse(u, HRmWrite, i->Ain.Set64.dst);
+         return;
 //..       case Xin_Bsfr32:
 //..          addHRegUse(u, HRmRead, i->Xin.Bsfr32.src);
 //..          addHRegUse(u, HRmWrite, i->Xin.Bsfr32.dst);
@@ -1628,9 +1628,9 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
          mapReg(m, &i->Ain.Store.src);
          mapRegs_AMD64AMode(m, i->Ain.Store.dst);
          return;
-//..       case Xin_Set32:
-//..          mapReg(m, &i->Xin.Set32.dst);
-//..          return;
+      case Ain_Set64:
+         mapReg(m, &i->Ain.Set64.dst);
+         return;
 //..       case Xin_Bsfr32:
 //..          mapReg(m, &i->Xin.Bsfr32.src);
 //..          mapReg(m, &i->Xin.Bsfr32.dst);
@@ -2150,6 +2150,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 {
    UInt /*irno,*/ opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
    UInt   xtra;
+   UInt   reg;
    UChar  rex;
    UChar* p = &buf[0];
    UChar* ptmp;
@@ -2670,39 +2671,30 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
       }
       break;
 
-//..    case Xin_Set32:
-//..       /* Make the destination register be 1 or 0, depending on whether
-//..          the relevant condition holds.  We have to dodge and weave
-//..          when the destination is %esi or %edi as we cannot directly
-//..          emit the native 'setb %reg' for those.  Further complication:
-//..          the top 24 bits of the destination should be forced to zero,
-//..          but doing 'xor %r,%r' kills the flag(s) we are about to read.
-//..          Sigh.  So start off my moving $0 into the dest. */
-//.. 
-//..       /* Do we need to swap in %eax? */
-//..       if (iregNo(i->Xin.Set32.dst) >= 4) {
-//..          /* xchg %eax, %dst */
-//..          *p++ = 0x90 + iregNo(i->Xin.Set32.dst);
-//..          /* movl $0, %eax */
-//..          *p++ = 0xB8 + iregNo(hregAMD64_EAX());
-//..          p = emit32(p, 0);
-//..          /* setb lo8(%eax) */
-//..          *p++ = 0x0F; 
-//..          *p++ = 0x90 + (UChar)(i->Xin.Set32.cond);
-//..          p = doAMode_R(p, fake(0), hregAMD64_EAX());
-//..          /* xchg %eax, %dst */
-//..          *p++ = 0x90 + iregNo(i->Xin.Set32.dst);
-//..       } else {
-//..          /* movl $0, %dst */
-//..          *p++ = 0xB8 + iregNo(i->Xin.Set32.dst);
-//..          p = emit32(p, 0);
-//..          /* setb lo8(%dst) */
-//..          *p++ = 0x0F; 
-//..          *p++ = 0x90 + (UChar)(i->Xin.Set32.cond);
-//..          p = doAMode_R(p, fake(0), i->Xin.Set32.dst);
-//..       }
-//..       goto done;
-//.. 
+   case Ain_Set64:
+      /* Make the destination register be 1 or 0, depending on whether
+         the relevant condition holds.  Complication: the top 56 bits
+         of the destination should be forced to zero, but doing 'xorq
+         %r,%r' kills the flag(s) we are about to read.  Sigh.  So
+         start off my moving $0 into the dest. */
+
+      reg = iregNo(i->Ain.Set64.dst);
+      vassert(reg < 16);
+
+      /* movq $0, %dst */
+      *p++ = toUChar(reg >= 8 ? 0x49 : 0x48);
+      *p++ = 0xC7;
+      *p++ = toUChar(0xC0 + (reg & 7));
+      p = emit32(p, 0);
+
+      /* setb lo8(%dst) */
+      /* note, 8-bit register rex trickyness.  Be careful here. */
+      *p++ = toUChar(reg >= 8 ? 0x41 : 0x40);
+      *p++ = 0x0F; 
+      *p++ = toUChar(0x90 + (0x0F & i->Ain.Set64.cond));
+      *p++ = toUChar(0xC0 + (reg & 7));
+      goto done;
+
 //..    case Xin_Bsfr32:
 //..       *p++ = 0x0F;
 //..       if (i->Xin.Bsfr32.isFwds) {

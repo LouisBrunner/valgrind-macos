@@ -369,7 +369,7 @@ typedef
       Ain_MovZLQ,    /* reg-reg move, zeroing out top half */
       Ain_LoadEX,    /* mov{s,z}{b,w,l}q from mem to reg */
       Ain_Store,     /* store 32/16/8 bit value in memory */
-//..       Xin_Set32,     /* convert condition code to 32-bit value */
+      Ain_Set64,     /* convert condition code to 32-bit value */
 //..       Xin_Bsfr32,    /* 32-bit bsf/bsr */
       Ain_MFence,    /* mem fence */
 //.. 
@@ -498,11 +498,11 @@ typedef
             HReg        src;
             AMD64AMode* dst;
          } Store;
-//..          /* Convert a x86 condition code to a 32-bit value (0 or 1). */
-//..          struct {
-//..             X86CondCode cond;
-//..             HReg        dst;
-//..          } Set32;
+         /* Convert an amd64 condition code to a 64-bit value (0 or 1). */
+         struct {
+            AMD64CondCode cond;
+            HReg          dst;
+         } Set64;
 //..          /* 32-bit bsf or bsr. */
 //..          struct {
 //..             Bool isFwds;
@@ -669,7 +669,7 @@ extern AMD64Instr* AMD64Instr_MovZLQ    ( HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_LoadEX    ( UChar szSmall, Bool syned,
                                           AMD64AMode* src, HReg dst );
 extern AMD64Instr* AMD64Instr_Store     ( UChar sz, HReg src, AMD64AMode* dst );
-//.. extern AMD64Instr* AMD64Instr_Set32     ( AMD64CondCode cond, HReg dst );
+extern AMD64Instr* AMD64Instr_Set64     ( AMD64CondCode cond, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
 extern AMD64Instr* AMD64Instr_MFence    ( void );
 //.. 

@@ -89,11 +89,10 @@ int do_exec(const char *exe, struct exeinfo *info);
 
 struct ume_auxv
 {
-   int	a_type;
+   Word a_type;
    union {
       void *a_ptr;
-      int   a_val;
-      void (*a_fcn)(void);
+      Word a_val;
    } u;
 };
 

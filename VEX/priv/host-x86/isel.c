@@ -2706,6 +2706,14 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_MulHi16Ux8: op = Xsse_MULHI16U; goto do_SseReRg;
       case Iop_MulHi16Sx8: op = Xsse_MULHI16S; goto do_SseReRg;
       case Iop_Mul16x8:    op = Xsse_MUL16;    goto do_SseReRg;
+      case Iop_Sub8x16:    op = Xsse_SUB8;     goto do_SseReRg;
+      case Iop_Sub16x8:    op = Xsse_SUB16;    goto do_SseReRg;
+      case Iop_Sub32x4:    op = Xsse_SUB32;    goto do_SseReRg;
+      case Iop_Sub64x2:    op = Xsse_SUB64;    goto do_SseReRg;
+      case Iop_QSub8Sx16:  op = Xsse_QSUB8S;   goto do_SseReRg;
+      case Iop_QSub16Sx8:  op = Xsse_QSUB16S;  goto do_SseReRg;
+      case Iop_QSub8Ux16:  op = Xsse_QSUB8U;   goto do_SseReRg;
+      case Iop_QSub16Ux8:  op = Xsse_QSUB16U;  goto do_SseReRg;
       do_SseReRg: {
          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
@@ -2720,10 +2728,46 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      case Iop_ShlN16x8: op = Xsse_SHL16; goto do_SseShift;
+      case Iop_ShlN32x4: op = Xsse_SHL32; goto do_SseShift;
+      case Iop_ShlN64x2: op = Xsse_SHL64; goto do_SseShift;
+      case Iop_SarN16x8: op = Xsse_SAR16; goto do_SseShift;
+      case Iop_SarN32x4: op = Xsse_SAR32; goto do_SseShift;
+      case Iop_ShrN16x8: op = Xsse_SHR16; goto do_SseShift;
+      case Iop_ShrN32x4: op = Xsse_SHR32; goto do_SseShift;
+      case Iop_ShrN64x2: op = Xsse_SHR64; goto do_SseShift;
+      do_SseShift: {
+         HReg      greg = iselVecExpr(env, e->Iex.Binop.arg1);
+         X86RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+         X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
+         HReg      ereg = newVRegV(env);
+         HReg      dst  = newVRegV(env);
+         addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
+         addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
+         addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
+         addInstr(env, X86Instr_Push(rmi));
+         addInstr(env, X86Instr_SseLdSt(True/*load*/, ereg, esp0));
+	 addInstr(env, mk_vMOVsd_RR(greg, dst));
+         addInstr(env, X86Instr_SseReRg(op, ereg, dst));
+         add_to_esp(env, 16);
+         return dst;
+      }
+
       default:
          break;
    } /* switch (e->Iex.Binop.op) */
    } /* if (e->tag == Iex_Binop) */
+
+   if (e->tag == Iex_Mux0X) {
+      HReg r8  = iselIntExpr_R(env, e->Iex.Mux0X.cond);
+      HReg rX  = iselVecExpr(env, e->Iex.Mux0X.exprX);
+      HReg r0  = iselVecExpr(env, e->Iex.Mux0X.expr0);
+      HReg dst = newVRegV(env);
+      addInstr(env, mk_vMOVsd_RR(rX,dst));
+      addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
+      addInstr(env, X86Instr_SseCMov(Xcc_Z,r0,dst));
+      return dst;
+   }
 
    ppIRExpr(e);
    vpanic("iselVecExpr_wrk");

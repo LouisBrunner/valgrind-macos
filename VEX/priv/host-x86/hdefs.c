@@ -858,6 +858,15 @@ X86Instr* X86Instr_SseReRg ( X86SseOp op, HReg re, HReg rg ) {
    vassert(op != Xsse_MOV);
    return i;
 }
+X86Instr* X86Instr_SseCMov ( X86CondCode cond, HReg src, HReg dst ) {
+   X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag              = Xin_SseCMov;
+   i->Xin.SseCMov.cond = cond;
+   i->Xin.SseCMov.src  = src;
+   i->Xin.SseCMov.dst  = dst;
+   vassert(cond != Xcc_ALWAYS);
+   return i;
+}
 
 void ppX86Instr ( X86Instr* i ) {
    switch (i->tag) {
@@ -1102,6 +1111,12 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppHRegX86(i->Xin.SseReRg.dst);
          return;
+      case Xin_SseCMov:
+         vex_printf("cmov%s ", showX86CondCode(i->Xin.SseCMov.cond));
+         ppHRegX86(i->Xin.SseCMov.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.SseCMov.dst);
+         return;
 
       default:
          vpanic("ppX86Instr");
@@ -1243,7 +1258,7 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmWrite, i->Xin.Fp64to32.dst);
          return;
       case Xin_FpCMov:
-         addHRegUse(u, HRmRead, i->Xin.FpCMov.src);
+         addHRegUse(u, HRmRead,   i->Xin.FpCMov.src);
          addHRegUse(u, HRmModify, i->Xin.FpCMov.dst);
          return;
       case Xin_FpLdStCW:
@@ -1315,6 +1330,10 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          vassert(i->Xin.SseReRg.op != Xsse_MOV);
          addHRegUse(u, HRmRead,   i->Xin.SseReRg.src);
          addHRegUse(u, HRmModify, i->Xin.SseReRg.dst);
+         return;
+      case Xin_SseCMov:
+         addHRegUse(u, HRmRead,   i->Xin.SseCMov.src);
+         addHRegUse(u, HRmModify, i->Xin.SseCMov.dst);
          return;
       default:
          ppX86Instr(i);
@@ -1455,6 +1474,10 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_SseReRg:
          mapReg(m, &i->Xin.SseReRg.src);
          mapReg(m, &i->Xin.SseReRg.dst);
+         return;
+      case Xin_SseCMov:
+         mapReg(m, &i->Xin.SseCMov.src);
+         mapReg(m, &i->Xin.SseCMov.dst);
          return;
       default:
          ppX86Instr(i);
@@ -2707,11 +2730,43 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_MULHI16U: XX(0x66); XX(0x0F); XX(0xE4); break;
          case Xsse_MULHI16S: XX(0x66); XX(0x0F); XX(0xE5); break;
          case Xsse_MUL16:    XX(0x66); XX(0x0F); XX(0xD5); break;
+         case Xsse_SHL16:    XX(0x66); XX(0x0F); XX(0xF1); break;
+         case Xsse_SHL32:    XX(0x66); XX(0x0F); XX(0xF2); break;
+         case Xsse_SHL64:    XX(0x66); XX(0x0F); XX(0xF3); break;
+         case Xsse_SAR16:    XX(0x66); XX(0x0F); XX(0xE1); break;
+         case Xsse_SAR32:    XX(0x66); XX(0x0F); XX(0xE2); break;
+         case Xsse_SHR16:    XX(0x66); XX(0x0F); XX(0xD1); break;
+         case Xsse_SHR32:    XX(0x66); XX(0x0F); XX(0xD2); break;
+         case Xsse_SHR64:    XX(0x66); XX(0x0F); XX(0xD3); break;
+         case Xsse_SUB8:     XX(0x66); XX(0x0F); XX(0xF8); break;
+         case Xsse_SUB16:    XX(0x66); XX(0x0F); XX(0xF9); break;
+         case Xsse_SUB32:    XX(0x66); XX(0x0F); XX(0xFA); break;
+         case Xsse_SUB64:    XX(0x66); XX(0x0F); XX(0xFB); break;
+         case Xsse_QSUB8S:   XX(0x66); XX(0x0F); XX(0xE8); break;
+         case Xsse_QSUB16S:  XX(0x66); XX(0x0F); XX(0xE9); break;
+         case Xsse_QSUB8U:   XX(0x66); XX(0x0F); XX(0xD8); break;
+         case Xsse_QSUB16U:  XX(0x66); XX(0x0F); XX(0xD9); break;
          default: goto bad;
       }
       p = doAMode_R(p, fake(vregNo(i->Xin.SseReRg.dst)),
                        fake(vregNo(i->Xin.SseReRg.src)) );
 #     undef XX
+      goto done;
+
+   case Xin_SseCMov:
+      /* jmp fwds if !condition */
+      *p++ = 0x70 + (i->Xin.SseCMov.cond ^ 1);
+      *p++ = 0; /* # of bytes in the next bit, which we don't know yet */
+      ptmp = p;
+
+      /* movaps %src, %dst */
+      *p++ = 0x0F; 
+      *p++ = 0x28; 
+      p = doAMode_R(p, fake(vregNo(i->Xin.SseCMov.dst)),
+                       fake(vregNo(i->Xin.SseCMov.src)) );
+
+      /* Fill in the jump offset. */
+      *(ptmp-1) = p - ptmp;
       goto done;
 
    default: 

@@ -2185,6 +2185,12 @@ ULong x86g_calculate_qadd8Ux8 ( ULong xx, ULong yy )
 
 /* ------------ Normal subtraction ------------ */
 
+ULong x86g_calculate_sub64x1 ( ULong xx, ULong yy )
+{
+   /* should really be done in-line */
+   return xx - yy;
+}
+
 ULong x86g_calculate_sub32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(

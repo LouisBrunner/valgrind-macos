@@ -371,7 +371,7 @@ typedef
       Xin_FpLdSt,    /* FP fake load/store */
       Xin_FpLdStI,   /* FP fake load/store, converting to/from Int */
       Xin_Fp64to32,  /* FP round IEEE754 double to IEEE754 single */
-      Xin_FpCMov,    /* FP fake floating point (un)conditional move */
+      Xin_FpCMov,    /* FP fake floating point conditional move */
       Xin_FpLdStCW,  /* fldcw / fstcw */
       Xin_FpStSW_AX, /* fstsw %ax */
       Xin_FpCmp,     /* FP compare, generating a C320 value into int reg */
@@ -384,7 +384,8 @@ typedef
       Xin_Sse32FLo,  /* SSE binary, 32F in lowest lane only */
       Xin_Sse64Fx2,  /* SSE binary, 64Fx2 */
       Xin_Sse64FLo,  /* SSE binary, 64F in lowest lane only */
-      Xin_SseReRg    /* SSE binary general reg-reg, Re, Rg */
+      Xin_SseReRg,   /* SSE binary general reg-reg, Re, Rg */
+      Xin_SseCMov    /* SSE conditional move */
    }
    X86InstrTag;
 
@@ -594,6 +595,13 @@ typedef
             HReg     src;
             HReg     dst;
          } SseReRg;
+         /* Mov src to dst on the given condition, which may not
+            be the bogus Xcc_ALWAYS. */
+         struct {
+            X86CondCode cond;
+            HReg        src;
+            HReg        dst;
+         } SseCMov;
 
       } Xin;
    }
@@ -636,6 +644,7 @@ extern X86Instr* X86Instr_Sse32FLo  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse64Fx2  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse64FLo  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_SseReRg   ( X86SseOp, HReg, HReg );
+extern X86Instr* X86Instr_SseCMov   ( X86CondCode, HReg src, HReg dst );
 
 
 extern void ppX86Instr ( X86Instr* );

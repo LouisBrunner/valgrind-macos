@@ -116,6 +116,7 @@ extern ULong x86g_calculate_qadd8Sx8  ( ULong, ULong );
 extern ULong x86g_calculate_qadd16Ux4 ( ULong, ULong );
 extern ULong x86g_calculate_qadd8Ux8  ( ULong, ULong );
 
+extern ULong x86g_calculate_sub64x1 ( ULong, ULong );
 extern ULong x86g_calculate_sub32x2 ( ULong, ULong );
 extern ULong x86g_calculate_sub16x4 ( ULong, ULong );
 extern ULong x86g_calculate_sub8x8  ( ULong, ULong );

@@ -78,6 +78,14 @@ static inline Bool toBool ( Int x ) {
    Int r = (x == 0) ? False : True;
    return (Bool)r;
 }
+static inline UChar toUChar ( Int x ) {
+   x &= 0xFF;
+   return (UChar)x;
+}
+static inline UShort toUShort ( Int x ) {
+   x &= 0xFFFF;
+   return (UShort)x;
+}
 
 /* 32/64 bit addresses. */
 typedef  UInt      Addr32;

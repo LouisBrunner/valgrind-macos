@@ -251,7 +251,8 @@ static Bool isFlat ( IRExpr* e )
    if (e->tag == Iex_Get) 
       return True;
    if (e->tag == Iex_Binop)
-      return isAtom(e->Iex.Binop.arg1) && isAtom(e->Iex.Binop.arg2);
+      return toBool( isAtom(e->Iex.Binop.arg1) 
+                     && isAtom(e->Iex.Binop.arg2) );
    if (e->tag == Iex_LDle)
       return isAtom(e->Iex.LDle.addr);
    return False;
@@ -545,8 +546,8 @@ static void redundant_get_removal_BB ( IRBB* bb )
                be to stick in a reinterpret-style cast, although that
                would make maintaining flatness more difficult. */
             IRExpr* valE    = (IRExpr*)val;
-            Bool    typesOK = typeOfIRExpr(bb->tyenv,valE) 
-                              == st->Ist.Tmp.data->Iex.Get.ty;
+            Bool    typesOK = toBool( typeOfIRExpr(bb->tyenv,valE) 
+                                      == st->Ist.Tmp.data->Iex.Get.ty );
             if (typesOK && DEBUG_IROPT) {
                vex_printf("rGET: "); ppIRExpr(get);
                vex_printf("  ->  "); ppIRExpr(valE);
@@ -826,9 +827,9 @@ static void redundant_put_removal_BB (
 /* Are both expressions simply the same IRTemp ? */
 static Bool sameIRTemps ( IRExpr* e1, IRExpr* e2 )
 {
-   return e1->tag == Iex_Tmp
-          && e2->tag == Iex_Tmp
-          && e1->Iex.Tmp.tmp == e2->Iex.Tmp.tmp;
+   return toBool( e1->tag == Iex_Tmp
+                  && e2->tag == Iex_Tmp
+                  && e1->Iex.Tmp.tmp == e2->Iex.Tmp.tmp );
 }
 
 static Bool notBool ( Bool b )
@@ -848,9 +849,9 @@ static IRExpr* fold_Expr ( IRExpr* e )
        && e->Iex.Unop.arg->tag == Iex_Const) {
       switch (e->Iex.Unop.op) {
          case Iop_1Uto8:
-            e2 = IRExpr_Const(IRConst_U8(
+            e2 = IRExpr_Const(IRConst_U8(toUChar(
                     e->Iex.Unop.arg->Iex.Const.con->Ico.U1
-                    ? 1 : 0));
+                    ? 1 : 0)));
             break;
          case Iop_1Uto32:
             e2 = IRExpr_Const(IRConst_U32(
@@ -885,17 +886,17 @@ static IRExpr* fold_Expr ( IRExpr* e )
                     0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U16));
             break;
          case Iop_32to16:
-            e2 = IRExpr_Const(IRConst_U16(
-                    0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U32));
+            e2 = IRExpr_Const(IRConst_U16(toUShort(
+                    0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
             break;
          case Iop_32to8:
-            e2 = IRExpr_Const(IRConst_U8(
-                    0xFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U32));
+            e2 = IRExpr_Const(IRConst_U8(toUChar(
+                    0xFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
             break;
          case Iop_32to1:
-            e2 = IRExpr_Const(IRConst_U1(
-                    0==e->Iex.Unop.arg->Iex.Const.con->Ico.U32
-                       ? False : True));
+            e2 = IRExpr_Const(IRConst_U1(toBool(
+                    1 == (1 & e->Iex.Unop.arg->Iex.Const.con->Ico.U32)
+                 )));
             break;
 
          case Iop_Not32:
@@ -903,12 +904,12 @@ static IRExpr* fold_Expr ( IRExpr* e )
                     ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
             break;
          case Iop_Not16:
-            e2 = IRExpr_Const(IRConst_U16(
-                    ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U16)));
+            e2 = IRExpr_Const(IRConst_U16(toUShort(
+                    ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U16))));
             break;
          case Iop_Not8:
-            e2 = IRExpr_Const(IRConst_U8(
-                    ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U8)));
+            e2 = IRExpr_Const(IRConst_U8(toUChar(
+                    ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U8))));
             break;
 
          case Iop_Not1:
@@ -948,14 +949,14 @@ static IRExpr* fold_Expr ( IRExpr* e )
 
             /* --- Iop_Or --- */
             case Iop_Or8:
-               e2 = IRExpr_Const(IRConst_U8(0xFF & 
+               e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
-                        | e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)));
+                        | e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
             case Iop_Or16:
-               e2 = IRExpr_Const(IRConst_U16(
+               e2 = IRExpr_Const(IRConst_U16(toUShort(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
-                        | e->Iex.Binop.arg2->Iex.Const.con->Ico.U16)));
+                        | e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
                break;
             case Iop_Or32:
                e2 = IRExpr_Const(IRConst_U32(
@@ -964,24 +965,24 @@ static IRExpr* fold_Expr ( IRExpr* e )
                break;
 
             case Iop_Xor8:
-               e2 = IRExpr_Const(IRConst_U8(0xFF & 
+               e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
-                        ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)));
+                        ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
             case Iop_And8:
-               e2 = IRExpr_Const(IRConst_U8(0xFF & 
+               e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
-                        & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)));
+                        & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
             case Iop_Add8:
-               e2 = IRExpr_Const(IRConst_U8(0xFF & 
+               e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
-                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)));
+                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
             case Iop_Sub8:
-               e2 = IRExpr_Const(IRConst_U8(0xFF & 
+               e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
-                        - e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)));
+                        - e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
             case Iop_Sub32:
                e2 = IRExpr_Const(IRConst_U32(
@@ -1049,48 +1050,48 @@ static IRExpr* fold_Expr ( IRExpr* e )
                break;
             }
             case Iop_CmpEQ32:
-               e2 = IRExpr_Const(IRConst_U1(
+               e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
-                        == e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+                        == e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
             case Iop_CmpNE32:
-               e2 = IRExpr_Const(IRConst_U1(
+               e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
-                        != e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+                        != e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
 
             case Iop_CmpNE64:
-               e2 = IRExpr_Const(IRConst_U1(
+               e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
-                        != e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
+                        != e->Iex.Binop.arg2->Iex.Const.con->Ico.U64))));
                break;
 
             case Iop_CmpNE8:
-               e2 = IRExpr_Const(IRConst_U1(
+               e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((0xFF & e->Iex.Binop.arg1->Iex.Const.con->Ico.U8)
-                        != (0xFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
+                        != (0xFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)))));
                break;
 
             case Iop_CmpLE32U:
-               e2 = IRExpr_Const(IRConst_U1(
+               e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((UInt)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
-                        <= (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
+                        <= (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)))));
                break;
             case Iop_CmpLE32S:
-               e2 = IRExpr_Const(IRConst_U1(
+               e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((Int)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
-                        <= (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
+                        <= (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)))));
                break;
 
             case Iop_CmpLT32S:
-               e2 = IRExpr_Const(IRConst_U1(
+               e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((Int)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
-                        < (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
+                        < (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)))));
                break;
             case Iop_CmpLT32U:
-               e2 = IRExpr_Const(IRConst_U1(
+               e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((UInt)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
-                        < (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
+                        < (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)))));
                break;
 
             case Iop_32HLto64:
@@ -1164,7 +1165,8 @@ static IRExpr* fold_Expr ( IRExpr* e )
       Bool zero;
       /* assured us by the IR type rules */
       vassert(e->Iex.Mux0X.cond->Iex.Const.con->tag == Ico_U8);
-      zero = 0 == (0xFF & e->Iex.Mux0X.cond->Iex.Const.con->Ico.U8);
+      zero = toBool(0 == (0xFF & e->Iex.Mux0X.cond
+                                  ->Iex.Const.con->Ico.U8));
       e2 = zero ? e->Iex.Mux0X.expr0 : e->Iex.Mux0X.exprX;
    }
 
@@ -1541,9 +1543,9 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
 /* Is this literally IRExpr_Const(IRConst_U1(False)) ? */
 static Bool isZeroU1 ( IRExpr* e )
 {
-   return e->tag == Iex_Const
-          && e->Iex.Const.con->tag == Ico_U1
-          && e->Iex.Const.con->Ico.U1 == False;
+   return toBool( e->tag == Iex_Const
+                  && e->Iex.Const.con->tag == Ico_U1
+                  && e->Iex.Const.con->Ico.U1 == False );
 }
 
 
@@ -1603,7 +1605,7 @@ static Bool isZeroU1 ( IRExpr* e )
 
 static 
 IRBB* spec_helpers_BB ( IRBB* bb,
-                        IRExpr* (*specHelper) ( Char*, IRExpr**) )   
+                        IRExpr* (*specHelper) ( HChar*, IRExpr**) )   
 {
    Int     i;
    IRStmt* st;
@@ -1696,22 +1698,26 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
       return False;
    switch (a1->tag) {
       case Ut: 
-         return a1->u.Ut.op == a2->u.Ut.op 
-                && a1->u.Ut.arg == a2->u.Ut.arg;
+         return toBool(
+                a1->u.Ut.op == a2->u.Ut.op 
+                && a1->u.Ut.arg == a2->u.Ut.arg);
       case Btt: 
-         return a1->u.Btt.op == a2->u.Btt.op
+         return toBool(
+                a1->u.Btt.op == a2->u.Btt.op
                 && a1->u.Btt.arg1 == a2->u.Btt.arg1
-                && a1->u.Btt.arg2 == a2->u.Btt.arg2;
+                && a1->u.Btt.arg2 == a2->u.Btt.arg2);
       case Btc: 
-         return a1->u.Btc.op == a2->u.Btc.op
+         return toBool(
+                a1->u.Btc.op == a2->u.Btc.op
                 && a1->u.Btc.arg1 == a2->u.Btc.arg1
-                && eqIRConst(&a1->u.Btc.con2, &a2->u.Btc.con2);
+                && eqIRConst(&a1->u.Btc.con2, &a2->u.Btc.con2));
       case Bct: 
-         return a1->u.Bct.op == a2->u.Bct.op
+         return toBool(
+                a1->u.Bct.op == a2->u.Bct.op
                 && a1->u.Bct.arg2 == a2->u.Bct.arg2
-                && eqIRConst(&a1->u.Bct.con1, &a2->u.Bct.con1);
+                && eqIRConst(&a1->u.Bct.con1, &a2->u.Bct.con1));
       case Cf64i: 
-         return a1->u.Cf64i.f64i == a2->u.Cf64i.f64i;
+         return toBool(a1->u.Cf64i.f64i == a2->u.Cf64i.f64i);
       default: vpanic("eq_AvailExpr");
    }
 }
@@ -2099,7 +2105,7 @@ static Bool identicalAtoms ( IRExpr* a1, IRExpr* a2 )
    vassert(isAtom(a1));
    vassert(isAtom(a2));
    if (a1->tag == Iex_Tmp && a2->tag == Iex_Tmp)
-      return a1->Iex.Tmp.tmp == a2->Iex.Tmp.tmp;
+      return toBool(a1->Iex.Tmp.tmp == a2->Iex.Tmp.tmp);
    if (a1->tag == Iex_Const && a2->tag == Iex_Const)
       return eqIRConst(a1->Iex.Const.con, a2->Iex.Const.con);
    return False;
@@ -2320,11 +2326,13 @@ static Bool identicalPutIs ( IRStmt* pi, IRStmt* s2 )
    if (s2->tag != Ist_PutI)
       return False;
 
-   return getAliasingRelation_II( 
+   return toBool(
+          getAliasingRelation_II( 
              pi->Ist.PutI.descr, pi->Ist.PutI.ix, pi->Ist.PutI.bias, 
              s2->Ist.PutI.descr, s2->Ist.PutI.ix, s2->Ist.PutI.bias
           )
-          == ExactAlias;
+          == ExactAlias
+          );
 }
 
 
@@ -3313,12 +3321,12 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
          need to be dumped.  Then, dump them in the order in which
          they were defined. */
 
-      invPut = st->tag == Ist_Put 
-               || st->tag == Ist_PutI 
-               || st->tag == Ist_Dirty;
+      invPut = toBool(st->tag == Ist_Put 
+                      || st->tag == Ist_PutI 
+                      || st->tag == Ist_Dirty);
 
-      invStore = st->tag == Ist_STle
-                 || st->tag == Ist_Dirty;
+      invStore = toBool(st->tag == Ist_STle
+                        || st->tag == Ist_Dirty);
 
       for (k = 0; k < n_tmps; k++) {
          ti = env[k];
@@ -3330,7 +3338,8 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
          /* Do we have to invalidate this binding? */
 
          ti->invalidateMe 
-            = /* a store invalidates loaded data */
+            = toBool(
+              /* a store invalidates loaded data */
               (ti->eDoesLoad && invStore)
               /* a put invalidates get'd data */
               || (ti->eDoesGet && invPut)
@@ -3344,7 +3353,8 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
                  invalidates absolutely everything, so that all
                  computation prior to it is forced to complete before
                  proceeding with the fence. */
-              || st->tag == Ist_MFence;
+              || st->tag == Ist_MFence
+              );
          /*
          if (ti->invalidateMe)
             vex_printf("SET INVAL\n");
@@ -3387,7 +3397,7 @@ static Bool iropt_verbose = False; //True;
 static 
 IRBB* cheap_transformations ( 
          IRBB* bb,
-         IRExpr* (*specHelper) ( Char*, IRExpr**),
+         IRExpr* (*specHelper) (HChar*, IRExpr**),
          Bool (*preciseMemExnsFn)(Int,Int)
       )
 {
@@ -3507,12 +3517,12 @@ static Bool hasGetIorPutI ( IRBB* bb )
 
 
 IRBB* do_iropt_BB ( IRBB* bb0,
-                    IRExpr* (*specHelper) ( Char*, IRExpr**),
+                    IRExpr* (*specHelper) (HChar*, IRExpr**),
                     Bool (*preciseMemExnsFn)(Int,Int),
                     Addr64 guest_addr )
 {
-   static UInt n_total     = 0;
-   static UInt n_expensive = 0;
+   static Int n_total     = 0;
+   static Int n_expensive = 0;
 
    Bool do_expensive;
    IRBB *bb, *bb2;

@@ -1,4 +1,3 @@
-
 Invalid read of size 4
    at 0x........: addemup (inline.c:10)
    by 0x........: main (inline.c:18)
@@ -9,9 +8,3 @@ Invalid read of size 4
    by 0x........: main (inline.c:17)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
-
-ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 40 bytes in 1 blocks.
-malloc/free: 1 allocs, 0 frees, 40 bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v

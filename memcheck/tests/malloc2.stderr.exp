@@ -1,4 +1,3 @@
-
 Invalid write of size 1
    at 0x........: main (malloc2.c:39)
    by 0x........: __libc_start_main (...libc...)
@@ -19,9 +18,3 @@ Invalid free() / delete / delete[]
    by 0x........: main (malloc2.c:38)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
-
-ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 443 allocs, 444 frees, 265463 bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v

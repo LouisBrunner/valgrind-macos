@@ -1,1 +1,2 @@
 prog: malloc1
+vgopts: -q

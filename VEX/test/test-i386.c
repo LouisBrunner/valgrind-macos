@@ -30,8 +30,13 @@
 #include <sys/mman.h>
 #include <asm/vm86.h>
 
-#define TEST_CMOV  0
-#define TEST_FCOMI 0
+
+#define TEST_INTEGER_VERBOSE 1
+
+
+#define TEST_CMOV  1
+#define TEST_FCOMI 1   // REINSTATE: 
+
 //#define LINUX_VM86_IOPL_FIX
 //#define TEST_P4_FLAGS
 
@@ -139,7 +144,6 @@ static void *call_start __init_call = NULL;
 
 
 /* XXX: should be more precise ? */
-#if 0
 #undef CC_MASK
 #define CC_MASK (CC_C)
 
@@ -158,7 +162,7 @@ static void *call_start __init_call = NULL;
 #define OP btc
 #define OP_NOBYTE
 #include "test-i386-shift.h"
-#endif
+
 
 /* lea test (modrm support) */
 #define TEST_LEA(STR)\
@@ -527,7 +531,7 @@ void test_bsx(void)
 }
 
 /**********************************************/
-#if 0
+#if 1
 void test_fops(double a, double b)
 {
     printf("a=%f b=%f a+b=%f\n", a, b, a + b);
@@ -538,14 +542,14 @@ void test_fops(double a, double b)
     printf("a=%f sqrt(a)=%f\n", a, sqrt(a));
     printf("a=%f sin(a)=%f\n", a, sin(a));
     printf("a=%f cos(a)=%f\n", a, cos(a));
-    printf("a=%f tan(a)=%f\n", a, tan(a));
+    // REINSTATE: printf("a=%f tan(a)=%f\n", a, tan(a));
     printf("a=%f log(a)=%f\n", a, log(a));
     printf("a=%f exp(a)=%f\n", a, exp(a));
     printf("a=%f b=%f atan2(a, b)=%f\n", a, b, atan2(a, b));
     /* just to test some op combining */
-    printf("a=%f asin(sin(a))=%f\n", a, asin(sin(a)));
-    printf("a=%f acos(cos(a))=%f\n", a, acos(cos(a)));
-    printf("a=%f atan(tan(a))=%f\n", a, atan(tan(a)));
+    // REINSTATE: printf("a=%f asin(sin(a))=%f\n", a, asin(sin(a)));
+    // REINSTATE: printf("a=%f acos(cos(a))=%f\n", a, acos(cos(a)));
+    // REINSTATE: printf("a=%f atan(tan(a))=%f\n", a, atan(tan(a)));
 
 }
 
@@ -745,11 +749,11 @@ void test_floats(void)
     test_fcvt(32768);
     test_fcvt(-1e20);
     test_fconst();
-    test_fbcd(1234567890123456);
-    test_fbcd(-123451234567890);
-    test_fenv();
+    // REINSTATE (maybe): test_fbcd(1234567890123456);
+    // REINSTATE (maybe): test_fbcd(-123451234567890);
+    // REINSTATE: test_fenv();
     if (TEST_CMOV) {
-        test_fcmov();
+        // REINSTATE: test_fcmov();
     }
 }
 #endif
@@ -1088,11 +1092,15 @@ void test_misc(void)
     char table[256];
     int res, i;
 
+#if 0
+    // REINSTATE
     for(i=0;i<256;i++) table[i] = 256 - i;
     res = 0x12345678;
     asm ("xlat" : "=a" (res) : "b" (table), "0" (res));
     printf("xlat: EAX=%08x\n", res);
+#endif
 #if 0
+    // REINSTATE
     asm volatile ("pushl %%cs ; call %1" 
                   : "=a" (res)
                   : "m" (func_lret32): "memory", "cc");
@@ -1108,6 +1116,7 @@ void test_misc(void)
                   : "=g" (res));
     printf("popl esp=%x\n", res);
 #if 0
+    // REINSTATE
     /* specific popw test */
     asm volatile ("pushl $12345432 ; pushl $0x9abcdef ; popw (%%esp) ; addl $2, %%esp ; popl %0"
                   : "=g" (res));
@@ -1155,19 +1164,19 @@ void test_string(void)
         str_buffer[i] = i + 0x56;
    TEST_STRING(stos, "");
    TEST_STRING(stos, "rep ");
-   TEST_STRING(lods, ""); /* to verify stos */
-   //   TEST_STRING(lods, "rep "); 
+   // REINSTATE: TEST_STRING(lods, ""); /* to verify stos */
+   // REINSTATE: TEST_STRING(lods, "rep "); 
    TEST_STRING(movs, "");
    TEST_STRING(movs, "rep ");
-   TEST_STRING(lods, ""); /* to verify stos */
+   // REINSTATE: TEST_STRING(lods, ""); /* to verify stos */
 
    /* XXX: better tests */
    TEST_STRING(scas, "");
-   TEST_STRING(scas, "repz ");
+   // REINSTATE: TEST_STRING(scas, "repz ");
    TEST_STRING(scas, "repnz ");
-   TEST_STRING(cmps, "");
+   // REINSTATE: TEST_STRING(cmps, "");
    TEST_STRING(cmps, "repz ");
-   TEST_STRING(cmps, "repnz ");
+   // REINSTATE: TEST_STRING(cmps, "repnz ");
 }
 
 /* VM86 test */
@@ -1646,15 +1655,15 @@ int main(int argc, char **argv)
         func();
     }
 #endif
-    //test_bsx();  // REINSTATE
-    test_mul(); //----------------
-    test_jcc(); //-------------
-    //    test_floats();
+    test_bsx();
+    test_mul();
+    test_jcc();
+    test_floats();
     //test_bcd();
     test_xchg();
-    //    test_string();  // REINSTATE
-    // test_misc();  // REINSTATE
-    test_lea();  //------------------
+    test_string();
+    //test_misc(); // REINSTATE
+    test_lea();
     //    test_segs();
     //test_code16();
     //test_vm86();

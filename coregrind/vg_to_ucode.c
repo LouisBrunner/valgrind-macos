@@ -2537,6 +2537,7 @@ static Char* nameBtOp ( BtOp op )
    }
 }
 
+#if 0
 static
 Addr dis_bt_G_E ( UCodeBlock* cb, Int sz, Addr eip, BtOp op )
 {
@@ -2599,6 +2600,148 @@ Addr dis_bt_G_E ( UCodeBlock* cb, Int sz, Addr eip, BtOp op )
 
    return eip;
 }
+#endif
+
+
+static
+Addr dis_bt_G_E ( UCodeBlock* cb, Int sz, Addr eip, BtOp op )
+{
+   UInt  pair;
+   UChar dis_buf[50];
+   UChar modrm;
+
+   Int t_addr, t_bitno, t_mask, t_fetched, t_esp, temp, lit;
+
+   /* 2 and 4 are actually possible. */
+   vg_assert(sz == 2 || sz == 4);
+   /* We only handle 4. */
+   vg_assert(sz == 4);
+
+   t_addr = t_bitno = t_mask 
+          = t_fetched = t_esp = temp = INVALID_TEMPREG;
+
+   t_fetched = newTemp(cb);
+   t_bitno   = newTemp(cb);
+   temp      = newTemp(cb);
+   lit       = newTemp(cb);
+
+   modrm = getUChar(eip);
+
+   uInstr2(cb, GET,  sz, ArchReg, gregOfRM(modrm), TempReg, t_bitno);
+
+   if (epartIsReg(modrm)) {
+      eip++;
+      /* Get it onto the client's stack. */
+      t_esp = newTemp(cb);
+      t_addr = newTemp(cb);
+      uInstr2(cb, GET,   4, ArchReg,  R_ESP, TempReg, t_esp);
+      uInstr2(cb, SUB,  sz, Literal,  0,     TempReg, t_esp);
+      uLiteral(cb, sz);
+      uInstr2(cb, PUT,   4, TempReg,  t_esp, ArchReg, R_ESP);
+      uInstr2(cb, GET,   sz, ArchReg, eregOfRM(modrm), TempReg, temp);
+      uInstr2(cb, STORE, sz, TempReg, temp, TempReg, t_esp);
+      /* Make ta point at it. */
+      uInstr2(cb, MOV,   4,  TempReg, t_esp, TempReg, t_addr);
+      /* Mask out upper bits of the shift amount, since we're doing a
+         reg. */
+      uInstr2(cb, MOV, 4, Literal, 0, TempReg, lit);
+      uLiteral(cb, sz == 4 ? 31 : 15);
+      uInstr2(cb, AND, 4, TempReg, lit, TempReg, t_bitno);
+   } else {
+      pair   = disAMode ( cb, eip, dis?dis_buf:NULL );
+      t_addr = LOW24(pair);
+      eip   += HI8(pair);
+   }
+  
+   /* At this point: ta points to the address being operated on.  If
+      it was a reg, we will have pushed it onto the client's stack.
+      t_bitno is the bit number, suitable masked in the case of a reg.  */
+   
+   /* Now the main sequence. */
+
+   uInstr2(cb, MOV, 4, TempReg, t_bitno, TempReg, temp);
+   uInstr2(cb, SAR, 4, Literal, 0, TempReg, temp);
+   uLiteral(cb, 3);
+   uInstr2(cb, ADD, 4, TempReg, temp, TempReg, t_addr);
+   /* ta now holds effective address */
+
+   uInstr2(cb, MOV, 4, Literal, 0, TempReg, lit);
+   uLiteral(cb, 7);
+   uInstr2(cb, AND, 4, TempReg, lit, TempReg, t_bitno);
+   /* bitno contains offset of bit within byte */
+
+   if (op != BtOpNone) {
+      t_mask = newTemp(cb);
+      uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_mask);
+      uLiteral(cb, 1);
+      uInstr2(cb, SHL, 4, TempReg, t_bitno, TempReg, t_mask);
+   }
+   /* mask is now a suitable byte mask */
+
+   uInstr2(cb, LOAD, 1, TempReg, t_addr, TempReg, t_fetched);
+   if (op != BtOpNone) {
+      uInstr2(cb, MOV, 4, TempReg, t_fetched, TempReg, temp);
+      switch (op) {
+         case BtOpSet: 
+            uInstr2(cb, OR, 4, TempReg, t_mask, TempReg, temp); 
+            break;
+         case BtOpComp: 
+            uInstr2(cb, XOR, 4, TempReg, t_mask, TempReg, temp); 
+            break;
+         case BtOpReset: 
+            uInstr1(cb, NOT, 4, TempReg, t_mask);
+            uInstr2(cb, AND, 4, TempReg, t_mask, TempReg, temp); 
+            break;
+         default: 
+            VG_(panic)("dis_bt_G_E");
+      }
+      uInstr2(cb, STORE, 1, TempReg, temp, TempReg, t_addr);
+   }
+
+   /* Side effect done; now get selected bit into Carry flag */
+
+   uInstr2(cb, SHR, 4, TempReg, t_bitno, TempReg, t_fetched);
+   /* at bit 0 of fetched */
+
+   uInstr2(cb, MOV, 4, Literal, 0, TempReg, lit);
+   uLiteral(cb, 1);
+   uInstr2(cb, AND, 4, TempReg, lit, TempReg, t_fetched);
+   /* fetched is now 1 or 0 */
+
+   /* NEG is a handy way to convert zero/nonzero into the carry
+      flag. */
+   uInstr1(cb, NEG, 4, TempReg, t_fetched);
+   setFlagsFromUOpcode(cb, NEG);
+   /* fetched is now in carry flag */
+
+   /* Move reg operand from stack back to reg */
+   if (epartIsReg(modrm)) {
+      /* t_esp still points at it. */
+      uInstr2(cb, LOAD, sz, TempReg, t_esp, TempReg, temp);
+      uInstr2(cb, PUT,  sz, TempReg, temp, ArchReg, eregOfRM(modrm));
+      uInstr2(cb, ADD,  sz, Literal, 0, TempReg, t_esp);
+      uLiteral(cb, sz);
+      uInstr2(cb, PUT,  4,  TempReg, t_esp, ArchReg, R_ESP);
+   }
+
+   if (epartIsReg(modrm)) {
+      if (dis)
+         VG_(printf)("bt%s%c %s, %s\n",
+                     nameBtOp(op),
+                     nameISize(sz), nameIReg(sz, gregOfRM(modrm)), 
+                     nameIReg(sz, eregOfRM(modrm)));
+   } else {
+      if (dis)
+         VG_(printf)("bt%s%c %s, %s\n",
+                     nameBtOp(op),
+                     nameISize(sz), nameIReg(sz, gregOfRM(modrm)), 
+                     dis_buf);
+   }
+ 
+   return eip;
+}
+
+
 
 
 /* Handle BSF/BSR.  Only v-size seems necessary. */

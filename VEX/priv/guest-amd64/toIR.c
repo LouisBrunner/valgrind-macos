@@ -33,6 +33,15 @@
    USA.
 */
 
+/* LIMITATIONS: 
+
+   LOCK prefix handling is only safe in the situation where
+   Vex-generated code is run single-threadedly.  (This is not the same
+   as saying that Valgrind can't safely use Vex to run multithreaded
+   programs).  See comment attached to LOCK prefix handling in
+   disInstr for details.
+*/
+
 //.. /* TODO:
 //.. 
 //..    check flag settings for cmpxchg
@@ -7908,81 +7917,22 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    if (pfx & PFX_66) sz = 2;
    if ((pfx & PFX_REX) && (pfx & PFX_REXW)) sz = 8;
 
-   /* temp hack re LOCK */
-   if (1 && (pfx & PFX_LOCK)) {
-      vex_printf("vex amd64->IR: ignoring LOCK prefix on: ");
-      insn_verbose = True;
+   /* Kludge re LOCK prefixes.  We assume here that all code generated
+      by Vex is going to be run in a single-threaded context, in other
+      words that concurrent executions of Vex-generated translations
+      will not happen.  That is certainly the case for how the
+      Valgrind-3.0 code line uses Vex.  Given that assumption, it
+      seems safe to ignore LOCK prefixes since there will never be any
+      other thread running at the same time as this one.  However, at
+      least emit a memory fence on the basis that it would at least be
+      prudent to flush any memory transactions from this thread as far
+      as possible down the memory hierarchy. */
+   if (pfx & PFX_LOCK) {
+      /* vex_printf("vex amd64->IR: ignoring LOCK prefix on: ");
+         insn_verbose = True; */
+      stmt( IRStmt_MFence() );
    }
 
-//..    /* Skip a LOCK prefix. */
-//..    /* 2005 Jan 06: the following insns are observed to sometimes
-//..       have a LOCK prefix:
-//..          cmpxchgl %ecx,(%edx)
-//..          cmpxchgl %edx,0x278(%ebx) etc
-//..          xchgl %eax, (%ecx)
-//..          xaddl %eax, (%ecx)
-//..       We need to catch any such which appear to be being used as
-//..       a memory barrier, for example  lock addl $0,0(%esp)
-//..       and emit an IR MFence construct.
-//..    */
-//..    if (getUChar(delta) == 0xF0) {
-//.. 
-//..       UChar* code = (UChar*)(guest_code + delta);
-//.. 
-//..       /* Various bits of kernel headers use the following as a memory
-//..          barrier.  Hence, first emit an MFence and then let the insn
-//..          go through as usual. */
-//..       /* F08344240000:  lock addl $0, 0(%esp) */
-//..       if (code[0] == 0xF0 && code[1] == 0x83 && code[2] == 0x44 && 
-//..           code[3] == 0x24 && code[4] == 0x00 && code[5] == 0x00) {
-//..          stmt( IRStmt_MFence() );
-//..       }
-//..       else
-//..       if (0) {
-//..          vex_printf("vex x86->IR: ignoring LOCK prefix on: ");
-//..          insn_verbose = True;
-//..       }
-//.. 
-//..       /* In any case, skip the prefix. */
-//..       delta++;
-//..    }
-//.. 
-//..    /* Detect operand-size overrides. */
-//..    if (getUChar(delta) == 0x66) { sz = 2; delta++; };
-//.. 
-//..    /* segment override prefixes come after the operand-size override,
-//..       it seems */
-//..    switch (getUChar(delta)) {
-//..       case 0x3E: /* %DS: */
-//..       case 0x26: /* %ES: */
-//..       case 0x64: /* %FS: */
-//..       case 0x65: /* %GS: */
-//..          sorb = getUChar(delta); delta++; 
-//..          break;
-//..       case 0x2E: /* %CS: */
-//..          /* 2E prefix on a conditional branch instruction is a
-//..             branch-prediction hint, which can safely be ignored.  */
-//..          {
-//..             UChar op1 = getUChar(delta+1);
-//..             UChar op2 = getUChar(delta+2);
-//..             if ((op1 >= 0x70 && op1 <= 0x7F)
-//..                 || (op1 == 0xE3)
-//..                 || (op1 == 0x0F && op2 >= 0x80 && op2 <= 0x8F)) {
-//..                vex_printf("vex x86->IR: ignoring branch hint\n");
-//..                sorb = getUChar(delta); delta++;
-//..                break;
-//..             }
-//..          }
-//..          unimplemented("x86 segment override (SEG=CS) prefix");
-//..          /*NOTREACHED*/
-//..          break;
-//..       case 0x36: /* %SS: */
-//..          unimplemented("x86 segment override (SEG=SS) prefix");
-//..          /*NOTREACHED*/
-//..          break;
-//..       default:
-//..          break;
-//..    }
 
    /* ---------------------------------------------------- */
    /* --- The SSE decoder.                             --- */

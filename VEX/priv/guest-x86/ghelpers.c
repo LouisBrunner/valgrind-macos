@@ -368,6 +368,10 @@ static void showCounts ( void )
    for (op = 0; op < CC_OP_NUMBER; op++) {
 
       ch = ' ';
+      if (op > 0 && (op-1) % 3 == 0) 
+         ch = 'B';
+      if (op > 0 && (op-1) % 3 == 1) 
+         ch = 'W';
       if (op > 0 && (op-1) % 3 == 2) 
          ch = 'L';
 
@@ -488,14 +492,19 @@ UInt calculate_eflags_c ( UInt cc_op,
 {
    /* Fast-case some common ones. */
    switch (cc_op) {
-#if 0
       case CC_OP_LOGICL: case CC_OP_LOGICW: case CC_OP_LOGICB:
          return 0;
+      case CC_OP_SUBL:
+         return ((UInt)cc_dep1) < ((UInt)cc_dep2)
+                   ? CC_MASK_C : 0;
+#if 0
+      case CC_OP_SUBB:
+         return ((UInt)(cc_dep1 & 0xFF)) < ((UInt)(cc_dep2 & 0xFF))
+                   ? CC_MASK_C : 0;
+#endif
+#if 0
       case CC_OP_DECL:
          return cc_src;
-      case CC_OP_SUBL:
-         return ( ((UInt)cc_src) > ((UInt)cc_dst) ) 
-                   ? CC_MASK_C : 0;
       case CC_OP_ADDL:
          return ( ((UInt)cc_src + (UInt)cc_dst) < ((UInt)cc_src) ) 
                    ? CC_MASK_C : 0;
@@ -537,7 +546,7 @@ UInt calculate_eflags_c ( UInt cc_op,
    tab[cc_op][cond]++;
    n_calc_cond++;
 
-   if (0 == ((n_calc_all+n_calc_c) & 0x3FFF)) showCounts();
+   if (0 == ((n_calc_all+n_calc_c) & 0x7FFFF)) showCounts();
 #  endif
 
    switch (cond) {
@@ -627,29 +636,31 @@ IRExpr* x86guest_spechelper ( Char* function_name,
    }
    vex_printf("\n");
 #  endif
-return NULL;
+
+   /* --------- specialising "calculate_eflags_c" --------- */
+
    if (vex_streq(function_name, "calculate_eflags_c")) {
       /* specialise calls to above "calculate_eflags_c" function */
-      IRExpr *cc_op, *cc_src, *cc_dst;
-      vassert(arity == 3);
-      cc_op = args[0];
-      cc_src = args[1];
-      cc_dst = args[2];
+      IRExpr *cc_op, *cc_dep1, *cc_dep2, *cc_ndep;
+      vassert(arity == 4);
+      cc_op   = args[0];
+      cc_dep1 = args[1];
+      cc_dep2 = args[2];
+      cc_ndep = args[3];
 
+      if (isU32(cc_op, CC_OP_SUBL)) {
+         /* C after sub denotes unsigned less than */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32U, cc_dep1, cc_dep2));
+      }
       if (isU32(cc_op, CC_OP_LOGICL)) {
          /* cflag after logic is zero */
          return mkU32(0);
       }
       if (isU32(cc_op, CC_OP_DECL) || isU32(cc_op, CC_OP_INCL)) {
          /* If the thunk is dec or inc, the cflag is supplied as CC_SRC. */
-         return cc_src;
+         return cc_dep1;
       }
-      if (isU32(cc_op, CC_OP_SUBL)) {
-         /* C after sub denotes unsigned less than */
-         return unop(Iop_1Uto32,
-                     binop(Iop_CmpLT32U, cc_dst, cc_src));
-      }
-
 #     if 0
       if (cc_op->tag == Iex_Const) {
          vex_printf("CFLAG "); ppIRExpr(cc_op); vex_printf("\n");
@@ -659,44 +670,47 @@ return NULL;
       return NULL;
    }
 
+   /* --------- specialising "calculate_condition" --------- */
+
    if (vex_streq(function_name, "calculate_condition")) {
       /* specialise calls to above "calculate condition" function */
-      IRExpr *cond, *cc_op, *cc_src, *cc_dst;
-      vassert(arity == 4);
-      cond = args[0];
-      cc_op = args[1];
-      cc_src = args[2];
-      cc_dst = args[3];
+      IRExpr *cond, *cc_op, *cc_dep1, *cc_dep2, *cc_ndep;
+      vassert(arity == 5);
+      cond    = args[0];
+      cc_op   = args[1];
+      cc_dep1 = args[2];
+      cc_dep2 = args[3];
+      cc_ndep = args[4];
 
       /*---------------- SUBL ----------------*/
 
       if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondZ)) {
          /* long sub/cmp, then Z --> test dst==src */
          return unop(Iop_1Uto32,
-                     binop(Iop_CmpEQ32, cc_dst, cc_src));
+                     binop(Iop_CmpEQ32, cc_dep1, cc_dep2));
       }
 
       if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondL)) {
          /* long sub/cmp, then L (signed less than) 
             --> test dst <s src */
          return unop(Iop_1Uto32,
-                     binop(Iop_CmpLT32S, cc_dst, cc_src));
+                     binop(Iop_CmpLT32S, cc_dep1, cc_dep2));
       }
 
       if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondLE)) {
          /* long sub/cmp, then LE (signed less than or equal)
             --> test dst <=s src */
          return unop(Iop_1Uto32,
-                     binop(Iop_CmpLE32S, cc_dst, cc_src));
+                     binop(Iop_CmpLE32S, cc_dep1, cc_dep2));
       }
 
       if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondBE)) {
          /* long sub/cmp, then BE (unsigned less than or equal)
             --> test dst <=u src */
          return unop(Iop_1Uto32,
-                     binop(Iop_CmpLE32U, cc_dst, cc_src));
+                     binop(Iop_CmpLE32U, cc_dep1, cc_dep2));
       }
-
+#if 0
       if (isU32(cc_op, CC_OP_SUBL) && isU32(cond, CondB)) {
          /* long sub/cmp, then B (unsigned less than)
             --> test dst <u src */
@@ -715,44 +729,43 @@ return NULL;
       }
 
       /*---------------- SUBB ----------------*/
-
+#endif
       if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondZ)) {
          /* byte sub/cmp, then Z --> test dst==src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpEQ8, 
-                           unop(Iop_32to8,cc_dst), 
-                           unop(Iop_32to8,cc_src)));
+                           unop(Iop_32to8,cc_dep1), 
+                           unop(Iop_32to8,cc_dep2)));
       }
 
       if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNZ)) {
          /* byte sub/cmp, then Z --> test dst!=src */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpNE8, 
-                           unop(Iop_32to8,cc_dst), 
-                           unop(Iop_32to8,cc_src)));
+                           unop(Iop_32to8,cc_dep1), 
+                           unop(Iop_32to8,cc_dep2)));
       }
-
       if (isU32(cc_op, CC_OP_SUBB) && isU32(cond, CondNBE)) {
          /* long sub/cmp, then NBE (unsigned greater than)
             --> test src <=u dst */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32U, 
-                           binop(Iop_And32,cc_src,mkU32(0xFF)),
-			   binop(Iop_And32,cc_dst,mkU32(0xFF))));
+                           binop(Iop_And32,cc_dep1,mkU32(0xFF)),
+			   binop(Iop_And32,cc_dep2,mkU32(0xFF))));
       }
 
       /*---------------- LOGICL ----------------*/
 
       if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondZ)) {
          /* long and/or/xor, then Z --> test dst==0 */
-         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dst, mkU32(0)));
+         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
-
+#if 0
       if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondS)) {
          /* long and/or/xor, then S --> test dst <s 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dst, mkU32(0)));
       }
-
+#endif
       if (isU32(cc_op, CC_OP_LOGICL) && isU32(cond, CondLE)) {
          /* long and/or/xor, then LE
             This is pretty subtle.  LOGIC sets SF and ZF according to the
@@ -760,7 +773,7 @@ return NULL;
             OF is zero, so this reduces to SZ | ZF -- which will be 1 iff
             the result is <=signed 0.  Hence ...
          */
-         return unop(Iop_1Uto32,binop(Iop_CmpLE32S, cc_dst, mkU32(0)));
+         return unop(Iop_1Uto32,binop(Iop_CmpLE32S, cc_dep1, mkU32(0)));
       }
 
       /*---------------- LOGICB ----------------*/
@@ -768,7 +781,7 @@ return NULL;
       if (isU32(cc_op, CC_OP_LOGICB) && isU32(cond, CondZ)) {
          /* byte and/or/xor, then Z --> test dst==0 */
          return unop(Iop_1Uto32,
-                     binop(Iop_CmpEQ32, binop(Iop_And32,cc_dst,mkU32(255)), 
+                     binop(Iop_CmpEQ32, binop(Iop_And32,cc_dep1,mkU32(255)), 
                                         mkU32(0)));
       }
 
@@ -776,13 +789,14 @@ return NULL;
 
       if (isU32(cc_op, CC_OP_DECL) && isU32(cond, CondZ)) {
          /* dec L, then Z --> test dst == 0 */
-         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dst, mkU32(0)));
+         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
-
+#if 0
       if (isU32(cc_op, CC_OP_DECL) && isU32(cond, CondS)) {
          /* dec L, then S --> compare DST <s 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpLT32S, cc_dst, mkU32(0)));
       }
+#endif
 
       return NULL;
    }

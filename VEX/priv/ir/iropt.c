@@ -492,7 +492,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
               || e->Iex.Binop.op == Iop_And8)
              && sameIRTemps(e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
             e2 = e->Iex.Binop.arg1;
-	 }
+         }
 
       }
    }
@@ -1214,13 +1214,13 @@ void spec_helpers_BB ( IRBB* bb,
       if (!st 
           || st->tag != Ist_Tmp
           || st->Ist.Tmp.data->tag != Iex_CCall)
-	continue;
+        continue;
 
       ex = (*specHelper)( st->Ist.Tmp.data->Iex.CCall.name,
                           st->Ist.Tmp.data->Iex.CCall.args );
       if (!ex)
-	/* the front end can't think of a suitable replacement */
-	continue;
+        /* the front end can't think of a suitable replacement */
+        continue;
 
       /* We got something better.  Install it in the bb. */
       bb->stmts[i]
@@ -1527,7 +1527,7 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
          return;
       case Iex_LDle:
          *doesLoad |= True;
-	 setHints_Expr(doesLoad, doesGet, e->Iex.LDle.addr);
+         setHints_Expr(doesLoad, doesGet, e->Iex.LDle.addr);
          return;
       case Iex_Get:
          *doesGet |= True;

@@ -495,6 +495,13 @@ static IRExpr* fold_Expr ( IRExpr* e )
       } else {
 
          /* other cases (identities, etc) */
+         /* Shl32(x,0) ==> x */
+         if (e->Iex.Binop.op == Iop_Shl32
+             && e->Iex.Binop.arg2->tag == Iex_Const
+             && e->Iex.Binop.arg2->Iex.Const.con->Ico.U32 == 0) {
+            e2 = e->Iex.Binop.arg1;
+         } else
+
          /* Add32(x,0) ==> x */
          if (e->Iex.Binop.op == Iop_Add32
              && e->Iex.Binop.arg2->tag == Iex_Const

@@ -1128,6 +1128,14 @@ POST(sys_ptrace)
 
 PRE(sys_set_tid_address, Special)
 {
+   // We don't let this syscall run, and don't do anything to simulate it
+   // ourselves -- it becomes a no-op!  Why?  Tom says:
+   // 
+   //   I suspect this is deliberate given that all the user level threads
+   //   are running in the same kernel thread under valgrind so we probably
+   //   don't want to be calling the actual system call here.
+   //
+   // Hmm.
    PRINT("sys_set_tid_address ( %p )", arg1);
    PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
 }

@@ -346,6 +346,20 @@ void ppIRDirty ( IRDirty* d )
    vex_printf(")");
 }
 
+void ppIRJumpKind ( IRJumpKind kind )
+{
+   switch (kind) {
+      case Ijk_Boring:    vex_printf("Boring"); break;
+      case Ijk_Call:      vex_printf("Call"); break;
+      case Ijk_Ret:       vex_printf("Return"); break;
+      case Ijk_ClientReq: vex_printf("ClientReq"); break;
+      case Ijk_Syscall:   vex_printf("Syscall"); break;
+      case Ijk_Yield:     vex_printf("Yield"); break;
+      case Ijk_EmWarn:    vex_printf("EmWarn"); break;
+      default:            vpanic("ppIRJumpKind");
+   }
+}
+
 void ppIRStmt ( IRStmt* s )
 {
    switch (s->tag) {
@@ -378,24 +392,13 @@ void ppIRStmt ( IRStmt* s )
       case Ist_Exit:
          vex_printf( "if (" );
          ppIRExpr(s->Ist.Exit.guard);
-         vex_printf( ") goto ");
+         vex_printf( ") goto {");
+         ppIRJumpKind(s->Ist.Exit.jk);
+         vex_printf("} ");
          ppIRConst(s->Ist.Exit.dst);
          break;
       default: 
          vpanic("ppIRStmt");
-   }
-}
-
-void ppIRJumpKind ( IRJumpKind kind )
-{
-   switch (kind) {
-      case Ijk_Boring:    vex_printf("Boring"); break;
-      case Ijk_Call:      vex_printf("Call"); break;
-      case Ijk_Ret:       vex_printf("Return"); break;
-      case Ijk_ClientReq: vex_printf("ClientReq"); break;
-      case Ijk_Syscall:   vex_printf("Syscall"); break;
-      case Ijk_Yield:     vex_printf("Yield"); break;
-      default:            vpanic("ppIRJumpKind");
    }
 }
 
@@ -712,10 +715,11 @@ IRStmt* IRStmt_Dirty ( IRDirty* d )
    s->Ist.Dirty.details = d;
    return s;
 }
-IRStmt* IRStmt_Exit ( IRExpr* guard, IRConst* dst ) {
+IRStmt* IRStmt_Exit ( IRExpr* guard, IRJumpKind jk, IRConst* dst ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
    s->tag            = Ist_Exit;
    s->Ist.Exit.guard = guard;
+   s->Ist.Exit.jk    = jk;
    s->Ist.Exit.dst   = dst;
    return s;
 }
@@ -885,7 +889,8 @@ IRStmt* dopyIRStmt ( IRStmt* s )
       case Ist_Dirty: 
          return IRStmt_Dirty(dopyIRDirty(s->Ist.Dirty.details));
       case Ist_Exit: 
-         return IRStmt_Exit(dopyIRExpr(s->Ist.Exit.guard), 
+         return IRStmt_Exit(dopyIRExpr(s->Ist.Exit.guard),
+                            s->Ist.Exit.jk,
                             dopyIRConst(s->Ist.Exit.dst));
       default: 
          vpanic("dopyIRStmt");

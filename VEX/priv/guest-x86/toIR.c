@@ -120,7 +120,9 @@ static IRBB* irbb;
 #define OFFB_IDFLAG   offsetof(VexGuestX86State,guest_IDFLAG)
 #define OFFB_FTOP     offsetof(VexGuestX86State,guest_FTOP)
 #define OFFB_FC3210   offsetof(VexGuestX86State,guest_FC3210)
-#define OFFB_FPUCW    offsetof(VexGuestX86State,guest_FPUCW)
+#define OFFB_FPRTZ    offsetof(VexGuestX86State,guest_FPRTZ)
+
+#define OFFB_EMWARN   offsetof(VexGuestX86State,guest_EMWARN)
 
 
 /*------------------------------------------------------------*/
@@ -1433,11 +1435,13 @@ void jcc_01( X86Condcode cond, Addr32 d32_false, Addr32 d32_true )
    condPos = positiveIse_X86Condcode ( cond, &invert );
    if (invert) {
       stmt( IRStmt_Exit( mk_x86g_calculate_condition(condPos),
+                         Ijk_Boring,
                          IRConst_U32(d32_false) ) );
       irbb->next     = mkU32(d32_true);
       irbb->jumpkind = Ijk_Boring;
    } else {
       stmt( IRStmt_Exit( mk_x86g_calculate_condition(condPos),
+                         Ijk_Boring,
                          IRConst_U32(d32_true) ) );
       irbb->next     = mkU32(d32_false);
       irbb->jumpkind = Ijk_Boring;
@@ -3230,6 +3234,7 @@ void dis_REP_op ( X86Condcode cond,
    //uInstr2 (cb, JIFZ,  4, TempReg, tc,    Literal, 0);
    //uLiteral(cb, eip_next);
    stmt( IRStmt_Exit( binop(Iop_CmpEQ32,mkexpr(tc),mkU32(0)),
+                      Ijk_Boring,
                       IRConst_U32(eip_next) ) );
 
    //uInstr1 (cb, DEC,   4, TempReg, tc);
@@ -3243,6 +3248,7 @@ void dis_REP_op ( X86Condcode cond,
       jmp_lit(Ijk_Boring,eip);
    } else {
       stmt( IRStmt_Exit( mk_x86g_calculate_condition(cond),
+                         Ijk_Boring,
                          IRConst_U32(eip) ) );
       jmp_lit(Ijk_Boring,eip_next);
    }
@@ -3349,6 +3355,13 @@ UInt dis_imul_I_E_G ( UChar       sorb,
 
 /* --- Helper functions for dealing with the register stack. --- */
 
+/* --- Set the emulation-warning pseudo-register. --- */
+
+static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ )
+{
+   stmt( IRStmt_Put( OFFB_EMWARN, e ) );
+}
+
 /* --- Produce an IRExpr* denoting a 64-bit QNaN. --- */
 
 static IRExpr* mkQNaN64 ( void )
@@ -3360,7 +3373,7 @@ static IRExpr* mkQNaN64 ( void )
    return IRExpr_Const(IRConst_F64i(0x7FF8000000000000ULL));
 }
 
-/* --------- Get/set the top-of-stack pointer. --------- */
+/* --------- Get/put the top-of-stack pointer. --------- */
 
 static IRExpr* get_ftop ( void )
 {
@@ -3372,7 +3385,7 @@ static void put_ftop ( IRExpr* e )
    stmt( IRStmt_Put( OFFB_FTOP, e ) );
 }
 
-/* --------- Get/set the C3210 bits of the control word. --------- */
+/* --------- Get/put the C3210 bits. --------- */
 
 static IRExpr* get_C3210 ( void )
 {
@@ -3384,30 +3397,32 @@ static void put_C3210 ( IRExpr* e )
    stmt( IRStmt_Put( OFFB_FC3210, e ) );
 }
 
-/* --------- Get/set the FPU control word. --------- */
-/* Note, IA32 has this as a 16-bit value, so fstcw/fldcw need to cast
-   to/from 16 bits.  Here we represent it in 32 bits. */
-static IRExpr* /* :: Ity_I32 */ get_fpucw ( void )
+/* --------- Get/put the FPU rounding mode. --------- */
+static IRExpr* /* :: Ity_I32 */ get_fprtz ( void )
 {
-   return IRExpr_Get( OFFB_FPUCW, Ity_I32 );
+   return IRExpr_Get( OFFB_FPRTZ, Ity_I32 );
 }
 
-static void put_fpucw ( IRExpr* /* :: Ity_I32 */ e )
+static void put_fprtz ( IRExpr* /* :: Ity_I32 */ e )
 {
-   stmt( IRStmt_Put( OFFB_FPUCW, e ) );
+   stmt( IRStmt_Put( OFFB_FPRTZ, e ) );
 }
 
 
-/* --------- Get the FPU rounding mode from the CW. --------- */
+/* --------- Synthesise a 2-bit FPU rounding mode. --------- */
 /* Produces a value in 0 .. 3, which is encoded as per the type
-   IRRoundingMode.  On IA32 the relevant value is precisely bits 11
-   and 10 of the control word.
+   IRRoundingMode.  Since 11b means round-to-zero and 00b means
+   round-to-nearest, this means the value can be synthesised from
+   bit 0 of guest_FPRTZ as (w<<31) >>s 31, where w = guest_FPRTZ.
 */
 static IRExpr* /* :: Ity_I32 */ get_roundingmode ( void )
 {
-   return binop( Iop_And32, 
-                 binop(Iop_Shr32, get_fpucw(), mkU8(10)),
-                 mkU32(3) );
+   return 
+      binop( Iop_And32,
+             binop( Iop_Sar32,
+                    binop(Iop_Shl32, get_fprtz(), mkU8(31)),
+                    mkU8(31) ),
+             mkU32(3) );
 }
 
 
@@ -3801,14 +3816,62 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_pop();
                break;
 
-            case 5: /* FLDCW */
+            case 5: {/* FLDCW */
+               /* The only thing we observe in the control word is the
+                  rounding mode, and even that only two values of.
+                  Therefore, pass the 16-bit value (x87 native-format
+                  control word) to a clean helper, getting back a
+                  64-bit value, the lower half of which is the FPRTZ
+                  value to store, and the upper half of which is the
+                  emulation-warning token which may be generated.
+               */
+               /* ULong x86h_check_fldcw ( UInt ); */
+               IRTemp t64 = newTemp(Ity_I64);
+               IRTemp ew = newTemp(Ity_I32);
                DIP("fldcw %s", dis_buf);
-               put_fpucw( unop(Iop_16Uto32, loadLE(Ity_I16, mkexpr(addr))) );
+               assign( t64, mkIRExprCCall(
+                               Ity_I64, 0/*regparms*/, 
+                               "x86h_check_fldcw",
+                               &x86h_check_fldcw, 
+                               mkIRExprVec_1( 
+                                  unop( Iop_16Uto32, 
+                                        loadLE(Ity_I16, mkexpr(addr)))
+                               )
+                            )
+                     );
+
+               put_fprtz( unop(Iop_64to32, mkexpr(t64)) );
+               assign( ew, unop(Iop_64HIto32, mkexpr(t64) ) );
+               put_emwarn( mkexpr(ew) );
+               /* Finally, if an emulation warning was reported,
+                  side-exit to the next insn, reporting the warning,
+                  so that Valgrind's dispatcher sees the warning. */
+               stmt( 
+                  IRStmt_Exit(
+                     binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
+                     Ijk_EmWarn,
+                     IRConst_U32( ((Addr32)guest_eip_bbstart)+delta)
+                  )
+               );
                break;
+            }
 
             case 7: /* FNSTCW */
+              /* Fake up a native x87 FPU control word.  The only
+                 thing it depends on is FPRTZ[0], so call a clean
+                 helper to cook it up. */
+               /* UInt x86h_create_fpucw ( UInt fptrz ) */
                DIP("fnstcw %s", dis_buf);
-               storeLE(mkexpr(addr), unop(Iop_32to16, get_fpucw()));
+               storeLE(
+                  mkexpr(addr), 
+                  unop( Iop_32to16, 
+                        mkIRExprCCall(
+                           Ity_I32, 0/*regp*/,
+                           "x86h_create_fpucw", &x86h_create_fpucw, 
+                           mkIRExprVec_1( get_fprtz() ) 
+                        ) 
+                  ) 
+               );
                break;
 
             default:
@@ -4367,21 +4430,24 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                break;
 
             case 4: { /* FRSTOR m108 */
-               /* Uses dirty helper: x86g_do_FRSTOR ( VexGuestX86State*, UInt ) */
-               IRDirty* d = unsafeIRDirty_0_N ( 
-                               0/*regparms*/, 
-                               "x86g_dirtyhelper_FRSTOR", 
-                               &x86g_dirtyhelper_FRSTOR,
-                               mkIRExprVec_1( mkexpr(addr) )
-                            );
+               /* Uses dirty helper: 
+                     VexEmWarn x86g_do_FRSTOR ( VexGuestX86State*, Addr32 ) */
+               IRTemp   ew = newTemp(Ity_I32);
+               IRDirty* d  = unsafeIRDirty_0_N ( 
+                                0/*regparms*/, 
+                                "x86g_dirtyhelper_FRSTOR", 
+                                &x86g_dirtyhelper_FRSTOR,
+                                mkIRExprVec_1( mkexpr(addr) )
+                             );
                d->needsBBP = True;
+               d->tmp      = ew;
                /* declare we're reading memory */
                d->mFx   = Ifx_Read;
                d->mAddr = mkexpr(addr);
                d->mSize = 108;
 
                /* declare we're writing guest state */
-	       d->nFxState = 5;
+               d->nFxState = 5;
 
                d->fxState[0].fx     = Ifx_Write;
                d->fxState[0].offset = offsetof(VexGuestX86State,guest_FTOP);
@@ -4396,7 +4462,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                d->fxState[2].size   = 8 * sizeof(UChar);
 
                d->fxState[3].fx     = Ifx_Write;
-               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPUCW);
+               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPRTZ);
                d->fxState[3].size   = sizeof(UInt);
 
                d->fxState[4].fx     = Ifx_Write;
@@ -4405,12 +4471,26 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
                stmt( IRStmt_Dirty(d) );
 
+               /* ew contains any emulation warning we may need to
+                  issue.  If needed, side-exit to the next insn,
+                  reporting the warning, so that Valgrind's dispatcher
+                  sees the warning. */
+               put_emwarn( mkexpr(ew) );
+               stmt( 
+                  IRStmt_Exit(
+                     binop(Iop_CmpNE32, mkexpr(ew), mkU32(0)),
+                     Ijk_EmWarn,
+                     IRConst_U32( ((Addr32)guest_eip_bbstart)+delta)
+                  )
+               );
+
                DIP("frstor %s", dis_buf);
                break;
             }
 
             case 6: { /* FNSAVE m108 */
-               /* Uses dirty helper: x86g_do_FSAVE ( VexGuestX86State*, UInt ) */
+               /* Uses dirty helper: 
+                     void x86g_do_FSAVE ( VexGuestX86State*, UInt ) */
                IRDirty* d = unsafeIRDirty_0_N ( 
                                0/*regparms*/, 
                                "x86g_dirtyhelper_FSAVE", 
@@ -4424,7 +4504,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                d->mSize = 108;
 
                /* declare we're reading guest state */
-	       d->nFxState = 5;
+               d->nFxState = 5;
 
                d->fxState[0].fx     = Ifx_Read;
                d->fxState[0].offset = offsetof(VexGuestX86State,guest_FTOP);
@@ -4439,7 +4519,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                d->fxState[2].size   = 8 * sizeof(UChar);
 
                d->fxState[3].fx     = Ifx_Read;
-               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPUCW);
+               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPRTZ);
                d->fxState[3].size   = sizeof(UInt);
 
                d->fxState[4].fx     = Ifx_Read;
@@ -4955,7 +5035,7 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
          } else {
             IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
             delta += len;
-	    storeLE( mkexpr(addr), getMMXReg(gregOfRM(modrm)) );
+            storeLE( mkexpr(addr), getMMXReg(gregOfRM(modrm)) );
             DIP("mov(nt)q %s, %s\n", 
                 nameMMXReg(gregOfRM(modrm)), dis_buf);
          }
@@ -8256,6 +8336,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                binop(mkSizedOp(ty,Iop_CmpEQ8),
                      getIReg(sz,R_ECX),
                      mkU(ty,0)),
+            Ijk_Boring,
             IRConst_U32(d32)) 
           );
 

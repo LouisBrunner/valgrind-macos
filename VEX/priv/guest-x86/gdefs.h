@@ -95,6 +95,10 @@ extern ULong x86g_calculate_RCR  (
                 UInt arg, UInt rot_amt, UInt eflags_in, UInt sz 
              );
 
+extern ULong x86h_check_fldcw ( UInt fpucw );
+
+extern UInt x86h_create_fpucw ( UInt fptrz );
+
 /* --- Clean helpers for MMX --- */
 
 extern ULong x86g_calculate_add32x2 ( ULong, ULong );

@@ -34,6 +34,7 @@
 */
 
 #include "libvex_basictypes.h"
+#include "libvex_emwarn.h"
 #include "libvex_guest_x86.h"
 #include "libvex_ir.h"
 #include "libvex.h"
@@ -1386,9 +1387,51 @@ typedef
 #define FP_REG(ii)    (10*(7-(ii)))
 
 
+/* native_fpucw[15:0] contains a x87 native format FPU control word.
+   Extract from it the required FPRTZ value and any resulting
+   emulation warning, and return (warn << 32) | fprtz value. */
+/* CLEAN HELPER */
+ULong x86h_check_fldcw ( UInt fpucw )
+{
+   /* Decide on a rounding mode.  fpucw[11:10] must be either
+      00b(round to nearest) or 11b(round to zero).  No others
+      supported.  Others are mapped to round-to-nearest. */
+   UInt rmode = (fpucw >> 10) & 3;
+   UInt fprtz = rmode==0 ? 0 : 1;
+
+   /* Detect any required emulation warnings. */
+   VexEmWarn ew = EmWarn_NONE;
+
+   if ((fpucw & 0x3F) != 0x3F) {
+      /* unmasked exceptions! */
+      ew = EmWarn_X86_x87exns;
+   }
+   else 
+   if (rmode != 0 && rmode != 3) {
+      /* unsupported rounding mode */
+      ew = EmWarn_X86_x87rounding;
+   }
+   else
+   if (((fpucw >> 8) & 3) != 3) {
+      /* unsupported precision */
+      ew = EmWarn_X86_x87precision;
+   }
+
+   return (((ULong)ew) << 32) | ((ULong)fprtz);
+}
+
+/* CLEAN HELPER */
+/* Given fprtz as 1 or 0, create a suitable x87 native format
+   FPU control word. */
+UInt x86h_create_fpucw ( UInt fprtz )
+{
+   return (fprtz & 1) ? 0x0F7F : 0x037F;
+}
+
+
 /* VISIBLE TO LIBVEX CLIENT */
-void LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
-                               /*OUT*/VexGuestX86State* vex_state )
+VexEmWarn LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
+                                    /*OUT*/VexGuestX86State* vex_state )
 {
    Int        r;
    UInt       tag;
@@ -1399,6 +1442,9 @@ void LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
    UInt       tagw    = x87->env[FP_ENV_TAG];
    UInt       fpucw   = x87->env[FP_ENV_CTRL];
    UInt       c3210   = x87->env[FP_ENV_STAT] & 0x4700;
+   VexEmWarn  ew;
+   UInt       fprtz;
+   ULong      pair;
 
    /* Copy registers and tags */
    for (r = 0; r < 8; r++) {
@@ -1417,11 +1463,19 @@ void LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
    /* stack pointer */
    vex_state->guest_FTOP = ftop;
 
-   /* control word */
-   vex_state->guest_FPUCW = fpucw;
-
    /* status word */
    vex_state->guest_FC3210 = c3210;
+
+   /* handle the control word, setting FPRTZ and detecting any 
+      emulation warnings. */
+   pair  = x86h_check_fldcw ( (UInt)fpucw );
+   fprtz = (UInt)pair;
+   ew    = (VexEmWarn)(pair >> 32);
+   
+   vex_state->guest_FPRTZ = fprtz & 1;
+
+   /* emulation warnings --> caller */
+   return ew;
 }
 
 
@@ -1441,8 +1495,9 @@ void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state,
       x87->env[i] = 0;
 
    x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
-   x87->env[FP_ENV_CTRL] = (UShort)( vex_state->guest_FPUCW );
    x87->env[FP_ENV_STAT] = ((ftop & 7) << 11) | (c3210 & 0x4700);
+   x87->env[FP_ENV_CTRL] 
+      = (UShort)x86h_create_fpucw( vex_state->guest_FPRTZ );
 
    tagw = 0;
    for (r = 0; r < 8; r++) {
@@ -1528,9 +1583,7 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
       vex_state->guest_FPTAG[i] = 0; /* empty */
       vex_state->guest_FPREG[i] = 0; /* IEEE754 64-bit zero */
    }
-   /* The default setting: all fp exceptions masked, rounding to
-      nearest, precision to 64 bits */
-   vex_state->guest_FPUCW = 0x03F7; 
+   vex_state->guest_FPRTZ  = 0; /* round to nearest */
    vex_state->guest_FC3210 = 0;
 
    vex_state->guest_CS = 0;
@@ -1539,6 +1592,8 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_FS = 0;
    vex_state->guest_GS = 0;
    vex_state->guest_SS = 0;
+
+   vex_state->guest_EMWARN = EmWarn_NONE;
 }
 
 
@@ -2434,7 +2489,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 15,
+          .n_alwaysDefd = 16,
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
              gdefs.h on meaning of thunk fields. */
@@ -2447,14 +2502,15 @@ VexGuestLayout
                  /*  4 */ ALWAYSDEFD(guest_EIP),
                  /*  5 */ ALWAYSDEFD(guest_FTOP),
                  /*  6 */ ALWAYSDEFD(guest_FPTAG),
-                 /*  7 */ ALWAYSDEFD(guest_FPUCW),
+                 /*  7 */ ALWAYSDEFD(guest_FPRTZ),
                  /*  8 */ ALWAYSDEFD(guest_FC3210),
                  /*  9 */ ALWAYSDEFD(guest_CS),
                  /* 10 */ ALWAYSDEFD(guest_DS),
                  /* 11 */ ALWAYSDEFD(guest_ES),
                  /* 12 */ ALWAYSDEFD(guest_FS),
                  /* 13 */ ALWAYSDEFD(guest_GS),
-	         /* 14 */ ALWAYSDEFD(guest_SS) 
+	         /* 14 */ ALWAYSDEFD(guest_SS),
+	         /* 15 */ ALWAYSDEFD(guest_EMWARN)
                }
         };
 

@@ -328,7 +328,8 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
          break;
       case Ist_Exit:
          e1 = flatten_Expr(bb, st->Ist.Exit.guard);
-         addStmtToIRBB(bb, IRStmt_Exit(e1, st->Ist.Exit.dst));
+         addStmtToIRBB(bb, IRStmt_Exit(e1, st->Ist.Exit.jk,
+                                           st->Ist.Exit.dst));
          break;
       default:
          vex_printf("\n");
@@ -859,7 +860,7 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                   vex_printf("vex iropt: IRStmt_Exit became unconditional\n");
             }
          }
-         return IRStmt_Exit(fcond,st->Ist.Exit.dst);
+         return IRStmt_Exit(fcond, st->Ist.Exit.jk, st->Ist.Exit.dst);
       }
 
    default:
@@ -1737,6 +1738,7 @@ static IRStmt* tbSubst_Stmt ( TmpInfo** env, IRStmt* st )
       case Ist_Exit:
          return IRStmt_Exit(
                    tbSubst_Expr(env, st->Ist.Exit.guard),
+                   st->Ist.Exit.jk,
                    st->Ist.Exit.dst
                 );
       case Ist_Dirty:

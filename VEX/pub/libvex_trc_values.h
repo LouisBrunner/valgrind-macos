@@ -44,6 +44,8 @@
    This file may get included in assembly code, so do not put
    C-specific constructs in it.
 */
+#define VEX_TRC_JMP_EMWARN     17  /* deliver emulation warning before
+                                      continuing */
 #define VEX_TRC_JMP_SYSCALL    19  /* do a system call before continuing */
 #define VEX_TRC_JMP_CLIENTREQ  23  /* do a client req before continuing */
 #define VEX_TRC_JMP_YIELD      27  /* yield to thread sched 

@@ -2555,7 +2555,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          vpanic("isel_x86: Ist_Exit: dst is not a 32-bit value");
       dst = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
       cc  = iselCondCode(env,stmt->Ist.Exit.guard);
-      addInstr(env, X86Instr_Goto(Ijk_Boring, cc, dst));
+      addInstr(env, X86Instr_Goto(stmt->Ist.Exit.jk, cc, dst));
       return;
    }
 

@@ -78,6 +78,9 @@ typedef
       UInt  guest_CC_DEP1;
       UInt  guest_CC_DEP2;
 
+      /* Emulation warnings */
+      UInt   guest_EMWARN;
+
       /* Padding to make it have an 8-aligned size */
       /* UInt   padding; */
    }

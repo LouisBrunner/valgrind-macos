@@ -37,6 +37,8 @@
 #define __LIBVEX_PUB_GUEST_X86_H
 
 #include "libvex_basictypes.h"
+#include "libvex_emwarn.h"
+
 
 /*---------------------------------------------------------------*/
 /*--- Vex's representation of the x86 CPU state.              ---*/
@@ -89,14 +91,15 @@
    * fst from st(0) to st(i) does not take an overflow fault even if the
      destination is already full.
 
-   FPUCW[15:0] is the FPU's control word.  FPUCW[31:16] is unused.
+   FPRTZ[0] is the FPU's notional rounding mode -- 0 "to nearest" (the
+   default), 1 "to zero".  FPRTZ[31:1] is unused.  Round to
+   +infinity/-infinity is not supported.
 
    FC3210 contains the C3, C2, C1 and C0 bits in the same place they
    are in the FPU's status word.  (bits 14, 10, 9, 8 respectively).
    All other bits should be zero.  The relevant mask to select just
    those bits is 0x4700.  To select C3, C2 and C0 only, the mask is
-   0x4500.
-*/
+   0x4500.  */
 
 typedef
    struct {
@@ -123,7 +126,7 @@ typedef
       UInt  guest_FTOP;
       ULong guest_FPREG[8];
       UChar guest_FPTAG[8];
-      UInt  guest_FPUCW;
+      UInt  guest_FPRTZ;
       UInt  guest_FC3210;
       /* Segment registers. */
       UShort guest_CS;
@@ -132,8 +135,10 @@ typedef
       UShort guest_FS;
       UShort guest_GS;
       UShort guest_SS;
+      /* Emulation warnings */
+      UInt   guest_EMWARN;
       /* Padding to make it have an 8-aligned size */
-      UInt   padding;
+      /* UInt   padding; */
    }
    VexGuestX86State;
 
@@ -154,10 +159,12 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state );
 
 /* Convert a saved x87 FPU image (as created by fsave) and write it
    into the supplied VexGuestX86State structure.  The non-FP parts of
-   said structure are left unchanged.  
+   said structure are left unchanged.  May return an emulation warning
+   value.
 */
 extern 
-void LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state, 
+VexEmWarn
+     LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state, 
                                /*OUT*/VexGuestX86State* vex_state );
 
 /* Extract from the supplied VexGuestX86State structure, an x87 FPU

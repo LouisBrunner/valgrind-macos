@@ -496,6 +496,26 @@ inline static Bool isAtom ( IRExpr* e ) {
 }
 
 
+/* ------------------ Jump kinds ------------------ */
+
+/* This describes hints which can be passed to the dispatcher at guest
+   control-flow transfer points.
+*/
+typedef
+   enum { 
+      Ijk_Boring=0x14000, /* not interesting; just goto next */
+      Ijk_Call,           /* guest is doing a call */
+      Ijk_Ret,            /* guest is doing a return */
+      Ijk_ClientReq,      /* do guest client req before continuing */
+      Ijk_Syscall,        /* do guest syscall before continuing */
+      Ijk_Yield,          /* client is yielding to thread scheduler */
+      Ijk_EmWarn          /* report emulation warning before continuing */
+   }
+   IRJumpKind;
+
+extern void ppIRJumpKind ( IRJumpKind );
+
+
 /* ------------------ Dirty helper calls ------------------ */
 
 /* A dirty call is a flexible mechanism for calling a helper function
@@ -638,8 +658,9 @@ typedef
             IRDirty* details;
          } Dirty;
          struct {
-            IRExpr*  guard;
-            IRConst* dst;
+            IRExpr*    guard;
+            IRJumpKind jk;
+            IRConst*   dst;
          } Exit;
       } Ist;
    }
@@ -651,7 +672,7 @@ extern IRStmt* IRStmt_PutI  ( IRArray* descr, IRExpr* ix, Int bias,
 extern IRStmt* IRStmt_Tmp   ( IRTemp tmp, IRExpr* data );
 extern IRStmt* IRStmt_STle  ( IRExpr* addr, IRExpr* data );
 extern IRStmt* IRStmt_Dirty ( IRDirty* details );
-extern IRStmt* IRStmt_Exit  ( IRExpr* guard, IRConst* dst );
+extern IRStmt* IRStmt_Exit  ( IRExpr* guard, IRJumpKind jk, IRConst* dst );
 
 extern IRStmt* dopyIRStmt ( IRStmt* );
 
@@ -659,25 +680,6 @@ extern void ppIRStmt ( IRStmt* );
 
 
 /* ------------------ Basic Blocks ------------------ */
-
-/* This describes the unconditional jumps which implicitly happen at
-   the end of each basic block.  Conditional jumps -- which can only
-   be done with the IRStmt_Exit statement -- are implicitly of the
-   Ijk_Boring kind. */
-
-typedef
-   enum { 
-      Ijk_Boring=0x14000, /* not interesting; just goto next */
-      Ijk_Call,           /* guest is doing a call */
-      Ijk_Ret,            /* guest is doing a return */
-      Ijk_ClientReq,      /* do guest client req before continuing */
-      Ijk_Syscall,        /* do guest syscall before continuing */
-      Ijk_Yield           /* client is yielding to thread scheduler */
-   }
-   IRJumpKind;
-
-extern void ppIRJumpKind ( IRJumpKind );
-
 
 /* A bunch of statements, expressions, etc, are incomplete without an
    environment indicating the type of each IRTemp.  So this provides
@@ -723,7 +725,7 @@ extern IRBB* dopyIRBB ( IRBB* );
 
 extern void ppIRBB ( IRBB* );
 
-extern void  addStmtToIRBB ( IRBB*, IRStmt* );
+extern void addStmtToIRBB ( IRBB*, IRStmt* );
 
 
 /*---------------------------------------------------------------*/

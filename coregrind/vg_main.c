@@ -58,6 +58,7 @@ Int VGOFF_(m_eflags) = INVALID_OFFSET;
 Int VGOFF_(m_dflag)  = INVALID_OFFSET;
 Int VGOFF_(m_ssestate) = INVALID_OFFSET;
 Int VGOFF_(ldt)   = INVALID_OFFSET;
+Int VGOFF_(tls)   = INVALID_OFFSET;
 Int VGOFF_(m_cs)  = INVALID_OFFSET;
 Int VGOFF_(m_ss)  = INVALID_OFFSET;
 Int VGOFF_(m_ds)  = INVALID_OFFSET;
@@ -327,8 +328,9 @@ static void vg_init_baseBlock ( void )
       == 0
    );
 
-   /* This thread's LDT pointer, and segment registers. */
+   /* This thread's LDT and TLS pointers, and segment registers. */
    VGOFF_(ldt)   = alloc_BaB(1);
+   VGOFF_(tls)   = alloc_BaB(1);
    VGOFF_(m_cs)  = alloc_BaB(1);
    VGOFF_(m_ss)  = alloc_BaB(1);
    VGOFF_(m_ds)  = alloc_BaB(1);
@@ -447,6 +449,9 @@ static void vg_init_baseBlock ( void )
 
    /* Pretend the root thread has a completely empty LDT to start with. */
    VG_(baseBlock)[VGOFF_(ldt)] = (UInt)NULL;
+
+   /* Pretend the root thread has no TLS array for now. */
+   VG_(baseBlock)[VGOFF_(tls)] = (UInt)NULL;
 
    /* Initialise shadow regs */
    if (VG_(needs).shadow_regs) {

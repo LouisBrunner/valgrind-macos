@@ -129,6 +129,11 @@
    fun:fixup
    fun:_dl_runtime_resolve
 }
+{
+   _dl_fini
+   Helgrind:Eraser
+   fun:_dl_fini
+}
 
 #-------- Threading bugs?
 # glibc 'knows' that destroying a locked mutex will unlock it
@@ -172,6 +177,24 @@
    Intel compiler70/ia32/lib/libcxa.so.3 below-esp accesses
    Addrcheck,Memcheck:Addr4
    obj:/opt/intel/compiler70/ia32/lib/libcxa.so.3
+}
+
+##----------------------------------------------------------------------##
+## SuSE 9 after FV changes (post 2.1.0)
+
+{
+   strlen/_dl_init_paths/dl_main/_dl_sysdep_start(Cond)
+   Memcheck:Cond
+   fun:strlen
+   fun:_dl_init_paths
+   fun:dl_main
+   fun:_dl_sysdep_start
+}
+
+{
+   Ugly strchr error in /lib/ld-2.3.2.so
+   Memcheck:Cond
+   obj:/lib/ld-2.3.2.so
 }
 
 ##----------------------------------------------------------------------##

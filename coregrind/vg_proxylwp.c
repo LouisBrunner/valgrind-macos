@@ -1373,6 +1373,15 @@ void VG_(proxy_sanity)(void)
    vg_assert(sane);
 }
 
+/* Get the PID/TID of the ProxyLWP. */
+Int VG_(proxy_id)(ThreadId tid)
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   ProxyLWP *proxy = tst->proxy;
+
+   return proxy->lwp;
+}
+
 /*--------------------------------------------------------------------*/
 /*--- Proxy LWP machinery.                           vg_proxylwp.c ---*/
 /*--------------------------------------------------------------------*/

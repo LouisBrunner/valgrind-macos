@@ -108,7 +108,7 @@ libpthread_so_SOURCES = \
 	vg_syscall.S
 libpthread_so_DEPENDENCIES = $(srcdir)/vg_libpthread.vs
 libpthread_so_LDFLAGS	   = -Werror -fno-omit-frame-pointer -UVG_LIBDIR \
-	-shared -fpic \
+	-shared -fpic -ldl \
 	-Wl,-version-script $(srcdir)/vg_libpthread.vs \
 	-Wl,-z,nodelete \
 	-Wl,--soname=libpthread.so.0

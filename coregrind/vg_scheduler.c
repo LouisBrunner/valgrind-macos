@@ -339,6 +339,7 @@ void VG_(load_thread_state) ( ThreadId tid )
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
 
    VG_(baseBlock)[VGOFF_(ldt)]  = (UInt)VG_(threads)[tid].ldt;
+   VG_(baseBlock)[VGOFF_(tls)]  = (UInt)VG_(threads)[tid].tls;
    VG_(baseBlock)[VGOFF_(m_cs)] = VG_(threads)[tid].m_cs;
    VG_(baseBlock)[VGOFF_(m_ss)] = VG_(threads)[tid].m_ss;
    VG_(baseBlock)[VGOFF_(m_ds)] = VG_(threads)[tid].m_ds;
@@ -420,6 +421,19 @@ void VG_(save_thread_state) ( ThreadId tid )
    vg_assert((void*)VG_(threads)[tid].ldt 
              == (void*)VG_(baseBlock)[VGOFF_(ldt)]);
 
+   /* We don't copy out the TLS entry, because it can never be changed
+      by the normal actions of the thread, only by the set_thread_area
+      syscall, in which case we will correctly be updating
+      VG_(threads)[tid].tls.  This printf happens iff the following
+      assertion fails. */
+   if ((void*)VG_(threads)[tid].tls != (void*)VG_(baseBlock)[VGOFF_(tls)])
+      VG_(printf)("VG_(threads)[%d].tls=%p  VG_(baseBlock)[VGOFF_(tls)]=%p\n",
+		  tid, (void*)VG_(threads)[tid].tls, 
+                       (void*)VG_(baseBlock)[VGOFF_(tls)]);
+
+   vg_assert((void*)VG_(threads)[tid].tls 
+             == (void*)VG_(baseBlock)[VGOFF_(tls)]);
+
    VG_(threads)[tid].m_cs = VG_(baseBlock)[VGOFF_(m_cs)];
    VG_(threads)[tid].m_ss = VG_(baseBlock)[VGOFF_(m_ss)];
    VG_(threads)[tid].m_ds = VG_(baseBlock)[VGOFF_(m_ds)];
@@ -469,6 +483,7 @@ void VG_(save_thread_state) ( ThreadId tid )
 
    /* Fill it up with junk. */
    VG_(baseBlock)[VGOFF_(ldt)] = junk;
+   VG_(baseBlock)[VGOFF_(tls)] = junk;
    VG_(baseBlock)[VGOFF_(m_cs)] = junk;
    VG_(baseBlock)[VGOFF_(m_ss)] = junk;
    VG_(baseBlock)[VGOFF_(m_ds)] = junk;
@@ -538,6 +553,7 @@ void mostly_clear_thread_record ( ThreadId tid )
 {
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
    VG_(threads)[tid].ldt                  = NULL;
+   VG_(clear_TLS_for_thread)(VG_(threads)[tid].tls);
    VG_(threads)[tid].tid                  = tid;
    VG_(threads)[tid].status               = VgTs_Empty;
    VG_(threads)[tid].associated_mx        = NULL;
@@ -596,6 +612,7 @@ void VG_(scheduler_init) ( void )
    /* Copy VG_(baseBlock) state to tid_main's slot. */
    vg_tid_currently_in_baseBlock = tid_main;
    vg_tid_last_in_baseBlock = tid_main;
+   VG_(baseBlock)[VGOFF_(tls)] = (UInt)VG_(threads)[tid_main].tls;
    VG_(save_thread_state) ( tid_main );
 
    VG_(threads)[tid_main].stack_highest_word 
@@ -1372,6 +1389,9 @@ void cleanup_after_thread_exited ( ThreadId tid, Bool forcekill )
    VG_(deallocate_LDT_for_thread)( VG_(threads)[tid].ldt );
    VG_(threads)[tid].ldt = NULL;
 
+   /* Clear its TLS array. */
+   VG_(clear_TLS_for_thread)( VG_(threads)[tid].tls );
+
    /* Not interested in the timeout anymore */
    VG_(threads)[tid].awaken_at = 0xFFFFFFFF;
 
@@ -1858,6 +1878,10 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
       VG_(baseBlock)[VGOFF_(ldt)] = (UInt)VG_(threads)[tid].ldt;
    }
 
+   /* Initialise the thread's TLS array */
+   VG_(clear_TLS_for_thread)( VG_(threads)[tid].tls );
+   VG_(baseBlock)[VGOFF_(tls)] = (UInt)VG_(threads)[tid].tls;
+
    VG_(save_thread_state)(tid);
    vg_tid_last_in_baseBlock = tid;
 
@@ -2075,8 +2099,12 @@ void do_pthread_mutex_lock( ThreadId tid,
    }
 
    if (mutex->__m_count > 0) {
-
-      vg_assert(VG_(is_valid_tid)((ThreadId)mutex->__m_owner));
+      if (!VG_(is_valid_tid)((ThreadId)mutex->__m_owner)) {
+         VG_(record_pthread_error)( tid, 
+            "pthread_mutex_lock/trylock: mutex has invalid owner");
+         SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
+         return;
+      }	 
 
       /* Someone has it already. */
       if ((ThreadId)mutex->__m_owner == tid) {

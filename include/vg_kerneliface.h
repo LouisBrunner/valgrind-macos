@@ -631,12 +631,16 @@ typedef struct vki_modify_ldt_ldt_s {
         unsigned int  limit_in_pages:1;
         unsigned int  seg_not_present:1;
         unsigned int  useable:1;
+        unsigned int  reserved:25;
 } vki_modify_ldt_t;
 
 #define VKI_MODIFY_LDT_CONTENTS_DATA        0
 #define VKI_MODIFY_LDT_CONTENTS_STACK       1
 #define VKI_MODIFY_LDT_CONTENTS_CODE        2
 
+#define VKI_GDT_TLS_ENTRIES 3
+#define VKI_GDT_TLS_MIN     6
+#define VKI_GDT_TLS_MAX     (VKI_GDT_TLS_MIN + VKI_GDT_TLS_ENTRIES)
 
 /* Flags for clone() */
 /* linux/sched.h */
@@ -725,6 +729,15 @@ struct statfs64 {
         unsigned int f_frsize;
         unsigned int f_spare[5];
 };
+
+/* 
+ * linux/futex.h
+ */
+
+#define VKI_FUTEX_WAIT    0
+#define VKI_FUTEX_WAKE    1
+#define VKI_FUTEX_FD      2
+#define VKI_FUTEX_REQUEUE 3
 
 
 #endif /*  __VG_KERNELIFACE_H */

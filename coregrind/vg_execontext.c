@@ -319,6 +319,21 @@ void get_needed_regs(ThreadId tid, Addr* eip, Addr* ebp, Addr* esp,
       *esp                = tst->m_esp; 
       *stack_highest_word = tst->stack_highest_word;
    }
+
+   /* Nasty little hack to deal with sysinfo syscalls - if libc is
+      using the sysinfo page for syscalls (the TLS version does), then
+      eip will always appear to be in that page when doing a syscall,
+      not the actual libc function doing the syscall.  This check sees
+      if EIP is within the syscall code, and pops the return address
+      off the stack so that eip is placed within the library function
+      calling the syscall.  This makes stack backtraces much more
+      useful.  */
+   if (*eip >= VG_(client_trampoline_code)+VG_(tramp_syscall_offset) &&
+       *eip < VG_(client_trampoline_code)+VG_(trampoline_code_length) &&
+       VG_(is_addressable)(*esp, sizeof(Addr))) {
+      *eip = *(Addr *)*esp;
+      *esp += sizeof(Addr);
+   }
 }
 
 ExeContext* VG_(get_ExeContext) ( ThreadId tid )

@@ -472,7 +472,6 @@ static void list_tools(void)
    environment, except:
    1. LD_LIBRARY_PATH=$VALGRINDLIB:$LD_LIBRARY_PATH
    2. LD_PRELOAD=$VALGRINDLIB/vg_inject.so:($VALGRINDLIB/vgpreload_TOOL.so:)?$LD_PRELOAD
-   3. LD_ASSUME_KERNEL=2.4.1
 
    If any of these is missing, then it is added.
 
@@ -488,13 +487,10 @@ static char **fix_environment(char **origenv, const char *preload)
    static const int  ld_library_path_len = sizeof(ld_library_path)-1;
    static const char ld_preload[]   = "LD_PRELOAD=";
    static const int  ld_preload_len = sizeof(ld_preload)-1;
-   static const char ld_assume_kernel[]   = "LD_ASSUME_KERNEL=";
-   static const int  ld_assume_kernel_len = sizeof(ld_assume_kernel)-1;
    static const char valgrind_clo[]   = VALGRINDCLO "=";
    static const char valgrind_clo_len = sizeof(valgrind_clo)-1;
    int ld_preload_done       = 0;
    int ld_library_path_done  = 0;
-   int ld_assume_kernel_done = 0;
    char *inject_path;
    int   inject_path_len;
    int vgliblen = strlen(valgrind_lib);
@@ -570,9 +566,6 @@ static char **fix_environment(char **origenv, const char *preload)
 	 *cpp = cp;
 	 
 	 ld_preload_done = 1;
-      } else if (memcmp(*cpp, ld_assume_kernel, ld_assume_kernel_len) == 0) {
-	 *cpp = "LD_ASSUME_KERNEL=2.4.1";
-	 ld_assume_kernel_done = 1;
       } else if (memcmp(*cpp, valgrind_clo, valgrind_clo_len) == 0) {
 	 *cpp = "";
       }
@@ -599,9 +592,6 @@ static char **fix_environment(char **origenv, const char *preload)
       
       ret[envc++] = cp;
    }
-
-   if (!ld_assume_kernel_done)
-      ret[envc++] = "LD_ASSUME_KERNEL=2.4.1";
       
    ret[envc] = NULL;
 

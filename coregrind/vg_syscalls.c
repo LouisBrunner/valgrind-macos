@@ -1046,15 +1046,6 @@ PRE(exit)
    VG_(core_panic)("syscall exit() not caught by the scheduler?!");
 }
 
-PRE(clone)
-{
-   VG_(unimplemented)
-      ("clone(): not supported by Valgrind.\n   "
-       "We do now support programs linked against\n   "
-       "libpthread.so, though.  Re-run with -v and ensure that\n   "
-       "you are picking up Valgrind's implementation of libpthread.so.");
-}
-
 PRE(ptrace)
 {
    /* long ptrace (enum __ptrace_request request, pid_t pid, 
@@ -1181,6 +1172,33 @@ PRE(modify_ldt)
 
    if (arg1 == 0 && !VG_(is_kerror)(res) && res > 0) {
       VG_TRACK( post_mem_write, arg2, res );
+   }
+}
+
+PRE(set_thread_area)
+{
+   MAYBE_PRINTF("set_thread_area ( %p )\n", arg1);
+
+   SYSCALL_TRACK( pre_mem_read, tid, 
+		  "set_thread_area(ptr)", arg1, 
+		  sizeof(struct vki_modify_ldt_ldt_s) );
+
+   /* "do" the syscall ourselves; the kernel never sees it */
+   res = VG_(sys_set_thread_area)( tid, (void *)arg1 );
+}
+
+PRE(get_thread_area)
+{
+   MAYBE_PRINTF("get_thread_area ( %p )\n", arg1);
+   SYSCALL_TRACK( pre_mem_write, tid, 
+		  "get_thread_area(ptr)", arg1, 
+		  sizeof(struct vki_modify_ldt_ldt_s) );
+
+   /* "do" the syscall ourselves; the kernel never sees it */
+   res = VG_(sys_get_thread_area)( tid, (void *)arg1 );
+
+   if (!VG_(is_kerror)(res)) {
+      VG_TRACK( post_mem_write, arg1, sizeof(struct vki_modify_ldt_ldt_s) );
    }
 }
 
@@ -2138,6 +2156,24 @@ POST(fork)
 
       /* restore signal mask */
       VG_(ksigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
+   }
+}
+
+PRE(clone)
+{
+   MAYBE_PRINTF("clone ( %d, %p, %p, %p, %p )\n",arg1,arg2,arg3,arg4,arg5);
+
+   if (arg2 == 0 &&
+       arg1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)) {
+      before_fork(tid, tst);
+      res = VG_(do_syscall)(SYSNO, arg1, arg2, arg3, arg4, arg5);
+      after_fork(tid, tst);
+   } else {
+      VG_(unimplemented)
+         ("clone(): not supported by Valgrind.\n   "
+          "We do now support programs linked against\n   "
+          "libpthread.so, though.  Re-run with -v and ensure that\n   "
+          "you are picking up Valgrind's implementation of libpthread.so.");
    }
 }
 
@@ -4727,6 +4763,27 @@ PRE(utimes)
                        sizeof(struct timeval) );
 }
 
+PRE(futex)
+{
+    /* int futex(void *futex, int op, int val, const struct timespec *timeout); */
+    MAYBE_PRINTF("futex ( %p, %d, %d, %p, %p )\n", arg1,arg2,arg3,arg4,arg5);
+    SYSCALL_TRACK( pre_mem_read, tid, "futex(futex)", arg1, sizeof(int) );
+    if (arg2 == VKI_FUTEX_WAIT && arg4 != (UInt)NULL)
+       SYSCALL_TRACK( pre_mem_read, tid, "futex(timeout)", arg4,
+                      sizeof(struct timespec) );
+    if (arg2 == VKI_FUTEX_REQUEUE)
+       SYSCALL_TRACK( pre_mem_read, tid, "futex(futex2)", arg4, sizeof(int) );
+}
+
+POST(futex)
+{
+   if (!VG_(is_kerror)(res)) {
+      VG_TRACK( post_mem_write, arg1, sizeof(int) );
+      if (arg2 == VKI_FUTEX_FD && VG_(clo_track_fds))
+         record_fd_open(tid, res, NULL);
+   }
+}
+
 #define SIGNAL_SIMULATION	1
 
 PRE(pause)
@@ -4927,6 +4984,8 @@ static const struct sys_info special_sys[] = {
    SYSB_(clone,			False),
 
    SYSB_(modify_ldt,		False),
+   SYSB_(set_thread_area,	False),
+   SYSB_(get_thread_area,	False),
 
    SYSB_(execve,		False),
    SYSB_(brk,			False),
@@ -5126,6 +5185,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(adjtimex,		False),
    SYSBA(mmap2,			False),
    SYSBA(clock_gettime,         False),
+   SYSBA(futex,                 True),
 
    /* new signal handling makes these normal blocking syscalls */
    SYSB_(pause,			True),

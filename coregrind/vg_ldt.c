@@ -121,6 +121,24 @@ void VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt )
 
 
 
+/* Clear a TLS array. */
+void VG_(clear_TLS_for_thread) ( VgLdtEntry* tls )
+{
+   VgLdtEntry* tlsp;
+
+   if (0)
+      VG_(printf)("clear_TLS_for_thread\n" );
+
+   for (tlsp = tls; tlsp < tls + VKI_GDT_TLS_ENTRIES; tlsp++) {
+      tlsp->LdtEnt.Words.word1 = 0;
+      tlsp->LdtEnt.Words.word2 = 0;
+   }
+
+   return;
+}
+
+
+
 /* Fish the base field out of an VgLdtEntry.  This is the only part we
    are particularly interested in. */
 
@@ -151,9 +169,9 @@ unsigned int wine_ldt_get_limit( const VgLdtEntry *ent )
 */
 Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
 {
-   Addr        base;
-   UInt        limit;
-   VgLdtEntry* the_ldt;
+   UInt table;
+   Addr base;
+   UInt limit;
 
    if (0) 
       VG_(printf)("do_useseg: seg_selector = %p, vaddr = %p\n", 
@@ -161,31 +179,48 @@ Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
 
    seg_selector &= 0x0000FFFF;
   
-   /* Sanity check the segment selector.  Ensure that TI=1 (LDT) and
-      that RPL=11b (least privilege).  These form the bottom 3 bits
-      of the selector. */
-   vg_assert((seg_selector & 7) == 7);
+   /* Sanity check the segment selector.  Ensure that RPL=11b (least
+      privilege).  This forms the bottom 2 bits of the selector. */
+   vg_assert((seg_selector & 3) == 3);
 
-   /* convert it onto a table index */
+   /* Extract the table number */
+   table = (seg_selector & 4) >> 2;
+
+   /* Convert the segment selector onto a table index */
    seg_selector >>= 3;
-   vg_assert(seg_selector >= 0 && seg_selector < 8192);
 
-   /* Come up with a suitable LDT entry.  We look at the thread's LDT,
-      which is pointed to by a VG_(baseBlock) entry.  If null, we will
-      use an implied zero-entry -- although this usually implies the
-      program is in deep trouble, since it is using LDT entries which
-      it probably hasn't set up. */
-   the_ldt = (VgLdtEntry*)VG_(baseBlock)[VGOFF_(ldt)];
-   if (the_ldt == NULL) {
-      base = 0;
-      limit = 0;
-      VG_(message)(
-         Vg_UserMsg,
-         "Warning: segment-override prefix encountered, but thread has no LDT"
-      );
+   if (table == 0) {
+      VgLdtEntry* the_tls;
+
+      vg_assert(seg_selector >= VKI_GDT_TLS_MIN && seg_selector < VKI_GDT_TLS_MAX);
+
+      /* Come up with a suitable GDT entry.  We look at the thread's TLS
+	 array, which is pointed to by a VG_(baseBlock) entry. */
+      the_tls = (VgLdtEntry*)VG_(baseBlock)[VGOFF_(tls)];
+      base = (Addr)wine_ldt_get_base ( &the_tls[seg_selector-VKI_GDT_TLS_MIN] );
+      limit = (UInt)wine_ldt_get_limit ( &the_tls[seg_selector-VKI_GDT_TLS_MIN] );
    } else {
-      base = (Addr)wine_ldt_get_base ( &the_ldt[seg_selector] );
-      limit = (UInt)wine_ldt_get_limit ( &the_ldt[seg_selector] );
+      VgLdtEntry* the_ldt;
+
+      vg_assert(seg_selector >= 0 && seg_selector < 8192);
+
+      /* Come up with a suitable LDT entry.  We look at the thread's LDT,
+	 which is pointed to by a VG_(baseBlock) entry.  If null, we will
+	 use an implied zero-entry -- although this usually implies the
+	 program is in deep trouble, since it is using LDT entries which
+	 it probably hasn't set up. */
+      the_ldt = (VgLdtEntry*)VG_(baseBlock)[VGOFF_(ldt)];
+      if (the_ldt == NULL) {
+	 base = 0;
+	 limit = 0;
+	 VG_(message)(
+            Vg_UserMsg,
+	    "Warning: segment-override prefix encountered, but thread has no LDT"
+	 );
+      } else {
+	 base = (Addr)wine_ldt_get_base ( &the_ldt[seg_selector] );
+	 limit = (UInt)wine_ldt_get_limit ( &the_ldt[seg_selector] );
+      }
    }
 
    /* Note, this check is just slightly too slack.  Really it should
@@ -198,6 +233,10 @@ Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
          virtual_addr, limit
       );
    }
+
+   if (0) 
+      VG_(printf)("do_useseg: base = %p, addr = %p\n", 
+                  base, base + virtual_addr);
 
    return base + virtual_addr;
 }
@@ -364,6 +403,63 @@ Int VG_(sys_modify_ldt) ( ThreadId tid,
       break;
    }
    return ret;
+}
+
+
+Int VG_(sys_set_thread_area) ( ThreadId tid,
+                               struct vki_modify_ldt_ldt_s* info )
+{
+   Int idx = info->entry_number;
+
+   if (idx == -1) {
+      for (idx = 0; idx < VKI_GDT_TLS_ENTRIES; idx++) {
+         VgLdtEntry* tls = VG_(threads)[tid].tls + idx;
+
+         if (tls->LdtEnt.Words.word1 == 0 && tls->LdtEnt.Words.word2 == 0)
+            break;
+      }
+
+      if (idx == VKI_GDT_TLS_ENTRIES)
+         return -VKI_ESRCH;
+   } else if (idx < VKI_GDT_TLS_MIN || idx > VKI_GDT_TLS_MAX) {
+      return -VKI_EINVAL;
+   } else {
+      idx = info->entry_number - VKI_GDT_TLS_MIN;
+   }
+
+   translate_to_hw_format(info, VG_(threads)[tid].tls + idx, 0);
+
+   info->entry_number = idx + VKI_GDT_TLS_MIN;
+
+   return 0;
+}
+
+
+Int VG_(sys_get_thread_area) ( ThreadId tid,
+                               struct vki_modify_ldt_ldt_s* info )
+{
+   Int idx = info->entry_number;
+   VgLdtEntry* tls;
+
+   if (idx < VKI_GDT_TLS_MIN || idx > VKI_GDT_TLS_MAX)
+      return -VKI_EINVAL;
+
+   tls = VG_(threads)[tid].tls + idx - VKI_GDT_TLS_MIN;
+
+   info->base_addr = ( tls->LdtEnt.Bits.BaseHi << 24 ) |
+                     ( tls->LdtEnt.Bits.BaseMid << 16 ) |
+                     tls->LdtEnt.Bits.BaseLow;
+   info->limit = ( tls->LdtEnt.Bits.LimitHi << 16 ) |
+                   tls->LdtEnt.Bits.LimitLow;
+   info->seg_32bit = tls->LdtEnt.Bits.Default_Big;
+   info->contents = ( tls->LdtEnt.Bits.Type >> 2 ) & 0x3;
+   info->read_exec_only = ( tls->LdtEnt.Bits.Type & 0x1 ) ^ 0x1;
+   info->limit_in_pages = tls->LdtEnt.Bits.Granularity;
+   info->seg_not_present = tls->LdtEnt.Bits.Pres ^ 0x1;
+   info->useable = tls->LdtEnt.Bits.Sys;
+   info->reserved = 0;
+
+   return 0;
 }
 
 

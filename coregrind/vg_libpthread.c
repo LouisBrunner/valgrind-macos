@@ -60,6 +60,10 @@
 #include <pthread.h>
 #undef __USE_UNIX98
 
+#define __USE_GNU
+#include <dlfcn.h>
+#undef __USE_GNU
+
 #include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
@@ -105,6 +109,9 @@ int is_kerror ( int res )
 #  define LC_GLOBAL_LOCALE       ((__locale_t) -1L)
    extern __locale_t __uselocale ( __locale_t );
 #endif
+
+static
+void init_thread_specific_state ( void );
 
 static
 void init_libc_tsd_keys ( void );
@@ -523,6 +530,38 @@ int pthread_getconcurrency(void)
    and for clearing up afterwards.
    ------------------------------------------------ */
 
+typedef void *(*__attribute__ ((regparm (3), stdcall)) allocate_tls_t) (void *result);
+typedef void (*__attribute__ ((regparm (3), stdcall)) deallocate_tls_t) (void *tcb, int dealloc_tcb);
+
+static allocate_tls_t allocate_tls = NULL;
+static deallocate_tls_t deallocate_tls = NULL;
+
+static
+int get_gs()
+{
+   int gs;
+
+   asm volatile ("movw %%gs, %w0" : "=q" (gs));
+
+   return gs & 0xffff;
+}
+
+static
+void set_gs( int gs )
+{
+   asm volatile ("movw %w0, %%gs" :: "q" (gs));
+}
+
+static
+void *get_tcb()
+{
+   void *tcb;
+
+   asm volatile ("movl %%gs:0, %0" : "=r" (tcb));
+
+   return tcb;
+}
+
 /* All exiting threads eventually pass through here, bearing the
    return value, or PTHREAD_CANCELED, in ret_val. */
 static
@@ -569,7 +608,13 @@ void thread_exit_wrapper ( void* ret_val )
    my_assert(specifics_ptr != (void**)1); /* 1 means invalid thread */
    if (specifics_ptr != NULL)
       my_free(specifics_ptr);
-
+   
+   /* Free up any TLS data */
+   if ((get_gs() & 7) == 3 && pthread_self() > 1) {
+      my_assert(deallocate_tls != NULL);
+      deallocate_tls(get_tcb(), 1);
+   }
+   
    /* Decide on my final disposition. */
    VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
                            VG_USERREQ__SET_OR_GET_DETACH, 
@@ -600,12 +645,25 @@ void thread_exit_wrapper ( void* ret_val )
    objects which might be on the parent's stack.  */
 typedef
    struct {
-      int   attr__detachstate;
-      void* (*root_fn) ( void* );
-      void* arg;
+      int           attr__detachstate;
+      void*         tls_data;
+      int           tls_segment;
+      unsigned long sysinfo;
+      void*         (*root_fn) ( void* );
+      void*         arg;
    }
    NewThreadInfo;
 
+/* Struct used to describe a TDB header, copied from glibc. */
+typedef
+   struct {
+      void *tcb;
+      void *dtv;
+      void *self;
+      int multiple_threads;
+      unsigned long sysinfo;
+   }
+   tcbhead_t;
 
 /* This is passed to the VG_USERREQ__APPLY_IN_NEW_THREAD and so must
    not return.  Note that this runs in the new thread, not the
@@ -614,14 +672,49 @@ static
 __attribute__((noreturn))
 void thread_wrapper ( NewThreadInfo* info )
 {
-   int   attr__detachstate;
-   void* (*root_fn) ( void* );
-   void* arg;
-   void* ret_val;
+   int           attr__detachstate;
+   void*         tls_data;
+   int           tls_segment;
+   unsigned long sysinfo;
+   void*         (*root_fn) ( void* );
+   void*         arg;
+   void*         ret_val;
 
    attr__detachstate = info->attr__detachstate;
+   tls_data          = info->tls_data;
+   tls_segment       = info->tls_segment;
+   sysinfo           = info->sysinfo;
    root_fn           = info->root_fn;
    arg               = info->arg;
+
+   if (tls_data) {
+      tcbhead_t *tcb = tls_data;
+      struct vki_modify_ldt_ldt_s ldt_info;
+
+      /* Fill in the TCB header */
+      tcb->tcb = tcb;
+      tcb->self = tcb;
+      tcb->multiple_threads = 1;
+      tcb->sysinfo = sysinfo;
+      
+      /* Fill in an LDT descriptor */
+      ldt_info.entry_number = tls_segment;
+      ldt_info.base_addr = (unsigned long)tls_data;
+      ldt_info.limit = 0xfffff;
+      ldt_info.seg_32bit = 1;
+      ldt_info.contents = 0;
+      ldt_info.read_exec_only = 0;
+      ldt_info.limit_in_pages = 1;
+      ldt_info.seg_not_present = 0;
+      ldt_info.useable = 1;
+      ldt_info.reserved = 0;
+      
+      /* Install the thread area */
+      VG_(do_syscall)(__NR_set_thread_area, &ldt_info);
+      
+      /* Setup the GS segment register */
+      set_gs(ldt_info.entry_number * 8 + 3);
+   }
 
    /* Free up the arg block that pthread_create malloced. */
    my_free(info);
@@ -632,6 +725,9 @@ void thread_wrapper ( NewThreadInfo* info )
       pthread_error("thread_wrapper: invalid attr->__detachstate");
    if (attr__detachstate == PTHREAD_CREATE_DETACHED)
       pthread_detach(pthread_self());
+
+   /* Initialise thread specific state */
+   init_thread_specific_state();
 
 #  ifdef GLIBC_2_3
    /* Set this thread's locale to the global (default) locale.  A hack
@@ -688,6 +784,7 @@ pthread_create (pthread_t *__restrict __thredd,
 {
    int            tid_child;
    NewThreadInfo* info;
+   int            gs;
 
    ensure_valgrind("pthread_create");
 
@@ -704,6 +801,29 @@ pthread_create (pthread_t *__restrict __thredd,
       info->attr__detachstate = __attr->__detachstate;
    else 
       info->attr__detachstate = PTHREAD_CREATE_JOINABLE;
+
+   gs = get_gs();
+
+   if ((gs & 7) == 3) {
+      tcbhead_t *tcb = get_tcb();
+
+      if (allocate_tls == NULL || deallocate_tls == NULL) {
+         allocate_tls = (allocate_tls_t)dlsym(RTLD_DEFAULT, "_dl_allocate_tls");
+         deallocate_tls = (deallocate_tls_t)dlsym(RTLD_DEFAULT, "_dl_deallocate_tls");
+      }
+
+      my_assert(allocate_tls != NULL);
+      
+      info->tls_data = allocate_tls(NULL);
+      info->tls_segment = gs >> 3;
+      info->sysinfo = tcb->sysinfo;
+
+      tcb->multiple_threads = 1;
+   } else {
+      info->tls_data = NULL;
+      info->tls_segment = -1;
+      info->sysinfo = 0;
+   }
 
    info->root_fn = __start_routine;
    info->arg     = __arg;
@@ -1619,17 +1739,33 @@ void __pthread_initialize ( void )
    ------------------------------------------------ */
 
 #include <resolv.h>
-static int thread_specific_errno[VG_N_THREADS];
-static int thread_specific_h_errno[VG_N_THREADS];
-static struct __res_state
-           thread_specific_res_state[VG_N_THREADS];
 
-#undef errno
-extern int errno;
+typedef
+   struct {
+     int                *errno_ptr;
+     int                *h_errno_ptr;
+     struct __res_state *res_state_ptr;
+     int                errno_data;
+     int                h_errno_data;
+     struct __res_state res_state_data;
+   }
+   ThreadSpecificState;
+
+static ThreadSpecificState thread_specific_state[VG_N_THREADS];
+
+static
+void init_thread_specific_state ( void )
+{
+  int tid = pthread_self();
+  
+   thread_specific_state[tid].errno_ptr = NULL;
+   thread_specific_state[tid].h_errno_ptr = NULL;
+   thread_specific_state[tid].res_state_ptr = NULL;
+}
+
 int* __errno_location ( void )
 {
    int tid;
-   int *ret;
 
    ensure_valgrind("__errno_location");
    VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
@@ -1638,16 +1774,17 @@ int* __errno_location ( void )
    /* 'cos I'm paranoid ... */
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__errno_location: invalid ThreadId");
-   if (tid == 1)
-      ret = &errno;
-   else
-      ret = &thread_specific_errno[tid];
-
-   return ret;
+   if (thread_specific_state[tid].errno_ptr == NULL) {
+      if ((get_gs() & 7) == 3)
+         thread_specific_state[tid].errno_ptr = dlsym(RTLD_DEFAULT, "errno");
+      else if (tid == 1)
+         thread_specific_state[tid].errno_ptr = dlvsym(RTLD_DEFAULT, "errno", "GLIBC_2.0");
+      else
+         thread_specific_state[tid].errno_ptr = &thread_specific_state[tid].errno_data;
+   }
+   return thread_specific_state[tid].errno_ptr;
 }
 
-#undef h_errno
-extern int h_errno;
 int* __h_errno_location ( void )
 {
    int tid;
@@ -1658,14 +1795,17 @@ int* __h_errno_location ( void )
    /* 'cos I'm paranoid ... */
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__h_errno_location: invalid ThreadId");
-   if (tid == 1)
-      return &h_errno;
-   return & thread_specific_h_errno[tid];
+   if (thread_specific_state[tid].h_errno_ptr == NULL) {
+      if ((get_gs() & 7) == 3)
+         thread_specific_state[tid].h_errno_ptr = dlsym(RTLD_DEFAULT, "h_errno");
+      else if (tid == 1)
+         thread_specific_state[tid].h_errno_ptr = dlvsym(RTLD_DEFAULT, "h_errno", "GLIBC_2.0");
+      else
+         thread_specific_state[tid].h_errno_ptr = &thread_specific_state[tid].h_errno_data;
+   }
+   return thread_specific_state[tid].h_errno_ptr;
 }
 
-
-#undef _res
-extern struct __res_state _res;
 struct __res_state* __res_state ( void )
 {
    int tid;
@@ -1676,9 +1816,18 @@ struct __res_state* __res_state ( void )
    /* 'cos I'm paranoid ... */
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__res_state: invalid ThreadId");
-   if (tid == 1)
-      return & _res;
-   return & thread_specific_res_state[tid];
+   if (thread_specific_state[tid].res_state_ptr == NULL) {
+      if ((get_gs() & 7) == 3) {
+         struct __res_state **resp = dlsym(RTLD_DEFAULT, "__resp");
+         
+         thread_specific_state[tid].res_state_ptr = *resp;
+      } else if (tid == 1) {
+         thread_specific_state[tid].res_state_ptr = dlvsym(RTLD_DEFAULT, "_res", "GLIBC_2.0");
+      } else {
+         thread_specific_state[tid].res_state_ptr = &thread_specific_state[tid].res_state_data;
+      }
+   }
+   return thread_specific_state[tid].res_state_ptr;
 }
 
 
@@ -2331,7 +2480,6 @@ int sem_init(sem_t *sem, int pshared, unsigned int value)
    return 0;
 }
 
-
 int sem_wait ( sem_t* sem ) 
 {
    int       res;
@@ -2918,15 +3066,20 @@ weak_alias(pthread_rwlock_tryrdlock, __pthread_rwlock_tryrdlock)
 weak_alias(pthread_rwlock_trywrlock, __pthread_rwlock_trywrlock)
 
 
-/* I've no idea what these are, but they get called quite a lot.
-   Anybody know? */
-
 #ifndef __UCLIBC__
+/* These are called as part of stdio to lock the FILE structure for MT
+   programs.  Unfortunately, the lock is not always a pthreads lock -
+   the NPTL version uses a lighter-weight lock which uses futex
+   directly (and uses a structure which is smaller than
+   pthread_mutex).  So basically, this is completely broken on recent
+   glibcs. */
+
 #undef _IO_flockfile
 void _IO_flockfile ( _IO_FILE * file )
 {
    pthread_mutex_lock(file->_lock);
 }
+strong_alias(_IO_flockfile, __flockfile);
 weak_alias(_IO_flockfile, flockfile);
 
 #undef _IO_funlockfile
@@ -2934,6 +3087,7 @@ void _IO_funlockfile ( _IO_FILE * file )
 {
    pthread_mutex_unlock(file->_lock);
 }
+strong_alias(_IO_funlockfile, __funlockfile);
 weak_alias(_IO_funlockfile, funlockfile);
 #endif
 

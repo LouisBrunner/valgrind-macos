@@ -42,6 +42,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	sha1_test.stderr.exp sha1_test.vgtest \
 	shortpush.stderr.exp shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \
+	tls.stderr.exp tls.stdout.exp tls.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	syscall-restart1.vgtest syscall-restart1.stdout.exp syscall-restart1.stderr.exp \
 	syscall-restart2.vgtest syscall-restart2.stdout.exp syscall-restart2.stderr.exp \
@@ -53,7 +54,7 @@ check_PROGRAMS = \
 	fucomip insn_mmx insn_sse insn_sse2 \
 	munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
-	pth_blockedsig \
+	tls.so tls2.so tls pth_blockedsig \
 	syscall-restart1 syscall-restart2 \
 	coolo_sigaction gxx304 yield
 
@@ -95,8 +96,20 @@ shortpush_SOURCES 	= shortpush.c
 shorts_SOURCES 		= shorts.c
 syscall_restart1_SOURCES = syscall-restart1.c
 syscall_restart2_SOURCES = syscall-restart2.c
+tls_SOURCES		= tls.c tls2.c
+tls_DEPENDENCIES	= tls.so
+tls_LDFLAGS		= -Wl,-rpath,$(srcdir)
+tls_LDADD		= tls.so -lpthread
+tls_so_SOURCES		= tls_so.c
+tls_so_LDADD		= tls2.so
+tls_so_DEPENDENCIES	= tls2.so
+tls_so_LDFLAGS		= -Wl,-rpath,$(srcdir) -shared
+tls2_so_SOURCES		= tls2_so.c
+tls2_so_LDFLAGS		= -shared
 yield_SOURCES		= yield.c
 yield_LDADD		= -lpthread
+
+tls_so.o tls2_so.o: CFLAGS += -fpic
 
 # pthread C ones
 pth_blockedsig_SOURCES	= pth_blockedsig.c

@@ -110,8 +110,8 @@ void ldt_seg_write ( int ldt_entno, unsigned offset, unsigned val )
 {
   asm volatile("movl %2, %%eax\n\t"
                "movl %1, %%edx\n\t"
-	       "movl %0, %%gs\n\t"
-               "movl %%eax, %%gs:(%%edx)\t"
+	       "movl %0, %%fs\n\t"
+               "movl %%eax, %%fs:(%%edx)\t"
 	       : 
                : "r" (7 /* LDT(TI), least privilege */ + (ldt_entno << 3)), 
                  "r" (offset), "r" (val)

@@ -624,10 +624,18 @@ extern VgLdtEntry*
          VG_(allocate_LDT_for_thread) ( VgLdtEntry* parent_ldt );
 extern void       
          VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt );
+extern void       
+         VG_(clear_TLS_for_thread) ( VgLdtEntry* tls );
 
 /* Simulate the modify_ldt syscall. */
 extern Int VG_(sys_modify_ldt) ( ThreadId tid,
                                  Int func, void* ptr, UInt bytecount );
+
+/* Simulate the {get,set}_thread_area syscalls. */
+extern Int VG_(sys_set_thread_area) ( ThreadId tid,
+                                      struct vki_modify_ldt_ldt_s* info );
+extern Int VG_(sys_get_thread_area) ( ThreadId tid,
+                                      struct vki_modify_ldt_ldt_s* info );
 
 /* Called from generated code.  Given a segment selector and a virtual
    address, return a linear address, and do limit checks too. */
@@ -802,6 +810,10 @@ typedef
       a straight copy of the Linux kernel's scheme.  Don't forget to
       deallocate this at thread exit. */
    VgLdtEntry* ldt;
+
+   /* TLS table. This consists of a small number (currently 3) of
+      entries from the Global Descriptor Table. */
+   VgLdtEntry tls[VKI_GDT_TLS_ENTRIES];
 
    /* Saved machine context.  Note the FPU state, %EIP and segment
       registers are not shadowed.
@@ -1622,6 +1634,9 @@ __attribute__ ((__noreturn__))
 extern void VG_(proxy_handlesig)( const vki_ksiginfo_t *siginfo, 
 				  const struct vki_sigcontext *sigcontext );
 
+/* Get the PID/TID of the ProxyLWP. */
+extern Int VG_(proxy_id)(ThreadId tid);
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_syscalls.c
@@ -1829,6 +1844,9 @@ extern Int VGOFF_(sh_eflags);
 
 /* This thread's LDT pointer. */
 extern Int VGOFF_(ldt);
+
+/* This thread's TLS pointer. */
+extern Int VGOFF_(tls);
 
 /* Nb: Most helper offsets are in include/vg_skin.h, for use by skins */
 

@@ -3109,7 +3109,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 //..          case Xsse_SQRTF:  *p++ = 0x51; break;
          case Asse_SUBF:   *p++ = 0x5C; break;
 //..          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
-//..          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
+         case Asse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
 //..          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
          default: goto bad;
       }

@@ -2976,6 +2976,16 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dst, rsp0 ));
          add_to_rsp(env, 16);
          return dst;
+      } else 
+      if (e->Iex.Const.con->Ico.V128 == 0x000F) {
+         HReg tmp = newVRegI(env);
+         AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
+         addInstr(env, AMD64Instr_Imm64(0xFFFFFFFFULL, tmp));
+         addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
+         addInstr(env, AMD64Instr_Push(AMD64RMI_Reg(tmp)));
+         addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 16, dst, rsp0 ));
+         add_to_rsp(env, 16);
+         return dst;
       } else {
          goto vec_fail;
 #        if 0
@@ -3238,7 +3248,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       }
 
 //..       case Iop_CmpEQ32F0x4: op = Xsse_CMPEQF; goto do_32F0x4;
-//..       case Iop_CmpLT32F0x4: op = Xsse_CMPLTF; goto do_32F0x4;
+      case Iop_CmpLT32F0x4: op = Asse_CMPLTF; goto do_32F0x4;
 //..       case Iop_CmpLE32F0x4: op = Xsse_CMPLEF; goto do_32F0x4;
       case Iop_Add32F0x4:   op = Asse_ADDF;   goto do_32F0x4;
       case Iop_Div32F0x4:   op = Asse_DIVF;   goto do_32F0x4;

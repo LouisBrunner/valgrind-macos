@@ -3605,9 +3605,9 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
          case 4: /* MUL (unsigned widening) */
             codegen_mulL_A_D ( sz, False, t1, dis_buf );
             break;
-//..          case 5: /* IMUL */
-//..             codegen_mulL_A_D ( sz, True, t1, dis_buf );
-//..             break;
+         case 5: /* IMUL */
+            codegen_mulL_A_D ( sz, True, t1, dis_buf );
+            break;
          case 6: /* DIV */
             codegen_div ( sz, t1, False );
             DIP("div%c %s\n", nameISize(sz), dis_buf);
@@ -8060,11 +8060,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 0F 55 = ANDNPS -- G = (not G) and E */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x55) {
-//..       delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "andnps", Iop_And128 );
-//..       goto decode_success;
-//..    }
+   /* 0F 55 = ANDNPS -- G = (not G) and E */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x55) {
+      delta = dis_SSE_E_to_G_all_invG( pfx, delta+2, "andnps", Iop_AndV128 );
+      goto decode_success;
+   }
 
    /* 0F 54 = ANDPS -- G = G and E */
    if (haveNo66noF2noF3(pfx) && sz == 4 
@@ -8078,13 +8079,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSEcmp_E_to_G( sorb, delta+2, "cmpps", True, 4 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* F3 0F C2 = CMPSS -- 32F0x4 comparison from R/M to R */
-//..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xC2) {
-//..       vassert(sz == 4);
-//..       delta = dis_SSEcmp_E_to_G( sorb, delta+3, "cmpss", False, 4 );
-//..       goto decode_success;
-//..    }
+
+   /* F3 0F C2 = CMPSS -- 32F0x4 comparison from R/M to R */
+   if (haveF3no66noF2(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0xC2) {
+      delta = dis_SSEcmp_E_to_G( pfx, delta+2, "cmpss", False, 4 );
+      goto decode_success;
+   }
 
    /* 0F 2F = COMISS  -- 32F0x4 comparison G,E, and set ZCP */
    /* 0F 2E = UCOMISS -- 32F0x4 comparison G,E, and set ZCP */
@@ -8700,12 +8701,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* 0F 56 = ORPS -- G = G and E */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x56) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "orps", Iop_Or128 );
-//..       goto decode_success;
-//..    }
-//.. 
+   /* 0F 56 = ORPS -- G = G and E */
+   if (haveNo66noF2noF3(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x56) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "orps", Iop_OrV128 );
+      goto decode_success;
+   }
+
 //..    /* ***--- this is an MMX class insn introduced in SSE1 ---*** */
 //..    /* 0F E0 = PAVGB -- 8x8 unsigned Packed Average, with rounding */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xE0) {

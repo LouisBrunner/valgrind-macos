@@ -79,7 +79,6 @@ stage2_SOURCES = \
 	vg_toolint.c \
 	vg_translate.c \
 	vg_transtab.c \
-	vg_ldt.c \
 	vg_cpuid.S
 stage2_DEPENDENCIES = $(srcdir)/valgrind.vs x86/stage2.lds
 stage2_LDFLAGS=-Wl,--export-dynamic -Wl,-e,_ume_entry  -g \
@@ -92,6 +91,7 @@ stage2_LDADD= \
 	demangle/dyn-string.o \
 	demangle/safe-ctype.o \
 	${VG_ARCH}/libarch.a \
+	${VG_PLATFORM}/libplatform.a \
 	-ldl
 
 vg_intercept.c: $(srcdir)/gen_intercepts.pl $(srcdir)/vg_intercept.c.base

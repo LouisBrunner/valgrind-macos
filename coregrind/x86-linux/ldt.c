@@ -91,7 +91,6 @@
 /* The size of each LDT entry == sizeof(VgLdtEntry) */
 #define VG_LDT_ENTRY_SIZE     8
 
-
 /* Allocate and deallocate LDTs for threads. */
 
 /* Create an LDT.  If the parent_ldt is NULL, zero out the

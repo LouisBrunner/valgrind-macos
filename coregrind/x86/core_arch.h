@@ -193,8 +193,10 @@ extern void VG_(helper_AAM);
 extern void VG_(helper_cmpxchg8b);
 
 /* ---------------------------------------------------------------------
-   Exports of vg_ldt.c
+   LDT type             
    ------------------------------------------------------------------ */
+
+// XXX: eventually this will be x86-private, not seen by the core(?)
 
 /* This is the hardware-format for a segment descriptor, ie what the
    x86 actually deals with.  It is 8 bytes long.  It's ugly.  */
@@ -222,7 +224,6 @@ typedef struct _LDT_ENTRY {
     } 
     LdtEnt;
 } VgLdtEntry;
-
 
 /* ---------------------------------------------------------------------
    Constants pertaining to the simulated CPU state, VG_(baseBlock),

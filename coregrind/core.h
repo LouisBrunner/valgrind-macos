@@ -608,25 +608,6 @@ struct vg_mallocfunc_info {
 extern Bool VG_(sk_malloc_called_by_scheduler);
 
 /* ---------------------------------------------------------------------
-   Exports of vg_ldt.c
-   ------------------------------------------------------------------ */
-
-/* Simulate the modify_ldt syscall. */
-extern Int VG_(sys_modify_ldt) ( ThreadId tid,
-                                 Int func, void* ptr, UInt bytecount );
-
-/* Simulate the {get,set}_thread_area syscalls. */
-extern Int VG_(sys_set_thread_area) ( ThreadId tid,
-                                      struct vki_modify_ldt_ldt_s* info );
-extern Int VG_(sys_get_thread_area) ( ThreadId tid,
-                                      struct vki_modify_ldt_ldt_s* info );
-
-/* Called from generated code.  Given a segment selector and a virtual
-   address, return a linear address, and do limit checks too. */
-extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
-
-
-/* ---------------------------------------------------------------------
    Exports of vg_libpthread.c
    ------------------------------------------------------------------ */
 

@@ -324,12 +324,12 @@ void VG_(unimplemented) ( Char* msg )
 }
 
 /* Get the simulated stack pointer */
-Addr VG_(get_stack_pointer) ( ThreadId tid )
+Addr VG_(get_SP) ( ThreadId tid )
 {
    return STACK_PTR( VG_(threads)[tid].arch );
 }
 
-Addr VG_(get_EIP) ( ThreadId tid )
+Addr VG_(get_IP) ( ThreadId tid )
 {
    return INSTR_PTR( VG_(threads)[tid].arch );
 }

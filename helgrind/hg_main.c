@@ -3033,7 +3033,7 @@ static void eraser_mem_read_word(Addr a, ThreadId tid)
       EC_IP ecip;
 
       if (clo_execontext == EC_Some)
-	 ecip = IP(VG_(get_EIP)(tid), prevstate, tls);
+	 ecip = IP(VG_(get_IP)(tid), prevstate, tls);
       else
 	 ecip = EC(VG_(get_ExeContext)(tid), prevstate, tls);
       setExeContext(a, ecip);
@@ -3138,7 +3138,7 @@ static void eraser_mem_write_word(Addr a, ThreadId tid)
       EC_IP ecip;
 
       if (clo_execontext == EC_Some)
-	 ecip = IP(VG_(get_EIP)(tid), prevstate, tls);
+	 ecip = IP(VG_(get_IP)(tid), prevstate, tls);
       else
 	 ecip = EC(VG_(get_ExeContext)(tid), prevstate, tls);
       setExeContext(a, ecip);

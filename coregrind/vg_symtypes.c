@@ -712,7 +712,7 @@ Char *VG_(describe_addr)(ThreadId tid, Addr addr)
    found = NULL;
    keeplist = NULL;
 
-   eip = VG_(get_EIP)(tid);
+   eip = VG_(get_IP)(tid);
    list = VG_(get_scope_variables)(tid);
 
    if (memaccount) {

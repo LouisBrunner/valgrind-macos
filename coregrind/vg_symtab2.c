@@ -2046,7 +2046,7 @@ static UInt *regaddr(ThreadId tid, Int regno)
    if (ret == 0) {
       Char file[100];
       Int line;
-      Addr eip = VG_(get_EIP)(tid);
+      Addr eip = VG_(get_IP)(tid);
 
       if (!VG_(get_filename_linenum)(eip, file, sizeof(file), &line))
 	 file[0] = 0;
@@ -2073,7 +2073,7 @@ Variable *VG_(get_scope_variables)(ThreadId tid)
 
    list = end = NULL;
 
-   eip = VG_(get_EIP)(tid);
+   eip = VG_(get_IP)(tid);
    
    search_all_scopetabs(eip, &si, &scopeidx);
 

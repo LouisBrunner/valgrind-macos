@@ -296,8 +296,9 @@ extern ThreadId VG_(first_matching_thread_stack)
                         ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
                           void* d );
 
-/* Get the simulated %esp */
-extern Addr VG_(get_stack_pointer) ( ThreadId tid );
+/* Get parts of the client's state. */
+extern Addr VG_(get_SP) ( ThreadId tid );
+extern Addr VG_(get_IP) ( ThreadId tid );
 
 
 /*====================================================================*/
@@ -609,12 +610,6 @@ extern ExeContext* VG_(get_ExeContext) ( ThreadId tid );
    --show-below-main=yes is set. */
 extern void VG_(apply_ExeContext)( void(*action)(UInt n, Addr ip),
                                    ExeContext* ec, UInt n_ips );
-
-/* Just grab the client's IP, as a much smaller and cheaper
-   indication of where they are.  Use is basically same as for
-   VG_(get_ExeContext)() above.
-*/
-extern Addr VG_(get_EIP)( ThreadId tid );
 
 /* For tools needing more control over stack traces:  walks the stack to get
    instruction pointers from the top stack frames for thread 'tid'.  Maximum of

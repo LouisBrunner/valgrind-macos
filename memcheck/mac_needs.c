@@ -441,10 +441,7 @@ void MAC_(record_address_error) ( ThreadId tid, Addr a, Int size,
    MAC_Error err_extra;
    Bool      just_below_esp;
 
-   just_below_esp = is_just_below_ESP( 
-                       VG_(get_stack_pointer)(tid),
-                       a 
-                    );
+   just_below_esp = is_just_below_ESP( VG_(get_SP)(tid), a );
 
    /* If this is caused by an access immediately below %ESP, and the
       user asks nicely, we just ignore it. */

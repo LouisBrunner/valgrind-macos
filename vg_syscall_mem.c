@@ -2048,7 +2048,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                }
                KERNEL_DO_SYSCALL(tid,res);
                if (size > 0 && (dir & _IOC_READ)
-                   && !VG_(is_kerror)(res) && res == 0)
+                   && !VG_(is_kerror)(res) && res == 0
+                   && arg3 != (Addr)NULL)
                   make_readable (arg3, size);
                break;
             }

@@ -39,7 +39,7 @@ JIT speedups
 ~~~~~~~~~~~~
 Ensure incremental flatness throughout
 
-Profile again with memcheck
+Profile again with cachegrind/calltree
 
 change IRTemp to 16 bits?
 

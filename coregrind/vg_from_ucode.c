@@ -1580,6 +1580,27 @@ static void emit_SSE4 ( FlagSet uses_sflags,
                   (UInt)third_byte, (UInt)fourth_byte );
 }
 
+static void emit_SSE5 ( FlagSet uses_sflags, 
+                         FlagSet sets_sflags,
+                         UChar first_byte, 
+                         UChar second_byte, 
+			 UChar third_byte,
+			 UChar fourth_byte,
+			 UChar fifth_byte )
+{
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
+   VG_(emitB) ( first_byte );
+   VG_(emitB) ( second_byte );
+   VG_(emitB) ( third_byte );
+   VG_(emitB) ( fourth_byte );
+   VG_(emitB) ( fifth_byte );
+   if (dis)
+      VG_(printf)("\n\t\tsse-0x%x:0x%x:0x%x:0x%x:0x%x\n", 
+                  (UInt)first_byte, (UInt)second_byte, 
+                  (UInt)third_byte, (UInt)fourth_byte,
+                  (UInt)fifth_byte );
+}
+
 static void emit_SSE3 ( FlagSet uses_sflags, 
                          FlagSet sets_sflags,
                          UChar first_byte, 
@@ -3870,6 +3891,24 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                              u->val2 & 0xFF,
                              u->lit32 & 0xFF,
                              u->val3 );
+         break;
+
+      case SSE5:
+         vg_assert(u->size == 0);
+         vg_assert(u->tag1 == Lit16);
+         vg_assert(u->tag2 == Lit16);
+         vg_assert(u->tag3 == Lit16);
+         vg_assert(!anyFlagUse(u));
+         if (!(*sselive)) {
+            emit_get_sse_state();
+            *sselive = True;
+         }
+         emit_SSE5 ( u->flags_r, u->flags_w,
+                     (u->val1 >> 8) & 0xFF,
+                     u->val1 & 0xFF,
+                     (u->val2 >> 8) & 0xFF,
+                     u->val2 & 0xFF,
+                     u->val3 & 0xFF );
          break;
 
       case SSE4:

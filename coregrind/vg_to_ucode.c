@@ -3394,6 +3394,45 @@ Addr dis_SSE2_reg_or_mem_Imm8 ( UCodeBlock* cb,
 }
 
 
+/* Simple SSE operations, either 
+       op   (src)xmmreg, (dst)xmmreg
+   or
+       op   (src)address, (dst)xmmreg
+   3 opcode bytes and an 8-bit immediate after the amode.
+   Supplied eip points to the first address mode byte.
+*/
+static
+Addr dis_SSE3_reg_or_mem_Imm8 ( UCodeBlock* cb, 
+                                UChar sorb, 
+				Addr eip,
+                                Int sz, 
+                                Char* name,
+				UChar opc1, 
+				UChar opc2,
+                                UChar opc3 )
+{
+   UChar modrm = getUChar(eip);
+   UChar imm8;
+   if (epartIsReg(modrm)) {
+      /* Completely internal SSE insn. */
+      eip++;
+      imm8 = getUChar(eip);
+      uInstr3(cb, SSE5, 0,  /* ignore sz for internal ops */
+                  Lit16, (((UShort)opc1) << 8) | (UShort)opc2,
+                  Lit16, (((UShort)opc3) << 8) | (UShort)modrm,
+                  Lit16, (UShort)imm8 );
+      if (dis)
+         VG_(printf)("%s %s, %s\n", name, 
+                     nameXMMReg(eregOfRM(modrm)), 
+                     nameXMMReg(gregOfRM(modrm)) );
+      eip++;
+   } else {
+      VG_(core_panic)("dis_SSE3_reg_or_mem_Imm8: mem");
+   }
+   return eip;
+}
+
+
 /* Disassemble an SSE insn which is either a simple reg-reg move or a
    move between registers and memory.  Supplied eip points to the
    first address mode byte.
@@ -3734,6 +3773,15 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* PSHUFD */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x70) {
+      eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, 
+                                           "pshufd",
+                                           0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
    /* SHUFPS */
    if (insn[0] == 0x0F && insn[1] == 0xC6) {
       vg_assert(sz == 4);
@@ -3766,7 +3814,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-#if 0
    /* SUBSD */
    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x5C) {
       vg_assert(sz == 4);
@@ -3774,7 +3821,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                                       insn[0], insn[1], insn[2] );
       goto decode_success;
    }
-#endif
 
    /* ADDSD */
    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x58) {
@@ -3800,11 +3846,29 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* PAND (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0xDB) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pand",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* POR (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0xEB) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "por",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
    /* PUNPCKLgg (src)xmmreg-or-mem, (dst)xmmreg */
    /* 60 is BW, 61 is WD, 62 is DQ */
    if (sz == 2
-       && insn[0] == 0x0F && insn[1] == 0x62) {
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "punpckldq",
+       && insn[0] == 0x0F 
+       && (insn[1] == 0x61 || insn[1] == 0x62)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
+                                      "punpckl{bw,wd,dq}",
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
@@ -3863,10 +3927,25 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* MOVAPS (28,29) -- aligned load/store of XMM reg, or x-x reg
+   /* I don't understand how MOVAPD differs from MOVAPS. */
+   /* MOVAPD (28,29) -- aligned load/store of xmm reg, or xmm-xmm reg
       move */
-   /* MOVUPS (10,11) -- unaligned load/store of XMM reg, or x-x reg
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x28) {
+      UChar* name = "movapd";
+                    //(insn[1] == 0x10 || insn[1] == 0x11)
+                    // ? "movups" : "movaps";
+      Bool store = False; //insn[1] == 0x29 || insn[1] == 11;
+      eip = dis_SSE3_load_store_or_mov
+               ( cb, sorb, eip+2, 16, store, name,
+                     0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* MOVAPS (28,29) -- aligned load/store of xmm reg, or xmm-xmm reg
       move */
+   /* MOVUPS (10,11) -- unaligned load/store of xmm reg, or xmm-xmm
+      reg move */
    if (insn[0] == 0x0F && (insn[1] == 0x28
                            || insn[1] == 0x29
                            || insn[1] == 0x10
@@ -5412,35 +5491,55 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          break;
 
       case 0x71: case 0x72: case 0x73: 
-         /* PSLL/PSRA/PSRL mmxreg by imm8 */
+         /* (sz==4): PSLL/PSRA/PSRL mmxreg by imm8 */
+         /* (sz==2): PSLL/PSRA/PSRL xmmreg by imm8 */
          {
-         UChar byte1, byte2, byte3, subopc, mmxreg;
-         vg_assert(sz == 4);
-         byte1 = opc;
-         byte2 = getUChar(eip); eip++;
-         byte3 = getUChar(eip); eip++;
-         mmxreg = byte2 & 7;
+         UChar byte1, byte2, byte3, subopc, mmreg;
+         vg_assert(sz == 4 || sz == 2);
+         byte1 = opc;                   /* 0x71/72/73 */
+         byte2 = getUChar(eip); eip++;  /* amode / sub-opcode */
+         byte3 = getUChar(eip); eip++;  /* imm8 */
+         mmreg = byte2 & 7;
          subopc = (byte2 >> 3) & 7;
          if (subopc == 2 || subopc == 6 || subopc == 4) {  
             /* 2 == 010 == SRL, 6 == 110 == SLL, 4 == 100 == SRA */
             /* ok */
          } else {
-            eip -= 2;
+            eip -= (sz==2 ? 3 : 2);
             goto decode_failure;
          }
-         uInstr2(cb, MMX3, 0, 
-                     Lit16, (((UShort)byte1) << 8) | ((UShort)byte2),
-                     Lit16, ((UShort)byte3) );
-         if (dis)
-            VG_(printf)("ps%s%s $%d, %s\n",
-                        (subopc == 2 ? "rl" 
-                         : subopc == 6 ? "ll" 
-                         : subopc == 4 ? "ra"
-                         : "??"),
-                        nameMMXGran(opc & 3),
-                        (Int)byte3,
-                        nameMMXReg(mmxreg) );
-         }
+         if (sz == 4) {
+            /* The leading 0x0F is implied for MMX*, so we don't
+	       include it. */
+            uInstr2(cb, MMX3, 0, 
+                        Lit16, (((UShort)byte1) << 8) | ((UShort)byte2),
+                        Lit16, ((UShort)byte3) );
+            if (dis)
+               VG_(printf)("ps%s%s $%d, %s\n",
+                           (subopc == 2 ? "rl" 
+                            : subopc == 6 ? "ll" 
+                            : subopc == 4 ? "ra"
+                            : "??"),
+                           nameMMXGran(opc & 3),
+                           (Int)byte3,
+                           nameMMXReg(mmreg) );
+	 } else {
+            /* Whereas we have to include it for SSE. */
+            uInstr3(cb, SSE5, 0, 
+                        Lit16, (((UShort)0x66) << 8) | ((UShort)0x0F),
+                        Lit16, (((UShort)byte1) << 8) | ((UShort)byte2),
+                        Lit16, ((UShort)byte3) );
+            if (dis)
+               VG_(printf)("ps%s%s $%d, %s\n",
+                           (subopc == 2 ? "rl" 
+                            : subopc == 6 ? "ll" 
+                            : subopc == 4 ? "ra"
+                            : "??"),
+                           nameMMXGran(opc & 3),
+                           (Int)byte3,
+                           nameXMMReg(mmreg) );
+	 }
+	 }
          break;
 
       case 0x77: /* EMMS */

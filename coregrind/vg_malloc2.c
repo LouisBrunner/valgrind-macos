@@ -338,7 +338,7 @@ static Arena* arenaId_to_ArenaP ( ArenaId arena )
 }
 
 // Initialise an arena.  rz_szB is the minimum redzone size;  it might be
-// made bigger to ensure that VG_MIN_MALLOC_ALIGNMENT is observed.
+// made bigger to ensure that VG_MIN_MALLOC_SZB is observed.
 static
 void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
 {
@@ -351,7 +351,7 @@ void arena_init ( ArenaId aid, Char* name, SizeT rz_szB, SizeT min_sblock_szB )
    a->clientmem = ( VG_AR_CLIENT == aid ? True : False );
 
    // The size of the low and high admin sections in a block must be a
-   // multiple of VG_MIN_MALLOC_ALIGNMENT.  So we round up the asked-for
+   // multiple of VG_MIN_MALLOC_SZB.  So we round up the asked-for
    // redzone size if necessary to achieve this.
    a->rz_szB = rz_szB;
    while (0 != overhead_szB_lo(a) % VG_MIN_MALLOC_SZB) a->rz_szB++;

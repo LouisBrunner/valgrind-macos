@@ -1,0 +1,2 @@
+prog: scalar_exit_group
+vgopts: -q

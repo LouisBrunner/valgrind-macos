@@ -49,6 +49,7 @@ realloc1
 realloc2
 realloc3
 scalar
+scalar_exit_group
 scalar_fork
 scalar_supp
 scalar_vfork

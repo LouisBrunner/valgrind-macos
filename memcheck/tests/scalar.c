@@ -8,14 +8,16 @@ int main(void)
 
    // All __NR_xxx numbers are taken from x86
 
-   // __NR_restart_syscall 1  XXX ???
+   // __NR_restart_syscall 0  XXX ???
    // (see below)
 
    // __NR_exit 1 
+   GO(__NR_exit, "other");
    // (see below)
 
    // __NR_fork 2
-   // (see scalar_fork.c)
+   GO(__NR_fork, "0s 0m");
+   // (sse scalar_fork.c)
 
    // __NR_read 3
    // Nb: here we are also getting an error from the syscall arg itself.
@@ -795,8 +797,8 @@ int main(void)
  //SY(__NR_putpmsg);
 
    // __NR_vfork 190
-   GO(__NR_vfork, "n/a");
-   // (Valgrind converts this to __NR_fork)
+   GO(__NR_vfork, "0s 0m");
+   // (sse scalar_vfork.c)
 
    // __NR_ugetrlimit 191
    GO(__NR_ugetrlimit, "2s 1m");
@@ -1043,7 +1045,8 @@ int main(void)
    SY(251);
 
    // __NR_exit_group 252
-   // (XXX: implement in scalar_exit_group)
+   GO(__NR_exit_group, "other");
+   // (see scalar_exit_group.c)
 
    // __NR_lookup_dcookie 253
    GO(__NR_lookup_dcookie, "4s 1m");

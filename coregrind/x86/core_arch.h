@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*---                                              x86/core_arch.h ---*/
+/*--- Arch-specific stuff for the core.            x86/core_arch.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -65,6 +65,7 @@ typedef struct _LDT_ENTRY {
     LdtEnt;
 } VgLdtEntry;
 
+
 /* ---------------------------------------------------------------------
    Constants pertaining to the simulated CPU state, VG_(baseBlock),
    which need to go here to avoid ugly circularities.
@@ -86,6 +87,8 @@ typedef struct _LDT_ENTRY {
 
 
 // Architecture-specific part of a ThreadState
+// XXX: eventually this should be made abstract, ie. the fields not visible
+//      to the core...
 typedef struct {
    /* Pointer to this thread's Local (Segment) Descriptor Table.
       Starts out as NULL, indicating there is no table, and we hope to
@@ -141,6 +144,14 @@ typedef struct {
    UInt sh_eflags;
 } 
 arch_thread_t;
+
+
+/* ---------------------------------------------------------------------
+   Constants involving memory layout
+   ------------------------------------------------------------------ */
+
+// base address of client address space
+#define CLIENT_BASE	0x00000000ul
 
 #endif   // __X86_CORE_ARCH_H
 

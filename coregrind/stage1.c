@@ -44,7 +44,6 @@
 
 #include "ume.h"
 #include "ume_arch.h"
-#include "ume_archdefs.h"
 
 static int stack[SIGSTKSZ*4];
 
@@ -209,7 +208,7 @@ static void hoops(void)
    ume_go(info.init_eip, (addr_t)esp);   
 }
 
-int main(int argc, char **argv)
+int main(void)
 {
    struct rlimit rlim;
    const char *cp = getenv(VALGRINDLIB);

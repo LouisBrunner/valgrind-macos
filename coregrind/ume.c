@@ -482,6 +482,10 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
 	       interp_size = end;
 	 }
 	 break;
+
+      default:
+         // do nothing
+         break;
       }
       }
    }

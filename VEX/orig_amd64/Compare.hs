@@ -15,6 +15,10 @@ import Char ( isSpace )
       insn(possibly with spaces)
 
    Purpose is to extract the insn (text), remove spaces, and compare.
+
+   How to use:
+(cd .. && make) && (../vex test1.orig | grep LALALA | cut -b 22- > out.txt)
+/home/sewardj/Tools/HugsInst/bin/runhugs Compare.hs | grep FAIL 
 -}
 
 main = mayn "test1.sorted" "out.txt"

@@ -36,36 +36,27 @@
 //#include "platform_arch.h"        // platform-specific tool stuff
 
 /* ---------------------------------------------------------------------
-   Interesting registers
+   Dealing with registers
    ------------------------------------------------------------------ */
 
 // Accessors for the ThreadArchState
-#define PLATFORM_SYSCALL_NUM(regs)     ((regs).vex.guest_EAX)
-#define PLATFORM_SYSCALL_RET(regs)     ((regs).vex.guest_EAX)
-#define PLATFORM_SYSCALL_ARG1(regs)    ((regs).vex.guest_EBX)
-#define PLATFORM_SYSCALL_ARG2(regs)    ((regs).vex.guest_ECX)
-#define PLATFORM_SYSCALL_ARG3(regs)    ((regs).vex.guest_EDX)
-#define PLATFORM_SYSCALL_ARG4(regs)    ((regs).vex.guest_ESI)
-#define PLATFORM_SYSCALL_ARG5(regs)    ((regs).vex.guest_EDI)
-#define PLATFORM_SYSCALL_ARG6(regs)    ((regs).vex.guest_EBP)
+#define PLATFORM_SYSCALL_NUM     guest_EAX
+#define PLATFORM_SYSCALL_ARG1    guest_EBX
+#define PLATFORM_SYSCALL_ARG2    guest_ECX
+#define PLATFORM_SYSCALL_ARG3    guest_EDX
+#define PLATFORM_SYSCALL_ARG4    guest_ESI
+#define PLATFORM_SYSCALL_ARG5    guest_EDI
+#define PLATFORM_SYSCALL_ARG6    guest_EBP
+#define PLATFORM_SYSCALL_RET     guest_EAX
 
+// Setting a syscall result
 #define PLATFORM_SET_SYSCALL_RESULT(regs, val)     \
    ((regs).vex.guest_EAX = (val))
 
-// Interesting register numbers
-#define R_SYSCALL_NUM                  R_EAX
-#define R_SYSCALL_ARG1                 R_EBX
-#define R_SYSCALL_ARG2                 R_ECX
-#define R_SYSCALL_ARG3                 R_EDX
-#define R_SYSCALL_ARG4                 R_ESI
-#define R_SYSCALL_ARG5                 R_EDI
-#define R_SYSCALL_ARG6                 R_EBP
-#define R_SYSCALL_RET                  R_EAX
-
 // Setting thread regs and shadow regs from within the core
 #define SET_SYSCALL_RETVAL(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, PLATFORM_SYSCALL_RET, R_SYSCALL_RET, \
-                  post_reg_write_syscall_return)
+   SET_THREAD_REG(zztid, zzval, SYSCALL_RET, post_reg_write, \
+                  Vg_CoreSysCall, zztid, O_SYSCALL_RET, sizeof(UWord))
 
 /* ---------------------------------------------------------------------
    Exports of vg_ldt.c
@@ -115,7 +106,7 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
 }
 
 #define PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do {\
-   UInt *arg_block = (UInt*)PLATFORM_SYSCALL_ARG1(tst->arch);   \
+   UInt *arg_block = (UInt*)SYSCALL_ARG1(tst->arch);            \
    PRE_MEM_READ( "old_mmap(args)", arg1, 6*sizeof(UWord) );     \
    a1 = arg_block[0];                                           \
    a2 = arg_block[1];                                           \

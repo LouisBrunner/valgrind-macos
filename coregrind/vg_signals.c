@@ -481,9 +481,9 @@ void VG_(do_sys_sigaltstack) ( ThreadId tid )
    Addr         m_SP;
 
    vg_assert(VG_(is_valid_tid)(tid));
-   ss    = (vki_stack_t*)PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
-   oss   = (vki_stack_t*)PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch);
-   m_SP  = ARCH_STACK_PTR(VG_(threads)[tid].arch);
+   ss    = (vki_stack_t*)SYSCALL_ARG1(VG_(threads)[tid].arch);
+   oss   = (vki_stack_t*)SYSCALL_ARG2(VG_(threads)[tid].arch);
+   m_SP  = STACK_PTR(VG_(threads)[tid].arch);
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
@@ -498,7 +498,7 @@ void VG_(do_sys_sigaltstack) ( ThreadId tid )
    }
 
    if (ss != NULL) {
-      if (on_sig_stack(tid, ARCH_STACK_PTR(VG_(threads)[tid].arch))) {
+      if (on_sig_stack(tid, STACK_PTR(VG_(threads)[tid].arch))) {
          SET_SYSCALL_RETVAL(tid, -VKI_EPERM);
          return;
       }
@@ -534,9 +534,9 @@ void VG_(do_sys_sigaction) ( ThreadId tid )
    vg_assert(is_correct_sigmask());
 
    vg_assert(VG_(is_valid_tid)(tid));
-   signo   =                        PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
-   new_act = (struct vki_sigaction*)PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch);
-   old_act = (struct vki_sigaction*)PLATFORM_SYSCALL_ARG3(VG_(threads)[tid].arch);
+   signo   =                        SYSCALL_ARG1(VG_(threads)[tid].arch);
+   new_act = (struct vki_sigaction*)SYSCALL_ARG2(VG_(threads)[tid].arch);
+   old_act = (struct vki_sigaction*)SYSCALL_ARG3(VG_(threads)[tid].arch);
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
@@ -839,7 +839,7 @@ void vg_push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
        && /* there is a defined and enabled alt stack, which we're not
              already using.  Logic from get_sigframe in
              arch/i386/kernel/signal.c. */
-          sas_ss_flags(tid, ARCH_STACK_PTR(tst->arch)) == 0
+          sas_ss_flags(tid, STACK_PTR(tst->arch)) == 0
       ) {
       esp_top_of_frame 
          = (Addr)(tst->altstack.ss_sp) + tst->altstack.ss_size;
@@ -852,7 +852,7 @@ void vg_push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
       
    } else {
-      esp_top_of_frame = ARCH_STACK_PTR(tst->arch);
+      esp_top_of_frame = STACK_PTR(tst->arch);
 
       /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
@@ -1503,8 +1503,8 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_siginfo_t *info, Bool async )
 
       if (tst->status == VgTs_WaitSys) {
 	 /* blocked in a syscall; we assume it should be interrupted */
-	 if (PLATFORM_SYSCALL_RET(tst->arch) == -VKI_ERESTARTSYS)
-	    PLATFORM_SYSCALL_RET(tst->arch) = -VKI_EINTR;
+	 if (SYSCALL_RET(tst->arch) == -VKI_ERESTARTSYS)
+	    SYSCALL_RET(tst->arch) = -VKI_EINTR;
       }
 
       VG_(proxy_sigack)(tid, &tst->sig_mask);
@@ -1729,7 +1729,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
    if (info->si_signo == VKI_SIGSEGV) {
       ThreadId tid = VG_(get_current_tid)();
       Addr fault = (Addr)info->_sifields._sigfault._addr;
-      Addr esp   =  ARCH_STACK_PTR(VG_(threads)[tid].arch);
+      Addr esp   =  STACK_PTR(VG_(threads)[tid].arch);
       Segment *seg;
 
       seg = VG_(find_segment)(fault);

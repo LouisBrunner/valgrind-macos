@@ -147,8 +147,8 @@ static void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
 }
 
 #define SET_SIGNAL_ESP(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, ARCH_STACK_PTR, R_STACK_PTR, \
-                  post_reg_write_deliver_signal)
+   SET_THREAD_REG(zztid, zzval, STACK_PTR, post_reg_write, \
+                  Vg_CoreSignal, zztid, O_STACK_PTR, sizeof(Addr))
 
 void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
                              const vki_siginfo_t *siginfo,
@@ -181,7 +181,8 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
    frame->retaddr    = (UInt)VG_(client_trampoline_code)+VG_(tramp_sigreturn_offset);
    frame->sigNo      = sigNo;
    frame->sigNo_private = sigNo;
-   VG_TRACK( post_mem_write, (Addr)frame, offsetof(VgSigFrame, handlerArgs) );
+   VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
+             (Addr)frame, offsetof(VgSigFrame, handlerArgs) );
 
    if (flags & VKI_SA_SIGINFO) {
       /* if the client asked for a siginfo delivery, then build the stack that way */
@@ -189,17 +190,20 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
 		(Addr)&frame->handlerArgs, sizeof(frame->handlerArgs.sigInfo) );
       frame->handlerArgs.sigInfo.psigInfo   = (Addr)&frame->sigInfo;
       frame->handlerArgs.sigInfo.puContext = (Addr)&frame->uContext;
-      VG_TRACK( post_mem_write, (Addr)&frame->handlerArgs, sizeof(frame->handlerArgs.sigInfo) );
+      VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
+                (Addr)&frame->handlerArgs, sizeof(frame->handlerArgs.sigInfo) );
 
       VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame (siginfo)", 
 		(Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
       VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_siginfo_t));
-      VG_TRACK( post_mem_write, (Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
+      VG_TRACK( post_mem_write, Vg_CoreSignal, tid, 
+                (Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
 
       VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame (siginfo)", 
 		(Addr)&frame->uContext, sizeof(frame->uContext) );
       synth_ucontext(tid, siginfo, mask, &frame->uContext);
-      VG_TRACK( post_mem_write, (Addr)&frame->uContext, sizeof(frame->uContext) );
+      VG_TRACK( post_mem_write, Vg_CoreSignal, tid, 
+                (Addr)&frame->uContext, sizeof(frame->uContext) );
    } else {
       struct vki_ucontext uc;
 
@@ -211,8 +215,8 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
 		(Addr)&frame->handlerArgs, sizeof(frame->handlerArgs.sigContext) );
       VG_(memcpy)(&frame->handlerArgs.sigContext, &uc.uc_mcontext, 
 		  sizeof(struct vki_sigcontext));
-      VG_TRACK( post_mem_write, (Addr)&frame->handlerArgs, 
-		sizeof(frame->handlerArgs.sigContext) );
+      VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
+                (Addr)&frame->handlerArgs, sizeof(frame->handlerArgs.sigContext) );
       
       frame->handlerArgs.sigContext.oldmask = tst->sig_mask.sig[0];
    }

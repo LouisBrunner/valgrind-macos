@@ -102,10 +102,7 @@ void VG_(sanity_check_needs) ( void)
       VG_(tool_panic)("`die_mem_stack' should be defined\n");
    }
 
-   if ( (VG_(defined_post_reg_write_syscall_return)()    ||
-         VG_(defined_post_reg_write_deliver_signal)()    ||
-         VG_(defined_post_reg_write_pthread_return)()    ||
-         VG_(defined_post_reg_write_clientreq_return)()  ||
+   if ( (VG_(defined_post_reg_write)()    ||
          VG_(defined_post_reg_write_clientcall_return)()) &&
        ! VG_(needs).shadow_regs) 
    {

@@ -43,14 +43,14 @@
 #define POST(x) \
    void VGA_(linux_##x##_after) (ThreadId tid, ThreadState *tst)
 
-#define SYSNO	PLATFORM_SYSCALL_NUM(tst->arch)    // in PRE(x)
-#define res	PLATFORM_SYSCALL_RET(tst->arch)	   // in POST(x)
-#define arg1	PLATFORM_SYSCALL_ARG1(tst->arch)
-#define arg2	PLATFORM_SYSCALL_ARG2(tst->arch)
-#define arg3	PLATFORM_SYSCALL_ARG3(tst->arch)
-#define arg4	PLATFORM_SYSCALL_ARG4(tst->arch)
-#define arg5	PLATFORM_SYSCALL_ARG5(tst->arch)
-#define arg6	PLATFORM_SYSCALL_ARG6(tst->arch)
+#define SYSNO   SYSCALL_NUM(tst->arch)    // in PRE(x)
+#define res     SYSCALL_RET(tst->arch)    // in POST(x)
+#define arg1    SYSCALL_ARG1(tst->arch)
+#define arg2    SYSCALL_ARG2(tst->arch)
+#define arg3    SYSCALL_ARG3(tst->arch)
+#define arg4    SYSCALL_ARG4(tst->arch)
+#define arg5    SYSCALL_ARG5(tst->arch)
+#define arg6    SYSCALL_ARG6(tst->arch)
 
 #define set_result(val) PLATFORM_SET_SYSCALL_RESULT(tst->arch, (val))
 
@@ -127,7 +127,7 @@ PRE(sys_adjtimex, 0)
 
 POST(sys_adjtimex)
 {
-   VG_TRACK(post_mem_write, arg1, sizeof(struct vki_timex));
+   POST_MEM_WRITE( arg1, sizeof(struct vki_timex) );
 }
 
 PRE(sys_setfsuid16, 0)

@@ -450,7 +450,7 @@ Int VG_(sys_set_thread_area) ( ThreadId tid,
              "set_thread_area(info->entry)",
              (Addr) & info->entry_number, sizeof(unsigned int) );
    info->entry_number = idx + VKI_GDT_ENTRY_TLS_MIN;
-   VG_TRACK( post_mem_write,
+   VG_TRACK( post_mem_write, Vg_CoreSysCall, tid,
              (Addr) & info->entry_number, sizeof(unsigned int) );
 
    return 0;

@@ -41,21 +41,18 @@
    Interesting registers
    ------------------------------------------------------------------ */
 
-// Accessors for the ThreadArchState
-#define ARCH_INSTR_PTR(regs)           ((regs).vex.guest_EIP)
-#define ARCH_STACK_PTR(regs)           ((regs).vex.guest_ESP)
-#define ARCH_FRAME_PTR(regs)           ((regs).vex.guest_EBP)
+// Vex field names
+#define ARCH_INSTR_PTR        guest_EIP
+#define ARCH_STACK_PTR        guest_ESP
+#define ARCH_FRAME_PTR        guest_EBP
 
-#define ARCH_CLREQ_ARGS(regs)          ((regs).vex.guest_EAX)
-#define ARCH_PTHREQ_RET(regs)          ((regs).vex.guest_EDX)
-#define ARCH_CLREQ_RET(regs)           ((regs).vex.guest_EDX)
+#define ARCH_CLREQ_ARGS       guest_EAX
+#define ARCH_CLREQ_RET        guest_EDX
+#define ARCH_PTHREQ_RET       guest_EDX
 
-// Accessors for the baseBlock
-#define R_STACK_PTR                    R_ESP
-#define R_FRAME_PTR                    R_EBP
-
-#define R_CLREQ_RET                    R_EDX
-#define R_PTHREQ_RET                   R_EDX
+// Register numbers, for vg_symtab2.c
+#define R_STACK_PTR           4
+#define R_FRAME_PTR           5
 
 // Stack frame layout and linkage
 #define FIRST_STACK_FRAME(ebp)         (ebp)
@@ -155,6 +152,7 @@ typedef
    } 
    ThreadArchState;
 
+typedef VexGuestX86State VexGuestArchState;
 
 /* ---------------------------------------------------------------------
    libpthread stuff

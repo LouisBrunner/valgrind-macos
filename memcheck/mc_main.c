@@ -740,35 +740,36 @@ void mc_set_perms (Addr a, SizeT len, Bool rr, Bool ww, Bool xx)
    else         mc_make_noaccess(a, len);
 }
 
+static
+void mc_post_mem_write(CorePart part, ThreadId tid, Addr a, SizeT len)
+{
+   mc_make_readable(a, len);
+}
 
 /*------------------------------------------------------------*/
 /*--- Register event handlers                              ---*/
 /*------------------------------------------------------------*/
 
-static void mc_post_regs_write_init ( void )
+// When a reg is written, mark the corresponding shadow reg bytes as valid.
+static void mc_post_reg_write(CorePart part, ThreadId tid, OffT offset,
+                              SizeT size)
 {
-#if 0
-   UInt i;
-   for (i = FIRST_ARCH_REG; i <= LAST_ARCH_REG; i++)
-      VG_(set_shadow_archreg)( i, VGM_WORD_VALID );
-   VG_(set_shadow_eflags)( VGM_EFLAGS_VALID );
-#endif
+   UChar area[size];
+   VG_(memset)(area, VGM_BYTE_VALID, size);
+   VG_(set_shadow_regs_area)( tid, offset, size, area );
 }
 
-static void mc_post_reg_write(ThreadId tid, UInt reg)
+static void mc_post_reg_write_clientcall(ThreadId tid, OffT offset, SizeT size,
+                                         Addr f)
 {
-   VGA_(set_thread_shadow_archreg)( tid, reg, VGM_WORD_VALID );
+   mc_post_reg_write(/*dummy*/0, tid, offset, size);
 }
 
-static void mc_post_reg_write_clientcall(ThreadId tid, UInt reg, Addr f )
-{
-   VGA_(set_thread_shadow_archreg)( tid, reg, VGM_WORD_VALID );
-}
-
-static void mc_pre_reg_read(CorePart part, ThreadId tid, Char* s, UInt reg,
+static void mc_pre_reg_read(CorePart part, ThreadId tid, Char* s, OffT offset,
                             SizeT size)
 {
    UWord mask;
+   UWord sh_reg_contents;
    
    // XXX: the only one at the moment
    tl_assert(Vg_CoreSysCall == part);
@@ -780,7 +781,8 @@ static void mc_pre_reg_read(CorePart part, ThreadId tid, Char* s, UInt reg,
    default: VG_(tool_panic)("Unhandled size in mc_pre_reg_read");
    }
 
-   if (VGM_WORD_VALID != (mask & VGA_(get_thread_shadow_archreg)( tid, reg )) )
+   VG_(get_shadow_regs_area)( tid, offset, size, (UChar*)&sh_reg_contents );
+   if ( VGM_WORD_VALID != (mask & sh_reg_contents) )
       MAC_(record_param_error) ( tid, 0, /*isReg*/True, /*isUnaddr*/False, s );
 }
 
@@ -1950,15 +1952,11 @@ void TL_(pre_clo_init)(void)
    VG_(init_pre_mem_read)         ( & mc_check_is_readable );
    VG_(init_pre_mem_read_asciiz)  ( & mc_check_is_readable_asciiz );
    VG_(init_pre_mem_write)        ( & mc_check_is_writable );
-   VG_(init_post_mem_write)       ( & mc_make_readable );
+   VG_(init_post_mem_write)       ( & mc_post_mem_write );
 
    VG_(init_pre_reg_read)         ( & mc_pre_reg_read );
 
-   VG_(init_post_regs_write_init)             ( & mc_post_regs_write_init );
-   VG_(init_post_reg_write_syscall_return)    ( & mc_post_reg_write );
-   VG_(init_post_reg_write_deliver_signal)    ( & mc_post_reg_write );
-   VG_(init_post_reg_write_pthread_return)    ( & mc_post_reg_write );
-   VG_(init_post_reg_write_clientreq_return)  ( & mc_post_reg_write );
+   VG_(init_post_reg_write)                   ( & mc_post_reg_write );
    VG_(init_post_reg_write_clientcall_return) ( & mc_post_reg_write_clientcall );
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );

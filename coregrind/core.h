@@ -913,26 +913,26 @@ extern void VG_(scheduler_handle_fatal_signal)( Int sigNo );
 // Write a value to a client's thread register, and shadow (if necessary).
 // Note that there are some further similar macros in the arch- and
 // platform-specific parts;  these ones are the totally generic ones.
-#define SET_THREAD_REG( zztid, zzval, zzGETREG, zzREG, zzevent, zzargs... ) \
-   do { zzGETREG(VG_(threads)[zztid].arch) = (zzval);         \
-        VG_TRACK( zzevent, zztid, zzREG, ##zzargs );          \
+#define SET_THREAD_REG( zztid, zzval, zzGETREG, zzevent, zzargs... ) \
+   do { zzGETREG(VG_(threads)[zztid].arch) = (zzval); \
+        VG_TRACK( zzevent, ##zzargs ); \
    } while (0)
 
 #define SET_CLREQ_RETVAL(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, ARCH_CLREQ_RET, R_CLREQ_RET, \
-                  post_reg_write_clientreq_return)
+   SET_THREAD_REG(zztid, zzval, CLREQ_RET, post_reg_write, \
+                  Vg_CoreClientReq, zztid, O_CLREQ_RET, sizeof(UWord))
 
 #define SET_CLCALL_RETVAL(zztid, zzval, f) \
-   SET_THREAD_REG(zztid, zzval, ARCH_CLREQ_RET, R_CLREQ_RET, \
-                  post_reg_write_clientcall_return, f)
+   SET_THREAD_REG(zztid, zzval, CLREQ_RET, post_reg_write_clientcall_return, \
+                  zztid, O_CLREQ_RET, sizeof(UWord), f)
 
 #define SET_PTHREQ_ESP(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, ARCH_STACK_PTR, R_STACK_PTR, \
-                  post_reg_write_pthread_return)
+   SET_THREAD_REG(zztid, zzval, STACK_PTR, post_reg_write, \
+                  Vg_CorePThread, zztid, O_STACK_PTR, sizeof(Addr))
 
 #define SET_PTHREQ_RETVAL(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, ARCH_PTHREQ_RET, R_PTHREQ_RET, \
-                  post_reg_write_pthread_return)
+   SET_THREAD_REG(zztid, zzval, PTHREQ_RET, post_reg_write, \
+                  Vg_CorePThread, zztid, O_PTHREQ_RET, sizeof(UWord))
 
 
 /* ---------------------------------------------------------------------
@@ -1630,10 +1630,10 @@ GEN_SYSCALL_WRAPPER(sys_mq_getsetattr);         // * P?
 
 #define PRRSN \
       TL_(pre_reg_read)(Vg_CoreSysCall, tid, "(syscallno)", \
-                        R_SYSCALL_NUM, sizeof(UWord));
+                        O_SYSCALL_NUM, sizeof(UWord));
 #define PRRAn(n,s,t,a) \
       TL_(pre_reg_read)(Vg_CoreSysCall, tid, s"("#a")", \
-                        R_SYSCALL_ARG##n, sizeof(t));
+                        O_SYSCALL_ARG##n, sizeof(t));
 #define PRE_REG_READ0(tr, s) \
    if (VG_(defined_pre_reg_read)()) { \
       PRRSN; \
@@ -1682,7 +1682,7 @@ GEN_SYSCALL_WRAPPER(sys_mq_getsetattr);         // * P?
    VG_TRACK( pre_mem_write, Vg_CoreSysCall, tid, zzname, zzaddr, zzlen)
 
 #define POST_MEM_WRITE(zzaddr, zzlen) \
-   VG_TRACK( post_mem_write, zzaddr, zzlen)
+   VG_TRACK( post_mem_write, Vg_CoreSysCall, tid, zzaddr, zzlen)
 
 /* ---------------------------------------------------------------------
    Exports of vg_transtab.c
@@ -1754,6 +1754,23 @@ extern void VG_(missing_tool_func) ( const Char* fn );
 // Architecture-specific things defined in eg. x86/*.c
 // ---------------------------------------------------------------------
 
+// Accessors for the ThreadArchState
+#define INSTR_PTR(regs)    ((regs).vex.ARCH_INSTR_PTR)
+#define STACK_PTR(regs)    ((regs).vex.ARCH_STACK_PTR)
+#define FRAME_PTR(regs)    ((regs).vex.ARCH_FRAME_PTR)
+
+#define CLREQ_ARGS(regs)   ((regs).vex.ARCH_CLREQ_ARGS)
+#define PTHREQ_RET(regs)   ((regs).vex.ARCH_PTHREQ_RET)
+#define CLREQ_RET(regs)    ((regs).vex.ARCH_CLREQ_RET)
+
+// Offsets for the shadow state
+#define O_STACK_PTR        (offsetof(VexGuestArchState, ARCH_STACK_PTR))
+#define O_FRAME_PTR        (offsetof(VexGuestArchState, ARCH_FRAME_PTR))
+
+#define O_CLREQ_RET        (offsetof(VexGuestArchState, ARCH_CLREQ_RET))
+#define O_PTHREQ_RET       (offsetof(VexGuestArchState, ARCH_PTHREQ_RET))
+
+
 // Setting up the initial thread (1) state
 extern void 
        VGA_(init_thread1state) ( Addr client_eip, 
@@ -1769,7 +1786,7 @@ extern void VGA_(set_arg_and_bogus_ret) ( ThreadId tid, UWord arg, Addr ret );
 extern void VGA_(thread_initial_stack)  ( ThreadId tid, UWord arg, Addr ret );
 
 // Symtab stuff
-extern UInt* VGA_(reg_addr_from_tst) ( Int reg, ThreadArchState* );
+extern UInt* VGA_(reg_addr_from_tst) ( Int regno, ThreadArchState* );
 
 // Pointercheck
 extern Bool VGA_(setup_pointercheck) ( void );
@@ -1817,6 +1834,26 @@ extern void VG_(user_assert_fail) ( const Char* expr, const Char* file,
 // ---------------------------------------------------------------------
 // Platform-specific things defined in eg. x86/*.c
 // ---------------------------------------------------------------------
+
+// Accessors for the ThreadArchState
+#define SYSCALL_NUM(regs)  ((regs).vex.PLATFORM_SYSCALL_NUM)
+#define SYSCALL_ARG1(regs) ((regs).vex.PLATFORM_SYSCALL_ARG1)
+#define SYSCALL_ARG2(regs) ((regs).vex.PLATFORM_SYSCALL_ARG2)
+#define SYSCALL_ARG3(regs) ((regs).vex.PLATFORM_SYSCALL_ARG3)
+#define SYSCALL_ARG4(regs) ((regs).vex.PLATFORM_SYSCALL_ARG4)
+#define SYSCALL_ARG5(regs) ((regs).vex.PLATFORM_SYSCALL_ARG5)
+#define SYSCALL_ARG6(regs) ((regs).vex.PLATFORM_SYSCALL_ARG6)
+#define SYSCALL_RET(regs)  ((regs).vex.PLATFORM_SYSCALL_RET)
+
+// Offsets for the shadow state
+#define O_SYSCALL_NUM   (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG6))
+#define O_SYSCALL_ARG1  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG1))
+#define O_SYSCALL_ARG2  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG2))
+#define O_SYSCALL_ARG3  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG3))
+#define O_SYSCALL_ARG4  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG4))
+#define O_SYSCALL_ARG5  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG5))
+#define O_SYSCALL_ARG6  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG6))
+#define O_SYSCALL_RET   (offsetof(VexGuestArchState, PLATFORM_SYSCALL_RET))
 
 struct SyscallTableEntry {
    UInt  *flags_ptr;

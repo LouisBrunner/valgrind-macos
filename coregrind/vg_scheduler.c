@@ -148,7 +148,7 @@ ThreadId VG_(first_matching_thread_stack)
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (VG_(threads)[tid].status == VgTs_Empty) continue;
       if (tid == tid_to_skip) continue;
-      if ( p ( ARCH_STACK_PTR(VG_(threads)[tid].arch),
+      if ( p ( STACK_PTR(VG_(threads)[tid].arch),
                VG_(threads)[tid].stack_highest_word, d ) )
          return tid;
    }
@@ -180,9 +180,9 @@ void VG_(pp_sched_status) ( void )
                   VG_(threads)[i].associated_mx,
                   VG_(threads)[i].associated_cv );
       VG_(pp_ExeContext)( 
-         VG_(get_ExeContext2)( ARCH_INSTR_PTR(VG_(threads)[i].arch),
-                               ARCH_FRAME_PTR(VG_(threads)[i].arch),
-                               ARCH_STACK_PTR(VG_(threads)[i].arch),
+         VG_(get_ExeContext2)( INSTR_PTR(VG_(threads)[i].arch),
+                               FRAME_PTR(VG_(threads)[i].arch),
+                               STACK_PTR(VG_(threads)[i].arch),
                                VG_(threads)[i].stack_highest_word)
       );
    }
@@ -443,12 +443,12 @@ void handle_signal_return ( ThreadId tid )
       return;
 
    if (VG_(threads)[tid].status == VgTs_Sleeping
-       && PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_nanosleep) {
+       && SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_nanosleep) {
       /* We interrupted a nanosleep().  The right thing to do is to
          write the unused time to nanosleep's second param, but that's
          too much effort ... we just say that 1 nanosecond was not
          used, and return EINTR. */
-      rem = (struct vki_timespec*)PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch);
+      rem = (struct vki_timespec*)SYSCALL_ARG2(VG_(threads)[tid].arch);
       if (rem != NULL) {
          rem->tv_sec = 0;
          rem->tv_nsec = 1;
@@ -502,7 +502,7 @@ void sched_do_syscall ( ThreadId tid )
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
-   syscall_no = PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch);
+   syscall_no = SYSCALL_NUM(VG_(threads)[tid].arch);
 
    /* Special-case nanosleep because we can.  But should we?
 
@@ -512,7 +512,7 @@ void sched_do_syscall ( ThreadId tid )
    if (0 && syscall_no == __NR_nanosleep) {
       UInt t_now, t_awaken;
       struct vki_timespec* req;
-      req = (struct vki_timespec*)PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
+      req = (struct vki_timespec*)SYSCALL_ARG1(VG_(threads)[tid].arch);
 
       if (req->tv_sec < 0 || req->tv_nsec < 0 || req->tv_nsec >= 1000000000) {
 	 SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
@@ -821,18 +821,18 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          if (VG_(bbs_done) > 31700000 + 0) {
             dispatch_ctr_SAVED = VG_(dispatch_ctr) = 2;
             VG_(translate)(&VG_(threads)[tid], 
-                           ARCH_INSTR_PTR(VG_(threads)[tid].arch),
+                           INSTR_PTR(VG_(threads)[tid].arch),
                            /*debugging*/True);
          }
-         vg_assert(ARCH_INSTR_PTR(VG_(threads)[tid].arch) != 0);
+         vg_assert(INSTR_PTR(VG_(threads)[tid].arch) != 0);
 #        endif
 
          trc = run_thread_for_a_while ( tid );
 
 #        if 0
-         if (0 == ARCH_INSTR_PTR(VG_(threads)[tid].arch)) {
+         if (0 == INSTR_PTR(VG_(threads)[tid].arch)) {
             VG_(printf)("tid = %d,  dc = %llu\n", tid, VG_(bbs_done));
-            vg_assert(0 != ARCH_INSTR_PTR(VG_(threads)[tid].arch));
+            vg_assert(0 != INSTR_PTR(VG_(threads)[tid].arch));
          }
 #        endif
 
@@ -840,7 +840,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             thread. */
 
          if (trc == VG_TRC_INNER_FASTMISS) {
-            Addr ip = ARCH_INSTR_PTR(VG_(threads)[tid].arch);
+            Addr ip = INSTR_PTR(VG_(threads)[tid].arch);
 
             vg_assert(VG_(dispatch_ctr) > 1);
 
@@ -868,7 +868,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          }
 
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
-            UWord* args = (UWord*)(ARCH_CLREQ_ARGS(VG_(threads)[tid].arch));
+            UWord* args = (UWord*)(CLREQ_ARGS(VG_(threads)[tid].arch));
             UWord reqno = args[0];
             /* VG_(printf)("request 0x%x\n", reqno); */
 
@@ -899,7 +899,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                to exit. */
 #           if 0
             { UInt* esp; Int i;
-              esp=(UInt*)ARCH_STACK_PTR(VG_(threads)[tid].arch);
+              esp=(UInt*)STACK_PTR(VG_(threads)[tid].arch);
               VG_(printf)("\nBEFORE\n");
               for (i = 10; i >= -10; i--)
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
@@ -917,24 +917,24 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                __libc_freeres does some invalid frees which crash
                the unprotected malloc/free system. */
 
-            if (PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit
-                || PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit_group
+            if (SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit
+                || SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit_group
                ) {
 
                /* Remember the supplied argument. */
-               *exitcode = PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
+               *exitcode = SYSCALL_ARG1(VG_(threads)[tid].arch);
 
                // Inform tool about regs read by syscall
                VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid, "(syscallno)",
-                         R_SYSCALL_NUM, sizeof(UWord) );
+                         O_SYSCALL_NUM, sizeof(UWord) );
 
-               if (PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit)
+               if (SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit)
                   VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid,
-                            "exit(error_code)", R_SYSCALL_ARG1, sizeof(int) );
+                            "exit(error_code)", O_SYSCALL_ARG1, sizeof(int) );
 
-               if (PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit_group)
+               if (SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit_group)
                   VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid,
-                            "exit_group(error_code)", R_SYSCALL_ARG1,
+                            "exit_group(error_code)", O_SYSCALL_ARG1,
                             sizeof(int) );
 
                /* Only run __libc_freeres if the tool says it's ok and
@@ -950,7 +950,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                         "Caught __NR_exit; running __libc_freeres()");
                   }
                   VG_(nuke_all_threads_except) ( tid );
-                  ARCH_INSTR_PTR(VG_(threads)[tid].arch) = 
+                  INSTR_PTR(VG_(threads)[tid].arch) = 
                      __libc_freeres_wrapper;
                   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
                   goto stage1; /* party on, dudes (but not for much longer :) */
@@ -968,13 +968,13 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             }
 
             /* We've dealt with __NR_exit at this point. */
-            vg_assert(PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) != __NR_exit && 
-                      PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) != __NR_exit_group);
+            vg_assert(SYSCALL_NUM(VG_(threads)[tid].arch) != __NR_exit && 
+                      SYSCALL_NUM(VG_(threads)[tid].arch) != __NR_exit_group);
 
             /* Trap syscalls to __NR_sched_yield and just have this
                thread yield instead.  Not essential, just an
                optimisation. */
-	    if (PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_sched_yield) {
+	    if (SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_sched_yield) {
                SET_SYSCALL_RETVAL(tid, 0); /* syscall returns with success */
                goto stage1; /* find a new thread to run */
 	    }
@@ -983,7 +983,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 
 #           if 0
             { UInt* esp; Int i;
-              esp=(UInt*)ARCH_STACK_PTR(VG_(threads)[tid].arch);
+              esp=(UInt*)STACK_PTR(VG_(threads)[tid].arch);
               VG_(printf)("AFTER\n");
               for (i = 10; i >= -10; i--)
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
@@ -1166,7 +1166,7 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
    VGA_(set_arg_and_bogus_ret)(tid, (UWord)PTHREAD_CANCELED, 0xBEADDEEF);
 
    /* .cancel_pend will hold &thread_exit_wrapper */
-   ARCH_INSTR_PTR(VG_(threads)[tid].arch) = (UWord)VG_(threads)[tid].cancel_pend;
+   INSTR_PTR(VG_(threads)[tid].arch) = (UWord)VG_(threads)[tid].cancel_pend;
 
    VG_(proxy_abort_syscall)(tid);
 
@@ -1304,7 +1304,8 @@ void maybe_rendezvous_joiners_and_joinees ( void )
          *thread_return = VG_(threads)[jee].joinee_retval;
          /* Not really right, since it makes the thread's return value
             appear to be defined even if it isn't. */
-         VG_TRACK( post_mem_write, (Addr)thread_return, sizeof(void*) );
+         VG_TRACK( post_mem_write, Vg_CorePThread, jnr,
+                   (Addr)thread_return, sizeof(void*) );
       }
 
       /* Joinee is discarded */
@@ -1413,7 +1414,8 @@ void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu )
    VG_TRACK( pre_mem_write, Vg_CorePThread, tid,
                             "cleanup pop", (Addr)cu, sizeof(CleanupEntry) );
    *cu = VG_(threads)[tid].custack[sp];
-   VG_TRACK( post_mem_write, (Addr)cu, sizeof(CleanupEntry) );
+   VG_TRACK( post_mem_write, Vg_CorePThread, tid,
+                                           (Addr)cu, sizeof(CleanupEntry) );
    VG_(threads)[tid].custack_used = sp;
    SET_PTHREQ_RETVAL(tid, 0);
 }
@@ -1802,14 +1804,14 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    VG_TRACK ( die_mem_stack, VG_(threads)[tid].stack_base, 
                              VG_(threads)[tid].stack_size
                              - VG_AR_CLIENT_STACKBASE_REDZONE_SZB);
-   VG_TRACK ( ban_mem_stack, ARCH_STACK_PTR(VG_(threads)[tid].arch), 
+   VG_TRACK ( ban_mem_stack, STACK_PTR(VG_(threads)[tid].arch), 
                              VG_AR_CLIENT_STACKBASE_REDZONE_SZB );
    
    VGA_(thread_initial_stack)(tid, (UWord)arg,
                               (Addr)&do__apply_in_new_thread_bogusRA);
 
    /* this is where we start */
-   ARCH_INSTR_PTR(VG_(threads)[tid].arch) = (UWord)fn;
+   INSTR_PTR(VG_(threads)[tid].arch) = (UWord)fn;
 
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, "new thread, created by %d", parent_tid );
@@ -2482,7 +2484,8 @@ void do_pthread_key_create ( ThreadId tid,
    VG_TRACK( pre_mem_write, Vg_CorePThread, tid, "pthread_key_create: key",
                             (Addr)key, sizeof(pthread_key_t));
    *key = i;
-   VG_TRACK( post_mem_write, (Addr)key, sizeof(pthread_key_t) );
+   VG_TRACK( post_mem_write, Vg_CorePThread, tid,
+                            (Addr)key, sizeof(pthread_key_t) );
 
    SET_PTHREQ_RETVAL(tid, 0);
 }
@@ -2598,7 +2601,8 @@ void do__get_key_destr_and_spec ( ThreadId tid,
       cu->data.function.arg = VG_(threads)[tid].specifics_ptr[key];
    }
 
-   VG_TRACK( post_mem_write, (Addr)cu, sizeof(CleanupEntry) );
+   VG_TRACK( post_mem_write, Vg_CorePThread, tid, 
+                             (Addr)cu, sizeof(CleanupEntry) );
    SET_PTHREQ_RETVAL(tid, 0);
 }
 
@@ -2639,7 +2643,8 @@ void do_pthread_sigmask ( ThreadId tid,
    VG_(do_pthread_sigmask_SCSS_upd) ( tid, vki_how, newmask, oldmask );
 
    if (oldmask)
-      VG_TRACK( post_mem_write, (Addr)oldmask, sizeof(vki_sigset_t) );
+      VG_TRACK( post_mem_write, Vg_CorePThread, tid,
+                                (Addr)oldmask, sizeof(vki_sigset_t) );
 
    /* Success. */
    SET_PTHREQ_RETVAL(tid, 0);
@@ -2780,7 +2785,8 @@ void do__get_fhstack_entry ( ThreadId tid, Int n, /*OUT*/
    *fh = vg_fhstack[n];
    SET_PTHREQ_RETVAL(tid, 0);
 
-   VG_TRACK( post_mem_write, (Addr)fh, sizeof(ForkHandlerEntry) );
+   VG_TRACK( post_mem_write, Vg_CorePThread, tid,
+                             (Addr)fh, sizeof(ForkHandlerEntry) );
 }
 
 
@@ -2812,17 +2818,52 @@ void do__get_stack_info ( ThreadId tid, ThreadId which, StackInfo* si )
 }
 
 /* ---------------------------------------------------------------------
-   Specifying shadow register values
+   Shadow register manipulations
    ------------------------------------------------------------------ */
 
-void VG_(set_return_from_syscall_shadow) ( ThreadId tid, UInt ret_shadow )
+void VG_(set_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size, 
+                                 const UChar* area )
 {
-   VGA_(set_thread_shadow_archreg)(tid, R_SYSCALL_RET, ret_shadow);
+   ThreadState* tst;
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = & VG_(threads)[tid];
+
+   // Bounds check
+   vg_assert(0 <= offset && offset < sizeof(VexGuestArchState));
+   vg_assert(offset + size <= sizeof(VexGuestArchState));
+
+   VG_(memcpy)( (void*)(((Addr)(&tst->arch.vex_shadow)) + offset), area, size);
+}
+
+void VG_(get_shadow_regs_area) ( ThreadId tid, OffT offset, SizeT size, 
+                                 UChar* area )
+{
+   ThreadState* tst;
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = & VG_(threads)[tid];
+
+   // Bounds check
+   vg_assert(0 <= offset && offset < sizeof(VexGuestArchState));
+   vg_assert(offset + size <= sizeof(VexGuestArchState));
+
+   VG_(memcpy)( area, (void*)(((Addr)&(tst->arch.vex_shadow)) + offset), size);
+}
+
+
+void VG_(set_return_from_syscall_shadow) ( ThreadId tid, UWord ret_shadow )
+{
+   VG_(set_shadow_regs_area)(tid, O_SYSCALL_RET, sizeof(UWord),
+                             (UChar*)&ret_shadow);
 }
 
 UInt VG_(get_exit_status_shadow) ( ThreadId tid )
 {
-   return VGA_(get_thread_shadow_archreg)(tid, R_SYSCALL_ARG1);
+   UInt ret;
+   VG_(get_shadow_regs_area)(tid, O_SYSCALL_ARG1, sizeof(UInt),
+                             (UChar*)&ret);
+   return ret;
 }
 
 void VG_(intercept_libc_freeres_wrapper)(Addr addr)
@@ -3273,7 +3314,7 @@ void scheduler_sanity ( void )
       if (VG_(threads)[i].status != VgTs_Empty) {
          Int
          stack_used = (Addr)VG_(threads)[i].stack_highest_word 
-                      - (Addr)ARCH_STACK_PTR(VG_(threads)[i].arch);
+                      - (Addr)STACK_PTR(VG_(threads)[i].arch);
          Int
          stack_avail = VG_(threads)[i].stack_size
                        - VG_AR_CLIENT_STACKBASE_REDZONE_SZB

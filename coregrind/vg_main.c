@@ -326,7 +326,7 @@ void VG_(unimplemented) ( Char* msg )
 /* Get the simulated stack pointer */
 Addr VG_(get_stack_pointer) ( ThreadId tid )
 {
-   return ARCH_STACK_PTR( VG_(threads)[tid].arch );
+   return STACK_PTR( VG_(threads)[tid].arch );
 }
 
 /* Initialize the PID and PGRP of scheduler LWP; this is also called

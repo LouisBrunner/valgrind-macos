@@ -79,7 +79,8 @@ void VGA_(init_thread1state) ( Addr client_eip,
    VGOFF_(m_eip) = offsetof(VexGuestX86State,guest_EIP)/4;
 
    if (VG_(needs).shadow_regs) {
-      VG_TRACK( post_regs_write_init );
+      VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
+                sizeof(VexGuestArchState));
    }
 
    /* I assume that if we have SSE2 we also have SSE */
@@ -92,57 +93,6 @@ void VGA_(init_thread1state) ( Addr client_eip,
          VG_(printf)("Looks like a SSE-capable CPU\n");
       else
          VG_(printf)("Looks like a MMX-only CPU\n");
-   }
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Register access stuff                                ---*/
-/*------------------------------------------------------------*/
-
-void VGA_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg, UInt val )
-{
-   ThreadState* tst;
-
-   vg_assert(VG_(is_valid_tid)(tid));
-   tst = & VG_(threads)[tid];
-   if (0)
-   VG_(printf)("set_thread_shadow_archreg(%d, %d, 0x%x)\n",
-               tid, archreg, val);
-   switch (archreg) {
-      case R_EAX: tst->arch.vex_shadow.guest_EAX = val; break;
-      case R_ECX: tst->arch.vex_shadow.guest_ECX = val; break;
-      case R_EDX: tst->arch.vex_shadow.guest_EDX = val; break;
-      case R_EBX: tst->arch.vex_shadow.guest_EBX = val; break;
-      case R_ESP: tst->arch.vex_shadow.guest_ESP = val; break;
-      case R_EBP: tst->arch.vex_shadow.guest_EBP = val; break;
-      case R_ESI: tst->arch.vex_shadow.guest_ESI = val; break;
-      case R_EDI: tst->arch.vex_shadow.guest_EDI = val; break;
-      default:    VG_(core_panic)( "set_thread_shadow_archreg");
-   }
-}
-
-UInt VGA_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg )
-{
-   ThreadState* tst;
-
-   vg_assert(VG_(is_valid_tid)(tid));
-   tst = & VG_(threads)[tid];
-
-   if (0)
-   VG_(printf)("get_thread_shadow_archreg(%d, %d)\n",
-               tid, archreg);
-
-   switch (archreg) {
-      case R_EAX: return tst->arch.vex_shadow.guest_EAX;
-      case R_ECX: return tst->arch.vex_shadow.guest_ECX;
-      case R_EDX: return tst->arch.vex_shadow.guest_EDX;
-      case R_EBX: return tst->arch.vex_shadow.guest_EBX;
-      case R_ESP: return tst->arch.vex_shadow.guest_ESP;
-      case R_EBP: return tst->arch.vex_shadow.guest_EBP;
-      case R_ESI: return tst->arch.vex_shadow.guest_ESI;
-      case R_EDI: return tst->arch.vex_shadow.guest_EDI;
-      default:    VG_(core_panic)( "get_thread_shadow_archreg");
    }
 }
 
@@ -187,8 +137,8 @@ void VGA_(set_arg_and_bogus_ret)( ThreadId tid, UWord arg, Addr ret )
    /* Push the arg, and mark it as readable. */
    SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.vex.guest_ESP - sizeof(UWord));
    * (UInt*)(VG_(threads)[tid].arch.vex.guest_ESP) = arg;
-   VG_TRACK( post_mem_write, VG_(threads)[tid].arch.vex.guest_ESP, 
-                             sizeof(void*) );
+   VG_TRACK( post_mem_write, Vg_CoreSignal, tid, 
+             VG_(threads)[tid].arch.vex.guest_ESP, sizeof(void*) );
 
    /* Don't mark the pushed return address as readable; any attempt to read
       this is an internal valgrind bug since thread_exit_wrapper() should not
@@ -199,7 +149,7 @@ void VGA_(set_arg_and_bogus_ret)( ThreadId tid, UWord arg, Addr ret )
 
 void VGA_(thread_initial_stack)(ThreadId tid, UWord arg, Addr ret)
 {
-   Addr esp = (Addr)ARCH_STACK_PTR(VG_(threads)[tid].arch);
+   Addr esp = (Addr)STACK_PTR(VG_(threads)[tid].arch);
 
    /* push two args */
    esp -= 2 * sizeof(UWord);
@@ -213,13 +163,23 @@ void VGA_(thread_initial_stack)(ThreadId tid, UWord arg, Addr ret)
    *(UWord*)(esp+sizeof(UWord)) = arg;
    *(UWord*)(esp)               = ret;
 
-   VG_TRACK ( post_mem_write, esp, 2 * sizeof(UWord) );
+   VG_TRACK ( post_mem_write, Vg_CoreSignal, tid, esp, 2 * sizeof(UWord) );
 }
 
 
 /*------------------------------------------------------------*/
 /*--- Symtab stuff                                         ---*/
 /*------------------------------------------------------------*/
+
+/* This is the Intel register encoding -- integer regs. */
+#define R_EAX 0
+#define R_ECX 1
+#define R_EDX 2
+#define R_EBX 3
+#define R_ESP 4
+#define R_EBP 5
+#define R_ESI 6
+#define R_EDI 7
 
 UInt *VGA_(reg_addr_from_tst)(Int regno, ThreadArchState *arch)
 {

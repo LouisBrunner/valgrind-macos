@@ -306,9 +306,9 @@ void get_needed_regs(ThreadId tid, Addr* ip, Addr* fp, Addr* sp,
                      Addr* stack_highest_word)
 {
    ThreadState* tst = & VG_(threads)[ tid ];
-   *ip                 = ARCH_INSTR_PTR(tst->arch);
-   *fp                 = ARCH_FRAME_PTR(tst->arch);
-   *sp                 = ARCH_STACK_PTR(tst->arch);
+   *ip                 = INSTR_PTR(tst->arch);
+   *fp                 = FRAME_PTR(tst->arch);
+   *sp                 = STACK_PTR(tst->arch);
    *stack_highest_word = tst->stack_highest_word;
 
    /* Nasty little hack to deal with sysinfo syscalls - if libc is
@@ -355,7 +355,7 @@ Addr VG_(get_EIP_from_ExeContext) ( ExeContext* e, UInt n )
 
 Addr VG_(get_EIP) ( ThreadId tid )
 {
-   return ARCH_INSTR_PTR(VG_(threads)[ tid ].arch);
+   return INSTR_PTR(VG_(threads)[ tid ].arch);
 }
 
 /*--------------------------------------------------------------------*/

@@ -630,6 +630,12 @@ void ac_set_perms (Addr a, SizeT len, Bool rr, Bool ww, Bool xx)
    }
 }
 
+static
+void ac_post_mem_write(CorePart part, ThreadId tid, Addr a, SizeT len)
+{
+   ac_make_accessible(a, len);
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Functions called directly from generated code.       ---*/

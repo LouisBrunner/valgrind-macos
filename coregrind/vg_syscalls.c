@@ -858,8 +858,7 @@ void buf_and_len_pre_check( ThreadId tid, Addr buf_p, Addr buflen_p,
    if (VG_(defined_pre_mem_write)()) {
       UInt buflen_in = deref_UInt( tid, buflen_p, buflen_s);
       if (buflen_in > 0) {
-         TL_(pre_mem_write) ( Vg_CoreSysCall,
-			      tid, buf_s, buf_p, buflen_in );
+         TL_(pre_mem_write) ( Vg_CoreSysCall, tid, buf_s, buf_p, buflen_in );
       }
    }
 }
@@ -871,7 +870,7 @@ void buf_and_len_post_check( ThreadId tid, Int res,
    if (!VG_(is_kerror)(res) && VG_(defined_post_mem_write)()) {
       UInt buflen_out = deref_UInt( tid, buflen_p, s);
       if (buflen_out > 0 && buf_p != (Addr)NULL) {
-         TL_(post_mem_write) ( buf_p, buflen_out );
+         TL_(post_mem_write) ( Vg_CoreSysCall, tid, buf_p, buflen_out );
       }
    }
 }
@@ -1023,14 +1022,14 @@ Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 #define POST(x) \
    void VGA_(gen_##x##_after) (ThreadId tid, ThreadState *tst)
 
-#define SYSNO	PLATFORM_SYSCALL_NUM(tst->arch)    // in PRE(x)
-#define res	PLATFORM_SYSCALL_RET(tst->arch)	   // in POST(x)
-#define arg1	PLATFORM_SYSCALL_ARG1(tst->arch)
-#define arg2	PLATFORM_SYSCALL_ARG2(tst->arch)
-#define arg3	PLATFORM_SYSCALL_ARG3(tst->arch)
-#define arg4	PLATFORM_SYSCALL_ARG4(tst->arch)
-#define arg5	PLATFORM_SYSCALL_ARG5(tst->arch)
-#define arg6	PLATFORM_SYSCALL_ARG6(tst->arch)
+#define SYSNO   SYSCALL_NUM(tst->arch)    // in PRE(x)
+#define res     SYSCALL_RET(tst->arch)    // in POST(x)
+#define arg1    SYSCALL_ARG1(tst->arch)
+#define arg2    SYSCALL_ARG2(tst->arch)
+#define arg3    SYSCALL_ARG3(tst->arch)
+#define arg4    SYSCALL_ARG4(tst->arch)
+#define arg5    SYSCALL_ARG5(tst->arch)
+#define arg6    SYSCALL_ARG6(tst->arch)
 
 #define set_result(val) PLATFORM_SET_SYSCALL_RESULT(tst->arch, (val))
 
@@ -1415,7 +1414,7 @@ PRE(sys_getitimer, NBRunInLWP)
 POST(sys_getitimer)
 {
    if (arg2 != (Addr)NULL) {
-      VG_TRACK( post_mem_write,arg2, sizeof(struct vki_itimerval));
+      POST_MEM_WRITE(arg2, sizeof(struct vki_itimerval));
    }
 }
 
@@ -1434,7 +1433,7 @@ PRE(sys_setitimer, NBRunInLWP)
 POST(sys_setitimer)
 {
    if (arg3 != (Addr)NULL) {
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_itimerval));
+      POST_MEM_WRITE(arg3, sizeof(struct vki_itimerval));
    }
 }
 
@@ -2275,7 +2274,7 @@ PRE(sys_getppid, 0)
    PRE_REG_READ0(long, "getppid");
 }
 
-static void common_post_getrlimit(UWord a1, UWord a2)
+static void common_post_getrlimit(ThreadId tid, UWord a1, UWord a2)
 {
    POST_MEM_WRITE( a2, sizeof(struct vki_rlimit) );
 
@@ -2305,7 +2304,7 @@ PRE(sys_old_getrlimit, 0)
 
 POST(sys_old_getrlimit)
 {
-   common_post_getrlimit(arg1, arg2);
+   common_post_getrlimit(tid, arg1, arg2);
 }
 
 PRE(sys_getrlimit, 0)
@@ -2318,7 +2317,7 @@ PRE(sys_getrlimit, 0)
 
 POST(sys_getrlimit)
 {
-   common_post_getrlimit(arg1, arg2);
+   common_post_getrlimit(tid, arg1, arg2);
 }
 
 PRE(sys_getrusage, 0)
@@ -2332,7 +2331,7 @@ PRE(sys_getrusage, 0)
 POST(sys_getrusage)
 {
    if (res == 0)
-      VG_TRACK( post_mem_write, arg2, sizeof(struct vki_rusage) );
+      POST_MEM_WRITE( arg2, sizeof(struct vki_rusage) );
 }
 
 PRE(sys_gettimeofday, 0)
@@ -3027,7 +3026,7 @@ PRE(sys_ioctl, MayBlock)
 	 PRE_MEM_WRITE( "ioctl(SIOCGIFCONF)", arg3, sizeof(struct ifconf));
 	 KERNEL_DO_SYSCALL(tid,res);
 	 if (!VG_(is_kerror)(res) && res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct ifconf));
+	 POST_MEM_WRITE(arg3, sizeof(struct ifconf));
       */
       PRE_MEM_READ( "ioctl(SIOCGIFCONF)", arg3, sizeof(struct vki_ifconf));
       if ( arg3 ) {
@@ -3645,28 +3644,28 @@ POST(sys_ioctl)
    case VKI_SG_SET_COMMAND_Q:
       break;
    case VKI_SG_IO:
-      VG_TRACK( post_mem_write,arg3, sizeof(vki_sg_io_hdr_t));
+      POST_MEM_WRITE(arg3, sizeof(vki_sg_io_hdr_t));
       break;
    case VKI_SG_GET_SCSI_ID:
-      VG_TRACK( post_mem_write,arg3, sizeof(vki_sg_scsi_id_t));
+      POST_MEM_WRITE(arg3, sizeof(vki_sg_scsi_id_t));
       break;
    case VKI_SG_SET_RESERVED_SIZE:
       break;
    case VKI_SG_SET_TIMEOUT:
       break;
    case VKI_SG_GET_RESERVED_SIZE:
-      VG_TRACK( post_mem_write,arg3, sizeof(int));
+      POST_MEM_WRITE(arg3, sizeof(int));
       break;
    case VKI_SG_GET_TIMEOUT:
-      VG_TRACK( post_mem_write,arg3, sizeof(int));
+      POST_MEM_WRITE(arg3, sizeof(int));
       break;
    case VKI_SG_GET_VERSION_NUM:
       break;
    case VKI_SG_EMULATED_HOST:
-      VG_TRACK( post_mem_write,arg3, sizeof(int));
+      POST_MEM_WRITE(arg3, sizeof(int));
       break;
    case VKI_SG_GET_SG_TABLESIZE:
-      VG_TRACK( post_mem_write,arg3, sizeof(int));
+      POST_MEM_WRITE(arg3, sizeof(int));
       break;      
 
    case VKI_IIOCGETCPS:
@@ -3678,61 +3677,57 @@ POST(sys_ioctl)
 
       /* These all use struct ifreq AFAIK */
    case VKI_SIOCGIFINDEX:        /* get iface index              */
-      VG_TRACK( post_mem_write,
-                (Addr)&((struct vki_ifreq *)arg3)->vki_ifr_ifindex,
-                sizeof(((struct vki_ifreq *)arg3)->vki_ifr_ifindex) );
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)arg3)->vki_ifr_ifindex,
+                      sizeof(((struct vki_ifreq *)arg3)->vki_ifr_ifindex) );
       break;
    case VKI_SIOCGIFFLAGS:        /* get flags                    */
-      VG_TRACK( post_mem_write,
-                (Addr)&((struct vki_ifreq *)arg3)->vki_ifr_flags,
-                sizeof(((struct vki_ifreq *)arg3)->vki_ifr_flags) );
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)arg3)->vki_ifr_flags,
+                      sizeof(((struct vki_ifreq *)arg3)->vki_ifr_flags) );
       break;
    case VKI_SIOCGIFHWADDR:       /* Get hardware address         */
-      VG_TRACK( post_mem_write,
-                (Addr)&((struct vki_ifreq *)arg3)->ifr_hwaddr,
-                sizeof(((struct vki_ifreq *)arg3)->ifr_hwaddr) );
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)arg3)->ifr_hwaddr,
+                      sizeof(((struct vki_ifreq *)arg3)->ifr_hwaddr) );
       break;
    case VKI_SIOCGIFMTU:          /* get MTU size                 */
-      VG_TRACK( post_mem_write,
-                (Addr)&((struct vki_ifreq *)arg3)->vki_ifr_mtu,
-                sizeof(((struct vki_ifreq *)arg3)->vki_ifr_mtu) );
+      POST_MEM_WRITE( (Addr)&((struct vki_ifreq *)arg3)->vki_ifr_mtu,
+                      sizeof(((struct vki_ifreq *)arg3)->vki_ifr_mtu) );
       break;
    case VKI_SIOCGIFADDR:         /* get PA address               */
    case VKI_SIOCGIFDSTADDR:      /* get remote PA address        */
    case VKI_SIOCGIFBRDADDR:      /* get broadcast PA address     */
    case VKI_SIOCGIFNETMASK:      /* get network PA mask          */
-      VG_TRACK( post_mem_write,
+      POST_MEM_WRITE(
                 (Addr)&((struct vki_ifreq *)arg3)->ifr_addr,
                 sizeof(((struct vki_ifreq *)arg3)->ifr_addr) );
       break;
    case VKI_SIOCGIFMETRIC:       /* get metric                   */
-      VG_TRACK( post_mem_write,
+      POST_MEM_WRITE(
                 (Addr)&((struct vki_ifreq *)arg3)->vki_ifr_metric,
                 sizeof(((struct vki_ifreq *)arg3)->vki_ifr_metric) );
       break;
    case VKI_SIOCGIFMAP:          /* Get device parameters        */
-      VG_TRACK( post_mem_write,
+      POST_MEM_WRITE(
                 (Addr)&((struct vki_ifreq *)arg3)->ifr_map,
                 sizeof(((struct vki_ifreq *)arg3)->ifr_map) );
       break;
      break;
    case VKI_SIOCGIFTXQLEN:       /* Get the tx queue length      */
-      VG_TRACK( post_mem_write,
+      POST_MEM_WRITE(
                 (Addr)&((struct vki_ifreq *)arg3)->ifr_qlen,
                 sizeof(((struct vki_ifreq *)arg3)->ifr_qlen) );
       break;
    case VKI_SIOCGIFNAME:         /* get iface name               */
-      VG_TRACK( post_mem_write,
+      POST_MEM_WRITE(
                 (Addr)&((struct vki_ifreq *)arg3)->vki_ifr_name,
                 sizeof(((struct vki_ifreq *)arg3)->vki_ifr_name) );
       break;
    case VKI_SIOCGMIIPHY:         /* get hardware entry           */
-      VG_TRACK( post_mem_write,
+      POST_MEM_WRITE(
                 (Addr)&((struct vki_mii_ioctl_data *)&((struct vki_ifreq *)arg3)->vki_ifr_data)->phy_id,
                 sizeof(((struct vki_mii_ioctl_data *)&((struct vki_ifreq *)arg3)->vki_ifr_data)->phy_id) );
       break;
    case VKI_SIOCGMIIREG:         /* get hardware entry registers */
-      VG_TRACK( post_mem_write,
+      POST_MEM_WRITE(
                 (Addr)&((struct vki_mii_ioctl_data *)&((struct vki_ifreq *)arg3)->vki_ifr_data)->val_out,
                 sizeof(((struct vki_mii_ioctl_data *)&((struct vki_ifreq *)arg3)->vki_ifr_data)->val_out) );
       break;
@@ -3741,7 +3736,7 @@ POST(sys_ioctl)
 	 PRE_MEM_WRITE("ioctl(SIOCGIFCONF)", arg3, sizeof(struct ifconf));
 	 KERNEL_DO_SYSCALL(tid,res);
 	 if (!VG_(is_kerror)(res) && res == 0)
-	 VG_TRACK( post_mem_write,arg3, sizeof(struct ifconf));
+	 POST_MEM_WRITE(arg3, sizeof(struct ifconf));
       */
       if (res == 0 && arg3 ) {
 	 struct vki_ifconf *ifc = (struct vki_ifconf *) arg3;
@@ -3750,18 +3745,18 @@ POST(sys_ioctl)
       }
       break;
    case VKI_SIOCGSTAMP:
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_timeval));
+      POST_MEM_WRITE( arg3, sizeof(struct vki_timeval) );
       break;
       /* SIOCOUTQ is an ioctl that, when called on a socket, returns
 	 the number of bytes currently in that socket's send buffer.
 	 It writes this value as an int to the memory location
 	 indicated by the third argument of ioctl(2). */
    case VKI_SIOCOUTQ:
-      VG_TRACK( post_mem_write,arg3, sizeof(int));
+      POST_MEM_WRITE(arg3, sizeof(int));
       break;
    case VKI_SIOCGRARP:           /* get RARP table entry         */
    case VKI_SIOCGARP:            /* get ARP table entry          */
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_arpreq));
+      POST_MEM_WRITE(arg3, sizeof(struct vki_arpreq));
       break;
                     
    case VKI_SIOCSIFFLAGS:        /* set flags                    */
@@ -3790,7 +3785,7 @@ POST(sys_ioctl)
       break;
 
    case VKI_SIOCGPGRP:
-      VG_TRACK( post_mem_write,arg3, sizeof(int));
+      POST_MEM_WRITE(arg3, sizeof(int));
       break;
    case VKI_SIOCSPGRP:
       break;
@@ -3814,7 +3809,7 @@ POST(sys_ioctl)
    case VKI_SOUND_PCM_READ_BITS:
    case (VKI_SOUND_PCM_READ_BITS|0x40000000): /* what the fuck ? */
    case VKI_SOUND_PCM_READ_FILTER:
-      VG_TRACK( post_mem_write,arg3, sizeof(int));
+      POST_MEM_WRITE(arg3, sizeof(int));
       break;
    case VKI_SNDCTL_SEQ_CTRLRATE:
    case VKI_SNDCTL_DSP_SPEED:
@@ -3834,7 +3829,7 @@ POST(sys_ioctl)
       break;
    case VKI_SNDCTL_DSP_GETOSPACE:
    case VKI_SNDCTL_DSP_GETISPACE:
-      VG_TRACK( post_mem_write,arg3, sizeof(vki_audio_buf_info));
+      POST_MEM_WRITE(arg3, sizeof(vki_audio_buf_info));
       break;
    case VKI_SNDCTL_DSP_SETTRIGGER:
       break;
@@ -3857,38 +3852,38 @@ POST(sys_ioctl)
       break;
    case VKI_RTC_RD_TIME:
    case VKI_RTC_ALM_READ:
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_rtc_time));
+      POST_MEM_WRITE(arg3, sizeof(struct vki_rtc_time));
       break;
    case VKI_RTC_ALM_SET:
       break;
    case VKI_RTC_IRQP_READ:
-      VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
+      POST_MEM_WRITE(arg3, sizeof(unsigned long));
       break;
 
    case VKI_BLKGETSIZE:
-      VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
+      POST_MEM_WRITE(arg3, sizeof(unsigned long));
       break;
 
       /* Hard disks */
    case VKI_HDIO_GET_IDENTITY: /* 0x030d */
-      VG_TRACK( post_mem_write,arg3, VKI_SIZEOF_STRUCT_HD_DRIVEID );
+      POST_MEM_WRITE(arg3, VKI_SIZEOF_STRUCT_HD_DRIVEID );
       break;
 
       /* CD ROM stuff (??)  */
    case VKI_CDROMSUBCHNL:
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_cdrom_subchnl));
+      POST_MEM_WRITE(arg3, sizeof(struct vki_cdrom_subchnl));
       break;
    case VKI_CDROMREADTOCHDR:
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_cdrom_tochdr));
+      POST_MEM_WRITE(arg3, sizeof(struct vki_cdrom_tochdr));
       break;
    case VKI_CDROMREADTOCENTRY:
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_cdrom_tochdr));
+      POST_MEM_WRITE(arg3, sizeof(struct vki_cdrom_tochdr));
       break;
    case VKI_CDROMMULTISESSION:
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_cdrom_multisession));
+      POST_MEM_WRITE(arg3, sizeof(struct vki_cdrom_multisession));
       break;
    case VKI_CDROMVOLREAD:
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_cdrom_volctrl));
+      POST_MEM_WRITE(arg3, sizeof(struct vki_cdrom_volctrl));
       break;
    case VKI_CDROMREADAUDIO:
    {
@@ -3906,17 +3901,17 @@ POST(sys_ioctl)
       break;
 
    case VKI_FIGETBSZ:
-      VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
+      POST_MEM_WRITE(arg3, sizeof(unsigned long));
       break;
    case VKI_FIBMAP:
-      VG_TRACK( post_mem_write,arg3, sizeof(unsigned long));
+      POST_MEM_WRITE(arg3, sizeof(unsigned long));
       break;
 
    case VKI_FBIOGET_VSCREENINFO: //0x4600
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_fb_var_screeninfo));
+      POST_MEM_WRITE(arg3, sizeof(struct vki_fb_var_screeninfo));
       break;
    case VKI_FBIOGET_FSCREENINFO: //0x4602
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_fb_fix_screeninfo));
+      POST_MEM_WRITE(arg3, sizeof(struct vki_fb_fix_screeninfo));
       break;
 
    case VKI_PPCLAIM:
@@ -4090,7 +4085,7 @@ POST(sys_ioctl)
       if (size > 0 && (dir & _VKI_IOC_READ)
 	  && res == 0
 	  && arg3 != (Addr)NULL)
-	 VG_TRACK( post_mem_write,arg3, size);
+	 POST_MEM_WRITE(arg3, size);
       break;
    }
    }
@@ -5282,7 +5277,7 @@ PRE(sys_sched_getaffinity, 0)
 
 POST(sys_sched_getaffinity)
 {
-   VG_TRACK(post_mem_write, arg3, arg2);
+   POST_MEM_WRITE(arg3, arg2);
 }
 
 PRE(sys_acct, 0)

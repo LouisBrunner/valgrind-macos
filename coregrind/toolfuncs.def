@@ -204,33 +204,21 @@ void,	die_mem_stack,	Addr a, SizeT len
 void,	ban_mem_stack,	Addr a, SizeT len
 
 ## These ones occur around syscalls, signal handling, etc
-void,	pre_mem_read,	CorePart part, ThreadId tid, Char* s, Addr a, SizeT size
-void,	pre_mem_read_asciiz,	CorePart part, ThreadId tid, Char* s, Addr a
-void,	pre_mem_write,	CorePart part, ThreadId tid, Char* s, Addr a, SizeT size
-## Not implemented yet -- have to add in lots of places, which is a
-## pain.  Won't bother unless/until there's a need.
-## void (*post_mem_read)  ( ThreadState* tst, Char* s, Addr a, SizeT size );
-void,	post_mem_write,	Addr a, SizeT size
+void,	pre_mem_read,	    CorePart part, ThreadId tid, Char* s, Addr a, SizeT size
+void,	pre_mem_read_asciiz,CorePart part, ThreadId tid, Char* s, Addr a
+void,	pre_mem_write,	    CorePart part, ThreadId tid, Char* s, Addr a, SizeT size
+void,	post_mem_write,	    CorePart part, ThreadId tid, Addr a, SizeT size
 
 
-## Register events -- if `shadow_regs' need is set, all should probably be
-## used.  Use VG_(set_thread_shadow_archreg)() to set the shadow of the
-## changed register.
-
-void,	pre_reg_read,	CorePart part, ThreadId tid, Char* s, UInt reg, SizeT size
-
-## Use VG_(set_shadow_archreg)() to set the eight general purpose regs,
-## and use VG_(set_shadow_eflags)() to set eflags.
-void,	post_regs_write_init,	void
-
-## Use VG_(set_thread_shadow_archreg)() to set the shadow regs for these
+## Register events -- if `shadow_regs' need is set, these should probably be
+## used.  Use VG_(set_shadow_state_area)() to set the shadow regs for these
 ## events.
-void,	post_reg_write_syscall_return,	ThreadId tid, UInt reg
-void,	post_reg_write_deliver_signal,	ThreadId tid, UInt reg
-void,	post_reg_write_pthread_return,	ThreadId tid, UInt reg
-void,	post_reg_write_clientreq_return,	ThreadId tid, UInt reg
+
+void,	pre_reg_read,	CorePart part, ThreadId tid, Char* s, OffT guest_state_offset, SizeT size
+void,	post_reg_write,	CorePart part, ThreadId tid, OffT guest_state_offset, SizeT size
+
 ## This one is called for malloc() et al if they are replaced by a tool.
-void,	post_reg_write_clientcall_return,	ThreadId tid, UInt reg, Addr f
+void,	post_reg_write_clientcall_return,	ThreadId tid, OffT guest_state_offset, SizeT size, Addr f
 
 
 ## Scheduler events (not exhaustive)

@@ -566,28 +566,13 @@ extern void VG_(cpuid) ( UInt eax,
 /* ------------------------------------------------------------------ */
 /* Accessing archregs and their shadows */
 
-extern UInt VGA_(get_archreg)            ( UInt archreg );
-extern UInt VGA_(get_thread_archreg)     ( ThreadId tid, UInt archreg );
+// For get/set, 'area' is where the asked-for shadow state will be copied
+// into/from.
 
-extern UInt VGA_(get_shadow_archreg)     ( UInt archreg );
-extern void VGA_(set_shadow_archreg)     ( UInt archreg, UInt val );
-
-extern UInt VGA_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg );
-extern void VGA_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg,
-                                              UInt val );
-
-/* ToDo: FIX */
-/* This is the Intel register encoding -- integer regs. */
-#define R_EAX 0
-#define R_ECX 1
-#define R_EDX 2
-#define R_EBX 3
-#define R_ESP 4
-#define R_EBP 5
-#define R_ESI 6
-#define R_EDI 7
-
-
+extern void VG_(get_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
+                                        SizeT size, UChar* area );
+extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
+                                        SizeT size, const UChar* area );
 
 /*====================================================================*/
 /*=== Execution contexts                                           ===*/
@@ -957,7 +942,7 @@ extern void *VG_(SkipNode_Next)  (const SkipList *l, void *data);
    syscall.  Call it from TL_(post_syscall)() (not TL_(pre_syscall)()!) to
    override the default shadow register value. */
 extern void VG_(set_return_from_syscall_shadow) ( ThreadId tid,
-                                                  UInt ret_shadow );
+                                                  UWord ret_shadow );
 
 /* This can be called from TL_(fini)() to find the shadow of the argument
    to exit(), ie. the shadow of the program's return value. */
@@ -1101,7 +1086,8 @@ extern float TL_(shadow_ratio);
 /* Part of the core from which this call was made.  Useful for determining
    what kind of error message should be emitted. */
 typedef
-   enum { Vg_CorePThread, Vg_CoreSignal, Vg_CoreSysCall, Vg_CoreTranslate }
+   enum { Vg_CoreStartup, Vg_CorePThread, Vg_CoreSignal, Vg_CoreSysCall,
+          Vg_CoreTranslate, Vg_CoreClientReq }
    CorePart;
 
 /* Useful to use in VG_(get_Xreg_usage)() */

@@ -509,6 +509,19 @@ struct vki_pollfd {
 #define VKI_POLLNVAL        0x0020
 
 
+/* sys/epoll.h */
+typedef union vki_epoll_data {
+   void *ptr;
+   Int   fd;
+   UInt  u32;
+   ULong u64;
+} vki_epoll_data_t;
+
+struct vki_epoll_event {
+   UInt events;            /* Epoll events */
+   vki_epoll_data_t data;      /* User data variable */
+};
+
 
 /* 
 ./include/asm-i386/posix_types.h:typedef long           __kernel_suseconds_t;

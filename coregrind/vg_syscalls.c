@@ -2128,7 +2128,7 @@ PRE(fcntl)
 POST(fcntl)
 {
    if (arg2 == VKI_F_DUPFD)
-      if(VG_(clo_track_fds))
+      if (VG_(clo_track_fds))
          record_fd_open(tid, res, VG_(resolve_filename)(res));
 }
 
@@ -3945,6 +3945,52 @@ POST(poll)
    }
 }
 
+PRE(epoll_create)
+{
+   /* int epoll_create(int size) */
+   MAYBE_PRINTF("epoll_create ( %d )\n", arg1);
+}
+
+POST(epoll_create)
+{
+   if (!fd_allowed(res, "open", tid)) {
+      VG_(close)(res);
+      res = -VKI_EMFILE;
+   } else {
+      if (VG_(clo_track_fds))
+         record_fd_open (tid, res, NULL);
+   }
+}
+
+PRE(epoll_ctl)
+{
+   /* int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event) */
+   static const char* epoll_ctl_s[3] = {
+      "EPOLL_CTL_ADD",
+      "EPOLL_CTL_DEL",
+      "EPOLL_CTL_MOD"
+   };
+   MAYBE_PRINTF("epoll_ctl ( %d, %s, %d, %p )\n", 
+                arg1, ( arg2<3 ? epoll_ctl_s[arg2] : "?" ), arg3, arg4);
+   SYSCALL_TRACK( pre_mem_read, tid, "epoll_ctl(event)",
+                  arg4, sizeof(struct vki_epoll_event) );
+}
+
+PRE(epoll_wait)
+{
+   /* int epoll_wait(int epfd, struct epoll_event * events, 
+                     int maxevents, int timeout) */
+   MAYBE_PRINTF("epoll_wait ( %d, %p, %d, %d )\n", arg1, arg2, arg3, arg4);
+   SYSCALL_TRACK( pre_mem_write, tid, "epoll_wait(events)",
+                  arg2, sizeof(struct vki_epoll_event)*arg3);
+}
+
+POST(epoll_wait)
+{
+   if (res > 0)
+      VG_TRACK( post_mem_write, arg2, sizeof(struct vki_epoll_event)*res ) ;
+}
+
 PRE(readlink)
 {
    /* int readlink(const char *path, char *buf, size_t bufsiz); */
@@ -5201,6 +5247,9 @@ static const struct sys_info sys_info[] = {
    SYSBA(creat,			True),
    SYSBA(pipe,			False),
    SYSBA(poll,			True),
+   SYSBA(epoll_create,          False),
+   SYSB_(epoll_ctl,             False),
+   SYSBA(epoll_wait,		True),
    SYSBA(readlink,		False),
    SYSBA(readv,			True),
    SYSB_(rename,		False),

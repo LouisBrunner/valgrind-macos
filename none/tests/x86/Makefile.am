@@ -14,7 +14,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	int.stderr.exp int.stdout.exp int.vgtest \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
-	$(addsuffix .vgtest,$(INSN_TESTS))
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	rcl_assert.stderr.exp rcl_assert.vgtest \
 	seg_override.stderr.exp seg_override.stdout.exp seg_override.vgtest

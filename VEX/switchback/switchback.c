@@ -530,6 +530,15 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
 {
    VexTranslateResult tres;
    Int trans_used, i, ws_needed;
+
+   if (trans_table_used >= N_TRANS_TABLE
+       || trans_cache_used >= N_TRANS_CACHE-1000) {
+      /* If things are looking to full, just dump
+         all the translations. */
+      trans_cache_used = 0;
+      trans_table_used = 0;
+   }
+
    assert(trans_table_used < N_TRANS_TABLE);
    if (0)
       printf("make translation %p\n", ULong_to_Ptr(guest_addr));
@@ -566,6 +575,40 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
    trans_tableP[trans_table_used] = &trans_cache[trans_cache_used];
    trans_table_used++;
    trans_cache_used += ws_needed;
+}
+
+
+static Bool overlap ( Addr64 start, UInt len, VexGuestExtents* vge )
+{
+   Int i;
+   for (i = 0; i < vge->n_used; i++) {
+     if (vge->base[i]+vge->len[i] <= start
+         || vge->base[i] >= start+len) {
+       /* ok */
+     } else {
+        return True;
+     }
+   }
+   return False; /* no overlap */
+}
+
+static void dump_translations ( Addr64 start, UInt len )
+{
+   Int i, j;
+   j = 0;
+   for (i = 0; i < trans_table_used; i++) {
+      if (overlap(start, len, &trans_table[i])) {
+         /* do nothing */
+      } else {
+         assert(j <= i);
+         trans_table[j] = trans_table[i];
+         trans_tableP[j] = trans_tableP[i];
+	 j++;
+      }
+   }
+   assert(j >= 0 && j <= trans_table_used);
+   if (0) printf("dumped %d translations\n", trans_table_used - j);
+   trans_table_used = j;
 }
 
 
@@ -662,11 +705,10 @@ static void run_simulator ( void )
       last_guest = next_guest;
       need_inval = run_translation(next_host);
       if (need_inval) {
-         if (0)
-         printf("switchback: dumping translation cache (%d entries)\n",
-                trans_table_used);
-         trans_cache_used = 0;
-         trans_table_used = 0;
+#if defined(__powerpc__)
+         dump_translations( (Addr64)gst.guest_TISTART, gst.guest_TILEN );
+	 if (0) printf("dump translations done\n");
+#endif
       }
    }
 }

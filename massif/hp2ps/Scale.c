@@ -3,6 +3,7 @@
    This program is governed by the license contained in the file LICENSE.  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "Main.h"
 #include "Defines.h"
 #include "Dimensions.h"
@@ -19,8 +20,6 @@
  *	used to scale the samples automatically so that they
  *	fit on the page.
  */
-
-extern void free();
 
 floatish
 MaxCombinedHeight()

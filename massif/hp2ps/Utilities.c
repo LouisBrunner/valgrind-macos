@@ -83,7 +83,7 @@ CommaPrint(fp,n)
 
 void *
 xmalloc(n)
-  int n;
+  size_t n;
 {
     void *r;
 
@@ -98,7 +98,7 @@ xmalloc(n)
 void *
 xrealloc(p, n)
   void *p;
-  int n;
+  size_t n;
 {
     void *r;
     extern void *realloc();

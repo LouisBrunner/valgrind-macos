@@ -1603,7 +1603,7 @@ ULong x86g_calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (modifies guest state) */
-/* Claim to be a P54C P133 (pre-MMX Pentium) */
+/* Claim to be a P55C (Intel Pentium/MMX) */
 void x86g_dirtyhelper_CPUID ( VexGuestX86State* st )
 {
    if (st->guest_EAX == 0) {
@@ -1612,10 +1612,10 @@ void x86g_dirtyhelper_CPUID ( VexGuestX86State* st )
       st->guest_ECX = 0x6c65746e;
       st->guest_EDX = 0x49656e69;
    } else {
-      st->guest_EAX = 0x52b;
+      st->guest_EAX = 0x543;
       st->guest_EBX = 0x0;
       st->guest_ECX = 0x0;
-      st->guest_EDX = 0x1bf;
+      st->guest_EDX = 0x8001bf;
    }
 }
 

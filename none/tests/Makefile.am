@@ -51,6 +51,7 @@ noinst_PROGRAMS = \
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
 AM_CXXFLAGS = $(AM_CFLAGS)
+CXXFLAGS    = $(AM_CFLAGS)
 
 # generic C ones
 args_SOURCES 		= args.c

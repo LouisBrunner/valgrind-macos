@@ -2482,6 +2482,19 @@ static void collapse_AddSub_chains_BB ( IRBB* bb )
 
 /* ------- Helper functions for PutI/GetI transformations ------ */
 
+/* Do a1 and a2 denote identical values?  Safe answer: False 
+*/
+static Bool identicalAtoms ( IRExpr* a1, IRExpr* a2 )
+{
+   vassert(isAtom(a1));
+   vassert(isAtom(a2));
+   if (a1->tag == Iex_Tmp && a2->tag == Iex_Tmp)
+      return a1->Iex.Tmp.tmp == a2->Iex.Tmp.tmp;
+   if (a1->tag == Iex_Const && a2->tag == Iex_Const)
+      return eqIRConst(a1->Iex.Const.con, a2->Iex.Const.con);
+   return False;
+}
+
 
 /* Determine, to the extent possible, the relationship between two
    guest state accesses.  The possible outcomes are:
@@ -2555,12 +2568,7 @@ GSAliasing getAliasingRelation_II (
       makes the comparison simple. */
    vassert(isAtom(ix1));
    vassert(isAtom(ix2));
-   if (ix1->tag != Iex_Tmp || ix2->tag != Iex_Tmp)
-      return UnknownAlias;
-
-   /* Both index expressions are Tmps.  If they are not the same tmp,
-      we're again hosed. */
-   if (ix1->Iex.Tmp.tmp != ix2->Iex.Tmp.tmp)
+   if (!identicalAtoms(ix1,ix2))
       return UnknownAlias;
 
    /* Ok, the index expressions are identical.  So now the only way

@@ -2647,7 +2647,6 @@ int main(int argc, char **argv, char **envp)
       VG_(mprotect)( (void *)VG_(client_trampoline_code),
 		     VG_(trampoline_code_length), VKI_PROT_READ|VKI_PROT_EXEC );
 #endif
-
       /* Make sure this segment isn't treated as stack */
       seg = VG_(find_segment)(VG_(client_trampoline_code));
       if (seg)
@@ -2674,6 +2673,7 @@ int main(int argc, char **argv, char **envp)
       { Long q; for (q = 0; q < 10ULL *1000*1000*1000; q++) ; }
    }
 
+   //--------------------------------------------------------------
    // Search for file descriptors that are inherited from our parent
    //   p: process_cmd_line_options  [for VG_(clo_track_fds)]
    //--------------------------------------------------------------
@@ -2747,6 +2747,13 @@ int main(int argc, char **argv, char **envp)
    //         > 20M of virtual address space.]
    //--------------------------------------------------------------
    VG_(init_tt_tc)();
+
+   //--------------------------------------------------------------
+   // Read debug info to find glibc entry points to intercept
+   //   p: parse_procselfmaps? [XXX for debug info?]
+   //   p: init_tt_tc [so it can call VG_(search_transtab) safely]
+   //--------------------------------------------------------------
+   VG_(setup_code_redirect_table)();
 
    //--------------------------------------------------------------
    // Verbosity message

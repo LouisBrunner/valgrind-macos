@@ -3566,9 +3566,16 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST(0, IRExpr_Const(IRConst_F64(0.0)));
                break;
 
+            case 0xF1: /* FYL2X */
+               DIP("fyl2x\n");
+               put_ST_UNCHECKED(1, binop(Iop_Yl2xF64,
+                                         get_ST(1), get_ST(0)));
+               fp_pop();
+               break;
+
             case 0xF3: /* FPATAN */
                DIP("fpatan\n");
-               put_ST_UNCHECKED(1, binop(Iop_AtanYXF64,
+               put_ST_UNCHECKED(1, binop(Iop_AtanF64,
                                          get_ST(1), get_ST(0)));
                fp_pop();
                break;

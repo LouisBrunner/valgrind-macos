@@ -247,7 +247,7 @@ typedef
    enum {
       Xfp_INVALID,
       /* Binary */
-      Xfp_ADD, Xfp_SUB, Xfp_MUL, Xfp_DIV, Xfp_ATANYX,
+      Xfp_ADD, Xfp_SUB, Xfp_MUL, Xfp_DIV, Xfp_ATAN, Xfp_YL2X,
       /* Unary */
       Xfp_SQRT, Xfp_ABS, Xfp_NEG, Xfp_MOV, Xfp_SIN, Xfp_COS,
       Xfp_ROUND

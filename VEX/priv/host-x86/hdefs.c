@@ -1820,7 +1820,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       goto done;
 
    case Xin_FpBinary:
-      if (i->Xin.FpBinary.op == Xfp_ATANYX) {
+      if (i->Xin.FpBinary.op == Xfp_ATAN) {
          /* Have to do this specially. */
          /* ffree %st7 ; fld %st(srcL) ; fld %st(srcR+1) ; fpatan ; fstp(1+dst) */
          p = do_ffree_st7(p);

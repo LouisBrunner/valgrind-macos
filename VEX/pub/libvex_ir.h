@@ -159,12 +159,20 @@ typedef
 
       /* ------ Floating point.  We try and be IEEE754 compliant. ------ */
 
-      /* Binary operations */
-      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, Iop_RemF64,
-      Iop_AtanYXF64,
+      /* Binary operations mandated by IEEE754. */
+      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, Iop_RemF64, 
 
-      /* Unary operations */
-      Iop_NegF64, Iop_AbsF64, Iop_SqrtF64, Iop_SinF64, Iop_CosF64,
+      /* Binary ops supported by IA32 but not mandated by 754. */
+      Iop_AtanF64,  /* FPATAN,  arctan(arg1/arg2) */
+      Iop_Yl2xF64,  /* FYL2X,   arg1 * log2(arg2)  */
+
+      /* Unary operations mandated by IEEE754. */
+      Iop_NegF64, Iop_SqrtF64, 
+
+      /* Unary ops supported by IA32 but not mandated by 754. */
+      Iop_AbsF64,    /* FABS */
+      Iop_SinF64,    /* FSIN */
+      Iop_CosF64,    /* FCOS */
 
       /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:
             0x45 Unordered
@@ -202,6 +210,7 @@ typedef
          of the argument.
       */
       Iop_F64toI64, Iop_F64toI32, Iop_F64toI16,
+
       /* F64 -> F64, also takes an I32 first argument encoding the
          rounding mode. */
       Iop_RoundF64,

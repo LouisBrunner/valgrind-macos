@@ -1,4 +1,52 @@
 
+Version 1.9.6 (7 May 2003 or thereabouts)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Major changes in 1.9.6:
+
+- Improved threading support for glibc >= 2.3.2 (SuSE 8.2,
+  RedHat 9, to name but two ...)  It turned out that 1.9.5
+  had problems with threading support on glibc >= 2.3.2,
+  usually manifested by threaded programs deadlocking in system calls,
+  or running unbelievably slowly.  Hopefully these are fixed now.  1.9.6
+  is the first valgrind which gives reasonable support for
+  glibc-2.3.2.  Also fixed a 2.3.2 problem with pthread_atfork().
+
+- Majorly expanded FAQ.txt.  We've added workarounds for all
+  common problems for which a workaround is known.
+
+Minor changes in 1.9.6:
+
+- Fix identification of the main thread's stack.  Incorrect
+  identification of it was causing some on-stack addresses to not get
+  identified as such.  This only affected the usefulness of some error
+  messages; the correctness of the checks made is unchanged.
+
+- Support for kernels >= 2.5.68.
+
+- Dummy implementations of __libc_current_sigrtmin, 
+  __libc_current_sigrtmax and __libc_allocate_rtsig, hopefully
+  good enough to keep alive programs which previously died for lack of
+  them.
+
+- Fix bug in the VALGRIND_DISCARD_TRANSLATIONS client request.
+
+- Debug info reading: read symbols from both "symtab" and "dynsym"
+  sections, rather than merely from the one that comes last in the
+  file.
+
+- New syscall support: prctl(), creat(), lookup_dcookie().
+
+- When checking calls to accept(), recvfrom(), getsocketopt(),
+  don't complain if buffer values are NULL.
+
+- Try and avoid assertion failures in
+  mash_LD_PRELOAD_and_LD_LIBRARY_PATH.
+
+- Minor bug fixes in cg_annotate.
+
+
+
 Version 1.9.5 (7 April 2003)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -1123,7 +1123,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
             /* dump the entire env (not clever, but correct ...) */
             for (j = 0; j < env->used; j++)
                env->inuse[j] = False;
-    vex_printf("rGET: trash env due to dirty helper\n");
+            if (0) vex_printf("rGET: trash env due to dirty helper\n");
          }
       }
 

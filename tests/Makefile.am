@@ -3,7 +3,7 @@ noinst_SCRIPTS = \
 	filter_addresses \
 	filter_discards \
 	filter_stderr_basic \
-	filter_test_paths
+	filter_test_paths \
 	vg_regtest
 
 EXTRA_DIST = \

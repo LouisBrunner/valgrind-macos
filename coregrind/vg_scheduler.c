@@ -729,8 +729,6 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
    VG_(dispatch_ctr) = SCHEDULING_QUANTUM + 1;
 
    while(!VG_(is_exiting)(tid)) {
-      UInt remaining_bbs;
-
       if (VG_(dispatch_ctr) == 1) {
 	 /* Our slice is done, so yield the CPU to another thread.  This
 	    doesn't sleep between sleeping and running, since that would
@@ -775,11 +773,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	 VG_(message)(Vg_DebugMsg, "thread %d: running for %d bbs", 
 		      tid, VG_(dispatch_ctr) - 1 );
 
-      remaining_bbs = VG_(dispatch_ctr);
-
       trc = run_thread_for_a_while ( tid );
-
-      VG_(bbs_done) += remaining_bbs - VG_(dispatch_ctr);
 
       if (VG_(clo_trace_sched) && VG_(clo_verbosity) > 2) {
 	 Char buf[50];

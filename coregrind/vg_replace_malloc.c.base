@@ -132,8 +132,16 @@ FREE( free,                 free                 );
 FREE( cfree,                free                 );
 FREE( __builtin_delete,     __builtin_delete     );
 FREE( _ZdlPv,               __builtin_delete     );
+
+// operator delete(void*, std::nothrow_t const&)
+FREE( _ZdlPvRKSt9nothrow_t, __builtin_delete     );
+
 FREE( __builtin_vec_delete, __builtin_vec_delete );
 FREE( _ZdaPv,               __builtin_vec_delete );
+
+// operator delete[](void*, std::nothrow_t const&)
+FREE( _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+
 
 LIBALIAS(void*, calloc, ( Int nmemb, Int size ))
 {

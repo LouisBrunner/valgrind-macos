@@ -10,6 +10,15 @@ noinst_SCRIPTS = \
 	filter_stderr_basic \
 	filter_test_paths
 
+noinst_PROGRAMS = \
+	true
+
+CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+CXXFLAGS = $(CFLAGS)
+
+# generic C ones
+true_SOURCES 	= true.c
+
 EXTRA_DIST = \
 	$(noinst_SCRIPTS) \
 	blocked_syscall.c \

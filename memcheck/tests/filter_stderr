@@ -1,7 +1,5 @@
 #! /bin/sh
 
-# Skip first four lines (valgrind intro)  
-
 dir=`dirname $0`
 
 $dir/../../tests/filter_stderr_basic                    |

@@ -1,0 +1,16 @@
+#! /bin/sh
+
+# Same as for MemCheck
+
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic |
+
+# Output looks like...
+#
+# ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+# [0] = { }
+# ==27116== 0 possible data races found
+
+sed "/ERROR SUMMARY:/ , /0 possible data races found/ d"
+

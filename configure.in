@@ -303,20 +303,23 @@ AC_OUTPUT(
    coregrind/docs/Makefile
    coregrind/valgrind
    addrcheck/Makefile
+   addrcheck/tests/Makefile
    addrcheck/docs/Makefile
    memcheck/Makefile
    memcheck/tests/Makefile
    memcheck/docs/Makefile
    cachegrind/Makefile
-   cachegrind/cg_annotate
    cachegrind/tests/Makefile
    cachegrind/docs/Makefile
+   cachegrind/cg_annotate
    corecheck/Makefile
    corecheck/tests/Makefile
    corecheck/docs/Makefile
    helgrind/Makefile
+   helgrind/tests/Makefile
    helgrind/docs/Makefile
    lackey/Makefile
+   lackey/tests/Makefile
    lackey/docs/Makefile
    none/Makefile
    none/tests/Makefile

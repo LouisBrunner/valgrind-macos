@@ -1,5 +1,3 @@
 docdir = $(datadir)/doc/valgrind
 
-doc_DATA = coregrind_core.html coregrind_intro.html coregrind_tools.html
-
-EXTRA_DIST = $(doc_DATA)
+dist_doc_DATA = coregrind_core.html coregrind_intro.html coregrind_tools.html

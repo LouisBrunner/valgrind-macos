@@ -23,7 +23,7 @@ SUPP_FILES = \
 	glibc-2.1.supp glibc-2.2.supp glibc-2.3.supp \
 	xfree-3.supp xfree-4.supp
 
-val_DATA = $(SUPP_FILES) default.supp
+dist_val_DATA = $(SUPP_FILES) default.supp
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = valgrind.pc
@@ -38,7 +38,7 @@ default.supp: $(SUPP_FILES)
 regtest: check
 	@PERL@ tests/vg_regtest --all
 
-EXTRA_DIST = $(val_DATA) \
+EXTRA_DIST = \
 	FAQ.txt \
 	ACKNOWLEDGEMENTS \
 	README_PACKAGERS \

@@ -4,7 +4,8 @@ include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 SUBDIRS = $(VG_ARCH) demangle . docs
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
-		-DKICKSTART_BASE=$(KICKSTART_BASE)
+		-DKICKSTART_BASE=$(KICKSTART_BASE) \
+		-DVG_PLATFORM="\"$(VG_PLATFORM)"\"
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g -DELFSZ=32
 AM_CCASFLAGS = $(add_includes) -I..

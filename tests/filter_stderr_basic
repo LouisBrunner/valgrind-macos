@@ -6,9 +6,9 @@
 # Remove ==pid== and --pid-- and ++pid++ and **pid** strings 
 sed "s/\(==\|--\|\+\+\|\*\*\)[0-9]\{1,5\}\1 //"             |
 
-# Remove "<name>, a <description> for x86-linux." line and the following
+# Remove "<name>, a <description> for $ARCH-$OS." line and the following
 # copyright notice line.  Works for tool and core intro lines.
-sed "/^.*, .* for x86-linux\./ , /./ d"                                | 
+sed "/^.*, .* for .*-.*\./ , /./ d"                                | 
 
 # Remove other introductory lines
 sed "/Estimated CPU clock rate is [0-9]* MHz/d"                       |

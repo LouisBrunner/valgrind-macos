@@ -3099,6 +3099,17 @@ static void put_ftop ( IRExpr* e )
    stmt( IRStmt_Put( OFFB_FTOP, e ) );
 }
 
+/* --------- Get/set the C320 bits of the control word. --------- */
+
+static IRExpr* get_C320 ( void )
+{
+   return IRExpr_Get( OFFB_FC320, Ity_I32 );
+}
+
+static void put_C320 ( IRExpr* e )
+{
+   stmt( IRStmt_Put( OFFB_FC320, e ) );
+}
 
 /* --------- Get/set the FPU control word. --------- */
 /* Note, IA32 has this as a 16-bit value, so fstcw/fldcw need to cast
@@ -3293,13 +3304,32 @@ void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf,
    Check dst and src tags when reading but not on write.
 */
 static
-void fp_do_op_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst )
+void fp_do_op_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
+                      Bool pop_after )
 {
-   DIP("f%s st(%d), st(%d)\n", op_txt, st_src, st_dst );
+   DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"", st_src, st_dst );
    put_ST_UNCHECKED( 
       st_dst, 
       binop(op, get_ST(st_dst), get_ST(st_src) ) 
    );
+   if (pop_after)
+      fp_pop();
+}
+
+/* ST(dst) = ST(src) `op` ST(dst).
+   Check dst and src tags when reading but not on write.
+*/
+static
+void fp_do_oprev_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
+                      Bool pop_after )
+{
+   DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"", st_src, st_dst );
+   put_ST_UNCHECKED( 
+      st_dst, 
+      binop(op, get_ST(st_src), get_ST(st_dst) ) 
+   );
+   if (pop_after)
+      fp_pop();
 }
 
 
@@ -3332,6 +3362,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, False );
                break;
 
+            case 6: /* FDIV single-real */
+               fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, False );
+               break;
+
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
                vex_printf("first_opcode == 0xD8\n");
@@ -3342,11 +3376,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          switch (modrm) {
 
             case 0xC0 ... 0xC7: /* FADD %st(?),%st(0) */
-               fp_do_op_ST_ST ( "add", Iop_AddF64, modrm - 0xC0, 0 );
+               fp_do_op_ST_ST ( "add", Iop_AddF64, modrm - 0xC0, 0, False );
                break;
 
             case 0xE0 ... 0xE7: /* FSUB %st(?),%st(0) */
-               fp_do_op_ST_ST ( "sub", Iop_SubF64, modrm - 0xE0, 0 );
+               fp_do_op_ST_ST ( "sub", Iop_SubF64, modrm - 0xE0, 0, False );
                break;
 
             default:
@@ -3497,7 +3531,23 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                goto decode_fail;
          }
       } else {
-         goto decode_fail;
+
+         delta++;
+         switch (modrm) {
+
+            case 0xE9: /* FUCOMPP %st(0),%st(1) */
+               DIP("fucompp %%st(0),%%st(1)\n");
+               put_C320( binop(Iop_Shl32, 
+                               binop(Iop_CmpF64, get_ST(0), get_ST(1)),
+                               mkU8(8)) );
+               fp_pop();
+               fp_pop();
+               break;
+
+	    default:
+               goto decode_fail;
+	 }
+
       }
    }
 
@@ -3567,7 +3617,18 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          }
 
       } else {
-         goto decode_fail;
+
+         delta++;
+         switch (modrm) {
+
+            case 0xF8 ... 0xFF: /* FDIV %st(0),%st(?) */
+               fp_do_op_ST_ST ( "div", Iop_DivF64, 0, modrm - 0xF8, False );
+               break;
+
+            default:
+               goto decode_fail;
+	 }
+
       }
    }
 
@@ -3609,6 +3670,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
       } else {
          delta++;
          switch (modrm) {
+
             case 0xD8 ... 0xDF: /* FSTP %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xD8;
                DIP("fstp %%st(0),%%st(%d)\n", r_dst);
@@ -3618,6 +3680,24 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST_UNCHECKED(r_dst, get_ST(0));
                fp_pop();
                break;
+
+            case 0xE0 ... 0xE7: /* FUCOM %st(0),%st(?) */
+               r_dst = (UInt)modrm - 0xE0;
+               DIP("fucom %%st(0),%%st(%d)\n", r_dst);
+               put_C320( binop(Iop_Shl32, 
+                               binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
+                               mkU8(8)) );
+               break;
+
+            case 0xE8 ... 0xEF: /* FUCOMP %st(0),%st(?) */
+               r_dst = (UInt)modrm - 0xE8;
+               DIP("fucomp %%st(0),%%st(%d)\n", r_dst);
+               put_C320( binop(Iop_Shl32, 
+                               binop(Iop_CmpF64, get_ST(0), get_ST(r_dst)),
+                               mkU8(8)) );
+               fp_pop();
+               break;
+
 	    default:
                goto decode_fail;
 	 }
@@ -3627,7 +3707,32 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDE opcodes +-+-+-+-+-+-+-+ */
    else
    if (first_opcode == 0xDE) {
-      goto decode_fail;
+
+      if (modrm < 0xC0) {
+         goto decode_fail;
+
+      } else {
+
+         delta++;
+	 switch (modrm) {
+
+            case 0xC8 ... 0xCF: /* FMULP %st(0),%st(?) */
+               fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, True );
+               break;
+
+            case 0xF0 ... 0xF7: /* FDIVRP %st(0),%st(?) */
+               fp_do_oprev_ST_ST ( "divr", Iop_DivF64, 0, modrm - 0xF0, True );
+               break;
+
+            case 0xF8 ... 0xFF: /* FDIVP %st(0),%st(?) */
+               fp_do_op_ST_ST ( "div", Iop_DivF64, 0, modrm - 0xF8, True );
+               break;
+
+            default: 
+               goto decode_fail;
+	 }
+
+      }
    }
 
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDF opcodes +-+-+-+-+-+-+-+ */
@@ -3650,14 +3755,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_pop();
                break;
 
-#if 0
             case 5: /* FILD m64 */
                DIP("fildll %s\n", dis_buf);
                fp_push();
                put_ST(0, unop(Iop_I64toF64,
                               loadLE(Ity_I64, mkexpr(addr))));
                break;
-#endif
 
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
@@ -3666,7 +3769,29 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          }
 
       } else {
-         goto decode_fail;
+
+         delta++;
+	 switch (modrm) {
+
+            case 0xE0: /* FNSTSW %ax */
+               DIP("fnstsw %%ax\n");
+               /* Invent a plausible-looking FPU status word value and
+                  dump it in %AX:
+                     ((ftop & 7) << 11) | (c320 & 0x4500)
+               */
+               putIReg(2, R_EAX,
+                  unop(Iop_32to16,
+                       binop(Iop_Or32,
+                             binop(Iop_Shl32, 
+                                   binop(Iop_And32, get_ftop(), mkU32(7)), 
+                                   mkU8(11)),
+                             binop(Iop_And32, get_C320(), mkU32(0x4500))
+               )));
+               break;
+
+            default: 
+               goto decode_fail;
+	 }
       }
 
    }
@@ -4357,34 +4482,29 @@ void codegen_xchg_eAX_Reg ( Int sz, Int reg )
 }
 
 
-//-- static 
-//-- void codegen_SAHF ( UCodeBlock* cb )
-//-- {
-//--    Int t   = newTemp(cb);
-//--    Int t2  = newTemp(cb);
-//--    uInstr2(cb, GET,   4, ArchReg, R_EAX, TempReg, t);
-//-- 
-//--    /* Mask out parts of t not corresponding to %AH.  This stops the
-//--       instrumenter complaining if they are undefined.  Otherwise, the
-//--       instrumenter would check all 32 bits of t at the PUSH, which
-//--       could be the cause of incorrect warnings.  Discovered by Daniel
-//--       Veillard <veillard@redhat.com>. 
-//--    */
-//--    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t2);
-//--    uLiteral(cb, 0x0000FF00);
-//--    uInstr2(cb, AND, 4, TempReg, t2, TempReg, t);
-//--    /* We deliberately don't set the condition codes here, since this
-//--       AND is purely internal to Valgrind and nothing to do with the
-//--       client's state. */
-//-- 
-//--    uInstr0(cb, CALLM_S, 0);
-//--    uInstr1(cb, PUSH,  4, TempReg, t);
-//--    uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_SAHF));
-//--    uFlagsRWU(cb, FlagsEmpty, FlagsSZACP, FlagsEmpty);
-//--    uInstr1(cb, CLEAR, 0, Lit16, 4);
-//--    uInstr0(cb, CALLM_E, 0);
-//-- }
-//-- 
+static 
+void codegen_SAHF ( void )
+{
+   /* Set the flags to:
+      (calculate_flags_all() & CC_MASK_O)  -- retain the old O flag
+      | (%AH & (CC_MASK_S|CC_MASK_Z|CC_MASK_A|CC_MASK_P|CC_MASK_C)
+   */
+   UInt   mask_SZACP = CC_MASK_S|CC_MASK_Z|CC_MASK_A|CC_MASK_P|CC_MASK_C;
+   IRTemp oldflags   = newTemp(Ity_I32);
+   assign( oldflags, mk_calculate_eflags_all() );
+   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DST, mkU32(0) ));
+   stmt( IRStmt_Put( OFFB_CC_SRC,
+         binop(Iop_Or32,
+               binop(Iop_And32, mkexpr(oldflags), mkU32(CC_MASK_O)),
+               binop(Iop_And32, 
+                     binop(Iop_Shr32, getIReg(4, R_EAX), mkU8(8)),
+                     mkU32(mask_SZACP))
+              )
+   ));
+}
+
+
 //-- static 
 //-- void codegen_LAHF ( UCodeBlock* cb )
 //-- {
@@ -6877,23 +6997,23 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       DIP(sz == 2 ? "cwdq\n" : "cdqq\n");
       break;
 
-//--    /* ------------------------ FPU ops -------------------- */
-//-- 
-//--    case 0x9E: /* SAHF */
-//--       codegen_SAHF ( cb );
-//--       DIP("sahf\n");
-//--       break;
-//-- 
+   /* ------------------------ FPU ops -------------------- */
+
+   case 0x9E: /* SAHF */
+      codegen_SAHF();
+      DIP("sahf\n");
+      break;
+
 //--    case 0x9F: /* LAHF */
 //--       codegen_LAHF ( cb );
 //--       DIP("lahf\n");
 //--       break;
 //-- 
-//--    case 0x9B: /* FWAIT */
-//--       /* ignore? */
-//--       DIP("fwait\n");
-//--       break;
-//-- 
+   case 0x9B: /* FWAIT */
+      /* ignore? */
+      DIP("fwait\n");
+      break;
+
    case 0xD8:
    case 0xD9:
    case 0xDA:

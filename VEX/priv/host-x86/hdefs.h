@@ -280,7 +280,8 @@ typedef
       Xin_FpLdSt,    /* FP fake load/store */
       Xin_FpLdStI,   /* FP fake load/store, converting to/from Int */
       Xin_FpCMov,    /* FP fake floating point (un)conditional move */
-      Xin_FpLdStCW   /* fldcw / fstcw */
+      Xin_FpLdStCW,  /* fldcw / fstcw */
+      Xin_FpCmp      /* FP compare, generating a C320 value into int reg */
    }
    X86InstrTag;
 
@@ -420,6 +421,12 @@ typedef
             X86AMode* addr;
          }
          FpLdStCW;
+         /* Do a compare, generating the C320 bits into the dst. */
+         struct {
+            HReg    srcL;
+            HReg    srcR;
+            HReg    dst;
+         } FpCmp;
       } Xin;
    }
    X86Instr;
@@ -447,6 +454,7 @@ extern X86Instr* X86Instr_FpLdSt   ( Bool isLoad, UChar sz, HReg reg, X86AMode* 
 extern X86Instr* X86Instr_FpLdStI  ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
 extern X86Instr* X86Instr_FpCMov   ( X86CondCode, HReg src, HReg dst );
 extern X86Instr* X86Instr_FpLdStCW ( Bool isLoad, X86AMode* );
+extern X86Instr* X86Instr_FpCmp    ( HReg srcL, HReg srcR, HReg dst );
 
 
 extern void ppX86Instr ( X86Instr* );

@@ -607,6 +607,15 @@ X86Instr* X86Instr_FpLdStCW ( Bool isLoad, X86AMode* addr )
    i->Xin.FpLdStCW.addr   = addr;
    return i;
 }
+X86Instr* X86Instr_FpCmp ( HReg srcL, HReg srcR, HReg dst )
+{
+   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag            = Xin_FpCmp;
+   i->Xin.FpCmp.srcL = srcL;
+   i->Xin.FpCmp.srcR = srcR;
+   i->Xin.FpCmp.dst  = dst;
+   return i;
+}
 
 
 void ppX86Instr ( X86Instr* i ) {
@@ -771,6 +780,14 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(i->Xin.FpLdStCW.isLoad ? "fldcw " : "fstcw ");
          ppX86AMode(i->Xin.FpLdStCW.addr);
          return;
+      case Xin_FpCmp:
+         vex_printf("gcmp ");
+         ppHRegX86(i->Xin.FpCmp.srcL);
+         vex_printf(",");
+         ppHRegX86(i->Xin.FpCmp.srcR);
+         vex_printf(",");
+         ppHRegX86(i->Xin.FpCmp.dst);
+         break;
       default:
          vpanic("ppX86Instr");
    }
@@ -890,6 +907,12 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
       case Xin_FpLdStCW:
          addRegUsage_X86AMode(u, i->Xin.FpLdStCW.addr);
          return;
+      case Xin_FpCmp:
+         addHRegUse(u, HRmRead, i->Xin.FpCmp.srcL);
+         addHRegUse(u, HRmRead, i->Xin.FpCmp.srcR);
+         addHRegUse(u, HRmWrite, i->Xin.FpCmp.dst);
+         addHRegUse(u, HRmWrite, hregX86_EAX());
+         return;
       default:
          ppX86Instr(i);
          vpanic("getRegUsage_X86Instr");
@@ -980,6 +1003,11 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          return;
       case Xin_FpLdStCW:
          mapRegs_X86AMode(m, i->Xin.FpLdStCW.addr);
+         return;
+      case Xin_FpCmp:
+         mapReg(m, &i->Xin.FpCmp.srcL);
+         mapReg(m, &i->Xin.FpCmp.srcR);
+         mapReg(m, &i->Xin.FpCmp.dst);
          return;
       default:
          ppX86Instr(i);
@@ -1797,7 +1825,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             --> ffree %st(7) ; fild{w/l/ll} amode ; fstp st(N+1) 
          */
          switch (i->Xin.FpLdStI.sz) {
-            case 8:  vassert(0); opc = 0xDF; subopc_imm = 5; break;
+            case 8:  opc = 0xDF; subopc_imm = 5; break;
             case 4:  opc = 0xDB; subopc_imm = 0; break;
             case 2:  vassert(0); opc = 0xDF; subopc_imm = 0; break;
             default: vpanic("emitX86Instr(Xin_FpLdStI-load)");
@@ -1825,29 +1853,6 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       }
       break;
 
-#if 0
-   case Xin_FpI64:
-     if (i->Xin.FpI64.toInt) {
-       vassert(0);
-     } else {
-        /* gi64tof64 %hi:%lo %fakeN
-           --> ffree %st7; pushl hi ; pushl lo ; fildll 0(%esp) ; 
-               addl $8,%esp ; fstpl %st(N+1) 
-        */
-        /* ffree %st(7) */
-        p = do_ffree_st7(p);
-        /* pushl %hi ; pushl %lo */
-        *p++ = 0x50 + iregNo(i->Xin.FpI64.iregHi);
-        *p++ = 0x50 + iregNo(i->Xin.FpI64.iregLo);
-        /* fildll 0(%esp) */
-        *p++ = 0xDF; *p++ = 0x6C; *p++ = 0x24; *p++ = 0x00; 
-        /* addl $8, %esp */
-        *p++ = 0x83; *p++ = 0xC4; *p++ = 0x08; 
-        p = do_fstp_st(p, 1+fregNo(i->Xin.FpI64.freg));
-        goto done;
-     }
-#endif
-
    case Xin_FpCMov:
       /* jmp fwds if !condition */
       *p++ = 0x70 + (i->Xin.FpCMov.cond ^ 1);
@@ -1856,8 +1861,8 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
       /* ffree %st7 ; fld %st(src) ; fstp %st(1+dst) */
       p = do_ffree_st7(p);
-      p = do_fld_st(p, 0+hregNumber(i->Xin.FpCMov.src));
-      p = do_fstp_st(p, 1+hregNumber(i->Xin.FpCMov.dst));
+      p = do_fld_st(p, 0+fregNo(i->Xin.FpCMov.src));
+      p = do_fstp_st(p, 1+fregNo(i->Xin.FpCMov.dst));
 
       /* Fill in the jump offset. */
       *(ptmp-1) = p - ptmp;
@@ -1870,6 +1875,27 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       } else {
          vassert(0);
       }
+      goto done;
+
+
+   case Xin_FpCmp:
+      /* gcmp %fL, %fR, %dst
+         -> ffree %st7; fpush %fL ; fucomp %(fR+1) ; 
+            fnstsw %ax ; movl %eax, %dst 
+      */
+      /* ffree %st7 */
+      p = do_ffree_st7(p);
+      /* fpush %fL */
+      p = do_fld_st(p, 0+fregNo(i->Xin.FpCmp.srcL));
+      /* fucomp %(fR+1) */
+      *p++ = 0xDD;
+      *p++ = 0xE8 + (7 & (1+fregNo(i->Xin.FpCmp.srcR)));
+      /* fnstsw %ax */
+      *p++ = 0xDF;
+      *p++ = 0xE0;
+      /*  movl %eax, %dst */
+      *p++ = 0x89;
+      p = doAMode_R(p, hregX86_EAX(), i->Xin.FpCmp.dst);
       goto done;
 
    default: 

@@ -502,6 +502,17 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return b16;
       }
 
+      if (e->Iex.Binop.op == Iop_CmpF64) {
+         HReg fL = iselDblExpr(env, e->Iex.Binop.arg1);
+         HReg fR = iselDblExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegI(env);
+         addInstr(env, X86Instr_FpCmp(fL,fR,dst));
+         /* shift this right 8 bits so as to conform to CmpF64
+            definition. */
+         addInstr(env, X86Instr_Sh32(Xsh_SHR, 8, X86RM_Reg(dst)));
+         return dst;
+      }
+
       if (e->Iex.Binop.op == Iop_F64toI32 || e->Iex.Binop.op == Iop_F64toI16) {
          Int  sz   = e->Iex.Binop.op == Iop_F64toI16 ? 2 : 4;
          HReg rf   = iselDblExpr(env, e->Iex.Binop.arg2);
@@ -518,7 +529,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 	    mode accordingly. */
 
          /* Create a space, both for the control word messing, and for
-	    the actual store conversion.
+	    the actual store conversion. */
          /* subl $4, %esp */
          addInstr(env, 
                   X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(4), hregX86_ESP()));
@@ -1182,6 +1193,23 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
+   /* 64-bit load */
+   if (e->tag == Iex_LDle) {
+      vassert(e->Iex.LDle.ty == Ity_I64);
+      HReg  tLo = newVRegI(env);
+      HReg  tHi = newVRegI(env);
+      HReg rA = iselIntExpr_R(env, e->Iex.LDle.addr);
+      addInstr(env, X86Instr_Alu32R(
+                        Xalu_MOV,
+                        X86RMI_Mem(X86AMode_IR(0, rA)), tLo));
+      addInstr(env, X86Instr_Alu32R(
+                        Xalu_MOV,
+                        X86RMI_Mem(X86AMode_IR(4, rA)), tHi));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
    /* 32 x 32 -> 64 multiply */
    if (e->tag == Iex_Binop
        && (e->Iex.Binop.op == Iop_MullU32
@@ -1487,6 +1515,20 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
                              X86AMode_IR(0, hregX86_ESP())));
 	    addInstr(env, X86Instr_Alu32R(Xalu_ADD,
                                           X86RMI_Imm(4),
+                                          hregX86_ESP()));
+            return dst;
+         }
+         case Iop_I64toF64: {
+            HReg dst = newVRegF(env);
+            HReg rHi,rLo;
+	    iselIntExpr64( &rHi, &rLo, env, e->Iex.Unop.arg);
+            addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
+            addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
+            addInstr(env, X86Instr_FpLdStI(
+                             True/*load*/, 8, dst, 
+                             X86AMode_IR(0, hregX86_ESP())));
+	    addInstr(env, X86Instr_Alu32R(Xalu_ADD,
+                                          X86RMI_Imm(8),
                                           hregX86_ESP()));
             return dst;
          }

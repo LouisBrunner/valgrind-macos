@@ -1365,7 +1365,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_I32, binop(op, vatom1, atom2));
 
-      case Iop_Shl16: case Iop_Shr16:
+      case Iop_Shl16: case Iop_Shr16: case Iop_Sar16:
          /* Same scheme as with 32-bit shifts. */
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_I16, binop(op, vatom1, atom2));

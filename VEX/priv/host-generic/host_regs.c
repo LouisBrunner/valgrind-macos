@@ -23,25 +23,6 @@ HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual )
    return regno | (((UInt)rc) << 28) | (virtual ? (1<<24) : 0);
 }
 
-HRegClass hregClass ( HReg r )
-{
-   UInt rc = r;
-   rc = (rc >> 28) & 0x0F;
-   vassert(rc == HRcInt || rc == HRcFloat || rc == HRcVector
-           || rc == HRcInt64 || rc == HRcVector128);
-   return (HRegClass)rc;
-}
-
-Bool hregIsVirtual ( HReg r )
-{
-   return (((UInt)r) & (1<<24)) ? True : False;
-}
-
-UInt hregNumber ( HReg r )
-{
-   return ((UInt)r) & 0x00FFFFFF;
-}
-
 void ppHRegClass ( HRegClass hrc )
 {
    switch (hrc) {

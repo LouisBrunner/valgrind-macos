@@ -8,8 +8,10 @@
 
 /* TODO:
    XOR reg with itself
+   SBB reg with itself
    is Iop_Neg* used?
-
+   xadd %reg,%reg fix
+   MOVAPS fix (vg_to_ucode rev 1.143)
 */
 
 /* Translates x86 code to IR. */
@@ -7927,9 +7929,11 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    while (True) {
       if (!first_stmt) 
          break;
-      vex_printf("              ");
-      ppIRStmt(first_stmt);
-      DIP("\n");
+      if (print_codegen) {
+         vex_printf("              ");
+         ppIRStmt(first_stmt);
+         vex_printf("\n");
+      }
       if (first_stmt == last_stmt)
 	 break;
       first_stmt = first_stmt->link;

@@ -143,6 +143,24 @@ Int findMostDistantlyMentionedVReg (
 }
 
 
+
+/* Double the size of the real-reg-info array, if needed. */
+static void ensureRRIspace ( RRegInfo** info, Int* size, Int used )
+{
+   Int k;
+   if (used < *size) return;
+   if (0)
+      vex_printf("ensureRRISpace: %d -> %d\n", *size, 2 * *size);
+   vassert(used == *size);
+   RRegInfo* arr2 
+      = LibVEX_Alloc(2 * *size * sizeof(RRegInfo));
+   for (k = 0; k < *size; k++)
+      arr2[k] = (*info)[k];
+   *size *= 2;
+   *info = arr2;
+}
+
+
 /* A target-independent register allocator for Valgrind.  Requires
    various functions which it uses to deal abstractly with
    instructions and registers, since it cannot have any
@@ -408,10 +426,9 @@ HInstrArray* doRegisterAllocation (
          if (flush) {
             vassert(flush_la != INVALID_INSTRNO);
             vassert(flush_db != INVALID_INSTRNO);
-            vex_printf("FLUSH 1 (%d,%d)\n", flush_la, flush_db);
-            if (rreg_info_used == rreg_info_size) {
-               vpanic("make rreg info array bigger(1)");
-            }
+            ensureRRIspace(&rreg_info, &rreg_info_size, rreg_info_used);
+            if (0) 
+               vex_printf("FLUSH 1 (%d,%d)\n", flush_la, flush_db);
             rreg_info[rreg_info_used].rreg        = rreg;
             rreg_info[rreg_info_used].live_after  = flush_la;
             rreg_info[rreg_info_used].dead_before = flush_db;
@@ -438,9 +455,11 @@ HInstrArray* doRegisterAllocation (
 
       if (rreg_live_after[j] == INVALID_INSTRNO)
          continue;
-      if (rreg_info_used == rreg_info_size) {
-         vpanic("make rreg info array bigger(2)");
-      }
+
+      ensureRRIspace(&rreg_info, &rreg_info_size, rreg_info_used);
+      if (0)
+         vex_printf("FLUSH 2 (%d,%d)\n", 
+                    rreg_live_after[j], rreg_dead_before[j]);
       rreg_info[rreg_info_used].rreg        = available_real_regs[j];
       rreg_info[rreg_info_used].live_after  = rreg_live_after[j];
       rreg_info[rreg_info_used].dead_before = rreg_dead_before[j];
@@ -569,7 +588,22 @@ HInstrArray* doRegisterAllocation (
              && ii < rreg_info[j].dead_before) {
             /* ii is the middle of a hard live range for some real reg.
                Check it's marked as such in the running state. */
-            vassert(state[rreg_info[j].rreg].disp == Unavail);
+
+#           if 0
+            vex_printf("considering la %d .. db %d   reg = ", 
+                       rreg_info[j].live_after, 
+                       rreg_info[j].dead_before);
+            (*ppReg)(rreg_info[j].rreg);
+            vex_printf("\n");
+#           endif
+
+            /* find the state entry for this rreg */
+            for (k = 0; k < n_state; k++)
+               if (state[k].rreg == rreg_info[j].rreg)
+                  break;
+
+            /* and assert that this rreg is marked as unavailable */
+            vassert(state[k].disp == Unavail);
          }
       }
 

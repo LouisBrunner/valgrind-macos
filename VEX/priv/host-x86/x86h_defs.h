@@ -281,7 +281,7 @@ typedef
          /* Not and Neg */
          struct {
             X86UnaryOp op;
-            X86RM* dst;
+            X86RM*    dst;
          } Unary32;
          /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
          struct {
@@ -289,7 +289,7 @@ typedef
             X86ScalarSz ssz;
             X86RM*      src;
          } MulL;
-         /* x86 div/idiv instruction */
+         /* x86 div/idiv instruction.  Modifies EDX and EAX and reads src. */
          struct {
             Bool        syned;
             X86ScalarSz ssz;

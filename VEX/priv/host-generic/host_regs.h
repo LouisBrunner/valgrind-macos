@@ -65,9 +65,22 @@ extern void ppHReg ( HReg );
 /* Construct/destruct. */
 extern HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual );
 
-extern HRegClass hregClass     ( HReg );
-extern Bool      hregIsVirtual ( HReg );
-extern UInt      hregNumber    ( HReg );
+static inline HRegClass hregClass ( HReg r ) {
+   UInt rc = r;
+   rc = (rc >> 28) & 0x0F;
+   vassert(rc >= HRcInt || rc <= HRcVector128);
+   return (HRegClass)rc;
+}
+
+static inline UInt hregNumber ( HReg r ) {
+   return ((UInt)r) & 0x00FFFFFF;
+}
+
+static inline Bool hregIsVirtual ( HReg r ) {
+   return (((UInt)r) & (1<<24)) ? True : False;
+}
+
+
 
 
 #define INVALID_HREG ((HReg)0xFFFFFFFF)

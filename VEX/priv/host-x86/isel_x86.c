@@ -11,6 +11,7 @@
 #include "libvex.h"
 
 #include "vex_util.h"
+#include "vex_globals.h"
 #include "host_regs.h"
 #include "x86h_defs.h"
 
@@ -190,8 +191,10 @@ static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
 static void addInstr ( ISelEnv* env, X86Instr* instr )
 {
    addHInstr(env->code, instr);
-   ppX86Instr(instr);
-   vex_printf("\n");
+   if (vex_verbosity > 0) {
+      ppX86Instr(instr);
+      vex_printf("\n");
+   }
 }
 
 static HReg newVRegI ( ISelEnv* env )
@@ -784,9 +787,11 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
 static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 {
-   vex_printf("-- ");
-   ppIRStmt(stmt);
-   vex_printf("\n");
+   if (vex_verbosity > 0) {
+      vex_printf("-- ");
+      ppIRStmt(stmt);
+      vex_printf("\n");
+   }
 
    switch (stmt->tag) {
 
@@ -866,7 +871,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_Exit: {
      if (stmt->Ist.Exit.dst->tag != Ico_U32)
         vpanic("isel_x86: Ist_Exit: dst is not a 32-bit value");
-
      X86RI* dst     = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
      X86CondCode cc = iselCondCode(env,stmt->Ist.Exit.cond);
      addInstr(env, X86Instr_Goto(cc, dst));
@@ -887,9 +891,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 {
    X86RI* ri;
-   vex_printf("-- goto ");
-   ppIRExpr(next);
-   vex_printf("\n");
+   if (vex_verbosity > 0) {
+      vex_printf("-- goto ");
+      ppIRExpr(next);
+      vex_printf("\n");
+   }
 
    ri = iselIntExpr_RI(env, next);
    addInstr(env, X86Instr_Goto(Xcc_ALWAYS,ri));

@@ -41,6 +41,7 @@ static Char linebuf[N_LINEBUF];
 static Char origbuf[N_ORIGBUF];
 static Char transbuf[N_TRANSBUF];
 
+static Bool verbose = True;
 
 int main ( int argc, char** argv )
 {
@@ -63,8 +64,10 @@ int main ( int argc, char** argv )
    }
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
-                 1, 1, //False, 
-                       True, 
+                 1,  /* debug_paranoia */ 
+                 1,  /* verbosity */
+                 False, 
+		 //True, 
                  100 );
 
    while (!feof(f)) {
@@ -82,15 +85,19 @@ int main ( int argc, char** argv )
       assert(linebuf[0] == '.');
       /* second line is:   . byte byte byte etc */
       //printf("%s", linebuf);
-      printf("\n\n============ Basic Block %d, "
-             "Start %x, nbytes %d ============\n\n", 
-             bb_number, orig_addr, orig_nbytes);
+      if (verbose)
+         printf("\n\n============ Basic Block %d, "
+                "Start %x, nbytes %d ============\n\n", 
+                bb_number, orig_addr, orig_nbytes);
       assert(orig_nbytes >= 1 && orig_nbytes <= N_ORIGBUF);
       for (i = 0; i < orig_nbytes; i++) {
 	 assert(1 == sscanf(&linebuf[2 + 3*i], "%x", &u));
 	 origbuf[i] = (UChar)u;
       }
 
+      //      if (bb_number == 50) exit(1);
+      { int i;
+      for (i = 0; i < 1; i++)
       tres =
       LibVEX_Translate ( InsnSetX86, InsnSetX86,
 			 origbuf, (Addr64)orig_addr, &orig_used,
@@ -98,9 +105,11 @@ int main ( int argc, char** argv )
 			 NULL, NULL );
       assert(tres == TransOK);
       assert(orig_used == orig_nbytes);
+      }
    }
 
    fclose(f);
+   LibVEX_ClearTemporary(True);
 
 #if 0
    Int* p;

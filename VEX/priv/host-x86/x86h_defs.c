@@ -620,9 +620,28 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addRegUsage_X86RI(u, i->Xin.Alu32M.src);
          addRegUsage_X86AMode(u, i->Xin.Alu32M.dst);
          return;
+      case Xin_Unary32:
+         addRegUsage_X86RM(u, i->Xin.Unary32.dst, HRmModify);
+         return;
+      case Xin_MulL:
+         addRegUsage_X86RM(u, i->Xin.MulL.src, HRmRead);
+         addHRegUse(u, HRmModify, hregX86_EAX());
+         addHRegUse(u, HRmWrite, hregX86_EDX());
+         return;
+      case Xin_Div:
+	 addRegUsage_X86RM(u, i->Xin.Div.src, HRmRead);
+         addHRegUse(u, HRmModify, hregX86_EAX());
+         addHRegUse(u, HRmModify, hregX86_EDX());
+         return;
       case Xin_Sh32:
          addRegUsage_X86RM(u, i->Xin.Sh32.dst, HRmModify);
          if (i->Xin.Sh32.src == 0)
+            addHRegUse(u, HRmRead, hregX86_ECX());
+         return;
+      case Xin_Sh3232:
+         addHRegUse(u, HRmRead, i->Xin.Sh3232.rLo);
+         addHRegUse(u, HRmModify, i->Xin.Sh3232.rHi);
+         if (i->Xin.Sh3232.amt == 0)
             addHRegUse(u, HRmRead, hregX86_ECX());
          return;
       case Xin_Push:
@@ -641,10 +660,28 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addRegUsage_X86RI(u, i->Xin.Goto.dst);
          addHRegUse(u, HRmWrite, hregX86_EAX());
          return;
+      case Xin_CMov32:
+         addRegUsage_X86RM(u, i->Xin.CMov32.src, HRmRead);
+         addHRegUse(u, HRmModify, i->Xin.CMov32.dst);
+         return;
+      case Xin_LoadEX:
+         addRegUsage_X86AMode(u, i->Xin.LoadEX.src);
+         addHRegUse(u, HRmWrite, i->Xin.LoadEX.dst);
+         return;
+      case Xin_Store:
+         addHRegUse(u, HRmRead, i->Xin.Store.src);
+         addRegUsage_X86AMode(u, i->Xin.Store.dst);
+         return;
       default:
          ppX86Instr(i);
          vpanic("getRegUsage_X86Instr");
    }
+}
+
+/* local helper */
+static void mapReg(HRegRemap* m, HReg* r)
+{
+   *r = lookupHRegRemap(m, *r);
 }
 
 void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
@@ -652,17 +689,48 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
    switch (i->tag) {
       case Xin_Alu32R:
          mapRegs_X86RMI(m, i->Xin.Alu32R.src);
-         i->Xin.Alu32R.dst = lookupHRegRemap(m, i->Xin.Alu32R.dst);
+         mapReg(m, &i->Xin.Alu32R.dst);
          return;
       case Xin_Alu32M:
          mapRegs_X86RI(m, i->Xin.Alu32M.src);
          mapRegs_X86AMode(m, i->Xin.Alu32M.dst);
          return;
+      case Xin_Unary32:
+         mapRegs_X86RM(m, i->Xin.Unary32.dst);
+         return;
+      case Xin_MulL:
+         mapRegs_X86RM(m, i->Xin.MulL.src);
+         return;
+      case Xin_Div:
+	 mapRegs_X86RM(m, i->Xin.Div.src);
+         return;
       case Xin_Sh32:
          mapRegs_X86RM(m, i->Xin.Sh32.dst);
          return;
+      case Xin_Sh3232:
+         mapReg(m, &i->Xin.Sh3232.rLo);
+         mapReg(m, &i->Xin.Sh3232.rHi);
+         return;
+      case Xin_Push:
+         mapRegs_X86RMI(m, i->Xin.Push.src);
+         return;
+      case Xin_Call:
+         mapReg(m, &i->Xin.Call.target);
+         return;
       case Xin_Goto:
          mapRegs_X86RI(m, i->Xin.Goto.dst);
+         return;
+      case Xin_CMov32:
+         mapRegs_X86RM(m, i->Xin.CMov32.src);
+         mapReg(m, &i->Xin.CMov32.dst);
+         return;
+      case Xin_LoadEX:
+         mapRegs_X86AMode(m, i->Xin.LoadEX.src);
+         mapReg(m, &i->Xin.LoadEX.dst);
+         return;
+      case Xin_Store:
+         mapReg(m, &i->Xin.Store.src);
+         mapRegs_X86AMode(m, i->Xin.Store.dst);
          return;
       default:
          ppX86Instr(i);

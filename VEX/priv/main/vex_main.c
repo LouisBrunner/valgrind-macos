@@ -149,14 +149,16 @@ TranslateResult LibVEX_Translate (
 
    /* Turn it into virtual-registerised code. */
    vcode = iselBB ( irbb );
-LibVEX_ClearTemporary(True); return TransOK;
 
-   vex_printf("\n-------- Virtual registerised code --------\n");
-   for (i = 0; i < vcode->arr_used; i++) {
-      ppInstr(vcode->arr[i]);
+   if (vex_verbosity > 0) {
+      vex_printf("\n-------- Virtual registerised code --------\n");
+      for (i = 0; i < vcode->arr_used; i++) {
+         vex_printf("%3d   ", i);
+         ppInstr(vcode->arr[i]);
+         vex_printf("\n");
+      }
       vex_printf("\n");
    }
-   vex_printf("\n");
 
    /* Register allocate. */
    rcode = doRegisterAllocation ( vcode, available_real_regs,
@@ -165,15 +167,19 @@ LibVEX_ClearTemporary(True); return TransOK;
 			          genSpill, genReload,
 				  ppInstr, ppReg );
 
-   vex_printf("\n-------- Post-regalloc code --------\n");
-   for (i = 0; i < rcode->arr_used; i++) {
-      ppInstr(rcode->arr[i]);
+   if (vex_verbosity > 0) {
+      vex_printf("\n-------- Post-regalloc code --------\n");
+      for (i = 0; i < rcode->arr_used; i++) {
+         vex_printf("%3d   ", i);
+         ppInstr(rcode->arr[i]);
+         vex_printf("\n");
+      }
       vex_printf("\n");
    }
-   vex_printf("\n");
 
    /* Assemble, etc. */
-   LibVEX_ClearTemporary(True);
+   //   LibVEX_ClearTemporary(True);
+   LibVEX_ClearTemporary(False);
 
    return TransOK;
 }

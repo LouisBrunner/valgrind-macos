@@ -1353,6 +1353,19 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    } else if (0 == VG_(strcmp)(vendor_id, "AuthenticAMD")) {
       ret = AMD_cache_info(I1c, D1c, L2c);
 
+   } else if (0 == VG_(strcmp)(vendor_id, "CentaurHauls")) {
+      /* Total kludge.  Pretend to be a VIA Nehemiah. */
+      D1c->size      = 64;
+      D1c->assoc     = 16;
+      D1c->line_size = 16;
+      I1c->size      = 64;
+      I1c->assoc     = 4;
+      I1c->line_size = 16;
+      L2c->size      = 64;
+      L2c->assoc     = 16;
+      L2c->line_size = 16;
+      ret = 0;
+
    } else {
       VG_(message)(Vg_DebugMsg, "CPU vendor ID not recognised (%s)",
                    vendor_id);

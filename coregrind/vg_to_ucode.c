@@ -3016,7 +3016,7 @@ Addr dis_cmov_E_G ( UCodeBlock* cb,
       uInstr2(cb, PUT, size, TempReg, tmpd, ArchReg, gregOfRM(rm));
       if (dis) VG_(printf)("cmov%c%s %s,%s\n", 
                            nameISize(size), 
-                           VG_(nameCondcode)(cond),
+                           VG_(name_UCondcode)(cond),
                            nameIReg(size,eregOfRM(rm)),
                            nameIReg(size,gregOfRM(rm)));
       return 1+eip0;
@@ -3034,7 +3034,7 @@ Addr dis_cmov_E_G ( UCodeBlock* cb,
       uInstr2(cb, PUT, size, TempReg, tmpd, ArchReg, gregOfRM(rm));
       if (dis) VG_(printf)("cmov%c%s %s,%s\n", 
                            nameISize(size), 
-                           VG_(nameCondcode)(cond),
+                           VG_(name_UCondcode)(cond),
                            dis_buf,
                            nameIReg(size,gregOfRM(rm)));
       return HI8(pair)+eip0;
@@ -3539,7 +3539,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       /* The above 3 lines would be removed if the bb was not to end
          here. */
       if (dis)
-         VG_(printf)("j%s-8 0x%x\n", VG_(nameCondcode)(opc - 0x70), d32);
+         VG_(printf)("j%s-8 0x%x\n", VG_(name_UCondcode)(opc - 0x70), d32);
       break;
 
    case 0xE3: /* JECXZ or perhaps JCXZ, depending on OSO ?  Intel
@@ -4574,7 +4574,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          *isEnd = True;
          if (dis)
             VG_(printf)("j%s-32 0x%x\n", 
-                        VG_(nameCondcode)(opc - 0x80), d32);
+                        VG_(name_UCondcode)(opc - 0x80), d32);
          break;
 
       /* =-=-=-=-=-=-=-=-=- RDTSC -=-=-=-=-=-=-=-=-=-=-= */
@@ -4626,7 +4626,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
             uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
             uInstr2(cb, PUT, 1, TempReg, t1, ArchReg, eregOfRM(modrm));
             if (dis) VG_(printf)("set%s %s\n", 
-                                 VG_(nameCondcode)(opc-0x90), 
+                                 VG_(name_UCondcode)(opc-0x90), 
                                  nameIReg(1,eregOfRM(modrm)));
          } else {
             pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
@@ -4637,7 +4637,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
             uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
             uInstr2(cb, STORE, 1, TempReg, t1, TempReg, t2);
             if (dis) VG_(printf)("set%s %s\n", 
-                                 VG_(nameCondcode)(opc-0x90), 
+                                 VG_(name_UCondcode)(opc-0x90), 
                                  dis_buf);
          }
          break;

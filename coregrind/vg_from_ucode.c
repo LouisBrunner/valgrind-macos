@@ -1556,7 +1556,7 @@ void VG_(emit_jcondshort_delta) ( Bool simd_flags, Condcode cond, Int delta )
    VG_(emitB) ( (UChar)delta );
    if (dis)
       VG_(printf)( "\n\t\tj%s-8\t%%eip+%d\n", 
-                   VG_(nameCondcode)(cond), delta );
+                   VG_(name_UCondcode)(cond), delta );
 }
 
 /* Same as above, but defers emitting the delta  */
@@ -1567,7 +1567,7 @@ void VG_(emit_jcondshort_target) ( Bool simd, Condcode cond, Int *tgt )
    VG_(emit_target_delta) (tgt);
    if (dis)
       VG_(printf)( "\n\t\tj%s-8\t%%eip+(%d)\n", 
-                   VG_(nameCondcode)(cond), tgt_addr(*tgt) );
+                   VG_(name_UCondcode)(cond), tgt_addr(*tgt) );
 }
 
 
@@ -1579,7 +1579,7 @@ static void emit_setb_reg ( Bool simd, Int reg, Condcode cond )
    VG_(emit_amode_ereg_greg) ( reg, 0 );
    if (dis)
       VG_(printf)("\n\t\tset%s %s\n", 
-                  VG_(nameCondcode)(cond), nameIReg(1,reg));
+                  VG_(name_UCondcode)(cond), nameIReg(1,reg));
 }
 
 static void emit_ret ( void )
@@ -2217,7 +2217,7 @@ static void synth_jcond_lit ( Condcode cond,
 
          default: 
             VG_(printf)("synth_jcond_lit: unhandled simd case %d (%s)\n", 
-                        (Int)cond, VG_(nameCondcode)(cond) );
+                        (Int)cond, VG_(name_UCondcode)(cond) );
             VG_(core_panic)("synth_jcond_lit: unhandled simd case");
 
           simple:

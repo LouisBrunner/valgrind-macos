@@ -112,21 +112,14 @@ typedef unsigned char          Bool;
 /* The major version number indicates binary-incompatible changes to the
    interface;  if the core and skin major versions don't match, Valgrind
    will abort.  The minor version indicates binary-compatible changes.
-
-   We don't want the variables themselves in the core, only in the skins,
-   hence the #ifndef.  But the core needs to know of their existence, hence
-   the #else branch.  Phew.
-
-   In summary:  skins don't need to do anything, the core works it all out.
 */
-
 #define VG_CORE_INTERFACE_MAJOR_VERSION   1
-#define VG_CORE_INTERFACE_MINOR_VERSION   1
+#define VG_CORE_INTERFACE_MINOR_VERSION   2
 
 extern const Int VG_(skin_interface_major_version);
 extern const Int VG_(skin_interface_minor_version);
 
-/* Every skin must define this macro somewhere, exactly once. */
+/* Every skin must include this macro somewhere, exactly once. */
 #define VG_DETERMINE_INTERFACE_VERSION \
 const Int VG_(skin_interface_major_version) = VG_CORE_INTERFACE_MAJOR_VERSION; \
 const Int VG_(skin_interface_minor_version) = VG_CORE_INTERFACE_MINOR_VERSION;
@@ -833,6 +826,7 @@ extern void  VG_(pp_UInstr)      ( Int instrNo, UInstr* u );
 extern void  VG_(pp_UInstr_regs) ( Int instrNo, UInstr* u );
 extern void  VG_(up_UInstr)      ( Int instrNo, UInstr* u );
 extern Char* VG_(name_UOpcode)   ( Bool upper, Opcode opc );
+extern Char* VG_(name_UCondcode) ( Condcode cond );
 extern void  VG_(pp_UOperand)    ( UInstr* u, Int operandNo, 
                                    Int sz, Bool parens );
 

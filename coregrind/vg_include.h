@@ -1085,7 +1085,6 @@ extern void  VG_(translate)  ( ThreadState* tst,
                                UInt* trans_size,
 			       UShort jumps[VG_MAX_JUMPS]);
 
-extern Char* VG_(nameCondcode)        ( Condcode cond );
 extern Bool  VG_(saneUInstr)          ( Bool beforeRA, Bool beforeLiveness,
                                         UInstr* u );
 extern void  VG_(saneUCodeBlock)      ( UCodeBlock* cb );

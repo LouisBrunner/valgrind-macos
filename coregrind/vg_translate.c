@@ -712,7 +712,7 @@ Bool VG_(saneUCodeBlockCalls) ( UCodeBlock* cb )
 /* Global that dictates whether to print generated code at all stages */
 Bool VG_(print_codegen);
 
-Char* VG_(nameCondcode) ( Condcode cond )
+Char* VG_(name_UCondcode) ( Condcode cond )
 {
    switch (cond) {
       case CondO:      return "o";
@@ -732,7 +732,7 @@ Char* VG_(nameCondcode) ( Condcode cond )
       case CondLE:     return "le";
       case CondNLE:    return "nle";
       case CondAlways: return "MP"; /* hack! */
-      default: VG_(core_panic)("nameCondcode");
+      default: VG_(core_panic)("name_UCondcode");
    }
 }
 
@@ -903,7 +903,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
    VG_(printf)("\t%4d: %s", instrNo, 
                             VG_(name_UOpcode)(True, u->opcode));
    if (u->opcode == JMP || u->opcode == CC2VAL)
-      VG_(printf)("%s", VG_(nameCondcode(u->cond)));
+      VG_(printf)("%s", VG_(name_UCondcode)(u->cond));
 
    switch (u->size) {
       case 0:  VG_(printf)("o"); break;

@@ -212,6 +212,7 @@ Bool SK_(recognised_suppression) ( Char* name, Supp* su )
    else if (STREQ(name, "Addr4"))   skind = Addr4Supp;
    else if (STREQ(name, "Addr8"))   skind = Addr8Supp;
    else if (STREQ(name, "Free"))    skind = FreeSupp;
+   else if (STREQ(name, "Leak"))    skind = LeakSupp;
    else 
       return False;
 

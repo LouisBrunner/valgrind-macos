@@ -7043,12 +7043,52 @@ static UInt dis_SSEcmp_E_to_G ( UChar sorb, UInt delta,
    return delta;
 }
 
+/* Get the current SSE rounding mode. */
 
 static IRExpr* /* :: Ity_I32 */ get_sse_roundingmode ( void )
 {
    return binop( Iop_And32, 
                  IRExpr_Get( OFFB_SSEROUND, Ity_I32 ), 
                  mkU32(3) );
+}
+
+/* Break a 128-bit value up into four 32-bit ints. */
+
+static void breakup128to32s ( IRTemp t128,
+			      /*OUTs*/
+                              IRTemp* t3, IRTemp* t2,
+                              IRTemp* t1, IRTemp* t0 )
+{
+   IRTemp hi64 = newTemp(Ity_I64);
+   IRTemp lo64 = newTemp(Ity_I64);
+   assign( hi64, unop(Iop_128HIto64, mkexpr(t128)) );
+   assign( lo64, unop(Iop_128to64,   mkexpr(t128)) );
+
+   vassert(t0 && *t0 == IRTemp_INVALID);
+   vassert(t1 && *t1 == IRTemp_INVALID);
+   vassert(t2 && *t2 == IRTemp_INVALID);
+   vassert(t3 && *t3 == IRTemp_INVALID);
+
+   *t0 = newTemp(Ity_I32);
+   *t1 = newTemp(Ity_I32);
+   *t2 = newTemp(Ity_I32);
+   *t3 = newTemp(Ity_I32);
+   assign( *t0, unop(Iop_64to32,   mkexpr(lo64)) );
+   assign( *t1, unop(Iop_64HIto32, mkexpr(lo64)) );
+   assign( *t2, unop(Iop_64to32,   mkexpr(hi64)) );
+   assign( *t3, unop(Iop_64HIto32, mkexpr(hi64)) );
+}
+
+/* Construct a 128-bit value from four 32-bit ints. */
+
+static IRExpr* mk128from32s ( IRTemp t3, IRTemp t2,
+                              IRTemp t1, IRTemp t0 )
+{
+   return
+      binop( Iop_64HLto128,
+             binop(Iop_32HLto64, mkexpr(t3), mkexpr(t2)),
+             binop(Iop_32HLto64, mkexpr(t1), mkexpr(t0))
+   );
 }
 
 
@@ -7225,7 +7265,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
    /* 0F 2F = COMISS -- 32F0x4 comparison G,E, and set ZCP */
-   if (insn[0] == 0x0F && insn[1] == 0x2F) {
+   /* 0F 2E = UCOMISS -- 32F0x4 comparison G,E, and set ZCP */
+   if (insn[0] == 0x0F && (insn[1] == 0x2F || insn[1] == 0x2E)) {
       IRTemp argL = newTemp(Ity_F32);
       IRTemp argR = newTemp(Ity_F32);
       vassert(sz == 4);
@@ -7233,14 +7274,14 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       if (epartIsReg(modrm)) {
          assign( argR, getXMMRegLane32F( eregOfRM(modrm), 0/*lowest lane*/ ) );
          delta += 2+1;
-         DIP("comiss %s,%s\n", nameXMMReg(eregOfRM(modrm)),
-                               nameXMMReg(gregOfRM(modrm)) );
+         DIP("[u]comiss %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                                  nameXMMReg(gregOfRM(modrm)) );
       } else {
          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
 	 assign( argR, loadLE(Ity_F32, mkexpr(addr)) );
          delta += 2+alen;
-         DIP("comiss %s,%s\n", dis_buf,
-                               nameXMMReg(gregOfRM(modrm)) );
+         DIP("[u]comiss %s,%s\n", dis_buf,
+                                  nameXMMReg(gregOfRM(modrm)) );
       }
       assign( argL, getXMMRegLane32F( gregOfRM(modrm), 0/*lowest lane*/ ) );
 
@@ -7988,6 +8029,158 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       vassert(sz == 4);
       delta = dis_SSE_E_to_G_unary_lo32( sorb, delta+3, 
                                          "rcpss", Iop_Recip32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F 52 = RSQRTPS -- approx reciprocal sqrt 32Fx4 from R/M to R */
+   if (insn[0] == 0x0F && insn[1] == 0x52) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_unary_all( sorb, delta+2, 
+                                        "rsqrtps", Iop_RSqrt32Fx4 );
+      goto decode_success;
+   }
+
+   /* F3 0F 52 = RSQRTSS -- approx reciprocal sqrt 32F0x4 from R/M to R */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x52) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_unary_lo32( sorb, delta+3, 
+                                         "rsqrtss", Iop_RSqrt32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F AE /7 = SFENCE -- flush pending operations to memory */
+   if (insn[0] == 0x0F && insn[1] == 0xAE
+       && epartIsReg(insn[2]) && gregOfRM(insn[2]) == 7)
+   {
+      vassert(sz == 4);
+      delta += 3;
+      /* nothing to do */
+      DIP("sfence\n");
+      goto decode_success;
+   }
+
+   /* 0F C6 /r ib = SHUFPS -- shuffle packed F32s */
+   if (insn[0] == 0x0F && insn[1] == 0xC6) {
+      Int    select;
+      IRTemp sV, dV;
+      IRTemp s3, s2, s1, s0, d3, d2, d1, d0;
+      sV = newTemp(Ity_V128);
+      dV = newTemp(Ity_V128);
+      s3 = s2 = s1 = s0 = d3 = d2 = d1 = d0 = IRTemp_INVALID;
+      vassert(sz == 4);
+      modrm = insn[2];
+      assign( dV, getXMMReg(gregOfRM(modrm)) );
+
+      if (epartIsReg(modrm)) {
+         assign( sV, getXMMReg(eregOfRM(modrm)) );
+         select = (Int)insn[3];
+         delta += 2+2;
+         DIP("shufps $%d,%s,%s\n", select, 
+                                   nameXMMReg(eregOfRM(modrm)),
+                                   nameXMMReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
+         select = (Int)insn[2+alen];
+         delta += 3+alen;
+         DIP("shufps $%d,%s,%s\n", select, 
+                                   dis_buf,
+                                   nameXMMReg(gregOfRM(modrm)));
+      }
+
+      breakup128to32s( dV, &d3, &d2, &d1, &d0 );
+      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+
+#     define SELD(n) ((n)==0 ? d0 : ((n)==1 ? d1 : ((n)==2 ? d2 : d3)))
+#     define SELS(n) ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
+
+      putXMMReg(
+         gregOfRM(modrm), 
+         mk128from32s( SELS((select>>6)&3), SELS((select>>4)&3), 
+                       SELD((select>>2)&3), SELD((select>>0)&3) )
+      );
+
+#     undef SELD
+#     undef SELS
+
+      goto decode_success;
+   }
+
+   /* 0F 51 = SQRTPS -- approx sqrt 32Fx4 from R/M to R */
+   if (insn[0] == 0x0F && insn[1] == 0x51) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_unary_all( sorb, delta+2, 
+                                        "sqrtps", Iop_Sqrt32Fx4 );
+      goto decode_success;
+   }
+
+   /* F3 0F 51 = SQRTSS -- approx sqrt 32F0x4 from R/M to R */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x51) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_unary_lo32( sorb, delta+3, 
+                                         "sqrtss", Iop_Sqrt32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F 5C = SUBPS -- sub 32Fx4 from R/M to R */
+   if (insn[0] == 0x0F && insn[1] == 0x5C) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "subps", Iop_Sub32Fx4 );
+      goto decode_success;
+   }
+
+   /* F3 0F 58 = SUBSS -- sub 32F0x4 from R/M to R */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5C) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "subss", Iop_Sub32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F 15 = UNPCKHPS -- unpack and interleave high part F32s */
+   /* 0F 14 = UNPCKLPS -- unpack and interleave low part F32s */
+   /* These just appear to be special cases of SHUFPS */
+   if (insn[0] == 0x0F && (insn[1] == 0x15 || insn[1] == 0x14)) {
+      IRTemp sV, dV;
+      IRTemp s3, s2, s1, s0, d3, d2, d1, d0;
+      Bool hi = insn[1] == 0x15;
+      sV = newTemp(Ity_V128);
+      dV = newTemp(Ity_V128);
+      s3 = s2 = s1 = s0 = d3 = d2 = d1 = d0 = IRTemp_INVALID;
+      vassert(sz == 4);
+      modrm = insn[2];
+      assign( dV, getXMMReg(gregOfRM(modrm)) );
+
+      if (epartIsReg(modrm)) {
+         assign( sV, getXMMReg(eregOfRM(modrm)) );
+         delta += 2+1;
+         DIP("unpck%sps %s,%s\n", hi ? "h" : "l",
+                                  nameXMMReg(eregOfRM(modrm)),
+                                  nameXMMReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         assign( sV, loadLE(Ity_V128, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("unpck%sps %s,%s\n", hi ? "h" : "l",
+                                  dis_buf,
+                                  nameXMMReg(gregOfRM(modrm)));
+      }
+
+      breakup128to32s( dV, &d3, &d2, &d1, &d0 );
+      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+
+      if (hi) {
+         putXMMReg( gregOfRM(modrm), mk128from32s( s3, d3, s2, d2 ) );
+      } else {
+         putXMMReg( gregOfRM(modrm), mk128from32s( s1, d1, s0, d0 ) );
+      }
+
+      goto decode_success;
+   }
+
+   /* 0F 57 = XORPS -- G = G and E */
+   if (insn[0] == 0x0F && insn[1] == 0x57) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "xorps", Iop_Xor128 );
       goto decode_success;
    }
 

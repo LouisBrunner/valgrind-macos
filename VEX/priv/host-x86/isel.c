@@ -2445,7 +2445,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop) {
    switch (e->Iex.Unop.op) {
 
-      case Iop_Recip32Fx4: op = Xsse_RCPF; goto do_32Fx4_unary;
+      case Iop_Recip32Fx4: op = Xsse_RCPF;   goto do_32Fx4_unary;
+      case Iop_RSqrt32Fx4: op = Xsse_RSQRTF; goto do_32Fx4_unary;
+      case Iop_Sqrt32Fx4:  op = Xsse_SQRTF;  goto do_32Fx4_unary;
       do_32Fx4_unary:
       {
          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
@@ -2454,7 +2456,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      case Iop_Recip32F0x4: op = Xsse_RCPF; goto do_32F0x4_unary;
+      case Iop_Recip32F0x4: op = Xsse_RCPF;   goto do_32F0x4_unary;
+      case Iop_RSqrt32F0x4: op = Xsse_RSQRTF; goto do_32F0x4_unary;
+      case Iop_Sqrt32F0x4:  op = Xsse_SQRTF;  goto do_32F0x4_unary;
       do_32F0x4_unary:
       {
          /* A bit subtle.  We have to copy the arg to the result
@@ -2545,6 +2549,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Max32Fx4:   op = Xsse_MAXF;   goto do_32Fx4;
       case Iop_Min32Fx4:   op = Xsse_MINF;   goto do_32Fx4;
       case Iop_Mul32Fx4:   op = Xsse_MULF;   goto do_32Fx4;
+      case Iop_Sub32Fx4:   op = Xsse_SUBF;   goto do_32Fx4;
       do_32Fx4:
       {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
@@ -2563,6 +2568,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Max32F0x4:   op = Xsse_MAXF;   goto do_32F0x4;
       case Iop_Min32F0x4:   op = Xsse_MINF;   goto do_32F0x4;
       case Iop_Mul32F0x4:   op = Xsse_MULF;   goto do_32F0x4;
+      case Iop_Sub32F0x4:   op = Xsse_SUBF;   goto do_32F0x4;
       do_32F0x4: {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);

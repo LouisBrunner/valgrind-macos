@@ -1,0 +1,146 @@
+
+##----------------------------------------------------------------------##
+
+# Errors to suppress by default with XFree86 3.3.6)
+
+# Format of this file is:
+# {
+#     name_of_suppression
+#     kind: one of Param Value1 Value2 Value4 Value8
+#                   Free Addr1 Addr2 Addr4 Addr8
+#                   Cond (previously known as Value0)
+#     (if Param: name of system call param, if Free: name of free-ing fn)
+#     caller0 name, or /name/of/so/file.so
+#     caller1 name, or ditto
+#     (optionally: caller2 name)
+#     (optionally: caller3 name)
+#  }
+
+##----------------------------------------------------------------------##
+
+{
+   X11-Cond-0
+   Cond
+   obj:*libXt.so.6.0
+   obj:*libXt.so.6.0
+   obj:*libXt.so.6.0
+}
+{
+   X11-Cond-1
+   Cond
+   fun:__rawmemchr
+   obj:*libXt.so.6.0
+   obj:*libXt.so.6.0
+}
+
+
+# Suppressions for XFree86-3.3.X
+
+{
+   X11-Addr4-1
+   Addr4
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libX11.so.6.1
+}
+
+{
+   X11-Addr4-2
+   Addr4
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-3
+   Addr4
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-4
+   Addr4
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-5
+   Addr4
+   fun:__rawmemchr
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-6
+   Addr4
+   obj:/usr/X11R6/lib/libXmu.so.6.0
+   obj:/usr/X11R6/lib/libXmu.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-7
+   Addr4
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXawXpm_posing_as_Xaw.so.6.1
+}
+
+{
+   X11-Param-1
+   Param
+   write(buf)
+   fun:__libc_write
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libX11.so.6.1
+}
+
+{
+   X11-Addr4-8
+   Addr4
+   obj:/usr/X11R6/lib/libX11.so.6.1
+   obj:/usr/X11R6/lib/libXpm.so.4.11
+   obj:/usr/X11R6/lib/libXpm.so.4.11
+}
+
+{
+   X11-Addr4-8
+   Addr4
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXawXpm_posing_as_Xaw.so.6.1
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-9
+   Addr4
+   obj:/usr/X11R6/lib/libXaw.so.6.1
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-10
+   Addr4
+   obj:/usr/X11R6/lib/libXaw.so.6.1
+   obj:/usr/X11R6/lib/libXaw.so.6.1
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+{
+   X11-Addr4-11
+   Addr4
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXaw.so.6.1
+}
+
+
+
+##----------------------------------------------------------------------##

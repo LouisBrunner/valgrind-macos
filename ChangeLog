@@ -1,3 +1,8 @@
+2002-04-04  Frédéric Gobry  <frederic.gobry@smartdata.ch>
+
+	* configure.in, glibc-*.supp, xfree-*.supp: now, configure
+	creates a default.supp by picking from the different specific
+	suppression files.
 
 2002-03-29  Julian Seward  <sewardj@localhost.localdomain>
 

@@ -8,7 +8,13 @@ INCLUDES = -I$(srcdir)/demangle
 
 bin_SCRIPTS = valgrind
 
-val_DATA = linux22.supp linux24.supp
+SUPP_FILES = glibc-2.1.supp glibc-2.2.supp xfree-3.supp xfree-4.supp
+
+val_DATA = $(SUPP_FILES) default.supp
+
+BUILT_SOURCES = default.supp
+
+default.supp: $(SUPP_FILES)
 
 bzdist: dist
 	gunzip -c $(PACKAGE)-$(VERSION).tar.gz | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
@@ -63,9 +69,6 @@ noinst_HEADERS = \
         vg_constants.h          \
         vg_unsafe.h
 
-
-install-data-hook:
-	cd ${valdir} && rm -f default.supp && $(LN_S) $(DEFAULT_SUPP) default.supp
 
 vg_memory.o: vg_memory.c
 	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<

@@ -20,8 +20,16 @@ fi
 
 AS="${CC}"
 AC_SUBST(AS)
+
 ASFLAGS=""
 AC_SUBST(ASFLAGS)
+
+
+# This variable will collect the individual suppression files
+# depending on the results of autoconf
+
+DEFAULT_SUPP=""
+
 
 # We don't want gcc 2.7
 AC_MSG_CHECKING([for a supported version of gcc])
@@ -101,13 +109,11 @@ case "${kernel}" in
      2.4.*) 
 	    AC_MSG_RESULT([2.4 family (${kernel})])
 	    AC_DEFINE(KERNEL_2_4)
-	    DEFAULT_SUPP="linux24.supp"
 	    ;;
 
      2.2.*) 
 	    AC_MSG_RESULT([2.2 family (${kernel})])
 	    AC_DEFINE(KERNEL_2_2)
-	    DEFAULT_SUPP="linux22.supp"
 	    ;;
 
      *) 
@@ -148,11 +154,13 @@ case "${glibc}" in
      2.1)
 	AC_MSG_RESULT(2.1 family)
 	AC_DEFINE(GLIBC_2_1)
+	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.1.supp"
 	;;
 
      2.2)
 	AC_MSG_RESULT(2.2 family)
 	AC_DEFINE(GLIBC_2_2)
+	DEFAULT_SUPP="${DEFAULT_SUPP} glibc-2.2.supp"
 	;;
 
      *)
@@ -204,11 +212,13 @@ EOF
 	*version=4*) 
 	   AC_MSG_RESULT([XFree 4.x family])
 	   AC_DEFINE(XFREE_4)
+	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
 	   ;;
 
 	*version=3*) 
 	   AC_MSG_RESULT([XFree 3.x family])
 	   AC_DEFINE(XFREE_3)
+	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
 	   ;;
 
 	*) AC_MSG_RESULT([unknown XFree86 server (${xfree})])
@@ -244,3 +254,22 @@ AC_OUTPUT(
    docs/Makefile 
    tests/Makefile 
    demangle/Makefile)
+
+cat<<EOF
+
+Using the following suppressions by default: 
+
+      ${DEFAULT_SUPP}
+EOF
+
+cat<<EOF > default.supp
+# This is a generated file, composed of the following suppression rules:
+#
+#      ${DEFAULT_SUPP}
+#
+
+EOF
+
+for file in ${DEFAULT_SUPP} ; do
+    cat ${srcdir}/$file >> default.supp
+done

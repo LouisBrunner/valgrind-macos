@@ -32,7 +32,7 @@
 
 /* All system calls are channelled through here, doing two things:
 
-   * notify the tool of the memory events (reads, writes) happening
+   * notify the tool of the events (mem/reg reads, writes) happening
 
    * perform the syscall, usually by passing it along to the kernel
      unmodified.
@@ -41,6 +41,8 @@
    does the tricky bit of passing a syscall to the kernel, whilst
    having the simulator retain control.
 */
+
+#define PRE_REG_READ3(tr, s, t1, a1, t2, a2, t3, a3)  /*nothing, so far*/
 
 #define PRE_MEM_READ(zzname, zzaddr, zzlen) \
    VG_TRACK( pre_mem_read, Vg_CoreSysCall, tid, zzname, zzaddr, zzlen)
@@ -991,8 +993,17 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 
 
 /* ---------------------------------------------------------------------
-   The Main Entertainment ...
+   The Main Entertainment ... syscall wrappers
    ------------------------------------------------------------------ */
+
+/* Note: the PRE() and POST() wrappers are for the actual functions
+   implementing the system calls in the Linux kernel.  These mostly have
+   names like sys_write();  a few have names like old_mmap().  See the
+   comment for sys_info[] and related arrays for important info about the
+   __NR_foo constants and their relationship to the sys_foo() functions.
+
+   XXX: some of these are arch-specific, and should be factored out.
+*/
 
 #define MayBlock   (1 << 0)
 #define PostOnFail (1 << 1)
@@ -4084,10 +4095,11 @@ POST(open)
    }
 }
 
-PRE(read)
+PRE(sys_read)
 {
-   /* size_t read(int fd, void *buf, size_t count); */
    PRINT("read ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
+   PRE_REG_READ3(ssize_t, sys_read,
+                 unsigned int, fd, char __user *, buf, size_t, count);
 
    if (!fd_allowed(arg1, "read", tid, False))
       set_result( -VKI_EBADF );
@@ -4095,15 +4107,16 @@ PRE(read)
       PRE_MEM_WRITE( "read(buf)", arg2, arg3 );
 }
 
-POST(read)
+POST(sys_read)
 {
    POST_MEM_WRITE( arg2, res );
 }
 
-PRE(write)
+PRE(sys_write)
 {
-   /* size_t write(int fd, const void *buf, size_t count); */
    PRINT("write ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
+   PRE_REG_READ3(ssize_t, sys_write,
+                 unsigned int, fd, const char __user *, buf, size_t, count);
    if (!fd_allowed(arg1, "write", tid, False))
       set_result( -VKI_EBADF );
    else
@@ -5625,6 +5638,30 @@ POST(clock_getres)
     POST_MEM_WRITE( arg2, sizeof(struct vki_timespec) );
 }
 
+
+/* ---------------------------------------------------------------------
+   Summary info about syscalls
+   ------------------------------------------------------------------ */
+
+/* Important point: for each arch/Linux platform, the name of the constant
+   for a syscall (eg. __NR_write) usually matches the name of the function
+   in the Linux kernel that implements it (eg. sys_write()).  However, this
+   is not always the case.  For example:
+      
+      __NR_lchown       --> sys_lchown16()
+      __NR_lchown32     --> sys_lchown()
+      __NR_select       --> old_select()
+      __NR__newselect   --> sys_select()
+
+   Therefore part of the role of the arrays below is to provide a mapping
+   from the __NR_foo constants to the sys_foo() PRE/POST wrappers above.
+
+   XXX: doing this in stages, so we're in transition between the old
+   SYSB_/SYSBA macros to the new SYSX_/SYS_XY macros.
+
+   XXX: some of these are arch-specific, and should be factored out.
+*/
+
 struct sys_info {
    UInt	flags;
    void	(*before)(ThreadId tid, ThreadState *tst);
@@ -5632,6 +5669,9 @@ struct sys_info {
 };
 #define SYSB_(name, flags)	[__NR_##name] = { flags, before_##name, NULL }
 #define SYSBA(name, flags)	[__NR_##name] = { flags, before_##name, after_##name }
+
+#define SYSX_(const, name, flags)   [const] = { flags, before_##name, NULL }
+#define SYSXY(const, name, flags)   [const] = { flags, before_##name, after_##name }
 
 static void bad_before(ThreadId tid, ThreadState *tst)
 {
@@ -5818,8 +5858,10 @@ static const struct sys_info sys_info[] = {
    SYSBA(nanosleep,		MayBlock|PostOnFail),
    SYSB_(_newselect,		MayBlock),
    SYSBA(open,			MayBlock),
-   SYSBA(read,			MayBlock),
-   SYSB_(write,			MayBlock),
+//   SYSBA(read,			MayBlock),
+//   SYSB_(write,			MayBlock),
+   SYSXY(__NR_read,             sys_read,       MayBlock),
+   SYSX_(__NR_write,            sys_write,      MayBlock),
    SYSBA(creat,			MayBlock),
    SYSBA(pipe,			0),
    SYSBA(poll,			MayBlock),
@@ -5922,6 +5964,11 @@ static const struct sys_info sys_info[] = {
 
 #undef SYSB_
 #undef SYSBA
+
+
+/* ---------------------------------------------------------------------
+   Executing the syscalls
+   ------------------------------------------------------------------ */
 
 Bool VG_(pre_syscall) ( ThreadId tid )
 {

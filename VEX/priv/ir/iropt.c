@@ -38,6 +38,8 @@
    ToDo:
 
    make spec_helpers_BB always return flat code
+
+   CSE up F64 literals (already doing F64is)
 */
 
 

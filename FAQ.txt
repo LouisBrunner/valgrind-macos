@@ -340,7 +340,8 @@ Q16.  When I trying building Valgrind, 'make' dies partway with an
 A16.  It's probably a bug in 'make'.  Some, but not all, instances of
       version 3.79.1 have this bug, see 
       www.mail-archive.com/bug-make@gnu.org/msg01658.html.  Try upgrading to a
-      more recent version of 'make'.
+      more recent version of 'make'.  Alternatively, we have heard that
+      unsetting the CFLAGS environment variable avoids the problem.
 
 -----------------------------------------------------------------
 

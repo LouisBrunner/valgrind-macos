@@ -21,9 +21,13 @@ vgskin_memcheck_so_SOURCES = \
 	mc_helpers.S
 vgskin_memcheck_so_LDFLAGS = -shared
 
-noinst_HEADERS = \
-	mc_include.h	\
+mcincludedir = $(includedir)/valgrind
+
+mcinclude_HEADERS = \
 	memcheck.h
+
+noinst_HEADERS = \
+	mc_include.h
 
 MANUAL_DEPS = $(noinst_HEADERS)
 

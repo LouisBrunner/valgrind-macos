@@ -373,6 +373,12 @@ int pthread_cond_init( pthread_cond_t *cond,
    return 0;
 }
 
+int pthread_cond_destroy(pthread_cond_t *cond)
+{
+   /* should check that no threads are waiting on this CV */
+   kludged("pthread_cond_destroy");
+   return 0;
+}
 
 /* ---------------------------------------------------
    SCHEDULING
@@ -704,7 +710,7 @@ int my_do_syscall1 ( int syscallno, int arg1 )
 
 static
 int my_do_syscall2 ( int syscallno, 
-                      int arg1, int arg2 )
+                     int arg1, int arg2 )
 { 
    int __res;
    __asm__ volatile ("pushl %%ebx; movl %%edx,%%ebx ; int $0x80 ; popl %%ebx"
@@ -712,6 +718,20 @@ int my_do_syscall2 ( int syscallno,
                      : "0" (syscallno),
                        "d" (arg1),
                        "c" (arg2) );
+   return __res;
+}
+
+static
+int my_do_syscall3 ( int syscallno, 
+                     int arg1, int arg2, int arg3 )
+{ 
+   int __res;
+   __asm__ volatile ("pushl %%ebx; movl %%esi,%%ebx ; int $0x80 ; popl %%ebx"
+                     : "=a" (__res)
+                     : "0" (syscallno),
+                       "S" (arg1),
+                       "c" (arg2),
+                       "d" (arg3) );
    return __res;
 }
 
@@ -769,7 +789,6 @@ int select ( int n,
    struct vki_timeval  t_end;
    struct vki_timeval  zero_timeout;
    struct vki_timespec nanosleep_interval;
-   int                 nanosleep_usec;
 
    ensure_valgrind("select");
 
@@ -796,12 +815,6 @@ int select ( int n,
 
    /* If a timeout was specified, set t_end to be the end wallclock
       time. */
-
-   /* Sleep in 50 millisecond intervals, unless the total duration is
-      one second or less, in which case sleep in 20 millisecond
-      intervals. */
-   nanosleep_usec = 50 * 1000;
-
    if (timeout) {
       res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
       assert(res == 0);
@@ -816,8 +829,6 @@ int select ( int n,
       assert (t_end.tv_sec > t_now.tv_sec
               || (t_end.tv_sec == t_now.tv_sec 
                   && t_end.tv_usec >= t_now.tv_usec));
-      if (timeout->tv_sec == 0)
-         nanosleep_usec = 20 * 1000;
    }
 
    /* fprintf(stderr, "MY_SELECT: before loop\n"); */
@@ -869,7 +880,96 @@ int select ( int n,
       /* fprintf(stderr, "MY_SELECT: nanosleep\n"); */
       /* nanosleep and go round again */
       nanosleep_interval.tv_sec  = 0;
-      nanosleep_interval.tv_nsec = 1000 * nanosleep_usec;
+      nanosleep_interval.tv_nsec = 75 * 1000 * 1000; /* 75 milliseconds */
+      /* It's critical here that valgrind's nanosleep implementation
+         is nonblocking. */
+      (void)my_do_syscall2(__NR_nanosleep, 
+                           (int)(&nanosleep_interval), (int)NULL);
+   }
+}
+
+
+
+
+#include <sys/poll.h>
+
+int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
+{
+   int                 res, i;
+   struct vki_timeval  t_now;
+   struct vki_timeval  t_end;
+   struct vki_timespec nanosleep_interval;
+
+   ensure_valgrind("poll");
+
+   if (/* CHECK SIZES FOR struct pollfd */
+       sizeof(struct timeval) != sizeof(struct vki_timeval))
+      barf("valgrind's hacky non-blocking poll(): data sizes error");
+
+   /* If a zero timeout specified, this call is harmless. */
+   if (__timeout == 0) {
+      res = my_do_syscall3(__NR_poll, (int)__fds, __nfds, __timeout);
+      if (is_kerror(res)) {
+         * (__errno_location()) = -res;
+         return -1;
+      } else {
+         return res;
+      }
+   }
+
+   /* If a timeout was specified, set t_end to be the end wallclock
+      time. */
+   if (__timeout > 0) {
+      res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
+      assert(res == 0);
+      t_end = t_now;
+      t_end.tv_usec += 1000 * (__timeout % 1000);
+      t_end.tv_sec  += (__timeout / 1000);
+      if (t_end.tv_usec >= 1000000) {
+         t_end.tv_usec -= 1000000;
+         t_end.tv_sec += 1;
+      }
+      /* Stay sane ... */
+      assert (t_end.tv_sec > t_now.tv_sec
+              || (t_end.tv_sec == t_now.tv_sec 
+                  && t_end.tv_usec >= t_now.tv_usec));
+   }
+
+   /* fprintf(stderr, "MY_POLL: before loop\n"); */
+
+   /* Either timeout < 0, meaning wait indefinitely, or timeout > 0,
+      in which case t_end holds the end time. */
+   while (1) {
+      assert(__timeout != 0);
+      if (__timeout > 0) {
+         res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
+         assert(res == 0);
+         if (t_now.tv_sec > t_end.tv_sec
+             || (t_now.tv_sec == t_end.tv_sec 
+                 && t_now.tv_usec > t_end.tv_usec)) {
+            /* timeout; nothing interesting happened. */
+            for (i = 0; i < __nfds; i++) 
+               __fds[i].revents = 0;
+            return 0;
+         }
+      }
+
+      /* These could be trashed each time round the loop, so restore
+         them each time. */
+      res = my_do_syscall3(__NR_poll, (int)__fds, __nfds, 0 );
+      if (is_kerror(res)) {
+         /* Some kind of error.  Set errno and return.  */
+         * (__errno_location()) = -res;
+         return -1;
+      }
+      if (res > 0) {
+         /* One or more fds is ready.  Return now. */
+         return res;
+      }
+      /* fprintf(stderr, "MY_POLL: nanosleep\n"); */
+      /* nanosleep and go round again */
+      nanosleep_interval.tv_sec  = 0;
+      nanosleep_interval.tv_nsec = 100 * 1000 * 1000; /* 100 milliseconds */
       /* It's critical here that valgrind's nanosleep implementation
          is nonblocking. */
       (void)my_do_syscall2(__NR_nanosleep, 

@@ -597,8 +597,8 @@ void addLineInfo ( SegInfo* si,
        size = 1;
    }
 
-   vg_assert(this < si->start + si->size && next-1 > si->start);
-   vg_assert(lineno >= 0 && lineno < MAX_LINENO);
+   vg_assert(this < si->start + si->size && next-1 >= si->start);
+   vg_assert(lineno >= 0 && lineno <= MAX_LINENO);
 
    loc.addr      = this;
    loc.size      = (UShort)size;

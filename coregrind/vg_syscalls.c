@@ -1363,7 +1363,17 @@ VG_(generic_POST_sys_recvmsg) ( ThreadId tid,
 
 PRE(sys_exit, Special)
 {
-   VG_(core_panic)("syscall exit() not caught by the scheduler?!");
+   /* simple; just make this thread exit */
+   PRINT("exit( %d )", ARG1);
+   PRE_REG_READ1(void, "exit", int, exitcode);
+   tst->exitreason = VgSrc_ExitSyscall;
+   tst->os_state.exitcode = ARG1;
+   /* exit doesn't return anything (it doesn't return.)
+      Nevertheless, if we don't do this, the result-not-assigned-
+      yet-you-said-you-were-Special assertion in the main syscall
+      handling logic will fire.  Hence ..
+   */
+   SET_RESULT(0);
 }
 
 PRE(sys_sched_yield, MayBlock)

@@ -89,6 +89,31 @@ extern UInt  calculate_FXAM ( UInt tag, ULong dbl );
 
 extern ULong calculate_RCR  ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz );
 
+/* --- Clean helpers for MMX --- */
+
+extern ULong calculate_vadd32x2 ( ULong, ULong );
+extern ULong calculate_vadd16x4 ( ULong, ULong );
+extern ULong calculate_vadd8x8  ( ULong, ULong );
+
+extern ULong calculate_vqadd16Sx4 ( ULong, ULong );
+extern ULong calculate_vqadd8Sx8  ( ULong, ULong );
+
+extern ULong calculate_vqadd16Ux4 ( ULong, ULong );
+extern ULong calculate_vqadd8Ux8  ( ULong, ULong );
+
+extern ULong calculate_vsub32x2 ( ULong, ULong );
+extern ULong calculate_vsub16x4 ( ULong, ULong );
+extern ULong calculate_vsub8x8  ( ULong, ULong );
+
+extern ULong calculate_vqsub16Sx4 ( ULong, ULong );
+extern ULong calculate_vqsub8Sx8  ( ULong, ULong );
+
+extern ULong calculate_vqsub16Ux4 ( ULong, ULong );
+extern ULong calculate_vqsub8Ux8  ( ULong, ULong );
+
+extern ULong calculate_vmulhi16x4 ( ULong, ULong );
+extern ULong calculate_vmullo16x4 ( ULong, ULong );
+
 /* --- DIRTY HELPERS --- */
 
 extern ULong loadF80le  ( UInt );

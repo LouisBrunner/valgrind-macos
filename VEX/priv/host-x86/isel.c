@@ -310,9 +310,14 @@ static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
 static X86AMode* advance4 ( X86AMode* am )
 {
    X86AMode* am4 = dopyX86AMode(am);
-   /* Could also advance the _IR form, but no need yet. */
-   vassert(am4->tag == Xam_IRRS);
-   am4->Xam.IRRS.imm += 4;
+   switch (am4->tag) {
+      case Xam_IRRS:
+         am4->Xam.IRRS.imm += 4; break;
+      case Xam_IR:
+         am4->Xam.IR.imm += 4; break;
+      default:
+         vpanic("advance4(x86,host)");
+   }
    return am4;
 }
 
@@ -1618,6 +1623,19 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
+   /* 64-bit GET */
+   if (e->tag == Iex_Get) {
+      X86AMode* am  = X86AMode_IR(e->Iex.Get.offset, hregX86_EBP());
+      X86AMode* am4 = advance4(am);
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
+      addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(am), tLo ));
+      addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(am4), tHi ));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
    /* 64-bit GETI */
    if (e->tag == Iex_GetI) {
       X86AMode* am 
@@ -2369,7 +2387,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       if (ty == Ity_I32) {
          /* We're going to write to memory, so compute the RHS into an
             X86RI. */
-         X86RI* ri  = iselIntExpr_RI(env, stmt->Ist.Put.data);
+         X86RI* ri = iselIntExpr_RI(env, stmt->Ist.Put.data);
          addInstr(env,
                   X86Instr_Alu32M(
                      Xalu_MOV,
@@ -2385,6 +2403,15 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
                           r,
                           X86AMode_IR(stmt->Ist.Put.offset,
                                       hregX86_EBP())));
+         return;
+      }
+      if (ty == Ity_I64) {
+         HReg vHi, vLo;
+         X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
+         X86AMode* am4 = advance4(am);
+         iselIntExpr64(&vHi, &vLo, env, stmt->Ist.Put.data);
+         addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(vLo), am ));
+         addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(vHi), am4 ));
          return;
       }
       break;

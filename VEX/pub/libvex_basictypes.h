@@ -42,6 +42,7 @@
 
 /* Always 8 bits. */
 typedef  unsigned char   UChar;
+typedef    signed char   SChar;
 typedef           char   Char;        /* platform-dependent signfulness */
 
 /* Always 16 bits. */

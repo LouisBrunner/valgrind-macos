@@ -1325,14 +1325,14 @@ static Char* nameSReg ( UInt sreg )
    }
 }
 
-//-- const Char* VG_(name_of_mmx_reg) ( Int mmxreg )
-//-- {
-//--    static const Char* mmx_names[8] 
-//--      = { "%mm0", "%mm1", "%mm2", "%mm3", "%mm4", "%mm5", "%mm6", "%mm7" };
-//--    if (mmxreg < 0 || mmxreg > 7) VG_(core_panic)("name_of_mmx_reg");
-//--    return mmx_names[mmxreg];
-//-- }
-//-- 
+static Char* nameMMXReg ( Int mmxreg )
+{
+   static Char* mmx_names[8] 
+     = { "%mm0", "%mm1", "%mm2", "%mm3", "%mm4", "%mm5", "%mm6", "%mm7" };
+   if (mmxreg < 0 || mmxreg > 7) vpanic("nameMMXReg(x86,guest)");
+   return mmx_names[mmxreg];
+}
+
 //-- const Char* VG_(name_of_xmm_reg) ( Int xmmreg )
 //-- {
 //--    static const Char* xmm_names[8] 
@@ -1340,17 +1340,17 @@ static Char* nameSReg ( UInt sreg )
 //--    if (xmmreg < 0 || xmmreg > 7) VG_(core_panic)("name_of_xmm_reg");
 //--    return xmm_names[xmmreg];
 //-- }
-//-- 
-//-- const Char* VG_(name_of_mmx_gran) ( UChar gran )
-//-- {
-//--    switch (gran) {
-//--       case 0: return "b";
-//--       case 1: return "w";
-//--       case 2: return "d";
-//--       case 3: return "q";
-//--       default: VG_(core_panic)("name_of_mmx_gran");
-//--    }
-//-- }
+ 
+static Char* nameMMXGran ( UChar gran )
+{
+   switch (gran) {
+      case 0: return "b";
+      case 1: return "w";
+      case 2: return "d";
+      case 3: return "q";
+      default: vpanic("nameMMXGran(x86,guest)");
+   }
+}
 
 static Char nameISize ( Int size )
 {
@@ -3050,6 +3050,7 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* whatNext )
    return delta;
 }
 
+
 /*------------------------------------------------------------*/
 /*--- Disassembling string ops (including REP prefixes)    ---*/
 /*------------------------------------------------------------*/
@@ -3242,6 +3243,7 @@ void dis_REP_op ( Condcode cond,
    DIP("%s%c\n", name, nameISize(sz));
 }
 
+
 /*------------------------------------------------------------*/
 /*--- Arithmetic, etc.                                     ---*/
 /*------------------------------------------------------------*/
@@ -3334,7 +3336,9 @@ UInt dis_imul_I_E_G ( UChar       sorb,
 
 
 /*------------------------------------------------------------*/
-/*--- x87 floating point insns.                            ---*/
+/*---                                                      ---*/
+/*--- x87 FLOATING POINT INSTRUCTIONS                      ---*/
+/*---                                                      ---*/
 /*------------------------------------------------------------*/
 
 /* --- Helper functions for dealing with the register stack. --- */
@@ -3616,7 +3620,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 {
    Int    len;
    UInt   r_src, r_dst;
-   Char   dis_buf[32];
+   UChar  dis_buf[50];
    IRTemp t1, t2;
 
    /* On entry, delta points at the second byte of the insn (the modrm
@@ -4569,294 +4573,262 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 }
 
 
-//-- /* Handle FPU insns which read/write memory.  On entry, eip points to
-//--    the second byte of the insn (the one following D8 .. DF). */
-//-- static 
-//-- Addr dis_fpu_mem ( UCodeBlock* cb, 
-//--                    UChar       sorb,
-//--                    Int size, Bool is_write, 
-//--                    Addr eip, UChar first_byte )
-//-- {
-//--    Int   ta;
-//--    UInt  pair;
-//--    UChar dis_buf[50];
-//--    UChar second_byte = getIByte(delta);
-//--    vg_assert(second_byte < 0xC0);
-//--    second_byte &= 0x38;
-//--    pair = disAMode ( cb, sorb, eip, dis_buf );
-//--    ta   = LOW24(pair);
-//--    eip  += HI8(pair);
-//--    uInstr2(cb, is_write ? FPU_W : FPU_R, size,
-//--                Lit16, 
-//--                (((UShort)first_byte) << 8) | ((UShort)second_byte),
-//--                TempReg, ta);
-//--    if (is_write) {
-//--       DIP("fpu_w_%d 0x%x:0x%x, %s\n",
-//--           size, (UInt)first_byte, (UInt)second_byte, dis_buf );
-//--    } else {
-//--       DIP("fpu_r_%d %s, 0x%x:0x%x\n",
-//--           size, dis_buf, (UInt)first_byte, (UInt)second_byte );
-//--    }
-//--    return eip;
-//-- }
-//-- 
-//-- 
-//-- /* Handle FPU insns which don't reference memory.  On entry, eip points to
-//--    the second byte of the insn (the one following D8 .. DF). */
-//-- static 
-//-- Addr dis_fpu_no_mem ( UCodeBlock* cb, Addr eip, UChar first_byte )
-//-- {
-//--    Bool  sets_ZCP    = False;
-//--    Bool  uses_ZCP    = False;
-//--    UChar second_byte = getUChar(eip); eip++;
-//--    vg_assert(second_byte >= 0xC0);
-//-- 
-//--    /* Does the insn write any integer condition codes (%EIP) ? */
-//-- 
-//--    if (first_byte == 0xDB && second_byte >= 0xF0 && second_byte <= 0xF7) {
-//--       /* FCOMI */
-//--       sets_ZCP = True;
-//--    } else
-//--    if (first_byte == 0xDF && second_byte >= 0xF0 && second_byte <= 0xF7) {
-//--       /* FCOMIP */
-//--       sets_ZCP = True;
-//--    } else
-//--    if (first_byte == 0xDB && second_byte >= 0xE8 && second_byte <= 0xEF) {
-//--       /* FUCOMI */
-//--       sets_ZCP = True;
-//--    } else
-//--    if (first_byte == 0xDF && second_byte >= 0xE8 && second_byte <= 0xEF) {
-//--       /* FUCOMIP */
-//--       sets_ZCP = True;
-//--    } 
-//-- 
-//--    /* Dually, does the insn read any integer condition codes (%EIP) ? */
-//-- 
-//--    if (first_byte == 0xDA && second_byte >= 0xC0 && second_byte <= 0xDF) {
-//--       /* FCMOVB  %st(n), %st(0)
-//--          FCMOVE  %st(n), %st(0)
-//--          FCMOVBE %st(n), %st(0)
-//--          FCMOVU  %st(n), %st(0)
-//--       */
-//--       uses_ZCP = True;
-//--    } else
-//--    if (first_byte == 0xDB && second_byte >= 0xC0 && second_byte <= 0xDF) {
-//--       /* FCMOVNB  %st(n), %st(0)
-//--          FCMOVNE  %st(n), %st(0)
-//--          FCMOVNBE %st(n), %st(0)
-//--          FCMOVNU  %st(n), %st(0)
-//--       */
-//--       uses_ZCP = True;
-//--    }
-//-- 
-//--    uInstr1(cb, FPU, 0,
-//--                Lit16,
-//--                (((UShort)first_byte) << 8) | ((UShort)second_byte)
-//--           );
-//--    if (uses_ZCP) {
-//--       /* VG_(printf)("!!! --- FPU insn which reads %EFLAGS\n"); */
-//--       uFlagsRWU(cb, FlagsZCP, FlagsEmpty, FlagsEmpty);
-//--       vg_assert(!sets_ZCP);
-//--    }
-//--    if (sets_ZCP) {
-//--       /* VG_(printf)("!!! --- FPU insn which writes %EFLAGS\n"); */
-//--       uFlagsRWU(cb, FlagsEmpty, FlagsZCP, FlagsEmpty);
-//--       vg_assert(!uses_ZCP);
-//--    }
-//-- 
-//--    DIP("fpu 0x%x:0x%x%s%s\n", (UInt)first_byte, (UInt)second_byte,
-//--                               uses_ZCP ? " -rZCP" : "",
-//--                               sets_ZCP ? " -wZCP" : "" );
-//--    return eip;
-//-- }
-//-- 
-//-- 
-//-- /* Top-level handler for all FPU insns.  On entry, eip points to the
-//--    second byte of the insn. */
-//-- static
-//-- Addr dis_fpu ( UCodeBlock* cb, 
-//--                UChar       sorb,
-//--                UChar first_byte, Addr eip )
-//-- {
-//--    const Bool rd = False; 
-//--    const Bool wr = True;
-//--    UChar second_byte = getUChar(eip);
-//-- 
-//--    /* Handle FSTSW %ax specially. */
-//--    if (first_byte == 0xDF && second_byte == 0xE0) {
-//--       Int t1 = newTemp(cb);
-//--       uInstr0(cb, CALLM_S, 0);
-//--       uInstr2(cb, MOV,   4, Literal, 0,  TempReg, t1);
-//--       uLiteral(cb, 0);
-//--       uInstr1(cb, PUSH,  4, TempReg, t1);
-//--       uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_fstsw_AX) );
-//--       uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
-//--       uInstr1(cb, POP,   2,  TempReg, t1);
-//--       uInstr2(cb, PUT,   2,  TempReg, t1, ArchReg, R_EAX);
-//--       uInstr0(cb, CALLM_E, 0);
-//--       DIP("fstsw %%ax\n");
-//--       eip++;
-//--       return eip;
-//--    }
-//-- 
-//--    /* Handle all non-memory FPU ops simply. */
-//--    if (second_byte >= 0xC0)
-//--       return dis_fpu_no_mem ( cb, eip, first_byte );
-//-- 
-//--    /* The insn references memory; need to determine 
-//--       whether it reads or writes, and at what size. */
-//--    switch (first_byte) {
-//-- 
-//--       case 0xD8:
-//--          switch ((second_byte >> 3) & 7) {
-//--             case 0: /* FADDs */
-//--             case 1: /* FMULs */
-//--             case 2: /* FCOMs */
-//--             case 3: /* FCOMPs */
-//--             case 4: /* FSUBs */
-//--             case 5: /* FSUBRs */
-//--             case 6: /* FDIVs */
-//--             case 7: /* FDIVRs */
-//--                return dis_fpu_mem(cb, sorb, 4, rd, eip, first_byte); 
-//--             default: 
-//--                goto unhandled;
-//--          }
-//--          break;
-//-- 
-//--       case 0xD9:
-//--          switch ((second_byte >> 3) & 7) {
-//--             case 0: /* FLDs */
-//--                return dis_fpu_mem(cb, sorb, 4, rd, eip, first_byte); 
-//--             case 2: /* FSTs */
-//--             case 3: /* FSTPs */
-//--                return dis_fpu_mem(cb, sorb, 4, wr, eip, first_byte); 
-//--             case 4: /* FLDENV */
-//--                return dis_fpu_mem(cb, sorb, 28, rd, eip, first_byte);
-//--             case 5: /* FLDCW */
-//--                return dis_fpu_mem(cb, sorb, 2, rd, eip, first_byte); 
-//--             case 6: /* FNSTENV */
-//--                return dis_fpu_mem(cb, sorb, 28, wr, eip, first_byte);
-//--             case 7: /* FSTCW */
-//--                /* HACK!  FSTCW actually writes 2 bytes, not 4.  glibc
-//--                   gets lots of moaning in __floor() if we do the right
-//--                   thing here. */
-//--                /* Later ... hack disabled .. we do do the Right Thing. */
-//--                return dis_fpu_mem(cb, sorb, /*4*/ 2, wr, eip, first_byte); 
-//--             default: 
-//--                goto unhandled;
-//--          }
-//--          break;
-//-- 
-//--       case 0xDA:
-//--          switch ((second_byte >> 3) & 7) {
-//--             case 0: /* FIADD dword-integer */
-//--             case 1: /* FIMUL dword-integer */
-//--             case 2: /* FICOM dword-integer */
-//--             case 3: /* FICOMP dword-integer */
-//--             case 4: /* FISUB dword-integer */
-//--             case 5: /* FISUBR dword-integer */
-//--             case 6: /* FIDIV dword-integer */
-//--             case 7: /* FIDIVR dword-integer */
-//--                return dis_fpu_mem(cb, sorb, 4, rd, eip, first_byte); 
-//--             default: 
-//--                goto unhandled;
-//--          }
-//--          break;
-//-- 
-//--       case 0xDB:
-//--          switch ((second_byte >> 3) & 7) {
-//--             case 0: /* FILD dword-integer */
-//--                return dis_fpu_mem(cb, sorb, 4, rd, eip, first_byte); 
-//--             case 2: /* FIST dword-integer */
-//--                return dis_fpu_mem(cb, sorb, 4, wr, eip, first_byte); 
-//--             case 3: /* FISTPl */
-//--                return dis_fpu_mem(cb, sorb, 4, wr, eip, first_byte); 
-//--             case 5: /* FLD extended-real */
-//--                return dis_fpu_mem(cb, sorb, 10, rd, eip, first_byte); 
-//--             case 7: /* FSTP extended-real */
-//--                return dis_fpu_mem(cb, sorb, 10, wr, eip, first_byte); 
-//--             default: 
-//--                goto unhandled;
-//--          }
-//--          break;
-//-- 
-//--       case 0xDC:
-//--          switch ((second_byte >> 3) & 7) {
-//--             case 0: /* FADD double-real */
-//--             case 1: /* FMUL double-real */
-//--             case 2: /* FCOM double-real */
-//--             case 3: /* FCOMP double-real */
-//--             case 4: /* FSUB double-real */
-//--             case 5: /* FSUBR double-real */
-//--             case 6: /* FDIV double-real */
-//--             case 7: /* FDIVR double-real */
-//--                return dis_fpu_mem(cb, sorb, 8, rd, eip, first_byte); 
-//--             default: 
-//--                goto unhandled;
-//--          }
-//--          break;
-//-- 
-//--       case 0xDD:
-//--          switch ((second_byte >> 3) & 7) {
-//--             case 0: /* FLD double-real */
-//--                return dis_fpu_mem(cb, sorb, 8, rd, eip, first_byte); 
-//--             case 2: /* FST double-real */
-//--             case 3: /* FSTP double-real */
-//--                return dis_fpu_mem(cb, sorb, 8, wr, eip, first_byte);
-//--             case 4: /* FRSTOR */
-//--                return dis_fpu_mem(cb, sorb, 108, rd, eip, first_byte);
-//--             case 6: /* FSAVE */
-//--                return dis_fpu_mem(cb, sorb, 108, wr, eip, first_byte);
-//--             case 7: /* FSTSW */
-//--                return dis_fpu_mem(cb, sorb, 2, wr, eip, first_byte);
-//--             default: 
-//--                goto unhandled;
-//--          }
-//--          break;
-//-- 
-//--       case 0xDE:
-//--          switch ((second_byte >> 3) & 7) {
-//--             case 0: /* FIADD word-integer */
-//--             case 1: /* FIMUL word-integer */
-//--             case 2: /* FICOM word-integer */
-//--             case 3: /* FICOMP word-integer */
-//--             case 4: /* FISUB word-integer */
-//--             case 5: /* FISUBR word-integer */
-//--             case 6: /* FIDIV word-integer */
-//--             case 7: /* FIDIVR word-integer */
-//--                return dis_fpu_mem(cb, sorb, 2, rd, eip, first_byte); 
-//--             default: 
-//--                goto unhandled;
-//--          }
-//--          break;
-//-- 
-//--       case 0xDF:
-//--          switch ((second_byte >> 3) & 7) {
-//--             case 0: /* FILD word-integer */
-//--                return dis_fpu_mem(cb, sorb, 2, rd, eip, first_byte); 
-//--             case 2: /* FIST word-integer */
-//--                return dis_fpu_mem(cb, sorb, 2, wr, eip, first_byte); 
-//--             case 3: /* FISTP word-integer */
-//--                return dis_fpu_mem(cb, sorb, 2, wr, eip, first_byte); 
-//--             case 5: /* FILD qword-integer */
-//--                return dis_fpu_mem(cb, sorb, 8, rd, eip, first_byte); 
-//--             case 7: /* FISTP qword-integer */
-//--                return dis_fpu_mem(cb, sorb, 8, wr, eip, first_byte); 
-//--             default: 
-//--                goto unhandled;
-//--          }
-//--          break;
-//-- 
-//--       default: goto unhandled;
-//--    }
-//-- 
-//--   unhandled: 
-//--    VG_(printf)("dis_fpu: unhandled memory case 0x%2x:0x%2x(%d)\n",
-//--                (UInt)first_byte, (UInt)second_byte, 
-//--                (UInt)((second_byte >> 3) & 7) );
-//--    VG_(core_panic)("dis_fpu: unhandled opcodes");
-//-- }
+/*------------------------------------------------------------*/
+/*---                                                      ---*/
+/*--- MMX INSTRUCTIONS                                     ---*/
+/*---                                                      ---*/
+/*------------------------------------------------------------*/
 
+/* Effect of MMX insns on x87 FPU state (table 11-2 of 
+   IA32 arch manual, volume 3):
+
+   Read from, or write to MMX register (viz, any insn except EMMS):
+   * All tags set to Valid (non-empty) -- FPTAGS[i] := nonzero
+   * FP stack pointer set to zero
+
+   EMMS:
+   * All tags set to Invalid (empty) -- FPTAGS[i] := zero
+   * FP stack pointer set to zero
+*/
+
+static void do_MMX_boilerplate ( void )
+{
+   Int      i;
+   IRArray* descr = mkIRArray( OFFB_FPTAGS, Ity_I8, 8 );
+   IRExpr*  zero  = mkU32(0);
+   IRExpr*  tag1  = mkU8(1);
+   put_ftop(zero);
+   for (i = 0; i < 8; i++)
+      stmt( IRStmt_PutI( descr, zero, i, tag1 ) );
+}
+
+static void do_EMMS_boilerplate ( void )
+{
+   Int      i;
+   IRArray* descr = mkIRArray( OFFB_FPTAGS, Ity_I8, 8 );
+   IRExpr*  zero  = mkU32(0);
+   IRExpr*  tag0  = mkU8(0);
+   put_ftop(zero);
+   for (i = 0; i < 8; i++)
+      stmt( IRStmt_PutI( descr, zero, i, tag0 ) );
+}
+
+
+static IRExpr* getMMXReg ( UInt archreg )
+{
+   vassert(archreg < 8);
+   return IRExpr_Get( OFFB_FPREGS + 8 * archreg, Ity_I64 );
+}
+
+
+static void putMMXReg ( UInt archreg, IRExpr* e )
+{
+   vassert(archreg < 8);
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I64);
+   stmt( IRStmt_Put( OFFB_FPREGS + 8 * archreg, e ) );
+}
+
+
+static 
+UInt dis_MMXop_regmem_to_reg ( UChar sorb,
+                               UInt  delta,
+                               UChar opc,
+                               Char* name,
+                               Bool  show_granularity )
+{
+   Char  dis_buf[50];
+   UChar modrm = getIByte(delta);
+   Bool  isReg = epartIsReg(modrm);
+
+#  define XXX(_name) hAddr = &_name; hName = #_name;
+
+   void* hAddr = NULL;
+   Char* hName = NULL;
+   switch (opc) {
+      case 0xFC: XXX(calculate_vadd8x8); break;
+      case 0xFD: XXX(calculate_vadd16x4); break;
+      case 0xFE: XXX(calculate_vadd32x2); break;
+
+      case 0xEC: XXX(calculate_vqadd8Sx8); break;
+      case 0xED: XXX(calculate_vqadd16Sx4); break;
+
+      case 0xDC: XXX(calculate_vqadd8Ux8); break;
+      case 0xDD: XXX(calculate_vqadd16Ux4); break;
+
+      case 0xF8: XXX(calculate_vsub8x8);  break;
+      case 0xF9: XXX(calculate_vsub16x4); break;
+      case 0xFA: XXX(calculate_vsub32x2); break;
+
+      case 0xE8: XXX(calculate_vqsub8Sx8); break;
+      case 0xE9: XXX(calculate_vqsub16Sx4); break;
+
+      case 0xD8: XXX(calculate_vqsub8Ux8); break;
+      case 0xD9: XXX(calculate_vqsub16Ux4); break;
+
+      case 0xE5: XXX(calculate_vmulhi16x4); break;
+      case 0xD5: XXX(calculate_vmullo16x4); break;
+
+      default: 
+         vex_printf("\n0x%x\n", (Int)opc);
+         vpanic("dis_MMXop_regmem_to_reg");
+   }
+
+#  undef XXX
+
+   if (isReg) {
+vassert(0);
+      delta++;
+      putMMXReg( 
+         gregOfRM(modrm),
+         mkIRExprCCall(
+            Ity_I64, 
+            0/*regparms*/, hName, hAddr,
+            mkIRExprVec_2( getMMXReg(gregOfRM(modrm)),
+                           getMMXReg(eregOfRM(modrm)) )
+         ) 
+      );
+   } else {
+      Int    len;
+      IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
+      delta += len;
+      putMMXReg( 
+         gregOfRM(modrm),
+         mkIRExprCCall(
+            Ity_I64, 
+            0/*regparms*/, hName, hAddr,
+            mkIRExprVec_2( getMMXReg(gregOfRM(modrm)),
+                           loadLE(Ity_I64, mkexpr(addr)) )
+         ) 
+      );
+   }
+
+   DIP("%s%s %s, %s\n", 
+       name, show_granularity ? nameMMXGran(opc & 3) : (Char*)"",
+       ( isReg ? nameMMXReg(eregOfRM(modrm)) : dis_buf ),
+       nameMMXReg(gregOfRM(modrm)) );
+
+   return delta;
+}
+
+
+
+static
+UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
+{
+   Int   len;
+   UChar modrm;
+   UChar dis_buf[50];
+   UChar opc = getIByte(delta);
+   delta++;
+
+   if (0) {
+   } else {
+      do_MMX_boilerplate();
+   }
+
+   switch (opc) {
+
+      case 0x6F:
+         /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         modrm = getIByte(delta);
+         if (epartIsReg(modrm)) {
+            delta++;
+            putMMXReg( gregOfRM(modrm), getMMXReg(eregOfRM(modrm)) );
+            DIP("movq %s, %s\n", 
+                nameMMXReg(eregOfRM(modrm)), nameMMXReg(gregOfRM(modrm)));
+         } else {
+            IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
+            delta += len;
+            putMMXReg( gregOfRM(modrm), loadLE(Ity_I64, mkexpr(addr)) );
+            DIP("movq %s, %s\n", 
+                dis_buf, nameMMXReg(gregOfRM(modrm)));
+         }
+         break;
+
+      case 0x7F:
+         /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
+         vassert(sz == 4);
+         modrm = getIByte(delta);
+         if (epartIsReg(modrm)) {
+vassert(0);
+#if 0
+            eip++;
+            uInstr1(cb, MMX2, 0, 
+                        Lit16, 
+                        (((UShort)(opc)) << 8) | ((UShort)modrm) );
+            DIP("movq %s, %s\n", 
+                nameMMXReg(gregOfRM(modrm)), nameMMXReg(eregOfRM(modrm)));
+#endif
+         } else {
+            IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
+            delta += len;
+	    storeLE( mkexpr(addr), getMMXReg(gregOfRM(modrm)) );
+            DIP("mov(nt)q %s, %s\n", 
+                nameMMXReg(gregOfRM(modrm)), dis_buf);
+         }
+         break;
+
+      case 0xFC: case 0xFD: case 0xFE: 
+         /* PADDgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "padd", True );
+         break;
+
+      case 0xEC: case 0xED:
+         /* PADDSgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "padds", True );
+         break;
+
+      case 0xDC: case 0xDD:
+         /* PADDUSgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "paddus", True );
+         break;
+
+      case 0xF8: case 0xF9: case 0xFA:
+         /* PSUBgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psub", True );
+         break;
+
+      case 0xE8: case 0xE9:
+         /* PSUBSgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psubs", True );
+         break;
+
+      case 0xD8: case 0xD9:
+         /* PSUBUSgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psubus", True );
+         break;
+
+      case 0xE5: /* PMULHW (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pmulhw", False );
+         break;
+
+      case 0xD5: /* PMULLW (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pmullw", False );
+         break;
+
+      default:
+         *decode_ok = False;
+         return delta; /* ignored */
+
+   }
+
+   *decode_ok = True;
+   return delta;
+}
+
+
+/*------------------------------------------------------------*/
+/*--- More misc arithmetic and other obscure insns.        ---*/
+/*------------------------------------------------------------*/
 
 /* Double length left and right shifts.  Apparently only required in
    v-size (no b- variant). */
@@ -9295,8 +9267,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                     "%cl", False );
          break;
 
-//--       /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */
-//-- 
+      /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */
+
 //--       case 0xC0: /* XADD Gb,Eb */
 //--          eip = dis_xadd_G_E ( cb, sorb, 1, eip );
 //--          break;
@@ -9450,30 +9422,44 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--          }
 //--          break;
 //-- 
-//--       case 0x6F: /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
-//--          vg_assert(sz == 4);
-//--          modrm = getUChar(eip);
-//--          if (epartIsReg(modrm)) {
-//--             eip++;
-//--             uInstr1(cb, MMX2, 0, 
-//--                         Lit16, 
-//--                         (((UShort)(opc)) << 8) | ((UShort)modrm) );
-//--             DIP("movq %s, %s\n", 
-//--                 nameMMXReg(eregOfRM(modrm)), nameMMXReg(gregOfRM(modrm)));
-//--          } else {
-//--             Int tmpa;
-//--             pair = disAMode ( cb, sorb, eip, dis_buf );
-//--             tmpa = LOW24(pair);
-//--             eip += HI8(pair);
-//--             uInstr2(cb, MMX2_MemRd, 8, 
-//--                         Lit16, 
-//--                         (((UShort)(opc)) << 8) | ((UShort)modrm),
-//--                         TempReg, tmpa);
-//--             DIP("movq %s, %s\n", 
-//--                 dis_buf, nameMMXReg(gregOfRM(modrm)));
-//--          }
-//--          break;
-//-- 
+
+      case 0x7F: /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
+
+      case 0xFC: 
+      case 0xFD: 
+      case 0xFE: /* PADDgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0xEC: 
+      case 0xED: /* PADDSgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0xDC:
+      case 0xDD: /* PADDUSgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0xF8: 
+      case 0xF9: 
+      case 0xFA: /* PSUBgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0xE8: 
+      case 0xE9: /* PSUBSgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0xD8: 
+      case 0xD9: /* PSUBUSgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0xE5: /* PMULHW (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0xD5: /* PMULLW (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0x6F: /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
+      {
+         UInt delta0    = delta-1;
+         Bool decode_OK = False;
+         delta = dis_MMX ( &decode_OK, sorb, sz, delta-1 );
+         if (!decode_OK) {
+            delta = delta0;
+            goto decode_failure;
+         }
+         break;
+      }
+
 //--       case 0x7F: /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
 //--       case 0xE7: /* MOVNTQ (src)mmxreg, (dst)mmxreg-or-mem */
 //--          vg_assert(sz == 4);

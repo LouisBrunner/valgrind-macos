@@ -1598,6 +1598,387 @@ void dirtyhelper_CPUID ( VexGuestX86State* st )
    }
 }
 
+
+
+/*----------------------------------------------*/
+/*--- Helpers for MMX                        ---*/
+/*----------------------------------------------*/
+
+/* Tuple/select functions for 32x2 vectors. */
+
+static inline ULong mk32x2 ( UInt w1, UInt w0 ) 
+{
+   return (((ULong)w1) << 32) | ((ULong)w0);
+}
+static inline UInt sel32x2_1 ( ULong w64 ) 
+{
+   return 0xFFFFFFFF & (UInt)(w64 >> 32);
+}
+static inline UInt sel32x2_0 ( ULong w64 ) 
+{
+   return 0xFFFFFFFF & (UInt)w64;
+}
+
+
+/* Tuple/select functions for 16x4 vectors.  gcc is pretty hopeless
+   with 64-bit shifts so we give it a hand. */
+
+static inline ULong mk16x4 ( UShort w3, UShort w2, 
+                             UShort w1, UShort w0 ) 
+{
+   UInt hi32 = (((UInt)w3) << 16) | ((UInt)w2);
+   UInt lo32 = (((UInt)w1) << 16) | ((UInt)w0);
+   return mk32x2(hi32, lo32);
+}
+static inline UShort sel16x4_3 ( ULong w64 ) 
+{
+   UInt hi32 = (UInt)(w64 >> 32);
+   return 0xFFFF & (UShort)(hi32 >> 16);
+}
+static inline UShort sel16x4_2 ( ULong w64 ) 
+{
+   UInt hi32 = (UInt)(w64 >> 32);
+   return 0xFFFF & (UShort)hi32;
+}
+static inline UShort sel16x4_1 ( ULong w64 ) 
+{
+   UInt lo32 = (UInt)w64;
+   return 0xFFFF & (UInt)(lo32 >> 16);
+}
+static inline UShort sel16x4_0 ( ULong w64 ) 
+{
+   UInt lo32 = (UInt)w64;
+   return 0xFFFF & (UShort)lo32;
+}
+
+
+/* Tuple/select functions for 8x8 vectors. */
+
+static inline ULong mk8x8 ( UChar w7, UChar w6,
+                            UChar w5, UChar w4,
+                            UChar w3, UChar w2,
+			    UChar w1, UChar w0 )
+{
+   UInt hi32 =   (((UInt)w7) << 24) | (((UInt)w6) << 16)
+               | (((UInt)w5) << 8)  | (((UInt)w4) << 0);
+   UInt lo32 =   (((UInt)w3) << 24) | (((UInt)w2) << 16)
+               | (((UInt)w1) << 8)  | (((UInt)w0) << 0);
+   return mk32x2(hi32, lo32);
+}
+
+static inline UChar sel8x8_7 ( ULong w64 ) 
+{
+   UInt hi32 = (UInt)(w64 >> 32);
+   return 0xFF & (UChar)(hi32 >> 24);
+}
+static inline UChar sel8x8_6 ( ULong w64 ) 
+{
+   UInt hi32 = (UInt)(w64 >> 32);
+   return 0xFF & (UChar)(hi32 >> 16);
+}
+static inline UChar sel8x8_5 ( ULong w64 ) 
+{
+   UInt hi32 = (UInt)(w64 >> 32);
+   return 0xFF & (UChar)(hi32 >> 8);
+}
+static inline UChar sel8x8_4 ( ULong w64 ) 
+{
+   UInt hi32 = (UInt)(w64 >> 32);
+   return 0xFF & (UChar)(hi32 >> 0);
+}
+static inline UChar sel8x8_3 ( ULong w64 ) 
+{
+   UInt lo32 = (UInt)w64;
+   return 0xFF & (UChar)(lo32 >> 24);
+}
+static inline UChar sel8x8_2 ( ULong w64 ) 
+{
+   UInt lo32 = (UInt)w64;
+   return 0xFF & (UChar)(lo32 >> 16);
+}
+static inline UChar sel8x8_1 ( ULong w64 ) 
+{
+   UInt lo32 = (UInt)w64;
+   return 0xFF & (UChar)(lo32 >> 8);
+}
+static inline UChar sel8x8_0 ( ULong w64 ) 
+{
+   UInt lo32 = (UInt)w64;
+   return 0xFF & (UChar)(lo32 >> 0);
+}
+
+
+/* Scalar helpers. */
+
+static inline Short qadd16S ( Short xx, Short yy )
+{
+   Int t = ((Int)xx) + ((Int)yy);
+   if (t < -32768) t = -32768;
+   if (t > 32767)  t = 32767;
+   return (Short)t;
+}
+
+static inline SChar qadd8S ( SChar xx, SChar yy )
+{
+   Int t = ((Int)xx) + ((Int)yy);
+   if (t < -128) t = -128;
+   if (t > 127)  t = 127;
+   return (SChar)t;
+}
+
+static inline UShort qadd16U ( UShort xx, UShort yy )
+{
+   UInt t = ((UInt)xx) + ((UInt)yy);
+   if (t > 0xFFFF) t = 0xFFFF;
+   return (UShort)t;
+}
+
+static inline UChar qadd8U ( UChar xx, UChar yy )
+{
+   UInt t = ((UInt)xx) + ((UInt)yy);
+   if (t > 0xFF) t = 0xFF;
+   return (UChar)t;
+}
+
+static inline Short qsub16S ( Short xx, Short yy )
+{
+   Int t = ((Int)xx) - ((Int)yy);
+   if (t < -32768) t = -32768;
+   if (t > 32767)  t = 32767;
+   return (Short)t;
+}
+
+static inline SChar qsub8S ( SChar xx, SChar yy )
+{
+   Int t = ((Int)xx) - ((Int)yy);
+   if (t < -128) t = -128;
+   if (t > 127)  t = 127;
+   return (SChar)t;
+}
+
+static inline UShort qsub16U ( UShort xx, UShort yy )
+{
+   Int t = ((Int)xx) - ((Int)yy);
+   if (t < 0)      t = 0;
+   if (t > 0xFFFF) t = 0xFFFF;
+   return (UShort)t;
+}
+
+static inline UChar qsub8U ( UChar xx, UChar yy )
+{
+   Int t = ((Int)xx) - ((Int)yy);
+   if (t < 0)    t = 0;
+   if (t > 0xFF) t = 0xFF;
+   return (UChar)t;
+}
+
+static inline Short mulhi16S ( Short xx, Short yy )
+{
+   Int t = ((Int)xx) * ((Int)yy);
+   t >>=/*s*/ 16;
+   return (Short)t;
+}
+
+static inline Short mullo16S ( Short xx, Short yy )
+{
+   Int t = ((Int)xx) * ((Int)yy);
+   return (Short)t;
+}
+
+
+/* Actually do something interesting! */
+
+/* Normal adds. */
+
+ULong calculate_vadd32x2 ( ULong xxL, ULong yyL )
+{
+   return mk32x2(
+             sel32x2_1(xxL) + sel32x2_1(yyL),
+             sel32x2_0(xxL) + sel32x2_0(yyL)
+          );
+}
+
+ULong calculate_vadd16x4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             sel16x4_3(xx) + sel16x4_3(yy),
+             sel16x4_2(xx) + sel16x4_2(yy),
+             sel16x4_1(xx) + sel16x4_1(yy),
+             sel16x4_0(xx) + sel16x4_0(yy)
+          );
+}
+
+ULong calculate_vadd8x8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             sel8x8_7(xx) + sel8x8_7(yy),
+             sel8x8_6(xx) + sel8x8_6(yy),
+             sel8x8_5(xx) + sel8x8_5(yy),
+             sel8x8_4(xx) + sel8x8_4(yy),
+             sel8x8_3(xx) + sel8x8_3(yy),
+             sel8x8_2(xx) + sel8x8_2(yy),
+             sel8x8_1(xx) + sel8x8_1(yy),
+             sel8x8_0(xx) + sel8x8_0(yy)
+          );
+}
+
+/* Saturated adds. */
+
+ULong calculate_vqadd16Sx4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             qadd16S( sel16x4_3(xx), sel16x4_3(yy) ),
+             qadd16S( sel16x4_2(xx), sel16x4_2(yy) ),
+             qadd16S( sel16x4_1(xx), sel16x4_1(yy) ),
+             qadd16S( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong calculate_vqadd8Sx8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             qadd8S( sel8x8_7(xx), sel8x8_7(yy) ),
+             qadd8S( sel8x8_6(xx), sel8x8_6(yy) ),
+             qadd8S( sel8x8_5(xx), sel8x8_5(yy) ),
+             qadd8S( sel8x8_4(xx), sel8x8_4(yy) ),
+             qadd8S( sel8x8_3(xx), sel8x8_3(yy) ),
+             qadd8S( sel8x8_2(xx), sel8x8_2(yy) ),
+             qadd8S( sel8x8_1(xx), sel8x8_1(yy) ),
+             qadd8S( sel8x8_0(xx), sel8x8_0(yy) )
+          );
+}
+
+ULong calculate_vqadd16Ux4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             qadd16U( sel16x4_3(xx), sel16x4_3(yy) ),
+             qadd16U( sel16x4_2(xx), sel16x4_2(yy) ),
+             qadd16U( sel16x4_1(xx), sel16x4_1(yy) ),
+             qadd16U( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong calculate_vqadd8Ux8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             qadd8U( sel8x8_7(xx), sel8x8_7(yy) ),
+             qadd8U( sel8x8_6(xx), sel8x8_6(yy) ),
+             qadd8U( sel8x8_5(xx), sel8x8_5(yy) ),
+             qadd8U( sel8x8_4(xx), sel8x8_4(yy) ),
+             qadd8U( sel8x8_3(xx), sel8x8_3(yy) ),
+             qadd8U( sel8x8_2(xx), sel8x8_2(yy) ),
+             qadd8U( sel8x8_1(xx), sel8x8_1(yy) ),
+             qadd8U( sel8x8_0(xx), sel8x8_0(yy) )
+          );
+}
+
+/* Normal subtracts. */
+
+ULong calculate_vsub32x2 ( ULong xxL, ULong yyL )
+{
+   return mk32x2(
+             sel32x2_1(xxL) - sel32x2_1(yyL),
+             sel32x2_0(xxL) - sel32x2_0(yyL)
+          );
+}
+
+ULong calculate_vsub16x4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             sel16x4_3(xx) - sel16x4_3(yy),
+             sel16x4_2(xx) - sel16x4_2(yy),
+             sel16x4_1(xx) - sel16x4_1(yy),
+             sel16x4_0(xx) - sel16x4_0(yy)
+          );
+}
+
+ULong calculate_vsub8x8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             sel8x8_7(xx) - sel8x8_7(yy),
+             sel8x8_6(xx) - sel8x8_6(yy),
+             sel8x8_5(xx) - sel8x8_5(yy),
+             sel8x8_4(xx) - sel8x8_4(yy),
+             sel8x8_3(xx) - sel8x8_3(yy),
+             sel8x8_2(xx) - sel8x8_2(yy),
+             sel8x8_1(xx) - sel8x8_1(yy),
+             sel8x8_0(xx) - sel8x8_0(yy)
+          );
+}
+
+/* Saturated subtracts. */
+
+ULong calculate_vqsub16Sx4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             qsub16S( sel16x4_3(xx), sel16x4_3(yy) ),
+             qsub16S( sel16x4_2(xx), sel16x4_2(yy) ),
+             qsub16S( sel16x4_1(xx), sel16x4_1(yy) ),
+             qsub16S( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong calculate_vqsub8Sx8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             qsub8S( sel8x8_7(xx), sel8x8_7(yy) ),
+             qsub8S( sel8x8_6(xx), sel8x8_6(yy) ),
+             qsub8S( sel8x8_5(xx), sel8x8_5(yy) ),
+             qsub8S( sel8x8_4(xx), sel8x8_4(yy) ),
+             qsub8S( sel8x8_3(xx), sel8x8_3(yy) ),
+             qsub8S( sel8x8_2(xx), sel8x8_2(yy) ),
+             qsub8S( sel8x8_1(xx), sel8x8_1(yy) ),
+             qsub8S( sel8x8_0(xx), sel8x8_0(yy) )
+          );
+}
+
+ULong calculate_vqsub16Ux4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             qsub16U( sel16x4_3(xx), sel16x4_3(yy) ),
+             qsub16U( sel16x4_2(xx), sel16x4_2(yy) ),
+             qsub16U( sel16x4_1(xx), sel16x4_1(yy) ),
+             qsub16U( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong calculate_vqsub8Ux8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             qsub8U( sel8x8_7(xx), sel8x8_7(yy) ),
+             qsub8U( sel8x8_6(xx), sel8x8_6(yy) ),
+             qsub8U( sel8x8_5(xx), sel8x8_5(yy) ),
+             qsub8U( sel8x8_4(xx), sel8x8_4(yy) ),
+             qsub8U( sel8x8_3(xx), sel8x8_3(yy) ),
+             qsub8U( sel8x8_2(xx), sel8x8_2(yy) ),
+             qsub8U( sel8x8_1(xx), sel8x8_1(yy) ),
+             qsub8U( sel8x8_0(xx), sel8x8_0(yy) )
+          );
+}
+
+/* Multiplication. */
+
+ULong calculate_vmulhi16x4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             mulhi16S( sel16x4_3(xx), sel16x4_3(yy) ),
+             mulhi16S( sel16x4_2(xx), sel16x4_2(yy) ),
+             mulhi16S( sel16x4_1(xx), sel16x4_1(yy) ),
+             mulhi16S( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong calculate_vmullo16x4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             mullo16S( sel16x4_3(xx), sel16x4_3(yy) ),
+             mullo16S( sel16x4_2(xx), sel16x4_2(yy) ),
+             mullo16S( sel16x4_1(xx), sel16x4_1(yy) ),
+             mullo16S( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+
 /*-----------------------------------------------------------*/
 /*--- Describing the x86 guest state, for the benefit     ---*/
 /*--- of iropt and instrumenters.                         ---*/

@@ -867,24 +867,28 @@ static void load_one_suppressions_file ( Char* filename )
 
       eof = getLine ( fd, buf, N_BUF );
       if (eof) goto syntax_error;
-      supp->caller1 = copyStr(buf);
-      if (!setLocationTy(&(supp->caller1), &(supp->caller1_ty)))
-         goto syntax_error;
-      
-      eof = getLine ( fd, buf, N_BUF );
-      if (eof) goto syntax_error;
       if (!STREQ(buf, "}")) {
-         supp->caller2 = copyStr(buf);
-         if (!setLocationTy(&(supp->caller2), &(supp->caller2_ty)))
+         supp->caller1 = copyStr(buf);
+         if (!setLocationTy(&(supp->caller1), &(supp->caller1_ty)))
             goto syntax_error;
+      
          eof = getLine ( fd, buf, N_BUF );
          if (eof) goto syntax_error;
          if (!STREQ(buf, "}")) {
-            supp->caller3 = copyStr(buf);
-            if (!setLocationTy(&(supp->caller3), &(supp->caller3_ty)))
+            supp->caller2 = copyStr(buf);
+            if (!setLocationTy(&(supp->caller2), &(supp->caller2_ty)))
                goto syntax_error;
+
             eof = getLine ( fd, buf, N_BUF );
-            if (eof || !STREQ(buf, "}")) goto syntax_error;
+            if (eof) goto syntax_error;
+            if (!STREQ(buf, "}")) {
+               supp->caller3 = copyStr(buf);
+              if (!setLocationTy(&(supp->caller3), &(supp->caller3_ty)))
+                 goto syntax_error;
+
+               eof = getLine ( fd, buf, N_BUF );
+               if (eof || !STREQ(buf, "}")) goto syntax_error;
+	    }
          }
       }
 
@@ -1020,14 +1024,17 @@ static Suppression* is_suppressible_error ( ErrContext* ec )
          default: goto baaaad;
       }
 
-      switch (su->caller1_ty) {
-         case ObjName: if (!VG_(stringMatch)(su->caller1, 
-                                             caller1_obj)) continue;
-                       break;
-         case FunName: if (!VG_(stringMatch)(su->caller1, 
-                                             caller1_fun)) continue;
-                       break;
-         default: goto baaaad;
+      if (su->caller1 != NULL) {
+         vg_assert(VG_(clo_backtrace_size) >= 2);
+         switch (su->caller1_ty) {
+            case ObjName: if (!VG_(stringMatch)(su->caller1, 
+                                                caller1_obj)) continue;
+                          break;
+            case FunName: if (!VG_(stringMatch)(su->caller1, 
+                                                caller1_fun)) continue;
+                          break;
+            default: goto baaaad;
+         }
       }
 
       if (VG_(clo_backtrace_size) > 2 && su->caller2 != NULL) {

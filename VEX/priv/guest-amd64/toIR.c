@@ -345,7 +345,7 @@ static void unimplemented ( HChar* str )
 #define OFFB_IDFLAG    offsetof(VexGuestAMD64State,guest_IDFLAG)
 #define OFFB_FTOP      offsetof(VexGuestAMD64State,guest_FTOP)
 //.. #define OFFB_FC3210    offsetof(VexGuestX86State,guest_FC3210)
-//.. #define OFFB_FPROUND   offsetof(VexGuestX86State,guest_FPROUND)
+#define OFFB_FPROUND   offsetof(VexGuestAMD64State,guest_FPROUND)
 //.. 
 //.. #define OFFB_CS        offsetof(VexGuestX86State,guest_CS)
 //.. #define OFFB_DS        offsetof(VexGuestX86State,guest_DS)
@@ -1214,10 +1214,10 @@ static IRExpr* getXMMRegLane32 ( UInt xmmreg, Int laneno )
    return IRExpr_Get( xmmGuestRegLane32offset(xmmreg,laneno), Ity_I32 );
 }
 
-//.. static IRExpr* getXMMRegLane32F ( UInt xmmreg, Int laneno )
-//.. {
-//..    return IRExpr_Get( xmmGuestRegLane32offset(xmmreg,laneno), Ity_F32 );
-//.. }
+static IRExpr* getXMMRegLane32F ( UInt xmmreg, Int laneno )
+{
+   return IRExpr_Get( xmmGuestRegLane32offset(xmmreg,laneno), Ity_F32 );
+}
 
 static void putXMMReg ( UInt xmmreg, IRExpr* e )
 {
@@ -3939,29 +3939,30 @@ static void put_ftop ( IRExpr* e )
 //.. {
 //..    stmt( IRStmt_Put( OFFB_FC3210, e ) );
 //.. }
-//.. 
-//.. /* --------- Get/put the FPU rounding mode. --------- */
-//.. static IRExpr* /* :: Ity_I32 */ get_fpround ( void )
-//.. {
-//..    return IRExpr_Get( OFFB_FPROUND, Ity_I32 );
-//.. }
-//.. 
+
+/* --------- Get/put the FPU rounding mode. --------- */
+static IRExpr* /* :: Ity_I32 */ get_fpround ( void )
+{
+   return unop(Iop_64to32, IRExpr_Get( OFFB_FPROUND, Ity_I64 ));
+}
+
 //.. static void put_fpround ( IRExpr* /* :: Ity_I32 */ e )
 //.. {
-//..    stmt( IRStmt_Put( OFFB_FPROUND, e ) );
+//..    vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I32);
+//..    stmt( IRStmt_Put( OFFB_FPROUND, unop(Iop_32Uto64,e) ) );
 //.. }
-//.. 
-//.. 
-//.. /* --------- Synthesise a 2-bit FPU rounding mode. --------- */
-//.. /* Produces a value in 0 .. 3, which is encoded as per the type
-//..    IRRoundingMode.  Since the guest_FPROUND value is also encoded as
-//..    per IRRoundingMode, we merely need to get it and mask it for
-//..    safety.
-//.. */
-//.. static IRExpr* /* :: Ity_I32 */ get_roundingmode ( void )
-//.. {
-//..    return binop( Iop_And32, get_fpround(), mkU32(3) );
-//.. }
+
+
+/* --------- Synthesise a 2-bit FPU rounding mode. --------- */
+/* Produces a value in 0 .. 3, which is encoded as per the type
+   IRRoundingMode.  Since the guest_FPROUND value is also encoded as
+   per IRRoundingMode, we merely need to get it and mask it for
+   safety.
+*/
+static IRExpr* /* :: Ity_I32 */ get_roundingmode ( void )
+{
+   return binop( Iop_And32, get_fpround(), mkU32(3) );
+}
 
 
 /* --------- Get/set FP register tag bytes. --------- */
@@ -4153,27 +4154,29 @@ static void fp_pop ( void )
 //..    if (pop_after)
 //..       fp_pop();
 //.. }
-//.. 
-//.. /* %eflags(Z,P,C) = UCOMI( st(0), st(i) ) */
-//.. static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
-//.. {
-//..    DIP("fucomi%s %%st(0),%%st(%d)\n", pop_after ? "p" : "", i);
-//..    /* This is a bit of a hack (and isn't really right).  It sets
-//..       Z,P,C,O correctly, but forces A and S to zero, whereas the Intel
-//..       documentation implies A and S are unchanged. 
-//..    */
-//..    /* It's also fishy in that it is used both for COMIP and
-//..       UCOMIP, and they aren't the same (although similar). */
-//..    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-//..    stmt( IRStmt_Put( OFFB_CC_DEP1,
-//..                      binop( Iop_And32,
-//..                             binop(Iop_CmpF64, get_ST(0), get_ST(i)),
-//..                             mkU32(0x45)
-//..        )));
-//..    if (pop_after)
-//..       fp_pop();
-//.. }
+
+/* %rflags(Z,P,C) = UCOMI( st(0), st(i) ) */
+static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
+{
+   DIP("fucomi%s %%st(0),%%st(%d)\n", pop_after ? "p" : "", i);
+   /* This is a bit of a hack (and isn't really right).  It sets
+      Z,P,C,O correctly, but forces A and S to zero, whereas the Intel
+      documentation implies A and S are unchanged. 
+   */
+   /* It's also fishy in that it is used both for COMIP and
+      UCOMIP, and they aren't the same (although similar). */
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+   stmt( IRStmt_Put( 
+            OFFB_CC_DEP1,
+            binop( Iop_And64,
+                   unop( Iop_32Uto64,
+                         binop(Iop_CmpF64, get_ST(0), get_ST(i))),
+                   mkU64(0x45)
+        )));
+   if (pop_after)
+      fp_pop();
+}
 
 
 static
@@ -4338,26 +4341,26 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 
          switch (gregOfRM(modrm)) {
 
-//..             case 0: /* FLD single-real */
-//..                DIP("flds %s\n", dis_buf);
-//..                fp_push();
-//..                put_ST(0, unop(Iop_F32toF64,
-//..                               loadLE(Ity_F32, mkexpr(addr))));
-//..                break;
-//.. 
-//..             case 2: /* FST single-real */
-//..                DIP("fsts %s\n", dis_buf);
-//..                storeLE(mkexpr(addr),
-//..                        binop(Iop_F64toF32, get_roundingmode(), get_ST(0)));
-//..                break;
-//.. 
-//..             case 3: /* FSTP single-real */
-//..                DIP("fstps %s\n", dis_buf);
-//..                storeLE(mkexpr(addr), 
-//..                        binop(Iop_F64toF32, get_roundingmode(), get_ST(0)));
-//..                fp_pop();
-//..                break;
-//.. 
+            case 0: /* FLD single-real */
+               DIP("flds %s\n", dis_buf);
+               fp_push();
+               put_ST(0, unop(Iop_F32toF64,
+                              loadLE(Ity_F32, mkexpr(addr))));
+               break;
+
+            case 2: /* FST single-real */
+               DIP("fsts %s\n", dis_buf);
+               storeLE(mkexpr(addr),
+                       binop(Iop_F64toF32, get_roundingmode(), get_ST(0)));
+               break;
+
+            case 3: /* FSTP single-real */
+               DIP("fstps %s\n", dis_buf);
+               storeLE(mkexpr(addr), 
+                       binop(Iop_F64toF32, get_roundingmode(), get_ST(0)));
+               fp_pop();
+               break;
+
 //..             case 4: { /* FLDENV m108 */
 //..                /* Uses dirty helper: 
 //..                      VexEmWarn x86g_do_FLDENV ( VexGuestX86State*, Addr32 ) */
@@ -4525,14 +4528,14 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
          delta++;
          switch (modrm) {
 
-//..             case 0xC0 ... 0xC7: /* FLD %st(?) */
-//..                r_src = (UInt)modrm - 0xC0;
-//..                DIP("fld %%st(%d)\n", r_src);
-//..                t1 = newTemp(Ity_F64);
-//..                assign(t1, get_ST(r_src));
-//..                fp_push();
-//..                put_ST(0, mkexpr(t1));
-//..                break;
+            case 0xC0 ... 0xC7: /* FLD %st(?) */
+               r_src = (UInt)modrm - 0xC0;
+               DIP("fld %%st(%d)\n", r_src);
+               t1 = newTemp(Ity_F64);
+               assign(t1, get_ST(r_src));
+               fp_push();
+               put_ST(0, mkexpr(t1));
+               break;
 
             case 0xC8 ... 0xCF: /* FXCH %st(?) */
                r_src = (UInt)modrm - 0xC8;
@@ -4574,14 +4577,14 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                DIP("fxam\n");
 //..                break;
 //..             }
-//.. 
-//..             case 0xE8: /* FLD1 */
-//..                DIP("fld1\n");
-//..                fp_push();
-//..                /* put_ST(0, IRExpr_Const(IRConst_F64(1.0))); */
-//..                put_ST(0, IRExpr_Const(IRConst_F64i(0x3ff0000000000000ULL)));
-//..                break;
-//.. 
+
+            case 0xE8: /* FLD1 */
+               DIP("fld1\n");
+               fp_push();
+               /* put_ST(0, IRExpr_Const(IRConst_F64(1.0))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x3ff0000000000000ULL)));
+               break;
+
 //..             case 0xE9: /* FLDL2T */
 //..                DIP("fldl2t\n");
 //..                fp_push();
@@ -4616,14 +4619,14 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                /* put_ST(0, IRExpr_Const(IRConst_F64(0.69314718055994530942))); */
 //..                put_ST(0, IRExpr_Const(IRConst_F64i(0x3fe62e42fefa39efULL)));
 //..                break;
-//.. 
-//..             case 0xEE: /* FLDZ */
-//..                DIP("fldz\n");
-//..                fp_push();
-//..                /* put_ST(0, IRExpr_Const(IRConst_F64(0.0))); */
-//..                put_ST(0, IRExpr_Const(IRConst_F64i(0x0000000000000000ULL)));
-//..                break;
-//.. 
+
+            case 0xEE: /* FLDZ */
+               DIP("fldz\n");
+               fp_push();
+               /* put_ST(0, IRExpr_Const(IRConst_F64(0.0))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x0000000000000000ULL)));
+               break;
+
 //..             case 0xF0: /* F2XM1 */
 //..                DIP("f2xm1\n");
 //..                put_ST_UNCHECKED(0, unop(Iop_2xm1F64, get_ST(0)));
@@ -4857,18 +4860,18 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
       }
    }
 
-//..    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDB opcodes +-+-+-+-+-+-+-+ */
-//..    else
-//..    if (first_opcode == 0xDB) {
-//..       if (modrm < 0xC0) {
-//.. 
-//..          /* bits 5,4,3 are an opcode extension, and the modRM also
-//..             specifies an address. */
-//..          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
-//..          delta += len;
-//.. 
-//..          switch (gregOfRM(modrm)) {
-//.. 
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDB opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xDB) {
+      if (modrm < 0xC0) {
+
+         /* bits 5,4,3 are an opcode extension, and the modRM also
+            specifies an address. */
+         IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+         delta += len;
+
+         switch (gregOfRM(modrm)) {
+
 //..             case 0: /* FILD m32int */
 //..                DIP("fildl %s\n", dis_buf);
 //..                fp_push();
@@ -4940,18 +4943,18 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                DIP("fstpt\n %s", dis_buf);
 //..                break;
 //..             }
-//.. 
-//..             default:
-//..                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
-//..                vex_printf("first_opcode == 0xDB\n");
-//..                goto decode_fail;
-//..          }
-//.. 
-//..       } else {
-//.. 
-//..          delta++;
-//..          switch (modrm) {
-//.. 
+
+            default:
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("first_opcode == 0xDB\n");
+               goto decode_fail;
+         }
+
+      } else {
+
+         delta++;
+         switch (modrm) {
+
 //..             case 0xC0 ... 0xC7: /* FCMOVNB ST(i), ST(0) */
 //..                r_src = (UInt)modrm - 0xC0;
 //..                DIP("fcmovnb %%st(%d), %%st(0)\n", r_src);
@@ -5025,21 +5028,21 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                DIP("fninit\n");
 //..                break;
 //..             }
-//.. 
-//..             case 0xE8 ... 0xEF: /* FUCOMI %st(0),%st(?) */
-//..                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, False );
-//..                break;
-//.. 
+
+            case 0xE8 ... 0xEF: /* FUCOMI %st(0),%st(?) */
+               fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, False );
+               break;
+
 //..             case 0xF0 ... 0xF7: /* FCOMI %st(0),%st(?) */
 //..                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xF0, False );
 //..                break;
-//.. 
-//..             default:
-//..                goto decode_fail;
-//..          }
-//..       }
-//..    }
-//.. 
+
+            default:
+               goto decode_fail;
+         }
+      }
+   }
+
 //..    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDC opcodes +-+-+-+-+-+-+-+ */
 //..    else
 //..    if (first_opcode == 0xDC) {
@@ -5166,10 +5169,10 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
                put_ST(0, IRExpr_LDle(Ity_F64, mkexpr(addr)));
                break;
 
-//..             case 2: /* FST double-real */
-//..                DIP("fstl %s\n", dis_buf);
-//..                storeLE(mkexpr(addr), get_ST(0));
-//..                break;
+            case 2: /* FST double-real */
+               DIP("fstl %s\n", dis_buf);
+               storeLE(mkexpr(addr), get_ST(0));
+               break;
 
             case 3: /* FSTP double-real */
                DIP("fstpl %s\n", dis_buf);
@@ -5458,20 +5461,20 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //.. 
 //..       }
 //..    }
-//.. 
-//..    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDF opcodes +-+-+-+-+-+-+-+ */
-//..    else
-//..    if (first_opcode == 0xDF) {
-//.. 
-//..       if (modrm < 0xC0) {
-//.. 
-//..          /* bits 5,4,3 are an opcode extension, and the modRM also
-//..             specifies an address. */
-//..          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
-//..          delta += len;
-//.. 
-//..          switch (gregOfRM(modrm)) {
-//.. 
+
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDF opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xDF) {
+
+      if (modrm < 0xC0) {
+
+         /* bits 5,4,3 are an opcode extension, and the modRM also
+            specifies an address. */
+         IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+         delta += len;
+
+         switch (gregOfRM(modrm)) {
+
 //..             case 0: /* FILD m16int */
 //..                DIP("fildw %s\n", dis_buf);
 //..                fp_push();
@@ -5507,18 +5510,24 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                         binop(Iop_F64toI64, get_roundingmode(), get_ST(0)) );
 //..                fp_pop();
 //..                break;
-//.. 
-//..             default:
-//..                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
-//..                vex_printf("first_opcode == 0xDF\n");
-//..                goto decode_fail;
-//..          }
-//.. 
-//..       } else {
-//.. 
-//..          delta++;
-//..          switch (modrm) {
-//.. 
+
+            default:
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("first_opcode == 0xDF\n");
+               goto decode_fail;
+         }
+
+      } else {
+
+         delta++;
+         switch (modrm) {
+
+            case 0xC0: /* FFREEP %st(0) */
+               DIP("ffreep %%st(%d)\n", 0);
+               put_ST_TAG ( 0, mkU8(0) );
+               fp_pop();
+               break;
+
 //..             case 0xE0: /* FNSTSW %ax */
 //..                DIP("fnstsw %%ax\n");
 //..                /* Invent a plausible-looking FPU status word value and
@@ -5543,13 +5552,13 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                /* not really right since COMIP != UCOMIP */
 //..                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xF0, True );
 //..                break;
-//.. 
-//..             default: 
-//..                goto decode_fail;
-//..          }
-//..       }
-//.. 
-//..    }
+
+            default: 
+               goto decode_fail;
+         }
+      }
+
+   }
 
    else
       goto decode_fail; //vpanic("dis_FPU(amd64): invalid primary opcode");
@@ -7936,41 +7945,47 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSEcmp_E_to_G( sorb, delta+3, "cmpss", False, 4 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 0F 2F = COMISS  -- 32F0x4 comparison G,E, and set ZCP */
-//..    /* 0F 2E = UCOMISS -- 32F0x4 comparison G,E, and set ZCP */
-//..    if (sz == 4 && insn[0] == 0x0F && (insn[1] == 0x2F || insn[1] == 0x2E)) {
-//..       IRTemp argL = newTemp(Ity_F32);
-//..       IRTemp argR = newTemp(Ity_F32);
-//..       modrm = getUChar(delta+2);
-//..       if (epartIsReg(modrm)) {
-//..          assign( argR, getXMMRegLane32F( eregOfRM(modrm), 0/*lowest lane*/ ) );
-//..          delta += 2+1;
-//..          DIP("[u]comiss %s,%s\n", nameXMMReg(eregOfRM(modrm)),
-//..                                   nameXMMReg(gregOfRM(modrm)) );
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//.. 	 assign( argR, loadLE(Ity_F32, mkexpr(addr)) );
-//..          delta += 2+alen;
-//..          DIP("[u]comiss %s,%s\n", dis_buf,
-//..                                   nameXMMReg(gregOfRM(modrm)) );
-//..       }
-//..       assign( argL, getXMMRegLane32F( gregOfRM(modrm), 0/*lowest lane*/ ) );
-//.. 
-//..       stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
-//..       stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-//..       stmt( IRStmt_Put( 
-//..                OFFB_CC_DEP1,
-//..                binop( Iop_And32,
-//..                       binop(Iop_CmpF64, 
-//..                             unop(Iop_F32toF64,mkexpr(argL)),
-//..                             unop(Iop_F32toF64,mkexpr(argR))),
-//..                       mkU32(0x45)
-//..           )));
-//.. 
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* 0F 2F = COMISS  -- 32F0x4 comparison G,E, and set ZCP */
+   /* 0F 2E = UCOMISS -- 32F0x4 comparison G,E, and set ZCP */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && (insn[1] == 0x2F || insn[1] == 0x2E)) {
+      IRTemp argL = newTemp(Ity_F32);
+      IRTemp argR = newTemp(Ity_F32);
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         assign( argR, getXMMRegLane32F( eregOfRexRM(pfx,modrm), 
+                                         0/*lowest lane*/ ) );
+         delta += 2+1;
+         DIP("%scomiss %s,%s\n", insn[1]==0x2E ? "u" : "",
+                                 nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                 nameXMMReg(gregOfRexRM(pfx,modrm)) );
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+	 assign( argR, loadLE(Ity_F32, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("%scomiss %s,%s\n", insn[1]==0x2E ? "u" : "",
+                                 dis_buf,
+                                 nameXMMReg(gregOfRexRM(pfx,modrm)) );
+      }
+      assign( argL, getXMMRegLane32F( gregOfRexRM(pfx,modrm), 
+                                      0/*lowest lane*/ ) );
+
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(AMD64G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0) ));
+      stmt( IRStmt_Put( 
+               OFFB_CC_DEP1,
+               binop( Iop_And64,
+                      unop( Iop_32Uto64,
+                            binop(Iop_CmpF64, 
+                                  unop(Iop_F32toF64,mkexpr(argL)),
+                                  unop(Iop_F32toF64,mkexpr(argR)))),
+                      mkU64(0x45)
+          )));
+
+      goto decode_success;
+   }
+
 //..    /* 0F 2A = CVTPI2PS -- convert 2 x I32 in mem/mmx to 2 x F32 in low
 //..       half xmm */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x2A) {
@@ -8031,7 +8046,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
             DIP("cvtsi2ss %s,%s\n", nameIRegB(pfx, 4, eregOfRM(modrm)),
                                     nameXMMReg(gregOfRexRM(pfx,modrm)));
          } else {
-            goto decode_failure; /* awaiting test case */
             addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
             assign( arg32, loadLE(Ity_I32, mkexpr(addr)) );
             delta += 2+alen;
@@ -8166,14 +8180,14 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "divps", Iop_Div32Fx4 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* F3 0F 5E = DIVSS -- div 32F0x4 from R/M to R */
-//..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5E) {
-//..       vassert(sz == 4);
-//..       delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "divss", Iop_Div32F0x4 );
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* F3 0F 5E = DIVSS -- div 32F0x4 from R/M to R */
+   if (haveF3no66noF2(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x5E) {
+      delta = dis_SSE_E_to_G_lo32( pfx, delta+2, "divss", Iop_Div32F0x4 );
+      goto decode_success;
+   }
+
 //..    /* 0F AE /2 = LDMXCSR m32 -- load %mxcsr */
 //..    if (insn[0] == 0x0F && insn[1] == 0xAE
 //..        && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 2) {
@@ -8971,7 +8985,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    /* 66 0F 2F = COMISD  -- 64F0x2 comparison G,E, and set ZCP */
    /* 66 0F 2E = UCOMISD -- 64F0x2 comparison G,E, and set ZCP */
-   if (have66noF2noF3(pfx) 
+   if (have66noF2noF3(pfx) && sz == 2
        && insn[0] == 0x0F && (insn[1] == 0x2F || insn[1] == 0x2E)) {
       IRTemp argL = newTemp(Ity_F64);
       IRTemp argR = newTemp(Ity_F64);
@@ -9456,32 +9470,32 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       goto decode_success;
    }
 
-//..    /* F3 0F 5A = CVTSS2SD -- convert F32 in mem/low 1/4 xmm to F64 in
-//..       low half xmm(G) */
-//..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5A) {
-//..       IRTemp f32lo = newTemp(Ity_F32);
-//..       vassert(sz == 4);
-//.. 
-//..       modrm = getUChar(delta+3);
-//..       if (epartIsReg(modrm)) {
-//..          delta += 3+1;
-//..          assign(f32lo, getXMMRegLane32F(eregOfRM(modrm), 0));
-//..          DIP("cvtss2sd %s,%s\n", nameXMMReg(eregOfRM(modrm)),
-//..                                  nameXMMReg(gregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
-//..          assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
-//..          delta += 3+alen;
-//..          DIP("cvtss2sd %s,%s\n", dis_buf,
-//..                                  nameXMMReg(gregOfRM(modrm)));
-//..       }
-//.. 
-//..       putXMMRegLane64F( gregOfRM(modrm), 0, 
-//..                         unop( Iop_F32toF64, mkexpr(f32lo) ) );
-//.. 
-//..       goto decode_success;
-//..    }
-//.. 
+   /* F3 0F 5A = CVTSS2SD -- convert F32 in mem/low 1/4 xmm to F64 in
+      low half xmm(G) */
+   if (haveF3no66noF2(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x5A) {
+      IRTemp f32lo = newTemp(Ity_F32);
+
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         delta += 2+1;
+         assign(f32lo, getXMMRegLane32F(eregOfRexRM(pfx,modrm), 0));
+         DIP("cvtss2sd %s,%s\n", nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                 nameXMMReg(gregOfRexRM(pfx,modrm)));
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
+         delta += 2+alen;
+         DIP("cvtss2sd %s,%s\n", dis_buf,
+                                 nameXMMReg(gregOfRexRM(pfx,modrm)));
+      }
+
+      putXMMRegLane64F( gregOfRexRM(pfx,modrm), 0, 
+                        unop( Iop_F32toF64, mkexpr(f32lo) ) );
+
+      goto decode_success;
+   }
+
 //..    /* 66 0F E6 = CVTTPD2DQ -- convert 2 x F64 in mem/xmm to 2 x I32 in
 //..       lo half xmm(G), and zero upper half, rounding towards zero */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xE6) {
@@ -9612,13 +9626,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "minpd", Iop_Min64Fx2 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* F2 0F 5D = MINSD -- min 64F0x2 from R/M to R */
-//..    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x5D) {
-//..       vassert(sz == 4);
-//..       delta = dis_SSE_E_to_G_lo64( sorb, delta+3, "minsd", Iop_Min64F0x2 );
-//..       goto decode_success;
-//..    }
+
+   /* F2 0F 5D = MINSD -- min 64F0x2 from R/M to R */
+   if (haveF2no66noF3(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x5D) {
+      delta = dis_SSE_E_to_G_lo64( pfx, delta+2, "minsd", Iop_Min64F0x2 );
+      goto decode_success;
+   }
 
    /* 66 0F 28 = MOVAPD -- move from E (mem or xmm) to G (xmm). */
    /* 66 0F 10 = MOVUPD -- move from E (mem or xmm) to G (xmm). */

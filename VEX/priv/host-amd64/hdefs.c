@@ -3100,7 +3100,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
       *p++ = 0x0F;
       switch (i->Ain.Sse32FLo.op) {
          case Asse_ADDF:   *p++ = 0x58; break;
-//..          case Xsse_DIVF:   *p++ = 0x5E; break;
+         case Asse_DIVF:   *p++ = 0x5E; break;
 //..          case Xsse_MAXF:   *p++ = 0x5F; break;
 //..          case Xsse_MINF:   *p++ = 0x5D; break;
          case Asse_MULF:   *p++ = 0x59; break;
@@ -3130,7 +3130,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Asse_ADDF:   *p++ = 0x58; break;
          case Asse_DIVF:   *p++ = 0x5E; break;
          case Asse_MAXF:   *p++ = 0x5F; break;
-//..          case Xsse_MINF:   *p++ = 0x5D; break;
+         case Asse_MINF:   *p++ = 0x5D; break;
          case Asse_MULF:   *p++ = 0x59; break;
 //..          case Xsse_RCPF:   *p++ = 0x53; break;
 //..          case Xsse_RSQRTF: *p++ = 0x52; break;

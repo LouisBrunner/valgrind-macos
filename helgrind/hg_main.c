@@ -778,8 +778,7 @@ void eraser_pre_mem_write(CorePart part, ThreadState* tst,
 static
 void eraser_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
 {
-   // JJJ: this ignores the permissions and just makes it readable, like the
-   // old code did, AFAICT
+   /* Ignore the permissions, just make it readable.  Seems to work... */
    make_segment_readable(a, len);
 }
 

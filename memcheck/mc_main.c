@@ -873,8 +873,7 @@ void check_is_readable_asciiz ( CorePart part, ThreadState* tst,
 static
 void memcheck_new_mem_startup( Addr a, UInt len, Bool rr, Bool ww, Bool xx )
 {
-   // JJJ: this ignores the permissions and just makes it readable, like the
-   // old code did, AFAICT
+   /* Ignore the permissions, just make it readable.  Seems to work... */
    DEBUG("new_mem_startup(%p, %u, rr=%u, ww=%u, xx=%u)\n", a,len,rr,ww,xx);
    SK_(make_readable)(a, len);
 }

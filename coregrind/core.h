@@ -1495,8 +1495,8 @@ extern void VGA_(init_high_baseBlock) ( Addr client_eip, Addr esp_at_startup );
 extern void VGA_(load_state) ( arch_thread_t*, ThreadId tid );
 extern void VGA_(save_state) ( arch_thread_t*, ThreadId tid );
 
-extern void VGA_(clear_thread)   ( arch_thread_t * );
-extern void VGA_(init_thread)    ( arch_thread_t * );
+extern void VGA_(clear_thread)   ( arch_thread_t* );
+extern void VGA_(init_thread)    ( arch_thread_t* );
 extern void VGA_(cleanup_thread) ( arch_thread_t* );
 extern void VGA_(setup_child)    ( arch_thread_t*, arch_thread_t* );
 

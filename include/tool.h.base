@@ -339,8 +339,6 @@ extern void* VG_(calloc)         ( SizeT n, SizeT bytes_per_elem );
 extern void* VG_(realloc)        ( void* p, SizeT size );
 extern void* VG_(malloc_aligned) ( SizeT align_bytes, SizeT nbytes );
 
-extern void  VG_(print_malloc_stats) ( void );
-
 /* terminate everything */
 extern void  VG_(exit)( Int status )
              __attribute__ ((__noreturn__));

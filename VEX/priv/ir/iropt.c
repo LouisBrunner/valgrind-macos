@@ -3138,7 +3138,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
 
    Bool show_res = False;
    Bool do_expensive;
-
+return bb0;
    IRBB *bb, *bb2;
 
    n_total++;

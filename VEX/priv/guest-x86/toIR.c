@@ -127,7 +127,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
    DisResult  dres;
    static Int n_resteers = 0;
    Int        d_resteers = 0;
-   Int        resteerBelow = 10;  /* the threshold value */
+   Int        resteerBelow = 0; //10;  /* the threshold value */
 
    /* Set up globals. */
    host_is_bigendian = host_bigendian;

@@ -100,13 +100,13 @@ struct _XPt {
    // An approximate space.time calculation used along the way for selecting
    // which contexts to include at each census point.
    // !!! top-XPTs only !!!
-   ULong spacetime; 
+   ULong approx_ST;
 
-   // spacetime2 is an exact space.time calculation done at the end, and
+   // exact_ST_dbld is an exact space.time calculation done at the end, and
    // used in the results.
    // Note that it is *doubled*, to avoid rounding errors.
    // !!! not used for 'alloc_xpt' !!!
-   ULong spacetime2;
+   ULong exact_ST_dbld;
 
    // n_children and max_children are integers;  a very big program might
    // have more than 65536 allocation points (Konqueror startup has 1800).
@@ -120,7 +120,7 @@ struct _XPt {
 // top-XPt as its root.  The 'curr_space' element for each XPt is recorded 
 // in the snapshot.  The snapshot contains all the XTree's XPts, not in a
 // tree structure, but flattened into an array.  This flat snapshot is used
-// at the end for computing spacetime2 for each XPt.
+// at the end for computing exact_ST_dbld for each XPt.
 //
 // Graph resolution, x-axis: no point having more than about 200 census
 // x-points;  you can't see them on the graph.  Therefore:
@@ -368,9 +368,9 @@ static XPt* new_XPt(Addr eip, XPt* parent, Bool is_bottom)
    XPt* xpt          = perm_malloc(sizeof(XPt));
    xpt->eip          = eip;
 
-   xpt->curr_space   = 0;
-   xpt->spacetime    = 0;
-   xpt->spacetime2   = 0;
+   xpt->curr_space    = 0;
+   xpt->approx_ST     = 0;
+   xpt->exact_ST_dbld = 0;
 
    xpt->parent       = parent;
 
@@ -438,8 +438,8 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
       // run out of %eips before hitting clo_depth.  It's done to ensure the
       // XPt we return is (now and forever) a bottom-XPt.  If the returned XPt
       // wasn't a bottom-XPt (now or later) it would cause problems later (eg.
-      // the parent's spacetime wouldn't be equal to the total of the
-      // childrens' spacetimes).  
+      // the parent's approx_ST wouldn't be equal [or almost equal] to the
+      // total of the childrens' approx_STs).  
       eips[ n_eips++ ] = 0xffffffff;
 
       // Skip over alloc functions in eips[]. 
@@ -536,18 +536,18 @@ static void update_XCon(XPt* xpt, Int space_delta)
 }
 
 // Actually want a reverse sort, biggest to smallest
-static Int XPt_cmp_spacetime(void* n1, void* n2)
+static Int XPt_cmp_approx_ST(void* n1, void* n2)
 {
    XPt* xpt1 = *(XPt**)n1;
    XPt* xpt2 = *(XPt**)n2;
-   return (xpt1->spacetime < xpt2->spacetime ? 1 : -1);
+   return (xpt1->approx_ST < xpt2->approx_ST ? 1 : -1);
 }
 
-static Int XPt_cmp_spacetime2(void* n1, void* n2)
+static Int XPt_cmp_exact_ST_dbld(void* n1, void* n2)
 {
    XPt* xpt1 = *(XPt**)n1;
    XPt* xpt2 = *(XPt**)n2;
-   return (xpt1->spacetime2 < xpt2->spacetime2 ? 1 : -1);
+   return (xpt1->exact_ST_dbld < xpt2->exact_ST_dbld ? 1 : -1);
 }
 
 
@@ -858,12 +858,12 @@ static UInt get_xtree_size(XPt* xpt, UInt ix)
 {
    UInt i;
 
-//   VG_(printf)("%4d ", xpt->curr_space);
-
-   // If this one has size zero, all the children will be size zero too, so
-   // nothing interesting to record.
-//   if (0 != xpt->curr_space || 0 == ix) {
-   if (xpt->curr_space / (double)alloc_xpt->curr_space > 0.002 || 0 == ix) {
+   // If no memory allocated at all, nothing interesting to record.
+   if (alloc_xpt->curr_space == 0) return 0;
+   
+   // Ignore sub-XTrees that account for a miniscule fraction of current
+   // allocated space.
+   if (xpt->curr_space / (double)alloc_xpt->curr_space > 0.002) {
       ix++;
 
       // Count all (non-zero) descendent XPts
@@ -878,14 +878,15 @@ UInt do_space_snapshot(XPt xpt[], XTreeSnapshot xtree_snapshot, UInt ix)
 {
    UInt i;
 
-   // Snapshot this XPt, if non-zero space, or the first one
-//   if (0 != xpt->curr_space || 0 == ix) {
-   if (xpt->curr_space / (double)alloc_xpt->curr_space > 0.002 || 0 == ix) {
+   // Structure of this function mirrors that of get_xtree_size().
+
+   if (alloc_xpt->curr_space == 0) return 0;
+   
+   if (xpt->curr_space / (double)alloc_xpt->curr_space > 0.002) {
       xtree_snapshot[ix].xpt   = xpt;
       xtree_snapshot[ix].space = xpt->curr_space;
       ix++;
 
-      // Snapshot all (non-zero) descendent XPts
       for (i = 0; i < xpt->n_children; i++)
          ix = do_space_snapshot(xpt->children[i], xtree_snapshot, ix);
    }
@@ -1007,15 +1008,15 @@ static void hp_census(void)
           ? alloc_xpt->n_children
           : MAX_SNAPSHOTS);     // max out
 
-      // Update .spacetime field (approximatively) for all top-XPts.
+      // Update .approx_ST field (approximatively) for all top-XPts.
       // We *do not* do it for any non-top-XPTs.
       for (i = 0; i < alloc_xpt->n_children; i++) {
          XPt* top_XPt = alloc_xpt->children[i];
-         top_XPt->spacetime += top_XPt->curr_space * ms_time_since_prev;
+         top_XPt->approx_ST += top_XPt->curr_space * ms_time_since_prev;
       }
-      // Sort top-XPts by spacetime2 field.
+      // Sort top-XPts by approx_ST field.
       VG_(ssort)(alloc_xpt->children, alloc_xpt->n_children, sizeof(XPt*),
-                 XPt_cmp_spacetime);
+                 XPt_cmp_approx_ST);
 
       VGP_PUSHCC(VgpCensusHeap);
 
@@ -1023,15 +1024,21 @@ static void hp_census(void)
       // entire XTree, in a single census entry.
       // Nb: the xtree_size count/snapshot buffer allocation, and the actual
       // snapshot, take similar amounts of time (measured with the
-      // millesecond counter).
+      // millisecond counter).
       for (i = 0; i < K; i++) {
          UInt xtree_size, xtree_size2;
-//         VG_(printf)("%7u ", alloc_xpt->children[i]->spacetime);
-         // Count how many XPts are in the XTree;  make array of that size
-         // (+1 for zero termination, which calloc() does for us).
+//         VG_(printf)("%7u ", alloc_xpt->children[i]->approx_ST);
+         // Count how many XPts are in the XTree
          VGP_PUSHCC(VgpCensusTreeSize);
          xtree_size = get_xtree_size( alloc_xpt->children[i], 0 );
          VGP_POPCC(VgpCensusTreeSize);
+
+         // If no XPts counted (ie. alloc_xpt.curr_space==0 or XTree
+         // insignificant) then don't take any more snapshots.
+         if (0 == xtree_size) break;
+         
+         // Make array of the appropriate size (+1 for zero termination,
+         // which calloc() does for us).
          census->xtree_snapshots[i] =
             VG_(calloc)(xtree_size+1, sizeof(XPtSnapshot));
          if (0 && VG_(clo_verbosity) > 1)
@@ -1041,7 +1048,7 @@ static void hp_census(void)
          // Take space-snapshot: copy 'curr_space' for every XPt in the
          // XTree into the snapshot array, along with pointers to the XPts.
          // (Except for ones with curr_space==0, which wouldn't contribute
-         // to the final spacetime2 calculation anyway;  excluding them
+         // to the final exact_ST_dbld calculation anyway;  excluding them
          // saves a lot of memory and up to 40% time with big --depth valus.
          VGP_PUSHCC(VgpCensusSnapshot);
          xtree_size2 = do_space_snapshot(alloc_xpt->children[i],
@@ -1179,7 +1186,7 @@ void SK_(pre_clo_init)()
    VGP_(register_profile_event)(VgpCensusSnapshot, "census-snapshot");
    VGP_(register_profile_event)(VgpCensusTreeSize, "census-treesize");
    VGP_(register_profile_event)(VgpUpdateXCon,     "update-XCon");
-   VGP_(register_profile_event)(VgpCalcSpacetime2, "calc-spacetime2");
+   VGP_(register_profile_event)(VgpCalcSpacetime2, "calc-exact_ST_dbld");
    VGP_(register_profile_event)(VgpPrintHp,        "print-hp");
    VGP_(register_profile_event)(VgpPrintXPts,      "print-XPts");
 
@@ -1213,15 +1220,15 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 /*--- Spacetime recomputation                              ---*/
 /*------------------------------------------------------------*/
 
-// Although we've been calculating spacetime along the way, because the
-// earlier calculations were done at a finer timescale, the .spacetime field
+// Although we've been calculating space-time along the way, because the
+// earlier calculations were done at a finer timescale, the .approx_ST field
 // might not agree with what hp2ps sees, because we've thrown away some of
 // the information.  So recompute it at the scale that hp2ps sees, so we can
 // confidently determine which contexts hp2ps will choose for displaying as
 // distinct bands.  This recomputation only happens to the significant ones
 // that get printed in the .hp file, so it's cheap.
 //
-// The spacetime calculation: 
+// The approx_ST calculation: 
 //   ( a[0]*d(0,1) + a[1]*(d(0,1) + d(1,2)) + ... + a[N-1]*d(N-2,N-1) ) / 2
 //   where
 //   a[N] is the space at census N
@@ -1236,11 +1243,11 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 // AP is a pain with this data structure, but getting the prev/next
 // census time is easy.
 //
-// Each heap calculation gets added to its context's spacetime2 field.
+// Each heap calculation gets added to its context's exact_ST_dbld field.
 // The ULong* values are all running totals, hence the use of "+=" everywhere.
 
 // This does the calculations for a single census.
-static void calc_spacetime2b(Census* census, UInt d_t1_t2,
+static void calc_exact_ST_dbld2(Census* census, UInt d_t1_t2,
                              ULong* twice_heap_ST,
                              ULong* twice_heap_admin_ST,
                              ULong* twice_stack_ST)
@@ -1251,14 +1258,15 @@ static void calc_spacetime2b(Census* census, UInt d_t1_t2,
    // Heap --------------------------------------------------------
    if (clo_heap) {
       for (i = 0; NULL != census->xtree_snapshots[i]; i++) {
-         // Compute total heap spacetime2 for the entire XTree using only the
-         // top-XPt (the first XPt in xtree_snapshot).
+         // Compute total heap exact_ST_dbld for the entire XTree using only
+         // the top-XPt (the first XPt in xtree_snapshot).
          *twice_heap_ST += d_t1_t2 * census->xtree_snapshots[i][0].space;
 
-         // Increment spacetime2 for every XPt in xtree_snapshot (inc. top one)
+         // Increment exact_ST_dbld for every XPt in xtree_snapshot (inc.
+         // top one)
          for (j = 0; NULL != census->xtree_snapshots[i][j].xpt; j++) {
             xpt_snapshot = & census->xtree_snapshots[i][j];
-            xpt_snapshot->xpt->spacetime2 += d_t1_t2 * xpt_snapshot->space;
+            xpt_snapshot->xpt->exact_ST_dbld += d_t1_t2 * xpt_snapshot->space;
          }
       }
       *twice_heap_ST += d_t1_t2 * census->others_space;
@@ -1274,7 +1282,7 @@ static void calc_spacetime2b(Census* census, UInt d_t1_t2,
 }
 
 // This does the calculations for all censi.
-static void calc_spacetime2(ULong* heap2, ULong* heap_admin2, ULong* stack2)
+static void calc_exact_ST_dbld(ULong* heap2, ULong* heap_admin2, ULong* stack2)
 {
    UInt i, N = curr_census;
 
@@ -1287,16 +1295,16 @@ static void calc_spacetime2(ULong* heap2, ULong* heap_admin2, ULong* stack2)
    if (N <= 1)
       return;
 
-   calc_spacetime2b( &censi[0], censi[1].ms_time - censi[0].ms_time,
-                     heap2, heap_admin2, stack2 );
+   calc_exact_ST_dbld2( &censi[0], censi[1].ms_time - censi[0].ms_time,
+                        heap2, heap_admin2, stack2 );
 
    for (i = 1; i <= N-2; i++) {
-      calc_spacetime2b( & censi[i], censi[i+1].ms_time - censi[i-1].ms_time,
-                        heap2, heap_admin2, stack2 );
+      calc_exact_ST_dbld2( & censi[i], censi[i+1].ms_time - censi[i-1].ms_time,
+                           heap2, heap_admin2, stack2 );
    }
 
-   calc_spacetime2b( & censi[N-1], censi[N-1].ms_time - censi[N-2].ms_time,
-                     heap2, heap_admin2, stack2 ); 
+   calc_exact_ST_dbld2( & censi[N-1], censi[N-1].ms_time - censi[N-2].ms_time,
+                        heap2, heap_admin2, stack2 ); 
    // Now get rid of the halves.  May lose a 0.5 on each, doesn't matter.
    *heap2       /= 2;
    *heap_admin2 /= 2;
@@ -1498,6 +1506,7 @@ static Char* make_perc(ULong spacetime, ULong total_spacetime)
    static Char mbuf[32];
    
    UInt  p = 10;
+   sk_assert(0 != total_spacetime);
    percentify(spacetime * 100 * p / total_spacetime, p, 5, mbuf); 
    return mbuf;
 }
@@ -1560,29 +1569,35 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
                                  "=================================" );
    Char* depth     = ( is_HTML ? "<code>--depth</code>" : "--depth" );
 
+   if (total_spacetime == 0) {
+      SPRINTF(buf, "(No heap memory allocated)\n");
+      return;
+   }
+
+
    SPRINTF(buf, "== %d ===========================%s\n", L, maybe_br);
 
    while (NULL != (xpt = (XPt*)dequeue(q))) {
-      // Check that non-top-level XPts have a zero .spacetime field.
-      if (xpt->parent != alloc_xpt) sk_assert( 0 == xpt->spacetime );
+      // Check that non-top-level XPts have a zero .approx_ST field.
+      if (xpt->parent != alloc_xpt) sk_assert( 0 == xpt->approx_ST );
 
-      // Check that the sum of all children .spacetime2s equals parent's
-      // (unless alloc_xpt, when it should == 0).
+      // Check that the sum of all children .exact_ST_dbld fields equals
+      // parent's (unless alloc_xpt, when it should == 0).
       if (alloc_xpt == xpt) {
-         sk_assert(0 == xpt->spacetime2);
+         sk_assert(0 == xpt->exact_ST_dbld);
       } else {
          sum = 0;
          for (i = 0; i < xpt->n_children; i++) {
-            sum += xpt->children[i]->spacetime2;
+            sum += xpt->children[i]->exact_ST_dbld;
          }
-         //sk_assert(sum == xpt->spacetime2);
+         //sk_assert(sum == xpt->exact_ST_dbld);
          // It's possible that not all the children were included in the
-         // spacetime2 calculations.  Hopefully almost all of them were, and
+         // exact_ST_dbld calculations.  Hopefully almost all of them were, and
          // all the important ones.
-//         sk_assert(sum <= xpt->spacetime2);
-//         sk_assert(sum * 1.05 > xpt->spacetime2 );
-//         if (sum != xpt->spacetime2) {
-//            VG_(printf)("%ld, %ld\n", sum, xpt->spacetime2);
+//         sk_assert(sum <= xpt->exact_ST_dbld);
+//         sk_assert(sum * 1.05 > xpt->exact_ST_dbld );
+//         if (sum != xpt->exact_ST_dbld) {
+//            VG_(printf)("%ld, %ld\n", sum, xpt->exact_ST_dbld);
 //         }
       }
 
@@ -1591,8 +1606,8 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
                       "%s of measured spacetime%s\n", 
                       make_perc(heap_spacetime, total_spacetime), maybe_br);
       } else {
-         // Remember: spacetime2 is space.time *doubled*
-         perc = make_perc(xpt->spacetime2 / 2, total_spacetime);
+         // Remember: exact_ST_dbld is space.time *doubled*
+         perc = make_perc(xpt->exact_ST_dbld / 2, total_spacetime);
          if (is_HTML) {
             SPRINTF(buf, "<a name=\"b%x\"></a>"
                          "Context accounted for "
@@ -1606,16 +1621,16 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
          sk_assert(n == L);
       }
 
-      // Sort children by spacetime2
+      // Sort children by exact_ST_dbld
       VG_(ssort)(xpt->children, xpt->n_children, sizeof(XPt*),
-                 XPt_cmp_spacetime2);
+                 XPt_cmp_exact_ST_dbld);
 
       SPRINTF(buf, "%s\nCalled from:%s\n", maybe_p, maybe_ul);
       for (i = 0; i < xpt->n_children; i++) {
          child = xpt->children[i];
 
          // Stop when <1% of total spacetime
-         if (child->spacetime2 * 1000 / (total_spacetime * 2) < 5) {
+         if (child->exact_ST_dbld * 1000 / (total_spacetime * 2) < 5) {
             UInt  n_insig = xpt->n_children - i;
             Char* s       = ( n_insig == 1 ? "" : "s" );
             Char* and     = ( 0 == i ? "" : "and "   );
@@ -1625,8 +1640,8 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
             break;
          }
 
-         // Remember: spacetime2 is space.time *doubled*
-         perc     = make_perc(child->spacetime2 / 2, total_spacetime);
+         // Remember: exact_ST_dbld is space.time *doubled*
+         perc     = make_perc(child->exact_ST_dbld / 2, total_spacetime);
          eip_desc = VG_(describe_eip)(child->eip-1, buf2, BUF_LEN);
          if (is_HTML) {
             SPRINTF(buf, "<li><a name=\"a%x\"></a>", child );
@@ -1673,6 +1688,7 @@ static void pp_all_XPts(Int fd, XPt* xpt, ULong heap_spacetime,
                         ULong total_spacetime)
 {
    Queue* q = construct_queue(100);
+
    enqueue(q, xpt);
    pp_all_XPts2(fd, q, heap_spacetime, total_spacetime);
    destruct_queue(q);
@@ -1737,19 +1753,23 @@ print_summary(ULong total_ST, ULong heap_ST, ULong heap_admin_ST,
    // Heap --------------------------------------------------------------
    if (clo_heap)
       VG_(message)(Vg_UserMsg, "heap:              %s",
-                   make_perc(heap_ST, total_ST) );
+                   ( 0 == total_ST ? (Char*)"(n/a)"
+                                   : make_perc(heap_ST, total_ST) ) );
 
    // Heap admin --------------------------------------------------------
    if (clo_heap_admin)
       VG_(message)(Vg_UserMsg, "heap admin:        %s", 
-                   make_perc(heap_admin_ST, total_ST));
+                   ( 0 == total_ST ? (Char*)"(n/a)"
+                                   : make_perc(heap_admin_ST, total_ST) ) );
 
    sk_assert( VG_(HT_count_nodes)(malloc_list) == n_heap_blocks );
 
    // Stack(s) ----------------------------------------------------------
-   if (clo_stacks)
+   if (clo_stacks) {
+      sk_assert(0 != total_ST);
       VG_(message)(Vg_UserMsg, "stack(s):          %s", 
-                   make_perc(stack_ST, total_ST));
+                   make_perc(stack_ST, total_ST) );
+   }
 
    if (VG_(clo_verbosity) > 1) {
       sk_assert(n_xpts > 0);  // always have alloc_xpt
@@ -1783,7 +1803,7 @@ void SK_(fini)(Int exit_status)
    hp_census();
 
    // Redo spacetimes of significant contexts to match the .hp file.
-   calc_spacetime2(&heap_ST, &heap_admin_ST, &stack_ST);
+   calc_exact_ST_dbld(&heap_ST, &heap_admin_ST, &stack_ST);
    total_ST = heap_ST + heap_admin_ST + stack_ST; 
    write_hp_file  ( );
    write_text_file( total_ST, heap_ST );

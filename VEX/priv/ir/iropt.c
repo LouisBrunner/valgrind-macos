@@ -86,23 +86,6 @@ static Bool lookupHHW ( HashHW* h, /*OUT*/HWord* val, HWord key )
 }
 
 
-#if 0
-/* Apparently unused */
-/* Delete any binding for key in h. */
-
-static void delFromHHW ( HashHW* h, HWord key )
-{
-   Int i;
-   for (i = 0; i < h->used; i++) {
-      if (h->inuse[i] && h->key[i] == key) {
-         h->inuse[i] = False;
-         return;
-      }
-   }
-}
-#endif
-
-
 /* Add key->val to the map.  Replaces any existing binding for key. */
 
 static void addToHHW ( HashHW* h, HWord key, HWord val )
@@ -311,6 +294,7 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
          } else {
             vassert(d2->mAddr == NULL);
          }
+         d2->guard = flatten_Expr(bb, d2->guard);
          for (i = 0; d2->args[i]; i++)
             d2->args[i] = flatten_Expr(bb, d2->args[i]);
          addStmtToIRBB(bb, IRStmt_Dirty(d2));
@@ -737,6 +721,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
             vassert(isAtom(d2->mAddr));
             d2->mAddr = fold_Expr(subst_Expr(env, d2->mAddr));
          }
+         vassert(isAtom(d2->guard));
+         d2->guard = fold_Expr(subst_Expr(env, d2->guard));
          for (i = 0; d2->args[i]; i++) {
             vassert(isAtom(d2->args[i]));
             d2->args[i] = fold_Expr(subst_Expr(env, d2->args[i]));
@@ -923,6 +909,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
          d = st->Ist.Dirty.details;
          if (d->mFx != Ifx_None)
             addUses_Expr(set, d->mAddr);
+         addUses_Expr(set, d->guard);
          for (i = 0; d->args[i] != NULL; i++)
             addUses_Expr(set, d->args[i]);
          return;
@@ -1496,6 +1483,7 @@ static void occCount_Stmt ( TmpInfo** env, IRStmt* st )
          d = st->Ist.Dirty.details;
          if (d->mFx != Ifx_None)
             occCount_Expr(env, d->mAddr);
+         occCount_Expr(env, d->guard);
          for (i = 0; d->args[i]; i++)
             occCount_Expr(env, d->args[i]);
          return;
@@ -1634,6 +1622,7 @@ static IRStmt* tbSubst_Stmt ( TmpInfo** env, IRStmt* st )
          *d2 = *d;
          if (d2->mFx != Ifx_None)
             d2->mAddr = tbSubst_Expr(env, d2->mAddr);
+         d2->guard = tbSubst_Expr(env, d2->guard);
          for (i = 0; d2->args[i]; i++)
             d2->args[i] = tbSubst_Expr(env, d2->args[i]);
          return IRStmt_Dirty(d2);
@@ -2824,6 +2813,7 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
          break;
       case Ist_Dirty:
          d = st->Ist.Dirty.details;
+         deltaIRExpr(d->guard, delta);
          for (i = 0; d->args[i]; i++)
             deltaIRExpr(d->args[i], delta);
          if (d->tmp != INVALID_IRTEMP)
@@ -3169,6 +3159,7 @@ static Bool hasGetIorPutI ( IRBB* bb )
             break;
          case Ist_Dirty:
             d = st->Ist.Dirty.details;
+            vassert(isAtom(d->guard));
             for (j = 0; d->args[j]; j++)
                vassert(isAtom(d->args[j]));
             if (d->mFx != Ifx_None)

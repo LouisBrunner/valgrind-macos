@@ -490,6 +490,11 @@ inline static Bool isAtom ( IRExpr* e ) {
    access the guest state.  It is invalid for .nFxState to be zero
    but .needsBBP to be True, since .nFxState==0 is a claim that the
    call does not access guest state.
+
+   IMPORTANT NOTE re GUARDS: Dirty calls are strict, very strict.  The
+   arguments are evaluated REGARDLESS of the guard value.  It is
+   unspecified the relative order of arg evaluation and guard
+   evaluation.
 */
 
 #define VEX_N_FXSTATE  4   /* enough for CPUID on x86 */
@@ -510,6 +515,7 @@ typedef
    struct {
       /* What to call, and details of args/results */
       IRCallee* cee;    /* where to call */
+      IRExpr*   guard;  /* :: Ity_Bit.  Controls whether call happens */
       IRExpr**  args;   /* arg list, ends in NULL */
       IRTemp    tmp;    /* to assign result to, or INVALID_IRTEMP if none */
 
@@ -536,10 +542,10 @@ extern IRDirty* dopyIRDirty ( IRDirty* );
 
 /* A handy function which takes some of the tedium out of constructing
    dirty helper calls.  The called function impliedly does not return
-   any value.  The call is marked as accessing neither guest state nor
-   memory (hence the "unsafe" designation) -- you can mess with this
-   later if need be.  A suitable IRCallee is constructed from the
-   supplied bits. */
+   any value and has a constant-True guard.  The call is marked as
+   accessing neither guest state nor memory (hence the "unsafe"
+   designation) -- you can mess with this later if need be.  A
+   suitable IRCallee is constructed from the supplied bits. */
 extern 
 IRDirty* unsafeIRDirty_0_N ( Int regparms, Char* name, void* addr, 
                              IRExpr** args );

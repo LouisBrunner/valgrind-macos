@@ -283,7 +283,8 @@ void ppIREffect ( IREffect fx )
 void ppIRDirty ( IRDirty* d )
 {
    Int i;
-   vex_printf("DIRTY");
+   vex_printf("DIRTY ");
+   ppIRExpr(d->guard);
    if (d->needsBBP)
       vex_printf(" NeedsBBP");
    if (d->mFx != Ifx_None) {
@@ -614,6 +615,7 @@ IRExpr** mkIRExprVec_4 ( IRExpr* arg1, IRExpr* arg2,
 IRDirty* emptyIRDirty ( void ) {
    IRDirty* d = LibVEX_Alloc(sizeof(IRDirty));
    d->cee      = NULL;
+   d->guard    = NULL;
    d->args     = NULL;
    d->tmp      = INVALID_IRTEMP;
    d->mFx      = Ifx_None;
@@ -803,6 +805,7 @@ IRDirty* dopyIRDirty ( IRDirty* d )
    Int      i;
    IRDirty* d2 = emptyIRDirty();
    d2->cee   = dopyIRCallee(d->cee);
+   d2->guard = dopyIRExpr(d->guard);
    d2->args  = dopyIRExprVec(d->args);
    d2->tmp   = d->tmp;
    d2->mFx   = d->mFx;
@@ -1443,6 +1446,9 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
             if (d->fxState[i].size <= 0) goto bad_dirty;
          }
          /* check types, minimally */
+         if (d->guard == NULL) goto bad_dirty;
+         if (typeOfIRExpr(tyenv, d->guard) != Ity_Bit)
+            sanityCheckFail(bb,stmt,"IRStmt.Dirty.guard not :: Ity_Bit");
          if (d->tmp != INVALID_IRTEMP
              && typeOfIRTemp(tyenv, d->tmp) == Ity_Bit)
             sanityCheckFail(bb,stmt,"IRStmt.Dirty.dst :: Ity_Bit");
@@ -1589,8 +1595,9 @@ IRDirty* unsafeIRDirty_0_N ( Int regparms, Char* name, void* addr,
                              IRExpr** args ) 
 {
    IRDirty* d = emptyIRDirty();
-   d->cee  = mkIRCallee ( regparms, name, addr );
-   d->args = args;
+   d->cee   = mkIRCallee ( regparms, name, addr );
+   d->guard = IRExpr_Const(IRConst_Bit(True));
+   d->args  = args;
    return d;
 }
 
@@ -1599,9 +1606,10 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
                              IRExpr** args ) 
 {
    IRDirty* d = emptyIRDirty();
-   d->cee  = mkIRCallee ( regparms, name, addr );
-   d->args = args;
-   d->tmp  = dst;
+   d->cee   = mkIRCallee ( regparms, name, addr );
+   d->guard = IRExpr_Const(IRConst_Bit(True));
+   d->args  = args;
+   d->tmp   = dst;
    return d;
 }
 

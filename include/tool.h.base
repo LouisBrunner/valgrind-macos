@@ -351,11 +351,11 @@ extern Int  VG_(rename) ( Char* old_name, Char* new_name );
 /* ------------------------------------------------------------------ */
 /* stdlib.h */
 
-extern void* VG_(malloc)         ( Int nbytes );
+extern void* VG_(malloc)         ( SizeT nbytes );
 extern void  VG_(free)           ( void* p );
-extern void* VG_(calloc)         ( Int n, Int nbytes );
-extern void* VG_(realloc)        ( void* p, Int size );
-extern void* VG_(malloc_aligned) ( Int align_bytes, Int nbytes );
+extern void* VG_(calloc)         ( SizeT n, SizeT nbytes );
+extern void* VG_(realloc)        ( void* p, SizeT size );
+extern void* VG_(malloc_aligned) ( SizeT align_bytes, SizeT nbytes );
 
 extern void  VG_(print_malloc_stats) ( void );
 
@@ -1735,18 +1735,18 @@ extern UInt VG_(get_exit_status_shadow) ( void );
 /* Arena size for valgrind's own malloc();  default value is 0, but can
    be overridden by tool -- but must be done so *statically*, eg:
 
-     Int VG_(vg_malloc_redzone_szB) = 4;
+     UInt VG_(vg_malloc_redzone_szB) = 4;
 
    It can't be done from a function like SK_(pre_clo_init)().  So it can't,
    for example, be controlled with a command line option, unfortunately. */
 extern UInt VG_(vg_malloc_redzone_szB);
 
 /* Can be called from SK_(malloc) et al to do the actual alloc/freeing. */
-extern void* VG_(cli_malloc) ( UInt align, Int nbytes );
+extern void* VG_(cli_malloc) ( SizeT align, SizeT nbytes );
 extern void  VG_(cli_free)   ( void* p );
 
 /* Check if an address is within a range, allowing for redzones at edges */
-extern Bool VG_(addr_is_in_block)( Addr a, Addr start, UInt size );
+extern Bool VG_(addr_is_in_block)( Addr a, Addr start, SizeT size );
 
 /* ------------------------------------------------------------------ */
 /* Some options that can be used by a tool if malloc() et al are replaced.
@@ -1759,7 +1759,7 @@ extern Bool VG_(clo_sloppy_malloc);
 extern Bool VG_(clo_trace_malloc);
 /* Minimum alignment in functions that don't specify alignment explicitly.
    default: 0, i.e. use default of the machine (== 4) */
-extern Int  VG_(clo_alignment);
+extern UInt VG_(clo_alignment);
 
 extern Bool VG_(replacement_malloc_process_cmd_line_option) ( Char* arg );
 extern void VG_(replacement_malloc_print_usage)             ( void );

@@ -1810,7 +1810,7 @@ UInt VG_(vg_malloc_redzone_szB) = 8;
    shadow chunk on the appropriate list, and set all memory
    protections correctly. */
 
-static void add_HG_Chunk ( ThreadId tid, Addr p, UInt size )
+static void add_HG_Chunk ( ThreadId tid, Addr p, SizeT size )
 {
    HG_Chunk* hc;
 
@@ -1825,7 +1825,7 @@ static void add_HG_Chunk ( ThreadId tid, Addr p, UInt size )
 
 /* Allocate memory and note change in memory available */
 static __inline__
-void* alloc_and_new_mem ( Int size, UInt alignment, Bool is_zeroed )
+void* alloc_and_new_mem ( SizeT size, SizeT alignment, Bool is_zeroed )
 {
    Addr p;
 
@@ -1842,27 +1842,27 @@ void* alloc_and_new_mem ( Int size, UInt alignment, Bool is_zeroed )
    return (void*)p;
 }
 
-void* SK_(malloc) ( Int n )
+void* SK_(malloc) ( SizeT n )
 {
    return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(__builtin_new) ( Int n )
+void* SK_(__builtin_new) ( SizeT n )
 {
    return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(__builtin_vec_new) ( Int n )
+void* SK_(__builtin_vec_new) ( SizeT n )
 {
    return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(memalign) ( Int align, Int n )
+void* SK_(memalign) ( SizeT align, SizeT n )
 {
    return alloc_and_new_mem ( n, align,              /*is_zeroed*/False );
 }
 
-void* SK_(calloc) ( Int nmemb, Int size )
+void* SK_(calloc) ( SizeT nmemb, SizeT size )
 {
    return alloc_and_new_mem ( nmemb*size, VG_(clo_alignment),
                               /*is_zeroed*/True );
@@ -1944,7 +1944,7 @@ void SK_(__builtin_vec_delete) ( void* p )
    handle_free(p);
 }
 
-void* SK_(realloc) ( void* p, Int new_size )
+void* SK_(realloc) ( void* p, SizeT new_size )
 {
    HG_Chunk  *hc;
    HG_Chunk **prev_chunks_next_ptr;

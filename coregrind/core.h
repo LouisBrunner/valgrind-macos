@@ -442,16 +442,16 @@ typedef Int ArenaId;
 // Round-up size for --sloppy-malloc=yes.
 #define VG_SLOPPY_MALLOC_SZB     4
 
-extern void* VG_(arena_malloc)  ( ArenaId arena, Int nbytes );
+extern void* VG_(arena_malloc)  ( ArenaId arena, SizeT nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
-extern void* VG_(arena_calloc)  ( ArenaId arena, Int alignment,
-                                  Int nmemb, Int nbytes );
-extern void* VG_(arena_realloc) ( ArenaId arena, void* ptr, Int alignment,
-                                  Int size );
-extern void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, 
-                                                Int req_pszB );
+extern void* VG_(arena_calloc)  ( ArenaId arena, SizeT alignment,
+                                  SizeT nmemb, SizeT nbytes );
+extern void* VG_(arena_realloc) ( ArenaId arena, void* ptr, SizeT alignment,
+                                  SizeT size );
+extern void* VG_(arena_malloc_aligned) ( ArenaId aid, SizeT req_alignB, 
+                                         SizeT req_pszB );
 
-extern Int   VG_(arena_payload_szB) ( ArenaId aid, void* payload );
+extern SizeT VG_(arena_payload_szB) ( ArenaId aid, void* payload );
 
 extern void  VG_(sanity_check_malloc_all) ( void );
 

@@ -54,6 +54,9 @@ typedef signed long long       Long;      // 64             64
 
 typedef UWord                  Addr;      // 32             64
 
+typedef UWord                  SizeT;     // 32             64
+typedef  Word                 SSizeT;     // 32             64
+
 typedef UChar                  Bool;      //  8              8
 #define False                  ((Bool)0)
 #define True                   ((Bool)1)

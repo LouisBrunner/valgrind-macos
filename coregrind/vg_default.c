@@ -79,7 +79,7 @@ Bool VG_(sk_malloc_called_by_scheduler) = False;
    malloc()-replacing tool cannot forget to implement SK_(malloc)() or
    SK_(free)().  */
 __attribute__ ((weak))
-void* SK_(malloc)( Int size )
+void* SK_(malloc)( SizeT size )
 {
    if (VG_(sk_malloc_called_by_scheduler))
       return VG_(cli_malloc)(VG_MIN_MALLOC_SZB, size);

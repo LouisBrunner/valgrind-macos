@@ -37,9 +37,9 @@
 /*------------------------------------------------------------*/
 
 /* Stats ... */
-static UInt cmalloc_n_mallocs  = 0;
-static UInt cmalloc_n_frees    = 0;
-static UInt cmalloc_bs_mallocd = 0;
+static SizeT cmalloc_n_mallocs  = 0;
+static SizeT cmalloc_n_frees    = 0;
+static SizeT cmalloc_bs_mallocd = 0;
 
 /* We want a 16B redzone on heap blocks for Addrcheck and Memcheck */
 UInt VG_(vg_malloc_redzone_szB) = 16;
@@ -132,7 +132,7 @@ MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk) ( Bool (*p)(MAC_Chunk*, void*),
 
 /* Allocate its shadow chunk, put it on the appropriate list. */
 static
-void add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind, VgHashTable table)
+void add_MAC_Chunk ( Addr p, SizeT size, MAC_AllocKind kind, VgHashTable table)
 {
    MAC_Chunk* mc;
 
@@ -158,9 +158,31 @@ void add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind, VgHashTable table)
 /*--- client_malloc(), etc                                 ---*/
 /*------------------------------------------------------------*/
 
+static Bool complain_about_silly_args(SizeT sizeB, Char* fn)
+{
+   // Cast to a signed type to catch any unexpectedly negative args.  We're
+   // assuming here that the size asked for is not greater than 2^31 bytes
+   // (for 32-bit platforms) or 2^63 bytes (for 64-bit platforms).
+   if ((SSizeT)sizeB < 0) {
+      VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to %s()", sizeB, fn );
+      return True;
+   }
+   return False;
+}
+
+static Bool complain_about_silly_args2(SizeT n, SizeT sizeB)
+{
+   if ((SSizeT)n < 0 || (SSizeT)sizeB < 0) {
+      VG_(message)(Vg_UserMsg, "Warning: silly args (%d,%d) to calloc()",
+                   n, sizeB);
+      return True;
+   }
+   return False;
+}
+
 /* Allocate memory and note change in memory available */
 __inline__
-void* MAC_(new_block) ( Addr p, UInt size, UInt align, UInt rzB,
+void* MAC_(new_block) ( Addr p, SizeT size, SizeT align, UInt rzB,
                         Bool is_zeroed, MAC_AllocKind kind, VgHashTable table)
 {
    VGP_PUSHCC(VgpCliMalloc);
@@ -191,10 +213,9 @@ void* MAC_(new_block) ( Addr p, UInt size, UInt align, UInt rzB,
    return (void*)p;
 }
 
-void* SK_(malloc) ( Int n )
+void* SK_(malloc) ( SizeT n )
 {
-   if (n < 0) {
-      VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to malloc()", n );
+   if (complain_about_silly_args(n, "malloc")) {
       return NULL;
    } else {
       return MAC_(new_block) ( 0, n, VG_(clo_alignment), 
@@ -203,10 +224,9 @@ void* SK_(malloc) ( Int n )
    }
 }
 
-void* SK_(__builtin_new) ( Int n )
+void* SK_(__builtin_new) ( SizeT n )
 {
-   if (n < 0) {
-      VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to __builtin_new()", n);
+   if (complain_about_silly_args(n, "__builtin_new")) {
       return NULL;
    } else {
       return MAC_(new_block) ( 0, n, VG_(clo_alignment), 
@@ -215,11 +235,9 @@ void* SK_(__builtin_new) ( Int n )
    }
 }
 
-void* SK_(__builtin_vec_new) ( Int n )
+void* SK_(__builtin_vec_new) ( SizeT n )
 {
-   if (n < 0) {
-      VG_(message)(Vg_UserMsg, 
-                   "Warning: silly arg (%d) to __builtin_vec_new()", n );
+   if (complain_about_silly_args(n, "__builtin_vec_new")) {
       return NULL;
    } else {
       return MAC_(new_block) ( 0, n, VG_(clo_alignment), 
@@ -228,10 +246,9 @@ void* SK_(__builtin_vec_new) ( Int n )
    }
 }
 
-void* SK_(memalign) ( Int align, Int n )
+void* SK_(memalign) ( SizeT align, SizeT n )
 {
-   if (n < 0) {
-      VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to memalign()", n);
+   if (complain_about_silly_args(n, "memalign")) {
       return NULL;
    } else {
       return MAC_(new_block) ( 0, n, align, 
@@ -240,11 +257,9 @@ void* SK_(memalign) ( Int align, Int n )
    }
 }
 
-void* SK_(calloc) ( Int nmemb, Int size1 )
+void* SK_(calloc) ( SizeT nmemb, SizeT size1 )
 {
-   if (nmemb < 0 || size1 < 0) {
-      VG_(message)(Vg_UserMsg, "Warning: silly args (%d,%d) to calloc()",
-                               nmemb, size1 );
+   if (complain_about_silly_args2(nmemb, size1)) {
       return NULL;
    } else {
       return MAC_(new_block) ( 0, nmemb*size1, VG_(clo_alignment),
@@ -255,7 +270,7 @@ void* SK_(calloc) ( Int nmemb, Int size1 )
 
 static
 void die_and_free_mem ( MAC_Chunk* mc,
-                        MAC_Chunk** prev_chunks_next_ptr, UInt rzB )
+                        MAC_Chunk** prev_chunks_next_ptr, SizeT rzB )
 {
    /* Note: ban redzones again -- just in case user de-banned them
       with a client request... */
@@ -321,7 +336,7 @@ void SK_(__builtin_vec_delete) ( void* p )
    MAC_(handle_free)((Addr)p, VG_(vg_malloc_redzone_szB), MAC_AllocNewVec);
 }
 
-void* SK_(realloc) ( void* p, Int new_size )
+void* SK_(realloc) ( void* p, SizeT new_size )
 {
    MAC_Chunk  *mc;
    MAC_Chunk **prev_chunks_next_ptr;
@@ -334,11 +349,8 @@ void* SK_(realloc) ( void* p, Int new_size )
    cmalloc_n_mallocs ++;
    cmalloc_bs_mallocd += new_size;
 
-   if (new_size < 0) {
-      VG_(message)(Vg_UserMsg, 
-                   "Warning: silly arg (%d) to realloc()", new_size );
+   if (complain_about_silly_args(new_size, "realloc")) 
       return NULL;
-   }
 
    /* First try and find the block. */
    mc = (MAC_Chunk*)VG_(HT_get_node) ( MAC_(malloc_list), (UInt)p,
@@ -465,7 +477,7 @@ void MAC_(destroy_mempool)(Addr pool)
    VG_(free)(mp);
 }
 
-void MAC_(mempool_alloc)(Addr pool, Addr addr, UInt size)
+void MAC_(mempool_alloc)(Addr pool, Addr addr, SizeT size)
 {
    MAC_Mempool*  mp;
    MAC_Mempool** prev_next;
@@ -514,8 +526,8 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
 
 typedef
    struct {
-      UInt nblocks;
-     UInt nbytes;
+      UInt  nblocks;
+      SizeT nbytes;
    }
    MallocStats;
 

@@ -41,31 +41,31 @@
 
 #define VG_N_MALLOC_LISTS     16    // do not change this
 
-// On 64-bit systems size_t is 64-bits, so bigger than this is possible.
-// We can worry about that when it happens...
-#define MAX_PSZB              0x7ffffff0
+// The amount you can ask for is limited only by sizeof(SizeT)...
+#define MAX_PSZB              (~((SizeT)0x0))
 
 typedef UChar UByte;
 
 /* Block layout:
 
-     this block total szB     (sizeof(Int) bytes)
+     this block total szB     (sizeof(SizeT) bytes)
      freelist previous ptr    (sizeof(void*) bytes)
      red zone bytes           (depends on .rz_szB field of Arena)
      (payload bytes)
      red zone bytes           (depends on .rz_szB field of Arena)
      freelist next ptr        (sizeof(void*) bytes)
-     this block total szB     (sizeof(Int) bytes)
+     this block total szB     (sizeof(SizeT) bytes)
 
      Total size in bytes (bszB) and payload size in bytes (pszB)
      are related by:
 
-        bszB == pszB + 2*sizeof(Int) + 2*sizeof(void*) + 2*a->rz_szB
+        bszB == pszB + 2*sizeof(SizeT) + 2*sizeof(void*) + 2*a->rz_szB
 
-     Furthermore, both size fields in the block are negative if it is
-     not in use, and positive if it is in use.  A block size of zero
-     is not possible, because a block always has at least two Ints and two
-     pointers of overhead.  
+     Furthermore, both size fields in the block have their least-sifnificant
+     bit set if the block is not in use, and unset if it is in use.
+     (The bottom 3 or so bits are always free for this because of alignment.)
+     A block size of zero is not possible, because a block always has at
+     least two SizeTs and two pointers of overhead.  
 
      Nb: All Block payloads must be VG_MIN_MALLOC_SZB-aligned.  This is
      achieved by ensuring that Superblocks are VG_MIN_MALLOC_SZB-aligned
@@ -100,9 +100,10 @@ typedef
 typedef 
    struct _Superblock {
       struct _Superblock* next;
-      Int   n_payload_bytes;
+      SizeT n_payload_bytes;
       UByte padding[ VG_MIN_MALLOC_SZB - 
-                        ((sizeof(void*) + sizeof(Int)) % VG_MIN_MALLOC_SZB) ];
+                        ((sizeof(struct _Superblock*) + sizeof(SizeT)) % 
+                         VG_MIN_MALLOC_SZB) ];
       UByte payload_bytes[0];
    }
    Superblock;
@@ -113,14 +114,14 @@ typedef
    struct {
       Char*       name;
       Bool        clientmem;        // Allocates in the client address space?
-      Int         rz_szB;           // Red zone size in bytes
-      Int         min_sblock_szB;   // Minimum superblock size in bytes
+      UInt        rz_szB;           // Red zone size in bytes
+      SizeT       min_sblock_szB;   // Minimum superblock size in bytes
       Block*      freelist[VG_N_MALLOC_LISTS];
       Superblock* sblocks;
       // Stats only.
-      UInt bytes_on_loan;
-      UInt bytes_mmaped;
-      UInt bytes_on_loan_max;
+      SizeT bytes_on_loan;
+      SizeT bytes_mmaped;
+      SizeT bytes_on_loan_max;
    } 
    Arena;
 
@@ -129,48 +130,50 @@ typedef
 /*--- Low-level functions for working with Blocks.         ---*/
 /*------------------------------------------------------------*/
 
+#define SIZE_T_0x1      ((SizeT)0x1)
+
 // Mark a bszB as in-use, and not in-use.
 static __inline__
-Int mk_inuse_bszB ( Int bszB )
+SizeT mk_inuse_bszB ( SizeT bszB )
 {
    vg_assert(bszB != 0);
-   return (bszB < 0) ? -bszB : bszB;
+   return bszB & (~SIZE_T_0x1);
 }
 static __inline__
-Int mk_free_bszB ( Int bszB )
+SizeT mk_free_bszB ( SizeT bszB )
 {
    vg_assert(bszB != 0);
-   return (bszB < 0) ? bszB : -bszB;
+   return bszB | SIZE_T_0x1;
 }
 
 // Remove the in-use/not-in-use attribute from a bszB, leaving just
 // the size.
 static __inline__
-Int mk_plain_bszB ( Int bszB )
+SizeT mk_plain_bszB ( SizeT bszB )
 {
    vg_assert(bszB != 0);
-   return (bszB < 0) ? -bszB : bszB;
+   return bszB & (~SIZE_T_0x1);
 }
 
 // Does this bszB have the in-use attribute?
 static __inline__
-Bool is_inuse_bszB ( Int bszB )
+Bool is_inuse_bszB ( SizeT bszB )
 {
    vg_assert(bszB != 0);
-   return (bszB < 0) ? False : True;
+   return (0 != (bszB & SIZE_T_0x1)) ? False : True;
 }
 
 
 // Set and get the lower size field of a block.
 static __inline__
-void set_bszB_lo ( Block* b, Int bszB )
+void set_bszB_lo ( Block* b, SizeT bszB )
 { 
-   *(Int*)&b[0] = bszB;
+   *(SizeT*)&b[0] = bszB;
 }
 static __inline__
-Int get_bszB_lo ( Block* b )
+SizeT get_bszB_lo ( Block* b )
 {
-   return *(Int*)&b[0];
+   return *(SizeT*)&b[0];
 }
 
 // Get the address of the last byte in a block
@@ -183,33 +186,51 @@ UByte* last_byte ( Block* b )
 
 // Set and get the upper size field of a block.
 static __inline__
-void set_bszB_hi ( Block* b, Int bszB )
+void set_bszB_hi ( Block* b, SizeT bszB )
 {
    UByte* b2 = (UByte*)b;
    UByte* lb = last_byte(b);
    vg_assert(lb == &b2[mk_plain_bszB(bszB) - 1]);
-   *(Int*)&lb[-sizeof(Int) + 1] = bszB;
+   *(SizeT*)&lb[-sizeof(SizeT) + 1] = bszB;
 }
 static __inline__
-Int get_bszB_hi ( Block* b )
+SizeT get_bszB_hi ( Block* b )
 {
    UByte* lb = last_byte(b);
-   return *(Int*)&lb[-sizeof(Int) + 1];
+   return *(SizeT*)&lb[-sizeof(SizeT) + 1];
 }
 
+
+// Return the lower, upper and total overhead in bytes for a block.
+// These are determined purely by which arena the block lives in.
+static __inline__
+UInt overhead_szB_lo ( Arena* a )
+{
+   return sizeof(SizeT) + sizeof(void*) + a->rz_szB;
+}
+static __inline__
+UInt overhead_szB_hi ( Arena* a )
+{
+   return a->rz_szB + sizeof(void*) + sizeof(SizeT);
+}
+static __inline__
+UInt overhead_szB ( Arena* a )
+{
+   return overhead_szB_lo(a) + overhead_szB_hi(a);
+}
 
 // Given the addr of a block, return the addr of its payload.
 static __inline__
 UByte* get_block_payload ( Arena* a, Block* b )
 {
    UByte* b2 = (UByte*)b;
-   return & b2[sizeof(Int) + sizeof(void*) + a->rz_szB];
+   return & b2[ overhead_szB_lo(a) ];
 }
 // Given the addr of a block's payload, return the addr of the block itself.
 static __inline__
 Block* get_payload_block ( Arena* a, UByte* payload )
 {
-   return (Block*)&payload[-sizeof(Int) - sizeof(void*) - a->rz_szB];
+   return (Block*)&payload[ -overhead_szB_lo(a) ];
 }
 
 
@@ -218,25 +239,25 @@ static __inline__
 void set_prev_b ( Block* b, Block* prev_p )
 { 
    UByte* b2 = (UByte*)b;
-   *(Block**)&b2[sizeof(Int)] = prev_p;
+   *(Block**)&b2[sizeof(SizeT)] = prev_p;
 }
 static __inline__
 void set_next_b ( Block* b, Block* next_p )
 {
    UByte* lb = last_byte(b);
-   *(Block**)&lb[-sizeof(Int) - sizeof(void*) + 1] = next_p;
+   *(Block**)&lb[-sizeof(SizeT) - sizeof(void*) + 1] = next_p;
 }
 static __inline__
 Block* get_prev_b ( Block* b )
 { 
    UByte* b2 = (UByte*)b;
-   return *(Block**)&b2[sizeof(Int)];
+   return *(Block**)&b2[sizeof(SizeT)];
 }
 static __inline__
 Block* get_next_b ( Block* b )
 { 
    UByte* lb = last_byte(b);
-   return *(Block**)&lb[-sizeof(Int) - sizeof(void*) + 1];
+   return *(Block**)&lb[-sizeof(SizeT) - sizeof(void*) + 1];
 }
 
 
@@ -245,76 +266,56 @@ static __inline__
 Block* get_predecessor_block ( Block* b )
 {
    UByte* b2 = (UByte*)b;
-   Int    bszB = mk_plain_bszB( (*(Int*)&b2[-sizeof(Int)]) );
+   SizeT  bszB = mk_plain_bszB( (*(SizeT*)&b2[-sizeof(SizeT)]) );
    return (Block*)&b2[-bszB];
 }
 
 // Read and write the lower and upper red-zone bytes of a block.
 static __inline__
-void set_rz_lo_byte ( Arena* a, Block* b, Int rz_byteno, UByte v )
+void set_rz_lo_byte ( Arena* a, Block* b, UInt rz_byteno, UByte v )
 {
    UByte* b2 = (UByte*)b;
-   b2[sizeof(Int) + sizeof(void*) + rz_byteno] = v;
+   b2[sizeof(SizeT) + sizeof(void*) + rz_byteno] = v;
 }
 static __inline__
-void set_rz_hi_byte ( Arena* a, Block* b, Int rz_byteno, UByte v )
+void set_rz_hi_byte ( Arena* a, Block* b, UInt rz_byteno, UByte v )
 {
    UByte* lb = last_byte(b);
-   lb[-sizeof(Int) - sizeof(void*) - rz_byteno] = v;
+   lb[-sizeof(SizeT) - sizeof(void*) - rz_byteno] = v;
 }
 static __inline__
-UByte get_rz_lo_byte ( Arena* a, Block* b, Int rz_byteno )
+UByte get_rz_lo_byte ( Arena* a, Block* b, UInt rz_byteno )
 {
    UByte* b2 = (UByte*)b;
-   return b2[sizeof(Int) + sizeof(void*) + rz_byteno];
+   return b2[sizeof(SizeT) + sizeof(void*) + rz_byteno];
 }
 static __inline__
-UByte get_rz_hi_byte ( Arena* a, Block* b, Int rz_byteno )
+UByte get_rz_hi_byte ( Arena* a, Block* b, UInt rz_byteno )
 {
    UByte* lb = last_byte(b);
-   return lb[-sizeof(Int) - sizeof(void*) - rz_byteno];
+   return lb[-sizeof(SizeT) - sizeof(void*) - rz_byteno];
 }
 
-
-/* Return the lower, upper and total overhead in bytes for a block.
-   These are determined purely by which arena the block lives in. */
-static __inline__
-Int overhead_szB_lo ( Arena* a )
-{
-   return sizeof(Int) + sizeof(void*) + a->rz_szB;
-}
-static __inline__
-Int overhead_szB_hi ( Arena* a )
-{
-   return sizeof(void*) + sizeof(Int) + a->rz_szB;
-}
-static __inline__
-Int overhead_szB ( Arena* a )
-{
-   return overhead_szB_lo(a) + overhead_szB_hi(a);
-}
 
 // Return the minimum bszB for a block in this arena.  Can have zero-length
 // payloads, so it's the size of the admin bytes.
 static __inline__
-Int min_useful_bszB ( Arena* a )
+UInt min_useful_bszB ( Arena* a )
 {
    return overhead_szB(a);
 }
 
 // Convert payload size <--> block size (both in bytes).
 static __inline__
-Int pszB_to_bszB ( Arena* a, Int pszB )
+SizeT pszB_to_bszB ( Arena* a, SizeT pszB )
 {
-   vg_assert(pszB >= 0);
    return pszB + overhead_szB(a);
 }
 static __inline__
-Int bszB_to_pszB ( Arena* a, Int bszB )
+SizeT bszB_to_pszB ( Arena* a, SizeT bszB )
 {
-   Int pszB = bszB - overhead_szB(a);
-   vg_assert(pszB >= 0);
-   return pszB;
+   vg_assert(bszB >= overhead_szB(a));
+   return bszB - overhead_szB(a);
 }
 
 
@@ -338,12 +339,12 @@ static Arena* arenaId_to_ArenaP ( ArenaId arena )
 // Initialise an arena.  rz_szB is the minimum redzone size;  it might be
 // made bigger to ensure that VG_MIN_MALLOC_ALIGNMENT is observed.
 static
-void arena_init ( ArenaId aid, Char* name, Int rz_szB, Int min_sblock_szB )
+void arena_init ( ArenaId aid, Char* name, UInt rz_szB, SizeT min_sblock_szB )
 {
-   Int i;
+   SizeT i;
    Arena* a = arenaId_to_ArenaP(aid);
    
-   vg_assert(rz_szB >= 0);
+   vg_assert(rz_szB < 128);      // ensure reasonable size
    vg_assert((min_sblock_szB % VKI_PAGE_SIZE) == 0);
    a->name      = name;
    a->clientmem = ( VG_AR_CLIENT == aid ? True : False );
@@ -366,7 +367,7 @@ void arena_init ( ArenaId aid, Char* name, Int rz_szB, Int min_sblock_szB )
 /* Print vital stats for an arena. */
 void VG_(print_all_arena_stats) ( void )
 {
-   Int i;
+   UInt i;
    for (i = 0; i < VG_N_ARENAS; i++) {
       Arena* a = arenaId_to_ArenaP(i);
       VG_(message)(Vg_DebugMsg,
@@ -383,7 +384,7 @@ void VG_(print_all_arena_stats) ( void )
 static
 void ensure_mm_init ( void )
 {
-   static Int  client_rz_szB;
+   static UInt client_rz_szB;
    static Bool init_done = False;
    
    if (init_done) {
@@ -396,7 +397,6 @@ void ensure_mm_init ( void )
 
    /* No particular reason for this figure, it's just smallish */
    sk_assert(VG_(vg_malloc_redzone_szB) < 128);
-   sk_assert(VG_(vg_malloc_redzone_szB) >= 0);
    client_rz_szB = VG_(vg_malloc_redzone_szB);
 
    /* Use checked red zones (of various sizes) for our internal stuff,
@@ -434,7 +434,7 @@ void ensure_mm_init ( void )
 
 // Align ptr p upwards to an align-sized boundary.
 static
-void* align_upwards ( void* p, Int align )
+void* align_upwards ( void* p, SizeT align )
 {
    Addr a = (Addr)p;
    if ((a % align) == 0) return (void*)a;
@@ -444,7 +444,7 @@ void* align_upwards ( void* p, Int align )
 // If not enough memory available, either aborts (for non-client memory)
 // or returns 0 (for client memory).
 static
-Superblock* newSuperblock ( Arena* a, Int cszB )
+Superblock* newSuperblock ( Arena* a, SizeT cszB )
 {
    // The extra VG_MIN_MALLOC_SZB bytes are for possible alignment up.
    static UByte bootstrap_superblock[CORE_ARENA_MIN_SZB+VG_MIN_MALLOC_SZB];
@@ -519,13 +519,13 @@ Bool VG_(clo_trace_malloc)  = False;
 
 /* Minimum alignment in functions that don't specify alignment explicitly.
    default: 0, i.e. use VG_MIN_MALLOC_SZB. */
-Int  VG_(clo_alignment)     = VG_MIN_MALLOC_SZB;
+UInt VG_(clo_alignment)     = VG_MIN_MALLOC_SZB;
 
 
 Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
 {
    if (VG_CLO_STREQN(12, arg, "--alignment=")) {
-      VG_(clo_alignment) = (Int)VG_(atoll)(&arg[12]);
+      VG_(clo_alignment) = (UInt)VG_(atoll)(&arg[12]);
 
       if (VG_(clo_alignment) < VG_MIN_MALLOC_SZB
           || VG_(clo_alignment) > 4096
@@ -572,9 +572,8 @@ void VG_(replacement_malloc_print_debug_usage)(void)
 
 // Convert a payload size in bytes to a freelist number.
 static
-Int pszB_to_listNo ( Int pszB )
+UInt pszB_to_listNo ( SizeT pszB )
 {
-   vg_assert(pszB >= 0);
    vg_assert(0 == pszB % VG_MIN_MALLOC_SZB);
    pszB /= VG_MIN_MALLOC_SZB;
    if (pszB <= 2)   return 0;
@@ -597,19 +596,19 @@ Int pszB_to_listNo ( Int pszB )
 
 // What is the minimum payload size for a given list?
 static
-Int listNo_to_pszB_min ( Int listNo )
+SizeT listNo_to_pszB_min ( UInt listNo )
 {
-   Int pszB = 0;
-   vg_assert(listNo >= 0 && listNo <= VG_N_MALLOC_LISTS);
+   SizeT pszB = 0;
+   vg_assert(listNo <= VG_N_MALLOC_LISTS);
    while (pszB_to_listNo(pszB) < listNo) pszB += VG_MIN_MALLOC_SZB;
    return pszB;
 }
 
 // What is the maximum payload size for a given list?
 static
-Int listNo_to_pszB_max ( Int listNo )
+SizeT listNo_to_pszB_max ( UInt listNo )
 {
-   vg_assert(listNo >= 0 && listNo <= VG_N_MALLOC_LISTS);
+   vg_assert(listNo <= VG_N_MALLOC_LISTS);
    if (listNo == VG_N_MALLOC_LISTS-1) {
       return MAX_PSZB;
    } else {
@@ -623,12 +622,12 @@ Int listNo_to_pszB_max ( Int listNo )
    lower address, with the idea of attempting to recycle the same
    blocks rather than cruise through the address space. */
 static 
-void swizzle ( Arena* a, Int lno )
+void swizzle ( Arena* a, UInt lno )
 {
    Block* p_best;
    Block* pp;
    Block* pn;
-   Int    i;
+   UInt   i;
 
    p_best = a->freelist[lno];
    if (p_best == NULL) return;
@@ -656,12 +655,12 @@ void swizzle ( Arena* a, Int lno )
 #define VG_REDZONE_LO_MASK    0x31
 #define VG_REDZONE_HI_MASK    0x7c
 
-// Do some crude sanity checks on a chunk.
+// Do some crude sanity checks on a Block.
 static 
 Bool blockSane ( Arena* a, Block* b )
 {
 #  define BLEAT(str) VG_(printf)("blockSane: fail -- %s\n",str)
-   Int i;
+   UInt i;
    if (get_bszB_lo(b) != get_bszB_hi(b))
       {BLEAT("sizes");return False;}
    if (!a->clientmem && is_inuse_bszB(get_bszB_lo(b))) {
@@ -682,7 +681,8 @@ Bool blockSane ( Arena* a, Block* b )
 static 
 void ppSuperblocks ( Arena* a )
 {
-   Int i, b_bszB, blockno;
+   UInt i, blockno;
+   SizeT b_bszB;
    Block* b;
    Superblock* sb = a->sblocks;
    blockno = 1;
@@ -707,13 +707,14 @@ void ppSuperblocks ( Arena* a )
 // Sanity check both the superblocks and the chains.
 static void sanity_check_malloc_arena ( ArenaId aid )
 {
-   Int         i, superblockctr, b_bszB, b_pszB, blockctr_sb, blockctr_li;
-   Int         blockctr_sb_free, listno, list_min_pszB, list_max_pszB;
+   UInt        i, superblockctr, blockctr_sb, blockctr_li;
+   UInt        blockctr_sb_free, listno;
+   SizeT       b_bszB, b_pszB, list_min_pszB, list_max_pszB;
    Superblock* sb;
    Bool        thisFree, lastWasFree;
    Block*      b;
    Block*      b_prev;
-   UInt        arena_bytes_on_loan;
+   SizeT       arena_bytes_on_loan;
    Arena*      a;
 
 #  define BOMB VG_(core_panic)("sanity_check_malloc_arena")
@@ -821,7 +822,7 @@ static void sanity_check_malloc_arena ( ArenaId aid )
 
 void VG_(sanity_check_malloc_all) ( void )
 {
-   Int i;
+   UInt i;
    for (i = 0; i < VG_N_ARENAS; i++)
       sanity_check_malloc_arena ( i );
 }
@@ -835,7 +836,7 @@ Bool VG_(is_empty_arena) ( ArenaId aid )
    Arena*      a;
    Superblock* sb;
    Block*      b;
-   Int         b_bszB;
+   SizeT       b_bszB;
 
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
@@ -861,10 +862,9 @@ Bool VG_(is_empty_arena) ( ArenaId aid )
 // relevant free list.
 
 static
-void mkFreeBlock ( Arena* a, Block* b, Int bszB, Int b_lno )
+void mkFreeBlock ( Arena* a, Block* b, SizeT bszB, UInt b_lno )
 {
-   Int pszB = bszB_to_pszB(a, bszB);
-   vg_assert(pszB >= 0);
+   SizeT pszB = bszB_to_pszB(a, bszB);
    vg_assert(b_lno == pszB_to_listNo(pszB));
    // Set the size fields and indicate not-in-use.
    set_bszB_lo(b, mk_free_bszB(bszB));
@@ -891,9 +891,9 @@ void mkFreeBlock ( Arena* a, Block* b, Int bszB, Int b_lno )
 // Mark the bytes at b .. b+bszB-1 as in use, and set up the block
 // appropriately.
 static
-void mkInuseBlock ( Arena* a, Block* b, UInt bszB )
+void mkInuseBlock ( Arena* a, Block* b, SizeT bszB )
 {
-   Int i;
+   UInt i;
    vg_assert(bszB >= min_useful_bszB(a));
    set_bszB_lo(b, mk_inuse_bszB(bszB));
    set_bszB_hi(b, mk_inuse_bszB(bszB));
@@ -912,9 +912,9 @@ void mkInuseBlock ( Arena* a, Block* b, UInt bszB )
 
 // Remove a block from a given list.  Does no sanity checking.
 static
-void unlinkBlock ( Arena* a, Block* b, Int listno )
+void unlinkBlock ( Arena* a, Block* b, UInt listno )
 {
-   vg_assert(listno >= 0 && listno < VG_N_MALLOC_LISTS);
+   vg_assert(listno < VG_N_MALLOC_LISTS);
    if (get_prev_b(b) == b) {
       // Only one element in the list; treat it specially.
       vg_assert(get_next_b(b) == b);
@@ -938,15 +938,16 @@ void unlinkBlock ( Arena* a, Block* b, Int listno )
 
 // Align the request size.
 static __inline__
-Int align_req_pszB ( Int req_pszB )
+SizeT align_req_pszB ( SizeT req_pszB )
 {
-   Int n = VG_MIN_MALLOC_SZB-1;
+   SizeT n = VG_MIN_MALLOC_SZB-1;
    return ((req_pszB + n) & (~n));
 }
 
-void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
+void* VG_(arena_malloc) ( ArenaId aid, SizeT req_pszB )
 {
-   Int         req_bszB, frag_bszB, b_bszB, lno;
+   SizeT       req_bszB, frag_bszB, b_bszB;
+   UInt        lno;
    Superblock* new_sb;
    Block*      b = NULL;
    Arena*      a;
@@ -957,7 +958,7 @@ void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
 
-   vg_assert(0 <= req_pszB && req_pszB < MAX_PSZB);
+   vg_assert(req_pszB < MAX_PSZB);
    req_pszB = align_req_pszB(req_pszB);
    req_bszB = pszB_to_bszB(a, req_pszB);
 
@@ -992,7 +993,7 @@ void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
   obtained_block:
    // Ok, we can allocate from b, which lives in list lno.
    vg_assert(b != NULL);
-   vg_assert(lno >= 0 && lno < VG_N_MALLOC_LISTS);
+   vg_assert(lno < VG_N_MALLOC_LISTS);
    vg_assert(a->freelist[lno] != NULL);
    b_bszB = mk_plain_bszB(get_bszB_lo(b));
    // req_bszB is the size of the block we are after.  b_bszB is the
@@ -1039,7 +1040,8 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    UByte*      sb_end;
    Block*      other;
    Block*      b;
-   Int         b_bszB, b_pszB, other_bszB, b_listno;
+   SizeT       b_bszB, b_pszB, other_bszB;
+   UInt        b_listno;
    Arena*      a;
 
    VGP_PUSHCC(VgpMalloc);
@@ -1158,12 +1160,12 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    .    .               .   .   .               .   .
 
 */
-void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
+void* VG_(arena_malloc_aligned) ( ArenaId aid, SizeT req_alignB, SizeT req_pszB )
 {
-   Int    base_pszB_req, base_pszB_act, frag_bszB;
+   SizeT  base_pszB_req, base_pszB_act, frag_bszB;
    Block  *base_b, *align_b;
    UByte  *base_p, *align_p;
-   UInt   saved_bytes_on_loan;
+   SizeT  saved_bytes_on_loan;
    Arena* a;
 
    VGP_PUSHCC(VgpMalloc);
@@ -1171,7 +1173,7 @@ void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
 
-   vg_assert(0 <= req_pszB && req_pszB < MAX_PSZB);
+   vg_assert(req_pszB < MAX_PSZB);
 
    // Check that the requested alignment seems reasonable; that is, is
    // a power of 2.
@@ -1252,7 +1254,7 @@ void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
 }
 
 
-Int VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
+SizeT VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
 {
    Arena* a = arenaId_to_ArenaP(aid);
    Block* b = get_payload_block(a, ptr);
@@ -1264,15 +1266,16 @@ Int VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
 /*--- Services layered on top of malloc/free.              ---*/
 /*------------------------------------------------------------*/
 
-void* VG_(arena_calloc) ( ArenaId aid, Int alignB, Int nmemb, Int nbytes )
+void* VG_(arena_calloc) ( ArenaId aid, SizeT alignB, SizeT nmemb, SizeT nbytes )
 {
-   Int    i, size;
+   UInt   i; 
+   SizeT  size;
    UChar* p;
 
    VGP_PUSHCC(VgpMalloc);
 
    size = nmemb * nbytes;
-   vg_assert(size >= 0);
+   vg_assert(size >= nmemb && size >= nbytes);  // check against overflow
 
    if (alignB == VG_MIN_MALLOC_SZB)
       p = VG_(arena_malloc) ( aid, size );
@@ -1288,10 +1291,11 @@ void* VG_(arena_calloc) ( ArenaId aid, Int alignB, Int nmemb, Int nbytes )
 
 
 void* VG_(arena_realloc) ( ArenaId aid, void* ptr, 
-                           Int req_alignB, Int req_pszB )
+                           SizeT req_alignB, SizeT req_pszB )
 {
    Arena* a;
-   Int    old_bszB, old_pszB, i;
+   SizeT  old_bszB, old_pszB;
+   UInt   i;
    UChar  *p_old, *p_new;
    Block* b;
 
@@ -1300,7 +1304,7 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
 
-   vg_assert(0 <= req_pszB && req_pszB < MAX_PSZB);
+   vg_assert(req_pszB < MAX_PSZB);
 
    b = get_payload_block(a, ptr);
    vg_assert(blockSane(a, b));
@@ -1338,7 +1342,7 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
 
 // All just wrappers to avoid exposing arenas to tools.
 
-void* VG_(malloc) ( Int nbytes )
+void* VG_(malloc) ( SizeT nbytes )
 {
    return VG_(arena_malloc) ( VG_AR_TOOL, nbytes );
 }
@@ -1348,23 +1352,23 @@ void  VG_(free) ( void* ptr )
    VG_(arena_free) ( VG_AR_TOOL, ptr );
 }
 
-void* VG_(calloc) ( Int nmemb, Int nbytes )
+void* VG_(calloc) ( SizeT nmemb, SizeT nbytes )
 {
    return VG_(arena_calloc) ( VG_AR_TOOL, VG_MIN_MALLOC_SZB, nmemb, nbytes );
 }
 
-void* VG_(realloc) ( void* ptr, Int size )
+void* VG_(realloc) ( void* ptr, SizeT size )
 {
    return VG_(arena_realloc) ( VG_AR_TOOL, ptr, VG_MIN_MALLOC_SZB, size );
 }
 
-void* VG_(malloc_aligned) ( Int req_alignB, Int req_pszB )
+void* VG_(malloc_aligned) ( SizeT req_alignB, SizeT req_pszB )
 {
    return VG_(arena_malloc_aligned) ( VG_AR_TOOL, req_alignB, req_pszB );
 }
 
 
-void* VG_(cli_malloc) ( UInt align, Int nbytes )                 
+void* VG_(cli_malloc) ( SizeT align, SizeT nbytes )                 
 {                                                                             
    // 'align' should be valid by now.  VG_(arena_malloc_aligned)() will
    // abort if it's not.
@@ -1380,7 +1384,7 @@ void VG_(cli_free) ( void* p )
 }
 
 
-Bool VG_(addr_is_in_block)( Addr a, Addr start, UInt size )
+Bool VG_(addr_is_in_block)( Addr a, Addr start, SizeT size )
 {  
    return (start - VG_(vg_malloc_redzone_szB) <= a
            && a < start + size + VG_(vg_malloc_redzone_szB));

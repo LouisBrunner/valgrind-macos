@@ -178,7 +178,7 @@ typedef
    struct _HP_Chunk {
       struct _HP_Chunk* next;
       Addr              data;    // Ptr to actual block
-      UInt              size;    // Size requested
+      SizeT             size;    // Size requested
       XPt*              where;   // Where allocated; bottom-XPt
    }
    HP_Chunk;
@@ -344,7 +344,7 @@ static XPt* alloc_xpt;
 
 // Cheap allocation for blocks that never need to be freed.  Saves about 10%
 // for Konqueror startup with --depth=40.
-static void* perm_malloc(UInt n_bytes)
+static void* perm_malloc(SizeT n_bytes)
 {
    static Addr hp     = 0;    // current heap pointer
    static Addr hp_lim = 0;    // maximum usable byte in current block
@@ -664,7 +664,7 @@ void remove_HP_Chunk(HP_Chunk* hc, HP_Chunk** prev_chunks_next_ptr)
 static void hp_census(void);
 
 static
-void* new_block ( void* p, Int size, UInt align, Bool is_zeroed )
+void* new_block ( void* p, SizeT size, SizeT align, Bool is_zeroed )
 {
    HP_Chunk* hc;
    Bool custom_alloc = (NULL == p);
@@ -738,27 +738,27 @@ void die_block ( void* p, Bool custom_free )
 }
  
 
-void* SK_(malloc) ( Int n )
+void* SK_(malloc) ( SizeT n )
 {
    return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(__builtin_new) ( Int n )
+void* SK_(__builtin_new) ( SizeT n )
 {
    return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(__builtin_vec_new) ( Int n )
+void* SK_(__builtin_vec_new) ( SizeT n )
 {
    return new_block( NULL, n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(calloc) ( Int m, Int size )
+void* SK_(calloc) ( SizeT m, SizeT size )
 {
    return new_block( NULL, m*size, VG_(clo_alignment), /*is_zeroed*/True );
 }
 
-void *SK_(memalign)( Int align, Int n )
+void *SK_(memalign)( SizeT align, SizeT n )
 {
    return new_block( NULL, n, align, False );
 }
@@ -778,13 +778,13 @@ void SK_(__builtin_vec_delete) ( void* p )
    die_block( p, /*custom_free*/False );
 }
 
-void* SK_(realloc) ( void* p_old, Int new_size )
+void* SK_(realloc) ( void* p_old, SizeT new_size )
 {
    HP_Chunk*    hc;
    HP_Chunk**   remove_handle;
    Int          i;
    void*        p_new;
-   UInt         old_size;
+   SizeT        old_size;
    XPt         *old_where, *new_where;
    
    VGP_PUSHCC(VgpCliMalloc);

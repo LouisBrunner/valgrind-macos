@@ -290,12 +290,12 @@ void,	init_shadow_page,	Addr p
 ## ================================================================================
 ## malloc and friends
 :malloc
-void*,	malloc,			Int n
-void*,	__builtin_new,		Int n
-void*,	__builtin_vec_new,	Int n
-void*,	memalign,		Int align, Int n
-void*,	calloc,			Int nmemb, Int n
+void*,	malloc,			SizeT n
+void*,	__builtin_new,		SizeT n
+void*,	__builtin_vec_new,	SizeT n
+void*,	memalign,		SizeT align, SizeT n
+void*,	calloc,			SizeT nmemb, SizeT n
 void,	free,			void* p
 void,	__builtin_delete,	void* p
 void,	__builtin_vec_delete,	void* p
-void*,	realloc,		void* p, Int size
+void*,	realloc,		void* p, SizeT size

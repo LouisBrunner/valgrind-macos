@@ -123,7 +123,7 @@ data Expr
 */
 typedef
    enum { Iex_Get, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, 
-          Iex_Const, Iex_CCall }
+          Iex_Const, Iex_CCall, Iex_Mux10 }
    IRExprTag;
 
 typedef 
@@ -158,6 +158,11 @@ typedef
             IRType retty;
             struct _IRExpr** args;
          }  CCall;
+         struct {
+            struct _IRExpr* cond;
+            struct _IRExpr* expr1;
+            struct _IRExpr* expr0;
+         } Mux10;
       } Iex;
    }
    IRExpr;
@@ -169,6 +174,7 @@ extern IRExpr* IRExpr_Unop  ( IROp op, IRExpr* arg );
 extern IRExpr* IRExpr_LDle  ( IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const ( IRConst* con );
 extern IRExpr* IRExpr_CCall ( Char* name, IRType retty, IRExpr** args );
+extern IRExpr* IRExpr_Mux10 ( IRExpr* cond, IRExpr* expr1, IRExpr* expr0 );
 
 extern void ppIRExpr ( IRExpr* );
 
@@ -207,7 +213,6 @@ typedef
       IRStmtTag tag;
       union {
          struct {
-            IRExpr* guard;
             Int     offset;
             IRExpr* expr;
          } Put;
@@ -228,7 +233,7 @@ typedef
    }
    IRStmt;
 
-extern IRStmt* IRStmt_Put  ( IRExpr* guard, Int off, IRExpr* value );
+extern IRStmt* IRStmt_Put  ( Int off, IRExpr* value );
 extern IRStmt* IRStmt_Tmp  ( IRTemp tmp, IRExpr* expr );
 extern IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value );
 extern IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst );

@@ -261,7 +261,7 @@ static void putIReg ( Int sz, UInt archreg, IRExpr* e )
 {
    vassert(sz == 1 || sz == 2 || sz == 4);
    vassert(archreg < 8);
-   stmt( IRStmt_Put(NULL, integerGuestRegOffset(sz,archreg), e) );
+   stmt( IRStmt_Put(integerGuestRegOffset(sz,archreg), e) );
 }
 
 static void assign ( IRTemp dst, IRExpr* e )
@@ -397,9 +397,8 @@ static void setFlags_SRC_DST1 ( IROp    op8,
                                 IRTemp  dst1,
                                 IRType  ty )
 {
-   Bool    logic = False;
-   Int     ccOp  = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-   IRExpr* guard = NULL;
+   Bool logic = False;
+   Int  ccOp  = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
 
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
 
@@ -412,10 +411,10 @@ static void setFlags_SRC_DST1 ( IROp    op8,
       default:       ppIROp(op8);
                      vpanic("setFlags_SRC_DST1(x86)");
    }
-   stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
-   stmt( IRStmt_Put(guard, OFFB_CC_SRC, logic ? mkU32(0) 
+   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_SRC, logic ? mkU32(0) 
                                               : mkexpr(src)) );
-   stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(dst1)) );
+   stmt( IRStmt_Put( OFFB_CC_DST, mkexpr(dst1)) );
 }
 
 
@@ -443,9 +442,18 @@ static void setFlags_DSTus_DST1 ( IROp    op8,
    }
 
    /* CC_SRC = undershifted %d after, CC_DST = %d afterwards */
-   stmt( IRStmt_Put(mkexpr(guard), OFFB_CC_OP,  mkU32(ccOp)) );
-   stmt( IRStmt_Put(mkexpr(guard), OFFB_CC_SRC, mkexpr(dstUS)) );
-   stmt( IRStmt_Put(mkexpr(guard), OFFB_CC_DST, mkexpr(dst1)) );
+   stmt( IRStmt_Put( OFFB_CC_OP,
+                     IRExpr_Mux10( mkexpr(guard),
+                                   mkU32(ccOp),
+                                   IRExpr_Get(OFFB_CC_OP,Ity_I32))) );
+   stmt( IRStmt_Put( OFFB_CC_SRC, 
+                     IRExpr_Mux10( mkexpr(guard),
+                                   mkexpr(dstUS),
+                                   IRExpr_Get(OFFB_CC_SRC,Ity_I32))) );
+   stmt( IRStmt_Put( OFFB_CC_DST,
+                     IRExpr_Mux10( mkexpr(guard),
+                                   mkexpr(dst1),
+                                   IRExpr_Get(OFFB_CC_DST,Ity_I32))) );
 }
 
 
@@ -454,17 +462,16 @@ static void setFlags_DSTus_DST1 ( IROp    op8,
 
 static void setFlags_INC_DEC ( Bool inc, IRTemp dst, IRType ty )
 {
-   IRExpr* guard = NULL;
-   Int     ccOp  = inc ? CC_OP_INCB : CC_OP_DECB;
+   Int ccOp  = inc ? CC_OP_INCB : CC_OP_DECB;
    
    ccOp += ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
 
    /* This has to come first, because calculating the C flag 
       may require reading all three OFFB_CC fields. */
-   stmt( IRStmt_Put(guard, OFFB_CC_SRC, mk_calculate_eflags_c()) );
-   stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
-   stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(dst)) );
+   stmt( IRStmt_Put( OFFB_CC_SRC, mk_calculate_eflags_c()) );
+   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_DST, mkexpr(dst)) );
 }
 
 
@@ -476,19 +483,19 @@ void setFlags_MUL ( IRType ty, IRTemp src1, IRTemp src2, UInt base_op )
 {
    switch (ty) {
    case Ity_I8:
-      stmt( IRStmt_Put( NULL, OFFB_CC_OP,  mkU32(base_op+0) ) );
-      stmt( IRStmt_Put( NULL, OFFB_CC_SRC, unop(Iop_8Uto32,mkexpr(src1)) ) );
-      stmt( IRStmt_Put( NULL, OFFB_CC_DST, unop(Iop_8Uto32,mkexpr(src2)) ) );
+      stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(base_op+0) ) );
+      stmt( IRStmt_Put( OFFB_CC_SRC, unop(Iop_8Uto32,mkexpr(src1)) ) );
+      stmt( IRStmt_Put( OFFB_CC_DST, unop(Iop_8Uto32,mkexpr(src2)) ) );
       break;
    case Ity_I16:
-      stmt( IRStmt_Put( NULL, OFFB_CC_OP,  mkU32(base_op+1) ) );
-      stmt( IRStmt_Put( NULL, OFFB_CC_SRC, unop(Iop_16Uto32,mkexpr(src1)) ) );
-      stmt( IRStmt_Put( NULL, OFFB_CC_DST, unop(Iop_16Uto32,mkexpr(src2)) ) );
+      stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(base_op+1) ) );
+      stmt( IRStmt_Put( OFFB_CC_SRC, unop(Iop_16Uto32,mkexpr(src1)) ) );
+      stmt( IRStmt_Put( OFFB_CC_DST, unop(Iop_16Uto32,mkexpr(src2)) ) );
       break;
    case Ity_I32:
-      stmt( IRStmt_Put( NULL, OFFB_CC_OP,  mkU32(base_op+2) ) );
-      stmt( IRStmt_Put( NULL, OFFB_CC_SRC, mkexpr(src1) ) );
-      stmt( IRStmt_Put( NULL, OFFB_CC_DST, mkexpr(src2) ) );
+      stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(base_op+2) ) );
+      stmt( IRStmt_Put( OFFB_CC_SRC, mkexpr(src1) ) );
+      stmt( IRStmt_Put( OFFB_CC_DST, mkexpr(src2) ) );
       break;
    default:
       vpanic("setFlags_MUL(x86)");
@@ -684,9 +691,9 @@ static void helper_ADC ( Int sz,
                      mkU32(thunkOp),
 		     binop(Iop_Mul32, mkexpr(oldc), mkU32(3)));
 
-   stmt( IRStmt_Put( NULL, OFFB_CC_OP,  thunkExpr ) );
-   stmt( IRStmt_Put( NULL, OFFB_CC_SRC, mkexpr(ta2) ) );
-   stmt( IRStmt_Put( NULL, OFFB_CC_DST, mkexpr(tdst) ) );
+   stmt( IRStmt_Put( OFFB_CC_OP,  thunkExpr ) );
+   stmt( IRStmt_Put( OFFB_CC_SRC, mkexpr(ta2) ) );
+   stmt( IRStmt_Put( OFFB_CC_DST, mkexpr(tdst) ) );
 }
 
 
@@ -6753,7 +6760,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 
 
    case 0xFC: /* CLD */
-      stmt( IRStmt_Put( NULL, OFFB_DFLAG, mkU32(1)) );
+      stmt( IRStmt_Put( OFFB_DFLAG, mkU32(1)) );
       DIP("cld\n");
       break;
 

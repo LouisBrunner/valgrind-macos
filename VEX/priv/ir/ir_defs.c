@@ -162,6 +162,15 @@ void ppIRExpr ( IRExpr* e )
       vex_printf("):");
       ppIRType(e->Iex.CCall.retty);
       break;
+    case Iex_Mux10:
+      vex_printf("Mux10(");
+      ppIRExpr(e->Iex.Mux10.cond);
+      vex_printf(",");
+      ppIRExpr(e->Iex.Mux10.expr1);
+      vex_printf(",");
+      ppIRExpr(e->Iex.Mux10.expr0);
+      vex_printf(")");
+      break;
     default:
       vpanic("ppIExpr");
   }
@@ -171,15 +180,8 @@ void ppIRStmt ( IRStmt* s )
 {
   switch (s->tag) {
     case Ist_Put:
-      if (s->Ist.Put.guard) {
-         vex_printf("if (");
-         ppIRExpr(s->Ist.Put.guard);
-         vex_printf( ") PUT(%d) = ", s->Ist.Put.offset);
-         ppIRExpr(s->Ist.Put.expr);
-      } else {
-         vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
-         ppIRExpr(s->Ist.Put.expr);
-      }
+      vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
+      ppIRExpr(s->Ist.Put.expr);
       break;
     case Ist_Tmp:
       ppIRTemp(s->Ist.Tmp.tmp);
@@ -341,15 +343,22 @@ IRExpr* IRExpr_CCall ( Char* name, IRType retty, IRExpr** args ) {
    e->Iex.CCall.args  = args;
    return e;
 }
+IRExpr* IRExpr_Mux10 ( IRExpr* cond, IRExpr* expr1, IRExpr* expr0 ) {
+   IRExpr* e          = LibVEX_Alloc(sizeof(IRExpr));
+   e->tag             = Iex_Mux10;
+   e->Iex.Mux10.cond  = cond;
+   e->Iex.Mux10.expr1 = expr1;
+   e->Iex.Mux10.expr0 = expr0;
+   return e;
+}
 
 
 /* Constructors -- IRStmt */
 
-IRStmt* IRStmt_Put ( IRExpr* guard, Int off, IRExpr* value ) {
+IRStmt* IRStmt_Put ( Int off, IRExpr* value ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
    s->tag            = Ist_Put;
    s->link           = NULL;
-   s->Ist.Put.guard  = guard;
    s->Ist.Put.offset = off;
    s->Ist.Put.expr   = value;
    return s;
@@ -555,6 +564,8 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
          return t_dst;
       case Iex_CCall:
          return e->Iex.CCall.retty;
+      case Iex_Mux10:
+         return typeOfIRExpr(tyenv, e->Iex.Mux10.expr1);
       default:
          ppIRExpr(e);
          vpanic("typeOfIRExpr");
@@ -635,6 +646,13 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
          for (i = 0; expr->Iex.CCall.args[i]; i++)
             useBeforeDef_Expr(bb,stmt,expr->Iex.CCall.args[i],def_counts);
          break;
+      case Iex_Mux10:
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux10.cond,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux10.expr1,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux10.expr0,def_counts);
+         break;
+      default:
+         vpanic("useBeforeDef_Expr");
    }
 }
 
@@ -643,8 +661,6 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
 {
    switch (stmt->tag) {
       case Ist_Put:
-         if (stmt->Ist.Put.guard)
-            useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.guard,def_counts);
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.expr,def_counts);
          break;
       case Ist_Tmp:
@@ -726,7 +742,17 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          break;
       case Iex_Const:
          break;
-      default: 
+      case Iex_Mux10:
+         tcExpr(bb,stmt, expr->Iex.Mux10.cond, gWordTy);
+         tcExpr(bb,stmt, expr->Iex.Mux10.expr1, gWordTy);
+         tcExpr(bb,stmt, expr->Iex.Mux10.expr0, gWordTy);
+         if (typeOfIRExpr(tyenv, expr->Iex.Mux10.cond) != Ity_Bit)
+            sanityCheckFail(bb,stmt,"Iex.Mux10.cond: cond :: Ity_Bit");
+         if (typeOfIRExpr(tyenv, expr->Iex.Mux10.expr1)
+             != typeOfIRExpr(tyenv, expr->Iex.Mux10.expr0))
+            sanityCheckFail(bb,stmt,"Iex.Mux10: expr1/expr0 mismatch");
+         break;
+       default: 
          vpanic("tcExpr");
    }
 }
@@ -738,11 +764,6 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
    IRTypeEnv* tyenv = bb->tyenv;
    switch (stmt->tag) {
       case Ist_Put:
-         if (stmt->Ist.Put.guard) {
-            tcExpr( bb, stmt, stmt->Ist.Put.guard, gWordTy );
-            if (typeOfIRExpr(tyenv,stmt->Ist.Put.guard) != Ity_Bit)
-               sanityCheckFail(bb,stmt,"IRStmt.Put.guard: not :: Ity_Bit");
-          }
           tcExpr( bb, stmt, stmt->Ist.Put.expr, gWordTy );
           if (typeOfIRExpr(tyenv,stmt->Ist.Put.expr) == Ity_Bit)
              sanityCheckFail(bb,stmt,"IRStmt.Put.expr: cannot Put :: Ity_Bit");

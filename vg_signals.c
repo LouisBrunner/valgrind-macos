@@ -34,7 +34,7 @@
 #include "vg_include.h"
 #include "vg_constants.h"
 #include "vg_unsafe.h"
-
+#include "valgrind.h"  /* for VALGRIND_MAGIC_SEQUENCE */
 
 /* ---------------------------------------------------------------------
    Signal state for this process.
@@ -122,17 +122,6 @@ typedef
 
 
 
-/* This is the bogus return address which the implementation
-   of RET in vg_cpu.c checks for.  If it spots a return to 
-   here, it calls vg_signal_returns().  We should never actually
-   enter this procedure, neither on the real nor simulated CPU.
-*/
-void VG_(signalreturn_bogusRA) ( void )
-{
-   VG_(panic) ( "vg_signalreturn_bogusRA -- something is badly wrong" );
-}
-
-
 /* Set up a stack frame (VgSigContext) for the client's signal
    handler.  This includes the signal number and a bogus return
    address.  */
@@ -210,9 +199,11 @@ Int vg_pop_signal_frame ( ThreadId tid )
 
    tst = VG_(get_thread_state)(tid);
 
-   /* esp is now pointing at the sigNo field in the signal frame. */
+   /* Correctly reestablish the frame base address. */
    esp   = tst->m_esp;
-   frame = (VgSigFrame*)(esp-4);
+   frame = (VgSigFrame*)
+              (esp -4 /* because the handler's RET pops the RA */
+                  +20 /* because signalreturn_bogusRA pushes 5 words */);
 
    vg_assert(frame->magicPI == 0x31415927);
    vg_assert(frame->magicE  == 0x27182818);

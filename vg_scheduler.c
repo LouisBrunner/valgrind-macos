@@ -185,7 +185,6 @@ static
 Char* name_of_sched_event ( UInt event )
 {
    switch (event) {
-      case VG_TRC_EBP_JMP_SPECIAL:    return "JMP_SPECIAL";
       case VG_TRC_EBP_JMP_SYSCALL:    return "SYSCALL";
       case VG_TRC_EBP_JMP_CLIENTREQ:  return "CLIENTREQ";
       case VG_TRC_INNER_COUNTERZERO:  return "COUNTERZERO";
@@ -889,7 +888,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
    ThreadId tid, tid_next;
    UInt     trc;
    UInt     dispatch_ctr_SAVED;
-   Int      done_this_time, n_in_fdwait;
+   Int      request_code, done_this_time, n_in_fdwait_or_sleep;
    Char     msg_buf[100];
    Addr     trans_addr;
 
@@ -941,12 +940,13 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
          /* Try and find a thread (tid) to run. */
          tid_next = tid;
-         n_in_fdwait   = 0;
+         n_in_fdwait_or_sleep = 0;
          while (True) {
             tid_next++;
             if (tid_next >= VG_N_THREADS) tid_next = 0;
-            if (vg_threads[tid_next].status == VgTs_WaitFD)
-               n_in_fdwait ++;
+            if (vg_threads[tid_next].status == VgTs_WaitFD
+                || vg_threads[tid_next].status == VgTs_Sleeping)
+               n_in_fdwait_or_sleep ++;
             if (vg_threads[tid_next].status == VgTs_Runnable) 
                break; /* We can run this one. */
             if (tid_next == tid) 
@@ -962,9 +962,10 @@ VgSchedReturnCode VG_(scheduler) ( void )
 	 }
 
          /* We didn't find a runnable thread.  Now what? */
-         if (n_in_fdwait == 0) {
-            /* No runnable threads and non in fd-wait either.  Not
-               good. */
+         if (n_in_fdwait_or_sleep == 0) {
+            /* No runnable threads and no prospect of any appearing
+               even if we wait for an arbitrary length of time.  In
+               short, we have a deadlock. */
 	    pp_sched_status();
             return VgSrc_Deadlock;
          }
@@ -1098,22 +1099,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
                1, whereupon the signal will be "delivered". */
 	    break;
 
-         case VG_TRC_EBP_JMP_SPECIAL: {
-            Addr next_eip = vg_threads[tid].m_eip;
-            if (next_eip == (Addr) & VG_(signalreturn_bogusRA)) {
-               /* vthread tid is returning from a signal handler;
-                  modify its stack/regs accordingly. */
-               VG_(signal_returns)(tid);
-            } 
-            else
-            if (next_eip == (Addr) & VG_(shutdown)) {
-               return VgSrc_Shutdown;
-            } else {
-               VG_(panic)("vg_schedule: VG_TRC_EBP_JMP_SPECIAL");
-            }
-            break;
-         }
-
          case VG_TRC_EBP_JMP_SYSCALL:
             /* Do a syscall for the vthread tid.  This could cause it
                to become non-runnable. */
@@ -1126,9 +1111,11 @@ VgSchedReturnCode VG_(scheduler) ( void )
                maybe_do_trivial_clientreq(), so we don't expect to see
                those here. 
             */
+            /* The thread's %EAX points at an arg block, the first
+               word of which is the request code. */
+            request_code = ((UInt*)(vg_threads[tid].m_eax))[0];
             if (0) {
-               VG_(sprintf)(msg_buf, "request 0x%x", 
-                                     vg_threads[tid].m_eax);
+               VG_(sprintf)(msg_buf, "request 0x%x", request_code );
                print_sched_event(tid, msg_buf);
 	    }
 	    /* Do a non-trivial client request for thread tid.  tid's
@@ -1139,7 +1126,11 @@ VgSchedReturnCode VG_(scheduler) ( void )
                other blocked threads become runnable.  In general we
                can and often do mess with the state of arbitrary
                threads at this point. */
-            do_nontrivial_clientreq(tid);
+            if (request_code == VG_USERREQ__SHUTDOWN_VALGRIND) {
+               return VgSrc_Shutdown;
+            } else {
+               do_nontrivial_clientreq(tid);
+	    }
             break;
 
          default: 
@@ -1744,6 +1735,12 @@ void do_nontrivial_clientreq ( ThreadId tid )
       case VG_USERREQ__DO_LEAK_CHECK:
          vg_threads[tid].m_edx = VG_(handle_client_request) ( arg );
 	 break;
+
+      case VG_USERREQ__SIGNAL_RETURNS:
+         /* vthread tid is returning from a signal handler;
+            modify its stack/regs accordingly. */
+         VG_(signal_returns)(tid);
+         break;
 
       default:
          VG_(printf)("panic'd on private request = 0x%x\n", arg[0] );

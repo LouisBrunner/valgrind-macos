@@ -80,28 +80,17 @@ VG_(run_innerloop):
 	# Start off dispatching paranoically, since we no longer have
 	# any indication whether or not this might be a special call/ret
 	# transfer.
-	jmp	dispatch_callret_maybe
+	jmp	dispatch_stkadj
 	
 	
 dispatch_main:
 	# Jump here to do a new dispatch.
 	# %eax holds destination (original) address.
 	# %ebp indicates further details of the control transfer
-	# requested to the address in %eax.  The idea is that we 
-	# want to check all jump targets to see if they are either
-	# VG_(signalreturn_bogusRA) or VG_(shutdown), both of which
-	# require special treatment.  However, testing all branch
-	# targets is expensive, and anyway in most cases JITter knows
-	# that a jump cannot be to either of these two.  We therefore
-	# adopt the following trick.
+	# requested to the address in %eax.
 	#
-	# If ebp == & VG_(baseBlock), which is what it started out as,
-	# this is a jump for which the JITter knows no check need be
-	# made.
+	# If ebp == & VG_(baseBlock), just jump next to %eax.
 	# 
-	# If ebp == VG_EBP_JMP_CALLRET, we had better make
-	# the check. 
-	#
 	# If ebp == VG_EBP_JMP_SYSCALL, do a system call before 
 	# continuing at eax.
 	#
@@ -109,12 +98,6 @@ dispatch_main:
 	# continuing at eax.
 	#
 	# If %ebp has any other value, we panic.
-	#
-	# What the JITter assumes is that VG_(signalreturn_bogusRA) can
-	# only be arrived at from an x86 ret insn, and dually that
-	# VG_(shutdown) can only be arrived at from an x86 call insn.
-	# The net effect is that all call and return targets are checked
-	# but straightforward jumps are not.
 	
 	cmpl	$VG_(baseBlock), %ebp
 	jnz	dispatch_exceptional
@@ -174,8 +157,8 @@ run_innerloop_exit:
 */
 dispatch_exceptional:
 	# this is jumped to only, not fallen-through from above
-	cmpl	$VG_TRC_EBP_JMP_SPECIAL, %ebp
-	jz	dispatch_callret_maybe
+	cmpl	$VG_TRC_EBP_JMP_STKADJ, %ebp
+	jz	dispatch_stkadj
 	cmpl	$VG_TRC_EBP_JMP_SYSCALL, %ebp
 	jz	dispatch_syscall
 	cmpl	$VG_TRC_EBP_JMP_CLIENTREQ, %ebp
@@ -202,7 +185,7 @@ dispatch_clientreq:
 	movl	$VG_TRC_EBP_JMP_CLIENTREQ, %eax
 	jmp	run_innerloop_exit
 
-dispatch_callret_maybe:
+dispatch_stkadj:
 	# save %eax in %EIP
 	movl	$VG_(baseBlock), %ebp
 	movl	VGOFF_(m_eip), %esi
@@ -213,20 +196,9 @@ dispatch_callret_maybe:
 	call	VG_(delete_client_stack_blocks_following_ESP_change)
 	popl	%eax
 	movl	$VG_(baseBlock), %ebp
-	
-	# is this a call/return which we need to mess with
-	cmpl	$VG_(signalreturn_bogusRA), %eax
-	jz	dispatch_callret
-	cmpl	$VG_(shutdown), %eax
-	jz	dispatch_callret
-	
+		
 	# ok, its not interesting.  Handle the normal way.
 	jmp	dispatch_boring
-
-dispatch_callret:
-	# %EIP is up to date here since dispatch_callret_maybe dominates
-	movl	$VG_TRC_EBP_JMP_SPECIAL, %eax
-	jmp	run_innerloop_exit
 
 
 .data

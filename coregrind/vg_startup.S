@@ -112,14 +112,29 @@ VG_(shutdown):
 	# Note that we will enter here on the synthetic CPU, not
 	# the real one!  So the interpreter must notice when this
 	# procedure is called, and use that as its cue to switch
-	# back to the real CPU.  That means the code placed here is
-	# utterly irrelevant, since it will never get run, but I
-	# place a RET here anyway, since it is the traditional way
-	# to return from a subroutine :-)
+	# back to the real CPU.  As usual we have a client request
+	# to do this.  To make sense of this you need to read the
+	# definition of VALGRIND_MAGIC_SEQUENCE in valgrind.h.
+	pushl	%eax
+	pushl	%edx
+	subl	$20, %esp	# allocate arg block
+	movl	%esp, %eax	# %eax == &_zzq_args[0]
+	movl	$VG_USERREQ__SHUTDOWN_VALGRIND, 0(%eax)	# request
+	# dont bother to fill in arg1 .. 4, not important
+	# and now the magic sequence itself:
+	roll $29, %eax
+	roll $3, %eax
+	rorl $27, %eax
+	rorl $5, %eax
+	roll $13, %eax
+	roll $19, %eax
+	# valgrind now exits.  the following insns are
+	# executed on the real CPU.
+	addl	$20, %esp
+	popl	%edx
+	popl	%eax
 	ret
-
-
-
+	
 .global	VG_(switch_to_real_CPU)
 VG_(switch_to_real_CPU):
 	# Once Valgrind has decided it needs to exit, either
@@ -215,6 +230,7 @@ VG_(swizzle_esp_then_start_GDB):
 # the same, in the vague hope that it might help GDBs navigation.
 .Lend_of_swizzle:
 	.size	VG_(swizzle_esp_then_start_GDB), .Lend_of_swizzle-VG_(swizzle_esp_then_start_GDB)
+
 
 ##--------------------------------------------------------------------##
 ##--- end                                             vg_startup.S ---##

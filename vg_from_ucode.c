@@ -1076,7 +1076,7 @@ static void load_ebp_from_JmpKind ( JmpKind jmpkind )
          break;
       case JmpCall:
       case JmpRet: 
-         emit_movv_lit_reg ( 4, VG_TRC_EBP_JMP_SPECIAL, R_EBP );
+         emit_movv_lit_reg ( 4, VG_TRC_EBP_JMP_STKADJ, R_EBP );
          break;
       case JmpSyscall: 
          emit_movv_lit_reg ( 4, VG_TRC_EBP_JMP_SYSCALL, R_EBP );

@@ -32,7 +32,46 @@
 
 #include "vg_constants.h"
 
+/* ------------------ SIMULATED CPU HELPERS ------------------ */
+/* A couple of stubs for returns which we want to catch: signal
+   returns and pthread returns.  In the latter case, the thread's
+   return value is in %EAX, so we pass this as the first argument
+   to the request.  In both cases we use the user request mechanism.
+   You need to to read the definition of VALGRIND_MAGIC_SEQUENCE
+   in valgrind.h to make sense of this.
+*/
+.global VG_(signalreturn_bogusRA)
+VG_(signalreturn_bogusRA):
+	subl	$20, %esp	# allocate arg block
+	movl	%esp, %edx	# %edx == &_zzq_args[0]
+	movl	$VG_USERREQ__SIGNAL_RETURNS, 0(%edx)	# request
+	movl	$0, 4(%edx)	# arg1
+	movl	$0, 8(%edx)	# arg2
+	movl	$0, 12(%edx)	# arg3
+	movl	$0, 16(%edx)	# arg4
+	movl	%edx, %eax
+	# and now the magic sequence itself:
+	roll $29, %eax
+	roll $3, %eax
+	rorl $27, %eax
+	rorl $5, %eax
+	roll $13, %eax
+	roll $19, %eax
+	# should never get here
+	pushl	$signalreturn_bogusRA_panic_msg
+	call	VG_(panic)
+	
+.data
+signalreturn_bogusRA_panic_msg:
+.ascii	"vg_signalreturn_bogusRA: VG_USERREQ__SIGNAL_RETURNS was missed"
+.byte	0
+.text	
+	
 
+	
+/* ------------------ REAL CPU HELPERS ------------------ */
+/* The rest of this lot run on the real CPU. */
+	
 /* Various helper routines, for instructions which are just too
    darn tedious for the JITter to output code in-line:
 	

@@ -409,6 +409,13 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__PTHREAD_MUTEX_DESTROY   0x3008
 #define VG_USERREQ__PTHREAD_CANCEL          0x3009
 
+/* 
+In vg_constants.h:
+#define VG_USERREQ__SIGNAL_RETURNS          0x4001
+#define VG_USERREQ__SHUTDOWN_VALGRIND       0x4002 
+*/
+
+
 /* ---------------------------------------------------------------------
    Constants pertaining to the simulated CPU state, VG_(baseBlock),
    which need to go here to avoid ugly circularities.
@@ -578,9 +585,6 @@ extern void VG_(unblock_host_signal) ( Int sigNo );
 /* Fake system calls for signal handling. */
 extern void VG_(do__NR_sigaction)     ( ThreadId tid );
 extern void VG_(do__NR_sigprocmask)   ( Int how, vki_ksigset_t* set );
-
-/* Bogus return address for signal handlers.  Is never executed. */
-extern void VG_(signalreturn_bogusRA) ( void );
 
 /* Modify the current thread's state once we have detected it is
    returning from a signal handler. */
@@ -1515,6 +1519,9 @@ extern void VG_(helper_value_check4_fail);
 extern void VG_(helper_value_check2_fail);
 extern void VG_(helper_value_check1_fail);
 extern void VG_(helper_value_check0_fail);
+
+/* NOT A FUNCTION; a bogus RETURN ADDRESS. */
+extern void VG_(signalreturn_bogusRA)( void );
 
 
 /* ---------------------------------------------------------------------

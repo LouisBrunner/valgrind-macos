@@ -1045,9 +1045,11 @@ void vg_read_lib_symbols ( SegInfo* si )
                      }
 
                   default:
-                     VG_(printf)("unhandled stabs case: %d %d", 
+                     VG_(printf)("unhandled (other) stabs case: %d %d", 
                                  stab[i+1].n_type,i);
-                     VG_(panic)("unhandled (other) stabs case");
+                     /* VG_(panic)("unhandled (other) stabs case"); */
+                     next_addr = this_addr + 4;
+                     break;
                }
             }
             

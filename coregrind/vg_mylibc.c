@@ -270,16 +270,12 @@ static Int munmap_inner(void *start, UInt length)
 
 static Addr mmap_inner(void *start, UInt length, UInt prot, UInt flags, UInt fd, UInt offset)
 {
-   UInt args[6];
-
-   args[0] = (UInt)start;
-   args[1] = length;
-   args[2] = prot;
-   args[3] = flags & ~(VKI_MAP_NOSYMS|VKI_MAP_CLIENT);
-   args[4] = fd;
-   args[5] = offset;
-
-   return VG_(do_syscall)(__NR_mmap, (UInt)(&(args[0])) );   
+   Int ret;
+   
+   PLATFORM_DO_MMAP(ret, start, length, prot,
+                    flags & ~(VKI_MAP_NOSYMS|VKI_MAP_CLIENT),
+                    fd, offset);
+   return ret;
 }
 
 /* Returns -1 on failure. */

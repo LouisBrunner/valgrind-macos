@@ -4183,17 +4183,11 @@ PRE(mmap)
       int flags, int fd, off_t offset); 
    */
 
-   UInt* arg_block = (UInt*)arg1;
    UInt a1, a2, a3, a4, a5, a6;
 
-   SYSCALL_TRACK( pre_mem_read, tid, "mmap(args)", arg1, 6*sizeof(UInt) );
+   vg_assert(tid = tst->tid);
+   PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6);
 
-   a1 = arg_block[0];
-   a2 = arg_block[1];
-   a3 = arg_block[2];
-   a4 = arg_block[3];
-   a5 = arg_block[4];
-   a6 = arg_block[5];
    MAYBE_PRINTF("mmap ( %p, %d, %d, %d, %d, %d )\n",
 		a1, a2, a3, a4, a5, a6 );
 
@@ -4203,7 +4197,7 @@ PRE(mmap)
 	 res = -VKI_ENOMEM;
       }
    } else {
-      a1 = VG_(find_map_space)(arg_block[0], arg_block[1], True);
+      a1 = VG_(find_map_space)(a1, a2, True);
       if (a1 == 0)
 	 res = -VKI_ENOMEM;
       else
@@ -4211,16 +4205,7 @@ PRE(mmap)
    }
 
    if (res != -VKI_ENOMEM) {
-      UInt new_arg_block[6];
-
-      new_arg_block[0] = a1;
-      new_arg_block[1] = a2;
-      new_arg_block[2] = a3;
-      new_arg_block[3] = a4;
-      new_arg_block[4] = a5;
-      new_arg_block[5] = a6;
-      
-      res = VG_(do_syscall)(__NR_mmap, new_arg_block);
+      PLATFORM_DO_MMAP(res, a1, a2, a3, a4, a5, a6);
 
       if (!VG_(is_kerror)(res)) {
          vg_assert(valid_client_addr(res, a2, tid, "mmap"));

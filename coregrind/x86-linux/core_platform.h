@@ -93,6 +93,34 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
 #define UCONTEXT_FRAME_PTR(uc)   ((uc)->uc_mcontext.ebp)
 #define UCONTEXT_SYSCALL_NUM(uc) ((uc)->uc_mcontext.eax)
 
+/* ---------------------------------------------------------------------
+   mmap() stuff
+   ------------------------------------------------------------------ */
+
+#define PLATFORM_DO_MMAP(ret, start, length, prot, flags, fd, offset) { \
+   UInt __args[6];                                                      \
+                                                                        \
+   __args[0] = (UInt)(start);                                           \
+   __args[1] = (length);                                                \
+   __args[2] = (prot);                                                  \
+   __args[3] = (flags);                                                 \
+   __args[4] = (fd);                                                    \
+   __args[5] = (offset);                                                \
+                                                                        \
+   ret = VG_(do_syscall)(__NR_mmap, (UInt)(&(__args[0])) );             \
+}
+
+#define PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do {\
+   UInt *arg_block = (UInt*)PLATFORM_SYSCALL_ARG1(tst->arch);   \
+   SYSCALL_TRACK( pre_mem_read, tst->tid, "mmap(args)", arg1, 6*sizeof(UWord) ); \
+   a1 = arg_block[0];                                           \
+   a2 = arg_block[1];                                           \
+   a3 = arg_block[2];                                           \
+   a4 = arg_block[3];                                           \
+   a5 = arg_block[4];                                           \
+   a6 = arg_block[5];                                           \
+} while (0)
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -163,6 +163,8 @@ typedef
    enum {
       Xalu_INVALID,
       Xalu_MOV,
+      Xalu_CMP,
+      Xalu_TEST,
       Xalu_ADD, Xalu_SUB, Xalu_ADC, Xalu_SBB, 
       Xalu_AND, Xalu_OR, Xalu_XOR 
    }
@@ -191,7 +193,9 @@ typedef
       Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
       Xin_Push,      /* push (32-bit?) value on stack */
       Xin_Call,      /* call to address in register */
-      Xin_GotoNZ     /* conditional/unconditional jmp to dst */
+      Xin_GotoNZ,    /* conditional/unconditional jmp to dst */
+      Xin_CMovZ,     /* conditional move when Z flag set */
+      Xin_LoadEX     /* mov{s,z}{b,w}l from mem to reg */
    }
    X86InstrTag;
 
@@ -228,6 +232,19 @@ typedef
             Bool   onlyWhenNZ;
             X86RI* dst;
          } GotoNZ;
+         /* Mov src to dst (both 32-bit regs?) when the Z flag is
+            set. */
+         struct {
+            X86RM* src;
+            HReg   dst;
+         } CMovZ;
+         /* Sign/Zero extending loads.  Dst size is always 32 bits. */
+         struct {
+            UChar     szSmall;
+            Bool      syned;
+            X86AMode* src;
+            HReg      dst;
+         } LoadEX;
       } Xin;
    }
    X86Instr;
@@ -238,6 +255,10 @@ extern X86Instr* X86Instr_Sh32   ( X86ShiftOp, UInt, X86RM* );
 extern X86Instr* X86Instr_Push   ( X86RMI* );
 extern X86Instr* X86Instr_Call   ( HReg );
 extern X86Instr* X86Instr_GotoNZ ( Bool onlyWhenNZ, X86RI* dst );
+extern X86Instr* X86Instr_CMovZ  ( X86RM* src, HReg dst );
+extern X86Instr* X86Instr_LoadEX ( UChar szSmall, Bool syned,
+                                   X86AMode* src, HReg dst );
+
 
 extern void ppX86Instr ( X86Instr* );
 

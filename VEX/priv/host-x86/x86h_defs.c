@@ -334,14 +334,16 @@ static void mapRegs_X86RM ( HRegRemap* m, X86RM* op )
 void ppX86AluOp ( X86AluOp op ) {
    Char* name;
    switch (op) {
-      case Xalu_MOV: name = "mov"; break;
-      case Xalu_ADD: name = "add"; break;
-      case Xalu_SUB: name = "sub"; break;
-      case Xalu_ADC: name = "adc"; break;
-      case Xalu_SBB: name = "sbb"; break;
-      case Xalu_AND: name = "and"; break;
-      case Xalu_OR:  name = "or";  break;
-      case Xalu_XOR: name = "xor"; break;
+      case Xalu_MOV:  name = "mov"; break;
+      case Xalu_CMP:  name = "cmp"; break;
+      case Xalu_TEST: name = "test"; break;
+      case Xalu_ADD:  name = "add"; break;
+      case Xalu_SUB:  name = "sub"; break;
+      case Xalu_ADC:  name = "adc"; break;
+      case Xalu_SBB:  name = "sbb"; break;
+      case Xalu_AND:  name = "and"; break;
+      case Xalu_OR:   name = "or";  break;
+      case Xalu_XOR:  name = "xor"; break;
       default: vpanic("ppX86AluOp");
    }
    vex_printf("%s", name);
@@ -409,6 +411,27 @@ X86Instr* X86Instr_GotoNZ ( Bool onlyWhenNZ, X86RI* dst ) {
    return i;
 }
 
+X86Instr* X86Instr_CMovZ  ( X86RM* src, HReg dst ) {
+   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag           = Xin_CMovZ;
+   i->Xin.CMovZ.src = src;
+   i->Xin.CMovZ.dst = dst;
+   return i;
+}
+
+X86Instr* X86Instr_LoadEX ( UChar szSmall, Bool syned,
+                            X86AMode* src, HReg dst ) {
+   X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                = Xin_LoadEX;
+   i->Xin.LoadEX.szSmall = szSmall;
+   i->Xin.LoadEX.syned   = syned;
+   i->Xin.LoadEX.src     = src;
+   i->Xin.LoadEX.dst     = dst;
+   vassert(szSmall == 1 || szSmall == 2);
+   return i;
+}
+
+
 void ppX86Instr ( X86Instr* i ) {
    switch (i->tag) {
       case Xin_Alu32R:
@@ -453,6 +476,20 @@ void ppX86Instr ( X86Instr* i ) {
             vex_printf(",%%eax ; ret");
          }
          return;
+      case Xin_CMovZ:
+         vex_printf("cmovz ");
+         ppX86RM(i->Xin.CMovZ.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.CMovZ.dst);
+         return;
+      case Xin_LoadEX:
+         vex_printf("mov%c%cl ",
+                    i->Xin.LoadEX.syned ? 's' : 'z',
+                    i->Xin.LoadEX.szSmall==1 ? 'b' : 'w');
+         ppX86AMode(i->Xin.LoadEX.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.LoadEX.dst);
+         return;
       default:
          vpanic("ppX86Instr");
    }
@@ -466,10 +503,16 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
    switch (i->tag) {
       case Xin_Alu32R:
          addRegUsage_X86RMI(u, i->Xin.Alu32R.src);
-         if (i->Xin.Alu32R.op == Xalu_MOV)
+         if (i->Xin.Alu32R.op == Xalu_MOV) {
             addHRegUse(u, HRmWrite,  i->Xin.Alu32R.dst);
-         else
-            addHRegUse(u, HRmModify, i->Xin.Alu32R.dst);
+            return;
+         }
+         if (i->Xin.Alu32R.op == Xalu_CMP 
+             || i->Xin.Alu32R.op == Xalu_TEST) {
+            addHRegUse(u, HRmRead,  i->Xin.Alu32R.dst);
+            return;
+         }
+         addHRegUse(u, HRmModify, i->Xin.Alu32R.dst);
          return;
       case Xin_Alu32M:
          addRegUsage_X86RI(u, i->Xin.Alu32M.src);

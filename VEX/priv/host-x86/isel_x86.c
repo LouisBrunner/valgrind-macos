@@ -93,7 +93,8 @@ static HReg newVRegI ( ISelEnv* env )
 /*---------------------------------------------------------*/
 
 /* forwards ... */
-static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e );
+static X86RMI*   iselIntExpr_RMI   ( ISelEnv* env, IRExpr* e );
+static X86RM*    iselIntExpr_RM    ( ISelEnv* env, IRExpr* e );
 static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e );
 
 
@@ -111,35 +112,50 @@ static X86Instr* mk_MOV_RR ( HReg src, HReg dst )
    there, and modify the copy.  The register allocator will do its
    best to map both vregs to the same real register, so the copies
    will often disappear later in the game.
+
+   This should handle expressions of 32, 16 and 8-bit type.  All
+   results are returned in a 32-bit register.  For 16- and 8-bit
+   expressions, the upper 16/24 bits are arbitrary, so you should
+   mask or sign extend partial values if necessary.
 */
 static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 {
    vassert(e);
    IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
 
    switch (e->tag) {
 
    case Iex_Tmp: {
-      vassert(ty == Ity_I32);
       return lookupIRTemp(env, e->Iex.Tmp.tmp);
    }
 
    case Iex_LDle: {
-      X86AMode* amode = iselIntExpr_AMode ( env, e->Iex.LDle.addr );
       HReg dst = newVRegI(env);
-      vassert(ty == Ity_I32);
-      addInstr(env, X86Instr_Alu32R(Xalu_MOV,
-				    X86RMI_Mem(amode), dst) );
-      return dst;
+      X86AMode* amode = iselIntExpr_AMode ( env, e->Iex.LDle.addr );
+      if (ty == Ity_I32) {
+         addInstr(env, X86Instr_Alu32R(Xalu_MOV,
+                                       X86RMI_Mem(amode), dst) );
+         return dst;
+      }
+      if (ty == Ity_I16) {
+         addInstr(env, X86Instr_LoadEX(2,False,amode,dst));
+         return dst;
+      }
+      break;
    }
 
    case Iex_Binop: {
       X86AluOp   aluOp;
       X86ShiftOp shOp;
-      vassert(ty == Ity_I32);
+      /* Is it an addition or logical style op? */
       switch (e->Iex.Binop.op) {
          case Iop_Add32: aluOp = Xalu_ADD; break;
+
+         case Iop_Sub8: case Iop_Sub16:
          case Iop_Sub32: aluOp = Xalu_SUB; break;
+
+         case Iop_And8:
          case Iop_And32: aluOp = Xalu_AND; break;
          case Iop_Or32:  aluOp = Xalu_OR;  break;
          case Iop_Xor32: aluOp = Xalu_XOR; break;
@@ -155,6 +171,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_Alu32R(aluOp, rmi, dst));
          return dst;
       }
+      /* Perhaps a shift op? */
       switch (e->Iex.Binop.op) {
          case Iop_Shl32: shOp = Xsh_SHL; break;
          case Iop_Shr32: shOp = Xsh_SHR; break;
@@ -173,6 +190,22 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       break;
    }
 
+   case Iex_Unop: {
+      switch (e->Iex.Unop.op) {
+         case Iop_8Uto32: {
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, mk_MOV_RR(src,dst) );
+            addInstr(env, X86Instr_Alu32R(Xalu_AND,
+                                          X86RMI_Imm(0xFF), dst));
+            return dst;
+         }
+         default: 
+            break;
+      }
+      break;
+   }
+
    case Iex_Get: {
       if (ty == Ity_I32) {
          HReg dst = newVRegI(env);
@@ -180,6 +213,14 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
                           Xalu_MOV, 
                           X86RMI_Mem(X86AMode_IR(e->Iex.Get.offset,
                                                  hregX86_EBP())),
+                          dst));
+         return dst;
+      }
+      if (ty == Ity_I8) {
+         HReg dst = newVRegI(env);
+         addInstr(env, X86Instr_LoadEX(
+                          1,False,
+                          X86AMode_IR(e->Iex.Get.offset,hregX86_EBP()),
                           dst));
          return dst;
       }
@@ -193,44 +234,52 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       vassert(ty == Ity_I32);
       /* be very restrictive for now.  Only 32-bit ints allowed
          for args and return type. */
-     if (e->Iex.CCall.retty != Ity_I32)
-        break;
+      if (e->Iex.CCall.retty != Ity_I32)
+         break;
       /* push args on the stack, right to left. */
-     nargs = 0;
-     while (e->Iex.CCall.args[nargs]) nargs++;
-     for (i = nargs-1; i >= 0; i--) {
-        arg = e->Iex.CCall.args[i];
-        if (typeOfIRExpr(env->type_env,arg) != Ity_I32)
-           goto irreducible;
-        addInstr(env, X86Instr_Push(iselIntExpr_RMI(env, arg)));
-     }
-     target = 0x12345678; //FIND_HELPER(e->Iex.CCall.name);
-     addInstr(env, X86Instr_Alu32R(
-				   Xalu_MOV,
-				   X86RMI_Imm(target),
-				   hregX86_EAX()));
-     addInstr(env, X86Instr_Call(hregX86_EAX()));
-     if (nargs > 0)
-       addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-				     X86RMI_Imm(4*nargs),
-				     hregX86_ESP()));
-
-     return hregX86_EAX();
+      nargs = 0;
+      while (e->Iex.CCall.args[nargs]) nargs++;
+      for (i = nargs-1; i >= 0; i--) {
+         arg = e->Iex.CCall.args[i];
+         if (typeOfIRExpr(env->type_env,arg) != Ity_I32)
+            goto irreducible;
+         addInstr(env, X86Instr_Push(iselIntExpr_RMI(env, arg)));
+      }
+      target = 0x12345678; //FIND_HELPER(e->Iex.CCall.name);
+      addInstr(env, X86Instr_Alu32R(
+                       Xalu_MOV,
+                       X86RMI_Imm(target),
+                       hregX86_EAX()));
+      addInstr(env, X86Instr_Call(hregX86_EAX()));
+      if (nargs > 0)
+         addInstr(env, X86Instr_Alu32R(Xalu_ADD,
+                          X86RMI_Imm(4*nargs),
+                          hregX86_ESP()));
+      return hregX86_EAX();
    }
 
    /* 32/16/8-bit literals */
    case Iex_Const: {
-      UInt u;
-      vassert(ty == Ity_I32 || ty == Ity_I8);
-      switch (e->Iex.Const.con->tag) {
-         case Ico_U32: u = e->Iex.Const.con->Ico.U32; break;
-         case Ico_U16: u = 0xFFFF & (e->Iex.Const.con->Ico.U16); break;
-         case Ico_U8:  u = 0xFF   & (e->Iex.Const.con->Ico.U8); break;
-         default: vpanic("iselIntExpr_R.Iex_Const(x86h)");
-      }
-      HReg r = newVRegI(env);
-      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(u), r));
+      X86RMI* rmi = iselIntExpr_RMI ( env, e );
+      HReg    r   = newVRegI(env);
+      addInstr(env, X86Instr_Alu32R(Xalu_MOV, rmi, r));
       return r;
+   }
+
+   case Iex_Mux0X: {
+      if (ty == Ity_I32 
+         && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
+	HReg rX   = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
+	X86RM* r0 = iselIntExpr_RM(env, e->Iex.Mux0X.expr0);
+	HReg dst = newVRegI(env);
+	addInstr(env, mk_MOV_RR(rX,dst));
+	HReg r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
+	addInstr(env, X86Instr_Alu32R(Xalu_TEST,
+				      X86RMI_Imm(0xFF), r8));
+	addInstr(env, X86Instr_CMovZ(r0,dst));
+	return dst;
+      }
+      break;
    }
 
    default: 
@@ -250,12 +299,13 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 
 /* Return an AMode which computes the value of the specified
    expression, possibly also adding insns to the code list as a
-   result.  
+   result.  The expression may only be a 32-bit one.
 */
 static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 {
    vassert(e);
-   vassert(typeOfIRExpr(env->type_env,e) == Ity_I32);
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I32);
 
    /* Add32(expr1, Shl32(expr2, imm)) */
    if (e->tag == Iex_Binop
@@ -290,21 +340,29 @@ static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 }
 
 
-/* Similarly, calculate an expression into an X86RMI operand. */
+/* Similarly, calculate an expression into an X86RMI operand.  As with
+   iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
 
 static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
 {
    vassert(e);
-   vassert(typeOfIRExpr(env->type_env,e) == Ity_I32);
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
    /* special case: immediate */
-   if (e->tag == Iex_Const 
-       && e->Iex.Const.con->tag == Ico_U32) {
-      return X86RMI_Imm(e->Iex.Const.con->Ico.U32);
+   if (e->tag == Iex_Const) {
+      UInt u;
+      switch (e->Iex.Const.con->tag) {
+         case Ico_U32: u = e->Iex.Const.con->Ico.U32; break;
+         case Ico_U16: u = 0xFFFF & (e->Iex.Const.con->Ico.U16); break;
+         case Ico_U8:  u = 0xFF   & (e->Iex.Const.con->Ico.U8); break;
+         default: vpanic("iselIntExpr_RMI.Iex_Const(x86h)");
+      }
+      return X86RMI_Imm(u);
    }
 
    /* special case: 32-bit GET */
-   if (e->tag == Iex_Get && e->Iex.Get.ty ==Ity_I32) {
+   if (e->tag == Iex_Get && ty == Ity_I32) {
       return X86RMI_Mem(X86AMode_IR(e->Iex.Get.offset,
                                     hregX86_EBP()));
    }
@@ -319,17 +377,25 @@ static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
 }
 
 
-/* Calculate an expression into an X86RI operand. */
+/* Calculate an expression into an X86RI operand.  As with
+   iselIntExpr_R, the expression can have type 32, 16 or 8 bits. */
 
 static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
 {
    vassert(e);
-   vassert(typeOfIRExpr(env->type_env,e) == Ity_I32);
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
    /* special case: immediate */
-   if (e->tag == Iex_Const 
-       && e->Iex.Const.con->tag == Ico_U32) {
-      return X86RI_Imm(e->Iex.Const.con->Ico.U32);
+   if (e->tag == Iex_Const) {
+      UInt u;
+      switch (e->Iex.Const.con->tag) {
+         case Ico_U32: u = e->Iex.Const.con->Ico.U32; break;
+         case Ico_U16: u = 0xFFFF & (e->Iex.Const.con->Ico.U16); break;
+         case Ico_U8:  u = 0xFF   & (e->Iex.Const.con->Ico.U8); break;
+         default: vpanic("iselIntExpr_RMI.Iex_Const(x86h)");
+      }
+      return X86RI_Imm(u);
    }
 
    /* default case: calculate into a register and return that */
@@ -338,6 +404,32 @@ static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
       return X86RI_Reg(r);
    }
 }
+
+
+/* Similarly, calculate an expression into an X86RM operand.  As with
+   iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
+
+static X86RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
+{
+   vassert(e);
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
+
+   /* special case: 32-bit GET */
+   if (e->tag == Iex_Get && ty == Ity_I32) {
+      return X86RM_Mem(X86AMode_IR(e->Iex.Get.offset,
+                                   hregX86_EBP()));
+   }
+
+   /* special case: load from memory */
+
+   /* default case: calculate into a register and return that */
+   {
+      HReg r = iselIntExpr_R ( env, e );
+      return X86RM_Reg(r);
+   }
+}
+
 
 
 /*---------------------------------------------------------*/
@@ -385,7 +477,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_Tmp: {
       IRTemp tmp = stmt->Ist.Tmp.tmp;
       IRType ty = lookupIRTypeEnv(env->type_env, tmp);
-      if (ty == Ity_I32) {
+      if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
          X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.expr);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, X86Instr_Alu32R(Xalu_MOV,rmi,dst));
@@ -471,6 +563,7 @@ HInstrArray* iselBB_X86 ( IRBB* bb )
       switch (bb->tyenv->types[i]) {
          case Ity_Bit:
          case Ity_I8:
+         case Ity_I16:
          case Ity_I32: hreg   = mkHReg(i, HRcInt, True); break;
          case Ity_I64: hreg   = mkHReg(i, HRcInt, True);
                        hregHI = mkHReg(i, HRcInt, True); break;

@@ -453,17 +453,17 @@ static void setFlags_DSTus_DST1 ( IROp    op8,
 
    /* CC_SRC = undershifted %d after, CC_DST = %d afterwards */
    stmt( IRStmt_Put( OFFB_CC_OP,
-                     IRExpr_Mux10( mkexpr(guard),
-                                   mkU32(ccOp),
-                                   IRExpr_Get(OFFB_CC_OP,Ity_I32))) );
+                     IRExpr_Mux0X( mkexpr(guard),
+                                   IRExpr_Get(OFFB_CC_OP,Ity_I32),
+                                   mkU32(ccOp))) );
    stmt( IRStmt_Put( OFFB_CC_SRC, 
-                     IRExpr_Mux10( mkexpr(guard),
-                                   widenUTo32(mkexpr(dstUS)),
-                                   IRExpr_Get(OFFB_CC_SRC,Ity_I32))) );
+                     IRExpr_Mux0X( mkexpr(guard),
+                                   IRExpr_Get(OFFB_CC_SRC,Ity_I32),
+                                   widenUTo32(mkexpr(dstUS)))) );
    stmt( IRStmt_Put( OFFB_CC_DST,
-                     IRExpr_Mux10( mkexpr(guard),
-                                   widenUTo32(mkexpr(dst1)),
-                                   IRExpr_Get(OFFB_CC_DST,Ity_I32))) );
+                     IRExpr_Mux0X( mkexpr(guard),
+                                   IRExpr_Get(OFFB_CC_DST,Ity_I32),
+                                   widenUTo32(mkexpr(dst1)))) );
 }
 
 
@@ -2030,7 +2030,7 @@ UInt dis_Grp2 ( UChar  sorb,
 
       IRTemp subshift  = newTemp(ty);
       IRTemp shift_amt = newTemp(Ity_I8);
-      IRTemp guard     = newTemp(Ity_Bit);
+      // IRTemp guard     = newTemp(Ity_Bit);
 
       switch (gregOfRM(modrm)) { 
          case 4: op8 = Iop_Shl8; break;
@@ -2054,11 +2054,11 @@ UInt dis_Grp2 ( UChar  sorb,
                                mkexpr(shift_amt), mkU8(1)),
                          mkU8(8*sz-1))));
       /* guard = (shift_amt != 0) */
-      assign(guard, binop(Iop_CmpNE8, 
-                           mkexpr(shift_amt), mkU8(0)));
+      //      assign(guard, binop(Iop_CmpNE8, 
+      //                     mkexpr(shift_amt), mkU8(0)));
 
       /* Build the flags thunk. */
-      setFlags_DSTus_DST1(op8, subshift, dst1, ty, guard);
+      setFlags_DSTus_DST1(op8, subshift, dst1, ty, shift_amt);
    } else {
       /* Rotate */
       vpanic("dis_Grp2: rotate");
@@ -3203,7 +3203,7 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
    IRTemp esrc     = newTemp(ty);
    IRTemp addr     = INVALID_IRTEMP;
    IRTemp tmpSH    = newTemp(Ity_I8);
-   IRTemp guard    = newTemp(Ity_Bit);
+   //   IRTemp guard    = newTemp(Ity_Bit);
    IRTemp tmpL     = INVALID_IRTEMP;
    IRTemp tmpRes   = INVALID_IRTEMP;
    IRTemp tmpSubSh = INVALID_IRTEMP;
@@ -3276,11 +3276,11 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
                       binop(Iop_And8, 
                             binop(Iop_Sub8, mkexpr(tmpSH), mkU8(1) ),
                             mask))) );
-   assign( guard, binop(Iop_CmpNE8, mkexpr(tmpSH), mkU8(0)) );
+   //assign( guard, binop(Iop_CmpNE8, mkexpr(tmpSH), mkU8(0)) );
 
    setFlags_DSTus_DST1 ( 
 			left_shift ? Iop_Shl8 : Iop_Sar8,
-			tmpSubSh, tmpRes, ty, guard );
+			tmpSubSh, tmpRes, ty, tmpSH );
 
    /* Put result back. */
 

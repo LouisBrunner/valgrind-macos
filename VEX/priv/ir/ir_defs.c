@@ -162,13 +162,13 @@ void ppIRExpr ( IRExpr* e )
       vex_printf("):");
       ppIRType(e->Iex.CCall.retty);
       break;
-    case Iex_Mux10:
-      vex_printf("Mux10(");
-      ppIRExpr(e->Iex.Mux10.cond);
+    case Iex_Mux0X:
+      vex_printf("Mux0X(");
+      ppIRExpr(e->Iex.Mux0X.cond);
       vex_printf(",");
-      ppIRExpr(e->Iex.Mux10.expr1);
+      ppIRExpr(e->Iex.Mux0X.expr0);
       vex_printf(",");
-      ppIRExpr(e->Iex.Mux10.expr0);
+      ppIRExpr(e->Iex.Mux0X.exprX);
       vex_printf(")");
       break;
     default:
@@ -343,12 +343,12 @@ IRExpr* IRExpr_CCall ( Char* name, IRType retty, IRExpr** args ) {
    e->Iex.CCall.args  = args;
    return e;
 }
-IRExpr* IRExpr_Mux10 ( IRExpr* cond, IRExpr* expr1, IRExpr* expr0 ) {
+IRExpr* IRExpr_Mux0X ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX ) {
    IRExpr* e          = LibVEX_Alloc(sizeof(IRExpr));
-   e->tag             = Iex_Mux10;
-   e->Iex.Mux10.cond  = cond;
-   e->Iex.Mux10.expr1 = expr1;
-   e->Iex.Mux10.expr0 = expr0;
+   e->tag             = Iex_Mux0X;
+   e->Iex.Mux0X.cond  = cond;
+   e->Iex.Mux0X.expr0 = expr0;
+   e->Iex.Mux0X.exprX = exprX;
    return e;
 }
 
@@ -564,8 +564,8 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
          return t_dst;
       case Iex_CCall:
          return e->Iex.CCall.retty;
-      case Iex_Mux10:
-         return typeOfIRExpr(tyenv, e->Iex.Mux10.expr1);
+      case Iex_Mux0X:
+         return typeOfIRExpr(tyenv, e->Iex.Mux0X.expr0);
       default:
          ppIRExpr(e);
          vpanic("typeOfIRExpr");
@@ -646,10 +646,10 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
          for (i = 0; expr->Iex.CCall.args[i]; i++)
             useBeforeDef_Expr(bb,stmt,expr->Iex.CCall.args[i],def_counts);
          break;
-      case Iex_Mux10:
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux10.cond,def_counts);
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux10.expr1,def_counts);
-         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux10.expr0,def_counts);
+      case Iex_Mux0X:
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux0X.cond,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux0X.expr0,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.Mux0X.exprX,def_counts);
          break;
       default:
          vpanic("useBeforeDef_Expr");
@@ -742,15 +742,15 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
          break;
       case Iex_Const:
          break;
-      case Iex_Mux10:
-         tcExpr(bb,stmt, expr->Iex.Mux10.cond, gWordTy);
-         tcExpr(bb,stmt, expr->Iex.Mux10.expr1, gWordTy);
-         tcExpr(bb,stmt, expr->Iex.Mux10.expr0, gWordTy);
-         if (typeOfIRExpr(tyenv, expr->Iex.Mux10.cond) != Ity_Bit)
-            sanityCheckFail(bb,stmt,"Iex.Mux10.cond: cond :: Ity_Bit");
-         if (typeOfIRExpr(tyenv, expr->Iex.Mux10.expr1)
-             != typeOfIRExpr(tyenv, expr->Iex.Mux10.expr0))
-            sanityCheckFail(bb,stmt,"Iex.Mux10: expr1/expr0 mismatch");
+      case Iex_Mux0X:
+         tcExpr(bb,stmt, expr->Iex.Mux0X.cond, gWordTy);
+         tcExpr(bb,stmt, expr->Iex.Mux0X.expr0, gWordTy);
+         tcExpr(bb,stmt, expr->Iex.Mux0X.exprX, gWordTy);
+         if (typeOfIRExpr(tyenv, expr->Iex.Mux0X.cond) != Ity_I8)
+            sanityCheckFail(bb,stmt,"Iex.Mux0X.cond: cond :: Ity_I8");
+         if (typeOfIRExpr(tyenv, expr->Iex.Mux0X.expr0)
+             != typeOfIRExpr(tyenv, expr->Iex.Mux0X.exprX))
+            sanityCheckFail(bb,stmt,"Iex.Mux0X: expr0/exprX mismatch");
          break;
        default: 
          vpanic("tcExpr");

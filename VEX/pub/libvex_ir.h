@@ -72,8 +72,6 @@ typedef
       Iop_INVALID=0x13000,
       Iop_Add8,  Iop_Add16,  Iop_Add32,  Iop_Add64,
       Iop_Sub8,  Iop_Sub16,  Iop_Sub32,  Iop_Sub64,
-//Iop_Adc8,  Iop_Adc16,  Iop_Adc32,  Iop_Adc64,
-//Iop_Sbb8,  Iop_Sbb16,  Iop_Sbb32,  Iop_Sbb64,
       /* Signless mul.  MullS/MullU is elsewhere. */
       Iop_Mul8,  Iop_Mul16,  Iop_Mul32,  Iop_Mul64,
       Iop_Or8,   Iop_Or16,   Iop_Or32,   Iop_Or64,
@@ -124,7 +122,7 @@ data Expr
 */
 typedef
    enum { Iex_Get, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, 
-          Iex_Const, Iex_CCall, Iex_Mux10 }
+          Iex_Const, Iex_CCall, Iex_Mux0X }
    IRExprTag;
 
 typedef 
@@ -161,9 +159,9 @@ typedef
          }  CCall;
          struct {
             struct _IRExpr* cond;
-            struct _IRExpr* expr1;
             struct _IRExpr* expr0;
-         } Mux10;
+            struct _IRExpr* exprX;
+         } Mux0X;
       } Iex;
    }
    IRExpr;
@@ -175,7 +173,7 @@ extern IRExpr* IRExpr_Unop  ( IROp op, IRExpr* arg );
 extern IRExpr* IRExpr_LDle  ( IRType ty, IRExpr* addr );
 extern IRExpr* IRExpr_Const ( IRConst* con );
 extern IRExpr* IRExpr_CCall ( Char* name, IRType retty, IRExpr** args );
-extern IRExpr* IRExpr_Mux10 ( IRExpr* cond, IRExpr* expr1, IRExpr* expr0 );
+extern IRExpr* IRExpr_Mux0X ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
 
 extern void ppIRExpr ( IRExpr* );
 

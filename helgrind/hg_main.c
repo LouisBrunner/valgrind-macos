@@ -142,7 +142,7 @@ typedef
    struct _HG_Chunk {
       struct _HG_Chunk* next;
       Addr          data;           /* ptr to actual block              */
-      Int           size;           /* size requested                   */
+      SizeT         size;           /* size requested                   */
       ExeContext*   where;          /* where it was allocated           */
       ThreadId      tid;            /* allocating thread                */
    }
@@ -2403,7 +2403,7 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 	  seg != NULL; 
 	  seg = VG_(next_seginfo)(seg)) {
 	 Addr base = VG_(seg_start)(seg);
-	 UInt size = VG_(seg_size)(seg);
+	 SizeT size = VG_(seg_size)(seg);
 	 const UChar *filename = VG_(seg_filename)(seg);
 
 	 if (a >= base && a < base+size) {

@@ -388,7 +388,7 @@ extern Long  VG_(atoll16) ( Char* str );
 extern Long  VG_(atoll36) ( UInt base, Char* str );
 
 /* Like qsort(), but does shell-sort.  The size==1/2/4 cases are specialised. */
-extern void VG_(ssort)( void* base, UInt nmemb, UInt size,
+extern void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
                         Int (*compar)(void*, void*) );
 
 
@@ -460,7 +460,7 @@ extern Int  VG_(stat)   ( Char* file_name, struct vki_stat* buf );
 extern Int  VG_(fstat)  ( Int   fd,        struct vki_stat* buf );
 extern Int  VG_(dup2)   ( Int oldfd, Int newfd );
 
-extern Char* VG_(getcwd) ( Char* buf, Int size );
+extern Char* VG_(getcwd) ( Char* buf, SizeT size );
 
 /* Easier to use than VG_(getcwd)() -- does the buffer fiddling itself.
    String put into 'cwd' is VG_(malloc)'d, and should be VG_(free)'d.
@@ -499,9 +499,9 @@ extern Addr VG_(get_shadow_size)(void);
 
 extern void *VG_(shadow_alloc)(UInt size);
 
-extern Bool VG_(is_addressable)(Addr p, Int sz);
+extern Bool VG_(is_addressable)(Addr p, SizeT sz);
 
-extern Addr VG_(client_alloc)(Addr base, UInt len, UInt prot, UInt flags);
+extern Addr VG_(client_alloc)(Addr base, SizeT len, UInt prot, UInt flags);
 extern void VG_(client_free)(Addr addr);
 
 extern Bool VG_(is_valgrind_addr)(Addr a);
@@ -1557,9 +1557,9 @@ extern SegInfo* VG_(get_obj)  ( Addr a );
 
 extern const SegInfo* VG_(next_seginfo)  ( const SegInfo *seg );
 extern       Addr     VG_(seg_start)     ( const SegInfo *seg );
-extern       UInt     VG_(seg_size)      ( const SegInfo *seg );
+extern       SizeT    VG_(seg_size)      ( const SegInfo *seg );
 extern const UChar*   VG_(seg_filename)  ( const SegInfo *seg );
-extern       UInt     VG_(seg_sym_offset)( const SegInfo *seg );
+extern       ULong    VG_(seg_sym_offset)( const SegInfo *seg );
 
 typedef
    enum {

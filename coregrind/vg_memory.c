@@ -715,14 +715,12 @@ static void segv_handler(Int seg)
    SIGSEGV handler, then try to touch the memory.  No signal = good,
    signal = bad.
  */
-Bool VG_(is_addressable)(Addr p, Int size)
+Bool VG_(is_addressable)(Addr p, SizeT size)
 {
    volatile Char * volatile cp = (volatile Char *)p;
    volatile Bool ret;
    struct vki_sigaction sa, origsa;
    vki_sigset_t mask;
-
-   vg_assert(size > 0);
 
    sa.ksa_handler = segv_handler;
    sa.sa_flags = 0;
@@ -748,7 +746,7 @@ Bool VG_(is_addressable)(Addr p, Int size)
 /*--------------------------------------------------------------------*/
 
 // Returns 0 on failure.
-Addr VG_(client_alloc)(Addr addr, UInt len, UInt prot, UInt sf_flags)
+Addr VG_(client_alloc)(Addr addr, SizeT len, UInt prot, UInt sf_flags)
 {
    len = PGROUNDUP(len);
 

@@ -60,8 +60,8 @@ typedef
 typedef
    struct {                   // Used by:
       AddrKind akind;         //   ALL
-      Int blksize;            //   Freed, Mallocd
-      Int rwoffset;           //   Freed, Mallocd
+      SizeT blksize;          //   Freed, Mallocd
+      SSizeT rwoffset;        //   Freed, Mallocd
       ExeContext* lastchange; //   Freed, Mallocd
       ThreadId stack_tid;     //   Stack
       Bool maybe_gcc;         // True if just below %esp -- could be a gcc bug.

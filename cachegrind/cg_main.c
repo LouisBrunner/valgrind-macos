@@ -1024,12 +1024,12 @@ void SK_(fini)(Int exitcode)
 /*--------------------------------------------------------------------*/
 
 // Called when a translation is invalidated due to code unloading.
-void SK_(discard_basic_block_info) ( Addr a, UInt size )
+void SK_(discard_basic_block_info) ( Addr a, SizeT size )
 {
    VgHashNode** prev_next_ptr;
    VgHashNode*  bb_info;
 
-   if (0) VG_(printf)( "discard_basic_block_info: %p, %u\n", a, size);
+   if (0) VG_(printf)( "discard_basic_block_info: %p, %llu\n", a, (ULong)size);
 
    // Get BB info, remove from table, free BB info.  Simple!
    bb_info = VG_(HT_get_node)(instr_info_table, a, &prev_next_ptr);

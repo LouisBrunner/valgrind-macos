@@ -1315,18 +1315,18 @@ Int VG_(unlink) ( Char* file_name )
 
 /* Nb: we do not allow the Linux extension which malloc()s memory for the
    buffer if buf==NULL, because we don't want Linux calling malloc() */
-Char* VG_(getcwd) ( Char* buf, Int size )
+Char* VG_(getcwd) ( Char* buf, SizeT size )
 {
    Int res;
    vg_assert(buf != NULL);
-   res = VG_(do_syscall)(__NR_getcwd, (UInt)buf, (UInt)size);
+   res = VG_(do_syscall)(__NR_getcwd, (UInt)buf, size);
    return VG_(is_kerror)(res) ? ((Char*)NULL) : (Char*)res;
 }
 
 /* Alternative version that does allocate the memory.  Easier to use. */
 Bool VG_(getcwd_alloc) ( Char** out )
 {
-   UInt size = 4;
+   SizeT size = 4;
 
    *out = NULL;
    while (True) {
@@ -1728,7 +1728,7 @@ Int VG_(log2) ( Int x )
 
 
 // Generic shell sort.  Like stdlib.h's qsort().
-void VG_(ssort)( void* base, UInt nmemb, UInt size,
+void VG_(ssort)( void* base, SizeT nmemb, SizeT size,
                  Int (*compar)(void*, void*) )
 {
    Int   incs[14] = { 1, 4, 13, 40, 121, 364, 1093, 3280,
@@ -1758,13 +1758,20 @@ void VG_(ssort)( void* base, UInt nmemb, UInt size,
    }
 
    // Specialised cases
-   if (sizeof(UInt) == size) {
+   if (sizeof(ULong) == size) {
 
       #define ASSIGN(dst, dsti, src, srci) \
       (dst)[(dsti)] = (src)[(srci)];      
       
       #define COMPAR(dst, dsti, src, srci) \
       compar( (void*)(& (dst)[(dsti)]), (void*)(& (src)[(srci)]) )
+
+      ULong* a = (ULong*)base;
+      ULong  v[1];
+
+      SORT;
+
+   } else if (sizeof(UInt) == size) {
 
       UInt* a = (UInt*)base;
       UInt  v[1];

@@ -1601,7 +1601,7 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
    accuracy of error messages, but we need to do it in order to
    maintain the no-overlapping invariant.
 */
-static void unload_symbols ( Addr start, UInt length )
+static void unload_symbols ( Addr start, SizeT length )
 {
    SegInfo *prev, *curr;
 
@@ -2541,7 +2541,7 @@ Addr VG_(seg_start)(const SegInfo* seg)
    return seg->start;
 }
 
-UInt VG_(seg_size)(const SegInfo* seg)
+SizeT VG_(seg_size)(const SegInfo* seg)
 {
    return seg->size;
 }
@@ -2551,7 +2551,7 @@ const UChar* VG_(seg_filename)(const SegInfo* seg)
    return seg->filename;
 }
 
-UInt VG_(seg_sym_offset)(const SegInfo* seg)
+ULong VG_(seg_sym_offset)(const SegInfo* seg)
 {
    return seg->offset;
 }

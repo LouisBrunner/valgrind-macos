@@ -876,7 +876,7 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UInt* arg, UInt* ret )
 
    case VG_USERREQ__MALLOCLIKE_BLOCK: {
       Addr p         = (Addr)arg[1];
-      UInt sizeB     =       arg[2];
+      SizeT sizeB    =       arg[2];
       UInt rzB       =       arg[3];
       Bool is_zeroed = (Bool)arg[4];
 

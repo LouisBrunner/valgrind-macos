@@ -138,7 +138,7 @@ Bool SK_(recognised_suppression) ( Char* name, Supp* su )
 static void ac_ACCESS4_SLOWLY ( Addr a, Bool isWrite );
 static void ac_ACCESS2_SLOWLY ( Addr a, Bool isWrite );
 static void ac_ACCESS1_SLOWLY ( Addr a, Bool isWrite );
-static void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size, Bool isWrite );
+static void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, SizeT size, Bool isWrite );
 
 /*------------------------------------------------------------*/
 /*--- Data defns.                                          ---*/
@@ -833,7 +833,7 @@ static void ac_ACCESS1_SLOWLY ( Addr a, Bool isWrite)
    ------------------------------------------------------------------ */
 
 static 
-void ac_fpu_ACCESS_check ( Addr addr, Int size, Bool isWrite )
+void ac_fpu_ACCESS_check ( Addr addr, SizeT size, Bool isWrite )
 {
    /* Ensure the read area is both addressible and valid (ie,
       readable).  If there's an address error, don't report a value
@@ -912,13 +912,13 @@ void ac_fpu_ACCESS_check ( Addr addr, Int size, Bool isWrite )
 }
 
 REGPARM(2)
-static void ac_fpu_READ_check ( Addr addr, Int size )
+static void ac_fpu_READ_check ( Addr addr, SizeT size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/False );
 }
 
 REGPARM(2)
-static void ac_fpu_WRITE_check ( Addr addr, Int size )
+static void ac_fpu_WRITE_check ( Addr addr, SizeT size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/True );
 }
@@ -927,7 +927,7 @@ static void ac_fpu_WRITE_check ( Addr addr, Int size )
    Slow, general cases for FPU access checks.
    ------------------------------------------------------------------ */
 
-void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size, Bool isWrite )
+void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, SizeT size, Bool isWrite )
 {
    Int  i;
    Bool aerr = False;

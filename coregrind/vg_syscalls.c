@@ -113,7 +113,7 @@ static void do_atfork_child(ThreadId tid)
 
 /* return true if address range entirely contained within client
    address space */
-static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *syscallname)
+static Bool valid_client_addr(Addr start, SizeT size, ThreadId tid, const Char *syscallname)
 {
    Addr end = start+size;
    Addr cl_base = VG_(client_base);
@@ -165,7 +165,7 @@ static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *s
    idea of addressible memory diverges from that of the
    kernel's, which causes the leak detector to crash. */
 static 
-void mash_addr_and_len( Addr* a, UInt* len)
+void mash_addr_and_len( Addr* a, SizeT* len)
 {
    Addr ra;
    
@@ -175,7 +175,7 @@ void mash_addr_and_len( Addr* a, UInt* len)
 }
 
 static
-void mmap_segment ( Addr a, UInt len, UInt prot, UInt mm_flags, Int fd, ULong offset )
+void mmap_segment ( Addr a, SizeT len, UInt prot, UInt mm_flags, Int fd, ULong offset )
 {
    Bool rr, ww, xx;
    UInt flags;
@@ -200,8 +200,8 @@ void mmap_segment ( Addr a, UInt len, UInt prot, UInt mm_flags, Int fd, ULong of
 }
 
 static 
-Addr mremap_segment ( Addr old_addr, UInt old_size,
-		      Addr new_addr, UInt new_size,
+Addr mremap_segment ( Addr old_addr, SizeT old_size,
+		      Addr new_addr, SizeT new_size,
 		      UInt flags, ThreadId tid)
 {
    Addr ret;
@@ -691,7 +691,7 @@ Char *strdupcat ( const Char *s1, const Char *s2, ArenaId aid )
 
 static 
 void pre_mem_read_sendmsg ( ThreadId tid,
-                            Char *msg, UInt base, UInt size )
+                            Char *msg, Addr base, SizeT size )
 {
    Char *outmsg = strdupcat ( "socketcall.sendmsg", msg, VG_AR_TRANSIENT );
    SYSCALL_TRACK( pre_mem_read, tid, outmsg, base, size );
@@ -701,7 +701,7 @@ void pre_mem_read_sendmsg ( ThreadId tid,
 
 static 
 void pre_mem_write_recvmsg ( ThreadId tid,
-                             Char *msg, UInt base, UInt size )
+                             Char *msg, Addr base, SizeT size )
 {
    Char *outmsg = strdupcat ( "socketcall.recvmsg", msg, VG_AR_TRANSIENT );
    SYSCALL_TRACK( pre_mem_write, tid, outmsg, base, size );
@@ -710,7 +710,7 @@ void pre_mem_write_recvmsg ( ThreadId tid,
 
 static
 void post_mem_write_recvmsg ( ThreadId tid,
-                              Char *fieldName, UInt base, UInt size )
+                              Char *fieldName, Addr base, SizeT size )
 {
    VG_TRACK( post_mem_write, base, size );
 }
@@ -719,7 +719,7 @@ static
 void msghdr_foreachfield ( 
         ThreadId tid, 
         struct vki_msghdr *msg, 
-        void (*foreach_func)( ThreadId, Char *, UInt, UInt ) 
+        void (*foreach_func)( ThreadId, Char *, Addr, SizeT ) 
      )
 {
    if ( !msg )
@@ -1188,8 +1188,8 @@ PRE(fsetxattr)
 {
    /* int fsetxattr (int filedes, const char *name,
       const void *value, size_t size, int flags); */
-   MAYBE_PRINTF("fsetxattr ( %d, %p, %p, %d, %d )\n",
-		arg1, arg2, arg3, arg4, arg5);
+   MAYBE_PRINTF("fsetxattr ( %d, %p, %p, %llu, %d )\n",
+		arg1, arg2, arg3, (ULong)arg4, arg5);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "fsetxattr(name)", arg2 );
    SYSCALL_TRACK( pre_mem_read, tid, "fsetxattr(value)", arg3, arg4 );
 }
@@ -1246,7 +1246,7 @@ POSTALIAS(llistxattr, listxattr);
 PRE(flistxattr)
 {
    /* ssize_t flistxattr (int filedes, char *list, size_t size); */
-   MAYBE_PRINTF("flistxattr ( %d, %p, %d )\n", arg1, arg2, arg3);
+   MAYBE_PRINTF("flistxattr ( %d, %p, %llu )\n", arg1, arg2, (ULong)arg3);
    SYSCALL_TRACK( pre_mem_write, tid, "listxattr(list)", arg2, arg3 );
 }
 
@@ -1307,7 +1307,7 @@ PRE(fdatasync)
 PRE(msync)
 {
    /* int msync(const void *start, size_t length, int flags); */
-   MAYBE_PRINTF("msync ( %p, %d, %d )\n", arg1,arg2,arg3);
+   MAYBE_PRINTF("msync ( %p, %llu, %d )\n", arg1,(ULong)arg2,arg3);
    SYSCALL_TRACK( pre_mem_read, tid, "msync(start)", arg1, arg2 );
 }
 
@@ -1431,7 +1431,7 @@ PRE(chroot)
 PRE(madvise)
 {
    /* int madvise(void *start, size_t length, int advice ); */
-   MAYBE_PRINTF("madvise ( %p, %d, %d )\n", arg1,arg2,arg3);
+   MAYBE_PRINTF("madvise ( %p, %llu, %d )\n", arg1,(ULong)arg2,arg3);
 }
 
 PRE(mremap)
@@ -1440,8 +1440,8 @@ PRE(mremap)
    // which lacks the fifth 'new_address' argument.
    /* void* mremap(void * old_address, size_t old_size, 
       size_t new_size, unsigned long flags, void * new_address); */
-   MAYBE_PRINTF("mremap ( %p, %d, %d, 0x%x, %p )\n", 
-		arg1, arg2, arg3, arg4, arg5);
+   MAYBE_PRINTF("mremap ( %p, %llu, %d, 0x%x, %p )\n", 
+		arg1, (ULong)arg2, arg3, arg4, arg5);
 
    set_result( mremap_segment((Addr)arg1, arg2, (Addr)arg5, arg3, arg4, tid) );
 }
@@ -1498,13 +1498,13 @@ PRE(sched_setscheduler)
 PRE(mlock)
 {
    /* int mlock(const void * addr, size_t len) */
-   MAYBE_PRINTF("mlock ( %p, %d )\n", arg1, arg2);
+   MAYBE_PRINTF("mlock ( %p, %llu )\n", arg1, (ULong)arg2);
 }
 
 PRE(munlock)
 {
    /* int munlock(const void * addr, size_t len) */
-   MAYBE_PRINTF("munlock ( %p, %d )\n", arg1, arg2);
+   MAYBE_PRINTF("munlock ( %p, %llu )\n", arg1, (ULong)arg2);
 }
 
 PRE(mlockall)
@@ -1571,7 +1571,7 @@ PRE(sendfile)
 {
    /* ssize_t sendfile(int out_fd, int in_fd, off_t *offset, 
       size_t count) */
-   MAYBE_PRINTF("sendfile ( %d, %d, %p, %d )\n",arg1,arg2,arg3,arg4);
+   MAYBE_PRINTF("sendfile ( %d, %d, %p, %llu )\n",arg1,arg2,arg3,(ULong)arg4);
    if (arg3 != (UInt)NULL)
       SYSCALL_TRACK( pre_mem_write, tid, "sendfile(offset)",
 		     arg3, sizeof(vki_off_t) );
@@ -1586,7 +1586,7 @@ PRE(sendfile64)
 {
    /* ssize_t sendfile64(int out_df, int in_fd, loff_t *offset,
       size_t count); */
-   MAYBE_PRINTF("sendfile64 ( %d, %d, %p, %d )\n",arg1,arg2,arg3,arg4);
+   MAYBE_PRINTF("sendfile64 ( %d, %d, %p, %llu )\n",arg1,arg2,arg3,(ULong)arg4);
    if (arg3 != (UInt)NULL)
       SYSCALL_TRACK( pre_mem_write, tid, "sendfile64(offset)",
 		     arg3, sizeof(vki_loff_t) );
@@ -1602,8 +1602,8 @@ POST(sendfile64)
 PRE(pwrite64)
 {
    // ssize_t pwrite64(int fd, const void *buf, size_t nbytes, loff_t offset);
-   MAYBE_PRINTF("pwrite64 ( %d, %p, %d, %lld )\n",
-                arg1, arg2, arg3, arg4|((ULong) arg5 << 32));
+   MAYBE_PRINTF("pwrite64 ( %d, %p, %llu, %lld )\n",
+                arg1, arg2, (ULong)arg3, arg4|((ULong) arg5 << 32));
    SYSCALL_TRACK( pre_mem_read, tid, "pwrite64(buf)", arg2, arg3 );
 }
 
@@ -1629,7 +1629,7 @@ POST(fstatfs)
 PRE(fstatfs64)
 {
    /* int fstatfs64(int fd, size_t sz, struct statfs *buf); */
-   MAYBE_PRINTF("fstatfs64 ( %d, %p )\n",arg1,arg2);
+   MAYBE_PRINTF("fstatfs64 ( %d, %llu, %p )\n",arg1,(ULong)arg2,arg3);
    SYSCALL_TRACK( pre_mem_write, tid, "stat(buf)", arg3, arg2 );
 }
 
@@ -1647,8 +1647,8 @@ PRE(getsid)
 PRE(pread64)
 {
    /* ssize_t pread64(int fd, void *buf, size_t count, loff_t offset); */
-   MAYBE_PRINTF("pread ( %d, %p, %d, %lld )\n",
-                arg1, arg2, arg3, arg4|((ULong) arg5 << 32));
+   MAYBE_PRINTF("pread ( %d, %p, %llu, %lld )\n",
+                arg1, arg2, (ULong)arg3, arg4|((ULong) arg5 << 32));
    SYSCALL_TRACK( pre_mem_write, tid, "pread(buf)", arg2, arg3 );
 }
 
@@ -2111,7 +2111,7 @@ PRE(fsync)
 PRE(ftruncate)
 {
    /* int ftruncate(int fd, size_t length); */
-   MAYBE_PRINTF("ftruncate ( %d, %d )\n", arg1,arg2);
+   MAYBE_PRINTF("ftruncate ( %d, %lld )\n", arg1,(ULong)arg2);
 }
 
 PRE(ftruncate64)
@@ -2172,7 +2172,7 @@ PRE(getcwd)
    // Note that this prototype is the kernel one, with a different return
    // type to the glibc one!
    /* long getcwd(char *buf, size_t size); */
-   MAYBE_PRINTF("getcwd ( %p, %d )\n",arg1,arg2);
+   MAYBE_PRINTF("getcwd ( %p, %llu )\n",arg1,(ULong)arg2);
    SYSCALL_TRACK( pre_mem_write, tid, "getcwd(buf)", arg1, arg2 );
 }
 
@@ -4080,8 +4080,8 @@ PRE(mmap2)
    /* void* mmap(void *start, size_t length, int prot, 
       int flags, int fd, off_t offset); 
    */
-   MAYBE_PRINTF("mmap2 ( %p, %d, %d, %d, %d, %d )\n",
-		arg1, arg2, arg3, arg4, arg5, arg6 );
+   MAYBE_PRINTF("mmap2 ( %p, %llu, %d, %d, %d, %d )\n",
+		arg1, (ULong)arg2, arg3, arg4, arg5, arg6 );
 
    if (arg4 & VKI_MAP_FIXED) {
       if (!valid_client_addr(arg1, arg2, tid, "mmap2"))
@@ -4112,8 +4112,8 @@ PRE(mmap)
    vg_assert(tid = tst->tid);
    PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6);
 
-   MAYBE_PRINTF("mmap ( %p, %d, %d, %d, %d, %d )\n",
-		a1, a2, a3, a4, a5, a6 );
+   MAYBE_PRINTF("mmap ( %p, %llu, %d, %d, %d, %d )\n",
+		a1, (ULong)a2, a3, a4, a5, a6 );
 
    if (a4 & VKI_MAP_FIXED) {
       if (!valid_client_addr(a1, a2, tid, "mmap")) {
@@ -4142,7 +4142,7 @@ PRE(mprotect)
 {
    /* int mprotect(const void *addr, size_t len, int prot); */
    /* should addr .. addr+len-1 be checked before the call? */
-   MAYBE_PRINTF("mprotect ( %p, %d, %d )\n", arg1,arg2,arg3);
+   MAYBE_PRINTF("mprotect ( %p, %llu, %d )\n", arg1,(ULong)arg2,arg3);
 
    if (!valid_client_addr(arg1, arg2, tid, "mprotect"))
       set_result( -VKI_ENOMEM );
@@ -4151,7 +4151,7 @@ PRE(mprotect)
 POST(mprotect)
 {
    Addr a    = arg1;
-   UInt len  = arg2;
+   SizeT len = arg2;
    Int  prot = arg3;
    Bool rr = prot & VKI_PROT_READ;
    Bool ww = prot & VKI_PROT_WRITE;
@@ -4166,7 +4166,7 @@ PRE(munmap)
 {
    /* int munmap(void *start, size_t length); */
    /* should start .. start+length-1 be checked before the call? */
-   MAYBE_PRINTF("munmap ( %p, %d )\n", arg1,arg2);
+   MAYBE_PRINTF("munmap ( %p, %llu )\n", arg1,(ULong)arg2);
 
    if (!valid_client_addr(arg1, arg2, tid, "munmap"))
       set_result( -VKI_EINVAL );
@@ -4174,8 +4174,8 @@ PRE(munmap)
 
 POST(munmap)
 {
-   Addr a   = arg1;
-   UInt len = arg2;
+   Addr  a   = arg1;
+   SizeT len = arg2;
 
    mash_addr_and_len(&a, &len);
    VG_(unmap_range)(a, len);
@@ -4185,7 +4185,7 @@ POST(munmap)
 PRE(mincore)
 {
    /* int mincore(void *start, size_t length, unsigned char *vec); */
-   MAYBE_PRINTF("mincore ( %p, %d, %p )\n", arg1,arg2,arg3);
+   MAYBE_PRINTF("mincore ( %p, %llu, %p )\n", arg1,(ULong)arg2,arg3);
    SYSCALL_TRACK(pre_mem_write, tid, "mincore(vec)",
                  arg3, (arg2 + 4096 - 1) / 4096);
 }
@@ -4262,7 +4262,7 @@ POST(open)
 PRE(read)
 {
    /* size_t read(int fd, void *buf, size_t count); */
-   MAYBE_PRINTF("read ( %d, %p, %d )\n", arg1, arg2, arg3);
+   MAYBE_PRINTF("read ( %d, %p, %llu )\n", arg1, arg2, (ULong)arg3);
 
    if (!fd_allowed(arg1, "read", tid, False))
       set_result( -VKI_EBADF );
@@ -4278,7 +4278,7 @@ POST(read)
 PRE(write)
 {
    /* size_t write(int fd, const void *buf, size_t count); */
-   MAYBE_PRINTF("write ( %d, %p, %d )\n", arg1, arg2, arg3);
+   MAYBE_PRINTF("write ( %d, %p, %llu )\n", arg1, arg2, (ULong)arg3);
    if (!fd_allowed(arg1, "write", tid, False))
       set_result( -VKI_EBADF );
    else
@@ -4411,7 +4411,7 @@ POST(epoll_wait)
 PRE(readlink)
 {
    /* int readlink(const char *path, char *buf, size_t bufsiz); */
-   MAYBE_PRINTF("readlink ( %p, %p, %d )\n", arg1,arg2,arg3);
+   MAYBE_PRINTF("readlink ( %p, %p, %llu )\n", arg1,arg2,(ULong)arg3);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "readlink(path)", arg1 );
    SYSCALL_TRACK( pre_mem_write, tid, "readlink(buf)", arg2,arg3 );
 }
@@ -4426,7 +4426,7 @@ PRE(readv)
    /* int readv(int fd, const struct iovec * vector, size_t count); */
    Int i;
    struct vki_iovec * vec;
-   MAYBE_PRINTF("readv ( %d, %p, %d )\n",arg1,arg2,arg3);
+   MAYBE_PRINTF("readv ( %d, %p, %llu )\n",arg1,arg2,(ULong)arg3);
    if (!fd_allowed(arg1, "readv", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
@@ -4586,7 +4586,7 @@ PRE(setsid)
 PRE(setgroups)
 {
    /* int setgroups(size_t size, const gid_t *list); */
-   MAYBE_PRINTF("setgroups ( %d, %p )\n", arg1, arg2);
+   MAYBE_PRINTF("setgroups ( %llu, %p )\n", (ULong)arg1, arg2);
    if (arg1 > 0)
       SYSCALL_TRACK( pre_mem_read, tid, "setgroups(list)", arg2, 
 		     arg1 * sizeof(vki_gid_t) );
@@ -5074,7 +5074,7 @@ POST(statfs)
 PRE(statfs64)
 {
    /* int statfs64(const char *path, size_t sz, struct statfs64 *buf); */
-   MAYBE_PRINTF("statfs64 ( %p, %p )\n",arg1,arg2);
+   MAYBE_PRINTF("statfs64 ( %p, %llu, %p )\n",arg1,(ULong)arg2,arg3);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "statfs64(path)", arg1 );
    SYSCALL_TRACK( pre_mem_write, tid, "statfs64(buf)", arg3, arg2 );
 }
@@ -5254,7 +5254,7 @@ PRE(writev)
    /* int writev(int fd, const struct iovec * vector, size_t count); */
    Int i;
    struct vki_iovec * vec;
-   MAYBE_PRINTF("writev ( %d, %p, %d )\n",arg1,arg2,arg3);
+   MAYBE_PRINTF("writev ( %d, %p, %llu )\n",arg1,arg2,(ULong)arg3);
    if (!fd_allowed(arg1, "writev", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
@@ -5520,7 +5520,7 @@ POSTALIAS(rt_sigpending, sigpending);
 
 PRE(io_setup)
 {
-   UInt size;
+   SizeT size;
    Addr addr;
 
    /* long io_setup (unsigned nr_events, aio_context_t *ctxp); */
@@ -5554,7 +5554,7 @@ PRE(io_destroy)
 {
    Segment *s = VG_(find_segment)(arg1);
    struct vki_aio_ring *r = *(struct vki_aio_ring **)arg1;
-   UInt size = PGROUNDUP(sizeof(struct vki_aio_ring) + r->nr * sizeof(struct vki_io_event));
+   SizeT size = PGROUNDUP(sizeof(struct vki_aio_ring) + r->nr * sizeof(struct vki_io_event));
 
    /* long io_destroy (aio_context_t ctx); */
    MAYBE_PRINTF("io_destroy ( %ul )\n",arg1);
@@ -5690,8 +5690,8 @@ PRE(mq_timedsend)
 {
    /* int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
                        unsigned msg_prio, const struct timespec *abs_timeout); */
-   MAYBE_PRINTF("mq_timedsend ( %d, %p, %d, %d, %p )\n",
-                arg1,arg2,arg3,arg4,arg5);
+   MAYBE_PRINTF("mq_timedsend ( %d, %p, %llu, %d, %p )\n",
+                arg1,arg2,(ULong)arg3,arg4,arg5);
    if (!fd_allowed(arg1, "mq_timedsend", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
@@ -5707,8 +5707,8 @@ PRE(mq_timedreceive)
    /* ssize_t mq_timedreceive(mqd_t mqdes, char *restrict msg_ptr,
                               size_t msg_len, unsigned *restrict msg_prio,
                               const struct timespec *restrict abs_timeout); */
-   MAYBE_PRINTF("mq_timedreceive( %d, %p, %d, %p, %p )\n",
-                arg1,arg2,arg3,arg4,arg5);
+   MAYBE_PRINTF("mq_timedreceive( %d, %p, %llu, %p, %p )\n",
+                arg1,arg2,(ULong)arg3,arg4,arg5);
    if (!fd_allowed(arg1, "mq_timedreceive", tid, False)) {
       set_result( -VKI_EBADF );
    } else {

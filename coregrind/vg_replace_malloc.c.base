@@ -95,7 +95,7 @@ static void init(void) __attribute__((constructor));
 
 /* ALL calls to malloc() and friends wind up here. */
 #define ALLOC(fff, vgfff) \
-LIBALIAS(void *, fff, (Int n)) \
+LIBALIAS(void *, fff, (SizeT n)) \
 { \
    void* v; \
  \
@@ -109,7 +109,7 @@ LIBALIAS(void *, fff, (Int n)) \
 }
 
 #define ALLOC2(fff, vgfff) \
-LIBALIAS(void *, fff, (Int n)) \
+LIBALIAS(void *, fff, (SizeT n)) \
 { \
    void* v; \
  \
@@ -164,7 +164,7 @@ FREE( _ZdaPv,               __builtin_vec_delete );
 FREE( _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
 
 
-LIBALIAS(void*, calloc, ( Int nmemb, Int size ))
+LIBALIAS(void*, calloc, ( SizeT nmemb, SizeT size ))
 {
    void* v;
 
@@ -177,7 +177,7 @@ LIBALIAS(void*, calloc, ( Int nmemb, Int size ))
    return v;
 }
 
-LIBALIAS(void*, realloc, ( void* ptrV, Int new_size ))
+LIBALIAS(void*, realloc, ( void* ptrV, SizeT new_size ))
 {
    void* v;
 
@@ -199,7 +199,7 @@ LIBALIAS(void*, realloc, ( void* ptrV, Int new_size ))
 }
 
 
-LIBALIAS(void*, memalign, ( Int alignment, Int n ))
+LIBALIAS(void*, memalign, ( SizeT alignment, SizeT n ))
 {
    void* v;
 
@@ -219,7 +219,7 @@ LIBALIAS(void*, memalign, ( Int alignment, Int n ))
 }
 
 
-LIBALIAS(void*, valloc, ( Int size ))
+LIBALIAS(void*, valloc, ( SizeT size ))
 {
    return VG_INTERCEPT(soname:libc.so.6, memalign)(VKI_PAGE_SIZE, size);
 }
@@ -234,7 +234,7 @@ LIBALIAS(int, mallopt, ( int cmd, int value ))
 }
 
 
-LIBALIAS(int, posix_memalign, ( void **memptr, UInt alignment, UInt size ))
+LIBALIAS(int, posix_memalign, ( void **memptr, SizeT alignment, SizeT size ))
 {
     void *mem;
 
@@ -255,15 +255,15 @@ LIBALIAS(int, posix_memalign, ( void **memptr, UInt alignment, UInt size ))
 
 LIBALIAS(int, malloc_usable_size, ( void* p ))
 { 
-   Int pszB;
+   SizeT pszB;
    
    MALLOC_TRACE("malloc_usable_size(%p)", p );
    if (NULL == p)
       return 0;
 
    if (!init_done) init();
-   pszB = (Int)VALGRIND_NON_SIMD_CALL2( info.arena_payload_szB, 
-                                        VG_AR_CLIENT, p );
+   pszB = (SizeT)VALGRIND_NON_SIMD_CALL2( info.arena_payload_szB, 
+                                          VG_AR_CLIENT, p );
    MALLOC_TRACE(" = %d", pszB );
 
    return pszB;

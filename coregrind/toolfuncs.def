@@ -91,7 +91,7 @@ void,	print_extra_suppression_info,	Error* err
 
 ## Should discard any information that pertains to specific basic blocks
 ## or instructions within the address range given.
-void,	discard_basic_block_info,		Addr a, UInt size
+void,	discard_basic_block_info,		Addr a, SizeT size
 
 
 ## ------------------------------------------------------------------

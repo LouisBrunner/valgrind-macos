@@ -1730,7 +1730,7 @@ strong_alias(send, __send)
 weak_alias (__pread64, pread64)
 weak_alias (__pwrite64, pwrite64)
 weak_alias(__fork, fork)
-//weak_alias(__vfork, vfork)
+
 
 
 /*--------------------------------------------------*/

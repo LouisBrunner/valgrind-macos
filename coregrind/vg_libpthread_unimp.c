@@ -72,7 +72,7 @@ void __libc_current_sigrtmin ( void )  { unimp("__libc_current_sigrtmin"); }
 //void __res_state ( void )  { unimp("__res_state"); }
 //void __send ( void )  { unimp("__send"); }
 //void __sigaction ( void )  { unimp("__sigaction"); }
-void __vfork ( void )  { unimp("__vfork"); }
+//--//void __vfork ( void )  { unimp("__vfork"); }
 //void __wait ( void )  { unimp("__wait"); }
 //void __write ( void )  { unimp("__write"); }
 //void _pthread_cleanup_pop ( void )  { unimp("_pthread_cleanup_pop"); }
@@ -208,7 +208,7 @@ __attribute__((weak)) void recvfrom ( void ) { vgPlain_unimp("recvfrom"); }
 __attribute__((weak)) void recvmsg ( void ) { vgPlain_unimp("recvmsg"); }
 //__attribute__((weak)) void sendmsg ( void ) { vgPlain_unimp("sendmsg"); }
 __attribute__((weak)) void tcdrain ( void ) { vgPlain_unimp("tcdrain"); }
-__attribute__((weak)) void vfork ( void ) { vgPlain_unimp("vfork"); }
+//--//__attribute__((weak)) void vfork ( void ) { vgPlain_unimp("vfork"); }
 
 __attribute__((weak)) void pthread_attr_getguardsize ( void )
                       { vgPlain_unimp("pthread_attr_getguardsize"); }

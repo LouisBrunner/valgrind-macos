@@ -125,7 +125,16 @@
               * Flatten into atomic form.
 */
 
-/* Implementation notes, 12 Oct 04.
+/* Implementation notes, 29 Dec 04.
+
+   TODO (important): I think rPutI removal ignores precise exceptions
+   and is therefore in a sense, wrong.  In the sense that PutIs are
+   assumed not to write parts of the guest state that we need to have
+   up-to-date at loads/stores.  So far on x86 guest that has not
+   mattered since indeed only the x87 FP registers and tags are
+   accessed using GetI/PutI, and there is no need so far for them to
+   be up to date at mem exception points.  The rPutI pass should be
+   fixed.
 
    TODO: improve pessimistic handling of precise exceptions
      in the tree builder.
@@ -142,8 +151,7 @@
    CSE up F64 literals (already doing F64is)
 
    CSE: consider carefully the requirement for precise exns
-        prior to making CSE any more aggressive.
-*/
+        prior to making CSE any more aggressive.  */
 
 
 /*---------------------------------------------------------------*/
@@ -726,7 +734,9 @@ static void handle_gets_Stmt (
    (minoff,maxoff) to the set.
 
    On seeing 'Get (minoff,maxoff)', remove any part of the set
-   overlapping (minoff,maxoff).
+   overlapping (minoff,maxoff).  The same has to happen for any events
+   which implicitly read parts of the guest state: dirty helper calls
+   and loads/stores.
 */
 
 static void redundant_put_removal_BB ( 
@@ -798,7 +808,9 @@ static void redundant_put_removal_BB (
 
       /* Deal with Gets.  These remove bits of the environment since
          appearance of a Get means that the next event for that slice
-         of the guest state is no longer a write, but a read. */
+         of the guest state is no longer a write, but a read.  Also
+         deals with implicit reads of guest state needed to maintain
+         precise exceptions. */
       handle_gets_Stmt( env, st, preciseMemExnsFn );
    }
 }
@@ -1322,6 +1334,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
             /* Interesting.  The condition on this exit has folded down to
                a constant. */
             vassert(fcond->Iex.Const.con->tag == Ico_U1);
+            vassert(fcond->Iex.Const.con->Ico.U1 == False
+                    || fcond->Iex.Const.con->Ico.U1 == True);
             if (fcond->Iex.Const.con->Ico.U1 == False) {
                /* exit is never going to happen, so dump the statement. */
                return NULL;
@@ -3271,7 +3285,7 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
       invPut = st->tag == Ist_Put 
                || st->tag == Ist_PutI || st->tag == Ist_Dirty;
       invStore = st->tag == Ist_STle
-               || st->tag == Ist_Dirty;
+                 || st->tag == Ist_Dirty;
 
       for (k = 0; k < n_tmps; k++) {
          ti = env[k];

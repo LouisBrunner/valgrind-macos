@@ -1977,7 +1977,8 @@ void VG_(route_signals)(void)
          tst->sigqueue[tst->sigqueue_head] = siset[sigNo];
          tst->sigqueue_head = (tst->sigqueue_head + 1) % VG_N_SIGNALQUEUE;
          vg_assert(tst->sigqueue_head != tst->sigqueue_tail);
-	 VG_(proxy_sendsig)(target, sigNo);
+	 VG_(proxy_sendsig)(VG_INVALID_THREADID/*from*/,
+                            target/*to*/, sigNo);
 	 VG_(sigdelset)(&proc_pending, sigNo);
       }
    }

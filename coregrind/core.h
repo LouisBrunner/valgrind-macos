@@ -1325,7 +1325,7 @@ extern void VG_(proxy_init)     ( void );
 extern void VG_(proxy_create)   ( ThreadId tid );
 extern void VG_(proxy_delete)   ( ThreadId tid, Bool force );
 extern void VG_(proxy_results)  ( void );
-extern void VG_(proxy_sendsig)  ( ThreadId tid, Int signo );
+extern void VG_(proxy_sendsig)  ( ThreadId fromTid, ThreadId toTid, Int signo );
 extern void VG_(proxy_setsigmask)(ThreadId tid);
 extern void VG_(proxy_sigack)   ( ThreadId tid, const vki_sigset_t *);
 extern void VG_(proxy_abort_syscall) ( ThreadId tid );

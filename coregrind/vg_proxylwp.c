@@ -725,11 +725,14 @@ static Int proxylwp(void *v)
 }
 
 /* Send a signal to a proxy LWP */
-void VG_(proxy_sendsig)(ThreadId tid, Int sig)
+void VG_(proxy_sendsig)(ThreadId fromTid, ThreadId toTid, Int sig)
 {
-   ThreadState *tst = VG_(get_ThreadState)(tid);
-   ProxyLWP *proxy = tst->proxy;
-   Int lwp;
+   /* toTid must be genuine, but fromTid can be
+      VG_INVALID_THREADID. */
+   ThreadState* tst   = VG_(get_ThreadState)(toTid);
+   ProxyLWP*    proxy = tst->proxy;
+   Bool         signallingMyself;
+   Int          lwp;
 
    if (proxy == NULL)
       return;
@@ -748,18 +751,22 @@ void VG_(proxy_sendsig)(ThreadId tid, Int sig)
    /* If a thread is sending a signal to itself and the signal isn't
       blocked (ie, it will be delivered), wait until the signal
       message gets sent back, thus making the signal synchronous. */
+   signallingMyself 
+      = fromTid != VG_INVALID_THREADID
+        && fromTid == toTid;
+
    if (sig != 0 && 
        !VG_(is_sig_ign)(sig) &&
-       tid == VG_(get_current_tid)() && 
+       signallingMyself && 
        !VG_(sigismember)(&tst->eff_sig_mask, sig)) {
       /* If the LWP is actually blocked in a sigtimedwait, then it
 	 will eat the signal rather than make it pending and deliver
 	 it by the normal mechanism.  In this case, just wait for the
 	 syscall to dinish. */
       if (tst->status == VgTs_WaitSys && tst->syscallno == __NR_rt_sigtimedwait)
-	 sys_wait_results(True, tid, PX_RunSyscall, True);
+	 sys_wait_results(True, toTid, PX_RunSyscall, True);
       else
-	 sys_wait_results(True, tid, PX_Signal, True);
+	 sys_wait_results(True, toTid, PX_Signal, True);
    }
 }
 

@@ -2689,7 +2689,7 @@ void do_pthread_kill ( ThreadId tid, /* me */
 
    tst = VG_(get_ThreadState)(thread);
    vg_assert(NULL != tst->proxy);
-   VG_(proxy_sendsig)(thread, sig);
+   VG_(proxy_sendsig)(tid/*from*/, thread/*to*/, sig);
    SET_PTHREQ_RETVAL(tid, 0);
 }
 

@@ -47,7 +47,6 @@
 #include "ume_archdefs.h"
 
 static int stack[SIGSTKSZ*4];
-static int our_argc;
 
 /* Where we expect to find all our aux files (namely, stage2) */
 static const char *valgrind_lib = VG_LIBDIR;
@@ -216,8 +215,6 @@ int main(int argc, char **argv)
       valgrind_lib = cp;
 
    assert(ume_exec_esp != NULL);
-
-   our_argc = argc;
 
    /* Set the address space limit as high as it will go, since we make
       a lot of very large mappings. */

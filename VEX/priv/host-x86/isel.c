@@ -847,7 +847,7 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
  
             shrdl %cl, %hi, %lo   -- make %lo be right for the shift amt
                                   -- %cl % 32
-            shrl  %cl, %hi        -- make %lo be right for the shift amt
+            shrl  %cl, %hi        -- make %hi be right for the shift amt
                                   -- %cl % 32
 
          Now, if (shift amount % 64) is in the range 32 .. 63, we have 

@@ -86,6 +86,28 @@
 
 #include <stdlib.h>
 
+/* ----------------- Hacky allocator -----------------*/
+#define HACKY_SIZE 100000
+static Int   hacky_used = 0;
+static UChar hacky[HACKY_SIZE];
+
+static void* hacky_alloc ( UInt n )
+{
+  UChar* p;
+  n = (n + 3) & ~3;
+  if (n + hacky_used >= HACKY_SIZE)
+     VG_(core_panic)("hacky_alloc: HACKY_SIZE too low; increase and recompile");
+  p = &hacky[hacky_used];
+  hacky_used += n;
+  return (void*)p;
+}
+
+static void hacky_free ( void* p )
+{
+}
+/* ----------------- end Hacky allocator -----------------*/
+
+
 #define SKIPLIST_DEBUG	0
 
 #define SK_MAXHEIGHT	20	/* 2^20 elements */
@@ -223,7 +245,7 @@ void *VG_(SkipNode_Alloc)(const SkipList *l)
    if (l->arena == -1)
       *(Short *)&l->arena = VG_AR_TOOL;
 
-   ret = VG_(arena_malloc)(l->arena, size);
+   ret = hacky_alloc(size);
 
    if (ret == NULL)
       return NULL;
@@ -246,7 +268,7 @@ void VG_(SkipNode_Free)(const SkipList *l, void *p)
 		  p, n);
       n->magic = 0x55ffaabb;
    }
-   VG_(arena_free)(l->arena, p);
+   hacky_free(p);
 }
 
 void *VG_(SkipNode_First)(const SkipList *l)
@@ -367,7 +389,7 @@ void VG_(SkipList_Insert)(SkipList *l, void *data)
       if (l->arena == -1)
 	 *(Short *)&l->arena = VG_AR_TOOL;
       
-      l->head = VG_(arena_malloc)(l->arena, size);
+      l->head = hacky_alloc(size);
       VG_(memset)(l->head, 0, size);
 
       l->head->magic = SKIPLIST_HEAD_MAGIC;

@@ -871,7 +871,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             VG_(printf)("init_module ( %p, %p )\n", arg1, arg2 );
          must_be_readable_asciiz( tst, "init_module(name)", arg1 );
          must_be_readable( tst, "init_module(image)", arg2, 
-                           sizeof(struct module) );
+                           VKI_SIZEOF_STRUCT_MODULE );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 

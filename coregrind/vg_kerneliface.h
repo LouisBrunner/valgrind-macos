@@ -326,6 +326,24 @@ struct vki_stat {
 #define VKI_AT_PHDR   3     /* program headers for program */
 
 
+/* Including <linux/module.h> leads to loads of hassle because then we
+   need <asm/atomic.h> sometimes (RedHat 7.3) and that is a
+   kernel-only header which deliberately #errors on gcc-3.1.  Mucho
+   hassle considering that we only want to know sizeof(struct module).
+   Hence ...
+ 
+   #include <stdio.h>
+   #include <asm/atomic.h>
+   #include <linux/module.h>
+
+   int main ( void )
+   {
+      printf ("sizeof(struct module) = %d\n", sizeof(struct module) );
+      return 0;
+    }
+*/
+
+#define VKI_SIZEOF_STRUCT_MODULE 96
 
 #endif /* ndef __VG_KERNELIFACE_H */
 

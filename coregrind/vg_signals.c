@@ -974,10 +974,13 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
    /* This thread needs to be marked runnable, but we leave that the
       caller to do. */
 
-   /* Make sigNo and retaddr fields readable -- at 0(%ESP) and 4(%ESP) */
+   /* Make retaddr, sigNo, psigInfo, puContext fields readable -- at
+      0(%ESP) .. 12(%ESP) */
    if (VG_(clo_instrument)) {
-      VGM_(make_readable) ( ((Addr)esp)+0 ,4 );
-      VGM_(make_readable) ( ((Addr)esp)+4 ,4 );
+      VGM_(make_readable) ( ((Addr)esp)+0,  4 );
+      VGM_(make_readable) ( ((Addr)esp)+4,  4 );
+      VGM_(make_readable) ( ((Addr)esp)+8,  4 );
+      VGM_(make_readable) ( ((Addr)esp)+12, 4 );
    }
 
    /* 

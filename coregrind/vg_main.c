@@ -50,6 +50,18 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#ifndef AT_DCACHEBSIZE
+#define AT_DCACHEBSIZE		19
+#endif /* AT_DCACHEBSIZE */
+
+#ifndef AT_ICACHEBSIZE
+#define AT_ICACHEBSIZE		20
+#endif /* AT_ICACHEBSIZE */
+
+#ifndef AT_UCACHEBSIZE
+#define AT_UCACHEBSIZE		21
+#endif /* AT_UCACHEBSIZE */
+
 #ifndef AT_SYSINFO
 #define AT_SYSINFO		32
 #endif /* AT_SYSINFO */

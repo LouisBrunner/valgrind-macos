@@ -18,6 +18,7 @@ AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g
 
 valdir = $(libdir)/valgrind
+inplacedir = $(top_builddir)/.in_place
 
 SUPP_FILES = \
 	glibc-2.1.supp glibc-2.2.supp glibc-2.3.supp \
@@ -43,7 +44,7 @@ EXTRA_DIST = \
 	ACKNOWLEDGEMENTS \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO \
-	valgrind.spec valgrind.spec.in valgrind.pc.in
+	valgrind.spec.in valgrind.pc.in
 
 install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)
@@ -51,10 +52,10 @@ install-exec-hook:
 	$(LN_S) libpthread.so $(DESTDIR)$(valdir)/libpthread.so.0
 
 all-local:
-	mkdir -p $(top_builddir)/.in_place
-	rm -f $(addprefix $(top_builddir)/.in_place/,default.supp $(SUPP_FILES))
-	ln -s ../default.supp $(top_builddir)/.in_place
-	ln -s $(addprefix ../$(top_srcdir)/,$(SUPP_FILES)) $(top_builddir)/.in_place
+	mkdir -p $(inplacedir)
+	rm -f $(addprefix $(inplacedir)/,default.supp $(SUPP_FILES))
+	ln -s ../default.supp $(inplacedir)
+	ln -s $(addprefix ../$(top_srcdir)/,$(SUPP_FILES)) $(inplacedir)
 
 distclean-local:
-	rm -rf $(top_builddir)/.in_place
+	rm -rf $(inplacedir)

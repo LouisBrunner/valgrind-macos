@@ -5029,7 +5029,6 @@ C70009000000                            movl $9, (%rax)
 0FBE3A                                  movsbl (%rdx),%edi
 0FBE3C04                                movsbl (%rsp,%rax),%edi
 480FBE0407                              movsbq (%rdi,%rax),%rax
-F20F11442408                            movsd %xmm0, 8(%rsp)
 48637C2468                              movslq 104(%rsp),%rdi
 486344246C                              movslq 108(%rsp),%rax
 486354246C                              movslq 108(%rsp),%rdx
@@ -5545,7 +5544,6 @@ F7D6                                    notl %esi
 55                                      pushq %rbp
 53                                      pushq %rbx
 F3C3                                    rep ; ret
-C3                                      ret
 41D3CC                                  rorl %cl, %r12d
 C1E70A                                  sall $10, %edi
 C1E60F                                  sall $15, %esi

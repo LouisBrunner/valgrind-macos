@@ -52,16 +52,16 @@ Int  VG_(clo_alignment) = 8;
 
 Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
 {
-   if      (VG_CLO_STREQN(12, arg, "--alignment=")) {
+   if (VG_CLO_STREQN(12, arg, "--alignment=")) {
       VG_(clo_alignment) = (Int)VG_(atoll)(&arg[12]);
 
-      if (VG_(clo_alignment) < 4 
+      if (VG_(clo_alignment) < 8 
           || VG_(clo_alignment) > 4096
           || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
          VG_(message)(Vg_UserMsg, "");
          VG_(message)(Vg_UserMsg, 
             "Invalid --alignment= setting.  "
-            "Should be a power of 2, >= 4, <= 4096.");
+            "Should be a power of 2, >= 8, <= 4096.");
          VG_(bad_option)("--alignment");
       }
    }
@@ -146,11 +146,11 @@ typedef
 
      this block total sizeW   (1 word)
      freelist previous ptr    (1 word)
-     freelist next  ptr       (1 word)
      red zone words (depends on .rz_szW field of Arena)
      (payload words)
      red zone words (depends on .rz_szW field of Arena)
-     this block total sizeW  (1 word)
+     freelist next  ptr       (1 word)
+     this block total sizeW   (1 word)
 
      Total size in words (bszW) and payload size in words (pszW)
      are related by
@@ -160,6 +160,10 @@ typedef
      not in use, and positive if it is in use.  A block size of zero
      is not possible, because a block always has at least four words
      of overhead.  
+
+     8-byte payload alignment is ensured by requiring the number
+     of words in the red zones and the number of payload words
+     to both be even (% 2 == 0).
 */
 typedef
    struct {
@@ -209,6 +213,8 @@ void arena_init ( Arena* a, Char* name,
                   Int rz_szW, Bool rz_check, Int min_sblockW, Bool client )
 {
    Int i;
+   vg_assert(rz_szW >= 0);
+   vg_assert(rz_szW % 2 == 0);
    vg_assert((min_sblockW % VKI_WORDS_PER_PAGE) == 0);
    a->name = name;
    a->clientmem = client;
@@ -248,8 +254,9 @@ void VG_(show_all_arena_stats) ( void )
 static
 void ensure_mm_init ( void )
 {
+   Int client_rz_szW;
    static Bool init_done = False;
-
+   
    if (init_done) return;
 
    /* Use a checked red zone size of 1 word for our internal stuff,
@@ -259,25 +266,29 @@ void ensure_mm_init ( void )
       here, which merely checks at the time of freeing that the red 
       zone words are unchanged. */
 
-   arena_init ( &vg_arena[VG_AR_CORE],      "core",     1, True, 262144, False );
+   arena_init ( &vg_arena[VG_AR_CORE],      "core",     2, True, 262144, False );
 
-   arena_init ( &vg_arena[VG_AR_TOOL],      "tool",     1, True, 262144, False );
+   arena_init ( &vg_arena[VG_AR_TOOL],      "tool",     2, True, 262144, False );
 
-   arena_init ( &vg_arena[VG_AR_SYMTAB],    "symtab",   1, True, 262144, False );
+   arena_init ( &vg_arena[VG_AR_SYMTAB],    "symtab",   2, True, 262144, False );
 
-   arena_init ( &vg_arena[VG_AR_JITTER],    "JITter",   1, True, 8192,   False );
+   arena_init ( &vg_arena[VG_AR_JITTER],    "JITter",   2, True, 8192,   False );
 
    /* No particular reason for this figure, it's just smallish */
    sk_assert(VG_(vg_malloc_redzone_szB) < 128);
+   sk_assert(VG_(vg_malloc_redzone_szB) >= 0);
+   client_rz_szW = VG_(vg_malloc_redzone_szB)/4;
+   if (client_rz_szW % 2 == 1) client_rz_szW++;
+
    arena_init ( &vg_arena[VG_AR_CLIENT],    "client",  
-                VG_(vg_malloc_redzone_szB)/4, False, 262144, True );
+               client_rz_szW, False, 262144, True );
 
    arena_init ( &vg_arena[VG_AR_DEMANGLE],  "demangle", 4 /*paranoid*/,
                                                            True, 16384, False );
 
-   arena_init ( &vg_arena[VG_AR_EXECTXT],   "exectxt",  1, True, 16384, False );
+   arena_init ( &vg_arena[VG_AR_EXECTXT],   "exectxt",  2, True, 16384, False );
 
-   arena_init ( &vg_arena[VG_AR_ERRORS],    "errors",   1, True, 16384, False );
+   arena_init ( &vg_arena[VG_AR_ERRORS],    "errors",   2, True, 16384, False );
 
    arena_init ( &vg_arena[VG_AR_TRANSIENT], "transien", 2, True, 16384, False );
 
@@ -323,8 +334,9 @@ Superblock* newSuperblock ( Arena* a, Int cszW )
    while ((cszW % VKI_WORDS_PER_PAGE) > 0) cszW++;
 
    if (a->clientmem) {
-      sb = (Superblock *)VG_(client_alloc)(0, cszW * sizeof(Word), 
-					   VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 0);
+      sb = (Superblock *)
+           VG_(client_alloc)(0, cszW * sizeof(Word), 
+                                VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 0);
    } else
       sb = VG_(get_memory_from_mmap) ( cszW * sizeof(Word), 
 				       "newSuperblock" );
@@ -413,7 +425,7 @@ WordF* last_to_first ( WordL* lw )
 static __inline__
 Word* first_to_payload ( Arena* a, WordF* fw )
 {
-   return & fw[3 + a->rz_szW];
+   return & fw[2 + a->rz_szW];
 }
 
 /* Given the addr of the first word of the payload of a block,
@@ -421,7 +433,7 @@ Word* first_to_payload ( Arena* a, WordF* fw )
 static __inline__
 Word* payload_to_first ( Arena* a, WordF* payload )
 {
-   return & payload[- 3 - a->rz_szW];
+   return & payload[- (2 + a->rz_szW)];
 }
 
 /* Set and get the lower size field of a block. */
@@ -442,8 +454,9 @@ void set_prev_p  ( WordF* fw, Word* prev_p ) {
    fw[1] = (Word)prev_p; 
 }
 static __inline__
-void set_next_p  ( WordF* fw, Word* next_p ) { 
-   fw[2] = (Word)next_p; 
+void set_next_p  ( WordF* fw, Word* next_p ) {
+   WordL* lw = first_to_last(fw); 
+   lw[-1] = (Word)next_p; 
 }
 static __inline__
 Word* get_prev_p  ( WordF* fw ) { 
@@ -451,7 +464,8 @@ Word* get_prev_p  ( WordF* fw ) {
 }
 static __inline__
 Word* get_next_p  ( WordF* fw ) { 
-   return (Word*)(fw[2]);
+   WordL* lw = first_to_last(fw);
+   return (Word*)(lw[-1]);
 }
 
 
@@ -481,24 +495,24 @@ Int get_bszW_hi_from_last_word ( WordL* lw ) {
 static __inline__
 void set_rz_lo_word ( Arena* a, WordF* fw, Int rz_wordno, Word w )
 {
-   fw[3 + rz_wordno] = w;
+   fw[2 + rz_wordno] = w;
 }
 static __inline__
 void set_rz_hi_word ( Arena* a, WordF* fw, Int rz_wordno, Word w )
 {
    WordL* lw = first_to_last(fw);
-   lw[-1-rz_wordno] = w;
+   lw[-2-rz_wordno] = w;
 }
 static __inline__
 Word get_rz_lo_word ( Arena* a, WordF* fw, Int rz_wordno )
 {
-   return fw[3 + rz_wordno];
+   return fw[2 + rz_wordno];
 }
 static __inline__
 Word get_rz_hi_word ( Arena* a, WordF* fw, Int rz_wordno )
 {
    WordL* lw = first_to_last(fw);
-   return lw[-1-rz_wordno];
+   return lw[-2-rz_wordno];
 }
 
 
@@ -507,12 +521,12 @@ Word get_rz_hi_word ( Arena* a, WordF* fw, Int rz_wordno )
 static __inline__
 Int overhead_szW_lo ( Arena* a )
 {
-   return 3 + a->rz_szW;
+   return 2 + a->rz_szW;
 }
 static __inline__
 Int overhead_szW_hi ( Arena* a )
 {
-   return 1 + a->rz_szW;
+   return 2 + a->rz_szW;
 }
 static __inline__
 Int overhead_szW ( Arena* a )
@@ -948,6 +962,17 @@ Bool VG_(is_empty_arena) ( ArenaId aid )
 }
 
 
+/* Turn a request size in bytes into a payload request size in
+   words.  This means 8-aligning the request size.
+*/
+static __inline__
+Int req_pszB_to_req_pszW ( Int req_pszB )
+{
+   return ((req_pszB + 7) / 8)   /* # of 64-bit units */
+          * 2;                   /* # of 32-bit units */
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Core-visible functions.                              ---*/
 /*------------------------------------------------------------*/
@@ -958,6 +983,7 @@ void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
    Superblock* new_sb;
    Word*       b;
    Arena*      a;
+   void*       v;
 
    VGP_PUSHCC(VgpMalloc);
 
@@ -967,7 +993,7 @@ void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
    vg_assert(req_pszB >= 0);
    vg_assert(req_pszB < 0x7FFFFFF0);
 
-   req_pszW = (req_pszB + VKI_BYTES_PER_WORD - 1) / VKI_BYTES_PER_WORD;
+   req_pszW = req_pszB_to_req_pszW(req_pszB);
 
    /* Keep gcc -O happy: */
    b = NULL;
@@ -1051,7 +1077,9 @@ void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
 #  endif
 
    VGP_POPCC(VgpMalloc);
-   return first_to_payload(a, b);
+   v = first_to_payload(a, b);
+   vg_assert( (((UInt)v) & 7) == 0 );
+   return v;
 }
 
  
@@ -1178,6 +1206,7 @@ void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
    Word   *base_b, *base_p, *align_p;
    UInt   saved_bytes_on_loan;
    Arena* a;
+   void*  v;
 
    VGP_PUSHCC(VgpMalloc);
 
@@ -1208,11 +1237,12 @@ void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
    /* Required alignment, in words.  Since it's constrained to be a
       power of 2 >= word size, no need to align the alignment.  Still,
       we check. */
+   if (req_alignB == 4) req_alignB = 8;
    req_alignW = req_alignB / VKI_BYTES_PER_WORD;
    vg_assert(req_alignB == req_alignW * VKI_BYTES_PER_WORD);
 
    /* Required payload size for the aligned chunk. */
-   req_pszW = (req_pszB + VKI_BYTES_PER_WORD - 1) / VKI_BYTES_PER_WORD;
+   req_pszW = req_pszB_to_req_pszW(req_pszB);
    
    /* Payload size to request for the big block that we will split
       up. */
@@ -1277,7 +1307,9 @@ void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
 
    VGP_POPCC(VgpMalloc);
 
-   return align_p;
+   v = (void*)align_p;
+   vg_assert( (((UInt)v) % req_alignB) == 0 );
+   return v;
 }
 
 
@@ -1295,7 +1327,7 @@ void* VG_(arena_calloc) ( ArenaId aid, Int alignB, Int nmemb, Int nbytes )
    size = nmemb * nbytes;
    vg_assert(size >= 0);
 
-   if (alignB == 4)
+   if (alignB == 8)
       p = VG_(arena_malloc) ( aid, size );
    else
       p = VG_(arena_malloc_aligned) ( aid, alignB, size );
@@ -1309,7 +1341,7 @@ void* VG_(arena_calloc) ( ArenaId aid, Int alignB, Int nmemb, Int nbytes )
 
 
 void* VG_(arena_realloc) ( ArenaId aid, void* ptr, 
-                          Int req_alignB, Int req_pszB )
+                           Int req_alignB, Int req_pszB )
 {
    Arena* a;
    Int    old_bszW, old_pszW, old_pszB, i;
@@ -1338,7 +1370,7 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
       return ptr;
    }
 
-   if (req_alignB == 4)
+   if (req_alignB == 8)
       p_new = VG_(arena_malloc) ( aid, req_pszB );
    else
       p_new = VG_(arena_malloc_aligned) ( aid, req_alignB, req_pszB );
@@ -1372,12 +1404,12 @@ void  VG_(free) ( void* ptr )
 
 void* VG_(calloc) ( Int nmemb, Int nbytes )
 {
-   return VG_(arena_calloc) ( VG_AR_TOOL, /*alignment*/4, nmemb, nbytes );
+   return VG_(arena_calloc) ( VG_AR_TOOL, /*alignment*/8, nmemb, nbytes );
 }
 
 void* VG_(realloc) ( void* ptr, Int size )
 {
-   return VG_(arena_realloc) ( VG_AR_TOOL, ptr, /*alignment*/4, size );
+   return VG_(arena_realloc) ( VG_AR_TOOL, ptr, /*alignment*/8, size );
 }
 
 void* VG_(malloc_aligned) ( Int req_alignB, Int req_pszB )
@@ -1388,8 +1420,8 @@ void* VG_(malloc_aligned) ( Int req_alignB, Int req_pszB )
 
 void* VG_(cli_malloc) ( UInt align, Int nbytes )                 
 {                                                                             
-   vg_assert(align >= 4);                                                     
-   if (4 == align)                                                            
+   vg_assert(align >= 8);
+   if (8 == align)                                                            
       return VG_(arena_malloc)         ( VG_AR_CLIENT, nbytes ); 
    else                                                                       
       return VG_(arena_malloc_aligned) ( VG_AR_CLIENT, align, nbytes );

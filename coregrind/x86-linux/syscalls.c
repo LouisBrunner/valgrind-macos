@@ -151,9 +151,12 @@ PRE(old_select, MayBlock)
 }
 
 
+/* --- BEGIN Quadrics Elan3 driver hacks (1) --- */
+
 /* Horrible hack.  Do sys_clone, and if you are then the child,
    continue at child_next_eip instead of returning. */
-static Bool  ELAN3_HACK = True;
+/* not even kernel thread-safe due to use of static var, but I think
+   that's ok.  we should not have multiple kernel threads here. */
 static void* child_wherenext;
 static UInt clone_child_native ( void* child_next_eip, UInt arg1, UInt arg2 )
 { 
@@ -174,6 +177,9 @@ static UInt clone_child_native ( void* child_next_eip, UInt arg1, UInt arg2 )
    return __res;
 }
 
+/* --- END Quadrics Elan3 driver hacks (1) --- */
+
+
 PRE(sys_clone, Special)
 {
    PRINT("sys_clone ( %d, %p, %p, %p, %p )",ARG1,ARG2,ARG3,ARG4,ARG5);
@@ -192,23 +198,35 @@ PRE(sys_clone, Special)
       VGA_(gen_sys_fork_after) (tid, tst);
    } 
    else
-   if (ELAN3_HACK) {
+   if (VG_(clo_support_elan3) && ARG1 == 0xF00) {
+      /* --- BEGIN Quadrics Elan3 driver hacks (2) --- */
+      /* The Elan3 user-space driver is trying to clone off a
+         do-nothing-much thread.  So we let it run natively, and hope
+         for the best, but keep the parent running normally on
+         Valgrind. */
       Int res = clone_child_native( (void*)tst->arch.vex.guest_EIP, ARG1, ARG2 );
       /* clone_child_native only returns in the parent's context, and
          so res must be either > 0, in which case it is the pid of the
          child, or < 0, which is an error code.  
       */
       if (1) 
-         VG_(printf)("valgrind: ELAN3_HACK: child pid = %d\n", res);
+         VG_(printf)("valgrind: ELAN3_HACK(x86): "
+                     "parent pid = %d, child pid = %d\n", VG_(getpid)(), res);
       vg_assert(res != 0);
       SET_RESULT(res);
+      /* --- END Quadrics Elan3 driver hacks (2) --- */
    } 
    else {
       VG_(unimplemented)
          ("clone(): not supported by Valgrind.\n   "
-          "We do support programs linked against\n   "
+          "\n"
+          "NOTE(1): We do support programs linked against\n   "
           "libpthread.so, though.  Re-run with -v and ensure that\n   "
-          "you are picking up Valgrind's implementation of libpthread.so.");
+          "you are picking up Valgrind's implementation of libpthread.so.\n"
+          "\n"
+          "NOTE(2): if you are trying to run a program using the Quadrics Elan3\n"
+          "   user-space drivers, you need re-run with the flag:\n"
+          "   --support-elan3=yes\n");
    }
 }
 

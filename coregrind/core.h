@@ -337,6 +337,9 @@ extern Bool VG_(clo_show_below_main);
    client address space bounds */
 extern Bool VG_(clo_pointercheck);
 
+/* HACK: Use hacked version of clone for Quadrics Elan3 drivers */
+extern Bool VG_(clo_support_elan3);
+
 /* Set up the libc freeres wrapper */
 extern void VG_(intercept_libc_freeres_wrapper)(Addr);
 

@@ -1498,6 +1498,7 @@ Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_track_fds)      = False;
 Bool   VG_(clo_show_below_main) = False;
 Bool   VG_(clo_pointercheck)   = True;
+Bool   VG_(clo_support_elan3)  = False;
 Bool   VG_(clo_branchpred)     = False;
 
 static Bool   VG_(clo_wait_for_gdb)   = False;
@@ -1535,6 +1536,7 @@ void usage ( Bool debug_help )
 "    --lowlat-signals=no|yes   improve thread signal wake-up latency [no]\n"
 "    --lowlat-syscalls=no|yes  improve thread syscall wake-up latency [no]\n"
 "    --pointercheck=no|yes     enforce client address space limits [yes]\n"
+"    --support-elan3=no|yes    hacks for Quadrics Elan3 support [no]\n"
 "\n"
 "  user options for Valgrind tools that report errors:\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
@@ -1748,6 +1750,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO("--lowlat-signals",   VG_(clo_lowlat_signals))
       else VG_BOOL_CLO("--lowlat-syscalls",  VG_(clo_lowlat_syscalls))
       else VG_BOOL_CLO("--pointercheck",     VG_(clo_pointercheck))
+      else VG_BOOL_CLO("--support-elan3",    VG_(clo_support_elan3))
       else VG_BOOL_CLO("--profile",          VG_(clo_profile))
       else VG_BOOL_CLO("--bbprofile",        VG_(clo_bbprofile))
       else VG_BOOL_CLO("--run-libc-freeres", VG_(clo_run_libc_freeres))

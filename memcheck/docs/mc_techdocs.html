@@ -438,7 +438,12 @@ Some more specific things are:
     <code>sbrk</code>, <code>setjmp</code> and <code>longjmp</code>.
 
 <p>
-<li>Similarly, valgrind should not really import any headers other
+<li>[Update: this is now out of date;  there are a number of such
+    kernel interface files -- vki*.h -- and now no kernel headers are used by
+    Valgrind at all.  We did this because unfortunately kernel headers
+    are frequently broken, and cannot be relied on.]
+
+    Similarly, valgrind should not really import any headers other
     than the Linux kernel headers, since it knows of no API other than
     the kernel interface to talk to.  At the moment this is really not
     in a good state, and <code>vg_syscall_mem</code> imports, via

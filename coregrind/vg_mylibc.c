@@ -39,75 +39,75 @@
 /* sigemptyset, sigfullset, sigaddset and sigdelset return 0 on
    success and -1 on error.  
 */
-Int VG_(ksigfillset)( vki_ksigset_t* set )
+Int VG_(sigfillset)( vki_sigset_t* set )
 {
    Int i;
    if (set == NULL)
       return -1;
-   for (i = 0; i < VKI_KNSIG_WORDS; i++)
-      set->ws[i] = 0xFFFFFFFF;
+   for (i = 0; i < _VKI_NSIG_WORDS; i++)
+      set->sig[i] = 0xFFFFFFFF;
    return 0;
 }
 
-Int VG_(ksigemptyset)( vki_ksigset_t* set )
+Int VG_(sigemptyset)( vki_sigset_t* set )
 {
    Int i;
    if (set == NULL)
       return -1;
-   for (i = 0; i < VKI_KNSIG_WORDS; i++)
-      set->ws[i] = 0x0;
+   for (i = 0; i < _VKI_NSIG_WORDS; i++)
+      set->sig[i] = 0x0;
    return 0;
 }
 
-Bool VG_(kisemptysigset)( vki_ksigset_t* set )
-{
-   Int i;
-   vg_assert(set != NULL);
-   for (i = 0; i < VKI_KNSIG_WORDS; i++)
-      if (set->ws[i] != 0x0) return False;
-   return True;
-}
-
-Bool VG_(kisfullsigset)( vki_ksigset_t* set )
+Bool VG_(isemptysigset)( vki_sigset_t* set )
 {
    Int i;
    vg_assert(set != NULL);
-   for (i = 0; i < VKI_KNSIG_WORDS; i++)
-      if (set->ws[i] != (UInt)(~0x0)) return False;
+   for (i = 0; i < _VKI_NSIG_WORDS; i++)
+      if (set->sig[i] != 0x0) return False;
+   return True;
+}
+
+Bool VG_(isfullsigset)( vki_sigset_t* set )
+{
+   Int i;
+   vg_assert(set != NULL);
+   for (i = 0; i < _VKI_NSIG_WORDS; i++)
+      if (set->sig[i] != (UInt)(~0x0)) return False;
    return True;
 }
 
 
-Int VG_(ksigaddset)( vki_ksigset_t* set, Int signum )
+Int VG_(sigaddset)( vki_sigset_t* set, Int signum )
 {
    if (set == NULL)
       return -1;
-   if (signum < 1 || signum > VKI_KNSIG)
+   if (signum < 1 || signum > _VKI_NSIG)
       return -1;
    signum--;
-   set->ws[signum / VKI_KNSIG_BPW] |= (1 << (signum % VKI_KNSIG_BPW));
+   set->sig[signum / _VKI_NSIG_BPW] |= (1 << (signum % _VKI_NSIG_BPW));
    return 0;
 }
 
-Int VG_(ksigdelset)( vki_ksigset_t* set, Int signum )
+Int VG_(sigdelset)( vki_sigset_t* set, Int signum )
 {
    if (set == NULL)
       return -1;
-   if (signum < 1 || signum > VKI_KNSIG)
+   if (signum < 1 || signum > _VKI_NSIG)
       return -1;
    signum--;
-   set->ws[signum / VKI_KNSIG_BPW] &= ~(1 << (signum % VKI_KNSIG_BPW));
+   set->sig[signum / _VKI_NSIG_BPW] &= ~(1 << (signum % _VKI_NSIG_BPW));
    return 0;
 }
 
-Int VG_(ksigismember) ( vki_ksigset_t* set, Int signum )
+Int VG_(sigismember) ( vki_sigset_t* set, Int signum )
 {
    if (set == NULL)
       return 0;
-   if (signum < 1 || signum > VKI_KNSIG)
+   if (signum < 1 || signum > _VKI_NSIG)
       return 0;
    signum--;
-   if (1 & ((set->ws[signum / VKI_KNSIG_BPW]) >> (signum % VKI_KNSIG_BPW)))
+   if (1 & ((set->sig[signum / _VKI_NSIG_BPW]) >> (signum % _VKI_NSIG_BPW)))
       return 1;
    else
       return 0;
@@ -115,60 +115,60 @@ Int VG_(ksigismember) ( vki_ksigset_t* set, Int signum )
 
 
 /* Add all signals in src to dst. */
-void VG_(ksigaddset_from_set)( vki_ksigset_t* dst, vki_ksigset_t* src )
+void VG_(sigaddset_from_set)( vki_sigset_t* dst, vki_sigset_t* src )
 {
    Int i;
    vg_assert(dst != NULL && src != NULL);
-   for (i = 0; i < VKI_KNSIG_WORDS; i++)
-      dst->ws[i] |= src->ws[i];
+   for (i = 0; i < _VKI_NSIG_WORDS; i++)
+      dst->sig[i] |= src->sig[i];
 }
 
 /* Remove all signals in src from dst. */
-void VG_(ksigdelset_from_set)( vki_ksigset_t* dst, vki_ksigset_t* src )
+void VG_(sigdelset_from_set)( vki_sigset_t* dst, vki_sigset_t* src )
 {
    Int i;
    vg_assert(dst != NULL && src != NULL);
-   for (i = 0; i < VKI_KNSIG_WORDS; i++)
-      dst->ws[i] &= ~(src->ws[i]);
+   for (i = 0; i < _VKI_NSIG_WORDS; i++)
+      dst->sig[i] &= ~(src->sig[i]);
 }
 
 
 /* The functions sigaction, sigprocmask, sigpending and sigsuspend
    return 0 on success and -1 on error.  
 */
-Int VG_(ksigprocmask)( Int how, 
-                       const vki_ksigset_t* set, 
-                       vki_ksigset_t* oldset)
+Int VG_(sigprocmask)( Int how, 
+                       const vki_sigset_t* set, 
+                       vki_sigset_t* oldset)
 {
    Int res 
       = VG_(do_syscall)(__NR_rt_sigprocmask, 
 			how, (UInt)set, (UInt)oldset, 
-			VKI_KNSIG_WORDS * VKI_BYTES_PER_WORD);
+			_VKI_NSIG_WORDS * sizeof(UWord));
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
 
-Int VG_(ksigaction) ( Int signum,  
-                      const vki_ksigaction* act,  
-                      vki_ksigaction* oldact)
+Int VG_(sigaction) ( Int signum,  
+                      const struct vki_sigaction* act,  
+                      struct vki_sigaction* oldact)
 {
    Int res
      = VG_(do_syscall)(__NR_rt_sigaction,
 		       signum, (UInt)act, (UInt)oldact, 
-		       VKI_KNSIG_WORDS * VKI_BYTES_PER_WORD);
+		       _VKI_NSIG_WORDS * sizeof(UWord));
    /* VG_(printf)("res = %d\n",res); */
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
 
-Int VG_(ksigaltstack)( const vki_kstack_t* ss, vki_kstack_t* oss )
+Int VG_(sigaltstack)( const vki_stack_t* ss, vki_stack_t* oss )
 {
    Int res
      = VG_(do_syscall)(__NR_sigaltstack, (UInt)ss, (UInt)oss);
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
-Int VG_(ksigtimedwait)( const vki_ksigset_t *set, vki_ksiginfo_t *info, 
+Int VG_(sigtimedwait)( const vki_sigset_t *set, vki_siginfo_t *info, 
 			const struct vki_timespec *timeout )
 {
    Int res = VG_(do_syscall)(__NR_rt_sigtimedwait, set, info, timeout, sizeof(*set));
@@ -176,30 +176,30 @@ Int VG_(ksigtimedwait)( const vki_ksigset_t *set, vki_ksiginfo_t *info,
    return VG_(is_kerror)(res) ? -1 : res;
 }
  
-Int VG_(ksignal)(Int signum, void (*sighandler)(Int))
+Int VG_(signal)(Int signum, void (*sighandler)(Int))
 {
    Int res;
-   vki_ksigaction sa;
+   struct vki_sigaction sa;
    sa.ksa_handler = sighandler;
-   sa.ksa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
-   sa.ksa_restorer = NULL;
-   res = VG_(ksigemptyset)( &sa.ksa_mask );
+   sa.sa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
+   sa.sa_restorer = NULL;
+   res = VG_(sigemptyset)( &sa.sa_mask );
    vg_assert(res == 0);
    res = VG_(do_syscall)(__NR_rt_sigaction,
 			 signum, (UInt)(&sa), (UInt)NULL,
-			 VKI_KNSIG_WORDS * VKI_BYTES_PER_WORD);
+			 _VKI_NSIG_WORDS * sizeof(UWord));
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
 
-Int VG_(kkill)( Int pid, Int signo )
+Int VG_(kill)( Int pid, Int signo )
 {
    Int res = VG_(do_syscall)(__NR_kill, pid, signo);
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
 
-Int VG_(ktkill)( Int tid, Int signo )
+Int VG_(tkill)( Int tid, Int signo )
 {
    Int ret = -VKI_ENOSYS;
 
@@ -218,7 +218,7 @@ Int VG_(ktkill)( Int tid, Int signo )
    return VG_(is_kerror)(ret) ? -1 : 0;
 }
 
-Int VG_(ksigpending) ( vki_ksigset_t* set )
+Int VG_(sigpending) ( vki_sigset_t* set )
 {
    Int res = VG_(do_syscall)(__NR_sigpending, (UInt)set);
    return VG_(is_kerror)(res) ? -1 : 0;
@@ -1810,46 +1810,6 @@ void VG_(ssort)( void* base, UInt nmemb, UInt size,
    This is all very Linux-kernel specific.
    ------------------------------------------------------------------ */
 
-/* Various needed constants from the kernel iface (2.4),
-   /usr/src/linux-2.4.9-31 */
-
-/* kernel, ./include/linux/net.h */
-#define SYS_SOCKET      1              /* sys_socket(2)        */
-#define SYS_CONNECT     3              /* sys_connect(2)       */
-#define SYS_GETSOCKNAME 6              /* sys_getsockname(2)   */
-#define SYS_GETPEERNAME 7              /* sys_getpeername(2)   */
-#define SYS_SEND        9              /* sys_send(2)          */
-#define SYS_GETSOCKOPT  15             /* sys_getsockopt(2)    */
-
-typedef UInt __u32;
-
-/* Internet address. */
-struct vki_in_addr {
-        __u32   s_addr;
-};
-
-/* kernel, include/linux/socket.h */
-#define AF_INET                2       /* Internet IP Protocol        */
-#define MSG_NOSIGNAL           0x4000  /* Do not generate SIGPIPE */
-
-/* kernel, ./include/asm-i386/socket.h */
-#define SOCK_STREAM 1                  /* stream (connection) socket  */
-
-/* kernel, /usr/src/linux-2.4.9-31/linux/include/in.h */
-/* Structure describing an Internet (IP) socket address. */
-#define __SOCK_SIZE__   16              /* sizeof(struct sockaddr)      */
-struct vki_sockaddr_in {
-  vki_sa_family_t       sin_family;     /* Address family               */
-  unsigned short int    sin_port;       /* Port number                  */
-  struct vki_in_addr    sin_addr;       /* Internet address             */
-
-  /* Pad to size of `struct sockaddr'. */
-  unsigned char         __pad[__SOCK_SIZE__ - sizeof(short int) -
-                        sizeof(unsigned short int) - 
-                        sizeof(struct vki_in_addr)];
-};
-
-
 static
 Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port );
 
@@ -1902,12 +1862,12 @@ Int VG_(connect_via_socket)( UChar* str )
                   (ip >> 8) & 0xFF, ip & 0xFF, 
 	          (UInt)port );
 
-   servAddr.sin_family = AF_INET;
+   servAddr.sin_family = VKI_AF_INET;
    servAddr.sin_addr.s_addr = my_htonl(ip);
    servAddr.sin_port = my_htons(port);
 
    /* create socket */
-   sd = my_socket(AF_INET, SOCK_STREAM, 0 /* IPPROTO_IP ? */);
+   sd = my_socket(VKI_AF_INET, VKI_SOCK_STREAM, 0 /* IPPROTO_IP ? */);
    if (sd < 0) {
      /* this shouldn't happen ... nevertheless */
      return -2;
@@ -1978,7 +1938,7 @@ Int my_socket ( Int domain, Int type, Int protocol )
    args[0] = domain;
    args[1] = type;
    args[2] = protocol;
-   res = VG_(do_syscall)(__NR_socketcall, SYS_SOCKET, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_SOCKET, (UInt)&args);
    if (VG_(is_kerror)(res)) 
       res = -1;
    return res;
@@ -1993,7 +1953,7 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr,
    args[0] = sockfd;
    args[1] = (UInt)serv_addr;
    args[2] = addrlen;
-   res = VG_(do_syscall)(__NR_socketcall, SYS_CONNECT, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_CONNECT, (UInt)&args);
    if (VG_(is_kerror)(res)) 
       res = -1;
    return res;
@@ -2006,7 +1966,7 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
    /* Requests not to send SIGPIPE on errors on stream oriented
       sockets when the other end breaks the connection. The EPIPE
       error is still returned. */
-   Int flags = MSG_NOSIGNAL;
+   Int flags = VKI_MSG_NOSIGNAL;
 
    Int res;
    UInt args[4];
@@ -2014,7 +1974,7 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
    args[1] = (UInt)msg;
    args[2] = count;
    args[3] = flags;
-   res = VG_(do_syscall)(__NR_socketcall, SYS_SEND, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_SEND, (UInt)&args);
    if (VG_(is_kerror)(res)) 
       res = -1;
    return res;
@@ -2027,7 +1987,7 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
    args[0] = sd;
    args[1] = (UInt)name;
    args[2] = (UInt)namelen;
-   res = VG_(do_syscall)(__NR_socketcall, SYS_GETSOCKNAME, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETSOCKNAME, (UInt)&args);
    if(VG_(is_kerror)(res))
       res = -1;
    return res;
@@ -2040,7 +2000,7 @@ Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
    args[0] = sd;
    args[1] = (UInt)name;
    args[2] = (UInt)namelen;
-   res = VG_(do_syscall)(__NR_socketcall, SYS_GETPEERNAME, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETPEERNAME, (UInt)&args);
    if(VG_(is_kerror)(res))
       res = -1;
    return res;
@@ -2056,7 +2016,7 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
    args[2] = (UInt)optname;
    args[3] = (UInt)optval;
    args[4] = (UInt)optlen;
-   res = VG_(do_syscall)(__NR_socketcall, SYS_GETSOCKOPT, (UInt)&args);
+   res = VG_(do_syscall)(__NR_socketcall, VKI_SYS_GETSOCKOPT, (UInt)&args);
    if(VG_(is_kerror)(res))
       res = -1;
    return res;

@@ -344,7 +344,7 @@ void arena_init ( ArenaId aid, Char* name, Int rz_szB, Int min_sblock_szB )
    Arena* a = arenaId_to_ArenaP(aid);
    
    vg_assert(rz_szB >= 0);
-   vg_assert((min_sblock_szB % VKI_BYTES_PER_PAGE) == 0);
+   vg_assert((min_sblock_szB % VKI_PAGE_SIZE) == 0);
    a->name      = name;
    a->clientmem = ( VG_AR_CLIENT == aid ? True : False );
 
@@ -455,7 +455,7 @@ Superblock* newSuperblock ( Arena* a, Int cszB )
    cszB += sizeof(Superblock);
 
    if (cszB < a->min_sblock_szB) cszB = a->min_sblock_szB;
-   while ((cszB % VKI_BYTES_PER_PAGE) > 0) cszB++;
+   while ((cszB % VKI_PAGE_SIZE) > 0) cszB++;
 
    if (!called_before) {
       // First time we're called -- use the special static bootstrap

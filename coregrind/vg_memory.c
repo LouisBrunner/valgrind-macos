@@ -119,7 +119,7 @@ Segment *VG_(split_segment)(Addr a)
    Segment *ns;
    Int delta;
 
-   vg_assert((a & (VKI_BYTES_PER_PAGE-1)) == 0);
+   vg_assert((a & (VKI_PAGE_SIZE-1)) == 0);
 
    /* missed */
    if (s == NULL)
@@ -173,8 +173,8 @@ void VG_(unmap_range)(Addr addr, UInt len)
    end = addr+len;
 
    /* Everything must be page-aligned */
-   vg_assert((addr & (VKI_BYTES_PER_PAGE-1)) == 0);
-   vg_assert((len  & (VKI_BYTES_PER_PAGE-1)) == 0);
+   vg_assert((addr & (VKI_PAGE_SIZE-1)) == 0);
+   vg_assert((len  & (VKI_PAGE_SIZE-1)) == 0);
 
    for(s = VG_(SkipList_Find)(&sk_segments, &addr); 
        s != NULL && s->addr < (addr+len); 
@@ -286,11 +286,11 @@ static void merge_segments(Addr a, UInt len)
    Segment *s;
    Segment *next;
 
-   vg_assert((a & (VKI_BYTES_PER_PAGE-1)) == 0);
-   vg_assert((len & (VKI_BYTES_PER_PAGE-1)) == 0);
+   vg_assert((a   & (VKI_PAGE_SIZE-1)) == 0);
+   vg_assert((len & (VKI_PAGE_SIZE-1)) == 0);
 
-   a -= VKI_BYTES_PER_PAGE;
-   len += VKI_BYTES_PER_PAGE;
+   a   -= VKI_PAGE_SIZE;
+   len += VKI_PAGE_SIZE;
 
    for(s = VG_(SkipList_Find)(&sk_segments, &a);
        s != NULL && s->addr < (a+len);) {
@@ -326,7 +326,7 @@ void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags,
 		  addr, len, prot, flags, dev, ino, off, filename);
 
    /* Everything must be page-aligned */
-   vg_assert((addr & (VKI_BYTES_PER_PAGE-1)) == 0);
+   vg_assert((addr & (VKI_PAGE_SIZE-1)) == 0);
    len = PGROUNDUP(len);
 
    /* First look to see what already exists around here */
@@ -392,7 +392,7 @@ void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags,
       if (off == 0									&&
 	  filename != NULL								&&
 	  (prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == (VKI_PROT_READ|VKI_PROT_EXEC)	&&
-	  len >= VKI_BYTES_PER_PAGE							&&
+	  len >= VKI_PAGE_SIZE							&&
 	  s->symtab == NULL								&&
 	  VG_(is_object_file)((void *)addr)) 
       {
@@ -431,7 +431,7 @@ void VG_(map_fd_segment)(Addr addr, UInt len, UInt prot, UInt flags,
    st.st_ino = 0;
 
    if (fd != -1 && (flags & SF_FILE)) {
-      vg_assert((off & (VKI_BYTES_PER_PAGE-1)) == 0);
+      vg_assert((off & (VKI_PAGE_SIZE-1)) == 0);
 
       if (VG_(fstat)(fd, &st) < 0)
 	 flags &= ~SF_FILE;
@@ -466,7 +466,7 @@ void VG_(mprotect_range)(Addr a, UInt len, UInt prot)
       VG_(printf)("mprotect_range(%p, %d, %x)\n", a, len, prot);
 
    /* Everything must be page-aligned */
-   vg_assert((a & (VKI_BYTES_PER_PAGE-1)) == 0);
+   vg_assert((a & (VKI_PAGE_SIZE-1)) == 0);
    len = PGROUNDUP(len);
 
    VG_(split_segment)(a);
@@ -499,15 +499,15 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
    else {
       /* leave space for redzone and still try to get the exact
 	 address asked for */
-      addr -= VKI_BYTES_PER_PAGE;
+      addr -= VKI_PAGE_SIZE;
    }
    ret = addr;
 
    /* Everything must be page-aligned */
-   vg_assert((addr & (VKI_BYTES_PER_PAGE-1)) == 0);
+   vg_assert((addr & (VKI_PAGE_SIZE-1)) == 0);
    len = PGROUNDUP(len);
 
-   len += VKI_BYTES_PER_PAGE * 2; /* leave redzone gaps before and after mapping */
+   len += VKI_PAGE_SIZE * 2; /* leave redzone gaps before and after mapping */
 
    if (debug)
       VG_(printf)("find_map_space: ret starts as %p-%p client=%d\n",
@@ -539,7 +539,7 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
    if (((limit - len)+1) < ret)
       ret = 0;			/* no space */
    else
-      ret += VKI_BYTES_PER_PAGE; /* skip leading redzone */
+      ret += VKI_PAGE_SIZE; /* skip leading redzone */
 
    if (debug)
       VG_(printf)("find_map_space(%p, %d, %d) -> %p\n",
@@ -719,16 +719,16 @@ Bool VG_(is_addressable)(Addr p, Int size)
 {
    volatile Char * volatile cp = (volatile Char *)p;
    volatile Bool ret;
-   vki_ksigaction sa, origsa;
-   vki_ksigset_t mask;
+   struct vki_sigaction sa, origsa;
+   vki_sigset_t mask;
 
    vg_assert(size > 0);
 
    sa.ksa_handler = segv_handler;
-   sa.ksa_flags = 0;
-   VG_(ksigfillset)(&sa.ksa_mask);
-   VG_(ksigaction)(VKI_SIGSEGV, &sa, &origsa);
-   VG_(ksigprocmask)(VKI_SIG_SETMASK, NULL, &mask);
+   sa.sa_flags = 0;
+   VG_(sigfillset)(&sa.sa_mask);
+   VG_(sigaction)(VKI_SIGSEGV, &sa, &origsa);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &mask);
 
    if (__builtin_setjmp(&segv_jmpbuf) == 0) {
       while(size--)
@@ -737,8 +737,8 @@ Bool VG_(is_addressable)(Addr p, Int size)
     } else
       ret = False;
 
-   VG_(ksigaction)(VKI_SIGSEGV, &origsa, NULL);
-   VG_(ksigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
+   VG_(sigaction)(VKI_SIGSEGV, &origsa, NULL);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
 
    return ret;
 }
@@ -847,8 +847,8 @@ void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init)
 	 /* ask the tool to initialize each page */
 	 VG_TRACK( init_shadow_page, PGROUNDDN(p) );
 	 
-	 p += VKI_BYTES_PER_PAGE;
-	 sz -= VKI_BYTES_PER_PAGE;
+	 p  += VKI_PAGE_SIZE;
+	 sz -= VKI_PAGE_SIZE;
       }
 }
 

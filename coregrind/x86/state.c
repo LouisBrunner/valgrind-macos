@@ -570,7 +570,7 @@ Bool VGA_(setup_pointercheck)(void)
    vki_modify_ldt_t ldt = { 
       VG_POINTERCHECK_SEGIDX,    // entry_number
       VG_(client_base),          // base_addr
-      (VG_(client_end)-VG_(client_base)) / VKI_BYTES_PER_PAGE, // limit
+      (VG_(client_end)-VG_(client_base)) / VKI_PAGE_SIZE, // limit
       1,                         // seg_32bit
       0,                         // contents: data, RW, non-expanding
       0,                         // ! read_exec_only
@@ -595,7 +595,7 @@ Bool VGA_(setup_pointercheck)(void)
 
 Int VGA_(ptrace_setregs_from_BB)(Int pid)
 {
-   struct user_regs_struct regs;
+   struct vki_user_regs_struct regs;
 
    regs.cs     = VG_(baseBlock)[VGOFF_(m_cs)];
    regs.ss     = VG_(baseBlock)[VGOFF_(m_ss)];
@@ -619,7 +619,7 @@ Int VGA_(ptrace_setregs_from_BB)(Int pid)
 
 Int VGA_(ptrace_setregs_from_tst)(Int pid, arch_thread_t* arch)
 {
-   struct user_regs_struct regs;
+   struct vki_user_regs_struct regs;
 
    regs.cs     = arch->m_cs;
    regs.ss     = arch->m_ss;

@@ -252,9 +252,9 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
             check_mmap(res, (char*)ROUNDUP(bss,align), bytes);
          }
 
-	 bytes = bss & (VKI_BYTES_PER_PAGE - 1);
+	 bytes = bss & (VKI_PAGE_SIZE - 1);
 	 if (bytes > 0) {
-	    bytes = VKI_BYTES_PER_PAGE - bytes;
+	    bytes = VKI_PAGE_SIZE - bytes;
 	    memset((char *)bss, 0, bytes);
 	 }
       }
@@ -281,7 +281,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
    ESZ(Addr) maxaddr = 0;	/* highest mapped address */
    ESZ(Addr) interp_addr = 0;	/* interpreter (ld.so) address */
    ESZ(Word) interp_size = 0;	/* interpreter size */
-   ESZ(Word) interp_align = VKI_BYTES_PER_PAGE;
+   ESZ(Word) interp_align = VKI_PAGE_SIZE;
    int i;
    void *entry;
    ESZ(Addr) ebase = 0;
@@ -537,7 +537,7 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
 {
    int fd;
    int err;
-   char buf[VKI_BYTES_PER_PAGE];
+   char buf[VKI_PAGE_SIZE];
    int bufsz;
    int i;
    int ret;

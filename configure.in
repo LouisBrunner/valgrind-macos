@@ -241,19 +241,6 @@ if test "$vg_have_sched_priority" = yes; then
 AC_DEFINE([HAVE_SCHED_PRIORITY], 1, [pthread / sched_priority exists])
 fi
 
-AC_MSG_CHECKING([whether nfds_t is defined])
-AC_CACHE_VAL(vg_have_nfds_t,
-[
-AC_TRY_COMPILE([#include <sys/poll.h>],[
-nfds_t i=0;],
-vg_have_nfds_t=yes,
-vg_have_nfds_t=no)
-])
-AC_MSG_RESULT($vg_have_nfds_t)
-if test "$vg_have_nfds_t" = yes; then
-AC_DEFINE([HAVE_NFDS_T], 1, [nfds_t exists])
-fi
-
 # try to detect the XFree version
 # JRS 2002-06-17: this is completely bogus because it
 # detects the server version, whereas we need to know the 
@@ -336,21 +323,6 @@ EOF
 fi
 
 
-# check if the GNU as supports CFI directives
-AC_MSG_CHECKING([if gas accepts .cfi])
-AC_TRY_LINK(, [
-
-__asm__ __volatile__ (".cfi_startproc\n"
-                      ".cfi_adjust_cfa_offset 0x0\n"
-                      ".cfi_endproc\n");
-],
-[
-  AC_DEFINE_UNQUOTED([HAVE_GAS_CFI], 1, [Define if your GNU as supports .cfi])
-  AC_MSG_RESULT(yes)
-],
-  AC_MSG_RESULT(no)
-)
-
 # does this compiler support -mpreferred-stack-boundary=2 ?
 AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary])
 
@@ -394,14 +366,7 @@ AM_CONDITIONAL(USE_PIE, test "$vg_cv_pie" = "yes")
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h sys/statfs.h sys/time.h sys/endian.h endian.h termios.h unistd.h utime.h linux/fb.h mqueue.h linux/compiler.h])
-
-AH_TEMPLATE([HAVE_LINUX_MII_H], [])
-AC_MSG_CHECKING([for linux/mii.h])
-AC_PREPROC_IFELSE([#include <linux/mii.h>],
-                   [AC_DEFINE([HAVE_LINUX_MII_H])
-                    AC_MSG_RESULT([yes])],
-                   [AC_MSG_RESULT([no])])
+AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h sys/statfs.h sys/time.h sys/endian.h endian.h termios.h unistd.h utime.h mqueue.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UID_T
@@ -409,7 +374,6 @@ AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_CHECK_TYPES(__pthread_unwind_buf_t,,,[#include <pthread.h>])
-AC_CHECK_TYPES(u16,,,[#include <linux/mii.h>])
 
 # Checks for library functions.
 AC_FUNC_MEMCMP
@@ -429,6 +393,8 @@ AC_OUTPUT(
    include/valgrind.h 
    include/Makefile 
    include/x86/Makefile 
+   include/linux/Makefile 
+   include/x86-linux/Makefile 
    auxprogs/Makefile
    coregrind/Makefile 
    coregrind/demangle/Makefile 

@@ -130,12 +130,10 @@ following:
     which has a similar behaviour to yours, and use it as a 
     starting point.
 
-    If you need structure definitions for your syscall, you can copy
-    structure definitions from the kernel headers into
-    include/vg_kerneliface.h, with the appropriate vki_* name
-    mangling.  Alternatively, you can #include headers for structure
-    definitions, put your #includes into vg_unsafe.h (copying
-    syscall-related things into vg_kerneliface.h is preferred though).
+    If you need structure definitions and/or constants for your syscall,
+    copy them from the kernel headers into include/vki.h and co., with
+    the appropriate vki_*/VKI_* name mangling.  Don't #include any
+    kernel headers.  And certainly don't #include any glibc headers.
 
     Test it.
 

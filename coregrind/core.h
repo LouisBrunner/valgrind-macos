@@ -173,8 +173,8 @@
 /* a - alignment - must be a power of 2 */
 #define ROUNDDN(p, a)	((Addr)(p) & ~((a)-1))
 #define ROUNDUP(p, a)	ROUNDDN((p)+(a)-1, (a))
-#define PGROUNDDN(p)	ROUNDDN(p, VKI_BYTES_PER_PAGE)
-#define PGROUNDUP(p)	ROUNDUP(p, VKI_BYTES_PER_PAGE)
+#define PGROUNDDN(p)	ROUNDDN(p, VKI_PAGE_SIZE)
+#define PGROUNDUP(p)	ROUNDUP(p, VKI_PAGE_SIZE)
 
 /* ---------------------------------------------------------------------
    Environment variables
@@ -798,20 +798,20 @@ typedef
       LWP: it may have more signals blocked because of signal
       handling, or it may be different because of sigsuspend.
    */
-   vki_ksigset_t sig_mask;
+   vki_sigset_t sig_mask;
 
    /* Effective signal mask.  This is the mask which currently
       applies; it may be different from sig_mask while a signal
       handler is running.
     */
-   vki_ksigset_t eff_sig_mask;
+   vki_sigset_t eff_sig_mask;
 
    /* Signal queue.  This is used when the kernel doesn't route
       signals properly in order to remember the signal information
       while we are routing the signal.  It is a circular queue with
       insertions performed at the head and removals at the tail.
     */
-   vki_ksiginfo_t sigqueue[VG_N_SIGNALQUEUE];
+   vki_siginfo_t sigqueue[VG_N_SIGNALQUEUE];
    Int sigqueue_head;
    Int sigqueue_tail;
 
@@ -845,7 +845,7 @@ typedef
    Addr stack_highest_word;
 
    /* Alternate signal stack */
-   vki_kstack_t altstack;
+   vki_stack_t altstack;
 
    /* Architecture-specific thread state */
    arch_thread_t arch;
@@ -900,7 +900,7 @@ extern void VG_(scheduler_init) ( void );
 extern void VG_(pp_sched_status) ( void );
 
 // Longjmp back to the scheduler and thus enter the sighandler immediately.
-extern void VG_(resume_scheduler) ( Int sigNo, vki_ksiginfo_t *info );
+extern void VG_(resume_scheduler) ( Int sigNo, vki_siginfo_t *info );
 
 // Longjmp, ending the scheduler, when a fatal signal occurs in the client.
 extern void VG_(scheduler_handle_fatal_signal)( Int sigNo );
@@ -948,7 +948,7 @@ extern Int  VG_(sig_alloc_rtsig) ( Int high );
 
 extern void VG_(sigstartup_actions) ( void );
 
-extern void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *, Bool async );
+extern void VG_(deliver_signal) ( ThreadId tid, const vki_siginfo_t *, Bool async );
 extern void VG_(unblock_host_signal) ( Int sigNo );
 
 extern Bool VG_(is_sig_ign) ( Int sigNo );
@@ -961,11 +961,11 @@ extern void VG_(route_signals) ( void );
 extern void VG_(do__NR_sigaltstack)   ( ThreadId tid );
 extern void VG_(do__NR_sigaction)     ( ThreadId tid );
 extern void VG_(do__NR_sigprocmask)   ( ThreadId tid, Int how, 
-                                        vki_ksigset_t* set,
-                                        vki_ksigset_t* oldset );
+                                        vki_sigset_t* set,
+                                        vki_sigset_t* oldset );
 extern void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid, Int how, 
-                                               vki_ksigset_t* set,
-                                               vki_ksigset_t* oldset );
+                                               vki_sigset_t* set,
+                                               vki_sigset_t* oldset );
 
 /* Modify the current thread's state once we have detected it is
    returning from a signal handler. */
@@ -973,9 +973,9 @@ extern Bool VG_(signal_returns) ( ThreadId tid );
 
 /* Handy utilities to block/restore all host signals. */
 extern void VG_(block_all_host_signals) 
-                  ( /* OUT */ vki_ksigset_t* saved_mask );
+                  ( /* OUT */ vki_sigset_t* saved_mask );
 extern void VG_(restore_all_host_signals) 
-                  ( /* IN */ vki_ksigset_t* saved_mask );
+                  ( /* IN */ vki_sigset_t* saved_mask );
 
 extern void VG_(kill_self)(Int sigNo);
 
@@ -1228,8 +1228,8 @@ extern Addr VG_(shadow_end);
 extern Addr VG_(valgrind_base);	/* valgrind's address range */
 extern Addr VG_(valgrind_last); // Nb: last byte, rather than one past the end
 
-extern vki_rlimit VG_(client_rlimit_data); /* client's original rlimit data */
-extern vki_rlimit VG_(client_rlimit_stack); /* client's original rlimit stack */
+extern struct vki_rlimit VG_(client_rlimit_data); /* client's original rlimit data */
+extern struct vki_rlimit VG_(client_rlimit_stack); /* client's original rlimit stack */
 
 /* client executable file descriptor */
 extern Int  VG_(clexecfd);
@@ -1360,7 +1360,7 @@ extern void VG_(proxy_delete)   ( ThreadId tid, Bool force );
 extern void VG_(proxy_results)  ( void );
 extern void VG_(proxy_sendsig)  ( ThreadId tid, Int signo );
 extern void VG_(proxy_setsigmask)(ThreadId tid);
-extern void VG_(proxy_sigack)   ( ThreadId tid, const vki_ksigset_t *);
+extern void VG_(proxy_sigack)   ( ThreadId tid, const vki_sigset_t *);
 extern void VG_(proxy_abort_syscall) ( ThreadId tid );
 extern void VG_(proxy_waitsig)  ( void );
 extern void VG_(proxy_wait_sys)	(ThreadId tid, Bool restart);
@@ -1375,7 +1375,7 @@ void VG_(sanity_check_proxy)(void);
 /* Send a signal from a thread's proxy to the thread.  This longjmps
    back into the proxy's main loop, so it doesn't return. */
 __attribute__ ((__noreturn__))
-extern void VG_(proxy_handlesig)( const vki_ksiginfo_t *siginfo, 
+extern void VG_(proxy_handlesig)( const vki_siginfo_t *siginfo, 
 				  Addr ip, Int sysnum );
 
 /* ---------------------------------------------------------------------
@@ -1515,21 +1515,21 @@ extern Int  VGA_(ptrace_setregs_from_BB)  ( Int pid );
 extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, arch_thread_t* arch );
 
 // Making coredumps
-extern void VGA_(fill_elfregs_from_BB)     ( struct user_regs_struct* regs );
-extern void VGA_(fill_elfregs_from_tst)    ( struct user_regs_struct* regs,
+extern void VGA_(fill_elfregs_from_BB)     ( struct vki_user_regs_struct* regs );
+extern void VGA_(fill_elfregs_from_tst)    ( struct vki_user_regs_struct* regs,
                                              const arch_thread_t* arch );
-extern void VGA_(fill_elffpregs_from_BB)   ( elf_fpregset_t* fpu );
-extern void VGA_(fill_elffpregs_from_tst)  ( elf_fpregset_t* fpu,
+extern void VGA_(fill_elffpregs_from_BB)   ( vki_elf_fpregset_t* fpu );
+extern void VGA_(fill_elffpregs_from_tst)  ( vki_elf_fpregset_t* fpu,
                                              const arch_thread_t* arch );
-extern void VGA_(fill_elffpxregs_from_BB)  ( elf_fpxregset_t* xfpu );
-extern void VGA_(fill_elffpxregs_from_tst) ( elf_fpxregset_t* xfpu,
+extern void VGA_(fill_elffpxregs_from_BB)  ( vki_elf_fpxregset_t* xfpu );
+extern void VGA_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
                                              const arch_thread_t* arch );
 
 // Signal stuff
 extern void VGA_(push_signal_frame) ( ThreadId tid, Addr sp_top_of_frame,
-                                      const vki_ksiginfo_t *siginfo,
+                                      const vki_siginfo_t *siginfo,
                                       void *handler, UInt flags,
-                                      const vki_ksigset_t *mask);
+                                      const vki_sigset_t *mask);
 extern Int  VGA_(pop_signal_frame)  ( ThreadId tid );
 
 // libpthread stuff

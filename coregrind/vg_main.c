@@ -106,8 +106,8 @@ Addr VG_(valgrind_base);	 /* valgrind's address range */
 // the VG_(*_end) vars name the byte one past the end of the section.
 Addr VG_(valgrind_last);
 
-vki_rlimit VG_(client_rlimit_data);
-vki_rlimit VG_(client_rlimit_stack);
+struct vki_rlimit VG_(client_rlimit_data);
+struct vki_rlimit VG_(client_rlimit_stack);
 
 /* This is set early to indicate whether this CPU has the
    SSE/fxsave/fxrestor features.  */
@@ -239,7 +239,7 @@ void VG_(start_debugger) ( Int tid )
 
    if ((pid = fork()) == 0) {
       ptrace(PTRACE_TRACEME, 0, NULL, NULL);
-      VG_(kkill)(VG_(getpid)(), VKI_SIGSTOP);
+      VG_(kill)(VG_(getpid)(), VKI_SIGSTOP);
 
    } else if (pid > 0) {
       Int status;
@@ -301,7 +301,7 @@ void VG_(start_debugger) ( Int tid )
          }
       }
 
-      VG_(kkill)(pid, VKI_SIGKILL);
+      VG_(kill)(pid, VKI_SIGKILL);
       VG_(waitpid)(pid, &status, 0);
    }
 }
@@ -987,12 +987,12 @@ static Addr setup_client_stack(void* init_sp,
       sizeof(char **) +			/* terminal NULL */
       auxsize +				/* auxv */
       ROUNDUP(stringsize, sizeof(int)) +/* strings (aligned) */
-      VKI_BYTES_PER_PAGE;		/* page for trampoline code */
+      VKI_PAGE_SIZE;		/* page for trampoline code */
 
    // decide where stack goes!
    VG_(clstk_end) = VG_(client_end);
 
-   VG_(client_trampoline_code) = VG_(clstk_end) - VKI_BYTES_PER_PAGE;
+   VG_(client_trampoline_code) = VG_(clstk_end) - VKI_PAGE_SIZE;
 
    /* cl_esp is the client's stack pointer */
    cl_esp = VG_(clstk_end) - stacksize;
@@ -1680,9 +1680,9 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
      config_error("Please use absolute paths in "
                   "./configure --prefix=... or --libdir=...");
 
-   for (auxp = client_auxv; auxp[0] != VKI_AT_NULL; auxp += 2) {
+   for (auxp = client_auxv; auxp[0] != AT_NULL; auxp += 2) {
       switch(auxp[0]) {
-      case VKI_AT_SYSINFO:
+      case AT_SYSINFO:
 	 auxp[1] = (Int)(VG_(client_trampoline_code) + VG_(tramp_syscall_offset));
 	 break;
       }
@@ -2551,7 +2551,7 @@ int main(int argc, char **argv)
    VgSchedReturnCode src;
    Int exitcode = 0;
    Int fatal_sigNo = -1;
-   vki_rlimit zero = { 0, 0 };
+   struct vki_rlimit zero = { 0, 0 };
    Int padfile;
    ThreadId last_run_tid = 0;    // Last thread the scheduler ran.
 

@@ -1,5 +1,5 @@
 
-SUBDIRS = $(VG_ARCH) .
+SUBDIRS = $(VG_ARCH) $(VG_OS) $(VG_PLATFORM) .
 
 EXTRA_DIST = \
 	tool.h.base \
@@ -12,7 +12,6 @@ incinc_HEADERS = \
 	tool.h \
 	tool_asm.h \
 	valgrind.h \
-	vg_kerneliface.h \
 	vg_skin.h
 
 BUILT_SOURCES = tool.h valgrind.h

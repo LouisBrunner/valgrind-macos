@@ -73,7 +73,7 @@ typedef
       /* Sanity check word. */
       UInt magicPI;
       /* pointed to by psigInfo */
-      vki_ksiginfo_t sigInfo;
+      vki_siginfo_t sigInfo;
       /* pointed to by puContext */
       struct vki_ucontext uContext;
 
@@ -104,7 +104,7 @@ typedef
       UInt sh_eflags;
 
       /* saved signal mask to be restored when handler returns */
-      vki_ksigset_t	mask;
+      vki_sigset_t	mask;
 
       /* Scheduler-private stuff: what was the thread's status prior to
          delivering this signal? */
@@ -123,8 +123,8 @@ typedef
 /*------------------------------------------------------------*/
 
 /* Make up a plausible-looking thread state from the thread's current state */
-static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si, 
-			   const vki_ksigset_t *set, struct vki_ucontext *uc)
+static void synth_ucontext(ThreadId tid, const vki_siginfo_t *si, 
+			   const vki_sigset_t *set, struct vki_ucontext *uc)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
    struct vki_sigcontext *sc = &uc->uc_mcontext;
@@ -168,9 +168,9 @@ static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si,
                   post_reg_write_deliver_signal)
 
 void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
-                             const vki_ksiginfo_t *siginfo,
+                             const vki_siginfo_t *siginfo,
                              void *handler, UInt flags,
-                             const vki_ksigset_t *mask)
+                             const vki_sigset_t *mask)
 {
    Addr		esp;
    ThreadState* tst;
@@ -211,7 +211,7 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
 
       VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame (siginfo)", 
 		(Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
-      VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_ksiginfo_t));
+      VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_siginfo_t));
       VG_TRACK( post_mem_write, (Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
 
       VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame (siginfo)", 
@@ -232,7 +232,7 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
       VG_TRACK( post_mem_write, (Addr)&frame->handlerArgs, 
 		sizeof(frame->handlerArgs.sigContext) );
       
-      frame->handlerArgs.sigContext.oldmask = tst->sig_mask.ws[0];
+      frame->handlerArgs.sigContext.oldmask = tst->sig_mask.sig[0];
    }
 
    frame->magicPI    = 0x31415927;
@@ -362,7 +362,7 @@ Int VGA_(pop_signal_frame)(ThreadId tid)
 /*--- Making coredumps                                     ---*/
 /*------------------------------------------------------------*/
 
-void VGA_(fill_elfregs_from_BB)(struct user_regs_struct* regs)
+void VGA_(fill_elfregs_from_BB)(struct vki_user_regs_struct* regs)
 {
    regs->eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
    regs->esp    = VG_(baseBlock)[VGOFF_(m_esp)];
@@ -385,7 +385,7 @@ void VGA_(fill_elfregs_from_BB)(struct user_regs_struct* regs)
 }
 
 
-void VGA_(fill_elfregs_from_tst)(struct user_regs_struct* regs, 
+void VGA_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
                                  const arch_thread_t* arch)
 {
    regs->eflags = arch->m_eflags;
@@ -408,7 +408,7 @@ void VGA_(fill_elfregs_from_tst)(struct user_regs_struct* regs,
    regs->gs     = arch->m_gs;
 }
 
-static void fill_fpu(elf_fpregset_t *fpu, const Char *from)
+static void fill_fpu(vki_elf_fpregset_t *fpu, const Char *from)
 {
    if (VG_(have_ssestate)) {
       UShort *to;
@@ -426,23 +426,23 @@ static void fill_fpu(elf_fpregset_t *fpu, const Char *from)
       VG_(memcpy)(fpu, from, sizeof(*fpu));
 }
 
-void VGA_(fill_elffpregs_from_BB)( elf_fpregset_t* fpu )
+void VGA_(fill_elffpregs_from_BB)( vki_elf_fpregset_t* fpu )
 {
    fill_fpu(fpu, (const Char *)&VG_(baseBlock)[VGOFF_(m_ssestate)]);
 }
 
-void VGA_(fill_elffpregs_from_tst)( elf_fpregset_t* fpu,
+void VGA_(fill_elffpregs_from_tst)( vki_elf_fpregset_t* fpu,
                                     const arch_thread_t* arch)
 {
    fill_fpu(fpu, (const Char *)&arch->m_sse);
 }
 
-void VGA_(fill_elffpxregs_from_BB) ( elf_fpxregset_t* xfpu )
+void VGA_(fill_elffpxregs_from_BB) ( vki_elf_fpxregset_t* xfpu )
 {
    VG_(memcpy)(xfpu, &VG_(baseBlock)[VGOFF_(m_ssestate)], sizeof(*xfpu));
 }
 
-void VGA_(fill_elffpxregs_from_tst) ( elf_fpxregset_t* xfpu,
+void VGA_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
                                       const arch_thread_t* arch )
 {
    VG_(memcpy)(xfpu, arch->m_sse, sizeof(*xfpu));

@@ -78,55 +78,55 @@ UInt vg_scan_all_valid_memory ( Bool is_valid_64k_chunk ( UInt ),
    volatile UInt res, numPages, page, primaryMapNo;
    volatile UInt page_first_word, nWordsNotified;
 
-   vki_ksigaction sigbus_saved;
-   vki_ksigaction sigbus_new;
-   vki_ksigaction sigsegv_saved;
-   vki_ksigaction sigsegv_new;
-   vki_ksigset_t  blockmask_saved;
-   vki_ksigset_t  unblockmask_new;
+   struct vki_sigaction sigbus_saved;
+   struct vki_sigaction sigbus_new;
+   struct vki_sigaction sigsegv_saved;
+   struct vki_sigaction sigsegv_new;
+   vki_sigset_t  blockmask_saved;
+   vki_sigset_t  unblockmask_new;
 
    /* Temporarily install a new sigsegv and sigbus handler, and make
       sure SIGBUS, SIGSEGV and SIGTERM are unblocked.  (Perhaps the
       first two can never be blocked anyway?)  */
 
    sigbus_new.ksa_handler = vg_scan_all_valid_memory_sighandler;
-   sigbus_new.ksa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
-   sigbus_new.ksa_restorer = NULL;
-   res = VG_(ksigemptyset)( &sigbus_new.ksa_mask );
+   sigbus_new.sa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
+   sigbus_new.sa_restorer = NULL;
+   res = VG_(sigemptyset)( &sigbus_new.sa_mask );
    sk_assert(res == 0);
 
    sigsegv_new.ksa_handler = vg_scan_all_valid_memory_sighandler;
-   sigsegv_new.ksa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
-   sigsegv_new.ksa_restorer = NULL;
-   res = VG_(ksigemptyset)( &sigsegv_new.ksa_mask );
+   sigsegv_new.sa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
+   sigsegv_new.sa_restorer = NULL;
+   res = VG_(sigemptyset)( &sigsegv_new.sa_mask );
    sk_assert(res == 0+0);
 
-   res =  VG_(ksigemptyset)( &unblockmask_new );
-   res |= VG_(ksigaddset)( &unblockmask_new, VKI_SIGBUS );
-   res |= VG_(ksigaddset)( &unblockmask_new, VKI_SIGSEGV );
-   res |= VG_(ksigaddset)( &unblockmask_new, VKI_SIGTERM );
+   res =  VG_(sigemptyset)( &unblockmask_new );
+   res |= VG_(sigaddset)( &unblockmask_new, VKI_SIGBUS );
+   res |= VG_(sigaddset)( &unblockmask_new, VKI_SIGSEGV );
+   res |= VG_(sigaddset)( &unblockmask_new, VKI_SIGTERM );
    sk_assert(res == 0+0+0);
 
-   res = VG_(ksigaction)( VKI_SIGBUS, &sigbus_new, &sigbus_saved );
+   res = VG_(sigaction)( VKI_SIGBUS, &sigbus_new, &sigbus_saved );
    sk_assert(res == 0+0+0+0);
 
-   res = VG_(ksigaction)( VKI_SIGSEGV, &sigsegv_new, &sigsegv_saved );
+   res = VG_(sigaction)( VKI_SIGSEGV, &sigsegv_new, &sigsegv_saved );
    sk_assert(res == 0+0+0+0+0);
 
-   res = VG_(ksigprocmask)( VKI_SIG_UNBLOCK, &unblockmask_new, &blockmask_saved );
+   res = VG_(sigprocmask)( VKI_SIG_UNBLOCK, &unblockmask_new, &blockmask_saved );
    sk_assert(res == 0+0+0+0+0+0);
 
    /* The signal handlers are installed.  Actually do the memory scan. */
-   numPages = 1 << (32-VKI_BYTES_PER_PAGE_BITS);
+   numPages = 1 << (32-VKI_PAGE_SHIFT);
    sk_assert(numPages == 1048576);
-   sk_assert(4096 == (1 << VKI_BYTES_PER_PAGE_BITS));
+   sk_assert(4096 == (1 << VKI_PAGE_SHIFT));
 
    nWordsNotified = 0;
 
    for (page = 0; page < numPages; page++) {
 
       /* Base address of this 4k page. */
-      pageBase = page << VKI_BYTES_PER_PAGE_BITS;
+      pageBase = page << VKI_PAGE_SHIFT;
 
       /* Skip if this page is in an unused 64k chunk. */
       primaryMapNo = pageBase >> 16;
@@ -141,7 +141,7 @@ UInt vg_scan_all_valid_memory ( Bool is_valid_64k_chunk ( UInt ),
          segment all the way down to here, which is seriously bad.
          Hence: */
       anyValid = False;
-      for (addr = pageBase; addr < pageBase+VKI_BYTES_PER_PAGE; addr += 4) {
+      for (addr = pageBase; addr < pageBase+VKI_PAGE_SIZE; addr += 4) {
          if (is_valid_address(addr)) {
             anyValid = True;
             break;
@@ -158,7 +158,7 @@ UInt vg_scan_all_valid_memory ( Bool is_valid_64k_chunk ( UInt ),
          page_first_word = * (volatile UInt*)pageBase;
          /* we get here if we didn't get a fault */
          /* Scan the page */
-         for (addr = pageBase; addr < pageBase+VKI_BYTES_PER_PAGE; addr += 4) {
+         for (addr = pageBase; addr < pageBase+VKI_PAGE_SIZE; addr += 4) {
             if (is_valid_address(addr)) {
                nWordsNotified++;
                notify_word ( addr, *(UInt*)addr );
@@ -177,13 +177,13 @@ UInt vg_scan_all_valid_memory ( Bool is_valid_64k_chunk ( UInt ),
    }
 
    /* Restore signal state to whatever it was before. */
-   res = VG_(ksigaction)( VKI_SIGBUS, &sigbus_saved, NULL );
+   res = VG_(sigaction)( VKI_SIGBUS, &sigbus_saved, NULL );
    sk_assert(res == 0 +0);
 
-   res = VG_(ksigaction)( VKI_SIGSEGV, &sigsegv_saved, NULL );
+   res = VG_(sigaction)( VKI_SIGSEGV, &sigsegv_saved, NULL );
    sk_assert(res == 0 +0 +0);
 
-   res = VG_(ksigprocmask)( VKI_SIG_SETMASK, &blockmask_saved, NULL );
+   res = VG_(sigprocmask)( VKI_SIG_SETMASK, &blockmask_saved, NULL );
    sk_assert(res == 0 +0 +0 +0);
 
    return nWordsNotified;
@@ -433,7 +433,7 @@ void MAC_(do_detect_memory_leaks) (
 
    /* Do the scan of memory. */
    bytes_notified
-       = VKI_BYTES_PER_WORD
+       = sizeof(UWord)
          * vg_scan_all_valid_memory (
               is_valid_64k_chunk,
               is_valid_address,

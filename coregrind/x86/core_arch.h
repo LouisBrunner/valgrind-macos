@@ -258,7 +258,7 @@ typedef struct {
 
    /* TLS table. This consists of a small number (currently 3) of
       entries from the Global Descriptor Table. */
-   VgLdtEntry tls[VKI_GDT_TLS_ENTRIES];
+   VgLdtEntry tls[VKI_GDT_ENTRY_TLS_ENTRIES];
 
    /* Saved machine context.  Note the FPU state, %EIP and segment
       registers are not shadowed.

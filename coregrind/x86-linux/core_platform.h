@@ -74,9 +74,9 @@ extern Int VG_(sys_modify_ldt) ( ThreadId tid,
 
 /* Simulate the {get,set}_thread_area syscalls. */
 extern Int VG_(sys_set_thread_area) ( ThreadId tid,
-                                      struct vki_modify_ldt_ldt_s* info );
+                                      vki_modify_ldt_t* info );
 extern Int VG_(sys_get_thread_area) ( ThreadId tid,
-                                      struct vki_modify_ldt_ldt_s* info );
+                                      vki_modify_ldt_t* info );
 
 /* Called from generated code.  Given a segment selector and a virtual
    address, return a linear address, and do limit checks too. */

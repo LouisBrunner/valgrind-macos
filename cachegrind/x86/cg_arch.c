@@ -258,16 +258,16 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
    Int  level, res, ret;
    Char vendor_id[13];
-   vki_ksigaction sigill_new, sigill_saved;
+   struct vki_sigaction sigill_new, sigill_saved;
 
    /* Install own SIGILL handler */
    sigill_new.ksa_handler  = cpuid_SIGILL_handler;
-   sigill_new.ksa_flags    = 0;
-   sigill_new.ksa_restorer = NULL;
-   res = VG_(ksigemptyset)( &sigill_new.ksa_mask );
+   sigill_new.sa_flags    = 0;
+   sigill_new.sa_restorer = NULL;
+   res = VG_(sigemptyset)( &sigill_new.sa_mask );
    sk_assert(res == 0);
 
-   res = VG_(ksigaction)( VKI_SIGILL, &sigill_new, &sigill_saved );
+   res = VG_(sigaction)( VKI_SIGILL, &sigill_new, &sigill_saved );
    sk_assert(res == 0);
 
    /* Trap for illegal instruction, in case it's a really old processor that
@@ -278,14 +278,14 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
       vendor_id[12] = '\0';
 
       /* Restore old SIGILL handler */
-      res = VG_(ksigaction)( VKI_SIGILL, &sigill_saved, NULL );
+      res = VG_(sigaction)( VKI_SIGILL, &sigill_saved, NULL );
       sk_assert(res == 0);
 
    } else  {
       VG_(message)(Vg_DebugMsg, "CPUID instruction not supported");
 
       /* Restore old SIGILL handler */
-      res = VG_(ksigaction)( VKI_SIGILL, &sigill_saved, NULL );
+      res = VG_(sigaction)( VKI_SIGILL, &sigill_saved, NULL );
       sk_assert(res == 0);
       return -1;
    }

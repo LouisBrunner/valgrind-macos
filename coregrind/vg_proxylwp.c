@@ -51,7 +51,7 @@ struct ProxyLWP {
    Int			exitcode;	/* ProxyLWP exit code */
 
    Int			topx, frommain;	/* pipe fds */
-   vki_ksiginfo_t	siginfo;	/* received signal */
+   vki_siginfo_t	siginfo;	/* received signal */
    Bool			terminating;	/* in the middle of exiting */
 
    /* State of proxy */
@@ -65,7 +65,7 @@ static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype,
 struct PX_Request {
    enum RequestType	request;
 
-   vki_ksigset_t	sigmask;	/* sigmask applied by SigACK */
+   vki_sigset_t	        sigmask;	/* sigmask applied by SigACK */
 };
 
 /* All replies are multiplexed over a single pipe, so we need to disinguish them */
@@ -75,7 +75,7 @@ struct PX_Reply {
 
    union {
       Int		syscallno;	/* system call completed */
-      vki_ksiginfo_t	siginfo;	/* signal */
+      vki_siginfo_t	siginfo;	/* signal */
    } u;
 };
 
@@ -136,7 +136,7 @@ static const Char *px_name(enum RequestType r)
    }
 }
 
-#define PROXYLWP_OFFSET	(VKI_BYTES_PER_PAGE - sizeof(ProxyLWP))
+#define PROXYLWP_OFFSET	(VKI_PAGE_SIZE - sizeof(ProxyLWP))
 
 /* 
    Allocate a page for the ProxyLWP and its stack.
@@ -148,7 +148,7 @@ static const Char *px_name(enum RequestType r)
  */
 static ProxyLWP *LWP_alloc(void)
 {
-   UChar *p = VG_(get_memory_from_mmap)(VKI_BYTES_PER_PAGE, "alloc_LWP");
+   UChar *p = VG_(get_memory_from_mmap)(VKI_PAGE_SIZE, "alloc_LWP");
    ProxyLWP *ret;
    vg_assert(p == (UChar *)PGROUNDDN(p)); /* px must be page aligned */
 
@@ -168,7 +168,7 @@ static void LWP_free(ProxyLWP *px)
    px->magic = 0;
    vg_assert((p + PROXYLWP_OFFSET) == (UChar *)px);
 
-   VG_(munmap)(p, VKI_BYTES_PER_PAGE);
+   VG_(munmap)(p, VKI_PAGE_SIZE);
 }
 
 /* Get a particular ProxyLWP's LWP structure from its esp (relies on
@@ -282,7 +282,7 @@ void VG_(proxy_shutdown)(void)
    handler is being run with all signals blocked; the longjmp is
    there to make sure they stay masked until the application thread is
    ready to run its signal handler. */
-void VG_(proxy_handlesig)(const vki_ksiginfo_t *siginfo, Addr ip, Int sysnum)
+void VG_(proxy_handlesig)(const vki_siginfo_t *siginfo, Addr ip, Int sysnum)
 {
    UChar local;
    ProxyLWP *px = LWP_TSD(&local);
@@ -348,22 +348,22 @@ static Int proxylwp(void *v)
    ProxyLWP *px = (ProxyLWP *)v;
    Int frommain = px->frommain;
    ThreadState *tst = px->tst;
-   vki_ksigset_t allsig;
-   vki_ksigset_t appsigmask;	/* signal mask the client has asked for */
+   vki_sigset_t allsig;
+   vki_sigset_t appsigmask;	/* signal mask the client has asked for */
    Int ret = 1000;
-   static const vki_kstack_t ss = { .ss_flags = VKI_SS_DISABLE };
+   static const vki_stack_t ss = { .ss_flags = VKI_SS_DISABLE };
 
    /* Block everything until we're told otherwise (LWP should have
       been started with all signals blocked anyway) */
-   VG_(ksigfillset)(&allsig);
-   VG_(ksigdelset)(&allsig, VKI_SIGVGKILL);	/* but allow SIGVGKILL to interrupt */
+   VG_(sigfillset)(&allsig);
+   VG_(sigdelset)(&allsig, VKI_SIGVGKILL);	/* but allow SIGVGKILL to interrupt */
 
-   VG_(ksigprocmask)(VKI_SIG_SETMASK, &allsig, NULL);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &allsig, NULL);
 
    appsigmask = allsig;
 
    /* no signal stack for us */
-   VG_(ksigaltstack)(&ss, NULL);
+   VG_(sigaltstack)(&ss, NULL);
 
    for(;;) {
       struct PX_Reply reply, sigreply;
@@ -516,7 +516,7 @@ static Int proxylwp(void *v)
 
 	 if (px->state == PXS_WaitReq) {
 	    /* allow signals when waiting for a normal request */
-	    VG_(ksigprocmask)(VKI_SIG_SETMASK, &appsigmask, NULL);
+	    VG_(sigprocmask)(VKI_SIG_SETMASK, &appsigmask, NULL);
 	 }
 
 	 /* ST:1 */
@@ -526,7 +526,7 @@ static Int proxylwp(void *v)
 	 /* ST:2 */
 
 	 /* process message with signals blocked */
-	 VG_(ksigprocmask)(VKI_SIG_SETMASK, &allsig, NULL);
+	 VG_(sigprocmask)(VKI_SIG_SETMASK, &allsig, NULL);
 
 	 if (res == 0) {
 	    ret = 0;
@@ -558,16 +558,16 @@ static Int proxylwp(void *v)
 	       want while running the handler. */
 	    vg_assert(px->state == PXS_SigACK);
 	    appsigmask = req.sigmask;
-	    VG_(ksigdelset)(&appsigmask, VKI_SIGVGKILL);  /* but allow SIGVGKILL */
-	    VG_(ksigdelset)(&appsigmask, VKI_SIGVGINT);   /*       and SIGVGINT to interrupt */
+	    VG_(sigdelset)(&appsigmask, VKI_SIGVGKILL);  /* but allow SIGVGKILL */
+	    VG_(sigdelset)(&appsigmask, VKI_SIGVGINT);   /*       and SIGVGINT to interrupt */
 	    px->state = PXS_WaitReq;
 	    reply.req = PX_BAD;	/* don't reply */
 	    break;
 	    
 	 case PX_SetSigmask:
 	    appsigmask = req.sigmask;
-	    VG_(ksigdelset)(&appsigmask, VKI_SIGVGKILL);  /* but allow SIGVGKILL */
-	    VG_(ksigdelset)(&appsigmask, VKI_SIGVGINT);   /*       and SIGVGINT to interrupt */
+	    VG_(sigdelset)(&appsigmask, VKI_SIGVGKILL);  /* but allow SIGVGKILL */
+	    VG_(sigdelset)(&appsigmask, VKI_SIGVGINT);   /*       and SIGVGINT to interrupt */
 
 	    vg_assert(px->state == PXS_WaitReq || 
 		      px->state == PXS_SigACK);
@@ -578,9 +578,9 @@ static Int proxylwp(void *v)
 		  be delivered synchronously, so that some progress is
 		  made before the we tell the client the mask has been
 		  set..  Then reset the mask back to all blocked. */
-	       VG_(ksigprocmask)(VKI_SIG_SETMASK, &appsigmask, NULL);
+	       VG_(sigprocmask)(VKI_SIG_SETMASK, &appsigmask, NULL);
 	       /* ST:3 */
-	       VG_(ksigprocmask)(VKI_SIG_SETMASK, &allsig, NULL);
+	       VG_(sigprocmask)(VKI_SIG_SETMASK, &allsig, NULL);
 	    } else {
 	       /* Waiting for SigACK.  We want all signals blocked,
 		  and when the SigACK arrives, it will give us the
@@ -616,7 +616,7 @@ static Int proxylwp(void *v)
 	       if (VG_(getpgrp)() != VG_(main_pgrp))
 		  VG_(setpgid)(0, VG_(main_pgrp));
 
-	       VG_(ksigprocmask)(VKI_SIG_SETMASK, &appsigmask, NULL);
+	       VG_(sigprocmask)(VKI_SIG_SETMASK, &appsigmask, NULL);
 
 	       /* ST:4 */
 	       
@@ -625,7 +625,7 @@ static Int proxylwp(void *v)
 
 	       /* ST:5 */
 
-	       VG_(ksigprocmask)(VKI_SIG_SETMASK, &allsig, NULL);
+	       VG_(sigprocmask)(VKI_SIG_SETMASK, &allsig, NULL);
 	       /* whew - made it here without being interrupted */
 	       px->state = PXS_WaitReq;
 
@@ -705,9 +705,9 @@ void VG_(proxy_sendsig)(ThreadId tid, Int sig)
       /* SIGKILL and SIGSTOP always apply to all threads (need to
 	 route for route_signals case?) */
       if (sig == VKI_SIGKILL || sig == VKI_SIGSTOP)
-	 VG_(kkill)(VG_(main_pid), sig);
+	 VG_(kill)(VG_(main_pid), sig);
       else
-	 VG_(ktkill)(lwp, sig);
+	 VG_(tkill)(lwp, sig);
    }
 
    /* If a thread is sending a signal to itself and the signal isn't
@@ -716,7 +716,7 @@ void VG_(proxy_sendsig)(ThreadId tid, Int sig)
    if (sig != 0 && 
        !VG_(is_sig_ign)(sig) &&
        tid == VG_(get_current_or_recent_tid)() && 
-       !VG_(ksigismember)(&tst->eff_sig_mask, sig)) {
+       !VG_(sigismember)(&tst->eff_sig_mask, sig)) {
       /* If the LWP is actually blocked in a sigtimedwait, then it
 	 will eat the signal rather than make it pending and deliver
 	 it by the normal mechanism.  In this case, just wait for the
@@ -745,7 +745,7 @@ void VG_(proxy_abort_syscall)(ThreadId tid)
    lwp = proxy->lwp;
    
    if (lwp != 0)
-      VG_(ktkill)(lwp, VKI_SIGVGINT);
+      VG_(tkill)(lwp, VKI_SIGVGINT);
 
    sys_wait_results(True, tid, PX_RunSyscall, False);
 
@@ -838,7 +838,7 @@ static Bool proxy_wait(ProxyLWP *proxy, Bool block, Int *status)
 	 }
       }
    } else {
-      Int flags = VKI__WCLONE;
+      Int flags = __VKI_WCLONE;
       Int res;
 
       if (!block)
@@ -859,7 +859,7 @@ void VG_(proxy_create)(ThreadId tid)
    ThreadState *tst = VG_(get_ThreadState)(tid);
    ProxyLWP *proxy;
    Int p[2];
-   vki_ksigset_t mask;
+   vki_sigset_t mask;
    Int ret;
 
    vg_assert(tst->proxy == NULL);
@@ -928,7 +928,7 @@ void VG_(proxy_delete)(ThreadId tid, Bool force)
       /* wouldn't need to force it if it were already dead */
       vg_assert(tst->status != VgTs_Empty);
       //VG_(printf)("kill %d with SIGVGKILL\n", lwp);
-      VG_(ktkill)(lwp, VKI_SIGVGKILL);
+      VG_(tkill)(lwp, VKI_SIGVGKILL);
    } else
       vg_assert(tst->status == VgTs_Empty); /* just killed */
 
@@ -1125,7 +1125,7 @@ void VG_(proxy_setsigmask)(ThreadId tid)
    sys_wait_results(True, tid, PX_SetSigmask, True);
 }
 
-void VG_(proxy_sigack)(ThreadId tid, const vki_ksigset_t *mask)
+void VG_(proxy_sigack)(ThreadId tid, const vki_sigset_t *mask)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
    ProxyLWP *proxy = tst->proxy;

@@ -130,7 +130,7 @@ void VGA_(thread_wrapper)(arch_thread_aux_t *aux)
 
    if (tls_data) {
       tcbhead_t *tcb = tls_data;
-      struct vki_modify_ldt_ldt_s ldt_info;
+      vki_modify_ldt_t ldt_info;
 
       /* Fill in the TCB header */
       tcb->tcb = tcb;

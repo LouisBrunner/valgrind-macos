@@ -68,7 +68,7 @@ static Int     longjmpd_on_signal;
 /* If the current thread gets a syncronous unresumable signal, then
    its details are placed here by the signal handler, to be passed to
    the applications signal handler later on. */
-static vki_ksiginfo_t unresumable_siginfo;
+static vki_siginfo_t unresumable_siginfo;
 
 /* If != VG_INVALID_THREADID, this is the preferred tid to schedule */
 static ThreadId prefer_sched = VG_INVALID_THREADID;
@@ -303,12 +303,12 @@ static void save_thread_state ( ThreadId tid )
 }
 
 
-void VG_(resume_scheduler)(Int sigNo, vki_ksiginfo_t *info)
+void VG_(resume_scheduler)(Int sigNo, vki_siginfo_t *info)
 {
    if (scheduler_jmpbuf_valid) {
       /* Can't continue; must longjmp back to the scheduler and thus
          enter the sighandler immediately. */
-      VG_(memcpy)(&unresumable_siginfo, info, sizeof(vki_ksiginfo_t));
+      VG_(memcpy)(&unresumable_siginfo, info, sizeof(vki_siginfo_t));
    
       longjmpd_on_signal = sigNo;
       __builtin_longjmp(scheduler_jmpbuf,1);
@@ -371,8 +371,8 @@ void mostly_clear_thread_record ( ThreadId tid )
    VG_(threads)[tid].cancel_ty   = True; /* PTHREAD_CANCEL_DEFERRED */
    VG_(threads)[tid].cancel_pend = NULL; /* not pending */
    VG_(threads)[tid].custack_used = 0;
-   VG_(ksigemptyset)(&VG_(threads)[tid].sig_mask);
-   VG_(ksigfillset)(&VG_(threads)[tid].eff_sig_mask);
+   VG_(sigemptyset)(&VG_(threads)[tid].sig_mask);
+   VG_(sigfillset)(&VG_(threads)[tid].eff_sig_mask);
    VG_(threads)[tid].sigqueue_head = 0;
    VG_(threads)[tid].sigqueue_tail = 0;
    VG_(threads)[tid].specifics_ptr = NULL;
@@ -1795,7 +1795,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    /* Consider allocating the child a stack, if the one it already has
       is inadequate. */
    new_stk_szb = si->size + VG_AR_CLIENT_STACKBASE_REDZONE_SZB + si->guardsize;
-   new_stk_szb = (new_stk_szb + VKI_BYTES_PER_PAGE - 1) & ~VKI_BYTES_PER_PAGE;
+   new_stk_szb = (new_stk_szb + VKI_PAGE_SIZE - 1) & ~VKI_PAGE_SIZE;
     
    VG_(threads)[tid].stack_guard_size = si->guardsize;
 
@@ -1852,7 +1852,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
 
    /* Start the thread with all signals blocked; it's up to the client
       code to set the right signal mask when it's ready. */
-   VG_(ksigfillset)(&VG_(threads)[tid].sig_mask);
+   VG_(sigfillset)(&VG_(threads)[tid].sig_mask);
 
    /* Now that the signal mask is set up, create a proxy LWP for this thread */
    VG_(proxy_create)(tid);
@@ -2650,8 +2650,8 @@ void do__get_key_destr_and_spec ( ThreadId tid,
 static
 void do_pthread_sigmask ( ThreadId tid,
                           Int vki_how,
-                          vki_ksigset_t* newmask, 
-                          vki_ksigset_t* oldmask )
+                          vki_sigset_t* newmask, 
+                          vki_sigset_t* oldmask )
 {
    Char msg_buf[100];
    if (VG_(clo_trace_pthread_level) >= 1) {
@@ -2666,15 +2666,15 @@ void do_pthread_sigmask ( ThreadId tid,
 
    if (newmask)
       VG_TRACK( pre_mem_read, Vg_CorePThread, tid, "pthread_sigmask: newmask",
-                              (Addr)newmask, sizeof(vki_ksigset_t));
+                              (Addr)newmask, sizeof(vki_sigset_t));
    if (oldmask)
       VG_TRACK( pre_mem_write, Vg_CorePThread, tid, "pthread_sigmask: oldmask",
-                               (Addr)oldmask, sizeof(vki_ksigset_t));
+                               (Addr)oldmask, sizeof(vki_sigset_t));
 
    VG_(do_pthread_sigmask_SCSS_upd) ( tid, vki_how, newmask, oldmask );
 
    if (oldmask)
-      VG_TRACK( post_mem_write, (Addr)oldmask, sizeof(vki_ksigset_t) );
+      VG_TRACK( post_mem_write, (Addr)oldmask, sizeof(vki_sigset_t) );
 
    /* Success. */
    SET_PTHREQ_RETVAL(tid, 0);
@@ -2712,7 +2712,7 @@ void do_pthread_kill ( ThreadId tid, /* me */
       return;
    }
 
-   if (sig < 1 || sig > VKI_KNSIG) {
+   if (sig < 1 || sig > _VKI_NSIG) {
       SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
       return;
    }
@@ -3048,8 +3048,8 @@ void do_client_request ( ThreadId tid, UInt* arg )
       case VG_USERREQ__PTHREAD_SIGMASK:
          do_pthread_sigmask ( tid,
                               arg[1],
-                              (vki_ksigset_t*)(arg[2]),
-                              (vki_ksigset_t*)(arg[3]) );
+                              (vki_sigset_t*)(arg[2]),
+                              (vki_sigset_t*)(arg[3]) );
 	 break;
 
       case VG_USERREQ__PTHREAD_KILL:

@@ -1297,8 +1297,8 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 	       si->bss_size = 0;
 	 }
 
-	 mapped = mapped & ~(VKI_BYTES_PER_PAGE-1);
-	 mapped_end = (mapped_end + VKI_BYTES_PER_PAGE - 1) & ~(VKI_BYTES_PER_PAGE-1);
+	 mapped = mapped & ~(VKI_PAGE_SIZE-1);
+	 mapped_end = (mapped_end + VKI_PAGE_SIZE - 1) & ~(VKI_PAGE_SIZE-1);
 
 	 if (VG_(needs).data_syms &&
 	     (mapped >= si->start && mapped <= (si->start+si->size)) &&

@@ -137,7 +137,7 @@ void VG_(clear_TLS_for_thread) ( VgLdtEntry* tls )
    if (0)
       VG_(printf)("clear_TLS_for_thread\n" );
 
-   for (tlsp = tls; tlsp < tls + VKI_GDT_TLS_ENTRIES; tlsp++) {
+   for (tlsp = tls; tlsp < tls + VKI_GDT_ENTRY_TLS_ENTRIES; tlsp++) {
       tlsp->LdtEnt.Words.word1 = 0;
       tlsp->LdtEnt.Words.word2 = 0;
    }
@@ -203,13 +203,13 @@ Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
    if (table == 0) {
       VgLdtEntry* the_tls;
 
-      vg_assert(seg_selector >= VKI_GDT_TLS_MIN && seg_selector < VKI_GDT_TLS_MAX);
+      vg_assert(seg_selector >= VKI_GDT_ENTRY_TLS_MIN && seg_selector <= VKI_GDT_ENTRY_TLS_MAX);
 
       /* Come up with a suitable GDT entry.  We look at the thread's TLS
 	 array, which is pointed to by a VG_(baseBlock) entry. */
       the_tls = (VgLdtEntry*)VG_(baseBlock)[VGOFF_(tls_ptr)];
-      base = (Addr)wine_ldt_get_base ( &the_tls[seg_selector-VKI_GDT_TLS_MIN] );
-      limit = (UInt)wine_ldt_get_limit ( &the_tls[seg_selector-VKI_GDT_TLS_MIN] );
+      base = (Addr)wine_ldt_get_base ( &the_tls[seg_selector-VKI_GDT_ENTRY_TLS_MIN] );
+      limit = (UInt)wine_ldt_get_limit ( &the_tls[seg_selector-VKI_GDT_ENTRY_TLS_MIN] );
    } else {
       VgLdtEntry* the_ldt;
 
@@ -257,7 +257,7 @@ Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
    Linux kernel's logic (cut-n-paste of code in linux/kernel/ldt.c).  */
 
 static
-void translate_to_hw_format ( /* IN  */ struct vki_modify_ldt_ldt_s* inn,
+void translate_to_hw_format ( /* IN  */ vki_modify_ldt_t* inn,
 			      /* OUT */ VgLdtEntry* out,
                                         Int oldmode )
 {
@@ -351,7 +351,7 @@ Int write_ldt ( ThreadId tid, void* ptr, UInt bytecount, Int oldmode )
 {
    Int error;
    VgLdtEntry* ldt;
-   struct vki_modify_ldt_ldt_s* ldt_info; 
+   vki_modify_ldt_t* ldt_info; 
 
    if (0)
       VG_(printf)("write_ldt: tid = %d, ptr = %p, "
@@ -359,10 +359,10 @@ Int write_ldt ( ThreadId tid, void* ptr, UInt bytecount, Int oldmode )
                   tid, ptr, bytecount, oldmode );
 
    ldt      = VG_(threads)[tid].arch.ldt;
-   ldt_info = (struct vki_modify_ldt_ldt_s*)ptr;
+   ldt_info = (vki_modify_ldt_t*)ptr;
 
    error = -VKI_EINVAL;
-   if (bytecount != sizeof(struct vki_modify_ldt_ldt_s))
+   if (bytecount != sizeof(vki_modify_ldt_t))
       goto out;
 
    error = -VKI_EINVAL;
@@ -418,24 +418,24 @@ Int VG_(sys_modify_ldt) ( ThreadId tid,
 
 
 Int VG_(sys_set_thread_area) ( ThreadId tid,
-                               struct vki_modify_ldt_ldt_s* info )
+                               vki_modify_ldt_t* info )
 {
    Int idx = info->entry_number;
 
    if (idx == -1) {
-      for (idx = 0; idx < VKI_GDT_TLS_ENTRIES; idx++) {
+      for (idx = 0; idx < VKI_GDT_ENTRY_TLS_ENTRIES; idx++) {
          VgLdtEntry* tls = VG_(threads)[tid].arch.tls + idx;
 
          if (tls->LdtEnt.Words.word1 == 0 && tls->LdtEnt.Words.word2 == 0)
             break;
       }
 
-      if (idx == VKI_GDT_TLS_ENTRIES)
+      if (idx == VKI_GDT_ENTRY_TLS_ENTRIES)
          return -VKI_ESRCH;
-   } else if (idx < VKI_GDT_TLS_MIN || idx > VKI_GDT_TLS_MAX) {
+   } else if (idx < VKI_GDT_ENTRY_TLS_MIN || idx > VKI_GDT_ENTRY_TLS_MAX) {
       return -VKI_EINVAL;
    } else {
-      idx = info->entry_number - VKI_GDT_TLS_MIN;
+      idx = info->entry_number - VKI_GDT_ENTRY_TLS_MIN;
    }
 
    translate_to_hw_format(info, VG_(threads)[tid].arch.tls + idx, 0);
@@ -443,7 +443,7 @@ Int VG_(sys_set_thread_area) ( ThreadId tid,
    VG_TRACK( pre_mem_write, Vg_CoreSysCall, tid,
              "set_thread_area(info->entry)",
              (Addr) & info->entry_number, sizeof(unsigned int) );
-   info->entry_number = idx + VKI_GDT_TLS_MIN;
+   info->entry_number = idx + VKI_GDT_ENTRY_TLS_MIN;
    VG_TRACK( post_mem_write,
              (Addr) & info->entry_number, sizeof(unsigned int) );
 
@@ -452,15 +452,15 @@ Int VG_(sys_set_thread_area) ( ThreadId tid,
 
 
 Int VG_(sys_get_thread_area) ( ThreadId tid,
-                               struct vki_modify_ldt_ldt_s* info )
+                               vki_modify_ldt_t* info )
 {
    Int idx = info->entry_number;
    VgLdtEntry* tls;
 
-   if (idx < VKI_GDT_TLS_MIN || idx > VKI_GDT_TLS_MAX)
+   if (idx < VKI_GDT_ENTRY_TLS_MIN || idx > VKI_GDT_ENTRY_TLS_MAX)
       return -VKI_EINVAL;
 
-   tls = VG_(threads)[tid].arch.tls + idx - VKI_GDT_TLS_MIN;
+   tls = VG_(threads)[tid].arch.tls + idx - VKI_GDT_ENTRY_TLS_MIN;
 
    info->base_addr = ( tls->LdtEnt.Bits.BaseHi << 24 ) |
                      ( tls->LdtEnt.Bits.BaseMid << 16 ) |

@@ -26,8 +26,7 @@ noinst_HEADERS = \
 	ume.h			\
 	vg_symtab2.h		\
 	vg_symtypes.h		\
-	vg_toolint.h		\
-	vg_unsafe.h
+	vg_toolint.h
 
 EXTRA_DIST = \
 	vg_libpthread.vs valgrind.vs \

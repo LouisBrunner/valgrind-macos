@@ -410,7 +410,7 @@ int pthread_attr_init(pthread_attr_t *attr)
    vg_attr->__vg_detachstate = PTHREAD_CREATE_JOINABLE;
    /* Linuxthreads sets this field to the value __getpagesize(), so I
       guess the following is OK. */
-   vg_attr->__vg_guardsize = VKI_BYTES_PER_PAGE;
+   vg_attr->__vg_guardsize = VKI_PAGE_SIZE;
    /* No special stack yet. */
    vg_attr->__vg_stackaddr = 0;
    vg_attr->__vg_stacksize = VG_PTHREAD_STACK_SIZE;
@@ -1080,7 +1080,7 @@ pthread_create (pthread_t *__restrict __thredd,
    } else {
       si.base = (Addr)NULL;
       si.size = VG_PTHREAD_STACK_SIZE;
-      si.guardsize = VKI_BYTES_PER_PAGE;
+      si.guardsize = VKI_PAGE_SIZE;
    }
    
    VALGRIND_MAGIC_SEQUENCE(tid_child, VG_INVALID_THREADID /* default */,

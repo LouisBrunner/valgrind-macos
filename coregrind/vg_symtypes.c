@@ -522,9 +522,9 @@ static ShadowChunk *findchunk(Addr a)
 }
 #endif
 
-static vki_ksigaction sigbus_saved;
-static vki_ksigaction sigsegv_saved;
-static vki_ksigset_t  blockmask_saved;
+static struct vki_sigaction sigbus_saved;
+static struct vki_sigaction sigsegv_saved;
+static vki_sigset_t  blockmask_saved;
 static jmp_buf valid_addr_jmpbuf;
 
 static void valid_addr_handler(int sig)
@@ -538,39 +538,39 @@ static void valid_addr_handler(int sig)
 static void setup_signals(void)
 {
    Int res;
-   vki_ksigaction sigbus_new;
-   vki_ksigaction sigsegv_new;
-   vki_ksigset_t  unblockmask_new;
+   struct vki_sigaction sigbus_new;
+   struct vki_sigaction sigsegv_new;
+   vki_sigset_t         unblockmask_new;
 
    /* Temporarily install a new sigsegv and sigbus handler, and make
       sure SIGBUS, SIGSEGV and SIGTERM are unblocked.  (Perhaps the
       first two can never be blocked anyway?)  */
 
    sigbus_new.ksa_handler = valid_addr_handler;
-   sigbus_new.ksa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
-   sigbus_new.ksa_restorer = NULL;
-   res = VG_(ksigemptyset)( &sigbus_new.ksa_mask );
+   sigbus_new.sa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
+   sigbus_new.sa_restorer = NULL;
+   res = VG_(sigemptyset)( &sigbus_new.sa_mask );
    vg_assert(res == 0);
 
    sigsegv_new.ksa_handler = valid_addr_handler;
-   sigsegv_new.ksa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
-   sigsegv_new.ksa_restorer = NULL;
-   res = VG_(ksigemptyset)( &sigsegv_new.ksa_mask );
+   sigsegv_new.sa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
+   sigsegv_new.sa_restorer = NULL;
+   res = VG_(sigemptyset)( &sigsegv_new.sa_mask );
    vg_assert(res == 0+0);
 
-   res =  VG_(ksigemptyset)( &unblockmask_new );
-   res |= VG_(ksigaddset)( &unblockmask_new, VKI_SIGBUS );
-   res |= VG_(ksigaddset)( &unblockmask_new, VKI_SIGSEGV );
-   res |= VG_(ksigaddset)( &unblockmask_new, VKI_SIGTERM );
+   res =  VG_(sigemptyset)( &unblockmask_new );
+   res |= VG_(sigaddset)( &unblockmask_new, VKI_SIGBUS );
+   res |= VG_(sigaddset)( &unblockmask_new, VKI_SIGSEGV );
+   res |= VG_(sigaddset)( &unblockmask_new, VKI_SIGTERM );
    vg_assert(res == 0+0+0);
 
-   res = VG_(ksigaction)( VKI_SIGBUS, &sigbus_new, &sigbus_saved );
+   res = VG_(sigaction)( VKI_SIGBUS, &sigbus_new, &sigbus_saved );
    vg_assert(res == 0+0+0+0);
 
-   res = VG_(ksigaction)( VKI_SIGSEGV, &sigsegv_new, &sigsegv_saved );
+   res = VG_(sigaction)( VKI_SIGSEGV, &sigsegv_new, &sigsegv_saved );
    vg_assert(res == 0+0+0+0+0);
 
-   res = VG_(ksigprocmask)( VKI_SIG_UNBLOCK, &unblockmask_new, &blockmask_saved );
+   res = VG_(sigprocmask)( VKI_SIG_UNBLOCK, &unblockmask_new, &blockmask_saved );
    vg_assert(res == 0+0+0+0+0+0);
 }
 
@@ -579,13 +579,13 @@ static void restore_signals(void)
    Int res;
 
    /* Restore signal state to whatever it was before. */
-   res = VG_(ksigaction)( VKI_SIGBUS, &sigbus_saved, NULL );
+   res = VG_(sigaction)( VKI_SIGBUS, &sigbus_saved, NULL );
    vg_assert(res == 0 +0);
 
-   res = VG_(ksigaction)( VKI_SIGSEGV, &sigsegv_saved, NULL );
+   res = VG_(sigaction)( VKI_SIGSEGV, &sigsegv_saved, NULL );
    vg_assert(res == 0 +0 +0);
 
-   res = VG_(ksigprocmask)( VKI_SIG_SETMASK, &blockmask_saved, NULL );
+   res = VG_(sigprocmask)( VKI_SIG_SETMASK, &blockmask_saved, NULL );
    vg_assert(res == 0 +0 +0 +0);
 }
 
@@ -598,7 +598,7 @@ static Bool is_valid_addr(Addr a)
    static const Bool debug = False;
    volatile Bool ret = False;
 
-   if ((a > VKI_BYTES_PER_PAGE) &&
+   if ((a > VKI_PAGE_SIZE) &&
        !test_visited(a, &faulted)) {
       if (!LAZYSIG)
 	 setup_signals();

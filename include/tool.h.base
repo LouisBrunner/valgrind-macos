@@ -69,7 +69,7 @@ typedef UChar                  Bool;      //  8              8
    ------------------------------------------------------------------ */
 
 #include "tool_arch.h"          // arch-specific tool stuff
-#include "vg_kerneliface.h"
+#include "vki.h"
 
 /* ---------------------------------------------------------------------
    Where to send bug reports to.
@@ -556,41 +556,41 @@ extern void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init);
 
    Note that these use the vk_ (kernel) structure
    definitions, which are different in places from those that glibc
-   defines -- hence the 'k' prefix.  Since we're operating right at the
-   kernel interface, glibc's view of the world is entirely irrelevant. */
+   defines.  Since we're operating right at the kernel interface, glibc's view
+   of the world is entirely irrelevant. */
 
 /* --- Signal set ops --- */
-extern Int  VG_(ksigfillset)  ( vki_ksigset_t* set );
-extern Int  VG_(ksigemptyset) ( vki_ksigset_t* set );
+extern Int  VG_(sigfillset)  ( vki_sigset_t* set );
+extern Int  VG_(sigemptyset) ( vki_sigset_t* set );
 
-extern Bool VG_(kisfullsigset)  ( vki_ksigset_t* set );
-extern Bool VG_(kisemptysigset) ( vki_ksigset_t* set );
+extern Bool VG_(isfullsigset)  ( vki_sigset_t* set );
+extern Bool VG_(isemptysigset) ( vki_sigset_t* set );
 
-extern Int  VG_(ksigaddset)   ( vki_ksigset_t* set, Int signum );
-extern Int  VG_(ksigdelset)   ( vki_ksigset_t* set, Int signum );
-extern Int  VG_(ksigismember) ( vki_ksigset_t* set, Int signum );
+extern Int  VG_(sigaddset)   ( vki_sigset_t* set, Int signum );
+extern Int  VG_(sigdelset)   ( vki_sigset_t* set, Int signum );
+extern Int  VG_(sigismember) ( vki_sigset_t* set, Int signum );
 
-extern void VG_(ksigaddset_from_set) ( vki_ksigset_t* dst, vki_ksigset_t* src );
-extern void VG_(ksigdelset_from_set) ( vki_ksigset_t* dst, vki_ksigset_t* src );
+extern void VG_(sigaddset_from_set) ( vki_sigset_t* dst, vki_sigset_t* src );
+extern void VG_(sigdelset_from_set) ( vki_sigset_t* dst, vki_sigset_t* src );
 
 /* --- Mess with the kernel's sig state --- */
-extern Int VG_(ksigprocmask) ( Int how, const vki_ksigset_t* set,
-                                       vki_ksigset_t* oldset );
-extern Int VG_(ksigaction)   ( Int signum,
-                               const vki_ksigaction* act,
-                               vki_ksigaction* oldact );
+extern Int VG_(sigprocmask) ( Int how, const vki_sigset_t* set,
+                              vki_sigset_t* oldset );
+extern Int VG_(sigaction)   ( Int signum,
+                              const struct vki_sigaction* act,
+                              struct vki_sigaction* oldact );
 
-extern Int VG_(ksigtimedwait)( const vki_ksigset_t *, vki_ksiginfo_t *, 
-			       const struct vki_timespec * );
+extern Int VG_(sigtimedwait)( const vki_sigset_t *, vki_siginfo_t *, 
+			      const struct vki_timespec * );
 
-extern Int VG_(ksignal)      ( Int signum, void (*sighandler)(Int) );
-extern Int VG_(ksigaltstack) ( const vki_kstack_t* ss, vki_kstack_t* oss );
+extern Int VG_(signal)      ( Int signum, void (*sighandler)(Int) );
+extern Int VG_(sigaltstack) ( const vki_stack_t* ss, vki_stack_t* oss );
 
-extern Int VG_(kkill)        ( Int pid, Int signo );
-extern Int VG_(ktkill)       ( Int pid, Int signo );
-extern Int VG_(ksigpending)  ( vki_ksigset_t* set );
+extern Int VG_(kill)        ( Int pid, Int signo );
+extern Int VG_(tkill)       ( Int pid, Int signo );
+extern Int VG_(sigpending)  ( vki_sigset_t* set );
 
-extern Int VG_(waitpid)	     ( Int pid, Int *status, Int options );
+extern Int VG_(waitpid)	    ( Int pid, Int *status, Int options );
 
 /* ------------------------------------------------------------------ */
 /* socket.h. */

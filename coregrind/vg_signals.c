@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Implementation of POSIX signals.                             ---*/
-/*---                                                 vg_signals.c ---*/
+/*--- Implementation of POSIX signals.                vg_signals.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -84,10 +83,10 @@
    Forwards decls.
    ------------------------------------------------------------------ */
 
-static void vg_sync_signalhandler  ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext * );
-static void vg_async_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext * );
-static void vg_babyeater	   ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext * );
-static void proxy_sigvg_handler	   ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext * );
+static void vg_sync_signalhandler  ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
+static void vg_async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
+static void vg_babyeater	   ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
+static void proxy_sigvg_handler	   ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext * );
 
 static Bool is_correct_sigmask(void);
 static const Char *signame(Int sigNo);
@@ -119,11 +118,11 @@ Bool VG_(do_signal_routing) = False;
    only used when we're doing signal routing, and this is a place to
    remember pending signals which we can't keep actually pending for
    some reason. */
-static vki_ksigset_t proc_pending; /* process-wide pending signals */
+static vki_sigset_t proc_pending; /* process-wide pending signals */
 
 /* Since we use a couple of RT signals, we need to handle allocating
    the rest for application use. */
-Int VG_(sig_rtmin) = VKI_SIGRTUSERMIN;
+Int VG_(sig_rtmin) = VKI_SIGVGRTUSERMIN;
 Int VG_(sig_rtmax) = VKI_SIGRTMAX;
 
 Int VG_(sig_alloc_rtsig)(Int high)
@@ -135,7 +134,7 @@ Int VG_(sig_alloc_rtsig)(Int high)
    else
       ret = high ? VG_(sig_rtmin)++ : VG_(sig_rtmax)--;
 
-   vg_assert(ret >= VKI_SIGRTUSERMIN);
+   vg_assert(ret >= VKI_SIGVGRTUSERMIN);
 
    return ret;
 }
@@ -145,9 +144,9 @@ Int VG_(sig_alloc_rtsig)(Int high)
    ------------------------------------------------------------------ */
 
 
-/* Base-ment of these arrays[VKI_KNSIG].
+/* Base-ment of these arrays[_VKI_NSIG].
 
-   Valid signal numbers are 1 .. VKI_KNSIG inclusive.
+   Valid signal numbers are 1 .. _VKI_NSIG inclusive.
    Rather than subtracting 1 for indexing these arrays, which
    is tedious and error-prone, they are simply dimensioned 1 larger,
    and entry [0] is not used. 
@@ -166,7 +165,7 @@ typedef
       void* scss_handler;  /* VKI_SIG_DFL or VKI_SIG_IGN or ptr to
                               client's handler */
       UInt  scss_flags;
-      vki_ksigset_t scss_mask;
+      vki_sigset_t scss_mask;
       void* scss_restorer; /* god knows; we ignore it. */
    }
    SCSS_Per_Signal;
@@ -174,7 +173,7 @@ typedef
 typedef 
    struct {
       /* per-signal info */
-      SCSS_Per_Signal scss_per_sig[1+VKI_KNSIG];
+      SCSS_Per_Signal scss_per_sig[1+_VKI_NSIG];
 
       /* Additional elements to SCSS not stored here:
          - for each thread, the thread's blocking mask
@@ -219,7 +218,7 @@ typedef
 
 typedef 
    struct {
-      SKSS_Per_Signal skss_per_sig[1+VKI_KNSIG];
+      SKSS_Per_Signal skss_per_sig[1+_VKI_NSIG];
    } 
    SKSS;
 
@@ -227,7 +226,7 @@ static SKSS vg_skss;
 
 Bool VG_(is_sig_ign)(Int sigNo)
 {
-   vg_assert(sigNo >= 1 && sigNo <= VKI_KNSIG);
+   vg_assert(sigNo >= 1 && sigNo <= _VKI_NSIG);
 
    return vg_scss.scss_per_sig[sigNo].scss_handler == VKI_SIG_IGN;
 }
@@ -241,7 +240,7 @@ void pp_SKSS ( void )
 {
    Int sig;
    VG_(printf)("\n\nSKSS:\n");
-   for (sig = 1; sig <= VKI_KNSIG; sig++) {
+   for (sig = 1; sig <= _VKI_NSIG; sig++) {
       VG_(printf)("sig %d:  handler 0x%x,  flags 0x%x\n", sig,
                   vg_skss.skss_per_sig[sig].skss_handler,
                   vg_skss.skss_per_sig[sig].skss_flags );
@@ -268,7 +267,7 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
    UInt  scss_flags;
    UInt  skss_flags;
 
-   for (sig = 1; sig <= VKI_KNSIG; sig++) {
+   for (sig = 1; sig <= _VKI_NSIG; sig++) {
       void *skss_handler;
       void *scss_handler;
       
@@ -385,9 +384,9 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
 
 static void handle_SCSS_change ( Bool force_update )
 {
-   Int            res, sig;
-   SKSS           skss_old;
-   vki_ksigaction ksa, ksa_old;
+   Int  res, sig;
+   SKSS skss_old;
+   struct vki_sigaction ksa, ksa_old;
 
    vg_assert(is_correct_sigmask());
 
@@ -397,7 +396,7 @@ static void handle_SCSS_change ( Bool force_update )
 
    /* Compare the new SKSS entries vs the old ones, and update kernel
       where they differ. */
-   for (sig = 1; sig <= VKI_KNSIG; sig++) {
+   for (sig = 1; sig <= _VKI_NSIG; sig++) {
 
       /* Trying to do anything with SIGKILL is pointless; just ignore
          it. */
@@ -414,25 +413,25 @@ static void handle_SCSS_change ( Bool force_update )
       }
 
       ksa.ksa_handler = vg_skss.skss_per_sig[sig].skss_handler;
-      ksa.ksa_flags   = vg_skss.skss_per_sig[sig].skss_flags;
-      ksa.ksa_restorer = VG_(sigreturn);
+      ksa.sa_flags   = vg_skss.skss_per_sig[sig].skss_flags;
+      ksa.sa_restorer = VG_(sigreturn);
 
-      vg_assert(ksa.ksa_flags & VKI_SA_ONSTACK);
-      VG_(ksigfillset)( &ksa.ksa_mask );
-      VG_(ksigdelset)( &ksa.ksa_mask, VKI_SIGKILL );
-      VG_(ksigdelset)( &ksa.ksa_mask, VKI_SIGSTOP );
+      vg_assert(ksa.sa_flags & VKI_SA_ONSTACK);
+      VG_(sigfillset)( &ksa.sa_mask );
+      VG_(sigdelset)( &ksa.sa_mask, VKI_SIGKILL );
+      VG_(sigdelset)( &ksa.sa_mask, VKI_SIGSTOP );
 
       if (VG_(clo_trace_signals)) 
          VG_(message)(Vg_DebugMsg, 
             "setting ksig %d to: hdlr 0x%x, flags 0x%x, "
             "mask(63..0) 0x%x 0x%x",
             sig, ksa.ksa_handler,
-            ksa.ksa_flags,
-            ksa.ksa_mask.ws[1], 
-            ksa.ksa_mask.ws[0] 
+            ksa.sa_flags,
+            ksa.sa_mask.sig[1], 
+            ksa.sa_mask.sig[0] 
          );
 
-      res = VG_(ksigaction)( sig, &ksa, &ksa_old );
+      res = VG_(sigaction)( sig, &ksa, &ksa_old );
       vg_assert(res == 0);
 
       /* Since we got the old sigaction more or less for free, might
@@ -440,13 +439,13 @@ static void handle_SCSS_change ( Bool force_update )
       if (!force_update) {
          vg_assert(ksa_old.ksa_handler 
                    == skss_old.skss_per_sig[sig].skss_handler);
-         vg_assert(ksa_old.ksa_flags 
+         vg_assert(ksa_old.sa_flags 
                    == skss_old.skss_per_sig[sig].skss_flags);
-         vg_assert(ksa_old.ksa_restorer 
+         vg_assert(ksa_old.sa_restorer 
                    == VG_(sigreturn));
-         VG_(ksigaddset)( &ksa_old.ksa_mask, VKI_SIGKILL );
-         VG_(ksigaddset)( &ksa_old.ksa_mask, VKI_SIGSTOP );
-         vg_assert(VG_(kisfullsigset)( &ksa_old.ksa_mask ));
+         VG_(sigaddset)( &ksa_old.sa_mask, VKI_SIGKILL );
+         VG_(sigaddset)( &ksa_old.sa_mask, VKI_SIGSTOP );
+         vg_assert(VG_(isfullsigset)( &ksa_old.sa_mask ));
       }
    }
 }
@@ -479,13 +478,13 @@ static Int sas_ss_flags ( ThreadId tid, Addr m_SP )
 
 void VG_(do__NR_sigaltstack) ( ThreadId tid )
 {
-   vki_kstack_t* ss;
-   vki_kstack_t* oss;
-   Addr          m_SP;
+   vki_stack_t* ss;
+   vki_stack_t* oss;
+   Addr         m_SP;
 
    vg_assert(VG_(is_valid_tid)(tid));
-   ss    = (vki_kstack_t*)PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
-   oss   = (vki_kstack_t*)PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch);
+   ss    = (vki_stack_t*)PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
+   oss   = (vki_stack_t*)PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch);
    m_SP  = ARCH_STACK_PTR(VG_(threads)[tid].arch);
 
    if (VG_(clo_trace_signals))
@@ -530,30 +529,30 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
 
 void VG_(do__NR_sigaction) ( ThreadId tid )
 {
-   Int              signo;
-   vki_ksigaction*  new_act;
-   vki_ksigaction*  old_act;
+   Int                    signo;
+   struct vki_sigaction*  new_act;
+   struct vki_sigaction*  old_act;
 
    vg_assert(is_correct_sigmask());
 
    vg_assert(VG_(is_valid_tid)(tid));
-   signo     =                  PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
-   new_act   = (vki_ksigaction*)PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch);
-   old_act   = (vki_ksigaction*)PLATFORM_SYSCALL_ARG3(VG_(threads)[tid].arch);
+   signo   =                        PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
+   new_act = (struct vki_sigaction*)PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch);
+   old_act = (struct vki_sigaction*)PLATFORM_SYSCALL_ARG3(VG_(threads)[tid].arch);
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
          "__NR_sigaction: tid %d, sigNo %d, "
          "new 0x%x, old 0x%x, new flags 0x%x",
          tid, signo, (UInt)new_act, (UInt)old_act,
-         (UInt)(new_act ? new_act->ksa_flags : 0) );
+         (UInt)(new_act ? new_act->sa_flags : 0) );
 
    /* Rule out various error conditions.  The aim is to ensure that if
       when the call is passed to the kernel it will definitely
       succeed. */
 
    /* Reject out-of-range signal numbers. */
-   if (signo < 1 || signo > VKI_KNSIG) goto bad_signo;
+   if (signo < 1 || signo > _VKI_NSIG) goto bad_signo;
 
    /* don't let them use our signals */
    if ( (signo == VKI_SIGVGINT || signo == VKI_SIGVGKILL)
@@ -570,18 +569,18 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    /* If the client supplied non-NULL old_act, copy the relevant SCSS
       entry into it. */
    if (old_act) {
-      old_act->ksa_handler  = vg_scss.scss_per_sig[signo].scss_handler;
-      old_act->ksa_flags    = vg_scss.scss_per_sig[signo].scss_flags;
-      old_act->ksa_mask     = vg_scss.scss_per_sig[signo].scss_mask;
-      old_act->ksa_restorer = vg_scss.scss_per_sig[signo].scss_restorer;
+      old_act->ksa_handler = vg_scss.scss_per_sig[signo].scss_handler;
+      old_act->sa_flags    = vg_scss.scss_per_sig[signo].scss_flags;
+      old_act->sa_mask     = vg_scss.scss_per_sig[signo].scss_mask;
+      old_act->sa_restorer = vg_scss.scss_per_sig[signo].scss_restorer;
    }
 
    /* And now copy new SCSS entry from new_act. */
    if (new_act) {
       vg_scss.scss_per_sig[signo].scss_handler  = new_act->ksa_handler;
-      vg_scss.scss_per_sig[signo].scss_flags    = new_act->ksa_flags;
-      vg_scss.scss_per_sig[signo].scss_mask     = new_act->ksa_mask;
-      vg_scss.scss_per_sig[signo].scss_restorer = new_act->ksa_restorer;
+      vg_scss.scss_per_sig[signo].scss_flags    = new_act->sa_flags;
+      vg_scss.scss_per_sig[signo].scss_mask     = new_act->sa_mask;
+      vg_scss.scss_per_sig[signo].scss_restorer = new_act->sa_restorer;
    }
 
    /* All happy bunnies ... */
@@ -626,15 +625,15 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
 
 static
 void do_sigprocmask_bitops ( Int vki_how, 
-			     vki_ksigset_t* orig_set,
-			     vki_ksigset_t* modifier )
+			     vki_sigset_t* orig_set,
+			     vki_sigset_t* modifier )
 {
    switch (vki_how) {
       case VKI_SIG_BLOCK: 
-         VG_(ksigaddset_from_set)( orig_set, modifier );
+         VG_(sigaddset_from_set)( orig_set, modifier );
          break;
       case VKI_SIG_UNBLOCK:
-         VG_(ksigdelset_from_set)( orig_set, modifier );
+         VG_(sigdelset_from_set)( orig_set, modifier );
          break;
       case VKI_SIG_SETMASK:
          *orig_set = *modifier;
@@ -655,8 +654,8 @@ void do_sigprocmask_bitops ( Int vki_how,
 static
 void do_setmask ( ThreadId tid,
                   Int how,
-                  vki_ksigset_t* newset,
-		  vki_ksigset_t* oldset )
+                  vki_sigset_t* newset,
+		  vki_sigset_t* oldset )
 {
    vg_assert(is_correct_sigmask());
 
@@ -667,7 +666,7 @@ void do_setmask ( ThreadId tid,
 		   how==VKI_SIG_BLOCK ? "SIG_BLOCK" : (
 		      how==VKI_SIG_UNBLOCK ? "SIG_UNBLOCK" : (
 			 how==VKI_SIG_SETMASK ? "SIG_SETMASK" : "???")),
-		   newset, newset ? newset->ws[1] : 0, newset ? newset->ws[0] : 0
+		   newset, newset ? newset->sig[1] : 0, newset ? newset->sig[0] : 0
 	 );
 
    /* Just do this thread. */
@@ -677,12 +676,12 @@ void do_setmask ( ThreadId tid,
       if (VG_(clo_trace_signals))
 	      VG_(message)(Vg_DebugExtraMsg, 
 			   "\toldset=%p %08x%08x",
-			   oldset, oldset->ws[1], oldset->ws[0]);
+			   oldset, oldset->sig[1], oldset->sig[0]);
    }
    if (newset) {
       do_sigprocmask_bitops (how, &VG_(threads)[tid].sig_mask, newset );
-      VG_(ksigdelset)(&VG_(threads)[tid].sig_mask, VKI_SIGKILL);
-      VG_(ksigdelset)(&VG_(threads)[tid].sig_mask, VKI_SIGSTOP);
+      VG_(sigdelset)(&VG_(threads)[tid].sig_mask, VKI_SIGKILL);
+      VG_(sigdelset)(&VG_(threads)[tid].sig_mask, VKI_SIGSTOP);
       VG_(proxy_setsigmask)(tid);
    }
 
@@ -692,8 +691,8 @@ void do_setmask ( ThreadId tid,
 
 void VG_(do__NR_sigprocmask) ( ThreadId tid,
                                Int how, 
-                               vki_ksigset_t* set,
-                               vki_ksigset_t* oldset )
+                               vki_sigset_t* set,
+                               vki_sigset_t* oldset )
 {
    switch(how) {
    case VKI_SIG_BLOCK:
@@ -721,8 +720,8 @@ void VG_(do__NR_sigprocmask) ( ThreadId tid,
 
 void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid,
                                         Int how, 
-                                        vki_ksigset_t* set,
-                                        vki_ksigset_t* oldset )
+                                        vki_sigset_t* set,
+                                        vki_sigset_t* oldset )
 {
    /* Assume that how has been validated by caller. */
    vg_assert(how == VKI_SIG_BLOCK || how == VKI_SIG_UNBLOCK 
@@ -742,21 +741,21 @@ void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid,
    ------------------------------------------------------------------ */
 
 /* Block all host signals, dumping the old mask in *saved_mask. */
-void VG_(block_all_host_signals) ( /* OUT */ vki_ksigset_t* saved_mask )
+void VG_(block_all_host_signals) ( /* OUT */ vki_sigset_t* saved_mask )
 {
    Int           ret;
-   vki_ksigset_t block_procmask;
-   VG_(ksigfillset)(&block_procmask);
-   ret = VG_(ksigprocmask)
+   vki_sigset_t block_procmask;
+   VG_(sigfillset)(&block_procmask);
+   ret = VG_(sigprocmask)
             (VKI_SIG_SETMASK, &block_procmask, saved_mask);
    vg_assert(ret == 0);
 }
 
 /* Restore the blocking mask using the supplied saved one. */
-void VG_(restore_all_host_signals) ( /* IN */ vki_ksigset_t* saved_mask )
+void VG_(restore_all_host_signals) ( /* IN */ vki_sigset_t* saved_mask )
 {
    Int ret;
-   ret = VG_(ksigprocmask)(VKI_SIG_SETMASK, saved_mask, NULL);
+   ret = VG_(sigprocmask)(VKI_SIG_SETMASK, saved_mask, NULL);
    vg_assert(ret == 0);
 }
 
@@ -764,34 +763,34 @@ void VG_(restore_all_host_signals) ( /* IN */ vki_ksigset_t* saved_mask )
    it is supposed to have blocked. */
 static Bool is_correct_sigmask(void)
 {
-   vki_ksigset_t mask;
+   vki_sigset_t mask;
    Bool ret = True;
 
    vg_assert(VG_(gettid)() == VG_(main_pid));
 
 #ifdef DEBUG_SIGNALS
-   VG_(ksigprocmask)(VKI_SIG_SETMASK, NULL, &mask);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, NULL, &mask);
 
    /* unresumable signals */
    
-   ret = ret && !VG_(ksigismember)(&mask, VKI_SIGSEGV);
-   VG_(ksigaddset)(&mask, VKI_SIGSEGV);
+   ret = ret && !VG_(sigismember)(&mask, VKI_SIGSEGV);
+   VG_(sigaddset)(&mask, VKI_SIGSEGV);
 
-   ret = ret && !VG_(ksigismember)(&mask, VKI_SIGBUS);
-   VG_(ksigaddset)(&mask, VKI_SIGBUS);
+   ret = ret && !VG_(sigismember)(&mask, VKI_SIGBUS);
+   VG_(sigaddset)(&mask, VKI_SIGBUS);
 
-   ret = ret && !VG_(ksigismember)(&mask, VKI_SIGFPE);
-   VG_(ksigaddset)(&mask, VKI_SIGFPE);
+   ret = ret && !VG_(sigismember)(&mask, VKI_SIGFPE);
+   VG_(sigaddset)(&mask, VKI_SIGFPE);
 
-   ret = ret && !VG_(ksigismember)(&mask, VKI_SIGILL);
-   VG_(ksigaddset)(&mask, VKI_SIGILL);
+   ret = ret && !VG_(sigismember)(&mask, VKI_SIGILL);
+   VG_(sigaddset)(&mask, VKI_SIGILL);
 
    /* unblockable signals (doesn't really matter if these are
       already present) */
-   VG_(ksigaddset)(&mask, VKI_SIGSTOP);
-   VG_(ksigaddset)(&mask, VKI_SIGKILL);
+   VG_(sigaddset)(&mask, VKI_SIGSTOP);
+   VG_(sigaddset)(&mask, VKI_SIGKILL);
 
-   ret = ret && VG_(kisfullsigset)(&mask);
+   ret = ret && VG_(isfullsigset)(&mask);
 #endif /* DEBUG_SIGNALS */
 
    return ret;
@@ -802,15 +801,15 @@ static Bool is_correct_sigmask(void)
    LWPs. */
 static void set_main_sigmask(void)
 {
-   vki_ksigset_t mask;
+   vki_sigset_t mask;
 
-   VG_(ksigfillset)(&mask);
-   VG_(ksigdelset)(&mask, VKI_SIGSEGV);
-   VG_(ksigdelset)(&mask, VKI_SIGBUS);
-   VG_(ksigdelset)(&mask, VKI_SIGFPE);
-   VG_(ksigdelset)(&mask, VKI_SIGILL);
+   VG_(sigfillset)(&mask);
+   VG_(sigdelset)(&mask, VKI_SIGSEGV);
+   VG_(sigdelset)(&mask, VKI_SIGBUS);
+   VG_(sigdelset)(&mask, VKI_SIGFPE);
+   VG_(sigdelset)(&mask, VKI_SIGILL);
 
-   VG_(ksigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
 
    vg_assert(is_correct_sigmask());
 }
@@ -823,13 +822,13 @@ static void set_main_sigmask(void)
 /* Set up a stack frame (VgSigContext) for the client's signal
    handler. */
 static
-void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
+void vg_push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
 {
    Addr         esp_top_of_frame;
    ThreadState* tst;
    Int		sigNo = siginfo->si_signo;
 
-   vg_assert(sigNo >= 1 && sigNo <= VKI_KNSIG);
+   vg_assert(sigNo >= 1 && sigNo <= _VKI_NSIG);
    vg_assert(VG_(is_valid_tid)(tid));
    tst = & VG_(threads)[tid];
 
@@ -896,7 +895,7 @@ Bool VG_(signal_returns) ( ThreadId tid )
       before the signal was delivered. */
    sigNo = vg_pop_signal_frame(tid);
 
-   vg_assert(sigNo >= 1 && sigNo <= VKI_KNSIG);
+   vg_assert(sigNo >= 1 && sigNo <= _VKI_NSIG);
 
    /* Scheduler now can resume this thread, or perhaps some other.
       Tell the scheduler whether or not any syscall interrupted by
@@ -962,24 +961,24 @@ static const Char *signame(Int sigNo)
 /* Hit ourselves with a signal using the default handler */
 void VG_(kill_self)(Int sigNo)
 {
-   vki_ksigset_t	mask, origmask;
-   vki_ksigaction	sa, origsa;   
+   vki_sigset_t	        mask, origmask;
+   struct vki_sigaction sa, origsa;   
 
    sa.ksa_handler = VKI_SIG_DFL;
-   sa.ksa_flags = 0;
-   sa.ksa_restorer = 0;
-   VG_(ksigemptyset)(&sa.ksa_mask);
+   sa.sa_flags = 0;
+   sa.sa_restorer = 0;
+   VG_(sigemptyset)(&sa.sa_mask);
       
-   VG_(ksigaction)(sigNo, &sa, &origsa);
+   VG_(sigaction)(sigNo, &sa, &origsa);
 
-   VG_(ksigfillset)(&mask);
-   VG_(ksigdelset)(&mask, sigNo);
-   VG_(ksigprocmask)(VKI_SIG_SETMASK, &mask, &origmask);
+   VG_(sigfillset)(&mask);
+   VG_(sigdelset)(&mask, sigNo);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &mask, &origmask);
 
-   VG_(ktkill)(VG_(getpid)(), sigNo);
+   VG_(tkill)(VG_(getpid)(), sigNo);
 
-   VG_(ksigaction)(sigNo, &origsa, NULL);
-   VG_(ksigprocmask)(VKI_SIG_SETMASK, &origmask, NULL);
+   VG_(sigaction)(sigNo, &origsa, NULL);
+   VG_(sigprocmask)(VKI_SIG_SETMASK, &origmask, NULL);
 }
 
 /*
@@ -1051,7 +1050,7 @@ static void fill_phdr(Elf32_Phdr *phdr, const Segment *seg, UInt off, Bool write
    if (seg->prot & VKI_PROT_EXEC)
       phdr->p_flags |= PF_X;
 
-   phdr->p_align = VKI_BYTES_PER_PAGE;
+   phdr->p_align = VKI_PAGE_SIZE;
 }
 
 struct note {
@@ -1091,7 +1090,7 @@ static void write_note(Int fd, const struct note *n)
    VG_(write)(fd, &n->note, note_size(n));
 }
 
-static void fill_prpsinfo(const ThreadState *tst, struct elf_prpsinfo *prpsinfo)
+static void fill_prpsinfo(const ThreadState *tst, struct vki_elf_prpsinfo *prpsinfo)
 {
    Char *name;
 
@@ -1137,9 +1136,9 @@ static void fill_prpsinfo(const ThreadState *tst, struct elf_prpsinfo *prpsinfo)
    }
 }
 
-static void fill_prstatus(const ThreadState *tst, struct elf_prstatus *prs, const vki_ksiginfo_t *si)
+static void fill_prstatus(const ThreadState *tst, struct vki_elf_prstatus *prs, const vki_siginfo_t *si)
 {
-   struct user_regs_struct *regs;
+   struct vki_user_regs_struct *regs;
 
    VG_(memset)(prs, 0, sizeof(*prs));
 
@@ -1154,7 +1153,7 @@ static void fill_prstatus(const ThreadState *tst, struct elf_prstatus *prs, cons
    prs->pr_pgrp = VG_(main_pgrp);
    prs->pr_sid = VG_(main_pgrp);
    
-   regs = (struct user_regs_struct *)prs->pr_reg;
+   regs = (struct vki_user_regs_struct *)prs->pr_reg;
 
    vg_assert(sizeof(*regs) == sizeof(prs->pr_reg));
 
@@ -1165,7 +1164,7 @@ static void fill_prstatus(const ThreadState *tst, struct elf_prstatus *prs, cons
    }
 }
 
-static void fill_fpu(const ThreadState *tst, elf_fpregset_t *fpu)
+static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 {
    if (VG_(is_running_thread)(tst->tid))
       VGA_(fill_elffpregs_from_BB)(fpu);
@@ -1173,7 +1172,7 @@ static void fill_fpu(const ThreadState *tst, elf_fpregset_t *fpu)
       VGA_(fill_elffpregs_from_tst)(fpu, &tst->arch);
 }
 
-static void fill_xfpu(const ThreadState *tst, elf_fpxregset_t *xfpu)
+static void fill_xfpu(const ThreadState *tst, vki_elf_fpxregset_t *xfpu)
 {
    if (VG_(is_running_thread)(tst->tid))
       VGA_(fill_elffpxregs_from_BB)(xfpu);
@@ -1181,7 +1180,7 @@ static void fill_xfpu(const ThreadState *tst, elf_fpxregset_t *xfpu)
       VGA_(fill_elffpxregs_from_tst)(xfpu, &tst->arch);
 }
 
-static void make_coredump(ThreadId tid, const vki_ksiginfo_t *si, UInt max_size)
+static void make_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
 {
    Char buf[1000];
    Char *basename = "vgcore";
@@ -1196,8 +1195,8 @@ static void make_coredump(ThreadId tid, const vki_ksiginfo_t *si, UInt max_size)
    UInt off;
    struct note *notelist, *note;
    UInt notesz;
-   struct elf_prpsinfo prpsinfo;
-   struct elf_prstatus prstatus;
+   struct vki_elf_prpsinfo prpsinfo;
+   struct vki_elf_prstatus prstatus;
 
    if (VG_(clo_log_name) != NULL) {
       coreext = ".core";
@@ -1240,13 +1239,13 @@ static void make_coredump(ThreadId tid, const vki_ksiginfo_t *si, UInt max_size)
    phdrs = VG_(arena_malloc)(VG_AR_CORE, sizeof(*phdrs) * num_phdrs);
 
    for(i = 1; i < VG_N_THREADS; i++) {
-      elf_fpregset_t fpu;
+      vki_elf_fpregset_t fpu;
 
       if (VG_(threads)[i].status == VgTs_Empty)
 	 continue;
 
       if (VG_(have_ssestate)) {
-	 elf_fpxregset_t xfpu;
+	 vki_elf_fpxregset_t xfpu;
 
 	 fill_xfpu(&VG_(threads)[i], &xfpu);
 	 add_note(&notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
@@ -1321,7 +1320,7 @@ static void make_coredump(ThreadId tid, const vki_ksiginfo_t *si, UInt max_size)
    If we're not being quiet, then print out some more detail about
    fatal signals (esp. core dumping signals).
  */
-static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
+static void vg_default_action(const vki_siginfo_t *info, ThreadId tid)
 {
    Int  sigNo     = info->si_signo;
    Bool terminate = False;
@@ -1465,7 +1464,7 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 
 static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
 {
-   vki_ksiginfo_t info;
+   vki_siginfo_t info;
 
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
@@ -1496,10 +1495,10 @@ void VG_(synth_fault)(ThreadId tid)
    synth_fault_common(tid, 0, 0x80);
 }
 
-void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async )
+void VG_(deliver_signal) ( ThreadId tid, const vki_siginfo_t *info, Bool async )
 {
    Int			sigNo = info->si_signo;
-   vki_ksigset_t	handlermask;
+   vki_sigset_t		handlermask;
    SCSS_Per_Signal	*handler = &vg_scss.scss_per_sig[sigNo];
    void			*handler_fn;
    ThreadState		*tst = VG_(get_ThreadState)(tid);
@@ -1601,11 +1600,11 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
       /* handler gets the union of the signal's mask and the thread's
 	 mask */
       handlermask = handler->scss_mask;
-      VG_(ksigaddset_from_set)(&handlermask, &VG_(threads)[tid].sig_mask);
+      VG_(sigaddset_from_set)(&handlermask, &VG_(threads)[tid].sig_mask);
 
       /* also mask this signal, unless they ask us not to */
       if (!(handler->scss_flags & VKI_SA_NOMASK))
-	 VG_(ksigaddset)(&handlermask, sigNo);
+	 VG_(sigaddset)(&handlermask, sigNo);
    }
 
    /* tell proxy we're about to start running the handler */
@@ -1620,7 +1619,7 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
    client set the SA_NOCLDWAIT on their SIGCHLD handler.
  */
 static
-void vg_babyeater ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext *uc )
+void vg_babyeater ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
 {
    Int status;
    Int pid;
@@ -1644,12 +1643,12 @@ void vg_babyeater ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext *uc )
    all signals for which this is the handler should be blocked there.
 */
 static 
-void vg_async_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext *uc )
+void vg_async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
 {
    if (VG_(gettid)() == VG_(main_pid)) {
       VG_(printf)("got signal %d in LWP %d (%d)\n",
 		  sigNo, VG_(gettid)(), VG_(gettid)(), VG_(main_pid));
-      vg_assert(VG_(ksigismember)(&uc->uc_sigmask, sigNo));
+      vg_assert(VG_(sigismember)(&uc->uc_sigmask, sigNo));
    }
 
    vg_assert(VG_(gettid)() != VG_(main_pid));
@@ -1666,7 +1665,7 @@ void vg_async_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_uconte
    the sync signals.
 */
 static
-void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext *uc )
+void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext *uc )
 {
    Int           dummy_local;
 
@@ -1702,7 +1701,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
    if (VG_(clo_trace_signals)) {
       VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d", sigNo, info->si_code );
    }
-   vg_assert(sigNo >= 1 && sigNo <= VKI_KNSIG);
+   vg_assert(sigNo >= 1 && sigNo <= _VKI_NSIG);
 
    /* Sanity check.  Ensure we're really running on the signal stack
       we asked for. */
@@ -1789,7 +1788,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 	 static Int recursion = 0;
 
 	 if (recursion++ == 0) {
-	    VG_(init_shadow_range)(PGROUNDDN(fault), VKI_BYTES_PER_PAGE, True);
+	    VG_(init_shadow_range)(PGROUNDDN(fault), VKI_PAGE_SIZE, True);
 	    recursion--;
 	    return;
 	 } else {
@@ -1824,7 +1823,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
       */
       VG_(message)(Vg_DebugMsg, 
 		   "adding signal %d to pending set", sigNo);
-      VG_(ksigaddset)(&proc_pending, sigNo);
+      VG_(sigaddset)(&proc_pending, sigNo);
    } else {
       /* 
 	 A bad signal came from the kernel (indicating an instruction
@@ -1869,7 +1868,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
    poke the LWP to make it fall out of whatever syscall it is in.
    Used for thread termination and cancellation.
  */
-static void proxy_sigvg_handler(int signo, vki_ksiginfo_t *si, struct vki_ucontext *uc)
+static void proxy_sigvg_handler(int signo, vki_siginfo_t *si, struct vki_ucontext *uc)
 {
    vg_assert(signo == VKI_SIGVGINT || signo == VKI_SIGVGKILL);
    vg_assert(si->si_signo == signo);
@@ -1900,14 +1899,14 @@ void VG_(unblock_host_signal) ( Int sigNo )
 
 
 static __attribute((unused))
-void pp_vg_ksigaction ( vki_ksigaction* sa )
+void pp_vg_ksigaction ( struct vki_sigaction* sa )
 {
    Int i;
    VG_(printf)("vg_ksigaction: handler %p, flags 0x%x, restorer %p\n", 
-               sa->ksa_handler, (UInt)sa->ksa_flags, sa->ksa_restorer);
+               sa->ksa_handler, (UInt)sa->sa_flags, sa->sa_restorer);
    VG_(printf)("vg_ksigaction: { ");
-   for (i = 1; i <= VKI_KNSIG; i++)
-      if (VG_(ksigismember(&(sa->ksa_mask),i)))
+   for (i = 1; i <= _VKI_NSIG; i++)
+      if (VG_(sigismember(&(sa->sa_mask),i)))
          VG_(printf)("%d ", i);
    VG_(printf)("}\n");
 }
@@ -1920,9 +1919,9 @@ void VG_(route_signals)(void)
 {
    static const struct vki_timespec zero = { 0, 0 };
    static ThreadId start_tid = 1;	/* tid to start scanning from */
-   vki_ksigset_t set;
-   vki_ksiginfo_t siset[VKI_KNSIG];
-   vki_ksiginfo_t si;
+   vki_sigset_t set;
+   vki_siginfo_t siset[_VKI_NSIG];
+   vki_siginfo_t si;
    Int sigNo;
 
    vg_assert(VG_(gettid)() == VG_(main_pid));
@@ -1937,19 +1936,19 @@ void VG_(route_signals)(void)
    VG_(block_all_host_signals) ( &set );
 
    /* grab any pending signals and add them to the pending signal set */
-   while(VG_(ksigtimedwait)(&set, &si, &zero) > 0) {
-      VG_(ksigaddset)(&proc_pending, si.si_signo);
+   while(VG_(sigtimedwait)(&set, &si, &zero) > 0) {
+      VG_(sigaddset)(&proc_pending, si.si_signo);
       siset[si.si_signo] = si;
    }
 
    /* transfer signals from the process pending set to a particular
       thread which has it unblocked */
-   for(sigNo = 0; sigNo < VKI_KNSIG; sigNo++) {
+   for(sigNo = 0; sigNo < _VKI_NSIG; sigNo++) {
       ThreadId tid;
       ThreadId end_tid;
       Int target = -1;
       
-      if (!VG_(ksigismember)(&proc_pending, sigNo))
+      if (!VG_(sigismember)(&proc_pending, sigNo))
 	 continue;
 
       end_tid = start_tid - 1;
@@ -1965,7 +1964,7 @@ void VG_(route_signals)(void)
 	 if (tst->status == VgTs_Empty)
 	    continue;
 
-	 if (!VG_(ksigismember)(&tst->sig_mask, sigNo)) {
+	 if (!VG_(sigismember)(&tst->sig_mask, sigNo)) {
 	    vg_assert(tst->proxy != NULL);
 	    target = tid;
 	    start_tid = tid;
@@ -1983,7 +1982,7 @@ void VG_(route_signals)(void)
          tst->sigqueue_head = (tst->sigqueue_head + 1) % VG_N_SIGNALQUEUE;
          vg_assert(tst->sigqueue_head != tst->sigqueue_tail);
 	 VG_(proxy_sendsig)(target, sigNo);
-	 VG_(ksigdelset)(&proc_pending, sigNo);
+	 VG_(sigdelset)(&proc_pending, sigNo);
       }
    }
 
@@ -1998,9 +1997,9 @@ void VG_(route_signals)(void)
 void VG_(sigstartup_actions) ( void )
 {
    Int i, ret;
-   vki_ksigset_t  saved_procmask;
-   vki_kstack_t   altstack_info;
-   vki_ksigaction sa;
+   vki_sigset_t saved_procmask;
+   vki_stack_t  altstack_info;
+   struct vki_sigaction sa;
 
    /* VG_(printf)("SIGSTARTUP\n"); */
    /* Block all signals.  saved_procmask remembers the previous mask,
@@ -2009,17 +2008,17 @@ void VG_(sigstartup_actions) ( void )
    VG_(block_all_host_signals)( &saved_procmask );
 
    /* clear process-wide pending signal set */
-   VG_(ksigemptyset)(&proc_pending);
+   VG_(sigemptyset)(&proc_pending);
 
    /* Set the signal mask which the scheduler LWP should maintain from
       now on. */
    set_main_sigmask();
 
    /* Copy per-signal settings to SCSS. */
-   for (i = 1; i <= VKI_KNSIG; i++) {
+   for (i = 1; i <= _VKI_NSIG; i++) {
 
       /* Get the old host action */
-      ret = VG_(ksigaction)(i, NULL, &sa);
+      ret = VG_(sigaction)(i, NULL, &sa);
       vg_assert(ret == 0);
 
       if (VG_(clo_trace_signals))
@@ -2027,18 +2026,18 @@ void VG_(sigstartup_actions) ( void )
                      (Addr)(sa.ksa_handler), i );
 
       vg_scss.scss_per_sig[i].scss_handler  = sa.ksa_handler;
-      vg_scss.scss_per_sig[i].scss_flags    = sa.ksa_flags;
-      vg_scss.scss_per_sig[i].scss_mask     = sa.ksa_mask;
-      vg_scss.scss_per_sig[i].scss_restorer = sa.ksa_restorer;
+      vg_scss.scss_per_sig[i].scss_flags    = sa.sa_flags;
+      vg_scss.scss_per_sig[i].scss_mask     = sa.sa_mask;
+      vg_scss.scss_per_sig[i].scss_restorer = sa.sa_restorer;
    }
 
    /* Our private internal signals are treated as ignored */
    vg_scss.scss_per_sig[VKI_SIGVGINT].scss_handler = VKI_SIG_IGN;
    vg_scss.scss_per_sig[VKI_SIGVGINT].scss_flags = VKI_SA_SIGINFO;
-   VG_(ksigfillset)(&vg_scss.scss_per_sig[VKI_SIGVGINT].scss_mask);
+   VG_(sigfillset)(&vg_scss.scss_per_sig[VKI_SIGVGINT].scss_mask);
    vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_handler = VKI_SIG_IGN;
    vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_flags = VKI_SA_SIGINFO;
-   VG_(ksigfillset)(&vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_mask);
+   VG_(sigfillset)(&vg_scss.scss_per_sig[VKI_SIGVGKILL].scss_mask);
 
    /* Copy the process' signal mask into the root thread. */
    vg_assert(VG_(threads)[1].status == VgTs_Runnable);
@@ -2049,7 +2048,7 @@ void VG_(sigstartup_actions) ( void )
    altstack_info.ss_sp = &(sigstack[0]);
    altstack_info.ss_size = VG_SIGSTACK_SIZE_W * sizeof(UInt);
    altstack_info.ss_flags = 0;
-   ret = VG_(ksigaltstack)(&altstack_info, NULL);
+   ret = VG_(sigaltstack)(&altstack_info, NULL);
    if (ret != 0) {
       VG_(core_panic)(
          "vg_sigstartup_actions: couldn't install alternative sigstack");
@@ -2060,7 +2059,7 @@ void VG_(sigstartup_actions) ( void )
    }
 
    /* DEBUGGING HACK */
-   /* VG_(ksignal)(VKI_SIGUSR1, &VG_(oursignalhandler)); */
+   /* VG_(signal)(VKI_SIGUSR1, &VG_(oursignalhandler)); */
 
    /* Calculate SKSS and apply it.  This also sets the initial kernel
       mask we need to run with. */

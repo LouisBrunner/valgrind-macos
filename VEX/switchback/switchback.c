@@ -49,17 +49,16 @@ static Int n_bbs_done = 0;
 #   error "Unknown arch"
 #endif
 
+/* 7: show conversion into IR */
+/* 6: show after initial opt */
+/* 5: show after instrumentation */
+/* 4: show after second opt */
+/* 3: show after tree building */
+/* 2: show selected insns */
+/* 1: show after reg-alloc */
+/* 0: show final assembly */
 #define TEST_FLAGS (1<<7)|(1<<3)|(1<<2)|(1<<1) //|(1<<0)
-
-#define DEBUG_TRACE_FLAGS 0 & (0               \
- | (1 << 7)  /* show conversion into IR */     \
- | (0 << 6)  /* show after initial opt */      \
- | (0 << 5)  /* show after instrumentation */  \
- | (0 << 4)  /* show after second opt */       \
- | (1 << 3)  /* show after tree building */    \
- | (1 << 2)  /* show selected insns */         \
- | (1 << 1)  /* show after reg-alloc */        \
- | (1 << 0))  /* show final assembly */
+#define DEBUG_TRACE_FLAGS 0//(1<<7)|(0<<6)|(0<<5)|(0<<4)|(1<<3)|(1<<2)|(1<<1)|(1<<0)
 
 
 /* guest state */
@@ -625,17 +624,18 @@ static void run_simulator ( void )
       // Switchback
       if (n_bbs_done == stopAfter) {
          printf("---begin SWITCHBACK at bb:%d---\n", n_bbs_done);
-#if 0
+#if 1
          if (last_guest) {
-            printf("\n=== Last run translation (bb:%d):\n", n_bbs_done-1);
+            printf("\n*** Last run translation (bb:%d):\n", n_bbs_done-1);
             make_translation(last_guest,True);
          }
 #endif
+#if 0
          if (next_guest) {
-            printf("\n=== Current translation (bb:%d):\n", n_bbs_done);
+            printf("\n*** Current translation (bb:%d):\n", n_bbs_done);
             make_translation(next_guest,True);
          }
-
+#endif
          printf("---  end SWITCHBACK at bb:%d ---\n", n_bbs_done);
          switchback();
          assert(0); /*NOTREACHED*/

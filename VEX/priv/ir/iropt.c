@@ -884,7 +884,7 @@ static void invalidateOverlaps ( Hash64* h, UInt k_lo, UInt k_hi )
 static void redundant_get_removal_BB ( IRBB* bb )
 {
    Hash64* env = newH64();
-   UInt    key;
+   UInt    key = 0; /* keep gcc -O happy */
    Int     i;
    Bool    isPut;
    ULong   val;
@@ -966,7 +966,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
 
 static void handle_gets_Stmt ( Hash64* env, IRStmt* st )
 {
-   UInt    key;
+   UInt    key = 0; /* keep gcc -O happy */
    Bool    isGet;
    IRExpr* e;
    switch (st->tag) {
@@ -1039,7 +1039,7 @@ static void redundant_put_removal_BB ( IRBB* bb )
    Int     i, j;
    Bool    isPut;
    IRStmt* st;
-   UInt    key;
+   UInt    key = 0; /* keep gcc -O happy */
 
    Hash64* env = newH64();
    for (i = bb->stmts_used-1; i >= 0; i--) {

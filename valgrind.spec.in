@@ -45,7 +45,6 @@ make install prefix=$RPM_BUILD_ROOT/usr
 /usr/bin/cg_annotate
 /usr/lib/valgrind/*
 /usr/bin/valgrind-listener
-/usr/bin/vg_regtest
 
 %doc
 /usr/share/doc/valgrind/*

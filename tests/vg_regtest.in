@@ -85,10 +85,10 @@ my @failures;           # List of failed tests
 my $num_tests_done      = 0;
 my %num_failures        = (stderr => 0, stdout => 0);
 
-# Default valgrind to use is this build tree's one
+# Default valgrind to use is this build tree's (uninstalled) one
 my $prefix="@prefix@";
 my $exec_prefix="@exec_prefix@";
-my $valgrind = "@bindir@/valgrind";
+my $valgrind = "./coregrind/valgrind";
 
 chomp(my $tests_dir = `pwd`);
 
@@ -108,16 +108,18 @@ my $default_stderr_filter = "filter_stderr";
 #    subsequent trouble when we change directories.
 #
 # Also checks the program exists and is executable.
-sub validate_program ($$) 
+sub validate_program ($$$) 
 {
-    my ($dir, $prog) = @_;
+    my ($dir, $prog, $must_be_executable) = @_;
 
     # If absolute path, leave it alone.  If relative, make it
     # absolute -- by prepending current dir -- so we can change
     # dirs and still use it.
     $prog = "$dir/$prog" if ($prog !~ /^\//);
-    (-f $prog) or die "`$prog' not found or not a file ($dir)\n";
-    (-x $prog) or die "`$prog' not found or not executable ($dir)\n";
+    (-f $prog) or die "vg_regtest: `$prog' not found or not a file ($dir)\n";
+    if ($must_be_executable) { 
+       (-x $prog) or die "vg_regtest: `$prog' not executable ($dir)\n";
+    }
 
     return $prog;
 }
@@ -140,7 +142,7 @@ sub process_command_line()
             push(@fs, $arg);
         }
     }
-    $valgrind = validate_program($tests_dir, $valgrind);
+    $valgrind = validate_program($tests_dir, $valgrind, 0);
 
     if ($alldirs) {
         @fs = ();
@@ -166,7 +168,7 @@ sub read_vgtest_file($)
         ("", undef, "", undef, undef);
 
     # Every test directory must have a "filter_stderr"
-    $stderr_filter = validate_program(".", $default_stderr_filter);
+    $stderr_filter = validate_program(".", $default_stderr_filter, 1);
 
     open(INPUTFILE, "< $f") || die "File $f not openable\n";
 
@@ -174,13 +176,13 @@ sub read_vgtest_file($)
         if      ($line =~ /^\s*vgopts:\s*(.*)$/) {
             $vgopts = $1;
         } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
-            $prog = validate_program(".", $1);
+            $prog = validate_program(".", $1, 1);
         } elsif ($line =~ /^\s*args:\s*(.*)$/) {
             $args = $1;
         } elsif ($line =~ /^\s*stdout_filter:\s*(.*)$/) {
-            $stdout_filter = validate_program(".", $1);
+            $stdout_filter = validate_program(".", $1, 1);
         } elsif ($line =~ /^\s*stderr_filter:\s*(.*)$/) {
-            $stderr_filter = validate_program(".", $1);
+            $stderr_filter = validate_program(".", $1, 1);
         } else {
             die "Bad line in $f: $line\n";
         }
@@ -222,9 +224,11 @@ sub do_one_test($$)
     printf("%-16s valgrind $vgopts $prog $args\n", "$name:");
 
     # Pass the appropriate --skin option for the directory (can be overridden
-    # by an "args:" or "args.dev:" line, though)
+    # by an "args:" or "args.dev:" line, though).  
+    # Also, because the default valgrind is coregrind/valgrind which isn't
+    # executable, prepend `sh'.
     my $skin=determine_skin();
-    mysystem("$valgrind --skin=$skin $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
+    mysystem("sh $valgrind --skin=$skin $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
 
     if (defined $stdout_filter) {
         mysystem("$stdout_filter < $name.stdout.out > $tmp");

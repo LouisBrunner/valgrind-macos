@@ -31,8 +31,9 @@ default.supp: $(SUPP_FILES)
 bzdist: dist
 	gunzip -c $(PACKAGE)-$(VERSION).tar.gz | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
 
+## Preprend @PERL@ because tests/vg_regtest isn't executable
 regtest: check
-	$(prefix)/bin/vg_regtest --all
+	@PERL@ tests/vg_regtest --all
 
 EXTRA_DIST = $(val_DATA) \
 	FAQ.txt \

@@ -1697,15 +1697,15 @@ static void copy_address_range_state(Addr src, Addr dst, SizeT len)
 static void eraser_mem_read (Addr a, SizeT data_size, ThreadId tid);
 static void eraser_mem_write(Addr a, SizeT data_size, ThreadId tid);
 
-static void eraser_mem_help_read_1(Addr a) REGPARM(1);
-static void eraser_mem_help_read_2(Addr a) REGPARM(1);
-static void eraser_mem_help_read_4(Addr a) REGPARM(1);
-static void eraser_mem_help_read_N(Addr a, SizeT size) REGPARM(2);
+static void eraser_mem_help_read_1(Addr a) VGA_REGPARM(1);
+static void eraser_mem_help_read_2(Addr a) VGA_REGPARM(1);
+static void eraser_mem_help_read_4(Addr a) VGA_REGPARM(1);
+static void eraser_mem_help_read_N(Addr a, SizeT size) VGA_REGPARM(2);
 
-static void eraser_mem_help_write_1(Addr a, UInt val) REGPARM(2);
-static void eraser_mem_help_write_2(Addr a, UInt val) REGPARM(2);
-static void eraser_mem_help_write_4(Addr a, UInt val) REGPARM(2);
-static void eraser_mem_help_write_N(Addr a, SizeT size) REGPARM(2);
+static void eraser_mem_help_write_1(Addr a, UInt val) VGA_REGPARM(2);
+static void eraser_mem_help_write_2(Addr a, UInt val) VGA_REGPARM(2);
+static void eraser_mem_help_write_4(Addr a, UInt val) VGA_REGPARM(2);
+static void eraser_mem_help_write_N(Addr a, SizeT size) VGA_REGPARM(2);
 
 static void bus_lock(void);
 static void bus_unlock(void);
@@ -3158,42 +3158,42 @@ static void eraser_mem_write(Addr a, SizeT size, ThreadId tid)
 
 #undef DEBUG_STATE
 
-REGPARM(1) static void eraser_mem_help_read_1(Addr a)
+VGA_REGPARM(1) static void eraser_mem_help_read_1(Addr a)
 {
    eraser_mem_read(a, 1, VG_(get_VCPU_tid)());
 }
 
-REGPARM(1) static void eraser_mem_help_read_2(Addr a)
+VGA_REGPARM(1) static void eraser_mem_help_read_2(Addr a)
 {
    eraser_mem_read(a, 2, VG_(get_VCPU_tid)());
 }
 
-REGPARM(1) static void eraser_mem_help_read_4(Addr a)
+VGA_REGPARM(1) static void eraser_mem_help_read_4(Addr a)
 {
    eraser_mem_read(a, 4, VG_(get_VCPU_tid)());
 }
 
-REGPARM(2) static void eraser_mem_help_read_N(Addr a, SizeT size)
+VGA_REGPARM(2) static void eraser_mem_help_read_N(Addr a, SizeT size)
 {
    eraser_mem_read(a, size, VG_(get_VCPU_tid)());
 }
 
-REGPARM(2) static void eraser_mem_help_write_1(Addr a, UInt val)
+VGA_REGPARM(2) static void eraser_mem_help_write_1(Addr a, UInt val)
 {
    if (*(UChar *)a != val)
       eraser_mem_write(a, 1, VG_(get_VCPU_tid)());
 }
-REGPARM(2) static void eraser_mem_help_write_2(Addr a, UInt val)
+VGA_REGPARM(2) static void eraser_mem_help_write_2(Addr a, UInt val)
 {
    if (*(UShort *)a != val)
       eraser_mem_write(a, 2, VG_(get_VCPU_tid)());
 }
-REGPARM(2) static void eraser_mem_help_write_4(Addr a, UInt val)
+VGA_REGPARM(2) static void eraser_mem_help_write_4(Addr a, UInt val)
 {
    if (*(UInt *)a != val)
       eraser_mem_write(a, 4, VG_(get_VCPU_tid)());
 }
-REGPARM(2) static void eraser_mem_help_write_N(Addr a, SizeT size)
+VGA_REGPARM(2) static void eraser_mem_help_write_N(Addr a, SizeT size)
 {
    eraser_mem_write(a, size, VG_(get_VCPU_tid)());
 }

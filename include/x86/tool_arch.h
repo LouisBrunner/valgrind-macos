@@ -34,10 +34,10 @@
 /*=== Registers, etc                                               ===*/
 /*====================================================================*/
 
-#define REGPARM(n)      __attribute__((regparm(n)))
+#define VGA_REGPARM(n)      __attribute__((regparm(n)))
 
-#define MIN_INSTR_SIZE     1
-#define MAX_INSTR_SIZE    16
+#define VGA_MIN_INSTR_SIZE    1
+#define VGA_MAX_INSTR_SIZE   16
 
 
 #endif   // __X86_TOOL_ARCH_H

@@ -181,19 +181,19 @@ void,	die_mem_munmap,	Addr a, SizeT len
 ## specialising can optimise things significantly.  If any of the
 ## specialised cases are defined, the general case must be defined too.
 
-## Nb: they must all use the REGPARM(n) attribute.
-REGPARM(1) void,	new_mem_stack_4,	Addr new_ESP
-REGPARM(1) void,	new_mem_stack_8,	Addr new_ESP
-REGPARM(1) void,	new_mem_stack_12,	Addr new_ESP
-REGPARM(1) void,	new_mem_stack_16,	Addr new_ESP
-REGPARM(1) void,	new_mem_stack_32,	Addr new_ESP
+## Nb: they must all use the VGA_REGPARM(n) attribute.
+VGA_REGPARM(1) void,	new_mem_stack_4,	Addr new_ESP
+VGA_REGPARM(1) void,	new_mem_stack_8,	Addr new_ESP
+VGA_REGPARM(1) void,	new_mem_stack_12,	Addr new_ESP
+VGA_REGPARM(1) void,	new_mem_stack_16,	Addr new_ESP
+VGA_REGPARM(1) void,	new_mem_stack_32,	Addr new_ESP
 void,	new_mem_stack,	Addr a, SizeT len
 
-REGPARM(1) void,	die_mem_stack_4,	Addr die_ESP
-REGPARM(1) void,	die_mem_stack_8,	Addr die_ESP
-REGPARM(1) void,	die_mem_stack_12,	Addr die_ESP
-REGPARM(1) void,	die_mem_stack_16,	Addr die_ESP
-REGPARM(1) void,	die_mem_stack_32,	Addr die_ESP
+VGA_REGPARM(1) void,	die_mem_stack_4,	Addr die_ESP
+VGA_REGPARM(1) void,	die_mem_stack_8,	Addr die_ESP
+VGA_REGPARM(1) void,	die_mem_stack_12,	Addr die_ESP
+VGA_REGPARM(1) void,	die_mem_stack_16,	Addr die_ESP
+VGA_REGPARM(1) void,	die_mem_stack_32,	Addr die_ESP
 void,	die_mem_stack,	Addr a, SizeT len
 
 ## Used for redzone at end of thread stacks

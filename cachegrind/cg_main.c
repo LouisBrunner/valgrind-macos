@@ -283,7 +283,7 @@ static lineCC* get_lineCC(Addr origAddr)
 /*--- Cache simulation functions                           ---*/
 /*------------------------------------------------------------*/
 
-static REGPARM(1)
+static VGA_REGPARM(1)
 void log_1I_0D_cache_access(instr_info* n)
 {
    //VG_(printf)("1I_0D : CCaddr=0x%x, iaddr=0x%x, isize=%u\n",
@@ -295,7 +295,7 @@ void log_1I_0D_cache_access(instr_info* n)
    VGP_POPCC(VgpCacheSimulate);
 }
 
-static REGPARM(2)
+static VGA_REGPARM(2)
 void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr)
 {
    //VG_(printf)("1I_1Dr: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
@@ -311,7 +311,7 @@ void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr)
    VGP_POPCC(VgpCacheSimulate);
 }
 
-static REGPARM(2)
+static VGA_REGPARM(2)
 void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr)
 {
    //VG_(printf)("1I_1Dw: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
@@ -327,7 +327,7 @@ void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr)
    VGP_POPCC(VgpCacheSimulate);
 }
 
-static REGPARM(3)
+static VGA_REGPARM(3)
 void log_1I_2D_cache_access(instr_info* n, Addr data_addr1, Addr data_addr2)
 {
    //VG_(printf)("1I_2D: CCaddr=%p, iaddr=%p, isize=%u, daddr1=%p, daddr2=%p, dsize=%u\n",
@@ -542,7 +542,8 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
 
    // Nb: instrLen will be zero if Vex failed to decode it.
    tl_assert( 0 == instrLen ||
-              (instrLen >= MIN_INSTR_SIZE && instrLen <= MAX_INSTR_SIZE) );
+              (instrLen >= VGA_MIN_INSTR_SIZE && 
+               instrLen <= VGA_MAX_INSTR_SIZE) );
 
    // Setup 1st arg: instr_info node's address
    // Believed to be 64-bit clean

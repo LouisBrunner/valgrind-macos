@@ -869,7 +869,7 @@ static __inline__ UInt shiftRight16 ( UInt x )
 
 /* ------------------------ Size = 8 ------------------------ */
 
-REGPARM(1)
+VGA_REGPARM(1)
 ULong MC_(helperc_LOADV8) ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
@@ -903,7 +903,7 @@ ULong MC_(helperc_LOADV8) ( Addr a )
 #  endif
 }
 
-REGPARM(1)
+VGA_REGPARM(1)
 void MC_(helperc_STOREV8) ( Addr a, ULong vbytes )
 {
 #  ifdef VG_DEBUG_MEMORY
@@ -942,7 +942,7 @@ void MC_(helperc_STOREV8) ( Addr a, ULong vbytes )
 
 /* ------------------------ Size = 4 ------------------------ */
 
-REGPARM(1)
+VGA_REGPARM(1)
 UInt MC_(helperc_LOADV4) ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
@@ -967,7 +967,7 @@ UInt MC_(helperc_LOADV4) ( Addr a )
 #  endif
 }
 
-REGPARM(2)
+VGA_REGPARM(2)
 void MC_(helperc_STOREV4) ( Addr a, UInt vbytes )
 {
 #  ifdef VG_DEBUG_MEMORY
@@ -994,7 +994,7 @@ void MC_(helperc_STOREV4) ( Addr a, UInt vbytes )
 
 /* ------------------------ Size = 2 ------------------------ */
 
-REGPARM(1)
+VGA_REGPARM(1)
 UInt MC_(helperc_LOADV2) ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
@@ -1017,7 +1017,7 @@ UInt MC_(helperc_LOADV2) ( Addr a )
 #  endif
 }
 
-REGPARM(2)
+VGA_REGPARM(2)
 void MC_(helperc_STOREV2) ( Addr a, UInt vbytes )
 {
 #  ifdef VG_DEBUG_MEMORY
@@ -1040,7 +1040,7 @@ void MC_(helperc_STOREV2) ( Addr a, UInt vbytes )
 
 /* ------------------------ Size = 1 ------------------------ */
 
-REGPARM(1)
+VGA_REGPARM(1)
 UInt MC_(helperc_LOADV1) ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
@@ -1063,7 +1063,7 @@ UInt MC_(helperc_LOADV1) ( Addr a )
 #  endif
 }
 
-REGPARM(2)
+VGA_REGPARM(2)
 void MC_(helperc_STOREV1) ( Addr a, UInt vbytes )
 {
 #  ifdef VG_DEBUG_MEMORY
@@ -1410,7 +1410,7 @@ void MC_(helperc_value_check4_fail) ( void )
    MC_(record_value_error) ( VG_(get_running_tid)(), 4 );
 }
 
-REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
+VGA_REGPARM(1) void MC_(helperc_complain_undef) ( HWord sz )
 {
    MC_(record_value_error) ( VG_(get_running_tid)(), (Int)sz );
 }

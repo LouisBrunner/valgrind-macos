@@ -1071,7 +1071,7 @@ Segment *VG_(find_segment_above_mapped)(Addr a)
 /* This function gets called if new_mem_stack and/or die_mem_stack are
    tracked by the tool, and one of the specialised cases (eg. new_mem_stack_4)
    isn't used in preference */
-REGPARM(2)
+VGA_REGPARM(2)
 void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
 {
    Word delta  = (Word)new_SP - (Word)old_SP;

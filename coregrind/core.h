@@ -1086,7 +1086,7 @@ extern Segment *VG_(split_segment)(Addr a);
 extern void VG_(pad_address_space)  (Addr start);
 extern void VG_(unpad_address_space)(Addr start);
 
-extern REGPARM(2)
+extern VGA_REGPARM(2)
        void VG_(unknown_SP_update) ( Addr old_SP, Addr new_SP );
 
 ///* Search /proc/self/maps for changes which aren't reflected in the

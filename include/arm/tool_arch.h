@@ -34,10 +34,10 @@
 /*=== Registers, etc                                               ===*/
 /*====================================================================*/
 
-#define REGPARM(n)
+#define VGA_REGPARM(n)
 
-#define MIN_INSTR_SIZE     4
-#define MAX_INSTR_SIZE     4 
+#define VGA_MIN_INSTR_SIZE    4
+#define VGA_MAX_INSTR_SIZE    4 
 
 #endif   // __ARM_TOOL_ARCH_H
 

@@ -210,11 +210,14 @@ static inline void validate_skiplist(const SkipList *l, const Char *where)
 
 void *VG_(SkipNode_Alloc)(const SkipList *l)
 {
-   UInt size = l->size;
-   Int h = get_height();
+   UInt size;
+   Int h;
    SkipNode *n;
    Char *ret;
 
+   h = get_height();
+
+   size = l->size;
    size += sizeof(SkipNode) + (h+1)*sizeof(SkipNode *);
 
    if (l->arena == -1)
@@ -229,8 +232,7 @@ void *VG_(SkipNode_Alloc)(const SkipList *l)
    n->level = h;
    n->magic = SKIPLIST_MAGIC;
 
-   while(h-- >= 0)
-      n->next[h] = NULL;
+   VG_(memset)(n->next, 0, sizeof(n->next[0]) * (h+1));
 
    return ret;
 }
@@ -349,7 +351,7 @@ void *VG_(SkipList_Find)(const SkipList *l, void *k)
 void VG_(SkipList_Insert)(SkipList *l, void *data)
 {
    SkipNode *update[SK_MAXHEIGHT];
-   SkipNode *n;
+   SkipNode *n, *nn;
    void *k = key_of_data(l, data);
    Int i;
 
@@ -372,19 +374,25 @@ void VG_(SkipList_Insert)(SkipList *l, void *data)
       l->head->level = 0;
    }
 
-   n = SkipList__Find(l, k, update);
-   
-   vg_assert(n == NULL || (l->cmp)(key_of_node(l, n), k) != 0);
-
    n = node_of_data(l, data);
 
+   /* update size of head's next vector to fit this new node */
    vg_assert(l->head != NULL);
    if (l->head->level < n->level) {
       for(i = l->head->level+1; i <= n->level; i++)
-	 l->head->next[i] = n;
+	 l->head->next[i] = NULL;
       l->head->level = n->level;
    }
 
+   /* Look for the node, but we're mostly interested in setting
+      "update", which is the set of previous nodes with next pointers
+      we need to fix up. */
+   nn = SkipList__Find(l, k, update);
+   
+   /* check the new entry is unique */
+   vg_assert(nn == NULL || (l->cmp)(key_of_node(l, nn), k) != 0);
+
+   /* update the previous node's next pointers */
    for(i = 0; i <= n->level; i++) {
       n->next[i] = update[i]->next[i];
       update[i]->next[i] = n;

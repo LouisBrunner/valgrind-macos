@@ -283,7 +283,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       X86ShiftOp shOp;
       /* Is it an addition or logical style op? */
       switch (e->Iex.Binop.op) {
-         case Iop_Add8: case Iop_Add32:
+         case Iop_Add8: case Iop_Add16: case Iop_Add32:
             aluOp = Xalu_ADD; break;
 
          case Iop_Sub8: case Iop_Sub16: case Iop_Sub32: 
@@ -294,7 +294,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          case Iop_Or8: case Iop_Or16: case Iop_Or32:  
             aluOp = Xalu_OR; break;
 
-         case Iop_Xor8: case Iop_Xor32: 
+         case Iop_Xor8: case Iop_Xor16: case Iop_Xor32: 
             aluOp = Xalu_XOR; break;
          case Iop_Mul32: aluOp = Xalu_MUL; break;
          default:        aluOp = Xalu_INVALID; break;
@@ -391,6 +391,8 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
                                           X86RMI_Imm(mask), dst));
             return dst;
          }
+	 case Iop_Not8:
+	 case Iop_Not16:
          case Iop_Not32: {
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
@@ -408,6 +410,12 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
             iselIntExpr64(&rHi,&rLo, env, e->Iex.Unop.arg);
             return rLo; /* similar stupid comment to the above ... */
          }
+
+         case Iop_32to8:
+         case Iop_32to16:
+            /* These are both no-ops. */
+            return iselIntExpr_R(env, e->Iex.Unop.arg);
+
          default: 
             break;
       }

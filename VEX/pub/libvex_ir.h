@@ -97,6 +97,8 @@ typedef
       /* Widening conversions */
       Iop_8Uto16, Iop_8Uto32, Iop_16Uto32,
       Iop_8Sto16, Iop_8Sto32, Iop_16Sto32,
+      /* Narrowing conversions */
+      Iop_32to16, Iop_32to8,
       /* 32 <-> 64 bit conversions */
       Iop_64LOto32,   // :: I64 -> I32, low half
       Iop_64HIto32,   // :: I64 -> I32, high half

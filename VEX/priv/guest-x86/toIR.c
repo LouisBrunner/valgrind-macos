@@ -391,6 +391,7 @@ static IRExpr* mk_calculate_eflags_c ( void )
    Ity_Bit, and the thunk is only updated iff guard evaluates to 1 at
    run-time.  If guard is NULL, the update is always done. */
 
+/* U-widen 8/16/32 bit int expr to 32. */
 static IRExpr* widenUTo32 ( IRExpr* e )
 {
    switch (typeOfIRExpr(irbb->tyenv,e)) {
@@ -399,6 +400,26 @@ static IRExpr* widenUTo32 ( IRExpr* e )
       case Ity_I8:  return unop(Iop_8Uto32,e);
       default: vpanic("widenUto32");
    }
+}
+
+/* Narrow 8/16/32 bit int expr to 8/16/32.  Clearly only some
+   of these combinations make sense. */
+static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
+{
+   IRType src_ty = typeOfIRExpr(irbb->tyenv,e);
+   if (src_ty == dst_ty)
+      return e;
+   if (src_ty == Ity_I32 && dst_ty == Ity_I16)
+      return unop(Iop_32to16, e);
+   if (src_ty == Ity_I32 && dst_ty == Ity_I8)
+      return unop(Iop_32to8, e);
+
+   vex_printf("\nsrc, dst tys are: ");
+   ppIRType(src_ty);
+   vex_printf(", ");
+   ppIRType(dst_ty);
+   vex_printf("\n");
+   vpanic("narrowTo(x86)");
 }
 
 
@@ -685,18 +706,16 @@ static void helper_ADC ( Int sz,
    IROp   plus = mkSizedOp(ty,Iop_Add8);
 
    /* oldc = old carry flag, 0 or 1 */
-   assign( oldc, binop(mkSizedOp(ty,Iop_And8),
+   assign( oldc, binop(Iop_And32,
                        mk_calculate_eflags_c(),
-		       mkU(ty,1)) );
+		       mkU32(1)) );
 
-   if (sz == 4) {
-      assign(tdst, binop(plus,
-                         binop(plus,mkexpr(ta1),mkexpr(ta2)),
-                         mkexpr(oldc)));
-      thunkOp = CC_OP_ADDL;
-   } else {
-      vassert(0);
-   }
+   assign(tdst, binop(plus,
+                      binop(plus,mkexpr(ta1),mkexpr(ta2)),
+                      narrowTo(ty,mkexpr(oldc))));
+
+   vassert(sz == 1 || sz == 2 || sz == 4);
+   thunkOp = sz==4 ? CC_OP_ADDL : (sz==2 ? CC_OP_ADDW : CC_OP_ADDB);
 
    /* This dynamically calculates the thunk op number.  
       3 * the old carry flag is added, so (eg) it gives
@@ -726,18 +745,16 @@ static void helper_SBB ( Int sz,
    IROp   minus = mkSizedOp(ty,Iop_Sub8);
 
    /* oldc = old carry flag, 0 or 1 */
-   assign( oldc, binop(mkSizedOp(ty,Iop_And8),
+   assign( oldc, binop(Iop_And32,
                        mk_calculate_eflags_c(),
-		       mkU(ty,1)) );
+		       mkU32(1)) );
 
-   if (sz == 4) {
-      assign(tdst, binop(minus,
-                         binop(minus,mkexpr(ta1),mkexpr(ta2)),
-                         mkexpr(oldc)));
-      thunkOp = CC_OP_SUBL;
-   } else {
-      vassert(0);
-   }
+   assign(tdst, binop(minus,
+                      binop(minus,mkexpr(ta1),mkexpr(ta2)),
+                      narrowTo(ty,mkexpr(oldc))));
+
+   vassert(sz == 1 || sz == 2 || sz == 4);
+   thunkOp = sz==4 ? CC_OP_SUBL : (sz==2 ? CC_OP_SUBW : CC_OP_SUBB);
 
    /* This dynamically calculates the thunk op number.  
       3 * the old carry flag is added, so (eg) it gives
@@ -6589,23 +6606,23 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       delta = dis_op2_G_E ( sorb, False, Iop_Or8, True, sz, delta, "or" );
       break;
 
-//--    case 0x10: /* ADC Gb,Eb */
-//--       delta = dis_op2_G_E ( sorb, False, ADC, True, 1, delta, "adc" );
-//--       break;
+   case 0x10: /* ADC Gb,Eb */
+      delta = dis_op2_G_E ( sorb, True, Iop_Add8, True, 1, delta, "adc" );
+      break;
    case 0x11: /* ADC Gv,Ev */
       delta = dis_op2_G_E ( sorb, True, Iop_Add8, True, sz, delta, "adc" );
       break;
 
-//--    case 0x18: /* SBB Gb,Eb */
-//--       delta = dis_op2_G_E ( sorb, False, SBB, True, 1, delta, "sbb" );
-//--       break;
+   case 0x18: /* SBB Gb,Eb */
+      delta = dis_op2_G_E ( sorb, True, Iop_Sub8, True, 1, delta, "sbb" );
+      break;
    case 0x19: /* SBB Gv,Ev */
       delta = dis_op2_G_E ( sorb, True, Iop_Sub8, True, sz, delta, "sbb" );
       break;
 
-//--    case 0x20: /* AND Gb,Eb */
-//--       delta = dis_op2_G_E ( sorb, False, AND, True, 1, delta, "and" );
-//--       break;
+   case 0x20: /* AND Gb,Eb */
+      delta = dis_op2_G_E ( sorb, False, Iop_And8, True, 1, delta, "and" );
+      break;
    case 0x21: /* AND Gv,Ev */
       delta = dis_op2_G_E ( sorb, False, Iop_And8, True, sz, delta, "and" );
       break;
@@ -6650,20 +6667,42 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       DIP("pop%c %s\n", nameISize(sz), nameIReg(sz,opc-0x58));
       break;
 
-//--    case 0x9D: /* POPF */
-//--       vg_assert(sz == 2 || sz == 4);
-//--       t1 = newTemp(cb); t2 = newTemp(cb);
-//--       uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg, t2);
-//--       uInstr2(cb, LOAD,  sz, TempReg, t2,       TempReg, t1);
-//--       uInstr2(cb, ADD,    4, Literal, 0,        TempReg, t2);
-//--       uLiteral(cb, sz);
-//--       uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg, R_ESP);
-//--       uInstr1(cb, PUTF,  sz, TempReg, t1);
-//--       /* PUTF writes all the flags we are interested in */
-//--       uFlagsRWU(cb, FlagsEmpty, FlagsALL, FlagsEmpty);
-//--       DIP("popf%c\n", nameISize(sz));
-//--       break;
-//-- 
+   case 0x9D: /* POPF */
+      vassert(sz == 2 || sz == 4);
+      vassert(sz == 4); // until we know a sz==2 test case exists
+      t1 = newTemp(Ity_I32); t2 = newTemp(Ity_I32);
+      assign(t2, getIReg(4, R_ESP));
+      assign(t1, widenUTo32(loadLE(szToITy(sz),mkexpr(t2))));
+      putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t2), mkU32(sz)));
+      /* t1 is the flag word.  Mask out everything OSZACP and 
+	 set the flags thunk to CC_OP_COPY. */
+      stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DST, mkU32(0) ));
+      stmt( IRStmt_Put( OFFB_CC_SRC, 
+			binop(Iop_And32,
+			      mkexpr(t1), 
+			      mkU32( CC_MASK_C | CC_MASK_P | CC_MASK_A 
+                                     | CC_MASK_Z | CC_MASK_S| CC_MASK_O )
+			     )
+		       )
+	  );
+
+      /* Also need to set the D flag, which is held in bit 10 of t1.
+         If zero, put 1 in OFFB_DFLAG, else -1 in OFFB_DFLAG. */
+      stmt( IRStmt_Put( 
+               OFFB_DFLAG,
+               IRExpr_Mux0X( 
+                  unop(Iop_32to8,
+                       binop(Iop_And32, 
+                             binop(Iop_Shr32, mkexpr(t1), mkU8(10)), 
+                             mkU32(1))),
+                  mkU32(1), 
+                  mkU32(0xFFFFFFFF))) 
+          );
+
+      DIP("popf%c\n", nameISize(sz));
+      break;
+
 //--    case 0x61: /* POPA */
 //--     { Int reg;
 //--       /* Just to keep things sane, we assert for a size 4.  It's
@@ -6790,21 +6829,37 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       DIP("push%c $0x%x\n", nameISize(sz), d32);
       break;
 
-//--    case 0x9C: /* PUSHF */
-//--       vg_assert(sz == 2 || sz == 4);
-//--       t1 = newTemp(cb); t2 = newTemp(cb); t3 = newTemp(cb);
-//--       uInstr1(cb, GETF,  sz, TempReg, t1);
-//--       /* GETF reads all the flags we are interested in */
-//--       uFlagsRWU(cb, FlagsALL, FlagsEmpty, FlagsEmpty);
-//--       uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg, t3);
-//--       uInstr2(cb, MOV,    4, TempReg, t3,       TempReg, t2);
-//--       uInstr2(cb, SUB,    4, Literal, 0,        TempReg, t2);
-//--       uLiteral(cb, sz);
-//--       uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg, R_ESP);
-//--       uInstr2(cb, STORE, sz, TempReg, t1,       TempReg, t2);
-//--       DIP("pushf%c\n", nameISize(sz));
-//--       break;
-//-- 
+   case 0x9C: /* PUSHF */ {
+      IRTemp t3;
+      vassert(sz == 2 || sz == 4);
+      vassert(sz == 4);  // wait for sz==2 test case
+
+      t1 = newTemp(Ity_I32);
+      assign( t1, binop(Iop_Sub32,getIReg(4,R_ESP),mkU32(sz)) );
+      putIReg(4, R_ESP, mkexpr(t1) );
+
+      t2 = newTemp(Ity_I32);
+      assign( t2, mk_calculate_eflags_all() );
+
+      /* Patch in the D flag.  This can simply be the inversion
+	 of bit 10 of baseBlock[OFFB_DFLAG]. */
+      t3 = newTemp(Ity_I32);
+      assign( t3, binop(Iop_Or32,
+                        mkexpr(t2),
+                        binop(Iop_And32,
+			      unop(Iop_Not32, IRExpr_Get(OFFB_DFLAG,Ity_I32)),
+			      mkU32(1<<10))) 
+            );
+      /* if sz==2, the stored value needs to be narrowed. */
+      if (sz == 2)
+	storeLE( mkexpr(t1), unop(Iop_32to16,mkexpr(t3)) );
+      else 
+	storeLE( mkexpr(t1), mkexpr(t3) );
+
+      DIP("pushf%c\n", nameISize(sz));
+      break;
+   }
+
 //--    case 0x60: /* PUSHA */
 //--     { Int reg;
 //--       /* Just to keep things sane, we assert for a size 4.  It's

@@ -91,7 +91,7 @@ static inline int lshift(int x, int n)
    const UInt CC_SRC = cc_src
 
 
-#define ACTIONS_ADD(DATA_BITS,DATA_TYPE,DATA_STYPE)		\
+#define ACTIONS_ADD(DATA_BITS,DATA_TYPE)		\
    {								\
       PREAMBLE(DATA_BITS);					\
       int cf, pf, af, zf, sf, of;				\
@@ -108,7 +108,24 @@ static inline int lshift(int x, int n)
       return cf | pf | af | zf | sf | of;			\
    }
 
-#define ACTIONS_SUB(DATA_BITS,DATA_TYPE,DATA_STYPE)			   \
+#define ACTIONS_ADC(DATA_BITS,DATA_TYPE)	\
+{							\
+      PREAMBLE(DATA_BITS);				\
+    int cf, pf, af, zf, sf, of;				\
+    int src1, src2;					\
+    src1 = CC_SRC;					\
+    src2 = CC_DST - CC_SRC - 1;				\
+    cf = (DATA_TYPE)CC_DST <= (DATA_TYPE)src1;		\
+    pf = parity_table[(uint8_t)CC_DST];			\
+    af = (CC_DST ^ src1 ^ src2) & 0x10;			\
+    zf = ((DATA_TYPE)CC_DST == 0) << 6;			\
+    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;		\
+    of = lshift((src1 ^ src2 ^ -1) & (src1 ^ CC_DST), 	\
+                 12 - DATA_BITS) & CC_O;		\
+    return cf | pf | af | zf | sf | of;			\
+}
+
+#define ACTIONS_SUB(DATA_BITS,DATA_TYPE)			   \
    {									   \
       PREAMBLE(DATA_BITS);						   \
       int cf, pf, af, zf, sf, of;					   \
@@ -124,7 +141,23 @@ static inline int lshift(int x, int n)
       return cf | pf | af | zf | sf | of;				   \
    }
 
-#define ACTIONS_LOGIC(DATA_BITS,DATA_TYPE,DATA_STYPE)	\
+#define ACTIONS_SBB(DATA_BITS,DATA_TYPE)					\
+{										\
+    PREAMBLE(DATA_BITS);							\
+    int cf, pf, af, zf, sf, of;							\
+    int src1, src2;								\
+    src1 = CC_DST + CC_SRC + 1;							\
+    src2 = CC_SRC;								\
+    cf = (DATA_TYPE)src1 <= (DATA_TYPE)src2;					\
+    pf = parity_table[(uint8_t)CC_DST];						\
+    af = (CC_DST ^ src1 ^ src2) & 0x10;						\
+    zf = ((DATA_TYPE)CC_DST == 0) << 6;						\
+    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;					\
+    of = lshift((src1 ^ src2) & (src1 ^ CC_DST), 12 - DATA_BITS) & CC_O;	\
+    return cf | pf | af | zf | sf | of;						\
+}
+
+#define ACTIONS_LOGIC(DATA_BITS,DATA_TYPE)	\
    {							\
       PREAMBLE(DATA_BITS);				\
       int cf, pf, af, zf, sf, of;			\
@@ -137,7 +170,7 @@ static inline int lshift(int x, int n)
       return cf | pf | af | zf | sf | of;		\
    }
 
-#define ACTIONS_INC(DATA_BITS,DATA_TYPE,DATA_STYPE)	\
+#define ACTIONS_INC(DATA_BITS,DATA_TYPE)	\
 {							\
     PREAMBLE(DATA_BITS);				\
     int cf, pf, af, zf, sf, of;				\
@@ -153,7 +186,7 @@ static inline int lshift(int x, int n)
     return cf | pf | af | zf | sf | of;			\
 }
 
-#define ACTIONS_DEC(DATA_BITS,DATA_TYPE,DATA_STYPE)			\
+#define ACTIONS_DEC(DATA_BITS,DATA_TYPE)			\
 {									\
   PREAMBLE(DATA_BITS);							\
   int cf, pf, af, zf, sf, of;						\
@@ -169,7 +202,7 @@ static inline int lshift(int x, int n)
   return cf | pf | af | zf | sf | of;					\
 }
 
-#define ACTIONS_SHL(DATA_BITS,DATA_TYPE,DATA_STYPE)		\
+#define ACTIONS_SHL(DATA_BITS,DATA_TYPE)		\
 {								\
   PREAMBLE(DATA_BITS);						\
     int cf, pf, af, zf, sf, of;					\
@@ -183,7 +216,7 @@ static inline int lshift(int x, int n)
     return cf | pf | af | zf | sf | of;				\
 }
 
-#define ACTIONS_SAR(DATA_BITS,DATA_TYPE,DATA_STYPE)		\
+#define ACTIONS_SAR(DATA_BITS,DATA_TYPE)		\
 {								\
     PREAMBLE(DATA_BITS);  					\
     int cf, pf, af, zf, sf, of;					\
@@ -199,7 +232,7 @@ static inline int lshift(int x, int n)
 
 /* ROR: cf' = msb(result).  of' = msb(result) ^ msb-1(result). */
 /* DST = result, SRC = old flags */
-#define ACTIONS_ROR(DATA_BITS,DATA_TYPE,DATA_STYPE)		\
+#define ACTIONS_ROR(DATA_BITS,DATA_TYPE)		\
 {								\
     PREAMBLE(DATA_BITS);					\
     int fl 							\
@@ -234,29 +267,41 @@ static inline int lshift(int x, int n)
          return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z 
                           | CC_MASK_A | CC_MASK_C | CC_MASK_O);
 
-      case CC_OP_ADDB:   ACTIONS_ADD(8, UChar,SChar);
-      case CC_OP_ADDL:   ACTIONS_ADD(32,UInt, Int);
+      case CC_OP_ADDB:   ACTIONS_ADD( 8,  UChar );
+      case CC_OP_ADDW:   ACTIONS_ADD( 16, UShort );
+      case CC_OP_ADDL:   ACTIONS_ADD( 32, UInt );
 
-      case CC_OP_SUBB:   ACTIONS_SUB( 8,UChar, SChar);
-      case CC_OP_SUBW:   ACTIONS_SUB(16,UShort,Short);
-      case CC_OP_SUBL:   ACTIONS_SUB(32,UInt,  Int);
+      case CC_OP_ADCB:   ACTIONS_ADC( 8,  UChar );
+      case CC_OP_ADCW:   ACTIONS_ADC( 16, UShort );
+      case CC_OP_ADCL:   ACTIONS_ADC( 32, UInt );
 
-      case CC_OP_LOGICB: ACTIONS_LOGIC(8, UChar, SChar);
-      case CC_OP_LOGICW: ACTIONS_LOGIC(16,UShort,Short);
-      case CC_OP_LOGICL: ACTIONS_LOGIC(32,UInt,  Int);
+      case CC_OP_SUBB:   ACTIONS_SUB(  8, UChar );
+      case CC_OP_SUBW:   ACTIONS_SUB( 16, UShort );
+      case CC_OP_SUBL:   ACTIONS_SUB( 32, UInt );
 
-      case CC_OP_INCL:   ACTIONS_INC(32,UInt,Int);
+      case CC_OP_SBBB:   ACTIONS_SBB(  8, UChar );
+      case CC_OP_SBBW:   ACTIONS_SBB( 16, UShort );
+      case CC_OP_SBBL:   ACTIONS_SBB( 32, UInt );
 
-      case CC_OP_DECB:   ACTIONS_DEC(8, UChar,SChar);
-      case CC_OP_DECL:   ACTIONS_DEC(32,UInt, Int);
+      case CC_OP_LOGICB: ACTIONS_LOGIC(  8, UChar );
+      case CC_OP_LOGICW: ACTIONS_LOGIC( 16, UShort );
+      case CC_OP_LOGICL: ACTIONS_LOGIC( 32, UInt );
 
-      case CC_OP_SHLL:   ACTIONS_SHL(32,UInt,Int);
-      case CC_OP_SARL:   ACTIONS_SAR(32,UInt,Int);
+      case CC_OP_INCB:   ACTIONS_INC(  8, UChar );
+      case CC_OP_INCW:   ACTIONS_INC( 16, UShort );
+      case CC_OP_INCL:   ACTIONS_INC( 32, UInt );
 
-      case CC_OP_RORW:   ACTIONS_ROR(16,UShort,Short);
-      case CC_OP_RORL:   ACTIONS_ROR(32,UInt,  Int);
+      case CC_OP_DECB:   ACTIONS_DEC(  8, UChar );
+      case CC_OP_DECW:   ACTIONS_DEC( 16, UShort );
+      case CC_OP_DECL:   ACTIONS_DEC( 32, UInt );
 
-      case CC_OP_MULL:   ACTIONS_MUL(32,UInt, Long);
+      case CC_OP_SHLL:   ACTIONS_SHL( 32, UInt );
+      case CC_OP_SARL:   ACTIONS_SAR( 32, UInt );
+
+      case CC_OP_RORW:   ACTIONS_ROR( 16, UShort );
+      case CC_OP_RORL:   ACTIONS_ROR( 32, UInt );
+
+      case CC_OP_MULL:   ACTIONS_MUL( 32, UInt, Long );
 
       default:
          /* shouldn't really make these calls from generated code */

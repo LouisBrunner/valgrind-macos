@@ -9,8 +9,8 @@
    This file is part of Valgrind, an x86 protected-mode emulator 
    designed for debugging and profiling binaries on x86-Unixes.
 
-   Copyright (C) 2000-2002 Julian Seward 
-      jseward@acm.org
+   Copyright (C) 2002 Nicholas Nethercote
+      njn25@cam.ac.uk
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

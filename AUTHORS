@@ -1,0 +1,17 @@
+
+Julian Seward, jseward@acm.org, is the main author.
+
+Nicholas Nethercote, njn25@cam.ac.uk, developed all the cache
+profiling extensions.
+
+readelf's dwarf2 source line reader, written by Nick Clifton, was
+modified to be used in Valgrind by Daniel Berlin.
+
+Michael Matz and Simon Hausmann modified in the GNU binutils
+demangler(s) for use in Valgrind.
+
+Dirk Mueller contrib'd the malloc-free mismatch checking stuff.
+
+Lots of other people sent bug reports, patches, and very 
+helpful feedback.  I thank you all.
+

@@ -1,0 +1,36 @@
+-----------------------------------------------------------------------------
+64-bit cleanness
+-----------------------------------------------------------------------------
+The following are places I know or suspect contain code that is not 64-bit
+clean.  Please mark them off this list as they are fixed, and add any new ones
+you know of.
+
+Memcheck is full of 32-bit assumptions:
+- shadow memory in general -- two-level lookup table, etc -- is totally 32-bit
+  specific.
+- new_mem_stack_4 etc are all very 32-bit specific... should make it
+  new_mem_stack_1wd, etc.  Also then need to change
+  make_aligned_word_noaccess() et al (heaps of places)
+- also rotateRight16 and all its dependents...
+- all the calls to IS_ALIGNED4_ADDR are 32-bit specific code.  Likewise
+  with Addrcheck?  Not sure.  Plus there's one in vg_transtab.c which doesn't
+  look right.
+
+Addrcheck has similar problems.  Helgrind too, especially the 32-bit specific
+"OTHER_BITS".
+
+Symbol table stuff:
+- is vg_dwarf.h 32-bit specific?
+- Elf32_* constants everywhere in vg_symtab2.c, blecch
+- symtab -- 32-bit specific stuff in here?  eg. search for
+  "(UInt)sym->st_value"
+- stabtype_parser -- all those literal 4's as args to VG_(st_mkint) -- are they
+  64-bit clean?  Who knows...
+
+Others:
+- search for the following casts: (UInt*), (Int*), (UInt *), (Int *)
+- should deref_UInt be deref_UWord??  Is socklen_t word-sized?
+- vki_sigset_t.sig use: the debug printing in do_setmask() is wrong -- it
+  touches sig[1], thus assuming 32-bits.  Likewise in handle_SCSS_change()
+- client_auxv in vg_main.c is UInt** -- should it be UWord** ?
+

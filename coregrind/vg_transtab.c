@@ -551,8 +551,7 @@ Addr VG_(search_transtab) ( Addr original_addr )
       VGP_POPCC(VgpSlowFindT);
       return (Addr)0;
    } else {
-      /* Found it.  Put the search result into the fast cache now.
-         Also set the mru_epoch to mark this translation as used. */
+      /* Found it.  Put the search result into the fast cache now. */
       UInt cno = (UInt)original_addr & VG_TT_FAST_MASK;
       VG_(tt_fast)[cno] = (Addr)(tte->tcentry);
       VG_(tt_fast_misses)++;

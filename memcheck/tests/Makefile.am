@@ -65,7 +65,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
 	threadederrno.vgtest \
 	vgtest_ume.stderr.exp vgtest_ume.vgtest \
-	writev.stderr.exp writev.vgtest \
+	writev.stderr.exp writev.stderr.exp2 writev.vgtest \
 	zeropage.stderr.exp zeropage.stderr.exp2 zeropage.vgtest
 
 check_PROGRAMS = \

@@ -765,4 +765,81 @@ not have any leaked or dubious blocks at exit.
 is: all naturally-aligned 4-byte words for which all A bits indicate
 addressibility and all V bits indicated that the stored value is
 actually valid.
+<p>
+
+
+<a name="clientreqs"></a>
+<h3>3.7&nbsp; Client Requests</h3>
+
+The following client requests are defined in <code>memcheck.h</code>.  They
+also work for the Addrcheck skin.  See <code>memcheck.h</code> for exact
+details of their arguments.
+
+<ul>
+<li><code>VALGRIND_MAKE_NOACCESS</code>,
+    <code>VALGRIND_MAKE_WRITABLE</code> and
+    <code>VALGRIND_MAKE_READABLE</code>.  These mark address
+    ranges as completely inaccessible, accessible but containing
+    undefined data, and accessible and containing defined data,
+    respectively.  Subsequent errors may have their faulting
+    addresses described in terms of these blocks.  Returns a
+    "block handle".  Returns zero when not run on Valgrind.
+<p>
+<li><code>VALGRIND_DISCARD</code>: At some point you may want
+    Valgrind to stop reporting errors in terms of the blocks
+    defined by the previous three macros.  To do this, the above
+    macros return a small-integer "block handle".  You can pass
+    this block handle to <code>VALGRIND_DISCARD</code>.  After
+    doing so, Valgrind will no longer be able to relate
+    addressing errors to the user-defined block associated with
+    the handle.  The permissions settings associated with the
+    handle remain in place; this just affects how errors are
+    reported, not whether they are reported.  Returns 1 for an
+    invalid handle and 0 for a valid handle (although passing
+    invalid handles is harmless).  Always returns 0 when not run
+    on Valgrind.
+<p>
+<li><code>VALGRIND_CHECK_WRITABLE</code> and
+    <code>VALGRIND_CHECK_READABLE</code>: check immediately
+    whether or not the given address range has the relevant
+    property, and if not, print an error message.  Also, for the
+    convenience of the client, returns zero if the relevant
+    property holds; otherwise, the returned value is the address
+    of the first byte for which the property is not true.
+    Always returns 0 when not run on Valgrind.
+<p>
+<li><code>VALGRIND_CHECK_DEFINED</code>: a quick and easy way
+    to find out whether Valgrind thinks a particular variable
+    (lvalue, to be precise) is addressible and defined.  Prints
+    an error message if not.  Returns no value.
+<p>
+<li><code>VALGRIND_DO_LEAK_CHECK</code>: run the memory leak detector
+    right now.  Returns no value.  I guess this could be used to
+    incrementally check for leaks between arbitrary places in the
+    program's execution.  Warning: not properly tested!
+<p>
+<li><code>VALGRIND_COUNT_LEAKS</code>: fills in the four arguments with
+    the number of bytes of memory found by the previous leak check to
+    be leaked, dubious, reachable and suppressed.  Again, useful in
+    test harness code, after calling <code>VALGRIND_DO_LEAK_CHECK</code>.
+<p>
+<li><code>VALGRIND_MALLOCLIKE_BLOCK</code>: If your program manages its own
+    memory instead of using the standard
+    <code>malloc()</code>/<code>new</code>/<code>new[]</code>, Memcheck will
+    not detect nearly as many errors, and the error messages won't be as
+    informative.  To improve this situation, use this macro just after your
+    custom allocator allocates some new memory.  See the comments in
+    <code>memcheck/memcheck.h</code> for information on how to use it.
+<p>
+<li><code>VALGRIND_FREELIKE_BLOCK</code>: This should be used in conjunction 
+    with <code>VALGRIND_MALLOCLIKE_BLOCK</code>.  Again, see
+    <code>memcheck/memcheck.h</code> for information on how to use it.  
+<p>
+<li><code>VALGRIND_GET_VBITS</code> and
+    <code>VALGRIND_SET_VBITS</code>: allow you to get and set the V (validity)
+    bits for an address range.  You should probably only set V bits that you
+    have got with <code>VALGRIND_GET_VBITS</code>.  Only for those who really
+    know what they are doing.
+<p>
+</ul>
 

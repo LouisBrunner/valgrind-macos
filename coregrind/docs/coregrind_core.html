@@ -889,19 +889,10 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
 <a name="clientreq"></a>
 <h3>2.7&nbsp; The Client Request mechanism</h3>
 
-(NOTE 20021117: this subsection is illogical here now; it jumbles up
-core and skin issues.  To be fixed.).
-
-(NOTE 20030318: the most important correction is that
-<code>valgrind.h</code> should not be included in your program, but
-instead <code>memcheck.h</code> (for the Memcheck and Addrcheck skins)
-or <code>helgrind.h</code> (for Helgrind).)
-
-<p>
 Valgrind has a trapdoor mechanism via which the client program can
-pass all manner of requests and queries to Valgrind.  Internally, this
-is used extensively to make malloc, free, signals, threads, etc, work,
-although you don't see that.
+pass all manner of requests and queries to Valgrind and the current skin.
+Internally, this is used extensively to make malloc, free, signals, threads,
+etc, work, although you don't see that.
 <p>
 For your convenience, a subset of these so-called client requests is
 provided to allow you to tell Valgrind facts about the behaviour of
@@ -910,89 +901,26 @@ program can tell Valgrind about changes in memory range permissions
 that Valgrind would not otherwise know about, and so allows clients to
 get Valgrind to do arbitrary custom checks.
 <p>
-Clients need to include a skin-specific header file to make
-this work.  For most people this will be <code>memcheck.h</code>,
-which should be installed in the <code>include</code> directory 
-when you did <code>make install</code>.
-<code>memcheck.h</code> is the correct file to use with both
-the Memcheck (default) and Addrcheck skins.
+Clients need to include a header file to make this work.  Which header file
+depends on which client requests you use.  Some client requests are handled by
+the core, and are defined in the header file <code>valgrind.h</code>.
+Skin-specific header files are named after the skin, e.g.
+<code>memcheck.h</code>.  All header files can be found in the
+<code>include</code> directory of wherever Valgrind was installed.
 <p>
-Note for those migrating from 1.0.X, that the old header file
-<code>valgrind.h</code> no longer works, and will cause a compilation
-failure (deliberately) if included.
-<p>
-The macros in <code>memcheck.h</code> have the magical property that
+The macros in these header files have the magical property that
 they generate code in-line which Valgrind can spot.  However, the code
 does nothing when not run on Valgrind, so you are not forced to run
 your program on Valgrind just because you use the macros in this file.
 Also, you are not required to link your program with any extra
 supporting libraries.
 <p>
-A brief description of the available macros:
+Here is a brief description of the macros available in
+<code>valgrind.h</code>, which work with more than one skin (see the
+skin-specific documentation for explanations of the skin-specific macros).
 <ul>
-<li><code>VALGRIND_MAKE_NOACCESS</code>,
-    <code>VALGRIND_MAKE_WRITABLE</code> and
-    <code>VALGRIND_MAKE_READABLE</code>.  These mark address
-    ranges as completely inaccessible, accessible but containing
-    undefined data, and accessible and containing defined data,
-    respectively.  Subsequent errors may have their faulting
-    addresses described in terms of these blocks.  Returns a
-    "block handle".  Returns zero when not run on Valgrind.
-<p>
-<li><code>VALGRIND_DISCARD</code>: At some point you may want
-    Valgrind to stop reporting errors in terms of the blocks
-    defined by the previous three macros.  To do this, the above
-    macros return a small-integer "block handle".  You can pass
-    this block handle to <code>VALGRIND_DISCARD</code>.  After
-    doing so, Valgrind will no longer be able to relate
-    addressing errors to the user-defined block associated with
-    the handle.  The permissions settings associated with the
-    handle remain in place; this just affects how errors are
-    reported, not whether they are reported.  Returns 1 for an
-    invalid handle and 0 for a valid handle (although passing
-    invalid handles is harmless).  Always returns 0 when not run
-    on Valgrind.
-<p>
-<li><code>VALGRIND_CHECK_NOACCESS</code>,
-    <code>VALGRIND_CHECK_WRITABLE</code> and
-    <code>VALGRIND_CHECK_READABLE</code>: check immediately
-    whether or not the given address range has the relevant
-    property, and if not, print an error message.  Also, for the
-    convenience of the client, returns zero if the relevant
-    property holds; otherwise, the returned value is the address
-    of the first byte for which the property is not true.
-    Always returns 0 when not run on Valgrind.
-<p>
-<li><code>VALGRIND_CHECK_NOACCESS</code>: a quick and easy way
-    to find out whether Valgrind thinks a particular variable
-    (lvalue, to be precise) is addressible and defined.  Prints
-    an error message if not.  Returns no value.
-<p>
-<li><code>VALGRIND_MAKE_NOACCESS_STACK</code>: a highly
-    experimental feature.  Similarly to
-    <code>VALGRIND_MAKE_NOACCESS</code>, this marks an address
-    range as inaccessible, so that subsequent accesses to an
-    address in the range gives an error.  However, this macro
-    does not return a block handle.  Instead, all annotations
-    created like this are reviewed at each client
-    <code>ret</code> (subroutine return) instruction, and those
-    which now define an address range block the client's stack
-    pointer register (<code>%esp</code>) are automatically
-    deleted.
-    <p>
-    In other words, this macro allows the client to tell
-    Valgrind about red-zones on its own stack.  Valgrind
-    automatically discards this information when the stack
-    retreats past such blocks.  Beware: hacky and flaky, and
-    probably interacts badly with the new pthread support.
-<p>
 <li><code>RUNNING_ON_VALGRIND</code>: returns 1 if running on
     Valgrind, 0 if running on the real CPU.
-<p>
-<li><code>VALGRIND_DO_LEAK_CHECK</code>: run the memory leak detector
-    right now.  Returns no value.  I guess this could be used to
-    incrementally check for leaks between arbitrary places in the
-    program's execution.  Warning: not properly tested!
 <p>
 <li><code>VALGRIND_DISCARD_TRANSLATIONS</code>: discard translations
     of code in the specified address range.  Useful if you are
@@ -1009,40 +937,35 @@ A brief description of the available macros:
     fresh memory, and just call this occasionally to discard large
     chunks of old code all at once.
     <p>
-    Warning: minimally tested, especially for the cache simulator.
+    Warning: minimally tested, especially for skins other than Memcheck.
+<p>
 <li><code>VALGRIND_COUNT_ERRORS</code>: returns the number of errors
     found so far by Valgrind.  Can be useful in test harness code when
     combined with the <code>--logfile-fd=-1</code> option;  this runs
     Valgrind silently, but the client program can detect when errors
-    occur.
+    occur.  Only useful for skins that report errors, e.g. it's useful for
+    Memcheck, but for Cachegrind it will always return zero because 
+    Cachegrind doesn't report errors.
 <p>
-<li><code>VALGRIND_COUNT_LEAKS</code>: fills in the four arguments with
-    the number of bytes of memory found by the previous leak check to
-    be leaked, dubious, reachable and suppressed.  Again, useful in
-    test harness code, after calling <code>VALGRIND_DO_LEAK_CHECK</code>.
-<p>
-<li><code>VALGRIND_MALLOCLIKE_BLOCK</code>: If your program manages its own
-    memory instead of using the standard
-    <code>malloc()</code>/<code>new</code>/<code>new[]</code>, Memcheck will
-    not detect nearly as many errors, and the error messages won't be as
-    informative.  To improve this situation, use this macro just after your
-    custom allocator allocates some new memory.  See the comments in
-    <code>memcheck/memcheck.h</code> for information on how to use it.
-<p>
-<li><code>VALGRIND_FREELIKE_BLOCK</code>: This should be used in conjunction 
-    with <code>VALGRIND_MALLOCLIKE_BLOCK</code>.  Again, see
-    <code>memcheck/memcheck.h</code> for information on how to use it.  
+<li><code>VALGRIND_NON_SIMD_CALL[0123]</code>: executes a function of 0, 1, 2
+     or 3 args in the client program on the <i>real</i> CPU, not the virtual
+     CPU that Valgrind normally runs code on.  These are used in various ways
+     internally to Valgrind.  They might be useful to client programs.
+     <b>Warning:</b> Only use these if you <i>really</i> know what you are
+     doing.
 <p>
 </ul>
+Note that <code>valgrind.h</code> is included by all the skin-specific header
+files (such as <code>memcheck.h</code>), so you don't need to include it in
+your client if you include a skin-specific header.
 <p>
 
 
 <a name="pthreads"></a>
 <h3>2.8&nbsp; Support for POSIX Pthreads</h3>
 
-As of late April 02, Valgrind supports programs which use POSIX
-pthreads.  Doing this has proved technically challenging but is now
-mostly complete.  It works well enough for significant threaded
+Valgrind supports programs which use POSIX pthreads.  Getting this to work was
+technically challenging but it all works well enough for significant threaded
 applications to work.
 <p>
 It works as follows: threaded apps are (dynamically) linked against
@@ -1065,8 +988,7 @@ natively.  This in itself may cause your program to behave differently
 if you have some kind of concurrency, critical race, locking, or
 similar, bugs.
 <p>
-The current (valgrind-1.0 release) state of pthread support is as
-follows:
+As of the valgrind-1.0 release, the state of pthread support was as follows:
 <ul>
 <li>Mutexes, condition variables, thread-specific data,
     <code>pthread_once</code>, reader-writer locks, semaphores,
@@ -1088,12 +1010,10 @@ follows:
     rather than one for each thread.  But hey.
 </ul>
 
-
 As of 18 May 02, the following threaded programs now work fine on my
 RedHat 7.2 box: Opera 6.0Beta2, KNode in KDE 3.0, Mozilla-0.9.2.1 and
 Galeon-0.11.3, both as supplied with RedHat 7.2.  Also Mozilla 1.0RC2.
 OpenOffice 1.0.  MySQL 3.something (the current stable release).
-
 
 
 
@@ -1183,7 +1103,7 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       few instructions such as "cmov" to the integer instruction set
       on Pentium and later processors, and these are supported.
       Nevertheless it's safest to think of Valgrind as implementing
-      the 486 instruction set.</li><br>
+      the 486 instruction set.</li>
       <p>
 
   <li>Pthreads support is improving, but there are still significant
@@ -1192,7 +1112,7 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       against <code>libpthread.so</code>, so that Valgrind can
       substitute its own implementation at program startup time.  If
       you're statically linked against it, things will fail
-      badly.</li><br>
+      badly.</li>
       <p>
 
   <li>The memcheck skin assumes that the floating point registers are
@@ -1200,12 +1120,12 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       immediately checks definedness of values loaded from memory by
       floating-point loads.  If you want to write code which copies
       around possibly-uninitialised values, you must ensure these
-      travel through the integer registers, not the FPU.</li><br>
+      travel through the integer registers, not the FPU.</li>
       <p>
 
   <li>If your program does its own memory management, rather than
       using malloc/new/free/delete, it should still work, but
-      Valgrind's error checking won't be so effective.</li><br>
+      Valgrind's error checking won't be so effective.</li>
       <p>
 
   <li>Valgrind's signal simulation is not as robust as it could be.
@@ -1214,7 +1134,7 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       if you do weird things with signals.  Workaround: don't.
       Programs that do non-POSIX signal tricks are in any case
       inherently unportable, so should be avoided if
-      possible.</li><br>
+      possible.</li>
       <p>
 
   <li>Programs which switch stacks are not well handled.  Valgrind
@@ -1223,29 +1143,29 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       large change in %esp is as a result of the program switching
       stacks, or merely allocating a large object temporarily on the
       current stack -- yet Valgrind needs to handle the two situations
-      differently.</li><br>
+      differently.</li>
       <p>
 
   <li>x86 instructions, and system calls, have been implemented on
       demand.  So it's possible, although unlikely, that a program
       will fall over with a message to that effect.  If this happens,
       please mail me ALL the details printed out, so I can try and
-      implement the missing feature.</li><br>
+      implement the missing feature.</li>
       <p>
 
   <li>x86 floating point works correctly, but floating-point code may
       run even more slowly than integer code, due to my simplistic
-      approach to FPU emulation.</li><br>
+      approach to FPU emulation.</li>
       <p>
 
   <li>You can't Valgrind-ize statically linked binaries.  Valgrind
       relies on the dynamic-link mechanism to gain control at
-      startup.</li><br>
+      startup.</li>
       <p>
 
   <li>Memory consumption of your program is majorly increased whilst
       running under Valgrind.  This is due to the large amount of
-      adminstrative information maintained behind the scenes.  Another
+      administrative information maintained behind the scenes.  Another
       cause is that Valgrind dynamically translates the original
       executable.  Translated, instrumented code is 14-16 times larger
       than the original (!) so you can easily end up with 30+ MB of

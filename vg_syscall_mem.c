@@ -2408,8 +2408,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                  struct itimerval *ovalue); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("setitimer ( %d, %p, %p )\n", arg1,arg2,arg3);
-         must_be_readable(tst, "setitimer(value)", 
-                          arg2, sizeof(struct itimerval) );
+         if (arg2 != (Addr)NULL)
+            must_be_readable(tst, "setitimer(value)", 
+                             arg2, sizeof(struct itimerval) );
          if (arg3 != (Addr)NULL)
             must_be_writable(tst, "setitimer(ovalue)", 
                              arg3, sizeof(struct itimerval));

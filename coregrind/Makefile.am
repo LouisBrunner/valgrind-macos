@@ -144,7 +144,7 @@ vg_inject_so_LDFLAGS = \
 	-Wl,-z,initfirst
 
 lib_replace_malloc_a_SOURCES = vg_replace_malloc.c
-lib_replace_malloc_a_CFLAGS  = $(AM_CFLAGS) -fpic
+lib_replace_malloc_a_CFLAGS  = $(AM_CFLAGS) -fpic -fno-omit-frame-pointer
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) $(inplacedir)/libpthread.so.0
 

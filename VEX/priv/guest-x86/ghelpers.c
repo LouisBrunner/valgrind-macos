@@ -52,11 +52,7 @@ static void  dirtyhelper_CPUID ( VexGuestX86State* st );
 #define PROFILE_EFLAGS 0
 
 
-typedef UChar uint8_t;
-typedef UInt  uint32_t;
-
-
-static const uint8_t parity_table[256] = {
+static const UChar parity_table[256] = {
     CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
     0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
     0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
@@ -128,7 +124,7 @@ inline static Int lshift ( Int x, Int n )
    src2 = CC_DST;						\
    dst  = src1 + src2;						\
    cf = (DATA_UTYPE)dst < (DATA_UTYPE)src1;			\
-   pf = parity_table[(uint8_t)dst];				\
+   pf = parity_table[(UChar)dst];				\
    af = (dst ^ src1 ^ src2) & 0x10;				\
    zf = ((DATA_UTYPE)dst == 0) << 6;				\
    sf = lshift(dst, 8 - DATA_BITS) & 0x80;			\
@@ -148,7 +144,7 @@ inline static Int lshift ( Int x, Int n )
    src2 = CC_DST;						\
    dst = src1 + src2 + 1;					\
    cf = (DATA_UTYPE)dst <= (DATA_UTYPE)src1;			\
-   pf = parity_table[(uint8_t)dst];				\
+   pf = parity_table[(UChar)dst];				\
    af = (dst ^ src1 ^ src2) & 0x10;				\
    zf = ((DATA_UTYPE)dst == 0) << 6;				\
    sf = lshift(dst, 8 - DATA_BITS) & 0x80;			\
@@ -168,7 +164,7 @@ inline static Int lshift ( Int x, Int n )
    src2 = CC_SRC;						\
    dst = src1 - src2;						\
    cf = (DATA_UTYPE)src1 < (DATA_UTYPE)src2;			\
-   pf = parity_table[(uint8_t)dst];				\
+   pf = parity_table[(UChar)dst];				\
    af = (dst ^ src1 ^ src2) & 0x10;				\
    zf = ((DATA_UTYPE)dst == 0) << 6;				\
    sf = lshift(dst, 8 - DATA_BITS) & 0x80;			\
@@ -188,7 +184,7 @@ inline static Int lshift ( Int x, Int n )
    src2 = CC_SRC;						\
    dst = (src1 - src2) - 1;					\
    cf = (DATA_UTYPE)src1 <= (DATA_UTYPE)src2;			\
-   pf = parity_table[(uint8_t)dst];				\
+   pf = parity_table[(UChar)dst];				\
    af = (dst ^ src1 ^ src2) & 0x10;				\
    zf = ((DATA_UTYPE)dst == 0) << 6;				\
    sf = lshift(dst, 8 - DATA_BITS) & 0x80;			\
@@ -204,7 +200,7 @@ inline static Int lshift ( Int x, Int n )
    PREAMBLE(DATA_BITS);						\
    int cf, pf, af, zf, sf, of;					\
    cf = 0;							\
-   pf = parity_table[(uint8_t)CC_DST];				\
+   pf = parity_table[(UChar)CC_DST];				\
    af = 0;							\
    zf = ((DATA_UTYPE)CC_DST == 0) << 6;				\
    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;			\
@@ -222,7 +218,7 @@ inline static Int lshift ( Int x, Int n )
    src1 = CC_DST - 1;						\
    src2 = 1;							\
    cf = CC_SRC;							\
-   pf = parity_table[(uint8_t)CC_DST];				\
+   pf = parity_table[(UChar)CC_DST];				\
    af = (CC_DST ^ src1 ^ src2) & 0x10;				\
    zf = ((DATA_UTYPE)CC_DST == 0) << 6;				\
    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;			\
@@ -240,12 +236,12 @@ inline static Int lshift ( Int x, Int n )
    src1 = CC_DST + 1;						\
    src2 = 1;							\
    cf = CC_SRC;							\
-   pf = parity_table[(uint8_t)CC_DST];				\
+   pf = parity_table[(UChar)CC_DST];				\
    af = (CC_DST ^ src1 ^ src2) & 0x10;				\
    zf = ((DATA_UTYPE)CC_DST == 0) << 6;				\
    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;			\
    of = ((CC_DST & DATA_MASK) 					\
-        == ((uint32_t)SIGN_MASK - 1)) << 11;			\
+        == ((UInt)SIGN_MASK - 1)) << 11;			\
    return cf | pf | af | zf | sf | of;				\
 }
 
@@ -256,7 +252,7 @@ inline static Int lshift ( Int x, Int n )
    PREAMBLE(DATA_BITS);						\
    int cf, pf, af, zf, sf, of;					\
    cf = (CC_SRC >> (DATA_BITS - 1)) & CC_MASK_C;		\
-   pf = parity_table[(uint8_t)CC_DST];				\
+   pf = parity_table[(UChar)CC_DST];				\
    af = 0; /* undefined */					\
    zf = ((DATA_UTYPE)CC_DST == 0) << 6;				\
    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;			\
@@ -272,7 +268,7 @@ inline static Int lshift ( Int x, Int n )
    PREAMBLE(DATA_BITS);  					\
    int cf, pf, af, zf, sf, of;					\
    cf = CC_SRC & 1;						\
-   pf = parity_table[(uint8_t)CC_DST];				\
+   pf = parity_table[(UChar)CC_DST];				\
    af = 0; /* undefined */					\
    zf = ((DATA_UTYPE)CC_DST == 0) << 6;				\
    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;			\
@@ -323,7 +319,7 @@ inline static Int lshift ( Int x, Int n )
                     * ((DATA_U2TYPE)((DATA_UTYPE)CC_DST));	\
    hi = (DATA_UTYPE)(rr >>/*u*/ DATA_BITS);			\
    cf = (hi != 0);						\
-   pf = parity_table[(uint8_t)lo];				\
+   pf = parity_table[(UChar)lo];				\
    af = 0; /* undefined */					\
    zf = (lo == 0) << 6;				  	     	\
    sf = lshift(lo, 8 - DATA_BITS) & 0x80;			\
@@ -343,7 +339,7 @@ inline static Int lshift ( Int x, Int n )
                     * ((DATA_S2TYPE)((DATA_STYPE)CC_DST));	\
    hi = (DATA_STYPE)(rr >>/*s*/ DATA_BITS);			\
    cf = (hi != (lo >>/*s*/ (DATA_BITS-1)));			\
-   pf = parity_table[(uint8_t)lo];				\
+   pf = parity_table[(UChar)lo];				\
    af = 0; /* undefined */					\
    zf = (lo == 0) << 6;						\
    sf = lshift(lo, 8 - DATA_BITS) & 0x80;			\

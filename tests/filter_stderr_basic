@@ -31,6 +31,7 @@ sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]*\( from \)[0-9]*)$/\10\20)/" |
 sed "s/ __getsockname / getsockname /"                                 |
 sed "s/ __sigaction / sigaction /"                                     |
 sed "s/ __GI___/ __/"                                                  |
+sed "s/ __\([a-z]*\)_nocancel / \1 /"                                  |
 
 # Remove line info out of order warnings
 sed "/warning: line info addresses out of order/d"                     |

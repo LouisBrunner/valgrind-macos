@@ -1338,8 +1338,8 @@ void* VG_(realloc) ( void* ptr, SizeT size )
 
 void* VG_(cli_malloc) ( SizeT align, SizeT nbytes )                 
 {                                                                             
-   // 'align' should be valid by now.  arena_malloc_aligned() will
-   // abort if it's not.
+   // 'align' should be valid (ie. big enough and a power of two) by now.
+   // arena_malloc_aligned() will abort if it's not.
    if (VG_MIN_MALLOC_SZB == align)
       return VG_(arena_malloc)    ( VG_AR_CLIENT, nbytes ); 
    else                                                                       

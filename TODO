@@ -1,34 +1,15 @@
 
 Doesn't run
 ~~~~~~~~~~~
-Anything with the __NR_clone system call.  No idea what to do about
-threads yet.
-
-netscape bombs shortly after successful normal startup.
-(???)
-
-
-ToDo
-~~~~
-Rewrite memory manager, with variable sized red zones.
+User Mode Linux.
+Wine.
 
 
 Desirable
 ~~~~~~~~~
-Demangle C++ names.
-
 Stack: make return address into NoAccess ?
 
-Give client programs a way to set memory range permissions.
 
-Have an --allow-scummy-symbols option, to allow in some of the symbols
-currently ignored in vg_symtab2.c.
-
-Figure out whether cwq (convert signed-32 to signed-64) as
-translated into ucode gives correct check semantics.
-(I think it does.)
-
-Check __NR_select; I don't really understand it.
-For that matter, __NR_newselect looks wrong too.
-
-
+Future
+~~~~~~
+Automatic invariant inference and checking.

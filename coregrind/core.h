@@ -761,11 +761,6 @@ extern void VG_(resume_scheduler) ( ThreadId tid );
 /* If true, a fault is Valgrind-internal (ie, a bug) */
 extern Bool VG_(my_fault);
 
-/* The red-zone size which we put at the bottom (highest address) of
-   thread stacks, for paranoia reasons.  This can be arbitrary, and
-   doesn't really need to be set at compile time. */
-#define VG_AR_CLIENT_STACKBASE_REDZONE_SZB   16
-
 // Write a value to a client's thread register, and shadow (if necessary).
 // Note that there are some further similar macros in the arch- and
 // platform-specific parts;  these ones are the totally generic ones.
@@ -840,8 +835,6 @@ extern void VG_(synth_fault)        (ThreadId tid);
 extern void VG_(synth_fault_mapping)(ThreadId tid, Addr addr);
 extern void VG_(synth_fault_perms)  (ThreadId tid, Addr addr);
 extern void VG_(synth_sigill)       (ThreadId tid, Addr addr);
-
-extern void VG_(get_sigstack_bounds)( Addr* low, Addr* high );
 
 /* Extend the stack to cover addr, if possible */
 extern Bool VG_(extend_stack)(Addr addr, UInt maxsize);

@@ -341,11 +341,34 @@ void malloc_get_state ( void )
 void malloc_set_state ( void )
 { VG_(panic)("call to malloc_set_state\n"); }
 
-void* mallinfo ( void )
-{ 
-   VG_(message)(Vg_UserMsg, 
-                "Warning: incorrectly-handled call to mallinfo()"); 
-   return NULL;
+
+/* Yet another ugly hack.  Cannot include <malloc.h> because we
+   implement functions implemented there with different signatures.
+   This struct definition MUST match the system one. */
+
+/* SVID2/XPG mallinfo structure */
+struct mallinfo {
+   int arena;    /* total space allocated from system */
+   int ordblks;  /* number of non-inuse chunks */
+   int smblks;   /* unused -- always zero */
+   int hblks;    /* number of mmapped regions */
+   int hblkhd;   /* total space in mmapped regions */
+   int usmblks;  /* unused -- always zero */
+   int fsmblks;  /* unused -- always zero */
+   int uordblks; /* total allocated space */
+   int fordblks; /* total non-inuse space */
+   int keepcost; /* top-most, releasable (via malloc_trim) space */
+};
+
+struct mallinfo mallinfo ( void )
+{
+   /* Should really try to return something a bit more meaningful */
+   Int             i;
+   struct mallinfo mi;
+   UChar*          pmi = (UChar*)(&mi);
+   for (i = 0; i < sizeof(mi); i++)
+      pmi[i] = 0;
+   return mi;
 }
 
 

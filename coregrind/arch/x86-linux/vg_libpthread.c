@@ -211,8 +211,11 @@ __attribute__((weak))
 int pthread_attr_setstacksize (pthread_attr_t *__attr,
                                size_t __stacksize)
 {
+   size_t limit;
    ensure_valgrind("pthread_attr_setstacksize");
-   if (__stacksize < VG_PTHREAD_STACK_SIZE)
+   limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB 
+                                 - 1000; /* paranoia */
+   if (__stacksize < limit)
       return 0;
    barf("pthread_attr_setstacksize: "
         "requested size >= VG_PTHREAD_STACK_SIZE\n   "
@@ -1125,6 +1128,15 @@ ssize_t __pread64 (int __fd, void *__buf, size_t __nbytes,
 }
 
 
+extern
+ssize_t __libc_pwrite64 (int __fd, const void *__buf, size_t __nbytes,
+                        __off64_t __offset);
+ssize_t __pwrite64 (int __fd, const void *__buf, size_t __nbytes,
+                   __off64_t __offset)
+{
+   return __libc_pwrite64(__fd, __buf, __nbytes, __offset);
+}
+
 
 extern  
 void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
@@ -1553,6 +1565,7 @@ strong_alias(connect, __connect)
 strong_alias(send, __send)
 
 weak_alias (__pread64, pread64)
+weak_alias (__pwrite64, pwrite64)
 weak_alias(__fork, fork)
 //weak_alias(__vfork, vfork)
 

@@ -415,7 +415,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  define SZf  (  u->size ==  4 || u->size ==  8 || u->size ==   2     \
                || u->size == 10 || u->size == 28 || u->size == 108)
 #  define SZ4m ((u->tag1 == TempReg || u->tag1 == RealReg) \
-                      ? (u->size == 4) : True)
+                      ? (u->size == 4) : SZi)
 
 /* For these ones, two cases:
  *

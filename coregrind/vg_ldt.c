@@ -77,15 +77,65 @@ void *wine_ldt_get_base( const VgLdtEntry *ent )
                     ((unsigned long)ent->LdtEnt.Bits.BaseHi) << 24);
 }
 
-#if 0
-inline static unsigned int wine_ldt_get_limit( const VgLdtEntry *ent )
+static 
+unsigned int wine_ldt_get_limit( const VgLdtEntry *ent )
 {
-    unsigned int limit = ent->LimitLow | (ent->HighWord.Bits.LimitHi << 16);
-    if (ent->HighWord.Bits.Granularity) limit = (limit << 12) | 0xfff;
+    unsigned int limit = ent->LdtEnt.Bits.LimitLow 
+                         | (ent->LdtEnt.Bits.LimitHi << 16);
+    if (ent->LdtEnt.Bits.Granularity) limit = (limit << 12) | 0xfff;
     return limit;
 }
-#endif
 
+
+/* Actually _DO_ the segment translation.  This is the whole entire
+   point of this accursed, overcomplicated, baroque, pointless
+   segment-override-and-LDT/GDT garbage foisted upon us all by Intel,
+   in its infinite wisdom. 
+
+   THIS IS CALLED FROM GENERATED CODE (AND SO RUNS ON REAL CPU). 
+*/
+Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
+{
+   Addr        base;
+   UInt        limit;
+   VgLdtEntry* the_ldt;
+
+   VG_(printf)("do_useseg: seg_selector = %p, vaddr = %p\n", 
+               seg_selector, virtual_addr);
+
+   seg_selector &= 0x0000FFFF;
+  
+   /* Sanity check the segment selector.  Ensure that TI=1 (LDT) and
+      that RPL=11b (least priviledge).  These form the bottom 3 bits
+      of the selector. */
+   vg_assert((seg_selector & 7) == 7);
+
+   /* convert it onto a table index */
+   seg_selector >>= 3;
+   vg_assert(seg_selector >= 0 && seg_selector < 8192);
+
+   /* Come up with a suitable LDT entry.  We look at the thread's LDT,
+      which is pointed to by a VG_(baseBlock) entry.  If null, we will
+      use an implied zero-entry -- although this usually implies the
+      program is in deep trouble, since it is using LDT entries which
+      it probably hasn't set up. */
+   the_ldt = (VgLdtEntry*)VG_(baseBlock)[VGOFF_(ldt)];
+   if (the_ldt == NULL) {
+      base = 0;
+      limit = 0;
+      VG_(printf)("warning! thread has no LDT!  this is really bad.\n");
+   } else {
+      base = (Addr)wine_ldt_get_base ( &the_ldt[seg_selector] );
+      limit = (UInt)wine_ldt_get_limit ( &the_ldt[seg_selector] );
+   }
+
+   if (virtual_addr >= limit) {
+      VG_(printf)("FATAL: do_useseg: vaddr %d exceeds segment limit %d\n", 
+                  virtual_addr, limit );
+   }
+
+   return base + virtual_addr;
+}
 
 
 /* Translate a struct modify_ldt_ldt_s to an VgLdtEntry, using the

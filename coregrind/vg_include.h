@@ -453,6 +453,10 @@ extern void
 extern Int VG_(sys_modify_ldt) ( ThreadId tid,
                                  Int func, void* ptr, UInt bytecount );
 
+/* Called from generated code.  Given a segment selector and a virtual
+   address, return a linear address, and do limit checks too. */
+extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_scheduler.c

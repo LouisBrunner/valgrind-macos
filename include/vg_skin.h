@@ -430,12 +430,19 @@ extern Int VG_(sigpending)   ( vki_ksigset_t* set );
 /*=== UCode definition                                             ===*/
 /*====================================================================*/
 
-/* Tags which describe what operands are. */
+/* Tags which describe what operands are.  Must fit into 4 bits, which
+   they clearly do. */
 typedef
-   enum { TempReg=0, ArchReg=1, RealReg=2, 
-          SpillNo=3, Literal=4, Lit16=5, 
-          NoValue=6 }
-   Tag;
+enum { TempReg  =0, /* virtual temp-reg */
+       ArchReg  =1, /* simulated integer reg */
+       ArchRegS =2, /* simulated segment reg */
+       RealReg  =3, /* real machine's real reg */
+       SpillNo  =4, /* spill slot location */
+       Literal  =5, /* literal; .lit32 field has actual value */
+       Lit16    =6, /* literal; .val[123] field has actual value */
+       NoValue  =7  /* operand not in use */
+     }
+     Tag;
 
 /* Invalid register numbers (can't be negative) */
 #define INVALID_TEMPREG 999999999
@@ -479,6 +486,10 @@ typedef
 
       /* Advance the simulated %eip by some small (< 128) number. */
       INCEIP,
+
+      /* Dealing with segment registers */
+      GETSEG, PUTSEG,   /* simulated segment register <--> TempReg */
+      USESEG,           /* (LDT/GDT index, virtual addr) --> linear addr */
 
       /* Not for translating x86 calls -- only to call helpers */
       CALLM_S, CALLM_E, /* Mark start/end of CALLM push/pop sequence */
@@ -526,7 +537,7 @@ typedef
       CondBE     = 6,  /* below or equal     */
       CondNBE    = 7,  /* not below or equal */
       CondS      = 8,  /* negative           */
-      ConsNS     = 9,  /* not negative       */
+      CondNS     = 9,  /* not negative       */
       CondP      = 10, /* parity even        */
       CondNP     = 11, /* not parity even    */
       CondL      = 12, /* jump less          */
@@ -768,7 +779,7 @@ extern void  VG_(pp_UOperand)    ( UInstr* u, Int operandNo,
 
 /* All this only necessary for skins with VG_(needs).extends_UCode == True. */
 
-/* This is the Intel register encoding. */
+/* This is the Intel register encoding -- integer regs. */
 #define R_EAX 0
 #define R_ECX 1
 #define R_EDX 2
@@ -787,7 +798,16 @@ extern void  VG_(pp_UOperand)    ( UInstr* u, Int operandNo,
 #define R_DH (4+R_EDX)
 #define R_BH (4+R_EBX)
 
+/* This is the Intel register encoding -- segment regs. */
+#define R_ES 0
+#define R_CS 1
+#define R_SS 2
+#define R_DS 3
+#define R_FS 4
+#define R_GS 5
+
 /* For pretty printing x86 code */
+extern Char* VG_(name_of_seg_reg)  ( Int sreg );
 extern Char* VG_(name_of_int_reg)  ( Int size, Int reg );
 extern Char  VG_(name_of_int_size) ( Int size );
 

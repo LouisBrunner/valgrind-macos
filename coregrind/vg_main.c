@@ -246,6 +246,8 @@ static void vg_init_baseBlock ( void )
    VGOFF_(m_fs)  = alloc_BaB(1);
    VGOFF_(m_gs)  = alloc_BaB(1);
 
+   VG_(register_noncompact_helper)( (Addr) & VG_(do_useseg) );
+
    /* Helper functions. */
    VGOFF_(helper_idiv_64_32)
       = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_64_32) );

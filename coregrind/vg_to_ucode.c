@@ -42,10 +42,12 @@
 #define uInstr3   VG_(new_UInstr3)
 #define nameIReg  VG_(name_of_int_reg)
 #define nameISize VG_(name_of_int_size)
+#define nameSReg  VG_(name_of_seg_reg)
 #define newTemp   VG_(get_new_temp)
 #define uLiteral  VG_(set_lit_field)
 
 #define dis       VG_(print_codegen)
+
 
 /*------------------------------------------------------------*/
 /*--- Here so it can be inlined everywhere.                ---*/
@@ -130,6 +132,19 @@ Char* VG_(name_of_int_reg) ( Int size, Int reg )
   bad:
    VG_(panic)("name_of_int_reg");
    return NULL; /*notreached*/
+}
+
+Char* VG_(name_of_seg_reg) ( Int sreg )
+{
+   switch (sreg) {
+      case R_ES: return "%es";
+      case R_CS: return "%cs";
+      case R_SS: return "%ss";
+      case R_DS: return "%ds";
+      case R_FS: return "%fs";
+      case R_GS: return "%gs";
+      default: VG_(panic)("nameOfSegReg");
+   }
 }
 
 Char VG_(name_of_int_size) ( Int size )
@@ -280,15 +295,60 @@ static __inline__ void uCond ( UCodeBlock* cb, Condcode cond )
 /*--- Disassembling addressing modes                       ---*/
 /*------------------------------------------------------------*/
 
+static 
+UChar* sorbTxt ( UChar sorb )
+{
+   switch (sorb) {
+      case 0:    return ""; /* no override */
+      case 0x3E: return "%ds";
+      case 0x26: return "%es:";
+      case 0x64: return "%fs:";
+      case 0x65: return "%gs:";
+      default: VG_(panic)("sorbTxt");
+   }
+}
+
+
+/* Tmp is a TempReg holding a virtual address.  Convert it to a linear
+   address by adding any required segment override as indicated by
+   sorb. */
+static
+void handleSegOverride ( UCodeBlock* cb, UChar sorb, Int tmp )
+{
+   Int sreg, tsreg;
+
+   if (sorb == 0)
+      /* the common case - no override */
+      return;
+
+   switch (sorb) {
+      case 0x3E: sreg = R_DS; break;
+      case 0x26: sreg = R_ES; break;
+      case 0x64: sreg = R_FS; break;
+      case 0x65: sreg = R_GS; break;
+      default: VG_(panic)("handleSegOverride");
+   }
+
+   tsreg = newTemp(cb);
+
+   /* sreg -> tsreg */
+   uInstr2(cb, GETSEG, 2, ArchRegS, sreg, TempReg, tsreg );
+
+   /* tmp += segment_base(ldt[tsreg]); also do limit check */
+   uInstr2(cb, USESEG, 0, TempReg, tsreg, TempReg, tmp );
+}
+
+
 /* Generate ucode to calculate an address indicated by a ModRM and
    following SIB bytes, getting the value in a new temporary.  The
    temporary, and the number of bytes in the address mode, are
-   returned, as a pair (length << 8) | temp.  Note that this fn should
+   returned, as a pair (length << 24) | temp.  Note that this fn should
    not be called if the R/M part of the address denotes a register
    instead of memory.  If buf is non-NULL, text of the addressing mode
    is placed therein. */
 
-static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
+static 
+UInt disAMode ( UCodeBlock* cb, UChar sorb, Addr eip0, UChar* buf )
 {
    UChar* eip        = (UChar*)eip0;
    UChar  mod_reg_rm = *eip++;
@@ -309,7 +369,9 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
       /* ! 04 */ /* ! 05 */ case 0x06: case 0x07:
          { UChar rm  = mod_reg_rm;
            uInstr2(cb, GET, 4, ArchReg, rm,  TempReg, tmp);
-           if (buf) VG_(sprintf)(buf,"(%s)", nameIReg(4,rm));
+           handleSegOverride(cb, sorb, tmp);
+           if (buf) VG_(sprintf)(buf,"%s(%s)", sorbTxt(sorb), 
+                                               nameIReg(4,rm));
            return (1<<24 | tmp);
          }
 
@@ -324,7 +386,9 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
            uInstr2(cb, GET,  4, ArchReg, rm,  TempReg, tmq);
            uInstr2(cb, LEA1, 4, TempReg, tmq, TempReg, tmp);
            LAST_UINSTR(cb).lit32 = d;
-           if (buf) VG_(sprintf)(buf,"%d(%s)", d, nameIReg(4,rm));
+           handleSegOverride(cb, sorb, tmp);
+           if (buf) VG_(sprintf)(buf,"%s%d(%s)", sorbTxt(sorb), 
+                                                 d, nameIReg(4,rm));
            return (2<<24 | tmp);
          }
 
@@ -339,7 +403,9 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
            uInstr2(cb, GET,  4, ArchReg, rm,  TempReg, tmq);
            uInstr2(cb, LEA1, 4, TempReg, tmq, TempReg, tmp);
            LAST_UINSTR(cb).lit32 = d;
-           if (buf) VG_(sprintf)(buf,"0x%x(%s)", d, nameIReg(4,rm));
+           handleSegOverride(cb, sorb, tmp);
+           if (buf) VG_(sprintf)(buf,"%s0x%x(%s)", sorbTxt(sorb), 
+                                                   d, nameIReg(4,rm));
            return (5<<24 | tmp);
          }
 
@@ -355,7 +421,8 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
          { UInt d = getUDisp32((Addr)eip); eip += 4;
            uInstr2(cb, MOV, 4, Literal, 0, TempReg, tmp);
            uLiteral(cb, d);
-           if (buf) VG_(sprintf)(buf,"(0x%x)", d);
+           handleSegOverride(cb, sorb, tmp);
+           if (buf) VG_(sprintf)(buf,"%s(0x%x)", sorbTxt(sorb), d);
            return (5<<24 | tmp);
          }
 
@@ -393,7 +460,9 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
                                  TempReg, tmp);
             LAST_UINSTR(cb).lit32   = 0;
             LAST_UINSTR(cb).extra4b = 1 << scale;
-            if (buf) VG_(sprintf)(buf,"(%s,%s,%d)", nameIReg(4,base_r),
+            handleSegOverride(cb, sorb, tmp);
+            if (buf) VG_(sprintf)(buf,"%s(%s,%s,%d)", sorbTxt(sorb), 
+                                  nameIReg(4,base_r),
                                   nameIReg(4,index_r),1<<scale);
             return (2<<24 | tmp);
          }
@@ -408,14 +477,17 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
                                  TempReg, tmp);
             LAST_UINSTR(cb).lit32   = d;
             LAST_UINSTR(cb).extra4b = 1 << scale;
-            if (buf) VG_(sprintf)(buf,"0x%x(,%s,%d)", d, 
+            handleSegOverride(cb, sorb, tmp);
+            if (buf) VG_(sprintf)(buf,"%s0x%x(,%s,%d)", sorbTxt(sorb), d, 
                                   nameIReg(4,index_r),1<<scale);
             return (6<<24 | tmp);
          }
 
          if (index_r == R_ESP && base_r != R_EBP) {
             uInstr2(cb, GET, 4, ArchReg, base_r, TempReg, tmp);
-            if (buf) VG_(sprintf)(buf,"(%s,,)", nameIReg(4,base_r));
+            handleSegOverride(cb, sorb, tmp);
+            if (buf) VG_(sprintf)(buf,"%s(%s,,)", 
+                                      sorbTxt(sorb), nameIReg(4,base_r));
             return (2<<24 | tmp);
          }
 
@@ -423,7 +495,8 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
             UInt d = getUDisp32((Addr)eip); eip += 4;
             uInstr2(cb, MOV, 4, Literal, 0, TempReg, tmp);
 	    uLiteral(cb, d);
-            if (buf) VG_(sprintf)(buf,"0x%x()", d);
+            handleSegOverride(cb, sorb, tmp);
+            if (buf) VG_(sprintf)(buf,"%s0x%x()", sorbTxt(sorb), d);
             return (6<<24 | tmp);
          }
 
@@ -451,7 +524,9 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
             uInstr2(cb, GET,  4, ArchReg, base_r,  TempReg, tmq);
             uInstr2(cb, LEA1, 4, TempReg, tmq, TempReg, tmp);
             LAST_UINSTR(cb).lit32 = d;
-            if (buf) VG_(sprintf)(buf,"%d(%s,,)", d, nameIReg(4,base_r));
+            handleSegOverride(cb, sorb, tmp);
+            if (buf) VG_(sprintf)(buf,"%s%d(%s,,)", sorbTxt(sorb), 
+                                  d, nameIReg(4,base_r));
             return (3<<24 | tmp);
          } else {
             Int index_tmp = newTemp(cb);
@@ -462,7 +537,9 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
                                  TempReg, tmp);
             LAST_UINSTR(cb).lit32   = d;
             LAST_UINSTR(cb).extra4b = 1 << scale;
-            if (buf) VG_(sprintf)(buf,"%d(%s,%s,%d)", d, nameIReg(4,base_r), 
+            handleSegOverride(cb, sorb, tmp);
+            if (buf) VG_(sprintf)(buf,"%s%d(%s,%s,%d)", 
+                                  sorbTxt(sorb), d, nameIReg(4,base_r), 
                                   nameIReg(4,index_r), 1<<scale);
             return (3<<24 | tmp);
          }
@@ -490,7 +567,9 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
             uInstr2(cb, GET,  4, ArchReg, base_r,  TempReg, tmq);
             uInstr2(cb, LEA1, 4, TempReg, tmq, TempReg, tmp);
             LAST_UINSTR(cb).lit32 = d;
-            if (buf) VG_(sprintf)(buf,"%d(%s,,)", d, nameIReg(4,base_r));
+            handleSegOverride(cb, sorb, tmp);
+            if (buf) VG_(sprintf)(buf,"%s%d(%s,,)", 
+                                  sorbTxt(sorb), d, nameIReg(4,base_r));
             return (6<<24 | tmp);
          } else {
             Int index_tmp = newTemp(cb);
@@ -501,7 +580,9 @@ static UInt disAMode ( UCodeBlock* cb, Addr eip0, UChar* buf )
                                  TempReg, tmp);
             LAST_UINSTR(cb).lit32   = d;
             LAST_UINSTR(cb).extra4b = 1 << scale;
-            if (buf) VG_(sprintf)(buf,"%d(%s,%s,%d)", d, nameIReg(4,base_r), 
+            handleSegOverride(cb, sorb, tmp);
+            if (buf) VG_(sprintf)(buf,"%s%d(%s,%s,%d)", 
+                                  sorbTxt(sorb), d, nameIReg(4,base_r), 
                                   nameIReg(4,index_r), 1<<scale);
             return (6<<24 | tmp);
          }
@@ -642,7 +723,8 @@ void codegen_XOR_reg_with_itself ( UCodeBlock* cb, Int size,
                        PUT tmpa, %G
 */
 static
-Addr dis_op2_E_G ( UCodeBlock* cb, 
+Addr dis_op2_E_G ( UCodeBlock* cb,
+                   UChar       sorb,
                    Opcode      opc, 
                    Bool        keep,
                    Int         size, 
@@ -688,7 +770,7 @@ Addr dis_op2_E_G ( UCodeBlock* cb,
       = (opc == ADD || opc == OR || opc == AND || opc == XOR || opc == ADC)
            ? True : False;
    if (reversible) {
-      UInt pair = disAMode ( cb, eip0, dis?dis_buf:NULL);
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL);
       Int  tmpa = LOW24(pair);
       uInstr2(cb, LOAD, size, TempReg, tmpa, TempReg, tmpa);
 
@@ -707,7 +789,7 @@ Addr dis_op2_E_G ( UCodeBlock* cb,
                            dis_buf,nameIReg(size,gregOfRM(rm)));
       return HI8(pair)+eip0;
    } else {
-      UInt pair = disAMode ( cb, eip0, dis?dis_buf:NULL);
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL);
       Int  tmpa = LOW24(pair);
       Int  tmp2 = newTemp(cb);
       uInstr2(cb, LOAD, size, TempReg, tmpa, TempReg, tmpa);
@@ -745,6 +827,7 @@ Addr dis_op2_E_G ( UCodeBlock* cb,
 */
 static
 Addr dis_op2_G_E ( UCodeBlock* cb, 
+                   UChar       sorb,
                    Opcode      opc, 
                    Bool        keep,
                    Int         size, 
@@ -787,7 +870,7 @@ Addr dis_op2_G_E ( UCodeBlock* cb,
 
    /* E refers to memory */    
    {
-      UInt pair = disAMode ( cb, eip0, dis?dis_buf:NULL);
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL);
       Int  tmpa = LOW24(pair);
       Int  tmpv = newTemp(cb);
       uInstr2(cb, LOAD,  size, TempReg, tmpa, TempReg, tmpv);
@@ -820,7 +903,7 @@ Addr dis_op2_G_E ( UCodeBlock* cb,
    E(src) is reg-or-mem
    G(dst) is reg.
 
-   If E is reg, -->    GET %G,  tmpv
+   If E is reg, -->    GET %E,  tmpv
                        PUT tmpv, %G
  
    If E is mem  -->    (getAddr E) -> tmpa
@@ -829,6 +912,7 @@ Addr dis_op2_G_E ( UCodeBlock* cb,
 */
 static
 Addr dis_mov_E_G ( UCodeBlock* cb, 
+                   UChar       sorb,
                    Int         size, 
                    Addr        eip0 )
 {
@@ -847,7 +931,7 @@ Addr dis_mov_E_G ( UCodeBlock* cb,
 
    /* E refers to memory */    
    {
-      UInt pair = disAMode ( cb, eip0, dis?dis_buf:NULL);
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL);
       Int  tmpa = LOW24(pair);
       Int  tmpb = newTemp(cb);
       uInstr2(cb, LOAD, size, TempReg, tmpa, TempReg, tmpb);
@@ -877,6 +961,7 @@ Addr dis_mov_E_G ( UCodeBlock* cb,
 */
 static
 Addr dis_mov_G_E ( UCodeBlock* cb, 
+                   UChar       sorb,
                    Int         size, 
                    Addr        eip0 )
 {
@@ -895,7 +980,7 @@ Addr dis_mov_G_E ( UCodeBlock* cb,
 
    /* E refers to memory */    
    {
-      UInt pair = disAMode ( cb, eip0, dis?dis_buf:NULL);
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL);
       Int  tmpa = LOW24(pair);
       Int  tmpv = newTemp(cb);
       uInstr2(cb, GET,   size, ArchReg, gregOfRM(rm), TempReg, tmpv);
@@ -941,6 +1026,7 @@ Addr dis_op_imm_A ( UCodeBlock* cb,
 /* Sign- and Zero-extending moves. */
 static
 Addr dis_movx_E_G ( UCodeBlock* cb, 
+                    UChar       sorb,
                     Addr eip, Int szs, Int szd, Bool sign_extend )
 {
    UChar dis_buf[50];
@@ -962,7 +1048,7 @@ Addr dis_movx_E_G ( UCodeBlock* cb,
 
    /* E refers to memory */    
    {
-      UInt pair = disAMode ( cb, eip, dis?dis_buf:NULL);
+      UInt pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL);
       Int  tmpa = LOW24(pair);
       uInstr2(cb, LOAD, szs, TempReg, tmpa, TempReg, tmpa);
       uInstr1(cb, WIDEN, szd, TempReg, tmpa);
@@ -1034,7 +1120,9 @@ void codegen_div ( UCodeBlock* cb, Int sz, Int t, Bool signed_divide )
 
 
 static 
-Addr dis_Grp1 ( UCodeBlock* cb, Addr eip, UChar modrm, 
+Addr dis_Grp1 ( UCodeBlock* cb, 
+                UChar       sorb,
+                Addr eip, UChar modrm, 
                 Int am_sz, Int d_sz, Int sz, UInt d32 )
 {
    Int   t1, t2, uopc;
@@ -1070,7 +1158,7 @@ Addr dis_Grp1 ( UCodeBlock* cb, Addr eip, UChar modrm,
                      nameGrp1(gregOfRM(modrm)), nameISize(sz), d32, 
                      nameIReg(sz,eregOfRM(modrm)));
    } else {
-      pair = disAMode ( cb, eip, dis?dis_buf:NULL);
+      pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL);
       t1   = LOW24(pair);
       t2   = newTemp(cb);
       eip  += HI8(pair);
@@ -1108,7 +1196,9 @@ Addr dis_Grp1 ( UCodeBlock* cb, Addr eip, UChar modrm,
 
 /* Group 2 extended opcodes. */
 static
-Addr dis_Grp2 ( UCodeBlock* cb, Addr eip, UChar modrm,
+Addr dis_Grp2 ( UCodeBlock* cb, 
+                UChar       sorb,
+                Addr eip, UChar modrm,
                 Int am_sz, Int d_sz, Int sz, 
                 Tag orig_src_tag, UInt orig_src_val )
 {
@@ -1162,7 +1252,7 @@ Addr dis_Grp2 ( UCodeBlock* cb, Addr eip, UChar modrm,
                         nameIReg(sz,eregOfRM(modrm)));
       }
    } else {
-      pair = disAMode ( cb, eip, dis?dis_buf:NULL);
+      pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL);
       t1   = LOW24(pair);
       t2   = newTemp(cb);
       eip  += HI8(pair);
@@ -1202,7 +1292,9 @@ Addr dis_Grp2 ( UCodeBlock* cb, Addr eip, UChar modrm,
 
 /* Group 8 extended opcodes (but BT/BTS/BTC/BTR only). */
 static
-Addr dis_Grp8_BT ( UCodeBlock* cb, Addr eip, UChar modrm,
+Addr dis_Grp8_BT ( UCodeBlock* cb, 
+                   UChar       sorb,
+                   Addr eip, UChar modrm,
                    Int am_sz, Int sz, UInt src_val )
 {
 #  define MODIFY_t2_AND_SET_CARRY_FLAG					\
@@ -1289,7 +1381,7 @@ Addr dis_Grp8_BT ( UCodeBlock* cb, Addr eip, UChar modrm,
                      src_val,
                      nameIReg(sz,eregOfRM(modrm)));
    } else {
-      pair = disAMode ( cb, eip, dis?dis_buf:NULL);
+      pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL);
       t1   = LOW24(pair);
       t2   = newTemp(cb);
       eip  += HI8(pair);
@@ -1396,7 +1488,9 @@ static void codegen_mul_A_D_Temp ( UCodeBlock* cb, Int sz,
 
 /* Group 3 extended opcodes. */
 static 
-Addr dis_Grp3 ( UCodeBlock* cb, Int sz, Addr eip )
+Addr dis_Grp3 ( UCodeBlock* cb, 
+                UChar       sorb,
+                Int sz, Addr eip )
 {
    Int   t1, t2;
    UInt  pair, d32;
@@ -1470,7 +1564,7 @@ Addr dis_Grp3 ( UCodeBlock* cb, Int sz, Addr eip )
             VG_(panic)("Grp3");
       }
    } else {
-      pair = disAMode ( cb, eip, dis?dis_buf:NULL );
+      pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
       t2   = LOW24(pair);
       t1   = newTemp(cb);
       eip  += HI8(pair);
@@ -1531,7 +1625,9 @@ Addr dis_Grp3 ( UCodeBlock* cb, Int sz, Addr eip )
 
 /* Group 4 extended opcodes. */
 static
-Addr dis_Grp4 ( UCodeBlock* cb, Addr eip )
+Addr dis_Grp4 ( UCodeBlock* cb, 
+                UChar       sorb,
+                Addr eip )
 {
    Int   t1, t2;
    UInt  pair;
@@ -1564,7 +1660,7 @@ Addr dis_Grp4 ( UCodeBlock* cb, Addr eip )
          VG_(printf)("%sb %s\n", nameGrp4(gregOfRM(modrm)),
                      nameIReg(1, eregOfRM(modrm)));
    } else {
-      pair = disAMode ( cb, eip, dis?dis_buf:NULL );
+      pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
       t2   = LOW24(pair);
       t1   = newTemp(cb);
       uInstr2(cb, LOAD, 1, TempReg, t2, TempReg, t1);
@@ -1594,7 +1690,9 @@ Addr dis_Grp4 ( UCodeBlock* cb, Addr eip )
 
 /* Group 5 extended opcodes. */
 static
-Addr dis_Grp5 ( UCodeBlock* cb, Int sz, Addr eip, Bool* isEnd )
+Addr dis_Grp5 ( UCodeBlock* cb, 
+                UChar       sorb,
+                Int sz, Addr eip, Bool* isEnd )
 {
    Int   t1, t2, t3, t4;
    UInt  pair;
@@ -1646,7 +1744,7 @@ Addr dis_Grp5 ( UCodeBlock* cb, Int sz, Addr eip, Bool* isEnd )
          VG_(printf)("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
                      nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
    } else {
-      pair = disAMode ( cb, eip, dis?dis_buf:NULL );
+      pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
       t2   = LOW24(pair);
       t1   = newTemp(cb);
       uInstr2(cb, LOAD, sz, TempReg, t2, TempReg, t1);
@@ -2092,6 +2190,7 @@ void codegen_SCAS ( UCodeBlock* cb, Int sz )
 /* (I)MUL E, G.  Supplied eip points to the modR/M byte. */
 static
 Addr dis_mul_E_G ( UCodeBlock* cb, 
+                   UChar       sorb,
                    Int         size, 
                    Addr        eip0,
                    Bool        signed_multiply )
@@ -2135,7 +2234,7 @@ Addr dis_mul_E_G ( UCodeBlock* cb,
                            nameIReg(size,gregOfRM(rm)));
       return 1+eip0;
    } else {
-      UInt pair = disAMode ( cb, eip0, dis?dis_buf:NULL);
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL);
       ta = LOW24(pair);
       uInstr2(cb, LOAD,  size, TempReg, ta, TempReg, te);
       uInstr2(cb, GET,   size, ArchReg, gregOfRM(rm), TempReg, tg);
@@ -2159,6 +2258,7 @@ Addr dis_mul_E_G ( UCodeBlock* cb,
 /* IMUL I * E -> G.  Supplied eip points to the modR/M byte. */
 static
 Addr dis_imul_I_E_G ( UCodeBlock* cb, 
+                      UChar       sorb,
                       Int         size, 
                       Addr        eip,
                       Int         litsize )
@@ -2183,7 +2283,7 @@ Addr dis_imul_I_E_G ( UCodeBlock* cb,
       uInstr1(cb, PUSH,  size, TempReg, te);
       eip++;
    } else {
-      UInt pair = disAMode ( cb, eip, dis?dis_buf:NULL);
+      UInt pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL);
       ta = LOW24(pair);
       uInstr2(cb, LOAD,  size, TempReg, ta, TempReg, te);
       uInstr1(cb, PUSH,  size, TempReg, te);
@@ -2220,7 +2320,9 @@ Addr dis_imul_I_E_G ( UCodeBlock* cb,
 /* Handle FPU insns which read/write memory.  On entry, eip points to
    the second byte of the insn (the one following D8 .. DF). */
 static 
-Addr dis_fpu_mem ( UCodeBlock* cb, Int size, Bool is_write, 
+Addr dis_fpu_mem ( UCodeBlock* cb, 
+                   UChar       sorb,
+                   Int size, Bool is_write, 
                    Addr eip, UChar first_byte )
 {
    Int   ta;
@@ -2229,7 +2331,7 @@ Addr dis_fpu_mem ( UCodeBlock* cb, Int size, Bool is_write,
    UChar second_byte = getUChar(eip);
    vg_assert(second_byte < 0xC0);
    second_byte &= 0x38;
-   pair = disAMode ( cb, eip, dis?dis_buf:NULL );
+   pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
    ta   = LOW24(pair);
    eip  += HI8(pair);
    uInstr2(cb, is_write ? FPU_W : FPU_R, size,
@@ -2325,7 +2427,9 @@ Addr dis_fpu_no_mem ( UCodeBlock* cb, Addr eip, UChar first_byte )
 /* Top-level handler for all FPU insns.  On entry, eip points to the
    second byte of the insn. */
 static
-Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
+Addr dis_fpu ( UCodeBlock* cb, 
+               UChar       sorb,
+               UChar first_byte, Addr eip )
 {
    const Bool rd = False; 
    const Bool wr = True;
@@ -2366,7 +2470,7 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
             case 5: /* FSUBRs */
             case 6: /* FDIVs */
             case 7: /* FDIVRs */
-               return dis_fpu_mem(cb, 4, rd, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 4, rd, eip, first_byte); 
             default: 
                goto unhandled;
          }
@@ -2375,22 +2479,22 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
       case 0xD9:
          switch ((second_byte >> 3) & 7) {
             case 0: /* FLDs */
-               return dis_fpu_mem(cb, 4, rd, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 4, rd, eip, first_byte); 
             case 2: /* FSTs */
             case 3: /* FSTPs */
-               return dis_fpu_mem(cb, 4, wr, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 4, wr, eip, first_byte); 
             case 4: /* FLDENV */
-               return dis_fpu_mem(cb, 28, rd, eip, first_byte);
+               return dis_fpu_mem(cb, sorb, 28, rd, eip, first_byte);
             case 5: /* FLDCW */
-               return dis_fpu_mem(cb, 2, rd, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 2, rd, eip, first_byte); 
             case 6: /* FNSTENV */
-               return dis_fpu_mem(cb, 28, wr, eip, first_byte);
+               return dis_fpu_mem(cb, sorb, 28, wr, eip, first_byte);
             case 7: /* FSTCW */
                /* HACK!  FSTCW actually writes 2 bytes, not 4.  glibc
                   gets lots of moaning in __floor() if we do the right
                   thing here. */
                /* Later ... hack disabled .. we do do the Right Thing. */
-               return dis_fpu_mem(cb, /*4*/ 2, wr, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, /*4*/ 2, wr, eip, first_byte); 
             default: 
                goto unhandled;
          }
@@ -2406,7 +2510,7 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
             case 5: /* FISUBR */
             case 6: /* FIDIV */
             case 7: /* FIDIVR */
-               return dis_fpu_mem(cb, 4, rd, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 4, rd, eip, first_byte); 
             default: 
                goto unhandled;
          }
@@ -2415,15 +2519,15 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
       case 0xDB:
          switch ((second_byte >> 3) & 7) {
             case 0: /* FILD dword-integer */
-               return dis_fpu_mem(cb, 4, rd, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 4, rd, eip, first_byte); 
             case 2: /* FIST dword-integer */
-               return dis_fpu_mem(cb, 4, wr, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 4, wr, eip, first_byte); 
             case 3: /* FISTPl */
-               return dis_fpu_mem(cb, 4, wr, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 4, wr, eip, first_byte); 
             case 5: /* FLD extended-real */
-               return dis_fpu_mem(cb, 10, rd, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 10, rd, eip, first_byte); 
             case 7: /* FSTP extended-real */
-               return dis_fpu_mem(cb, 10, wr, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 10, wr, eip, first_byte); 
             default: 
                goto unhandled;
          }
@@ -2439,7 +2543,7 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
             case 5: /* FSUBR double-real */
             case 6: /* FDIV double-real */
             case 7: /* FDIVR double-real */
-               return dis_fpu_mem(cb, 8, rd, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 8, rd, eip, first_byte); 
             default: 
                goto unhandled;
          }
@@ -2448,16 +2552,16 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
       case 0xDD:
          switch ((second_byte >> 3) & 7) {
             case 0: /* FLD double-real */
-               return dis_fpu_mem(cb, 8, rd, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 8, rd, eip, first_byte); 
             case 2: /* FST double-real */
             case 3: /* FSTP double-real */
-               return dis_fpu_mem(cb, 8, wr, eip, first_byte);
+               return dis_fpu_mem(cb, sorb, 8, wr, eip, first_byte);
             case 4: /* FRSTOR */
-               return dis_fpu_mem(cb, 108, rd, eip, first_byte);
+               return dis_fpu_mem(cb, sorb, 108, rd, eip, first_byte);
             case 6: /* FSAVE */
-               return dis_fpu_mem(cb, 108, wr, eip, first_byte);
+               return dis_fpu_mem(cb, sorb, 108, wr, eip, first_byte);
             case 7: /* FSTSW */
-               return dis_fpu_mem(cb, 2, wr, eip, first_byte);
+               return dis_fpu_mem(cb, sorb, 2, wr, eip, first_byte);
             default: 
                goto unhandled;
          }
@@ -2466,15 +2570,15 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
       case 0xDF:
          switch ((second_byte >> 3) & 7) {
             case 0: /* FILD word-integer */
-               return dis_fpu_mem(cb, 2, rd, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 2, rd, eip, first_byte); 
             case 2: /* FIST word-integer */
-               return dis_fpu_mem(cb, 2, wr, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 2, wr, eip, first_byte); 
             case 3: /* FISTP word-integer */
-               return dis_fpu_mem(cb, 2, wr, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 2, wr, eip, first_byte); 
             case 5: /* FILD qword-integer */
-               return dis_fpu_mem(cb, 8, rd, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 8, rd, eip, first_byte); 
             case 7: /* FISTP qword-integer */
-               return dis_fpu_mem(cb, 8, wr, eip, first_byte); 
+               return dis_fpu_mem(cb, sorb, 8, wr, eip, first_byte); 
             default: 
                goto unhandled;
          }
@@ -2494,7 +2598,9 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
 /* Double length left shifts.  Apparently only required in v-size (no
    b- variant). */
 static
-Addr dis_SHLRD_Gv_Ev ( UCodeBlock* cb, Addr eip, UChar modrm,
+Addr dis_SHLRD_Gv_Ev ( UCodeBlock* cb,
+                       UChar sorb,
+                       Addr eip, UChar modrm,
                        Int sz, 
                        Tag amt_tag, UInt amt_val,
                        Bool left_shift )
@@ -2548,7 +2654,7 @@ Addr dis_SHLRD_Gv_Ev ( UCodeBlock* cb, Addr eip, UChar modrm,
                      nameISize(sz), nameIReg(sz, gregOfRM(modrm)), 
                      nameIReg(sz, eregOfRM(modrm)));
    } else {
-      pair = disAMode ( cb, eip, dis?dis_buf:NULL );
+      pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
       ta   = LOW24(pair);
       eip  += HI8(pair);
       uInstr2(cb, LOAD,  sz, TempReg, ta,     TempReg, t2);
@@ -2589,7 +2695,9 @@ static Char* nameBtOp ( BtOp op )
 
 
 static
-Addr dis_bt_G_E ( UCodeBlock* cb, Int sz, Addr eip, BtOp op )
+Addr dis_bt_G_E ( UCodeBlock* cb, 
+                  UChar       sorb,
+                  Int sz, Addr eip, BtOp op )
 {
    UInt  pair;
    UChar dis_buf[50];
@@ -2633,7 +2741,7 @@ Addr dis_bt_G_E ( UCodeBlock* cb, Int sz, Addr eip, BtOp op )
       uLiteral(cb, sz == 4 ? 31 : 15);
       uInstr2(cb, AND, 4, TempReg, lit, TempReg, t_bitno);
    } else {
-      pair   = disAMode ( cb, eip, dis?dis_buf:NULL );
+      pair   = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
       t_addr = LOW24(pair);
       eip   += HI8(pair);
    }
@@ -2731,7 +2839,9 @@ Addr dis_bt_G_E ( UCodeBlock* cb, Int sz, Addr eip, BtOp op )
 
 /* Handle BSF/BSR.  Only v-size seems necessary. */
 static
-Addr dis_bs_E_G ( UCodeBlock* cb, Int sz, Addr eip, Bool fwds )
+Addr dis_bs_E_G ( UCodeBlock* cb, 
+                  UChar       sorb,
+                  Int sz, Addr eip, Bool fwds )
 {
    Int   t, t1, ta, helper;
    UInt  pair;
@@ -2759,7 +2869,7 @@ Addr dis_bs_E_G ( UCodeBlock* cb, Int sz, Addr eip, Bool fwds )
                      nameISize(sz), nameIReg(sz, eregOfRM(modrm)), 
                      nameIReg(sz, gregOfRM(modrm)));
    } else {
-      pair = disAMode ( cb, eip, dis?dis_buf:NULL );
+      pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
       ta   = LOW24(pair);
       eip  += HI8(pair);
       uInstr2(cb, LOAD, sz, TempReg, ta, TempReg, t);
@@ -2830,6 +2940,7 @@ void codegen_SAHF ( UCodeBlock* cb )
 
 static
 Addr dis_cmpxchg_G_E ( UCodeBlock* cb, 
+                       UChar       sorb,
                        Int         size, 
                        Addr        eip0 )
 {
@@ -2854,7 +2965,7 @@ Addr dis_cmpxchg_G_E ( UCodeBlock* cb,
                           nameIReg(size,eregOfRM(rm)) );
      nameIReg(size,eregOfRM(rm));
    } else {
-      UInt pair = disAMode ( cb, eip0, dis?dis_buf:NULL );
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL );
       ta        = LOW24(pair);
       uInstr2(cb, LOAD, size, TempReg, ta, TempReg, dest);
       eip0 += HI8(pair);
@@ -2905,6 +3016,7 @@ Addr dis_cmpxchg_G_E ( UCodeBlock* cb,
 */
 static
 Addr dis_cmov_E_G ( UCodeBlock* cb, 
+                    UChar       sorb,
                     Int         size, 
                     Condcode    cond,
                     Addr        eip0 )
@@ -2932,7 +3044,7 @@ Addr dis_cmov_E_G ( UCodeBlock* cb,
 
    /* E refers to memory */    
    {
-      UInt pair = disAMode ( cb, eip0, dis?dis_buf:NULL);
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL);
       Int  tmpa = LOW24(pair);
       uInstr2(cb, LOAD, size, TempReg, tmpa, TempReg, tmps);
       uInstr2(cb, GET,  size, ArchReg, gregOfRM(rm), TempReg, tmpd);
@@ -2952,6 +3064,7 @@ Addr dis_cmov_E_G ( UCodeBlock* cb,
 
 static
 Addr dis_xadd_G_E ( UCodeBlock* cb, 
+                    UChar       sorb,
                     Int         sz, 
                     Addr        eip0 )
 {
@@ -2974,7 +3087,7 @@ Addr dis_xadd_G_E ( UCodeBlock* cb,
                      nameIReg(sz,eregOfRM(rm)));
       return 1+eip0;
    } else {
-      UInt pair = disAMode ( cb, eip0, dis?dis_buf:NULL);
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL);
       Int  tmpa  = LOW24(pair);
       uInstr2(cb, LOAD, sz, TempReg, tmpa,          TempReg, tmpd);
       uInstr2(cb, GET,  sz, ArchReg, gregOfRM(rm),  TempReg, tmpt);
@@ -2986,6 +3099,54 @@ Addr dis_xadd_G_E ( UCodeBlock* cb,
          VG_(printf)("xadd%c %s, %s\n", nameISize(sz), 
                      nameIReg(sz,gregOfRM(rm)), 
                      dis_buf);
+      return HI8(pair)+eip0;
+   }
+}
+
+
+/* Moves of Ew into a segment register.
+      mov Ew, Sw  meaning
+      mov reg-or-mem, reg
+   Is passed the a ptr to the modRM byte, and the data size.  Returns
+   the address advanced completely over this instruction.
+
+   Ew(src) is reg-or-mem
+   Sw(dst) is seg reg.
+
+   If E is reg, -->    GETw   %Ew,  tmpv
+                       PUTSEG tmpv, %Sw
+ 
+   If E is mem  -->    (getAddr E) -> tmpa
+                       LDw (tmpa), tmpb
+                       PUTSEG tmpb, %Sw
+*/
+static
+Addr dis_mov_Ew_Sw ( UCodeBlock* cb, 
+                    UChar       sorb,
+                     Addr        eip0 )
+{
+   UChar rm  = getUChar(eip0);
+   UChar dis_buf[50];
+
+   if (epartIsReg(rm)) {
+      Int tmpv = newTemp(cb);
+      uInstr2(cb, GET,    2, ArchReg, eregOfRM(rm), TempReg, tmpv);
+      uInstr2(cb, PUTSEG, 2, TempReg, tmpv, ArchRegS, gregOfRM(rm));
+      if (dis) VG_(printf)("movw %s,%s\n",
+                           nameIReg(2,eregOfRM(rm)),
+                           nameSReg(gregOfRM(rm)));
+      return 1+eip0;
+   }
+
+   /* E refers to memory */    
+   {
+      UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL);
+      Int  tmpa = LOW24(pair);
+      Int  tmpb = newTemp(cb);
+      uInstr2(cb, LOAD,   2, TempReg, tmpa, TempReg, tmpb);
+      uInstr2(cb, PUTSEG, 2, TempReg, tmpb, ArchRegS, gregOfRM(rm));
+      if (dis) VG_(printf)("movw %s,%s\n",
+                           dis_buf,nameSReg(gregOfRM(rm)));
       return HI8(pair)+eip0;
    }
 }
@@ -3007,8 +3168,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    UChar dis_buf[50];
    Int   am_sz, d_sz;
 
-   Int   sz           = 4;
-   Int   first_uinstr = cb->used;
+   /* sz denotes the nominal data-op size of the insn; we change it to
+      2 if an 0x66 prefix is seen */
+   Int sz = 4;
+
+   /* sorb holds the segment-override-prefix byte, if any.  Zero if no
+      prefix has been seen, else one of {0x26, 0x3E, 0x64, 0x65}
+      indicating the prefix.  */
+   UChar sorb = 0;
+
+   Int first_uinstr = cb->used;
    *isEnd = False;
    t1 = t2 = t3 = t4 = INVALID_TEMPREG;
 
@@ -3050,31 +3219,30 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip++;
    }
 
-   /* Crap out if we see a segment override prefix. */
-   if (getUChar(eip) == 0x65) {
-      VG_(message)(Vg_DebugMsg, "");
-      VG_(message)(Vg_DebugMsg, "Possible workaround for the following abort: do not use special");
-      VG_(message)(Vg_DebugMsg, "PII/PIII-specific pthreads library (possibly in /lib/i686/*.so).");
-      VG_(message)(Vg_DebugMsg, "You might be able to kludge around this by renaming /lib/i686 to");
-      VG_(message)(Vg_DebugMsg, "/lib/i686-HIDDEN.  On RedHat 7.2 this causes ld.so to fall back");
-      VG_(message)(Vg_DebugMsg, "to using the less specialised versions in /lib instead, which");
-      VG_(message)(Vg_DebugMsg, "valgrind might be able to better deal with.");
-      VG_(message)(Vg_DebugMsg, "");
-      VG_(message)(Vg_DebugMsg, "WARNING. WARNING. WARNING. WARNING. WARNING. WARNING. WARNING.");
-      VG_(message)(Vg_DebugMsg, "WARNING: The suggested kludge may also render your system unbootable");
-      VG_(message)(Vg_DebugMsg, "WARNING: or otherwise totally screw it up.  Only try this if you");
-      VG_(message)(Vg_DebugMsg, "WARNING: know what you are doing, and are prepared to take risks.");
-      VG_(message)(Vg_DebugMsg, "YOU HAVE BEEN WARNED. YOU HAVE BEEN WARNED. YOU HAVE BEEN WARNED.");
-      VG_(message)(Vg_DebugMsg, "");
-      VG_(message)(Vg_DebugMsg, "Another consideration is that this may well mean your application");
-      VG_(message)(Vg_DebugMsg, "uses threads, which valgrind doesn't currently support, so even if");
-      VG_(message)(Vg_DebugMsg, "you work around this problem, valgrind may abort later if it sees");
-      VG_(message)(Vg_DebugMsg, "a clone() system call.");
-      VG_(unimplemented)("x86 segment override (SEG=GS) prefix; see above for details");
-   }
-
    /* Detect operand-size overrides. */
    if (getUChar(eip) == 0x66) { sz = 2; eip++; };
+
+   /* segment override prefixes come after the operand-size override,
+      it seems */
+   switch (getUChar(eip)) {
+      case 0x3E: /* %DS: */
+      case 0x26: /* %ES: */
+      case 0x64: /* %FS: */
+      case 0x65: /* %GS: */
+         sorb = getUChar(eip); eip++; 
+         break;
+      case 0x2E: /* %CS: */
+         VG_(unimplemented)("x86 segment override (SEG=CS) prefix");
+         /*NOTREACHED*/
+         break;
+      case 0x36: /* %SS: */
+         VG_(unimplemented)("x86 segment override (SEG=SS) prefix");
+         /*NOTREACHED*/
+         break;
+      default:
+         break;
+   }
+
 
    opc = getUChar(eip); eip++;
 
@@ -3230,7 +3398,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0xDD:
    case 0xDE:
    case 0xDF:
-      eip = dis_fpu ( cb, opc, eip );
+      eip = dis_fpu ( cb, sorb, opc, eip );
       break;
 
    /* ------------------------ INC & DEC ------------------ */
@@ -3380,41 +3548,48 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* ------------------------ IMUL ----------------------- */
 
    case 0x69: /* IMUL Iv, Ev, Gv */
-      eip = dis_imul_I_E_G ( cb, sz, eip, sz );
+      eip = dis_imul_I_E_G ( cb, sorb, sz, eip, sz );
       break;
    case 0x6B: /* IMUL Ib, Ev, Gv */
-      eip = dis_imul_I_E_G ( cb, sz, eip, 1 );
+      eip = dis_imul_I_E_G ( cb, sorb, sz, eip, 1 );
       break;
 
    /* ------------------------ MOV ------------------------ */
 
    case 0x88: /* MOV Gb,Eb */
-      eip = dis_mov_G_E(cb, 1, eip);
+      eip = dis_mov_G_E(cb, sorb, 1, eip);
       break;
 
    case 0x89: /* MOV Gv,Ev */
-      eip = dis_mov_G_E(cb, sz, eip);
+      eip = dis_mov_G_E(cb, sorb, sz, eip);
       break;
 
    case 0x8A: /* MOV Eb,Gb */
-      eip = dis_mov_E_G(cb, 1, eip);
+      eip = dis_mov_E_G(cb, sorb, 1, eip);
       break;
  
    case 0x8B: /* MOV Ev,Gv */
-      eip = dis_mov_E_G(cb, sz, eip);
+      eip = dis_mov_E_G(cb, sorb, sz, eip);
       break;
  
    case 0x8D: /* LEA M,Gv */
       modrm = getUChar(eip);
       if (epartIsReg(modrm)) 
          VG_(panic)("LEA M,Gv: modRM refers to register");
-      pair = disAMode ( cb, eip, dis?dis_buf:NULL );
+      /* NOTE!  this is the one place where a segment override prefix
+         has no effect on the address calculation.  Therefore we pass
+         zero instead of sorb here. */
+      pair = disAMode ( cb, /*sorb*/ 0, eip, dis?dis_buf:NULL );
       eip  += HI8(pair);
       t1   = LOW24(pair);
       uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, gregOfRM(modrm));
       if (dis)
          VG_(printf)("lea%c %s, %s\n", nameISize(sz), dis_buf, 
                                        nameIReg(sz,gregOfRM(modrm)));
+      break;
+
+   case 0x8E: /* MOV Ew,Sw -- MOV to a SEGMENT REGISTER */
+      eip = dis_mov_Ew_Sw(cb, sorb, eip);
       break;
 
    case 0xA0: /* MOV Ob,AL */
@@ -3495,7 +3670,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          if (dis) VG_(printf)("mov%c $0x%x, %s\n", nameISize(sz), d32, 
                               nameIReg(sz,eregOfRM(modrm)));
       } else {
-         pair = disAMode ( cb, eip, dis?dis_buf:NULL );
+         pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
          eip += HI8(pair);
          d32 = getUDisp(sz,eip); eip += sz;
          t1 = newTemp(cb);
@@ -3569,118 +3744,118 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* ------------------------ opl Ev, Gv ----------------- */
 
    case 0x02: /* ADD Eb,Gb */
-      eip = dis_op2_E_G ( cb, ADD, True, 1, eip, "add" );
+      eip = dis_op2_E_G ( cb, sorb, ADD, True, 1, eip, "add" );
       break;
    case 0x03: /* ADD Ev,Gv */
-      eip = dis_op2_E_G ( cb, ADD, True, sz, eip, "add" );
+      eip = dis_op2_E_G ( cb, sorb, ADD, True, sz, eip, "add" );
       break;
 
    case 0x0A: /* OR Eb,Gb */
-      eip = dis_op2_E_G ( cb, OR, True, 1, eip, "or" );
+      eip = dis_op2_E_G ( cb, sorb, OR, True, 1, eip, "or" );
       break;
    case 0x0B: /* OR Ev,Gv */
-      eip = dis_op2_E_G ( cb, OR, True, sz, eip, "or" );
+      eip = dis_op2_E_G ( cb, sorb, OR, True, sz, eip, "or" );
       break;
 
    case 0x12: /* ADC Eb,Gb */
-      eip = dis_op2_E_G ( cb, ADC, True, 1, eip, "adc" );
+      eip = dis_op2_E_G ( cb, sorb, ADC, True, 1, eip, "adc" );
       break;
    case 0x13: /* ADC Ev,Gv */
-      eip = dis_op2_E_G ( cb, ADC, True, sz, eip, "adc" );
+      eip = dis_op2_E_G ( cb, sorb, ADC, True, sz, eip, "adc" );
       break;
 
    case 0x1B: /* SBB Ev,Gv */
-      eip = dis_op2_E_G ( cb, SBB, True, sz, eip, "sbb" );
+      eip = dis_op2_E_G ( cb, sorb, SBB, True, sz, eip, "sbb" );
       break;
 
    case 0x22: /* AND Eb,Gb */
-      eip = dis_op2_E_G ( cb, AND, True, 1, eip, "and" );
+      eip = dis_op2_E_G ( cb, sorb, AND, True, 1, eip, "and" );
       break;
    case 0x23: /* AND Ev,Gv */
-      eip = dis_op2_E_G ( cb, AND, True, sz, eip, "and" );
+      eip = dis_op2_E_G ( cb, sorb, AND, True, sz, eip, "and" );
       break;
 
    case 0x2A: /* SUB Eb,Gb */
-      eip = dis_op2_E_G ( cb, SUB, True, 1, eip, "sub" );
+      eip = dis_op2_E_G ( cb, sorb, SUB, True, 1, eip, "sub" );
       break;
    case 0x2B: /* SUB Ev,Gv */
-      eip = dis_op2_E_G ( cb, SUB, True, sz, eip, "sub" );
+      eip = dis_op2_E_G ( cb, sorb, SUB, True, sz, eip, "sub" );
       break;
 
    case 0x32: /* XOR Eb,Gb */
-      eip = dis_op2_E_G ( cb, XOR, True, 1, eip, "xor" );
+      eip = dis_op2_E_G ( cb, sorb, XOR, True, 1, eip, "xor" );
       break;
    case 0x33: /* XOR Ev,Gv */
-      eip = dis_op2_E_G ( cb, XOR, True, sz, eip, "xor" );
+      eip = dis_op2_E_G ( cb, sorb, XOR, True, sz, eip, "xor" );
       break;
 
    case 0x3A: /* CMP Eb,Gb */
-      eip = dis_op2_E_G ( cb, SUB, False, 1, eip, "cmp" );
+      eip = dis_op2_E_G ( cb, sorb, SUB, False, 1, eip, "cmp" );
       break;
    case 0x3B: /* CMP Ev,Gv */
-      eip = dis_op2_E_G ( cb, SUB, False, sz, eip, "cmp" );
+      eip = dis_op2_E_G ( cb, sorb, SUB, False, sz, eip, "cmp" );
       break;
 
    case 0x84: /* TEST Eb,Gb */
-      eip = dis_op2_E_G ( cb, AND, False, 1, eip, "test" );
+      eip = dis_op2_E_G ( cb, sorb, AND, False, 1, eip, "test" );
       break;
    case 0x85: /* TEST Ev,Gv */
-      eip = dis_op2_E_G ( cb, AND, False, sz, eip, "test" );
+      eip = dis_op2_E_G ( cb, sorb, AND, False, sz, eip, "test" );
       break;
 
    /* ------------------------ opl Gv, Ev ----------------- */
 
    case 0x00: /* ADD Gb,Eb */
-      eip = dis_op2_G_E ( cb, ADD, True, 1, eip, "add" );
+      eip = dis_op2_G_E ( cb, sorb, ADD, True, 1, eip, "add" );
       break;
    case 0x01: /* ADD Gv,Ev */
-      eip = dis_op2_G_E ( cb, ADD, True, sz, eip, "add" );
+      eip = dis_op2_G_E ( cb, sorb, ADD, True, sz, eip, "add" );
       break;
 
    case 0x08: /* OR Gb,Eb */
-      eip = dis_op2_G_E ( cb, OR, True, 1, eip, "or" );
+      eip = dis_op2_G_E ( cb, sorb, OR, True, 1, eip, "or" );
       break;
    case 0x09: /* OR Gv,Ev */
-      eip = dis_op2_G_E ( cb, OR, True, sz, eip, "or" );
+      eip = dis_op2_G_E ( cb, sorb, OR, True, sz, eip, "or" );
       break;
 
    case 0x10: /* ADC Gb,Eb */
-      eip = dis_op2_G_E ( cb, ADC, True, 1, eip, "adc" );
+      eip = dis_op2_G_E ( cb, sorb, ADC, True, 1, eip, "adc" );
       break;
    case 0x11: /* ADC Gv,Ev */
-      eip = dis_op2_G_E ( cb, ADC, True, sz, eip, "adc" );
+      eip = dis_op2_G_E ( cb, sorb, ADC, True, sz, eip, "adc" );
       break;
 
    case 0x19: /* SBB Gv,Ev */
-      eip = dis_op2_G_E ( cb, SBB, True, sz, eip, "sbb" );
+      eip = dis_op2_G_E ( cb, sorb, SBB, True, sz, eip, "sbb" );
       break;
 
    case 0x20: /* AND Gb,Eb */
-      eip = dis_op2_G_E ( cb, AND, True, 1, eip, "and" );
+      eip = dis_op2_G_E ( cb, sorb, AND, True, 1, eip, "and" );
       break;
    case 0x21: /* AND Gv,Ev */
-      eip = dis_op2_G_E ( cb, AND, True, sz, eip, "and" );
+      eip = dis_op2_G_E ( cb, sorb, AND, True, sz, eip, "and" );
       break;
 
    case 0x28: /* SUB Gb,Eb */
-      eip = dis_op2_G_E ( cb, SUB, True, 1, eip, "sub" );
+      eip = dis_op2_G_E ( cb, sorb, SUB, True, 1, eip, "sub" );
       break;
    case 0x29: /* SUB Gv,Ev */
-      eip = dis_op2_G_E ( cb, SUB, True, sz, eip, "sub" );
+      eip = dis_op2_G_E ( cb, sorb, SUB, True, sz, eip, "sub" );
       break;
 
    case 0x30: /* XOR Gb,Eb */
-      eip = dis_op2_G_E ( cb, XOR, True, 1, eip, "xor" );
+      eip = dis_op2_G_E ( cb, sorb, XOR, True, 1, eip, "xor" );
       break;
    case 0x31: /* XOR Gv,Ev */
-      eip = dis_op2_G_E ( cb, XOR, True, sz, eip, "xor" );
+      eip = dis_op2_G_E ( cb, sorb, XOR, True, sz, eip, "xor" );
       break;
 
    case 0x38: /* CMP Gb,Eb */
-      eip = dis_op2_G_E ( cb, SUB, False, 1, eip, "cmp" );
+      eip = dis_op2_G_E ( cb, sorb, SUB, False, 1, eip, "cmp" );
       break;
    case 0x39: /* CMP Gv,Ev */
-      eip = dis_op2_G_E ( cb, SUB, False, sz, eip, "cmp" );
+      eip = dis_op2_G_E ( cb, sorb, SUB, False, sz, eip, "cmp" );
       break;
 
    /* ------------------------ POP ------------------------ */
@@ -3776,7 +3951,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
        /* load M[ESP] to virtual register t3: t3 = M[t1] */
        uInstr2(cb, LOAD, 4, TempReg, t1, TempReg, t3);
        /* resolve MODR/M */
-       pair1 = disAMode ( cb, eip, dis?dis_buf:NULL);              
+       pair1 = disAMode ( cb, sorb, eip, dis?dis_buf:NULL);              
        
        tmpa = LOW24(pair1);
        /*  uInstr2(cb, LOAD, sz, TempReg, tmpa, TempReg, tmpa); */
@@ -4043,7 +4218,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                         nameIReg(sz,gregOfRM(modrm)), 
                         nameIReg(sz,eregOfRM(modrm)));
       } else {
-         pair = disAMode ( cb, eip, dis?dis_buf:NULL);
+         pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL);
          t3   = LOW24(pair);
          uInstr2(cb, LOAD, sz, TempReg, t3, TempReg, t1);
          uInstr2(cb, GET, sz, ArchReg, gregOfRM(modrm), TempReg, t2);
@@ -4074,7 +4249,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       sz    = 1;
       d_sz  = 1;
       d32   = getSDisp8(eip + am_sz);
-      eip   = dis_Grp1 ( cb, eip, modrm, am_sz, d_sz, sz, d32 );
+      eip   = dis_Grp1 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, d32 );
       break;
 
    case 0x81: /* Grp1 Iv,Ev */
@@ -4082,7 +4257,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       am_sz = lengthAMode(eip);
       d_sz  = sz;
       d32   = getUDisp(d_sz, eip + am_sz);
-      eip   = dis_Grp1 ( cb, eip, modrm, am_sz, d_sz, sz, d32 );
+      eip   = dis_Grp1 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, d32 );
       break;
 
    case 0x83: /* Grp1 Ib,Ev */
@@ -4090,7 +4265,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       am_sz = lengthAMode(eip);
       d_sz  = 1;
       d32   = getSDisp8(eip + am_sz);
-      eip   = dis_Grp1 ( cb, eip, modrm, am_sz, d_sz, sz, d32 );
+      eip   = dis_Grp1 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, d32 );
       break;
 
    /* ------------------------ (Grp2 extensions) ---------- */
@@ -4101,7 +4276,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       d_sz  = 1;
       d32   = getSDisp8(eip + am_sz);
       sz    = 1;
-      eip   = dis_Grp2 ( cb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
+      eip   = dis_Grp2 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
       break;
 
    case 0xC1: /* Grp2 Ib,Ev */
@@ -4109,7 +4284,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       am_sz = lengthAMode(eip);
       d_sz  = 1;
       d32   = getSDisp8(eip + am_sz);
-      eip   = dis_Grp2 ( cb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
+      eip   = dis_Grp2 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
       break;
 
    case 0xD0: /* Grp2 1,Eb */
@@ -4118,7 +4293,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       d_sz  = 0;
       d32   = 1;
       sz    = 1;
-      eip   = dis_Grp2 ( cb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
+      eip   = dis_Grp2 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
       break;
 
    case 0xD1: /* Grp2 1,Ev */
@@ -4126,7 +4301,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       am_sz = lengthAMode(eip);
       d_sz  = 0;
       d32   = 1;
-      eip   = dis_Grp2 ( cb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
+      eip   = dis_Grp2 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
       break;
 
    case 0xD2: /* Grp2 CL,Eb */
@@ -4134,35 +4309,35 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       am_sz = lengthAMode(eip);
       d_sz  = 0;
       sz    = 1;
-      eip   = dis_Grp2 ( cb, eip, modrm, am_sz, d_sz, sz, ArchReg, R_ECX );
+      eip   = dis_Grp2 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, ArchReg, R_ECX );
       break;
 
    case 0xD3: /* Grp2 CL,Ev */
       modrm = getUChar(eip);
       am_sz = lengthAMode(eip);
       d_sz  = 0;
-      eip   = dis_Grp2 ( cb, eip, modrm, am_sz, d_sz, sz, ArchReg, R_ECX );
+      eip   = dis_Grp2 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, ArchReg, R_ECX );
       break;
 
    /* ------------------------ (Grp3 extensions) ---------- */
 
    case 0xF6: /* Grp3 Eb */
-      eip = dis_Grp3 ( cb, 1, eip );
+      eip = dis_Grp3 ( cb, sorb, 1, eip );
       break;
    case 0xF7: /* Grp3 Ev */
-      eip = dis_Grp3 ( cb, sz, eip );
+      eip = dis_Grp3 ( cb, sorb, sz, eip );
       break;
 
    /* ------------------------ (Grp4 extensions) ---------- */
 
    case 0xFE: /* Grp4 Eb */
-      eip = dis_Grp4 ( cb, eip );
+      eip = dis_Grp4 ( cb, sorb, eip );
       break;
 
    /* ------------------------ (Grp5 extensions) ---------- */
 
    case 0xFF: /* Grp5 Ev */
-      eip = dis_Grp5 ( cb, sz, eip, isEnd );
+      eip = dis_Grp5 ( cb, sorb, sz, eip, isEnd );
       break;
 
    /* ------------------------ Escapes to 2-byte opcodes -- */
@@ -4177,16 +4352,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          modrm = getUChar(eip);
          am_sz = lengthAMode(eip);
          d32   = getSDisp8(eip + am_sz);
-         eip = dis_Grp8_BT ( cb, eip, modrm, am_sz, sz, d32 );
+         eip = dis_Grp8_BT ( cb, sorb, eip, modrm, am_sz, sz, d32 );
          break;
 
       /* =-=-=-=-=-=-=-=-=- BSF/BSR -=-=-=-=-=-=-=-=-=-= */
 
       case 0xBC: /* BSF Gv,Ev */
-         eip = dis_bs_E_G ( cb, sz, eip, True );
+         eip = dis_bs_E_G ( cb, sorb, sz, eip, True );
          break;
       case 0xBD: /* BSR Gv,Ev */
-         eip = dis_bs_E_G ( cb, sz, eip, False );
+         eip = dis_bs_E_G ( cb, sorb, sz, eip, False );
          break;
 
       /* =-=-=-=-=-=-=-=-=- BSWAP -=-=-=-=-=-=-=-=-=-=-= */
@@ -4211,16 +4386,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       /* =-=-=-=-=-=-=-=-=- BT/BTS/BTR/BTC =-=-=-=-=-=-= */
 
       case 0xA3: /* BT Gv,Ev */
-         eip = dis_bt_G_E ( cb, sz, eip, BtOpNone );
+         eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpNone );
          break;
       case 0xB3: /* BTR Gv,Ev */
-         eip = dis_bt_G_E ( cb, sz, eip, BtOpReset );
+         eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpReset );
          break;
       case 0xAB: /* BTS Gv,Ev */
-         eip = dis_bt_G_E ( cb, sz, eip, BtOpSet );
+         eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpSet );
          break;
       case 0xBB: /* BTC Gv,Ev */
-         eip = dis_bt_G_E ( cb, sz, eip, BtOpComp );
+         eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpComp );
          break;
 
       /* =-=-=-=-=-=-=-=-=- CMOV =-=-=-=-=-=-=-=-=-=-=-= */
@@ -4241,13 +4416,13 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       case 0x4D: /* CMOVGEb/CMOVNLb (cmov greater or equal) */
       case 0x4E: /* CMOVLEb/CMOVNGb (cmov less or equal) */
       case 0x4F: /* CMOVGb/CMOVNLEb (cmov greater) */
-         eip = dis_cmov_E_G(cb, sz, (Condcode)(opc - 0x40), eip);
+         eip = dis_cmov_E_G(cb, sorb, sz, (Condcode)(opc - 0x40), eip);
          break;
 
       /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
 
       case 0xB1: /* CMPXCHG Gv,Ev */
-         eip = dis_cmpxchg_G_E ( cb, sz, eip );
+         eip = dis_cmpxchg_G_E ( cb, sorb, sz, eip );
          break;
 
       /* =-=-=-=-=-=-=-=-=- CPUID -=-=-=-=-=-=-=-=-=-=-= */
@@ -4296,23 +4471,23 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       /* =-=-=-=-=-=-=-=-=- MOVZX, MOVSX =-=-=-=-=-=-=-= */
 
       case 0xB6: /* MOVZXb Eb,Gv */
-         eip = dis_movx_E_G ( cb, eip, 1, 4, False );
+         eip = dis_movx_E_G ( cb, sorb, eip, 1, 4, False );
          break;
       case 0xB7: /* MOVZXw Ew,Gv */
-         eip = dis_movx_E_G ( cb, eip, 2, 4, False );
+         eip = dis_movx_E_G ( cb, sorb, eip, 2, 4, False );
          break;
 
       case 0xBE: /* MOVSXb Eb,Gv */
-         eip = dis_movx_E_G ( cb, eip, 1, 4, True );
+         eip = dis_movx_E_G ( cb, sorb, eip, 1, 4, True );
          break;
       case 0xBF: /* MOVSXw Ew,Gv */
-         eip = dis_movx_E_G ( cb, eip, 2, 4, True );
+         eip = dis_movx_E_G ( cb, sorb, eip, 2, 4, True );
          break;
 
       /* =-=-=-=-=-=-=-=-=- MUL/IMUL =-=-=-=-=-=-=-=-=-= */
 
       case 0xAF: /* IMUL Ev, Gv */
-         eip = dis_mul_E_G ( cb, sz, eip, True );
+         eip = dis_mul_E_G ( cb, sorb, sz, eip, True );
          break;
 
       /* =-=-=-=-=-=-=-=-=- Jcond d32 -=-=-=-=-=-=-=-=-= */
@@ -4398,7 +4573,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                                  VG_(nameCondcode)(opc-0x90), 
                                  nameIReg(1,eregOfRM(modrm)));
          } else {
-            pair = disAMode ( cb, eip, dis?dis_buf:NULL );
+            pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
             t2 = LOW24(pair);
             eip += HI8(pair);
             uInstr1(cb, CC2VAL, 1, TempReg, t1);
@@ -4416,33 +4591,33 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       case 0xA4: /* SHLDv imm8,Gv,Ev */
          modrm = getUChar(eip);
          eip = dis_SHLRD_Gv_Ev ( 
-                  cb, eip, modrm, sz, 
+                  cb, sorb, eip, modrm, sz, 
                   Literal, getUChar(eip + lengthAMode(eip)),
                   True );
          break;
       case 0xA5: /* SHLDv %cl,Gv,Ev */
          modrm = getUChar(eip);
          eip = dis_SHLRD_Gv_Ev ( 
-                  cb, eip, modrm, sz, ArchReg, R_CL, True );
+                  cb, sorb, eip, modrm, sz, ArchReg, R_CL, True );
          break;
 
       case 0xAC: /* SHRDv imm8,Gv,Ev */
          modrm = getUChar(eip);
          eip = dis_SHLRD_Gv_Ev ( 
-                  cb, eip, modrm, sz, 
+                  cb, sorb, eip, modrm, sz, 
                   Literal, getUChar(eip + lengthAMode(eip)),
                   False );
          break;
       case 0xAD: /* SHRDv %cl,Gv,Ev */
          modrm = getUChar(eip);
          eip = dis_SHLRD_Gv_Ev ( 
-                  cb, eip, modrm, sz, ArchReg, R_CL, False );
+                  cb, sorb, eip, modrm, sz, ArchReg, R_CL, False );
          break;
 
       /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
 
       case 0xC1: /* XADD Gv,Ev */
-         eip = dis_xadd_G_E ( cb, sz, eip );
+         eip = dis_xadd_G_E ( cb, sorb, sz, eip );
          break;
 
       /* =-=-=-=-=-=-=-=-=- unimp2 =-=-=-=-=-=-=-=-=-=-= */

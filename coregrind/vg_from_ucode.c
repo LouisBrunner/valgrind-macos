@@ -1877,6 +1877,19 @@ static Int eflagsOffset ( void )
    return 4 * VGOFF_(m_eflags);
 }
 
+static Int segRegOffset ( UInt archregs )
+{
+   switch (archregs) {
+      case R_CS: return 4 * VGOFF_(m_cs);
+      case R_SS: return 4 * VGOFF_(m_ss);
+      case R_DS: return 4 * VGOFF_(m_ds);
+      case R_ES: return 4 * VGOFF_(m_es);
+      case R_FS: return 4 * VGOFF_(m_fs);
+      case R_GS: return 4 * VGOFF_(m_gs);
+      default: VG_(panic)("segRegOffset");
+   }
+}
+
 
 /* Return the byte offset from %ebp (ie, into baseBlock)
    for the specified shadow register */
@@ -2118,6 +2131,32 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
          break;
       }
 
+      case GETSEG: {
+         vg_assert(u->tag1 == ArchRegS);
+         vg_assert(u->tag2 == RealReg);
+         vg_assert(u->size == 2);
+         synth_mov_offregmem_reg (
+            4,
+            segRegOffset( u->val1 ),
+            R_EBP,
+            u->val2
+         );
+         break;
+      }
+
+      case PUTSEG: {
+         vg_assert(u->tag1 == RealReg);
+         vg_assert(u->tag2 == ArchRegS);
+         vg_assert(u->size == 2);
+         synth_mov_reg_offregmem (
+            4,
+            u->val1,
+            segRegOffset( u->val2 ),
+            R_EBP 
+         );
+         break;
+      }
+
       case GETF: {
          vg_assert(u->size == 2 || u->size == 4);
          vg_assert(u->tag1 == RealReg);
@@ -2154,6 +2193,25 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
                           break;
             default: VG_(panic)("emitUInstr:mov");
 	 }
+         break;
+      }
+
+      case USESEG: {
+         /* Lazy: copy all three vals;  synth_ccall ignores any unnecessary
+            ones. */
+         UInt argv[]  = { u->val1, u->val2, 0 };
+         UInt tagv[]  = { RealReg, RealReg, NoValue };
+         UInt ret_reg = u->val2;
+
+         vg_assert(u->tag1 == RealReg);
+         vg_assert(u->tag2 == RealReg);
+         vg_assert(u->size == 0);
+
+         VG_(synth_ccall) ( (Addr) & VG_(do_useseg), 
+                            2, /* args */
+                            0, /* regparms_n */
+                            argv, tagv,
+                            ret_reg, regs_live_before, u->regs_live_after );
          break;
       }
 
@@ -2300,6 +2358,8 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
          break;
 
       case CCALL: {
+         /* If you change this, remember to change USESEG above, since
+            that's just a copy of this, slightly simplified. */
          /* Lazy: copy all three vals;  synth_ccall ignores any unnecessary
             ones. */
          UInt argv[]  = { u->val1, u->val2, u->val3 };
@@ -2318,6 +2378,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
                             ret_reg, regs_live_before, u->regs_live_after );
          break;
       }
+
       case CLEAR:
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == NoValue);

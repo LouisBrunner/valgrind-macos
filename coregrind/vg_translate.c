@@ -38,8 +38,10 @@
 #define uInstr2   VG_(new_UInstr2)
 #define nameIReg  VG_(name_of_int_reg)
 #define nameISize VG_(name_of_int_size)
+#define nameSReg  VG_(name_of_seg_reg)
 
 #define dis       VG_(print_codegen)
+
 
 /*------------------------------------------------------------*/
 /*--- Basics                                               ---*/
@@ -372,6 +374,7 @@ Int VG_(realreg_to_rank) ( Int realReg )
    Restrictions for the individual UInstrs are clear from the checks below.
    Abbreviations: A=ArchReg   S=SpillNo   T=TempReg   L=Literal
                   Ls=Lit16    R=RealReg   N=NoValue
+                  As=ArchRegS
  
    Before register allocation, S operands should not appear anywhere.
    After register allocation, all T operands should have been
@@ -442,6 +445,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  define N1  (u->tag1 == NoValue)
 #  define N2  (u->tag2 == NoValue)
 #  define N3  (u->tag3 == NoValue)
+#  define Se1 (u->tag1 == ArchRegS)
+#  define Se2 (u->tag2 == ArchRegS)
 
 #  define COND0    (u->cond         == 0)
 #  define EXTRA4b0 (u->extra4b      == 0)
@@ -472,6 +477,9 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    switch (u->opcode) {
 
    /* Fields checked: lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
+   case PUTSEG: return LIT0 && SZ2  && CC0 &&  TR1 && Se2 &&  N3 && XOTHER;
+   case GETSEG: return LIT0 && SZ2  && CC0 &&  Se1 && TR2 &&  N3 && XOTHER;
+   case USESEG: return LIT0 && SZ0  && CC0 &&  TR1 && TR2 &&  N3 && XOTHER;
    case NOP:    return LIT0 && SZ0  && CC0 &&   N1 &&  N2 &&  N3 && XOTHER;
    case GETF:   return LIT0 && SZ42 && CCr &&  TR1 &&  N2 &&  N3 && XOTHER;
    case PUTF:   return LIT0 && SZ42 && CCw &&  TR1 &&  N2 &&  N3 && XOTHER;
@@ -572,6 +580,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef N1
 #  undef N2
 #  undef N3
+#  undef Se2
+#  undef Se1
 #  undef COND0
 #  undef EXTRA4b0
 #  undef SG_WD0
@@ -700,7 +710,7 @@ Char* VG_(nameCondcode) ( Condcode cond )
       case CondBE:     return "be";
       case CondNBE:    return "nbe";
       case CondS:      return "s";
-      case ConsNS:     return "ns";
+      case CondNS:     return "ns";
       case CondP:      return "p";
       case CondNP:     return "np";
       case CondL:      return "l";
@@ -748,14 +758,15 @@ void VG_(pp_UOperand) ( UInstr* u, Int operandNo, Int sz, Bool parens )
 
    if (parens) VG_(printf)("(");
    switch (tag) {
-      case TempReg: ppTempReg(val); break;
-      case RealReg: VG_(printf)("%s",nameIReg(sz==0 ? 4 : sz,val)); break;
-      case Literal: VG_(printf)("$0x%x", val); break;
-      case Lit16:   VG_(printf)("$0x%x", val); break;
-      case NoValue: VG_(printf)("NoValue"); break;
-      case ArchReg: VG_(printf)("%S",nameIReg(sz,val)); break;
-      case SpillNo: VG_(printf)("spill%d", val); break;
-      default: VG_(panic)("VG_(pp_UOperand)(2)");
+      case TempReg:  ppTempReg(val); break;
+      case RealReg:  VG_(printf)("%s",nameIReg(sz==0 ? 4 : sz,val)); break;
+      case Literal:  VG_(printf)("$0x%x", val); break;
+      case Lit16:    VG_(printf)("$0x%x", val); break;
+      case NoValue:  VG_(printf)("NoValue"); break;
+      case ArchReg:  VG_(printf)("%S",nameIReg(sz,val)); break;
+      case ArchRegS: VG_(printf)("%S",nameSReg(val)); break;
+      case SpillNo:  VG_(printf)("spill%d", val); break;
+      default: VG_(panic)("VG_(ppUOperand)(2)");
    }
    if (parens) VG_(printf)(")");
 }
@@ -797,6 +808,9 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case PUT:     return "PUT";
       case GETF:    return "GETF";
       case PUTF:    return "PUTF";
+      case GETSEG:  return "GETSEG";
+      case PUTSEG:  return "PUTSEG";
+      case USESEG:  return "USESEG";
       case LOAD:    return "LD" ;
       case STORE:   return "ST" ;
       case MOV:     return "MOV";
@@ -930,6 +944,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          break;
 
       case GET: case PUT: case MOV: case LOAD: case STORE: case CMOV:
+      case GETSEG: case PUTSEG:
          VG_(printf)("\t");
          VG_(pp_UOperand)(u, 1, u->size, u->opcode==LOAD); 
          VG_(printf)(", ");
@@ -988,6 +1003,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          VG_(printf)(") ");
          break;
 
+      case USESEG:
       case JIFZ:
       case ADD: case ADC: case AND: case OR:  
       case XOR: case SUB: case SBB:   
@@ -1090,6 +1106,9 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, RegUse* arr )
 
       case FPU_R: case FPU_W: RD(2); break;
 
+      case GETSEG: WR(2); break;
+      case PUTSEG: RD(1); break;
+
       case GETF:  WR(1); break;
       case PUTF:  RD(1); break;
 
@@ -1104,6 +1123,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, RegUse* arr )
       case PUSH: RD(1); break;
       case POP:  WR(1); break;
 
+      case USESEG:
       case CMOV:
       case ADD: case ADC: case AND: case OR:  
       case XOR: case SUB: case SBB:   
@@ -1220,6 +1240,9 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case JIFZ:
       case FPU: case FPU_R: case FPU_W:
       case WIDEN:
+      /* GETSEG and USESEG are to do with ArchRegS, not ArchReg */
+      case GETSEG: case PUTSEG: 
+      case USESEG:
          return -1;
 
       default: 

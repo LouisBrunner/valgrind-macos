@@ -683,7 +683,7 @@ IRExpr* mkIRExprCCall ( IRType retty,
 
 
 inline static Bool isAtom ( IRExpr* e ) {
-   return e->tag == Iex_Tmp || e->tag == Iex_Const;
+   return toBool(e->tag == Iex_Tmp || e->tag == Iex_Const);
 }
 
 

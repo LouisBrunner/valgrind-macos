@@ -71,6 +71,14 @@ typedef  unsigned char  Bool;
 #define  True   ((Bool)1)
 #define  False  ((Bool)0)
 
+/* Use this to coerce the result of a C comparison to a Bool.  This is
+   useful when compiling with Intel icc with ultra-paranoid
+   compilation flags (-Wall). */
+static inline Bool toBool ( Int x ) {
+   Int r = (x == 0) ? False : True;
+   return (Bool)r;
+}
+
 /* 32/64 bit addresses. */
 typedef  UInt      Addr32;
 typedef  ULong     Addr64;

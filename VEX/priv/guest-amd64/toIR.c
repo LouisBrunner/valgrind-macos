@@ -118,6 +118,24 @@ static Bool  insn_verbose = False;
 
 
 /*------------------------------------------------------------*/
+/*--- For placating icc's typechecker when -Wall applies.  ---*/
+/*------------------------------------------------------------*/
+ 
+static inline UChar and8 ( UChar x, UChar y ) { 
+   UInt r = x & y;
+   return (UChar)r;
+}
+static inline UChar or8 ( UChar x, UChar y ) { 
+   UInt r = x | y;
+   return (UChar)r;
+}
+static inline UChar shr8U ( UChar x, Int n ) { 
+   UInt r = ((UInt)x) >> n;
+   return (UChar)r;
+}
+
+
+/*------------------------------------------------------------*/
 /*--- Helpers for constructing IR.                         ---*/
 /*------------------------------------------------------------*/
  
@@ -411,10 +429,12 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 
       guest_next = 0;
       resteerOK 
-         = n_instrs < vex_control.guest_chase_thresh
-           /* we can't afford to have a resteer once we're on the last
-              extent slot. */
-           && vge->n_used < 3;
+         = toBool(
+              n_instrs < vex_control.guest_chase_thresh
+              /* we can't afford to have a resteer once we're on the
+                 last extent slot. */
+              && vge->n_used < 3
+           );
 
       first_stmt_idx = irbb->stmts_used;
 
@@ -554,7 +574,7 @@ static ULong extend_s_32to64 ( UInt x )
    where YYY is the register number. */
 static Bool epartIsReg ( UChar mod_reg_rm )
 {
-   return (0xC0 == (mod_reg_rm & 0xC0));
+   return toBool(0xC0 == (mod_reg_rm & 0xC0));
 }
 
 /* ... and extract the register number ... */
@@ -694,11 +714,11 @@ typedef UInt  Prefix;
 #define PFX_EMPTY 0x31410000
 
 static Bool IS_VALID_PFX ( Prefix pfx ) {
-   return (pfx & 0xFFFF0000) == PFX_EMPTY;
+   return toBool((pfx & 0xFFFF0000) == PFX_EMPTY);
 }
 
 static Bool haveREX ( Prefix pfx ) {
-   return (pfx & PFX_REX) ? True : False;
+   return toBool(pfx & PFX_REX);
 }
 
 static Int getRexW ( Prefix pfx ) {
@@ -715,15 +735,15 @@ static Int getRexB ( Prefix pfx ) {
    completely changes what instruction it really is. */
 static Bool haveF2orF3 ( Prefix pfx ) {
    pfx &= 0x0000FFFF;
-   return (pfx & (PFX_F2|PFX_F3)) > 0;
+   return toBool((pfx & (PFX_F2|PFX_F3)) > 0);
 }
 static Bool haveF2 ( Prefix pfx ) {
    pfx &= 0x0000FFFF;
-   return (pfx & PFX_F2) > 0;
+   return toBool((pfx & PFX_F2) > 0);
 }
 static Bool haveF3 ( Prefix pfx ) {
    pfx &= 0x0000FFFF;
-   return (pfx & PFX_F3) > 0;
+   return toBool((pfx & PFX_F3) > 0);
 }
 
 /* Clear all the segment-override bits in a prefix. */
@@ -949,9 +969,6 @@ void putIReg ( Prefix pfx, RegField rf, Int sz, UInt lo3bits, IRExpr* e )
 static void putIRegR ( Prefix pfx, Int sz, UInt lo3bits, IRExpr* e ) {
    putIReg ( pfx, RegR, sz, lo3bits, e );
 }
-static void putIRegX ( Prefix pfx, Int sz, UInt lo3bits, IRExpr* e ) {
-   putIReg ( pfx, RegX, sz, lo3bits, e );
-}
 static void putIRegB ( Prefix pfx, Int sz, UInt lo3bits, IRExpr* e ) {
    putIReg ( pfx, RegB, sz, lo3bits, e );
 }
@@ -972,6 +989,7 @@ static void putIReg64 ( UInt regno, IRExpr* e )
    stmt( IRStmt_Put( integerGuestReg64Offset(regno), e ) );
 }
 
+#if 0
 static HChar* nameIReg64 ( UInt regno )
 {
    static HChar* ireg64_names[16]
@@ -980,7 +998,7 @@ static HChar* nameIReg64 ( UInt regno )
    vassert(regno < 16);
    return ireg64_names[regno];
 }
-
+#endif
 
 //.. static Int segmentGuestRegOffset ( UInt sreg )
 //.. {
@@ -1198,12 +1216,12 @@ static IRExpr* mk_amd64g_calculate_rflags_c ( void )
 
 static Bool isAddSub ( IROp op8 )
 {
-   return op8 == Iop_Add8 || op8 == Iop_Sub8;
+   return toBool(op8 == Iop_Add8 || op8 == Iop_Sub8);
 }
 
 static Bool isLogic ( IROp op8 )
 {
-   return op8 == Iop_And8 || op8 == Iop_Or8 || op8 == Iop_Xor8;
+   return toBool(op8 == Iop_And8 || op8 == Iop_Or8 || op8 == Iop_Xor8);
 }
 
 /* U-widen 8/16/32/64 bit int expr to 64. */
@@ -1676,12 +1694,12 @@ HChar* sorbTxt ( Prefix pfx )
 static
 IRExpr* handleSegOverride ( Prefix pfx, IRExpr* virtual )
 {
-   UChar cs = (pfx & PFX_CS) ? 1 : 0;
-   UChar ds = (pfx & PFX_DS) ? 1 : 0;
-   UChar es = (pfx & PFX_ES) ? 1 : 0;
-   UChar fs = (pfx & PFX_FS) ? 1 : 0;
-   UChar gs = (pfx & PFX_GS) ? 1 : 0;
-   UChar ss = (pfx & PFX_SS) ? 1 : 0;
+   Int cs = (pfx & PFX_CS) ? 1 : 0;
+   Int ds = (pfx & PFX_DS) ? 1 : 0;
+   Int es = (pfx & PFX_ES) ? 1 : 0;
+   Int fs = (pfx & PFX_FS) ? 1 : 0;
+   Int gs = (pfx & PFX_GS) ? 1 : 0;
+   Int ss = (pfx & PFX_SS) ? 1 : 0;
    if (cs + ds + es + fs + gs + ss == 0)
       /* the common case - no override */
       return virtual;
@@ -1778,9 +1796,10 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
    /* squeeze out the reg field from mod_reg_rm, since a 256-entry
       jump table seems a bit excessive. 
    */
-   mod_reg_rm &= 0xC7;               /* is now XX000YYY */
-   mod_reg_rm |= (mod_reg_rm >> 3);  /* is now XX0XXYYY */
-   mod_reg_rm &= 0x1F;               /* is now 000XXYYY */
+   mod_reg_rm &= 0xC7;                         /* is now XX000YYY */
+   mod_reg_rm  = or8( mod_reg_rm, 
+                      shr8U(mod_reg_rm, 3) );  /* is now XX0XXYYY */
+   mod_reg_rm &= 0x1F;                         /* is now 000XXYYY */
    switch (mod_reg_rm) {
 
       /* REX.B==0: (%rax) .. (%rdi), not including (%rsp) or (%rbp).
@@ -1788,7 +1807,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
       */
       case 0x00: case 0x01: case 0x02: case 0x03: 
       /* ! 04 */ /* ! 05 */ case 0x06: case 0x07:
-         { UChar rm = mod_reg_rm & 7;
+         { UChar rm = and8(mod_reg_rm, 7);
            DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegB(pfx,8,rm));
            *len = 1;
            return disAMode_copy2tmp(
@@ -1800,7 +1819,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
       */
       case 0x08: case 0x09: case 0x0A: case 0x0B: 
       /* ! 0C */ case 0x0D: case 0x0E: case 0x0F:
-         { UChar rm = mod_reg_rm & 7;
+         { UChar rm = and8(mod_reg_rm, 7);
            Long d   = getSDisp8(delta);
            DIS(buf, "%s%lld(%s)", sorbTxt(pfx), d, nameIRegB(pfx,8,rm));
            *len = 2;
@@ -1814,7 +1833,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
       */
       case 0x10: case 0x11: case 0x12: case 0x13: 
       /* ! 14 */ case 0x15: case 0x16: case 0x17:
-         { UChar rm = mod_reg_rm & 7;
+         { UChar rm = and8(mod_reg_rm, 7);
            ULong d  = getSDisp32(delta);
            DIS(buf, "%s0x%llx(%s)", sorbTxt(pfx), d, nameIRegB(pfx,8,rm));
            *len = 5;
@@ -1859,12 +1878,12 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
                = %base + (%index << scale)
          */
          UChar sib     = getUChar(delta);
-         UChar scale   = (sib >> 6) & 3;
-         UChar index_r = (sib >> 3) & 7;
-         UChar base_r  = sib & 7;
+         UChar scale   = and8(shr8U(sib,6), 3);
+         UChar index_r = and8(shr8U(sib,3), 7);
+         UChar base_r  = and8(sib, 7);
          /* correct since #(R13) == 8 + #(RBP) */
-         Bool  base_is_BPor13 = base_r == R_RBP;
-         Bool  index_is_SP    = index_r == R_RSP && 0==getRexX(pfx);
+         Bool  base_is_BPor13 = toBool(base_r == R_RBP);
+         Bool  index_is_SP    = toBool(index_r == R_RSP && 0==getRexX(pfx));
          delta++;
 
          if ((!index_is_SP) && (!base_is_BPor13)) {
@@ -1925,9 +1944,9 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
       */
       case 0x0C: {
          UChar sib     = getUChar(delta);
-         UChar scale   = (sib >> 6) & 3;
-         UChar index_r = (sib >> 3) & 7;
-         UChar base_r  = sib & 7;
+         UChar scale   = and8(shr8U(sib,6), 3);
+         UChar index_r = and8(shr8U(sib,3), 7);
+         UChar base_r  = and8(sib, 7);
          Long d        = getSDisp8(delta+1);
 
          if (index_r == R_RSP && 0==getRexX(pfx)) {
@@ -1966,9 +1985,9 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
       */
       case 0x14: {
          UChar sib     = getUChar(delta);
-         UChar scale   = (sib >> 6) & 3;
-         UChar index_r = (sib >> 3) & 7;
-         UChar base_r  = sib & 7;
+         UChar scale   = and8(shr8U(sib,6), 3);
+         UChar index_r = and8(shr8U(sib,3), 7);
+         UChar base_r  = and8(sib, 7);
          Long d        = getSDisp32(delta+1);
 
          if (index_r == R_RSP && 0==getRexX(pfx)) {
@@ -2015,9 +2034,10 @@ static UInt lengthAMode ( Prefix pfx, ULong delta )
    /* squeeze out the reg field from mod_reg_rm, since a 256-entry
       jump table seems a bit excessive. 
    */
-   mod_reg_rm &= 0xC7;               /* is now XX000YYY */
-   mod_reg_rm |= (mod_reg_rm >> 3);  /* is now XX0XXYYY */
-   mod_reg_rm &= 0x1F;               /* is now 000XXYYY */
+   mod_reg_rm &= 0xC7;                         /* is now XX000YYY */
+   mod_reg_rm  = or8( mod_reg_rm, 
+                      shr8U(mod_reg_rm, 3) );  /* is now XX0XXYYY */
+   mod_reg_rm &= 0x1F;                         /* is now 000XXYYY */
    switch (mod_reg_rm) {
 
       /* REX.B==0: (%rax) .. (%rdi), not including (%rsp) or (%rbp).
@@ -2056,9 +2076,9 @@ static UInt lengthAMode ( Prefix pfx, ULong delta )
       case 0x04: {
          /* SIB, with no displacement. */
          UChar sib     = getUChar(delta);
-         UChar base_r  = sib & 7;
+         UChar base_r  = and8(sib,7);
          /* correct since #(R13) == 8 + #(RBP) */
-         Bool  base_is_BPor13 = base_r == R_RBP;
+         Bool  base_is_BPor13 = toBool(base_r == R_RBP);
 
          if (base_is_BPor13) {
             vassert(0);
@@ -2082,63 +2102,6 @@ static UInt lengthAMode ( Prefix pfx, ULong delta )
    }
 }
 
-
-//.. /* Figure out the number of (insn-stream) bytes constituting the amode
-//..    beginning at delta.  Is useful for getting hold of literals beyond
-//..    the end of the amode before it has been disassembled.  */
-//.. 
-//.. static UInt lengthAMode ( UInt delta )
-//.. {
-//..    UChar mod_reg_rm = getUChar(delta); delta++;
-//.. 
-//..    /* squeeze out the reg field from mod_reg_rm, since a 256-entry
-//..       jump table seems a bit excessive. 
-//..    */
-//..    mod_reg_rm &= 0xC7;               /* is now XX000YYY */
-//..    mod_reg_rm |= (mod_reg_rm >> 3);  /* is now XX0XXYYY */
-//..    mod_reg_rm &= 0x1F;               /* is now 000XXYYY */
-//..    switch (mod_reg_rm) {
-//.. 
-//..       /* (%eax) .. (%edi), not including (%esp) or (%ebp). */
-//..       case 0x00: case 0x01: case 0x02: case 0x03: 
-//..       /* ! 04 */ /* ! 05 */ case 0x06: case 0x07:
-//..          return 1;
-//.. 
-//..       /* d8(%eax) ... d8(%edi), not including d8(%esp). */ 
-//..       case 0x08: case 0x09: case 0x0A: case 0x0B: 
-//..       /* ! 0C */ case 0x0D: case 0x0E: case 0x0F:
-//..          return 2;
-//.. 
-//..       /* d32(%eax) ... d32(%edi), not including d32(%esp). */
-//..       case 0x10: case 0x11: case 0x12: case 0x13: 
-//..       /* ! 14 */ case 0x15: case 0x16: case 0x17:
-//..          return 5;
-//.. 
-//..       /* a register, %eax .. %edi.  (Not an addr, but still handled.) */
-//..       case 0x18: case 0x19: case 0x1A: case 0x1B:
-//..       case 0x1C: case 0x1D: case 0x1E: case 0x1F:
-//..          return 1;
-//.. 
-//..       /* a 32-bit literal address. */
-//..       case 0x05: return 5;
-//.. 
-//..       /* SIB, no displacement.  */
-//..       case 0x04: {
-//..          UChar sib    = getUChar(delta);
-//..          UChar base_r = sib & 7;
-//..          if (base_r == R_EBP) return 6; else return 2;
-//..       }
-//..       /* SIB, with 8-bit displacement.  */
-//..       case 0x0C: return 3;
-//.. 
-//..       /* SIB, with 32-bit displacement.  */
-//..       case 0x14: return 6;
-//.. 
-//..       default:
-//..          vpanic("lengthAMode");
-//..          return 0; /*notreached*/
-//..    }
-//.. }
 
 /*------------------------------------------------------------*/
 /*--- Disassembling common idioms                          ---*/
@@ -7413,14 +7376,14 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                      /*OUT*/ Addr64*    whereNext )
 {
    IRType    ty;
-   IRTemp    addr, t0, t1, t2, t3, t4, t5, t6;
+   IRTemp    addr, /* t0, */ t1, t2 /*, t3, t4, t5, t6 */;
    Int       alen;
-   UChar     opc, modrm, abyte, pre;
+   UChar     opc, modrm, /*abyte,*/ pre;
    ULong     d64;
    HChar     dis_buf[50];
    Int       am_sz, d_sz, n, n_prefixes;
    DisResult whatNext = Dis_Continue;
-   UChar*    insn; /* used in SSE decoders */
+   /* UChar*    insn;*/ /* used in SSE decoders */
 
    /* Holds eip at the start of the insn, so that we can print
       consistent error messages for unimplemented insns. */
@@ -7438,7 +7401,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       assert. */
    *size = 0;
 
-   addr = t0 = t1 = t2 = t3 = t4 = t5 = t6 = IRTemp_INVALID; 
+   addr = /* t0 = */ t1 = t2 = /* t3 = t4 = t5 = t6 = */ IRTemp_INVALID; 
 
    DIP("\t0x%llx:  ", guest_rip_bbstart+delta);
 
@@ -10748,7 +10711,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* --- end of the SSE/SSE2 decoder.                 --- */
    /* ---------------------------------------------------- */
 
-   after_sse_decoders:
+   /*after_sse_decoders:*/
 
    /* Get the primary opcode. */
    opc = getUChar(delta); delta++;

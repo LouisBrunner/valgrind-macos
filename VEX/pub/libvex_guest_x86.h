@@ -95,6 +95,13 @@ typedef
       UChar guest_FPTAG[8];
       UInt  guest_FPUCW;
       UInt  guest_FC3210;
+      /* Segment registers. */
+      UShort guest_CS;
+      UShort guest_DS;
+      UShort guest_ES;
+      UShort guest_FS;
+      UShort guest_GS;
+      UShort guest_SS;
    }
    VexGuestX86State;
 

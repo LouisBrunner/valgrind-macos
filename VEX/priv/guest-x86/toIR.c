@@ -235,6 +235,14 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
 #define R_AL (0+R_EAX)
 #define R_AH (4+R_EAX)
 
+/* This is the Intel register encoding -- segment regs. */
+#define R_ES 0
+#define R_CS 1
+#define R_SS 2
+#define R_DS 3
+#define R_FS 4
+#define R_GS 5
+
 
 /* Add a statement to the list held by "irbb". */
 static void stmt ( IRStmt* st )
@@ -384,14 +392,44 @@ static Int integerGuestRegOffset ( Int sz, UInt archreg )
    vassert(!host_is_bigendian);
 
    /* Correct for little-endian host only. */
-   switch (sz) {
-      case 2:
-      case 4: return OFFB_EAX + 4*archreg;
-      case 1: if (archreg < 4)
-                 return OFFB_EAX + 4*archreg + 0;
-              else
-                 return OFFB_EAX + 4*(archreg-4) + 1;
-      default: vpanic("integerGuestRegOffset(x86,le)");
+
+   if (sz == 4 || sz == 2 || (sz == 1 && archreg < 4)) {
+      switch (archreg) {
+         case R_EAX: return offsetof(VexGuestX86State,guest_EAX);
+         case R_EBX: return offsetof(VexGuestX86State,guest_EBX);
+         case R_ECX: return offsetof(VexGuestX86State,guest_ECX);
+         case R_EDX: return offsetof(VexGuestX86State,guest_EDX);
+         case R_ESI: return offsetof(VexGuestX86State,guest_ESI);
+         case R_EDI: return offsetof(VexGuestX86State,guest_EDI);
+         case R_ESP: return offsetof(VexGuestX86State,guest_ESP);
+         case R_EBP: return offsetof(VexGuestX86State,guest_EBP);
+         default: vpanic("integerGuestRegOffset(x86,le)(4,2)");
+      }
+   }
+
+   vassert(archreg >= 4 && archreg < 8 && sz == 1);
+   switch (archreg-4) {
+      case R_EAX: return 1+ offsetof(VexGuestX86State,guest_EAX);
+      case R_EBX: return 1+ offsetof(VexGuestX86State,guest_EBX);
+      case R_ECX: return 1+ offsetof(VexGuestX86State,guest_ECX);
+      case R_EDX: return 1+ offsetof(VexGuestX86State,guest_EDX);
+      default: vpanic("integerGuestRegOffset(x86,le)(1h)");
+   }
+
+   /* NOTREACHED */
+   vpanic("integerGuestRegOffset(x86,le)");
+}
+
+static Int segmentGuestRegOffset ( UInt sreg )
+{
+   switch (sreg) {
+      case R_ES: return offsetof(VexGuestX86State,guest_ES);
+      case R_CS: return offsetof(VexGuestX86State,guest_CS);
+      case R_SS: return offsetof(VexGuestX86State,guest_SS);
+      case R_DS: return offsetof(VexGuestX86State,guest_DS);
+      case R_FS: return offsetof(VexGuestX86State,guest_FS);
+      case R_GS: return offsetof(VexGuestX86State,guest_GS);
+      default: vpanic("segmentGuestRegOffset(x86)");
    }
 }
 
@@ -409,6 +447,17 @@ static void putIReg ( Int sz, UInt archreg, IRExpr* e )
    vassert(sz == 1 || sz == 2 || sz == 4);
    vassert(archreg < 8);
    stmt( IRStmt_Put(integerGuestRegOffset(sz,archreg), e) );
+}
+
+static IRExpr* getSReg ( UInt sreg )
+{
+   return IRExpr_Get( segmentGuestRegOffset(sreg), Ity_I16 );
+}
+
+static void putSReg ( UInt sreg, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I16);
+   stmt( IRStmt_Put( segmentGuestRegOffset(sreg), e ) );
 }
 
 static void assign ( IRTemp dst, IRExpr* e )
@@ -1179,19 +1228,19 @@ static Char* nameIReg ( Int size, Int reg )
    return NULL; /*notreached*/
 }
 
-//-- const Char* VG_(name_of_seg_reg) ( Int sreg )
-//-- {
-//--    switch (sreg) {
-//--       case R_ES: return "%es";
-//--       case R_CS: return "%cs";
-//--       case R_SS: return "%ss";
-//--       case R_DS: return "%ds";
-//--       case R_FS: return "%fs";
-//--       case R_GS: return "%gs";
-//--       default: VG_(core_panic)("nameOfSegReg");
-//--    }
-//-- }
-//-- 
+static Char* nameSReg ( UInt sreg )
+{
+   switch (sreg) {
+      case R_ES: return "%es";
+      case R_CS: return "%cs";
+      case R_SS: return "%ss";
+      case R_DS: return "%ds";
+      case R_FS: return "%fs";
+      case R_GS: return "%gs";
+      default: vpanic("nameSReg(x86)");
+   }
+}
+
 //-- const Char* VG_(name_of_mmx_reg) ( Int mmxreg )
 //-- {
 //--    static const Char* mmx_names[8] 
@@ -5310,36 +5359,43 @@ UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
 //--                        GETSEG %Sw, tmpv
 //--                        STW tmpv, (tmpa) 
 //-- */
-//-- static
-//-- Addr dis_mov_Sw_Ew ( UCodeBlock* cb, 
-//--                      UChar       sorb,
-//--                      Addr        eip0 )
-//-- {
-//--    UChar rm = getUChar(eip0);
-//--    UChar dis_buf[50];
-//-- 
-//--    if (epartIsReg(rm)) {
-//--       Int tmpv = newTemp(cb);
-//--       uInstr2(cb, GETSEG, 2, ArchRegS, gregOfRM(rm), TempReg, tmpv);
-//--       uInstr2(cb, PUT,    2, TempReg, tmpv, ArchReg, eregOfRM(rm));
-//--       DIP("movw %s,%s\n", nameSReg(gregOfRM(rm)), nameIReg(2,eregOfRM(rm)));
-//--       return 1+eip0;
-//--    }
-//-- 
-//--    /* E refers to memory */    
-//--    {
-//--       UInt pair = disAMode ( cb, sorb, eip0, dis_buf );
-//--       Int  tmpa = LOW24(pair);
-//--       Int  tmpv = newTemp(cb);
-//--       uInstr2(cb, GETSEG, 2, ArchRegS, gregOfRM(rm), TempReg, tmpv);
-//--       uInstr2(cb, STORE,  2, TempReg, tmpv, TempReg, tmpa);
-//--       DIP("mov %s,%s\n", nameSReg(gregOfRM(rm)), dis_buf);
-//--       return HI8(pair)+eip0;
-//--    }
-//-- }
-//-- 
-//-- 
-//-- 
+static
+UInt dis_mov_Sw_Ew ( UChar sorb,
+                     Int   sz,
+                     UInt  delta0 )
+{
+   UChar rm = getIByte(delta0);
+   //UChar dis_buf[50];
+
+   vassert(sz == 2 || sz == 4);
+
+   if (epartIsReg(rm)) {
+      if (sz == 4)
+         putIReg(4, eregOfRM(rm), unop(Iop_16Uto32, getSReg(gregOfRM(rm))));
+      else
+         putIReg(2, eregOfRM(rm), getSReg(gregOfRM(rm)));
+
+      DIP("mov %s,%s\n", nameSReg(gregOfRM(rm)), nameIReg(sz,eregOfRM(rm)));
+      return 1+delta0;
+   }
+
+   vassert(0);
+#if 0
+   /* E refers to memory */    
+   {
+      UInt pair = disAMode ( cb, sorb, eip0, dis_buf );
+      Int  tmpa = LOW24(pair);
+      Int  tmpv = newTemp(cb);
+      uInstr2(cb, GETSEG, 2, ArchRegS, gregOfRM(rm), TempReg, tmpv);
+      uInstr2(cb, STORE,  2, TempReg, tmpv, TempReg, tmpa);
+      DIP("mov %s,%s\n", nameSReg(gregOfRM(rm)), dis_buf);
+      return HI8(pair)+eip0;
+   }
+#endif
+}
+
+
+
 //-- /* Simple MMX operations, either 
 //--        op   (src)mmxreg, (dst)mmxreg
 //--    or
@@ -7731,10 +7787,10 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             nameIReg(sz,gregOfRM(modrm)));
       break;
 
-//--    case 0x8C: /* MOV Sw,Ew -- MOV from a SEGMENT REGISTER */
-//--       eip = dis_mov_Sw_Ew(cb, sorb, eip);
-//--       break;
-//-- 
+   case 0x8C: /* MOV Sw,Ew -- MOV from a SEGMENT REGISTER */
+      delta = dis_mov_Sw_Ew(sorb, sz, delta);
+      break;
+
 //--    case 0x8E: /* MOV Ew,Sw -- MOV to a SEGMENT REGISTER */
 //--       eip = dis_mov_Ew_Sw(cb, sorb, eip);
 //--       break;

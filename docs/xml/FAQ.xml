@@ -433,27 +433,6 @@ int main(void)
 </qandaentry>
 
 
-<qandaentry id="faq.segfault">
- <question>
-  <para>My program dies with a segmentation fault, but Memcheck
-  doesn't give any error messages before it, or none that look
-  related.</para>
- </question>
- <answer>
-  <para>One possibility is that your program accesses to memory
-  with inappropriate permissions set, such as writing to
-  read-only memory.  Maybe your program is writing to a static
-  string like this:</para>
-<programlisting>
-char* s = "hello";
-s[0] = 'j';
-</programlisting>
-
-  <para>or something similar.  Writing to read-only memory can
-  also apparently make LinuxThreads behave strangely.</para>
- </answer>
-</qandaentry>
-
 </qandaset>
 </chapter>
 

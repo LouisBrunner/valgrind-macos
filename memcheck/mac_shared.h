@@ -80,9 +80,9 @@ typedef
       /* Memory errors in core (pthread ops, signal handling) */
       CoreMemSupp,
       /* Use of invalid values of given size (MemCheck only) */
-      Value0Supp, Value1Supp, Value2Supp, Value4Supp, Value8Supp, 
+      Value0Supp, Value1Supp, Value2Supp, Value4Supp, Value8Supp, Value16Supp,
       /* Invalid read/write attempt at given size */
-      Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp,
+      Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp, Addr16Supp,
       /* Invalid or mismatching free */
       FreeSupp,
       /* Overlapping blocks in memcpy(), strcpy(), etc */

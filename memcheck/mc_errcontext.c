@@ -183,6 +183,7 @@ Bool SK_(recognised_suppression) ( Char* name, Supp* su )
    else if (VG_STREQ(name, "Value2"))  skind = Value2Supp;
    else if (VG_STREQ(name, "Value4"))  skind = Value4Supp;
    else if (VG_STREQ(name, "Value8"))  skind = Value8Supp;
+   else if (VG_STREQ(name, "Value16")) skind = Value16Supp;
    else if (VG_STREQ(name, "Overlap")) skind = OverlapSupp;
    else 
       return False;

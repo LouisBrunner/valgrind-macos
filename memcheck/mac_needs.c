@@ -497,6 +497,7 @@ Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su )
    else if (VG_STREQ(name, "Addr2"))   skind = Addr2Supp;
    else if (VG_STREQ(name, "Addr4"))   skind = Addr4Supp;
    else if (VG_STREQ(name, "Addr8"))   skind = Addr8Supp;
+   else if (VG_STREQ(name, "Addr16"))  skind = Addr16Supp;
    else if (VG_STREQ(name, "Free"))    skind = FreeSupp;
    else if (VG_STREQ(name, "Leak"))    skind = LeakSupp;
    else
@@ -540,6 +541,7 @@ Bool SK_(error_matches_suppression)(Error* err, Supp* su)
       case Value2Supp: su_size = 2; goto value_case;
       case Value4Supp: su_size = 4; goto value_case;
       case Value8Supp: su_size = 8; goto value_case;
+      case Value16Supp:su_size =16; goto value_case;
       value_case:
          return (ekind == ValueErr && err_extra->size == su_size);
 
@@ -547,6 +549,7 @@ Bool SK_(error_matches_suppression)(Error* err, Supp* su)
       case Addr2Supp: su_size = 2; goto addr_case;
       case Addr4Supp: su_size = 4; goto addr_case;
       case Addr8Supp: su_size = 8; goto addr_case;
+      case Addr16Supp:su_size =16; goto addr_case;
       addr_case:
          return (ekind == AddrErr && err_extra->size == su_size);
 
@@ -582,6 +585,7 @@ Char* SK_(get_error_name) ( Error* err )
       case 2:               return "Addr2";
       case 4:               return "Addr4";
       case 8:               return "Addr8";
+      case 16:              return "Addr16";
       default:              VG_(skin_panic)("unexpected size for Addr");
       }
      
@@ -592,6 +596,7 @@ Char* SK_(get_error_name) ( Error* err )
       case 2:               return "Value2";
       case 4:               return "Value4";
       case 8:               return "Value8";
+      case 16:              return "Value16";
       default:              VG_(skin_panic)("unexpected size for Value");
       }
    case CoreMemErr:         return "CoreMem";

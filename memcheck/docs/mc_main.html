@@ -391,18 +391,21 @@ Memcheck,Addrcheck:suppression_type
 The Memcheck suppression types are as follows:
 <code>Value1</code>, 
 <code>Value2</code>,
-<code>Value4</code> or
+<code>Value4</code>,
 <code>Value8</code>,
+<code>Value16</code>,
 meaning an uninitialised-value error when
-using a value of 1, 2, 4 or 8 bytes.
+using a value of 1, 2, 4, 8 or 16 bytes.
 Or
 <code>Cond</code> (or its old name, <code>Value0</code>),
 meaning use of an uninitialised CPU condition code.  Or: 
 <code>Addr1</code>,
 <code>Addr2</code>, 
-<code>Addr4</code> or 
-<code>Addr8</code>, meaning an invalid address during a
-memory access of 1, 2, 4 or 8 bytes respectively.  Or 
+<code>Addr4</code>,
+<code>Addr8</code>,
+<code>Addr16</code>, 
+meaning an invalid address during a
+memory access of 1, 2, 4, 8 or 16 bytes respectively.  Or 
 <code>Param</code>,
 meaning an invalid system call parameter error.  Or
 <code>Free</code>, meaning an invalid or mismatching free.

@@ -1488,6 +1488,102 @@ Int VG_(setpgid) ( Int pid, Int pgrp )
    return VG_(do_syscall)(__NR_setpgid, pid, pgrp);
 }
 
+/* Walk through a colon-separated environment variable, and remove the
+   entries which match remove_pattern.  It slides everything down over
+   the removed entries, and pads the remaining space with '\0'.  It
+   modifies the entries in place (in the client address space), but it
+   shouldn't matter too much, since we only do this just before an
+   execve().
+
+   This is also careful to mop up any excess ':'s, since empty strings
+   delimited by ':' are considered to be '.' in a path.
+*/
+static void mash_colon_env(Char *varp, const Char *remove_pattern)
+{
+   Char *const start = varp;
+   Char *entry_start = varp;
+   Char *output = varp;
+
+   if (varp == NULL)
+      return;
+
+   while(*varp) {
+      if (*varp == ':') {
+	 Char prev;
+	 Bool match;
+
+	 /* This is a bit subtle: we want to match against the entry
+	    we just copied, because it may have overlapped with
+	    itself, junking the original. */
+
+	 prev = *output;
+	 *output = '\0';
+
+	 match = VG_(string_match)(remove_pattern, entry_start);
+
+	 *output = prev;
+	 
+	 if (match) {
+	    output = entry_start;
+	    varp++;			/* skip ':' after removed entry */
+	 } else
+	    entry_start = output+1;	/* entry starts after ':' */
+      }
+
+      *output++ = *varp++;
+   }
+
+   /* match against the last entry */
+   if (VG_(string_match)(remove_pattern, entry_start)) {
+      output = entry_start;
+      if (output > start) {
+	 /* remove trailing ':' */
+	 output--;
+	 vg_assert(*output == ':');
+      }
+   }	 
+
+   /* pad out the left-overs with '\0' */
+   while(output < varp)
+      *output++ = '\0';
+}
+
+
+// Removes all the Valgrind-added stuff from the passed environment.  Used
+// when starting child processes, so they don't see that added stuff.
+void VG_(env_remove_valgrind_env_stuff)(Char** envp)
+{
+   Int i;
+   Char* ld_preload_str = NULL;
+   Char* ld_library_path_str = NULL;
+   Char* buf;
+
+   // Find LD_* variables
+   for (i = 0; envp[i] != NULL; i++) {
+      if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0)
+         ld_preload_str = &envp[i][11];
+      if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0)
+         ld_library_path_str = &envp[i][16];
+   }
+
+   buf = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(VG_(libdir)) + 20);
+
+   // Remove Valgrind-specific entries from LD_*.
+   VG_(sprintf)(buf, "%s*/vg_inject.so", VG_(libdir));
+   mash_colon_env(ld_preload_str, buf);
+   VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
+   mash_colon_env(ld_preload_str, buf);
+   VG_(sprintf)(buf, "%s*", VG_(libdir));
+   mash_colon_env(ld_library_path_str, buf);
+
+   // Remove VALGRIND_CLO variable.
+   VG_(env_unsetenv)(envp, VALGRINDCLO);
+
+   // XXX if variable becomes empty, remove it completely?
+
+   VG_(arena_free)(VG_AR_CORE, buf);
+}
+
 /* Return -1 if error, else 0.  NOTE does not indicate return code of
    child! */
 Int VG_(system) ( Char* cmd )
@@ -1506,36 +1602,8 @@ Int VG_(system) ( Char* cmd )
       /* restore the DATA rlimit for the child */
       VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
 
-      if (envp == NULL) {
-         Int i;
-         Char* ld_preload_str = NULL;
-         Char* ld_library_path_str = NULL;
-         Char* buf;
-
-         envp = env_clone(VG_(client_envp));
-         
-         for (i = 0; envp[i] != NULL; i++) {
-            if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0)
-               ld_preload_str = &envp[i][11];
-            if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0)
-               ld_library_path_str = &envp[i][16];
-         }
-
-         buf = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(VG_(libdir)) + 20);
-
-         VG_(sprintf)(buf, "%s*/vg_inject.so", VG_(libdir));
-         VG_(mash_colon_env)(ld_preload_str, buf);
-
-         VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
-         VG_(mash_colon_env)(ld_preload_str, buf);
-
-         VG_(sprintf)(buf, "%s*", VG_(libdir));
-         VG_(mash_colon_env)(ld_library_path_str, buf);
-
-         VG_(env_unsetenv)(envp, VALGRINDCLO);
-
-         VG_(arena_free)(VG_AR_CORE, buf);
-      }
+      envp = env_clone(VG_(client_envp));
+      VG_(env_remove_valgrind_env_stuff)( envp ); 
 
       argv[0] = "/bin/sh";
       argv[1] = "-c";

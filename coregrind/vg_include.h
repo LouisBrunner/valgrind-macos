@@ -1096,8 +1096,10 @@ extern Int VG_(write_socket)( Int sd, void *msg, Int count );
 extern Int VG_(connect_via_socket)( UChar* str );
 
 /* Environment manipulations */
-extern Char **VG_(env_setenv) ( Char ***envp, const Char* varname, const Char *val );
-extern void  VG_(env_unsetenv) ( Char **env, const Char *varname );
+extern Char **VG_(env_setenv)   ( Char ***envp, const Char* varname,
+                                  const Char *val );
+extern void   VG_(env_unsetenv) ( Char **env, const Char *varname );
+extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env ); 
 
 /* ---------------------------------------------------------------------
    Exports of vg_message.c
@@ -1455,10 +1457,6 @@ extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child);
 /* fd leakage calls. */
 extern void VG_(init_preopened_fds) ( void );
 extern void VG_(fd_stats) ( void );
-
-/* Walk through a colon separated list variable, removing entries
-   which match pattern. */
-extern void VG_(mash_colon_env)(Char *varp, const Char *pattern);
 
 /* ---------------------------------------------------------------------
    Exports of vg_transtab.c

@@ -153,67 +153,6 @@ static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *s
    return ret;
 }
 
-/* Walk through a colon-separated environment variable, and remove the
-   entries which matches file_pattern.  It slides everything down over
-   the removed entries, and pads the remaining space with '\0'.  It
-   modifies the entries in place (in the client address space), but it
-   shouldn't matter too much, since we only do this just before an
-   execve().
-
-   This is also careful to mop up any excess ':'s, since empty strings
-   delimited by ':' are considered to be '.' in a path.
-*/
-void VG_(mash_colon_env)(Char *varp, const Char *remove_pattern)
-{
-   Char *const start = varp;
-   Char *entry_start = varp;
-   Char *output = varp;
-
-   if (varp == NULL)
-      return;
-
-   while(*varp) {
-      if (*varp == ':') {
-	 Char prev;
-	 Bool match;
-
-	 /* This is a bit subtle: we want to match against the entry
-	    we just copied, because it may have overlapped with
-	    itself, junking the original. */
-
-	 prev = *output;
-	 *output = '\0';
-
-	 match = VG_(string_match)(remove_pattern, entry_start);
-
-	 *output = prev;
-	 
-	 if (match) {
-	    output = entry_start;
-	    varp++;			/* skip ':' after removed entry */
-	 } else
-	    entry_start = output+1;	/* entry starts after ':' */
-      }
-
-      *output++ = *varp++;
-   }
-
-   /* match against the last entry */
-   if (VG_(string_match)(remove_pattern, entry_start)) {
-      output = entry_start;
-      if (output > start) {
-	 /* remove trailing ':' */
-	 output--;
-	 vg_assert(*output == ':');
-      }
-   }	 
-
-   /* pad out the left-overs with '\0' */
-   while(output < varp)
-      *output++ = '\0';
-}
-
-
 /* ---------------------------------------------------------------------
    Doing mmap, mremap
    ------------------------------------------------------------------ */
@@ -1839,39 +1778,14 @@ PRE(execve)
    VG_(nuke_all_threads_except)( VG_INVALID_THREADID );
 
    {
-      /* Make the LD_LIBRARY_PATH/LD_PRELOAD disappear so that the
-	 child doesn't get our libpthread and other stuff.  This is
-	 done unconditionally, since if we are tracing the child,
-	 stage1/2 will set up the appropriate client environment. */
-      Int i;
+      // Remove the valgrind-specific stuff from the environment so the
+      // child doesn't get our libpthread and other stuff.  This is
+      // done unconditionally, since if we are tracing the child,
+      // stage1/2 will set up the appropriate client environment.
       Char** envp = (Char**)arg3;
-      Char*  ld_preload_str = NULL;
-      Char*  ld_library_path_str = NULL;
 
       if (envp != NULL) {
-	 Char *buf;
-
-	 for (i = 0; envp[i] != NULL; i++) {
-	    if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0)
-	       ld_preload_str = &envp[i][11];
-	    if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0)
-	       ld_library_path_str = &envp[i][16];
-	 }
-
-	 buf = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(VG_(libdir)) + 20);
-
-         VG_(sprintf)(buf, "%s*/vg_inject.so", VG_(libdir));
-         VG_(mash_colon_env)(ld_preload_str, buf);
-
-         VG_(sprintf)(buf, "%s*/vgpreload_*.so", VG_(libdir));
-         VG_(mash_colon_env)(ld_preload_str, buf);
-
-         VG_(sprintf)(buf, "%s*", VG_(libdir));
-         VG_(mash_colon_env)(ld_library_path_str, buf);
-
-         VG_(env_unsetenv)(envp, VALGRINDCLO);
-
-	 /* XXX if variable becomes empty, remove it completely? */
+         VG_(env_remove_valgrind_env_stuff)( envp ); 
       }
    }
 

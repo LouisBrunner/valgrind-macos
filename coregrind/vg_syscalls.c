@@ -1810,13 +1810,28 @@ PRE(capset)
 		  arg2, sizeof( vki_cap_user_data_t) );
 }
 
+// Pre_read a char** argument.
+void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
+{
+   while (True) {
+      Addr a_deref = deref_Addr( tid, a, s1 );
+      if (0 == a_deref)
+         break;
+      SYSCALL_TRACK( pre_mem_read_asciiz, tid, s2, a_deref );
+      a += sizeof(char*);
+   }
+}
+
 PRE(execve)
 {
    /* int execve (const char *filename, 
       char *const argv [], 
       char *const envp[]); */
-   MAYBE_PRINTF("execve ( %p(%s), %p, %p ) --- NOT CHECKED\n", 
-		arg1, arg1, arg2, arg3);
+   MAYBE_PRINTF("execve ( %p(%s), %p, %p )\n", arg1, arg1, arg2, arg3);
+
+   SYSCALL_TRACK( pre_mem_read_asciiz, tid, "execve(filename)", arg1 );
+   pre_argv_envp( arg2, tid, "execve(argv)", "execve(argv[i])" );
+   pre_argv_envp( arg3, tid, "execve(envp)", "execve(envp[i])" );
 
    /* Erk.  If the exec fails, then the following will have made a
       mess of things which makes it hard for us to continue.  The

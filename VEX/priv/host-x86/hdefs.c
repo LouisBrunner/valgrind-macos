@@ -1595,23 +1595,26 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          emit the native 'setb %reg' for those.  Further complication:
          the top 24 bits of the destination should be forced to zero,
          but doing 'xor %r,%r' kills the flag(s) we are about to read.
-         Sigh. */
-      /* First: movl $0, %dst */
-      *p++ = 0xB8 + iregNo(i->Xin.Set32.dst);
-      p = emit32(p, 0);
-      /* Do we need to swap in %eax? */
+         Sigh.  So start off my moving $0 into the dest. */
 
+      /* Do we need to swap in %eax? */
       if (iregNo(i->Xin.Set32.dst) >= 4) {
          /* xchg %eax, %dst */
          *p++ = 0x90 + iregNo(i->Xin.Set32.dst);
-         /* setb lo8(%reg) */
+         /* movl $0, %eax */
+         *p++ = 0xB8 + iregNo(hregX86_EAX());
+         p = emit32(p, 0);
+         /* setb lo8(%eax) */
          *p++ = 0x0F; 
          *p++ = 0x90 + (UChar)(i->Xin.Set32.cond);
          p = doAMode_R(p, fake(0), hregX86_EAX());
          /* xchg %eax, %dst */
          *p++ = 0x90 + iregNo(i->Xin.Set32.dst);
       } else {
-         /* setb lo8(%reg) */
+         /* movl $0, %dst */
+         *p++ = 0xB8 + iregNo(i->Xin.Set32.dst);
+         p = emit32(p, 0);
+         /* setb lo8(%dst) */
          *p++ = 0x0F; 
          *p++ = 0x90 + (UChar)(i->Xin.Set32.cond);
          p = doAMode_R(p, fake(0), i->Xin.Set32.dst);

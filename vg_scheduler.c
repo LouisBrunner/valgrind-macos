@@ -1278,8 +1278,23 @@ VgSchedReturnCode VG_(scheduler) ( void )
          if (0)
             VG_(message)(Vg_DebugMsg, "thread %d: running for %d bbs", 
                                       tid, VG_(dispatch_ctr) - 1 );
+#        if 0
+         if (VG_(bbs_done) > 31700000 + 0) {
+            dispatch_ctr_SAVED = VG_(dispatch_ctr) = 2;
+            VG_(translate)(&vg_threads[tid], vg_threads[tid].m_eip,
+                           NULL,NULL,NULL);
+         }
+         vg_assert(vg_threads[tid].m_eip != 0);
+#        endif
 
          trc = run_thread_for_a_while ( tid );
+
+#        if 0
+         if (0 == vg_threads[tid].m_eip) {
+            VG_(printf)("tid = %d,  dc = %llu\n", tid, VG_(bbs_done));
+            vg_assert(0 != vg_threads[tid].m_eip);
+         }
+#        endif
 
          /* Deal quickly with trivial scheduling events, and resume the
             thread. */
@@ -1317,7 +1332,26 @@ VgSchedReturnCode VG_(scheduler) ( void )
          if (trc == VG_TRC_EBP_JMP_SYSCALL) {
             /* Do a syscall for the vthread tid.  This could cause it
                to become non-runnable. */
+#           if 0
+            { UInt* esp; Int i;
+              esp=(UInt*)vg_threads[tid].m_esp;
+              VG_(printf)("\nBEFORE\n");
+              for (i = 10; i >= -10; i--)
+                 VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
+            }
+#           endif
+
             sched_do_syscall(tid);
+
+#           if 0
+            { UInt* esp; Int i;
+              esp=(UInt*)vg_threads[tid].m_esp;
+              VG_(printf)("AFTER\n");
+              for (i = 10; i >= -10; i--)
+                 VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
+            }
+#           endif
+
             if (vg_threads[tid].status == VgTs_Runnable)
                continue; /* with this thread */
             else

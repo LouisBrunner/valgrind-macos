@@ -140,7 +140,7 @@ and the program finally <code>exit()s</code> back to the kernel in the
 usual way.
 
 <p>
-The normal course of activity, one Valgrind has started up, is as
+The normal course of activity, once Valgrind has started up, is as
 follows.  Valgrind never runs any part of your program (usually
 referred to as the "client"), not a single byte of it, directly.
 Instead it uses function <code>VG_(translate)</code> to translate

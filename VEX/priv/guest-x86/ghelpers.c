@@ -544,14 +544,14 @@ UInt x86g_calculate_eflags_c ( UInt cc_op,
       case X86G_CC_OP_SUBL:
          return ((UInt)cc_dep1) < ((UInt)cc_dep2)
                    ? X86G_CC_MASK_C : 0;
-#if 0
       case X86G_CC_OP_SUBB:
          return ((UInt)(cc_dep1 & 0xFF)) < ((UInt)(cc_dep2 & 0xFF))
                    ? X86G_CC_MASK_C : 0;
-#endif
-#if 0
+      case X86G_CC_OP_INCL:
       case X86G_CC_OP_DECL:
-         return cc_src;
+         return cc_ndep & X86G_CC_MASK_C;
+#if 0
+      /* unclear if these are correct or not */
       case X86G_CC_OP_ADDL:
          return ( ((UInt)cc_src + (UInt)cc_dst) < ((UInt)cc_src) ) 
                    ? X86G_CC_MASK_C : 0;
@@ -702,6 +702,13 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
          /* C after sub denotes unsigned less than */
          return unop(Iop_1Uto32,
                      binop(Iop_CmpLT32U, cc_dep1, cc_dep2));
+      }
+      if (isU32(cc_op, X86G_CC_OP_SUBB)) {
+         /* C after sub denotes unsigned less than */
+         return unop(Iop_1Uto32,
+                     binop(Iop_CmpLT32U, 
+                           binop(Iop_And32,cc_dep1,mkU32(0xFF)),
+                           binop(Iop_And32,cc_dep2,mkU32(0xFF))));
       }
       if (isU32(cc_op, X86G_CC_OP_LOGICL)) {
          /* cflag after logic is zero */

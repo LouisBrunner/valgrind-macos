@@ -65,8 +65,7 @@ libvex.a: $(LIB_OBJS)
 
 clean:
 	rm -f $(LIB_OBJS) libvex.a vex test_main.o
-	(cd hacked104 && make clean)
-
+	(cd head20041019 && make --quiet clean)
 
 
 ALL_HEADERS  = $(PUB_HEADERS) $(PRIV_HEADERS)

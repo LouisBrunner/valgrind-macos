@@ -427,7 +427,7 @@ void VG_(resume_scheduler)(ThreadId tid)
       /* Can't continue; must longjmp back to the scheduler and thus
          enter the sighandler immediately. */
    
-      LONGJMP(tst->sched_jmpbuf, True);
+      VGP_LONGJMP(tst->sched_jmpbuf, True);
    }
 }
 
@@ -435,7 +435,7 @@ void VG_(resume_scheduler)(ThreadId tid)
    do {									\
       ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid);	\
 									\
-      (jumped) = SETJMP(_qq_tst->sched_jmpbuf);				\
+      (jumped) = VGP_SETJMP(_qq_tst->sched_jmpbuf);                     \
       if ((jumped) == 0) {						\
 	 vg_assert(!_qq_tst->sched_jmpbuf_valid);			\
 	 _qq_tst->sched_jmpbuf_valid = True;				\

@@ -4408,7 +4408,7 @@ PRE(old_mmap, Special)
    UInt a1, a2, a3, a4, a5, a6;
 
    PRE_REG_READ1(long, "old_mmap", struct mmap_arg_struct *, args);
-   PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6);
+   VGP_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6);
 
    PRINT("old_mmap ( %p, %llu, %d, %d, %d, %d )",
          a1, (ULong)a2, a3, a4, a5, a6 );
@@ -4444,7 +4444,7 @@ PRE(old_mmap, Special)
    }
 
    if (RES != -VKI_ENOMEM) {
-      PLATFORM_DO_MMAP(RES, a1, a2, a3, a4, a5, a6);
+      VGP_DO_MMAP(RES, a1, a2, a3, a4, a5, a6);
       SET_RESULT(RES);
 
       if (!VG_(is_kerror)(RES)) {

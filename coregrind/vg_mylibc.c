@@ -282,9 +282,8 @@ static Addr mmap_inner(void *start, SizeT length, UInt prot, UInt flags,
 {
    Int ret;
    
-   PLATFORM_DO_MMAP(ret, start, length, prot,
-                    flags & ~(VKI_MAP_NOSYMS|VKI_MAP_CLIENT),
-                    fd, offset);
+   VGP_DO_MMAP(ret, start, length, prot,
+               flags & ~(VKI_MAP_NOSYMS|VKI_MAP_CLIENT), fd, offset);
    return ret;
 }
 

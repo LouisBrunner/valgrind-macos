@@ -40,17 +40,17 @@
    ------------------------------------------------------------------ */
 
 // Accessors for the ThreadArchState
-#define PLATFORM_SYSCALL_NUM     guest_SYSCALLNO
-#define PLATFORM_SYSCALL_ARG1    guest_R0
-#define PLATFORM_SYSCALL_ARG2    guest_R1
-#define PLATFORM_SYSCALL_ARG3    guest_R2
-#define PLATFORM_SYSCALL_ARG4    guest_R3
-#define PLATFORM_SYSCALL_ARG5    guest_R4
-#define PLATFORM_SYSCALL_ARG6    guest_R5
-#define PLATFORM_SYSCALL_RET     guest_R0 // ToDo XXX ????????
+#define VGP_SYSCALL_NUM       guest_SYSCALLNO
+#define VGP_SYSCALL_ARG1      guest_R0
+#define VGP_SYSCALL_ARG2      guest_R1
+#define VGP_SYSCALL_ARG3      guest_R2
+#define VGP_SYSCALL_ARG4      guest_R3
+#define VGP_SYSCALL_ARG5      guest_R4
+#define VGP_SYSCALL_ARG6      guest_R5
+#define VGP_SYSCALL_RET       guest_R0 // ToDo XXX ????????
 
-#define PLATFORM_SET_SYSCALL_RESULT(regs, val)     \
-   ((regs).vex.guest_R0 = (val))    // ToDo XXX ????????
+// ToDo XXX ????????
+#define VGP_SET_SYSCALL_RESULT(regs, val)    ((regs).vex.guest_R0 = (val))
 
 // Setting thread regs and shadow regs from within the core
 // XXX ToDo: not sure about this
@@ -62,20 +62,20 @@
    ucontext stuff
    ------------------------------------------------------------------ */
 
-#define UCONTEXT_INSTR_PTR(uc)   ((uc)->uc_mcontext.arm_pc)
-#define UCONTEXT_STACK_PTR(uc)   ((uc)->uc_mcontext.arm_sp)
-#define UCONTEXT_FRAME_PTR(uc)   ((uc)->uc_mcontext.arm_fp)
-#define UCONTEXT_SYSCALL_NUM(uc) ((uc)->uc_mcontext.arm_r0)
+#define VGP_UCONTEXT_INSTR_PTR(uc)     ((uc)->uc_mcontext.arm_pc)
+#define VGP_UCONTEXT_STACK_PTR(uc)     ((uc)->uc_mcontext.arm_sp)
+#define VGP_UCONTEXT_FRAME_PTR(uc)     ((uc)->uc_mcontext.arm_fp)
+#define VGP_UCONTEXT_SYSCALL_NUM(uc)   ((uc)->uc_mcontext.arm_r0)
 
 /* ---------------------------------------------------------------------
    mmap() stuff
    ------------------------------------------------------------------ */
 
-#define PLATFORM_DO_MMAP(ret, start, length, prot, flags, fd, offset) { \
+#define VGP_DO_MMAP(ret, start, length, prot, flags, fd, offset) { \
    I_die_here; \
 } while (0)
 
-#define PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do { \
+#define VGP_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do { \
    I_die_here; \
 } while (0)
 

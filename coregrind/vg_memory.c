@@ -956,9 +956,9 @@ void VG_(pad_address_space)(Addr start)
    
    while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
-         PLATFORM_DO_MMAP(ret, addr, s->addr - addr, 0,
-                          VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
-                          -1, 0);
+         VGP_DO_MMAP(ret, addr, s->addr - addr, 0,
+                     VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
+                     -1, 0);
       }
       addr = s->addr + s->len;
       i++;
@@ -966,9 +966,9 @@ void VG_(pad_address_space)(Addr start)
    }
 
    if (addr <= VG_(valgrind_last)) {
-      PLATFORM_DO_MMAP(ret, addr, VG_(valgrind_last) - addr + 1, 0,
-                       VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
-                       -1, 0);
+      VGP_DO_MMAP(ret, addr, VG_(valgrind_last) - addr + 1, 0,
+                  VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
+                  -1, 0);
    }
 }
 

@@ -1805,7 +1805,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
       VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d, EIP=%p, eip=%p",
                    sigNo, info->si_code, 
 		   INSTR_PTR(VG_(threads)[tid].arch), 
-		   UCONTEXT_INSTR_PTR(uc) );
+		   VGP_UCONTEXT_INSTR_PTR(uc) );
    }
    vg_assert(sigNo >= 1 && sigNo <= VG_(max_signal));
 
@@ -1913,7 +1913,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
 		   sigNo, signame(sigNo));
 
       buf[0] = 0;
-      context_ip = UCONTEXT_INSTR_PTR(uc);
+      context_ip = VGP_UCONTEXT_INSTR_PTR(uc);
       if (1 && !VG_(get_fnname)(context_ip, buf+2, sizeof(buf)-5)) {
 	 Int len;
 
@@ -1928,7 +1928,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
 		   "si_code=%x Fault EIP: %p%s; Faulting address: %p",
 		   info->si_code, context_ip, buf, info->_sifields._sigfault._addr);
       VG_(message)(Vg_DebugMsg, 
-		   "  sp=%p\n", UCONTEXT_STACK_PTR(uc));
+		   "  sp=%p\n", VGP_UCONTEXT_STACK_PTR(uc));
 
       if (0)
 	 VG_(kill_self)(sigNo);		/* generate a core dump */
@@ -1937,9 +1937,9 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
         tid = VG_(master_tid);
       tst = VG_(get_ThreadState)(tid);
       VG_(get_StackTrace2)(ips, VG_(clo_backtrace_size), 
-                           UCONTEXT_INSTR_PTR(uc),
-                           UCONTEXT_FRAME_PTR(uc),
-                           UCONTEXT_STACK_PTR(uc),
+                           VGP_UCONTEXT_INSTR_PTR(uc),
+                           VGP_UCONTEXT_FRAME_PTR(uc),
+                           VGP_UCONTEXT_STACK_PTR(uc),
                            (Addr)(tst->os_state.stack + tst->os_state.stacksize));
       VG_(core_panic_at)("Killed by fatal signal", ips);
    }

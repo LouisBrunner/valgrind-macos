@@ -108,11 +108,11 @@ void VGA_(interrupted_syscall)(ThreadId tid,
 
    ThreadState *tst = VG_(get_ThreadState)(tid);
    ThreadArchState *th_regs = &tst->arch;
-   Word eip = UCONTEXT_INSTR_PTR(uc);
+   Word eip = VGP_UCONTEXT_INSTR_PTR(uc);
 
    if (debug)
       VG_(printf)("interrupted_syscall: eip=%p; restart=%d eax=%d\n", 
-		  eip, restart, UCONTEXT_SYSCALL_NUM(uc));
+		  eip, restart, VGP_UCONTEXT_SYSCALL_NUM(uc));
 
    if (eip < VGA_(blksys_setup) || eip >= VGA_(blksys_finished)) {
       VG_(printf)("  not in syscall (%p - %p)\n", VGA_(blksys_setup), VGA_(blksys_finished));
@@ -134,7 +134,7 @@ void VGA_(interrupted_syscall)(ThreadId tid,
       if (restart)
 	 VGA_(restart_syscall)(th_regs);
       else {
-	 th_regs->vex.PLATFORM_SYSCALL_RET = -VKI_EINTR;
+	 th_regs->vex.VGP_SYSCALL_RET = -VKI_EINTR;
 	 VG_(post_syscall)(tid);
       }
    } else if (eip >= VGA_(blksys_complete) && eip < VGA_(blksys_committed)) {
@@ -142,8 +142,8 @@ void VGA_(interrupted_syscall)(ThreadId tid,
 	 The saved real CPU %eax has the result, which we need to move
 	 to EAX. */
       if (debug)
-	 VG_(printf)("  completed: ret=%d\n", UCONTEXT_SYSCALL_RET(uc));
-      th_regs->vex.PLATFORM_SYSCALL_RET = UCONTEXT_SYSCALL_RET(uc);
+	 VG_(printf)("  completed: ret=%d\n", VGP_UCONTEXT_SYSCALL_RET(uc));
+      th_regs->vex.VGP_SYSCALL_RET = VGP_UCONTEXT_SYSCALL_RET(uc);
       VG_(post_syscall)(tid);
    } else if (eip >= VGA_(blksys_committed) && eip < VGA_(blksys_finished)) {
       /* Result committed, but the signal mask has not been restored;
@@ -336,7 +336,7 @@ static Int do_clone(ThreadId ptid,
    */
    VGA_(setup_child)( &ctst->arch, &ptst->arch );
 
-   PLATFORM_SET_SYSCALL_RESULT(ctst->arch, 0);
+   VGP_SET_SYSCALL_RESULT(ctst->arch, 0);
    if (esp != 0)
       ctst->arch.vex.guest_ESP = esp;
 

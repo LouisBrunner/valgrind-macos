@@ -1187,9 +1187,9 @@ void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname);
 #define ARG5    SYSCALL_ARG5(tst->arch)
 #define ARG6    SYSCALL_ARG6(tst->arch)
 
-#define SET_RESULT(val)                                \
-   do { PLATFORM_SET_SYSCALL_RESULT(tst->arch, (val)); \
-        tst->syscall_result_set = True;                \
+#define SET_RESULT(val)                            \
+   do { VGP_SET_SYSCALL_RESULT(tst->arch, (val));  \
+        tst->syscall_result_set = True;            \
    } while (0)
 
 #define PRINT(format, args...)  \
@@ -1736,24 +1736,24 @@ extern void VG_(user_assert_fail) ( const Char* expr, const Char* file,
 // ---------------------------------------------------------------------
 
 // Accessors for the ThreadArchState
-#define SYSCALL_NUM(regs)  ((regs).vex.PLATFORM_SYSCALL_NUM)
-#define SYSCALL_ARG1(regs) ((regs).vex.PLATFORM_SYSCALL_ARG1)
-#define SYSCALL_ARG2(regs) ((regs).vex.PLATFORM_SYSCALL_ARG2)
-#define SYSCALL_ARG3(regs) ((regs).vex.PLATFORM_SYSCALL_ARG3)
-#define SYSCALL_ARG4(regs) ((regs).vex.PLATFORM_SYSCALL_ARG4)
-#define SYSCALL_ARG5(regs) ((regs).vex.PLATFORM_SYSCALL_ARG5)
-#define SYSCALL_ARG6(regs) ((regs).vex.PLATFORM_SYSCALL_ARG6)
-#define SYSCALL_RET(regs)  ((regs).vex.PLATFORM_SYSCALL_RET)
+#define SYSCALL_NUM(regs)  ((regs).vex.VGP_SYSCALL_NUM)
+#define SYSCALL_ARG1(regs) ((regs).vex.VGP_SYSCALL_ARG1)
+#define SYSCALL_ARG2(regs) ((regs).vex.VGP_SYSCALL_ARG2)
+#define SYSCALL_ARG3(regs) ((regs).vex.VGP_SYSCALL_ARG3)
+#define SYSCALL_ARG4(regs) ((regs).vex.VGP_SYSCALL_ARG4)
+#define SYSCALL_ARG5(regs) ((regs).vex.VGP_SYSCALL_ARG5)
+#define SYSCALL_ARG6(regs) ((regs).vex.VGP_SYSCALL_ARG6)
+#define SYSCALL_RET(regs)  ((regs).vex.VGP_SYSCALL_RET)
 
 // Offsets for the shadow state
-#define O_SYSCALL_NUM   (offsetof(VexGuestArchState, PLATFORM_SYSCALL_NUM))
-#define O_SYSCALL_ARG1  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG1))
-#define O_SYSCALL_ARG2  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG2))
-#define O_SYSCALL_ARG3  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG3))
-#define O_SYSCALL_ARG4  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG4))
-#define O_SYSCALL_ARG5  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG5))
-#define O_SYSCALL_ARG6  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG6))
-#define O_SYSCALL_RET   (offsetof(VexGuestArchState, PLATFORM_SYSCALL_RET))
+#define O_SYSCALL_NUM   (offsetof(VexGuestArchState, VGP_SYSCALL_NUM))
+#define O_SYSCALL_ARG1  (offsetof(VexGuestArchState, VGP_SYSCALL_ARG1))
+#define O_SYSCALL_ARG2  (offsetof(VexGuestArchState, VGP_SYSCALL_ARG2))
+#define O_SYSCALL_ARG3  (offsetof(VexGuestArchState, VGP_SYSCALL_ARG3))
+#define O_SYSCALL_ARG4  (offsetof(VexGuestArchState, VGP_SYSCALL_ARG4))
+#define O_SYSCALL_ARG5  (offsetof(VexGuestArchState, VGP_SYSCALL_ARG5))
+#define O_SYSCALL_ARG6  (offsetof(VexGuestArchState, VGP_SYSCALL_ARG6))
+#define O_SYSCALL_RET   (offsetof(VexGuestArchState, VGP_SYSCALL_RET))
 
 struct SyscallTableEntry {
    UInt  *flags_ptr;

@@ -40,18 +40,17 @@
    ------------------------------------------------------------------ */
 
 // Accessors for the ThreadArchState
-#define PLATFORM_SYSCALL_NUM     guest_EAX
-#define PLATFORM_SYSCALL_ARG1    guest_EBX
-#define PLATFORM_SYSCALL_ARG2    guest_ECX
-#define PLATFORM_SYSCALL_ARG3    guest_EDX
-#define PLATFORM_SYSCALL_ARG4    guest_ESI
-#define PLATFORM_SYSCALL_ARG5    guest_EDI
-#define PLATFORM_SYSCALL_ARG6    guest_EBP
-#define PLATFORM_SYSCALL_RET     guest_EAX
+#define VGP_SYSCALL_NUM       guest_EAX
+#define VGP_SYSCALL_ARG1      guest_EBX
+#define VGP_SYSCALL_ARG2      guest_ECX
+#define VGP_SYSCALL_ARG3      guest_EDX
+#define VGP_SYSCALL_ARG4      guest_ESI
+#define VGP_SYSCALL_ARG5      guest_EDI
+#define VGP_SYSCALL_ARG6      guest_EBP
+#define VGP_SYSCALL_RET       guest_EAX
 
 // Setting a syscall result
-#define PLATFORM_SET_SYSCALL_RESULT(regs, val)     \
-   ((regs).vex.guest_EAX = (val))
+#define VGP_SET_SYSCALL_RESULT(regs, val)    ((regs).vex.guest_EAX = (val))
 
 // Setting thread regs and shadow regs from within the core
 #define SET_SYSCALL_RETVAL(zztid, zzval) \
@@ -83,17 +82,17 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
    ucontext stuff
    ------------------------------------------------------------------ */
 
-#define UCONTEXT_INSTR_PTR(uc)   ((uc)->uc_mcontext.eip)
-#define UCONTEXT_STACK_PTR(uc)   ((uc)->uc_mcontext.esp)
-#define UCONTEXT_FRAME_PTR(uc)   ((uc)->uc_mcontext.ebp)
-#define UCONTEXT_SYSCALL_NUM(uc) ((uc)->uc_mcontext.eax)
-#define UCONTEXT_SYSCALL_RET(uc) ((uc)->uc_mcontext.eax)
+#define VGP_UCONTEXT_INSTR_PTR(uc)     ((uc)->uc_mcontext.eip)
+#define VGP_UCONTEXT_STACK_PTR(uc)     ((uc)->uc_mcontext.esp)
+#define VGP_UCONTEXT_FRAME_PTR(uc)     ((uc)->uc_mcontext.ebp)
+#define VGP_UCONTEXT_SYSCALL_NUM(uc)   ((uc)->uc_mcontext.eax)
+#define VGP_UCONTEXT_SYSCALL_RET(uc)   ((uc)->uc_mcontext.eax)
 
 /* ---------------------------------------------------------------------
    mmap() stuff
    ------------------------------------------------------------------ */
 
-#define PLATFORM_DO_MMAP(ret, start, length, prot, flags, fd, offset) { \
+#define VGP_DO_MMAP(ret, start, length, prot, flags, fd, offset) {      \
    UWord __args[6];                                                     \
                                                                         \
    __args[0] = (UWord)(start);                                          \
@@ -106,7 +105,7 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
    ret = VG_(do_syscall1)(__NR_mmap, (UWord)(&(__args[0])) );           \
 } while (0)
 
-#define PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do {\
+#define VGP_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do {     \
    UInt *arg_block = (UInt*)SYSCALL_ARG1(tst->arch);            \
    PRE_MEM_READ( "old_mmap(args)", (Addr)arg_block, 6*sizeof(UWord) );\
    a1 = arg_block[0];                                           \
@@ -189,8 +188,8 @@ static __inline__ void __futex_commit(void)
    state, but does need to pass though "val". */
 #include <setjmp.h>       /* for jmp_buf         */
 
-#define SETJMP(env)		setjmp(env)
-#define LONGJMP(env, val)	longjmp(env, val)
+#define VGP_SETJMP(env)       setjmp(env)
+#define VGP_LONGJMP(env, val) longjmp(env, val)
 
 #endif   // __X86_LINUX_CORE_PLATFORM_H
 

@@ -12,8 +12,7 @@ incinc_HEADERS = \
 	basic_types.h \
 	tool.h \
 	tool_asm.h \
-	valgrind.h \
-	vg_skin.h
+	valgrind.h
 
 BUILT_SOURCES = tool.h valgrind.h
 CLEANFILES = tool.h valgrind.h

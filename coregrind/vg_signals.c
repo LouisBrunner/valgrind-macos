@@ -464,21 +464,20 @@ static void handle_SCSS_change ( Bool force_update )
    in kernel/signal.[ch] */
 
 /* True if we are on the alternate signal stack.  */
-static Int on_sig_stack ( ThreadId tid, Addr m_esp )
+static Int on_sig_stack ( ThreadId tid, Addr m_SP )
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
-   return (m_esp - (Addr)tst->altstack.ss_sp 
-           < tst->altstack.ss_size);
+   return (m_SP - (Addr)tst->altstack.ss_sp < tst->altstack.ss_size);
 }
 
-static Int sas_ss_flags ( ThreadId tid, Addr m_esp )
+static Int sas_ss_flags ( ThreadId tid, Addr m_SP )
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
    return (tst->altstack.ss_size == 0 
               ? VKI_SS_DISABLE
-              : on_sig_stack(tid, m_esp) ? VKI_SS_ONSTACK : 0);
+              : on_sig_stack(tid, m_SP) ? VKI_SS_ONSTACK : 0);
 }
 
 
@@ -486,27 +485,27 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
 {
    vki_kstack_t* ss;
    vki_kstack_t* oss;
-   Addr          m_esp;
+   Addr          m_SP;
 
    vg_assert(VG_(is_valid_tid)(tid));
-   ss    = (vki_kstack_t*)(PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch));
-   oss   = (vki_kstack_t*)(PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch));
-   m_esp = VG_(threads)[tid].arch.m_esp;
+   ss    = (vki_kstack_t*)PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
+   oss   = (vki_kstack_t*)PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch);
+   m_SP  = ARCH_STACK_PTR(VG_(threads)[tid].arch);
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
          "__NR_sigaltstack: tid %d, "
-         "ss 0x%x, oss 0x%x (current %%esp %p)",
-         tid, (UInt)ss, (UInt)oss, (UInt)m_esp );
+         "ss %p, oss %p (current SP %p)",
+         tid, (void*)ss, (void*)oss, (void*)m_SP );
 
    if (oss != NULL) {
       oss->ss_sp    = VG_(threads)[tid].altstack.ss_sp;
       oss->ss_size  = VG_(threads)[tid].altstack.ss_size;
-      oss->ss_flags = VG_(threads)[tid].altstack.ss_flags | sas_ss_flags(tid, m_esp);
+      oss->ss_flags = VG_(threads)[tid].altstack.ss_flags | sas_ss_flags(tid, m_SP);
    }
 
    if (ss != NULL) {
-      if (on_sig_stack(tid, VG_(threads)[tid].arch.m_esp)) {
+      if (on_sig_stack(tid, ARCH_STACK_PTR(VG_(threads)[tid].arch))) {
          SET_SYSCALL_RETVAL(tid, -VKI_EPERM);
          return;
       }
@@ -973,7 +972,7 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
        && /* there is a defined and enabled alt stack, which we're not
              already using.  Logic from get_sigframe in
              arch/i386/kernel/signal.c. */
-          sas_ss_flags(tid, tst->arch.m_esp) == 0
+          sas_ss_flags(tid, ARCH_STACK_PTR(tst->arch)) == 0
       ) {
       esp_top_of_frame 
          = (Addr)(tst->altstack.ss_sp) + tst->altstack.ss_size;
@@ -986,7 +985,7 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
       
    } else {
-      esp_top_of_frame = tst->arch.m_esp;
+      esp_top_of_frame = ARCH_STACK_PTR(tst->arch);
 
       /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
@@ -2075,8 +2074,9 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
    if (info->si_signo == VKI_SIGSEGV) {
       ThreadId tid = VG_(get_current_or_recent_tid)();
       Addr fault = (Addr)info->_sifields._sigfault._addr;
-      Addr esp = VG_(is_running_thread)(tid) ?
-	 VG_(baseBlock)[VGOFF_(m_esp)] : VG_(threads)[tid].arch.m_esp;
+      Addr esp = VG_(is_running_thread)(tid)
+	       ? VG_(baseBlock)[VGOFF_STACK_PTR]
+               : ARCH_STACK_PTR(VG_(threads)[tid].arch);
       Segment *seg;
 
       seg = VG_(find_segment)(fault);

@@ -2422,19 +2422,16 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 }
 
 
-/* Creates a copy of the `extra' part, updates the copy with address info if
-   necessary, and returns the copy. */
-void* SK_(dup_extra_and_update)(Error* err)
+/* Updates the copy with address info if necessary. */
+UInt SK_(update_extra)(Error* err)
 {
-   HelgrindError* new_extra;
+   HelgrindError* extra;
 
-   new_extra  = VG_(malloc)(sizeof(HelgrindError));
-   *new_extra = *((HelgrindError*)VG_(get_error_extra)(err));
-
-   if (new_extra->addrinfo.akind == Undescribed)
-      describe_addr ( VG_(get_error_address)(err), &(new_extra->addrinfo) );
-
-   return new_extra;
+   extra = (HelgrindError*)VG_(get_error_extra)(err);
+   if (extra != NULL && Undescribed == extra->addrinfo.akind) {
+      describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
+   }
+   return sizeof(HelgrindError);
 }
 
 static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,

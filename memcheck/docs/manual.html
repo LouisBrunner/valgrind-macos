@@ -1818,6 +1818,14 @@ Known platform-specific limitations:
       in the ELF frame constructed by the kernel.  The 2.4.18 in the
       standard Red Hat 7.3 release works fine, though.</li><br>
       <p>
+  <li>
+      Inlining of string functions with gcc-3.1 or above causes a
+      large number of false reports of uninitialised value uses.  I
+      know what the problem is and roughly how to fix it, but I need
+      to devise a reasonably efficient fix.  Try to reduce the
+      optimisation level, or use <code>-fno-builtin-strlen</code> in
+      the meantime.  Or use an earlier gcc.</li><br>
+      <p>
 </ul>
 
 

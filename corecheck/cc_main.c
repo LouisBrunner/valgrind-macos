@@ -56,6 +56,13 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb, Addr a)
     return cb;
 }
 
+/* JRS 2003-07-11: I have no idea if it this is correct, but it does
+   stop corecheck crashing on corecheck/tests/res_search */
+UInt SK_(update_extra)(Error* err)
+{
+   return 0;
+}
+
 void SK_(fini)(Int exitcode)
 {
 }

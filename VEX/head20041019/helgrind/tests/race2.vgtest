@@ -1,0 +1,2 @@
+prog: race2
+vgopts: --optimise=no

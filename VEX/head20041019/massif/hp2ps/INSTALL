@@ -1,0 +1,17 @@
+NOTE: these are instructions for installing hp2ps separately.  If you only want
+to use it with the Valgrind tool, Massif, it should be installed automatically.
+
+The original Makefile, for which the below instructions apply, is kept as
+Makefile.old.
+
+-----------------------------------------------------------------------------
+For binary distribution: 
+
+    - just copy "hp2ps" into an appropriate directory.
+
+For source distribution: 
+
+    - edit "Makefile" and set the $DSTBIN to the directory you wish to install
+      hp2ps in
+
+    - do "make install"

@@ -1,0 +1,459 @@
+
+##----------------------------------------------------------------------##
+
+# Errors to suppress by default with glibc 2.2.4 / 2.2.5
+
+# Format of this file is:
+# {
+#     name_of_suppression
+#     tool_name:supp_kind
+#     (optional extra info for some suppression types)
+#     caller0 name, or /name/of/so/file.so
+#     caller1 name, or ditto
+#     (optionally: caller2 name)
+#     (optionally: caller3 name)
+#  }
+#
+# For Memcheck, the supp_kinds are:
+#
+#     Param Value1 Value2 Value4 Value8 Value16
+#     Free Addr1 Addr2 Addr4 Addr8 Addr16
+#     Cond (previously known as Value0)
+#
+# and the optional extra info is:
+#     if Param: name of system call param
+#     if Free: name of free-ing fn)
+
+#-------- For SuSE 8.2 (gcc 3.3, glibc 2.3.2)
+{
+   __GI___stpcpy/*
+   Memcheck:Cond
+   fun:__GI___stpcpy
+   fun:*
+}
+{
+   strlen/__GI__dl_open/dlopen_doit
+   Memcheck:Cond
+   fun:strlen
+   fun:__GI__dl_open
+   fun:dlopen_doit
+}
+{
+   strlen/_dl_signal_cerror/_dl_lookup_symbol_internal/do_dlsym
+   Memcheck:Cond
+   fun:_dl_signal_cerror
+   fun:_dl_lookup_symbol_internal
+   fun:do_dlsym
+}
+
+
+#-------- For R H 8.0
+{
+   elf_dynamic_do_rel.7/_dl_relocate_object_internal/dl_open_worker(Cond)
+   Memcheck:Cond
+   fun:elf_dynamic_do_rel.7
+   fun:_dl_relocate_object_internal
+   fun:dl_open_worker
+}
+
+
+#-------- For R H 7.3 on i686
+{
+   _dl_relocate_object*/*libc-2.2.?.so/_dl_catch_error*(Cond)
+   Memcheck:Cond
+   fun:_dl_relocate_object*
+   obj:*libc-2.2.?.so
+   fun:_dl_catch_error*
+}
+
+
+#-------- SuSE 8.1 stuff (gcc-3.2, glibc-2.2.5 + SuSE's hacks)
+{
+   __stpcpy/*
+   Memcheck:Cond
+   fun:__stpcpy
+   fun:*
+}
+{
+   strlen/decompose_rpath/_dl_map_object
+   Memcheck:Cond
+   fun:strlen
+   fun:decompose_rpath
+   fun:_dl_map_object
+}
+{
+   strlen/_dl_sym/dlsym_doit
+   Memcheck:Cond
+   fun:strlen
+   fun:_dl_sym
+   fun:dlsym_doit
+}
+{
+   trecurse/__gconv_release_shlib(Addr4)
+   Addrcheck,Memcheck:Addr4
+   fun:trecurse
+   fun:__gconv_release_shlib
+}
+{
+   do_release_shlib/trecurse(Addr4)
+   Addrcheck,Memcheck:Addr4
+   fun:do_release_shlib
+   fun:trecurse
+}
+
+#-------- R H Limbo (glibc-2.2.90) stuff
+{
+   elf_dynamic_do_rela.8/_dl_relocate_object_internal
+   Memcheck:Cond
+   fun:elf_dynamic_do_rela.8
+   fun:_dl_relocate_object_internal
+}
+
+{
+   __strnlen/_nl_make_l10nflist(Cond)
+   Memcheck:Cond
+   fun:__strnlen
+   fun:_nl_make_l10nflist
+}
+
+{
+   __strnlen/*vfprintf*
+   Memcheck:Cond
+   fun:__strnlen
+   fun:*vfprintf*
+}
+
+{
+   libXaw.so.7.0(Cond)
+   Memcheck:Cond
+   obj:*libXaw.so.7.0
+}
+
+#-------- Suppress errors appearing as a result of calling
+#-------- __libc_freeres()
+
+{
+   __twalk/*(Addr4)
+   Addrcheck,Memcheck:Addr4
+   fun:__twalk
+}
+
+{
+   do_release_shlib/__twalk(Addr4)
+   Addrcheck,Memcheck:Addr4
+   fun:do_release_shlib
+   fun:__twalk
+}
+
+{
+   __libc_freeres/free_mem/free(Free)
+   Addrcheck,Memcheck:Free
+   fun:free
+   fun:free_mem
+   fun:__libc_freeres
+}
+
+#-------- Data races
+{
+   _dl_lookup_symbol/fixup/_dl_runtime_resolve
+   Helgrind:Eraser
+   fun:_dl_lookup_symbol
+   fun:fixup
+   fun:_dl_runtime_resolve
+}
+
+{
+   _dl_lookup_versioned_symbol/fixup/_dl_runtime_resolve
+   Helgrind:Eraser
+   fun:_dl_lookup_versioned_symbol
+   fun:fixup
+   fun:_dl_runtime_resolve
+}
+
+{
+   _dl_lookup_versioned_symbol_internal/fixup/_dl_runtime_resolve
+   Helgrind:Eraser
+   fun:_dl_lookup_versioned_symbol_internal
+   fun:fixup
+   fun:_dl_runtime_resolve
+}
+
+{
+   _dl_fini/exit/__libc_start_main
+   Helgrind:Eraser
+   fun:_dl_fini
+   fun:exit
+   fun:__libc_start_main
+}
+
+#-------- Threading bugs?
+# glibc 'knows' that destroying a locked mutex will unlock it
+{
+   pthread_error/pthread_mutex_destroy/__closedir
+   core:PThread
+   fun:pthread_error
+   fun:pthread_mutex_destroy
+   fun:__closedir
+}
+
+{
+   pthread_error/pthread_mutex_destroy/_IO_default_finish
+   core:PThread
+   fun:pthread_error
+   fun:pthread_mutex_destroy
+   fun:_IO_default_finish*
+}
+
+{
+   pthread_mutex_unlock/_IO_funlockfile
+   core:PThread
+   fun:pthread_mutex_unlock
+   fun:_IO_funlockfile
+}
+
+# even more glibc suppressions ?
+{
+   libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Cond)
+   Memcheck:Cond
+   obj:*libc-2.2.?.so
+   obj:*libc-2.2.?.so
+   obj:*libc-2.2.?.so
+}
+{
+   libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Value4)
+   Memcheck:Value4
+   obj:*libc-2.2.?.so
+   obj:*libc-2.2.?.so
+   obj:*libc-2.2.?.so
+}
+
+##### glibc 2.2.5 stuff perhaps?
+##### suppressions for coolo
+{
+   strchr/dl_open_worker(Cond)
+   Memcheck:Cond
+   fun:strchr
+   fun:dl_open_worker
+}
+{ 
+   __rawmemchr(Cond)
+   Memcheck:Cond 
+   fun:__rawmemchr
+} 
+{ 
+   _IO_vfprintf/__strnlen(Cond)
+   Memcheck:Cond 
+   fun:__strnlen
+   fun:_IO_vfprintf
+} 
+{ 
+   __strchrnul/gethostbyname*(Cond)
+   Memcheck:Cond 
+   fun:__strchrnul
+   fun:gethostbyname*
+} 
+
+
+##----
+{
+   strlen/*dl_map_object*(Cond)
+   Memcheck:Cond
+   fun:strlen
+   fun:*dl_map_object*
+}
+
+{
+   strlen/*dl_open_worker*(Cond)
+   Memcheck:Cond
+   fun:strlen
+   fun:*dl_open_worker*
+}
+
+{
+   *rawmemchr*/*nss*(Cond)
+   Memcheck:Cond
+   fun:*rawmemchr*
+   fun:*nss*
+}
+
+{
+   *strchrnul*/*nss*(Cond)
+   Memcheck:Cond
+   fun:*strchrnul*
+   fun:*nss*
+}
+
+# gcc version 2.96 20000731 (Red Hat Linux 7.1 2.96-98)
+# on Red Hat 7.2 (x86) miscompiles __mpn_construct_double in
+# __mpn_construct_double (../sysdeps/ieee754/dbl-64/mpn2dbl.c:45)
+# (glibc-2.2.4) to read and write below %esp.  Hence the following
+# two:
+{
+   __mpn_construct_double/*(Addr4)
+   Addrcheck,Memcheck:Addr4
+   fun:__mpn_construct_double
+   fun:*
+}
+{
+   __mpn_construct_double/*(Addr8)
+   Addrcheck,Memcheck:Addr8
+   fun:__mpn_construct_double
+   fun:*
+}
+
+# More of the same (gcc bug, I'm pretty sure)
+{
+   __fabs/*(Addr4)
+   Addrcheck,Memcheck:Addr4
+   fun:__fabs
+   fun:*
+}
+{
+   __fabs/*(Addr8)
+   Addrcheck,Memcheck:Addr8
+   fun:__fabs
+   fun:*
+}
+
+
+# Not sure what this is about ... but anyway
+{
+   pthread_sighandler/*(Addr4)
+   Addrcheck,Memcheck:Addr4
+   fun:pthread_sighandler
+   fun:*
+}
+
+
+# More glibc stuff, AFAICS
+
+{
+   __strnlen/__argz_stringify/_nl_make_l10nflist(Cond)
+   Memcheck:Cond
+   fun:__strnlen
+   fun:__argz_stringify
+   fun:_nl_make_l10nflist
+}
+
+#--------------
+{
+   _dl_relocate_object*/dl_open_worker/_dl_catch_error*(Cond)
+   Memcheck:Cond
+   fun:_dl_relocate_object*
+   fun:dl_open_worker
+   fun:_dl_catch_error*
+}
+{
+   _dl_relocate_object/libc-2.2.4.so/_dl_catch_error(Cond)
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   obj:*libc-2.2.?.so
+   fun:_dl_catch_error
+}
+{
+   _dl_relocate_object/dl_main(Cond)
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:dl_main
+}
+{
+   _dl_relocate_object_internal/dl_main(Cond)
+   Memcheck:Cond
+   fun:_dl_relocate_object_internal
+   fun:dl_main
+}
+
+{
+   strrchr/_dl_map_object_from_fd/_dl_map_object(Cond)
+   Memcheck:Cond
+   fun:strrchr
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+}
+
+{
+   _dl_init/ld-2.2.4.so(Cond)
+   Memcheck:Cond
+   fun:_dl_start
+   obj:/lib/ld-2.2.4.so
+}
+
+#-------------------
+{
+   socketcall.connect(serv_addr)/connect/*
+   Addrcheck,Memcheck:Param
+   socketcall.connect(serv_addr)
+   fun:connect
+   fun:*
+}
+{
+   socketcall.connect(serv_addr)/libc-2.2.4.so/libc-2.2.4.so
+   Addrcheck,Memcheck:Param
+   socketcall.connect(serv_addr)
+   obj:*libc-2.2.?.so
+   obj:*libc-2.2.?.so
+}
+
+#----------------------
+{
+   write(buf)/write/libX11.so.6.2/libX11.so.6.2(Param)
+   Addrcheck,Memcheck:Param
+   write(buf)
+   fun:write
+   obj:/usr/X11R6/lib/libX11.so.6.2
+   obj:/usr/X11R6/lib/libX11.so.6.2
+}
+{
+   write(buf)/libc-2.2.4.so/libX11.so.6.2/libX11.so.6.2(Param)
+   Addrcheck,Memcheck:Param
+   write(buf)
+   obj:*libc-2.2.?.so
+   obj:/usr/X11R6/lib/libX11.so.6.2
+   obj:/usr/X11R6/lib/libX11.so.6.2
+}
+
+#{
+#   llseek(result)/lseek64/_IO_file_seek(Param)
+#   Param
+#   llseek(result)
+#   fun:lseek64
+#   fun:_IO_file_seek
+#}
+
+{
+   writev(vector[...])/__writev/libX11.so.6.2/libX11.so.6.2
+   Addrcheck,Memcheck:Param
+   writev(vector[...])
+   fun:__writev
+   obj:/usr/X11R6/lib/libX11.so.6.2
+   obj:/usr/X11R6/lib/libX11.so.6.2
+}
+
+#----------------
+{
+   __rawmemchr/libXt.so.6.0/libXt.so.6.0
+   Memcheck:Cond
+   fun:__rawmemchr
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+{
+   libc-2.2.4.so/libXt.so.6.0/libXt.so.6.0
+   Memcheck:Cond
+   obj:*libc-2.2.?.so
+   obj:/usr/X11R6/lib/libXt.so.6.0
+   obj:/usr/X11R6/lib/libXt.so.6.0
+}
+
+##----------------------------------------------------------------------##
+## For a leak in Valgrind's own libpthread.so :(
+{
+   my_malloc/get_or_allocate_specifics_ptr/pthread_key_create(Leak)
+   Memcheck:Leak
+   fun:malloc
+   fun:my_malloc
+   fun:get_or_allocate_specifics_ptr
+   fun:pthread_key_create
+}
+
+

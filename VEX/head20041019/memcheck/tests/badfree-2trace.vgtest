@@ -1,0 +1,2 @@
+vgopts: --num-callers=2 -q
+prog:   badfree

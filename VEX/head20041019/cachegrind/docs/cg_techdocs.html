@@ -1,0 +1,458 @@
+<html>
+  <head>
+    <style type="text/css">
+      body      { background-color: #ffffff;
+                  color:            #000000;
+                  font-family:      Times, Helvetica, Arial;
+                  font-size:        14pt}
+      h4        { margin-bottom:    0.3em}
+      code      { color:            #000000;
+                  font-family:      Courier; 
+                  font-size:        13pt }
+      pre       { color:            #000000;
+                  font-family:      Courier; 
+                  font-size:        13pt }
+      a:link    { color:            #0000C0;
+                  text-decoration:  none; }
+      a:visited { color:            #0000C0; 
+                  text-decoration:  none; }
+      a:active  { color:            #0000C0;
+                  text-decoration:  none; }
+    </style>
+    <title>How Cachegrind works</title>
+  </head>
+
+<body bgcolor="#ffffff">
+
+<a name="cg-techdocs">&nbsp;</a>
+<h1 align=center>How Cachegrind works</h1>
+
+<center>
+Detailed technical notes for hackers, maintainers and the
+overly-curious<br>
+<p>
+<a href="mailto:njn25@cam.ac.uk">njn25@cam.ac.uk</a><br>
+<a
+href="http://valgrind.kde.org">http://valgrind.kde.org</a><br>
+<p>
+Copyright &copy; 2001-2003 Nick Nethercote
+<p>
+</center>
+
+<p>
+
+
+
+
+<hr width="100%">
+
+<h2>Cache profiling</h2>
+Valgrind is a very nice platform for doing cache profiling and other kinds of
+simulation, because it converts horrible x86 instructions into nice clean
+RISC-like UCode.  For example, for cache profiling we are interested in
+instructions that read and write memory;  in UCode there are only four
+instructions that do this:  <code>LOAD</code>, <code>STORE</code>,
+<code>FPU_R</code> and <code>FPU_W</code>.  By contrast, because of the x86
+addressing modes, almost every instruction can read or write memory.<p>
+
+Most of the cache profiling machinery is in the file
+<code>vg_cachesim.c</code>.<p>
+
+These notes are a somewhat haphazard guide to how Valgrind's cache profiling
+works.<p>
+
+<h3>Cost centres</h3>
+Valgrind gathers cache profiling about every instruction executed,
+individually.  Each instruction has a <b>cost centre</b> associated with it.
+There are two kinds of cost centre: one for instructions that don't reference
+memory (<code>iCC</code>), and one for instructions that do
+(<code>idCC</code>):
+
+<pre>
+typedef struct _CC {
+   ULong a;
+   ULong m1;
+   ULong m2;
+} CC;
+
+typedef struct _iCC {
+   /* word 1 */
+   UChar tag;
+   UChar instr_size;
+
+   /* words 2+ */
+   Addr instr_addr;
+   CC I;
+} iCC;
+   
+typedef struct _idCC {
+   /* word 1 */
+   UChar tag;
+   UChar instr_size;
+   UChar data_size;
+
+   /* words 2+ */
+   Addr instr_addr;
+   CC I; 
+   CC D; 
+} idCC; 
+</pre>
+
+Each <code>CC</code> has three fields <code>a</code>, <code>m1</code>,
+<code>m2</code> for recording references, level 1 misses and level 2 misses.
+Each of these is a 64-bit <code>ULong</code> -- the numbers can get very large,
+ie. greater than 4.2 billion allowed by a 32-bit unsigned int.<p>
+
+A <code>iCC</code> has one <code>CC</code> for instruction cache accesses.  A
+<code>idCC</code> has two, one for instruction cache accesses, and one for data
+cache accesses.<p>
+
+The <code>iCC</code> and <code>dCC</code> structs also store unchanging
+information about the instruction:
+<ul>
+  <li>An instruction-type identification tag (explained below)</li><p>
+  <li>Instruction size</li><p>
+  <li>Data reference size (<code>idCC</code> only)</li><p>
+  <li>Instruction address</li><p>
+</ul>
+
+Note that data address is not one of the fields for <code>idCC</code>.  This is
+because for many memory-referencing instructions the data address can change
+each time it's executed (eg. if it uses register-offset addressing).  We have
+to give this item to the cache simulation in a different way (see
+Instrumentation section below). Some memory-referencing instructions do always
+reference the same address, but we don't try to treat them specialy in order to
+keep things simple.<p>
+
+Also note that there is only room for recording info about one data cache
+access in an <code>idCC</code>.  So what about instructions that do a read then
+a write, such as:
+
+<blockquote><code>inc %(esi)</code></blockquote>
+
+In a write-allocate cache, as simulated by Valgrind, the write cannot miss,
+since it immediately follows the read which will drag the block into the cache
+if it's not already there.  So the write access isn't really interesting, and
+Valgrind doesn't record it.  This means that Valgrind doesn't measure
+memory references, but rather memory references that could miss in the cache.
+This behaviour is the same as that used by the AMD Athlon hardware counters.
+It also has the benefit of simplifying the implementation -- instructions that
+read and write memory can be treated like instructions that read memory.<p>
+
+<h3>Storing cost-centres</h3>
+Cost centres are stored in a way that makes them very cheap to lookup, which is
+important since one is looked up for every original x86 instruction
+executed.<p>
+
+Valgrind does JIT translations at the basic block level, and cost centres are
+also setup and stored at the basic block level.  By doing things carefully, we
+store all the cost centres for a basic block in a contiguous array, and lookup
+comes almost for free.<p>
+
+Consider this part of a basic block (for exposition purposes, pretend it's an
+entire basic block):
+
+<pre>
+movl $0x0,%eax
+movl $0x99, -4(%ebp)
+</pre>
+
+The translation to UCode looks like this:
+                
+<pre>
+MOVL      $0x0, t20
+PUTL      t20, %EAX
+INCEIPo   $5
+
+LEA1L     -4(t4), t14
+MOVL      $0x99, t18
+STL       t18, (t14)
+INCEIPo   $7
+</pre>
+
+The first step is to allocate the cost centres.  This requires a preliminary
+pass to count how many x86 instructions were in the basic block, and their
+types (and thus sizes).  UCode translations for single x86 instructions are
+delimited by the <code>INCEIPo</code> instruction, the argument of which gives
+the byte size of the instruction (note that lazy INCEIP updating is turned off
+to allow this).<p>
+
+We can tell if an x86 instruction references memory by looking for
+<code>LDL</code> and <code>STL</code> UCode instructions, and thus what kind of
+cost centre is required.  From this we can determine how many cost centres we
+need for the basic block, and their sizes.  We can then allocate them in a
+single array.<p>
+
+Consider the example code above.  After the preliminary pass, we know we need
+two cost centres, one <code>iCC</code> and one <code>dCC</code>.  So we
+allocate an array to store these which looks like this:
+
+<pre>
+|(uninit)|      tag         (1 byte)
+|(uninit)|      instr_size  (1 bytes)
+|(uninit)|      (padding)   (2 bytes)
+|(uninit)|      instr_addr  (4 bytes)
+|(uninit)|      I.a         (8 bytes)
+|(uninit)|      I.m1        (8 bytes)
+|(uninit)|      I.m2        (8 bytes)
+
+|(uninit)|      tag         (1 byte)
+|(uninit)|      instr_size  (1 byte)
+|(uninit)|      data_size   (1 byte)
+|(uninit)|      (padding)   (1 byte)
+|(uninit)|      instr_addr  (4 bytes)
+|(uninit)|      I.a         (8 bytes)
+|(uninit)|      I.m1        (8 bytes)
+|(uninit)|      I.m2        (8 bytes)
+|(uninit)|      D.a         (8 bytes)
+|(uninit)|      D.m1        (8 bytes)
+|(uninit)|      D.m2        (8 bytes)
+</pre>
+
+(We can see now why we need tags to distinguish between the two types of cost
+centres.)<p>
+
+We also record the size of the array.  We look up the debug info of the first
+instruction in the basic block, and then stick the array into a table indexed
+by filename and function name.  This makes it easy to dump the information
+quickly to file at the end.<p>
+
+<h3>Instrumentation</h3>
+The instrumentation pass has two main jobs:
+
+<ol>
+  <li>Fill in the gaps in the allocated cost centres.</li><p>
+  <li>Add UCode to call the cache simulator for each instruction.</li><p>
+</ol>
+
+The instrumentation pass steps through the UCode and the cost centres in
+tandem.  As each original x86 instruction's UCode is processed, the appropriate
+gaps in the instructions cost centre are filled in, for example:
+
+<pre>
+|INSTR_CC|      tag         (1 byte)
+|5       |      instr_size  (1 bytes)
+|(uninit)|      (padding)   (2 bytes)
+|i_addr1 |      instr_addr  (4 bytes)
+|0       |      I.a         (8 bytes)
+|0       |      I.m1        (8 bytes)
+|0       |      I.m2        (8 bytes)
+
+|WRITE_CC|      tag         (1 byte)
+|7       |      instr_size  (1 byte)
+|4       |      data_size   (1 byte)
+|(uninit)|      (padding)   (1 byte)
+|i_addr2 |      instr_addr  (4 bytes)
+|0       |      I.a         (8 bytes)
+|0       |      I.m1        (8 bytes)
+|0       |      I.m2        (8 bytes)
+|0       |      D.a         (8 bytes)
+|0       |      D.m1        (8 bytes)
+|0       |      D.m2        (8 bytes)
+</pre>
+
+(Note that this step is not performed if a basic block is re-translated;  see
+<a href="#retranslations">here</a> for more information.)<p>
+
+GCC inserts padding before the <code>instr_size</code> field so that it is word
+aligned.<p>
+
+The instrumentation added to call the cache simulation function looks like this
+(instrumentation is indented to distinguish it from the original UCode):
+
+<pre>
+MOVL      $0x0, t20
+PUTL      t20, %EAX
+  PUSHL     %eax
+  PUSHL     %ecx
+  PUSHL     %edx
+  MOVL      $0x4091F8A4, t46  # address of 1st CC
+  PUSHL     t46
+  CALLMo    $0x12             # second cachesim function
+  CLEARo    $0x4
+  POPL      %edx
+  POPL      %ecx
+  POPL      %eax
+INCEIPo   $5
+
+LEA1L     -4(t4), t14
+MOVL      $0x99, t18
+  MOVL      t14, t42
+STL       t18, (t14)
+  PUSHL     %eax
+  PUSHL     %ecx
+  PUSHL     %edx
+  PUSHL     t42
+  MOVL      $0x4091F8C4, t44  # address of 2nd CC
+  PUSHL     t44
+  CALLMo    $0x13             # second cachesim function
+  CLEARo    $0x8
+  POPL      %edx
+  POPL      %ecx
+  POPL      %eax
+INCEIPo   $7
+</pre>
+
+Consider the first instruction's UCode.  Each call is surrounded by three
+<code>PUSHL</code> and <code>POPL</code> instructions to save and restore the
+caller-save registers.  Then the address of the instruction's cost centre is
+pushed onto the stack, to be the first argument to the cache simulation
+function.  The address is known at this point because we are doing a
+simultaneous pass through the cost centre array.  This means the cost centre
+lookup for each instruction is almost free (just the cost of pushing an
+argument for a function call).  Then the call to the cache simulation function
+for non-memory-reference instructions is made (note that the
+<code>CALLMo</code> UInstruction takes an offset into a table of predefined
+functions;  it is not an absolute address), and the single argument is
+<code>CLEAR</code>ed from the stack.<p>
+
+The second instruction's UCode is similar.  The only difference is that, as
+mentioned before, we have to pass the address of the data item referenced to
+the cache simulation function too.  This explains the <code>MOVL t14,
+t42</code> and <code>PUSHL t42</code> UInstructions.  (Note that the seemingly
+redundant <code>MOV</code>ing will probably be optimised away during register
+allocation.)<p>
+
+Note that instead of storing unchanging information about each instruction
+(instruction size, data size, etc) in its cost centre, we could have passed in
+these arguments to the simulation function.  But this would slow the calls down
+(two or three extra arguments pushed onto the stack).  Also it would bloat the
+UCode instrumentation by amounts similar to the space required for them in the
+cost centre;  bloated UCode would also fill the translation cache more quickly,
+requiring more translations for large programs and slowing them down more.<p>
+
+<a name="retranslations"></a>
+<h3>Handling basic block retranslations</h3>
+The above description ignores one complication.  Valgrind has a limited size
+cache for basic block translations;  if it fills up, old translations are
+discarded.  If a discarded basic block is executed again, it must be
+re-translated.<p>
+
+However, we can't use this approach for profiling -- we can't throw away cost
+centres for instructions in the middle of execution!  So when a basic block is
+translated, we first look for its cost centre array in the hash table.  If
+there is no cost centre array, it must be the first translation, so we proceed
+as described above.  But if there is a cost centre array already, it must be a
+retranslation.  In this case, we skip the cost centre allocation and
+initialisation steps, but still do the UCode instrumentation step.<p>
+
+<h3>The cache simulation</h3>
+The cache simulation is fairly straightforward.  It just tracks which memory
+blocks are in the cache at the moment (it doesn't track the contents, since
+that is irrelevant).<p>
+
+The interface to the simulation is quite clean.  The functions called from the
+UCode contain calls to the simulation functions in the files
+<Code>vg_cachesim_{I1,D1,L2}.c</code>;  these calls are inlined so that only
+one function call is done per simulated x86 instruction.  The file
+<code>vg_cachesim.c</code> simply <code>#include</code>s the three files
+containing the simulation, which makes plugging in new cache simulations is
+very easy -- you just replace the three files and recompile.<p>
+
+<h3>Output</h3>
+Output is fairly straightforward, basically printing the cost centre for every
+instruction, grouped by files and functions.  Total counts (eg. total cache
+accesses, total L1 misses) are calculated when traversing this structure rather
+than during execution, to save time;  the cache simulation functions are called
+so often that even one or two extra adds can make a sizeable difference.<p>
+
+Input file has the following format:
+
+<pre>
+file         ::= desc_line* cmd_line events_line data_line+ summary_line
+desc_line    ::= "desc:" ws? non_nl_string
+cmd_line     ::= "cmd:" ws? cmd
+events_line  ::= "events:" ws? (event ws)+
+data_line    ::= file_line | fn_line | count_line
+file_line    ::= ("fl=" | "fi=" | "fe=") filename
+fn_line      ::= "fn=" fn_name
+count_line   ::= line_num ws? (count ws)+
+summary_line ::= "summary:" ws? (count ws)+
+count        ::= num | "."
+</pre>
+
+Where:
+
+<ul>
+  <li><code>non_nl_string</code> is any string not containing a newline.</li><p>
+  <li><code>cmd</code> is a command line invocation.</li><p>
+  <li><code>filename</code> and <code>fn_name</code> can be anything.</li><p>
+  <li><code>num</code> and <code>line_num</code> are decimal numbers.</li><p>
+  <li><code>ws</code> is whitespace.</li><p>
+  <li><code>nl</code> is a newline.</li><p>
+</ul>
+
+The contents of the "desc:" lines is printed out at the top of the summary.
+This is a generic way of providing simulation specific information, eg. for
+giving the cache configuration for cache simulation.<p>
+
+Counts can be "." to represent "N/A", eg. the number of write misses for an
+instruction that doesn't write to memory.<p>
+
+The number of counts in each <code>line</code> and the
+<code>summary_line</code> should not exceed the number of events in the
+<code>event_line</code>.  If the number in each <code>line</code> is less,
+cg_annotate treats those missing as though they were a "." entry.  <p>
+
+A <code>file_line</code> changes the current file name.  A <code>fn_line</code>
+changes the current function name.  A <code>count_line</code> contains counts
+that pertain to the current filename/fn_name.  A "fn=" <code>file_line</code>
+and a <code>fn_line</code> must appear before any <code>count_line</code>s to
+give the context of the first <code>count_line</code>s.<p>
+
+Each <code>file_line</code> should be immediately followed by a
+<code>fn_line</code>.  "fi=" <code>file_lines</code> are used to switch
+filenames for inlined functions; "fe=" <code>file_lines</code> are similar, but
+are put at the end of a basic block in which the file name hasn't been switched
+back to the original file name.  (fi and fe lines behave the same, they are
+only distinguished to help debugging.)<p>
+
+
+<h3>Summary of performance features</h3>
+Quite a lot of work has gone into making the profiling as fast as possible.
+This is a summary of the important features:
+
+<ul>
+  <li>The basic block-level cost centre storage allows almost free cost centre
+      lookup.</li><p>
+  
+  <li>Only one function call is made per instruction simulated;  even this
+      accounts for a sizeable percentage of execution time, but it seems
+      unavoidable if we want flexibility in the cache simulator.</li><p>
+
+  <li>Unchanging information about an instruction is stored in its cost centre,
+      avoiding unnecessary argument pushing, and minimising UCode
+      instrumentation bloat.</li><p>
+
+  <li>Summary counts are calculated at the end, rather than during
+      execution.</li><p>
+
+  <li>The <code>cachegrind.out</code> output files can contain huge amounts of
+      information; file format was carefully chosen to minimise file
+      sizes.</li><p>
+</ul>
+
+
+<h3>Annotation</h3>
+Annotation is done by cg_annotate.  It is a fairly straightforward Perl script
+that slurps up all the cost centres, and then runs through all the chosen
+source files, printing out cost centres with them.  It too has been carefully
+optimised.
+
+
+<h3>Similar work, extensions</h3>
+It would be relatively straightforward to do other simulations and obtain
+line-by-line information about interesting events.  A good example would be
+branch prediction -- all branches could be instrumented to interact with a
+branch prediction simulator, using very similar techniques to those described
+above.<p>
+
+In particular, cg_annotate would not need to change -- the file format is such
+that it is not specific to the cache simulation, but could be used for any kind
+of line-by-line information.  The only part of cg_annotate that is specific to
+the cache simulation is the name of the input file
+(<code>cachegrind.out</code>), although it would be very simple to add an
+option to control this.<p>
+
+</body>
+</html>

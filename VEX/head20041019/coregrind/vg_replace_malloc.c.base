@@ -1,0 +1,342 @@
+
+/*--------------------------------------------------------------------*/
+/*--- Replacements for malloc() et al, which run on the simulated  ---*/
+/*--- CPU.                                     vg_replace_malloc.c ---*/
+/*--------------------------------------------------------------------*/
+
+/*
+   This file is part of Valgrind, an extensible x86 protected-mode
+   emulator for monitoring program execution on x86-Unixes.
+
+   Copyright (C) 2000-2004 Julian Seward 
+      jseward@acm.org
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
+
+/* ---------------------------------------------------------------------
+   All the code in this file runs on the SIMULATED CPU.  It is intended
+   for various reasons as drop-in replacements for malloc() and friends.
+   These functions have global scope, but are not intended to be called
+   directly.  See the comments in coregrind/vg_intercept.c.base for the
+   gory details.
+
+   This file can be linked into the injected so file for any tool that
+   wishes to know about calls to malloc().  It should define functions
+   SK_(malloc) et al that will be called.
+   ------------------------------------------------------------------ */
+
+#include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */
+#include "core.h"
+
+#define LIBALIAS(ret, name, args) \
+   ret VG_INTERCEPT(soname:libstdc++*, __libc_##name) args \
+      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
+                     visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libc.so.6, __libc_##name) args \
+      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
+                     visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libstdc++*, __##name) args \
+      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
+                     visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libc.so.6, __##name) args \
+      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
+                     visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libstdc++*, ##name) args \
+      __attribute__((alias(VG_INTERCEPT_ALIAS(soname:libc.so.6, ##name)), \
+                     visibility("protected"))); \
+   ret VG_INTERCEPT(soname:libc.so.6, ##name) args
+
+extern void _exit(int);
+
+/*------------------------------------------------------------*/
+/*--- Replacing malloc() et al                             ---*/
+/*------------------------------------------------------------*/
+
+static struct vg_mallocfunc_info info;
+static int init_done;
+
+/* Startup hook - called as init section */
+static void init(void) __attribute__((constructor));
+
+/* Below are new versions of malloc, __builtin_new, free, 
+   __builtin_delete, calloc, realloc, memalign, and friends.
+
+   None of these functions are called directly - they are not meant to
+   be found by the dynamic linker.  They get called because
+   vg_replace_malloc installs a bunch of code redirects which causes
+   Valgrind to use these functions rather than the ones they're
+   replacing.
+*/
+
+#define MALLOC_TRACE(format, args...)  \
+   if (info.clo_trace_malloc)          \
+      VALGRIND_INTERNAL_PRINTF(format, ## args )
+
+#define MAYBE_SLOPPIFY(n)           \
+   if (info.clo_sloppy_malloc) {    \
+      n = (n+(VG_SLOPPY_MALLOC_SZB-1)) & ~(VG_SLOPPY_MALLOC_SZB-1); \
+   }
+
+/* ALL calls to malloc() and friends wind up here. */
+#define ALLOC(fff, vgfff) \
+LIBALIAS(void *, fff, (Int n)) \
+{ \
+   void* v; \
+ \
+   MALLOC_TRACE(#fff "(%d)", n ); \
+   MAYBE_SLOPPIFY(n); \
+   if (!init_done) init(); \
+ \
+   v = (void*)VALGRIND_NON_SIMD_CALL1( info.sk_##vgfff, n ); \
+   MALLOC_TRACE(" = %p", v ); \
+   return v; \
+}
+
+#define ALLOC2(fff, vgfff) \
+LIBALIAS(void *, fff, (Int n)) \
+{ \
+   void* v; \
+ \
+   MALLOC_TRACE(#fff "(%d)", n ); \
+   MAYBE_SLOPPIFY(n); \
+   if (!init_done) init(); \
+ \
+   v = (void*)VALGRIND_NON_SIMD_CALL1( info.sk_##vgfff, n ); \
+   MALLOC_TRACE(" = %p", v ); \
+   if (NULL == v) { \
+      VALGRIND_PRINTF_BACKTRACE( \
+         "new/new[] failed and should throw an exception, but Valgrind\n" \
+         "   cannot throw exceptions and so is aborting instead.  Sorry."); \
+         _exit(1); \
+   } \
+   return v; \
+}
+ALLOC( malloc,              malloc            );
+ALLOC2(__builtin_new,       __builtin_new     );
+ALLOC2(_Znwj,               __builtin_new     );
+
+// operator new(unsigned, std::nothrow_t const&)
+ALLOC( _ZnwjRKSt9nothrow_t, __builtin_new     );
+
+ALLOC2(__builtin_vec_new,   __builtin_vec_new );
+ALLOC2(_Znaj,               __builtin_vec_new );
+
+// operator new[](unsigned, std::nothrow_t const&)
+ALLOC( _ZnajRKSt9nothrow_t, __builtin_vec_new );
+
+#define FREE(fff, vgfff) \
+LIBALIAS(void, fff, (void *p)) \
+{ \
+   MALLOC_TRACE(#fff "(%p)", p ); \
+   if (p == NULL)  \
+      return; \
+   if (!init_done) init(); \
+   (void)VALGRIND_NON_SIMD_CALL1( info.sk_##vgfff, p ); \
+}
+FREE( free,                 free                 );
+FREE( cfree,                free                 );
+FREE( __builtin_delete,     __builtin_delete     );
+FREE( _ZdlPv,               __builtin_delete     );
+
+// operator delete(void*, std::nothrow_t const&)
+FREE( _ZdlPvRKSt9nothrow_t, __builtin_delete     );
+
+FREE( __builtin_vec_delete, __builtin_vec_delete );
+FREE( _ZdaPv,               __builtin_vec_delete );
+
+// operator delete[](void*, std::nothrow_t const&)
+FREE( _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+
+
+LIBALIAS(void*, calloc, ( Int nmemb, Int size ))
+{
+   void* v;
+
+   MALLOC_TRACE("calloc(%d,%d)", nmemb, size );
+   MAYBE_SLOPPIFY(size);
+
+   if (!init_done) init();
+   v = (void*)VALGRIND_NON_SIMD_CALL2( info.sk_calloc, nmemb, size );
+   MALLOC_TRACE(" = %p", v );
+   return v;
+}
+
+LIBALIAS(void*, realloc, ( void* ptrV, Int new_size ))
+{
+   void* v;
+
+   MALLOC_TRACE("realloc(%p,%d)", ptrV, new_size );
+   MAYBE_SLOPPIFY(new_size);
+
+   if (ptrV == NULL)
+      return VG_INTERCEPT(soname:libc.so.6, malloc)(new_size);
+   if (new_size <= 0) {
+      VG_INTERCEPT(soname:libc.so.6, free)(ptrV);
+      if (info.clo_trace_malloc) 
+         VALGRIND_INTERNAL_PRINTF(" = 0" );
+      return NULL;
+   }   
+   if (!init_done) init();
+   v = (void*)VALGRIND_NON_SIMD_CALL2( info.sk_realloc, ptrV, new_size );
+   MALLOC_TRACE(" = %p", v );
+   return v;
+}
+
+
+LIBALIAS(void*, memalign, ( Int alignment, Int n ))
+{
+   void* v;
+
+   MALLOC_TRACE("memalign(al %d, size %d)", alignment, n );
+   MAYBE_SLOPPIFY(n);
+
+   // Round up to minimum alignment if necessary.
+   if (alignment < VG_MIN_MALLOC_SZB) alignment = VG_MIN_MALLOC_SZB;
+
+   // Round up to nearest power-of-two if necessary (like glibc).
+   while (0 != (alignment & (alignment - 1))) alignment++;
+
+   if (!init_done) init();
+   v = (void*)VALGRIND_NON_SIMD_CALL2( info.sk_memalign, alignment, n );
+   MALLOC_TRACE(" = %p", v );
+   return v;
+}
+
+
+LIBALIAS(void*, valloc, ( Int size ))
+{
+   return VG_INTERCEPT(soname:libc.so.6, memalign)(VKI_BYTES_PER_PAGE, size);
+}
+
+
+/* Various compatibility wrapper functions, for glibc and libstdc++. */
+
+LIBALIAS(int, mallopt, ( int cmd, int value ))
+{
+   /* In glibc-2.2.4, 1 denotes a successful return value for mallopt */
+   return 1;
+}
+
+
+LIBALIAS(int, posix_memalign, ( void **memptr, UInt alignment, UInt size ))
+{
+    void *mem;
+
+    /* Test whether the alignment argument is valid.  It must be a power of
+       two multiple of sizeof (void *).  */
+    if (alignment % sizeof (void *) != 0 || (alignment & (alignment - 1)) != 0)
+       return VKI_EINVAL /*22*/ /*EINVAL*/;
+
+    mem = VG_INTERCEPT(soname:libc.so.6, memalign)(alignment, size);
+
+    if (mem != NULL) {
+       *memptr = mem;
+       return 0;
+    }
+
+    return VKI_ENOMEM /*12*/ /*ENOMEM*/;
+}
+
+LIBALIAS(int, malloc_usable_size, ( void* p ))
+{ 
+   Int pszB;
+   
+   MALLOC_TRACE("malloc_usable_size(%p)", p );
+   if (NULL == p)
+      return 0;
+
+   if (!init_done) init();
+   pszB = (Int)VALGRIND_NON_SIMD_CALL2( info.arena_payload_szB, 
+                                        VG_AR_CLIENT, p );
+   MALLOC_TRACE(" = %d", pszB );
+
+   return pszB;
+}
+
+
+/* Bomb out if we get any of these. */
+
+static void panic(const char *str)
+{
+   VALGRIND_PRINTF_BACKTRACE("Program aborting because of call to %s", str);
+   
+   _exit(99);
+   *(int *)0 = 'x';
+}
+
+#define PANIC(x) \
+   void VG_INTERCEPT(soname:libc.so.6, ## x)(void) \
+   { \
+      panic(#x); \
+   }
+
+PANIC(pvalloc);
+PANIC(malloc_stats);
+PANIC(malloc_trim);
+PANIC(malloc_get_state);
+PANIC(malloc_set_state);
+
+
+/* Yet another ugly hack.  Cannot include <malloc.h> because we
+   implement functions implemented there with different signatures.
+   This struct definition MUST match the system one. */
+
+/* SVID2/XPG mallinfo structure */
+struct mallinfo {
+   int arena;    /* total space allocated from system */
+   int ordblks;  /* number of non-inuse chunks */
+   int smblks;   /* unused -- always zero */
+   int hblks;    /* number of mmapped regions */
+   int hblkhd;   /* total space in mmapped regions */
+   int usmblks;  /* unused -- always zero */
+   int fsmblks;  /* unused -- always zero */
+   int uordblks; /* total allocated space */
+   int fordblks; /* total non-inuse space */
+   int keepcost; /* top-most, releasable (via malloc_trim) space */
+};
+
+LIBALIAS(struct mallinfo, mallinfo, ( void ))
+{
+   /* Should really try to return something a bit more meaningful */
+   UInt            i;
+   struct mallinfo mi;
+   UChar*          pmi = (UChar*)(&mi);
+   for (i = 0; i < sizeof(mi); i++)
+      pmi[i] = 0;
+   return mi;
+}
+
+/* All the code in here is unused until this function is called */
+
+static void init(void)
+{
+   int res;
+
+   if (init_done)
+      return;
+
+   init_done = 1;
+
+   VALGRIND_MAGIC_SEQUENCE(res, -1, VG_USERREQ__GET_MALLOCFUNCS, &info,
+                           0, 0, 0);
+}
+
+/*--------------------------------------------------------------------*/
+/*--- end                                      vg_replace_malloc.c ---*/
+/*--------------------------------------------------------------------*/

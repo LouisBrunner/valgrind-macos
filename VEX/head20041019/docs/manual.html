@@ -1,0 +1,125 @@
+<html>
+  <head>
+    <style type="text/css">
+      body      { background-color: #ffffff;
+                  color:            #000000;
+                  font-family:      Times, Helvetica, Arial;
+                  font-size:        14pt}
+      h4        { margin-bottom:    0.3em}
+      code      { color:            #000000;
+                  font-family:      Courier; 
+                  font-size:        13pt }
+      pre       { color:            #000000;
+                  font-family:      Courier; 
+                  font-size:        13pt }
+      a:link    { color:            #0000C0;
+                  text-decoration:  none; }
+      a:visited { color:            #0000C0; 
+                  text-decoration:  none; }
+      a:active  { color:            #0000C0;
+                  text-decoration:  none; }
+    </style>
+    <title>Valgrind</title>
+  </head>
+
+<body bgcolor="#ffffff">
+
+<a name="title">&nbsp;</a>
+<h1 align=center>Valgrind, version 2.2.0</h1>
+<center>This manual was last updated on 31 August 2004</center>
+<p>
+
+<center>
+<a href="mailto:jseward@acm.org">jseward@acm.org</a>,
+   <a href="mailto:njn25@cam.ac.uk">njn25@cam.ac.uk</a><br>
+Copyright &copy; 2000-2004 Julian Seward, Nick Nethercote
+<p>
+
+Valgrind is licensed under the GNU General Public License, version
+2<br>
+
+An open-source tool for debugging and profiling Linux-x86 executables.
+</center>
+
+<p>
+
+<hr width="100%">
+<a name="contents"></a>
+<h2>Contents of this manual</h2>
+
+<h4>1&nbsp; <a href="coregrind_intro.html#intro">Introduction</a></h4>
+    1.1&nbsp; <a href="coregrind_intro.html#intro-overview">
+              An overview of Valgrind</a><br>
+    1.2&nbsp; <a href="coregrind_intro.html#intro-navigation">
+              How to navigate this manual</a>
+
+<h4>2&nbsp; <a href="coregrind_core.html#core">
+            Using and understanding the Valgrind core</a></h4>
+    2.1&nbsp; <a href="coregrind_core.html#core-whatdoes">
+                      What it does with your program</a><br>
+    2.2&nbsp; <a href="coregrind_core.html#started">
+                      Getting started</a><br>
+    2.3&nbsp; <a href="coregrind_core.html#comment">
+                      The commentary</a><br>
+    2.4&nbsp; <a href="coregrind_core.html#report">
+                      Reporting of errors</a><br>
+    2.5&nbsp; <a href="coregrind_core.html#suppress">
+                      Suppressing errors</a><br>
+    2.6&nbsp; <a href="coregrind_core.html#flags">
+                      Command-line flags for the Valgrind core</a><br>
+    2.7&nbsp; <a href="coregrind_core.html#clientreq">
+                      The Client Request mechanism</a><br>
+    2.8&nbsp; <a href="coregrind_core.html#pthreads">
+                      Support for POSIX pthreads</a><br>
+    2.9&nbsp; <a href="coregrind_core.html#signals">
+                      Handling of signals</a><br>
+    2.10&nbsp; <a href="coregrind_core.html#install">
+                       Building and installing</a><br>
+    2.11&nbsp; <a href="coregrind_core.html#problems">
+                        If you have problems</a><br>
+    2.12&nbsp; <a href="coregrind_core.html#limits">
+                       Limitations</a><br>
+    2.13&nbsp; <a href="coregrind_core.html#howworks">
+                       How it works -- a rough overview</a><br>
+    2.14&nbsp; <a href="coregrind_core.html#example">
+                       An example run</a><br>
+    2.15&nbsp; <a href="coregrind_core.html#warnings">
+                       Warning messages you might see</a><br>
+
+<h4>3&nbsp; <a href="mc_main.html#mc-top">
+            Memcheck: a heavyweight memory checker</a></h4>
+
+<h4>4&nbsp; <a href="cg_main.html#cg-top">
+            Cachegrind: a cache-miss profiler</a></h4>
+
+<h4>5&nbsp; <a href="ac_main.html#ac-top">
+            Addrcheck: a lightweight memory checker</a></h4>
+
+<h4>6&nbsp; <a href="hg_main.html#hg-top">
+            Helgrind: a data-race detector</a></h4>
+
+<h4>7&nbsp; <a href="ms_main.html#ms-top">
+            Massif: a heap profiler</a></h4>
+
+<p>
+The following is not part of the user manual.  It describes how you can
+write tools for Valgrind, in order to make new program supervision
+tools.
+
+<h4>8&nbsp; <a href="coregrind_tools.html">
+            Valgrind Tools</a></h4>
+
+<p>
+The following are not part of the user manual.  They describe internal
+details of how Valgrind works.  Reading them may rot your brain.  You
+have been warned.
+
+<h4>9&nbsp; <a href="mc_techdocs.html#mc-techdocs">
+            The design and implementation of Valgrind</a></h4>
+
+<h4>10&nbsp; <a href="cg_techdocs.html#cg-techdocs">
+            How Cachegrind works</a></h4>
+
+<hr width="100%">
+
+

@@ -1,0 +1,5 @@
+
+#use: subject file-to-mail
+
+/usr/bin/mail -s "$1" -R jseward@acm.org -r jseward@acm.org valgrind-developers@lists.sourceforge.net < $2
+ 

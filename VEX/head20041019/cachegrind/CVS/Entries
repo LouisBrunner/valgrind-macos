@@ -1,0 +1,9 @@
+/.cvsignore/1.2/Mon Sep 23 11:37:05 2002//
+/Makefile.am/1.48/Sat Sep 11 18:27:43 2004//
+/cg_annotate.in/1.20/Tue Jul  6 21:54:20 2004//
+/cg_arch.h/1.1/Sat Sep 11 16:45:25 2004//
+/cg_main.c/1.81/Wed Oct  6 13:50:12 2004//
+/cg_sim.c/1.1/Sun Jan  4 16:56:57 2004//
+D/docs////
+D/tests////
+D/x86////

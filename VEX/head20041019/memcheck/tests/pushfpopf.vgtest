@@ -1,0 +1,3 @@
+prog: pushfpopf
+stderr_filter: filter_pushfpopf
+vgopts: -q

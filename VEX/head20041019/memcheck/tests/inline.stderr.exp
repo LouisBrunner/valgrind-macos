@@ -1,0 +1,6 @@
+Invalid read of size 4
+   at 0x........: addemup (inline.c:10)
+   by 0x........: main (inline.c:18)
+ Address 0x........ is 0 bytes after a block of size 40 alloc'd
+   at 0x........: calloc (vg_replace_malloc.c:...)
+   by 0x........: main (inline.c:17)

@@ -1,0 +1,2 @@
+prog: discard
+stderr_filter: filter_none_discards

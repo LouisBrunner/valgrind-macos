@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# Automated build and test for Valgrind.  
+#   Use: two args, first is path to top of ValgrindABT tree
+#        second is name of machine
+
+ABT_TOP=$1
+ABT_MACHINE=$2
+
+ABT_START=`date "+%F %H:%M:%S %Z"`
+
+cd $ABT_TOP
+
+source $ABT_TOP/conf/$ABT_MACHINE.conf
+
+rm -rf log.verbose log.short valgrind
+
+echo > log.short
+echo > log.verbose
+
+echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ") started at" $ABT_START >> log.short
+echo >> log.short
+
+echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ") started at" $ABT_START >> log.verbose
+echo >> log.verbose
+
+echo -n "   Checking out source tree  ... " >> log.short
+cvs co valgrind 2>&1 >> log.verbose
+echo "done" >> log.short
+
+echo -n "   Configuring               ... " >> log.short
+(cd valgrind && ./autogen.sh 2>&1  && ./configure --prefix=`pwd`/Inst  2>&1 ) >> log.verbose
+echo "done" >> log.short
+
+echo -n "   Building                  ... " >> log.short
+(cd valgrind && make install 2>&1 ) >> log.verbose
+echo "done" >> log.short
+
+echo -n "   Running regression tests  ... " >> log.short
+(cd valgrind && make regtest 2>&1 ) >> log.verbose
+echo "done" >> log.short
+
+echo >> log.short
+echo "Last 20 lines of log.verbose follow" >> log.short
+echo >> log.short
+tail -20 log.verbose >> log.short
+
+$ABT_TOP/conf/$ABT_MACHINE.sendmail "$ABT_START nightly build ($ABT_MACHINE, $ABT_DETAILS)" \
+	$ABT_TOP/log.short
+

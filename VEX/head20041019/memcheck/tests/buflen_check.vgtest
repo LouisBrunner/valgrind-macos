@@ -1,0 +1,2 @@
+prog: buflen_check
+vgopts: -q

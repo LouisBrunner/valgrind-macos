@@ -1,0 +1,235 @@
+
+##----------------------------------------------------------------------##
+
+# Errors to suppress by default with glibc 2.3.x
+
+# Format of this file is:
+# {
+#     name_of_suppression
+#     tool_name:supp_kind
+#     (optional extra info for some suppression types)
+#     caller0 name, or /name/of/so/file.so
+#     caller1 name, or ditto
+#     (optionally: caller2 name)
+#     (optionally: caller3 name)
+#  }
+#
+# For Memcheck, the supp_kinds are:
+#
+#     Param Value1 Value2 Value4 Value8 Value16
+#     Free Addr1 Addr2 Addr4 Addr8 Addr16
+#     Cond (previously known as Value0)
+#
+# and the optional extra info is:
+#     if Param: name of system call param
+#     if Free: name of free-ing fn)
+
+{
+   __GI___stpcpy/*
+   Memcheck:Cond
+   fun:__GI___stpcpy
+   fun:*
+}
+{
+   strlen/__GI__dl_open/dlopen_doit
+   Memcheck:Cond
+   fun:strlen
+   fun:__GI__dl_open
+   fun:dlopen_doit
+}
+{
+   strlen/_dl_signal_cerror/_dl_lookup_symbol_internal/do_dlsym
+   Memcheck:Cond
+   fun:_dl_signal_cerror
+   fun:_dl_lookup_symbol_internal
+   fun:do_dlsym
+}
+{
+   strlen/*dl_map_object*(Cond)
+   Memcheck:Cond
+   fun:strlen
+   fun:*dl_map_object*
+}
+
+{
+   strlen/*dl_open_worker*(Cond)
+   Memcheck:Cond
+   fun:strlen
+   fun:*dl_open_worker*
+}
+{
+   strlen/_dl_sym/dlsym_doit
+   Memcheck:Cond
+   fun:strlen
+   fun:_dl_sym
+   fun:dlsym_doit
+}
+{
+   realpath is inefficiently coded
+   Addrcheck,Memcheck:Overlap
+   fun:memcpy
+   fun:realpath*
+}
+
+{
+   realpath stupidity part II
+   Addrcheck,Memcheck:Overlap
+   fun:strcpy
+   fun:realpath*
+}
+{
+   strlen/decompose_rpath/_dl_map_object
+   Memcheck:Cond
+   fun:strlen
+   fun:decompose_rpath
+   fun:*dl_map_object*
+}
+{
+   stpcpy/_dl_sym*
+   Memcheck:Cond
+   fun:__stpcpy
+   fun:_dl_*
+}
+
+#-------- For R H 8.0
+{
+   elf_dynamic_do_rel.7/_dl_relocate_object_internal/dl_open_worker(Cond)
+   Memcheck:Cond
+   fun:elf_dynamic_do_rel.7
+   fun:_dl_relocate_object_internal
+   fun:dl_open_worker
+}
+{
+   dl_relocate/dl_open_worker
+   Memcheck:Cond
+   fun:_dl_relocate_object_internal
+   fun:dl_open_worker
+}
+
+#-------- glibc 2.3.2/ Fedora Core 1
+{
+   dl_relocate/dl_main
+   Memcheck:Cond
+   fun:_dl_relocate_object_internal
+   fun:dl_main
+}
+
+#-------- glibc 2.3.3/ Fedora Core 2
+{
+   dl_relocate_object/dl_main
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:dl_main
+}
+{
+   _dl_relocate_object/dl_open_worker
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:dl_open_worker
+}
+
+#-------- Data races
+{
+   _dl_lookup_symbol_internal/fixup/_dl_runtime_resolve
+   Helgrind:Eraser
+   fun:_dl_lookup_symbol_internal
+   fun:fixup
+   fun:_dl_runtime_resolve
+}
+{
+   _dl_lookup_symbol_x/fixup/_dl_runtime_resolve
+   Helgrind:Eraser
+   fun:_dl_lookup_symbol_x
+   fun:fixup
+   fun:_dl_runtime_resolve
+}
+{
+   _dl_lookup_versioned_symbol_internal/fixup/_dl_runtime_resolve
+   Helgrind:Eraser
+   fun:_dl_lookup_versioned_symbol_internal
+   fun:fixup
+   fun:_dl_runtime_resolve
+}
+{
+   _dl_lookup_versioned_symbol/ld-2.3.2.so/ld-2.3.2.so
+   Helgrind:Eraser
+   fun:_dl_lookup_versioned_symbol
+   obj:/lib/ld-2.3.2.so
+   obj:/lib/ld-2.3.2.so
+}
+{
+   _dl_fini
+   Helgrind:Eraser
+   fun:_dl_fini
+}
+
+#-------- Threading bugs?
+# glibc 'knows' that destroying a locked mutex will unlock it
+{
+   pthread_error/pthread_mutex_destroy/__closedir
+   core:PThread
+   fun:pthread_error
+   fun:pthread_mutex_destroy
+   fun:__closedir
+}
+
+{
+   pthread_error/pthread_mutex_destroy/_IO_default_finish
+   core:PThread
+   fun:pthread_error
+   fun:pthread_mutex_destroy
+   fun:_IO_default_finish*
+}
+
+{
+   pthread_mutex_unlock/_IO_funlockfile
+   core:PThread
+   fun:pthread_mutex_unlock
+   fun:_IO_funlockfile
+}
+
+##----------------------------------------------------------------------##
+## For a leak in Valgrind's own libpthread.so :(
+{
+   my_malloc/get_or_allocate_specifics_ptr/pthread_key_create(Leak)
+   Memcheck:Leak
+   fun:malloc
+   fun:my_malloc
+   fun:get_or_allocate_specifics_ptr
+   fun:pthread_key_create
+}
+
+##----------------------------------------------------------------------##
+## Bugs in helper library supplied with Intel Icc 7.0 (65)
+## in /opt/intel/compiler70/ia32/lib/libcxa.so.3
+{
+   Intel compiler70/ia32/lib/libcxa.so.3 below-esp accesses
+   Addrcheck,Memcheck:Addr4
+   obj:/opt/intel/compiler70/ia32/lib/libcxa.so.3
+}
+
+##----------------------------------------------------------------------##
+## SuSE 9 after FV changes (post 2.1.0)
+
+{
+   strlen/_dl_init_paths/dl_main/_dl_sysdep_start(Cond)
+   Memcheck:Cond
+   fun:strlen
+   fun:_dl_init_paths
+   fun:dl_main
+   fun:_dl_sysdep_start
+}
+
+{
+   Ugly strchr error in /lib/ld-2.3.2.so
+   Memcheck:Cond
+   obj:/lib/ld-2.3.2.so
+}
+
+##----------------------------------------------------------------------##
+## SuSE 9.1 with post 2.1.2
+{
+   Ugly strchr error in /lib/ld-2.3.3.so
+   Memcheck:Cond
+   obj:/lib/ld-2.3.3.so
+}

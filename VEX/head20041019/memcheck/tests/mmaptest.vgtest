@@ -1,0 +1,2 @@
+prog: mmaptest
+vgopts: -q

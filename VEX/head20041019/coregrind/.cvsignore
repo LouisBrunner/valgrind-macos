@@ -1,0 +1,8 @@
+Makefile.in
+Makefile
+valgrind
+stage2
+vg_toolint.h
+vg_toolint.c
+vg_intercept.c
+vg_replace_malloc.c

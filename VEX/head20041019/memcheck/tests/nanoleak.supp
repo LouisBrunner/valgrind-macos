@@ -1,0 +1,7 @@
+{
+   this_is_the_nanoleak_suppression_name
+   Addrcheck,Memcheck:Leak
+   fun:malloc
+   fun:main
+}
+

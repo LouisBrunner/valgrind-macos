@@ -1,0 +1,2 @@
+prog: fpu-28-108
+delete: cachegrind.out.*

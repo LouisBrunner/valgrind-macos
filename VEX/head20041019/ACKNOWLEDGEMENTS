@@ -1,0 +1,26 @@
+
+The following people contributed in some way to valgrind, during its
+long journey over the past two years or so.  Here's a list.  If I have
+forgotten you, I do apologise; let me know (jseward@acm.org) and I'll
+fix it.
+
+Donna Robinson <donna@muraroa.demon.co.uk>
+	for many reasons, including endless encouragement, and
+	persuading me I wasn't crazy to	try doing this
+
+Rob Noble <rob.noble@antlimited.com>
+	for early encouragement, support, suggestions, and asking of
+	many questions
+
+Reuben Thomas <rrt@sc3d.org>
+	for discussions about value tag operations, and making me
+	laugh
+
+Various KDE folks, for suffering recent versions of valgrind, 
+	providing many patches, questions and helpful feedback
+	Dirk Mueller <mueller@kde.org>
+	Stephan Kulow <coolo@kde.org>
+	Michael Matz <matz@kde.org>
+	Simon Hausmann <hausmann@kde.org>
+	David Faure <david@mandrakesoft.com>
+	Ellis Whitehead <kde@ellisw.net>

@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <style type="text/css">
+      body      { background-color: #ffffff;
+                  color:            #000000;
+                  font-family:      Times, Helvetica, Arial;
+                  font-size:        14pt}
+      h4        { margin-bottom:    0.3em}
+      code      { color:            #000000;
+                  font-family:      Courier; 
+                  font-size:        13pt }
+      pre       { color:            #000000;
+                  font-family:      Courier; 
+                  font-size:        13pt }
+      a:link    { color:            #0000C0;
+                  text-decoration:  none; }
+      a:visited { color:            #0000C0; 
+                  text-decoration:  none; }
+      a:active  { color:            #0000C0;
+                  text-decoration:  none; }
+    </style>
+    <title>Cachegrind</title>
+  </head>
+
+<body bgcolor="#ffffff">
+
+<a name="title"></a>
+<h1 align=center>Lackey</h1>
+<center>This manual was last updated on 2002-10-03</center>
+<p>
+
+<center>
+<a href="mailto:njn25@cam.ac.uk">njn25@cam.ac.uk</a><br>
+Copyright &copy; 2002-2004 Nicholas Nethercote
+<p>
+Lackey is licensed under the GNU General Public License, 
+version 2<br>
+Lackey is an example Valgrind tool that does some very basic program
+measurement.
+</center>
+
+<p>
+
+<h2>1&nbsp; Lackey</h2>
+
+Lackey is a simple Valgrind tool that does some basic program measurement.
+It adds quite a lot of simple instrumentation to the program's code.  It is
+primarily intended to be of use as an example tool.
+<p>
+It measures three things:
+
+<ol>
+<li>The number of calls to <code>_dl_runtime_resolve()</code>, the function
+    in glibc's dynamic linker that resolves function lookups into shared 
+    objects.<p>
+
+<li>The number of UCode instructions (UCode is Valgrind's RISC-like
+    intermediate language), x86 instructions, and basic blocks executed by the
+    program, and some ratios between the three counts.<p>
+
+<li>The number of conditional branches encountered and the proportion of those
+    taken.<p>
+</ol>
+
+<hr width="100%">
+</body>
+</html>
+

@@ -1,0 +1,2 @@
+prog: clientperm
+vgopts: -q

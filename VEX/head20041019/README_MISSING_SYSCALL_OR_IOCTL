@@ -1,0 +1,166 @@
+
+Dealing with missing system call or ioctl wrappers in Valgrind
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+You're probably reading this because Valgrind bombed out whilst
+running your program, and advised you to read this file.  The good
+news is that, in general, it's easy to write the missing syscall or
+ioctl wrappers you need, so that you can continue your debugging.  If
+you send the resulting patches to me, then you'll be doing a favour to
+all future Valgrind users too.
+
+Note that an "ioctl" is just a special kind of system call, really; so
+there's not a lot of need to distinguish them (at least conceptually)
+in the discussion that follows.
+
+All this machinery is in coregrind/vg_syscalls.c.
+
+
+What are syscall/ioctl wrappers?  What do they do?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Valgrind does what it does, in part, by keeping track of everything your
+program does.  When a system call happens, for example a request to read
+part of a file, control passes to the Linux kernel, which fulfills the
+request, and returns control to your program.  The problem is that the
+kernel will often change the status of some part of your program's memory
+as a result, and tools (instrumentation plug-ins) may need to know about
+this.
+
+Syscall and ioctl wrappers have two jobs: 
+
+1. Tell a tool what's about to happen, before the syscall takes place.  A
+   tool could perform checks beforehand, eg. if memory about to be written
+   is actually writeable.  This part is useful, but not strictly
+   essential.
+
+2. Tell a tool what just happened, after a syscall takes place.  This is
+   so it can update its view of the program's state, eg. that memory has
+   just been written to.  This step is essential.
+
+The "happenings" mostly involve reading/writing of memory.
+
+So, let's look at an example of a wrapper for a system call which
+should be familiar to many Unix programmers.
+
+
+The syscall wrapper for time()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Removing the debug printing clutter, it looks like this:
+
+  PRE(time)
+  {
+     /* time_t time(time_t *t); */
+     MAYBE_PRINTF("time ( %p )\n",arg1);
+     if (arg1 != (UInt)NULL) {
+        SYSCALL_TRACK( pre_mem_write, tid, "time", arg1, sizeof(time_t) );
+     }
+  }
+
+  POST(time)
+  {  
+     if (arg1 != (UInt)NULL) {
+        VG_TRACK( post_mem_write, arg1, sizeof(time_t) );
+     }
+  }
+
+The first thing we do happens before the syscall occurs, in the PRE() function:
+if a non-NULL buffer is passed in as the argument, tell the tool that the
+buffer is about to be written to:
+
+     if (arg1 != (UInt)NULL) {
+        SYSCALL_TRACK( pre_mem_write, tst, "time", arg1, sizeof(time_t) );
+     }
+
+Finally, the really important bit, after the syscall occurs, in the POST()
+function:  if, and only if, the system call was successful, tell the tool that
+the memory was written:
+
+     if (arg1 != (UInt)NULL) {
+        VG_TRACK( post_mem_write, arg1, sizeof(time_t) );
+     }
+
+The POST() function won't be called if the syscall failed, so you
+don't need to worry about checking that in the POST() function.
+(Note: this is sometimes a bug; some syscalls do return results when
+they "fail" - for example, nanosleep returns the amount of unslept
+time if interrupted. TODO: add another per-syscall flag for this
+case.)
+
+
+Writing your own syscall wrappers (see below for ioctl wrappers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If Valgrind tells you that system call NNN is unimplemented, do the 
+following:
+
+1.  Find out the name of the system call:
+
+       grep NNN /usr/include/asm/unistd.h
+
+    This should tell you something like  __NR_mysyscallname.
+    Copy this entry to coregrind/$(VG_PLATFORM)/vki_unistd.h.
+
+2.  Do 'man 2 mysyscallname' to get some idea of what the syscall
+    does.  Note that the actual kernel interface can differ from this,
+    so you might also want to check a version of the Linux kernel
+    source.
+
+    NOTE: any syscall which has something to do with signals or
+    threads is probably "special", and needs more careful handling.
+    Post something to valgrind-developers if you aren't sure.
+
+
+3.  Add a case to the already-huge collection of wrappers in 
+    coregrind/vg_syscalls.c.  For each in-memory parameter which is 
+    read or written by the syscall, do one of
+    
+      SYSCALL_TRACK( pre_mem_read, ... )
+      SYSCALL_TRACK( pre_mem_read_asciiz, ... ) 
+      SYSCALL_TRACK( pre_mem_write, ... ) 
+      
+    for  that parameter.  Then do the syscall.  Then, if the syscall
+    succeeds, issue suitable VG_TRACK( post_mem_write, ... ) calls.
+    (There's no need for post_mem_read calls.)
+
+    Also, add it to the sys_info[] array; use SYSBA if it requires a
+    PRE() and POST() function, and SYSB_ if it only requires a PRE()
+    function.  The 2nd arg of these macros indicate if the syscall
+    could possibly block.
+    
+    If you find this difficult, read the wrappers for other syscalls
+    for ideas.  A good tip is to look for the wrapper for a syscall
+    which has a similar behaviour to yours, and use it as a 
+    starting point.
+
+    If you need structure definitions for your syscall, you can copy
+    structure definitions from the kernel headers into
+    include/vg_kerneliface.h, with the appropriate vki_* name
+    mangling.  Alternatively, you can #include headers for structure
+    definitions, put your #includes into vg_unsafe.h (copying
+    syscall-related things into vg_kerneliface.h is preferred though).
+
+    Test it.
+
+    Note that a common error is to call VG_TRACK( post_mem_write, ... )
+    with 0 (NULL) as the first (address) argument.  This usually means
+    your logic is slightly inadequate.  It's a sufficiently common bug
+    that there's a built-in check for it, and you'll get a "probably
+    sanity check failure" for the syscall wrapper you just made, if this
+    is the case.
+
+
+4.  Once happy, send us the patch.  Pretty please.
+
+
+
+
+Writing your own ioctl wrappers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Is pretty much the same as writing syscall wrappers, except that all
+the action happens within PRE(ioctl) and POST(ioctl).
+
+There's a default case, sometimes it isn't correct and you have to write a
+more specific case to get the right behaviour.
+
+As above, please create a bug report and attach the patch as described
+on http://valgrind.kde.org/bugs.html
+

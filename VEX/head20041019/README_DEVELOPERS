@@ -1,0 +1,49 @@
+
+Building and not installing it
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To run Valgrind without having to install it, run coregrind/valgrind (prefix
+with "sh" because it's not executable) with the --in-place=<dir> option, where
+<dir> is the root of the source tree (and must be an absolute path).  Eg:
+
+  sh ~/grind/head4/coregrind/valgrind --in-place=/homes/njn25/grind/head4
+
+This allows you to compile and run with "make" instead of "make install",
+saving you time.
+
+I recommend compiling with "make --quiet" to further reduce the amount of
+output spewed out during compilation, letting you actually see any errors,
+warnings, etc.
+
+
+Running the regression tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To build and run all the regression tests, run "make [--quiet] regtest".
+
+To run a subset of the regression tests, execute:
+
+  perl tests/vg_regtest <name>
+
+where <name> is a directory (all tests within will be run) or a single
+.vgtest test file, or the name of a program which has a like-named .vgtest
+file.  Eg:
+
+  perl tests/vg_regtest memcheck
+  perl tests/vg_regtest memcheck/tests/badfree.vgtest
+  perl tests/vg_regtest memcheck/tests/badfree
+
+
+Debugging Valgrind with GDB
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To debug Valgrind itself with GDB, start Valgrind like this:
+
+  valgrind --tool=none --wait-for-gdb=yes <prog>
+
+Then start gdb like this in another terminal:
+
+  gdb /usr/lib/valgrind/stage2 <pid>
+
+Where <pid> is the pid valgrind printed. Then set whatever breakpoints
+you want and do this in gdb:
+
+  jump *$eip
+

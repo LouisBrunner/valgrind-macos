@@ -1,0 +1,2 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (supp.c:8)

@@ -1,0 +1,55 @@
+
+
+FILE DESCRIPTORS: 7 open at exit.
+Open AF_UNIX socket .: /tmp/sock
+   at 0x........: accept (in /...libc...)
+   by 0x........: main (fdleak_cmsg.c:170)
+
+Open AF_UNIX socket .: /tmp/sock
+   at 0x........: socket (in /...libc...)
+   by 0x........: main (fdleak_cmsg.c:170)
+
+Open file descriptor .: /tmp/data2
+   at 0x........: open (in /...libc...)
+   by 0x........: main (fdleak_cmsg.c:170)
+
+Open file descriptor .: /tmp/data1
+   at 0x........: open (in /...libc...)
+   by 0x........: main (fdleak_cmsg.c:170)
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: /dev/null
+   <inherited from parent>
+
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+FILE DESCRIPTORS: 6 open at exit.
+Open file descriptor .: /tmp/data2
+   at 0x........: recvmsg (in /...libc...)
+   by 0x........: main (fdleak_cmsg.c:174)
+
+Open file descriptor .: /tmp/data1
+   at 0x........: recvmsg (in /...libc...)
+   by 0x........: main (fdleak_cmsg.c:174)
+
+Open AF_UNIX socket .: <unknown>
+   at 0x........: socket (in /...libc...)
+   by 0x........: main (fdleak_cmsg.c:174)
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: .
+   <inherited from parent>
+
+Open file descriptor .: /dev/null
+   <inherited from parent>
+
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -1,0 +1,2 @@
+prog: realloc2
+vgopts: -q

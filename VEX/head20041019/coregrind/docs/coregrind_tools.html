@@ -1,0 +1,761 @@
+<html>
+  <head>
+    <style type="text/css">
+      body      { background-color: #ffffff;
+                  color:            #000000;
+                  font-family:      Times, Helvetica, Arial;
+                  font-size:        14pt}
+      h4        { margin-bottom:    0.3em}
+      code      { color:            #000000;
+                  font-family:      Courier; 
+                  font-size:        13pt }
+      pre       { color:            #000000;
+                  font-family:      Courier; 
+                  font-size:        13pt }
+      a:link    { color:            #0000C0;
+                  text-decoration:  none; }
+      a:visited { color:            #0000C0; 
+                  text-decoration:  none; }
+      a:active  { color:            #0000C0;
+                  text-decoration:  none; }
+    </style>
+    <title>Valgrind</title>
+  </head>
+
+<body bgcolor="#ffffff">
+
+<a name="title">&nbsp;</a>
+<h1 align=center>Valgrind Tools</h1>
+<center>
+  A guide to writing new tools for Valgrind<br>
+  This guide was last updated on 20030520
+</center>
+<p>
+
+<center>
+<a href="mailto:njn25@cam.ac.uk">njn25@cam.ac.uk</a><br>
+Nick Nethercote
+<p>
+Valgrind is licensed under the GNU General Public License, 
+version 2<br>
+An open-source tool for supervising execution of Linux-x86 executables.
+</center>
+
+<p>
+
+<hr width="100%">
+<a name="contents"></a>
+<h2>Contents of this manual</h2>
+
+<h4>1&nbsp; <a href="#intro">Introduction</a></h4>
+    1.1&nbsp; <a href="#supexec">Supervised Execution</a><br>
+    1.2&nbsp; <a href="#tools">Tools</a><br>
+    1.3&nbsp; <a href="#execspaces">Execution Spaces</a><br>
+
+<h4>2&nbsp; <a href="#writingatool">Writing a Tool</a></h4>
+    2.1&nbsp; <a href="#whywriteatool">Why write a tool?</a><br>
+    2.2&nbsp; <a href="#suggestedtools">Suggested tools</a><br>
+    2.3&nbsp; <a href="#howtoolswork">How tools work</a><br>
+    2.4&nbsp; <a href="#gettingcode">Getting the code</a><br>
+    2.5&nbsp; <a href="#gettingstarted">Getting started</a><br>
+    2.6&nbsp; <a href="#writingcode">Writing the code</a><br>
+    2.7&nbsp; <a href="#init">Initialisation</a><br>
+    2.8&nbsp; <a href="#instr">Instrumentation</a><br>
+    2.9&nbsp; <a href="#fini">Finalisation</a><br>
+    2.10&nbsp; <a href="#otherimportantinfo">Other important information</a><br>
+    2.11&nbsp; <a href="#wordsofadvice">Words of advice</a><br>
+
+<h4>3&nbsp; <a href="#advancedtopics">Advanced Topics</a></h4>
+    3.1&nbsp; <a href="#suppressions">Suppressions</a><br>
+    3.2&nbsp; <a href="#documentation">Documentation</a><br>
+    3.3&nbsp; <a href="#regressiontests">Regression tests</a><br>
+    3.4&nbsp; <a href="#profiling">Profiling</a><br>
+    3.5&nbsp; <a href="#othermakefilehackery">Other makefile hackery</a><br>
+    3.6&nbsp; <a href="#interfaceversions">Core/tool interface versions</a><br>
+
+<h4>4&nbsp; <a href="#finalwords">Final Words</a></h4>
+
+<hr width="100%">
+
+<a name="intro"></a>
+<h2>1&nbsp; Introduction</h2>
+
+<a name="supexec"></a>
+<h3>1.1&nbsp; Supervised Execution</h3>
+
+Valgrind provides a generic infrastructure for supervising the execution of
+programs.  This is done by providing a way to instrument programs in very
+precise ways, making it relatively easy to support activities such as dynamic
+error detection and profiling.<p>
+
+Although writing a tool is not easy, and requires learning quite a few things
+about Valgrind, it is much easier than instrumenting a program from scratch
+yourself.
+
+<a name="tools"></a>
+<h3>1.2&nbsp; Tools</h3>
+The key idea behind Valgrind's architecture is the division between its
+``core'' and ``tools''.
+<p>
+The core provides the common low-level infrastructure to support program
+instrumentation, including the x86-to-x86 JIT compiler, low-level memory
+manager, signal handling and a scheduler (for pthreads).   It also provides
+certain services that are useful to some but not all tools, such as support
+for error recording and suppression.
+<p>
+But the core leaves certain operations undefined, which must be filled by tools.
+Most notably, tools define how program code should be instrumented.  They can
+also define certain variables to indicate to the core that they would like to
+use certain services, or be notified when certain interesting events occur.
+But the core takes care of all the hard work.
+<p>
+
+<a name="execspaces"></a>
+<h3>1.3&nbsp; Execution Spaces</h3>
+An important concept to understand before writing a tool is that there are
+three spaces in which program code executes:
+
+<ol>
+  <li>User space: this covers most of the program's execution.  The tool is
+      given the code and can instrument it any way it likes, providing (more or
+      less) total control over the code.<p>
+
+      Code executed in user space includes all the program code, almost all of
+      the C library (including things like the dynamic linker), and almost
+      all parts of all other libraries.
+  </li><p>
+
+  <li>Core space: a small proportion of the program's execution takes place
+      entirely within Valgrind's core.  This includes:<p>
+
+      <ul>
+        <li>Dynamic memory management (<code>malloc()</code> etc.)</li>
+
+        <li>Pthread operations and scheduling</li>
+
+        <li>Signal handling</li>
+      </ul><p>
+
+      A tool has no control over these operations;  it never ``sees'' the code
+      doing this work and thus cannot instrument it.  However, the core
+      provides hooks so a tool can be notified when certain interesting events
+      happen, for example when when dynamic memory is allocated or freed, the
+      stack pointer is changed, or a pthread mutex is locked, etc.<p>
+
+      Note that these hooks only notify tools of events relevant to user 
+      space.  For example, when the core allocates some memory for its own use,
+      the tool is not notified of this, because it's not directly part of the
+      supervised program's execution.
+  </li><p>
+      
+  <li>Kernel space: execution in the kernel.  Two kinds:<p>
+   
+      <ol>
+        <li>System calls:  can't be directly observed by either the tool or the
+            core.  But the core does have some idea of what happens to the
+            arguments, and it provides hooks for a tool to wrap system calls.
+        </li><p>
+
+        <li>Other: all other kernel activity (e.g. process scheduling) is
+            totally opaque and irrelevant to the program.
+        </li><p>
+      </ol>
+  </li><p>
+
+  It should be noted that a tool only has direct control over code executed in
+  user space.  This is the vast majority of code executed, but it is not
+  absolutely all of it, so any profiling information recorded by a tool won't
+  be totally accurate.
+</ol>
+
+
+<a name="writingatool"></a>
+<h2>2&nbsp; Writing a Tool</h2>
+
+<a name="whywriteatool"></a>
+<h3>2.1&nbsp; Why write a tool?</h3>
+
+Before you write a tool, you should have some idea of what it should do.  What
+is it you want to know about your programs of interest?  Consider some existing
+tools:
+
+<ul>
+  <li>memcheck: among other things, performs fine-grained validity and
+      addressibility checks of every memory reference performed by the program
+      </li><p>
+
+  <li>addrcheck: performs lighterweight addressibility checks of every memory
+      reference performed by the program</li><p>
+
+  <li>cachegrind: tracks every instruction and memory reference to simulate
+      instruction and data caches, tracking cache accesses and misses that
+      occur on every line in the program</li><p>
+
+  <li>helgrind: tracks every memory access and mutex lock/unlock to determine
+      if a program contains any data races</li><p>
+
+  <li>lackey: does simple counting of various things: the number of calls to a
+      particular function (<code>_dl_runtime_resolve()</code>);  the number of
+      basic blocks, x86 instruction, UCode instructions executed;  the number
+      of branches executed and the proportion of those which were taken.</li><p>
+</ul>
+
+These examples give a reasonable idea of what kinds of things Valgrind can be
+used for.  The instrumentation can range from very lightweight (e.g. counting
+the number of times a particular function is called) to very intrusive (e.g.
+memcheck's memory checking).
+
+
+<a name="suggestedtools"></a>
+<h3>2.2&nbsp; Suggested tools</h3>
+
+Here is a list of ideas we have had for tools that should not be too hard to
+implement.
+
+<ul>
+  <li>branch profiler: A machine's branch prediction hardware could be
+      simulated, and each branch annotated with the number of predicted and
+      mispredicted branches.  Would be implemented quite similarly to
+      Cachegrind, and could reuse the <code>cg_annotate</code> script to
+      annotate source code.<p>
+
+      The biggest difficulty with this is the simulation;  the chip-makers
+      are very cagey about how their chips do branch prediction.  But
+      implementing one or more of the basic algorithms could still give good
+      information.
+      </li><p>
+
+  <li>coverage tool:  Cachegrind can already be used for doing test coverage,
+      but it's massive overkill to use it just for that.<p>
+
+      It would be easy to write a coverage tool that records how many times
+      each basic block was recorded.  Again, the <code>cg_annotate</code>
+      script could be used for annotating source code with the gathered
+      information.  Although, <code>cg_annotate</code> is only designed for
+      working with single program runs.  It could be extended relatively easily
+      to deal with multiple runs of a program, so that the coverage of a whole
+      test suite could be determined.<p>
+
+      In addition to the standard coverage information, such a tool could
+      record extra information that would help a user generate test cases to
+      exercise unexercised paths.  For example, for each conditional branch,
+      the tool could record all inputs to the conditional test, and print these
+      out when annotating.<p>
+  
+  <li>run-time type checking: A nice example of a dynamic checker is given
+      in this paper:
+
+      <blockquote>
+      Debugging via Run-Time Type Checking<br>
+      Alexey Loginov, Suan Hsi Yong, Susan Horwitz and Thomas Reps<br>
+      Proceedings of Fundamental Approaches to Software Engineering<br>
+      April 2001.
+      </blockquote>
+
+      Similar is the tool described in this paper:
+
+      <blockquote>
+      Run-Time Type Checking for Binary Programs<br>
+      Michael Burrows, Stephen N. Freund, Janet L. Wiener<br>
+      Proceedings of the 12th International Conference on Compiler Construction
+      (CC 2003)<br>
+      April 2003.
+      </blockquote>
+
+      These approach can find quite a range of bugs, particularly in C and C++
+      programs, and could be implemented quite nicely as a Valgrind tool.<p>
+
+      Ways to speed up this run-time type checking are described in this paper:
+
+      <blockquote>
+      Reducing the Overhead of Dynamic Analysis<br>
+      Suan Hsi Yong and Susan Horwitz<br>
+      Proceedings of Runtime Verification '02<br>
+      July 2002.
+      </blockquote>
+
+      Valgrind's client requests could be used to pass information to a tool
+      about which elements need instrumentation and which don't.
+      </li><p>
+</ul>
+
+We would love to hear from anyone who implements these or other tools.
+
+<a name="howtoolswork"></a>
+<h3>2.3&nbsp; How tools work</h3>
+
+Tools must define various functions for instrumenting programs that are called
+by Valgrind's core, yet they must be implemented in such a way that they can be
+written and compiled without touching Valgrind's core.  This is important,
+because one of our aims is to allow people to write and distribute their own
+tools that can be plugged into Valgrind's core easily.<p>
+
+This is achieved by packaging each tool into a separate shared object which is
+then loaded ahead of the core shared object <code>valgrind.so</code>, using the
+dynamic linker's <code>LD_PRELOAD</code> variable.  Any functions defined in
+the tool that share the name with a function defined in core (such as
+the instrumentation function <code>SK_(instrument)()</code>) override the
+core's definition.  Thus the core can call the necessary tool functions.<p>
+
+This magic is all done for you;  the shared object used is chosen with the
+<code>--tool</code> option to the <code>valgrind</code> startup script.  The
+default tool used is <code>memcheck</code>, Valgrind's original memory checker.
+
+<a name="gettingcode"></a>
+<h3>2.4&nbsp; Getting the code</h3>
+
+To write your own tool, you'll need to check out a copy of Valgrind from the
+CVS repository, rather than using a packaged distribution.  This is because it
+contains several extra files needed for writing tools.<p>
+
+To check out the code from the CVS repository, first login:
+<blockquote><code>
+cvs -d:pserver:anonymous@cvs.valgrind.sourceforge.net:/cvsroot/valgrind login
+</code></blockquote>
+
+Then checkout the code.  To get a copy of the current development version
+(recommended for the brave only):
+<blockquote><code>
+cvs -z3 -d:pserver:anonymous@cvs.valgrind.sourceforge.net:/cvsroot/valgrind co valgrind
+</code></blockquote>
+
+To get a copy of the stable released branch:
+<blockquote><code>
+cvs -z3 -d:pserver:anonymous@cvs.valgrind.sourceforge.net:/cvsroot/valgrind co -r <i>TAG</i> valgrind
+</code></blockquote>
+
+where <code><i>TAG</i></code> has the form <code>VALGRIND_X_Y_Z</code> for
+version X.Y.Z.
+
+<a name="gettingstarted"></a>
+<h3>2.5&nbsp; Getting started</h3>
+
+Valgrind uses GNU <code>automake</code> and <code>autoconf</code> for the
+creation of Makefiles and configuration.  But don't worry, these instructions
+should be enough to get you started even if you know nothing about those
+tools.<p>
+
+In what follows, all filenames are relative to Valgrind's top-level directory
+<code>valgrind/</code>.
+
+<ol>
+  <li>Choose a name for the tool, and an abbreviation that can be used as a
+      short prefix.  We'll use <code>foobar</code> and <code>fb</code> as an
+      example.
+  </li><p>
+
+  <li>Make a new directory <code>foobar/</code> which will hold the tool.
+  </li><p>
+
+  <li>Copy <code>none/Makefile.am</code> into <code>foobar/</code>.
+      Edit it by replacing all occurrences of the string
+      ``<code>none</code>'' with ``<code>foobar</code>'' and the one
+      occurrence of the string ``<code>nl_</code>'' with ``<code>fb_</code>''.
+      It might be worth trying to understand this file, at least a little;  you
+      might have to do more complicated things with it later on.  In
+      particular, the name of the <code>vgskin_foobar_so_SOURCES</code> variable
+      determines the name of the tool's shared object, which determines what
+      name must be passed to the <code>--tool</code> option to use the tool.
+  </li><p>
+
+  <li>Copy <code>none/nl_main.c</code> into
+      <code>foobar/</code>, renaming it as <code>fb_main.c</code>.
+      Edit it by changing the lines in <code>SK_(pre_clo_init)()</code>
+      to something appropriate for the tool.  These fields are used in the
+      startup message, except for <code>bug_reports_to</code> which is used
+      if a tool assertion fails.
+  </li><p>
+
+  <li>Edit <code>Makefile.am</code>, adding the new directory
+      <code>foobar</code> to the <code>SUBDIRS</code> variable.
+  </li><p>
+
+  <li>Edit <code>configure.in</code>, adding <code>foobar/Makefile</code> to the
+      <code>AC_OUTPUT</code> list.
+  </li><p>
+
+  <li>Run:
+      <pre>
+    autogen.sh
+    ./configure --prefix=`pwd`/inst
+    make install</pre>
+
+      It should automake, configure and compile without errors, putting copies
+      of the tool's shared object <code>vgskin_foobar.so</code> in
+      <code>foobar/</code> and
+      <code>inst/lib/valgrind/</code>.
+  </li><p>
+
+  <li>You can test it with a command like
+      <pre>
+    inst/bin/valgrind --tool=foobar date</pre>
+
+      (almost any program should work; <code>date</code> is just an example).  
+      The output should be something like this:
+      <pre>
+==738== foobar-0.0.1, a foobarring tool for x86-linux.
+==738== Copyright (C) 1066AD, and GNU GPL'd, by J. Random Hacker.
+==738== Built with valgrind-1.1.0, a program execution monitor.
+==738== Copyright (C) 2000-2003, and GNU GPL'd, by Julian Seward.
+==738== Estimated CPU clock rate is 1400 MHz
+==738== For more details, rerun with: -v
+==738== 
+Wed Sep 25 10:31:54 BST 2002
+==738==</pre>
+
+      The tool does nothing except run the program uninstrumented.
+  </li><p>
+</ol>
+
+These steps don't have to be followed exactly - you can choose different names
+for your source files, and use a different <code>--prefix</code> for
+<code>./configure</code>.<p>
+
+Now that we've setup, built and tested the simplest possible tool, onto the
+interesting stuff...
+
+
+<a name="writingcode"></a>
+<h3>2.6&nbsp; Writing the code</h3>
+
+A tool must define at least these four functions:
+<pre>
+    SK_(pre_clo_init)()
+    SK_(post_clo_init)()
+    SK_(instrument)()
+    SK_(fini)()
+</pre>
+
+Also, it must use the macro <code>VG_DETERMINE_INTERFACE_VERSION</code>
+exactly once in its source code.  If it doesn't, you will get a link error
+involving <code>VG_(skin_interface_major_version)</code>.  This macro is
+used to ensure the core/tool interface used by the core and a plugged-in
+tool are binary compatible.
+
+In addition, if a tool wants to use some of the optional services provided by
+the core, it may have to define other functions.
+
+<a name="init"></a>
+<h3>2.7&nbsp; Initialisation</h3>
+
+Most of the initialisation should be done in <code>SK_(pre_clo_init)()</code>.
+Only use <code>SK_(post_clo_init)()</code> if a tool provides command line
+options and must do some initialisation after option processing takes place
+(``<code>clo</code>'' stands for ``command line options'').<p>
+
+First of all, various ``details'' need to be set for a tool, using the
+functions <code>VG_(details_*)()</code>.  Some are all compulsory, some aren't. 
+Some are used when constructing the startup message,
+<code>detail_bug_reports_to</code> is used if <code>VG_(skin_panic)()</code> is
+ever called, or a tool assertion fails.  Others have other uses.<p>
+
+Second, various ``needs'' can be set for a tool, using the functions
+<code>VG_(needs_*)()</code>.  They are mostly booleans, and can be left
+untouched (they default to <code>False</code>).  They determine whether a tool
+can do various things such as:  record, report and suppress errors; process
+command line options;  wrap system calls;  record extra information about
+malloc'd blocks, etc.<p>
+
+For example, if a tool wants the core's help in recording and reporting errors,
+it must set the <code>skin_errors</code> need to <code>True</code>, and then
+provide definitions of six functions for comparing errors, printing out errors,
+reading suppressions from a suppressions file, etc.  While writing these
+functions requires some work, it's much less than doing error handling from
+scratch because the core is doing most of the work.  See the type
+<code>VgNeeds</code> in <code>include/tool.h</code> for full details of all
+the needs.<p>
+
+Third, the tool can indicate which events in core it wants to be notified
+about, using the functions <code>VG_(track_*)()</code>.  These include things
+such as blocks of memory being malloc'd, the stack pointer changing, a mutex
+being locked, etc.  If a tool wants to know about this, it should set the
+relevant pointer in the structure to point to a function, which will be called
+when that event happens.<p>
+
+For example, if the tool want to be notified when a new block of memory is
+malloc'd, it should call <code>VG_(track_new_mem_heap)()</code> with an
+appropriate function pointer, and the assigned function will be called each
+time this happens.<p>
+
+More information about ``details'', ``needs'' and ``trackable events'' can be
+found in <code>include/tool.h</code>.<p>
+
+<a name="instr"></a>
+<h3>2.8&nbsp; Instrumentation</h3>
+
+<code>SK_(instrument)()</code> is the interesting one.  It allows you to
+instrument <i>UCode</i>, which is Valgrind's RISC-like intermediate language.
+UCode is described in the <a href="mc_techdocs.html">technical docs</a> for
+Memcheck.
+
+The easiest way to instrument UCode is to insert calls to C functions when
+interesting things happen.  See the tool ``Lackey''
+(<code>lackey/lk_main.c</code>) for a simple example of this, or
+Cachegrind (<code>cachegrind/cg_main.c</code>) for a more complex
+example.<p>
+
+A much more complicated way to instrument UCode, albeit one that might result
+in faster instrumented programs, is to extend UCode with new UCode
+instructions.  This is recommended for advanced Valgrind hackers only!  See
+Memcheck for an example.
+
+<a name="fini"></a>
+<h3>2.9&nbsp; Finalisation</h3>
+
+This is where you can present the final results, such as a summary of the
+information collected.  Any log files should be written out at this point.
+
+<a name="otherimportantinfo"></a>
+<h3>2.10&nbsp; Other important information</h3>
+
+Please note that the core/tool split infrastructure is quite complex and
+not brilliantly documented.  Here are some important points, but there are
+undoubtedly many others that I should note but haven't thought of.<p>
+
+The file <code>include/tool.h</code> contains all the types,
+macros, functions, etc. that a tool should (hopefully) need, and is the only
+<code>.h</code> file a tool should need to <code>#include</code>.<p>
+
+In particular, you probably shouldn't use anything from the C library (there
+are deep reasons for this, trust us).  Valgrind provides an implementation of a
+reasonable subset of the C library, details of which are in
+<code>tool.h</code>.<p>
+
+Similarly, when writing a tool, you shouldn't need to look at any of the code
+in Valgrind's core.  Although it might be useful sometimes to help understand
+something.<p>
+
+<code>tool.h</code> has a reasonable amount of documentation in it that
+should hopefully be enough to get you going.  But ultimately, the tools
+distributed (Memcheck, Addrcheck, Cachegrind, Lackey, etc.) are probably the
+best documentation of all, for the moment.<p>
+
+Note that the <code>VG_</code> and <code>SK_</code> macros are used heavily.
+These just prepend longer strings in front of names to avoid potential
+namespace clashes.  We strongly recommend using the <code>SK_</code> macro for
+any global functions and variables in your tool, or writing a similar macro.<p>
+
+<a name="wordsofadvice"></a>
+<h3>2.11&nbsp; Words of Advice</h3>
+
+Writing and debugging tools is not trivial.  Here are some suggestions for
+solving common problems.<p>
+
+If you are getting segmentation faults in C functions used by your tool, the
+usual GDB command:
+<blockquote><code>gdb <i>prog</i> core</code></blockquote>
+usually gives the location of the segmentation fault.<p>
+
+If you want to debug C functions used by your tool, you can attach GDB to
+Valgrind with some effort:
+<ul>
+  <li>Enable the following code in <code>coregrind/vg_main.c</code> by
+  changing <code>if (0)</code> into <code>if (1)</code>:
+<pre>
+   /* Hook to delay things long enough so we can get the pid and
+      attach GDB in another shell. */
+   if (0) { 
+      Int p, q;
+      for (p = 0; p < 50000; p++)
+         for (q = 0; q < 50000; q++) ;
+   }
+</pre>
+      </li><p>
+      and rebuild Valgrind.
+
+  <li>Then run: 
+      <blockquote><code>valgrind <i>prog</i></code></blockquote>
+
+      Valgrind starts the program, printing its process id, and then delays for
+      a few seconds (you may have to change the loop bounds to get a suitable
+      delay).</li><p>
+      
+  <li>In a second shell run: 
+  
+      <blockquote><code>gdb <i>prog</i> <i>pid</i></code></blockquote></li><p>
+</ul>
+
+GDB may be able to give you useful information.  Note that by default
+most of the system is built with <code>-fomit-frame-pointer</code>,
+and you'll need to get rid of this to extract useful tracebacks from
+GDB.<p>
+
+If you just want to know whether a program point has been reached, using the
+<code>OINK</code> macro (in <code> include/tool.h</code>) can be easier than
+using GDB.<p>
+
+If you are having problems with your UCode instrumentation, it's likely that
+GDB won't be able to help at all.  In this case, Valgrind's
+<code>--trace-codegen</code> option is invaluable for observing the results of
+instrumentation.<p>
+
+The other debugging command line options can be useful too (run <code>valgrind
+-h</code> for the list).<p>
+
+<a name="advancedtopics"></a>
+<h2>3&nbsp; Advanced Topics</h2>
+
+Once a tool becomes more complicated, there are some extra things you may
+want/need to do.
+
+<a name="suppressions"></a>
+<h3>3.1&nbsp; Suppressions</h3>
+
+If your tool reports errors and you want to suppress some common ones, you can
+add suppressions to the suppression files.  The relevant files are 
+<code>valgrind/*.supp</code>;  the final suppression file is aggregated from
+these files by combining the relevant <code>.supp</code> files depending on the
+versions of linux, X and glibc on a system.
+<p>
+Suppression types have the form <code>tool_name:suppression_name</code>.  The
+<code>tool_name</code> here is the name you specify for the tool during
+initialisation with <code>VG_(details_name)()</code>.
+
+<a name="documentation"></a>
+<h3>3.2&nbsp; Documentation</h3>
+
+If you are feeling conscientious and want to write some HTML documentation for
+your tool, follow these steps (using <code>foobar</code> as the example tool
+name again):
+
+<ol>
+  <li>Make a directory <code>foobar/docs/</code>.
+  </li><p>
+
+  <li>Edit <code>foobar/Makefile.am</code>, adding <code>docs</code> to
+      the <code>SUBDIRS</code> variable.
+  </li><p>
+
+  <li>Edit <code>configure.in</code>, adding
+      <code>foobar/docs/Makefile</code> to the <code>AC_OUTPUT</code> list.
+  </li><p>
+
+  <li>Write <code>foobar/docs/Makefile.am</code>.  Use
+      <code>memcheck/docs/Makefile.am</code> as an example.
+  </li><p>
+
+  <li>Write the documentation, putting it in <code>foobar/docs/</code>.
+  </li><p>
+</ol>
+
+<a name="regressiontests"></a>
+<h3>3.3&nbsp; Regression tests</h3>
+
+Valgrind has some support for regression tests.  If you want to write
+regression tests for your tool:
+
+<ol>
+  <li>Make a directory <code>foobar/tests/</code>.
+  </li><p>
+
+  <li>Edit <code>foobar/Makefile.am</code>, adding <code>tests</code> to
+      the <code>SUBDIRS</code> variable.
+  </li><p>
+
+  <li>Edit <code>configure.in</code>, adding
+      <code>foobar/tests/Makefile</code> to the <code>AC_OUTPUT</code> list.
+  </li><p>
+
+  <li>Write <code>foobar/tests/Makefile.am</code>.  Use
+      <code>memcheck/tests/Makefile.am</code> as an example.
+  </li><p>
+
+  <li>Write the tests, <code>.vgtest</code> test description files, 
+      <code>.stdout.exp</code> and <code>.stderr.exp</code> expected output
+      files.  (Note that Valgrind's output goes to stderr.)  Some details
+      on writing and running tests are given in the comments at the top of the
+      testing script <code>tests/vg_regtest</code>.
+  </li><p>
+
+  <li>Write a filter for stderr results <code>foobar/tests/filter_stderr</code>.
+      It can call the existing filters in <code>tests/</code>.  See
+      <code>memcheck/tests/filter_stderr</code> for an example;  in particular
+      note the <code>$dir</code> trick that ensures the filter works correctly
+      from any directory.
+  </li><p>
+</ol>
+
+<a name="profiling"></a>
+<h3>3.4&nbsp; Profiling</h3>
+
+To do simple tick-based profiling of a tool, include the line 
+<blockquote>
+#include "vg_profile.c"
+</blockquote>
+in the tool somewhere, and rebuild (you may have to <code>make clean</code>
+first).  Then run Valgrind with the <code>--profile=yes</code> option.<p>
+
+The profiler is stack-based;  you can register a profiling event with
+<code>VGP_(register_profile_event)()</code> and then use the
+<code>VGP_PUSHCC</code> and <code>VGP_POPCC</code> macros to record time spent
+doing certain things.  New profiling event numbers must not overlap with the
+core profiling event numbers.  See <code>include/tool.h</code> for details
+and Memcheck for an example.
+
+
+<a name="othermakefilehackery"></a>
+<h3>3.5&nbsp; Other makefile hackery</h3>
+
+If you add any directories under <code>valgrind/foobar/</code>, you will
+need to add an appropriate <code>Makefile.am</code> to it, and add a
+corresponding entry to the <code>AC_OUTPUT</code> list in
+<code>valgrind/configure.in</code>.<p>
+
+If you add any scripts to your tool (see Cachegrind for an example) you need to
+add them to the <code>bin_SCRIPTS</code> variable in
+<code>valgrind/foobar/Makefile.am</code>.<p>
+
+
+<a name="interfaceversions"></a>
+<h3>3.5&nbsp; Core/tool interface versions</h3>
+
+In order to allow for the core/tool interface to evolve over time, Valgrind
+uses a basic interface versioning system.  All a tool has to do is use the
+<code>VG_DETERMINE_INTERFACE_VERSION</code> macro exactly once in its code.
+If not, a link error will occur when the tool is built.
+<p>
+The interface version number has the form X.Y.  Changes in Y indicate binary
+compatible changes.  Changes in X indicate binary incompatible changes.  If
+the core and tool has the same major version number X they should work
+together.  If X doesn't match, Valgrind will abort execution with an
+explanation of the problem.
+<p>
+This approach was chosen so that if the interface changes in the future,
+old tools won't work and the reason will be clearly explained, instead of
+possibly crashing mysteriously.  We have attempted to minimise the potential
+for binary incompatible changes by means such as minimising the use of naked
+structs in the interface.
+
+<a name="finalwords"></a>
+<h2>4&nbsp; Final Words</h2>
+
+This whole core/tool business under active development, although it's slowly
+maturing.<p>
+
+The first consequence of this is that the core/tool interface will continue
+to change in the future;  we have no intention of freezing it and then
+regretting the inevitable stupidities.  Hopefully most of the future changes
+will be to add new features, hooks, functions, etc, rather than to change old
+ones, which should cause a minimum of trouble for existing tools, and we've put
+some effort into future-proofing the interface to avoid binary incompatibility.
+But we can't guarantee anything.  The versioning system should catch any
+incompatibilities.  Just something to be aware of.<p>
+
+The second consequence of this is that we'd love to hear your feedback about
+it:
+
+<ul>
+  <li>If you love it or hate it</li><p>
+  <li>If you find bugs</li><p>
+  <li>If you write a tool</li><p>
+  <li>If you have suggestions for new features, needs, trackable events,
+      functions</li><p>
+  <li>If you have suggestions for making tools easier to write</li><p>
+  <li>If you have suggestions for improving this documentation</li><p>
+  <li>If you don't understand something</li><p>
+</ul>
+
+or anything else!<p>
+
+Happy programming.
+

@@ -1,0 +1,2 @@
+prog: mismatches
+vgopts: -q

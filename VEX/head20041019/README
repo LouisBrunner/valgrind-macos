@@ -1,0 +1,100 @@
+
+Release notes for Valgrind
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you are building a binary package of Valgrind for distribution,
+please read README_PACKAGERS.  It contains some important information.
+
+If you are developing Valgrind, please read README_DEVELOPERS.  It contains
+some useful information.
+
+For instructions on how to build/install, see the end of this file.
+
+Valgrind works on most, reasonably recent Linux setups.  If you have
+problems, consult FAQ.txt to see if there are workarounds.
+
+Executive Summary
+~~~~~~~~~~~~~~~~~
+Valgrind is a GPL'd system for debugging and profiling x86-Linux programs.
+With the tools that come with Valgrind, you can automatically detect
+many memory management and threading bugs, avoiding hours of frustrating
+bug-hunting, making your programs more stable. You can also perform
+detailed profiling to help speed up your programs.
+
+The Valgrind distribution includes five tools: two memory error
+detectors, a thread error detector, a cache profiler and a heap profiler.
+Several other tools have been built with Valgrind.
+
+To give you an idea of what Valgrind tools do, when a program is run
+under the supervision of the first memory error detector tool, all reads
+and writes of memory are checked, and calls to malloc/new/free/delete
+are intercepted. As a result, it can detect problems such as:
+
+   Use of uninitialised memory
+   Reading/writing memory after it has been free'd
+   Reading/writing off the end of malloc'd blocks
+   Reading/writing inappropriate areas on the stack
+   Memory leaks -- where pointers to malloc'd blocks are lost forever
+   Passing of uninitialised and/or unaddressible memory to system calls
+   Mismatched use of malloc/new/new [] vs free/delete/delete []
+   Overlaps of arguments to strcpy() and related functions
+   Some abuses of the POSIX pthread API
+
+Problems like these can be difficult to find by other means, often
+lying undetected for long periods, then causing occasional,
+difficult-to-diagnose crashes.  When one of these errors occurs, you can
+attach GDB to your program, so you can poke around and see what's going
+on.
+
+Valgrind is closely tied to details of the CPU, operating system and
+to a less extent, compiler and basic C libraries. This makes it
+difficult to make it portable, so I have chosen at the outset to
+concentrate on what I believe to be a widely used platform: x86/Linux.
+
+Valgrind is licensed under the GNU General Public License, version 2. 
+Read the file COPYING in the source distribution for details.
+
+
+Documentation
+~~~~~~~~~~~~~
+A comprehensive user guide is supplied.  Point your browser at
+$PREFIX/share/doc/valgrind/manual.html, where $PREFIX is whatever you
+specified with --prefix= when building.
+
+
+Building and installing it
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+To install from CVS :
+
+  0. Check out the code from CVS, following the instructions at
+     http://developer.kde.org/source/anoncvs.html. The 'modulename' is
+     "valgrind".
+
+  1. cd into the source directory.
+
+  2. Run ./autogen.sh to setup the environment (you need the standard
+     autoconf tools to do so).
+
+To install from a tar.bz2 distribution:
+
+  3. Run ./configure, with some options if you wish. The standard
+     options are documented in the INSTALL file.  The only interesting
+     one is the usual --prefix=/where/you/want/it/installed.
+
+  4. Do "make".
+
+  5. Do "make install", possibly as root if the destination permissions
+     require that.
+
+  6. See if it works.  Try "valgrind --tool=memcheck ls -l".  Either
+     this works, or it bombs out with some complaint.  In that case,
+     please let us know (see valgrind.kde.org/bugs.html).
+
+Important!  Do not move the valgrind installation into a place
+different from that specified by --prefix at build time.  This will
+cause things to break in subtle ways, mostly when Valgrind handles
+fork/exec calls.
+
+
+Julian Seward (jseward@acm.org)
+Nick Nethercote (njn25@cam.ac.uk)
+Jeremy Fitzhardinge (jeremy@goop.org)

@@ -1,0 +1,3 @@
+#! /bin/sh
+
+../../tests/filter_stderr_basic

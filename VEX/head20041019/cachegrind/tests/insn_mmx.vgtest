@@ -1,0 +1,4 @@
+vgopts: -q
+prog: ../../none/tests/insn_mmx
+cpu_test: mmx
+delete: cachegrind.out.*

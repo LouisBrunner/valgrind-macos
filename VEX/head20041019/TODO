@@ -1,0 +1,15 @@
+
+Doesn't run
+~~~~~~~~~~~
+User Mode Linux.
+Wine.
+
+
+Desirable
+~~~~~~~~~
+Stack: make return address into NoAccess ?
+
+
+Future
+~~~~~~
+Automatic invariant inference and checking.

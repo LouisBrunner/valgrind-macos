@@ -1,0 +1,9 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic                |
+
+# Remove numbers from all lines
+sed "s/\([a-zA-Z(): ]*\)[ 0-9\.,()+rdw]*\(%\|ms.B\)$/\1/"
+

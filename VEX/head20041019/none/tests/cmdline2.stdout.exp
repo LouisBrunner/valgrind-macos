@@ -1,0 +1,69 @@
+usage: valgrind --tool=<toolname> [options] prog-and-args
+
+  common user options for all Valgrind tools, with defaults in [ ]:
+    --tool=<name>             use the Valgrind tool named <name>
+    -h --help                 show this message
+    --help-debug              show this message, plus debugging options
+    --version                 show version
+    -q --quiet                run silently; only print error msgs
+    -v --verbose              be more verbose, incl counts of errors
+    --trace-children=no|yes   Valgrind-ise child processes? [no]
+    --track-fds=no|yes        track open file descriptors? [no]
+    --time-stamp=no|yes       add timestamps to log messages? [no]
+
+  uncommon user options for all Valgrind tools:
+    --run-libc-freeres=no|yes free up glibc memory at exit? [yes]
+    --weird-hacks=hack1,hack2,...  recognised hacks: lax-ioctls [none]
+    --signal-polltime=<time>  signal poll period (mS) for older kernels [50]
+    --lowlat-signals=no|yes   improve thread signal wake-up latency [no]
+    --lowlat-syscalls=no|yes  improve thread syscall wake-up latency [no]
+    --pointercheck=no|yes     enforce client address space limits [yes]
+
+  user options for Valgrind tools that report errors:
+    --log-fd=<number>         log messages to file descriptor [2=stderr]
+    --log-file=<file>         log messages to <file>.pid<pid>
+    --log-socket=ipaddr:port  log messages to socket ipaddr:port
+    --demangle=no|yes         automatically demangle C++ names? [yes]
+    --num-callers=<number>    show <num> callers in stack traces [4]
+    --error-limit=no|yes      stop showing new errors if too many? [yes]
+    --show-below-main=no|yes  continue stack traces below main() [no]
+    --suppressions=<filename> suppress errors described in <filename>
+    --gen-suppressions=no|yes print suppressions for errors detected [no]
+    --db-attach=no|yes        start debugger when errors detected? [no]
+    --db-command=<command>    command to start debugger [gdb -nw %f %p]
+    --input-fd=<number>       file descriptor for input [0=stdin]
+
+  user options for Nulgrind:
+    (none)
+
+  debugging options for all Valgrind tools:
+    --sanity-level=<number>   level of sanity checking to do [1]
+    --single-step=no|yes      translate each instr separately? [no]
+    --optimise=no|yes         improve intermediate code? [yes]
+    --profile=no|yes          profile? (tool must be built for it) [no]
+    --chain-bb=no|yes         do basic-block chaining? [yes]
+    --branchpred=yes|no       generate branch prediction hints [no]
+    --trace-codegen=<XXXXX>   show generated code? (X = 0|1) [00000]
+    --trace-syscalls=no|yes   show all system calls? [no]
+    --trace-signals=no|yes    show signal handling details? [no]
+    --trace-symtab=no|yes     show symbol table details? [no]
+    --trace-sched=no|yes      show thread scheduler details? [no]
+    --trace-pthread=none|some|all  show pthread event details? [none]
+    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach
+
+  debugging options for Valgrind tools that report errors
+    --dump-error=<number>     show translation for basic block associated
+                              with <number>'th error context [0=show none]
+
+  debugging options for Nulgrind:
+    (none)
+
+  Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc
+
+  Valgrind is Copyright (C) 2000-2004 Julian Seward et al.
+  and licensed under the GNU General Public License, version 2.
+  Bug reports, feedback, admiration, abuse, etc, to: valgrind.kde.org.
+
+  Tools are copyright and licensed by their authors.  See each
+  tool's start-up message for more information.
+

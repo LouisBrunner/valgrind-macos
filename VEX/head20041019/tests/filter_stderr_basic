@@ -1,0 +1,41 @@
+#! /bin/sh
+
+# This filter should be applied to *every* stderr results.  It removes Valgrind
+# startup stuff and pid numbers.
+
+# Remove ==pid== and --pid-- and ++pid++ and **pid** strings 
+sed "s/\(==\|--\|\+\+\|\*\*\)[0-9]\{1,5\}\1 //"             |
+
+# Remove "<name>, a <description> for $ARCH-$OS." line and the following
+# copyright notice line.  Works for tool and core intro lines.
+sed "/^.*, .* for .*-.*\./ , /./ d"                                | 
+
+# Remove other introductory lines
+sed "/Estimated CPU clock rate is [0-9]* MHz/d"                       |
+sed "/For more details, rerun with: -v/d"                              |
+
+# Anonymise line numbers in vg_replace_malloc.c
+sed "s/vg_replace_malloc.c:[0-9]*/vg_replace_malloc.c:.../"           |
+
+# Anonymise vg_intercept lines
+sed "s/vg_intercept.c:[0-9]*/vg_intercept.c:.../"                     |
+
+# Anonymise vg_libpthread lines
+sed "s/vg_libpthread.c:[0-9]*/vg_libpthread.c:.../"                   |
+
+# Hide suppressed error counts
+sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]*\( from \)[0-9]*)$/\10\20)/" |
+
+
+# Reduce some libc incompatibility
+sed "s/ __getsockname / getsockname /"                                 |
+sed "s/ __sigaction / sigaction /"                                     |
+sed "s/ __GI___/ __/"                                                  |
+sed "s/ __\([a-z]*\)_nocancel / \1 /"                                  |
+
+# Remove line info out of order warnings
+sed "/warning: line info addresses out of order/d"                     |
+
+# Remove any ": dumping core" message as the user might have a
+# limit set that prevents the core dump
+sed "s/\(signal [0-9]* (SIG[A-Z]*)\): dumping core/\1/"

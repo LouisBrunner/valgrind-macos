@@ -1,0 +1,6 @@
+
+SUBDIRS = . tests docs
+
+include $(top_srcdir)/Makefile.all.am
+include $(top_srcdir)/Makefile.tool-flags.am
+include $(top_srcdir)/Makefile.tool-inplace.am

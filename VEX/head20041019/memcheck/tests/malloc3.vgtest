@@ -1,0 +1,3 @@
+prog: malloc3
+stdout_filter: ../../tests/filter_addresses
+vgopts: -q

@@ -1,0 +1,3 @@
+vgopts: -q
+prog: ../../none/tests/insn_basic
+delete: cachegrind.out.*

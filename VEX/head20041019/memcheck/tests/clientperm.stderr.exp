@@ -1,0 +1,5 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (clientperm.c:29)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (clientperm.c:36)

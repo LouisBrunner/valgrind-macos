@@ -1,0 +1,2 @@
+prog: args
+args: a b "1 2 3"

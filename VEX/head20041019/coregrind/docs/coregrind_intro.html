@@ -1,0 +1,162 @@
+
+
+<a name="intro"></a>
+<h2>1&nbsp; Introduction</h2>
+
+<a name="intro-overview"></a>
+<h3>1.1&nbsp; An overview of Valgrind</h3>
+
+Valgrind is a flexible system for debugging and profiling Linux-x86
+executables.  The system consists of a core, which provides a synthetic
+x86 CPU in software, and a series of tools, each of which performs some
+kind of debugging, profiling, or similar task.  The architecture is
+modular, so that new tools can be created easily and without disturbing
+the existing structure.
+
+<p>
+A number of useful tools are supplied as standard.  In summary, these
+are:
+
+<ul>
+<li><b>Memcheck</b> detects memory-management problems in your programs.
+    All reads and writes of memory are checked, and calls to
+    malloc/new/free/delete are intercepted. As a result, Memcheck can
+    detect the following problems:
+    <ul>
+        <li>Use of uninitialised memory</li>
+        <li>Reading/writing memory after it has been free'd</li>
+        <li>Reading/writing off the end of malloc'd blocks</li>
+        <li>Reading/writing inappropriate areas on the stack</li>
+        <li>Memory leaks -- where pointers to malloc'd blocks are lost
+            forever</li>
+        <li>Mismatched use of malloc/new/new [] vs free/delete/delete []</li>
+        <li>Overlapping <code>src</code> and <code>dst</code> pointers in 
+            <code>memcpy()</code> and related functions</li>
+        <li>Some misuses of the POSIX pthreads API</li>
+    </ul>
+    <p>
+    Problems like these can be difficult to find by other means, often
+    lying undetected for long periods, then causing occasional,
+    difficult-to-diagnose crashes.
+<p>
+<li><b>Addrcheck</b> is a lightweight version of
+    Memcheck.  It is identical to Memcheck except
+    for the single detail that it does not do any uninitialised-value
+    checks.  All of the other checks -- primarily the fine-grained
+    address checking -- are still done.  The downside of this is that
+    you don't catch the uninitialised-value errors that
+    Memcheck can find.
+    <p>
+    But the upside is significant: programs run about twice as fast as
+    they do on Memcheck, and a lot less memory is used.  It
+    still finds reads/writes of freed memory, memory off the end of
+    blocks and in other invalid places, bugs which you really want to
+    find before release!
+    <p>
+    Because Addrcheck is lighter and faster than
+    Memcheck, you can run more programs for longer, and so you
+    may be able to cover more test scenarios.  Addrcheck was 
+    created because one of us (Julian) wanted to be able to 
+    run a complete KDE desktop session with checking.  As of early 
+    November 2002, we have been able to run KDE-3.0.3 on a 1.7 GHz P4
+    with 512 MB of memory, using Addrcheck.  Although the
+    result is not stellar, it's quite usable, and it seems plausible
+    to run KDE for long periods at a time like this, collecting up
+    all the addressing errors that appear.
+<p>
+<li><b>Cachegrind</b> is a cache profiler.  It performs detailed simulation of
+    the I1, D1 and L2 caches in your CPU and so can accurately
+    pinpoint the sources of cache misses in your code.  If you desire,
+    it will show the number of cache misses, memory references and
+    instructions accruing to each line of source code, with
+    per-function, per-module and whole-program summaries.  If you ask
+    really nicely it will even show counts for each individual x86
+    instruction.
+    <p>
+    Cachegrind auto-detects your machine's cache configuration
+    using the <code>CPUID</code> instruction, and so needs no further
+    configuration info, in most cases.
+    <p>
+    Cachegrind is nicely complemented by Josef Weidendorfer's
+    amazing KCacheGrind visualisation tool (<A
+    HREF="http://kcachegrind.sourceforge.net">
+    http://kcachegrind.sourceforge.net</A>), a KDE application which
+    presents these profiling results in a graphical and
+    easier-to-understand form.
+<p>
+<li><b>Helgrind</b> finds data races in multithreaded programs.
+    Helgrind looks for
+    memory locations which are accessed by more than one (POSIX
+    p-)thread, but for which no consistently used (pthread_mutex_)lock
+    can be found.  Such locations are indicative of missing
+    synchronisation between threads, and could cause hard-to-find
+    timing-dependent problems.
+    <p>
+    Helgrind ("Hell's Gate", in Norse mythology) implements the
+    so-called "Eraser" data-race-detection algorithm, along with
+    various refinements (thread-segment lifetimes) which reduce the
+    number of false errors it reports.  It is as yet somewhat of an
+    experimental tool, so your feedback is especially welcomed here.
+    <p>
+    Helgrind has been hacked on extensively by Jeremy
+    Fitzhardinge, and we have him to thank for getting it to a
+    releasable state.
+</ul>
+
+A number of minor tools (<b>corecheck</b>, <b>lackey</b> and
+<b>Nulgrind</b>) are also supplied.  These aren't particularly useful --
+they exist to illustrate how to create simple tools and to help the
+valgrind developers in various ways.
+
+
+<p>
+Valgrind is closely tied to details of the CPU, operating system and
+to a less extent, compiler and basic C libraries. This makes it
+difficult to make it portable, so we have chosen at the outset to
+concentrate on what we believe to be a widely used platform: Linux on
+x86s.  Valgrind uses the standard Unix <code>./configure</code>,
+<code>make</code>, <code>make install</code> mechanism, and we have
+attempted to ensure that it works on machines with kernel 2.2 or 2.4
+and glibc 2.1.X, 2.2.X or 2.3.1.  This should cover the vast majority
+of modern Linux installations.  Note that glibc-2.3.2+, with the
+NPTL (Native Posix Threads Library) package won't work.  We hope to
+be able to fix this, but it won't be easy.
+
+
+<p>
+Valgrind is licensed under the GNU General Public License, version
+2. Read the file LICENSE in the source distribution for details.  Some
+of the PThreads test cases, <code>pth_*.c</code>, are taken from
+"Pthreads Programming" by Bradford Nichols, Dick Buttlar &amp;
+Jacqueline Proulx Farrell, ISBN 1-56592-115-1, published by O'Reilly
+&amp; Associates, Inc.
+
+
+
+
+<a name="intro-navigation"></a>
+<h3>1.2&nbsp; How to navigate this manual</h3>
+
+The Valgrind distribution consists of the Valgrind core, upon which are
+built Valgrind tools, which do different kinds of debugging and
+profiling.  This manual is structured similarly.  
+
+<p>
+First, we describe the Valgrind core, how to use it, and the flags it
+supports.  Then, each tool has its own chapter in this manual.  You only
+need to read the documentation for the core and for the tool(s) you
+actually use, although you may find it helpful to be at least a little
+bit familar with what all tools do.  If you're new to all this, you 
+probably want to run the Memcheck tool.  If you want to write a new tool,
+read <A HREF="coregrind_tools.html">this</A>.
+
+<p>
+Be aware that the core understands some command line flags, and the
+tools have their own flags which they know about.  This means
+there is no central place describing all the flags that are accepted
+-- you have to read the flags documentation both for 
+<A HREF="coregrind_core.html#core">Valgrind's core</A>
+and for the tool you want to use.
+
+<p>
+

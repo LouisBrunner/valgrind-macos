@@ -1,0 +1,406 @@
+#! @PERL@
+##--------------------------------------------------------------------##
+##--- Valgrind regression testing script                vg_regtest ---##
+##--------------------------------------------------------------------##
+
+#  This file is part of Valgrind, an extensible x86 protected-mode
+#  emulator for monitoring program execution on x86-Unixes.
+#
+#  Copyright (C) 2003 Nicholas Nethercote
+#     njn25@cam.ac.uk
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as
+#  published by the Free Software Foundation; either version 2 of the
+#  License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+#  02111-1307, USA.
+#
+#  The GNU General Public License is contained in the file COPYING.
+
+#----------------------------------------------------------------------------
+# usage: vg_regtest [options] <dirs | files>
+#
+# Options:
+#   --all:      run tests in all subdirs
+#   --valgrind: valgrind to use.  Default is one built from this source tree.
+#
+# The easiest way is to run all tests in valgrind/ with (assuming you installed
+# in $PREFIX):
+#
+#   $PREFIX/bin/vg_regtest --all
+#
+# You can specify individual files to test, or whole directories, or both.
+# Directories are traversed recursively, except for ones named, for example, 
+# CVS/ or docs/.
+#
+# Each test is defined in a file <test>.vgtest, containing one or more of the
+# following lines, in any order:
+#   - prog:   <prog to run>                         (compulsory)
+#   - args:   <args for prog>                       (default: none)
+#   - vgopts: <Valgrind options>                    (default: none)
+#   - stdout_filter: <filter to run stdout through> (default: none)
+#   - stderr_filter: <filter to run stderr through> (default: ./filter_stderr)
+#   - cpu_test: <cpu feature required for test>     (default: none)
+#   - delete: <created file(s) to delete>           (default: none)
+#
+# Note that filters are necessary for stderr results to filter out things that
+# always change, eg. process id numbers.
+#
+# Expected stdout (filtered) is kept in <test>.stdout.exp[0-9]? (can be more
+# than one expected output).  It can be missing if it would be empty.  Expected
+# stderr (filtered) is kept in <test>.stderr.exp[0-9]?. 
+#
+# If results don't match, the output can be found in <test>.std<strm>.out,
+# and the diff between expected and actual in <test>.std<strm>.diff[0-9]?.
+#
+# Notes on adding regression tests for a new tool are in
+# coregrind/docs/coregrind_tools.html.
+#----------------------------------------------------------------------------
+
+use warnings;
+use strict;
+
+#----------------------------------------------------------------------------
+# Global vars
+#----------------------------------------------------------------------------
+my $usage="vg_regtest [--all, --valgrind]\n";
+
+my $tmp="vg_regtest.tmp.$$";
+
+# Test variables
+my $vgopts;             # valgrind options
+my $prog;               # test prog
+my $args;               # test prog args
+my $stdout_filter;      # filter program to run stdout results file through
+my $stderr_filter;      # filter program to run stderr results file through
+my $cpu_test;           # cpu feature to check for before running test
+my $delete;             # file(s) to delete
+
+my @failures;           # List of failed tests
+
+my $num_tests_done      = 0;
+my %num_failures        = (stderr => 0, stdout => 0);
+
+# Default valgrind to use is this build tree's (uninstalled) one
+my $prefix="@prefix@";
+my $exec_prefix="@exec_prefix@";
+my $valgrind = "./coregrind/valgrind";
+
+chomp(my $tests_dir = `pwd`);
+
+# default filter is the one named "filter_stderr" in the test's directory
+my $default_stderr_filter = "filter_stderr";
+
+
+#----------------------------------------------------------------------------
+# Process command line, setup
+#----------------------------------------------------------------------------
+
+# If $prog is a relative path, it prepends $dir to it.  Useful for two reasons:
+#
+# 1. Can prepend "." onto programs to avoid trouble with users who don't have
+#    "." in their path (by making $dir = ".")
+# 2. Can prepend the current dir to make the command absolute to avoid
+#    subsequent trouble when we change directories.
+#
+# Also checks the program exists and is executable.
+sub validate_program ($$$$) 
+{
+    my ($dir, $prog, $must_exist, $must_be_executable) = @_;
+
+    # If absolute path, leave it alone.  If relative, make it
+    # absolute -- by prepending current dir -- so we can change
+    # dirs and still use it.
+    $prog = "$dir/$prog" if ($prog !~ /^\//);
+    if ($must_exist) {
+        (-f $prog) or die "vg_regtest: `$prog' not found or not a file ($dir)\n";
+    }
+    if ($must_be_executable) { 
+        (-x $prog) or die "vg_regtest: `$prog' not executable ($dir)\n";
+    }
+
+    return $prog;
+}
+
+sub process_command_line() 
+{
+    my $alldirs = 0;
+    my @fs;
+    
+    for my $arg (@ARGV) {
+        if ($arg =~ /^-/) {
+            if      ($arg =~ /^--all$/) {
+                $alldirs = 1;
+            } elsif ($arg =~ /^--valgrind=(.*)$/) {
+                $valgrind = $1;
+            } else {
+                die $usage;
+            }
+        } else {
+            push(@fs, $arg);
+        }
+    }
+    $valgrind = validate_program($tests_dir, $valgrind, 1, 0);
+
+    if ($alldirs) {
+        @fs = ();
+        foreach my $f (glob "*") {
+            push(@fs, $f) if (-d $f);
+        }
+    }
+
+    (0 != @fs) or die "No test files or directories specified\n";
+
+    return @fs;
+}
+
+#----------------------------------------------------------------------------
+# Read a .vgtest file
+#----------------------------------------------------------------------------
+sub read_vgtest_file($)
+{
+    my ($f) = @_;
+
+    # Defaults.
+    ($vgopts, $prog, $args, $stdout_filter, $stderr_filter, $cpu_test, $delete)
+      = ("", undef, "", undef, undef, undef, undef);
+
+    # Every test directory must have a "filter_stderr"
+    $stderr_filter = validate_program(".", $default_stderr_filter, 1, 1);
+
+    open(INPUTFILE, "< $f") || die "File $f not openable\n";
+
+    while (my $line = <INPUTFILE>) {
+        if      ($line =~ /^\s*vgopts:\s*(.*)$/) {
+            $vgopts = $1;
+        } elsif ($line =~ /^\s*prog:\s*(.*)$/) {
+            $prog = validate_program(".", $1, 0, 0);
+        } elsif ($line =~ /^\s*args:\s*(.*)$/) {
+            $args = $1;
+        } elsif ($line =~ /^\s*stdout_filter:\s*(.*)$/) {
+            $stdout_filter = validate_program(".", $1, 1, 1);
+        } elsif ($line =~ /^\s*stderr_filter:\s*(.*)$/) {
+            $stderr_filter = validate_program(".", $1, 1, 1);
+        } elsif ($line =~ /^\s*cpu_test:\s*(.*)$/) {
+            $cpu_test = $1;
+        } elsif ($line =~ /^\s*delete:\s*(.*)$/) {
+            $delete = $1;
+        } else {
+            die "Bad line in $f: $line\n";
+        }
+    }
+    close(INPUTFILE);
+
+    if (!defined $prog) {
+        $prog = "";     # allow no prog for testing error and --help cases
+    }
+}
+
+#----------------------------------------------------------------------------
+# Do one test
+#----------------------------------------------------------------------------
+# Since most of the program time is spent in system() calls, need this to
+# propagate a Ctrl-C enabling us to quit.
+sub mysystem($) 
+{
+    (system($_[0]) != 2) or exit 1;      # 2 is SIGINT
+}
+
+# from a directory name like "/foo/cachesim/tests/" determine the tool name
+sub determine_tool()
+{
+    my $dir = `pwd`;
+    $dir =~ /.*\/([^\/]+)\/tests.*/;   # foo/tool_name/tests/foo
+    return $1;
+}
+
+# Compare output against expected output;  it should match at least one of
+# them.
+sub do_diffs($$$$)
+{
+    my ($fullname, $name, $mid, $f_exps) = @_;
+    
+    for my $f_exp (@$f_exps) {
+        (-r $f_exp) or die "Could not read `$f_exp'\n";
+
+        my $n = "";
+        if ($f_exp =~ /.*\.exp(\d?)/) {
+            $n = $1;
+        } else {
+            $n = "";
+            ($f_exp eq "/dev/null") or die "Unexpected .exp file: $f_exp\n";
+        }
+
+        #print("diff -C0 $f_exp $name.$mid.out > $name.$mid.diff$n\n");
+        mysystem("diff -C0 $f_exp $name.$mid.out > $name.$mid.diff$n");
+
+        if (not -s "$name.$mid.diff$n") {
+            # A match;  remove .out and any previously created .diff files.
+            unlink("$name.$mid.out");
+            unlink(<$name.$mid.diff*>);
+            return;
+        }
+    }
+    # If we reach here, none of the .exp files matched.
+    print "*** $name failed ($mid) ***\n";
+    push(@failures, sprintf("%-40s ($mid)", "$fullname"));
+    $num_failures{$mid}++;
+}
+
+sub do_one_test($$) 
+{
+    my ($dir, $vgtest) = @_;
+    $vgtest =~ /^(.*)\.vgtest/;
+    my $name = $1;
+    my $fullname = "$dir/$name"; 
+
+    read_vgtest_file($vgtest);
+
+    if (defined $cpu_test) {
+        return unless system("../../tests/cputest $cpu_test") == 0;
+    }
+
+    printf("%-16s valgrind $vgopts $prog $args\n", "$name:");
+
+    # Pass the appropriate --tool option for the directory (can be overridden
+    # by an "args:" or "args.dev:" line, though).  
+    my $tool=determine_tool();
+    mysystem("VALGRINDLIB=$tests_dir/.in_place $valgrind --tool=$tool $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
+
+    if (defined $stdout_filter) {
+        mysystem("$stdout_filter < $name.stdout.out > $tmp");
+        rename($tmp, "$name.stdout.out");
+    }
+
+    mysystem("$stderr_filter < $name.stderr.out > $tmp");
+    rename($tmp, "$name.stderr.out");
+
+
+    # Find all the .stdout.exp files.  If none, use /dev/null.
+    my @stdout_exps = <$name.stdout.exp*>;
+    @stdout_exps = ( "/dev/null" ) if (0 == scalar @stdout_exps);
+
+    # Find all the .stderr.exp files.  $name.stderr.exp must exist.
+    my @stderr_exps = <$name.stderr.exp*>;
+    (-r "$name.stderr.exp") or die "Could not read `$name.stderr.exp'\n";
+    
+    do_diffs($fullname, $name, "stdout", \@stdout_exps); 
+    do_diffs($fullname, $name, "stderr", \@stderr_exps); 
+ 
+    if (defined $delete) {
+        unlink(glob($delete));
+    }
+
+    $num_tests_done++;
+}
+
+#----------------------------------------------------------------------------
+# Test one directory (and any subdirs)
+#----------------------------------------------------------------------------
+sub test_one_dir($$);    # forward declaration
+
+sub test_one_dir($$) 
+{
+    my ($dir, $prev_dirs) = @_;
+    $dir =~ s/\/$//;    # trim a trailing '/'
+
+    # ignore dirs into which we should not recurse
+    if ($dir =~ /^(BitKeeper|CVS|SCCS|docs|doc)$/) { return; }
+
+    chdir($dir) or die "Could not change into $dir\n";
+
+    # Nb: Don't prepend a '/' to the base directory
+    my $full_dir = $prev_dirs . ($prev_dirs eq "" ? "" : "/") . $dir;
+    my $dashes = "-" x (50 - length $full_dir);
+
+    my @fs = glob "*";
+    my @vgtests = grep { $_ =~ /\.vgtest$/ } @fs;
+    my $found_tests = (0 != (grep { $_ =~ /\.vgtest$/ } @fs));
+
+    if ($found_tests) {
+        print "-- Running  tests in $full_dir $dashes\n";
+    }
+    foreach my $f (@fs) {
+        if (-d $f) {
+            test_one_dir($f, $full_dir);
+        } elsif ($f =~ /\.vgtest$/) {
+            do_one_test($full_dir, $f);
+        }
+    }
+    if ($found_tests) {
+        print "-- Finished tests in $full_dir $dashes\n";
+    }
+
+    chdir("..");
+}
+
+#----------------------------------------------------------------------------
+# Summarise results
+#----------------------------------------------------------------------------
+sub plural($)
+{
+   return ( $_[0] == 1 ? "" : "s" );
+}
+
+sub summarise_results 
+{
+    my $x = ( $num_tests_done == 1 ? "test" : "tests" );
+    
+    printf("\n== %d test%s, %d stderr failure%s, %d stdout failure%s =================\n", 
+           $num_tests_done, plural($num_tests_done),
+           $num_failures{"stderr"}, plural($num_failures{"stderr"}),
+           $num_failures{"stdout"}, plural($num_failures{"stdout"}));
+
+    foreach my $failure (@failures) {
+        print "$failure\n";
+    }
+    print "\n";
+}
+
+#----------------------------------------------------------------------------
+# main(), sort of
+#----------------------------------------------------------------------------
+
+# nuke VALGRIND_OPTS
+$ENV{"VALGRIND_OPTS"} = "";
+
+my @fs = process_command_line();
+foreach my $f (@fs) {
+    if (-d $f) {
+        test_one_dir($f, "");
+    } else { 
+        # Allow the .vgtest suffix to be given or omitted
+        if ($f =~ /.vgtest$/ && -r $f) {
+            # do nothing
+        } elsif (-r "$f.vgtest") {
+            $f = "$f.vgtest";
+        } else {
+            die "`$f' neither a directory nor a readable test file/name\n"
+        }
+        my $dir  = `dirname  $f`;   chomp $dir;
+        my $file = `basename $f`;   chomp $file;
+        chdir($dir) or die "Could not change into $dir\n";
+        do_one_test($dir, $file);
+        chdir($tests_dir);
+    }
+}
+summarise_results();
+
+if (0 == $num_failures{"stdout"} && 0 == $num_failures{"stderr"}) {
+    exit 0;
+} else {
+    exit 1;
+}
+
+##--------------------------------------------------------------------##
+##--- end                                               vg_regtest ---##
+##--------------------------------------------------------------------##

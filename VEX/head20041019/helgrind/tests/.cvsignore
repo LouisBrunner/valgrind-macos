@@ -1,0 +1,12 @@
+Makefile.in
+Makefile
+allok
+deadlock
+inherit
+race
+race2
+readshared
+*.stdout.diff
+*.stderr.diff
+*.stdout.out
+*.stderr.out

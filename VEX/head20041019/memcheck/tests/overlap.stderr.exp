@@ -1,0 +1,27 @@
+Source and destination overlap in memcpy(0x........, 0x........, 21)
+   at 0x........: memcpy (mac_replace_strmem.c:...)
+   by 0x........: main (overlap.c:40)
+
+Source and destination overlap in memcpy(0x........, 0x........, 21)
+   at 0x........: memcpy (mac_replace_strmem.c:...)
+   by 0x........: main (overlap.c:42)
+
+Source and destination overlap in strncpy(0x........, 0x........, 21)
+   at 0x........: strncpy (mac_replace_strmem.c:...)
+   by 0x........: main (overlap.c:45)
+
+Source and destination overlap in strncpy(0x........, 0x........, 21)
+   at 0x........: strncpy (mac_replace_strmem.c:...)
+   by 0x........: main (overlap.c:47)
+
+Source and destination overlap in strcpy(0x........, 0x........)
+   at 0x........: strcpy (mac_replace_strmem.c:...)
+   by 0x........: main (overlap.c:54)
+
+Source and destination overlap in strncat(0x........, 0x........, 21)
+   at 0x........: strncat (mac_replace_strmem.c:...)
+   by 0x........: main (overlap.c:112)
+
+Source and destination overlap in strncat(0x........, 0x........, 21)
+   at 0x........: strncat (mac_replace_strmem.c:...)
+   by 0x........: main (overlap.c:113)

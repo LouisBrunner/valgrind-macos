@@ -1,0 +1,3 @@
+vgopts: --leak-check=yes -q
+prog: nanoleak
+stderr_filter: filter_leak_check_size

@@ -1,0 +1,3 @@
+prog: ../../tests/true
+vgopts: --format=text
+delete: massif.*.*

@@ -1796,7 +1796,7 @@ static void treebuild_BB ( IRBB* bb )
 
 typedef
    struct {
-      enum { Ut, Btt, Btc, Cf64i } tag;
+      enum { Ut, Btt, Btc, Cf64i, Ld } tag;
       union {
          /* unop(tmp) */
          struct {
@@ -1819,6 +1819,11 @@ typedef
          struct {
             ULong f64i;
          } Cf64i;
+         /* LoadLE(tmp):ty */
+         struct {
+            IRTemp addr;
+            IRType ty;
+         } Ld;
       } u;
    }
    AvailExpr;
@@ -1837,6 +1842,8 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
                        && a1->u.Btc.arg1 == a2->u.Btc.arg1
                        && eqIRConst(&a1->u.Btc.con2, &a2->u.Btc.con2);
       case Cf64i: return a1->u.Cf64i.f64i == a2->u.Cf64i.f64i;
+      case Ld: return a1->u.Ld.ty == a2->u.Ld.ty
+                      && a1->u.Ld.addr == a2->u.Ld.addr;
       default: vpanic("eq_AvailExpr");
    }
 }
@@ -1858,6 +1865,8 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
                               IRExpr_Tmp(ae->u.Btc.arg1), IRExpr_Const(con) );
       case Cf64i:
          return IRExpr_Const(IRConst_F64i(ae->u.Cf64i.f64i));
+      case Ld:
+         return IRExpr_LDle( ae->u.Ld.ty, IRExpr_Tmp(ae->u.Ld.addr) );
       default:
          vpanic("availExpr_to_IRExpr");
    }
@@ -1889,6 +1898,9 @@ static void subst_AvailExpr ( Hash64* env, AvailExpr* ae )
          ae->u.Btc.arg1 = subst_AvailExpr_Temp( env, ae->u.Btc.arg1 );
          break;
       case Cf64i:
+         break;
+      case Ld:
+         ae->u.Ld.addr = subst_AvailExpr_Temp( env, ae->u.Ld.addr );
          break;
       default: 
          vpanic("subst_AvailExpr");
@@ -1938,6 +1950,16 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
       return ae;
    }
 
+   if (e->tag == Iex_LDle
+       && e->Iex.LDle.addr->tag == Iex_Tmp) {
+     vex_printf("\ndsssssssssssssssssssssssssssssssssssssssssssss\n");
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag       = Ld;
+      ae->u.Ld.addr = e->Iex.LDle.addr->Iex.Tmp.tmp;
+      ae->u.Ld.ty   = e->Iex.LDle.ty;
+      return ae;
+   }
+
    return NULL;
 }
 
@@ -1982,7 +2004,7 @@ static void cse_BB ( IRBB* bb )
       if (!eprime)
          continue;
 
-      /* vex_printf("considering: " ); ppIRStmt(st); vex_printf("\n"); */
+      vex_printf("considering: " ); ppIRStmt(st); vex_printf("\n");
 
       /* apply tenv */
       subst_AvailExpr( tenv, eprime );
@@ -3019,11 +3041,15 @@ IRBB* do_iropt_BB ( IRBB* bb0,
 
    bb2 = maybe_loop_unroll_BB( bb, guest_addr );
    if (bb2) {
-     show_res = True;
+      show_res = True;
       bb = cheap_transformations( bb2, specHelper );
       if (do_expensive) {
          bb = expensive_transformations( bb );
          bb = cheap_transformations( bb, specHelper );
+      } else {
+	 /* at least do CSE and dead code removal */
+         cse_BB( bb );
+         dead_BB( bb );
       }
    }
 

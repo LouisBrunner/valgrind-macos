@@ -144,16 +144,24 @@ sub SwitchBack {
     }
     my $TMPFILE = ".switchback_output.$n";
 
-    print "=== Calling switchback for basic block $n ===\n";
+    print "=== Calling switchback for bb $n ===\n";
 
-    system("$SWITCHBACK $TEST.o 0 $n >& $TMPFILE");
+    system("$SWITCHBACK $TEST.o $n >& $TMPFILE");
     my $ret = $?;
+
+    if ($ret == 256) {
+	print "Error running switchback - Quitting...\n---\n";
+	open(INFILE, "$TMPFILE");
+	print <INFILE>;
+	close(INFILE);
+
+	unlink($TMPFILE) if (! DEBUG);
+	exit 0;	
+    } 
 
     if ($ret & 127) {
 	print "Ctrl-C pressed - Quitting...\n";
-	if (! DEBUG) {
-	    unlink($TMPFILE);
-	}
+	unlink($TMPFILE) if (! DEBUG);
 	exit 0;
     }
 
@@ -174,12 +182,10 @@ sub SwitchBack {
 	my @results = <INFILE>;
 	close(INFILE);
 
-	while (!((shift @results) =~ /^---START---/)) {}
+	while (@results && !((shift @results) =~ /^---START---/)) {}
 	print @results;
 
-	if (! DEBUG) {
-	    unlink($TMPFILE);
-	}
+	unlink($TMPFILE) if (! DEBUG);
 	return;
     }
 
@@ -187,9 +193,7 @@ sub SwitchBack {
     my @results = <INFILE>;
     close(INFILE);
 
-    if (! DEBUG) {
-	unlink($TMPFILE);
-    }
+    unlink($TMPFILE) if (! DEBUG);
     return @results;
 }
 

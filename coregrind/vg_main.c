@@ -1505,6 +1505,11 @@ void VG_(main) ( void )
                    "For more details, rerun with: -v");
    }
 
+   /* Force a read of the debug info so that we can look for 
+      glibc entry points to intercept. */
+   VG_(maybe_read_symbols)();
+   VG_(setup_code_redirect_table)();
+
    /* Now it is safe for malloc et al in vg_clientmalloc.c to act
       instrumented-ly. */
    if (VG_(clo_verbosity) > 0)

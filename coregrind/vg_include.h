@@ -1281,6 +1281,18 @@ extern void VG_(maybe_unload_symbols) ( Addr start, UInt length );
 
 extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
 extern void VG_(mini_stack_dump)      ( ExeContext* ec );
+extern Int  VG_(setup_code_redirect_table) ( void );
+
+typedef
+   struct {
+      Addr entry_pt_orig;
+      Addr entry_pt_subst;
+   }
+   CodeRedirect;
+
+#define VG_N_CODE_REDIRECTS 10
+extern CodeRedirect VG_(code_redirect_table)[VG_N_CODE_REDIRECTS];
+/* Table is terminated by a NULL entry_pt_orig field. */
 
 
 /* ---------------------------------------------------------------------

@@ -1943,8 +1943,14 @@ void VG_(read_symtab_callback) (
    which happen to correspond to the munmap()d area.  */
 void VG_(maybe_read_symbols) ( void )
 {
-   if (!VG_(using_debug_info))
-      return;
+   /* 9 July 2003: In order to work around PLT bypassing in
+      glibc-2.3.2 (see below VG_(setup_code_redirect_table)), we need
+      to load debug info regardless of the skin, unfortunately.  Hence
+      .. */
+
+   /* if (!VG_(using_debug_info))
+         return;
+   */
 
    VGP_PUSHCC(VgpReadSyms);
       VG_(read_procselfmaps) ( VG_(read_symtab_callback),
@@ -2031,6 +2037,27 @@ static Int search_one_symtab ( SegInfo* si, Addr ptr,
       vg_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
       return mid;
    }
+}
+
+
+/* SLOW (Linear search).  Try and map a symbol name to an address.
+   Since this is searching in the direction opposite to which the
+   table is designed we have no option but to do a complete linear
+   scan of the table.  Returns NULL if not found. */
+
+static Addr reverse_search_one_symtab ( SegInfo* si,
+                                        Char* name )
+{
+   UInt i;
+   for (i = 0; i < si->symtab_used; i++) {
+      /*
+      VG_(printf)("%p %s\n",  si->symtab[i].addr, 
+                  &si->strtab[si->symtab[i].nmoff]);
+      */
+      if (0 == VG_(strcmp)(name, &si->strtab[si->symtab[i].nmoff]))
+         return si->symtab[i].addr;
+   }
+   return (Addr)NULL;
 }
 
 
@@ -2347,6 +2374,78 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
 }
 
 #undef APPEND
+
+
+/*------------------------------------------------------------*/
+/*--- Find interesting glibc entry points.                 ---*/
+/*------------------------------------------------------------*/
+
+CodeRedirect VG_(code_redirect_table)[VG_N_CODE_REDIRECTS];
+
+Int VG_(setup_code_redirect_table) ( void )
+{
+#  define N_SUBSTS 3
+
+   Int     i, j;
+   Addr    a_libc, a_pth;
+   SegInfo *si, *si_libc, *si_pth;
+
+   /* Original entry points to look for in libc. */
+   static Char* libc_names[N_SUBSTS]
+     = { "__GI___errno_location",
+         "__GI___h_errno_location",
+         "__GI___res_state" };
+
+   /* Corresponding substitute address in our pthread lib. */
+   static Char* pth_names[N_SUBSTS]
+     = { "__errno_location",
+         "__h_errno_location",
+         "__res_state" };
+
+   /* Look for the SegInfo for glibc and our pthread library. */
+
+   ensure_debug_info_inited();
+   si_libc = si_pth = NULL;
+
+   for (si = segInfo; si != NULL; si = si->next) {
+      if (NULL != VG_(strstr)(si->filename, "/libc.so"))
+         si_libc = si;
+      if (NULL != VG_(strstr)(si->filename, "/libpthread.so"))
+         si_pth = si;
+   }
+
+   if (si_libc == NULL || si_pth == NULL) 
+      return 0;
+
+   /* Build the substitution table. */
+   vg_assert(N_SUBSTS <= VG_N_CODE_REDIRECTS-1);
+
+   j = 0;
+   VG_(code_redirect_table)[j].entry_pt_orig = 0; 
+
+   for (i = 0; i < N_SUBSTS; i++) {
+      a_libc = reverse_search_one_symtab(si_libc, libc_names[i]);
+      a_pth  = reverse_search_one_symtab(si_pth,  pth_names[i]);
+      if (a_libc == 0 || a_pth == 0)
+         continue;
+      /* We've found a substitution pair. */
+      VG_(code_redirect_table)[j].entry_pt_orig  = a_libc;
+      VG_(code_redirect_table)[j].entry_pt_subst = a_pth;
+      j++;
+      vg_assert(j < VG_N_CODE_REDIRECTS);
+      /* Set end marker. */
+      VG_(code_redirect_table)[j].entry_pt_orig = 0; 
+      if (VG_(clo_verbosity) >= 2)
+         VG_(message)(Vg_UserMsg, 
+            "REPLACING libc(%s) with libpthread(%s)",
+            libc_names[i], pth_names[i]
+         );
+   }
+
+   return j;
+
+#  undef N_SUBSTS
+}
 
 /*------------------------------------------------------------*/
 /*--- SegInfo accessor functions                           ---*/

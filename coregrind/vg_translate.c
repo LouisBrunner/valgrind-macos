@@ -2314,7 +2314,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
                       /*OUT*/ UInt* trans_size,
 		      /*OUT*/ UShort jumps[VG_MAX_JUMPS])
 {
-   Int         n_disassembled_bytes, final_code_size;
+   Int         n_disassembled_bytes, final_code_size, i;
    Bool        debugging_translation;
    UChar*      final_code;
    UCodeBlock* cb;
@@ -2324,6 +2324,20 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    VGP_PUSHCC(VgpTranslate);
    debugging_translation
       = orig_size == NULL || trans_addr == NULL || trans_size == NULL;
+
+   /* Look in the code redirect table to see if we should
+      translate an alternative address for orig_addr. */
+   for (i = 0; VG_(code_redirect_table)[i].entry_pt_orig != 0; i++) {
+      if (orig_addr == VG_(code_redirect_table)[i].entry_pt_orig) {
+         if (VG_(clo_verbosity) >= 2)
+            VG_(message)(Vg_UserMsg, 
+               "TRANSLATE: %p redirected to %p",
+               orig_addr, 
+               VG_(code_redirect_table)[i].entry_pt_subst );
+         orig_addr = VG_(code_redirect_table)[i].entry_pt_subst;
+         break;
+      }
+   }
 
    /* If codegen tracing, don't start tracing until
       notrace_until_limit blocks have gone by.  This avoids printing

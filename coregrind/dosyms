@@ -6,10 +6,12 @@
 nm /lib/libpthread.so.0 | grep " T " | cut -c 10- > orig-T
 nm /lib/libpthread.so.0 | grep " D " | cut -c 10- > orig-D
 nm /lib/libpthread.so.0 | grep " W " | cut -c 10- > orig-W
+nm /lib/libpthread.so.0 | grep " U " | cut -c 10- > orig-U
 
 nm ./libpthread.so | grep " T " | cut -c 10- > mine-T
 nm ./libpthread.so | grep " D " | cut -c 10- > mine-D
 nm ./libpthread.so | grep " W " | cut -c 10- > mine-W
+nm ./libpthread.so | grep " U " | cut -c 10- > mine-U
 
 echo ========================== TEXT orig vs mine =========================
 sdiff -w 80 orig-T mine-T
@@ -22,3 +24,8 @@ echo
 echo ========================== DATA orig vs mine =========================
 sdiff -w 80 orig-D mine-D
 echo
+
+echo ========================== UNDF orig vs mine =========================
+sdiff -w 80 orig-U mine-U
+echo
+

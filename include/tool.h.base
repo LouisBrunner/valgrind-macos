@@ -35,7 +35,34 @@
 #include <setjmp.h>       /* for jmp_buf         */
 
 #include "tool_asm.h"           // asm stuff
+
+/*====================================================================*/
+/*=== Basic types                                                  ===*/
+/*====================================================================*/
+
+typedef unsigned char          UChar;
+typedef unsigned short         UShort;
+typedef unsigned int           UInt;
+typedef unsigned long long int ULong;
+
+typedef signed char            Char;
+typedef signed short           Short;
+typedef signed int             Int;
+typedef signed long long int   Long;
+
+typedef unsigned int           Addr;
+
+typedef unsigned char          Bool;
+#define False                  ((Bool)0)
+#define True                   ((Bool)1)
+
+/* ---------------------------------------------------------------------
+   Now the basic types are set up, we can haul in the kernel-interface
+   definitions and tool_arch.h
+   ------------------------------------------------------------------ */
+
 #include "tool_arch.h"          // arch-specific tool stuff
+#include "vg_kerneliface.h"
 
 /* ---------------------------------------------------------------------
    Where to send bug reports to.
@@ -80,39 +107,14 @@
 
 
 /*====================================================================*/
-/*=== Basic types, useful macros                                   ===*/
+/*=== Useful macros                                                ===*/
 /*====================================================================*/
-
-typedef unsigned char          UChar;
-typedef unsigned short         UShort;
-typedef unsigned int           UInt;
-typedef unsigned long long int ULong;
-
-typedef signed char            Char;
-typedef signed short           Short;
-typedef signed int             Int;
-typedef signed long long int   Long;
-
-typedef unsigned int           Addr;
-
-typedef unsigned char          Bool;
-#define False                  ((Bool)0)
-#define True                   ((Bool)1)
-
 
 #define mycat_wrk(aaa,bbb) aaa##bbb
 #define mycat(aaa,bbb) mycat_wrk(aaa,bbb)
 
 /* No, really.  I _am_ that strange. */
 #define OINK(nnn) VG_(message)(Vg_DebugMsg, "OINK %d",nnn)
-
-/* ---------------------------------------------------------------------
-   Now the basic types are set up, we can haul in the kernel-interface
-   definitions.
-   ------------------------------------------------------------------ */
-
-#include "vg_kerneliface.h"
-
 
 /* Path to all our library/aux files */
 extern const Char *VG_(libdir);
@@ -1247,61 +1249,6 @@ extern Addr VG_(shadow_archreg_address) ( UInt archreg );
 extern UInt VG_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg );
 extern void VG_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg,
                                              UInt val );
-
-/* ------------------------------------------------------------------ */
-/* Offsets of addresses of helper functions.  A "helper" function is one
-   which is called from generated code via CALLM. */
-
-extern Int VGOFF_(helper_idiv_64_32);
-extern Int VGOFF_(helper_div_64_32);
-extern Int VGOFF_(helper_idiv_32_16);
-extern Int VGOFF_(helper_div_32_16);
-extern Int VGOFF_(helper_idiv_16_8);
-extern Int VGOFF_(helper_div_16_8);
-
-extern Int VGOFF_(helper_imul_32_64);
-extern Int VGOFF_(helper_mul_32_64);
-extern Int VGOFF_(helper_imul_16_32);
-extern Int VGOFF_(helper_mul_16_32);
-extern Int VGOFF_(helper_imul_8_16);
-extern Int VGOFF_(helper_mul_8_16);
-
-extern Int VGOFF_(helper_CLD);
-extern Int VGOFF_(helper_STD);
-extern Int VGOFF_(helper_get_dirflag);
-
-extern Int VGOFF_(helper_CLC);
-extern Int VGOFF_(helper_STC);
-extern Int VGOFF_(helper_CMC);
-
-extern Int VGOFF_(helper_shldl);
-extern Int VGOFF_(helper_shldw);
-extern Int VGOFF_(helper_shrdl);
-extern Int VGOFF_(helper_shrdw);
-
-extern Int VGOFF_(helper_RDTSC);
-extern Int VGOFF_(helper_CPUID);
-
-extern Int VGOFF_(helper_IN);
-extern Int VGOFF_(helper_OUT);
-
-extern Int VGOFF_(helper_bsfw);
-extern Int VGOFF_(helper_bsfl);
-extern Int VGOFF_(helper_bsrw);
-extern Int VGOFF_(helper_bsrl);
-
-extern Int VGOFF_(helper_fstsw_AX);
-extern Int VGOFF_(helper_SAHF);
-extern Int VGOFF_(helper_LAHF);
-extern Int VGOFF_(helper_DAS);
-extern Int VGOFF_(helper_DAA);
-extern Int VGOFF_(helper_AAS);
-extern Int VGOFF_(helper_AAA);
-extern Int VGOFF_(helper_AAD);
-extern Int VGOFF_(helper_AAM);
-
-extern Int VGOFF_(helper_cmpxchg8b);
-
 
 /*====================================================================*/
 /*=== Generating x86 code from UCode                               ===*/

@@ -59,6 +59,114 @@
 #define VGOFF_STACK_PTR                VGOFF_(m_esp)
 #define VGOFF_FRAME_PTR                VGOFF_(m_ebp)
 
+/* -----------------------------------------------------
+   Read-write parts of baseBlock.
+   -------------------------------------------------- */
+
+/* State of the simulated CPU. */
+extern Int VGOFF_(m_eax);
+extern Int VGOFF_(m_ecx);
+extern Int VGOFF_(m_edx);
+extern Int VGOFF_(m_ebx);
+extern Int VGOFF_(m_esp);
+extern Int VGOFF_(m_ebp);
+extern Int VGOFF_(m_esi);
+extern Int VGOFF_(m_edi);
+extern Int VGOFF_(m_eflags);
+extern Int VGOFF_(m_ssestate);
+extern Int VGOFF_(m_eip);
+
+extern Int VGOFF_(m_dflag);	/* D flag is handled specially */
+
+extern Int VGOFF_(m_cs);
+extern Int VGOFF_(m_ss);
+extern Int VGOFF_(m_ds);
+extern Int VGOFF_(m_es);
+extern Int VGOFF_(m_fs);
+extern Int VGOFF_(m_gs);
+
+/* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
+extern Int VGOFF_(spillslots);
+
+/* Records the valid bits for the 8 integer regs & flags reg. */
+extern Int VGOFF_(sh_eax);
+extern Int VGOFF_(sh_ecx);
+extern Int VGOFF_(sh_edx);
+extern Int VGOFF_(sh_ebx);
+extern Int VGOFF_(sh_esp);
+extern Int VGOFF_(sh_ebp);
+extern Int VGOFF_(sh_esi);
+extern Int VGOFF_(sh_edi);
+extern Int VGOFF_(sh_eflags);
+
+/* -----------------------------------------------------
+   Read-only parts of baseBlock.
+   -------------------------------------------------- */
+
+/* This thread's LDT pointer. */
+extern Int VGOFF_(ldt);
+
+/* This thread's TLS pointer. */
+extern Int VGOFF_(tls_ptr);
+
+/* Nb: Most helper offsets are in include/tool.h, for use by tools */
+extern Int VGOFF_(helper_undefined_instruction);
+
+
+/* ---------------------------------------------------------------------
+   Exports of vg_helpers.S
+   ------------------------------------------------------------------ */
+
+/* Mul, div, etc, -- we don't codegen these directly. */
+extern void VG_(helper_idiv_64_32);
+extern void VG_(helper_div_64_32);
+extern void VG_(helper_idiv_32_16);
+extern void VG_(helper_div_32_16);
+extern void VG_(helper_idiv_16_8);
+extern void VG_(helper_div_16_8);
+
+extern void VG_(helper_imul_32_64);
+extern void VG_(helper_mul_32_64);
+extern void VG_(helper_imul_16_32);
+extern void VG_(helper_mul_16_32);
+extern void VG_(helper_imul_8_16);
+extern void VG_(helper_mul_8_16);
+
+extern void VG_(helper_CLD);
+extern void VG_(helper_STD);
+extern void VG_(helper_get_dirflag);
+
+extern void VG_(helper_CLC);
+extern void VG_(helper_STC);
+extern void VG_(helper_CMC);
+
+extern void VG_(helper_shldl);
+extern void VG_(helper_shldw);
+extern void VG_(helper_shrdl);
+extern void VG_(helper_shrdw);
+
+extern void VG_(helper_IN);
+extern void VG_(helper_OUT);
+
+extern void VG_(helper_RDTSC);
+extern void VG_(helper_CPUID);
+
+extern void VG_(helper_bsfw);
+extern void VG_(helper_bsfl);
+extern void VG_(helper_bsrw);
+extern void VG_(helper_bsrl);
+
+extern void VG_(helper_fstsw_AX);
+extern void VG_(helper_SAHF);
+extern void VG_(helper_LAHF);
+extern void VG_(helper_DAS);
+extern void VG_(helper_DAA);
+extern void VG_(helper_AAS);
+extern void VG_(helper_AAA);
+extern void VG_(helper_AAD);
+extern void VG_(helper_AAM);
+
+extern void VG_(helper_cmpxchg8b);
 
 /* ---------------------------------------------------------------------
    Exports of vg_ldt.c

@@ -2107,82 +2107,6 @@ static void setup_file_descriptors(void)
 /*=== baseBlock: definition + setup                                ===*/
 /*====================================================================*/
 
-/* The variables storing offsets. */
-
-#define INVALID_OFFSET (-1)
-
-Int VGOFF_(m_eax) = INVALID_OFFSET;
-Int VGOFF_(m_ecx) = INVALID_OFFSET;
-Int VGOFF_(m_edx) = INVALID_OFFSET;
-Int VGOFF_(m_ebx) = INVALID_OFFSET;
-Int VGOFF_(m_esp) = INVALID_OFFSET;
-Int VGOFF_(m_ebp) = INVALID_OFFSET;
-Int VGOFF_(m_esi) = INVALID_OFFSET;
-Int VGOFF_(m_edi) = INVALID_OFFSET;
-Int VGOFF_(m_eflags) = INVALID_OFFSET;
-Int VGOFF_(m_dflag)  = INVALID_OFFSET;
-Int VGOFF_(m_ssestate) = INVALID_OFFSET;
-Int VGOFF_(ldt)   = INVALID_OFFSET;
-Int VGOFF_(tls_ptr) = INVALID_OFFSET;
-Int VGOFF_(m_cs)  = INVALID_OFFSET;
-Int VGOFF_(m_ss)  = INVALID_OFFSET;
-Int VGOFF_(m_ds)  = INVALID_OFFSET;
-Int VGOFF_(m_es)  = INVALID_OFFSET;
-Int VGOFF_(m_fs)  = INVALID_OFFSET;
-Int VGOFF_(m_gs)  = INVALID_OFFSET;
-Int VGOFF_(m_eip) = INVALID_OFFSET;
-Int VGOFF_(spillslots) = INVALID_OFFSET;
-Int VGOFF_(sh_eax) = INVALID_OFFSET;
-Int VGOFF_(sh_ecx) = INVALID_OFFSET;
-Int VGOFF_(sh_edx) = INVALID_OFFSET;
-Int VGOFF_(sh_ebx) = INVALID_OFFSET;
-Int VGOFF_(sh_esp) = INVALID_OFFSET;
-Int VGOFF_(sh_ebp) = INVALID_OFFSET;
-Int VGOFF_(sh_esi) = INVALID_OFFSET;
-Int VGOFF_(sh_edi) = INVALID_OFFSET;
-Int VGOFF_(sh_eflags) = INVALID_OFFSET;
-
-Int VGOFF_(helper_idiv_64_32) = INVALID_OFFSET;
-Int VGOFF_(helper_div_64_32) = INVALID_OFFSET;
-Int VGOFF_(helper_idiv_32_16) = INVALID_OFFSET;
-Int VGOFF_(helper_div_32_16) = INVALID_OFFSET;
-Int VGOFF_(helper_idiv_16_8) = INVALID_OFFSET;
-Int VGOFF_(helper_div_16_8) = INVALID_OFFSET;
-Int VGOFF_(helper_imul_32_64) = INVALID_OFFSET;
-Int VGOFF_(helper_mul_32_64) = INVALID_OFFSET;
-Int VGOFF_(helper_imul_16_32) = INVALID_OFFSET;
-Int VGOFF_(helper_mul_16_32) = INVALID_OFFSET;
-Int VGOFF_(helper_imul_8_16) = INVALID_OFFSET;
-Int VGOFF_(helper_mul_8_16) = INVALID_OFFSET;
-Int VGOFF_(helper_CLD) = INVALID_OFFSET;
-Int VGOFF_(helper_STD) = INVALID_OFFSET;
-Int VGOFF_(helper_get_dirflag) = INVALID_OFFSET;
-Int VGOFF_(helper_CLC) = INVALID_OFFSET;
-Int VGOFF_(helper_STC) = INVALID_OFFSET;
-Int VGOFF_(helper_CMC) = INVALID_OFFSET;
-Int VGOFF_(helper_shldl) = INVALID_OFFSET;
-Int VGOFF_(helper_shldw) = INVALID_OFFSET;
-Int VGOFF_(helper_shrdl) = INVALID_OFFSET;
-Int VGOFF_(helper_shrdw) = INVALID_OFFSET;
-Int VGOFF_(helper_IN) = INVALID_OFFSET;
-Int VGOFF_(helper_OUT) = INVALID_OFFSET;
-Int VGOFF_(helper_RDTSC) = INVALID_OFFSET;
-Int VGOFF_(helper_CPUID) = INVALID_OFFSET;
-Int VGOFF_(helper_BSWAP) = INVALID_OFFSET;
-Int VGOFF_(helper_bsfw) = INVALID_OFFSET;
-Int VGOFF_(helper_bsfl) = INVALID_OFFSET;
-Int VGOFF_(helper_bsrw) = INVALID_OFFSET;
-Int VGOFF_(helper_bsrl) = INVALID_OFFSET;
-Int VGOFF_(helper_fstsw_AX) = INVALID_OFFSET;
-Int VGOFF_(helper_SAHF) = INVALID_OFFSET;
-Int VGOFF_(helper_LAHF) = INVALID_OFFSET;
-Int VGOFF_(helper_DAS) = INVALID_OFFSET;
-Int VGOFF_(helper_DAA) = INVALID_OFFSET;
-Int VGOFF_(helper_AAS) = INVALID_OFFSET;
-Int VGOFF_(helper_AAA) = INVALID_OFFSET;
-Int VGOFF_(helper_AAD) = INVALID_OFFSET;
-Int VGOFF_(helper_AAM) = INVALID_OFFSET;
-Int VGOFF_(helper_cmpxchg8b) = INVALID_OFFSET;
 Int VGOFF_(helper_undefined_instruction) = INVALID_OFFSET;
 
 /* MAX_NONCOMPACT_HELPERS can be increased easily.  If MAX_COMPACT_HELPERS is
@@ -2210,18 +2134,18 @@ static Int baB_off = 0;
 
 
 /* Returns the offset, in words. */
-static Int alloc_BaB ( Int words )
+Int VG_(alloc_BaB) ( Int words )
 {
    Int off = baB_off;
    baB_off += words;
    if (baB_off >= VG_BASEBLOCK_WORDS)
-      VG_(core_panic)( "alloc_BaB: baseBlock is too small");
+      VG_(core_panic)( "VG_(alloc_BaB): baseBlock is too small");
 
    return off;   
 }
 
 /* Align offset, in *bytes* */
-static void align_BaB ( UInt align )
+void VG_(align_BaB) ( UInt align )
 {
    vg_assert(2 == align || 4 == align || 8 == align || 16 == align);
    baB_off +=  (align-1);
@@ -2229,9 +2153,9 @@ static void align_BaB ( UInt align )
 }
 
 /* Allocate 1 word in baseBlock and set it to the given value. */
-static Int alloc_BaB_1_set ( Addr a )
+Int VG_(alloc_BaB_1_set) ( Addr a )
 {
-   Int off = alloc_BaB(1);
+   Int off = VG_(alloc_BaB)(1);
    VG_(baseBlock)[off] = (UInt)a;
    return off;
 }
@@ -2270,7 +2194,7 @@ void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
 {
    UInt i;
    for (i = 0; i < n; i++) 
-      offsets[i] = alloc_BaB_1_set( addrs[i] );
+      offsets[i] = VG_(alloc_BaB_1_set)( addrs[i] );
 }
 
 Bool VG_(need_to_handle_esp_assignment)(void)
@@ -2290,133 +2214,19 @@ Bool VG_(need_to_handle_esp_assignment)(void)
           );
 }
 
-/* Here we assign actual offsets.  It's important to get the most
-   popular referents within 128 bytes of the start, so we can take
-   advantage of short addressing modes relative to %ebp.  Popularity
-   of offsets was measured on 22 Feb 02 running a KDE application, and
-   the slots rearranged accordingly, with a 1.5% reduction in total
-   size of translations. */
+// The low/high split is for x86, so that the more common helpers can be
+// in the first 128 bytes of the start, which allows the use of a more
+// compact addressing mode.
 static void init_baseBlock ( Addr client_eip, Addr esp_at_startup )
 {
-   /* Those with offsets under 128 are carefully chosen. */
+   VGA_(init_low_baseBlock)(client_eip, esp_at_startup);
 
-   /* WORD offsets in this column */
-   /* 0   */ VGOFF_(m_eax)     = alloc_BaB_1_set(0);
-   /* 1   */ VGOFF_(m_ecx)     = alloc_BaB_1_set(0);
-   /* 2   */ VGOFF_(m_edx)     = alloc_BaB_1_set(0);
-   /* 3   */ VGOFF_(m_ebx)     = alloc_BaB_1_set(0);
-   /* 4   */ VGOFF_(m_esp)     = alloc_BaB_1_set(esp_at_startup);
-   /* 5   */ VGOFF_(m_ebp)     = alloc_BaB_1_set(0);
-   /* 6   */ VGOFF_(m_esi)     = alloc_BaB_1_set(0);
-   /* 7   */ VGOFF_(m_edi)     = alloc_BaB_1_set(0);
-   /* 8   */ VGOFF_(m_eflags)  = alloc_BaB_1_set(0);
-
-   if (VG_(needs).shadow_regs) {
-      /* 9   */ VGOFF_(sh_eax)    = alloc_BaB_1_set(0);
-      /* 10  */ VGOFF_(sh_ecx)    = alloc_BaB_1_set(0);
-      /* 11  */ VGOFF_(sh_edx)    = alloc_BaB_1_set(0);
-      /* 12  */ VGOFF_(sh_ebx)    = alloc_BaB_1_set(0);
-      /* 13  */ VGOFF_(sh_esp)    = alloc_BaB_1_set(0);
-      /* 14  */ VGOFF_(sh_ebp)    = alloc_BaB_1_set(0);
-      /* 15  */ VGOFF_(sh_esi)    = alloc_BaB_1_set(0);
-      /* 16  */ VGOFF_(sh_edi)    = alloc_BaB_1_set(0);
-      /* 17  */ VGOFF_(sh_eflags) = alloc_BaB_1_set(0);
-      VG_TRACK( post_regs_write_init );
-   }
-
-   /* 9,10,11 or 18,19,20... depends on number whether shadow regs are used
-    * and on compact helpers registered */ 
-
-   /* Make these most-frequently-called specialised ones compact, if they
-      are used. */
-   if (VG_(defined_new_mem_stack_4)())
-      VG_(register_compact_helper)( (Addr) VG_(tool_interface).track_new_mem_stack_4);
-
-   if (VG_(defined_die_mem_stack_4)())
-      VG_(register_compact_helper)( (Addr) VG_(tool_interface).track_die_mem_stack_4);
-
-   /* (9 or 18) + n_compact_helpers  */
    /* Allocate slots for compact helpers */
    assign_helpers_in_baseBlock(VG_(n_compact_helpers), 
                                VG_(compact_helper_offsets), 
                                VG_(compact_helper_addrs));
 
-   /* (9/10 or 18/19) + n_compact_helpers */
-   VGOFF_(m_eip) = alloc_BaB_1_set(client_eip);
-
-   /* There are currently 24 spill slots */
-   /* (11+/20+ .. 32+/43+) + n_compact_helpers.  This can overlap the magic
-    * boundary at >= 32 words, but most spills are to low numbered spill
-    * slots, so the ones above the boundary don't see much action. */
-   VGOFF_(spillslots) = alloc_BaB(VG_MAX_SPILLSLOTS);
-
-   /* I gave up counting at this point.  Since they're above the
-      short-amode-boundary, there's no point. */
-
-   VGOFF_(m_dflag) = alloc_BaB_1_set(1);  // 1 == forward D-flag
-
-   /* The FPU/SSE state.  This _must_ be 16-byte aligned.  Initial
-      state doesn't matter much, as long as it's not totally borked. */
-   align_BaB(16);
-   VGOFF_(m_ssestate) = alloc_BaB(VG_SIZE_OF_SSESTATE_W);
-   vg_assert( 
-      0 == ( ((UInt)(& VG_(baseBlock)[VGOFF_(m_ssestate)])) % 16 )
-   );
-
-   /* I assume that if we have SSE2 we also have SSE */
-   VG_(have_ssestate) = 
-	   VG_(cpu_has_feature)(VG_X86_FEAT_FXSR) &&
-	   VG_(cpu_has_feature)(VG_X86_FEAT_SSE);
-
-   /* set up an initial FPU state (doesn't really matter what it is,
-      so long as it's somewhat valid) */
-   if (!VG_(have_ssestate))
-      asm volatile("fwait; fnsave %0; fwait; frstor %0; fwait" 
-                   : 
-                   : "m" (VG_(baseBlock)[VGOFF_(m_ssestate)]) 
-                   : "cc", "memory");
-   else
-      asm volatile("fwait; fxsave %0; fwait; andl $0xffbf, %1;"
-                   "fxrstor %0; fwait"
-                   : 
-                   : "m" (VG_(baseBlock)[VGOFF_(m_ssestate)]), 
-                     "m" (VG_(baseBlock)[VGOFF_(m_ssestate)+(24/4)]) 
-                   : "cc", "memory");
-
-   if (0) {
-      if (VG_(have_ssestate))
-         VG_(printf)("Looks like a SSE-capable CPU\n");
-      else
-         VG_(printf)("Looks like a MMX-only CPU\n");
-   }
-
-   /* LDT pointer: pretend the root thread has an empty LDT to start with. */
-   VGOFF_(ldt)   = alloc_BaB_1_set((UInt)NULL);
-
-   /* TLS pointer: pretend the root thread has no TLS array for now. */
-   VGOFF_(tls_ptr) = alloc_BaB_1_set((UInt)NULL);
-
-   /* segment registers */
-   VGOFF_(m_cs)  = alloc_BaB_1_set(0);
-   VGOFF_(m_ss)  = alloc_BaB_1_set(0);
-   VGOFF_(m_ds)  = alloc_BaB_1_set(0);
-   VGOFF_(m_es)  = alloc_BaB_1_set(0);
-   VGOFF_(m_fs)  = alloc_BaB_1_set(0);
-   VGOFF_(m_gs)  = alloc_BaB_1_set(0);
-
-   /* initialise %cs, %ds and %ss to point at the operating systems
-      default code, data and stack segments */
-   asm volatile("movw %%cs, %0"
-                :
-                : "m" (VG_(baseBlock)[VGOFF_(m_cs)]));
-   asm volatile("movw %%ds, %0"
-                :
-                : "m" (VG_(baseBlock)[VGOFF_(m_ds)]));
-   asm volatile("movw %%ss, %0"
-                :
-                : "m" (VG_(baseBlock)[VGOFF_(m_ss)]));
-
-   VG_(register_noncompact_helper)( (Addr) & VG_(do_useseg) );
+   VGA_(init_high_baseBlock)(client_eip, esp_at_startup);
 
 #define REG(kind, size) \
    if (VG_(defined_##kind##_mem_stack##size)()) \
@@ -2437,43 +2247,8 @@ static void init_baseBlock ( Addr client_eip, Addr esp_at_startup )
    if (VG_(need_to_handle_esp_assignment)())
       VG_(register_noncompact_helper)((Addr) VG_(unknown_esp_update));
 
-#  define HELPER(name) \
-   VGOFF_(helper_##name) = alloc_BaB_1_set( (Addr) & VG_(helper_##name))
-
-   /* Helper functions. */
-   HELPER(idiv_64_32);     HELPER(div_64_32);
-   HELPER(idiv_32_16);     HELPER(div_32_16);
-   HELPER(idiv_16_8);      HELPER(div_16_8);
-
-   HELPER(imul_32_64);     HELPER(mul_32_64);
-   HELPER(imul_16_32);     HELPER(mul_16_32);
-   HELPER(imul_8_16);      HELPER(mul_8_16);
-
-   HELPER(CLD);            HELPER(STD);
-   HELPER(get_dirflag);
-
-   HELPER(CLC);            HELPER(STC);
-   HELPER(CMC);
-
-   HELPER(shldl);          HELPER(shldw);
-   HELPER(shrdl);          HELPER(shrdw);
-
-   HELPER(RDTSC);          HELPER(CPUID);
-
-   HELPER(bsfw);           HELPER(bsfl);
-   HELPER(bsrw);           HELPER(bsrl);
-
-   HELPER(fstsw_AX);
-   HELPER(SAHF);           HELPER(LAHF);
-   HELPER(DAS);            HELPER(DAA);
-   HELPER(AAS);            HELPER(AAA);
-   HELPER(AAD);            HELPER(AAM);
-   HELPER(IN);             HELPER(OUT);
-   HELPER(cmpxchg8b);
-
-   HELPER(undefined_instruction);
-
-#  undef HELPER
+   VGOFF_(helper_undefined_instruction)
+      = VG_(alloc_BaB_1_set)( (Addr) & VG_(helper_undefined_instruction));
 
    /* Allocate slots for noncompact helpers */
    assign_helpers_in_baseBlock(VG_(n_noncompact_helpers), 

@@ -498,6 +498,15 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 #     endif
 
+#if   defined(__NR_getpriority)
+      case __NR_getpriority: /* syscall 96 */
+         /* int getpriority(int which, int who); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("getpriority ( %d, %d )\n", arg1, arg2);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_setfsgid)
       case __NR_setfsgid: /* syscall 139 */
          /* int setfsgid(gid_t gid); */

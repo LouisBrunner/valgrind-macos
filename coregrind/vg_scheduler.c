@@ -2920,16 +2920,14 @@ void do_pthread_sigmask ( ThreadId tid,
 
    if (VG_(clo_instrument)) {
       /* check newmask/oldmask are addressible/defined */
-      if (VG_(clo_instrument)
-          && newmask
+      if (newmask
           && !VGM_(check_readable)( (Addr)newmask, 
                                     sizeof(vki_ksigset_t), NULL))
          VG_(record_pthread_err)( tid, 
             "pthread_sigmask: newmask contains "
             "unaddressible or undefined bytes");
-      if (VG_(clo_instrument)
-          && oldmask
-          && !VGM_(check_readable)( (Addr)oldmask, 
+      if (oldmask
+          && !VGM_(check_writable)( (Addr)oldmask, 
                                     sizeof(vki_ksigset_t), NULL))
          VG_(record_pthread_err)( tid, 
             "pthread_sigmask: oldmask contains "

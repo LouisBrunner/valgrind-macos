@@ -53,7 +53,6 @@
    if (VG_(clo_trace_syscalls))        \
       VG_(printf)(format, ## args)
 
-
 /* ---------------------------------------------------------------------
    A simple atfork() facility for Valgrind's internal use
    ------------------------------------------------------------------ */
@@ -796,51 +795,51 @@ void pre_mem_read_sockaddr ( ThreadId tid,
 
    VG_(sprintf) ( outmsg, description, ".sa_family" );
    SYSCALL_TRACK( pre_mem_read, tid, outmsg, 
-                  (UInt) &sa->sa_family, sizeof (sa_family_t));
+                  (Addr) &sa->sa_family, sizeof (sa_family_t));
 
    switch (sa->sa_family) {
                   
       case AF_UNIX:
          VG_(sprintf) ( outmsg, description, ".sun_path" );
          SYSCALL_TRACK( pre_mem_read_asciiz, tid, outmsg,
-            (UInt) ((struct sockaddr_un *) sa)->sun_path);
+            (Addr) ((struct sockaddr_un *) sa)->sun_path);
          break;
                      
       case AF_INET:
          VG_(sprintf) ( outmsg, description, ".sin_port" );
          SYSCALL_TRACK( pre_mem_read, tid, outmsg,
-            (UInt) &((struct sockaddr_in *) sa)->sin_port,
+            (Addr) &((struct sockaddr_in *) sa)->sin_port,
             sizeof (((struct sockaddr_in *) sa)->sin_port));
          VG_(sprintf) ( outmsg, description, ".sin_addr" );
          SYSCALL_TRACK( pre_mem_read, tid, outmsg,
-            (UInt) &((struct sockaddr_in *) sa)->sin_addr,
+            (Addr) &((struct sockaddr_in *) sa)->sin_addr,
             sizeof (struct in_addr));
          break;
                            
       case AF_INET6:
          VG_(sprintf) ( outmsg, description, ".sin6_port" );
          SYSCALL_TRACK( pre_mem_read, tid, outmsg,
-            (UInt) &((struct sockaddr_in6 *) sa)->sin6_port,
+            (Addr) &((struct sockaddr_in6 *) sa)->sin6_port,
             sizeof (((struct sockaddr_in6 *) sa)->sin6_port));
          VG_(sprintf) ( outmsg, description, ".sin6_flowinfo" );
          SYSCALL_TRACK( pre_mem_read, tid, outmsg,
-            (UInt) &((struct sockaddr_in6 *) sa)->sin6_flowinfo,
+            (Addr) &((struct sockaddr_in6 *) sa)->sin6_flowinfo,
             sizeof (uint32_t));
          VG_(sprintf) ( outmsg, description, ".sin6_addr" );
          SYSCALL_TRACK( pre_mem_read, tid, outmsg,
-            (UInt) &((struct sockaddr_in6 *) sa)->sin6_addr,
+            (Addr) &((struct sockaddr_in6 *) sa)->sin6_addr,
             sizeof (struct in6_addr));
 #        ifndef GLIBC_2_1
          VG_(sprintf) ( outmsg, description, ".sin6_scope_id" );
          SYSCALL_TRACK( pre_mem_read, tid, outmsg,
-            (UInt) &((struct sockaddr_in6 *) sa)->sin6_scope_id,
+            (Addr) &((struct sockaddr_in6 *) sa)->sin6_scope_id,
 			sizeof (uint32_t));
 #        endif
          break;
                
       default:
          VG_(sprintf) ( outmsg, description, "" );
-         SYSCALL_TRACK( pre_mem_read, tid, outmsg, (UInt) sa, salen );
+         SYSCALL_TRACK( pre_mem_read, tid, outmsg, (Addr) sa, salen );
          break;
    }
    
@@ -1338,16 +1337,16 @@ PRE(getpmsg)
    data = (struct getpmsg_strbuf *)arg3;
    if (ctrl && ctrl->maxlen > 0)
       SYSCALL_TRACK( pre_mem_write,tid, "getpmsg(ctrl)", 
-		     (UInt)ctrl->buf, ctrl->maxlen);
+		     (Addr)ctrl->buf, ctrl->maxlen);
    if (data && data->maxlen > 0)
       SYSCALL_TRACK( pre_mem_write,tid, "getpmsg(data)", 
-		     (UInt)data->buf, data->maxlen);
+		     (Addr)data->buf, data->maxlen);
    if (arg4)
       SYSCALL_TRACK( pre_mem_write,tid, "getpmsg(bandp)", 
-		     (UInt)arg4, sizeof(int));
+		     (Addr)arg4, sizeof(int));
    if (arg5)
       SYSCALL_TRACK( pre_mem_write,tid, "getpmsg(flagsp)", 
-		     (UInt)arg5, sizeof(int));
+		     (Addr)arg5, sizeof(int));
 }
 
 POST(getpmsg)
@@ -1358,10 +1357,10 @@ POST(getpmsg)
    ctrl = (struct getpmsg_strbuf *)arg2;
    data = (struct getpmsg_strbuf *)arg3;
    if (res == 0 && ctrl && ctrl->len > 0) {
-      VG_TRACK( post_mem_write, (UInt)ctrl->buf, ctrl->len);
+      VG_TRACK( post_mem_write, (Addr)ctrl->buf, ctrl->len);
    }
    if (res == 0 && data && data->len > 0) {
-      VG_TRACK( post_mem_write, (UInt)data->buf, data->len);
+      VG_TRACK( post_mem_write, (Addr)data->buf, data->len);
    }
 }
 
@@ -1383,10 +1382,10 @@ PRE(putpmsg)
    data = (struct strbuf *)arg3;
    if (ctrl && ctrl->len > 0)
       SYSCALL_TRACK( pre_mem_read,tid, "putpmsg(ctrl)",
-		     (UInt)ctrl->buf, ctrl->len);
+		     (Addr)ctrl->buf, ctrl->len);
    if (data && data->len > 0)
       SYSCALL_TRACK( pre_mem_read,tid, "putpmsg(data)",
-		     (UInt)data->buf, data->len);
+		     (Addr)data->buf, data->len);
 }
 
 PRE(getitimer)
@@ -1800,7 +1799,7 @@ PRE(execve)
       VG_(env_setenv)( (Char***)&arg3, VALGRINDLIB, VG_(libdir));
 
       // Create executable name: "/proc/self/fd/<vgexecfd>", update arg1
-      arg1 = (UInt)VG_(build_child_exename)();
+      arg1 = (Addr)VG_(build_child_exename)();
    }
 
    if (0) {
@@ -2543,9 +2542,9 @@ PRE(ipc)
       Int msgsz = arg3;
 
       SYSCALL_TRACK( pre_mem_read, tid, "msgsnd(msgp->mtype)", 
-		     (UInt)&msgp->mtype, sizeof(msgp->mtype) );
+		     (Addr)&msgp->mtype, sizeof(msgp->mtype) );
       SYSCALL_TRACK( pre_mem_read, tid, "msgsnd(msgp->mtext)", 
-		     (UInt)msgp->mtext, msgsz );
+		     (Addr)msgp->mtext, msgsz );
 
       if ((arg4 & VKI_IPC_NOWAIT) == 0)
          tst->sys_flags |= MayBlock;
@@ -2561,9 +2560,9 @@ PRE(ipc)
 					  "msgrcv(msgp)" );
 
       SYSCALL_TRACK( pre_mem_write, tid, "msgrcv(msgp->mtype)", 
-		     (UInt)&msgp->mtype, sizeof(msgp->mtype) );
+		     (Addr)&msgp->mtype, sizeof(msgp->mtype) );
       SYSCALL_TRACK( pre_mem_write, tid, "msgrcv(msgp->mtext)", 
-		     (UInt)msgp->mtext, msgsz );
+		     (Addr)msgp->mtext, msgsz );
 
       if ((arg4 & VKI_IPC_NOWAIT) == 0)
          tst->sys_flags |= MayBlock;
@@ -2752,9 +2751,9 @@ POST(ipc)
 					  (Addr) (&((struct ipc_kludge *)arg5)->msgp),
 					  "msgrcv(msgp)" );
       if ( res > 0 ) {
-	 VG_TRACK( post_mem_write, (UInt)&msgp->mtype, 
+	 VG_TRACK( post_mem_write, (Addr)&msgp->mtype, 
 		   sizeof(msgp->mtype) );
-	 VG_TRACK( post_mem_write, (UInt)msgp->mtext, res );
+	 VG_TRACK( post_mem_write, (Addr)msgp->mtext, res );
       }
       break;
    }
@@ -3032,7 +3031,7 @@ PRE(ioctl)
       break;
    case VKI_IIOCNETGPN:
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(IIOCNETGPN)",
-		     (UInt)&((isdn_net_ioctl_phone *)arg3)->name,
+		     (Addr)&((isdn_net_ioctl_phone *)arg3)->name,
 		     sizeof(((isdn_net_ioctl_phone *)arg3)->name) );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(IIOCNETGPN)", arg3,
 		     sizeof(isdn_net_ioctl_phone) );
@@ -3041,73 +3040,73 @@ PRE(ioctl)
       /* These all use struct ifreq AFAIK */
    case SIOCGIFINDEX:        /* get iface index              */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFINDEX)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFINDEX)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFFLAGS:        /* get flags                    */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFFLAGS)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFFLAGS)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFHWADDR:       /* Get hardware address         */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFHWADDR)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFHWADDR)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFMTU:          /* get MTU size                 */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFMTU)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFMTU)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFADDR:         /* get PA address               */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFADDR)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFADDR)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFNETMASK:      /* get network PA mask          */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFNETMASK)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFNETMASK)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFMETRIC:       /* get metric                   */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFMETRIC)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFMETRIC)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFMAP:          /* Get device parameters        */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFMAP)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFMAP)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFTXQLEN:       /* Get the tx queue length      */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFTXQLEN)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFTXQLEN)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFDSTADDR:      /* get remote PA address        */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFDSTADDR)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFDSTADDR)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFBRDADDR:      /* get broadcast PA address     */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFBRDADDR)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFBRDADDR)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGIFNAME:         /* get iface name               */
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCGIFNAME)",
-                     (UInt)((struct ifreq *)arg3)->ifr_ifindex,
+                     (Addr)((struct ifreq *)arg3)->ifr_ifindex,
                      sizeof(((struct ifreq *)arg3)->ifr_ifindex) );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFNAME)", arg3, 
 		     sizeof(struct ifreq));
@@ -3115,18 +3114,18 @@ PRE(ioctl)
 #ifdef HAVE_LINUX_MII_H
    case SIOCGMIIPHY:         /* get hardware entry           */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFMIIPHY)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFMIIPHY)", arg3, 
 		     sizeof(struct ifreq));
       break;
    case SIOCGMIIREG:         /* get hardware entry registers */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCGIFMIIREG)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCGIFMIIREG)",
-                     (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id,
+                     (Addr)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id,
                      sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id) );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCGIFMIIREG)",
-                     (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->reg_num,
+                     (Addr)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->reg_num,
                      sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->reg_num) );
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGIFMIIREG)", arg3, 
 		     sizeof(struct ifreq));
@@ -3170,23 +3169,23 @@ PRE(ioctl)
                     
    case SIOCSIFFLAGS:        /* set flags                    */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCSIFFLAGS)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSIFFLAGS)",
-                     (UInt)&((struct ifreq *)arg3)->ifr_flags,
+                     (Addr)&((struct ifreq *)arg3)->ifr_flags,
                      sizeof(((struct ifreq *)arg3)->ifr_flags) );
       break;
    case SIOCSIFMAP:          /* Set device parameters        */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCSIFMAP)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSIFMAP)",
-                     (UInt)&((struct ifreq *)arg3)->ifr_map,
+                     (Addr)&((struct ifreq *)arg3)->ifr_map,
                      sizeof(((struct ifreq *)arg3)->ifr_map) );
       break;
    case SIOCSIFTXQLEN:       /* Set the tx queue length      */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCSIFTXQLEN)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSIFTXQLEN)",
-                     (UInt)&((struct ifreq *)arg3)->ifr_qlen,
+                     (Addr)&((struct ifreq *)arg3)->ifr_qlen,
                      sizeof(((struct ifreq *)arg3)->ifr_qlen) );
       break;
    case SIOCSIFADDR:         /* set PA address               */
@@ -3194,44 +3193,44 @@ PRE(ioctl)
    case SIOCSIFBRDADDR:      /* set broadcast PA address     */
    case SIOCSIFNETMASK:      /* set network PA mask          */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCSIF*ADDR)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSIF*ADDR)",
-                     (UInt)&((struct ifreq *)arg3)->ifr_addr,
+                     (Addr)&((struct ifreq *)arg3)->ifr_addr,
                      sizeof(((struct ifreq *)arg3)->ifr_addr) );
       break;
    case SIOCSIFMETRIC:       /* set metric                   */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCSIFMETRIC)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSIFMETRIC)",
-                     (UInt)&((struct ifreq *)arg3)->ifr_metric,
+                     (Addr)&((struct ifreq *)arg3)->ifr_metric,
                      sizeof(((struct ifreq *)arg3)->ifr_metric) );
       break;
    case SIOCSIFMTU:          /* set MTU size                 */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCSIFMTU)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSIFMTU)",
-                     (UInt)&((struct ifreq *)arg3)->ifr_mtu,
+                     (Addr)&((struct ifreq *)arg3)->ifr_mtu,
                      sizeof(((struct ifreq *)arg3)->ifr_mtu) );
       break;
    case SIOCSIFHWADDR:       /* set hardware address         */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCSIFHWADDR)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSIFHWADDR)",
-                     (UInt)&((struct ifreq *)arg3)->ifr_hwaddr,
+                     (Addr)&((struct ifreq *)arg3)->ifr_hwaddr,
                      sizeof(((struct ifreq *)arg3)->ifr_hwaddr) );
       break;
 #ifdef HAVE_LINUX_MII_H
    case SIOCSMIIREG:         /* set hardware entry registers */
       SYSCALL_TRACK( pre_mem_read_asciiz, tid, "ioctl(SIOCSMIIREG)",
-                     (UInt)((struct ifreq *)arg3)->ifr_name );
+                     (Addr)((struct ifreq *)arg3)->ifr_name );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSMIIREG)",
-                     (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id,
+                     (Addr)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id,
                      sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id) );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSMIIREG)",
-                     (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->reg_num,
+                     (Addr)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->reg_num,
                      sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->reg_num) );
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSMIIREG)",
-                     (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->val_in,
+                     (Addr)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->val_in,
                      sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->val_in) );
       break;
 #endif
@@ -3720,22 +3719,22 @@ POST(ioctl)
       /* These all use struct ifreq AFAIK */
    case SIOCGIFINDEX:        /* get iface index              */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct ifreq *)arg3)->ifr_ifindex,
+                (Addr)&((struct ifreq *)arg3)->ifr_ifindex,
                 sizeof(((struct ifreq *)arg3)->ifr_ifindex) );
       break;
    case SIOCGIFFLAGS:        /* get flags                    */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct ifreq *)arg3)->ifr_flags,
+                (Addr)&((struct ifreq *)arg3)->ifr_flags,
                 sizeof(((struct ifreq *)arg3)->ifr_flags) );
       break;
    case SIOCGIFHWADDR:       /* Get hardware address         */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct ifreq *)arg3)->ifr_hwaddr,
+                (Addr)&((struct ifreq *)arg3)->ifr_hwaddr,
                 sizeof(((struct ifreq *)arg3)->ifr_hwaddr) );
       break;
    case SIOCGIFMTU:          /* get MTU size                 */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct ifreq *)arg3)->ifr_mtu,
+                (Addr)&((struct ifreq *)arg3)->ifr_mtu,
                 sizeof(((struct ifreq *)arg3)->ifr_mtu) );
       break;
    case SIOCGIFADDR:         /* get PA address               */
@@ -3743,39 +3742,39 @@ POST(ioctl)
    case SIOCGIFBRDADDR:      /* get broadcast PA address     */
    case SIOCGIFNETMASK:      /* get network PA mask          */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct ifreq *)arg3)->ifr_addr,
+                (Addr)&((struct ifreq *)arg3)->ifr_addr,
                 sizeof(((struct ifreq *)arg3)->ifr_addr) );
       break;
    case SIOCGIFMETRIC:       /* get metric                   */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct ifreq *)arg3)->ifr_metric,
+                (Addr)&((struct ifreq *)arg3)->ifr_metric,
                 sizeof(((struct ifreq *)arg3)->ifr_metric) );
       break;
    case SIOCGIFMAP:          /* Get device parameters        */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct ifreq *)arg3)->ifr_map,
+                (Addr)&((struct ifreq *)arg3)->ifr_map,
                 sizeof(((struct ifreq *)arg3)->ifr_map) );
       break;
      break;
    case SIOCGIFTXQLEN:       /* Get the tx queue length      */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct ifreq *)arg3)->ifr_qlen,
+                (Addr)&((struct ifreq *)arg3)->ifr_qlen,
                 sizeof(((struct ifreq *)arg3)->ifr_qlen) );
       break;
    case SIOCGIFNAME:         /* get iface name               */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct ifreq *)arg3)->ifr_name,
+                (Addr)&((struct ifreq *)arg3)->ifr_name,
                 sizeof(((struct ifreq *)arg3)->ifr_name) );
       break;
 #ifdef HAVE_LINUX_MII_H
    case SIOCGMIIPHY:         /* get hardware entry           */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id,
+                (Addr)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id,
                 sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->phy_id) );
       break;
    case SIOCGMIIREG:         /* get hardware entry registers */
       VG_TRACK( post_mem_write,
-                (UInt)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->val_out,
+                (Addr)&((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->val_out,
                 sizeof(((struct mii_ioctl_data *)&((struct ifreq *)arg3)->ifr_data)->val_out) );
       break;
 #endif
@@ -4514,7 +4513,7 @@ PRE(readv)
       vec = (struct iovec *)arg2;
       for (i = 0; i < (Int)arg3; i++)
 	 SYSCALL_TRACK( pre_mem_write, tid, "readv(vector[...])",
-			(UInt)vec[i].iov_base,vec[i].iov_len );
+			(Addr)vec[i].iov_base, vec[i].iov_len );
    }
 }
 
@@ -4529,7 +4528,7 @@ POST(readv)
       for (i = 0; i < (Int)arg3; i++) {
 	 Int nReadThisBuf = vec[i].iov_len;
 	 if (nReadThisBuf > remains) nReadThisBuf = remains;
-	 VG_TRACK( post_mem_write, (UInt)vec[i].iov_base, nReadThisBuf );
+	 VG_TRACK( post_mem_write, (Addr)vec[i].iov_base, nReadThisBuf );
 	 remains -= nReadThisBuf;
 	 if (remains < 0) VG_(core_panic)("readv: remains < 0");
       }
@@ -5342,7 +5341,7 @@ PRE(writev)
       vec = (struct iovec *)arg2;
       for (i = 0; i < (Int)arg3; i++)
 	 SYSCALL_TRACK( pre_mem_read, tid, "writev(vector[...])",
-			(UInt)vec[i].iov_base,vec[i].iov_len );
+			(Addr)vec[i].iov_base, vec[i].iov_len );
    }
 }
 
@@ -5365,7 +5364,7 @@ PRE(adjtimex)
    if (tx->modes & bit)					\
       SYSCALL_TRACK(pre_mem_read, tid,			\
 		    "adjtimex(timex->"#field")",	\
-		    (UInt)&tx->field, sizeof(tx->field))
+		    (Addr)&tx->field, sizeof(tx->field))
    ADJX(ADJ_FREQUENCY, freq);
    ADJX(ADJ_MAXERROR, maxerror);
    ADJX(ADJ_ESTERROR, esterror);
@@ -5696,7 +5695,7 @@ PRE(io_submit)
    for (i = 0; i < arg2; i++) {
       vki_iocb *cb = ((vki_iocb **)arg3)[i];
       SYSCALL_TRACK( pre_mem_read, tid, "io_submit(iocb)",
-                     (UInt)cb, sizeof(vki_iocb) );
+                     (Addr)cb, sizeof(vki_iocb) );
       switch (cb->aio_lio_opcode) {
       case VKI_IOCB_CMD_PREAD:
          SYSCALL_TRACK( pre_mem_write, tid, "io_submit(PREAD)",

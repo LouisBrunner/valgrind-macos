@@ -203,8 +203,13 @@ Int VG_(ktkill)( Int tid, Int signo )
 {
    Int ret = -VKI_ENOSYS;
 
+#ifdef __NR_tgkill
+   ret = VG_(do_syscall)(__NR_tgkill, VG_(main_pid), tid, signo);
+#endif /* __NR_tgkill */
+
 #ifdef __NR_tkill
-   ret = VG_(do_syscall)(__NR_tkill, tid, signo);
+   if (ret == -VKI_ENOSYS)
+      ret = VG_(do_syscall)(__NR_tkill, tid, signo);
 #endif /* __NR_tkill */
 
    if (ret == -VKI_ENOSYS)

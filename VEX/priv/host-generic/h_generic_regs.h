@@ -113,7 +113,7 @@ static inline HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual ) {
 static inline HRegClass hregClass ( HReg r ) {
    UInt rc = r;
    rc = (rc >> 28) & 0x0F;
-   vassert(rc >= HRcInt32 || rc <= HRcVec128);
+   vassert(rc >= HRcInt32 && rc <= HRcVec128);
    return (HRegClass)rc;
 }
 

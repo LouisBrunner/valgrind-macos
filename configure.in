@@ -278,6 +278,51 @@ EOF
    rm -f conftest conftest.c
 fi
 
+
+
+
+
+AC_MSG_CHECKING([if this is an NPTL-based system])
+
+cat<<EOG > nptltest.c
+#include <pthread.h>
+#include <stdio.h>
+int main (int argc, char * argv [])
+{
+   int ret;
+   pthread_mutexattr_t mutexattr;
+   ret = pthread_mutexattr_init (&mutexattr);
+   if (ret == 0) {
+      ret = pthread_mutexattr_setpshared(&mutexattr, PTHREAD_PROCESS_SHARED);
+     if (ret == 0) /* nptl */
+         printf("yes");
+     else          /* not nptl */
+         printf("no");
+         return 0;
+   }
+   return 1;
+}
+EOG
+
+${CC} -o nptltest nptltest.c -lpthread >&5 2>&1
+have_nptl=`./nptltest`
+
+if test "$?" != 0 ; then
+  AC_MSG_RESULT([couldn't run test program])
+  NPTL_THREADING="no"
+else
+  if test "${have_nptl}" == 'yes' ; then
+     NPTL_THREADING="yes"
+     AC_MSG_RESULT([yes])
+  else
+     NPTL_THREADING="no"
+     AC_MSG_RESULT([no])
+  fi
+fi
+
+AC_SUBST(NPTL_THREADING)
+
+
 # does this compiler support -mpreferred-stack-boundary=2 ?
 AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary])
 

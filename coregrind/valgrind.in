@@ -31,6 +31,7 @@
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 VALGRIND="@libdir@/valgrind"
+nptl_threading="@NPTL_THREADING@"
 
 # Other stuff ...
 version="@VERSION@"
@@ -88,10 +89,10 @@ export VG_ARGS
 # tell the dynamic loader to disable this interface using
 # an environment variable.
 
-###this needs to be conditionalised so it only happens on
-###NPTL-based platforms.  Commented out 2002-Apr-06.  JRS
-###LD_ASSUME_KERNEL=2.2.5
-###export LD_ASSUME_KERNEL 
+if [ z"$nptl_threading" = zyes ]; then
+   LD_ASSUME_KERNEL=2.2.5
+   export LD_ASSUME_KERNEL 
+fi
 
 # A bit subtle.  The LD_PRELOAD added entry must be absolute
 # and not depend on LD_LIBRARY_PATH.  This is so that we can

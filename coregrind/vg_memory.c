@@ -514,7 +514,11 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
       VG_(printf)("find_map_space: ret starts as %p-%p client=%d\n",
 		  ret, ret+len, for_client);
 
-   for(s = VG_(SkipList_Find)(&sk_segments, &ret);
+   s = VG_(SkipList_Find)(&sk_segments, &ret);
+   if (s == NULL)
+      s = VG_(SkipNode_First)(&sk_segments);
+
+   for( ;
        s != NULL && s->addr < (ret+len);
        s = VG_(SkipNode_Next)(&sk_segments, s))
    {

@@ -100,7 +100,7 @@ char* strcat ( char* dst, const char* src )
 
    /* This is a bit redundant, I think;  any overlap and the strcat will
       go forever... or until a seg fault occurs. */
-   if (is_overlap(dst, src, (Addr)dst-(Addr)dst_orig+1))
+   if (is_overlap(dst_orig, src_orig, (Addr)dst-(Addr)dst_orig+1))
       complain2("strcat", dst_orig, src_orig);
 
    return dst_orig;
@@ -118,7 +118,7 @@ char* strncat ( char* dst, const char* src, int n )
 
    /* This checks for overlap after copying, unavoidable without
       pre-counting lengths... should be ok */
-   if (is_overlap(dst, src, (Addr)dst-(Addr)dst_orig+1))
+   if (is_overlap(dst_orig, src_orig, (Addr)dst-(Addr)dst_orig+1))
       complain3("strncat", dst_orig, src_orig, n);
 
    return dst_orig;
@@ -141,7 +141,7 @@ char* strcpy ( char* dst, const char* src )
 
    /* This checks for overlap after copying, unavoidable without
       pre-counting length... should be ok */
-   if (is_overlap(dst, src, (Addr)dst-(Addr)dst_orig+1))
+   if (is_overlap(dst_orig, src_orig, (Addr)dst-(Addr)dst_orig+1))
       complain2("strcpy", dst_orig, src_orig);
 
    return dst_orig;

@@ -1731,11 +1731,11 @@ Int commify(ULong n, int field_width, char buf[COMMIFY_BUF_LEN])
 }
 
 static
-void percentify(Int n, Int pow, Int field_width, char buf[]) 
+void percentify(Int n, Int ex, Int field_width, char buf[]) 
 {
    int i, len, space;
     
-   VG_(sprintf)(buf, "%d.%d%%", n / pow, n % pow);
+   VG_(sprintf)(buf, "%d.%d%%", n / ex, n % ex);
    len = VG_(strlen)(buf);
    space = field_width - len;
    if (space < 0) space = 0;     /* Allow for v. small field_width */

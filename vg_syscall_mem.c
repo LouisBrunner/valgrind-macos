@@ -346,6 +346,15 @@ void VG_(wrap_syscall) ( void )
 
       /* !!!!!!!!!! New, untested syscalls, 14 Mar 02 !!!!!!!!!! */
 
+#     if defined(__NR_setresgid32)
+      case __NR_setresgid32: /* syscall 210 */
+         /* int setresgid(gid_t rgid, gid_t egid, gid_t sgid); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("setresgid32 ( %d, %d, %d )\n", arg1, arg2, arg3);
+         KERNEL_DO_SYSCALL(res);
+         break;
+#     endif
+
 #     if defined(__NR_setfsuid32)
       case __NR_setfsuid32: /* syscall 215 */
          /* int setfsuid(uid_t fsuid); */

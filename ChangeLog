@@ -1,3 +1,8 @@
+2002-03-24  Julian Seward  <sewardj@localhost.localdomain>
+
+	* vg_syscall_mem.c: Add syscall setresgid32, from "Arkadi
+	E. Shishlov" <arkadi@it.lv>
+
 2002-03-22  Frédéric Gobry  <frederic.gobry@smartdata.ch>
 
 	* Makefile.am, demangle/Makefile.am: added base dependencies for

@@ -843,9 +843,9 @@ HInstrArray* doRegisterAllocation (
                 && hregClass(state[k].rreg) == hregClass(vreg)) {
                m = hregNumber(state[k].vreg);
                vassert(m >= 0 && m < n_vregs);
-               if (vreg_info[m].dead_before <= ii) {
-                  /* Ok, it's gone dead before this insn.  We can use
-                     it. */
+               if (vreg_info[m].dead_before < ii) {
+                  /* Ok, it's gone dead before the previous insn.  We
+                     can use it. */
                   break;
                }
             }

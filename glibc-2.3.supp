@@ -251,16 +251,16 @@
    Memcheck:Cond
    fun:strstr
    fun:__pthread_initialize_minimal
-   obj:/lib/tls/libpthread-0.61.so
-   obj:/lib/tls/libpthread-0.61.so
+   obj:/lib/tls/libpthread*.so*
+   obj:/lib/tls/libpthread*.so*
 }
 {
    Unterminated strstr string in is_smp_system() (LinuxThreads)
    Memcheck:Cond
    fun:strstr
    fun:pthread_initialize
-   obj:/lib/i686/libpthread-0.10.so
-   obj:/lib/i686/libpthread-0.10.so
+   obj:/lib/i686/libpthread*.so*
+   obj:/lib/i686/libpthread*.so*
 }
 {
    Unterminated strstr string in is_smp_system() (LinuxThreads)

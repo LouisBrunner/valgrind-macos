@@ -377,16 +377,21 @@ CodeRedirect *VG_(add_wrapper)(const Char *from_lib, const Char *from_sym,
      96 == __NR_gettimeofday
     201 == __NR_time
 */
+static void amd64_linux_rerouted__vgettimeofday(void)
+{
 asm(
-"amd64_linux_rerouted__vgettimeofday:\n"
 "       movq    $96, %rax\n"
 "       syscall\n"
-"       ret\n"
-"amd64_linux_rerouted__vtime:\n"
+);
+}
+
+static void amd64_linux_rerouted__vtime(void)
+{
+asm(
 "       movq    $201, %rax\n"
 "       syscall\n"
-"       ret\n"
 );
+}
 #endif
 
 /* If address 'a' is being redirected, return the redirected-to
@@ -399,12 +404,10 @@ Addr VG_(code_redirect)(Addr a)
    /* HACK.  Reroute the amd64-linux vsyscalls.  This should be moved
       out of here into an amd64-linux specific initialisation routine.
    */
-   extern void amd64_linux_rerouted__vgettimeofday;
-   extern void amd64_linux_rerouted__vtime;
    if (a == 0xFFFFFFFFFF600000ULL)
-      return (Addr)&amd64_linux_rerouted__vgettimeofday;
+      return (Addr)amd64_linux_rerouted__vgettimeofday;
    if (a == 0xFFFFFFFFFF600400ULL)
-      return (Addr)&amd64_linux_rerouted__vtime;
+      return (Addr)amd64_linux_rerouted__vtime;
 #endif
 
    r = VG_(SkipList_Find_Exact)(&sk_resolved_redir, &a);

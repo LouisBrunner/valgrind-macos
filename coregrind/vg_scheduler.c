@@ -464,6 +464,18 @@ void handle_signal_return ( ThreadId tid )
       maybe_rendezvous_joiners_and_joinees();
    }
 
+   /* If we were interrupted while waiting on a mutex then check that
+      it hasn't been unlocked while we were busy handling the signal. */
+   if (VG_(threads)[tid].status == VgTs_WaitMX &&
+       VG_(threads)[tid].associated_mx->__vg_m_count == 0) {
+      vg_pthread_mutex_t* mutex = VG_(threads)[tid].associated_mx;
+      mutex->__vg_m_count = 1;
+      mutex->__vg_m_owner = (/*_pthread_descr*/void*)tid;
+      VG_(threads)[tid].status        = VgTs_Runnable;
+      VG_(threads)[tid].associated_mx = NULL;
+      /* m_edx already holds pth_mx_lock() success (0) */
+   }
+
    if (restart_blocked_syscalls)
       /* Easy; we don't have to do anything. */
       return;

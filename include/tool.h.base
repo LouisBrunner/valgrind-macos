@@ -449,7 +449,7 @@ extern Int  VG_(setpgid) ( Int pid, Int pgrp );
 extern Int  VG_(open)   ( const Char* pathname, Int flags, Int mode );
 extern Int  VG_(read)   ( Int fd, void* buf, Int count);
 extern Int  VG_(write)  ( Int fd, const void* buf, Int count);
-extern Int  VG_(lseek)  ( Int fd, Long offset, Int whence);
+extern OffT VG_(lseek)  ( Int fd, OffT offset, Int whence);
 extern void VG_(close)  ( Int fd );
 
 extern Int  VG_(pipe)   ( Int fd[2] );

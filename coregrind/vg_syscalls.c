@@ -4010,7 +4010,7 @@ PRE(link)
 PRE(lseek)
 {
    /* off_t lseek(int fildes, off_t offset, int whence); */
-   MAYBE_PRINTF("lseek ( %d, %d, %d )\n",arg1,arg2,arg3);
+   MAYBE_PRINTF("lseek ( %d, %lld, %d )\n",arg1,(ULong)arg2,arg3);
 }
 
 PRE(_llseek)

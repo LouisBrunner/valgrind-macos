@@ -1013,7 +1013,7 @@ extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
 
 /* system/mman.h */
 extern void* VG_(mmap)( void* start, SizeT length, UInt prot, UInt flags,
-                        UInt sf_flags, UInt fd, UInt offset );
+                        UInt sf_flags, UInt fd, OffT offset );
 extern Int  VG_(munmap)( void* start, SizeT length );
 extern Int  VG_(mprotect)( void *start, SizeT length, UInt prot );
 
@@ -1387,7 +1387,7 @@ extern Char *VG_(resolve_filename)(Int fd);
 extern Bool VG_(pre_syscall) ( ThreadId tid );
 extern void VG_(post_syscall)( ThreadId tid, Bool restart );
 
-extern Bool VG_(is_kerror) ( Int res );
+extern Bool VG_(is_kerror) ( Word res );
 
 /* Internal atfork handlers */
 typedef void (*vg_atfork_t)(ThreadId);

@@ -269,7 +269,8 @@ static Int munmap_inner(void *start, SizeT length)
    return VG_(do_syscall)(__NR_munmap, (UWord)start, length );
 }
 
-static Addr mmap_inner(void *start, SizeT length, UInt prot, UInt flags, UInt fd, UInt offset)
+static Addr mmap_inner(void *start, SizeT length, UInt prot, UInt flags,
+                       UInt fd, OffT offset)
 {
    Int ret;
    
@@ -281,7 +282,7 @@ static Addr mmap_inner(void *start, SizeT length, UInt prot, UInt flags, UInt fd
 
 /* Returns -1 on failure. */
 void* VG_(mmap)( void* start, SizeT length,
-                 UInt prot, UInt flags, UInt sf_flags, UInt fd, UInt offset)
+                 UInt prot, UInt flags, UInt sf_flags, UInt fd, OffT offset)
 {
    Addr  res;
 
@@ -1265,11 +1266,11 @@ Int VG_(write) ( Int fd, const void* buf, Int count)
    return res;
 }
 
-Int VG_(lseek) ( Int fd, Long offset, Int whence)
+OffT VG_(lseek) ( Int fd, OffT offset, Int whence)
 {
    Int res;
    /* res = lseek( fd, offset, whence ); */
-   res = VG_(do_syscall)(__NR_lseek, fd, (UWord)offset, whence);
+   res = VG_(do_syscall)(__NR_lseek, fd, offset, whence);
    if (VG_(is_kerror)(res)) res = -1;
    return res;
 }

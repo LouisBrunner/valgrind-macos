@@ -681,14 +681,16 @@ static Int proxylwp(void *v)
 	       want while running the handler. */
 	    vg_assert(px->state == PXS_SigACK);
 	    appsigmask = req.sigmask;
-	    VG_(ksigdelset)(&appsigmask, VKI_SIGVGKILL);  /* but allow SIGVGKILL to interrupt */
+	    VG_(ksigdelset)(&appsigmask, VKI_SIGVGKILL);  /* but allow SIGVGKILL */
+	    VG_(ksigdelset)(&appsigmask, VKI_SIGVGINT);   /*       and SIGVGINT to interrupt */
 	    px->state = PXS_WaitReq;
 	    reply.req = PX_BAD;	/* don't reply */
 	    break;
 	    
 	 case PX_SetSigmask:
 	    appsigmask = req.sigmask;
-	    VG_(ksigdelset)(&appsigmask, VKI_SIGVGKILL);   /* but allow SIGVGKILL to interrupt */
+	    VG_(ksigdelset)(&appsigmask, VKI_SIGVGKILL);  /* but allow SIGVGKILL */
+	    VG_(ksigdelset)(&appsigmask, VKI_SIGVGINT);   /*       and SIGVGINT to interrupt */
 
 	    vg_assert(px->state == PXS_WaitReq || 
 		      px->state == PXS_SigACK);

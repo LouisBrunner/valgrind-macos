@@ -488,7 +488,10 @@ struct vki_ucontext {
 //----------------------------------------------------------------------
 
 // I think this LDT stuff will have to be reinstated for amd64, but I'm not
-// certain.  Note that the type here is very slightly different to the
+// certain.  (Nb: The sys_arch_prctl seems to have replaced
+// [gs]et_thread_area syscalls.)
+//
+// Note that the type here is very slightly different to the
 // type for x86 (the final 'lm' field is added);  I'm not sure about the
 // significance of that... --njn
 

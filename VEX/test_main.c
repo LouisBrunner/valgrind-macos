@@ -61,7 +61,7 @@ int main ( int argc, char** argv )
    }
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
-                 1, 1, False, 100 );
+                 1, 1, True, 100 );
 
    while (!feof(f)) {
       fgets(linebuf, N_LINEBUF,f);

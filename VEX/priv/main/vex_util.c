@@ -42,14 +42,20 @@ void* LibVEX_Alloc ( Int nbytes )
 {
    vassert(vex_initdone);
    vassert(nbytes > 0);
-   nbytes = (nbytes + 7) & ~7;
-   if (storage_used + nbytes > N_STORAGE_BYTES)
-      vpanic("VEX storage exhausted.\n"
-             "Increase N_STORAGE_BYTES and recompile.");
-   storage_count_allocs++;
-   storage_bytes_allocd += nbytes;
-   storage_used += nbytes;
-   return (void*)(&storage[storage_used - nbytes]);
+   if (vex_valgrind_support) {
+      /* ugly hack */
+      extern void* malloc ( int );
+      return malloc(nbytes);
+   } else {
+      nbytes = (nbytes + 7) & ~7;
+      if (storage_used + nbytes > N_STORAGE_BYTES)
+         vpanic("VEX storage exhausted.\n"
+                "Increase N_STORAGE_BYTES and recompile.");
+      storage_count_allocs++;
+      storage_bytes_allocd += nbytes;
+      storage_used += nbytes;
+      return (void*)(&storage[storage_used - nbytes]);
+   }
 }
 
 /* Exported to library client. */

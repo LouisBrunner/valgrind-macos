@@ -65,27 +65,6 @@ void SK_(pp_SkinError) ( Error* err )
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          break;
 
-      case AddrErr:
-         switch (err_extra->axskind) {
-            case ReadAxs:
-               VG_(message)(Vg_UserMsg, "Invalid read of size %d", 
-                                        err_extra->size ); 
-               break;
-            case WriteAxs:
-               VG_(message)(Vg_UserMsg, "Invalid write of size %d", 
-                                        err_extra->size ); 
-               break;
-            case ExecAxs:
-               VG_(message)(Vg_UserMsg, "Jump to the invalid address "
-                                        "stated on the next line");
-               break;
-            default: 
-               VG_(skin_panic)("SK_(pp_SkinError)(axskind)");
-         }
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
-         break;
-
       case ParamErr:
          if (err_extra->isWrite) {
             VG_(message)(Vg_UserMsg, 

@@ -96,7 +96,18 @@ Bool VGA_(has_tls)(void)
 
 void VGA_(thread_create)(arch_thread_aux_t *aux)
 {
-   if (VGA_(has_tls)) {
+   // Weirdness alert:  I tried removing this call to get_gs() by using a
+   // call to VGA_(has_tls)() in the condition, and Jeroen Witmond
+   // experienced mysterious regtest failures (some of the pth_* ones) on
+   // on of his machines:
+   //
+   //   'Linux DoornRoosje 2.4.26-1-386 #1 Tue Aug // 24
+   //    13:31:19 JST 2004 i686 GNU/Linux' (Debian sarge)
+   //
+   // I don't understand what the difference is either.  Compiler bug?  --njn
+   int gs = get_gs();
+   
+   if ((gs & 7) == 3) {
       tcbhead_t *tcb = get_tcb();
 
       if (allocate_tls == NULL || deallocate_tls == NULL) {
@@ -107,7 +118,7 @@ void VGA_(thread_create)(arch_thread_aux_t *aux)
       my_assert(allocate_tls != NULL);
       
       aux->tls_data = allocate_tls(NULL);
-      aux->tls_segment = get_gs() >> 3;
+      aux->tls_segment = gs >> 3;
       aux->sysinfo = tcb->sysinfo;
 
       tcb->multiple_threads = 1;

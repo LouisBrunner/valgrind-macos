@@ -1028,6 +1028,8 @@ static Bool fits8bits ( UInt w32 )
      greg,  d32(ereg)  |  ereg != ESP
                        =  10 greg ereg, d32
 
+     greg,  d8(%esp)   =  01 greg 100, 0x24, d8
+
      -----------------------------------------------
 
      greg,  d8(base,index,scale)  
@@ -1056,6 +1058,13 @@ static UChar* doAMode_M ( UChar* p, HReg greg, X86AMode* am )
       if (am->Xam.IR.reg != hregX86_ESP()) {
          *p++ = mkModRegRM(2, iregNo(greg), iregNo(am->Xam.IR.reg));
          p = emit32(p, am->Xam.IR.imm);
+         return p;
+      }
+      if (am->Xam.IR.reg == hregX86_ESP()
+          && fits8bits(am->Xam.IR.imm)) {
+ 	 *p++ = mkModRegRM(1, iregNo(greg), 4);
+         *p++ = 0x24;
+         *p++ = am->Xam.IR.imm & 0xFF;
          return p;
       }
       ppX86AMode(am);
@@ -1127,6 +1136,7 @@ static UChar* do_fop_st ( UChar* p, X86FpOp op, Int i )
 #  define fake(_n) mkHReg((_n), HRcInt, False)
    Int subopc;
    switch (op) {
+      case Xfp_ADD: subopc = 0; break;
       case Xfp_MUL: subopc = 1; break;
       default: vpanic("do_fop_st: unknown op");
    }
@@ -1411,7 +1421,11 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             *p++ = 0xFF;
             p = doAMode_M(p, fake(6), i->Xin.Push.src->Xrmi.Mem.am);
             goto done;
-         default: 
+         case Xrmi_Imm:
+            *p++ = 0x68;
+            p = emit32(p, i->Xin.Push.src->Xrmi.Imm.imm32);
+            goto done;
+        default: 
             goto bad;
       }
 

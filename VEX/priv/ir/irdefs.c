@@ -40,6 +40,7 @@ void ppIRConst ( IRConst* con )
     case Ico_U16: vex_printf( "0x%x",   (UInt)(con->Ico.U16)); break;
     case Ico_U32: vex_printf( "0x%x",   (UInt)(con->Ico.U32)); break;
     case Ico_U64: vex_printf( "0x%llx", (ULong)(con->Ico.U64)); break;
+    case Ico_F64: vex_printf("(f64 value)"); break;
     default: vpanic("ppIRConst");
   }
 }
@@ -117,6 +118,7 @@ void ppIROp ( IROp op )
       case Iop_64to32:   vex_printf("64to32");   return;
       case Iop_32HLto64: vex_printf("32HLto64"); return;
 
+      case Iop_AddF64:   vex_printf("AddF64"); return;
       case Iop_MulF64:   vex_printf("MulF64"); return;
       case Iop_I64toF64: vex_printf("I64toF64"); return;
 
@@ -321,7 +323,13 @@ IRConst* IRConst_U64 ( ULong u64 )
    c->Ico.U64 = u64;
    return c;
 }
-
+IRConst* IRConst_F64 ( Double f64 )
+{
+   IRConst* c = LibVEX_Alloc(sizeof(IRConst));
+   c->tag     = Ico_F64;
+   c->Ico.F64 = f64;
+   return c;
+}
 
 /* Constructors -- IRExpr */
 
@@ -555,7 +563,8 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_32Sto64: UNARY(Ity_I64,Ity_I32);
       case Iop_32to8:   UNARY(Ity_I8,Ity_I32);
 
-      case Iop_MulF64:   BINARY(Ity_F64,Ity_F64,Ity_F64);
+      case Iop_AddF64: case Iop_MulF64:
+         BINARY(Ity_F64,Ity_F64,Ity_F64);
       case Iop_I64toF64: UNARY(Ity_F64,Ity_I64);
 
       default:
@@ -620,6 +629,7 @@ IRType typeOfIRConst ( IRConst* con )
       case Ico_U16: return Ity_I16;
       case Ico_U32: return Ity_I32;
       case Ico_U64: return Ity_I64;
+      case Ico_F64: return Ity_F64;
       default: vpanic("typeOfIRConst");
    }
 }

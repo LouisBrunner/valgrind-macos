@@ -33,7 +33,7 @@ extern void ppIRType ( IRType );
 
 typedef
    enum { Ico_U8=0x12000, 
-          Ico_U16, Ico_U32, Ico_U64 }
+          Ico_U16, Ico_U32, Ico_U64, Ico_F64 }
    IRConstTag;
 
 typedef
@@ -44,6 +44,7 @@ typedef
          UShort U16;
          UInt   U32;
          ULong  U64;
+         Double F64;
       } Ico;
    }
    IRConst;
@@ -52,6 +53,7 @@ extern IRConst* IRConst_U8  ( UChar );
 extern IRConst* IRConst_U16 ( UShort );
 extern IRConst* IRConst_U32 ( UInt );
 extern IRConst* IRConst_U64 ( ULong );
+extern IRConst* IRConst_F64 ( Double );
 
 extern void ppIRConst ( IRConst* );
 

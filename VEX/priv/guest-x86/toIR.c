@@ -3127,7 +3127,7 @@ static IRExpr* get_ST ( Int i )
 
 /* Adjust FTOP downwards by one register. */
 
-static IRStmt* do_push ( void )
+static IRStmt* fp_push ( void )
 {
    return
       put_ftop(
@@ -3137,13 +3137,37 @@ static IRStmt* do_push ( void )
       );
 }
 
+/* Adjust FTOP upwards by one register. */
+
+static IRStmt* fp_pop ( void )
+{
+   return
+      put_ftop(
+         binop(Iop_And32,
+               binop(Iop_Add32, get_ftop(), mkU32(1)),
+	       mkU32(7))
+      );
+}
+
+static
+void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
+                         IROp op, Bool dbl )
+{
+   DIP("f%s%c %s", op_txt, dbl?'l':'s', dis_buf);
+   if (dbl) {
+      stmt( put_ST(0, binop(op, get_ST(0), loadLE(Ity_F64,mkexpr(addr)))));
+   } else {
+      vassert(0);
+   }
+}
+
 
 static
 UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 {
-   Int  len;
-   UInt src;
-   Char dis_buf[32];
+   Int    len;
+   UInt   r_src, r_dst;
+   Char   dis_buf[32];
    IRTemp t1;
 
    /* On entry, delta points at the second byte of the insn (the modrm
@@ -3166,12 +3190,18 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          delta++;
          switch (modrm) {
             case 0xC0 ... 0xC7: /* FLD %st(?) */
-               src = (UInt)modrm - 0xC0;
-               DIP("fld %%st(%d)\n", src);
+               r_src = (UInt)modrm - 0xC0;
+               DIP("fld %%st(%d)\n", r_src);
 	       t1 = newTemp(Ity_F64);
-	       assign(t1, get_ST(src));
-	       stmt( do_push() );
+	       assign(t1, get_ST(r_src));
+	       stmt( fp_push() );
 	       stmt( put_ST(0, mkexpr(t1)) );
+               break;
+
+            case 0xEE: /* FLDZ */
+               DIP("fldz");
+               stmt( fp_push() );
+               stmt( put_ST(0, IRExpr_Const(IRConst_F64(0.0))) );
                break;
 
             default:
@@ -3221,7 +3251,28 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDC opcodes +-+-+-+-+-+-+-+ */
    else
    if (first_opcode == 0xDC) {
-      goto decode_fail;
+      if (modrm < 0xC0) {
+
+          /* bits 5,4,3 are an opcode extension, and the modRM also
+            specifies an address. */
+         IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
+         delta += len;
+
+         switch (gregOfRM(modrm)) {
+
+            case 0: /* FADD double-real */
+               fp_do_op_mem_ST_0 ( addr, "add", dis_buf, Iop_AddF64, True );
+               break;
+
+            default:
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("first_opcode == 0xDC\n");
+               goto decode_fail;
+         }
+
+      } else {
+         goto decode_fail;
+      }
    }
 
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDD opcodes +-+-+-+-+-+-+-+ */
@@ -3239,7 +3290,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0: /* FLD double-real */
                DIP("fldD %s\n", dis_buf);
-               stmt( do_push() );
+               stmt( fp_push() );
                stmt( put_ST(0, IRExpr_LDle(Ity_F64, mkexpr(addr))) );
                break;
 
@@ -3254,19 +3305,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                }
                setDMem(a_addr,vd_addr);
                break;
-
-            case 3: /* FSTP double-real */
-               IFDB( if (dis) printf("\tfstpD\t%s\n",t_addr); )
-               if (!fp_is_empty_tag(fp_get_tag_ST(0))) {
-                  vd_addr = fp_pop();
-               } else {
-                  vd_addr = fp_pop(); /* then throw away result */
-                  vd_addr = NAN;
-                  fp_set_stack_underflow();
-               }
-               setDMem(a_addr,vd_addr);
-               break;
 #endif
+            case 3: /* FSTP double-real */
+               DIP("fstpD %s", dis_buf);
+	       storeLE(mkexpr(addr), get_ST(0));
+	       stmt( fp_pop() );
+               break;
 
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
@@ -3274,7 +3318,17 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                goto decode_fail;
          }
       } else {
-         goto decode_fail;
+         delta++;
+         switch (modrm) {
+            case 0xD8 ... 0xDF: /* FSTP %st(0),%st(?) */
+               r_dst = (UInt)modrm - 0xD8;
+               DIP("fstp %%st(0),%%st(%d)\n", r_dst);
+               stmt( put_ST(r_dst, get_ST(0)) );
+               stmt( fp_pop() );
+               break;
+	    default:
+               goto decode_fail;
+	 }
       }
    }
 

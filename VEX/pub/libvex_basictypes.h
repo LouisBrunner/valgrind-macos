@@ -21,6 +21,9 @@ typedef    signed int    Int;
 typedef  unsigned long long int   ULong;
 typedef    signed long long int   Long;
 
+typedef  float   Float;    /* IEEE754 single-precision (32-bit) value */
+typedef  double  Double;   /* IEEE754 double-precision (64-bit) value */
+
 typedef  unsigned char  Bool;
 #define  True   ((Bool)1)
 #define  False  ((Bool)0)

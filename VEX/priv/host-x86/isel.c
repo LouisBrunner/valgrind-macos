@@ -92,6 +92,10 @@ static Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
                                    ? (p->Iex.Const.con->Ico.U64 
                                       == e->Iex.Const.con->Ico.U64) 
                                    : False;
+           case Ico_F64: return e->Iex.Const.con->tag==Ico_F64 
+                                   ? (p->Iex.Const.con->Ico.F64 
+                                      == e->Iex.Const.con->Ico.F64) 
+                                   : False;
 	}
         vpanic("matchIRExpr.Iex_Const");
         /*NOTREACHED*/
@@ -967,6 +971,24 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
       return lookupIRTemp(env, e->Iex.Tmp.tmp);
    }
 
+   if (e->tag == Iex_Const) {
+      union { UInt i64[2]; Double f64; } u;
+      HReg freg = newVRegF(env);
+      vassert(sizeof(u) == 8);
+      vassert(sizeof(u.i64) == 8);
+      vassert(sizeof(u.f64) == 8);
+      vassert(e->Iex.Const.con->tag == Ico_F64);
+      u.f64 = e->Iex.Const.con->Ico.F64;
+      addInstr(env, X86Instr_Push(X86RMI_Imm(u.i64[1])));
+      addInstr(env, X86Instr_Push(X86RMI_Imm(u.i64[0])));
+      addInstr(env, X86Instr_FpLdSt(True/*load*/, 8, freg, 
+                                    X86AMode_IR(0, hregX86_ESP())));
+      addInstr(env, X86Instr_Alu32R(Xalu_ADD,
+                                    X86RMI_Imm(8),
+                                    hregX86_ESP()));
+      return freg;
+   }
+
    if (e->tag == Iex_LDle) {
       X86AMode* am;
       HReg res = newVRegF(env);
@@ -991,6 +1013,7 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Binop) {
       X86FpOp fpop = Xfp_INVALID;
       switch (e->Iex.Binop.op) {
+         case Iop_AddF64: fpop = Xfp_ADD; break;
          case Iop_MulF64: fpop = Xfp_MUL; break;
          default: break;
       }
@@ -1035,20 +1058,25 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- STORE --------- */
    case Ist_STle: {
+      X86AMode* am;
       IRType tya = typeOfIRExpr(env->type_env, stmt->Ist.STle.addr);
       IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.STle.data);
       vassert(tya == Ity_I32);
+      am = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
       if (tyd == Ity_I32) {
-         X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
-         X86RI* ri    = iselIntExpr_RI(env, stmt->Ist.STle.data);
+         X86RI* ri = iselIntExpr_RI(env, stmt->Ist.STle.data);
          addInstr(env, X86Instr_Alu32M(Xalu_MOV,ri,am));
          return;
       }
       if (tyd == Ity_I8 || tyd == Ity_I16) {
-         X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
-         HReg r       = iselIntExpr_R(env, stmt->Ist.STle.data);
+         HReg r = iselIntExpr_R(env, stmt->Ist.STle.data);
          addInstr(env, X86Instr_Store(tyd==Ity_I8 ? 1 : 2,
                                       r,am));
+         return;
+      }
+      if (tyd == Ity_F64) {
+         HReg r = iselDblExpr(env, stmt->Ist.STle.data);
+         addInstr(env, X86Instr_FpLdSt(False/*store*/, 8, r, am));
          return;
       }
       break;

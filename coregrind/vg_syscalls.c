@@ -119,7 +119,7 @@ static void do_atfork_child(ThreadId tid)
 
 /* return true if address range entirely contained within client
    address space */
-static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *syscall)
+static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *syscallname)
 {
    Addr end = start+size;
    Addr cl_base = VG_(client_base);
@@ -138,11 +138,11 @@ static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *s
 
    if (0)
       VG_(printf)("%s: test=%p-%p client=%p-%p ret=%d\n",
-		  syscall, start, end, cl_base, VG_(client_end), ret);
+		  syscallname, start, end, cl_base, VG_(client_end), ret);
 
-   if (!ret && syscall != NULL) {
+   if (!ret && syscallname != NULL) {
       VG_(message)(Vg_UserMsg, "Warning: client syscall %s tried to modify addresses %p-%p",
-		   syscall, start, end);
+		   syscallname, start, end);
 
       if (VG_(clo_verbosity) > 1) {
 	 ExeContext *ec = VG_(get_ExeContext)(tid);
@@ -971,12 +971,12 @@ static Addr do_brk(Addr newbrk)
    ------------------------------------------------------------------ */
 
 /* Return true if we're allowed to use or create this fd */
-static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid, Bool soft)
+static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 {
    if (fd < 0 || fd >= VG_(fd_hard_limit) || fd == VG_(clo_log_fd)) {
       VG_(message)(Vg_UserMsg, 
          "Warning: invalid file descriptor %d in syscall %s()",
-         fd, syscall);
+         fd, syscallname);
       if (fd == VG_(clo_log_fd))
 	 VG_(message)(Vg_UserMsg, 
             "   Use --log-fd=<number> to select an alternative log fd.");

@@ -46,6 +46,8 @@
 
 /* TODO 4 Feb 2005:
 
+   -- Fill in load-case in iselIntExpr_RMI
+
    -- preserve xmm registers across function calls (by declaring them
       as trashed by call insns)
 

@@ -41,8 +41,10 @@ make install prefix=$RPM_BUILD_ROOT/usr
 /usr/include/valgrind/vg_skin.h
 /usr/bin/valgrind
 /usr/bin/cg_annotate
+/usr/lib/valgrind
 /usr/lib/valgrind/*
 /usr/bin/valgrind-listener
+/usr/lib/pkgconfig/valgrind.pc
 
 %doc
 /usr/share/doc/valgrind/*

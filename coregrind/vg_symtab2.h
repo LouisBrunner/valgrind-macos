@@ -120,12 +120,18 @@ struct _ScopeRange {
 /* A structure which contains information pertaining to one mapped
    text segment. (typedef in vg_skin.h) */
 struct _SegInfo {
-   struct _SegInfo* next;
+   struct _SegInfo* next;	/* list of SegInfos */
+
+   Segment	*seg;		/* first segment we're mapped out of */
+   Int		ref;
+
    /* Description of the mapped segment. */
    Addr   start;
    UInt   size;
    Char*  filename; /* in mallocville */
    UInt   foffset;
+   Char*  soname;
+
    /* An expandable array of symbols. */
    RiSym* symtab;
    UInt   symtab_used;

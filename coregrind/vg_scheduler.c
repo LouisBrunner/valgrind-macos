@@ -119,6 +119,10 @@ static ThreadKeyState vg_thread_keys[VG_N_THREAD_KEYS];
 
 typedef UInt ThreadKey;
 
+/* The scheduler does need to know the address of it so it can be
+   called at program exit. */
+static Addr VG_(__libc_freeres_wrapper);
+
 
 UInt VG_(syscall_altered_shadow_reg);
 UInt VG_(signal_delivery_altered_shadow_reg);
@@ -594,9 +598,9 @@ void VG_(scheduler_init) ( void )
    VG_(save_thread_state) ( tid_main );
 
    VG_(threads)[tid_main].stack_highest_word 
-      = VG_(foundstack_start) + VG_(foundstack_size) - 4;
-   VG_(threads)[tid_main].stack_base = VG_(foundstack_start);
-   VG_(threads)[tid_main].stack_size = VG_(foundstack_size);
+      = VG_(clstk_end) - 4;
+   VG_(threads)[tid_main].stack_base = VG_(clstk_base);
+   VG_(threads)[tid_main].stack_size = VG_(clstk_end) - VG_(clstk_base);
 
    /* So now ... */
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
@@ -1096,15 +1100,16 @@ VgSchedReturnCode VG_(scheduler) ( void )
                   it hasn't been overridden with --run-libc-freeres=no
                   on the command line. */
 
-               if (VG_(needs).libc_freeres && VG_(clo_run_libc_freeres)) {
-
+               if (VG_(needs).libc_freeres && 
+		   VG_(clo_run_libc_freeres) &&
+		   VG_(__libc_freeres_wrapper) != 0) {
                   if (VG_(clo_verbosity) > 2 
                       || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
                      VG_(message)(Vg_DebugMsg, 
                         "Caught __NR_exit; running __libc_freeres()");
                   }
                   VG_(nuke_all_threads_except) ( tid );
-                  VG_(threads)[tid].m_eip = (UInt)(&VG_(__libc_freeres_wrapper));
+                  VG_(threads)[tid].m_eip = (UInt)VG_(__libc_freeres_wrapper);
                   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
                   goto stage1; /* party on, dudes (but not for much longer :) */
 
@@ -1858,8 +1863,9 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
          assigning it for the first time. */
       vg_assert(VG_(threads)[tid].stack_size == 0);
       vg_assert(VG_(threads)[tid].stack_base == (Addr)NULL);
-      new_stack = (Addr)VG_(get_memory_from_mmap)( new_stk_szb, 
-                                                   "new thread stack" );
+      new_stack = VG_(client_alloc)(0, new_stk_szb, 
+				    VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC, 
+				    SF_STACK);
       VG_(threads)[tid].stack_base = new_stack;
       VG_(threads)[tid].stack_size = new_stk_szb;
       VG_(threads)[tid].stack_highest_word
@@ -2880,27 +2886,40 @@ void do_client_request ( ThreadId tid )
    UInt*        arg    = (UInt*)(VG_(threads)[tid].m_eax);
    UInt         req_no = arg[0];
 
-   /* VG_(printf)("req no = 0x%x\n", req_no); */
+   if (0)
+      VG_(printf)("req no = 0x%x\n", req_no);
    switch (req_no) {
 
       case VG_USERREQ__CLIENT_CALL0: {
          UInt (*f)(void) = (void*)arg[1];
-         SET_CLCALL_RETVAL(tid, f ( ), (Addr)f);
+	 if (f == NULL)
+	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL: func=%p\n", f);
+	 else
+	    SET_CLCALL_RETVAL(tid, f ( ), (Addr)f);
          break;
       }
       case VG_USERREQ__CLIENT_CALL1: {
          UInt (*f)(UInt) = (void*)arg[1];
-         SET_CLCALL_RETVAL(tid, f ( arg[2] ), (Addr)f );
+	 if (f == NULL)
+	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL: func=%p\n", f);
+	 else
+	    SET_CLCALL_RETVAL(tid, f ( arg[2] ), (Addr)f );
          break;
       }
       case VG_USERREQ__CLIENT_CALL2: {
          UInt (*f)(UInt, UInt) = (void*)arg[1];
-         SET_CLCALL_RETVAL(tid, f ( arg[2], arg[3] ), (Addr)f );
+	 if (f == NULL)
+	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL: func=%p\n", f);
+	 else
+	    SET_CLCALL_RETVAL(tid, f ( arg[2], arg[3] ), (Addr)f );
          break;
       }
       case VG_USERREQ__CLIENT_CALL3: {
          UInt (*f)(UInt, UInt, UInt) = (void*)arg[1];
-         SET_CLCALL_RETVAL(tid, f ( arg[2], arg[3], arg[4] ), (Addr)f );
+	 if (f == NULL)
+	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL: func=%p\n", f);
+	 else
+	    SET_CLCALL_RETVAL(tid, f ( arg[2], arg[3], arg[4] ), (Addr)f );
          break;
       }
 
@@ -3109,12 +3128,26 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__SIGNAL_RETURNS: 
          handle_signal_return(tid);
 	 break;
- 
+
+
+      case VG_USERREQ__GET_SIGRT_MIN:
+	 SET_PTHREQ_RETVAL(tid, VG_(sig_rtmin));
+	 break;
+
+      case VG_USERREQ__GET_SIGRT_MAX:
+	 SET_PTHREQ_RETVAL(tid, VG_(sig_rtmax));
+	 break;
+
+      case VG_USERREQ__ALLOC_RTSIG:
+	 SET_PTHREQ_RETVAL(tid, VG_(sig_alloc_rtsig)((Int)arg[1]));
+	 break;
+
       case VG_USERREQ__PRINTF: {
          int count = 
             VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (va_list)arg[2] );
             SET_CLREQ_RETVAL( tid, count );
          break; }
+
 
       case VG_USERREQ__INTERNAL_PRINTF: {
          int count = 
@@ -3138,6 +3171,46 @@ void do_client_request ( ThreadId tid )
             SET_CLREQ_RETVAL( tid, count );
          break; }
 
+      case VG_USERREQ__REGISTER_LIBC_FREERES:
+	 VG_(__libc_freeres_wrapper)	= arg[1];
+         SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
+	 break;
+
+      case VG_USERREQ__GET_MALLOCFUNCS: {
+	 struct vg_mallocfunc_info *info = (struct vg_mallocfunc_info *)arg[1];
+
+	 info->sk_malloc	= (Addr)SK_(malloc);
+	 info->sk_calloc	= (Addr)SK_(calloc);
+	 info->sk_realloc	= (Addr)SK_(realloc);
+	 info->sk_memalign	= (Addr)SK_(memalign);
+	 info->sk___builtin_new	= (Addr)SK_(__builtin_new);
+	 info->sk___builtin_vec_new	= (Addr)SK_(__builtin_vec_new);
+	 info->sk_free		= (Addr)SK_(free);
+	 info->sk___builtin_delete	= (Addr)SK_(__builtin_delete);
+	 info->sk___builtin_vec_delete	= (Addr)SK_(__builtin_vec_delete);
+
+	 info->arena_payload_szB	= (Addr)VG_(arena_payload_szB);
+	 
+	 info->clo_sloppy_malloc	= VG_(clo_sloppy_malloc);
+	 info->clo_trace_malloc		= VG_(clo_trace_malloc);
+
+         SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
+
+	 break;
+      }
+
+      case VG_USERREQ__REGISTER_REDIRECT_SYM: {
+	 VG_(add_redirect_sym)((const Char *)arg[1], (const Char *)arg[2],
+			       (const Char *)arg[3], (const Char *)arg[4]);
+	 break;
+      }
+
+      case VG_USERREQ__REGISTER_REDIRECT_ADDR: {
+	 VG_(add_redirect_addr)((const Char *)arg[1], (const Char *)arg[2],
+				(Addr)arg[3]);
+	 break;
+      }
+
       /* Requests from the client program */
 
       case VG_USERREQ__DISCARD_TRANSLATIONS:
@@ -3160,7 +3233,7 @@ void do_client_request ( ThreadId tid )
 	    UInt ret;
 
             if (VG_(clo_verbosity) > 2)
-               VG_(printf)("client request: code %d,  addr %p,  len %d\n",
+               VG_(printf)("client request: code %x,  addr %p,  len %d\n",
                            arg[0], (void*)arg[1], arg[2] );
 
 	    if (SK_(handle_client_request) ( tid, arg, &ret ))

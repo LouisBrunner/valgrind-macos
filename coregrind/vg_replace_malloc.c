@@ -43,235 +43,165 @@
 
 #include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */
 #include "vg_include.h"
+#include "vg_skin.h"
 
-/*------------------------------------------------------------*/
-/*--- Command line options                                 ---*/
-/*------------------------------------------------------------*/
+/* Create an alias */
+#define ALIAS(ret, name, args, toname)					\
+   ret name args __attribute__((alias(#toname), visibility("protected")))
 
-/* Round malloc sizes upwards to integral number of words? default: NO */
-Bool VG_(clo_sloppy_malloc)  = False;
-
-/* DEBUG: print malloc details?  default: NO */
-Bool VG_(clo_trace_malloc)   = False;
-
-/* Minimum alignment in functions that don't specify alignment explicitly.
-   default: 0, i.e. use default of the machine (== 4) */
-Int  VG_(clo_alignment) = 4;
-
-
-Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
-{
-   if      (VG_CLO_STREQN(12, arg, "--alignment=")) {
-      VG_(clo_alignment) = (Int)VG_(atoll)(&arg[12]);
-
-      if (VG_(clo_alignment) < 4 
-          || VG_(clo_alignment) > 4096
-          || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
-         VG_(message)(Vg_UserMsg, "");
-         VG_(message)(Vg_UserMsg, 
-            "Invalid --alignment= setting.  "
-            "Should be a power of 2, >= 4, <= 4096.");
-         VG_(bad_option)("--alignment");
-      }
-   }
-
-   else if (VG_CLO_STREQ(arg, "--sloppy-malloc=yes"))
-      VG_(clo_sloppy_malloc) = True;
-   else if (VG_CLO_STREQ(arg, "--sloppy-malloc=no"))
-      VG_(clo_sloppy_malloc) = False;
-
-   else if (VG_CLO_STREQ(arg, "--trace-malloc=yes"))
-      VG_(clo_trace_malloc) = True;
-   else if (VG_CLO_STREQ(arg, "--trace-malloc=no"))
-      VG_(clo_trace_malloc) = False;
-
-   else 
-      return False;
-
-   return True;
-}
-
-void VG_(replacement_malloc_print_usage)(void)
-{
-   VG_(printf)(
-"    --sloppy-malloc=no|yes    round malloc sizes to next word? [no]\n"
-"    --alignment=<number>      set minimum alignment of allocations [4]\n"
-   );
-}
-
-void VG_(replacement_malloc_print_debug_usage)(void)
-{
-   VG_(printf)(
-"    --trace-malloc=no|yes     show client malloc details? [no]\n"
-   );
-}
-
+/* Declare a function, along with libc's various aliases */
+#define LIBALIAS(ret, name, args)		\
+	ALIAS(ret, __##name, args, name);	\
+	ALIAS(ret, __libc_##name, args, name);	\
+	ret name args
 
 /*------------------------------------------------------------*/
 /*--- Replacing malloc() et al                             ---*/
 /*------------------------------------------------------------*/
 
+static struct vg_mallocfunc_info info;
+static int init_done;
+
+/* Startup hook - called as init section */
+static void init(void) __attribute__((constructor));
+
 /* Below are new versions of malloc, __builtin_new, free, 
    __builtin_delete, calloc, realloc, memalign, and friends.
 
-   malloc, __builtin_new, free, __builtin_delete, calloc and realloc
-   can be entered either on the real CPU or the simulated one.  If on
-   the real one, this is because the dynamic linker is running the
-   static initialisers for C++, before starting up Valgrind itself.
-   In this case it is safe to route calls through to
-   VG_(arena_malloc)/VG_(arena_free), since they are self-initialising.
-
-   Once Valgrind is initialised, vg_running_on_simd_CPU becomes True.
-   The call needs to be transferred from the simulated CPU back to the
-   real one and routed to the VG_(cli_malloc)() or VG_(cli_free)().  To do
-   that, the client-request mechanism (in valgrind.h) is used to convey
-   requests to the scheduler.
+   None of these functions are called directly - they are not meant to
+   be found by the dynamic linker.  They get called because
+   vg_replace_malloc installs a bunch of code redirects which causes
+   Valgrind to use these functions rather than the ones they're
+   replacing.  That said, we certainly don't mind if the linker finds
+   them, because it makes our life easier with respect to startup
+   initialization order (we can't guarantee that our init routine will
+   necessarily be called early enough to do the redirects before
+   someone wants to allocate).
 */
 
 #define MALLOC_TRACE(format, args...)  \
-   if (VG_(clo_trace_malloc))          \
+   if (info.clo_trace_malloc)          \
       VALGRIND_INTERNAL_PRINTF(format, ## args )
 
 #define MAYBE_SLOPPIFY(n)           \
-   if (VG_(clo_sloppy_malloc)) {    \
-      while ((n % 4) > 0) n++;      \
+   if (info.clo_sloppy_malloc) {    \
+      n = (n+3) & ~3;		    \
    }
 
 /* ALL calls to malloc() and friends wind up here. */
 #define ALLOC(fff, vgfff) \
-void* fff ( Int n ) \
+LIBALIAS(void *, fff, (Int n))			\
 { \
    void* v; \
  \
-   MALLOC_TRACE(#fff "[simd=%d](%d)",  \
-                (UInt)VG_(is_running_on_simd_CPU)(), n ); \
+   MALLOC_TRACE(#fff "(%d)", n ); \
    MAYBE_SLOPPIFY(n); \
+   if (!init_done) init(); \
  \
-   if (VG_(is_running_on_simd_CPU)()) { \
-      v = (void*)VALGRIND_NON_SIMD_CALL1( vgfff, n ); \
-   } else if (VG_(clo_alignment) != 4) { \
-      v = VG_(arena_malloc_aligned)(VG_AR_CLIENT, VG_(clo_alignment), n); \
-   } else { \
-      v = VG_(arena_malloc)(VG_AR_CLIENT, n); \
-   } \
+   v = (void*)VALGRIND_NON_SIMD_CALL1( info.sk_##vgfff, n ); \
    MALLOC_TRACE(" = %p", v ); \
    return v; \
 }
-ALLOC( malloc,              SK_(malloc)            );
-ALLOC( __builtin_new,       SK_(__builtin_new)     );
-ALLOC( _Znwj,               SK_(__builtin_new)     );
+ALLOC( malloc,              malloc            );
+ALLOC( __builtin_new,       __builtin_new     );
+ALLOC( _Znwj,               __builtin_new     );
 
 // operator new(unsigned, std::nothrow_t const&)
-ALLOC( _ZnwjRKSt9nothrow_t, SK_(__builtin_new)     );
+ALLOC( _ZnwjRKSt9nothrow_t, __builtin_new     );
 
-ALLOC( __builtin_vec_new,   SK_(__builtin_vec_new) );
-ALLOC( _Znaj,               SK_(__builtin_vec_new) );
+ALLOC( __builtin_vec_new,   __builtin_vec_new );
+ALLOC( _Znaj,               __builtin_vec_new );
 
 // operator new[](unsigned, std::nothrow_t const&
-ALLOC( _ZnajRKSt9nothrow_t, SK_(__builtin_vec_new) );
+ALLOC( _ZnajRKSt9nothrow_t, __builtin_vec_new );
 
 #define FREE(fff, vgfff) \
-void fff ( void* p ) \
+LIBALIAS(void, fff, (void *p))			\
 { \
-   MALLOC_TRACE(#fff "[simd=%d](%p)",  \
-                (UInt)VG_(is_running_on_simd_CPU)(), p ); \
+   MALLOC_TRACE(#fff "(%p)", p ); \
    if (p == NULL)  \
       return; \
-   if (VG_(is_running_on_simd_CPU)()) { \
-      (void)VALGRIND_NON_SIMD_CALL1( vgfff, p ); \
-   } else { \
-      VG_(arena_free)(VG_AR_CLIENT, p);       \
-   } \
+   if (!init_done) init(); \
+   (void)VALGRIND_NON_SIMD_CALL1( info.sk_##vgfff, p ); \
 }
-FREE( free,                 SK_(free)                 );
-FREE( __builtin_delete,     SK_(__builtin_delete)     );
-FREE( _ZdlPv,               SK_(__builtin_delete)     );
-FREE( __builtin_vec_delete, SK_(__builtin_vec_delete) );
-FREE( _ZdaPv,               SK_(__builtin_vec_delete) );
+FREE( free,                 free                 );
+FREE( __builtin_delete,     __builtin_delete     );
+FREE( _ZdlPv,               __builtin_delete     );
+FREE( __builtin_vec_delete, __builtin_vec_delete );
+FREE( _ZdaPv,               __builtin_vec_delete );
 
-void* calloc ( UInt nmemb, UInt size )
+LIBALIAS(void*, calloc, ( Int nmemb, Int size ))
 {
    void* v;
 
-   MALLOC_TRACE("calloc[simd=%d](%d,%d)", 
-                (UInt)VG_(is_running_on_simd_CPU)(), nmemb, size );
+   MALLOC_TRACE("calloc(%d,%d)", nmemb, size );
    MAYBE_SLOPPIFY(size);
 
-   if (VG_(is_running_on_simd_CPU)()) {
-      v = (void*)VALGRIND_NON_SIMD_CALL2( SK_(calloc), nmemb, size );
-   } else {
-      v = VG_(arena_calloc)(VG_AR_CLIENT, VG_(clo_alignment), nmemb, size);
-   }
+   if (!init_done) init();
+   v = (void*)VALGRIND_NON_SIMD_CALL2( info.sk_calloc, nmemb, size );
    MALLOC_TRACE(" = %p", v );
    return v;
 }
 
-
-void* realloc ( void* ptrV, Int new_size )
+LIBALIAS(void*, realloc, ( void* ptrV, Int new_size ))
 {
    void* v;
 
-   MALLOC_TRACE("realloc[simd=%d](%p,%d)", 
-                (UInt)VG_(is_running_on_simd_CPU)(), ptrV, new_size );
+   MALLOC_TRACE("realloc(%p,%d)", ptrV, new_size );
    MAYBE_SLOPPIFY(new_size);
 
    if (ptrV == NULL)
       return malloc(new_size);
    if (new_size <= 0) {
       free(ptrV);
-      if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = 0" );
+      if (info.clo_trace_malloc) 
+         VALGRIND_INTERNAL_PRINTF(" = 0" );
       return NULL;
    }   
-   if (VG_(is_running_on_simd_CPU)()) {
-      v = (void*)VALGRIND_NON_SIMD_CALL2( SK_(realloc), ptrV, new_size );
-   } else {
-      v = VG_(arena_realloc)(VG_AR_CLIENT, ptrV, VG_(clo_alignment), new_size);
-   }
+   if (!init_done) init();
+   v = (void*)VALGRIND_NON_SIMD_CALL2( info.sk_realloc, ptrV, new_size );
    MALLOC_TRACE(" = %p", v );
    return v;
 }
 
 
-void* memalign ( Int alignment, Int n )
+LIBALIAS(void*, memalign, ( Int alignment, Int n ))
 {
    void* v;
 
-   MALLOC_TRACE("memalign[simd=%d](al %d, size %d)", 
-                (UInt)VG_(is_running_on_simd_CPU)(), alignment, n );
+   MALLOC_TRACE("memalign(al %d, size %d)", alignment, n );
    MAYBE_SLOPPIFY(n);
 
-   if (VG_(is_running_on_simd_CPU)()) {
-      v = (void*)VALGRIND_NON_SIMD_CALL2( SK_(memalign), alignment, n );
-   } else {
-      v = VG_(arena_malloc_aligned)(VG_AR_CLIENT, alignment, n);
-   }
+   if (!init_done) init();
+   v = (void*)VALGRIND_NON_SIMD_CALL2( info.sk_memalign, alignment, n );
    MALLOC_TRACE(" = %p", v );
    return v;
 }
 
 
-void* valloc ( Int size )
+LIBALIAS(void*, valloc, ( Int size ))
 {
    return memalign(VKI_BYTES_PER_PAGE, size);
 }
 
 
 /* Various compatibility wrapper functions, for glibc and libstdc++. */
-void cfree ( void* p )
+
+/* Don't just alias free, otherwise people could get confused seeing
+   cfree rather than free in error output */
+LIBALIAS(void, cfree, ( void* p ) )
 {
-   free ( p );
+   free(p);
 }
 
-
-int mallopt ( int cmd, int value )
+LIBALIAS(int, mallopt, ( int cmd, int value ))
 {
    /* In glibc-2.2.4, 1 denotes a successful return value for mallopt */
    return 1;
 }
 
 
-int __posix_memalign ( void **memptr, UInt alignment, UInt size )
+LIBALIAS(int, posix_memalign, ( void **memptr, UInt alignment, UInt size ))
 {
     void *mem;
 
@@ -290,25 +220,17 @@ int __posix_memalign ( void **memptr, UInt alignment, UInt size )
     return VKI_ENOMEM /*12*/ /*ENOMEM*/;
 }
 
-# define weak_alias(name, aliasname) \
-  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
-weak_alias(__posix_memalign, posix_memalign);
-
-Int malloc_usable_size ( void* p )
+LIBALIAS(int, malloc_usable_size, ( void* p ))
 { 
    Int pszB;
    
-   MALLOC_TRACE("malloc_usable_size[simd=%d](%p)", 
-                (UInt)VG_(is_running_on_simd_CPU)(), p );
+   MALLOC_TRACE("malloc_usable_size(%p)", p );
    if (NULL == p)
       return 0;
 
-   if (VG_(is_running_on_simd_CPU)()) {
-      pszB = (Int)VALGRIND_NON_SIMD_CALL2( VG_(arena_payload_szB), 
-                                           VG_AR_CLIENT, p );
-   } else {
-      pszB = VG_(arena_payload_szB)(VG_AR_CLIENT, p);
-   }
+   if (!init_done) init();
+   pszB = (Int)VALGRIND_NON_SIMD_CALL2( info.arena_payload_szB, 
+					VG_AR_CLIENT, p );
    MALLOC_TRACE(" = %d", pszB );
 
    return pszB;
@@ -316,21 +238,28 @@ Int malloc_usable_size ( void* p )
 
 
 /* Bomb out if we get any of these. */
-/* HACK: We shouldn't call VG_(core_panic) or VG_(message) on the simulated
-   CPU.  Really we should pass the request in the usual way, and
-   Valgrind itself can do the panic.  Too tedious, however.  
-*/
-void pvalloc ( void )
-{ VG_(core_panic)("call to pvalloc\n"); }
-void malloc_stats ( void )
-{ VG_(core_panic)("call to malloc_stats\n"); }
 
-void malloc_trim ( void )
-{ VG_(core_panic)("call to malloc_trim\n"); }
-void malloc_get_state ( void )
-{ VG_(core_panic)("call to malloc_get_state\n"); }
-void malloc_set_state ( void )
-{ VG_(core_panic)("call to malloc_set_state\n"); }
+extern void _exit(int);
+
+static void panic(const char *str)
+{
+   VALGRIND_PRINTF_BACKTRACE("Program aborting because of call to %s", str);
+   
+   _exit(99);
+   *(int *)0 = 'x';
+}
+
+#define PANIC(x)				\
+   void x(void)					\
+   {						\
+      panic(#x);				\
+   }
+
+PANIC(pvalloc);
+PANIC(malloc_stats);
+PANIC(malloc_trim);
+PANIC(malloc_get_state);
+PANIC(malloc_set_state);
 
 
 /* Yet another ugly hack.  Cannot include <malloc.h> because we
@@ -351,7 +280,7 @@ struct mallinfo {
    int keepcost; /* top-most, releasable (via malloc_trim) space */
 };
 
-struct mallinfo mallinfo ( void )
+LIBALIAS(struct mallinfo, mallinfo, ( void ))
 {
    /* Should really try to return something a bit more meaningful */
    UInt            i;
@@ -360,6 +289,83 @@ struct mallinfo mallinfo ( void )
    for (i = 0; i < sizeof(mi); i++)
       pmi[i] = 0;
    return mi;
+}
+
+static const struct {
+   const Char *libname;
+   Addr		func;
+} replacements[] =
+{
+#define E(pfx, x)	{ pfx #x, (Addr)x }
+#define R(x)		E("", x), E("__libc_", x), E("__", x)
+
+   /* alloc */
+   R(malloc),
+   R(__builtin_new),
+   R(_Znwj),
+   R(_ZnwjRKSt9nothrow_t),	/* operator new(unsigned, std::nothrow_t const&) */
+   R(__builtin_vec_new),
+   R(_Znaj),
+   R(_ZnajRKSt9nothrow_t),	/* operator new[](unsigned, std::nothrow_t const& */
+   R(calloc),
+   R(realloc),
+   R(memalign),
+   R(valloc),
+   R(cfree),
+   R(posix_memalign),
+
+   /* free */
+   R(free),
+   R(__builtin_delete),
+   R(_ZdlPv),
+   R(__builtin_vec_delete),
+   R(_ZdaPv),
+
+   /* misc */
+   R(mallopt),
+   R(malloc_usable_size),
+   R(mallinfo),
+
+   /* bad */
+   R(pvalloc),
+   R(malloc_stats),
+   R(malloc_trim),
+   R(malloc_get_state),
+   R(malloc_set_state),   
+#undef R
+#undef S
+#undef E
+};
+
+/* All the code in here is unused until this function is called */
+
+static void init(void)
+{
+   int i;
+   int res;
+
+   if (init_done)
+      return;
+
+   init_done = 1;
+
+   VALGRIND_MAGIC_SEQUENCE(res, -1, VG_USERREQ__GET_MALLOCFUNCS, &info, 0, 0, 0);
+
+   for(i = 0; i < sizeof(replacements)/sizeof(*replacements); i++) {
+#if 0
+      /* doesn't seem much point - ld-linux.so will have already used
+	 malloc/free before we run */
+      VALGRIND_MAGIC_SEQUENCE(res, 0, VG_USERREQ__REGISTER_REDIRECT_ADDR, 
+			      "soname:ld-linux.so.2", replacements[i].libname,
+			      replacements[i].func, 0);
+#endif
+      VALGRIND_MAGIC_SEQUENCE(res, 0, VG_USERREQ__REGISTER_REDIRECT_ADDR, 
+			      "soname:libc.so.6", replacements[i].libname,
+			      replacements[i].func, 0);
+      VALGRIND_MAGIC_SEQUENCE(res, 0, VG_USERREQ__REGISTER_REDIRECT_ADDR, 
+			      "soname:libstdc++*", replacements[i].libname,
+			      replacements[i].func, 0);
+   }
 }
 
 /*--------------------------------------------------------------------*/

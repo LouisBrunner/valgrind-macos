@@ -474,7 +474,7 @@ void canonicaliseSymtab ( SegInfo* si )
   cleanup_more:
  
    /* If two symbols have identical address ranges, favour the
-      one with the longer name. 
+      one with the longer name (unless the extra length is junk)
    */
    do {
       n_merged = 0;
@@ -717,6 +717,35 @@ void canonicaliseLoctab ( SegInfo* si )
 /*--- Read info from a .so/exe file.                       ---*/
 /*------------------------------------------------------------*/
 
+Bool VG_(is_object_file)(const void *buf)
+{
+   {
+      Elf32_Ehdr *ehdr = (Elf32_Ehdr *)buf;
+      Int ok = 1;
+
+      ok &= (ehdr->e_ident[EI_MAG0] == 0x7F
+             && ehdr->e_ident[EI_MAG1] == 'E'
+             && ehdr->e_ident[EI_MAG2] == 'L'
+             && ehdr->e_ident[EI_MAG3] == 'F');
+      ok &= (ehdr->e_ident[EI_CLASS] == ELFCLASS32
+             && ehdr->e_ident[EI_DATA] == ELFDATA2LSB
+             && ehdr->e_ident[EI_VERSION] == EV_CURRENT);
+      ok &= (ehdr->e_type == ET_EXEC || ehdr->e_type == ET_DYN);
+      ok &= (ehdr->e_machine == EM_386);
+      ok &= (ehdr->e_version == EV_CURRENT);
+      ok &= (ehdr->e_shstrndx != SHN_UNDEF);
+      ok &= (ehdr->e_shoff != 0 && ehdr->e_shnum != 0);
+      ok &= (ehdr->e_phoff != 0 && ehdr->e_phnum != 0);
+
+      if (ok)
+	 return True;
+   }
+
+   /* other file formats here? */
+
+   return False;
+}
+
 /* Read a symbol table (normal or dynamic) */
 static
 void read_symtab( SegInfo* si, Char* tab_name,
@@ -848,7 +877,6 @@ void read_symtab( SegInfo* si, Char* tab_name,
       name = VG_(addStr) ( si, t0, -1 );
       vg_assert(name != NULL
                 /* && 0==VG_(strcmp)(t0,&vg_strtab[nmoff]) */ );
-      vg_assert( (Int)sym->st_value >= 0);
       /* VG_(printf)("%p + %d:   %p %s\n", si->start, 
                   (Int)sym->st_value, sym_addr,  t0 ); */
       risym.addr  = sym_addr;
@@ -877,7 +905,7 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_UserMsg, "Reading syms from %s", si->filename );
+      VG_(message)(Vg_UserMsg, "Reading syms from %s (%p)", si->filename, si->start );
 
    /* mmap the object image aboard, so that we can read symbols and
       line number info out of it.  It will be munmapped immediately
@@ -897,7 +925,8 @@ Bool vg_read_lib_symbols ( SegInfo* si )
    }
 
    oimage = (Addr)VG_(mmap)( NULL, n_oimage, 
-                             VKI_PROT_READ, VKI_MAP_PRIVATE, fd, 0 );
+                             VKI_PROT_READ, VKI_MAP_PRIVATE|VKI_MAP_NOSYMS, fd, 0 );
+
    VG_(close)(fd);
 
    if (oimage == ((Addr)(-1))) {
@@ -913,21 +942,8 @@ Bool vg_read_lib_symbols ( SegInfo* si )
    ok = (n_oimage >= sizeof(Elf32_Ehdr));
    ehdr = (Elf32_Ehdr*)oimage;
 
-   if (ok) {
-      ok &= (ehdr->e_ident[EI_MAG0] == 0x7F
-             && ehdr->e_ident[EI_MAG1] == 'E'
-             && ehdr->e_ident[EI_MAG2] == 'L'
-             && ehdr->e_ident[EI_MAG3] == 'F');
-      ok &= (ehdr->e_ident[EI_CLASS] == ELFCLASS32
-             && ehdr->e_ident[EI_DATA] == ELFDATA2LSB
-             && ehdr->e_ident[EI_VERSION] == EV_CURRENT);
-      ok &= (ehdr->e_type == ET_EXEC || ehdr->e_type == ET_DYN);
-      ok &= (ehdr->e_machine == EM_386);
-      ok &= (ehdr->e_version == EV_CURRENT);
-      ok &= (ehdr->e_shstrndx != SHN_UNDEF);
-      ok &= (ehdr->e_shoff != 0 && ehdr->e_shnum != 0);
-      ok &= (ehdr->e_phoff != 0 && ehdr->e_phnum != 0);
-   }
+   if (ok)
+      ok &= VG_(is_object_file)(ehdr);
 
    if (!ok) {
       VG_(symerr)("Invalid ELF header, or missing stringtab/sectiontab.");
@@ -945,6 +961,7 @@ Bool vg_read_lib_symbols ( SegInfo* si )
    {
       Bool offset_set = False;
       Elf32_Addr prev_addr = 0;
+      Addr baseaddr = 0;
 
       si->offset = 0;
 
@@ -954,12 +971,37 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
 	 o_phdr = &((Elf32_Phdr *)(oimage + ehdr->e_phoff))[i];
 
+	 if (o_phdr->p_type == PT_DYNAMIC && si->soname == NULL) {
+	    const Elf32_Dyn *dyn = (const Elf32_Dyn *)(oimage + o_phdr->p_offset);
+	    Int stroff = -1;
+	    Char *strtab = NULL;
+	    Int j;
+	    
+	    for(j = 0; dyn[j].d_tag != DT_NULL; j++) {
+	       switch(dyn[j].d_tag) {
+	       case DT_SONAME:
+		  stroff =  dyn[j].d_un.d_val;
+		  break;
+
+	       case DT_STRTAB:
+		  strtab = (Char *)oimage + dyn[j].d_un.d_ptr - baseaddr;
+		  break;
+	       }
+	    }
+
+	    if (stroff != -1 && strtab != 0) {
+	       TRACE_SYMTAB("soname=%s\n", strtab+stroff);
+	       si->soname = VG_(arena_strdup)(VG_AR_SYMTAB, strtab+stroff);
+	    }
+	 }
+
 	 if (o_phdr->p_type != PT_LOAD)
 	    continue;
 
 	 if (!offset_set) {
 	    offset_set = True;
 	    si->offset = si->start - o_phdr->p_vaddr;
+	    baseaddr = o_phdr->p_vaddr;
 	 }
 
 	 if (o_phdr->p_vaddr < prev_addr) {
@@ -990,10 +1032,31 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 	     (mapped_end > (si->start+si->size))) {
 	    UInt newsz = mapped_end - si->start;
 	    if (newsz > si->size) {
+	       Segment *seg;
+
 	       if (0)
 		  VG_(printf)("extending mapping %p..%p %d -> ..%p %d\n", 
 			      si->start, si->start+si->size, si->size,
 			      si->start+newsz, newsz);
+
+	       for(seg = VG_(find_segment)(si->start);
+		   seg != NULL && VG_(seg_overlaps)(seg, si->start, si->size); 
+		   seg = VG_(next_segment)(seg)) {
+		  if (seg->symtab == si)
+		     continue;
+
+		  if (seg->symtab != NULL)
+		     VG_(symtab_decref)(seg->symtab, seg->addr, seg->len);
+
+		  VG_(symtab_incref)(si);
+		  seg->symtab = si;
+		  
+		  if (0)
+		     VG_(printf)("adding symtab %p (%p-%p) to segment %p (%p-%p)\n",
+				 si, si->start, si->start+newsz,
+				 seg, seg->addr, seg->addr+seg->len);
+	       }
+	       
 	       si->size = newsz;
 	    }
 	 }
@@ -1128,54 +1191,27 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 */
 static SegInfo* segInfo = NULL;
 
-void VG_(read_seg_symbols) ( Addr start, UInt size, 
-                             Char rr, Char ww, Char xx, 
-                             UInt foffset, UChar* filename )
+static void resolve_seg_redirs(SegInfo *si);
+
+SegInfo *VG_(read_seg_symbols) ( Segment *seg )
 {
    SegInfo* si;
 
-   /* Stay sane ... */
-   if (size == 0)
-      return;
-
-   /* We're only interested in collecting symbols in executable
-      segments which are associated with a real file.  Hence: */
-   if (filename == NULL || xx != 'x')
-      return;
-   if (0 == VG_(strcmp)(filename, "/dev/zero"))
-      return;
-   if (foffset != 0)
-      return;
+   vg_assert(seg->symtab == NULL);
 
    VGP_PUSHCC(VgpReadSyms);
-
-   /* Perhaps we already have this one?  If so, skip. */
-   for (si = segInfo; si != NULL; si = si->next) {
-      /*
-      if (0==VG_(strcmp)(si->filename, filename)) 
-         VG_(printf)("same fnames: %c%c%c (%p, %d) (%p, %d) %s\n", 
-                     rr,ww,xx,si->start,si->size,start,size,filename);
-      */
-      /* For some reason the observed size of a mapping can change, so
-         we don't use that to determine uniqueness. */
-      if (si->start == start
-          /* && si->size == size */
-          && 0==VG_(strcmp)(si->filename, filename)) 
-      {
-         VGP_POPCC(VgpReadSyms);
-         return;
-      }
-   }
 
    /* Get the record initialised right. */
    si = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(SegInfo));
 
    VG_(memset)(si, 0, sizeof(*si));
-   si->start    = start;
-   si->size     = size;
-   si->foffset  = foffset;
-   si->filename = VG_(arena_malloc)(VG_AR_SYMTAB, 1 + VG_(strlen)(filename));
-   VG_(strcpy)(si->filename, filename);
+   si->start    = seg->addr;
+   si->size     = seg->len;
+   si->foffset  = seg->offset;
+   si->filename = VG_(arena_malloc)(VG_AR_SYMTAB, 1 + VG_(strlen)(seg->filename));
+   VG_(strcpy)(si->filename, seg->filename);
+
+   si->ref = 1;
 
    si->symtab = NULL;
    si->symtab_size = si->symtab_used = 0;
@@ -1184,6 +1220,8 @@ void VG_(read_seg_symbols) ( Addr start, UInt size,
    si->strchunks = NULL;
    si->scopetab = NULL;
    si->scopetab_size = si->scopetab_used = 0;
+
+   si->seg = seg;
 
    si->stab_typetab = NULL;
 
@@ -1209,27 +1247,15 @@ void VG_(read_seg_symbols) ( Addr start, UInt size,
       canonicaliseSymtab ( si );
       canonicaliseLoctab ( si );
       canonicaliseScopetab ( si );
+
+      /* do redirects */
+      resolve_seg_redirs( si );
    }
    VGP_POPCC(VgpReadSyms);
+
+   return si;
 }
 
-
-/* This one really is the Head Honcho.  Update the symbol tables to
-   reflect the current state of /proc/self/maps.  Rather than re-read
-   everything, just read the entries which are not already in segInfo.
-   So we can call here repeatedly, after every mmap of a non-anonymous
-   segment with execute permissions, for example, to pick up new
-   libraries as they are dlopen'd.  Conversely, when the client does
-   munmap(), vg_symtab_notify_munmap() throws away any symbol tables
-   which happen to correspond to the munmap()d area.  */
-void VG_(read_all_symbols) ( void )
-{
-   /* 9 July 2003: In order to work around PLT bypassing in
-      glibc-2.3.2 (see below VG_(setup_code_redirect_table)), we need
-      to load debug info regardless of the skin, unfortunately.  */
-   VG_(read_procselfmaps)  ( );
-   VG_(parse_procselfmaps) ( VG_(read_seg_symbols) );
-}
 
 /* When an munmap() call happens, check to see whether it corresponds
    to a segment for a .so, and if so discard the relevant SegInfo.
@@ -1256,8 +1282,8 @@ void VG_(unload_symbols) ( Addr start, UInt length )
 
    if (VG_(clo_verbosity) > 1)
       VG_(message)(Vg_UserMsg, 
-                   "discard syms in %s due to munmap()", 
-                   curr->filename ? curr->filename : (Char *)"???");
+                   "discard syms at %p-%p in %s due to munmap()", 
+                   start, start+length, curr->filename ? curr->filename : (Char *)"???");
 
    vg_assert(prev == NULL || prev->next == curr);
 
@@ -1271,6 +1297,18 @@ void VG_(unload_symbols) ( Addr start, UInt length )
    return;
 }
 
+void VG_(symtab_decref)(SegInfo *si, Addr start, UInt len)
+{
+   vg_assert(si->ref >= 1);
+   if (--si->ref == 0)
+      VG_(unload_symbols)(si->start, si->size);
+}
+
+void VG_(symtab_incref)(SegInfo *si)
+{
+   vg_assert(si->ref > 0);
+   si->ref++;
+}
 
 /*------------------------------------------------------------*/
 /*--- Use of symbol table & location info to create        ---*/
@@ -1310,8 +1348,8 @@ static Int search_one_symtab ( SegInfo* si, Addr ptr,
    table is designed we have no option but to do a complete linear
    scan of the table.  Returns NULL if not found. */
 
-static Addr reverse_search_one_symtab ( SegInfo* si,
-                                        Char* name )
+static Addr reverse_search_one_symtab ( const SegInfo* si,
+                                        const Char* name )
 {
    UInt i;
    for (i = 0; i < si->symtab_used; i++) {
@@ -1334,19 +1372,25 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/SegInfo** psi,
 {
    Int      sno;
    SegInfo* si;
+   Segment *s;
 
    VGP_PUSHCC(VgpSearchSyms);
+
+   s = VG_(find_segment)(ptr);
+
+   if (s == NULL || !VG_(seg_overlaps)(s, ptr, 0) || s->symtab == NULL)
+      goto not_found;
    
-   for (si = segInfo; si != NULL; si = si->next) {
-      if (si->start <= ptr && ptr < si->start+si->size) {
-         sno = search_one_symtab ( si, ptr, match_anywhere_in_fun );
-         if (sno == -1) goto not_found;
-         *symno = sno;
-         *psi = si;
-         VGP_POPCC(VgpSearchSyms);
-         return;
-      }
-   }
+   si = s->symtab;
+
+   sno = search_one_symtab ( si, ptr, match_anywhere_in_fun );
+   if (sno == -1) goto not_found;
+   
+   *symno = sno;
+   *psi = si;
+   VGP_POPCC(VgpSearchSyms);
+   return;
+
   not_found:
    *psi = NULL;
    VGP_POPCC(VgpSearchSyms);
@@ -1864,84 +1908,259 @@ void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips )
 
 
 /*------------------------------------------------------------*/
-/*--- Find interesting glibc entry points.                 ---*/
+/*--- General purpose redirection.                         ---*/
 /*------------------------------------------------------------*/
 
-CodeRedirect VG_(code_redirect_table)[VG_N_CODE_REDIRECTS];
+/* resolved redirections, indexed by from_addr */
+typedef struct _CodeRedirect {
+   const Char	*from_lib;	/* library qualifier pattern */
+   const Char	*from_sym;	/* symbol */
+   Addr		from_addr;	/* old addr */
 
-Int VG_(setup_code_redirect_table) ( void )
+   const Char	*to_lib;	/* library qualifier pattern */
+   const Char	*to_sym;	/* symbol */
+   Addr		to_addr;	/* new addr */
+
+   struct _CodeRedirect *next;	/* next pointer on unresolved list */
+} CodeRedirect;
+
+static Int addrcmp(const void *ap, const void *bp)
 {
-#  define N_SUBSTS 6
+   Addr a = *(Addr *)ap;
+   Addr b = *(Addr *)bp;
+   Int ret;
 
-   Int     i, j;
-   Addr    a_libc, a_pth;
-   SegInfo *si, *si_libc, *si_pth;
+   if (a == b)
+      ret = 0;
+   else
+      ret = (a < b) ? -1 : 1;
 
-   /* Original entry points to look for in libc. */
-   static Char* libc_names[N_SUBSTS]
-     = { "__GI___errno_location"
-       , "__errno_location"
-       , "__GI___h_errno_location"
-       , "__h_errno_location"
-       , "__GI___res_state" 
-       , "__res_state"
-       };
+   return ret;
+}
 
-   /* Corresponding substitute address in our pthread lib. */
-   static Char* pth_names[N_SUBSTS]
-     = { "__errno_location"
-       , "__errno_location"
-       , "__h_errno_location"
-       , "__h_errno_location"
-       , "__res_state" 
-       , "__res_state"
-       };
+static Char *straddr(void *p)
+{
+   static Char buf[16];
 
-   /* Look for the SegInfo for glibc and our pthread library. */
+   VG_(sprintf)(buf, "%p", *(Addr *)p);
 
-   si_libc = si_pth = NULL;
+   return buf;
+}
 
-   for (si = segInfo; si != NULL; si = si->next) {
-      if (VG_(strstr)(si->filename, "/libc-2.2.93.so")
-          || VG_(strstr)(si->filename, "/libc-2.3.1.so")
-          || VG_(strstr)(si->filename, "/libc-2.3.2.so")
-          || VG_(strstr)(si->filename, "/libc.so"))
-         si_libc = si;
-      if (VG_(strstr)(si->filename, "/libpthread.so"))
-         si_pth = si;
+static SkipList sk_resolved_redir = SKIPLIST_INIT(CodeRedirect, from_addr, 
+						  addrcmp, straddr, VG_AR_SYMTAB);
+static CodeRedirect *unresolved_redir = NULL;
+
+static Bool match_lib(const Char *pattern, const SegInfo *si)
+{
+   /* pattern == NULL matches everything, otherwise use globbing
+
+      If the pattern starts with:
+	file:, then match filename
+	soname:, then match soname
+	something else, match filename
+   */
+   const Char *name = si->filename;
+
+   if (pattern == NULL)
+      return True;
+
+   if (VG_(strncmp)(pattern, "file:", 5) == 0) {
+      pattern += 5;
+      name = si->filename;
+   }
+   if (VG_(strncmp)(pattern, "soname:", 7) == 0) {
+      pattern += 7;
+      name = si->soname;
    }
 
-   if (si_libc == NULL || si_pth == NULL) 
-      return 0;
+   if (name == NULL)
+      return False;
+   
+   return VG_(string_match)(pattern, name);
+}
 
-   /* Build the substitution table. */
-   vg_assert(N_SUBSTS <= VG_N_CODE_REDIRECTS-1);
+/* Resolve a redir using si if possible, and add it to the resolved
+   list */
+static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
+{
+   Bool resolved;
+   static const Bool verbose = False;
 
-   j = 0;
-   VG_(code_redirect_table)[j].entry_pt_orig = 0; 
+   vg_assert(si != NULL);
+   vg_assert(si->seg != NULL);
 
-   for (i = 0; i < N_SUBSTS; i++) {
-      a_libc = reverse_search_one_symtab(si_libc, libc_names[i]);
-      a_pth  = reverse_search_one_symtab(si_pth,  pth_names[i]);
-      if (a_libc == 0 || a_pth == 0)
-         continue;
-      /* We've found a substitution pair. */
-      VG_(code_redirect_table)[j].entry_pt_orig  = a_libc;
-      VG_(code_redirect_table)[j].entry_pt_subst = a_pth;
-      j++;
-      vg_assert(j < VG_N_CODE_REDIRECTS);
-      /* Set end marker. */
-      VG_(code_redirect_table)[j].entry_pt_orig = 0; 
+   /* no redirection from Valgrind segments */
+   if (si->seg->flags & SF_VALGRIND)
+      return False;
+
+   resolved = (redir->from_addr != 0) && (redir->to_addr != 0);
+
+   if (verbose)
+      VG_(printf)("trying to resolve %s:%s / %s:%s against %s:%s\n",
+		  redir->from_lib, redir->from_sym,
+		  redir->to_lib, redir->to_sym,
+		  si->filename, si->soname);
+
+   vg_assert(!resolved);
+
+   if (redir->from_addr == 0) {
+      vg_assert(redir->from_sym != NULL);
+
+      if (match_lib(redir->from_lib, si)) {
+	 redir->from_addr = reverse_search_one_symtab(si, redir->from_sym);
+	 if (verbose)
+	    VG_(printf)("match lib %s passed; from_addr=%p\n", 
+			redir->from_lib, redir->from_addr);
+      }
+   }
+
+   if (redir->to_addr == 0) {
+      vg_assert(redir->to_sym != NULL);
+
+      if (match_lib(redir->to_lib, si)) {
+	 redir->to_addr = reverse_search_one_symtab(si, redir->to_sym);
+	 if (verbose)
+	    VG_(printf)("match lib %s passed; to_addr=%p\n", 
+			redir->to_lib, redir->to_addr);
+      }
+   }
+
+   resolved = (redir->from_addr != 0) && (redir->to_addr != 0);
+
+   if (verbose)
+      VG_(printf)("resolve_redir: %s:%s from=%p %s:%s to=%p\n",
+		  redir->from_lib, redir->from_sym, redir->from_addr, 
+		  redir->to_lib, redir->to_sym, redir->to_addr);
+
+   if (resolved) {
+      if (VG_(clo_verbosity) > 2 || verbose) {
+	 VG_(message)(Vg_DebugMsg, "redir resolved (%s:%s=%p -> ",
+		      redir->from_lib, redir->from_sym, redir->from_addr);
+	 VG_(message)(Vg_DebugMsg, "                %s:%s=%p)",
+		      redir->to_lib, redir->to_sym, redir->to_addr);
+      }
+      
+      if (VG_(search_transtab)(redir->from_addr) != 0)
+	 VG_(message)(Vg_DebugMsg, "!!!! adding redirect to already called function %s (%p -> %p)!!!",
+		      redir->from_sym, redir->from_addr, redir->to_addr);
+
+      VG_(SkipList_Insert)(&sk_resolved_redir, redir);
+   }
+
+   return resolved;
+}
+
+/* Go through the complete redir list, resolving as much as possible with this SegInfo.
+
+    This should be called when a new SegInfo symtab is loaded.
+ */
+static void resolve_seg_redirs(SegInfo *si)
+{
+   CodeRedirect **prevp = &unresolved_redir;
+   CodeRedirect *redir, *next;
+
+   /* visit each unresolved redir - if it becomes resolved, then
+      remove it from the unresolved list */
+   for(redir = unresolved_redir; redir != NULL; redir = next) {
+      next = redir->next;
+
+      if (resolve_redir(redir, si)) {
+	 *prevp = next;
+	 redir->next = NULL;
+      } else
+	 prevp = &redir->next;
+   }
+}
+
+static Bool resolve_redir_allsegs(CodeRedirect *redir)
+{
+   SegInfo *si;
+
+   for(si = segInfo; si != NULL; si = si->next)
+      if (resolve_redir(redir, si))
+	 return True;
+
+   return False;
+}
+
+/* Redirect a lib/symbol reference to a function at lib/symbol */
+void VG_(add_redirect_sym)(const Char *from_lib, const Char *from_sym,
+			   const Char *to_lib, const Char *to_sym)
+{
+   CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
+
+   redir->from_lib = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
+   redir->from_sym = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
+   redir->from_addr = 0;
+
+   redir->to_lib = VG_(arena_strdup)(VG_AR_SYMTAB, to_lib);
+   redir->to_sym = VG_(arena_strdup)(VG_AR_SYMTAB, to_sym);
+   redir->to_addr = 0;
+
+   if (!resolve_redir_allsegs(redir)) {
+      /* can't resolve immediately; add to list */
+      redir->next = unresolved_redir;
+      unresolved_redir = redir;
+   }
+}
+
+/* Redirect a lib/symbol reference to a function at lib/symbol */
+void VG_(add_redirect_addr)(const Char *from_lib, const Char *from_sym,
+			    Addr to_addr)
+{
+   CodeRedirect *redir = VG_(SkipNode_Alloc)(&sk_resolved_redir);
+
+   redir->from_lib = VG_(arena_strdup)(VG_AR_SYMTAB, from_lib);
+   redir->from_sym = VG_(arena_strdup)(VG_AR_SYMTAB, from_sym);
+   redir->from_addr = 0;
+
+   redir->to_lib = NULL;
+   redir->to_sym = NULL;
+   redir->to_addr = to_addr;
+
+   if (!resolve_redir_allsegs(redir)) {
+      /* can't resolve immediately; add to list */
+      redir->next = unresolved_redir;
+      unresolved_redir = redir;
+   }
+}
+
+Addr VG_(code_redirect)(Addr a)
+{
+   CodeRedirect *r = VG_(SkipList_Find)(&sk_resolved_redir, &a);
+
+   if (r == NULL || r->from_addr != a)
+      return a;
+
+   vg_assert(r->to_addr != 0);
+
+   return r->to_addr;
+}
+
+void VG_(setup_code_redirect_table) ( void )
+{
+   static const struct {
+      const Char *from, *to;
+   } redirects[] = {
+      { "__GI___errno_location",	"__errno_location"	},
+      { "__errno_location",		"__errno_location"	},
+      { "__GI___h_errno_location",	"__h_errno_location"	},
+      { "__h_errno_location",		"__h_errno_location"	},
+      { "__GI___res_state",		"__res_state"		},
+      { "__res_state",			"__res_state"		},
+   };
+   Int i;
+
+   for(i = 0; i < sizeof(redirects)/sizeof(*redirects); i++) {
+      VG_(add_redirect_sym)("soname:libc.so.6",		redirects[i].from,
+			    "soname:libpthread.so.0",	redirects[i].to);
+
       if (VG_(clo_verbosity) >= 2)
          VG_(message)(Vg_UserMsg, 
-            "REPLACING libc(%s) with libpthread(%s)",
-            libc_names[i], pth_names[i]
-         );
+		      "REPLACING libc(%s) with libpthread(%s)",
+		      redirects[i].from, redirects[i].to);
    }
-
-   return j;
-
-#  undef N_SUBSTS
 }
 
 /*------------------------------------------------------------*/

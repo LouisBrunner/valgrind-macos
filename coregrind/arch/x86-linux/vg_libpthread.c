@@ -68,6 +68,7 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include <stdlib.h>
 
 # define strong_alias(name, aliasname) \
   extern __typeof (name) aliasname __attribute__ ((alias (#name)));
@@ -128,40 +129,19 @@ int get_pt_trace_level ( void )
    return res;
 }
 
-static
-void my_exit ( int arg )
-{
-   VG_(do_syscall)(__NR_exit, arg);
-   /*NOTREACHED*/
-}
-
-/* Apparently unused. 
-static
-void my_write ( int fd, const void *buf, int count )
-{
-   VG_(do_syscall)(__NR_write, fd, (int)buf, count );
-}
-*/
-
-/* We need this guy -- it's in valgrind.so. */
-extern void VG_(startup) ( void );
-
-
-/* Just start up Valgrind if it's not already going.  VG_(startup)()
-   detects and ignores second and subsequent calls. */
+/* Don't do anything if we're not under Valgrind */
 static __inline__
 void ensure_valgrind ( char* caller )
 {
-   VG_(startup)();
+   if (!RUNNING_ON_VALGRIND) {
+      const char msg[] = "Warning: this libpthread.so should only be run with Valgrind\n";
+      VG_(do_syscall)(__NR_write, 2, msg, sizeof(msg)-1);
+      VG_(do_syscall)(__NR_exit, 1);
+   }
 }
 
 /* While we're at it ... hook our own startup function into this
    game. */
-__asm__ (
-   ".section .init\n"
-   "\tcall vgPlain_startup"
-);
-
 
 static
 __attribute__((noreturn))
@@ -173,8 +153,8 @@ void barf ( const char* str )
    strcat(buf, "\nPlease report this bug at: ");
    strcat(buf, VG_BUGS_TO);
    strcat(buf, "\n\n");
-   VALGRIND_NON_SIMD_CALL2(VG_(message), Vg_UserMsg, buf);
-   my_exit(1);
+   VALGRIND_INTERNAL_PRINTF(buf);
+   _exit(1);
    /* We have to persuade gcc into believing this doesn't return. */
    while (1) { };
 }
@@ -186,7 +166,7 @@ static void cat_n_send ( char* s1, char* s2, char* s3 )
    if (get_pt_trace_level() >= 0) {
       snprintf(buf, sizeof(buf), "%s%s%s", s1, s2, s3);
       buf[sizeof(buf)-1] = '\0';
-      VALGRIND_NON_SIMD_CALL2(VG_(message), Vg_UserMsg, buf);
+      VALGRIND_INTERNAL_PRINTF(buf);
    }
 }
 
@@ -223,13 +203,14 @@ void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* 
    char buf[1000];
    static Bool entered = False;
    if (entered) 
-      my_exit(2);
+      _exit(2);
    entered = True;
    sprintf(buf, "\n%s: %s:%d (%s): Assertion `%s' failed.\n",
                 "valgrind", file, line, fn, expr );
    cat_n_send ( "", buf, "" );
    sprintf(buf, "Please report this bug at: %s\n\n", VG_BUGS_TO);
-   my_exit(1);
+   cat_n_send ( "", buf, "" );
+   _exit(1);
 }
 
 #define MY__STRING(__str)  #__str
@@ -243,10 +224,14 @@ void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* 
 static
 void my_free ( void* ptr )
 {
+#if 0
    int res;
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__FREE, ptr, 0, 0, 0);
    my_assert(res == 0);
+#else
+   free(ptr);
+#endif
 }
 
 
@@ -254,8 +239,12 @@ static
 void* my_malloc ( int nbytes )
 {
    void* res;
+#if 0
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__MALLOC, nbytes, 0, 0, 0);
+#else
+   res = malloc(nbytes);
+#endif
    my_assert(res != (void*)0);
    return res;
 }
@@ -1033,7 +1022,7 @@ int pthread_condattr_destroy(pthread_condattr_t *attr)
 }
 
 int pthread_cond_init( pthread_cond_t *cond,
-                       const pthread_condattr_t *cond_attr)
+		       const pthread_condattr_t *cond_attr)
 {
    cond->__c_waiting = (_pthread_descr)VG_INVALID_THREADID;
    return 0;
@@ -1278,14 +1267,12 @@ int pthread_sigmask(int how, const sigset_t *newmask,
 int sigwait ( const sigset_t* set, int* sig )
 {
    int res;
-   vki_ksiginfo_t si;
+   siginfo_t si;
    
    __my_pthread_testcancel();
 
-   /* As with pthread_sigmask we deliberately confuse sigset_t with
-      vki_ksigset_t. */
    si.si_signo = 0;
-   res = VG_(ksigtimedwait)((const vki_ksigset_t *)set, &si, NULL);
+   res = sigtimedwait(set, &si, NULL);
    *sig = si.si_signo;
 
    return 0;			/* always returns 0 */
@@ -1642,7 +1629,9 @@ extern int errno;
 int* __errno_location ( void )
 {
    int tid;
-   /* ensure_valgrind("__errno_location"); */
+   int *ret;
+
+   ensure_valgrind("__errno_location");
    VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
                            VG_USERREQ__PTHREAD_GET_THREADID,
                            0, 0, 0, 0);
@@ -1650,8 +1639,11 @@ int* __errno_location ( void )
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__errno_location: invalid ThreadId");
    if (tid == 1)
-      return &errno;
-   return & thread_specific_errno[tid];
+      ret = &errno;
+   else
+      ret = &thread_specific_errno[tid];
+
+   return ret;
 }
 
 #undef h_errno
@@ -2805,17 +2797,35 @@ pthread_rwlockattr_setpshared (pthread_rwlockattr_t *attr, int pshared)
    ------------------------------------------------------------------ */
 int __libc_current_sigrtmin (void)
 {
-   return VG_(sig_rtmin);
+   int res;
+
+   VALGRIND_MAGIC_SEQUENCE(res, 0, 
+			   VG_USERREQ__GET_SIGRT_MIN,
+			   0, 0, 0, 0);
+
+   return res;
 }
 
 int __libc_current_sigrtmax (void)
 {
-   return VG_(sig_rtmax);
+   int res;
+
+   VALGRIND_MAGIC_SEQUENCE(res, 0, 
+			   VG_USERREQ__GET_SIGRT_MAX,
+			   0, 0, 0, 0);
+
+   return res;
 }
 
 int __libc_allocate_rtsig (int high)
 {
-   return VG_(sig_alloc_rtsig)(high);
+   int res;
+
+   VALGRIND_MAGIC_SEQUENCE(res, 0, 
+			   VG_USERREQ__ALLOC_RTSIG,
+			   high, 0, 0, 0);
+
+   return res;
 }
 
 /* ---------------------------------------------------------------------

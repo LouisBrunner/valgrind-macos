@@ -137,18 +137,30 @@ static void do_atfork_child(ThreadId tid)
 static 
 void mash_addr_and_len( Addr* a, UInt* len)
 {
-   while (( *a         % VKI_BYTES_PER_PAGE) > 0) { (*a)--; (*len)++; }
-   while (((*a + *len) % VKI_BYTES_PER_PAGE) > 0) {         (*len)++; }
+   Addr ra;
+   
+   ra = PGROUNDDN(*a);
+   *len = PGROUNDUP(*a + *len) - ra;
+   *a = ra;
 }
 
 static
-void mmap_segment ( Addr a, UInt len, UInt prot, Int fd )
+void mmap_segment ( Addr a, UInt len, UInt prot, UInt mm_flags, Int fd, ULong offset )
 {
    Bool rr, ww, xx;
+   UInt flags;
 
-   /* Records segment, reads debug symbols if necessary */
-   if ((prot & PROT_EXEC) && fd != -1)
-      VG_(new_exeseg_mmap) ( a, len );
+   flags = SF_MMAP;
+   
+   if (mm_flags & VKI_MAP_FIXED)
+      flags |= SF_FIXED;
+   if (!(mm_flags & VKI_MAP_PRIVATE))
+      flags |= SF_SHARED;
+
+   if (fd != -1)
+      flags |= SF_FILE;
+
+   VG_(map_fd_segment)(a, len, prot, flags, fd, offset, NULL);
 
    rr = prot & PROT_READ;
    ww = prot & PROT_WRITE;
@@ -164,18 +176,14 @@ void munmap_segment ( Addr a, UInt len )
       Addr orig_len = len; */
 
    mash_addr_and_len(&a, &len);
+
+   VG_(unmap_range)(a, len);
+
    /*
    VG_(printf)("MUNMAP: correct (%p for %d) to (%p for %d) %s\n", 
       orig_a, orig_len, a, len, (orig_a!=start || orig_len!=length) 
                                     ? "CHANGE" : "");
    */
-
-   /* Invalidate translations as necessary (also discarding any basic
-      block-specific info retained by the skin) and unload any debug
-      symbols. */
-   // This doesn't handle partial unmapping of exe segs correctly, if that
-   // ever happens...
-   VG_(remove_if_exeseg) ( a, len );
 
    VG_TRACK( die_mem_munmap, a, len );
 }
@@ -184,6 +192,8 @@ static
 void mprotect_segment ( Addr a, UInt len, Int prot )
 {
    Bool rr, ww, xx;
+
+   VG_(mprotect_range)(a, len, prot);
 
    rr = prot & PROT_READ;
    ww = prot & PROT_WRITE;
@@ -280,8 +290,7 @@ static int fd_count = 0;
    doesn't exist, we just return NULL.  Otherwise, we return a pointer
    to the file name, which the caller is responsible for freeing. */
 
-static
-Char *resolve_fname(Int fd)
+Char *VG_(resolve_filename)(Int fd)
 {
    char tmp[28], buf[PATH_MAX];
 
@@ -535,7 +544,7 @@ void VG_(init_preopened_fds)()
 
          if(fno != f)
             if(VG_(clo_track_fds))
-               record_fd_open(-1, fno, resolve_fname(fno));
+               record_fd_open(-1, fno, VG_(resolve_filename)(fno));
       }
 
       VG_(lseek)(f, d.d_off, VKI_SEEK_SET);
@@ -643,7 +652,7 @@ void check_cmsg_for_fds(Int tid, struct msghdr *msg)
 
          for (i = 0; i < fdc; i++)
             if(VG_(clo_track_fds))
-               record_fd_open (tid, fds[i], resolve_fname(fds[i]));
+               record_fd_open (tid, fds[i], VG_(resolve_filename)(fds[i]));
       }
 
       cm = CMSG_NXTHDR(msg, cm);
@@ -739,11 +748,11 @@ static
 void buf_and_len_pre_check( ThreadId tid, Addr buf_p, Addr buflen_p,
                             Char* buf_s, Char* buflen_s )
 {
-   if (VG_(track_events).pre_mem_write) {
+   if (VG_(defined_pre_mem_write)()) {
       UInt buflen_in = deref_UInt( tid, buflen_p, buflen_s);
       if (buflen_in > 0) {
-         VG_(track_events).pre_mem_write ( Vg_CoreSysCall,
-					   tid, buf_s, buf_p, buflen_in );
+         SK_(pre_mem_write) ( Vg_CoreSysCall,
+			      tid, buf_s, buf_p, buflen_in );
       }
    }
 }
@@ -752,10 +761,10 @@ static
 void buf_and_len_post_check( ThreadId tid, Int res,
                              Addr buf_p, Addr buflen_p, Char* s )
 {
-   if (!VG_(is_kerror)(res) && VG_(track_events).post_mem_write) {
+   if (!VG_(is_kerror)(res) && VG_(defined_post_mem_write)()) {
       UInt buflen_out = deref_UInt( tid, buflen_p, s);
       if (buflen_out > 0 && buf_p != (Addr)NULL) {
-         VG_(track_events).post_mem_write ( buf_p, buflen_out );
+         SK_(post_mem_write) ( buf_p, buflen_out );
       }
    }
 }
@@ -764,18 +773,110 @@ void buf_and_len_post_check( ThreadId tid, Int res,
    Data seg end, for brk()
    ------------------------------------------------------------------ */
 
-/* Records the current end of the data segment so we can make sense of
-   calls to brk(). */
-static
-Addr curr_dataseg_end;
-
-void VG_(init_dataseg_end_for_brk) ( void )
+static Addr do_brk(Addr newbrk)
 {
-   curr_dataseg_end = (Addr)VG_(brk)(0);
-   if (curr_dataseg_end == (Addr)(-1))
-      VG_(core_panic)("can't determine data-seg end for brk()");
+   Addr ret = VG_(brk_limit);
+   static const Bool debug = False;
+   Segment *seg;
+
+   if (debug)
+      VG_(printf)("do_brk: brk_base=%p brk_limit=%p newbrk=%p\n",
+		  VG_(brk_base), VG_(brk_limit), newbrk);
+
+   if (newbrk < VG_(brk_base) || newbrk >= VG_(client_end))
+      return VG_(brk_limit);
+
+   /* brk isn't allowed to grow over anything else */
+   seg = VG_(find_segment)(VG_(brk_limit));
+
+   vg_assert(seg != NULL);
+
    if (0)
-      VG_(printf)("DS END is %p\n", (void*)curr_dataseg_end);
+      VG_(printf)("brk_limit=%p seg->addr=%p seg->end=%p\n", 
+		  VG_(brk_limit), seg->addr, seg->addr+seg->len);
+   vg_assert(VG_(brk_limit) >= seg->addr && VG_(brk_limit) <= (seg->addr + seg->len));
+
+   seg = VG_(next_segment)(seg);
+   if (seg != NULL && newbrk > seg->addr)
+      return VG_(brk_limit);
+
+   if (PGROUNDDN(newbrk) != PGROUNDDN(VG_(brk_limit))) {
+      Addr current = PGROUNDUP(VG_(brk_limit));
+      Addr newaddr = PGROUNDUP(newbrk);
+
+      /* new brk in a new page - fix the mappings */
+      if (newbrk > VG_(brk_limit)) {
+	 
+	 if (debug)
+	    VG_(printf)("  extending brk: current=%p newaddr=%p delta=%d\n",
+			current, newaddr, newaddr-current);
+
+	 if (newaddr == current) {
+	    ret = newbrk;
+	 } else if (VG_(mmap)((void *)current , newaddr-current,
+			      VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC,
+			      VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS | VKI_MAP_FIXED | VKI_MAP_CLIENT,
+			      -1, 0) >= 0) {
+	    VG_(map_segment)(current, newaddr-current, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
+			     SF_FIXED|SF_BRK);
+	    ret = newbrk;
+	 }
+      } else {
+	 vg_assert(newbrk < VG_(brk_limit));
+
+	 if (debug)
+	    VG_(printf)("  shrinking brk: current=%p newaddr=%p delta=%d\n",
+			current, newaddr, current-newaddr);
+
+	 if (newaddr != current) {
+	    VG_(munmap)((void *)newaddr, current - newaddr);
+	    VG_(unmap_range)(newaddr, current-newaddr);
+	 }
+	 ret = newbrk;
+      }
+   } else
+      ret = newbrk;
+
+   VG_(brk_limit) = ret;
+
+   return ret;
+}
+
+
+/* return true if address range entirely contained within client
+   address space */
+static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *syscall)
+{
+   Addr end = start+size;
+   Addr cl_base = VG_(client_base);
+   Bool ret;
+
+   if (size == 0)
+      return True;
+
+   if (cl_base < 0x10000)
+      cl_base = 0x10000;
+
+   ret =
+      (end >= start) && 
+      start >= cl_base && start < VG_(client_end) &&
+      (end <= VG_(client_end));
+
+   if (0)
+      VG_(printf)("%s: test=%p-%p client=%p-%p ret=%d\n",
+		  syscall, start, end, cl_base, VG_(client_end), ret);
+
+   if (!ret && syscall != NULL) {
+      VG_(message)(Vg_UserMsg, "Warning: client syscall %s tried to modify addresses %p-%p",
+		   syscall, start, end);
+
+      if (VG_(clo_verbosity) > 1) {
+	 ExeContext *ec = VG_(get_ExeContext)(tid);
+	 VG_(pp_ExeContext)(ec);
+      }
+   }
+
+   return ret;
 }
 
 /* ---------------------------------------------------------------------
@@ -813,7 +914,6 @@ static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid)
 #define POST(x)	\
 	static void after_##x(ThreadId tid, ThreadState *tst)
 
-#define STR(x)	#x
 #define PREALIAS(new, old)	\
 	PRE(new) __attribute__((alias(STR(before_##old))))
 #define POSTALIAS(new, old)	\
@@ -1563,21 +1663,107 @@ PRE(execve)
       its own new thread.) */
    VG_(nuke_all_threads_except)( VG_INVALID_THREADID );
 
-   /* Make any binding for LD_PRELOAD disappear, so that child
-      processes don't get traced into. */
    if (!VG_(clo_trace_children)) {
+      /* Make the LD_LIBRARY_PATH/LD_PRELOAD disappear so that the
+	 child doesn't get our libpthread and other stuff */
       Int i;
       Char** envp = (Char**)arg3;
       Char*  ld_preload_str = NULL;
       Char*  ld_library_path_str = NULL;
-      for (i = 0; envp[i] != NULL; i++) {
-	 if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0)
-	    ld_preload_str = &envp[i][11];
-	 if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0)
-	    ld_library_path_str = &envp[i][16];
+
+      if (envp != NULL) {
+	 Char *buf;
+
+	 for (i = 0; envp[i] != NULL; i++) {
+	    if (VG_(strncmp)(envp[i], "LD_PRELOAD=", 11) == 0)
+	       ld_preload_str = &envp[i][11];
+	    if (VG_(strncmp)(envp[i], "LD_LIBRARY_PATH=", 16) == 0)
+	       ld_library_path_str = &envp[i][16];
+	 }
+
+	 buf = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(VG_(libdir)) + 20);
+
+	 VG_(sprintf)(buf, "%s*/vg_inject.so", VG_(libdir));
+	 VG_(mash_colon_env)(ld_preload_str, buf);
+
+	 VG_(sprintf)(buf, "%s*", VG_(libdir));
+	 VG_(mash_colon_env)(ld_library_path_str, buf);
+
+	 VG_(env_unsetenv)(envp, VALGRINDCLO);
+
+	 /* XXX if variable becomes empty, remove it completely? */
       }
-      VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH)(
-	 ld_preload_str, ld_library_path_str );
+   } else {
+      /* If we're tracing the children, then we need to start it
+	 with our starter+arguments.
+      */
+      Int i;
+      Char *exec = (Char *)arg1;
+      Char **env = (Char **)arg3;
+      Char *cp;
+      Char *exename;
+      Bool sawexec = False;
+      Char *optvar;
+      Int  optlen;
+
+      optlen = 1;
+      for(i = 0; i < VG_(vg_argc); i++)
+	 optlen += VG_(strlen)(VG_(vg_argv)[i]) + 1;
+
+      /* All these are leaked - we're either going to exec, or panic
+	 when we fail. */
+      exename  = VG_(arena_malloc)(VG_AR_CORE, 64);
+      exec = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(exec) + 7 /* --exec= */ + 1 /* \0 */);
+
+      VG_(sprintf)(exec, "--exec=%s", (Char *)arg1);
+      VG_(sprintf)(exename, "/proc/self/fd/%d", VG_(execfd));
+
+      optlen += VG_(strlen)(exec)+1;
+
+      optvar = VG_(arena_malloc)(VG_AR_CORE, optlen);
+
+      /* valgrind arguments */
+      cp = optvar;
+      
+      for(i = 1; i < VG_(vg_argc); i++) {
+	 Char *arg = VG_(vg_argv)[i];
+	 Int len;
+	 
+	 if (VG_(memcmp)(arg, "--exec=", 7) == 0) {
+	    /* replace existing --exec= arg */
+	    sawexec = True;
+	    arg = exec;
+	 } else if (VG_(strcmp)(VG_(vg_argv)[i], "--") == 0)
+	    break;
+
+	 len = VG_(strlen)(arg);
+	 VG_(memcpy)(cp, arg, len);
+	 cp += len;
+	 *cp++ = '\01';
+      }
+
+      if (!sawexec) {
+	 Int execlen = VG_(strlen)(exec);
+	 VG_(memcpy)(cp, exec, execlen);
+	 cp += execlen;
+	 *cp++ = '\01';
+      }
+      *cp = '\0';
+
+      VG_(env_setenv)(&env, VALGRINDCLO, optvar);
+
+      arg1 = (UInt)exename;
+      arg3 = (UInt)env;
+   }
+
+   if (0) {
+      Char **cpp;
+
+      VG_(printf)("exec: %s\n", (Char *)arg1);
+      for(cpp = (Char **)arg2; cpp && *cpp; cpp++)
+	 VG_(printf)("argv: %s\n", *cpp);
+      for(cpp = (Char **)arg3; cpp && *cpp; cpp++)
+	 VG_(printf)("env: %s\n", *cpp);
    }
 
    res = VG_(do_syscall)(__NR_execve, arg1, arg2, arg3);
@@ -1605,6 +1791,8 @@ PRE(alarm)
 
 PRE(brk)
 {
+   Addr brk_limit = VG_(brk_limit);
+
    /* libc   says: int   brk(void *end_data_segment);
       kernel says: void* brk(void* end_data_segment);  (more or less)
 
@@ -1621,28 +1809,26 @@ PRE(brk)
       Both will seg fault if you shrink it back into a text segment.
    */
    MAYBE_PRINTF("brk ( %p ) --> ",arg1);
-}
 
-POST(brk)
-{
+   res = do_brk(arg1);
+
    MAYBE_PRINTF("0x%x\n", res);
 
    if (res == arg1) {
       /* brk() succeeded */
-      if (res < curr_dataseg_end) {
+      if (res < brk_limit) {
          /* successfully shrunk the data segment. */
          VG_TRACK( die_mem_brk, (Addr)arg1,
-		   curr_dataseg_end-arg1 );
+		   brk_limit-arg1 );
       } else
-      if (res > curr_dataseg_end && res != 0) {
+      if (res > brk_limit) {
          /* successfully grew the data segment */
-         VG_TRACK( new_mem_brk, curr_dataseg_end,
-                                arg1-curr_dataseg_end );
+         VG_TRACK( new_mem_brk, brk_limit,
+                                arg1-brk_limit );
       }
-      curr_dataseg_end = res;
    } else {
       /* brk() failed */
-      vg_assert(curr_dataseg_end == res);
+      vg_assert(brk_limit == res);
    }
 }
 
@@ -1699,7 +1885,7 @@ POST(dup)
       res = -VKI_EMFILE;
    } else {
       if(VG_(clo_track_fds))
-         record_fd_open(tid, res, resolve_fname(res));
+         record_fd_open(tid, res, VG_(resolve_filename)(res));
    }
 }
 
@@ -1717,7 +1903,7 @@ POST(dup2)
 		VG_(getpid)(), 
 		arg1, arg2, res);
    if(VG_(clo_track_fds))
-      record_fd_open(tid, res, resolve_fname(res));
+      record_fd_open(tid, res, VG_(resolve_filename)(res));
 }
 
 PRE(fcntl)
@@ -1730,7 +1916,7 @@ POST(fcntl)
 {
    if (arg2 == VKI_F_DUPFD)
       if(VG_(clo_track_fds))
-         record_fd_open(tid, res, resolve_fname(res));
+         record_fd_open(tid, res, VG_(resolve_filename)(res));
 }
 
 PRE(fchdir)
@@ -1763,7 +1949,7 @@ POST(fcntl64)
 {
    if (arg2 == VKI_F_DUPFD)
       if(VG_(clo_track_fds))
-         record_fd_open(tid, res, resolve_fname(res));
+         record_fd_open(tid, res, VG_(resolve_filename)(res));
 }
 
 PRE(fstat)
@@ -2176,6 +2362,15 @@ PRE(ipc)
    }
    case 21: /* IPCOP_shmat */
    {
+      UInt shmid = arg2;
+      UInt segmentSize = get_shm_size ( shmid );
+      
+      /* If they didn't ask for a particular address, then place it
+	 like an mmap. */
+      if (arg5 == 0)
+	 arg5 = VG_(find_map_space)(0, segmentSize, True);
+      else if (!valid_client_addr(arg5, segmentSize, tid, "shmat"))
+	 res = -VKI_EINVAL;
       break;
    }
    case 22: /* IPCOP_shmdt */
@@ -2287,10 +2482,9 @@ POST(ipc)
    case 21: /* IPCOP_shmat */
    {
       Int shmid = arg2;
-      /*Int shmflag = arg3;*/
+      Int shmflag = arg3;
       Addr addr;
 
-                  
       /* force readability. before the syscall it is
        * indeed uninitialized, as can be seen in
        * glibc/sysdeps/unix/sysv/linux/shmat.c */
@@ -2300,21 +2494,36 @@ POST(ipc)
       if ( addr > 0 ) { 
 	 UInt segmentSize = get_shm_size ( shmid );
 	 if ( segmentSize > 0 ) {
+	    UInt prot;
 	    /* we don't distinguish whether it's read-only or
 	     * read-write -- it doesn't matter really. */
 	    VG_TRACK( new_mem_mmap, addr, segmentSize, 
 		      True, True, False );
+
+	    prot = VKI_PROT_READ|VKI_PROT_WRITE;
+	    if (!(shmflag & 010000)) /* = SHM_RDONLY */
+	       prot &= ~VKI_PROT_WRITE;
+	    VG_(map_segment)(addr, segmentSize, prot,
+			     SF_SHARED | SF_SHM);
 	 }
       }
       break;
    }
    case 22: /* IPCOP_shmdt */
+   {
       /* ### FIXME: this should call make_noaccess on the
        * area passed to shmdt. But there's no way to
        * figure out the size of the shared memory segment
        * just from the address...  Maybe we want to keep a
        * copy of the exiting mappings inside valgrind? */
+      Segment *s = VG_(find_segment)(arg1);
+
+      if (s->addr == arg1 && (s->flags & SF_SHM)) {
+	 VG_TRACK( die_mem_munmap, s->addr, s->len );
+	 VG_(unmap_range)(s->addr, s->len);
+      }
       break;
+   }
    case 23: /* IPCOP_shmget */
       break;
    case 24: /* IPCOP_shmctl */
@@ -3173,7 +3382,7 @@ POST(_llseek)
 PRE(lstat)
 {
    /* int lstat(const char *file_name, struct stat *buf); */
-   MAYBE_PRINTF("lstat ( %p, %p )\n",arg1,arg2);
+   MAYBE_PRINTF("lstat ( %p \"%s\", %p )\n",arg1,arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "lstat(file_name)", arg1 );
    SYSCALL_TRACK( pre_mem_write, tid, "lstat(buf)", arg2, 
 		  sizeof(struct stat) );
@@ -3189,7 +3398,7 @@ POST(lstat)
 PRE(lstat64)
 {
    /* int lstat64(const char *file_name, struct stat64 *buf); */
-   MAYBE_PRINTF("lstat64 ( %p, %p )\n",arg1,arg2);
+   MAYBE_PRINTF("lstat64 ( %p \"%s\", %p )\n",arg1,arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "lstat64(file_name)", arg1 );
    SYSCALL_TRACK( pre_mem_write, tid, "lstat64(buf)", arg2, 
 		  sizeof(struct stat64) );
@@ -3209,31 +3418,40 @@ PRE(mkdir)
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "mkdir(pathname)", arg1 );
 }
 
-void check_mmap_start(ThreadState* tst, Addr start, Int flags)
-{
-   /* Refuse to mmap the first 64KB of memory, so that the cheap sanity test 
-      for tools using shadow memory works. */
-   if (start < 65536 && (flags & VKI_MAP_FIXED))
-      tst->m_eax = -VKI_EINVAL;
-}
-
 PRE(mmap2)
 {
    /* My impression is that this is exactly like __NR_mmap 
       except that all 6 args are passed in regs, rather than in 
-      a memory-block. */
+      a memory-block.
+      
+      Almost.  The big difference is that the file offset is specified
+      in pagesize units rather than bytes, so that it can be used for
+      files bigger than 2^32 bytes. - JSGF
+   */
    /* void* mmap(void *start, size_t length, int prot, 
       int flags, int fd, off_t offset); 
    */
    MAYBE_PRINTF("mmap2 ( %p, %d, %d, %d, %d, %d )\n",
 		arg1, arg2, arg3, arg4, arg5, arg6 );
 
-   check_mmap_start(tst, arg1, arg4);
+   if (arg4 & VKI_MAP_FIXED) {
+      if (!valid_client_addr(arg1, arg2, tid, "mmap2"))
+	 res = -VKI_ENOMEM;
+   } else {
+      arg1 = VG_(find_map_space)(arg1, arg2, True);
+      arg4 |= VKI_MAP_FIXED;
+      if (arg1 == 0)
+	 res = -VKI_ENOMEM;
+   }
 }
 
 POST(mmap2)
 {
-   mmap_segment( (Addr)res, arg2, arg3, arg5 );
+   if (!valid_client_addr(res, arg2, tid, "mmap2")) {
+      VG_(munmap)((void *)res, arg2);
+      res = -VKI_ENOMEM;
+   } else
+      mmap_segment( (Addr)res, arg2, arg3, arg4, arg5, arg6 * (ULong)VKI_BYTES_PER_PAGE );
 }
 
 PRE(mmap)
@@ -3256,19 +3474,30 @@ PRE(mmap)
    MAYBE_PRINTF("mmap ( %p, %d, %d, %d, %d, %d )\n",
 		a1, a2, a3, a4, a5, a6 );
 
-   check_mmap_start(tst, a1, a4);
-}
+   if (a4 & VKI_MAP_FIXED) {
+      if (!valid_client_addr(a1, a2, tid, "mmap")) {
+	 MAYBE_PRINTF("mmap failing: %p-%p\n", a1, a1+a2);
+	 res = -VKI_ENOMEM;
+      }
+   } else {
+      a1 = VG_(find_map_space)(arg_block[0], arg_block[1], True);
+      if (a1 == 0)
+	 res = -VKI_ENOMEM;
+      else
+	 a4 |= VKI_MAP_FIXED;
+   }
 
-POST(mmap)
-{
-   UInt* arg_block = (UInt*)arg1;
-   UInt a2, a3, a5;
-
-   a2 = arg_block[1];
-   a3 = arg_block[2];
-   a5 = arg_block[4];
-
-   mmap_segment( (Addr)res, a2, a3, a5 );
+   if (res != -VKI_ENOMEM) {
+      res = (Int)VG_(mmap)((void *)a1, a2, a3, a4 | VKI_MAP_CLIENT, a5, a6);
+      
+      if (res == -1)
+	 res = -VKI_ENOMEM;
+      else if (!valid_client_addr(res, a2, tid, "mmap")) {
+	 VG_(munmap)((void *)res, a2);
+	 res = -VKI_ENOMEM;
+      } else
+	 mmap_segment( (Addr)res, a2, a3, a4, a5, a6 );
+   }
 }
 
 PRE(mprotect)
@@ -3276,6 +3505,9 @@ PRE(mprotect)
    /* int mprotect(const void *addr, size_t len, int prot); */
    /* should addr .. addr+len-1 be checked before the call? */
    MAYBE_PRINTF("mprotect ( %p, %d, %d )\n", arg1,arg2,arg3);
+
+   if (!valid_client_addr(arg1, arg2, tid, "mprotect"))
+      res = -VKI_ENOMEM;
 }
 
 POST(mprotect)
@@ -3288,6 +3520,9 @@ PRE(munmap)
    /* int munmap(void *start, size_t length); */
    /* should start .. start+length-1 be checked before the call? */
    MAYBE_PRINTF("munmap ( %p, %d )\n", arg1,arg2);
+
+   if (!valid_client_addr(arg1, arg2, tid, "munmap"))
+      res = -VKI_EINVAL;
 }
 
 POST(munmap)
@@ -4174,7 +4409,7 @@ POST(times)
 PRE(truncate)
 {
    /* int truncate(const char *path, size_t length); */
-   MAYBE_PRINTF("truncate ( %p, %d )\n", arg1,arg2);
+   MAYBE_PRINTF("truncate ( %p \"%s\", %d )\n", arg1,arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "truncate(path)", arg1 );
 }
 
@@ -4187,7 +4422,7 @@ PRE(umask)
 PRE(unlink)
 {
    /* int unlink(const char *pathname) */
-   MAYBE_PRINTF("ulink ( %p )\n",arg1);
+   MAYBE_PRINTF("unlink ( %p \"%s\" )\n",arg1, arg1);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "unlink(pathname)", arg1 );
 }
 
@@ -4511,6 +4746,10 @@ static void bad_before(ThreadId tid, ThreadState *tst)
 {
    VG_(message)
       (Vg_DebugMsg,"WARNING: unhandled syscall: %d", tst->m_eax);
+   if (VG_(clo_verbosity) > 1) {
+      ExeContext *ec = VG_(get_ExeContext)(tid);
+      VG_(pp_ExeContext)(ec);
+   }
    VG_(message)
       (Vg_DebugMsg,"Do not panic.  You may be able to fix this easily.");
    VG_(message)
@@ -4534,6 +4773,8 @@ static const struct sys_info special_sys[] = {
    SYSB_(modify_ldt,		False),
 
    SYSB_(execve,		False),
+   SYSB_(brk,			False),
+   SYSB_(mmap,			False),
 
 #if SIGNAL_SIMULATION
    SYSBA(sigaltstack,		False),
@@ -4620,7 +4861,6 @@ static const struct sys_info sys_info[] = {
    SYSBA(capget,		False),
    SYSB_(capset,		False),
    SYSB_(access,		False),
-   SYSBA(brk,			False),
    SYSB_(chdir,			False),
    SYSB_(chmod,			False),
    SYSB_(chown32,		False),
@@ -4674,8 +4914,6 @@ static const struct sys_info sys_info[] = {
    SYSBA(lstat,			False),
    SYSBA(lstat64,		False),
    SYSB_(mkdir,			True),
-   SYSBA(mmap2,			False),
-   SYSBA(mmap,			False),
    SYSBA(mprotect,		False),
    SYSBA(munmap,		False),
    SYSBA(nanosleep,		True),
@@ -4729,6 +4967,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(writev,		True),
    SYSB_(prctl,			True),
    SYSBA(adjtimex,		False),
+   SYSBA(mmap2,			False),
    SYSBA(clock_gettime,         False),
 
    /* new signal handling makes these normal blocking syscalls */

@@ -950,6 +950,8 @@ static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si,
    sc->cr2 = (UInt)si->_sifields._sigfault._addr;
 }
 
+static Addr signalreturn_stub_addr = 0;
+
 /* Set up a stack frame (VgSigContext) for the client's signal
    handler.  This includes the signal number and a bogus return
    address.  */
@@ -1007,10 +1009,30 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
    vg_assert( ((Char*)(&frame->magicE)) + sizeof(UInt) 
               == ((Char*)(esp_top_of_frame)) );
 
+   /* if the sigreturn stub isn't in the client address space yet,
+      allocate space for it and copy it into place. */
+   if (signalreturn_stub_addr == 0) {
+      UInt len = PGROUNDUP(VG_(signalreturn_bogusRA_length));
+
+      signalreturn_stub_addr = VG_(client_alloc)(0, len,
+						 VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
+						 0);
+      VG_(memcpy)((void *)signalreturn_stub_addr, &VG_(signalreturn_bogusRA), 
+		  VG_(signalreturn_bogusRA_length));
+      VG_(mprotect)((void *)signalreturn_stub_addr, len, VKI_PROT_READ|VKI_PROT_EXEC);
+      VG_TRACK(new_mem_mmap, signalreturn_stub_addr, VG_(signalreturn_bogusRA_length),
+	       True, False, True);
+
+      if (VG_(clo_trace_signals))
+	 VG_(message)(Vg_DebugMsg, "Put sigreturn stub at %p-%p in client address space",
+		      signalreturn_stub_addr, 
+		      signalreturn_stub_addr + VG_(signalreturn_bogusRA_length));
+   }
+
    /* retaddr, sigNo, psigInfo, puContext fields are to be written */
    VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame", 
                             (Addr)frame, offsetof(VgSigFrame, handlerArgs) );
-   frame->retaddr    = (UInt)(&VG_(signalreturn_bogusRA));
+   frame->retaddr    = (UInt)signalreturn_stub_addr;
    frame->sigNo      = sigNo;
    frame->sigNo_private = sigNo;
    VG_TRACK( post_mem_write, (Addr)frame, offsetof(VgSigFrame, handlerArgs) );
@@ -1323,6 +1345,10 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 
    vg_assert(!core || (core && terminate));
 
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "delivering %d to default handler %s%s",
+		   sigNo, terminate ? "terminate" : "", core ? "+core" : "");
+
    if (terminate) {
       if (VG_(clo_verbosity) != 0 && (core || VG_(clo_verbosity) > 1)) {
 	 VG_(message)(Vg_UserMsg, "");
@@ -1336,8 +1362,8 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 	    switch(sigNo) {
 	    case VKI_SIGSEGV:
 	       switch(info->si_code) {
-	       case 1: event = "Address not mapped to object"; break;
-	       case 2: event = "Invalid permissions for mapped object"; break;
+	       case 1: event = "Access not within mapped region"; break;
+	       case 2: event = "Bad permissions for mapped region"; break;
 	       }
 	       break;
 
@@ -1409,6 +1435,7 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
    Int			sigNo = info->si_signo;
    vki_ksigset_t	handlermask;
    SCSS_Per_Signal	*handler = &vg_scss.scss_per_sig[sigNo];
+   void			*handler_fn;
    ThreadState		*tst = VG_(get_ThreadState)(tid);
 
    if (VG_(clo_trace_signals))
@@ -1461,14 +1488,19 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
       }
    }
 
-   vg_assert(handler->scss_handler != VKI_SIG_IGN);
+   /* If the client specifies SIG_IGN, treat it as SIG_DFL */
+   handler_fn = handler->scss_handler;
+   if (handler_fn == VKI_SIG_IGN)
+      handler_fn = VKI_SIG_DFL;
+
+   vg_assert(handler_fn != VKI_SIG_IGN);
 
    if (sigNo == VKI_SIGCHLD && (handler->scss_flags & VKI_SA_NOCLDWAIT)) {
       //VG_(printf)("sigNo==SIGCHLD and app asked for NOCLDWAIT\n");
       vg_babyeater(sigNo, NULL, NULL);
    }
 
-   if (handler->scss_handler == VKI_SIG_DFL) {
+   if (handler_fn == VKI_SIG_DFL) {
       handlermask = tst->sig_mask; /* no change to signal mask */
       vg_default_action(info, tid);
    } else {
@@ -1604,8 +1636,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
    */
 
    if (VG_(clo_trace_signals)) {
-      VG_(start_msg)(Vg_DebugMsg);
-      VG_(add_to_msg)("signal %d arrived ... ", sigNo );
+      VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d", sigNo, info->si_code );
    }
    vg_assert(sigNo >= 1 && sigNo <= VKI_KNSIG);
 
@@ -1630,6 +1661,77 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 
    vg_assert((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&dummy_local));
    vg_assert((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[VG_SIGSTACK_SIZE_W])));
+
+   /* Special fault-handling case. We can now get signals which can
+      act upon and immediately restart the faulting instruction.
+    */
+   if (info->si_signo == VKI_SIGSEGV) {
+      ThreadId tid = VG_(get_current_or_recent_tid)();
+      Addr fault = (Addr)info->_sifields._sigfault._addr;
+      Addr esp = VG_(is_running_thread)(tid) ?
+	 VG_(baseBlock)[VGOFF_(m_esp)] : VG_(threads)[tid].m_esp;
+      Segment *seg;
+
+      seg = VG_(find_segment)(fault);
+      if (seg != NULL)
+	 seg = VG_(next_segment)(seg);
+
+      if (VG_(clo_trace_signals)) {
+	 if (seg == NULL)
+	    VG_(message)(Vg_DebugMsg,
+			 "SIGSEGV: si_code=%d faultaddr=%p tid=%d esp=%p seg=NULL shad=%p-%p",
+			 info->si_code, fault, tid, esp,
+			 VG_(shadow_base), VG_(shadow_end));
+	 else
+	    VG_(message)(Vg_DebugMsg,
+			 "SIGSEGV: si_code=%d faultaddr=%p tid=%d esp=%p seg=%p-%p fl=%x shad=%p-%p",
+			 info->si_code, fault, tid, esp, seg->addr, seg->addr+seg->len, seg->flags,
+			 VG_(shadow_base), VG_(shadow_end));
+      }
+
+      if (info->si_code == 1		&&	/* SEGV_MAPERR */
+	  seg != NULL                   &&
+	  fault >= esp			&&
+	  fault < seg->addr		&&
+	  (seg->flags & SF_GROWDOWN)) {
+	 /* If the fault address is above esp but below the current known
+	    stack segment base, and it was a fault because there was
+	    nothing mapped there (as opposed to a permissions fault),
+	    then extend the stack segment. 
+	 */
+	 Addr base = PGROUNDDN(esp);
+	 Char *ret = VG_(mmap)((Char *)base, seg->addr - base, 
+			       VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC,
+			       VKI_MAP_PRIVATE | VKI_MAP_FIXED | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,
+			       -1, 0);
+	 if ((Addr)ret == base) {
+	    VG_(map_segment)(base, seg->addr - base,
+			     VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
+			     SF_STACK|SF_GROWDOWN);
+	    return;		/* restart instruction */
+	 }
+	 /* Otherwise fall into normal signal handling */
+      } else if (info->si_code == 2 && /* SEGV_ACCERR */
+		 VG_(needs).shadow_memory &&
+		 VG_(is_shadow_addr)(fault)) {
+	 /* If there's a fault within the shadow memory range, and it
+	    is a permissions fault, then it means that the client is
+	    using some memory which had not previously been used.
+	    This catches those faults, makes the memory accessible,
+	    and calls the skin to initialize that page.
+	 */
+	 static Int recursion = 0;
+
+	 if (recursion++ == 0) {
+	    VG_(init_shadow_range)(PGROUNDDN(fault), VKI_BYTES_PER_PAGE, True);
+	    recursion--;
+	    return;
+	 } else {
+	    /* otherwise fall into normal SEGV handling */	    
+	    recursion--;
+	 }
+      }
+   }
 
    if (VG_(scheduler_jmpbuf_valid)) {
       /* Can't continue; must longjmp back to the scheduler and thus
@@ -1661,13 +1763,26 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 	 it was actually generated by Valgrind internally.
        */
       struct vki_sigcontext *sc = &uc->uc_mcontext;
+      Char buf[1024];
 
       VG_(message)(Vg_DebugMsg, 
 		   "INTERNAL ERROR: Valgrind received a signal %d (%s) - exiting",
 		   sigNo, signame(sigNo));
+
+      buf[0] = 0;
+      if (1 && !VG_(get_fnname)(sc->eip, buf+2, sizeof(buf)-5)) {
+	 Int len;
+
+	 buf[0] = ' ';
+	 buf[1] = '(';
+	 len = VG_(strlen)(buf);
+	 buf[len] = ')';
+	 buf[len+1] = '\0';
+      }
+
       VG_(message)(Vg_DebugMsg, 
-		   "si_code=%x Fault EIP: %p; Faulting address: %p",
-		   info->si_code, sc->eip, info->_sifields._sigfault._addr);
+		   "si_code=%x Fault EIP: %p%s; Faulting address: %p",
+		   info->si_code, sc->eip, buf, info->_sifields._sigfault._addr);
 
       if (0)
 	 VG_(kill_self)(sigNo);		/* generate a core dump */

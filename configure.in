@@ -350,7 +350,7 @@ AC_OUTPUT(
    coregrind/Makefile 
    coregrind/demangle/Makefile 
    coregrind/docs/Makefile
-   coregrind/valgrind
+   coregrind/x86/Makefile
    addrcheck/Makefile
    addrcheck/tests/Makefile
    addrcheck/docs/Makefile

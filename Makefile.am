@@ -1,10 +1,9 @@
 
 AUTOMAKE_OPTIONS = 1.6 dist-bzip2
 
-## coregrind must come before memcheck, addrcheck, helgrind, for
-##   vg_replace_malloc.o.
+## include must be first for vg_skin.h
 ## addrcheck must come after memcheck, for mac_*.o
-SUBDIRS = 	coregrind . docs tests include auxprogs \
+SUBDIRS = 	include coregrind . docs tests auxprogs \
 		memcheck \
 		addrcheck \
 		cachegrind \
@@ -49,4 +48,9 @@ install-exec-hook:
 	$(mkinstalldirs) $(DESTDIR)$(valdir)
 	rm -f $(DESTDIR)$(valdir)/libpthread.so.0
 	$(LN_S) libpthread.so $(DESTDIR)$(valdir)/libpthread.so.0
+
+all-local:
+	mkdir -p .in_place
+	rm -f $(addprefix .in_place/,default.supp $(SUPP_FILES))
+	ln -s $(addprefix ../,default.supp $(SUPP_FILES)) $(top_srcdir)/.in_place
 

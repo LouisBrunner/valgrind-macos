@@ -26,6 +26,7 @@ int main(int argv, char** argc) {
   fprintf(stderr,"setting sigaction\n");
   act.sa_flags=SA_ONSTACK;
   act.sa_handler=&sig_handler;
+  sigemptyset(&act.sa_mask);
   res = sigaction(SIGUSR1,&act,0);
   fprintf(stderr, "res = %d\n", res);
   fprintf(stderr, "raising the signal\n");

@@ -31,7 +31,25 @@
 */
 
 #include "mc_include.h"
+#include "memcheck.h"
 #include "valgrind.h"
+
+static Addr record_overlap_error;
+
+static int init_done;
+
+/* Startup hook - called as init section */
+static void init(void) __attribute__((constructor));
+static void init(void) 
+{
+   if (init_done)
+      return;
+
+   VALGRIND_MAGIC_SEQUENCE(record_overlap_error, 0,
+			   _VG_USERREQ__MEMCHECK_GET_RECORD_OVERLAP,
+			   0, 0, 0, 0);
+   init_done = 1;
+}
 
 /* ---------------------------------------------------------------------
    The normal versions of these functions are hyper-optimised, which fools
@@ -80,7 +98,8 @@ void complain2 ( Char* s, char* dst, const char* src )
    OverlapExtra extra = {
       .src = (Addr)src, .dst = (Addr)dst, .len = -1,
    };
-   VALGRIND_NON_SIMD_CALL2( MAC_(record_overlap_error), s, &extra );
+   init();
+   VALGRIND_NON_SIMD_CALL2( record_overlap_error, s, &extra );
 }
 
 static __inline__
@@ -90,7 +109,8 @@ void complain3 ( Char* s, void* dst, const void* src, int n )
    OverlapExtra extra = {
       .src = (Addr)src, .dst = (Addr)dst, .len = n,
    };
-   VALGRIND_NON_SIMD_CALL2( MAC_(record_overlap_error), s, &extra );
+   init();
+   VALGRIND_NON_SIMD_CALL2( record_overlap_error, s, &extra );
 }
 
 char* strrchr ( const char* s, int c )

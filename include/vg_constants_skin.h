@@ -45,9 +45,16 @@
 #define VGP_(str)   VGAPPEND(vgProf_,str)
 #define VGOFF_(str) VGAPPEND(vgOff_,str)
 #define VGR_(str)   VGAPPEND(vgAllRoadsLeadToRome_,str)
+#define VGINJ_(str) VGAPPEND(__vgInject_,str)
 
 /* Skin specific ones.  Note that final name still starts with "vg". */
 #define SK_(str)    VGAPPEND(vgSkin_,str)
+
+/* This is specifically for stringifying VG_(x) function names.  We
+   need to do two macroexpansions to get the VG_ macro expanded before
+   stringifying */
+#define _STR(x)	#x
+#define STR(x)	_STR(x)
 
 #endif /* ndef __VG_CONSTANTS_SKIN_H */
 

@@ -215,6 +215,19 @@ void VG_(emitL) ( UInt l )
    VG_(emitB) ( (l >> 24) & 0x000000FF );
 }
 
+/* This bit is ORd onto the size to indicate that it's a client
+   pointer which needs bounds checking. */
+#define DO_BOUNDSCHECK	(1<<8)
+
+/* If the user asks for it, generate bounds checks on application
+   pointer dereferences, in the form of a segment override. */
+static __inline__ void boundscheck()
+{
+   if (VG_(clo_pointercheck))
+      VG_(emitB)(0x64);		/* %fs prefix - see vg_dispatch.S */
+}
+
+
 static void emit_get_eflags ( void )
 {
    Int off = 4 * VGOFF_(m_eflags);
@@ -771,6 +784,12 @@ void VG_(emit_movv_offregmem_reg) ( Int sz, Int off, Int areg, Int reg )
 void VG_(emit_movv_reg_offregmem) ( Int sz, Int reg, Int off, Int areg )
 {
    VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+
+   if (sz & DO_BOUNDSCHECK) {
+      boundscheck();
+      sz &= ~DO_BOUNDSCHECK;
+   }
+
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x89 ); /* MOV Gv, Ev */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
@@ -782,6 +801,12 @@ void VG_(emit_movv_reg_offregmem) ( Int sz, Int reg, Int off, Int areg )
 static void emit_movv_regmem_reg ( Int sz, Int reg1, Int reg2 )
 {
    VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+
+   if (sz & DO_BOUNDSCHECK) {
+      boundscheck();
+      sz &= ~DO_BOUNDSCHECK;
+   }
+
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x8B ); /* MOV Ev, Gv */
    emit_amode_regmem_reg ( reg1, reg2 );
@@ -793,6 +818,12 @@ static void emit_movv_regmem_reg ( Int sz, Int reg1, Int reg2 )
 static void emit_movv_reg_regmem ( Int sz, Int reg1, Int reg2 )
 {
    VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+
+   if (sz & DO_BOUNDSCHECK) {
+      boundscheck();
+      sz &= ~DO_BOUNDSCHECK;
+   }
+
    if (sz == 2) VG_(emitB) ( 0x66 );
    VG_(emitB) ( 0x89 ); /* MOV Gv, Ev */
    emit_amode_regmem_reg ( reg2, reg1 );
@@ -1205,9 +1236,13 @@ static void emit_nonshiftopb_reg_reg ( Bool simd_flags, Opcode opc,
                    nameIReg(1,reg1), nameIReg(1,reg2));
 }
 
-static void emit_movb_reg_regmem ( Int reg1, Int reg2 )
+static void emit_movb_reg_regmem ( Bool bounds, Int reg1, Int reg2 )
 {
    VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+
+   if (bounds)
+      boundscheck();
+
    VG_(emitB) ( 0x88 ); /* MOV G1, E1 */
    emit_amode_regmem_reg ( reg2, reg1 );
    if (dis)
@@ -1290,9 +1325,11 @@ void VG_(emit_testb_lit_reg) ( Bool simd_flags, UInt lit, Int reg )
 /*--- zero-extended load emitters                  ---*/
 /*----------------------------------------------------*/
 
-void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg )
+void VG_(emit_movzbl_offregmem_reg) ( Bool bounds, Int off, Int regmem, Int reg )
 {
    VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+   if (bounds)
+      boundscheck();
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB6 ); /* MOVZBL */
    VG_(emit_amode_offregmem_reg) ( off, regmem, reg );
    if (dis)
@@ -1300,9 +1337,13 @@ void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg )
                    off, nameIReg(4,regmem), nameIReg(4,reg));
 }
 
-static void emit_movzbl_regmem_reg ( Int reg1, Int reg2 )
+static void emit_movzbl_regmem_reg ( Bool bounds, Int reg1, Int reg2 )
 {
    VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+
+   if (bounds)
+      boundscheck();
+
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB6 ); /* MOVZBL */
    emit_amode_regmem_reg ( reg1, reg2 );
    if (dis)
@@ -1310,9 +1351,13 @@ static void emit_movzbl_regmem_reg ( Int reg1, Int reg2 )
                                                nameIReg(4,reg2));
 }
 
-void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg )
+void VG_(emit_movzwl_offregmem_reg) ( Bool bounds, Int off, Int areg, Int reg )
 {
    VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+
+   if (bounds)
+      boundscheck();
+
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB7 ); /* MOVZWL */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
    if (dis)
@@ -1320,9 +1365,13 @@ void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg )
                    off, nameIReg(4,areg), nameIReg(4,reg));
 }
 
-void VG_( emit_movzwl_regmem_reg ) ( Int reg1, Int reg2 )
+void VG_( emit_movzwl_regmem_reg ) ( Bool bounds, Int reg1, Int reg2 )
 {
    VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+
+   if (bounds)
+      boundscheck();
+
    VG_(emitB) ( 0x0F ); VG_(emitB) ( 0xB7 ); /* MOVZWL */
    emit_amode_regmem_reg ( reg1, reg2 );
    if (dis)
@@ -1394,6 +1443,9 @@ static void emit_fpu_regmem ( FlagSet uses_sflags,
                               Int reg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
+
+   boundscheck();		/* assume all FPU ops are the client's */
+
    VG_(emitB) ( first_byte );
    emit_amode_regmem_reg ( reg, second_byte_masked >> 3 );
    if (dis)
@@ -1409,6 +1461,9 @@ static void emit_MMX2_regmem ( FlagSet uses_sflags,
                                Int ireg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
+
+   boundscheck();
+
    VG_(emitB) ( 0x0F );
    VG_(emitB) ( first_byte );
    second_byte &= 0x38; /* mask out mod and rm fields */
@@ -1427,6 +1482,9 @@ static void emit_SSE2a ( FlagSet uses_sflags,
                          Int ireg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
+
+   boundscheck();
+
    VG_(emitB) ( first_byte );
    VG_(emitB) ( second_byte );
    third_byte &= 0x38; /* mask out mod and rm fields */
@@ -1446,6 +1504,9 @@ static void emit_SSE2a1 ( FlagSet uses_sflags,
                           Int ireg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
+
+   boundscheck();
+
    VG_(emitB) ( first_byte );
    VG_(emitB) ( second_byte );
    third_byte &= 0x38; /* mask out mod and rm fields */
@@ -1467,6 +1528,9 @@ static void emit_SSE3a ( FlagSet uses_sflags,
                          Int ireg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
+
+   boundscheck();
+
    VG_(emitB) ( first_byte );
    VG_(emitB) ( second_byte );
    VG_(emitB) ( third_byte );
@@ -1593,6 +1657,9 @@ static void emit_SSE3a1 ( FlagSet uses_sflags,
                           Int ireg )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
+
+   boundscheck();
+
    VG_(emitB) ( first_byte );
    VG_(emitB) ( second_byte );
    VG_(emitB) ( third_byte );
@@ -2067,13 +2134,13 @@ static void emit_call_patchme( void )
 	 dispatch loop.  We still need to keep it the same size as the
 	 call sequence. */
       VG_(emitB) ( 0xC3 );	/* ret */
-      VG_(emitB) ( 0x90 );	/* nop */
-      VG_(emitB) ( 0x90 );	/* nop */
-      VG_(emitB) ( 0x90 );	/* nop */
-      VG_(emitB) ( 0x90 );	/* nop */
+      VG_(emitB) ( 0x8d );	/* 4 byte nop (lea    0x0(%esi,1),%esi) */
+      VG_(emitB) ( 0x74 );
+      VG_(emitB) ( 0x26 );
+      VG_(emitB) ( 0x00 );
 
       if (dis)
-	 VG_(printf)("\n\t\tret; nop; nop; nop; nop\n");
+	 VG_(printf)("\n\t\tret; nop4\n");
 
       if (0 && VG_(clo_verbosity))
 	 VG_(message)(Vg_DebugMsg, "too many chained jumps in basic-block");
@@ -2087,7 +2154,7 @@ static void emit_call_patchme( void )
       VG_(emitB) ( 0x90 );		/* NOP */
 
       if (dis)
-	 VG_(printf)("\n\t\tud2; ud2; nop\n");
+	 VG_(printf)("\n\t\tud2; ud2; nop /* call VG_(patchme) */\n");
    }
 }   
 
@@ -2670,10 +2737,10 @@ static void synth_mov_lit_reg ( Int size, UInt lit, Int reg )
 
 static void synth_mov_regmem_reg ( Int size, Int reg1, Int reg2 ) 
 {
-   switch (size) {
-      case 4: emit_movv_regmem_reg ( 4, reg1, reg2 ); break;
-      case 2: VG_(emit_movzwl_regmem_reg) ( reg1, reg2 ); break;
-      case 1: emit_movzbl_regmem_reg ( reg1, reg2 ); break;
+   switch (size & ~DO_BOUNDSCHECK) {
+      case 4: emit_movv_regmem_reg ( size, reg1, reg2 ); break;
+      case 2: VG_(emit_movzwl_regmem_reg) ( size & DO_BOUNDSCHECK, reg1, reg2 ); break;
+      case 1: emit_movzbl_regmem_reg ( size & DO_BOUNDSCHECK, reg1, reg2 ); break;
       default: VG_(core_panic)("synth_mov_regmem_reg");
    }  
 }
@@ -2681,10 +2748,10 @@ static void synth_mov_regmem_reg ( Int size, Int reg1, Int reg2 )
 
 static void synth_mov_offregmem_reg ( Int size, Int off, Int areg, Int reg ) 
 {
-   switch (size) {
+   switch (size & ~DO_BOUNDSCHECK) {
       case 4: VG_(emit_movv_offregmem_reg) ( 4, off, areg, reg ); break;
-      case 2: VG_(emit_movzwl_offregmem_reg) ( off, areg, reg ); break;
-      case 1: VG_(emit_movzbl_offregmem_reg) ( off, areg, reg ); break;
+      case 2: VG_(emit_movzwl_offregmem_reg) ( size & DO_BOUNDSCHECK, off, areg, reg ); break;
+      case 1: VG_(emit_movzbl_offregmem_reg) ( size & DO_BOUNDSCHECK, off, areg, reg ); break;
       default: VG_(core_panic)("synth_mov_offregmem_reg");
    }  
 }
@@ -2713,17 +2780,17 @@ static void synth_mov_reg_offregmem ( Int size, Int reg,
 static void synth_mov_reg_memreg ( Int size, Int reg1, Int reg2 )
 {
    Int s1;
-   switch (size) {
-      case 4: emit_movv_reg_regmem ( 4, reg1, reg2 ); break;
-      case 2: emit_movv_reg_regmem ( 2, reg1, reg2 ); break;
+   switch (size & ~DO_BOUNDSCHECK) {
+      case 4: 
+      case 2: emit_movv_reg_regmem ( size, reg1, reg2 ); break;
       case 1: if (reg1 < 4) {
-                 emit_movb_reg_regmem ( reg1, reg2 ); 
+                 emit_movb_reg_regmem ( size & DO_BOUNDSCHECK, reg1, reg2 ); 
               }
               else {
                  /* Choose a swap reg which is < 4 and not reg1 or reg2. */
                  for (s1 = 0; s1 == reg1 || s1 == reg2; s1++) ;
                  emit_swapl_reg_reg ( s1, reg1 );
-                 emit_movb_reg_regmem ( s1, reg2 );
+                 emit_movb_reg_regmem ( size & DO_BOUNDSCHECK, s1, reg2 );
                  emit_swapl_reg_reg ( s1, reg1 );
               }
               break;
@@ -3473,14 +3540,14 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
       case STORE: {
          vg_assert(u->tag1 == RealReg);
          vg_assert(u->tag2 == RealReg);
-         synth_mov_reg_memreg ( u->size, u->val1, u->val2 );
+         synth_mov_reg_memreg ( u->size | DO_BOUNDSCHECK, u->val1, u->val2 );
          break;
       }
 
       case LOAD: {
          vg_assert(u->tag1 == RealReg);
          vg_assert(u->tag2 == RealReg);
-         synth_mov_regmem_reg ( u->size, u->val1, u->val2 );
+         synth_mov_regmem_reg ( u->size | DO_BOUNDSCHECK, u->val1, u->val2 );
          break;
       }
 

@@ -31,8 +31,6 @@
 
 #include "vg_skin.h"
 
-VG_DETERMINE_INTERFACE_VERSION
-
 /* Nb: use ULongs because the numbers can get very big */
 static ULong n_dlrr_calls   = 0;
 static ULong n_BBs          = 0;
@@ -223,6 +221,9 @@ void SK_(fini)(Int exitcode)
     VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg, "Exit code:     %d", exitcode);
 }
+
+VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 0)
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                lk_main.c ---*/

@@ -305,12 +305,16 @@ struct vki_ucontext {
 
 /* The following are copied from include/asm-i386/mman.h .*/
 
+#define VKI_PROT_NONE      0x0		   /* No page permissions */
 #define VKI_PROT_READ      0x1             /* Page can be read.  */
 #define VKI_PROT_WRITE     0x2             /* Page can be written.  */
 #define VKI_PROT_EXEC      0x4             /* Page can be executed.  */
 #define VKI_MAP_ANONYMOUS  0x20            /* Don't use a file.  */
+#define VKI_MAP_SHARED	   0x01		   /* Share changes.  */
 #define VKI_MAP_PRIVATE    0x02            /* Changes are private.  */
 #define VKI_MAP_FIXED      0x10            /* Interpret addr exactly */
+#define VKI_MAP_NOSYMS     0x40000000	   /* internal pseudo-flag to disable symbol loading */
+#define VKI_MAP_CLIENT     0x80000000	   /* internal pseudo-flag to distinguish client mappings */
 
 /* Copied from linux-2.4.19/include/asm-i386/fcntl.h */
 
@@ -571,6 +575,7 @@ struct vki_stat {
    Logic from     /usr/src/linux-2.4.9-31/fs/binfmt_elf.c
                   and its counterpart in the 2.2.14 kernel sources 
                   in Red Hat 6.2.  */
+#define VKI_AT_NULL   0
 #define VKI_AT_SYSINFO 32   /* address of system info page */
 #define VKI_AT_CLKTCK 17    /* frequency at which times() increments */
 #define VKI_AT_HWCAP  16    /* arch dependent hints at CPU capabilities */

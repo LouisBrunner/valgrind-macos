@@ -3,6 +3,5 @@
    Addrcheck,Memcheck:Leak
    fun:malloc
    fun:main
-   fun:__libc_start_main
 }
 

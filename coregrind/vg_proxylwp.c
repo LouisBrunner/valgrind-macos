@@ -257,7 +257,6 @@ static const Char *px_name(enum RequestType r)
 }
 
 #define PROXYLWP_OFFSET	(VKI_BYTES_PER_PAGE - sizeof(ProxyLWP))
-#define ROUNDDN(p)	((UChar *)((Addr)(p) & ~(VKI_BYTES_PER_PAGE-1)))
 
 /* 
    Allocate a page for the ProxyLWP and its stack.
@@ -271,7 +270,7 @@ static ProxyLWP *LWP_alloc(void)
 {
    UChar *p = VG_(get_memory_from_mmap)(VKI_BYTES_PER_PAGE, "alloc_LWP");
    ProxyLWP *ret;
-   vg_assert(p == ROUNDDN(p)); /* px must be page aligned */
+   vg_assert(p == (UChar *)PGROUNDDN(p)); /* px must be page aligned */
 
    ret = (ProxyLWP *)(p + PROXYLWP_OFFSET);
 
@@ -283,7 +282,7 @@ static ProxyLWP *LWP_alloc(void)
 /* Free a thread structure */
 static void LWP_free(ProxyLWP *px)
 {
-   UChar *p = ROUNDDN(px);
+   UChar *p = (UChar *)PGROUNDDN(px);
    
    vg_assert(px->magic == VG_PROXY_MAGIC);
    px->magic = 0;
@@ -297,7 +296,7 @@ static void LWP_free(ProxyLWP *px)
    end). */
 static inline ProxyLWP *LWP_TSD(void *esp)
 {
-   UChar *p = ROUNDDN(esp);
+   UChar *p = (UChar *)PGROUNDDN(esp);
    ProxyLWP *ret;
 
    ret = (ProxyLWP *)(p + PROXYLWP_OFFSET);

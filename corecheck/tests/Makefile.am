@@ -35,13 +35,19 @@ check_PROGRAMS = \
 	fdleak_socketpair sigkill res_search \
 	pth_atfork1 pth_cancel2 pth_cvsimple pth_empty \
 	pth_exit pth_mutexspeed pth_once \
+	as_mmap as_shm \
 	vgprintf
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0 -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
-# C ones
-erringfds_SOURCES 	= erringfds.c
+vgprintf_SOURCES	= vgprintf.c
+
+# Client address space checks
+as_mmap_SOURCES		= as_mmap.c
+as_shm_SOURCES		= as_shm.c
+
+# Leak tests
 fdleak_cmsg_SOURCES	= fdleak_cmsg.c
 fdleak_creat_SOURCES	= fdleak_creat.c
 fdleak_dup_SOURCES	= fdleak_dup.c
@@ -52,7 +58,6 @@ fdleak_open_SOURCES	= fdleak_open.c
 fdleak_pipe_SOURCES	= fdleak_pipe.c
 fdleak_socketpair_SOURCES = fdleak_socketpair.c
 sigkill_SOURCES		= sigkill.c
-vgprintf_SOURCES	= vgprintf.c
 
 # Pthread ones
 pth_atfork1_SOURCES	= pth_atfork1.c

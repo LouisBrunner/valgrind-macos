@@ -33,8 +33,6 @@
 #include "vg_skin.h"
 //#include "vg_profile.c"
 
-VG_DETERMINE_INTERFACE_VERSION
-
 /* For cache simulation */
 typedef struct {
     int size;       /* bytes */ 
@@ -2071,6 +2069,8 @@ void SK_(post_clo_init)(void)
    
    init_BBCC_table();
 }
+
+VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 0)
 
 #if 0
 Bool SK_(cheap_sanity_check)(void) { return True; }

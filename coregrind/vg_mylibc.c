@@ -248,15 +248,57 @@ Int VG_(gettid)(void)
 void* VG_(mmap)( void* start, UInt length, 
                  UInt prot, UInt flags, UInt fd, UInt offset)
 {
-   Int  res;
+   Addr  res;
    UInt args[6];
+
+   if (!(flags & VKI_MAP_FIXED)) {
+      start = (void *)VG_(find_map_space)((Addr)start, length, !!(flags & VKI_MAP_CLIENT));
+      if (start == 0)
+	 return (void *)-1;
+
+      flags |= VKI_MAP_FIXED;
+   }
+
    args[0] = (UInt)start;
    args[1] = length;
    args[2] = prot;
-   args[3] = flags;
+   args[3] = flags & ~(VKI_MAP_NOSYMS|VKI_MAP_CLIENT);
    args[4] = fd;
    args[5] = offset;
    res = VG_(do_syscall)(__NR_mmap, (UInt)(&(args[0])) );
+
+   if (!VG_(is_kerror)(res)) {
+      UInt sf_flags = SF_MMAP;
+
+      if (flags & VKI_MAP_FIXED)
+	 sf_flags |= SF_FIXED;
+      if (flags & VKI_MAP_SHARED)
+	 sf_flags |= SF_SHARED;
+      if (!(flags & VKI_MAP_ANONYMOUS))
+	 sf_flags |= SF_FILE;
+      if (!(flags & VKI_MAP_CLIENT))
+	 sf_flags |= SF_VALGRIND;
+      if (flags & VKI_MAP_NOSYMS)
+	 sf_flags |= SF_NOSYMS;
+
+      /* placeholder - caller will update flags etc if they want */
+      VG_(map_fd_segment)(res, length, prot, sf_flags, fd, offset, NULL);
+
+      if (flags & VKI_MAP_CLIENT) {
+	 if (res < VG_(client_base) || res >= VG_(client_end)) {
+	    VG_(munmap)((void *)res, length);
+	    res = -1;
+	 }
+      } else {
+	 if (res < VG_(valgrind_base) || res >= VG_(valgrind_end)) {
+	    VG_(munmap)((void *)res, length);
+	    res = -1;
+	 }
+      }
+   }
+
+   
+
    return VG_(is_kerror)(res) ? ((void*)(-1)) : (void*)res;
 }
 
@@ -264,6 +306,16 @@ void* VG_(mmap)( void* start, UInt length,
 Int VG_(munmap)( void* start, Int length )
 {
    Int res = VG_(do_syscall)(__NR_munmap, (UInt)start, (UInt)length );
+   if (!VG_(is_kerror))
+      VG_(unmap_range)((Addr)start, length);
+   return VG_(is_kerror)(res) ? -1 : 0;
+}
+
+Int VG_(mprotect)( void *start, Int length, UInt prot )
+{
+   Int res = VG_(do_syscall)(__NR_mprotect, (UInt)start, (UInt)length, prot );
+   if (!VG_(is_kerror)(res))
+      VG_(mprotect_range)((Addr)start, length, prot);
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
@@ -999,7 +1051,7 @@ Char* VG_(strdup) ( const Char* s )
 /* Keep track of recursion depth. */
 static Int recDepth;
 
-static Bool string_match_wrk ( Char* pat, Char* str )
+static Bool string_match_wrk ( const Char* pat, const Char* str )
 {
    vg_assert(recDepth >= 0 && recDepth < 500);
    recDepth++;
@@ -1034,7 +1086,7 @@ static Bool string_match_wrk ( Char* pat, Char* str )
    }
 }
 
-Bool VG_(string_match) ( Char* pat, Char* str )
+Bool VG_(string_match) ( const Char* pat, const Char* str )
 {
    Bool b;
    recDepth = 0;
@@ -1064,7 +1116,7 @@ static inline ExeContext *get_real_execontext(Addr ret)
    Addr stacktop;
 
    asm("movl %%ebp, %0; movl %%esp, %1" : "=r" (ebp), "=r" (esp));
-   stacktop = (Addr)&VG_(stack)[VG_STACK_SIZE_W];
+   stacktop = VG_(valgrind_end);
    if (esp >= (Addr)&VG_(sigstack)[0] && esp < (Addr)&VG_(sigstack)[VG_STACK_SIZE_W])
       stacktop = (Addr)&VG_(sigstack)[VG_STACK_SIZE_W];
       
@@ -1289,14 +1341,69 @@ Bool VG_(getcwd_alloc) ( Char** out )
    Misc functions looking for a proper home.
    ------------------------------------------------------------------ */
 
-/* We do getenv without libc's help by snooping around in
-   VG_(client_envp) as determined at startup time. */
-Char* VG_(getenv) ( Char* varname )
+void  VG_(env_unsetenv) ( Char **env, const Char *varname )
+{
+   Char **from;
+   Char **to = NULL;
+   Int len = VG_(strlen)(varname);
+
+   for(from = to = env; from && *from; from++) {
+      if (!(VG_(strncmp)(varname, *from, len) == 0 && (*from)[len] == '=')) {
+	 *to = *from;
+	 to++;
+      }
+   }
+   *to = *from;
+}
+
+/* set the environment; returns the old env if a new one was allocated */
+Char **VG_(env_setenv) ( Char ***envp, const Char* varname, const Char *val )
+{
+   Char **env = (*envp);
+   Char **cpp;
+   Int len = VG_(strlen)(varname);
+   Char *valstr = VG_(arena_malloc)(VG_AR_CORE, len + VG_(strlen)(val) + 2);
+   Char **oldenv = NULL;
+
+   VG_(sprintf)(valstr, "%s=%s", varname, val);
+
+   for(cpp = env; cpp && *cpp; cpp++) {
+      if (VG_(strncmp)(varname, *cpp, len) == 0 && (*cpp)[len] == '=') {
+	 *cpp = valstr;
+	 return oldenv;
+      }
+   }
+
+   if (env == NULL) {
+      env = VG_(arena_malloc)(VG_AR_CORE, sizeof(Char **) * 2);
+      env[0] = valstr;
+      env[1] = NULL;
+
+      *envp = env;
+
+   }  else {
+      Int envlen = (cpp-env) + 2;
+      Char **newenv = VG_(arena_malloc)(VG_AR_CORE, envlen * sizeof(Char **));
+
+      for(cpp = newenv; *env; )
+	 *cpp++ = *env++;
+      *cpp++ = valstr;
+      *cpp++ = NULL;
+
+      oldenv = *envp;
+
+      *envp = newenv;
+   }
+
+   return oldenv;
+}
+
+Char* VG_(env_getenv) ( Char **env, Char* varname )
 {
    Int i, n;
    n = VG_(strlen)(varname);
-   for (i = 0; VG_(client_envp)[i] != NULL; i++) {
-      Char* s = VG_(client_envp)[i];
+   for (i = 0; env[i] != NULL; i++) {
+      Char* s = env[i];
       if (VG_(strncmp)(varname, s, n) == 0 && s[n] == '=') {
          return & s[n+1];
       }
@@ -1304,6 +1411,12 @@ Char* VG_(getenv) ( Char* varname )
    return NULL;
 }
 
+/* We do getenv without libc's help by snooping around in
+   VG_(client_envp) as determined at startup time. */
+Char *VG_(getenv)(Char *varname)
+{
+   return VG_(env_getenv)(VG_(client_envp), varname);
+}
 
 /* Support for getrlimit. */
 Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
@@ -1532,10 +1645,27 @@ void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
 {
    static UInt tot_alloc = 0;
    void* p;
-   p = VG_(mmap)( 0, nBytes,
-                     VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 
-                     VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, -1, 0 );
+
+#if 0
+   p = VG_(mmap)( (void *)VG_(valgrind_base), nBytes,
+		  VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC, 
+		  VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS, -1, 0 );
+#else
+   /* use brk, because it will definitely be in the valgrind address space */
+   {
+      Char *b = VG_(brk)(0);
+
+      p = (void *)PGROUNDUP(b);
+      
+      b = VG_(brk)(p + PGROUNDUP(nBytes));
+
+      if (b != (p + PGROUNDUP(nBytes)))
+	 p = (void *)-1;
+   }
+#endif
+
    if (p != ((void*)(-1))) {
+      vg_assert(p >= (void *)VG_(valgrind_mmap_end) && p < (void *)VG_(valgrind_end));
       tot_alloc += (UInt)nBytes;
       if (0)
          VG_(printf)(

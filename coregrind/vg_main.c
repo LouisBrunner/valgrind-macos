@@ -120,6 +120,30 @@ Int  VG_(noncompact_helper_offsets)[MAX_NONCOMPACT_HELPERS];
 /* This is the actual defn of baseblock. */
 UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 
+/* Client address space */
+Addr VG_(client_base);	/* client address space limits */
+Addr VG_(client_end);
+Addr VG_(client_mapbase);
+Addr VG_(clstk_base);
+Addr VG_(clstk_end);
+Addr VG_(brk_base);	/* start of brk */
+Addr VG_(brk_limit);	/* current brk */
+Addr VG_(shadow_base);	/* skin's shadow memory */
+Addr VG_(shadow_end);
+Addr VG_(valgrind_base);	/* valgrind's address range */
+Addr VG_(valgrind_mmap_end);	/* valgrind's mmaps are between valgrind_base and here */
+Addr VG_(valgrind_end);
+
+/* stage1 (main) executable */
+Int  VG_(execfd) = -1;
+
+/* Path to library directory */
+const Char *VG_(libdir) = VG_LIBDIR;
+
+/* our argc/argv */
+Int  VG_(vg_argc);
+Char **VG_(vg_argv);
+
 /* PID of the main thread */
 Int VG_(main_pid);
 
@@ -200,18 +224,18 @@ void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
 
 Bool VG_(need_to_handle_esp_assignment)(void)
 {
-   return ( VG_(track_events).new_mem_stack_4  ||
-            VG_(track_events).die_mem_stack_4  ||
-            VG_(track_events).new_mem_stack_8  ||
-            VG_(track_events).die_mem_stack_8  ||
-            VG_(track_events).new_mem_stack_12 ||
-            VG_(track_events).die_mem_stack_12 ||
-            VG_(track_events).new_mem_stack_16 ||
-            VG_(track_events).die_mem_stack_16 ||
-            VG_(track_events).new_mem_stack_32 ||
-            VG_(track_events).die_mem_stack_32 ||
-            VG_(track_events).new_mem_stack    ||
-            VG_(track_events).die_mem_stack
+   return ( VG_(defined_new_mem_stack_4)()  ||
+            VG_(defined_die_mem_stack_4)()  ||
+            VG_(defined_new_mem_stack_8)()  ||
+            VG_(defined_die_mem_stack_8)()  ||
+            VG_(defined_new_mem_stack_12)() ||
+            VG_(defined_die_mem_stack_12)() ||
+            VG_(defined_new_mem_stack_16)() ||
+            VG_(defined_die_mem_stack_16)() ||
+            VG_(defined_new_mem_stack_32)() ||
+            VG_(defined_die_mem_stack_32)() ||
+            VG_(defined_new_mem_stack)()    ||
+            VG_(defined_die_mem_stack)()
           );
 }
 
@@ -253,11 +277,11 @@ static void vg_init_baseBlock ( void )
 
    /* Make these most-frequently-called specialised ones compact, if they
       are used. */
-   if (VG_(track_events).new_mem_stack_4)
-      VG_(register_compact_helper)( (Addr) VG_(track_events).new_mem_stack_4);
+   if (VG_(defined_new_mem_stack_4)())
+      VG_(register_compact_helper)( (Addr) VG_(tool_interface).track_new_mem_stack_4);
 
-   if (VG_(track_events).die_mem_stack_4)
-      VG_(register_compact_helper)( (Addr) VG_(track_events).die_mem_stack_4);
+   if (VG_(defined_die_mem_stack_4)())
+      VG_(register_compact_helper)( (Addr) VG_(tool_interface).track_die_mem_stack_4);
 
    /* (9 or 18) + n_compact_helpers  */
    /* Allocate slots for compact helpers */
@@ -300,9 +324,9 @@ static void vg_init_baseBlock ( void )
    VG_(register_noncompact_helper)( (Addr) & VG_(do_useseg) );
 
 #define REG(kind, size) \
-   if (VG_(track_events).kind##_mem_stack##size) \
+   if (VG_(defined_##kind##_mem_stack##size)()) \
       VG_(register_noncompact_helper)(           \
-          (Addr) VG_(track_events).kind##_mem_stack##size );
+          (Addr) VG_(tool_interface).track_##kind##_mem_stack##size );
 
    REG(new, _8);
    REG(new, _12);
@@ -426,10 +450,6 @@ static void vg_init_baseBlock ( void )
 /* ---------------------------------------------------------------------
    Global entities which are not referenced from generated code.
    ------------------------------------------------------------------ */
-
-/* The stack on which Valgrind runs.  We can't use the same stack as
-   the simulatee -- that's an important design decision.  */
-UInt VG_(stack)[VG_STACK_SIZE_W];
 
 /* Ditto our signal delivery stack. */
 UInt VG_(sigstack)[VG_SIGSTACK_SIZE_W];
@@ -562,6 +582,7 @@ Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_track_fds)      = False;
 Bool   VG_(clo_chain_bb)       = True;
 Bool   VG_(clo_show_below_main) = False;
+Bool   VG_(clo_pointercheck)   = True;
 
 static Bool   VG_(clo_wait_for_gdb)   = False;
 
@@ -592,10 +613,6 @@ Int    VG_(client_argc);
 Char** VG_(client_argv);
 Char** VG_(client_envp);
 
-/* A place into which to copy the value of env var VG_ARGS, so we
-   don't have to modify the original. */
-static Char vg_cmdline_copy[M_VG_CMDLINE_STRLEN];
-
 /* ---------------------------------------------------------------------
    Processing of command-line options.
    ------------------------------------------------------------------ */
@@ -615,23 +632,13 @@ static void config_error ( Char* msg )
    VG_(clo_log_to)     = VgLogTo_Fd;
    VG_(clo_logfile_fd) = 2; /* stderr */
    VG_(printf)(
-      "valgrind.so: Startup or configuration error:\n   %s\n", msg);
+      "valgrind: Startup or configuration error:\n   %s\n", msg);
    VG_(printf)(
-      "valgrind.so: Unable to start up properly.  Giving up.\n");
+      "valgrind: Unable to start up properly.  Giving up.\n");
    VG_(exit)(1);
 }
 
-static void args_grok_error ( Char* msg )
-{
-   VG_(shutdown_logging)();
-   VG_(clo_log_to)     = VgLogTo_Fd;
-   VG_(clo_logfile_fd) = 2; /* stderr */
-   VG_(printf)("valgrind.so: When searching for "
-               "client's argc/argc/envp:\n\t%s\n", msg);
-   config_error("couldn't find client's argc/argc/envp");
-}   
-
-static void usage ( void )
+void VG_(usage) ( void )
 {
    Char* usage1 = 
 "usage: valgrind [options] prog-and-args\n"
@@ -656,6 +663,7 @@ static void usage ( void )
 "			       a signal [no]\n"
 "    --lowlat-syscalls=no|yes  improve wake-up latency when a thread's\n"
 "			       syscall completes [no]\n"
+"    --pointercheck=no|yes     enforce client address space limits [yes]\n"
 "\n"
 "  user options for Valgrind tools that report errors:\n"
 "    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
@@ -671,8 +679,7 @@ static void usage ( void )
 "    --gdb-attach=no|yes       start GDB when errors detected? [no]\n"
 "    --gdb-path=/path/to/gdb   path to the GDB to use [/usr/bin/gdb]\n"
 "    --input-fd=<number>       file descriptor for (gdb) input [0=stdin]\n"
-"\n"
-"  user options for %s:\n";
+"\n";
 
    Char* usage2 = 
 "\n"
@@ -695,8 +702,7 @@ static void usage ( void )
 "  debugging options for Valgrind tools that report errors\n"
 "    --dump-error=<number>     show translation for basic block associated\n"
 "                              with <number>'th error context [0=show none]\n"
-"\n"
-"  debugging options for %s:\n";
+"\n";
 
    Char* usage3 =
 "\n"
@@ -710,17 +716,25 @@ static void usage ( void )
 "  tool's start-up message for more information.\n"
 "\n";
 
-   VG_(printf)(usage1, VG_(details).name);
-   /* Don't print skin string directly for security, ha! */
-   if (VG_(needs).command_line_options)
-      SK_(print_usage)();
-   else
-      VG_(printf)("    (none)\n");
-   VG_(printf)(usage2, VG_(details).name);
-   if (VG_(needs).command_line_options)
-      SK_(print_debug_usage)();
-   else
-      VG_(printf)("    (none)\n");
+   VG_(printf)(usage1);
+   if (VG_(details).name) {
+      VG_(printf)("  user options for %s:\n", VG_(details).name);
+      /* Don't print skin string directly for security, ha! */
+      if (VG_(needs).command_line_options)
+	 SK_(print_usage)();
+      else
+	 VG_(printf)("    (none)\n");
+   }
+   VG_(printf)(usage2);
+
+   if (VG_(details).name) {
+      VG_(printf)("  debugging options for %s:\n", VG_(details).name);
+   
+      if (VG_(needs).command_line_options)
+	 SK_(print_debug_usage)();
+      else
+	 VG_(printf)("    (none)\n");
+   }
    VG_(printf)(usage3, VG_BUGS_TO);
 
    VG_(shutdown_logging)();
@@ -730,37 +744,12 @@ static void usage ( void )
 }
 
 
-/* Callback for looking for the stack segment. */
-Addr VG_(foundstack_start) = (Addr)NULL;
-UInt VG_(foundstack_size)  = 0;
-
-static void vg_findstack_callback ( Addr start, UInt size, 
-                                    Char r, Char w, Char x, 
-                                    UInt foffset, UChar* filename )
+static void process_cmd_line_options ( const KickstartParams *kp )
 {
-   Addr lastword;
-   if (size == 0) return;
-   if (r != 'r' || w != 'w' 
-       /* || x != 'x'  --not necessarily so on x86-64*/
-      ) return;
-   lastword = start + size - 4;
-   if (start <= VG_(esp_at_startup) 
-       && VG_(esp_at_startup) <= lastword) {
-      VG_(foundstack_start) = start;
-      VG_(foundstack_size) = size;
-      vg_assert(VG_(foundstack_size) > 0);
-   }
-}
-
-
-
-static void process_cmd_line_options ( void )
-{
-   Char* argv[M_VG_CMDLINE_OPTS];
-   Int   argc;
-   Char* p;
-   Char* str;
-   Int   i, eventually_logfile_fd, ctr;
+   Int argc;
+   Char **argv;
+   Int   i, eventually_logfile_fd;
+   Int	*auxp;
 
 #  define ISSPACE(cc)      ((cc) == ' ' || (cc) == '\t' || (cc) == '\n')
 
@@ -772,188 +761,42 @@ static void process_cmd_line_options ( void )
    VG_(startup_logging)();
 
    /* Check for sane path in ./configure --prefix=... */
-   if (VG_(strlen)(VG_LIBDIR) < 1 
-       || VG_LIBDIR[0] != '/') 
+   if (VG_LIBDIR[0] != '/') 
      config_error("Please use absolute paths in "
                   "./configure --prefix=... or --libdir=...");
 
-   /* (Suggested by Fabrice Bellard ... )
-      We look for the Linux ELF table and go down until we find the
-      envc & envp. It is not fool-proof, but these structures should
-      change less often than the libc ones. */
-   {
-       Int* sp;
-
-       /* Look for the stack segment by parsing /proc/self/maps and
-	  looking for a section bracketing VG_(esp_at_startup) which
-	  has rwx permissions and no associated file.  Note that this uses
-          the /proc/self/maps contents read at the start of VG_(main)(),
-          and doesn't re-read /proc/self/maps. */
-
-       VG_(parse_procselfmaps)( vg_findstack_callback );
-
-       /* Now foundstack_start and foundstack_size should delimit the stack. */
-       if (VG_(foundstack_size) == 0) {
-          args_grok_error("Cannot determine stack segment "
-                          "from /proc/self/maps");
-       }
-
-       if (0)
-          VG_(printf)("stack segment is %p .. %p\n", 
-                      VG_(foundstack_start), 
-                      VG_(foundstack_start) + VG_(foundstack_size) - 4 );
-
-       sp = (UInt*)(VG_(foundstack_start) + VG_(foundstack_size) );
-       if ((((UInt)(sp)) % VKI_BYTES_PER_PAGE) != 0) {
-          args_grok_error("Stack segment is not page aligned?!");
-       }
-
-       /* we locate: NEW_AUX_ENT(1, AT_PAGESZ, ELF_EXEC_PAGESIZE) in
-          the elf interpreter table */
-
-       sp -= 2;
-       while (sp[0] != VKI_AT_PAGESZ || sp[1] != 4096) {
-           /* VG_(printf)("trying %p\n", sp); */
-           sp--;
-       }
-
-       if (sp[2] == VKI_AT_BASE 
-           && sp[0] == VKI_AT_PAGESZ
-           && sp[-2] == VKI_AT_PHNUM
-           && sp[-4] == VKI_AT_PHENT
-           && sp[-6] == VKI_AT_PHDR
-           && sp[-6-1] == 0) {
-          if (0)
-             VG_(printf)("Looks like you've got a 2.2.X kernel here.\n");
-          sp -= 6;
-       } else
-       if (sp[2] == VKI_AT_CLKTCK
-           && sp[0] == VKI_AT_PAGESZ
-           && sp[-2] == VKI_AT_HWCAP
-           && sp[-2-1] == 0) {
-          if (0)
-             VG_(printf)("Looks like you've got a 2.4.X kernel here.\n");
-          sp -= 2;
-       } else
-       if (sp[2] == VKI_AT_CLKTCK
-           && sp[0] == VKI_AT_PAGESZ
-           && sp[-2] == VKI_AT_HWCAP
-           && sp[-4] == VKI_AT_SYSINFO
-           && sp[-4-1] == 0) {
-          if (0)
-             VG_(printf)("Looks like you've got a 2.4.X kernel with "
-                         "a sysinfo page at %x here.\n", sp[-3]);
-	  VG_(sysinfo_page_exists) = True;
-	  VG_(sysinfo_page_addr) = sp[-3];
-          sp -= 4;
-       } else
-       if (sp[2] == VKI_AT_CLKTCK
-           && sp[0] == VKI_AT_PAGESZ
-           && sp[-2] == VKI_AT_HWCAP
-           && sp[-4] == VKI_AT_USER_AUX_SEGMENT
-           && sp[-4-1] == 0) {
-          if (0)
-             VG_(printf)("Looks like you've got a R-H Limbo 2.4.X "
-                         "kernel here.\n");
-          sp -= 4;
-       } else
-       if (sp[2] == VKI_AT_CLKTCK
-           && sp[0] == VKI_AT_PAGESZ
-           && sp[-2] == VKI_AT_HWCAP
-           && sp[-2-20-1] == 0) {
-          if (0)
-             VG_(printf)("Looks like you've got a early 2.4.X kernel here.\n");
-          sp -= 22;
-       } else
-       if (sp[2] == VKI_AT_CLKTCK
-           && sp[0] == VKI_AT_PAGESZ
-           && sp[-2] == VKI_AT_HWCAP
-           && sp[-4-1] == 0) {
-          if (0)
-             VG_(printf)("Looks like a 2.5.43-2.5.67 kernel here.\n");
-          sp -= 4;
-       } else
-       if (sp[2] == VKI_AT_CLKTCK
-           && sp[0] == VKI_AT_PAGESZ
-           && sp[-2] == VKI_AT_HWCAP
-           && sp[-6] == VKI_AT_SYSINFO
-           && sp[-6-1] == 0) {
-          if (0)
-             VG_(printf)("Looks like a >= 2.5.68 kernel with "
-                         "a sysinfo page at %x here.\n", sp[-5]);
-	  VG_(sysinfo_page_exists) = True;
-	  VG_(sysinfo_page_addr) = sp[-5];
-          sp -= 6;
-       } else
-         args_grok_error(
-            "ELF frame does not look like 2.2.X or 2.4.X.\n   "
-            "See kernel sources linux/fs/binfmt_elf.c to make sense of this."
-         );
-
-       sp--;
-       if (*sp != 0)
-	 args_grok_error("can't find NULL at end of env[]");
-
-       /* sp now points to NULL at the end of env[] */
-       ctr = 0;
-       while (True) {
-           sp --;
-           if (*sp == 0) break;
-           if (++ctr >= 2000)
-              args_grok_error(
-                 "suspiciously many (2000) env[] entries; giving up");
-           
-       }
-       /* sp now points to NULL at the end of argv[] */
-       VG_(client_envp) = (Char**)(sp+1);
-
-       ctr = 0;
-       VG_(client_argc) = 0;
-       while (True) {
-          sp--;
-          if (*sp == VG_(client_argc))
-             break;
-          VG_(client_argc)++;
-           if (++ctr >= 1000)
-              args_grok_error(
-                 "suspiciously many (1000) argv[] entries; giving up");
-       }
-
-       VG_(client_argv) = (Char**)(sp+1);
-   }
-
-   /* Now that VG_(client_envp) has been set, we can extract the args
-      for Valgrind itself.  Copy into global var so that we don't have to
-      write zeroes to the getenv'd value itself. */
-   str = VG_(getenv)("VG_ARGS");
-   argc = 0;
-
-   if (!str) {
-      config_error("Can't read options from env var VG_ARGS.");
-   }
-
-   if (VG_(strlen)(str) >= M_VG_CMDLINE_STRLEN-1) {
-      config_error("Command line length exceeds M_CMDLINE_STRLEN.");
-   }
-   VG_(strcpy)(vg_cmdline_copy, str);
-   str = NULL;
-
-   p = &vg_cmdline_copy[0];
-   while (True) {
-      while (ISSPACE(*p)) { *p = 0; p++; }
-      if (*p == 0) break;
-      if (argc < M_VG_CMDLINE_OPTS-1) { 
-         argv[argc] = p; argc++; 
-      } else {
-         config_error(
-            "Found more than M_CMDLINE_OPTS command-line opts.");
+   for(auxp = kp->client_auxv; auxp[0] != VKI_AT_NULL; auxp += 2) {
+      switch(auxp[0]) {
+      case VKI_AT_SYSINFO:
+	 VG_(sysinfo_page_exists) = True;
+	 VG_(sysinfo_page_addr) = auxp[1];
+	 break;
       }
-      while (*p != 0 && !ISSPACE(*p)) p++;
-   }
+   } 
 
-   for (i = 0; i < argc; i++) {
+   VG_(client_envp) = kp->client_envp;
 
-      if      (VG_CLO_STREQ(argv[i], "-v") ||
+   argc = kp->argc;
+   argv = kp->argv;
+
+   VG_(vg_argc) = argc;
+   VG_(vg_argv) = argv;
+
+   /* We know the initial ESP is pointing at argc/argv */
+   VG_(client_argc) = *(Int *)kp->client_esp;
+   VG_(client_argv) = (Char **)(kp->client_esp + sizeof(Int));
+
+   for (i = 1; i < argc; i++) {
+      /* Ignore these options - they've already been handled */
+      if (VG_CLO_STREQN(7, argv[i], "--tool=") ||
+	  VG_CLO_STREQN(7, argv[i], "--skin="))
+	 continue;
+      if (VG_CLO_STREQN(7, argv[i], "--exec="))
+	 continue;
+
+      if (     VG_CLO_STREQ(argv[i], "--"))
+	 continue;
+      else if (VG_CLO_STREQ(argv[i], "-v") ||
                VG_CLO_STREQ(argv[i], "--verbose"))
          VG_(clo_verbosity)++;
       else if (VG_CLO_STREQ(argv[i], "-q") ||
@@ -982,6 +825,11 @@ static void process_cmd_line_options ( void )
          VG_(clo_show_below_main) = True;
       else if (VG_CLO_STREQ(argv[i], "--show-below-main=no"))
          VG_(clo_show_below_main) = False;
+
+      else if (VG_CLO_STREQ(argv[i], "--pointercheck=yes"))
+         VG_(clo_pointercheck) = True;
+      else if (VG_CLO_STREQ(argv[i], "--pointercheck=no"))
+         VG_(clo_pointercheck) = False;
 
       else if (VG_CLO_STREQ(argv[i], "--demangle=yes"))
          VG_(clo_demangle) = True;
@@ -1142,10 +990,10 @@ static void process_cmd_line_options ( void )
       else if (VG_(needs).command_line_options) {
          Bool ok = SK_(process_cmd_line_option)(argv[i]);
          if (!ok)
-            usage();
+            VG_(usage)();
       }
       else
-         usage();
+         VG_(usage)();
    }
 
 #  undef ISSPACE
@@ -1294,19 +1142,27 @@ static void process_cmd_line_options ( void )
    if (VG_(clo_verbosity) > 1) {
       if (VG_(clo_log_to) != VgLogTo_Fd)
          VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "Valgrind library directory: %s", VG_(libdir));
       VG_(message)(Vg_UserMsg, "Command line");
       for (i = 0; i < VG_(client_argc); i++)
          VG_(message)(Vg_UserMsg, "   %s", VG_(client_argv)[i]);
 
       VG_(message)(Vg_UserMsg, "Startup, with flags:");
-      for (i = 0; i < argc; i++) {
+      for (i = 1; i < argc; i++) {
          VG_(message)(Vg_UserMsg, "   %s", argv[i]);
       }
    }
 
-   if (VG_(clo_n_suppressions) == 0 && 
+   if (VG_(clo_n_suppressions) < VG_CLO_MAX_SFILES-1 &&
        (VG_(needs).core_errors || VG_(needs).skin_errors)) {
-      config_error("No error-suppression files were specified.");
+      /* If there are no suppression files specified and the skin
+	 needs one, load the default */
+      static const Char default_supp[] = "default.supp";
+      Int len = VG_(strlen)(VG_(libdir)) + 1 + sizeof(default_supp);
+      Char *buf = VG_(arena_malloc)(VG_AR_CORE, len);
+      VG_(sprintf)(buf, "%s/%s", VG_(libdir), default_supp);
+      VG_(clo_suppressions)[VG_(clo_n_suppressions)] = buf;
+      VG_(clo_n_suppressions)++;
    }
 
    if (VG_(clo_gen_suppressions) && 
@@ -1421,30 +1277,6 @@ Addr VG_(get_stack_pointer) ( void )
    return VG_(baseBlock)[VGOFF_(m_esp)];
 }
 
-/* Some random tests needed for leak checking */
-
-Bool VG_(within_stack)(Addr a)
-{
-   if (a >= ((Addr)(&VG_(stack)))
-       && a <= ((Addr)(&VG_(stack))) + sizeof(VG_(stack)))
-      return True;
-   else
-      return False;
-}
-
-Bool VG_(within_m_state_static_OR_threads)(Addr a)
-{
-   if (a >= ((Addr)(&VG_(m_state_static)))
-       && a < ((Addr)(&VG_(m_state_static))) + sizeof(VG_(m_state_static)))
-      return True;
-
-   if (a >= ((Addr)(&VG_(threads)[0]))
-       && a < ((Addr)(&VG_(threads)[VG_N_THREADS])))
-      return True;
-
-   return False;
-}
-
 /* ---------------------------------------------------------------------
    Show accumulated counts.
    ------------------------------------------------------------------ */
@@ -1519,10 +1351,46 @@ static void newpid(ThreadId unused)
 /* Where we jump to once Valgrind has got control, and the real
    machine's state has been copied to the m_state_static. */
 
-void VG_(main) ( void )
+void VG_(main) ( const KickstartParams *kp, void (*tool_init)(void), void *tool_dlhandle )
 {
-   Int               i;
    VgSchedReturnCode src;
+
+   /* initial state */
+   if (0)
+      VG_(printf)("starting esp=%p eip=%p, esp=%p\n", kp->client_esp, kp->client_eip, &src);
+   VG_(esp_at_startup) = kp->client_esp;
+   VG_(memset)(&VG_(m_state_static), 0, sizeof(VG_(m_state_static)));
+   VG_(m_state_static)[40/4] = kp->client_esp;
+   VG_(m_state_static)[60/4] = kp->client_eip;
+
+   /* set up an initial FPU state (doesn't really matter what it is,
+      so long as it's somewhat valid) */
+   if (!VG_(have_ssestate))
+	   asm volatile("fwait; fnsave %0; fwait; frstor %0; fwait" 
+			: : "m" (VG_(m_state_static)[64/4]) : "cc", "memory");
+   else
+	   asm volatile("fwait; fxsave %0; fwait; andl $0xffbf, %1; fxrstor %0; fwait"
+			: : "m" (VG_(m_state_static)[64/4]), "m" (VG_(m_state_static)[(64+24)/4]) : "cc", "memory");
+
+   VG_(brk_base)          = VG_(brk_limit) = kp->client_brkbase;
+   VG_(client_base)       = kp->client_base;
+   VG_(client_end)        = kp->client_end;
+   VG_(client_mapbase)    = kp->client_mapbase;
+   VG_(clstk_base)        = kp->clstk_base;
+   VG_(clstk_end)         = kp->clstk_end;
+
+   VG_(shadow_base)	  = kp->shadow_base;
+   VG_(shadow_end)	  = kp->shadow_end;
+   VG_(valgrind_base)	  = kp->vg_base;
+   VG_(valgrind_mmap_end) = kp->vg_mmap_end;
+   VG_(valgrind_end)	  = kp->vg_end;
+
+   VG_(libdir)            = kp->libdir;
+
+   vg_assert(VG_(clstk_end) == VG_(client_end));
+
+   if (kp->execfd != -1)
+      VG_(execfd) = VG_(safe_fd)(kp->execfd);
 
    if (0) {
       if (VG_(have_ssestate))
@@ -1531,35 +1399,8 @@ void VG_(main) ( void )
          VG_(printf)("Looks like a MMX-only CPU\n");
    }
 
-   /* Check skin and core versions are compatible */
-   if (VG_CORE_INTERFACE_MAJOR_VERSION != VG_(skin_interface_major_version)) {
-      VG_(printf)("Error:\n"
-                  "  Tool and core interface versions do not match.\n"
-                  "  Interface version used by core is: %d.%d\n"
-                  "  Interface version used by tool is: %d.%d\n"
-                  "  The major version numbers must match.\n",
-                  VG_CORE_INTERFACE_MAJOR_VERSION,
-                  VG_CORE_INTERFACE_MINOR_VERSION,
-                  VG_(skin_interface_major_version),
-                  VG_(skin_interface_minor_version));
-      VG_(printf)("  You need to at least recompile, and possibly update,\n");
-      if (VG_CORE_INTERFACE_MAJOR_VERSION > VG_(skin_interface_major_version))
-         VG_(printf)("  your skin to work with this version of Valgrind.\n");
-      else
-         VG_(printf)("  your version of Valgrind to work with this skin.\n");
-      VG_(printf)("  Aborting, sorry.\n");
-      VG_(exit)(1);
-   }
-
    VG_(atfork)(NULL, NULL, newpid);
    newpid(VG_INVALID_THREADID);
-
-   /* Set up our stack sanity-check words. */
-   for (i = 0; i < 10; i++) {
-      VG_(stack)[i] = (UInt)(&VG_(stack)[i])                   ^ 0xA4B3C2D1;
-      VG_(stack)[VG_STACK_SIZE_W-1-i] 
-                    = (UInt)(&VG_(stack)[VG_STACK_SIZE_W-i-1]) ^ 0xABCD4321;
-   }
 
    /* Read /proc/self/maps into a buffer.  Must be before:
       - SK_(pre_clo_init)(): so that if it calls VG_(malloc)(), any mmap'd
@@ -1578,11 +1419,13 @@ void VG_(main) ( void )
         and turn on/off 'command_line_options' need
       - init_memory() (to setup memory event trackers).
    */
-   SK_(pre_clo_init)();
+   (*tool_init)();
+   VG_(tool_init_dlsym)(tool_dlhandle);
+
    VG_(sanity_check_needs)();
 
-   /* Process Valgrind's command-line opts (from env var VG_ARGS). */
-   process_cmd_line_options();
+   /* Process Valgrind's command-line opts */
+   process_cmd_line_options(kp);
 
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
@@ -1657,6 +1500,27 @@ void VG_(main) ( void )
 
    VG_(bbs_to_go) = VG_(clo_stop_after);
 
+   if (VG_(clo_pointercheck)) {
+      vki_modify_ldt_t ldt = { VG_POINTERCHECK_SEGIDX,
+			       VG_(client_base),
+			       (VG_(client_end)-VG_(client_base)) / VKI_BYTES_PER_PAGE,
+			       1,		/* 32 bit */
+			       0,		/* contents: data, RW, non-expanding */
+			       0,		/* not read-exec only */
+			       1,		/* limit in pages */
+			       0,		/* !seg not present */
+			       1,		/* usable */
+      };
+      Int ret = VG_(do_syscall)(__NR_modify_ldt, 1, &ldt, sizeof(ldt));
+
+      if (ret < 0) {
+	 VG_(message)(Vg_UserMsg,
+		      "Warning: ignoring --pointercheck=yes, "
+		      "because modify_ldt failed (errno=%d)", -ret);
+	 VG_(clo_pointercheck) = False;
+      }
+   }
+
    /* Run! */
    VG_(running_on_simd_CPU) = True;
    VGP_PUSHCC(VgpSched);
@@ -1710,20 +1574,6 @@ void VG_(main) ( void )
       VGP_(done_profiling)();
 
    VG_(shutdown_logging)();
-
-   /* Remove valgrind.so from a LD_PRELOAD=... string so child
-      processes don't get traced into.  Also mess up $libdir/valgrind
-      so that our libpthread.so disappears from view. */
-   /* 26 Apr 03: doing this often causes trouble for no reason, and is
-      pointless when we are just about to VgSrc_ExitSyscall.  So don't
-      bother in that case. */
-   if ((!VG_(clo_trace_children))
-       && src != VgSrc_ExitSyscall) { 
-      VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH)(
-         VG_(getenv)("LD_PRELOAD"),
-         VG_(getenv)("LD_LIBRARY_PATH") 
-      );
-   }
 
    /* We're exiting, so nuke all the threads and clean up the proxy LWPs */
    vg_assert(src == VgSrc_FatalSig ||
@@ -1794,149 +1644,65 @@ void VG_(oynk) ( Int n )
 }
 
 
-/* Find "valgrind.so" in a LD_PRELOAD=... string, and convert it to
-   "valgrinq.so", which doesn't do anything.  This is used to avoid
-   tracing into child processes.  To make this work the build system
-   also supplies a dummy file, "valgrinq.so". 
+/* Walk through a colon-separated environment variable, and remove the
+   entries which matches file_pattern.  It slides everything down over
+   the removed entries, and pads the remaining space with '\0'.  It
+   modifies the entries in place (in the client address space), but it
+   shouldn't matter too much, since we only do this just before an
+   execve().
 
-   Also replace "vgskin_<foo>.so" with whitespace, for the same reason;
-   without it, child processes try to find valgrind.so symbols in the 
-   skin .so.
-
-   Also look for $(libdir)/lib/valgrind in LD_LIBRARY_PATH and change
-   it to $(libdir)/lib/valgrinq, so as to make our libpthread.so
-   disappear.  
+   This is also careful to mop up any excess ':'s, since empty strings
+   delimited by ':' are considered to be '.' in a path.
 */
-static void slideleft ( Char* s )
+void VG_(mash_colon_env)(Char *varp, const Char *remove_pattern)
 {
-   vg_assert(s && (*s == ' ' || *s == ':'));
-   while (True) {
-      s[0] = s[1];
-      if (s[0] == '\0') break;
-      s++;
-   }
-}
+   Char *const start = varp;
+   Char *entry_start = varp;
+   Char *output = varp;
 
-
-void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
-                                                Char* ld_library_path_str )
-{
-   Char* vg_prel  = NULL;
-   Char* sk_prel  = NULL;
-   Char* coredir2 = NULL;
-   Char* p;
-   Char* coredir_first;
-   Char* coredir_last;
-   Int   coredir_len;
-   Int   i;
-   Int   what;
-
-#define MUTANCY(n)   { what = n; goto mutancy; }
-
-   if (ld_preload_str == NULL || ld_library_path_str == NULL) MUTANCY(0);
-
-   /* VG_(printf)("pre:\n%s\n%s\n", ld_preload_str, ld_library_path_str); */
-
-   /* LD_PRELOAD      = "<skindir>/vgskin_foo.so:<coredir>/valgrind.so:X"
-      LD_LIBRARY_PATH = "<coredir>:Y"  */
-
-   /* Setting up, finding things */
-
-   /* LD_PRELOAD: Search for "valgrind.so" */
-   vg_prel = VG_(strstr)(ld_preload_str, "valgrind.so");
-
-   /* LD_PRELOAD: if "valgrind.so" not found, has been done before;
-      "valgrinq.so" should be there instead.  Then stop. */
-   if (NULL == vg_prel) {
-      if (VG_(strstr)(ld_preload_str, "valgrinq.so") == NULL) MUTANCY(1);
+   if (varp == NULL)
       return;
+
+   while(*varp) {
+      if (*varp == ':') {
+	 Char prev;
+	 Bool match;
+
+	 /* This is a bit subtle: we want to match against the entry
+	    we just copied, because it may have overlapped with
+	    itself, junking the original. */
+
+	 prev = *output;
+	 *output = '\0';
+
+	 match = VG_(string_match)(remove_pattern, entry_start);
+
+	 *output = prev;
+	 
+	 if (match) {
+	    output = entry_start;
+	    varp++;			/* skip ':' after removed entry */
+	 } else
+	    entry_start = output+1;	/* entry starts after ':' */
+      }
+
+      *output++ = *varp++;
    }
 
-   /* LD_PRELOAD: find start of <coredir> */
-   p = vg_prel;
+   /* match against the last entry */
+   if (VG_(string_match)(remove_pattern, entry_start)) {
+      output = entry_start;
+      if (output > start) {
+	 /* remove trailing ':' */
+	 output--;
+	 vg_assert(*output == ':');
+      }
+   }	 
 
-   for (p = vg_prel;  *p != ':' && p > ld_preload_str;  p--) { }
-   if (*p != ':') MUTANCY(2);  /* skin.so entry must precede it */
-   coredir_first = p+1;
-   coredir_last  = vg_prel - 1;
-   coredir_len   = coredir_last - coredir_first;
-   
-   /* LD_PRELOAD: find "vgskin_foo.so" */
-   sk_prel = VG_(strstr)(ld_preload_str, "vgskin_");
-   if (sk_prel == NULL) MUTANCY(4);
-
-   /* LD_LIBRARY_PATH: find <coredir> */
-   *coredir_last = '\0';      /* Temporarily zero-terminate coredir */
-   coredir2 = VG_(strstr)(ld_library_path_str, coredir_first);
-   if (coredir2 == NULL) MUTANCY(5);
-   *coredir_last = '/';       /* Undo zero-termination */
-
-   /* Changing things */
-
-   /* LD_PRELOAD: "valgrind.so" --> "valgrinq.so" */
-   if (vg_prel[7] != 'd') MUTANCY(6);
-   vg_prel[7] = 'q';
-
-   /* LD_PRELOAD: "<skindir>/vgskin_foo.so:<coredir>/valgrinq.so:X" -->
-                  "          vgskin_foo.so:<coredir>/valgrinq.so:X" */
-   p = sk_prel-1;
-   while (*p != ':' && p >= ld_preload_str) { 
-      *p = ' ';
-      p--;
-   }
-   /* LD_PRELOAD: "          vgskin_foo.so:<coredir>/valgrinq.so:X" -->
-                  "                       :<coredir>/valgrinq.so:X" */
-   p = sk_prel;
-   while (*p != ':' && *p != '\0') { 
-      *p = ' ';
-      p++;
-   }
-   if (*p == '\0') MUTANCY(7);    /* valgrind.so has disappeared?! */
-
-   /* LD_LIBRARY_PATH: "<coredir>:Y" --> "         :Y"  */
-   for (i = 0; i < coredir_len; i++)
-      coredir2[i] = ' ';
-   
-   /* Zap the leading spaces and : in both strings. */
-   while (ld_preload_str[0] == ' ') slideleft(ld_preload_str);
-   if    (ld_preload_str[0] == ':') slideleft(ld_preload_str);
-
-   while (ld_library_path_str[0] == ' ') slideleft(ld_library_path_str);
-   if    (ld_library_path_str[0] == ':') slideleft(ld_library_path_str);
-
-   /* VG_(printf)("post:\n%s\n%s\n", ld_preload_str, ld_library_path_str); */
-
-   return;
-
-
-mutancy:
-   VG_(printf)(
-      "\nVG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH): internal error:\n"
-      "   what                = %d\n"
-      "   ld_preload_str      = `%s'\n"
-      "   ld_library_path_str = `%s'\n"
-      "   vg_prel             = `%s'\n"
-      "   sk_prel             = `%s'\n"
-      "   coredir2            = `%s'\n"
-      "   VG_LIBDIR           = `%s'\n",
-      what, ld_preload_str, ld_library_path_str, 
-      vg_prel, sk_prel, coredir2, VG_LIBDIR 
-   );
-   VG_(printf)(
-      "\n"
-      "Note that this is often caused by mis-installation of valgrind.\n"
-      "Correct installation procedure is:\n"
-      "   ./configure --prefix=/install/dir\n"
-      "   make install\n"
-      "And then use /install/dir/bin/valgrind\n"
-      "Moving the installation directory elsewhere after 'make install'\n"
-      "will cause the above error.  Hand-editing the paths in the shell\n"
-      "scripts is also likely to cause problems.\n"
-      "\n"
-   );
-   VG_(core_panic)("VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) failed\n");
+   /* pad out the left-overs with '\0' */
+   while(output < varp)
+      *output++ = '\0';
 }
-
 
 /* RUNS ON THE CLIENT'S STACK, but on the real CPU.  Start GDB and get
    it to attach to this process.  Called if the user requests this
@@ -2001,8 +1767,6 @@ void VG_(unimplemented) ( Char* msg )
 
 void VG_(do_sanity_checks) ( Bool force_expensive )
 {
-   Int          i;
-
    VGP_PUSHCC(VgpCoreCheapSanity);
 
    if (VG_(sanity_level) < 1) return;
@@ -2010,14 +1774,6 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
    /* --- First do all the tests that we can do quickly. ---*/
 
    VG_(sanity_fast_count)++;
-
-   /* Check that we haven't overrun our private stack. */
-   for (i = 0; i < 10; i++) {
-      vg_assert(VG_(stack)[i]
-                == ((UInt)(&VG_(stack)[i]) ^ 0xA4B3C2D1));
-      vg_assert(VG_(stack)[VG_STACK_SIZE_W-1-i] 
-                == ((UInt)(&VG_(stack)[VG_STACK_SIZE_W-i-1]) ^ 0xABCD4321));
-   }
 
    /* Check stuff pertaining to the memory check system. */
 

@@ -4,19 +4,25 @@ SUBDIRS = . tests docs
 all_includes = -I$(top_srcdir)/include
 
 AM_CPPFLAGS = $(all_includes) -DVG_LIBDIR="\"$(libdir)"\"
-AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
+AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O2 -fomit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g
 AM_CCASFLAGS = $(all_includes)
 
 valdir = $(libdir)/valgrind
+inplacedir = $(top_srcdir)/.in_place
 
-val_PROGRAMS = vgskin_memcheck.so
+val_PROGRAMS = vgskin_memcheck.so vgpreload_memcheck.so
+
+vgpreload_memcheck_so_SOURCES = \
+	mac_replace_strmem.c
+vgpreload_memcheck_so_LDADD = $(top_srcdir)/coregrind/vg_replace_malloc.o
+vgpreload_memcheck_so_DEPENDENCIES = $(top_srcdir)/coregrind/vg_replace_malloc.o
+vgpreload_memcheck_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst
 
 vgskin_memcheck_so_SOURCES = \
 	mac_leakcheck.c \
 	mac_malloc_wrappers.c \
 	mac_needs.c \
-	mac_replace_strmem.c \
 	mc_main.c \
 	mc_clientreqs.c \
 	mc_errcontext.c \
@@ -24,7 +30,6 @@ vgskin_memcheck_so_SOURCES = \
 	mc_translate.c \
 	mc_helpers.S
 vgskin_memcheck_so_LDFLAGS = -shared
-vgskin_memcheck_so_LDADD = ../coregrind/vg_replace_malloc.o
 
 mcincludedir = $(includedir)/valgrind
 
@@ -38,3 +43,7 @@ noinst_HEADERS =	\
 
 mac_replace_strmem.o: CFLAGS += -fno-omit-frame-pointer
 
+all-local:
+	mkdir -p $(inplacedir)
+	-rm -f $(addprefix $(inplacedir)/,$(val_PROGRAMS))
+	ln -f -s $(addprefix $(top_srcdir)/$(subdir)/,$(val_PROGRAMS)) $(inplacedir)

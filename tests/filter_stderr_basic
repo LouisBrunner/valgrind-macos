@@ -23,6 +23,10 @@ sed "s/vg_intercept.c:[0-9]\+/vg_intercept.c:.../"                     |
 # Anonymise vg_libpthread lines
 sed "s/vg_libpthread.c:[0-9]\+/vg_libpthread.c:.../"                   |
 
+# Hide suppressed error counts
+sed "s/^\(ERROR SUMMARY[^(]*(suppressed: \)[0-9]\+\( from \)[0-9]\+)$/\10\20)/" |
+
+
 # Reduce some libc incompatibility
 sed "s/ __getsockname / getsockname /"                                 |
 sed "s/ __sigaction / sigaction /"                                     |

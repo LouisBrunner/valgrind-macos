@@ -1,4 +1,3 @@
-
 ##--------------------------------------------------------------------##
 ##--- Support routines for the JITter output.                      ---##
 ##---                                                 vg_helpers.S ---##
@@ -38,8 +37,13 @@
    to the request.  In both cases we use the user request mechanism.
    You need to to read the definition of VALGRIND_MAGIC_SEQUENCE
    in valgrind.h to make sense of this.
+
+   This isn't used in-place.  It is copied into the client address space
+   at an arbitary address.  Therefore, this code must be completely
+   position-independent.
 */
 .global VG_(signalreturn_bogusRA)
+.global VG_(signalreturn_bogusRA_length)
 VG_(signalreturn_bogusRA):
 	subl	$20, %esp	# allocate arg block
 	movl	%esp, %edx	# %edx == &_zzq_args[0]
@@ -57,15 +61,10 @@ VG_(signalreturn_bogusRA):
 	roll $13, %eax
 	roll $19, %eax
 	# should never get here
-	pushl	$signalreturn_bogusRA_panic_msg
-	call	VG_(core_panic)
-	
-.data
-signalreturn_bogusRA_panic_msg:
-.ascii	"vg_signalreturn_bogusRA: VG_USERREQ__SIGNAL_RETURNS was missed"
-.byte	0
-.text	
-	
+	ud2
+
+VG_(signalreturn_bogusRA_length):
+	.long . - VG_(signalreturn_bogusRA)
 
 
 	

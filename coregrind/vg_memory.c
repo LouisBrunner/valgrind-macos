@@ -32,180 +32,591 @@
 
 #include "vg_include.h"
 
+#include <stddef.h>
+
 /* Define to debug the memory-leak-detector. */
 /* #define VG_DEBUG_LEAKCHECK */
 
+static const Bool mem_debug = False;
+
+static Int addrcmp(const void *ap, const void *bp)
+{
+   Addr a = *(Addr *)ap;
+   Addr b = *(Addr *)bp;
+   Int ret;
+
+   if (a == b)
+      ret = 0;
+   else
+      ret = (a < b) ? -1 : 1;
+
+   return ret;
+}
+
+static Char *straddr(void *p)
+{
+   static Char buf[16];
+
+   VG_(sprintf)(buf, "%p", *(Addr *)p);
+
+   return buf;
+}
+
+static SkipList sk_segments = SKIPLIST_INIT(Segment, addr, addrcmp, straddr, VG_AR_CORE);
+
+/*--------------------------------------------------------------*/
+/*--- Maintain an ordered list of all the client's mappings  ---*/
+/*--------------------------------------------------------------*/
+
+Bool VG_(seg_contains)(const Segment *s, Addr p, UInt len)
+{
+   Addr se = s->addr+s->len;
+   Addr pe = p+len;
+
+   vg_assert(pe >= p);
+
+   return (p >= s->addr && pe <= se);
+}
+
+Bool VG_(seg_overlaps)(const Segment *s, Addr p, UInt len)
+{
+   Addr se = s->addr+s->len;
+   Addr pe = p+len;
+
+   vg_assert(pe >= p);
+
+   return (p < se && pe > s->addr);
+}
+
+/* Prepare a Segment structure for recycling by freeing everything
+   hanging off it. */
+static void recycleseg(Segment *s)
+{
+   if (s->flags & SF_CODE)
+      VG_(invalidate_translations)(s->addr, s->len, False);
+
+   if (s->filename != NULL)
+      VG_(arena_free)(VG_AR_CORE, (Char *)s->filename);
+
+   /* keep the SegInfo, if any - it probably still applies */
+}
+
+/* When freeing a Segment, also clean up every one else's ideas of
+   what was going on in that range of memory */
+static void freeseg(Segment *s)
+{
+   recycleseg(s);
+   if (s->symtab != NULL) {
+      VG_(symtab_decref)(s->symtab, s->addr, s->len);
+      s->symtab = NULL;
+   }
+
+   VG_(SkipNode_Free)(&sk_segments, s);
+}
+
+/* Split a segment at address a */
+static Segment *split_segment(Addr a)
+{
+   Segment *s = VG_(SkipList_Find)(&sk_segments, &a);
+   Segment *ns;
+   Int delta;
+
+   vg_assert((a & (VKI_BYTES_PER_PAGE-1)) == 0);
+
+   /* missed */
+   if (s == NULL)
+      return NULL;
+
+   /* a at or beyond endpoint */
+   if (s->addr == a || a >= (s->addr+s->len))
+      return NULL;
+
+   vg_assert(a > s->addr && a < (s->addr+s->len));
+
+   ns = VG_(SkipNode_Alloc)(&sk_segments);
+
+   *ns = *s;
+
+   delta = a - s->addr;
+   ns->addr += delta;
+   ns->offset += delta;
+   ns->len -= delta;
+
+   if (ns->symtab != NULL)
+      VG_(symtab_incref)(ns->symtab);
+
+   VG_(SkipList_Insert)(&sk_segments, ns);
+
+   return ns;
+}
+
+/* This unmaps all the segments in the range [addr, addr+len); any
+   partial mappings at the ends are truncated. */
+void VG_(unmap_range)(Addr addr, UInt len)
+{
+   Segment *s;
+   Segment *next;
+   static const Bool debug = False || mem_debug;
+
+   if (len == 0)
+      return;
+
+   if (debug)
+      VG_(printf)("unmap_range(%p, %d)\n", addr, len);
+
+   len = PGROUNDUP(addr+len)-PGROUNDDN(addr);
+   addr = PGROUNDDN(addr);
+
+   /* Everything must be page-aligned */
+   vg_assert((addr & (VKI_BYTES_PER_PAGE-1)) == 0);
+   vg_assert((len  & (VKI_BYTES_PER_PAGE-1)) == 0);
+
+   for(s = VG_(SkipList_Find)(&sk_segments, &addr); 
+       s != NULL && s->addr < (addr+len); 
+       s = next) {
+
+      /* fetch next now in case we end up deleting this segment */
+      next = VG_(SkipNode_Next)(&sk_segments, s);
+
+      if (debug)
+	 VG_(printf)("unmap: addr=%p s=%p ->addr=%p len=%d end=%p\n",
+		     addr, s, s->addr, s->len, s->addr+s->len);
+
+      if (!VG_(seg_overlaps)(s, addr, len))
+	 continue;
+
+      /* 4 cases: */
+      if (addr > s->addr && addr < (s->addr + s->len)) {
+	 /* this segment's tail is truncated by [addr, addr+len)
+	    -> truncate tail
+	 */
+	 s->len = addr - s->addr;
+
+	 if (debug)
+	    VG_(printf)("  case 1: s->len=%d\n", s->len);
+      } else if (addr <= s->addr && (addr+len) >= (s->addr + s->len)) {
+	 /* this segment is completely contained within [addr, addr+len)
+	    -> delete segment
+	 */
+	 Segment *rs = VG_(SkipList_Remove)(&sk_segments, &s->addr);
+	 vg_assert(rs == s);
+	 freeseg(s);
+
+	 if (debug)
+	    VG_(printf)("  case 2: s==%p deleted\n", s);
+      } else if ((addr+len) > s->addr && (addr+len) < (s->addr+s->len)) {
+	 /* this segment's head is truncated by [addr, addr+len)
+	    -> truncate head
+	 */
+	 Int delta = (addr+len) - s->addr;
+
+	 s->addr += delta;
+	 s->offset += delta;
+	 s->len -= delta;
+
+	 if (debug)
+	    VG_(printf)("  case 3: s->addr=%p s->len=%d delta=%d\n", s->addr, s->len, delta);
+      } else if (addr > s->addr && (addr+len) < (s->addr + s->len)) {
+	 /* [addr, addr+len) is contained within a single segment
+	    -> split segment into 3, delete middle portion
+	  */
+	 Segment *middle, *rs;
+
+	 middle = split_segment(addr);
+	 split_segment(addr+len);
+
+	 vg_assert(middle->addr == addr);
+	 rs = VG_(SkipList_Remove)(&sk_segments, &addr);
+	 vg_assert(rs == middle);
+
+	 freeseg(rs);
+
+	 if (debug)
+	    VG_(printf)("  case 4: subrange %p-%p deleted\n",
+			addr, addr+len);
+      }
+   }
+}
+
+/* If possible, merge segment with its neighbours - some segments,
+   including s, may be destroyed in the process */
+static inline Bool neighbours(Segment *s1, Segment *s2)
+{
+   if (s1->addr+s1->len != s2->addr)
+      return False;
+
+   if (s1->flags != s2->flags)
+      return False;
+
+   if (s1->prot != s2->prot)
+      return False;
+
+   if (s1->symtab != s2->symtab)
+      return False;
+
+   if (s1->flags & SF_FILE){
+      if ((s1->offset + s1->len) != s2->offset)
+	 return False;
+      if (s1->dev != s2->dev)
+	 return False;
+      if (s1->ino != s2->ino)
+	 return False;
+   }
+   
+   return True;
+}
+
+/* Merge segments in the address range if they're adjacent and
+   compatible */
+static void merge_segments(Addr a, UInt len)
+{
+   Segment *s;
+   Segment *next;
+
+   vg_assert((a & (VKI_BYTES_PER_PAGE-1)) == 0);
+   vg_assert((len & (VKI_BYTES_PER_PAGE-1)) == 0);
+
+   a -= VKI_BYTES_PER_PAGE;
+   len += VKI_BYTES_PER_PAGE;
+
+   for(s = VG_(SkipList_Find)(&sk_segments, &a);
+       s != NULL && s->addr < (a+len);) {
+      next = VG_(SkipNode_Next)(&sk_segments, s);
+
+      if (next && neighbours(s, next)) {
+	 Segment *rs;
+
+	 if (0)
+	    VG_(printf)("merge %p-%p with %p-%p\n",
+			s->addr, s->addr+s->len,
+			next->addr, next->addr+next->len);
+	 s->len += next->len;
+	 s = VG_(SkipNode_Next)(&sk_segments, next);
+
+	 rs = VG_(SkipList_Remove)(&sk_segments, &next->addr);
+	 vg_assert(next == rs);
+	 freeseg(next);
+      } else
+	 s = next;
+   }
+}
+
+void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags, 
+			   UInt dev, UInt ino, ULong off, const Char *filename)
+{
+   Segment *s;
+   static const Bool debug = False || mem_debug;
+   Bool recycled;
+
+   if (debug)
+      VG_(printf)("map_file_segment(%p, %d, %x, %x, %4x, %d, %ld, %s)\n",
+		  addr, len, prot, flags, dev, ino, off, filename);
+
+   /* Everything must be page-aligned */
+   vg_assert((addr & (VKI_BYTES_PER_PAGE-1)) == 0);
+   len = PGROUNDUP(len);
+
+   /* First look to see what already exists around here */
+   s = VG_(SkipList_Find)(&sk_segments, &addr);
+
+   if (s != NULL && s->addr == addr && s->len == len) {
+      /* This probably means we're just updating the flags */
+      recycled = True;
+      recycleseg(s);
+
+      /* If we had a symtab, but the new mapping is incompatible, then
+	 free up the old symtab in preparation for a new one. */
+      if (s->symtab != NULL		&&
+	  (!(s->flags & SF_FILE)	||
+	   !(flags & SF_FILE)		||
+	   s->dev != dev		||
+	   s->ino != ino		||
+	   s->offset != off)) {
+	 VG_(symtab_decref)(s->symtab, s->addr, s->len);
+	 s->symtab = NULL;
+      }
+   } else {
+      recycled = False;
+      VG_(unmap_range)(addr, len);
+
+      s = VG_(SkipNode_Alloc)(&sk_segments);
+
+      s->addr   = addr;
+      s->len    = len;
+      s->symtab = NULL;
+   }
+
+   s->flags  = flags;
+   s->prot   = prot;
+   s->dev    = dev;
+   s->ino    = ino;
+   s->offset = off;
+   
+   if (filename != NULL)
+      s->filename = VG_(arena_strdup)(VG_AR_CORE, filename);
+   else
+      s->filename = NULL;
+
+   if (debug) {
+      Segment *ts;
+      for(ts = VG_(SkipNode_First)(&sk_segments);
+	  ts != NULL;
+	  ts = VG_(SkipNode_Next)(&sk_segments, ts))
+	 VG_(printf)("list: %8p->%8p ->%d (0x%x) prot=%x flags=%x\n",
+		     ts, ts->addr, ts->len, ts->len, ts->prot, ts->flags);
+
+      VG_(printf)("inserting s=%p addr=%p len=%d\n",
+		  s, s->addr, s->len);
+   }
+
+   if (!recycled)
+      VG_(SkipList_Insert)(&sk_segments, s);
+
+   /* If this mapping is of the beginning of a file, isn't part of
+      Valgrind, is at least readable and seems to contain an object
+      file, then try reading symbols from it. */
+   if ((flags & (SF_MMAP|SF_NOSYMS)) == SF_MMAP	&&
+       s->symtab == NULL) {
+      if (off == 0									&&
+	  filename != NULL								&&
+	  (prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == (VKI_PROT_READ|VKI_PROT_EXEC)	&&
+	  len >= VKI_BYTES_PER_PAGE							&&
+	  s->symtab == NULL								&&
+	  VG_(is_object_file)((void *)addr)) {
+
+      s->symtab = VG_(read_seg_symbols)(s);
+
+      if (s->symtab != NULL)
+	 s->flags |= SF_DYNLIB;
+      } else if (flags & SF_MMAP) {
+	 const SegInfo *info;
+
+	 /* Otherwise see if an existing symtab applies to this Segment */
+	 for(info = VG_(next_seginfo)(NULL);
+	     info != NULL;
+	     info = VG_(next_seginfo)(info)) {
+	    if (VG_(seg_overlaps)(s, VG_(seg_start)(info), VG_(seg_size)(info))) {
+	       s->symtab = (SegInfo *)info;
+	       VG_(symtab_incref)((SegInfo *)info);
+	    }
+	 }
+      }
+   }
+
+   /* clean up */
+   merge_segments(addr, len);
+}
+
+void VG_(map_fd_segment)(Addr addr, UInt len, UInt prot, UInt flags, 
+			 Int fd, ULong off, const Char *filename)
+{
+   struct vki_stat st;
+   Char *name = NULL;
+
+   st.st_dev = 0;
+   st.st_ino = 0;
+
+   if (fd != -1 && (flags & SF_FILE)) {
+      vg_assert((off & (VKI_BYTES_PER_PAGE-1)) == 0);
+
+      if (VG_(fstat)(fd, &st) < 0)
+	 flags &= ~SF_FILE;
+   }
+
+   if ((flags & SF_FILE) && filename == NULL && fd != -1)
+      name = VG_(resolve_filename)(fd);
+
+   if (filename == NULL)
+      filename = name;
+
+   VG_(map_file_segment)(addr, len, prot, flags, st.st_dev, st.st_ino, off, filename);
+
+   if (name)
+      VG_(arena_free)(VG_AR_CORE, name);
+}
+
+void VG_(map_segment)(Addr addr, UInt len, UInt prot, UInt flags)
+{
+   flags &= ~SF_FILE;
+
+   VG_(map_file_segment)(addr, len, prot, flags, 0, 0, 0, 0);
+}
+
+/* set new protection flags on an address range */
+void VG_(mprotect_range)(Addr a, UInt len, UInt prot)
+{
+   Segment *s, *next;
+   static const Bool debug = False || mem_debug;
+
+   if (debug)
+      VG_(printf)("mprotect_range(%p, %d, %x)\n", a, len, prot);
+
+   /* Everything must be page-aligned */
+   vg_assert((a & (VKI_BYTES_PER_PAGE-1)) == 0);
+   vg_assert((len & (VKI_BYTES_PER_PAGE-1)) == 0);
+
+   split_segment(a);
+   split_segment(a+len);
+
+   for(s = VG_(SkipList_Find)(&sk_segments, &a);
+       s != NULL && s->addr < a+len;
+       s = next)
+   {
+      next = VG_(SkipNode_Next)(&sk_segments, s);
+      if (s->addr < a)
+	 continue;
+
+      s->prot = prot;
+   }
+
+   merge_segments(a, len);
+}
+
+Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
+{
+   Segment *s;
+   Addr ret;
+   static const Bool debug = False || mem_debug;
+   Addr limit = (for_client ? VG_(client_end) : VG_(valgrind_mmap_end));
+
+   if (addr == 0)
+      addr = for_client ? VG_(client_mapbase) : VG_(valgrind_base);
+   else {
+      /* leave space for redzone and still try to get the exact
+	 address asked for */
+      addr -= VKI_BYTES_PER_PAGE;
+   }
+   ret = addr;
+
+   /* Everything must be page-aligned */
+   vg_assert((addr & (VKI_BYTES_PER_PAGE-1)) == 0);
+   len = PGROUNDUP(len);
+
+   len += VKI_BYTES_PER_PAGE * 2; /* leave redzone gaps before and after mapping */
+
+   if (debug)
+      VG_(printf)("find_map_space: ret starts as %p-%p client=%d\n",
+		  ret, ret+len, for_client);
+
+   for(s = VG_(SkipList_Find)(&sk_segments, &ret);
+       s != NULL && s->addr < (ret+len);
+       s = VG_(SkipNode_Next)(&sk_segments, s))
+   {
+      if (debug)
+	 VG_(printf)("s->addr=%p len=%d (%p) ret=%p\n",
+		     s->addr, s->len, s->addr+s->len, ret);
+
+      if (s->addr < (ret + len) && (s->addr + s->len) > ret)
+	 ret = s->addr+s->len;
+   }
+
+   if (debug) {
+      if (s)
+	 VG_(printf)("  s->addr=%p ->len=%d\n", s->addr, s->len);
+      else
+	 VG_(printf)("  s == NULL\n");
+   }
+
+   if ((limit - len) < ret)
+      ret = 0;			/* no space */
+   else
+      ret += VKI_BYTES_PER_PAGE; /* skip leading redzone */
+
+   if (debug)
+      VG_(printf)("find_map_space(%p, %d, %d) -> %p\n",
+		  addr, len, for_client, ret);
+   
+   return ret;
+}
+
+Segment *VG_(find_segment)(Addr a)
+{
+   return VG_(SkipList_Find)(&sk_segments, &a);
+}
+
+Segment *VG_(next_segment)(Segment *s)
+{
+   return VG_(SkipNode_Next)(&sk_segments, s);
+}
 
 /*--------------------------------------------------------------*/
 /*--- Initialise program data/text etc on program startup.   ---*/
 /*--------------------------------------------------------------*/
 
-typedef
-   struct _ExeSeg {
-      Addr start;
-      UInt size;
-      struct _ExeSeg* next;
-   }
-   ExeSeg;
-
-/* The list of current executable segments loaded.  Required so that when a
-   segment is munmap'd, if it's executable we can recognise it as such and
-   invalidate translations for it, and drop any basic-block specific
-   information being stored.  If symbols are being used, this list will have
-   the same segments recorded in it as the SegInfo symbols list (but much
-   less information about each segment).
-*/
-static ExeSeg* exeSegsHead = NULL;
-
-/* Prepend it -- mmaps/munmaps likely to follow a stack pattern(?) so this
-   is good.
-   Also check no segments overlap, which would be very bad.  Check is linear
-   for each seg added (quadratic overall) but the total number should be
-   small (konqueror has around 50 --njn). */
-static void add_exe_segment_to_list( Addr a, UInt len ) 
+static
+void build_valgrind_map_callback ( Addr start, UInt size, 
+				   Char rr, Char ww, Char xx, UInt dev, UInt ino,
+				   ULong foffset, const UChar* filename )
 {
-   Addr lo = a;
-   Addr hi = a + len - 1;
-   ExeSeg* es;
-   ExeSeg* es2;
-   
-   /* Prepend it */
-   es        = (ExeSeg*)VG_(arena_malloc)(VG_AR_CORE, sizeof(ExeSeg));
-   es->start = a;
-   es->size  = len;
-   es->next  = exeSegsHead;
-   exeSegsHead = es;
+   UInt prot = 0;
+   UInt flags;
+   Bool is_stack_segment;
+   Bool verbose = False || mem_debug; /* set to True for debugging */
 
-   /* Check there's no overlap with the rest of the list */
-   for (es2 = es->next; es2 != NULL; es2 = es2->next) {
-      Addr lo2 = es2->start;
-      Addr hi2 = es2->start + es2->size - 1;
-      Bool overlap;
-      vg_assert(lo < hi);
-      vg_assert(lo2 < hi2);
-      /* the main assertion */
-      overlap = (lo <= lo2 && lo2 <= hi)
-                 || (lo <= hi2 && hi2 <= hi);
-      if (overlap) {
-         VG_(printf)("\n\nOVERLAPPING EXE SEGMENTS\n"
-                     "  new: start %p, size %d\n"
-                     "  old: start %p, size %d\n\n",
-                     es->start, es->size, es2->start, es2->size );
-         vg_assert(! overlap);
-      }
+   is_stack_segment = (start == VG_(clstk_base) && (start+size) == VG_(clstk_end));
+
+   prot = 0;
+   flags = SF_MMAP|SF_NOSYMS;
+
+   if (start >= VG_(valgrind_base) && (start+size) <= VG_(valgrind_end))
+      flags |= SF_VALGRIND;
+
+   /* Only record valgrind mappings for now, without loading any
+      symbols.  This is so we know where the free space is before we
+      start allocating more memory (note: heap is OK, it's just mmap
+      which is the problem here). */
+   if (flags & SF_VALGRIND) {
+      if (verbose)
+	 VG_(printf)("adding segment %08p-%08p prot=%x flags=%4x filename=%s\n",
+		     start, start+size, prot, flags, filename);
+
+      VG_(map_file_segment)(start, size, prot, flags, dev, ino, foffset, filename);
    }
 }
-
-static Bool remove_if_exeseg_from_list( Addr a )
-{
-   ExeSeg **prev_next_ptr = & exeSegsHead, 
-          *curr = exeSegsHead;
-
-   while (True) {
-      if (curr == NULL) break;
-      if (a == curr->start) break;
-      prev_next_ptr = &curr->next;
-      curr = curr->next;
-   }
-   if (curr == NULL)
-      return False;
-
-   vg_assert(*prev_next_ptr == curr);
-
-   *prev_next_ptr = curr->next;
-
-   VG_(arena_free)(VG_AR_CORE, curr);
-   return True;
-}
-
-/* Records the exe segment in the ExeSeg list (checking for overlaps), and
-   reads debug info if required.  Note the entire /proc/pid/maps file is 
-   read for the debug info, but it just reads symbols for newly added exe
-   segments.  This is required to find out their names if they have one,
-   because with mmap() we only have the file descriptor, not the name.  We
-   don't use this at startup because we do have the names then. */
-void VG_(new_exeseg_mmap) ( Addr a, UInt len )
-{
-   add_exe_segment_to_list( a, len );
-   VG_(read_all_symbols)();
-}
-
-/* Like VG_(new_exeseg_mmap)(), but here we do have the name, so we don't
-   need to grovel through /proc/self/maps to find it. */
-void VG_(new_exeseg_startup) ( Addr a, UInt len, Char rr, Char ww, Char xx,
-                               UInt foffset, UChar* filename )
-{
-   add_exe_segment_to_list( a, len );
-   VG_(read_seg_symbols)( a, len, rr, ww, xx, foffset, filename);
-}
-
-/* Invalidate translations as necessary (also discarding any basic
-   block-specific info retained by the skin) and unload any debug
-   symbols. */
-// Nb: remove_if_exeseg_from_list() and VG_(maybe_unload_symbols)()
-// both ignore 'len', but that seems that's ok for most programs...  see
-// comment above vg_syscalls.c:mmap_segment() et al for more details.
-void VG_(remove_if_exeseg) ( Addr a, UInt len )
-{
-   if (remove_if_exeseg_from_list( a )) {
-      VG_(invalidate_translations) ( a, len, False );
-      VG_(unload_symbols)          ( a, len );
-   }
-}
-
 
 static
-void startup_segment_callback ( Addr start, UInt size, 
-                                Char rr, Char ww, Char xx, 
-                                UInt foffset, UChar* filename )
+void build_segment_map_callback ( Addr start, UInt size, 
+				  Char rr, Char ww, Char xx, UInt dev, UInt ino,
+				  ULong foffset, const UChar* filename )
 {
-   UInt r_esp;
+   UInt prot = 0;
+   UInt flags;
    Bool is_stack_segment;
-   Bool verbose = False; /* set to True for debugging */
+   Bool verbose = False || mem_debug; /* set to True for debugging */
+   Addr r_esp;
+
+   is_stack_segment = (start == VG_(clstk_base) && (start+size) == VG_(clstk_end));
+
+   if (rr == 'r')
+      prot |= VKI_PROT_READ;
+   if (ww == 'w')
+      prot |= VKI_PROT_WRITE;
+   if (xx == 'x')
+      prot |= VKI_PROT_EXEC;
+
+      
+   if (is_stack_segment)
+      flags = SF_STACK | SF_GROWDOWN;
+   else
+      flags = SF_EXEC|SF_MMAP;
+
+   if (filename != NULL)
+      flags |= SF_FILE;
+
+   if (start >= VG_(valgrind_base) && (start+size) <= VG_(valgrind_end))
+      flags |= SF_VALGRIND;
 
    if (verbose)
-      VG_(message)(Vg_DebugMsg,
-                   "initial map %8x-%8x %c%c%c? %8x (%d) (%s)",
-                   start,start+size,rr,ww,xx,foffset,
-                   size, filename?filename:(UChar*)"NULL");
+      VG_(printf)("adding segment %08p-%08p prot=%x flags=%4x filename=%s\n",
+		  start, start+size, prot, flags, filename);
 
-   if (rr != 'r' && xx != 'x' && ww != 'w') {
-      /* Implausible as it seems, R H 6.2 generates such segments:
-      40067000-400ac000 r-xp 00000000 08:05 320686 /usr/X11R6/lib/libXt.so.6.0
-      400ac000-400ad000 ---p 00045000 08:05 320686 /usr/X11R6/lib/libXt.so.6.0
-      400ad000-400b0000 rw-p 00045000 08:05 320686 /usr/X11R6/lib/libXt.so.6.0
-      when running xedit. So just ignore them. */
-      if (0)
-         VG_(printf)("No permissions on a segment mapped from %s\n", 
-                     filename?filename:(UChar*)"NULL");
-      return;
-   }
+   VG_(map_file_segment)(start, size, prot, flags, dev, ino, foffset, filename);
 
-   /* If this segment corresponds to something mmap'd /dev/zero by the
-      low-level memory manager (vg_malloc2.c), skip it.  Clients
-      should never have access to the segments which hold valgrind
-      internal data.  And access to client data in the VG_AR_CLIENT
-      arena is mediated by the skin, so we don't want make it
-      accessible at this stage. */
-   if (VG_(is_inside_segment_mmapd_by_low_level_MM)( start )) {
-      if (verbose)
-         VG_(message)(Vg_DebugMsg,
-                      "   skipping %8x-%8x (owned by our MM)", 
-                      start, start+size );
-      /* Don't announce it to the skin. */
-      return;
-   }
-   
-   /* This is similar to what happens when we mmap some new memory */
-   if (filename != NULL && xx == 'x') {
-      VG_(new_exeseg_startup)( start, size, rr, ww, xx, foffset, filename );
-   }
-
-   VG_TRACK( new_mem_startup, start, size, rr=='r', ww=='w', xx=='x' );
+   if (VG_(is_client_addr)(start) && VG_(is_client_addr)(start+size-1))
+      VG_TRACK( new_mem_startup, start, size, rr=='r', ww=='w', xx=='x' );
 
    /* If this is the stack segment mark all below %esp as noaccess. */
-   r_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   is_stack_segment = start <= r_esp && r_esp < start+size;
+   r_esp = VG_(m_state_static)[40/4];
    if (is_stack_segment) {
       if (0)
          VG_(message)(Vg_DebugMsg, "invalidating stack area: %x .. %x",
@@ -223,17 +634,17 @@ void startup_segment_callback ( Addr start, UInt size,
       buffer at the start of VG_(main) so that any superblocks mmap'd by
       calls to VG_(malloc)() by SK_({pre,post}_clo_init) aren't erroneously
       thought of as being owned by the client.
-
-   2. Sets up the end of the data segment so that vg_syscalls.c can make
-      sense of calls to brk().
  */
 void VG_(init_memory) ( void )
 {
    /* 1 */
-   VG_(parse_procselfmaps) ( startup_segment_callback );
+   /* reserve Valgrind's kickstart, heap and stack */
+   VG_(map_segment)(VG_(valgrind_mmap_end), VG_(valgrind_end)-VG_(valgrind_mmap_end),
+		    VKI_PROT_NONE, SF_VALGRIND|SF_FIXED);
 
-   /* 2 */
-   VG_(init_dataseg_end_for_brk)();
+   /* work out what's mapped where, and read interesting symtabs */
+   VG_(parse_procselfmaps) ( build_valgrind_map_callback );	/* just Valgrind mappings */
+   VG_(parse_procselfmaps) ( build_segment_map_callback );	/* everything */
 
    /* kludge: some newer kernels place a "sysinfo" page up high, with
       vsyscalls in it, and possibly some other stuff in the future. */
@@ -354,6 +765,134 @@ Bool VG_(is_addressable)(Addr p, Int size)
 
    VG_(ksigaction)(VKI_SIGSEGV, &origsa, NULL);
    VG_(ksigprocmask)(VKI_SIG_SETMASK, &mask, NULL);
+
+   return ret;
+}
+
+/*--------------------------------------------------------------------*/
+/*--- manage allocation of memory on behalf of the client          ---*/
+/*--------------------------------------------------------------------*/
+
+Addr VG_(client_alloc)(Addr addr, UInt len, UInt prot, UInt flags)
+{
+   len = PGROUNDUP(len);
+
+   if (!(flags & SF_FIXED))
+      addr = VG_(find_map_space)(addr, len, True);
+
+   flags |= SF_CORE;
+
+   if (VG_(mmap)((void *)addr, len, prot,
+		 VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,
+		 -1, 0) == (void *)addr) {
+      VG_(map_segment)(addr, len, prot, flags);
+      return addr;
+   }
+
+   return 0;
+}
+
+void VG_(client_free)(Addr addr)
+{
+   Segment *s = VG_(find_segment)(addr);
+
+   if (s == NULL || s->addr != addr || !(s->flags & SF_CORE)) {
+      VG_(message)(Vg_DebugMsg, "VG_(client_free)(%p) - no CORE memory found there", addr);
+      return;
+   }
+
+   VG_(munmap)((void *)s->addr, s->len);
+}
+
+Bool VG_(is_client_addr)(Addr a)
+{
+   return a >= VG_(client_base) && a < VG_(client_end);
+}
+
+Bool VG_(is_shadow_addr)(Addr a)
+{
+   return a >= VG_(shadow_base) && a < VG_(shadow_end);
+}
+
+Bool VG_(is_valgrind_addr)(Addr a)
+{
+   return a >= VG_(valgrind_base) && a < VG_(valgrind_end);
+}
+
+Addr VG_(get_client_base)(void)
+{
+   return VG_(client_base);
+}
+
+Addr VG_(get_client_end)(void)
+{
+   return VG_(client_end);
+}
+
+Addr VG_(get_client_size)(void)
+{
+   return VG_(client_end)-VG_(client_base);
+}
+
+Addr VG_(get_shadow_base)(void)
+{
+   return VG_(shadow_base);
+}
+
+Addr VG_(get_shadow_end)(void)
+{
+   return VG_(shadow_end);
+}
+
+Addr VG_(get_shadow_size)(void)
+{
+   return VG_(shadow_end)-VG_(shadow_base);
+}
+
+
+void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init)
+{
+   if (0)
+      VG_(printf)("init_shadow_range(%p, %d)\n", p, sz);
+
+   vg_assert(VG_(needs).shadow_memory);
+   vg_assert(VG_(defined_init_shadow_page)());
+
+   sz = PGROUNDUP(p+sz) - PGROUNDDN(p);
+   p = PGROUNDDN(p);
+
+   VG_(mprotect)((void *)p, sz, VKI_PROT_READ|VKI_PROT_WRITE);
+   
+   if (call_init) 
+      while(sz) {
+	 /* ask the skin to initialize each page */
+	 VG_TRACK( init_shadow_page, PGROUNDDN(p) );
+	 
+	 p += VKI_BYTES_PER_PAGE;
+	 sz -= VKI_BYTES_PER_PAGE;
+      }
+}
+
+void *VG_(shadow_alloc)(UInt size)
+{
+   static Addr shadow_alloc = 0;
+   void *ret;
+
+   vg_assert(VG_(needs).shadow_memory);
+   vg_assert(!VG_(defined_init_shadow_page)());
+
+   size = PGROUNDUP(size);
+
+   if (shadow_alloc == 0)
+      shadow_alloc = VG_(shadow_base);
+
+   if (shadow_alloc >= VG_(shadow_end))
+       return 0;
+
+   ret = (void *)shadow_alloc;
+   VG_(mprotect)(ret, size, VKI_PROT_READ|VKI_PROT_WRITE);
+
+   shadow_alloc += size;
 
    return ret;
 }

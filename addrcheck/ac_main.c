@@ -35,8 +35,6 @@
 //#include "vg_profile.c"
 
 
-VG_DETERMINE_INTERFACE_VERSION
-
 /*------------------------------------------------------------*/
 /*--- Comparing and printing errors                        ---*/
 /*------------------------------------------------------------*/
@@ -191,7 +189,7 @@ static AcSecMap* alloc_secondary_map ( __attribute__ ((unused))
       although this isn't important, so the following assert is
       spurious. */
    sk_assert(0 == (sizeof(AcSecMap) % VKI_BYTES_PER_PAGE));
-   map = VG_(get_memory_from_mmap)( sizeof(AcSecMap), caller );
+   map = (AcSecMap *)VG_(shadow_alloc)(sizeof(AcSecMap));
 
    for (i = 0; i < 8192; i++)
       map->abits[i] = VGM_BYTE_INVALID; /* Invalid address */
@@ -1288,6 +1286,7 @@ void SK_(pre_clo_init)(void)
    VG_(needs_client_requests)     ();
    VG_(needs_syscall_wrapper)     ();
    VG_(needs_sanity_checks)       ();
+   VG_(needs_shadow_memory)       ();
 
    MAC_( new_mem_heap)             = & ac_new_mem_heap;
    MAC_( ban_mem_heap)             = & ac_make_noaccess;
@@ -1295,38 +1294,38 @@ void SK_(pre_clo_init)(void)
    MAC_( die_mem_heap)             = & ac_make_noaccess;
    MAC_(check_noaccess)            = & ac_check_noaccess;
 
-   VG_(track_new_mem_startup)      ( & ac_new_mem_startup );
-   VG_(track_new_mem_stack_signal) ( & ac_make_accessible );
-   VG_(track_new_mem_brk)          ( & ac_make_accessible );
-   VG_(track_new_mem_mmap)         ( & ac_set_perms );
+   VG_(init_new_mem_startup)      ( & ac_new_mem_startup );
+   VG_(init_new_mem_stack_signal) ( & ac_make_accessible );
+   VG_(init_new_mem_brk)          ( & ac_make_accessible );
+   VG_(init_new_mem_mmap)         ( & ac_set_perms );
    
-   VG_(track_copy_mem_remap)       ( & ac_copy_address_range_state );
-   VG_(track_change_mem_mprotect)  ( & ac_set_perms );
+   VG_(init_copy_mem_remap)       ( & ac_copy_address_range_state );
+   VG_(init_change_mem_mprotect)  ( & ac_set_perms );
       
-   VG_(track_die_mem_stack_signal) ( & ac_make_noaccess ); 
-   VG_(track_die_mem_brk)          ( & ac_make_noaccess );
-   VG_(track_die_mem_munmap)       ( & ac_make_noaccess ); 
+   VG_(init_die_mem_stack_signal) ( & ac_make_noaccess ); 
+   VG_(init_die_mem_brk)          ( & ac_make_noaccess );
+   VG_(init_die_mem_munmap)       ( & ac_make_noaccess ); 
 
-   VG_(track_new_mem_stack_4)      ( & MAC_(new_mem_stack_4)  );
-   VG_(track_new_mem_stack_8)      ( & MAC_(new_mem_stack_8)  );
-   VG_(track_new_mem_stack_12)     ( & MAC_(new_mem_stack_12) );
-   VG_(track_new_mem_stack_16)     ( & MAC_(new_mem_stack_16) );
-   VG_(track_new_mem_stack_32)     ( & MAC_(new_mem_stack_32) );
-   VG_(track_new_mem_stack)        ( & MAC_(new_mem_stack)    );
+   VG_(init_new_mem_stack_4)      ( & MAC_(new_mem_stack_4)  );
+   VG_(init_new_mem_stack_8)      ( & MAC_(new_mem_stack_8)  );
+   VG_(init_new_mem_stack_12)     ( & MAC_(new_mem_stack_12) );
+   VG_(init_new_mem_stack_16)     ( & MAC_(new_mem_stack_16) );
+   VG_(init_new_mem_stack_32)     ( & MAC_(new_mem_stack_32) );
+   VG_(init_new_mem_stack)        ( & MAC_(new_mem_stack)    );
 
-   VG_(track_die_mem_stack_4)      ( & MAC_(die_mem_stack_4)  );
-   VG_(track_die_mem_stack_8)      ( & MAC_(die_mem_stack_8)  );
-   VG_(track_die_mem_stack_12)     ( & MAC_(die_mem_stack_12) );
-   VG_(track_die_mem_stack_16)     ( & MAC_(die_mem_stack_16) );
-   VG_(track_die_mem_stack_32)     ( & MAC_(die_mem_stack_32) );
-   VG_(track_die_mem_stack)        ( & MAC_(die_mem_stack)    );
+   VG_(init_die_mem_stack_4)      ( & MAC_(die_mem_stack_4)  );
+   VG_(init_die_mem_stack_8)      ( & MAC_(die_mem_stack_8)  );
+   VG_(init_die_mem_stack_12)     ( & MAC_(die_mem_stack_12) );
+   VG_(init_die_mem_stack_16)     ( & MAC_(die_mem_stack_16) );
+   VG_(init_die_mem_stack_32)     ( & MAC_(die_mem_stack_32) );
+   VG_(init_die_mem_stack)        ( & MAC_(die_mem_stack)    );
    
-   VG_(track_ban_mem_stack)        ( & ac_make_noaccess );
+   VG_(init_ban_mem_stack)        ( & ac_make_noaccess );
 
-   VG_(track_pre_mem_read)         ( & ac_check_is_readable );
-   VG_(track_pre_mem_read_asciiz)  ( & ac_check_is_readable_asciiz );
-   VG_(track_pre_mem_write)        ( & ac_check_is_writable );
-   VG_(track_post_mem_write)       ( & ac_make_accessible );
+   VG_(init_pre_mem_read)         ( & ac_check_is_readable );
+   VG_(init_pre_mem_read_asciiz)  ( & ac_check_is_readable_asciiz );
+   VG_(init_pre_mem_write)        ( & ac_check_is_writable );
+   VG_(init_post_mem_write)       ( & ac_make_accessible );
 
    VG_(register_compact_helper)((Addr) & ac_helperc_LOAD4);
    VG_(register_compact_helper)((Addr) & ac_helperc_LOAD2);
@@ -1353,6 +1352,9 @@ void SK_(fini) ( Int exitcode )
 {
    MAC_(common_fini)( ac_detect_memory_leaks );
 }
+
+VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 1./8)
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                ac_main.c ---*/

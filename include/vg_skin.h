@@ -1,4 +1,4 @@
-
+/* -*- c -*- */
 /*--------------------------------------------------------------------*/
 /*--- The only header your skin will ever need to #include...      ---*/
 /*---                                                    vg_skin.h ---*/
@@ -126,14 +126,38 @@ typedef unsigned char          Bool;
 #define VG_CORE_INTERFACE_MAJOR_VERSION   5
 #define VG_CORE_INTERFACE_MINOR_VERSION   0
 
-extern const Int VG_(skin_interface_major_version);
-extern const Int VG_(skin_interface_minor_version);
+typedef struct _ToolInfo {
+   Int	sizeof_ToolInfo;
+   Int	interface_major_version;
+   Int	interface_minor_version;
+
+   /* Initialise skin.   Must do the following:
+      - initialise the `details' struct, via the VG_(details_*)() functions
+      - register any helpers called by generated code
+      
+      May do the following:
+      - initialise the `needs' struct to indicate certain requirements, via
+      the VG_(needs_*)() functions
+      - initialize all the tool's entrypoints via the VG_(init_*)() functions
+      - register any skin-specific profiling events
+      - any other skin-specific initialisation
+   */
+   void        (*sk_pre_clo_init) ( void );
+
+   /* Specifies how big the shadow segment should be as a ratio to the
+      client address space.  0 for no shadow segment. */
+   float	shadow_ratio;
+} ToolInfo;
 
 /* Every skin must include this macro somewhere, exactly once. */
-#define VG_DETERMINE_INTERFACE_VERSION \
-const Int VG_(skin_interface_major_version) = VG_CORE_INTERFACE_MAJOR_VERSION; \
-const Int VG_(skin_interface_minor_version) = VG_CORE_INTERFACE_MINOR_VERSION;
-
+#define VG_DETERMINE_INTERFACE_VERSION(pre_clo_init, shadow)		\
+   const ToolInfo SK_(tool_info) = {					\
+      .sizeof_ToolInfo         = sizeof(ToolInfo),			\
+      .interface_major_version = VG_CORE_INTERFACE_MAJOR_VERSION,	\
+      .interface_minor_version = VG_CORE_INTERFACE_MINOR_VERSION,	\
+      .sk_pre_clo_init         = pre_clo_init,				\
+      .shadow_ratio	       = shadow,				\
+   };
 
 /*====================================================================*/
 /*=== Command-line options                                         ===*/
@@ -419,7 +443,7 @@ extern void  VG_(strncpy_safely) ( Char* dest, const Char* src, Int ndest );
 
 /* Mini-regexp function.  Searches for 'pat' in 'str'.  Supports
  * meta-symbols '*' and '?'.  '\' escapes meta-symbols. */
-extern Bool  VG_(string_match)   ( Char* pat, Char* str );
+extern Bool  VG_(string_match)   ( const Char* pat, const Char* str );
 
 
 /* ------------------------------------------------------------------ */
@@ -476,14 +500,33 @@ extern void VG_(skin_assert_fail) ( const Char* expr, const Char* file,
 
 
 /* ------------------------------------------------------------------ */
-/* system/mman.h */
-extern void* VG_(mmap)( void* start, UInt length,
-                        UInt prot, UInt flags, UInt fd, UInt offset );
-extern Int  VG_(munmap)( void* start, Int length );
-
 /* Get memory by anonymous mmap. */
 extern void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who );
 
+extern Bool VG_(is_client_addr) (Addr a);
+extern Addr VG_(get_client_base)(void);
+extern Addr VG_(get_client_end) (void);
+extern Addr VG_(get_client_size)(void);
+
+extern Bool VG_(is_shadow_addr) (Addr a);
+extern Addr VG_(get_shadow_base)(void);
+extern Addr VG_(get_shadow_end) (void);
+extern Addr VG_(get_shadow_size)(void);
+
+extern void *VG_(shadow_alloc)(UInt size);
+
+extern Bool VG_(is_addressable)(Addr p, Int sz);
+
+extern Addr VG_(client_alloc)(Addr base, UInt len, UInt prot, UInt flags);
+extern void VG_(client_free)(Addr addr);
+
+extern Bool VG_(is_valgrind_addr)(Addr a);
+
+/* initialize shadow pages in the range [p, p+sz) This calls
+   init_shadow_page for each one.  It should be a lot more efficient
+   for bulk-initializing shadow pages than faulting on each one. 
+*/
+extern void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init);
 
 /* ------------------------------------------------------------------ */
 /* signal.h.
@@ -1254,9 +1297,9 @@ extern void VG_(emit_unaryopb_reg)       ( Bool upd_cc, Opcode opc, Int reg );
 extern void VG_(emit_testb_lit_reg)      ( Bool upd_cc, UInt lit, Int reg );
 
 /* zero-extended load emitters */
-extern void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg );
-extern void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg );
-extern void VG_(emit_movzwl_regmem_reg)    ( Int reg1, Int reg2 );
+extern void VG_(emit_movzbl_offregmem_reg) ( Bool bounds, Int off, Int regmem, Int reg );
+extern void VG_(emit_movzwl_offregmem_reg) ( Bool bounds, Int off, Int areg, Int reg );
+extern void VG_(emit_movzwl_regmem_reg)    ( Bool bounds, Int reg1, Int reg2 );
 
 /* misc instruction emitters */
 extern void VG_(emit_call_reg)         ( Int reg );
@@ -1557,6 +1600,72 @@ extern void VG_(HT_destruct) ( VgHashTable t );
 
 
 /*====================================================================*/
+/*=== A generic skiplist                                           ===*/
+/*====================================================================*/
+
+/* 
+   The idea here is that the skiplist puts its per-element data at the
+   end of the structure.  When you initialize the skiplist, you tell
+   it what structure your list elements are going to be.  Then you
+   should allocate them with VG_(SkipNode_Alloc), which will allocate
+   enough memory for the extra bits.
+ */
+#include <stddef.h>		/* for offsetof */
+
+typedef struct _SkipList SkipList;
+typedef struct _SkipNode SkipNode;
+
+typedef Int (*SkipCmp_t)(const void *key1, const void *key2);
+
+struct _SkipList {
+   const Short		arena;		/* allocation arena                        */
+   const UShort		size;		/* structure size (not including SkipNode) */
+   const UShort		keyoff;		/* key offset                              */
+   const SkipCmp_t	cmp;		/* compare two keys                        */
+	 Char *		(*strkey)(void *); /* stringify a key (for debugging)      */
+         SkipNode	*head;		/* list head                               */
+};
+
+/* Use this macro to initialize your skiplist head.  The arguments are pretty self explanitory:
+   _type is the type of your element structure
+   _key is the field within that type which you want to use as the key
+   _cmp is the comparison function for keys - it gets two typeof(_key) pointers as args
+   _strkey is a function which can return a string of your key - it's only used for debugging
+   _arena is the arena to use for allocation - -1 is the default
+ */
+#define SKIPLIST_INIT(_type, _key, _cmp, _strkey, _arena)		\
+	{								\
+	   .arena       = _arena,					\
+	   .size	= sizeof(_type),				\
+	   .keyoff	= offsetof(_type, _key),			\
+	   .cmp		= _cmp,						\
+	   .strkey      = _strkey,					\
+	   .head	= NULL,						\
+	}
+
+/* List operations:
+   SkipList_Find searchs a list.  If it can't find an exact match, it either returns NULL
+      or a pointer to the element before where k would go
+   SkipList_Insert inserts a new element into the list.  Duplicates are forbidden.
+   SkipList_Remove removes an element from the list and returns it.  It doesn't free the memory.
+ */
+extern void *VG_(SkipList_Find)  (const SkipList *l, void *key);
+extern void  VG_(SkipList_Insert)(      SkipList *l, void *data);
+extern void *VG_(SkipList_Remove)(      SkipList *l, void *key);
+
+/* Node (element) operations:
+   SkipNode_Alloc: allocate memory for a new element on the list
+   SkipNode_Free: free memory allocated above
+   SkipNode_First: return the first element on the list
+   SkipNode_Next: return the next element after "data" on the list - 
+      NULL for none
+ */
+extern void *VG_(SkipNode_Alloc) (const SkipList *l);
+extern void  VG_(SkipNode_Free)  (const SkipList *l, void *p);
+extern void *VG_(SkipNode_First) (const SkipList *l);
+extern void *VG_(SkipNode_Next)  (const SkipList *l, void *data);
+
+/*====================================================================*/
 /*=== Functions for shadow registers                               ===*/
 /*====================================================================*/
 
@@ -1603,9 +1712,10 @@ extern Bool VG_(is_running_on_simd_CPU) ( void );
 /*=== Specific stuff for replacing malloc() and friends            ===*/
 /*====================================================================*/
 
-/* If a skin replaces malloc() et al, the easiest way to do so is to link
-   with coregrind/vg_replace_malloc.c, and follow the following instructions.
-   You can do it from scratch, though, if you enjoy that sort of thing. */
+/* If a skin replaces malloc() et al, the easiest way to do so is to
+   link with vg_replace_malloc.o into its vgpreload_*.so file, and
+   follow the following instructions.  You can do it from scratch,
+   though, if you enjoy that sort of thing. */
 
 /* Arena size for valgrind's own malloc();  default value is 0, but can
    be overridden by skin -- but must be done so *statically*, eg:
@@ -1615,18 +1725,6 @@ extern Bool VG_(is_running_on_simd_CPU) ( void );
    It can't be done from a function like SK_(pre_clo_init)().  So it can't,
    for example, be controlled with a command line option, unfortunately. */
 extern UInt VG_(vg_malloc_redzone_szB);
-
-/* If a skin links with vg_replace_malloc.c, the following functions will be
-   called appropriately when malloc() et al are called. */
-extern void* SK_(malloc)               ( Int n );
-extern void* SK_(__builtin_new)        ( Int n );
-extern void* SK_(__builtin_vec_new)    ( Int n );
-extern void* SK_(memalign)             ( Int align, Int n );
-extern void* SK_(calloc)               ( Int nmemb, Int n );
-extern void  SK_(free)                 ( void* p );
-extern void  SK_(__builtin_delete)     ( void* p );
-extern void  SK_(__builtin_vec_delete) ( void* p );
-extern void* SK_(realloc)              ( void* p, Int size );
 
 /* Can be called from SK_(malloc) et al to do the actual alloc/freeing. */
 extern void* VG_(cli_malloc) ( UInt align, Int nbytes );
@@ -1737,6 +1835,13 @@ extern void VG_(needs_sanity_checks) ( void );
 /* Do we need to see data symbols? */
 extern void VG_(needs_data_syms) ( void );
 
+/* Does the skin need shadow memory allocated (if you set this, you must also statically initialize 
+   float SK_(shadow_ratio) = n./m;
+   to define how many shadow bits you need per client address space bit.
+*/
+extern void VG_(needs_shadow_memory)( void );
+extern float SK_(shadow_ratio);
+
 /* ------------------------------------------------------------------ */
 /* Core events to track */
 
@@ -1745,299 +1850,6 @@ extern void VG_(needs_data_syms) ( void );
 typedef
    enum { Vg_CorePThread, Vg_CoreSignal, Vg_CoreSysCall, Vg_CoreTranslate }
    CorePart;
-
-#define EV  extern void
-
-/* Events happening in core to track.  To be notified, pass a callback
-   function to the appropriate function.  To ignore an event, don't do
-   anything (default is for events to be ignored).
-
-   Note that most events aren't passed a ThreadId.  To find out the ThreadId
-   of the affected thread, use VG_(get_current_or_recent_tid)().  For the
-   ones passed a ThreadId, use that instead, since
-   VG_(get_current_or_recent_tid)() might not give the right ThreadId in
-   that case.
-*/
-
-
-/* Memory events (Nb: to track heap allocation/freeing, a skin must replace
-   malloc() et al.  See above how to do this.) */
-
-/* These ones occur at startup, upon some signals, and upon some syscalls */
-EV VG_(track_new_mem_startup) ( void (*f)(Addr a, UInt len,
-                                          Bool rr, Bool ww, Bool xx) );
-EV VG_(track_new_mem_stack_signal)  ( void (*f)(Addr a, UInt len) );
-EV VG_(track_new_mem_brk)     ( void (*f)(Addr a, UInt len) );
-EV VG_(track_new_mem_mmap)    ( void (*f)(Addr a, UInt len,
-                                          Bool rr, Bool ww, Bool xx) );
-
-EV VG_(track_copy_mem_remap)  ( void (*f)(Addr from, Addr to, UInt len) );
-EV VG_(track_change_mem_mprotect) ( void (*f)(Addr a, UInt len,
-                                              Bool rr, Bool ww, Bool xx) );
-EV VG_(track_die_mem_stack_signal)  ( void (*f)(Addr a, UInt len) );
-EV VG_(track_die_mem_brk)     ( void (*f)(Addr a, UInt len) );
-EV VG_(track_die_mem_munmap)  ( void (*f)(Addr a, UInt len) );
-
-
-/* These ones are called when %esp changes.  A skin could track these itself
-   (except for ban_mem_stack) but it's much easier to use the core's help.
-
-   The specialised ones are called in preference to the general one, if they
-   are defined.  These functions are called a lot if they are used, so
-   specialising can optimise things significantly.  If any of the
-   specialised cases are defined, the general case must be defined too.
-
-   Nb: they must all use the __attribute__((regparm(n))) attribute. */
-EV VG_(track_new_mem_stack_4)  ( void (*f)(Addr new_ESP) );
-EV VG_(track_new_mem_stack_8)  ( void (*f)(Addr new_ESP) );
-EV VG_(track_new_mem_stack_12) ( void (*f)(Addr new_ESP) );
-EV VG_(track_new_mem_stack_16) ( void (*f)(Addr new_ESP) );
-EV VG_(track_new_mem_stack_32) ( void (*f)(Addr new_ESP) );
-EV VG_(track_new_mem_stack)    ( void (*f)(Addr a, UInt len) );
-
-EV VG_(track_die_mem_stack_4)  ( void (*f)(Addr die_ESP) );
-EV VG_(track_die_mem_stack_8)  ( void (*f)(Addr die_ESP) );
-EV VG_(track_die_mem_stack_12) ( void (*f)(Addr die_ESP) );
-EV VG_(track_die_mem_stack_16) ( void (*f)(Addr die_ESP) );
-EV VG_(track_die_mem_stack_32) ( void (*f)(Addr die_ESP) );
-EV VG_(track_die_mem_stack)    ( void (*f)(Addr a, UInt len) );
-
-/* Used for redzone at end of thread stacks */
-EV VG_(track_ban_mem_stack)   ( void (*f)(Addr a, UInt len) );
-
-/* These ones occur around syscalls, signal handling, etc */
-EV VG_(track_pre_mem_read)    ( void (*f)(CorePart part, ThreadId tid,
-                                          Char* s, Addr a, UInt size) );
-EV VG_(track_pre_mem_read_asciiz) ( void (*f)(CorePart part, ThreadId tid,
-                                              Char* s, Addr a) );
-EV VG_(track_pre_mem_write)   ( void (*f)(CorePart part, ThreadId tid,
-                                          Char* s, Addr a, UInt size) );
-/* Not implemented yet -- have to add in lots of places, which is a
-   pain.  Won't bother unless/until there's a need. */
-/* EV VG_(track_post_mem_read)  ( void (*f)(ThreadId tid, Char* s,
-                                            Addr a, UInt size) ); */
-EV VG_(track_post_mem_write) ( void (*f)(Addr a, UInt size) );
-
-
-/* Register events -- if `shadow_regs' need is set, all should probably be
-   used.  Use VG_(set_thread_shadow_archreg)() to set the shadow of the
-   changed register. */
-
-/* Use VG_(set_shadow_archreg)() to set the eight general purpose regs,
-   and use VG_(set_shadow_eflags)() to set eflags. */
-EV VG_(track_post_regs_write_init)  ( void (*f)() );
-
-/* Use VG_(set_thread_shadow_archreg)() to set the shadow regs for these
-   events. */
-EV VG_(track_post_reg_write_syscall_return)
-                                    ( void (*f)(ThreadId tid, UInt reg) );
-EV VG_(track_post_reg_write_deliver_signal)
-                                    ( void (*f)(ThreadId tid, UInt reg) );
-EV VG_(track_post_reg_write_pthread_return)
-                                    ( void (*f)(ThreadId tid, UInt reg) );
-EV VG_(track_post_reg_write_clientreq_return)
-                                    ( void (*f)(ThreadId tid, UInt reg) );
-   /* This one is called for malloc() et al if they are replaced by a skin. */
-EV VG_(track_post_reg_write_clientcall_return)
-                                    ( void (*f)(ThreadId tid, UInt reg,
-                                                Addr called_function) );
-
-
-/* Scheduler events (not exhaustive) */
-
-EV VG_(track_thread_run) ( void (*f)(ThreadId tid) );
-
-/* Thread events (not exhaustive) */
-
-/* Called during thread create, before the new thread has run any
-   instructions (or touched any memory). */
-EV VG_(track_post_thread_create)( void (*f)(ThreadId tid, ThreadId child) );
-/* Called once the joinee thread is terminated and the joining thread is
-   about to resume. */
-EV VG_(track_post_thread_join)  ( void (*f)(ThreadId joiner, ThreadId joinee) );
-
-
-/* Mutex events (not exhaustive) */
-
-/* Called before a thread can block while waiting for a mutex (called
-   regardless of whether the thread will block or not). */
-EV VG_(track_pre_mutex_lock)    ( void (*f)(ThreadId tid,
-                                          void* /*pthread_mutex_t* */ mutex) );
-/* Called once the thread actually holds the mutex (always paired with
-   pre_mutex_lock). */
-EV VG_(track_post_mutex_lock)   ( void (*f)(ThreadId tid,
-                                          void* /*pthread_mutex_t* */ mutex) );
-/* Called after a thread has released a mutex (no need for a corresponding
-   pre_mutex_unlock, because unlocking can't block). */
-EV VG_(track_post_mutex_unlock) ( void (*f)(ThreadId tid,
-                                          void* /*pthread_mutex_t* */ mutex) );
-
-
-/* Signal events (not exhaustive) */
-
-/* ... pre_send_signal, post_send_signal ... */
-
-/* Called before a signal is delivered;  `alt_stack' indicates if it is
-   delivered on an alternative stack. */
-EV VG_(track_pre_deliver_signal)  ( void (*f)(ThreadId tid, Int sigNum,
-                                             Bool alt_stack) );
-/* Called after a signal is delivered.  Nb: unfortunately, if the signal
-   handler longjmps, this won't be called. */
-EV VG_(track_post_deliver_signal) ( void (*f)(ThreadId tid, Int sigNum ) );
-
-
-/* Others... condition variables... */
-/* ... */
-
-#undef EV
-
-/* ------------------------------------------------------------------ */
-/* Template functions */
-
-/* These are the parameterised functions in the core.  The default definitions
-   are overridden by LD_PRELOADed skin version.  At the very least, a skin
-   must define the fundamental template functions.  Depending on what needs
-   are set, extra template functions will be used too.  Functions are
-   grouped under the needs that govern their use. */
-
-
-/* ------------------------------------------------------------------ */
-/* Fundamental template functions */
-
-/* Initialise skin.   Must do the following:
-     - initialise the `details' struct, via the VG_(details_*)() functions
-     - register any helpers called by generated code
-
-   May do the following:
-     - initialise the `needs' struct to indicate certain requirements, via
-       the VG_(needs_*)() functions
-     - initialise the `track' struct to indicate core events of interest, via
-       the VG_(track_*)() functions
-     - register any skin-specific profiling events
-     - any other skin-specific initialisation
-*/
-extern void        SK_(pre_clo_init) ( void );
-
-/* Do initialisation that can only be done after command line processing. */
-extern void        SK_(post_clo_init)( void );
-
-/* Instrument a basic block.  Must be a true function, ie. the same input
-   always results in the same output, because basic blocks can be
-   retranslated.  Unless you're doing something really strange...
-   'orig_addr' is the address of the first instruction in the block. */
-extern UCodeBlock* SK_(instrument)   ( UCodeBlock* cb, Addr orig_addr );
-
-/* Finish up, print out any results, etc.  `exitcode' is program's exit
-   code.  The shadow (if the `shadow_regs' need is set) can be found with
-   VG_(get_shadow_archreg)(R_EBX), since %ebx holds the argument to the
-   exit() syscall.  */
-extern void        SK_(fini)         ( Int exitcode );
-
-
-/* ------------------------------------------------------------------ */
-/* VG_(needs).core_errors */
-
-/* (none needed) */
-
-/* ------------------------------------------------------------------ */
-/* VG_(needs).skin_errors */
-
-/* Identify if two errors are equal, or equal enough.  `res' indicates how
-   close is "close enough".  `res' should be passed on as necessary, eg. if
-   the Error's `extra' part contains an ExeContext, `res' should be
-   passed to VG_(eq_ExeContext)() if the ExeContexts are considered.  Other
-   than that, probably don't worry about it unless you have lots of very
-   similar errors occurring.
- */
-extern Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 );
-
-/* Print error context. */
-extern void SK_(pp_SkinError) ( Error* err );
-
-/* Should fill in any details that could be postponed until after the
-   decision whether to ignore the error (ie. details not affecting the
-   result of SK_(eq_SkinError)()).  This saves time when errors are ignored.
-   Yuk.
-
-   Return value: must be the size of the `extra' part in bytes -- used by
-   the core to make a copy.
-*/
-extern UInt SK_(update_extra) ( Error* err );
-
-/* Return value indicates recognition.  If recognised, must set skind using
-   VG_(set_supp_kind)(). */
-extern Bool SK_(recognised_suppression) ( Char* name, Supp* su );
-
-/* Read any extra info for this suppression kind.  Most likely for filling
-   in the `extra' and `string' parts (with VG_(set_supp_{extra,string})())
-   of a suppression if necessary.  Should return False if a syntax error
-   occurred, True otherwise. */
-extern Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf,
-                                               Supp* su );
-
-/* This should just check the kinds match and maybe some stuff in the
-   `string' and `extra' field if appropriate (using VG_(get_supp_*)() to
-   get the relevant suppression parts). */
-extern Bool SK_(error_matches_suppression) ( Error* err, Supp* su );
-
-/* This should return the suppression name, for --gen-suppressions, or NULL
-   if that error type cannot be suppressed.  This is the inverse of
-   SK_(recognised_suppression)(). */
-extern Char* SK_(get_error_name) ( Error* err );
-
-/* This should print any extra info for the error, for --gen-suppressions,
-   including the newline.  This is the inverse of
-   SK_(read_extra_suppression_info)(). */
-extern void SK_(print_extra_suppression_info) ( Error* err );
-
-
-/* ------------------------------------------------------------------ */
-/* VG_(needs).basic_block_discards */
-
-/* Should discard any information that pertains to specific basic blocks
-   or instructions within the address range given. */
-extern void SK_(discard_basic_block_info) ( Addr a, UInt size );
-
-
-/* ------------------------------------------------------------------ */
-/* VG_(needs).shadow_regs */
-
-/* No functions must be defined, but the post_reg[s]_write_* events should
-   be tracked. */
-
-/* ------------------------------------------------------------------ */
-/* VG_(needs).command_line_options */
-
-/* Return True if option was recognised.  Presumably sets some state to
-   record the option as well. */
-extern Bool SK_(process_cmd_line_option) ( Char* argv );
-
-/* Print out command line usage for options for normal skin operation. */
-extern void SK_(print_usage)             ( void );
-
-/* Print out command line usage for options for debugging the skin. */
-extern void SK_(print_debug_usage)       ( void );
-
-/* ------------------------------------------------------------------ */
-/* VG_(needs).client_requests */
-
-/* If using client requests, the number of the first request should be equal
-   to VG_USERREQ_SKIN_BASE('X','Y'), where 'X' and 'Y' form a suitable two
-   character identification for the string.  The second and subsequent
-   requests should follow. */
-
-/* This function should use the VG_IS_SKIN_USERREQ macro (in
-   include/valgrind.h) to first check if it's a request for this skin.  Then
-   should handle it if it's recognised (and return True), or return False if
-   not recognised.  arg_block[0] holds the request number, any further args
-   from the request are in arg_block[1..].  'ret' is for the return value...
-   it should probably be filled, if only with 0. */
-extern Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg_block,
-                                         UInt *ret );
-
-
-/* ------------------------------------------------------------------ */
-/* VG_(needs).extends_UCode */
 
 /* Useful to use in VG_(get_Xreg_usage)() */
 #define VG_UINSTR_READS_REG(ono,regs,isWrites)  \
@@ -2055,42 +1867,654 @@ extern Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg_block,
         }                                       \
    }
 
-/* 'X' prefix indicates eXtended UCode. */
-extern Int   SK_(get_Xreg_usage) ( UInstr* u, Tag tag, Int* regs,
-                                   Bool* isWrites );
-extern void  SK_(emit_XUInstr)   ( UInstr* u, RRegSet regs_live_before );
-extern Bool  SK_(sane_XUInstr)   ( Bool beforeRA, Bool beforeLiveness,
-                                   UInstr* u );
-extern Char* SK_(name_XUOpcode)  ( Opcode opc );
-extern void  SK_(pp_XUInstr)     ( UInstr* u );
+#endif   /* NDEF __VG_SKIN_H */
 
+/* gen_toolint.pl will put the VG_(init_*)() functions here: */
+/* Generated by "gen_toolint.pl toolproto" */
 
-/* ------------------------------------------------------------------ */
-/* VG_(needs).syscall_wrapper */
+/* These are the parameterised functions in the core.  The default definitions
+   are overridden by LD_PRELOADed skin version.  At the very least, a skin
+   must define the fundamental template functions.  Depending on what needs
+   are set, extra template functions will be used too.  Functions are
+   grouped under the needs that govern their use.
 
-/* If either of the pre_ functions malloc() something to return, the
- * corresponding post_ function had better free() it!
+   ------------------------------------------------------------------
+   Fundamental template functions
+
+   Do initialisation that can only be done after command line processing.
  */
-extern void* SK_( pre_syscall) ( ThreadId tid, UInt syscallno,
-                                 Bool is_blocking );
-extern void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
-                                 void* pre_result, Int res,
-                                 Bool is_blocking );
+void SK_(post_clo_init)(void);
+
+/* Instrument a basic block.  Must be a true function, ie. the same input
+   always results in the same output, because basic blocks can be
+   retranslated.  Unless you're doing something really strange...
+   'orig_addr' is the address of the first instruction in the block.
+ */
+UCodeBlock* SK_(instrument)(UCodeBlock* cb, Addr orig_addr);
+
+/* Finish up, print out any results, etc.  `exitcode' is program's exit
+   code.  The shadow (if the `shadow_regs' need is set) can be found with
+   VG_(get_shadow_archreg)(R_EBX), since %ebx holds the argument to the
+   exit() syscall.
+ */
+void SK_(fini)(Int exitcode);
+
+
+/* ------------------------------------------------------------------
+   VG_(needs).core_errors
+
+   (none needed)
+
+   ------------------------------------------------------------------
+   VG_(needs).skin_errors
+
+   Identify if two errors are equal, or equal enough.  `res' indicates how
+   close is "close enough".  `res' should be passed on as necessary, eg. if
+   the Error's `extra' part contains an ExeContext, `res' should be
+   passed to VG_(eq_ExeContext)() if the ExeContexts are considered.  Other
+   than that, probably don't worry about it unless you have lots of very
+   similar errors occurring.
+ */
+Bool SK_(eq_SkinError)(VgRes res, Error* e1, Error* e2);
+
+/* Print error context. */
+void SK_(pp_SkinError)(Error* err);
+
+/* Should fill in any details that could be postponed until after the
+   decision whether to ignore the error (ie. details not affecting the
+   result of SK_(eq_SkinError)()).  This saves time when errors are ignored.
+   Yuk.
+
+   Return value: must be the size of the `extra' part in bytes -- used by
+   the core to make a copy.
+ */
+UInt SK_(update_extra)(Error* err);
+
+/* Return value indicates recognition.  If recognised, must set skind using
+   VG_(set_supp_kind)().
+ */
+Bool SK_(recognised_suppression)(Char* name, Supp* su);
+
+/* Read any extra info for this suppression kind.  Most likely for filling
+   in the `extra' and `string' parts (with VG_(set_supp_{extra, string})())
+   of a suppression if necessary.  Should return False if a syntax error
+   occurred, True otherwise.
+ */
+Bool SK_(read_extra_suppression_info)(Int fd, Char* buf, Int nBuf, Supp* su);
+
+/* This should just check the kinds match and maybe some stuff in the
+   `string' and `extra' field if appropriate (using VG_(get_supp_*)() to
+   get the relevant suppression parts).
+ */
+Bool SK_(error_matches_suppression)(Error* err, Supp* su);
+
+/* This should return the suppression name, for --gen-suppressions, or NULL
+   if that error type cannot be suppressed.  This is the inverse of
+   SK_(recognised_suppression)().
+ */
+Char* SK_(get_error_name)(Error* err);
+
+/* This should print any extra info for the error, for --gen-suppressions,
+   including the newline.  This is the inverse of
+   SK_(read_extra_suppression_info)().
+ */
+void SK_(print_extra_suppression_info)(Error* err);
+
+
+/* ------------------------------------------------------------------
+   VG_(needs).basic_block_discards
+
+   Should discard any information that pertains to specific basic blocks
+   or instructions within the address range given.
+ */
+void SK_(discard_basic_block_info)(Addr a, UInt size);
+
+
+/* ------------------------------------------------------------------
+   VG_(needs).shadow_regs
+
+   No functions must be defined, but the post_reg[s]_write_* events should
+   be tracked.
+
+   ------------------------------------------------------------------
+   VG_(needs).command_line_options
+
+   Return True if option was recognised.  Presumably sets some state to
+   record the option as well.
+ */
+Bool SK_(process_cmd_line_option)(Char* argv);
+
+/* Print out command line usage for options for normal skin operation. */
+void SK_(print_usage)(void);
+
+/* Print out command line usage for options for debugging the skin. */
+void SK_(print_debug_usage)(void);
+
+/* ------------------------------------------------------------------
+   VG_(needs).client_requests
+
+   If using client requests, the number of the first request should be equal
+   to VG_USERREQ_SKIN_BASE('X', 'Y'), where 'X' and 'Y' form a suitable two
+   character identification for the string.  The second and subsequent
+   requests should follow.
+
+   This function should use the VG_IS_SKIN_USERREQ macro (in
+   include/valgrind.h) to first check if it's a request for this skin.  Then
+   should handle it if it's recognised (and return True), or return False if
+   not recognised.  arg_block[0] holds the request number, any further args
+   from the request are in arg_block[1..].  'ret' is for the return value...
+   it should probably be filled, if only with 0.
+ */
+Bool SK_(handle_client_request)(ThreadId tid, UInt* arg_block, UInt* ret);
+
+
+/* ------------------------------------------------------------------
+   VG_(needs).extends_UCode
+
+   'X' prefix indicates eXtended UCode.
+ */
+Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, Int* regs, Bool* isWrites);
+void SK_(emit_XUInstr)(UInstr* u, RRegSet regs_live_before);
+Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u);
+Char * SK_(name_XUOpcode)(Opcode opc);
+void SK_(pp_XUInstr)(UInstr* u);
+
+
+/* ------------------------------------------------------------------
+   VG_(needs).syscall_wrapper
+
+   If either of the pre_ functions malloc() something to return, the
+   corresponding post_ function had better free() it!
+
+ */
+void * SK_(pre_syscall)(ThreadId tid, UInt syscallno, Bool is_blocking);
+void SK_(post_syscall)(ThreadId tid, UInt syscallno, void* pre_result, Int res, Bool is_blocking);
 
 
 /* ---------------------------------------------------------------------
-   VG_(needs).sanity_checks */
+     VG_(needs).sanity_checks
 
-/* Can be useful for ensuring a skin's correctness.  SK_(cheap_sanity_check)
+   Can be useful for ensuring a skin's correctness.  SK_(cheap_sanity_check)
    is called very frequently;  SK_(expensive_sanity_check) is called less
-   frequently and can be more involved. */
-extern Bool SK_(cheap_sanity_check)     ( void );
-extern Bool SK_(expensive_sanity_check) ( void );
+   frequently and can be more involved.
+ */
+Bool SK_(cheap_sanity_check)(void);
+Bool SK_(expensive_sanity_check)(void);
 
 
-#endif   /* NDEF __VG_SKIN_H */
+/* ================================================================================
+   Event tracking functions
 
-/*--------------------------------------------------------------------*/
-/*--- end                                                vg_skin.h ---*/
-/*--------------------------------------------------------------------*/
+   Events happening in core to track.  To be notified, pass a callback
+   function to the appropriate function.  To ignore an event, don't do
+   anything (default is for events to be ignored).
 
+   Note that most events aren't passed a ThreadId.  To find out the ThreadId
+   of the affected thread, use VG_(get_current_or_recent_tid)().  For the
+   ones passed a ThreadId, use that instead, since
+   VG_(get_current_or_recent_tid)() might not give the right ThreadId in
+   that case.
+
+   Memory events (Nb: to track heap allocation/freeing, a skin must replace
+   malloc() et al.  See above how to do this.)
+
+   These ones occur at startup, upon some signals, and upon some syscalls
+ */
+void SK_(new_mem_startup)(Addr a, UInt len, Bool rr, Bool ww, Bool xx);
+void SK_(new_mem_stack_signal)(Addr a, UInt len);
+void SK_(new_mem_brk)(Addr a, UInt len);
+void SK_(new_mem_mmap)(Addr a, UInt len, Bool rr, Bool ww, Bool xx);
+
+void SK_(copy_mem_remap)(Addr from, Addr to, UInt len);
+void SK_(change_mem_mprotect)(Addr a, UInt len, Bool rr, Bool ww, Bool xx);
+void SK_(die_mem_stack_signal)(Addr a, UInt len);
+void SK_(die_mem_brk)(Addr a, UInt len);
+void SK_(die_mem_munmap)(Addr a, UInt len);
+
+/* These ones are called when %esp changes.  A skin could track these itself
+   (except for ban_mem_stack) but it's much easier to use the core's help.
+
+   The specialised ones are called in preference to the general one, if they
+   are defined.  These functions are called a lot if they are used, so
+   specialising can optimise things significantly.  If any of the
+   specialised cases are defined, the general case must be defined too.
+
+   Nb: they must all use the __attribute__((regparm(n))) attribute.
+ */
+void SK_(new_mem_stack_4)(Addr new_ESP);
+void SK_(new_mem_stack_8)(Addr new_ESP);
+void SK_(new_mem_stack_12)(Addr new_ESP);
+void SK_(new_mem_stack_16)(Addr new_ESP);
+void SK_(new_mem_stack_32)(Addr new_ESP);
+void SK_(new_mem_stack)(Addr a, UInt len);
+
+void SK_(die_mem_stack_4)(Addr die_ESP);
+void SK_(die_mem_stack_8)(Addr die_ESP);
+void SK_(die_mem_stack_12)(Addr die_ESP);
+void SK_(die_mem_stack_16)(Addr die_ESP);
+void SK_(die_mem_stack_32)(Addr die_ESP);
+void SK_(die_mem_stack)(Addr a, UInt len);
+
+/* Used for redzone at end of thread stacks */
+void SK_(ban_mem_stack)(Addr a, UInt len);
+
+/* These ones occur around syscalls, signal handling, etc */
+void SK_(pre_mem_read)(CorePart part, ThreadId tid, Char* s, Addr a, UInt size);
+void SK_(pre_mem_read_asciiz)(CorePart part, ThreadId tid, Char* s, Addr a);
+void SK_(pre_mem_write)(CorePart part, ThreadId tid, Char* s, Addr a, UInt size);
+/* Not implemented yet -- have to add in lots of places, which is a
+   pain.  Won't bother unless/until there's a need.
+   void (*post_mem_read)  ( ThreadState* tst, Char* s, Addr a, UInt size );
+ */
+void SK_(post_mem_write)(Addr a, UInt size);
+
+
+/* Register events -- if `shadow_regs' need is set, all should probably be
+   used.  Use VG_(set_thread_shadow_archreg)() to set the shadow of the
+   changed register.
+
+   Use VG_(set_shadow_archreg)() to set the eight general purpose regs,
+   and use VG_(set_shadow_eflags)() to set eflags.
+ */
+void SK_(post_regs_write_init)(void);
+
+/* Use VG_(set_thread_shadow_archreg)() to set the shadow regs for these
+   events.
+ */
+void SK_(post_reg_write_syscall_return)(ThreadId tid, UInt reg);
+void SK_(post_reg_write_deliver_signal)(ThreadId tid, UInt reg);
+void SK_(post_reg_write_pthread_return)(ThreadId tid, UInt reg);
+void SK_(post_reg_write_clientreq_return)(ThreadId tid, UInt reg);
+/* This one is called for malloc() et al if they are replaced by a skin. */
+void SK_(post_reg_write_clientcall_return)(ThreadId tid, UInt reg, Addr f);
+
+
+/* Scheduler events (not exhaustive) */
+void SK_(thread_run)(ThreadId tid);
+
+
+/* Thread events (not exhaustive)
+
+   Called during thread create, before the new thread has run any
+   instructions (or touched any memory).
+ */
+void SK_(post_thread_create)(ThreadId tid, ThreadId child);
+void SK_(post_thread_join)(ThreadId joiner, ThreadId joinee);
+
+
+/* Mutex events (not exhaustive)
+   "void *mutex" is really a pthread_mutex *
+
+   Called before a thread can block while waiting for a mutex (called
+   regardless of whether the thread will block or not).
+ */
+void SK_(pre_mutex_lock)(ThreadId tid, void* mutex);
+/* Called once the thread actually holds the mutex (always paired with
+   pre_mutex_lock).
+ */
+void SK_(post_mutex_lock)(ThreadId tid, void* mutex);
+/* Called after a thread has released a mutex (no need for a corresponding
+   pre_mutex_unlock, because unlocking can't block).
+ */
+void SK_(post_mutex_unlock)(ThreadId tid, void* mutex);
+
+/* Signal events (not exhaustive)
+
+   ... pre_send_signal, post_send_signal ...
+
+   Called before a signal is delivered;  `alt_stack' indicates if it is
+   delivered on an alternative stack. 
+ */
+void SK_(pre_deliver_signal)(ThreadId tid, Int sigNo, Bool alt_stack);
+/* Called after a signal is delivered.  Nb: unfortunately, if the signal
+   handler longjmps, this won't be called.
+ */
+void SK_(post_deliver_signal)(ThreadId tid, Int sigNo);
+
+
+/* Others... condition variable...
+   ...
+
+   Shadow memory management
+ */
+void SK_(init_shadow_page)(Addr p);
+
+/* ================================================================================
+   malloc and friends
+ */
+void* SK_(malloc)(Int n);
+void* SK_(__builtin_new)(Int n);
+void* SK_(__builtin_vec_new)(Int n);
+void* SK_(memalign)(Int align, Int n);
+void* SK_(calloc)(Int nmemb, Int n);
+void SK_(free)(void* p);
+void SK_(__builtin_delete)(void* p);
+void SK_(__builtin_vec_delete)(void* p);
+void* SK_(realloc)(void* p, Int size);
+/* Generated by "gen_toolint.pl initproto" */
+
+#ifndef VG_toolint_initproto
+#define VG_toolint_initproto
+
+
+/* These are the parameterised functions in the core.  The default definitions
+   are overridden by LD_PRELOADed skin version.  At the very least, a skin
+   must define the fundamental template functions.  Depending on what needs
+   are set, extra template functions will be used too.  Functions are
+   grouped under the needs that govern their use.
+
+   ------------------------------------------------------------------
+   Fundamental template functions
+
+   Do initialisation that can only be done after command line processing.
+ */
+void VG_(init_post_clo_init)(void (*func)(void));
+
+/* Instrument a basic block.  Must be a true function, ie. the same input
+   always results in the same output, because basic blocks can be
+   retranslated.  Unless you're doing something really strange...
+   'orig_addr' is the address of the first instruction in the block.
+ */
+void VG_(init_instrument)(UCodeBlock* (*func)(UCodeBlock* cb, Addr orig_addr));
+
+/* Finish up, print out any results, etc.  `exitcode' is program's exit
+   code.  The shadow (if the `shadow_regs' need is set) can be found with
+   VG_(get_shadow_archreg)(R_EBX), since %ebx holds the argument to the
+   exit() syscall.
+ */
+void VG_(init_fini)(void (*func)(Int exitcode));
+
+
+/* ------------------------------------------------------------------
+   VG_(needs).core_errors
+
+   (none needed)
+
+   ------------------------------------------------------------------
+   VG_(needs).skin_errors
+
+   Identify if two errors are equal, or equal enough.  `res' indicates how
+   close is "close enough".  `res' should be passed on as necessary, eg. if
+   the Error's `extra' part contains an ExeContext, `res' should be
+   passed to VG_(eq_ExeContext)() if the ExeContexts are considered.  Other
+   than that, probably don't worry about it unless you have lots of very
+   similar errors occurring.
+ */
+void VG_(init_eq_SkinError)(Bool (*func)(VgRes res, Error* e1, Error* e2));
+
+/* Print error context. */
+void VG_(init_pp_SkinError)(void (*func)(Error* err));
+
+/* Should fill in any details that could be postponed until after the
+   decision whether to ignore the error (ie. details not affecting the
+   result of SK_(eq_SkinError)()).  This saves time when errors are ignored.
+   Yuk.
+
+   Return value: must be the size of the `extra' part in bytes -- used by
+   the core to make a copy.
+ */
+void VG_(init_update_extra)(UInt (*func)(Error* err));
+
+/* Return value indicates recognition.  If recognised, must set skind using
+   VG_(set_supp_kind)().
+ */
+void VG_(init_recognised_suppression)(Bool (*func)(Char* name, Supp* su));
+
+/* Read any extra info for this suppression kind.  Most likely for filling
+   in the `extra' and `string' parts (with VG_(set_supp_{extra, string})())
+   of a suppression if necessary.  Should return False if a syntax error
+   occurred, True otherwise.
+ */
+void VG_(init_read_extra_suppression_info)(Bool (*func)(Int fd, Char* buf, Int nBuf, Supp* su));
+
+/* This should just check the kinds match and maybe some stuff in the
+   `string' and `extra' field if appropriate (using VG_(get_supp_*)() to
+   get the relevant suppression parts).
+ */
+void VG_(init_error_matches_suppression)(Bool (*func)(Error* err, Supp* su));
+
+/* This should return the suppression name, for --gen-suppressions, or NULL
+   if that error type cannot be suppressed.  This is the inverse of
+   SK_(recognised_suppression)().
+ */
+void VG_(init_get_error_name)(Char* (*func)(Error* err));
+
+/* This should print any extra info for the error, for --gen-suppressions,
+   including the newline.  This is the inverse of
+   SK_(read_extra_suppression_info)().
+ */
+void VG_(init_print_extra_suppression_info)(void (*func)(Error* err));
+
+
+/* ------------------------------------------------------------------
+   VG_(needs).basic_block_discards
+
+   Should discard any information that pertains to specific basic blocks
+   or instructions within the address range given.
+ */
+void VG_(init_discard_basic_block_info)(void (*func)(Addr a, UInt size));
+
+
+/* ------------------------------------------------------------------
+   VG_(needs).shadow_regs
+
+   No functions must be defined, but the post_reg[s]_write_* events should
+   be tracked.
+
+   ------------------------------------------------------------------
+   VG_(needs).command_line_options
+
+   Return True if option was recognised.  Presumably sets some state to
+   record the option as well.
+ */
+void VG_(init_process_cmd_line_option)(Bool (*func)(Char* argv));
+
+/* Print out command line usage for options for normal skin operation. */
+void VG_(init_print_usage)(void (*func)(void));
+
+/* Print out command line usage for options for debugging the skin. */
+void VG_(init_print_debug_usage)(void (*func)(void));
+
+/* ------------------------------------------------------------------
+   VG_(needs).client_requests
+
+   If using client requests, the number of the first request should be equal
+   to VG_USERREQ_SKIN_BASE('X', 'Y'), where 'X' and 'Y' form a suitable two
+   character identification for the string.  The second and subsequent
+   requests should follow.
+
+   This function should use the VG_IS_SKIN_USERREQ macro (in
+   include/valgrind.h) to first check if it's a request for this skin.  Then
+   should handle it if it's recognised (and return True), or return False if
+   not recognised.  arg_block[0] holds the request number, any further args
+   from the request are in arg_block[1..].  'ret' is for the return value...
+   it should probably be filled, if only with 0.
+ */
+void VG_(init_handle_client_request)(Bool (*func)(ThreadId tid, UInt* arg_block, UInt* ret));
+
+
+/* ------------------------------------------------------------------
+   VG_(needs).extends_UCode
+
+   'X' prefix indicates eXtended UCode.
+ */
+void VG_(init_get_Xreg_usage)(Int (*func)(UInstr* u, Tag tag, Int* regs, Bool* isWrites));
+void VG_(init_emit_XUInstr)(void (*func)(UInstr* u, RRegSet regs_live_before));
+void VG_(init_sane_XUInstr)(Bool (*func)(Bool beforeRA, Bool beforeLiveness, UInstr* u));
+void VG_(init_name_XUOpcode)(Char * (*func)(Opcode opc));
+void VG_(init_pp_XUInstr)(void (*func)(UInstr* u));
+
+
+/* ------------------------------------------------------------------
+   VG_(needs).syscall_wrapper
+
+   If either of the pre_ functions malloc() something to return, the
+   corresponding post_ function had better free() it!
+
+ */
+void VG_(init_pre_syscall)(void * (*func)(ThreadId tid, UInt syscallno, Bool is_blocking));
+void VG_(init_post_syscall)(void (*func)(ThreadId tid, UInt syscallno, void* pre_result, Int res, Bool is_blocking));
+
+
+/* ---------------------------------------------------------------------
+     VG_(needs).sanity_checks
+
+   Can be useful for ensuring a skin's correctness.  SK_(cheap_sanity_check)
+   is called very frequently;  SK_(expensive_sanity_check) is called less
+   frequently and can be more involved.
+ */
+void VG_(init_cheap_sanity_check)(Bool (*func)(void));
+void VG_(init_expensive_sanity_check)(Bool (*func)(void));
+
+
+/* ================================================================================
+   Event tracking functions
+
+   Events happening in core to track.  To be notified, pass a callback
+   function to the appropriate function.  To ignore an event, don't do
+   anything (default is for events to be ignored).
+
+   Note that most events aren't passed a ThreadId.  To find out the ThreadId
+   of the affected thread, use VG_(get_current_or_recent_tid)().  For the
+   ones passed a ThreadId, use that instead, since
+   VG_(get_current_or_recent_tid)() might not give the right ThreadId in
+   that case.
+
+   Memory events (Nb: to track heap allocation/freeing, a skin must replace
+   malloc() et al.  See above how to do this.)
+
+   These ones occur at startup, upon some signals, and upon some syscalls
+ */
+void VG_(init_new_mem_startup)(void (*func)(Addr a, UInt len, Bool rr, Bool ww, Bool xx));
+void VG_(init_new_mem_stack_signal)(void (*func)(Addr a, UInt len));
+void VG_(init_new_mem_brk)(void (*func)(Addr a, UInt len));
+void VG_(init_new_mem_mmap)(void (*func)(Addr a, UInt len, Bool rr, Bool ww, Bool xx));
+
+void VG_(init_copy_mem_remap)(void (*func)(Addr from, Addr to, UInt len));
+void VG_(init_change_mem_mprotect)(void (*func)(Addr a, UInt len, Bool rr, Bool ww, Bool xx));
+void VG_(init_die_mem_stack_signal)(void (*func)(Addr a, UInt len));
+void VG_(init_die_mem_brk)(void (*func)(Addr a, UInt len));
+void VG_(init_die_mem_munmap)(void (*func)(Addr a, UInt len));
+
+/* These ones are called when %esp changes.  A skin could track these itself
+   (except for ban_mem_stack) but it's much easier to use the core's help.
+
+   The specialised ones are called in preference to the general one, if they
+   are defined.  These functions are called a lot if they are used, so
+   specialising can optimise things significantly.  If any of the
+   specialised cases are defined, the general case must be defined too.
+
+   Nb: they must all use the __attribute__((regparm(n))) attribute.
+ */
+void VG_(init_new_mem_stack_4)(void (*func)(Addr new_ESP));
+void VG_(init_new_mem_stack_8)(void (*func)(Addr new_ESP));
+void VG_(init_new_mem_stack_12)(void (*func)(Addr new_ESP));
+void VG_(init_new_mem_stack_16)(void (*func)(Addr new_ESP));
+void VG_(init_new_mem_stack_32)(void (*func)(Addr new_ESP));
+void VG_(init_new_mem_stack)(void (*func)(Addr a, UInt len));
+
+void VG_(init_die_mem_stack_4)(void (*func)(Addr die_ESP));
+void VG_(init_die_mem_stack_8)(void (*func)(Addr die_ESP));
+void VG_(init_die_mem_stack_12)(void (*func)(Addr die_ESP));
+void VG_(init_die_mem_stack_16)(void (*func)(Addr die_ESP));
+void VG_(init_die_mem_stack_32)(void (*func)(Addr die_ESP));
+void VG_(init_die_mem_stack)(void (*func)(Addr a, UInt len));
+
+/* Used for redzone at end of thread stacks */
+void VG_(init_ban_mem_stack)(void (*func)(Addr a, UInt len));
+
+/* These ones occur around syscalls, signal handling, etc */
+void VG_(init_pre_mem_read)(void (*func)(CorePart part, ThreadId tid, Char* s, Addr a, UInt size));
+void VG_(init_pre_mem_read_asciiz)(void (*func)(CorePart part, ThreadId tid, Char* s, Addr a));
+void VG_(init_pre_mem_write)(void (*func)(CorePart part, ThreadId tid, Char* s, Addr a, UInt size));
+/* Not implemented yet -- have to add in lots of places, which is a
+   pain.  Won't bother unless/until there's a need.
+   void (*post_mem_read)  ( ThreadState* tst, Char* s, Addr a, UInt size );
+ */
+void VG_(init_post_mem_write)(void (*func)(Addr a, UInt size));
+
+
+/* Register events -- if `shadow_regs' need is set, all should probably be
+   used.  Use VG_(set_thread_shadow_archreg)() to set the shadow of the
+   changed register.
+
+   Use VG_(set_shadow_archreg)() to set the eight general purpose regs,
+   and use VG_(set_shadow_eflags)() to set eflags.
+ */
+void VG_(init_post_regs_write_init)(void (*func)(void));
+
+/* Use VG_(set_thread_shadow_archreg)() to set the shadow regs for these
+   events.
+ */
+void VG_(init_post_reg_write_syscall_return)(void (*func)(ThreadId tid, UInt reg));
+void VG_(init_post_reg_write_deliver_signal)(void (*func)(ThreadId tid, UInt reg));
+void VG_(init_post_reg_write_pthread_return)(void (*func)(ThreadId tid, UInt reg));
+void VG_(init_post_reg_write_clientreq_return)(void (*func)(ThreadId tid, UInt reg));
+/* This one is called for malloc() et al if they are replaced by a skin. */
+void VG_(init_post_reg_write_clientcall_return)(void (*func)(ThreadId tid, UInt reg, Addr f));
+
+
+/* Scheduler events (not exhaustive) */
+void VG_(init_thread_run)(void (*func)(ThreadId tid));
+
+
+/* Thread events (not exhaustive)
+
+   Called during thread create, before the new thread has run any
+   instructions (or touched any memory).
+ */
+void VG_(init_post_thread_create)(void (*func)(ThreadId tid, ThreadId child));
+void VG_(init_post_thread_join)(void (*func)(ThreadId joiner, ThreadId joinee));
+
+
+/* Mutex events (not exhaustive)
+   "void *mutex" is really a pthread_mutex *
+
+   Called before a thread can block while waiting for a mutex (called
+   regardless of whether the thread will block or not).
+ */
+void VG_(init_pre_mutex_lock)(void (*func)(ThreadId tid, void* mutex));
+/* Called once the thread actually holds the mutex (always paired with
+   pre_mutex_lock).
+ */
+void VG_(init_post_mutex_lock)(void (*func)(ThreadId tid, void* mutex));
+/* Called after a thread has released a mutex (no need for a corresponding
+   pre_mutex_unlock, because unlocking can't block).
+ */
+void VG_(init_post_mutex_unlock)(void (*func)(ThreadId tid, void* mutex));
+
+/* Signal events (not exhaustive)
+
+   ... pre_send_signal, post_send_signal ...
+
+   Called before a signal is delivered;  `alt_stack' indicates if it is
+   delivered on an alternative stack. 
+ */
+void VG_(init_pre_deliver_signal)(void (*func)(ThreadId tid, Int sigNo, Bool alt_stack));
+/* Called after a signal is delivered.  Nb: unfortunately, if the signal
+   handler longjmps, this won't be called.
+ */
+void VG_(init_post_deliver_signal)(void (*func)(ThreadId tid, Int sigNo));
+
+
+/* Others... condition variable...
+   ...
+
+   Shadow memory management
+ */
+void VG_(init_init_shadow_page)(void (*func)(Addr p));
+
+/* ================================================================================
+   malloc and friends
+ */
+void VG_(init_malloc)(void* (*func)(Int n));
+void VG_(init___builtin_new)(void* (*func)(Int n));
+void VG_(init___builtin_vec_new)(void* (*func)(Int n));
+void VG_(init_memalign)(void* (*func)(Int align, Int n));
+void VG_(init_calloc)(void* (*func)(Int nmemb, Int n));
+void VG_(init_free)(void (*func)(void* p));
+void VG_(init___builtin_delete)(void (*func)(void* p));
+void VG_(init___builtin_vec_delete)(void (*func)(void* p));
+void VG_(init_realloc)(void* (*func)(void* p, Int size));
+
+#endif /* VG_toolint_initproto */

@@ -30,6 +30,7 @@
 */
 
 #include <stdio.h>
+#include "valgrind.h"
 
 typedef unsigned int Addr;
 typedef unsigned char UChar;
@@ -44,7 +45,7 @@ void p ( int n )
    printf("in p %d\n", n);
 }
 
-UChar code[100];
+UChar code[10];
 
 /* Make `code' be JMP-32 dest */
 void set_dest ( Addr dest )
@@ -58,6 +59,9 @@ void set_dest ( Addr dest )
    code[2] = ((delta >> 8) & 0xFF);
    code[3] = ((delta >> 16) & 0xFF);
    code[4] = ((delta >> 24) & 0xFF);
+
+   /* XXX this should be automatic */
+   VALGRIND_DISCARD_TRANSLATIONS(code, sizeof(code));
 }
 
 int main ( void )

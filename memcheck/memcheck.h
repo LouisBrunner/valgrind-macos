@@ -89,7 +89,10 @@ typedef
       VG_USERREQ__FREELIKE_BLOCK__OLD_DO_NOT_USE,
 
       VG_USERREQ__GET_VBITS,
-      VG_USERREQ__SET_VBITS
+      VG_USERREQ__SET_VBITS,
+
+      /* This is just for memcheck's internal use - don't use it */
+      _VG_USERREQ__MEMCHECK_GET_RECORD_OVERLAP = VG_USERREQ_SKIN_BASE('M','C')+256,
    } Vg_MemCheckClientRequest;
 
 

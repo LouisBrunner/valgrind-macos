@@ -246,16 +246,16 @@ static void synth_GETV ( Int sz, Int arch, Int reg )
                                         R_EBP, reg );
          break;
       case 2: 
-         VG_(emit_movzwl_offregmem_reg) ( VG_(shadow_reg_offset)(arch),
+         VG_(emit_movzwl_offregmem_reg) ( False, VG_(shadow_reg_offset)(arch),
                                           R_EBP, reg );
          VG_(emit_nonshiftopv_lit_reg) ( False, 4, OR, 0xFFFF0000, reg );
          break;
       case 1: 
          if (arch < 4) {
-            VG_(emit_movzbl_offregmem_reg) ( VG_(shadow_reg_offset)(arch),
+            VG_(emit_movzbl_offregmem_reg) ( False, VG_(shadow_reg_offset)(arch),
                                              R_EBP, reg );
          } else {
-            VG_(emit_movzbl_offregmem_reg) ( VG_(shadow_reg_offset)(arch-4)+1,
+            VG_(emit_movzbl_offregmem_reg) ( False, VG_(shadow_reg_offset)(arch-4)+1,
                                              R_EBP, reg );
          }
          VG_(emit_nonshiftopv_lit_reg) ( False, 4, OR, 0xFFFFFF00, reg );

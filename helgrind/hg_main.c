@@ -32,8 +32,6 @@
 #include "vg_skin.h"
 #include "helgrind.h"
 
-VG_DETERMINE_INTERFACE_VERSION
-
 static UInt n_eraser_warnings = 0;
 static UInt n_lockorder_warnings = 0;
 
@@ -498,7 +496,7 @@ ESecMap* alloc_secondary_map ( __attribute__ ((unused)) Char* caller )
       although this isn't important, so the following assert is
       spurious. (SSS: not true for ESecMaps -- they're 16 pages) */
    sk_assert(0 == (sizeof(ESecMap) % VKI_BYTES_PER_PAGE));
-   map = VG_(get_memory_from_mmap)( sizeof(ESecMap), caller );
+   map = (ESecMap *)VG_(shadow_alloc)(sizeof(ESecMap));
 
    for (i = 0; i < ESEC_MAP_WORDS; i++)
       map->swords[i] = virgin_sword;
@@ -3246,34 +3244,35 @@ void SK_(pre_clo_init)(void)
    VG_(needs_data_syms)();
    VG_(needs_client_requests)();
    VG_(needs_command_line_options)();
+   VG_(needs_shadow_memory)();
 
-   VG_(track_new_mem_startup)      (& eraser_new_mem_startup);
+   VG_(init_new_mem_startup)      (& eraser_new_mem_startup);
 
    /* stack ones not decided until VG_(post_clo_init)() */
 
-   VG_(track_new_mem_brk)          (& make_writable);
-   VG_(track_new_mem_mmap)         (& eraser_new_mem_startup);
+   VG_(init_new_mem_brk)          (& make_writable);
+   VG_(init_new_mem_mmap)         (& eraser_new_mem_startup);
 
-   VG_(track_change_mem_mprotect)  (& eraser_set_perms);
+   VG_(init_change_mem_mprotect)  (& eraser_set_perms);
 
-   VG_(track_ban_mem_stack)        (NULL);
+   VG_(init_ban_mem_stack)        (NULL);
 
-   VG_(track_die_mem_stack)        (NULL);
-   VG_(track_die_mem_stack_signal) (NULL);
-   VG_(track_die_mem_brk)          (NULL);
-   VG_(track_die_mem_munmap)       (NULL);
+   VG_(init_die_mem_stack)        (NULL);
+   VG_(init_die_mem_stack_signal) (NULL);
+   VG_(init_die_mem_brk)          (NULL);
+   VG_(init_die_mem_munmap)       (NULL);
 
-   VG_(track_pre_mem_read)         (& eraser_pre_mem_read);
-   VG_(track_pre_mem_read_asciiz)  (& eraser_pre_mem_read_asciiz);
-   VG_(track_pre_mem_write)        (& eraser_pre_mem_write);
-   VG_(track_post_mem_write)       (NULL);
+   VG_(init_pre_mem_read)         (& eraser_pre_mem_read);
+   VG_(init_pre_mem_read_asciiz)  (& eraser_pre_mem_read_asciiz);
+   VG_(init_pre_mem_write)        (& eraser_pre_mem_write);
+   VG_(init_post_mem_write)       (NULL);
 
-   VG_(track_post_thread_create)   (& hg_thread_create);
-   VG_(track_post_thread_join)     (& hg_thread_join);
+   VG_(init_post_thread_create)   (& hg_thread_create);
+   VG_(init_post_thread_join)     (& hg_thread_join);
 
-   VG_(track_pre_mutex_lock)       (& eraser_pre_mutex_lock);
-   VG_(track_post_mutex_lock)      (& eraser_post_mutex_lock);
-   VG_(track_post_mutex_unlock)    (& eraser_post_mutex_unlock);
+   VG_(init_pre_mutex_lock)       (& eraser_pre_mutex_lock);
+   VG_(init_post_mutex_lock)      (& eraser_post_mutex_lock);
+   VG_(init_post_mutex_unlock)    (& eraser_post_mutex_unlock);
 
    VG_(register_compact_helper)((Addr) & eraser_mem_help_read_1);
    VG_(register_compact_helper)((Addr) & eraser_mem_help_read_2);
@@ -3392,8 +3391,8 @@ void SK_(post_clo_init)(void)
    else
       stack_tracker = & eraser_new_mem_stack;
 
-   VG_(track_new_mem_stack)        (stack_tracker);
-   VG_(track_new_mem_stack_signal) (stack_tracker);
+   VG_(init_new_mem_stack)        (stack_tracker);
+   VG_(init_new_mem_stack_signal) (stack_tracker);
 }
 
 
@@ -3416,6 +3415,9 @@ void SK_(fini)(Int exitcode)
 		  nonstk_ld, nonstk_st, nonstk_ld + nonstk_st,
 		  ((stk_ld+stk_st)*100) / (stk_ld + stk_st + nonstk_ld + nonstk_st));
 }
+
+/* Uses a 1:1 mapping */
+VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 1.0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                hg_main.c ---*/

@@ -6536,7 +6536,8 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
          if (eip - eip0 > 2000 && !isEnd) {
             if (VG_(clo_verbosity) > 2)
                VG_(message)(Vg_DebugMsg,
-                  "Warning: splitting giant basic block into pieces");
+			    "Warning: splitting giant basic block into pieces at %p %(y",
+			    eip, eip);
             uInstr1(cb, JMP, 0, Literal, 0);
             uLiteral(cb, eip);
             uCond(cb, CondAlways);

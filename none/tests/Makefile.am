@@ -45,7 +45,7 @@ check_PROGRAMS = \
 	pth_blockedsig \
 	coolo_sigaction gxx304
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones

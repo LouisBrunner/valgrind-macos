@@ -35,6 +35,68 @@
 /* Define to turn on (heavyweight) debugging machinery. */
 /* #define DEBUG_MALLOC */
 
+/*------------------------------------------------------------*/
+/*--- Command line options                                 ---*/
+/*------------------------------------------------------------*/
+
+/* Round malloc sizes upwards to integral number of words? default: NO */
+Bool VG_(clo_sloppy_malloc)  = False;
+
+/* DEBUG: print malloc details?  default: NO */
+Bool VG_(clo_trace_malloc)   = False;
+
+/* Minimum alignment in functions that don't specify alignment explicitly.
+   default: 0, i.e. use default of the machine (== 4) */
+Int  VG_(clo_alignment) = 4;
+
+
+Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
+{
+   if      (VG_CLO_STREQN(12, arg, "--alignment=")) {
+      VG_(clo_alignment) = (Int)VG_(atoll)(&arg[12]);
+
+      if (VG_(clo_alignment) < 4 
+          || VG_(clo_alignment) > 4096
+          || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
+         VG_(message)(Vg_UserMsg, "");
+         VG_(message)(Vg_UserMsg, 
+            "Invalid --alignment= setting.  "
+            "Should be a power of 2, >= 4, <= 4096.");
+         VG_(bad_option)("--alignment");
+      }
+   }
+
+   else if (VG_CLO_STREQ(arg, "--sloppy-malloc=yes"))
+      VG_(clo_sloppy_malloc) = True;
+   else if (VG_CLO_STREQ(arg, "--sloppy-malloc=no"))
+      VG_(clo_sloppy_malloc) = False;
+
+   else if (VG_CLO_STREQ(arg, "--trace-malloc=yes"))
+      VG_(clo_trace_malloc) = True;
+   else if (VG_CLO_STREQ(arg, "--trace-malloc=no"))
+      VG_(clo_trace_malloc) = False;
+
+   else 
+      return False;
+
+   return True;
+}
+
+void VG_(replacement_malloc_print_usage)(void)
+{
+   VG_(printf)(
+"    --sloppy-malloc=no|yes    round malloc sizes to next word? [no]\n"
+"    --alignment=<number>      set minimum alignment of allocations [4]\n"
+   );
+}
+
+void VG_(replacement_malloc_print_debug_usage)(void)
+{
+   VG_(printf)(
+"    --trace-malloc=no|yes     show client malloc details? [no]\n"
+   );
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Structs n stuff                                      ---*/
@@ -66,9 +128,10 @@ typedef
 typedef 
    struct {
       Char*       name;
-      Int         rz_szW; /* Red zone size in words */
-      Bool        rz_check; /* Check red-zone on free? */
-      Int         min_sblockW; /* Minimum superblock size */
+      Bool	  clientmem;	/* allocates in the client address space */
+      Int         rz_szW;	/* Red zone size in words */
+      Bool        rz_check;	/* Check red-zone on free? */
+      Int         min_sblockW;	/* Minimum superblock size */
       WordF*      freelist[VG_N_MALLOC_LISTS];
       Superblock* sblocks;
       /* Stats only. */
@@ -143,11 +206,12 @@ static Arena* arenaId_to_ArenaP ( ArenaId arena )
 /* Initialise an arena. */
 static
 void arena_init ( Arena* a, Char* name, 
-                  Int rz_szW, Bool rz_check, Int min_sblockW )
+                  Int rz_szW, Bool rz_check, Int min_sblockW, Bool client )
 {
    Int i;
    vg_assert((min_sblockW % VKI_WORDS_PER_PAGE) == 0);
    a->name = name;
+   a->clientmem = client;
    a->rz_szW = rz_szW;
    a->rz_check = rz_check;
    a->min_sblockW = min_sblockW;
@@ -195,27 +259,27 @@ void ensure_mm_init ( void )
       here, which merely checks at the time of freeing that the red 
       zone words are unchanged. */
 
-   arena_init ( &vg_arena[VG_AR_CORE],      "core",     1, True, 262144 );
+   arena_init ( &vg_arena[VG_AR_CORE],      "core",     1, True, 262144, False );
 
-   arena_init ( &vg_arena[VG_AR_SKIN],      "skin",     1, True, 262144 );
+   arena_init ( &vg_arena[VG_AR_SKIN],      "skin",     1, True, 262144, False );
 
-   arena_init ( &vg_arena[VG_AR_SYMTAB],    "symtab",   1, True, 262144 );
+   arena_init ( &vg_arena[VG_AR_SYMTAB],    "symtab",   1, True, 262144, False );
 
-   arena_init ( &vg_arena[VG_AR_JITTER],    "JITter",   1, True, 8192 );
+   arena_init ( &vg_arena[VG_AR_JITTER],    "JITter",   1, True, 8192,   False );
 
    /* No particular reason for this figure, it's just smallish */
    sk_assert(VG_(vg_malloc_redzone_szB) < 128);
    arena_init ( &vg_arena[VG_AR_CLIENT],    "client",  
-                VG_(vg_malloc_redzone_szB)/4, False, 262144 );
+                VG_(vg_malloc_redzone_szB)/4, False, 262144, True );
 
    arena_init ( &vg_arena[VG_AR_DEMANGLE],  "demangle", 4 /*paranoid*/,
-                                                           True, 16384 );
+                                                           True, 16384, False );
 
-   arena_init ( &vg_arena[VG_AR_EXECTXT],   "exectxt",  1, True, 16384 );
+   arena_init ( &vg_arena[VG_AR_EXECTXT],   "exectxt",  1, True, 16384, False );
 
-   arena_init ( &vg_arena[VG_AR_ERRORS],    "errors",   1, True, 16384 );
+   arena_init ( &vg_arena[VG_AR_ERRORS],    "errors",   1, True, 16384, False );
 
-   arena_init ( &vg_arena[VG_AR_TRANSIENT], "transien", 2, True, 16384 );
+   arena_init ( &vg_arena[VG_AR_TRANSIENT], "transien", 2, True, 16384, False );
 
    init_done = True;
 #  ifdef DEBUG_MALLOC
@@ -257,8 +321,13 @@ Superblock* newSuperblock ( Arena* a, Int cszW )
    cszW += 2; /* Take into account sb->next and sb->n_words fields */
    if (cszW < a->min_sblockW) cszW = a->min_sblockW;
    while ((cszW % VKI_WORDS_PER_PAGE) > 0) cszW++;
-   sb = VG_(get_memory_from_mmap) ( cszW * sizeof(Word), 
-                                    "newSuperblock" );
+
+   if (a->clientmem) {
+      sb = (Superblock *)VG_(client_alloc)(0, cszW * sizeof(Word), 
+					   VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 0);
+   } else
+      sb = VG_(get_memory_from_mmap) ( cszW * sizeof(Word), 
+				       "newSuperblock" );
    sb->n_payload_words = cszW - 2;
    a->bytes_mmaped += cszW * sizeof(Word);
    if (0)

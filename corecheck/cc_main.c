@@ -31,8 +31,6 @@
 
 #include "vg_skin.h"
 
-VG_DETERMINE_INTERFACE_VERSION
-
 void SK_(pre_clo_init)(void)
 {
    VG_(details_name)            ("Coregrind");
@@ -46,6 +44,8 @@ void SK_(pre_clo_init)(void)
 
    /* No core events to track */
 }
+
+VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 0)
 
 void SK_(post_clo_init)(void)
 {

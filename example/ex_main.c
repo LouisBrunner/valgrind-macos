@@ -5,9 +5,7 @@
 
 #include "vg_skin.h"
 
-VG_DETERMINE_INTERFACE_VERSION
-
-void SK_(pre_clo_init)()
+static void SK_(pre_clo_init)()
 {
    VG_(details_name)            ("Example");
    VG_(details_version)         ("0.0.1");
@@ -31,6 +29,9 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb, Addr a)
 void SK_(fini)(exitcode)
 {
 }
+
+/* Does not use shadow memory */
+VG_DETERMINE_INTERFACE_VERSION(SK_(pre_clo_init), 0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                ex_main.c ---*/

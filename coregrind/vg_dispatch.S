@@ -76,6 +76,16 @@ VG_(run_innerloop):
 	pushl	%edi
 	pushl	%ebp
 
+	/* check to see if we're doing pointer checking */
+	movl	VG_(clo_pointercheck), %eax
+	testl	%eax,%eax
+	jz	1f
+	
+	pushl	%fs						/* save %fs     */
+	mov	$(VG_POINTERCHECK_SEGIDX << 3) + 7, %eax	/* load new %fs */
+	movw	%ax,%fs
+
+1:	
 	/* Set up the baseBlock pointer */
 	movl	$VG_(baseBlock), %ebp
 
@@ -137,7 +147,14 @@ counter_is_zero:
 	jmp	run_innerloop_exit
 	
 run_innerloop_exit:
-	popl	%ebp
+	movl	VG_(clo_pointercheck), %ebx
+	testl	%ebx,%ebx
+	jz	1f
+
+	/* restore %fs */
+	popl	%fs
+	
+1:	popl	%ebp
 	popl	%edi
 	popl	%esi
 	popl	%edx

@@ -1842,22 +1842,22 @@ UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
 
       } else if (PUT == u->opcode && R_ESP == u->val2 && 4 == u->size) {
 
-#           define DO_GENERIC                                                 \
-               if (VG_(track_events).new_mem_stack ||                         \
-                   VG_(track_events).die_mem_stack) {                         \
-                  uInstr1(cb, CCALL, 0, TempReg, u->val1);                    \
-                  uCCall(cb, (Addr) VG_(unknown_esp_update),                  \
-                         1, 1, False);                                        \
+#           define DO_GENERIC					\
+               if (VG_(defined_new_mem_stack)() ||		\
+                   VG_(defined_die_mem_stack)()) {		\
+                  uInstr1(cb, CCALL, 0, TempReg, u->val1);	\
+                  uCCall(cb, (Addr) VG_(unknown_esp_update),	\
+                         1, 1, False);				\
                } 
 
-#           define DO(kind, size)                                             \
-               if (VG_(track_events).kind##_mem_stack_##size) {               \
-                  uInstr1(cb, CCALL, 0, TempReg, u->val1);                    \
-                  uCCall(cb, (Addr) VG_(track_events).kind##_mem_stack_##size,\
-                         1, 1, False);                                        \
-                                                                              \
-               } else                                                         \
-                  DO_GENERIC                                                  \
+#           define DO(kind, size)								\
+               if (VG_(defined_##kind##_mem_stack_##size)()) {					\
+                  uInstr1(cb, CCALL, 0, TempReg, u->val1);					\
+                  uCCall(cb, (Addr) VG_(tool_interface).track_##kind##_mem_stack_##size,	\
+                         1, 1, False);								\
+												\
+               } else										\
+                  DO_GENERIC									\
                break
 
          if (u->val1 == t_ESP) {
@@ -2354,12 +2354,14 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
                       /*OUT*/ UInt* trans_size,
 		      /*OUT*/ UShort jumps[VG_MAX_JUMPS])
 {
-   Int         n_disassembled_bytes, final_code_size, i;
+   Int         n_disassembled_bytes, final_code_size;
    Bool        debugging_translation;
    UChar*      final_code;
    UCodeBlock* cb;
    Bool        notrace_until_done;
    UInt        notrace_until_limit = 0;
+   Segment     *seg;
+   Addr		redir;
 
    VGP_PUSHCC(VgpTranslate);
    debugging_translation
@@ -2367,17 +2369,14 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
 
    /* Look in the code redirect table to see if we should
       translate an alternative address for orig_addr. */
-   for (i = 0; VG_(code_redirect_table)[i].entry_pt_orig != 0; i++) {
-      if (orig_addr == VG_(code_redirect_table)[i].entry_pt_orig) {
-         if (VG_(clo_verbosity) >= 2)
-            VG_(message)(Vg_UserMsg, 
-               "TRANSLATE: %p redirected to %p",
-               orig_addr, 
-               VG_(code_redirect_table)[i].entry_pt_subst );
-         orig_addr = VG_(code_redirect_table)[i].entry_pt_subst;
-         break;
-      }
-   }
+   redir = VG_(code_redirect)(orig_addr);
+
+   if (redir != orig_addr && VG_(clo_verbosity) >= 2)
+      VG_(message)(Vg_UserMsg, 
+		   "TRANSLATE: %p redirected to %p",
+		   orig_addr, 
+		   redir );
+   orig_addr = redir;
 
    /* If codegen tracing, don't start tracing until
       notrace_until_limit blocks have gone by.  This avoids printing
@@ -2388,20 +2387,32 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
    notrace_until_done
       = VG_(overall_in_count) > notrace_until_limit;
 
+   seg = VG_(find_segment)(orig_addr);
+
    if (!debugging_translation)
       VG_TRACK( pre_mem_read, Vg_CoreTranslate, tid, "", orig_addr, 1 );
 
-   if (!VG_(is_addressable)(orig_addr, 1)) {
-      /* Code address is bad - deliver a signal instead */
+   if (seg == NULL ||
+       !VG_(seg_contains)(seg, orig_addr, 1) || 
+       (seg->prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == 0) {
       vki_ksiginfo_t info;
 
+      /* Code address is bad - deliver a signal instead */
+      vg_assert(!VG_(is_addressable)(orig_addr, 1));
+
       info.si_signo = VKI_SIGSEGV;
-      info.si_code = 1;		/* address not mapped to object */
+
+      if (seg != NULL && VG_(seg_contains)(seg, orig_addr, 1)) {
+	 vg_assert((seg->prot & VKI_PROT_EXEC) == 0);
+	 info.si_code = 2;	/* invalid permissions for mapped object */
+      } else
+	 info.si_code = 1;	/* address not mapped to object */
       info._sifields._sigfault._addr = (void*)orig_addr;
 
       VG_(deliver_signal)(tid, &info, False);
       return;
-   }
+   } else
+      seg->flags |= SF_CODE;	/* contains cached code */
 
    cb = VG_(alloc_UCodeBlock)();
    cb->orig_eip = orig_addr;

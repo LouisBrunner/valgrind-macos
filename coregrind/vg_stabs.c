@@ -300,7 +300,7 @@ static StabType *getStabType(StabTypeTab *tab, Int file, Int sym)
    return &sf->types[sym];
 }
 
-static inline Bool isdigit(Char c, Int base, Int *v)
+static Bool isdigit(Char c, Int base, Int *v)
 {
    switch(base) {
    case 10:

@@ -50,6 +50,12 @@ static Int hexdigit ( Char c )
    return -1;
 }
 
+static Int decdigit ( Char c )
+{
+   if (c >= '0' && c <= '9') return (Int)(c - '0');
+   return -1;
+}
+
 static Int readchar ( Char* buf, Char* ch )
 {
    if (*buf == 0) return 0;
@@ -63,6 +69,17 @@ static Int readhex ( Char* buf, UInt* val )
    *val = 0;
    while (hexdigit(*buf) >= 0) {
       *val = (*val << 4) + hexdigit(*buf);
+      n++; buf++;
+   }
+   return n;
+}
+
+static Int readdec ( Char* buf, UInt* val )
+{
+   Int n = 0;
+   *val = 0;
+   while (hexdigit(*buf) >= 0) {
+      *val = (*val * 10) + decdigit(*buf);
       n++; buf++;
    }
    return n;
@@ -124,13 +141,16 @@ void VG_(read_procselfmaps)(void)
        procmap_buf!
 */
 void VG_(parse_procselfmaps) (
-   void (*record_mapping)( Addr, UInt, Char, Char, Char, UInt, UChar* ) )
+   void (*record_mapping)( Addr addr, UInt len, Char rr, Char ww, Char xx, 
+			   UInt dev, UInt ino, ULong foff, const UChar* filename )
+   )
 {
    Int    i, j, i_eol;
    Addr   start, endPlusOne;
    UChar* filename;
    UInt   foffset;
    UChar  rr, ww, xx, pp, ch, tmp;
+   UInt	  maj, min, ino;
 
    sk_assert( '\0' != procmap_buf[0] && 0 != buf_n_tot);
 
@@ -142,7 +162,7 @@ void VG_(parse_procselfmaps) (
    while (True) {
       if (i >= buf_n_tot) break;
 
-      /* Read (without fscanf :) the pattern %8x-%8x %c%c%c%c %8x */
+      /* Read (without fscanf :) the pattern %8x-%8x %c%c%c%c %8x %2x:%2x %d */
       j = readhex(&procmap_buf[i], &start);
       if (j > 0) i += j; else goto syntaxerror;
       j = readchar(&procmap_buf[i], &ch);
@@ -159,7 +179,7 @@ void VG_(parse_procselfmaps) (
       if (j == 1 && (ww == 'w' || ww == '-')) i += j; else goto syntaxerror;
       j = readchar(&procmap_buf[i], &xx);
       if (j == 1 && (xx == 'x' || xx == '-')) i += j; else goto syntaxerror;
-      /* I haven't a clue what this last field means. */
+      /* This field is the shared/private flag */
       j = readchar(&procmap_buf[i], &pp);
       if (j == 1 && (pp == 'p' || pp == '-' || pp == 's')) 
                                               i += j; else goto syntaxerror;
@@ -169,7 +189,23 @@ void VG_(parse_procselfmaps) (
 
       j = readhex(&procmap_buf[i], &foffset);
       if (j > 0) i += j; else goto syntaxerror;
-      
+
+      j = readchar(&procmap_buf[i], &ch);
+      if (j == 1 && ch == ' ') i += j; else goto syntaxerror;
+
+      j = readhex(&procmap_buf[i], &maj);
+      if (j > 0) i += j; else goto syntaxerror;
+      j = readchar(&procmap_buf[i], &ch);
+      if (j == 1 && ch == ':') i += j; else goto syntaxerror;
+      j = readhex(&procmap_buf[i], &min);
+      if (j > 0) i += j; else goto syntaxerror;
+
+      j = readchar(&procmap_buf[i], &ch);
+      if (j == 1 && ch == ' ') i += j; else goto syntaxerror;
+
+      j = readdec(&procmap_buf[i], &ino);
+      if (j > 0) i += j; else goto syntaxerror;
+ 
       goto read_line_ok;
 
     syntaxerror:
@@ -203,7 +239,7 @@ void VG_(parse_procselfmaps) (
       }
 
       (*record_mapping) ( start, endPlusOne-start, 
-                          rr, ww, xx, 
+                          rr, ww, xx, maj * 256 + min, ino,
                           foffset, filename );
 
       if ('\0' != tmp) {

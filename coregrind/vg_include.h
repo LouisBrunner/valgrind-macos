@@ -49,6 +49,9 @@
 #include "vg_skin.h"
 #include "valgrind.h"
 
+#undef SK_
+#define SK_(x)	vgSkinInternal_##x
+
 /* Total number of spill slots available for allocation, if a TempReg
    doesn't make it into a RealReg.  Just bomb the entire system if
    this value is too small; we don't expect it will ever get
@@ -136,6 +139,14 @@
 /* Valgrind's stack sizes, in words */
 #define VG_STACK_SIZE_W       10000
 #define VG_SIGSTACK_SIZE_W    10000
+
+/* Useful macros */
+/* a - alignment - must be a power of 2 */
+#define ROUNDDN(p, a)	((Addr)(p) & ~((a)-1))
+#define ROUNDUP(p, a)	ROUNDDN((p)+(a)-1, (a))
+#define PGROUNDDN(p)	ROUNDDN(p, VKI_BYTES_PER_PAGE)
+#define PGROUNDUP(p)	ROUNDUP(p, VKI_BYTES_PER_PAGE)
+
 
 /* ---------------------------------------------------------------------
    Basic types
@@ -261,7 +272,9 @@ extern Bool  VG_(clo_run_libc_freeres);
 extern Bool VG_(clo_chain_bb);
 /* Continue stack traces below main()?  Default: NO */
 extern Bool VG_(clo_show_below_main);
-
+/* Test each client pointer dereference to check it's within the
+   client address space bounds */
+extern Bool VG_(clo_pointercheck);
 
 /* ---------------------------------------------------------------------
    Debugging and profiling stuff
@@ -319,96 +332,15 @@ typedef
       Bool syscall_wrapper;
       Bool sanity_checks;
       Bool data_syms;
+      Bool shadow_memory;
    } 
    VgNeeds;
 
 extern VgNeeds VG_(needs);
 
-/* Events happening in core to track.  To be notified, assign a function
-   to the function pointer.  To ignore an event, don't do anything
-   (default assignment is to NULL in which case the call is skipped). */
-typedef
-   struct {
-      /* Memory events */
-      void (*new_mem_startup)( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
-      void (*new_mem_stack_signal)  ( Addr a, UInt len );
-      void (*new_mem_brk)    ( Addr a, UInt len );
-      void (*new_mem_mmap)   ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
+extern void VG_(tool_init_dlsym)(void *dlhandle);
 
-      void (*copy_mem_remap) ( Addr from, Addr to, UInt len );
-      void (*change_mem_mprotect) ( Addr a, UInt len, Bool rr, Bool ww, Bool xx );
-      void (*die_mem_stack_signal)  ( Addr a, UInt len );
-      void (*die_mem_brk)    ( Addr a, UInt len );
-      void (*die_mem_munmap) ( Addr a, UInt len );
-
-      void (*new_mem_stack_4)  ( Addr new_ESP );
-      void (*new_mem_stack_8)  ( Addr new_ESP );
-      void (*new_mem_stack_12) ( Addr new_ESP );
-      void (*new_mem_stack_16) ( Addr new_ESP );
-      void (*new_mem_stack_32) ( Addr new_ESP );
-      void (*new_mem_stack)    ( Addr a, UInt len );
-
-      void (*die_mem_stack_4)  ( Addr die_ESP );
-      void (*die_mem_stack_8)  ( Addr die_ESP );
-      void (*die_mem_stack_12) ( Addr die_ESP );
-      void (*die_mem_stack_16) ( Addr die_ESP );
-      void (*die_mem_stack_32) ( Addr die_ESP );
-      void (*die_mem_stack)    ( Addr a, UInt len );
-
-      void (*ban_mem_stack)  ( Addr a, UInt len );
-
-      void (*pre_mem_read)   ( CorePart part, ThreadId tid,
-                               Char* s, Addr a, UInt size );
-      void (*pre_mem_read_asciiz) ( CorePart part, ThreadId tid,
-                                    Char* s, Addr a );
-      void (*pre_mem_write)  ( CorePart part, ThreadId tid,
-                               Char* s, Addr a, UInt size );
-      /* Not implemented yet -- have to add in lots of places, which is a
-         pain.  Won't bother unless/until there's a need. */
-      /* void (*post_mem_read)  ( ThreadState* tst, Char* s, 
-                                  Addr a, UInt size ); */
-      void (*post_mem_write) ( Addr a, UInt size );
-
-
-      /* Register events */
-      void (*post_regs_write_init)             ( void );
-      void (*post_reg_write_syscall_return)    ( ThreadId tid, UInt reg );
-      void (*post_reg_write_deliver_signal)    ( ThreadId tid, UInt reg );
-      void (*post_reg_write_pthread_return)    ( ThreadId tid, UInt reg );
-      void (*post_reg_write_clientreq_return)  ( ThreadId tid, UInt reg );
-      void (*post_reg_write_clientcall_return) ( ThreadId tid, UInt reg,
-                                                 Addr f );
-
-
-      /* Scheduler events (not exhaustive) */
-      void (*thread_run) ( ThreadId tid );
-
-
-      /* Thread events (not exhaustive) */
-      void (*post_thread_create) ( ThreadId tid, ThreadId child );
-      void (*post_thread_join)   ( ThreadId joiner, ThreadId joinee );
-
-
-      /* Mutex events (not exhaustive) */
-      void (*pre_mutex_lock)    ( ThreadId tid, 
-                                  void* /*pthread_mutex_t* */ mutex );
-      void (*post_mutex_lock)   ( ThreadId tid, 
-                                  void* /*pthread_mutex_t* */ mutex );
-      void (*post_mutex_unlock) ( ThreadId tid, 
-                                  void* /*pthread_mutex_t* */ mutex );
-
-      /* Signal events (not exhaustive) */
-      void (* pre_deliver_signal) ( ThreadId tid, Int sigNo, Bool alt_stack );
-      void (*post_deliver_signal) ( ThreadId tid, Int sigNo );
-
-      
-      /* Others... condition variable... */
-      /* ... */
-   }
-   VgTrackEvents;
-
-extern VgTrackEvents VG_(track_events);
-
+#include "vg_toolint.h"
 
 /* ---------------------------------------------------------------------
    Exports of vg_needs.c
@@ -550,6 +482,19 @@ extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
 
 /* Denote the finish of VG_(__libc_freeres_wrapper). */
 #define VG_USERREQ__LIBC_FREERES_DONE       0x3029
+#define VG_USERREQ__REGISTER_LIBC_FREERES   0x302A
+
+/* Allocate RT signals */
+#define VG_USERREQ__GET_SIGRT_MIN	    0x302B
+#define VG_USERREQ__GET_SIGRT_MAX	    0x302C
+#define VG_USERREQ__ALLOC_RTSIG		    0x302D
+
+/* Hook for replace_malloc.o to get malloc functions */
+#define VG_USERREQ__GET_MALLOCFUNCS	    0x3030
+
+/* Hook for interface to vg_inject.so */
+#define VG_USERREQ__REGISTER_REDIRECT_SYM   0x3031
+#define VG_USERREQ__REGISTER_REDIRECT_ADDR  0x3032
 
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
@@ -566,9 +511,23 @@ In vg_constants.h:
 */
 
 
-/* The scheduler does need to know the address of it so it can be
-   called at program exit. */
-extern void VG_(__libc_freeres_wrapper)( void );
+struct vg_mallocfunc_info {
+   /* things vg_replace_malloc.o needs to know about */
+   Addr	sk_malloc;
+   Addr	sk_calloc;
+   Addr	sk_realloc;
+   Addr	sk_memalign;
+   Addr	sk___builtin_new;
+   Addr	sk___builtin_vec_new;
+   Addr	sk_free;
+   Addr	sk___builtin_delete;
+   Addr	sk___builtin_vec_delete;
+
+   Addr	arena_payload_szB;
+
+   Bool	clo_sloppy_malloc;
+   Bool	clo_trace_malloc;
+};
 
 __attribute__((weak))
 int
@@ -1101,6 +1060,13 @@ extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
 extern Int VG_(nanosleep)( const struct vki_timespec *req, 
                            struct vki_timespec *rem );
 
+/* system/mman.h */
+extern void* VG_(mmap)( void* start, UInt length,
+                        UInt prot, UInt flags, UInt fd, UInt offset );
+extern Int  VG_(munmap)( void* start, Int length );
+extern Int  VG_(mprotect)( void *start, Int length, UInt prot );
+
+
 /* Move an fd into the Valgrind-safe range */
 Int VG_(safe_fd)(Int oldfd);
 
@@ -1109,6 +1075,10 @@ extern Int VG_(write_socket)( Int sd, void *msg, Int count );
 /* --- Connecting over the network --- */
 extern Int VG_(connect_via_socket)( UChar* str );
 
+/* Environment manipulations */
+extern Char* VG_(env_getenv) ( Char **env, Char* varname );
+extern Char **VG_(env_setenv) ( Char ***envp, const Char* varname, const Char *val );
+extern void  VG_(env_unsetenv) ( Char **env, const Char *varname );
 
 /* ---------------------------------------------------------------------
    Exports of vg_message.c
@@ -1318,7 +1288,8 @@ extern void VG_(read_procselfmaps) ( void );
    it's read from the buffer filled by VG_(read_procselfmaps_contents)(). */
 extern 
 void VG_(parse_procselfmaps) (
-   void (*record_mapping)( Addr, UInt, Char, Char, Char, UInt, UChar* )
+   void (*record_mapping)( Addr addr, UInt len, Char rr, Char ww, Char xx, 
+			   UInt dev, UInt ino, ULong foff, const UChar *filename )
 );
 
 
@@ -1326,31 +1297,64 @@ void VG_(parse_procselfmaps) (
    Exports of vg_symtab2.c
    ------------------------------------------------------------------ */
 
+typedef struct _Segment Segment;
+
+extern Bool VG_(is_object_file)   ( const void *hdr );
 extern void VG_(mini_stack_dump)  ( Addr eips[], UInt n_eips );
-extern void VG_(read_all_symbols) ( void );
-extern void VG_(read_seg_symbols) ( Addr start, UInt size, 
-                                    Char rr, Char ww, Char xx,
-                                    UInt foffset, UChar* filename );
+extern SegInfo * VG_(read_seg_symbols) ( Segment *seg );
 extern void VG_(unload_symbols)   ( Addr start, UInt length );
+extern void VG_(symtab_incref)	  ( SegInfo * );
+extern void VG_(symtab_decref)	  ( SegInfo *, Addr a, UInt len );
 
 extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
-extern Int  VG_(setup_code_redirect_table) ( void );
 
-typedef
-   struct {
-      Addr entry_pt_orig;
-      Addr entry_pt_subst;
-   }
-   CodeRedirect;
+/* Set up some default redirects */
+extern void VG_(setup_code_redirect_table) ( void );
 
-#define VG_N_CODE_REDIRECTS 10
-extern CodeRedirect VG_(code_redirect_table)[VG_N_CODE_REDIRECTS];
-/* Table is terminated by a NULL entry_pt_orig field. */
-
+/* Redirection machinery */
+extern void VG_(add_redirect_sym)(const Char *from_lib, const Char *from_sym,
+				  const Char *to_lib, const Char *to_sym);
+extern void VG_(add_redirect_addr)(const Char *from_lib, const Char *from_sym,
+				   Addr to_addr);
+extern Addr VG_(code_redirect)	  (Addr orig);
 
 /* ---------------------------------------------------------------------
    Exports of vg_main.c
    ------------------------------------------------------------------ */
+
+/* structure used for transporting values from stage2 into Valgrind
+   proper */
+typedef struct {
+   Addr	client_esp;		/* initial client ESP			*/
+   Addr client_eip;		/* initial client EIP			*/
+   Char **client_envp;		/* client envp				*/
+   UInt	*client_auxv;		/* client auxv				*/
+   Addr client_brkbase;		/* initial value of brk			*/
+
+   Int	argc;			/* Valgrind's argc/argv			*/
+   Char **argv;
+   const Char *libdir;		/* library directory                    */
+
+   Int  execfd;			/* fd of our own (stage1) executable    */
+
+   Addr client_base;		/* start of client address space	*/
+   Addr	client_end;		/* end of client address space		*/
+   Addr client_mapbase;		/* base address of !MAP_FIXED mappings  */
+   Addr	shadow_base;		/* start of skin's shadow memory	*/
+   Addr shadow_end;		/* end of skin's shadow memory		*/
+   Addr	vg_base;		/* start of Valgrind's memory		*/
+   Addr vg_mmap_end;		/* end of Valgrind's mmap area		*/
+   Addr	vg_end;			/* end of Valgrind's memory		*/
+   Addr	clstk_base;		/* lowest address of client stack	*/
+   Addr	clstk_end;		/* highest address of client stack	*/
+} KickstartParams;
+
+/* Entrypoint for kickstart */
+typedef void (kickstart_main_t)(const KickstartParams *kp, 
+				void (*tool_init)(void), void *tool_dlhandle);
+extern kickstart_main_t VG_(main);
+
+extern void VG_(usage)(void);
 
 /* Is this a SSE/SSE2-capable CPU?  If so, we had better save/restore
    the SSE state all over the place.  This is set up very early, in
@@ -1364,6 +1368,26 @@ extern Bool VG_(logging_to_filedes);
 
 /* Sanity checks which may be done at any time.  The scheduler decides when. */
 extern void VG_(do_sanity_checks) ( Bool force_expensive );
+
+/* Address space */
+extern Addr VG_(client_base);	/* client address space limits */
+extern Addr VG_(client_end);
+extern Addr VG_(client_mapbase); /* base of mappings */
+extern Addr VG_(clstk_base);	/* client stack range */
+extern Addr VG_(clstk_end);
+extern Addr VG_(brk_base);	/* start of brk */
+extern Addr VG_(brk_limit);	/* current brk */
+extern Addr VG_(shadow_base);	/* skin's shadow memory */
+extern Addr VG_(shadow_end);
+extern Addr VG_(valgrind_base);	/* valgrind's address range */
+extern Addr VG_(valgrind_mmap_end);
+extern Addr VG_(valgrind_end);
+
+/* stage1 executable file descriptor */
+extern Int  VG_(execfd);
+
+/* Path to all our library/aux files */
+extern const Char *VG_(libdir);
 
 /* A structure used as an intermediary when passing the simulated
    CPU's state to some assembly fragments, particularly system calls.
@@ -1394,15 +1418,15 @@ extern Bool VG_(need_to_handle_esp_assignment) ( void );
 extern void VG_(unimplemented) ( Char* msg )
             __attribute__((__noreturn__));
 
-/* The stack on which Valgrind runs.  We can't use the same stack as the
-   simulatee -- that's an important design decision.  */
-extern UInt VG_(stack)[VG_STACK_SIZE_W];
-
 /* Similarly, we have to ask for signals to be delivered on an alternative
    stack, since it is possible, although unlikely, that we'll have to run
    client code from inside the Valgrind-installed signal handler.  If this
    happens it will be done by vg_deliver_signal_immediately(). */
 extern UInt VG_(sigstack)[VG_SIGSTACK_SIZE_W];
+
+/* Valgrind's argc and argv */
+extern Int    VG_(vg_argc);
+extern Char **VG_(vg_argv);
 
 /* Holds client's %esp at the point we gained control.  From this the
    client's argc, argv and envp are deduced. */
@@ -1413,11 +1437,9 @@ extern Addr   VG_(esp_at_startup);
 extern Bool VG_(sysinfo_page_exists);
 extern Addr VG_(sysinfo_page_addr);
 
-/* Remove valgrind.so and skin's .so from a LD_PRELOAD=... string so child
-   processes don't get traced into.  Also mess up $libdir/valgrind so that
-   our libpthread.so disappears from view. */
-void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
-                                                Char* ld_library_path_str );
+/* Walk through a colon separated list variable, removing entries
+   which match pattern. */
+extern void VG_(mash_colon_env)(Char *varp, const Char *pattern);
 
 /* Something of a function looking for a home ... start up GDB.  This
    is called from VG_(swizzle_esp_then_start_GDB) and so runs on the
@@ -1432,9 +1454,6 @@ extern ULong VG_(bbs_to_go);
 
 /* Counts downwards in vg_run_innerloop. */
 extern UInt VG_(dispatch_ctr);
-
-/* Is the client running on the simulated CPU or the real one? */
-extern Bool VG_(running_on_simd_CPU); /* Initially False */
 
 /* This is the ThreadId of the last thread the scheduler ran. */
 extern ThreadId VG_(last_run_tid);
@@ -1499,26 +1518,72 @@ extern UInt VG_(num_scheduling_events_MAJOR);
 UInt VG_(insertDflag)(UInt eflags, Int d);
 Int VG_(extractDflag)(UInt eflags);
 
-/* start address and size of the initial stack */
-extern Addr VG_(foundstack_start);
-extern UInt VG_(foundstack_size);
-
-
 /* ---------------------------------------------------------------------
    Exports of vg_memory.c
    ------------------------------------------------------------------ */
 
+/* A Segment is mapped piece of client memory.  This covers all kinds
+   of mapped memory (exe, brk, mmap, .so, shm, stack, etc)
+
+   We try to encode everything we know about a particular segment here.
+*/
+#define SF_FIXED	(1 <<  0) /* client asked for MAP_FIXED			*/
+#define SF_SHARED	(1 <<  1) /* shared					*/
+#define SF_SHM		(1 <<  2) /* SYSV SHM (also SF_SHARED)			*/
+#define SF_MMAP		(1 <<  3) /* mmap memory				*/
+#define SF_FILE		(1 <<  4) /* mapping is backed by a file		*/
+#define SF_STACK	(1 <<  5) /* is a stack					*/
+#define SF_GROWDOWN	(1 <<  6) /* segment grows down				*/
+#define SF_GROWUP	(1 <<  7) /* segment grows up				*/
+#define SF_EXEC		(1 <<  8) /* segment created by exec			*/
+#define SF_DYNLIB	(1 <<  9) /* mapped from dynamic library		*/
+#define SF_NOSYMS	(1 << 10) /* don't load syms, even if present           */
+#define SF_BRK		(1 << 11) /* brk segment                                */
+#define SF_CORE		(1 << 12) /* allocated by core on behalf of the client  */
+#define SF_VALGRIND	(1 << 13) /* a valgrind-internal mapping - not in client*/
+#define SF_CODE		(1 << 14) /* segment contains cached code               */
+
+struct _Segment {
+   UInt		prot;		/* VKI_PROT_*				*/
+   UInt		flags;		/* SF_*					*/
+
+   Addr		addr;		/* mapped addr (page aligned)		*/
+   UInt		len;		/* size of mapping (page aligned)	*/
+
+   /* These are valid if (flags & SF_FILE) */
+   ULong	offset;		/* file offset				*/
+   const Char	*filename;	/* filename (NULL if unknown)		*/
+   UInt		dev;		/* device				*/
+   UInt		ino;		/* inode				*/
+
+   SegInfo	*symtab;	/* symbol table				*/
+};
+
+/* segment mapped from a file descriptor */
+extern void VG_(map_fd_segment)  (Addr addr, UInt len, UInt prot, UInt flags, 
+				  Int fd, ULong off, const Char *filename);
+
+/* segment mapped from a file */
+extern void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags, 
+				  UInt dev, UInt ino, ULong off, const Char *filename);
+
+/* simple segment */
+extern void VG_(map_segment)     (Addr addr, UInt len, UInt prot, UInt flags);
+
+extern void VG_(unmap_range)   (Addr addr, UInt len);
+extern void VG_(mprotect_range)(Addr addr, UInt len, UInt prot);
+extern Addr VG_(find_map_space)(Addr base, UInt len, Bool for_client);
+
+extern Segment *VG_(find_segment)(Addr a);
+extern Segment *VG_(next_segment)(Segment *);
+
+extern Bool     VG_(seg_contains)(const Segment *s, Addr ptr, UInt size);
+extern Bool     VG_(seg_overlaps)(const Segment *s, Addr ptr, UInt size);
+
 extern void VG_(init_memory)        ( void );
-extern void VG_(new_exeseg_startup) ( Addr a, UInt len, Char rr, Char ww,
-                                      Char xx, UInt foffset,
-                                      UChar* filename );
-extern void VG_(new_exeseg_mmap)    ( Addr a, UInt len );
-extern void VG_(remove_if_exeseg)   ( Addr a, UInt len );
 
 extern __attribute__((regparm(1))) 
        void VG_(unknown_esp_update) ( Addr new_ESP );
-
-extern Bool VG_(is_addressable)(Addr p, Int sz);
 
 /* ---------------------------------------------------------------------
    Exports of vg_proxylwp.c
@@ -1556,7 +1621,7 @@ extern void VG_(proxy_handlesig)( const vki_ksiginfo_t *siginfo,
    Exports of vg_syscalls.c
    ------------------------------------------------------------------ */
 
-extern void VG_(init_dataseg_end_for_brk) ( void );
+extern Char *VG_(resolve_filename)(Int fd);
 
 extern Bool VG_(pre_syscall) ( ThreadId tid );
 extern void VG_(post_syscall)( ThreadId tid );
@@ -1674,18 +1739,21 @@ extern void VG_(helper_DAA);
 extern void VG_(helper_undefined_instruction);
 
 /* NOT A FUNCTION; this is a bogus RETURN ADDRESS. */
-extern void VG_(signalreturn_bogusRA)( void );
+extern Char VG_(signalreturn_bogusRA);
+extern Int  VG_(signalreturn_bogusRA_length);	/* length */
 
 /* ---------------------------------------------------------------------
    Things relating to the used skin
    ------------------------------------------------------------------ */
 
-#define VG_TRACK(fn, args...)          \
-   do {                                \
-      if (VG_(track_events).fn)        \
-         VG_(track_events).fn(args);   \
-   } while (0)
+#define VG_TRACK(fn, args...) 			\
+   do {						\
+      if (VG_(defined_##fn)())			\
+	 SK_(fn)(args);				\
+   } while(0)
 
+__attribute__ ((noreturn))
+extern void VG_(missing_tool_func) ( const Char* fn );
 
 /* ---------------------------------------------------------------------
    The state of the simulated CPU.

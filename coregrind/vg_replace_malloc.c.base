@@ -91,7 +91,7 @@ static void init(void) __attribute__((constructor));
 
 #define MAYBE_SLOPPIFY(n)           \
    if (info.clo_sloppy_malloc) {    \
-      n = (n+3) & ~3;               \
+      n = (n+(VG_SLOPPY_MALLOC_SZB-1)) & ~(VG_SLOPPY_MALLOC_SZB-1); \
    }
 
 /* ALL calls to malloc() and friends wind up here. */
@@ -206,6 +206,12 @@ LIBALIAS(void*, memalign, ( Int alignment, Int n ))
 
    MALLOC_TRACE("memalign(al %d, size %d)", alignment, n );
    MAYBE_SLOPPIFY(n);
+
+   // Round up to minimum alignment if necessary.
+   if (alignment < VG_MIN_MALLOC_SZB) alignment = VG_MIN_MALLOC_SZB;
+
+   // Round up to nearest power-of-two if necessary (like glibc).
+   while (0 != (alignment & (alignment - 1))) alignment++;
 
    if (!init_done) init();
    v = (void*)VALGRIND_NON_SIMD_CALL2( info.sk_memalign, alignment, n );

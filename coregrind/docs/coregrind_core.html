@@ -727,8 +727,7 @@ and Addrcheck), the following options apply.
   <li><code>--sloppy-malloc=no</code> [default]<br>
       <code>--sloppy-malloc=yes</code>
       <p>When enabled, all requests for malloc/calloc are rounded up
-      to a whole number of machine words -- in other words, made
-      divisible by 4.  For example, a request for 17 bytes of space
+      to a multiple of 4 bytes.  For example, a request for 17 bytes of space
       would result in a 20-byte area being made available.  This works
       around bugs in sloppy libraries which assume that they can
       safely rely on malloc/calloc requests being rounded up in this

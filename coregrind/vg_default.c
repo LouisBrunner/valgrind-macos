@@ -82,7 +82,7 @@ __attribute__ ((weak))
 void* SK_(malloc)( Int size )
 {
    if (VG_(sk_malloc_called_by_scheduler))
-      return VG_(cli_malloc)(4, size);
+      return VG_(cli_malloc)(VG_MIN_MALLOC_SZB, size);
    else 
       malloc_panic(__PRETTY_FUNCTION__);
 }

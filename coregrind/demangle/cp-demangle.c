@@ -50,7 +50,7 @@
 
 #define malloc(s)    VG_(arena_malloc) (VG_AR_DEMANGLE, s)
 #define free(p)      VG_(arena_free)   (VG_AR_DEMANGLE, p)
-#define realloc(p,s) VG_(arena_realloc)(VG_AR_DEMANGLE, p, /*alignment*/4, s)
+#define realloc(p,s) VG_(arena_realloc)(VG_AR_DEMANGLE, p, VG_MIN_MALLOC_SZB, s)
 #endif
 
 /* If CP_DEMANGLE_DEBUG is defined, a trace of the grammar evaluation,

@@ -365,6 +365,14 @@ typedef Int ArenaId;
 #define VG_AR_ERRORS       7
 #define VG_AR_TRANSIENT    8
 
+// This is both the minimum payload size of a malloc'd block, and its
+// minimum alignment.  Must be a power of 2 greater than 4, and should be
+// greater than 8.
+#define VG_MIN_MALLOC_SZB        8
+
+// Round-up size for --sloppy-malloc=yes.
+#define VG_SLOPPY_MALLOC_SZB     4
+
 extern void* VG_(arena_malloc)  ( ArenaId arena, Int nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
 extern void* VG_(arena_calloc)  ( ArenaId arena, Int alignment,

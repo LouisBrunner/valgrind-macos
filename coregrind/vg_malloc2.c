@@ -32,22 +32,494 @@
 
 #include "vg_include.h"
 
-/* Define to turn on (heavyweight) debugging machinery. */
-/* #define DEBUG_MALLOC */
+//#define DEBUG_MALLOC      // turn on heavyweight debugging machinery
+//#define VERBOSE_MALLOC    // make verbose, esp. in debugging machinery
+
+/*------------------------------------------------------------*/
+/*--- Main types                                           ---*/
+/*------------------------------------------------------------*/
+
+#define VG_N_MALLOC_LISTS     16    // do not change this
+
+// On 64-bit systems size_t is 64-bits, so bigger than this is possible.
+// We can worry about that when it happens...
+#define MAX_PSZB              0x7ffffff0
+
+typedef UChar UByte;
+
+/* Block layout:
+
+     this block total szB     (sizeof(Int) bytes)
+     freelist previous ptr    (sizeof(void*) bytes)
+     red zone bytes           (depends on .rz_szB field of Arena)
+     (payload bytes)
+     red zone bytes           (depends on .rz_szB field of Arena)
+     freelist next ptr        (sizeof(void*) bytes)
+     this block total szB     (sizeof(Int) bytes)
+
+     Total size in bytes (bszB) and payload size in bytes (pszB)
+     are related by:
+
+        bszB == pszB + 2*sizeof(Int) + 2*sizeof(void*) + 2*a->rz_szB
+
+     Furthermore, both size fields in the block are negative if it is
+     not in use, and positive if it is in use.  A block size of zero
+     is not possible, because a block always has at least two Ints and two
+     pointers of overhead.  
+
+     Nb: All Block payloads must be VG_MIN_MALLOC_SZB-aligned.  This is
+     achieved by ensuring that Superblocks are VG_MIN_MALLOC_SZB-aligned
+     (see newSuperblock() for how), and that the lengths of the following
+     things are a multiple of VG_MIN_MALLOC_SZB:
+     - Superblock admin section lengths (due to elastic padding)
+     - Block admin section (low and high) lengths (due to elastic redzones)
+     - Block payload lengths (due to req_pszB rounding up)
+*/
+typedef
+   struct {
+      // No fields are actually used in this struct, because a Block has
+      // loads of variable sized fields and so can't be accessed
+      // meaningfully with normal fields.  So we use access functions all
+      // the time.  This struct gives us a type to use, though.  Also, we
+      // make sizeof(Block) 1 byte so that we can do arithmetic with the
+      // Block* type in increments of 1!
+      UByte dummy;
+   } 
+   Block;
+
+// A superblock.  'padding' is never used, it just ensures that if the
+// entire Superblock is aligned to VG_MIN_MALLOC_SZB, then payload_bytes[]
+// will be too.  It can add small amounts of padding unnecessarily -- eg.
+// 8-bytes on 32-bit machines with an 8-byte VG_MIN_MALLOC_SZB -- because
+// it's too hard to make a constant expression that works perfectly in all
+// cases.
+// payload_bytes[] is made a single big Block when the Superblock is
+// created, and then can be split and the splittings remerged, but Blocks
+// always cover its entire length -- there's never any unused bytes at the
+// end, for example.
+typedef 
+   struct _Superblock {
+      struct _Superblock* next;
+      Int   n_payload_bytes;
+      UByte padding[ VG_MIN_MALLOC_SZB - 
+                        ((sizeof(void*) + sizeof(Int)) % VG_MIN_MALLOC_SZB) ];
+      UByte payload_bytes[0];
+   }
+   Superblock;
+
+// An arena. 'freelist' is a circular, doubly-linked list.  'rz_szB' is
+// elastic, in that it can be bigger than asked-for to ensure alignment.
+typedef 
+   struct {
+      Char*       name;
+      Bool        clientmem;        // Allocates in the client address space?
+      Int         rz_szB;           // Red zone size in bytes
+      Int         min_sblock_szB;   // Minimum superblock size in bytes
+      Block*      freelist[VG_N_MALLOC_LISTS];
+      Superblock* sblocks;
+      // Stats only.
+      UInt bytes_on_loan;
+      UInt bytes_mmaped;
+      UInt bytes_on_loan_max;
+   } 
+   Arena;
+
+
+/*------------------------------------------------------------*/
+/*--- Low-level functions for working with Blocks.         ---*/
+/*------------------------------------------------------------*/
+
+// Mark a bszB as in-use, and not in-use.
+static __inline__
+Int mk_inuse_bszB ( Int bszB )
+{
+   vg_assert(bszB != 0);
+   return (bszB < 0) ? -bszB : bszB;
+}
+static __inline__
+Int mk_free_bszB ( Int bszB )
+{
+   vg_assert(bszB != 0);
+   return (bszB < 0) ? bszB : -bszB;
+}
+
+// Remove the in-use/not-in-use attribute from a bszB, leaving just
+// the size.
+static __inline__
+Int mk_plain_bszB ( Int bszB )
+{
+   vg_assert(bszB != 0);
+   return (bszB < 0) ? -bszB : bszB;
+}
+
+// Does this bszB have the in-use attribute?
+static __inline__
+Bool is_inuse_bszB ( Int bszB )
+{
+   vg_assert(bszB != 0);
+   return (bszB < 0) ? False : True;
+}
+
+
+// Set and get the lower size field of a block.
+static __inline__
+void set_bszB_lo ( Block* b, Int bszB )
+{ 
+   *(Int*)&b[0] = bszB;
+}
+static __inline__
+Int get_bszB_lo ( Block* b )
+{
+   return *(Int*)&b[0];
+}
+
+// Get the address of the last byte in a block
+static __inline__
+UByte* last_byte ( Block* b )
+{
+   UByte* b2 = (UByte*)b;
+   return &b2[mk_plain_bszB(get_bszB_lo(b)) - 1];
+}
+
+// Set and get the upper size field of a block.
+static __inline__
+void set_bszB_hi ( Block* b, Int bszB )
+{
+   UByte* b2 = (UByte*)b;
+   UByte* lb = last_byte(b);
+   vg_assert(lb == &b2[mk_plain_bszB(bszB) - 1]);
+   *(Int*)&lb[-sizeof(Int) + 1] = bszB;
+}
+static __inline__
+Int get_bszB_hi ( Block* b )
+{
+   UByte* lb = last_byte(b);
+   return *(Int*)&lb[-sizeof(Int) + 1];
+}
+
+
+// Given the addr of a block, return the addr of its payload.
+static __inline__
+UByte* get_block_payload ( Arena* a, Block* b )
+{
+   UByte* b2 = (UByte*)b;
+   return & b2[sizeof(Int) + sizeof(void*) + a->rz_szB];
+}
+// Given the addr of a block's payload, return the addr of the block itself.
+static __inline__
+Block* get_payload_block ( Arena* a, UByte* payload )
+{
+   return (Block*)&payload[-sizeof(Int) - sizeof(void*) - a->rz_szB];
+}
+
+
+// Set and get the next and previous link fields of a block.
+static __inline__
+void set_prev_b ( Block* b, Block* prev_p )
+{ 
+   UByte* b2 = (UByte*)b;
+   *(Block**)&b2[sizeof(Int)] = prev_p;
+}
+static __inline__
+void set_next_b ( Block* b, Block* next_p )
+{
+   UByte* lb = last_byte(b);
+   *(Block**)&lb[-sizeof(Int) - sizeof(void*) + 1] = next_p;
+}
+static __inline__
+Block* get_prev_b ( Block* b )
+{ 
+   UByte* b2 = (UByte*)b;
+   return *(Block**)&b2[sizeof(Int)];
+}
+static __inline__
+Block* get_next_b ( Block* b )
+{ 
+   UByte* lb = last_byte(b);
+   return *(Block**)&lb[-sizeof(Int) - sizeof(void*) + 1];
+}
+
+
+// Get the block immediately preceding this one in the Superblock.
+static __inline__
+Block* get_predecessor_block ( Block* b )
+{
+   UByte* b2 = (UByte*)b;
+   Int    bszB = mk_plain_bszB( (*(Int*)&b2[-sizeof(Int)]) );
+   return (Block*)&b2[-bszB];
+}
+
+// Read and write the lower and upper red-zone bytes of a block.
+static __inline__
+void set_rz_lo_byte ( Arena* a, Block* b, Int rz_byteno, UByte v )
+{
+   UByte* b2 = (UByte*)b;
+   b2[sizeof(Int) + sizeof(void*) + rz_byteno] = v;
+}
+static __inline__
+void set_rz_hi_byte ( Arena* a, Block* b, Int rz_byteno, UByte v )
+{
+   UByte* lb = last_byte(b);
+   lb[-sizeof(Int) - sizeof(void*) - rz_byteno] = v;
+}
+static __inline__
+UByte get_rz_lo_byte ( Arena* a, Block* b, Int rz_byteno )
+{
+   UByte* b2 = (UByte*)b;
+   return b2[sizeof(Int) + sizeof(void*) + rz_byteno];
+}
+static __inline__
+UByte get_rz_hi_byte ( Arena* a, Block* b, Int rz_byteno )
+{
+   UByte* lb = last_byte(b);
+   return lb[-sizeof(Int) - sizeof(void*) - rz_byteno];
+}
+
+
+/* Return the lower, upper and total overhead in bytes for a block.
+   These are determined purely by which arena the block lives in. */
+static __inline__
+Int overhead_szB_lo ( Arena* a )
+{
+   return sizeof(Int) + sizeof(void*) + a->rz_szB;
+}
+static __inline__
+Int overhead_szB_hi ( Arena* a )
+{
+   return sizeof(void*) + sizeof(Int) + a->rz_szB;
+}
+static __inline__
+Int overhead_szB ( Arena* a )
+{
+   return overhead_szB_lo(a) + overhead_szB_hi(a);
+}
+
+// Return the minimum bszB for a block in this arena.  Can have zero-length
+// payloads, so it's the size of the admin bytes.
+static __inline__
+Int min_useful_bszB ( Arena* a )
+{
+   return overhead_szB(a);
+}
+
+// Convert payload size <--> block size (both in bytes).
+static __inline__
+Int pszB_to_bszB ( Arena* a, Int pszB )
+{
+   vg_assert(pszB >= 0);
+   return pszB + overhead_szB(a);
+}
+static __inline__
+Int bszB_to_pszB ( Arena* a, Int bszB )
+{
+   Int pszB = bszB - overhead_szB(a);
+   vg_assert(pszB >= 0);
+   return pszB;
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Arena management                                     ---*/
+/*------------------------------------------------------------*/
+
+#define CORE_ARENA_MIN_SZB    1048576
+
+// The arena structures themselves.
+static Arena vg_arena[VG_N_ARENAS];
+
+// Functions external to this module identify arenas using ArenaIds,
+// not Arena*s.  This fn converts the former to the latter.
+static Arena* arenaId_to_ArenaP ( ArenaId arena )
+{
+   vg_assert(arena >= 0 && arena < VG_N_ARENAS);
+   return & vg_arena[arena];
+}
+
+// Initialise an arena.  rz_szB is the minimum redzone size;  it might be
+// made bigger to ensure that VG_MIN_MALLOC_ALIGNMENT is observed.
+static
+void arena_init ( ArenaId aid, Char* name, Int rz_szB, Int min_sblock_szB )
+{
+   Int i;
+   Arena* a = arenaId_to_ArenaP(aid);
+   
+   vg_assert(rz_szB >= 0);
+   vg_assert((min_sblock_szB % VKI_BYTES_PER_PAGE) == 0);
+   a->name      = name;
+   a->clientmem = ( VG_AR_CLIENT == aid ? True : False );
+
+   // The size of the low and high admin sections in a block must be a
+   // multiple of VG_MIN_MALLOC_ALIGNMENT.  So we round up the asked-for
+   // redzone size if necessary to achieve this.
+   a->rz_szB = rz_szB;
+   while (0 != overhead_szB_lo(a) % VG_MIN_MALLOC_SZB) a->rz_szB++;
+   vg_assert(overhead_szB_lo(a) == overhead_szB_hi(a));
+
+   a->min_sblock_szB = min_sblock_szB;
+   for (i = 0; i < VG_N_MALLOC_LISTS; i++) a->freelist[i] = NULL;
+   a->sblocks           = NULL;
+   a->bytes_on_loan     = 0;
+   a->bytes_mmaped      = 0;
+   a->bytes_on_loan_max = 0;
+}
+
+/* Print vital stats for an arena. */
+void VG_(print_all_arena_stats) ( void )
+{
+   Int i;
+   for (i = 0; i < VG_N_ARENAS; i++) {
+      Arena* a = arenaId_to_ArenaP(i);
+      VG_(message)(Vg_DebugMsg,
+         "AR %8s: %8d mmap'd, %8d/%8d max/curr",
+         a->name, a->bytes_mmaped, a->bytes_on_loan_max, a->bytes_on_loan 
+      );
+   }
+}
+
+/* This library is self-initialising, as it makes this more self-contained,
+   less coupled with the outside world.  Hence VG_(arena_malloc)() and
+   VG_(arena_free)() below always call ensure_mm_init() to ensure things are
+   correctly initialised.  */
+static
+void ensure_mm_init ( void )
+{
+   static Int  client_rz_szB;
+   static Bool init_done = False;
+   
+   if (init_done) {
+      // Make sure the client arena's redzone size never changes.  Could
+      // happen if VG_(arena_malloc) was called too early, ie. before the
+      // tool was loaded.
+      vg_assert(client_rz_szB == VG_(vg_malloc_redzone_szB));
+      return;
+   }
+
+   /* No particular reason for this figure, it's just smallish */
+   sk_assert(VG_(vg_malloc_redzone_szB) < 128);
+   sk_assert(VG_(vg_malloc_redzone_szB) >= 0);
+   client_rz_szB = VG_(vg_malloc_redzone_szB);
+
+   /* Use checked red zones (of various sizes) for our internal stuff,
+      and an unchecked zone of arbitrary size for the client.  Of
+      course the client's red zone can be checked by the tool, eg. 
+      by using addressibility maps, but not by the mechanism implemented
+      here, which merely checks at the time of freeing that the red 
+      zone bytes are unchanged.
+
+      Nb: redzone sizes are *minimums*;  they could be made bigger to ensure
+      alignment.  Eg. on 32-bit machines, 4 becomes 8, and 12 becomes 16;
+      but on 64-bit machines 4 stays as 4, and 12 stays as 12 --- the extra
+      4 bytes in both are accounted for by the larger prev/next ptr.
+   */
+   arena_init ( VG_AR_CORE,      "core",     4, CORE_ARENA_MIN_SZB );
+   arena_init ( VG_AR_TOOL,      "tool",     4,            1048576 );
+   arena_init ( VG_AR_SYMTAB,    "symtab",   4,            1048576 );
+   arena_init ( VG_AR_JITTER,    "JITter",   4,              32768 );
+   arena_init ( VG_AR_CLIENT,    "client",  client_rz_szB, 1048576 );
+   arena_init ( VG_AR_DEMANGLE,  "demangle", 12/*paranoid*/, 65536 );
+   arena_init ( VG_AR_EXECTXT,   "exectxt",  4,              65536 );
+   arena_init ( VG_AR_ERRORS,    "errors",   4,              65536 );
+   arena_init ( VG_AR_TRANSIENT, "transien", 4,              65536 );
+
+   init_done = True;
+#  ifdef DEBUG_MALLOC
+   VG_(sanity_check_malloc_all)();
+#  endif
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Superblock management                                ---*/
+/*------------------------------------------------------------*/
+
+// Align ptr p upwards to an align-sized boundary.
+static
+void* align_upwards ( void* p, Int align )
+{
+   Addr a = (Addr)p;
+   if ((a % align) == 0) return (void*)a;
+   return (void*)(a - (a % align) + align);
+}
+
+// If not enough memory available, either aborts (for non-client memory)
+// or returns 0 (for client memory).
+static
+Superblock* newSuperblock ( Arena* a, Int cszB )
+{
+   // The extra VG_MIN_MALLOC_SZB bytes are for possible alignment up.
+   static UByte bootstrap_superblock[CORE_ARENA_MIN_SZB+VG_MIN_MALLOC_SZB];
+   static Bool  called_before = False;
+   Superblock* sb;
+
+   // Take into account admin bytes in the Superblock.
+   cszB += sizeof(Superblock);
+
+   if (cszB < a->min_sblock_szB) cszB = a->min_sblock_szB;
+   while ((cszB % VKI_BYTES_PER_PAGE) > 0) cszB++;
+
+   if (!called_before) {
+      // First time we're called -- use the special static bootstrap
+      // superblock (see comment at top of main() for details).
+      called_before = True;
+      vg_assert(a == arenaId_to_ArenaP(VG_AR_CORE));
+      vg_assert(CORE_ARENA_MIN_SZB >= cszB);
+      // Ensure sb is suitably aligned.
+      sb = (Superblock*)align_upwards( bootstrap_superblock, 
+                                       VG_MIN_MALLOC_SZB );
+   } else if (a->clientmem) {
+      // client allocation -- return 0 to client if it fails
+      sb = (Superblock *)
+           VG_(client_alloc)(0, cszB,
+                             VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 0);
+      if (NULL == sb)
+         return 0;
+   } else {
+      // non-client allocation -- aborts if it fails
+      sb = VG_(get_memory_from_mmap) ( cszB, "newSuperblock" );
+   }
+   vg_assert(NULL != sb);
+   vg_assert(0 == (Addr)sb % VG_MIN_MALLOC_SZB);
+   sb->n_payload_bytes = cszB - sizeof(Superblock);
+   a->bytes_mmaped += cszB;
+   if (0)
+      VG_(message)(Vg_DebugMsg, "newSuperblock, %d payload bytes", 
+                                sb->n_payload_bytes);
+   return sb;
+}
+
+// Find the superblock containing the given chunk.
+static
+Superblock* findSb ( Arena* a, Block* b )
+{
+   Superblock* sb;
+   for (sb = a->sblocks; sb; sb = sb->next)
+      if ((Block*)&sb->payload_bytes[0] <= b
+          && b < (Block*)&sb->payload_bytes[sb->n_payload_bytes])
+         return sb;
+   VG_(printf)("findSb: can't find pointer %p in arena `%s'\n", b, a->name );
+   VG_(core_panic)("findSb: VG_(arena_free)() in wrong arena?");
+   return NULL; /*NOTREACHED*/
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Command line options                                 ---*/
 /*------------------------------------------------------------*/
 
-/* Round malloc sizes upwards to integral number of words? default: NO */
-Bool VG_(clo_sloppy_malloc)  = False;
+/* Round malloc sizes up to a multiple of VG_SLOPPY_MALLOC_SZB bytes?
+     default: NO
+   Nb: the allocator always rounds blocks up to a multiple of
+   VG_MIN_MALLOC_SZB.  VG_(clo_sloppy_malloc) is relevant eg. for
+   Memcheck, which will be byte-precise with addressability maps on its
+   malloc allocations unless --sloppy-malloc=yes.  */
+Bool VG_(clo_sloppy_malloc) = False;
 
 /* DEBUG: print malloc details?  default: NO */
-Bool VG_(clo_trace_malloc)   = False;
+Bool VG_(clo_trace_malloc)  = False;
 
 /* Minimum alignment in functions that don't specify alignment explicitly.
-   default: 0, i.e. use default of the machine (== 8) */
-Int  VG_(clo_alignment) = 8;
+   default: 0, i.e. use VG_MIN_MALLOC_SZB. */
+Int  VG_(clo_alignment)     = VG_MIN_MALLOC_SZB;
 
 
 Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
@@ -55,13 +527,13 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
    if (VG_CLO_STREQN(12, arg, "--alignment=")) {
       VG_(clo_alignment) = (Int)VG_(atoll)(&arg[12]);
 
-      if (VG_(clo_alignment) < 8 
+      if (VG_(clo_alignment) < VG_MIN_MALLOC_SZB
           || VG_(clo_alignment) > 4096
           || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
          VG_(message)(Vg_UserMsg, "");
          VG_(message)(Vg_UserMsg, 
             "Invalid --alignment= setting.  "
-            "Should be a power of 2, >= 8, <= 4096.");
+            "Should be a power of 2, >= %d, <= 4096.", VG_MIN_MALLOC_SZB);
          VG_(bad_option)("--alignment");
       }
    }
@@ -77,8 +549,9 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
 void VG_(replacement_malloc_print_usage)(void)
 {
    VG_(printf)(
-"    --sloppy-malloc=no|yes    round malloc sizes to next word? [no]\n"
-"    --alignment=<number>      set minimum alignment of allocations [8]\n"
+"    --sloppy-malloc=no|yes    round malloc sizes to multiple of %d? [no]\n"
+"    --alignment=<number>      set minimum alignment of allocations [%d]\n",
+   VG_SLOPPY_MALLOC_SZB, VG_MIN_MALLOC_SZB
    );
 }
 
@@ -91,523 +564,56 @@ void VG_(replacement_malloc_print_debug_usage)(void)
 
 
 /*------------------------------------------------------------*/
-/*--- Structs n stuff                                      ---*/
-/*------------------------------------------------------------*/
-
-#define VG_REDZONE_LO_MASK 0x31415927
-#define VG_REDZONE_HI_MASK 0x14141356
-
-#define VG_N_MALLOC_LISTS 16 /* do not change this */
-
-
-typedef UInt Word;
-typedef Word WordF;
-typedef Word WordL;
-
-
-/* A superblock. */
-typedef 
-   struct _Superblock {
-      struct _Superblock* next;
-      /* number of payload words in this superblock. */
-      Int  n_payload_words;
-      Word payload_words[0];
-   }
-   Superblock;
-
-
-/* An arena. */
-typedef 
-   struct {
-      Char*       name;
-      Bool	  clientmem;	/* allocates in the client address space */
-      Int         rz_szW;	/* Red zone size in words */
-      Bool        rz_check;	/* Check red-zone on free? */
-      Int         min_sblockW;	/* Minimum superblock size */
-      WordF*      freelist[VG_N_MALLOC_LISTS];
-      Superblock* sblocks;
-      /* Stats only. */
-      UInt bytes_on_loan;
-      UInt bytes_mmaped;
-      UInt bytes_on_loan_max;
-   } 
-   Arena;
-
-
-/* Block layout:
-
-     this block total sizeW   (1 word)
-     freelist previous ptr    (1 word)
-     red zone words (depends on .rz_szW field of Arena)
-     (payload words)
-     red zone words (depends on .rz_szW field of Arena)
-     freelist next  ptr       (1 word)
-     this block total sizeW   (1 word)
-
-     Total size in words (bszW) and payload size in words (pszW)
-     are related by
-        bszW == pszW + 4 + 2 * a->rz_szW
-
-     Furthermore, both size fields in the block are negative if it is
-     not in use, and positive if it is in use.  A block size of zero
-     is not possible, because a block always has at least four words
-     of overhead.  
-
-     8-byte payload alignment is ensured by requiring the number
-     of words in the red zones and the number of payload words
-     to both be even (% 2 == 0).
-*/
-typedef
-   struct {
-      Int   bszW_lo;
-      Word* prev;
-      Word* next;
-      Word  redzone[0];
-   } 
-   BlockHeader;
-
-
-/*------------------------------------------------------------*/
-/*--- Forwardses ... and misc ...                          ---*/
-/*------------------------------------------------------------*/
-
-static Bool blockSane ( Arena* a, Word* b );
-
-/* Align ptr p upwards to an align-sized boundary. */
-static
-void* align_upwards ( void* p, Int align )
-{
-   Addr a = (Addr)p;
-   if ((a % align) == 0) return (void*)a;
-   return (void*)(a - (a % align) + align);
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Arena management stuff                               ---*/
-/*------------------------------------------------------------*/
-
-#define CORE_ARENA_MIN_SZW    262144
-
-/* The arena structures themselves. */
-static Arena vg_arena[VG_N_ARENAS];
-
-/* Functions external to this module identify arenas using ArenaIds,
-   not Arena*s.  This fn converts the former to the latter. */
-static Arena* arenaId_to_ArenaP ( ArenaId arena )
-{
-   vg_assert(arena >= 0 && arena < VG_N_ARENAS);
-   return & vg_arena[arena];
-}
-
-
-/* Initialise an arena. */
-static
-void arena_init ( Arena* a, Char* name, 
-                  Int rz_szW, Bool rz_check, Int min_sblockW, Bool client )
-{
-   Int i;
-   vg_assert(rz_szW >= 0);
-   vg_assert(rz_szW % 2 == 0);
-   vg_assert((min_sblockW % VKI_WORDS_PER_PAGE) == 0);
-   a->name = name;
-   a->clientmem = client;
-   a->rz_szW = rz_szW;
-   a->rz_check = rz_check;
-   a->min_sblockW = min_sblockW;
-   for (i = 0; i < VG_N_MALLOC_LISTS; i++) a->freelist[i] = NULL;
-   a->sblocks = NULL;
-   a->bytes_on_loan     = 0;
-   a->bytes_mmaped      = 0;
-   a->bytes_on_loan_max = 0;
-}
-
-
-/* Print vital stats for an arena. */
-void VG_(print_all_arena_stats) ( void )
-{
-   Int i;
-   for (i = 0; i < VG_N_ARENAS; i++) {
-      VG_(message)(Vg_DebugMsg,
-         "AR %8s: %8d mmap'd, %8d/%8d max/curr",
-         vg_arena[i].name, 
-         vg_arena[i].bytes_mmaped, 
-         vg_arena[i].bytes_on_loan_max, 
-         vg_arena[i].bytes_on_loan 
-      );
-   }
-}
-
-
-/* It is important that this library is self-initialising, because it
-   may get called very early on -- as a result of C++ static
-   constructor initialisations -- before Valgrind itself is
-   initialised.  Hence VG_(arena_malloc)() and VG_(arena_free)() below always
-   call ensure_mm_init() to ensure things are correctly initialised.  */
-
-static
-void ensure_mm_init ( void )
-{
-   static Int  client_rz_szW;
-   static Bool init_done = False;
-   
-   if (init_done) {
-      // Make sure the client arena's redzone size never changes.  Could
-      // happen if VG_(arena_malloc) was called too early, ie. before the
-      // tool was loaded.
-      vg_assert(client_rz_szW == VG_(vg_malloc_redzone_szB)/4);
-      return;
-   }
-
-   /* Use checked red zones (of various sizes) for our internal stuff,
-      and an unchecked zone of arbitrary size for the client.  Of
-      course the client's red zone can be checked by the tool, eg. 
-      by using addressibility maps, but not by the mechanism implemented
-      here, which merely checks at the time of freeing that the red 
-      zone words are unchanged. */
-
-   arena_init ( &vg_arena[VG_AR_CORE],      "core",     2, True, CORE_ARENA_MIN_SZW, False );
-
-   arena_init ( &vg_arena[VG_AR_TOOL],      "tool",     2, True, 262144, False );
-
-   arena_init ( &vg_arena[VG_AR_SYMTAB],    "symtab",   2, True, 262144, False );
-
-   arena_init ( &vg_arena[VG_AR_JITTER],    "JITter",   2, True, 8192,   False );
-
-   /* No particular reason for this figure, it's just smallish */
-   sk_assert(VG_(vg_malloc_redzone_szB) < 128);
-   sk_assert(VG_(vg_malloc_redzone_szB) >= 0);
-   client_rz_szW = VG_(vg_malloc_redzone_szB)/4;
-
-   arena_init ( &vg_arena[VG_AR_CLIENT],    "client",  
-               client_rz_szW, False, 262144, True );
-
-   arena_init ( &vg_arena[VG_AR_DEMANGLE],  "demangle", 4 /*paranoid*/,
-                                                           True, 16384, False );
-
-   arena_init ( &vg_arena[VG_AR_EXECTXT],   "exectxt",  2, True, 16384, False );
-
-   arena_init ( &vg_arena[VG_AR_ERRORS],    "errors",   2, True, 16384, False );
-
-   arena_init ( &vg_arena[VG_AR_TRANSIENT], "transien", 2, True, 16384, False );
-
-   init_done = True;
-#  ifdef DEBUG_MALLOC
-   VG_(sanity_check_malloc_all)();
-#  endif
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Superblock management stuff                          ---*/
-/*------------------------------------------------------------*/
-
-// If not enough memory available, either aborts (for non-client memory)
-// or returns 0 (for client memory).
-static
-Superblock* newSuperblock ( Arena* a, Int cszW )
-{
-   static Bool called_before = False;
-   static Word bootstrap_superblock[CORE_ARENA_MIN_SZW];
-   Int cszB;
-   Superblock* sb;
-
-   cszW += 2; /* Take into account sb->next and sb->n_words fields */
-   if (cszW < a->min_sblockW) cszW = a->min_sblockW;
-   while ((cszW % VKI_WORDS_PER_PAGE) > 0) cszW++;
-
-   cszB = cszW * sizeof(Word);
-
-   if (!called_before) {
-      // First time we're called -- use the special static bootstrap
-      // superblock (see comment at top of main() for details).
-      called_before = True;
-      vg_assert(a == &vg_arena[VG_AR_CORE]);
-      vg_assert(CORE_ARENA_MIN_SZW*sizeof(Word) >= cszB);
-      sb = (Superblock*)bootstrap_superblock;
-
-   } else if (a->clientmem) {
-      // client allocation -- return 0 to client if it fails
-      sb = (Superblock *)
-           VG_(client_alloc)(0, cszB,
-                             VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 0);
-      if (NULL == sb) {
-         return 0;
-      }
-   } else {
-      // non-client allocation -- abort if it fails
-      sb = VG_(get_memory_from_mmap) ( cszB, "newSuperblock" );
-   }
-   sb->n_payload_words = cszW - 2;
-   a->bytes_mmaped += cszB;
-   if (0)
-      VG_(message)(Vg_DebugMsg, "newSuperblock, %d payload words", 
-                                sb->n_payload_words);
-   return sb;
-}
-
-
-/* Find the superblock containing the given chunk. */
-static
-Superblock* findSb ( Arena* a, UInt* ch )
-{
-   Superblock* sb;
-   for (sb = a->sblocks; sb; sb = sb->next)
-      if (&sb->payload_words[0] <= ch
-          && ch < &sb->payload_words[sb->n_payload_words]) 
-         return sb;
-   VG_(printf)("findSb: can't find pointer %p in arena `%s'\n",
-               ch, a->name );
-   VG_(core_panic)("findSb: vg_free() in wrong arena?");
-   return NULL; /*NOTREACHED*/
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Low-level functions for working with blocks.         ---*/
-/*------------------------------------------------------------*/
-
-/* Add the not-in-use attribute to a bszW. */
-static __inline__
-Int mk_free_bszW ( Int bszW )
-{
-   vg_assert(bszW != 0);
-   return (bszW < 0) ? bszW : -bszW;
-}
-
-/* Add the in-use attribute to a bszW. */
-static __inline__
-Int mk_inuse_bszW ( Int bszW )
-{
-   vg_assert(bszW != 0);
-   return (bszW < 0) ? -bszW : bszW;
-}
-
-/* Remove the in-use/not-in-use attribute from a bszW, leaving just
-   the size. */
-static __inline__
-Int mk_plain_bszW ( Int bszW )
-{
-   vg_assert(bszW != 0);
-   return (bszW < 0) ? -bszW : bszW;
-}
-
-/* Does this bszW have the in-use attribute ? */
-static __inline__
-Bool is_inuse_bszW ( Int bszW )
-{
-   vg_assert(bszW != 0);
-   return (bszW < 0) ? False : True;
-}
-
-
-/* Given the addr of the first word of a block, return the addr of the
-   last word. */
-static __inline__
-WordL* first_to_last ( WordF* fw )
-{
-   return fw + mk_plain_bszW(fw[0]) - 1;
-}
-
-/* Given the addr of the last word of a block, return the addr of the
-   first word. */
-static __inline__
-WordF* last_to_first ( WordL* lw )
-{
-   return lw - mk_plain_bszW(lw[0]) + 1;
-}
-
-
-/* Given the addr of the first word of a block, return the addr of the
-   first word of its payload. */
-static __inline__
-Word* first_to_payload ( Arena* a, WordF* fw )
-{
-   return & fw[2 + a->rz_szW];
-}
-
-/* Given the addr of the first word of the payload of a block,
-   return the addr of the first word of the block. */
-static __inline__
-Word* payload_to_first ( Arena* a, WordF* payload )
-{
-   return & payload[- (2 + a->rz_szW)];
-}
-
-/* Set and get the lower size field of a block. */
-static __inline__
-void set_bszW_lo ( WordF* fw, Int bszW ) { 
-   fw[0] = bszW; 
-}
-static __inline__
-Int get_bszW_lo ( WordF* fw )
-{
-   return fw[0];
-}
-
-
-/* Set and get the next and previous link fields of a block. */
-static __inline__
-void set_prev_p  ( WordF* fw, Word* prev_p ) { 
-   fw[1] = (Word)prev_p; 
-}
-static __inline__
-void set_next_p  ( WordF* fw, Word* next_p ) {
-   WordL* lw = first_to_last(fw); 
-   lw[-1] = (Word)next_p; 
-}
-static __inline__
-Word* get_prev_p  ( WordF* fw ) { 
-   return (Word*)(fw[1]);
-}
-static __inline__
-Word* get_next_p  ( WordF* fw ) { 
-   WordL* lw = first_to_last(fw);
-   return (Word*)(lw[-1]);
-}
-
-
-/* Set and get the upper size field of a block. */
-static __inline__
-void set_bszW_hi ( WordF* fw, Int bszW ) {
-   WordL* lw = first_to_last(fw);
-   vg_assert(lw == fw + mk_plain_bszW(bszW) - 1);
-   lw[0] = bszW;
-}
-static __inline__
-Int get_bszW_hi ( WordF* fw ) {
-   WordL* lw = first_to_last(fw);
-   return lw[0];
-}
-
-/* Get the upper size field of a block, given a pointer to the last
-   word of it. */
-static __inline__
-Int get_bszW_hi_from_last_word ( WordL* lw ) {
-   WordF* fw = last_to_first(lw);
-   return get_bszW_lo(fw);
-}
-
-
-/* Read and write the lower and upper red-zone words of a block. */
-static __inline__
-void set_rz_lo_word ( Arena* a, WordF* fw, Int rz_wordno, Word w )
-{
-   fw[2 + rz_wordno] = w;
-}
-static __inline__
-void set_rz_hi_word ( Arena* a, WordF* fw, Int rz_wordno, Word w )
-{
-   WordL* lw = first_to_last(fw);
-   lw[-2-rz_wordno] = w;
-}
-static __inline__
-Word get_rz_lo_word ( Arena* a, WordF* fw, Int rz_wordno )
-{
-   return fw[2 + rz_wordno];
-}
-static __inline__
-Word get_rz_hi_word ( Arena* a, WordF* fw, Int rz_wordno )
-{
-   WordL* lw = first_to_last(fw);
-   return lw[-2-rz_wordno];
-}
-
-
-/* Return the lower, upper and total overhead in words for a block.
-   These are determined purely by which arena the block lives in. */
-static __inline__
-Int overhead_szW_lo ( Arena* a )
-{
-   return 2 + a->rz_szW;
-}
-static __inline__
-Int overhead_szW_hi ( Arena* a )
-{
-   return 2 + a->rz_szW;
-}
-static __inline__
-Int overhead_szW ( Arena* a )
-{
-   return overhead_szW_lo(a) + overhead_szW_hi(a);
-}
-
-
-/* Convert payload size in words to block size in words, and back. */
-static __inline__
-Int pszW_to_bszW ( Arena* a, Int pszW )
-{
-   vg_assert(pszW >= 0);
-   return pszW + overhead_szW(a);
-}
-static __inline__
-Int bszW_to_pszW ( Arena* a, Int bszW )
-{
-   Int pszW = bszW - overhead_szW(a);
-   vg_assert(pszW >= 0);
-   return pszW;
-}
-
-Int VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
-{
-   Arena* a = arenaId_to_ArenaP(aid);
-   Word* fw = payload_to_first(a, (WordF*)ptr);
-   Int pszW = bszW_to_pszW(a, get_bszW_lo(fw));
-   return VKI_BYTES_PER_WORD * pszW;
-}
-
-
-/*------------------------------------------------------------*/
 /*--- Functions for working with freelists.                ---*/
 /*------------------------------------------------------------*/
 
-/* Determination of which freelist a block lives on is based on the
-   payload size, not block size, in words. */
+// Nb: Determination of which freelist a block lives on is based on the
+// payload size, not block size.
 
-/* Convert a payload size in words to a freelist number. */
-
+// Convert a payload size in bytes to a freelist number.
 static
-Int pszW_to_listNo ( Int pszW )
+Int pszB_to_listNo ( Int pszB )
 {
-   vg_assert(pszW >= 0);
-   if (pszW <= 3)   return 0;
-   if (pszW <= 4)   return 1;
-   if (pszW <= 5)   return 2;
-   if (pszW <= 6)   return 3;
-   if (pszW <= 7)   return 4;
-   if (pszW <= 8)   return 5;
-   if (pszW <= 9)   return 6;
-   if (pszW <= 10)  return 7;
-   if (pszW <= 11)  return 8;
-   if (pszW <= 12)  return 9;
-   if (pszW <= 16)  return 10;
-   if (pszW <= 32)  return 11;
-   if (pszW <= 64)  return 12;
-   if (pszW <= 128) return 13;
-   if (pszW <= 256) return 14;
+   vg_assert(pszB >= 0);
+   vg_assert(0 == pszB % VG_MIN_MALLOC_SZB);
+   pszB /= VG_MIN_MALLOC_SZB;
+   if (pszB <= 2)   return 0;
+   if (pszB <= 3)   return 1;
+   if (pszB <= 4)   return 2;
+   if (pszB <= 5)   return 3;
+   if (pszB <= 6)   return 4;
+   if (pszB <= 7)   return 5;
+   if (pszB <= 8)   return 6;
+   if (pszB <= 9)   return 7;
+   if (pszB <= 10)  return 8;
+   if (pszB <= 11)  return 9;
+   if (pszB <= 12)  return 10;
+   if (pszB <= 16)  return 11;
+   if (pszB <= 32)  return 12;
+   if (pszB <= 64)  return 13;
+   if (pszB <= 128) return 14;
    return 15;
 }
 
-
-/* What are the minimum and maximum payload sizes for a given list? */
-
+// What is the minimum payload size for a given list?
 static
-Int listNo_to_pszW_min ( Int listNo )
+Int listNo_to_pszB_min ( Int listNo )
 {
-   Int pszW = 0;
+   Int pszB = 0;
    vg_assert(listNo >= 0 && listNo <= VG_N_MALLOC_LISTS);
-   while (pszW_to_listNo(pszW) < listNo) pszW++;
-   return pszW;
+   while (pszB_to_listNo(pszB) < listNo) pszB += VG_MIN_MALLOC_SZB;
+   return pszB;
 }
 
+// What is the maximum payload size for a given list?
 static
-Int listNo_to_pszW_max ( Int listNo )
+Int listNo_to_pszB_max ( Int listNo )
 {
    vg_assert(listNo >= 0 && listNo <= VG_N_MALLOC_LISTS);
    if (listNo == VG_N_MALLOC_LISTS-1) {
-      return 999999999;
+      return MAX_PSZB;
    } else {
-      return listNo_to_pszW_min(listNo+1) - 1;
+      return listNo_to_pszB_min(listNo+1) - 1;
    }
 }
 
@@ -616,29 +622,27 @@ Int listNo_to_pszW_max ( Int listNo )
    a->freelist[lno] with another block on the same list but with a
    lower address, with the idea of attempting to recycle the same
    blocks rather than cruise through the address space. */
-
 static 
 void swizzle ( Arena* a, Int lno )
 {
-   UInt* p_best;
-   UInt* pp;
-   UInt* pn;
-   Int   i;
+   Block* p_best;
+   Block* pp;
+   Block* pn;
+   Int    i;
 
    p_best = a->freelist[lno];
    if (p_best == NULL) return;
 
    pn = pp = p_best;
    for (i = 0; i < 20; i++) {
-      pn = get_next_p(pn);
-      pp = get_prev_p(pp);
+      pn = get_next_b(pn);
+      pp = get_prev_b(pp);
       if (pn < p_best) p_best = pn;
       if (pp < p_best) p_best = pp;
    }
    if (p_best < a->freelist[lno]) {
-#     ifdef DEBUG_MALLOC
-      VG_(printf)("retreat by %d\n", 
-           ((Char*)(a->freelist[lno])) - ((Char*)p_best));
+#     ifdef VERBOSE_MALLOC
+      VG_(printf)("retreat by %d\n", a->freelist[lno] - p_best);
 #     endif
       a->freelist[lno] = p_best;
    }
@@ -646,175 +650,69 @@ void swizzle ( Arena* a, Int lno )
 
 
 /*------------------------------------------------------------*/
-/*--- Creating and deleting blocks.                        ---*/
-/*------------------------------------------------------------*/
-
-/* Mark the words at b .. b+bszW-1 as not in use, and add them to the
-   relevant free list. */
-
-static
-void mkFreeBlock ( Arena* a, Word* b, Int bszW, Int b_lno )
-{
-   Int pszW = bszW_to_pszW(a, bszW);
-   vg_assert(pszW >= 0);
-   vg_assert(b_lno == pszW_to_listNo(pszW));
-   /* Set the size fields and indicate not-in-use. */
-   set_bszW_lo(b, mk_free_bszW(bszW));
-   set_bszW_hi(b, mk_free_bszW(bszW));
-
-   /* Add to the relevant list. */
-   if (a->freelist[b_lno] == NULL) {
-      set_prev_p(b, b);
-      set_next_p(b, b);
-      a->freelist[b_lno] = b;
-   } else {
-      Word* b_prev = get_prev_p(a->freelist[b_lno]);
-      Word* b_next = a->freelist[b_lno];
-      set_next_p(b_prev, b);
-      set_prev_p(b_next, b);
-      set_next_p(b, b_next);
-      set_prev_p(b, b_prev);
-   }
-#  ifdef DEBUG_MALLOC
-   (void)blockSane(a,b);
-#  endif
-}
-
-
-/* Mark the words at b .. b+bszW-1 as in use, and set up the block
-   appropriately. */
-static
-void mkInuseBlock ( Arena* a, UInt* b, UInt bszW )
-{
-   Int i;
-   set_bszW_lo(b, mk_inuse_bszW(bszW));
-   set_bszW_hi(b, mk_inuse_bszW(bszW));
-   set_prev_p(b, NULL);
-   set_next_p(b, NULL);
-   if (a->rz_check) {
-      for (i = 0; i < a->rz_szW; i++) {
-         set_rz_lo_word(a, b, i, (UInt)b ^ VG_REDZONE_LO_MASK);
-         set_rz_hi_word(a, b, i, (UInt)b ^ VG_REDZONE_HI_MASK);
-      }
-   }
-#  ifdef DEBUG_MALLOC
-   (void)blockSane(a,b);
-#  endif
-}
-
-
-/* Remove a block from a given list.  Does no sanity checking. */
-static
-void unlinkBlock ( Arena* a, UInt* b, Int listno )
-{
-   vg_assert(listno >= 0 && listno < VG_N_MALLOC_LISTS);
-   if (get_prev_p(b) == b) {
-      /* Only one element in the list; treat it specially. */
-      vg_assert(get_next_p(b) == b);
-      a->freelist[listno] = NULL;
-   } else {
-      UInt* b_prev = get_prev_p(b);
-      UInt* b_next = get_next_p(b);
-      a->freelist[listno] = b_prev;
-      set_next_p(b_prev, b_next);
-      set_prev_p(b_next, b_prev);
-      swizzle ( a, listno );
-   }
-   set_prev_p(b, NULL);
-   set_next_p(b, NULL);
-}
-
-
-/* Split an existing free block into two pieces, and put the fragment
-   (the second one along in memory) onto the relevant free list.
-   req_bszW is the required size of the block which isn't the
-   fragment. */
-static
-void splitChunk ( Arena* a, UInt* b, Int b_listno, UInt req_bszW )
-{
-   UInt b_bszW;
-   Int  frag_bszW;
-   b_bszW = (UInt)mk_plain_bszW(get_bszW_lo(b));
-   vg_assert(req_bszW < b_bszW);
-   frag_bszW = b_bszW - req_bszW;
-   vg_assert(frag_bszW >= overhead_szW(a));
-   /*
-   printf( "split %d into %d and %d\n", 
-                   b_bszW,req_bszW,frag_bszW  );
-   */
-   vg_assert(bszW_to_pszW(a, frag_bszW) > 0);
-   unlinkBlock(a, b, b_listno);
-   mkInuseBlock(a, b, req_bszW);
-   mkFreeBlock(a, &b[req_bszW], frag_bszW, 
-                  pszW_to_listNo(bszW_to_pszW(a, frag_bszW)));
-}
-
-
-/*------------------------------------------------------------*/
 /*--- Sanity-check/debugging machinery.                    ---*/
 /*------------------------------------------------------------*/
 
-/* Do some crude sanity checks on a chunk. */
+#define VG_REDZONE_LO_MASK    0x31
+#define VG_REDZONE_HI_MASK    0x7c
+
+// Do some crude sanity checks on a chunk.
 static 
-Bool blockSane ( Arena* a, Word* b )
+Bool blockSane ( Arena* a, Block* b )
 {
 #  define BLEAT(str) VG_(printf)("blockSane: fail -- %s\n",str)
    Int i;
-   if (get_bszW_lo(b) != get_bszW_hi(b)) 
+   if (get_bszB_lo(b) != get_bszB_hi(b))
       {BLEAT("sizes");return False;}
-   if (a->rz_check && is_inuse_bszW(get_bszW_lo(b))) {
-      for (i = 0; i < a->rz_szW; i++) {
-         if (get_rz_lo_word(a, b, i) != ((Word)b ^ VG_REDZONE_LO_MASK))
-            {BLEAT("redzone-lo");return False;}
-         if (get_rz_hi_word(a, b, i) != ((Word)b ^ VG_REDZONE_HI_MASK))
-            {BLEAT("redzone-hi");return False;}
+   if (!a->clientmem && is_inuse_bszB(get_bszB_lo(b))) {
+      for (i = 0; i < a->rz_szB; i++) {
+         if (get_rz_lo_byte(a, b, i) != 
+            (UByte)(((Addr)b&0xff) ^ VG_REDZONE_LO_MASK))
+               {BLEAT("redzone-lo");return False;}
+         if (get_rz_hi_byte(a, b, i) != 
+            (UByte)(((Addr)b&0xff) ^ VG_REDZONE_HI_MASK))
+               {BLEAT("redzone-hi");return False;}
       }      
    }
    return True;
 #  undef BLEAT
 }
 
-
-/* Print superblocks (only for debugging). */
+// Print superblocks (only for debugging).
 static 
 void ppSuperblocks ( Arena* a )
 {
-   Int i, ch_bszW, blockno;
-   UInt* ch;
+   Int i, b_bszB, blockno;
+   Block* b;
    Superblock* sb = a->sblocks;
    blockno = 1;
 
    while (sb) {
       VG_(printf)( "\n" );
-      VG_(printf)( "superblock %d at %p, sb->n_pl_ws = %d, next = %p\n", 
-                   blockno++, sb, sb->n_payload_words, sb->next );
-      i = 0;
-      while (True) {
-         if (i >= sb->n_payload_words) break;
-         ch     = &sb->payload_words[i];
-         ch_bszW = get_bszW_lo(ch);
-         VG_(printf)( "   block at %d, bszW %d: ", i, mk_plain_bszW(ch_bszW) );
-         VG_(printf)( "%s, ", is_inuse_bszW(ch_bszW) ? "inuse" : "free" );
-         VG_(printf)( "%s\n", blockSane(a,ch) ? "ok" : "BAD" );
-         i += mk_plain_bszW(ch_bszW);
+      VG_(printf)( "superblock %d at %p, sb->n_pl_bs = %d, next = %p\n", 
+                   blockno++, sb, sb->n_payload_bytes, sb->next );
+      for (i = 0; i < sb->n_payload_bytes; i += mk_plain_bszB(b_bszB)) {
+         b      = (Block*)&sb->payload_bytes[i];
+         b_bszB = get_bszB_lo(b);
+         VG_(printf)( "   block at %d, bszB %d: ", i, mk_plain_bszB(b_bszB) );
+         VG_(printf)( "%s, ", is_inuse_bszB(b_bszB) ? "inuse" : "free");
+         VG_(printf)( "%s\n", blockSane(a, b) ? "ok" : "BAD" );
       }
-      if (i > sb->n_payload_words) 
-         VG_(printf)( "   last block overshoots end of SB\n");
+      vg_assert(i == sb->n_payload_bytes);   // no overshoot at end of Sb
       sb = sb->next;
    }
    VG_(printf)( "end of superblocks\n\n" );
 }
 
-
-/* Sanity check both the superblocks and the chains. */
+// Sanity check both the superblocks and the chains.
 static void sanity_check_malloc_arena ( ArenaId aid )
 {
-   Int         i, superblockctr, b_bszW, b_pszW, blockctr_sb, blockctr_li;
-   Int         blockctr_sb_free, listno, list_min_pszW, list_max_pszW;
+   Int         i, superblockctr, b_bszB, b_pszB, blockctr_sb, blockctr_li;
+   Int         blockctr_sb_free, listno, list_min_pszB, list_max_pszB;
    Superblock* sb;
    Bool        thisFree, lastWasFree;
-   Word*       b;
-   Word*       b_prev;
+   Block*      b;
+   Block*      b_prev;
    UInt        arena_bytes_on_loan;
    Arena*      a;
 
@@ -822,39 +720,35 @@ static void sanity_check_malloc_arena ( ArenaId aid )
 
    a = arenaId_to_ArenaP(aid);
    
-   /* First, traverse all the superblocks, inspecting the chunks in each. */
+   // First, traverse all the superblocks, inspecting the Blocks in each.
    superblockctr = blockctr_sb = blockctr_sb_free = 0;
    arena_bytes_on_loan = 0;
    sb = a->sblocks;
    while (sb) {
       lastWasFree = False;
       superblockctr++;
-      i = 0;
-      while (True) {
-         if (i >= sb->n_payload_words) break;
+      for (i = 0; i < sb->n_payload_bytes; i += mk_plain_bszB(b_bszB)) {
          blockctr_sb++;
-         b     = &sb->payload_words[i];
-         b_bszW = get_bszW_lo(b);
+         b     = (Block*)&sb->payload_bytes[i];
+         b_bszB = get_bszB_lo(b);
          if (!blockSane(a, b)) {
-            VG_(printf)("sanity_check_malloc_arena: sb %p, block %d (bszW %d): "
-                        " BAD\n",
-                         sb, i, b_bszW );
+            VG_(printf)("sanity_check_malloc_arena: sb %p, block %d (bszB %d): "
+                        " BAD\n", sb, i, b_bszB );
             BOMB;
          }
-         thisFree = !is_inuse_bszW(b_bszW);
+         thisFree = !is_inuse_bszB(b_bszB);
          if (thisFree && lastWasFree) {
-            VG_(printf)("sanity_check_malloc_arena: sb %p, block %d (bszW %d): "
+            VG_(printf)("sanity_check_malloc_arena: sb %p, block %d (bszB %d): "
                         "UNMERGED FREES\n",
-                         sb, i, b_bszW );
+                         sb, i, b_bszB );
             BOMB;
          }
-         lastWasFree = thisFree;
          if (thisFree) blockctr_sb_free++;
          if (!thisFree) 
-            arena_bytes_on_loan += sizeof(Word) * bszW_to_pszW(a, b_bszW);
-         i += mk_plain_bszW(b_bszW);
+            arena_bytes_on_loan += bszB_to_pszB(a, b_bszB);
+         lastWasFree = thisFree;
       }
-      if (i > sb->n_payload_words) {
+      if (i > sb->n_payload_bytes) {
          VG_(printf)( "sanity_check_malloc_arena: sb %p: last block "
                       "overshoots end\n", sb);
          BOMB;
@@ -863,10 +757,11 @@ static void sanity_check_malloc_arena ( ArenaId aid )
    }
 
    if (arena_bytes_on_loan != a->bytes_on_loan) {
-            VG_(printf)( 
-                    "sanity_check_malloc_arena: a->bytes_on_loan %d, "
-                    "arena_bytes_on_loan %d: "
-                    "MISMATCH\n", a->bytes_on_loan, arena_bytes_on_loan);
+#     ifdef VERBOSE_MALLOC
+      VG_(printf)( "sanity_check_malloc_arena: a->bytes_on_loan %d, "
+                   "arena_bytes_on_loan %d: "
+                   "MISMATCH\n", a->bytes_on_loan, arena_bytes_on_loan);
+#     endif
       ppSuperblocks(a);
       BOMB;
    }
@@ -876,25 +771,25 @@ static void sanity_check_malloc_arena ( ArenaId aid )
       is an appropriate size for this list. */
    blockctr_li = 0;
    for (listno = 0; listno < VG_N_MALLOC_LISTS; listno++) {
-      list_min_pszW = listNo_to_pszW_min(listno);
-      list_max_pszW = listNo_to_pszW_max(listno);
+      list_min_pszB = listNo_to_pszB_min(listno);
+      list_max_pszB = listNo_to_pszB_max(listno);
       b = a->freelist[listno];
       if (b == NULL) continue;
       while (True) {
          b_prev = b;
-         b = get_next_p(b);
-         if (get_prev_p(b) != b_prev) {
+         b = get_next_b(b);
+         if (get_prev_b(b) != b_prev) {
             VG_(printf)( "sanity_check_malloc_arena: list %d at %p: "
                          "BAD LINKAGE\n", 
                          listno, b );
             BOMB;
          }
-         b_pszW = bszW_to_pszW(a, mk_plain_bszW(get_bszW_lo(b)));
-         if (b_pszW < list_min_pszW || b_pszW > list_max_pszW) {
+         b_pszB = bszB_to_pszB(a, mk_plain_bszB(get_bszB_lo(b)));
+         if (b_pszB < list_min_pszB || b_pszB > list_max_pszB) {
             VG_(printf)( 
                "sanity_check_malloc_arena: list %d at %p: "
-               "WRONG CHAIN SIZE %d (%d, %d)\n", 
-               listno, b, b_pszW, list_min_pszW, list_max_pszW );
+               "WRONG CHAIN SIZE %dB (%dB, %dB)\n", 
+               listno, b, b_pszB, list_min_pszB, list_max_pszB );
             BOMB;
          }
          blockctr_li++;
@@ -903,10 +798,11 @@ static void sanity_check_malloc_arena ( ArenaId aid )
    }
 
    if (blockctr_sb_free != blockctr_li) {
-      VG_(printf)( 
-         "sanity_check_malloc_arena: BLOCK COUNT MISMATCH "
-         "(via sbs %d, via lists %d)\n",
-         blockctr_sb_free, blockctr_li );
+#     ifdef VERBOSE_MALLOC
+      VG_(printf)( "sanity_check_malloc_arena: BLOCK COUNT MISMATCH "
+                   "(via sbs %d, via lists %d)\n",
+                   blockctr_sb_free, blockctr_li );
+#     endif
       ppSuperblocks(a);
       BOMB;
    }
@@ -930,43 +826,109 @@ void VG_(sanity_check_malloc_all) ( void )
       sanity_check_malloc_arena ( i );
 }
 
-
 /* Really, this isn't the right place for this.  Nevertheless: find
    out if an arena is empty -- currently has no bytes on loan.  This
    is useful for checking for memory leaks (of valgrind, not the
-   client.) 
-*/
+   client.) */
 Bool VG_(is_empty_arena) ( ArenaId aid )
 {
    Arena*      a;
    Superblock* sb;
-   WordF*      b;
-   Int         b_bszW;
+   Block*      b;
+   Int         b_bszB;
 
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
    for (sb = a->sblocks; sb != NULL; sb = sb->next) {
-      /* If the superblock is empty, it should contain a single free
-         block, of the right size. */
-      b = &(sb->payload_words[0]);
-      b_bszW = get_bszW_lo(b);
-      if (is_inuse_bszW(b_bszW)) return False;
-      if (mk_plain_bszW(b_bszW) != sb->n_payload_words) return False;
-      /* So this block is not in use and is of the right size.  Keep
-         going. */
+      // If the superblock is empty, it should contain a single free
+      // block, of the right size.
+      b = (Block*)&sb->payload_bytes[0];
+      b_bszB = get_bszB_lo(b);
+      if (is_inuse_bszB(b_bszB)) return False;
+      if (mk_plain_bszB(b_bszB) != sb->n_payload_bytes) return False;
+      // If we reach here, this block is not in use and is of the right
+      // size, so keep going around the loop...
    }
    return True;
 }
 
 
-/* Turn a request size in bytes into a payload request size in
-   words.  This means 8-aligning the request size.
-*/
-static __inline__
-Int req_pszB_to_req_pszW ( Int req_pszB )
+/*------------------------------------------------------------*/
+/*--- Creating and deleting blocks.                        ---*/
+/*------------------------------------------------------------*/
+
+// Mark the bytes at b .. b+bszB-1 as not in use, and add them to the
+// relevant free list.
+
+static
+void mkFreeBlock ( Arena* a, Block* b, Int bszB, Int b_lno )
 {
-   return ((req_pszB + 7) / 8)   /* # of 64-bit units */
-          * 2;                   /* # of 32-bit units */
+   Int pszB = bszB_to_pszB(a, bszB);
+   vg_assert(pszB >= 0);
+   vg_assert(b_lno == pszB_to_listNo(pszB));
+   // Set the size fields and indicate not-in-use.
+   set_bszB_lo(b, mk_free_bszB(bszB));
+   set_bszB_hi(b, mk_free_bszB(bszB));
+
+   // Add to the relevant list.
+   if (a->freelist[b_lno] == NULL) {
+      set_prev_b(b, b);
+      set_next_b(b, b);
+      a->freelist[b_lno] = b;
+   } else {
+      Block* b_prev = get_prev_b(a->freelist[b_lno]);
+      Block* b_next = a->freelist[b_lno];
+      set_next_b(b_prev, b);
+      set_prev_b(b_next, b);
+      set_next_b(b, b_next);
+      set_prev_b(b, b_prev);
+   }
+#  ifdef DEBUG_MALLOC
+   (void)blockSane(a,b);
+#  endif
+}
+
+// Mark the bytes at b .. b+bszB-1 as in use, and set up the block
+// appropriately.
+static
+void mkInuseBlock ( Arena* a, Block* b, UInt bszB )
+{
+   Int i;
+   vg_assert(bszB >= min_useful_bszB(a));
+   set_bszB_lo(b, mk_inuse_bszB(bszB));
+   set_bszB_hi(b, mk_inuse_bszB(bszB));
+   set_prev_b(b, NULL);    // Take off freelist
+   set_next_b(b, NULL);    // ditto
+   if (!a->clientmem) {
+      for (i = 0; i < a->rz_szB; i++) {
+         set_rz_lo_byte(a, b, i, (UByte)(((Addr)b&0xff) ^ VG_REDZONE_LO_MASK));
+         set_rz_hi_byte(a, b, i, (UByte)(((Addr)b&0xff) ^ VG_REDZONE_HI_MASK));
+      }
+   }
+#  ifdef DEBUG_MALLOC
+   (void)blockSane(a,b);
+#  endif
+}
+
+// Remove a block from a given list.  Does no sanity checking.
+static
+void unlinkBlock ( Arena* a, Block* b, Int listno )
+{
+   vg_assert(listno >= 0 && listno < VG_N_MALLOC_LISTS);
+   if (get_prev_b(b) == b) {
+      // Only one element in the list; treat it specially.
+      vg_assert(get_next_b(b) == b);
+      a->freelist[listno] = NULL;
+   } else {
+      Block* b_prev = get_prev_b(b);
+      Block* b_next = get_next_b(b);
+      a->freelist[listno] = b_prev;
+      set_next_b(b_prev, b_next);
+      set_prev_b(b_next, b_prev);
+      swizzle ( a, listno );
+   }
+   set_prev_b(b, NULL);
+   set_next_b(b, NULL);
 }
 
 
@@ -974,11 +936,19 @@ Int req_pszB_to_req_pszW ( Int req_pszB )
 /*--- Core-visible functions.                              ---*/
 /*------------------------------------------------------------*/
 
+// Align the request size.
+static __inline__
+Int align_req_pszB ( Int req_pszB )
+{
+   Int n = VG_MIN_MALLOC_SZB-1;
+   return ((req_pszB + n) & (~n));
+}
+
 void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
 {
-   Int         req_pszW, req_bszW, frag_bszW, b_bszW, lno;
+   Int         req_bszB, frag_bszB, b_bszB, lno;
    Superblock* new_sb;
-   Word*       b;
+   Block*      b = NULL;
    Arena*      a;
    void*       v;
 
@@ -987,90 +957,67 @@ void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
 
-   vg_assert(req_pszB >= 0);
-   vg_assert(req_pszB < 0x7FFFFFF0);
+   vg_assert(0 <= req_pszB && req_pszB < MAX_PSZB);
+   req_pszB = align_req_pszB(req_pszB);
+   req_bszB = pszB_to_bszB(a, req_pszB);
 
-   req_pszW = req_pszB_to_req_pszW(req_pszB);
-
-   /* Keep gcc -O happy: */
-   b = NULL;
-
-   /* Start searching at this list. */
-   lno = pszW_to_listNo(req_pszW);
-
-   /* This loop finds a list which has a block big enough, or sets
-      req_listno to N_LISTS if no such block exists. */
-   while (True) {
-      if (lno == VG_N_MALLOC_LISTS) break;
-      /* If this list is empty, try the next one. */
-      if (a->freelist[lno] == NULL) {
-         lno++;
-         continue;
-      }
-      /* Scan a->list[lno] to find a big-enough chunk. */
+   // Scan through all the big-enough freelists for a block.
+   for (lno = pszB_to_listNo(req_pszB); lno < VG_N_MALLOC_LISTS; lno++) {
       b = a->freelist[lno];
-      b_bszW = mk_plain_bszW(get_bszW_lo(b));
+      if (NULL == b) continue;   // If this list is empty, try the next one.
       while (True) {
-         if (bszW_to_pszW(a, b_bszW) >= req_pszW) break;
-         b = get_next_p(b);
-         b_bszW = mk_plain_bszW(get_bszW_lo(b));
-         if (b == a->freelist[lno]) break;
+         b_bszB = mk_plain_bszB(get_bszB_lo(b));
+         if (b_bszB >= req_bszB) goto obtained_block;    // success!
+         b = get_next_b(b);
+         if (b == a->freelist[lno]) break;   // traversed entire freelist
       }
-      if (bszW_to_pszW(a, b_bszW) >= req_pszW) break;
-      /* No luck?  Try a larger list. */
-      lno++;
    }
 
-   /* Either lno < VG_N_MALLOC_LISTS and b points to the selected
-      block, or lno == VG_N_MALLOC_LISTS, and we have to allocate a
-      new superblock. */
-
-   if (lno == VG_N_MALLOC_LISTS) {
-      req_bszW = pszW_to_bszW(a, req_pszW);      
-      new_sb = newSuperblock(a, req_bszW);
-      if (NULL == new_sb) {
-         // Should only fail if for client, otherwise, should have aborted
-         // already.
-         vg_assert(VG_AR_CLIENT == aid);
-         return NULL;
-      }
-      new_sb->next = a->sblocks;
-      a->sblocks = new_sb;
-      b = &(new_sb->payload_words[0]);
-      lno = pszW_to_listNo(bszW_to_pszW(a, new_sb->n_payload_words));
-      mkFreeBlock ( a, b, new_sb->n_payload_words, lno);
+   // If we reach here, no suitable block found, allocate a new superblock
+   vg_assert(lno == VG_N_MALLOC_LISTS);
+   new_sb = newSuperblock(a, req_bszB);
+   if (NULL == new_sb) {
+      // Should only fail if for client, otherwise, should have aborted
+      // already.
+      vg_assert(VG_AR_CLIENT == aid);
+      return NULL;
    }
+   new_sb->next = a->sblocks;
+   a->sblocks = new_sb;
+   b = (Block*)&new_sb->payload_bytes[0];
+   lno = pszB_to_listNo(bszB_to_pszB(a, new_sb->n_payload_bytes));
+   mkFreeBlock ( a, b, new_sb->n_payload_bytes, lno);
+   // fall through
 
-   /* Ok, we can allocate from b, which lives in list req_listno. */
+  obtained_block:
+   // Ok, we can allocate from b, which lives in list lno.
    vg_assert(b != NULL);
    vg_assert(lno >= 0 && lno < VG_N_MALLOC_LISTS);
    vg_assert(a->freelist[lno] != NULL);
-   b_bszW = mk_plain_bszW(get_bszW_lo(b));
-   req_bszW = pszW_to_bszW(a, req_pszW);
-   /* req_bszW is the size of the block we are after.  b_bszW is the
-      size of what we've actually got. */
-   vg_assert(b_bszW >= req_bszW);
+   b_bszB = mk_plain_bszB(get_bszB_lo(b));
+   // req_bszB is the size of the block we are after.  b_bszB is the
+   // size of what we've actually got. */
+   vg_assert(b_bszB >= req_bszB);
 
-   /* Could we split this block and still get a useful fragment?
-      Where "useful" means that the payload size of the frag is at
-      least one word.  */
-   frag_bszW = b_bszW - req_bszW;
-   if (frag_bszW > overhead_szW(a)) {
-      splitChunk(a, b, lno, req_bszW);
-   } else {
-      /* No, mark as in use and use as-is. */
+   // Could we split this block and still get a useful fragment?
+   frag_bszB = b_bszB - req_bszB;
+   if (frag_bszB >= min_useful_bszB(a)) {
+      // Yes, split block in two, put the fragment on the appropriate free
+      // list, and update b_bszB accordingly.
+      // printf( "split %dB into %dB and %dB\n", b_bszB, req_bszB, frag_bszB );
       unlinkBlock(a, b, lno);
-      /*
-      set_bszW_lo(b, mk_inuse_bszW(b_bszW));
-      set_bszW_hi(b, mk_inuse_bszW(b_bszW));
-      */
-      mkInuseBlock(a, b, b_bszW);
+      mkInuseBlock(a, b, req_bszB);
+      mkFreeBlock(a, &b[req_bszB], frag_bszB, 
+                     pszB_to_listNo(bszB_to_pszB(a, frag_bszB)));
+      b_bszB = mk_plain_bszB(get_bszB_lo(b));
+   } else {
+      // No, mark as in use and use as-is.
+      unlinkBlock(a, b, lno);
+      mkInuseBlock(a, b, b_bszB);
    }
-   vg_assert(req_bszW <= mk_plain_bszW(get_bszW_lo(b)));
 
-   a->bytes_on_loan 
-      += sizeof(Word) 
-         * bszW_to_pszW(a, mk_plain_bszW(get_bszW_lo(b)));
+   // Update stats
+   a->bytes_on_loan += bszB_to_pszB(a, b_bszB);
    if (a->bytes_on_loan > a->bytes_on_loan_max)
       a->bytes_on_loan_max = a->bytes_on_loan;
 
@@ -1079,8 +1026,8 @@ void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
 #  endif
 
    VGP_POPCC(VgpMalloc);
-   v = first_to_payload(a, b);
-   vg_assert( (((UInt)v) & 7) == 0 );
+   v = get_block_payload(a, b);
+   vg_assert( (((Addr)v) & (VG_MIN_MALLOC_SZB-1)) == 0 );
    return v;
 }
 
@@ -1088,11 +1035,11 @@ void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
 void VG_(arena_free) ( ArenaId aid, void* ptr )
 {
    Superblock* sb;
-   UInt*       sb_payl_firstw;
-   UInt*       sb_payl_lastw;
-   UInt*       other;
-   UInt*       ch;
-   Int         ch_bszW, ch_pszW, other_bszW, ch_listno;
+   UByte*      sb_start;
+   UByte*      sb_end;
+   Block*      other;
+   Block*      b;
+   Int         b_bszB, b_pszB, other_bszB, b_listno;
    Arena*      a;
 
    VGP_PUSHCC(VgpMalloc);
@@ -1105,61 +1052,70 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
       return;
    }
       
-   ch = payload_to_first(a, ptr);
+   b = get_payload_block(a, ptr);
 
 #  ifdef DEBUG_MALLOC
-   vg_assert(blockSane(a,ch));
+   vg_assert(blockSane(a, b));
 #  endif
 
-   a->bytes_on_loan 
-      -= sizeof(Word) 
-         * bszW_to_pszW(a, mk_plain_bszW(get_bszW_lo(ch)));
+   a->bytes_on_loan -= bszB_to_pszB(a, mk_plain_bszB(get_bszB_lo(b)));
 
-   sb             = findSb( a, ch );
-   sb_payl_firstw = &(sb->payload_words[0]);
-   sb_payl_lastw  = &(sb->payload_words[sb->n_payload_words-1]);
+   sb       = findSb( a, b );
+   sb_start = &sb->payload_bytes[0];
+   sb_end   = &sb->payload_bytes[sb->n_payload_bytes - 1];
 
-   /* Put this chunk back on a list somewhere. */
-   ch_bszW    = get_bszW_lo(ch);
-   ch_pszW    = bszW_to_pszW(a, ch_bszW);
-   ch_listno  = pszW_to_listNo(ch_pszW);
-   mkFreeBlock( a, ch, ch_bszW, ch_listno );
+   // Put this chunk back on a list somewhere.
+   b_bszB   = get_bszB_lo(b);
+   b_pszB   = bszB_to_pszB(a, b_bszB);
+   b_listno = pszB_to_listNo(b_pszB);
+   mkFreeBlock( a, b, b_bszB, b_listno );
 
-   /* See if this block can be merged with the following one. */
-   other = ch + ch_bszW;
-   /* overhead_szW(a) is the smallest possible bszW for this arena.
-      So the nearest possible end to the block beginning at other is
-      other+overhead_szW(a)-1.  Hence the test below. */
-   if (other+overhead_szW(a)-1 <= sb_payl_lastw) {
-      other_bszW = get_bszW_lo(other);
-      if (!is_inuse_bszW(other_bszW)) {
-         /* VG_(printf)( "merge-successor\n"); */
-         other_bszW = mk_plain_bszW(other_bszW);
+   // See if this block can be merged with its successor.
+   // First test if we're far enough before the superblock's end to possibly
+   // have a successor.
+   other = b + b_bszB;
+   if (other+min_useful_bszB(a)-1 <= (Block*)sb_end) {
+      // Ok, we have a successor, merge if it's not in use.
+      other_bszB = get_bszB_lo(other);
+      if (!is_inuse_bszB(other_bszB)) {
+         // VG_(printf)( "merge-successor\n");
+         other_bszB = mk_plain_bszB(other_bszB);
 #        ifdef DEBUG_MALLOC
          vg_assert(blockSane(a, other));
 #        endif
-         unlinkBlock( a, ch, ch_listno );
-         unlinkBlock( a, other, pszW_to_listNo(bszW_to_pszW(a,other_bszW)) );
-         ch_bszW += other_bszW; 
-         ch_listno = pszW_to_listNo(bszW_to_pszW(a, ch_bszW));
-         mkFreeBlock( a, ch, ch_bszW, ch_listno );
+         unlinkBlock( a, b, b_listno );
+         unlinkBlock( a, other, pszB_to_listNo(bszB_to_pszB(a,other_bszB)) );
+         b_bszB += other_bszB;
+         b_listno = pszB_to_listNo(bszB_to_pszB(a, b_bszB));
+         mkFreeBlock( a, b, b_bszB, b_listno );
       }
+   } else {
+      // Not enough space for successor: check that b is the last block
+      // ie. there are no unused bytes at the end of the Superblock.
+      vg_assert(other-1 == (Block*)sb_end);
    }
 
-   /* See if this block can be merged with its predecessor. */
-   if (ch-overhead_szW(a) >= sb_payl_firstw) {
-      other_bszW = get_bszW_hi_from_last_word( ch-1 );
-      if (!is_inuse_bszW(other_bszW)) {
-         /* VG_(printf)( "merge-predecessor\n"); */
-         other = last_to_first( ch-1 );
-         other_bszW = mk_plain_bszW(other_bszW);         
-         unlinkBlock( a, ch, ch_listno );
-         unlinkBlock( a, other, pszW_to_listNo(bszW_to_pszW(a, other_bszW)) );
-         ch = other;
-         ch_bszW += other_bszW;
-         ch_listno = pszW_to_listNo(bszW_to_pszW(a, ch_bszW));
-         mkFreeBlock( a, ch, ch_bszW, ch_listno );
+   // Then see if this block can be merged with its predecessor.
+   // First test if we're far enough after the superblock's start to possibly
+   // have a predecessor.
+   if (b >= (Block*)sb_start + min_useful_bszB(a)) {
+      // Ok, we have a predecessor, merge if it's not in use.
+      other = get_predecessor_block( b );
+      other_bszB = get_bszB_lo(other);
+      if (!is_inuse_bszB(other_bszB)) {
+         // VG_(printf)( "merge-predecessor\n");
+         other_bszB = mk_plain_bszB(other_bszB);
+         unlinkBlock( a, b, b_listno );
+         unlinkBlock( a, other, pszB_to_listNo(bszB_to_pszB(a, other_bszB)) );
+         b = other;
+         b_bszB += other_bszB;
+         b_listno = pszB_to_listNo(bszB_to_pszB(a, b_bszB));
+         mkFreeBlock( a, b, b_bszB, b_listno );
       }
+   } else {
+      // Not enough space for predecessor: check that b is the first block,
+      // ie. there are no unused bytes at the start of the Superblock.
+      vg_assert((Block*)sb_start == b);
    }
 
 #  ifdef DEBUG_MALLOC
@@ -1175,7 +1131,7 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    then split it into two parts: frag, which is returned to the the
    free pool, and align, which is the bit we're really after.  Here's
    a picture.  L and H denote the block lower and upper overheads, in
-   words.  The details are gruesome.  Note it is slightly complicated
+   bytes.  The details are gruesome.  Note it is slightly complicated
    because the initial request to generate base may return a bigger
    block than we asked for, so it is important to distinguish the base
    request size and the base actual size.
@@ -1197,109 +1153,91 @@ void VG_(arena_free) ( ArenaId aid, void* ptr )
    base_b
 
    .    .               .   .   .               .   .
-   <------ frag_bszW ------->   .               .   .
-   .    <------------- base_pszW_act ----------->   .
+   <------ frag_bszB ------->   .               .   .
+   .    <------------- base_pszB_act ----------->   .
    .    .               .   .   .               .   .
 
 */
 void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
 {
-   Int    req_alignW, req_pszW, base_pszW_req, base_pszW_act, frag_bszW;
-   Word   *base_b, *base_p, *align_p;
+   Int    base_pszB_req, base_pszB_act, frag_bszB;
+   Block  *base_b, *align_b;
+   UByte  *base_p, *align_p;
    UInt   saved_bytes_on_loan;
    Arena* a;
-   void*  v;
 
    VGP_PUSHCC(VgpMalloc);
 
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
 
-   vg_assert(req_pszB >= 0);
-   vg_assert(req_pszB < 0x7FFFFFF0);
+   vg_assert(0 <= req_pszB && req_pszB < MAX_PSZB);
 
-   /* Check that the requested alignment seems reasonable; that is, is
-      a power of 2.  */
-   switch (req_alignB) {
-      case 4:
-      case 8: case 16: case 32: case 64: case 128: case 256: 
-      case 512: case 1024: case 2048: case 4096: case 8192: 
-      case 16384: case 32768: case 65536: case 131072: 
-      case 262144:
-      case 1048576: 
-         /* can't be bothered to calculate larger ones */
-         break;
-      default:
-         VG_(printf)("vg_malloc_aligned(%p, %d, %d)\nbad alignment request", 
-                     a, req_alignB, req_pszB );
-         VG_(core_panic)("vg_malloc_aligned");
-         /*NOTREACHED*/
+   // Check that the requested alignment seems reasonable; that is, is
+   // a power of 2.
+   if (req_alignB < VG_MIN_MALLOC_SZB
+       || req_alignB > 1048576
+       || VG_(log2)( VG_(clo_alignment) ) == -1 /* not a power of 2 */) {
+      VG_(printf)("VG_(arena_malloc_aligned)(%p, %d, %d)\nbad alignment", 
+                  a, req_alignB, req_pszB );
+      VG_(core_panic)("VG_(arena_malloc_aligned)");
+      /*NOTREACHED*/
    }
-
-   /* Required alignment, in words.  Since it's constrained to be a
-      power of 2 >= word size, no need to align the alignment.  Still,
-      we check. */
-   if (req_alignB == 4) req_alignB = 8;
-   req_alignW = req_alignB / VKI_BYTES_PER_WORD;
-   vg_assert(req_alignB == req_alignW * VKI_BYTES_PER_WORD);
+   // Paranoid
+   vg_assert(req_alignB % VG_MIN_MALLOC_SZB == 0);
 
    /* Required payload size for the aligned chunk. */
-   req_pszW = req_pszB_to_req_pszW(req_pszB);
+   req_pszB = align_req_pszB(req_pszB);
    
-   /* Payload size to request for the big block that we will split
-      up. */
-   base_pszW_req = req_pszW + overhead_szW(a) + req_alignW;
+   /* Payload size to request for the big block that we will split up. */
+   base_pszB_req = req_pszB + min_useful_bszB(a) + req_alignB;
 
    /* Payload ptr for the block we are going to split.  Note this
       changes a->bytes_on_loan; we save and restore it ourselves. */
    saved_bytes_on_loan = a->bytes_on_loan;
-   base_p = VG_(arena_malloc) ( aid, base_pszW_req * VKI_BYTES_PER_WORD );
+   base_p = VG_(arena_malloc) ( aid, base_pszB_req );
    a->bytes_on_loan = saved_bytes_on_loan;
 
    /* Block ptr for the block we are going to split. */
-   base_b = payload_to_first ( a, base_p );
+   base_b = get_payload_block ( a, base_p );
 
    /* Pointer to the payload of the aligned block we are going to
       return.  This has to be suitably aligned. */
-   align_p = align_upwards ( base_b + 2 * overhead_szW_lo(a) 
-                                    + overhead_szW_hi(a),
+   align_p = align_upwards ( base_b + 2 * overhead_szB_lo(a)
+                                    + overhead_szB_hi(a),
                              req_alignB );
+   align_b = get_payload_block(a, align_p);
 
    /* The block size of the fragment we will create.  This must be big
       enough to actually create a fragment. */
-   frag_bszW = align_p - overhead_szW_lo(a) - base_b;
-   vg_assert(frag_bszW >= overhead_szW(a));
+   frag_bszB = align_b - base_b;
+
+   vg_assert(frag_bszB >= min_useful_bszB(a));
 
    /* The actual payload size of the block we are going to split. */
-   base_pszW_act = bszW_to_pszW(a, mk_plain_bszW(get_bszW_lo(base_b)));
+   base_pszB_act = bszB_to_pszB(a, mk_plain_bszB(get_bszB_lo(base_b)));
 
-   /* Create the fragment block, and put it back on the relevant free
-      list. */
-   mkFreeBlock ( a, base_b, frag_bszW, 
-                 pszW_to_listNo(bszW_to_pszW(a, frag_bszW)) );
+   /* Create the fragment block, and put it back on the relevant free list. */
+   mkFreeBlock ( a, base_b, frag_bszB,
+                 pszB_to_listNo(bszB_to_pszB(a, frag_bszB)) );
 
    /* Create the aligned block. */
-   mkInuseBlock ( a,
-                  align_p - overhead_szW_lo(a), 
-                  base_p + base_pszW_act 
-                         + overhead_szW_hi(a) 
-                         - (align_p - overhead_szW_lo(a)) );
+   mkInuseBlock ( a, align_b,
+                  base_p + base_pszB_act 
+                         + overhead_szB_hi(a) - (UByte*)align_b );
 
    /* Final sanity checks. */
-   vg_assert(( (UInt)align_p % req_alignB) == 0);
+   vg_assert( is_inuse_bszB(get_bszB_lo(get_payload_block(a, align_p))) );
 
-   vg_assert(is_inuse_bszW(get_bszW_lo(payload_to_first(a, align_p))));
-
-   vg_assert(req_pszW 
+   vg_assert(req_pszB
              <= 
-             bszW_to_pszW(a, mk_plain_bszW(get_bszW_lo(
-                payload_to_first(a, align_p))))
+             bszB_to_pszB(a, mk_plain_bszB(get_bszB_lo(
+                                             get_payload_block(a, align_p))))
             );
 
    a->bytes_on_loan 
-      += sizeof(Word)
-         * bszW_to_pszW(a, mk_plain_bszW(get_bszW_lo(
-              payload_to_first(a, align_p))));
+      += bszB_to_pszB(a, mk_plain_bszB(get_bszB_lo(
+                                          get_payload_block(a, align_p))));
    if (a->bytes_on_loan > a->bytes_on_loan_max)
       a->bytes_on_loan_max = a->bytes_on_loan;
 
@@ -1309,9 +1247,16 @@ void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
 
    VGP_POPCC(VgpMalloc);
 
-   v = (void*)align_p;
-   vg_assert( (((UInt)v) % req_alignB) == 0 );
-   return v;
+   vg_assert( (((Addr)align_p) % req_alignB) == 0 );
+   return align_p;
+}
+
+
+Int VG_(arena_payload_szB) ( ArenaId aid, void* ptr )
+{
+   Arena* a = arenaId_to_ArenaP(aid);
+   Block* b = get_payload_block(a, ptr);
+   return bszB_to_pszB(a, get_bszB_lo(b));
 }
 
 
@@ -1329,7 +1274,7 @@ void* VG_(arena_calloc) ( ArenaId aid, Int alignB, Int nmemb, Int nbytes )
    size = nmemb * nbytes;
    vg_assert(size >= 0);
 
-   if (alignB == 8)
+   if (alignB == VG_MIN_MALLOC_SZB)
       p = VG_(arena_malloc) ( aid, size );
    else
       p = VG_(arena_malloc_aligned) ( aid, alignB, size );
@@ -1346,36 +1291,35 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
                            Int req_alignB, Int req_pszB )
 {
    Arena* a;
-   Int    old_bszW, old_pszW, old_pszB, i;
+   Int    old_bszB, old_pszB, i;
    UChar  *p_old, *p_new;
-   UInt*  ch;
+   Block* b;
 
    VGP_PUSHCC(VgpMalloc);
 
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
 
-   vg_assert(req_pszB >= 0);
-   vg_assert(req_pszB < 0x7FFFFFF0);
+   vg_assert(0 <= req_pszB && req_pszB < MAX_PSZB);
 
-   ch = payload_to_first(a, ptr);
-   vg_assert(blockSane(a, ch));
+   b = get_payload_block(a, ptr);
+   vg_assert(blockSane(a, b));
 
-   old_bszW = get_bszW_lo(ch);
-   vg_assert(is_inuse_bszW(old_bszW));
-   old_bszW = mk_plain_bszW(old_bszW);
-   old_pszW = bszW_to_pszW(a, old_bszW);
-   old_pszB = old_pszW * VKI_BYTES_PER_WORD;
+   old_bszB = get_bszB_lo(b);
+   vg_assert(is_inuse_bszB(old_bszB));
+   old_bszB = mk_plain_bszB(old_bszB);
+   old_pszB = bszB_to_pszB(a, old_bszB);
 
    if (req_pszB <= old_pszB) {
       VGP_POPCC(VgpMalloc);
       return ptr;
    }
 
-   if (req_alignB == 8)
+   if (req_alignB == VG_MIN_MALLOC_SZB)
       p_new = VG_(arena_malloc) ( aid, req_pszB );
-   else
+   else {
       p_new = VG_(arena_malloc_aligned) ( aid, req_alignB, req_pszB );
+   }
 
    p_old = (UChar*)ptr;
    for (i = 0; i < old_pszB; i++)
@@ -1392,7 +1336,7 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
 /*--- Tool-visible functions.                              ---*/
 /*------------------------------------------------------------*/
 
-/* All just wrappers to avoid exposing arenas to tools */
+// All just wrappers to avoid exposing arenas to tools.
 
 void* VG_(malloc) ( Int nbytes )
 {
@@ -1406,12 +1350,12 @@ void  VG_(free) ( void* ptr )
 
 void* VG_(calloc) ( Int nmemb, Int nbytes )
 {
-   return VG_(arena_calloc) ( VG_AR_TOOL, /*alignment*/8, nmemb, nbytes );
+   return VG_(arena_calloc) ( VG_AR_TOOL, VG_MIN_MALLOC_SZB, nmemb, nbytes );
 }
 
 void* VG_(realloc) ( void* ptr, Int size )
 {
-   return VG_(arena_realloc) ( VG_AR_TOOL, ptr, /*alignment*/8, size );
+   return VG_(arena_realloc) ( VG_AR_TOOL, ptr, VG_MIN_MALLOC_SZB, size );
 }
 
 void* VG_(malloc_aligned) ( Int req_alignB, Int req_pszB )
@@ -1422,8 +1366,9 @@ void* VG_(malloc_aligned) ( Int req_alignB, Int req_pszB )
 
 void* VG_(cli_malloc) ( UInt align, Int nbytes )                 
 {                                                                             
-   vg_assert(align >= 8);
-   if (8 == align)                                                            
+   // 'align' should be valid by now.  VG_(arena_malloc_aligned)() will
+   // abort if it's not.
+   if (VG_MIN_MALLOC_SZB == align)
       return VG_(arena_malloc)         ( VG_AR_CLIENT, nbytes ); 
    else                                                                       
       return VG_(arena_malloc_aligned) ( VG_AR_CLIENT, align, nbytes );
@@ -1508,7 +1453,7 @@ int main ( int argc, char** argv )
    fprintf(stderr, "%d max useful, %d bytes mmap'd (%4.1f%%), %d useful\n",
            a->bytes_on_loan_max, 
            a->bytes_mmaped, 
-	   100.0 * (double)a->bytes_on_loan_max / (double)a->bytes_mmaped,
+           100.0 * (double)a->bytes_on_loan_max / (double)a->bytes_mmaped,
            a->bytes_on_loan );
 
    return 0;

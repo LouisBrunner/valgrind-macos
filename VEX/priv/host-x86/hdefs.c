@@ -454,13 +454,13 @@ X86Instr* X86Instr_Div ( Bool syned, X86ScalarSz ssz, X86RM* src ) {
    i->Xin.Div.src     = src;
    return i;
 }
-X86Instr* X86Instr_Sh3232  ( X86ShiftOp op, UInt amt, HReg rHi, HReg rLo ) {
+X86Instr* X86Instr_Sh3232  ( X86ShiftOp op, UInt amt, HReg src, HReg dst ) {
    X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
    i->tag            = Xin_Sh3232;
    i->Xin.Sh3232.op  = op;
    i->Xin.Sh3232.amt = amt;
-   i->Xin.Sh3232.rHi = rHi;
-   i->Xin.Sh3232.rLo = rLo;
+   i->Xin.Sh3232.src = src;
+   i->Xin.Sh3232.dst = dst;
    vassert(op == Xsh_SHL || op == Xsh_SHR);
    return i;
 }
@@ -567,9 +567,9 @@ void ppX86Instr ( X86Instr* i ) {
            vex_printf(" %%cl,"); 
          else 
             vex_printf(" $%d,", i->Xin.Sh3232.amt);
-         ppHRegX86(i->Xin.Sh3232.rLo);
+         ppHRegX86(i->Xin.Sh3232.src);
          vex_printf(",");
-         ppHRegX86(i->Xin.Sh3232.rHi);
+         ppHRegX86(i->Xin.Sh3232.dst);
          return;
       case Xin_Push:
          vex_printf("pushl ");
@@ -667,8 +667,8 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmModify, hregX86_EDX());
          return;
       case Xin_Sh3232:
-         addHRegUse(u, HRmRead, i->Xin.Sh3232.rLo);
-         addHRegUse(u, HRmModify, i->Xin.Sh3232.rHi);
+         addHRegUse(u, HRmRead, i->Xin.Sh3232.src);
+         addHRegUse(u, HRmModify, i->Xin.Sh3232.dst);
          if (i->Xin.Sh3232.amt == 0)
             addHRegUse(u, HRmRead, hregX86_ECX());
          return;
@@ -743,8 +743,8 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapRegs_X86RM(m, i->Xin.Div.src);
          return;
       case Xin_Sh3232:
-         mapReg(m, &i->Xin.Sh3232.rLo);
-         mapReg(m, &i->Xin.Sh3232.rHi);
+         mapReg(m, &i->Xin.Sh3232.src);
+         mapReg(m, &i->Xin.Sh3232.dst);
          return;
       case Xin_Push:
          mapRegs_X86RMI(m, i->Xin.Push.src);
@@ -1208,11 +1208,10 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          *p++ = 0x0F;
          if (i->Xin.Sh3232.op == Xsh_SHL) {
             *p++ = 0xA5;
-            p = doAMode_R(p, i->Xin.Sh3232.rLo, i->Xin.Sh3232.rHi);
          } else {
             *p++ = 0xAD;
-            p = doAMode_R(p, i->Xin.Sh3232.rHi, i->Xin.Sh3232.rLo);
          }
+         p = doAMode_R(p, i->Xin.Sh3232.src, i->Xin.Sh3232.dst);
          goto done;
       }
       break;

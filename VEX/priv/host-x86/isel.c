@@ -867,7 +867,7 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       addInstr(env, mk_MOVsd_RR(sLo, tLo));
       /* Ok.  Now shift amt is in %ecx, and value is in tHi/tLo and
          those regs are legitimately modifiable. */
-      addInstr(env, X86Instr_Sh3232(Xsh_SHL, 0/*%cl*/, tHi, tLo));
+      addInstr(env, X86Instr_Sh3232(Xsh_SHL, 0/*%cl*/, tLo, tHi));
       addInstr(env, X86Instr_Sh32(Xsh_SHL, 0/*%cl*/, X86RM_Reg(tLo)));
       addInstr(env, X86Instr_Test32(X86RI_Imm(32), X86RM_Reg(hregX86_ECX())));
       addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tLo), tHi));
@@ -910,7 +910,7 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       addInstr(env, mk_MOVsd_RR(sLo, tLo));
       /* Ok.  Now shift amt is in %ecx, and value is in tHi/tLo and
          those regs are legitimately modifiable. */
-      addInstr(env, X86Instr_Sh3232(Xsh_SHR, 0/*%cl*/, tLo, tHi));
+      addInstr(env, X86Instr_Sh3232(Xsh_SHR, 0/*%cl*/, tHi, tLo));
       addInstr(env, X86Instr_Sh32(Xsh_SHR, 0/*%cl*/, X86RM_Reg(tHi)));
       addInstr(env, X86Instr_Test32(X86RI_Imm(32), X86RM_Reg(hregX86_ECX())));
       addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tHi), tLo));

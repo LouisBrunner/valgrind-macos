@@ -308,8 +308,8 @@ typedef
          struct {
             X86ShiftOp op;
             UInt       amt;   /* shift amount, or 0 means %cl */
-            HReg       rHi;
-            HReg       rLo;
+            HReg       src;
+            HReg       dst;
          } Sh3232;
          struct {
             X86RMI* src;
@@ -359,7 +359,7 @@ extern X86Instr* X86Instr_Sh32    ( X86ShiftOp, UInt, X86RM* );
 extern X86Instr* X86Instr_Test32  ( X86RI* src, X86RM* dst );
 extern X86Instr* X86Instr_MulL    ( Bool syned, X86ScalarSz, X86RM* );
 extern X86Instr* X86Instr_Div     ( Bool syned, X86ScalarSz, X86RM* );
-extern X86Instr* X86Instr_Sh3232  ( X86ShiftOp, UInt amt, HReg rHi, HReg rLo );
+extern X86Instr* X86Instr_Sh3232  ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 extern X86Instr* X86Instr_Push    ( X86RMI* );
 extern X86Instr* X86Instr_Call    ( HReg );
 extern X86Instr* X86Instr_Goto    ( IRJumpKind, X86CondCode cond, X86RI* dst );

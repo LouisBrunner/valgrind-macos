@@ -464,6 +464,8 @@ static Addr build_sigframe(ThreadState *tst,
    Int	sigNo = siginfo->si_signo;
    struct vki_ucontext uc;
 
+   vg_assert((flags & VKI_SA_SIGINFO) == 0);
+
    esp -= sizeof(*frame);
    esp = ROUNDDN(esp, 16);
    frame = (struct sigframe *)esp;
@@ -479,14 +481,9 @@ static Addr build_sigframe(ThreadState *tst,
 
    if (flags & VKI_SA_RESTORER)
       frame->retaddr = (Addr)restorer;
-   else {
-      if (flags & VKI_SA_SIGINFO)
-	 frame->retaddr 
-            = (UInt)VG_(client_trampoline_code)+VG_(tramp_rt_sigreturn_offset);
-      else
-	 frame->retaddr
-            = (UInt)VG_(client_trampoline_code)+VG_(tramp_sigreturn_offset);
-   }
+   else
+      frame->retaddr
+         = VG_(client_trampoline_code)+VG_(tramp_sigreturn_offset);
 
    synth_ucontext(tst->tid, siginfo, mask, &uc, &frame->fpstate);
 
@@ -514,6 +511,8 @@ static Addr build_rt_sigframe(ThreadState *tst,
    Addr esp = esp_top_of_frame;
    Int	sigNo = siginfo->si_signo;
 
+   vg_assert((flags & VKI_SA_SIGINFO) != 0);
+
    esp -= sizeof(*frame);
    esp = ROUNDDN(esp, 16);
    frame = (struct rt_sigframe *)esp;
@@ -529,14 +528,9 @@ static Addr build_rt_sigframe(ThreadState *tst,
 
    if (flags & VKI_SA_RESTORER)
       frame->retaddr = (Addr)restorer;
-   else {
-      if (flags & VKI_SA_SIGINFO)
-	 frame->retaddr 
-            = (UInt)VG_(client_trampoline_code)+VG_(tramp_rt_sigreturn_offset);
-      else
-	 frame->retaddr
-            = (UInt)VG_(client_trampoline_code)+VG_(tramp_sigreturn_offset);
-   }
+   else
+      frame->retaddr 
+         = VG_(client_trampoline_code)+VG_(tramp_rt_sigreturn_offset);
 
    frame->psigInfo = (Addr)&frame->sigInfo;
    frame->puContext = (Addr)&frame->uContext;

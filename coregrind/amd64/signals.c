@@ -456,10 +456,9 @@ static Addr build_rt_sigframe(ThreadState *tst,
 
    if (flags & VKI_SA_RESTORER)
       frame->retaddr = (Addr)restorer;
-   else {
-      frame->retaddr 
-         = (UInt)VG_(client_trampoline_code)+VG_(tramp_rt_sigreturn_offset);
-   }
+   else
+      frame->retaddr
+         = VG_(client_trampoline_code)+VG_(tramp_rt_sigreturn_offset);
 
    VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_siginfo_t));
 

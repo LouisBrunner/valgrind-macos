@@ -1218,12 +1218,13 @@ typedef
 
 
 /* VISIBLE TO LIBVEX CLIENT */
-void x87_to_vex ( /*IN*/UChar* x87_state, /*OUT*/UChar* vex_state )
+void x87_to_vex ( /*IN*/UChar* x87_state,
+                  /*OUT*/VexGuestX86State* vex_state )
 {
    Int        r;
    UInt       tag;
-   Double*    vexRegs = (Double*)(vex_state + OFFB_F0);
-   UChar*     vexTags = (UChar*)(vex_state + OFFB_FTAG0);
+   Double*    vexRegs = (Double*)(&vex_state->guest_FPREG[0]);
+   UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
    Fpu_State* x87     = (Fpu_State*)x87_state;
    UInt       ftop    = (x87->env[FP_ENV_STAT] >> 11) & 7;
    UInt       tagw    = x87->env[FP_ENV_TAG];
@@ -1245,32 +1246,33 @@ void x87_to_vex ( /*IN*/UChar* x87_state, /*OUT*/UChar* vex_state )
    }
 
    /* stack pointer */
-   *(UInt*)(vex_state + OFFB_FTOP) = ftop;
+   vex_state->guest_FTOP = ftop;
 
    /* control word */
-   *(UInt*)(vex_state + OFFB_FPUCW) = fpucw;
+   vex_state->guest_FPUCW = fpucw;
 
    /* status word */
-   *(UInt*)(vex_state + OFFB_FC3210) = c3210;
+   vex_state->guest_FC3210 = c3210;
 }
 
 
 /* VISIBLE TO LIBVEX CLIENT */
-void vex_to_x87 ( /*IN*/UChar* vex_state, /*OUT*/UChar* x87_state )
+void vex_to_x87 ( /*IN*/VexGuestX86State* vex_state,
+                  /*OUT*/UChar* x87_state )
 {
    Int        i, r;
    UInt       tagw;
-   Double*    vexRegs = (Double*)(vex_state + OFFB_F0);
-   UChar*     vexTags = (UChar*)(vex_state + OFFB_FTAG0);
+   Double*    vexRegs = (Double*)(&vex_state->guest_FPREG[0]);
+   UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
    Fpu_State* x87     = (Fpu_State*)x87_state;
-   UInt       ftop    = *(UInt*)(vex_state + OFFB_FTOP);
-   UInt       c3210   = *(UInt*)(vex_state + OFFB_FC3210);
+   UInt       ftop    = vex_state->guest_FTOP;
+   UInt       c3210   = vex_state->guest_FC3210;
 
    for (i = 0; i < 14; i++)
       x87->env[i] = 0;
 
    x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
-   x87->env[FP_ENV_CTRL] = (UShort)( *(UInt*)(vex_state + OFFB_FPUCW) );
+   x87->env[FP_ENV_CTRL] = (UShort)( vex_state->guest_FPUCW );
    x87->env[FP_ENV_STAT] = ((ftop & 7) << 11) | (c3210 & 0x4700);
 
    tagw = 0;
@@ -1287,6 +1289,42 @@ void vex_to_x87 ( /*IN*/UChar* vex_state, /*OUT*/UChar* x87_state )
    }
    x87->env[FP_ENV_TAG] = tagw;
 }
+
+
+/* VISIBLE TO LIBVEX CLIENT */
+void eflags_to_vex ( UInt eflags_native,
+                     /*OUT*/VexGuestX86State* vex_state )
+{
+   vex_state->guest_DFLAG
+      = (eflags_native & (1<<10)) ? 0xFFFFFFFF : 0x00000001;
+
+   /* Mask out everything except O S Z A C P. */
+   eflags_native
+      &= (CC_MASK_C | CC_MASK_P | CC_MASK_A 
+          | CC_MASK_Z | CC_MASK_S | CC_MASK_O);
+
+   vex_state->guest_CC_OP  = CC_OP_COPY;
+   vex_state->guest_CC_DST = 0;
+   vex_state->guest_CC_DST = eflags_native;
+}
+
+
+/* VISIBLE TO LIBVEX CLIENT */
+UInt vex_to_eflags ( /*IN*/VexGuestX86State* vex_state )
+{
+   UInt eflags = calculate_eflags_all(
+                    vex_state->guest_CC_OP,
+                    vex_state->guest_CC_SRC,
+                    vex_state->guest_CC_DST
+                 );
+   UInt dflag = vex_state->guest_DFLAG;
+   vassert(dflag == 1 || dflag == 0xFFFFFFFF);
+   if (dflag == 0xFFFFFFFF)
+      eflags |= (1<<10);
+					     
+   return eflags;
+}
+
 
 
 /*---------------------------------------------------------------*/

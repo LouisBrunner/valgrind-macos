@@ -27,6 +27,7 @@
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
 #include "libvex.h"
+#include "libvex_guest_x86.h"
 
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
@@ -196,6 +197,24 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
       }
    }
 }
+
+
+/*------------------------------------------------------------*/
+/*--- Offsets of various parts of the x86 guest state.     ---*/
+/*------------------------------------------------------------*/
+
+#define offsetof(type,memb) ((Int)&((type*)0)->memb)
+
+#define OFFB_FPREGS  offsetof(VexGuestX86State,guest_FPREG[0])
+#define OFFB_FPTAGS  offsetof(VexGuestX86State,guest_FPTAG[0])
+#define OFFB_EAX     offsetof(VexGuestX86State,guest_EAX)
+#define OFFB_CC_OP   offsetof(VexGuestX86State,guest_CC_OP)
+#define OFFB_CC_SRC  offsetof(VexGuestX86State,guest_CC_SRC)
+#define OFFB_CC_DST  offsetof(VexGuestX86State,guest_CC_DST)
+#define OFFB_DFLAG   offsetof(VexGuestX86State,guest_DFLAG)
+#define OFFB_FTOP    offsetof(VexGuestX86State,guest_FTOP)
+#define OFFB_FC3210  offsetof(VexGuestX86State,guest_FC3210)
+#define OFFB_FPUCW   offsetof(VexGuestX86State,guest_FPUCW)
 
 
 /*------------------------------------------------------------*/
@@ -3217,7 +3236,7 @@ static void put_ST_TAG ( Int i, IRExpr* value )
 {
    IRArray* descr;
    vassert(typeOfIRExpr(irbb->tyenv, value) == Ity_I8);
-   descr = mkIRArray( OFFB_FTAG0, Ity_I8, 8 );
+   descr = mkIRArray( OFFB_FPTAGS, Ity_I8, 8 );
    stmt( IRStmt_PutI( descr, get_ftop(), i, value ) );
 }
 
@@ -3226,7 +3245,7 @@ static void put_ST_TAG ( Int i, IRExpr* value )
 
 static IRExpr* get_ST_TAG ( Int i )
 {
-   IRArray* descr = mkIRArray( OFFB_FTAG0, Ity_I8, 8 );
+   IRArray* descr = mkIRArray( OFFB_FPTAGS, Ity_I8, 8 );
    return IRExpr_GetI( descr, get_ftop(), i );
 }
 
@@ -3241,7 +3260,7 @@ static void put_ST_UNCHECKED ( Int i, IRExpr* value )
 {
    IRArray* descr;
    vassert(typeOfIRExpr(irbb->tyenv, value) == Ity_F64);
-   descr = mkIRArray( OFFB_F0, Ity_F64, 8 );
+   descr = mkIRArray( OFFB_FPREGS, Ity_F64, 8 );
    stmt( IRStmt_PutI( descr, get_ftop(), i, value ) );
    /* Mark the register as in-use. */
    put_ST_TAG(i, mkU8(1));
@@ -3269,7 +3288,7 @@ static void put_ST ( Int i, IRExpr* value )
 
 static IRExpr* get_ST_UNCHECKED ( Int i )
 {
-   IRArray* descr = mkIRArray( OFFB_F0, Ity_F64, 8 );
+   IRArray* descr = mkIRArray( OFFB_FPREGS, Ity_F64, 8 );
    return IRExpr_GetI( descr, get_ftop(), i );
 }
 

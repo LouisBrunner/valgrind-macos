@@ -693,6 +693,40 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
 
 /* vthread tid is returning from a signal handler; modify its
    stack/regs accordingly. */
+
+/* [Helper fn for handle_signal_return] tid, assumed to be in WaitFD
+   for read or write, has been interrupted by a signal.  Find and
+   clear the relevant vg_waiting_fd[] entry.  Most of the code in this
+   procedure is total paranoia, if you look closely. */
+static
+void cleanup_waiting_fd_table ( ThreadId tid )
+{
+   Int  i, waiters;
+
+   vg_assert(is_valid_tid(tid));
+   vg_assert(vg_threads[tid].status == VgTs_WaitFD);
+   vg_assert(vg_threads[tid].m_eax == __NR_read 
+             || vg_threads[tid].m_eax == __NR_write);
+
+   /* Excessively paranoidly ... find the fd this op was waiting
+      for, and mark it as not being waited on. */
+   waiters = 0;
+   for (i = 0; i < VG_N_WAITING_FDS; i++) {
+      if (vg_waiting_fds[i].tid == tid) {
+         waiters++;
+         vg_assert(vg_waiting_fds[i].syscall_no == vg_threads[tid].m_eax);
+      }
+   }
+   vg_assert(waiters == 1);
+   for (i = 0; i < VG_N_WAITING_FDS; i++)
+      if (vg_waiting_fds[i].tid == tid)
+         break;
+   vg_assert(i < VG_N_WAITING_FDS);
+   vg_assert(vg_waiting_fds[i].fd != -1);
+   vg_waiting_fds[i].fd = -1; /* not in use */
+}
+
+
 static
 void handle_signal_return ( ThreadId tid )
 {
@@ -707,12 +741,14 @@ void handle_signal_return ( ThreadId tid )
       /* Easy; we don't have to do anything. */
       return;
 
-   if (vg_threads[tid].status == VgTs_WaitFD) {
-      vg_assert(vg_threads[tid].m_eax == __NR_read 
-                || vg_threads[tid].m_eax == __NR_write);
+   if (vg_threads[tid].status == VgTs_WaitFD
+       && (vg_threads[tid].m_eax == __NR_read 
+           || vg_threads[tid].m_eax == __NR_write)) {
       /* read() or write() interrupted.  Force a return with EINTR. */
+      cleanup_waiting_fd_table(tid);
       vg_threads[tid].m_eax = -VKI_EINTR;
       vg_threads[tid].status = VgTs_Runnable;
+
       if (VG_(clo_trace_sched)) {
          VG_(sprintf)(msg_buf, 
             "read() / write() interrupted by signal; return EINTR" );
@@ -721,12 +757,16 @@ void handle_signal_return ( ThreadId tid )
       return;
    }
 
-   if (vg_threads[tid].status == VgTs_WaitFD) {
-      vg_assert(vg_threads[tid].m_eax == __NR_nanosleep);
+   if (vg_threads[tid].status == VgTs_WaitFD
+       && vg_threads[tid].m_eax == __NR_nanosleep) {
       /* We interrupted a nanosleep().  The right thing to do is to
          write the unused time to nanosleep's second param and return
          EINTR, but I'm too lazy for that. */
       return;
+   }
+
+   if (vg_threads[tid].status == VgTs_WaitFD) {
+      VG_(panic)("handle_signal_return: unknown interrupted syscall");
    }
 
    /* All other cases?  Just return. */

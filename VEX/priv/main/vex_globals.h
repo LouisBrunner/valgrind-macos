@@ -10,6 +10,7 @@
 #define __VEX_GLOBALS_H
 
 #include "libvex_basictypes.h"
+#include "libvex.h"
 
 
 /* Global settings for the VEX library.  These are the
@@ -34,8 +35,8 @@ extern Int vex_verbosity;
 /* Are we supporting valgrind checking? */
 extern Bool vex_valgrind_support;
 
-/* Max # guest insns per bb */
-extern Int vex_guest_insns_per_bb;
+/* Optimiser/front-end control */
+extern VexControl vex_control;
 
 
 #endif /* ndef __VEX_GLOBALS_H */

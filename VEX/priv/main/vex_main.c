@@ -22,6 +22,19 @@
 
 /* Exported to library client. */
 
+void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon )
+{
+   vcon->iropt_verbosity            = 0;
+   vcon->iropt_level                = 2;
+   vcon->iropt_precise_memory_exns  = False;
+   vcon->iropt_unroll_thresh        = 120;
+   vcon->guest_max_insns            = 50;
+   vcon->guest_chase_thresh         = 10;
+}
+
+
+/* Exported to library client. */
+
 void LibVEX_Init (
    /* failure exit function */
    __attribute__ ((noreturn))
@@ -34,12 +47,12 @@ void LibVEX_Init (
    Int verbosity,
    /* Are we supporting valgrind checking? */
    Bool valgrind_support,
-   /* Max # guest insns per bb */
-   Int guest_insns_per_bb
+   /* Control ... */
+   /*READONLY*/VexControl* vcon
 )
 {
-   /* First off, do enough minimal setup so that the follow asserts can
-      fail in a sane fashion, if need be. */
+   /* First off, do enough minimal setup so that the following
+      assertions can fail in a sane fashion, if need be. */
    vex_failure_exit = failure_exit;
    vex_log_bytes    = log_bytes;
 
@@ -49,7 +62,16 @@ void LibVEX_Init (
    vassert(log_bytes);
    vassert(debuglevel >= 0);
    vassert(verbosity >= 0);
-   vassert(guest_insns_per_bb >= 1 && guest_insns_per_bb <= 100);
+
+   vassert(vcon->iropt_verbosity >= 0);
+   vassert(vcon->iropt_level >= 0);
+   vassert(vcon->iropt_level <= 2);
+   vassert(vcon->iropt_unroll_thresh >= 0);
+   vassert(vcon->iropt_unroll_thresh <= 400);
+   vassert(vcon->guest_max_insns >= 1);
+   vassert(vcon->guest_max_insns <= 100);
+   vassert(vcon->guest_chase_thresh >= 0);
+   vassert(vcon->guest_chase_thresh < vcon->guest_max_insns);
 
    /* Check that Vex has been built with sizes of basic types as
       stated in priv/libvex_basictypes.h.  Failure of any of these is
@@ -79,7 +101,7 @@ void LibVEX_Init (
    vex_debuglevel         = debuglevel;
    vex_verbosity          = verbosity;
    vex_valgrind_support   = valgrind_support;
-   vex_guest_insns_per_bb = guest_insns_per_bb;
+   vex_control            = *vcon;
    vex_initdone           = True;
    LibVEX_SetAllocMode ( AllocModeTEMPORARY );
 }

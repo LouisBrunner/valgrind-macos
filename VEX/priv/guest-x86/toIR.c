@@ -37,9 +37,6 @@
 #include "guest-x86/gdefs.h"
 
 
-#define RESTEER_THRESH 10
-
-
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
 /*------------------------------------------------------------*/
@@ -133,7 +130,12 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
    DisResult  dres;
    static Int n_resteers = 0;
    Int        d_resteers = 0;
-   Int        resteerBelow = RESTEER_THRESH;  /* the threshold value */
+
+   /* check sanity .. */
+   vassert(vex_control.guest_max_insns >= 1);
+   vassert(vex_control.guest_max_insns < 1000);
+   vassert(vex_control.guest_chase_thresh >= 0);
+   vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
 
    /* Set up globals. */
    host_is_bigendian = host_bigendian;
@@ -142,14 +144,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
    guest_eip_bbstart = (Addr32)guest_eip_start;
    irbb              = emptyIRBB();
 
-   if (vex_guest_insns_per_bb <= resteerBelow)
-      resteerBelow = vex_guest_insns_per_bb-1;
-
    vassert((guest_eip_start >> 32) == 0);
-   vassert(vex_guest_insns_per_bb >= 1);
-   vassert(resteerBelow < vex_guest_insns_per_bb);
-   vassert(resteerBelow >= 0);
-   vassert(vex_guest_insns_per_bb);
 
    DIP("Original x86 code to IR:\n\n");
 
@@ -160,10 +155,10 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
    *guest_bytes_read = 0;
 
    while (True) {
-      vassert(n_instrs < vex_guest_insns_per_bb);
+      vassert(n_instrs < vex_control.guest_max_insns);
 
       guest_next = 0;
-      resteerOK = n_instrs < resteerBelow;
+      resteerOK = n_instrs < vex_control.guest_chase_thresh;
       dres = disInstr( resteerOK, delta, &size, &guest_next );
       delta += size;
       *guest_bytes_read += size;
@@ -179,7 +174,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
       switch (dres) {
          case Dis_Continue:
             vassert(irbb->next == NULL);
-            if (n_instrs < vex_guest_insns_per_bb) {
+            if (n_instrs < vex_control.guest_max_insns) {
                /* keep going */
             } else {
                irbb->next = mkU32(((Addr32)guest_eip_start)+delta);

@@ -11,25 +11,12 @@
 #include "libvex.h"
 
 #include "main/vex_util.h"
+#include "main/vex_globals.h"
 #include "ir/iropt.h"
 
-/* Possibly disable iropt for drastic debugging:
-   Set to 0 to completely disable iropt
-          1 for simple optimisation
-          2 for maximum optimisation (the default) */
-#define IROPT_LEVEL 2
 
 /* Set to 1 for lots of debugging output. */
 #define DEBUG_IROPT 0
-
-/* Controls the enthusiasm of the loop unroller.  It tries to
-   unroll loops enough times to get somewhere near this number of SSA
-   statements, as measured after initial cleanup pass.  Set to zero to
-   disable the unroller. */
-#define UNROLL_TARGET 120
-
-/* Set to 1 to get details of loop unrolling. */
-#define UNROLL_VERBOSE 0
 
 
 /* Implementation notes, 12 Oct 04.
@@ -770,7 +757,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                   it is for now, since we'd have to truncate the BB at
                   this point, which is tricky. */
                /* fall out into the reconstruct-the-exit code. */
-               if (UNROLL_VERBOSE) /* really a misuse of UNROLL_VERBOSE */
+               if (vex_control.iropt_verbosity > 0) 
+                  /* really a misuse of vex_control.iropt_verbosity */
                   vex_printf("vex iropt: IRStmt_Exit became unconditional\n");
             }
          }
@@ -2852,27 +2840,27 @@ static Int calc_unroll_factor( IRBB* bb )
      if (bb->stmts[i])
         n_stmts++;
 
-   if (n_stmts <= UNROLL_TARGET/8) {
-      if (UNROLL_VERBOSE)
+   if (n_stmts <= vex_control.iropt_unroll_thresh/8) {
+      if (vex_control.iropt_verbosity > 0)
          vex_printf("vex iropt: 8 x unrolling (%d sts -> %d sts)\n",
                     n_stmts, 8* n_stmts);
       return 8;
    }
-   if (n_stmts <= UNROLL_TARGET/4) {
-      if (UNROLL_VERBOSE)
+   if (n_stmts <= vex_control.iropt_unroll_thresh/4) {
+      if (vex_control.iropt_verbosity > 0)
          vex_printf("vex iropt: 4 x unrolling (%d sts -> %d sts)\n",
                     n_stmts, 4* n_stmts);
       return 4;
    }
 
-   if (n_stmts <= UNROLL_TARGET/2) {
-      if (UNROLL_VERBOSE)
+   if (n_stmts <= vex_control.iropt_unroll_thresh/2) {
+      if (vex_control.iropt_verbosity > 0)
          vex_printf("vex iropt: 2 x unrolling (%d sts -> %d sts)\n",
                     n_stmts, 2* n_stmts);
       return 2;
    }
 
-   if (UNROLL_VERBOSE)
+   if (vex_control.iropt_verbosity > 0)
       vex_printf("vex iropt: not unrolling (%d sts)\n", n_stmts);
 
    return 1;
@@ -2890,7 +2878,7 @@ static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
    IRBB     *bb1, *bb2;
    Int      unroll_factor;
 
-   if (UNROLL_TARGET <= 0)
+   if (vex_control.iropt_unroll_thresh <= 0)
       return NULL;
 
    /* First off, figure out if we can unroll this loop.  Do this
@@ -3193,7 +3181,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
    IRBB *bb, *bb2;
 
    /* Completely disable iropt? */
-   if (IROPT_LEVEL <= 0) return bb0;
+   if (vex_control.iropt_level <= 0) return bb0;
 
    n_total++;
 
@@ -3215,7 +3203,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
 
    bb = cheap_transformations( bb, specHelper );
 
-   if (IROPT_LEVEL > 1) {
+   if (vex_control.iropt_level > 1) {
       do_expensive = hasGetIorPutI(bb);
       if (do_expensive) {
          n_expensive++;

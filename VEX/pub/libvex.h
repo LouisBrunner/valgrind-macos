@@ -19,6 +19,41 @@
 /*---------------------------------------------------------------*/
 
 
+/* Control of Vex's optimiser. */
+
+typedef
+   struct {
+      /* Controls verbosity of iropt.  0 = no output. */
+      Int iropt_verbosity;
+      /* Control aggressiveness of iropt.  0 = no opt, 1 = simple
+         opts, 2 (default) = max optimisation. */
+      Int iropt_level;
+      /* Ensure all integer registers are up to date at potential
+         memory exception points?  True(default)=yes, False=no, only
+         the guest's stack pointer. */
+      Bool iropt_precise_memory_exns;
+      /* How aggressive should iropt be in unrolling loops?  Higher
+         numbers make it more enthusiastic about loop unrolling.
+         Default=120.  A setting of zero disables unrolling.  */
+      Int iropt_unroll_thresh;
+      /* What's the maximum basic block length the front end(s) allow?
+         BBs longer than this are split up.  Default=50 (guest
+         insns). */
+      Int guest_max_insns;
+      /* How aggressive should front ends be in following
+         unconditional branches to known destinations?  Default=10,
+         meaning that if a block contains less than 10 guest insns so
+         far, the front end(s) will attempt to chase into its
+         successor. A setting of zero disables chasing.  */
+      Int guest_chase_thresh;
+   }
+   VexControl;
+
+
+/* Write the default settings into *vcon. */
+extern void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon );
+
+
 /* Initialise the translator. */
 
 extern void LibVEX_Init (
@@ -33,8 +68,8 @@ extern void LibVEX_Init (
    Int verbosity,
    /* Are we supporting valgrind checking? */
    Bool valgrind_support,
-   /* Max # guest insns per bb */
-   Int guest_insns_per_bb
+   /* Control ... */
+   /*READONLY*/VexControl* vcon
 );
 
 

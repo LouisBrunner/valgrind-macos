@@ -35,7 +35,7 @@ Int vex_verbosity = 0;
 Bool vex_valgrind_support = False;
 
 /* Max # guest insns per bb */
-Int vex_guest_insns_per_bb = 0;
+VexControl vex_control = { 0,0,False,0,0,0 };
 
 
 

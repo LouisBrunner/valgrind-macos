@@ -1534,8 +1534,12 @@ Bool vg_read_lib_symbols ( SegInfo* si )
    {
       UChar*     o_strtab    = NULL;
       Elf32_Sym* o_symtab    = NULL;
+      UChar*     o_dynstr    = NULL;
+      Elf32_Sym* o_dynsym    = NULL;
       UInt       o_strtab_sz = 0;
       UInt       o_symtab_sz = 0;
+      UInt       o_dynstr_sz = 0;
+      UInt       o_dynsym_sz = 0;
 
       UChar*     o_got = NULL;
       UChar*     o_plt = NULL;
@@ -1548,24 +1552,18 @@ Bool vg_read_lib_symbols ( SegInfo* si )
       /* find the .stabstr and .stab sections */
       for (i = 0; i < ehdr->e_shnum; i++) {
 
-         /* As a fallback position, we look first for the dynamic
-            symbols of a library to increase the chances that we can
-            say something helpful even if the standard and debug
-            symbols are missing. */
-
          if (0 == VG_(strcmp)(".dynsym",sh_strtab + shdr[i].sh_name)) {
-            o_symtab    = (Elf32_Sym*)(oimage + shdr[i].sh_offset);
-            o_symtab_sz = shdr[i].sh_size;
-            vg_assert((o_symtab_sz % sizeof(Elf32_Sym)) == 0);
+            o_dynsym    = (Elf32_Sym*)(oimage + shdr[i].sh_offset);
+            o_dynsym_sz = shdr[i].sh_size;
+            vg_assert((o_dynsym_sz % sizeof(Elf32_Sym)) == 0);
             /* check image overrun here */
          }
          if (0 == VG_(strcmp)(".dynstr",sh_strtab + shdr[i].sh_name)) {
-            o_strtab    = (UChar*)(oimage + shdr[i].sh_offset);
-            o_strtab_sz = shdr[i].sh_size;
+            o_dynstr    = (UChar*)(oimage + shdr[i].sh_offset);
+            o_dynstr_sz = shdr[i].sh_size;
             /* check image overrun here */
          }
  
-         /* now look for the main symbol and string tables. */
          if (0 == VG_(strcmp)(".symtab",sh_strtab + shdr[i].sh_name)) {
             o_symtab    = (Elf32_Sym*)(oimage + shdr[i].sh_offset);
             o_symtab_sz = shdr[i].sh_size;
@@ -1609,13 +1607,40 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
       if (o_strtab == NULL || o_symtab == NULL) {
          vg_symerr("   object doesn't have a symbol table");
-      } else {
+      }
+      if (o_dynstr == NULL || o_dynsym == NULL) {
+         vg_symerr("   object doesn't have a dynamic symbol table");
+      }
+
+      while (True) {
+	 if (o_strtab == NULL || o_symtab == NULL) {
+
+	    o_strtab    = o_dynstr;
+	    o_symtab    = o_dynsym;
+	    o_strtab_sz = o_dynstr_sz;
+	    o_symtab_sz = o_dynsym_sz;
+
+	    if (o_strtab == NULL || o_symtab == NULL) break;
+
+	    o_dynstr = NULL;
+	    o_dynsym = NULL;
+
+	    if (VG_(clo_trace_symtab))
+	       VG_(printf)("Reading dynamic symbol table (%d entries)\n",
+			    o_symtab_sz/sizeof(Elf32_Sym) );
+	 }
+	 else if (VG_(clo_trace_symtab)) {
+	      
+	    VG_(printf)("Reading symbol table (%d entries)\n",
+			o_symtab_sz/sizeof(Elf32_Sym) );
+	 }
+
          /* Perhaps should start at i = 1; ELF docs suggest that entry
             0 always denotes `unknown symbol'. */
          for (i = 1; i < o_symtab_sz/sizeof(Elf32_Sym); i++){
 #           if 1
 	    if (VG_(clo_trace_symtab)) {
-	       VG_(printf)("raw symbol: ");
+	       VG_(printf)("raw symbol [%d]: ", i);
 	       switch (ELF32_ST_BIND(o_symtab[i].st_info)) {
                case STB_LOCAL:  VG_(printf)("LOC "); break;
                case STB_GLOBAL: VG_(printf)("GLO "); break;
@@ -1746,6 +1771,9 @@ Bool vg_read_lib_symbols ( SegInfo* si )
                addSym ( si, &sym );
 	    }
          }
+	 /* If there's dynamic symbol info, force reading in next loop */
+	 o_strtab    = NULL;
+	 o_symtab    = NULL;
       }
    }
 

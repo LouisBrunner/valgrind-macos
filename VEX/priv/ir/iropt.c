@@ -2968,7 +2968,8 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
 /* The two schemas considered are:
 
      X: BODY; goto X
-     --> X: BODY;BODY; goto X
+
+     which unrolls to (eg)  X: BODY;BODY; goto X
 
    and
 
@@ -3085,6 +3086,8 @@ static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
 
    st = bb0->stmts[i];
    if (st->tag != Ist_Exit)
+      return NULL;
+   if (st->Ist.Exit.jk != Ijk_Boring)
       return NULL;
 
    con = st->Ist.Exit.dst;

@@ -54,6 +54,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
 	signal2.stderr.exp \
 	signal2.stdout.exp signal2.vgtest \
+	str_tester.stderr.exp str_tester.vgtest \
 	supp1.stderr.exp supp1.vgtest \
 	supp2.stderr.exp supp2.vgtest \
 	supp.supp \
@@ -78,7 +79,8 @@ check_PROGRAMS = \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak new_nothrow \
 	null_socket overlap \
-	realloc1 realloc2 realloc3 sigaltstack signal2 supp1 supp2 suppfree \
+	realloc1 realloc2 realloc3 sigaltstack signal2 \
+	str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
 	mismatches new_override metadata threadederrno \
 	vgtest_ume \
@@ -137,6 +139,8 @@ sigaltstack_SOURCES 	= sigaltstack.c
 trivialleak_SOURCES 	= trivialleak.c
 weirdioctl_SOURCES 	= weirdioctl.c
 metadata_SOURCES	= metadata.c
+str_tester_SOURCES	= str_tester.c
+str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow
 threadederrno_SOURCES	= threadederrno.c
 threadederrno_LDADD	= -lpthread
 writev_SOURCES		= writev.c

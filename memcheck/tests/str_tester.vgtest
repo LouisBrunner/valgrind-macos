@@ -1,0 +1,2 @@
+prog: str_tester
+vgopts: -q

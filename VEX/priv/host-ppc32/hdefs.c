@@ -2064,24 +2064,21 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       goto done;
    }
 
-//..    case Xin_Div:
-//..       subopc = i->Xin.Div.syned ? 7 : 6;
-//..       if (i->Xin.Div.ssz == Xss_32) {
-//..          *p++ = 0xF7;
-//..          switch (i->Xin.Div.src->tag)  {
-//..             case Xrm_Mem:
-//..                p = doAMode_M(p, fake(subopc),
-//..                                 i->Xin.Div.src->Xrm.Mem.am);
-//..                goto done;
-//..             case Xrm_Reg:
-//..                p = doAMode_R(p, fake(subopc), 
-//..                                 i->Xin.Div.src->Xrm.Reg.reg);
-//..                goto done;
-//..             default:
-//..                goto bad;
-//..          }
-//..       }
-//..       break;
+   case Pin_Div: {
+      Bool syned  = i->Pin.MulL.syned;
+      UInt r_dst  = iregNo(i->Pin.Div.dst);
+      UInt r_src1 = iregNo(i->Pin.Div.src1);
+      UInt r_src2 = iregNo(i->Pin.Div.src2);
+
+      if (syned == True) {
+         // divw r_dst,r_src1,r_src2
+         p = mkFormXO(p, 31, r_dst, r_src1, r_src2, 0, 491, 0);
+      } else {
+         // divwu r_dst,r_src1,r_src2
+         p = mkFormXO(p, 31, r_dst, r_src1, r_src2, 0, 459, 0);
+      }
+      goto done;
+   }
 
 //..    case Xin_Sh3232:
 //..       vassert(i->Xin.Sh3232.op == Xsh_SHL || i->Xin.Sh3232.op == Xsh_SHR);

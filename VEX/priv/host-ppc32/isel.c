@@ -106,10 +106,12 @@ static IRExpr* unop ( IROp op, IRExpr* a )
    return IRExpr_Unop(op, a);
 }
 
+#if 0
 static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
 {
    return IRExpr_Binop(op, a1, a2);
 }
+#endif
 
 //.. static IRExpr* mkU64 ( ULong i )
 //.. {
@@ -1137,8 +1139,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
       case Iop_64to32: {
 
-#if 1
-// CAB: This right? Need to figure out sign issues...
+#if 0
          /* 64to32(MullS32(expr,expr)) */
          {
             DECLARE_PATTERN(p_MullS32_then_64to32);
@@ -1153,10 +1154,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                return dst;
             }
          }
-#endif
 
-#if 0
-// CAB: This right? Need to figure out sign issues...
          /* 64to32(MullU32(expr,expr)) */
          {
             DECLARE_PATTERN(p_MullU32_then_64to32);
@@ -1171,6 +1169,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                return dst;
             }
          }
+
+         // CAB: Also: 64HIto32(MullU32(expr,expr))
+         // CAB: Also: 64HIto32(MullS32(expr,expr))
 #endif
 
          HReg rHi, rLo;
@@ -1792,7 +1793,9 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
          HReg     tHi   = newVRegI(env);
          Bool     syned = e->Iex.Binop.op == Iop_MullS32;
          HReg     src1  = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         PPC32RI* src2  = mk_FitRI16(env, iselIntExpr_RI(env, e->Iex.Binop.arg2));
+         PPC32RI* ri    = iselIntExpr_RI(env, e->Iex.Binop.arg2);
+// CAB: could do better than this...
+         PPC32RI* src2  = PPC32RI_Reg( mk_RItoR(env, ri) );
          addInstr(env, PPC32Instr_MulL(syned, 0, tLo, src1, src2));
          addInstr(env, PPC32Instr_MulL(syned, 1, tHi, src1, src2));
          *rHi = tHi;

@@ -241,8 +241,9 @@ extern Bool  VG_(clo_trace_symtab);
 extern Bool  VG_(clo_trace_malloc);
 /* DEBUG: print thread scheduling events?  default: NO */
 extern Bool  VG_(clo_trace_sched);
-/* DEBUG: print pthread (mutex etc) events?  default: NO */
-extern Bool  VG_(clo_trace_pthread);
+/* DEBUG: print pthread (mutex etc) events?  default: 0 (none), 1
+   (some), 2 (all) */
+extern Int   VG_(clo_trace_pthread_level);
 /* Stop after this many basic blocks.  default: Infinity. */
 extern ULong VG_(clo_stop_after);
 /* Display gory details for the k'th most popular error.  default:
@@ -404,6 +405,9 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__PTHREAD_MUTEX_UNLOCK    0x3006
 #define VG_USERREQ__PTHREAD_MUTEX_DESTROY   0x3007
 #define VG_USERREQ__PTHREAD_CANCEL          0x3008
+
+/* Cosmetic ... */
+#define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
 
 /* 
 In vg_constants.h:

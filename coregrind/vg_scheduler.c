@@ -176,7 +176,7 @@ void add_waiting_fd ( ThreadId tid, Int fd, Int syscall_no )
 static
 void print_sched_event ( ThreadId tid, Char* what )
 {
-   VG_(message)(Vg_DebugMsg, "SCHED[%d]: %s", tid, what );
+   VG_(message)(Vg_DebugMsg, "  SCHED[%d]: %s", tid, what );
 }
 
 
@@ -555,6 +555,8 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
          SIMPLE_RETURN(tid);
       case VG_USERREQ__RUNNING_ON_VALGRIND:
          SIMPLE_RETURN(1);
+      case VG_USERREQ__GET_PTHREAD_TRACE_LEVEL:
+         SIMPLE_RETURN(VG_(clo_trace_pthread_level));
 
       default:
          /* Too hard; wimp out. */
@@ -1477,7 +1479,7 @@ void initialise_mutex ( ThreadId tid, pthread_mutex_t *mutex )
    vg_mutexes[mid].owner = VG_INVALID_THREADID; /* irrelevant */
    mutex->__m_reserved = mid;
    mutex->__m_count = 1; /* initialised */
-   if (VG_(clo_trace_pthread)) {
+   if (VG_(clo_trace_pthread_level) >= 1) {
       VG_(sprintf)(msg_buf, "(initialise mutex) (%p) -> %d", 
                             mutex, mid );
       print_pthread_event(tid, msg_buf);
@@ -1497,7 +1499,7 @@ void do_pthread_mutex_init ( ThreadId tid,
 
    initialise_mutex(tid, mutex);
 
-   if (VG_(clo_trace_pthread)) {
+   if (VG_(clo_trace_pthread_level) >= 1) {
       VG_(sprintf)(msg_buf, "pthread_mutex_init (%p) -> %d", 
                             mutex, mutex->__m_reserved );
       print_pthread_event(tid, msg_buf);
@@ -1541,7 +1543,7 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
       return;
    }
 
-   if (VG_(clo_trace_pthread)) {
+   if (VG_(clo_trace_pthread_level) >= 2) {
       VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d (%p)", 
                             mid, mutex );
       print_pthread_event(tid, msg_buf);
@@ -1562,9 +1564,9 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
       vg_threads[tid].status = VgTs_WaitMX;
       vg_threads[tid].waited_on_mid = mid;
       /* No assignment to %EDX, since we're blocking. */
-      if (VG_(clo_trace_pthread)) {
-         VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d (%p): BLOCK", 
-                               mid, mutex );
+      if (VG_(clo_trace_pthread_level) >= 1) {
+         VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d: BLOCK", 
+                               mid );
          print_pthread_event(tid, msg_buf);
       }
    } else {
@@ -1597,7 +1599,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       return;
    }
 
-   if (VG_(clo_trace_pthread)) {
+   if (VG_(clo_trace_pthread_level) >= 2) {
       VG_(sprintf)(msg_buf, "pthread_mutex_unlock %d (%p)", 
                             mid, mutex );
       print_pthread_event(tid, msg_buf);
@@ -1633,7 +1635,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       vg_threads[i].status = VgTs_Runnable;
       vg_threads[i].m_edx = 0; /* pth_lock() success */
 
-      if (VG_(clo_trace_pthread)) {
+      if (VG_(clo_trace_pthread_level) >= 1) {
          VG_(sprintf)(msg_buf, "pthread_mutex_lock   %d: RESUME", 
                                mid );
          print_pthread_event(tid, msg_buf);
@@ -1664,7 +1666,7 @@ static void do_pthread_mutex_destroy ( ThreadId tid,
       return;
    }
 
-   if (VG_(clo_trace_pthread)) {
+   if (VG_(clo_trace_pthread_level) >= 1) {
       VG_(sprintf)(msg_buf, "pthread_mutex_destroy %d (%p)", 
                             mid, mutex );
       print_pthread_event(tid, msg_buf);

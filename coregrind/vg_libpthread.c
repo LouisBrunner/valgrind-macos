@@ -27,29 +27,36 @@
 #include <unistd.h>
 #include <string.h>
 
-/* ---------------------------------------------------------------------
-   Mini-configuration.
-   ------------------------------------------------------------------ */
-
-/* Set to 1 to see IGNORED debugging messages. */
-static int show_IGNORED = 1;
-
 
 /* ---------------------------------------------------------------------
    Helpers.  We have to be pretty self-sufficient.
    ------------------------------------------------------------------ */
 
+/* Extract from Valgrind the value of VG_(clo_trace_pthread_level).
+   Returns 0 (none) if not running on Valgrind. */
+static
+int get_pt_trace_level ( void )
+{
+   int res;
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__GET_PTHREAD_TRACE_LEVEL,
+                           0, 0, 0, 0);
+   return res;
+}
+
+
+
 static
 void myexit ( int arg )
 {
-  int __res;
+   int __res;
    __asm__ volatile ("movl %%ecx, %%ebx ; int $0x80"
                      : "=a" (__res)
                      : "0" (__NR_exit),
                        "c" (arg) );
-  /* We don't bother to mention the fact that this asm trashes %ebx,
-     since it won't return.  If you ever do let it return ... fix
-     this! */
+   /* We don't bother to mention the fact that this asm trashes %ebx,
+      since it won't return.  If you ever do let it return ... fix
+      this! */
 }
 
 
@@ -95,12 +102,13 @@ void barf ( char* str )
 
 static void ignored ( char* msg )
 {
-   char* ig = "vg_libpthread.so: IGNORED call to: ";
-   if (!show_IGNORED) return;
-   write(2, ig, strlen(ig));
-   write(2, msg, strlen(msg));
-   ig = "\n";
-   write(2, ig, strlen(ig));
+   if (get_pt_trace_level() >= 1) {
+      char* ig = "vg_libpthread.so: IGNORED call to: ";
+      write(2, ig, strlen(ig));
+      write(2, msg, strlen(msg));
+      ig = "\n";
+      write(2, ig, strlen(ig));
+   }
 }
 
 
@@ -190,8 +198,6 @@ int pthread_mutex_init(pthread_mutex_t *mutex,
                        const  pthread_mutexattr_t *mutexattr)
 {
    int res;
-   //  char* str = "pthread_mutex_init\n";
-   //  write(2, str, strlen(str));
    ensure_valgrind("pthread_mutex_init");
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__PTHREAD_MUTEX_INIT,
@@ -214,7 +220,8 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 int pthread_mutex_lock(pthread_mutex_t *mutex)
 {
    int res;
-   if (!(RUNNING_ON_VALGRIND)) {
+   static int moans = 5;
+   if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
       char* str = "pthread_mutex_lock-NOT-INSIDE-VALGRIND\n";
       write(2, str, strlen(str));
       return 0;
@@ -229,7 +236,8 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
 int pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
    int res;
-   if (!(RUNNING_ON_VALGRIND)) {
+   static int moans = 5;
+   if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
       char* str = "pthread_mutex_unlock-NOT-INSIDE-VALGRIND\n";
       write(2, str, strlen(str));
       return 0;
@@ -256,7 +264,8 @@ pthread_t pthread_self(void)
 int pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
    int res;
-   if (!(RUNNING_ON_VALGRIND)) {
+   static int moans = 5;
+   if (!(RUNNING_ON_VALGRIND) && moans-- > 0) {
       char* str = "pthread_mutex_destroy-NOT-INSIDE-VALGRIND\n";
       write(2, str, strlen(str));
       return 0;
@@ -335,9 +344,7 @@ int sigaction(int signum,
               const struct sigaction *act,  
               struct  sigaction *oldact)
 {
-  //  char* str = "sigaction\n";
-  //  write(2, str, strlen(str));
-  return __libc_sigaction(signum, act, oldact);
+   return __libc_sigaction(signum, act, oldact);
 }
 
 
@@ -349,9 +356,7 @@ int  connect(int  sockfd,
              const  struct  sockaddr  *serv_addr, 
              socklen_t addrlen)
 {
-  //  char* str = "connect\n";
-  //  write(2, str, strlen(str));
-  return __libc_connect(sockfd, serv_addr, addrlen);
+   return __libc_connect(sockfd, serv_addr, addrlen);
 }
 
 
@@ -359,9 +364,7 @@ extern
 int __libc_fcntl(int fd, int cmd, long arg);
 int fcntl(int fd, int cmd, long arg)
 {
-  //  char* str = "fcntl\n";
-  //  write(2, str, strlen(str));
-  return __libc_fcntl(fd, cmd, arg);
+   return __libc_fcntl(fd, cmd, arg);
 }
 
 
@@ -369,9 +372,7 @@ extern
 ssize_t __libc_write(int fd, const void *buf, size_t count);
 ssize_t write(int fd, const void *buf, size_t count)
 {
-  //  char* str = "write\n";
-  //  write(2, str, strlen(str));
-  return __libc_write(fd, buf, count);
+   return __libc_write(fd, buf, count);
 }
 
 
@@ -379,9 +380,7 @@ extern
 ssize_t __libc_read(int fd, void *buf, size_t count);
 ssize_t read(int fd, void *buf, size_t count)
 {
-  //  char* str = "read\n";
-  //  write(2, str, strlen(str));
-  return __libc_read(fd, buf, count);
+   return __libc_read(fd, buf, count);
 }
 
 
@@ -389,9 +388,7 @@ extern
 int __libc_open(const char *pathname, int flags);
 int open(const char *pathname, int flags)
 {
-  //  char* str = "open\n";
-  //  write(2, str, strlen(str));
-  return __libc_open(pathname, flags);
+   return __libc_open(pathname, flags);
 }
 
 
@@ -399,9 +396,7 @@ extern
 int __libc_close(int fd);
 int close(int fd)
 {
-  //  char* str = "open\n";
-  //  write(2, str, strlen(str));
-  return __libc_close(fd);
+   return __libc_close(fd);
 }
 
 
@@ -409,9 +404,7 @@ extern
 int __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
-  //  char* str = "accept\n";
-  //  write(2, str, strlen(str));
-  return __libc_accept(s, addr, addrlen);
+   return __libc_accept(s, addr, addrlen);
 }
 
 
@@ -419,9 +412,7 @@ extern
 pid_t __libc_fork(void);
 pid_t fork(void)
 {
-  //  char* str = "fork\n";
-  //  write(2, str, strlen(str));
-  return __libc_fork();
+   return __libc_fork();
 }
 
 
@@ -429,9 +420,7 @@ extern
 pid_t __libc_waitpid(pid_t pid, int *status, int options);
 pid_t waitpid(pid_t pid, int *status, int options)
 {
-  //  char* str = "waitpid\n";
-  //  write(2, str, strlen(str));
-  return __libc_waitpid(pid, status, options);
+   return __libc_waitpid(pid, status, options);
 }
 
 
@@ -446,14 +435,14 @@ extern
 int __libc_fsync(int fd);
 int fsync(int fd)
 {
-  return __libc_fsync(fd);
+   return __libc_fsync(fd);
 }
 
 extern
 off_t __libc_lseek(int fildes, off_t offset, int whence);
 off_t lseek(int fildes, off_t offset, int whence)
 {
-  return __libc_lseek(fildes, offset, whence);
+   return __libc_lseek(fildes, offset, whence);
 }
 
 extern  
@@ -469,6 +458,7 @@ int send(int s, const void *msg, size_t len, int flags)
 {
    return __libc_send(s, msg, len, flags);
 }
+
 
 /*--------------------------------------------------*/
 
@@ -666,7 +656,7 @@ int select ( int n,
       /* fprintf(stderr, "MY_SELECT: nanosleep\n"); */
       /* nanosleep and go round again */
       nanosleep_interval.tv_sec = 0;
-      nanosleep_interval.tv_nsec = 20 * 1000 * 1000; /* 20 milliseconds */
+      nanosleep_interval.tv_nsec = 40 * 1000 * 1000; /* 40 milliseconds */
       /* It's critical here that valgrind's nanosleep implementation
          is nonblocking. */
       (void)my_do_syscall2(__NR_nanosleep, 

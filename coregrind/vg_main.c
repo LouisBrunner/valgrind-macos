@@ -425,7 +425,7 @@ Bool   VG_(clo_trace_signals);
 Bool   VG_(clo_trace_symtab);
 Bool   VG_(clo_trace_malloc);
 Bool   VG_(clo_trace_sched);
-Bool   VG_(clo_trace_pthread);
+Int    VG_(clo_trace_pthread_level);
 ULong  VG_(clo_stop_after);
 Int    VG_(clo_dump_error);
 Int    VG_(clo_backtrace_size);
@@ -508,7 +508,7 @@ static void process_cmd_line_options ( void )
    VG_(clo_trace_symtab)     = False;
    VG_(clo_trace_malloc)     = False;
    VG_(clo_trace_sched)      = False;
-   VG_(clo_trace_pthread)    = False;
+   VG_(clo_trace_pthread_level) = 0;
    VG_(clo_stop_after)       = 1000000000000LL;
    VG_(clo_dump_error)       = 0;
    VG_(clo_backtrace_size)   = 4;
@@ -777,10 +777,12 @@ static void process_cmd_line_options ( void )
       else if (STREQ(argv[i], "--trace-sched=no"))
          VG_(clo_trace_sched) = False;
 
-      else if (STREQ(argv[i], "--trace-pthread=yes"))
-         VG_(clo_trace_pthread) = True;
-      else if (STREQ(argv[i], "--trace-pthread=no"))
-         VG_(clo_trace_pthread) = False;
+      else if (STREQ(argv[i], "--trace-pthread=none"))
+         VG_(clo_trace_pthread_level) = 0;
+      else if (STREQ(argv[i], "--trace-pthread=some"))
+         VG_(clo_trace_pthread_level) = 1;
+      else if (STREQ(argv[i], "--trace-pthread=all"))
+         VG_(clo_trace_pthread_level) = 2;
 
       else if (STREQN(13, argv[i], "--stop-after="))
          VG_(clo_stop_after) = VG_(atoll)(&argv[i][13]);

@@ -49,6 +49,11 @@
 #define VGP_M_STACK     20
 #define VGP_MAX_CCS     50
 
+/* Required function from coregrind/vg_include.h;  duplicated declaration
+   is a hack but will do. */
+__attribute__((noreturn))
+extern void VG_(skin_error) ( Char* s );
+
 
 /* All zeroed initially because they're static */
 static Int   vgp_nticks;

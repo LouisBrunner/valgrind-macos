@@ -180,11 +180,15 @@ extern void VG_(message)    ( VgMsgKind kind, Char* format, ... );
    VGP_PAIR(VgpAddToT,      "add-to-transtab"),       \
    VGP_PAIR(VgpCoreSysWrap, "core-syscall-wrapper"),  \
    VGP_PAIR(VgpDemangle,    "demangle"),              \
+   VGP_PAIR(VgpCoreCheapSanity,     "core-cheap-sanity"),     \
+   VGP_PAIR(VgpCoreExpensiveSanity, "core-expensive-sanity"), \
    /* These ones depend on the skin */                \
    VGP_PAIR(VgpPreCloInit,  "pre-clo-init"),          \
    VGP_PAIR(VgpPostCloInit, "post-clo-init"),         \
    VGP_PAIR(VgpInstrument,  "instrument"),            \
    VGP_PAIR(VgpSkinSysWrap, "skin-syscall-wrapper"),  \
+   VGP_PAIR(VgpSkinCheapSanity,     "skin-cheap-sanity"),     \
+   VGP_PAIR(VgpSkinExpensiveSanity, "skin-expensive-sanity"), \
    VGP_PAIR(VgpFini,        "fini")
 
 #define VGP_PAIR(n,name) n

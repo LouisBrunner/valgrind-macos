@@ -1527,6 +1527,8 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 {
    Int          i;
 
+   VGP_PUSHCC(VgpCoreCheapSanity);
+
    if (VG_(sanity_level) < 1) return;
 
    /* --- First do all the tests that we can do quickly. ---*/
@@ -1545,8 +1547,11 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 
    /* Check that nobody has spuriously claimed that the first or
       last 16 pages of memory have become accessible [...] */
-   if (VG_(needs).sanity_checks)
+   if (VG_(needs).sanity_checks) {
+      VGP_PUSHCC(VgpSkinCheapSanity);
       vg_assert(SK_(cheap_sanity_check)());
+      VGP_POPCC(VgpSkinCheapSanity);
+   }
 
    /* --- Now some more expensive checks. ---*/
 
@@ -1555,6 +1560,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
      || VG_(sanity_level) > 1
      || (VG_(sanity_level) == 1 && (VG_(sanity_fast_count) % 25) == 0)) {
 
+      VGP_PUSHCC(VgpCoreExpensiveSanity);
       VG_(sanity_slow_count)++;
 
 #     if 0
@@ -1565,20 +1571,26 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
          VG_(sanity_check_tc_tt)();
 
       if (VG_(needs).sanity_checks) {
+          VGP_PUSHCC(VgpSkinExpensiveSanity);
           vg_assert(SK_(expensive_sanity_check)());
+          VGP_POPCC(VgpSkinExpensiveSanity);
       }
       /* 
       if ((VG_(sanity_fast_count) % 500) == 0) VG_(mallocSanityCheckAll)(); 
       */
+      VGP_POPCC(VgpCoreExpensiveSanity);
    }
 
    if (VG_(sanity_level) > 1) {
+      VGP_PUSHCC(VgpCoreExpensiveSanity);
       /* Check sanity of the low-level memory manager.  Note that bugs
          in the client's code can cause this to fail, so we don't do
          this check unless specially asked for.  And because it's
          potentially very expensive. */
       VG_(mallocSanityCheckAll)();
+      VGP_POPCC(VgpCoreExpensiveSanity);
    }
+   VGP_POPCC(VgpCoreCheapSanity);
 }
 /*--------------------------------------------------------------------*/
 /*--- end                                                vg_main.c ---*/

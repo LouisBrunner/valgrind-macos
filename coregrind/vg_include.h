@@ -794,6 +794,7 @@ extern void VG_(restore_all_host_signals)
    Exports of vg_mylibc.c
    ------------------------------------------------------------------ */
 
+/* Note: this function is re-declared (cough, hack) in include/vg_profile.c */
 __attribute__((noreturn))
 extern void VG_(skin_error) ( Char* s );
 

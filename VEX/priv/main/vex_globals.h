@@ -19,6 +19,7 @@
 extern Bool vex_initdone;
 
 /* failure exit function */
+__attribute__ ((noreturn))
 extern void (*vex_failure_exit) ( void );
 
 /* logging output function */

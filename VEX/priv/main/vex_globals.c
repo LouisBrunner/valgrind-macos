@@ -18,6 +18,7 @@
 Bool vex_initdone = False;
 
 /* failure exit function */
+__attribute__ ((noreturn))
 void (*vex_failure_exit) ( void ) = NULL;
 
 /* logging output function */

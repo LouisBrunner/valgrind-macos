@@ -195,7 +195,11 @@ HInstrArray* doRegisterAllocation (
    /* Return an insn to spill/restore a real reg to a spill slot
       offset. */
    HInstr* (*genSpill) ( HReg, Int ),
-   HInstr* (*genReload) ( HReg, Int )
+   HInstr* (*genReload) ( HReg, Int ),
+
+   /* For debug printing only. */
+   void (*ppInstr) ( HInstr* ),
+   void (*ppReg) ( HReg )
 );
 
 

@@ -23,6 +23,7 @@
 
 extern void LibVEX_Init (
    /* failure exit function */
+   __attribute__ ((noreturn))
    void (*failure_exit) ( void ),
    /* logging output function */
    void (*log_bytes) ( Char*, Int nbytes ),

@@ -22,6 +22,7 @@
 
 void LibVEX_Init (
    /* failure exit function */
+   __attribute__ ((noreturn))
    void (*failure_exit) ( void ),
    /* logging output function */
    void (*log_bytes) ( Char*, Int nbytes ),
@@ -83,6 +84,8 @@ TranslateResult LibVEX_Translate (
    void (*mapRegs) (HRegRemap*, HInstr*);
    HInstr* (*genSpill) ( HReg, Int );
    HInstr* (*genReload) ( HReg, Int );
+   void (*ppInstr) ( HInstr* );
+   void (*ppReg) ( HReg );
    HInstrArray* (*iselBB) ( IRBB* );
    IRBB* (*bbToIR) ( Char*, Addr64, Int*, Bool(*)(Addr64) );
 
@@ -104,6 +107,8 @@ TranslateResult LibVEX_Translate (
          mapRegs     = (void(*)(HRegRemap*,HInstr*)) mapRegs_X86Instr;
          genSpill    = (HInstr*(*)(HReg,Int)) genSpill_X86;
          genReload   = (HInstr*(*)(HReg,Int)) genReload_X86;
+         ppInstr     = (void(*)(HInstr*)) ppX86Instr;
+         ppReg       = (void(*)(HReg)) ppHRegX86;
          iselBB      = iselBB_X86;
          break;
       default:
@@ -140,7 +145,8 @@ TranslateResult LibVEX_Translate (
    rcode = doRegisterAllocation ( vcode, available_real_regs,
                   	       	  n_available_real_regs,
 			          isMove, getRegUsage, mapRegs, 
-			          genSpill, genReload );
+			          genSpill, genReload,
+				  ppInstr, ppReg );
 
    /* Assemble, etc. */
    LibVEX_Clear(True);

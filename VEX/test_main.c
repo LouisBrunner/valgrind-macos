@@ -18,6 +18,7 @@
 #include "libvex_basictypes.h"
 #include "libvex.h"
 
+__attribute__ ((noreturn))
 void failure_exit ( void )
 {
    fprintf(stdout, "VEX did failure_exit.  Bye.\n");

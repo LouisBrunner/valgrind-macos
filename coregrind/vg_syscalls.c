@@ -2741,14 +2741,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       case __NR_readv: { /* syscall 145 */
          /* int readv(int fd, const struct iovec * vector, size_t count); */
-         UInt i;
+         Int i;
          struct iovec * vec;
          MAYBE_PRINTF("readv ( %d, %p, %d )\n",arg1,arg2,arg3);
          SYSCALL_TRACK( pre_mem_read, tid, "readv(vector)", 
                            arg2, arg3 * sizeof(struct iovec) );
          /* ToDo: don't do any of the following if the vector is invalid */
          vec = (struct iovec *)arg2;
-         for (i = 0; i < arg3; i++)
+         for (i = 0; i < (Int)arg3; i++)
             SYSCALL_TRACK( pre_mem_write, tid, "readv(vector[...])",
                               (UInt)vec[i].iov_base,vec[i].iov_len );
          KERNEL_DO_SYSCALL(tid,res);
@@ -3369,14 +3369,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       case __NR_writev: { /* syscall 146 */
          /* int writev(int fd, const struct iovec * vector, size_t count); */
-         UInt i;
+         Int i;
          struct iovec * vec;
          MAYBE_PRINTF("writev ( %d, %p, %d )\n",arg1,arg2,arg3);
          SYSCALL_TRACK( pre_mem_read, tid, "writev(vector)", 
                            arg2, arg3 * sizeof(struct iovec) );
          /* ToDo: don't do any of the following if the vector is invalid */
          vec = (struct iovec *)arg2;
-         for (i = 0; i < arg3; i++)
+         for (i = 0; i < (Int)arg3; i++)
             SYSCALL_TRACK( pre_mem_read, tid, "writev(vector[...])",
                               (UInt)vec[i].iov_base,vec[i].iov_len );
          KERNEL_DO_SYSCALL(tid,res);

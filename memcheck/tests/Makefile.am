@@ -57,10 +57,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	tronical.stderr.exp tronical.vgtest \
 	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
-	threadederrno.stderr.exp threadederrno.stdout.exp threadederrno.vgtest
+	threadederrno.stderr.exp threadederrno.stdout.exp \
+	threadederrno.vgtest \
+	writev.stderr.exp writev.vgtest
 
 check_PROGRAMS = \
-	badaddrvalue badfree badjump badloop brk buflen_check 
+	badaddrvalue badfree badjump badloop brk buflen_check \
 	clientperm custom_alloc \
 	doublefree error_counts errs1 exitprog fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
@@ -68,7 +70,7 @@ check_PROGRAMS = \
 	overlap pushfpopf \
 	realloc1 realloc2 realloc3 sigaltstack signal2 supp1 supp2 suppfree \
 	trivialleak tronical weirdioctl	\
-	mismatches new_override metadata threadederrno
+	mismatches new_override metadata threadederrno writev
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
@@ -118,6 +120,7 @@ weirdioctl_SOURCES 	= weirdioctl.c
 metadata_SOURCES	= metadata.c
 threadederrno_SOURCES	= threadederrno.c
 threadederrno_LDADD	= -lpthread
+writev_SOURCES		= writev.c
 
 # C++ ones
 mismatches_SOURCES	= mismatches.cpp

@@ -498,6 +498,7 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
       case AMD64G_CC_OP_ADCB:   ACTIONS_ADC( 8,  UChar  );
       case AMD64G_CC_OP_ADCW:   ACTIONS_ADC( 16, UShort );
       case AMD64G_CC_OP_ADCL:   ACTIONS_ADC( 32, UInt   );
+      case AMD64G_CC_OP_ADCQ:   ACTIONS_ADC( 64, ULong  );
 
       case AMD64G_CC_OP_SUBB:   ACTIONS_SUB(  8, UChar  );
       case AMD64G_CC_OP_SUBW:   ACTIONS_SUB( 16, UShort );
@@ -507,6 +508,7 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
       case AMD64G_CC_OP_SBBB:   ACTIONS_SBB(  8, UChar  );
       case AMD64G_CC_OP_SBBW:   ACTIONS_SBB( 16, UShort );
       case AMD64G_CC_OP_SBBL:   ACTIONS_SBB( 32, UInt   );
+      case AMD64G_CC_OP_SBBQ:   ACTIONS_SBB( 64, ULong  );
 
       case AMD64G_CC_OP_LOGICB: ACTIONS_LOGIC(  8, UChar  );
       case AMD64G_CC_OP_LOGICW: ACTIONS_LOGIC( 16, UShort );
@@ -536,10 +538,12 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
       case AMD64G_CC_OP_ROLB:   ACTIONS_ROL(  8, UChar  );
       case AMD64G_CC_OP_ROLW:   ACTIONS_ROL( 16, UShort );
       case AMD64G_CC_OP_ROLL:   ACTIONS_ROL( 32, UInt   );
+      case AMD64G_CC_OP_ROLQ:   ACTIONS_ROL( 64, ULong  );
 
       case AMD64G_CC_OP_RORB:   ACTIONS_ROR(  8, UChar  );
       case AMD64G_CC_OP_RORW:   ACTIONS_ROR( 16, UShort );
       case AMD64G_CC_OP_RORL:   ACTIONS_ROR( 32, UInt   );
+      case AMD64G_CC_OP_RORQ:   ACTIONS_ROR( 64, ULong  );
 
       case AMD64G_CC_OP_UMULB:  ACTIONS_UMUL(  8, UChar,  UShort );
       case AMD64G_CC_OP_UMULW:  ACTIONS_UMUL( 16, UShort, UInt   );
@@ -716,8 +720,8 @@ ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/VexGuestAMD64State* vex_state )
    vassert(dflag == 1 || dflag == -1);
    if (dflag == -1)
       rflags |= (1<<10);
-//   if (vex_state->guest_IDFLAG == 1)
-//      rflags |= (1<<21);
+   if (vex_state->guest_IDFLAG == 1)
+      rflags |= (1<<21);
    return rflags;
 }
 
@@ -1175,7 +1179,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_CC_NDEP = 0;
 
    vex_state->guest_DFLAG   = 1; /* forwards */
-   // XXX: add more here later, for D/ID flags
+   vex_state->guest_IDFLAG  = 0;
 
    // HACK
    vex_state->guest_FS_ZERO = 0;
@@ -1238,7 +1242,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 5,
+          .n_alwaysDefd = 7,
 
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
@@ -1246,23 +1250,23 @@ VexGuestLayout
           .alwaysDefd
              = { /*  0 */ ALWAYSDEFD(guest_CC_OP),
                  /*  1 */ ALWAYSDEFD(guest_CC_NDEP),
-		 // /*  2 */ ALWAYSDEFD(guest_DFLAG),
-                 // /*  3 */ ALWAYSDEFD(guest_IDFLAG),
-                 /*  3 */ ALWAYSDEFD(guest_RIP),
-                 /*  4 */ ALWAYSDEFD(guest_FS_ZERO),
-                 // /*  5 */ ALWAYSDEFD(guest_FTOP),
-                 // /*  6 */ ALWAYSDEFD(guest_FPTAG),
-                 // /*  7 */ ALWAYSDEFD(guest_FPROUND),
-                 // /*  8 */ ALWAYSDEFD(guest_FC3210),
-                 // /*  9 */ ALWAYSDEFD(guest_CS),
-                 // /* 10 */ ALWAYSDEFD(guest_DS),
-                 // /* 11 */ ALWAYSDEFD(guest_ES),
-                 // /* 12 */ ALWAYSDEFD(guest_FS),
-                 // /* 13 */ ALWAYSDEFD(guest_GS),
-                 // /* 14 */ ALWAYSDEFD(guest_SS),
-                 // /* 15 */ ALWAYSDEFD(guest_LDT),
-                 // /* 16 */ ALWAYSDEFD(guest_GDT),
-                 /* 4 */ ALWAYSDEFD(guest_EMWARN)
+		 /*  2 */ ALWAYSDEFD(guest_DFLAG),
+                 /*  3 */ ALWAYSDEFD(guest_IDFLAG),
+                 /*  4 */ ALWAYSDEFD(guest_RIP),
+                 /*  5 */ ALWAYSDEFD(guest_FS_ZERO),
+                 // /* */ ALWAYSDEFD(guest_FTOP),
+                 // /* */ ALWAYSDEFD(guest_FPTAG),
+                 // /* */ ALWAYSDEFD(guest_FPROUND),
+                 // /* */ ALWAYSDEFD(guest_FC3210),
+                 // /* */ ALWAYSDEFD(guest_CS),
+                 // /* */ ALWAYSDEFD(guest_DS),
+                 // /* */ ALWAYSDEFD(guest_ES),
+                 // /* */ ALWAYSDEFD(guest_FS),
+                 // /* */ ALWAYSDEFD(guest_GS),
+                 // /* */ ALWAYSDEFD(guest_SS),
+                 // /* */ ALWAYSDEFD(guest_LDT),
+                 // /* */ ALWAYSDEFD(guest_GDT),
+                 /*  6 */ ALWAYSDEFD(guest_EMWARN)
                }
         };
 

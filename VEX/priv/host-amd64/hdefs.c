@@ -2349,14 +2349,15 @@ vassert(0);
       if (i->Ain.Div.sz == 8) {
          switch (i->Ain.Div.src->tag)  {
             case Arm_Mem:
-               goto bad;
-               /*FIXME*/
+               *p++ = rexAMode_M( fake(0),
+                                  i->Ain.Div.src->Arm.Mem.am);
                *p++ = 0xF7;
                p = doAMode_M(p, fake(subopc),
                                 i->Ain.Div.src->Arm.Mem.am);
                goto done;
             case Arm_Reg:
-               *p++ = rexAMode_R( fake(0), i->Ain.Div.src->Arm.Reg.reg);
+               *p++ = rexAMode_R( fake(0), 
+                                  i->Ain.Div.src->Arm.Reg.reg);
                *p++ = 0xF7;
                p = doAMode_R(p, fake(subopc), 
                                 i->Ain.Div.src->Arm.Reg.reg);

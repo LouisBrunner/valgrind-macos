@@ -788,8 +788,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             aluOp = Aalu_OR; break;
          case Iop_Xor8: case Iop_Xor16: case Iop_Xor32: case Iop_Xor64: 
             aluOp = Aalu_XOR; break;
-//..          case Iop_Mul16: case Iop_Mul32: 
-         case Iop_Mul32: case Iop_Mul64:
+         case Iop_Mul16: case Iop_Mul32: case Iop_Mul64:
             aluOp = Aalu_MUL; break;
          default:
             aluOp = Aalu_INVALID; break;
@@ -827,16 +826,16 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          switch (e->Iex.Binop.op) {
             case Iop_Shr64: case Iop_Shl64: case Iop_Sar64: 
                break;
-            case Iop_Shl32:
+            case Iop_Shl32: case Iop_Shl16: case Iop_Shl8:
                break;
-//..             case Iop_Shr8:
-//..                addInstr(env, X86Instr_Alu32R(
-//..                                 Xalu_AND, X86RMI_Imm(0xFF), dst));
-//..                break;
-//..             case Iop_Shr16:
-//..                addInstr(env, X86Instr_Alu32R(
-//..                                 Xalu_AND, X86RMI_Imm(0xFFFF), dst));
-//..                break;
+            case Iop_Shr8:
+               addInstr(env, AMD64Instr_Alu64R(
+                                Aalu_AND, AMD64RMI_Imm(0xFF), dst));
+               break;
+            case Iop_Shr16:
+               addInstr(env, AMD64Instr_Alu64R(
+                                Aalu_AND, AMD64RMI_Imm(0xFFFF), dst));
+               break;
             case Iop_Shr32:
                addInstr(env, AMD64Instr_Alu64R(
                                 Aalu_AND, AMD64RMI_Imm(0xFFFFFFFF), dst));
@@ -854,6 +853,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                addInstr(env, AMD64Instr_Sh64(Ash_SAR, 32, AMD64RM_Reg(dst)));
                break;
             default: 
+	      ppIROp(e->Iex.Binop.op);
                vassert(0);
          }
 
@@ -924,7 +924,20 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return hi32;
       }
 
-
+      if (e->Iex.Binop.op == Iop_16HLto32) {
+         HReg hi16  = newVRegI(env);
+         HReg lo16  = newVRegI(env);
+         HReg hi16s = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg lo16s = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_iMOVsd_RR(hi16s, hi16));
+         addInstr(env, mk_iMOVsd_RR(lo16s, lo16));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 16, AMD64RM_Reg(hi16)));
+         addInstr(env, AMD64Instr_Alu64R(
+                          Aalu_AND, AMD64RMI_Imm(0xFFFF), lo16));
+         addInstr(env, AMD64Instr_Alu64R(
+                          Aalu_OR, AMD64RMI_Reg(lo16), hi16));
+         return hi16;
+      }
 
 //..       if (e->Iex.Binop.op == Iop_8HLto16) {
 //..          HReg hi8  = newVRegI(env);
@@ -951,30 +964,39 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..          addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Reg(lo16), hi16));
 //..          return hi16;
 //..       }
-//.. 
-//..       if (e->Iex.Binop.op == Iop_MullS16 || e->Iex.Binop.op == Iop_MullS8
-//..           || e->Iex.Binop.op == Iop_MullU16 || e->Iex.Binop.op == Iop_MullU8) {
-//..          HReg a16   = newVRegI(env);
-//..          HReg b16   = newVRegI(env);
-//..          HReg a16s  = iselIntExpr_R(env, e->Iex.Binop.arg1);
-//..          HReg b16s  = iselIntExpr_R(env, e->Iex.Binop.arg2);
-//..          Int  shift = (e->Iex.Binop.op == Iop_MullS8 
-//..                        || e->Iex.Binop.op == Iop_MullU8)
-//..                          ? 24 : 16;
-//..          X86ShiftOp shr_op = (e->Iex.Binop.op == Iop_MullS8 
-//..                               || e->Iex.Binop.op == Iop_MullS16)
-//..                                 ? Xsh_SAR : Xsh_SHR;
-//.. 
-//..          addInstr(env, mk_iMOVsd_RR(a16s, a16));
-//..          addInstr(env, mk_iMOVsd_RR(b16s, b16));
-//..          addInstr(env, X86Instr_Sh32(Xsh_SHL, shift, X86RM_Reg(a16)));
-//..          addInstr(env, X86Instr_Sh32(Xsh_SHL, shift, X86RM_Reg(b16)));
-//..          addInstr(env, X86Instr_Sh32(shr_op,  shift, X86RM_Reg(a16)));
-//..          addInstr(env, X86Instr_Sh32(shr_op,  shift, X86RM_Reg(b16)));
-//..          addInstr(env, X86Instr_Alu32R(Xalu_MUL, X86RMI_Reg(a16), b16));
-//..          return b16;
-//..       }
-//.. 
+
+      if (e->Iex.Binop.op == Iop_MullS32
+          || e->Iex.Binop.op == Iop_MullS16
+          || e->Iex.Binop.op == Iop_MullS8
+          || e->Iex.Binop.op == Iop_MullU32 
+          || e->Iex.Binop.op == Iop_MullU16 
+          || e->Iex.Binop.op == Iop_MullU8) {
+         HReg a32   = newVRegI(env);
+         HReg b32   = newVRegI(env);
+         HReg a32s  = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg b32s  = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         Int          shift  = 0;
+         AMD64ShiftOp shr_op = Ash_SHR;
+         switch (e->Iex.Binop.op) {
+            case Iop_MullS32: shr_op = Ash_SAR; shift = 32; break;
+            case Iop_MullS16: shr_op = Ash_SAR; shift = 48; break;
+            case Iop_MullS8:  shr_op = Ash_SAR; shift = 56; break;
+            case Iop_MullU32: shr_op = Ash_SHR; shift = 32; break;
+            case Iop_MullU16: shr_op = Ash_SHR; shift = 48; break;
+            case Iop_MullU8:  shr_op = Ash_SHR; shift = 56; break;
+            default: vassert(0);
+         }
+
+         addInstr(env, mk_iMOVsd_RR(a32s, a32));
+         addInstr(env, mk_iMOVsd_RR(b32s, b32));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, shift, AMD64RM_Reg(a32)));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, shift, AMD64RM_Reg(b32)));
+         addInstr(env, AMD64Instr_Sh64(shr_op,  shift, AMD64RM_Reg(a32)));
+         addInstr(env, AMD64Instr_Sh64(shr_op,  shift, AMD64RM_Reg(b32)));
+         addInstr(env, AMD64Instr_Alu64R(Aalu_MUL, AMD64RMI_Reg(a32), b32));
+         return b32;
+      }
+
 //..       if (e->Iex.Binop.op == Iop_CmpF64) {
 //..          HReg fL = iselDblExpr(env, e->Iex.Binop.arg1);
 //..          HReg fR = iselDblExpr(env, e->Iex.Binop.arg2);
@@ -1132,9 +1154,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             iselInt128Expr(&rHi,&rLo, env, e->Iex.Unop.arg);
             return rLo; /* and abandon rHi */
          }
-         case Iop_8Uto16: {
+         case Iop_8Uto16:
 //..          case Iop_8Uto32:
-//..          case Iop_16Uto32: {
+         case Iop_16Uto32: {
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             UInt mask = e->Iex.Unop.op==Iop_16Uto32 ? 0xFFFF : 0xFF;
@@ -1143,7 +1165,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                                             AMD64RMI_Imm(mask), dst));
             return dst;
          }
-//..          case Iop_8Sto16:
+         case Iop_8Sto16:
          case Iop_8Sto32:
          case Iop_16Sto32: {
             HReg dst = newVRegI(env);
@@ -1154,8 +1176,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, AMD64Instr_Sh64(Ash_SAR, amt, AMD64RM_Reg(dst)));
             return dst;
          }
-//.. 	 case Iop_Not8:
-//.. 	 case Iop_Not16:
+ 	 case Iop_Not8:
+ 	 case Iop_Not16:
          case Iop_Not32:
          case Iop_Not64: {
             HReg dst = newVRegI(env);
@@ -1175,12 +1197,13 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..             return rLo; /* similar stupid comment to the above ... */
 //..          }
 //..          case Iop_16HIto8:
-//..          case Iop_32HIto16:
+         case Iop_32HIto16:
          case Iop_64HIto32: {
             HReg dst  = newVRegI(env);
             HReg src  = iselIntExpr_R(env, e->Iex.Unop.arg);
             Int shift = 0;
             switch (e->Iex.Unop.op) {
+               case Iop_32HIto16: shift = 16; break;
                case Iop_64HIto32: shift = 32; break;
                default: vassert(0);
             }
@@ -1239,8 +1262,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..             add_to_esp(env, 16);
 //..             return dst;
 //..          }
-//.. 
-//..          case Iop_16to8:
+
+         case Iop_16to8:
          case Iop_32to8:
          case Iop_32to16:
          case Iop_64to32:

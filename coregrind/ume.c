@@ -55,9 +55,7 @@ struct elfinfo
 static void check_mmap(void* res, void* base, int len)
 {
    if ((void*)-1 == res) {
-      fprintf(stderr, "valgrind: mmap(%p, %d) failed during startup.\n"  
-                      "valgrind: is there a hard virtual memory limit set?\n",
-                      base, len);
+      fprintf(stderr, "valgrind: mmap(%p, %d) failed in UME.\n", base, len);
       exit(1);
    }
 }
@@ -110,130 +108,6 @@ void foreach_map(int (*fn)(char *start, char *end,
       if (!(*fn)(segstart, segend, perm, offset, maj, min, ino, extra))
 	 break;
    }
-}
-
-typedef struct {
-   char* fillgap_start;
-   char* fillgap_end;
-   int   fillgap_padfile;
-} fillgap_extra;
-
-static int fillgap(char *segstart, char *segend, const char *perm, off_t off, 
-                   int maj, int min, int ino, void* e)
-{
-   fillgap_extra* extra = e;
-
-   if (segstart >= extra->fillgap_end)
-      return 0;
-
-   if (segstart > extra->fillgap_start) {
-      void* res = mmap(extra->fillgap_start, segstart - extra->fillgap_start,
-                       PROT_NONE, MAP_FIXED|MAP_PRIVATE|MAP_NORESERVE, 
-                       extra->fillgap_padfile, 0);
-      check_mmap(res, extra->fillgap_start, segstart - extra->fillgap_start);
-   }
-   extra->fillgap_start = segend;
-   
-   return 1;
-}
-
-// Choose a name for the padfile, open it.
-int as_openpadfile(void)
-{
-   char buf[256];
-   int padfile;
-   int seq = 1;
-   do {
-      snprintf(buf, 256, "/tmp/.pad.%d.%d", getpid(), seq++);
-      padfile = open(buf, O_RDWR|O_CREAT|O_EXCL, 0);
-      unlink(buf);
-      if (padfile == -1 && errno != EEXIST) {
-         fprintf(stderr, "valgrind: couldn't open padfile\n");
-         exit(44);
-      }
-   } while(padfile == -1);
-
-   return padfile;
-}
-
-// Pad all the empty spaces in a range of address space to stop interlopers.
-void as_pad(void *start, void *end, int padfile)
-{
-   fillgap_extra extra;
-   extra.fillgap_start   = start;
-   extra.fillgap_end     = end;
-   extra.fillgap_padfile = padfile;
-
-   foreach_map(fillgap, &extra);
-	
-   if (extra.fillgap_start < extra.fillgap_end) {
-      void* res = mmap(extra.fillgap_start, 
-                       extra.fillgap_end - extra.fillgap_start,
-                       PROT_NONE, MAP_FIXED|MAP_PRIVATE|MAP_NORESERVE, padfile, 0);
-      check_mmap(res, extra.fillgap_start, 
-                 extra.fillgap_end - extra.fillgap_start);
-   }
-}
-
-typedef struct {
-   char*        killpad_start;
-   char*        killpad_end;
-   struct stat* killpad_padstat;
-} killpad_extra;
-
-static int killpad(char *segstart, char *segend, const char *perm, off_t off, 
-                   int maj, int min, int ino, void* ex)
-{
-   killpad_extra* extra = ex;
-   void *b, *e;
-   int res;
-
-   assert(NULL != extra->killpad_padstat);
-
-   if (extra->killpad_padstat->st_dev != makedev(maj, min) || 
-       extra->killpad_padstat->st_ino != ino)
-      return 1;
-   
-   if (segend <= extra->killpad_start || segstart >= extra->killpad_end)
-      return 1;
-   
-   if (segstart <= extra->killpad_start)
-      b = extra->killpad_start;
-   else
-      b = segstart;
-   
-   if (segend >= extra->killpad_end)
-      e = extra->killpad_end;
-   else
-      e = segend;
-   
-   res = munmap(b, (char *)e-(char *)b);
-   assert(0 == res);
-   
-   return 1;
-}
-
-// Remove padding of 'padfile' from a range of address space.
-void as_unpad(void *start, void *end, int padfile)
-{
-   static struct stat padstat;
-   killpad_extra extra;
-   int res;
-
-   assert(padfile > 0);
-   
-   res = fstat(padfile, &padstat);
-   assert(0 == res);
-   extra.killpad_padstat = &padstat;
-   extra.killpad_start   = start;
-   extra.killpad_end     = end;
-   foreach_map(killpad, &extra);
-}
-
-void as_closepadfile(int padfile)
-{
-   int res = close(padfile);
-   assert(0 == res);
 }
 
 /*------------------------------------------------------------*/

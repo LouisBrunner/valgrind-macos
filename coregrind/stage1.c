@@ -30,13 +30,16 @@
 
 #define _FILE_OFFSET_BITS	64
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <sys/mman.h>
 #include <sys/resource.h>
+#include <unistd.h>
 
 #include "core.h"
 
@@ -50,6 +53,10 @@ static const char *valgrind_lib = VG_LIBDIR;
 
 /* stage2's name */
 static const char stage2[] = "stage2";
+
+/*------------------------------------------------------------*/
+/*--- Auxv modification                                    ---*/
+/*------------------------------------------------------------*/
 
 /* Modify the auxv the kernel gave us to make it look like we were
    execed as the shared object.
@@ -152,6 +159,89 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info,
 
    return v_init_esp;
 }
+
+
+/*------------------------------------------------------------*/
+/*--- Address space padding                                ---*/
+/*------------------------------------------------------------*/
+
+static void check_mmap(void* res, void* base, int len)
+{
+   if ((void*)-1 == res) {
+      fprintf(stderr, "valgrind: padding mmap(%p, %d) failed during startup.\n"
+                      "valgrind: is there a hard virtual memory limit set?\n",
+                      base, len);
+      exit(1);
+   }
+}
+
+typedef struct {
+   char* fillgap_start;
+   char* fillgap_end;
+   int   fillgap_padfile;
+} fillgap_extra;
+
+static int fillgap(char *segstart, char *segend, const char *perm, off_t off, 
+                   int maj, int min, int ino, void* e)
+{
+   fillgap_extra* extra = e;
+
+   if (segstart >= extra->fillgap_end)
+      return 0;
+
+   if (segstart > extra->fillgap_start) {
+      void* res = mmap(extra->fillgap_start, segstart - extra->fillgap_start,
+                       PROT_NONE, MAP_FIXED|MAP_PRIVATE, 
+                       extra->fillgap_padfile, 0);
+      check_mmap(res, extra->fillgap_start, segstart - extra->fillgap_start);
+   }
+   extra->fillgap_start = segend;
+   
+   return 1;
+}
+
+// Choose a name for the padfile, open it.
+int as_openpadfile(void)
+{
+   char buf[256];
+   int padfile;
+   int seq = 1;
+   do {
+      snprintf(buf, 256, "/tmp/.pad.%d.%d", getpid(), seq++);
+      padfile = open(buf, O_RDWR|O_CREAT|O_EXCL, 0);
+      unlink(buf);
+      if (padfile == -1 && errno != EEXIST) {
+         fprintf(stderr, "valgrind: couldn't open padfile\n");
+         exit(44);
+      }
+   } while(padfile == -1);
+
+   return padfile;
+}
+
+// Pad all the empty spaces in a range of address space to stop interlopers.
+void as_pad(void *start, void *end, int padfile)
+{
+   fillgap_extra extra;
+   extra.fillgap_start   = start;
+   extra.fillgap_end     = end;
+   extra.fillgap_padfile = padfile;
+
+   foreach_map(fillgap, &extra);
+	
+   if (extra.fillgap_start < extra.fillgap_end) {
+      void* res = mmap(extra.fillgap_start, 
+                       extra.fillgap_end - extra.fillgap_start,
+                       PROT_NONE, MAP_FIXED|MAP_PRIVATE, padfile, 0);
+      check_mmap(res, extra.fillgap_start, 
+                 extra.fillgap_end - extra.fillgap_start);
+   }
+}
+
+
+/*------------------------------------------------------------*/
+/*--- main() and related pieces                            ---*/
+/*------------------------------------------------------------*/
 
 static int prmap(char *start, char *end, const char *perm, off_t off, int maj,
                  int min, int ino, void* dummy) {

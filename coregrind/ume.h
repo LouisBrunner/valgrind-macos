@@ -39,6 +39,15 @@
 /*--- General stuff                                        ---*/
 /*------------------------------------------------------------*/
 
+void foreach_map(int (*fn)(char *start, char *end,
+			   const char *perm, off_t offset,
+			   int maj, int min, int ino, void* extra),
+                 void* extra);
+
+/*------------------------------------------------------------*/
+/*--- Loading ELF files                                    ---*/
+/*------------------------------------------------------------*/
+
 #if	ELFSZ == 64
 #define ESZ(x)	Elf64_##x
 #elif	ELFSZ == 32
@@ -49,15 +58,6 @@
 
 /* Integer type the same size as a pointer */
 typedef ESZ(Addr) addr_t;
-
-void foreach_map(int (*fn)(char *start, char *end,
-			   const char *perm, off_t offset,
-			   int maj, int min, int ino, void* extra),
-                 void* extra);
-
-/*------------------------------------------------------------*/
-/*--- Loading ELF files                                    ---*/
-/*------------------------------------------------------------*/
 
 // Info needed to load and run a program.  IN/INOUT/OUT refers to the
 // inputs/outputs of do_exec().
@@ -86,16 +86,6 @@ struct exeinfo
 // reads headers, maps file into memory, and returns important info about
 // the program.
 int do_exec(const char *exe, struct exeinfo *info);
-
-/*------------------------------------------------------------*/
-/*--- Address space padding                                ---*/
-/*------------------------------------------------------------*/
-
-// Padding functions used at startup to force things where we want them.
-int  as_openpadfile (void);
-void as_pad         (void *start, void *end, int padfile);
-void as_unpad       (void *start, void *end, int padfile);
-void as_closepadfile(int padfile);
 
 /*------------------------------------------------------------*/
 /*--- Finding and dealing with auxv                        ---*/

@@ -1400,6 +1400,71 @@ static void load_client(char* cl_argv[], const char* exec, Int need_help,
    VG_(brk_base) = VG_(brk_limit) = info->brkbase;
 }
 
+/*====================================================================*/
+/*=== Address space unpadding                                      ===*/
+/*====================================================================*/
+
+typedef struct {
+   char*        killpad_start;
+   char*        killpad_end;
+   struct stat* killpad_padstat;
+} killpad_extra;
+
+static int killpad(char *segstart, char *segend, const char *perm, off_t off, 
+                   int maj, int min, int ino, void* ex)
+{
+   killpad_extra* extra = ex;
+   void *b, *e;
+   int res;
+
+   vg_assert(NULL != extra->killpad_padstat);
+
+   if (extra->killpad_padstat->st_dev != makedev(maj, min) || 
+       extra->killpad_padstat->st_ino != ino)
+      return 1;
+   
+   if (segend <= extra->killpad_start || segstart >= extra->killpad_end)
+      return 1;
+   
+   if (segstart <= extra->killpad_start)
+      b = extra->killpad_start;
+   else
+      b = segstart;
+   
+   if (segend >= extra->killpad_end)
+      e = extra->killpad_end;
+   else
+      e = segend;
+   
+   res = munmap(b, (char *)e-(char *)b);
+   vg_assert(0 == res);
+   
+   return 1;
+}
+
+// Remove padding of 'padfile' from a range of address space.
+void as_unpad(void *start, void *end, int padfile)
+{
+   static struct stat padstat;
+   killpad_extra extra;
+   int res;
+
+   vg_assert(padfile > 0);
+   
+   res = fstat(padfile, &padstat);
+   vg_assert(0 == res);
+   extra.killpad_padstat = &padstat;
+   extra.killpad_start   = start;
+   extra.killpad_end     = end;
+   foreach_map(killpad, &extra);
+}
+
+void as_closepadfile(int padfile)
+{
+   int res = close(padfile);
+   vg_assert(0 == res);
+}
+
 
 /*====================================================================*/
 /*=== Command-line: variables, processing, etc                     ===*/
@@ -2570,7 +2635,7 @@ int main(int argc, char **argv)
    load_client(cl_argv, exec, need_help, &info, &client_eip);
 
    //--------------------------------------------------------------
-   // Everything in place, unpad us
+   // Everything in place, remove padding done by stage1
    //   p: layout_remaining_space()  [everything must be mapped in before now]  
    //   p: load_client()             [ditto] 
    //--------------------------------------------------------------

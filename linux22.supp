@@ -105,6 +105,13 @@
    fun:*locale*
 }
 
+{
+   _dl_relocate_object/dl_open_worker(Value0)
+   Cond
+   fun:_dl_relocate_object
+   fun:dl_open_worker
+}
+
 ##----------------------------------------------------------------------##
 ## from a Debian machine running kernel 2.2.19 I believe
 ## I guess most of these are the same as above really, but

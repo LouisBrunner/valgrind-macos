@@ -39,8 +39,8 @@
 const Addr VGA_(sys_before), VGA_(sys_restarted),
            VGA_(sys_after),  VGA_(sys_done);
 void VGA_(do_thread_syscall)(UWord sys,
-                             UWord ARG1, UWord ARG2, UWord ARG3,
-                             UWord ARG4, UWord ARG5, UWord ARG6,
+                             UWord arg1, UWord arg2, UWord arg3,
+                             UWord arg4, UWord arg5, UWord arg6,
                              UWord *result, /*enum PXState*/Int *statep,
                              /*enum PXState*/Int poststate)
 {

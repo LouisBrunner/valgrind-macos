@@ -36,10 +36,11 @@ void ppIRType ( IRType ty )
 void ppIRConst ( IRConst* con )
 {
   switch (con->tag) {
-    case Ico_U8:  vex_printf( "0x%x",   (UInt)(con->Ico.U8)); break;
-    case Ico_U16: vex_printf( "0x%x",   (UInt)(con->Ico.U16)); break;
-    case Ico_U32: vex_printf( "0x%x",   (UInt)(con->Ico.U32)); break;
-    case Ico_U64: vex_printf( "0x%llx", (ULong)(con->Ico.U64)); break;
+    case Ico_Bit: vex_printf( "%d:Bit",     con->Ico.Bit ? 1 : 0); break;
+    case Ico_U8:  vex_printf( "0x%x:I8",    (UInt)(con->Ico.U8)); break;
+    case Ico_U16: vex_printf( "0x%x:I16",   (UInt)(con->Ico.U16)); break;
+    case Ico_U32: vex_printf( "0x%x:I32",   (UInt)(con->Ico.U32)); break;
+    case Ico_U64: vex_printf( "0x%llx:I64", (ULong)(con->Ico.U64)); break;
     case Ico_F64: vex_printf("(f64 value)"); break;
     default: vpanic("ppIRConst");
   }
@@ -299,6 +300,13 @@ void ppIRBB ( IRBB* bb )
 
 /* Constructors -- IRConst */
 
+IRConst* IRConst_Bit ( Bool bit )
+{
+   IRConst* c = LibVEX_Alloc(sizeof(IRConst));
+   c->tag     = Ico_Bit;
+   c->Ico.Bit = bit;
+   return c;
+}
 IRConst* IRConst_U8 ( UChar u8 )
 {
    IRConst* c = LibVEX_Alloc(sizeof(IRConst));
@@ -665,6 +673,7 @@ IRType lookupIRTypeEnv ( IRTypeEnv* env, IRTemp tmp )
 IRType typeOfIRConst ( IRConst* con )
 {
    switch (con->tag) {
+      case Ico_Bit: return Ity_Bit;
       case Ico_U8:  return Ity_I8;
       case Ico_U16: return Ity_I16;
       case Ico_U32: return Ity_I32;

@@ -350,10 +350,20 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         & e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
+            case Iop_Or32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        | e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
             case Iop_Shl32:
                e2 = IRExpr_Const(IRConst_U32(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         << e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+            case Iop_CmpEQ32:
+               e2 = IRExpr_Const(IRConst_Bit(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        == e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
             case Iop_32HLto64:
                e2 = IRExpr_Const(IRConst_U64(
@@ -361,10 +371,6 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        | ((ULong)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)) 
                     ));
                break;
-
-case Iop_CmpEQ32:
-  vex_printf("FOLD: warning, missed CmpEQ32\n");
-break;
            default:
               goto unhandled;
          }
@@ -497,7 +503,8 @@ static IRExpr* subst_Expr ( Hash64* env, IRExpr* ex )
 
 
 /* Apply the subst to stmt, then fold the result as much as possible.
-   Much simplified due to stmt being previously flattened. */
+   Much simplified due to stmt being previously flattened.  Returning
+   NULL means the statement has been turned into a no-op. */
 
 static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
 {
@@ -545,11 +552,26 @@ static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
    }
 
    if (st->tag == Ist_Exit) {
-     vassert(isAtom(st->Ist.Exit.cond));
-     return IRStmt_Exit(
-               fold_Expr(subst_Expr(env, st->Ist.Exit.cond)),
-               st->Ist.Exit.dst
-            );
+      IRExpr* fcond;
+      vassert(isAtom(st->Ist.Exit.cond));
+      fcond = fold_Expr(subst_Expr(env, st->Ist.Exit.cond));
+      if (fcond->tag == Iex_Const) {
+         /* Interesting.  The condition on this exit has folded down to
+            a constant. */
+         vassert(fcond->Iex.Const.con->tag == Ico_Bit);
+         if (fcond->Iex.Const.con->Ico.Bit == False) {
+            /* exit is never going to happen, so dump the statement. */
+            return NULL;
+         } else {
+            vassert(fcond->Iex.Const.con->Ico.Bit == True);
+            /* Hmmm.  The exit has become unconditional.  Leave it as
+               it is for now, since we'd have to truncate the BB at
+               this point, which is tricky. */
+            /* fall out into the reconstruct-the-exit code. */
+	    vex_printf("subst_and_fold_Stmt: IRStmt_Exit became unconditional\n");
+         }
+      }
+      return IRStmt_Exit(fcond,st->Ist.Exit.dst);
    }
 
    vex_printf("\n");
@@ -585,6 +607,10 @@ static IRBB* cprop_BB ( IRBB* in )
          call, also then fold any constant expressions resulting. */
 
       st2 = subst_and_fold_Stmt( env, in->stmts[i] );
+
+      /* If the statement has been folded into a no-op, forget it. */
+      if (!st2)
+         continue;
 
       /* Now consider what the stmt looks like.  If it's of the form
          't = const' or 't1 = t2', add it to the running environment

@@ -46,7 +46,9 @@ void ppHRegX86 ( FILE* f, HReg reg )
 }
 
 HReg hregX86_EAX ( void ) { return mkHReg(0, HRcInt, False); }
+HReg hregX86_EBX ( void ) { return mkHReg(3, HRcInt, False); }
 HReg hregX86_ECX ( void ) { return mkHReg(1, HRcInt, False); }
+HReg hregX86_EDX ( void ) { return mkHReg(2, HRcInt, False); }
 HReg hregX86_EBP ( void ) { return mkHReg(5, HRcInt, False); }
 
 

@@ -11,9 +11,8 @@
 
 #include "basictypes.h"
 #include "ir_defs.h"
-
-
-
+#include "host_regs.h"
+#include "x86h_defs.h"
 
 
 /*---------------------------------------------------------------*/
@@ -22,13 +21,15 @@
 
 /* HACK */
 extern
-void /* not really, but for the time being ... */
-     iselBB ( IRBB* bb );
+HInstrArray* /* not really, but for the time being ... */
+             iselBB ( IRBB* bb );
+
 
 int main ( void )
 {
-   IRBB*      bb;
-   IRTypeEnv* env = newIRTypeEnv();
+   HInstrArray* vcode;
+   IRBB*        bb;
+   IRTypeEnv*   env = newIRTypeEnv();
 
    IRTemp t1 = 1;
    IRTemp t2 = 2;
@@ -48,7 +49,26 @@ int main ( void )
    ppIRBB(stdout, bb);
    printf("\n");
 
-   iselBB(bb);
+   vcode = iselBB(bb);
+   {
+     HInstrArray* rcode;
+     HReg rregs_to_use[4];
+     rregs_to_use[0] = hregX86_EAX();
+     rregs_to_use[1] = hregX86_EBX();
+     rregs_to_use[2] = hregX86_ECX();
+     rregs_to_use[3] = hregX86_EDX();
 
+     rcode =
+     doRegisterAllocation(vcode, 3, /* vregs */
+                          rregs_to_use, 4, /* rregs */
+			  NULL, /* ismove */
+			  getRegUsage_X86Instr,
+			  mapRegs_X86Instr,
+			  NULL, /* genspill */
+			  NULL /* genreload */
+			  );
+
+
+   }
    return 0;
 }

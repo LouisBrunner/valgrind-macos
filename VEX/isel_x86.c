@@ -50,13 +50,11 @@ typedef
       IRTypeEnv* type_env;
 
       VRegMaplet* vregmap;
-      Int n_vregmap;
+      Int         n_vregmap;
 
-      void** code;  /* really, X86Instr**, or ArmInstr**, or whatever */
-      Int    code_size;
-      Int    code_used;
+      HInstrArray* code;
 
-      Int    ctr;
+      Int ctr;
    }
    ISelEnv;
 
@@ -70,10 +68,9 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
    panic("lookupIRTemp");
 }
 
-static void addInstr ( ISelEnv* env, void* instr )
+static void addInstr ( ISelEnv* env, X86Instr* instr )
 {
-   assert(env->code_used < env->code_size);
-   env->code[env->code_used++] = instr;
+   addHInstr(env->code, instr);
    ppX86Instr(stdout, instr);
    printf("\n");
 }
@@ -311,8 +308,7 @@ void iselNext ( ISelEnv* env, IRNext* next )
 /*--- Insn selector top-level                           ---*/
 /*---------------------------------------------------------*/
 
-void /* not really, but for the time being ... */
-     iselBB ( IRBB* bb )
+HInstrArray* iselBB ( IRBB* bb )
 {
    Int     i;
    HReg    hreg;
@@ -323,9 +319,7 @@ void /* not really, but for the time being ... */
    env->ctr = 0;
 
    /* Set up output code array. */
-   env->code_used = 0;
-   env->code_size = 40;
-   env->code = malloc(env->code_size * sizeof(void*));
+   env->code = newHInstrArray();
 
    /* Copy BB's type env. */
    env->type_env = bb->tyenv;
@@ -352,4 +346,6 @@ void /* not really, but for the time being ... */
       iselStmt(env,stmt);
 
    iselNext(env,bb->next);
+
+   return env->code;
 }

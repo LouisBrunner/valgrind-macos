@@ -7,6 +7,7 @@
 /*---------------------------------------------------------------*/
 
 #include <stdio.h>
+#include <malloc.h>
 
 #include "basictypes.h"
 #include "host_regs.h"
@@ -174,6 +175,44 @@ HReg lookupHRegRemap ( HRegRemap* map, HReg orig )
          return map->replacement[i];
    panic("lookupHRegRemap: not found");
 }
+
+/*---------------------------------------------------------*/
+/*--- Abstract instructions                             ---*/
+/*---------------------------------------------------------*/
+
+HInstrArray* newHInstrArray ( void )
+{
+   HInstrArray* ha = malloc(sizeof(HInstrArray));
+   ha->arr_size = 4;
+   ha->arr_used = 0;
+   ha->arr = malloc(ha->arr_size * sizeof(HInstr*));
+   return ha;
+}
+
+void deleteHInstrArray ( HInstrArray* ha )
+{
+   free(ha->arr);
+   free(ha);
+}
+
+void addHInstr ( HInstrArray* ha, HInstr* instr )
+{
+   assert(ha->arr_used <= ha->arr_size);
+   if (ha->arr_used < ha->arr_size) {
+      ha->arr[ha->arr_used] = instr;
+      ha->arr_used++;
+   } else {
+      Int      i;
+      HInstr** arr2 = malloc(ha->arr_size * 2 * sizeof(HInstr*));
+      for (i = 0; i < ha->arr_size; i++)
+         arr2[i] = ha->arr[i];
+      ha->arr_size *= 2;
+      free(ha->arr);
+      ha->arr = arr2;
+      addHInstr(ha, instr);
+   }
+}
+
 
 /*---------------------------------------------------------------*/
 /*---                                             host_regs.c ---*/

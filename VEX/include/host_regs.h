@@ -136,8 +136,58 @@ extern HReg lookupHRegRemap ( HRegRemap*, HReg );
 typedef  void  HInstr;
 
 
+/* An expandable array of HInstr*'s.  Handy for insn 
+   selection and register allocation. */
+
+typedef
+   struct {
+      HInstr** arr;
+      Int      arr_size;
+      Int      arr_used;
+   }
+   HInstrArray;
+
+extern HInstrArray* newHInstrArray ( void );
+extern void         deleteHInstrArray ( HInstrArray* );
+extern void         addHInstr ( HInstrArray*, HInstr* );
+
 
 #endif /* ndef __HOST_REGS_H */
+
+
+/*---------------------------------------------------------*/
+/*--- Reg alloc: TODO: move somewhere else              ---*/
+/*---------------------------------------------------------*/
+
+extern
+HInstrArray* doRegisterAllocation (
+
+   /* Incoming virtual-registerised code. */ 
+   HInstrArray* instrs_in,
+   Int          n_vregs,
+
+   /* An array listing all the real registers the allocator may use,
+      in no particular order. */
+   HReg* available_real_regs,
+   Int   n_available_real_regs,
+
+   /* Return True iff the given insn is a reg-reg move, in which
+      case also return the src and dst regs. */
+   Bool (*isMove) (HInstr*, HReg*, HReg*),
+
+   /* Get info about register usage in this insn. */
+   void (*getRegUsage) (HRegUsage*, HInstr*),
+
+   /* Apply a reg-reg mapping to an insn. */
+   void (*mapRegs) (HRegRemap*, HInstr*),
+
+   /* Return an insn to spill/restore a real reg to a spill slot
+      offset. */
+   HInstr* (*genSpill) ( HReg, Int ),
+   HInstr* (*genReload) ( HReg, Int )
+);
+
+
 
 /*---------------------------------------------------------------*/
 /*---                                             host_regs.h ---*/

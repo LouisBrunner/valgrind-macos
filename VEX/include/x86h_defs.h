@@ -19,7 +19,9 @@
 extern void ppHRegX86 ( FILE*, HReg );
 
 extern HReg hregX86_EAX ( void );
+extern HReg hregX86_EBX ( void );
 extern HReg hregX86_ECX ( void );
+extern HReg hregX86_EDX ( void );
 extern HReg hregX86_EBP ( void );
 
 

@@ -100,6 +100,7 @@ static void vg_sync_signalhandler  ( Int sigNo, vki_ksiginfo_t *info, struct vki
 static void vg_async_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext * );
 static void vg_babyeater	   ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext * );
 static void proxy_sigvg_handler	   ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontext * );
+static void resume_scheduler(Int signo, vki_ksiginfo_t *info);
 
 static Bool is_correct_sigmask(void);
 static const Char *signame(Int sigNo);
@@ -1817,6 +1818,52 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
    vg_assert(!terminate);
 }
 
+/* Synthesize a fault where the address is OK, but the page
+   permissions are bad */
+void VG_(synth_fault_perms)(ThreadId tid, Addr addr)
+{
+   vki_ksiginfo_t info;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   info.si_signo = VKI_SIGSEGV;
+   info.si_code = 2;
+   info._sifields._sigfault._addr = (void*)addr;
+
+   resume_scheduler(VKI_SIGSEGV, &info);
+   VG_(deliver_signal)(tid, &info, False);
+}
+
+/* Synthesize a fault where the address there's nothing mapped at the
+   address */
+void VG_(synth_fault_mapping)(ThreadId tid, Addr addr)
+{
+   vki_ksiginfo_t info;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   info.si_signo = VKI_SIGSEGV;
+   info.si_code = 1;
+   info._sifields._sigfault._addr = (void*)addr;
+
+   resume_scheduler(VKI_SIGSEGV, &info);
+   VG_(deliver_signal)(tid, &info, False);
+}
+
+/* Synthesize a misc memory fault */
+void VG_(synth_fault)(ThreadId tid)
+{
+   vki_ksiginfo_t info;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   info.si_signo = VKI_SIGSEGV;
+   info.si_code = 0x80;
+   info._sifields._sigfault._addr = (void*)0;
+
+   resume_scheduler(VKI_SIGSEGV, &info);
+   VG_(deliver_signal)(tid, &info, False);
+}
 
 void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async )
 {
@@ -1973,6 +2020,18 @@ void vg_async_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_uconte
    VG_(proxy_handlesig)(info, &uc->uc_mcontext);
 }
 
+static void resume_scheduler(Int sigNo, vki_ksiginfo_t *info)
+{
+   if (VG_(scheduler_jmpbuf_valid)) {
+      /* Can't continue; must longjmp back to the scheduler and thus
+         enter the sighandler immediately. */
+      VG_(memcpy)(&VG_(unresumable_siginfo), info, sizeof(vki_ksiginfo_t));
+   
+      VG_(longjmpd_on_signal) = sigNo;
+      __builtin_longjmp(VG_(scheduler_jmpbuf),1);
+   }
+}
+
 /* 
    Recieve a sync signal from the host. 
 
@@ -2111,14 +2170,9 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
       }
    }
 
-   if (VG_(scheduler_jmpbuf_valid)) {
-      /* Can't continue; must longjmp back to the scheduler and thus
-         enter the sighandler immediately. */
-      VG_(memcpy)(&VG_(unresumable_siginfo), info, sizeof(vki_ksiginfo_t));
-   
-      VG_(longjmpd_on_signal) = sigNo;
-      __builtin_longjmp(VG_(scheduler_jmpbuf),1);
-   }
+   /* Can't continue; must longjmp back to the scheduler and thus
+      enter the sighandler immediately. */
+   resume_scheduler(sigNo, info);
 
    if (info->si_code <= VKI_SI_USER) {
       /* 

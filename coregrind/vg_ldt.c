@@ -181,7 +181,10 @@ Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
   
    /* Sanity check the segment selector.  Ensure that RPL=11b (least
       privilege).  This forms the bottom 2 bits of the selector. */
-   vg_assert((seg_selector & 3) == 3);
+   if ((seg_selector & 3) != 3) {
+      VG_(synth_fault)(VG_(get_current_tid)());
+      return 0;
+   }
 
    /* Extract the table number */
    table = (seg_selector & 4) >> 2;

@@ -1080,6 +1080,14 @@ extern vki_ksiginfo_t VG_(unresumable_siginfo);
 
 extern void VG_(kill_self)(Int sigNo);
 
+/* These function synthesize a fault, as if the running instruction
+   had had a fault.  These functions do not return - they longjmp back
+   into the scheduler so the signal can be delivered. */
+extern void VG_(synth_fault)        (ThreadId tid);
+extern void VG_(synth_fault_mapping)(ThreadId tid, Addr addr);
+extern void VG_(synth_fault_perms)  (ThreadId tid, Addr addr);
+
+
 /* ---------------------------------------------------------------------
    Exports of vg_mylibc.c
    ------------------------------------------------------------------ */

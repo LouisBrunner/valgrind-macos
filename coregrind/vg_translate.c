@@ -2399,21 +2399,15 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
    if (seg == NULL ||
        !VG_(seg_contains)(seg, orig_addr, 1) || 
        (seg->prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == 0) {
-      vki_ksiginfo_t info;
-
       /* Code address is bad - deliver a signal instead */
       vg_assert(!VG_(is_addressable)(orig_addr, 1));
 
-      info.si_signo = VKI_SIGSEGV;
-
       if (seg != NULL && VG_(seg_contains)(seg, orig_addr, 1)) {
 	 vg_assert((seg->prot & VKI_PROT_EXEC) == 0);
-	 info.si_code = 2;	/* invalid permissions for mapped object */
+	 VG_(synth_fault_perms)(tid, orig_addr);
       } else
-	 info.si_code = 1;	/* address not mapped to object */
-      info._sifields._sigfault._addr = (void*)orig_addr;
+	 VG_(synth_fault_mapping)(tid, orig_addr);
 
-      VG_(deliver_signal)(tid, &info, False);
       return;
    } else
       seg->flags |= SF_CODE;	/* contains cached code */

@@ -350,7 +350,8 @@ void VG_(start_debugger) ( Int tid )
       if ((res = VG_(waitpid)(pid, &status, 0)) == pid &&
           WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP &&
           ptrace(PTRACE_SETREGS, pid, NULL, &regs) == 0 &&
-          ptrace(PTRACE_DETACH, pid, NULL, SIGSTOP) == 0) {
+          kill(pid, SIGSTOP) == 0 &&
+          ptrace(PTRACE_DETACH, pid, NULL, 0) == 0) {
          Char pidbuf[15];
          Char file[30];
          Char buf[100];

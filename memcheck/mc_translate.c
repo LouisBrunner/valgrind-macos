@@ -860,6 +860,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          */
          case ADD: case SUB:
          case ADC: case SBB:
+         case MUL:
             qd = SHADOW(u_in->val2);
             qs = getOperandShadow(cb, u_in->size, u_in->tag1, u_in->val1);
             create_UifU(cb, u_in->size, qs, qd);

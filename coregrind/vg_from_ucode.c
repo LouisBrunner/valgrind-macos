@@ -2879,6 +2879,91 @@ static void synth_nonshiftop_lit_offregmem ( Bool simd_flags,
 }
 
 
+static void synth_mul_reg_reg ( Bool upd_cc, 
+				Opcode opcode, Int size, 
+				Int reg1, Int reg2 )
+{
+   VG_(new_emit)(upd_cc, FlagsEmpty, FlagsOSZACP);
+
+   switch (size) {
+   case 2:
+      VG_(emitB)(0x66);
+      /* FALLTHROUGH */
+   case 4:
+      VG_(emitB)(0x0F);
+      VG_(emitB)(0xAF);
+      VG_(emit_amode_ereg_greg)(reg1, reg2);
+      break;
+
+   case 1:
+      VG_(core_panic)("can't do byte mul");
+      break;
+   }
+   if (dis)
+      VG_(printf)("\n\t\timul%c\t%s, %s\n",
+		  nameISize(size),
+		  nameIReg(size, reg1),
+		  nameIReg(size, reg2));
+}
+
+static void synth_mul_lit_reg ( Bool upd_cc,
+				Opcode opcode, Int size, 
+				UInt lit, Int reg )
+{
+   VG_(new_emit)(upd_cc, FlagsEmpty, FlagsOSZACP);
+
+   switch (size) {
+   case 2:
+      VG_(emitB)(0x66);
+      /* FALLTHROUGH */
+   case 4:
+      VG_(emitB)(0x69);
+      VG_(emit_amode_ereg_greg)(reg, 0);
+      if (size == 2)
+	 VG_(emitW)(lit);
+      else
+	 VG_(emitL)(lit);
+      break;
+
+   case 1:
+      VG_(core_panic)("can't do byte mul");
+      break;
+   }
+   if (dis)
+      VG_(printf)("\n\t\timul%c\t%d, %s\n",
+		  nameISize(size),
+		  lit,
+		  nameIReg(size, reg));
+}
+
+static void synth_mul_offregmem_reg ( 
+   Bool upd_cc,
+   Opcode opcode, Int size, 
+   Int off, Int areg, Int reg )
+{
+   VG_(new_emit)(upd_cc, FlagsEmpty, FlagsOSZACP);
+
+   switch(size) {
+   case 2:
+      VG_(emitB)(0x66);
+      /* FALLTHROUGH */
+   case 4:
+      VG_(emitB)(0x0F);
+      VG_(emitB)(0xAF);
+      VG_(emit_amode_offregmem_reg)(off, areg, reg);
+      break;
+
+   case 1:
+      VG_(core_panic)("can't do byte mul");
+   }
+
+   if (dis)
+      VG_(printf)("\n\t\timul%c\t0x%x(%s), %s\n",
+		  nameISize(size), off, nameIReg(4,areg),nameIReg(size,reg));
+
+}
+
+
 static void synth_push_reg ( Int size, Int reg )
 {
    switch (size) {
@@ -3526,6 +3611,30 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                             argv, tagv,
                             ret_reg, regs_live_before, u->regs_live_after );
          break;
+      }
+
+      case MUL: {
+	 vg_assert(u->tag2 == RealReg);
+
+	 switch(u->tag1) {
+	    case Literal:
+	       synth_mul_lit_reg(anyFlagUse(u),
+				 u->opcode, u->size, u->lit32, u->val2);
+	       break;
+	    case RealReg:
+	       synth_mul_reg_reg(anyFlagUse(u),
+				 u->opcode, u->size, u->val1, u->val2);
+	       break;
+	    case ArchReg:
+	       synth_mul_offregmem_reg(anyFlagUse(u),
+				       u->opcode, u->size,
+				       spillOrArchOffset(u->size, u->tag1, u->val1), 
+				       R_EBP, u->val2);
+	       break;
+	    
+	    default: VG_(core_panic)("emitUInstr:MUL");
+	 }
+	 break;
       }
 
       case SBB:

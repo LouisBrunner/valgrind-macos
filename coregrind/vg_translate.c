@@ -461,6 +461,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  define Ls3 (u->tag3 == Lit16)
 #  define TRL1 (TR1 || L1)
 #  define TRAL1 (TR1 || A1 || L1)
+#  define TRA1 (TR1 || A1)
+#  define TRA2 (TR2 || A2)
 #  define N1  (u->tag1 == NoValue)
 #  define N2  (u->tag2 == NoValue)
 #  define N3  (u->tag3 == NoValue)
@@ -519,6 +521,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case CLEAR:  return LIT0 && SZ0  && CC0 &&  Ls1 &&  N2 &&  N3 && XOTHER;
    case AND:
    case OR:     return LIT0 && SZi  && CCa &&  TR1 && TR2 &&  N3 && XOTHER;
+   case MUL:    return LIT0 && SZ42 && CCa && TRA1 &&TRA2 &&  N3 && XOTHER;
    case ADD:
    case XOR:
    case SUB:    return LITm && SZi  && CCa &&TRAL1 && TR2 &&  N3 && XOTHER;
@@ -840,6 +843,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case ROR:   return (upper ? "ROR" : "ror");
       case RCL:   return (upper ? "RCL" : "rcl");
       case RCR:   return (upper ? "RCR" : "rcr");
+      case MUL:   return (upper ? "MUL" : "mul");
       case NOT:   return (upper ? "NOT" : "not");
       case NEG:   return (upper ? "NEG" : "neg");
       case INC:   return (upper ? "INC" : "inc");
@@ -1172,7 +1176,8 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       case ADD: case ADC: case AND: case OR:  
       case XOR: case SUB: case SBB:   
       case SHL: case SHR: case SAR: 
-      case ROL: case ROR: case RCL: case RCR:   
+      case ROL: case ROR: case RCL: case RCR:
+      case MUL:   
          VG_(pp_UOperand)(u, 1, u->size, False); 
          VG_(printf)(", ");
          VG_(pp_UOperand)(u, 2, u->size, False);
@@ -1308,6 +1313,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
       case CMOV:
       case ADD: case ADC: case AND: case OR:  
       case XOR: case SUB: case SBB:   
+      case MUL:
          RD(1); RD(2); WR(2); break;
 
       case SHL: case SHR: case SAR: 
@@ -1398,6 +1404,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case XOR: case SUB: case SBB:   
       case SHL: case SHR: case SAR: case ROL: 
       case ROR: case RCL: case RCR:
+      case MUL:
          if (u->tag1 == ArchReg) 
             return containingArchRegOf ( u->size, u->val1 ); 
          else
@@ -1614,6 +1621,7 @@ static void vg_improve ( UCodeBlock* cb )
                case ADC: case SBB:
                case SHL: case SHR: case SAR: case ROL: case ROR:
                case RCL: case RCR:
+	       case MUL:
                   if (dis) 
                      VG_(printf)(
                         "   at %2d: change ArchReg %S to TempReg t%d\n", 

@@ -551,6 +551,7 @@ typedef
       CMOV,        /* Used for cmpxchg and cmov       */
 
       /* Arithmetic/logical ops */
+      MUL, UMUL,                	  /* Multiply */
       ADD, ADC, SUB, SBB,                 /* Add/subtract (w/wo carry)     */
       AND, OR,  XOR, NOT,                 /* Boolean ops                   */
       SHL, SHR, SAR, ROL, ROR, RCL, RCR,  /* Shift/rotate (w/wo carry)     */

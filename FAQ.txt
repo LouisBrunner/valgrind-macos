@@ -1,0 +1,137 @@
+
+A mini-FAQ for valgrind, version 1.9.5
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Last revised 22 Apr 2003
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Q1. Programs run OK on valgrind, but at exit produce a bunch
+    of errors a bit like this
+
+    ==20755== Invalid read of size 4
+    ==20755==    at 0x40281C8A: _nl_unload_locale (loadlocale.c:238)
+    ==20755==    by 0x4028179D: free_mem (findlocale.c:257)
+    ==20755==    by 0x402E0962: __libc_freeres (set-freeres.c:34)
+    ==20755==    by 0x40048DCC: vgPlain___libc_freeres_wrapper 
+                                              (vg_clientfuncs.c:585)
+    ==20755==    Address 0x40CC304C is 8 bytes inside a block of size 380 free'd
+    ==20755==    at 0x400484C9: free (vg_clientfuncs.c:180)
+    ==20755==    by 0x40281CBA: _nl_unload_locale (loadlocale.c:246)
+    ==20755==    by 0x40281218: free_mem (setlocale.c:461)
+    ==20755==    by 0x402E0962: __libc_freeres (set-freeres.c:34)
+
+    and then die with a segmentation fault.
+
+A1. When the program exits, valgrind runs the procedure
+    __libc_freeres() in glibc.  This is a hook for memory debuggers,
+    so they can ask glibc to free up any memory it has used.  Doing
+    that is needed to ensure that valgrind doesn't incorrectly
+    report space leaks in glibc.
+
+    Problem is that running __libc_freeres() in older glibc versions
+    causes this crash.  
+
+    WORKAROUND FOR 1.0.X versions of valgrind: The simple fix is to
+    find in valgrind's sources, the one and only call to
+    __libc_freeres() and comment it out, then rebuild the system.  In
+    the 1.0.3 version, this call is on line 584 of vg_clientfuncs.c.
+    This may mean you get false reports of space leaks in glibc, but
+    it at least avoids the crash.
+
+    WORKAROUND FOR 1.1.X and later versions of valgrind: use the
+    --run-libc-freeres=no flag.
+
+
+Q2. My program dies complaining that syscall 197 is unimplemented.
+
+A2. 197, which is fstat64, is supported by valgrind.  The problem is
+    that the /usr/include/asm/unistd.h on the machine on which your
+    valgrind was built, doesn't match your kernel -- or, to be more 
+    specific, glibc is asking your kernel to do a syscall which is
+    not listed in /usr/include/asm/unistd.h.
+
+    The fix is simple.  Somewhere near the top of vg_syscall_mem.c,
+    add the following line:
+
+       #define __NR_fstat64            197
+
+    Rebuild and try again.  The above line should appear before any
+    uses of the __NR_fstat64 symbol in that file.  If you look at the
+    place where __NR_fstat64 is used in vg_syscall_mem.c, it will be
+    obvious why this fix works.  NOTE for valgrind versions 1.1.0
+    and later, the relevant file is actually coregrind/vg_syscalls.c.
+
+
+Q3. My (buggy) program dies like this:
+      valgrind: vg_malloc2.c:442 (bszW_to_pszW): 
+                Assertion `pszW >= 0' failed.
+    And/or my (buggy) program runs OK on valgrind, but dies like 
+    this on cachegrind.
+
+A3. If valgrind shows any invalid reads, invalid writes and invalid
+    frees in your program, the above may happen.  Reason is that your
+    program may trash valgrind's low-level memory manager, which then
+    dies with the above assertion, or something like this.  The cure
+    is to fix your program so that it doesn't do any illegal memory
+    accesses.  The above failure will hopefully go away after that.
+
+
+Q4. I'm running Red Hat Advanced Server.  Valgrind always segfaults at
+    startup.  
+
+A4. Known issue with RHAS 2.1.  The following kludge works, but 
+    is too gruesome to put in the sources permanently.  Try it.
+    Last verified as working on RHAS 2.1 at 20021008.
+
+    Find the following comment in vg_main.c -- in 1.0.4 this is at
+    line 636:
+
+       /* we locate: NEW_AUX_ENT(1, AT_PAGESZ, ELF_EXEC_PAGESIZE) in
+          the elf interpreter table */
+
+    Immediately _before_ this comment add the following:
+
+       /* HACK for R H Advanced server.  Ignore all the above and
+          start the search 18 pages below the "obvious" start point.
+          God knows why.  Seems like we can't go into the highest 18
+          pages of the stack.  This is not good! -- the 18 pages is
+          determined just by looking for the highest proddable
+          address.  It would be nice to see some kernel or libc or
+          something code to justify this.  */
+
+       /* 0xBFFEE000 is 0xC0000000 - 18 pages */
+       sp = 0xBFFEE000; 
+
+       /* end of HACK for R H Advanced server. */
+
+    Obviously the assignment to sp is the only important line.
+
+
+Q5. I try running "valgrind my_program", but my_program runs normally,
+    and Valgrind doesn't emit any output at all.
+
+A5. Is my_program statically linked?  Valgrind doesn't work with
+    statically linked binaries.  It must rely on at least one shared
+    object.  To detrmine if a my_program is statically linked, run:
+
+      ldd my_program
+
+    It will show what shared objects my_program relies on, or say:
+
+      not a dynamic executable
+
+    it my_program is statically linked.
+
+
+Q6. I try running "valgrind my_program" and get Valgrind's startup message,
+    but I don't get any errors and I know my program has errors.
+   
+A6. By default, Valgrind only traces the top-level process.  So if your
+    program spawns children, they won't be traced by Valgrind by default.
+    Also, if your program is started by a shell script, Perl script, or
+    something similar, Valgrind will trace the shell, or the Perl 
+    interpreter, or equivalent.
+
+    To trace child processes, use the --trace-children=yes option.
+
+
+(this is the end of the FAQ.)

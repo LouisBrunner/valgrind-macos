@@ -1,5 +1,5 @@
 
-AUTOMAKE_OPTIONS = 1.5
+AUTOMAKE_OPTIONS = 1.4
 
 ## coregrind must come before memcheck, addrcheck, helgrind, for
 ##   vg_replace_malloc.o.
@@ -35,6 +35,7 @@ regtest:
 	$(prefix)/bin/vg_regtest --all
 
 EXTRA_DIST = $(val_DATA) \
+	FAQ.txt \
 	PATCHES_APPLIED ACKNOWLEDGEMENTS \
 	README_KDE3_FOLKS README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO \

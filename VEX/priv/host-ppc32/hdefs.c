@@ -1467,12 +1467,13 @@ static UInt iregNo ( HReg r )
 //..    return ((shift & 3) << 6) | ((regindex & 7) << 3) | (regbase & 7);
 //.. }
 
+/* Emit 32bit instruction for big-endian host */
 static UChar* emit32 ( UChar* p, UInt w32 )
 {
-   *p++ = (w32)       & 0x000000FF;
-   *p++ = (w32 >>  8) & 0x000000FF;
-   *p++ = (w32 >> 16) & 0x000000FF;
    *p++ = (w32 >> 24) & 0x000000FF;
+   *p++ = (w32 >> 16) & 0x000000FF;
+   *p++ = (w32 >>  8) & 0x000000FF;
+   *p++ = (w32)       & 0x000000FF;
    return p;
 }
 

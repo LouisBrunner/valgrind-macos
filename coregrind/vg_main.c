@@ -1995,8 +1995,13 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
       /* Core details */
       VG_(message)(Vg_UserMsg,
+         "Using LibVEX-%s, a library for dynamic binary translation.",
+         /*VERSION*/ "SVN >= 653");
+      VG_(message)(Vg_UserMsg, 
+         "Copyright (C) 2004, and GNU GPL'd, by OpenWorks LLP.");
+      VG_(message)(Vg_UserMsg,
          "Using valgrind-%s, a dynamic binary instrumentation framework.",
-         VERSION, VG_PLATFORM);
+         /*VERSION*/ "SVN >= 3196");
       VG_(message)(Vg_UserMsg, 
          "Copyright (C) 2000-2004, and GNU GPL'd, by Julian Seward et al.");
    }

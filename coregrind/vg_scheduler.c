@@ -2318,6 +2318,8 @@ void release_one_thread_waiting_on_mutex ( pthread_mutex_t* mutex,
          break;
    }
 
+   VG_TRACK( post_mutex_unlock, (ThreadId)mutex->__m_owner, mutex );
+
    vg_assert(i <= VG_N_THREADS);
    if (i == VG_N_THREADS) {
       /* Nobody else is waiting on it. */
@@ -2332,6 +2334,8 @@ void release_one_thread_waiting_on_mutex ( pthread_mutex_t* mutex,
       VG_(threads)[i].status        = VgTs_Runnable;
       VG_(threads)[i].associated_mx = NULL;
       /* m_edx already holds pth_mx_lock() success (0) */
+
+      VG_TRACK( post_mutex_lock, (ThreadId)i, mutex);
 
       if (VG_(clo_trace_pthread_level) >= 1) {
          VG_(sprintf)(msg_buf, "%s       mx %p: RESUME", 
@@ -2520,8 +2524,6 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    vg_assert(mutex->__m_count == 1);
    vg_assert((ThreadId)mutex->__m_owner == tid);
 
-   VG_TRACK( post_mutex_unlock, tid, mutex);
-
    /* Release at max one thread waiting on this mutex. */
    release_one_thread_waiting_on_mutex ( mutex, "pthread_mutex_lock" );
 
@@ -2583,6 +2585,8 @@ void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid )
       VG_(threads)[tid].associated_mx = NULL;
       mx->__m_owner = (_pthread_descr)tid;
       mx->__m_count = 1;
+
+      VG_TRACK( post_mutex_lock, tid, mx );
 
       if (VG_(clo_trace_pthread_level) >= 1) {
          VG_(sprintf)(msg_buf, 
@@ -2648,6 +2652,8 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
          mx->__m_owner = (_pthread_descr)i;
          mx->__m_count = 1;
          /* .m_edx already holds pth_cond_wait success value (0) */
+
+	 VG_TRACK( post_mutex_lock, i, mx );
 
          if (VG_(clo_trace_pthread_level) >= 1) {
             VG_(sprintf)(msg_buf, "%s   cv %p: RESUME with mx %p", 

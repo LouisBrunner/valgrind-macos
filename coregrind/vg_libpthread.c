@@ -1477,7 +1477,7 @@ int pthread_cond_timedwait ( pthread_cond_t *cond,
 
    ull_ms_now_after_1970 
       = 1000ULL * ((unsigned long long int)(timeval_now.tv_sec))
-        + ((unsigned long long int)(timeval_now.tv_usec / 1000000));
+        + ((unsigned long long int)(timeval_now.tv_usec / 1000));
    ull_ms_end_after_1970
       = 1000ULL * ((unsigned long long int)(abstime->tv_sec))
         + ((unsigned long long int)(abstime->tv_nsec / 1000000));

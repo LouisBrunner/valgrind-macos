@@ -1127,7 +1127,7 @@ POST(sys_shmctl)
 const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_read,              sys_read),           // 0 
    GENX_(__NR_write,             sys_write),          // 1 
-   GENX_(__NR_open,              sys_open),           // 2 
+   GENXY(__NR_open,              sys_open),           // 2 
    GENXY(__NR_close,             sys_close),          // 3 
    GENXY(__NR_stat,              sys_newstat),        // 4 
 

@@ -86,6 +86,9 @@ typedef
       /* Tags for unary ops */
       Iop_Not8,  Iop_Not16,  Iop_Not32,  Iop_Not64,
       Iop_Neg8,  Iop_Neg16,  Iop_Neg32,  Iop_Neg64,
+      /* Conversions */
+      Iop_8Uto16, Iop_8Uto32, Iop_16Uto32,
+      Iop_8Sto16, Iop_8Sto32, Iop_16Sto32,
       /* Specials */
       Iop_32to1 /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
    }

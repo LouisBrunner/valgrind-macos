@@ -79,7 +79,13 @@ void ppIROp ( IROp op )
       case Iop_Not8 ... Iop_Not64:
          str = "Not"; base = Iop_Not8; break;
       /* other cases must explicitly "return;" */
-      case Iop_32to1: vex_printf("32to1"); return;
+      case Iop_8Uto16:  vex_printf("8Uto16");  return;
+      case Iop_8Uto32:  vex_printf("8Uto32");  return;
+      case Iop_16Uto32: vex_printf("16Uto32"); return;
+      case Iop_8Sto16:  vex_printf("8Sto16");  return;
+      case Iop_8Sto32:  vex_printf("8Sto32");  return;
+      case Iop_16Sto32: vex_printf("16Sto32"); return;
+      case Iop_32to1:   vex_printf("32to1");   return;
       default:        vpanic("ppIROp(1)");
    }
   

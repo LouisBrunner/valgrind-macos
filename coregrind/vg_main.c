@@ -2582,10 +2582,12 @@ int main(int argc, char **argv)
    {  Bool ok = VGA_(getArchAndSubArch)(
                    & VG_(vex_arch), & VG_(vex_subarch) );
       if (!ok) {
+         VG_(printf)("\n");
          VG_(printf)("valgrind: fatal error: unsupported CPU.\n");
-         VG_(printf)("   supported CPUs are:\n");
-         VG_(printf)("   * x86 with SSE state (Pentium II or above,\n");
-         VG_(printf)("     AMD Athlon or above)\n");
+         VG_(printf)("   Supported CPUs are:\n");
+         VG_(printf)("   * x86 with SSE state (Pentium II or above, "
+                     "AMD Athlon or above)\n");
+         VG_(printf)("\n");
          VG_(exit)(1);
       }
       if (VG_(clo_verbosity) > 2) {

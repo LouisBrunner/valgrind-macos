@@ -49,19 +49,24 @@
       - C headers        include  asm headers
 
      This gives the following hierarchy (only showing 'arch' headers, not
-     'os' or 'platform' headers), where arrows indicate inclusion:
+     'os' or 'platform' headers), where arrows indicate inclusion, and
+     $VG_ARCH==x86:
 
-        (tool_arch_asm.h?) <------- core_arch_asm.h
-            ^     ^                    ^     ^
-           /       \                  /       \
-          /         \                /         \
-      tool_asm.h <---\---------- core_asm.h     \
-          ^           \              ^           \
-           \    tool_arch.h <---------\---- core_arch.h
-            \         ^                \         ^
-             \       /                  \       /
-              \     /                    \     /
-              tool.h <------------------ core.h
+
+   (include/x86/tool_arch_asm.h?) <----- coregrind/x86/core_arch_asm.h
+              ^   ^                          ^   ^
+             /     \                        /     \
+            /       \                      /       \
+           /         \                    /         \
+ include/tool_asm.h <-\---- coregrind/core_asm.h     \
+           ^           \                  ^           \
+            \  include/x86/tool_arch.h <--------coregrind/x86/core_arch.h
+             \         ^                    \         ^
+              \       /                      \       /
+               \     /                        \     /
+                \   /                          \   /
+           include/tool.h <------------ coregrind/core.h
+
 
    Note that core.h contains the *declarations* of arch-specific functions
    and variables, which can be used by the core_arch.h file of any
@@ -69,6 +74,9 @@
    However, arch-specific macros and types cannot go into core.h, because
    there is no separation between declaration and definition for
    macros/types, so they instead go into $VG_ARCH/core_arch.h.
+
+   The tool-specific headers are all in include/ so they can be seen by any
+   external tools.
 */
 
 

@@ -82,10 +82,14 @@ static Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
       case Iex_Const:
 	if (e->tag != Iex_Const) return False;
 	switch (p->Iex.Const.con->tag) {
-           case Ico_U8: return e->Iex.Const.con->tag==Ico_U8 
-                                  ? (p->Iex.Const.con->Ico.U8 
-                                     == e->Iex.Const.con->Ico.U8) 
-                                  : False;
+           case Ico_Bit: return e->Iex.Const.con->tag==Ico_Bit 
+                                   ? (p->Iex.Const.con->Ico.Bit 
+                                      == e->Iex.Const.con->Ico.Bit) 
+                                   : False;
+           case Ico_U8:  return e->Iex.Const.con->tag==Ico_U8 
+                                   ? (p->Iex.Const.con->Ico.U8 
+                                      == e->Iex.Const.con->Ico.U8) 
+                                   : False;
            case Ico_U16: return e->Iex.Const.con->tag==Ico_U16 
                                    ? (p->Iex.Const.con->Ico.U16 
                                       == e->Iex.Const.con->Ico.U16) 
@@ -102,6 +106,7 @@ static Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
                                    ? (p->Iex.Const.con->Ico.F64 
                                       == e->Iex.Const.con->Ico.F64) 
                                    : False;
+           case Ico_NaN64: return e->Iex.Const.con->tag == Ico_NaN64;
 	}
         vpanic("matchIRExpr.Iex_Const");
         /*NOTREACHED*/
@@ -126,10 +131,12 @@ static IRExpr* unop ( IROp op, IRExpr* a )
    return IRExpr_Unop(op, a);
 }
 
+#if 0
 static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
 {
    return IRExpr_Binop(op, a1, a2);
 }
+#endif
 
 static IRExpr* bind ( Int binder )
 {

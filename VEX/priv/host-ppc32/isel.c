@@ -918,6 +918,25 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          shOp = Psh_INVALID; break;
       }
       if (shOp != Psh_INVALID) {
+#if 0
+         /* Shr32(Shl32(expr32,imm8),imm8) */
+         {
+            DECLARE_PATTERN(p_Shl32_then_Shr32);
+            DEFINE_PATTERN(p_Shl32_then_Shr32,
+                           binop(Iop_Shr32,
+                                 binop(Iop_Shl32,bind(0),bind(1)),
+                                 bind(2)));
+            if (matchIRExpr(&mi,p_Shl32_then_Shr32,e)) {
+               HReg src     = iselIntExpr_R( env, mi.bindee[0] );
+               PPC32RI* sh1 = mk_FitRI16(env, iselIntExpr_RI( env, mi.bindee[1] ));
+               PPC32RI* sh2 = mk_FitRI16(env, iselIntExpr_RI( env, mi.bindee[2] ));
+               if (sh1->tag == Pri_Imm && sh2->tag == Pri_Imm &&
+                   sh1->Pri.Imm.imm32 ==sh1->Pri.Imm.imm32) {
+                  return src;
+               }
+            }
+         }
+#endif
          HReg dst = newVRegI(env);
 
          /* regL = the value to be shifted */

@@ -1,7 +1,110 @@
 
+Unstable (cvs head) release 2.1.2 (18 July 2004)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2.1.2 contains four months worth of bug fixes and refinements.
+Although officially an "unstable" release, we believe it to be stable
+enough for widespread day-to-day use.  A large number of minor
+problems with 2.1.1 have been fixed, and so if you use 2.1.1 you
+should try 2.1.2.  Users of the last stable release, 2.0.0, might also
+want to try this release.
+
+
+The following bugs, and probably many more, have been fixed.  These
+are listed at http://bugs.kde.org.  Reporting a bug for valgrind in
+the http://bugs.kde.org is much more likely to get you a fix than
+mailing developers directly, so please continue to keep sending bugs
+there.
+
+76869   Crashes when running any tool under Fedora Core 2 test1
+        This fixes the problem with returning from a signal handler 
+        when VDSOs are turned off in FC2.  Note that we don't
+        (yet) support VDSOs being on 
+        (use "echo 0 > /proc/sys/kernel/vdso").
+
+69508   java 1.4.2 client fails with erroneous "stack size too small"
+        (make more of the pthread stack attribute related functions
+        work properly)
+
+71906   malloc alignment should be 8, not 4
+        All memory returned by malloc/new etc is now at least
+        8-byte aligned.
+
+78514   Conditional jump or move depends on uninitialized value(s)
+        (a slight mishanding of FP code in memcheck)
+
+80942   Addrcheck wasn't doing overlap checking as it should.
+78048   return NULL on malloc/new etc failure, instead of asserting
+73655   operator new() override in user .so files often doesn't get picked up
+83060   Valgrind does not handle native kernel AIO
+69872   Create proper coredumps after fatal signals
+82026   failure with new glibc versions: __libc_* functions are not exported
+70344   UNIMPLEMENTED FUNCTION: tcdrain 
+81297   Cancellation of pthread_cond_wait does not require mutex
+82872   Using debug info from additional packages (wishlist)
+83025   Support for ioctls FIGETBSZ and FIBMAP
+83340   Support for ioctl HDIO_GET_IDENTITY
+79714   Support for the semtimedop system call.
+77022   Support for ioctls FBIOGET_VSCREENINFO and FBIOGET_FSCREENINFO
+82098   hp2ps ansification (wishlist)
+83573   Valgrind SIGSEGV on execve
+82999   show which cmdline option was erroneous (wishlist)
+83040   make valgrind VPATH and distcheck-clean (wishlist)
+77952   pThread Support (crash) (due to initialisation-ordering probs)
+
+
+Additionally there are the following changes, which are not 
+connected to any bug report numbers, AFAICS:
+
+* Rearranged address space layout relative to 2.1.1, so that
+  Valgrind/tools will run out of memory later than currently in many
+  circumstances.  This is good news esp. for Calltree.  It should
+  be possible for client programs to allocate over 800MB of
+  memory when using memcheck now.
+
+* Support for Fedora Core 2 and SuSE 9.1.  Improvements to NPTL
+  support to the extent that V now works properly on NPTL-only setups.
+
+* Renamed the following options:
+  --logfile-fd  -->  --log-fd
+  --logfile     -->  --log-file
+  --logsocket   -->  --log-socket
+  to be consistent with each other and other options (esp. --input-fd).
+
+* Add support for SIOCGMIIPHY, SIOCGMIIREG and SIOCSMIIREG ioctls and
+  improve the checking of other interface related ioctls.
+
+* Removed all uses of nested functions as they only work with gcc and
+  cause the stack to be marked as executable in order for them to work.
+  Valgrind should be buildable with Intel Icc now.
+
+* Fix building with gcc-3.4.1.
+
+* Remove limit on number of semaphores supported.
+
+* Add support for SIOCGMIIPHY, SIOCGMIIREG and SIOCSMIIREG ioctls and
+  improve the checking of other interface related ioctls.
+
+* Add support for syscalls: set_tid_address (258), acct (51).
+
+* Support instruction "repne movs" -- not official but seems to occur.
+
+* Implement an emulated soft limit for file descriptors in addition to
+  the current reserved area, which effectively acts as a hard limit. The
+  setrlimit system call now simply updates the emulated limits as best
+  as possible - the hard limit is not allowed to move at all and just
+  returns EPERM if you try and change it.  This should stop reductions
+  in the soft limit causing assertions when valgrind tries to allocate
+  descriptors from the reserved area.
+
+* Major overhaul of Cachegrind implementation (not user-visible)
+
+* Client requests for telling valgrind about memory pools.
+
+
+
 Unstable (cvs head) release 2.1.1 (12 March 2004)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-2.1.1 contains some internal structure changes needed for V's
+2.1.1 contains some internal structural changes needed for V's
 long-term future.  These don't affect end-users.  Most notable
 user-visible changes are:
 

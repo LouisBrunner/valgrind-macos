@@ -1218,7 +1218,7 @@ static void make_writable_aligned ( Addr a, UInt len )
 
 static
 void check_is_writable ( CorePart part, ThreadState* tst,
-                         Char* s, UInt base, UInt size )
+                         Char* s, Addr base, UInt size )
 {
    Bool ok;
    Addr bad_addr;
@@ -1240,7 +1240,7 @@ void check_is_writable ( CorePart part, ThreadState* tst,
          break;
 
       default:
-         VG_(skin_panic)("check_is_readable: Unknown or unexpected CorePart");
+         VG_(skin_panic)("check_is_writable: Unknown or unexpected CorePart");
       }
    }
 
@@ -1249,7 +1249,7 @@ void check_is_writable ( CorePart part, ThreadState* tst,
 
 static
 void check_is_readable ( CorePart part, ThreadState* tst,
-                         Char* s, UInt base, UInt size )
+                         Char* s, Addr base, UInt size )
 {     
    Bool ok;
    Addr bad_addr;
@@ -1284,7 +1284,7 @@ void check_is_readable ( CorePart part, ThreadState* tst,
 
 static
 void check_is_readable_asciiz ( CorePart part, ThreadState* tst,
-                                Char* s, UInt str )
+                                Char* s, Addr str )
 {
    Bool ok = True;
    Addr bad_addr;

@@ -54,6 +54,28 @@ of Valgrind.  The following notes may save you some trouble.
    from valgrind.
 
 
+-- Try and ensure that the /usr/include/asm/unistd.h file on the
+   build machine contains an entry for all the system calls that
+   the kernels on the target machines can actually support.  On my
+   Red Hat 7.2 (kernel 2.4.9) box the highest-numbered entry is   
+      #define __NR_fcntl64            221
+   but I have heard of 2.2 boxes where it stops at 179 or so.
+
+   Reason for this is that at build time, support for syscalls
+   is compiled in -- or not -- depending on which of these __NR_*
+   symbols is defined.  Problems arise when /usr/include/asm/unistd.h
+   fails to give an entry for a system call which is actually 
+   available in the target kernel.  In that case, valgrind will
+   abort if asked to handle such a syscall.  This is despite the
+   fact that (usually) valgrind's sources actually contain the
+   code to deal with the syscall.
+
+   Several people have reported having this problem.  So, please
+   be aware of it.  If it's useful, the syscall wrappers are
+   all done in vg_syscall_mem.c; you might want to have a little
+   look in there.
+
+
 -- Please test the final installation works by running it on
    something huge.  I suggest checking that it can start and
    exit successfully both Mozilla-1.0 and OpenOffice.org 1.0.

@@ -1918,6 +1918,10 @@ static void synth_jcond_lit ( Condcode cond,
          case CondNP: 
             mask = EFlagP; goto simple; /* P=1        */
 
+         case CondO:
+         case CondNO:
+            mask = EFlagO; goto simple; /* O=1        */
+
          default: 
             VG_(printf)("synth_jcond_lit: unhandled simd case %d (%s)\n", 
                         (Int)cond, VG_(nameCondcode)(cond) );

@@ -1204,7 +1204,7 @@ extern void VG_(start_GDB_whilst_on_client_stack) ( void )
 
 /* Print some helpful-ish text about unimplemented things, and give
    up. */
-extern void VG_(unimplemented) ( Char* msg )
+void VG_(unimplemented) ( Char* msg )
 {
    VG_(message)(Vg_UserMsg, "");
    VG_(message)(Vg_UserMsg, 
@@ -1228,6 +1228,15 @@ extern void VG_(unimplemented) ( Char* msg )
       "");
    VG_(pp_sched_status)();
    VG_(exit)(1);
+}
+
+
+void VG_(nvidia_moan) ( void) 
+{
+   VG_(message)(Vg_UserMsg,
+      "The following failure _might_ be caused by linking to NVidia's\n   "
+      "libGL.so, so avoiding it, if you can, _might_ help you.  For example,\n   "
+      "re-build any Qt libraries you are using without OpenGL support.");
 }
 
 

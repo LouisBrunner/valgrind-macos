@@ -410,11 +410,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
 #     if defined(__NR_modify_ldt)
       case __NR_modify_ldt:
+         VG_(nvidia_moan)();
          VG_(unimplemented)
-            ("modify_ldt(): I (JRS) haven't investigated this yet; sorry.\n   "
-             "This might be caused by linking to NVidia's libGL.so, so\n   "
-             "avoiding it, if you can, _might_ help you.  For example,\n   "
-             "re-build any Qt libraries you are using without OpenGL support.");
+            ("modify_ldt(): I (JRS) haven't investigated this yet; sorry.");
          break;
 #     endif
 

@@ -1781,7 +1781,9 @@ static IRExpr* definedOfType ( IRType ty ) {
    switch (ty) {
       case Ity_Bit: return IRExpr_Const(IRConst_Bit(False));
       case Ity_I8:  return mkU8(0);
+      case Ity_I16: return mkU16(0);
       case Ity_I32: return mkU32(0);
+      case Ity_I64: return mkU64(0);
       default:      VG_(skin_panic)("memcheck:definedOfType");
    }
 }
@@ -1915,6 +1917,9 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRAtom* vbits, IRType dst_ty ) {
       case Ity_I32: 
          tmp1 = assignNew(mce, Ity_Bit, binop(Iop_CmpNE32, vbits, mkU32(0)));
          break;
+      case Ity_I64: 
+         tmp1 = assignNew(mce, Ity_Bit, binop(Iop_CmpNE64, vbits, mkU64(0)));
+         break;
       default:
          VG_(skin_panic)("mkPCastTo(1)");
    }
@@ -1925,6 +1930,8 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRAtom* vbits, IRType dst_ty ) {
          return tmp1;
       case Ity_I32: 
          return assignNew(mce, Ity_I32, unop(Iop_1Sto32, tmp1));
+      case Ity_I64: 
+         return assignNew(mce, Ity_I64, unop(Iop_1Sto64, tmp1));
       default: 
          ppIRType(dst_ty);
          VG_(skin_panic)("mkPCastTo(2)");
@@ -2090,8 +2097,19 @@ IRExpr* shadow_GETI ( MCEnv* mce, IRArray* descr, IRAtom* ix, Int bias )
 }
 
 
+static
+IRAtom* lazy2 ( MCEnv* mce, IRType finalVty, IRAtom* a1, IRAtom* a2 )
+{
+   /* force everything via 32-bit intermediaries. */
+   IRAtom* at;
+   at = mkPCastTo(mce, a1, Ity_I32);
+   at = mkUifU(mce, Ity_I32, at, mkPCastTo(mce, a2, Ity_I32));
+   at = mkPCastTo(mce, at, finalVty);
+   return at;
+}
+
 static 
-IRExpr* expr2vbits_Binop ( MCEnv* mce,
+IRAtom* expr2vbits_Binop ( MCEnv* mce,
                            IROp op,
                            IRExpr* atom1, IRExpr* atom2,
                            IRExpr* vatom1, IRExpr* vatom2 )
@@ -2108,6 +2126,21 @@ IRExpr* expr2vbits_Binop ( MCEnv* mce,
    sk_assert(sameKindedAtoms(atom1,vatom1));
    sk_assert(sameKindedAtoms(atom2,vatom2));
    switch (op) {
+
+      case Iop_DivModU64to32:
+      case Iop_DivModS64to32:
+         return lazy2(mce, Ity_I64, vatom1, vatom2);
+
+      case Iop_32HLto64:
+         return assignNew(mce, Ity_I64,
+                          binop(Iop_32HLto64, atom1, atom2));
+
+      case Iop_MullU32: {
+         IRAtom* vLo32 = mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
+         IRAtom* vHi32 = mkPCastTo(mce, vLo32, Ity_I32);
+         return assignNew(mce, Ity_I64, binop(Iop_32HLto64, vHi32, vLo32));
+      }
+
       case Iop_Sub32:
       case Iop_Add32:
       case Iop_Mul32:
@@ -2117,7 +2150,8 @@ IRExpr* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Add8:
          return mkLeft8(mce, mkUifU8(mce, vatom1,vatom2));
 
-      case Iop_CmpLE32S: case Iop_CmpLE32U: case Iop_CmpLT32U:
+      case Iop_CmpLE32S: case Iop_CmpLE32U: 
+      case Iop_CmpLT32U: case Iop_CmpLT32S:
       case Iop_CmpEQ32:
          return mkPCastTo(mce, mkUifU32(mce, vatom1,vatom2), Ity_Bit);
 
@@ -2127,12 +2161,16 @@ IRExpr* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpEQ8: case Iop_CmpNE8:
          return mkPCastTo(mce, mkUifU8(mce, vatom1,vatom2), Ity_Bit);
 
-      case Iop_Shl32:
-      case Iop_Shr32:
+      case Iop_Shl32: case Iop_Shr32: case Iop_Sar32:
          /* Complain if the shift amount is undefined.  Then simply
             shift the first arg's V bits by the real shift amount. */
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_I32, binop(op, vatom1, atom2));
+
+      case Iop_Shl64: case Iop_Shr64: 
+         /* Same scheme as with 32-bit shifts. */
+         complainIfUndefined(mce, atom2);
+         return assignNew(mce, Ity_I64, binop(op, vatom1, atom2));
 
       case Iop_And32:
          uifu = mkUifU32; difd = mkDifD32; 
@@ -2175,6 +2213,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce,
    sk_assert(isShadowAtom(mce,vatom));
    sk_assert(sameKindedAtoms(atom,vatom));
    switch (op) {
+      case Iop_64to32:
+      case Iop_64HIto32:
       case Iop_1Uto32:
       case Iop_8Uto32:
       case Iop_16Uto32:
@@ -2390,7 +2430,7 @@ void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
 
 IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
-   Bool verbose = True; 
+   Bool verbose = False; //True; 
 
    Int i, j, n_types, first_stmt;
    IRStmt* st;

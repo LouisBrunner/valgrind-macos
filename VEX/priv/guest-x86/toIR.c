@@ -2182,18 +2182,18 @@ UInt dis_Grp2 ( UChar  sorb,
 
       /* shift_amt = shift_expr & mask */
       assign(shift_amt, binop(Iop_And8, 
-                              shift_expr, mkU8(8*sz-1)));
+                              shift_expr, mkU8(31 /* 8*sz-1 */)));
       /* dst1 = dst0 `shift` shift_amt */
       assign(dst1, binop(mkSizedOp(ty,op8), 
                          mkexpr(dst0), mkexpr(shift_amt)));
-      /* subshift = dst0 `shift` (shift_amt - 1) */
+      /* subshift = dst0 `shift` ((shift_amt - 1) & mask) */
       assign(subshift, 
              binop(mkSizedOp(ty,op8), 
                    mkexpr(dst0), 
                    binop(Iop_And8,
                          binop(Iop_Sub8,
                                mkexpr(shift_amt), mkU8(1)),
-                         mkU8(8*sz-1))));
+                         mkU8(31 /* 8*sz-1 */))));
 
       /* Build the flags thunk. */
       setFlags_DSTus_DST1(op8, subshift, dst1, ty, shift_amt);
@@ -2478,9 +2478,9 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
             dst0 = newTemp(ty);
             src  = newTemp(ty);
             dst1 = newTemp(ty);
-            assign(dst0, getIReg(sz,eregOfRM(modrm)));
-	    assign(src,  mkU(ty,0));
-	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8),mkexpr(src), mkexpr(dst0)));
+	    assign(dst0, mkU(ty,0));
+            assign(src,  getIReg(sz,eregOfRM(modrm)));
+	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
             setFlags_SRC_DST1(Iop_Sub8, src, dst1, ty);
 	    putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
             DIP("neg%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
@@ -2539,9 +2539,9 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
             dst0 = newTemp(ty);
             src  = newTemp(ty);
             dst1 = newTemp(ty);
-            assign(dst0, mkexpr(t1));
-	    assign(src,  mkU(ty,0));
-	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8),mkexpr(src), mkexpr(dst0)));
+	    assign(dst0, mkU(ty,0));
+            assign(src,  mkexpr(t1));
+	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
             setFlags_SRC_DST1(Iop_Sub8, src, dst1, ty);
 	    storeLE( mkexpr(addr), mkexpr(dst1) );
             DIP("neg%c %s\n", nameISize(sz), dis_buf);
@@ -2583,7 +2583,6 @@ UInt dis_Grp4 ( UChar sorb, UInt delta )
 
    modrm = getIByte(delta);
    if (epartIsReg(modrm)) {
-//--       uInstr2(cb, GET, 1, ArchReg, eregOfRM(modrm), TempReg, t1);
       assign(t1, getIReg(1, eregOfRM(modrm)));
       switch (gregOfRM(modrm)) {
          case 0: /* INC */
@@ -7585,12 +7584,14 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
                     mkU8(getIByte(d32)), True, /* literal */
                     dis_buf, False );
          break;
-//--       case 0xAD: /* SHRDv %cl,Gv,Ev */
-//--          modrm = getUChar(eip);
-//--          eip = dis_SHLRD_Gv_Ev ( 
-//--                   cb, sorb, eip, modrm, sz, ArchReg, R_CL, False );
-//--          break;
-//-- 
+      case 0xAD: /* SHRDv %cl,Gv,Ev */
+         modrm = getIByte(delta);
+         delta = dis_SHLRD_Gv_Ev ( 
+                    sorb, delta, modrm, sz, 
+                    getIReg(1,R_ECX), False, /* not literal */
+                    "%cl", False );
+         break;
+
 //--       /* =-=-=-=-=-=-=-=-=- CMPXCHG -=-=-=-=-=-=-=-=-=-= */
 //-- 
 //--       case 0xC0: /* XADD Gb,Eb */

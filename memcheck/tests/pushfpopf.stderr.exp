@@ -1,6 +1,6 @@
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: fooble (in /.../tests/pushfpopf)
+   at 0x........: fooble (...)
    by 0x........: main (pushfpopf_c.c:12)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/pushfpopf)

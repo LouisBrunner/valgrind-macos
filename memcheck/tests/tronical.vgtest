@@ -1,1 +1,2 @@
 prog: tronical
+stderr_filter: filter_tronical

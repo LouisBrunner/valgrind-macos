@@ -1,7 +1,7 @@
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: get (in /.../tests/tronical)
-   by 0x........: main (in /.../tests/tronical)
+   at 0x........: get (...)
+   by 0x........: main (...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: (within /.../tests/tronical)
 

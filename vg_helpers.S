@@ -289,6 +289,27 @@ VG_(helper_SAHF):
 	ret
 
 
+/* Do %al = DAS(%al).  Note that the passed param has %AL as the least
+   significant 8 bits, since it was generated with GETB %AL,
+   some-temp.  Fortunately %al is the least significant 8 bits of
+   %eax anyway, which is why it's safe to work with %eax as a
+   whole. 
+ 
+   On entry:
+	value of %eax
+	RA   <- %esp
+*/
+.global VG_(helper_DAS)
+VG_(helper_DAS):
+	pushl	%eax
+	movl	8(%esp), %eax
+	das
+ 	movl	%eax, 8(%esp)
+	popl	%eax
+	ret
+
+
+
 /* Bit scan forwards/reverse.  Sets flags (??).
    On entry:
 	value, replaced by result
@@ -316,6 +337,17 @@ VG_(helper_bsf):
 	src
 	dst
 	RA   <- %esp
+	
+   NOTE all these are basically misimplemented, since for memory
+   operands it appears the index value can be arbitrary, and the
+   address should be calculated accordingly.  Here, we assume (by
+   forcing the register- and memory- versions to be handled by
+   the same helper) that the offset is always in the range
+   0 .. word-size-1, or to be more precise by implementing the
+   client's memory- version of this using the register- version,
+   we impose the condition that the offset is used
+   modulo-wordsize.  This is just plain wrong and should be
+   fixed.
 */
 .global VG_(helper_bt)
 VG_(helper_bt):

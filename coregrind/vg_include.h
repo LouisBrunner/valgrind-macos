@@ -617,6 +617,7 @@ typedef UChar FlagSet;
 #define FlagsSZACP  (        FlagS | FlagZ | FlagA | FlagC | FlagP)
 #define FlagsSZAP   (        FlagS | FlagZ | FlagA |         FlagP)
 #define FlagsOC     (FlagO |                         FlagC        )
+#define FlagsAC     (                        FlagA | FlagC        )
 
 #define FlagsALL    (FlagsOSZACP | FlagD)
 #define FlagsEmpty  (FlagSet)0
@@ -1292,6 +1293,7 @@ extern void VG_(helper_bsr);
 
 extern void VG_(helper_fstsw_AX);
 extern void VG_(helper_SAHF);
+extern void VG_(helper_DAS);
 
 extern void VG_(helper_value_check4_fail);
 extern void VG_(helper_value_check2_fail);
@@ -1420,6 +1422,7 @@ extern Int VGOFF_(helper_bsr);
 
 extern Int VGOFF_(helper_fstsw_AX);
 extern Int VGOFF_(helper_SAHF);
+extern Int VGOFF_(helper_DAS);
 
 extern Int VGOFF_(helper_value_check4_fail);
 extern Int VGOFF_(helper_value_check2_fail);

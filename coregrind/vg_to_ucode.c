@@ -3018,6 +3018,24 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (dis) VG_(printf)("leave");
       break;
 
+   /* ---------------- Misc wierd-ass insns --------------- */
+
+   case 0x2F: /* DAS */
+      t1 = newTemp(cb);
+      uInstr2(cb, GET, 1, ArchReg, R_AL, TempReg, t1);
+      /* Widen %AL to 32 bits, so it's all defined when we push it. */
+      uInstr1(cb, WIDEN, 4, TempReg, t1);
+      LAST_UINSTR(cb).extra4b = 1;
+      LAST_UINSTR(cb).signed_widen = False;
+      uInstr0(cb, CALLM_S, 0);
+      uInstr1(cb, PUSH, 4, TempReg, t1);
+      uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_DAS) );
+      uFlagsRWU(cb, FlagsAC, FlagsOSZACP, FlagsEmpty);
+      uInstr1(cb, POP, 4, TempReg, t1);
+      uInstr0(cb, CALLM_E, 0);
+      uInstr2(cb, PUT, 1, TempReg, t1, ArchReg, R_AL);
+      if (dis) VG_(printf)("das\n");
+
    /* ------------------------ CWD/CDQ -------------------- */
 
    case 0x98: /* CBW */

@@ -38,7 +38,7 @@ VgLdtEntry* VG_(allocate_LDT_for_thread) ( VgLdtEntry* parent_ldt )
    UInt        nbytes, i;
    VgLdtEntry* ldt;
 
-   if (VG_(clo_verbosity) > 1)
+   if (0)
       VG_(printf)("allocate_LDT_for_thread: parent = %p\n", parent_ldt );
    vg_assert(VG_LDT_ENTRY_SIZE == sizeof(VgLdtEntry));
    nbytes = VG_M_LDT_ENTRIES * VG_LDT_ENTRY_SIZE;
@@ -58,7 +58,7 @@ VgLdtEntry* VG_(allocate_LDT_for_thread) ( VgLdtEntry* parent_ldt )
 /* Free an LDT created by the above function. */
 void VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt )
 {
-   if (VG_(clo_verbosity) > 1)
+   if (0)
       VG_(printf)("deallocate_LDT_for_thread: ldt = %p\n", ldt );
    if (ldt != NULL)
       VG_(arena_free)(VG_AR_CORE, ldt);
@@ -100,8 +100,9 @@ Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
    UInt        limit;
    VgLdtEntry* the_ldt;
 
-   VG_(printf)("do_useseg: seg_selector = %p, vaddr = %p\n", 
-               seg_selector, virtual_addr);
+   if (0) 
+      VG_(printf)("do_useseg: seg_selector = %p, vaddr = %p\n", 
+                  seg_selector, virtual_addr);
 
    seg_selector &= 0x0000FFFF;
   
@@ -123,15 +124,21 @@ Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
    if (the_ldt == NULL) {
       base = 0;
       limit = 0;
-      VG_(printf)("warning! thread has no LDT!  this is really bad.\n");
+      VG_(message)(
+         Vg_UserMsg,
+         "Warning: segment-override prefix encountered, but thread has no LDT"
+      );
    } else {
       base = (Addr)wine_ldt_get_base ( &the_ldt[seg_selector] );
       limit = (UInt)wine_ldt_get_limit ( &the_ldt[seg_selector] );
    }
 
    if (virtual_addr >= limit) {
-      VG_(printf)("FATAL: do_useseg: vaddr %d exceeds segment limit %d\n", 
-                  virtual_addr, limit );
+      VG_(message)(
+         Vg_UserMsg,
+         "Warning: segment access: virtual addr %d exceeds segment limit of %d",
+         virtual_addr, limit
+      );
    }
 
    return base + virtual_addr;
@@ -204,7 +211,7 @@ Int read_ldt ( ThreadId tid, UChar* ptr, UInt bytecount )
    UInt i, size;
    Char* ldt;
 
-   if (VG_(clo_verbosity) > 1)
+   if (0)
       VG_(printf)("read_ldt: tid = %d, ptr = %p, bytecount = %d\n",
                   tid, ptr, bytecount );
 
@@ -234,7 +241,7 @@ Int write_ldt ( ThreadId tid, void* ptr, UInt bytecount, Int oldmode )
    VgLdtEntry* ldt;
    struct vki_modify_ldt_ldt_s* ldt_info; 
 
-   if (VG_(clo_verbosity) > 1)
+   if (0)
       VG_(printf)("write_ldt: tid = %d, ptr = %p, "
                   "bytecount = %d, oldmode = %d\n",
                   tid, ptr, bytecount, oldmode );

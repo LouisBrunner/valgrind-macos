@@ -232,8 +232,27 @@ Int VG_(gettid)(void)
 
    ret = VG_(do_syscall)(__NR_gettid);
 
-   if (ret == -VKI_ENOSYS)
-      ret = VG_(do_syscall)(__NR_getpid);
+   if (ret == -VKI_ENOSYS) {
+      Char pid[16];
+      
+      /*
+       * The gettid system call does not exist. The obvious assumption
+       * to make at this point would be that we are running on an older
+       * system where the getpid system call actually returns the ID of
+       * the current thread.
+       *
+       * Unfortunately it seems that there are some systems with a kernel
+       * where getpid has been changed to return the ID of the thread group
+       * leader but where the gettid system call has not yet been added.
+       *
+       * So instead of calling getpid here we use readlink to see where
+       * the /proc/self link is pointing...
+       */
+      if ((ret = VG_(do_syscall)(__NR_readlink, "/proc/self", pid, sizeof(pid))) >= 0) {
+         pid[ret] = '\0';
+         ret = VG_(atoll)(pid);
+      }
+   }
 
    return ret;
 }

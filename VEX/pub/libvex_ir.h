@@ -638,7 +638,7 @@ typedef
             IRDirty* details;
          } Dirty;
          struct {
-            IRExpr*  cond;
+            IRExpr*  guard;
             IRConst* dst;
          } Exit;
       } Ist;
@@ -651,7 +651,7 @@ extern IRStmt* IRStmt_PutI  ( IRArray* descr, IRExpr* ix, Int bias,
 extern IRStmt* IRStmt_Tmp   ( IRTemp tmp, IRExpr* data );
 extern IRStmt* IRStmt_STle  ( IRExpr* addr, IRExpr* data );
 extern IRStmt* IRStmt_Dirty ( IRDirty* details );
-extern IRStmt* IRStmt_Exit  ( IRExpr* cond, IRConst* dst );
+extern IRStmt* IRStmt_Exit  ( IRExpr* guard, IRConst* dst );
 
 extern IRStmt* dopyIRStmt ( IRStmt* );
 

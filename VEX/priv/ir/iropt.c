@@ -327,7 +327,7 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
          addStmtToIRBB(bb, IRStmt_Dirty(d2));
          break;
       case Ist_Exit:
-         e1 = flatten_Expr(bb, st->Ist.Exit.cond);
+         e1 = flatten_Expr(bb, st->Ist.Exit.guard);
          addStmtToIRBB(bb, IRStmt_Exit(e1, st->Ist.Exit.dst));
          break;
       default:
@@ -839,8 +839,8 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
 
       case Ist_Exit: {
          IRExpr* fcond;
-         vassert(isAtom(st->Ist.Exit.cond));
-         fcond = fold_Expr(subst_Expr(env, st->Ist.Exit.cond));
+         vassert(isAtom(st->Ist.Exit.guard));
+         fcond = fold_Expr(subst_Expr(env, st->Ist.Exit.guard));
          if (fcond->tag == Iex_Const) {
             /* Interesting.  The condition on this exit has folded down to
                a constant. */
@@ -1021,7 +1021,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
             addUses_Expr(set, d->args[i]);
          return;
       case Ist_Exit:
-         addUses_Expr(set, st->Ist.Exit.cond);
+         addUses_Expr(set, st->Ist.Exit.guard);
          return;
       default:
          vex_printf("\n");
@@ -1322,7 +1322,7 @@ static void handle_gets_Stmt (
          break;
 
       case Ist_Exit:
-         vassert(isAtom(st->Ist.Exit.cond));
+         vassert(isAtom(st->Ist.Exit.guard));
          break;
 
       case Ist_PutI:
@@ -1398,7 +1398,7 @@ static void redundant_put_removal_BB (
             out the set, since we can no longer claim that the next
             event for any part of the guest state is definitely a
             write. */
-         vassert(isAtom(st->Ist.Exit.cond));
+         vassert(isAtom(st->Ist.Exit.guard));
          for (j = 0; j < env->used; j++)
             env->inuse[j] = False;
          continue;
@@ -1611,7 +1611,7 @@ static void occCount_Stmt ( TmpInfo** env, IRStmt* st )
             occCount_Expr(env, d->args[i]);
          return;
       case Ist_Exit:
-         occCount_Expr(env, st->Ist.Exit.cond);
+         occCount_Expr(env, st->Ist.Exit.guard);
          return;
       default: 
          vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
@@ -1736,7 +1736,7 @@ static IRStmt* tbSubst_Stmt ( TmpInfo** env, IRStmt* st )
 
       case Ist_Exit:
          return IRStmt_Exit(
-                   tbSubst_Expr(env, st->Ist.Exit.cond),
+                   tbSubst_Expr(env, st->Ist.Exit.guard),
                    st->Ist.Exit.dst
                 );
       case Ist_Dirty:
@@ -2928,7 +2928,7 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
          deltaIRExpr(st->Ist.Tmp.data, delta);
          break;
       case Ist_Exit:
-         deltaIRExpr(st->Ist.Exit.cond, delta);
+         deltaIRExpr(st->Ist.Exit.guard, delta);
          break;
       case Ist_STle:
          deltaIRExpr(st->Ist.STle.addr, delta);
@@ -3133,7 +3133,8 @@ static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
    }
 
    /* negate the test condition */
-   st->Ist.Exit.cond = IRExpr_Unop(Iop_Not1,dopyIRExpr(st->Ist.Exit.cond));
+   st->Ist.Exit.guard 
+      = IRExpr_Unop(Iop_Not1,dopyIRExpr(st->Ist.Exit.guard));
 
    /* --- The unroller proper.  Both idioms are by now --- */
    /* --- now converted to idiom 1. --- */
@@ -3278,7 +3279,7 @@ static Bool hasGetIorPutI ( IRBB* bb )
             vassert(isAtom(st->Ist.STle.data));
             break;
          case Ist_Exit:
-            vassert(isAtom(st->Ist.Exit.cond));
+            vassert(isAtom(st->Ist.Exit.guard));
             break;
          case Ist_Dirty:
             d = st->Ist.Dirty.details;

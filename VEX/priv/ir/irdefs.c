@@ -377,7 +377,7 @@ void ppIRStmt ( IRStmt* s )
          break;
       case Ist_Exit:
          vex_printf( "if (" );
-         ppIRExpr(s->Ist.Exit.cond);
+         ppIRExpr(s->Ist.Exit.guard);
          vex_printf( ") goto ");
          ppIRConst(s->Ist.Exit.dst);
          break;
@@ -712,11 +712,11 @@ IRStmt* IRStmt_Dirty ( IRDirty* d )
    s->Ist.Dirty.details = d;
    return s;
 }
-IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst ) {
-   IRStmt* s        = LibVEX_Alloc(sizeof(IRStmt));
-   s->tag           = Ist_Exit;
-   s->Ist.Exit.cond = cond;
-   s->Ist.Exit.dst  = dst;
+IRStmt* IRStmt_Exit ( IRExpr* guard, IRConst* dst ) {
+   IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag            = Ist_Exit;
+   s->Ist.Exit.guard = guard;
+   s->Ist.Exit.dst   = dst;
    return s;
 }
 
@@ -885,7 +885,7 @@ IRStmt* dopyIRStmt ( IRStmt* s )
       case Ist_Dirty: 
          return IRStmt_Dirty(dopyIRDirty(s->Ist.Dirty.details));
       case Ist_Exit: 
-         return IRStmt_Exit(dopyIRExpr(s->Ist.Exit.cond), 
+         return IRStmt_Exit(dopyIRExpr(s->Ist.Exit.guard), 
                             dopyIRConst(s->Ist.Exit.dst));
       default: 
          vpanic("dopyIRStmt");
@@ -1253,7 +1253,7 @@ Bool isFlatIRStmt ( IRStmt* st )
             return False;
          return True;
       case Ist_Exit:
-         return isAtom(st->Ist.Exit.cond);
+         return isAtom(st->Ist.Exit.guard);
       default: 
          vpanic("isFlatIRStmt(st)");
    }
@@ -1398,7 +1398,7 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
             useBeforeDef_Expr(bb,stmt,d->mAddr,def_counts);
          break;
       case Ist_Exit:
-         useBeforeDef_Expr(bb,stmt,stmt->Ist.Exit.cond,def_counts);
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.Exit.guard,def_counts);
          break;
       default: 
          vpanic("useBeforeDef_Stmt");
@@ -1583,9 +1583,9 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          sanityCheckFail(bb,stmt,"IRStmt.Dirty: ill-formed");
 
       case Ist_Exit:
-         tcExpr( bb, stmt, stmt->Ist.Exit.cond, gWordTy );
-         if (typeOfIRExpr(tyenv,stmt->Ist.Exit.cond) != Ity_I1)
-            sanityCheckFail(bb,stmt,"IRStmt.Exit.cond: not :: Ity_I1");
+         tcExpr( bb, stmt, stmt->Ist.Exit.guard, gWordTy );
+         if (typeOfIRExpr(tyenv,stmt->Ist.Exit.guard) != Ity_I1)
+            sanityCheckFail(bb,stmt,"IRStmt.Exit.guard: not :: Ity_I1");
          if (typeOfIRConst(stmt->Ist.Exit.dst) != gWordTy)
             sanityCheckFail(bb,stmt,"IRStmt.Exit.dst: not :: guest word type");
          break;

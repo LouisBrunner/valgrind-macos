@@ -1010,7 +1010,7 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             break;
 
          case Ist_Exit:
-            sk_assert(isAtom(st->Ist.Exit.cond));
+            sk_assert(isAtom(st->Ist.Exit.guard));
             break;
 
          case Ist_Dirty:

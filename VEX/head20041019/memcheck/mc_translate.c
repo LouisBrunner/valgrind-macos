@@ -1592,7 +1592,7 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
          case Ist_Exit:
             /* if (!hasBogusLiterals) */
-               complainIfUndefined( &mce, st->Ist.Exit.cond );
+               complainIfUndefined( &mce, st->Ist.Exit.guard );
             break;
 
          case Ist_Dirty:

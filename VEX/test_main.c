@@ -287,7 +287,7 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             break;
 
          case Ist_Exit:
-            assert(isAtom(st->Ist.Exit.cond));
+            assert(isAtom(st->Ist.Exit.guard));
             break;
 
          case Ist_Dirty:
@@ -1843,7 +1843,7 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
          return isBogusAtom(st->Ist.STle.addr) 
                 || isBogusAtom(st->Ist.STle.data);
       case Ist_Exit:
-         return isBogusAtom(st->Ist.Exit.cond);
+         return isBogusAtom(st->Ist.Exit.guard);
       default: 
       unhandled:
          ppIRStmt(st);
@@ -1934,7 +1934,7 @@ IRBB* mc_instrument ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
          case Ist_Exit:
             /* if (!hasBogusLiterals) */
-               complainIfUndefined( &mce, st->Ist.Exit.cond );
+               complainIfUndefined( &mce, st->Ist.Exit.guard );
             break;
 
          case Ist_Dirty:

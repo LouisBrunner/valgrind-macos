@@ -1742,9 +1742,6 @@ extern void
 extern void VGA_(cleanup_thread) ( ThreadArchState* );
 extern void VGA_(setup_child)    ( ThreadArchState*, ThreadArchState* );
 
-extern void VGA_(set_arg_and_bogus_ret) ( ThreadId tid, UWord arg, Addr ret );
-extern void VGA_(thread_initial_stack)  ( ThreadId tid, UWord arg, Addr ret );
-
 // OS/Platform-specific thread clear (after thread exit)
 extern void VGA_(os_state_clear)(ThreadState *);
 

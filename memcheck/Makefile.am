@@ -10,6 +10,9 @@ bin_SCRIPTS = valgrind
 
 val_DATA = linux22.supp linux24.supp
 
+bzdist: dist
+	gunzip -c $(PACKAGE)-$(VERSION).tar.gz | bzip2 > $(PACKAGE)-$(VERSION).tar.bz2
+
 EXTRA_DIST = $(val_DATA) \
 	PATCHES_APPLIED ACKNOWLEDGEMENTS \
 	README_KDE3_FOLKS \

@@ -1,3 +1,8 @@
+2002-03-24  Frederic Gobry  <gobry@puck.ch>
+
+	* Makefile.am: added a bzdist target that creates a bzip2 archive
+	of the project.
+
 2002-03-24  Julian Seward  <sewardj@localhost.localdomain>
 
 	* vg_to_ucode.c (disInstr): Implement DAA as well as DAS.

@@ -828,6 +828,25 @@ Syscall param setrlimit(rlim) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
+ 76:      __NR_getrlimit 2s 1m
+-----------------------------------------------------
+
+Syscall param old_getrlimit(resource) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param old_getrlimit(rlim) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param old_getrlimit(rlim) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
 111:        __NR_vhangup 0e
 -----------------------------------------------------
 -----------------------------------------------------
@@ -862,6 +881,25 @@ Syscall param uname(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 167:   __NR_query_module 0e
 -----------------------------------------------------
+-----------------------------------------------------
+191:     __NR_ugetrlimit 2s 1m
+-----------------------------------------------------
+
+Syscall param getrlimit(resource) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param getrlimit(rlim) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param getrlimit(rlim) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
 199:       __NR_getuid32 0e
 -----------------------------------------------------

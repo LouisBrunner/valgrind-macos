@@ -666,7 +666,7 @@ void do_hacky_preopened()
    unsigned int count;
    int i;
 
-   if(VG_(getrlimit) (VKI_RLIMIT_NOFILE, &lim) == -1) {
+   if (VG_(getrlimit) (VKI_RLIMIT_NOFILE, &lim) == -1) {
       /* Hmm.  getrlimit() failed.  Now we're screwed, so just choose
          an arbitrarily high number.  1024 happens to be the limit in
          the 2.4 kernels. */
@@ -2412,35 +2412,51 @@ POST(getresuid32)
    }
 }
 
-PRE(getrlimit)
+static void common_post_getrlimit(UWord a1, UWord a2)
 {
-   /* int getrlimit (int resource, struct rlimit *rlim); */
-   PRINT("getrlimit ( %d, %p )", arg1,arg2);
-   PRE_MEM_WRITE( "getrlimit(rlim)", arg2, sizeof(struct vki_rlimit) );
-}
+   POST_MEM_WRITE( a2, sizeof(struct vki_rlimit) );
 
-POST(getrlimit)
-{
-    POST_MEM_WRITE( arg2, sizeof(struct vki_rlimit) );
+   switch (a1) {
+   case VKI_RLIMIT_NOFILE:
+      ((struct vki_rlimit *)a2)->rlim_cur = VG_(fd_soft_limit);
+      ((struct vki_rlimit *)a2)->rlim_max = VG_(fd_hard_limit);
+      break;
 
-    switch(arg1) {
-    case VKI_RLIMIT_NOFILE:
-	((struct vki_rlimit *)arg2)->rlim_cur = VG_(fd_soft_limit);
-	((struct vki_rlimit *)arg2)->rlim_max = VG_(fd_hard_limit);
-	break;
+   case VKI_RLIMIT_DATA:
+      *((struct vki_rlimit *)a2) = VG_(client_rlimit_data);
+      break;
 
-    case VKI_RLIMIT_DATA:
-	*((struct vki_rlimit *)arg2) = VG_(client_rlimit_data);
-	break;
-
-    case VKI_RLIMIT_STACK:
-	*((struct vki_rlimit *)arg2) = VG_(client_rlimit_stack);
-	break;
+   case VKI_RLIMIT_STACK:
+      *((struct vki_rlimit *)a2) = VG_(client_rlimit_stack);
+      break;
     }
 }
 
-PREALIAS(ugetrlimit, getrlimit);
-POSTALIAS(ugetrlimit, getrlimit);
+PREx(sys_old_getrlimit, 0)
+{
+   PRINT("sys_old_getrlimit ( %d, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "old_getrlimit",
+                 unsigned int, resource, struct rlimit *, rlim);
+   PRE_MEM_WRITE( "old_getrlimit(rlim)", arg2, sizeof(struct vki_rlimit) );
+}
+
+POSTx(sys_old_getrlimit)
+{
+   common_post_getrlimit(arg1, arg2);
+}
+
+PREx(sys_getrlimit, 0)
+{
+   PRINT("sys_getrlimit ( %d, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "getrlimit",
+                 unsigned int, resource, struct rlimit *, rlim);
+   PRE_MEM_WRITE( "getrlimit(rlim)", arg2, sizeof(struct vki_rlimit) );
+}
+
+POSTx(sys_getrlimit)
+{
+   common_post_getrlimit(arg1, arg2);
+}
 
 PRE(getrusage)
 {
@@ -5922,9 +5938,9 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_sigpending,       sys_sigpending),   // 73 * P
    //   (__NR_sethostname,      sys_sethostname),  // 74 * (almost P)
 
-   SYSX_(__NR_setrlimit,        sys_setrlimit),    // 75 * (SVr4,BSD4.3)
-   SYSBA(__NR_getrlimit,        sys_old_getrlimit, 0), // 76 *
-   SYSBA(__NR_getrusage,        sys_getrusage, 0), // 77 sys_getrusage *
+   SYSX_(__NR_setrlimit,        sys_setrlimit),       // 75 * (SVr4,BSD4.3)
+   SYSXY(__NR_getrlimit,        sys_old_getrlimit),   // 76 * (SVr4,BSD4.3)
+   SYSBA(__NR_getrusage,        sys_getrusage, 0),    // 77 *
    SYSBA(__NR_gettimeofday,     sys_gettimeofday, 0), // 78 *
    SYSB_(__NR_settimeofday,     sys_settimeofday, 0), // 79 *
 
@@ -5979,7 +5995,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(__NR_clone,            sys_clone, Special), // 120 (very non-gen) L
    //   (__NR_setdomainname,    sys_setdomainname),// 121 * (non-P?)
    SYSXY(__NR_uname,            sys_newuname),     // 122 * P
-   SYSB_(__NR_modify_ldt,       sys_modify_ldt, Special), // 123 sys_modify_ldt (x86,amd64) L
+   SYSB_(__NR_modify_ldt,       sys_modify_ldt, Special), // 123 (x86,amd64) L
    SYSBA(__NR_adjtimex,         sys_adjtimex, 0),  // 124 *
 
    SYSBA(__NR_mprotect,         sys_mprotect, 0),  // 125 *
@@ -6064,7 +6080,7 @@ static const struct sys_info sys_info[] = {
 
    // Nb: we convert vfork() to fork() in VG_(pre_syscall)().
    //   (__NR_vfork,            sys_vfork),        // 190 -- Valgrind avoids
-   SYSBA(__NR_ugetrlimit,       sys_getrlimit, 0), // 191 *
+   SYSXY(__NR_ugetrlimit,       sys_getrlimit),    // 191 * (?)
    SYSBA(__NR_mmap2,            sys_mmap2, 0),     // 192 
    SYSB_(__NR_truncate64,       sys_truncate64, MayBlock),   // 193 %%
    SYSB_(__NR_ftruncate64,      sys_ftruncate64, MayBlock), // 194 %%

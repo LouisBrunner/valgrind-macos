@@ -1114,14 +1114,83 @@ void VG_(wrap_syscall) ( void )
                         arg1,arg2,arg3,arg4,arg5,arg6);
          switch (arg1 /* call */) {
             case 1: /* IPCOP_semop */
-            case 2: /* IPCOP_semget */
-            case 3: /* IPCOP_semctl */
-            case 11: /* IPCOP_msgsnd */
-            case 12: /* IPCOP_msgrcv */
-            case 13: /* IPCOP_msgget */
-            case 14: /* IPCOP_msgctl */
+               must_be_readable ( "semop(sops)", arg5, 
+                                  arg3 * sizeof(struct sembuf) );
                KERNEL_DO_SYSCALL(res);
                break;
+            case 2: /* IPCOP_semget */
+            case 3: /* IPCOP_semctl */
+               KERNEL_DO_SYSCALL(res);
+               break;
+            case 11: /* IPCOP_msgsnd */
+               {
+                  struct msgbuf *msgp = (struct msgbuf *)arg5;
+                  Int msgsz = arg3;
+
+                  must_be_readable ( "msgsnd(msgp->mtype)", 
+                                     (UInt)&msgp->mtype, sizeof(msgp->mtype) );
+                  must_be_readable ( "msgsnd(msgp->mtext)", 
+                                     (UInt)msgp->mtext, msgsz );
+
+                  KERNEL_DO_SYSCALL(res);
+                  break;
+               }
+            case 12: /* IPCOP_msgrcv */
+               {
+                  struct msgbuf *msgp = ((struct ipc_kludge *)arg5)->msgp;
+                  Int msgsz = arg3;
+
+                  must_be_writable ( "msgsnd(msgp->mtype)", 
+                                     (UInt)&msgp->mtype, sizeof(msgp->mtype) );
+                  must_be_writable ( "msgsnd(msgp->mtext)", 
+                                     (UInt)msgp->mtext, msgsz );
+
+                  KERNEL_DO_SYSCALL(res);
+
+                  if ( !VG_(is_kerror)(res) && res > 0 ) {
+                     make_readable ( (UInt)&msgp->mtype, sizeof(msgp->mtype) );
+                     make_readable ( (UInt)msgp->mtext, res );
+                  }
+                  break;
+               }
+            case 13: /* IPCOP_msgget */
+               KERNEL_DO_SYSCALL(res);
+               break;
+            case 14: /* IPCOP_msgctl */
+               {
+                  switch (arg3 /* cmd */) {
+                     case IPC_STAT:
+                        must_be_writable ( "msgctl(buf)", arg5, 
+                                           sizeof(struct msqid_ds) );
+                        KERNEL_DO_SYSCALL(res);
+                        if ( !VG_(is_kerror)(res) && res > 0 ) {
+                           make_readable ( arg5, sizeof(struct msqid_ds) );
+                        }
+                        break;
+                     case IPC_SET:
+                        must_be_readable ( "msgctl(buf)", arg5, 
+                                           sizeof(struct msqid_ds) );
+                        KERNEL_DO_SYSCALL(res);
+                        break;
+                     case IPC_STAT|IPC_64:
+                        must_be_writable ( "msgctl(buf)", arg5, 
+                                           sizeof(struct msqid64_ds) );
+                        KERNEL_DO_SYSCALL(res);
+                        if ( !VG_(is_kerror)(res) && res > 0 ) {
+                           make_readable ( arg5, sizeof(struct msqid64_ds) );
+                        }
+                        break;
+                     case IPC_SET|IPC_64:
+                        must_be_readable ( "msgctl(buf)", arg5, 
+                                           sizeof(struct msqid64_ds) );
+                        KERNEL_DO_SYSCALL(res);
+                        break;
+                     default:
+                        KERNEL_DO_SYSCALL(res);
+                        break;
+                  }
+                  break;
+               }
             case 21: /* IPCOP_shmat */
                {
                   Int shmid = arg2;

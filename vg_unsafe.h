@@ -46,6 +46,9 @@
 #include <net/if.h>       /* for struct ifreq et al */
 #include <net/if_arp.h>   /* for struct arpreq */
 #include <net/route.h>    /* for struct rtentry */
+#include <asm/ipc.h>      /* for struct ipc_kludge */
+#include <linux/msg.h>    /* for struct msgbuf */
+#include <linux/sem.h>    /* for struct sembuf */
 
 #include <linux/isdn.h>   /* for ISDN ioctls */
 #include <linux/module.h> /* for struct module */

@@ -1,3 +1,9 @@
+2002-03-29  Tom Hughes <thh@cyberscience.com>
+
+	* vg_syscall_mem.c: Significantly improved SYSV IPC call
+	handling.  Unfortunately some of this stuff doesn't use
+	safe_dereference when it should.
+
 2002-03-27  Frederic Gobry  <gobry@puck.ch>
 
 	* configure.in: added support for maintainer mode. Now, to

@@ -1391,7 +1391,7 @@ void VG_(nuke_all_threads_except) ( ThreadId me )
       VG_(threads)[tid].status = VgTs_Empty;
       VG_(threads)[tid].associated_mx = NULL;
       VG_(threads)[tid].associated_cv = NULL;
-      VG_(threads)[tid].stack_base = NULL;
+      VG_(threads)[tid].stack_base = (Addr)NULL;
       VG_(threads)[tid].stack_size = 0;
       cleanup_after_thread_exited( tid, True );
    }

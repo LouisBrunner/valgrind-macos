@@ -125,12 +125,17 @@ int main ( int argc, char** argv )
                  origbuf, (Addr64)orig_addr, chase_into_not_ok,
                  &orig_used,
                  transbuf, N_TRANSBUF, &trans_used,
+#if 1 /* no instrumentation */
+                 NULL,          /* instrument1 */
+                 NULL,          /* instrument2 */
+		 False,         /* cleanup after instrument */
+#endif
 #if 0 /* addrcheck */
                  ac_instrument, /* instrument1 */
                  NULL,          /* instrument2 */
 		 False,         /* cleanup after instrument */
 #endif
-#if 1 /* memcheck */
+#if 0 /* memcheck */
                  mc_instrument, /* instrument1 */
                  NULL,          /* instrument2 */
 		 False,         /* cleanup after instrument */

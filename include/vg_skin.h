@@ -254,7 +254,7 @@ typedef
    ThreadState;
 
 extern ThreadId     VG_(get_current_tid)           ( void );
-extern ThreadId     VG_(get_current_tid_1_if_root) ( void );
+extern ThreadId     VG_(get_current_or_recent_tid) ( void );
 extern ThreadId     VG_(get_tid_from_ThreadState)  ( ThreadState* );
 extern ThreadState* VG_(get_ThreadState)           ( ThreadId tid );
 

@@ -95,6 +95,10 @@ static ForkHandlerEntry vg_fhstack[VG_N_FORKHANDLERSTACK];
 /* The tid of the thread currently in VG_(baseBlock). */
 static Int vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 
+/* The tid either currently in baseBlock, or was in baseBlock before
+   was saved it out; this is only updated when a new thread is loaded
+   into the baseBlock */
+static Int vg_tid_last_in_baseBlock = VG_INVALID_THREADID;
 
 /* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
 jmp_buf VG_(scheduler_jmpbuf);
@@ -376,17 +380,18 @@ ThreadState* VG_(get_current_thread_state) ( void )
 
 ThreadId VG_(get_current_tid) ( void )
 {
-   vg_assert(VG_(is_valid_tid)(vg_tid_currently_in_baseBlock));
+   if (!VG_(is_valid_tid)(vg_tid_currently_in_baseBlock))
+      return VG_INVALID_THREADID;
    return vg_tid_currently_in_baseBlock;
 }
 
-ThreadId VG_(get_current_tid_1_if_root) ( void )
+ThreadId VG_(get_current_or_recent_tid) ( void )
 {
-   if (0 == vg_tid_currently_in_baseBlock)
-      return 1;     /* root thread */
-    
-   vg_assert(VG_(is_valid_tid)(vg_tid_currently_in_baseBlock));
-   return vg_tid_currently_in_baseBlock;
+   vg_assert(vg_tid_currently_in_baseBlock == vg_tid_last_in_baseBlock ||
+	     vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
+   vg_assert(VG_(is_valid_tid)(vg_tid_last_in_baseBlock));
+
+   return vg_tid_last_in_baseBlock;
 }
 
 ThreadId VG_(get_tid_from_ThreadState) (ThreadState* tst)
@@ -453,6 +458,7 @@ void VG_(load_thread_state) ( ThreadId tid )
    }
 
    vg_tid_currently_in_baseBlock = tid;
+   vg_tid_last_in_baseBlock = tid;
 }
 
 
@@ -693,6 +699,7 @@ void VG_(scheduler_init) ( void )
 
    /* Copy VG_(baseBlock) state to tid_main's slot. */
    vg_tid_currently_in_baseBlock = tid_main;
+   vg_tid_last_in_baseBlock = tid_main;
    VG_(save_thread_state) ( tid_main );
 
    VG_(threads)[tid_main].stack_highest_word 

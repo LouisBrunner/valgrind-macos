@@ -287,8 +287,10 @@ static __inline__
 void init_nonvirgin_sword(Addr a)
 {
    shadow_word sword;
+   ThreadId tid = VG_(get_current_or_recent_tid)();
 
-   sword.other = VG_(get_current_tid_1_if_root)();
+   sk_assert(tid != VG_INVALID_THREADID);
+   sword.other = tid;
    sword.state = Vge_Excl;
    set_sword(a, sword);
 }
@@ -303,7 +305,7 @@ void init_magically_inited_sword(Addr a)
 {
    shadow_word sword;
 
-   sk_assert(1 == VG_(get_current_tid_1_if_root)());
+   sk_assert(VG_INVALID_THREADID == VG_(get_current_tid)());
    sword.other = TID_INDICATING_NONVIRGIN;
    sword.state = Vge_Virgin;
    set_sword(a, virgin_sword);

@@ -193,27 +193,29 @@ ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
     * offending stack traces only have one item.  --njn, 2002-aug-16 */
    /* vg_assert(ebp_min <= ebp_max);*/
 
-   /* Checks the stack isn't riduculously big */
-   vg_assert(ebp_min + 4000000 > ebp_max);
-
-   //   VG_(printf)("%p -> %p\n", ebp_max_orig, ebp_max);
-   eips[0] = eip;
-   //   VG_(printf)("\nSNAP: %p .. %p, EBP=%p\n", ebp_min, ebp_max, ebp  );
-   //   VG_(printf)("   : %p\n", eips[0]);
-   /* Get whatever we safely can ... */
-   for (i = 1; i < VG_(clo_backtrace_size); i++) {
-      if (!(ebp_min <= ebp && ebp <= ebp_max)) {
-         //VG_(printf)("... out of range %p\n", ebp);
-         break; /* ebp gone baaaad */
+   if (ebp_min + 4000000 > ebp_max) {
+      /* If the stack is ridiculously big, don't poke around ... but
+         don't bomb out either.  Needed to make John Regehr's
+         user-space threads package work. JRS 20021001 */
+      eips[0] = eip;
+      i = 1;
+   } else {
+      /* Get whatever we safely can ... */
+      eips[0] = eip;
+      for (i = 1; i < VG_(clo_backtrace_size); i++) {
+         if (!(ebp_min <= ebp && ebp <= ebp_max)) {
+            //VG_(printf)("... out of range %p\n", ebp);
+            break; /* ebp gone baaaad */
+         }
+         // NJN 2002-sep-17: monotonicity doesn't work -- gives wrong traces...
+         //     if (ebp >= ((UInt*)ebp)[0]) {
+         //   VG_(printf)("nonmonotonic\n");
+         //    break; /* ebp gone nonmonotonic */
+         // }
+         eips[i] = ((UInt*)ebp)[1];  /* ret addr */
+         ebp     = ((UInt*)ebp)[0];  /* old ebp */
+         //VG_(printf)("     %p\n", eips[i]);
       }
-      // NJN 2002-sep-17: monotonicity doesn't work -- gives wrong traces...
-      //     if (ebp >= ((UInt*)ebp)[0]) {
-      //   VG_(printf)("nonmonotonic\n");
-      //    break; /* ebp gone nonmonotonic */
-      // }
-      eips[i] = ((UInt*)ebp)[1];  /* ret addr */
-      ebp     = ((UInt*)ebp)[0];  /* old ebp */
-      //VG_(printf)("     %p\n", eips[i]);
    }
 
    /* Put zeroes in the rest. */

@@ -1047,6 +1047,19 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         * e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
+            case Iop_MullS32: {
+               /* very paranoid */
+               UInt  u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt  u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               Int   s32a = (Int)u32a;
+               Int   s32b = (Int)u32b;
+               Long  s64a = (Long)s32a;
+               Long  s64b = (Long)s32b;
+               Long  sres = s64a * s64b;
+               ULong ures = (ULong)sres;
+               e2 = IRExpr_Const(IRConst_U64(ures));
+               break;
+            }
 
             /* -- Shl -- */
             case Iop_Shl32:

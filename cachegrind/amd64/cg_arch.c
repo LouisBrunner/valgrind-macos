@@ -35,7 +35,6 @@
 // Probably only works for Intel and AMD chips, and probably only for some of
 // them. 
 
-#if 0
 static void micro_ops_warn(Int actual_size, Int used_size, Int line_size)
 {
     VG_(message)(Vg_DebugMsg, 
@@ -246,48 +245,19 @@ Int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    return 0;
 }
 
-static jmp_buf cpuid_jmpbuf;
-
-static
-void cpuid_SIGILL_handler(int signum)
-{
-   __builtin_longjmp(cpuid_jmpbuf, 1);
-}
-
 static 
 Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
-   Int  level, res, ret;
+   Int  level, ret;
    Char vendor_id[13];
-   struct vki_sigaction sigill_new, sigill_saved;
-
-   /* Install own SIGILL handler */
-   sigill_new.ksa_handler  = cpuid_SIGILL_handler;
-   sigill_new.sa_flags    = 0;
-   sigill_new.sa_restorer = NULL;
-   res = VG_(sigemptyset)( &sigill_new.sa_mask );
-   tl_assert(res == 0);
-
-   res = VG_(sigaction)( VKI_SIGILL, &sigill_new, &sigill_saved );
-   tl_assert(res == 0);
-
    /* Trap for illegal instruction, in case it's a really old processor that
     * doesn't support CPUID. */
-   if (__builtin_setjmp(cpuid_jmpbuf) == 0) {
+   if (VG_(has_cpuid)()) {
       VG_(cpuid)(0, &level, (int*)&vendor_id[0], 
                             (int*)&vendor_id[8], (int*)&vendor_id[4]);    
       vendor_id[12] = '\0';
-
-      /* Restore old SIGILL handler */
-      res = VG_(sigaction)( VKI_SIGILL, &sigill_saved, NULL );
-      tl_assert(res == 0);
-
    } else  {
       VG_(message)(Vg_DebugMsg, "CPUID instruction not supported");
-
-      /* Restore old SIGILL handler */
-      res = VG_(sigaction)( VKI_SIGILL, &sigill_saved, NULL );
-      tl_assert(res == 0);
       return -1;
    }
 
@@ -303,19 +273,6 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    } else if (0 == VG_(strcmp)(vendor_id, "AuthenticAMD")) {
       ret = AMD_cache_info(I1c, D1c, L2c);
 
-   } else if (0 == VG_(strcmp)(vendor_id, "CentaurHauls")) {
-      /* Total kludge.  Pretend to be a VIA Nehemiah. */
-      D1c->size      = 64;
-      D1c->assoc     = 16;
-      D1c->line_size = 16;
-      I1c->size      = 64;
-      I1c->assoc     = 4;
-      I1c->line_size = 16;
-      L2c->size      = 64;
-      L2c->assoc     = 16;
-      L2c->line_size = 16;
-      ret = 0;
-
    } else {
       VG_(message)(Vg_DebugMsg, "CPU vendor ID not recognised (%s)",
                    vendor_id);
@@ -329,24 +286,11 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
       
    return ret;
 }
-#endif
 
 
 void VGA_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
                             Bool all_caches_clo_defined)
 {
-   // Set caches to default.
-   *I1c = (cache_t) {  65536, 2, 64 };
-   *D1c = (cache_t) {  65536, 2, 64 };
-   *L2c = (cache_t) { 524288, 8, 64 };
-
-   if (1) {
-      VG_(message)(Vg_DebugMsg, 
-                   "Warning: Couldn't auto-detect cache config, using one "
-                   "or more defaults ");
-   }
-
-#if 0
    Int res;
    
    // Set caches to default.
@@ -363,7 +307,6 @@ void VGA_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
                    "Warning: Couldn't auto-detect cache config, using one "
                    "or more defaults ");
    }
-#endif
 }
 
 /*--------------------------------------------------------------------*/

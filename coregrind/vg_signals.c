@@ -981,6 +981,9 @@ void VG_(kill_self)(Int sigNo)
 
 // Core dumping is disabled until someone can work out how to abstract out
 // the arch-specific and word-size-specific parts neatly.
+//
+// Note that the code below is not 64-bit clean!
+//
 #if 0
 /*
   Dump core

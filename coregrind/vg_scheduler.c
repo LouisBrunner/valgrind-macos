@@ -426,7 +426,7 @@ void VG_(scheduler_init) ( void )
    vg_assert(tid_main == 1); 
    VG_(threads)[tid_main].status = VgTs_Runnable;
 
-   VG_(threads)[tid_main].stack_highest_word = VG_(clstk_end) - 4;
+   VG_(threads)[tid_main].stack_highest_word = VG_(clstk_end) - sizeof(UWord);
    VG_(threads)[tid_main].stack_base = VG_(clstk_base);
    VG_(threads)[tid_main].stack_size = VG_(client_rlimit_stack).rlim_cur;
 
@@ -1824,7 +1824,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
       VG_(threads)[tid].stack_size = new_stk_szb;
       VG_(threads)[tid].stack_highest_word
          = new_stack + new_stk_szb 
-                     - VG_AR_CLIENT_STACKBASE_REDZONE_SZB; /* -4  ??? */;
+                     - VG_AR_CLIENT_STACKBASE_REDZONE_SZB; /* - sizeof(UWord) ??? */;
    }
 
    /* Having got memory to hold the thread's stack:

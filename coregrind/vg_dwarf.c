@@ -202,6 +202,8 @@ int process_extended_line_op( SegInfo *si, Char*** fnames,
 
     case DW_LNE_set_address:
       /* XXX: Pointer size could be 8 */
+      // (and there may be other 32-bit assumptions within this file?
+      //  not sure...  --njn)
       vg_assert(pointer_size == 4);
       adr = *((Addr *)data);
       if (0) VG_(printf)("smr.a := %p\n", adr );

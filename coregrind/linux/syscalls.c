@@ -253,6 +253,8 @@ PRE(sys_syslog, MayBlock)
    PRINT("sys_syslog (%d, %p, %d)", ARG1,ARG2,ARG3);
    PRE_REG_READ3(long, "syslog", int, type, char *, bufp, int, len);
    switch (ARG1) {
+   // The kernel uses magic numbers here, rather than named constants,
+   // therefore so do we.
    case 2: case 3: case 4:
       PRE_MEM_WRITE( "syslog(bufp)", ARG2, ARG3);
       break;

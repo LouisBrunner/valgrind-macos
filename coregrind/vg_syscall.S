@@ -112,6 +112,11 @@ VG_(clone):
 	pop	%edi
 	pop	%ebx
 	ret
+
+.globl VG_(sigreturn)
+VG_(sigreturn):
+	movl	$__NR_rt_sigreturn, %eax
+	int	$0x80
 	
 ##--------------------------------------------------------------------##
 ##--- end                                             vg_syscall.S ---##

@@ -1667,6 +1667,7 @@ extern Addr VG_(search_transtab) ( Addr original_addr );
 extern Int VG_(do_syscall) ( UInt, ... );
 extern Int VG_(clone) ( Int (*fn)(void *), void *stack, Int flags, void *arg, 
 			Int *child_tid, Int *parent_tid);
+extern void VG_(sigreturn)(void);
 
 /* ---------------------------------------------------------------------
    Exports of vg_dispatch.S

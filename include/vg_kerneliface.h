@@ -249,9 +249,9 @@ struct vki_ucontext {
 #define VKI_SA_NODEFER      0x40000000
 #define VKI_SA_NOMASK       VKI_SA_NODEFER
 #define VKI_SA_NOCLDWAIT    0x00000002
+#define VKI_SA_RESTORER     0x04000000
 #if 0
 #define VKI_SA_INTERRUPT    0x20000000 /* dummy -- ignored */
-#define VKI_SA_RESTORER     0x04000000
 #endif
 
 /* extra wait flags */

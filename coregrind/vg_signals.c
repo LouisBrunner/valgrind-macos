@@ -353,6 +353,9 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
       /* always ask for SA_SIGINFO */
       skss_flags |= VKI_SA_SIGINFO;
 
+      /* use our own restorer */
+      skss_flags |= VKI_SA_RESTORER;
+
       /* Create SKSS entry for this signal. */
 
       if (sig != VKI_SIGKILL && sig != VKI_SIGSTOP)
@@ -410,11 +413,12 @@ void VG_(handle_SCSS_change) ( Bool force_update )
 
       ksa.ksa_handler = vg_skss.skss_per_sig[sig].skss_handler;
       ksa.ksa_flags   = vg_skss.skss_per_sig[sig].skss_flags;
+      ksa.ksa_restorer = VG_(sigreturn);
+
       vg_assert(ksa.ksa_flags & VKI_SA_ONSTACK);
       VG_(ksigfillset)( &ksa.ksa_mask );
       VG_(ksigdelset)( &ksa.ksa_mask, VKI_SIGKILL );
       VG_(ksigdelset)( &ksa.ksa_mask, VKI_SIGSTOP );
-      ksa.ksa_restorer = NULL;
 
       if (VG_(clo_trace_signals)) 
          VG_(message)(Vg_DebugMsg, 

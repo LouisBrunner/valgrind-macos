@@ -3,7 +3,7 @@ Conditional jump or move depends on uninitialised value(s)
    at 0x........: fooble (...)
    by 0x........: main (pushfpopf_c.c:12)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/pushfpopf)
+   by 0x........: ...
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 0 bytes in 0 blocks.

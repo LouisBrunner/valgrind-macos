@@ -1,5 +1,5 @@
 #! /bin/sh
 
-./filter_stderr | \
+./filter_stderr |
 sed "s/: fooble ([^)]*)/: fooble (...)/"
 

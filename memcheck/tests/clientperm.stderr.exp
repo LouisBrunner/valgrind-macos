@@ -2,12 +2,12 @@
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (clientperm.c:29)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/clientperm)
+   by 0x........: ...
 
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (clientperm.c:36)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/clientperm)
+   by 0x........: ...
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 100 bytes in 1 blocks.

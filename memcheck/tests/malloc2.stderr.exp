@@ -2,23 +2,23 @@
 Invalid write of size 1
    at 0x........: main (malloc2.c:39)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/malloc2)
+   by 0x........: ...
    Address 0x........ is 0 bytes inside a block of size 429 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (malloc2.c:38)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/malloc2)
+   by 0x........: ...
 
 Invalid free() / delete / delete[]
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (malloc2.c:43)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/malloc2)
+   by 0x........: ...
    Address 0x........ is 0 bytes inside a block of size 429 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (malloc2.c:38)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/malloc2)
+   by 0x........: ...
 
 ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 0 bytes in 0 blocks.

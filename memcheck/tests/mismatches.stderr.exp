@@ -3,67 +3,55 @@ Mismatched free() / delete / delete []
    at 0x........: __builtin_delete (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:6)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
    Address 0x........ is 0 bytes inside a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:5)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
 
 Mismatched free() / delete / delete []
    at 0x........: __builtin_vec_delete (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:8)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
    Address 0x........ is 0 bytes inside a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:7)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
 
 Mismatched free() / delete / delete []
    at 0x........: __builtin_delete (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:13)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
    Address 0x........ is 0 bytes inside a block of size 40 alloc'd
    at 0x........: __builtin_vec_new (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:12)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
 
 Mismatched free() / delete / delete []
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:15)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
    Address 0x........ is 0 bytes inside a block of size 40 alloc'd
    at 0x........: __builtin_vec_new (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:14)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
 
 Mismatched free() / delete / delete []
    at 0x........: __builtin_vec_delete (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:20)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
    Address 0x........ is 0 bytes inside a block of size 4 alloc'd
    at 0x........: __builtin_new (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:19)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
 
 Mismatched free() / delete / delete []
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:22)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
    Address 0x........ is 0 bytes inside a block of size 4 alloc'd
    at 0x........: __builtin_new (vg_replace_malloc.c:...)
    by 0x........: main (mismatches.cpp:21)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/mismatches)
 
 ERROR SUMMARY: 6 errors from 6 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 0 bytes in 0 blocks.

@@ -1,4 +1,12 @@
 #! /bin/sh
 
 # Anonymise paths like "/local/foo/bar/tests/baz/quux" (note "tests" is there)
-sed "s/\/.*\/tests\//\/...\/tests\//"
+#sed "s/\/.*\/tests\//\/...\/tests\//"
+
+# Remove these two kinds of lines, which tend to appear beneath
+# the stack frame of __libc_start_main
+#    by 0x........: (within /.../tests/malloc2)
+#    by 0x........: ??? (start.S:81)
+sed "s/by 0x........: (within [^)]*)/by 0x........: .../" | \
+sed "s/by 0x........: ??? ([^)]*)/by 0x........: .../"
+

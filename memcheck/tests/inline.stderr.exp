@@ -3,12 +3,12 @@ Invalid read of size 4
    at 0x........: addemup (inline.c:10)
    by 0x........: main (inline.c:18)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/inline)
+   by 0x........: ...
    Address 0x........ is 0 bytes after a block of size 40 alloc'd
    at 0x........: calloc (vg_replace_malloc.c:...)
    by 0x........: main (inline.c:17)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: (within /.../tests/inline)
+   by 0x........: ...
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 40 bytes in 1 blocks.

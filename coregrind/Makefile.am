@@ -88,6 +88,7 @@ noinst_HEADERS = \
         vg_include.h            \
         vg_constants.h          \
 	vg_symtab2.h		\
+        vg_unistd.h             \
 	vg_symtypes.h		\
 	vg_unsafe.h
 

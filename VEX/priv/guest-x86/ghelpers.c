@@ -590,17 +590,17 @@ static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
 Addr64 x86guest_findhelper ( Char* function_name )
 {
    if (vex_streq(function_name, "calculate_condition"))
-      return (Addr64)(& calculate_condition);
+      return (Addr64)(Addr32)(& calculate_condition);
    if (vex_streq(function_name, "calculate_eflags_c"))
-      return (Addr64)(& calculate_eflags_c);
+      return (Addr64)(Addr32)(& calculate_eflags_c);
    if (vex_streq(function_name, "calculate_eflags_all"))
-      return (Addr64)(& calculate_eflags_all);
+      return (Addr64)(Addr32)(& calculate_eflags_all);
    if (vex_streq(function_name, "calculate_FXAM"))
-      return (Addr64)(& calculate_FXAM);
+      return (Addr64)(Addr32)(& calculate_FXAM);
    if (vex_streq(function_name, "storeF80le"))
-      return (Addr64)(& storeF80le);
+      return (Addr64)(Addr32)(& storeF80le);
    if (vex_streq(function_name, "loadF80le"))
-      return (Addr64)(& loadF80le);
+      return (Addr64)(Addr32)(& loadF80le);
    vex_printf("\nx86 guest: can't find helper: %s\n", function_name);
    vpanic("x86guest_findhelper");
 }

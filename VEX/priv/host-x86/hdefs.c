@@ -960,7 +960,7 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 {
    Int base = 4 * 51;
    vassert(offset >= 0);
-   vassert(offset <= 4*(24-1));
+   vassert(offset <= 4*(100-1));
    vassert(!hregIsVirtual(rreg));
    switch (hregClass(rreg)) {
       case HRcInt:
@@ -978,7 +978,7 @@ X86Instr* genReload_X86 ( HReg rreg, Int offset )
 {
    Int base = 4 * 51;
    vassert(offset >= 0);
-   vassert(offset <= 4*(24-1));
+   vassert(offset <= 4*(100-1));
    vassert(!hregIsVirtual(rreg));
    switch (hregClass(rreg)) {
       case HRcInt:

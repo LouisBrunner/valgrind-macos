@@ -16,7 +16,7 @@
 #define DEBUG_REGALLOC 0
 
 /* How many 64-bit sized spill slots do we have? */
-#define N_SPILL64S  12
+#define N_SPILL64S  50
 
 
 /* TODO (critical)

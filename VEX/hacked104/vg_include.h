@@ -72,7 +72,7 @@
    doesn't make it into a RealReg.  Just bomb the entire system if
    this value is too small; we don't expect it will ever get
    particularly high. */
-#define VG_MAX_SPILLSLOTS 24
+#define VG_MAX_SPILLSLOTS 100
 
 
 /* Constants for the slow translation lookup cache. */

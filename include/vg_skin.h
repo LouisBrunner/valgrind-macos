@@ -1332,7 +1332,7 @@ extern Bool VG_(get_filename_linenum)
    a particular function.  Nb: if an executable/shared object is stripped
    of its symbols, this function will not be able to recognise function
    entry points within it. */
-extern Bool VG_(get_fnname_if_entry) ( Addr a, Char* filename, Int n_filename );
+extern Bool VG_(get_fnname_if_entry) ( Addr a, Char* fnname, Int n_fnname );
 
 /* Succeeds if the address is within a shared object or the main executable.
    It doesn't matter if debug info is present or not. */

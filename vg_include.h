@@ -1294,6 +1294,7 @@ extern void VG_(helper_bsr);
 extern void VG_(helper_fstsw_AX);
 extern void VG_(helper_SAHF);
 extern void VG_(helper_DAS);
+extern void VG_(helper_DAA);
 
 extern void VG_(helper_value_check4_fail);
 extern void VG_(helper_value_check2_fail);
@@ -1423,6 +1424,7 @@ extern Int VGOFF_(helper_bsr);
 extern Int VGOFF_(helper_fstsw_AX);
 extern Int VGOFF_(helper_SAHF);
 extern Int VGOFF_(helper_DAS);
+extern Int VGOFF_(helper_DAA);
 
 extern Int VGOFF_(helper_value_check4_fail);
 extern Int VGOFF_(helper_value_check2_fail);

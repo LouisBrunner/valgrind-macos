@@ -309,6 +309,16 @@ VG_(helper_DAS):
 	ret
 
 
+/* Similarly, do %al = DAA(%al). */
+.global VG_(helper_DAA)
+VG_(helper_DAA):
+       pushl   %eax
+       movl    8(%esp), %eax
+       daa
+       movl    %eax, 8(%esp)
+       popl    %eax
+       ret
+	
 
 /* Bit scan forwards/reverse.  Sets flags (??).
    On entry:

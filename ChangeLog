@@ -1,5 +1,8 @@
 2002-03-24  Julian Seward  <sewardj@localhost.localdomain>
 
+	* vg_to_ucode.c (disInstr): Implement DAA as well as DAS.
+         Byrial Jensen <byrial@image.dk>
+
 	* vg_errcontext.c (pp_ErrContext): Change message "Use of
 	uninitialized CPU condition code" to "Conditional jump or move
 	depends on uninitialised value(s)", since that will be more

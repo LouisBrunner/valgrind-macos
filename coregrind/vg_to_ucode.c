@@ -3035,6 +3035,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
    /* ---------------- Misc wierd-ass insns --------------- */
 
+   case 0x27: /* DAA */
    case 0x2F: /* DAS */
       t1 = newTemp(cb);
       uInstr2(cb, GET, 1, ArchReg, R_AL, TempReg, t1);
@@ -3044,12 +3045,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       LAST_UINSTR(cb).signed_widen = False;
       uInstr0(cb, CALLM_S, 0);
       uInstr1(cb, PUSH, 4, TempReg, t1);
-      uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_DAS) );
+      uInstr1(cb, CALLM, 0, Lit16, 
+                  opc == 0x27 ? VGOFF_(helper_DAA) : VGOFF_(helper_DAS) );
       uFlagsRWU(cb, FlagsAC, FlagsOSZACP, FlagsEmpty);
       uInstr1(cb, POP, 4, TempReg, t1);
       uInstr0(cb, CALLM_E, 0);
       uInstr2(cb, PUT, 1, TempReg, t1, ArchReg, R_AL);
-      if (dis) VG_(printf)("das\n");
+      if (dis) VG_(printf)(opc == 0x27 ? "daa\n" : "das\n");
+      break;
 
    /* ------------------------ CWD/CDQ -------------------- */
 

@@ -42,6 +42,13 @@
    disInstr for details.
 */
 
+/* TODO:
+
+   MOVQ (sse) is wrong wrt is the upper half zeroed or not?
+   It always should be if dst is a reg; not quite the same
+   as MOVSD.
+*/
+
 //.. /* TODO:
 //.. 
 //..    check flag settings for cmpxchg
@@ -5073,13 +5080,13 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
          switch (gregLO3ofRM(modrm)) {
 
-//..             case 0: /* FILD m32int */
-//..                DIP("fildl %s\n", dis_buf);
-//..                fp_push();
-//..                put_ST(0, unop(Iop_I32toF64,
-//..                               loadLE(Ity_I32, mkexpr(addr))));
-//..                break;
-//.. 
+            case 0: /* FILD m32int */
+               DIP("fildl %s\n", dis_buf);
+               fp_push();
+               put_ST(0, unop(Iop_I32toF64,
+                              loadLE(Ity_I32, mkexpr(addr))));
+               break;
+
 //..             case 2: /* FIST m32 */
 //..                DIP("fistl %s\n", dis_buf);
 //..                storeLE( mkexpr(addr), 
@@ -10142,23 +10149,24 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       }
 //..       /* else fall through */
 //..    }
-//.. 
-//..    /* 66 0F D6 = MOVQ -- move 64 bits from G (lo half xmm) to E (mem
-//..       or lo half xmm).  */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD6) {
-//..       modrm = getUChar(delta+2);
-//..       if (epartIsReg(modrm)) {
-//..          /* fall through, awaiting test case */
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
-//..          storeLE( mkexpr(addr), 
-//..                   getXMMRegLane64( gregOfRM(modrm), 0 ));
-//..          DIP("movq %s,%s\n", nameXMMReg(gregOfRM(modrm)), dis_buf );
-//..          delta += 2+alen;
-//..          goto decode_success;
-//..       }
-//..    }
-//.. 
+
+   /* 66 0F D6 = MOVQ -- move 64 bits from G (lo half xmm) to E (mem
+      or lo half xmm).  */
+   if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0xD6) {
+      vassert(sz == 2);
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         /* fall through, awaiting test case */
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         storeLE( mkexpr(addr), 
+                  getXMMRegLane64( gregOfRexRM(pfx,modrm), 0 ));
+         DIP("movq %s,%s\n", nameXMMReg(gregOfRexRM(pfx,modrm)), dis_buf );
+         delta += 2+alen;
+         goto decode_success;
+      }
+   }
+
 //..    /* F3 0F D6 = MOVQ2DQ -- move from E (mmx) to G (lo half xmm, zero
 //..       hi half). */
 //..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xD6) {
@@ -10182,8 +10190,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* F2 0F 10 = MOVSD -- move 64 bits from E (mem or lo half xmm) to
       G (lo half xmm).  If E is mem, upper half of G is zeroed out.
       (original defn) */
-   if ((haveF2no66noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x10)
-//..        || (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x7E)
+   if ( (haveF2no66noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x10)
+        || 
+        (haveF3no66noF2(pfx) && insn[0] == 0x0F && insn[1] == 0x7E)
       ) {
       vassert(sz == 4);
       modrm = getUChar(delta+2);
@@ -13128,10 +13137,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
             DIP("set%s %s\n", name_AMD64Condcode(opc-0x90), 
                               nameIRegE(1,pfx,modrm));
          } else {
-           addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
-           delta += alen;
-           storeLE( mkexpr(addr), mkexpr(t1) );
-           DIP("set%s %s\n", name_AMD64Condcode(opc-0x90), dis_buf);
+            addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
+            delta += alen;
+            storeLE( mkexpr(addr), mkexpr(t1) );
+            DIP("set%s %s\n", name_AMD64Condcode(opc-0x90), dis_buf);
          }
          break;
 

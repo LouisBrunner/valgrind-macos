@@ -35,24 +35,31 @@
 
 /* TODO:
    SBB reg with itself
-   MOVAPS fix (vg_to_ucode rev 1.143)
+
    check flag settings for cmpxchg
    FUCOMI(P): what happens to A and S flags?  Currently are forced
       to zero.
-   Fix CPUID, or more precisely, eflags bit 21 so it is changeable.
 
    x87 FP Limitations:
    * no FP exceptions, except for handling stack over/underflow
    * FP rounding mode observed only for float->int conversions
+     and int->float conversions which could lose accuracy
    * FP sin/cos/tan/sincos: C2 flag is always cleared.  IOW the
      simulation claims the argument is in-range (-2^63 <= arg <= 2^63)
      even when it isn't.
    * some of the FCOM cases could do with testing -- not convinced
      that the args are the right way round.
 
+   CPUID claims Pentium-MMX, no matter what.
+   RDTSC returns zero, always.
+
+   SAHF should cause eflags[1] == 1, and in fact it produces 0.  As
+   per Intel docs this bit has no meaning anyway.  Since PUSHF is the
+   only way to observe eflags[1], a proper fix would be to make that
+   bit be set by PUSHF.
+
    This module uses global variables and so is not MT-safe (if that
-   should ever become relevant).
-*/
+   should ever become relevant).  */
 
 /* Translates x86 code to IR. */
 
@@ -12864,7 +12871,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       /* =-=-=-=-=-=-=-=-=- RDTSC -=-=-=-=-=-=-=-=-=-=-= */
 
       case 0x31: /* RDTSC */
-         vex_printf("vex x86->IR: kludged rdtsc\n");
+         if (0) vex_printf("vex x86->IR: kludged rdtsc\n");
          putIReg(4, R_EAX, mkU32(0));
          putIReg(4, R_EDX, mkU32(0));
 

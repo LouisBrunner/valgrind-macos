@@ -60,7 +60,7 @@ typedef
    }
    X86CondCode;
 
-extern void ppX86CondCode ( X86CondCode );
+extern Char* showX86CondCode ( X86CondCode );
 
 
 /* --------- Memory address expressions (amodes). --------- */
@@ -194,6 +194,28 @@ extern void ppX86RM ( X86RM* );
 /* --------- Instructions. --------- */
 
 /* --------- */
+typedef
+   enum {
+      Xss_16,
+      Xss_32
+   }
+   X86ScalarSz;
+
+extern Char* showX86ScalarSz ( X86ScalarSz );
+
+
+/* --------- */
+typedef
+   enum {
+      Xun_Neg,
+      Xun_Not
+   }
+   X86UnaryOp;
+
+extern Char* showX86UnaryOp ( X86UnaryOp );
+
+
+/* --------- */
 typedef 
    enum {
       Xalu_INVALID,
@@ -201,11 +223,12 @@ typedef
       Xalu_CMP,
       Xalu_TEST,
       Xalu_ADD, Xalu_SUB, Xalu_ADC, Xalu_SBB, 
-      Xalu_AND, Xalu_OR, Xalu_XOR 
+      Xalu_AND, Xalu_OR, Xalu_XOR,
+      Xalu_MUL
    }
    X86AluOp;
 
-extern void ppX86AluOp ( X86AluOp );
+extern Char* showX86AluOp ( X86AluOp );
 
 
 /* --------- */
@@ -217,7 +240,7 @@ typedef
    }
    X86ShiftOp;
 
-extern void ppX86ShiftOp ( X86ShiftOp );
+extern Char* showX86ShiftOp ( X86ShiftOp );
 
 
 /* --------- */
@@ -225,7 +248,7 @@ typedef
    enum {
       Xin_Alu32R,    /* 32-bit mov/arith/logical, dst=REG */
       Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
-      Xin_Not32,     /* 32-bit not */
+      Xin_Unary32,   /* 32-bit not and neg */
       Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
       Xin_Push,      /* push (32-bit?) value on stack */
       Xin_Call,      /* call to address in register */
@@ -252,9 +275,17 @@ typedef
             X86RI*    src;
             X86AMode* dst;
          } Alu32M;
+         /* Not and Neg */
          struct {
+            X86UnaryOp op;
             X86RM* dst;
-         } Not32;
+         } Unary32;
+         /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
+         struct {
+            Bool        syned;
+            X86ScalarSz ssz;
+            X86RM*      src;
+         } MulL;
          struct {
             X86ShiftOp op;
             UInt       src;  /* shift amount, or 0 means %cl */
@@ -296,17 +327,18 @@ typedef
    }
    X86Instr;
 
-extern X86Instr* X86Instr_Alu32R ( X86AluOp, X86RMI*, HReg );
-extern X86Instr* X86Instr_Alu32M ( X86AluOp, X86RI*,  X86AMode* );
-extern X86Instr* X86Instr_Not32  ( X86RM* dst );
-extern X86Instr* X86Instr_Sh32   ( X86ShiftOp, UInt, X86RM* );
-extern X86Instr* X86Instr_Push   ( X86RMI* );
-extern X86Instr* X86Instr_Call   ( HReg );
-extern X86Instr* X86Instr_Goto   ( X86CondCode cond, X86RI* dst );
-extern X86Instr* X86Instr_CMovZ  ( X86RM* src, HReg dst );
-extern X86Instr* X86Instr_LoadEX ( UChar szSmall, Bool syned,
-                                   X86AMode* src, HReg dst );
-extern X86Instr* X86Instr_Store  ( UChar sz, HReg src, X86AMode* dst );
+extern X86Instr* X86Instr_Alu32R  ( X86AluOp, X86RMI*, HReg );
+extern X86Instr* X86Instr_Alu32M  ( X86AluOp, X86RI*,  X86AMode* );
+extern X86Instr* X86Instr_Unary32 ( X86UnaryOp op, X86RM* dst );
+extern X86Instr* X86Instr_MulL    ( Bool syned, X86ScalarSz, X86RM* );
+extern X86Instr* X86Instr_Sh32    ( X86ShiftOp, UInt, X86RM* );
+extern X86Instr* X86Instr_Push    ( X86RMI* );
+extern X86Instr* X86Instr_Call    ( HReg );
+extern X86Instr* X86Instr_Goto    ( X86CondCode cond, X86RI* dst );
+extern X86Instr* X86Instr_CMovZ   ( X86RM* src, HReg dst );
+extern X86Instr* X86Instr_LoadEX  ( UChar szSmall, Bool syned,
+                                    X86AMode* src, HReg dst );
+extern X86Instr* X86Instr_Store   ( UChar sz, HReg src, X86AMode* dst );
 
 extern void ppX86Instr ( X86Instr* );
 

@@ -242,12 +242,12 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 
    switch (e->tag) {
 
-   /* --------- TEMPs --------- */
+   /* --------- TEMP --------- */
    case Iex_Tmp: {
       return lookupIRTemp(env, e->Iex.Tmp.tmp);
    }
 
-   /* --------- LOADs --------- */
+   /* --------- LOAD --------- */
    case Iex_LDle: {
       HReg dst = newVRegI(env);
       X86AMode* amode = iselIntExpr_AMode ( env, e->Iex.LDle.addr );
@@ -267,7 +267,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       break;
    }
 
-   /* --------- BINARY OPs --------- */
+   /* --------- BINARY OP --------- */
    case Iex_Binop: {
       X86AluOp   aluOp;
       X86ShiftOp shOp;
@@ -275,13 +275,15 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Binop.op) {
          case Iop_Add32: aluOp = Xalu_ADD; break;
 
-         case Iop_Sub8: case Iop_Sub16:
-         case Iop_Sub32: aluOp = Xalu_SUB; break;
+         case Iop_Sub8: case Iop_Sub16: case Iop_Sub32: 
+            aluOp = Xalu_SUB; break;
 
          case Iop_And8:
          case Iop_And32: aluOp = Xalu_AND; break;
-         case Iop_Or32:  aluOp = Xalu_OR;  break;
+         case Iop_Or8: case Iop_Or32:  
+            aluOp = Xalu_OR;  break;
          case Iop_Xor32: aluOp = Xalu_XOR; break;
+         case Iop_Mul32: aluOp = Xalu_MUL; break;
          default:        aluOp = Xalu_INVALID; break;
       }
       /* For commutative ops we assume any literal
@@ -313,7 +315,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       break;
    }
 
-   /* --------- UNARY OPs --------- */
+   /* --------- UNARY OP --------- */
    case Iex_Unop: {
       /* 1Uto8(32to1(expr32)) */
       DEFINE_PATTERN(p_32to1_then_1Uto8,
@@ -343,7 +345,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, mk_MOVsd_RR(src,dst) );
-            addInstr(env, X86Instr_Not32(X86RM_Reg(dst)));
+            addInstr(env, X86Instr_Unary32(Xun_Not,X86RM_Reg(dst)));
             return dst;
          }
          default: 
@@ -352,7 +354,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       break;
    }
 
-   /* --------- GETs --------- */
+   /* --------- GET --------- */
    case Iex_Get: {
       if (ty == Ity_I32) {
          HReg dst = newVRegI(env);
@@ -363,10 +365,11 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
                           dst));
          return dst;
       }
-      if (ty == Ity_I8) {
+      if (ty == Ity_I8 || ty == Ity_I16) {
          HReg dst = newVRegI(env);
          addInstr(env, X86Instr_LoadEX(
-                          1,False,
+                          ty==Ity_I8 ? 1 : 2,
+                          False,
                           X86AMode_IR(e->Iex.Get.offset,hregX86_EBP()),
                           dst));
          return dst;
@@ -374,7 +377,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       break;
    }
 
-   /* --------- CCALLs --------- */
+   /* --------- CCALL --------- */
    case Iex_CCall: {
       Int i, nargs;
       UInt target;
@@ -406,7 +409,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       return hregX86_EAX();
    }
 
-   /* --------- LITERALs --------- */
+   /* --------- LITERAL --------- */
    /* 32/16/8-bit literals */
    case Iex_Const: {
       X86RMI* rmi = iselIntExpr_RMI ( env, e );
@@ -415,7 +418,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       return r;
    }
 
-   /* --------- MULTIPLEXes --------- */
+   /* --------- MULTIPLEX --------- */
    case Iex_Mux0X: {
       if (ty == Ity_I32 
          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
@@ -446,6 +449,8 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 /*---------------------------------------------------------*/
 /*--- ISEL: Integer expression auxiliaries              ---*/
 /*---------------------------------------------------------*/
+
+/* --------------- AMODEs --------------- */
 
 /* Return an AMode which computes the value of the specified
    expression, possibly also adding insns to the code list as a
@@ -490,6 +495,8 @@ static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 }
 
 
+/* --------------- RMIs --------------- */
+
 /* Similarly, calculate an expression into an X86RMI operand.  As with
    iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
 
@@ -527,6 +534,8 @@ static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
 }
 
 
+/* --------------- RIs --------------- */
+
 /* Calculate an expression into an X86RI operand.  As with
    iselIntExpr_R, the expression can have type 32, 16 or 8 bits. */
 
@@ -556,6 +565,8 @@ static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
 }
 
 
+/* --------------- RMs --------------- */
+
 /* Similarly, calculate an expression into an X86RM operand.  As with
    iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
 
@@ -580,6 +591,8 @@ static X86RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
    }
 }
 
+
+/* --------------- CONDCODE --------------- */
 
 /* Generate code to evaluated a bit-typed expression, returning the
    condition code which would correspond when the expression would
@@ -634,6 +647,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    switch (stmt->tag) {
 
+   /* --------- STORE --------- */
    case Ist_STle: {
       IRType tya = typeOfIRExpr(env->type_env, stmt->Ist.STle.addr);
       IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.STle.data);
@@ -644,16 +658,18 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, X86Instr_Alu32M(Xalu_MOV,ri,am));
          return;
       }
-      if (tyd == Ity_I8) {
+      if (tyd == Ity_I8 || tyd == Ity_I16) {
          X86AMode* am = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
          HReg r       = iselIntExpr_R(env, stmt->Ist.STle.data);
-         addInstr(env, X86Instr_Store(1,r,am));
+         addInstr(env, X86Instr_Store(tyd==Ity_I8 ? 1 : 2,
+                                      r,am));
          return;
       }
 
       break;
    }
 
+   /* --------- PUT --------- */
    case Ist_Put: {
       IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.Put.expr);
       if (ty == Ity_I32) {
@@ -681,6 +697,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       break;
    }
 
+   /* --------- TMP --------- */
    case Ist_Tmp: {
       IRTemp tmp = stmt->Ist.Tmp.tmp;
       IRType ty = lookupIRTypeEnv(env->type_env, tmp);
@@ -693,6 +710,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       break;
    }
 
+   /* --------- EXIT --------- */
    case Ist_Exit: {
      if (stmt->Ist.Exit.dst->tag != Ico_U32)
         vpanic("isel_x86: Ist_Exit: dst is not a 32-bit value");

@@ -69,26 +69,26 @@ void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
 
 /* --------- Condition codes, Intel encoding. --------- */
 
-void ppX86CondCode ( X86CondCode cond )
+Char* showX86CondCode ( X86CondCode cond )
 {
    switch (cond) {
-      case Xcc_O:      vex_printf("o"); break;
-      case Xcc_NO:     vex_printf("no"); break;
-      case Xcc_B:      vex_printf("b"); break;
-      case Xcc_NB:     vex_printf("nb"); break;
-      case Xcc_Z:      vex_printf("z"); break;
-      case Xcc_NZ:     vex_printf("nz"); break;
-      case Xcc_BE:     vex_printf("be"); break;
-      case Xcc_NBE:    vex_printf("nbe"); break;
-      case Xcc_S:      vex_printf("s"); break;
-      case Xcc_NS:     vex_printf("ns"); break;
-      case Xcc_P:      vex_printf("p"); break;
-      case Xcc_NP:     vex_printf("np"); break;
-      case Xcc_L:      vex_printf("l"); break;
-      case Xcc_NL:     vex_printf("nl"); break;
-      case Xcc_LE:     vex_printf("le"); break;
-      case Xcc_NLE:    vex_printf("nle"); break;
-      case Xcc_ALWAYS: vex_printf("ALWAYS"); break;
+      case Xcc_O:      return "o";
+      case Xcc_NO:     return "no";
+      case Xcc_B:      return "b";
+      case Xcc_NB:     return "nb";
+      case Xcc_Z:      return "z";
+      case Xcc_NZ:     return "nz";
+      case Xcc_BE:     return "be";
+      case Xcc_NBE:    return "nbe";
+      case Xcc_S:      return "s";
+      case Xcc_NS:     return "ns";
+      case Xcc_P:      return "p";
+      case Xcc_NP:     return "np";
+      case Xcc_L:      return "l";
+      case Xcc_NL:     return "nl";
+      case Xcc_LE:     return "le";
+      case Xcc_NLE:    return "nle";
+      case Xcc_ALWAYS: return "ALWAYS";
       default: vpanic("ppX86CondCode");
    }
 }
@@ -353,35 +353,48 @@ static void mapRegs_X86RM ( HRegRemap* m, X86RM* op )
 
 /* --------- Instructions. --------- */
 
-void ppX86AluOp ( X86AluOp op ) {
-   Char* name;
-   switch (op) {
-      case Xalu_MOV:  name = "mov"; break;
-      case Xalu_CMP:  name = "cmp"; break;
-      case Xalu_TEST: name = "test"; break;
-      case Xalu_ADD:  name = "add"; break;
-      case Xalu_SUB:  name = "sub"; break;
-      case Xalu_ADC:  name = "adc"; break;
-      case Xalu_SBB:  name = "sbb"; break;
-      case Xalu_AND:  name = "and"; break;
-      case Xalu_OR:   name = "or";  break;
-      case Xalu_XOR:  name = "xor"; break;
-      default: vpanic("ppX86AluOp");
+Char* showX86ScalarSz ( X86ScalarSz sz ) {
+   switch (sz) {
+      case Xss_16: return "w";
+      case Xss_32: return "l";
+      default: vpanic("ppX86ScalarSz");
    }
-   vex_printf("%s", name);
 }
 
-void ppX86ShiftOp ( X86ShiftOp op ) {
-   Char* name;
+Char* showX86UnaryOp ( X86UnaryOp op ) {
    switch (op) {
-      case Xsh_SHL: name = "shl"; break;
-      case Xsh_SHR: name = "shr"; break;
-      case Xsh_SAR: name = "sar"; break;
-      case Xsh_ROL: name = "rol"; break;
-      case Xsh_ROR: name = "ror"; break;
+      case Xun_Not: return "not";
+      case Xun_Neg: return "neg";
+      default: vpanic("ppX86UnaryOp");
+   }
+}
+
+Char* showX86AluOp ( X86AluOp op ) {
+   switch (op) {
+      case Xalu_MOV:  return "mov";
+      case Xalu_CMP:  return "cmp";
+      case Xalu_TEST: return "test";
+      case Xalu_ADD:  return "add";
+      case Xalu_SUB:  return "sub";
+      case Xalu_ADC:  return "adc";
+      case Xalu_SBB:  return "sbb";
+      case Xalu_AND:  return "and";
+      case Xalu_OR:   return "or";
+      case Xalu_XOR:  return "xor";
+      case Xalu_MUL:  return "mul";
+      default: vpanic("ppX86AluOp");
+   }
+}
+
+Char* showX86ShiftOp ( X86ShiftOp op ) {
+   switch (op) {
+      case Xsh_SHL: return "shl";
+      case Xsh_SHR: return "shr";
+      case Xsh_SAR: return "sar";
+      case Xsh_ROL: return "rol";
+      case Xsh_ROR: return "ror";
       default: vpanic("ppX86ShiftOp");
    }
-   vex_printf("%s", name);
 }
 
 X86Instr* X86Instr_Alu32R ( X86AluOp op, X86RMI* src, HReg dst ) {
@@ -400,10 +413,11 @@ X86Instr* X86Instr_Alu32M ( X86AluOp op, X86RI* src, X86AMode* dst ) {
    i->Xin.Alu32M.dst = dst;
    return i;
 }
-X86Instr* X86Instr_Not32  ( X86RM* dst ) {
-   X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag           = Xin_Not32;
-   i->Xin.Not32.dst = dst;
+X86Instr* X86Instr_Unary32  ( X86UnaryOp op, X86RM* dst ) {
+   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag             = Xin_Unary32;
+   i->Xin.Unary32.op  = op;
+   i->Xin.Unary32.dst = dst;
    return i;
 }
 X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
@@ -465,26 +479,23 @@ X86Instr* X86Instr_Store  ( UChar sz, HReg src, X86AMode* dst ) {
 void ppX86Instr ( X86Instr* i ) {
    switch (i->tag) {
       case Xin_Alu32R:
-         ppX86AluOp(i->Xin.Alu32R.op);
-         vex_printf("l ");
+         vex_printf("%sl ", showX86AluOp(i->Xin.Alu32R.op));
          ppX86RMI(i->Xin.Alu32R.src);
          vex_printf(",");
          ppHRegX86(i->Xin.Alu32R.dst);
          return;
       case Xin_Alu32M:
-         ppX86AluOp(i->Xin.Alu32M.op);
-         vex_printf("l ");
+         vex_printf("%sl ", showX86AluOp(i->Xin.Alu32M.op));
          ppX86RI(i->Xin.Alu32M.src);
          vex_printf(",");
          ppX86AMode(i->Xin.Alu32M.dst);
          return;
-      case Xin_Not32:
-         vex_printf("notl ");
-         ppX86RM(i->Xin.Not32.dst);
+      case Xin_Unary32:
+         vex_printf("%sl ", showX86UnaryOp(i->Xin.Unary32.op));
+         ppX86RM(i->Xin.Unary32.dst);
          return;
       case Xin_Sh32:
-         ppX86ShiftOp(i->Xin.Sh32.op);
-         vex_printf("l ");
+         vex_printf("%sl ", showX86ShiftOp(i->Xin.Sh32.op));
          if (i->Xin.Sh32.src == 0)
 	   vex_printf(" %%cl,"); 
          else 
@@ -505,9 +516,8 @@ void ppX86Instr ( X86Instr* i ) {
             ppX86RI(i->Xin.Goto.dst);
             vex_printf(",%%eax ; ret");
          } else {
-            vex_printf("if (%%eflags.");
-	    ppX86CondCode(i->Xin.Goto.cond);
-            vex_printf(") { movl ");
+            vex_printf("if (%%eflags.%s) { movl ", 
+                       showX86CondCode(i->Xin.Goto.cond));
             ppX86RI(i->Xin.Goto.dst);
             vex_printf(",%%eax ; ret }");
          }

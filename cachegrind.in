@@ -122,12 +122,17 @@ if [ $# = 0 ] || [ z"$dousage" = z1 ]; then
    exit 1
 fi
 
+# A bit subtle.  The LD_PRELOAD added entry must be absolute
+# and not depend on LD_LIBRARY_PATH.  This is so that we can
+# mess with LD_LIBRARY_PATH for child processes, which makes
+# libpthread.so fall out of visibility, independently of
+# whether valgrind.so is visible.
 
 VG_ARGS="$CACHEGRIND_OPTS $vgsupp $vgopts --cachesim=yes"
 export VG_ARGS
 LD_LIBRARY_PATH=$VALGRIND:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
-LD_PRELOAD=valgrind.so:$LD_PRELOAD
+LD_PRELOAD=$VALGRIND/valgrind.so:$LD_PRELOAD
 export LD_PRELOAD
 #LD_DEBUG=files
 #LD_DEBUG=symbols

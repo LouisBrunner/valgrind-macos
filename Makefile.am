@@ -37,6 +37,7 @@ regtest: check
 EXTRA_DIST = \
 	FAQ.txt \
 	ACKNOWLEDGEMENTS \
+	README_DEVELOPERS \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO \
 	valgrind.spec.in valgrind.pc.in \

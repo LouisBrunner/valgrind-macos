@@ -31,3 +31,19 @@ file.  Eg:
   perl tests/vg_regtest memcheck/tests/badfree.vgtest
   perl tests/vg_regtest memcheck/tests/badfree
 
+
+Debugging Valgrind with GDB
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To debug Valgrind itself with GDB, start Valgrind like this:
+
+  valgrind --tool=none --wait-for-gdb=yes <prog>
+
+Then start gdb like this in another terminal:
+
+  gdb /usr/lib/valgrind/stage2 <pid>
+
+Where <pid> is the pid valgrind printed. Then set whatever breakpoints
+you want and do this in gdb:
+
+  jump *$eip
+

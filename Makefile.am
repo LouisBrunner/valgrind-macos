@@ -13,7 +13,7 @@ SUBDIRS = 	include coregrind . docs tests auxprogs \
 		lackey \
 		none
 
-AM_CPPFLAGS = -DVG_LIBDIR="\"$(libdir)"\"
+AM_CPPFLAGS = 
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g
 

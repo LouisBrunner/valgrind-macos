@@ -3,7 +3,7 @@ SUBDIRS = . docs tests
 
 # include memcheck/ for mac_shared.h
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
-		-I$(top_srcdir)/memcheck -DVG_LIBDIR="\"$(libdir)"\"
+		-I$(top_srcdir)/memcheck
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g
 

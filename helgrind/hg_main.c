@@ -41,7 +41,7 @@ static UInt n_lockorder_warnings = 0;
 /*--- Debug guff                                           ---*/
 /*------------------------------------------------------------*/
 
-#define DEBUG_LOCK_TABLE    1   /* Print lock table at end */
+#define DEBUG_LOCK_TABLE    0   /* Print lock table at end */
 
 #define DEBUG_MAKE_ACCESSES 0   /* Print make_access() calls */
 #define DEBUG_LOCKS         0   /* Print lock()/unlock() calls and locksets */
@@ -3211,8 +3211,9 @@ Bool SK_(process_cmd_line_option)(Char* arg)
 Char *SK_(usage)(void)
 {
    return ""
-"    --show-last-access=no|some|all  show location of last word access on error [no]\n"
-"    --private-stacks=yes|no         assume thread stacks are used privately [no]\n"
+"    --private-stacks=yes|no   assume thread stacks are used privately [no]\n"
+"    --show-last-access=no|some|all\n"
+"                           show location of last word access on error [no]\n"
       ;
 }
 

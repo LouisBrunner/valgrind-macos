@@ -15,6 +15,17 @@
 #     (optionally: caller3 name)
 #  }
 
+#-------- Suppress errors appearing as a result of calling
+#-------- __libc_freeres()
+
+{
+   __libc_freeres/free_mem(Addr4)
+   Addr4
+   fun:free_mem
+   fun:__libc_freeres
+}
+
+
 ##----------------------------------------------------------------------##
 
 {

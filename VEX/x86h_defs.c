@@ -432,6 +432,10 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
             addHRegUse(u, HRmRead, hregX86_ECX());
          return;
       case Xin_RET:
+         /* Using our calling conventions, %eax is live into a ret,
+            because we know the dispatcher -- to which we're returning
+            -- uses that value as the next guest address. */
+         addHRegUse(u, HRmRead, hregX86_EAX());
          return;
       default:
          ppX86Instr(stderr, i);
@@ -461,3 +465,15 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
    }
 }
 
+Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
+{
+   if (i->tag != Xin_Alu32R)
+      return False;
+   if (i->Xin.Alu32R.op != Xalu_MOV)
+      return False;
+   if (i->Xin.Alu32R.src->tag != Xrmi_Reg)
+      return False;
+   *src = i->Xin.Alu32R.src->Xrmi.Reg.reg;
+   *dst = i->Xin.Alu32R.dst;
+   return True;
+}

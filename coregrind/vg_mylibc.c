@@ -289,7 +289,7 @@ static Int munmap_inner(void *start, SizeT length)
 static Addr mmap_inner(void *start, SizeT length, UInt prot, UInt flags,
                        UInt fd, OffT offset)
 {
-   Int ret;
+   Word ret;
    
    VGP_DO_MMAP(ret, start, length, prot,
                flags & ~(VKI_MAP_NOSYMS|VKI_MAP_CLIENT), fd, offset);

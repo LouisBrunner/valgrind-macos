@@ -5,6 +5,8 @@ include $(top_srcdir)/Makefile.tool-inplace.am
 
 SUBDIRS = $(VG_ARCH) . tests docs
 
+AM_CPPFLAGS += -I$(top_srcdir)/cachegrind/$(VG_ARCH)
+
 bin_SCRIPTS = cg_annotate
 
 EXTRA_DIST = cg_sim.c 

@@ -1,6 +1,6 @@
 include $(top_srcdir)/Makefile.tool-flags.am
 
-AM_CPPFLAGS += -I..
+AM_CPPFLAGS += -I$(top_srcdir)/cachegrind
 
 noinst_LIBRARIES = libcgarch.a
 

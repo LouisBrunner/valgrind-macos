@@ -1781,17 +1781,17 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
 			 VG_(shadow_base), VG_(shadow_end));
       }
 
-      if (info->si_code == 1		&&	/* SEGV_MAPERR */
-	  seg != NULL                   &&
-	  fault >= esp			&&
-	  fault < seg->addr		&&
+      if (info->si_code == 1                        && /* SEGV_MAPERR */
+	  seg != NULL                               &&
+	  fault >= (esp	- ARCH_STACK_REDZONE_SIZE)  &&
+	  fault < seg->addr                         &&
 	  (seg->flags & SF_GROWDOWN)) {
 	 /* If the fault address is above esp but below the current known
 	    stack segment base, and it was a fault because there was
 	    nothing mapped there (as opposed to a permissions fault),
 	    then extend the stack segment. 
 	 */
-	 Addr base = PGROUNDDN(esp);
+	 Addr base = PGROUNDDN(esp - ARCH_STACK_REDZONE_SIZE);
          if (seg->len + (seg->addr - base) <= VG_(threads)[tid].stack_size &&
              (void*)-1 != VG_(mmap)((Char *)base, seg->addr - base,
                               VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,

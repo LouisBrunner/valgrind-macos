@@ -77,6 +77,10 @@
    asm("movl %%ebp, %0" : "=r" (ebp));       \
 } while (0)
 
+// On X86, any access below %esp is illegal.
+// The signal handler needs to know this.
+#define ARCH_STACK_REDZONE_SIZE 0
+
 /* ---------------------------------------------------------------------
    Architecture-specific part of a ThreadState
    ------------------------------------------------------------------ */

@@ -75,7 +75,7 @@ static void add_one_Jcc_untaken(void)
 void SK_(pre_clo_init)(VgDetails* details, VgNeeds* not_used1,
                        VgTrackEvents* not_used2)
 {
-   details->name             = "lackey";
+   details->name             = "Lackey";
    details->version          = NULL;
    details->description      = "an example Valgrind skin";
    details->copyright_author =

@@ -1334,7 +1334,7 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
    Int i;
 
-   details->name             = "helgrind";
+   details->name             = "Helgrind";
    details->version          = NULL;
    details->description      = "a data race detector";
    details->copyright_author =

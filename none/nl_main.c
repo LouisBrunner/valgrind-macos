@@ -34,7 +34,7 @@
 void SK_(pre_clo_init)(VgDetails* details, VgNeeds* not_used1,
                        VgTrackEvents* not_used2) 
 {
-   details->name             = "nulgrind";
+   details->name             = "Nulgrind";
    details->version          = NULL;
    details->description      = "a binary JIT-compiler";
    details->copyright_author =

@@ -1027,10 +1027,10 @@ static void process_cmd_line_options ( void )
 
       /* Core details */
       VG_(message)(Vg_UserMsg,
-                   "Built with valgrind-%s, a program execution monitor.",
-                   VERSION);
+         "Using valgrind-%s, a program instrumentation system for x86-linux.",
+         VERSION);
       VG_(message)(Vg_UserMsg, 
-                   "Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.");
+         "Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.");
    }
 
    if (VG_(clo_verbosity) > 1) {

@@ -2510,7 +2510,7 @@ Char* SK_(usage)(void)
 
 void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
-   details->name             = "addrcheck";
+   details->name             = "Addrcheck";
    details->version          = NULL;
    details->description      = "a fine-grained address checker";
    details->copyright_author =

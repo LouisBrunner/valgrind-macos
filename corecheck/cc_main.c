@@ -34,7 +34,7 @@
 
 void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
-   details->name             = "coregrind";
+   details->name             = "Coregrind";
    details->version          = NULL;
    details->description      = "a rudimentary error detector";
    details->copyright_author =

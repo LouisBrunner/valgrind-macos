@@ -7,7 +7,7 @@
 
 void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
-   details->name             = "example";
+   details->name             = "Example";
    details->version          = "0.0.1";
    details->description      = "an example Valgrind skin";
    details->copyright_author =

@@ -2350,7 +2350,7 @@ Char* SK_(usage)(void)
 
 void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 {
-   details->name             = "memcheck";
+   details->name             = "Memcheck (a.k.a. Valgrind)";
    details->version          = NULL;
    details->description      = "a memory error detector";
    details->copyright_author =

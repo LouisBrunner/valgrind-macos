@@ -1917,7 +1917,7 @@ Char* SK_(usage)(void)
 void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs,
                        VgTrackEvents* not_used)
 {
-   details->name             = "cachegrind";
+   details->name             = "Cachegrind";
    details->version          = NULL;
    details->description      = "an I1/D1/L2 cache profiler";
    details->copyright_author =

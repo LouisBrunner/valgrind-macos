@@ -32,7 +32,7 @@ PRIV_INCLUDES = -Ipriv
 
 
 CC = gcc341
-CCFLAGS = -g -Wall -Wshadow $(EXTRA_CFLAGS)
+CCFLAGS = -g -O -Wall -Wshadow $(EXTRA_CFLAGS)
 
 #CC = icc
 #CCFLAGS = -g  -Wbrief -Wall -wd981 -wd279 -wd1287 -wd869 \

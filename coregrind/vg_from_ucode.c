@@ -3412,8 +3412,6 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
       case FPU:
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == NoValue);
-         if (anyFlagUse ( u )) 
-            emit_get_eflags();
 	 if (!(*fplive)) {
 	    emit_get_fpu_state();
 	    *fplive = True;

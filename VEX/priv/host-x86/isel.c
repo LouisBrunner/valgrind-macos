@@ -44,6 +44,18 @@
 #include "host-generic/h_generic_simd64.h"
 #include "host-x86/hdefs.h"
 
+/* TODO 4 Feb 2005:
+
+   -- preserve xmm registers across function calls (by declaring them
+      as trashed by call insns)
+
+   -- preserve x87 ST stack discipline across function calls.  Sigh.
+
+   -- Check doHelperCall: if a call is conditional, we cannot safely
+      compute any regparm args directly to registers.  Hence, the
+      fast-regparm marshalling should be restricted to unconditional
+      calls only.
+*/
 
 /*---------------------------------------------------------*/
 /*--- x87 control word stuff                            ---*/

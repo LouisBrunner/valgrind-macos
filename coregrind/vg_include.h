@@ -1075,9 +1075,37 @@ extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env );
 extern void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes );
 
 // Functions for printing from code within Valgrind, but which runs on the
-// sim'd CPU.
-int VALGRIND_INTERNAL_PRINTF           ( char *format, ... );
-int VALGRIND_INTERNAL_PRINTF_BACKTRACE ( char *format, ... );
+// sim'd CPU.  Defined here because needed for vg_libpthread.c,
+// vg_replace_malloc.c, plus the rest of the core.  The weak attribute
+// ensures the multiple definitions are not a problem.  They must be functions
+// rather than macros so that va_list can be used.
+
+__attribute__((weak))
+int
+VALGRIND_INTERNAL_PRINTF(char *format, ...)
+{
+   unsigned int _qzz_res = 0;
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
+                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+   va_end(vargs);
+   return _qzz_res;
+}
+
+__attribute__((weak))
+int
+VALGRIND_INTERNAL_PRINTF_BACKTRACE(char *format, ...)
+{
+   unsigned int _qzz_res = 0;
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF_BACKTRACE,
+                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+   va_end(vargs);
+   return _qzz_res;
+}
+
 
 
 /* ---------------------------------------------------------------------

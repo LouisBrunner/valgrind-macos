@@ -31,11 +31,42 @@
 #include "core_asm.h"
 #include "vki_unistd.h"
 
-# XXX: must reinstate comments also -- see x86-linux/syscall.S
+/*
+	Perform a Linux syscall with the "syscall" instruction.
+	
+	Incoming args (syscall number + up to 6 args) come in 
+	%rdi, %rsi, %rdx, %rcx, %r8, %r9, and the last one on the stack
+	(ie. the C calling convention).
 
+	They are passed to the syscall in the regs
+	%rdi, %rsi, %rdx, %r10, %r8, %r9 (yes, really %r10, not %rcx), ie. the
+	kernel's syscall calling convention.
+
+	%rax holds the syscall number and gets the return value.
+	%rcx and %r11 are clobbered by the syscall;  no matter, they
+	are caller-save (the syscall clobbers no callee-save regs, so
+	we don't have to do any register saving/restoring).
+
+	This has no effect on the virtual machine; the expectation is
+	that the syscall mechanism makes no useful changes to any
+	register except %rax, which is returned.
+*/
 .globl	VG_(do_syscall)
 VG_(do_syscall):
-	ud2
+	# Convert function calling convention --> syscall calling convention
+	movq	%rdi, %rax
+	movq	%rsi, %rdi
+	movq	%rdx, %rsi
+	movq	%rcx, %rdx
+	movq	%r8,  %r10
+	movq	%r9,  %r8
+	movq    8(%rsp), %r9		# last arg from stack
+	syscall
+	ret
+
+
+
+# XXX: must reinstate comments also -- see x86-linux/syscall.S
 
 .globl VG_(clone)
 VG_(clone):

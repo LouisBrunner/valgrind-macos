@@ -225,7 +225,6 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
       ESZ(Off) off;
       ESZ(Word) filesz;
       ESZ(Word) memsz;
-      ESZ(Word) align;
       unsigned prot = 0;
 
       if (ph->p_type != PT_LOAD)
@@ -235,7 +234,6 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
       if (ph->p_flags & PF_W) prot |= PROT_WRITE;
       if (ph->p_flags & PF_R) prot |= PROT_READ;
 
-      align   = ph->p_align;
       addr    = ph->p_vaddr+base;
       off     = ph->p_offset;
       filesz  = ph->p_filesz;
@@ -243,21 +241,25 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
       memsz   = ph->p_memsz;
       brkaddr = addr+memsz;
 
-      res = mmap((char *)ROUNDDN(addr, align),
-                 ROUNDUP(bss, align)-ROUNDDN(addr, align),
-                 prot, MAP_FIXED|MAP_PRIVATE, e->fd, ROUNDDN(off, align));
-      check_mmap(res, (char*)ROUNDDN(addr,align),
-                 ROUNDUP(bss, align)-ROUNDDN(addr, align));
+      // Tom says: In the following, do what the Linux kernel does and only
+      // map the pages that are required instead of rounding everything to
+      // the specified alignment (ph->p_align).  (AMD64 doesn't work if you
+      // use ph->p_align -- part of stage2's memory gets trashed somehow.)
 
-      /* if memsz > filesz, then we need to fill the remainder with zeroed pages */
+      res = mmap((char *)PGROUNDDN(addr), PGROUNDUP(bss)-PGROUNDDN(addr),
+                 prot, MAP_FIXED|MAP_PRIVATE, e->fd, PGROUNDDN(off));
+      check_mmap(res, (char*)PGROUNDDN(addr),
+                 PGROUNDUP(bss)-PGROUNDDN(addr));
+
+      // if memsz > filesz, fill the remainder with zeroed pages
       if (memsz > filesz) {
 	 UInt bytes;
 
-	 bytes = ROUNDUP(brkaddr, align)-ROUNDUP(bss, align);
+	 bytes = PGROUNDUP(brkaddr)-PGROUNDUP(bss);
 	 if (bytes > 0) {
-	    res = mmap((char *)ROUNDUP(bss, align), bytes,
+	    res = mmap((char *)PGROUNDUP(bss), bytes,
 		       prot, MAP_FIXED|MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
-            check_mmap(res, (char*)ROUNDUP(bss,align), bytes);
+            check_mmap(res, (char*)PGROUNDUP(bss), bytes);
          }
 
 	 bytes = bss & (VKI_PAGE_SIZE - 1);

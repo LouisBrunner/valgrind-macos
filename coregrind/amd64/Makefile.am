@@ -30,4 +30,4 @@ stage2.lds: Makefile
 	$(CC) -Wl,--verbose -nostdlib 2>&1 | sed \
 		-e '1,/^=====\+$$/d' \
 		-e '/^=====\+$$/d' \
-		-e 's/0x00400000/kickstart_base/g' > $@ || rm -f $@
+		-e 's/0x400000/kickstart_base/g' > $@ || rm -f $@

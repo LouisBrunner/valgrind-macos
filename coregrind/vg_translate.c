@@ -1855,6 +1855,9 @@ UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
          } else {
             /* Unknown delta */
             DO_GENERIC;
+            /* now we know the temp that points to %ESP */
+            if ( t_ESP == INVALID_TEMPREG )
+               t_ESP = u->val1;
          }
          delta = 0;
 

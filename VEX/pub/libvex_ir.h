@@ -53,6 +53,7 @@ typedef
       Ity_I16, 
       Ity_I32, 
       Ity_I64,
+      Ity_I128,  /* 128-bit scalar */
       Ity_F32,   /* IEEE 754 float */
       Ity_F64,   /* IEEE 754 double */
       Ity_V128   /* 128-bit SIMD */
@@ -195,8 +196,8 @@ typedef
       /* Tags for unary ops */
       Iop_Not8,  Iop_Not16,  Iop_Not32,  Iop_Not64,
       /* Widening multiplies */
-      Iop_MullS8, Iop_MullS16, Iop_MullS32,
-      Iop_MullU8, Iop_MullU16, Iop_MullU32,
+      Iop_MullS8, Iop_MullS16, Iop_MullS32, Iop_MullS64,
+      Iop_MullU8, Iop_MullU16, Iop_MullU32, Iop_MullU64,
 
       /* Wierdo integer stuff */
       Iop_Clz32,   /* count leading zeroes */
@@ -241,6 +242,10 @@ typedef
       Iop_64to32,     // :: I64 -> I32, low half
       Iop_64HIto32,   // :: I64 -> I32, high half
       Iop_32HLto64,   // :: (I32,I32) -> I64
+      /* 64 <-> 128 bit conversions */
+      Iop_128to64,    // :: I128 -> I64, low half
+      Iop_128HIto64,  // :: I128 -> I64, high half
+      Iop_64HLto128,  // :: (I64,I64) -> I128
       /* 1-bit stuff */
       Iop_Not1,   /* :: Ity_Bit -> Ity_Bit */
       Iop_32to1,  /* :: Ity_I32 -> Ity_Bit, just select bit[0] */

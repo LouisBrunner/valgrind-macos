@@ -3111,22 +3111,36 @@ ULong dis_Grp2 ( Prefix pfx,
 //-- 
 //-- #  undef MODIFY_t2_AND_SET_CARRY_FLAG
 //-- }
-//.. 
-//.. 
-//.. 
-//.. /* Signed/unsigned widening multiply.  Generate IR to multiply the
-//..    value in EAX/AX/AL by the given IRTemp, and park the result in
-//..    EDX:EAX/DX:AX/AX.
-//.. */
-//.. static void codegen_mulL_A_D ( Int sz, Bool syned, 
-//..                                IRTemp tmp, Char* tmp_txt )
-//.. {
-//..    IRType ty = szToITy(sz);
-//..    IRTemp t1 = newTemp(ty);
-//.. 
-//..    assign( t1, getIReg(sz, R_EAX) );
-//.. 
-//..    switch (ty) {
+
+
+
+/* Signed/unsigned widening multiply.  Generate IR to multiply the
+   value in RAX/EAX/AX/AL by the given IRTemp, and park the result in
+   RDX:RAX/EDX:EAX/DX:AX/AX.
+*/
+static void codegen_mulL_A_D ( Int sz, Bool syned, 
+                               IRTemp tmp, Char* tmp_txt )
+{
+   IRType ty = szToITy(sz);
+   IRTemp t1 = newTemp(ty);
+
+   assign( t1, getIRegR(PFX_EMPTY, sz, R_RAX) );
+
+   switch (ty) {
+      case Ity_I64: {
+         IRTemp res128  = newTemp(Ity_I128);
+         IRTemp resHi   = newTemp(Ity_I64);
+         IRTemp resLo   = newTemp(Ity_I64);
+         IROp   mulOp   = syned ? Iop_MullS64 : Iop_MullU64;
+         UInt   tBaseOp = syned ? AMD64G_CC_OP_SMULQ : AMD64G_CC_OP_UMULQ;
+         setFlags_MUL ( Ity_I64, t1, tmp, tBaseOp );
+         assign( res128, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
+         assign( resHi, unop(Iop_128HIto64,mkexpr(res128)));
+         assign( resLo, unop(Iop_128to64,mkexpr(res128)));
+         putIRegR(PFX_EMPTY, 8, R_RDX, mkexpr(resHi));
+         putIRegR(PFX_EMPTY, 8, R_RAX, mkexpr(resLo));
+         break;
+      }
 //..       case Ity_I32: {
 //..          IRTemp res64   = newTemp(Ity_I64);
 //..          IRTemp resHi   = newTemp(Ity_I32);
@@ -3168,11 +3182,11 @@ ULong dis_Grp2 ( Prefix pfx,
 //..          putIReg(2, R_EAX, mkexpr(res16));
 //..          break;
 //..       }
-//..       default:
-//..          vpanic("codegen_mulL_A_D(x86)");
-//..    }
-//..    DIP("%s%c %s\n", syned ? "imul" : "mul", nameISize(sz), tmp_txt);
-//.. }
+      default:
+         vpanic("codegen_mulL_A_D(amd64)");
+   }
+   DIP("%s%c %s\n", syned ? "imul" : "mul", nameISize(sz), tmp_txt);
+}
 
 
 /* Group 3 extended opcodes. */
@@ -3225,12 +3239,13 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
             putIRegB(pfx, sz, eregOfRM(modrm), mkexpr(dst1));
             DIP("neg%c %s\n", nameISize(sz), nameIRegB(pfx, sz, eregOfRM(modrm)));
             break;
-//..          case 4: /* MUL (unsigned widening) */
-//..             delta++;
-//..             src = newTemp(ty);
-//..             assign(src, getIReg(sz,eregOfRM(modrm)));
-//..             codegen_mulL_A_D ( sz, False, src, nameIReg(sz,eregOfRM(modrm)) );
-//..             break;
+         case 4: /* MUL (unsigned widening) */
+            delta++;
+            src = newTemp(ty);
+            assign(src, getIRegB(pfx,sz,eregOfRM(modrm)));
+            codegen_mulL_A_D ( sz, False, src,
+                               nameIRegB(pfx,sz,eregOfRM(modrm)) );
+            break;
 //..          case 5: /* IMUL (signed widening) */
 //..             delta++;
 //..             src = newTemp(ty);

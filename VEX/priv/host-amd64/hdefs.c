@@ -503,16 +503,17 @@ static void mapRegs_AMD64RM ( HRegRemap* m, AMD64RM* op )
 }
 
 
-//.. /* --------- Instructions. --------- */
-//.. 
-//.. HChar* showAMD64ScalarSz ( AMD64ScalarSz sz ) {
-//..    switch (sz) {
-//..       case Xss_16: return "w";
-//..       case Xss_32: return "l";
-//..       default: vpanic("showAMD64ScalarSz");
-//..    }
-//.. }
-//.. 
+/* --------- Instructions. --------- */
+
+static HChar* showAMD64ScalarSz ( Int sz ) {
+   switch (sz) {
+      case 2: return "w";
+      case 4: return "l";
+      case 8: return "q";
+      default: vpanic("showAMD64ScalarSz");
+   }
+}
+ 
 //.. HChar* showAMD64UnaryOp ( AMD64UnaryOp op ) {
 //..    switch (op) {
 //..       case Xun_NOT: return "not";
@@ -691,14 +692,15 @@ AMD64Instr* AMD64Instr_Test64 ( AMD64RI* src, AMD64RM* dst ) {
 //..    i->Xin.Unary32.dst = dst;
 //..    return i;
 //.. }
-//.. AMD64Instr* AMD64Instr_MulL ( Bool syned, AMD64ScalarSz ssz , AMD64RM* src ) {
-//..    AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag             = Xin_MulL;
-//..    i->Xin.MulL.syned  = syned;
-//..    i->Xin.MulL.ssz    = ssz;
-//..    i->Xin.MulL.src    = src;
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_MulL ( Bool syned, Int sz, AMD64RM* src ) {
+   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag            = Ain_MulL;
+   i->Ain.MulL.syned = syned;
+   i->Ain.MulL.sz    = sz;
+   i->Ain.MulL.src   = src;
+   vassert(sz == 2 || sz == 4 || sz == 8);
+   return i;
+}
 //.. AMD64Instr* AMD64Instr_Div ( Bool syned, AMD64ScalarSz ssz, AMD64RM* src ) {
 //..    AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
 //..    i->tag             = Xin_Div;
@@ -1003,12 +1005,12 @@ void ppAMD64Instr ( AMD64Instr* i )
 //..          vex_printf("%sl ", showAMD64UnaryOp(i->Xin.Unary32.op));
 //..          ppAMD64RM(i->Xin.Unary32.dst);
 //..          return;
-//..       case Xin_MulL:
-//..          vex_printf("%cmul%s ",
-//..                     i->Xin.MulL.syned ? 's' : 'u',
-//..                     showAMD64ScalarSz(i->Xin.MulL.ssz));
-//..          ppAMD64RM(i->Xin.MulL.src);
-//..          return;
+      case Ain_MulL:
+         vex_printf("%cmul%s ",
+                    i->Ain.MulL.syned ? 's' : 'u',
+                    showAMD64ScalarSz(i->Ain.MulL.sz));
+         ppAMD64RM(i->Ain.MulL.src);
+         return;
 //..       case Xin_Div:
 //..          vex_printf("%cdiv%s ",
 //..                     i->Xin.Div.syned ? 's' : 'u',
@@ -1280,11 +1282,11 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
 //..       case Xin_Unary32:
 //..          addRegUsage_AMD64RM(u, i->Xin.Unary32.dst, HRmModify);
 //..          return;
-//..       case Xin_MulL:
-//..          addRegUsage_AMD64RM(u, i->Xin.MulL.src, HRmRead);
-//..          addHRegUse(u, HRmModify, hregAMD64_EAX());
-//..          addHRegUse(u, HRmWrite, hregAMD64_EDX());
-//..          return;
+      case Ain_MulL:
+         addRegUsage_AMD64RM(u, i->Ain.MulL.src, HRmRead);
+         addHRegUse(u, HRmModify, hregAMD64_RAX());
+         addHRegUse(u, HRmWrite, hregAMD64_RDX());
+         return;
 //..       case Xin_Div:
 //..          addRegUsage_AMD64RM(u, i->Xin.Div.src, HRmRead);
 //..          addHRegUse(u, HRmModify, hregAMD64_EAX());
@@ -1511,9 +1513,9 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
 //..       case Xin_Unary32:
 //..          mapRegs_AMD64RM(m, i->Xin.Unary32.dst);
 //..          return;
-//..       case Xin_MulL:
-//..          mapRegs_AMD64RM(m, i->Xin.MulL.src);
-//..          return;
+      case Ain_MulL:
+         mapRegs_AMD64RM(m, i->Ain.MulL.src);
+         return;
 //..       case Xin_Div:
 //..          mapRegs_AMD64RM(m, i->Xin.Div.src);
 //..          return;
@@ -2290,26 +2292,30 @@ vassert(0);
 //..          }
 //..       }
 //..       break;
-//.. 
-//..    case Xin_MulL:
-//..       subopc = i->Xin.MulL.syned ? 5 : 4;
-//..       if (i->Xin.MulL.ssz == Xss_32) {
-//..          *p++ = 0xF7;
-//..          switch (i->Xin.MulL.src->tag)  {
-//..             case Xrm_Mem:
-//..                p = doAMode_M(p, fake(subopc),
-//..                                 i->Xin.MulL.src->Xrm.Mem.am);
-//..                goto done;
-//..             case Xrm_Reg:
-//..                p = doAMode_R(p, fake(subopc), 
-//..                                 i->Xin.MulL.src->Xrm.Reg.reg);
-//..                goto done;
-//..             default:
-//..                goto bad;
-//..          }
-//..       }
-//..       break;
-//.. 
+
+   case Ain_MulL:
+      subopc = i->Ain.MulL.syned ? 5 : 4;
+      if (i->Ain.MulL.sz == 8) {
+         switch (i->Ain.MulL.src->tag)  {
+            case Arm_Mem:
+               vassert(0);
+               *p++ = 0xF7;
+               p = doAMode_M(p, fake(subopc),
+                                i->Ain.MulL.src->Arm.Mem.am);
+               goto done;
+            case Arm_Reg:
+               *p++ = rexAMode_R(fake(0), 
+                                 i->Ain.MulL.src->Arm.Reg.reg);
+               *p++ = 0xF7;
+               p = doAMode_R(p, fake(subopc), 
+                                i->Ain.MulL.src->Arm.Reg.reg);
+               goto done;
+            default:
+               goto bad;
+         }
+      }
+      break;
+
 //..    case Xin_Div:
 //..       subopc = i->Xin.Div.syned ? 7 : 6;
 //..       if (i->Xin.Div.ssz == Xss_32) {
@@ -2465,7 +2471,6 @@ vassert(0);
          goto done;
       }
       if (i->Ain.CMov64.src->tag == Arm_Mem) {
-vassert(0);
          *p++ = rexAMode_M(i->Ain.CMov64.dst, i->Ain.CMov64.src->Arm.Mem.am);
          *p++ = 0x0F;
          *p++ = 0x40 + (0xF & i->Ain.CMov64.cond);

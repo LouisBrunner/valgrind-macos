@@ -257,17 +257,6 @@ extern void ppAMD64RM ( AMD64RM* );
 //.. /* --------- */
 //.. typedef
 //..    enum {
-//..       Xss_16,
-//..       Xss_32
-//..    }
-//..    X86ScalarSz;
-//.. 
-//.. extern HChar* showX86ScalarSz ( X86ScalarSz );
-//.. 
-//.. 
-//.. /* --------- */
-//.. typedef
-//..    enum {
 //..       Xun_NEG,
 //..       Xun_NOT
 //..    }
@@ -370,7 +359,7 @@ typedef
       Ain_Sh64,      /* 64-bit shift/rotate, dst=REG or MEM */
       Ain_Test64,    /* 64-bit test (AND, set flags, discard result) */
 //..       Xin_Unary32,   /* 32-bit not and neg */
-//..       Xin_MulL,      /* widening multiply */
+      Ain_MulL,      /* widening multiply */
 //..       Xin_Div,       /* div and mod */
 //..       Xin_Sh3232,    /* shldl or shrdl */
 //..       Xin_Push,      /* push (32-bit?) value on stack */
@@ -441,12 +430,13 @@ typedef
 //..             X86UnaryOp op;
 //..             X86RM*     dst;
 //..          } Unary32;
-//..          /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
-//..          struct {
-//..             Bool        syned;
-//..             X86ScalarSz ssz;
-//..             X86RM*      src;
-//..          } MulL;
+         /* DX:AX = AX *s/u r/m16, or EDX:EAX = EAX *s/u r/m32,
+            or RDX:RAX = RAX *s/u r/m64 */
+         struct {
+            Bool     syned;
+            Int      sz; /* 2, 4 or 8 only */
+            AMD64RM* src;
+         } MulL;
 //..          /* x86 div/idiv instruction.  Modifies EDX and EAX and reads src. */
 //..          struct {
 //..             Bool        syned;
@@ -646,7 +636,7 @@ extern AMD64Instr* AMD64Instr_Alu64M    ( AMD64AluOp, AMD64RI*,  AMD64AMode* );
 //.. extern AMD64Instr* AMD64Instr_Unary32   ( AMD64UnaryOp op, AMD64RM* dst );
 extern AMD64Instr* AMD64Instr_Sh64      ( AMD64ShiftOp, UInt, AMD64RM* );
 extern AMD64Instr* AMD64Instr_Test64    ( AMD64RI* src, AMD64RM* dst );
-//.. extern AMD64Instr* AMD64Instr_MulL      ( Bool syned, AMD64ScalarSz, AMD64RM* );
+extern AMD64Instr* AMD64Instr_MulL      ( Bool syned, Int sz, AMD64RM* );
 //.. extern AMD64Instr* AMD64Instr_Div       ( Bool syned, AMD64ScalarSz, AMD64RM* );
 //.. extern AMD64Instr* AMD64Instr_Sh3232    ( AMD64ShiftOp, UInt amt, HReg src, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_Push      ( AMD64RMI* );

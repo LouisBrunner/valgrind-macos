@@ -48,13 +48,14 @@ void ppIRType ( IRType ty )
 {
    switch (ty) {
       case Ity_INVALID: vex_printf("Ity_INVALID"); break;
-      case Ity_I1:      vex_printf( "I1");  break;
-      case Ity_I8:      vex_printf( "I8");  break;
-      case Ity_I16:     vex_printf( "I16"); break;
-      case Ity_I32:     vex_printf( "I32"); break;
-      case Ity_I64:     vex_printf( "I64"); break;
-      case Ity_F32:     vex_printf( "F32"); break;
-      case Ity_F64:     vex_printf( "F64"); break;
+      case Ity_I1:      vex_printf( "I1");   break;
+      case Ity_I8:      vex_printf( "I8");   break;
+      case Ity_I16:     vex_printf( "I16");  break;
+      case Ity_I32:     vex_printf( "I32");  break;
+      case Ity_I64:     vex_printf( "I64");  break;
+      case Ity_I128:    vex_printf( "I128"); break;
+      case Ity_F32:     vex_printf( "F32");  break;
+      case Ity_F64:     vex_printf( "F64");  break;
       case Ity_V128:    vex_printf( "V128"); break;
       default: vex_printf("ty = 0x%x\n", (Int)ty);
                vpanic("ppIRType");
@@ -154,9 +155,11 @@ void ppIROp ( IROp op )
       case Iop_MullS8:   vex_printf("MullS8");  return;
       case Iop_MullS16:  vex_printf("MullS16"); return;
       case Iop_MullS32:  vex_printf("MullS32"); return;
+      case Iop_MullS64:  vex_printf("MullS64"); return;
       case Iop_MullU8:   vex_printf("MullU8");  return;
       case Iop_MullU16:  vex_printf("MullU16"); return;
       case Iop_MullU32:  vex_printf("MullU32"); return;
+      case Iop_MullU64:  vex_printf("MullU64"); return;
 
       case Iop_Clz32:    vex_printf("Clz32"); return;
       case Iop_Ctz32:    vex_printf("Ctz32"); return;
@@ -186,6 +189,10 @@ void ppIROp ( IROp op )
       case Iop_64HIto32: vex_printf("64HIto32"); return;
       case Iop_64to32:   vex_printf("64to32");   return;
       case Iop_32HLto64: vex_printf("32HLto64"); return;
+
+      case Iop_128HIto64: vex_printf("128HIto64"); return;
+      case Iop_128to64:   vex_printf("128to64");   return;
+      case Iop_64HLto128: vex_printf("64HLto128"); return;
 
       case Iop_AddF64:    vex_printf("AddF64"); return;
       case Iop_SubF64:    vex_printf("SubF64"); return;
@@ -1239,6 +1246,8 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
          BINARY(Ity_I32, Ity_I16,Ity_I16);
       case Iop_MullU32: case Iop_MullS32:
          BINARY(Ity_I64, Ity_I32,Ity_I32);
+      case Iop_MullU64: case Iop_MullS64:
+         BINARY(Ity_I128, Ity_I64,Ity_I64);
 
       case Iop_Clz32: case Iop_Ctz32:
          UNARY(Ity_I32,Ity_I32);
@@ -1266,6 +1275,11 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
          UNARY(Ity_I32, Ity_I64);
       case Iop_32HLto64:
          BINARY(Ity_I64, Ity_I32,Ity_I32);
+
+      case Iop_128HIto64: case Iop_128to64:
+         UNARY(Ity_I64, Ity_I128);
+      case Iop_64HLto128:
+         BINARY(Ity_I128, Ity_I64,Ity_I64);
 
       case Iop_Not1:   UNARY(Ity_I1,Ity_I1);
       case Iop_1Uto8:  UNARY(Ity_I8,Ity_I1);
@@ -1519,7 +1533,8 @@ Bool isPlausibleType ( IRType ty )
 {
    switch (ty) {
       case Ity_INVALID: case Ity_I1:
-      case Ity_I8: case Ity_I16: case Ity_I32: case Ity_I64: 
+      case Ity_I8: case Ity_I16: case Ity_I32: 
+      case Ity_I64: case Ity_I128:
       case Ity_F32: case Ity_F64:
       case Ity_V128:
          return True;

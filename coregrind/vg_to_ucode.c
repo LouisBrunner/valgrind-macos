@@ -2628,7 +2628,8 @@ Addr dis_SHLRD_Gv_Ev ( UCodeBlock* cb,
       uInstr1(cb, POP,   sz, TempReg, t);
       uInstr2(cb, PUT,   sz, TempReg, t, ArchReg, eregOfRM(modrm));
       if (dis)
-         VG_(printf)("shld%c %%cl, %s, %s\n",
+         VG_(printf)("sh%cd%c %%cl, %s, %s\n",
+                     ( left_shift ? 'l' : 'r' ),
                      nameISize(sz), nameIReg(sz, gregOfRM(modrm)), 
                      nameIReg(sz, eregOfRM(modrm)));
    } else {
@@ -2642,7 +2643,8 @@ Addr dis_SHLRD_Gv_Ev ( UCodeBlock* cb,
       uInstr1(cb, POP,   sz, TempReg, t);
       uInstr2(cb, STORE, sz, TempReg, t,      TempReg, ta);
       if (dis)
-         VG_(printf)("shld%c %%cl, %s, %s\n",
+         VG_(printf)("sh%cd%c %%cl, %s, %s\n",
+                     ( left_shift ? 'l' : 'r' ),
                      nameISize(sz), nameIReg(sz, gregOfRM(modrm)), 
                      dis_buf);
    }

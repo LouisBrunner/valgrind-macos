@@ -4077,6 +4077,120 @@ POSTx(sys_ioctl)
       POST_MEM_WRITE( arg3, sizeof(struct vki_timeval) );
       break;
 
+   case VKI_GIO_FONT:
+      POST_MEM_WRITE( arg3, 32 * 256 );
+      break;
+   case VKI_PIO_FONT:
+      break;
+
+   case VKI_GIO_FONTX:
+      POST_MEM_WRITE( (Addr)((struct vki_consolefontdesc *)arg3)->chardata,
+                      32 * ((struct vki_consolefontdesc *)arg3)->charcount );
+      break;
+   case VKI_PIO_FONTX:
+      break;
+
+   case VKI_PIO_FONTRESET:
+      break;
+
+   case VKI_GIO_CMAP:
+      POST_MEM_WRITE( arg3, 16 * 3 );
+      break;
+   case VKI_PIO_CMAP:
+      break;
+
+   case VKI_KIOCSOUND:
+   case VKI_KDMKTONE:
+      break;
+
+   case VKI_KDGETLED:
+      POST_MEM_WRITE( arg3, sizeof(char) );
+      break;
+   case VKI_KDSETLED:
+      break;
+
+   case VKI_KDGKBTYPE:
+      POST_MEM_WRITE( arg3, sizeof(char) );
+      break;
+
+   case VKI_KDADDIO:
+   case VKI_KDDELIO:
+   case VKI_KDENABIO:
+   case VKI_KDDISABIO:
+      break;
+
+   case VKI_KDSETMODE:
+      break;
+   case VKI_KDGETMODE:
+      POST_MEM_WRITE( arg3, sizeof(int) );
+      break;
+
+   case VKI_KDMAPDISP:
+   case VKI_KDUNMAPDISP:
+      break;
+
+   case VKI_GIO_SCRNMAP:
+      POST_MEM_WRITE( arg3, VKI_E_TABSZ );
+      break;
+   case VKI_PIO_SCRNMAP:
+      break;
+   case VKI_GIO_UNISCRNMAP:
+      POST_MEM_WRITE( arg3, VKI_E_TABSZ * sizeof(unsigned short) );
+      break;
+   case VKI_PIO_UNISCRNMAP:
+      break;
+
+   case VKI_KDGKBMODE:
+      POST_MEM_WRITE( arg3, sizeof(int) );
+      break;
+   case VKI_KDSKBMODE:
+      break;
+      
+   case VKI_KDGKBMETA:
+      POST_MEM_WRITE( arg3, sizeof(int) );
+      break;
+   case VKI_KDSKBMETA:
+      break;
+      
+   case VKI_KDGKBLED:
+      POST_MEM_WRITE( arg3, sizeof(char) );
+      break;
+   case VKI_KDSKBLED:
+      break;
+      
+   case VKI_KDGKBENT:
+      POST_MEM_WRITE( (Addr)&((struct vki_kbentry *)arg3)->kb_value,
+                      sizeof(((struct vki_kbentry *)arg3)->kb_value) );
+      break;
+   case VKI_KDSKBENT:
+      break;
+      
+   case VKI_KDGKBSENT:
+      POST_MEM_WRITE( (Addr)((struct vki_kbsentry *)arg3)->kb_string,
+                      sizeof(((struct vki_kbsentry *)arg3)->kb_string) );
+      break;
+   case VKI_KDSKBSENT:
+      break;
+      
+   case VKI_KDGKBDIACR:
+      POST_MEM_WRITE( arg3, sizeof(struct vki_kbdiacrs) );
+      break;
+   case VKI_KDSKBDIACR:
+      break;
+      
+   case VKI_KDGETKEYCODE:
+      POST_MEM_WRITE( (Addr)((struct vki_kbkeycode *)arg3)->keycode,
+                      sizeof(((struct vki_kbkeycode *)arg3)->keycode) );
+      break;
+   case VKI_KDSETKEYCODE:
+      break;
+      
+   case VKI_KDSIGACCEPT:
+      break;
+
+   case VKI_KDKBDREP:
+      break;
+
       /* We don't have any specific information on it, so
 	 try to do something reasonable based on direction and
 	 size bits.  The encoding scheme is described in

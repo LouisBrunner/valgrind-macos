@@ -778,17 +778,35 @@ void ppPPC32Instr ( PPC32Instr* i )
    case Pin_Goto:
       vex_printf("goto: ");
       if (i->Pin.Goto.cond.test != Pct_ALWAYS) {
-         vex_printf("if (%%CR.%s) { ", 
+         vex_printf("if (%%crf0.%s) { ", 
                     showPPC32CondCode(i->Pin.Goto.cond));
       }
       if (i->Pin.Goto.jk != Ijk_Boring) {
-         vex_printf("la %%r31, $");
+         vex_printf("li %%r31, $");
          ppIRJumpKind(i->Pin.Goto.jk);
          vex_printf(" ; ");
       }
-      vex_printf("bca %s,%%r3, ", showPPC32CondCode(i->Pin.Goto.cond));
-      ppPPC32RI(i->Pin.Goto.dst);
-      vex_printf(" ; ret");
+      if (i->Pin.Goto.dst->tag == Pri_Imm) {
+         if (i->Pin.Goto.dst->Pri.Imm.imm32 < 0x10000) {
+            vex_printf("li %%r3, ");
+            ppPPC32RI(i->Pin.Goto.dst);
+            vex_printf(" ; ");
+         } else {
+            vex_printf("lis %%r3,0x%x ; ",
+                       i->Pin.Goto.dst->Pri.Imm.imm32 >> 16);
+            vex_printf("la %%r3,0x%x(%%r3) ; ",
+                       i->Pin.Goto.dst->Pri.Imm.imm32 & 0xFFFF);
+         }
+      } else {
+         vex_printf("if (%%r3 != ");
+         ppHRegPPC32(i->Pin.Goto.dst->Pri.Reg.reg);
+         vex_printf(") { mr %%r3,");
+         ppHRegPPC32(i->Pin.Goto.dst->Pri.Reg.reg);
+         vex_printf(" } ; ");
+      }
+      vex_printf("blr");
+      //      vex_printf("mtctr %%r_dst ; ");
+      //      vex_printf("bctr");
       if (i->Pin.Goto.cond.test != Pct_ALWAYS) {
          vex_printf(" }");
       }
@@ -804,7 +822,7 @@ void ppPPC32Instr ( PPC32Instr* i )
    case Pin_Load: {
       UChar sz = i->Pin.Load.sz;
       Bool syned = i->Pin.Load.syned;
-      Bool idxd = (i->Pin.Load.src->tag == Pam_IR) ? True : False;
+      Bool idxd = (i->Pin.Load.src->tag == Pam_RR) ? True : False;
       vex_printf("l%c%c%s ",
                  (sz==1) ? 'b' : (sz==2 ? 'h' : 'w'),
                  syned ? 'a' : 'z',
@@ -816,7 +834,7 @@ void ppPPC32Instr ( PPC32Instr* i )
    }
    case Pin_Store: {
       UChar sz = i->Pin.Store.sz;
-      Bool idxd = (i->Pin.Store.dst->tag == Pam_IR) ? True : False;
+      Bool idxd = (i->Pin.Store.dst->tag == Pam_RR) ? True : False;
       vex_printf("st%c%s ",
                  (sz==1) ? 'b' : (sz==2 ? 'h' : 'w'),
                  idxd ? "x" : "" );
@@ -1827,6 +1845,38 @@ static UChar* doAMode_RR ( UChar* p, UInt op1, UInt op2,
    return p;
 }
 
+/* Load imm to r_dst */
+static UChar* mkLoadImm ( UChar* p, UInt r_dst, UInt imm )
+{
+   vassert(r_dst < 0x20);
+
+   if (imm < 0x10000) {
+      // CAB: Sign extends immediate...
+      // addi r_dst,0,imm  => li r_dst,imm
+      p = mkFormD(p, 14, r_dst, 0, imm);
+   } else {
+      // addis r_dst,r0,(imm>>16) => lis r_dst, (imm>>16)
+      p = mkFormD(p, 15, r_dst, 0, (imm>>16));
+      // ori r_dst, r_dst, (imm & 0xFFFF)
+      p = mkFormD(p, 24, r_dst, r_dst, (imm & 0xFFFF));
+   }
+   return p;
+}
+
+
+/* Move r_dst to r_src */
+static UChar* mkMoveReg ( UChar* p, UInt r_dst, UInt r_src )
+{
+   vassert(r_dst < 0x20);
+   vassert(r_src < 0x20);
+
+   if (r_dst != r_src) {
+      /* or r_dst, r_src, r_src */
+      p = mkFormX(p, 31, r_src, r_dst, r_src, 444, 0 );
+   }
+   return p;
+}
+
 
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
@@ -1948,7 +1998,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    case Pin_Cmp32: {
       UInt opc1, opc2=0;
       UInt op = i->Pin.Cmp32.op;
-      UInt fld1 = i->Pin.Cmp32.crfD << 2;
+      UInt fld1 = (7 - i->Pin.Cmp32.crfD) << 2;
       UInt r1 = iregNo(i->Pin.Cmp32.src1);
       UInt r2, imm;
 
@@ -2079,7 +2129,6 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..       }
 
    case Pin_Call: {
-      Addr32 target;
       PPC32CondCode cond = i->Pin.Call.cond;
       UInt r_dst = 12;
       /* As per detailed comment for Pin_Call in
@@ -2088,23 +2137,30 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
       /* jump over the following two insns if the condition does not
          hold */
-      if (i->Pin.Call.cond.test != Pct_ALWAYS) {
-         target = 16; /* num bytes in next insts */
-         /* bca ct,cf,target */
-         p = mkFormB(p, invertCondTest(cond.test), cond.flag, target, 1, 0);
+      if (cond.test != Pct_ALWAYS) {
+         /* don't know how many bytes to jump over yet...
+            make space for a jump instruction and fill in later. */
+         ptmp = p; /* fill in this bit later */
+         p += 4;
       }
 
-      /* addi r_dst,0,(target & 0xFFFF)
-         addis r_dst,r_dst,((target >> 16) & 0xFFFF) => load target to r_dst */
-      target = i->Pin.Call.target;
-      p = mkFormD(p, 14, r_dst, 0, (target & 0xFFFF));
-      p = mkFormD(p, 15, r_dst, r_dst, ((target>>16) & 0xFFFF) );
+      /* load target to r_dst */
+      p = mkLoadImm(p, r_dst, i->Pin.Call.target);
 
       /* mtspr 9,r_dst => move r_dst to count register */
       p = mkFormXFX(p, r_dst, 9, 467);
       
       /* bcctrl 20,0 => branch w. link to count register */
       p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);
+
+      /* Fix up the conditional jump, if there was one. */
+      if (cond.test != Pct_ALWAYS) {
+         Int delta = p - ptmp;
+         vassert(delta >= 8 && delta <= 16);
+
+         /* bca !ct,cf,jump */
+         mkFormB(ptmp, invertCondTest(cond.test), cond.flag, (delta>>2), 1, 0);
+      }
 
 /* CAB: Hmm...
    "When possible, independent instructions should separate the load
@@ -2115,7 +2171,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
    case Pin_Goto: {
       UInt magic_num = 0;
-      UChar r_dst = 3;    /* Put target addr into %r3 */
+      UChar r_return = 3;    /* Put target addr into %r3 */
       PPC32CondCode cond = i->Pin.Goto.cond;
       UInt imm;
       
@@ -2123,15 +2179,15 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          jump over the rest of it. */
       if (cond.test != Pct_ALWAYS) {
          /* jmp fwds if !condition */
-         imm = 8; /* num bytes in next insts */
-         /* bca ct,cf,imm */
-         p = mkFormB(p, invertCondTest(cond.test), cond.flag, imm, 1, 0);
+         /* don't know how many bytes to jump over yet...
+            make space for a jump instruction and fill in later. */
          ptmp = p; /* fill in this bit later */
-         *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
+         p += 4;
       }
 
+      // cond succeeds...
+      
       /* If a non-boring, set GuestStatePtr appropriately. */
-      /* addi r31,0,magic_num */
       switch (i->Pin.Goto.jk) {
       case Ijk_ClientReq: magic_num = VEX_TRC_JMP_CLIENTREQ; break;
       case Ijk_Syscall:   magic_num = VEX_TRC_JMP_SYSCALL;   break;
@@ -2149,38 +2205,29 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       }
       if (magic_num !=0) {
          vassert(magic_num < 0x10000);
+         /* addi r31,0,magic_num */
          p = mkFormD(p, 14, 31, 0, magic_num);
       }
 
-      /* Get the destination address into %r3 */
+      /* Get the destination address into %r_return */
       if (i->Pin.Goto.dst->tag == Pri_Imm) {
          imm = i->Pin.Goto.dst->Pri.Imm.imm32;
-         if (imm < 0x10000) {
-            // addi r_dst,0,(imm & 0xFFFF)
-            p = mkFormD(p, 14, r_dst, 0, imm);
-         } else {
-            // addi r_dst,0,(imm & 0xFFFF)
-            // addis r_dst,r_dst,((imm >> 16) & 0xFFFF)
-            p = mkFormD(p, 14, r_dst, 0, (imm & 0xFFFF));
-            p = mkFormD(p, 15, r_dst, r_dst, ((imm>>16) & 0xFFFF));
-         }
+         p = mkLoadImm(p, r_return, imm);
       } else {
          vassert(i->Pin.Goto.dst->tag == Pri_Reg);
-         UChar r_src = iregNo(i->Pin.Goto.dst->Pri.Reg.reg);
-         if (r_dst != r_src) {
-            /* add r_dst, 0, r_src */
-            p = mkFormXO(p, 31, r_dst, 0, r_src, 0, 266, 0);
-         }
+         UInt r_dst = iregNo(i->Pin.Goto.dst->Pri.Reg.reg);
+         p = mkMoveReg(p, r_return, r_dst);
       }
-
-      /* ret => bclr (always),0 */
+      
+      /* blr */
       p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 16, 0);
 
       /* Fix up the conditional jump, if there was one. */
       if (cond.test != Pct_ALWAYS) {
          Int delta = p - ptmp;
-         vassert(delta > 0 && delta < 20);
-         *ptmp = (UChar)(delta-1);
+         vassert(delta >= 8 && delta <= 16);
+         /* bc !ct,cf,delta */
+         mkFormB(ptmp, invertCondTest(cond.test), cond.flag, (delta>>2), 0, 0);
       }
       goto done;
    }
@@ -2191,32 +2238,33 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       PPC32CondCode cond = i->Pin.CMov32.cond;
       UInt imm, r_src;
 
-      // branch (if cond false) over next instr
-      // bc false,cond,8
-      p = mkFormB(p, invertCondTest(cond.test), cond.flag, 8, 0, 0);
+      /* branch (if cond fails) over move instrs */
+      if (cond.test != Pct_ALWAYS) {
+         /* don't know how many bytes to jump over yet...
+            make space for a jump instruction and fill in later. */
+         ptmp = p; /* fill in this bit later */
+         p += 4;
+      }
 
       // cond true: move src => dst
       switch (i->Pin.CMov32.src->tag) {
       case Pri_Imm:
          imm = i->Pin.CMov32.src->Pri.Imm.imm32;
-         if (imm < 0x10000) {
-            // addi r_dst,0,imm
-            p = mkFormD(p, 14, r_dst, 0, imm);
-         } else {
-            // addi r_dst,0,(imm & 0xFFFF)
-            // addis r_dst,r_dst,((imm >> 16) & 0xFFFF)
-            p = mkFormD(p, 14, r_dst, 0, (imm & 0xFFFF));
-            p = mkFormD(p, 15, r_dst, r_dst, ((imm>>16) & 0xFFFF));
-         }
+         p = mkLoadImm(p, r_dst, imm);
          break;
       case Pri_Reg:
          r_src = iregNo(i->Pin.CMov32.src->Pri.Reg.reg);
-         if (r_src != r_dst) {
-            /* add r_dst, 0, r_src */
-            p = mkFormXO(p, 31, r_dst, 0, r_src, 0, 266, 0);
-         }
+         p = mkMoveReg(p, r_dst, r_src);
          break;
       default: goto bad;
+      }
+
+      /* Fix up the conditional jump, if there was one. */
+      if (cond.test != Pct_ALWAYS) {
+         Int delta = p - ptmp;
+         vassert(delta >= 4 && delta <= 12);
+         /* bc !ct,cf,delta */
+         mkFormB(ptmp, invertCondTest(cond.test), cond.flag, (delta>>2), 0, 0);
       }
       goto done;
    }
@@ -2269,7 +2317,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
          // r_dst = flag (rotate left and mask)
          //  => rlwinm r_dst,r_tmp,rot_imm,31,31
-         p = mkFormM(p, 21, r_dst, r_tmp, rot_imm, 31, 31, 0);
+         p = mkFormM(p, 21, r_tmp, r_dst, rot_imm, 31, 31, 0);
 
          if (cond.test == Pct_FALSE) {
             // flip bit  => xori rD,rD,1

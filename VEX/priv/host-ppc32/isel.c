@@ -336,7 +336,7 @@ static PPC32Instr* mk_iMOVds_RRI ( ISelEnv* env, HReg dst, PPC32RI* src )
       // CAB: addis (aka lis) would be good...
       addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(imm>>16)));
       addInstr(env, mk_sh32(env, Psh_SHL, dst, dst, PPC32RI_Imm(16)));
-      return PPC32Instr_Alu32(Palu_ADD, dst, dst, PPC32RI_Imm(imm & 0xFFFF));
+      return PPC32Instr_Alu32(Palu_OR, dst, dst, PPC32RI_Imm(imm & 0xFFFF));
    } else {
       return PPC32Instr_Alu32(Palu_ADD, dst, zero, src);
    }
@@ -1299,15 +1299,16 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    case Iex_Mux0X: {
       if ((ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
           && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
-         PPC32CondCode cond = mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
+         PPC32CondCode cc;
          HReg r8;
          HReg rX     = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
          PPC32RI* r0 = iselIntExpr_RI(env, e->Iex.Mux0X.expr0);
          HReg dst    = newVRegI(env);
          addInstr(env, mk_iMOVds_RR(dst,rX));
          r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-         addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 0, r8, PPC32RI_Imm(0)));
-         addInstr(env, PPC32Instr_CMov32(cond,dst,r0));
+         addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, r8, PPC32RI_Imm(0)));
+         cc = mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
+         addInstr(env, PPC32Instr_CMov32(cc,dst,r0));
          return dst;
       }
       break;
@@ -1506,7 +1507,7 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    DEFINE_PATTERN(p_32to1, unop(Iop_32to1,bind(0)));
    if (matchIRExpr(&mi,p_32to1,e)) {
       HReg dst = iselIntExpr_R(env, mi.bindee[0]);
-      addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 0, dst, PPC32RI_Imm(1)));
+      addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, dst, PPC32RI_Imm(1)));
       return mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
    }
 
@@ -1570,7 +1571,7 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
           e->Iex.Binop.op == Iop_CmpLE32S) {
          cmp_op = Pcmp_S;
       }
-      addInstr(env, PPC32Instr_Cmp32(cmp_op,0,r1,ri2));
+      addInstr(env, PPC32Instr_Cmp32(cmp_op,7,r1,ri2));
 
       switch (e->Iex.Binop.op) {
       case Iop_CmpEQ32:  return mk_PPCCondCode( Pct_TRUE,  Pcf_EQ );

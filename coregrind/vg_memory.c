@@ -142,6 +142,9 @@ Segment *VG_(split_segment)(Addr a)
    ns->offset += delta;
    ns->len -= delta;
 
+   if (s->filename != NULL)
+      ns->filename = VG_(arena_strdup)(VG_AR_CORE, s->filename);
+
    if (ns->symtab != NULL)
       VG_(symtab_incref)(ns->symtab);
 
@@ -156,17 +159,19 @@ void VG_(unmap_range)(Addr addr, UInt len)
 {
    Segment *s;
    Segment *next;
-   static const Bool debug = False || mem_debug;
-   Addr end = addr+len;
+   static const Bool debug = True || mem_debug;
+   Addr end;
 
    if (len == 0)
       return;
 
+   len = PGROUNDUP(len);
+   vg_assert(addr == PGROUNDDN(addr));
+
    if (debug)
       VG_(printf)("unmap_range(%p, %d)\n", addr, len);
 
-   len = PGROUNDUP(addr+len)-PGROUNDDN(addr);
-   addr = PGROUNDDN(addr);
+   end = addr+len;
 
    /* Everything must be page-aligned */
    vg_assert((addr & (VKI_BYTES_PER_PAGE-1)) == 0);
@@ -182,7 +187,7 @@ void VG_(unmap_range)(Addr addr, UInt len)
 
       if (debug)
 	 VG_(printf)("unmap: addr=%p-%p s=%p ->addr=%p-%p len=%d\n",
-		     addr, addr+len, s, s->addr, s->addr+s->len, s->len);
+		     addr, end, s, s->addr, seg_end, s->len);
 
       if (!VG_(seg_overlaps)(s, addr, len)) {
 	 if (debug)
@@ -217,12 +222,14 @@ void VG_(unmap_range)(Addr addr, UInt len)
 	 */
 	 Int delta = (addr+len) - s->addr;
 
+	 if (debug)
+	    VG_(printf)("  case 3: s->addr=%p s->len=%d delta=%d\n", s->addr, s->len, delta);
+
 	 s->addr += delta;
 	 s->offset += delta;
 	 s->len -= delta;
 
-	 if (debug)
-	    VG_(printf)("  case 3: s->addr=%p s->len=%d delta=%d\n", s->addr, s->len, delta);
+	 vg_assert(s->len != 0);
       } else if (addr > s->addr && end < seg_end) {
 	 /* [addr, addr+len) is contained within a single segment
 	    -> split segment into 3, delete middle portion
@@ -245,8 +252,8 @@ void VG_(unmap_range)(Addr addr, UInt len)
    }
 }
 
-/* If possible, merge segment with its neighbours - some segments,
-   including s, may be destroyed in the process */
+/* Return true if two segments are adjacent and mergable (s1 is
+   assumed to have a lower ->addr than s2) */
 static inline Bool neighbours(Segment *s1, Segment *s2)
 {
    if (s1->addr+s1->len != s2->addr)
@@ -273,8 +280,8 @@ static inline Bool neighbours(Segment *s1, Segment *s2)
    return True;
 }
 
-/* Merge segments in the address range if they're adjacent and
-   compatible */
+/* If possible, merge segment with its neighbours - some segments,
+   including s, may be destroyed in the process */
 static void merge_segments(Addr a, UInt len)
 {
    Segment *s;

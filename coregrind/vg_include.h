@@ -1580,7 +1580,6 @@ extern Addr VG_(find_map_space)(Addr base, UInt len, Bool for_client);
 
 extern Segment *VG_(find_segment)(Addr a);
 extern Segment *VG_(next_segment)(Segment *);
-extern Segment *VG_(split_segment)(Addr a);
 
 extern Bool     VG_(seg_contains)(const Segment *s, Addr ptr, UInt size);
 extern Bool     VG_(seg_overlaps)(const Segment *s, Addr ptr, UInt size);

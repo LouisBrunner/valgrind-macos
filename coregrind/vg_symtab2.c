@@ -1208,8 +1208,7 @@ SegInfo *VG_(read_seg_symbols) ( Segment *seg )
    si->start    = seg->addr;
    si->size     = seg->len;
    si->foffset  = seg->offset;
-   si->filename = VG_(arena_malloc)(VG_AR_SYMTAB, 1 + VG_(strlen)(seg->filename));
-   VG_(strcpy)(si->filename, seg->filename);
+   si->filename = VG_(arena_strdup)(VG_AR_SYMTAB, seg->filename);
 
    si->ref = 1;
 

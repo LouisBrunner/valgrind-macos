@@ -958,9 +958,9 @@ extern Bool VG_(is_sig_ign) ( Int sigNo );
 extern void VG_(route_signals) ( void );
 
 /* Fake system calls for signal handling. */
-extern void VG_(do__NR_sigaltstack)   ( ThreadId tid );
-extern void VG_(do__NR_sigaction)     ( ThreadId tid );
-extern void VG_(do__NR_sigprocmask)   ( ThreadId tid, Int how, 
+extern void VG_(do_sys_sigaltstack)   ( ThreadId tid );
+extern void VG_(do_sys_sigaction)     ( ThreadId tid );
+extern void VG_(do_sys_sigprocmask)   ( ThreadId tid, Int how, 
                                         vki_sigset_t* set,
                                         vki_sigset_t* oldset );
 extern void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid, Int how, 

@@ -5312,7 +5312,7 @@ PRE(sigaltstack)
    }
 
    if (SIGNAL_SIMULATION)
-      VG_(do__NR_sigaltstack) (tid);
+      VG_(do_sys_sigaltstack) (tid);
 }
 
 POST(sigaltstack)
@@ -5332,7 +5332,7 @@ PRE(sigaction)
       PRE_MEM_WRITE( "sigaction(oldact)", arg3, sizeof(struct vki_sigaction));
 
    if (SIGNAL_SIMULATION)
-      VG_(do__NR_sigaction)(tid);
+      VG_(do_sys_sigaction)(tid);
 }
 
 POST(sigaction)
@@ -5355,7 +5355,7 @@ PRE(sigprocmask)
       PRE_MEM_WRITE( "sigprocmask(oldset)", arg3, sizeof(vki_sigset_t));
 
    if (SIGNAL_SIMULATION)
-      VG_(do__NR_sigprocmask) ( tid, 
+      VG_(do_sys_sigprocmask) ( tid, 
 				arg1 /*how*/, 
 				(vki_sigset_t*) arg2,
 				(vki_sigset_t*) arg3 );

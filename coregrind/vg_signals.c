@@ -474,7 +474,7 @@ static Int sas_ss_flags ( ThreadId tid, Addr m_SP )
 }
 
 
-void VG_(do__NR_sigaltstack) ( ThreadId tid )
+void VG_(do_sys_sigaltstack) ( ThreadId tid )
 {
    vki_stack_t* ss;
    vki_stack_t* oss;
@@ -525,7 +525,7 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
 }
 
 
-void VG_(do__NR_sigaction) ( ThreadId tid )
+void VG_(do_sys_sigaction) ( ThreadId tid )
 {
    Int                    signo;
    struct vki_sigaction*  new_act;
@@ -687,7 +687,7 @@ void do_setmask ( ThreadId tid,
 }
 
 
-void VG_(do__NR_sigprocmask) ( ThreadId tid,
+void VG_(do_sys_sigprocmask) ( ThreadId tid,
                                Int how, 
                                vki_sigset_t* set,
                                vki_sigset_t* oldset )

@@ -641,7 +641,7 @@ void VG_(record_free_error) ( ThreadState* tst, Addr a )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( True, tst->m_eip, tst->m_ebp );
+   ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
    ec.ekind   = FreeErr;
    ec.addr    = a;
    ec.tid     = tst->tid;
@@ -659,7 +659,7 @@ void VG_(record_freemismatch_error) ( ThreadState* tst, Addr a )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( True, tst->m_eip, tst->m_ebp );
+   ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
    ec.ekind   = FreeMismatchErr;
    ec.addr    = a;
    ec.tid     = tst->tid;

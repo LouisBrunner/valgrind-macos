@@ -792,18 +792,19 @@ be told that -- making duplicate frees of the same block easy to spot.
 
 <h4>2.6.4&nbsp; When a block is freed with an inappropriate
 deallocation function</h4>
-For example:
+In the following example, a block allocated with <code>new []</code>
+has wrongly been deallocated with <code>free</code>:
 <pre>
   Mismatched free() / delete / delete []
-     at 0x40303847: DeviceContextImpl::~DeviceContextImpl(void)
-     by 0x45149BCB: nsDeviceContextGTK::~nsDeviceContextGTK(void)
-     by 0x4030341A: DeviceContextImpl::Release(void)
-     by 0x460C0CAC: nsBaseWidget::OnDestroy(void)
-     Address 0x41C11A7C is 0 bytes inside a block of size 120 alloc'd
-     at 0x40040BEC: malloc (vg_clientfuncs.c:100)
-     by 0x4516DAAC: ??? (../../gcc-2.95.3/gcc/cp/new1.cc:78)
-     by 0x4515FA11: nsDeviceContextGTKConstructor(nsISupports *, ...
-     by 0x40553ABB: nsGenericFactory::CreateInstance(nsISupports *, ...
+     at 0x40043249: free (vg_clientfuncs.c:171)
+     by 0x4102BB4E: QGArray::~QGArray(void) (tools/qgarray.cpp:149)
+     by 0x4C261C41: PptDoc::~PptDoc(void) (include/qmemarray.h:60)
+     by 0x4C261F0E: PptXml::~PptXml(void) (pptxml.cc:44)
+     Address 0x4BB292A8 is 0 bytes inside a block of size 64 alloc'd
+     at 0x4004318C: __builtin_vec_new (vg_clientfuncs.c:152)
+     by 0x4C21BC15: KLaola::readSBStream(int) const (klaola.cc:314)
+     by 0x4C21C155: KLaola::stream(KLaola::OLENode const *) (klaola.cc:416)
+     by 0x4C21788F: OLEFilter::convert(QCString const &) (olefilter.cc:272)
 </pre>
 The following was told to me be the KDE 3 developers.  I didn't know
 any of it myself.  They also implemented the check itself.

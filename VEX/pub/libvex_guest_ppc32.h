@@ -46,96 +46,96 @@
 
 typedef
    struct {
-      // General Purpose Registers
-      UInt guest_GPR0;
-      UInt guest_GPR1;
-      UInt guest_GPR2;
-      UInt guest_GPR3;
-      UInt guest_GPR4;
-      UInt guest_GPR5;
-      UInt guest_GPR6;
-      UInt guest_GPR7;
-      UInt guest_GPR8;
-      UInt guest_GPR9;
-      UInt guest_GPR10;
-      UInt guest_GPR11;
-      UInt guest_GPR12;
-      UInt guest_GPR13;
-      UInt guest_GPR14;
-      UInt guest_GPR15;
-      UInt guest_GPR16;
-      UInt guest_GPR17;
-      UInt guest_GPR18;
-      UInt guest_GPR19;
-      UInt guest_GPR20;
-      UInt guest_GPR21;
-      UInt guest_GPR22;
-      UInt guest_GPR23;
-      UInt guest_GPR24;
-      UInt guest_GPR25;
-      UInt guest_GPR26;
-      UInt guest_GPR27;
-      UInt guest_GPR28;
-      UInt guest_GPR29;
-      UInt guest_GPR30;
-      UInt guest_GPR31;
+      /* General Purpose Registers */
+      /*   0 */ UInt guest_GPR0;
+      /*   4 */ UInt guest_GPR1;
+      /*   8 */ UInt guest_GPR2;
+      /*  12 */ UInt guest_GPR3;
+      /*  16 */ UInt guest_GPR4;
+      /*  20 */ UInt guest_GPR5;
+      /*  24 */ UInt guest_GPR6;
+      /*  28 */ UInt guest_GPR7;
+      /*  32 */ UInt guest_GPR8;
+      /*  36 */ UInt guest_GPR9;
+      /*  40 */ UInt guest_GPR10;
+      /*  44 */ UInt guest_GPR11;
+      /*  48 */ UInt guest_GPR12;
+      /*  52 */ UInt guest_GPR13;
+      /*  56 */ UInt guest_GPR14;
+      /*  60 */ UInt guest_GPR15;
+      /*  64 */ UInt guest_GPR16;
+      /*  68 */ UInt guest_GPR17;
+      /*  72 */ UInt guest_GPR18;
+      /*  76 */ UInt guest_GPR19;
+      /*  80 */ UInt guest_GPR20;
+      /*  84 */ UInt guest_GPR21;
+      /*  88 */ UInt guest_GPR22;
+      /*  92 */ UInt guest_GPR23;
+      /*  96 */ UInt guest_GPR24;
+      /* 100 */ UInt guest_GPR25;
+      /* 104 */ UInt guest_GPR26;
+      /* 108 */ UInt guest_GPR27;
+      /* 112 */ UInt guest_GPR28;
+      /* 116 */ UInt guest_GPR29;
+      /* 120 */ UInt guest_GPR30;
+      /* 124 */ UInt guest_GPR31;
 
       // Floating Point Registers
-      ULong guest_FPR0;
-      ULong guest_FPR1;
-      ULong guest_FPR2;
-      ULong guest_FPR3;
-      ULong guest_FPR4;
-      ULong guest_FPR5;
-      ULong guest_FPR6;
-      ULong guest_FPR7;
-      ULong guest_FPR8;
-      ULong guest_FPR9;
-      ULong guest_FPR10;
-      ULong guest_FPR11;
-      ULong guest_FPR12;
-      ULong guest_FPR13;
-      ULong guest_FPR14;
-      ULong guest_FPR15;
-      ULong guest_FPR16;
-      ULong guest_FPR17;
-      ULong guest_FPR18;
-      ULong guest_FPR19;
-      ULong guest_FPR20;
-      ULong guest_FPR21;
-      ULong guest_FPR22;
-      ULong guest_FPR23;
-      ULong guest_FPR24;
-      ULong guest_FPR25;
-      ULong guest_FPR26;
-      ULong guest_FPR27;
-      ULong guest_FPR28;
-      ULong guest_FPR29;
-      ULong guest_FPR30;
-      ULong guest_FPR31;
+      /* 128 */ ULong guest_FPR0;
+      /* 136 */ ULong guest_FPR1;
+      /* 144 */ ULong guest_FPR2;
+      /* 152 */ ULong guest_FPR3;
+      /* 160 */ ULong guest_FPR4;
+      /* 168 */ ULong guest_FPR5;
+      /* 176 */ ULong guest_FPR6;
+      /* 184 */ ULong guest_FPR7;
+      /* 192 */ ULong guest_FPR8;
+      /* 200 */ ULong guest_FPR9;
+      /* 208 */ ULong guest_FPR10;
+      /* 216 */ ULong guest_FPR11;
+      /* 224 */ ULong guest_FPR12;
+      /* 232 */ ULong guest_FPR13;
+      /* 240 */ ULong guest_FPR14;
+      /* 248 */ ULong guest_FPR15;
+      /* 256 */ ULong guest_FPR16;
+      /* 264 */ ULong guest_FPR17;
+      /* 272 */ ULong guest_FPR18;
+      /* 280 */ ULong guest_FPR19;
+      /* 288 */ ULong guest_FPR20;
+      /* 296 */ ULong guest_FPR21;
+      /* 304 */ ULong guest_FPR22;
+      /* 312 */ ULong guest_FPR23;
+      /* 320 */ ULong guest_FPR24;
+      /* 328 */ ULong guest_FPR25;
+      /* 336 */ ULong guest_FPR26;
+      /* 344 */ ULong guest_FPR27;
+      /* 352 */ ULong guest_FPR28;
+      /* 360 */ ULong guest_FPR29;
+      /* 368 */ ULong guest_FPR30;
+      /* 376 */ ULong guest_FPR31;
 
-      UInt guest_CIA;    // Current Instruction Address (no arch visible register)
-      UInt guest_LR;     // Link Register
-      UInt guest_CTR;    // Count Register
+      /* 384 */ UInt guest_CIA;    // IP (no arch visible register)
+      /* 388 */ UInt guest_LR;     // Link Register
+      /* 392 */ UInt guest_CTR;    // Count Register
 
       /* CR[7]: thunk used to calculate these flags. */
-      UChar guest_CC_OP;    // boolean: 0=> dep1=result 1=> dep1=flags
-      UInt  guest_CC_DEP1;  // Result of last op | flags
-      UChar guest_CC_DEP2;  // XER_SO
+      /* 396 */ UChar guest_CC_OP;
+      /* 400 */ UInt  guest_CC_DEP1;
+      /* 404 */ UChar guest_CC_DEP2;
 
       // CR[0:6]: Used for 'compare' ops
-      UInt guest_CR0to6;
+      /* 408 */ UInt guest_CR0to6;
 
-      UInt guest_FPSCR;   // Floating Point Status and Control Register
+      /* 412 */ UInt guest_FPSCR;   // FP Status & Control Reg
 
       /* XER */
-      UChar guest_XER_SO;  // Summary Overflow
-      UChar guest_XER_OV;  // Overflow
-      UChar guest_XER_CA;  // Carry
-      UChar guest_XER_BC;  // Byte Count
+      /* 416 */ UChar guest_XER_SO;  // Summary Overflow
+      /* 417 */ UChar guest_XER_OV;  // Overflow
+      /* 418 */ UChar guest_XER_CA;  // Carry
+      /* 419 */ UChar guest_XER_BC;  // Byte Count
 
       /* Emulation warnings */
-      UInt guest_EMWARN;
+      /* 420 */ UInt guest_EMWARN;
 
       /* Padding to make it have an 8-aligned size */
 //      UChar padding_1b1;

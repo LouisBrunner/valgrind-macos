@@ -1793,6 +1793,11 @@ static IRAtom* mkDifD8 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
    sk_assert(isShadowAtom(mce,a2));
    return assignNew(mce, Ity_I8, binop(Iop_And8, a1, a2));
 }
+static IRAtom* mkDifD16 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
+   sk_assert(isShadowAtom(mce,a1));
+   sk_assert(isShadowAtom(mce,a2));
+   return assignNew(mce, Ity_I16, binop(Iop_And16, a1, a2));
+}
 static IRAtom* mkDifD32 ( MCEnv* mce, IRAtom* a1, IRAtom* a2 ) {
    sk_assert(isShadowAtom(mce,a1));
    sk_assert(isShadowAtom(mce,a2));
@@ -1832,6 +1837,15 @@ static IRAtom* mkLeft8 ( MCEnv* mce, IRAtom* a1 ) {
                           assignNew(mce, Ity_I8,
                                     /* unop(Iop_Neg8, a1)))); */
                                     binop(Iop_Sub8, mkU8(0), a1) )));
+}
+static IRAtom* mkLeft16 ( MCEnv* mce, IRAtom* a1 ) {
+   sk_assert(isShadowAtom(mce,a1));
+   /* It's safe to duplicate a1 since it's only an atom */
+   return assignNew(mce, Ity_I16, 
+                    binop(Iop_Or16, a1, 
+                          assignNew(mce, Ity_I16,
+                                    /* unop(Iop_Neg16, a1)))); */
+                                    binop(Iop_Sub16, mkU16(0), a1) )));
 }
 static IRAtom* mkLeft32 ( MCEnv* mce, IRAtom* a1 ) {
    sk_assert(isShadowAtom(mce,a1));
@@ -1873,6 +1887,17 @@ static IRAtom* mkImproveOR8 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
              mce, Ity_I8, 
              binop(Iop_Or8, 
                    assignNew(mce, Ity_I8, unop(Iop_Not8, data)), 
+                   vbits) );
+}
+static IRAtom* mkImproveOR16 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
+{
+   sk_assert(isOriginalAtom(mce, data));
+   sk_assert(isShadowAtom(mce, vbits));
+   sk_assert(sameKindedAtoms(data, vbits));
+   return assignNew(
+             mce, Ity_I16, 
+             binop(Iop_Or16, 
+                   assignNew(mce, Ity_I16, unop(Iop_Not16, data)), 
                    vbits) );
 }
 static IRAtom* mkImproveOR32 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
@@ -2147,13 +2172,16 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Mul32:
          return mkLeft32(mce, mkUifU32(mce, vatom1,vatom2));
 
+      case Iop_Sub16:
+         return mkLeft16(mce, mkUifU16(mce, vatom1,vatom2));
+
       case Iop_Sub8:
       case Iop_Add8:
          return mkLeft8(mce, mkUifU8(mce, vatom1,vatom2));
 
       case Iop_CmpLE32S: case Iop_CmpLE32U: 
       case Iop_CmpLT32U: case Iop_CmpLT32S:
-      case Iop_CmpEQ32:
+      case Iop_CmpEQ32: case Iop_CmpNE32:
          return mkPCastTo(mce, mkUifU32(mce, vatom1,vatom2), Ity_Bit);
 
       case Iop_CmpEQ16:
@@ -2173,6 +2201,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          complainIfUndefined(mce, atom2);
          return assignNew(mce, Ity_I16, binop(op, vatom1, atom2));
 
+      case Iop_Shl8:
+         /* Same scheme as with 32-bit shifts. */
+         complainIfUndefined(mce, atom2);
+         return assignNew(mce, Ity_I8, binop(op, vatom1, atom2));
+
       case Iop_Shl64: case Iop_Shr64: 
          /* Same scheme as with 32-bit shifts. */
          complainIfUndefined(mce, atom2);
@@ -2188,9 +2221,9 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Or32:
          uifu = mkUifU32; difd = mkDifD32; 
          and_or_ty = Ity_I32; improve = mkImproveOR32; goto do_And_Or;
-	 //case Iop_Or16:
-         //uifu = mkUifU16; difd = mkDifD16; 
-         //and_or_ty = Ity_I16; improve = mkImproveOR16; goto do_And_Or;
+      case Iop_Or16:
+         uifu = mkUifU16; difd = mkDifD16; 
+         and_or_ty = Ity_I16; improve = mkImproveOR16; goto do_And_Or;
       case Iop_Or8:
          uifu = mkUifU8; difd = mkDifD8; 
          and_or_ty = Ity_I8; improve = mkImproveOR8; goto do_And_Or;
@@ -2230,11 +2263,13 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce,
       case Iop_1Uto32:
       case Iop_8Uto32:
       case Iop_16Uto32:
+      case Iop_16Sto32:
       case Iop_8Sto32:
          return assignNew(mce, Ity_I32, unop(op, vatom));
 
+      case Iop_8Sto16:
       case Iop_32to16:
-         return assignNew(mce, Ity_I16, unop(Iop_32to16, vatom));
+         return assignNew(mce, Ity_I16, unop(op, vatom));
 
       case Iop_1Uto8:
       case Iop_32to8:

@@ -1327,33 +1327,42 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 
       case __NR_brk: /* syscall 45 */
-         /* Haven't a clue if this is really right. */
-         /* int brk(void *end_data_segment); */
+         /* libc   says: int   brk(void *end_data_segment);
+            kernel says: void* brk(void* end_data_segment);  (more or less)
+
+            libc returns 0 on success, and -1 (and sets errno) on failure.
+            Nb: if you ask to shrink the dataseg end below what it
+            currently is, that always succeeds, even if the dataseg end
+            doesn't actually change (eg. brk(0)).  Unless it seg faults.
+
+            Kernel returns the new dataseg end.  If the brk() failed, this
+            will be unchanged from the old one.  That's why calling (kernel)
+            brk(0) gives the current dataseg end (libc brk() just returns
+            zero in that case).
+
+            Both will seg fault if you shrink it back into a text segment.
+         */
          MAYBE_PRINTF("brk ( %p ) --> ",arg1);
          KERNEL_DO_SYSCALL(tid,res);
          MAYBE_PRINTF("0x%x\n", res);
 
-         if (!VG_(is_kerror)(res)) {
-            if (arg1 == 0) {
-               /* Just asking where the current end is. (???) */
-               curr_dataseg_end = res;
-            } else
-            if (arg1 < curr_dataseg_end) {
-               /* shrinking the data segment. */
-               VG_TRACK( die_mem_brk, (Addr)arg1, 
+         if (res == arg1) {
+            /* brk() succeeded */
+            if (res < curr_dataseg_end) {
+               /* successfully shrunk the data segment. */
+               VG_TRACK( die_mem_brk, (Addr)arg1,
                                       curr_dataseg_end-arg1 );
-               curr_dataseg_end = arg1;
             } else
-            if (arg1 > curr_dataseg_end && res != 0) {
-               /* asked for more memory, and got it */
-               /* 
-               VG_(printf)("BRK: new area %x .. %x\n", 
-                           VG_(curr_dataseg_end, arg1-1 );
-               */
-               VG_TRACK( new_mem_brk, (Addr)curr_dataseg_end, 
-                                         arg1-curr_dataseg_end );
-               curr_dataseg_end = arg1;         
+            if (res > curr_dataseg_end && res != 0) {
+               /* successfully grew the data segment */
+               VG_TRACK( new_mem_brk, curr_dataseg_end,
+                                      arg1-curr_dataseg_end );
             }
+            curr_dataseg_end = res;
+
+         } else {
+            /* brk() failed */
+            vg_assert(curr_dataseg_end == res);
          }
          break;
 

@@ -14,6 +14,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	badfree.stderr.exp badfree.vgtest \
 	badjump.stderr.exp badjump.vgtest \
 	badloop.stderr.exp badloop.vgtest \
+	brk.stderr.exp brk.vgtest \
 	buflen_check.stderr.exp buflen_check.vgtest \
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
@@ -59,8 +60,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	threadederrno.stderr.exp threadederrno.stdout.exp threadederrno.vgtest
 
 check_PROGRAMS = \
-	badaddrvalue badfree badjump badloop buflen_check clientperm \
-	custom_alloc \
+	badaddrvalue badfree badjump badloop brk buflen_check 
+	clientperm custom_alloc \
 	doublefree error_counts errs1 exitprog fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	memalign_test memcmptest mmaptest nanoleak null_socket \
@@ -78,6 +79,7 @@ badaddrvalue_SOURCES 	= badaddrvalue.c
 badfree_SOURCES 	= badfree.c
 badjump_SOURCES 	= badjump.c
 badloop_SOURCES 	= badloop.c
+brk_SOURCES 		= brk.c
 buflen_check_SOURCES	= buflen_check.c
 clientperm_SOURCES 	= clientperm.c
 custom_alloc_SOURCES 	= custom_alloc.c

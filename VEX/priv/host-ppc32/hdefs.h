@@ -133,47 +133,10 @@ typedef
       Pcf_SO  = 3,   /* summary overflow   */
 
       // field 6 (floating point only)
-      Pcf_FX     = 4,   /* neg  | lt          */
-      Pcf_FEX    = 5,   /* pos  | gt          */
-      Pcf_VX     = 6,   /* zero | equal       */
-      Pcf_OX     = 7,   /* summary overflow   */
-#if 0
-      // field 5
-      Pcf_f5_LT  = 8,   /* neg  | lt          */
-      Pcf_f5_GT  = 9,   /* pos  | gt          */
-      Pcf_f5_EQ  = 10,  /* zero | equal       */
-      Pcf_f5_SO  = 11,  /* summary overflow   */
-
-      // field 4
-      Pcf_f4_LT  = 12,  /* neg  | lt          */
-      Pcf_f4_GT  = 13,  /* pos  | gt          */
-      Pcf_f4_EQ  = 14,  /* zero | equal       */
-      Pcf_f4_SO  = 15,  /* summary overflow   */
-
-      // field 3
-      Pcf_f3_LT  = 16,  /* neg  | lt          */
-      Pcf_f3_GT  = 17,  /* pos  | gt          */
-      Pcf_f3_EQ  = 18,  /* zero | equal       */
-      Pcf_f3_SO  = 19,  /* summary overflow   */
-
-      // field 2
-      Pcf_f2_LT  = 20,  /* neg  | lt          */
-      Pcf_f2_GT  = 21,  /* pos  | gt          */
-      Pcf_f2_EQ  = 22,  /* zero | equal       */
-      Pcf_f2_SO  = 23,  /* summary overflow   */
-
-      // field 1
-      Pcf_f1_LT  = 24,  /* neg  | lt          */
-      Pcf_f1_GT  = 25,  /* pos  | gt          */
-      Pcf_f1_EQ  = 26,  /* zero | equal       */
-      Pcf_f1_SO  = 27,  /* summary overflow   */
-
-      // field 0
-      Pcf_f0_LT  = 28,  /* neg  | lt          */
-      Pcf_f0_GT  = 29,  /* pos  | gt          */
-      Pcf_f0_EQ  = 30,  /* zero | equal       */
-      Pcf_f0_SO  = 31,  /* summary overflow   */
-#endif
+      Pcf_FX  = 4,   /* neg  | lt          */
+      Pcf_FEX = 5,   /* pos  | gt          */
+      Pcf_VX  = 6,   /* zero | equal       */
+      Pcf_OX  = 7,   /* summary overflow   */
    }
    PPC32CondFlag;
 

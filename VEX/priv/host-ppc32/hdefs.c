@@ -144,7 +144,7 @@ void getAllocableRegs_PPC32 ( Int* nregs, HReg** arr )
 {
    *nregs = 59;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
-   // GPR0 = reserved
+   // GPR0 = scratch reg where possible - some ops interpret as value zero
    // GPR1 = stack pointer
    // GPR2 = TOC pointer
    (*arr)[ 0] = hregPPC32_GPR3();
@@ -786,7 +786,7 @@ void ppPPC32Instr ( PPC32Instr* i )
          ppIRJumpKind(i->Pin.Goto.jk);
          vex_printf(" ; ");
       }
-      vex_printf("bca %s,%%r4, ", showPPC32CondCode(i->Pin.Goto.cond));
+      vex_printf("bca %s,%%r3, ", showPPC32CondCode(i->Pin.Goto.cond));
       ppPPC32RI(i->Pin.Goto.dst);
       vex_printf(" ; ret");
       if (i->Pin.Goto.cond.test != Pct_ALWAYS) {
@@ -1030,9 +1030,8 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       /* This is a bit subtle. */
       /* First off, claim it trashes all the caller-saved regs
          which fall within the register allocator's jurisdiction.
-         These I believe to be: r0,r3:12
+         These I believe to be: r3:12
       */
-      addHRegUse(u, HRmWrite, hregPPC32_GPR0());
       addHRegUse(u, HRmWrite, hregPPC32_GPR3());
       addHRegUse(u, HRmWrite, hregPPC32_GPR4());
       addHRegUse(u, HRmWrite, hregPPC32_GPR5());
@@ -1060,14 +1059,16 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       }
       /* Finally, there is the issue that the insn trashes a
          register because the literal target address has to be
-         loaded into a register.  %r12 seems a suitable victim.  */
+         loaded into a register.  %r12 seems a suitable victim.
+         (Can't use %r0, as use ops that interpret it as value zero).  */
       addHRegUse(u, HRmWrite, hregPPC32_GPR12());
       /* Upshot of this is that the assembler really must use %r12,
-            and no other, as a destination temporary. */
+         and no other, as a destination temporary. */
       return;
    case Pin_Goto:
       addRegUsage_PPC32RI(u, i->Pin.Goto.dst);
-      addHRegUse(u, HRmWrite, hregPPC32_GPR4());
+      /* GPR3 holds destination address from Pin_Goto */
+      addHRegUse(u, HRmWrite, hregPPC32_GPR3());
       if (i->Pin.Goto.jk != Ijk_Boring)
          addHRegUse(u, HRmWrite, GuestStatePtr);
       return;
@@ -2080,10 +2081,11 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    case Pin_Call: {
       Addr32 target;
       PPC32CondCode cond = i->Pin.Call.cond;
-
-      /* As per detailed comment for Ain_Call in
+      UInt r_dst = 12;
+      /* As per detailed comment for Pin_Call in
          getRegUsage_PPC32Instr above, %r12 is used as an address
          temporary. */
+
       /* jump over the following two insns if the condition does not
          hold */
       if (i->Pin.Call.cond.test != Pct_ALWAYS) {
@@ -2092,14 +2094,14 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          p = mkFormB(p, invertCondTest(cond.test), cond.flag, target, 1, 0);
       }
 
-      /* addi r12,0,(target & 0xFFFF)
-         addis r12,r12,((target >> 16) & 0xFFFF) => load target to r12 */
+      /* addi r_dst,0,(target & 0xFFFF)
+         addis r_dst,r_dst,((target >> 16) & 0xFFFF) => load target to r_dst */
       target = i->Pin.Call.target;
-      p = mkFormD(p, 14, 12, 0, (target & 0xFFFF));
-      p = mkFormD(p, 15, 12, 12, ((target>>16) & 0xFFFF) );
+      p = mkFormD(p, 14, r_dst, 0, (target & 0xFFFF));
+      p = mkFormD(p, 15, r_dst, r_dst, ((target>>16) & 0xFFFF) );
 
-      /* mtspr 9,r12 => move r12 to count register */
-      p = mkFormXFX(p, 12, 9, 467);
+      /* mtspr 9,r_dst => move r_dst to count register */
+      p = mkFormXFX(p, r_dst, 9, 467);
       
       /* bcctrl 20,0 => branch w. link to count register */
       p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);
@@ -2113,7 +2115,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
    case Pin_Goto: {
       UInt magic_num = 0;
-      UChar r_dst, r_src;
+      UChar r_dst = 3;    /* Put target addr into %r3 */
       PPC32CondCode cond = i->Pin.Goto.cond;
       UInt imm;
       
@@ -2150,10 +2152,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          p = mkFormD(p, 14, 31, 0, magic_num);
       }
 
-
-      /* Get the destination address into %r4 */
-// CAB: Which reg?  On amd64,x86, does 'ret' use rax,eax somehow?
-      r_dst = 4;
+      /* Get the destination address into %r3 */
       if (i->Pin.Goto.dst->tag == Pri_Imm) {
          imm = i->Pin.Goto.dst->Pri.Imm.imm32;
          if (imm < 0x10000) {
@@ -2167,9 +2166,9 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          }
       } else {
          vassert(i->Pin.Goto.dst->tag == Pri_Reg);
-         if (i->Pin.Goto.dst->Pri.Reg.reg != hregPPC32_GPR4()) {
+         UChar r_src = iregNo(i->Pin.Goto.dst->Pri.Reg.reg);
+         if (r_dst != r_src) {
             /* add r_dst, 0, r_src */
-            r_src = iregNo(i->Pin.Goto.dst->Pri.Reg.reg);
             p = mkFormXO(p, 31, r_dst, 0, r_src, 0, 266, 0);
          }
       }
@@ -2263,8 +2262,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          p = mkFormD(p, 14, r_dst, 0, 1);
       } else {
          rot_imm = 1 + cond.flag;
-         r_tmp = 1;
-// CAB: how choose r_tmp so don't kill anything else?
+         r_tmp = 0;  // Not within scope of regalloc, so no need to declare.
 
          // r_tmp = CR  => mfcr r_tmp
          p = mkFormX(p, 31, r_tmp, 0, 0, 19, 0);

@@ -62,7 +62,8 @@
   GPR3:12    Caller-saved regs
   GPR14:30   Callee-saved regs
 
-  GPR3:10    Parameter-carrying regs
+  GPR3       [Return | Parameter] - carrying reg
+  GPR4:10    Parameter-carrying regs
 
 
   Floating Point Regs
@@ -1279,8 +1280,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       
       /* Marshal args, do the call, clear stack. */
       doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
-      
-      addInstr(env, mk_iMOVds_RR(dst, hregPPC32_GPR4()));
+
+      /* GPR3 now holds the destination address from Pin_Goto */
+      addInstr(env, mk_iMOVds_RR(dst, hregPPC32_GPR3()));
       return dst;
    }
       

@@ -733,6 +733,13 @@ int sendto(int s, const void *msg, size_t len, int flags,
    return __libc_sendto(s, msg, len, flags, to, tolen);
 }
 
+extern 
+int __libc_system(const char* str);
+int system(const char* str)
+{
+   return __libc_system(str);
+}
+
 
 /*--------------------------------------------------*/
 

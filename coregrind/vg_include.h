@@ -1331,9 +1331,8 @@ extern UInt VG_(dispatch_ctr);
 extern ThreadId VG_(last_run_tid);
 
 /* If we're doing the default action of a fatal signal */
-extern jmp_buf VG_(fatal_signal_jmpbuf);
-extern Bool    VG_(fatal_signal_set);		/* jmp_buf is valid */
-extern Int     VG_(fatal_sigNo);		/* the fatal signal */
+extern jmp_buf* VG_(fatal_signal_jmpbuf_ptr);
+extern Int      VG_(fatal_sigNo);		/* the fatal signal */
 
 /* --- Counters, for informational purposes only. --- */
 

@@ -1795,9 +1795,9 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 	 VG_(setrlimit)(VKI_RLIMIT_CORE, &zero);
       }
 
-      if (VG_(fatal_signal_set)) {
+      if (NULL != VG_(fatal_signal_jmpbuf_ptr)) {
 	 VG_(fatal_sigNo) = sigNo;
-	 __builtin_longjmp(VG_(fatal_signal_jmpbuf), 1);
+	 __builtin_longjmp(*VG_(fatal_signal_jmpbuf_ptr), 1);
       }
    }
 

@@ -151,10 +151,11 @@ Char** VG_(client_envp);
 /* Our signal delivery stack. */
 UInt VG_(sigstack)[VG_SIGSTACK_SIZE_W];
 
-/* jmp_buf for fatal signals */
-Int	VG_(fatal_sigNo) = -1;
-Bool	VG_(fatal_signal_set) = False;
-jmp_buf VG_(fatal_signal_jmpbuf);
+/* jmp_buf for fatal signals;  VG_(fatal_signal_jmpbuf_ptr) is NULL until
+   the time is right that it can be used. */
+Int      VG_(fatal_sigNo) = -1;
+jmp_buf* VG_(fatal_signal_jmpbuf_ptr) = NULL;
+jmp_buf  fatal_signal_jmpbuf;
 
 /* Counts downwards in VG_(run_innerloop). */
 UInt VG_(dispatch_ctr);
@@ -2980,12 +2981,12 @@ int main(int argc, char **argv)
    VGP_POPCC(VgpStartup);
    VGP_PUSHCC(VgpSched);
 
-   if (__builtin_setjmp(&VG_(fatal_signal_jmpbuf)) == 0) {
-      VG_(fatal_signal_set) = True;
+   VG_(fatal_signal_jmpbuf_ptr) = &fatal_signal_jmpbuf;
+   if (__builtin_setjmp(VG_(fatal_signal_jmpbuf_ptr)) == 0) {
       src = VG_(scheduler)( &exitcode );
-   } else
+   } else {
       src = VgSrc_FatalSig;
-
+   }
    VGP_POPCC(VgpSched);
 
 

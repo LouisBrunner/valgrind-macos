@@ -53,7 +53,7 @@ runcmd "Configuring valgrind             " \
        "cd valgrind && ./autogen.sh  && ./configure --prefix=$ABT_TOP/Inst --with-vex=$ABT_TOP/vex" && \
 \
 runcmd "Building valgrind                " \
-       "cd valgrind && make install" && \
+       "cd valgrind && make && make install" && \
 \
 runcmd "Running regression tests         " \
        "cd valgrind && make regtest"

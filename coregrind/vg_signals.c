@@ -1059,8 +1059,15 @@ Bool VG_(deliver_signals) ( void )
          If so just give to one of them and have done. */
       for (tid = 1; tid < VG_N_THREADS; tid++) {
          tst = & VG_(threads)[tid];
+         /* Is tid waiting for a signal?  If not, ignore. */
          if (tst->status != VgTs_WaitSIG)
             continue;
+	 /* Is the signal directed at a specific thread other than
+            this one?  If yes, ignore. */
+         if (vg_dcss.dcss_destthread[sigNo] != VG_INVALID_THREADID
+             && vg_dcss.dcss_destthread[sigNo] != tid)
+            continue;
+         /* Is tid waiting for the signal?  If not, ignore. */
          if (VG_(ksigismember)(&(tst->sigs_waited_for), sigNo))
             break;
       }

@@ -45,7 +45,6 @@ typedef struct {
 /*--- Constants                                            ---*/
 /*------------------------------------------------------------*/
 
-#define MAX_x86_INSTR_SIZE    16    // According to ia32 sw dev manual vol 2
 #define MIN_LINE_SIZE         16
 #define FILE_LEN              256
 #define FN_LEN                256
@@ -431,8 +430,8 @@ void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
            t_data_addr1 = INVALID_TEMPREG,
            t_data_addr2 = INVALID_TEMPREG;
 
-   sk_assert(instr_size >= 1 && 
-             instr_size <= MAX_x86_INSTR_SIZE);
+   sk_assert(instr_size >= MIN_INSTR_SIZE && 
+             instr_size <= MAX_INSTR_SIZE);
 
 #define IS_(X)      (INVALID_TEMPREG != t_##X##_addr)
 #define INV(qqt)    (INVALID_TEMPREG == (qqt))

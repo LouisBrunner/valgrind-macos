@@ -2226,7 +2226,8 @@ void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips )
    i = 0;
    do {
       Addr eip = eips[i];
-      if (i  > 0) eip--;            /* point to calling line */
+      if (i > 0) 
+         eip -= MIN_INSTR_SIZE;     // point to calling line
       VG_(describe_eip)(eip, buf, M_VG_ERRTXT);
 
       if ( ! VG_(clo_show_below_main)) {

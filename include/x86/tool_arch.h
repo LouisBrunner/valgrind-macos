@@ -35,7 +35,10 @@
 #define FIRST_ARCH_REG  R_EAX
 #define LAST_ARCH_REG   R_EDI
 
-#define N_ARCH_REGS     8
+#define N_ARCH_REGS        8
+
+#define MIN_INSTR_SIZE     1
+#define MAX_INSTR_SIZE    16
 
 #endif   // __X86_TOOL_ARCH_H
 

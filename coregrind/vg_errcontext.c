@@ -361,7 +361,8 @@ static void gen_suppression(Error* err)
    i = 0;
    do {
       Addr eip = ec->eips[i];
-      if (i > 0) eip--;                 /* point to calling line */
+      if (i > 0) 
+         eip -= MIN_INSTR_SIZE;     // point to calling line
       if ( VG_(get_fnname_nodemangle) (eip, buf,  M_VG_ERRTXT) ) {
          // Stop after "main";  if main() is recursive, stop after last main().
 

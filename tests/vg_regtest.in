@@ -1,4 +1,4 @@
-#! @PERL@ -w
+#! @PERL@
 ##--------------------------------------------------------------------##
 ##--- Valgrind regression testing script                vg_regtest ---##
 ##--------------------------------------------------------------------##
@@ -63,6 +63,7 @@
 # coregrind/docs/skins.html.
 #----------------------------------------------------------------------------
 
+use warnings;
 use strict;
 
 #----------------------------------------------------------------------------
@@ -81,7 +82,8 @@ my $stderr_filter;      # filter program to run stderr results file through
 
 my @failures;           # List of failed tests
 
-my $num_tests_done = 0;
+my $num_tests_done      = 0;
+my %num_failures        = (stderr => 0, stdout => 0);
 
 # Default valgrind to use is this build tree's one
 my $prefix="@prefix@";
@@ -247,12 +249,13 @@ sub do_one_test($$)
     for my $ext ("stdout", "stderr") {
         if (-s "$name.$ext.diff") {
             print "*** $name failed ($ext) ***\n";
-            push(@failures, sprintf("%-40s $ext", "$fullname"));
+            push(@failures, sprintf("%-40s ($ext)", "$fullname"));
+            $num_failures{$ext}++;
         } else {
             unlink("$name.$ext.out", "$name.$ext.diff");
         }
-        $num_tests_done++;
     }
+    $num_tests_done++;
 }
 
 #----------------------------------------------------------------------------
@@ -300,19 +303,24 @@ sub test_one_dir($$)
 #----------------------------------------------------------------------------
 # Summarise results
 #----------------------------------------------------------------------------
+sub plural($)
+{
+   return ( $_[0] == 1 ? "" : "s" );
+}
+
 sub summarise_results 
 {
     my $x = ( $num_tests_done == 1 ? "test" : "tests" );
-    my $n_failures = @failures;
     
-    print "\n== $num_tests_done $x, $n_failures failed: ===============================\n";
-    if (0 == $n_failures) {
-        print "   (none)\n";
-    } else {
-        foreach my $failure (@failures) {
-            print "$failure\n";
-        }
+    printf("\n== %d test%s, %d stderr failure%s, %d stdout failure%s =================\n", 
+           $num_tests_done, plural($num_tests_done),
+           $num_failures{"stderr"}, plural($num_failures{"stderr"}),
+           $num_failures{"stdout"}, plural($num_failures{"stdout"}));
+
+    foreach my $failure (@failures) {
+        print "$failure\n";
     }
+    print "\n";
 }
 
 #----------------------------------------------------------------------------

@@ -40,7 +40,7 @@
 /* --------- Registers. --------- */
 
 /* The usual HReg abstraction.  There are 8 real int regs,
-   6 real float regs, and 0 real vector regs. 
+   6 real float regs, and 8 real vector regs. 
 */
 
 extern void ppHRegX86 ( HReg );

@@ -247,11 +247,14 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
       // map the pages that are required instead of rounding everything to
       // the specified alignment (ph->p_align).  (AMD64 doesn't work if you
       // use ph->p_align -- part of stage2's memory gets trashed somehow.)
-
-      res = mmap((char *)PGROUNDDN(addr), PGROUNDUP(bss)-PGROUNDDN(addr),
-                 prot, MAP_FIXED|MAP_PRIVATE, e->fd, PGROUNDDN(off));
-      check_mmap(res, (char*)PGROUNDDN(addr),
-                 PGROUNDUP(bss)-PGROUNDDN(addr));
+      //
+      // The condition handles the case of a zero-length segment.
+      if (PGROUNDUP(bss)-PGROUNDDN(addr) > 0) {
+         res = mmap((char *)PGROUNDDN(addr), PGROUNDUP(bss)-PGROUNDDN(addr),
+                    prot, MAP_FIXED|MAP_PRIVATE, e->fd, PGROUNDDN(off));
+         check_mmap(res, (char*)PGROUNDDN(addr),
+                    PGROUNDUP(bss)-PGROUNDDN(addr));
+      }
 
       // if memsz > filesz, fill the remainder with zeroed pages
       if (memsz > filesz) {
@@ -265,7 +268,9 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
          }
 
 	 bytes = bss & (VKI_PAGE_SIZE - 1);
-	 if (bytes > 0) {
+
+         // The 'prot' condition allows for a read-only bss
+         if ((prot & PROT_WRITE) && (bytes > 0)) {
 	    bytes = VKI_PAGE_SIZE - bytes;
 	    memset((char *)bss, 0, bytes);
 	 }

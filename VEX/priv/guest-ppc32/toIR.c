@@ -1403,19 +1403,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
 
-   theInstr = 
-       (((theInstr >> 0 ) & 0xFF) << 24)
-       | (((theInstr >> 8 ) & 0xFF) << 16)
-       | (((theInstr >> 16 ) & 0xFF) << 8)
-       | (((theInstr >> 24 ) & 0xFF) << 0);
-
-
    opc1 = (theInstr >> 26) & 0x3F;     /* opcode1: [0:5] -> [26:31] */
    opc2 = (theInstr >> 1 ) & 0x3FF;    /* opcode2: [21:30] -> [1:10] */
 
    vex_printf("\n");
-   vex_printf("disInstr(ppc32): opcode1: 0x%2x, %06b\n", opc1, opc1 );
-   vex_printf("disInstr(ppc32): opcode2: 0x%2x, %010b\n", opc2, opc2 );
+   vex_printf("disInstr(ppc32): instr:   0x%8x, %,039b\n", theInstr, theInstr );
+   vex_printf("disInstr(ppc32): opcode1: 0x%02x, %06b\n", opc1, opc1 );
+   vex_printf("disInstr(ppc32): opcode2: 0x%02x, %010b\n", opc2, opc2 );
 
    // Note: all 'reserved' bits must be cleared, else invalid
    switch (opc1) {

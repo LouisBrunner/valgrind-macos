@@ -1831,7 +1831,7 @@ extern void VG_(user_assert_fail) ( const Char* expr, const Char* file,
 #define SYSCALL_RET(regs)  ((regs).vex.PLATFORM_SYSCALL_RET)
 
 // Offsets for the shadow state
-#define O_SYSCALL_NUM   (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG6))
+#define O_SYSCALL_NUM   (offsetof(VexGuestArchState, PLATFORM_SYSCALL_NUM))
 #define O_SYSCALL_ARG1  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG1))
 #define O_SYSCALL_ARG2  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG2))
 #define O_SYSCALL_ARG3  (offsetof(VexGuestArchState, PLATFORM_SYSCALL_ARG3))

@@ -65,7 +65,9 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
-
+#ifdef GLIBC_2_1
+#include <sys/time.h>
+#endif
 
 /* --------------------------------------------------------------- */
 
@@ -409,7 +411,11 @@ int VGR_(msgsnd)(int msgid,
    return 0;
 }
 
+#ifdef GLIBC_2_1
+int msgsnd(int msgid,       void *msgp, size_t msgsz, int msgflg)
+#else
 int msgsnd(int msgid, const void *msgp, size_t msgsz, int msgflg)
+#endif
 {
    return VGR_(msgsnd)(msgid, msgp, msgsz, msgflg);
 }

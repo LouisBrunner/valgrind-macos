@@ -780,7 +780,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          SYSCALL_TRACK( pre_mem_write, tst, "lookup_dcookie(buf)", arg3, arg4);
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && arg3 != (Addr)NULL)
-             VG_TRACK( post_mem_write, arg3, arg4);
+             VG_TRACK( post_mem_write, arg3, res);
          break;
 #     endif
 

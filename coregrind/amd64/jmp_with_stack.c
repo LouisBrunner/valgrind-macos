@@ -26,35 +26,6 @@
 
 #include "ume.h"
 
-void jmp_with_stack(void(*rip)(void), Addr rsp)
-{
-   asm volatile (
-      "movq  %1, %%rsp;"       // set rsp
-      "pushq %%rax;"          // push rsp
-      "xorq  %%rax,%%rax;"    // clear registers
-      "xorq  %%rbx,%%rbx;"
-      "xorq  %%rcx,%%rcx;"
-      "xorq  %%rdx,%%rdx;"
-      "xorq  %%rsi,%%rsi;"
-      "xorq  %%rdi,%%rdi;"
-      "xorq  %%rbp,%%rbp;"
-      "xorq  %%r8, %%r8;"
-      "xorq  %%r9, %%r9;"
-      "xorq  %%r10,%%r10;"
-      "xorq  %%r11,%%r11;"
-      "xorq  %%r12,%%r12;"
-      "xorq  %%r13,%%r13;"
-      "xorq  %%r14,%%r14;"
-      "xorq  %%r15,%%r15;"
-      "ret"                   // return into entry
-      : : "a" (rip), "r" (rsp));
-
-   // we should never get here
-   for(;;)
-      asm volatile("ud2");
-} 
-
-
 
 #define ZERO_ALL_INT_REGS \
    "   movq $0, %rax\n"  \
@@ -72,6 +43,7 @@ void jmp_with_stack(void(*rip)(void), Addr rsp)
    "   movq $0, %r13\n"  \
    "   movq $0, %r14\n"  \
    "   movq $0, %r15\n"
+
 
 /* Call f(), but first switch stacks, using 'stack' as the new stack,
    and use 'retaddr' as f's return-to address.  Also, clear all the

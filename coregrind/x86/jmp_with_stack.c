@@ -26,27 +26,71 @@
 
 #include "ume.h"
 
-/* 
-   Jump to a particular IP with a particular SP.  This is intended
-   to simulate the initial CPU state when the kernel starts an program
-   after exec; it therefore also clears all the other registers.
- */
-void jmp_with_stack(void (*eip)(void), Addr esp)
-{
-   asm volatile (
-      "movl  %1, %%esp;"      // set esp */
-      "pushl %%eax;"          // push esp */
-      "xorl  %%eax,%%eax;"    // clear registers
-      "xorl  %%ebx,%%ebx;"
-      "xorl  %%ecx,%%ecx;"
-      "xorl  %%edx,%%edx;"
-      "xorl  %%esi,%%esi;"
-      "xorl  %%edi,%%edi;"
-      "xorl  %%ebp,%%ebp;"
-      "ret"                   // return into entry
-      : : "a" (eip), "r" (esp));
 
-   // we should never get here
-   for(;;)
-      asm volatile("ud2");
-} 
+#define ZERO_ALL_INT_REGS \
+   "   movl $0, %eax\n"  \
+   "   movl $0, %ebx\n"  \
+   "   movl $0, %ecx\n"  \
+   "   movl $0, %edx\n"  \
+   "   movl $0, %esi\n"  \
+   "   movl $0, %edi\n"  \
+   "   movl $0, %ebp\n"
+
+
+/* Jump to 'dst', but first set the stack pointer to 'stack'.  Also,
+   clear all the integer registers before entering 'dst'.  It's
+   important that the stack pointer is set to exactly 'stack' and not
+   (eg) stack - apparently_harmless_looking_small_offset.  Basically
+   because the code at 'dst' might be wanting to scan the area above
+   'stack' (viz, the auxv array), and putting spurious words on the
+   stack confuses it.
+*/
+/*
+__attribute__((noreturn))
+void jump_and_switch_stacks ( Addr stack, Addr dst );
+
+   4(%esp) == stack
+   8(%esp) == f
+*/
+asm(
+".global jump_and_switch_stacks\n"
+"jump_and_switch_stacks:\n"
+"   movl   %esp, %esi\n"    /* remember old stack pointer */
+"   movl   4(%esi), %esp\n" /* set stack */
+"   pushl  8(%esi)\n"       /* f to stack*/
+    ZERO_ALL_INT_REGS
+"   ret\n"                  /* jump to f */
+"   ud2\n"                  /* should never get here */
+);
+
+
+
+/* Call f(arg1), but first switch stacks, using 'stack' as the new
+   stack, and use 'retaddr' as f's return-to address.  Also, clear all
+   the integer registers before entering f.*/
+/*
+__attribute__((noreturn))
+void call_on_new_stack_0_1 ( Addr stack,
+			     Addr retaddr,
+			     void (*f)(Word),
+                             Word arg1 );
+    4(%esp) == stack
+    8(%esp) == retaddr
+   12(%esp) == f
+   16(%esp) == arg1
+*/
+asm(
+".global call_on_new_stack_0_1\n"
+"call_on_new_stack_0_1:\n"
+"   movl %esp, %esi\n"      /* remember old stack pointer */
+"   movl 4(%esi), %esp\n"   /* set stack */
+"   pushl 16(%esi)\n"       /* arg1 to stack */
+"   pushl  8(%esi)\n"       /* retaddr to stack */
+"   pushl 12(%esi)\n"       /* f to stack */
+    ZERO_ALL_INT_REGS
+"   ret\n"                  /* jump to f */
+"   ud2\n"                  /* should never get here */
+);
+
+
+#undef ZERO_ALL_INT_REGS

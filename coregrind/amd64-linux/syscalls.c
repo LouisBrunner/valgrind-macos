@@ -246,8 +246,6 @@ static ULong *allocstack(ThreadId tid)
 void VGA_(main_thread_wrapper)(ThreadId tid)
 {
    ULong *rsp = allocstack(tid);
-
-   VG_(printf)("m-t-r: %d\n", (int)tid);
    vg_assert(tid == VG_(master_tid));
 
    call_on_new_stack_0_1( 

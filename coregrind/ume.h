@@ -47,22 +47,18 @@ void foreach_map(int (*fn)(char *start, char *end,
 			   int maj, int min, int ino, void* extra),
                  void* extra);
 
-// Jump to a new 'ip' with the stack 'sp'.  This is intended
-// to simulate the initial CPU state when the kernel starts an program
-// after exec; and so should clear all the other registers.
+/* Jump to 'dst', but first set the stack pointer to 'stack'.  Also,
+   clear all the integer registers before entering 'dst'.  It's
+   important that the stack pointer is set to exactly 'stack' and not
+   (eg) stack - apparently_harmless_looking_small_offset.  Basically
+   because the code at 'dst' might be wanting to scan the area above
+   'stack' (viz, the auxv array), and putting spurious words on the
+   stack confuses it.
+*/
 extern
 __attribute__((noreturn))
-void jmp_with_stack(void (*eip)(void), Addr sp);
+void jump_and_switch_stacks ( Addr stack, Addr dst );
 
-
-/* Call f(), but first switch stacks, using 'stack' as the new stack,
-   and use 'retaddr' as f's return-to address.  Also, clear all the
-   integer registers before entering f. */
-extern
-__attribute__((noreturn))
-void call_on_new_stack_0_0 ( Addr stack,
-			     Addr retaddr,
-			     void (*f)(void) );
 
 /* Call f(arg1), but first switch stacks, using 'stack' as the new
    stack, and use 'retaddr' as f's return-to address.  Also, clear all

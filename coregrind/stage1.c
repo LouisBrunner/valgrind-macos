@@ -255,6 +255,7 @@ static int prmap(char *start, char *end, const char *perm, off_t off, int maj,
    return 1;
 }
 
+
 static void main2(void)
 {
    int err, padfile;
@@ -262,7 +263,7 @@ static void main2(void)
    extern char _end;
    int *esp;
    char buf[strlen(valgrind_lib) + sizeof(stage2) + 16];
-
+   printf("& local = %p\n", &esp);
    info.exe_end  = PGROUNDDN(init_sp);
 #ifdef HAVE_PIE
    info.exe_base = ROUNDDN(info.exe_end - 0x02000000, 0x10000000);
@@ -300,8 +301,15 @@ static void main2(void)
       foreach_map(prmap, /*dummy*/NULL);
    }
 
-   jmp_with_stack((void (*)(void))info.init_eip, (Addr)esp);   
+   jump_and_switch_stacks(
+      (Addr) esp,           /* stack */
+      (Addr) info.init_eip  /* where to */
+   );
+
+   /*NOTREACHED*/
+   assert(0); 
 }
+
 
 int main(int argc, char** argv)
 {
@@ -328,7 +336,13 @@ int main(int argc, char** argv)
    setrlimit(RLIMIT_AS, &rlim);
 
    /* move onto another stack so we can play with the main one */
-   jmp_with_stack(main2, (Addr)stack + sizeof(stack));
+   jump_and_switch_stacks(
+      (Addr)stack + sizeof(stack),  /* stack */
+      main2                         /* where to */
+   );
+
+   /*NOTREACHED*/
+   assert(0); 
 }
 
 /*--------------------------------------------------------------------*/

@@ -241,9 +241,15 @@ void VGA_(main_thread_wrapper)(ThreadId tid)
 
    vg_assert(tid == VG_(master_tid));
 
-   *--esp = tid;		/* set arg */
-   *--esp = 0;			/* bogus return address */
-   jmp_with_stack((void (*)(void))VGA_(thread_wrapper), (Addr)esp);
+   call_on_new_stack_0_1( 
+      (Addr)esp,             /* stack */
+      0,                     /*bogus return address*/
+      VGA_(thread_wrapper),  /* fn to call */
+      (Word)tid              /* arg to give it */
+   );
+
+   /*NOTREACHED*/
+   vg_assert(0);
 }
 
 static Int start_thread(void *arg)

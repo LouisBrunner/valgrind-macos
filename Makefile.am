@@ -1,5 +1,5 @@
 
-AUTOMAKE_OPTIONS = 1.6 dist-bzip2
+AUTOMAKE_OPTIONS = foreign 1.6 dist-bzip2
 
 ## include must be first for vg_skin.h
 ## addrcheck must come after memcheck, for mac_*.o

@@ -489,8 +489,8 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
    Addr          m_esp;
 
    vg_assert(VG_(is_valid_tid)(tid));
-   ss    = (vki_kstack_t*)(VG_(threads)[tid].arch.m_ebx);
-   oss   = (vki_kstack_t*)(VG_(threads)[tid].arch.m_ecx);
+   ss    = (vki_kstack_t*)(PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch));
+   oss   = (vki_kstack_t*)(PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch));
    m_esp = VG_(threads)[tid].arch.m_esp;
 
    if (VG_(clo_trace_signals))
@@ -542,9 +542,9 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    vg_assert(is_correct_sigmask());
 
    vg_assert(VG_(is_valid_tid)(tid));
-   signo     = VG_(threads)[tid].arch.m_ebx; /* int sigNo */
-   new_act   = (vki_ksigaction*)(VG_(threads)[tid].arch.m_ecx);
-   old_act   = (vki_ksigaction*)(VG_(threads)[tid].arch.m_edx);
+   signo     =                  PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
+   new_act   = (vki_ksigaction*)PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch);
+   old_act   = (vki_ksigaction*)PLATFORM_SYSCALL_ARG3(VG_(threads)[tid].arch);
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
@@ -1867,8 +1867,8 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
 
       if (tst->status == VgTs_WaitSys) {
 	 /* blocked in a syscall; we assume it should be interrupted */
-	 if (tst->arch.m_eax == -VKI_ERESTARTSYS)
-	    tst->arch.m_eax = -VKI_EINTR;
+	 if (PLATFORM_SYSCALL_RET(tst->arch) == -VKI_ERESTARTSYS)
+	    PLATFORM_SYSCALL_RET(tst->arch) = -VKI_EINTR;
       }
 
       VG_(proxy_sigack)(tid, &tst->sig_mask);

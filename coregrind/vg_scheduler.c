@@ -467,12 +467,12 @@ void handle_signal_return ( ThreadId tid )
       return;
 
    if (VG_(threads)[tid].status == VgTs_Sleeping
-       && VG_(threads)[tid].arch.m_eax == __NR_nanosleep) {
+       && PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_nanosleep) {
       /* We interrupted a nanosleep().  The right thing to do is to
          write the unused time to nanosleep's second param, but that's
          too much effort ... we just say that 1 nanosecond was not
          used, and return EINTR. */
-      rem = (struct vki_timespec *)VG_(threads)[tid].arch.m_ecx; /* arg2 */
+      rem = (struct vki_timespec*)PLATFORM_SYSCALL_ARG2(VG_(threads)[tid].arch);
       if (rem != NULL) {
          rem->tv_sec = 0;
          rem->tv_nsec = 1;
@@ -526,7 +526,7 @@ void sched_do_syscall ( ThreadId tid )
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
-   syscall_no = VG_(threads)[tid].arch.m_eax; /* syscall number */
+   syscall_no = PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch);
 
    /* Special-case nanosleep because we can.  But should we?
 
@@ -536,7 +536,7 @@ void sched_do_syscall ( ThreadId tid )
    if (0 && syscall_no == __NR_nanosleep) {
       UInt t_now, t_awaken;
       struct vki_timespec* req;
-      req = (struct vki_timespec*)VG_(threads)[tid].arch.m_ebx; /* arg1 */
+      req = (struct vki_timespec*)PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
 
       if (req->tv_sec < 0 || req->tv_nsec < 0 || req->tv_nsec >= 1000000000) {
 	 SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
@@ -924,12 +924,12 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                __libc_freeres does some invalid frees which crash
                the unprotected malloc/free system. */
 
-            if (VG_(threads)[tid].arch.m_eax == __NR_exit
-                || VG_(threads)[tid].arch.m_eax == __NR_exit_group
+            if (PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit
+                || PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_exit_group
                ) {
 
                /* If __NR_exit, remember the supplied argument. */
-               *exitcode = VG_(threads)[tid].arch.m_ebx; /* syscall arg1 */
+               *exitcode = PLATFORM_SYSCALL_ARG1(VG_(threads)[tid].arch);
 
                /* Only run __libc_freeres if the tool says it's ok and
                   it hasn't been overridden with --run-libc-freeres=no
@@ -962,13 +962,13 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             }
 
             /* We've dealt with __NR_exit at this point. */
-	    vg_assert(VG_(threads)[tid].arch.m_eax != __NR_exit && 
-		      VG_(threads)[tid].arch.m_eax != __NR_exit_group);
+            vg_assert(PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) != __NR_exit && 
+                      PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) != __NR_exit_group);
 
             /* Trap syscalls to __NR_sched_yield and just have this
                thread yield instead.  Not essential, just an
                optimisation. */
-	    if (VG_(threads)[tid].arch.m_eax == __NR_sched_yield) {
+	    if (PLATFORM_SYSCALL_NUM(VG_(threads)[tid].arch) == __NR_sched_yield) {
                SET_SYSCALL_RETVAL(tid, 0); /* syscall returns with success */
                goto stage1; /* find a new thread to run */
 	    }

@@ -1010,14 +1010,14 @@ static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid, Bool soft)
 #define POSTALIAS(new, old)	\
 	POST(new) __attribute__((alias(STR(after_##old))))
 
-#define SYSNO	(tst->arch.m_eax)	/* in PRE(x)  */
-#define res	(tst->arch.m_eax)	/* in POST(x) */
-#define arg1	(tst->arch.m_ebx)
-#define arg2	(tst->arch.m_ecx)
-#define arg3	(tst->arch.m_edx)
-#define arg4	(tst->arch.m_esi)
-#define arg5	(tst->arch.m_edi)
-#define arg6	(tst->arch.m_ebp)
+#define SYSNO	PLATFORM_SYSCALL_NUM(tst->arch)    // in PRE(x)
+#define res	PLATFORM_SYSCALL_RET(tst->arch)	   // in POST(x)
+#define arg1	PLATFORM_SYSCALL_ARG1(tst->arch)
+#define arg2	PLATFORM_SYSCALL_ARG2(tst->arch)
+#define arg3	PLATFORM_SYSCALL_ARG3(tst->arch)
+#define arg4	PLATFORM_SYSCALL_ARG4(tst->arch)
+#define arg5	PLATFORM_SYSCALL_ARG5(tst->arch)
+#define arg6	PLATFORM_SYSCALL_ARG6(tst->arch)
 
 PRE(exit_group)
 {

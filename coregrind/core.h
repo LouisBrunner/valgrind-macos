@@ -85,7 +85,9 @@
 
 #include "core_asm.h"      // asm stuff
 #include "tool.h"          // tool stuff
-#include "core_arch.h"     // arch-specific stuff;  eg. x86/arch.h
+#include "core_arch.h"     // arch-specific stuff,  eg. x86/core_arch.h
+#include "core_platform.h" // platform-specific stuff,
+                           //   eg. x86-linux/core_platform.h
 
 #include "valgrind.h"
 

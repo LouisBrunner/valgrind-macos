@@ -1078,11 +1078,11 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_sched_get_priority_max,  sys_sched_get_priority_max),  // 146 
    GENX_(__NR_sched_get_priority_min,  sys_sched_get_priority_min),  // 147 
    //   (__NR_sched_rr_get_interval,   sys_sched_rr_get_interval),   // 148 
-   //   (__NR_mlock,                   sys_mlock),                   // 149 
+   GENX_(__NR_mlock,                   sys_mlock),                   // 149 
 
-   //   (__NR_munlock,           sys_munlock),        // 150 
-   //   (__NR_mlockall,          sys_mlockall),       // 151 
-   //   (__NR_munlockall,        sys_munlockall),     // 152 
+   GENX_(__NR_munlock,           sys_munlock),        // 150 
+   GENX_(__NR_mlockall,          sys_mlockall),       // 151 
+   GENX_(__NR_munlockall,        sys_munlockall),     // 152 
    //   (__NR_vhangup,           sys_vhangup),        // 153 
    //   (__NR_modify_ldt,        sys_modify_ldt),     // 154 
 
@@ -1094,7 +1094,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
 
    GENX_(__NR_setrlimit,         sys_setrlimit),      // 160 
    GENX_(__NR_chroot,            sys_chroot),         // 161 
-   //   (__NR_sync,              sys_sync),           // 162 
+   GENX_(__NR_sync,              sys_sync),           // 162 
    //   (__NR_acct,              sys_acct),           // 163 
    //   (__NR_settimeofday,      sys_settimeofday),   // 164 
 
@@ -1147,12 +1147,12 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_sched_getaffinity, sys_sched_getaffinity), // 204 
 
    //   (__NR_set_thread_area,   sys_ni_syscall),     // 205 
-   //   (__NR_io_setup,          sys_io_setup),       // 206 
-   //   (__NR_io_destroy,        sys_io_destroy),     // 207 
-   //   (__NR_io_getevents,      sys_io_getevents),   // 208 
-   //   (__NR_io_submit,         sys_io_submit),      // 209 
+   LINX_(__NR_io_setup,          sys_io_setup),       // 206 
+   LINX_(__NR_io_destroy,        sys_io_destroy),     // 207 
+   LINXY(__NR_io_getevents,      sys_io_getevents),   // 208 
+   LINX_(__NR_io_submit,         sys_io_submit),      // 209 
 
-   //   (__NR_io_cancel,         sys_io_cancel),      // 210 
+   LINXY(__NR_io_cancel,         sys_io_cancel),      // 210 
    //   (__NR_get_thread_area,   sys_ni_syscall),     // 211 
    //   (__NR_lookup_dcookie,    sys_lookup_dcookie), // 212 
    //   (__NR_epoll_create,      sys_epoll_create),   // 213 

@@ -196,7 +196,8 @@ UInt *VGA_(reg_addr_from_tst)(Int regno, ThreadArchState *arch)
 
 Bool VGA_(setup_pointercheck)(void)
 {
-   VG_(message)(Vg_DebugMsg, "ignoring --pointercheck (unimplemented)");
+   if (0) 
+      VG_(message)(Vg_DebugMsg, "ignoring --pointercheck (unimplemented)");
    return True;
 }
 

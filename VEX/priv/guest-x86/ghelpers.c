@@ -201,7 +201,7 @@ inline static Int lshift ( Int x, Int n )
    Int argL, argR;						\
    argL = CC_RES - 1;						\
    argR = 1;							\
-   cf = CC_AUX & CC_MASK_O;					\
+   cf = CC_AUX & CC_MASK_C;					\
    pf = parity_table[(UChar)CC_RES];				\
    af = (CC_RES ^ argL ^ argR) & 0x10;				\
    zf = ((DATA_UTYPE)CC_RES == 0) << 6;				\
@@ -219,7 +219,7 @@ inline static Int lshift ( Int x, Int n )
    Int argL, argR;						\
    argL = CC_RES + 1;						\
    argR = 1;							\
-   cf = CC_AUX & CC_MASK_O;					\
+   cf = CC_AUX & CC_MASK_C;					\
    pf = parity_table[(UChar)CC_RES];				\
    af = (CC_RES ^ argL ^ argR) & 0x10;				\
    zf = ((DATA_UTYPE)CC_RES == 0) << 6;				\

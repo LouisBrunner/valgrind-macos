@@ -59,9 +59,6 @@
 
   TODO for valgrind-1.0:
 
-- Check memory permissions of client-space addresses passed from
-  vg_libpthread.c.
-
 - Update assertion checking in scheduler_sanity().
 
   TODO sometime:
@@ -1674,6 +1671,12 @@ void maybe_rendezvous_joiners_and_joinees ( void )
       thread_return = VG_(threads)[jnr].joiner_thread_return;
       if (thread_return != NULL) {
          /* CHECK thread_return writable */
+         if (VG_(clo_instrument)
+             && !VGM_(check_writable)( (Addr)thread_return, 
+                                       sizeof(void*), NULL))
+            VG_(record_pthread_err)( jnr, 
+               "pthread_join: thread_return points to invalid location");
+
          *thread_return = VG_(threads)[jee].joinee_retval;
          /* Not really right, since it makes the thread's return value
             appear to be defined even if it isn't. */
@@ -2749,7 +2752,12 @@ void do_pthread_key_create ( ThreadId tid,
    vg_thread_keys[i].inuse      = True;
    vg_thread_keys[i].destructor = destructor;
 
-   /* TODO: check key for addressibility */
+   /* check key for addressibility */
+   if (VG_(clo_instrument)
+       && !VGM_(check_writable)( (Addr)key, 
+                                 sizeof(pthread_key_t), NULL))
+      VG_(record_pthread_err)( tid, 
+         "pthread_key_create: key points to invalid location");
    *key = i;
    if (VG_(clo_instrument))
       VGM_(make_readable)( (Addr)key, sizeof(pthread_key_t) );
@@ -2899,13 +2907,27 @@ void do_pthread_sigmask ( ThreadId tid,
              && VG_(threads)[tid].status == VgTs_Runnable);
 
    if (VG_(clo_instrument)) {
-      /* TODO check newmask/oldmask are addressible/defined */
+      /* check newmask/oldmask are addressible/defined */
+      if (VG_(clo_instrument)
+          && newmask
+          && !VGM_(check_readable)( (Addr)newmask, 
+                                    sizeof(vki_ksigset_t), NULL))
+         VG_(record_pthread_err)( tid, 
+            "pthread_sigmask: newmask contains "
+            "unaddressible or undefined bytes");
+      if (VG_(clo_instrument)
+          && oldmask
+          && !VGM_(check_readable)( (Addr)oldmask, 
+                                    sizeof(vki_ksigset_t), NULL))
+         VG_(record_pthread_err)( tid, 
+            "pthread_sigmask: oldmask contains "
+            "unaddressible bytes");
    }
 
    VG_(do_pthread_sigmask_SCSS_upd) ( tid, vki_how, newmask, oldmask );
 
-   if (newmask && VG_(clo_instrument)) {
-      VGM_(make_readable)( (Addr)newmask, sizeof(vki_ksigset_t) );
+   if (oldmask && VG_(clo_instrument)) {
+      VGM_(make_readable)( (Addr)oldmask, sizeof(vki_ksigset_t) );
    }
 
    /* Success. */

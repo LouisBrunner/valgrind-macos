@@ -30,6 +30,8 @@
 
 #include "core.h"
 
+#include "libvex_guest_x86.h"
+
 /*------------------------------------------------------------*/
 /*--- Signal frame                                         ---*/
 /*------------------------------------------------------------*/
@@ -79,29 +81,10 @@ typedef
 
       /* Safely-saved version of sigNo, as described above. */
       Int  sigNo_private;
+
       /* Saved processor state. */
-      UInt m_sse[VG_SIZE_OF_SSESTATE_W];
-
-      UInt m_eax;
-      UInt m_ecx;
-      UInt m_edx;
-      UInt m_ebx;
-      UInt m_ebp;
-      UInt m_esp;
-      UInt m_esi;
-      UInt m_edi;
-      UInt m_eflags;
-      Addr m_eip;
-
-      UInt sh_eax;
-      UInt sh_ebx;
-      UInt sh_ecx;
-      UInt sh_edx;
-      UInt sh_esi;
-      UInt sh_edi;
-      UInt sh_ebp;
-      UInt sh_esp;
-      UInt sh_eflags;
+      VexGuestX86State vex;
+      VexGuestX86State vex_shadow;
 
       /* saved signal mask to be restored when handler returns */
       vki_sigset_t	mask;
@@ -136,29 +119,29 @@ static void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
    uc->uc_sigmask = *set;
    uc->uc_stack = tst->altstack;
 
-#define SC(reg)	sc->reg = tst->arch.m_##reg
-   SC(gs);
-   SC(fs);
-   SC(es);
-   SC(ds);
+#define SC2(reg,REG)  sc->reg = tst->arch.vex.guest_##REG
+   SC2(gs,GS);
+   SC2(fs,FS);
+   SC2(es,ES);
+   SC2(ds,DS);
 
-   SC(edi);
-   SC(esi);
-   SC(ebp);
-   SC(esp);
-   SC(ebx);
-   SC(edx);
-   SC(ecx);
-   SC(eax);
+   SC2(edi,EDI);
+   SC2(esi,ESI);
+   SC2(ebp,EBP);
+   SC2(esp,ESP);
+   SC2(ebx,EBX);
+   SC2(edx,EDX);
+   SC2(ecx,ECX);
+   SC2(eax,EAX);
 
-   SC(eip);
-   SC(cs);
-   SC(eflags);
-   SC(ss);
+   SC2(eip,EIP);
+   SC2(cs,CS);
+   sc->eflags = LibVEX_GuestX86_get_eflags(&tst->arch.vex);
+   SC2(ss,SS);
    /* XXX esp_at_signal */
    /* XXX trapno */
    /* XXX err */
-#undef SC
+#undef SC2
 
    sc->cr2 = (UInt)si->_sifields._sigfault._addr;
 }
@@ -174,7 +157,6 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
 {
    Addr		esp;
    ThreadState* tst;
-   Int          i;
    VgSigFrame*  frame;
    Int		sigNo = siginfo->si_signo;
 
@@ -237,31 +219,9 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
 
    frame->magicPI    = 0x31415927;
 
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      frame->m_sse[i] = tst->arch.m_sse[i];
-
-   frame->m_eax      = tst->arch.m_eax;
-   frame->m_ecx      = tst->arch.m_ecx;
-   frame->m_edx      = tst->arch.m_edx;
-   frame->m_ebx      = tst->arch.m_ebx;
-   frame->m_ebp      = tst->arch.m_ebp;
-   frame->m_esp      = tst->arch.m_esp;
-   frame->m_esi      = tst->arch.m_esi;
-   frame->m_edi      = tst->arch.m_edi;
-   frame->m_eflags   = tst->arch.m_eflags;
-   frame->m_eip      = tst->arch.m_eip;
-
-   if (VG_(needs).shadow_regs) {
-      frame->sh_eax     = tst->arch.sh_eax;
-      frame->sh_ecx     = tst->arch.sh_ecx;
-      frame->sh_edx     = tst->arch.sh_edx;
-      frame->sh_ebx     = tst->arch.sh_ebx;
-      frame->sh_ebp     = tst->arch.sh_ebp;
-      frame->sh_esp     = tst->arch.sh_esp;
-      frame->sh_esi     = tst->arch.sh_esi;
-      frame->sh_edi     = tst->arch.sh_edi;
-      frame->sh_eflags  = tst->arch.sh_eflags;
-   }
+   frame->vex = tst->arch.vex;
+   if (VG_(needs).shadow_regs)
+      frame->vex_shadow = tst->arch.vex_shadow;
 
    frame->mask = tst->sig_mask;
 
@@ -283,19 +243,18 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
    /* tst->m_esp  = esp; */
    SET_SIGNAL_ESP(tid, esp);
 
-   tst->arch.m_eip  = (Addr) handler;
+   tst->arch.vex.guest_EIP = (Addr) handler;
    /* This thread needs to be marked runnable, but we leave that the
       caller to do. */
 
    if (0)
       VG_(printf)("pushed signal frame; %%ESP now = %p, next %%EBP = %p, status=%d\n", 
-		  esp, tst->arch.m_eip, tst->status);
+		  esp, tst->arch.vex.guest_EIP, tst->status);
 }
 
 Int VGA_(pop_signal_frame)(ThreadId tid)
 {
    Addr          esp;
-   Int           i;
    VgSigFrame*   frame;
    ThreadState*  tst;
 
@@ -303,7 +262,7 @@ Int VGA_(pop_signal_frame)(ThreadId tid)
    tst = & VG_(threads)[tid];
 
    /* Correctly reestablish the frame base address. */
-   esp   = tst->arch.m_esp;
+   esp   = tst->arch.vex.guest_ESP;
    frame = (VgSigFrame*)
               (esp -4 /* because the handler's RET pops the RA */
                   +20 /* because signalreturn_bogusRA pushes 5 words */);
@@ -312,37 +271,15 @@ Int VGA_(pop_signal_frame)(ThreadId tid)
    vg_assert(frame->magicE  == 0x27182818);
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, 
-         "vg_pop_signal_frame (thread %d): valid magic; EIP=%p", tid, frame->m_eip);
+         "vg_pop_signal_frame (thread %d): valid magic; EIP=%p", tid, frame->vex.guest_EIP);
 
    /* Mark the frame structure as nonaccessible. */
    VG_TRACK( die_mem_stack_signal, (Addr)frame, sizeof(VgSigFrame) );
 
    /* restore machine state */
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      tst->arch.m_sse[i] = frame->m_sse[i];
-
-   tst->arch.m_eax     = frame->m_eax;
-   tst->arch.m_ecx     = frame->m_ecx;
-   tst->arch.m_edx     = frame->m_edx;
-   tst->arch.m_ebx     = frame->m_ebx;
-   tst->arch.m_ebp     = frame->m_ebp; 
-   tst->arch.m_esp     = frame->m_esp;
-   tst->arch.m_esi     = frame->m_esi;
-   tst->arch.m_edi     = frame->m_edi;
-   tst->arch.m_eflags  = frame->m_eflags;
-   tst->arch.m_eip     = frame->m_eip;
-
-   if (VG_(needs).shadow_regs) {
-      tst->arch.sh_eax     = frame->sh_eax;
-      tst->arch.sh_ecx     = frame->sh_ecx;
-      tst->arch.sh_edx     = frame->sh_edx;
-      tst->arch.sh_ebx     = frame->sh_ebx;
-      tst->arch.sh_ebp     = frame->sh_ebp; 
-      tst->arch.sh_esp     = frame->sh_esp;
-      tst->arch.sh_esi     = frame->sh_esi;
-      tst->arch.sh_edi     = frame->sh_edi;
-      tst->arch.sh_eflags  = frame->sh_eflags;
-   }
+   tst->arch.vex = frame->vex;
+   if (VG_(needs).shadow_regs)
+      tst->arch.vex_shadow = frame->vex_shadow;
 
    /* And restore the thread's status to what it was before the signal
       was delivered. */
@@ -364,50 +301,51 @@ Int VGA_(pop_signal_frame)(ThreadId tid)
 
 void VGA_(fill_elfregs_from_BB)(struct vki_user_regs_struct* regs)
 {
-   regs->eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
-   regs->esp    = VG_(baseBlock)[VGOFF_(m_esp)];
-   regs->eip    = VG_(baseBlock)[VGOFF_(m_eip)];
+   regs->eflags = LibVEX_GuestX86_get_eflags(BASEBLOCK_VEX);
+   regs->esp    = BASEBLOCK_VEX->guest_ESP;
+   regs->eip    = BASEBLOCK_VEX->guest_EIP;
 
-   regs->ebx    = VG_(baseBlock)[VGOFF_(m_ebx)];
-   regs->ecx    = VG_(baseBlock)[VGOFF_(m_ecx)];
-   regs->edx    = VG_(baseBlock)[VGOFF_(m_edx)];
-   regs->esi    = VG_(baseBlock)[VGOFF_(m_esi)];
-   regs->edi    = VG_(baseBlock)[VGOFF_(m_edi)];
-   regs->ebp    = VG_(baseBlock)[VGOFF_(m_ebp)];
-   regs->eax    = VG_(baseBlock)[VGOFF_(m_eax)];
+   regs->ebx    = BASEBLOCK_VEX->guest_EBX;
+   regs->ecx    = BASEBLOCK_VEX->guest_ECX;
+   regs->edx    = BASEBLOCK_VEX->guest_EDX;
+   regs->esi    = BASEBLOCK_VEX->guest_ESI;
+   regs->edi    = BASEBLOCK_VEX->guest_EDI;
+   regs->ebp    = BASEBLOCK_VEX->guest_EBP;
+   regs->eax    = BASEBLOCK_VEX->guest_EAX;
 
-   regs->cs     = VG_(baseBlock)[VGOFF_(m_cs)];
-   regs->ds     = VG_(baseBlock)[VGOFF_(m_ds)];
-   regs->ss     = VG_(baseBlock)[VGOFF_(m_ss)];
-   regs->es     = VG_(baseBlock)[VGOFF_(m_es)];
-   regs->fs     = VG_(baseBlock)[VGOFF_(m_fs)];
-   regs->gs     = VG_(baseBlock)[VGOFF_(m_gs)];
+   regs->cs     = BASEBLOCK_VEX->guest_CS;
+   regs->ds     = BASEBLOCK_VEX->guest_DS;
+   regs->ss     = BASEBLOCK_VEX->guest_SS;
+   regs->es     = BASEBLOCK_VEX->guest_ES;
+   regs->fs     = BASEBLOCK_VEX->guest_FS;
+   regs->gs     = BASEBLOCK_VEX->guest_GS;
 }
 
 
 void VGA_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
-                                 const arch_thread_t* arch)
+                                 arch_thread_t* arch)
 {
-   regs->eflags = arch->m_eflags;
-   regs->esp    = arch->m_esp;
-   regs->eip    = arch->m_eip;
+   regs->eflags = LibVEX_GuestX86_get_eflags(&arch->vex);
+   regs->esp    = arch->vex.guest_ESP;
+   regs->eip    = arch->vex.guest_EIP;
 
-   regs->ebx    = arch->m_ebx;
-   regs->ecx    = arch->m_ecx;
-   regs->edx    = arch->m_edx;
-   regs->esi    = arch->m_esi;
-   regs->edi    = arch->m_edi;
-   regs->ebp    = arch->m_ebp;
-   regs->eax    = arch->m_eax;
+   regs->ebx    = arch->vex.guest_EBX;
+   regs->ecx    = arch->vex.guest_ECX;
+   regs->edx    = arch->vex.guest_EDX;
+   regs->esi    = arch->vex.guest_ESI;
+   regs->edi    = arch->vex.guest_EDI;
+   regs->ebp    = arch->vex.guest_EBP;
+   regs->eax    = arch->vex.guest_EAX;
 
-   regs->cs     = arch->m_cs;
-   regs->ds     = arch->m_ds;
-   regs->ss     = arch->m_ss;
-   regs->es     = arch->m_es;
-   regs->fs     = arch->m_fs;
-   regs->gs     = arch->m_gs;
+   regs->cs     = arch->vex.guest_CS;
+   regs->ds     = arch->vex.guest_DS;
+   regs->ss     = arch->vex.guest_SS;
+   regs->es     = arch->vex.guest_ES;
+   regs->fs     = arch->vex.guest_FS;
+   regs->gs     = arch->vex.guest_GS;
 }
 
+#if 0
 static void fill_fpu(vki_elf_fpregset_t *fpu, const Char *from)
 {
    if (VG_(have_ssestate)) {
@@ -425,27 +363,28 @@ static void fill_fpu(vki_elf_fpregset_t *fpu, const Char *from)
    } else
       VG_(memcpy)(fpu, from, sizeof(*fpu));
 }
+#endif
 
 void VGA_(fill_elffpregs_from_BB)( vki_elf_fpregset_t* fpu )
 {
-   fill_fpu(fpu, (const Char *)&VG_(baseBlock)[VGOFF_(m_ssestate)]);
+  //fill_fpu(fpu, (const Char *)&VG_(baseBlock)[VGOFF_(m_ssestate)]);
 }
 
 void VGA_(fill_elffpregs_from_tst)( vki_elf_fpregset_t* fpu,
                                     const arch_thread_t* arch)
 {
-   fill_fpu(fpu, (const Char *)&arch->m_sse);
+  //fill_fpu(fpu, (const Char *)&arch->m_sse);
 }
 
 void VGA_(fill_elffpxregs_from_BB) ( vki_elf_fpxregset_t* xfpu )
 {
-   VG_(memcpy)(xfpu, &VG_(baseBlock)[VGOFF_(m_ssestate)], sizeof(*xfpu));
+  //VG_(memcpy)(xfpu, &VG_(baseBlock)[VGOFF_(m_ssestate)], sizeof(*xfpu));
 }
 
 void VGA_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
                                       const arch_thread_t* arch )
 {
-   VG_(memcpy)(xfpu, arch->m_sse, sizeof(*xfpu));
+  //VG_(memcpy)(xfpu, arch->m_sse, sizeof(*xfpu));
 }
 
 /*--------------------------------------------------------------------*/

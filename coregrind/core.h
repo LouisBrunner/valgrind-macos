@@ -239,6 +239,8 @@ extern Int VG_(main_pgrp);
 extern Int VG_(fd_soft_limit);
 extern Int VG_(fd_hard_limit);
 
+/* Vex iropt control */
+extern VexControl VG_(clo_vex_control);
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
 /* Enquire about whether to attach to a debugger at errors?   default: NO */
@@ -1088,8 +1090,6 @@ extern void VG_(demangle) ( Char* orig, Char* result, Int result_size );
    Exports of vg_from_ucode.c
    ------------------------------------------------------------------ */
 
-extern UChar* VG_(emit_code) ( UCodeBlock* cb, Int* nbytes, UShort jumps[VG_MAX_JUMPS] );
-
 extern void   VG_(print_ccall_stats)      ( void );
 extern void   VG_(print_UInstr_histogram) ( void );
 
@@ -1102,26 +1102,13 @@ extern Addr   VG_(get_jmp_dest)           ( Addr jumpsite );
 
 Bool VG_(cpu_has_feature)(UInt feat);
 
-extern Int   VG_(disBB)          ( UCodeBlock* cb, Addr ip0 );
 
 /* ---------------------------------------------------------------------
    Exports of vg_translate.c
    ------------------------------------------------------------------ */
 
-/* Expandable arrays of uinstrs. */
-struct _UCodeBlock { 
-   Addr	   orig_eip;
-   Int     used; 
-   Int     size; 
-   UInstr* instrs;
-   Int     nextTemp;
-};
-
 extern Bool VG_(translate)  ( ThreadId tid, Addr orig_addr, Bool debugging );
 
-extern void VG_(sanity_check_UInstr) ( UInt n, UInstr* u );
-
-extern void VG_(print_reg_alloc_stats) ( void );
 
 /* ---------------------------------------------------------------------
    Exports of vg_execontext.c.
@@ -1647,6 +1634,9 @@ GEN_SYSCALL_WRAPPER(sys_mq_getsetattr);         // * P?
 #undef GEN_SYSCALL_WRAPPER
 
 // Macros used in syscall wrappers
+/* PRRAn == "pre-register-read-argument"
+   PRRSN == "pre-register-read-syscall"
+*/
 
 #define PRRSN \
       TL_(pre_reg_read)(Vg_CoreSysCall, tid, "(syscallno)", \
@@ -1704,12 +1694,6 @@ GEN_SYSCALL_WRAPPER(sys_mq_getsetattr);         // * P?
 #define POST_MEM_WRITE(zzaddr, zzlen) \
    VG_TRACK( post_mem_write, zzaddr, zzlen)
 
-
-
-/*--------------------------------------------------------------------*/
-/*--- end                                            vg_syscalls.c ---*/
-/*--------------------------------------------------------------------*/
-
 /* ---------------------------------------------------------------------
    Exports of vg_transtab.c
    ------------------------------------------------------------------ */
@@ -1719,8 +1703,7 @@ extern Addr VG_(tt_fast)[VG_TT_FAST_SIZE];
 
 extern void VG_(init_tt_tc)       ( void );
 extern void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
-                                    Addr trans_addr, Int trans_size,
-				    UShort jumps[VG_MAX_JUMPS]);
+                                    Addr trans_addr, Int trans_size );
 extern Addr VG_(search_transtab)  ( Addr original_addr );
 
 extern void VG_(invalidate_translations) ( Addr start, UInt range,
@@ -1807,6 +1790,11 @@ extern void VGA_(init_high_baseBlock) ( Addr client_ip, Addr sp_at_startup );
 extern void VGA_(load_state) ( arch_thread_t*, ThreadId tid );
 extern void VGA_(save_state) ( arch_thread_t*, ThreadId tid );
 
+// Register state access
+extern void VGA_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg, UInt val );
+extern UInt VGA_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg );
+extern UInt VGA_(get_shadow_archreg) ( UInt archreg );
+
 // Thread stuff
 extern void VGA_(clear_thread)   ( arch_thread_t* );
 extern void VGA_(init_thread)    ( arch_thread_t* );
@@ -1830,7 +1818,7 @@ extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, arch_thread_t* arch );
 // Making coredumps
 extern void VGA_(fill_elfregs_from_BB)     ( struct vki_user_regs_struct* regs );
 extern void VGA_(fill_elfregs_from_tst)    ( struct vki_user_regs_struct* regs,
-                                             const arch_thread_t* arch );
+                                             arch_thread_t* arch );
 extern void VGA_(fill_elffpregs_from_BB)   ( vki_elf_fpregset_t* fpu );
 extern void VGA_(fill_elffpregs_from_tst)  ( vki_elf_fpregset_t* fpu,
                                              const arch_thread_t* arch );

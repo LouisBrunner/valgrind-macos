@@ -40,16 +40,17 @@
    ------------------------------------------------------------------ */
 
 // Accessors for the arch_thread_t
-#define PLATFORM_SYSCALL_NUM(regs)     ((regs).m_eax)
-#define PLATFORM_SYSCALL_RET(regs)     ((regs).m_eax)
-#define PLATFORM_SYSCALL_ARG1(regs)    ((regs).m_ebx)
-#define PLATFORM_SYSCALL_ARG2(regs)    ((regs).m_ecx)
-#define PLATFORM_SYSCALL_ARG3(regs)    ((regs).m_edx)
-#define PLATFORM_SYSCALL_ARG4(regs)    ((regs).m_esi)
-#define PLATFORM_SYSCALL_ARG5(regs)    ((regs).m_edi)
-#define PLATFORM_SYSCALL_ARG6(regs)    ((regs).m_ebp)
+#define PLATFORM_SYSCALL_NUM(regs)     ((regs).vex.guest_EAX)
+#define PLATFORM_SYSCALL_RET(regs)     ((regs).vex.guest_EAX)
+#define PLATFORM_SYSCALL_ARG1(regs)    ((regs).vex.guest_EBX)
+#define PLATFORM_SYSCALL_ARG2(regs)    ((regs).vex.guest_ECX)
+#define PLATFORM_SYSCALL_ARG3(regs)    ((regs).vex.guest_EDX)
+#define PLATFORM_SYSCALL_ARG4(regs)    ((regs).vex.guest_ESI)
+#define PLATFORM_SYSCALL_ARG5(regs)    ((regs).vex.guest_EDI)
+#define PLATFORM_SYSCALL_ARG6(regs)    ((regs).vex.guest_EBP)
 
-#define PLATFORM_SET_SYSCALL_RESULT(regs, val)     ((regs).m_eax = (val))
+#define PLATFORM_SET_SYSCALL_RESULT(regs, val)     \
+   ((regs).vex.guest_EAX = (val))
 
 // Interesting register numbers
 #define R_SYSCALL_NUM                  R_EAX

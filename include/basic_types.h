@@ -35,22 +35,19 @@
    Basic types
    ------------------------------------------------------------------ */
 
+#include "libvex_basictypes.h"
+
+/* VEX defines Char, UChar, Short, UShort, Int, UInt, Long, ULong,
+   Addr32, Addr64, HWord, HChar, Bool, False and True. */
+
 // By choosing the right types, we can get these right for 32-bit and 64-bit
 // platforms without having to do any conditional compilation or anything.
 // 
 // Size in bits on:                          32-bit archs   64-bit archs
 //                                           ------------   ------------
-typedef unsigned char          UChar;     //  8              8
-typedef unsigned short         UShort;    // 16             16
-typedef unsigned int           UInt;      // 32             32
 typedef unsigned long          UWord;     // 32             64
-typedef unsigned long long     ULong;     // 64             64
 
-typedef signed char            Char;      //  8              8
-typedef signed short           Short;     // 16             16
-typedef signed int             Int;       // 32             32
 typedef signed long            Word;      // 32             64
-typedef signed long long       Long;      // 64             64
 
 typedef UWord                  Addr;      // 32             64
 
@@ -59,9 +56,6 @@ typedef  Word                 SSizeT;     // 32             64
 
 typedef  Word                   OffT;     // 32             64
 
-typedef UChar                  Bool;      //  8              8
-#define False                  ((Bool)0)
-#define True                   ((Bool)1)
 
 /* ---------------------------------------------------------------------
    Where to send bug reports to.

@@ -150,7 +150,7 @@ Char** VG_(client_envp);
 UInt VG_(dispatch_ctr);
 
 /* 64-bit counter for the number of basic blocks done. */
-ULong VG_(bbs_done);
+ULong VG_(bbs_done) = 0;
 
 /* Tell the logging mechanism whether we are logging to a file
    descriptor or a socket descriptor. */
@@ -188,18 +188,9 @@ static void print_all_stats ( void )
    // Scheduler stats
    VG_(print_scheduler_stats)();
 
-   // Reg-alloc stats
-   VG_(print_reg_alloc_stats)();
    VG_(message)(Vg_DebugMsg, 
                 "   sanity: %d cheap, %d expensive checks.",
                 sanity_fast_count, sanity_slow_count );
-
-   // C call stats
-   VG_(print_ccall_stats)();
-
-   // UInstr histogram 
-   if (VG_(clo_verbosity) > 3)
-      VG_(print_UInstr_histogram)();
 
    // Memory stats
    if (VG_(clo_verbosity) > 2) {
@@ -337,7 +328,7 @@ void VG_(unimplemented) ( Char* msg )
 
 Addr VG_(get_stack_pointer) ( void )
 {
-   return VG_(baseBlock)[VGOFF_STACK_PTR];
+   return BASEBLOCK_STACK_PTR;
 }
 
 /* Debugging thing .. can be called from assembly with OYNK macro. */
@@ -1477,6 +1468,7 @@ void as_closepadfile(int padfile)
 /*====================================================================*/
 
 /* Define, and set defaults. */
+VexControl VG_(clo_vex_control);
 Bool   VG_(clo_error_limit)    = True;
 Bool   VG_(clo_db_attach)      = False;
 Char*  VG_(clo_db_command)     = VG_CLO_DEFAULT_DBCOMMAND;
@@ -1577,13 +1569,20 @@ void usage ( Bool debug_help )
 "    --profile=no|yes          profile? (tool must be built for it) [no]\n"
 "    --chain-bb=no|yes         do basic-block chaining? [yes]\n"
 "    --branchpred=yes|no       generate branch prediction hints [no]\n"
-"    --trace-codegen=<XXXXX>   show generated code? (X = 0|1) [00000]\n"
+"    --trace-codegen=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"
 "    --trace-sched=no|yes      show thread scheduler details? [no]\n"
 "    --trace-pthread=none|some|all  show pthread event details? [none]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
+"\n"
+"    --vex-iropt-verbosity             0 .. 9 [0]\n"
+"    --vex-iropt-level                 0 .. 2 [2]\n"
+"    --vex-iropt-precise-memory-exns   [no]\n"
+"    --vex-iropt-unroll-thresh         0 .. 400 [120]\n"
+"    --vex-guest-max-insns             1 .. 100 [50]\n"
+"    --vex-guest-chase-thresh          0 .. 99  [10]\n"
 "\n"
 "  debugging options for Valgrind tools that report errors\n"
 "    --dump-error=<number>     show translation for basic block associated\n"
@@ -1630,6 +1629,8 @@ static void pre_process_cmd_line_options
       ( Int* need_help, const char** tool, const char** exec )
 {
    UInt i;
+
+   LibVEX_default_VexControl(& VG_(clo_vex_control));
 
    /* parse the options we have (only the options we care about now) */
    for (i = 1; i < vg_argc; i++) {
@@ -1765,6 +1766,19 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BNUM_CLO("--num-callers",       VG_(clo_backtrace_size), 1,
                                                 VG_DEEPEST_BACKTRACE)
 
+      else VG_BNUM_CLO("--vex-iropt-verbosity",
+                       VG_(clo_vex_control).iropt_verbosity, 0, 10)
+      else VG_BNUM_CLO("--vex-iropt-level",
+                       VG_(clo_vex_control).iropt_level, 0, 2)
+      else VG_BOOL_CLO("--vex-iropt-precise-memory-exns",
+                       VG_(clo_vex_control).iropt_precise_memory_exns)
+      else VG_BNUM_CLO("--vex-iropt-unroll-thresh",
+                       VG_(clo_vex_control).iropt_unroll_thresh, 0, 400)
+      else VG_BNUM_CLO("--vex-guest-max-insns",
+                       VG_(clo_vex_control).guest_max_insns, 1, 100)
+      else VG_BNUM_CLO("--vex-guest-chase-thresh",
+                       VG_(clo_vex_control).guest_chase_thresh, 0, 99)
+
       // for backwards compatibility, replaced by --log-fd
       else if (VG_CLO_STREQN(13, arg, "--logfile-fd=")) {
          VG_(clo_log_to)   = VgLogTo_Fd;
@@ -1815,12 +1829,12 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
    
          if (5 != VG_(strlen)(opt)) {
             VG_(message)(Vg_UserMsg, 
-                         "--trace-codegen argument must have 5 digits");
+                         "--trace-codegen argument must have 8 digits");
             VG_(bad_option)(arg);
          }
-         for (j = 0; j < 5; j++) {
+         for (j = 0; j < 8; j++) {
             if      ('0' == opt[j]) { /* do nothing */ }
-            else if ('1' == opt[j]) VG_(clo_trace_codegen) |= (1 << j);
+            else if ('1' == opt[j]) VG_(clo_trace_codegen) |= (1 << (7-j));
             else {
                VG_(message)(Vg_UserMsg, "--trace-codegen argument can only "
                                         "contain 0s and 1s");
@@ -2896,6 +2910,9 @@ int main(int argc, char **argv)
 	     VG_(threads)[last_run_tid].status == VgTs_Runnable ||
 	     VG_(threads)[last_run_tid].status == VgTs_WaitJoiner);
    VG_(nuke_all_threads_except)(VG_INVALID_THREADID);
+
+   /* Print Vex storage stats */
+   LibVEX_ClearTemporary( True/*show stats*/ );
 
    //--------------------------------------------------------------
    // Exit, according to the scheduler's return code

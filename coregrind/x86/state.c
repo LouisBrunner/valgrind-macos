@@ -32,97 +32,23 @@
 #include "x86_private.h"
 #include <sys/ptrace.h>
 
+#include "libvex_guest_x86.h"
+
 /*------------------------------------------------------------*/
 /*--- baseBlock setup and operations                       ---*/
 /*------------------------------------------------------------*/
 
 /* The variables storing offsets. */
+Int VGOFF_(m_vex) = INVALID_OFFSET;
+Int VGOFF_(m_vex_shadow) = INVALID_OFFSET;
 
-Int VGOFF_(m_eax) = INVALID_OFFSET;
-Int VGOFF_(m_ecx) = INVALID_OFFSET;
-Int VGOFF_(m_edx) = INVALID_OFFSET;
-Int VGOFF_(m_ebx) = INVALID_OFFSET;
-Int VGOFF_(m_esp) = INVALID_OFFSET;
-Int VGOFF_(m_ebp) = INVALID_OFFSET;
-Int VGOFF_(m_esi) = INVALID_OFFSET;
-Int VGOFF_(m_edi) = INVALID_OFFSET;
-Int VGOFF_(m_eflags) = INVALID_OFFSET;
-Int VGOFF_(m_dflag)  = INVALID_OFFSET;
-Int VGOFF_(m_ssestate) = INVALID_OFFSET;
 Int VGOFF_(ldt)   = INVALID_OFFSET;
 Int VGOFF_(tls_ptr) = INVALID_OFFSET;
-Int VGOFF_(m_cs)  = INVALID_OFFSET;
-Int VGOFF_(m_ss)  = INVALID_OFFSET;
-Int VGOFF_(m_ds)  = INVALID_OFFSET;
-Int VGOFF_(m_es)  = INVALID_OFFSET;
-Int VGOFF_(m_fs)  = INVALID_OFFSET;
-Int VGOFF_(m_gs)  = INVALID_OFFSET;
 Int VGOFF_(m_eip) = INVALID_OFFSET;
+
 Int VGOFF_(spillslots) = INVALID_OFFSET;
-Int VGOFF_(sh_eax) = INVALID_OFFSET;
-Int VGOFF_(sh_ecx) = INVALID_OFFSET;
-Int VGOFF_(sh_edx) = INVALID_OFFSET;
-Int VGOFF_(sh_ebx) = INVALID_OFFSET;
-Int VGOFF_(sh_esp) = INVALID_OFFSET;
-Int VGOFF_(sh_ebp) = INVALID_OFFSET;
-Int VGOFF_(sh_esi) = INVALID_OFFSET;
-Int VGOFF_(sh_edi) = INVALID_OFFSET;
-Int VGOFF_(sh_eflags) = INVALID_OFFSET;
 
-Int VGOFF_(helper_idiv_64_32) = INVALID_OFFSET;
-Int VGOFF_(helper_div_64_32) = INVALID_OFFSET;
-Int VGOFF_(helper_idiv_32_16) = INVALID_OFFSET;
-Int VGOFF_(helper_div_32_16) = INVALID_OFFSET;
-Int VGOFF_(helper_idiv_16_8) = INVALID_OFFSET;
-Int VGOFF_(helper_div_16_8) = INVALID_OFFSET;
-Int VGOFF_(helper_imul_32_64) = INVALID_OFFSET;
-Int VGOFF_(helper_mul_32_64) = INVALID_OFFSET;
-Int VGOFF_(helper_imul_16_32) = INVALID_OFFSET;
-Int VGOFF_(helper_mul_16_32) = INVALID_OFFSET;
-Int VGOFF_(helper_imul_8_16) = INVALID_OFFSET;
-Int VGOFF_(helper_mul_8_16) = INVALID_OFFSET;
-Int VGOFF_(helper_CLD) = INVALID_OFFSET;
-Int VGOFF_(helper_STD) = INVALID_OFFSET;
-Int VGOFF_(helper_get_dirflag) = INVALID_OFFSET;
-Int VGOFF_(helper_CLC) = INVALID_OFFSET;
-Int VGOFF_(helper_STC) = INVALID_OFFSET;
-Int VGOFF_(helper_CMC) = INVALID_OFFSET;
-Int VGOFF_(helper_shldl) = INVALID_OFFSET;
-Int VGOFF_(helper_shldw) = INVALID_OFFSET;
-Int VGOFF_(helper_shrdl) = INVALID_OFFSET;
-Int VGOFF_(helper_shrdw) = INVALID_OFFSET;
-Int VGOFF_(helper_IN) = INVALID_OFFSET;
-Int VGOFF_(helper_OUT) = INVALID_OFFSET;
-Int VGOFF_(helper_RDTSC) = INVALID_OFFSET;
-Int VGOFF_(helper_CPUID) = INVALID_OFFSET;
-Int VGOFF_(helper_BSWAP) = INVALID_OFFSET;
-Int VGOFF_(helper_bsfw) = INVALID_OFFSET;
-Int VGOFF_(helper_bsfl) = INVALID_OFFSET;
-Int VGOFF_(helper_bsrw) = INVALID_OFFSET;
-Int VGOFF_(helper_bsrl) = INVALID_OFFSET;
-Int VGOFF_(helper_fstsw_AX) = INVALID_OFFSET;
-Int VGOFF_(helper_SAHF) = INVALID_OFFSET;
-Int VGOFF_(helper_LAHF) = INVALID_OFFSET;
-Int VGOFF_(helper_DAS) = INVALID_OFFSET;
-Int VGOFF_(helper_DAA) = INVALID_OFFSET;
-Int VGOFF_(helper_AAS) = INVALID_OFFSET;
-Int VGOFF_(helper_AAA) = INVALID_OFFSET;
-Int VGOFF_(helper_AAD) = INVALID_OFFSET;
-Int VGOFF_(helper_AAM) = INVALID_OFFSET;
-Int VGOFF_(helper_cmpxchg8b) = INVALID_OFFSET;
 
-static Int extractDflag(UInt eflags)
-{
-   return ( eflags & EFlagD ? -1 : 1 );
-}
-
-static UInt insertDflag(UInt eflags, Int d)
-{
-   vg_assert(d == 1 || d == -1);
-   eflags &= ~EFlagD;
-   if (d < 0) eflags |= EFlagD;
-   return eflags;
-}
 
 /* Here we assign actual offsets.  It's important on x86 to get the most
    popular referents within 128 bytes of the start, so we can take
@@ -132,88 +58,52 @@ static UInt insertDflag(UInt eflags, Int d)
    size of translations. */
 void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
 {
-   /* Those with offsets under 128 are carefully chosen. */
+   vg_assert(0 == sizeof(VexGuestX86State) % 8);
 
-   /* WORD offsets in this column */
-   /* 0   */ VGOFF_(m_eax)     = VG_(alloc_BaB_1_set)(0);
-   /* 1   */ VGOFF_(m_ecx)     = VG_(alloc_BaB_1_set)(0);
-   /* 2   */ VGOFF_(m_edx)     = VG_(alloc_BaB_1_set)(0);
-   /* 3   */ VGOFF_(m_ebx)     = VG_(alloc_BaB_1_set)(0);
-   /* 4   */ VGOFF_(m_esp)     = VG_(alloc_BaB_1_set)(esp_at_startup);
-   /* 5   */ VGOFF_(m_ebp)     = VG_(alloc_BaB_1_set)(0);
-   /* 6   */ VGOFF_(m_esi)     = VG_(alloc_BaB_1_set)(0);
-   /* 7   */ VGOFF_(m_edi)     = VG_(alloc_BaB_1_set)(0);
-   /* 8   */ VGOFF_(m_eflags)  = VG_(alloc_BaB_1_set)(0);
+   /* First the guest state. */
+   VGOFF_(m_vex) = VG_(alloc_BaB)( sizeof(VexGuestX86State) / 4 );
+
+   /* Then equal sized shadow state. */
+   VGOFF_(m_vex_shadow) = VG_(alloc_BaB)( sizeof(VexGuestX86State) / 4 );
+
+   /* Finally the spill area. */
+   VGOFF_(spillslots) = VG_(alloc_BaB)( LibVEX_N_SPILL_BYTES/4 );
+   if (0) VG_(printf)("SPILL SLOTS start at %d\n", VGOFF_(spillslots));
+
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestX86_initialise(BASEBLOCK_VEX);
+
+   /* Zero out the shadow area. */
+   VG_(memset)(BASEBLOCK_VEX_SHADOW, 0, sizeof(VexGuestX86State));
+
+   /* Put essential stuff into the new state. */
+   BASEBLOCK_VEX->guest_ESP = esp_at_startup;
+   BASEBLOCK_VEX->guest_EIP = client_eip;
+
+   /* The dispatch loop needs to be able to find %EIP. */
+   VGOFF_(m_eip)
+      = VGOFF_(m_vex) + offsetof(VexGuestX86State,guest_EIP)/4;
 
    if (VG_(needs).shadow_regs) {
-      /* 9   */ VGOFF_(sh_eax)    = VG_(alloc_BaB_1_set)(0);
-      /* 10  */ VGOFF_(sh_ecx)    = VG_(alloc_BaB_1_set)(0);
-      /* 11  */ VGOFF_(sh_edx)    = VG_(alloc_BaB_1_set)(0);
-      /* 12  */ VGOFF_(sh_ebx)    = VG_(alloc_BaB_1_set)(0);
-      /* 13  */ VGOFF_(sh_esp)    = VG_(alloc_BaB_1_set)(0);
-      /* 14  */ VGOFF_(sh_ebp)    = VG_(alloc_BaB_1_set)(0);
-      /* 15  */ VGOFF_(sh_esi)    = VG_(alloc_BaB_1_set)(0);
-      /* 16  */ VGOFF_(sh_edi)    = VG_(alloc_BaB_1_set)(0);
-      /* 17  */ VGOFF_(sh_eflags) = VG_(alloc_BaB_1_set)(0);
       VG_TRACK( post_regs_write_init );
    }
-
-   /* 9,10,11 or 18,19,20... depends on number whether shadow regs are used
-    * and on compact helpers registered */ 
-
-   /* Make these most-frequently-called specialised ones compact, if they
-      are used. */
-   if (VG_(defined_new_mem_stack_4)())
-      VG_(register_compact_helper)( (Addr) VG_(tool_interface).track_new_mem_stack_4);
-
-   if (VG_(defined_die_mem_stack_4)())
-      VG_(register_compact_helper)( (Addr) VG_(tool_interface).track_die_mem_stack_4);
-
 }
 
 void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
 {
-   /* (9/10 or 18/19) + n_compact_helpers */
-   VGOFF_(m_eip) = VG_(alloc_BaB_1_set)(client_eip);
-
    /* There are currently 24 spill slots */
    /* (11+/20+ .. 32+/43+) + n_compact_helpers.  This can overlap the magic
     * boundary at >= 32 words, but most spills are to low numbered spill
     * slots, so the ones above the boundary don't see much action. */
-   VGOFF_(spillslots) = VG_(alloc_BaB)(VG_MAX_SPILLSLOTS);
 
    /* I gave up counting at this point.  Since they're above the
       short-amode-boundary, there's no point. */
 
-   VGOFF_(m_dflag) = VG_(alloc_BaB_1_set)(1);  // 1 == forward D-flag
-
-   /* The FPU/SSE state.  This _must_ be 16-byte aligned.  Initial
-      state doesn't matter much, as long as it's not totally borked. */
-   VG_(align_BaB)(16);
-   VGOFF_(m_ssestate) = VG_(alloc_BaB)(VG_SIZE_OF_SSESTATE_W);
-   vg_assert( 
-      0 == ( ((UInt)(& VG_(baseBlock)[VGOFF_(m_ssestate)])) % 16 )
-   );
-
    /* I assume that if we have SSE2 we also have SSE */
-   VG_(have_ssestate) = 
-	   VG_(cpu_has_feature)(VG_X86_FEAT_FXSR) &&
-	   VG_(cpu_has_feature)(VG_X86_FEAT_SSE);
-
-   /* set up an initial FPU state (doesn't really matter what it is,
-      so long as it's somewhat valid) */
-   if (!VG_(have_ssestate))
-      asm volatile("fwait; fnsave %0; fwait; frstor %0; fwait" 
-                   : 
-                   : "m" (VG_(baseBlock)[VGOFF_(m_ssestate)]) 
-                   : "cc", "memory");
-   else
-      asm volatile("fwait; fxsave %0; fwait; andl $0xffbf, %1;"
-                   "fxrstor %0; fwait"
-                   : 
-                   : "m" (VG_(baseBlock)[VGOFF_(m_ssestate)]), 
-                     "m" (VG_(baseBlock)[VGOFF_(m_ssestate)+(24/4)]) 
-                   : "cc", "memory");
+   VG_(have_ssestate) = False;
+   //      VG_(cpu_has_feature)(VG_X86_FEAT_FXSR) &&
+   //   VG_(cpu_has_feature)(VG_X86_FEAT_SSE);
 
    if (0) {
       if (VG_(have_ssestate))
@@ -228,65 +118,17 @@ void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
    /* TLS pointer: pretend the root thread has no TLS array for now. */
    VGOFF_(tls_ptr) = VG_(alloc_BaB_1_set)((UInt)NULL);
 
-   /* segment registers */
-   VGOFF_(m_cs)  = VG_(alloc_BaB_1_set)(0);
-   VGOFF_(m_ss)  = VG_(alloc_BaB_1_set)(0);
-   VGOFF_(m_ds)  = VG_(alloc_BaB_1_set)(0);
-   VGOFF_(m_es)  = VG_(alloc_BaB_1_set)(0);
-   VGOFF_(m_fs)  = VG_(alloc_BaB_1_set)(0);
-   VGOFF_(m_gs)  = VG_(alloc_BaB_1_set)(0);
-
    /* initialise %cs, %ds and %ss to point at the operating systems
       default code, data and stack segments */
    asm volatile("movw %%cs, %0"
                 :
-                : "m" (VG_(baseBlock)[VGOFF_(m_cs)]));
+                : "m" (BASEBLOCK_VEX->guest_CS));
    asm volatile("movw %%ds, %0"
                 :
-                : "m" (VG_(baseBlock)[VGOFF_(m_ds)]));
+                : "m" (BASEBLOCK_VEX->guest_DS));
    asm volatile("movw %%ss, %0"
                 :
-                : "m" (VG_(baseBlock)[VGOFF_(m_ss)]));
-
-   VG_(register_noncompact_helper)( (Addr) & VG_(do_useseg) );
-
-#  define HELPER(name) \
-   VGOFF_(helper_##name) = VG_(alloc_BaB_1_set)( (Addr) & VG_(helper_##name))
-
-   /* Helper functions. */
-   HELPER(idiv_64_32);     HELPER(div_64_32);
-   HELPER(idiv_32_16);     HELPER(div_32_16);
-   HELPER(idiv_16_8);      HELPER(div_16_8);
-
-   HELPER(imul_32_64);     HELPER(mul_32_64);
-   HELPER(imul_16_32);     HELPER(mul_16_32);
-   HELPER(imul_8_16);      HELPER(mul_8_16);
-
-   HELPER(CLD);            HELPER(STD);
-   HELPER(get_dirflag);
-
-   HELPER(CLC);            HELPER(STC);
-   HELPER(CMC);
-
-   HELPER(shldl);          HELPER(shldw);
-   HELPER(shrdl);          HELPER(shrdw);
-
-   HELPER(RDTSC);          HELPER(CPUID);
-
-   HELPER(bsfw);           HELPER(bsfl);
-   HELPER(bsrw);           HELPER(bsrl);
-
-   HELPER(fstsw_AX);
-   HELPER(SAHF);           HELPER(LAHF);
-   HELPER(DAS);            HELPER(DAA);
-   HELPER(AAS);            HELPER(AAA);
-   HELPER(AAD);            HELPER(AAM);
-   HELPER(IN);             HELPER(OUT);
-   HELPER(cmpxchg8b);
-
-   HELPER(undefined_instruction);
-
-#  undef HELPER
+                : "m" (BASEBLOCK_VEX->guest_SS));
 }
 
 /* Junk to fill up a thread's shadow regs with when shadow regs aren't
@@ -295,44 +137,16 @@ void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
 
 void VGA_(load_state) ( arch_thread_t* arch, ThreadId tid )
 {
-   Int i;
-
    VG_(baseBlock)[VGOFF_(ldt)]  = (UInt)arch->ldt;
    VG_(baseBlock)[VGOFF_(tls_ptr)]  = (UInt)arch->tls;
-   VG_(baseBlock)[VGOFF_(m_cs)] = arch->m_cs;
-   VG_(baseBlock)[VGOFF_(m_ss)] = arch->m_ss;
-   VG_(baseBlock)[VGOFF_(m_ds)] = arch->m_ds;
-   VG_(baseBlock)[VGOFF_(m_es)] = arch->m_es;
-   VG_(baseBlock)[VGOFF_(m_fs)] = arch->m_fs;
-   VG_(baseBlock)[VGOFF_(m_gs)] = arch->m_gs;
 
-   VG_(baseBlock)[VGOFF_(m_eax)] = arch->m_eax;
-   VG_(baseBlock)[VGOFF_(m_ebx)] = arch->m_ebx;
-   VG_(baseBlock)[VGOFF_(m_ecx)] = arch->m_ecx;
-   VG_(baseBlock)[VGOFF_(m_edx)] = arch->m_edx;
-   VG_(baseBlock)[VGOFF_(m_esi)] = arch->m_esi;
-   VG_(baseBlock)[VGOFF_(m_edi)] = arch->m_edi;
-   VG_(baseBlock)[VGOFF_(m_ebp)] = arch->m_ebp;
-   VG_(baseBlock)[VGOFF_(m_esp)] = arch->m_esp;
-   VG_(baseBlock)[VGOFF_(m_eflags)] = arch->m_eflags & ~EFlagD;
-   VG_(baseBlock)[VGOFF_(m_dflag)] = extractDflag(arch->m_eflags);
-   VG_(baseBlock)[VGOFF_(m_eip)] = arch->m_eip;
-
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_ssestate) + i] = arch->m_sse[i];
+   *BASEBLOCK_VEX = arch->vex;
 
    if (VG_(needs).shadow_regs) {
-      VG_(baseBlock)[VGOFF_(sh_eax)] = arch->sh_eax;
-      VG_(baseBlock)[VGOFF_(sh_ebx)] = arch->sh_ebx;
-      VG_(baseBlock)[VGOFF_(sh_ecx)] = arch->sh_ecx;
-      VG_(baseBlock)[VGOFF_(sh_edx)] = arch->sh_edx;
-      VG_(baseBlock)[VGOFF_(sh_esi)] = arch->sh_esi;
-      VG_(baseBlock)[VGOFF_(sh_edi)] = arch->sh_edi;
-      VG_(baseBlock)[VGOFF_(sh_ebp)] = arch->sh_ebp;
-      VG_(baseBlock)[VGOFF_(sh_esp)] = arch->sh_esp;
-      VG_(baseBlock)[VGOFF_(sh_eflags)] = arch->sh_eflags;
+      *BASEBLOCK_VEX_SHADOW = arch->vex_shadow;
    } else {
       /* Fields shouldn't be used -- check their values haven't changed. */
+     /* ummm ...
       vg_assert(
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_eax &&
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_ebx &&
@@ -343,6 +157,7 @@ void VGA_(load_state) ( arch_thread_t* arch, ThreadId tid )
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_ebp &&
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_esp &&
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_eflags);
+     */
    }
 }
 
@@ -358,7 +173,7 @@ void VGA_(save_state)( arch_thread_t *arch, ThreadId tid )
       assertion fails. */
    if ((void*)arch->ldt != (void*)VG_(baseBlock)[VGOFF_(ldt)])
       VG_(printf)("VG_(threads)[%d].ldt=%p  VG_(baseBlock)[VGOFF_(ldt)]=%p\n",
-                 tid, (void*)arch->ldt, 
+                 tid, (void*)arch->ldt,
                        (void*)VG_(baseBlock)[VGOFF_(ldt)]);
 
    vg_assert((void*)arch->ldt == (void*)VG_(baseBlock)[VGOFF_(ldt)]);
@@ -371,48 +186,19 @@ void VGA_(save_state)( arch_thread_t *arch, ThreadId tid )
    if ((void*)arch->tls != (void*)VG_(baseBlock)[VGOFF_(tls_ptr)])
       VG_(printf)("VG_(threads)[%d].tls=%p  VG_(baseBlock)[VGOFF_(tls_ptr)]=%p\
 n",
-                 tid, (void*)arch->tls, 
+                 tid, (void*)arch->tls,
                        (void*)VG_(baseBlock)[VGOFF_(tls_ptr)]);
 
-   vg_assert((void*)arch->tls 
+   vg_assert((void*)arch->tls
              == (void*)VG_(baseBlock)[VGOFF_(tls_ptr)]);
 
-   arch->m_cs = VG_(baseBlock)[VGOFF_(m_cs)];
-   arch->m_ss = VG_(baseBlock)[VGOFF_(m_ss)];
-   arch->m_ds = VG_(baseBlock)[VGOFF_(m_ds)];
-   arch->m_es = VG_(baseBlock)[VGOFF_(m_es)];
-   arch->m_fs = VG_(baseBlock)[VGOFF_(m_fs)];
-   arch->m_gs = VG_(baseBlock)[VGOFF_(m_gs)];
-
-   arch->m_eax = VG_(baseBlock)[VGOFF_(m_eax)];
-   arch->m_ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
-   arch->m_ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
-   arch->m_edx = VG_(baseBlock)[VGOFF_(m_edx)];
-   arch->m_esi = VG_(baseBlock)[VGOFF_(m_esi)];
-   arch->m_edi = VG_(baseBlock)[VGOFF_(m_edi)];
-   arch->m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
-   arch->m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   arch->m_eflags 
-      = insertDflag(VG_(baseBlock)[VGOFF_(m_eflags)],
-                    VG_(baseBlock)[VGOFF_(m_dflag)]);
-   arch->m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
-
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      arch->m_sse[i] 
-         = VG_(baseBlock)[VGOFF_(m_ssestate) + i];
+   arch->vex = *BASEBLOCK_VEX;
 
    if (VG_(needs).shadow_regs) {
-      arch->sh_eax = VG_(baseBlock)[VGOFF_(sh_eax)];
-      arch->sh_ebx = VG_(baseBlock)[VGOFF_(sh_ebx)];
-      arch->sh_ecx = VG_(baseBlock)[VGOFF_(sh_ecx)];
-      arch->sh_edx = VG_(baseBlock)[VGOFF_(sh_edx)];
-      arch->sh_esi = VG_(baseBlock)[VGOFF_(sh_esi)];
-      arch->sh_edi = VG_(baseBlock)[VGOFF_(sh_edi)];
-      arch->sh_ebp = VG_(baseBlock)[VGOFF_(sh_ebp)];
-      arch->sh_esp = VG_(baseBlock)[VGOFF_(sh_esp)];
-      arch->sh_eflags = VG_(baseBlock)[VGOFF_(sh_eflags)];
+      arch->vex_shadow = *BASEBLOCK_VEX_SHADOW;
    } else {
       /* Fill with recognisable junk */
+      /* can't easily do this ...
       arch->sh_eax =
       arch->sh_ebx =
       arch->sh_ecx =
@@ -420,33 +206,91 @@ n",
       arch->sh_esi =
       arch->sh_edi =
       arch->sh_ebp =
-      arch->sh_esp = 
+      arch->sh_esp =
       arch->sh_eflags = VG_UNUSED_SHADOW_REG_VALUE;
+      */
    }
    /* Fill it up with junk. */
    VG_(baseBlock)[VGOFF_(ldt)] = junk;
    VG_(baseBlock)[VGOFF_(tls_ptr)] = junk;
-   VG_(baseBlock)[VGOFF_(m_cs)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ss)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ds)] = junk;
-   VG_(baseBlock)[VGOFF_(m_es)] = junk;
-   VG_(baseBlock)[VGOFF_(m_fs)] = junk;
-   VG_(baseBlock)[VGOFF_(m_gs)] = junk;
 
-   VG_(baseBlock)[VGOFF_(m_eax)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ebx)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ecx)] = junk;
-   VG_(baseBlock)[VGOFF_(m_edx)] = junk;
-   VG_(baseBlock)[VGOFF_(m_esi)] = junk;
-   VG_(baseBlock)[VGOFF_(m_edi)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ebp)] = junk;
-   VG_(baseBlock)[VGOFF_(m_esp)] = junk;
-   VG_(baseBlock)[VGOFF_(m_eflags)] = junk;
-   VG_(baseBlock)[VGOFF_(m_eip)] = junk;
-
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_ssestate) + i] = junk;
+   for (i = 0; i < (3 + sizeof(VexGuestX86State)) / 4; i++)
+      VG_(baseBlock)[VGOFF_(m_vex) + i] = junk;
 }
+
+/*------------------------------------------------------------*/
+/*--- Register access stuff                                ---*/
+/*------------------------------------------------------------*/
+
+void VGA_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg, UInt val )
+{
+   ThreadState* tst;
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = & VG_(threads)[tid];
+   if (0)
+   VG_(printf)("set_thread_shadow_archreg(%d, %d, 0x%x)\n",
+               tid, archreg, val);
+   switch (archreg) {
+      case R_EAX: tst->arch.vex_shadow.guest_EAX = val; break;
+      case R_ECX: tst->arch.vex_shadow.guest_ECX = val; break;
+      case R_EDX: tst->arch.vex_shadow.guest_EDX = val; break;
+      case R_EBX: tst->arch.vex_shadow.guest_EBX = val; break;
+      case R_ESP: tst->arch.vex_shadow.guest_ESP = val; break;
+      case R_EBP: tst->arch.vex_shadow.guest_EBP = val; break;
+      case R_ESI: tst->arch.vex_shadow.guest_ESI = val; break;
+      case R_EDI: tst->arch.vex_shadow.guest_EDI = val; break;
+      default:    VG_(core_panic)( "set_thread_shadow_archreg");
+   }
+}
+
+UInt VGA_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg )
+{
+   ThreadState* tst;
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = & VG_(threads)[tid];
+
+   VG_(printf)("get_thread_shadow_archreg(%d, %d)\n",
+               tid, archreg);
+
+   switch (archreg) {
+      case R_EAX: return tst->arch.vex_shadow.guest_EAX;
+      case R_ECX: return tst->arch.vex_shadow.guest_ECX;
+      case R_EDX: return tst->arch.vex_shadow.guest_EDX;
+      case R_EBX: return tst->arch.vex_shadow.guest_EBX;
+      case R_ESP: return tst->arch.vex_shadow.guest_ESP;
+      case R_EBP: return tst->arch.vex_shadow.guest_EBP;
+      case R_ESI: return tst->arch.vex_shadow.guest_ESI;
+      case R_EDI: return tst->arch.vex_shadow.guest_EDI;
+      default:    VG_(core_panic)( "get_thread_shadow_archreg");
+   }
+}
+
+/* Return the baseBlock index for the specified shadow register */
+static Int shadow_reg_index ( Int arch )
+{
+   VG_(printf)("shadow_reg_index(%d)\n",
+               arch);
+   switch (arch) {
+      case R_EAX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EAX)/4;
+      case R_ECX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_ECX)/4;
+      case R_EDX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EDX)/4;
+      case R_EBX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EBX)/4;
+      case R_ESP: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_ESP)/4;
+      case R_EBP: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EBP)/4;
+      case R_ESI: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_ESI)/4;
+      case R_EDI: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EDI)/4;
+      default:    VG_(core_panic)( "shadow_reg_index");
+   }
+}
+
+/* Accessing shadow arch. registers */
+UInt VGA_(get_shadow_archreg) ( UInt archreg )
+{
+   return VG_(baseBlock)[ shadow_reg_index(archreg) ];
+}
+
 
 /*------------------------------------------------------------*/
 /*--- Thread stuff                                         ---*/
@@ -493,15 +337,15 @@ void VGA_(setup_child) ( arch_thread_t *regs, arch_thread_t *parent_regs )
 void VGA_(set_arg_and_bogus_ret)( ThreadId tid, UWord arg, Addr ret )
 {
    /* Push the arg, and mark it as readable. */
-   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.m_esp - sizeof(UWord));
-   * (UInt*)(VG_(threads)[tid].arch.m_esp) = arg;
-   VG_TRACK( post_mem_write, VG_(threads)[tid].arch.m_esp, sizeof(void*) );
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.vex.guest_ESP - sizeof(UWord));
+   * (UInt*)(VG_(threads)[tid].arch.vex.guest_ESP) = arg;
+   VG_TRACK( post_mem_write, VG_(threads)[tid].arch.vex.guest_ESP, sizeof(void*) );
 
    /* Don't mark the pushed return address as readable; any attempt to read
       this is an internal valgrind bug since thread_exit_wrapper() should not
       return. */
-   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.m_esp - sizeof(UWord));
-   * (UInt*)(VG_(threads)[tid].arch.m_esp) = ret;
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.vex.guest_ESP - sizeof(UWord));
+   * (UInt*)(VG_(threads)[tid].arch.vex.guest_ESP) = ret;
 }
 
 void VGA_(thread_initial_stack)(ThreadId tid, UWord arg, Addr ret)
@@ -530,33 +374,30 @@ void VGA_(thread_initial_stack)(ThreadId tid, UWord arg, Addr ret)
 
 UInt *VGA_(reg_addr_from_BB)(Int regno)
 {
-   Int r;
    switch (regno) {
-   case R_EAX: r = VGOFF_(m_eax); break;
-   case R_ECX: r = VGOFF_(m_ecx); break;
-   case R_EDX: r = VGOFF_(m_edx); break;
-   case R_EBX: r = VGOFF_(m_ebx); break;
-   case R_ESP: r = VGOFF_(m_esp); break;
-   case R_EBP: r = VGOFF_(m_ebp); break;
-   case R_ESI: r = VGOFF_(m_esi); break;
-   case R_EDI: r = VGOFF_(m_edi); break;
-   default:
-      return NULL;
+   case R_EAX: return &(BASEBLOCK_VEX->guest_EAX);
+   case R_ECX: return &(BASEBLOCK_VEX->guest_ECX);
+   case R_EDX: return &(BASEBLOCK_VEX->guest_EDX);
+   case R_EBX: return &(BASEBLOCK_VEX->guest_EBX);
+   case R_ESP: return &(BASEBLOCK_VEX->guest_ESP);
+   case R_EBP: return &(BASEBLOCK_VEX->guest_EBP);
+   case R_ESI: return &(BASEBLOCK_VEX->guest_ESI);
+   case R_EDI: return &(BASEBLOCK_VEX->guest_EDI);
+   default:    return NULL;
    }
-   return &VG_(baseBlock)[r];
 }
 
 UInt *VGA_(reg_addr_from_tst)(Int regno, arch_thread_t *arch)
 {
    switch (regno) {
-   case R_EAX: return &arch->m_eax;
-   case R_ECX: return &arch->m_ecx;
-   case R_EDX: return &arch->m_edx;
-   case R_EBX: return &arch->m_ebx;
-   case R_ESP: return &arch->m_esp;
-   case R_EBP: return &arch->m_ebp;
-   case R_ESI: return &arch->m_esi;
-   case R_EDI: return &arch->m_edi;
+   case R_EAX: return &arch->vex.guest_EAX;
+   case R_ECX: return &arch->vex.guest_ECX;
+   case R_EDX: return &arch->vex.guest_EDX;
+   case R_EBX: return &arch->vex.guest_EBX;
+   case R_ESP: return &arch->vex.guest_ESP;
+   case R_EBP: return &arch->vex.guest_EBP;
+   case R_ESI: return &arch->vex.guest_ESI;
+   case R_EDI: return &arch->vex.guest_EDI;
    default:    return NULL;
    }
 }
@@ -597,22 +438,22 @@ Int VGA_(ptrace_setregs_from_BB)(Int pid)
 {
    struct vki_user_regs_struct regs;
 
-   regs.cs     = VG_(baseBlock)[VGOFF_(m_cs)];
-   regs.ss     = VG_(baseBlock)[VGOFF_(m_ss)];
-   regs.ds     = VG_(baseBlock)[VGOFF_(m_ds)];
-   regs.es     = VG_(baseBlock)[VGOFF_(m_es)];
-   regs.fs     = VG_(baseBlock)[VGOFF_(m_fs)];
-   regs.gs     = VG_(baseBlock)[VGOFF_(m_gs)];
-   regs.eax    = VG_(baseBlock)[VGOFF_(m_eax)];
-   regs.ebx    = VG_(baseBlock)[VGOFF_(m_ebx)];
-   regs.ecx    = VG_(baseBlock)[VGOFF_(m_ecx)];
-   regs.edx    = VG_(baseBlock)[VGOFF_(m_edx)];
-   regs.esi    = VG_(baseBlock)[VGOFF_(m_esi)];
-   regs.edi    = VG_(baseBlock)[VGOFF_(m_edi)];
-   regs.ebp    = VG_(baseBlock)[VGOFF_(m_ebp)];
-   regs.esp    = VG_(baseBlock)[VGOFF_(m_esp)];
-   regs.eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
-   regs.eip    = VG_(baseBlock)[VGOFF_(m_eip)];
+   regs.cs     = BASEBLOCK_VEX->guest_CS;
+   regs.ss     = BASEBLOCK_VEX->guest_SS;
+   regs.ds     = BASEBLOCK_VEX->guest_DS;
+   regs.es     = BASEBLOCK_VEX->guest_ES;
+   regs.fs     = BASEBLOCK_VEX->guest_FS;
+   regs.gs     = BASEBLOCK_VEX->guest_GS;
+   regs.eax    = BASEBLOCK_VEX->guest_EAX;
+   regs.ebx    = BASEBLOCK_VEX->guest_EBX;
+   regs.ecx    = BASEBLOCK_VEX->guest_ECX;
+   regs.edx    = BASEBLOCK_VEX->guest_EDX;
+   regs.esi    = BASEBLOCK_VEX->guest_ESI;
+   regs.edi    = BASEBLOCK_VEX->guest_EDI;
+   regs.ebp    = BASEBLOCK_VEX->guest_EBP;
+   regs.esp    = BASEBLOCK_VEX->guest_ESP;
+   regs.eflags = LibVEX_GuestX86_get_eflags(BASEBLOCK_VEX);
+   regs.eip    = BASEBLOCK_VEX->guest_EIP;
 
    return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
 }
@@ -621,22 +462,22 @@ Int VGA_(ptrace_setregs_from_tst)(Int pid, arch_thread_t* arch)
 {
    struct vki_user_regs_struct regs;
 
-   regs.cs     = arch->m_cs;
-   regs.ss     = arch->m_ss;
-   regs.ds     = arch->m_ds;
-   regs.es     = arch->m_es;
-   regs.fs     = arch->m_fs;
-   regs.gs     = arch->m_gs;
-   regs.eax    = arch->m_eax;
-   regs.ebx    = arch->m_ebx;
-   regs.ecx    = arch->m_ecx;
-   regs.edx    = arch->m_edx;
-   regs.esi    = arch->m_esi;
-   regs.edi    = arch->m_edi;
-   regs.ebp    = arch->m_ebp;
-   regs.esp    = arch->m_esp;
-   regs.eflags = arch->m_eflags;
-   regs.eip    = arch->m_eip;
+   regs.cs     = arch->vex.guest_CS;
+   regs.ss     = arch->vex.guest_SS;
+   regs.ds     = arch->vex.guest_DS;
+   regs.es     = arch->vex.guest_ES;
+   regs.fs     = arch->vex.guest_FS;
+   regs.gs     = arch->vex.guest_GS;
+   regs.eax    = arch->vex.guest_EAX;
+   regs.ebx    = arch->vex.guest_EBX;
+   regs.ecx    = arch->vex.guest_ECX;
+   regs.edx    = arch->vex.guest_EDX;
+   regs.esi    = arch->vex.guest_ESI;
+   regs.edi    = arch->vex.guest_EDI;
+   regs.ebp    = arch->vex.guest_EBP;
+   regs.esp    = arch->vex.guest_ESP;
+   regs.eflags = LibVEX_GuestX86_get_eflags(&arch->vex);
+   regs.eip    = arch->vex.guest_EIP;
 
    return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
 }

@@ -24,7 +24,7 @@ void,		post_clo_init
 ## always results in the same output, because basic blocks can be
 ## retranslated.  Unless you're doing something really strange...
 ## 'orig_addr' is the address of the first instruction in the block.
-UCodeBlock*,	instrument,	UCodeBlock* cb, Addr orig_addr
+IRBB*,  instrument,  IRBB* bb,  VexGuestLayout* layout,  IRType hWordTy
 
 ## Finish up, print out any results, etc.  `exitcode' is program's exit
 ## code.  The shadow (if the `shadow_regs' need is set) can be found with
@@ -128,17 +128,6 @@ void,	print_debug_usage
 ## from the request are in arg_block[1..].  'ret' is for the return value...
 ## it should probably be filled, if only with 0.
 Bool, handle_client_request, ThreadId tid, UWord* arg_block, UWord* ret
-
-
-## ------------------------------------------------------------------
-## VG_(needs).extends_UCode
-
-## 'X' prefix indicates eXtended UCode.
-Int, get_Xreg_usage, UInstr* u, Tag tag, Int* regs, Bool* isWrites
-void, emit_XUInstr, UInstr* u, RRegSet regs_live_before
-Bool, sane_XUInstr, Bool beforeRA, Bool beforeLiveness, UInstr* u
-Char *, name_XUOpcode, Opcode opc
-void, pp_XUInstr, UInstr* u
 
 
 ## ------------------------------------------------------------------

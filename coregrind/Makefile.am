@@ -82,7 +82,8 @@ stage2_extra= \
 	demangle/libdemangle.a \
 	${VG_PLATFORM}/libplatform.a \
 	${VG_ARCH}/libarch.a \
-	${VG_OS}/libos.a
+	${VG_OS}/libos.a \
+	@VEX_DIR@/libvex.a
 
 ## Test repeated in both arms of the if-then-else because older versions of
 ## automake don't seem to like having += within an if-then-else.

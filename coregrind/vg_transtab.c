@@ -153,7 +153,7 @@ static void for_each_tc(Int sector, void (*fn)(TCEntry *));
 
 
 /*------------------ T-CHAINING HELPERS ------------------*/
-
+#if 0
 static
 void for_each_jumpsite(TCEntry *tce, void (*fn)(Addr))
 {
@@ -201,7 +201,7 @@ void unchain_sector(Int s, Addr base, UInt len)
 
    for_each_tc(s, unchain_tce_for_sector);
 }
-
+#endif
 
 /*------------------ TT HELPERS ------------------*/
 
@@ -354,16 +354,16 @@ void discard_oldest_sector ( void )
    Char msg[100];
    Int s = find_oldest_sector();
    if (s != -1) {
-      Int i;
+     //Int i;
 
       vg_assert(s >= 0 && s < VG_TC_N_SECTORS);
       VG_(sprintf)(msg, "before discard of sector %d (%d bytes)", 
                         s, vg_tc_used[s]);
 
-      for(i = 0; i < VG_TC_N_SECTORS; i++) {
-	 if (i != s && vg_tc[i] != NULL)
-	    unchain_sector(i, (Addr)vg_tc[s], vg_tc_used[s]);
-      }
+      //for(i = 0; i < VG_TC_N_SECTORS; i++) {
+      //	 if (i != s && vg_tc[i] != NULL)
+      //	    unchain_sector(i, (Addr)vg_tc[s], vg_tc_used[s]);
+      //      }
 
       pp_tt_tc_status ( msg );
       overall_out_count += vg_tc_stats_count[s];
@@ -554,8 +554,7 @@ Int VG_(get_bbs_translated) ( void )
    pointer, which is inserted here.
 */
 void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
-                             Addr trans_addr, Int trans_size,
-			     UShort jumps[VG_MAX_JUMPS])
+                             Addr trans_addr, Int trans_size )
 {
    Int i, nBytes, trans_size_aligned;
    TCEntry* tce;
@@ -582,14 +581,11 @@ void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
    tce->orig_addr  = orig_addr;
    tce->orig_size  = (UShort)orig_size;  /* what's the point of storing this? */
    tce->trans_size = (UShort)trans_size_aligned;
-   for (i = 0; i < VG_MAX_JUMPS; i++) {
-      tce->jump_sites[i] = jumps[i];
-   }
    for (i = 0; i < trans_size; i++) {
       tce->payload[i] = ((UChar*)trans_addr)[i];
    }
    
-   unchain_tce(tce);
+   //unchain_tce(tce);
    add_tt_entry(tce);
 
    /* Update stats. */
@@ -637,7 +633,7 @@ void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks 
 {
    Addr     i_start, i_end, o_start, o_end;
    UInt     out_count, out_osize, out_tsize;
-   Int      i, j;
+   Int      i; //, j;
    TCEntry* tce;
 #  ifdef DEBUG_TRANSTAB
    VG_(sanity_check_tt_tc)();
@@ -662,13 +658,13 @@ void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks 
       vg_tt[i].orig_addr = VG_TTE_DELETED;
       tce->orig_addr = VG_TTE_DELETED;
 
-      if (unchain_blocks) {
-         /* make sure no other blocks chain to the one we just discarded */
-         for(j = 0; j < VG_TC_N_SECTORS; j++) {
-            if (vg_tc[j] != NULL)
-               unchain_sector(j, (Addr)tce->payload, tce->trans_size);
-         }
-      }
+      //      if (unchain_blocks) {
+      //         /* make sure no other blocks chain to the one we just discarded */
+      //         for(j = 0; j < VG_TC_N_SECTORS; j++) {
+      //            if (vg_tc[j] != NULL)
+      //               unchain_sector(j, (Addr)tce->payload, tce->trans_size);
+      //         }
+      //      }
 
       overall_out_count ++;
       overall_out_osize += tce->orig_size;

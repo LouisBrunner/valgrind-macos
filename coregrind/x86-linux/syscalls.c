@@ -132,14 +132,14 @@ asm(
 void VGA_(thread_syscall)(Int syscallno, arch_thread_t *arch, 
                           enum PXState *state , enum PXState poststate)
 {
-   do_thread_syscall(syscallno,    // syscall no.
-		     arch->m_ebx,  // arg 1
-		     arch->m_ecx,  // arg 2
-		     arch->m_edx,  // arg 3
-		     arch->m_esi,  // arg 4
-		     arch->m_edi,  // arg 5
-		     arch->m_ebp,  // arg 6
-		     &arch->m_eax, // result
+   do_thread_syscall(syscallno,            // syscall no.
+		     arch->vex.guest_EBX,  // arg 1
+		     arch->vex.guest_ECX,  // arg 2
+		     arch->vex.guest_EDX,  // arg 3
+		     arch->vex.guest_ESI,  // arg 4
+		     arch->vex.guest_EDI,  // arg 5
+		     arch->vex.guest_EBP,  // arg 6
+		     &arch->vex.guest_EAX, // result
 		     state,	   // state to update
 		     poststate);   // state when syscall has finished
 }
@@ -149,7 +149,7 @@ void VGA_(thread_syscall)(Int syscallno, arch_thread_t *arch,
 // Back up to restart a system call.
 void VGA_(restart_syscall)(arch_thread_t *arch)
 {
-   arch->m_eip -= 2;             // sizeof(int $0x80)
+   arch->vex.guest_EIP -= 2;             // sizeof(int $0x80)
 
    /* Make sure our caller is actually sane, and we're really backing
       back over a syscall.
@@ -157,12 +157,12 @@ void VGA_(restart_syscall)(arch_thread_t *arch)
       int $0x80 == CD 80 
    */
    {
-      UChar *p = (UChar *)arch->m_eip;
+      UChar *p = (UChar *)arch->vex.guest_EIP;
       
       if (p[0] != 0xcd || p[1] != 0x80)
          VG_(message)(Vg_DebugMsg,
                       "?! restarting over syscall at %p %02x %02x\n",
-                      arch->m_eip, p[0], p[1]); 
+                      arch->vex.guest_EIP, p[0], p[1]); 
 
       vg_assert(p[0] == 0xcd && p[1] == 0x80);
    }

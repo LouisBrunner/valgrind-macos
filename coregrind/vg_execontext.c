@@ -307,9 +307,9 @@ void get_needed_regs(ThreadId tid, Addr* ip, Addr* fp, Addr* sp,
 {
    if (VG_(is_running_thread)(tid)) {
       /* thread currently in baseblock */
-      *ip                 = VG_(baseBlock)[VGOFF_INSTR_PTR];
-      *fp                 = VG_(baseBlock)[VGOFF_FRAME_PTR];
-      *sp                 = VG_(baseBlock)[VGOFF_STACK_PTR];
+      *ip                 = BASEBLOCK_INSTR_PTR;
+      *fp                 = BASEBLOCK_FRAME_PTR;
+      *sp                 = BASEBLOCK_STACK_PTR;
       *stack_highest_word = VG_(threads)[tid].stack_highest_word;
    } else {
       /* thread in thread table */
@@ -367,7 +367,7 @@ Addr VG_(get_EIP) ( ThreadId tid )
    Addr ret;
 
    if (VG_(is_running_thread)(tid))
-      ret = VG_(baseBlock)[VGOFF_INSTR_PTR];
+      ret = BASEBLOCK_INSTR_PTR;
    else
       ret = ARCH_INSTR_PTR(VG_(threads)[ tid ].arch);
 

@@ -153,7 +153,7 @@ ThreadId VG_(first_matching_thread_stack)
       VG_(baseBlock). */
    if (vg_tid_currently_in_baseBlock != VG_INVALID_THREADID) {
       tid = vg_tid_currently_in_baseBlock;
-      if ( p ( VG_(baseBlock)[VGOFF_STACK_PTR], 
+      if ( p ( BASEBLOCK_STACK_PTR, 
                VG_(threads)[tid].stack_highest_word, d ) )
          return tid;
       else
@@ -321,6 +321,9 @@ static
 UInt run_thread_for_a_while ( ThreadId tid )
 {
    volatile UInt trc = 0;
+   volatile Int dispatch_ctr_SAVED = VG_(dispatch_ctr);
+   volatile Int done_this_time;
+
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
    vg_assert(!scheduler_jmpbuf_valid);
@@ -348,6 +351,12 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(!scheduler_jmpbuf_valid);
 
    save_thread_state ( tid );
+
+   done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 0;
+
+   vg_assert(done_this_time >= 0);
+   VG_(bbs_done) += (ULong)done_this_time;
+
    VGP_POPCC(VgpRun);
    return trc;
 }
@@ -723,7 +732,6 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 {
    ThreadId tid, tid_next;
    UInt     trc;
-   UInt     dispatch_ctr_SAVED;
    Int      done_this_time, n_in_bounded_wait;
    Int	    n_exists, n_waiting_for_reaper;
    Addr     trans_addr;
@@ -843,9 +851,6 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
       */
       VG_(dispatch_ctr) = VG_SCHEDULING_QUANTUM + 1;
 
-      /* ... and remember what we asked for. */
-      dispatch_ctr_SAVED = VG_(dispatch_ctr);
-
       /* paranoia ... */
       vg_assert(VG_(threads)[tid].tid == tid);
 
@@ -885,7 +890,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          if (trc == VG_TRC_INNER_FASTMISS) {
             Addr ip = ARCH_INSTR_PTR(VG_(threads)[tid].arch);
 
-            vg_assert(VG_(dispatch_ctr) > 0);
+            vg_assert(VG_(dispatch_ctr) > 1);
 
             /* Trivial event.  Miss in the fast-cache.  Do a full
                lookup for it. */
@@ -1052,10 +1057,6 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          non-completely-trivial reason. First, update basic-block
          counters. */
 
-      done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr);
-      vg_assert(done_this_time > 0);
-      VG_(bbs_done)    += (ULong)done_this_time;
-
       if (0 && trc != VG_TRC_INNER_FASTMISS)
          VG_(message)(Vg_DebugMsg, "thread %d:   completed %d bbs, trc %d", 
                                    tid, done_this_time, (Int)trc );
@@ -1080,7 +1081,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             /* Timeslice is out.  Let a new thread be scheduled,
                simply by doing nothing, causing us to arrive back at
                Phase 1. */
-            vg_assert(VG_(dispatch_ctr) == 0);
+            vg_assert(VG_(dispatch_ctr) == 1);
             break;
 
          case VG_TRC_UNRESUMABLE_SIGNAL:
@@ -2868,12 +2869,12 @@ void do__get_stack_info ( ThreadId tid, ThreadId which, StackInfo* si )
 
 void VG_(set_return_from_syscall_shadow) ( ThreadId tid, UInt ret_shadow )
 {
-   VG_(set_thread_shadow_archreg)(tid, R_SYSCALL_RET, ret_shadow);
+   VGA_(set_thread_shadow_archreg)(tid, R_SYSCALL_RET, ret_shadow);
 }
 
 UInt VG_(get_exit_status_shadow) ( void )
 {
-   return VG_(get_shadow_archreg)(R_SYSCALL_ARG1);
+   return VGA_(get_shadow_archreg)(R_SYSCALL_ARG1);
 }
 
 void VG_(intercept_libc_freeres_wrapper)(Addr addr)

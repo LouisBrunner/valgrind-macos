@@ -1134,7 +1134,7 @@ static void fill_prpsinfo(const ThreadState *tst, struct vki_elf_prpsinfo *prpsi
    }
 }
 
-static void fill_prstatus(const ThreadState *tst, struct vki_elf_prstatus *prs, const vki_siginfo_t *si)
+static void fill_prstatus(ThreadState *tst, struct vki_elf_prstatus *prs, const vki_siginfo_t *si)
 {
    struct vki_user_regs_struct *regs;
 
@@ -1697,6 +1697,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
    */
 
    if (VG_(clo_trace_signals)) {
+      VG_(message)(Vg_DebugMsg, "");
       VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d",
                    sigNo, info->si_code );
    }
@@ -1731,7 +1732,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
       ThreadId tid = VG_(get_current_or_recent_tid)();
       Addr fault = (Addr)info->_sifields._sigfault._addr;
       Addr esp = VG_(is_running_thread)(tid)
-	       ? VG_(baseBlock)[VGOFF_STACK_PTR]
+	       ? BASEBLOCK_STACK_PTR
                : ARCH_STACK_PTR(VG_(threads)[tid].arch);
       Segment *seg;
 

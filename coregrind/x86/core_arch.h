@@ -34,32 +34,47 @@
 #include "core_arch_asm.h"    // arch-specific asm  stuff
 #include "tool_arch.h"        // arch-specific tool stuff
 
+#include "libvex_guest_x86.h"
+
+
 /* ---------------------------------------------------------------------
    Interesting registers
    ------------------------------------------------------------------ */
 
-// Accessors for the arch_thread_t
-#define ARCH_INSTR_PTR(regs)           ((regs).m_eip)
-#define ARCH_STACK_PTR(regs)           ((regs).m_esp)
-#define ARCH_FRAME_PTR(regs)           ((regs).m_ebp)
+/* Generate a pointer into baseBlock via which we can prod the
+   Vex guest state. */
+#define BASEBLOCK_VEX  \
+   ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))
 
-#define ARCH_CLREQ_ARGS(regs)          ((regs).m_eax)
-#define ARCH_PTHREQ_RET(regs)          ((regs).m_edx)
-#define ARCH_CLREQ_RET(regs)           ((regs).m_edx)
+/* Ditto the Vex shadow guest state. */
+#define BASEBLOCK_VEX_SHADOW  \
+   ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex_shadow)]))
+
+// Accessors for the arch_thread_t
+#define ARCH_INSTR_PTR(regs)           ((regs).vex.guest_EIP)
+#define ARCH_STACK_PTR(regs)           ((regs).vex.guest_ESP)
+#define ARCH_FRAME_PTR(regs)           ((regs).vex.guest_EBP)
+
+#define ARCH_CLREQ_ARGS(regs)          ((regs).vex.guest_EAX)
+#define ARCH_PTHREQ_RET(regs)          ((regs).vex.guest_EDX)
+#define ARCH_CLREQ_RET(regs)           ((regs).vex.guest_EDX)
 
 // Accessors for the baseBlock
+#define R_STACK_PTR                    R_ESP
+#define R_FRAME_PTR                    R_EBP
+
 #define R_CLREQ_RET                    R_EDX
 #define R_PTHREQ_RET                   R_EDX
 
 // Stack frame layout and linkage
 #define FIRST_STACK_FRAME(ebp)         (ebp)
-#define STACK_FRAME_RET(ebp)           (((UWord*)ebp)[1])
-#define STACK_FRAME_NEXT(ebp)          (((UWord*)ebp)[0])
+#define STACK_FRAME_RET(ebp)           (((UInt*)ebp)[1])
+#define STACK_FRAME_NEXT(ebp)          (((UInt*)ebp)[0])
 
-// Offsets of interesting registers
-#define VGOFF_INSTR_PTR                VGOFF_(m_eip)
-#define VGOFF_STACK_PTR                VGOFF_(m_esp)
-#define VGOFF_FRAME_PTR                VGOFF_(m_ebp)
+// Baseblock access to interesting registers
+#define BASEBLOCK_INSTR_PTR            BASEBLOCK_VEX->guest_EIP
+#define BASEBLOCK_STACK_PTR            BASEBLOCK_VEX->guest_ESP
+#define BASEBLOCK_FRAME_PTR            BASEBLOCK_VEX->guest_EBP
 
 // Get stack pointer and frame pointer
 #define ARCH_GET_REAL_STACK_PTR(esp) do {   \
@@ -76,40 +91,12 @@
    -------------------------------------------------- */
 
 /* State of the simulated CPU. */
-extern Int VGOFF_(m_eax);
-extern Int VGOFF_(m_ecx);
-extern Int VGOFF_(m_edx);
-extern Int VGOFF_(m_ebx);
-extern Int VGOFF_(m_esp);
-extern Int VGOFF_(m_ebp);
-extern Int VGOFF_(m_esi);
-extern Int VGOFF_(m_edi);
-extern Int VGOFF_(m_eflags);
-extern Int VGOFF_(m_ssestate);
-extern Int VGOFF_(m_eip);
-
-extern Int VGOFF_(m_dflag);	/* D flag is handled specially */
-
-extern Int VGOFF_(m_cs);
-extern Int VGOFF_(m_ss);
-extern Int VGOFF_(m_ds);
-extern Int VGOFF_(m_es);
-extern Int VGOFF_(m_fs);
-extern Int VGOFF_(m_gs);
+extern Int VGOFF_(m_vex);
+extern Int VGOFF_(m_vex_shadow);
 
 /* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
 extern Int VGOFF_(spillslots);
 
-/* Records the valid bits for the 8 integer regs & flags reg. */
-extern Int VGOFF_(sh_eax);
-extern Int VGOFF_(sh_ecx);
-extern Int VGOFF_(sh_edx);
-extern Int VGOFF_(sh_ebx);
-extern Int VGOFF_(sh_esp);
-extern Int VGOFF_(sh_ebp);
-extern Int VGOFF_(sh_esi);
-extern Int VGOFF_(sh_edi);
-extern Int VGOFF_(sh_eflags);
 
 /* -----------------------------------------------------
    Read-only parts of baseBlock.
@@ -133,61 +120,6 @@ extern Int VGOFF_(helper_undefined_instruction);
 #define VG_ELF_MACHINE        EM_386       
 #define VG_ELF_CLASS          ELFCLASS32
 
-
-/* ---------------------------------------------------------------------
-   Exports of vg_helpers.S
-   ------------------------------------------------------------------ */
-
-/* Mul, div, etc, -- we don't codegen these directly. */
-extern void VG_(helper_idiv_64_32);
-extern void VG_(helper_div_64_32);
-extern void VG_(helper_idiv_32_16);
-extern void VG_(helper_div_32_16);
-extern void VG_(helper_idiv_16_8);
-extern void VG_(helper_div_16_8);
-
-extern void VG_(helper_imul_32_64);
-extern void VG_(helper_mul_32_64);
-extern void VG_(helper_imul_16_32);
-extern void VG_(helper_mul_16_32);
-extern void VG_(helper_imul_8_16);
-extern void VG_(helper_mul_8_16);
-
-extern void VG_(helper_CLD);
-extern void VG_(helper_STD);
-extern void VG_(helper_get_dirflag);
-
-extern void VG_(helper_CLC);
-extern void VG_(helper_STC);
-extern void VG_(helper_CMC);
-
-extern void VG_(helper_shldl);
-extern void VG_(helper_shldw);
-extern void VG_(helper_shrdl);
-extern void VG_(helper_shrdw);
-
-extern void VG_(helper_IN);
-extern void VG_(helper_OUT);
-
-extern void VG_(helper_RDTSC);
-extern void VG_(helper_CPUID);
-
-extern void VG_(helper_bsfw);
-extern void VG_(helper_bsfl);
-extern void VG_(helper_bsrw);
-extern void VG_(helper_bsrl);
-
-extern void VG_(helper_fstsw_AX);
-extern void VG_(helper_SAHF);
-extern void VG_(helper_LAHF);
-extern void VG_(helper_DAS);
-extern void VG_(helper_DAA);
-extern void VG_(helper_AAS);
-extern void VG_(helper_AAA);
-extern void VG_(helper_AAD);
-extern void VG_(helper_AAM);
-
-extern void VG_(helper_cmpxchg8b);
 
 /* ---------------------------------------------------------------------
    LDT type             
@@ -227,21 +159,6 @@ typedef struct _LDT_ENTRY {
    which need to go here to avoid ugly circularities.
    ------------------------------------------------------------------ */
 
-/* How big is the saved SSE/SSE2 state?  Note that this subsumes the
-   FPU state.  On machines without SSE, we just save/restore the FPU
-   state into the first part of this area. */
-/* A general comment about SSE save/restore: It appears that the 7th
-   word (which is the MXCSR) has to be &ed with 0x0000FFBF in order
-   that restoring from it later does not cause a GP fault (which is
-   delivered as a segfault).  I guess this will have to be done
-   any time we do fxsave :-(  7th word means word offset 6 or byte
-   offset 24 from the start address of the save area.
- */
-#define VG_SIZE_OF_SSESTATE 512
-/* ... and in words ... */
-#define VG_SIZE_OF_SSESTATE_W ((VG_SIZE_OF_SSESTATE+3)/4)
-
-
 // Architecture-specific part of a ThreadState
 // XXX: eventually this should be made abstract, ie. the fields not visible
 //      to the core...  then VgLdtEntry can be made non-visible to the core
@@ -255,50 +172,15 @@ typedef struct {
       deallocate this at thread exit. */
    VgLdtEntry* ldt;
 
-
    /* TLS table. This consists of a small number (currently 3) of
       entries from the Global Descriptor Table. */
    VgLdtEntry tls[VKI_GDT_ENTRY_TLS_ENTRIES];
 
-   /* Saved machine context.  Note the FPU state, %EIP and segment
-      registers are not shadowed.
+   /* Saved machine context. */
+   VexGuestX86State vex;
 
-      Although the segment registers are 16 bits long, storage
-      management here and in VG_(baseBlock) is
-      simplified if we pretend they are 32 bits. */
-   UInt m_cs;
-   UInt m_ss;
-   UInt m_ds;
-   UInt m_es;
-   UInt m_fs;
-   UInt m_gs;
-
-   UInt m_eax;
-   UInt m_ebx;
-   UInt m_ecx;
-   UInt m_edx;
-   UInt m_esi;
-   UInt m_edi;
-   UInt m_ebp;
-   UInt m_esp;
-   UInt m_eflags;
-   UInt m_eip;
-
-   /* The SSE/FPU state.  This array does not (necessarily) have the
-      required 16-byte alignment required to get stuff in/out by
-      fxsave/fxrestore.  So we have to do it "by hand".
-   */
-   UInt m_sse[VG_SIZE_OF_SSESTATE_W];
-
-   UInt sh_eax;
-   UInt sh_ebx;
-   UInt sh_ecx;
-   UInt sh_edx;
-   UInt sh_esi;
-   UInt sh_edi;
-   UInt sh_ebp;
-   UInt sh_esp;
-   UInt sh_eflags;
+   /* Saved shadow context. */
+   VexGuestX86State vex_shadow;
 } 
 arch_thread_t;
 
@@ -317,7 +199,7 @@ struct arch_thread_aux {
    ------------------------------------------------------------------ */
 
 // Total number of spill slots available for register allocation.
-#define VG_MAX_SPILLSLOTS     24
+#define VG_MAX_SPILLSLOTS     100
 
 // Valgrind's signal stack size, in words.
 #define VG_SIGSTACK_SIZE_W    10000

@@ -670,7 +670,7 @@ Segment *VG_(next_segment)(Segment *s)
 REGPARM(1)
 void VG_(unknown_SP_update)(Addr new_SP)
 {
-   Addr old_SP = VG_(get_archreg)(R_STACK_PTR);
+   Addr old_SP = BASEBLOCK_STACK_PTR;
    Word delta  = (Word)new_SP - (Word)old_SP;
 
    if (delta < -(VG_HUGE_DELTA) || VG_HUGE_DELTA < delta) {

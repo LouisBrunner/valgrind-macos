@@ -772,6 +772,18 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 #     endif
 
+#     if defined(__NR_lookup_dcookie)
+      case __NR_lookup_dcookie: /* syscall 253 */
+         /* int lookup_dcookie (uint64_t cookie, char *buf, size_t sz); */
+         MAYBE_PRINTF("lookup_dcookie (0x%llx, %p, %d)\n",
+                     arg1 | ((long long) arg2 << 32), arg3, arg4);
+         SYSCALL_TRACK( pre_mem_write, tst, "lookup_dcookie(buf)", arg3, arg4);
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res) && arg3 != (Addr)NULL)
+             VG_TRACK( post_mem_write, arg3, arg4);
+         break;
+#     endif
+
 #     if defined(__NR_truncate64)
       case __NR_truncate64: /* syscall 193 */
          /* int truncate64(const char *path, off64_t length); */

@@ -1911,6 +1911,10 @@ void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips )
 /*--- General purpose redirection.                         ---*/
 /*------------------------------------------------------------*/
 
+/* Set to True for debug printing. */
+static const Bool verbose_redir = False;
+
+
 /* resolved redirections, indexed by from_addr */
 typedef struct _CodeRedirect {
    const Char	*from_lib;	/* library qualifier pattern */
@@ -1985,7 +1989,6 @@ static Bool match_lib(const Char *pattern, const SegInfo *si)
 static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
 {
    Bool resolved;
-   static const Bool verbose = False;
 
    vg_assert(si != NULL);
    vg_assert(si->seg != NULL);
@@ -1996,8 +1999,8 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
 
    resolved = (redir->from_addr != 0) && (redir->to_addr != 0);
 
-   if (verbose)
-      VG_(printf)("trying to resolve %s:%s / %s:%s against %s:%s\n",
+   if (0 && verbose_redir)
+      VG_(printf)("   consider FROM binding %s:%s -> %s:%s in %s(%s)\n",
 		  redir->from_lib, redir->from_sym,
 		  redir->to_lib, redir->to_sym,
 		  si->filename, si->soname);
@@ -2009,9 +2012,9 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
 
       if (match_lib(redir->from_lib, si)) {
 	 redir->from_addr = reverse_search_one_symtab(si, redir->from_sym);
-	 if (verbose)
-	    VG_(printf)("match lib %s passed; from_addr=%p\n", 
-			redir->from_lib, redir->from_addr);
+	 if (verbose_redir && redir->from_addr != 0)
+	    VG_(printf)("   bind FROM: %p = %s:%s\n", 
+                        redir->from_addr,redir->from_lib, redir->from_sym );
       }
    }
 
@@ -2020,24 +2023,25 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
 
       if (match_lib(redir->to_lib, si)) {
 	 redir->to_addr = reverse_search_one_symtab(si, redir->to_sym);
-	 if (verbose)
-	    VG_(printf)("match lib %s passed; to_addr=%p\n", 
-			redir->to_lib, redir->to_addr);
+	 if (verbose_redir && redir->to_addr != 0)
+	    VG_(printf)("   bind   TO: %p = %s:%s\n", 
+                        redir->to_addr,redir->to_lib, redir->to_sym );
+
       }
    }
 
    resolved = (redir->from_addr != 0) && (redir->to_addr != 0);
 
-   if (verbose)
+   if (0 && verbose_redir)
       VG_(printf)("resolve_redir: %s:%s from=%p %s:%s to=%p\n",
 		  redir->from_lib, redir->from_sym, redir->from_addr, 
 		  redir->to_lib, redir->to_sym, redir->to_addr);
 
    if (resolved) {
-      if (VG_(clo_verbosity) > 2 || verbose) {
-	 VG_(message)(Vg_DebugMsg, "redir resolved (%s:%s=%p -> ",
+      if (VG_(clo_verbosity) > 2 || verbose_redir) {
+	 VG_(message)(Vg_DebugMsg, "  redir resolved (%s:%s=%p -> ",
 		      redir->from_lib, redir->from_sym, redir->from_addr);
-	 VG_(message)(Vg_DebugMsg, "                %s:%s=%p)",
+	 VG_(message)(Vg_DebugMsg, "                  %s:%s=%p)",
 		      redir->to_lib, redir->to_sym, redir->to_addr);
       }
       
@@ -2059,6 +2063,10 @@ static void resolve_seg_redirs(SegInfo *si)
 {
    CodeRedirect **prevp = &unresolved_redir;
    CodeRedirect *redir, *next;
+
+   if (verbose_redir)
+      VG_(printf)("Considering redirs to/from %s(soname=%s)\n",
+                  si->filename, si->soname);
 
    /* visit each unresolved redir - if it becomes resolved, then
       remove it from the unresolved list */
@@ -2161,6 +2169,7 @@ void VG_(setup_code_redirect_table) ( void )
 		      "REPLACING libc(%s) with libpthread(%s)",
 		      redirects[i].from, redirects[i].to);
    }
+
 }
 
 /*------------------------------------------------------------*/

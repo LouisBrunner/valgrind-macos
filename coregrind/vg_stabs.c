@@ -101,7 +101,7 @@ typedef struct _StabTypeTab {
    }		*headerhash[HEADER_HASHSZ];
 } StabTypeTab;
 
-static const Bool stabs_debug = True;
+static const Bool stabs_debug = False;
 
 static UInt header_hash(Char *filename, UInt instance)
 {

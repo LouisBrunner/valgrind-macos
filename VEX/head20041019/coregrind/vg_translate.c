@@ -1386,7 +1386,7 @@ Bool uInstrMentionsTempReg ( UInstr* u, Int tempreg )
 
 /* Vex dumps the final code in here.  Then we can copy it off
    wherever we like. */
-#define N_TMPBUF 5000
+#define N_TMPBUF 10000
 static UChar tmpbuf[N_TMPBUF];
 
 /* Function pointers we must supply to LibVEX in order that it

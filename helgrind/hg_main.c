@@ -734,7 +734,6 @@ static void make_readable ( Addr a, UInt len )
 }
 
 
-// SSS: change name
 /* Block-copy states (needed for implementing realloc()). */
 static void copy_address_range_state(Addr src, Addr dst, UInt len)
 {

@@ -296,7 +296,8 @@ sub test_one_dir($$)
 
     chdir($dir) or die "Could not change into $dir\n";
 
-    my $full_dir = "$prev_dirs/$dir";
+    # Nb: Don't prepend a '/' to the base directory
+    my $full_dir = $prev_dirs . ($prev_dirs eq "" ? "" : "/") . $dir;
     my $dashes = "-" x (50 - length $full_dir);
 
     my @fs = glob "*";
@@ -349,7 +350,7 @@ if ( exists $ENV{VALGRIND_OPTS} ) {
 my @fs = process_command_line();
 foreach my $f (@fs) {
     if (-d $f) {
-        test_one_dir($f, ".");
+        test_one_dir($f, "");
     } else { 
         # Allow the .vgtest suffix to be given or omitted
         if ($f =~ /.vgtest$/ && -r $f) {

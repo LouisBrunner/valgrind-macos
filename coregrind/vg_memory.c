@@ -124,8 +124,6 @@ static Bool remove_if_exe_segment_from_list( Addr a, UInt len )
  */
 void VG_(new_exe_segment) ( Addr a, UInt len )
 {
-   // SSS: only bother if size != 0?  Does that happen? (probably can)
-
    add_exe_segment_to_list( a, len );
    VG_(maybe_read_symbols)();
 }

@@ -144,6 +144,7 @@ typedef enum
    { Vge_VirginInit, Vge_NonVirginInit, Vge_SegmentInit, Vge_Error } 
    VgeInitStatus;
 
+
 /* Should add up to 32 to fit in one word */
 #define OTHER_BITS      30
 #define STATE_BITS      2
@@ -163,6 +164,20 @@ typedef enum
 
 /* Number of entries must fit in STATE_BITS bits */
 typedef enum { Vge_Virgin, Vge_Excl, Vge_Shar, Vge_SharMod } pth_state;
+
+static inline const Char *pp_state(pth_state st)
+{
+   const Char *ret;
+
+   switch(st) {
+   case Vge_Virgin:	ret = "virgin"; break;
+   case Vge_Excl:	ret = "exclusive"; break;
+   case Vge_Shar:	ret = "shared RO"; break;
+   case Vge_SharMod:	ret = "shared RW"; break;
+   default:		ret = "???";
+   }
+   return ret;
+}
 
 typedef
    struct {
@@ -198,15 +213,45 @@ static const shadow_word error_sword = SW(Vge_Excl, TLSP_INDICATING_ALL);
    } while(0)
 
 
-/* Parallel map which contains execution contexts when words were last
-   accessed (if required) */
+/* Parallel map which contains execution contexts when words last
+  changed state (if required) */
 
-typedef union EC_EIP {
-   ExeContext *ec;
-   Addr eip;
+typedef struct EC_EIP {
+   union u_ec_eip {
+      Addr		eip;
+      ExeContext	*ec;
+   };
+
+   UInt			state:STATE_BITS;
+   UInt			tls:OTHER_BITS;		/* packed TLS */
 } EC_EIP;
 
-#define NULL_EC_EIP	((EC_EIP) { .ec = NULL })
+#define NULL_EC_EIP	((EC_EIP){ { 0 }, 0, 0})
+
+#define EIP(eip, prev, tls) ((EC_EIP) { (union u_ec_eip)(eip), (prev).state, packTLS(tls) })
+#define EC(ec, prev, tls)   ((EC_EIP) { (union u_ec_eip)(ec), (prev).state, packTLS(tls) })
+
+static inline UInt packEC(ExeContext *ec)
+{
+   SK_ASSERT(((UInt)ec & ((1 << STATE_BITS)-1)) == 0);
+   return ((UInt)ec) >> STATE_BITS;
+}
+
+static inline ExeContext *unpackEC(UInt i)
+{
+   return (ExeContext *)(i << STATE_BITS);
+}
+
+/* Lose 2 LSB of eip */
+static inline UInt packEIP(Addr eip)
+{
+   return ((UInt)eip) >> STATE_BITS;
+}
+
+static inline Addr unpackEIP(UInt i)
+{
+   return (Addr)(i << STATE_BITS);
+}
 
 typedef struct {
    EC_EIP execontext[ESEC_MAP_WORDS];
@@ -231,7 +276,7 @@ static inline EC_EIP getExeContext(Addr a)
 {
    UInt idx = (a >> 16) & 0xffff;
    UInt off = (a >>  2) & 0x3fff;
-   EC_EIP ec = { .ec = NULL };
+   EC_EIP ec = NULL_EC_EIP;
 
    if (execontext_map[idx] != NULL)
       ec = execontext_map[idx]->execontext[off];
@@ -2274,7 +2319,7 @@ static void record_mutex_error(ThreadId tid, Mutex *mutex,
    clear_HelgrindError(&err_extra);
    err_extra.addrinfo.akind = Undescribed;
    err_extra.mutex = mutex;
-   err_extra.lasttouched = (EC_EIP){ .ec = ec };
+   err_extra.lasttouched = EC(ec, virgin_sword, thread_seg[tid]);
    err_extra.lasttid = tid;
 
    VG_(maybe_record_error)(VG_(get_ThreadState)(tid), MutexErr, 
@@ -2293,7 +2338,7 @@ static void record_lockgraph_error(ThreadId tid, Mutex *mutex,
    err_extra.addrinfo.akind = Undescribed;
    err_extra.mutex = mutex;
    
-   err_extra.lasttouched = (EC_EIP) { .ec = mutex->location };
+   err_extra.lasttouched = EC(mutex->location, virgin_sword, 0);
    err_extra.held_lockset = lockset_holding;
    err_extra.prev_lockset = lockset_prev;
    
@@ -2453,7 +2498,10 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 	 UInt line;
 	 Addr eip = extra->lasttouched.eip;
 	 
-	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state", err->addr);
+	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state from %s by thread %u",
+		      err->addr,
+		      pp_state(extra->lasttouched.state),
+		      unpackTLS(extra->lasttouched.tls)->tid);
 	 
 	 if (VG_(get_filename_linenum)(eip, file, sizeof(file), &line)) {
 	    VG_(message)(Vg_UserMsg, "   at %p: %y (%s:%u)",
@@ -2465,7 +2513,10 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 	    VG_(message)(Vg_UserMsg, "   at %p: %y", eip, eip);
 	 }
       } else if (clo_execontext == EC_All && extra->lasttouched.ec != NULL) {
-	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state", err->addr);
+	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state from %s in tid %u",
+		      err->addr,
+		      pp_state(extra->lasttouched.state),
+		      unpackTLS(extra->lasttouched.tls)->tid);
 	 VG_(pp_ExeContext)(extra->lasttouched.ec);
       }
 
@@ -2754,9 +2805,9 @@ static void eraser_mem_read_word(Addr a, ThreadId tid, ThreadState *tst)
       EC_EIP eceip;
 
       if (clo_execontext == EC_Some)
-	 eceip.eip = VG_(get_EIP)(tst);
+	 eceip = EIP(VG_(get_EIP)(tst), prevstate, tls);
       else
-	 eceip.ec = VG_(get_ExeContext)(tst);
+	 eceip = EC(VG_(get_ExeContext)(tst), prevstate, tls);
       setExeContext(a, eceip);
    }
 }
@@ -2866,9 +2917,9 @@ static void eraser_mem_write_word(Addr a, ThreadId tid, ThreadState *tst)
       EC_EIP eceip;
 
       if (clo_execontext == EC_Some)
-	 eceip.eip = VG_(get_EIP)(tst);
+	 eceip = EIP(VG_(get_EIP)(tst), prevstate, tls);
       else
-	 eceip.ec = VG_(get_ExeContext)(tst);
+	 eceip = EC(VG_(get_ExeContext)(tst), prevstate, tls);
       setExeContext(a, eceip);
    }
 }

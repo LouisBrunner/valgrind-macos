@@ -2397,7 +2397,8 @@ Int VG_(setup_code_redirect_table) ( void )
    si_libc = si_pth = NULL;
 
    for (si = segInfo; si != NULL; si = si->next) {
-      if (VG_(strstr)(si->filename, "/libc-2.3.2.so")
+      if (VG_(strstr)(si->filename, "/libc-2.3.1.so")
+          || VG_(strstr)(si->filename, "/libc-2.3.2.so")
           || VG_(strstr)(si->filename, "/libc.so"))
          si_libc = si;
       if (VG_(strstr)(si->filename, "/libpthread.so"))

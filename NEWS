@@ -14,12 +14,14 @@ Fixes some minor problems in 20030716.
 
 - Install headers needed to compile new skins.
 
-- Remove leading spaces and
-  colon created by this mechanism in the LD_LIBRARY_PATH / LD_PRELOAD
+- Remove leading spaces and colon in the LD_LIBRARY_PATH / LD_PRELOAD
   passed to non-traced children.
 
 - Fix file descriptor leak in valgrind-listener.
 
+- Fix longstanding bug in which the allocation point of a 
+  block resized by realloc was not correctly set.  This may
+  have caused confusing error messages.
 
 
 Snapshot 20030716 (16 July 2003)

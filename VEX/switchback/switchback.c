@@ -503,6 +503,19 @@ HWord find_translation ( Addr64 guest_addr )
       if (0) printf("none\n");
       return 0; /* not found */
    }
+
+   /* Move this translation one step towards the front, so finding it
+      next time round is just that little bit cheaper. */
+   if (i > 2) {
+      VexGuestExtents tmpE = trans_table[i-1];
+      ULong*          tmpP = trans_tableP[i-1];
+      trans_table[i-1]  = trans_table[i];
+      trans_tableP[i-1] = trans_tableP[i];
+      trans_table[i] = tmpE;
+      trans_tableP[i] = tmpP;
+      i--;
+   }
+
    res = (HWord)trans_tableP[i];
    if (0) printf("%p\n", (void*)res);
    return res;

@@ -549,6 +549,13 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
          SIMPLE_RETURN(
             (UInt)VG_(client_memalign) ( tst, arg[1], arg[2] )
          );
+
+      /* These are heavily used. */
+      case VG_USERREQ__PTHREAD_GET_THREADID:
+         SIMPLE_RETURN(tid);
+      case VG_USERREQ__RUNNING_ON_VALGRIND:
+         SIMPLE_RETURN(1);
+
       default:
          /* Too hard; wimp out. */
          return False;
@@ -1742,13 +1749,6 @@ void do_nontrivial_clientreq ( ThreadId tid )
       case VG_USERREQ__PTHREAD_JOIN:
          do_pthread_join( tid, arg[1], (void**)(arg[2]) );
          break;
-
-      /* Sigh ... this probably will cause huge numbers of major
-         (expensive) scheduling events, for no real reason.
-         Perhaps should be classified as a trivial-request. */
-      case VG_USERREQ__PTHREAD_GET_THREADID:
-         vg_threads[tid].m_edx = tid;
-	 break;
 
       case VG_USERREQ__PTHREAD_MUTEX_INIT:
          do_pthread_mutex_init( tid, 

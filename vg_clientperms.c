@@ -372,8 +372,12 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          vg_add_client_stack_block ( tst, arg[1], arg[2] );
          return 0;
 
+      /* Is handled by the scheduler as a trivial request, for
+         performance reasons. */
+      /*
       case VG_USERREQ__RUNNING_ON_VALGRIND:
          return 1;
+      */
 
       case VG_USERREQ__DO_LEAK_CHECK:
          if (!VG_(clo_instrument))

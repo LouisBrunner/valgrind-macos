@@ -598,8 +598,7 @@ static Bool is_valid_addr(Addr a)
    static const Bool debug = False;
    volatile Bool ret = False;
 
-   if ((a > VKI_PAGE_SIZE) &&
-       !test_visited(a, &faulted)) {
+   if ((a > VKI_PAGE_SIZE) && !test_visited(a, &faulted)) {
       if (!LAZYSIG)
 	 setup_signals();
    

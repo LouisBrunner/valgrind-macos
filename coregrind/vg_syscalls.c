@@ -4075,8 +4075,8 @@ PRE(mmap2)
    //  - all 6 args are passed in regs, rather than in a memory-block.
    //  - the file offset is specified in pagesize units rather than bytes,
    //    so that it can be used for files bigger than 2^32 bytes.
-   /* void* mmap(void *start, size_t length, int prot, 
-      int flags, int fd, off_t offset); 
+   /* void* mmap2(void *start, size_t length, int prot, 
+                  int flags, int fd, off_t offset); 
    */
    MAYBE_PRINTF("mmap2 ( %p, %llu, %d, %d, %d, %d )\n",
 		arg1, (ULong)arg2, arg3, arg4, arg5, arg6 );

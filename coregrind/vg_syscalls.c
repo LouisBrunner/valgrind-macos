@@ -2325,22 +2325,33 @@ POST(getdents64)
       POST_MEM_WRITE( arg2, res );
 }
 
-PRE(getgroups)
+PREx(sys_getgroups16, 0)
 {
-   /* int getgroups(int size, gid_t list[]); */
+   PRINT("sys_getgroups16 ( %d, %p )", arg1, arg2);
+   PRE_REG_READ2(long, "getgroups16", int, size, vki_old_gid_t *, list);
+   if (arg1 > 0)
+      PRE_MEM_WRITE( "getgroups16(list)", arg2, arg1 * sizeof(vki_old_gid_t) );
+}
+
+POSTx(sys_getgroups16)
+{
+   if (arg1 > 0 && res > 0)
+      POST_MEM_WRITE( arg2, res * sizeof(vki_old_gid_t) );
+}
+
+PREx(sys_getgroups, 0)
+{
    PRINT("getgroups ( %d, %p )", arg1, arg2);
+   PRE_REG_READ2(long, "getgroups", int, size, vki_gid_t *, list);
    if (arg1 > 0)
       PRE_MEM_WRITE( "getgroups(list)", arg2, arg1 * sizeof(vki_gid_t) );
 }
 
-POST(getgroups)
+POSTx(sys_getgroups)
 {
    if (arg1 > 0 && res > 0)
       POST_MEM_WRITE( arg2, res * sizeof(vki_gid_t) );
 }
-
-PREALIAS(getgroups32, getgroups);
-POSTALIAS(getgroups32, getgroups);
 
 PRE(getcwd)
 {
@@ -2548,21 +2559,34 @@ POST(getrusage)
       VG_TRACK( post_mem_write,arg2, sizeof(struct vki_rusage) );
 }
 
-PRE(gettimeofday)
+PREx(sys_gettimeofday, 0)
 {
-   /* int gettimeofday(struct timeval *tv, struct timezone *tz); */
-   PRINT("gettimeofday ( %p, %p )",arg1,arg2);
+   PRINT("sys_gettimeofday ( %p, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "gettimeofday",
+                 struct timeval *, tv, struct timezone *, tz);
    PRE_MEM_WRITE( "gettimeofday(tv)", arg1, sizeof(struct vki_timeval) );
    if (arg2 != 0)
       PRE_MEM_WRITE( "gettimeofday(tz)", arg2, sizeof(struct vki_timezone) );
 }
 
-POST(gettimeofday)
+POSTx(sys_gettimeofday)
 {
    if (res == 0) {
       POST_MEM_WRITE( arg1, sizeof(struct vki_timeval) );
       if (arg2 != 0)
 	 POST_MEM_WRITE( arg2, sizeof(struct vki_timezone) );
+   }
+}
+
+PREx(sys_settimeofday, 0)
+{
+   PRINT("sys_settimeofday ( %p, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "settimeofday",
+                 struct timeval *, tv, struct timezone *, tz);
+   PRE_MEM_READ( "settimeofday(tv)", arg1, sizeof(struct vki_timeval) );
+   if (arg2 != 0) {
+      PRE_MEM_READ( "settimeofday(tz)", arg2, sizeof(struct vki_timezone) );
+      /* maybe should warn if tz->tz_dsttime is non-zero? */
    }
 }
 
@@ -4883,23 +4907,27 @@ PREx(sys_setgid, 0)
    PRE_REG_READ1(long, "setgid", vki_gid_t, gid);
 }
 
-PREALIAS(setgid32, setgid);
-
 PREx(sys_setsid, 0)
 {
    PRINT("sys_setsid ( )");
    PRE_REG_READ0(long, "setsid");
 }
 
-PRE(setgroups)
+PREx(sys_setgroups16, 0)
 {
-   /* int setgroups(size_t size, const gid_t *list); */
+   PRINT("sys_setgroups16 ( %llu, %p )", (ULong)arg1, arg2);
+   PRE_REG_READ2(long, "setgroups16", int, size, vki_old_gid_t *, list);
+   if (arg1 > 0)
+      PRE_MEM_READ( "setgroups16(list)", arg2, arg1 * sizeof(vki_old_gid_t) );
+}
+
+PREx(sys_setgroups, 0)
+{
    PRINT("setgroups ( %llu, %p )", (ULong)arg1, arg2);
+   PRE_REG_READ2(long, "setgroups", int, size, vki_gid_t *, list);
    if (arg1 > 0)
       PRE_MEM_READ( "setgroups(list)", arg2, arg1 * sizeof(vki_gid_t) );
 }
-
-PREALIAS(setgroups32, setgroups);
 
 PREx(sys_setpgid, 0)
 {
@@ -4935,8 +4963,6 @@ PREx(sys_setreuid, 0)
    PRINT("sys_setreuid ( 0x%x, 0x%x )", arg1, arg2);
    PRE_REG_READ2(long, "setreuid", vki_uid_t, ruid, vki_uid_t, euid);
 }
-
-PREALIAS(setreuid32, setreuid);
 
 PREx(sys_setrlimit, 0)
 {
@@ -4975,17 +5001,6 @@ PREx(sys_setrlimit, 0)
          VG_(client_rlimit_stack) = *(struct vki_rlimit *)arg2;
          set_result( 0 );
       }
-   }
-}
-
-PRE(settimeofday)
-{
-   /* int settimeofday(const struct timeval *tv, const struct timezone *tz); */
-   PRINT("settimeofday ( %p, %p )",arg1,arg2);
-   PRE_MEM_READ( "settimeofday(tv)", arg1, sizeof(struct vki_timeval) );
-   if (arg2 != 0) {
-      PRE_MEM_READ( "settimeofday(tz)", arg2, sizeof(struct vki_timezone) );
-      /* maybe should warn if tz->tz_dsttime is non-zero? */
    }
 }
 
@@ -5751,9 +5766,9 @@ PREx(sys_sigaction, SIG_SIM)
                  int, signum, const struct old_sigaction *, act,
                  struct old_sigaction *, oldact)
    if (arg2 != (UWord)NULL)
-      PRE_MEM_READ( "sigaction(act)", arg2, sizeof(struct vki_sigaction));
+      PRE_MEM_READ( "sigaction(act)", arg2, sizeof(struct vki_old_sigaction));
    if (arg3 != (UWord)NULL)
-      PRE_MEM_WRITE( "sigaction(oldact)", arg3, sizeof(struct vki_sigaction));
+      PRE_MEM_WRITE( "sigaction(oldact)", arg3, sizeof(struct vki_old_sigaction));
 
    if (SIGNAL_SIMULATION)
       VG_(do_sys_sigaction)(tid);
@@ -5762,11 +5777,33 @@ PREx(sys_sigaction, SIG_SIM)
 POSTx(sys_sigaction)
 {
    if (res == 0 && arg3 != (UWord)NULL)
-      POST_MEM_WRITE( arg3, sizeof(struct vki_sigaction));
+      POST_MEM_WRITE( arg3, sizeof(struct vki_old_sigaction));
 }
 
-PREALIASx(rt_sigaction, sys_sigaction);
-POSTALIASx(rt_sigaction, sys_sigaction);
+// XXX: x86-specific
+PREx(sys_rt_sigaction, SIG_SIM)
+{
+   PRINT("sys_rt_sigaction ( %d, %p, %p, %d )", arg1,arg2,arg3,arg4);
+   PRE_REG_READ4(long, "rt_sigaction",
+                 int, signum, const struct sigaction *, act,
+                 struct sigaction *, oldact,
+                 vki_size_t, sigsetsize);
+
+   if (arg2 != (UWord)NULL)
+      PRE_MEM_READ( "rt_sigaction(act)", arg2, sizeof(struct vki_sigaction));
+   if (arg3 != (UWord)NULL)
+      PRE_MEM_WRITE( "rt_sigaction(oldact)", arg3, sizeof(struct vki_sigaction));
+
+   // XXX: hmm... doesn't seem quite right...
+   if (SIGNAL_SIMULATION)
+      VG_(do_sys_sigaction)(tid);
+}
+
+POSTx(sys_rt_sigaction)
+{
+   if (res == 0 && arg3 != (UWord)NULL)
+      POST_MEM_WRITE( arg3, sizeof(struct vki_sigaction));
+}
 
 PRE(sigprocmask)
 {
@@ -6302,11 +6339,11 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_setrlimit,        sys_setrlimit),       // 75 * (SVr4,BSD4.3)
    SYSXY(__NR_getrlimit,        sys_old_getrlimit),   // 76 * (SVr4,BSD4.3)
    SYSBA(__NR_getrusage,        sys_getrusage, 0),    // 77 *
-   SYSBA(__NR_gettimeofday,     sys_gettimeofday, 0), // 78 *
-   SYSB_(__NR_settimeofday,     sys_settimeofday, 0), // 79 *
+   SYSXY(__NR_gettimeofday,     sys_gettimeofday),    // 78 * P
+   SYSX_(__NR_settimeofday,     sys_settimeofday),    // 79 * almost-P
 
-   SYSBA(__NR_getgroups,        sys_getgroups16, 0), // 80 ##
-   SYSB_(__NR_setgroups,        sys_setgroups16, 0), // 81 ##
+   SYSXY(__NR_getgroups,        sys_getgroups16),     // 80 ## P
+   SYSX_(__NR_setgroups,        sys_setgroups16),     // 81 ## almost-P
    SYSB_(__NR_select,           old_select, MayBlock), // 82 old_select
    SYSB_(__NR_symlink,          sys_symlink, MayBlock), // 83 *
    //   (__NR_oldlstat,         sys_lstat),        // 84 * L -- obsolete
@@ -6418,8 +6455,8 @@ static const struct sys_info sys_info[] = {
    SYSB_(__NR_setresgid,        sys_setresgid16, 0), // 170 ##
    SYSBA(__NR_getresgid,        sys_getresgid16, 0), // 171 ##
    SYSB_(__NR_prctl,            sys_prctl, MayBlock), // 172 *
-   //   (__NR_rt_sigreturn,     sys_rt_sigreturn), // 173 () ()
-   SYSBA(__NR_rt_sigaction,     sys_rt_sigaction, SIG_SIM), // 174 
+   //   (__NR_rt_sigreturn,     sys_rt_sigreturn), // 173 (x86) ()
+   SYSXY(__NR_rt_sigaction,     sys_rt_sigaction), // 174 (x86) ()
 
    SYSBA(__NR_rt_sigprocmask,   sys_rt_sigprocmask, SIG_SIM), // 175 *
    SYSBA(__NR_rt_sigpending,    sys_rt_sigpending, NBRunInLWP), // 176 *
@@ -6458,8 +6495,8 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_setreuid32,       sys_setreuid),     // 203 * (BSD4.3)
    SYSX_(__NR_setregid32,       sys_setregid),     // 204 * (BSD4.3)
 
-   SYSBA(__NR_getgroups32,      sys_getgroups, 0), // 205 *
-   SYSB_(__NR_setgroups32,      sys_setgroups, 0), // 206 *
+   SYSXY(__NR_getgroups32,      sys_getgroups),    // 205 * P
+   SYSX_(__NR_setgroups32,      sys_setgroups),    // 206 * almost-P
    SYSX_(__NR_fchown32,         sys_fchown),       // 207 * (SVr4,BSD4.3)
    SYSB_(__NR_setresuid32,      sys_setresuid, 0), // 208 *
    SYSBA(__NR_getresuid32,      sys_getresuid, 0), // 209 *

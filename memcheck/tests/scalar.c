@@ -313,21 +313,22 @@ int main(void)
  //GO(__NR_getrusage, ".s .m");
  //SY(__NR_getrusage);
 
-   // __NR_gettimeofday 78
- //GO(__NR_gettimeofday, ".s .m");
- //SY(__NR_gettimeofday);
+   // __NR_gettimeofday 78 --> sys_gettimeofday()
+   // XXX: it succeeds when I give it two NULL pointers... kernel bug?
+// GO(__NR_gettimeofday, "2s 2m");
+// SY(__NR_gettimeofday, x0, x0);
 
-   // __NR_settimeofday 79
- //GO(__NR_settimeofday, ".s .m");
- //SY(__NR_settimeofday);
+   // __NR_settimeofday 79 --> sys_settimeofday()
+   GO(__NR_settimeofday, "2s 2m");
+   SY(__NR_settimeofday, x0, x0+1);
 
-   // __NR_getgroups 80
- //GO(__NR_getgroups, ".s .m");
- //SY(__NR_getgroups);
+   // __NR_getgroups 80 --> sys_getgroups16()
+   GO(__NR_getgroups, "2s 1m");
+   SY(__NR_getgroups, x0+1, x0+1);
 
-   // __NR_setgroups 81
- //GO(__NR_setgroups, ".s .m");
- //SY(__NR_setgroups);
+   // __NR_setgroups 81 --> sys_setgroups16()
+   GO(__NR_setgroups, "2s 1m");
+   SY(__NR_setgroups, x0+1, x0+1);
 
    // __NR_select 82
  //GO(__NR_select, ".s .m");
@@ -691,9 +692,9 @@ int main(void)
  //GO(__NR_rt_sigreturn, ".s .m");
  //SY(__NR_rt_sigreturn);
 
-   // __NR_rt_sigaction 174
- //GO(__NR_rt_sigaction, ".s .m");
- //SY(__NR_rt_sigaction);
+   // __NR_rt_sigaction 174 --> sys_rt_sigaction()
+   GO(__NR_rt_sigaction, "4s 2m");
+   SY(__NR_rt_sigaction, x0, x0+1, x0+1, x0);
 
    // __NR_rt_sigprocmask 175
  //GO(__NR_rt_sigprocmask, ".s .m");
@@ -815,13 +816,13 @@ int main(void)
    GO(__NR_setregid32, "2s 0m");
    SY(__NR_setregid32, x0, x0);
 
-   // __NR_getgroups32 205
- //GO(__NR_getgroups32, ".s .m");
- //SY(__NR_getgroups32);
+   // __NR_getgroups32 205 --> sys_getgroups()
+   GO(__NR_getgroups32, "2s 1m");
+   SY(__NR_getgroups32, x0+1, x0+1);
 
-   // __NR_setgroups32 206
- //GO(__NR_setgroups32, ".s .m");
- //SY(__NR_setgroups32);
+   // __NR_setgroups32 206 --> sys_setgroups()
+   GO(__NR_setgroups32, "2s 1m");
+   SY(__NR_setgroups32, x0+1, x0+1);
 
    // __NR_fchown32 207 --> sys_fchown()
    GO(__NR_fchown32, "3s 0m");

@@ -156,11 +156,19 @@ typedef struct {
 #define VKI_SS_ONSTACK	1
 #define VKI_SS_DISABLE	2
 
-struct vki_sigaction {
+struct vki_old_sigaction {
         // [[Nb: a 'k' prefix is added to "sa_handler" because
         // bits/sigaction.h (which gets dragged in somehow via signal.h)
         // #defines it as something else.  Since that is done for glibc's
         // purposes, which we don't care about here, we use our own name.]]
+        __vki_sighandler_t ksa_handler;
+        vki_old_sigset_t sa_mask;
+        unsigned long sa_flags;
+        __vki_sigrestore_t sa_restorer;
+};
+
+struct vki_sigaction {
+        // [[See comment about extra 'k' above]]
 	__vki_sighandler_t ksa_handler;
 	unsigned long sa_flags;
 	__vki_sigrestore_t sa_restorer;

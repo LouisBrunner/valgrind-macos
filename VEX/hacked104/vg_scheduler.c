@@ -373,7 +373,6 @@ ThreadId VG_(get_current_tid) ( void )
 __inline__
 void VG_(load_thread_state) ( ThreadId tid )
 {
-   Int i;
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
 
    VG_(baseBlock)[VGOFF_(m_eax)] = VG_(threads)[tid].m_eax;
@@ -392,8 +391,15 @@ void VG_(load_thread_state) ( ThreadId tid )
 
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(threads)[tid].m_eip;
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_fpustate) + i] = VG_(threads)[tid].m_fpu[i];
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f0)]) = VG_(threads)[tid].m_f0;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f1)]) = VG_(threads)[tid].m_f1;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f2)]) = VG_(threads)[tid].m_f2;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f3)]) = VG_(threads)[tid].m_f3;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f4)]) = VG_(threads)[tid].m_f4;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]) = VG_(threads)[tid].m_f5;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]) = VG_(threads)[tid].m_f6;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]) = VG_(threads)[tid].m_f7;
+   VG_(baseBlock)[VGOFF_(m_ftop)] = VG_(threads)[tid].m_ftop;
 
    VG_(baseBlock)[VGOFF_(sh_eax)] = VG_(threads)[tid].sh_eax;
    VG_(baseBlock)[VGOFF_(sh_ebx)] = VG_(threads)[tid].sh_ebx;
@@ -418,8 +424,8 @@ void VG_(load_thread_state) ( ThreadId tid )
 __inline__
 void VG_(save_thread_state) ( ThreadId tid )
 {
-   Int i;
-   const UInt junk = 0xDEADBEEF;
+   const UInt  junk   = 0xDEADBEEF;
+   const ULong junk64 = 0xDEADBEEFDEADBEEFLL;
 
    vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
 
@@ -439,8 +445,15 @@ void VG_(save_thread_state) ( ThreadId tid )
 
    VG_(threads)[tid].m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(threads)[tid].m_fpu[i] = VG_(baseBlock)[VGOFF_(m_fpustate) + i];
+   VG_(threads)[tid].m_f0   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f0)]);
+   VG_(threads)[tid].m_f1   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f1)]);
+   VG_(threads)[tid].m_f2   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f2)]);
+   VG_(threads)[tid].m_f3   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f3)]);
+   VG_(threads)[tid].m_f4   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f4)]);
+   VG_(threads)[tid].m_f5   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]);
+   VG_(threads)[tid].m_f6   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]);
+   VG_(threads)[tid].m_f7   = *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]);
+   VG_(threads)[tid].m_ftop = VG_(baseBlock)[VGOFF_(m_ftop)];
 
    VG_(threads)[tid].sh_eax = VG_(baseBlock)[VGOFF_(sh_eax)];
    VG_(threads)[tid].sh_ebx = VG_(baseBlock)[VGOFF_(sh_ebx)];
@@ -467,8 +480,15 @@ void VG_(save_thread_state) ( ThreadId tid )
    VG_(baseBlock)[VGOFF_(m_cc_dflag)] = junk;
    VG_(baseBlock)[VGOFF_(m_eip)] = junk;
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_fpustate) + i] = junk;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f0)]) = junk64;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f1)]) = junk64;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f2)]) = junk64;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f3)]) = junk64;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f4)]) = junk64;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]) = junk64;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]) = junk64;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]) = junk64;
+   VG_(baseBlock)[VGOFF_(m_ftop)] = junk;
 
    vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 }

@@ -3076,6 +3076,189 @@ UInt dis_imul_I_E_G ( UChar       sorb,
 }   
 
 
+/*------------------------------------------------------------*/
+/*--- x87 floating point insns.                            ---*/
+/*------------------------------------------------------------*/
+
+/* Get/set the top-of-stack pointer. */
+
+static IRExpr* get_ftop ( void )
+{
+   return IRExpr_Get( OFFB_FTOP, Ity_I32 );
+}
+
+static IRStmt* put_ftop ( IRExpr* e )
+{
+   return IRStmt_Put( OFFB_FTOP, e );
+}
+
+/* Given i, generate an expression which is the offset in the guest
+   state of ST(i), considering the current value of FTOP. */
+
+static IRExpr* off_ST ( Int i )
+{
+  vassert(i >= 0 && i <= 7);
+  return 
+     binop(Iop_Add32,
+           binop(Iop_Mul32,
+                 binop(Iop_And32, 
+                       binop(Iop_Add32, get_ftop(), mkU32(i)),
+                       mkU32(7)),
+                 mkU32(8)),
+           mkU32(OFFB_F0)
+     );
+}
+
+/* Given i, and some expression e, generate 'ST(i) = e'. */
+
+static IRStmt* put_ST ( Int i, IRExpr* value )
+{
+   return
+      IRStmt_PutI( off_ST(i), value, OFFB_F0, OFFB_F7+8-1 );
+}
+
+/* Given i, generate an expression yielding 'ST(i)'. */
+
+static IRExpr* get_ST ( Int i )
+{
+   return
+      IRExpr_GetI( off_ST(i), Ity_F64, OFFB_F0, OFFB_F7+8-1 );
+}
+
+/* Adjust FTOP downwards by one register. */
+
+static IRStmt* do_push ( void )
+{
+   return
+      put_ftop(
+         binop(Iop_And32,
+               binop(Iop_Sub32, get_ftop(), mkU32(1)),
+	       mkU32(7))
+      );
+}
+
+
+static
+UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
+{
+   Int  len;
+   Char dis_buf[32];
+   UInt opc_aux;
+
+   /* On entry, delta points at the second byte of the insn (the modrm
+      byte).*/
+   UChar first_opcode = getIByte(delta-1);
+   UChar modrm        = getIByte(delta+0);
+
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xD8 opcodes +-+-+-+-+-+-+-+ */
+
+   if (first_opcode == 0xD8) {
+      goto decode_fail;
+   }
+
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xD9 opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xD9) {
+      goto decode_fail;
+   }
+
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDA opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xDA) {
+      goto decode_fail;
+   }
+
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDB opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xDB) {
+      goto decode_fail;
+   }
+
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDC opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xDC) {
+      goto decode_fail;
+   }
+
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDD opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xDD) {
+
+      if (modrm < 0xC0) {
+
+ 	 /* bits 5,4,3 are an opcode extension, and the modRM also
+            specifies an address. */
+	 IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
+	 delta += len;
+
+         switch (gregOfRM(modrm)) {
+
+            case 0: /* FLD double-real */
+               DIP("fldD %s\n", dis_buf);
+	       stmt( do_push() );
+	       stmt( put_ST(0, IRExpr_LDle(Ity_F64, mkexpr(addr))) );
+	       break;
+
+#if 0
+            case 2: /* FST double-real */
+               IFDB( if (dis) printf("\tfstD\t%s\n",t_addr); )
+               if (!fp_is_empty_tag(fp_get_tag_ST(0))) {
+                  vd_addr = fp_get_reg_ST(0);
+               } else {
+                  vd_addr = NAN;
+                  fp_set_stack_underflow();
+               }
+               setDMem(a_addr,vd_addr);
+               break;
+
+            case 3: /* FSTP double-real */
+               IFDB( if (dis) printf("\tfstpD\t%s\n",t_addr); )
+               if (!fp_is_empty_tag(fp_get_tag_ST(0))) {
+                  vd_addr = fp_pop();
+               } else {
+                  vd_addr = fp_pop(); /* then throw away result */
+                  vd_addr = NAN;
+                  fp_set_stack_underflow();
+               }
+               setDMem(a_addr,vd_addr);
+               break;
+#endif
+
+            default:
+               vex_printf("unhandled opc_aux = 0x%2x\n", opc_aux);
+               vex_printf("first_opcode == 0xDD");
+               goto decode_fail;
+	 }
+      } else {
+         goto decode_fail;
+      }
+   }
+
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDE opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xDE) {
+      goto decode_fail;
+   }
+
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDF opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xDF) {
+      goto decode_fail;
+   }
+
+   else
+   vpanic("dis_FPU(x86): invalid primary opcode");
+
+  decode_success:
+   *decode_ok = True;
+   return delta;
+
+  decode_fail:
+   *decode_ok = False;
+   return delta;
+}
+
+
 //-- /* Handle FPU insns which read/write memory.  On entry, eip points to
 //--    the second byte of the insn (the one following D8 .. DF). */
 //-- static 
@@ -6249,16 +6432,23 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       DIP("fwait\n");
 //--       break;
 //-- 
-//--    case 0xD8:
-//--    case 0xD9:
-//--    case 0xDA:
-//--    case 0xDB:
-//--    case 0xDC:
-//--    case 0xDD:
-//--    case 0xDE:
-//--    case 0xDF:
-//--       eip = dis_fpu ( cb, sorb, opc, eip );
-//--       break;
+   case 0xD8:
+   case 0xD9:
+   case 0xDA:
+   case 0xDB:
+   case 0xDC:
+   case 0xDD:
+   case 0xDE:
+   case 0xDF: {
+      UInt delta0    = delta;
+      Bool decode_OK = False;
+      delta = dis_FPU ( &decode_OK, sorb, delta );
+      if (!decode_OK) {
+         delta = delta0;
+         goto decode_failure;
+      }
+      break;
+   }
 
    /* ------------------------ INC & DEC ------------------ */
 

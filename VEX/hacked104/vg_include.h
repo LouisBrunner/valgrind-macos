@@ -554,10 +554,11 @@ extern void VG_(__libc_freeres_wrapper)( void );
    which need to go here to avoid ugly circularities.
    ------------------------------------------------------------------ */
 
-/* How big is the saved FPU state? */
-#define VG_SIZE_OF_FPUSTATE 108
 /* ... and in words ... */
-#define VG_SIZE_OF_FPUSTATE_W ((VG_SIZE_OF_FPUSTATE+3)/4)
+#define VG_SIZE_OF_FPUSTATE_W (8*2 + 1)
+
+#define VG_SIZE_OF_FPUSTATE (4 * VG_SIZE_OF_FPUSTATE_W)
+
 
 
 /* ---------------------------------------------------------------------
@@ -737,7 +738,9 @@ typedef
       UInt m_cc_dflag;
 
       UInt m_eip;
-      UInt m_fpu[VG_SIZE_OF_FPUSTATE_W];
+
+      ULong m_f0, m_f1, m_f2, m_f3, m_f4, m_f5, m_f6, m_f7;
+      UInt  m_ftop;
 
       UInt sh_eax;
       UInt sh_ebx;
@@ -1533,7 +1536,7 @@ extern void* VG_(client_realloc)  ( ThreadState* tst,
 extern UInt VG_(m_state_static) [8 /* int regs, in Intel order */ 
                                  + 1 /* %eflags */ 
                                  + 1 /* %eip */
-                                 + VG_SIZE_OF_FPUSTATE_W /* FPU state */
+                                 + (108/4) /* real FPU state */
                                 ];
 
 /* Handy fns for doing the copy back and forth. */
@@ -1969,8 +1972,17 @@ extern Int VGOFF_(m_cc_src);
 extern Int VGOFF_(m_cc_dst);
 extern Int VGOFF_(m_cc_dflag);
 
-extern Int VGOFF_(m_fpustate);
 extern Int VGOFF_(m_eip);
+
+extern Int VGOFF_(m_f0);
+extern Int VGOFF_(m_f1);
+extern Int VGOFF_(m_f2);
+extern Int VGOFF_(m_f3);
+extern Int VGOFF_(m_f4);
+extern Int VGOFF_(m_f5);
+extern Int VGOFF_(m_f6);
+extern Int VGOFF_(m_f7);
+extern Int VGOFF_(m_ftop);
 
 
 /* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */

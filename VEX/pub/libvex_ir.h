@@ -21,7 +21,9 @@
 typedef 
    enum { Ity_INVALID=0x10FFF,
           Ity_Bit=0x11000, 
-          Ity_I8, Ity_I16, Ity_I32, Ity_I64 }
+          Ity_I8, Ity_I16, Ity_I32, Ity_I64,
+          Ity_F32, Ity_F64
+   }
    IRType;
 
 extern void ppIRType ( IRType );
@@ -113,7 +115,11 @@ typedef
       Iop_32HLto64,   // :: (I32,I32) -> I64
       /* 1-bit stuff */
       Iop_32to1, /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
-      Iop_1Uto8  /* :: Ity_Bit -> Ity_I8, unsigned widen */
+      Iop_1Uto8, /* :: Ity_Bit -> Ity_I8, unsigned widen */
+      /* FP stuff */
+      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64,
+      Iop_SqrtF64,
+      Iop_I64toF64, Iop_F64toI64
    }
    IROp;
 
@@ -123,17 +129,35 @@ extern void ppIROp ( IROp );
 /* ------------------ Expressions ------------------ */
 /*
 data Expr
-   = GET   Int Int         -- offset, size
+   = GET   Int Type        -- offset, size
+   | GETI  Expr Type Int Int -- offset, size, minoff, maxoff
    | TMP   Temp            -- value of temporary
    | BINOP Op Expr Expr    -- binary op
    | UNOP  Op Expr         -- unary op
    | LDle  Type Expr       -- load of the given type, Expr:: 32 or 64
    | CONST Const           -- 8/16/32/64-bit int constant
+
+Re GETI.  It carries two ints, which give the lowest and highest
+possible byte offsets that the GetI can possibly reference.
+For example, if the type is Ity_I32, and the Expr may have
+a value of M, M+4 or M+8, where M is a translation-time known
+constant, then the low and high limits are M and M+11 respectively.
+
+PUTI carries similar limit values.
+
+These can be used by IR optimisers to establish aliasing/non-aliasing
+between seperate GETI and PUTI terms, which could be used to do
+reordering of them, or suchlike things.  Clearly it's critical to give
+the correct limit values -- this is something that can't be
+automatically checked (in general), and so the front-end writers must
+be very careful to tell the truth, since not doing so could lead to
+obscure IR optimisation bugs.
 */
+
 typedef
      enum { Iex_Binder, /* Used only in pattern matching.  
                            Not an expression. */
-          Iex_Get, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, 
+          Iex_Get, Iex_GetI, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, 
           Iex_Const, Iex_CCall, Iex_Mux0X }
    IRExprTag;
 
@@ -148,6 +172,12 @@ typedef
             Int    offset;
             IRType ty;
          } Get;
+         struct {
+            struct _IRExpr* offset;
+            IRType  ty;
+            UShort  minoff;
+            UShort  maxoff;
+         } GetI;
          struct {
             IRTemp tmp;
          } Tmp;
@@ -183,6 +213,8 @@ typedef
 
 extern IRExpr* IRExpr_Binder ( Int binder );
 extern IRExpr* IRExpr_Get    ( Int off, IRType ty );
+extern IRExpr* IRExpr_GetI   ( IRExpr* off, IRType ty,  
+                               UShort minoff, UShort maxoff );
 extern IRExpr* IRExpr_Tmp    ( IRTemp tmp );
 extern IRExpr* IRExpr_Binop  ( IROp op, IRExpr* arg1, IRExpr* arg2 );
 extern IRExpr* IRExpr_Unop   ( IROp op, IRExpr* arg );
@@ -194,7 +226,8 @@ extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
 extern void ppIRExpr ( IRExpr* );
 
 /* CCall info.  The name is the C helper function; the backends
-   will look it up in a table of known helpers, to get the address.
+   will hand the name to the front ends to get the address of a 
+   host-code helper function to be called.
 
    The args are a NULL-terminated array of arguments.  The stated
    return IRType, and the implied argument types, must match that
@@ -220,7 +253,7 @@ data Stmt
                               -- Const is destination guest addr
 */
 typedef 
-   enum { Ist_Put, Ist_Tmp, Ist_STle, Ist_Exit } 
+   enum { Ist_Put, Ist_PutI, Ist_Tmp, Ist_STle, Ist_Exit } 
    IRStmtTag;
 
 typedef
@@ -231,6 +264,12 @@ typedef
             Int     offset;
             IRExpr* expr;
          } Put;
+         struct {
+            IRExpr* offset;
+            IRExpr* expr;
+            UShort  minoff;
+            UShort  maxoff;
+         } PutI;
          struct {
             IRTemp  tmp;
             IRExpr* expr;
@@ -249,6 +288,8 @@ typedef
    IRStmt;
 
 extern IRStmt* IRStmt_Put  ( Int off, IRExpr* value );
+extern IRStmt* IRStmt_PutI ( IRExpr* off, IRExpr* value, 
+                             UShort minoff, UShort maxoff );
 extern IRStmt* IRStmt_Tmp  ( IRTemp tmp, IRExpr* expr );
 extern IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value );
 extern IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst );

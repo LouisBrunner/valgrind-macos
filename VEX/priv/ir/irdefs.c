@@ -26,6 +26,8 @@ void ppIRType ( IRType ty )
     case Ity_I16:     vex_printf( "I16"); break;
     case Ity_I32:     vex_printf( "I32"); break;
     case Ity_I64:     vex_printf( "I64"); break;
+    case Ity_F32:     vex_printf( "F32"); break;
+    case Ity_F64:     vex_printf( "F64"); break;
     default: vex_printf("ty = 0x%x\n", (Int)ty);
              vpanic("ppIRType");
   }
@@ -196,6 +198,12 @@ void ppIRStmt ( IRStmt* s )
       vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
       ppIRExpr(s->Ist.Put.expr);
       break;
+    case Ist_PutI:
+      vex_printf( "PUTI[%d,%d](", s->Ist.PutI.minoff, s->Ist.PutI.maxoff);
+      ppIRExpr(s->Ist.PutI.offset);
+      vex_printf( ") = " );
+      ppIRExpr(s->Ist.PutI.expr);
+      break;
     case Ist_Tmp:
       ppIRTemp(s->Ist.Tmp.tmp);
       vex_printf( " = " );
@@ -320,6 +328,16 @@ IRExpr* IRExpr_Get ( Int off, IRType ty ) {
    e->Iex.Get.ty     = ty;
    return e;
 }
+IRExpr* IRExpr_GetI ( IRExpr* off, IRType ty, 
+                      UShort minoff, UShort maxoff ) {
+   IRExpr* e          = LibVEX_Alloc(sizeof(IRExpr));
+   e->tag             = Iex_GetI;
+   e->Iex.GetI.offset = off;
+   e->Iex.GetI.ty     = ty;
+   e->Iex.GetI.minoff = minoff;
+   e->Iex.GetI.maxoff = maxoff;
+   return e;
+}
 IRExpr* IRExpr_Tmp ( IRTemp tmp ) {
    IRExpr* e      = LibVEX_Alloc(sizeof(IRExpr));
    e->tag         = Iex_Tmp;
@@ -380,6 +398,17 @@ IRStmt* IRStmt_Put ( Int off, IRExpr* value ) {
    s->link           = NULL;
    s->Ist.Put.offset = off;
    s->Ist.Put.expr   = value;
+   return s;
+}
+IRStmt* IRStmt_PutI ( IRExpr* off, IRExpr* value, 
+                      UShort minoff, UShort maxoff ) {
+   IRStmt* s          = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag             = Ist_PutI;
+   s->link            = NULL;
+   s->Ist.PutI.offset = off;
+   s->Ist.PutI.expr   = value;
+   s->Ist.PutI.minoff = minoff;
+   s->Ist.PutI.maxoff = maxoff;
    return s;
 }
 IRStmt* IRStmt_Tmp ( IRTemp tmp, IRExpr* expr ) {
@@ -702,6 +731,10 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
       case Ist_Put:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.expr,def_counts);
          break;
+      case Ist_PutI:
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.offset,def_counts);
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.expr,def_counts);
+         break;
       case Ist_Tmp:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Tmp.expr,def_counts);
          break;
@@ -806,6 +839,14 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
           tcExpr( bb, stmt, stmt->Ist.Put.expr, gWordTy );
           if (typeOfIRExpr(tyenv,stmt->Ist.Put.expr) == Ity_Bit)
              sanityCheckFail(bb,stmt,"IRStmt.Put.expr: cannot Put :: Ity_Bit");
+          break;
+      case Ist_PutI:
+          tcExpr( bb, stmt, stmt->Ist.PutI.expr, gWordTy );
+          tcExpr( bb, stmt, stmt->Ist.PutI.offset, gWordTy );
+          if (typeOfIRExpr(tyenv,stmt->Ist.PutI.expr) == Ity_Bit)
+             sanityCheckFail(bb,stmt,"IRStmt.PutI.expr: cannot PutI :: Ity_Bit");
+          if (typeOfIRExpr(tyenv,stmt->Ist.PutI.offset) != Ity_I32)
+             sanityCheckFail(bb,stmt,"IRStmt.PutI.offset: not :: Ity_I32");
           break;
       case Ist_Tmp:
          tcExpr( bb, stmt, stmt->Ist.Tmp.expr, gWordTy );

@@ -3121,8 +3121,8 @@ void VG_(translate) ( ThreadState* tst,
    UChar* final;
    Bool debugging_translation;
 
-   static Int v0thresh = 87000;
-   static Int v2thresh = 87000;
+   static Int v0thresh = 940;
+   static Int v2thresh = 940;
 
    TranslateResult tres;
    static Bool vex_init_done = False;

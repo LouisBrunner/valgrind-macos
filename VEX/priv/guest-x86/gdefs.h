@@ -130,8 +130,46 @@ enum {
 /* EIP */
 #define OFFB_EIP     (12*4)
 
+/* FPU.  For now, just simulate 8 64-bit registers and the reg-stack
+   top pointer, of which only the least significant three bits are
+   relevant.
 
-#define SIZEOF_X86H_STATE OFFB_EIP
+   The model is:
+     F0 .. F7 are the 8 registers.  ftop[2:0] contains the 
+     index of the current 'stack top' -- pretty meaningless, but
+     still.  
+
+     When a value is pushed onto the stack, ftop is first replaced by 
+     (ftop-1) & 7, and then F[ftop] is assigned the value.
+
+     When a value is popped off the stack, the value is read from
+     F[ftop], and then ftop is replaced by (ftop+1) & 7.
+
+     In general, a reference to a register ST(i) actually references
+     F[ (ftop+i) & 7 ].
+
+   There should be an array of 8 booleans corresponding to F0 .. F7,
+   indicating whether the corresponding F reg contains a value or not.
+
+   A read of an F reg marked empty, for any reason, elicits a stack
+   underflow fault.
+
+   A load from memory into an F reg marked full elicits a stack overflow
+   fault.  This appears to be the only way a stack overflow fault can
+   happen.
+*/
+#define OFFB_F0      (13*4)
+#define OFFB_F1      (15*4)
+#define OFFB_F2      (17*4)
+#define OFFB_F3      (19*4)
+#define OFFB_F4      (21*4)
+#define OFFB_F5      (23*4)
+#define OFFB_F6      (25*4)
+#define OFFB_F7      (27*4)
+#define OFFB_FTOP    (29*4)
+
+/* Don't forget to keep this up to date. */
+#define SIZEOF_X86H_STATE  OFFB_FTOP
 
 
 

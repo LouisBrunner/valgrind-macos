@@ -206,9 +206,10 @@ cpuid__99:
 VG_(helper_fstsw_AX):
 	pushl	%eax
 	pushl	%esi
-	movl	VGOFF_(m_fpustate), %esi
-	frstor	(%ebp, %esi, 4)
-	fstsw	%ax
+#	movl	VGOFF_(m_fpustate), %esi
+#	frstor	(%ebp, %esi, 4)
+#	fstsw	%ax
+	movw	$0, %ax
 	popl	%esi
 	movw	%ax, 8(%esp)
 	popl	%eax

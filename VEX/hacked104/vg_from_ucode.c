@@ -810,22 +810,26 @@ static void emit_movzwl_regmem_reg ( Int reg1, Int reg2 )
 
 static void emit_get_fpu_state ( void )
 {
+#if 0
    Int off = 4 * VGOFF_(m_fpustate);
    newEmit();
    emitB ( 0xDD ); emitB ( 0xA5 ); /* frstor d32(%ebp) */
    emitL ( off );
    if (dis)
       VG_(printf)("\n\t\tfrstor\t%d(%%ebp)\n", off );
+#endif
 }
 
 static void emit_put_fpu_state ( void )
 {
+#if 0
    Int off = 4 * VGOFF_(m_fpustate);
    newEmit();
    emitB ( 0xDD ); emitB ( 0xB5 ); /* fnsave d32(%ebp) */
    emitL ( off );
    if (dis)
       VG_(printf)("\n\t\tfnsave\t%d(%%ebp)\n", off );
+#endif
 }
 
 static void emit_fpu_no_mem ( UChar first_byte, 

@@ -55,8 +55,18 @@ Int VGOFF_(m_cc_src) = INVALID_OFFSET;
 Int VGOFF_(m_cc_dst) = INVALID_OFFSET;
 Int VGOFF_(m_cc_dflag) = INVALID_OFFSET;
 
-Int VGOFF_(m_fpustate) = INVALID_OFFSET;
 Int VGOFF_(m_eip) = INVALID_OFFSET;
+
+Int VGOFF_(m_f0) = INVALID_OFFSET;
+Int VGOFF_(m_f1) = INVALID_OFFSET;
+Int VGOFF_(m_f2) = INVALID_OFFSET;
+Int VGOFF_(m_f3) = INVALID_OFFSET;
+Int VGOFF_(m_f4) = INVALID_OFFSET;
+Int VGOFF_(m_f5) = INVALID_OFFSET;
+Int VGOFF_(m_f6) = INVALID_OFFSET;
+Int VGOFF_(m_f7) = INVALID_OFFSET;
+Int VGOFF_(m_ftop) = INVALID_OFFSET;
+
 Int VGOFF_(spillslots) = INVALID_OFFSET;
 Int VGOFF_(sh_eax) = INVALID_OFFSET;
 Int VGOFF_(sh_ecx) = INVALID_OFFSET;
@@ -165,12 +175,24 @@ static void vg_init_baseBlock ( void )
    /* 6   */ VGOFF_(m_esi)     = alloc_BaB(1);
    /* 7   */ VGOFF_(m_edi)     = alloc_BaB(1);
 
-   /* 8   */ VGOFF_(m_cc_op)  = alloc_BaB(1);
+   /* 8   */ VGOFF_(m_cc_op)   = alloc_BaB(1);
    /* 9   */ VGOFF_(m_cc_src)  = alloc_BaB(1);
    /* 10  */ VGOFF_(m_cc_dst)  = alloc_BaB(1);
-   /* 11  */ VGOFF_(m_cc_dflag)  = alloc_BaB(1);
-   /* 12  */  VGOFF_(m_eip) = alloc_BaB(1);
+   /* 11  */ VGOFF_(m_cc_dflag)= alloc_BaB(1);
 
+   /* 12  */ VGOFF_(m_eip)     = alloc_BaB(1);
+
+   /* 13 */ VGOFF_(m_f0) = alloc_BaB(2);
+   /* 15 */ VGOFF_(m_f1) = alloc_BaB(2);
+   /* 17 */ VGOFF_(m_f2) = alloc_BaB(2);
+   /* 19 */ VGOFF_(m_f3) = alloc_BaB(2);
+   /* 21 */ VGOFF_(m_f4) = alloc_BaB(2);
+   /* 23 */ VGOFF_(m_f5) = alloc_BaB(2);
+   /* 25 */ VGOFF_(m_f6) = alloc_BaB(2);
+   /* 27 */ VGOFF_(m_f7) = alloc_BaB(2);
+   /* 29 */ VGOFF_(m_ftop) = alloc_BaB(1);
+
+   /* stated offsets are wrong after here */
    /* 13  */ VGOFF_(sh_eax)    = alloc_BaB(1);
    /* 14  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
    /* 15  */ VGOFF_(sh_edx)    = alloc_BaB(1);
@@ -254,8 +276,6 @@ static void vg_init_baseBlock ( void )
 
    /* I gave up counting at this point.  Since they're way above the
       short-amode-boundary, there's no point. */
-
-   VGOFF_(m_fpustate) = alloc_BaB(VG_SIZE_OF_FPUSTATE_W);
 
    VGOFF_(helper_idiv_64_32)
       = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_64_32) );
@@ -999,7 +1019,7 @@ static void process_cmd_line_options ( void )
 UInt VG_(m_state_static) [8 /* int regs, in Intel order */ 
                           + 1 /* %eflags */ 
                           + 1 /* %eip */
-                          + VG_SIZE_OF_FPUSTATE_W /* FPU state */
+                          + (108/4) /* real FPU state */
                          ];
 
 void VG_(copy_baseBlock_to_m_state_static) ( void )
@@ -1030,15 +1050,15 @@ void VG_(copy_baseBlock_to_m_state_static) ( void )
 
    VG_(m_state_static)[36/4] = VG_(baseBlock)[VGOFF_(m_eip)];
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
+   /* Hack */
+   for (i = 0; i < (108/4); i++)
       VG_(m_state_static)[40/4 + i] 
-         = VG_(baseBlock)[VGOFF_(m_fpustate) + i];
+         = 0;
 }
 
 
 void VG_(copy_m_state_static_to_baseBlock) ( void )
 {
-   Int i;
    VG_(baseBlock)[VGOFF_(m_eax)] = VG_(m_state_static)[ 0/4];
    VG_(baseBlock)[VGOFF_(m_ecx)] = VG_(m_state_static)[ 4/4];
    VG_(baseBlock)[VGOFF_(m_edx)] = VG_(m_state_static)[ 8/4];
@@ -1055,9 +1075,20 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
 
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(m_state_static)[36/4];
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_fpustate) + i]
-         = VG_(m_state_static)[40/4 + i];
+   /* Make the FPU register stack appear to be empty. */
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f0)]) = 0;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f1)]) = 0;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f2)]) = 0;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f3)]) = 0;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f4)]) = 0;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f5)]) = 0;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f6)]) = 0;
+   *(ULong*)(&VG_(baseBlock)[VGOFF_(m_f7)]) = 0;
+   /* stack grows down, towards lower numbered registers, and ftop is
+      decremented prior to use when pushing.  Hence the initial value
+      should be zero, as the decrement then changes it to 7 so we end
+      up first writing %f7. */
+   VG_(baseBlock)[VGOFF_(m_ftop)] = 0;
 }
 
 

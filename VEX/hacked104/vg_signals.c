@@ -899,7 +899,6 @@ typedef
       /* Safely-saved version of sigNo, as described above. */
       Int  sigNo_private;
       /* Saved processor state. */
-      UInt fpustate[VG_SIZE_OF_FPUSTATE_W];
       UInt eax;
       UInt ecx;
       UInt edx;
@@ -913,6 +912,8 @@ typedef
       UInt cc_src;
       UInt cc_dst;
       UInt cc_dflag;
+      ULong f0, f1, f2, f3, f4, f5, f6, f7;
+      UInt ftop;
       /* Scheduler-private stuff: what was the thread's status prior to
          delivering this signal? */
       ThreadStatus status;
@@ -930,7 +931,6 @@ typedef
 static
 void vg_push_signal_frame ( ThreadId tid, int sigNo )
 {
-   Int          i;
    Addr         esp, esp_top_of_frame;
    VgSigFrame*  frame;
    ThreadState* tst;
@@ -971,8 +971,15 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
    frame->puContext  = (Addr)NULL;
    frame->magicPI    = 0x31415927;
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      frame->fpustate[i] = tst->m_fpu[i];
+   frame->f0         = tst->m_f0;
+   frame->f1         = tst->m_f1;
+   frame->f2         = tst->m_f2;
+   frame->f3         = tst->m_f3;
+   frame->f4         = tst->m_f4;
+   frame->f5         = tst->m_f5;
+   frame->f6         = tst->m_f6;
+   frame->f7         = tst->m_f7;
+   frame->ftop       = tst->m_ftop;
 
    frame->eax        = tst->m_eax;
    frame->ecx        = tst->m_ecx;
@@ -1022,7 +1029,7 @@ static
 Int vg_pop_signal_frame ( ThreadId tid )
 {
    Addr          esp;
-   Int           sigNo, i;
+   Int           sigNo;
    VgSigFrame*   frame;
    ThreadState*  tst;
 
@@ -1042,8 +1049,15 @@ Int vg_pop_signal_frame ( ThreadId tid )
          "vg_pop_signal_frame (thread %d): valid magic", tid);
 
    /* restore machine state */
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      tst->m_fpu[i] = frame->fpustate[i];
+   tst->m_f0      = frame->f0;
+   tst->m_f1      = frame->f1;
+   tst->m_f2      = frame->f2;
+   tst->m_f3      = frame->f3;
+   tst->m_f4      = frame->f4;
+   tst->m_f5      = frame->f5;
+   tst->m_f6      = frame->f6;
+   tst->m_f7      = frame->f7;
+   tst->m_ftop    = frame->ftop;
 
    /* Mark the frame structure as nonaccessible. */
    if (VG_(clo_instrument))

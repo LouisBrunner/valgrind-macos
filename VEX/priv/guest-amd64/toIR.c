@@ -143,24 +143,6 @@ static Bool   guest_rip_next_mustcheck;
 
 
 /*------------------------------------------------------------*/
-/*--- For placating icc's typechecker when -Wall applies.  ---*/
-/*------------------------------------------------------------*/
- 
-static inline UChar and8 ( UChar x, UChar y ) { 
-   UInt r = x & y;
-   return (UChar)r;
-}
-static inline UChar or8 ( UChar x, UChar y ) { 
-   UInt r = x | y;
-   return (UChar)r;
-}
-static inline UChar shr8U ( UChar x, Int n ) { 
-   UInt r = ((UInt)x) >> n;
-   return (UChar)r;
-}
-
-
-/*------------------------------------------------------------*/
 /*--- Helpers for constructing IR.                         ---*/
 /*------------------------------------------------------------*/
  
@@ -415,7 +397,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                      /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
                      /*IN*/  ULong      delta, 
                      /*IN*/  VexSubArch subarch,
-                     /*OUT*/ UInt*      size,
+                     /*OUT*/ Long*      size,
                      /*OUT*/ Addr64*    whereNext );
 
 
@@ -432,8 +414,8 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
                      Bool             host_bigendian,
                      VexSubArch       subarch_guest )
 {
-   Long       delta;
-   Int        i, n_instrs, size, first_stmt_idx;
+   Long       delta, size;
+   Int        i, n_instrs, first_stmt_idx;
    Addr64     guest_next;
    Bool       resteerOK;
    DisResult  dres;
@@ -528,7 +510,13 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
       }
 
       delta += size;
-      vge->len[vge->n_used-1] += size;
+      /* If vex_control.guest_max_insns is required to be < 500 and
+	 each insn is at max 15 bytes long, this limit of 10000 then
+	 seems reasonable since the max possible extent length will be
+	 500 * 15 == 7500. */
+      vassert(vge->len[vge->n_used-1] < 10000);
+      vge->len[vge->n_used-1] 
+         = toUShort(toUInt( vge->len[vge->n_used-1] + size ));
       n_instrs++;
       DIP("\n");
 
@@ -555,7 +543,7 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
             vassert(irbb->next == NULL);
             /* figure out a new delta to continue at. */
             vassert(chase_into_ok(guest_next));
-            delta = (ULong)(guest_next - guest_rip_start);
+            delta = guest_next - guest_rip_start;
             /* we now have to start a new extent slot. */
 	    vge->n_used++;
 	    vassert(vge->n_used <= 3);
@@ -674,14 +662,14 @@ static UChar getUChar ( ULong delta )
 
 /* Get a byte value out of the insn stream and sign-extend to 64
    bits. */
-static ULong getSDisp8 ( ULong delta )
+static Long getSDisp8 ( ULong delta )
 {
    return extend_s_8to64( guest_code[delta] );
 }
 
 /* Get a 16-bit value out of the insn stream and sign-extend to 64
    bits. */
-static ULong getSDisp16 ( ULong delta )
+static Long getSDisp16 ( ULong delta )
 {
    UInt v = guest_code[delta+1]; v <<= 8;
    v |= guest_code[delta+0];
@@ -690,7 +678,7 @@ static ULong getSDisp16 ( ULong delta )
 
 /* Get a 32-bit value out of the insn stream and sign-extend to 64
    bits. */
-static ULong getSDisp32 ( ULong delta )
+static Long getSDisp32 ( ULong delta )
 {
    UInt v = guest_code[delta+3]; v <<= 8;
    v |= guest_code[delta+2]; v <<= 8;
@@ -700,7 +688,7 @@ static ULong getSDisp32 ( ULong delta )
 }
 
 /* Get a 64-bit value out of the insn stream. */
-static ULong getDisp64 ( ULong delta )
+static Long getDisp64 ( ULong delta )
 {
    ULong v = 0;
    v |= guest_code[delta+7]; v <<= 8;
@@ -716,7 +704,7 @@ static ULong getDisp64 ( ULong delta )
 
 /* Note: because AMD64 doesn't allow 64-bit literals, it is an error
    if this is called with size==8.  Should not happen. */
-static ULong getSDisp ( Int size, ULong delta )
+static Long getSDisp ( Int size, ULong delta )
 {
    switch (size) {
       case 4: return getSDisp32(delta);
@@ -1952,8 +1940,8 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta,
       jump table seems a bit excessive. 
    */
    mod_reg_rm &= 0xC7;                         /* is now XX000YYY */
-   mod_reg_rm  = or8( mod_reg_rm, 
-                      shr8U(mod_reg_rm, 3) );  /* is now XX0XXYYY */
+   mod_reg_rm  = toUChar(mod_reg_rm | (mod_reg_rm >> 3));
+                                               /* is now XX0XXYYY */
    mod_reg_rm &= 0x1F;                         /* is now 000XXYYY */
    switch (mod_reg_rm) {
 
@@ -1962,7 +1950,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta,
       */
       case 0x00: case 0x01: case 0x02: case 0x03: 
       /* ! 04 */ /* ! 05 */ case 0x06: case 0x07:
-         { UChar rm = and8(mod_reg_rm, 7);
+         { UChar rm = toUChar(mod_reg_rm & 7);
            DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegB(pfx,8,rm));
            *len = 1;
            return disAMode_copy2tmp(
@@ -1974,7 +1962,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta,
       */
       case 0x08: case 0x09: case 0x0A: case 0x0B: 
       /* ! 0C */ case 0x0D: case 0x0E: case 0x0F:
-         { UChar rm = and8(mod_reg_rm, 7);
+         { UChar rm = toUChar(mod_reg_rm & 7);
            Long d   = getSDisp8(delta);
            if (d == 0) {
               DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegB(pfx,8,rm));
@@ -1992,7 +1980,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta,
       */
       case 0x10: case 0x11: case 0x12: case 0x13: 
       /* ! 14 */ case 0x15: case 0x16: case 0x17:
-         { UChar rm = and8(mod_reg_rm, 7);
+         { UChar rm = toUChar(mod_reg_rm & 7);
            Long  d  = getSDisp32(delta);
            DIS(buf, "%s%lld(%s)", sorbTxt(pfx), d, nameIRegB(pfx,8,rm));
            *len = 5;
@@ -2045,9 +2033,9 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta,
                = %base + (%index << scale)
          */
          UChar sib     = getUChar(delta);
-         UChar scale   = and8(shr8U(sib,6), 3);
-         UChar index_r = and8(shr8U(sib,3), 7);
-         UChar base_r  = and8(sib, 7);
+         UChar scale   = toUChar((sib >> 6) & 3);
+         UChar index_r = toUChar((sib >> 3) & 7);
+         UChar base_r  = toUChar(sib & 7);
          /* correct since #(R13) == 8 + #(RBP) */
          Bool  base_is_BPor13 = toBool(base_r == R_RBP);
          Bool  index_is_SP    = toBool(index_r == R_RSP && 0==getRexX(pfx));
@@ -2116,9 +2104,9 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta,
       */
       case 0x0C: {
          UChar sib     = getUChar(delta);
-         UChar scale   = and8(shr8U(sib,6), 3);
-         UChar index_r = and8(shr8U(sib,3), 7);
-         UChar base_r  = and8(sib, 7);
+         UChar scale   = toUChar((sib >> 6) & 3);
+         UChar index_r = toUChar((sib >> 3) & 7);
+         UChar base_r  = toUChar(sib & 7);
          Long d        = getSDisp8(delta+1);
 
          if (index_r == R_RSP && 0==getRexX(pfx)) {
@@ -2163,9 +2151,9 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta,
       */
       case 0x14: {
          UChar sib     = getUChar(delta);
-         UChar scale   = and8(shr8U(sib,6), 3);
-         UChar index_r = and8(shr8U(sib,3), 7);
-         UChar base_r  = and8(sib, 7);
+         UChar scale   = toUChar((sib >> 6) & 3);
+         UChar index_r = toUChar((sib >> 3) & 7);
+         UChar base_r  = toUChar(sib & 7);
          Long d        = getSDisp32(delta+1);
 
          if (index_r == R_RSP && 0==getRexX(pfx)) {
@@ -2219,8 +2207,8 @@ static UInt lengthAMode ( Prefix pfx, ULong delta )
       jump table seems a bit excessive. 
    */
    mod_reg_rm &= 0xC7;                         /* is now XX000YYY */
-   mod_reg_rm  = or8( mod_reg_rm, 
-                      shr8U(mod_reg_rm, 3) );  /* is now XX0XXYYY */
+   mod_reg_rm  = toUChar(mod_reg_rm | (mod_reg_rm >> 3));
+                                               /* is now XX0XXYYY */
    mod_reg_rm &= 0x1F;                         /* is now 000XXYYY */
    switch (mod_reg_rm) {
 
@@ -2259,7 +2247,7 @@ static UInt lengthAMode ( Prefix pfx, ULong delta )
       case 0x04: {
          /* SIB, with no displacement. */
          UChar sib     = getUChar(delta);
-         UChar base_r  = and8(sib,7);
+         UChar base_r  = toUChar(sib & 7);
          /* correct since #(R13) == 8 + #(RBP) */
          Bool  base_is_BPor13 = toBool(base_r == R_RBP);
 
@@ -2938,7 +2926,7 @@ ULong dis_Grp2 ( Prefix pfx,
       IRTemp res64     = newTemp(Ity_I64);
       IRTemp res64ss   = newTemp(Ity_I64);
       IRTemp shift_amt = newTemp(Ity_I8);
-      UChar  mask      = sz==8 ? 63 : 31;
+      UChar  mask      = toUChar(sz==8 ? 63 : 31);
       IROp   op64;
 
       switch (gregOfRM(modrm)) { 
@@ -2996,7 +2984,7 @@ ULong dis_Grp2 ( Prefix pfx,
       IRTemp rot_amt   = newTemp(Ity_I8);
       IRTemp rot_amt64 = newTemp(Ity_I8);
       IRTemp oldFlags  = newTemp(Ity_I64);
-      UChar  mask      = sz==8 ? 63 : 31;
+      UChar  mask      = toUChar(sz==8 ? 63 : 31);
 
       /* rot_amt = shift_expr & mask */
       /* By masking the rotate amount thusly, the IR-level Shl/Shr
@@ -3216,7 +3204,7 @@ ULong dis_Grp2 ( Prefix pfx,
    RDX:RAX/EDX:EAX/DX:AX/AX.
 */
 static void codegen_mulL_A_D ( Int sz, Bool syned, 
-                               IRTemp tmp, Char* tmp_txt )
+                               IRTemp tmp, HChar* tmp_txt )
 {
    IRType ty = szToITy(sz);
    IRTemp t1 = newTemp(ty);
@@ -4130,7 +4118,7 @@ static
 void fp_do_op_ST_ST ( HChar* op_txt, IROp op, UInt st_src, UInt st_dst,
                       Bool pop_after )
 {
-   DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"", st_src, st_dst );
+   DIP("f%s%s st(%u), st(%u)\n", op_txt, pop_after?"p":"", st_src, st_dst );
    put_ST_UNCHECKED( 
       st_dst, 
       binop(op, get_ST(st_dst), get_ST(st_src) ) 
@@ -4158,7 +4146,7 @@ void fp_do_op_ST_ST ( HChar* op_txt, IROp op, UInt st_src, UInt st_dst,
 /* %rflags(Z,P,C) = UCOMI( st(0), st(i) ) */
 static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
 {
-   DIP("fucomi%s %%st(0),%%st(%d)\n", pop_after ? "p" : "", i);
+   DIP("fucomi%s %%st(0),%%st(%u)\n", pop_after ? "p" : "", i);
    /* This is a bit of a hack (and isn't really right).  It sets
       Z,P,C,O correctly, but forces A and S to zero, whereas the Intel
       documentation implies A and S are unchanged. 
@@ -4199,8 +4187,8 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 
          /* bits 5,4,3 are an opcode extension, and the modRM also
            specifies an address. */
-         IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
-         delta += len;
+         //IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+         //delta += len;
 
          switch (gregOfRM(modrm)) {
 
@@ -4530,7 +4518,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 
             case 0xC0 ... 0xC7: /* FLD %st(?) */
                r_src = (UInt)modrm - 0xC0;
-               DIP("fld %%st(%d)\n", r_src);
+               DIP("fld %%st(%u)\n", r_src);
                t1 = newTemp(Ity_F64);
                assign(t1, get_ST(r_src));
                fp_push();
@@ -4539,7 +4527,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 
             case 0xC8 ... 0xCF: /* FXCH %st(?) */
                r_src = (UInt)modrm - 0xC8;
-               DIP("fxch %%st(%d)\n", r_src);
+               DIP("fxch %%st(%u)\n", r_src);
                t1 = newTemp(Ity_F64);
                t2 = newTemp(Ity_F64);
                assign(t1, get_ST(0));
@@ -4747,8 +4735,8 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 
          /* bits 5,4,3 are an opcode extension, and the modRM also
             specifies an address. */
-         IROp   fop;
-         IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+         //IROp   fop;
+         //IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
          delta += len;
          switch (gregOfRM(modrm)) {
 
@@ -4821,7 +4809,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 
             case 0xC8 ... 0xCF: /* FCMOVE(Z) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
-               DIP("fcmovz %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovz %%st(%u), %%st(0)\n", r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4831,7 +4819,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 
             case 0xD0 ... 0xD7: /* FCMOVBE ST(i), ST(0) */
                r_src = (UInt)modrm - 0xD0;
-               DIP("fcmovbe %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovbe %%st(%u), %%st(0)\n", r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -5303,7 +5291,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 
             case 0xD8 ... 0xDF: /* FSTP %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xD8;
-               DIP("fstp %%st(0),%%st(%d)\n", r_dst);
+               DIP("fstp %%st(0),%%st(%u)\n", r_dst);
                /* P4 manual says: "If the destination operand is a
                   non-empty register, the invalid-operation exception
                   is not generated.  Hence put_ST_UNCHECKED. */
@@ -7364,7 +7352,7 @@ static ULong dis_SSEcmp_E_to_G ( Prefix pfx, ULong delta,
    }
    else
    if (needNot && !all_lanes) {
-      mask = sz==4 ? 0x000F : 0x00FF;
+      mask = toUShort(sz==4 ? 0x000F : 0x00FF);
       putXMMReg( gregOfRexRM(pfx,rm), 
                  binop(Iop_XorV128, mkexpr(plain), mkV128(mask)) );
    }
@@ -7616,14 +7604,14 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                      /*IN*/  Bool       (*resteerOkFn) ( Addr64 ),
                      /*IN*/  ULong      delta, 
                      /*IN*/  VexSubArch subarch,
-                     /*OUT*/ UInt*      size,
+                     /*OUT*/ Long*      size,
                      /*OUT*/ Addr64*    whereNext )
 {
    IRType    ty;
    IRTemp    addr, /* t0, */ t1, t2, t3, t4 /*, t5, t6 */;
    Int       alen;
    UChar     opc, modrm, /*abyte,*/ pre;
-   ULong     d64;
+   Long      d64;
    HChar     dis_buf[50];
    Int       am_sz, d_sz, n, n_prefixes;
    DisResult whatNext = Dis_Continue;
@@ -9349,7 +9337,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
        && ( /* insn[1] == 0x2D || */ insn[1] == 0x2C)) {
       IRTemp rmode  = newTemp(Ity_I32);
       IRTemp f64lo  = newTemp(Ity_F64);
-      Bool   r2zero = insn[1] == 0x2C;
+      Bool   r2zero = toBool(insn[1] == 0x2C);
       vassert(sz == 4 || sz == 8);
 
       modrm = getUChar(delta+2);
@@ -10110,7 +10098,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       IRTemp d0 = newTemp(Ity_I64);
       IRTemp sV = newTemp(Ity_V128);
       IRTemp dV = newTemp(Ity_V128);
-      Bool   hi = insn[1] == 0x15;
+      Bool   hi = toBool(insn[1] == 0x15);
 
       modrm = insn[2];
       assign( dV, getXMMReg(gregOfRexRM(pfx,modrm)) );
@@ -11990,7 +11978,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       assign( t1, binop(Iop_Sub64,getIReg64(R_RSP),mkU64(sz)) );
       putIReg64(R_RSP, mkexpr(t1) );
       storeLE( mkexpr(t1), mkU(ty,d64) );
-      DIP("push%c $%lld\n", nameISize(sz), d64);
+      DIP("push%c $%lld\n", nameISize(sz), (Long)d64);
       break;
 
    case 0x9C: /* PUSHF */ {

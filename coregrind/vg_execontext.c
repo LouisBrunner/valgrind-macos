@@ -278,10 +278,34 @@ ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
 
 ExeContext* VG_(get_ExeContext) ( ThreadState *tst )
 {
-   return VG_(get_ExeContext2)( tst->m_eip, tst->m_ebp, tst->m_esp, 
-                                tst->stack_highest_word );
+   ExeContext *ec;
+
+   if (tst == NULL) {
+      /* thread currently in baseblock */
+      ThreadId tid = VG_(get_current_tid)();
+
+      ec = VG_(get_ExeContext2)( VG_(baseBlock)[VGOFF_(m_eip)], 
+				 VG_(baseBlock)[VGOFF_(m_ebp)],
+				 VG_(baseBlock)[VGOFF_(m_esp)],
+				 VG_(threads)[tid].stack_highest_word);
+   } else {
+      ec = VG_(get_ExeContext2)( tst->m_eip, tst->m_ebp, tst->m_esp, 
+				 tst->stack_highest_word );
+   }
+   return ec;
 }
 
+Addr VG_(get_EIP) ( ThreadState *tst )
+{
+   Addr ret;
+
+   if (tst == NULL)
+      ret = VG_(baseBlock)[VGOFF_(m_eip)];
+   else
+      ret = tst->m_eip;
+
+   return ret;
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                          vg_execontext.c ---*/

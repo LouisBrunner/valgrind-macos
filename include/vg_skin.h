@@ -974,6 +974,9 @@ extern void VG_(pp_ExeContext) ( ExeContext* );
    new one.  Either way, return a pointer to the context. */
 extern ExeContext* VG_(get_ExeContext) ( ThreadState *tst );
 
+/* Just grab the client's EIP, as a much smaller and cheaper
+   indication of where they are. */
+extern Addr VG_(get_EIP)( ThreadState *tst );
 
 /*====================================================================*/
 /*=== Error reporting                                              ===*/

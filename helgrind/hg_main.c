@@ -168,6 +168,53 @@ static const shadow_word error_sword = { TID_INDICATING_ALL, Vge_Excl };
    } while(0)
 
 
+/* Parallel map which contains execution contexts when words were last
+   accessed (if required) */
+
+static enum {
+   EC_None,
+   EC_Some,
+   EC_All
+} clo_execontext = EC_None;
+
+typedef union EC_EIP {
+   ExeContext *ec;
+   Addr eip;
+} EC_EIP;
+
+#define NULL_EC_EIP	((EC_EIP) { .ec = NULL })
+
+typedef struct {
+   EC_EIP execontext[ESEC_MAP_WORDS];
+} ExeContextMap;
+
+static ExeContextMap** execontext_map;
+
+static inline void setExeContext(Addr a, EC_EIP ec)
+{
+   UInt idx = (a >> 16) & 0xffff;
+   UInt off = (a >>  2) & 0x3fff;
+
+   if (execontext_map[idx] == NULL) {
+      execontext_map[idx] = VG_(malloc)(sizeof(ExeContextMap));
+      VG_(memset)(execontext_map[idx], 0, sizeof(ExeContextMap));
+   }
+
+   execontext_map[idx]->execontext[off] = ec;
+}
+
+static inline EC_EIP getExeContext(Addr a)
+{
+   UInt idx = (a >> 16) & 0xffff;
+   UInt off = (a >>  2) & 0x3fff;
+   EC_EIP ec = { .ec = NULL };
+
+   if (execontext_map[idx] != NULL)
+      ec = execontext_map[idx]->execontext[off];
+
+   return ec;
+}
+
 /*------------------------------------------------------------*/
 /*--- Low-level support for memory tracking.               ---*/
 /*------------------------------------------------------------*/
@@ -267,6 +314,8 @@ shadow_word* get_sword_addr ( Addr a )
 static __inline__ 
 void init_virgin_sword(Addr a)
 {
+   if (clo_execontext != EC_None)
+      setExeContext(a, NULL_EC_EIP);
    set_sword(a, virgin_sword);
 }
 
@@ -287,6 +336,8 @@ void make_writable_aligned ( Addr a, UInt size )
    sk_assert(IS_ALIGNED4_ADDR(a));
 
    for ( ; a < a_past_end; a += 4) {
+      if (clo_execontext != EC_None)
+	 setExeContext(a, NULL_EC_EIP);
       set_sword(a, virgin_sword);
    }
 }
@@ -1419,7 +1470,7 @@ static void make_writable ( Addr a, UInt len )
 static void make_readable ( Addr a, UInt len )
 {
    //PROF_EVENT(37);  PPP
-   set_address_range_state( a, len, Vge_NonVirginInit );
+   set_address_range_state( a, len, Vge_VirginInit );
 }
 
 
@@ -1729,7 +1780,7 @@ typedef
       shadow_word prevstate;
       /* MutexErr, LockGraphErr */
       Mutex      *mutex;
-      ExeContext *lasttouched;
+      EC_EIP      lasttouched;
       ThreadId    lasttid;
       /* LockGraphErr */
       const LockSet    *held_lockset;
@@ -1757,7 +1808,7 @@ void clear_HelgrindError ( HelgrindError* err_extra )
    err_extra->axskind    = ReadAxs;
    err_extra->size       = 0;
    err_extra->mutex      = NULL;
-   err_extra->lasttouched= NULL;
+   err_extra->lasttouched= NULL_EC_EIP;
    err_extra->lasttid    = VG_INVALID_THREADID;
    err_extra->prev_lockset = 0;
    err_extra->held_lockset = 0;
@@ -1882,7 +1933,8 @@ static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
    err_extra.isWrite = is_write;
    err_extra.addrinfo.akind = Undescribed;
    err_extra.prevstate = prevstate;
-
+   if (clo_execontext)
+      err_extra.lasttouched = getExeContext(a);
    VG_(maybe_record_error)( tst, EraserErr, a, 
                             (is_write ? "writing" : "reading"),
                             &err_extra);
@@ -1898,7 +1950,7 @@ static void record_mutex_error(ThreadId tid, Mutex *mutex,
    clear_HelgrindError(&err_extra);
    err_extra.addrinfo.akind = Undescribed;
    err_extra.mutex = mutex;
-   err_extra.lasttouched = ec;
+   err_extra.lasttouched = (EC_EIP){ .ec = ec };
    err_extra.lasttid = tid;
 
    VG_(maybe_record_error)(VG_(get_ThreadState)(tid), MutexErr, 
@@ -1917,7 +1969,7 @@ static void record_lockgraph_error(ThreadId tid, Mutex *mutex,
    err_extra.addrinfo.akind = Undescribed;
    err_extra.mutex = mutex;
    
-   err_extra.lasttouched = mutex->location;
+   err_extra.lasttouched = (EC_EIP) { .ec = mutex->location };
    err_extra.held_lockset = lockset_holding;
    err_extra.prev_lockset = lockset_prev;
    
@@ -1983,7 +2035,7 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
             relative = "inside";
          }
 	 VG_(message)(Vg_UserMsg, 
-		      "  Address %p is %d bytes %s a block of size %d %s by thread %d at",
+		      "  Address %p is %d bytes %s a block of size %d %s by thread %d",
 		      a, delta, relative, 
 		      ai->blksize,
 		      ai->akind == Mallocd ? "alloc'd" : "freed",
@@ -2065,19 +2117,41 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 	 break;
       }
 
-      if (*msg) {
+      if (*msg)
 	 VG_(message)(Vg_UserMsg, "  Previous state: %s", msg);
-      }
+
       pp_AddrInfo(err->addr, &extra->addrinfo);
+
+      if (clo_execontext == EC_Some && extra->lasttouched.eip != 0) {
+	 Char file[100];
+	 UInt line;
+	 Addr eip = extra->lasttouched.eip;
+	 
+	 VG_(message)(Vg_UserMsg, "  Word at %p last accessed", err->addr);
+	 
+	 if (VG_(get_filename_linenum)(eip, file, sizeof(file), &line)) {
+	    VG_(message)(Vg_UserMsg, "   at %p: %y (%s:%u)",
+			 eip, eip, file, line);
+	 } else if (VG_(get_objname)(eip, file, sizeof(file))) {
+	    VG_(message)(Vg_UserMsg, "   at %p: %y (in %s)",
+			 eip, eip, file);
+	 } else {
+	    VG_(message)(Vg_UserMsg, "   at %p: %y", eip, eip);
+	 }
+      } else if (clo_execontext == EC_All && extra->lasttouched.ec != NULL) {
+	 VG_(message)(Vg_UserMsg, "  Word at %p last accessed", err->addr);
+	 VG_(pp_ExeContext)(extra->lasttouched.ec);
+      }
+
       break;
 
    case MutexErr:
-      VG_(message)(Vg_UserMsg, "Mutex problem at %p%(y trying to %s at",
+      VG_(message)(Vg_UserMsg, "Mutex problem at %p%(y trying to %s",
 		   err->addr, err->addr, err->string );
       pp_ExeContext();
-      if (extra->lasttouched) {
-	 VG_(message)(Vg_UserMsg, "  last touched by thread %d at", extra->lasttid);
-	 VG_(pp_ExeContext)(extra->lasttouched);
+      if (extra->lasttouched.ec != NULL) {
+	 VG_(message)(Vg_UserMsg, "  last touched by thread %d", extra->lasttid);
+	 VG_(pp_ExeContext)(extra->lasttouched.ec);
       }
       pp_AddrInfo(err->addr, &extra->addrinfo);
       break;
@@ -2276,7 +2350,10 @@ static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
    shadow_word  prevstate;
    const LockSet *ls;
 
-   tid = (tst == NULL) ? VG_(get_current_tid)() : VG_(get_tid_from_ThreadState)(tst);
+   if (tst == NULL)
+      tid = VG_(get_current_tid)();
+   else
+      tid = VG_(get_tid_from_ThreadState)(tst);
 
    for ( ; a < end; a += 4) {
 
@@ -2340,6 +2417,16 @@ static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
       default:
          VG_(skin_panic)("Unknown eraser state");
       }
+
+      if (clo_execontext != EC_None) {
+	 EC_EIP eceip;
+
+	 if (clo_execontext == EC_Some)
+	    eceip.eip = VG_(get_EIP)(tst);
+	 else
+	    eceip.ec = VG_(get_ExeContext)(tst);
+	 setExeContext(a, eceip);
+      }
    }
 }
 
@@ -2350,8 +2437,11 @@ static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
    Addr     end = a + 4*compute_num_words_accessed(a, size);
    shadow_word  prevstate;
 
-   tid = (tst == NULL) ? VG_(get_current_tid)() : VG_(get_tid_from_ThreadState)(tst);
-
+   if (tst == NULL)
+      tid = VG_(get_current_tid)();
+   else
+      tid = VG_(get_tid_from_ThreadState)(tst);
+   
    for ( ; a < end; a += 4) {
 
       sword = get_sword_addr(a);
@@ -2407,6 +2497,16 @@ static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
 
       default:
          VG_(skin_panic)("Unknown eraser state");
+      }
+
+      if (clo_execontext != EC_None) {
+	 EC_EIP eceip;
+
+	 if (clo_execontext == EC_Some)
+	    eceip.eip = VG_(get_EIP)(tst);
+	 else
+	    eceip.ec = VG_(get_ExeContext)(tst);
+	 setExeContext(a, eceip);
       }
    }
 }
@@ -2558,7 +2658,6 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    init_shadow_memory();
 }
 
-#if 0
 static Bool match_Bool(Char *arg, Char *argstr, Bool *ret)
 {
    Int len = VG_(strlen)(argstr);
@@ -2598,22 +2697,46 @@ static Bool match_str(Char *arg, Char *argstr, Char **ret)
 
    return False;
 }
-#endif
 
 Bool SK_(process_cmd_line_option)(Char* arg)
 {
+   Char *str;
+
+   if (match_str(arg, "--show-last-access=", &str)) {
+      Bool ok = True;
+      if (VG_(strcmp)(str, "no") == 0)
+	 clo_execontext = EC_None;
+      else if (VG_(strcmp)(str, "some") == 0)
+	 clo_execontext = EC_Some;
+      else if (VG_(strcmp)(str, "all") == 0)
+	 clo_execontext = EC_All;
+      else {
+	 ok = False;
+	 VG_(bad_option)(arg);
+      }
+
+      VG_(free)(str);
+      if (ok)
+	 return True;
+   }
+
    return False;
 }
 
 Char *SK_(usage)(void)
 {
    return ""
+"    --show-last-access=no|some|all  show location of last word access on error [no]\n"
       ;
 }
 
 
 void SK_(post_clo_init)(void)
 {
+   if (clo_execontext) {
+      execontext_map = VG_(malloc)(sizeof(ExeContextMap *) * 65536);
+      VG_(memset)(execontext_map, 0, sizeof(ExeContextMap *) * 65536);
+   }
 }
 
 

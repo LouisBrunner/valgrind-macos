@@ -1022,7 +1022,7 @@ HInstrArray* iselBB_X86 ( IRBB* bb, Addr64(*find_helper)(Char*) )
       env->vregmap[i]   = hreg;
       env->vregmapHI[i] = hregHI;
    }
-   env->vreg_ctr = env->n_vregmap;
+   env->vreg_ctr = j;
 
    /* Ok, finally we can iterate over the statements. */
    for (stmt = bb->stmts; stmt; stmt=stmt->link)

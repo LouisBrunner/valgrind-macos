@@ -320,8 +320,13 @@ HInstrArray* doRegisterAllocation (
          if (!hregIsVirtual(vreg))
             continue;
          k = hregNumber(vreg);
-         if (k < 0 || k >= n_vregs)
+         if (k < 0 || k >= n_vregs) {
+            vex_printf("\n");
+            (*ppInstr)(instrs_in->arr[ii]);
+            vex_printf("\n");
+            vex_printf("vreg %d, n_vregs %d\n", k, n_vregs);
             vpanic("doRegisterAllocation: out-of-range vreg");
+         }
 
          /* Take the opportunity to note its regclass.  We'll need
             that when allocating spill slots. */

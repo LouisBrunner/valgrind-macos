@@ -51,6 +51,16 @@ static Int n_bbs_done = 0;
 
 #define TEST_FLAGS (1<<7)|(1<<3)|(1<<2)|(1<<1) //|(1<<0)
 
+#define DEBUG_TRACE_FLAGS 0 & (0               \
+ | (1 << 7)  /* show conversion into IR */     \
+ | (0 << 6)  /* show after initial opt */      \
+ | (0 << 5)  /* show after instrumentation */  \
+ | (0 << 4)  /* show after second opt */       \
+ | (1 << 3)  /* show after tree building */    \
+ | (1 << 2)  /* show selected insns */         \
+ | (1 << 1)  /* show after reg-alloc */        \
+ | (1 << 0))  /* show final assembly */
+
 
 /* guest state */
 UInt gstack[50000];
@@ -392,9 +402,8 @@ asm(
 "   mflr %r0\n"
 "   stw  %r0,260(%r1)\n"
 
-// leave hole @ 4(%r1) for a caller to save it's LR
+// leave hole @ 4(%r1) for a callee to save it's LR
 // no params
-// no local vars
 // no need to save non-volatile CR fields
 
 // store registers to stack: just the callee-saved regs
@@ -471,7 +480,7 @@ asm(
 
 void run_translation ( HWord translation )
 {
-   if (0) {
+   if (DEBUG_TRACE_FLAGS) {
       printf(" run translation %p\n", (void*)translation );
       printf(" simulated bb: %d\n", n_bbs_done);
    }
@@ -521,7 +530,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
            NULL,          /* instrument2 */
            False,         /* cleanup after instrument */
            NULL, /* access checker */
-           verbose ? TEST_FLAGS : 0 //(1<<7)|(1<<3)|(1<<2)|(1<<1)|(1<<0) //0
+           verbose ? TEST_FLAGS : DEBUG_TRACE_FLAGS
         );
    assert(tres == VexTransOK);
    ws_needed = (trans_used+7) / 8;
@@ -572,15 +581,6 @@ static void run_simulator ( void )
    Addr64 next_guest;
    HWord next_host;
    while (1) {
-      if (n_bbs_done == stopAfter) {
-         printf("---begin SWITCHBACK at %d---\n", n_bbs_done);
-	 if (last_guest)
-            make_translation(last_guest,True);
-         printf("---  end SWITCHBACK at %d---\n", n_bbs_done);
-         switchback();
-         assert(0); /*NOTREACHED*/
-      }
-
       next_guest = gst.GuestPC;
 
       if (0)
@@ -619,8 +619,28 @@ static void run_simulator ( void )
       if (next_host == 0) {
          make_translation(next_guest,False);
          next_host = find_translation(next_guest);
-	 assert(next_host != 0);
+         assert(next_host != 0);
       }
+
+      // Switchback
+      if (n_bbs_done == stopAfter) {
+         printf("---begin SWITCHBACK at bb:%d---\n", n_bbs_done);
+#if 0
+         if (last_guest) {
+            printf("\n=== Last run translation (bb:%d):\n", n_bbs_done-1);
+            make_translation(last_guest,True);
+         }
+#endif
+         if (next_guest) {
+            printf("\n=== Current translation (bb:%d):\n", n_bbs_done);
+            make_translation(next_guest,True);
+         }
+
+         printf("---  end SWITCHBACK at bb:%d ---\n", n_bbs_done);
+         switchback();
+         assert(0); /*NOTREACHED*/
+      }
+
       last_guest = next_guest;
       run_translation(next_host);
    }

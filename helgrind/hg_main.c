@@ -960,9 +960,20 @@ Bool SK_(eq_SkinError) ( VgRes not_used,
 
 void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 {
+   Char buf[100];
    sk_assert(EraserErr == err->ekind);
-   VG_(message)(Vg_UserMsg, "Possible data race %s variable at 0x%x",
-                err->string, err->addr );
+
+   buf[0] = ' ';
+   buf[1] = '(';
+   if (VG_(get_fnname)(err->addr, buf+2, sizeof(buf)-4)) {
+      Int len = VG_(strlen)(buf);
+      buf[len] = ')';
+      buf[len+1] = '\0';
+   } else
+      buf[0] = '\0';
+
+   VG_(message)(Vg_UserMsg, "Possible data race %s variable at 0x%x%s",
+                err->string, err->addr, buf );
    pp_ExeContext();
 }
 
@@ -1350,8 +1361,9 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
       "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.";
    details->bug_reports_to   = "njn25@cam.ac.uk";
 
-   needs->core_errors = True;
-   needs->skin_errors = True;
+   needs->core_errors           = True;
+   needs->skin_errors           = True;
+   needs->data_syms             = True;
 
    track->new_mem_startup       = & eraser_new_mem_startup;
    track->new_mem_heap          = & eraser_new_mem_heap;

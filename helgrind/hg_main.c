@@ -2000,25 +2000,11 @@ void* SK_(realloc) ( void* p, Int new_size )
 /*--- Machinery to support sanity checking                   ---*/
 /*--------------------------------------------------------------*/
 
-/* Check that nobody has spuriously claimed that the first or last 16
-   pages (64 KB) of address space have become accessible.  Failure of
-   the following do not per se indicate an internal consistency
-   problem, but they are so likely to that we really want to know
-   about it if so. */
-
 Bool SK_(cheap_sanity_check) ( void )
 {
-   if (VGE_IS_DISTINGUISHED_SM(primary_map[0])
-       /* kludge: kernel drops a page up at top of address range for
-          magic "optimized syscalls", so we can no longer check the
-          highest page */
-       /* && VGE_IS_DISTINGUISHED_SM(primary_map[65535]) */
-      )
-      return True;
-   else
-      return False;
+   /* nothing useful we can rapidly check */
+   return True;
 }
-
 
 Bool SK_(expensive_sanity_check)(void)
 {

@@ -146,7 +146,8 @@ VG_(switch_to_real_CPU):
 	movl	VG_(m_state_static)+56, %eax
 	pushl	%eax
 	popfl
-	movw	VG_(m_state_static)+0, %cs
+	/* some of these are apparently illegal */
+	/* movw	VG_(m_state_static)+0, %cs */
 	movw	VG_(m_state_static)+4, %ss
 	movw	VG_(m_state_static)+8, %ds
 	movw	VG_(m_state_static)+12, %es

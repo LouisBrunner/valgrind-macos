@@ -60,7 +60,7 @@ int main(int argc, char **argv)
       exit(1);
     }
 
-  printf("result = %p\n", result);
+  printf("result is %s\n", result == PTHREAD_CANCELED ? "correct" : "incorrect");
   
   exit(0);
 }

@@ -259,18 +259,41 @@ asm(
 "   nop\n"
 "   nop\n"
 "   nop\n"
+"nop_end_point:\n"
 );
 extern void nop_start_point;
+extern void nop_end_point;
 void switchback ( void )
 {
-   UInt* p = &nop_start_point;
+   Int i;
+   /* blargh.  Copy the entire switchback_asm procedure into new
+      memory on which can can set both write and execute permissions,
+      so we can poke around with it and then run the results. */
+
+   UChar* sa_start     = (UChar*)&switchback_asm;
+   UChar* sa_nop_start = (UChar*)&nop_start_point;
+   UChar* sa_end       = (UChar*)&nop_end_point;
+
+   Int nbytes       = sa_end - sa_start;
+   Int off_nopstart = sa_nop_start - sa_start;
+   if (0)
+      printf("nbytes = %d, nopstart = %d\n", nbytes, off_nopstart);
+
+   /* copy it into mallocville */
+   UChar* copy = malloc(nbytes);
+   assert(copy);
+   for (i = 0; i < nbytes; i++)
+      copy[i] = sa_start[i];
+
+   UInt* p = (UInt*)(&copy[off_nopstart]);
 
    Addr32 addr_of_nop = (Addr32)p;
    Addr32 where_to_go = gst.guest_CIA;
-   Int    diff = ((Int)addr_of_nop) - ((Int)where_to_go);
+   Int    diff = ((Int)where_to_go) - ((Int)addr_of_nop);
 
    if (diff < -0x2000000 || diff >= 0x2000000) {
      // we're hosed.  Give up
+     printf("hosed -- offset too large\n");
      assert(0);
    }
 
@@ -278,14 +301,19 @@ void switchback ( void )
    sb_helper2 = LibVEX_GuestPPC32_get_flags(&gst);
 
    /* stay sane ... */
-   assert(p[0] == 0 /* whatever the encoding for nop is */);
+   assert(p[0] == 24<<26);
 
+#if 0
+   printf("addr of first nop = 0x%x\n", addr_of_nop);
+   printf("where to go       = 0x%x\n", where_to_go);
+   printf("diff = %d\n", diff);
+#endif
    /* branch to diff */
-   p[0] = ((18<<26) | (diff & 0x3FFFFFC) | (0<<1) | (0<<0));
+   p[0] = ((18<<26) | (((diff >> 2) & 0xFFFFFF) << 2) | (0<<1) | (0<<0));
 
-   invalidate_icache( &p[0], sizeof(UInt) );
+   invalidate_icache( copy, nbytes );
 
-   switchback_asm(); // never returns
+   ( (void(*)(void))copy )();
 }
 
 #else
@@ -573,7 +601,6 @@ static void run_simulator ( void )
          }
 #        elif defined(__powerpc__)
          {
-// CAB: ?  Need to send gpr3 as arg1, but what about return param?
             gst.guest_GPR3 = serviceFn( gst.guest_GPR3, gst.guest_GPR4 );
             gst.guest_CIA  = gst.guest_LR;
             next_guest     = gst.guest_CIA;
@@ -600,6 +627,17 @@ static void usage ( void )
    printf("usage: switchback file.o #bbs\n");
    exit(1);
 }
+
+#if defined(__powerpc__)
+UInt saved_R2;
+asm(
+"get_R2:\n"
+"   lis  %r10,saved_R2@ha\n"
+"   stw  %r2,saved_R2@l(%r10)\n"
+"   blr\n"
+);
+extern void get_R2 ( void );
+#endif
 
 int main ( Int argc, HChar** argv )
 {
@@ -645,9 +683,11 @@ int main ( Int argc, HChar** argv )
    gst.guest_RDI = (ULong)serviceFn;
    *(ULong*)(gst.guest_RSP+0) = 0x12345678AABBCCDDULL;
 #  elif defined(__powerpc__)
+   get_R2();
    gst.guest_CIA  = (UInt)entry;
    gst.guest_GPR1 = (UInt)&gstack[25000]; /* stack pointer */
    gst.guest_GPR3 = (UInt)serviceFn; /* param to entry */
+   gst.guest_GPR2 = saved_R2;
    gst.guest_LR = 0x12345678; /* bogus return address */
 #  else
 #  error "Unknown arch"

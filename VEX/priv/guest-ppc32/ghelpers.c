@@ -66,13 +66,13 @@ UChar ppc32g_calculate_cr0_all ( UChar op, UInt word1, UChar xer_so )
 {
     Int sword1 = (Int)word1;
     if (op) {
-	return (word1 & 0x0000000F);
+	return (word1 & 0xF0000000);
     } else {
 	return
-	    ((xer_so & 1) << 3)
-	    | (((sword1 == 0) ? 1:0) << 2)
-	    | (((sword1 >  0) ? 1:0) << 1)
-	    | (((sword1 <  0) ? 1:0) << 0);
+	    (xer_so & 1)
+	    | (((sword1 == 0) ? 1:0) << 1)
+	    | (((sword1 >  0) ? 1:0) << 2)
+	    | (((sword1 <  0) ? 1:0) << 3);
     }
 }
 

@@ -298,6 +298,8 @@ static IRBB* flatten_BB ( IRBB* in )
 /*--- Constant propagation and folding                        ---*/
 /*---------------------------------------------------------------*/
 
+/* The env in this section is a map from IRTemp to IRExpr*. */
+
 /* Are both expressions simply the same IRTemp ? */
 static Bool sameIRTemps ( IRExpr* e1, IRExpr* e2 )
 {
@@ -1204,6 +1206,10 @@ static void occCount_Expr ( Hash64* env, IRExpr* e )
             occCount_Expr(env, e->Iex.CCall.args[i]);
          return;
 
+      case Iex_GetI:
+         occCount_Expr(env, e->Iex.GetI.offset);
+         return;
+
       case Iex_Const:
       case Iex_Get:
          return;
@@ -1227,6 +1233,10 @@ static void occCount_Stmt ( Hash64* env, IRStmt* st )
          return; 
       case Ist_Put: 
          occCount_Expr(env, st->Ist.Put.expr);
+         return;
+      case Ist_PutI:
+         occCount_Expr(env, st->Ist.PutI.offset);
+         occCount_Expr(env, st->Ist.PutI.expr);
          return;
       case Ist_STle: 
          occCount_Expr(env, st->Ist.STle.addr);
@@ -1299,8 +1309,15 @@ static IRExpr* tbSubst_Expr ( Hash64* env, IRExpr* e )
       case Iex_LDle:
          return IRExpr_LDle(
                    e->Iex.LDle.ty,
-                  tbSubst_Expr(env,e->Iex.LDle.addr)
+                  tbSubst_Expr(env, e->Iex.LDle.addr)
                 );
+      case Iex_GetI:
+         return IRExpr_GetI(
+                   tbSubst_Expr(env, e->Iex.GetI.offset),
+                   e->Iex.GetI.ty,
+                   e->Iex.GetI.minoff,
+                   e->Iex.GetI.maxoff
+         );
       case Iex_Const:
       case Iex_Get:
          return e;
@@ -1330,6 +1347,14 @@ static IRStmt* tbSubst_Stmt ( Hash64* env, IRStmt* st )
                    st->Ist.Put.offset,
                    tbSubst_Expr(env, st->Ist.Put.expr)
                 );
+      case Ist_PutI:
+         return IRStmt_PutI(
+                   tbSubst_Expr(env, st->Ist.PutI.offset),
+                   tbSubst_Expr(env, st->Ist.PutI.expr),
+                   st->Ist.PutI.minoff,
+                   st->Ist.PutI.maxoff
+         );
+
       case Ist_Exit:
          return IRStmt_Exit(
                    tbSubst_Expr(env, st->Ist.Exit.cond),
@@ -1372,6 +1397,10 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
          return;
       case Iex_Get:
          *doesGet |= True;
+         return;
+      case Iex_GetI:
+         *doesGet |= True;
+         setHints_Expr(doesLoad, doesGet, e->Iex.GetI.offset);
          return;
       case Iex_Tmp:
       case Iex_Const:

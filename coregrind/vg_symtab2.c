@@ -799,73 +799,121 @@ Bool VG_(is_object_file)(const void *buf)
    return False;
 }
 
-/*
- * Demangle an intercept symbol into library:func form
+/* Demangle an intercept symbol into library:func form
+   eg "_vgi_libcZdsoZd6__ZdlPv"  -->  "libc.so.6:_ZdlPv"
+   Uses the Z-encoding scheme described in vg_replace_malloc.c.
+   Returns True if demangle OK, False otherwise.
  */
 
 static Bool
 intercept_demangle(const Char* symbol, Char* result, Int nbytes)
 {
-   int i, j = 0;
-   int len = VG_(strlen)(symbol);
+#  define EMIT(ch)                    \
+      do {                            \
+         if (j >= nbytes)             \
+            result[j-1] = 0;          \
+         else                         \
+            result[j++] = ch;         \
+      } while (0)
 
-   for(i = VG_INTERCEPT_PREFIX_LEN; i < len; i++) {
-      if(symbol[i] == 'J') {
+   Bool error = False;
+   Int i, j = 0;
+   Int len = VG_(strlen)(symbol);
+   if (0) VG_(printf)("idm: %s\n", symbol);
+
+   i = VG_INTERCEPT_PREFIX_LEN;
+
+   /* Chew though the Z-encoded soname part. */
+   while (True) {
+
+      if (i >= len) 
+         break;
+
+      if (symbol[i] == '_')
+         /* We found the underscore following the Z-encoded soname.
+            Just copy the rest literally. */
+         break;
+
+      if (symbol[i] != 'Z') {
+         EMIT(symbol[i]);
          i++;
-         vg_assert('J' != symbol[i]);
-         if((symbol[i] >= '0' && symbol[i] <= '9') ||
-            (symbol[i] >= 'a' && symbol[i] <= 'f') ||
-            (symbol[i] >= 'A' && symbol[i] <= 'F')) 
-         {
-            int x = symbol[i++];
-            int y = symbol[i];
-            if(x >= '0' && x <= '9') {
-               x -= '0';
-            } else if(x >= 'a' && x <= 'f') {
-               x -= 'a';
-            } else if(x >= 'A' && x <= 'F') {
-               x -= 'A';
-            }
-            if(y >= '0' && y <= '9') {
-               y -= '0';
-            } else if(y >= 'a' && y <= 'f') {
-               y = y - 'a' + 10;
-            } else if(y >= 'A' && y <= 'F') {
-               y = y - 'A' + 10;
-            } else {
-               return False;
-            }
-            result[j] = (x << 4) | y;
-         } else {
-            return False;
-         }
-      } else {
-         result[j] = symbol[i];
+         continue;
       }
-      if(j >= nbytes) {
-         result[j] = '\0';
-         return True;
+
+      /* We've got a Z-escape.  Act accordingly. */
+      i++;
+      if (i >= len) {
+         /* Hmm, Z right at the end.  Something's wrong. */
+         error = True;
+         EMIT('Z');
+         break;
       }
-      j++;
+      switch (symbol[i]) {
+         case 'a': EMIT('*'); break;
+         case 'p': EMIT('+'); break;
+         case 'c': EMIT(':'); break;
+         case 'd': EMIT('.'); break;
+         case 'u': EMIT('_'); break;
+         case 's': EMIT(' '); break;
+         case 'Z': EMIT('Z'); break;
+         default: error = True; EMIT('Z'); EMIT(symbol[i]); break;
+      }
+      i++;
    }
-   result[j] = '\0';
+
+   if (error || i >= len || symbol[i] != '_') {
+      /* Something's wrong.  Give up. */
+      VG_(message)(Vg_UserMsg, "intercept: error demangling: %s", symbol);
+      EMIT(0);
+      return False;
+   }
+
+   /* Copy the rest of the string verbatim. */
+   i++;
+   EMIT(':');
+   while (True) {
+     if (i >= len)
+        break;
+     EMIT(symbol[i]);
+     i++;
+   }
+
+   EMIT(0);
+   if (0) VG_(printf)("%s\n", result);
    return True;
+
+#  undef EMIT
 }
 
 static
 void handle_intercept( SegInfo* si, Char* symbol, ElfXX_Sym* sym)
 {
-   Int len = VG_(strlen)(symbol) + 1 - VG_INTERCEPT_PREFIX_LEN;
-   Char *lib = VG_(arena_malloc)(VG_AR_SYMTAB, len);
+   Bool ok;
+   Int  len  = VG_(strlen)(symbol) + 1 - VG_INTERCEPT_PREFIX_LEN;
+   Char *lib = VG_(arena_malloc)(VG_AR_SYMTAB, len+8);
    Char *func;
 
-   intercept_demangle(symbol, lib, len);
-   func = lib + VG_(strlen)(lib)-1;
+   /* Put "soname:" at the start of lib. */
+   lib[0] = 's';
+   lib[1] = 'o';
+   lib[2] = 'n';
+   lib[3] = 'a';
+   lib[4] = 'm';
+   lib[5] = 'e';
+   lib[6] = ':';
+   lib[7] = 0;
 
-   while(*func != ':') func--;
-   *func = '\0';
+   ok = intercept_demangle(symbol, lib+7, len);
+   if (ok) {
+      func = lib + VG_(strlen)(lib)-1;
 
-   VG_(add_redirect_sym_to_addr)(lib, func+1, si->offset + sym->st_value);
+      while(*func != ':') func--;
+      *func = '\0';
+
+      if (0) VG_(printf)("lib A%sZ, func A%sZ\n", lib, func+1);
+      VG_(add_redirect_sym_to_addr)(lib, func+1, si->offset + sym->st_value);
+   }
+
    VG_(arena_free)(VG_AR_SYMTAB, lib);
 }
 

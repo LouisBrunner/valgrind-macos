@@ -37,10 +37,10 @@ noinst_HEADERS = \
 EXTRA_DIST = \
 	valgrind.vs \
 	gen_toolint.pl toolfuncs.def \
-	gen_intercepts.pl vg_replace_malloc.c.base
+	gen_intercepts.pl
 
 BUILT_SOURCES = vg_toolint.c vg_toolint.h
-CLEANFILES = vg_toolint.c vg_toolint.h vg_replace_malloc.c
+CLEANFILES = vg_toolint.c vg_toolint.h
 
 valgrind_SOURCES = \
 	ume.c \
@@ -61,6 +61,7 @@ stage2_SOURCES = \
 	vg_demangle.c \
 	vg_errcontext.c \
 	vg_hashtable.c \
+	vg_replace_malloc.c \
 	vg_main.c \
 	vg_malloc2.c \
 	vg_memory.c \
@@ -113,10 +114,6 @@ endif
 
 stage2_LDADD= $(stage2_extra) -ldl
 
-
-vg_replace_malloc.c: $(srcdir)/gen_intercepts.pl $(srcdir)/vg_replace_malloc.c.base
-	rm -f $@
-	$(PERL) $(srcdir)/gen_intercepts.pl < $(srcdir)/vg_replace_malloc.c.base > $@
 
 vg_toolint.c: $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile
 	rm -f $@

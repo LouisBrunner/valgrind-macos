@@ -468,15 +468,18 @@ extern void  VG_(print_all_arena_stats) ( void );
    A synonym for exit. */
 #define VG_USERREQ__LIBC_FREERES_DONE       0x3029
 
-#define VG_INTERCEPT_PREFIX "_vgi__"
-#define VG_INTERCEPT_PREFIX_LEN 6
-#define VG_INTERCEPT(name) _vgi__##name
-#define VG_INTERCEPT_ALIAS(name) "_vgi__" #name
+/* Intercept prefix stuff.  See coregrind/vg_replace_malloc.c for
+   details.  Unfortunately the "_vgi_" literal is also hardcoded in
+   that file, so if you change this one you must also change the other
+   one. */
+#define VG_INTERCEPT_PREFIX "_vgi_"
+#define VG_INTERCEPT_PREFIX_LEN 5
 
-#define VG_WRAPPER_PREFIX "_vgw__"
-#define VG_WRAPPER_PREFIX_LEN 6
-#define VG_WRAPPER(name) _vgw__##name
-#define VG_WRAPPER_ALIAS(name) "_vgw__" #name
+/* Not sure what these are for.  Todo: clarify */
+#define VG_WRAPPER_PREFIX "_vgw_"
+#define VG_WRAPPER_PREFIX_LEN 5
+#define VG_WRAPPER(name) _vgw_##name
+#define VG_WRAPPER_ALIAS(name) "_vgw_" #name
 
 
 struct vg_mallocfunc_info {

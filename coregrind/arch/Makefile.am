@@ -1,2 +1,0 @@
-DIST_SUBDIRS=x86-linux x86-freebsd
-SUBDIRS=$(VG_PLATFORM)

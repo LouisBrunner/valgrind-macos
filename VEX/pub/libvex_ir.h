@@ -365,11 +365,13 @@ typedef
       Iop_128HIto64,   // :: V128 -> I64, high half
       Iop_64HLto128,   // :: (I64,I64) -> V128
 
+      Iop_32Uto128,
+      Iop_Set128lo32,
       /* 128 -> 32 bit unpack */
-      Iop_128W3to32,   // :: V128 -> I32, bits 127-96
-      Iop_128W2to32,   // :: V128 -> I32, bits 95-64
-      Iop_128W1to32,   // :: V128 -> I32, bits 63-32
-      Iop_128W0to32    // :: V128 -> I32, bits 31-0
+      //Iop_128W3to32,   // :: V128 -> I32, bits 127-96
+      //Iop_128W2to32,   // :: V128 -> I32, bits 95-64
+      //Iop_128W1to32,   // :: V128 -> I32, bits 63-32
+      //Iop_128W0to32    // :: V128 -> I32, bits 31-0
    }
    IROp;
 

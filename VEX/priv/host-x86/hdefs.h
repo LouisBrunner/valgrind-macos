@@ -350,6 +350,7 @@ typedef
 
       Xin_SseConst,  /* Generate restricted SSE literal */
       Xin_SseLdSt,   /* SSE load/store, no alignment constraints */
+      Xin_SseLdzLO,  /* SSE load low 32/64 bits, zero remainder of reg */
       Xin_Sse128,    /* SSE binary typeless (and/or/xor/andn) */
       Xin_Sse32Fx4,  /* SSE binary, 32Fx4 */
       Xin_Sse32FLo   /* SSE binary, 32F in lowest lane only */
@@ -531,6 +532,11 @@ typedef
             X86AMode* addr;
          } SseLdSt;
          struct {
+            Int       sz; /* 4 or 8 only */
+            HReg      reg;
+            X86AMode* addr;
+         } SseLdzLO;
+         struct {
             X86SseOp op;  /* MOV/AND/OR/XOR/ANDN only */
             HReg     src;
             HReg     dst;
@@ -580,6 +586,7 @@ extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
 
 extern X86Instr* X86Instr_SseConst  ( UShort con, HReg dst );
 extern X86Instr* X86Instr_SseLdSt   ( Bool isLoad, HReg, X86AMode* );
+extern X86Instr* X86Instr_SseLdzLO  ( Int sz, HReg, X86AMode* );
 extern X86Instr* X86Instr_Sse128    ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse32Fx4  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse32FLo  ( X86SseOp, HReg, HReg );

@@ -327,6 +327,22 @@ static X86Instr* mk_vMOVsd_RR ( HReg src, HReg dst )
    return X86Instr_Sse128(Xsse_MOV, src, dst);
 }
 
+/* Advance/retreat %esp by n. */
+
+static void move_esp_up ( ISelEnv* env, Int n )
+{
+   vassert(n > 0 && n < 256 && (n%4) == 0);
+   addInstr(env, 
+            X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(n), hregX86_ESP()));
+}
+
+static void move_esp_down ( ISelEnv* env, Int n )
+{
+   vassert(n > 0 && n < 256 && (n%4) == 0);
+   addInstr(env, 
+            X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(n), hregX86_ESP()));
+}
+
 
 /* Given an amode, return one which references 4 bytes further
    along. */
@@ -2441,9 +2457,26 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Recip32F0x4: op = Xsse_RCPF; goto do_32F0x4_unary;
       do_32F0x4_unary:
       {
+         /* A bit subtle.  We have to copy the arg to the result
+            register first, because actually doing the SSE scalar insn
+            leaves the upper 3/4 of the destination register
+            unchanged.  Whereas the required semantics of these
+            primops is that the upper 3/4 is simply copied in from the
+            argument. */
          HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
          HReg dst = newVRegV(env);
+         addInstr(env, mk_vMOVsd_RR(arg, dst));
          addInstr(env, X86Instr_Sse32FLo(op, arg, dst));
+         return dst;
+      }
+
+      case Iop_32Uto128: {
+         HReg      dst  = newVRegV(env);
+         X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
+         X86RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Unop.arg);
+         addInstr(env, X86Instr_Push(rmi));
+	 addInstr(env, X86Instr_SseLdzLO(4, dst, esp0));
+         move_esp_up(env, 4);
          return dst;
       }
 
@@ -2454,6 +2487,20 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_Binop) {
    switch (e->Iex.Binop.op) {
+
+      case Iop_Set128lo32: {
+         HReg dst = newVRegV(env);
+         HReg srcV = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg srcI = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
+         move_esp_down(env, 16);
+         addInstr(env, X86Instr_SseLdSt(False/*store*/, srcV, esp0));
+         addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(srcI), esp0));
+         addInstr(env, X86Instr_SseLdSt(True/*load*/, dst, esp0));
+         move_esp_up(env, 16);
+         return dst;
+      }
+
       case Iop_64HLto128: {
          HReg r3, r2, r1, r0;
          X86AMode* esp0  = X86AMode_IR(0, hregX86_ESP());
@@ -2462,8 +2509,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          X86AMode* esp12 = advance4(esp8);
          HReg dst = newVRegV(env);
 	 /* do this via the stack (easy, convenient, etc) */
-         addInstr(env, 
-            X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(16), hregX86_ESP()));
+         move_esp_down(env, 16);
          /* Do the less significant 64 bits */
          iselInt64Expr(&r1, &r0, env, e->Iex.Binop.arg2);
          addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r0), esp0));
@@ -2474,8 +2520,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r3), esp12));
 	 /* Fetch result back from stack. */
          addInstr(env, X86Instr_SseLdSt(True/*load*/, dst, esp0));
-         addInstr(env, 
-            X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(16), hregX86_ESP()));
+         move_esp_up(env, 16);
          return dst;
       }
 

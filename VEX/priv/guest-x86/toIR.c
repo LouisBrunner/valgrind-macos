@@ -6797,7 +6797,11 @@ void dis_ret ( UInt d32 )
 /*--- SSE/SSE2/SSE3 helpers                                ---*/
 /*------------------------------------------------------------*/
 
-static UInt dis_SSE_E_to_G_wrk ( 
+/* Worker function; do not call directly. 
+   Handles full width G = G `op` E   and   G = (not G) `op` E.
+*/
+
+static UInt dis_SSE_E_to_G_all_wrk ( 
                UChar sorb, UInt delta, 
                HChar* opname, IROp op,
                Bool   invertG
@@ -6832,19 +6836,61 @@ static UInt dis_SSE_E_to_G_wrk (
    }
 }
 
-static
-UInt dis_SSE_E_to_G ( UChar sorb, UInt delta, HChar* opname, IROp op )
-{
-   return dis_SSE_E_to_G_wrk( sorb, delta, opname, op, False );
-}
+
+/* All lanes SSE binary operation, G = G `op` E. */
 
 static
-UInt dis_SSE_E_to_G_invG ( UChar sorb, UInt delta, HChar* opname, IROp op )
+UInt dis_SSE_E_to_G_all ( UChar sorb, UInt delta, HChar* opname, IROp op )
 {
-   return dis_SSE_E_to_G_wrk( sorb, delta, opname, op, True );
+   return dis_SSE_E_to_G_all_wrk( sorb, delta, opname, op, False );
 }
 
-static UInt dis_SSE_E_to_G_unary ( 
+/* All lanes SSE binary operation, G = (not G) `op` E. */
+
+static
+UInt dis_SSE_E_to_G_all_invG ( UChar sorb, UInt delta, 
+                               HChar* opname, IROp op )
+{
+   return dis_SSE_E_to_G_all_wrk( sorb, delta, opname, op, True );
+}
+
+/* Lowest 32-bit lane only SSE binary operation, G = G `op` E. */
+
+static UInt dis_SSE_E_to_G_lo32 ( UChar sorb, UInt delta, 
+                                  HChar* opname, IROp op )
+{
+   HChar   dis_buf[50];
+   Int     alen;
+   IRTemp  addr;
+   UChar   rm = getIByte(delta);
+   IRExpr* gpart = getXMMReg(gregOfRM(rm));
+   if (epartIsReg(rm)) {
+      putXMMReg( gregOfRM(rm), 
+                 binop(op, gpart,
+                           getXMMReg(eregOfRM(rm))) );
+      DIP("%s %s,%s\n", opname,
+                        nameXMMReg(eregOfRM(rm)),
+                        nameXMMReg(gregOfRM(rm)) );
+      return delta+1;
+   } else {
+      /* We can only do a 32-bit memory read, so the upper 3/4 of the
+         E operand needs to be made simply of zeroes. */
+      IRTemp epart = newTemp(Ity_V128);
+      addr = disAMode ( &alen, sorb, delta, dis_buf );
+      assign( epart, unop( Iop_32Uto128,
+                           loadLE(Ity_I32, mkexpr(addr))) );
+      putXMMReg( gregOfRM(rm), 
+                 binop(op, gpart, mkexpr(epart)) );
+      DIP("%s %s,%s\n", opname,
+                        dis_buf,
+                        nameXMMReg(gregOfRM(rm)) );
+      return delta+alen;
+   }
+}
+
+/* All lanes unary SSE operation, G = op(E). */
+
+static UInt dis_SSE_E_to_G_unary_all ( 
                UChar sorb, UInt delta, 
                HChar* opname, IROp op
             )
@@ -6871,7 +6917,49 @@ static UInt dis_SSE_E_to_G_unary (
    }
 }
 
+/* Lowest 32-bit lane only unary SSE operation, G = op(E). */
 
+static UInt dis_SSE_E_to_G_unary_lo32 ( 
+               UChar sorb, UInt delta, 
+               HChar* opname, IROp op
+            )
+{
+   /* First we need to get the old G value and patch the low 32 bits
+      of the E operand into it.  Then apply op and write back to G. */
+   HChar   dis_buf[50];
+   Int     alen;
+   IRTemp  addr;
+   UChar   rm = getIByte(delta);
+   IRTemp  oldG0 = newTemp(Ity_V128);
+   IRTemp  oldG1 = newTemp(Ity_V128);
+
+   assign( oldG0, getXMMReg(gregOfRM(rm)) );
+
+   if (epartIsReg(rm)) {
+      assign( oldG1, 
+              binop( Iop_Set128lo32,
+                     mkexpr(oldG0),
+                     getXMMRegLane32(0, eregOfRM(rm))) );
+      putXMMReg( gregOfRM(rm), unop(op, mkexpr(oldG1)) );
+      DIP("%s %s,%s\n", opname,
+                        nameXMMReg(eregOfRM(rm)),
+                        nameXMMReg(gregOfRM(rm)) );
+      return delta+1;
+   } else {
+      addr = disAMode ( &alen, sorb, delta, dis_buf );
+      assign( oldG1, 
+              binop( Iop_Set128lo32,
+                     mkexpr(oldG0),
+                     loadLE(Ity_I32, mkexpr(addr)) ));
+      putXMMReg( gregOfRM(rm), unop(op, mkexpr(oldG1)) );
+      DIP("%s %s,%s\n", opname,
+                        dis_buf,
+                        nameXMMReg(gregOfRM(rm)) );
+      return delta+alen;
+   }
+}
+
+/* Helper for doing SSE 32Fx4 comparisons. */
 
 static void findSSECmpOp ( Bool* needNot, IROp* op, 
                            Int imm8, Bool all_lanes, Int sz )
@@ -6906,6 +6994,8 @@ static void findSSECmpOp ( Bool* needNot, IROp* op,
    }
    vpanic("findSSECmpOp(x86,guest)");
 }
+
+/* Handles SSE 32F comparisons. */
 
 static UInt dis_SSEcmp_E_to_G ( UChar sorb, UInt delta, 
 				HChar* opname, Bool all_lanes, Int sz )
@@ -7095,28 +7185,28 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* 0F 58 = ADDPS -- add 32Fx4 from R/M to R */
    if (insn[0] == 0x0F && insn[1] == 0x58) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+2, "addps", Iop_Add32Fx4 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "addps", Iop_Add32Fx4 );
       goto decode_success;
    }
 
    /* F3 0F 58 = ADDSS -- add 32F0x4 from R/M to R */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x58) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+3, "addss", Iop_Add32F0x4 );
+      delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "addss", Iop_Add32F0x4 );
       goto decode_success;
    }
 
    /* 0F 55 = ANDNPS -- G = (not G) and E */
    if (insn[0] == 0x0F && insn[1] == 0x55) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G_invG( sorb, delta+2, "andnps", Iop_And128 );
+      delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "andnps", Iop_And128 );
       goto decode_success;
    }
 
    /* 0F 54 = ANDPS -- G = G and E */
    if (insn[0] == 0x0F && insn[1] == 0x54) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+2, "andps", Iop_And128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "andps", Iop_And128 );
       goto decode_success;
    }
 
@@ -7345,42 +7435,42 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* 0F 5E = DIVPS -- div 32Fx4 from R/M to R */
    if (insn[0] == 0x0F && insn[1] == 0x5E) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+2, "divps", Iop_Div32Fx4 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "divps", Iop_Div32Fx4 );
       goto decode_success;
    }
 
    /* F3 0F 5E = DIVSS -- div 32F0x4 from R/M to R */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5E) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+3, "divss", Iop_Div32F0x4 );
+      delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "divss", Iop_Div32F0x4 );
       goto decode_success;
    }
 
    /* 0F 5F = MAXPS -- max 32Fx4 from R/M to R */
    if (insn[0] == 0x0F && insn[1] == 0x5F) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+2, "maxps", Iop_Max32Fx4 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "maxps", Iop_Max32Fx4 );
       goto decode_success;
    }
 
    /* F3 0F 5F = MAXSS -- max 32F0x4 from R/M to R */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5F) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+3, "maxss", Iop_Max32F0x4 );
+      delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "maxss", Iop_Max32F0x4 );
       goto decode_success;
    }
 
    /* 0F 5D = MINPS -- min 32Fx4 from R/M to R */
    if (insn[0] == 0x0F && insn[1] == 0x5D) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+2, "minps", Iop_Min32Fx4 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "minps", Iop_Min32Fx4 );
       goto decode_success;
    }
 
    /* F3 0F 5D = MINSS -- min 32F0x4 from R/M to R */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5D) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+3, "minss", Iop_Min32F0x4 );
+      delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "minss", Iop_Min32F0x4 );
       goto decode_success;
    }
 
@@ -7494,31 +7584,34 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       t2 = newTemp(Ity_I32);
       t3 = newTemp(Ity_I32);
       Int src;
-      vassert(sz == 4);
       modrm = getIByte(delta+2);
-      delta += 2+1;
-      src = eregOfRM(modrm);
-      assign( t0, binop( Iop_And32,
-                         binop(Iop_Shr32, getXMMRegLane32(src,0), mkU8(31)),
-                         mkU32(1) ));
-      assign( t1, binop( Iop_And32,
-                         binop(Iop_Shr32, getXMMRegLane32(src,1), mkU8(30)),
-                         mkU32(2) ));
-      assign( t2, binop( Iop_And32,
-                         binop(Iop_Shr32, getXMMRegLane32(src,2), mkU8(29)),
-                         mkU32(4) ));
-      assign( t3, binop( Iop_And32,
-                         binop(Iop_Shr32, getXMMRegLane32(src,3), mkU8(28)),
-                         mkU32(8) ));
-      putIReg(4, gregOfRM(modrm),
-                 binop(Iop_Or32,
-                       binop(Iop_Or32, mkexpr(t0), mkexpr(t1)),
-                       binop(Iop_Or32, mkexpr(t2), mkexpr(t3))
-                      )
-              );
-      DIP("movmskps %s,%s\n", nameXMMReg(src), 
-                              nameIReg(4, gregOfRM(modrm)));
-      goto decode_success;
+      if (epartIsReg(modrm)) {
+         vassert(sz == 4);
+         delta += 2+1;
+         src = eregOfRM(modrm);
+         assign( t0, binop( Iop_And32,
+                            binop(Iop_Shr32, getXMMRegLane32(src,0), mkU8(31)),
+                            mkU32(1) ));
+         assign( t1, binop( Iop_And32,
+                            binop(Iop_Shr32, getXMMRegLane32(src,1), mkU8(30)),
+                            mkU32(2) ));
+         assign( t2, binop( Iop_And32,
+                            binop(Iop_Shr32, getXMMRegLane32(src,2), mkU8(29)),
+                            mkU32(4) ));
+         assign( t3, binop( Iop_And32,
+                            binop(Iop_Shr32, getXMMRegLane32(src,3), mkU8(28)),
+                            mkU32(8) ));
+         putIReg(4, gregOfRM(modrm),
+                    binop(Iop_Or32,
+                          binop(Iop_Or32, mkexpr(t0), mkexpr(t1)),
+                          binop(Iop_Or32, mkexpr(t2), mkexpr(t3))
+                         )
+                 );
+         DIP("movmskps %s,%s\n", nameXMMReg(src), 
+                                 nameIReg(4, gregOfRM(modrm)));
+         goto decode_success;
+      }
+      /* else fall through */
    }
 
    /* 0F 2B = MOVNTPS -- for us, just a plain SSE store. */
@@ -7597,21 +7690,21 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* 0F 59 = MULPS -- mul 32Fx4 from R/M to R */
    if (insn[0] == 0x0F && insn[1] == 0x59) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+2, "mulps", Iop_Mul32Fx4 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "mulps", Iop_Mul32Fx4 );
       goto decode_success;
    }
 
    /* F3 0F 59 = MULSS -- mul 32F0x4 from R/M to R */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x59) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+3, "mulss", Iop_Mul32F0x4 );
+      delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "mulss", Iop_Mul32F0x4 );
       goto decode_success;
    }
 
    /* 0F 56 = ORPS -- G = G and E */
    if (insn[0] == 0x0F && insn[1] == 0x56) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G( sorb, delta+2, "orps", Iop_Or128 );
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "orps", Iop_Or128 );
       goto decode_success;
    }
 
@@ -7885,16 +7978,16 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* 0F 53 = RCPPS -- approx reciprocal 32Fx4 from R/M to R */
    if (insn[0] == 0x0F && insn[1] == 0x53) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G_unary( sorb, delta+2, 
-                                    "rcpps", Iop_Recip32Fx4 );
+      delta = dis_SSE_E_to_G_unary_all( sorb, delta+2, 
+                                        "rcpps", Iop_Recip32Fx4 );
       goto decode_success;
    }
 
    /* F3 0F 53 = RCPSS -- approx reciprocal 32F0x4 from R/M to R */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x53) {
       vassert(sz == 4);
-      delta = dis_SSE_E_to_G_unary( sorb, delta+3, 
-                                    "rcpss", Iop_Recip32F0x4 );
+      delta = dis_SSE_E_to_G_unary_lo32( sorb, delta+3, 
+                                         "rcpss", Iop_Recip32F0x4 );
       goto decode_success;
    }
 

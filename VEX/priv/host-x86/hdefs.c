@@ -743,6 +743,16 @@ X86Instr* X86Instr_SseLdSt ( Bool isLoad, HReg reg, X86AMode* addr ) {
    i->Xin.SseLdSt.addr   = addr;
    return i;
 }
+X86Instr* X86Instr_SseLdzLO  ( Int sz, HReg reg, X86AMode* addr )
+{
+   X86Instr* i           = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                = Xin_SseLdzLO;
+   i->Xin.SseLdzLO.sz    = sz;
+   i->Xin.SseLdzLO.reg   = reg;
+   i->Xin.SseLdzLO.addr  = addr;
+   vassert(sz == 4 || sz == 8);
+   return i;
+}
 X86Instr* X86Instr_Sse128 ( X86SseOp op, HReg src, HReg dst ) {
    X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
    i->tag            = Xin_Sse128;
@@ -967,6 +977,12 @@ void ppX86Instr ( X86Instr* i ) {
             ppX86AMode(i->Xin.SseLdSt.addr);
          }
          return;
+      case Xin_SseLdzLO:
+         vex_printf("movs%s ", i->Xin.SseLdzLO.sz==4 ? "s" : "d");
+         ppX86AMode(i->Xin.SseLdzLO.addr);
+         vex_printf(",");
+         ppHRegX86(i->Xin.SseLdzLO.reg);
+         return;
       case Xin_Sse128:
          if (i->Xin.Sse128.op == Xsse_MOV) {
             vex_printf("mov ");
@@ -1150,6 +1166,10 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, i->Xin.SseLdSt.isLoad ? HRmWrite : HRmRead,
                        i->Xin.SseLdSt.reg);
          return;
+      case Xin_SseLdzLO:
+         addRegUsage_X86AMode(u, i->Xin.SseLdzLO.addr);
+         addHRegUse(u, HRmWrite, i->Xin.SseLdzLO.reg);
+         return;
       case Xin_SseConst:
          addHRegUse(u, HRmWrite, i->Xin.SseConst.dst);
          return;
@@ -1283,6 +1303,10 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_SseLdSt:
          mapReg(m, &i->Xin.SseLdSt.reg);
          mapRegs_X86AMode(m, i->Xin.SseLdSt.addr);
+         break;
+      case Xin_SseLdzLO:
+         mapReg(m, &i->Xin.SseLdzLO.reg);
+         mapRegs_X86AMode(m, i->Xin.SseLdzLO.addr);
          break;
       case Xin_Sse128:
          mapReg(m, &i->Xin.Sse128.src);
@@ -2389,11 +2413,24 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       *p++ = 0x10;
       goto done;
    }
+
    case Xin_SseLdSt:
       *p++ = 0x0F; 
       *p++ = i->Xin.SseLdSt.isLoad ? 0x10 : 0x11;
       p = doAMode_M(p, fake(vregNo(i->Xin.SseLdSt.reg)), i->Xin.SseLdSt.addr);
       goto done;
+
+   case Xin_SseLdzLO:
+      if (i->Xin.SseLdzLO.sz == 4) {
+         /* movss amode, %xmm-dst */
+         *p++ = 0xF3; 
+         *p++ = 0x0F; 
+         *p++ = 0x10; 
+         p = doAMode_M(p, fake(vregNo(i->Xin.SseLdzLO.reg)), 
+                          i->Xin.SseLdzLO.addr);
+         goto done;
+      }
+      break;
 
    case Xin_Sse128:
       *p++ = 0x0F;
@@ -2401,6 +2438,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_OR:  *p++ = 0x56; break;
          case Xsse_XOR: *p++ = 0x57; break;
          case Xsse_AND: *p++ = 0x54; break;
+         case Xsse_MOV: *p++ = 0x10; break;
          default: goto bad;
       }
       p = doAMode_R(p, fake(vregNo(i->Xin.Sse128.dst)),

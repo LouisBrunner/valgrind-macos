@@ -3694,7 +3694,7 @@ static void build_ii16_table (void)
 
     ii16 = my_malloc(200 * sizeof(uint32_t));
     i = 0;
-    for (tmp = 0; ; tmp = tmp + 1 + (tmp >> 2)) {
+    for (tmp = 0; ; tmp = tmp + 1 + (tmp>>1)+(tmp>>2)+(tmp>>3)) {
         if (tmp >= 0x10000)
             tmp = 0xFFFF;
         ii16[i++] = tmp;

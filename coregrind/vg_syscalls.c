@@ -5948,7 +5948,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(ftruncate64,		MayBlock),
    SYSBA(getdents,		MayBlock),
    SYSBA(getdents64,		MayBlock),
-   SYSBA(getgroups32,		MayBlock),
+   SYSBA(getgroups32,		0),
    SYSBA(getgroups,		0),
    SYSBA(getcwd,		0),
    SYSB_(geteuid,		0),

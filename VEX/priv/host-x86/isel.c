@@ -810,6 +810,20 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I64);
 
+   if (e->tag == Iex_Const) {
+      ULong w64 = e->Iex.Const.con->Ico.U64;
+      UInt  wHi = ((UInt)(w64 >> 32)) & 0xFFFFFFFF;
+      UInt  wLo = ((UInt)w64) & 0xFFFFFFFF;
+      HReg  tLo = newVRegI(env);
+      HReg  tHi = newVRegI(env);
+      vassert(e->Iex.Const.con->tag == Ico_U64);
+      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(wHi), tHi));
+      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(wLo), tLo));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
    /* read 64-bit IRTemp */
    if (e->tag == Iex_Tmp) {
       lookupIRTemp64( rHi, rLo, env, e->Iex.Tmp.tmp);

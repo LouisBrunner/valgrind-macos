@@ -37,6 +37,10 @@
 #include <sys/mman.h>     /* for PROT_* */
 #include <sys/utsname.h>  /* for uname */
 #include <sys/time.h>     /* for struct timeval & struct timezone */
+#ifdef KERNEL_2_6
+/* ugly hack to avoid that kernel headers redefine stuff from sys/time.h */
+#define _LINUX_TIME_H
+#endif
 #include <linux/net.h>    /* for the SYS_* constants */
 #include <sys/resource.h> /* for struct rlimit */
 #include <linux/shm.h>    /* for struct shmid_ds & struct ipc_perm */

@@ -158,9 +158,23 @@
    obj:/lib/ld-2.3.2.so
 }
 {
+   _dl_lookup_symbol/ld-2.3.2.so/ld-2.3.2.so
+   Helgrind:Eraser
+   fun:_dl_lookup_symbol
+   obj:/lib/ld-2.3.2.so
+   obj:/lib/ld-2.3.2.so
+}
+{
    _dl_fini
    Helgrind:Eraser
    fun:_dl_fini
+}
+{
+   ld-2.3.2.so/exit/__libc_start_main
+   Helgrind:Eraser
+   obj:/lib/ld-2.3.2.so
+   fun:exit
+   fun:__libc_start_main
 }
 
 #-------- Threading bugs?

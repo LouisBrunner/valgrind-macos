@@ -1181,12 +1181,34 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_DFLAG   = 1; /* forwards */
    vex_state->guest_IDFLAG  = 0;
 
-   // HACK
+   /* HACK: represent the offset associated with %fs==0. This
+      assumes that %fs is only ever zero. */
    vex_state->guest_FS_ZERO = 0;
 
    vex_state->guest_RIP = 0;
 
-   // XXX: add more here later, for segment registers, FPU, etc.
+   /* Initialise the SSE state. */
+#  define SSEZERO(_xmm) _xmm[0]=_xmm[1]=_xmm[2]=_xmm[3] = 0;
+
+   vex_state->guest_SSEROUND = (ULong)Irrm_NEAREST;
+   SSEZERO(vex_state->guest_XMM0);
+   SSEZERO(vex_state->guest_XMM1);
+   SSEZERO(vex_state->guest_XMM2);
+   SSEZERO(vex_state->guest_XMM3);
+   SSEZERO(vex_state->guest_XMM4);
+   SSEZERO(vex_state->guest_XMM5);
+   SSEZERO(vex_state->guest_XMM6);
+   SSEZERO(vex_state->guest_XMM7);
+   SSEZERO(vex_state->guest_XMM8);
+   SSEZERO(vex_state->guest_XMM9);
+   SSEZERO(vex_state->guest_XMM10);
+   SSEZERO(vex_state->guest_XMM11);
+   SSEZERO(vex_state->guest_XMM12);
+   SSEZERO(vex_state->guest_XMM13);
+   SSEZERO(vex_state->guest_XMM14);
+   SSEZERO(vex_state->guest_XMM15);
+
+#  undef SSEZERO
 
    vex_state->guest_EMWARN = EmWarn_NONE;
 }

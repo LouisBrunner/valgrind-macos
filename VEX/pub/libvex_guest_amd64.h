@@ -44,6 +44,15 @@
 /*--- Vex's representation of the AMD64 CPU state.            ---*/
 /*---------------------------------------------------------------*/
 
+/* See detailed comments at the top of libvex_guest_x86.h for
+   further info.  This representation pretty closely mimics the
+   x86 representation.
+
+   SSEROUND[1:0] is the SSE unit's notional rounding mode, encoded as
+   per the IRRoundingMode type.
+*/
+
+
 typedef
    struct {
       /*   0 */ ULong  guest_RAX;
@@ -85,6 +94,25 @@ typedef
          hold zero, and so guest_FS_ZERO holds the 64-bit offset
          associated with a %fs value of zero. */
       ULong guest_FS_ZERO;
+
+      /* XMM registers */
+      ULong guest_SSEROUND;
+      U128  guest_XMM0;
+      U128  guest_XMM1;
+      U128  guest_XMM2;
+      U128  guest_XMM3;
+      U128  guest_XMM4;
+      U128  guest_XMM5;
+      U128  guest_XMM6;
+      U128  guest_XMM7;
+      U128  guest_XMM8;
+      U128  guest_XMM9;
+      U128  guest_XMM10;
+      U128  guest_XMM11;
+      U128  guest_XMM12;
+      U128  guest_XMM13;
+      U128  guest_XMM14;
+      U128  guest_XMM15;
 
       /* Emulation warnings */
       UInt   guest_EMWARN;

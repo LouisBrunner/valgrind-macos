@@ -880,7 +880,7 @@ static void ac_fpu_ACCESS_check ( Addr addr, Int size )
       return;
    }
 
-   if (size == 10 || size == 28 || size == 108) {
+   if (size == 16 || size == 10 || size == 28 || size == 108) {
       PROF_EVENT(94);
       ac_fpu_ACCESS_check_SLOWLY ( addr, size );
       return;
@@ -961,20 +961,15 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
-         case FPU_R:
-         case FPU_W:
-            t_addr = u_in->val2;
-            t_size = newTemp(cb);
-	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
-	    uLiteral(cb, u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, (Addr) & ac_fpu_ACCESS_check, 2, 2, False );
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
          case MMX2_MemRd:
          case MMX2_MemWr:
             sk_assert(u_in->size == 4 || u_in->size == 8);
+	    goto do_Access_ARG2;
+         case FPU_R:
+         case FPU_W:
+            goto do_Access_ARG2;
+         do_Access_ARG2:
+	    sk_assert(u_in->tag2 == TempReg);
             t_addr = u_in->val2;
             t_size = newTemp(cb);
 	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
@@ -984,6 +979,38 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+         case SSE3a_MemRd: // this one causes trouble
+         case SSE2a_MemRd:
+         case SSE2a_MemWr:
+	 case SSE3a_MemWr:
+	    sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+	    goto do_Access_ARG3;
+         do_Access_ARG3:
+            sk_assert(u_in->tag3 == TempReg);
+            t_addr = u_in->val3;
+            t_size = newTemp(cb);
+	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, u_in->size);
+            uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
+            uCCall(cb, (Addr) & ac_fpu_ACCESS_check, 2, 2, False );
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case SSE2a1_MemRd:
+         case SSE2a1_MemWr:
+         case SSE3g1_RegWr:
+         case SSE3g1_RegRd:
+         case SSE3ag_MemRd_RegWr:
+         case SSE5:
+         case SSE3a1_MemRd:
+         case SSE3a1_MemWr:
+	    VG_(pp_UInstr)(0,u_in);
+	    VG_(skin_panic)("AddrCheck: unhandled SSE uinstr");
+	    break;
+
+         case SSE3g_RegWr:
+         case SSE3g_RegRd:
+         case SSE4:
          default:
             VG_(copy_UInstr)(cb, u_in);
             break;

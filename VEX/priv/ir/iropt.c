@@ -45,37 +45,37 @@
 /*--- Finite mappery, of a sort                               ---*/
 /*---------------------------------------------------------------*/
 
-/* General map from 64-bit thing 64-bit thing.  Could be done faster
-   by hashing. */
+/* General map from HWord-sized thing HWord-sized thing.  Could be
+   done faster by hashing. */
 
 typedef
    struct {
       Bool*  inuse;
-      ULong* key;
-      ULong* val;
+      HWord* key;
+      HWord* val;
       Int    size;
       Int    used;
    }
-   Hash64;
+   HashHW;
 
-static Hash64* newH64 ( void )
+static HashHW* newHHW ( void )
 {
-   Hash64* h = LibVEX_Alloc(sizeof(Hash64));
+   HashHW* h = LibVEX_Alloc(sizeof(HashHW));
    h->size   = 8;
    h->used   = 0;
    h->inuse  = LibVEX_Alloc(h->size * sizeof(Bool));
-   h->key    = LibVEX_Alloc(h->size * sizeof(ULong));
-   h->val    = LibVEX_Alloc(h->size * sizeof(ULong));
+   h->key    = LibVEX_Alloc(h->size * sizeof(HWord));
+   h->val    = LibVEX_Alloc(h->size * sizeof(HWord));
    return h;
 }
 
 
 /* Look up key in the map. */
 
-static Bool lookupH64 ( Hash64* h, /*OUT*/ULong* val, ULong key )
+static Bool lookupHHW ( HashHW* h, /*OUT*/HWord* val, HWord key )
 {
    Int i;
-   //vex_printf("lookupH64(%llx)\n", key );
+   //vex_printf("lookupHHW(%llx)\n", key );
    for (i = 0; i < h->used; i++) {
       if (h->inuse[i] && h->key[i] == key) {
          if (val)
@@ -91,7 +91,7 @@ static Bool lookupH64 ( Hash64* h, /*OUT*/ULong* val, ULong key )
 /* Apparently unused */
 /* Delete any binding for key in h. */
 
-static void delFromH64 ( Hash64* h, ULong key )
+static void delFromHHW ( HashHW* h, HWord key )
 {
    Int i;
    for (i = 0; i < h->used; i++) {
@@ -106,11 +106,11 @@ static void delFromH64 ( Hash64* h, ULong key )
 
 /* Add key->val to the map.  Replaces any existing binding for key. */
 
-static void addToH64 ( Hash64* h, ULong key, ULong val )
+static void addToHHW ( HashHW* h, HWord key, HWord val )
 {
    Int i, j;
 
-   //vex_printf("addToH64(%llx, %llx)\n", key, val);
+   //vex_printf("addToHHW(%llx, %llx)\n", key, val);
    /* Find and replace existing binding, if any. */
    for (i = 0; i < h->used; i++) {
       if (h->inuse[i] && h->key[i] == key) {
@@ -123,8 +123,8 @@ static void addToH64 ( Hash64* h, ULong key, ULong val )
    if (h->used == h->size) {
       /* Copy into arrays twice the size. */
       Bool*  inuse2 = LibVEX_Alloc(2 * h->size * sizeof(Bool));
-      ULong* key2   = LibVEX_Alloc(2 * h->size * sizeof(ULong));
-      ULong* val2   = LibVEX_Alloc(2 * h->size * sizeof(ULong));
+      HWord* key2   = LibVEX_Alloc(2 * h->size * sizeof(HWord));
+      HWord* val2   = LibVEX_Alloc(2 * h->size * sizeof(HWord));
       for (i = j = 0; i < h->size; i++) {
          if (!h->inuse[i]) continue;
          inuse2[j] = True;
@@ -818,7 +818,7 @@ static IRBB* cprop_BB ( IRBB* in )
 /*--- Dead code (t = E) removal                               ---*/
 /*---------------------------------------------------------------*/
 
-/* The type of the Hash64 map is: a map from IRTemp to nothing
+/* The type of the HashHW map is: a map from IRTemp to nothing
    -- really just operating a set or IRTemps.
 */
 
@@ -1000,7 +1000,7 @@ static UInt mk_key_GetIPutI ( IRArray* descr )
    .. k_hi). 
 */
 
-static void invalidateOverlaps ( Hash64* h, UInt k_lo, UInt k_hi )
+static void invalidateOverlaps ( HashHW* h, UInt k_lo, UInt k_hi )
 {
    Int  j;
    UInt e_lo, e_hi;
@@ -1026,11 +1026,11 @@ static void invalidateOverlaps ( Hash64* h, UInt k_lo, UInt k_hi )
 
 static void redundant_get_removal_BB ( IRBB* bb )
 {
-   Hash64* env = newH64();
+   HashHW* env = newHHW();
    UInt    key = 0; /* keep gcc -O happy */
    Int     i;
    Bool    isPut;
-   ULong   val;
+   HWord   val;
 
    for (i = 0; i < bb->stmts_used; i++) {
       IRStmt* st = bb->stmts[i];
@@ -1044,9 +1044,9 @@ static void redundant_get_removal_BB ( IRBB* bb )
          /* st is 't = Get(...)'.  Look up in the environment and see
             if the Get can be replaced. */
          IRExpr* get = st->Ist.Tmp.data;
-         key = (ULong)mk_key_GetPut( get->Iex.Get.offset, 
+         key = (HWord)mk_key_GetPut( get->Iex.Get.offset, 
                                      get->Iex.Get.ty );
-         if (lookupH64(env, &val, (ULong)key)) {
+         if (lookupHHW(env, &val, (HWord)key)) {
             /* found it */
             if (DEBUG_IROPT) {
                vex_printf("rGET: "); ppIRExpr(get);
@@ -1059,8 +1059,8 @@ static void redundant_get_removal_BB ( IRBB* bb )
             /* Not found, but at least we know that t and the Get(...)
                are now associated.  So add a binding to reflect that
                fact. */
-            addToH64( env, (ULong)key, 
-                           (ULong)(IRExpr_Tmp(st->Ist.Tmp.tmp)) );
+            addToHHW( env, (HWord)key, 
+                           (HWord)(IRExpr_Tmp(st->Ist.Tmp.tmp)) );
          }
       }
 
@@ -1090,7 +1090,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
       /* add this one to the env, if appropriate */
       if (st->tag == Ist_Put) {
          vassert(isAtom(st->Ist.Put.data));
-         addToH64( env, (ULong)key, (ULong)(st->Ist.Put.data));
+         addToHHW( env, (HWord)key, (HWord)(st->Ist.Put.data));
       }
 
    } /* for (i = 0; i < bb->stmts_used; i++) */
@@ -1106,7 +1106,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
    overlapping ranges listed in env.  Due to the flattening phase, the
    only stmt kind we expect to find a Get on is IRStmt_Tmp. */
 
-static void handle_gets_Stmt ( Hash64* env, IRStmt* st )
+static void handle_gets_Stmt ( HashHW* env, IRStmt* st )
 {
    UInt    key = 0; /* keep gcc -O happy */
    Bool    isGet;
@@ -1185,7 +1185,7 @@ static void redundant_put_removal_BB ( IRBB* bb )
    IRStmt* st;
    UInt    key = 0; /* keep gcc -O happy */
 
-   Hash64* env = newH64();
+   HashHW* env = newHHW();
    for (i = bb->stmts_used-1; i >= 0; i--) {
       st = bb->stmts[i];
       if (!st)
@@ -1224,9 +1224,9 @@ static void redundant_put_removal_BB ( IRBB* bb )
          /* See if any single entry in env overlaps this Put.  This is
             simplistic in that the transformation is valid if, say, two
             or more entries in the env overlap this Put, but the use of
-            lookupH64 will only find a single entry which exactly
+            lookupHHW will only find a single entry which exactly
             overlaps this Put.  This is suboptimal but safe. */
-         if (lookupH64(env, NULL, (ULong)key)) {
+         if (lookupHHW(env, NULL, (HWord)key)) {
             /* This Put is redundant because a later one will overwrite
                it.  So NULL (nop) it out. */
             if (DEBUG_IROPT) {
@@ -1237,7 +1237,7 @@ static void redundant_put_removal_BB ( IRBB* bb )
          } else {
             /* We can't demonstrate that this Put is redundant, so add it
                to the running collection. */
-            addToH64(env, (ULong)key, 0);
+            addToHHW(env, (HWord)key, 0);
          }
          continue;
       }
@@ -1888,17 +1888,17 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
 }
 
 inline
-static IRTemp subst_AvailExpr_Temp ( Hash64* env, IRTemp tmp )
+static IRTemp subst_AvailExpr_Temp ( HashHW* env, IRTemp tmp )
 {
-   ULong res;
+   HWord res;
    /* env :: IRTemp -> IRTemp */
-   if (lookupH64( env, &res, (ULong)tmp ))
+   if (lookupHHW( env, &res, (HWord)tmp ))
       return (IRTemp)res;
    else
       return tmp;
 }
 
-static void subst_AvailExpr ( Hash64* env, AvailExpr* ae )
+static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
 {
    /* env :: IRTemp -> IRTemp */
    switch (ae->tag) {
@@ -1990,8 +1990,10 @@ static void cse_BB ( IRBB* bb )
    IRStmt*    st;
    AvailExpr* eprime;
 
-   Hash64* tenv = newH64(); /* :: IRTemp -> IRTemp */
-   Hash64* aenv = newH64(); /* :: AvailExpr -> IRTemp */
+   HashHW* tenv = newHHW(); /* :: IRTemp -> IRTemp */
+   HashHW* aenv = newHHW(); /* :: AvailExpr* -> IRTemp */
+
+   vassert(sizeof(IRTemp) <= sizeof(HWord));
 
    //ppIRBB(bb);
    //vex_printf("\n\n");
@@ -2037,13 +2039,13 @@ static void cse_BB ( IRBB* bb )
          /* (this is the core of the CSE action) */
          q = (IRTemp)aenv->val[j];
          bb->stmts[i] = IRStmt_Tmp( t, IRExpr_Tmp(q) );
-         addToH64( tenv, (ULong)t, (ULong)q );
+         addToHHW( tenv, (HWord)t, (HWord)q );
       } else {
          /* No binding was found, so instead we add E' -> t to our
             collection of available expressions, replace this stmt
             with "t = E'", and move on. */
          bb->stmts[i] = IRStmt_Tmp( t, availExpr_to_IRExpr(eprime) );
-         addToH64( aenv, (ULong)eprime, (ULong)t );
+         addToHHW( aenv, (HWord)eprime, (HWord)t );
       }
    }
 

@@ -38,6 +38,12 @@ void LibVEX_Init (
    Int guest_insns_per_bb
 )
 {
+   /* First off, do enough minimal setup so that the follow asserts can
+      fail in a sane fashion, if need be. */
+   vex_failure_exit = failure_exit;
+   vex_log_bytes    = log_bytes;
+
+   /* Now it's safe to check parameters for sanity. */
    vassert(!vex_initdone);
    vassert(failure_exit);
    vassert(log_bytes);
@@ -45,8 +51,31 @@ void LibVEX_Init (
    vassert(verbosity >= 0);
    vassert(guest_insns_per_bb >= 1 && guest_insns_per_bb <= 100);
 
-   vex_failure_exit       = failure_exit;
-   vex_log_bytes          = log_bytes;
+   /* Check that Vex has been built with sizes of basic types as
+      stated in priv/libvex_basictypes.h.  Failure of any of these is
+      a serious configuration error and should be corrected
+      immediately.  If any of these assertions fail you can fully
+      expect Vex not to work properly, if at all. */
+
+   vassert(1 == sizeof(UChar));
+   vassert(1 == sizeof(Char));
+   vassert(2 == sizeof(UShort));
+   vassert(2 == sizeof(Short));
+   vassert(4 == sizeof(UInt));
+   vassert(4 == sizeof(Int));
+   vassert(8 == sizeof(ULong));
+   vassert(8 == sizeof(Long));
+   vassert(4 == sizeof(Float));
+   vassert(8 == sizeof(Double));
+   vassert(1 == sizeof(Bool));
+   vassert(4 == sizeof(Addr32));
+   vassert(8 == sizeof(Addr64));
+
+   vassert(sizeof(void*) == 4 || sizeof(void*) == 8);
+   vassert(sizeof(void*) == sizeof(int*));
+   vassert(sizeof(void*) == sizeof(HWord));
+
+   /* Really start up .. */
    vex_debuglevel         = debuglevel;
    vex_verbosity          = verbosity;
    vex_valgrind_support   = valgrind_support;

@@ -1273,11 +1273,11 @@ void VG_(read_procselfmaps) (
    Exports of vg_symtab2.c
    ------------------------------------------------------------------ */
 
-extern void VG_(maybe_read_symbols)   ( void );
+extern void VG_(read_symbols)         ( void );
 extern void VG_(read_symtab_callback) ( Addr start, UInt size, 
                                         Char rr, Char ww, Char xx,
                                         UInt foffset, UChar* filename );
-extern void VG_(maybe_unload_symbols) ( Addr start, UInt length );
+extern void VG_(unload_symbols)       ( Addr start, UInt length );
 
 extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
 extern void VG_(mini_stack_dump)      ( ExeContext* ec );

@@ -40,8 +40,6 @@
    Stabs reader greatly improved by Nick Nethercote, Apr 02.
 */
 
-/* Set to True when first debug info search is performed */
-Bool VG_(using_debug_info) = False;
 
 /*------------------------------------------------------------*/
 /*--- Structs n stuff                                      ---*/
@@ -1913,6 +1911,11 @@ void VG_(read_symtab_callback) (
    si->strtab = NULL;
    si->strtab_size = si->strtab_used = 0;
 
+   si->plt_start  = si->plt_size = 0;
+   si->got_start  = si->got_size = 0;
+   si->data_start = si->data_size = 0;
+   si->bss_start  = si->bss_size = 0;
+
    /* And actually fill it up. */
    if (!vg_read_lib_symbols ( si ) && 0) {
       /* XXX this interacts badly with the prevN optimization in
@@ -1941,16 +1944,11 @@ void VG_(read_symtab_callback) (
    libraries as they are dlopen'd.  Conversely, when the client does
    munmap(), vg_symtab_notify_munmap() throws away any symbol tables
    which happen to correspond to the munmap()d area.  */
-void VG_(maybe_read_symbols) ( void )
+void VG_(read_symbols) ( void )
 {
    /* 9 July 2003: In order to work around PLT bypassing in
       glibc-2.3.2 (see below VG_(setup_code_redirect_table)), we need
-      to load debug info regardless of the skin, unfortunately.  Hence
-      .. */
-
-   /* if (!VG_(using_debug_info))
-         return;
-   */
+      to load debug info regardless of the skin, unfortunately.  */
 
    VGP_PUSHCC(VgpReadSyms);
       VG_(read_procselfmaps) ( VG_(read_symtab_callback),
@@ -1964,12 +1962,9 @@ void VG_(maybe_read_symbols) ( void )
    accuracy of error messages, but we need to do it in order to
    maintain the no-overlapping invariant.
 */
-void VG_(maybe_unload_symbols) ( Addr start, UInt length )
+void VG_(unload_symbols) ( Addr start, UInt length )
 {
    SegInfo *prev, *curr;
-
-   if (!VG_(using_debug_info))
-      return;
 
    prev = NULL;
    curr = segInfo;
@@ -2003,14 +1998,6 @@ void VG_(maybe_unload_symbols) ( Addr start, UInt length )
 /*--- Use of symbol table & location info to create        ---*/
 /*--- plausible-looking stack dumps.                       ---*/
 /*------------------------------------------------------------*/
-
-static __inline__ void ensure_debug_info_inited ( void )
-{
-   if (!VG_(using_debug_info)) {
-      VG_(using_debug_info) = True;
-      VG_(maybe_read_symbols)();
-   }
-}
 
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
@@ -2072,7 +2059,6 @@ static void search_all_symtabs ( Addr ptr, /*OUT*/SegInfo** psi,
    Int      sno;
    SegInfo* si;
 
-   ensure_debug_info_inited();
    VGP_PUSHCC(VgpSearchSyms);
    
    for (si = segInfo; si != NULL; si = si->next) {
@@ -2127,7 +2113,6 @@ static void search_all_loctabs ( Addr ptr, /*OUT*/SegInfo** psi,
 
    VGP_PUSHCC(VgpSearchSyms);
 
-   ensure_debug_info_inited();
    for (si = segInfo; si != NULL; si = si->next) {
       if (si->start <= ptr && ptr < si->start+si->size) {
          lno = search_one_loctab ( si, ptr );
@@ -2232,7 +2217,6 @@ Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 {
    SegInfo* si;
 
-   ensure_debug_info_inited();
    for (si = segInfo; si != NULL; si = si->next) {
       if (si->start <= a && a < si->start+si->size) {
          VG_(strncpy_safely)(buf, si->filename, nbuf);
@@ -2248,7 +2232,6 @@ SegInfo* VG_(get_obj) ( Addr a )
 {
    SegInfo* si;
 
-   ensure_debug_info_inited();
    for (si = segInfo; si != NULL; si = si->next) {
       if (si->start <= a && a < si->start+si->size) {
          return si;
@@ -2404,7 +2387,6 @@ Int VG_(setup_code_redirect_table) ( void )
 
    /* Look for the SegInfo for glibc and our pthread library. */
 
-   ensure_debug_info_inited();
    si_libc = si_pth = NULL;
 
    for (si = segInfo; si != NULL; si = si->next) {
@@ -2453,8 +2435,6 @@ Int VG_(setup_code_redirect_table) ( void )
 
 const SegInfo* VG_(next_seginfo)(const SegInfo* seg)
 {
-   ensure_debug_info_inited();
-
    if (seg == NULL)
       return segInfo;
    return seg->next;
@@ -2484,8 +2464,6 @@ VgSectKind VG_(seg_sect_kind)(Addr a)
 {
    SegInfo* seg;
    VgSectKind ret = Vg_SectUnknown;
-
-   ensure_debug_info_inited();
 
    for(seg = segInfo; seg != NULL; seg = seg->next) {
       if (a >= seg->start && a < (seg->start + seg->size)) {

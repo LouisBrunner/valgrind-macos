@@ -128,7 +128,7 @@ static Bool remove_if_exe_segment_from_list( Addr a )
 void VG_(new_exe_segment) ( Addr a, UInt len )
 {
    add_exe_segment_to_list( a, len );
-   VG_(maybe_read_symbols)();
+   VG_(read_symbols)();
 }
 
 /* Invalidate translations as necessary (also discarding any basic
@@ -141,7 +141,7 @@ void VG_(remove_if_exe_segment) ( Addr a, UInt len )
 {
    if (remove_if_exe_segment_from_list( a )) {
       VG_(invalidate_translations) ( a, len, False );
-      VG_(maybe_unload_symbols)    ( a, len );
+      VG_(unload_symbols)          ( a, len );
    }
 }
 

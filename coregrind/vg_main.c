@@ -245,43 +245,10 @@ void VG_(start_debugger) ( Int tid )
       Int status;
       Int res;
 
-      if (VG_(is_running_thread)( tid )) {
-         regs.cs  = VG_(baseBlock)[VGOFF_(m_cs)];
-         regs.ss  = VG_(baseBlock)[VGOFF_(m_ss)];
-         regs.ds  = VG_(baseBlock)[VGOFF_(m_ds)];
-         regs.es  = VG_(baseBlock)[VGOFF_(m_es)];
-         regs.fs  = VG_(baseBlock)[VGOFF_(m_fs)];
-         regs.gs  = VG_(baseBlock)[VGOFF_(m_gs)];
-         regs.eax = VG_(baseBlock)[VGOFF_(m_eax)];
-         regs.ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
-         regs.ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
-         regs.edx = VG_(baseBlock)[VGOFF_(m_edx)];
-         regs.esi = VG_(baseBlock)[VGOFF_(m_esi)];
-         regs.edi = VG_(baseBlock)[VGOFF_(m_edi)];
-         regs.ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
-         regs.esp = VG_(baseBlock)[VGOFF_(m_esp)];
-         regs.eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
-         regs.eip = VG_(baseBlock)[VGOFF_(m_eip)];
-      } else {
-         ThreadState* tst = & VG_(threads)[ tid ];
-         
-         regs.cs  = tst->arch.m_cs;
-         regs.ss  = tst->arch.m_ss;
-         regs.ds  = tst->arch.m_ds;
-         regs.es  = tst->arch.m_es;
-         regs.fs  = tst->arch.m_fs;
-         regs.gs  = tst->arch.m_gs;
-         regs.eax = tst->arch.m_eax;
-         regs.ebx = tst->arch.m_ebx;
-         regs.ecx = tst->arch.m_ecx;
-         regs.edx = tst->arch.m_edx;
-         regs.esi = tst->arch.m_esi;
-         regs.edi = tst->arch.m_edi;
-         regs.ebp = tst->arch.m_ebp;
-         regs.esp = tst->arch.m_esp;
-         regs.eflags = tst->arch.m_eflags;
-         regs.eip = tst->arch.m_eip;
-      }
+      if (VG_(is_running_thread)( tid ))
+         VGA_(regs_for_ptrace_from_BB)(&regs);
+      else
+         VGA_(regs_for_ptrace_from_tst)(&VG_(threads)[tid].arch, &regs);
 
       if ((res = VG_(waitpid)(pid, &status, 0)) == pid &&
           WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP &&

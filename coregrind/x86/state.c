@@ -31,7 +31,7 @@
 #include "core.h"
 
 /*------------------------------------------------------------*/
-/*--- baseBlock setup                                      ---*/
+/*--- baseBlock setup and operations                       ---*/
 /*------------------------------------------------------------*/
 
 /* The variables storing offsets. */
@@ -342,7 +342,6 @@ void VGA_(load_state) ( arch_thread_t* arch, ThreadId tid )
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_esp &&
          VG_UNUSED_SHADOW_REG_VALUE == arch->sh_eflags);
    }
-
 }
 
 void VGA_(save_state)( arch_thread_t *arch, ThreadId tid )
@@ -445,6 +444,51 @@ n",
 
    for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
       VG_(baseBlock)[VGOFF_(m_ssestate) + i] = junk;
+}
+
+/*------------------------------------------------------------*/
+/*--- Debugger-related operations                          ---*/
+/*------------------------------------------------------------*/
+
+void VGA_(regs_for_ptrace_from_BB)(struct user_regs_struct* regs)
+{
+   regs->cs     = VG_(baseBlock)[VGOFF_(m_cs)];
+   regs->ss     = VG_(baseBlock)[VGOFF_(m_ss)];
+   regs->ds     = VG_(baseBlock)[VGOFF_(m_ds)];
+   regs->es     = VG_(baseBlock)[VGOFF_(m_es)];
+   regs->fs     = VG_(baseBlock)[VGOFF_(m_fs)];
+   regs->gs     = VG_(baseBlock)[VGOFF_(m_gs)];
+   regs->eax    = VG_(baseBlock)[VGOFF_(m_eax)];
+   regs->ebx    = VG_(baseBlock)[VGOFF_(m_ebx)];
+   regs->ecx    = VG_(baseBlock)[VGOFF_(m_ecx)];
+   regs->edx    = VG_(baseBlock)[VGOFF_(m_edx)];
+   regs->esi    = VG_(baseBlock)[VGOFF_(m_esi)];
+   regs->edi    = VG_(baseBlock)[VGOFF_(m_edi)];
+   regs->ebp    = VG_(baseBlock)[VGOFF_(m_ebp)];
+   regs->esp    = VG_(baseBlock)[VGOFF_(m_esp)];
+   regs->eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
+   regs->eip    = VG_(baseBlock)[VGOFF_(m_eip)];
+}
+
+void VGA_(regs_for_ptrace_from_tst)(arch_thread_t *tst,
+                                    struct user_regs_struct* regs)
+{
+   regs->cs     = tst->m_cs;
+   regs->ss     = tst->m_ss;
+   regs->ds     = tst->m_ds;
+   regs->es     = tst->m_es;
+   regs->fs     = tst->m_fs;
+   regs->gs     = tst->m_gs;
+   regs->eax    = tst->m_eax;
+   regs->ebx    = tst->m_ebx;
+   regs->ecx    = tst->m_ecx;
+   regs->edx    = tst->m_edx;
+   regs->esi    = tst->m_esi;
+   regs->edi    = tst->m_edi;
+   regs->ebp    = tst->m_ebp;
+   regs->esp    = tst->m_esp;
+   regs->eflags = tst->m_eflags;
+   regs->eip    = tst->m_eip;
 }
 
 /*--------------------------------------------------------------------*/

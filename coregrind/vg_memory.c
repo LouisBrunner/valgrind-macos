@@ -327,21 +327,21 @@ void VG_(handle_esp_assignment) ( Addr new_esp )
 
 #     ifdef VG_PROFILE_MEMORY
       // PPP
-      if      (delta = - 4) PROF_EVENT(102);
-      else if (delta =   4) PROF_EVENT(103);
-      else if (delta = -12) PROF_EVENT(104);
-      else if (delta = - 8) PROF_EVENT(105);
-      else if (delta =  16) PROF_EVENT(106);
-      else if (delta =  12) PROF_EVENT(107);
-      else if (delta =   0) PROF_EVENT(108);
-      else if (delta =   8) PROF_EVENT(109);
-      else if (delta = -16) PROF_EVENT(110);
-      else if (delta =  20) PROF_EVENT(111);
-      else if (delta = -20) PROF_EVENT(112);
-      else if (delta =  24) PROF_EVENT(113);
-      else if (delta = -24) PROF_EVENT(114);
-      else if (delta > 0)   PROF_EVENT(115); // PPP: new: aligned_big_pos
-      else                  PROF_EVENT(116); // PPP: new: aligned_big_neg
+      if      (delta == - 4) PROF_EVENT(102);
+      else if (delta ==   4) PROF_EVENT(103);
+      else if (delta == -12) PROF_EVENT(104);
+      else if (delta == - 8) PROF_EVENT(105);
+      else if (delta ==  16) PROF_EVENT(106);
+      else if (delta ==  12) PROF_EVENT(107);
+      else if (delta ==   0) PROF_EVENT(108);
+      else if (delta ==   8) PROF_EVENT(109);
+      else if (delta == -16) PROF_EVENT(110);
+      else if (delta ==  20) PROF_EVENT(111);
+      else if (delta == -20) PROF_EVENT(112);
+      else if (delta ==  24) PROF_EVENT(113);
+      else if (delta == -24) PROF_EVENT(114);
+      else if (delta > 0)    PROF_EVENT(115); // PPP: new: aligned_big_pos
+      else                   PROF_EVENT(116); // PPP: new: aligned_big_neg
 #     endif
       
       if (delta < 0 && delta > -2000) {

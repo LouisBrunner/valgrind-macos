@@ -551,8 +551,10 @@ static void augment_command_line(Int* vg_argc_inout, char*** vg_argv_inout)
       /* ' ' separated extra options */
       char **from;
       char **to;
-      int env_arg_count, f1_arg_count, f2_arg_count;
-      
+      int orig_arg_count, env_arg_count, f1_arg_count, f2_arg_count;
+
+      for ( orig_arg_count = 0; vg_argv0[orig_arg_count]; orig_arg_count++ );
+
       env_arg_count = count_args(env_clo);
       f1_arg_count  = count_args(f1_clo);
       f2_arg_count  = count_args(f2_clo);
@@ -563,7 +565,7 @@ static void augment_command_line(Int* vg_argc_inout, char*** vg_argv_inout)
 
       /* +2: +1 for null-termination, +1 for added '--' */
       from     = vg_argv0;
-      vg_argv0 = malloc( (vg_argc0 + env_arg_count + f1_arg_count 
+      vg_argv0 = malloc( (orig_arg_count + env_arg_count + f1_arg_count 
                           + f2_arg_count + 2) * sizeof(char **));
       vg_assert(vg_argv0);
       to      = vg_argv0;

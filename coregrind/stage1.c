@@ -263,7 +263,6 @@ static void main2(void)
    extern char _end;
    int *esp;
    char buf[strlen(valgrind_lib) + sizeof(stage2) + 16];
-   printf("& local = %p\n", &esp);
    info.exe_end  = PGROUNDDN(init_sp);
 #ifdef HAVE_PIE
    info.exe_base = ROUNDDN(info.exe_end - 0x02000000, 0x10000000);

@@ -66,8 +66,8 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
       }
    }
 
-   else VG_BOOL_CLO("--sloppy-malloc=yes", VG_(clo_sloppy_malloc))
-   else VG_BOOL_CLO("--trace-malloc=yes",  VG_(clo_trace_malloc))
+   else VG_BOOL_CLO("--sloppy-malloc", VG_(clo_sloppy_malloc))
+   else VG_BOOL_CLO("--trace-malloc",  VG_(clo_trace_malloc))
    else 
       return False;
 

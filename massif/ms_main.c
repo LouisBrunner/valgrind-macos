@@ -390,7 +390,9 @@ static XPt* new_XPt(Addr eip, XPt* parent, Bool is_bottom)
    xpt->spacetime2   = 0;
 
    xpt->parent       = parent;
-   sk_assert(parent == NULL || 0xffffffff != parent->eip);
+
+   // Check parent is not a bottom-XPt
+   sk_assert(parent == NULL || 0 != parent->max_children);
 
    xpt->n_children   = 0;
 

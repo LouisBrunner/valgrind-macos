@@ -774,14 +774,21 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
    return True;
 }
 
+/* x86 spill/reload using the hacked104 testbed.  Spill slots
+   start at word 34, and there are 24 in total. 
+*/
+
 X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 {
+   Int base = 4 * 34;
+   vassert(offset >= 0);
+   vassert(offset <= 4*(24-1));
    vassert(!hregIsVirtual(rreg));
    switch (hregClass(rreg)) {
       case HRcInt:
         return
         X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), 
-                          X86AMode_IR(offset + 0x1000, 
+                          X86AMode_IR(offset + base, 
                                       hregX86_EBP()));
       default: 
          ppHRegClass(hregClass(rreg));
@@ -791,12 +798,15 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 
 X86Instr* genReload_X86 ( HReg rreg, Int offset )
 {
+   Int base = 4 * 34;
+   vassert(offset >= 0);
+   vassert(offset <= 4*(24-1));
    vassert(!hregIsVirtual(rreg));
    switch (hregClass(rreg)) {
       case HRcInt:
         return
         X86Instr_Alu32R ( Xalu_MOV, 
-                          X86RMI_Mem(X86AMode_IR(offset + 0x1000, 
+                          X86RMI_Mem(X86AMode_IR(offset + base, 
                                                  hregX86_EBP())),
                           rreg );
       default: 

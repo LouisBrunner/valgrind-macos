@@ -25,14 +25,91 @@
    x86toIR.c.  
 */
 
+typedef UChar uint8_t;
+
+#define CC_O CC_MASK_O
+#define CC_P CC_MASK_P
+
+
+static const uint8_t parity_table[256] = {
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
+    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+};
+
+/* n must be a constant to be efficient */
+static inline int lshift(int x, int n)
+{
+    if (n >= 0)
+        return x << n;
+    else
+        return x >> (-n);
+}
+
+
+#define PREAMBLE(__data_bits)						 \
+   const UInt DATA_MASK 						 \
+      = __data_bits==8 ? 0xFF : (__data_bits==16 ? 0xFFFF : 0xFFFFFFFF); \
+   const UInt CC_DST = cc_dst;						 \
+   const UInt CC_SRC = cc_src
+
+
+#define ACTIONS_SUB(DATA_BITS,DATA_TYPE,DATA_STYPE)			   \
+   {									   \
+      PREAMBLE(DATA_BITS);						   \
+      int cf, pf, af, zf, sf, of;					   \
+      int src1, src2;							   \
+      src1 = CC_DST + CC_SRC;						   \
+      src2 = CC_SRC;							   \
+      cf = (DATA_TYPE)src1 < (DATA_TYPE)src2;				   \
+      pf = parity_table[(uint8_t)CC_DST];				   \
+      af = (CC_DST ^ src1 ^ src2) & 0x10;				   \
+      zf = ((DATA_TYPE)CC_DST == 0) << 6;				   \
+      sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;			   \
+      of = lshift((src1 ^ src2) & (src1 ^ CC_DST), 12 - DATA_BITS) & CC_O; \
+      return cf | pf | af | zf | sf | of;				   \
+   }
+
 
 /* RUNS AS PART OF GENERATED CODE */
 /*static*/ UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
    switch (cc_op) {
+      case CC_OP_SUBL: ACTIONS_SUB(32,UChar,Char);
+
       default:
          /* shouldn't really make these calls from generated code */
-         vex_printf("calculate_eflags_all: unhandled %d\n", cc_op);
+         vex_printf("calculate_eflags_all( %d, 0x%x, 0x%x )\n",
+                    cc_op, cc_src, cc_dst );
          vpanic("calculate_eflags_all");
    }
 }

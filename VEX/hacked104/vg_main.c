@@ -166,59 +166,59 @@ static void vg_init_baseBlock ( void )
    /* 7   */ VGOFF_(m_edi)     = alloc_BaB(1);
 
    /* 8   */ VGOFF_(m_cc_op)  = alloc_BaB(1);
-   /* 8   */ VGOFF_(m_cc_src)  = alloc_BaB(1);
-   /* 8   */ VGOFF_(m_cc_dst)  = alloc_BaB(1);
-   /* 8   */ VGOFF_(m_cc_dflag)  = alloc_BaB(1);
-   /* 25 */  VGOFF_(m_eip) = alloc_BaB(1);
+   /* 9   */ VGOFF_(m_cc_src)  = alloc_BaB(1);
+   /* 10  */ VGOFF_(m_cc_dst)  = alloc_BaB(1);
+   /* 11  */ VGOFF_(m_cc_dflag)  = alloc_BaB(1);
+   /* 12  */  VGOFF_(m_eip) = alloc_BaB(1);
 
-   /* 9   */ VGOFF_(sh_eax)    = alloc_BaB(1);
-   /* 10  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
-   /* 11  */ VGOFF_(sh_edx)    = alloc_BaB(1);
-   /* 12  */ VGOFF_(sh_ebx)    = alloc_BaB(1);
-   /* 13  */ VGOFF_(sh_esp)    = alloc_BaB(1);
-   /* 14  */ VGOFF_(sh_ebp)    = alloc_BaB(1);
-   /* 15  */ VGOFF_(sh_esi)    = alloc_BaB(1);
-   /* 16  */ VGOFF_(sh_edi)    = alloc_BaB(1);
-   /* 17  */ VGOFF_(sh_eflags) = alloc_BaB(1);
+   /* 13  */ VGOFF_(sh_eax)    = alloc_BaB(1);
+   /* 14  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
+   /* 15  */ VGOFF_(sh_edx)    = alloc_BaB(1);
+   /* 16  */ VGOFF_(sh_ebx)    = alloc_BaB(1);
+   /* 17  */ VGOFF_(sh_esp)    = alloc_BaB(1);
+   /* 18  */ VGOFF_(sh_ebp)    = alloc_BaB(1);
+   /* 19  */ VGOFF_(sh_esi)    = alloc_BaB(1);
+   /* 20  */ VGOFF_(sh_edi)    = alloc_BaB(1);
+   /* 21  */ VGOFF_(sh_eflags) = alloc_BaB(1);
 
-   /* 17a */ 
+   /* 22 */ 
    VGOFF_(log_1I_0D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_1I_0D_cache_access) );
-   /* 17b */ 
+   /* 23 */ 
    VGOFF_(log_0I_1D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_0I_1D_cache_access) );
-   /* 17c */ 
+   /* 24 */ 
    VGOFF_(log_1I_1D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_1I_1D_cache_access) );
-   /* 17d */ 
+   /* 25 */ 
    VGOFF_(log_0I_2D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_0I_2D_cache_access) );
-   /* 17e */ 
+   /* 26 */ 
    VGOFF_(log_1I_2D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_1I_2D_cache_access) );
 
-   /* 18  */ 
+   /* 27  */ 
    VGOFF_(helper_value_check4_fail) 
       = alloc_BaB_1_set( (Addr) & VG_(helper_value_check4_fail) );
-   /* 19 */
+   /* 28 */
    VGOFF_(helper_value_check0_fail)
       = alloc_BaB_1_set( (Addr) & VG_(helper_value_check0_fail) );
 
-   /* 20  */
+   /* 29  */
    VGOFF_(helperc_STOREV4)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_STOREV4) );
-   /* 21  */
+   /* 30  */
    VGOFF_(helperc_STOREV1)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_STOREV1) );
 
-   /* 22  */
+   /* 31  */
    VGOFF_(helperc_LOADV4)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_LOADV4) );
-   /* 23  */
+   /* 32  */
    VGOFF_(helperc_LOADV1)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_LOADV1) );
 
-   /* 24  */
+   /* 33  */
    VGOFF_(handle_esp_assignment)
       = alloc_BaB_1_set( (Addr) & VGM_(handle_esp_assignment) );
 
@@ -227,7 +227,7 @@ static void vg_init_baseBlock ( void )
       most spills are to low numbered spill slots, so the ones above
       the boundary don't see much action. */
    VGOFF_(spillslots) = alloc_BaB(VG_MAX_SPILLSLOTS);
-
+   VG_(printf)("1.0.4 spillslots: start at word %d\n", VGOFF_(spillslots));
    /* These two pushed beyond the boundary because 2-byte transactions
       are rare. */
    /* 50  */

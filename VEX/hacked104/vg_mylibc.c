@@ -1196,10 +1196,10 @@ void VG_(end_rdtsc_calibration) ( void )
    vg_assert(rdtsc_calibration_state == 1);
    rdtsc_calibration_state = 2;
 
-   /* Try and delay for 20 milliseconds, so that we can at least have
+   /* Try and delay for 50 milliseconds, so that we can at least have
       some minimum level of accuracy. */
    req.tv_sec = 0;
-   req.tv_nsec = 20 * 1000 * 1000;
+   req.tv_nsec = 50 * 1000 * 1000;
    loops = 0;
    while (True) {
       res = VG_(nanosleep)(&req, &rem);

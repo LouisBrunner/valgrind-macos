@@ -3130,6 +3130,18 @@ void VG_(translate) ( ThreadState* tst,
       vex_init_done = True;
    }
 
+   if (1) {
+     VG_(printf)("\n\n");
+         VG_(message)(Vg_UserMsg,
+                     "=======================================================");
+         VG_(message)(Vg_UserMsg,
+              "trans# %d, bb# %lu, in %d, out %d =======================",
+              VG_(overall_in_count), 
+              VG_(bbs_done),
+              VG_(overall_in_osize), VG_(overall_in_tsize) );
+     VG_(printf)("\n");
+   }
+
    tres = LibVEX_Translate ( 
              InsnSetX86, InsnSetX86,
              (Char*)orig_addr, (Addr64)orig_addr, orig_size,

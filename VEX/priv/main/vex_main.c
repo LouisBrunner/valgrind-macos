@@ -201,12 +201,12 @@ TranslateResult LibVEX_Translate (
    /* Assemble */
    out_used = 0; /* tracks along the host_bytes array */
    for (i = 0; i < rcode->arr_used; i++) {
-      if (vex_verbosity > 0) {
+      if (vex_verbosity > 1) {
          ppInstr(rcode->arr[i]);
          vex_printf("\n");
       }
       j = (*emit)( insn_bytes, 32, rcode->arr[i] );
-      if (vex_verbosity > 0) {
+      if (vex_verbosity > 1) {
          for (k = 0; k < j; k++)
 	    if (insn_bytes[k] < 16)
                vex_printf("0%x ",  (UInt)insn_bytes[k]);

@@ -711,6 +711,11 @@ static IRExpr* mkU32 ( UInt i )
    return IRExpr_Const(IRConst_U32(i));
 }
 
+static IRExpr* mkU64 ( ULong i )
+{
+   return IRExpr_Const(IRConst_U64(i));
+}
+
 static IRExpr* mkU ( IRType ty, UInt i )
 {
    if (ty == Ity_I8)  return mkU8(i);
@@ -7392,7 +7397,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* 0F 10 = MOVUPS -- move from E (mem or xmm) to G (xmm). */
    if (sz == 4 && insn[0] == 0x0F && (insn[1] == 0x28 || insn[1] == 0x10)) {
       modrm = getIByte(delta+2);
-
       if (epartIsReg(modrm)) {
          putXMMReg( gregOfRM(modrm), 
                     getXMMReg( eregOfRM(modrm) ));
@@ -7413,7 +7417,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* 0F 29 = MOVAPS -- move from G (xmm) to E (mem or xmm). */
    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x29) {
       modrm = getIByte(delta+2);
-
       if (epartIsReg(modrm)) {
          /* fall through; awaiting test case */
       } else {
@@ -8728,6 +8731,21 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       goto decode_success;
    }
 
+   /* 66 0F 29 = MOVAPD -- move from G (xmm) to E (mem or xmm). */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x29) {
+      modrm = getIByte(delta+2);
+      if (epartIsReg(modrm)) {
+         /* fall through; awaiting test case */
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
+         DIP("movapd %s,%s\n", nameXMMReg(gregOfRM(modrm)),
+                               dis_buf );
+         delta += 2+alen;
+         goto decode_success;
+      }
+   }
+
    /* 66 0F 6E = MOVD from r/m32 to xmm, zeroing high 3/4 of xmm. */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6E) {
       modrm = getIByte(delta+2);
@@ -8973,8 +8991,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       /* else fall through */
    }
 
-   /* 66 0F D6 = MOVQ -- move 64 bits from E (mem or lo half xmm) to G
-      (lo half xmm). */
+   /* 66 0F D6 = MOVQ -- move 64 bits from G (lo half xmm) to E (mem
+      or lo half xmm).  */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD6) {
       modrm = getIByte(delta+2);
       if (epartIsReg(modrm)) {
@@ -9007,9 +9025,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       }
    }
 
-   /* F2 0F 10 = MOVSD -- move 64 bits from E (mem or lo half xmm) to
+   /* F3 0F 7E = MOVQ -- move 64 bits from E (mem or lo half xmm) to
       G (lo half xmm).  If E is mem, upper half of G is zeroed out. */
-   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x10) {
+   /* F2 0F 10 = MOVSD -- move 64 bits from E (mem or lo half xmm) to
+      G (lo half xmm).  If E is mem, upper half of G is zeroed out.
+      (original defn) */
+   if ((insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x10)
+       || (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x7E)) {
       vassert(sz == 4);
       modrm = getIByte(delta+3);
       if (epartIsReg(modrm)) {
@@ -9781,25 +9803,58 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /* 66 0F 73 /3 ib = PSRLDQ by immediate */
    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x73
        && epartIsReg(insn[2])
-       && gregOfRM(insn[2]) == 3
-       /* hack; only deal with specific shift amounts */
-       && (insn[3] == 4 || insn[3] == 8)) {
+       && gregOfRM(insn[2]) == 3) {
+      IRTemp sV, dV, hi64, lo64, hi64r, lo64r;
       Int    imm = (Int)insn[3];
       Int    reg = eregOfRM(insn[2]);
-      IRTemp sV  = newTemp(Ity_V128);
-      IRTemp dV  = newTemp(Ity_V128);
-      delta += 4;
-      t5 = newTemp(Ity_I32);
-      assign( t5, mkU32(0) );
-      assign( sV, getXMMReg(reg) );
-      breakup128to32s( sV, &t3, &t2, &t1, &t0 );
-      switch (imm) {
-         case 8:  assign( dV, mk128from32s(t5,t5,t3,t2) ); break;
-         case 4:  assign( dV, mk128from32s(t5,t3,t2,t1) ); break;
-         default: vassert(0); /* can't get here */
-      } 
-      putXMMReg(reg, mkexpr(dV));
       DIP("psrldq $%d,%s\n", imm, nameXMMReg(reg));
+      vassert(imm >= 0 && imm <= 255);
+      delta += 4;
+
+      sV    = newTemp(Ity_V128);
+      dV    = newTemp(Ity_V128);
+      hi64  = newTemp(Ity_I64);
+      lo64  = newTemp(Ity_I64);
+      hi64r = newTemp(Ity_I64);
+      lo64r = newTemp(Ity_I64);
+
+      if (imm >= 16) {
+         vassert(0); /* awaiting test case */
+         putXMMReg(reg, mkV128(0x0000));
+         goto decode_success;
+      }
+
+      assign( sV, getXMMReg(reg) );
+      assign( hi64, unop(Iop_128HIto64, mkexpr(sV)) );
+      assign( lo64, unop(Iop_128to64, mkexpr(sV)) );
+
+      if (imm == 8) {
+         assign( hi64r, mkU64(0) );
+         assign( lo64r, mkexpr(hi64) );
+      }
+      else 
+      if (imm > 8) {
+         vassert(0); /* awaiting test case */
+         assign( hi64r, mkU64(0) );
+         assign( lo64r, binop( Iop_Shr64, 
+                               mkexpr(hi64),
+                               mkU8( 8*(imm-8) ) ));
+      } else {
+         assign( hi64r, binop( Iop_Shr64, 
+                               mkexpr(hi64),
+                               mkU8(8 * imm) ));
+         assign( lo64r, 
+                 binop( Iop_Or64,
+                        binop(Iop_Shr64, mkexpr(lo64), 
+                                         mkU8(8 * imm)),
+                        binop(Iop_Shl64, mkexpr(hi64),
+                                         mkU8(8 * (8 - imm)) )
+                      )
+               );
+      }
+
+      assign( dV, binop(Iop_64HLto128, mkexpr(hi64r), mkexpr(lo64r)) );
+      putXMMReg(reg, mkexpr(dV));
       goto decode_success;
    }
 

@@ -1444,25 +1444,58 @@ Bool guest_x86_state_requires_precise_mem_exns ( Int minoff,
    Int eip_max = eip_min + 4 - 1;
 
    if (maxoff < esp_min || minoff > esp_max) {
-     /* no overlap with esp */
+      /* no overlap with esp */
    } else {
-     return True;
+      return True;
    }
 
    if (maxoff < eip_min || minoff > eip_max) {
-     /* no overlap with eip */
+      /* no overlap with eip */
    } else {
-     return True;
+      return True;
    }
 
    return False;
 }
 
 
-VexGuestLayoutInfo 
+#define ALWAYSDEFD(field)                           \
+    { offsetof(VexGuestX86State, field),            \
+      (sizeof ((VexGuestX86State*)0)->field) }
+
+VexGuestLayout
    x86guest_layout 
-      = { .offset_SP = offsetof(VexGuestX86State, guest_ESP),
-          .sizeof_SP   = 4 };
+      = { 
+          /* Total size of the guest state, in bytes. */
+          .total_sizeB = sizeof(VexGuestX86State),
+
+          /* Describe the stack pointer. */
+          .offset_SP = offsetof(VexGuestX86State,guest_ESP),
+          .sizeof_SP = 4,
+
+          /* Describe any indexable sections */
+          .n_descrs = 2,
+          .descrs[0] = { offsetof(VexGuestX86State,guest_FPREG), Ity_F64, 8 },
+          .descrs[1] = { offsetof(VexGuestX86State,guest_FPTAG), Ity_I8, 8 },
+
+          /* Describe any sections to be regarded by Memcheck as
+             'always-defined'. */
+          .n_alwaysDefd = 14,
+          .alwaysDefd[0]  = ALWAYSDEFD(guest_CC_OP),
+          .alwaysDefd[1]  = ALWAYSDEFD(guest_DFLAG),
+          .alwaysDefd[2]  = ALWAYSDEFD(guest_IDFLAG),
+          .alwaysDefd[3]  = ALWAYSDEFD(guest_EIP),
+          .alwaysDefd[4]  = ALWAYSDEFD(guest_FTOP),
+          .alwaysDefd[5]  = ALWAYSDEFD(guest_FPTAG),
+          .alwaysDefd[6]  = ALWAYSDEFD(guest_FPUCW),
+          .alwaysDefd[7]  = ALWAYSDEFD(guest_FC3210),
+          .alwaysDefd[8]  = ALWAYSDEFD(guest_CS),
+          .alwaysDefd[9]  = ALWAYSDEFD(guest_DS),
+          .alwaysDefd[10] = ALWAYSDEFD(guest_ES),
+          .alwaysDefd[11] = ALWAYSDEFD(guest_FS),
+          .alwaysDefd[12] = ALWAYSDEFD(guest_GS),
+          .alwaysDefd[13] = ALWAYSDEFD(guest_SS)
+        };
 
 
 /*---------------------------------------------------------------*/

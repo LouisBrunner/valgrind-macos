@@ -48,7 +48,7 @@ static UChar transbuf[N_TRANSBUF];
 static Bool verbose = True;
 
 /* Forwards */
-static IRBB* ac_instrument ( IRBB*, VexGuestLayoutInfo* );
+static IRBB* ac_instrument ( IRBB*, VexGuestLayout* );
 
 
 int main ( int argc, char** argv )
@@ -155,7 +155,7 @@ void panic ( Char* s )
 }
 
 static
-IRBB* ac_instrument (IRBB* bb_in, VexGuestLayoutInfo* layout)
+IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout)
 {
 /* Use this rather than eg. -1 because it's a UInt. */
 #define INVALID_DATA_SIZE   999999
@@ -262,7 +262,7 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayoutInfo* layout)
             break;
 
          case Ist_PutI:
-            assert(isAtom(st->Ist.PutI.off));
+            assert(isAtom(st->Ist.PutI.ix));
             assert(isAtom(st->Ist.PutI.data));
             break;
 

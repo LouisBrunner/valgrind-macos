@@ -38,7 +38,7 @@ extern
 Bool guest_x86_state_requires_precise_mem_exns ( Int, Int );
 
 extern
-VexGuestLayoutInfo x86guest_layout;
+VexGuestLayout x86guest_layout;
 
 
 /*---------------------------------------------------------*/

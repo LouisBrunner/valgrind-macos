@@ -948,7 +948,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       X86AMode* am 
          = genGuestArrayOffset(
               env, e->Iex.GetI.descr, 
-                   e->Iex.GetI.off, e->Iex.GetI.bias );
+                   e->Iex.GetI.ix, e->Iex.GetI.bias );
       HReg dst = newVRegI(env);
       if (ty == Ity_I8) {
          addInstr(env, X86Instr_LoadEX( 1, False, am, dst ));
@@ -1712,7 +1712,7 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       vassert(e->Iex.GetI.ty == Ity_I64);
       HReg tLo = newVRegI(env);
       HReg tHi = newVRegI(env);
-      HReg idx = iselIntExpr_R(env, e->Iex.GetI.offset);
+      HReg idx = iselIntExpr_R(env, e->Iex.GetI.ixset);
 
       /* This (x86) is a little-endian target.  The front end will
 	 have laid out the baseblock in accordance with the back-end's
@@ -1875,7 +1875,7 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
       X86AMode* am 
          = genGuestArrayOffset(
               env, e->Iex.GetI.descr, 
-                   e->Iex.GetI.off, e->Iex.GetI.bias );
+                   e->Iex.GetI.ix, e->Iex.GetI.bias );
       HReg res = newVRegF(env);
       addInstr(env, X86Instr_FpLdSt( True/*load*/, 8, res, am ));
       return res;
@@ -2136,7 +2136,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       X86AMode* am 
          = genGuestArrayOffset(
               env, stmt->Ist.PutI.descr, 
-                   stmt->Ist.PutI.off, stmt->Ist.PutI.bias );
+                   stmt->Ist.PutI.ix, stmt->Ist.PutI.bias );
 
       IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.PutI.data);
       if (ty == Ity_F64) {

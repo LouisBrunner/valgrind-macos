@@ -92,13 +92,33 @@ extern void* LibVEX_Alloc ( Int nbytes );
 /* Describe the guest state enough that the instrumentation
    functions can work. */
 
+/* The max number of indexable guest state sections we can describe.
+   2 is enough for x86. */
+#define VEXGLO_N_DESCRS 2
+
+/* The max number of guest state chunks which we can describe as
+   always defined (for the benefit of Memcheck). */
+#define VEXGLO_N_ALWAYSDEFD  14
+
 typedef
    struct {
+      /* Total size of the guest state, in bytes. */
+      Int total_sizeB;
       /* Whereabouts is the stack pointer? */
       Int offset_SP;
       Int sizeof_SP; /* 4 or 8 */
+      /* Describe the indexed sections */
+      Int     n_descrs; /* must be 0 .. VEXG_N_DESCRS */
+      IRArray descrs[VEXGLO_N_DESCRS];
+      /* Describe parts of the guest state regarded as 'always
+         defined'. */
+      Int n_alwaysDefd;
+      struct {
+         Int offset;
+         Int size;
+      } alwaysDefd[VEXGLO_N_ALWAYSDEFD];
    }
-   VexGuestLayoutInfo;
+   VexGuestLayout;
 
 
 /* Translate a basic block. */
@@ -127,8 +147,8 @@ TranslateResult LibVEX_Translate (
    /* OUT: how much of the output area is used. */
    Int* host_bytes_used,
    /* IN: optionally, two instrumentation functions. */
-   IRBB* (*instrument1) ( IRBB*, VexGuestLayoutInfo* ),
-   IRBB* (*instrument2) ( IRBB*, VexGuestLayoutInfo* ),
+   IRBB* (*instrument1) ( IRBB*, VexGuestLayout* ),
+   IRBB* (*instrument2) ( IRBB*, VexGuestLayout* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
    /* IN: debug: trace vex activity at various points */

@@ -182,7 +182,7 @@ static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
          t1 = newIRTemp(bb->tyenv, ty);
          addStmtToIRBB(bb, IRStmt_Tmp(t1,
             IRExpr_GetI(ex->Iex.GetI.descr,
-                        flatten_Expr(bb, ex->Iex.GetI.off),
+                        flatten_Expr(bb, ex->Iex.GetI.ix),
                         ex->Iex.GetI.bias)));
          return IRExpr_Tmp(t1);
 
@@ -278,7 +278,7 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
          }
          break;
       case Ist_PutI:
-         e1 = flatten_Expr(bb, st->Ist.PutI.off);
+         e1 = flatten_Expr(bb, st->Ist.PutI.ix);
          e2 = flatten_Expr(bb, st->Ist.PutI.data);
          addStmtToIRBB(bb, IRStmt_PutI(st->Ist.PutI.descr,
                                        e1,
@@ -618,10 +618,10 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
          return ex;
 
       case Iex_GetI:
-         vassert(isAtom(ex->Iex.GetI.off));
+         vassert(isAtom(ex->Iex.GetI.ix));
          return IRExpr_GetI(
             ex->Iex.GetI.descr,
-            subst_Expr(env, ex->Iex.GetI.off),
+            subst_Expr(env, ex->Iex.GetI.ix),
             ex->Iex.GetI.bias
          );
 
@@ -701,11 +701,11 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
                 );
 
       case Ist_PutI:
-         vassert(isAtom(st->Ist.PutI.off));
+         vassert(isAtom(st->Ist.PutI.ix));
          vassert(isAtom(st->Ist.PutI.data));
          return IRStmt_PutI(
                    st->Ist.PutI.descr,
-                   fold_Expr(subst_Expr(env, st->Ist.PutI.off)),
+                   fold_Expr(subst_Expr(env, st->Ist.PutI.ix)),
                    st->Ist.PutI.bias,
                    fold_Expr(subst_Expr(env, st->Ist.PutI.data))
                 );
@@ -866,7 +866,7 @@ static void addUses_Expr ( Bool* set, IRExpr* e )
    Int i;
    switch (e->tag) {
       case Iex_GetI:
-         addUses_Expr(set, e->Iex.GetI.off);
+         addUses_Expr(set, e->Iex.GetI.ix);
          return;
       case Iex_Mux0X:
          addUses_Expr(set, e->Iex.Mux0X.cond);
@@ -906,7 +906,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
    IRDirty* d;
    switch (st->tag) {
       case Ist_PutI:
-         addUses_Expr(set, st->Ist.PutI.off);
+         addUses_Expr(set, st->Ist.PutI.ix);
          addUses_Expr(set, st->Ist.PutI.data);
          return;
       case Ist_Tmp:
@@ -1216,7 +1216,7 @@ static void handle_gets_Stmt (
          break;
 
       case Ist_PutI:
-         vassert(isAtom(st->Ist.PutI.off));
+         vassert(isAtom(st->Ist.PutI.ix));
          vassert(isAtom(st->Ist.PutI.data));
          break;
 
@@ -1305,7 +1305,7 @@ static void redundant_put_removal_BB (
          case Ist_PutI:
             isPut = True;
             key = mk_key_GetIPutI( st->Ist.PutI.descr );
-            vassert(isAtom(st->Ist.PutI.off));
+            vassert(isAtom(st->Ist.PutI.ix));
             vassert(isAtom(st->Ist.PutI.data));
             break;
          default: 
@@ -1455,7 +1455,7 @@ static void occCount_Expr ( TmpInfo** env, IRExpr* e )
          return;
 
       case Iex_GetI:
-         occCount_Expr(env, e->Iex.GetI.off);
+         occCount_Expr(env, e->Iex.GetI.ix);
          return;
 
       case Iex_Const:
@@ -1485,7 +1485,7 @@ static void occCount_Stmt ( TmpInfo** env, IRStmt* st )
          occCount_Expr(env, st->Ist.Put.data);
          return;
       case Ist_PutI:
-         occCount_Expr(env, st->Ist.PutI.off);
+         occCount_Expr(env, st->Ist.PutI.ix);
          occCount_Expr(env, st->Ist.PutI.data);
          return;
       case Ist_STle: 
@@ -1580,7 +1580,7 @@ static IRExpr* tbSubst_Expr ( TmpInfo** env, IRExpr* e )
       case Iex_GetI:
          return IRExpr_GetI(
                    e->Iex.GetI.descr,
-                   tbSubst_Expr(env, e->Iex.GetI.off),
+                   tbSubst_Expr(env, e->Iex.GetI.ix),
                    e->Iex.GetI.bias
                 );
       case Iex_Const:
@@ -1618,7 +1618,7 @@ static IRStmt* tbSubst_Stmt ( TmpInfo** env, IRStmt* st )
       case Ist_PutI:
          return IRStmt_PutI(
                    st->Ist.PutI.descr,
-                   tbSubst_Expr(env, st->Ist.PutI.off),
+                   tbSubst_Expr(env, st->Ist.PutI.ix),
                    st->Ist.PutI.bias,
                    tbSubst_Expr(env, st->Ist.PutI.data)
                 );
@@ -1677,7 +1677,7 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
          return;
       case Iex_GetI:
          *doesGet = True;
-         setHints_Expr(doesLoad, doesGet, e->Iex.GetI.off);
+         setHints_Expr(doesLoad, doesGet, e->Iex.GetI.ix);
          return;
       case Iex_Tmp:
       case Iex_Const:
@@ -2184,7 +2184,7 @@ static Bool isAdd32OrSub32 ( IRExpr* e, IRTemp* tmp, Int* i32 )
 }
 
 
-/* Figure out if tmp can be expressed as tmp3 +32 const, for some
+/* Figure out if tmp can be expressed as tmp2 +32 const, for some
    other tmp2.  Scan backwards from the specified start point -- an
    optimisation. */
 
@@ -2281,8 +2281,8 @@ static void collapse_AddSub_chains_BB ( IRBB* bb )
 
       if (st->tag == Ist_Tmp
           && st->Ist.Tmp.data->tag == Iex_GetI
-          && st->Ist.Tmp.data->Iex.GetI.off->tag == Iex_Tmp
-          && collapseChain(bb, i-1, st->Ist.Tmp.data->Iex.GetI.off
+          && st->Ist.Tmp.data->Iex.GetI.ix->tag == Iex_Tmp
+          && collapseChain(bb, i-1, st->Ist.Tmp.data->Iex.GetI.ix
                                       ->Iex.Tmp.tmp, &var2, &con2)) {
          if (DEBUG_IROPT) {
             vex_printf("replacing3 ");
@@ -2306,8 +2306,8 @@ static void collapse_AddSub_chains_BB ( IRBB* bb )
       /* Perhaps st is PutI[t, con] ? */
 
       if (st->tag == Ist_PutI
-          && st->Ist.PutI.off->tag == Iex_Tmp
-          && collapseChain(bb, i-1, st->Ist.PutI.off->Iex.Tmp.tmp, 
+          && st->Ist.PutI.ix->tag == Iex_Tmp
+          && collapseChain(bb, i-1, st->Ist.PutI.ix->Iex.Tmp.tmp, 
                                &var2, &con2)) {
          if (DEBUG_IROPT) {
             vex_printf("replacing2 ");
@@ -2509,7 +2509,7 @@ IRExpr* findPutI ( IRBB* bb, Int startHere,
          relation = getAliasingRelation_II(
                        descrG, ixG, biasG,
                        st->Ist.PutI.descr,
-                       st->Ist.PutI.off,
+                       st->Ist.PutI.ix,
                        st->Ist.PutI.bias
                     );
 
@@ -2558,8 +2558,8 @@ static Bool identicalPutIs ( IRStmt* pi, IRStmt* s2 )
       return False;
 
    return getAliasingRelation_II( 
-             pi->Ist.PutI.descr, pi->Ist.PutI.off, pi->Ist.PutI.bias, 
-             s2->Ist.PutI.descr, s2->Ist.PutI.off, s2->Ist.PutI.bias
+             pi->Ist.PutI.descr, pi->Ist.PutI.ix, pi->Ist.PutI.bias, 
+             s2->Ist.PutI.descr, s2->Ist.PutI.ix, s2->Ist.PutI.bias
           )
           == ExactAlias;
 }
@@ -2592,19 +2592,19 @@ Bool guestAccessWhichMightOverlapPutI (
          vassert(isAtom(s2->Ist.Put.data));
          relation 
             = getAliasingRelation_IC(
-                 pi->Ist.PutI.descr, pi->Ist.PutI.off,
+                 pi->Ist.PutI.descr, pi->Ist.PutI.ix,
                  s2->Ist.Put.offset, 
                  typeOfIRExpr(tyenv,s2->Ist.Put.data)
               );
          goto have_relation;
 
       case Ist_PutI:
-         vassert(isAtom(s2->Ist.PutI.off));
+         vassert(isAtom(s2->Ist.PutI.ix));
          vassert(isAtom(s2->Ist.PutI.data));
          relation
             = getAliasingRelation_II(
-                 pi->Ist.PutI.descr, pi->Ist.PutI.off, pi->Ist.PutI.bias, 
-                 s2->Ist.PutI.descr, s2->Ist.PutI.off, s2->Ist.PutI.bias
+                 pi->Ist.PutI.descr, pi->Ist.PutI.ix, pi->Ist.PutI.bias, 
+                 s2->Ist.PutI.descr, s2->Ist.PutI.ix, s2->Ist.PutI.bias
               );
          goto have_relation;
 
@@ -2612,10 +2612,10 @@ Bool guestAccessWhichMightOverlapPutI (
          if (s2->Ist.Tmp.data->tag == Iex_GetI) {
             relation
                = getAliasingRelation_II(
-                    pi->Ist.PutI.descr, pi->Ist.PutI.off, 
+                    pi->Ist.PutI.descr, pi->Ist.PutI.ix, 
                                         pi->Ist.PutI.bias, 
                     s2->Ist.Tmp.data->Iex.GetI.descr,
-                    s2->Ist.Tmp.data->Iex.GetI.off,
+                    s2->Ist.Tmp.data->Iex.GetI.ix,
                     s2->Ist.Tmp.data->Iex.GetI.bias
                  );
             goto have_relation;
@@ -2623,7 +2623,7 @@ Bool guestAccessWhichMightOverlapPutI (
          if (s2->Ist.Tmp.data->tag == Iex_Get) {
             relation
                = getAliasingRelation_IC(
-                    pi->Ist.PutI.descr, pi->Ist.PutI.off,
+                    pi->Ist.PutI.descr, pi->Ist.PutI.ix,
                     s2->Ist.Tmp.data->Iex.Get.offset,
                     s2->Ist.Tmp.data->Iex.Get.ty
                  );
@@ -2667,9 +2667,9 @@ void do_PutI_GetI_forwarding_BB ( IRBB* bb )
 
       if (st->tag == Ist_Tmp
           && st->Ist.Tmp.data->tag == Iex_GetI
-          && st->Ist.Tmp.data->Iex.GetI.off->tag == Iex_Tmp) {
+          && st->Ist.Tmp.data->Iex.GetI.ix->tag == Iex_Tmp) {
          IRArray* descr = st->Ist.Tmp.data->Iex.GetI.descr;
-         IRExpr*  ix    = st->Ist.Tmp.data->Iex.GetI.off;
+         IRExpr*  ix    = st->Ist.Tmp.data->Iex.GetI.ix;
          Int      bias  = st->Ist.Tmp.data->Iex.GetI.bias;
          IRExpr*  replacement = findPutI(bb, i-1, descr, ix, bias);
          if (replacement 
@@ -2769,7 +2769,7 @@ static void deltaIRExpr ( IRExpr* e, Int delta )
       case Iex_Const:
          break;
       case Iex_GetI:
-         deltaIRExpr(e->Iex.GetI.off, delta);
+         deltaIRExpr(e->Iex.GetI.ix, delta);
          break;
       case Iex_Binop:
          deltaIRExpr(e->Iex.Binop.arg1, delta);
@@ -2808,7 +2808,7 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
          deltaIRExpr(st->Ist.Put.data, delta);
          break;
       case Ist_PutI:
-         deltaIRExpr(st->Ist.PutI.off, delta);
+         deltaIRExpr(st->Ist.PutI.ix, delta);
          deltaIRExpr(st->Ist.PutI.data, delta);
          break;
       case Ist_Tmp: 

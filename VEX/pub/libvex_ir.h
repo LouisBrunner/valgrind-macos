@@ -269,9 +269,7 @@ typedef
    }
    IROp;
 
-
 extern void ppIROp ( IROp );
-
 
 
 /* Encoding of IEEE754-specified rounding modes in Float -> Int
@@ -379,7 +377,7 @@ typedef
          } Get;
          struct {
             IRArray* descr;
-            struct _IRExpr* off;
+            struct _IRExpr* ix;
             Int bias;
          } GetI;
          struct {
@@ -417,7 +415,7 @@ typedef
 
 extern IRExpr* IRExpr_Binder ( Int binder );
 extern IRExpr* IRExpr_Get    ( Int off, IRType ty );
-extern IRExpr* IRExpr_GetI   ( IRArray* descr, IRExpr* off, Int bias );
+extern IRExpr* IRExpr_GetI   ( IRArray* descr, IRExpr* ix, Int bias );
 extern IRExpr* IRExpr_Tmp    ( IRTemp tmp );
 extern IRExpr* IRExpr_Binop  ( IROp op, IRExpr* arg1, IRExpr* arg2 );
 extern IRExpr* IRExpr_Unop   ( IROp op, IRExpr* arg );
@@ -578,7 +576,7 @@ typedef
          } Put;
          struct {
             IRArray* descr;
-            IRExpr*  off;
+            IRExpr*  ix;
             Int      bias;
             IRExpr*  data;
          } PutI;
@@ -602,7 +600,7 @@ typedef
    IRStmt;
 
 extern IRStmt* IRStmt_Put   ( Int off, IRExpr* data );
-extern IRStmt* IRStmt_PutI  ( IRArray* descr, IRExpr* off, Int bias, 
+extern IRStmt* IRStmt_PutI  ( IRArray* descr, IRExpr* ix, Int bias, 
                               IRExpr* data );
 extern IRStmt* IRStmt_Tmp   ( IRTemp tmp, IRExpr* data );
 extern IRStmt* IRStmt_STle  ( IRExpr* addr, IRExpr* data );
@@ -680,7 +678,6 @@ extern IRBB* dopyIRBB ( IRBB* );
 extern void ppIRBB ( IRBB* );
 
 extern void  addStmtToIRBB ( IRBB*, IRStmt* );
-
 
 
 /*---------------------------------------------------------------*/

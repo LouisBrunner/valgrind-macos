@@ -126,8 +126,8 @@ TranslateResult LibVEX_Translate (
    /* OUT: how much of the output area is used. */
    Int* host_bytes_used,
    /* IN: optionally, two instrumentation functions. */
-   IRBB* (*instrument1) ( IRBB*, VexGuestLayoutInfo* ),
-   IRBB* (*instrument2) ( IRBB*, VexGuestLayoutInfo* ),
+   IRBB* (*instrument1) ( IRBB*, VexGuestLayout* ),
+   IRBB* (*instrument2) ( IRBB*, VexGuestLayout* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
    /* IN: debug: trace vex activity at various points */
@@ -153,14 +153,14 @@ TranslateResult LibVEX_Translate (
    IRExpr*      (*specHelper)  ( Char*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
 
-   VexGuestLayoutInfo* guest_layout;
-   Bool                host_is_bigendian = False;
-   IRBB*               irbb;
-   HInstrArray*        vcode;
-   HInstrArray*        rcode;
-   Int                 i, j, k, out_used, guest_sizeB;
-   UChar               insn_bytes[32];
-   IRType              guest_word_size;
+   VexGuestLayout* guest_layout;
+   Bool            host_is_bigendian = False;
+   IRBB*           irbb;
+   HInstrArray*    vcode;
+   HInstrArray*    rcode;
+   Int             i, j, k, out_used, guest_sizeB;
+   UChar           insn_bytes[32];
+   IRType          guest_word_size;
 
    guest_layout           = NULL;
    available_real_regs    = NULL;

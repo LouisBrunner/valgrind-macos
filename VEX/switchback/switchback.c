@@ -280,7 +280,7 @@ void switchback ( void )
    assert(p[0] == 0 /* whatever the encoding for nop is */);
 
    /* branch to diff */
-   p[0] = ((18<<26) | ((diff >> 2) & 0xFFFFFF) | (0<<1) | (0<<0));
+   p[0] = ((18<<26) | (diff & 0x3FFFFFC) | (0<<1) | (0<<0));
 
    flush_cache( &p[0], sizeof(UInt) );
 

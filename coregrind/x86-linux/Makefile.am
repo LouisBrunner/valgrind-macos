@@ -14,3 +14,9 @@ libplatform_a_SOURCES = \
 	ldt.c \
 	syscall.S \
 	syscalls.c
+
+if USE_PIE
+libplatform_a_CFLAGS = $(AM_CFLAGS) -fpie
+else
+libplatform_a_CFLAGS = $(AM_CFLAGS)
+endif

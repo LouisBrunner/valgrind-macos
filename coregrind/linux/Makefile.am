@@ -12,3 +12,9 @@ libos_a_SOURCES = \
 	core_os.c \
 	sema.c \
 	syscalls.c
+
+if USE_PIE
+libos_a_CFLAGS = $(AM_CFLAGS) -fpie
+else
+libos_a_CFLAGS = $(AM_CFLAGS)
+endif

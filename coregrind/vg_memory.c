@@ -491,10 +491,11 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
    static const Bool debug = False || mem_debug;
    Segment *s;
    Addr ret;
-   Addr limit = (for_client ? VG_(client_end)-1 : VG_(valgrind_last));
+   Addr limit = (for_client ? VG_(client_end)-1   : VG_(valgrind_last));
+   Addr base  = (for_client ? VG_(client_mapbase) : VG_(valgrind_base));
 
    if (addr == 0)
-      addr = for_client ? VG_(client_mapbase) : VG_(valgrind_base);
+      addr = base;
    else {
       /* leave space for redzone and still try to get the exact
 	 address asked for */

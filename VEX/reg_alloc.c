@@ -17,6 +17,9 @@
 #define N_SPILL64S  16
 
 
+/* Urk.  Need a way to statically establish the vreg classes,
+   else we can't allocate spill slots properly. */
+
 
 /* Records information on virtual register live ranges.  Computed once
    and remains unchanged after that. */
@@ -197,6 +200,11 @@ HInstrArray* doRegisterAllocation (
 
       (*getRegUsage)( &reg_usage, instrs_in->arr[ii] );
 
+      fprintf(stdout, "\n%d  stage1: ", ii);
+      ppX86Instr(stdout, instrs_in->arr[ii]);
+      fprintf(stdout, "\n");
+      ppHRegUsage(stdout, &reg_usage);
+
       /* for each reg mentioned in the insn ... */
       for (j = 0; j < reg_usage.n_used; j++) {
 
@@ -204,7 +212,8 @@ HInstrArray* doRegisterAllocation (
          if (!hregIsVirtual(reg_usage.hreg[j]))
             continue;
          k = hregNumber(reg_usage.hreg[j]);
-         assert(k >= 0 && k < n_vregs);
+         if (k < 0 || k >= n_vregs)
+            panic("doRegisterAllocation: out-of-range vreg");
          switch (reg_usage.mode[j]) {
             case HRmRead: 
                if (vreg_info[k].live_after == INVALID_INSTRNO)
@@ -231,6 +240,10 @@ HInstrArray* doRegisterAllocation (
 
    } /* iterate over insns */
 
+   for (j = 0; j < n_vregs; j++) {
+      fprintf(stdout, "vreg %d:  la = %d,  db = %d\n", 
+              j, vreg_info[j].live_after, vreg_info[j].dead_before );
+   }
 
    /* --------- Stage 2: compute rreg live ranges. --------- */
 
@@ -280,13 +293,14 @@ HInstrArray* doRegisterAllocation (
                break;
          if (k == n_available_real_regs) 
             continue; /* not found -- ignore. */
-
          flush = False;
          switch (reg_usage.mode[j]) {
             case HRmWrite:
-               flush    = True;
                flush_la = rreg_live_after[k];
                flush_db = rreg_dead_before[k];
+	       if (flush_la != INVALID_INSTRNO 
+                   && flush_db != INVALID_INSTRNO)
+                  flush = True;
                rreg_live_after[k]  = ii;
                rreg_dead_before[k] = ii+1;
                break;
@@ -307,15 +321,16 @@ HInstrArray* doRegisterAllocation (
          }
 
          if (flush) {
+            assert(flush_la != INVALID_INSTRNO);
+            assert(flush_db != INVALID_INSTRNO);
+            printf("FLUSH 1 (%d,%d)\n", flush_la, flush_db);
             if (rreg_info_used == rreg_info_size) {
                panic("make rreg info array bigger(1)");
             }
-            /* An assert to catch pointwise RLRs.  Probably not
-               something we can really get away with. */
-            assert(flush_db-1 > flush_la);
             rreg_info[rreg_info_used].rreg        = rreg;
             rreg_info[rreg_info_used].live_after  = flush_la;
             rreg_info[rreg_info_used].dead_before = flush_db;
+	    rreg_info_used++;
          }
 
       } /* iterate over regs in the instr */
@@ -324,6 +339,18 @@ HInstrArray* doRegisterAllocation (
 
    /* Now finish up any live ranges left over. */
    for (j = 0; j < n_available_real_regs; j++) {
+
+#     if 0
+      printf("residual %d:  %d %d\n", j, rreg_live_after[j],
+                                         rreg_dead_before[j]);
+#     endif 
+      assert( (rreg_live_after[j] == INVALID_INSTRNO 
+               && rreg_dead_before[j] == INVALID_INSTRNO)
+              ||
+              (rreg_live_after[j] != INVALID_INSTRNO 
+               && rreg_dead_before[j] != INVALID_INSTRNO)
+            );
+
       if (rreg_live_after[j] == INVALID_INSTRNO)
          continue;
       if (rreg_info_used == rreg_info_size) {
@@ -332,11 +359,19 @@ HInstrArray* doRegisterAllocation (
       rreg_info[rreg_info_used].rreg        = available_real_regs[j];
       rreg_info[rreg_info_used].live_after  = rreg_live_after[j];
       rreg_info[rreg_info_used].dead_before = rreg_dead_before[j];
+      rreg_info_used++;
    }
 
    free(rreg_live_after);
    free(rreg_dead_before);
 
+#  if 1
+   for (j = 0; j < rreg_info_used; j++) {
+      ppHReg(stdout, rreg_info[j].rreg);
+      fprintf(stdout, "      la = %d,  db = %d\n",
+              rreg_info[j].live_after, rreg_info[j].dead_before );
+   }
+#  endif
 
    /* --------- Stage 3: allocate spill slots. --------- */
 
@@ -374,6 +409,10 @@ HInstrArray* doRegisterAllocation (
       /*    max_ss_no = j; */
    }
 
+   fprintf(stdout, "\n\n");
+   for (j = 0; j < n_vregs; j++)
+     fprintf(stdout, "vreg %d    --> spill offset %d\n",
+	     j, vreg_info[j].spill_offset);
 
    /* --------- Stage 4: establish rreg preferences --------- */
 
@@ -406,6 +445,22 @@ HInstrArray* doRegisterAllocation (
 
    /* Process each insn in turn. */
    for (ii = 0; ii < instrs_in->arr_used; ii++) {
+
+      fprintf(stdout, "\n-----------\n%d   ", ii);
+      ppX86Instr(stdout, instrs_in->arr[ii]);
+      fprintf(stdout, "\n");
+      for (j = 0; j < n_state; j++) {
+         ppHReg(stdout, state[j].rreg);
+	 fprintf(stdout, "\t  ");
+	 switch (state[j].disp) {
+	    case Free: fprintf(stdout, "Free\n"); break;
+	    case Unavail: fprintf(stdout, "Unavail\n"); break;
+	    case Bound: fprintf(stdout, "BoundTo "); 
+                        ppHReg(stdout, state[j].vreg);
+                        fprintf(stdout, "\n"); break;
+	 }
+      }
+      fprintf(stdout, "\n");
 
       /* ------ Sanity checks ------ */
 
@@ -474,13 +529,30 @@ HInstrArray* doRegisterAllocation (
          if (state[j].disp != Bound)
             continue;
          k = hregNumber(state[j].vreg);
+	 printf("possibly expire vreg %d\n", k);
          assert(k >= 0 && k < n_vregs);
          if (vreg_info[k].dead_before == ii) {
+	   printf("yes (state[%d])\n", j);
            /* It's just gone dead.  Free up the associated rreg. */
            state[j].disp = Free;
            state[j].vreg = INVALID_HREG;
          }
       }
+
+
+      for (j = 0; j < n_state; j++) {
+         ppHReg(stdout, state[j].rreg);
+	 fprintf(stdout, "\t  ");
+	 switch (state[j].disp) {
+	    case Free: fprintf(stdout, "Free\n"); break;
+	    case Unavail: fprintf(stdout, "Unavail\n"); break;
+	    case Bound: fprintf(stdout, "BoundTo "); 
+                        ppHReg(stdout, state[j].vreg);
+                        fprintf(stdout, "\n"); break;
+	 }
+      }
+
+
 
       /* Now we have to deal with rregs which are about to be made
          live by this instruction -- in other words, are entering into

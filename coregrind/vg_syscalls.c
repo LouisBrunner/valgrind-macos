@@ -900,6 +900,8 @@ static Addr do_brk(Addr newbrk)
    Addr ret = VG_(brk_limit);
    static const Bool debug = False;
    Segment *seg;
+   Addr current, newaddr;
+
 
    if (debug)
       VG_(printf)("do_brk: brk_base=%p brk_limit=%p newbrk=%p\n",
@@ -922,9 +924,9 @@ static Addr do_brk(Addr newbrk)
    if (seg != NULL && newbrk > seg->addr)
       return VG_(brk_limit);
 
-   if (PGROUNDDN(newbrk) != PGROUNDDN(VG_(brk_limit))) {
-      Addr current = PGROUNDUP(VG_(brk_limit));
-      Addr newaddr = PGROUNDUP(newbrk);
+   current = PGROUNDUP(VG_(brk_limit));
+   newaddr = PGROUNDUP(newbrk);
+   if (newaddr != current) {
 
       /* new brk in a new page - fix the mappings */
       if (newbrk > VG_(brk_limit)) {

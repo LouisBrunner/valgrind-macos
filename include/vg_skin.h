@@ -112,7 +112,6 @@ extern Int   VG_(clo_verbosity);
 /* Profile? */
 extern Bool  VG_(clo_profile);
 
-
 /* Call this if a recognised option was bad for some reason.
    Note: don't use it just because an option was unrecognised -- return 'False'
    from SKN_(process_cmd_line_option) to indicate that. */
@@ -122,7 +121,7 @@ extern void VG_(bad_option) ( Char* opt );
 extern Int    VG_(client_argc);
 extern Char** VG_(client_argv);
 
-/* Client environment.  Can be inspected with VG_(getenv)() (below) */
+/* Client environment.  Can be inspected with VG_(getenv)() */
 extern Char** VG_(client_envp);
 
 
@@ -146,7 +145,7 @@ extern void VG_(add_to_msg) ( Char* format, ... );
 /* Ends and prints the message.  Appends a newline. */
 extern void VG_(end_msg)    ( void );
 
-/* Send a simple, single-part message.  Appends a newline. */
+/* Send a single-part message.  Appends a newline. */
 extern void VG_(message)    ( VgMsgKind kind, Char* format, ... );
 
 
@@ -215,10 +214,10 @@ extern void VGP_(popcc)  ( UInt cc );
 /* Get the simulated %esp */
 extern Addr VG_(get_stack_pointer) ( void );
 
-/* Detect if an address is within Valgrind's stack */
+/* Detect if an address is within Valgrind's stack or Valgrind's
+   m_state_static;  useful for memory leak detectors to tell if a block
+   is used by Valgrind (and thus can be ignored). */
 extern Bool VG_(within_stack)(Addr a);
-
-/* Detect if an address is in Valgrind's m_state_static */
 extern Bool VG_(within_m_state_static)(Addr a);
 
 /* Check if an address is 4-byte aligned */
@@ -238,6 +237,8 @@ typedef
    UInt 
    ThreadId;
 
+/* struct _ThreadState defined elsewhere;  ThreadState is abstract as its
+   definition is not important for skins. */
 typedef
    struct _ThreadState
    ThreadState;
@@ -267,8 +268,6 @@ extern ThreadState* VG_(get_ThreadState)           ( ThreadId tid );
  * Note that they all output to the file descriptor given by the
  * --logfile-fd=N argument, which defaults to 2 (stderr).  Hence no
  * need for VG_(fprintf)().  
- *
- * Also note that VG_(printf)() and VG_(vprintf)()
  */
 extern void VG_(printf)  ( const char *format, ... );
 /* too noisy ...  __attribute__ ((format (printf, 1, 2))) ; */
@@ -280,34 +279,34 @@ extern void VG_(vprintf) ( void(*send)(Char),
 /* stdlib.h */
 
 extern void* VG_(malloc)         ( Int nbytes );
-extern void  VG_(free)           ( void* ptr );
-extern void* VG_(calloc)         ( Int nmemb, Int nbytes );
-extern void* VG_(realloc)        ( void* ptr, Int size );
-extern void* VG_(malloc_aligned) ( Int req_alignB, Int req_pszB );
+extern void  VG_(free)           ( void* p );
+extern void* VG_(calloc)         ( Int n, Int nbytes );
+extern void* VG_(realloc)        ( void* p, Int size );
+extern void* VG_(malloc_aligned) ( Int align_bytes, Int nbytes );
 
 extern void  VG_(print_malloc_stats) ( void );
 
 
 extern void  VG_(exit)( Int status )
              __attribute__ ((__noreturn__));
-/* Print a (panic) message (constant string) appending newline, and abort. */
+/* Prints a panic message (a constant string), appends newline, aborts. */
 extern void  VG_(panic) ( Char* str )
              __attribute__ ((__noreturn__));
 
-/* Looks up VG_(client_envp) (above) */
+/* Looks up VG_(client_envp) */
 extern Char* VG_(getenv) ( Char* name );
 
 /* Crude stand-in for the glibc system() call. */
 extern Int   VG_(system) ( Char* cmd );
 
-extern Long  VG_(atoll)   ( Char* str );
+extern Long  VG_(atoll)  ( Char* str );
 
 /* Like atoll(), but converts a number of base 2..36 */
 extern Long  VG_(atoll36) ( UInt base, Char* str );
 
 
 /* ------------------------------------------------------------------ */
-/* ctype.h functions and related */
+/* ctype.h */
 extern Bool VG_(isspace) ( Char c );
 extern Bool VG_(isdigit) ( Char c );
 extern Char VG_(toupper) ( Char c );
@@ -327,14 +326,12 @@ extern Char* VG_(strstr)         ( const Char* haystack, Char* needle );
 extern Char* VG_(strchr)         ( const Char* s, Char c );
 extern Char* VG_(strdup)         ( const Char* s);
 
-/* Like strcmp(),  but stops comparing at any whitespace. */
+/* Like strcmp() and strncmp(), but stop comparing at any whitespace. */
 extern Int   VG_(strcmp_ws)      ( const Char* s1, const Char* s2 );
-
-/* Like strncmp(), but stops comparing at any whitespace. */
 extern Int   VG_(strncmp_ws)     ( const Char* s1, const Char* s2, Int nmax );
 
-/* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' at the 
-   Nth character. */
+/* Like strncpy(), but if 'src' is longer than 'ndest' inserts a '\0' as the 
+   last character. */
 extern void  VG_(strncpy_safely) ( Char* dest, const Char* src, Int ndest );
 
 /* Mini-regexp function.  Searches for 'pat' in 'str'.  Supports
@@ -344,13 +341,20 @@ extern Bool  VG_(stringMatch)    ( Char* pat, Char* str );
 
 /* ------------------------------------------------------------------ */
 /* math.h */
-/* Returns the base-2 logarithm of its argument. */
+/* Returns the base-2 logarithm of x. */
 extern Int VG_(log2) ( Int x );
 
 
 /* ------------------------------------------------------------------ */
-/* unistd.h */
-extern Int   VG_(getpid) ( void );
+/* unistd.h, fcntl.h, sys/stat.h */
+extern Int  VG_(getpid) ( void );
+
+extern Int  VG_(open)  ( const Char* pathname, Int flags, Int mode );
+extern Int  VG_(read)  ( Int fd, void* buf, Int count);
+extern Int  VG_(write) ( Int fd, void* buf, Int count);
+extern void VG_(close) ( Int fd );
+
+extern Int  VG_(stat)  ( Char* file_name, struct vki_stat* buf );
 
 
 /* ------------------------------------------------------------------ */
@@ -370,19 +374,7 @@ extern void VG_(assert_fail) ( Char* expr, Char* file,
 
 
 /* ------------------------------------------------------------------ */
-/* Reading and writing files. */
-
-/* As per the system calls */
-extern Int  VG_(open)  ( const Char* pathname, Int flags, Int mode );
-extern Int  VG_(read)  ( Int fd, void* buf, Int count);
-extern Int  VG_(write) ( Int fd, void* buf, Int count);
-extern void VG_(close) ( Int fd );
-
-extern Int  VG_(stat)  ( Char* file_name, struct vki_stat* buf );
-
-
-/* ------------------------------------------------------------------ */
-/* mmap and related functions ... */
+/* system/mman.h */
 extern void* VG_(mmap)( void* start, UInt length, 
                         UInt prot, UInt flags, UInt fd, UInt offset );
 extern Int  VG_(munmap)( void* start, Int length );
@@ -400,34 +392,31 @@ extern void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who );
    kernel interface, glibc's view of the world is entirely irrelevant. */
 
 /* --- Signal set ops --- */
-extern Int  VG_(ksigfillset)( vki_ksigset_t* set );
-extern Int  VG_(ksigemptyset)( vki_ksigset_t* set );
+extern Int  VG_(ksigfillset)  ( vki_ksigset_t* set );
+extern Int  VG_(ksigemptyset) ( vki_ksigset_t* set );
 
-extern Bool VG_(kisfullsigset)( vki_ksigset_t* set );
-extern Bool VG_(kisemptysigset)( vki_ksigset_t* set );
+extern Bool VG_(kisfullsigset)  ( vki_ksigset_t* set );
+extern Bool VG_(kisemptysigset) ( vki_ksigset_t* set );
 
-extern Int  VG_(ksigaddset)( vki_ksigset_t* set, Int signum );
-extern Int  VG_(ksigdelset)( vki_ksigset_t* set, Int signum );
+extern Int  VG_(ksigaddset)   ( vki_ksigset_t* set, Int signum );
+extern Int  VG_(ksigdelset)   ( vki_ksigset_t* set, Int signum );
 extern Int  VG_(ksigismember) ( vki_ksigset_t* set, Int signum );
 
-extern void VG_(ksigaddset_from_set)( vki_ksigset_t* dst, 
-                                      vki_ksigset_t* src );
-extern void VG_(ksigdelset_from_set)( vki_ksigset_t* dst, 
-                                      vki_ksigset_t* src );
+extern void VG_(ksigaddset_from_set) ( vki_ksigset_t* dst, vki_ksigset_t* src );
+extern void VG_(ksigdelset_from_set) ( vki_ksigset_t* dst, vki_ksigset_t* src );
 
 /* --- Mess with the kernel's sig state --- */
-extern Int VG_(ksigprocmask)( Int how, const vki_ksigset_t* set, 
+extern Int VG_(ksigprocmask) ( Int how, const vki_ksigset_t* set, 
                                        vki_ksigset_t* oldset );
-extern Int VG_(ksigaction) ( Int signum,  
-                             const vki_ksigaction* act,  
-                             vki_ksigaction* oldact );
+extern Int VG_(ksigaction)   ( Int signum,  
+                               const vki_ksigaction* act,  
+                               vki_ksigaction* oldact );
 
-extern Int VG_(ksignal)(Int signum, void (*sighandler)(Int));
+extern Int VG_(ksignal)      ( Int signum, void (*sighandler)(Int) );
+extern Int VG_(ksigaltstack) ( const vki_kstack_t* ss, vki_kstack_t* oss );
 
-extern Int VG_(ksigaltstack)( const vki_kstack_t* ss, vki_kstack_t* oss );
-
-extern Int VG_(kill)( Int pid, Int signo );
-extern Int VG_(sigpending) ( vki_ksigset_t* set );
+extern Int VG_(kill)         ( Int pid, Int signo );
+extern Int VG_(sigpending)   ( vki_ksigset_t* set );
 
 
 /*====================================================================*/
@@ -441,50 +430,61 @@ typedef
           NoValue=6 }
    Tag;
 
-/* Invalid register numbers :-) */
+/* Invalid register numbers (can't be negative) */
 #define INVALID_TEMPREG 999999999
 #define INVALID_REALREG 999999999
 
 /* Microinstruction opcodes. */
 typedef
    enum {
-      NOP,
-      GET,
-      PUT,
-      LOAD,
-      STORE,
-      MOV,
-      CMOV, /* Used for cmpxchg and cmov */
-      WIDEN,
-      JMP,
+      NOP,         /* Null op */
 
-      /* Read/write the %EFLAGS register into a TempReg. */
-      GETF, PUTF,
+      /* Moving values around */
+      GET,  PUT,   /* simulated register <--> TempReg */
+      GETF, PUTF,  /* simulated %eflags  <--> TempReg */
+      LOAD, STORE, /* memory  <--> TempReg            */
+      MOV,         /* TempReg <--> TempReg            */
+      CMOV,        /* Used for cmpxchg and cmov       */
 
-      ADD, ADC, AND, OR,  XOR, SUB, SBB,
-      SHL, SHR, SAR, ROL, ROR, RCL, RCR,
-      NOT, NEG, INC, DEC, BSWAP,
-      CC2VAL,
+      /* Arithmetic/logical ops */
+      ADD, ADC, SUB, SBB,                 /* Add/subtract (w/wo carry)     */
+      AND, OR,  XOR, NOT,                 /* Boolean ops                   */
+      SHL, SHR, SAR, ROL, ROR, RCL, RCR,  /* Shift/rotate (w/wo carry)     */
+      NEG,                                /* Negate                        */
+      INC, DEC,                           /* Increment/decrement           */
+      BSWAP,                              /* Big-endian <--> little-endian */
+      CC2VAL,                             /* Condition code --> 0 or 1     */
+      WIDEN,                              /* Signed or unsigned widening   */
 
-      /* Not strictly needed, but useful for making better
-         translations of address calculations. */
+      /* Conditional or unconditional jump  */
+      JMP,         
+
+      /* FPU ops */
+      FPU,           /* Doesn't touch memory */
+      FPU_R, FPU_W,  /* Reads/writes memory  */
+
+      /* Not strictly needed, but improve address calculation translations. */
       LEA1,  /* reg2 := const + reg1 */
       LEA2,  /* reg3 := const + reg1 + reg2 * 1,2,4 or 8 */
 
-      /* not for translating x86 calls -- only to call helpers */
-      CALLM_S, CALLM_E, /* Mark start and end of push/pop sequences
-                           for CALLM. */
-      PUSH, POP, CLEAR, /* Add/remove/zap args for helpers. */
-      CALLM,  /* call to a machine-code helper */
+      /* Hack for x86 REP insns.  Jump to literal if TempReg/RealReg is zero. */
+      JIFZ,
 
-      /* For calling C functions of up to three arguments (or two if the
-         functions has a return value).  Arguments and return value must be
-         word-sized.  If you want to pass more arguments than this to a C
-         function you have to use global variables to fake it (eg. use
-         VG_(set_global_var)()).
+      /* Advance the simulated %eip by some small (< 128) number. */
+      INCEIP,
 
-         Seven possibilities: 'arg1..3' show where args go, 'ret' shows
-         where return values go.
+      /* Not for translating x86 calls -- only to call helpers */
+      CALLM_S, CALLM_E, /* Mark start/end of CALLM push/pop sequence */
+      PUSH, POP, CLEAR, /* Add/remove/zap args for helpers           */
+      CALLM,            /* Call assembly-code helper                 */
+
+      /* Not for translating x86 calls -- only to call C helper functions of
+         up to three arguments (or two if the functions has a return value).
+         Arguments and return value must be word-sized.  More arguments can
+         be faked with global variables (eg. use VG_(set_global_var)()).
+
+         Seven possibilities: 'arg[123]' show where args go, 'ret' shows
+         where return value goes (if present).
         
          CCALL(-,    -,    -   )    void f(void)
          CCALL(arg1, -,    -   )    void f(UInt arg1)
@@ -492,25 +492,13 @@ typedef
          CCALL(arg1, arg2, arg3)    void f(UInt arg1, UInt arg2, UInt arg3)
          CCALL(-,    -,    ret )    UInt f(UInt)
          CCALL(arg1, -,    ret )    UInt f(UInt arg1)
-         CCALL(arg1, arg2, ret )    UInt f(UInt arg1, UInt arg2)
-       */
+         CCALL(arg1, arg2, ret )    UInt f(UInt arg1, UInt arg2) */
       CCALL,
 
-      /* Hack for translating string (REP-) insns.  Jump to literal if
-         TempReg/RealReg is zero. */
-      JIFZ,
+      /* This opcode makes it easy for skins that extend UCode to do this to
+         avoid opcode overlap:
 
-      /* FPU ops which read/write mem or don't touch mem at all. */
-      FPU_R,
-      FPU_W,
-      FPU,
-
-      /* Advance the simulated %eip by some small (< 128) number. */
-      INCEIP,
-
-      /* Makes it easy for extended-UCode ops by doing:
-
-           enum { EU_OP1 = DUMMY_FINAL_OP + 1, ... } 
+           enum { EU_OP1 = DUMMY_FINAL_UOPCODE + 1, ... } 
    
          WARNING: Do not add new opcodes after this one!  They can be added
          before, though. */
@@ -519,8 +507,7 @@ typedef
    Opcode;
 
 
-/* Condition codes, observing the Intel encoding.  CondAlways is an
-   extra. */
+/* Condition codes, using the Intel encoding.  CondAlways is an extra. */
 typedef
    enum {
       CondO      = 0,  /* overflow           */
@@ -686,7 +673,10 @@ extern Int  VG_(getRegUsage) ( UInstr* u, Tag tag, RegUse* arr );
 
 
 /* ------------------------------------------------------------------ */
-/* Used to register helper functions to be called from generated code */
+/* Used to register helper functions to be called from generated code.  A
+   limited number of compact helpers can be registered;  the code generated
+   to call them is slightly shorter -- so register the mostly frequently
+   called helpers as compact. */
 extern void VG_(register_compact_helper)    ( Addr a );
 extern void VG_(register_noncompact_helper) ( Addr a );
 
@@ -744,7 +734,12 @@ extern void VG_(callHelper_2_0) ( UCodeBlock* cb, Addr f, UInt arg1, UInt arg2,
 void VG_(set_global_var) ( UCodeBlock* cb, Addr globvar_ptr, UInt val);
 
 /* ------------------------------------------------------------------ */
-/* UCode pretty/ugly printing, to help debugging skins;  but only useful
+/* Allocating/freeing basic blocks of UCode */
+extern UCodeBlock* VG_(allocCodeBlock) ( void );
+extern void        VG_(freeCodeBlock)  ( UCodeBlock* cb );
+
+/* ------------------------------------------------------------------ */
+/* UCode pretty/ugly printing.  Probably only useful to call from a skin 
    if VG_(needs).extended_UCode == True. */
 
 /* When True, all generated code is/should be printed. */
@@ -758,17 +753,12 @@ extern Char* VG_(nameUOpcode)      ( Bool upper, Opcode opc );
 extern void  VG_(ppUOperand)       ( UInstr* u, Int operandNo, 
                                      Int sz, Bool parens );
 
-/* ------------------------------------------------------------------ */
-/* Allocating/freeing basic blocks of UCode */
-extern UCodeBlock* VG_(allocCodeBlock) ( void );
-extern void  VG_(freeCodeBlock)        ( UCodeBlock* cb );
 
 /*====================================================================*/
-/*=== Functions for generating x86 code from UCode                 ===*/
+/*=== Generating x86 code from UCode                               ===*/
 /*====================================================================*/
 
-/* These are only of interest for skins where 
-   VG_(needs).extends_UCode == True. */
+/* All this only necessary for skins with VG_(needs).extends_UCode == True. */
 
 /* This is the Intel register encoding. */
 #define R_EAX 0
@@ -807,24 +797,22 @@ extern Int  VG_(helper_offset)     ( Addr a );
 extern Int  VG_(shadowRegOffset)   ( Int arch );
 extern Int  VG_(shadowFlagsOffset) ( void );
 
-/* Converting reg ranks <-> Intel register ordering, for using register
-   liveness info */
+/* Convert reg ranks <-> Intel register ordering, for using register
+   liveness information. */
 extern Int VG_(realRegNumToRank) ( Int realReg );
 extern Int VG_(rankToRealRegNum) ( Int rank    );
 
-/* Subroutine calls */
-/* This one just calls it. */
+/* Call a subroutine.  Does no argument passing, stack manipulations, etc. */
 void VG_(synth_call) ( Bool ensure_shortform, Int word_offset );
 
-/* This one is good for calling C functions -- saves caller save regs,
-   pushes args, calls, clears the stack, restores caller save regs.
-   `fn' must be registered in the baseBlock first.  Acceptable tags are
-   RealReg and Literal.  
+/* For calling C functions -- saves caller save regs, pushes args, calls,
+   clears the stack, restores caller save regs.  `fn' must be registered in
+   the baseBlock first.  Acceptable tags are RealReg and Literal.  Optimises
+   things, eg. by not preserving non-live caller-save registers.
 
-   WARNING:  a UInstr should *not* be translated with synth_ccall followed
-   by some other x86 assembly code;  this will confuse
-   vg_ccall_reg_save_analysis() and everything will fall over.
-*/
+   WARNING:  a UInstr should *not* be translated with synth_ccall() followed
+   by some other x86 assembly code;  this will invalidate the results of
+   vg_realreg_liveness_analysis() and everything will fall over.  */
 void VG_(synth_ccall) ( Addr fn, Int argc, Int regparms_n, UInt argv[],
                         Tag tagv[], Int ret_reg, 
                         RRegSet regs_live_before, RRegSet regs_live_after );
@@ -884,7 +872,10 @@ typedef
    struct _ExeContext
    ExeContext;
 
-/* Compare two ExeContexts, just comparing the top two callers. */
+/* Compare two ExeContexts.  Number of callers considered depends on `res': 
+     Vg_LowRes:  2 
+     Vg_MedRes:  4 
+     Vg_HighRes: all */
 extern Bool VG_(eq_ExeContext) ( VgRes res,
                                  ExeContext* e1, ExeContext* e2 );
 
@@ -905,8 +896,7 @@ extern ExeContext* VG_(get_ExeContext) ( ThreadState *tst );
 /* Suppressions describe errors which we want to suppress, ie, not 
    show the user, usually because it is caused by a problem in a library
    which we can't fix, replace or work around.  Suppressions are read from 
-   a file at startup time, specified by vg_clo_suppressions, and placed in
-   the vg_suppressions list.  This gives flexibility so that new
+   a file at startup time.  This gives flexibility so that new
    suppressions can be added to the file as and when needed.
 */
 
@@ -939,8 +929,8 @@ typedef
 /* ------------------------------------------------------------------ */
 /* Error records contain enough info to generate an error report.  The idea
    is that (typically) the same few points in the program generate thousands
-   of illegal accesses, and we don't want to spew out a fresh error message
-   for each one.  Instead, we use these structures to common up duplicates.
+   of errors, and we don't want to spew out a fresh error message for each
+   one.  Instead, we use these structures to common up duplicates.
 */
 
 typedef
@@ -963,14 +953,14 @@ typedef
       Addr addr;
       /* Used frequently */
       Char* string;
-      /* For any skin-specific extras: size and the extra fields */
+      /* For any skin-specific extras */
       void* extra;
    }
    SkinError;
 
 
 /* ------------------------------------------------------------------ */
-/* Call this when an error occurs.  It will be recorded if it's not been
+/* Call this when an error occurs.  It will be recorded if it hasn't been
    seen before.  If it has, the existing error record will have its count
    incremented.  
    
@@ -979,6 +969,9 @@ typedef
    `extra' field can be stack-allocated;  it will be copied (using
    SKN_(dup_extra_and_update)()) if needed.  But it won't be copied
    if it's NULL.
+
+   If no 'a', 's' or 'extra' of interest needs to be recorded, just use
+   NULL for them.
 */
 extern void VG_(maybe_record_error) ( ThreadState* tst, ErrorKind ekind, 
                                       Addr a, Char* s, void* extra );
@@ -1013,7 +1006,7 @@ extern Bool VG_(get_filename_linenum)
    first instruction in a function -- as opposed to VG_(get_fnname) which
    succeeds if we find from debug info that 'a' is the address of any
    instruction in a function.  Use this to instrument the start of
-   a particular function.  Nb: if a executable/shared object is stripped
+   a particular function.  Nb: if an executable/shared object is stripped
    of its symbols, this function will not be able to recognise function
    entry points within it. */
 extern Bool VG_(get_fnname_if_entry) ( Addr a, Char* filename, Int n_filename );
@@ -1060,7 +1053,7 @@ extern Bool VG_(addr_is_in_block) ( Addr a, Addr start, UInt size );
 
 /* Searches through currently malloc'd blocks until a matching one is found.
    Returns NULL if none match.  Extra arguments can be implicitly passed to
-   p using nested functions; see vg_memcheck_errcontext.c for an example. */
+   p using nested functions; see memcheck/mc_errcontext.c for an example. */
 extern ShadowChunk* VG_(any_matching_mallocd_ShadowChunks) 
                         ( Bool (*p) ( ShadowChunk* ));
 
@@ -1076,7 +1069,7 @@ extern ThreadId VG_(any_matching_thread_stack)
 /* Skin-specific settings.
  *
  * If new fields are added to this type, update:
- *  - vg_main.c:VG_(needs) initialisation
+ *  - vg_main.c:initialisation of VG_(needs)
  *  - vg_main.c:sanity_check_needs()
  *
  * If the name of this type or any of its fields change, update:
@@ -1084,11 +1077,17 @@ extern ThreadId VG_(any_matching_thread_stack)
  */
 typedef
    struct {
-      /* name and description used in the startup message */
+      /* Name and description used in the startup message. 'name' also
+         determines the string used for identifying suppressions in a
+         suppression file as belonging to this skin. */
       Char* name;
       Char* description;
 
-      /* Booleans that decide core behaviour */
+      /* Booleans that decide core behaviour, but don't require extra
+         operations to be defined if `True' */
+
+      /* Should __libc_freeres() be run?  Bugs in it can crash the skin. */
+      Bool run_libc_freeres;
 
       /* Want to have errors detected by Valgrind's core reported?  Includes:
          - pthread API errors (many;  eg. unlocking a non-locked mutex)
@@ -1097,27 +1096,24 @@ typedef
          - bad signal numbers passed to sigaction()
          - attempt to install signal handler for SIGKILL or SIGSTOP */  
       Bool core_errors;
-      /* Want to report errors from the skin?  This implies use of
-         suppressions, too. */
-      Bool skin_errors;
-
-      /* Should __libc_freeres() be run?  Bugs in it crash the skin. */
-      Bool run_libc_freeres;
 
       /* Booleans that indicate extra operations are defined;  if these are
          True, the corresponding template functions (given below) must be
          defined.  A lot like being a member of a type class. */
 
+      /* Want to report errors from the skin?  This implies use of
+         suppressions, too. */
+      Bool skin_errors;
+
       /* Is information kept about specific individual basic blocks?  (Eg. for
-         cachesim there are cost-centres for every instruction, stored at a
+         cachegrind there are cost-centres for every instruction, stored at a
          basic block level.)  If so, it sometimes has to be discarded, because
          .so mmap/munmap-ping or self-modifying code (informed by the
          DISCARD_TRANSLATIONS user request) can cause one instruction address
-         to store information about more than one instruction in one program
-         run!  */
+         to be used for more than one instruction in one program run...  */
       Bool basic_block_discards;
 
-      /* Maintains information about each register? */
+      /* Skin maintains information about each register? */
       Bool shadow_regs;
 
       /* Skin defines its own command line options? */
@@ -1150,14 +1146,14 @@ extern VgNeeds VG_(needs);
 /* Core events to track */
 
 /* Part of the core from which this call was made.  Useful for determining
- * what kind of error message should be emitted. */
+   what kind of error message should be emitted. */
 typedef 
    enum { Vg_CorePThread, Vg_CoreSignal, Vg_CoreSysCall, Vg_CoreTranslate }
    CorePart;
 
 /* Events happening in core to track.  To be notified, assign a function
- * to the function pointer.  To ignore an event, don't do anything
- * (default assignment is to NULL in which case the call is skipped). */
+   to the function pointer.  To ignore an event, don't do anything
+   (default assignment is to NULL in which case the call is skipped). */
 typedef
    struct {
       /* Memory events */
@@ -1175,6 +1171,7 @@ typedef
       void (*change_mem_mprotect) ( Addr a, UInt len,  
                                     Bool nn, Bool rr, Bool ww, Bool xx );
       
+      /* Used on redzones around malloc'd blocks and at end of stack */
       void (*ban_mem_heap)   ( Addr a, UInt len );
       void (*ban_mem_stack)  ( Addr a, UInt len );
 
@@ -1201,18 +1198,18 @@ typedef
       void (*post_mem_write) ( Addr a, UInt size );
 
 
-      /* Scheduler events */
+      /* Scheduler events (not exhaustive) */
       void (*thread_run) ( ThreadId tid );
 
 
-      /* Mutex events */
+      /* Mutex events (not exhaustive) */
       void (*post_mutex_lock)   ( ThreadId tid, 
                                   void* /*pthread_mutex_t* */ mutex );
       void (*post_mutex_unlock) ( ThreadId tid, 
                                   void* /*pthread_mutex_t* */ mutex );
-      
-      /* Others... threads, condition variables, etc... */
 
+      
+      /* Others... thread, condition variable, signal events... */
       /* ... */
    }
    VgTrackEvents;
@@ -1225,10 +1222,10 @@ extern VgTrackEvents VG_(track_events);
 /* Template functions */
 
 /* These are the parameterised functions in the core.  The default definitions
- * are replaced by LD_PRELOADing skin substitutes.  At the very least, a skin
- * must define the fundamental template functions.  Depending on what needs
- * boolean variables are set, extra templates will be used too.  For each
- * group, the need governing its use is mentioned. */
+   are overridden by LD_PRELOADed skin version.  At the very least, a skin
+   must define the fundamental template functions.  Depending on what needs
+   are set, extra template functions will be used too.  Functions are
+   grouped under the needs that govern their use. */
 
 
 /* ------------------------------------------------------------------ */
@@ -1246,8 +1243,7 @@ extern VgTrackEvents VG_(track_events);
 */
 extern void        SK_(pre_clo_init) ( VgNeeds* needs, VgTrackEvents* track );
 
-/* Do any initialisation that relies on the results of command line option
-   processing. */
+/* Do initialisation that can only be done after command line processing. */
 extern void        SK_(post_clo_init)( void );
 
 /* Instrument a basic block.  Must be a true function, ie. the same input
@@ -1294,7 +1290,7 @@ extern Bool SK_(recognised_suppression) ( Char* name, SuppKind *skind );
 /* Read any extra info for this suppression kind.  For filling up the
    `string' and `extra' fields in a `SkinSupp' struct if necessary. */
 extern Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, 
-                                                Int nBuf, SkinSupp *s );
+                                               Int nBuf, SkinSupp *s );
 
 /* This should just check the kinds match and maybe some stuff in the
    'extra' field if appropriate */
@@ -1304,6 +1300,8 @@ extern Bool SK_(error_matches_suppression)(SkinError* ec, SkinSupp* su);
 /* ------------------------------------------------------------------ */
 /* VG_(needs).basic_block_discards */
 
+/* Should discard any information that pertains to specific basic blocks
+   or instructions within the address range given. */
 extern void SK_(discard_basic_block_info) ( Addr a, UInt size );
 
 
@@ -1318,8 +1316,9 @@ extern void SK_(written_shadow_regs_values) ( UInt* gen_reg, UInt* eflags );
 /* ------------------------------------------------------------------ */
 /* VG_(needs).command_line_options */
 
-/* Return True if option was recognised */
-extern Bool SK_(process_cmd_line_option)( Char* argv );
+/* Return True if option was recognised.  Presumably sets some state to
+   record the option as well. */
+extern Bool SK_(process_cmd_line_option) ( Char* argv );
 
 /* Print out command line usage for skin options */
 extern Char* SK_(usage)                  ( void );
@@ -1335,22 +1334,21 @@ extern UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block );
 /* VG_(needs).extends_UCode */
 
 /* Used in VG_(getExtRegUsage)() */
-#  define VG_UINSTR_READS_REG(ono)              \
+#define VG_UINSTR_READS_REG(ono)                \
    { if (mycat(u->tag,ono) == tag)              \
         { arr[n].num     = mycat(u->val,ono);   \
           arr[n].isWrite = False;               \
           n++;                                  \
         }                                       \
    }
-#  define VG_UINSTR_WRITES_REG(ono)             \
-   {  if (mycat(u->tag,ono) == tag)             \
-         { arr[n].num     = mycat(u->val,ono);  \
-           arr[n].isWrite = True;               \
-           n++;                                 \
-         }                                      \
+#define VG_UINSTR_WRITES_REG(ono)               \
+   { if (mycat(u->tag,ono) == tag)              \
+        { arr[n].num     = mycat(u->val,ono);   \
+          arr[n].isWrite = True;                \
+          n++;                                  \
+        }                                       \
    }
 
-// SSS: only ones using camel caps
 extern Int   SK_(getExtRegUsage) ( UInstr* u, Tag tag, RegUse* arr );
 extern void  SK_(emitExtUInstr)  ( UInstr* u, RRegSet regs_live_before );
 extern Bool  SK_(saneExtUInstr)  ( Bool beforeRA, Bool beforeLiveness,
@@ -1371,8 +1369,9 @@ extern void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
                                  void* pre_result, Int res,
                                  Bool is_blocking );
 
+
 /* ------------------------------------------------------------------ */
-/* VG_(needs).sizeof_shadow_chunk > 0 */
+/* VG_(needs).sizeof_shadow_chunk (if > 0) */
 
 extern void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst );
 
@@ -1382,9 +1381,13 @@ extern void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst );
 
 extern void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst );
 
+
 /* ---------------------------------------------------------------------
    VG_(needs).sanity_checks */
 
+/* Can be useful for ensuring a skin's correctness.  SK_(cheap_sanity_check)
+   is called very frequently;  SK_(expensive_sanity_check) is called less
+   frequently and can be more involved. */
 extern Bool SK_(cheap_sanity_check)     ( void );
 extern Bool SK_(expensive_sanity_check) ( void );
 

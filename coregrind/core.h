@@ -115,7 +115,7 @@
 #define M_VG_LIBNAMESTR 100
 
 /* Max length of a text fragment used to construct error messages. */
-#define M_VG_ERRTXT 512
+#define M_VG_ERRTXT 4096
 
 /* Max length of the string copied from env var VG_ARGS at startup. */
 #define M_VG_CMDLINE_STRLEN 1000

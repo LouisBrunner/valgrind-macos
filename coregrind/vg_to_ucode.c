@@ -3857,7 +3857,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    Int   t1, t2, t3, t4;
    UChar dis_buf[50];
    Int   am_sz, d_sz;
-   Char  loc_buf[M_VG_ERRTXT];
+   static Char  loc_buf[M_VG_ERRTXT];
 
    /* Holds eip at the start of the insn, so that we can print
       consistent error messages for unimplemented insns. */

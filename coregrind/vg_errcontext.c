@@ -332,7 +332,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
 static void gen_suppression(Error* err)
 {
    Int         i;
-   UChar       buf[M_VG_ERRTXT];
+   static UChar buf[M_VG_ERRTXT];
    Bool        main_done = False;
    ExeContext* ec      = VG_(get_error_where)(err);
    Int         stop_at = VG_(clo_backtrace_size);
@@ -986,8 +986,8 @@ static Supp* is_suppressible_error ( Error* err )
 {
    Int i;
 
-   Char caller_obj[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
-   Char caller_fun[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
+   static Char caller_obj[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
+   static Char caller_fun[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
 
    Supp* su;
 

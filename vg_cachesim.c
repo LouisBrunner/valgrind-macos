@@ -191,18 +191,18 @@ struct _file_node {
 };
 
 /* BBCC_table structure:  list(filename, list(fn_name, list(BBCC))) */
-file_node *BBCC_table[N_FILE_ENTRIES];
+static file_node *BBCC_table[N_FILE_ENTRIES];
 
-Int  distinct_files      = 0;
-Int  distinct_fns        = 0;
+static Int  distinct_files      = 0;
+static Int  distinct_fns        = 0;
 
-Int  distinct_instrs     = 0;
-Int  full_debug_BBs      = 0;
-Int  file_line_debug_BBs = 0;
-Int  fn_name_debug_BBs   = 0;
-Int  no_debug_BBs        = 0;
+static Int  distinct_instrs     = 0;
+static Int  full_debug_BBs      = 0;
+static Int  file_line_debug_BBs = 0;
+static Int  fn_name_debug_BBs   = 0;
+static Int  no_debug_BBs        = 0;
 
-Int  BB_retranslations   = 0;
+static Int  BB_retranslations   = 0;
 
 static void init_BBCC_table()
 {
@@ -903,6 +903,7 @@ static void fprint_BBCC_table_and_calc_totals(Int client_argc,
 
 /* Adds commas to ULong, right justifying in a field field_width wide, returns
  * the string in buf. */
+static
 Int commify(ULong n, int field_width, char buf[COMMIFY_BUF_LEN])
 {
    int len, n_commas, i, j, new_len, space;
@@ -932,6 +933,7 @@ Int commify(ULong n, int field_width, char buf[COMMIFY_BUF_LEN])
    return new_len;
 }
 
+static
 void percentify(Int n, Int pow, Int field_width, char buf[]) 
 {
    int i, len, space;

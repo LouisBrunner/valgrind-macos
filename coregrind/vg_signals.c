@@ -64,6 +64,7 @@ void* VG_(sigpending)[VKI_KNSIG];
    interrupted by this signal.  We need to consult this when a signal
    returns, if it should happen that the signal which we delivered has
    interrupted a system call. */
+static 
 Bool vg_sig_sarestart[VKI_KNSIG];
 
 

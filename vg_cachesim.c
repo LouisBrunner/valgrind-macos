@@ -1547,6 +1547,7 @@ void VG_(cachesim_notify_discard) ( TTEntry* tte )
    Addr BBCC_ptr0, BBCC_ptr;
    Bool BB_seen_before;
     
+   if (0)
    VG_(printf)( "cachesim_notify_discard: %p for %d\n", 
                 tte->orig_addr, (Int)tte->orig_size);
 

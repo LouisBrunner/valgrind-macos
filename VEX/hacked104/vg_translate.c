@@ -3115,14 +3115,14 @@ void VG_(translate) ( ThreadState* tst,
                       Addr* trans_addr,
                       UInt* trans_size )
 {
-#  define N_TMPBUF 1000
+#  define N_TMPBUF 5000
    UChar tmpbuf[N_TMPBUF];
    Int tmpbuf_used, i, t_orig_size;
    UChar* final;
    Bool debugging_translation;
 
-   static Int v0thresh = 94000;
-   static Int v2thresh = 940000;
+   static Int v0thresh = 63000;
+   static Int v2thresh = 63000;
 
    TranslateResult tres;
    static Bool vex_init_done = False;
@@ -3133,7 +3133,7 @@ void VG_(translate) ( ThreadState* tst,
                     0,  /* verbosity */
                     False, 
 		    //True, 
-                    1 /* max insns per bb */ );
+                    20 /* max insns per bb */ );
       vex_init_done = True;
    }
 
@@ -3164,13 +3164,21 @@ void VG_(translate) ( ThreadState* tst,
              (Char*)orig_addr, (Addr64)orig_addr, &t_orig_size,
              tmpbuf, N_TMPBUF, &tmpbuf_used,
              NULL, NULL,
-             debugging_translation ? 1 :
+             debugging_translation ? 2 :
                 (VG_(overall_in_count) > v2thresh ? 2 : 0)
           );
 
    vg_assert(tres == TransOK);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
+
+   if (debugging_translation) {
+      UChar* p = (UChar*)orig_addr;
+      VG_(printf)(". %d %x %d\n.", 0, orig_addr, t_orig_size );
+      for (i = 0; i < t_orig_size; i++)
+         VG_(printf)(" %02x", (Int)p[i] );
+      VG_(printf)("\n");
+   }
 
    final = VG_(jitmalloc)( tmpbuf_used );
    for (i = 0; i < tmpbuf_used; i++)

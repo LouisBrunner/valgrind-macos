@@ -35,7 +35,7 @@ void log_bytes ( Char* bytes, Int nbytes )
 #define N_LINEBUF 10000
 static Char linebuf[N_LINEBUF];
 
-#define N_ORIGBUF 200
+#define N_ORIGBUF 1000
 #define N_TRANSBUF 5000
 
 static UChar origbuf[N_ORIGBUF];
@@ -65,9 +65,9 @@ int main ( int argc, char** argv )
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
-                 1,  /* verbosity */
-                 //False, 
-		 True, 
+                 0,  /* verbosity */
+                 False, 
+		 //True, /* valgrind support */
                  50 /*100*/ /* max insns per bb */);
 
 #if 0
@@ -102,9 +102,9 @@ int main ( int argc, char** argv )
 	 origbuf[i] = (UChar)u;
       }
 
-      //      if (bb_number == 50) exit(1);
+            if (bb_number == 1000) break;
       {
-      for (i = 0; i < 1; i++)
+      for (i = 0; i < 100; i++)
       tres =
       LibVEX_Translate ( InsnSetX86, InsnSetX86,
 			 origbuf, (Addr64)orig_addr, &orig_used,
@@ -122,6 +122,7 @@ int main ( int argc, char** argv )
    }
 
    fclose(f);
+   printf("\n");
    LibVEX_ClearTemporary(True);
 
 #if 0

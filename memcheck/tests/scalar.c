@@ -11,9 +11,11 @@
 // for (very) basic syscall use.  Generally not trying to do anything
 // meaningful with the syscalls.
 
-void GO(char* s) {
-   fprintf(stderr, "---------- %s\n", s);
-}
+#define GO(__NR_xxx, s) \
+   fprintf(stderr, "-----------------------------------------------------\n"  \
+                   "%3d:%20s %s\n"                                            \
+                   "-----------------------------------------------------\n", \
+                   __NR_xxx, #__NR_xxx, s);
 
 int main(void)
 {
@@ -34,18 +36,18 @@ int main(void)
 
    // __NR_read 3 --> sys_read()
    // Nb: here we are also getting an error from the syscall arg itself.
-   GO("__NR_read, 1+3 scalar errors");
+   GO(__NR_read, "1+3 scalar errors");
    syscall(i0+__NR_read, i0, s0, i0);
 
    // __NR_write 4 --> sys_write()
-   GO("__NR_write, 3 scalar errors, 1 memory error");
+   GO(__NR_write, "3 scalar errors, 1 memory error");
    syscall(__NR_write, i0, s0, i0+1);
 
    // __NR_open 5
-   GO("__NR_open(2), 2 scalar errors, 1 memory error");
+   GO(__NR_open, "(2-args), 2 scalar errors, 1 memory error");
    syscall(__NR_open, s0, i0, i0+1);
 
-   GO("__NR_open(3), 1 scalar error");
+   GO(__NR_open, "(3-args), 1 scalar error");
    syscall(__NR_open, "tmp_write_file_foo", O_CREAT, i0);
 
    // __NR_close 6
@@ -63,28 +65,39 @@ int main(void)
    // __NR_oldstat 18
    // __NR_lseek 19
    // __NR_getpid 20 --> sys_getpid()
-   GO("__NR_getpid, 0 errors");
+   GO(__NR_getpid, "0 errors");
    syscall(__NR_getpid);
 
    // __NR_mount 21
-   GO("__NR_mount, 4 scalar errors, 3 memory errors");
+   GO(__NR_mount, "4 scalar errors, 3 memory errors");
    syscall(__NR_mount, s0, s0, s0, i0, s0);
    
    // __NR_umount 22
    // __NR_setuid 23
+
    // __NR_getuid 24
+   GO(__NR_getuid, "0 errors");
+   syscall(__NR_getuid);
+
    // __NR_stime 25
    // __NR_ptrace 26
    // __NR_alarm 27
    // __NR_oldfstat 28
+
    // __NR_pause 29
+   // XXX: will have to be tested separately
+
    // __NR_utime 30
    // __NR_stty 31
    // __NR_gtty 32
    // __NR_access 33
    // __NR_nice 34
    // __NR_ftime 35
+
    // __NR_sync 36
+   GO(__NR_sync, "0 errors");
+   syscall(__NR_sync);
+
    // __NR_kill 37
    // __NR_rename 38
    // __NR_mkdir 39
@@ -95,10 +108,21 @@ int main(void)
    // __NR_prof 44
    // __NR_brk 45
    // __NR_setgid 46
+
    // __NR_getgid 47
+   GO(__NR_getgid, "0 errors");
+   syscall(__NR_getgid);
+
    // __NR_signal 48
+
    // __NR_geteuid 49
+   GO(__NR_geteuid, "0 errors");
+   syscall(__NR_geteuid);
+
    // __NR_getegid 50
+   GO(__NR_getegid, "0 errors");
+   syscall(__NR_getegid);
+
    // __NR_acct 51
    // __NR_umount2 52
    // __NR_lock 53
@@ -114,11 +138,17 @@ int main(void)
    // __NR_dup2 63
 
    // __NR_getppid 64
-   GO("__NR_getppid, 0 errors");
+   GO(__NR_getppid, "0 errors");
    syscall(__NR_getppid);
 
    // __NR_getpgrp 65
+   GO(__NR_getpgrp, "0 errors");
+   syscall(__NR_getpgrp);
+
    // __NR_setsid 66
+   GO(__NR_setsid, "0 errors");
+   syscall(__NR_setsid);
+
    // __NR_sigaction 67
    // __NR_sgetmask 68
    // __NR_ssetmask 69
@@ -128,7 +158,7 @@ int main(void)
    // __NR_sigpending 73
    // __NR_sethostname 74
    // __NR_setrlimit 75
-   // __NR_getrlimit 76	/* Back compatible 2Gig limited rlimit */
+   // __NR_getrlimit 76
    // __NR_getrusage 77
    // __NR_gettimeofday 78
    // __NR_settimeofday 79
@@ -163,7 +193,11 @@ int main(void)
    // __NR_fstat 108
    // __NR_olduname 109
    // __NR_iopl 110
+
    // __NR_vhangup 111
+   GO(__NR_vhangup, "0 errors");
+   syscall(__NR_vhangup);
+   
    // __NR_idle 112
    // __NR_vm86old 113
    // __NR_wait4 114
@@ -189,7 +223,7 @@ int main(void)
    // __NR_bdflush 134
    // __NR_sysfs 135
    // __NR_personality 136
-   // __NR_afs_syscall 137 /* Syscall for Andrew File System */
+   // __NR_afs_syscall 137
    // __NR_setfsuid 138
    // __NR_setfsgid 139
    // __NR__llseek 140
@@ -205,7 +239,11 @@ int main(void)
    // __NR_mlock 150
    // __NR_munlock 151
    // __NR_mlockall 152
+
    // __NR_munlockall 153
+   GO(__NR_munlockall, "0 errors");
+   syscall(__NR_munlockall);
+
    // __NR_sched_setparam 154
    // __NR_sched_getparam 155
    // __NR_sched_setscheduler 156
@@ -240,10 +278,10 @@ int main(void)
    // __NR_capset 185
    // __NR_sigaltstack 186
    // __NR_sendfile 187
-   // __NR_getpmsg 188 /* some people actually want streams */
-   // __NR_putpmsg 189 /* some people actually want streams */
+   // __NR_getpmsg 188
+   // __NR_putpmsg 189
    // __NR_vfork 190
-   // __NR_ugetrlimit 191 /* SuS compliant getrlimit */
+   // __NR_ugetrlimit 191
    // __NR_mmap2 192
    // __NR_truncate64 193
    // __NR_ftruncate64 194
@@ -251,10 +289,23 @@ int main(void)
    // __NR_lstat64 196
    // __NR_fstat64 197
    // __NR_lchown32 198
+
    // __NR_getuid32 199
+   GO(__NR_getuid32, "0 errors");
+   syscall(__NR_getuid32);
+
    // __NR_getgid32 200
+   GO(__NR_getgid32, "0 errors");
+   syscall(__NR_getgid32);
+
    // __NR_geteuid32 201
+   GO(__NR_geteuid32, "0 errors");
+   syscall(__NR_geteuid32);
+
    // __NR_getegid32 202
+   GO(__NR_getegid32, "0 errors");
+   syscall(__NR_getegid32);
+
    // __NR_setreuid32 203
    // __NR_setregid32 204
    // __NR_getgroups32 205
@@ -272,7 +323,6 @@ int main(void)
    // __NR_pivot_root 217
    // __NR_mincore 218
    // __NR_madvise 219
-   // __NR_madvise1 219 /* delete when C lib stub is removed */
    // __NR_getdents64 220
    // __NR_fcntl64 221
 /* 223 is unused */
@@ -337,11 +387,11 @@ int main(void)
    // __NR_mq_getsetattr (__NR_mq_open+5)
    // __NR_sys_kexec_load 283
 
-   GO("bogus constant, 1 message");
+   GO(9999, "1 message");
    syscall(9999);
 
    // __NR_exit 1 --> sys_exit() 
-   GO("__NR_exit, 1 scalar error");
+   GO(__NR_exit, "1 scalar error");
    syscall(__NR_exit, i0);
 
    assert(0);

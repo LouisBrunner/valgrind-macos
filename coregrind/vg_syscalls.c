@@ -48,7 +48,7 @@
       SK_(pre_reg_read)(Vg_CoreSysCall, tid, "(syscallno)", \
                         R_SYSCALL_NUM, sizeof(UWord));
 
-#define PRRAn(n,s,a,t) \
+#define PRRAn(n,s,t,a) \
       SK_(pre_reg_read)(Vg_CoreSysCall, tid, X(s,a), \
                         R_SYSCALL_ARG##n, sizeof(t));
 
@@ -60,40 +60,40 @@
 #define PRE_REG_READ1(tr, s, t1, a1) \
    if (VG_(defined_pre_reg_read)()) { \
       PRRSN; \
-      PRRAn(1,s,); \
+      PRRAn(1,s,t1,a1); \
    }
 
 #define PRE_REG_READ2(tr, s, t1, a1, t2, a2) \
    if (VG_(defined_pre_reg_read)()) { \
       PRRSN; \
-      PRRAn(1,s,a1,t1); PRRAn(2,s,a2,t2); \
+      PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); \
    }
 
 #define PRE_REG_READ3(tr, s, t1, a1, t2, a2, t3, a3) \
    if (VG_(defined_pre_reg_read)()) { \
       PRRSN; \
-      PRRAn(1,s,a1,t1); PRRAn(2,s,a2,t2); PRRAn(3,s,a3,t3); \
+      PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
    }
 
 #define PRE_REG_READ4(tr, s, t1, a1, t2, a2, t3, a3, t4, a4) \
    if (VG_(defined_pre_reg_read)()) { \
       PRRSN; \
-      PRRAn(1,s,a1,t1); PRRAn(2,s,a2,t2); PRRAn(3,s,a3,t3); \
-      PRRAn(4,s,a4,t4); \
+      PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
+      PRRAn(4,s,t4,a4); \
    }
 
 #define PRE_REG_READ5(tr, s, t1, a1, t2, a2, t3, a3, t4, a4, t5, a5) \
    if (VG_(defined_pre_reg_read)()) { \
       PRRSN; \
-      PRRAn(1,s,a1,t1); PRRAn(2,s,a2,t2); PRRAn(3,s,a3,t3); \
-      PRRAn(4,s,a4,t4); PRRAn(5,s,a5,t5); \
+      PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
+      PRRAn(4,s,t4,a4); PRRAn(5,s,t5,a5); \
    }
 
 #define PRE_REG_READ6(tr, s, t1, a1, t2, a2, t3, a3, t4, a4, t5, a5, t6, a6) \
    if (VG_(defined_pre_reg_read)()) { \
       PRRSN; \
-      PRRAn(1,s,a1,t1); PRRAn(2,s,a2,t2); PRRAn(3,s,a3,t3); \
-      PRRAn(4,s,a4,t4); PRRAn(5,s,a5,t5); PRRAn(6,s,a6,t6); \
+      PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
+      PRRAn(4,s,t4,a4); PRRAn(5,s,t5,a5); PRRAn(6,s,t6,a6); \
    }
 
 
@@ -1174,9 +1174,8 @@ PREx(sys_mount, MayBlock)
    // by 'data'.
    PRINT( "sys_mount( %p, %p, %p, %p, %p )" ,arg1,arg2,arg3);
    PRE_REG_READ5(long, "mount",
-                 char __user *, source, char __user *, target,
-                 char __user *, type, unsigned long, flags,
-                 void __user *, data);
+                 char *, source, char *, target, char *, type,
+                 unsigned long, flags, void *, data);
    PRE_MEM_RASCIIZ( "mount(source)", arg1);
    PRE_MEM_RASCIIZ( "mount(target)", arg2);
    PRE_MEM_RASCIIZ( "mount(type)", arg3);
@@ -1245,9 +1244,10 @@ PRE(setresgid)
    PRINT("setresgid ( %d, %d, %d )", arg1, arg2, arg3);
 }
 
-PRE(vhangup)
+PREx(sys_vhangup, 0)
 {
-   PRINT("vhangup()");
+   PRINT("sys_vhangup ( )");
+   PRE_REG_READ0(long, "vhangup");
 }
 
 PRE(iopl)
@@ -1583,10 +1583,10 @@ PRE(mlockall)
    PRINT("mlockall ( %x )", arg1);
 }
 
-PRE(munlockall)
+PREx(sys_munlockall, MayBlock)
 {
-   /* int munlockall(void) */
-   PRINT("munlockall()");
+   PRINT("sys_munlockall ( )");
+   PRE_REG_READ0(long, "munlockall");
 }
 
 PRE(sched_get_priority_max)
@@ -1675,10 +1675,10 @@ PRE(pwrite64)
    PRE_MEM_READ( "pwrite64(buf)", arg2, arg3 );
 }
 
-PRE(sync)
+PREx(sys_sync, MayBlock)
 {
-   /* int sync(); */
-   PRINT("sync ( )");
+   PRINT("sys_sync ( )");
+   PRE_REG_READ0(long, "sync");
 }
 
 PRE(fstatfs)
@@ -2238,40 +2238,40 @@ POST(getcwd)
       POST_MEM_WRITE( arg1, res );
 }
 
-PRE(geteuid)
+PREx(sys_geteuid16, 0)
 {
-   /* uid_t geteuid(void); */
-   PRINT("geteuid ( )");
+   PRINT("sys_geteuid16 ( )");
+   PRE_REG_READ0(long, "geteuid16");
 }
 
-PRE(geteuid32)
+PREx(sys_geteuid, 0)
 {
-   /* ?? uid_t geteuid32(void); */
-   PRINT("geteuid32(?) ( )");
+   PRINT("sys_geteuid ( )");
+   PRE_REG_READ0(long, "geteuid");
 }
 
-PRE(getegid)
+PREx(sys_getegid16, 0)
 {
-   /* gid_t getegid(void); */
-   PRINT("getegid ()");
+   PRINT("sys_getegid16 ( )");
+   PRE_REG_READ0(long, "getegid16");
 }
 
-PRE(getegid32)
+PREx(sys_getegid, 0)
 {
-   /* gid_t getegid32(void); */
-   PRINT("getegid32 ()");
+   PRINT("sys_getegid ( )");
+   PRE_REG_READ0(long, "getegid");
 }
 
-PRE(getgid)
+PREx(sys_getgid16, 0)
 {
-   /* gid_t getgid(void); */
-   PRINT("getgid ()");
+   PRINT("sys_getgid16 ( )");
+   PRE_REG_READ0(long, "getgid16");
 }
 
-PRE(getgid32)
+PREx(sys_getgid, 0)
 {
-   /* gid_t getgid32(void); */
-   PRINT("getgid32 ()");
+   PRINT("sys_getgid ( )");
+   PRE_REG_READ0(long, "getgid");
 }
 
 PREx(sys_getpid, 0)
@@ -2286,10 +2286,10 @@ PRE(getpgid)
    PRINT("getpgid ( %d )", arg1);
 }
 
-PRE(getpgrp)
+PREx(sys_getpgrp, 0)
 {
-   /* pid_t getpgrp(void); */
-   PRINT("getpgrp ()");
+   PRINT("sys_getpgrp ()");
+   PRE_REG_READ0(long, "getpgrp");
 }
 
 PREx(sys_getppid, 0)
@@ -2431,16 +2431,16 @@ POST(gettimeofday)
    }
 }
 
-PRE(getuid)
+PREx(sys_getuid16, 0)
 {
-   /* uid_t getuid(void); */
-   PRINT("getuid ( )");
+   PRINT("sys_getuid16 ( )");
+   PRE_REG_READ0(long, "getuid16");
 }
 
-PRE(getuid32)
+PREx(sys_getuid, 0)
 {
-   /* ???uid_t getuid32(void); */
-   PRINT("getuid32 ( )");
+   PRINT("sys_getuid ( )");
+   PRE_REG_READ0(long, "getuid");
 }
 
 PRE(ipc)
@@ -4145,12 +4145,12 @@ PREx(sys_open, MayBlock)
       // 3-arg version
       PRINT("sys_open ( %p(%s), %d, %d )",arg1,arg1,arg2,arg3);
       PRE_REG_READ3(long, "open",
-                    const char __user *, filename, int, flags, int, mode);
+                    const char *, filename, int, flags, int, mode);
    } else {
       // 2-arg version
       PRINT("sys_open ( %p(%s), %d )",arg1,arg1,arg2);
       PRE_REG_READ2(long, "open",
-                    const char __user *, filename, int, flags);
+                    const char *, filename, int, flags);
    }
    PRE_MEM_RASCIIZ( "open(filename)", arg1 );
 }
@@ -4170,7 +4170,7 @@ PREx(sys_read, MayBlock)
 {
    PRINT("sys_read ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
    PRE_REG_READ3(ssize_t, "read",
-                 unsigned int, fd, char __user *, buf, size_t, count);
+                 unsigned int, fd, char *, buf, size_t, count);
 
    if (!fd_allowed(arg1, "read", tid, False))
       set_result( -VKI_EBADF );
@@ -4187,7 +4187,7 @@ PREx(sys_write, MayBlock)
 {
    PRINT("sys_write ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
    PRE_REG_READ3(ssize_t, "write",
-                 unsigned int, fd, const char __user *, buf, size_t, count);
+                 unsigned int, fd, const char *, buf, size_t, count);
    if (!fd_allowed(arg1, "write", tid, False))
       set_result( -VKI_EBADF );
    else
@@ -4476,10 +4476,10 @@ PRE(setgid)
 
 PREALIAS(setgid32, setgid);
 
-PRE(setsid)
+PREx(sys_setsid, 0)
 {
-   /* pid_t setsid(void); */
-   PRINT("setsid ()");
+   PRINT("sys_setsid ( )");
+   PRE_REG_READ0(long, "setsid");
 }
 
 PRE(setgroups)
@@ -5238,10 +5238,10 @@ PRE(acct)
    PRE_MEM_RASCIIZ( "acct(filename)", arg1 );
 }
 
-PRE(pause)
+PREx(sys_pause, MayBlock)
 {
-   /* int pause(void); */
-   PRINT("pause ( )");
+   PRINT("sys_pause ( )");
+   PRE_REG_READ0(long, "pause");
 }
 
 PRE(rt_sigsuspend)
@@ -5811,13 +5811,13 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_mount,            sys_mount), // 21 *
    SYSB_(umount,		0), // 22 sys_oldumount *
    SYSB_(setuid,		0), // 23 sys_setuid16 ##
-   SYSB_(getuid,		0), // 24 sys_getuid16 ##
+   SYSX_(__NR_getuid,           sys_getuid16), // 24 ##
 
    // stime		               25 sys_stime *
    SYSBA(ptrace,		0), // 26 sys_ptrace
    SYSB_(alarm,			MayBlock), /* not blocking, but must run in LWP context */ // 27 sys_alarm *
    // oldfstat		               28 sys_fstat *
-   SYSB_(pause,			MayBlock), // 29 sys_pause *
+   SYSX_(__NR_pause,            sys_pause), // 29 *
 
    SYSB_(utime,			MayBlock), // 30 sys_utime *
    // stty		               31 sys_ni_syscall
@@ -5826,7 +5826,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(nice,			0), // 34 sys_nice *
    // ftime		               35 sys_ni_syscall
 
-   SYSB_(sync,			MayBlock), // 36 sys_sync *
+   SYSX_(__NR_sync,             sys_sync), // 36 *
    SYSBA(kill,			0), // 37 sys_kill *
    SYSB_(rename,		0), // 38 sys_rename *
    SYSB_(mkdir,			MayBlock), // 39 sys_mkdir *
@@ -5839,11 +5839,11 @@ static const struct sys_info sys_info[] = {
    SYSB_(brk,			Special), // 45  sys_brk *
 
    SYSB_(setgid,		0), // 46 sys_setgid16 ##
-   SYSB_(getgid,		0), // 47 sys_getgid16 ##
+   SYSX_(__NR_getgid,           sys_getgid16), // 47 ##
    // signal		               48   sys_signal *
-   SYSB_(geteuid,		0), // 49 sys_geteuid16 ##
+   SYSX_(__NR_geteuid,          sys_geteuid16), // 49 ##
 
-   SYSB_(getegid,		0), // 50 sys_getegid16 ##
+   SYSX_(__NR_getegid,          sys_getegid16), // 50 ##
    SYSB_(acct,                  0), // 51 sys_acct *
    // umount2		               52 sys_umount
    // lock		               53 sys_ni_syscall
@@ -5859,10 +5859,10 @@ static const struct sys_info sys_info[] = {
    SYSB_(chroot,		0), // 61 sys_chroot *
    // ustat		               62 sys_ustat *
    SYSBA(dup2,			0), // 63 sys_dup2 *
-   SYSX_(__NR_getppid,		sys_getppid), // 64 *
+   SYSX_(__NR_getppid,          sys_getppid), // 64 *
 
-   SYSB_(getpgrp,		0), // 65 sys_getpgrp *
-   SYSB_(setsid,		0), // 66 sys_setsid *
+   SYSX_(__NR_getpgrp,          sys_getpgrp), // 65 *
+   SYSX_(__NR_setsid,           sys_setsid), // 66 *
    SYSBA(sigaction,		SIG_SIM), // 67 sys_sigaction
    // sgetmask		               68 sys_sgetmask *
    // ssetmask		               69 sys_ssetmask *
@@ -5916,7 +5916,7 @@ static const struct sys_info sys_info[] = {
    // olduname		               109 sys_uname
 
    SYSB_(iopl,			0), // 110 sys_iopl
-   SYSB_(vhangup,		0), // 111 sys_vhangup *
+   SYSX_(__NR_vhangup,          sys_vhangup), // 111 *
    // idle		               112 sys_ni_syscall
    // vm86old		               113 sys_vm86old
    SYSBA(wait4,			MayBlock), // 114 sys_wait4 *
@@ -5968,7 +5968,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(mlock,			MayBlock), // 150 sys_mlock *
    SYSB_(munlock,		MayBlock), // 151 sys_unlock *
    SYSB_(mlockall,		MayBlock), // 152 sys_mlockall *
-   SYSB_(munlockall,		MayBlock), // 153 sys_munlockall *
+   SYSX_(__NR_munlockall,       sys_munlockall), // 153 *
    SYSBA(sched_setparam,	0),	/* ??? */ // 154 sys_sched_setparam *
 
    SYSBA(sched_getparam,	0),	/* ??? */ // 155 sys_sched_getparam *
@@ -6023,11 +6023,11 @@ static const struct sys_info sys_info[] = {
    SYSBA(lstat64,		0), // 196 sys_lstat64 %%
    SYSBA(fstat64,		0), // 197 sys_fstat64 %%
    SYSB_(lchown32,		0), // 198 sys_lchown *
-   SYSB_(getuid32,		0), // 199 sys_getuid *
+   SYSX_(__NR_getuid32,         sys_getuid), // 199 *
 
-   SYSB_(getgid32,		0), // 200 sys_getgid *
-   SYSB_(geteuid32,		0), // 201 sys_geteuid *
-   SYSB_(getegid32,		0), // 202 sys_getegid *
+   SYSX_(__NR_getgid32,         sys_getgid), // 200 *
+   SYSX_(__NR_geteuid32,        sys_geteuid), // 201 *
+   SYSX_(__NR_getegid32,        sys_getegid), // 202 *
    SYSB_(setreuid32,		0), // 203 sys_setreuid *
    SYSB_(setregid32,		0), // 204 sys_setregid *
 

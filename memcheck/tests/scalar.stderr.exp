@@ -1,4 +1,6 @@
----------- __NR_read, 1+3 scalar errors
+-----------------------------------------------------
+  3:           __NR_read 1+3 scalar errors
+-----------------------------------------------------
 Syscall param (syscallno) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
@@ -18,7 +20,9 @@ Syscall param read(count) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
----------- __NR_write, 3 scalar errors, 1 memory error
+-----------------------------------------------------
+  4:          __NR_write 3 scalar errors, 1 memory error
+-----------------------------------------------------
 
 Syscall param write(fd) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
@@ -40,7 +44,9 @@ Syscall param write(buf) points to unaddressable byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
----------- __NR_open(2), 2 scalar errors, 1 memory error
+-----------------------------------------------------
+  5:           __NR_open (2-args), 2 scalar errors, 1 memory error
+-----------------------------------------------------
 
 Syscall param open(filename) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
@@ -57,14 +63,20 @@ Syscall param open(filename) points to unaddressable byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
----------- __NR_open(3), 1 scalar error
+-----------------------------------------------------
+  5:           __NR_open (3-args), 1 scalar error
+-----------------------------------------------------
 
 Syscall param open(mode) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
----------- __NR_getpid, 0 errors
----------- __NR_mount, 4 scalar errors, 3 memory errors
+-----------------------------------------------------
+ 20:         __NR_getpid 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+ 21:          __NR_mount 4 scalar errors, 3 memory errors
+-----------------------------------------------------
 
 Syscall param mount(source) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
@@ -108,12 +120,57 @@ Syscall param mount(type) points to unaddressable byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
----------- __NR_getppid, 0 errors
----------- bogus constant, 1 message
+-----------------------------------------------------
+ 24:         __NR_getuid 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+ 36:           __NR_sync 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+ 47:         __NR_getgid 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+ 49:        __NR_geteuid 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+ 50:        __NR_getegid 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+ 64:        __NR_getppid 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+ 65:        __NR_getpgrp 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+ 66:         __NR_setsid 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+111:        __NR_vhangup 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+153:     __NR_munlockall 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+199:       __NR_getuid32 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+200:       __NR_getgid32 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+201:      __NR_geteuid32 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+202:      __NR_getegid32 0 errors
+-----------------------------------------------------
+-----------------------------------------------------
+9999:                9999 1 message
+-----------------------------------------------------
 WARNING: unhandled syscall: 9999
 Do not panic.  You may be able to fix this easily.
 Read the file README_MISSING_SYSCALL_OR_IOCTL.
----------- __NR_exit, 1 scalar error
+-----------------------------------------------------
+  1:           __NR_exit 1 scalar error
+-----------------------------------------------------
 
 Syscall param exit(error_code) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)

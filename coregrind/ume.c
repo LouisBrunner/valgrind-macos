@@ -100,7 +100,7 @@ void foreach_map(int (*fn)(char *start, char *end,
       int ino;
       void *segstart, *segend;
 
-      sscanf(bufptr, "%p-%p %s %Lx %x:%x %d",
+      sscanf(bufptr, "%p-%p %s %llx %x:%x %d",
 	     &segstart, &segend, perm, &offset, &maj, &min, &ino);
       bufptr = strchr(bufptr, '\n');
       if (bufptr != NULL)

@@ -115,7 +115,8 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info,
    seen = 0;
    for(; auxv->a_type != AT_NULL; auxv++) {
       if (0)
-	 printf("doing auxv %p %4x: %d %p\n", auxv, auxv->a_type, auxv->u.a_val, auxv->u.a_ptr);
+	 printf("doing auxv %p %4lld: %lld %p\n",
+                auxv, (ULong)auxv->a_type, (ULong)auxv->u.a_val, auxv->u.a_ptr);
 
       switch(auxv->a_type) {
       case AT_PHDR:

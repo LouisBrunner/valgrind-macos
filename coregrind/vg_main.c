@@ -880,7 +880,7 @@ static char *copy_str(char **tab, const char *str)
    *cp++ = '\0';
 
    if (0)
-      printf("copied %p \"%s\" len %d\n", orig, orig, cp-orig);
+      printf("copied %p \"%s\" len %lld\n", orig, orig, (Long)(cp-orig));
 
    *tab = cp;
 
@@ -1128,7 +1128,7 @@ static Addr setup_client_stack(void* init_sp,
       default:
 	 /* stomp out anything we don't know about */
 	 if (0)
-	    printf("stomping auxv entry %d\n", auxv->a_type);
+	    printf("stomping auxv entry %lld\n", (ULong)auxv->a_type);
 	 auxv->a_type = AT_IGNORE;
 	 break;
 	 
@@ -1284,7 +1284,7 @@ static void load_tool( const char *toolname, void** handle_out,
               "  The major version numbers must match.\n",
               VG_CORE_INTERFACE_MAJOR_VERSION, 
               VG_CORE_INTERFACE_MINOR_VERSION,
-              sizeof(*toolinfo),
+              (Int)sizeof(*toolinfo),
               toolinfo->interface_major_version,
               toolinfo->interface_minor_version, 
               toolinfo->sizeof_ToolInfo);

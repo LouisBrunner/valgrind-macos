@@ -1019,9 +1019,9 @@ static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype,
 
 	 case PX_RunSyscall:
 	    if (VG_(clo_trace_syscalls))
-	       VG_(message)(Vg_DebugMsg, "sys_wait_results: got PX_RunSyscall for TID %d: syscall %d result %d",
+	       VG_(message)(Vg_DebugMsg, "sys_wait_results: got PX_RunSyscall for TID %d: syscall %d result %lld",
 			    res.tid, tst->syscallno,
-                            PLATFORM_SYSCALL_RET(tst->arch));
+                            (UWord)PLATFORM_SYSCALL_RET(tst->arch));
 
 	    if (tst->status != VgTs_WaitSys)
 	       VG_(printf)("tid %d in status %d\n",

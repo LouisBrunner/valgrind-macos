@@ -283,7 +283,8 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       X86ShiftOp shOp;
       /* Is it an addition or logical style op? */
       switch (e->Iex.Binop.op) {
-         case Iop_Add32: aluOp = Xalu_ADD; break;
+         case Iop_Add8: case Iop_Add32:
+            aluOp = Xalu_ADD; break;
 
          case Iop_Sub8: case Iop_Sub16: case Iop_Sub32: 
             aluOp = Xalu_SUB; break;
@@ -310,11 +311,14 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       }
       /* Perhaps a shift op? */
       switch (e->Iex.Binop.op) {
-         case Iop_Shl32: shOp = Xsh_SHL; break;
-         case Iop_Shr8: case Iop_Shr32: 
+         case Iop_Shl32: case Iop_Shl16: case Iop_Shl8:
+            shOp = Xsh_SHL; break;
+         case Iop_Shr32: case Iop_Shr16: case Iop_Shr8: 
             shOp = Xsh_SHR; break;
-         case Iop_Sar32: shOp = Xsh_SAR; break;
-         default:        shOp = Xsh_INVALID; break;
+         case Iop_Sar32: 
+            shOp = Xsh_SAR; break;
+         default:
+            shOp = Xsh_INVALID; break;
       }
       if (shOp != Xsh_INVALID) {
          HReg dst    = newVRegI(env);

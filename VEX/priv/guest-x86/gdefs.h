@@ -84,17 +84,25 @@ enum {
     CC_OP_SARW, /* where res' is like res but shifted one bit less */
     CC_OP_SARL, /* 27 */
 
+    CC_OP_ROLB, /* modify C and O only.  CC_DST = res, CC_SRC = old flags */
+    CC_OP_ROLW,
+    CC_OP_ROLL, /* 30 */
+
+    CC_OP_RORB, /* modify C and O only.  CC_DST = res, CC_SRC = old flags */
+    CC_OP_RORW,
+    CC_OP_RORL, /* 33 */
+
     CC_OP_MULB, /* modify all flags, CC_DST = one arg */
     CC_OP_MULW, /* CC_SRC = the other arg */
-    CC_OP_MULL, /* 30 */
+    CC_OP_MULL, /* 36 */
 
     CC_OP_MULLSB, /* modify all flags, CC_DST = one arg */
     CC_OP_MULLSW, /* CC_SRC = the other arg */
-    CC_OP_MULLSL,
+    CC_OP_MULLSL, /* 39 */
 
     CC_OP_MULLUB, /* modify all flags, CC_DST = one arg */
     CC_OP_MULLUW, /* CC_SRC = the other arg */
-    CC_OP_MULLUL,
+    CC_OP_MULLUL, /* 42 */
 
     CC_OP_NUMBER
 };

@@ -161,6 +161,19 @@ static inline int lshift(int x, int n)
     return cf | pf | af | zf | sf | of;				\
 }
 
+/* ROR: cf' = msb(result).  of' = msb(result) ^ msb-1(result). */
+/* DST = result, SRC = old flags */
+#define ACTIONS_ROR(DATA_BITS,DATA_TYPE,DATA_STYPE)		\
+{								\
+    PREAMBLE(DATA_BITS);					\
+    int fl 							\
+       = (CC_SRC & ~(CC_O | CC_C))				\
+         | (CC_C & (CC_DST >> (DATA_BITS-1)))			\
+         | (CC_O & (lshift(CC_DST, 11-(DATA_BITS-1)) 		\
+                    ^ lshift(CC_DST, 11-(DATA_BITS-1)+1)));	\
+    return fl;							\
+}
+
 #define ACTIONS_INC(DATA_BITS,DATA_TYPE,DATA_STYPE)	\
 {							\
     PREAMBLE(DATA_BITS);				\
@@ -199,9 +212,9 @@ static inline int lshift(int x, int n)
 /*static*/ UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
    switch (cc_op) {
-   case CC_OP_COPY:
-      return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z 
-                       | CC_MASK_A | CC_MASK_C | CC_MASK_O);
+      case CC_OP_COPY:
+         return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z 
+                          | CC_MASK_A | CC_MASK_C | CC_MASK_O);
 
       case CC_OP_ADDL:   ACTIONS_ADD(32,UInt,Int);
 
@@ -213,13 +226,17 @@ static inline int lshift(int x, int n)
       case CC_OP_LOGICW: ACTIONS_LOGIC(16,UShort,Short);
       case CC_OP_LOGICL: ACTIONS_LOGIC(32,UInt,Int);
 
-      case CC_OP_INCL: ACTIONS_INC(32,UInt,Int);
+      case CC_OP_INCL:   ACTIONS_INC(32,UInt,Int);
 
-      case CC_OP_DECB: ACTIONS_DEC(8,UChar,Char);
-      case CC_OP_DECL: ACTIONS_DEC(32,UInt,Int);
+      case CC_OP_DECB:   ACTIONS_DEC(8,UChar,Char);
+      case CC_OP_DECL:   ACTIONS_DEC(32,UInt,Int);
 
-      case CC_OP_SHLL: ACTIONS_SHL(32,UInt,Int);
-      case CC_OP_SARL: ACTIONS_SAR(32,UInt,Int);
+      case CC_OP_SHLL:   ACTIONS_SHL(32,UInt,Int);
+      case CC_OP_SARL:   ACTIONS_SAR(32,UInt,Int);
+
+      case CC_OP_RORW:   ACTIONS_ROR(16,UShort,Short);
+      case CC_OP_RORL:   ACTIONS_ROR(32,UInt,Int);
+
       default:
          /* shouldn't really make these calls from generated code */
          vex_printf("calculate_eflags_all( %d, 0x%x, 0x%x )\n",

@@ -330,7 +330,7 @@ typedef
       /* ------------------ 64-bit SIMD Integer. ------------------ */
 
       /* MISC (vector integer cmp != 0) */
-      //      Iop_CmpNEZ8x8, Iop_CmpNEZ16x4, Iop_CmpNEZ32x2,
+      Iop_CmpNEZ8x8, Iop_CmpNEZ16x4, Iop_CmpNEZ32x2,
 
       /* ADDITION (normal / unsigned sat / signed sat) */
       Iop_Add8x8,   Iop_Add16x4,   Iop_Add32x2,

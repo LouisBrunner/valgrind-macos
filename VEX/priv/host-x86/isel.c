@@ -2218,6 +2218,33 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
             return;
          }
 
+         case Iop_CmpNEZ32x2:
+            fn = (HWord)h_generic_calc_CmpNEZ32x2; goto unish;
+         case Iop_CmpNEZ16x4:
+            fn = (HWord)h_generic_calc_CmpNEZ16x4; goto unish;
+         case Iop_CmpNEZ8x8:
+            fn = (HWord)h_generic_calc_CmpNEZ8x8; goto unish;
+         unish: {
+            /* Note: the following assumes all helpers are of
+               signature 
+                  ULong fn ( ULong ), and they are
+               not marked as regparm functions. 
+            */
+            HReg xLo, xHi;
+            HReg tLo = newVRegI(env);
+            HReg tHi = newVRegI(env);
+            iselInt64Expr(&xHi, &xLo, env, e->Iex.Unop.arg);
+            addInstr(env, X86Instr_Push(X86RMI_Reg(xHi)));
+            addInstr(env, X86Instr_Push(X86RMI_Reg(xLo)));
+            addInstr(env, X86Instr_Call( Xcc_ALWAYS, (UInt)fn, 0 ));
+            add_to_esp(env, 2*4);
+            addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
+            addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
          default: 
             break;
       }

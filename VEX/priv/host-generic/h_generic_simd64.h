@@ -82,6 +82,10 @@ extern ULong h_generic_calc_CmpGT32Sx2 ( ULong, ULong );
 extern ULong h_generic_calc_CmpGT16Sx4 ( ULong, ULong );
 extern ULong h_generic_calc_CmpGT8Sx8  ( ULong, ULong );
 
+extern ULong h_generic_calc_CmpNEZ32x2 ( ULong );
+extern ULong h_generic_calc_CmpNEZ16x4 ( ULong );
+extern ULong h_generic_calc_CmpNEZ8x8  ( ULong );
+
 extern ULong h_generic_calc_QNarrow32Sx2 ( ULong, ULong );
 extern ULong h_generic_calc_QNarrow16Sx4 ( ULong, ULong );
 extern ULong h_generic_calc_QNarrow16Ux4 ( ULong, ULong );

@@ -268,6 +268,10 @@ void ppIROp ( IROp op )
       case Iop_InterleaveLO16x4: vex_printf("InterleaveLO16x4"); return;
       case Iop_InterleaveLO32x2: vex_printf("InterleaveLO32x2"); return;
 
+      case Iop_CmpNEZ32x2: vex_printf("CmpNEZ32x2"); return;
+      case Iop_CmpNEZ16x4: vex_printf("CmpNEZ16x4"); return;
+      case Iop_CmpNEZ8x8:  vex_printf("CmpNEZ8x8"); return;
+
       case Iop_Add32Fx4:  vex_printf("Add32Fx4"); return;
       case Iop_Add32F0x4: vex_printf("Add32F0x4"); return;
       case Iop_Add64Fx2:  vex_printf("Add64Fx2"); return;
@@ -346,6 +350,7 @@ void ppIROp ( IROp op )
       case Iop_And128:     vex_printf("And128"); return;
       case Iop_Or128:      vex_printf("Or128");  return;
       case Iop_Xor128:     vex_printf("Xor128"); return;
+
       case Iop_CmpNEZ8x16: vex_printf("CmpNEZ8x16"); return;
       case Iop_CmpNEZ16x8: vex_printf("CmpNEZ16x8"); return;
       case Iop_CmpNEZ32x4: vex_printf("CmpNEZ32x4"); return;
@@ -1206,7 +1211,10 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_Not8:   UNARY(Ity_I8,Ity_I8);
       case Iop_Not16:  UNARY(Ity_I16,Ity_I16);
       case Iop_Not32:  UNARY(Ity_I32,Ity_I32);
-      case Iop_Not64:  UNARY(Ity_I64,Ity_I64);
+
+      case Iop_Not64:  
+      case Iop_CmpNEZ32x2: case Iop_CmpNEZ16x4: case Iop_CmpNEZ8x8:
+         UNARY(Ity_I64,Ity_I64);
 
       case Iop_CmpEQ8: case Iop_CmpNE8:
          COMPARISON(Ity_I8);

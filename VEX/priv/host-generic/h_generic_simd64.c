@@ -246,6 +246,21 @@ static inline UChar cmpgt8S ( Char xx, Char yy )
    return xx>yy ? 0xFF : 0;
 }
 
+static inline UInt cmpnez32 ( UInt xx )
+{
+   return xx==0 ? 0 : 0xFFFFFFFF;
+}
+
+static inline UShort cmpnez16 ( UShort xx )
+{
+   return xx==0 ? 0 : 0xFFFF;
+}
+
+static inline UChar cmpnez8 ( UChar xx )
+{
+   return xx==0 ? 0 : 0xFF;
+}
+
 static inline Short qnarrow32Sto16 ( UInt xx0 )
 {
    Int xx = (Int)xx0;
@@ -612,6 +627,38 @@ ULong h_generic_calc_CmpGT8Sx8 ( ULong xx, ULong yy )
              cmpgt8S( sel8x8_2(xx), sel8x8_2(yy) ),
              cmpgt8S( sel8x8_1(xx), sel8x8_1(yy) ),
              cmpgt8S( sel8x8_0(xx), sel8x8_0(yy) )
+          );
+}
+
+ULong h_generic_calc_CmpNEZ32x2 ( ULong xx )
+{
+   return mk32x2(
+             cmpnez32( sel32x2_1(xx) ),
+             cmpnez32( sel32x2_0(xx) )
+          );
+}
+
+ULong h_generic_calc_CmpNEZ16x4 ( ULong xx )
+{
+   return mk16x4(
+             cmpnez16( sel16x4_3(xx) ),
+             cmpnez16( sel16x4_2(xx) ),
+             cmpnez16( sel16x4_1(xx) ),
+             cmpnez16( sel16x4_0(xx) )
+          );
+}
+
+ULong h_generic_calc_CmpNEZ8x8 ( ULong xx )
+{
+   return mk8x8(
+             cmpnez8( sel8x8_7(xx) ),
+             cmpnez8( sel8x8_6(xx) ),
+             cmpnez8( sel8x8_5(xx) ),
+             cmpnez8( sel8x8_4(xx) ),
+             cmpnez8( sel8x8_3(xx) ),
+             cmpnez8( sel8x8_2(xx) ),
+             cmpnez8( sel8x8_1(xx) ),
+             cmpnez8( sel8x8_0(xx) )
           );
 }
 

@@ -1810,32 +1810,6 @@ extern UInt VG_(get_exit_status_shadow) ( void );
 
 
 /*====================================================================*/
-/*=== General stuff for replacing functions                        ===*/
-/*====================================================================*/
-
-/* Some skins need to replace the standard definitions of some functions. */
-
-/* ------------------------------------------------------------------ */
-/* General stuff, for replacing any functions */
-
-/* Is the client running on the simulated CPU or the real one?
-
-   Nb: If it is, and you want to call a function to be run on the real CPU,
-   use one of the VALGRIND_NON_SIMD_CALL[123] macros in valgrind.h to call it.
-
-   Nb: don't forget the function parentheses when using this in a
-   condition... write this:
-
-     if (VG_(is_running_on_simd_CPU)()) { ... }    // calls function
-
-   not this:
-
-     if (VG_(is_running_on_simd_CPU)) { ... }      // address of var!
-*/
-extern Bool VG_(is_running_on_simd_CPU) ( void );
-
-
-/*====================================================================*/
 /*=== Specific stuff for replacing malloc() and friends            ===*/
 /*====================================================================*/
 

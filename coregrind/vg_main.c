@@ -179,10 +179,6 @@ ThreadId VG_(last_run_tid) = 0;
    descriptor or a socket descriptor. */
 Bool VG_(logging_to_filedes) = True;
 
-/* This Bool is needed by wrappers in vg_clientmalloc.c to decide how
-   to behave.  Initially we say False. */
-Bool VG_(running_on_simd_CPU) = False;
-
 /* This is the argument to __NR_exit() supplied by the first thread to
    call that syscall.  We eventually pass that to __NR_exit() for
    real. */
@@ -2975,7 +2971,6 @@ int main(int argc, char **argv)
    //--------------------------------------------------------------
    // Run!
    //--------------------------------------------------------------
-   VG_(running_on_simd_CPU) = True;
    VGP_POPCC(VgpStartup);
    VGP_PUSHCC(VgpSched);
 
@@ -2986,7 +2981,6 @@ int main(int argc, char **argv)
       src = VgSrc_FatalSig;
 
    VGP_POPCC(VgpSched);
-   VG_(running_on_simd_CPU) = False;
 
 
 

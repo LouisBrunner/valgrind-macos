@@ -121,6 +121,19 @@ static Int vg_tc_stats_count[VG_TC_N_SECTORS];
 static Int vg_tc_stats_osize[VG_TC_N_SECTORS];
 static Int vg_tc_stats_tsize[VG_TC_N_SECTORS];
 
+static UInt n_tt_fast_misses = 0;   // number of lookups missing fast TT helper
+static UInt n_tc_discards = 0;      // number of TT/TC discards
+
+// Number and total original/translated size of translations overall.
+static UInt overall_in_count  = 0;
+static UInt overall_in_osize  = 0;
+static UInt overall_in_tsize  = 0;
+// Number and total original/t size of discards overall.
+static UInt overall_out_count = 0;
+static UInt overall_out_osize = 0;
+static UInt overall_out_tsize = 0;
+
+
 
 /*------------------ TRANSLATION TABLE ------------------*/
 
@@ -353,14 +366,14 @@ void discard_oldest_sector ( void )
       }
 
       pp_tt_tc_status ( msg );
-      VG_(overall_out_count) += vg_tc_stats_count[s];
-      VG_(overall_out_osize) += vg_tc_stats_osize[s];
-      VG_(overall_out_tsize) += vg_tc_stats_tsize[s]; 
+      overall_out_count += vg_tc_stats_count[s];
+      overall_out_osize += vg_tc_stats_osize[s];
+      overall_out_tsize += vg_tc_stats_tsize[s]; 
       vg_tc_used[s] = 0;
       vg_tc_stats_count[s] = 0;
       vg_tc_stats_osize[s] = 0;
       vg_tc_stats_tsize[s] = 0;
-      VG_(number_of_tc_discards) ++;
+      n_tc_discards++;
    }
 }
 
@@ -374,13 +387,13 @@ Int maybe_commission_sector ( void )
    Int  s;
    for (s = 0; s < VG_TC_N_SECTORS; s++) {
       if (vg_tc[s] != NULL && vg_tc_used[s] == 0) {
-         vg_tc_age[s] = VG_(overall_in_count);
+         vg_tc_age[s] = overall_in_count;
          VG_(sprintf)(msg, "after  commission of sector %d "
                            "at time %d", 
                            s, vg_tc_age[s]);
          pp_tt_tc_status ( msg );
 #        ifdef DEBUG_TRANSTAB
-         VG_(sanity_check_tc_tt)();
+         VG_(sanity_check_tt_tc)();
 #        endif
          return s;
       }
@@ -459,7 +472,7 @@ UChar* allocate ( Int nBytes )
    vg_tc_current = maybe_commission_sector();
    vg_assert(vg_tc_current >= 0 && vg_tc_current < VG_TC_N_SECTORS);
 #  ifdef DEBUG_TRANSTAB
-   VG_(sanity_check_tc_tt)();
+   VG_(sanity_check_tt_tc)();
 #  endif
 
    return allocate(nBytes);
@@ -480,7 +493,7 @@ void VG_(get_tt_tc_used) ( UInt* tt_used, UInt* tc_used )
 
 /* Do a sanity check on TT/TC.
 */
-void VG_(sanity_check_tc_tt) ( void )
+void VG_(sanity_check_tt_tc) ( void )
 {
    Int i, s;
    TTEntry* tte;
@@ -508,6 +521,33 @@ void VG_(sanity_check_tc_tt) ( void )
    }
 }
 
+static __inline__ Int safe_idiv(Int a, Int b)
+{
+   return (b == 0 ? 0 : a / b);
+}
+
+void VG_(print_tt_tc_stats)(void)
+{
+   VG_(message)(Vg_DebugMsg,
+                "    TT/TC: %d tc sectors discarded.",
+                n_tc_discards );
+   VG_(message)(Vg_DebugMsg,
+                "           %d tt_fast misses.",
+                n_tt_fast_misses);
+   VG_(message)(Vg_DebugMsg,
+                "translate: new     %d (%d -> %d; ratio %d:10)",
+                overall_in_count, overall_in_osize, overall_in_tsize,
+                safe_idiv(10*overall_in_tsize, overall_in_osize));
+   VG_(message)(Vg_DebugMsg,
+                "           discard %d (%d -> %d; ratio %d:10).",
+                overall_out_count, overall_out_osize, overall_out_tsize,
+                safe_idiv(10*overall_out_tsize, overall_out_osize));
+}
+
+Int VG_(get_bbs_translated) ( void )
+{
+   return overall_in_count;
+}
 
 /* Add this already-filled-in entry to the TT.  Assumes that the
    relevant code chunk has been placed in TC, along with a dummy back
@@ -553,9 +593,9 @@ void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
    add_tt_entry(tce);
 
    /* Update stats. */
-   VG_(overall_in_count) ++;
-   VG_(overall_in_osize) += orig_size;
-   VG_(overall_in_tsize) += trans_size;
+   overall_in_count ++;
+   overall_in_osize += orig_size;
+   overall_in_tsize += trans_size;
 
    vg_tc_stats_count[vg_tc_current] ++;
    vg_tc_stats_osize[vg_tc_current] += orig_size;
@@ -581,7 +621,7 @@ Addr VG_(search_transtab) ( Addr original_addr )
       /* Found it.  Put the search result into the fast cache now. */
       UInt cno = (UInt)original_addr & VG_TT_FAST_MASK;
       VG_(tt_fast)[cno] = (Addr)(tte->tcentry);
-      VG_(tt_fast_misses)++;
+      n_tt_fast_misses++;
       VGP_POPCC(VgpSlowFindT);
       return (Addr)&(tte->tcentry->payload[0]);
    }
@@ -600,7 +640,7 @@ void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks 
    Int      i, j;
    TCEntry* tce;
 #  ifdef DEBUG_TRANSTAB
-   VG_(sanity_check_tc_tt)();
+   VG_(sanity_check_tt_tc)();
 #  endif
    i_start = start;
    i_end   = start + range - 1;
@@ -630,9 +670,9 @@ void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks 
          }
       }
 
-      VG_(overall_out_count) ++;
-      VG_(overall_out_osize) += tce->orig_size;
-      VG_(overall_out_tsize) += tce->trans_size;
+      overall_out_count ++;
+      overall_out_osize += tce->orig_size;
+      overall_out_tsize += tce->trans_size;
       out_count ++;
       out_osize += tce->orig_size;
       out_tsize += tce->trans_size;
@@ -640,7 +680,7 @@ void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks 
 
    if (out_count > 0) {
       vg_invalidate_tt_fast();
-      VG_(sanity_check_tc_tt)();
+      VG_(sanity_check_tt_tc)();
 #     ifdef DEBUG_TRANSTAB
       { Addr aa;
         for (aa = i_start; aa <= i_end; aa++)
@@ -705,7 +745,7 @@ void VG_(init_tt_tc) ( void )
    }
 
 #  ifdef DEBUG_TRANSTAB
-   VG_(sanity_check_tc_tt)();
+   VG_(sanity_check_tt_tc)();
 #  endif
 }
 

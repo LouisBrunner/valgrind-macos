@@ -153,9 +153,9 @@ UInt VG_(sigstack)[VG_SIGSTACK_SIZE_W];
 
 /* jmp_buf for fatal signals;  VG_(fatal_signal_jmpbuf_ptr) is NULL until
    the time is right that it can be used. */
-Int      VG_(fatal_sigNo) = -1;
-jmp_buf* VG_(fatal_signal_jmpbuf_ptr) = NULL;
-jmp_buf  fatal_signal_jmpbuf;
+       Int      VG_(fatal_sigNo) = -1;
+       jmp_buf* VG_(fatal_signal_jmpbuf_ptr) = NULL;
+static jmp_buf  fatal_signal_jmpbuf;
 
 /* Counts downwards in VG_(run_innerloop). */
 UInt VG_(dispatch_ctr);
@@ -175,60 +175,22 @@ Bool VG_(logging_to_filedes) = True;
 /*=== Counters, for profiling purposes only                        ===*/
 /*====================================================================*/
 
-/* Number of lookups which miss the fast tt helper. */
-UInt VG_(tt_fast_misses) = 0;
-
-
-/* Counts for TT/TC informational messages. */
-
-/* Number and total o/t size of translations overall. */
-UInt VG_(overall_in_count) = 0;
-UInt VG_(overall_in_osize) = 0;
-UInt VG_(overall_in_tsize) = 0;
-/* Number and total o/t size of discards overall. */
-UInt VG_(overall_out_count) = 0;
-UInt VG_(overall_out_osize) = 0;
-UInt VG_(overall_out_tsize) = 0;
-/* The number of discards of TT/TC. */
-UInt VG_(number_of_tc_discards) = 0;
-/* Counts of chain and unchain operations done. */
-UInt VG_(bb_enchain_count) = 0;
-UInt VG_(bb_dechain_count) = 0;
-/* Number of unchained jumps performed. */
-UInt VG_(unchained_jumps_done) = 0;
+// These ones maintained by vg_dispatch.S
+UInt VG_(bb_enchain_count) = 0;        // Number of chain operations done
+UInt VG_(bb_dechain_count) = 0;        // Number of unchain operations done
+UInt VG_(unchained_jumps_done) = 0;    // Number of unchained jumps done
 
 /* Counts pertaining to internal sanity checking. */
 static UInt sanity_fast_count = 0;
 static UInt sanity_slow_count = 0;
 
-static __inline__ Int safe_idiv(Int a, Int b)
-{
-   return (b == 0 ? 0 : a / b);
-}
-
 static void print_all_stats ( void )
 {
    // Translation stats
+   VG_(print_tt_tc_stats)();
    VG_(message)(Vg_DebugMsg,
-                "    TT/TC: %d tc sectors discarded.",
-                VG_(number_of_tc_discards) );
-   VG_(message)(Vg_DebugMsg,
-                "           %d tt_fast misses.", VG_(tt_fast_misses));
-   VG_(message)(Vg_DebugMsg,
-                "           %d chainings, %d unchainings.",
+                "chainings: %d chainings, %d unchainings.",
                 VG_(bb_enchain_count), VG_(bb_dechain_count) );
-   VG_(message)(Vg_DebugMsg,
-                "translate: new     %d (%d -> %d; ratio %d:10)",
-                VG_(overall_in_count),
-                VG_(overall_in_osize),
-                VG_(overall_in_tsize),
-                safe_idiv(10*VG_(overall_in_tsize), VG_(overall_in_osize)));
-   VG_(message)(Vg_DebugMsg,
-                "           discard %d (%d -> %d; ratio %d:10).",
-                VG_(overall_out_count),
-                VG_(overall_out_osize),
-                VG_(overall_out_tsize),
-                safe_idiv(10*VG_(overall_out_tsize), VG_(overall_out_osize)));
    VG_(message)(Vg_DebugMsg,
       " dispatch: %llu jumps (bb entries); of them %u (%lu%%) unchained.",
       VG_(bbs_done), 
@@ -2615,7 +2577,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 #     endif
 
       if ((sanity_fast_count % 250) == 0)
-         VG_(sanity_check_tc_tt)();
+         VG_(sanity_check_tt_tc)();
 
       if (VG_(needs).sanity_checks) {
           VGP_PUSHCC(VgpSkinExpensiveSanity);

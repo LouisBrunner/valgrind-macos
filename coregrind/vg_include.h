@@ -1277,26 +1277,11 @@ extern Int      VG_(fatal_sigNo);		/* the fatal signal */
 
 /* --- Counters, for informational purposes only. --- */
 
-/* Number of lookups which miss the fast tt helper. */
-extern UInt VG_(tt_fast_misses);
-
-/* Counts for TT/TC informational messages. */
-
-/* Number and total o/t size of translations overall. */
-extern UInt VG_(overall_in_count);
-extern UInt VG_(overall_in_osize);
-extern UInt VG_(overall_in_tsize);
-/* Number and total o/t size of discards overall. */
-extern UInt VG_(overall_out_count);
-extern UInt VG_(overall_out_osize);
-extern UInt VG_(overall_out_tsize);
-/* The number of discards of TT/TC. */
-extern UInt VG_(number_of_tc_discards);
-/* Counts of chain and unchain operations done. */
-extern UInt VG_(bb_enchain_count);
-extern UInt VG_(bb_dechain_count);
-/* Number of unchained jumps performed. */
-extern UInt VG_(unchained_jumps_done);
+// These counters must be declared here because they're maintained by
+// vg_dispatch.S.
+extern UInt VG_(bb_enchain_count);     // Counts of chain operations done
+extern UInt VG_(bb_dechain_count);     // Counts of unchain operations done
+extern UInt VG_(unchained_jumps_done); // Number of unchained jumps performed
 
 extern void VG_(print_scheduler_stats) ( void );
 
@@ -1426,16 +1411,20 @@ extern void VG_(show_open_fds) ( void );
 /* The fast-cache for tt-lookup. */
 extern Addr VG_(tt_fast)[VG_TT_FAST_SIZE];
 
+extern void VG_(init_tt_tc)       ( void );
 extern void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
                                     Addr trans_addr, Int trans_size,
 				    UShort jumps[VG_MAX_JUMPS]);
+extern Addr VG_(search_transtab)  ( Addr original_addr );
 
-extern void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks );
+extern void VG_(invalidate_translations) ( Addr start, UInt range,
+                                           Bool unchain_blocks );
 
-extern void VG_(init_tt_tc) ( void );
+extern void VG_(sanity_check_tt_tc) ( void );
 
-extern void VG_(sanity_check_tc_tt) ( void );
-extern Addr VG_(search_transtab) ( Addr original_addr );
+extern void VG_(print_tt_tc_stats) ( void );
+
+extern Int  VG_(get_bbs_translated) ( void );
 
 /* ---------------------------------------------------------------------
    Exports of vg_syscall.S

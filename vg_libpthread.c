@@ -869,11 +869,19 @@ void* (*__libc_internal_tsd_get)
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#ifdef GLIBC_2_1
+extern
+int __sigaction
+             (int signum, 
+              const struct sigaction *act,  
+              struct  sigaction *oldact);
+#else
 extern
 int __libc_sigaction
              (int signum, 
               const struct sigaction *act,  
               struct  sigaction *oldact);
+#endif
 int sigaction(int signum, 
               const struct sigaction *act,  
               struct  sigaction *oldact)
@@ -1415,9 +1423,10 @@ strong_alias(__pthread_key_create, pthread_key_create)
 strong_alias(__pthread_getspecific, pthread_getspecific)
 strong_alias(__pthread_setspecific, pthread_setspecific)
 
-//strong_alias(__sigaction, sigaction)
+#ifndef GLIBC_2_1
 strong_alias(sigaction, __sigaction)
-
+#endif
+     
 strong_alias(close, __close)
 strong_alias(fcntl, __fcntl)
 strong_alias(lseek, __lseek)

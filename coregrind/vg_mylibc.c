@@ -1495,6 +1495,89 @@ Int VG_(log2) ( Int x )
 }
 
 
+// Generic shell sort.  Like stdlib.h's qsort().
+void VG_(ssort)( void* base, UInt nmemb, UInt size,
+                 Int (*compar)(void*, void*) )
+{
+   Int   incs[14] = { 1, 4, 13, 40, 121, 364, 1093, 3280,
+                      9841, 29524, 88573, 265720,
+                      797161, 2391484 };
+   Int   lo = 0;
+   Int   hi = nmemb-1;
+   Int   i, j, h, bigN, hp;
+
+   bigN = hi - lo + 1; if (bigN < 2) return;
+   hp = 0; while (hp < 14 && incs[hp] < bigN) hp++; hp--;
+   vg_assert(0 <= hp && hp < 14);
+
+   #define SORT \
+   for ( ; hp >= 0; hp--) { \
+      h = incs[hp]; \
+      i = lo + h; \
+      while (1) { \
+         if (i > hi) break; \
+         ASSIGN(v,0, a,i); \
+         j = i; \
+        while (COMPAR(a,(j-h), v,0) > 0) { \
+            ASSIGN(a,j, a,(j-h)); \
+            j = j - h; \
+            if (j <= (lo + h - 1)) break; \
+         } \
+         ASSIGN(a,j, v,0); \
+         i++; \
+      } \
+   }
+
+   // Specialised cases
+   if (sizeof(UInt) == size) {
+
+      #define ASSIGN(dst, dsti, src, srci) \
+      (dst)[(dsti)] = (src)[(srci)];      
+      
+      #define COMPAR(dst, dsti, src, srci) \
+      compar( (void*)(& (dst)[(dsti)]), (void*)(& (src)[(srci)]) )
+
+      UInt* a = (UInt*)base;
+      UInt  v[1];
+
+      SORT;
+
+   } else if (sizeof(UShort) == size) {
+      UShort* a = (UShort*)base;
+      UShort  v[1];
+
+      SORT;
+
+   } else if (sizeof(UChar) == size) {
+      UChar* a = (UChar*)base;
+      UChar  v[1];
+
+      SORT;
+
+      #undef ASSIGN
+      #undef COMPAR
+
+   // General case
+   } else {
+      void* a = (void*)base;
+      Char  vc[size];      // will be at least 'size' bytes
+      void* v = (void*)vc;
+
+      #define ASSIGN(dst, dsti, src, srci) \
+      VG_(memcpy)( (void*)((dst) + size*(dsti)), \
+                   (void*)((src) + size*(srci)), (size) );
+
+      #define COMPAR(dst, dsti, src, srci) \
+      compar( (void*)((dst) + size*(dsti)), (void*)((src) + size*(srci)) )
+
+      SORT;
+
+      #undef ASSIGN
+      #undef COMPAR
+   }
+   #undef SORT
+}
+
 /* ---------------------------------------------------------------------
    Gruesome hackery for connecting to a logging server over the network.
    This is all very Linux-kernel specific.

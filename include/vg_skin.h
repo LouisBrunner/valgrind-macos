@@ -368,6 +368,10 @@ extern Long  VG_(atoll)  ( Char* str );
 /* Like atoll(), but converts a number of base 2..36 */
 extern Long  VG_(atoll36) ( UInt base, Char* str );
 
+/* Like qsort(), but does shell-sort.  The size==4 case is specialised. */
+extern void VG_(ssort)( void* base, UInt nmemb, UInt size,
+                        Int (*compar)(void*, void*) );
+
 
 /* ------------------------------------------------------------------ */
 /* ctype.h */

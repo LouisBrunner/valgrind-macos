@@ -81,7 +81,7 @@
 #define REDZONE_SIZE		(1 * 1024*1024)
 
 /* size multiple for client address space */
-#define CLIENT_SIZE_MULTIPLE	(64 * 1024*1024)
+#define CLIENT_SIZE_MULTIPLE	(1 * 1024*1024)
 
 #define ISSPACE(cc)      ((cc) == ' ' || (cc) == '\t' || (cc) == '\n')
 

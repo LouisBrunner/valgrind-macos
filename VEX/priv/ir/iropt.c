@@ -368,6 +368,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
    if (e->tag == Iex_Unop
        && e->Iex.Unop.arg->tag == Iex_Const) {
       switch (e->Iex.Unop.op) {
+         case Iop_1Uto8:
+            e2 = IRExpr_Const(IRConst_U8(
+                    e->Iex.Unop.arg->Iex.Const.con->Ico.Bit
+                    ? 1 : 0));
+            break;
          case Iop_1Uto32:
             e2 = IRExpr_Const(IRConst_U32(
                     e->Iex.Unop.arg->Iex.Const.con->Ico.Bit
@@ -497,6 +502,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
                e2 = IRExpr_Const(IRConst_Bit(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         == e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+            case Iop_CmpNE32:
+               e2 = IRExpr_Const(IRConst_Bit(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        != e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
             case Iop_32HLto64:
                e2 = IRExpr_Const(IRConst_U64(
@@ -2431,8 +2441,13 @@ IRExpr* findPutI ( IRBB* bb, Int startHere,
 
       } /* if (st->tag == Ist_PutI) */
 
-      /* Figure out what to do here -- be conservative. */
-      vassert(st->tag != Ist_Dirty);
+      if (st->tag == Ist_Dirty) {
+         /* Be conservative.  If the dirty call has any guest effects at
+            all, give up.  We could do better -- only give up if there
+            are any guest writes/modifies. */
+         if (st->Ist.Dirty.details->nFxState > 0)
+            return NULL;
+      }
 
    } /* for */
 
@@ -2475,6 +2490,13 @@ Bool guestAccessWhichMightOverlapPutI (
    vassert(pi->tag == Ist_PutI);
    getArrayBounds(pi->Ist.PutI.descr, &minoffP, &maxoffP);
    switch (s2->tag) {
+
+      case Ist_Dirty:
+         /* If the dirty call has any guest effects at all, give up.
+            Probably could do better. */
+         if (s2->Ist.Dirty.details->nFxState > 0)
+            return True;
+         return False;
 
       case Ist_Put:
          vassert(isAtom(s2->Ist.Put.data));

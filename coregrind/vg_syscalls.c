@@ -2704,7 +2704,20 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          }
          /* For some unknown reason, %ebx sometimes gets changed by poll...
             let the skin know (using the `post_reg_write_syscall_return'
-            event isn't ideal... */
+            event isn't ideal... 
+          
+            Update from Lennert Buytenhek <buytenh@gnu.org>: 
+            This came up a while ago on linux-kernel, search for a posting
+            by dvorak <dvorak@xs4all.nl>.
+
+            Basically, the linux syscall handler pushes the arguments to the
+            stack, and inside sys_poll (or another routine), one of the
+            parameters to the function is changed.  gcc uses the stack space
+            the parameter came in as the storage location for that variable,
+            and will sometimes spill that variable back to stack.  The linux
+            syscall handler pops all registers on return, and that is how
+            %ebx can get changed sometimes.
+          */
          if (arg1 != tst->m_ebx) {
             VG_TRACK( post_reg_write_syscall_return, tid, R_EBX );
          }

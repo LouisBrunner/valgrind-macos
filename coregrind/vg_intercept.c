@@ -134,9 +134,7 @@ void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* 
    sprintf(buf, "\n%s: %s:%d (%s): Assertion `%s' failed.\n",
                 "valgrind", file, line, fn, expr );
    cat_n_send ( "", buf );
-   sprintf(buf, "Please report this bug to me at: %s\n\n", 
-                 VG_EMAIL_ADDR);
-   cat_n_send ( "", buf );
+   sprintf(buf, "Please report this bug at: %s\n\n", VG_BUGS_TO);
    my_exit(1);
 }
 

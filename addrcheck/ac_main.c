@@ -1278,7 +1278,7 @@ void SK_(pre_clo_init)(void)
    VG_(details_description)     ("a fine-grained address checker");
    VG_(details_copyright_author)(
       "Copyright (C) 2002-2003, and GNU GPL'd, by Julian Seward.");
-   VG_(details_bug_reports_to)  ("jseward@acm.org");
+   VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 135 );
 
    VG_(needs_core_errors)         ();

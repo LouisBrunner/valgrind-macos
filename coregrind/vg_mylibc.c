@@ -1106,7 +1106,7 @@ void VG_(skin_assert_fail) ( const Char* expr, const Char* file, Int line, const
 
 void VG_(core_assert_fail) ( const Char* expr, const Char* file, Int line, const Char* fn )
 {
-   assert_fail(expr, "valgrind", VG_EMAIL_ADDR, file, line, fn);
+   assert_fail(expr, "valgrind", VG_BUGS_TO, file, line, fn);
 }
 
 __attribute__ ((noreturn))
@@ -1119,7 +1119,7 @@ static void panic ( Char* name, Char* report, Char* str )
 
 void VG_(core_panic) ( Char* str )
 {
-   panic("valgrind", VG_EMAIL_ADDR, str);
+   panic("valgrind", VG_BUGS_TO, str);
 }
 
 void VG_(skin_panic) ( Char* str )

@@ -170,6 +170,8 @@ void barf ( const char* str )
    char buf[1000];
    strcpy(buf, "\nvalgrind's libpthread.so: ");
    strcat(buf, str);
+   strcat(buf, "\nPlease report this bug at: ");
+   strcat(buf, VG_BUGS_TO);
    strcat(buf, "\n\n");
    VALGRIND_NON_SIMD_CALL2(VG_(message), Vg_UserMsg, buf);
    my_exit(1);
@@ -211,7 +213,7 @@ __attribute__((noreturn))
 void vgPlain_unimp ( char* fn )
 {
    cat_n_send ( "valgrind's libpthread.so: UNIMPLEMENTED FUNCTION: ", fn, "" );
-   barf("Please report this bug to me at: jseward@acm.org");
+   barf("unimplemented function");
 }
 
 
@@ -226,7 +228,7 @@ void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* 
    sprintf(buf, "\n%s: %s:%d (%s): Assertion `%s' failed.\n",
                 "valgrind", file, line, fn, expr );
    cat_n_send ( "", buf, "" );
-   sprintf(buf, "Please report this bug to me at: %s\n\n", VG_EMAIL_ADDR);
+   sprintf(buf, "Please report this bug at: %s\n\n", VG_BUGS_TO);
    my_exit(1);
 }
 

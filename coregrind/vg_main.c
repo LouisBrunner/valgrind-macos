@@ -728,7 +728,7 @@ static void usage ( void )
       SK_(print_debug_usage)();
    else
       VG_(printf)("    (none)\n");
-   VG_(printf)(usage3, VG_EMAIL_ADDR);
+   VG_(printf)(usage3, VG_BUGS_TO);
 
    VG_(shutdown_logging)();
    VG_(clo_log_to)     = VgLogTo_Fd;
@@ -1990,9 +1990,9 @@ void VG_(unimplemented) ( Char* msg )
    VG_(message)(Vg_UserMsg,
       "or because no reasonable program would behave this way,");
    VG_(message)(Vg_UserMsg,
-      "or because nobody has yet needed it.  In any case, let me know");
+      "or because nobody has yet needed it.  In any case, let us know at");
    VG_(message)(Vg_UserMsg,
-      "(jseward@acm.org) and/or try to work around the problem, if you can.");
+      "%s and/or try to work around the problem, if you can.", VG_BUGS_TO);
    VG_(message)(Vg_UserMsg,
       "");
    VG_(message)(Vg_UserMsg,

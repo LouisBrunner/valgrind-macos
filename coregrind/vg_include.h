@@ -34,13 +34,6 @@
 #define __VG_INCLUDE_H
 
 /* ---------------------------------------------------------------------
-   Where to send bug reports to.
-   ------------------------------------------------------------------ */
-
-#define VG_EMAIL_ADDR "jseward@acm.org"
-
-
-/* ---------------------------------------------------------------------
    Build options and table sizes.  You should be able to change these
    options or sizes, recompile, and still have a working system.
    ------------------------------------------------------------------ */

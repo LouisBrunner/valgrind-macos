@@ -45,7 +45,7 @@
 #include <netinet/in.h>
 
 
-/* For VG_CLO_DEFAULT_LOGPORT and VG_EMAIL_ADDR. */
+/* For VG_CLO_DEFAULT_LOGPORT and VG_BUGS_TO. */
 #include "vg_include.h"
 
 
@@ -64,7 +64,7 @@ static void panic ( Char* str )
            "\nvalgrind-listener: the "
            "`impossible' happened:\n   %s\n", str);
    fprintf(stderr,
-           "Please report this bug to: %s\n\n", VG_EMAIL_ADDR);
+           "Please report this bug at: %s\n\n", VG_BUGS_TO);
    exit(1);
 }
 
@@ -75,7 +75,7 @@ static void my_assert_fail ( const Char* expr, const Char* file, Int line, const
            "\nvalgrind-listener: %s:%d (%s): Assertion `%s' failed.\n",
            file, line, fn, expr );
    fprintf(stderr,
-           "Please report this bug to: %s\n\n", VG_EMAIL_ADDR);
+           "Please report this bug at: %s\n\n", VG_BUGS_TO);
    exit(1);
 }
 

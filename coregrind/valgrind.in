@@ -109,28 +109,40 @@ if getconf GNU_LIBPTHREAD_VERSION | grep -qi NPTL 2>/dev/null; then
    export LD_ASSUME_KERNEL
 fi
 
-which_prog="`which $1`"
+# Check that the program looks ok
+is_prog=0
 
-# Ensure the program isn't statically linked.
 if [ $# != 0 ] ; then
-   case `file "$which_prog"` in
-   *"statically linked"*)
-     echo "\`$which_prog' is statically linked"
-     echo "Valgrind only works on dynamically linked executables;  your"
-     echo "program must rely on at least one shared object for Valgrind"
-     echo "to work with it.  Read FAQ #5 for more information."
-     exit 1 ;;
-   esac
-fi
 
-# Ensure that there is no suid or sgid flag
-if [ `stat -c %a "$which_prog"` -gt 2000 ] ; then
-  echo "\`$which_prog' is suid/sgid."
-  echo "Valgrind can't handle these executables, as it"
-  echo "requires the LD_PRELOAD feature in order to work."
-  echo ""
-  echo "Remove those flags and try again."
-  exit 1
+   # Ensure the program exists.  Ignore any error messages from 'which'.
+   which_prog=`which $1 2> /dev/null`
+   if [ z$which_prog = z ] ; then
+       echo "'$1' not found in \$PATH, aborting."
+       exit
+   fi
+
+   # Ensure the program isn't statically linked.
+   if [ $# != 0 ] ; then
+      case `file "$which_prog"` in
+      *"statically linked"*)
+        echo "\`$which_prog' is statically linked"
+        echo "Valgrind only works on dynamically linked executables;  your"
+        echo "program must rely on at least one shared object for Valgrind"
+        echo "to work with it.  Read FAQ #5 for more information."
+        exit 1 ;;
+      esac
+   fi
+
+   # Ensure that there is no suid or sgid flag
+   if [ `stat -c %a "$which_prog"` -gt 2000 ] ; then
+     echo "\`$which_prog' is suid/sgid."
+     echo "Valgrind can't handle these executables, as it"
+     echo "requires the LD_PRELOAD feature in order to work."
+     echo ""
+     echo "Remove those flags and try again."
+     exit 1
+   fi
+   is_prog=1
 fi
 
 # A bit subtle.  The LD_PRELOAD added entry must be absolute
@@ -149,13 +161,14 @@ export LD_PRELOAD
 #LD_DEBUG=symbols
 #export LD_DEBUG
     
-# If no command given, act like -h was given so vg_main.c prints out
-# the usage string.  And pass to 'exec' tha name of any program -- it doesn't
-# matter which -- because it won't be run anyway (we use 'true').
-if [ $# != 0 ] ; then
+# Actually run the program, under Valgrind's control
+if [ $is_prog = 1 ] ; then
    exec "$@"
 else
-   VG_ARGS="$VG_ARGS -h" 
+   # If no command given, act like -h was given so vg_main.c prints out the
+   # usage string.  And pass to 'exec' the name of any program -- it doesn't
+   # matter which -- because it won't be run anyway (we use 'true').
+   VG_ARGS="$VG_ARGS -h"
    exec true
 fi
 

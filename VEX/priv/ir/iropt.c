@@ -1955,6 +1955,83 @@ static void cse_BB ( IRBB* bb )
       
 }
 
+/*---------------------------------------------------------------*/
+/*--- Add32/Sub32 chain collapsing                            ---*/
+/*---------------------------------------------------------------*/
+
+static Bool isAdd32OrSub32 ( IRExpr* e )
+{ if (e->tag != Iex_Binop)
+  return False;
+if (e->Iex.Binop.op != Iop_Add32 && e->Iex.Binop.op != Iop_Sub32)
+  return False;
+ if (e->Iex.Binop.arg1->tag != Iex_Tmp)
+   return False;
+ if (e->Iex.Binop.arg2->tag != Iex_Const)
+   return False;
+ return True;
+}
+
+static void track_deltas_BB ( IRBB* bb )
+{
+  Int i, j;
+  IRStmt *st, *st2;
+  IRExpr *e1, *e2;
+  IRTemp var;
+  Int con;
+return;
+   for (i = bb->stmts_used-1; i >= 0; i--) {
+      st = bb->stmts[i];
+      if (!st || st->tag != Ist_Tmp)
+	continue;
+      e1 = st->Ist.Tmp.data;
+      if (!isAdd32OrSub32(e1)) continue;
+
+      /* ok.  So e1 is of the form Add32(v,c) or Sub32(v,c). */
+      var = e1->Iex.Binop.arg1->Iex.Tmp.tmp;
+      con = (Int)e1->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+      if (e1->Iex.Binop.op == Iop_Sub32)
+	con = -con;
+
+      for (j = i-1; j >= 0; j--) {
+	st2 = bb->stmts[j];
+	if (!st2 || st2->tag != Ist_Tmp) 
+	  continue;
+        if (st2->Ist.Tmp.tmp != var)
+	  continue;
+        e2 = st2->Ist.Tmp.data;
+	if (!isAdd32OrSub32(e2))
+	  break;
+var = e2->Iex.Binop.arg1->Iex.Tmp.tmp;
+ if (e2->Iex.Binop.op == Iop_Sub32)
+con -= (Int)e2->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+ else 
+con += (Int)e2->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+      }
+      if (j == -1)
+	/* no earlier binding for var .. ill-formed IR */
+	vpanic("track_deltas_BB");
+
+      /* did we find anything interesting? */
+      if (var != e1->Iex.Binop.arg1->Iex.Tmp.tmp) {
+	//vex_printf("replacing ");
+	//ppIRStmt(st);
+	//vex_printf(" with ");
+	bb->stmts[i] 
+           = IRStmt_Tmp(st->Ist.Tmp.tmp,
+			(((Int)(con)) >= 0) 
+?
+			   IRExpr_Binop(Iop_Add32, IRExpr_Tmp(var),
+					IRExpr_Const(IRConst_U32(con)))
+			:
+			   IRExpr_Binop(Iop_Sub32, IRExpr_Tmp(var),
+					IRExpr_Const(IRConst_U32(-con)))
+			);
+	//ppIRStmt(bb->stmts[i]);
+	//vex_printf("\n");
+      }
+   }
+
+}
 
 /*---------------------------------------------------------------*/
 /*--- iropt main                                              ---*/
@@ -2106,6 +2183,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
       vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
       //ppIRBB(bb); vex_printf("\n\n");
       cse_BB( bb );
+      track_deltas_BB( bb );
       /*
       ppIRBB(bb); vex_printf("\n\n");
       dead_BB( bb );

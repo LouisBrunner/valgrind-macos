@@ -1461,3 +1461,10 @@ void _pthread_cleanup_pop_restore ( void )
    //    char* str = "_pthread_cleanup_pop_restore\n";
    //    write(2, str, strlen(str));
 }
+
+
+/* This doesn't seem to be needed to simulate libpthread.so's external
+   interface, but many people complain about its absence. */
+
+strong_alias(__pthread_mutexattr_settype, __pthread_mutexattr_setkind_np)
+weak_alias(__pthread_mutexattr_setkind_np, pthread_mutexattr_setkind_np)

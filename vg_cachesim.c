@@ -375,7 +375,7 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
    is_LOAD = is_STORE = is_FPU_R = is_FPU_W = False;
 
    for (i = 0; i < cb->used; i++) {
-      //VG_(ppUInstr)(0, &cb->instrs[i]);
+      /* VG_(ppUInstr)(0, &cb->instrs[i]); */
 
       u_in = &cb->instrs[i];
       switch(u_in->opcode) {
@@ -399,7 +399,8 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
 
          case LOAD:
             /* Two LDBs are possible for a single instruction */
-            vg_assert(/*!is_LOAD &&*/ !is_STORE && !is_FPU_R && !is_FPU_W);
+            vg_assert(/*!is_LOAD &&*/ /* !is_STORE && */ 
+                      !is_FPU_R && !is_FPU_W);
             is_LOAD = True;
             break;
 

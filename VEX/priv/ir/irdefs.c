@@ -497,7 +497,9 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_1Uto8:   UNARY(Ity_I8,Ity_Bit);
       case Iop_32to1:   UNARY(Ity_Bit,Ity_I32);
       case Iop_8Uto32:  UNARY(Ity_I32,Ity_I8);
+      case Iop_8Sto32:  UNARY(Ity_I32,Ity_I8);
       case Iop_16Uto32: UNARY(Ity_I32,Ity_I16);
+      case Iop_16Sto32: UNARY(Ity_I32,Ity_I16);
       case Iop_32to8:   UNARY(Ity_I8,Ity_I32);
 
       default:

@@ -412,6 +412,16 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
                                           X86RMI_Imm(mask), dst));
             return dst;
          }
+         case Iop_8Sto32:
+         case Iop_16Sto32: {
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            UInt amt = e->Iex.Unop.op==Iop_8Sto32 ? 24 : 16;
+            addInstr(env, mk_MOVsd_RR(src,dst) );
+            addInstr(env, X86Instr_Sh32(Xsh_SHL, amt, X86RM_Reg(dst)));
+            addInstr(env, X86Instr_Sh32(Xsh_SAR, amt, X86RM_Reg(dst)));
+            return dst;
+         }
 	 case Iop_Not8:
 	 case Iop_Not16:
          case Iop_Not32: {

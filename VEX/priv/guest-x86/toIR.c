@@ -328,10 +328,9 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
    Int adj;
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
    vassert(op8 == Iop_Add8 || op8 == Iop_Sub8 
-           // || op8 == Iop_Adc8 || op8 == Iop_Sbb8 
            || op8 == Iop_Mul8 
            || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
-           || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
+	   || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
            || op8 == Iop_CmpEQ8 || op8 == Iop_CmpNE8
            || op8 == Iop_Not8 || op8 == Iop_Neg8 );
    adj = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
@@ -392,13 +391,24 @@ static IRExpr* mk_calculate_eflags_c ( void )
    run-time.  If guard is NULL, the update is always done. */
 
 /* U-widen 8/16/32 bit int expr to 32. */
-static IRExpr* widenUTo32 ( IRExpr* e )
+static IRExpr* widenUto32 ( IRExpr* e )
 {
    switch (typeOfIRExpr(irbb->tyenv,e)) {
       case Ity_I32: return e;
       case Ity_I16: return unop(Iop_16Uto32,e);
       case Ity_I8:  return unop(Iop_8Uto32,e);
       default: vpanic("widenUto32");
+   }
+}
+
+/* S-widen 8/16/32 bit int expr to 32. */
+static IRExpr* widenSto32 ( IRExpr* e )
+{
+   switch (typeOfIRExpr(irbb->tyenv,e)) {
+      case Ity_I32: return e;
+      case Ity_I16: return unop(Iop_16Sto32,e);
+      case Ity_I8:  return unop(Iop_8Sto32,e);
+      default: vpanic("widenSto32");
    }
 }
 
@@ -447,8 +457,8 @@ static void setFlags_SRC_DST1 ( IROp    op8,
    }
    stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(ccOp)) );
    stmt( IRStmt_Put( OFFB_CC_SRC, logic ? mkU32(0) 
-                                        : widenUTo32(mkexpr(src))) );
-   stmt( IRStmt_Put( OFFB_CC_DST, widenUTo32(mkexpr(dst1))) );
+                                        : widenUto32(mkexpr(src))) );
+   stmt( IRStmt_Put( OFFB_CC_DST, widenUto32(mkexpr(dst1))) );
 }
 
 
@@ -456,23 +466,23 @@ static void setFlags_SRC_DST1 ( IROp    op8,
    result except shifted one bit less.  And then only when the guard
    is non-zero. */
 
-static void setFlags_DSTus_DST1 ( IROp    op8,
+static void setFlags_DSTus_DST1 ( IROp    op32,
                                   IRTemp  dstUS,
                                   IRTemp  dst1,
                                   IRType  ty,
                                   IRTemp  guard )
 {
-   Int ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+   Int ccOp = ty==Ity_I8 ? 2 : (ty==Ity_I16 ? 1 : 0);
 
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
    vassert(guard);
 
-   switch (op8) {
-      case Iop_Shr8:
-      case Iop_Sar8: ccOp += CC_OP_SARB; break;
-      case Iop_Shl8: ccOp += CC_OP_SHLB; break;
-      default:       ppIROp(op8);
-                     vpanic("setFlags_DSTus_DST1(x86)");
+   switch (op32) {
+      case Iop_Shr32:
+      case Iop_Sar32: ccOp = CC_OP_SARL - ccOp; break;
+      case Iop_Shl32: ccOp = CC_OP_SHLL - ccOp; break;
+      default:        ppIROp(op32);
+                      vpanic("setFlags_DSTus_DST1(x86)");
    }
 
    /* CC_SRC = undershifted %d after, CC_DST = %d afterwards */
@@ -483,11 +493,11 @@ static void setFlags_DSTus_DST1 ( IROp    op8,
    stmt( IRStmt_Put( OFFB_CC_SRC, 
                      IRExpr_Mux0X( mkexpr(guard),
                                    IRExpr_Get(OFFB_CC_SRC,Ity_I32),
-                                   widenUTo32(mkexpr(dstUS)))) );
+                                   widenUto32(mkexpr(dstUS)))) );
    stmt( IRStmt_Put( OFFB_CC_DST,
                      IRExpr_Mux0X( mkexpr(guard),
                                    IRExpr_Get(OFFB_CC_DST,Ity_I32),
-                                   widenUTo32(mkexpr(dst1)))) );
+                                   widenUto32(mkexpr(dst1)))) );
 }
 
 
@@ -2138,7 +2148,6 @@ UInt dis_Grp2 ( UChar  sorb,
    /* delta on entry points at the modrm byte. */
    UChar  dis_buf[50];
    Int    len;
-   IROp   op8;
    Bool   isShift, isRotate;
    IRType ty    = szToITy(sz);
    IRTemp dst0  = newTemp(ty);
@@ -2170,33 +2179,53 @@ UInt dis_Grp2 ( UChar  sorb,
 
    if (isShift) {
 
-      IRTemp subshift  = newTemp(ty);
+      IRTemp pre32     = newTemp(Ity_I32);
+      IRTemp res32     = newTemp(Ity_I32);
+      IRTemp res32ss   = newTemp(Ity_I32);
       IRTemp shift_amt = newTemp(Ity_I8);
+      IROp   op32;
 
       switch (gregOfRM(modrm)) { 
-         case 4: op8 = Iop_Shl8; break;
-         case 5: op8 = Iop_Shr8; break;
-         case 7: op8 = Iop_Sar8; break;
+         case 4: op32 = Iop_Shl32; break;
+         case 5: op32 = Iop_Shr32; break;
+         case 7: op32 = Iop_Sar32; break;
          default: vpanic("dis_Grp2:shift"); break;
       }
 
-      /* shift_amt = shift_expr & mask */
-      assign(shift_amt, binop(Iop_And8, 
-                              shift_expr, mkU8(31 /* 8*sz-1 */)));
-      /* dst1 = dst0 `shift` shift_amt */
-      assign(dst1, binop(mkSizedOp(ty,op8), 
-                         mkexpr(dst0), mkexpr(shift_amt)));
-      /* subshift = dst0 `shift` ((shift_amt - 1) & mask) */
-      assign(subshift, 
-             binop(mkSizedOp(ty,op8), 
-                   mkexpr(dst0), 
-                   binop(Iop_And8,
-                         binop(Iop_Sub8,
-                               mkexpr(shift_amt), mkU8(1)),
-                         mkU8(31 /* 8*sz-1 */))));
+      /* Widen the value to be shifted to 32 bits, do the shift, and
+         narrow back down.  This seems surprisingly long-winded, but
+         unfortunately the Intel semantics requires that 8/16-bit
+         shifts give defined results for shift values all the way up
+         to 31, and this seems the simplest way to do it.  It has the
+         advantage that the only IR level shifts generated are of 32
+         bit values, and the shift amount is guaranteed to be in the
+         range 0 .. 31, thereby observing the IR semantics requiring
+         all shift values to be in the range 0 .. 2^word_size-1. */
+
+      /* shift_amt = shift_expr & 31, regardless of operation size */
+      assign( shift_amt, binop(Iop_And8, shift_expr, mkU8(31)) );
+
+      /* suitably widen the value to be shifted to 32 bits. */
+      assign( pre32, op32==Iop_Sar32 ? widenSto32(mkexpr(dst0))
+                                     : widenUto32(mkexpr(dst0)) );
+
+      /* res32 = pre32 `shift` shift_amt */
+      assign( res32, binop(op32, mkexpr(pre32), mkexpr(shift_amt)) );
+
+      /* res32ss = pre32 `shift` ((shift_amt - 1) & 31) */
+      assign( res32ss,
+              binop(op32,
+                    mkexpr(pre32), 
+                    binop(Iop_And8,
+                          binop(Iop_Sub8,
+                                mkexpr(shift_amt), mkU8(1)),
+                          mkU8(31))) );
 
       /* Build the flags thunk. */
-      setFlags_DSTus_DST1(op8, subshift, dst1, ty, shift_amt);
+      setFlags_DSTus_DST1(op32, res32ss, res32, ty, shift_amt);
+
+      /* Narrow the result back down. */
+      assign( dst1, narrowTo(ty, mkexpr(res32)) );
 
    } /* if (isShift) */
 
@@ -2208,6 +2237,9 @@ UInt dis_Grp2 ( UChar  sorb,
       IRTemp oldFlags = newTemp(Ity_I32);
 
       /* rot_amt = shift_expr & mask */
+      /* By masking the rotate amount thusly, the IR-level Shl/Shr
+         expressions never shift beyond the word size and thus remain
+         well defined. */
       assign(rot_amt, binop(Iop_And8, 
                             shift_expr, mkU8(8*sz-1)));
 
@@ -2226,7 +2258,6 @@ UInt dis_Grp2 ( UChar  sorb,
                    )
             )
          );
-
          ccOp += CC_OP_ROLB;
 
       } else { /* right */
@@ -2244,9 +2275,10 @@ UInt dis_Grp2 ( UChar  sorb,
                    )
             )
          );
-
          ccOp += CC_OP_RORB;
+
       }
+
       /* dst1 now holds the rotated value.  Build flag thunk.  We
          need the resulting value for this, and the previous flags.
          Except don't set it if the rotate count is zero. */
@@ -2261,7 +2293,7 @@ UInt dis_Grp2 ( UChar  sorb,
       stmt( IRStmt_Put( OFFB_CC_DST, 
                         IRExpr_Mux0X( mkexpr(rot_amt),
                                       IRExpr_Get(OFFB_CC_DST,Ity_I32),
-                                      widenUTo32(mkexpr(dst1)))) );
+                                      widenUto32(mkexpr(dst1)))) );
       stmt( IRStmt_Put( OFFB_CC_SRC, 
                         IRExpr_Mux0X( mkexpr(rot_amt),
                                       IRExpr_Get(OFFB_CC_SRC,Ity_I32),
@@ -3326,7 +3358,6 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
    IRTemp esrc     = newTemp(ty);
    IRTemp addr     = INVALID_IRTEMP;
    IRTemp tmpSH    = newTemp(Ity_I8);
-   //   IRTemp guard    = newTemp(Ity_Bit);
    IRTemp tmpL     = INVALID_IRTEMP;
    IRTemp tmpRes   = INVALID_IRTEMP;
    IRTemp tmpSubSh = INVALID_IRTEMP;
@@ -3410,7 +3441,7 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
                             binop(Iop_Sub8, mkexpr(tmpSH), mkU8(1) ),
                             mask))) );
 
-   setFlags_DSTus_DST1 ( left_shift ? Iop_Shl8 : Iop_Sar8,
+   setFlags_DSTus_DST1 ( left_shift ? Iop_Shl32 : Iop_Sar32,
 			 tmpSubSh, tmpRes, ty, tmpSH );
 
    /* Put result back. */
@@ -6671,7 +6702,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       vassert(sz == 4); // until we know a sz==2 test case exists
       t1 = newTemp(Ity_I32); t2 = newTemp(Ity_I32);
       assign(t2, getIReg(4, R_ESP));
-      assign(t1, widenUTo32(loadLE(szToITy(sz),mkexpr(t2))));
+      assign(t1, widenUto32(loadLE(szToITy(sz),mkexpr(t2))));
       putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t2), mkU32(sz)));
       /* t1 is the flag word.  Mask out everything OSZACP and 
 	 set the flags thunk to CC_OP_COPY. */

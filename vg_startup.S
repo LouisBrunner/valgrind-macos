@@ -104,40 +104,20 @@ first_insn_to_simulate:
 
 
 
-.global VG_(shutdown)	
 VG_(shutdown):
-	# ld.so will call here after execution of the program proper
-	# is complete, to allow libraries to close down cleanly.
-	# Note that we will enter here on the synthetic CPU, not
-	# the real one!  So the interpreter must notice when this
-	# procedure is called, and use that as its cue to switch
-	# back to the real CPU.  As usual we have a client request
-	# to do this.  To make sense of this you need to read the
-	# definition of VALGRIND_MAGIC_SEQUENCE in valgrind.h.
-	pushl	%eax
-	pushl	%edx
-	subl	$20, %esp	# allocate arg block
-	movl	%esp, %eax	# %eax == &_zzq_args[0]
-	movl	$VG_USERREQ__SHUTDOWN_VALGRIND, 0(%eax)	# request
-	# dont bother to fill in arg1 .. 4, not important
-	# and now the magic sequence itself:
-	roll $29, %eax
-	roll $3, %eax
-	rorl $27, %eax
-	rorl $5, %eax
-	roll $13, %eax
-	roll $19, %eax
-	# valgrind now exits.  the following insns are
-	# executed on the real CPU.
-	addl	$20, %esp
-	popl	%edx
-	popl	%eax
+	# Just return, and ignore any attempt by ld.so to call
+	# valgrind.sos exit function.  We just run the client all
+	# the way to the final exit() syscall.  This sidesteps
+	# problems caused by ld.so calling the finalisation code
+	# of other .sos *after* it shuts down valgrind, which
+	# was causing big problems with threads.
 	ret
+
+	
 	
 .global	VG_(switch_to_real_CPU)
 VG_(switch_to_real_CPU):
-	# Once Valgrind has decided it needs to exit, either
-	# because it has detected a call to vg_shutdown, or
+	# Once Valgrind has decided it needs to exit,
 	# because the specified number of insns have been completed
 	# during a debugging run, it jumps here, which copies the
 	# simulators state into the real machine state.  Execution

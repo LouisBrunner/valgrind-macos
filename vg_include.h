@@ -437,7 +437,6 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 In vg_constants.h:
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 #define VG_USERREQ__PTHREAD_RETURNS         0x4002
-#define VG_USERREQ__SHUTDOWN_VALGRIND       0x4003
 */
 
 
@@ -602,8 +601,16 @@ extern ThreadId VG_(identify_stack_addr)( Addr a );
 
 /* Return codes from the scheduler. */
 typedef
-   enum { VgSrc_Deadlock, VgSrc_Shutdown, VgSrc_BbsDone }
+   enum { 
+      VgSrc_Deadlock,    /* no runnable threads and no prospect of any
+                            even if we wait for a long time */
+      VgSrc_ExitSyscall, /* client called exit().  This is the normal
+                            route out. */
+      VgSrc_BbsDone      /* In a debugging run, the specified number of
+                            bbs has been completed. */
+   }
    VgSchedReturnCode;
+
 
 /* The scheduler. */
 extern VgSchedReturnCode VG_(scheduler) ( void );
@@ -1320,6 +1327,9 @@ extern Bool VG_(running_on_simd_CPU); /* Initially False */
 /* The current LRU epoch. */
 extern UInt VG_(current_epoch);
 
+/* This is the ThreadId of the last thread the scheduler ran. */
+extern ThreadId VG_(last_run_tid);
+
 
 /* --- Counters, for informational purposes only. --- */
 
@@ -1549,7 +1559,6 @@ extern void VG_(do_syscall) ( void );
    Exports of vg_startup.S
    ------------------------------------------------------------------ */
 
-extern void VG_(shutdown);
 extern void VG_(switch_to_real_CPU) ( void );
 
 extern void VG_(swizzle_esp_then_start_GDB) ( Addr m_eip_at_error,

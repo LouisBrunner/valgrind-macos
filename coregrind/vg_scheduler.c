@@ -1142,7 +1142,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
    /* Start with the root thread.  tid in general indicates the
       currently runnable/just-finished-running thread. */
-   tid = 1;
+   VG_(last_run_tid) = tid = 1;
 
    /* This is the top level scheduler loop.  It falls into three
       phases. */
@@ -1239,8 +1239,8 @@ VgSchedReturnCode VG_(scheduler) ( void )
             while, and go round again, in the hope that eventually a
             thread becomes runnable. */
          nanosleep_for_a_while();
-	 //         pp_sched_status();
-	 //	 VG_(printf)(".\n");
+	 /* pp_sched_status(); */
+	 /* VG_(printf)(".\n"); */
       }
 
 
@@ -1274,6 +1274,8 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
       /* Actually run thread tid. */
       while (True) {
+
+         VG_(last_run_tid) = tid;
 
          /* For stats purposes only. */
          VG_(num_scheduling_events_MINOR) ++;
@@ -1334,7 +1336,9 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
          if (trc == VG_TRC_EBP_JMP_SYSCALL) {
             /* Do a syscall for the vthread tid.  This could cause it
-               to become non-runnable. */
+               to become non-runnable.  One special case: spot the
+               client doing calls to exit() and take this as the cue
+               to exit. */
 #           if 0
             { UInt* esp; Int i;
               esp=(UInt*)vg_threads[tid].m_esp;
@@ -1343,6 +1347,9 @@ VgSchedReturnCode VG_(scheduler) ( void )
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
             }
 #           endif
+
+            if (vg_threads[tid].m_eax == __NR_exit)
+               return VgSrc_ExitSyscall;
 
             sched_do_syscall(tid);
 
@@ -1413,14 +1420,6 @@ VgSchedReturnCode VG_(scheduler) ( void )
                1, whereupon the signal will be "delivered". */
 	    break;
 
-#if 0
-         case VG_TRC_EBP_JMP_SYSCALL:
-            /* Do a syscall for the vthread tid.  This could cause it
-               to become non-runnable. */
-            sched_do_syscall(tid);
-            break;
-#endif
-
          case VG_TRC_EBP_JMP_CLIENTREQ: 
             /* Do a client request for the vthread tid.  Note that
                some requests will have been handled by
@@ -1442,11 +1441,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
                other blocked threads become runnable.  In general we
                can and often do mess with the state of arbitrary
                threads at this point. */
-            if (request_code == VG_USERREQ__SHUTDOWN_VALGRIND) {
-               return VgSrc_Shutdown;
-            } else {
-               do_nontrivial_clientreq(tid);
-	    }
+            do_nontrivial_clientreq(tid);
             break;
 
          default: 

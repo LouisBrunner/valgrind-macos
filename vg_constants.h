@@ -103,7 +103,6 @@
 /* Assembly code stubs make these requests ... */
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 #define VG_USERREQ__PTHREAD_RETURNS         0x4002
-#define VG_USERREQ__SHUTDOWN_VALGRIND       0x4003
 
 #endif /* ndef __VG_INCLUDE_H */
 

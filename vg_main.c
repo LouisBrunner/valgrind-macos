@@ -331,6 +331,9 @@ Bool VG_(disassemble) = False;
 /* The current LRU epoch. */
 UInt VG_(current_epoch) = 0;
 
+/* This is the ThreadId of the last thread the scheduler ran. */
+ThreadId VG_(last_run_tid) = 0;
+
 
 /* ---------------------------------------------------------------------
    Counters, for informational purposes only.
@@ -975,6 +978,7 @@ void VG_(main) ( void )
 {
    Int               i;
    VgSchedReturnCode src;
+   ThreadState*      tst;
 
    /* Set up our stack sanity-check words. */
    for (i = 0; i < 10; i++) {
@@ -1105,17 +1109,46 @@ void VG_(main) ( void )
       VG_(mash_LD_PRELOAD_string)(VG_(getenv)("LD_PRELOAD"));
    }
 
-   /* Prepare to restore state to the real CPU. */
-   VG_(load_thread_state)(1 /* root thread */);
-   VG_(copy_baseBlock_to_m_state_static)();
+   /* Decide how to exit.  This depends on what the scheduler
+      returned. */
+   switch (src) {
+      case VgSrc_ExitSyscall: /* the normal way out */
+         vg_assert(VG_(last_run_tid) > 0 
+                   && VG_(last_run_tid) < VG_N_THREADS);
+         tst = VG_(get_thread_state)(VG_(last_run_tid));
+         vg_assert(tst->status == VgTs_Runnable);
+         /* The thread's %EBX will hold the arg to exit(), so we just
+            do exit with that arg. */
+         VG_(exit)( tst->m_ebx );
+         /* NOT ALIVE HERE! */
+         VG_(panic)("entered the afterlife in vg_main() -- ExitSyscall");
+         break; /* what the hell :) */
 
-   /* This pushes a return address on the simulator's stack, which
-      is abandoned.  We call vg_sigshutdown_actions() at the end
-      of vg_switch_to_real_CPU(), so as to ensure that the original
-      stack and machine state is restored before the real signal
-      mechanism is restored.
-   */
-   VG_(switch_to_real_CPU)();
+      case VgSrc_Deadlock:
+         /* Just exit now.  No point in continuing. */
+         VG_(exit)(0);
+         VG_(panic)("entered the afterlife in vg_main() -- Deadlock");
+         break;
+
+      case VgSrc_BbsDone: 
+         /* Tricky; we have to try and switch back to the real CPU.
+            This is all very dodgy and won't work at all in the
+            presence of threads, or if the client happened to be
+            running a signal handler. */
+         /* Prepare to restore state to the real CPU. */
+         VG_(load_thread_state)(1 /* root thread */ );
+         VG_(copy_baseBlock_to_m_state_static)();
+
+         /* This pushes a return address on the simulator's stack,
+            which is abandoned.  We call vg_sigshutdown_actions() at
+            the end of vg_switch_to_real_CPU(), so as to ensure that
+            the original stack and machine state is restored before
+            the real signal mechanism is restored.  */
+         VG_(switch_to_real_CPU)();
+
+      default:
+         VG_(panic)("vg_main(): unexpected scheduler return code");
+   }
 }
 
 

@@ -332,6 +332,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
    switch (syscallno) {
 
+      case __NR_exit:
+         VG_(panic)("syscall exit() not caught by the scheduler?!");
+         break;
+
       case __NR_sigaltstack:
          VG_(unimplemented)
             ("client signals on alternative stack (SA_ONSTACK)");
@@ -348,7 +352,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     if defined(__NR_modify_ldt)
       case __NR_modify_ldt:
          VG_(unimplemented)
-            ("modify_ldt(): I (JRS) haven't investigated this yet; sorry.");
+            ("modify_ldt(): I (JRS) haven't investigated this yet; sorry.\n   "
+             "This might be caused by linking to NVidia's libGL.so, so\n   "
+             "avoiding it, if you can, _might_ help you.  For example,\n   "
+             "re-build any Qt libraries you are using without OpenGL support.");
          break;
 #     endif
 
@@ -713,18 +720,6 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             like any other syscall -- typically the file to exec does
             not exist.  Hence: */
          vg_assert(VG_(is_kerror)(res));
-         break;
-
-      case __NR_exit: /* syscall 1 */
-         /* void _exit(int status); */
-         if (VG_(clo_trace_syscalls))
-            VG_(printf)("exit ( %d )\n", arg1);
-         VG_(message)(Vg_UserMsg, 
-            "Warning: client exiting by calling exit(%d).  Bye!",
-            arg1);
-
-         KERNEL_DO_SYSCALL(tid,res);
-         /* Definitely should not be alive here :) */
          break;
 
       /* !!!!!!!!!!!!!!!!!!!!!     end     !!!!!!!!!!!!!!!!!!!!! */

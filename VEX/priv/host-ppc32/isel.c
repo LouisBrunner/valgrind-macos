@@ -345,36 +345,45 @@ static PPC32Instr* mk_iMOVds_RRI ( ISelEnv* env, HReg dst, PPC32RI* src )
          addInstr(env, mk_sh32(env, Psh_SHL, dst, dst, PPC32RI_Imm(16)));
          return PPC32Instr_Alu32(Palu_OR, dst, dst, PPC32RI_Imm(imm & 0xFFFF));
       }
+      // Load immediate _without_ sign extend
+      addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(0)));
+      return PPC32Instr_Alu32(Palu_OR, dst, dst, src);
+   } else {
+      return PPC32Instr_Alu32(Palu_OR, dst, src->Pri.Reg.reg, src);  // mr rD,rS
    }
-
-   // Load immediate _without_ sign extend
-   addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(0)));
-   return PPC32Instr_Alu32(Palu_OR, dst, dst, src);
 }
 
-/* If imm > 0xffff, mov to reg first */
+#if 0
+// CAB: A number of instructions can take advantage of this, but is there much point?
+// instns: cmpli, Alu32: all bar ADD
+
+/* Ensure an RI->imm fits into 16 bits, else load into a register
+   - Only use with zero-padding instns */
 static PPC32RI* mk_FitRI16 ( ISelEnv* env, PPC32RI* ri )
 {
    HReg tmp = newVRegI(env);
-
-   if (ri->tag == Pri_Imm && ri->Pri.Imm.imm32 > 0xFFFF) {
-      addInstr(env, mk_iMOVds_RRI(env, tmp, ri));
-      return PPC32RI_Reg(tmp);
+   if (ri->tag == Pri_Imm) {
+      if (ri->Pri.Imm.imm32 > 0xFFFF) {
+         addInstr(env, mk_iMOVds_RRI(env, tmp, ri));
+         return PPC32RI_Reg(tmp);
+      }
    }
    return ri;
 }
+#endif
 
-/* Flatten RI to an R */
-static HReg mk_RItoR ( ISelEnv* env, PPC32RI* ri )
+/* Ensure an RI->imm fits into 15 bits, else load into a register
+   - All sign-extending instn's, with unknown ri, must use this */
+static PPC32RI* mk_FitRI15 ( ISelEnv* env, PPC32RI* ri )
 {
    HReg tmp = newVRegI(env);
-
    if (ri->tag == Pri_Imm) {
-      addInstr(env, mk_iMOVds_RRI(env, tmp, ri));
-      return tmp;
-   } else {
-      return ri->Pri.Reg.reg;
+      if (ri->Pri.Imm.imm32 > 0x7FFF) {
+         addInstr(env, mk_iMOVds_RRI(env, tmp, ri));
+         return PPC32RI_Reg(tmp);
+      }
    }
+   return ri;
 }
 
 //.. /* Make a vector reg-reg move. */
@@ -861,7 +870,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (aluOp != Palu_INVALID) {
          HReg dst    = newVRegI(env);
          HReg src    = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         PPC32RI* ri = mk_FitRI16(env, iselIntExpr_RI(env, e->Iex.Binop.arg2));
+         PPC32RI* ri = mk_FitRI15(env, iselIntExpr_RI(env, e->Iex.Binop.arg2));
          addInstr(env, PPC32Instr_Alu32(aluOp, dst, src, ri));
          return dst;
       }
@@ -888,7 +897,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
           e->Iex.Binop.op == Iop_Sub16 ||
           e->Iex.Binop.op == Iop_Sub32) {
          HReg dst     = newVRegI(env);
-         PPC32RI* riL = mk_FitRI16(env, iselIntExpr_RI(env, e->Iex.Binop.arg1));
+         PPC32RI* riL = mk_FitRI15(env, iselIntExpr_RI(env, e->Iex.Binop.arg1));
          HReg     rR  = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, PPC32Instr_Sub32(dst, riL, rR));
          return dst;
@@ -898,14 +907,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (e->Iex.Binop.op == Iop_DivU32) {
          HReg dst  = newVRegI(env);
          HReg src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg src2 = mk_RItoR(env, iselIntExpr_RI(env, e->Iex.Binop.arg2));
+         HReg src2 = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, PPC32Instr_Div(False, dst, src1, src2));
          return dst;
       }
       if (e->Iex.Binop.op == Iop_DivS32) {
          HReg dst  = newVRegI(env);
          HReg src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg src2 = mk_RItoR(env, iselIntExpr_RI(env, e->Iex.Binop.arg2));
+         HReg src2 = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, PPC32Instr_Div(True, dst, src1, src2));
          return dst;
       }
@@ -916,7 +925,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          Bool syned    = True;
          HReg dst      = newVRegI(env);
          HReg src1     = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         PPC32RI* src2 = mk_FitRI16(env, iselIntExpr_RI(env, e->Iex.Binop.arg2));
+         PPC32RI* src2 = mk_FitRI15(env, iselIntExpr_RI(env, e->Iex.Binop.arg2));
          addInstr(env, PPC32Instr_MulL(syned, 0, dst, src1, src2));
          return dst;
       }      
@@ -1169,7 +1178,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             if (matchIRExpr(&mi,p_MullS32_then_64to32,e)) {
                HReg dst      = newVRegI(env);
                HReg src1     = iselIntExpr_R( env, mi.bindee[0] );
-               PPC32RI* src2 = mk_FitRI16(env, iselIntExpr_RI( env, mi.bindee[1] ));
+               PPC32RI* src2 = mk_FitRI15(env, iselIntExpr_RI( env, mi.bindee[1] ));
                addInstr(env, PPC32Instr_MulL(True, 0, dst, src1, src2));
                return dst;
             }
@@ -1184,7 +1193,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             if (matchIRExpr(&mi,p_MullU32_then_64to32,e)) {
                HReg dst      = newVRegI(env);
                HReg src1     = iselIntExpr_R( env, mi.bindee[0] );
-               PPC32RI* src2 = mk_FitRI16(env, iselIntExpr_RI( env, mi.bindee[1] ));
+               PPC32RI* src2 = mk_FitRI15(env, iselIntExpr_RI( env, mi.bindee[1] ));
                addInstr(env, PPC32Instr_MulL(False, 0, dst, src1, src2));
                return dst;
             }
@@ -1309,8 +1318,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    /* 32/16/8-bit literals */
    case Iex_Const: {
       HReg dst    = newVRegI(env);
-      PPC32RI* ri = iselIntExpr_RI ( env, e );
-      addInstr(env, mk_iMOVds_RRI(env, dst, ri));
+      addInstr(env, mk_iMOVds_RRI(env, dst, iselIntExpr_RI ( env, e )));
       return dst;
    }
 
@@ -1584,8 +1592,7 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_CmpLE32S
            || e->Iex.Binop.op == Iop_CmpLE32U)) {
       HReg     r1  = iselIntExpr_R(env, e->Iex.Binop.arg1);
-      PPC32RI* ri2 = PPC32RI_Reg(
-         mk_RItoR(env, iselIntExpr_RI(env, e->Iex.Binop.arg2)));
+      PPC32RI* ri2 = mk_FitRI15(env, iselIntExpr_RI(env, e->Iex.Binop.arg2));
 
       PPC32CmpOp cmp_op = Pcmp_U;
       if (e->Iex.Binop.op == Iop_CmpLT32S ||
@@ -1794,9 +1801,10 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
          HReg     tHi   = newVRegI(env);
          Bool     syned = e->Iex.Binop.op == Iop_MullS32;
          HReg     src1  = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         PPC32RI* ri    = iselIntExpr_RI(env, e->Iex.Binop.arg2);
+
 // CAB: could do better than this...
-         PPC32RI* src2  = PPC32RI_Reg( mk_RItoR(env, ri) );
+         PPC32RI* src2 = PPC32RI_Reg(iselIntExpr_R(env, e->Iex.Binop.arg2));
+
          addInstr(env, PPC32Instr_MulL(syned, 0, tLo, src1, src2));
          addInstr(env, PPC32Instr_MulL(syned, 1, tHi, src1, src2));
          *rHi = tHi;

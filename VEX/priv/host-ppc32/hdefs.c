@@ -485,6 +485,8 @@ PPC32Instr* PPC32Instr_Sh32 ( PPC32ShiftOp op, HReg dst, HReg src, PPC32RI* shft
    return i;
 }
 PPC32Instr* PPC32Instr_Cmp32 ( PPC32CmpOp op, UInt crfD, HReg src1, PPC32RI* src2 ) {
+   if (src2->tag == Pri_Imm)
+      vassert(src2->Pri.Imm.imm32 < 0x10000);
    PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag            = Pin_Cmp32;
    i->Pin.Cmp32.op   = op;
@@ -1965,8 +1967,7 @@ static UChar* mkLoadImm ( UChar* p, UInt r_dst, UInt imm )
 {
    vassert(r_dst < 0x20);
 
-   if (imm < 0x10000) {
-      // CAB: Sign extends immediate...
+   if (imm >= 0xFFFF8000 || imm <= 0x7FFF) { // sign-extendable from 16 bits?
       // addi r_dst,0,imm  => li r_dst,imm
       p = mkFormD(p, 14, r_dst, 0, imm);
    } else {

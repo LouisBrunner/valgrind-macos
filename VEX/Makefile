@@ -77,6 +77,8 @@ CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline \
 
 all: vex
 
+scratch: clean version all
+
 vex: libvex.a test_main.o
 	$(CC) $(CCFLAGS) -o vex test_main.o libvex.a
 

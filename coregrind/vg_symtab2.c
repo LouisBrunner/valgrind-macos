@@ -2181,13 +2181,13 @@ Char* VG_(describe_IP)(Addr eip, Char* buf, Int n_buf)
    UInt  lineno; 
    UChar ibuf[20];
    UInt  n = 0;
-   static UChar buf_fn[M_VG_ERRTXT];
-   static UChar buf_obj[M_VG_ERRTXT];
-   static UChar buf_srcloc[M_VG_ERRTXT];
-   Bool  know_fnname  = VG_(get_fnname) (eip, buf_fn,  M_VG_ERRTXT);
-   Bool  know_objname = VG_(get_objname)(eip, buf_obj, M_VG_ERRTXT);
-   Bool  know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc, M_VG_ERRTXT, 
-                                                  &lineno);
+   static UChar buf_fn[VG_ERRTXT_LEN];
+   static UChar buf_obj[VG_ERRTXT_LEN];
+   static UChar buf_srcloc[VG_ERRTXT_LEN];
+   Bool  know_fnname  = VG_(get_fnname) (eip, buf_fn,  VG_ERRTXT_LEN);
+   Bool  know_objname = VG_(get_objname)(eip, buf_obj, VG_ERRTXT_LEN);
+   Bool  know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc,
+                                                  VG_ERRTXT_LEN, &lineno);
    VG_(sprintf)(ibuf,"0x%llx: ", (ULong)eip);
    APPEND(ibuf);
    if (know_fnname) { 

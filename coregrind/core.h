@@ -106,7 +106,7 @@ typedef struct _ThreadState ThreadState;
    ------------------------------------------------------------------ */
 
 /* Max length of a text fragment used to construct error messages. */
-#define M_VG_ERRTXT 4096
+#define VG_ERRTXT_LEN 4096
 
 /* The maximum number of calls we're prepared to save in a
    backtrace. */

@@ -143,9 +143,9 @@ UInt VG_(get_StackTrace) ( ThreadId tid, StackTrace ips, UInt n_ips )
 
 static void printIpDesc(UInt n, Addr ip)
 {
-   static UChar buf[M_VG_ERRTXT];
+   static UChar buf[VG_ERRTXT_LEN];
 
-   VG_(describe_IP)(ip, buf, M_VG_ERRTXT);
+   VG_(describe_IP)(ip, buf, VG_ERRTXT_LEN);
    VG_(message)(Vg_UserMsg, "   %s %s", ( n == 0 ? "at" : "by" ), buf);
 }
 

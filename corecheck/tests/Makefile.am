@@ -23,6 +23,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pth_cvsimple.stderr.exp pth_cvsimple.stdout.exp pth_cvsimple.vgtest \
 	pth_empty.stderr.exp pth_empty.vgtest \
 	pth_exit.stderr.exp pth_exit.vgtest \
+	pth_exit2.stderr.exp pth_exit2.vgtest \
 	pth_mutexspeed.stderr.exp \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
@@ -35,7 +36,7 @@ check_PROGRAMS = \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair sigkill res_search \
 	pth_atfork1 pth_cancel1 pth_cancel2 pth_cvsimple pth_empty \
-	pth_exit pth_mutexspeed pth_once \
+	pth_exit pth_exit2 pth_mutexspeed pth_once \
 	as_mmap as_shm \
 	vgprintf
 
@@ -73,6 +74,8 @@ pth_empty_SOURCES 	= pth_empty.c
 pth_empty_LDADD 	= -lpthread
 pth_exit_SOURCES 	= pth_exit.c
 pth_exit_LDADD	 	= -lpthread
+pth_exit2_SOURCES 	= pth_exit2.c
+pth_exit2_LDADD	 	= -lpthread
 pth_mutexspeed_SOURCES	= pth_mutexspeed.c
 pth_mutexspeed_LDADD	= -lpthread
 pth_once_SOURCES	= pth_once.c

@@ -2019,7 +2019,7 @@ void cleanup_root(void *arg)
    /* NOTREACHED */
 }
 
-static void
+static void __attribute__((constructor))
 init_global_thread_specific_state ( void )
 {
    int res;

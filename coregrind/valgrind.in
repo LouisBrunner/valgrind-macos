@@ -85,7 +85,7 @@ VG_ARGS="$VALGRIND_OPTS $vgsupp $vgopts"
 export VG_ARGS
 
 # Red Hat Linux 9 uses NPTL, which has a kernel interface 
-# unlike the linuxthreads interface valgrind expects. we can
+# unlike the linuxthreads interface valgrind expects.  We can
 # tell the dynamic loader to disable this interface using
 # an environment variable.
 
@@ -112,7 +112,7 @@ export LD_PRELOAD
     
 # If no command given, act like -h was given so vg_main.c prints out
 # the usage string.  And pass to 'exec' tha name of any program -- it doesn't
-# which -- because it won't be run anyway (we use 'true').
+# matter which -- because it won't be run anyway (we use 'true').
 if [ $# != 0 ] ; then
    exec "$@"
 else

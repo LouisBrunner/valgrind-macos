@@ -7,7 +7,6 @@
 /*---------------------------------------------------------------*/
 
 #include "libvex.h"
-#include "libvex_guest_x86.h"
 
 #include "main/vex_globals.h"
 #include "main/vex_util.h"

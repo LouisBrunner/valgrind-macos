@@ -1238,8 +1238,8 @@ typedef
 
 
 /* VISIBLE TO LIBVEX CLIENT */
-void x87_to_vex ( /*IN*/UChar* x87_state,
-                  /*OUT*/VexGuestX86State* vex_state )
+void LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
+                               /*OUT*/VexGuestX86State* vex_state )
 {
    Int        r;
    UInt       tag;
@@ -1277,8 +1277,8 @@ void x87_to_vex ( /*IN*/UChar* x87_state,
 
 
 /* VISIBLE TO LIBVEX CLIENT */
-void vex_to_x87 ( /*IN*/VexGuestX86State* vex_state,
-                  /*OUT*/UChar* x87_state )
+void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state,
+                               /*OUT*/UChar* x87_state )
 {
    Int        i, r;
    UInt       tagw;
@@ -1312,8 +1312,8 @@ void vex_to_x87 ( /*IN*/VexGuestX86State* vex_state,
 
 
 /* VISIBLE TO LIBVEX CLIENT */
-void eflags_to_vex ( UInt eflags_native,
-                     /*OUT*/VexGuestX86State* vex_state )
+void LibVEX_GuestX86_put_eflags ( UInt eflags_native,
+                                  /*OUT*/VexGuestX86State* vex_state )
 {
    vex_state->guest_DFLAG
       = (eflags_native & (1<<10)) ? 0xFFFFFFFF : 0x00000001;
@@ -1330,7 +1330,7 @@ void eflags_to_vex ( UInt eflags_native,
 
 
 /* VISIBLE TO LIBVEX CLIENT */
-UInt vex_to_eflags ( /*IN*/VexGuestX86State* vex_state )
+UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state )
 {
    UInt eflags = calculate_eflags_all(
                     vex_state->guest_CC_OP,
@@ -1346,19 +1346,42 @@ UInt vex_to_eflags ( /*IN*/VexGuestX86State* vex_state )
 }
 
 /* VISIBLE TO LIBVEX CLIENT */
-void vex_initialise_x87 ( /* MOD*/VexGuestX86State* vex_state )
+void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
 {
    Int i;
+
+   vex_state->guest_EAX = 0;
+   vex_state->guest_ECX = 0;
+   vex_state->guest_EDX = 0;
+   vex_state->guest_EBX = 0;
+   vex_state->guest_ESP = 0;
+   vex_state->guest_EBP = 0;
+   vex_state->guest_ESI = 0;
+   vex_state->guest_EDI = 0;
+
+   vex_state->guest_CC_OP  = CC_OP_COPY;
+   vex_state->guest_CC_SRC = 0;
+   vex_state->guest_CC_DST = 0;
+   vex_state->guest_DFLAG  = 1; /* forwards */
+
+   vex_state->guest_EIP = 0;
+
+   vex_state->guest_FTOP = 0;
    for (i = 0; i < 8; i++) {
       vex_state->guest_FPTAG[i] = 0; /* empty */
       vex_state->guest_FPREG[i] = 0; /* IEEE754 64-bit zero */
    }
-   vex_state->guest_FTOP = 0;
-   vex_state->guest_FC3210 = 0;
-
    /* The default setting: all fp exceptions masked, rounding to
       nearest, precision to 64 bits */
    vex_state->guest_FPUCW = 0x03F7; 
+   vex_state->guest_FC3210 = 0;
+
+   vex_state->guest_CS = 0;
+   vex_state->guest_DS = 0;
+   vex_state->guest_ES = 0;
+   vex_state->guest_FS = 0;
+   vex_state->guest_GS = 0;
+   vex_state->guest_SS = 0;
 }
 
 

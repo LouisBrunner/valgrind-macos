@@ -106,34 +106,33 @@ typedef
    VexGuestX86State;
 
 
-/* This is logically part of the guest state description. */
-/* Not visible to library client. */
-extern Bool guest_x86_state_requires_precise_mem_exns ( Int, Int );
-
-
 
 /*---------------------------------------------------------------*/
 /*--- Utility functions for x86 guest stuff.                  ---*/
 /*---------------------------------------------------------------*/
 
 
-
-
 /* ALL THE FOLLOWING ARE VISIBLE TO LIBRARY CLIENT */
+
+
+/* Initialise all guest x86 state.  The FPU is put in default mode. */
+extern
+void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state );
+
 
 /* Convert a saved x87 FPU image (as created by fsave) and write it
    into the supplied VexGuestX86State structure.  The non-FP parts of
    said structure are left unchanged.  
 */
 extern 
-void x87_to_vex ( /*IN*/UChar* x87_state, 
-                  /*OUT*/VexGuestX86State* vex_state );
+void LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state, 
+                               /*OUT*/VexGuestX86State* vex_state );
 
 /* Extract from the supplied VexGuestX86State structure, an x87 FPU
    image. */
 extern 
-void vex_to_x87 ( /*IN*/VexGuestX86State* vex_state, 
-                  /*OUT*/UChar* x87_state );
+void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state, 
+                               /*OUT*/UChar* x87_state );
 
 
 /* Given a 32-bit word containing native x86 %eflags values, set the
@@ -141,17 +140,15 @@ void vex_to_x87 ( /*IN*/VexGuestX86State* vex_state,
    All other fields are left unchanged.  */
 
 extern
-void eflags_to_vex ( UInt eflags_native,
-                     /*OUT*/VexGuestX86State* vex_state );
+void LibVEX_GuestX86_put_eflags ( UInt eflags_native,
+                                  /*OUT*/VexGuestX86State* vex_state );
 
 /* Extract from the supplied VexGuestX86State structure the
    corresponding native %eflags value. */
 
 extern 
-UInt vex_to_eflags ( /*IN*/VexGuestX86State* vex_state );
+UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state );
 
-extern
-void vex_initialise_x87 ( /* MOD*/VexGuestX86State* vex_state );
 
 #endif /* ndef __LIBVEX_PUB_GUEST_X86_H */
 

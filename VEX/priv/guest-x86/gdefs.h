@@ -36,6 +36,12 @@ extern
 IRExpr* x86guest_spechelper ( Char* function_name,
                               IRExpr** args );
 
+/* Describes to the optimser which part of the guest state require
+   precise memory exceptions.  This is logically part of the guest
+   state description. */
+extern 
+Bool guest_x86_state_requires_precise_mem_exns ( Int, Int );
+
 
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/

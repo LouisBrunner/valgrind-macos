@@ -994,9 +994,6 @@ extern void VG_(start_debugger) ( ThreadId tid );
 /* Counts downwards in vg_run_innerloop. */
 extern UInt VG_(dispatch_ctr);
 
-/* Instruction pointer guest state offset, used by $VG_ARCH/dispatch.S. */
-extern OffT VG_(instr_ptr_offset);
-
 /* Stats ... */
 extern void VG_(print_scheduler_stats) ( void );
 
@@ -1607,7 +1604,7 @@ extern void VG_(sigreturn)(void);
    address is found in the translation cache.  For anything else, the
    scheduler does the work.
 */
-extern UInt VG_(run_innerloop) ( void* guest_state );
+extern UWord VG_(run_innerloop) ( void* guest_state );
 
 /* ---------------------------------------------------------------------
    Exports of vg_helpers.S

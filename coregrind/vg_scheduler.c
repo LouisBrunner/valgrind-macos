@@ -453,8 +453,6 @@ UInt run_thread_for_a_while ( ThreadId tid )
 {
    volatile Bool jumped;
    volatile ThreadState *tst = VG_(get_ThreadState)(tid);
-   //volatile Addr EIP = tst->arch.m_eip;
-   //volatile Addr nextEIP;
 
    volatile UInt trc = 0;
    volatile Int  dispatch_ctr_SAVED = VG_(dispatch_ctr);
@@ -495,10 +493,6 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(sz_spill == LibVEX_N_SPILL_BYTES);
    vg_assert(a_vex + 2 * sz_vex == a_spill);
 
-   vg_assert(VG_(instr_ptr_offset) >= 0);
-   vg_assert(VG_(instr_ptr_offset) <= 10000); /* let's say */
-   vg_assert(sizeof VG_(instr_ptr_offset) == sizeof(HWord));
-
    VGP_PUSHCC(VgpRun);
 
    /* there should be no undealt-with signals */
@@ -509,7 +503,8 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(VG_(my_fault));
    VG_(my_fault) = False;
 
-   SCHEDSETJMP(tid, jumped, trc = VG_(run_innerloop)( (void*)&tst->arch.vex ));
+   SCHEDSETJMP(tid, jumped, 
+                    trc = (UInt)VG_(run_innerloop)( (void*)&tst->arch.vex ));
 
    //nextEIP = tst->arch.m_eip;
    //if (nextEIP >= VG_(client_end))

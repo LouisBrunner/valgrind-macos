@@ -148,9 +148,6 @@ Int    VG_(client_argc);
 Char** VG_(client_argv);
 Char** VG_(client_envp);
 
-// Instruction pointer guest state offset, used by $VG_ARCH/dispatch.S.
-OffT VG_(instr_ptr_offset);
-
 /* Indicates what arch and subarch we are running on. */
 VexArch    VG_(vex_arch)    = VexArch_INVALID;
 VexSubArch VG_(vex_subarch) = VexSubArch_INVALID;
@@ -2684,9 +2681,6 @@ int main(int argc, char **argv, char **envp)
    // Tell the tool that we just wrote to the registers.
    VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
              sizeof(VexGuestArchState));
-
-   // Record the instr ptr offset, for use by asm code.
-   VG_(instr_ptr_offset) = offsetof(VexGuestArchState, VGA_INSTR_PTR);
 
    //--------------------------------------------------------------
    // Initialise the pthread model

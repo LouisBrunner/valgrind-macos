@@ -31,13 +31,14 @@
 
 #include "core_asm.h"
 #include "x86_private_asm.h"
+#include "libvex_guest_offsets.h"	/* for OFFSET_x86_EIP */
 
 
 /*------------------------------------------------------------*/
 /*--- The dispatch loop.                                   ---*/
 /*------------------------------------------------------------*/
-	
-/* signature: UInt VG_(run_innerloop) ( void* guest_state ) */
+
+/* signature: UWord VG_(run_innerloop) ( void* guest_state ) */
 
 .globl VG_(run_innerloop)
 VG_(run_innerloop):
@@ -57,8 +58,7 @@ VG_(run_innerloop):
 	movl	28(%esp), %ebp
 	
 	/* fetch %EIP into %eax */
-	movl	VG_(instr_ptr_offset), %esi
-	movl	(%ebp, %esi, 1), %eax
+	movl	OFFSET_x86_EIP(%ebp), %eax
 
 	/* set host FPU control word to the default mode expected 
            by VEX-generated code.  See comments in libvex.h for
@@ -84,8 +84,7 @@ VG_(run_innerloop):
 
 dispatch_boring:
 	/* save the jump address in the guest state */
-	movl	VG_(instr_ptr_offset), %esi
-	movl	%eax, (%ebp, %esi, 1)
+	movl	%eax, OFFSET_x86_EIP(%ebp)
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
 	subl $1, VG_(dispatch_ctr)
@@ -169,9 +168,8 @@ dispatch_exceptional:
 	jz	counter_is_zero
 
 	/* save %eax in %EIP and defer to sched */
-	movl	VG_(instr_ptr_offset), %esi
 	movl	28(%esp), %edi
-	movl	%eax, (%edi, %esi, 1)
+	movl	%eax, OFFSET_x86_EIP(%edi)
 	movl	%ebp, %eax
 	jmp	run_innerloop_exit
 

@@ -1290,8 +1290,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                temporarily swap the source into, so the store can
                happen.  So we have to look at the regs mentioned
                in the amode. */
-            HReg eax = hregX86_EAX(), ebx = hregX86_EBX(), 
-                 ecx = hregX86_ECX(), edx = hregX86_EDX();
+            HReg swap = INVALID_HREG;
+            HReg  eax = hregX86_EAX(), ebx = hregX86_EBX(), 
+                  ecx = hregX86_ECX(), edx = hregX86_EDX();
             Bool a_ok = True, b_ok = True, c_ok = True, d_ok = True;
             HRegUsage u;
             Int j;
@@ -1304,7 +1305,6 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                if (r == ecx) c_ok = False;
                if (r == edx) d_ok = False;
             }
-            HReg swap = INVALID_HREG;
             if (a_ok) swap = eax;
             if (b_ok) swap = ebx;
             if (c_ok) swap = ecx;

@@ -149,13 +149,13 @@ Int findMostDistantlyMentionedVReg (
 /* Double the size of the real-reg-info array, if needed. */
 static void ensureRRIspace ( RRegInfo** info, Int* size, Int used )
 {
-   Int k;
+   Int       k;
+   RRegInfo* arr2;
    if (used < *size) return;
    if (0)
       vex_printf("ensureRRISpace: %d -> %d\n", *size, 2 * *size);
    vassert(used == *size);
-   RRegInfo* arr2 
-      = LibVEX_Alloc(2 * *size * sizeof(RRegInfo));
+   arr2 = LibVEX_Alloc(2 * *size * sizeof(RRegInfo));
    for (k = 0; k < *size; k++)
       arr2[k] = (*info)[k];
    *size *= 2;

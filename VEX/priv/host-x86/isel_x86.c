@@ -243,7 +243,6 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
    MatchInfo mi;
    DECLARE_PATTERN(p_32to1_then_1Uto8);     
 
-   vassert(e);
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
 
@@ -455,11 +454,12 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
    case Iex_Mux0X: {
       if (ty == Ity_I32 
          && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
+        HReg r8;
 	HReg rX   = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
 	X86RM* r0 = iselIntExpr_RM(env, e->Iex.Mux0X.expr0);
 	HReg dst = newVRegI(env);
 	addInstr(env, mk_MOVsd_RR(rX,dst));
-	HReg r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
+	r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
 	addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
 	addInstr(env, X86Instr_CMov32(Xcc_Z,r0,dst));
 	return dst;
@@ -490,7 +490,6 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 */
 static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 {
-   vassert(e);
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32);
 
@@ -534,7 +533,6 @@ static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 
 static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
 {
-   vassert(e);
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
@@ -573,7 +571,6 @@ static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
 
 static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
 {
-   vassert(e);
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
@@ -604,7 +601,6 @@ static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
 
 static X86RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
 {
-   vassert(e);
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
@@ -868,12 +864,14 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- EXIT --------- */
    case Ist_Exit: {
-     if (stmt->Ist.Exit.dst->tag != Ico_U32)
-        vpanic("isel_x86: Ist_Exit: dst is not a 32-bit value");
-     X86RI* dst     = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
-     X86CondCode cc = iselCondCode(env,stmt->Ist.Exit.cond);
-     addInstr(env, X86Instr_Goto(cc, dst));
-     return;
+      X86RI*      dst;
+      X86CondCode cc;
+      if (stmt->Ist.Exit.dst->tag != Ico_U32)
+         vpanic("isel_x86: Ist_Exit: dst is not a 32-bit value");
+      dst = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
+      cc  = iselCondCode(env,stmt->Ist.Exit.cond);
+      addInstr(env, X86Instr_Goto(cc, dst));
+      return;
    }
 
    default: break;

@@ -101,6 +101,7 @@ TranslateResult LibVEX_Translate (
    HInstrArray* vcode;
    HInstrArray* rcode;
    Int          i, j, k, out_used;
+   UChar        insn_bytes[32];
 
    vassert(vex_initdone);
    LibVEX_ClearTemporary(False);
@@ -182,7 +183,6 @@ TranslateResult LibVEX_Translate (
    }
 
    /* Assemble */
-   UChar insn_bytes[32];
    out_used = 0; /* tracks along the host_bytes array */
    for (i = 0; i < rcode->arr_used; i++) {
       if (vex_verbosity > 0) {

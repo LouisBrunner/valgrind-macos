@@ -4,32 +4,73 @@
 
 void do_fsave ( void* p )
 {
-   asm("movl 8(%esp), %eax ; fsave (%eax)");
+   asm __volatile__("fsave (%0)" : : "r" (p) : "memory" );
 }
 
 void do_frstor ( void* p )
 {
-   asm("movl 8(%esp), %eax ; frstor (%eax)");
+   asm __volatile__("frstor (%0)" : : "r" (p) : "memory" );
 }
 
-int main ( void )
+
+int isFPLsbs ( int i )
+{
+   int q;
+   q = 0; if (i == q || i == q+1) return 1;
+   q = 10; if (i == q || i == q+1) return 1;
+   q = 20; if (i == q || i == q+1) return 1;
+   q = 30; if (i == q || i == q+1) return 1;
+   q = 40; if (i == q || i == q+1) return 1;
+   q = 50; if (i == q || i == q+1) return 1;
+   q = 60; if (i == q || i == q+1) return 1;
+   q = 70; if (i == q || i == q+1) return 1;
+   return 0;
+}
+
+void show_fpustate ( unsigned char* buf, int hide64to80 )
+{
+   int i;
+   printf("  0   ");
+   for (i = 0; i < 14; i++)
+      printf("%02x ", buf[i]);
+   printf("\n");
+
+   printf(" 14   ");
+   for (i = 14; i < 28; i++)
+      printf("%02x ", buf[i]);
+   printf("\n");
+
+   for (i = 0; i < 80; i++) {
+      if ((i % 10) == 0)
+         printf("%3d   ", i+28);
+      if (hide64to80 && isFPLsbs(i))
+	 printf("xx ");
+      else
+         printf("%02x ", buf[i+28]);
+      if (i > 0 && ((i % 10) == 9))
+          printf("\n");
+   }
+}
+
+int main ( int argc, char** argv )
 {
    int i;
    unsigned short* buf = malloc(54*sizeof(short));
+   int xx = argc > 1;
+   printf("Re-run with any arg to suppress least-significant\n"
+          "   16 bits of FP numbers\n");
+
    for (i = 0; i < 54; i++)
       buf[i] = i;
    buf[0] = 0x037f;
 
    for (i = 0; i < 8; i++)
-      *(long double *)(&buf[14+5 *i]) = 0.1234 * i;
+      *(long double *)(&buf[14+5 *i]) = 20.0 + 0.1234 * i;
 
    do_frstor(buf);
    do_fsave(buf);
-   for (i = 0; i < 54; i++) {
-      printf("%04x ", buf[i]);
-      if (i > 0 && ((i % 12) == 11))
-          printf("\n");
-   }
-   printf("\n");
+
+   show_fpustate( (unsigned char*)buf, xx );
+
    return 0;
 }

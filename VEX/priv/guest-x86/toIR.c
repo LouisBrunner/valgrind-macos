@@ -277,10 +277,12 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
 
       guest_next = 0;
       resteerOK 
-         = n_instrs < vex_control.guest_chase_thresh
-           /* we can't afford to have a resteer once we're on the last
-              extent slot. */
-           && vge->n_used < 3;
+         = toBool(
+              n_instrs < vex_control.guest_chase_thresh
+              /* we can't afford to have a resteer once we're on the
+                 last extent slot. */
+              && vge->n_used < 3
+           );
 
       first_stmt_idx = irbb->stmts_used;
 
@@ -405,7 +407,7 @@ static IRTemp newTemp ( IRType ty )
 
 /* Bomb out if we can't handle something. */
 __attribute__ ((noreturn))
-static void unimplemented ( Char* str )
+static void unimplemented ( HChar* str )
 {
    vex_printf("x86toIR: unimplemented feature\n");
    vpanic(str);
@@ -440,7 +442,7 @@ static Int gregOfRM ( UChar mod_reg_rm )
    where YYY is the register number. */
 static Bool epartIsReg ( UChar mod_reg_rm )
 {
-   return (0xC0 == (mod_reg_rm & 0xC0));
+   return toBool(0xC0 == (mod_reg_rm & 0xC0));
 }
 
 /* ... and extract the register number ... */
@@ -451,9 +453,9 @@ static Int eregOfRM ( UChar mod_reg_rm )
 
 /* Get a 8/16/32-bit unsigned value out of the insn stream. */
 
-static UInt getUChar ( UInt delta )
+static UChar getUChar ( UInt delta )
 {
-   UInt v = guest_code[delta+0];
+   UChar v = guest_code[delta+0];
    return v & 0xFF;
 }
 
@@ -478,7 +480,7 @@ static UInt getUDisp ( Int size, UInt delta )
    switch (size) {
       case 4: return getUDisp32(delta);
       case 2: return getUDisp16(delta);
-      case 1: return getUChar(delta);
+      case 1: return (UInt)getUChar(delta);
       default: vpanic("getUDisp(x86)");
    }
    return 0; /*notreached*/
@@ -743,13 +745,13 @@ static IRExpr* mkexpr ( IRTemp tmp )
 static IRExpr* mkU8 ( UInt i )
 {
    vassert(i < 256);
-   return IRExpr_Const(IRConst_U8(i));
+   return IRExpr_Const(IRConst_U8( (UChar)i ));
 }
 
 static IRExpr* mkU16 ( UInt i )
 {
    vassert(i < 65536);
-   return IRExpr_Const(IRConst_U16(i));
+   return IRExpr_Const(IRConst_U16( (UShort)i ));
 }
 
 static IRExpr* mkU32 ( UInt i )
@@ -895,12 +897,12 @@ static IRExpr* mk_x86g_calculate_eflags_c ( void )
 
 static Bool isAddSub ( IROp op8 )
 {
-   return op8 == Iop_Add8 || op8 == Iop_Sub8;
+   return toBool(op8 == Iop_Add8 || op8 == Iop_Sub8);
 }
 
 static Bool isLogic ( IROp op8 )
 {
-   return op8 == Iop_And8 || op8 == Iop_Or8 || op8 == Iop_Xor8;
+   return toBool(op8 == Iop_And8 || op8 == Iop_Or8 || op8 == Iop_Xor8);
 }
 
 /* U-widen 8/16/32 bit int expr to 32. */
@@ -1079,7 +1081,7 @@ void setFlags_MUL ( IRType ty, IRTemp arg1, IRTemp arg2, UInt base_op )
 
 /* Condition codes, using the Intel encoding.  */
 
-static Char* name_X86Condcode ( X86Condcode cond )
+static HChar* name_X86Condcode ( X86Condcode cond )
 {
    switch (cond) {
       case X86CondO:      return "o";
@@ -1285,7 +1287,7 @@ static HChar* nameXMMReg ( Int xmmreg )
    return xmm_names[xmmreg];
 }
  
-static Char* nameMMXGran ( UChar gran )
+static HChar* nameMMXGran ( Int gran )
 {
    switch (gran) {
       case 0: return "b";
@@ -1296,7 +1298,7 @@ static Char* nameMMXGran ( UChar gran )
    }
 }
 
-static Char nameISize ( Int size )
+static HChar nameISize ( Int size )
 {
    switch (size) {
       case 4: return 'l';
@@ -1350,7 +1352,7 @@ void jcc_01( X86Condcode cond, Addr32 d32_false, Addr32 d32_true )
 /*------------------------------------------------------------*/
 
 static 
-UChar* sorbTxt ( UChar sorb )
+HChar* sorbTxt ( UChar sorb )
 {
    switch (sorb) {
       case 0:    return ""; /* no override */
@@ -1448,7 +1450,7 @@ static IRTemp disAMode_copy2tmp ( IRExpr* addr32 )
 }
 
 static 
-IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
+IRTemp disAMode ( Int* len, UChar sorb, UInt delta, HChar* buf )
 {
    UChar mod_reg_rm = getIByte(delta);
    delta++;
@@ -1482,7 +1484,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
       /* ! 0C */ case 0x0D: case 0x0E: case 0x0F:
          { UChar rm = mod_reg_rm & 7;
            UInt  d  = getSDisp8(delta);
-           DIS(buf, "%s%d(%s)", sorbTxt(sorb), d, nameIReg(4,rm));
+           DIS(buf, "%s%d(%s)", sorbTxt(sorb), (Int)d, nameIReg(4,rm));
            *len = 2;
            return disAMode_copy2tmp(
                   handleSegOverride(sorb,
@@ -1496,7 +1498,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
       /* ! 14 */ case 0x15: case 0x16: case 0x17:
          { UChar rm = mod_reg_rm & 7;
            UInt  d  = getUDisp32(delta);
-           DIS(buf, "%s0x%x(%s)", sorbTxt(sorb), d, nameIReg(4,rm));
+           DIS(buf, "%s0x%x(%s)", sorbTxt(sorb), (Int)d, nameIReg(4,rm));
            *len = 5;
            return disAMode_copy2tmp(
                   handleSegOverride(sorb,
@@ -1607,13 +1609,14 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          UInt  d       = getSDisp8(delta+1);
 
          if (index_r == R_ESP) {
-            DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), d, nameIReg(4,base_r));
+            DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), 
+                                   (Int)d, nameIReg(4,base_r));
             *len = 3;
             return disAMode_copy2tmp(
                    handleSegOverride(sorb, 
                       binop(Iop_Add32, getIReg(4,base_r), mkU32(d)) ));
          } else {
-            DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), d, 
+            DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), (Int)d, 
                      nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
             *len = 3;
             return 
@@ -1646,14 +1649,15 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          UInt d        = getUDisp32(delta+1);
 
          if (index_r == R_ESP) {
-            DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), d, nameIReg(4,base_r));
+            DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), 
+                                   (Int)d, nameIReg(4,base_r));
             *len = 6;
             return disAMode_copy2tmp(
                    handleSegOverride(sorb, 
                       binop(Iop_Add32, getIReg(4,base_r), mkU32(d)) ));
          } else {
-            DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), d, 
-                      nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
+            DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), (Int)d, 
+                     nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
             *len = 6;
             return 
                 disAMode_copy2tmp(
@@ -1785,7 +1789,7 @@ UInt dis_op2_E_G ( UChar       sorb,
                    Bool        keep,
                    Int         size, 
                    UInt        delta0,
-                   Char*       t_x86opc )
+                   HChar*      t_x86opc )
 {
    HChar   dis_buf[50];
    Int     len;
@@ -1893,7 +1897,7 @@ UInt dis_op2_G_E ( UChar       sorb,
                    Bool        keep,
                    Int         size, 
                    UInt        delta0,
-                   Char*       t_x86opc )
+                   HChar*      t_x86opc )
 {
    HChar   dis_buf[50];
    Int     len;
@@ -2070,7 +2074,7 @@ UInt dis_op_imm_A ( Int    size,
                     IROp   op8,
                     Bool   keep,
                     UInt   delta,
-                    Char*  t_x86opc )
+                    HChar* t_x86opc )
 {
    IRType ty   = szToITy(size);
    IRTemp dst0 = newTemp(ty);
@@ -2263,7 +2267,7 @@ static
 UInt dis_Grp2 ( UChar  sorb,
                 UInt delta, UChar modrm,
                 Int am_sz, Int d_sz, Int sz, IRExpr* shift_expr,
-                Char* shift_expr_txt )
+                HChar* shift_expr_txt )
 {
    /* delta on entry points at the modrm byte. */
    HChar  dis_buf[50];
@@ -2292,7 +2296,7 @@ UInt dis_Grp2 ( UChar  sorb,
    isRotate = False;
    switch (gregOfRM(modrm)) { case 0: case 1: isRotate = True; }
 
-   isRotateRC = gregOfRM(modrm) == 3;
+   isRotateRC = toBool(gregOfRM(modrm) == 3);
 
    if (!isShift && !isRotate && !isRotateRC) {
       vex_printf("\ncase %d\n", gregOfRM(modrm));
@@ -2377,7 +2381,7 @@ UInt dis_Grp2 ( UChar  sorb,
    else 
    if (isRotate) {
       Int    ccOp      = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-      Bool   left      = gregOfRM(modrm) == 0;
+      Bool   left      = toBool(gregOfRM(modrm) == 0);
       IRTemp rot_amt   = newTemp(Ity_I8);
       IRTemp rot_amt32 = newTemp(Ity_I8);
       IRTemp oldFlags  = newTemp(Ity_I32);
@@ -2600,7 +2604,7 @@ UInt dis_Grp2 ( UChar  sorb,
    EDX:EAX/DX:AX/AX.
 */
 static void codegen_mulL_A_D ( Int sz, Bool syned, 
-                               IRTemp tmp, Char* tmp_txt )
+                               IRTemp tmp, HChar* tmp_txt )
 {
    IRType ty = szToITy(sz);
    IRTemp t1 = newTemp(ty);
@@ -2728,7 +2732,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
             break;
          default: 
             vex_printf(
-               "unhandled Grp3(R) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp3(R) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp3(x86)");
       }
    } else {
@@ -2778,7 +2782,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
             break;
          default: 
             vex_printf(
-               "unhandled Grp3(M) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp3(M) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp3(x86)");
       }
    }
@@ -2813,7 +2817,7 @@ UInt dis_Grp4 ( UChar sorb, UInt delta )
             break;
          default: 
             vex_printf(
-               "unhandled Grp4(R) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp4(R) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp4(x86,R)");
       }
       delta++;
@@ -2835,7 +2839,7 @@ UInt dis_Grp4 ( UChar sorb, UInt delta )
             break;
          default: 
             vex_printf(
-               "unhandled Grp4(M) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp4(M) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp4(x86,M)");
       }
       delta += alen;
@@ -2887,7 +2891,7 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* whatNext )
             break;
          default: 
             vex_printf(
-               "unhandled Grp5(R) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp5(R) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp5(x86)");
       }
       delta++;
@@ -2934,7 +2938,7 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* whatNext )
             break;
          default: 
             vex_printf(
-               "unhandled Grp5(M) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp5(M) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp5(x86)");
       }
       delta += len;
@@ -2965,7 +2969,7 @@ void dis_string_op_increment(Int sz, Int t_inc)
 
 static
 void dis_string_op( void (*dis_OP)( Int, IRTemp ), 
-                    Int sz, Char* name, UChar sorb )
+                    Int sz, HChar* name, UChar sorb )
 {
    IRTemp t_inc = newTemp(Ity_I32);
    vassert(sorb == 0);
@@ -3107,7 +3111,7 @@ void dis_SCAS ( Int sz, IRTemp t_inc )
 static 
 void dis_REP_op ( X86Condcode cond,
                   void (*dis_OP)(Int, IRTemp),
-                  Int sz, Addr32 eip, Addr32 eip_next, Char* name )
+                  Int sz, Addr32 eip, Addr32 eip_next, HChar* name )
 {
    IRTemp t_inc = newTemp(Ity_I32);
    IRTemp tc    = newTemp(Ity_I32);  /*  ECX  */
@@ -3419,7 +3423,7 @@ static void clear_C2 ( void )
    Need to check ST(0)'s tag on read, but not on write.
 */
 static
-void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
+void fp_do_op_mem_ST_0 ( IRTemp addr, HChar* op_txt, HChar* dis_buf, 
                          IROp op, Bool dbl )
 {
    DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
@@ -3443,7 +3447,7 @@ void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf,
    Need to check ST(0)'s tag on read, but not on write.
 */
 static
-void fp_do_oprev_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
+void fp_do_oprev_mem_ST_0 ( IRTemp addr, HChar* op_txt, HChar* dis_buf, 
                             IROp op, Bool dbl )
 {
    DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
@@ -3467,10 +3471,11 @@ void fp_do_oprev_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf,
    Check dst and src tags when reading but not on write.
 */
 static
-void fp_do_op_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
+void fp_do_op_ST_ST ( HChar* op_txt, IROp op, UInt st_src, UInt st_dst,
                       Bool pop_after )
 {
-   DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"", st_src, st_dst );
+   DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"", 
+                                 (Int)st_src, (Int)st_dst );
    put_ST_UNCHECKED( 
       st_dst, 
       binop(op, get_ST(st_dst), get_ST(st_src) ) 
@@ -3483,10 +3488,11 @@ void fp_do_op_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
    Check dst and src tags when reading but not on write.
 */
 static
-void fp_do_oprev_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
+void fp_do_oprev_ST_ST ( HChar* op_txt, IROp op, UInt st_src, UInt st_dst,
                          Bool pop_after )
 {
-   DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"", st_src, st_dst );
+   DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"",
+                                 (Int)st_src, (Int)st_dst );
    put_ST_UNCHECKED( 
       st_dst, 
       binop(op, get_ST(st_src), get_ST(st_dst) ) 
@@ -3498,7 +3504,7 @@ void fp_do_oprev_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
 /* %eflags(Z,P,C) = UCOMI( st(0), st(i) ) */
 static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
 {
-   DIP("fucomi%s %%st(0),%%st(%d)\n", pop_after ? "p" : "", i);
+   DIP("fucomi%s %%st(0),%%st(%d)\n", pop_after ? "p" : "", (Int)i );
    /* This is a bit of a hack (and isn't really right).  It sets
       Z,P,C,O correctly, but forces A and S to zero, whereas the Intel
       documentation implies A and S are unchanged. 
@@ -3614,11 +3620,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_ST_ST ( "mul", Iop_MulF64, modrm - 0xC8, 0, False );
                break;
 
-#if 1
             /* Dunno if this is right */
             case 0xD0 ... 0xD7: /* FCOM %st(?),%st(0) */
                r_dst = (UInt)modrm - 0xD0;
-               DIP("fcom %%st(0),%%st(%d)\n", r_dst);
+               DIP("fcom %%st(0),%%st(%d)\n", (Int)r_dst);
                /* This forces C1 to zero, which isn't right. */
                put_C3210( 
                    binop( Iop_And32,
@@ -3628,12 +3633,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                           mkU32(0x4500)
                    ));
                break;
-#endif
-#if 1
+
             /* Dunno if this is right */
             case 0xD8 ... 0xDF: /* FCOMP %st(?),%st(0) */
                r_dst = (UInt)modrm - 0xD8;
-               DIP("fcomp %%st(0),%%st(%d)\n", r_dst);
+               DIP("fcomp %%st(0),%%st(%d)\n", (Int)r_dst);
                /* This forces C1 to zero, which isn't right. */
                put_C3210( 
                    binop( Iop_And32,
@@ -3644,7 +3648,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                    ));
                fp_pop();
                break;
-#endif
+
             case 0xE0 ... 0xE7: /* FSUB %st(?),%st(0) */
                fp_do_op_ST_ST ( "sub", Iop_SubF64, modrm - 0xE0, 0, False );
                break;
@@ -3868,7 +3872,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC0 ... 0xC7: /* FLD %st(?) */
                r_src = (UInt)modrm - 0xC0;
-               DIP("fld %%st(%d)\n", r_src);
+               DIP("fld %%st(%d)\n", (Int)r_src);
                t1 = newTemp(Ity_F64);
                assign(t1, get_ST(r_src));
                fp_push();
@@ -3877,7 +3881,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC8 ... 0xCF: /* FXCH %st(?) */
                r_src = (UInt)modrm - 0xC8;
-               DIP("fxch %%st(%d)\n", r_src);
+               DIP("fxch %%st(%d)\n", (Int)r_src);
                t1 = newTemp(Ity_F64);
                t2 = newTemp(Ity_F64);
                assign(t1, get_ST(0));
@@ -4149,7 +4153,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC0 ... 0xC7: /* FCMOVB ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC0;
-               DIP("fcmovb %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovb %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4159,7 +4163,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC8 ... 0xCF: /* FCMOVE(Z) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
-               DIP("fcmovz %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovz %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4169,7 +4173,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xD0 ... 0xD7: /* FCMOVBE ST(i), ST(0) */
                r_src = (UInt)modrm - 0xD0;
-               DIP("fcmovbe %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovbe %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4295,7 +4299,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC0 ... 0xC7: /* FCMOVNB ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC0;
-               DIP("fcmovnb %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovnb %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4305,7 +4309,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC8 ... 0xCF: /* FCMOVNE(NZ) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
-               DIP("fcmovnz %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovnz %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4315,7 +4319,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xD0 ... 0xD7: /* FCMOVNBE ST(i), ST(0) */
                r_src = (UInt)modrm - 0xD0;
-               DIP("fcmovnbe %%st(%d), %%st(0)\n", r_src);
+               DIP("fcmovnbe %%st(%d), %%st(0)\n", (Int)r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4632,7 +4636,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xD0 ... 0xD7: /* FST %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xD0;
-               DIP("fst %%st(0),%%st(%d)\n", r_dst);
+               DIP("fst %%st(0),%%st(%d)\n", (Int)r_dst);
                /* P4 manual says: "If the destination operand is a
                   non-empty register, the invalid-operation exception
                   is not generated.  Hence put_ST_UNCHECKED. */
@@ -4641,7 +4645,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xD8 ... 0xDF: /* FSTP %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xD8;
-               DIP("fstp %%st(0),%%st(%d)\n", r_dst);
+               DIP("fstp %%st(0),%%st(%d)\n", (Int)r_dst);
                /* P4 manual says: "If the destination operand is a
                   non-empty register, the invalid-operation exception
                   is not generated.  Hence put_ST_UNCHECKED. */
@@ -4651,7 +4655,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xE0 ... 0xE7: /* FUCOM %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xE0;
-               DIP("fucom %%st(0),%%st(%d)\n", r_dst);
+               DIP("fucom %%st(0),%%st(%d)\n", (Int)r_dst);
                /* This forces C1 to zero, which isn't right. */
                put_C3210( 
                    binop( Iop_And32,
@@ -4664,7 +4668,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xE8 ... 0xEF: /* FUCOMP %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xE8;
-               DIP("fucomp %%st(0),%%st(%d)\n", r_dst);
+               DIP("fucomp %%st(0),%%st(%d)\n", (Int)r_dst);
                /* This forces C1 to zero, which isn't right. */
                put_C3210( 
                    binop( Iop_And32,
@@ -4965,11 +4969,11 @@ static void putMMXReg ( UInt archreg, IRExpr* e )
    responsibility of its caller. */
 
 static 
-UInt dis_MMXop_regmem_to_reg ( UChar sorb,
-                               UInt  delta,
-                               UChar opc,
-                               Char* name,
-                               Bool  show_granularity )
+UInt dis_MMXop_regmem_to_reg ( UChar  sorb,
+                               UInt   delta,
+                               UChar  opc,
+                               HChar* name,
+                               Bool   show_granularity )
 {
    HChar   dis_buf[50];
    UChar   modrm = getIByte(delta);
@@ -4983,7 +4987,7 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
    Bool    invG  = False;
    IROp    op    = Iop_INVALID;
    void*   hAddr = NULL;
-   Char*   hName = NULL;
+   HChar*  hName = NULL;
    Bool    eLeft = False;
 
 #  define XXX(_name) do { hAddr = &_name; hName = #_name; } while (0)
@@ -5103,7 +5107,7 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
    putMMXReg( gregOfRM(modrm), mkexpr(res) );
 
    DIP("%s%s %s, %s\n", 
-       name, show_granularity ? nameMMXGran(opc & 3) : (Char*)"",
+       name, show_granularity ? nameMMXGran(opc & 3) : "",
        ( isReg ? nameMMXReg(eregOfRM(modrm)) : dis_buf ),
        nameMMXReg(gregOfRM(modrm)) );
 
@@ -5200,7 +5204,7 @@ UInt dis_MMX_shiftE_imm ( UInt delta, HChar* opname, IROp op )
    vassert(epartIsReg(rm));
    vassert(gregOfRM(rm) == 2 
            || gregOfRM(rm) == 4 || gregOfRM(rm) == 6);
-   amt = (Int)(getIByte(delta+1));
+   amt = getIByte(delta+1);
    delta += 2;
    DIP("%s $%d,%s\n", opname,
                       (Int)amt,
@@ -5559,7 +5563,7 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
                        Int sz,
                        IRExpr* shift_amt,
                        Bool amt_is_literal,
-                       Char* shift_amt_txt,
+                       HChar* shift_amt_txt,
                        Bool left_shift )
 {
    /* shift_amt :: Ity_I8 is the amount to shift.  shift_amt_txt is used
@@ -5676,7 +5680,7 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
 
 typedef enum { BtOpNone, BtOpSet, BtOpReset, BtOpComp } BtOp;
 
-static Char* nameBtOp ( BtOp op )
+static HChar* nameBtOp ( BtOp op )
 {
    switch (op) {
       case BtOpNone:  return "";
@@ -6786,7 +6790,7 @@ UInt dis_SSE_shiftE_imm ( UInt delta, HChar* opname, IROp op )
    vassert(epartIsReg(rm));
    vassert(gregOfRM(rm) == 2 
            || gregOfRM(rm) == 4 || gregOfRM(rm) == 6);
-   amt = (Int)(getIByte(delta+1));
+   amt = getIByte(delta+1);
    delta += 2;
    DIP("%s $%d,%s\n", opname,
                       (Int)amt,
@@ -7317,7 +7321,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       IRTemp rmode  = newTemp(Ity_I32);
       IRTemp f32lo  = newTemp(Ity_F32);
       IRTemp f32hi  = newTemp(Ity_F32);
-      Bool   r2zero = insn[1] == 0x2C;
+      Bool   r2zero = toBool(insn[1] == 0x2C);
 
       do_MMX_preamble();
       modrm = getIByte(delta+2);
@@ -7371,7 +7375,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
        && (insn[2] == 0x2D || insn[2] == 0x2C)) {
       IRTemp rmode = newTemp(Ity_I32);
       IRTemp f32lo = newTemp(Ity_F32);
-      Bool   r2zero = insn[2] == 0x2C;
+      Bool   r2zero = toBool(insn[2] == 0x2C);
       vassert(sz == 4);
 
       modrm = getIByte(delta+3);
@@ -8114,7 +8118,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    if (sz == 4 && insn[0] == 0x0F && (insn[1] == 0x15 || insn[1] == 0x14)) {
       IRTemp sV, dV;
       IRTemp s3, s2, s1, s0, d3, d2, d1, d0;
-      Bool hi = insn[1] == 0x15;
+      Bool hi = toBool(insn[1] == 0x15);
       sV = newTemp(Ity_V128);
       dV = newTemp(Ity_V128);
       s3 = s2 = s1 = s0 = d3 = d2 = d1 = d0 = IRTemp_INVALID;
@@ -8361,7 +8365,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       IRTemp rmode  = newTemp(Ity_I32);
       IRTemp f64lo  = newTemp(Ity_F64);
       IRTemp f64hi  = newTemp(Ity_F64);
-      Bool   r2zero = insn[1] == 0x2C;
+      Bool   r2zero = toBool(insn[1] == 0x2C);
 
       do_MMX_preamble();
       modrm = getIByte(delta+2);
@@ -8561,7 +8565,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
        && (insn[2] == 0x2D || insn[2] == 0x2C)) {
       IRTemp rmode = newTemp(Ity_I32);
       IRTemp f64lo = newTemp(Ity_F64);
-      Bool   r2zero = insn[2] == 0x2C;
+      Bool   r2zero = toBool(insn[2] == 0x2C);
       vassert(sz == 4);
 
       modrm = getIByte(delta+3);
@@ -9283,7 +9287,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       IRTemp d0 = newTemp(Ity_I64);
       IRTemp sV = newTemp(Ity_V128);
       IRTemp dV = newTemp(Ity_V128);
-      Bool   hi = insn[1] == 0x15;
+      Bool   hi = toBool(insn[1] == 0x15);
 
       modrm = insn[2];
       assign( dV, getXMMReg(gregOfRM(modrm)) );
@@ -10230,7 +10234,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta += 2;
       dis_ret(d32);
       whatNext = Dis_StopHere;
-      DIP("ret %d\n", d32);
+      DIP("ret %d\n", (Int)d32);
       break;
    case 0xC3: /* RET */
       dis_ret(0);
@@ -11891,7 +11895,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       case 0xA4: /* SHLDv imm8,Gv,Ev */
          modrm = getIByte(delta);
          d32   = delta + lengthAMode(delta);
-         vex_sprintf(dis_buf, "$%d", delta);
+         vex_sprintf(dis_buf, "$%d", getIByte(d32));
          delta = dis_SHLRD_Gv_Ev ( 
                   sorb, delta, modrm, sz, 
                   mkU8(getIByte(d32)), True, /* literal */
@@ -11908,7 +11912,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       case 0xAC: /* SHRDv imm8,Gv,Ev */
          modrm = getIByte(delta);
          d32   = delta + lengthAMode(delta);
-         vex_sprintf(dis_buf, "$%d", delta);
+         vex_sprintf(dis_buf, "$%d", getIByte(d32));
          delta = dis_SHLRD_Gv_Ev ( 
                     sorb, delta, modrm, sz, 
                     mkU8(getIByte(d32)), True, /* literal */

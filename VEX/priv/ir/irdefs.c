@@ -714,7 +714,7 @@ IRConst* IRConst_V128 ( UShort con )
 
 /* Constructors -- IRCallee */
 
-IRCallee* mkIRCallee ( Int regparms, Char* name, void* addr )
+IRCallee* mkIRCallee ( Int regparms, HChar* name, void* addr )
 {
    IRCallee* ce = LibVEX_Alloc(sizeof(IRCallee));
    ce->regparms = regparms;
@@ -2086,7 +2086,7 @@ IRExpr* mkIRExpr_HWord ( HWord hw )
    vpanic("mkIRExpr_HWord");
 }
 
-IRDirty* unsafeIRDirty_0_N ( Int regparms, Char* name, void* addr, 
+IRDirty* unsafeIRDirty_0_N ( Int regparms, HChar* name, void* addr, 
                              IRExpr** args ) 
 {
    IRDirty* d = emptyIRDirty();
@@ -2097,7 +2097,7 @@ IRDirty* unsafeIRDirty_0_N ( Int regparms, Char* name, void* addr,
 }
 
 IRDirty* unsafeIRDirty_1_N ( IRTemp dst, 
-                             Int regparms, Char* name, void* addr, 
+                             Int regparms, HChar* name, void* addr, 
                              IRExpr** args ) 
 {
    IRDirty* d = emptyIRDirty();
@@ -2109,7 +2109,7 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 }
 
 IRExpr* mkIRExprCCall ( IRType retty,
-                        Int regparms, Char* name, void* addr, 
+                        Int regparms, HChar* name, void* addr, 
                         IRExpr** args )
 {
    return IRExpr_CCall ( mkIRCallee ( regparms, name, addr ), 

@@ -1180,6 +1180,15 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_Bit);
 
+   /* Constant 1:Bit */
+   if (e->tag == Iex_Const && e->Iex.Const.con->Ico.Bit == True) {
+      vassert(e->Iex.Const.con->tag == Ico_Bit);
+      HReg r = newVRegI(env);
+      addInstr(env, X86Instr_Alu32R(Xalu_MOV,X86RMI_Imm(0),r));
+      addInstr(env, X86Instr_Alu32R(Xalu_XOR,X86RMI_Reg(r),r));
+      return Xcc_Z;
+   }
+
    /* Not1(...) */
    if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_Not1) {
       /* Generate code for the arg, and negate the test condition */

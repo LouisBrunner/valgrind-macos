@@ -1,4 +1,144 @@
-Snapshot 2003XXXX (XX XXXX 2003)
+
+Unstable (cvs head) release 2.1.0 (15 December 2003)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For whatever it's worth, 2.1.0 actually seems pretty darn stable to me
+(Julian).  It looks eminently usable, and given that it fixes some
+significant bugs, may well be worth using on a day-to-day basis.
+2.1.0 is known to build and pass regression tests on: SuSE 9, SuSE
+8.2, RedHat 8.
+
+2.1.0 most notably includes Jeremy Fitzhardinge's complete overhaul of
+handling of system calls and signals, and their interaction with
+threads.  In general, the accuracy of the system call, thread and
+signal simulations is much improved.  Specifically:
+
+- Blocking system calls behave exactly as they do when running
+  natively (not on valgrind).  That is, if a syscall blocks only the
+  calling thread when running natively, than it behaves the same on
+  valgrind.  No more mysterious hangs because V doesn't know that some
+  syscall or other, should block only the calling thread.
+
+- Interrupted syscalls should now give more faithful results.
+
+- Finally, signal contexts in signal handlers are supported.  As a
+  result, konqueror on SuSE 9 no longer segfaults when notified of
+  file changes in directories it is watching.
+
+Other changes:
+
+- Robert Walsh's file descriptor leakage checks.  When enabled,
+  Valgrind will print out a list of open file descriptors on
+  exit.  Along with each file descriptor, Valgrind prints out a stack
+  backtrace of where the file was opened and any details relating to the
+  file descriptor such as the file name or socket details.
+  To use, give: --track-fds=yes
+
+- Implemented a few more SSE/SSE2 instructions.
+
+- Less crud on the stack when you do 'where' inside a GDB attach.
+
+- Fixed the following bugs:
+  68360: Valgrind does not compile against 2.6.0-testX kernels
+  68525: CVS head doesn't compile on C90 compilers
+  68566: pkgconfig support (wishlist)
+  68588: Assertion `sz == 4' failed in vg_to_ucode.c (disInstr)
+  69140: valgrind not able to explicitly specify a path to a binary. 
+  69432: helgrind asserts encountering a MutexErr when there are 
+         EraserErr suppressions
+
+
+
+Stable release 2.0.0 (5 Nov 2003)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+2.0.0 improves SSE/SSE2 support, fixes some minor bugs, and
+improves support for SuSE 9 and the Red Hat "Severn" beta.
+
+- Further improvements to SSE/SSE2 support.  The entire test suite of
+  the GNU Scientific Library (gsl-1.4) compiled with Intel Icc 7.1
+  20030307Z '-g -O -xW' now works.  I think this gives pretty good
+  coverage of SSE/SSE2 floating point instructions, or at least the
+  subset emitted by Icc.
+
+- Also added support for the following instructions:
+    MOVNTDQ UCOMISD UNPCKLPS UNPCKHPS SQRTSS
+    PUSH/POP %{FS,GS}, and PUSH %CS (Nb: there is no POP %CS).
+
+- CFI support for GDB version 6.  Needed to enable newer GDBs
+  to figure out where they are when using --gdb-attach=yes.
+
+- Fix this:
+      mc_translate.c:1091 (memcheck_instrument): Assertion
+      `u_in->size == 4 || u_in->size == 16' failed.
+
+- Return an error rather than panicing when given a bad socketcall.
+
+- Fix checking of syscall rt_sigtimedwait().
+
+- Implement __NR_clock_gettime (syscall 265).  Needed on Red Hat Severn.
+
+- Fixed bug in overlap check in strncpy() -- it was assuming the src was 'n'
+  bytes long, when it could be shorter, which could cause false
+  positives.
+
+- Support use of select() for very large numbers of file descriptors.
+
+- Don't fail silently if the executable is statically linked, or is
+  setuid/setgid. Print an error message instead.
+
+- Support for old DWARF-1 format line number info.
+
+
+
+Snapshot 20031012 (12 October 2003)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Three months worth of bug fixes, roughly.  Most significant single
+change is improved SSE/SSE2 support, mostly thanks to Dirk Mueller.
+
+20031012 builds on Red Hat Fedora ("Severn") but doesn't really work
+(curiosly, mozilla runs OK, but a modest "ls -l" bombs).  I hope to
+get a working version out soon.  It may or may not work ok on the
+forthcoming SuSE 9; I hear positive noises about it but haven't been
+able to verify this myself (not until I get hold of a copy of 9).
+
+A detailed list of changes, in no particular order:
+
+- Describe --gen-suppressions in the FAQ.
+
+- Syscall __NR_waitpid supported.
+
+- Minor MMX bug fix.
+
+- -v prints program's argv[] at startup.
+
+- More glibc-2.3 suppressions.
+
+- Suppressions for stack underrun bug(s) in the c++ support library
+  distributed with Intel Icc 7.0.
+
+- Fix problems reading /proc/self/maps.
+
+- Fix a couple of messages that should have been suppressed by -q, 
+  but weren't.
+
+- Make Addrcheck understand "Overlap" suppressions.
+
+- At startup, check if program is statically linked and bail out if so.
+
+- Cachegrind: Auto-detect Intel Pentium-M, also VIA Nehemiah
+
+- Memcheck/addrcheck: minor speed optimisations
+
+- Handle syscall __NR_brk more correctly than before.
+
+- Fixed incorrect allocate/free mismatch errors when using
+  operator new(unsigned, std::nothrow_t const&)
+  operator new[](unsigned, std::nothrow_t const&)
+
+- Support POSIX pthread spinlocks.
+
+- Fixups for clean compilation with gcc-3.3.1.
 
 - Implemented more opcodes: 
     - push %es
@@ -14,8 +154,9 @@ Snapshot 2003XXXX (XX XXXX 2003)
     - mov imm32, %esp
     - all "in" and "out" opcodes
     - inc/dec %esp
+    - A whole bunch of SSE/SSE2 instructions
 
-- Memcheck: Implemented handling of more SSE(2) constructs
+- Memcheck: don't bomb on SSE/SSE2 code.
 
 
 Snapshot 20030725 (25 July 2003)

@@ -3420,8 +3420,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                               arg1, sizeof(vki_kstack_t) );
          }
          if (arg2 != (UInt)NULL) {
-            SYSCALL_TRACK( pre_mem_write, tid, "sigaltstack(ss)", 
-                              arg1, sizeof(vki_kstack_t) );
+            SYSCALL_TRACK( pre_mem_write, tid, "sigaltstack(oss)", 
+                              arg2, sizeof(vki_kstack_t) );
          }
 #        if SIGNAL_SIMULATION
          VG_(do__NR_sigaltstack) (tid);

@@ -227,6 +227,15 @@ void ppIROp ( IROp op )
       case Iop_Add32Fx4:  vex_printf("Add32Fx4"); return;
       case Iop_Add32F0x4: vex_printf("Add32F0x4"); return;
 
+      case Iop_Div32Fx4:  vex_printf("Div32Fx4"); return;
+      case Iop_Div32F0x4: vex_printf("Div32F0x4"); return;
+
+      case Iop_Max32Fx4:  vex_printf("Max32Fx4"); return;
+      case Iop_Max32F0x4: vex_printf("Max32F0x4"); return;
+
+      case Iop_Min32Fx4:  vex_printf("Min32Fx4"); return;
+      case Iop_Min32F0x4: vex_printf("Min32F0x4"); return;
+
       case Iop_CmpEQ32Fx4: vex_printf("CmpEQ32Fx4"); return;
       case Iop_CmpLT32Fx4: vex_printf("CmpLT32Fx4"); return;
       case Iop_CmpLE32Fx4: vex_printf("CmpLE32Fx4"); return;
@@ -1101,6 +1110,9 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_CmpEQ32F0x4: case Iop_CmpLT32F0x4:
       case Iop_CmpLE32F0x4: case Iop_CmpUN32F0x4:
       case Iop_Add32Fx4: case Iop_Add32F0x4:
+      case Iop_Div32Fx4: case Iop_Div32F0x4:
+      case Iop_Max32Fx4: case Iop_Max32F0x4:
+      case Iop_Min32Fx4: case Iop_Min32F0x4:
       case Iop_And128: case Iop_Or128: case Iop_Xor128:
          BINARY(Ity_V128, Ity_V128,Ity_V128);
 

@@ -7351,6 +7351,47 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       goto decode_success;
    }
 
+   /* 0F 5E = DIVPS -- div 32Fx4 from R/M to R */
+   if (insn[0] == 0x0F && insn[1] == 0x5E) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+2, "divps", Iop_Div32Fx4 );
+      goto decode_success;
+   }
+
+   /* F3 0F 5E = DIVSS -- div 32F0x4 from R/M to R */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5E) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+3, "divss", Iop_Div32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F 5F = MAXPS -- max 32Fx4 from R/M to R */
+   if (insn[0] == 0x0F && insn[1] == 0x5F) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+2, "maxps", Iop_Max32Fx4 );
+      goto decode_success;
+   }
+
+   /* F3 0F 5F = MAXSS -- max 32F0x4 from R/M to R */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5F) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+3, "maxss", Iop_Max32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F 5D = MINPS -- min 32Fx4 from R/M to R */
+   if (insn[0] == 0x0F && insn[1] == 0x5D) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+2, "minps", Iop_Min32Fx4 );
+      goto decode_success;
+   }
+
+   /* F3 0F 5D = MINSS -- min 32F0x4 from R/M to R */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5D) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+3, "minss", Iop_Min32F0x4 );
+      goto decode_success;
+   }
 
 //-- 
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */

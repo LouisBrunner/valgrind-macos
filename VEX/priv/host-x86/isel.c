@@ -2490,6 +2490,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpLT32Fx4: op = Xsse_CMPLTF; goto do_32Fx4;
       case Iop_CmpLE32Fx4: op = Xsse_CMPLEF; goto do_32Fx4;
       case Iop_Add32Fx4:   op = Xsse_ADDF;   goto do_32Fx4;
+      case Iop_Div32Fx4:   op = Xsse_DIVF;   goto do_32Fx4;
+      case Iop_Max32Fx4:   op = Xsse_MAXF;   goto do_32Fx4;
+      case Iop_Min32Fx4:   op = Xsse_MINF;   goto do_32Fx4;
       do_32Fx4:
       {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
@@ -2504,6 +2507,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_CmpLT32F0x4: op = Xsse_CMPLTF; goto do_32F0x4;
       case Iop_CmpLE32F0x4: op = Xsse_CMPLEF; goto do_32F0x4;
       case Iop_Add32F0x4:   op = Xsse_ADDF;   goto do_32F0x4;
+      case Iop_Div32F0x4:   op = Xsse_DIVF;   goto do_32F0x4;
+      case Iop_Max32F0x4:   op = Xsse_MAXF;   goto do_32F0x4;
+      case Iop_Min32F0x4:   op = Xsse_MINF;   goto do_32F0x4;
       do_32F0x4: {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);

@@ -508,6 +508,9 @@ HChar* showX86SseOp ( X86SseOp op ) {
       case Xsse_ADDF:   return "add";
       case Xsse_SUBF:   return "sub";
       case Xsse_MULF:   return "mul";
+      case Xsse_DIVF:   return "div";
+      case Xsse_MAXF:   return "max";
+      case Xsse_MINF:   return "min";
       case Xsse_CMPEQF: return "cmpFeq";
       case Xsse_CMPLTF: return "cmpFlt";
       case Xsse_CMPLEF: return "cmpFle";
@@ -2363,6 +2366,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       *p++ = 0x0F;
       switch (i->Xin.Sse32Fx4.op) {
          case Xsse_ADDF:   *p++ = 0x58; break;
+         case Xsse_DIVF:   *p++ = 0x5E; break;
+         case Xsse_MAXF:   *p++ = 0x5F; break;
+         case Xsse_MINF:   *p++ = 0x5D; break;
          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
@@ -2380,6 +2386,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       *p++ = 0x0F;
       switch (i->Xin.Sse32FLo.op) {
          case Xsse_ADDF:   *p++ = 0x58; break;
+         case Xsse_DIVF:   *p++ = 0x5E; break;
+         case Xsse_MAXF:   *p++ = 0x5F; break;
+         case Xsse_MINF:   *p++ = 0x5D; break;
          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;

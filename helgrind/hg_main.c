@@ -1453,17 +1453,13 @@ static Bool check_cycle(const Mutex *start, const LockSet* lockset)
    return check_cycle_inner(start, lockset);
 }
 
-/* catch bad mutex state changes (though the common ones are handled
-   by core) */
-static void set_mutex_state(Mutex *mutex, MutexState state,
-			    ThreadId tid, ThreadState *tst)
+/* test to see if a mutex state change would be problematic; this
+   makes no changes to the mutex state.  This should be called before
+   the locking thread has actually blocked. */
+static void test_mutex_state(Mutex *mutex, MutexState state,
+			     ThreadId tid, ThreadState *tst)
 {
    static const Bool debug = False;
-
-   if (debug)
-      VG_(printf)("\ntid %d changing mutex (%p)->%p%(y state %s -> %s\n",
-		  tid, mutex, mutex->mutexp, mutex->mutexp,
-		  pp_MutexState(mutex->state), pp_MutexState(state));
 
    if (mutex->state == MxDead) {
       Char *str;
@@ -1476,6 +1472,73 @@ static void set_mutex_state(Mutex *mutex, MutexState state,
 
       /* can't do anything legal to a destroyed mutex */
       record_mutex_error(tid, mutex, str, mutex->location);
+      return;
+   }
+
+   switch(state) {
+   case MxLocked:
+      sk_assert(!check_cycle(mutex, mutex->lockdep));
+
+      if (debug)
+	 print_LockSet("thread holding", thread_locks[tid]);
+
+      if (check_cycle(mutex, thread_locks[tid]))
+	 record_lockgraph_error(tid, mutex, thread_locks[tid], mutex->lockdep);
+      else {
+	 mutex->lockdep = ls_union(mutex->lockdep, thread_locks[tid]);
+
+	 if (debug) {
+	    VG_(printf)("giving mutex %p%(y lockdep = %p ", 
+			mutex->mutexp, mutex->mutexp, mutex->lockdep);
+	    print_LockSet("lockdep", mutex->lockdep);
+	 }
+      }
+      break;
+
+   case MxUnlocked:
+      if (debug)
+	 print_LockSet("thread holding", thread_locks[tid]);
+
+      if (mutex->state != MxLocked) {
+	 record_mutex_error(tid, mutex, 
+			    "unlock non-locked mutex", mutex->location);
+      }
+      if (mutex->tid != tid) {
+	 record_mutex_error(tid, mutex, 
+			    "unlock someone else's mutex", mutex->location);
+      }
+      break;
+
+   case MxDead:
+      break;
+
+   default:
+      break;
+   }
+}
+
+/* Update a mutex state.  Expects most error testing and reporting to
+   have happened in test_mutex_state().  The assumption is that no
+   client code is run by thread tid between test and set, either
+   because it is blocked or test and set are called together
+   atomically.  
+
+   Setting state to MxDead is the exception, since that can happen as
+   a result of any thread freeing memory; in this case set_mutex_state
+   does all the error reporting as well.
+*/
+static void set_mutex_state(Mutex *mutex, MutexState state,
+			    ThreadId tid, ThreadState *tst)
+{
+   static const Bool debug = False;
+
+   if (debug)
+      VG_(printf)("\ntid %d changing mutex (%p)->%p%(y state %s -> %s\n",
+		  tid, mutex, mutex->mutexp, mutex->mutexp,
+		  pp_MutexState(mutex->state), pp_MutexState(state));
+
+   if (mutex->state == MxDead) {
+      /* can't do anything legal to a destroyed mutex */
       return;
    }
 
@@ -1495,20 +1558,6 @@ static void set_mutex_state(Mutex *mutex, MutexState state,
 
       sk_assert(!check_cycle(mutex, mutex->lockdep));
 
-      if (debug)
-	 print_LockSet("thread holding", thread_locks[tid]);
-
-      if (check_cycle(mutex, thread_locks[tid]))
-	 record_lockgraph_error(tid, mutex, thread_locks[tid], mutex->lockdep);
-      else {
-	 mutex->lockdep = ls_union(mutex->lockdep, thread_locks[tid]);
-
-	 if (debug) {
-	    VG_(printf)("giving mutex %p%(y lockdep = %p ", 
-			mutex->mutexp, mutex->mutexp, mutex->lockdep);
-	    print_LockSet("lockdep", mutex->lockdep);
-	 }
-      }
       mutex->tid = tid;
       break;
 
@@ -1516,14 +1565,9 @@ static void set_mutex_state(Mutex *mutex, MutexState state,
       if (debug)
 	 print_LockSet("thread holding", thread_locks[tid]);
 
-      if (mutex->state != MxLocked) {
-	 record_mutex_error(tid, mutex, 
-			    "unlock non-locked mutex", mutex->location);
-      }
-      if (mutex->tid != tid) {
-	 record_mutex_error(tid, mutex, 
-			    "unlock someone else's mutex", mutex->location);
-      }
+      if (mutex->state != MxLocked || mutex->tid != tid)
+	 break;
+
       mutex->tid = VG_INVALID_THREADID;
       break;
 
@@ -2406,6 +2450,13 @@ Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
 }
 
 
+static void eraser_pre_mutex_lock(ThreadId tid, void* void_mutex)
+{
+   Mutex *mutex = get_mutex((Addr)void_mutex);
+
+   test_mutex_state(mutex, MxLocked, tid, VG_(get_ThreadState)(tid));
+}
+
 static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
 {
    static const Bool debug = False;
@@ -2447,6 +2498,7 @@ static void eraser_post_mutex_unlock(ThreadId tid, void* void_mutex)
    Mutex *mutex = get_mutex((Addr)void_mutex);
    const LockSet *ls;
 
+   test_mutex_state(mutex, MxUnlocked, tid, VG_(get_ThreadState)(tid));
    set_mutex_state(mutex, MxUnlocked, tid, VG_(get_ThreadState)(tid));
 
    if (!ismember(thread_locks[tid], mutex))
@@ -2870,6 +2922,7 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    track->pre_mem_write         = & eraser_pre_mem_write;
    track->post_mem_write        = NULL;
 
+   track->pre_mutex_lock        = & eraser_pre_mutex_lock;
    track->post_mutex_lock       = & eraser_post_mutex_lock;
    track->post_mutex_unlock     = & eraser_post_mutex_unlock;
 

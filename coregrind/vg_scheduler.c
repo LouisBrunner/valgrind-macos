@@ -2435,6 +2435,8 @@ void do_pthread_mutex_lock( ThreadId tid,
             /* caller is polling; so return immediately. */
             SET_EDX(tid, EBUSY);
          } else {
+	    VG_TRACK ( pre_mutex_lock, tid, mutex );
+
             VG_(threads)[tid].status        = VgTs_WaitMX;
             VG_(threads)[tid].associated_mx = mutex;
             SET_EDX(tid, 0); /* pth_mx_lock success value */
@@ -2450,6 +2452,9 @@ void do_pthread_mutex_lock( ThreadId tid,
    } else {
       /* Nobody owns it.  Sanity check ... */
       vg_assert(mutex->__m_owner == VG_INVALID_THREADID);
+
+      VG_TRACK ( pre_mutex_lock, tid, mutex );
+
       /* We get it! [for the first time]. */
       mutex->__m_count = 1;
       mutex->__m_owner = (_pthread_descr)tid;
@@ -2489,6 +2494,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       locked now so that it balances with unlocks */
    if (mutex->__m_kind & VG_PTHREAD_PREHISTORY) {
       mutex->__m_kind &= ~VG_PTHREAD_PREHISTORY;
+      VG_TRACK( pre_mutex_lock, (ThreadId)mutex->__m_owner, mutex );
       VG_TRACK( post_mutex_lock, (ThreadId)mutex->__m_owner, mutex );
    }
 
@@ -2616,6 +2622,8 @@ void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid )
    } else {
       /* Currently held.  Make thread tid be blocked on it. */
       vg_assert(mx->__m_count > 0);
+      VG_TRACK( pre_mutex_lock, tid, mx );
+
       VG_(threads)[tid].status        = VgTs_WaitMX;
       SET_EDX(tid, ETIMEDOUT);      /* pthread_cond_wait return value */
       VG_(threads)[tid].associated_cv = NULL;
@@ -2661,6 +2669,8 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
 
       mx = VG_(threads)[i].associated_mx;
       vg_assert(mx != NULL);
+
+      VG_TRACK( pre_mutex_lock, i, mx );
 
       if (mx->__m_owner == VG_INVALID_THREADID) {
          /* Currently unheld; hand it out to thread i. */

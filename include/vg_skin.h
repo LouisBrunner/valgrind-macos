@@ -1345,12 +1345,27 @@ typedef
 
 
       /* Mutex events (not exhaustive) */
+
+      /* Called before a thread can block while waiting for a mutex
+	 (called regardless of whether the thread will block or
+	 not) */
+      void (*pre_mutex_lock)    ( ThreadId tid, 
+                                  void* /*pthread_mutex_t* */ mutex );
+      /* Called once the thread actually holds the mutex (always
+	 paired with pre_mutex_lock) */
       void (*post_mutex_lock)   ( ThreadId tid, 
                                   void* /*pthread_mutex_t* */ mutex );
+      /* Called after a thread has released a mutex (no need for a
+	 corresponding pre_mutex_unlock, because unlocking can't
+	 block) */
       void (*post_mutex_unlock) ( ThreadId tid, 
                                   void* /*pthread_mutex_t* */ mutex );
 
+      /* Called during thread create, before the new thread has run
+	 any instructions (or touched any memory). */
       void (*post_thread_create)( ThreadId tid, ThreadId child );
+      /* Called once the joinee thread is terminated and the joining
+	 thread is about to resume. */
       void (*post_thread_join)  ( ThreadId joiner, ThreadId joinee );
       
       /* Others... thread, condition variable, signal events... */

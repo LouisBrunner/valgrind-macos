@@ -88,6 +88,16 @@ static
 int my_do_syscall3 ( int syscallno, 
                      int arg1, int arg2, int arg3 );
 
+static
+__inline__
+int is_kerror ( int res )
+{
+   if (res >= -4095 && res <= -1)
+      return 1;
+   else
+      return 0;
+}
+
 
 #ifdef GLIBC_2_3
    /* kludge by JRS (not from glibc) ... */
@@ -1999,18 +2009,34 @@ int VGL_(recv)(int s, void *buf, size_t len, int flags)
 
 int VGL_(readv)(int fd, const struct iovec *iov, int count)
 {
+   int res;
+
    __my_pthread_testcancel();
    wait_for_fd_to_be_readable_or_erring(fd);
    __my_pthread_testcancel();
-   return my_do_syscall3(__NR_readv, fd, (unsigned)iov, count);
+   res = my_do_syscall3(__NR_readv, fd, (unsigned)iov, count);
+
+   if (is_kerror(res)) {
+      *(__errno_location()) = -res;
+      return -1;
+   }
+   return res;
 }
 
 int VGL_(writev)(int fd, struct iovec *iov, int count)
 {
+   int res;
+
    __my_pthread_testcancel();
    wait_for_fd_to_be_writable_or_erring(fd);
    __my_pthread_testcancel();
-   return my_do_syscall3(__NR_writev, fd, (unsigned)iov, count);
+   res = my_do_syscall3(__NR_writev, fd, (unsigned)iov, count);
+
+   if (is_kerror(res)) {
+      *(__errno_location()) = -res;
+      return -1;
+   }
+   return res;
 }
 
 extern
@@ -2308,17 +2334,6 @@ pid_t __vfork(void)
 /*--------------------------------------------------*/
 
 #include "vg_kerneliface.h"
-
-static
-__inline__
-int is_kerror ( int res )
-{
-   if (res >= -4095 && res <= -1)
-      return 1;
-   else
-      return 0;
-}
-
 
 static
 int my_do_syscall1 ( int syscallno, int arg1 )

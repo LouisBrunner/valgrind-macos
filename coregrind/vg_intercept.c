@@ -225,6 +225,11 @@ WEAK int VGL_(select)( int n,
    args[3] = (int)exceptfds;
    args[4] = (int)timeout;
    res = my_do_syscall1(__NR_select, (int)(&(args[0])) );
+
+   if (is_kerror(res)) {
+      *(__errno_location()) = -res;
+      return -1;
+   }
    return res;
 }
 
@@ -245,7 +250,14 @@ strong_alias(select, __select)
 
 WEAK int VGL_(readv)(int fd, const struct iovec *iov, int count)
 {
-   return my_do_syscall3(__NR_readv, fd, (unsigned)iov, count);
+   int res = my_do_syscall3(__NR_readv, fd, (unsigned)iov, count);
+
+   if (is_kerror(res)) {
+      *(__errno_location()) = -res;
+      return -1;
+   }
+
+   return res;
 }
 
 int readv (int fd, const struct iovec *iov, int count)
@@ -259,7 +271,14 @@ strong_alias(readv, __readv)
 
 WEAK int VGL_(writev)(int fd, const struct iovec *iov, int count)
 {
-   return my_do_syscall3(__NR_writev, fd, (unsigned)iov, count);
+   int res = my_do_syscall3(__NR_writev, fd, (unsigned)iov, count);
+
+   if (is_kerror(res)) {
+      *(__errno_location()) = -res;
+      return -1;
+   }
+
+   return res;
 }
 
 int writev (int fd, const struct iovec *iov, int count)

@@ -1586,7 +1586,7 @@ extern VgSectKind VG_(seg_sect_kind)(Addr);
 typedef
    struct _VgHashNode {
       struct _VgHashNode * next;
-      UInt               key;
+      UWord              key;
    }
    VgHashNode;
 
@@ -1606,7 +1606,7 @@ extern void VG_(HT_add_node) ( VgHashTable t, VgHashNode* node );
 /* Looks up a node in the hash table.  Also returns the address of the
    previous node's `next' pointer which allows it to be removed from the
    list later without having to look it up again.  */
-extern VgHashNode* VG_(HT_get_node) ( VgHashTable t, UInt key,
+extern VgHashNode* VG_(HT_get_node) ( VgHashTable t, UWord key,
                                     /*OUT*/VgHashNode*** next_ptr );
 
 /* Allocates an array of pointers to all the shadow chunks of malloc'd

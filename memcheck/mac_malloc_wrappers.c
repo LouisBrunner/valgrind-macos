@@ -304,7 +304,7 @@ void MAC_(handle_free) ( Addr p, UInt rzB, MAC_AllocKind kind )
 
    cmalloc_n_frees++;
 
-   mc = (MAC_Chunk*)VG_(HT_get_node) ( MAC_(malloc_list), (UInt)p,
+   mc = (MAC_Chunk*)VG_(HT_get_node) ( MAC_(malloc_list), (UWord)p,
                                        (void*)&prev_chunks_next_ptr );
    if (mc == NULL) {
       MAC_(record_free_error) ( tid, p );
@@ -353,7 +353,7 @@ void* SK_(realloc) ( void* p, SizeT new_size )
       return NULL;
 
    /* First try and find the block. */
-   mc = (MAC_Chunk*)VG_(HT_get_node) ( MAC_(malloc_list), (UInt)p,
+   mc = (MAC_Chunk*)VG_(HT_get_node) ( MAC_(malloc_list), (UWord)p,
                                        (void*)&prev_chunks_next_ptr );
 
    if (mc == NULL) {
@@ -460,7 +460,7 @@ void MAC_(destroy_mempool)(Addr pool)
    MAC_Mempool** prev_next;
 
    mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list),
-                                         (UInt)pool,
+                                         (UWord)pool,
                                          (void*)&prev_next );
 
    if (mp == NULL) {
@@ -482,7 +482,7 @@ void MAC_(mempool_alloc)(Addr pool, Addr addr, SizeT size)
    MAC_Mempool*  mp;
    MAC_Mempool** prev_next;
 
-   mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list), (UInt)pool,
+   mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list), (UWord)pool,
                                         (void*)&prev_next );
 
    if (mp == NULL) {
@@ -505,7 +505,7 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
    ThreadId      tid = VG_(get_current_or_recent_tid)();
 
 
-   mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list), (UInt)pool,
+   mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list), (UWord)pool,
                                        (void*)&prev_pool);
 
    if (mp == NULL) {
@@ -513,7 +513,7 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
       return;
    }
 
-   mc = (MAC_Chunk*)VG_(HT_get_node)(mp->chunks, (UInt)addr,
+   mc = (MAC_Chunk*)VG_(HT_get_node)(mp->chunks, (UWord)addr,
                                      (void*)&prev_chunk);
 
    if (mc == NULL) {

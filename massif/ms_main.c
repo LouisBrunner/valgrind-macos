@@ -648,7 +648,7 @@ void add_HP_Chunk(HP_Chunk* hc)
 static __inline__ 
 HP_Chunk* get_HP_Chunk(void* p, HP_Chunk*** prev_chunks_next_ptr)
 {
-   return (HP_Chunk*)VG_(HT_get_node) ( malloc_list, (UInt)p,
+   return (HP_Chunk*)VG_(HT_get_node) ( malloc_list, (UWord)p,
                                         (VgHashNode***)prev_chunks_next_ptr );
 }
 

@@ -1920,7 +1920,7 @@ void handle_free ( void* p )
    HG_Chunk*  hc;
    HG_Chunk** prev_chunks_next_ptr;
 
-   hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UInt)p,
+   hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UWord)p,
                                       (VgHashNode***)&prev_chunks_next_ptr );
    if (hc == NULL) {
       return;
@@ -1952,7 +1952,7 @@ void* SK_(realloc) ( void* p, SizeT new_size )
    ThreadId   tid = VG_(get_current_or_recent_tid)();
 
    /* First try and find the block. */
-   hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UInt)p,
+   hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UWord)p,
                                        (VgHashNode***)&prev_chunks_next_ptr );
 
    if (hc == NULL) {

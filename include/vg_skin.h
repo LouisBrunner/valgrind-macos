@@ -565,14 +565,14 @@ typedef
       MMX2_MemRd,
       MMX2_MemWr,
 
-      /* 2 bytes, reads/writes an integer register.  Insns of the form
+      /* 2 bytes, reads/writes an integer ("E") register.  Insns of the form
          bbbbbbbb:11 mmxreg ireg.
          Held in val1[15:0], and ireg is to be replaced
          at codegen time by a reference to the relevant RealReg.
          Transfer is always at size 4.  Arg2 holds this Temp/Real Reg.
       */
-      MMX2_RegRd,
-      MMX2_RegWr,
+      MMX2_ERegRd,
+      MMX2_ERegWr,
 
       /* ------------ SSE/SSE2 ops ------------ */
       /* In the following:
@@ -584,13 +584,15 @@ typedef
          to be replaced at codegen time to a Temp/RealReg holding the
          address.
 
-         'g' indicates a byte of the form '11 xmmreg ireg', where ireg
-         is written, and is to be replaced at codegen time by a
-         reference to the relevant RealReg.
+         'e' indicates a byte of the form '11 xmmreg ireg', where ireg
+         is read or written, and is to be replaced at codegen time by
+         a reference to the relevant RealReg.  'e' because it's the E
+         reg in Intel encoding parlance.
 
-         'h' indicates a byte of the form '11 ireg xmmreg', where ireg
-         is read, and is to be replaced at codegen time by a reference
-         to the relevant RealReg.  */
+         'g' indicates a byte of the form '11 ireg xmmreg', where ireg
+         is read or written, and is to be replaced at codegen time by
+         a reference to the relevant RealReg.  'g' because it's called
+         G in Intel parlance. */
 
       /* 3 bytes, no memrefs, no iregdefs, copy exactly to the
          output.  Held in val1[15:0] and val2[7:0]. */
@@ -629,7 +631,7 @@ typedef
       SSE2a1_MemWr,
 #endif
       /* 4 bytes, writes an integer register.  Insns of the form
-         bbbbbbbb:bbbbbbbb:bbbbbbbb:11 ireg xmmreg.
+         bbbbbbbb:bbbbbbbb:bbbbbbbb:11 ireg bbb.
          Held in val1[15:0] and val2[15:0], and ireg is to be replaced
          at codegen time by a reference to the relevant RealReg.
          Transfer is always at size 4.  Arg3 holds this Temp/Real Reg.
@@ -645,6 +647,14 @@ typedef
       */
       SSE3g1_RegWr,
 
+      /* 4 bytes, reads an integer register.  Insns of the form
+         bbbbbbbb:bbbbbbbb:bbbbbbbb:11 bbb ireg.
+         Held in val1[15:0] and val2[15:0], and ireg is to be replaced
+         at codegen time by a reference to the relevant RealReg.
+         Transfer is always at size 4.  Arg3 holds this Temp/Real Reg.
+      */
+      SSE3e_RegRd,
+
       /* 5 bytes, reads an integer register.  Insns of the form
          bbbbbbbb:bbbbbbbb:bbbbbbbb: 11 bbb ireg :bbbbbbbb. Held in
          val1[15:0] and val2[15:0] and lit32[7:0], and ireg is to be
@@ -652,15 +662,7 @@ typedef
          RealReg.  Transfer is always at size 4.  Arg3 holds this
          Temp/Real Reg.
       */
-      SSE3g1_RegRd,
-
-      /* 4 bytes, reads an integer register.  Insns of the form
-         bbbbbbbb:bbbbbbbb:bbbbbbbb:11 xmmreg ireg.
-         Held in val1[15:0] and val2[15:0], and ireg is to be replaced
-         at codegen time by a reference to the relevant RealReg.
-         Transfer is always at size 4.  Arg3 holds this Temp/Real Reg.
-      */
-      SSE3g_RegRd,
+      SSE3e1_RegRd,
 
       /* 4 bytes, reads memory, writes an integer register, but is
          nevertheless an SSE insn.  The insn is of the form

@@ -1119,7 +1119,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          /* Since we don't track definedness of values inside the
             MMX state, we'd better check that the (int) reg being
             read here is defined. */
-         case MMX2_RegRd: 
+         case MMX2_ERegRd: 
             sk_assert(u_in->tag2 == TempReg);
             sk_assert(u_in->size == 4);
             uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val2));
@@ -1129,7 +1129,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
 
 	 /* The MMX register is assumed to be fully defined, so
 	    that's what this register becomes. */
-         case MMX2_RegWr:
+         case MMX2_ERegWr:
             sk_assert(u_in->tag2 == TempReg);
             sk_assert(u_in->size == 4);
             uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val2));

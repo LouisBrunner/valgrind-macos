@@ -3744,7 +3744,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                              u->val2 );
          break;
 
-      case MMX2_RegRd:
+      case MMX2_ERegRd:
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == RealReg);
          vg_assert(u->tag3 == NoValue);
@@ -3759,7 +3759,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                                     u->val2 );
          break;
 
-      case MMX2_RegWr:
+      case MMX2_ERegWr:
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == RealReg);
          vg_assert(u->tag3 == NoValue);
@@ -3849,7 +3849,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                       u->val3 );
          break;
 
-      case SSE3g_RegRd:
+      case SSE3e_RegRd:
       case SSE3g_RegWr:
          vg_assert(u->size == 4);
          vg_assert(u->tag1 == Lit16);
@@ -3860,7 +3860,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
             emit_get_sse_state();
             *sselive = True;
          }
-	 if (u->opcode==SSE3g_RegRd) {
+	 if (u->opcode==SSE3e_RegRd) {
             emit_SSE3g_RegRd ( u->flags_r, u->flags_w,
                                (u->val1 >> 8) & 0xFF,
                                u->val1 & 0xFF,
@@ -3896,7 +3896,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                              u->val3 );
          break;
 
-      case SSE3g1_RegRd:
+      case SSE3e1_RegRd:
          vg_assert(u->size == 2);
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == Lit16);

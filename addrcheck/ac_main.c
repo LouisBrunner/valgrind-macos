@@ -1013,7 +1013,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 
 	    //         case SSE2a1_MemRd:
 	    //         case SSE2a1_MemWr:
-         case SSE3g1_RegRd:
+         case SSE3e1_RegRd:
 	   //         case SSE3a1_MemRd:
 	   //         case SSE3a1_MemWr:
 	    VG_(pp_UInstr)(0,u_in);
@@ -1023,7 +1023,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
          case SSE3g1_RegWr:
          case SSE5:
          case SSE3g_RegWr:
-         case SSE3g_RegRd:
+         case SSE3e_RegRd:
          case SSE4:
          default:
             VG_(copy_UInstr)(cb, u_in);

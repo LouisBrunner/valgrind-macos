@@ -3729,7 +3729,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (epartIsReg(modrm)) { 
          uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
          vg_assert(epartIsReg(modrm));
-         uInstr3(cb, SSE3g_RegRd, 4,
+         uInstr3(cb, SSE3e_RegRd, 4,
                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
                      Lit16, (((UShort)insn[2]) << 8) | (UShort)modrm,
                      TempReg, t1 );
@@ -4214,7 +4214,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (epartIsReg(modrm) && !is_store) {
          t1 = newTemp(cb);
 	 uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
-         uInstr3(cb, SSE3g_RegRd, 4,
+         uInstr3(cb, SSE3e_RegRd, 4,
                      Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
                      Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
                      TempReg, t1 );
@@ -4257,7 +4257,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (epartIsReg(modrm)) {
          uInstr2(cb, GET, 2, ArchReg, eregOfRM(modrm), TempReg, t1);
          vg_assert(epartIsReg(modrm));
-         uInstr3(cb, SSE3g1_RegRd, 2,
+         uInstr3(cb, SSE3e1_RegRd, 2,
                      Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
                      Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
                      TempReg, t1 );
@@ -5811,7 +5811,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          if (epartIsReg(modrm)) {
             eip++;
             t1 = newTemp(cb);
-            uInstr2(cb, MMX2_RegWr, 4, 
+            uInstr2(cb, MMX2_ERegWr, 4, 
                         Lit16, 
                         (((UShort)(opc)) << 8) | ((UShort)modrm),
                         TempReg, t1 );
@@ -5843,7 +5843,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
             eip++;
             t1 = newTemp(cb);
             uInstr2(cb, GET, 4, ArchReg, eregOfRM(modrm), TempReg, t1);
-            uInstr2(cb, MMX2_RegRd, 4, 
+            uInstr2(cb, MMX2_ERegRd, 4, 
                         Lit16, 
                         (((UShort)(opc)) << 8) | ((UShort)modrm),
                         TempReg, t1 );

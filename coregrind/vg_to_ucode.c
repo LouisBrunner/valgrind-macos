@@ -4882,7 +4882,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       UChar* name = "movapd";
                     //(insn[1] == 0x10 || insn[1] == 0x11)
                     // ? "movups" : "movaps";
-      Bool store = False; //insn[1] == 0x29 || insn[1] == 11;
+      Bool store = False; //insn[1] == 0x29 || insn[1] == 0x11;
       eip = dis_SSE3_load_store_or_mov
                ( cb, sorb, eip+2, 16, store, name,
                      0x66, insn[0], insn[1] );
@@ -4903,7 +4903,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                            || insn[1] == 0x11)) {
       UChar* name = (insn[1] == 0x10 || insn[1] == 0x11)
                     ? "movups" : "movaps";
-      Bool store = insn[1] == 0x29 || insn[1] == 11;
+      Bool store = insn[1] == 0x29 || insn[1] == 0x11;
       vg_assert(sz == 2 || sz == 4);
       if (sz == 4) {
          eip = dis_SSE2_load_store_or_mov

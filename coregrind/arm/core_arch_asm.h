@@ -30,13 +30,6 @@
 #ifndef __ARM_CORE_ARCH_ASM_H
 #define __ARM_CORE_ARCH_ASM_H
 
-// XXX: ???
-/* maximum number of normal jumps which can appear in a basic block */
-#define VG_MAX_JUMPS		2
-
-/* Offset of code in a TCEntry */
-#define VG_CODE_OFFSET		(8 + VG_MAX_JUMPS * 2)
-
 #if 0
 /* Debugging hack for assembly code ... sigh. */
 #if 0

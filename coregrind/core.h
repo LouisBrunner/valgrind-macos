@@ -1084,6 +1084,7 @@ VALGRIND_INTERNAL_PRINTF_BACKTRACE(char *format, ...)
 
 extern void VG_(demangle) ( Char* orig, Char* result, Int result_size );
 
+
 /* ---------------------------------------------------------------------
    Exports of vg_from_ucode.c
    ------------------------------------------------------------------ */
@@ -1091,8 +1092,6 @@ extern void VG_(demangle) ( Char* orig, Char* result, Int result_size );
 extern void   VG_(print_ccall_stats)      ( void );
 extern void   VG_(print_UInstr_histogram) ( void );
 
-extern void   VG_(unchain_jumpsite)	  ( Addr jumpsite );
-extern Addr   VG_(get_jmp_dest)           ( Addr jumpsite );
 
 /* ---------------------------------------------------------------------
    Exports of vg_to_ucode.c
@@ -1239,17 +1238,10 @@ extern void VG_(start_debugger) ( Int tid );
 /* Counts downwards in vg_run_innerloop. */
 extern UInt VG_(dispatch_ctr);
 
-// Instruction pointer guest state offset, used by $VG_ARCH/dispatch.S.
+/* Instruction pointer guest state offset, used by $VG_ARCH/dispatch.S. */
 extern UInt VG_(instr_ptr_offset);
 
-/* --- Counters, for informational purposes only. --- */
-
-// These counters must be declared here because they're maintained by
-// vg_dispatch.S.
-extern UInt VG_(bb_enchain_count);     // Counts of chain operations done
-extern UInt VG_(bb_dechain_count);     // Counts of unchain operations done
-extern UInt VG_(unchained_jumps_done); // Number of unchained jumps performed
-
+/* Stats ... */
 extern void VG_(print_scheduler_stats) ( void );
 
 
@@ -1730,10 +1722,9 @@ extern void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
                                     Addr trans_addr, Int trans_size );
 extern Addr VG_(search_transtab)  ( Addr original_addr );
 
-extern void VG_(invalidate_translations) ( Addr start, UInt range,
-                                           Bool unchain_blocks );
+extern void VG_(invalidate_translations) ( Addr start, UInt range );
 
-extern void VG_(sanity_check_tt_tc) ( void );
+extern void VG_(sanity_check_tt_tc) ( Char* caller );
 
 extern void VG_(print_tt_tc_stats) ( void );
 

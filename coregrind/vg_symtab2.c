@@ -2377,7 +2377,7 @@ static Bool resolve_redir(CodeRedirect *redir, const SegInfo *si)
                 "   %s (%p -> %p)",
                 redir->from_sym, redir->from_addr, redir->to_addr );
          }
-	 VG_(invalidate_translations)(redir->from_addr, 1, True);
+	 VG_(invalidate_translations)(redir->from_addr, 1);
       }
 
       VG_(SkipList_Insert)(&sk_resolved_redir, redir);
@@ -2437,7 +2437,7 @@ static void add_redirect_sym(const Char *from_lib, const Char *from_sym,
    redir->to_sym = VG_(arena_strdup)(VG_AR_SYMTAB, to_sym);
    redir->to_addr = 0;
 
-   if (0||VG_(clo_verbosity) >= 2)
+   if (0||VG_(clo_verbosity) > 2)
       VG_(message)(Vg_UserMsg, 
                    "REDIRECT %s(%s) to %s(%s)",
                    from_lib, from_sym, to_lib, to_sym);
@@ -2463,7 +2463,7 @@ static void add_redirect_addr(const Char *from_lib, const Char *from_sym,
    redir->to_sym = NULL;
    redir->to_addr = to_addr;
 
-   if (0||VG_(clo_verbosity) >= 2)
+   if (0||VG_(clo_verbosity) > 2)
       VG_(message)(Vg_UserMsg, 
                    "REDIRECT %s(%s) to %p",
                    from_lib, from_sym, to_addr);

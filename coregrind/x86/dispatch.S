@@ -102,9 +102,11 @@ dispatch_boring:
 	/* try a fast lookup in the translation cache */
 	TT_LOOKUP(%ebx, fast_lookup_failed)
 
-	/* Found a match.  Call the tce.payload field (+VG_CODE_OFFSET) */
-	addl	$VG_CODE_OFFSET, %ebx
-	call	*%ebx
+	/* Found a match.  Call the tce.payload field.  The magic 8
+	   value is offsetof(TCEntry,payload) on a 32-bit platform. */
+	
+	addl $8, %ebx
+	call *%ebx
 	
 	/* 
 	   %eax holds destination (original) address.

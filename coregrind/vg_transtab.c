@@ -48,7 +48,7 @@ static /* const */ Int vg_tc_sector_szB = 0;
 
 /* Number of entries in the translation table.  This must be a prime
    number in order to make the hashing work properly. */
-#define VG_TT_SIZE /*5281*/ /*100129*/ /*200191*/ /*250829*/ 300007
+#define VG_TT_SIZE /*5281*/ /*100129*/ /*200191*/ 250829 /*300007*/
 
 /* Do an LRU pass when the translation table becomes this full. */
 #define VG_TT_LIMIT_PERCENT /*67*/ 80
@@ -58,20 +58,18 @@ static /* const */ Int vg_tc_sector_szB = 0;
 
 /*------------------ TYPES ------------------*/
 
-#define CODE_ALIGNMENT	sizeof(void*)     // alignment of TCEntries
-#define CODE_ALIGN(a)	(((a)+CODE_ALIGNMENT-1) & ~(CODE_ALIGNMENT-1))
-#define IS_ALIGNED(a)	(((a) & (CODE_ALIGNMENT-1)) == 0)
-
-/* An entry in TC.  Payload always is always padded out to a word-aligned
-   quantity so that these structs are always word-aligned. */
+/* An entry in TC.  Payload always is always padded out to a
+   word-aligned quantity so that these structs are always
+   word-aligned.  Note, the layout of this is known by
+   <arch>/dispatch.S, so do not change it unless you change them
+   too. */
 typedef
    struct { 
       /* 32-bit or 64-bit offsets */
       /* +0 or  0 */ Addr   orig_addr;
       /* +4 or  8 */ UShort orig_size;
       /* +6 or 10 */ UShort trans_size;
-      /* +8 or 12 */ UShort jump_sites[VG_MAX_JUMPS];
-      /* +VG_CODE_OFFSET */ UChar  payload[0];
+      /* +8 or 12 */ UChar  payload[0];
    }
    TCEntry;
 
@@ -82,6 +80,14 @@ typedef
       TCEntry* tcentry;
    }
    TTEntry;
+
+
+#define PAYLOAD_OFFSET  (sizeof(void*)==8 ? 12 : 8)
+#define CODE_ALIGNMENT	sizeof(void*)     // alignment of TCEntries
+#define CODE_ALIGN(a)	(((a)+CODE_ALIGNMENT-1) & ~(CODE_ALIGNMENT-1))
+#define IS_ALIGNED(a)	(((a) & (CODE_ALIGNMENT-1)) == 0)
+
+
 
 /* Denotes an empty TT slot, when TTEntry.orig_addr holds this
    value. */
@@ -152,57 +158,6 @@ Addr /* TCEntry*, really */ VG_(tt_fast)[VG_TT_FAST_SIZE];
 static void for_each_tc(Int sector, void (*fn)(TCEntry *));
 
 
-/*------------------ T-CHAINING HELPERS ------------------*/
-#if 0
-static
-void for_each_jumpsite(TCEntry *tce, void (*fn)(Addr))
-{
-   Int i;
-   for(i = 0; i < VG_MAX_JUMPS; i++) {
-      Addr a;
-      UShort idx = tce->jump_sites[i];
-
-      if (idx == (UShort)-1)
-	 continue;
-      
-      a = (Addr)&tce->payload[idx];
-
-      (*fn)(a);
-   }
-}
-
-static inline
-void unchain_tce(TCEntry *tce)
-{
-   for_each_jumpsite(tce, VG_(unchain_jumpsite));
-}
-
-/* Unchain any jumps pointing to a sector we're about to free */
-static Addr sector_base;
-static Addr sector_len;
-
-static
-void unchain_site_for_sector(Addr a) {
-   Addr jmp = VG_(get_jmp_dest)(a);
-   if (jmp >= sector_base && jmp < (sector_base+sector_len))
-      VG_(unchain_jumpsite)(a);
-}
-
-static
-void unchain_tce_for_sector(TCEntry *tce) {
-   for_each_jumpsite(tce, unchain_site_for_sector);
-}
-
-static
-void unchain_sector(Int s, Addr base, UInt len)
-{
-   sector_base = base;
-   sector_len = len;
-
-   for_each_tc(s, unchain_tce_for_sector);
-}
-#endif
-
 /*------------------ TT HELPERS ------------------*/
 
 static
@@ -216,7 +171,7 @@ void pp_tt_tc_status ( Char* submsg )
       tc_used += vg_tc_used[s];
 
    VG_(message)(Vg_DebugMsg, 
-       "%lluk bbs: tt %d, tc %d, %s",
+       "%lluk bbs: tt %d, tc %d: %s",
        VG_(bbs_done) / 1000,
        vg_tt_used, tc_used, submsg );
 }
@@ -293,7 +248,7 @@ void initialise_tt ( void )
 static 
 void rebuild_TT ( void )
 {
-   Int      s;
+   Int s;
 
    /* Throw away TT. */
    initialise_tt();
@@ -303,6 +258,10 @@ void rebuild_TT ( void )
       for_each_tc(s, add_tt_entry);
    }
    pp_tt_tc_status ( "after  rebuild of TC" );
+#  if 1 /* def DEBUG_TRANSTAB */
+   VG_(sanity_check_tt_tc)("rebuild_TT");
+#  endif
+
 }
 
 
@@ -354,17 +313,9 @@ void discard_oldest_sector ( void )
    Char msg[100];
    Int s = find_oldest_sector();
    if (s != -1) {
-     //Int i;
-
       vg_assert(s >= 0 && s < VG_TC_N_SECTORS);
       VG_(sprintf)(msg, "before discard of sector %d (%d bytes)", 
                         s, vg_tc_used[s]);
-
-      //for(i = 0; i < VG_TC_N_SECTORS; i++) {
-      //	 if (i != s && vg_tc[i] != NULL)
-      //	    unchain_sector(i, (Addr)vg_tc[s], vg_tc_used[s]);
-      //      }
-
       pp_tt_tc_status ( msg );
       overall_out_count += vg_tc_stats_count[s];
       overall_out_osize += vg_tc_stats_osize[s];
@@ -392,35 +343,16 @@ Int maybe_commission_sector ( void )
                            "at time %d", 
                            s, vg_tc_age[s]);
          pp_tt_tc_status ( msg );
-#        ifdef DEBUG_TRANSTAB
-         VG_(sanity_check_tt_tc)();
+#        if 1 /* def DEBUG_TRANSTAB */
+         VG_(sanity_check_tt_tc)("maybe_commission_sector");
 #        endif
          return s;
       }
    }
    for (s = 0; s < VG_TC_N_SECTORS; s++) {
       if (vg_tc[s] == NULL) {
-#if 1
          vg_tc[s] = VG_(get_memory_from_mmap) 
                        ( vg_tc_sector_szB, "trans-cache(sector)" );
-#else
-         // Alternative: put translations in an mmap'd file.  The main
-         // reason is to help OProfile -- OProfile can assign time spent in
-         // translations to a particular file.  The file format doesn't
-         // really matter, which is good because it's not really readable,
-         // being generated code but not a proper ELF file.
-	 Char buf[20];
-	 static Int count = 0;
-	 Int fd;
-	 
-	 VG_(sprintf)(buf, ".transtab.%d", count++);
-
-	 fd = VG_(open)(buf, VKI_O_RDWR|VKI_O_CREAT|VKI_O_TRUNC, 0700);
-	 //VG_(unlink)(buf);
-	 VG_(do_syscall)(__NR_ftruncate, fd, PGROUNDUP(vg_tc_sector_szB));
-	 vg_tc[s] = VG_(mmap)(0, PGROUNDUP(vg_tc_sector_szB), VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, VKI_MAP_SHARED, 0, fd, 0);
-	 VG_(close)(fd);
-#endif
          vg_tc_used[s] = 0;
          VG_(sprintf)(msg, "after  allocation of sector %d (size %d)", 
                            s, vg_tc_sector_szB );
@@ -435,13 +367,11 @@ Int maybe_commission_sector ( void )
 static
 UChar* allocate ( Int nBytes )
 {
-   Int i;
-
    vg_assert(IS_ALIGNED(nBytes));
 
    /* Ensure the TT is still OK. */
    while (vg_tt_used >= VG_TT_LIMIT) {
-      (void)discard_oldest_sector();
+      discard_oldest_sector();
       rebuild_TT();
       vg_assert(vg_tt_used < VG_TT_LIMIT);
    }
@@ -463,10 +393,8 @@ UChar* allocate ( Int nBytes )
    if (vg_tc_current >= 0 && vg_tc_current < VG_TC_N_SECTORS)
       return allocate(nBytes);
 
-   /* That didn't work.  We'll have to dump the oldest.  We take the
-      opportunity to dump the N oldest at once. */
-   for (i = 0; i < 1; i++)
-      (void)discard_oldest_sector();
+   /* That didn't work.  We'll have to dump the oldest.  */
+   discard_oldest_sector();
 
    rebuild_TT();
    vg_tc_current = maybe_commission_sector();
@@ -493,11 +421,27 @@ void VG_(get_tt_tc_used) ( UInt* tt_used, UInt* tc_used )
 
 /* Do a sanity check on TT/TC.
 */
-void VG_(sanity_check_tt_tc) ( void )
+void VG_(sanity_check_tt_tc) ( Char* who )
 {
-   Int i, s;
+   Int      i, s;
    TTEntry* tte;
    TCEntry* tce;
+   Char     msg[200];
+
+   vg_assert(VG_(strlen)(who) < 50);
+   VG_(sprintf)(msg, "sanity_check_tt_tc: begin (%s)", who );
+   pp_tt_tc_status ( msg );
+
+   /* Some basic checks on the sector array. */
+   for (i = 0; i < VG_TC_N_SECTORS; i++) {
+      if (vg_tc[i] == NULL) {
+         vg_assert(vg_tc_used[i] == 0);
+         vg_assert(vg_tc_age[i] == 0);
+      } else {
+         vg_assert(vg_tc_used[i] <= vg_tc_sector_szB);
+      }
+   }
+
    /* Checks: 
       - Each TT entry points to a valid and corresponding TC entry.
    */
@@ -510,16 +454,20 @@ void VG_(sanity_check_tt_tc) ( void )
       vg_assert(IS_ALIGNED4_ADDR(tce));
       /* does this point into a valid TC sector? */
       for (s = 0; s < VG_TC_N_SECTORS; s++)
-	if (vg_tc[s] != NULL
-            && ((Addr)tce) >= (Addr)&vg_tc[s][0]
-            && ((Addr)tce) <  (Addr)&vg_tc[s][ vg_tc_used[s] ])
-	  break; 
+         if (vg_tc[s] != NULL
+             && ((Addr)tce) >= (Addr)&vg_tc[s][0]
+             && ((Addr)tce) <  (Addr)&vg_tc[s][ vg_tc_used[s] ])
+            break; 
       vg_assert(s < VG_TC_N_SECTORS);
       /* It should agree with the TC entry on the orig_addr.  This may
          be VG_TTE_DELETED, or a real orig addr. */
       vg_assert(tte->orig_addr == tce->orig_addr);
    }
+
+   VG_(sprintf)(msg, "sanity_check_tt_tc: done  (%s)", who );
+   pp_tt_tc_status ( msg );
 }
+
 
 static __inline__ Int safe_idiv(Int a, Int b)
 {
@@ -564,7 +512,8 @@ void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
                tte->trans_addr, tte->trans_size);
    */
 
-   vg_assert(offsetof(TCEntry, payload) == VG_CODE_OFFSET);
+   vg_assert(offsetof(TCEntry, payload) == PAYLOAD_OFFSET);
+   vg_assert(trans_size > 0);
 
    /* figure out how many bytes we require. */
    nBytes = CODE_ALIGN(trans_size + sizeof(TCEntry));
@@ -577,6 +526,13 @@ void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
                tce, &tce->payload[0]);
    */
    vg_assert(vg_tc_current >= 0 && vg_tc_current < VG_TC_N_SECTORS);
+   vg_assert(vg_tc_sector_szB > 0);
+
+   /* Range check for writing in the trans cache. */
+   vg_assert( ((UChar*)(tce)) 
+              >= ((UChar*)(&vg_tc[vg_tc_current][0])) );
+   vg_assert( ((UChar*)(&tce->payload[trans_size_aligned-1]))
+              <  ((UChar*)(&vg_tc[vg_tc_current][vg_tc_sector_szB])) );
 
    tce->orig_addr  = orig_addr;
    tce->orig_size  = (UShort)orig_size;  /* what's the point of storing this? */
@@ -584,8 +540,7 @@ void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
    for (i = 0; i < trans_size; i++) {
       tce->payload[i] = ((UChar*)trans_addr)[i];
    }
-   
-   //unchain_tce(tce);
+
    add_tt_entry(tce);
 
    /* Update stats. */
@@ -626,14 +581,12 @@ Addr VG_(search_transtab) ( Addr original_addr )
 
 /* Invalidate translations of original code [start .. start + range - 1].
    This is slow, so you *really* don't want to call it very often.
-   Set 'unchain_blocks' if the translation being invalidated may be chained
-   to by other local blocks (which are NOT being discarded).
 */
-void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks )
+void VG_(invalidate_translations) ( Addr start, UInt range )
 {
    Addr     i_start, i_end, o_start, o_end;
    UInt     out_count, out_osize, out_tsize;
-   Int      i; //, j;
+   Int      i;
    TCEntry* tce;
 #  ifdef DEBUG_TRANSTAB
    VG_(sanity_check_tt_tc)();
@@ -658,14 +611,6 @@ void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks 
       vg_tt[i].orig_addr = VG_TTE_DELETED;
       tce->orig_addr = VG_TTE_DELETED;
 
-      //      if (unchain_blocks) {
-      //         /* make sure no other blocks chain to the one we just discarded */
-      //         for(j = 0; j < VG_TC_N_SECTORS; j++) {
-      //            if (vg_tc[j] != NULL)
-      //               unchain_sector(j, (Addr)tce->payload, tce->trans_size);
-      //         }
-      //      }
-
       overall_out_count ++;
       overall_out_osize += tce->orig_size;
       overall_out_tsize += tce->trans_size;
@@ -676,7 +621,7 @@ void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks 
 
    if (out_count > 0) {
       vg_invalidate_tt_fast();
-      VG_(sanity_check_tt_tc)();
+      VG_(sanity_check_tt_tc)("invalidate_translations");
 #     ifdef DEBUG_TRANSTAB
       { Addr aa;
         for (aa = i_start; aa <= i_end; aa++)
@@ -700,12 +645,8 @@ void VG_(init_tt_tc) ( void )
 {
    Int s;
 
-   /* Otherwise we wind up with non-32-bit-aligned code in
-      TCEntries. */
-   vg_assert((VG_MAX_JUMPS % 2) == 0);
-
-   // Otherwise lots of things go wrong... 
-   vg_assert(VG_CODE_OFFSET == sizeof(TCEntry));
+   /* Otherwise lots of things go wrong... */
+   vg_assert(PAYLOAD_OFFSET == sizeof(TCEntry));
    
    /* Figure out how big each sector should be.  */
    vg_tc_sector_szB 
@@ -716,8 +657,8 @@ void VG_(init_tt_tc) ( void )
         )
         / VG_TC_N_SECTORS;
    /* Ensure the calculated value is not way crazy. */
-   vg_assert(vg_tc_sector_szB >= 200000);
-   vg_assert(vg_tc_sector_szB <= 8000000);
+   vg_assert(vg_tc_sector_szB >= 50000);
+   vg_assert(vg_tc_sector_szB <= 11500000);
 
    for (s = 0; s < VG_TC_N_SECTORS; s++) {
       vg_tc[s] = NULL;

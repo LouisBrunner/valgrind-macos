@@ -164,11 +164,6 @@ Bool VG_(logging_to_filedes) = True;
 /*=== Counters, for profiling purposes only                        ===*/
 /*====================================================================*/
 
-// These ones maintained by vg_dispatch.S
-UInt VG_(bb_enchain_count) = 0;        // Number of chain operations done
-UInt VG_(bb_dechain_count) = 0;        // Number of unchain operations done
-UInt VG_(unchained_jumps_done) = 0;    // Number of unchained jumps done
-
 /* Counts pertaining to internal sanity checking. */
 static UInt sanity_fast_count = 0;
 static UInt sanity_slow_count = 0;
@@ -178,15 +173,7 @@ static void print_all_stats ( void )
    // Translation stats
    VG_(print_tt_tc_stats)();
    VG_(message)(Vg_DebugMsg,
-                "chainings: %d chainings, %d unchainings.",
-                VG_(bb_enchain_count), VG_(bb_dechain_count) );
-   VG_(message)(Vg_DebugMsg,
-      " dispatch: %llu jumps (bb entries); of them %u (%lu%%) unchained.",
-      VG_(bbs_done), 
-      VG_(unchained_jumps_done),
-      ((ULong)(100) * (ULong)(VG_(unchained_jumps_done)))
-         / ( VG_(bbs_done)==0 ? 1 : VG_(bbs_done) )
-   );
+      " dispatch: %llu jumps (bb entries).", VG_(bbs_done) );
 
    // Scheduler stats
    VG_(print_scheduler_stats)();
@@ -2286,7 +2273,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 #     endif
 
       if ((sanity_fast_count % 250) == 0)
-         VG_(sanity_check_tt_tc)();
+         VG_(sanity_check_tt_tc)("VG_(sanity_check_general)");
 
       if (VG_(needs).sanity_checks) {
           VGP_PUSHCC(VgpToolExpensiveSanity);

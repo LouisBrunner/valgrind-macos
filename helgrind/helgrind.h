@@ -57,6 +57,7 @@
 #ifndef __HELGRIND_H
 #define __HELGRIND_H
 
+#define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"
 
 typedef

@@ -68,6 +68,7 @@
    See comment near the top of valgrind.h on how to use them.
 */
 
+#define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"
 
 typedef

@@ -2427,6 +2427,18 @@ static void init_baseBlock ( Addr client_eip, Addr esp_at_startup )
    VGOFF_(m_fs)  = alloc_BaB_1_set(0);
    VGOFF_(m_gs)  = alloc_BaB_1_set(0);
 
+   /* initialise %cs, %ds and %ss to point at the operating systems
+      default code, data and stack segments */
+   asm volatile("movw %%cs, %0"
+                :
+                : "m" (VG_(baseBlock)[VGOFF_(m_cs)]));
+   asm volatile("movw %%ds, %0"
+                :
+                : "m" (VG_(baseBlock)[VGOFF_(m_ds)]));
+   asm volatile("movw %%ss, %0"
+                :
+                : "m" (VG_(baseBlock)[VGOFF_(m_ss)]));
+
    VG_(register_noncompact_helper)( (Addr) & VG_(do_useseg) );
 
 #define REG(kind, size) \

@@ -547,33 +547,8 @@ usual GDB command:
 usually gives the location of the segmentation fault.<p>
 
 If you want to debug C functions used by your tool, you can attach GDB to
-Valgrind with some effort:
-<ul>
-  <li>Enable the following code in <code>coregrind/vg_main.c</code> by
-  changing <code>if (0)</code> into <code>if (1)</code>:
-<pre>
-   /* Hook to delay things long enough so we can get the pid and
-      attach GDB in another shell. */
-   if (0) { 
-      Int p, q;
-      for (p = 0; p < 50000; p++)
-         for (q = 0; q < 50000; q++) ;
-   }
-</pre>
-      </li><p>
-      and rebuild Valgrind.
-
-  <li>Then run: 
-      <blockquote><code>valgrind <i>prog</i></code></blockquote>
-
-      Valgrind starts the program, printing its process id, and then delays for
-      a few seconds (you may have to change the loop bounds to get a suitable
-      delay).</li><p>
-      
-  <li>In a second shell run: 
-  
-      <blockquote><code>gdb <i>prog</i> <i>pid</i></code></blockquote></li><p>
-</ul>
+Valgrind with some effort; see the file <code>README_DEVELOPERS</code> in
+CVS for instructions.<p>
 
 GDB may be able to give you useful information.  Note that by default
 most of the system is built with <code>-fomit-frame-pointer</code>,

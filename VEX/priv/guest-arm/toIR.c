@@ -312,6 +312,11 @@ static UInt extend_s_16to32 ( UInt x )
    return (UInt)((((Int)x) << 16) >> 16);
 }
 
+static UInt extend_s_24to32 ( UInt x )
+{
+   return (UInt)((((Int)x) << 8) >> 8);
+}
+
 /* Fetch a byte from the guest insn stream. */
 static UChar getIByte ( UInt delta )
 {
@@ -821,15 +826,17 @@ void dis_loadstore_mult ( theInstr )
     UInt reg_list = theInstr & 0xFFFF;  // each bit addresses a register: R0 to R15
     UChar L  = (flags >> 0) & 1;  // Load(1) | Store(0)
     UChar W  = (flags >> 1) & 1;  // (W)riteback Rn (incr(U=1) | decr(U=0) by n_bytes)
-//  UChar S  = (flags >> 2) & 1;  // Priviledged mode flag - *** CAB: TODO! ***
+//  UChar S  = (flags >> 2) & 1;  // Priviledged mode flag - *** CAB TODO ***
     UChar U  = (flags >> 3) & 1;  // Txfr ctl: Direction = upwards(1) | downwards(0)
     UChar PU = (flags >> 3) & 3;  // Txfr ctl: Rn within(P=1) | outside(P=0) accessed mem
 
-    IRTemp start_addr=0, end_addr=0, addr=0; // stop compiler warnings
+    IRTemp start_addr = newTemp(Ity_I32);
+    IRTemp end_addr   = newTemp(Ity_I32);
     IRTemp data=0;
+
     UInt n_bytes=0;
     UInt tmp_reg = reg_list;
-    UInt reg_idx, first;
+    UInt reg_idx, offset;
 
     while (tmp_reg > 0) {     // Count num bits in reg_list => num_bytes
 	if (tmp_reg & 1) { n_bytes += 4; }
@@ -839,7 +846,7 @@ void dis_loadstore_mult ( theInstr )
     assign( Rn, getIReg(Rn_addr) );
     assign( Rn_orig, mkexpr(Rn) );
 
-    switch (PU) {
+    switch (PU) {  // <addressing_mode>
     case 0x0:  // Decrement after  (DA)
 	assign( start_addr, binop( Iop_Add32, mkexpr(Rn), mkU32(n_bytes + 4) ) );
 	assign( end_addr,   mkexpr(Rn) );
@@ -867,9 +874,9 @@ void dis_loadstore_mult ( theInstr )
 
     if (W==1) {
 	if (U==1) { // upwards
-	    assign( Rn, binop( Iop_Add32, mkexpr(Rn), mkU32(n_bytes) ) );
+	    putIReg( Rn_addr, binop( Iop_Add32, mkexpr(Rn), mkU32(n_bytes) ) );
 	} else { // downwards
-	    assign( Rn, binop( Iop_Sub32, mkexpr(Rn), mkU32(n_bytes) ) );
+	    putIReg( Rn_addr, binop( Iop_Sub32, mkexpr(Rn), mkU32(n_bytes) ) );
 	}
     }
 
@@ -880,44 +887,44 @@ void dis_loadstore_mult ( theInstr )
       lowest numbered reg -> lowest address
        -> so start with lowest register...
       reg_idx gives the guest register address
+      offset gives current mem offset from start_addr
     */
-    assign( addr, mkexpr(start_addr) );
-
-    first=1;
+    offset=0;
     for (reg_idx=0; reg_idx < 16; reg_idx++) {
 	if (( reg_list >> reg_idx ) & 1) {  // reg_list[i] == 1?
-	    
-	    if (L==1) { // LOAD Ri, addr
+
+	    if (L==1) { // LOAD Ri, (start_addr + offset)
 
 		// CAB: TODO
 		if (Rn_addr == reg_idx && W==1) {} // Undefined! - See ARM ARM A4-31
 
-		assign( data, loadLE(Ity_I32, mkexpr(addr)) );
+		assign( data, loadLE(Ity_I32, binop(Iop_Add32,
+						    mkexpr(start_addr), mkU32(offset))) );
 		if (reg_idx == 15) {
 		    // assuming architecture < 5: See ARM ARM A4-31
 		    putIReg( reg_idx, binop(Iop_And32, mkexpr(data), mkU32(0xFFFFFFFC)) );
 		} else {
 		    putIReg( reg_idx, mkexpr(data) );
 		}
-	    } else {    // STORE Ri, addr
+	    } else {    // STORE Ri, (start_addr + offset)
 
 		// ARM ARM A4-85 (Operand restrictions)
-		if (Rn_addr == reg_idx && W==1) {
-		    if (first) { // lowest reg in reg_list: Rn_orig is stored
-			storeLE( mkexpr(addr), mkexpr(Rn_orig) );
+		if (reg_idx == Rn_addr && W==1) {  // Rn in list && writeback
+		    if (offset==0) { // lowest reg in reg_list: Rn_orig is stored
+			storeLE( mkexpr(start_addr), mkexpr(Rn_orig) );
 		    } else { // Undefined! - See ARM ARM A4-85
 			// CAB TODO
 		    }
 		} else {
-		    storeLE( mkexpr(addr), getIReg(reg_idx) );
+		    storeLE( binop(Iop_Add32, mkexpr(start_addr), mkU32(offset) ),
+			     getIReg(reg_idx) );
 		}
 	    }
-	    assign( addr, binop( Iop_Add32, mkexpr(addr), mkU32(4) ) );
-	    first=0;
+	    offset += 4;
 	}
     }
     // CAB TODO:
-    // IR assert( end_addr == addr - 4)
+    // IR assert( end_addr == (start_addr + offset) - 8 )
 
     return;
 }
@@ -973,6 +980,10 @@ void dis_loadstore_w_ub ( theInstr )
 	    assign( Rn, binop(Iop_And32, mkexpr(Rn), mkU32(8)) );
 	} else { // Unpredictable: ARM ARM A5-29
 	    // CAB TODO
+	    //illegal instruction exception
+
+//	    goto decode_failure;
+
 	}
     }
 
@@ -1001,12 +1012,12 @@ void dis_loadstore_w_ub ( theInstr )
 
 	    switch (shift) {
 	    case 0x0: // LSL
-		assign( indx, binop(Iop_Shl32, mkexpr(Rm), mkU32(shift_imm)) );
+		assign( indx, binop(Iop_Shl32, mkexpr(Rm), mkU8(shift_imm)) );
 		break;
 
 	    case 0x1: // LSR
 		if (shift_imm) {
-		    assign( indx, binop(Iop_Shr32, mkexpr(Rm), mkU32(shift_imm)) );
+		    assign( indx, binop(Iop_Shr32, mkexpr(Rm), mkU8(shift_imm)) );
 		} else {
 		    assign( indx, mkU32(0) );
 		}
@@ -1032,17 +1043,17 @@ void dis_loadstore_w_ub ( theInstr )
 		    // 33 bit ROR using carry flag as the 33rd bit
 		    // op = Rm >> 1, carry flag replacing vacated bit position.  
 		    // indx = (c_flag lsl 31) OR (Rm LSR 1)
-		    assign( tmp, binop(Iop_Shr32, mkexpr(oldFlagC), mkU32(ARMG_CC_SHIFT_C)) );
+		    assign( tmp, mkexpr(oldFlagC) );
 		    assign( indx, binop( Iop_Or32,
 					 binop( Iop_Shl32, mkexpr(tmp), mkU32(31) ),
-					 binop( Iop_Shr32, mkexpr(Rm),  mkU32(1)  ) ) );
+					 binop( Iop_Shr32, mkexpr(Rm),  mkU8(1)  ) ) );
 
 		} else { // ROR
 		    // indx = Rm ROR shift_imm
 		    //      = (Rm >> shift_imm) | (Rm << (32-shift_imm))
 		    assign( tmp, binop(Iop_Sub8, mkU8(32), mkU32(shift_imm)) );
 		    assign( indx, binop( Iop_Or32,
-					 binop( Iop_Shr32, mkexpr(Rm), mkU32(shift_imm) ),
+					 binop( Iop_Shr32, mkexpr(Rm), mkU8(shift_imm) ),
 					 binop( Iop_Shl32, mkexpr(Rm), mkexpr(tmp) ) ) );
 		}
 		break;
@@ -1094,18 +1105,18 @@ void dis_loadstore_w_ub ( theInstr )
 	    // data ROR 8
 	    assign( tmp2, binop(Iop_Sub8, mkU8(32), mkU32(8)) ); 
 	    assign( tmp2, binop( Iop_Or32,
-				 binop( Iop_Shr32, mkexpr(tmp1), mkU32(8) ),
+				 binop( Iop_Shr32, mkexpr(tmp1), mkU8(8) ),
 				 binop( Iop_Shl32, mkexpr(tmp1), mkexpr(tmp2) ) ) );
 	    // data ROR 16
 	    assign( tmp3, binop(Iop_Sub8, mkU8(32), mkU32(16)) );
 	    assign( tmp3, binop( Iop_Or32,
-				 binop( Iop_Shr32, mkexpr(tmp1), mkU32(16) ),
+				 binop( Iop_Shr32, mkexpr(tmp1), mkU8(16) ),
 				 binop( Iop_Shl32, mkexpr(tmp1), mkexpr(tmp3) ) ) );
 	    
 	    // data ROR 24
 	    assign( tmp4, binop(Iop_Sub8, mkU8(32), mkU32(24)) );
 	    assign( tmp4, binop( Iop_Or32,
-				 binop( Iop_Shr32, mkexpr(tmp1), mkU32(24) ),
+				 binop( Iop_Shr32, mkexpr(tmp1), mkU8(24) ),
 				 binop( Iop_Shl32, mkexpr(tmp1), mkexpr(tmp4) ) ) );
 
 	    /* switch (addr[1:0]) {
@@ -1163,12 +1174,12 @@ IRExpr* dis_shift( UInt theInstr, IRTemp* carry_out )
     UChar Rs_addr  = (theInstr >> 8) & 0xF;
     UChar Rm_addr  = (theInstr >> 0) & 0xF;
     UChar by_reg   = (theInstr >> 4) & 0x1; // instr[4]
-    UInt shift_imm = (theInstr >> 7) & 0x1F; // instr[11:7]
-    UChar shift_op = (theInstr >> 4) & 0xF; // instr[7:4]
+    UChar shift_imm = (theInstr >> 7) & 0x1F; // instr[11:7]
+    UChar shift_op  = (theInstr >> 4) & 0xF;  // instr[7:4]
     IRTemp Rm          = newTemp(Ity_I32);
     IRTemp Rs          = newTemp(Ity_I32);
-    IRTemp shift_amt   = newTemp(Ity_I32);
-    IRTemp carry_shift = newTemp(Ity_I32);
+    IRTemp shift_amt   = newTemp(Ity_I8);
+    IRTemp carry_shift = newTemp(Ity_I8);
     IRTemp oldFlagC    = newTemp(Ity_I32);
     IRTemp mux_false   = newTemp(Ity_I32);
     IRExpr* expr;
@@ -1186,6 +1197,8 @@ IRExpr* dis_shift( UInt theInstr, IRTemp* carry_out )
 
 
     if (by_reg) {  // Register Shift
+	vex_printf("shift: reg\n");
+
 	if (Rd_addr == 15 || Rm_addr == 15 || Rn_addr == 15 || Rs_addr == 15) {
 	    // Unpredictable (ARM ARM A5-10)
 	    // CAB TODO
@@ -1194,19 +1207,19 @@ IRExpr* dis_shift( UInt theInstr, IRTemp* carry_out )
 	assign( Rs, getIReg((theInstr >> 8) & 0xF) );
 
 	// shift_amt = shift_expr & 31   => Rs[5:0]
-	assign( shift_amt, binop( Iop_And32, mkexpr(Rs), mkU32(0x1F) ) );
-	// CAB TODO: support for >31 shift ? 
-	// => Rs[7:0]
-//	assign( shift_amt, binop( Iop_And32, mkexpr(Rs), mkU32(0xFF) ) ); 
+	assign( shift_amt,
+		narrowTo(Ity_I8, binop( Iop_And32, mkexpr(Rs), mkU32(0x1F)) ) );
+	
+	// CAB TODO: support for >31 shift ?  (Rs[7:0])
 
 	switch (shift_op) {
 	    case 0x1: // LSL(reg)
 		assign( mux_false, mkU32(0) );
-		assign( carry_shift, binop(Iop_Add32, mkU32(32), mkexpr(shift_amt)) );
+		assign( carry_shift, binop(Iop_Add8, mkU8(32), mkexpr(shift_amt)) );
 		break;
 	    case 0x3: // LSR(reg)
 		assign( mux_false, mkU32(0) );
-		assign( carry_shift, binop(Iop_Sub32, mkexpr(shift_amt), mkU32(1)) );
+		assign( carry_shift, binop(Iop_Sub8, mkexpr(shift_amt), mkU8(1)) );
 		break;
 	    case 0x5: // ASR(reg)
 		// Rs[31] == 0 ? 0x0 : 0xFFFFFFFF
@@ -1215,42 +1228,45 @@ IRExpr* dis_shift( UInt theInstr, IRTemp* carry_out )
 			    binop(Iop_CmpLT32U, mkexpr(Rs), mkU32(0x80000000)),
 			    mkU32(0xFFFFFFFF), mkU32(0) ) );
 		assign( carry_shift,
-			binop(Iop_Sub32, mkexpr(shift_amt), mkU32(1)) );
+			binop(Iop_Sub8, mkexpr(shift_amt), mkU8(1)) );
 		break;
-	    default: break;
+	    default:
+		vex_printf("dis_shift(arm): Reg shift: No such case: 0x%x\n", shift_op);
+		vpanic("dis_shift(ARM): Reg shift");
 	}
-	expr = IRExpr_Mux0X( binop(Iop_CmpLT32U, mkexpr(shift_amt), mkU32(32)),
-			     mkexpr(mux_false),
-			     binop(op, mkexpr(Rm), mkexpr(shift_amt)) );
+
+	expr = IRExpr_Mux0X( 
+	    binop(Iop_CmpLT32U, widenUto32(mkexpr(shift_amt)), mkU32(32)),
+	    mkexpr(mux_false),
+	    binop(op, mkexpr(Rm), mkexpr(shift_amt)) );
 
 	// shift_amt == 0 ? old_flag_c : Rm >> x
 	assign( *carry_out,
 		IRExpr_Mux0X(
-		    binop(Iop_CmpEQ32, mkexpr(shift_amt), mkU32(0)),
+		    binop(Iop_CmpEQ8, mkexpr(shift_amt), mkU8(0)),
 		    binop(Iop_Shr32, mkexpr(Rm), mkexpr(carry_shift)),
-		    binop(Iop_Shr32, mkexpr(oldFlagC), mkU32(ARMG_CC_SHIFT_C)) ) );
+		    mkexpr(oldFlagC) ) );
     }
     else {  // Immediate shift
+	vex_printf("shift: imm\n");
 	
 	// CAB: This right? Seems kinda strange... (ARM ARM A5-9)
 	if (Rm_addr == 15 || Rn_addr == 15) {
 	    assign( Rm, binop(Iop_Add32, getIReg(15), mkU32(8)) );
 	}
 
-	expr = binop(op, mkexpr(Rm), mkU32(shift_imm));
-	assign( *carry_out, binop(op, mkexpr(Rm),
-				  binop(Iop_Sub32, mkU32(shift_imm), mkU32(1)) ) );
-
 	if (shift_imm == 0) {
 	    switch (shift_op) {
 		case 0x0: case 0x8: // LSL(imm)
-		    assign( *carry_out, binop(Iop_Shr32, mkexpr(oldFlagC),
-					      mkU32(ARMG_CC_SHIFT_C)) );
+		    expr = mkexpr(Rm);
+		    assign( *carry_out, mkexpr(oldFlagC) );
+//		    assign( *carry_out, binop(Iop_Shr32, mkexpr(oldFlagC),
+//		                              mkU32(ARMG_CC_SHIFT_C)) );
 		    break;
 		case 0x2: case 0xA: // LSR(imm)
 		    expr = mkexpr(0);
 		    // Rm >> 31: carry = R[0]
-		    assign( *carry_out, binop(Iop_Shr32, mkexpr(Rm), mkU32(31)) );
+		    assign( *carry_out, binop(Iop_Shr32, mkexpr(Rm), mkU8(31)) );
 		    break;
 		case 0x4: case 0xC: // ASR(imm)
 		    // Rs[31] == 0 ? 0x0 : 0xFFFFFFFF
@@ -1258,10 +1274,16 @@ IRExpr* dis_shift( UInt theInstr, IRTemp* carry_out )
 			binop(Iop_CmpLT32U, mkexpr(Rs), mkU32(0x80000000)),
 			mkU32(0xFFFFFFFF), mkU32(0) );
 		    // Rm >> 31: carry = R[0]
-		    assign( *carry_out, binop(Iop_Shr32, mkexpr(Rm), mkU32(31)) );
+		    assign( *carry_out, binop(Iop_Shr32, mkexpr(Rm), mkU8(31)) );
 		    break;
-		default: break;
+		default:
+		    vex_printf("dis_shift(arm): Imm shift: No such case: 0x%x\n", shift_op);
+		    vpanic("dis_shift(ARM): Imm shift");
 	    }
+	} else {
+	    expr = binop(op, mkexpr(Rm), mkU8(shift_imm));
+	    assign( *carry_out, binop(op, mkexpr(Rm),
+				      binop(Iop_Sub32, mkU32(shift_imm), mkU32(1)) ) );
 	}
     }
     return expr;
@@ -1285,8 +1307,9 @@ IRExpr* dis_rotate ( UInt theInstr, IRTemp* carry_out )
     UInt rot_imm   = (theInstr >> 7) & 0x1F; // instr[11:7]
     IRTemp Rm       = newTemp(Ity_I32);
     IRTemp Rs       = newTemp(Ity_I32);
-    IRTemp rot_amt  = newTemp(Ity_I32);      // Rs[7:0]
-    IRTemp tmp1     = newTemp(Ity_I32);
+    IRTemp rot_amt  = newTemp(Ity_I8);      // Rs[7:0]
+    IRTemp tmp_8    = newTemp(Ity_I8);
+    IRTemp tmp_32   = newTemp(Ity_I32);
     IRTemp oldFlagC = newTemp(Ity_I32);
     IRExpr* expr=0;
 
@@ -1294,64 +1317,71 @@ IRExpr* dis_rotate ( UInt theInstr, IRTemp* carry_out )
     assign(oldFlagC, mk_armg_calculate_flags_c());
 
     if (by_reg) {  // Register rotate
+	vex_printf("rotate: reg\n");
+
 	if (Rd_addr == 15 || Rm_addr == 15 || Rn_addr == 15 || Rs_addr == 15) {
 	    // Unpredictable (ARM ARM A5-10)
 	    // CAB TODO
 	}
 
 	assign( Rs, getIReg((theInstr >> 8) & 0xF) );  // instr[11:8]
-	assign( rot_amt, binop( Iop_And32, mkexpr(Rs), mkU32(0x1F) ) );  // Rs[4:0]
+	// Rs[4:0]
+	assign( rot_amt, narrowTo(Ity_I8,
+				  binop(Iop_And32, mkexpr(Rs), mkU32(0x1F))) );
 
 	// CAB: This right?
 
 	// Rs[7:0] == 0 ? oldFlagC : (Rs[4:0] == 0 ? Rm >> 31 : Rm >> rot-1 )
-	assign( tmp1, binop(Iop_Shr32, mkexpr(oldFlagC),
-			    mkU32(ARMG_CC_SHIFT_C)) );
+//	assign( tmp_32, binop(Iop_Shr32, mkexpr(oldFlagC), mkU32(ARMG_CC_SHIFT_C)) );
+	assign( tmp_32, mkexpr(oldFlagC) );
 	assign( *carry_out,
 		IRExpr_Mux0X(
 		    binop(Iop_CmpNE32, mkU32(0),
 			  binop(Iop_And32, mkexpr(Rs), mkU32(0xFF))),
-		    mkexpr(tmp1),
+		    mkexpr(tmp_32),
 		    IRExpr_Mux0X(
-			binop(Iop_CmpEQ32, mkexpr(rot_amt), mkU32(0)),
+			binop(Iop_CmpEQ8, mkexpr(rot_amt), mkU8(0)),
 			binop(Iop_Shr32, mkexpr(Rm),
-			      binop(Iop_Sub32, mkexpr(rot_amt), mkU32(1))),
+			      binop(Iop_Sub8, mkexpr(rot_amt), mkU8(1))),
 			binop(Iop_Shr32, mkexpr(Rm),
-			      binop(Iop_Shr32, mkexpr(Rm), mkU32(31))) ) ) );
+			      binop(Iop_Shr32, mkexpr(Rm), mkU8(31))) ) ) );
 	
 
 	/* expr = (dst0 >> rot_amt) | (dst0 << (wordsize-rot_amt)) */
-	assign( tmp1, binop(Iop_Sub8, mkU8(32), mkexpr(rot_amt)) );
+	assign( tmp_8, binop(Iop_Sub8, mkU8(32), mkexpr(rot_amt)) );
 	expr = binop( Iop_Or32,
 		      binop( Iop_Shr32, mkexpr(Rm), mkexpr(rot_amt) ),
-		      binop(Iop_Shl32, mkexpr(Rm), mkexpr(tmp1)) );
+		      binop(Iop_Shl32, mkexpr(Rm), mkexpr(tmp_8)) );
     }
     else {  // Immediate rotate
+	vex_printf("rotate: imm\n");
 
 	// CAB: This right? Seems kinda strange... (ARM ARM A5-9)
 	if (Rm_addr == 15 || Rn_addr == 15) {
-	    assign( Rm, binop(Iop_Add32, getIReg(15), mkU32(8)) );
+//	    assign( Rm, binop(Iop_Add32, getIReg(15), mkU32(8)) );
+	    // TODO : Can't re-assign a temp!
 	}
 
 	// Rm >> rot-1: carry = R[0]
 	assign( *carry_out, binop(Iop_Shr32, mkexpr(Rm),
-				  binop(Iop_Sub32, mkU32(rot_imm), mkU32(1)) ) );
+				  binop(Iop_Sub8, mkU8(rot_imm), mkU8(1)) ) );
 
 	if (rot_imm == 0) { // RRX (ARM ARM A5-17)
 	    // 33 bit ROR using carry flag as the 33rd bit
 	    // op = Rm >> 1, carry flag replacing vacated bit position.  
 
 	    // CAB: This right?
-	    assign( tmp1, binop(Iop_Shr32, mkexpr(oldFlagC),
-				mkU32(ARMG_CC_SHIFT_C)) );
+	    assign( tmp_32, mkexpr(oldFlagC) );
+//	    assign( tmp_32, binop(Iop_Shr32, mkexpr(oldFlagC),
+//				  mkU32(ARMG_CC_SHIFT_C)) );
 	    expr = binop(Iop_Or32,
-			 binop( Iop_Shl32, mkexpr(tmp1), mkU32(31) ),
-			 binop( Iop_Shr32, mkexpr(Rm), mkU32(1) ) );
+			 binop( Iop_Shl32, mkexpr(tmp_32), mkU8(31) ),
+			 binop( Iop_Shr32, mkexpr(Rm), mkU8(1) ) );
 	} else {
-	    assign( tmp1, binop(Iop_Sub8, mkU8(32), mkU32(rot_imm)) );
+	    assign( tmp_8, binop(Iop_Sub8, mkU8(32), mkU8(rot_imm)) );
 	    expr = binop(Iop_Or32,
-			 binop( Iop_Shr32, mkexpr(Rm), mkU32(rot_imm) ),
-			 binop( Iop_Shl32, mkexpr(Rm), mkexpr(tmp1) ) );
+			 binop( Iop_Shr32, mkexpr(Rm), mkU8(rot_imm) ),
+			 binop( Iop_Shl32, mkexpr(Rm), mkexpr(tmp_8) ) );
 	}
     }
     return expr;
@@ -1386,21 +1416,24 @@ IRExpr* dis_shifter_op ( UInt theInstr, IRTemp* carry_out)
     // CAB TODO: Check what can do with R15... strict limits apply (ARM A5-9)
 
     if (is_immed) {  // ARM ARM A5-2
+	vex_printf("shifter_op: imm\n");
+
 	immed_8 = theInstr & 0xFF;
 	rot_imm = (theInstr >> 8) & 0xF;
 	imm = immed_8 << (rot_imm << 1);
 	vex_printf("imm: %,b\n", imm);
 
-	assign(oldFlagC, mk_armg_calculate_flags_c());
-
 	if (rot_imm == 0) {
-	    assign( *carry_out, binop(Iop_Shr32, mkexpr(oldFlagC),
-				      mkU32(ARMG_CC_SHIFT_C)) );
+	    assign(oldFlagC, mk_armg_calculate_flags_c());
+
+	    assign( *carry_out, mkexpr(oldFlagC) );
 	} else {
-	    assign( *carry_out, binop(Iop_Shr32, mkU32(imm), mkU32(31)) );
+	    assign( *carry_out, binop(Iop_Shr32, mkU32(imm), mkU8(31)) );
 	}
-	return mkexpr(imm);
+	return mkU32(imm);
     } else {
+	vex_printf("shifter_op: shift\n");
+
 	// We shouldn't have any 'op' with bits 4=1 and 7=1 : 1xx1
 	switch (shift_op) {
 	case 0x0: case 0x8: case 0x1:
@@ -1440,24 +1473,29 @@ void dis_dataproc ( UInt theInstr )
 
     switch (opc) {
     case 0x0: // AND
+	vex_printf("OPCODE: AND\n");
 	putIReg( Rd_addr, binop(Iop_And32, getIReg(Rn_addr), mkexpr(shifter_op)) );
 	break;
 
     case 0x1: // EOR
+	vex_printf("OPCODE: EOR\n");
 	putIReg( Rd_addr, binop(Iop_Xor32, getIReg(Rn_addr), mkexpr(shifter_op)) );
 	break;
 
     case 0x2: // SUB
+	vex_printf("OPCODE: SUB\n");
 	putIReg( Rd_addr, binop( Iop_Sub32, getIReg(Rn_addr), mkexpr(shifter_op) ) );
 	op = ARMG_CC_OP_SUB;
 	break;
 
     case 0x3:  // RSB
+	vex_printf("OPCODE: RSB\n");
 	putIReg( Rd_addr, binop( Iop_Sub32, mkexpr(shifter_op), getIReg(Rn_addr) ) );
 	op = ARMG_CC_OP_SUB;
 	break;
 
     case 0x4: // ADD
+	vex_printf("OPCODE: ADD\n");
 	putIReg( Rd_addr, binop( Iop_Add32, getIReg(Rn_addr), mkexpr(shifter_op) ) );
 	op = ARMG_CC_OP_ADD;
 	break;
@@ -1468,43 +1506,51 @@ void dis_dataproc ( UInt theInstr )
 	goto decode_failure;
 
     case 0x8: // TST
+	vex_printf("OPCODE: TST\n");
 	vassert(set_flags==1);
 	assign( Rd, binop(Iop_And32, getIReg(Rn_addr), mkexpr(shifter_op)) );
 	check_r15 = False;
 	break;
 
     case 0x9: // TEQ
+	vex_printf("OPCODE: TEQ\n");
 	vassert(set_flags==1);
 	assign( Rd, binop(Iop_Xor32, getIReg(Rn_addr), mkexpr(shifter_op)) );
 	check_r15 = False;
 	break;
 
     case 0xA: // CMP
+	vex_printf("OPCODE: CMP\n");
 	vassert(set_flags==1);
 	op = ARMG_CC_OP_SUB;
 	check_r15 = False;
 	break;
 
     case 0xB: // CMN
+	vex_printf("OPCODE: CMN\n");
 	vassert(set_flags==1);
 	op = ARMG_CC_OP_ADD;
 	check_r15 = False;
 	break;
 
     case 0xC: // ORR
+	vex_printf("OPCODE: ORR\n");
 	putIReg( Rd_addr, binop(Iop_Or32, getIReg(Rn_addr), mkexpr(shifter_op)) );
 	break;
 
     case 0xD: // MOV
+	vex_printf("OPCODE: MOV\n");
 	putIReg( Rd_addr, mkexpr(shifter_op) );
 	break;
 
     case 0xE: // BIC
+	vex_printf("OPCODE: BIC\n");
 	putIReg( Rd_addr, binop(Iop_And32, getIReg(Rn_addr),
 				unop( Iop_Not32, mkexpr(shifter_op))) );
 	break;
 
     case 0xF: // MVN
+	vex_printf("OPCODE: MVN\n");
 	putIReg( Rd_addr, unop(Iop_Not32, mkexpr(shifter_op)) );
 	break;
 
@@ -1533,7 +1579,6 @@ void dis_dataproc ( UInt theInstr )
 
 
 
-#define SIGNEXT24(x) ((((x) & 0xFFFFFF) ^ (~ 0x7FFFFF)) + 0x800000)
 
 /* -------------- Helper for Branch. --------------
 */
@@ -1541,28 +1586,25 @@ static
 void dis_branch ( UInt theInstr )
 {
     UChar link = (theInstr >> 24) & 1;
-    Int signed_immed_24 = theInstr & 0xFFFFFF;
-    Int branch_offset;
+    UInt signed_immed_24 = theInstr & 0xFFFFFF;
+    UInt branch_offset;
     IRTemp addr = newTemp(Ity_I32);
 
     if (link) { // LR (R14) = addr of instr after branch instr
-	// CAB TODO...
-
-//	assign( addr, binop(Iop_And32, getIReg(15), mkU32(8)) );
-//	putIReg( 14, mkexpr(addr) );
-
-
-       //irbb->next     = mkU32(guest_pc_bbstart+delta+4);
-       //irbb->jumpkind = Ijk_Boring;
+	assign( addr, binop(Iop_Add32, getIReg(15), mkU32(4)) );
+	putIReg( 14, mkexpr(addr) );
     }
 
     // PC = PC + (SignExtend(signed_immed_24) << 2)
-    branch_offset = SIGNEXT24( signed_immed_24 ) << 2;
+    branch_offset = extend_s_24to32( signed_immed_24 ) << 2;
     putIReg( 15, binop(Iop_Add32, getIReg(15), mkU32(branch_offset)) );
+
+    irbb->jumpkind = link ? Ijk_Call : Ijk_Boring;
+    irbb->next     = mkU32(branch_offset);
 }
 
 
-
+// whatNext = Dis_StopHere;
 
 
 
@@ -1695,7 +1737,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    opc1 = (theInstr >> 20) & 0xFF;    /* opcode1: bits 27:20 */
    opc2 = (theInstr >> 4 ) & 0xF;     /* opcode2: bits 7:4   */
    vex_printf("disInstr(arm): opcode1: 0x%2x, %,09b\n", opc1, opc1 );
-   vex_printf("disInstr(arm): opcode2: 0x%02x, %,09b\n", opc2, opc2 );
+   vex_printf("disInstr(arm): opcode2: 0x%02x, %,04b\n", opc2, opc2 );
 
    switch (opc1 >> 4) { // instr[27:24]
    case 0x0:
@@ -1798,7 +1840,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
        /*
 	 Data Processing Instructions
-	 (if we get here, it's a valid dpi instruction)
+	 (if we get here, it's a valid dpi)
        */
        vex_printf("OPCODE: DPI\n");
        dis_dataproc( theInstr );
@@ -1832,6 +1874,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        // B(L): L=1 => return address stored in link register (R14)
        vex_printf("OPCODE: B(L)\n");
        dis_branch(theInstr);
+       whatNext = Dis_StopHere;
        break;
 
 

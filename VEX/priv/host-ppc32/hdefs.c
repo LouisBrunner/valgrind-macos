@@ -450,25 +450,25 @@ HChar* showPPC32CmpOp ( PPC32CmpOp op ) {
 //..    }
 //.. }
 
-PPC32Instr* PPC32Instr_Alu32 ( PPC32AluOp op, HReg dst, HReg src1, PPC32RI* src2 ) {
+PPC32Instr* PPC32Instr_Alu32 ( PPC32AluOp op, HReg dst, HReg srcL, PPC32RI* srcR ) {
    PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
-   if (src2->tag == Pri_Imm)
-      vassert(src2->Pri.Imm.imm32 < 0x10000);
+   if (srcR->tag == Pri_Imm)
+      vassert(srcR->Pri.Imm.imm32 < 0x10000);
    i->tag            = Pin_Alu32;
    i->Pin.Alu32.op   = op;
    i->Pin.Alu32.dst  = dst;
-   i->Pin.Alu32.src1 = src1;
-   i->Pin.Alu32.src2 = src2;
+   i->Pin.Alu32.srcL = srcL;
+   i->Pin.Alu32.srcR = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_Sub32 ( HReg dst, PPC32RI* src1, HReg src2 ) {
+PPC32Instr* PPC32Instr_Sub32 ( HReg dst, PPC32RI* srcL, HReg srcR ) {
    PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
-   if (src1->tag == Pri_Imm)
-      vassert(src1->Pri.Imm.imm32 < 0x10000);
+   if (srcL->tag == Pri_Imm)
+      vassert(srcL->Pri.Imm.imm32 < 0x10000);
    i->tag            = Pin_Sub32;
    i->Pin.Sub32.dst  = dst;
-   i->Pin.Sub32.src1 = src1;
-   i->Pin.Sub32.src2 = src2;
+   i->Pin.Sub32.srcL = srcL;
+   i->Pin.Sub32.srcR = srcR;
    return i;
 }
 PPC32Instr* PPC32Instr_Sh32 ( PPC32ShiftOp op, HReg dst, HReg src, PPC32RI* shft ) {
@@ -484,15 +484,15 @@ PPC32Instr* PPC32Instr_Sh32 ( PPC32ShiftOp op, HReg dst, HReg src, PPC32RI* shft
    i->Pin.Sh32.shft = shft;
    return i;
 }
-PPC32Instr* PPC32Instr_Cmp32 ( PPC32CmpOp op, UInt crfD, HReg src1, PPC32RI* src2 ) {
+PPC32Instr* PPC32Instr_Cmp32 ( PPC32CmpOp op, UInt crfD, HReg srcL, PPC32RI* srcR ) {
    PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
-   if (src2->tag == Pri_Imm)
-      vassert(src2->Pri.Imm.imm32 < 0x10000);
+   if (srcR->tag == Pri_Imm)
+      vassert(srcR->Pri.Imm.imm32 < 0x10000);
    i->tag            = Pin_Cmp32;
    i->Pin.Cmp32.op   = op;
    i->Pin.Cmp32.crfD = crfD;
-   i->Pin.Cmp32.src1 = src1;
-   i->Pin.Cmp32.src2 = src2;
+   i->Pin.Cmp32.srcL = srcL;
+   i->Pin.Cmp32.srcR = srcR;
    return i;
 }
 PPC32Instr* PPC32Instr_Unary32  ( PPC32UnaryOp op, HReg dst, HReg src ) {
@@ -504,31 +504,31 @@ PPC32Instr* PPC32Instr_Unary32  ( PPC32UnaryOp op, HReg dst, HReg src ) {
    return i;
 }
 PPC32Instr* PPC32Instr_MulL ( Bool syned, Bool word, HReg dst,
-                              HReg src1, PPC32RI* src2 ) {
+                              HReg srcL, PPC32RI* srcR ) {
    PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
    if (word == 1) { // high
-      vassert(src2->tag == Pri_Reg);
+      vassert(srcR->tag == Pri_Reg);
    } else {         // low
-      if (src2->tag == Pri_Imm) {
+      if (srcR->tag == Pri_Imm) {
          vassert(syned == True);
-         vassert(src2->Pri.Imm.imm32 < 0x10000);
+         vassert(srcR->Pri.Imm.imm32 < 0x10000);
       }
    }
    i->tag            = Pin_MulL;
    i->Pin.MulL.syned = syned;
    i->Pin.MulL.word  = word;
    i->Pin.MulL.dst   = dst;
-   i->Pin.MulL.src1  = src1;
-   i->Pin.MulL.src2  = src2;
+   i->Pin.MulL.srcL  = srcL;
+   i->Pin.MulL.srcR  = srcR;
    return i;
 }
-PPC32Instr* PPC32Instr_Div ( Bool syned, HReg dst, HReg src1, HReg src2 ) {
+PPC32Instr* PPC32Instr_Div ( Bool syned, HReg dst, HReg srcL, HReg srcR ) {
    PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag             = Pin_Div;
    i->Pin.Div.syned   = syned;
    i->Pin.Div.dst     = dst;
-   i->Pin.Div.src1    = src1;
-   i->Pin.Div.src2    = src2;
+   i->Pin.Div.srcL    = srcL;
+   i->Pin.Div.srcR    = srcR;
    return i;
 }
 //.. X86Instr* X86Instr_Sh3232  ( X86ShiftOp op, UInt amt, HReg src, HReg dst ) {
@@ -733,48 +733,48 @@ void ppPPC32Instr ( PPC32Instr* i )
    switch (i->tag) {
    case Pin_Alu32:
       if (i->Pin.Alu32.op == Palu_OR &&     // or Rd,Rs,Rs == mr Rd,Rs
-          i->Pin.Alu32.src2->tag == Pri_Reg &&
-          i->Pin.Alu32.src2->Pri.Reg.reg == i->Pin.Alu32.src1) {
+          i->Pin.Alu32.srcR->tag == Pri_Reg &&
+          i->Pin.Alu32.srcR->Pri.Reg.reg == i->Pin.Alu32.srcL) {
          vex_printf("mr ");
          ppHRegPPC32(i->Pin.Alu32.dst);
          vex_printf(",");
-         ppHRegPPC32(i->Pin.Alu32.src1);
+         ppHRegPPC32(i->Pin.Alu32.srcL);
          return;
       }
       if (i->Pin.Alu32.op == Palu_ADD &&     // add rD,r0,val == li rD,val
-          i->Pin.Alu32.src1 == hregPPC32_GPR0() &&
-          i->Pin.Alu32.src2->tag == Pri_Imm) {
+          i->Pin.Alu32.srcL == hregPPC32_GPR0() &&
+          i->Pin.Alu32.srcR->tag == Pri_Imm) {
          vex_printf("li ");
          ppHRegPPC32(i->Pin.Alu32.dst);
          vex_printf(",");
-         ppPPC32RI(i->Pin.Alu32.src2);
+         ppPPC32RI(i->Pin.Alu32.srcR);
          return;
       }
       if (i->Pin.Alu32.op == Palu_AND &&     // 'andi.' - always has the '.'
-          i->Pin.Alu32.src2->tag == Pri_Imm) {
+          i->Pin.Alu32.srcR->tag == Pri_Imm) {
          vex_printf("andi. ");
          ppHRegPPC32(i->Pin.Alu32.dst);
          vex_printf(",");
-         ppHRegPPC32(i->Pin.Alu32.src1);
+         ppHRegPPC32(i->Pin.Alu32.srcL);
          vex_printf(",");
-         ppPPC32RI(i->Pin.Alu32.src2);
+         ppPPC32RI(i->Pin.Alu32.srcR);
          return;
       }
       vex_printf("%s%s ", showPPC32AluOp(i->Pin.Alu32.op),
-                 i->Pin.Alu32.src2->tag == Pri_Imm ? "i" : "" );
+                 i->Pin.Alu32.srcR->tag == Pri_Imm ? "i" : "" );
       ppHRegPPC32(i->Pin.Alu32.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.Alu32.src1);
+      ppHRegPPC32(i->Pin.Alu32.srcL);
       vex_printf(",");
-      ppPPC32RI(i->Pin.Alu32.src2);
+      ppPPC32RI(i->Pin.Alu32.srcR);
       return;
    case Pin_Sub32:
-      vex_printf("subf%s ", i->Pin.Sub32.src1->tag == Pri_Imm ? "ic" : "" );
+      vex_printf("subf%s ", i->Pin.Sub32.srcL->tag == Pri_Imm ? "ic" : "" );
       ppHRegPPC32(i->Pin.Sub32.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.Sub32.src2); // yes, order is right :-)
+      ppHRegPPC32(i->Pin.Sub32.srcR); // yes, order is right :-)
       vex_printf(",");
-      ppPPC32RI(i->Pin.Sub32.src1);
+      ppPPC32RI(i->Pin.Sub32.srcL);
       return;
    case Pin_Sh32:
       vex_printf("%s%s ", showPPC32ShiftOp(i->Pin.Sh32.op),
@@ -787,11 +787,11 @@ void ppPPC32Instr ( PPC32Instr* i )
       return;
    case Pin_Cmp32:
       vex_printf("%s%s %%crf%d,", showPPC32CmpOp(i->Pin.Cmp32.op),
-                 i->Pin.Cmp32.src2->tag == Pri_Imm ? "i" : "",
+                 i->Pin.Cmp32.srcR->tag == Pri_Imm ? "i" : "",
                  (7 - i->Pin.Cmp32.crfD));
-      ppHRegPPC32(i->Pin.Cmp32.src1);
+      ppHRegPPC32(i->Pin.Cmp32.srcL);
       vex_printf(",");
-      ppPPC32RI(i->Pin.Cmp32.src2);
+      ppPPC32RI(i->Pin.Cmp32.srcR);
       return;
    case Pin_Unary32:
       vex_printf("%s ", showPPC32UnaryOp(i->Pin.Unary32.op));
@@ -800,7 +800,7 @@ void ppPPC32Instr ( PPC32Instr* i )
       ppHRegPPC32(i->Pin.Unary32.src);
       return;
    case Pin_MulL:
-      if (i->Pin.MulL.src2->tag == Pri_Imm) {
+      if (i->Pin.MulL.srcR->tag == Pri_Imm) {
          vex_printf("mulli ");
       } else {
          vex_printf("mul%s%c ",
@@ -809,18 +809,18 @@ void ppPPC32Instr ( PPC32Instr* i )
       }
       ppHRegPPC32(i->Pin.MulL.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.MulL.src1);
+      ppHRegPPC32(i->Pin.MulL.srcL);
       vex_printf(",");
-      ppPPC32RI(i->Pin.MulL.src2);
+      ppPPC32RI(i->Pin.MulL.srcR);
       return;
    case Pin_Div:
       vex_printf("divw%s ",
                  i->Pin.Div.syned ? "" : "u");
       ppHRegPPC32(i->Pin.Div.dst);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.Div.src1);
+      ppHRegPPC32(i->Pin.Div.srcL);
       vex_printf(",");
-      ppHRegPPC32(i->Pin.Div.src2);
+      ppHRegPPC32(i->Pin.Div.srcR);
       return;
 //..       case Xin_Sh3232:
 //..          vex_printf("%sdl ", showX86ShiftOp(i->Xin.Sh3232.op));
@@ -1089,14 +1089,14 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
    initHRegUsage(u);
    switch (i->tag) {
    case Pin_Alu32:
-      addHRegUse(u, HRmRead, i->Pin.Alu32.src1);
-      addRegUsage_PPC32RI(u, i->Pin.Alu32.src2);
+      addHRegUse(u, HRmRead, i->Pin.Alu32.srcL);
+      addRegUsage_PPC32RI(u, i->Pin.Alu32.srcR);
       addHRegUse(u, HRmWrite, i->Pin.Alu32.dst);
       return;
 
    case Pin_Sub32:
-      addRegUsage_PPC32RI(u, i->Pin.Sub32.src1);
-      addHRegUse(u, HRmRead, i->Pin.Sub32.src2);
+      addRegUsage_PPC32RI(u, i->Pin.Sub32.srcL);
+      addHRegUse(u, HRmRead, i->Pin.Sub32.srcR);
       addHRegUse(u, HRmWrite, i->Pin.Sub32.dst);
       return;
 
@@ -1107,8 +1107,8 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       return;
       
    case Pin_Cmp32:
-      addHRegUse(u, HRmRead, i->Pin.Cmp32.src1);
-      addRegUsage_PPC32RI(u, i->Pin.Cmp32.src2);
+      addHRegUse(u, HRmRead, i->Pin.Cmp32.srcL);
+      addRegUsage_PPC32RI(u, i->Pin.Cmp32.srcR);
       return;
 
    case Pin_Unary32:
@@ -1117,13 +1117,13 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       return;
    case Pin_MulL:
       addHRegUse(u, HRmWrite, i->Pin.MulL.dst);
-      addHRegUse(u, HRmRead, i->Pin.MulL.src1);
-      addRegUsage_PPC32RI(u, i->Pin.MulL.src2);
+      addHRegUse(u, HRmRead, i->Pin.MulL.srcL);
+      addRegUsage_PPC32RI(u, i->Pin.MulL.srcR);
       return;
    case Pin_Div:
       addHRegUse(u, HRmWrite, i->Pin.Div.dst);
-      addHRegUse(u, HRmRead, i->Pin.Div.src1);
-      addHRegUse(u, HRmRead, i->Pin.Div.src2);
+      addHRegUse(u, HRmRead, i->Pin.Div.srcL);
+      addHRegUse(u, HRmRead, i->Pin.Div.srcR);
       return;
 //..       case Xin_Sh3232:
 //..          addHRegUse(u, HRmRead, i->Xin.Sh3232.src);
@@ -1333,13 +1333,13 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
    switch (i->tag) {
    case Pin_Alu32:
       mapReg(m, &i->Pin.Alu32.dst);
-      mapReg(m, &i->Pin.Alu32.src1);
-      mapRegs_PPC32RI(m, i->Pin.Alu32.src2);
+      mapReg(m, &i->Pin.Alu32.srcL);
+      mapRegs_PPC32RI(m, i->Pin.Alu32.srcR);
       return;
    case Pin_Sub32:
       mapReg(m, &i->Pin.Sub32.dst);
-      mapRegs_PPC32RI(m, i->Pin.Sub32.src1);
-      mapReg(m, &i->Pin.Sub32.src2);
+      mapRegs_PPC32RI(m, i->Pin.Sub32.srcL);
+      mapReg(m, &i->Pin.Sub32.srcR);
       return;
    case Pin_Sh32:
       mapReg(m, &i->Pin.Sh32.dst);
@@ -1347,8 +1347,8 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       mapRegs_PPC32RI(m, i->Pin.Sh32.shft);
       return;
    case Pin_Cmp32:
-      mapReg(m, &i->Pin.Cmp32.src1);
-      mapRegs_PPC32RI(m, i->Pin.Cmp32.src2);
+      mapReg(m, &i->Pin.Cmp32.srcL);
+      mapRegs_PPC32RI(m, i->Pin.Cmp32.srcR);
       return;
    case Pin_Unary32:
       mapReg(m, &i->Pin.Unary32.dst);
@@ -1356,13 +1356,13 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       return;
    case Pin_MulL:
       mapReg(m, &i->Pin.MulL.dst);
-      mapReg(m, &i->Pin.MulL.src1);
-      mapRegs_PPC32RI(m, i->Pin.MulL.src2);
+      mapReg(m, &i->Pin.MulL.srcL);
+      mapRegs_PPC32RI(m, i->Pin.MulL.srcR);
       return;
    case Pin_Div:
       mapReg(m, &i->Pin.Div.dst);
-      mapReg(m, &i->Pin.Div.src1);
-      mapReg(m, &i->Pin.Div.src2);
+      mapReg(m, &i->Pin.Div.srcL);
+      mapReg(m, &i->Pin.Div.srcR);
       return;
 //..       case Xin_Sh3232:
 //..          mapReg(m, &i->Xin.Sh3232.src);
@@ -1493,11 +1493,11 @@ Bool isMove_PPC32Instr ( PPC32Instr* i, HReg* src, HReg* dst )
       // or Rd,Rs,Rs == mr Rd,Rs
       if (i->Pin.Alu32.op != Palu_OR)
          return False;
-      if (i->Pin.Alu32.src2->tag != Pri_Reg)
+      if (i->Pin.Alu32.srcR->tag != Pri_Reg)
          return False;
-      if (i->Pin.Alu32.src2->Pri.Reg.reg != i->Pin.Alu32.src1)
+      if (i->Pin.Alu32.srcR->Pri.Reg.reg != i->Pin.Alu32.srcL)
          return False;
-      *src = i->Pin.Alu32.src1;
+      *src = i->Pin.Alu32.srcL;
       *dst = i->Pin.Alu32.dst;
       return True;
    }
@@ -1808,72 +1808,70 @@ static UChar* emit32 ( UChar* p, UInt w32 )
 //..    return p;
 //.. }
 
-static UChar* mkFormD ( UChar* p, UInt op1, UInt r1, UInt r2, UInt imm )
+static UChar* mkFormD ( UChar* p, UInt opc1, UInt r1, UInt r2, UInt imm )
 {
    UInt theInstr;
-   vassert(op1 < 0x40);
+   vassert(opc1 < 0x40);
    vassert(r1  < 0x20);
    vassert(r2  < 0x20);
    vassert(imm < 0x10000 || imm >= 0xFFFF8000);     // Pos|Neg
    imm = imm & 0xFFFF;
-   theInstr = ((op1<<26) | (r1<<21) | (r2<<16) | (imm));
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (imm));
    return emit32(p, theInstr);
 }
 
-static UChar* mkFormX ( UChar* p, UInt op1, UInt r1, UInt r2,
-                        UInt r3, UInt op2, UInt b0 )
+static UChar* mkFormX ( UChar* p, UInt opc1, UInt r1, UInt r2,
+                        UInt r3, UInt opc2, UInt b0 )
 {
    UInt theInstr;
-   vassert(op1 < 0x40);
+   vassert(opc1 < 0x40);
    vassert(r1  < 0x20);
    vassert(r2  < 0x20);
    vassert(r3  < 0x20);
-   vassert(op2 < 0x400);
+   vassert(opc2 < 0x400);
    vassert(b0  < 0x2);
-   theInstr = ((op1<<26) | (r1<<21) | (r2<<16) |
-               (r3<<11) | (op2<<1) | (b0));
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) | (r3<<11) | (opc2<<1) | (b0));
    return emit32(p, theInstr);
 }
 
-static UChar* mkFormXO ( UChar* p, UInt op1, UInt r1, UInt r2,
-                         UInt r3, UInt b10, UInt op2, UInt b0 )
+static UChar* mkFormXO ( UChar* p, UInt opc1, UInt r1, UInt r2,
+                         UInt r3, UInt b10, UInt opc2, UInt b0 )
 {
    UInt theInstr;
-   vassert(op1 < 0x40);
+   vassert(opc1 < 0x40);
    vassert(r1  < 0x20);
    vassert(r2  < 0x20);
    vassert(r3  < 0x20);
    vassert(b10 < 0x2);
-   vassert(op2 < 0x200);
+   vassert(opc2 < 0x200);
    vassert(b0  < 0x2);
-   theInstr = ((op1<<26) | (r1<<21) | (r2<<16) |
-               (r3<<11) | (b10 << 10) | (op2<<1) | (b0));
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
+               (r3<<11) | (b10 << 10) | (opc2<<1) | (b0));
    return emit32(p, theInstr);
 }
 
-static UChar* mkFormXL ( UChar* p, UInt op1, UInt f1, UInt f2,
-                         UInt f3, UInt op2, UInt b0 )
+static UChar* mkFormXL ( UChar* p, UInt opc1, UInt f1, UInt f2,
+                         UInt f3, UInt opc2, UInt b0 )
 {
    UInt theInstr;
-   vassert(op1 < 0x40);
+   vassert(opc1 < 0x40);
    vassert(f1  < 0x20);
    vassert(f2  < 0x20);
    vassert(f3  < 0x20);
-   vassert(op2 < 0x400);
+   vassert(opc2 < 0x400);
    vassert(b0  < 0x2);
-   theInstr = ((op1<<26) | (f1<<21) | (f2<<16) |
-               (f3<<11) | (op2<<1) | (b0));
+   theInstr = ((opc1<<26) | (f1<<21) | (f2<<16) | (f3<<11) | (opc2<<1) | (b0));
    return emit32(p, theInstr);
 }
 
 // Note: for split field ops, give mnemonic arg
-static UChar* mkFormXFX ( UChar* p, UInt r1, UInt f2, UInt op2 )
+static UChar* mkFormXFX ( UChar* p, UInt r1, UInt f2, UInt opc2 )
 {
    UInt theInstr;
    vassert(r1  < 0x20);
    vassert(f2  < 0x20);
-   vassert(op2 < 0x400);
-   switch (op2) {
+   vassert(opc2 < 0x400);
+   switch (opc2) {
    case 144:  // mtcrf
       vassert(f2 < 0x100);
       f2 = f2 << 1;
@@ -1886,7 +1884,7 @@ static UChar* mkFormXFX ( UChar* p, UInt r1, UInt f2, UInt op2 )
       break;
    default: vpanic("mkFormXFX(PPC32)");
    }
-   theInstr = ((31<<26) | (r1<<21) | (f2<<11) | (op2<<1));
+   theInstr = ((31<<26) | (r1<<21) | (f2<<11) | (opc2<<1));
    return emit32(p, theInstr);
 }
 
@@ -1913,52 +1911,54 @@ static UChar* mkFormB ( UChar* p, UInt BO, UInt BI,
    vassert(BD  < 0x4000);
    vassert(AA  < 0x2);
    vassert(LK  < 0x2);
-   theInstr = ((16<<26) | (BO<<21) | (BI<<16) |
-               (BD<<2) | (AA<<1) | (LK));
+   theInstr = ((16<<26) | (BO<<21) | (BI<<16) | (BD<<2) | (AA<<1) | (LK));
    return emit32(p, theInstr);
 }
 
 // rotates
-static UChar* mkFormM ( UChar* p, UInt op1, UInt r1, UInt r2,
+static UChar* mkFormM ( UChar* p, UInt opc1, UInt r1, UInt r2,
                         UInt f3, UInt MB, UInt ME, UInt Rc )
 {
    UInt theInstr;
-   vassert(op1 < 0x40);
+   vassert(opc1 < 0x40);
    vassert(r1  < 0x20);
    vassert(r2  < 0x20);
    vassert(f3  < 0x20);
    vassert(MB  < 0x20);
    vassert(ME  < 0x20);
    vassert(Rc  < 0x2);
-   theInstr = ((op1<<26) | (r1<<21) | (r2<<16) |
+   theInstr = ((opc1<<26) | (r1<<21) | (r2<<16) |
                (f3<<11) | (MB<<6) | (ME<<1) | (Rc));
    return emit32(p, theInstr);
 }
 
-static UChar* doAMode_IR ( UChar* p, UInt op1, HReg hrSD, PPC32AMode* am )
+static UChar* doAMode_IR ( UChar* p, UInt opc1, HReg hrSD, PPC32AMode* am )
 {
    UInt rSD, rA, idx;
    vassert(am->tag == Pam_IR);
+   vassert(am->Pam.IR.index < 0x10000);
+
    rSD = iregNo(hrSD);
    rA  = iregNo(am->Pam.IR.base);
    idx = am->Pam.IR.index;
-   vassert(idx < 0x10000);
-   
-   p = mkFormD(p, op1, rSD, rA, idx);
+
+   p = mkFormD(p, opc1, rSD, rA, idx);
    return p;
 }
 
 
-static UChar* doAMode_RR ( UChar* p, UInt op1, UInt op2,
+static UChar* doAMode_RR ( UChar* p, UInt opc1, UInt opc2,
                            HReg hrSD, PPC32AMode* am )
 {
    UInt rSD, rA, rB;
 //   vassert(hregClass(hrSD) == HRcInt32); // CAB: etc. worth doing this?
    vassert(am->tag == Pam_RR);
+
    rSD = iregNo(hrSD);
    rA  = iregNo(am->Pam.RR.base);
    rB  = iregNo(am->Pam.RR.index);
-   p = mkFormX(p, op1, rSD, rA, rB, op2, 0);
+   
+   p = mkFormX(p, opc1, rSD, rA, rB, opc2, 0);
    return p;
 }
 
@@ -2017,64 +2017,64 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    switch (i->tag) {
 
    case Pin_Alu32: {
-      UInt op1, op2, rR, immR;
-      UInt rD  = iregNo(i->Pin.Alu32.dst);
-      UInt rL = iregNo(i->Pin.Alu32.src1);
+      UInt opc1, opc2, r_srcR, imm_srcR;
+      UInt r_dst  = iregNo(i->Pin.Alu32.dst);
+      UInt r_srcL = iregNo(i->Pin.Alu32.srcL);
 
       /* ADD/AND/OR/XOR */
-      if (i->Pin.Alu32.src2->tag == Pri_Reg) {
-         op1 = 31;
-         rR = iregNo(i->Pin.Alu32.src2->Pri.Reg.reg);
+      if (i->Pin.Alu32.srcR->tag == Pri_Reg) {
+         opc1 = 31;
+         r_srcR = iregNo(i->Pin.Alu32.srcR->Pri.Reg.reg);
          switch (i->Pin.Alu32.op) {
-         case Palu_ADD: op2 = 266; break;
-         case Palu_AND: op2 =  28; break;
-         case Palu_XOR: op2 = 316; break;
-         case Palu_OR:  op2 = 444; break;
+         case Palu_ADD: opc2 = 266; break;
+         case Palu_AND: opc2 =  28; break;
+         case Palu_XOR: opc2 = 316; break;
+         case Palu_OR:  opc2 = 444; break;
          default:
             goto bad;
          }
 
          if (i->Pin.Alu32.op == Palu_ADD) {
-            p = mkFormXO(p, op1, rD, rL, rR, 0, op2, 0);
+            p = mkFormXO(p, opc1, r_dst, r_srcL, r_srcR, 0, opc2, 0);
          } else {
-            p = mkFormX(p, op1, rL, rD, rR, op2, 0);
+            p = mkFormX(p, opc1, r_srcL, r_dst, r_srcR, opc2, 0);
          }
       } else { // Pri_Imm:
-         immR = i->Pin.Alu32.src2->Pri.Imm.imm32;
+         imm_srcR = i->Pin.Alu32.srcR->Pri.Imm.imm32;
          switch (i->Pin.Alu32.op) {
-         case Palu_ADD: op1 = 14; break;
-         case Palu_AND: op1 = 28; break;
-         case Palu_XOR: op1 = 26; break;
-         case Palu_OR:  op1 = 24; break;
+         case Palu_ADD: opc1 = 14; break;
+         case Palu_AND: opc1 = 28; break;
+         case Palu_XOR: opc1 = 26; break;
+         case Palu_OR:  opc1 = 24; break;
          default:
             goto bad;
          }
 
          if (i->Pin.Alu32.op == Palu_ADD) {
-            p = mkFormD(p, op1, rD, rL, immR);
+            p = mkFormD(p, opc1, r_dst, r_srcL, imm_srcR);
          } else {
-            p = mkFormD(p, op1, rL, rD, immR);
+            p = mkFormD(p, opc1, r_srcL, r_dst, imm_srcR);
          }
       }
       goto done;
    }
 
    case Pin_Sub32: {
-      UInt rD = iregNo(i->Pin.Sub32.dst);
-      UInt rR = iregNo(i->Pin.Sub32.src2);
-      UInt rL, immL;
+      UInt r_dst = iregNo(i->Pin.Sub32.dst);
+      UInt r_srcR = iregNo(i->Pin.Sub32.srcR);
+      UInt r_srcL, imm_srcL;
 
       // Note argument swap: PPC32 only has sub-from instrs
-      switch (i->Pin.Sub32.src1->tag) {
+      switch (i->Pin.Sub32.srcL->tag) {
       case Pri_Reg:
-         rL = iregNo(i->Pin.Sub32.src1->Pri.Reg.reg);
-         // subf rD, rR, rL
-         p = mkFormXO(p, 31, rD, rR, rL, 0, 40, 0);
+         r_srcL = iregNo(i->Pin.Sub32.srcL->Pri.Reg.reg);
+         // subf r_dst, r_srcR, r_srcL
+         p = mkFormXO(p, 31, r_dst, r_srcR, r_srcL, 0, 40, 0);
          break;
       case Pri_Imm:
-         immL = i->Pin.Sub32.src1->Pri.Imm.imm32;
-         // subf rD, rR, immL
-         p = mkFormD(p, 8, rD, rR, immL);
+         imm_srcL = i->Pin.Sub32.srcL->Pri.Imm.imm32;
+         // subf r_dst, r_srcR, imm_srcL
+         p = mkFormD(p, 8, r_dst, r_srcR, imm_srcL);
          break;
       default:
          goto bad;
@@ -2083,10 +2083,10 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    }
 
    case Pin_Sh32: {
-      UInt opc1 = 31, opc2, rB, sh;
+      UInt opc1 = 31, opc2, r_shft, imm_shft;
       UInt op = i->Pin.Sh32.op;
-      UInt rS = iregNo(i->Pin.Sh32.src);
-      UInt rA = iregNo(i->Pin.Sh32.dst);
+      UInt r_src = iregNo(i->Pin.Sh32.src);
+      UInt r_dst = iregNo(i->Pin.Sh32.dst);
 
       switch (i->Pin.Sh32.shft->tag) {
       case Pri_Reg:
@@ -2096,15 +2096,15 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          case Psh_SAR: opc2 = 792; break;
          default: goto bad;
          }
-         rB = iregNo(i->Pin.Sh32.shft->Pri.Reg.reg);
-         p = mkFormX(p, opc1, rS, rA, rB, opc2, 0);
+         r_shft = iregNo(i->Pin.Sh32.shft->Pri.Reg.reg);
+         p = mkFormX(p, opc1, r_src, r_dst, r_shft, opc2, 0);
          break;
 
       case Pri_Imm:  // SAR only
          if (op != Psh_SAR) goto bad;
          opc2 = 824;
-         sh = i->Pin.Sh32.shft->Pri.Imm.imm32;
-         p = mkFormX(p, opc1, rS, rA, sh, opc2, 0);
+         imm_shft = i->Pin.Sh32.shft->Pri.Imm.imm32;
+         p = mkFormX(p, opc1, r_src, r_dst, imm_shft, opc2, 0);
          break;
 
       default:
@@ -2117,20 +2117,20 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt opc1, opc2=0;
       UInt op = i->Pin.Cmp32.op;
       UInt fld1 = (7 - i->Pin.Cmp32.crfD) << 2;
-      UInt r1 = iregNo(i->Pin.Cmp32.src1);
-      UInt r2, imm;
+      UInt r_srcL = iregNo(i->Pin.Cmp32.srcL);
+      UInt r_srcR, imm_srcR;
 
-      switch (i->Pin.Cmp32.src2->tag) {
+      switch (i->Pin.Cmp32.srcR->tag) {
       case Pri_Imm:
          opc1 = (op == Pcmp_U) ? 10 : 11;
-         imm = i->Pin.Cmp32.src2->Pri.Imm.imm32;
-         p = mkFormD(p, opc1, fld1, r1, imm);
+         imm_srcR = i->Pin.Cmp32.srcR->Pri.Imm.imm32;
+         p = mkFormD(p, opc1, fld1, r_srcL, imm_srcR);
          break;
       case Pri_Reg:
          opc1 = 31;
          opc2 = (op == Pcmp_U) ? 32 : 0;
-         r2 = iregNo(i->Pin.Cmp32.src2->Pri.Reg.reg);
-         p = mkFormX(p, opc1, fld1, r1, r2, opc2, 0);
+         r_srcR = iregNo(i->Pin.Cmp32.srcR->Pri.Reg.reg);
+         p = mkFormX(p, opc1, fld1, r_srcL, r_srcR, opc2, 0);
          break;
       default: goto bad;
       }        
@@ -2159,23 +2159,23 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    case Pin_MulL: {
       Bool syned  = i->Pin.MulL.syned;
       UInt r_dst  = iregNo(i->Pin.MulL.dst);
-      UInt r_src1 = iregNo(i->Pin.MulL.src1);
-      UInt r_src2, imm;
+      UInt r_srcL = iregNo(i->Pin.MulL.srcL);
+      UInt r_srcR, imm;
 
       switch (i->Pin.MulL.word) {
       case 0:  // Mult LOW word
-         switch (i->Pin.MulL.src2->tag) {
+         switch (i->Pin.MulL.srcR->tag) {
          case Pri_Reg:
-            // mullw r_dst,r_src1,r_src2
+            // mullw r_dst,r_srcL,r_srcR
             // sign makes no difference.
-            r_src2 = iregNo(i->Pin.MulL.src2->Pri.Reg.reg);
-            p = mkFormXO(p, 31, r_dst, r_src1, r_src2, 0, 235, 0);
+            r_srcR = iregNo(i->Pin.MulL.srcR->Pri.Reg.reg);
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 235, 0);
             break;
          case Pri_Imm:
             // mulli r_dst,r_src,imm
             vassert(syned == True);  // always signed
-            imm = i->Pin.MulL.src2->Pri.Imm.imm32;
-            p = mkFormD(p, 07, r_dst, r_src1, imm);
+            imm = i->Pin.MulL.srcR->Pri.Imm.imm32;
+            p = mkFormD(p, 07, r_dst, r_srcL, imm);
             break;
          default:
             goto bad;
@@ -2183,14 +2183,14 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          break;
 
       case 1:  // Mult HIGH word
-         vassert(i->Pin.MulL.src2->tag == Pri_Reg);
-         r_src2 = iregNo(i->Pin.MulL.src2->Pri.Reg.reg);
+         vassert(i->Pin.MulL.srcR->tag == Pri_Reg);
+         r_srcR = iregNo(i->Pin.MulL.srcR->Pri.Reg.reg);
          if (syned == True) {
-            // mulhw r_dst,r_src1,r_src2
-            p = mkFormXO(p, 31, r_dst, r_src1, r_src2, 0, 75, 0);
+            // mulhw r_dst,r_srcL,r_srcR
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 75, 0);
          } else {
-            // mulhwu r_dst,r_src1,r_src2
-            p = mkFormXO(p, 31, r_dst, r_src1, r_src2, 0, 11, 0);
+            // mulhwu r_dst,r_srcL,r_srcR
+            p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 11, 0);
          }
          break;
 
@@ -2202,15 +2202,15 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    case Pin_Div: {
       Bool syned  = i->Pin.MulL.syned;
       UInt r_dst  = iregNo(i->Pin.Div.dst);
-      UInt r_src1 = iregNo(i->Pin.Div.src1);
-      UInt r_src2 = iregNo(i->Pin.Div.src2);
+      UInt r_srcL = iregNo(i->Pin.Div.srcL);
+      UInt r_srcR = iregNo(i->Pin.Div.srcR);
 
       if (syned == True) {
-         // divw r_dst,r_src1,r_src2
-         p = mkFormXO(p, 31, r_dst, r_src1, r_src2, 0, 491, 0);
+         // divw r_dst,r_srcL,r_srcR
+         p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 491, 0);
       } else {
-         // divwu r_dst,r_src1,r_src2
-         p = mkFormXO(p, 31, r_dst, r_src1, r_src2, 0, 459, 0);
+         // divwu r_dst,r_srcL,r_srcR
+         p = mkFormXO(p, 31, r_dst, r_srcL, r_srcR, 0, 459, 0);
       }
       goto done;
    }
@@ -2285,7 +2285,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       UInt magic_num = 0;
       UChar r_return = 3;    /* Put target addr into %r3 */
       PPC32CondCode cond = i->Pin.Goto.cond;
-      UInt imm;
+      UInt r_dst, imm_dst;
       
       /* First off, if this is conditional, create a conditional
          jump over the rest of it. */
@@ -2323,10 +2323,9 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
       /* Get the destination address into %r_return */
       if (i->Pin.Goto.dst->tag == Pri_Imm) {
-         imm = i->Pin.Goto.dst->Pri.Imm.imm32;
-         p = mkLoadImm(p, r_return, imm);
+         imm_dst = i->Pin.Goto.dst->Pri.Imm.imm32;
+         p = mkLoadImm(p, r_return, imm_dst);
       } else {
-         UInt r_dst;
          vassert(i->Pin.Goto.dst->tag == Pri_Reg);
          r_dst = iregNo(i->Pin.Goto.dst->Pri.Reg.reg);
          p = mkMoveReg(p, r_return, r_dst);
@@ -2346,9 +2345,10 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    }
 
    case Pin_CMov32: {
-      UInt r_dst, imm, r_src;
+      UInt r_dst, imm_src, r_src;
       PPC32CondCode cond;
       vassert(i->Pin.CMov32.cond.test != Pct_ALWAYS);
+
       r_dst = iregNo(i->Pin.CMov32.dst);
       cond = i->Pin.CMov32.cond;
 
@@ -2363,8 +2363,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       // cond true: move src => dst
       switch (i->Pin.CMov32.src->tag) {
       case Pri_Imm:
-         imm = i->Pin.CMov32.src->Pri.Imm.imm32;
-         p = mkLoadImm(p, r_dst, imm);
+         imm_src = i->Pin.CMov32.src->Pri.Imm.imm32;
+         p = mkLoadImm(p, r_dst, imm_src);
          break;
       case Pri_Reg:
          r_src = iregNo(i->Pin.CMov32.src->Pri.Reg.reg);
@@ -2385,26 +2385,26 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
    case Pin_Load: {
       Bool syned = i->Pin.Load.syned;
-      UInt op1, op2, sz = i->Pin.Load.sz;
+      UInt opc1, opc2, sz = i->Pin.Load.sz;
       switch (i->Pin.Load.src->tag) {
       case Pam_IR:
          if (sz == 2) {  // the only signed load
-            op1 = (syned) ? 42: 40;
+            opc1 = (syned) ? 42: 40;
          } else {
             vassert(syned == False);
-            op1 = (sz == 1) ? 34 : 32;   // 1:4
+            opc1 = (sz == 1) ? 34 : 32;   // 1:4
          }
-         p = doAMode_IR(p, op1, i->Pin.Load.dst, i->Pin.Load.src);
+         p = doAMode_IR(p, opc1, i->Pin.Load.dst, i->Pin.Load.src);
          goto done;
       case Pam_RR:
-         op1 = 31;
+         opc1 = 31;
          if (sz == 2) {  // the only signed load
-            op2 = (syned) ? 343: 279;
+            opc2 = (syned) ? 343: 279;
          } else {
             vassert(syned == False);
-            op2 = (sz == 1) ? 87 : 23;   // 1:4
+            opc2 = (sz == 1) ? 87 : 23;   // 1:4
          }
-         p = doAMode_RR(p, op1, op2, i->Pin.Load.dst, i->Pin.Load.src);
+         p = doAMode_RR(p, opc1, opc2, i->Pin.Load.dst, i->Pin.Load.src);
          goto done;
       default:
          goto bad;
@@ -2434,7 +2434,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          p = mkFormM(p, 21, r_tmp, r_dst, rot_imm, 31, 31, 0);
 
          if (cond.test == Pct_FALSE) {
-            // flip bit  => xori rD,rD,1
+            // flip bit  => xori r_dst,r_dst,1
             p = mkFormD(p, 26, r_dst, r_dst, 1);
          }
       }
@@ -2462,16 +2462,16 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    }
 
    case Pin_Store: {
-      UInt op1, op2, sz = i->Pin.Store.sz;
+      UInt opc1, opc2, sz = i->Pin.Store.sz;
       switch (i->Pin.Store.dst->tag) {
       case Pam_IR:
-         op1 = (sz == 1) ? 38 : ((sz == 2) ? 44 : 36);      // 1:2:4
-         p = doAMode_IR(p, op1, i->Pin.Store.src, i->Pin.Store.dst);
+         opc1 = (sz == 1) ? 38 : ((sz == 2) ? 44 : 36);      // 1:2:4
+         p = doAMode_IR(p, opc1, i->Pin.Store.src, i->Pin.Store.dst);
          goto done;
       case Pam_RR:
-         op1 = 31;
-         op2 = (sz == 1) ? 215 : ((sz == 2) ? 407 : 151);   // 1:2:4
-         p = doAMode_RR(p, op1, op2, i->Pin.Store.src, i->Pin.Store.dst);
+         opc1 = 31;
+         opc2 = (sz == 1) ? 215 : ((sz == 2) ? 407 : 151);   // 1:2:4
+         p = doAMode_RR(p, opc1, opc2, i->Pin.Store.src, i->Pin.Store.dst);
          goto done;
       default:
          goto bad;

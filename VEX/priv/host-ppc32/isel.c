@@ -286,11 +286,11 @@ static PPC32CondCode iselCondCode     ( ISelEnv* env, IRExpr* e );
 /* Shift helper */
 
 static PPC32Instr* mk_sh32 ( ISelEnv* env, PPC32ShiftOp shOp,
-                             HReg dst, HReg src1, PPC32RI* src2 )
+                             HReg r_dst, HReg r_srcL, PPC32RI* ri_srcR )
 {
    HReg zero, tmp;
-   vassert(hregClass(dst) == HRcInt32);
-   vassert(hregClass(src1) == HRcInt32);
+   vassert(hregClass(r_dst) == HRcInt32);
+   vassert(hregClass(r_srcL) == HRcInt32);
    
    // Note: In this context, GPR0 is NOT read -> just gives _value_ 0
    zero = hregPPC32_GPR0();
@@ -299,19 +299,19 @@ static PPC32Instr* mk_sh32 ( ISelEnv* env, PPC32ShiftOp shOp,
    switch (shOp) {
    case Psh_SHL:
    case Psh_SHR:  // These ops only take regs as args...
-      if (src2->tag == Pri_Imm) {
-         if (src2->Pri.Imm.imm32 < 32) {
-            addInstr(env, PPC32Instr_Alu32(Palu_ADD, tmp, zero, src2));
-            return PPC32Instr_Sh32(shOp, dst, src1, PPC32RI_Reg(tmp));
+      if (ri_srcR->tag == Pri_Imm) {
+         if (ri_srcR->Pri.Imm.imm32 < 32) {
+            addInstr(env, PPC32Instr_Alu32(Palu_ADD, tmp, zero, ri_srcR));
+            return PPC32Instr_Sh32(shOp, r_dst, r_srcL, PPC32RI_Reg(tmp));
          } else {  // shift > 31 => zero
-            return PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(0));
+            return PPC32Instr_Alu32(Palu_ADD, r_dst, zero, PPC32RI_Imm(0));
          }
       } else {
-         return PPC32Instr_Sh32(shOp, dst, src1, src2);
+         return PPC32Instr_Sh32(shOp, r_dst, r_srcL, ri_srcR);
       }
 
    case Psh_SAR:  // No problem here.
-      return PPC32Instr_Sh32(Psh_SAR, dst, dst, src2);
+      return PPC32Instr_Sh32(Psh_SAR, r_dst, r_dst, ri_srcR);
 
    default:
       vpanic("");
@@ -320,38 +320,39 @@ static PPC32Instr* mk_sh32 ( ISelEnv* env, PPC32ShiftOp shOp,
 
 /* Make an int reg-reg move. */
 
-static PPC32Instr* mk_iMOVds_RR ( HReg dst, HReg src )
+static PPC32Instr* mk_iMOVds_RR ( HReg r_dst, HReg r_src )
 {
-   vassert(hregClass(dst) == HRcInt32);
-   vassert(hregClass(src) == HRcInt32);
-   return PPC32Instr_Alu32(Palu_OR, dst, src, PPC32RI_Reg(src));
+   vassert(hregClass(r_dst) == HRcInt32);
+   vassert(hregClass(r_src) == HRcInt32);
+   return PPC32Instr_Alu32(Palu_OR, r_dst, r_src, PPC32RI_Reg(r_src));
 }
 
 /* Load an RI to a reg */
 
-static PPC32Instr* mk_iMOVds_RRI ( ISelEnv* env, HReg dst, PPC32RI* src )
+static PPC32Instr* mk_iMOVds_RRI ( ISelEnv* env, HReg r_dst, PPC32RI* ri_src )
 {
    HReg zero;
-   vassert(hregClass(dst) == HRcInt32);
+   vassert(hregClass(r_dst) == HRcInt32);
    // Note: In this context, GPR0 is NOT read -> just gives _value_ 0
    zero = hregPPC32_GPR0();
 
-   if (src->tag == Pri_Imm) {
-      UInt imm = src->Pri.Imm.imm32;
+   if (ri_src->tag == Pri_Imm) {
+      UInt imm = ri_src->Pri.Imm.imm32;
       if (imm >= 0xFFFF8000 || imm <= 0x7FFF) { // sign-extendable from 16 bits?
-         return PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(imm & 0xFFFF));
+         return PPC32Instr_Alu32(Palu_ADD, r_dst, zero, PPC32RI_Imm(imm & 0xFFFF));
       }
       if (imm > 0xFFFF) {
          // CAB: addis (aka lis) would be good...
-         addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(imm>>16)));
-         addInstr(env, mk_sh32(env, Psh_SHL, dst, dst, PPC32RI_Imm(16)));
-         return PPC32Instr_Alu32(Palu_OR, dst, dst, PPC32RI_Imm(imm & 0xFFFF));
+         addInstr(env, PPC32Instr_Alu32(Palu_ADD, r_dst, zero, PPC32RI_Imm(imm>>16)));
+         addInstr(env, mk_sh32(env, Psh_SHL, r_dst, r_dst, PPC32RI_Imm(16)));
+         return PPC32Instr_Alu32(Palu_OR, r_dst, r_dst, PPC32RI_Imm(imm & 0xFFFF));
       }
       // Load immediate _without_ sign extend
-      addInstr(env, PPC32Instr_Alu32(Palu_ADD, dst, zero, PPC32RI_Imm(0)));
-      return PPC32Instr_Alu32(Palu_OR, dst, dst, src);
+      addInstr(env, PPC32Instr_Alu32(Palu_ADD, r_dst, zero, PPC32RI_Imm(0)));
+      return PPC32Instr_Alu32(Palu_OR, r_dst, r_dst, ri_src);
    } else {
-      return PPC32Instr_Alu32(Palu_OR, dst, src->Pri.Reg.reg, src);  // mr rD,rS
+      // mr rD,rS
+      return PPC32Instr_Alu32(Palu_OR, r_dst, ri_src->Pri.Reg.reg, ri_src);
    }
 }
 
@@ -833,11 +834,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- LOAD --------- */
    case Iex_LDle: {
-      HReg dst = newVRegI(env);
+      HReg r_dst = newVRegI(env);
       PPC32AMode* am_src = iselIntExpr_AMode(env, e->Iex.LDle.addr);
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
-         addInstr(env, PPC32Instr_Load( sizeofIRType(ty), False, dst, am_src ));
-         return dst;
+         addInstr(env, PPC32Instr_Load( sizeofIRType(ty), False, r_dst, am_src ));
+         return r_dst;
       }
       break;
    }
@@ -872,15 +873,17 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       /* For commutative ops we assume any literal
          values are on the second operand. */
       if (aluOp != Palu_INVALID) {
-         HReg dst    = newVRegI(env);
-         HReg src    = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg r_dst  = newVRegI(env);
+         HReg r_srcL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          PPC32RI* ri = iselIntExpr_RI(env, e->Iex.Binop.arg2);
+         PPC32RI* ri_srcR;
          if (aluOp == Palu_ADD) {
-            addInstr(env, PPC32Instr_Alu32(aluOp, dst, src, mk_FitRI16_S(env, ri)));
+            ri_srcR = mk_FitRI16_S(env, ri );
          } else {
-            addInstr(env, PPC32Instr_Alu32(aluOp, dst, src, mk_FitRI16_U(env, ri)));
+            ri_srcR = mk_FitRI16_U(env, ri);
          }
-         return dst;
+         addInstr(env, PPC32Instr_Alu32(aluOp, r_dst, r_srcL, ri_srcR));
+         return r_dst;
       }
 //..       /* Could do better here; forcing the first arg into a reg
 //..          isn't always clever.
@@ -904,38 +907,38 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (e->Iex.Binop.op == Iop_Sub8  ||
           e->Iex.Binop.op == Iop_Sub16 ||
           e->Iex.Binop.op == Iop_Sub32) {
-         HReg dst     = newVRegI(env);
+         HReg r_dst     = newVRegI(env);
          PPC32RI* riL = mk_FitRI16_S(env, iselIntExpr_RI(env, e->Iex.Binop.arg1));
          HReg     rR  = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, PPC32Instr_Sub32(dst, riL, rR));
-         return dst;
+         addInstr(env, PPC32Instr_Sub32(r_dst, riL, rR));
+         return r_dst;
       }
 
       /* How about a div? */
       if (e->Iex.Binop.op == Iop_DivU32) {
-         HReg dst  = newVRegI(env);
-         HReg src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg src2 = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, PPC32Instr_Div(False, dst, src1, src2));
-         return dst;
+         HReg r_dst  = newVRegI(env);
+         HReg r_srcL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg r_srcR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, PPC32Instr_Div(False, r_dst, r_srcL, r_srcR));
+         return r_dst;
       }
       if (e->Iex.Binop.op == Iop_DivS32) {
-         HReg dst  = newVRegI(env);
-         HReg src1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg src2 = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, PPC32Instr_Div(True, dst, src1, src2));
-         return dst;
+         HReg r_dst  = newVRegI(env);
+         HReg r_srcL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg r_srcR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, PPC32Instr_Div(True, r_dst, r_srcL, r_srcR));
+         return r_dst;
       }
 
       /* No? Anyone for a mul? */
       if (e->Iex.Binop.op == Iop_Mul16 ||
           e->Iex.Binop.op == Iop_Mul32) {
-         Bool syned    = True;
-         HReg dst      = newVRegI(env);
-         HReg src1     = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         PPC32RI* src2 = mk_FitRI16_S(env, iselIntExpr_RI(env, e->Iex.Binop.arg2));
-         addInstr(env, PPC32Instr_MulL(syned, 0, dst, src1, src2));
-         return dst;
+         Bool syned       = True;
+         HReg r_dst         = newVRegI(env);
+         HReg r_srcL      = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         PPC32RI* ri_srcR = mk_FitRI16_S(env, iselIntExpr_RI(env, e->Iex.Binop.arg2));
+         addInstr(env, PPC32Instr_MulL(syned, 0, r_dst, r_srcL, ri_srcR));
+         return r_dst;
       }      
 
       /* Perhaps a shift op? */
@@ -950,26 +953,26 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          shOp = Psh_INVALID; break;
       }
       if (shOp != Psh_INVALID) {
-         HReg dst = newVRegI(env);
+         HReg r_dst = newVRegI(env);
 
          /* regL = the value to be shifted */
-         HReg src = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg r_src = iselIntExpr_R(env, e->Iex.Binop.arg1);
 
          /* Do any necessary widening for 16/8 bit operands */
          switch (e->Iex.Binop.op) {
          case Iop_Shr8:
-            addInstr(env, PPC32Instr_Alu32(Palu_AND, dst, dst, PPC32RI_Imm(0xFF)));
+            addInstr(env, PPC32Instr_Alu32(Palu_AND, r_dst, r_dst, PPC32RI_Imm(0xFF)));
             break;
          case Iop_Shr16:
-            addInstr(env, PPC32Instr_Alu32(Palu_AND, dst, dst, PPC32RI_Imm(0xFFFF)));
+            addInstr(env, PPC32Instr_Alu32(Palu_AND, r_dst, r_dst, PPC32RI_Imm(0xFFFF)));
             break;
          case Iop_Sar8:
-            addInstr(env, mk_sh32(env, Psh_SHL, dst, dst, PPC32RI_Imm(24)));
-            addInstr(env, mk_sh32(env, Psh_SAR, dst, dst, PPC32RI_Imm(24)));
+            addInstr(env, mk_sh32(env, Psh_SHL, r_dst, r_dst, PPC32RI_Imm(24)));
+            addInstr(env, mk_sh32(env, Psh_SAR, r_dst, r_dst, PPC32RI_Imm(24)));
             break;
          case Iop_Sar16:
-            addInstr(env, mk_sh32(env, Psh_SHL, dst, dst, PPC32RI_Imm(16)));
-            addInstr(env, mk_sh32(env, Psh_SAR, dst, dst, PPC32RI_Imm(16)));
+            addInstr(env, mk_sh32(env, Psh_SHL, r_dst, r_dst, PPC32RI_Imm(16)));
+            addInstr(env, mk_sh32(env, Psh_SAR, r_dst, r_dst, PPC32RI_Imm(16)));
             break;
          default: break;
          }
@@ -979,18 +982,18 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          if (e->Iex.Binop.arg2->tag == Iex_Const &&
              e->Iex.Binop.arg2->Iex.Const.con->Ico.U8 < 32) {
             /* assert that the IR is well-typed */
-            Int nshift;
+            Int imm_shft;
             vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
-            nshift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
-            vassert(nshift >= 0);
-            if (nshift > 0)
-               addInstr(env, mk_sh32(env, shOp, dst, src, PPC32RI_Imm(nshift)));
+            imm_shft = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+            vassert(imm_shft >= 0);
+            if (imm_shft > 0)
+               addInstr(env, mk_sh32(env, shOp, r_dst, r_src, PPC32RI_Imm(imm_shft)));
          } else {
             /* General case; we have to force the amount into %cl. */
-            HReg shft = iselIntExpr_R(env, e->Iex.Binop.arg2);
-            addInstr(env, mk_sh32(env, shOp, dst, src, PPC32RI_Reg(shft)));
+            HReg r_shft = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            addInstr(env, mk_sh32(env, shOp, r_dst, r_src, PPC32RI_Reg(r_shft)));
          }
-         return dst;
+         return r_dst;
       }
 
       /* Handle misc other ops. */
@@ -1122,10 +1125,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                      unop(Iop_1Uto8,unop(Iop_32to1,bind(0))));
       if (matchIRExpr(&mi,p_32to1_then_1Uto8,e)) {
          IRExpr* expr32 = mi.bindee[0];
-         HReg dst = newVRegI(env);
-         HReg src = iselIntExpr_R(env, expr32);
-         addInstr(env, PPC32Instr_Alu32(Palu_AND, dst, src, PPC32RI_Imm(1)));
-         return dst;
+         HReg r_dst = newVRegI(env);
+         HReg r_src = iselIntExpr_R(env, expr32);
+         addInstr(env, PPC32Instr_Alu32(Palu_AND, r_dst, r_src, PPC32RI_Imm(1)));
+         return r_dst;
       }
 
       /* 16Uto32(LDle(expr32)) */
@@ -1134,10 +1137,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          DEFINE_PATTERN(p_LDle16_then_16Uto32,
             unop(Iop_16Uto32,IRExpr_LDle(Ity_I16,bind(0))) );
          if (matchIRExpr(&mi,p_LDle16_then_16Uto32,e)) {
-            HReg dst = newVRegI(env);
+            HReg r_dst = newVRegI(env);
             PPC32AMode* amode = iselIntExpr_AMode ( env, mi.bindee[0] );
-            addInstr(env, PPC32Instr_Load(2,False,dst,amode));
-            return dst;
+            addInstr(env, PPC32Instr_Load(2,False,r_dst,amode));
+            return r_dst;
          }
       }
 
@@ -1145,29 +1148,29 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_8Uto16:
       case Iop_8Uto32:
       case Iop_16Uto32: {
-         HReg dst = newVRegI(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         UInt mask = e->Iex.Unop.op==Iop_16Uto32 ? 0xFFFF : 0xFF;
-         addInstr(env, PPC32Instr_Alu32(Palu_AND,dst,src,PPC32RI_Imm(mask)));
-         return dst;
+         HReg r_dst = newVRegI(env);
+         HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         UInt mask  = e->Iex.Unop.op==Iop_16Uto32 ? 0xFFFF : 0xFF;
+         addInstr(env, PPC32Instr_Alu32(Palu_AND,r_dst,r_src,PPC32RI_Imm(mask)));
+         return r_dst;
       }
       case Iop_8Sto16:
       case Iop_8Sto32:
       case Iop_16Sto32: {
-         HReg dst = newVRegI(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         UInt amt = e->Iex.Unop.op==Iop_16Sto32 ? 16 : 24;
-         addInstr(env, mk_sh32(env, Psh_SHL, dst, src, PPC32RI_Imm(amt)));
-         addInstr(env, mk_sh32(env, Psh_SAR, dst, dst, PPC32RI_Imm(amt)));
-         return dst;
+         HReg r_dst = newVRegI(env);
+         HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         UInt amt   = e->Iex.Unop.op==Iop_16Sto32 ? 16 : 24;
+         addInstr(env, mk_sh32(env, Psh_SHL, r_dst, r_src, PPC32RI_Imm(amt)));
+         addInstr(env, mk_sh32(env, Psh_SAR, r_dst, r_dst, PPC32RI_Imm(amt)));
+         return r_dst;
       }
       case Iop_Not8:
       case Iop_Not16:
       case Iop_Not32: {
-         HReg dst = newVRegI(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, PPC32Instr_Unary32(Pun_NOT,dst,src));
-         return dst;
+         HReg r_dst = newVRegI(env);
+         HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, PPC32Instr_Unary32(Pun_NOT,r_dst,r_src));
+         return r_dst;
       }
       case Iop_64HIto32: {
          HReg rHi, rLo;
@@ -1184,11 +1187,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                            unop(Iop_64to32,
                                 binop(Iop_MullS32, bind(0), bind(1))));
             if (matchIRExpr(&mi,p_MullS32_then_64to32,e)) {
-               HReg dst      = newVRegI(env);
-               HReg src1     = iselIntExpr_R( env, mi.bindee[0] );
-               PPC32RI* src2 = mk_FitRI16_S(env, iselIntExpr_RI( env, mi.bindee[1] ));
-               addInstr(env, PPC32Instr_MulL(True, 0, dst, src1, src2));
-               return dst;
+               HReg r_dst         = newVRegI(env);
+               HReg r_srcL      = iselIntExpr_R( env, mi.bindee[0] );
+               PPC32RI* ri_srcR = mk_FitRI16_S(env, iselIntExpr_RI( env, mi.bindee[1] ));
+               addInstr(env, PPC32Instr_MulL(True, 0, r_dst, r_srcL, ri_srcR));
+               return r_dst;
             }
          }
 
@@ -1199,11 +1202,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                            unop(Iop_64to32,
                                 binop(Iop_MullU32, bind(0), bind(1))));
             if (matchIRExpr(&mi,p_MullU32_then_64to32,e)) {
-               HReg dst      = newVRegI(env);
-               HReg src1     = iselIntExpr_R( env, mi.bindee[0] );
-               PPC32RI* src2 = mk_FitRI16_S(env, iselIntExpr_RI( env, mi.bindee[1] ));
-               addInstr(env, PPC32Instr_MulL(False, 0, dst, src1, src2));
-               return dst;
+               HReg r_dst         = newVRegI(env);
+               HReg r_srcL      = iselIntExpr_R( env, mi.bindee[0] );
+               PPC32RI* ri_srcR = mk_FitRI16_S(env, iselIntExpr_RI( env, mi.bindee[1] ));
+               addInstr(env, PPC32Instr_MulL(False, 0, r_dst, r_srcL, ri_srcR));
+               return r_dst;
             }
          }
 
@@ -1217,29 +1220,29 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
       case Iop_16HIto8:
       case Iop_32HIto16: {
-         HReg dst   = newVRegI(env);
-         HReg src   = iselIntExpr_R(env, e->Iex.Unop.arg);
+         HReg r_dst = newVRegI(env);
+         HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
          UInt shift = e->Iex.Unop.op == Iop_16HIto8 ? 8 : 16;
-         addInstr(env, mk_sh32(env, Psh_SHR, dst, src, PPC32RI_Imm(shift)));
-         return dst;
+         addInstr(env, mk_sh32(env, Psh_SHR, r_dst, r_src, PPC32RI_Imm(shift)));
+         return r_dst;
       }
       case Iop_1Uto32:
       case Iop_1Uto8: {
-         HReg dst           = newVRegI(env);
+         HReg r_dst           = newVRegI(env);
          PPC32CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
-         addInstr(env, PPC32Instr_Set32(cond,dst));
-         return dst;
+         addInstr(env, PPC32Instr_Set32(cond,r_dst));
+         return r_dst;
       }
       case Iop_1Sto8:
       case Iop_1Sto16:
       case Iop_1Sto32: {
          /* could do better than this, but for now ... */
-         HReg dst           = newVRegI(env);
+         HReg r_dst           = newVRegI(env);
          PPC32CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
-         addInstr(env, PPC32Instr_Set32(cond,dst));
-         addInstr(env, mk_sh32(env, Psh_SHL, dst, dst, PPC32RI_Imm(31)));
-         addInstr(env, mk_sh32(env, Psh_SAR, dst, dst, PPC32RI_Imm(31)));
-         return dst;
+         addInstr(env, PPC32Instr_Set32(cond,r_dst));
+         addInstr(env, mk_sh32(env, Psh_SHL, r_dst, r_dst, PPC32RI_Imm(31)));
+         addInstr(env, mk_sh32(env, Psh_SAR, r_dst, r_dst, PPC32RI_Imm(31)));
+         return r_dst;
       }
 
 //..          case Iop_Ctz32: {
@@ -1251,10 +1254,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..          }
       case Iop_Clz32: {
          /* Count leading zeroes. */
-         HReg dst = newVRegI(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, PPC32Instr_Unary32(Pun_CLZ,dst,src));
-         return dst;
+         HReg r_dst = newVRegI(env);
+         HReg r_src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, PPC32Instr_Unary32(Pun_CLZ,r_dst,r_src));
+         return r_dst;
       }
 
 //..          case Iop_128to32: {
@@ -1283,10 +1286,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- GET --------- */
    case Iex_Get: {
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
-         HReg dst = newVRegI(env);
+         HReg r_dst = newVRegI(env);
          PPC32AMode* am_src = PPC32AMode_IR(e->Iex.Get.offset, GuestStatePtr );
-         addInstr(env, PPC32Instr_Load( sizeofIRType(ty), False, dst, am_src ));
-         return dst;
+         addInstr(env, PPC32Instr_Load( sizeofIRType(ty), False, r_dst, am_src ));
+         return r_dst;
       }
       break;
    }
@@ -1306,7 +1309,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- CCALL --------- */
    case Iex_CCall: {
-      HReg    dst = newVRegI(env);
+      HReg    r_dst = newVRegI(env);
       vassert(ty == Ity_I32);
 
       /* be very restrictive for now.  Only 32/64-bit ints allowed
@@ -1318,16 +1321,16 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
 
       /* GPR3 now holds the destination address from Pin_Goto */
-      addInstr(env, mk_iMOVds_RR(dst, hregPPC32_GPR3()));
-      return dst;
+      addInstr(env, mk_iMOVds_RR(r_dst, hregPPC32_GPR3()));
+      return r_dst;
    }
       
    /* --------- LITERAL --------- */
    /* 32/16/8-bit literals */
    case Iex_Const: {
-      HReg dst    = newVRegI(env);
-      addInstr(env, mk_iMOVds_RRI(env, dst, iselIntExpr_RI ( env, e )));
-      return dst;
+      HReg r_dst    = newVRegI(env);
+      addInstr(env, mk_iMOVds_RRI(env, r_dst, iselIntExpr_RI ( env, e )));
+      return r_dst;
    }
 
    /* --------- MULTIPLEX --------- */
@@ -1338,14 +1341,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg r_cond;
          HReg rX     = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
          PPC32RI* r0 = iselIntExpr_RI(env, e->Iex.Mux0X.expr0);
-         HReg dst    = newVRegI(env);
+         HReg r_dst    = newVRegI(env);
 
-         addInstr(env, mk_iMOVds_RR(dst,rX));
+         addInstr(env, mk_iMOVds_RR(r_dst,rX));
          r_cond = iselIntExpr_R(env, e->Iex.Mux0X.cond);
          addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, r_cond, PPC32RI_Imm(0)));
          cc = mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
-         addInstr(env, PPC32Instr_CMov32(cc,dst,r0));
-         return dst;
+         addInstr(env, PPC32Instr_CMov32(cc,r_dst,r0));
+         return r_dst;
       }
       break;
    }
@@ -1536,8 +1539,8 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* pattern: 32to1(expr32) */
    DEFINE_PATTERN(p_32to1, unop(Iop_32to1,bind(0)));
    if (matchIRExpr(&mi,p_32to1,e)) {
-      HReg dst = iselIntExpr_R(env, mi.bindee[0]);
-      addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, dst, PPC32RI_Imm(1)));
+      HReg r_dst = iselIntExpr_R(env, mi.bindee[0]);
+      addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, r_dst, PPC32RI_Imm(1)));
       return mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
    }
 
@@ -1669,9 +1672,9 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 
    /* var */
    if (e->tag == Iex_Tmp) {
-      HReg src        = lookupIRTemp(env, e->Iex.Tmp.tmp);
+      HReg r_src      = lookupIRTemp(env, e->Iex.Tmp.tmp);
       HReg src_masked = newVRegI(env);
-      addInstr(env, PPC32Instr_Alu32(Palu_AND, src_masked, src, PPC32RI_Imm(1)));
+      addInstr(env, PPC32Instr_Alu32(Palu_AND, src_masked, r_src, PPC32RI_Imm(1)));
       addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, src_masked, PPC32RI_Imm(1)));
       return mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
    }
@@ -1803,16 +1806,16 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
          /* get one operand into %r3, and the other into a R/I.
             Need to make an educated guess about which is better in
             which. */
-         HReg     tLo   = newVRegI(env);
-         HReg     tHi   = newVRegI(env);
-         Bool     syned = e->Iex.Binop.op == Iop_MullS32;
-         HReg     src1  = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg     tLo     = newVRegI(env);
+         HReg     tHi     = newVRegI(env);
+         Bool     syned   = e->Iex.Binop.op == Iop_MullS32;
+         HReg     r_srcL  = iselIntExpr_R(env, e->Iex.Binop.arg1);
 
 // CAB: could do better than this...
-         PPC32RI* src2 = PPC32RI_Reg(iselIntExpr_R(env, e->Iex.Binop.arg2));
+         PPC32RI* ri_srcR = PPC32RI_Reg(iselIntExpr_R(env, e->Iex.Binop.arg2));
 
-         addInstr(env, PPC32Instr_MulL(syned, 0, tLo, src1, src2));
-         addInstr(env, PPC32Instr_MulL(syned, 1, tHi, src1, src2));
+         addInstr(env, PPC32Instr_MulL(syned, 0, tLo, r_srcL, ri_srcR));
+         addInstr(env, PPC32Instr_MulL(syned, 1, tHi, r_srcL, ri_srcR));
          *rHi = tHi;
          *rLo = tLo;
          return;
@@ -3195,8 +3198,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       vassert(tya == Ity_I32);
       am_dst = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
       if (tyd == Ity_I8 || tyd == Ity_I16 || tyd == Ity_I32) {
-         HReg src = iselIntExpr_R(env, stmt->Ist.STle.data);
-         addInstr(env, PPC32Instr_Store(sizeofIRType(tyd),am_dst,src));
+         HReg r_src = iselIntExpr_R(env, stmt->Ist.STle.data);
+         addInstr(env, PPC32Instr_Store(sizeofIRType(tyd),am_dst,r_src));
          return;
       }
 //..       if (tyd == Ity_F64) {
@@ -3231,9 +3234,9 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    case Ist_Put: {
       IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
-         HReg src = iselIntExpr_R(env, stmt->Ist.Put.data);
+         HReg r_src = iselIntExpr_R(env, stmt->Ist.Put.data);
          PPC32AMode* am_dst = PPC32AMode_IR(stmt->Ist.Put.offset, GuestStatePtr);
-         addInstr(env, PPC32Instr_Store( sizeofIRType(ty), am_dst, src ));
+         addInstr(env, PPC32Instr_Store( sizeofIRType(ty), am_dst, r_src ));
          return;
       }
 //..       if (ty == Ity_I64) {
@@ -3296,9 +3299,9 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       IRTemp tmp = stmt->Ist.Tmp.tmp;
       IRType ty = typeOfIRTemp(env->type_env, tmp);
       if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
-         HReg dst = lookupIRTemp(env, tmp);
-         HReg src = iselIntExpr_R(env, stmt->Ist.Tmp.data);
-         addInstr(env, mk_iMOVds_RR( dst, src ));
+         HReg r_dst = lookupIRTemp(env, tmp);
+         HReg r_src = iselIntExpr_R(env, stmt->Ist.Tmp.data);
+         addInstr(env, mk_iMOVds_RR( r_dst, r_src ));
          return;
       }
 //..       if (ty == Ity_I64) {
@@ -3311,8 +3314,8 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //..       }
       if (ty == Ity_I1) {
          PPC32CondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
-         HReg dst = lookupIRTemp(env, tmp);
-         addInstr(env, PPC32Instr_Set32(cond, dst));
+         HReg r_dst = lookupIRTemp(env, tmp);
+         addInstr(env, PPC32Instr_Set32(cond, r_dst));
          return;
       }
 //..       if (ty == Ity_F64) {
@@ -3381,14 +3384,14 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- EXIT --------- */
    case Ist_Exit: {
-      PPC32RI*      dst;
+      PPC32RI*      ri_dst;
       PPC32CondCode cc;
       if (stmt->Ist.Exit.dst->tag != Ico_U32)
          vpanic("isel_ppc32: Ist_Exit: dst is not a 32-bit value");
-      dst = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
-      cc  = iselCondCode(env,stmt->Ist.Exit.guard);
+      ri_dst = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
+      cc     = iselCondCode(env,stmt->Ist.Exit.guard);
       addInstr(env, PPC32Instr_RdWrLR(True, env->savedLR));
-      addInstr(env, PPC32Instr_Goto(stmt->Ist.Exit.jk, cc, dst));
+      addInstr(env, PPC32Instr_Goto(stmt->Ist.Exit.jk, cc, ri_dst));
       return;
    }
 

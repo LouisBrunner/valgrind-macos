@@ -338,13 +338,13 @@ typedef
          struct {
             PPC32AluOp op;
             HReg       dst;
-            HReg       src1;
-            PPC32RI*   src2;
+            HReg       srcL;
+            PPC32RI*   srcR;
          } Alu32;
          struct {
             HReg       dst;    // PPC32 sub args are switched:
-            PPC32RI*   src1;   // argL => RI
-            HReg       src2;   // argR => R
+            PPC32RI*   srcL;   // argL => RI
+            HReg       srcR;   // argR => R
          } Sub32;
          struct {
             PPC32ShiftOp op;
@@ -355,8 +355,8 @@ typedef
          struct {
             PPC32CmpOp op;
             UInt     crfD;
-            HReg     src1;
-            PPC32RI* src2;
+            HReg     srcL;
+            PPC32RI* srcR;
          } Cmp32;
          /* Not and Neg */
          struct {
@@ -368,15 +368,15 @@ typedef
             Bool     syned;
             Bool     word;   /* low=0, high=1 */
             HReg     dst;
-            HReg     src1;
-            PPC32RI* src2;
+            HReg     srcL;
+            PPC32RI* srcR;
          } MulL;
          /* ppc32 div/divu instruction. */
          struct {
             Bool syned;
             HReg dst;
-            HReg src1;
-            HReg src2;
+            HReg srcL;
+            HReg srcR;
          } Div;
 //..          /* shld/shrd.  op may only be Xsh_SHL or Xsh_SHR */
 //..          struct {
@@ -517,7 +517,7 @@ extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Cmp32     ( PPC32CmpOp, UInt, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_MulL      ( Bool syned, Bool word, HReg, HReg, PPC32RI* );
-extern PPC32Instr* PPC32Instr_Div       ( Bool syned, HReg dst, HReg src1, HReg src2 );
+extern PPC32Instr* PPC32Instr_Div       ( Bool syned, HReg dst, HReg srcL, HReg srcR );
 //.. extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_Push      ( X86RMI* );
 extern PPC32Instr* PPC32Instr_Call      ( PPC32CondCode, Addr32, Int );

@@ -1,18 +1,5 @@
 
-4 February 2002
-
-Greetings, KDE developer.  Some of you may have noticed, in recent
-days, that I have posted some bug reports to kde-core-devel@kde.org,
-containing traces like the following:
-
-  Use of uninitialised CPU condition code
-     at 0x471A4196: KateBuffer::parseBlock(KateBufBlock *) (katebuffer.cpp:446)
-     by 0x471A3B58: KateBuffer::line(unsigned int) (katebuffer.cpp:343)
-     by 0x471C684B: KateDocument::updateLines(int, int) 
-                       (../../kdecore/ksharedptr.h:126)
-     by 0x471C1C3E: KateDocument::makeAttribs() (katedocument.cpp:2302)
-
-These errors were detected using this tool, Valgrind.
+19 June 2002
 
 The purpose of this small doc is to guide you in using Valgrind to
 find and fix memory management bugs in KDE3.
@@ -78,21 +65,12 @@ but once set up things work fairly well.
   considerable details about how to use it, what's really going on, 
   etc.
 
-* The source locations in error messages can be way wrong sometimes;
-  please treat them with suspicion.  In particular, it will sometimes
-  say that a source location is in a header file (.h) when really it
-  is in some totally unrelated source (.cpp) file.  I'm working on it ...
-
 * There are some significant limitations:
-  - No threads!  You can run programs linked with libpthread.so,
-    but only until the point where they do clone(); at that point
-    Valgrind will abort.
   - No MMX, SSE, SSE2 insns.  Basically a 486 instruction set only.
   - Various other minor limitations listed in the manual.
 
-* Valgrind is still under active development.  If you have trouble
-  with it, please let me know (jseward@acm.org) and I'll see if I
-  can help you out.
+* If you have trouble with it, please let me know (jseward@acm.org)
+  and I'll see if I can help you out.
 
 
 Have fun!  If you find Valgrind useful in finding and fixing bugs,

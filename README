@@ -1,6 +1,6 @@
 
-Release notes for Valgrind, snapshot 20020217
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Release notes for Valgrind, version 1.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 KDE3 developers: please read also README_KDE3_FOLKS for guidance
 about how to debug KDE3 applications with Valgrind.
@@ -23,6 +23,7 @@ detect problems such as:
    Memory leaks -- where pointers to malloc'd blocks are lost forever
    Passing of uninitialised and/or unaddressible memory to system calls
    Mismatched use of malloc/new/new [] vs free/delete/delete [] 
+   Some abuses of the POSIX pthread API
 
 Problems like these can be difficult to find by other means, often
 lying undetected for long periods, then causing occasional,
@@ -50,12 +51,13 @@ Documentation
 ~~~~~~~~~~~~~
 A comprehensive user guide is supplied.  Point your browser at
 docs/index.html.  If your browser doesn't like frames, point it
-instead at docs/manual.html.
+instead at docs/manual.html.  There's also detailed, although somewhat
+out of date, documentation of how valgrind works, in
+docs/techdocs.html.
 
 
 Building and installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 If you install from CVS :
 
   0. cd into the source directory
@@ -66,34 +68,23 @@ If you install from CVS :
 If you install from a tar.gz archive:
 
   2. Run ./configure, with some options if you wish. The standard
-     options are documented in the INSTALL file.
+     options are documented in the INSTALL file.  The only interesting
+     one is the usual --prefix=/where/you/want/it/installed
 
   3. Do "make"
 
-  4. As root, do "make install"
+  4. Do "make install", possibly as root if the destination permissions
+     require that.
 
   5. See if it works.  Try "valgrind ls -l".  Either this works,
      or it bombs out complaining it can't find argc/argv/envp.
-     If this happens, you'll have to futz around with 
-     vg_main.c:710 to vg_main.c:790 to try and find suitable offsets.
-     It's not hard; many have been successful here.
+     In that case, mail me a bug report.
 
-Once step 5 is successful, you can now use valgrind.  Documentation
-is in docs/manual.html.  The following auxiliary steps may enhance
-your valgrinding experience, though.
-
-6.  Create a file containing  enough suppressions so that
-
-       valgrind xedit
-
-    runs without generating any errors.  This means you've more
-    or less suppressed all the scummy errors from the X11 base
-    libraries and from glibc, which will make it easier to spot
-    genuine errors in your own code. The default.supp file
-    should contains a good starting point. Do *not* edit this file
-    however, as it will be overwritten at the next installation of
-    valgrind, but create your own local.supp file.
+Important!  Do not move the valgrind installation into a place
+different from that specified by --prefix at build time.  This will
+cause things to break in subtle ways, mostly when Valgrind handles
+fork/exec calls.
 
 
 Julian Seward (jseward@acm.org)
-15 Feb 2002
+19 June 2002

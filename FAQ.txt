@@ -87,17 +87,27 @@ A4. Known issue with RHAS 2.1, due to funny stack permissions at
 Q5. I try running "valgrind my_program", but my_program runs normally,
     and Valgrind doesn't emit any output at all.
 
-A5. This should no longer happen, as a check for this takes place
-    when Valgrind starts up.
+A5. Valgrind doesn't work out-of-the-box with programs that are entirely
+    statically linked.  It does a quick test at startup, and if it detects
+    that the program is statically linked, it aborts with an explanation.
+    
+    This test may fail in some obscure cases, eg. if you run a script
+    under Valgrind and the script interpreter is statically linked.
 
-    However, Valgrind still doesn't work with programs that are entirely
-    statically linked.  If you still want static linking, you can ask 
-    gcc to link certain libraries statically.  Try the following options:
+    If you still want static linking, you can ask gcc to link certain
+    libraries statically.  Try the following options:
 
         -Wl,-Bstatic -lmyLibrary1 -lotherLibrary -Wl,-Bdynamic
 
     Just make sure you end with -Wl,-Bdynamic so that libc is dynamically
     linked.
+
+    If you absolutely cannot use dynamic libraries, you can try statically
+    linking together all the .o files in coregrind/, all the .o files of the
+    skin of your choice (eg. those in memcheck/), and the .o files of your
+    program.  You'll end up with a statically linked binary that runs
+    permanently under Valgrind's control.  Note that we haven't tested this
+    procedure thoroughly.
 
 -----------------------------------------------------------------
 

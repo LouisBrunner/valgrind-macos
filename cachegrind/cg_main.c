@@ -1913,11 +1913,11 @@ static void parse_cache_opt ( cache_t* cache, char* orig_opt, int opt_len )
 Bool SK_(process_cmd_line_option)(Char* arg)
 {
    /* 5 is length of "--I1=" */
-   if      (0 == VG_(strncmp)(arg, "--I1=", 5))
+   if      (VG_CLO_STREQN(5, arg, "--I1="))
       parse_cache_opt(&clo_I1_cache, arg,   5);
-   else if (0 == VG_(strncmp)(arg, "--D1=", 5))
+   else if (VG_CLO_STREQN(5, arg, "--D1="))
       parse_cache_opt(&clo_D1_cache, arg,   5);
-   else if (0 == VG_(strncmp)(arg, "--L2=", 5))
+   else if (VG_CLO_STREQN(5, arg, "--L2="))
       parse_cache_opt(&clo_L2_cache, arg,   5);
    else
       return False;

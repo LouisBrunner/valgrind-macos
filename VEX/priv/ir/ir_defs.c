@@ -304,7 +304,7 @@ IRNext* IRNext_UJump ( IRConst* dst ) {
 
 /* Constructors -- IRBB */
 
-IRBB* mk_IRBB ( IRTypeEnv* env, IRStmt* stmts, IRNext* next ) {
+IRBB* mkIRBB ( IRTypeEnv* env, IRStmt* stmts, IRNext* next ) {
    IRBB* bb  = LibVEX_Alloc(sizeof(IRBB));
    bb->tyenv = env;
    bb->stmts = stmts;

@@ -249,7 +249,7 @@ typedef
    }
    IRBB;
 
-extern IRBB* mk_IRBB ( IRTypeEnv*, IRStmt*, IRNext* );
+extern IRBB* mkIRBB ( IRTypeEnv*, IRStmt*, IRNext* );
 
 extern void ppIRBB ( IRBB* );
 

@@ -12,6 +12,7 @@
 #include "vex_util.h"
 #include "host_regs.h"
 #include "x86h_defs.h"
+#include "x86guest_defs.h"
 
 
 /* This file contains the top level interface to the library. */
@@ -87,8 +88,9 @@ TranslateResult LibVEX_Translate (
    void (*ppInstr) ( HInstr* );
    void (*ppReg) ( HReg );
    HInstrArray* (*iselBB) ( IRBB* );
-   IRBB* (*bbToIR) ( Char*, Addr64, Int*, Bool(*)(Addr64) );
+   IRBB* (*bbToIR) ( Char*, Addr64, Int*, Bool(*)(Addr64), Bool );
 
+   Bool         host_is_bigendian = False;
    IRBB*        irbb;
    HInstrArray* vcode;
    HInstrArray* rcode;
@@ -110,6 +112,7 @@ TranslateResult LibVEX_Translate (
          ppInstr     = (void(*)(HInstr*)) ppX86Instr;
          ppReg       = (void(*)(HReg)) ppHRegX86;
          iselBB      = iselBB_X86;
+	 host_is_bigendian = False;
          break;
       default:
          vpanic("LibVEX_Translate: unsupported target insn set");
@@ -117,7 +120,7 @@ TranslateResult LibVEX_Translate (
 
    switch (iset_guest) {
       case InsnSetX86:
-         bbToIR = NULL; //bbToIR_X86Instr;
+         bbToIR = bbToIR_X86Instr;
          break;
       default:
          vpanic("LibVEX_Translate: unsupported guest insn set");
@@ -126,7 +129,8 @@ TranslateResult LibVEX_Translate (
    irbb = bbToIR ( guest_bytes, 
 		   guest_bytes_addr,
 		   guest_bytes_read,
-		   byte_accessible );
+		   byte_accessible,
+		   host_is_bigendian );
 
    if (irbb == NULL) {
       /* Access failure. */

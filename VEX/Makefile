@@ -6,21 +6,23 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 PRIV_HEADERS = 	priv/host-x86/x86h_defs.h		\
 		priv/host-generic/host_regs.h		\
 		priv/main/vex_globals.h			\
-		priv/main/vex_util.h
+		priv/main/vex_util.h			\
+		priv/guest-x86/x86guest_defs.h
 
-LIB_OBJS = 						\
-		priv/ir/ir_defs.o			\
+LIB_OBJS = 	priv/ir/ir_defs.o			\
 		priv/main/vex_main.o			\
 		priv/main/vex_globals.o			\
 		priv/main/vex_util.o			\
 		priv/host-x86/x86h_defs.o		\
 		priv/host-x86/isel_x86.o		\
 		priv/host-generic/host_regs.o		\
-		priv/host-generic/reg_alloc.o
+		priv/host-generic/reg_alloc.o		\
+		priv/guest-x86/x86toIR.o
 
 PUB_INCLUDES = -Ipub
 
-PRIV_INCLUDES = -Ipriv/ir -Ipriv/main -Ipriv/host-generic -Ipriv/host-x86
+PRIV_INCLUDES = -Ipriv/ir -Ipriv/main -Ipriv/host-generic \
+		-Ipriv/host-x86 -Ipriv/guest-x86
 
 APP_OBJS =	test_main.o
 
@@ -80,3 +82,6 @@ priv/host-generic/reg_alloc.o: $(ALL_HEADERS) priv/host-generic/reg_alloc.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-generic/reg_alloc.o \
 					 -c priv/host-generic/reg_alloc.c
 
+priv/guest-x86/x86toIR.o: $(ALL_HEADERS) priv/guest-x86/x86toIR.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-x86/x86toIR.o \
+					 -c priv/guest-x86/x86toIR.c

@@ -78,45 +78,54 @@ case "${host_cpu}" in
 esac
 
 AC_MSG_CHECKING([for a supported OS])
+AC_SUBST(VG_PLATFORM)
 
 case "${host_os}" in
-     *linux*) 
+     *linux*)
 	AC_MSG_RESULT([ok (${host_os})])
+        VG_PLATFORM="x86-linux"
+
+        # Ok, this is linux. Check the kernel version
+        AC_MSG_CHECKING([for the kernel version])
+
+        kernel=`uname -r`
+
+        case "${kernel}" in
+             2.6.*) 
+        	    AC_MSG_RESULT([2.6 family (${kernel})])
+        	    AC_DEFINE([KERNEL_2_6], 1, [Define to 1 if you're using Linux 2.6.x])
+        	    ;;
+
+             2.4.*) 
+        	    AC_MSG_RESULT([2.4 family (${kernel})])
+        	    AC_DEFINE([KERNEL_2_4], 1, [Define to 1 if you're using Linux 2.4.x])
+        	    ;;
+
+             2.2.*) 
+        	    AC_MSG_RESULT([2.2 family (${kernel})])
+        	    AC_DEFINE([KERNEL_2_2], 1, [Define to 1 if you're using Linux 2.2.x])
+        	    ;;
+
+             *) 
+        	    AC_MSG_RESULT([unsupported (${kernel})])
+        	    AC_MSG_ERROR([Valgrind works on kernels 2.2, 2.4, 2.6])
+        	    ;;
+        esac
+
+        ;;
+
+     *freebsd*)
+        AC_MSG_RESULT([ok (${host_os})])
+        VG_PLATFORM="x86-freebsd"
+
         ;;
 
      *) 
 	AC_MSG_RESULT([no (${host_os})])
-	AC_MSG_ERROR([Valgrind is Linux specific. Sorry])
+	AC_MSG_ERROR([Valgrind is operating system specific. Sorry. Please consider doing a port.])
 	;;
 esac
 
-
-# Ok, this is linux. Check the kernel version
-AC_MSG_CHECKING([for the kernel version])
-
-kernel=`uname -r`
-
-case "${kernel}" in
-     2.6.*) 
-	    AC_MSG_RESULT([2.6 family (${kernel})])
-	    AC_DEFINE([KERNEL_2_6], 1, [Define to 1 if you're using Linux 2.6.x])
-	    ;;
-
-     2.4.*) 
-	    AC_MSG_RESULT([2.4 family (${kernel})])
-	    AC_DEFINE([KERNEL_2_4], 1, [Define to 1 if you're using Linux 2.4.x])
-	    ;;
-
-     2.2.*) 
-	    AC_MSG_RESULT([2.2 family (${kernel})])
-	    AC_DEFINE([KERNEL_2_2], 1, [Define to 1 if you're using Linux 2.2.x])
-	    ;;
-
-     *) 
-	    AC_MSG_RESULT([unsupported (${kernel})])
-	    AC_MSG_ERROR([Valgrind works on kernels 2.2, 2.4, 2.6])
-	    ;;
-esac
 
 AC_SUBST(DEFAULT_SUPP)
 
@@ -348,6 +357,9 @@ AC_OUTPUT(
    include/Makefile 
    auxprogs/Makefile
    coregrind/Makefile 
+   coregrind/arch/Makefile
+   coregrind/arch/x86-linux/Makefile
+   coregrind/arch/x86-freebsd/Makefile
    coregrind/demangle/Makefile 
    coregrind/docs/Makefile
    coregrind/x86/Makefile

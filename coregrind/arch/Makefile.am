@@ -1,0 +1,2 @@
+
+SUBDIR=$(VG_PLATFORM)

@@ -14,4 +14,4 @@ void yyy  ( void ) { zzzzzzz(); }
 void xxx  ( void ) { yyy(); }
 void www  ( void ) { xxx(); }
 
-void main ( void ) { www(); aaa(); }
+int main ( void ) { www(); aaa(); return 0; }

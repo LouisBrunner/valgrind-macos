@@ -1733,6 +1733,8 @@ void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu )
    }
    sp--;
    *cu = VG_(threads)[tid].custack[sp];
+   if (VG_(clo_instrument))
+      VGM_(make_readable)( (Addr)cu, sizeof(CleanupEntry) );
    VG_(threads)[tid].custack_used = sp;
    SET_EDX(tid, 0);
 }

@@ -514,13 +514,13 @@ static HChar* showAMD64ScalarSz ( Int sz ) {
    }
 }
  
-//.. HChar* showAMD64UnaryOp ( AMD64UnaryOp op ) {
-//..    switch (op) {
-//..       case Xun_NOT: return "not";
-//..       case Xun_NEG: return "neg";
-//..       default: vpanic("showAMD64UnaryOp");
-//..    }
-//.. }
+HChar* showAMD64UnaryOp ( AMD64UnaryOp op ) {
+   switch (op) {
+      case Aun_NOT: return "not";
+      case Aun_NEG: return "neg";
+      default: vpanic("showAMD64UnaryOp");
+   }
+}
 
 HChar* showAMD64AluOp ( AMD64AluOp op ) {
    switch (op) {
@@ -685,13 +685,13 @@ AMD64Instr* AMD64Instr_Test64 ( AMD64RI* src, AMD64RM* dst ) {
    i->Ain.Test64.dst = dst;
    return i;
 }
-//.. AMD64Instr* AMD64Instr_Unary32  ( AMD64UnaryOp op, AMD64RM* dst ) {
-//..    AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag             = Xin_Unary32;
-//..    i->Xin.Unary32.op  = op;
-//..    i->Xin.Unary32.dst = dst;
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_Unary64 ( AMD64UnaryOp op, AMD64RM* dst ) {
+   AMD64Instr* i      = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag             = Ain_Unary64;
+   i->Ain.Unary64.op  = op;
+   i->Ain.Unary64.dst = dst;
+   return i;
+}
 AMD64Instr* AMD64Instr_MulL ( Bool syned, Int sz, AMD64RM* src ) {
    AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag            = Ain_MulL;
@@ -793,17 +793,13 @@ AMD64Instr* AMD64Instr_Store ( UChar sz, HReg src, AMD64AMode* dst ) {
 //..    i->Xin.Bsfr32.dst    = dst;
 //..    return i;
 //.. }
-//.. AMD64Instr* AMD64Instr_MFence ( VexSubArch subarch )
-//.. {
-//..    AMD64Instr* i           = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag                = Xin_MFence;
-//..    i->Xin.MFence.subarch = subarch;
-//..    vassert(subarch == VexSubArchAMD64_sse0
-//..            || subarch == VexSubArchAMD64_sse1
-//..            || subarch == VexSubArchAMD64_sse2);
-//..    return i;
-//.. }
-//.. 
+AMD64Instr* AMD64Instr_MFence ( void )
+{
+   AMD64Instr* i         = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag                = Ain_MFence;
+   return i;
+}
+
 //.. AMD64Instr* AMD64Instr_FpUnary ( AMD64FpOp op, HReg src, HReg dst ) {
 //..    AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
 //..    i->tag             = Xin_FpUnary;
@@ -1001,10 +997,10 @@ void ppAMD64Instr ( AMD64Instr* i )
          vex_printf(",");
          ppAMD64RM(i->Ain.Test64.dst);
          return;
-//..       case Xin_Unary32:
-//..          vex_printf("%sl ", showAMD64UnaryOp(i->Xin.Unary32.op));
-//..          ppAMD64RM(i->Xin.Unary32.dst);
-//..          return;
+      case Ain_Unary64:
+         vex_printf("%sl ", showAMD64UnaryOp(i->Ain.Unary64.op));
+         ppAMD64RM(i->Ain.Unary64.dst);
+         return;
       case Ain_MulL:
          vex_printf("%cmul%s ",
                     i->Ain.MulL.syned ? 's' : 'u',
@@ -1101,10 +1097,9 @@ void ppAMD64Instr ( AMD64Instr* i )
 //..          vex_printf(",");
 //..          ppHRegAMD64(i->Xin.Bsfr32.dst);
 //..          return;
-//..       case Xin_MFence:
-//..          vex_printf("mfence(%s)",
-//..                     LibVEX_ppVexSubArch(i->Xin.MFence.subarch));
-//..          return;
+      case Ain_MFence:
+         vex_printf("mfence" );
+         return;
 //..       case Xin_FpUnary:
 //..          vex_printf("g%sD ", showAMD64FpOp(i->Xin.FpUnary.op));
 //..          ppHRegAMD64(i->Xin.FpUnary.src);
@@ -1279,9 +1274,9 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          addRegUsage_AMD64RI(u, i->Ain.Test64.src);
          addRegUsage_AMD64RM(u, i->Ain.Test64.dst, HRmRead);
          return;
-//..       case Xin_Unary32:
-//..          addRegUsage_AMD64RM(u, i->Xin.Unary32.dst, HRmModify);
-//..          return;
+      case Ain_Unary64:
+         addRegUsage_AMD64RM(u, i->Ain.Unary64.dst, HRmModify);
+         return;
       case Ain_MulL:
          addRegUsage_AMD64RM(u, i->Ain.MulL.src, HRmRead);
          addHRegUse(u, HRmModify, hregAMD64_RAX());
@@ -1367,8 +1362,8 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
 //..          addHRegUse(u, HRmRead, i->Xin.Bsfr32.src);
 //..          addHRegUse(u, HRmWrite, i->Xin.Bsfr32.dst);
 //..          return;
-//..       case Xin_MFence:
-//..          return;
+      case Ain_MFence:
+         return;
 //..       case Xin_FpUnary:
 //..          addHRegUse(u, HRmRead, i->Xin.FpUnary.src);
 //..          addHRegUse(u, HRmWrite, i->Xin.FpUnary.dst);
@@ -1510,9 +1505,9 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
          mapRegs_AMD64RI(m, i->Ain.Test64.src);
          mapRegs_AMD64RM(m, i->Ain.Test64.dst);
          return;
-//..       case Xin_Unary32:
-//..          mapRegs_AMD64RM(m, i->Xin.Unary32.dst);
-//..          return;
+      case Ain_Unary64:
+         mapRegs_AMD64RM(m, i->Ain.Unary64.dst);
+         return;
       case Ain_MulL:
          mapRegs_AMD64RM(m, i->Ain.MulL.src);
          return;
@@ -1554,8 +1549,8 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
 //..          mapReg(m, &i->Xin.Bsfr32.src);
 //..          mapReg(m, &i->Xin.Bsfr32.dst);
 //..          return;
-//..       case Xin_MFence:
-//..          return;
+      case Ain_MFence:
+         return;
 //..       case Xin_FpUnary:
 //..          mapReg(m, &i->Xin.FpUnary.src);
 //..          mapReg(m, &i->Xin.FpUnary.dst);
@@ -1676,42 +1671,42 @@ Bool isMove_AMD64Instr ( AMD64Instr* i, HReg* src, HReg* dst )
    condition codes. */
 
 AMD64Instr* genSpill_AMD64 ( HReg rreg, Int offsetB )
-{vassert(0);
-//..    AMD64AMode* am;
-//..    vassert(offsetB >= 0);
-//..    vassert(!hregIsVirtual(rreg));
-//..    am = AMD64AMode_IR(offsetB, hregAMD64_EBP());
-//.. 
-//..    switch (hregClass(rreg)) {
-//..       case HRcInt32:
-//..          return AMD64Instr_Alu32M ( Xalu_MOV, AMD64RI_Reg(rreg), am );
-//..       case HRcFlt64:
-//..          return AMD64Instr_FpLdSt ( False/*store*/, 8, rreg, am );
-//..       case HRcVec128:
-//..          return AMD64Instr_SseLdSt ( False/*store*/, rreg, am );
-//..       default: 
-//..          ppHRegClass(hregClass(rreg));
-//..          vpanic("genSpill_AMD64: unimplemented regclass");
-//..    }
+{
+   AMD64AMode* am;
+   vassert(offsetB >= 0);
+   vassert(!hregIsVirtual(rreg));
+   am = AMD64AMode_IR(offsetB, hregAMD64_RBP());
+
+   switch (hregClass(rreg)) {
+      case HRcInt64:
+         return AMD64Instr_Alu64M ( Aalu_MOV, AMD64RI_Reg(rreg), am );
+	 //case HRcFlt64:
+	 //   return AMD64Instr_FpLdSt ( False/*store*/, 8, rreg, am );
+	 //case HRcVec128:
+	 //   return AMD64Instr_SseLdSt ( False/*store*/, rreg, am );
+      default: 
+         ppHRegClass(hregClass(rreg));
+         vpanic("genSpill_AMD64: unimplemented regclass");
+   }
 }
 
 AMD64Instr* genReload_AMD64 ( HReg rreg, Int offsetB )
-{vassert(0);
-//..    AMD64AMode* am;
-//..    vassert(offsetB >= 0);
-//..    vassert(!hregIsVirtual(rreg));
-//..    am = AMD64AMode_IR(offsetB, hregAMD64_EBP());
-//..    switch (hregClass(rreg)) {
-//..       case HRcInt32:
-//..          return AMD64Instr_Alu32R ( Xalu_MOV, AMD64RMI_Mem(am), rreg );
-//..       case HRcFlt64:
-//..          return AMD64Instr_FpLdSt ( True/*load*/, 8, rreg, am );
-//..       case HRcVec128:
-//..          return AMD64Instr_SseLdSt ( True/*load*/, rreg, am );
-//..       default: 
-//..          ppHRegClass(hregClass(rreg));
-//..          vpanic("genReload_AMD64: unimplemented regclass");
-//..    }
+{
+   AMD64AMode* am;
+   vassert(offsetB >= 0);
+   vassert(!hregIsVirtual(rreg));
+   am = AMD64AMode_IR(offsetB, hregAMD64_RBP());
+   switch (hregClass(rreg)) {
+      case HRcInt64:
+         return AMD64Instr_Alu64R ( Aalu_MOV, AMD64RMI_Mem(am), rreg );
+	 //case HRcFlt64:
+	 //   return AMD64Instr_FpLdSt ( True/*load*/, 8, rreg, am );
+	 //case HRcVec128:
+	 //   return AMD64Instr_SseLdSt ( True/*load*/, rreg, am );
+      default: 
+         ppHRegClass(hregClass(rreg));
+         vpanic("genReload_AMD64: unimplemented regclass");
+   }
 }
 
 
@@ -2084,21 +2079,23 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
                goto bad;
          }
       }
-//..       /* MUL */
-//..       if (i->Xin.Alu32R.op == Xalu_MUL) {
-//..          switch (i->Xin.Alu32R.src->tag) {
+      /* MUL */
+      if (i->Ain.Alu64R.op == Aalu_MUL) {
+         switch (i->Ain.Alu64R.src->tag) {
 //..             case Xrmi_Reg:
 //..                *p++ = 0x0F;
 //..                *p++ = 0xAF;
 //..                p = doAMode_R(p, i->Xin.Alu32R.dst,
 //..                                 i->Xin.Alu32R.src->Xrmi.Reg.reg);
 //..                goto done;
-//..             case Xrmi_Mem:
-//..                *p++ = 0x0F;
-//..                *p++ = 0xAF;
-//..                p = doAMode_M(p, i->Xin.Alu32R.dst,
-//..                                 i->Xin.Alu32R.src->Xrmi.Mem.am);
-//..                goto done;
+            case Armi_Mem:
+               *p++ = rexAMode_M(i->Ain.Alu64R.dst,
+                                 i->Ain.Alu64R.src->Armi.Mem.am);
+               *p++ = 0x0F;
+               *p++ = 0xAF;
+               p = doAMode_M(p, i->Ain.Alu64R.dst,
+                                i->Ain.Alu64R.src->Armi.Mem.am);
+               goto done;
 //..             case Xrmi_Imm:
 //..                if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
 //..                   *p++ = 0x6B;
@@ -2110,10 +2107,10 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 //..                   p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
 //..                }
 //..                goto done;
-//..             default:
-//..                goto bad;
-//..          }
-//..       }
+            default:
+               goto bad;
+         }
+      }
       /* ADD/SUB/ADC/SBB/AND/OR/XOR/CMP */
       opc = opc_rr = subopc_imm = opc_imma = 0;
       switch (i->Ain.Alu64R.op) {
@@ -2272,16 +2269,17 @@ vassert(0);
       }
       break;
 
-//..    case Xin_Unary32:
-//..       if (i->Xin.Unary32.op == Xun_NOT) {
-//..          *p++ = 0xF7;
-//..          if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
-//..             p = doAMode_R(p, fake(2), i->Xin.Unary32.dst->Xrm.Reg.reg);
-//..             goto done;
-//..          } else {
-//..             goto bad;
-//..          }
-//..       }
+   case Ain_Unary64:
+      if (i->Ain.Unary64.op == Aun_NOT) {
+         if (i->Ain.Unary64.dst->tag == Arm_Reg) {
+            *p++ = rexAMode_R(fake(0), i->Ain.Unary64.dst->Arm.Reg.reg);
+            *p++ = 0xF7;
+            p = doAMode_R(p, fake(2), i->Ain.Unary64.dst->Arm.Reg.reg);
+            goto done;
+         } else {
+            goto bad;
+         }
+      }
 //..       if (i->Xin.Unary32.op == Xun_NEG) {
 //..          *p++ = 0xF7;
 //..          if (i->Xin.Unary32.dst->tag == Xrm_Reg) {
@@ -2291,7 +2289,7 @@ vassert(0);
 //..             goto bad;
 //..          }
 //..       }
-//..       break;
+      break;
 
    case Ain_MulL:
       subopc = i->Ain.MulL.syned ? 5 : 4;
@@ -2562,32 +2560,11 @@ vassert(0);
 //..       }
 //..       p = doAMode_R(p, i->Xin.Bsfr32.dst, i->Xin.Bsfr32.src);
 //..       goto done;
-//.. 
-//..    case Xin_MFence:
-//..       /* see comment in hdefs.h re this insn */
-//..       if (0) vex_printf("EMIT FENCE\n");
-//..       switch (i->Xin.MFence.subarch) {
-//..          case VexSubArchAMD64_sse0:
-//..             vassert(0); /* awaiting test case */
-//..             /* lock addl $0,0(%esp) */
-//..             *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
-//..             *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
-//..             goto done;
-//..          case VexSubArchAMD64_sse1:
-//..             /* sfence */
-//..             *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF8;
-//..             /* lock addl $0,0(%esp) */
-//..             *p++ = 0xF0; *p++ = 0x83; *p++ = 0x44; 
-//..             *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
-//..             goto done;
-//..          case VexSubArchAMD64_sse2:
-//..             /* mfence */
-//..             *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
-//..             goto done;
-//..          default: 
-//..             vpanic("emit_AMD64Instr:mfence:subarch");
-//..       }
-//..       break;
+
+   case Ain_MFence:
+      /* mfence */
+      *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
+      goto done;
 
    case Ain_Store:
       if (i->Ain.Store.sz == 2) {

@@ -67,7 +67,9 @@ typedef
       ULong  guest_CC_DEP1;
       ULong  guest_CC_DEP2;
       ULong  guest_CC_NDEP;
-      /* EIP */
+      /* The D flag is stored here, encoded as either -1 or +1 */
+      ULong  guest_DFLAG;       /* 48 */
+      /* RIP */
       ULong  guest_RIP;
       /* Probably a lot more stuff too. 
          D,ID flags

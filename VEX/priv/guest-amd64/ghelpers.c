@@ -493,6 +493,7 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
       case AMD64G_CC_OP_ADDB:   ACTIONS_ADD( 8,  UChar  );
       case AMD64G_CC_OP_ADDW:   ACTIONS_ADD( 16, UShort );
       case AMD64G_CC_OP_ADDL:   ACTIONS_ADD( 32, UInt   );
+      case AMD64G_CC_OP_ADDQ:   ACTIONS_ADD( 64, ULong  );
 
       case AMD64G_CC_OP_ADCB:   ACTIONS_ADC( 8,  UChar  );
       case AMD64G_CC_OP_ADCW:   ACTIONS_ADC( 16, UShort );
@@ -1062,6 +1063,85 @@ IRExpr* guest_amd64_spechelper ( HChar* function_name,
 }
 
 
+
+/*---------------------------------------------------------------*/
+/*--- Misc integer helpers, including rotates and CPUID.      ---*/
+/*---------------------------------------------------------------*/
+
+/* Claim to be the following CPU:
+   vendor_id       : AuthenticAMD
+   cpu family      : 15
+   model           : 12
+   model name      : AMD Athlon(tm) 64 Processor 3200+
+   stepping        : 0
+   cpu MHz         : 2202.917
+   cache size      : 512 KB
+   fpu             : yes
+   fpu_exception   : yes
+   cpuid level     : 1
+   wp              : yes
+   flags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr 
+                     pge mca cmov pat pse36 clflush mmx fxsr sse sse2 
+                     pni syscall nx mmxext lm 3dnowext 3dnow
+   bogomips        : 4308.99
+   TLB size        : 1088 4K pages
+   clflush size    : 64
+   cache_alignment : 64
+   address sizes   : 40 bits physical, 48 bits virtual
+   power management: ts fid vid ttp
+*/
+void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st )
+{
+#  define SET_ABCD(_a,_b,_c,_d)                \
+      do { st->guest_RAX = (ULong)(_a);        \
+           st->guest_RBX = (ULong)(_b);        \
+           st->guest_RCX = (ULong)(_c);        \
+           st->guest_RDX = (ULong)(_d);        \
+      } while (0)
+
+   switch (0xFFFFFFFF & st->guest_RAX) {
+      case 0x0: 
+         SET_ABCD(0x00000001, 0x68747541, 0x444d4163, 0x69746e65); 
+         break;
+      case 0x1: 
+         SET_ABCD(0x00000fc0, 0x00000800, 0x00000000, 0x078bfbff); 
+         break;
+      case 0x80000000: 
+         SET_ABCD(0x80000018, 0x68747541, 0x444d4163, 0x69746e65); 
+         break;
+      case 0x80000001: 
+         SET_ABCD(0x00000fc0, 0x0000010a, 0x00000000, 0xe1d3fbff); 
+         break;
+      case 0x80000002: 
+         SET_ABCD(0x20444d41, 0x6c687441, 0x74286e6f, 0x3620296d); 
+         break;
+      case 0x80000003: 
+         SET_ABCD(0x72502034, 0x7365636f, 0x20726f73, 0x30303233); 
+         break;
+      case 0x80000004: 
+         SET_ABCD(0x0000002b, 0x00000000, 0x00000000, 0x00000000); 
+         break;
+      case 0x80000005: 
+         SET_ABCD(0xff08ff08, 0xff20ff20, 0x40020140, 0x40020140); 
+         break;
+      case 0x80000006: 
+         SET_ABCD(0x00000000, 0x42004200, 0x02008140, 0x00000000); 
+         break;
+      case 0x80000007: 
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x0000000f); 
+         break;
+      case 0x80000008: 
+         SET_ABCD(0x00003028, 0x00000000, 0x00000000, 0x00000000); 
+         break;
+      default:         
+         SET_ABCD(0x00000000, 0x00000000, 0x00000000, 0x00000000); 
+         break;
+   }
+#  undef SET_ABCD
+}
+
+
+
 /*---------------------------------------------------------------*/
 /*--- Helpers for dealing with, and describing,               ---*/
 /*--- guest state as a whole.                                 ---*/
@@ -1095,6 +1175,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_CC_DEP2 = 0;
    vex_state->guest_CC_NDEP = 0;
 
+   vex_state->guest_DFLAG   = 1; /* forwards */
    // XXX: add more here later, for D/ID flags
 
    vex_state->guest_RIP = 0;

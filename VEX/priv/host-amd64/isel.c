@@ -789,7 +789,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Xor8: case Iop_Xor16: case Iop_Xor32: case Iop_Xor64: 
             aluOp = Aalu_XOR; break;
 //..          case Iop_Mul16: case Iop_Mul32: 
-//..             aluOp = Xalu_MUL; break;
+         case Iop_Mul64:
+            aluOp = Aalu_MUL; break;
          default:
             aluOp = Aalu_INVALID; break;
       }
@@ -1104,13 +1105,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          }
 //.. 	 case Iop_Not8:
 //.. 	 case Iop_Not16:
-//..          case Iop_Not32: {
-//..             HReg dst = newVRegI(env);
-//..             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-//..             addInstr(env, mk_iMOVsd_RR(src,dst) );
-//..             addInstr(env, X86Instr_Unary32(Xun_NOT,X86RM_Reg(dst)));
-//..             return dst;
-//..          }
+//..          case Iop_Not32:
+         case Iop_Not64: {
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, mk_iMOVsd_RR(src,dst) );
+            addInstr(env, AMD64Instr_Unary64(Aun_NOT,AMD64RM_Reg(dst)));
+            return dst;
+         }
 //..          case Iop_64HIto32: {
 //..             HReg rHi, rLo;
 //..             iselInt64Expr(&rHi,&rLo, env, e->Iex.Unop.arg);
@@ -1661,29 +1663,30 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 //..          return iselCondCode(env, mi.bindee[0]);
 //..       }
 //..    }
-//.. 
-//..    /* Cmp*32*(x,y) */
-//..    if (e->tag == Iex_Binop 
-//..        && (e->Iex.Binop.op == Iop_CmpEQ32
-//..            || e->Iex.Binop.op == Iop_CmpNE32
-//..            || e->Iex.Binop.op == Iop_CmpLT32S
-//..            || e->Iex.Binop.op == Iop_CmpLT32U
-//..            || e->Iex.Binop.op == Iop_CmpLE32S
-//..            || e->Iex.Binop.op == Iop_CmpLE32U)) {
-//..       HReg    r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
-//..       X86RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
-//..       addInstr(env, X86Instr_Alu32R(Xalu_CMP,rmi2,r1));
-//..       switch (e->Iex.Binop.op) {
-//..          case Iop_CmpEQ32:  return Xcc_Z;
-//..          case Iop_CmpNE32:  return Xcc_NZ;
-//..          case Iop_CmpLT32S: return Xcc_L;
-//..          case Iop_CmpLT32U: return Xcc_B;
-//..          case Iop_CmpLE32S: return Xcc_LE;
-//..          case Iop_CmpLE32U: return Xcc_BE;
-//..          default: vpanic("iselCondCode(x86): CmpXX32");
-//..       }
-//..    }
-//.. 
+
+   /* Cmp*64*(x,y) */
+   if (e->tag == Iex_Binop 
+       && (e->Iex.Binop.op == Iop_CmpEQ64
+           || e->Iex.Binop.op == Iop_CmpNE64
+           //|| e->Iex.Binop.op == Iop_CmpLT64S
+           //|| e->Iex.Binop.op == Iop_CmpLT64U
+           //|| e->Iex.Binop.op == Iop_CmpLE64S
+           //|| e->Iex.Binop.op == Iop_CmpLE64U
+          )) {
+      HReg      r1   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+      AMD64RMI* rmi2 = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+      addInstr(env, AMD64Instr_Alu64R(Aalu_CMP,rmi2,r1));
+      switch (e->Iex.Binop.op) {
+         case Iop_CmpEQ64:  return Acc_Z;
+         case Iop_CmpNE64:  return Acc_NZ;
+	   //case Iop_CmpLT64S: return Acc_L;
+	   //case Iop_CmpLT64U: return Acc_B;
+	   //case Iop_CmpLE64S: return Acc_LE;
+	   //case Iop_CmpLE64U: return Acc_BE;
+         default: vpanic("iselCondCode(amd64): CmpXX64");
+      }
+   }
+
 //..    /* CmpNE64(1Sto64(b), 0) ==> b */
 //..    {
 //..       DECLARE_PATTERN(p_CmpNE64_1Sto64);
@@ -3419,48 +3422,39 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       break;
    }
 
-//..    /* --------- Call to DIRTY helper --------- */
-//..    case Ist_Dirty: {
-//..       IRType   retty;
-//..       IRDirty* d = stmt->Ist.Dirty.details;
-//..       Bool     passBBP = False;
-//.. 
-//..       if (d->nFxState == 0)
-//..          vassert(!d->needsBBP);
-//..       passBBP = d->nFxState > 0 && d->needsBBP;
-//.. 
-//..       /* Marshal args, do the call, clear stack. */
-//..       doHelperCall( env, passBBP, d->guard, d->cee, d->args );
-//.. 
-//..       /* Now figure out what to do with the returned value, if any. */
-//..       if (d->tmp == IRTemp_INVALID)
-//..          /* No return value.  Nothing to do. */
-//..          return;
-//.. 
-//..       retty = typeOfIRTemp(env->type_env, d->tmp);
-//..       if (retty == Ity_I64) {
-//..          HReg dstHi, dstLo;
-//..          /* The returned value is in %edx:%eax.  Park it in the
-//..             register-pair associated with tmp. */
-//..          lookupIRTemp64( &dstHi, &dstLo, env, d->tmp);
-//..          addInstr(env, mk_iMOVsd_RR(hregX86_EDX(),dstHi) );
-//..          addInstr(env, mk_iMOVsd_RR(hregX86_EAX(),dstLo) );
-//..          return;
-//..       }
-//..       if (retty == Ity_I32 || retty == Ity_I16 || retty == Ity_I8) {
-//..          /* The returned value is in %eax.  Park it in the register
-//..             associated with tmp. */
-//..          HReg dst = lookupIRTemp(env, d->tmp);
-//..          addInstr(env, mk_iMOVsd_RR(hregX86_EAX(),dst) );
-//..          return;
-//..       }
-//..       break;
-//..    }
-//.. 
-//..    /* --------- MEM FENCE --------- */
-//..    case Ist_MFence:
-//..       addInstr(env, X86Instr_MFence(env->subarch));
-//..       return;
+   /* --------- Call to DIRTY helper --------- */
+   case Ist_Dirty: {
+      IRType   retty;
+      IRDirty* d = stmt->Ist.Dirty.details;
+      Bool     passBBP = False;
+
+      if (d->nFxState == 0)
+         vassert(!d->needsBBP);
+      passBBP = d->nFxState > 0 && d->needsBBP;
+
+      /* Marshal args, do the call, clear stack. */
+      doHelperCall( env, passBBP, d->guard, d->cee, d->args );
+
+      /* Now figure out what to do with the returned value, if any. */
+      if (d->tmp == IRTemp_INVALID)
+         /* No return value.  Nothing to do. */
+         return;
+
+      retty = typeOfIRTemp(env->type_env, d->tmp);
+      if (retty == Ity_I64) {
+         /* The returned value is in %rax.  Park it in the register
+            associated with tmp. */
+         HReg dst = lookupIRTemp(env, d->tmp);
+         addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(),dst) );
+         return;
+      }
+      break;
+   }
+
+   /* --------- MEM FENCE --------- */
+   case Ist_MFence:
+      addInstr(env, AMD64Instr_MFence());
+      return;
 
    /* --------- EXIT --------- */
    case Ist_Exit: {

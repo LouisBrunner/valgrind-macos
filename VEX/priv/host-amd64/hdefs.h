@@ -252,17 +252,17 @@ extern AMD64RM* AMD64RM_Mem ( AMD64AMode* );
 extern void ppAMD64RM ( AMD64RM* );
 
 
-//.. /* --------- Instructions. --------- */
-//.. 
-//.. /* --------- */
-//.. typedef
-//..    enum {
-//..       Xun_NEG,
-//..       Xun_NOT
-//..    }
-//..    X86UnaryOp;
-//.. 
-//.. extern HChar* showX86UnaryOp ( X86UnaryOp );
+/* --------- Instructions. --------- */
+
+/* --------- */
+typedef
+   enum {
+      Aun_NEG,
+      Aun_NOT
+   }
+   AMD64UnaryOp;
+
+extern HChar* showAMD64UnaryOp ( AMD64UnaryOp );
 
 
 /* --------- */
@@ -358,7 +358,7 @@ typedef
       Ain_Alu64M,    /* 64-bit mov/arith/logical, dst=MEM */
       Ain_Sh64,      /* 64-bit shift/rotate, dst=REG or MEM */
       Ain_Test64,    /* 64-bit test (AND, set flags, discard result) */
-//..       Xin_Unary32,   /* 32-bit not and neg */
+      Ain_Unary64,   /* 64-bit not and neg */
       Ain_MulL,      /* widening multiply */
 //..       Xin_Div,       /* div and mod */
 //..       Xin_Sh3232,    /* shldl or shrdl */
@@ -371,7 +371,7 @@ typedef
       Ain_Store,     /* store 32/16/8 bit value in memory */
 //..       Xin_Set32,     /* convert condition code to 32-bit value */
 //..       Xin_Bsfr32,    /* 32-bit bsf/bsr */
-//..       Xin_MFence,    /* mem fence (not just sse2, but sse0 and 1 too) */
+      Ain_MFence,    /* mem fence */
 //.. 
 //..       Xin_FpUnary,   /* FP fake unary op */
 //..       Xin_FpBinary,  /* FP fake binary op */
@@ -425,11 +425,11 @@ typedef
             AMD64RI* src;
             AMD64RM* dst;
          } Test64;
-//..          /* Not and Neg */
-//..          struct {
-//..             X86UnaryOp op;
-//..             X86RM*     dst;
-//..          } Unary32;
+         /* Not and Neg */
+         struct {
+            AMD64UnaryOp op;
+            AMD64RM*     dst;
+         } Unary64;
          /* DX:AX = AX *s/u r/m16, or EDX:EAX = EAX *s/u r/m32,
             or RDX:RAX = RAX *s/u r/m64 */
          struct {
@@ -503,17 +503,12 @@ typedef
 //..             HReg src;
 //..             HReg dst;
 //..          } Bsfr32;
-//..          /* Mem fence (not just sse2, but sse0 and 1 too).  In short,
-//..             an insn which flushes all preceding loads and stores as
-//..             much as possible before continuing.  On SSE2 we emit a
-//..             real "mfence", on SSE1 "sfence ; lock addl $0,0(%esp)" and
-//..             on SSE0 "lock addl $0,0(%esp)".  This insn therefore
-//..             carries the subarch so the assembler knows what to
-//..             emit. */
-//..          struct {
-//..             VexSubArch subarch;
-//..          } MFence;
-//.. 
+         /* Mem fence.  In short, an insn which flushes all preceding
+            loads and stores as much as possible before continuing.
+            On AMD64 we emit a real "mfence". */
+         struct {
+         } MFence;
+
 //..          /* X86 Floating point (fake 3-operand, "flat reg file" insns) */
 //..          struct {
 //..             X86FpOp op;
@@ -633,7 +628,7 @@ typedef
 extern AMD64Instr* AMD64Instr_Imm64     ( ULong imm64, HReg dst );
 extern AMD64Instr* AMD64Instr_Alu64R    ( AMD64AluOp, AMD64RMI*, HReg );
 extern AMD64Instr* AMD64Instr_Alu64M    ( AMD64AluOp, AMD64RI*,  AMD64AMode* );
-//.. extern AMD64Instr* AMD64Instr_Unary32   ( AMD64UnaryOp op, AMD64RM* dst );
+extern AMD64Instr* AMD64Instr_Unary64   ( AMD64UnaryOp op, AMD64RM* dst );
 extern AMD64Instr* AMD64Instr_Sh64      ( AMD64ShiftOp, UInt, AMD64RM* );
 extern AMD64Instr* AMD64Instr_Test64    ( AMD64RI* src, AMD64RM* dst );
 extern AMD64Instr* AMD64Instr_MulL      ( Bool syned, Int sz, AMD64RM* );
@@ -649,7 +644,7 @@ extern AMD64Instr* AMD64Instr_LoadEX    ( UChar szSmall, Bool syned,
 extern AMD64Instr* AMD64Instr_Store     ( UChar sz, HReg src, AMD64AMode* dst );
 //.. extern AMD64Instr* AMD64Instr_Set32     ( AMD64CondCode cond, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
-//.. extern AMD64Instr* AMD64Instr_MFence    ( VexSubArch );
+extern AMD64Instr* AMD64Instr_MFence    ( void );
 //.. 
 //.. extern AMD64Instr* AMD64Instr_FpUnary   ( AMD64FpOp op, HReg src, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_FpBinary  ( AMD64FpOp op, HReg srcL, HReg srcR, HReg dst );

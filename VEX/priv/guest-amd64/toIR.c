@@ -339,7 +339,7 @@ static void unimplemented ( HChar* str )
 
 //.. #define OFFB_FPREGS    offsetof(VexGuestX86State,guest_FPREG[0])
 //.. #define OFFB_FPTAGS    offsetof(VexGuestX86State,guest_FPTAG[0])
-//.. #define OFFB_DFLAG     offsetof(VexGuestX86State,guest_DFLAG)
+#define OFFB_DFLAG     offsetof(VexGuestAMD64State,guest_DFLAG)
 //.. #define OFFB_IDFLAG    offsetof(VexGuestX86State,guest_IDFLAG)
 //.. #define OFFB_FTOP      offsetof(VexGuestX86State,guest_FTOP)
 //.. #define OFFB_FC3210    offsetof(VexGuestX86State,guest_FC3210)
@@ -3534,24 +3534,28 @@ vassert(0);
 }
 
 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Disassembling string ops (including REP prefixes)    ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. /* Code shared by all the string ops */
-//.. static
-//.. void dis_string_op_increment(Int sz, Int t_inc)
-//.. {
-//..    if (sz == 4 || sz == 2) {
-//..       assign( t_inc, 
-//..               binop(Iop_Shl32, IRExpr_Get( OFFB_DFLAG, Ity_I32 ),
-//..                                mkU8(sz/2) ) );
-//..    } else {
-//..       assign( t_inc, 
-//..               IRExpr_Get( OFFB_DFLAG, Ity_I32 ) );
-//..    }
-//.. }
-//.. 
+/*------------------------------------------------------------*/
+/*--- Disassembling string ops (including REP prefixes)    ---*/
+/*------------------------------------------------------------*/
+
+/* Code shared by all the string ops */
+static
+void dis_string_op_increment ( Int sz, IRTemp t_inc )
+{
+   UChar logSz;
+   if (sz == 8 || sz == 4 || sz == 2) {
+      logSz = 1;
+      if (sz == 4) logSz = 2;
+      if (sz == 8) logSz = 3;
+      assign( t_inc, 
+              binop(Iop_Shl64, IRExpr_Get( OFFB_DFLAG, Ity_I64 ),
+                               mkU8(logSz) ) );
+   } else {
+      assign( t_inc, 
+              IRExpr_Get( OFFB_DFLAG, Ity_I64 ) );
+   }
+}
+
 //.. static
 //.. void dis_string_op( void (*dis_OP)( Int, IRTemp ), 
 //..                     Int sz, Char* name, UChar sorb )
@@ -3623,44 +3627,31 @@ vassert(0);
 //..    //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
 //..    putIReg( 4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
 //.. }
-//.. 
-//.. static 
-//.. void dis_CMPS ( Int sz, IRTemp t_inc )
-//.. {
-//..    IRType ty  = szToITy(sz);
-//..    IRTemp tdv = newTemp(ty);      /* (EDI) */
-//..    IRTemp tsv = newTemp(ty);      /* (ESI) */
-//..    //IRTemp res = newTemp(ty);
-//..    IRTemp td  = newTemp(Ity_I32); /*  EDI  */
-//..    IRTemp ts  = newTemp(Ity_I32); /*  ESI  */
-//.. 
-//..    //uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-//..    assign( td, getIReg(4, R_EDI) );
-//.. 
-//..    //uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
-//..    assign( ts, getIReg(4, R_ESI) );
-//.. 
-//..    //uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tdv);
-//..    assign( tdv, loadLE(ty,mkexpr(td)) );
-//.. 
-//..    //uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tsv);
-//..    assign( tsv, loadLE(ty,mkexpr(ts)) );
-//.. 
-//..    //uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, tsv); 
-//..    //setFlagsFromUOpcode(cb, SUB);
-//..    //assign( res, binop(mkSizedOp(ty, Iop_Sub8), mkexpr(tsv), mkexpr(tdv)) );
-//..    setFlags_DEP1_DEP2 ( Iop_Sub8, tsv, tdv, ty );
-//.. 
-//..    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
-//..    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
-//.. 
-//..    //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-//..    putIReg(4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
-//.. 
-//..    //uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
-//..    putIReg(4, R_ESI, binop(Iop_Add32, mkexpr(ts), mkexpr(t_inc)) );
-//.. }
-//.. 
+
+static 
+void dis_CMPS ( Int sz, IRTemp t_inc )
+{
+   IRType ty  = szToITy(sz);
+   IRTemp tdv = newTemp(ty);      /* (RDI) */
+   IRTemp tsv = newTemp(ty);      /* (RSI) */
+   IRTemp td  = newTemp(Ity_I64); /*  RDI  */
+   IRTemp ts  = newTemp(Ity_I64); /*  RSI  */
+
+   assign( td, getIReg64(R_RDI) );
+
+   assign( ts, getIReg64(R_RSI) );
+
+   assign( tdv, loadLE(ty,mkexpr(td)) );
+
+   assign( tsv, loadLE(ty,mkexpr(ts)) );
+
+   setFlags_DEP1_DEP2 ( Iop_Sub8, tsv, tdv, ty );
+
+   putIReg64(R_RDI, binop(Iop_Add64, mkexpr(td), mkexpr(t_inc)) );
+
+   putIReg64(R_RSI, binop(Iop_Add64, mkexpr(ts), mkexpr(t_inc)) );
+}
+
 //.. static 
 //.. void dis_SCAS ( Int sz, IRTemp t_inc )
 //.. {
@@ -3688,45 +3679,40 @@ vassert(0);
 //..    //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
 //..    putIReg(4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
 //.. }
-//.. 
-//.. 
-//.. /* Wrap the appropriate string op inside a REP/REPE/REPNE.
-//..    We assume the insn is the last one in the basic block, and so emit a jump
-//..    to the next insn, rather than just falling through. */
-//.. static 
-//.. void dis_REP_op ( X86Condcode cond,
-//..                   void (*dis_OP)(Int, IRTemp),
-//..                   Int sz, Addr32 eip, Addr32 eip_next, Char* name )
-//.. {
-//..    IRTemp t_inc = newTemp(Ity_I32);
-//..    IRTemp tc    = newTemp(Ity_I32);  /*  ECX  */
-//.. 
-//..    //uInstr2 (cb, GET,   4, ArchReg, R_ECX, TempReg, tc);
-//..    assign( tc, getIReg(4,R_ECX) );
-//.. 
-//..    //uInstr2 (cb, JIFZ,  4, TempReg, tc,    Literal, 0);
-//..    //uLiteral(cb, eip_next);
-//..    stmt( IRStmt_Exit( binop(Iop_CmpEQ32,mkexpr(tc),mkU32(0)),
-//..                       Ijk_Boring,
-//..                       IRConst_U32(eip_next) ) );
-//.. 
-//..    //uInstr1 (cb, DEC,   4, TempReg, tc);
-//..    //uInstr2 (cb, PUT,   4, TempReg, tc,    ArchReg, R_ECX);
-//..    putIReg(4, R_ECX, binop(Iop_Sub32, mkexpr(tc), mkU32(1)) );
-//.. 
-//..    dis_string_op_increment(sz, t_inc);
-//..    dis_OP (sz, t_inc);
-//.. 
-//..    if (cond == X86CondAlways) {
-//..       jmp_lit(Ijk_Boring,eip);
-//..    } else {
-//..       stmt( IRStmt_Exit( mk_x86g_calculate_condition(cond),
-//..                          Ijk_Boring,
-//..                          IRConst_U32(eip) ) );
-//..       jmp_lit(Ijk_Boring,eip_next);
-//..    }
-//..    DIP("%s%c\n", name, nameISize(sz));
-//.. }
+
+
+/* Wrap the appropriate string op inside a REP/REPE/REPNE.  We assume
+   the insn is the last one in the basic block, and so emit a jump to
+   the next insn, rather than just falling through. */
+static 
+void dis_REP_op ( AMD64Condcode cond,
+                  void (*dis_OP)(Int, IRTemp),
+                  Int sz, Addr64 rip, Addr64 rip_next, HChar* name )
+{
+   IRTemp t_inc = newTemp(Ity_I64);
+   IRTemp tc    = newTemp(Ity_I64);  /*  RCX  */
+
+   assign( tc, getIReg64(R_RCX) );
+
+   stmt( IRStmt_Exit( binop(Iop_CmpEQ64,mkexpr(tc),mkU64(0)),
+                      Ijk_Boring,
+                      IRConst_U64(rip_next) ) );
+
+   putIReg64(R_RCX, binop(Iop_Sub64, mkexpr(tc), mkU64(1)) );
+
+   dis_string_op_increment(sz, t_inc);
+   dis_OP (sz, t_inc);
+
+   if (cond == AMD64CondAlways) {
+      jmp_lit(Ijk_Boring,rip);
+   } else {
+      stmt( IRStmt_Exit( mk_amd64g_calculate_condition(cond),
+                         Ijk_Boring,
+                         IRConst_U64(rip) ) );
+      jmp_lit(Ijk_Boring,rip_next);
+   }
+   DIP("%s%c\n", name, nameISize(sz));
+}
 
 
 /*------------------------------------------------------------*/
@@ -11250,10 +11236,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_mov_G_E(pfx, sz, delta);
       break;
 
-//..    case 0x8A: /* MOV Eb,Gb */
-//..       delta = dis_mov_E_G(sorb, 1, delta);
-//..       break;
-//..  
+   case 0x8A: /* MOV Eb,Gb */
+      delta = dis_mov_E_G(pfx, 1, delta);
+      break;
+ 
    case 0x8B: /* MOV Ev,Gv */
       delta = dis_mov_E_G(pfx, sz, delta);
       break;
@@ -11915,13 +11901,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0xAF:
 //..       dis_string_op( dis_SCAS, ( opc == 0xAE ? 1 : sz ), "scas", sorb );
 //..       break;
-//.. 
-//.. 
-//..    case 0xFC: /* CLD */
-//..       stmt( IRStmt_Put( OFFB_DFLAG, mkU32(1)) );
-//..       DIP("cld\n");
-//..       break;
-//.. 
+
+
+   case 0xFC: /* CLD */
+      stmt( IRStmt_Put( OFFB_DFLAG, mkU64(1)) );
+      DIP("cld\n");
+      break;
+
 //..    case 0xFD: /* STD */
 //..       stmt( IRStmt_Put( OFFB_DFLAG, mkU32(0xFFFFFFFF)) );
 //..       DIP("std\n");
@@ -11986,10 +11972,24 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       }
 //..       break;
 //..    }
-//.. 
-//..    /* REP/REPE prefix insn (for SCAS and CMPS, 0xF3 means REPE,
-//..       for the rest, it means REP) */
-//..    case 0xF3: { 
+
+   /* REP/REPE prefix insn (for SCAS and CMPS, 0xF3 means REPE,
+      for the rest, it means REP) */
+
+   case 0xA6: /* F3 A6: repe cmpsb */
+   case 0xA7: /* F3 A7: repe cmps{w,l,q} */
+      if (haveF3(pfx) && !haveF2(pfx)) {
+         if (opc == 0xA6)
+            sz = 1;
+         dis_REP_op ( AMD64CondZ, dis_CMPS, sz, 
+                                  guest_rip_curr_instr,
+                                  guest_rip_bbstart+delta, "repe cmps" );
+         whatNext = Dis_StopHere;
+         break;
+      }
+      goto decode_failure;
+
+//..   case 0xF3: { 
 //..       Addr32 eip_orig = guest_eip_bbstart + delta - 1;
 //..       vassert(sorb == 0);
 //..       abyte = getUChar(delta); delta++;
@@ -12389,102 +12389,51 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. //--          eip = dis_cmpxchg8b ( cb, sorb, eip );
 //.. //--          break;
 //.. //-- 
-//..       /* =-=-=-=-=-=-=-=-=- CPUID -=-=-=-=-=-=-=-=-=-=-= */
-//.. 
-//..       case 0xA2: { /* CPUID */
-//..          /* Uses dirty helper: 
-//..                void dirtyhelper_CPUID_sse[012] ( VexGuestX86State* )
-//..             declared to mod eax, wr ebx, ecx, edx
-//..          */
-//..          IRDirty* d     = NULL;
-//..          HChar*   fName = NULL;
-//..          void*    fAddr = NULL;
-//..          switch (subarch) {
-//..             case VexSubArchX86_sse0:
-//..                fName = "x86g_dirtyhelper_CPUID_sse0";
-//..                fAddr = &x86g_dirtyhelper_CPUID_sse0; 
-//..                break;
-//..             case VexSubArchX86_sse1:
-//..                fName = "x86g_dirtyhelper_CPUID_sse1";
-//..                fAddr = &x86g_dirtyhelper_CPUID_sse1; 
-//..                break;
-//..             case VexSubArchX86_sse2:
-//..                fName = "x86g_dirtyhelper_CPUID_sse2";
-//..                fAddr = &x86g_dirtyhelper_CPUID_sse2; 
-//..                break;
-//..             default:
-//..                vpanic("disInstr(x86)(cpuid)");
-//..          }
-//..          vassert(fName); vassert(fAddr);
-//..          d = unsafeIRDirty_0_N ( 0/*regparms*/, 
-//..                                  fName, fAddr, mkIRExprVec_0() );
-//..          /* declare guest state effects */
-//..          d->needsBBP = True;
-//..          d->nFxState = 4;
-//..          d->fxState[0].fx     = Ifx_Modify;
-//..          d->fxState[0].offset = OFFB_EAX;
-//..          d->fxState[0].size   = 4;
-//..          d->fxState[1].fx     = Ifx_Write;
-//..          d->fxState[1].offset = OFFB_EBX;
-//..          d->fxState[1].size   = 4;
-//..          d->fxState[2].fx     = Ifx_Write;
-//..          d->fxState[2].offset = OFFB_ECX;
-//..          d->fxState[2].size   = 4;
-//..          d->fxState[3].fx     = Ifx_Write;
-//..          d->fxState[3].offset = OFFB_EDX;
-//..          d->fxState[3].size   = 4;
-//..          /* execute the dirty call, side-effecting guest state */
-//..          stmt( IRStmt_Dirty(d) );
-//..          /* CPUID is a serialising insn.  So, just in case someone is
-//..             using it as a memory fence ... */
-//..          stmt( IRStmt_MFence() );
-//..          DIP("cpuid\n");
-//..          break;
-//..       }
-//.. 
-//.. //--          if (!VG_(cpu_has_feature)(VG_X86_FEAT_CPUID))
-//.. //--             goto decode_failure;
-//.. //-- 
-//.. //--          t1 = newTemp(cb);
-//.. //--          t2 = newTemp(cb);
-//.. //--          t3 = newTemp(cb);
-//.. //--          t4 = newTemp(cb);
-//.. //--          uInstr0(cb, CALLM_S, 0);
-//.. //-- 
-//.. //--          uInstr2(cb, GET,   4, ArchReg, R_EAX, TempReg, t1);
-//.. //--          uInstr1(cb, PUSH,  4, TempReg, t1);
-//.. //-- 
-//.. //--          uInstr2(cb, MOV,   4, Literal, 0, TempReg, t2);
-//.. //--          uLiteral(cb, 0);
-//.. //--          uInstr1(cb, PUSH,  4, TempReg, t2);
-//.. //-- 
-//.. //--          uInstr2(cb, MOV,   4, Literal, 0, TempReg, t3);
-//.. //--          uLiteral(cb, 0);
-//.. //--          uInstr1(cb, PUSH,  4, TempReg, t3);
-//.. //-- 
-//.. //--          uInstr2(cb, MOV,   4, Literal, 0, TempReg, t4);
-//.. //--          uLiteral(cb, 0);
-//.. //--          uInstr1(cb, PUSH,  4, TempReg, t4);
-//.. //-- 
-//.. //--          uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_CPUID));
-//.. //--          uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
-//.. //-- 
-//.. //--          uInstr1(cb, POP,   4, TempReg, t4);
-//.. //--          uInstr2(cb, PUT,   4, TempReg, t4, ArchReg, R_EDX);
-//.. //-- 
-//.. //--          uInstr1(cb, POP,   4, TempReg, t3);
-//.. //--          uInstr2(cb, PUT,   4, TempReg, t3, ArchReg, R_ECX);
-//.. //-- 
-//.. //--          uInstr1(cb, POP,   4, TempReg, t2);
-//.. //--          uInstr2(cb, PUT,   4, TempReg, t2, ArchReg, R_EBX);
-//.. //-- 
-//.. //--          uInstr1(cb, POP,   4, TempReg, t1);
-//.. //--          uInstr2(cb, PUT,   4, TempReg, t1, ArchReg, R_EAX);
-//.. //-- 
-//.. //--          uInstr0(cb, CALLM_E, 0);
-//.. //--          DIP("cpuid\n");
-//.. //--          break;
-//.. //-- 
+      /* =-=-=-=-=-=-=-=-=- CPUID -=-=-=-=-=-=-=-=-=-=-= */
+
+      case 0xA2: { /* CPUID */
+         /* Uses dirty helper: 
+               void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* )
+            declared to mod rax, wr rbx, rcx, rdx
+         */
+         IRDirty* d     = NULL;
+         HChar*   fName = NULL;
+         void*    fAddr = NULL;
+         switch (subarch) {
+            case VexSubArch_NONE:
+               fName = "amd64g_dirtyhelper_CPUID";
+               fAddr = &amd64g_dirtyhelper_CPUID; 
+               break;
+            default:
+               vpanic("disInstr(amd64)(cpuid)");
+         }
+         vassert(fName); vassert(fAddr);
+         d = unsafeIRDirty_0_N ( 0/*regparms*/, 
+                                 fName, fAddr, mkIRExprVec_0() );
+         /* declare guest state effects */
+         d->needsBBP = True;
+         d->nFxState = 4;
+         d->fxState[0].fx     = Ifx_Modify;
+         d->fxState[0].offset = OFFB_RAX;
+         d->fxState[0].size   = 8;
+         d->fxState[1].fx     = Ifx_Write;
+         d->fxState[1].offset = OFFB_RBX;
+         d->fxState[1].size   = 8;
+         d->fxState[2].fx     = Ifx_Write;
+         d->fxState[2].offset = OFFB_RCX;
+         d->fxState[2].size   = 8;
+         d->fxState[3].fx     = Ifx_Write;
+         d->fxState[3].offset = OFFB_RDX;
+         d->fxState[3].size   = 8;
+         /* execute the dirty call, side-effecting guest state */
+         stmt( IRStmt_Dirty(d) );
+         /* CPUID is a serialising insn.  So, just in case someone is
+            using it as a memory fence ... */
+         stmt( IRStmt_MFence() );
+         DIP("cpuid\n");
+         break;
+      }
+
       /* =-=-=-=-=-=-=-=-=- MOVZX, MOVSX =-=-=-=-=-=-=-= */
 
       case 0xB6: /* MOVZXb Eb,Gv */

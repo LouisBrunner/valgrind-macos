@@ -890,14 +890,12 @@ static IRExpr* getReg_CR ( )
 {
     IRTemp cr0 = newTemp(Ity_I32);
     IRTemp cr1to7 = newTemp(Ity_I32);
-    IRTemp cr = newTemp(Ity_I32);
     
-    assign( cr0, mk_ppc32g_calculate_cr0_all() );
-    assign( cr1to7, IRExpr_Get(OFFB_CR1to7, Ity_I32) );
-    assign( cr, binop(Iop_Or32,
-		      binop(Iop_And32, mkexpr(cr1to7), mkU32(-1>>4)),
-		      binop(Iop_Shl32, mkexpr(cr0), mkU8(28))) );
-    return mkexpr(cr);
+    assign( cr0, binop(Iop_And32, mkU32(0xF<<28)
+		       mk_ppc32g_calculate_cr0_all()) );
+    assign( cr1to7, binop(Iop_And32, mkU32(-1>>4)
+			  IRExpr_Get(OFFB_CR1to7, Ity_I32)) );
+    return binop(Iop_Or32, mkexpr(cr1to7), mkexpr(cr0));
 }
 
 /* Write given flags (least sig. nibble) to given field of CR

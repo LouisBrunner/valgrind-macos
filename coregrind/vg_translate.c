@@ -1941,7 +1941,7 @@ typedef
    struct {
       /* Becomes live for the first time after this insn ... */
       Int live_after;
-      /* Becomes dead for the last time after this insn ... */
+      /* Becomes dead for the last time before this insn ... */
       Int dead_before;
       /* The "home" spill slot, if needed.  Never changes. */
       Int spill_no;

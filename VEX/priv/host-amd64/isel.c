@@ -710,6 +710,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 {
    MatchInfo mi;
+   DECLARE_PATTERN(p_8Uto64);
    DECLARE_PATTERN(p_16Uto64);
    DECLARE_PATTERN(p_1Uto8_32to1_64to32);
 //..    DECLARE_PATTERN(p_32to1_then_1Uto8);
@@ -741,10 +742,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, AMD64Instr_LoadEX(2,False,amode,dst));
          return dst;
       }
-//..       if (ty == Ity_I8) {
-//..          addInstr(env, X86Instr_LoadEX(1,False,amode,dst));
-//..          return dst;
-//..       }
+      if (ty == Ity_I8) {
+         addInstr(env, AMD64Instr_LoadEX(1,False,amode,dst));
+         return dst;
+      }
       break;
    }
 
@@ -992,11 +993,24 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
                      unop(Iop_32Uto64, unop(Iop_16Uto32, bind(0)) ) );
       if (matchIRExpr(&mi,p_16Uto64,e)) {
          IRExpr* expr16 = mi.bindee[0];
-         HReg dst = newVRegI(env);
-         HReg src = iselIntExpr_R(env, expr16);
+         HReg    dst    = newVRegI(env);
+         HReg    src    = iselIntExpr_R(env, expr16);
          addInstr(env, mk_iMOVsd_RR(src,dst) );
          addInstr(env, AMD64Instr_Sh64(Ash_SHL, 48, AMD64RM_Reg(dst)));
          addInstr(env, AMD64Instr_Sh64(Ash_SHR, 48, AMD64RM_Reg(dst)));
+         return dst;
+      }
+
+      /* 32Uto64(8Uto32(expr16)) */
+      DEFINE_PATTERN(p_8Uto64,
+                     unop(Iop_32Uto64, unop(Iop_8Uto32, bind(0)) ) );
+      if (matchIRExpr(&mi,p_8Uto64,e)) {
+         IRExpr* expr8 = mi.bindee[0];
+         HReg    dst   = newVRegI(env);
+         HReg    src   = iselIntExpr_R(env, expr8);
+         addInstr(env, mk_iMOVsd_RR(src,dst) );
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 56, AMD64RM_Reg(dst)));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHR, 56, AMD64RM_Reg(dst)));
          return dst;
       }
 
@@ -1196,28 +1210,33 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- CCALL --------- */
    case Iex_CCall: {
       HReg    dst = newVRegI(env);
-      vassert(ty == Ity_I64);
+      vassert(ty == e->Iex.CCall.retty);
 
       /* be very restrictive for now.  Only 64-bit ints allowed
          for args, and 64 bits for return type. */
       if (e->Iex.CCall.retty != Ity_I64)
          goto irreducible;
 
-      /* Marshal args, do the call, clear stack. */
+      /* Marshal args, do the call. */
       doHelperCall( env, False, NULL, e->Iex.CCall.cee, e->Iex.CCall.args );
 
       addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), dst));
       return dst;
    }
 
-//..    /* --------- LITERAL --------- */
-//..    /* 32/16/8-bit literals */
-//..    case Iex_Const: {
-//..       X86RMI* rmi = iselIntExpr_RMI ( env, e );
-//..       HReg    r   = newVRegI(env);
-//..       addInstr(env, X86Instr_Alu32R(Xalu_MOV, rmi, r));
-//..       return r;
-//..    }
+   /* --------- LITERAL --------- */
+   /* 64/32/16/8-bit literals */
+   case Iex_Const:
+      if (ty == Ity_I64) {
+         HReg r = newVRegI(env);
+         addInstr(env, AMD64Instr_Imm64(e->Iex.Const.con->Ico.U64, r));
+         return r;
+      } else {
+         AMD64RMI* rmi = iselIntExpr_RMI ( env, e );
+         HReg      r   = newVRegI(env);
+         addInstr(env, AMD64Instr_Alu64R(Aalu_MOV, rmi, r));
+         return r;
+      }
 
    /* --------- MULTIPLEX --------- */
    case Iex_Mux0X: {
@@ -3267,7 +3286,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
                  ));
          return;
       }
-#if 0
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
          HReg r = iselIntExpr_R(env, stmt->Ist.Put.data);
          addInstr(env, AMD64Instr_Store(
@@ -3277,7 +3295,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
                                         hregAMD64_RBP())));
          return;
       }
-#endif
 //..       if (ty == Ity_V128) {
 //..          HReg      vec = iselVecExpr(env, stmt->Ist.Put.data);
 //..          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());

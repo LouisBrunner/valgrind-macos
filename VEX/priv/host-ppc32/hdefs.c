@@ -2307,6 +2307,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       case Ijk_EmWarn:    magic_num = VEX_TRC_JMP_EMWARN;    break;
       case Ijk_MapFail:   magic_num = VEX_TRC_JMP_MAPFAIL;   break;
       case Ijk_NoDecode:  magic_num = VEX_TRC_JMP_NODECODE;  break;
+      case Ijk_TInval:    magic_num = VEX_TRC_JMP_TINVAL;    break;
       case Ijk_Ret:
       case Ijk_Call:
       case Ijk_Boring:

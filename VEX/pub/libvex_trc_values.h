@@ -44,6 +44,9 @@
    This file may get included in assembly code, so do not put
    C-specific constructs in it.
 */
+
+#define VEX_TRC_JMP_TINVAL     13  /* invalidate translations before
+                                      continuing */
 #define VEX_TRC_JMP_EMWARN     17  /* deliver emulation warning before
                                       continuing */
 #define VEX_TRC_JMP_SYSCALL    19  /* do a system call before continuing */

@@ -154,7 +154,8 @@ static IRBB* irbb;
 
 #define OFFB_XER        offsetof(VexGuestPPC32State,guest_XER)
 
-
+#define OFFB_TISTART    offsetof(VexGuestPPC32State,guest_TISTART)
+#define OFFB_TILEN      offsetof(VexGuestPPC32State,guest_TILEN)
 
 
 /*------------------------------------------------------------*/
@@ -2986,7 +2987,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 }
 
 
-static Bool dis_cache_manage ( UInt theInstr )
+static Bool dis_cache_manage ( UInt theInstr, DisResult* whatNext )
 {
    /* X-Form */
    UChar opc1    = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
@@ -3009,7 +3010,7 @@ static Bool dis_cache_manage ( UInt theInstr )
       
    case 0x056: // dcbf (Data Cache Block Flush, PPC32 p382)
       DIP("dcbf r%d,r%d\n", Ra_addr, Rb_addr);
-      if (1) vex_printf("vex ppc32->IR: kludged dcbf\n");
+      if (0) vex_printf("vex ppc32->IR: kludged dcbf\n");
       break;
       
    case 0x036: // dcbst (Data Cache Block Store, PPC32 p384)
@@ -3032,10 +3033,35 @@ static Bool dis_cache_manage ( UInt theInstr )
       if (1) vex_printf("vex ppc32->IR: kludged dcbz\n");
       break;
 
-   case 0x3D6: // icbi (Instruction Cache Block Invalidate, PPC32 p431)
+   case 0x3D6: { 
+      // icbi (Instruction Cache Block Invalidate, PPC32 p431)
+      /* Invalidate all translations containing code from the cache
+         block at (rA|0) + rB.  Since we don't know what the cache
+         line size is, let's assume 256 -- no real I1 cache would ever
+         have a line size that large, so that's safe. */
+      IRTemp addr = newTemp(Ity_I32);
+      UInt   assumed_line_size = 256;
       DIP("icbi r%d,r%d\n", Ra_addr, Rb_addr);
-      if (1) vex_printf("vex ppc32->IR: kludged icbi\n");
+
+      assign( addr,
+              binop( Iop_Add32, 
+                     getIReg(Rb_addr), 
+                     Ra_addr==0 ? mkU32(0) : getIReg(Ra_addr)) );
+
+      /* Round addr down to the start of the containing block. */
+      stmt( IRStmt_Put(
+               OFFB_TISTART,
+               binop( Iop_And32, 
+                      mkexpr(addr), 
+                      mkU32( ~(assumed_line_size-1) ))) );
+
+      stmt( IRStmt_Put(OFFB_TILEN, mkU32(assumed_line_size) ) );
+
+      irbb->jumpkind = Ijk_TInval;
+      irbb->next     = mkU32(guest_cia_curr_instr + 4);
+      *whatNext      = Dis_StopHere;
       break;
+   }
 
    default:
       vex_printf("dis_cache_manage(PPC32)(opc2)\n");
@@ -3321,7 +3347,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       case 0x2F6: case 0x056: case 0x036: // dcba, dcbf,   dcbst
       case 0x116: case 0x0F6: case 0x3F6: // dcbt, dcbtst, dcbz
       case 0x3D6:                         // icbi
-         if (dis_cache_manage( theInstr )) goto decode_success;
+         if (dis_cache_manage( theInstr, &whatNext )) goto decode_success;
          goto decode_failure;
 
       /* External Control Instructions */

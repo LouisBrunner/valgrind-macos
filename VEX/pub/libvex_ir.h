@@ -704,6 +704,13 @@ inline static Bool isAtom ( IRExpr* e ) {
 
 /* This describes hints which can be passed to the dispatcher at guest
    control-flow transfer points.
+
+   Re Ijk_Invalidate: typically the guest state will have two
+   pseudo-registers, guest_TISTART and guest_TILEN, which
+   specify the start and length of the region to be invalidated.
+   It is the responsibility of the relevant toIR.c to ensure that
+   these are filled in with suitable values before issuing a jump
+   of kind Ijk_TInval.
 */
 typedef
    enum { 
@@ -715,7 +722,8 @@ typedef
       Ijk_Yield,          /* client is yielding to thread scheduler */
       Ijk_EmWarn,         /* report emulation warning before continuing */
       Ijk_NoDecode,       /* next instruction cannot be decoded */
-      Ijk_MapFail         /* Vex-provided address translation failed */
+      Ijk_MapFail,        /* Vex-provided address translation failed */
+      Ijk_TInval          /* Invalidate translations before continuing. */
    }
    IRJumpKind;
 

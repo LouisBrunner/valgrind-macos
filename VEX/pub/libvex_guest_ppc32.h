@@ -133,6 +133,10 @@ typedef
       /* Emulation warnings */
       /* 420 */ UInt guest_EMWARN;
 
+      /* For icbi: record start and length of area to invalidate */
+      /* 424 */ UInt guest_TISTART;
+      /* 428 */ UInt guest_TILEN;
+
       /* Padding to make it have an 8-aligned size */
       /* UInt  padding; */
    }

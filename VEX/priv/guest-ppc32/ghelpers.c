@@ -280,6 +280,8 @@ void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state )
    vex_state->guest_XER = 0;
 
    vex_state->guest_EMWARN = 0;
+   vex_state->guest_TISTART = 0;
+   vex_state->guest_TILEN   = 0;
 }
 
 

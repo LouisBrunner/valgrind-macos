@@ -569,6 +569,7 @@ void ppIRJumpKind ( IRJumpKind kind )
       case Ijk_EmWarn:    vex_printf("EmWarn"); break;
       case Ijk_NoDecode:  vex_printf("NoDecode"); break;
       case Ijk_MapFail:   vex_printf("MapFail"); break;
+      case Ijk_TInval:    vex_printf("Invalidate"); break;
       default:            vpanic("ppIRJumpKind");
    }
 }

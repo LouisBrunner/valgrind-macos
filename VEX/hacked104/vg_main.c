@@ -49,7 +49,12 @@ Int VGOFF_(m_esp) = INVALID_OFFSET;
 Int VGOFF_(m_ebp) = INVALID_OFFSET;
 Int VGOFF_(m_esi) = INVALID_OFFSET;
 Int VGOFF_(m_edi) = INVALID_OFFSET;
-Int VGOFF_(m_eflags) = INVALID_OFFSET;
+
+Int VGOFF_(m_cc_op) = INVALID_OFFSET;
+Int VGOFF_(m_cc_src) = INVALID_OFFSET;
+Int VGOFF_(m_cc_dst) = INVALID_OFFSET;
+Int VGOFF_(m_cc_dflag) = INVALID_OFFSET;
+
 Int VGOFF_(m_fpustate) = INVALID_OFFSET;
 Int VGOFF_(m_eip) = INVALID_OFFSET;
 Int VGOFF_(spillslots) = INVALID_OFFSET;
@@ -159,7 +164,12 @@ static void vg_init_baseBlock ( void )
    /* 5   */ VGOFF_(m_ebp)     = alloc_BaB(1);
    /* 6   */ VGOFF_(m_esi)     = alloc_BaB(1);
    /* 7   */ VGOFF_(m_edi)     = alloc_BaB(1);
-   /* 8   */ VGOFF_(m_eflags)  = alloc_BaB(1);
+
+   /* 8   */ VGOFF_(m_cc_op)  = alloc_BaB(1);
+   /* 8   */ VGOFF_(m_cc_src)  = alloc_BaB(1);
+   /* 8   */ VGOFF_(m_cc_dst)  = alloc_BaB(1);
+   /* 8   */ VGOFF_(m_cc_dflag)  = alloc_BaB(1);
+   /* 25 */  VGOFF_(m_eip) = alloc_BaB(1);
 
    /* 9   */ VGOFF_(sh_eax)    = alloc_BaB(1);
    /* 10  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
@@ -211,9 +221,6 @@ static void vg_init_baseBlock ( void )
    /* 24  */
    VGOFF_(handle_esp_assignment)
       = alloc_BaB_1_set( (Addr) & VGM_(handle_esp_assignment) );
-
-   /* 25 */
-   VGOFF_(m_eip) = alloc_BaB(1);
 
    /* There are currently 24 spill slots */
    /* 26 .. 49  This overlaps the magic boundary at >= 32 words, but
@@ -822,6 +829,7 @@ static void process_cmd_line_options ( void )
       }
 
       else if (STREQN(15, argv[i], "--suppressions=")) {
+         VG_(printf)("");
          if (VG_(clo_n_suppressions) >= VG_CLO_MAX_SFILES) {
             VG_(message)(Vg_UserMsg, "Too many suppression files specified.");
             VG_(message)(Vg_UserMsg, 
@@ -1006,7 +1014,20 @@ void VG_(copy_baseBlock_to_m_state_static) ( void )
    VG_(m_state_static)[24/4] = VG_(baseBlock)[VGOFF_(m_esi)];
    VG_(m_state_static)[28/4] = VG_(baseBlock)[VGOFF_(m_edi)];
 
-   VG_(m_state_static)[32/4] = VG_(baseBlock)[VGOFF_(m_eflags)];
+   { extern UInt calculate_eflags_all(UInt,UInt,UInt);
+     UInt eflags = calculate_eflags_all(
+		      VG_(baseBlock)[VGOFF_(m_cc_op)],
+		      VG_(baseBlock)[VGOFF_(m_cc_src)],
+		      VG_(baseBlock)[VGOFF_(m_cc_dst)]
+                   );
+     UInt dflag = VG_(baseBlock)[VGOFF_(m_cc_dflag)];
+     vg_assert(dflag == 1 || dflag == 0xFFFFFFFF);
+     if (dflag == 0xFFFFFFFF)
+        eflags |= (1<<10);
+						     
+      VG_(m_state_static)[32/4] = eflags;
+   }
+
    VG_(m_state_static)[36/4] = VG_(baseBlock)[VGOFF_(m_eip)];
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
@@ -1027,7 +1048,12 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
    VG_(baseBlock)[VGOFF_(m_esi)] = VG_(m_state_static)[24/4];
    VG_(baseBlock)[VGOFF_(m_edi)] = VG_(m_state_static)[28/4];
 
-   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(m_state_static)[32/4];
+   //   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(m_state_static)[32/4];
+   VG_(baseBlock)[VGOFF_(m_cc_op)]    = 0; // CC_OP_COPY
+   VG_(baseBlock)[VGOFF_(m_cc_src)]   = 0;
+   VG_(baseBlock)[VGOFF_(m_cc_dst)]   = 0;
+   VG_(baseBlock)[VGOFF_(m_cc_dflag)] = 0;
+
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(m_state_static)[36/4];
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)

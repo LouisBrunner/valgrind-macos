@@ -74,8 +74,10 @@ VERSION = @VERSION@
 
 SUBDIRS = demangle . docs tests
 
+#CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
+#		-Winline -Wall -Wshadow -O -fomit-frame-pointer -g
 CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
-		-Winline -Wall -Wshadow -O -fomit-frame-pointer -g
+		-Winline -Wall -Wshadow -g
 
 
 valdir = $(libdir)/valgrind
@@ -671,7 +673,7 @@ vg_libpthread.o: vg_libpthread.c $(MANUAL_DEPS)
 
 valgrind.so$(EXEEXT): $(valgrind_so_OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o valgrind.so \
-		$(valgrind_so_OBJECTS) $(valgrind_so_LDADD)
+		$(valgrind_so_OBJECTS) $(valgrind_so_LDADD) ../libvex.a
 
 valgrinq.so$(EXEEXT): $(valgrinq_so_OBJECTS)
 	$(CC) $(CFLAGS) -shared -o valgrinq.so $(valgrinq_so_OBJECTS)

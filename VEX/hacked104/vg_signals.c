@@ -909,7 +909,10 @@ typedef
       UInt esi;
       UInt edi;
       Addr eip;
-      UInt eflags;
+      UInt cc_op;
+      UInt cc_src;
+      UInt cc_dst;
+      UInt cc_dflag;
       /* Scheduler-private stuff: what was the thread's status prior to
          delivering this signal? */
       ThreadStatus status;
@@ -980,7 +983,11 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
    frame->esi        = tst->m_esi;
    frame->edi        = tst->m_edi;
    frame->eip        = tst->m_eip;
-   frame->eflags     = tst->m_eflags;
+
+   frame->cc_op    = tst->m_cc_op;
+   frame->cc_src   = tst->m_cc_src;
+   frame->cc_dst   = tst->m_cc_dst;
+   frame->cc_dflag = tst->m_cc_dflag;
 
    frame->status     = tst->status;
 
@@ -1051,7 +1058,12 @@ Int vg_pop_signal_frame ( ThreadId tid )
    tst->m_esp     = frame->esp;
    tst->m_esi     = frame->esi;
    tst->m_edi     = frame->edi;
-   tst->m_eflags  = frame->eflags;
+
+   tst->m_cc_op  = frame->cc_op;
+   tst->m_cc_src = frame->cc_src;
+   tst->m_cc_dst = frame->cc_dst;
+   tst->m_cc_dflag = frame->cc_dflag;
+
    tst->m_eip     = frame->eip;
 
    /* don't use the copy exposed to the handler; it might have changed

@@ -99,10 +99,6 @@ enum {
     CC_OP_NUMBER
 };
 
-/* called from generated code to evaluate the flags-thunk. */
-extern UInt calculate_c   ( void );
-extern UInt calculate_all ( void );
-
 
 /*---------------------------------------------------------*/
 /*--- Simulated state offsets                           ---*/
@@ -131,7 +127,7 @@ extern UInt calculate_all ( void );
 #define OFFB_EIP     (12*4)
 
 
-#define SIZEOF_X86H_STATE OFFB_EIF
+#define SIZEOF_X86H_STATE OFFB_EIP
 
 
 

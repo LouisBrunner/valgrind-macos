@@ -44,8 +44,12 @@ CCFLAGS = -g -Wall -Wshadow
 # 167: argument of type unsigned char incompatible with formal of type char
 # (the above are for icc 8.0 -- 8.0.0.55 I think)
 
-all: libvex.a $(APP_OBJS)
-	$(CC) $(CCFLAGS) -o vex $(APP_OBJS) libvex.a
+all: libvex.a
+	rm -f hacked104/valgrind.so
+	(cd hacked104 && make install)
+
+#all: libvex.a $(APP_OBJS)
+#	$(CC) $(CCFLAGS) -o vex $(APP_OBJS) libvex.a
 
 libvex.a: $(LIB_OBJS)
 	rm -f libvex.a
@@ -53,7 +57,7 @@ libvex.a: $(LIB_OBJS)
 
 clean:
 	rm -f $(APP_OBJS) $(LIB_OBJS) libvex.a vex
-
+	(cd hacked104 && make clean)
 
 
 

@@ -384,7 +384,12 @@ void VG_(load_thread_state) ( ThreadId tid )
    VG_(baseBlock)[VGOFF_(m_edi)] = VG_(threads)[tid].m_edi;
    VG_(baseBlock)[VGOFF_(m_ebp)] = VG_(threads)[tid].m_ebp;
    VG_(baseBlock)[VGOFF_(m_esp)] = VG_(threads)[tid].m_esp;
-   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(threads)[tid].m_eflags;
+
+   VG_(baseBlock)[VGOFF_(m_cc_op)]    = VG_(threads)[tid].m_cc_op;
+   VG_(baseBlock)[VGOFF_(m_cc_src)]   = VG_(threads)[tid].m_cc_src;
+   VG_(baseBlock)[VGOFF_(m_cc_dst)]   = VG_(threads)[tid].m_cc_dst;
+   VG_(baseBlock)[VGOFF_(m_cc_dflag)] = VG_(threads)[tid].m_cc_dflag;
+
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(threads)[tid].m_eip;
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
@@ -426,7 +431,12 @@ void VG_(save_thread_state) ( ThreadId tid )
    VG_(threads)[tid].m_edi = VG_(baseBlock)[VGOFF_(m_edi)];
    VG_(threads)[tid].m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
    VG_(threads)[tid].m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   VG_(threads)[tid].m_eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
+
+   VG_(threads)[tid].m_cc_op    = VG_(baseBlock)[VGOFF_(m_cc_op)];
+   VG_(threads)[tid].m_cc_src   = VG_(baseBlock)[VGOFF_(m_cc_src)];
+   VG_(threads)[tid].m_cc_dst   = VG_(baseBlock)[VGOFF_(m_cc_dst)];
+   VG_(threads)[tid].m_cc_dflag = VG_(baseBlock)[VGOFF_(m_cc_dflag)];
+
    VG_(threads)[tid].m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
@@ -451,7 +461,10 @@ void VG_(save_thread_state) ( ThreadId tid )
    VG_(baseBlock)[VGOFF_(m_edi)] = junk;
    VG_(baseBlock)[VGOFF_(m_ebp)] = junk;
    VG_(baseBlock)[VGOFF_(m_esp)] = junk;
-   VG_(baseBlock)[VGOFF_(m_eflags)] = junk;
+   VG_(baseBlock)[VGOFF_(m_cc_op)] = junk;
+   VG_(baseBlock)[VGOFF_(m_cc_src)] = junk;
+   VG_(baseBlock)[VGOFF_(m_cc_dst)] = junk;
+   VG_(baseBlock)[VGOFF_(m_cc_dflag)] = junk;
    VG_(baseBlock)[VGOFF_(m_eip)] = junk;
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)

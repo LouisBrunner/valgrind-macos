@@ -27,7 +27,7 @@
 
 
 /* RUNS AS PART OF GENERATED CODE */
-static UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst )
+/*static*/ UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
    switch (cc_op) {
       default:

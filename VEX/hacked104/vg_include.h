@@ -170,6 +170,7 @@
    Basic types
    ------------------------------------------------------------------ */
 
+#if 0
 typedef unsigned char          UChar;
 typedef unsigned short         UShort;
 typedef unsigned int           UInt;
@@ -185,6 +186,13 @@ typedef unsigned int Addr;
 typedef unsigned char Bool;
 #define False ((Bool)0)
 #define True ((Bool)1)
+#endif
+
+#include "../pub/libvex_basictypes.h"
+typedef Addr32  Addr;
+
+
+
 
 #define mycat_wrk(aaa,bbb) aaa##bbb
 #define mycat(aaa,bbb) mycat_wrk(aaa,bbb)
@@ -722,7 +730,12 @@ typedef
       UInt m_edi;
       UInt m_ebp;
       UInt m_esp;
-      UInt m_eflags;
+
+      UInt m_cc_op;
+      UInt m_cc_src;
+      UInt m_cc_dst;
+      UInt m_cc_dflag;
+
       UInt m_eip;
       UInt m_fpu[VG_SIZE_OF_FPUSTATE_W];
 
@@ -1950,9 +1963,15 @@ extern Int VGOFF_(m_esp);
 extern Int VGOFF_(m_ebp);
 extern Int VGOFF_(m_esi);
 extern Int VGOFF_(m_edi);
-extern Int VGOFF_(m_eflags);
+
+extern Int VGOFF_(m_cc_op);
+extern Int VGOFF_(m_cc_src);
+extern Int VGOFF_(m_cc_dst);
+extern Int VGOFF_(m_cc_dflag);
+
 extern Int VGOFF_(m_fpustate);
 extern Int VGOFF_(m_eip);
+
 
 /* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
 extern Int VGOFF_(spillslots);

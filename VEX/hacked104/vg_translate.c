@@ -3078,6 +3078,25 @@ static void vg_cleanup ( UCodeBlock* cb )
 /*--- Main entry point for the JITter.                     ---*/
 /*------------------------------------------------------------*/
 
+#include "../pub/libvex.h"
+
+__attribute__ ((noreturn))
+static
+void failure_exit ( void )
+{
+   VG_(printf)("VEX did failure_exit.  Bye.\n");
+   VG_(exit)(1);
+}
+
+static
+void log_bytes ( Char* bytes, Int nbytes )
+{
+  //fwrite ( bytes, 1, nbytes, stdout );
+  Int i;
+  for (i = 0; i < nbytes; i++) 
+     VG_(printf)("%c", bytes[i]);
+}
+
 /* Translate the basic block beginning at orig_addr, placing the
    translation in a vg_malloc'd block, the address and size of which
    are returned in trans_addr and trans_size.  Length of the original
@@ -3093,6 +3112,44 @@ void VG_(translate) ( ThreadState* tst,
                       Addr* trans_addr,
                       UInt* trans_size )
 {
+#  define N_TMPBUF 1000
+   UChar tmpbuf[N_TMPBUF];
+   Int tmpbuf_used, i;
+   UChar* final;
+
+   TranslateResult tres;
+   static Bool vex_init_done = False;
+
+   if (!vex_init_done) {
+      LibVEX_Init ( &failure_exit, &log_bytes, 
+                    1,  /* debug_paranoia */ 
+                    1,  /* verbosity */
+                    False, 
+		    //True, 
+                    10 );
+      vex_init_done = True;
+   }
+
+   tres = LibVEX_Translate ( 
+             InsnSetX86, InsnSetX86,
+             (Char*)orig_addr, (Addr64)orig_addr, orig_size,
+             tmpbuf, N_TMPBUF, &tmpbuf_used,
+             NULL, NULL
+          );
+
+   vg_assert(tres == TransOK);
+   vg_assert(tmpbuf_used <= N_TMPBUF);
+   vg_assert(tmpbuf_used > 0);
+
+   final = VG_(jitmalloc)( tmpbuf_used );
+   for (i = 0; i < tmpbuf_used; i++)
+      final[i] = tmpbuf[i];
+
+   *trans_addr = (Addr)final;
+   *trans_size = tmpbuf_used;
+
+
+#if 0
    Int         n_disassembled_bytes, final_code_size;
    Bool        debugging_translation;
    UChar*      final_code;
@@ -3204,6 +3261,7 @@ void VG_(translate) ( ThreadState* tst,
       *trans_size = final_code_size;
    }
    VGP_POPCC;
+#endif
 }
 
 /*--------------------------------------------------------------------*/

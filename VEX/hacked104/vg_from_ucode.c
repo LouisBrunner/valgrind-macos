@@ -953,6 +953,8 @@ static void emit_jcondshort_delta ( Condcode cond, Int delta )
 
 static void emit_get_eflags ( void )
 {
+  vg_assert(0);
+#if 0
    Int off = 4 * VGOFF_(m_eflags);
    vg_assert(off >= 0 && off < 128);
    newEmit();
@@ -962,10 +964,13 @@ static void emit_get_eflags ( void )
    emitB ( 0x9D ); /* POPFL */
    if (dis)
       VG_(printf)( "\n\t\tpushl %d(%%ebp) ; popfl\n", off );
+#endif
 }
 
 static void emit_put_eflags ( void )
 {
+  vg_assert(0);
+#if 0
    Int off = 4 * VGOFF_(m_eflags);
    vg_assert(off >= 0 && off < 128);
    newEmit();
@@ -975,6 +980,7 @@ static void emit_put_eflags ( void )
    emitB ( off );
    if (dis)
       VG_(printf)( "\n\t\tpushfl ; popl %d(%%ebp)\n", off );
+#endif
 }
 
 static void emit_setb_reg ( Int reg, Condcode cond )
@@ -1587,7 +1593,10 @@ static Int spillOrArchOffset ( Int size, Tag tag, UInt value )
 
 static Int eflagsOffset ( void )
 {
+  vg_assert(0);
+#if 0
    return 4 * VGOFF_(m_eflags);
+#endif
 }
 
 

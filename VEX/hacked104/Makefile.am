@@ -1,7 +1,9 @@
 SUBDIRS = demangle . docs tests
 
+#CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
+#		-Winline -Wall -Wshadow -O -fomit-frame-pointer -g
 CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
-		-Winline -Wall -Wshadow -O -fomit-frame-pointer -g
+		-Winline -Wall -Wshadow -g
 
 valdir = $(libdir)/valgrind
 

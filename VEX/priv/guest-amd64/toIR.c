@@ -444,13 +444,14 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 
       first_stmt_idx = irbb->stmts_used;
 
+      guest_rip_curr_instr = guest_rip_bbstart + delta;
+
       if (n_instrs > 0) {
          /* for the first insn, the dispatch loop will have set
-            %EIP, but for all the others we have to do it ourselves. */
-         stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_rip_bbstart + delta)) );
+            %RIP, but for all the others we have to do it ourselves. */
+         stmt( IRStmt_Put( OFFB_RIP, mkU64(guest_rip_curr_instr)) );
       }
 
-      guest_rip_curr_instr = guest_rip_bbstart + delta;
       dres = disInstr( resteerOK, chase_into_ok, 
                        delta, subarch_guest, &size, &guest_next );
       insn_verbose = False;

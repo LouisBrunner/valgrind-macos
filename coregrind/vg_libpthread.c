@@ -906,7 +906,7 @@ int __pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
    return 0;
 }
 
-int pthread_mutexattr_setpshared ( pthread_mutexattr_t* attr, int pshared)
+int __pthread_mutexattr_setpshared ( pthread_mutexattr_t* attr, int pshared)
 {
   if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_SHARED)
     return EINVAL;
@@ -3009,6 +3009,7 @@ strong_alias(__pthread_mutex_trylock, pthread_mutex_trylock)
 strong_alias(__pthread_mutex_unlock, pthread_mutex_unlock)
 strong_alias(__pthread_mutexattr_init, pthread_mutexattr_init)
   weak_alias(__pthread_mutexattr_settype, pthread_mutexattr_settype)
+  weak_alias(__pthread_mutexattr_setpshared, pthread_mutexattr_setpshared)
 strong_alias(__pthread_mutex_init, pthread_mutex_init)
 strong_alias(__pthread_mutexattr_destroy, pthread_mutexattr_destroy)
 strong_alias(__pthread_mutex_destroy, pthread_mutex_destroy)

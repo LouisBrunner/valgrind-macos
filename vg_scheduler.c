@@ -1543,6 +1543,20 @@ void cleanup_after_thread_exited ( ThreadId tid )
 
 
 static
+void do_pthread_yield ( ThreadId tid )
+{
+   Char msg_buf[100];
+   vg_assert(VG_(is_valid_tid)(tid));
+
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "yield");
+      print_sched_event(tid, msg_buf);
+   }
+   SET_EDX(tid, 0);
+}
+
+
+static
 void do_pthread_cancel ( ThreadId  tid,
                          pthread_t tid_cancellee )
 {
@@ -2672,6 +2686,12 @@ void do_nontrivial_clientreq ( ThreadId tid )
          do_pthread_kill ( tid, arg[1], arg[2] );
 	 break;
 
+      case VG_USERREQ__PTHREAD_YIELD:
+         do_pthread_yield ( tid );
+         /* because this is classified as a non-trivial client
+            request, the scheduler should now select a new thread to
+            run. */
+	 break;
 
       case VG_USERREQ__MAKE_NOACCESS:
       case VG_USERREQ__MAKE_WRITABLE:

@@ -252,8 +252,6 @@ __attribute__((weak)) void pthread_spin_trylock ( void )
                       { vgPlain_unimp("pthread_spin_trylock"); }
 __attribute__((weak)) void pthread_spin_unlock ( void )
                       { vgPlain_unimp("pthread_spin_unlock"); }
-__attribute__((weak)) void pthread_yield ( void )
-                      { vgPlain_unimp("pthread_yield"); }
 
 
 /*--------------------------------------------------------------------*/

@@ -436,6 +436,7 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__PTHREAD_SIGMASK         0x3012
 #define VG_USERREQ__SIGWAIT                 0x3013
 #define VG_USERREQ__PTHREAD_KILL            0x3014
+#define VG_USERREQ__PTHREAD_YIELD           0x3015
 
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101

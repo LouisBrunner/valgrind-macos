@@ -259,6 +259,17 @@ int pthread_attr_destroy(pthread_attr_t *attr)
    THREADs
    ------------------------------------------------ */
 
+__attribute__((weak))
+int pthread_yield ( void )
+{
+   int res;
+   ensure_valgrind("pthread_yield");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_YIELD, 0, 0, 0, 0);
+   return 0;
+}
+
+
 int pthread_equal(pthread_t thread1, pthread_t thread2)
 {
    return thread1 == thread2 ? 1 : 0;

@@ -11535,6 +11535,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          d->fxState[3].size   = 4;
          /* execute the dirty call, side-effecting guest state */
          stmt( IRStmt_Dirty(d) );
+         /* CPUID is a serialising insn.  So, just in case someone is
+            using it as a memory fence ... */
+         stmt( IRStmt_MFence() );
          DIP("cpuid\n");
          break;
       }

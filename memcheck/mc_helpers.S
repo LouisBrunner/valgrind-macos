@@ -29,7 +29,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#include "mc_constants.h"
+#include "mc_asm.h"
 
 .global MC_(helper_value_check0_fail)
 MC_(helper_value_check0_fail):

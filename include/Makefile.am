@@ -5,9 +5,9 @@ EXTRA_DIST = \
 incincdir = $(includedir)/valgrind
 
 incinc_HEADERS = \
-	valgrind.h \
-	vg_constants_skin.h \
 	tool.h \
+	tool_asm.h \
+	valgrind.h \
 	vg_kerneliface.h \
 	vg_skin.h
 

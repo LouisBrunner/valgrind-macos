@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- A header file for all private parts of Valgrind's core.      ---*/
-/*--- Include no other!                                            ---*/
+/*--- Include no other! (more or less...)                          ---*/
 /*---                                                       core.h ---*/
 /*--------------------------------------------------------------------*/
 
@@ -41,7 +41,7 @@
 /* For system call numbers __NR_... */
 #include "vg_unistd.h"
 
-#include "vg_constants.h"
+#include "core_asm.h"
 
 /* All stuff visible to core and tools goes in tool.h.  Things
  * visible to core but not visible to any tools should go in this
@@ -495,7 +495,7 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__INTERNAL_PRINTF_BACKTRACE 0x3104
 
 /* 
-In vg_constants.h:
+In core_asm.h:
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 */
 

@@ -1,7 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- A header file containing constants (for assembly code).      ---*/
-/*---                                               vg_constants.h ---*/
+/*--- Asm-specific core stuff.                          core_asm.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -29,10 +28,10 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __VG_CONSTANTS_H
-#define __VG_CONSTANTS_H
+#ifndef __CORE_ASM_H
+#define __CORE_ASM_H
 
-#include "vg_constants_skin.h"
+#include "tool_asm.h"
 
 /* This file is included in all Valgrind source files, including
    assembly ones. */
@@ -181,8 +180,8 @@
  */
 #define VALGRINDCLO	"_VALGRIND_CLO"
 
-#endif /* ndef __VG_CONSTANTS_H */
+#endif /* ndef __CORE_ASM_H */
 
 /*--------------------------------------------------------------------*/
-/*--- end                                           vg_constants.h ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

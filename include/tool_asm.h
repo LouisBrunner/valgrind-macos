@@ -1,11 +1,11 @@
 
 /*--------------------------------------------------------------------*/
-/*---                                               mc_constants.h ---*/
+/*--- Tool-specific, asm-specific includes.             tool_asm.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of MemCheck, a heavyweight Valgrind tool for
-   detecting memory errors.
+   This file is part of Valgrind, an extensible x86 protected-mode
+   emulator for monitoring program execution on x86-Unixes.
 
    Copyright (C) 2000-2004 Julian Seward 
       jseward@acm.org
@@ -28,16 +28,33 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __MC_CONSTANTS_H
-#define __MC_CONSTANTS_H
+#ifndef __TOOL_ASM_H
+#define __TOOL_ASM_H
 
-#include "vg_constants_skin.h"
 
-#define MC_(str)    VGAPPEND(vgMemCheck_,str)
+/* All symbols externally visible from valgrind.so are prefixed
+   as specified here.  The prefix can be changed, so as to avoid
+   namespace conflict problems.
+*/
+#define VGAPPEND(str1,str2) str1##str2
 
-#endif   /* __MC_CONSTANTS_H */
+/* These macros should add different prefixes so the same base
+   name can safely be used across different macros. */
+#define VG_(str)    VGAPPEND(vgPlain_,str)
+#define VGP_(str)   VGAPPEND(vgProf_,str)
+#define VGOFF_(str) VGAPPEND(vgOff_,str)
+
+/* Tool-specific ones.  Note that final name still starts with "vg". */
+#define SK_(str)    VGAPPEND(vgSkin_,str)
+
+/* This is specifically for stringifying VG_(x) function names.  We
+   need to do two macroexpansions to get the VG_ macro expanded before
+   stringifying */
+#define _STR(x)	#x
+#define STR(x)	_STR(x)
+
+#endif /* ndef __TOOL_ASM_H */
 
 /*--------------------------------------------------------------------*/
-/*--- end                                           mc_constants.h ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

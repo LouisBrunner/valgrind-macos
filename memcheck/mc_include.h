@@ -37,7 +37,7 @@
 #define __MC_INCLUDE_H
 
 #include "mac_shared.h"
-#include "mc_constants.h"
+#include "mc_asm.h"
 
 /*------------------------------------------------------------*/
 /*--- Types                                                ---*/

@@ -140,9 +140,9 @@ vg_inject_so_LDFLAGS = \
 
 noinst_HEADERS = \
 	core.h			\
+	core_asm.h		\
 	ume.h			\
 	ume_arch.h		\
-        vg_constants.h          \
 	vg_symtab2.h		\
         vg_unistd.h             \
 	vg_symtypes.h		\

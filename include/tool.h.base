@@ -34,7 +34,7 @@
 #include <stdarg.h>       /* ANSI varargs stuff  */
 #include <setjmp.h>       /* for jmp_buf         */
 
-#include "vg_constants_skin.h"
+#include "tool_asm.h"
 
 // XXX: here temporarily, will eventually go in arch-specific headers...
 #define REGPARM(x)     __attribute__((regparm (x)))

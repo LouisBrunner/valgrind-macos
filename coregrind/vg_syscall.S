@@ -29,7 +29,7 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#include "vg_constants.h"
+#include "core_asm.h"
 #include "vg_unistd.h"
 
 .globl	VG_(do_syscall)

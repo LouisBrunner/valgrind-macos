@@ -879,11 +879,6 @@ static Int do_futex(void *addr, Int op, Int val, struct vki_timespec *time, void
    return VG_(do_syscall)(__NR_futex, addr, op, val, time, addr2);
 }
 
-#define VKI_FUTEX_WAIT		0
-#define VKI_FUTEX_WAKE		1
-#define VKI_FUTEX_FD		2
-#define VKI_FUTEX_REQUEUE	3
-
 static Int have_settid = -1;	/* -1 -> unknown */
 
 /*

@@ -132,24 +132,45 @@ static void init_idCC(CC_type X_CC, idCC* cc, Addr instr_addr,
    initCC(&cc->D);
 }
 
+/* If 1, address of each instruction is printed as a comment after its counts
+ * in cachegrind.out */
+#define PRINT_INSTR_ADDRS 0
+
 static __inline__ void sprint_iCC(Char buf[BUF_LEN], iCC* cc)
 {
+#if PRINT_INSTR_ADDRS
+   VG_(sprintf)(buf, "%llu %llu %llu # %x\n",
+                      cc->I.a, cc->I.m1, cc->I.m2, cc->instr_addr);
+#else
    VG_(sprintf)(buf, "%llu %llu %llu\n",
                       cc->I.a, cc->I.m1, cc->I.m2);
+#endif
 }
 
 static __inline__ void sprint_read_or_mod_CC(Char buf[BUF_LEN], idCC* cc)
 {
+#if PRINT_INSTR_ADDRS
+   VG_(sprintf)(buf, "%llu %llu %llu %llu %llu %llu # %x\n",
+                      cc->I.a, cc->I.m1, cc->I.m2, 
+                      cc->D.a, cc->D.m1, cc->D.m2, cc->instr_addr);
+#else
    VG_(sprintf)(buf, "%llu %llu %llu %llu %llu %llu\n",
                       cc->I.a, cc->I.m1, cc->I.m2, 
                       cc->D.a, cc->D.m1, cc->D.m2);
+#endif
 }
 
 static __inline__ void sprint_write_CC(Char buf[BUF_LEN], idCC* cc)
 {
+#if PRINT_INSTR_ADDRS
+   VG_(sprintf)(buf, "%llu %llu %llu . . . %llu %llu %llu # %x\n",
+                      cc->I.a, cc->I.m1, cc->I.m2, 
+                      cc->D.a, cc->D.m1, cc->D.m2, cc->instr_addr);
+#else
    VG_(sprintf)(buf, "%llu %llu %llu . . . %llu %llu %llu\n",
                       cc->I.a, cc->I.m1, cc->I.m2, 
                       cc->D.a, cc->D.m1, cc->D.m2);
+#endif
 }
 
 /*------------------------------------------------------------*/
@@ -968,7 +989,7 @@ void VG_(show_cachesim_results)(Int client_argc, Char** client_argv)
    VG_(message)(Vg_UserMsg, "I1  misses:    %s", buf1);
 
    commify(Ir_total.m2, l1, buf1);
-   VG_(message)(Vg_UserMsg, "L2  misses:    %s", buf1);
+   VG_(message)(Vg_UserMsg, "L2i misses:    %s", buf1);
 
    p = 100;
 
@@ -1000,7 +1021,7 @@ void VG_(show_cachesim_results)(Int client_argc, Char** client_argv)
    commify( D_total.m2, l1, buf1);
    commify(Dr_total.m2, l2, buf2);
    commify(Dw_total.m2, l3, buf3);
-   VG_(message)(Vg_UserMsg, "L2  misses:    %s  (%s rd + %s wr)",
+   VG_(message)(Vg_UserMsg, "L2d misses:    %s  (%s rd + %s wr)",
                 buf1, buf2, buf3);
 
    p = 10;

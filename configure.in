@@ -84,6 +84,8 @@ AC_CANONICAL_HOST
 
 AC_MSG_CHECKING([for a supported CPU])
 AC_SUBST(VG_ARCH)
+AC_SUBST(VG_ARCH_ALL)
+VG_ARCH_ALL="arm x86"
 AC_SUBST(KICKSTART_BASE)
 AC_SUBST(ARCH_CORE_AM_CFLAGS)
 AC_SUBST(ARCH_TOOL_AM_CFLAGS)
@@ -138,6 +140,8 @@ esac
 
 AC_MSG_CHECKING([for a supported OS])
 AC_SUBST(VG_OS)
+AC_SUBST(VG_OS_ALL)
+VG_OS_ALL="linux"
 
 case "${host_os}" in
      *linux*)
@@ -181,6 +185,8 @@ esac
 
 AC_MSG_CHECKING([for a supported CPU/OS combination])
 AC_SUBST(VG_PLATFORM)
+AC_SUBST(VG_PLATFORM_ALL)
+VG_PLATFORM_ALL="arm-linux x86-linux"
 
 VG_PLATFORM="$VG_ARCH-$VG_OS"
 

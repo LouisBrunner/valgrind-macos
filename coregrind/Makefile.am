@@ -1,7 +1,11 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
-SUBDIRS = $(VG_ARCH) $(VG_OS) $(VG_PLATFORM) demangle . docs
+## When building, we are only interested in the current arch/OS/platform.
+## But when doing 'make dist', we are interested in every arch/OS/platform.
+## That's what DIST_SUBDIRS specifies.
+SUBDIRS      = $(VG_ARCH)     $(VG_OS)     $(VG_PLATFORM)     demangle . docs
+DIST_SUBDIRS = $(VG_ARCH_ALL) $(VG_OS_ALL) $(VG_PLATFORM_ALL) demangle . docs
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
 		-DKICKSTART_BASE=@KICKSTART_BASE@ \

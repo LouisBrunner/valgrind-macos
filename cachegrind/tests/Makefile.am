@@ -1,4 +1,5 @@
-SUBDIRS =  ${VG_ARCH} .
+SUBDIRS      = ${VG_ARCH}     .
+DIST_SUBDIRS = ${VG_ARCH_ALL} .
 
 noinst_SCRIPTS = filter_stderr filter_cachesim_discards
 

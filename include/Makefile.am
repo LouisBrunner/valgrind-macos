@@ -1,5 +1,6 @@
 
-SUBDIRS = $(VG_ARCH) $(VG_OS) $(VG_PLATFORM) .
+SUBDIRS      = $(VG_ARCH)     $(VG_OS)     $(VG_PLATFORM)     .
+DIST_SUBDIRS = $(VG_ARCH_ALL) $(VG_OS_ALL) $(VG_PLATFORM_ALL) .
 
 EXTRA_DIST = \
 	tool.h.base \

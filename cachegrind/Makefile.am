@@ -3,7 +3,8 @@ include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.tool-flags.am
 include $(top_srcdir)/Makefile.tool-inplace.am
 
-SUBDIRS = $(VG_ARCH) . tests docs
+SUBDIRS      = $(VG_ARCH)     . tests docs
+DIST_SUBDIRS = $(VG_ARCH_ALL) . tests docs
 
 AM_CPPFLAGS += -I$(top_srcdir)/cachegrind/$(VG_ARCH)
 

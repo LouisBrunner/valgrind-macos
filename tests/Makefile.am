@@ -26,4 +26,5 @@ EXTRA_DIST = \
 	twoparams.s \
 	pth_cvsimple.c pth_simple_threads.c pth_simple_mutex.c \
 	bt_everything.c bt_literal.c \
-	pth_threadpool.c pth_specific.c pth_mutexspeed.c malloc3.c
+	pth_threadpool.c pth_specific.c pth_mutexspeed.c malloc3.c \
+	pth_once.c

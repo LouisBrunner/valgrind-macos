@@ -823,8 +823,6 @@ struct vki_mq_attr {
 // From linux-2.6.8.1/include/linux/utsname.h
 //----------------------------------------------------------------------
 
-// [[Nb: newer kernels seem to use new_utsname, rather than old_utsname or
-//   oldold_utsname]]
 struct vki_new_utsname {
 	char sysname[65];
 	char nodename[65];

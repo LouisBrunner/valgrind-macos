@@ -506,10 +506,9 @@ static void layout_remaining_space(float ratio)
    addr_t shadow_size = PGROUNDUP(client_size * ratio);
 
    VG_(client_end)     = VG_(client_base) + client_size;
-   VG_(client_mapbase) = PGROUNDDN((client_size/4)*3); /* where !FIXED mmap goes */
-
    /* where !FIXED mmap goes */
-   VG_(client_mapbase) = PGROUNDDN((addr_t)(client_size * CLIENT_HEAP_PROPORTION)); 
+   VG_(client_mapbase) = VG_(client_base) +
+         PGROUNDDN((addr_t)(client_size * CLIENT_HEAP_PROPORTION));
 
    VG_(shadow_base) = VG_(client_end) + REDZONE_SIZE;
    VG_(shadow_end)  = VG_(shadow_base) + shadow_size;

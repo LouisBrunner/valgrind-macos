@@ -1366,12 +1366,8 @@ static Bool dis_int_logic ( UInt theInstr )
 	case 0x11C: // eqv (Equivalent, p427)
 	    DIP("eqv%s %d,%d,%d\n",
 		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
-
-	    // CAB: ?
-	    // Ra = Rs === Rb
-	    //    = NOT(Rs ^ Rb) ?
-
-	    return False;
+	    assign( Ra, unop(Iop_Not32, binop(Iop_Xor32, mkexpr(Rs), mkexpr(Rb))) );
+	    break;
 
 	case 0x3BA: // extsb (Extend Sign Byte, p428)
 	    if (Rb_addr!=0) { return False; }

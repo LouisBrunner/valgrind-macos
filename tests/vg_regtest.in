@@ -91,8 +91,6 @@ my $num_tests_done      = 0;
 my %num_failures        = (stderr => 0, stdout => 0);
 
 # Default valgrind to use is this build tree's (uninstalled) one
-my $prefix="@prefix@";
-my $exec_prefix="@exec_prefix@";
 my $valgrind = "./coregrind/valgrind";
 
 chomp(my $tests_dir = `pwd`);
@@ -266,7 +264,10 @@ sub do_one_test($$)
     read_vgtest_file($vgtest);
 
     if (defined $cpu_test) {
-        return unless system("../../tests/cputest $cpu_test") == 0;
+        if (system("$tests_dir/tests/cputest $cpu_test") != 0) {
+            printf("%-16s (cpu_test failed, skipping)\n", "$name:");
+            return;
+        }
     }
 
     printf("%-16s valgrind $vgopts $prog $args\n", "$name:");

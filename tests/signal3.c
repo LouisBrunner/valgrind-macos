@@ -26,8 +26,9 @@ void hdp_init_profiling ( void )
    assert(ret == 0);
 }
 
-void main ( void )
+int main ( void )
 {
    hdp_init_profiling();
    while (1) {}
+   return 0;
 }

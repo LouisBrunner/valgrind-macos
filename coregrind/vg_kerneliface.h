@@ -132,6 +132,11 @@ typedef
 #define VKI_MAP_PRIVATE    0x02            /* Changes are private.  */
 
 
+/* Copied from /usr/src/linux-2.4.9-13/include/asm/errno.h */
+
+#define VKI_EINVAL          22      /* Invalid argument */
+
+
 /* Gawd ... hack ... */
 
 typedef struct vki__user_cap_header_struct {

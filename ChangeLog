@@ -1,3 +1,10 @@
+2002-03-29  Julian Seward  <sewardj@localhost.localdomain>
+
+	* vg_signals.c (VG_(do__NR_sigaction)): Don't allow setting of
+	handlers for SIGKILL or SIGSTOP.  This fixes
+	valgrind: vg_signals.c:723 (vgPlain_do__NR_sigaction): 
+	Assertion `our_old_handler == ((void *)0)' failed.
+	
 2002-03-29  Alexandre Duret-Lutz  <duret_g@epita.fr>
 
 	* vg_syscall_mem.c: wrapper for ioctl TIOCGPGRP.

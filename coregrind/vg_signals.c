@@ -688,7 +688,17 @@ void VG_(do__NR_sigaction) ( void )
          (UInt)(new_action ? new_action->ksa_flags : 0) );
    /* VG_(ppSigProcMask)(); */
 
-   if (param1 < 1 || param1 >= VKI_KNSIG) goto bad;
+   /* Rule out various error conditions.  The aim is to ensure that if
+      the call is passed to the kernel it will definitely succeed. */
+
+   /* Reject out-of-range signal numbers. */
+   if (param1 < 1 || param1 >= VKI_KNSIG) goto bad_signo;
+
+   /* Reject attempts to set a handler (or set ignore) for SIGKILL. */
+   if ( (param1 == VKI_SIGKILL || param1 == VKI_SIGSTOP)
+       && new_action
+       && new_action->ksa_handler != VKI_SIG_DFL)
+      goto bad_sigkill;
 
    our_old_handler = VG_(sighandler)[param1];
    /* VG_(printf)("old handler = 0x%x\n", our_old_handler); */
@@ -714,6 +724,7 @@ void VG_(do__NR_sigaction) ( void )
 
    KERNEL_DO_SYSCALL(res);
    /* VG_(printf)("RES = %d\n", res); */
+
    /* If the client asks for the old handler, maintain our fiction
       by stuffing in the handler it thought it asked for ... */
    if (old_action) {
@@ -742,11 +753,18 @@ void VG_(do__NR_sigaction) ( void )
    VG_(baseBlock)[VGOFF_(m_eax)] = (UInt)0;
    return;
 
-  bad:
+  bad_signo:
    VG_(message)(Vg_UserMsg,
                 "Warning: bad signal number %d in __NR_sigaction.", 
                 param1);
-   VG_(baseBlock)[VGOFF_(m_eax)] = (UInt)(-1);
+   VG_(baseBlock)[VGOFF_(m_eax)] = (UInt)(-VKI_EINVAL);
+   return;
+
+  bad_sigkill:
+   VG_(message)(Vg_UserMsg,
+                "Warning: attempt to set SIGKILL handler in __NR_sigaction.", 
+                param1);
+   VG_(baseBlock)[VGOFF_(m_eax)] = (UInt)(-VKI_EINVAL);
    return;
 }
 

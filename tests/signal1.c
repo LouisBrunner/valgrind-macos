@@ -11,7 +11,7 @@ void sig_hdlr ( int signo )
    printf ( "signal returns\n" );
 }
 
-void main ( void )
+int main ( void )
 {
    spin = 1;
    printf ( "installing sig handler\n" );
@@ -19,4 +19,5 @@ void main ( void )
    printf ( "entering busy wait\n" );
    while (spin) { };
    printf ( "exited\n" );
+   return 0;
 }

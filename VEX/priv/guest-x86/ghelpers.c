@@ -421,7 +421,7 @@ static void showCounts ( void )
 {
    Int op, co;
    Char ch;
-   vex_printf("\nTotal calls: calc_all=%d   calc_cond=%d   calc_c=%d\n",
+   vex_printf("\nTotal calls: calc_all=%u   calc_cond=%u   calc_c=%u\n",
               n_calc_all, n_calc_cond, n_calc_c);
 
    vex_printf("      cSLOW  cFAST    O   NO    B   NB    Z   NZ   BE  NBE"
@@ -439,8 +439,8 @@ static void showCounts ( void )
          ch = 'L';
 
       vex_printf("%2d%c: ", op, ch);
-      vex_printf("%6d ", tabc_slow[op]);
-      vex_printf("%6d ", tabc_fast[op]);
+      vex_printf("%6u ", tabc_slow[op]);
+      vex_printf("%6u ", tabc_fast[op]);
       for (co = 0; co < 16; co++) {
          Int n = tab_cond[op][co];
          if (n >= 1000) {
@@ -541,7 +541,7 @@ UInt x86g_calculate_eflags_all_WRK ( UInt cc_op,
       default:
          /* shouldn't really make these calls from generated code */
          vex_printf("x86g_calculate_eflags_all_WRK(X86)"
-                    "( %d, 0x%x, 0x%x, 0x%x )\n",
+                    "( %u, 0x%x, 0x%x, 0x%x )\n",
                     cc_op, cc_dep1_formal, cc_dep2_formal, cc_ndep_formal );
          vpanic("x86g_calculate_eflags_all_WRK(X86)");
    }
@@ -683,7 +683,7 @@ UInt x86g_calculate_condition ( UInt/*X86Condcode*/ cond,
 
       default:
          /* shouldn't really make these calls from generated code */
-         vex_printf("x86g_calculate_condition( %d, %d, 0x%x, 0x%x, 0x%x )\n",
+         vex_printf("x86g_calculate_condition( %u, %u, 0x%x, 0x%x, 0x%x )\n",
                     cond, cc_op, cc_dep1, cc_dep2, cc_ndep );
          vpanic("x86g_calculate_condition");
    }
@@ -721,9 +721,10 @@ UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state )
 
 static Bool isU32 ( IRExpr* e, UInt n )
 {
-   return e->tag == Iex_Const
-          && e->Iex.Const.con->tag == Ico_U32
-          && e->Iex.Const.con->Ico.U32 == n;
+   return 
+      toBool( e->tag == Iex_Const
+              && e->Iex.Const.con->tag == Ico_U32
+              && e->Iex.Const.con->Ico.U32 == n );
 }
 
 IRExpr* guest_x86_spechelper ( HChar* function_name,
@@ -1086,7 +1087,7 @@ static inline Bool host_is_little_endian ( void )
 {
    UInt x = 0x76543210;
    UChar* p = (UChar*)(&x);
-   return (*p == 0x10);
+   return toBool(*p == 0x10);
 }
 
 static inline UInt read_bit_array ( UChar* arr, UInt n )
@@ -1099,8 +1100,8 @@ static inline UInt read_bit_array ( UChar* arr, UInt n )
 static inline void write_bit_array ( UChar* arr, UInt n, UInt b )
 {
    UChar c = arr[n >> 3];
-   c &= ~(1 << (n&7));
-   c |= ((b&1) << (n&7));
+   c = toUChar( c & ~(1 << (n&7)) );
+   c = toUChar( c | ((b&1) << (n&7)) );
    arr[n >> 3] = c;
 }
 
@@ -1149,7 +1150,7 @@ UInt x86g_calculate_FXAM ( UInt tag, ULong dbl )
    /* vex_printf("calculate_FXAM ( %d, %llx ) .. ", tag, dbl ); */
 
    f64  = (UChar*)(&dbl);
-   sign = (f64[7] >> 7) & 1;
+   sign = toUChar( (f64[7] >> 7) & 1 );
 
    /* First off, if the tag indicates the register was empty,
       return 1,0,sign,1 */
@@ -1162,8 +1163,10 @@ UInt x86g_calculate_FXAM ( UInt tag, ULong dbl )
    bexp &= 0x7FF;
 
    mantissaIsZero
-      = (f64[6] & 0x0F) == 0 
-        && (f64[5] | f64[4] | f64[3] | f64[2] | f64[1] | f64[0]) == 0;
+      = toBool(
+           (f64[6] & 0x0F) == 0 
+           && (f64[5] | f64[4] | f64[3] | f64[2] | f64[1] | f64[0]) == 0
+        );
 
    /* If both exponent and mantissa are zero, the value is zero.
       Return 1,0,sign,0. */
@@ -1216,7 +1219,7 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
    Int   bexp, i, j, shift;
    UChar sign;
 
-   sign = (f64[7] >> 7) & 1;
+   sign = toUChar( (f64[7] >> 7) & 1 );
    bexp = (f64[7] << 4) | ((f64[6] >> 4) & 0x0F);
    bexp &= 0x7FF;
 
@@ -1226,16 +1229,18 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
          all zeroes in order to handle these cases.  So figure it
          out. */
       mantissaIsZero
-         = (f64[6] & 0x0F) == 0 
-           && f64[5] == 0 && f64[4] == 0 && f64[3] == 0 
-           && f64[2] == 0 && f64[1] == 0 && f64[0] == 0;
+         = toBool( 
+              (f64[6] & 0x0F) == 0 
+              && f64[5] == 0 && f64[4] == 0 && f64[3] == 0 
+              && f64[2] == 0 && f64[1] == 0 && f64[0] == 0
+           );
    }
 
    /* If the exponent is zero, either we have a zero or a denormal.
       Produce a zero.  This is a hack in that it forces denormals to
       zero.  Could do better. */
    if (bexp == 0) {
-      f80[9] = sign << 7;
+      f80[9] = toUChar( sign << 7 );
       f80[8] = f80[7] = f80[6] = f80[5] = f80[4]
              = f80[3] = f80[2] = f80[1] = f80[0] = 0;
 
@@ -1266,8 +1271,8 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
       /* Set the exponent appropriately, and we're done. */
       bexp -= shift;
       bexp += (16383 - 1023);
-      f80[9] = (sign << 7) | ((bexp >> 8) & 0xFF);
-      f80[8] = bexp & 0xFF;
+      f80[9] = toUChar( (sign << 7) | ((bexp >> 8) & 0xFF) );
+      f80[8] = toUChar( bexp & 0xFF );
       return;
    }
 
@@ -1283,7 +1288,7 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
          /* Produce an appropriately signed infinity:
             S 1--1 (15)  1  0--0 (63)
          */
-         f80[9] = (sign << 7) | 0x7F;
+         f80[9] = toUChar( (sign << 7) | 0x7F );
          f80[8] = 0xFF;
          f80[7] = 0x80;
          f80[6] = f80[5] = f80[4] = f80[3] 
@@ -1301,7 +1306,7 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
          /* QNaN.  Make a QNaN:
             S 1--1 (15)  1  1--1 (63) 
          */
-         f80[9] = (sign << 7) | 0x7F;
+         f80[9] = toUChar( (sign << 7) | 0x7F );
          f80[8] = 0xFF;
          f80[7] = 0xFF;
          f80[6] = f80[5] = f80[4] = f80[3] 
@@ -1310,7 +1315,7 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
          /* SNaN.  Make a SNaN:
             S 1--1 (15)  0  1--1 (63) 
          */
-         f80[9] = (sign << 7) | 0x7F;
+         f80[9] = toUChar( (sign << 7) | 0x7F );
          f80[8] = 0xFF;
          f80[7] = 0x7F;
          f80[6] = f80[5] = f80[4] = f80[3] 
@@ -1324,16 +1329,17 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
       number.  */
    bexp += (16383 - 1023);
 
-   f80[9] = (sign << 7) | ((bexp >> 8) & 0xFF);
-   f80[8] = bexp & 0xFF;
-   f80[7] = (1 << 7) | ((f64[6] << 3) & 0x78) | ((f64[5] >> 5) & 7);
-   f80[6] = ((f64[5] << 3) & 0xF8) | ((f64[4] >> 5) & 7);
-   f80[5] = ((f64[4] << 3) & 0xF8) | ((f64[3] >> 5) & 7);
-   f80[4] = ((f64[3] << 3) & 0xF8) | ((f64[2] >> 5) & 7);
-   f80[3] = ((f64[2] << 3) & 0xF8) | ((f64[1] >> 5) & 7);
-   f80[2] = ((f64[1] << 3) & 0xF8) | ((f64[0] >> 5) & 7);
-   f80[1] = ((f64[0] << 3) & 0xF8);
-   f80[0] = 0;
+   f80[9] = toUChar( (sign << 7) | ((bexp >> 8) & 0xFF) );
+   f80[8] = toUChar( bexp & 0xFF );
+   f80[7] = toUChar( (1 << 7) | ((f64[6] << 3) & 0x78) 
+                              | ((f64[5] >> 5) & 7) );
+   f80[6] = toUChar( ((f64[5] << 3) & 0xF8) | ((f64[4] >> 5) & 7) );
+   f80[5] = toUChar( ((f64[4] << 3) & 0xF8) | ((f64[3] >> 5) & 7) );
+   f80[4] = toUChar( ((f64[3] << 3) & 0xF8) | ((f64[2] >> 5) & 7) );
+   f80[3] = toUChar( ((f64[2] << 3) & 0xF8) | ((f64[1] >> 5) & 7) );
+   f80[2] = toUChar( ((f64[1] << 3) & 0xF8) | ((f64[0] >> 5) & 7) );
+   f80[1] = toUChar( ((f64[0] << 3) & 0xF8) );
+   f80[0] = toUChar( 0 );
 }
 
 
@@ -1354,7 +1360,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
    Int   bexp, i, j;
    UChar sign;
 
-   sign = (f80[9] >> 7) & 1;
+   sign = toUChar((f80[9] >> 7) & 1);
    bexp = (((UInt)f80[9]) << 8) | (UInt)f80[8];
    bexp &= 0x7FFF;
 
@@ -1363,7 +1369,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
       zero, so in either case, just produce the appropriately signed
       zero. */
    if (bexp == 0) {
-      f64[7] = sign << 7;
+      f64[7] = toUChar(sign << 7);
       f64[6] = f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
       return;
    }
@@ -1376,16 +1382,19 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
       where at least one of the Xs is not zero.
    */
    if (bexp == 0x7FFF) {
-      isInf = (f80[7] & 0x7F) == 0 
-              && f80[6] == 0 && f80[5] == 0 && f80[4] == 0 
-              && f80[3] == 0 && f80[2] == 0 && f80[1] == 0 && f80[0] == 0;
+      isInf = toBool(
+                 (f80[7] & 0x7F) == 0 
+                 && f80[6] == 0 && f80[5] == 0 && f80[4] == 0 
+                 && f80[3] == 0 && f80[2] == 0 && f80[1] == 0 
+                 && f80[0] == 0
+              );
       if (isInf) {
          if (0 == (f80[7] & 0x80))
             goto wierd_NaN;
          /* Produce an appropriately signed infinity:
             S 1--1 (11)  0--0 (52)
          */
-         f64[7] = (sign << 7) | 0x7F;
+         f64[7] = toUChar((sign << 7) | 0x7F);
          f64[6] = 0xF0;
          f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
          return;
@@ -1401,14 +1410,14 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
          /* QNaN.  Make a QNaN:
             S 1--1 (11)  1  1--1 (51) 
          */
-         f64[7] = (sign << 7) | 0x7F;
+         f64[7] = toUChar((sign << 7) | 0x7F);
          f64[6] = 0xFF;
          f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0xFF;
       } else {
          /* SNaN.  Make a SNaN:
             S 1--1 (11)  0  1--1 (51) 
          */
-         f64[7] = (sign << 7) | 0x7F;
+         f64[7] = toUChar((sign << 7) | 0x7F);
          f64[6] = 0xF7;
          f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0xFF;
       }
@@ -1436,7 +1445,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
    bexp -= (16383 - 1023);
    if (bexp >= 0x7FF) {
       /* It's too big for a double.  Construct an infinity. */
-      f64[7] = (sign << 7) | 0x7F;
+      f64[7] = toUChar((sign << 7) | 0x7F);
       f64[6] = 0xF0;
       f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
       return;
@@ -1445,7 +1454,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
    if (bexp <= 0) {
       /* It's too small for a normalised double.  First construct a
          zero and then see if it can be improved into a denormal.  */
-      f64[7] = sign << 7;
+      f64[7] = toUChar(sign << 7);
       f64[6] = f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
 
       if (bexp < -52)
@@ -1480,16 +1489,16 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
                         i,
                         read_bit_array ( f80, i+11 ) );
    */
-   f64[0] = (f80[1] >> 3) | (f80[2] << 5);
-   f64[1] = (f80[2] >> 3) | (f80[3] << 5);
-   f64[2] = (f80[3] >> 3) | (f80[4] << 5);
-   f64[3] = (f80[4] >> 3) | (f80[5] << 5);
-   f64[4] = (f80[5] >> 3) | (f80[6] << 5);
-   f64[5] = (f80[6] >> 3) | (f80[7] << 5);
+   f64[0] = toUChar( (f80[1] >> 3) | (f80[2] << 5) );
+   f64[1] = toUChar( (f80[2] >> 3) | (f80[3] << 5) );
+   f64[2] = toUChar( (f80[3] >> 3) | (f80[4] << 5) );
+   f64[3] = toUChar( (f80[4] >> 3) | (f80[5] << 5) );
+   f64[4] = toUChar( (f80[5] >> 3) | (f80[6] << 5) );
+   f64[5] = toUChar( (f80[6] >> 3) | (f80[7] << 5) );
 
-   f64[6] = ((bexp << 4) & 0xF0) | ((f80[7] >> 3) & 0x0F);
+   f64[6] = toUChar( ((bexp << 4) & 0xF0) | ((f80[7] >> 3) & 0x0F) );
 
-   f64[7] = (sign << 7) | ((bexp >> 4) & 0x7F);
+   f64[7] = toUChar( (sign << 7) | ((bexp >> 4) & 0x7F) );
 
    /* Now consider any rounding that needs to happen as a result of
       truncating the mantissa. */
@@ -1745,9 +1754,10 @@ void do_get_x87 ( /*IN*/VexGuestX86State* vex_state,
       x87->env[i] = 0;
 
    x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
-   x87->env[FP_ENV_STAT] = ((ftop & 7) << 11) | (c3210 & 0x4700);
+   x87->env[FP_ENV_STAT] 
+      = toUShort(((ftop & 7) << 11) | (c3210 & 0x4700));
    x87->env[FP_ENV_CTRL] 
-      = (UShort)x86g_create_fpucw( vex_state->guest_FPROUND );
+      = toUShort(x86g_create_fpucw( vex_state->guest_FPROUND ));
 
    /* Dump the register stack in ST order. */
    tagw = 0;
@@ -1765,7 +1775,7 @@ void do_get_x87 ( /*IN*/VexGuestX86State* vex_state,
                                  &x87->reg[10*stno] );
       }
    }
-   x87->env[FP_ENV_TAG] = tagw;
+   x87->env[FP_ENV_TAG] = toUShort(tagw);
 }
 
 
@@ -1780,7 +1790,7 @@ void x86g_dirtyhelper_FXSAVE ( VexGuestX86State* gst, HWord addr )
    U128*     xmm   = (U128*)(addr + 160);
    UInt      mxcsr;
    UShort    fp_tags;
-   UChar     summary_tags;
+   UInt      summary_tags;
    Int       r, stno;
    UShort    *srcS, *dstS;
 
@@ -1800,7 +1810,7 @@ void x86g_dirtyhelper_FXSAVE ( VexGuestX86State* gst, HWord addr )
       if ( ((fp_tags >> (2*r)) & 3) != 3 )
          summary_tags |= (1 << r);
    }
-   addrC[4]  = summary_tags; /* FTW: tag summary byte */
+   addrC[4]  = toUChar(summary_tags); /* FTW: tag summary byte */
    addrC[5]  = 0; /* pad */
 
    addrS[3]  = 0; /* FOP: fpu opcode (bogus) */
@@ -1817,8 +1827,8 @@ void x86g_dirtyhelper_FXSAVE ( VexGuestX86State* gst, HWord addr )
                      perhaps? */
    addrS[11] = 0; /* Intel reserved */
 
-   addrS[12] = (UShort)mxcsr;  /* MXCSR */
-   addrS[13] = (UShort)(mxcsr >> 16);
+   addrS[12] = toUShort(mxcsr);  /* MXCSR */
+   addrS[13] = toUShort(mxcsr >> 16);
 
    addrS[14] = 0xFFFF; /* MXCSR mask (lo16); who knows what for */
    addrS[15] = 0xFFFF; /* MXCSR mask (hi16); who knows what for */
@@ -2049,7 +2059,7 @@ void x86g_dirtyhelper_CPUID_sse2 ( VexGuestX86State* st )
 /*---------------------------------------------------------------*/
 
 static inline UChar abdU8 ( UChar xx, UChar yy ) {
-   return xx>yy ? xx-yy : yy-xx;
+   return toUChar(xx>yy ? xx-yy : yy-xx);
 }
 
 static inline ULong mk32x2 ( UInt w1, UInt w0 ) {
@@ -2057,53 +2067,53 @@ static inline ULong mk32x2 ( UInt w1, UInt w0 ) {
 }
 
 static inline UShort sel16x4_3 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFFFF & (UShort)(hi32 >> 16);
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUShort(hi32 >> 16);
 }
 static inline UShort sel16x4_2 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFFFF & (UShort)hi32;
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUShort(hi32);
 }
 static inline UShort sel16x4_1 ( ULong w64 ) {
-   UInt lo32 = (UInt)w64;
-   return 0xFFFF & (UShort)(lo32 >> 16);
+   UInt lo32 = toUInt(w64);
+   return toUShort(lo32 >> 16);
 }
 static inline UShort sel16x4_0 ( ULong w64 ) {
-   UInt lo32 = (UInt)w64;
-   return 0xFFFF & (UShort)lo32;
+   UInt lo32 = toUInt(w64);
+   return toUShort(lo32);
 }
 
 static inline UChar sel8x8_7 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFF & (UChar)(hi32 >> 24);
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(hi32 >> 24);
 }
 static inline UChar sel8x8_6 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFF & (UChar)(hi32 >> 16);
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(hi32 >> 16);
 }
 static inline UChar sel8x8_5 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFF & (UChar)(hi32 >> 8);
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(hi32 >> 8);
 }
 static inline UChar sel8x8_4 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFF & (UChar)(hi32 >> 0);
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(hi32 >> 0);
 }
 static inline UChar sel8x8_3 ( ULong w64 ) {
-   UInt lo32 = (UInt)w64;
-   return 0xFF & (UChar)(lo32 >> 24);
+   UInt lo32 = toUInt(w64);
+   return toUChar(lo32 >> 24);
 }
 static inline UChar sel8x8_2 ( ULong w64 ) {
-   UInt lo32 = (UInt)w64;
-   return 0xFF & (UChar)(lo32 >> 16);
+   UInt lo32 = toUInt(w64);
+   return toUChar(lo32 >> 16);
 }
 static inline UChar sel8x8_1 ( ULong w64 ) {
-   UInt lo32 = (UInt)w64;
-   return 0xFF & (UChar)(lo32 >> 8);
+   UInt lo32 = toUInt(w64);
+   return toUChar(lo32 >> 8);
 }
 static inline UChar sel8x8_0 ( ULong w64 ) {
-   UInt lo32 = (UInt)w64;
-   return 0xFF & (UChar)(lo32 >> 0);
+   UInt lo32 = toUInt(w64);
+   return toUChar(lo32 >> 0);
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */

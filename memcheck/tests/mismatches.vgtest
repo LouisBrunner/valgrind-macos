@@ -1,3 +1,2 @@
 prog: mismatches
-stderr_filter: filter_mismatches
 vgopts: -q

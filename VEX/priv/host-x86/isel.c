@@ -112,22 +112,20 @@ static IRExpr* unop ( IROp op, IRExpr* a )
    return IRExpr_Unop(op, a);
 }
 
-#if 0
-/* Apparently unused. */
 static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
 {
    return IRExpr_Binop(op, a1, a2);
 }
-#endif
 
-#if 0
-/* Apparently unused. */
-static IRExpr* mkU8 ( UInt i )
+static IRExpr* mkU64 ( ULong i )
 {
-   vassert(i < 256);
-   return IRExpr_Const(IRConst_U8(i));
+   return IRExpr_Const(IRConst_U64(i));
 }
-#endif
+
+static IRExpr* mkU32 ( UInt i )
+{
+   return IRExpr_Const(IRConst_U32(i));
+}
 
 static IRExpr* bind ( Int binder )
 {
@@ -1342,6 +1340,17 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       }
    }
 
+   /* CmpNE32(1Sto32(b), 0) ==> b */
+   {
+      DECLARE_PATTERN(p_CmpNE32_1Sto32);
+      DEFINE_PATTERN(
+         p_CmpNE32_1Sto32,
+         binop(Iop_CmpNE32, unop(Iop_1Sto32,bind(0)), mkU32(0)));
+      if (matchIRExpr(&mi, p_CmpNE32_1Sto32, e)) {
+         return iselCondCode(env, mi.bindee[0]);
+      }
+   }
+
    /* Cmp*32*(x,y) */
    if (e->tag == Iex_Binop 
        && (e->Iex.Binop.op == Iop_CmpEQ32
@@ -1361,6 +1370,17 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpLE32S: return Xcc_LE;
          case Iop_CmpLE32U: return Xcc_BE;
          default: vpanic("iselCondCode(x86): CmpXX32");
+      }
+   }
+
+   /* CmpNE64(1Sto64(b), 0) ==> b */
+   {
+      DECLARE_PATTERN(p_CmpNE64_1Sto64);
+      DEFINE_PATTERN(
+         p_CmpNE64_1Sto64,
+         binop(Iop_CmpNE64, unop(Iop_1Sto64,bind(0)), mkU64(0)));
+      if (matchIRExpr(&mi, p_CmpNE64_1Sto64, e)) {
+         return iselCondCode(env, mi.bindee[0]);
       }
    }
 
@@ -1581,7 +1601,6 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
-   /* 1Sto64(e) */
    /* could do better than this, but for now ... */
    if (e->tag == Iex_Unop
        && e->Iex.Unop.op == Iop_1Sto64) {

@@ -50,10 +50,10 @@ static inline ULong mk32x2 ( UInt w1, UInt w0 ) {
 }
 
 static inline UInt sel32x2_1 ( ULong w64 ) {
-   return 0xFFFFFFFF & (UInt)(w64 >> 32);
+   return 0xFFFFFFFF & toUInt(w64 >> 32);
 }
 static inline UInt sel32x2_0 ( ULong w64 ) {
-   return 0xFFFFFFFF & (UInt)w64;
+   return 0xFFFFFFFF & toUInt(w64);
 }
 
 
@@ -68,20 +68,20 @@ static inline ULong mk16x4 ( UShort w3, UShort w2,
 }
 
 static inline UShort sel16x4_3 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFFFF & (UShort)(hi32 >> 16);
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUShort(0xFFFF & (hi32 >> 16));
 }
 static inline UShort sel16x4_2 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFFFF & (UShort)hi32;
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUShort(0xFFFF & hi32);
 }
 static inline UShort sel16x4_1 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
-   return 0xFFFF & (UShort)(lo32 >> 16);
+   return toUShort(0xFFFF & (lo32 >> 16));
 }
 static inline UShort sel16x4_0 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
-   return 0xFFFF & (UShort)lo32;
+   return toUShort(0xFFFF & lo32);
 }
 
 
@@ -99,36 +99,36 @@ static inline ULong mk8x8 ( UChar w7, UChar w6,
 }
 
 static inline UChar sel8x8_7 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFF & (UChar)(hi32 >> 24);
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(0xFF & (hi32 >> 24));
 }
 static inline UChar sel8x8_6 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFF & (UChar)(hi32 >> 16);
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(0xFF & (hi32 >> 16));
 }
 static inline UChar sel8x8_5 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFF & (UChar)(hi32 >> 8);
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(0xFF & (hi32 >> 8));
 }
 static inline UChar sel8x8_4 ( ULong w64 ) {
-   UInt hi32 = (UInt)(w64 >> 32);
-   return 0xFF & (UChar)(hi32 >> 0);
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUChar(0xFF & (hi32 >> 0));
 }
 static inline UChar sel8x8_3 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
-   return 0xFF & (UChar)(lo32 >> 24);
+   return toUChar(0xFF & (lo32 >> 24));
 }
 static inline UChar sel8x8_2 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
-   return 0xFF & (UChar)(lo32 >> 16);
+   return toUChar(0xFF & (lo32 >> 16));
 }
 static inline UChar sel8x8_1 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
-   return 0xFF & (UChar)(lo32 >> 8);
+   return toUChar(0xFF & (lo32 >> 8));
 }
 static inline UChar sel8x8_0 ( ULong w64 ) {
    UInt lo32 = (UInt)w64;
-   return 0xFF & (UChar)(lo32 >> 0);
+   return toUChar(0xFF & (lo32 >> 0));
 }
 
 
@@ -223,12 +223,12 @@ static inline UInt cmpeq32 ( UInt xx, UInt yy )
 
 static inline UShort cmpeq16 ( UShort xx, UShort yy )
 {
-   return xx==yy ? 0xFFFF : 0;
+   return toUShort(xx==yy ? 0xFFFF : 0);
 }
 
 static inline UChar cmpeq8 ( UChar xx, UChar yy )
 {
-   return xx==yy ? 0xFF : 0;
+   return toUChar(xx==yy ? 0xFF : 0);
 }
 
 static inline UInt cmpgt32S ( Int xx, Int yy )
@@ -238,12 +238,12 @@ static inline UInt cmpgt32S ( Int xx, Int yy )
 
 static inline UShort cmpgt16S ( Short xx, Short yy )
 {
-   return xx>yy ? 0xFFFF : 0;
+   return toUShort(xx>yy ? 0xFFFF : 0);
 }
 
 static inline UChar cmpgt8S ( Char xx, Char yy )
 {
-   return xx>yy ? 0xFF : 0;
+   return toUChar(xx>yy ? 0xFF : 0);
 }
 
 static inline UInt cmpnez32 ( UInt xx )
@@ -253,12 +253,12 @@ static inline UInt cmpnez32 ( UInt xx )
 
 static inline UShort cmpnez16 ( UShort xx )
 {
-   return xx==0 ? 0 : 0xFFFF;
+   return toUShort(xx==0 ? 0 : 0xFFFF);
 }
 
 static inline UChar cmpnez8 ( UChar xx )
 {
-   return xx==0 ? 0 : 0xFF;
+   return toUChar(xx==0 ? 0 : 0xFF);
 }
 
 static inline Short qnarrow32Sto16 ( UInt xx0 )
@@ -290,17 +290,17 @@ static inline UChar qnarrow16Uto8 ( UShort xx0 )
 
 static inline UShort shl16 ( UShort v, UInt n )
 {
-   return v << n;
+   return toUShort(v << n);
 }
 
 static inline UShort shr16 ( UShort v, UInt n )
 {
-   return (((UShort)v) >> n);
+   return toUShort((((UShort)v) >> n));
 }
 
 static inline UShort sar16 ( UShort v, UInt n )
 {
-   return ((Short)v) >> n;
+   return toUShort(((Short)v) >> n);
 }
 
 static inline UInt shl32 ( UInt v, UInt n )
@@ -336,22 +336,22 @@ static inline UShort avg16U ( UShort xx, UShort yy )
 
 static inline Short max16S ( Short xx, Short yy )
 {
-   return (xx > yy) ? xx : yy;
+   return toUShort((xx > yy) ? xx : yy);
 }
 
 static inline UChar max8U ( UChar xx, UChar yy )
 {
-   return (xx > yy) ? xx : yy;
+   return toUChar((xx > yy) ? xx : yy);
 }
 
 static inline Short min16S ( Short xx, Short yy )
 {
-   return (xx < yy) ? xx : yy;
+   return toUShort((xx < yy) ? xx : yy);
 }
 
 static inline UChar min8U ( UChar xx, UChar yy )
 {
-   return (xx < yy) ? xx : yy;
+   return toUChar((xx < yy) ? xx : yy);
 }
 
 /* ----------------------------------------------------- */
@@ -372,24 +372,24 @@ ULong h_generic_calc_Add32x2 ( ULong xx, ULong yy )
 ULong h_generic_calc_Add16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
-             sel16x4_3(xx) + sel16x4_3(yy),
-             sel16x4_2(xx) + sel16x4_2(yy),
-             sel16x4_1(xx) + sel16x4_1(yy),
-             sel16x4_0(xx) + sel16x4_0(yy)
+             toUShort( sel16x4_3(xx) + sel16x4_3(yy) ),
+             toUShort( sel16x4_2(xx) + sel16x4_2(yy) ),
+             toUShort( sel16x4_1(xx) + sel16x4_1(yy) ),
+             toUShort( sel16x4_0(xx) + sel16x4_0(yy) )
           );
 }
 
 ULong h_generic_calc_Add8x8 ( ULong xx, ULong yy )
 {
    return mk8x8(
-             sel8x8_7(xx) + sel8x8_7(yy),
-             sel8x8_6(xx) + sel8x8_6(yy),
-             sel8x8_5(xx) + sel8x8_5(yy),
-             sel8x8_4(xx) + sel8x8_4(yy),
-             sel8x8_3(xx) + sel8x8_3(yy),
-             sel8x8_2(xx) + sel8x8_2(yy),
-             sel8x8_1(xx) + sel8x8_1(yy),
-             sel8x8_0(xx) + sel8x8_0(yy)
+             toUChar( sel8x8_7(xx) + sel8x8_7(yy) ),
+             toUChar( sel8x8_6(xx) + sel8x8_6(yy) ),
+             toUChar( sel8x8_5(xx) + sel8x8_5(yy) ),
+             toUChar( sel8x8_4(xx) + sel8x8_4(yy) ),
+             toUChar( sel8x8_3(xx) + sel8x8_3(yy) ),
+             toUChar( sel8x8_2(xx) + sel8x8_2(yy) ),
+             toUChar( sel8x8_1(xx) + sel8x8_1(yy) ),
+             toUChar( sel8x8_0(xx) + sel8x8_0(yy) )
           );
 }
 
@@ -456,24 +456,24 @@ ULong h_generic_calc_Sub32x2 ( ULong xx, ULong yy )
 ULong h_generic_calc_Sub16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
-             sel16x4_3(xx) - sel16x4_3(yy),
-             sel16x4_2(xx) - sel16x4_2(yy),
-             sel16x4_1(xx) - sel16x4_1(yy),
-             sel16x4_0(xx) - sel16x4_0(yy)
+             toUShort( sel16x4_3(xx) - sel16x4_3(yy) ),
+             toUShort( sel16x4_2(xx) - sel16x4_2(yy) ),
+             toUShort( sel16x4_1(xx) - sel16x4_1(yy) ),
+             toUShort( sel16x4_0(xx) - sel16x4_0(yy) )
           );
 }
 
 ULong h_generic_calc_Sub8x8 ( ULong xx, ULong yy )
 {
    return mk8x8(
-             sel8x8_7(xx) - sel8x8_7(yy),
-             sel8x8_6(xx) - sel8x8_6(yy),
-             sel8x8_5(xx) - sel8x8_5(yy),
-             sel8x8_4(xx) - sel8x8_4(yy),
-             sel8x8_3(xx) - sel8x8_3(yy),
-             sel8x8_2(xx) - sel8x8_2(yy),
-             sel8x8_1(xx) - sel8x8_1(yy),
-             sel8x8_0(xx) - sel8x8_0(yy)
+             toUChar( sel8x8_7(xx) - sel8x8_7(yy) ),
+             toUChar( sel8x8_6(xx) - sel8x8_6(yy) ),
+             toUChar( sel8x8_5(xx) - sel8x8_5(yy) ),
+             toUChar( sel8x8_4(xx) - sel8x8_4(yy) ),
+             toUChar( sel8x8_3(xx) - sel8x8_3(yy) ),
+             toUChar( sel8x8_2(xx) - sel8x8_2(yy) ),
+             toUChar( sel8x8_1(xx) - sel8x8_1(yy) ),
+             toUChar( sel8x8_0(xx) - sel8x8_0(yy) )
           );
 }
 

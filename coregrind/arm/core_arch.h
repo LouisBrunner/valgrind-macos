@@ -63,7 +63,6 @@
 
 #define VGA_CLREQ_ARGS        guest_R0
 #define VGA_CLREQ_RET         guest_R0
-#define VGA_PTHREQ_RET        guest_R0
 
 // Register numbers, for vg_symtab2.c
 #define VGA_R_STACK_PTR       13

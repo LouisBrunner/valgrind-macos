@@ -408,10 +408,9 @@ extern void  VG_(print_all_arena_stats) ( void );
    request codes.  A few, publically-visible, request codes are also
    defined in valgrind.h, and similar headers for some tools. */
 
+/* Obsolete pthread-related requests */
 #define VG_USERREQ__MALLOC                  0x2001
 #define VG_USERREQ__FREE                    0x2002
-
-/* Obsolete pthread-related requests */
 #define VG_USERREQ__APPLY_IN_NEW_THREAD     0x3001
 #define VG_USERREQ__QUIT                    0x3002
 #define VG_USERREQ__WAIT_JOINER             0x3003
@@ -434,6 +433,7 @@ extern void  VG_(print_all_arena_stats) ( void );
 #define VG_USERREQ__PTHREAD_KEY_DELETE      0x3014
 #define VG_USERREQ__PTHREAD_SETSPECIFIC_PTR 0x3015
 #define VG_USERREQ__PTHREAD_GETSPECIFIC_PTR 0x3016
+#define VG_USERREQ__READ_MILLISECOND_TIMER  0x3017
 #define VG_USERREQ__PTHREAD_SIGMASK         0x3018
 #define VG_USERREQ__SIGWAIT                 0x3019
 #define VG_USERREQ__PTHREAD_KILL            0x301A
@@ -456,8 +456,6 @@ extern void  VG_(print_all_arena_stats) ( void );
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
 #define VG_USERREQ__PTHREAD_ERROR           0x3102
 
-
-#define VG_USERREQ__READ_MILLISECOND_TIMER  0x3017
 
 /* Internal equivalent of VALGRIND_PRINTF . */
 #define VG_USERREQ__INTERNAL_PRINTF         0x3103
@@ -502,7 +500,7 @@ struct vg_mallocfunc_info {
    Exports of vg_defaults.c
    ------------------------------------------------------------------ */
 
-extern Bool VG_(tl_malloc_called_by_scheduler);
+extern Bool VG_(tl_malloc_called_deliberately);
 
 
 
@@ -722,14 +720,6 @@ extern Bool VG_(my_fault);
 #define SET_CLCALL_RETVAL(zztid, zzval, f) \
    SET_THREAD_REG(zztid, zzval, CLREQ_RET, post_reg_write_clientcall_return, \
                   zztid, O_CLREQ_RET, sizeof(UWord), f)
-
-#define SET_PTHREQ_ESP(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, STACK_PTR, post_reg_write, \
-                  Vg_CorePThread, zztid, O_STACK_PTR, sizeof(Addr))
-
-#define SET_PTHREQ_RETVAL(zztid, zzval) \
-   SET_THREAD_REG(zztid, zzval, PTHREQ_RET, post_reg_write, \
-                  Vg_CorePThread, zztid, O_PTHREQ_RET, sizeof(UWord))
 
 /* ---------------------------------------------------------------------
    Exports of vg_signals.c
@@ -1653,13 +1643,11 @@ extern Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*,
 #define STACK_PTR(regs)    ((regs).vex.VGA_STACK_PTR)
 #define FRAME_PTR(regs)    ((regs).vex.VGA_FRAME_PTR)
 #define CLREQ_ARGS(regs)   ((regs).vex.VGA_CLREQ_ARGS)
-#define PTHREQ_RET(regs)   ((regs).vex.VGA_PTHREQ_RET)
 #define CLREQ_RET(regs)    ((regs).vex.VGA_CLREQ_RET)
 // Offsets for the Vex state
 #define O_STACK_PTR        (offsetof(VexGuestArchState, VGA_STACK_PTR))
 #define O_FRAME_PTR        (offsetof(VexGuestArchState, VGA_FRAME_PTR))
 #define O_CLREQ_RET        (offsetof(VexGuestArchState, VGA_CLREQ_RET))
-#define O_PTHREQ_RET       (offsetof(VexGuestArchState, VGA_PTHREQ_RET))
 
 
 // Setting up the initial thread (1) state

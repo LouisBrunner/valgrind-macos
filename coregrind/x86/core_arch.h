@@ -57,8 +57,6 @@
 
 #define VGA_CLREQ_ARGS        guest_EAX
 #define VGA_CLREQ_RET         guest_EDX
-#define VGA_PTHREQ_RET        guest_EDX
-
 
 // Register numbers, for vg_symtab2.c
 #define VGA_R_STACK_PTR       4

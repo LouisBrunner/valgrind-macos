@@ -70,18 +70,16 @@ void malloc_panic ( const Char* fn )
 __attribute__ ((weak))
 SizeT VG_(vg_malloc_redzone_szB) = 8;
 
-Bool VG_(tl_malloc_called_by_scheduler) = False;
+Bool VG_(tl_malloc_called_deliberately) = False;
 
-/* If the tool hasn't replaced malloc(), this one can be called from the
-   scheduler, for the USERREQ__MALLOC user request used by vg_libpthread.c. 
-   (Nb: it cannot call glibc's malloc().)  The lock variable ensures that the
-   scheduler is the only place this can be called from;  this ensures that a
-   malloc()-replacing tool cannot forget to implement TL_(malloc)() or
-   TL_(free)().  */
+/* If the tool hasn't replaced malloc(), this one can be called
+   deliberately.  The lock variable ensures that this isn't called by
+   accident, which could happen if a malloc()-replacing tool forgot to
+   implement TL_(malloc)() or TL_(free)().  */
 __attribute__ ((weak))
 void* TL_(malloc)( ThreadId tid, SizeT size )
 {
-   if (VG_(tl_malloc_called_by_scheduler))
+   if (VG_(tl_malloc_called_deliberately))
       return VG_(cli_malloc)(VG_MIN_MALLOC_SZB, size);
    else 
       malloc_panic(__PRETTY_FUNCTION__);
@@ -91,7 +89,7 @@ __attribute__ ((weak))
 void TL_(free)( ThreadId tid, void* p )
 {
    /* see comment for TL_(malloc)() above */
-   if (VG_(tl_malloc_called_by_scheduler))
+   if (VG_(tl_malloc_called_deliberately))
       VG_(cli_free)(p);
    else 
       malloc_panic(__PRETTY_FUNCTION__);

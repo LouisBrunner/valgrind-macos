@@ -1005,35 +1005,8 @@ void do_client_request ( ThreadId tid )
          break;
       }
 
-      /* Note:  for tools that replace malloc() et al, we want to call
-         the replacement versions.  For those that don't, we want to call
-         VG_(cli_malloc)() et al.  We do this by calling SK_(malloc)(), which
-         malloc-replacing tools must replace, but have the default definition
-         of SK_(malloc)() call VG_(cli_malloc)().  */
-
-      /* Note: for MALLOC and FREE, must set the appropriate "lock"... see
-         the comment in vg_defaults.c/SK_(malloc)() for why. */
-      case VG_USERREQ__MALLOC:
-         VG_(tl_malloc_called_by_scheduler) = True;
-         SET_PTHREQ_RETVAL(
-            tid, (Addr)TL_(malloc) ( tid, arg[1] ) 
-         );
-         VG_(tl_malloc_called_by_scheduler) = False;
-         break;
-
-      case VG_USERREQ__FREE:
-         VG_(tl_malloc_called_by_scheduler) = True;
-         TL_(free) ( tid, (void*)arg[1] );
-         VG_(tl_malloc_called_by_scheduler) = False;
-	 SET_PTHREQ_RETVAL(tid, 0); /* irrelevant */
-         break;
-
       case VG_USERREQ__RUNNING_ON_VALGRIND:
          SET_CLREQ_RETVAL(tid, RUNNING_ON_VALGRIND+1);
-         break;
-
-      case VG_USERREQ__READ_MILLISECOND_TIMER:
-         SET_PTHREQ_RETVAL(tid, VG_(read_millisecond_timer)());
          break;
 
       case VG_USERREQ__PRINTF: {
@@ -1119,6 +1092,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__PTHREAD_KEY_DELETE:
       case VG_USERREQ__PTHREAD_SETSPECIFIC_PTR:
       case VG_USERREQ__PTHREAD_GETSPECIFIC_PTR:
+      case VG_USERREQ__READ_MILLISECOND_TIMER:
       case VG_USERREQ__PTHREAD_SIGMASK:
       case VG_USERREQ__SIGWAIT:
       case VG_USERREQ__PTHREAD_KILL:
@@ -1136,6 +1110,8 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__GET_SIGRT_MIN:
       case VG_USERREQ__GET_SIGRT_MAX:
       case VG_USERREQ__ALLOC_RTSIG:
+      case VG_USERREQ__MALLOC:
+      case VG_USERREQ__FREE:
 	 VG_(message)(Vg_UserMsg, "It looks like you've got an old libpthread.so* ");
 	 VG_(message)(Vg_UserMsg, "installed in \"%s\".", VG_(libdir));
 	 VG_(message)(Vg_UserMsg, "Please delete it and try again.");

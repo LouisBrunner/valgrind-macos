@@ -196,9 +196,14 @@ static void *before_pthread_create(va_list va)
 
    tst = VG_(get_ThreadState)(VG_(get_running_tid)());
 
-   VG_(sk_malloc_called_by_scheduler) = True;
-   data = SK_(malloc)(sizeof(*data));
-   VG_(sk_malloc_called_by_scheduler) = False;
+   // XXX: why use TL_(malloc)() here?  What characteristics does this
+   // allocation require?  
+   // [Possible: When using a tool that replaces malloc(), we want to call
+   //  the replacement version.  Otherwise, we want to use VG_(cli_malloc)().
+   //  So we go via the default version of TL_(malloc)() in vg_default?]
+   VG_(tl_malloc_called_deliberately) = True;
+   data = TL_(malloc)(sizeof(*data));
+   VG_(tl_malloc_called_deliberately) = False;
 
    VG_TRACK(pre_mem_write, Vg_CorePThread, tst->tid, "new thread data",
 	    (Addr)data, sizeof(*data));

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "valgrind.h"
+#include "../memcheck.h"
 
 int main1 ( void )
 {
@@ -26,14 +26,14 @@ int main ( void )
 
    for (i = 0; i < 100; i++)
      sum += aa[i];
-   printf("sum is %d\n", sum);
+   printf("sum is %s\n", sum > 0 ? "positive" : "non-positive");
 
    m = VALGRIND_DISCARD(m);
    printf("m_rm: returned value is %d\n", m );
 
    for (i = 0; i < 100; i++)
      sum += aa[i];
-   printf("sum is %d\n", sum);
+   printf("sum is %s\n", sum > 0 ? "positive" : "non-positive");
 
    return 0;
 }

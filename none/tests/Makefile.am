@@ -19,6 +19,8 @@ EXTRA_DIST = \
 	cpuid.stderr.exp cpuid.stderr.exp.hd cpuid.stdout.exp cpuid.vgtest \
 	dastest.stderr.exp dastest.stderr.exp.hd dastest.stdout.exp \
 	dastest.vgtest \
+	discard.stderr.exp discard.stderr.exp.hd discard.stdout.exp \
+	discard.vgtest \
 	floored.stderr.exp floored.stderr.exp.hd floored.stdout.exp \
 	floored.vgtest \
 	fork.stderr.exp fork.stderr.exp.hd fork.stdout.exp fork.vgtest \
@@ -41,7 +43,7 @@ EXTRA_DIST = \
 
 noinst_PROGRAMS = \
 	bitfield1 bt_everything bt_literal coolo_strlen \
-	cpuid dastest floored fork fucomip munmap_exe rcl_assert \
+	cpuid dastest discard floored fork fucomip munmap_exe rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	pth_blockedsig \
 	coolo_sigaction gxx304
@@ -56,6 +58,7 @@ bt_literal_SOURCES 	= bt_literal.c
 cpuid_SOURCES 		= cpuid_c.c cpuid_s.s
 coolo_strlen_SOURCES 	= coolo_strlen.c
 dastest_SOURCES 	= dastest_c.c dastest_s.s
+discard_SOURCES 	= discard.c
 fork_SOURCES 		= fork.c
 floored_SOURCES 	= floored.c
 floored_LDADD 		= -lm

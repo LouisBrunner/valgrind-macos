@@ -1,0 +1,17 @@
+
+Invalid read of size 4
+   at 0x........: baaaad (clientstackperm.c:23)
+   by 0x........: main (clientstackperm.c:29)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/clientstackperm)
+   Address 0x........ is 36 bytes inside a 40-byte stack red-zone created
+   at 0x........: baaaad (clientstackperm.c:18)
+   by 0x........: main (clientstackperm.c:29)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/clientstackperm)
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 0 bytes in 0 blocks.
+malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v

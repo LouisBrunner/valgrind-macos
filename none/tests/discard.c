@@ -1,6 +1,6 @@
 
 #include <stdio.h>
-#include <valgrind.h>
+#include "../../include/valgrind.h"
 
 int fooble ( void )
 {

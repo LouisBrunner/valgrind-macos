@@ -5,6 +5,8 @@ badfree
 badjump
 badloop
 buflen_check
+clientperm
+clientstackperm
 dir
 doublefree
 errs1

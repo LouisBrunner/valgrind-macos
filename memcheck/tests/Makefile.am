@@ -20,6 +20,10 @@ EXTRA_DIST = \
 	badjump.stderr.exp badjump.vgtest \
 	badloop.stderr.exp badloop.vgtest \
 	buflen_check.stderr.exp buflen_check.stderr.exp.hd buflen_check.vgtest \
+	clientperm.stderr.exp clientperm.stderr.exp.hd \
+	clientperm.stdout.exp clientperm.vgtest \
+	clientstackperm.stderr.exp clientstackperm.stderr.exp.hd \
+	clientstackperm.stdout.exp clientstackperm.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
@@ -53,7 +57,8 @@ EXTRA_DIST = \
 	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest
 
 noinst_PROGRAMS = \
-	badaddrvalue badfree badjump badloop buflen_check \
+	badaddrvalue badfree badjump badloop buflen_check clientperm \
+	clientstackperm \
 	doublefree errs1 exitprog fprw fwrite inits inline \
 	malloc1 malloc2 manuel1 manuel2 manuel3 \
 	memalign_test memcmptest mmaptest nanoleak pushfpopf \
@@ -61,8 +66,9 @@ noinst_PROGRAMS = \
 	trivialleak tronical weirdioctl	\
 	mismatches new_override
 
-CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
 CXXFLAGS = $(CFLAGS)
+INCLUDES = -I$(top_srcdir)/include
 
 # C ones
 badaddrvalue_SOURCES 	= badaddrvalue.c
@@ -70,6 +76,8 @@ badfree_SOURCES 	= badfree.c
 badjump_SOURCES 	= badjump.c
 badloop_SOURCES 	= badloop.c
 buflen_check_SOURCES	= buflen_check.c
+clientperm_SOURCES 	= clientperm.c
+clientstackperm_SOURCES	= clientstackperm.c
 doublefree_SOURCES 	= doublefree.c
 errs1_SOURCES 		= errs1.c
 exitprog_SOURCES 	= exitprog.c

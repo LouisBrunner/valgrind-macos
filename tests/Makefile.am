@@ -30,4 +30,5 @@ EXTRA_DIST = \
 	pth_once.c weirdioctl.c pth_signal1.c pth_signal2.c \
 	discard.c pth_semaphore1.c new_override.cpp pth_yield.c \
 	sigaltstack.c erringfds.c sigwait_all.c \
-	pth_cancel1.c pth_cancel2.c pth_signal_gober.c nanoleak.c
+	pth_cancel1.c pth_cancel2.c pth_signal_gober.c nanoleak.c \
+	pth_pause.c

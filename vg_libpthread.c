@@ -75,6 +75,10 @@
 
 static void wait_for_fd_to_be_readable_or_erring ( int fd );
 
+static
+int my_do_syscall2 ( int syscallno, 
+                     int arg1, int arg2 );
+
 
 /* ---------------------------------------------------------------------
    Helpers.  We have to be pretty self-sufficient.
@@ -1144,6 +1148,41 @@ int raise (int sig)
     errno = retcode;
     return -1;
   }
+}
+
+
+int pause ( void )
+{
+   unsigned int n_orig, n_now;
+   struct vki_timespec nanosleep_interval;
+   ensure_valgrind("pause");
+
+   /* This is surely a cancellation point. */
+   __my_pthread_testcancel();
+
+   VALGRIND_MAGIC_SEQUENCE(n_orig, 0xFFFFFFFF /* default */,
+                           VG_USERREQ__GET_N_SIGS_RETURNED, 
+                           0, 0, 0, 0);
+   my_assert(n_orig != 0xFFFFFFFF);
+
+   while (1) {
+      VALGRIND_MAGIC_SEQUENCE(n_now, 0xFFFFFFFF /* default */,
+                              VG_USERREQ__GET_N_SIGS_RETURNED, 
+                              0, 0, 0, 0);
+      my_assert(n_now != 0xFFFFFFFF);
+      my_assert(n_now >= n_orig);
+      if (n_now != n_orig) break;
+
+      nanosleep_interval.tv_sec  = 0;
+      nanosleep_interval.tv_nsec = 52 * 1000 * 1000; /* 52 milliseconds */
+      /* It's critical here that valgrind's nanosleep implementation
+         is nonblocking. */
+      (void)my_do_syscall2(__NR_nanosleep, 
+                           (int)(&nanosleep_interval), (int)NULL);
+   }
+
+   * (__errno_location()) = EINTR;
+   return -1;
 }
 
 

@@ -543,6 +543,7 @@ void mostly_clear_thread_record ( ThreadId tid )
    VG_(threads)[tid].cancel_ty   = True; /* PTHREAD_CANCEL_DEFERRED */
    VG_(threads)[tid].cancel_pend = NULL; /* not pending */
    VG_(threads)[tid].custack_used = 0;
+   VG_(threads)[tid].n_signals_returned = 0;
    VG_(ksigemptyset)(&VG_(threads)[tid].sig_mask);
    VG_(ksigemptyset)(&VG_(threads)[tid].sigs_waited_for);
    for (j = 0; j < VG_N_THREAD_KEYS; j++)
@@ -653,6 +654,10 @@ Bool fd_is_valid ( Int fd )
 
    False = request not done.  A more capable but slower mechanism will
    deal with it.  
+
+   2002-06-19: the division between this dispatcher and the one at the
+   end of the file is completely artificial and should be got rid of.
+   There is no longer any good reason for it.  
 */
 static
 Bool maybe_do_trivial_clientreq ( ThreadId tid )
@@ -748,6 +753,9 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
          do__testcancel ( tid );
          return True;
 
+      case VG_USERREQ__GET_N_SIGS_RETURNED:
+         SIMPLE_RETURN(VG_(threads)[tid].n_signals_returned);
+
       default:
          /* Too hard; wimp out. */
          return False;
@@ -800,6 +808,10 @@ void handle_signal_return ( ThreadId tid )
    struct vki_timespec * rem;
 
    vg_assert(VG_(is_valid_tid)(tid));
+
+   /* Increment signal-returned counter.  Used only to implement
+      pause(). */
+   VG_(threads)[tid].n_signals_returned++;
 
    restart_blocked_syscalls = VG_(signal_returns)(tid);
 

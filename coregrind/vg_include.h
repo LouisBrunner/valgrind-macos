@@ -505,6 +505,7 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__GET_KEY_D_AND_S         0x3022
 
 #define VG_USERREQ__NUKE_OTHER_THREADS      0x3023
+#define VG_USERREQ__GET_N_SIGS_RETURNED     0x3024
 
 
 /* Cosmetic ... */
@@ -643,6 +644,12 @@ typedef
       /* When not VgTs_WaitSIG, has no meaning.  When VgTs_WaitSIG,
          is the set of signals for which we are sigwait()ing. */
       vki_ksigset_t sigs_waited_for;
+
+      /* Counts the number of times a signal handler for this thread
+         has returned.  This makes it easy to implement pause(), by
+         polling this value, of course interspersed with nanosleeps,
+         and waiting till it changes. */
+      UInt n_signals_returned;
 
       /* Stacks.  When a thread slot is freed, we don't deallocate its
          stack; we just leave it lying around for the next use of the

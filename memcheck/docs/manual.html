@@ -1216,17 +1216,13 @@ As of 1 May 02, the following programs now work fine on my RedHat 7.2
 box: Opera 6.0Beta2, KNode in KDE 3.0, Mozilla-0.9.2.1 and
 Galeon-0.11.3, both as supplied with RedHat 7.2.
 <p>
-Mozilla 1.0RC1 crashes because it jumps to location zero: <code>Jump
-to the invalid address stated on the next line</code>.  Other people
-have reported the same thing.  Despite considerable effort in tracking
-this down, I cannot figure out what's going on.  If you have a program
-which does this, is small enough that I have half a hope of making
-sense of it, and is open-source (or at least you'd be happy for me to
-look at), I'd be very grateful to have it.
-<p>
-On the other hand, I have received mail from at least one person
-who appears to be successful in running CVS builds of Mozilla on
-Valgrind.
+Mozilla 1.0RC1 works fine too, provided that you patch it as described
+here: <a href="http://bugzilla.mozilla.org/show_bug.cgi?id=124335">
+http://bugzilla.mozilla.org/show_bug.cgi?id=124335</a>.  This fixes a
+bug in Mozilla which assumes that memory returned from
+<code>malloc</code> is 8-aligned.  Valgrind's allocator only
+guarantees 4-alignment, so without the patch Mozilla makes an illegal
+memory access, which Valgrind of course spots, and then bombs.
 
 
 
@@ -1720,14 +1716,6 @@ Programs which are known not to work are:
       Valgrind.  Emacs works fine if you build it to use the standard
       malloc/free routines.</li><br>
       <p>
-  <li>Mozilla 1.0RC1 crashes because it jumps to location zero:
-      <code>Jump to the invalid address stated on the next
-      line</code>.  Other people have reported the same thing.
-      Despite considerable effort in tracking this down, I cannot
-      figure out what's going on.  If you have a program which does
-      this, is small enough that I have half a hope of making sense of
-      it, and is open-source (or at least you'd be happy for me to
-      look at), I'd be very grateful to have it.
 </ul>
 
 

@@ -1531,7 +1531,7 @@ Bool read_lib_symbols ( SegInfo* si )
          VG_(read_debuginfo_stabs) ( si, stab, stab_sz, 
                                          stabstr, stabstr_sz );
       }
-      if (debug_line && VGA_WORD_SIZE==4/*hack*/) {
+      if (debug_line) {
          has_debuginfo = True;
          VG_(read_debuginfo_dwarf2) ( si, debug_line, debug_line_sz );
       }

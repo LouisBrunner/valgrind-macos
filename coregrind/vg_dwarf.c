@@ -159,7 +159,7 @@ void reset_state_machine ( Int is_stmt )
    of sequence.  */
 static 
 int process_extended_line_op( SegInfo *si, Char*** fnames, 
-                              UChar* data, Int is_stmt, Int pointer_size)
+                              UChar* data, Int is_stmt)
 {
   UChar   op_code;
   Int     bytes_read;
@@ -201,10 +201,6 @@ int process_extended_line_op( SegInfo *si, Char*** fnames,
       break;
 
     case DW_LNE_set_address:
-      /* XXX: Pointer size could be 8 */
-      // (and there may be other 32-bit assumptions within this file?
-      //  not sure...  --njn)
-      vg_assert(pointer_size == 4);
       adr = *((Addr *)data);
       if (0) VG_(printf)("smr.a := %p\n", adr );
       state_machine_regs.address = adr;
@@ -214,11 +210,11 @@ int process_extended_line_op( SegInfo *si, Char*** fnames,
       ++ state_machine_regs.last_file_entry;
       name = data;
       if (*fnames == NULL)
-        *fnames = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof (UInt) * 2);
+        *fnames = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof (Char *) * 2);
       else
         *fnames = VG_(arena_realloc)(
                      VG_AR_SYMTAB, *fnames,
-                     sizeof(UInt) * (state_machine_regs.last_file_entry + 1));
+                     sizeof(Char *) * (state_machine_regs.last_file_entry + 1));
       (*fnames)[state_machine_regs.last_file_entry] = VG_(addStr) (si,name, -1);
       data += VG_(strlen) ((char *) data) + 1;
       read_leb128 (data, & bytes_read, 0);
@@ -366,10 +362,10 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 		semantics, we need to malloc the first time. */
 
              if (fnames == NULL)
-               fnames = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof (UInt) * 2);
+               fnames = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof (Char *) * 2);
              else
                fnames = VG_(arena_realloc)(VG_AR_SYMTAB, fnames,
-                           sizeof(UInt) 
+                           sizeof(Char *) 
                               * (state_machine_regs.last_file_entry + 1));
              data += VG_(strlen) ((Char *) data) + 1;
              fnames[state_machine_regs.last_file_entry] = VG_(addStr) (si,name, -1);
@@ -433,7 +429,7 @@ void VG_(read_debuginfo_dwarf2) ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
            case DW_LNS_extended_op:
              data += process_extended_line_op (
                         si, &fnames, data, 
-                        info.li_default_is_stmt, sizeof (Addr));
+                        info.li_default_is_stmt);
              break;
 
            case DW_LNS_copy:

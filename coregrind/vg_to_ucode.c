@@ -4367,6 +4367,25 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       codegen_xchg_eAX_Reg ( cb, sz, opc - 0x90 );
       break;
 
+   /* ------------------------ XLAT ----------------------- */
+
+   case 0xD7: /* XLAT */
+      t1 = newTemp(cb); t2 = newTemp(cb);
+      uInstr2(cb, GET, sz, ArchReg, R_EBX, TempReg, t1); /* get eBX */
+      handleSegOverride( cb, sorb, t1 );               /* make t1 DS:eBX */
+      uInstr2(cb, GET, 1, ArchReg, R_AL, TempReg, t2); /* get AL */
+      /* Widen %AL to 32 bits, so it's all defined when we add it. */
+      uInstr1(cb, WIDEN, 4, TempReg, t2);
+      LAST_UINSTR(cb).extra4b = 1;
+      LAST_UINSTR(cb).signed_widen = False;
+      uInstr2(cb, ADD, sz, TempReg, t2, TempReg, t1);  /* add AL to eBX */
+      uInstr2(cb, LOAD, 1, TempReg, t1,  TempReg, t2); /* get byte at t1 into t2 */
+      uInstr2(cb, PUT, 1, TempReg, t2, ArchReg, R_AL); /* put byte into AL */
+
+      if (dis)
+         VG_(printf)("xlat%c [ebx]\n", nameISize(sz));
+      break;
+
    /* ------------------------ (Grp1 extensions) ---------- */
 
    case 0x80: /* Grp1 Ib,Eb */

@@ -316,6 +316,7 @@ AC_OUTPUT(
    lackey/Makefile
    none/Makefile
    none/tests/Makefile
+   none/docs/Makefile
 ) 
 
 cat<<EOF

@@ -15,5 +15,4 @@ EXTRA_DIST = \
 	blocked_syscall.c \
 	clientperm.c \
 	clientstackperm.c \
-	discard.c \
-	resolv.c
+	discard.c

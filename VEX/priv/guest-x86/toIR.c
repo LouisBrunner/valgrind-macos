@@ -104,6 +104,9 @@ static void unimplemented ( Char* str )
 #define R_ESI 6
 #define R_EDI 7
 
+#define R_AL (0+R_EAX)
+#define R_AH (4+R_EAX)
+
 
 static UInt extend_s_8to32( UInt x )
 {
@@ -1931,6 +1934,20 @@ void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
          assign( dst64, binop(op, mkexpr(src64), unop(widen1632,mkexpr(t))) );
          putIReg( 2, R_EAX, unop(Iop_32to16,unop(Iop_64to32,mkexpr(dst64))) );
          putIReg( 2, R_EDX, unop(Iop_32to16,unop(Iop_64HIto32,mkexpr(dst64))) );
+         break;
+      }
+      case 1: {
+         IROp widen3264 = signed_divide ? Iop_32Sto64 : Iop_32Uto64;
+         IROp widen1632 = signed_divide ? Iop_16Sto32 : Iop_16Uto32;
+         IROp widen816  = signed_divide ? Iop_8Sto16  : Iop_8Uto16;
+         assign( src64, unop(widen3264, unop(widen1632, getIReg(2,R_EAX))) );
+         assign( dst64, 
+                 binop(op, mkexpr(src64), 
+                           unop(widen1632, unop(widen816, mkexpr(t)))) );
+         putIReg( 1, R_AL, unop(Iop_16to8, unop(Iop_32to16,
+                           unop(Iop_64to32,mkexpr(dst64)))) );
+         putIReg( 1, R_AH, unop(Iop_16to8, unop(Iop_32to16,
+                           unop(Iop_64HIto32,mkexpr(dst64)))) );
          break;
       }
       default: vpanic("codegen_div(x86)");
@@ -3789,6 +3806,15 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
          delta++;
          switch (modrm) {
+
+            case 0xC8 ... 0xCF: /* FCMOVNE(NZ) ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xC8;
+	       DIP("fcmovnz %%st(%d), %%st(0)", r_src);
+	       put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,calculate_condition(CondNZ)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
 
             case 0xE8 ... 0xEF: /* FUCOMI %st(0),%st(?) */
                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, False );

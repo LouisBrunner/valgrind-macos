@@ -925,12 +925,13 @@ enum dwarf_line_number_x_ops
 
 typedef struct State_Machine_Registers
 {
-  Addr  address;
-  /* Holds the address of the last statement boundary.
-   * We use it to calculate statement lengths. Without it,
-   * we would need to search backwards for last statement begin
-   * each time we are emitting a statement with addLineInfo */
+  /* Information for the last statement boundary.
+   * Needed to calculate statement lengths. */
   Addr  last_address;
+  UInt  last_file;
+  UInt  last_line;
+
+  Addr  address;
   UInt  file;
   UInt  line;
   UInt  column;
@@ -979,8 +980,10 @@ static
 void reset_state_machine ( Int is_stmt )
 {
   if (0) VG_(printf)("smr.a := %p (reset)\n", 0 );
-  state_machine_regs.address = 0;
   state_machine_regs.last_address = 0;
+  state_machine_regs.last_file = 1;
+  state_machine_regs.last_line = 1;
+  state_machine_regs.address = 0;
   state_machine_regs.file = 1;
   state_machine_regs.line = 1;
   state_machine_regs.column = 0;
@@ -1027,10 +1030,10 @@ int process_extended_line_op( SegInfo *si, UInt** fnames,
       */
       if (state_machine_regs.is_stmt) {
 	  if (state_machine_regs.last_address)
-	      addLineInfo (si, (*fnames)[state_machine_regs.file], 
+	      addLineInfo (si, (*fnames)[state_machine_regs.last_file], 
                        si->offset + state_machine_regs.last_address, 
                        si->offset + state_machine_regs.address, 
-                       state_machine_regs.line, 0);
+                       state_machine_regs.last_line, 0);
       }
       reset_state_machine (is_stmt);
       break;
@@ -1249,16 +1252,19 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
              adv = (op_code % info.li_line_range) + info.li_line_base;
              if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
                                 si->offset, state_machine_regs.address );
+             state_machine_regs.line += adv;
+
 	     if (state_machine_regs.is_stmt) {
 		 /* only add a statement if there was a previous boundary */
 		 if (state_machine_regs.last_address) 
-		     addLineInfo (si, fnames[state_machine_regs.file], 
+		     addLineInfo (si, fnames[state_machine_regs.last_file], 
 			      si->offset + state_machine_regs.last_address, 
                               si->offset + state_machine_regs.address, 
-                              state_machine_regs.line, 0);
+                              state_machine_regs.last_line, 0);
 		 state_machine_regs.last_address = state_machine_regs.address;
+		 state_machine_regs.last_file = state_machine_regs.file;
+		 state_machine_regs.last_line = state_machine_regs.line;
 	     }
-             state_machine_regs.line += adv;
            }
          else switch (op_code)
            {
@@ -1274,11 +1280,13 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 	     if (state_machine_regs.is_stmt) {
 		 /* only add a statement if there was a previous boundary */
 		 if (state_machine_regs.last_address) 
-		     addLineInfo (si, fnames[state_machine_regs.file], 
+		     addLineInfo (si, fnames[state_machine_regs.last_file], 
                               si->offset + state_machine_regs.last_address, 
                               si->offset + state_machine_regs.address,
-                              state_machine_regs.line , 0);
+                              state_machine_regs.last_line , 0);
 		 state_machine_regs.last_address = state_machine_regs.address;
+		 state_machine_regs.last_file = state_machine_regs.file;
+		 state_machine_regs.last_line = state_machine_regs.line;
 	     }
              state_machine_regs.basic_block = 0; /* JRS added */
              break;

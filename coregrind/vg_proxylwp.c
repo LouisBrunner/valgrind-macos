@@ -882,7 +882,7 @@ static Int do_futex(void *addr, Int op, Int val, struct vki_timespec *time, void
 #define VKI_FUTEX_FD		2
 #define VKI_FUTEX_REQUEUE	3
 
-static Int have_futex = -1;	/* -1 -> unknown */
+static Int have_settid = -1;	/* -1 -> unknown */
 
 /*
   Create a proxy LWP using whatever varient of clone makes the most
@@ -894,27 +894,24 @@ static Int proxy_clone(ProxyLWP *proxy)
 {
    Int ret;
 
-   if (VG_(clo_assume_24))
-      have_futex = 0;
-
-   if (have_futex == -1)
-      have_futex = do_futex(NULL, VKI_FUTEX_WAKE, 0, NULL, NULL) != -VKI_ENOSYS;
-
-   if (have_futex) {
+   if (have_settid != 0) {
       ret = VG_(clone)(proxylwp, 
 		       LWP_stack(proxy),
 		       VKI_CLONE_FS | VKI_CLONE_FILES | VKI_CLONE_VM |
-		       VKI_CLONE_SIGHAND | VKI_CLONE_THREAD | 
-		       VKI_CLONE_PARENT_SETTID |
-		       VKI_CLONE_CHILD_CLEARTID | VKI_CLONE_DETACHED, 
+		       VKI_CLONE_SIGHAND | VKI_CLONE_THREAD /*| 
+		       VKI_CLONE_PARENT_SETTID 
+		       VKI_CLONE_CHILD_CLEARTID | VKI_CLONE_DETACHED*/, 
 		       proxy, &proxy->lwp, &proxy->lwp);
+      if ( have_settid < 0 && !proxy->lwp ) {
+         have_settid = 0;
+         proxy->lwp = ret;
+         VG_(do_signal_routing) = True; /* XXX True, it seems kernels
+                                        which have futex also have
+                                        sensible signal handling, but
+                                        it would be nice to test it
+                                        directly. */
+       }
    } else {
-      VG_(do_signal_routing) = True; /* XXX True, it seems kernels
-					which have futex also have
-					sensible signal handling, but
-					it would be nice to test it
-					directly. */
-
       ret = VG_(clone)(proxylwp, 
 		       LWP_stack(proxy),
 		       VKI_CLONE_FS | VKI_CLONE_FILES | VKI_CLONE_VM |
@@ -931,14 +928,14 @@ static Bool proxy_wait(ProxyLWP *proxy, Bool block, Int *status)
 {
    Bool ret = False;
 
-   if (have_futex == -1)
+   if (have_settid == -1)
       return False;
 
-   if (have_futex) {
+   if (have_settid) {
       if (block) {
 	 Int lwp = proxy->lwp;
 
-	 while(proxy->lwp != 0)
+	 if(proxy->lwp != 0)
 	    do_futex(&proxy->lwp, VKI_FUTEX_WAIT, lwp, NULL, NULL);
 
 	 if (status)
@@ -984,6 +981,8 @@ void VG_(proxy_create)(ThreadId tid)
 
    proxy->tid = tid;
    proxy->tst = tst;
+   proxy->exitcode = 0;
+   proxy->lwp = 0;
    proxy->siginfo.si_signo = 0;
    proxy->frommain = VG_(safe_fd)(p[0]);
    proxy->topx = VG_(safe_fd)(p[1]);
@@ -1312,7 +1311,7 @@ void VG_(proxy_sanity)(void)
    for(tid = 0; tid < VG_N_THREADS; tid++) {
       ThreadState *tst = &VG_(threads)[tid];
       ProxyLWP *px;
-      Int status;
+      Int status = 0;
       Int ret;
 
       if (tst->status == VgTs_Empty)

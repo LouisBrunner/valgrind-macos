@@ -362,7 +362,7 @@ static void newpid(ThreadId unused)
 /* Look for our AUXV table */
 int scan_auxv(void* init_sp)
 {
-   const struct ume_auxv *auxv = find_auxv((int *)init_sp);
+   const struct ume_auxv *auxv = find_auxv((UWord*)init_sp);
    int padfile = -1, found = 0;
 
    for (; auxv->a_type != AT_NULL; auxv++)

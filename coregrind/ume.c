@@ -115,19 +115,19 @@ void foreach_map(int (*fn)(char *start, char *end,
 /*--- Finding auxv on the stack                            ---*/
 /*------------------------------------------------------------*/
 
-struct ume_auxv *find_auxv(int *esp)
+struct ume_auxv *find_auxv(UWord* sp)
 {
-   esp++;			/* skip argc */
+   sp++;                // skip argc (Nb: is word-sized, not int-sized!)
 
-   while(*esp != 0)		/* skip argv */
-      esp++;
-   esp++;
+   while (*sp != 0)     // skip argv
+      sp++;
+   sp++;
 
-   while(*esp != 0)		/* skip env */
-      esp++;
-   esp++;
+   while (*sp != 0)     // skip env
+      sp++;
+   sp++;
    
-   return (struct ume_auxv *)esp;
+   return (struct ume_auxv *)sp;
 }
 
 /*------------------------------------------------------------*/

@@ -35,6 +35,8 @@
 #include <elf.h>
 #include <sys/types.h>
 
+#include "basic_types.h"
+
 /*------------------------------------------------------------*/
 /*--- General stuff                                        ---*/
 /*------------------------------------------------------------*/
@@ -104,7 +106,7 @@ struct ume_auxv
    } u;
 };
 
-struct ume_auxv *find_auxv(int *orig_esp);
+struct ume_auxv *find_auxv(UWord* orig_esp);
 
 /* Our private auxv entries */
 #define AT_UME_PADFD	0xff01	/* padding file fd */

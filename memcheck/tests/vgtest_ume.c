@@ -51,7 +51,7 @@ static void test__find_auxv(void)
    assert(init_sp != NULL);
    
    fprintf(stderr, "Calling find_auxv()\n");
-   auxv = find_auxv((int*)init_sp);
+   auxv = find_auxv((UWord*)init_sp);
 
    // Check the auxv value looks sane
    assert((void*)auxv > (void*)init_sp);
@@ -65,6 +65,7 @@ static void test__find_auxv(void)
          break;
    
       default:
+         fprintf(stderr, "auxv->a_type = %d\n", auxv->a_type);
          assert(0);
       }
    }

@@ -394,23 +394,23 @@ HChar* showPPC32AluOp ( PPC32AluOp op ) {
    switch (op) {
       case Palu_CMP:  return "cmp";
       case Palu_ADD:  return "add";
-      case Palu_SUB:  return "sub";
+      case Palu_SUB:  return "subf";
       case Palu_ADC:  return "adc";
       case Palu_SBB:  return "sbb";
       case Palu_AND:  return "and";
       case Palu_OR:   return "or";
       case Palu_XOR:  return "xor";
-      case Palu_MUL:  return "mul";
+      case Palu_MUL:  return "mull";
       default: vpanic("showPPC32AluOp");
    }
 }
 
 HChar* showPPC32ShiftOp ( PPC32ShiftOp op ) {
    switch (op) {
-      case Psh_SHL: return "shl";
-      case Psh_SHR: return "shr";
-      case Psh_SAR: return "sar";
-      case Psh_ROL: return "rol";
+      case Psh_SHL: return "slw";
+      case Psh_SHR: return "srw";
+      case Psh_SAR: return "sraw";
+      case Psh_ROL: return "rlw";
       default: vpanic("showPPC32ShiftOp");
    }
 }
@@ -678,7 +678,8 @@ void ppPPC32Instr ( PPC32Instr* i )
 	     ppPPC32RI(i->Pin.Alu32.src2);
 	     return;
 	 }
-	 vex_printf("%s ", showPPC32AluOp(i->Pin.Alu32.op));
+	 vex_printf("%s%s ", showPPC32AluOp(i->Pin.Alu32.op),
+		    i->Pin.Alu32.src2->tag == Pri_Imm ? "i" : "" );
 	 ppHRegPPC32(i->Pin.Alu32.dst);
 	 vex_printf(",");
 	 ppHRegPPC32(i->Pin.Alu32.src1);
@@ -686,7 +687,8 @@ void ppPPC32Instr ( PPC32Instr* i )
 	 ppPPC32RI(i->Pin.Alu32.src2);
          return;
       case Pin_Sh32:
-         vex_printf("%sl ", showPPC32ShiftOp(i->Pin.Sh32.op));
+         vex_printf("%s%s ", showPPC32ShiftOp(i->Pin.Sh32.op),
+		    i->Pin.Sh32.shft->tag == Pri_Imm ? "i" : "" );
          ppHRegPPC32(i->Pin.Sh32.dst);
          vex_printf(",");
          ppHRegPPC32(i->Pin.Sh32.src);
@@ -694,7 +696,7 @@ void ppPPC32Instr ( PPC32Instr* i )
          ppPPC32RI(i->Pin.Sh32.shft);
          return;
       case Pin_Test32:
-         vex_printf("testl ");
+         vex_printf("test ");
          ppHRegPPC32(i->Pin.Test32.dst);
          vex_printf(",");
          ppPPC32RI(i->Pin.Test32.src);
@@ -757,11 +759,11 @@ void ppPPC32Instr ( PPC32Instr* i )
                        showPPC32CondCode(i->Pin.Goto.cond));
 	 }
          if (i->Pin.Goto.jk != Ijk_Boring) {
-            vex_printf("movl %%r31, $");
+            vex_printf("la %%r31, $");
             ppIRJumpKind(i->Pin.Goto.jk);
             vex_printf(" ; ");
          }
-         vex_printf("movl ");
+         vex_printf("la ");
          vex_printf("%%r4, ");
          ppPPC32RI(i->Pin.Goto.dst);
          vex_printf(" ; ret");
@@ -806,8 +808,7 @@ void ppPPC32Instr ( PPC32Instr* i )
          return;
        }
       case Pin_Set32:
-// CAB: find 'setl' equivalent...
-         vex_printf("setl%s ", showPPC32CondCode(i->Pin.Set32.cond));
+         vex_printf("set%s ", showPPC32CondCode(i->Pin.Set32.cond));
          ppHRegPPC32(i->Pin.Set32.dst);
          return;
 //..       case Xin_Bsfr32:
@@ -1424,9 +1425,8 @@ PPC32Instr* genReload_PPC32 ( HReg rreg, Int offsetB )
 }
 
 
-/* --------- The x86 assembler (bleh.) --------- */
+/* --------- The ppc32 assembler (bleh.) --------- */
 
-#if 0
 static UInt iregNo ( HReg r )
 {
    UInt n;
@@ -1436,7 +1436,6 @@ static UInt iregNo ( HReg r )
    vassert(n <= 32);
    return n;
 }
-#endif
 
 //.. static UInt fregNo ( HReg r )
 //.. {
@@ -1468,14 +1467,14 @@ static UInt iregNo ( HReg r )
 //..    return ((shift & 3) << 6) | ((regindex & 7) << 3) | (regbase & 7);
 //.. }
 
-//.. static UChar* emit32 ( UChar* p, UInt w32 )
-//.. {
-//..    *p++ = (w32)       & 0x000000FF;
-//..    *p++ = (w32 >>  8) & 0x000000FF;
-//..    *p++ = (w32 >> 16) & 0x000000FF;
-//..    *p++ = (w32 >> 24) & 0x000000FF;
-//..    return p;
-//.. }
+static UChar* emit32 ( UChar* p, UInt w32 )
+{
+   *p++ = (w32)       & 0x000000FF;
+   *p++ = (w32 >>  8) & 0x000000FF;
+   *p++ = (w32 >> 16) & 0x000000FF;
+   *p++ = (w32 >> 24) & 0x000000FF;
+   return p;
+}
 
 //.. /* Does a sign-extend of the lowest 8 bits give 
 //..    the original number? */
@@ -1667,6 +1666,58 @@ static UInt iregNo ( HReg r )
 //..    }
 //..    return p;
 //.. }
+
+static UChar* mkFormD ( UChar* p, UInt op1, UInt r1, UInt r2, UInt imm )
+{
+   vassert(op1 < 0x40);
+   vassert(r1  < 0x20);
+   vassert(r2  < 0x20);
+   vassert(imm < 0x10000);
+   UInt theInstr = ((op1<<26) | (r1<<21) | (r2<<16) | (imm));
+   return emit32(p, theInstr);
+}
+
+static UChar* mkFormX ( UChar* p, UInt op1, UInt r1, UInt r2,
+			UInt r3, UInt op2, UInt b0 )
+{
+   vassert(op1 < 0x40);
+   vassert(r1  < 0x20);
+   vassert(r2  < 0x20);
+   vassert(r3  < 0x20);
+   vassert(op2 < 0x400);
+   vassert(b0  < 0x2);
+   UInt theInstr = ((op1<<26) | (r1<<21) | (r2<<16) |
+		    (r3<<11) | (op2<<1) | (b0));
+   return emit32(p, theInstr);
+}
+
+
+static UChar* doAMode_IR ( UChar* p, UInt op1, HReg hrSD, PPC32AMode* am )
+{
+   vassert(am->tag == Pam_IR);
+   UInt rSD = iregNo(hrSD);
+   UInt rA  = iregNo(am->Pam.IR.base);
+   UInt idx = am->Pam.IR.index;
+   vassert(idx < 0x10000);
+   
+   p = mkFormD(p, op1, rSD, rA, idx);
+   return p;
+}
+
+
+static UChar* doAMode_RR ( UChar* p, UInt op1, UInt op2,
+			   HReg hrSD, PPC32AMode* am )
+{
+//   vassert(hregClass(hrSD) == HRcInt32);   // CAB: worth doing this?
+   vassert(am->tag == Pam_RR);
+   UInt rSD = iregNo(hrSD);
+   UInt rA  = iregNo(am->Pam.RR.base);
+   UInt rB  = iregNo(am->Pam.RR.index);
+   
+   p = mkFormX(p, op1, rSD, rA, rB, op2, 0);
+   return p;
+}
+
 
 /* Emit an instruction into buf and return the number of bytes used.
    Note that buf is not the insn's final place, and therefore it is
@@ -2118,22 +2169,32 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //.. #endif
 //..       break;
 
-//..    case Xin_LoadEX:
-//..       if (i->Xin.LoadEX.szSmall == 1 && !i->Xin.LoadEX.syned) {
-//..          /* movzbl */
-//..          *p++ = 0x0F;
-//..          *p++ = 0xB6;
-//..          p = doAMode_M(p, i->Xin.LoadEX.dst, i->Xin.LoadEX.src); 
-//..          goto done;
-//..       }
-//..       if (i->Xin.LoadEX.szSmall == 2 && !i->Xin.LoadEX.syned) {
-//..          /* movzwl */
-//..          *p++ = 0x0F;
-//..          *p++ = 0xB7;
-//..          p = doAMode_M(p, i->Xin.LoadEX.dst, i->Xin.LoadEX.src); 
-//..          goto done;
-//..       }
-//..       break;
+   case Pin_LoadEX: {
+      UInt op1, op2, sz = i->Pin.LoadEX.sz;
+      switch (i->Pin.LoadEX.src->tag) {
+      case Pam_IR:
+	  if (sz == 2) {  // the only signed load
+	      op1 = (i->Pin.LoadEX.syned) ? 42: 40;
+	  } else {
+	      vassert(i->Pin.LoadEX.syned == False);
+	      op1 = (sz == 1) ? 34 : 32;
+	  }
+	  p = doAMode_IR(p, op1, i->Pin.LoadEX.dst, i->Pin.LoadEX.src);
+	  goto done;
+      case Pam_RR:
+	  op1 = 31;
+	  if (sz == 2) {  // the only signed load
+	      op2 = (i->Pin.LoadEX.syned) ? 343: 279;
+	  } else {
+	      vassert(i->Pin.LoadEX.syned == False);
+	      op2 = (sz == 1) ? 87 : 23;
+	  }
+	  p = doAMode_RR(p, op1, op2, i->Pin.LoadEX.dst, i->Pin.LoadEX.src);
+	  goto done;
+      default:
+	  goto bad;
+      }
+   }
 
 //..    case Xin_Set32:
 //..       /* Make the destination register be 1 or 0, depending on whether
@@ -2204,64 +2265,23 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..       }
 //..       break;
 
-//..    case Xin_Store:
-//..       if (i->Xin.Store.sz == 2) {
-//..          /* This case, at least, is simple, given that we can
-//..             reference the low 16 bits of any integer register. */
-//..          *p++ = 0x66;
-//..          *p++ = 0x89;
-//..          p = doAMode_M(p, i->Xin.Store.src, i->Xin.Store.dst);
-//..          goto done;
-//..       }
-//.. 
-//..       if (i->Xin.Store.sz == 1) {
-//..          /* We have to do complex dodging and weaving if src is not
-//..             the low 8 bits of %eax/%ebx/%ecx/%edx. */
-//..          if (iregNo(i->Xin.Store.src) < 4) {
-//..             /* we're OK, can do it directly */
-//..             *p++ = 0x88;
-//..             p = doAMode_M(p, i->Xin.Store.src, i->Xin.Store.dst);
-//..            goto done;
-//..          } else {
-//..             /* Bleh.  This means the source is %edi or %esi.  Since
-//..                the address mode can only mention three registers, at
-//..                least one of %eax/%ebx/%ecx/%edx must be available to
-//..                temporarily swap the source into, so the store can
-//..                happen.  So we have to look at the regs mentioned
-//..                in the amode. */
-//..             HReg swap = INVALID_HREG;
-//..             HReg  eax = hregX86_EAX(), ebx = hregX86_EBX(), 
-//..                   ecx = hregX86_ECX(), edx = hregX86_EDX();
-//..             Bool a_ok = True, b_ok = True, c_ok = True, d_ok = True;
-//..             HRegUsage u;
-//..             Int j;
-//..             initHRegUsage(&u);
-//..             addRegUsage_X86AMode(&u,  i->Xin.Store.dst);
-//..             for (j = 0; j < u.n_used; j++) {
-//..                HReg r = u.hreg[j];
-//..                if (r == eax) a_ok = False;
-//..                if (r == ebx) b_ok = False;
-//..                if (r == ecx) c_ok = False;
-//..                if (r == edx) d_ok = False;
-//..             }
-//..             if (a_ok) swap = eax;
-//..             if (b_ok) swap = ebx;
-//..             if (c_ok) swap = ecx;
-//..             if (d_ok) swap = edx;
-//..             vassert(swap != INVALID_HREG);
-//..             /* xchgl %source, %swap. Could do better if swap is %eax. */
-//..             *p++ = 0x87;
-//..             p = doAMode_R(p, i->Xin.Store.src, swap);
-//..             /* movb lo8{%swap}, (dst) */
-//..             *p++ = 0x88;
-//..             p = doAMode_M(p, swap, i->Xin.Store.dst);
-//..             /* xchgl %source, %swap. Could do better if swap is %eax. */
-//..             *p++ = 0x87;
-//..             p = doAMode_R(p, i->Xin.Store.src, swap);
-//..             goto done;
-//..          }
-//..       } /* if (i->Xin.Store.sz == 1) */
-//..       break;
+   case Pin_Store: {
+      UInt op1, op2, sz = i->Pin.Store.sz;
+      switch (i->Pin.Store.dst->tag) {
+      case Pam_IR:
+	  op1 = (sz == 1) ? 38 : ((sz == 2) ? 44 : 36);
+	  p = doAMode_IR(p, op1, i->Pin.Store.src, i->Pin.Store.dst);
+	  goto done;
+      case Pam_RR:
+	  op1 = 31;
+	  op2 = (sz == 1) ? 215 : ((sz == 2) ? 407 : 151);
+	  p = doAMode_RR(p, op1, op2, i->Pin.Store.src, i->Pin.Store.dst);
+	  goto done;
+      default:
+	  goto bad;
+      }
+      goto done;
+   }
 
 //..    case Xin_FpUnary:
 //..       /* gop %src, %dst
@@ -2688,7 +2708,6 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
    vpanic("emit_PPC32Instr");
    /*NOTREACHED*/
    
-  goto done;  // CAB: Rem to remove - Just reducing compiler warnings.
   done:
    vassert(p - &buf[0] <= 32);
    return p - &buf[0];

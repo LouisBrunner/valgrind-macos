@@ -1007,6 +1007,9 @@ void setFlags_DEP1_DEP2 ( IROp op8, IRTemp dep1, IRTemp dep2, IRType ty )
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(dep2))) );
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 }
 
 
@@ -1029,6 +1032,9 @@ void setFlags_DEP1 ( IROp op8, IRTemp dep1, IRType ty )
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)) );
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 }
 
 
@@ -1070,6 +1076,9 @@ static void setFlags_DEP1_DEP2_shift ( IROp    op32,
                      IRExpr_Mux0X( mkexpr(guard),
                                    IRExpr_Get(OFFB_CC_DEP2,Ity_I32),
                                    widenUto32(mkexpr(resUS)))) );
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 }
 
 
@@ -1114,6 +1123,9 @@ void setFlags_MUL ( IRType ty, IRTemp arg1, IRTemp arg2, UInt base_op )
    }
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(arg1)) ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(arg2)) ));
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 }
 
 
@@ -1792,6 +1804,9 @@ void codegen_XOR_reg_with_itself ( Int size, Int ge_reg )
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
    stmt( IRStmt_Put( OFFB_CC_DEP1, mkU32(X86G_CC_MASK_Z|X86G_CC_MASK_P) ));
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
    DIP("xor%c %s, %s\n", nameISize(size),
                          nameIReg(size,ge_reg), nameIReg(size,ge_reg) );
 }
@@ -2376,6 +2391,9 @@ UInt dis_Grp2 ( UChar  sorb,
       stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
       stmt( IRStmt_Put( OFFB_CC_DEP1, unop(Iop_64HIto32, mkexpr(r64)) ));
       stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+      /* Set NDEP even though it isn't used.  This makes redundant-PUT
+         elimination of previous stores to this field work better. */
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
    }
 
    if (isShift) {
@@ -2607,6 +2625,9 @@ UInt dis_Grp8_Imm ( UChar       sorb,
                   binop(Iop_Shr32, mkexpr(t2), mkU8(src_val)),
                   mkU32(1))
        ));
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 
    /* Compute the new value into t2m, if non-BT. */
    switch (gregOfRM(modrm)) {
@@ -3574,6 +3595,9 @@ static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
                             binop(Iop_CmpF64, get_ST(0), get_ST(i)),
                             mkU32(0x45)
        )));
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
    if (pop_after)
       fp_pop();
 }
@@ -5882,6 +5906,9 @@ UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
                         mkexpr(t_bitno2)),
                   mkU32(1)))
        );
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 
    /* Move reg operand from stack back to reg */
    if (epartIsReg(modrm)) {
@@ -5954,6 +5981,9 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, UInt delta, Bool fwds )
                           mkU32(0)
                         )
        ));
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 
    /* Result: iff source value is zero, we can't use
       Iop_Clz32/Iop_Ctz32 as they have no defined result in that case.
@@ -6042,6 +6072,9 @@ void codegen_SAHF ( void )
                      mkU32(mask_SZACP))
               )
    ));
+   /* Set NDEP even though it isn't used.  This makes redundant-PUT
+      elimination of previous stores to this field work better. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 }
 
 
@@ -7315,7 +7348,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                             unop(Iop_F32toF64,mkexpr(argR))),
                       mkU32(0x45)
           )));
-
+      /* Set NDEP even though it isn't used.  This makes redundant-PUT
+         elimination of previous stores to this field work better. */
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
       goto decode_success;
    }
 
@@ -8324,7 +8359,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                       binop(Iop_CmpF64, mkexpr(argL), mkexpr(argR)),
                       mkU32(0x45)
           )));
-
+      /* Set NDEP even though it isn't used.  This makes redundant-PUT
+         elimination of previous stores to this field work better. */
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
       goto decode_success;
    }
 
@@ -11033,6 +11070,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                              )
                        )
           );
+      /* Set NDEP even though it isn't used.  This makes redundant-PUT
+         elimination of previous stores to this field work better. */
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 
       /* Also need to set the D flag, which is held in bit 10 of t1.
          If zero, put 1 in OFFB_DFLAG, else -1 in OFFB_DFLAG. */

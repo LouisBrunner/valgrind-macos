@@ -5710,24 +5710,15 @@ PREx(sys_pause, MayBlock)
 // XXX: x86-specific
 PREx(sys_sigsuspend, MayBlock)
 {
-   // XXX: is this right?  sys_sigsuspend prototype looks like this:
-   //
-   //   int sys_sigsuspend(int history0, int history1, old_sigset_t mask)
-   //
-   PRINT("sys_sigsuspend ( %p )", arg1 );
-   PRE_REG_READ1(int, "sigsuspend",    // XXX: is this right?
+   PRINT("sys_sigsuspend ( %d, %d, %d )", arg1,arg2,arg3 );
+   PRE_REG_READ3(int, "sigsuspend",
+                 int, history0, int, history1,
                  vki_old_sigset_t, mask);
-   if (arg1 != (Addr)NULL) {
-      PRE_MEM_READ( "sigsuspend(mask)", arg1, sizeof(vki_old_sigset_t) );
-   }
 }
 
 // XXX: x86-specific
 PREx(sys_rt_sigsuspend, MayBlock)
 {
-   // XXX: is this right?  sys_rt_sigsuspend prototype looks like this:
-   //
-   // int sys_rt_sigsuspend(struct pt_regs regs)
    PRINT("sys_rt_sigsuspend ( %p, %d )", arg1,arg2 );
    PRE_REG_READ2(int, "rt_sigsuspend", vki_sigset_t *, mask, vki_size_t, size)
    if (arg1 != (Addr)NULL) {

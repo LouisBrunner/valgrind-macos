@@ -1443,6 +1443,10 @@ extern Bool VG_(is_just_below_ESP)( Addr esp, Addr aa );
    like netscape. */
 #define VG_PLAUSIBLE_STACK_SIZE 8000000
 
+/* Needed by the pthreads implementation. */
+#define VGM_WORD_VALID     0
+#define VGM_WORD_INVALID   0xFFFFFFFF
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_syscall_mem.c

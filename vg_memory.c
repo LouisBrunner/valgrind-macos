@@ -294,8 +294,10 @@ static SecMap  vg_distinguished_secondary_map;
 #define VGM_BYTE_VALID     0
 #define VGM_BYTE_INVALID   0xFF
 
+/* Now in vg_include.h.
 #define VGM_WORD_VALID     0
 #define VGM_WORD_INVALID   0xFFFFFFFF
+*/
 
 #define VGM_EFLAGS_VALID   0xFFFFFFFE
 #define VGM_EFLAGS_INVALID 0xFFFFFFFF

@@ -613,6 +613,7 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
 {
 #  define SIMPLE_RETURN(vvv)                      \
        { tst->m_edx = (vvv);                      \
+         tst->sh_edx = VGM_WORD_VALID;            \
          return True;                             \
        }
 
@@ -1490,11 +1491,18 @@ VgSchedReturnCode VG_(scheduler) ( void )
 #include <errno.h>
 
 #define VG_PTHREAD_STACK_MIN \
-             (VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB)
+   (VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB)
 
 /*  /usr/include/bits/pthreadtypes.h:
     typedef unsigned long int pthread_t;
 */
+
+/* Write a value to the client's %EDX (request return value register)
+   and set the shadow to indicate it is defined. */
+#define SET_EDX(zztid, zzval)                          \
+   do { vg_threads[zztid].m_edx = (zzval);             \
+        vg_threads[zztid].sh_edx = VGM_WORD_VALID;     \
+   } while (0)
 
 
 /* -----------------------------------------------------------
@@ -1512,7 +1520,7 @@ void do_pthread_cancel ( ThreadId  tid,
 
    if (!is_valid_tid(tid_cancellee)
        || vg_threads[tid_cancellee].status == VgTs_Empty) {
-      vg_threads[tid].m_edx = ESRCH;
+      SET_EDX(tid, ESRCH);
       return;
    }
 
@@ -1529,7 +1537,7 @@ void do_pthread_cancel ( ThreadId  tid,
    vg_threads[tid_cancellee].status = VgTs_Runnable;
 
    /* We return with success (0). */
-   vg_threads[tid].m_edx = 0;
+   SET_EDX(tid, 0);
 }
 
 
@@ -1594,7 +1602,7 @@ void handle_pthread_return ( ThreadId tid, void* retval )
       jnr_thread_return = (void**)(jnr_args[2]);
       if (jnr_thread_return != NULL)
          *jnr_thread_return = vg_threads[tid].retval;
-      vg_threads[jnr].m_edx = 0; /* success */
+      SET_EDX(jnr, 0); /* success */
       vg_threads[jnr].status = VgTs_Runnable;
       vg_threads[tid].status = VgTs_Empty; /* bye! */
       if (VG_(clo_instrument) && tid != 0)
@@ -1626,7 +1634,7 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
    vg_assert(vg_threads[tid].status == VgTs_Runnable);
 
    if (jee == tid) {
-      vg_threads[tid].m_edx = EDEADLK; /* libc constant, not a kernel one */
+      SET_EDX(tid, EDEADLK); /* libc constant, not a kernel one */
       vg_threads[tid].status = VgTs_Runnable;
       return;
    }
@@ -1635,14 +1643,14 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
        || jee >= VG_N_THREADS
        || vg_threads[jee].status == VgTs_Empty) {
       /* Invalid thread to join to. */
-      vg_threads[tid].m_edx = EINVAL;
+      SET_EDX(tid, EINVAL);
       vg_threads[tid].status = VgTs_Runnable;
       return;
    }
 
    if (vg_threads[jee].joiner != VG_INVALID_THREADID) {
       /* Someone already did join on this thread */
-      vg_threads[tid].m_edx = EINVAL;
+      SET_EDX(tid, EINVAL);
       vg_threads[tid].status = VgTs_Runnable;
       return;
    }
@@ -1654,9 +1662,14 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
       free it properly (also above). */
    if (vg_threads[jee].status == VgTs_WaitJoiner) {
       vg_assert(vg_threads[jee].joiner == VG_INVALID_THREADID);
-      vg_threads[tid].m_edx = 0; /* success */
-      if (thread_return != NULL) 
+      SET_EDX(tid, 0); /* success */
+      if (thread_return != NULL) {
          *thread_return = vg_threads[jee].retval;
+	 /* Not really right, since it makes the thread's return value
+            appear to be defined even if it isn't. */
+         if (VG_(clo_instrument))
+            VGM_(make_readable)( (Addr)thread_return, sizeof(void*) );
+      }
       vg_threads[tid].status = VgTs_Runnable;
       vg_threads[jee].status = VgTs_Empty; /* bye! */
       if (VG_(clo_instrument) && jee != 0)
@@ -1768,6 +1781,8 @@ void do_pthread_create ( ThreadId parent_tid,
    //   if (VG_(clo_instrument))
    // ***** CHECK *thread is writable
    *thread = (pthread_t)tid;
+   if (VG_(clo_instrument))
+      VGM_(make_readable)( (Addr)thread, sizeof(pthread_t) );
 
    vg_threads[tid].associated_mx = NULL;
    vg_threads[tid].associated_cv = NULL;
@@ -1778,7 +1793,7 @@ void do_pthread_create ( ThreadId parent_tid,
       vg_threads[tid].specifics[i] = NULL;
 
    /* return zero */
-   vg_threads[tid].m_edx  = 0; /* success */
+   SET_EDX(tid, 0); /* success */
 }
 
 
@@ -1895,7 +1910,7 @@ void do_pthread_mutex_lock( ThreadId tid,
 
    /* POSIX doesn't mandate this, but for sanity ... */
    if (mutex == NULL) {
-      vg_threads[tid].m_edx = EINVAL;
+      SET_EDX(tid, EINVAL);
       return;
    }
 
@@ -1910,7 +1925,7 @@ void do_pthread_mutex_lock( ThreadId tid,
          if (mutex->__m_count >= 0) break;
          /* else fall thru */
       default:
-         vg_threads[tid].m_edx = EINVAL;
+         SET_EDX(tid, EINVAL);
          return;
    }
 
@@ -1924,16 +1939,16 @@ void do_pthread_mutex_lock( ThreadId tid,
          if (mutex->__m_kind == PTHREAD_MUTEX_RECURSIVE_NP) {
             /* return 0 (success). */
             mutex->__m_count++;
-            vg_threads[tid].m_edx = 0;
+            SET_EDX(tid, 0);
             if (0)
                VG_(printf)("!!!!!! tid %d, mx %p -> locked %d\n", 
                            tid, mutex, mutex->__m_count);
             return;
          } else {
             if (is_trylock)
-               vg_threads[tid].m_edx = EBUSY;
+               SET_EDX(tid, EBUSY);
             else
-               vg_threads[tid].m_edx = EDEADLK;
+               SET_EDX(tid, EDEADLK);
             return;
          }
       } else {
@@ -1942,11 +1957,11 @@ void do_pthread_mutex_lock( ThreadId tid,
          /* GUARD: __m_count > 0 && __m_owner is valid */
          if (is_trylock) {
             /* caller is polling; so return immediately. */
-            vg_threads[tid].m_edx = EBUSY;
+            SET_EDX(tid, EBUSY);
          } else {
             vg_threads[tid].status        = VgTs_WaitMX;
             vg_threads[tid].associated_mx = mutex;
-            vg_threads[tid].m_edx         = 0; /* pth_mx_lock success value */
+            SET_EDX(tid, 0); /* pth_mx_lock success value */
             if (VG_(clo_trace_pthread_level) >= 1) {
                VG_(sprintf)(msg_buf, "%s    mx %p: BLOCK", 
                                      caller, mutex );
@@ -1964,7 +1979,7 @@ void do_pthread_mutex_lock( ThreadId tid,
       mutex->__m_owner = (_pthread_descr)tid;
       vg_assert(vg_threads[tid].associated_mx == NULL);
       /* return 0 (success). */
-      vg_threads[tid].m_edx = 0;
+      SET_EDX(tid, 0);
    }
 
 }
@@ -1987,7 +2002,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
              && vg_threads[tid].status == VgTs_Runnable);
 
    if (mutex == NULL) {
-      vg_threads[tid].m_edx = EINVAL;
+      SET_EDX(tid, EINVAL);
       return;
    }
 
@@ -2002,14 +2017,14 @@ void do_pthread_mutex_unlock ( ThreadId tid,
          if (mutex->__m_count >= 0) break;
          /* else fall thru */
       default:
-         vg_threads[tid].m_edx = EINVAL;
+         SET_EDX(tid, EINVAL);
          return;
    }
 
    /* Barf if we don't currently hold the mutex. */
    if (mutex->__m_count == 0 /* nobody holds it */
        || (ThreadId)mutex->__m_owner != tid /* we don't hold it */) {
-      vg_threads[tid].m_edx = EPERM;
+      SET_EDX(tid, EPERM);
       return;
    }
 
@@ -2018,7 +2033,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    if (mutex->__m_count > 1) {
       vg_assert(mutex->__m_kind == PTHREAD_MUTEX_RECURSIVE_NP);
       mutex->__m_count --;
-      vg_threads[tid].m_edx = 0; /* success */
+      SET_EDX(tid, 0); /* success */
       return;
    }
 
@@ -2031,7 +2046,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    release_one_thread_waiting_on_mutex ( mutex, "pthread_mutex_lock" );
 
    /* Our (tid's) pth_unlock() returns with 0 (success). */
-   vg_threads[tid].m_edx = 0; /* Success. */
+   SET_EDX(tid, 0); /* Success. */
 }
 
 
@@ -2083,24 +2098,23 @@ void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid )
       /* Currently unheld; hand it out to thread tid. */
       vg_assert(mx->__m_count == 0);
       vg_threads[tid].status        = VgTs_Runnable;
-      vg_threads[tid].m_edx         = ETIMEDOUT; 
-                                      /* pthread_cond_wait return value */
+      SET_EDX(tid, ETIMEDOUT);      /* pthread_cond_wait return value */
       vg_threads[tid].associated_cv = NULL;
       vg_threads[tid].associated_mx = NULL;
       mx->__m_owner = (_pthread_descr)tid;
       mx->__m_count = 1;
 
       if (VG_(clo_trace_pthread_level) >= 1) {
-         VG_(sprintf)(msg_buf, "pthread_cond_timedwai cv %p: TIMEOUT with mx %p", 
-                               cv, mx );
+         VG_(sprintf)(msg_buf, 
+            "pthread_cond_timedwai cv %p: TIMEOUT with mx %p", 
+            cv, mx );
          print_pthread_event(tid, msg_buf);
       }
    } else {
       /* Currently held.  Make thread tid be blocked on it. */
       vg_assert(mx->__m_count > 0);
       vg_threads[tid].status        = VgTs_WaitMX;
-      vg_threads[tid].m_edx         = ETIMEDOUT; 
-                                      /* pthread_cond_wait return value */
+      SET_EDX(tid, ETIMEDOUT);      /* pthread_cond_wait return value */
       vg_threads[tid].associated_cv = NULL;
       vg_threads[tid].associated_mx = mx;
       if (VG_(clo_trace_pthread_level) >= 1) {
@@ -2167,7 +2181,7 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
          vg_threads[i].status        = VgTs_WaitMX;
          vg_threads[i].associated_cv = NULL;
          vg_threads[i].associated_mx = mx;
-         vg_threads[i].m_edx         = 0; /* pth_cond_wait success value */
+         SET_EDX(i, 0); /* pth_cond_wait success value */
 
          if (VG_(clo_trace_pthread_level) >= 1) {
             VG_(sprintf)(msg_buf, "%s   cv %p: BLOCK for mx %p", 
@@ -2205,7 +2219,7 @@ void do_pthread_cond_wait ( ThreadId tid,
              && vg_threads[tid].status == VgTs_Runnable);
 
    if (mutex == NULL || cond == NULL) {
-      vg_threads[tid].m_edx = EINVAL;
+      SET_EDX(tid, EINVAL);
       return;
    }
 
@@ -2220,14 +2234,14 @@ void do_pthread_cond_wait ( ThreadId tid,
          if (mutex->__m_count >= 0) break;
          /* else fall thru */
       default:
-         vg_threads[tid].m_edx = EINVAL;
+         SET_EDX(tid, EINVAL);
          return;
    }
 
    /* Barf if we don't currently hold the mutex. */
    if (mutex->__m_count == 0 /* nobody holds it */
        || (ThreadId)mutex->__m_owner != tid /* we don't hold it */) {
-      vg_threads[tid].m_edx = EINVAL;
+      SET_EDX(tid, EINVAL);
       return;
    }
 
@@ -2270,7 +2284,7 @@ void do_pthread_cond_signal_or_broadcast ( ThreadId tid,
              && vg_threads[tid].status == VgTs_Runnable);
 
    if (cond == NULL) {
-      vg_threads[tid].m_edx = EINVAL;
+      SET_EDX(tid, EINVAL);
       return;
    }
    
@@ -2280,7 +2294,7 @@ void do_pthread_cond_signal_or_broadcast ( ThreadId tid,
       caller
    );
 
-   vg_threads[tid].m_edx = 0; /* success */
+   SET_EDX(tid, 0); /* success */
 }
 
 
@@ -2320,7 +2334,7 @@ void do_pthread_key_create ( ThreadId tid,
          break;
 
    if (i == VG_N_THREAD_KEYS) {
-      /* vg_threads[tid].m_edx = EAGAIN; 
+      /* SET_EDX(tid, EAGAIN); 
          return; 
       */
       VG_(panic)("pthread_key_create: VG_N_THREAD_KEYS is too low;"
@@ -2328,9 +2342,13 @@ void do_pthread_key_create ( ThreadId tid,
    }
 
    vg_thread_keys[i].inuse = True;
+
    /* TODO: check key for addressibility */
    *key = i;
-   vg_threads[tid].m_edx = 0;
+   if (VG_(clo_instrument))
+      VGM_(make_readable)( (Addr)key, sizeof(pthread_key_t) );
+
+   SET_EDX(tid, 0);
 }
 
 
@@ -2348,7 +2366,7 @@ void do_pthread_key_delete ( ThreadId tid, pthread_key_t key )
              && vg_threads[tid].status == VgTs_Runnable);
    
    if (!is_valid_key(key)) {
-      vg_threads[tid].m_edx = EINVAL;
+      SET_EDX(tid, EINVAL);
       return;
    }
 
@@ -2380,11 +2398,11 @@ void do_pthread_getspecific ( ThreadId tid, pthread_key_t key )
              && vg_threads[tid].status == VgTs_Runnable);
 
    if (!is_valid_key(key)) {
-      vg_threads[tid].m_edx = (UInt)NULL;
+      SET_EDX(tid, (UInt)NULL);
       return;
    }
 
-   vg_threads[tid].m_edx = (UInt)vg_threads[tid].specifics[key];
+   SET_EDX(tid, (UInt)vg_threads[tid].specifics[key]);
 }
 
 
@@ -2404,12 +2422,12 @@ void do_pthread_setspecific ( ThreadId tid,
              && vg_threads[tid].status == VgTs_Runnable);
 
    if (!is_valid_key(key)) {
-      vg_threads[tid].m_edx = EINVAL;
+      SET_EDX(tid, EINVAL);
       return;
    }
 
    vg_threads[tid].specifics[key] = pointer;
-   vg_threads[tid].m_edx = 0;
+   SET_EDX(tid, 0);
 }
 
 
@@ -2502,8 +2520,10 @@ void do_nontrivial_clientreq ( ThreadId tid )
       case VG_USERREQ__MAKE_NOACCESS_STACK:
       case VG_USERREQ__RUNNING_ON_VALGRIND:
       case VG_USERREQ__DO_LEAK_CHECK:
-         vg_threads[tid].m_edx 
-            = VG_(handle_client_request) ( &vg_threads[tid], arg );
+         SET_EDX(
+            tid, 
+            VG_(handle_client_request) ( &vg_threads[tid], arg )
+         );
 	 break;
 
       case VG_USERREQ__SIGNAL_RETURNS: 

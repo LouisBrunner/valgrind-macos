@@ -39,7 +39,7 @@ regtest: check
 
 EXTRA_DIST = $(val_DATA) \
 	FAQ.txt \
-	PATCHES_APPLIED ACKNOWLEDGEMENTS \
+	ACKNOWLEDGEMENTS \
 	README_PACKAGERS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO \
 	valgrind.spec valgrind.spec.in valgrind.pc.in

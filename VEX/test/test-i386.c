@@ -30,12 +30,10 @@
 #include <sys/mman.h>
 #include <asm/vm86.h>
 
+/* Setting this to 1 creates a very comprehensive test of
+   integer condition codes. */
+#define TEST_INTEGER_VERBOSE 0
 
-#define TEST_INTEGER_VERBOSE 1
-
-
-#define TEST_CMOV  1
-#define TEST_FCOMI 1   // REINSTATE: 
 
 //#define LINUX_VM86_IOPL_FIX
 //#define TEST_P4_FLAGS
@@ -265,7 +263,7 @@ void test_lea(void)
         : "=r" (res)\
         : "r" (v1), "r" (v2));\
     printf("%-10s %d\n", "set" JCC, res);\
- if (TEST_CMOV) {\
+ {\
     asm("movl $0x12345678, %0\n\t"\
         "cmpl %2, %1\n\t"\
         "cmov" JCC "l %3, %0\n\t"\
@@ -531,7 +529,7 @@ void test_bsx(void)
 }
 
 /**********************************************/
-#if 1
+
 void test_fops(double a, double b)
 {
     printf("a=%f b=%f a+b=%f\n", a, b, a + b);
@@ -542,15 +540,14 @@ void test_fops(double a, double b)
     printf("a=%f sqrt(a)=%f\n", a, sqrt(a));
     printf("a=%f sin(a)=%f\n", a, sin(a));
     printf("a=%f cos(a)=%f\n", a, cos(a));
-    // REINSTATE: printf("a=%f tan(a)=%f\n", a, tan(a));
+    printf("a=%f tan(a)=%f\n", a, tan(a));
     printf("a=%f log(a)=%f\n", a, log(a));
     printf("a=%f exp(a)=%f\n", a, exp(a));
     printf("a=%f b=%f atan2(a, b)=%f\n", a, b, atan2(a, b));
     /* just to test some op combining */
-    // REINSTATE: printf("a=%f asin(sin(a))=%f\n", a, asin(sin(a)));
-    // REINSTATE: printf("a=%f acos(cos(a))=%f\n", a, acos(cos(a)));
-    // REINSTATE: printf("a=%f atan(tan(a))=%f\n", a, atan(tan(a)));
-
+    printf("a=%f asin(sin(a))=%f\n", a, asin(sin(a)));
+    printf("a=%f acos(cos(a))=%f\n", a, acos(cos(a)));
+    printf("a=%f atan(tan(a))=%f\n", a, atan(tan(a)));
 }
 
 void test_fcmp(double a, double b)
@@ -565,7 +562,7 @@ void test_fcmp(double a, double b)
            a, b, a > b);
     printf("(%f<=%f)=%d\n",
            a, b, a >= b);
-    if (TEST_FCOMI) {
+    {
         unsigned int eflags;
         /* test f(u)comi instruction */
         asm("fcomi %2, %1\n"
@@ -752,11 +749,8 @@ void test_floats(void)
     // REINSTATE (maybe): test_fbcd(1234567890123456);
     // REINSTATE (maybe): test_fbcd(-123451234567890);
     // REINSTATE: test_fenv();
-    if (TEST_CMOV) {
-        // REINSTATE: test_fcmov();
-    }
+    // REINSTATE: test_fcmov();
 }
-#endif
 
 /**********************************************/
 #if 0

@@ -1229,9 +1229,9 @@ void VG_(end_rdtsc_calibration) ( void )
    if (VG_(clo_verbosity) >= 1)
       VG_(message)(Vg_UserMsg, "Estimated CPU clock rate is %d MHz",
                                (UInt)cpu_clock_MHZ);
-   if (cpu_clock_MHZ < 100 || cpu_clock_MHZ > 10000)
+   if (cpu_clock_MHZ < 50 || cpu_clock_MHZ > 10000)
       VG_(panic)("end_rdtsc_calibration: "
-                 "estimated CPU MHz outside range 100 .. 10000");
+                 "estimated CPU MHz outside range 50 .. 10000");
    /* Paranoia about division by zero later. */
    vg_assert(rdtsc_ticks_per_millisecond != 0);
    if (0)

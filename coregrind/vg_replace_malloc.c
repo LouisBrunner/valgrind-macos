@@ -133,7 +133,7 @@ void VG_(replacement_malloc_print_debug_usage)(void)
 
 #define MALLOC_TRACE(format, args...)  \
    if (VG_(clo_trace_malloc))          \
-      VG_(printf)(format, ## args )
+      VALGRIND_INTERNAL_PRINTF(format, ## args )
 
 #define MAYBE_SLOPPIFY(n)           \
    if (VG_(clo_sloppy_malloc)) {    \
@@ -157,7 +157,7 @@ void* fff ( Int n ) \
    } else { \
       v = VG_(arena_malloc)(VG_AR_CLIENT, n); \
    } \
-   MALLOC_TRACE(" = %p\n", v ); \
+   MALLOC_TRACE(" = %p", v ); \
    return v; \
 }
 ALLOC( malloc,              SK_(malloc)            );
@@ -176,7 +176,7 @@ ALLOC( _ZnajRKSt9nothrow_t, SK_(__builtin_vec_new) );
 #define FREE(fff, vgfff) \
 void fff ( void* p ) \
 { \
-   MALLOC_TRACE(#fff "[simd=%d](%p)\n",  \
+   MALLOC_TRACE(#fff "[simd=%d](%p)",  \
                 (UInt)VG_(is_running_on_simd_CPU)(), p ); \
    if (p == NULL)  \
       return; \
@@ -205,7 +205,7 @@ void* calloc ( UInt nmemb, UInt size )
    } else {
       v = VG_(arena_calloc)(VG_AR_CLIENT, VG_(clo_alignment), nmemb, size);
    }
-   MALLOC_TRACE(" = %p\n", v );
+   MALLOC_TRACE(" = %p", v );
    return v;
 }
 
@@ -223,7 +223,7 @@ void* realloc ( void* ptrV, Int new_size )
    if (new_size <= 0) {
       free(ptrV);
       if (VG_(clo_trace_malloc)) 
-         VG_(printf)(" = 0\n" );
+         VG_(printf)(" = 0" );
       return NULL;
    }   
    if (VG_(is_running_on_simd_CPU)()) {
@@ -231,7 +231,7 @@ void* realloc ( void* ptrV, Int new_size )
    } else {
       v = VG_(arena_realloc)(VG_AR_CLIENT, ptrV, VG_(clo_alignment), new_size);
    }
-   MALLOC_TRACE(" = %p\n", v );
+   MALLOC_TRACE(" = %p", v );
    return v;
 }
 
@@ -249,7 +249,7 @@ void* memalign ( Int alignment, Int n )
    } else {
       v = VG_(arena_malloc_aligned)(VG_AR_CLIENT, alignment, n);
    }
-   MALLOC_TRACE(" = %p\n", v );
+   MALLOC_TRACE(" = %p", v );
    return v;
 }
 
@@ -308,7 +308,7 @@ Int malloc_usable_size ( void* p )
    } else {
       pszB = VG_(arena_payload_szB)(VG_AR_CLIENT, p);
    }
-   MALLOC_TRACE(" = %d\n", pszB );
+   MALLOC_TRACE(" = %d", pszB );
 
    return pszB;
 }

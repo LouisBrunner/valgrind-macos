@@ -318,8 +318,12 @@ typedef
             HReg target;
          } Call;
          /* Pseudo-insn.  Goto dst, on given condition (which could be
-            Xcc_ALWAYS). */
+            Xcc_ALWAYS).  Note importantly that if the jump is 
+            conditional (not Xcc_ALWAYS) the jump kind *must* be
+            Ijk_Boring.  Ie non-Boring conditional jumps are
+            not allowed. */
          struct {
+            IRJumpKind  jk;
             X86CondCode cond;
             X86RI*      dst;
          } Goto;
@@ -358,7 +362,7 @@ extern X86Instr* X86Instr_Div     ( Bool syned, X86ScalarSz, X86RM* );
 extern X86Instr* X86Instr_Sh3232  ( X86ShiftOp, UInt amt, HReg rHi, HReg rLo );
 extern X86Instr* X86Instr_Push    ( X86RMI* );
 extern X86Instr* X86Instr_Call    ( HReg );
-extern X86Instr* X86Instr_Goto    ( X86CondCode cond, X86RI* dst );
+extern X86Instr* X86Instr_Goto    ( IRJumpKind, X86CondCode cond, X86RI* dst );
 extern X86Instr* X86Instr_CMov32  ( X86CondCode, X86RM* src, HReg dst );
 extern X86Instr* X86Instr_LoadEX  ( UChar szSmall, Bool syned,
                                     X86AMode* src, HReg dst );

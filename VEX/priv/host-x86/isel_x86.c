@@ -290,7 +290,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 
          case Iop_And8: case Iop_And16: case Iop_And32: 
             aluOp = Xalu_AND; break;
-         case Iop_Or8: case Iop_Or32:  
+         case Iop_Or8: case Iop_Or16: case Iop_Or32:  
             aluOp = Xalu_OR; break;
 
          case Iop_Xor8: case Iop_Xor32: 
@@ -880,7 +880,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          vpanic("isel_x86: Ist_Exit: dst is not a 32-bit value");
       dst = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
       cc  = iselCondCode(env,stmt->Ist.Exit.cond);
-      addInstr(env, X86Instr_Goto(cc, dst));
+      addInstr(env, X86Instr_Goto(Ijk_Boring, cc, dst));
       return;
    }
 
@@ -899,13 +899,14 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 {
    X86RI* ri;
    if (vex_verbosity > 0) {
-      vex_printf("-- goto ");
+      vex_printf("-- goto {");
+      ppIRJumpKind(jk);
+      vex_printf("} ");
       ppIRExpr(next);
       vex_printf("\n");
    }
-
    ri = iselIntExpr_RI(env, next);
-   addInstr(env, X86Instr_Goto(Xcc_ALWAYS,ri));
+   addInstr(env, X86Instr_Goto(jk, Xcc_ALWAYS,ri));
 }
 
 

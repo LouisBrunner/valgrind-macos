@@ -160,9 +160,25 @@ static inline int lshift(int x, int n)
     return cf | pf | af | zf | sf | of;				\
 }
 
+#define ACTIONS_INC(DATA_BITS,DATA_TYPE,DATA_STYPE)	\
+{							\
+    PREAMBLE(DATA_BITS);				\
+    int cf, pf, af, zf, sf, of;				\
+    int src1, src2;					\
+    src1 = CC_DST - 1;					\
+    src2 = 1;						\
+    cf = CC_SRC;					\
+    pf = parity_table[(uint8_t)CC_DST];			\
+    af = (CC_DST ^ src1 ^ src2) & 0x10;			\
+    zf = ((DATA_TYPE)CC_DST == 0) << 6;			\
+    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;		\
+    of = ((CC_DST & DATA_MASK) == SIGN_MASK) << 11;	\
+    return cf | pf | af | zf | sf | of;			\
+}
+
 #define ACTIONS_DEC(DATA_BITS,DATA_TYPE,DATA_STYPE)			\
 {									\
-  PREAMBLE(DATA_BITS);							\
+  PREAMBLE(DATA_BITS);		\
   int cf, pf, af, zf, sf, of;						\
   int src1, src2;							\
   src1 = CC_DST + 1;							\
@@ -189,10 +205,13 @@ static inline int lshift(int x, int n)
       case CC_OP_ADDL:   ACTIONS_ADD(32,UInt,Int);
 
       case CC_OP_SUBB:   ACTIONS_SUB(8,UChar,Char);
+      case CC_OP_SUBW:   ACTIONS_SUB(16,UShort,Short);
       case CC_OP_SUBL:   ACTIONS_SUB(32,UInt,Int);
 
       case CC_OP_LOGICB: ACTIONS_LOGIC(8,UChar,Char);
       case CC_OP_LOGICL: ACTIONS_LOGIC(32,UInt,Int);
+
+      case CC_OP_INCL: ACTIONS_INC(32,UInt,Int);
 
       case CC_OP_DECL: ACTIONS_DEC(32,UInt,Int);
 

@@ -433,7 +433,7 @@ static void setFlags_SRC_DST1 ( IROp    op8,
 
 /* This is for shl/shr/sar, where we store the result value and the
    result except shifted one bit less.  And then only when the guard
-   says we can. */
+   is non-zero. */
 
 static void setFlags_DSTus_DST1 ( IROp    op8,
                                   IRTemp  dstUS,
@@ -1988,6 +1988,27 @@ UInt dis_Grp1 ( UChar sorb,
 /* Group 2 extended opcodes.  shift_expr must be an 8-bit typed
    expression. */
 
+/* Generate specialised inline versions of this function:
+   static inline int lshift(int x, int n)
+   {
+       if (n >= 0)
+           return x << n;
+       else
+           return x >> (-n);
+   }
+*/
+static IRExpr* mkLShift ( IRType ty, IRExpr* e, Int shift )
+{
+   if (shift > 0)
+      /* left */
+      return binop(mkSizedOp(ty,Iop_Shl8), e, mkU8(shift));
+   if (shift < 0)
+      /* right */
+      return binop(mkSizedOp(ty,Iop_Sar8), e, mkU8(-shift));
+   /* shift == 0 */
+   return e;
+}
+
 static
 UInt dis_Grp2 ( UChar  sorb,
                 UInt delta, UChar modrm,
@@ -1998,7 +2019,7 @@ UInt dis_Grp2 ( UChar  sorb,
    UChar  dis_buf[50];
    Int    len;
    IROp   op8;
-   Bool   isShift;
+   Bool   isShift, isRotate;
    IRType ty    = szToITy(sz);
    IRTemp dst0  = newTemp(ty);
    IRTemp dst1  = newTemp(ty);
@@ -2029,11 +2050,13 @@ UInt dis_Grp2 ( UChar  sorb,
    isShift = False;
    switch (gregOfRM(modrm)) { case 4: case 5: case 7: isShift = True; }
 
+   isRotate = False;
+   switch (gregOfRM(modrm)) { case 0: case 1: isRotate = True; }
+
    if (isShift) {
 
       IRTemp subshift  = newTemp(ty);
       IRTemp shift_amt = newTemp(Ity_I8);
-      // IRTemp guard     = newTemp(Ity_Bit);
 
       switch (gregOfRM(modrm)) { 
          case 4: op8 = Iop_Shl8; break;
@@ -2056,15 +2079,90 @@ UInt dis_Grp2 ( UChar  sorb,
                          binop(Iop_Sub8,
                                mkexpr(shift_amt), mkU8(1)),
                          mkU8(8*sz-1))));
-      /* guard = (shift_amt != 0) */
-      //      assign(guard, binop(Iop_CmpNE8, 
-      //                     mkexpr(shift_amt), mkU8(0)));
 
       /* Build the flags thunk. */
       setFlags_DSTus_DST1(op8, subshift, dst1, ty, shift_amt);
-   } else {
-      /* Rotate */
-      vpanic("dis_Grp2: rotate");
+   }
+   else 
+
+   if (isRotate) {
+      vassert(0);
+#if 0
+      Bool   left    = gregOfRM(modrm) == 0;
+      IRTemp rot_amt = newTemp(Ity_I8);
+      IRTemp flags1  = newTemp(Ity_I32),
+             flags2  = newTemp(Ity_I32),
+             flags3  = newTemp(Ity_I32);
+
+      /* rot_amt = shift_expr & mask */
+      assign(rot_amt, binop(Iop_And8, 
+                            shift_expr, mkU8(8*sz-1)));
+
+      if (left) {
+         /* dst1 = (dst0 << rot_amt) | (dst0 >>u (wordsize-rot_amt)) */
+         assign(dst1, 
+            binop( mkSizedOp(ty,Iop_Or8),
+                   binop( mkSizedOp(ty,Iop_Shl8), 
+                          mkexpr(dst0),
+                          mkexpr(rot_amt)
+                   ),
+                   binop( mkSizedOp(ty,Iop_Shr8), 
+                          mkexpr(dst0), 
+                          binop(Iop_Sub8,mkU8(8*sz), mkexpr(rot_amt))
+                   )
+            )
+         );
+
+         /* dst1 now holds the rotated value.  Figure out new flags. */
+         /* Get old flags and clear C and O bits. */
+         /* flags1 = compute_flags & ~(CC_O | CC_C) */
+         assign(flags1, binop( Iop_And32,
+                               mk_calculate_eflags_all(),
+                               mkU32(~(CC_MASK_O | CC_MASK_C))));
+
+         /* Copy in C bit from lowest bit of result. */
+         /* flags2 = flags1 | (dst1 & CC_MASK_C) */
+         assign(flags2, 
+                binop( Iop_Or32,
+                       mkexpr(flags1), 
+                       binop(Iop_And32, mkexpr(dst1), mkU32(CC_MASK_C))));
+
+         /* Set the O bit by mysterious means. */
+         assign(flags3, 
+            binop( Iop_Or32,
+                   mkexpr(flags2),
+                   binop( Iop_And32,
+                          mkLShift(ty, binop( mkSizedOp(ty,Iop_Xor8), 
+                                              mkexpr(dst0),
+                                              mkexpr(dst1)
+                                       ),
+                                       11 - (8*sz - 1)
+                          ),
+                          mkU32(CC_MASK_O)
+                   )
+            )
+         );
+ 
+         /* Rebuild the thunk, if the rotate-amount is non-zero */
+         stmt( IRStmt_Put( 
+                  OFFB_CC_OP, 
+                  IRExpr_Mux0X( mkexpr(rot_amt),
+                                IRExpr_Get(OFFB_CC_OP,Ity_I32),
+                                mkU32(CC_OP_COPY))) );
+         stmt( IRStmt_Put( 
+                  OFFB_CC_SRC,
+                  IRExpr_Mux0X( mkexpr(rot_amt),
+                                IRExpr_Get(OFFB_CC_SRC,Ity_I32),
+                                mkexpr(flags3))) );
+         stmt( IRStmt_Put( 
+                  OFFB_CC_DST,
+                  IRExpr_Mux0X( mkexpr(rot_amt),
+                                IRExpr_Get(OFFB_CC_DST,Ity_I32),
+                                mkU32(0))) );
+      } else { /* !left */
+         vassert(0);
+      }
+ #endif
    }
 
    /* Save result, and finish up. */
@@ -4510,32 +4608,31 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 
    DIP("\t0x%x:  ", guest_eip+delta);
 
-//--    /* Spot the client-request magic sequence. */
-//--    {
-//--       UChar* myeip = (UChar*)eip;
-//--       /* Spot this:
-//--          C1C01D                roll $29, %eax
-//--          C1C003                roll $3,  %eax
-//--          C1C81B                rorl $27, %eax
-//--          C1C805                rorl $5,  %eax
-//--          C1C00D                roll $13, %eax
-//--          C1C013                roll $19, %eax      
-//--       */
-//--       if (myeip[ 0] == 0xC1 && myeip[ 1] == 0xC0 && myeip[ 2] == 0x1D &&
-//--           myeip[ 3] == 0xC1 && myeip[ 4] == 0xC0 && myeip[ 5] == 0x03 &&
-//--           myeip[ 6] == 0xC1 && myeip[ 7] == 0xC8 && myeip[ 8] == 0x1B &&
-//--           myeip[ 9] == 0xC1 && myeip[10] == 0xC8 && myeip[11] == 0x05 &&
-//--           myeip[12] == 0xC1 && myeip[13] == 0xC0 && myeip[14] == 0x0D &&
-//--           myeip[15] == 0xC1 && myeip[16] == 0xC0 && myeip[17] == 0x13
-//--          ) {
-//--          eip += 18;
-//--          jmp_lit(cb, eip);
-//--          LAST_UINSTR(cb).jmpkind = JmpClientReq;
-//--          *isEnd = True;
-//--          DIP("%%edx = client_request ( %%eax )\n");
-//--          return eip;
-//--       }
-//--    }
+   /* Spot the client-request magic sequence. */
+   {
+      UChar* code = (UChar*)(guest_code + delta);
+      /* Spot this:
+         C1C01D                roll $29, %eax
+         C1C003                roll $3,  %eax
+         C1C81B                rorl $27, %eax
+         C1C805                rorl $5,  %eax
+         C1C00D                roll $13, %eax
+         C1C013                roll $19, %eax      
+      */
+      if (code[ 0] == 0xC1 && code[ 1] == 0xC0 && code[ 2] == 0x1D &&
+          code[ 3] == 0xC1 && code[ 4] == 0xC0 && code[ 5] == 0x03 &&
+          code[ 6] == 0xC1 && code[ 7] == 0xC8 && code[ 8] == 0x1B &&
+          code[ 9] == 0xC1 && code[10] == 0xC8 && code[11] == 0x05 &&
+          code[12] == 0xC1 && code[13] == 0xC0 && code[14] == 0x0D &&
+          code[15] == 0xC1 && code[16] == 0xC0 && code[17] == 0x13
+         ) {
+         delta += 18;
+         jmp_lit(Ijk_ClientReq, guest_eip+delta);
+         *isEnd = True;
+         DIP("%%edx = client_request ( %%eax )\n");
+         return delta;
+      }
+   }
 
    /* Skip a LOCK prefix. */
    if (getIByte(delta) == 0xF0) { 
@@ -6268,17 +6365,15 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0xA2: /* MOV AL,Ob */
 //--       sz = 1;
 //--       /* Fall through ... */
-//--    case 0xA3: /* MOV eAX,Ov */
-//--       d32 = getUDisp32(eip); eip += 4;
-//--       t1 = newTemp(cb); t2 = newTemp(cb);
-//--       uInstr2(cb, GET,   sz, ArchReg, R_EAX, TempReg, t1);
-//--       uInstr2(cb, MOV,    4, Literal, 0,     TempReg, t2);
-//--       uLiteral(cb, d32);
-//--       handleSegOverride(cb, sorb, t2);
-//--       uInstr2(cb, STORE, sz, TempReg, t1,    TempReg, t2);
-//--       DIP("mov%c %s, %s0x%x\n", nameISize(sz), nameIReg(sz,R_EAX),
-//--                                 sorbTxt(sorb), d32);
-//--       break;
+   case 0xA3: /* MOV eAX,Ov */
+      d32 = getUDisp32(delta); delta += 4;
+      ty = szToITy(sz);
+      addr = newTemp(Ity_I32);
+      assign( addr, handleSegOverride(sorb, mkU32(d32)) );
+      storeLE( mkexpr(addr), getIReg(sz,R_EAX) );
+      DIP("mov%c %s, %s0x%x\n", nameISize(sz), nameIReg(sz,R_EAX),
+                                sorbTxt(sorb), d32);
+      break;
 
 #if 0
    case 0xB0: /* MOV imm,AL */
@@ -7382,15 +7477,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
             DIP("set%s %s\n", name_Condcode(opc-0x90), 
                               nameIReg(1,eregOfRM(modrm)));
          } else {
-            vassert(0);
-//--             pair = disAMode ( cb, sorb, eip, dis_buf );
-//--             t2 = LOW24(pair);
-//--             eip += HI8(pair);
-//--             uInstr1(cb, CC2VAL, 1, TempReg, t1);
-//--             uCond(cb, (Condcode)(opc-0x90));
-//--             uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
-//--             uInstr2(cb, STORE, 1, TempReg, t1, TempReg, t2);
-//--             DIP("set%s %s\n", VG_(name_UCondcode)(opc-0x90), dis_buf);
+           addr = disAMode ( &alen, sorb, delta, dis_buf );
+           delta += alen;
+           storeLE( mkexpr(addr), mkexpr(t1) );
+           DIP("set%s %s\n", name_Condcode(opc-0x90), dis_buf);
          }
          break;
 

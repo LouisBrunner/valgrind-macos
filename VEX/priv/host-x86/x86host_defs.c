@@ -476,11 +476,14 @@ X86Instr* X86Instr_Call ( HReg target ) {
    i->Xin.Call.target = target;
    return i;
 }
-X86Instr* X86Instr_Goto ( X86CondCode cond, X86RI* dst ) {
+X86Instr* X86Instr_Goto ( IRJumpKind jk, X86CondCode cond, X86RI* dst ) {
    X86Instr* i      = LibVEX_Alloc(sizeof(X86Instr));
    i->tag           = Xin_Goto;
    i->Xin.Goto.cond = cond;
    i->Xin.Goto.dst  = dst;
+   i->Xin.Goto.jk   = jk;
+   /* non-Boring conditional jumps are not allowed. */
+   vassert(jk == Ijk_Boring || cond == Xcc_ALWAYS);
    return i;
 }
 X86Instr* X86Instr_CMov32  ( X86CondCode cond, X86RM* src, HReg dst ) {
@@ -577,6 +580,12 @@ void ppX86Instr ( X86Instr* i ) {
          ppHRegX86(i->Xin.Call.target);
          break;
       case Xin_Goto:
+         if (i->Xin.Goto.jk == Ijk_ClientReq 
+             || i->Xin.Goto.jk == Ijk_Syscall) {
+            vex_printf("movl $");
+            ppIRJumpKind(i->Xin.Goto.jk);
+            vex_printf(", %%ebp ; ");
+         }
          if (i->Xin.Goto.cond == Xcc_ALWAYS) {
             vex_printf("movl ");
             ppX86RI(i->Xin.Goto.dst);
@@ -678,6 +687,9 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
       case Xin_Goto:
          addRegUsage_X86RI(u, i->Xin.Goto.dst);
          addHRegUse(u, HRmWrite, hregX86_EAX());
+         if (i->Xin.Goto.jk == Ijk_ClientReq 
+             || i->Xin.Goto.jk == Ijk_Syscall)
+            addHRegUse(u, HRmWrite, hregX86_EBP());
          return;
       case Xin_CMov32:
          addRegUsage_X86RM(u, i->Xin.CMov32.src, HRmRead);
@@ -944,6 +956,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
    UInt opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
 
    UChar* p = &buf[0];
+   UChar* ptmp;
    vassert(nbuf >= 32);
 
    /* Wrap an integer as a int register, for use assembling
@@ -962,10 +975,10 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
                goto done;
             case Xrmi_Reg:
-              *p++ = 0x89;
-              p = doAMode_R(p, i->Xin.Alu32R.src->Xrmi.Reg.reg,
-                            i->Xin.Alu32R.dst);
-              goto done;
+               *p++ = 0x89;
+               p = doAMode_R(p, i->Xin.Alu32R.src->Xrmi.Reg.reg,
+                                i->Xin.Alu32R.dst);
+               goto done;
             case Xrmi_Mem:
                *p++ = 0x8B;
                p = doAMode_M(p, i->Xin.Alu32R.dst, 
@@ -1210,6 +1223,26 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       goto done;
 
    case Xin_Goto:
+      /* If a non-boring unconditional jump, set %ebp appropriately.
+         The magic numbers here have to match those defined in
+         vg_constants.h. */
+      if (i->Xin.Goto.cond == Xcc_ALWAYS
+          && (i->Xin.Goto.jk == Ijk_ClientReq 
+              || i->Xin.Goto.jk == Ijk_Syscall)) {
+         /* movl $magic_number, %ebp */
+         *p++ = 0xBD;
+         switch (i->Xin.Goto.jk) {
+            case Ijk_ClientReq: 
+               /* 23 == VG_TRC_EBP_JMP_CLIENTREQ */
+               p = emit32(p, 23); break;
+            case Ijk_Syscall: 
+               /* 19 == VG_TRC_EBP_JMP_SYSCALL */
+               p = emit32(p, 19); break;
+            default: 
+               ppIRJumpKind(i->Xin.Goto.jk);
+               vpanic("emit_X86Instr.Xin_Goto: unknown jump kind");
+         }
+      }
       /* unconditional jump to immediate */
       if (i->Xin.Goto.cond == Xcc_ALWAYS
           && i->Xin.Goto.dst->tag == Xri_Imm) {
@@ -1233,6 +1266,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       /* conditional jump to immediate */
       if (i->Xin.Goto.cond != Xcc_ALWAYS
           && i->Xin.Goto.dst->tag == Xri_Imm) {
+         vassert(i->Xin.Goto.jk == Ijk_Boring);
          /* jmp fwds if !condition */
          *p++ = 0x70 + (i->Xin.Goto.cond ^ 1);
          *p++ = 6; /* # of bytes in the next bit */
@@ -1246,6 +1280,8 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
    case Xin_CMov32:
       vassert(i->Xin.CMov32.cond != Xcc_ALWAYS);
+#if 0
+      /* This generates cmov, which is illegal on P5. */
       *p++ = 0x0F;
       *p++ = 0x40 + i->Xin.CMov32.cond;
       if (i->Xin.CMov32.src->tag == Xrm_Reg) {
@@ -1256,6 +1292,33 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          p = doAMode_M(p, i->Xin.CMov32.dst, i->Xin.CMov32.src->Xrm.Mem.am);
          goto done;
       }
+#else
+      /* P5 friendly version: conditional jump over an unconditional
+         move. */
+      /* jmp fwds if !condition */
+      *p++ = 0x70 + (i->Xin.CMov32.cond ^ 1);
+      *p++ = 0; /* # of bytes in the next bit, which we don't know yet */
+      ptmp = p;
+
+      switch (i->Xin.CMov32.src->tag) {
+         case Xrm_Reg:
+            vassert(0); // waiting for test case
+            *p++ = 0x89;
+            p = doAMode_R(p, i->Xin.CMov32.src->Xrm.Reg.reg,
+                             i->Xin.CMov32.dst);
+            break;
+         case Xrm_Mem:
+            *p++ = 0x8B;
+            p = doAMode_M(p, i->Xin.CMov32.dst, 
+                             i->Xin.CMov32.src->Xrm.Mem.am);
+            break;
+         default:
+            goto bad;
+      }
+      /* Fill in the jump offset. */
+      *(ptmp-1) = p - ptmp;
+      goto done;
+#endif
       break;
 
    case Xin_LoadEX:

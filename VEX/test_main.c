@@ -65,7 +65,7 @@ int main ( int argc, char** argv )
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
-                 1,  /* verbosity */
+                 0,  /* verbosity */
                  //False, 
 		 True, 
                  100 );

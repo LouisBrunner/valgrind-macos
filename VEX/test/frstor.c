@@ -2,6 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void do_fsave_interesting_stuff ( void* p )
+{
+   asm __volatile__("fninit");
+   asm __volatile__("fldpi");
+   asm __volatile__("fld1");
+   asm __volatile__("fldln2");
+   asm __volatile__("fsave (%0)" : : "r" (p) : "memory" );
+}
+
 void do_fsave ( void* p )
 {
    asm __volatile__("fsave (%0)" : : "r" (p) : "memory" );
@@ -54,23 +63,20 @@ void show_fpustate ( unsigned char* buf, int hide64to80 )
 
 int main ( int argc, char** argv )
 {
-   int i;
-   unsigned short* buf = malloc(54*sizeof(short));
+   unsigned short* buf1 = malloc(54*sizeof(short));
+   unsigned short* buf2 = malloc(54*sizeof(short));
    int xx = argc > 1;
    printf("Re-run with any arg to suppress least-significant\n"
           "   16 bits of FP numbers\n");
 
-   for (i = 0; i < 54; i++)
-      buf[i] = i;
-   buf[0] = 0x037f;
+   /* Create an initial image. */
+   do_fsave_interesting_stuff(buf1);
+   show_fpustate( (unsigned char*)buf1, xx );
 
-   for (i = 0; i < 8; i++)
-      *(long double *)(&buf[14+5 *i]) = 20.0 + 0.1234 * i;
-
-   do_frstor(buf);
-   do_fsave(buf);
-
-   show_fpustate( (unsigned char*)buf, xx );
+   /* Reload it into buf2. */
+   do_frstor(buf1);
+   do_fsave(buf2);
+   show_fpustate( (unsigned char*)buf2, xx );
 
    return 0;
 }

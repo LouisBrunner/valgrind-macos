@@ -871,6 +871,17 @@ A brief description of the available macros:
     chunks of old code all at once.
     <p>
     Warning: minimally tested, especially for the cache simulator.
+<li><code>VALGRIND_COUNT_ERRORS</code>: returns the number of errors
+    found so far by Valgrind.  Can be useful in test harness code when
+    combined with the <code>--logfile-fd=-1</code> option;  this runs
+    Valgrind silently, but the client program can detect when errors
+    occur.
+<p>
+<li><code>VALGRIND_COUNT_LEAKS</code>: fills in the four arguments with
+    the number of bytes of memory found by all previous leak checks that
+    were leaked, dubious, reachable and suppressed.  Again, useful for
+    test harness code.
+<p>
 </ul>
 <p>
 

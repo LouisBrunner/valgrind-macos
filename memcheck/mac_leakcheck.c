@@ -356,6 +356,11 @@ void MAC_(pp_LeakError)(void* vl, UInt n_this_record, UInt n_total_records)
    VG_(pp_ExeContext)(l->allocated_at);
 }
 
+Int MAC_(total_bytes_leaked)     = 0;
+Int MAC_(total_bytes_dubious)    = 0;
+Int MAC_(total_bytes_reachable)  = 0;
+Int MAC_(total_bytes_suppressed) = 0;
+
 /* Top level entry point to leak detector.  Call here, passing in
    suitable address-validating functions (see comment at top of
    vg_scan_all_valid_memory above).  All this is to avoid duplication
@@ -480,7 +485,7 @@ void MAC_(do_detect_memory_leaks) (
          VG_(unique_error) ( /*tst*/NULL, LeakErr, (UInt)i+1,
                              (Char*)n_lossrecords, (void*) p_min,
                              p_min->allocated_at, print_record,
-                             /*allow_GDB_attach*/False );
+                             /*allow_GDB_attach*/False, /*count_error*/False );
 
       if (is_suppressed) {
          blocks_suppressed += p_min->num_blocks;
@@ -521,6 +526,11 @@ void MAC_(do_detect_memory_leaks) (
          "To see them, rerun with: --show-reachable=yes");
    }
    VG_(message)(Vg_UserMsg, "");
+
+   MAC_(total_bytes_leaked)     += bytes_leaked;
+   MAC_(total_bytes_dubious)    += bytes_dubious;
+   MAC_(total_bytes_reachable)  += bytes_reachable;
+   MAC_(total_bytes_suppressed) += bytes_suppressed;
 
    VG_(free) ( lc_shadows );
    VG_(free) ( lc_reachedness );

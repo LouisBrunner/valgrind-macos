@@ -34,7 +34,7 @@
    directly. */
 #define __VALGRIND_SOMESKIN_H
 #include "valgrind.h" /* for VG_USERREQ__RUNNING_ON_VALGRIND and
-                             VG_USERREQ__DISCARD_TRANSLATIONS */
+                             VG_USERREQ__DISCARD_TRANSLATIONS, and others */
 
 /* BORKAGE/ISSUES as of 29 May 02
 
@@ -3557,6 +3557,10 @@ void do_client_request ( ThreadId tid )
 
          SET_EDX( tid, 0 );     /* return value is meaningless */
 	 break;
+
+      case VG_USERREQ__COUNT_ERRORS:  
+         SET_EDX( tid, VG_(n_errs_found) );
+         break;
 
       default:
          if (VG_(needs).client_requests) {

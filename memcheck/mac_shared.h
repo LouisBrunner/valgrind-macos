@@ -266,6 +266,11 @@ extern void (*MAC_(copy_mem_heap))( Addr from, Addr to, UInt len );
 /* Used in describe_addr() */
 extern Bool (*MAC_(describe_addr_supp))    ( Addr a, AddrInfo* ai );
 
+/* For VALGRIND_COUNT_LEAKS client request */
+extern Int MAC_(total_bytes_leaked);
+extern Int MAC_(total_bytes_dubious);
+extern Int MAC_(total_bytes_reachable);
+extern Int MAC_(total_bytes_suppressed);
 
 /*------------------------------------------------------------*/
 /*--- Functions                                            ---*/
@@ -292,6 +297,9 @@ extern MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk)( Bool (*p)(MAC_Chunk*) );
 
 extern void MAC_(common_pre_clo_init) ( void );
 extern void MAC_(common_fini)         ( void (*leak_check)(void) );
+
+extern Bool MAC_(handle_common_client_requests) 
+                  ( ThreadState* tst, UInt* arg_block, UInt* ret );
 
 extern void MAC_(print_malloc_stats) ( void );
 

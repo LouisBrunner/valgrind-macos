@@ -46,7 +46,7 @@ static Supp* vg_suppressions = NULL;
 Supp* VG_(get_suppressions) ( void ) { return vg_suppressions; }
 
 /* Running count of unsuppressed errors detected. */
-static UInt vg_n_errs_found = 0;
+UInt VG_(n_errs_found) = 0;
 
 /* Running count of suppressed errors detected. */
 static UInt vg_n_errs_suppressed = 0;
@@ -292,7 +292,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
       pointless to continue the Valgrind run after this point. */
    if (VG_(clo_error_limit) 
        && (vg_n_errs_shown >= M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN
-           || vg_n_errs_found >= M_VG_COLLECT_NO_ERRORS_AFTER_FOUND)) {
+           || VG_(n_errs_found) >= M_VG_COLLECT_NO_ERRORS_AFTER_FOUND)) {
       if (!stopping_message) {
          VG_(message)(Vg_UserMsg, "");
 
@@ -354,7 +354,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
             p->supp->count++;
             vg_n_errs_suppressed++;	 
          } else {
-            vg_n_errs_found++;
+            VG_(n_errs_found)++;
          }
 
          /* Move p to the front of the list so that future searches
@@ -405,7 +405,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    p->supp = is_suppressible_error(&err);
    vg_errors = p;
    if (p->supp == NULL) {
-      vg_n_errs_found++;
+      VG_(n_errs_found)++;
       if (!is_first_shown_context)
          VG_(message)(Vg_UserMsg, "");
       pp_Error(p, False);
@@ -422,10 +422,12 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    errors that the skin want to report immediately, eg. because they're
    guaranteed to only happen once.  This avoids all the recording and
    comparing stuff.  But they can be suppressed;  returns True if it is
-   suppressed.  Bool `print_error' dictates whether to print the error. */
+   suppressed.  Bool `print_error' dictates whether to print the error. 
+   Bool `count_error' dictates whether to count the error in VG_(n_errs_found)
+*/
 Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind, Addr a, Char* s,
                          void* extra, ExeContext* where, Bool print_error,
-                         Bool allow_GDB_attach )
+                         Bool allow_GDB_attach, Bool count_error )
 {
    Error  err;
    Addr   m_eip, m_esp, m_ebp;
@@ -443,7 +445,8 @@ Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind, Addr a, Char* s,
    (void)SK_(update_extra)(&err);
 
    if (NULL == is_suppressible_error(&err)) {
-      vg_n_errs_found++;
+      if (count_error)
+         VG_(n_errs_found)++;
 
       if (print_error) {
          if (!is_first_shown_context)
@@ -502,7 +505,7 @@ void VG_(show_all_errors) ( void )
    VG_(message)(Vg_UserMsg,
                 "ERROR SUMMARY: "
                 "%d errors from %d contexts (suppressed: %d from %d)",
-                vg_n_errs_found, n_err_contexts, 
+                VG_(n_errs_found), n_err_contexts, 
                 vg_n_errs_suppressed, n_supp_contexts );
 
    if (VG_(clo_verbosity) <= 1)
@@ -551,7 +554,7 @@ void VG_(show_all_errors) ( void )
       VG_(message)(Vg_UserMsg,
                    "IN SUMMARY: "
                    "%d errors from %d contexts (suppressed: %d from %d)",
-                   vg_n_errs_found, n_err_contexts, 
+                   VG_(n_errs_found), n_err_contexts, 
                    vg_n_errs_suppressed,
                    n_supp_contexts );
       VG_(message)(Vg_UserMsg, "");

@@ -1082,9 +1082,10 @@ Bool SK_(expensive_sanity_check) ( void )
    return True;
 }
       
-/* 
-   Client requests
- */
+/*------------------------------------------------------------*/
+/*--- Client requests                                      ---*/
+/*------------------------------------------------------------*/
+
 Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
 {
 #define IGNORE(what)                                                    \
@@ -1131,10 +1132,14 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
          return False;
 
       default:
-         VG_(message)(Vg_UserMsg, 
-                      "Warning: unknown addrcheck client request code %d",
-                      arg[0]);
-         return False;
+         if (MAC_(handle_common_client_requests)(tst, arg_block, ret )) {
+            return True;
+         } else {
+            VG_(message)(Vg_UserMsg, 
+                         "Warning: unknown addrcheck client request code %d",
+                         arg[0]);
+            return False;
+         }
    }
    return True;
 

@@ -23,6 +23,7 @@ EXTRA_DIST = \
 	clientperm.stderr.exp \
 	clientperm.stdout.exp clientperm.vgtest \
 	doublefree.stderr.exp doublefree.vgtest \
+	error_counts.stderr.exp error_counts.stdout.exp error_count.vgtest \
 	errs1.stderr.exp errs1.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
 	fprw.stderr.exp fprw.vgtest \
@@ -59,7 +60,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	badaddrvalue badfree badjump badloop buflen_check clientperm \
-	doublefree errs1 exitprog fprw fwrite inits inline \
+	doublefree error_counts errs1 exitprog fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	memalign_test memcmptest mmaptest nanoleak overlap pushfpopf \
 	realloc1 realloc2 sigaltstack signal2 supp1 supp2 suppfree \
@@ -78,6 +79,7 @@ badloop_SOURCES 	= badloop.c
 buflen_check_SOURCES	= buflen_check.c
 clientperm_SOURCES 	= clientperm.c
 doublefree_SOURCES 	= doublefree.c
+error_counts_SOURCES 	= error_counts.c
 errs1_SOURCES 		= errs1.c
 exitprog_SOURCES 	= exitprog.c
 fprw_SOURCES 		= fprw.c

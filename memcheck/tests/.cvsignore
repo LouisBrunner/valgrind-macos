@@ -9,6 +9,7 @@ clientperm
 clientstackperm
 dir
 doublefree
+error_counts
 errs1
 exitprog
 filter_leak_check_size

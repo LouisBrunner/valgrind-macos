@@ -166,6 +166,10 @@ typedef
           VG_USERREQ__CLIENT_tstCALL2,
           VG_USERREQ__CLIENT_tstCALL3,
 
+          /* Can be useful in regression testing suites -- eg. can send
+             Valgrind's output to /dev/null and still count errors. */
+          VG_USERREQ__COUNT_ERRORS = 0x1300,
+
           VG_USERREQ__FINAL_DUMMY_CLIENT_REQUEST
    } Vg_ClientRequest;
 
@@ -270,5 +274,16 @@ typedef
     _qyy_res;                                                           \
    })
 
+
+/* Counts the number of errors that have been recorded by a skin.  Nb:
+   the skin must record the errors with VG_(maybe_record_error)() or
+   VG_(unique_error)() for them to be counted. */
+#define VALGRIND_COUNT_ERRORS                                           \
+   ({unsigned int _qyy_res;                                             \
+    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,           \
+                            VG_USERREQ__COUNT_ERRORS,                   \
+                            0, 0, 0, 0);                                \
+    _qyy_res;                                                           \
+   })
 
 #endif   /* __VALGRIND_H */

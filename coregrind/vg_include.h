@@ -1170,6 +1170,8 @@ extern Bool VG_(is_action_requested) ( Char* action, Bool* clo );
 
 extern void VG_(gen_suppression) ( Error* err );
 
+extern UInt VG_(n_errs_found);
+
 /* ---------------------------------------------------------------------
    Exports of vg_procselfmaps.c
    ------------------------------------------------------------------ */

@@ -79,7 +79,8 @@ typedef
       VG_USERREQ__DISCARD,
       VG_USERREQ__CHECK_WRITABLE,
       VG_USERREQ__CHECK_READABLE,
-      VG_USERREQ__DO_LEAK_CHECK /* untested */
+      VG_USERREQ__DO_LEAK_CHECK,
+      VG_USERREQ__COUNT_LEAKS
    } Vg_MemCheckClientRequest;
 
 
@@ -169,9 +170,7 @@ typedef
       (volatile unsigned char *)&(__lvalue),                       \
                       (unsigned int)(sizeof (__lvalue)))
 
-/* Do a memory leak check mid-execution.
-   Currently implemented but untested.
-*/
+/* Do a memory leak check mid-execution.  */
 #define VALGRIND_DO_LEAK_CHECK                                     \
    {unsigned int _qzz_res;                                         \
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
@@ -179,5 +178,13 @@ typedef
                             0, 0, 0, 0);                           \
    }
 
+/* Return number of leaked, dubious, reachable and suppressed bytes found by
+   all previous leak checks.  They must be lvalues. */
+#define VALGRIND_COUNT_LEAKS(leaked, dubious, reachable, suppressed)    \
+   {unsigned int _qzz_res;                                              \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                                \
+                            VG_USERREQ__COUNT_LEAKS,                    \
+                            &leaked, &dubious, &reachable, &suppressed);\
+   }
 
 #endif

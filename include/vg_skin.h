@@ -1202,11 +1202,12 @@ extern void VG_(maybe_record_error) ( ThreadState* tst, ErrorKind ekind,
    suppressed, though.  Return value is True if it was suppressed.
    `print_error' dictates whether to print the error, which is a bit of a 
    hack that's useful sometimes if you just want to know if the error would
-   be suppressed without possibly printing it. */
+   be suppressed without possibly printing it.  `count_error' dictates 
+   whether to add the error in the error total count (another mild hack). */
 extern Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind,
                                 Addr a, Char* s, void* extra,
                                 ExeContext* where, Bool print_error,
-                                Bool allow_GDB_attach );
+                                Bool allow_GDB_attach, Bool count_error );
 
 /* Gets a non-blank, non-comment line of at most nBuf chars from fd.
    Skips leading spaces on the line.  Returns True if EOF was hit instead. 

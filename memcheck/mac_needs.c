@@ -33,6 +33,8 @@
 
 #include "mac_shared.h"
 
+#include "memcheck.h"   /* for VG_USERREQ__* */
+
 /*------------------------------------------------------------*/
 /*--- Defns                                                ---*/
 /*------------------------------------------------------------*/
@@ -755,6 +757,29 @@ void MAC_(common_fini)(void (*leak_check)(void))
    if (MAC_(clo_leak_check)) leak_check();
 
    done_prof_mem();
+}
+
+/*------------------------------------------------------------*/
+/*--- Common client request handling                       ---*/
+/*------------------------------------------------------------*/
+
+Bool MAC_(handle_common_client_requests)(ThreadState* tst, UInt* arg,
+                                         UInt* ret )
+{
+   UInt** argp = (UInt**)arg;
+   
+   switch (arg[0]) {
+   case VG_USERREQ__COUNT_LEAKS: /* count leaked bytes */
+      *argp[1] = MAC_(total_bytes_leaked);
+      *argp[2] = MAC_(total_bytes_dubious);
+      *argp[3] = MAC_(total_bytes_reachable);
+      *argp[4] = MAC_(total_bytes_suppressed);
+      *ret = 0;
+      return True;
+
+   default:
+      return False;
+   }
 }
 
 /*------------------------------------------------------------*/

@@ -930,6 +930,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return assignNew(mce, Ity_Bit, unop(Iop_32to1, vatom));
 
       case Iop_Not32:
+      case Iop_Not8:
       case Iop_Not1:
          return vatom;
       default:
@@ -1137,7 +1138,7 @@ void do_shadow_STle ( MCEnv* mce, IRAtom* addr, IRAtom* data )
 
 IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
-   Bool verbose = False;
+   Bool verboze = False;
      //True; 
 
    Int i, j, first_stmt;
@@ -1169,7 +1170,7 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
       sk_assert(isFlatIRStmt(st));
       first_stmt = bb->stmts_used;
 
-      if (verbose) {
+      if (verboze) {
          ppIRStmt(st);
          VG_(printf)("\n\n");
       }
@@ -1211,7 +1212,7 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
       } /* switch (st->tag) */
 
-      if (verbose) {
+      if (verboze) {
          for (j = first_stmt; j < bb->stmts_used; j++) {
             VG_(printf)("   ");
             ppIRStmt(bb->stmts[j]);
@@ -1227,7 +1228,7 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
    /* Now we need to complain if the jump target is undefined. */
    first_stmt = bb->stmts_used;
 
-   if (verbose) {
+   if (verboze) {
       VG_(printf)("bb->next = ");
       ppIRExpr(bb->next);
       VG_(printf)("\n\n");
@@ -1235,7 +1236,7 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
    complainIfUndefined( &mce, bb->next );
 
-   if (verbose) {
+   if (verboze) {
       for (j = first_stmt; j < bb->stmts_used; j++) {
          VG_(printf)("   ");
          ppIRStmt(bb->stmts[j]);

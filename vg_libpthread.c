@@ -87,6 +87,7 @@ void ensure_valgrind ( char* caller )
 
 
 static
+__attribute__((noreturn))
 void barf ( char* str )
 {
    char buf[100];
@@ -96,6 +97,8 @@ void barf ( char* str )
    strcat(buf, "\n\n");
    write(2, buf, strlen(buf));
    myexit(1);
+   /* We have to persuade gcc into believing this doesn't return. */
+   while (1) { };
 }
 
 
@@ -174,6 +177,18 @@ pthread_join (pthread_t __th, void **__thread_return)
    return res;
 }
 
+
+void pthread_exit(void *retval)
+{
+   int res;
+   ensure_valgrind("pthread_exit");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_EXIT,
+                           retval, 0, 0, 0);
+   /* Doesn't return! */
+   /* However, we have to fool gcc into knowing that. */
+   barf("pthread_exit: still alive after request?!");
+}
 
 
 static int thread_specific_errno[VG_N_THREADS];
@@ -322,6 +337,36 @@ int pthread_setschedparam(pthread_t target_thread,
 {
    ignored("pthread_setschedparam");
    return 0;
+}
+
+int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex)
+{
+   int res;
+   ensure_valgrind("pthread_cond_wait");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_COND_WAIT,
+			   cond, mutex, 0, 0);
+   return res;
+}
+
+int pthread_cond_signal(pthread_cond_t *cond)
+{
+   int res;
+   ensure_valgrind("pthread_cond_signal");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_COND_SIGNAL,
+			   cond, 0, 0, 0);
+   return res;
+}
+
+int pthread_cond_broadcast(pthread_cond_t *cond)
+{
+   int res;
+   ensure_valgrind("pthread_cond_broadcast");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_COND_BROADCAST,
+			   cond, 0, 0, 0);
+   return res;
 }
 
 

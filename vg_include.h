@@ -126,7 +126,7 @@
    scheduler algorithms is surely O(N^2) in the number of threads,
    since that's simple, at least.  And (in practice) we hope that most
    programs do not need many threads. */
-#define VG_N_THREADS 10
+#define VG_N_THREADS 20
 
 /* Number of file descriptors that can simultaneously be waited on for
    I/O to complete.  Perhaps this should be the same as VG_N_THREADS
@@ -397,9 +397,13 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__PTHREAD_CREATE          0x3001
 #define VG_USERREQ__PTHREAD_JOIN            0x3002
 #define VG_USERREQ__PTHREAD_GET_THREADID    0x3003
-#define VG_USERREQ__PTHREAD_MUTEX_LOCK      0x3005
-#define VG_USERREQ__PTHREAD_MUTEX_UNLOCK    0x3006
-#define VG_USERREQ__PTHREAD_CANCEL          0x3008
+#define VG_USERREQ__PTHREAD_MUTEX_LOCK      0x3004
+#define VG_USERREQ__PTHREAD_MUTEX_UNLOCK    0x3005
+#define VG_USERREQ__PTHREAD_CANCEL          0x3006
+#define VG_USERREQ__PTHREAD_EXIT            0x3007
+#define VG_USERREQ__PTHREAD_COND_WAIT       0x3008
+#define VG_USERREQ__PTHREAD_COND_SIGNAL     0x3009
+#define VG_USERREQ__PTHREAD_COND_BROADCAST  0x300A
 
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
@@ -445,6 +449,7 @@ typedef
       VgTs_WaitJoinee, /* waiting for the thread I did join on */
       VgTs_WaitFD,     /* waiting for I/O completion on a fd */
       VgTs_WaitMX,     /* waiting on a mutex */
+      VgTs_WaitCV,     /* waiting on a condition variable */
       VgTs_Sleeping    /* sleeping for a while */
    }
    ThreadStatus;
@@ -467,9 +472,15 @@ typedef
          VG_INVALID_THREADID if no one asked to join yet. */
       ThreadId joiner;
 
-      /* When .status == WaitMX, points to the mutex I am waiting
-         for. */
-      void* /* pthread_mutex_t* */ waited_on_mx;
+      /* When .status == WaitMX, points to the mutex I am waiting for.
+         When .status == WaitCV, points to the mutex associated with
+         the condition variable indicated by the .associated_cv field.
+         In all other cases, should be NULL. */
+      void* /* pthread_mutex_t* */ associated_mx;
+
+      /* When .status == WaitCV, points to the condition variable I am
+         waiting for.  In all other cases, should be NULL. */
+      void* /* pthread_cond_t* */ associated_cv;
 
       /* If VgTs_Sleeping, this is when we should wake up. */
       ULong awaken_at;

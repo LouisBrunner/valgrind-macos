@@ -188,9 +188,12 @@ void VG_(pp_sched_status) ( void )
          case VgTs_WaitJoinee: VG_(printf)("WaitJoinee"); break;
          case VgTs_Sleeping:   VG_(printf)("Sleeping"); break;
          case VgTs_WaitMX:     VG_(printf)("WaitMX"); break;
+         case VgTs_WaitCV:     VG_(printf)("WaitCV"); break;
          default: VG_(printf)("???"); break;
       }
-      VG_(printf)(", waited_on_mx = %p\n", vg_threads[i].waited_on_mx );
+      VG_(printf)(", associated_mx = %p, associated_cv = %p\n", 
+                  vg_threads[i].associated_mx,
+                  vg_threads[i].associated_cv );
       VG_(pp_ExeContext)( 
          VG_(get_ExeContext)( False, vg_threads[i].m_eip, 
                                      vg_threads[i].m_ebp ));
@@ -513,10 +516,11 @@ void VG_(scheduler_init) ( void )
    tid_main = vg_alloc_ThreadState();
    vg_assert(tid_main == 1); 
 
-   vg_threads[tid_main].status       = VgTs_Runnable;
-   vg_threads[tid_main].joiner       = VG_INVALID_THREADID;
-   vg_threads[tid_main].waited_on_mx = NULL;
-   vg_threads[tid_main].retval       = NULL; /* not important */
+   vg_threads[tid_main].status        = VgTs_Runnable;
+   vg_threads[tid_main].joiner        = VG_INVALID_THREADID;
+   vg_threads[tid_main].associated_mx = NULL;
+   vg_threads[tid_main].associated_cv = NULL;
+   vg_threads[tid_main].retval        = NULL; /* not important */
    vg_threads[tid_main].stack_highest_word 
       = vg_threads[tid_main].m_esp /* -4  ??? */;
 
@@ -1140,7 +1144,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
          aim is not to do too many of Phase 1 since it is expensive.  */
 
       if (0)
-         VG_(printf)("SCHED: tid %d, used %d\n", tid, VG_N_THREADS);
+         VG_(printf)("SCHED: tid %d\n", tid);
 
       /* Figure out how many bbs to ask vg_run_innerloop to do.  Note
          that it decrements the counter before testing it for zero, so
@@ -1363,6 +1367,23 @@ void do_pthread_cancel ( ThreadId  tid_canceller,
 }
 
 
+static
+void do_pthread_exit ( ThreadId tid, void* retval )
+{
+   Char msg_buf[100];
+   /* We want make is appear that this thread has returned to
+      do_pthread_create_bogusRA with retval as the
+      return value.  So: simple: put retval into %EAX
+      and &do_pthread_create_bogusRA into %EIP and keep going! */
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "exiting with %p", retval);
+      print_sched_event(tid, msg_buf);
+   }
+   vg_threads[tid].m_eax  = (UInt)retval;
+   vg_threads[tid].m_eip  = (UInt)&VG_(pthreadreturn_bogusRA);
+   vg_threads[tid].status = VgTs_Runnable;
+}
+
 
 /* Thread tid is exiting, by returning from the function it was
    created with.  Or possibly due to pthread_exit or cancellation.
@@ -1581,9 +1602,10 @@ void do_pthread_create ( ThreadId parent_tid,
    // ***** CHECK *thread is writable
    *thread = (pthread_t)tid;
 
-   vg_threads[tid].waited_on_mx = NULL;
-   vg_threads[tid].joiner       = VG_INVALID_THREADID;
-   vg_threads[tid].status       = VgTs_Runnable;
+   vg_threads[tid].associated_mx = NULL;
+   vg_threads[tid].associated_cv = NULL;
+   vg_threads[tid].joiner        = VG_INVALID_THREADID;
+   vg_threads[tid].status        = VgTs_Runnable;
 
    /* return zero */
    vg_threads[tid].m_edx  = 0; /* success */
@@ -1638,6 +1660,47 @@ void do_pthread_create ( ThreadId parent_tid,
    deals with that for us.  
 */
 
+/* Helper fns ... */
+static
+void release_one_thread_waiting_on_mutex ( pthread_mutex_t* mutex, 
+                                           Char* caller )
+{
+   Int  i;
+   Char msg_buf[100];
+
+   /* Find some arbitrary thread waiting on this mutex, and make it
+      runnable.  If none are waiting, mark the mutex as not held. */
+   for (i = 1; i < VG_N_THREADS; i++) {
+      if (vg_threads[i].status == VgTs_Empty) 
+         continue;
+      if (vg_threads[i].status == VgTs_WaitMX 
+          && vg_threads[i].associated_mx == mutex)
+         break;
+   }
+
+   vg_assert(i <= VG_N_THREADS);
+   if (i == VG_N_THREADS) {
+      /* Nobody else is waiting on it. */
+      mutex->__m_count = 0;
+      mutex->__m_owner = VG_INVALID_THREADID;
+   } else {
+      /* Notionally transfer the hold to thread i, whose
+         pthread_mutex_lock() call now returns with 0 (success). */
+      /* The .count is already == 1. */
+      vg_assert(vg_threads[i].associated_mx == mutex);
+      mutex->__m_owner = (_pthread_descr)i;
+      vg_threads[i].status        = VgTs_Runnable;
+      vg_threads[i].associated_mx = NULL;
+      vg_threads[i].m_edx         = 0; /* pth_lock() success */
+
+      if (VG_(clo_trace_pthread_level) >= 1) {
+         VG_(sprintf)(msg_buf, "%s       mx %p: RESUME", 
+                               caller, mutex );
+         print_pthread_event(i, msg_buf);
+      }
+   }
+}
+
 
 static
 void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
@@ -1645,7 +1708,7 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
    Char msg_buf[100];
 
    if (VG_(clo_trace_pthread_level) >= 2) {
-      VG_(sprintf)(msg_buf, "pthread_mutex_lock   %p", mutex );
+      VG_(sprintf)(msg_buf, "pthread_mutex_lock       mx %p ...", mutex );
       print_pthread_event(tid, msg_buf);
    }
 
@@ -1683,7 +1746,7 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
             /* return 0 (success). */
             mutex->__m_count++;
             vg_threads[tid].m_edx = 0;
-	    VG_(printf)("!!!!!! tid %d, mutex %p -> locked %d\n", 
+	    VG_(printf)("!!!!!! tid %d, mx %p -> locked %d\n", 
                         tid, mutex, mutex->__m_count);
             return;
          } else {
@@ -1693,11 +1756,11 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
       } else {
          /* Someone else has it; we have to wait.  Mark ourselves
             thusly. */
-         vg_threads[tid].status       = VgTs_WaitMX;
-         vg_threads[tid].waited_on_mx = mutex;
+         vg_threads[tid].status        = VgTs_WaitMX;
+         vg_threads[tid].associated_mx = mutex;
          /* No assignment to %EDX, since we're blocking. */
          if (VG_(clo_trace_pthread_level) >= 1) {
-            VG_(sprintf)(msg_buf, "pthread_mutex_lock   %p: BLOCK", 
+            VG_(sprintf)(msg_buf, "pthread_mutex_lock       mx %p: BLOCK", 
                                   mutex );
             print_pthread_event(tid, msg_buf);
          }
@@ -1710,7 +1773,7 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
       /* We get it! [for the first time]. */
       mutex->__m_count = 1;
       mutex->__m_owner = (_pthread_descr)tid;
-      vg_assert(vg_threads[tid].waited_on_mx == NULL);
+      vg_assert(vg_threads[tid].associated_mx == NULL);
       /* return 0 (success). */
       vg_threads[tid].m_edx = 0;
    }
@@ -1722,11 +1785,10 @@ static
 void do_pthread_mutex_unlock ( ThreadId tid,
                                pthread_mutex_t *mutex )
 {
-   Int      i;
-   Char     msg_buf[100];
+   Char msg_buf[100];
 
    if (VG_(clo_trace_pthread_level) >= 2) {
-      VG_(sprintf)(msg_buf, "pthread_mutex_unlock %p", mutex );
+      VG_(sprintf)(msg_buf, "pthread_mutex_unlock     mx %p ...", mutex );
       print_pthread_event(tid, msg_buf);
    }
 
@@ -1773,40 +1835,10 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    vg_assert(mutex->__m_count == 1);
    vg_assert((ThreadId)mutex->__m_owner == tid);
 
-   /* Find some arbitrary thread waiting on this mutex, and make it
-      runnable.  If none are waiting, mark the mutex as not held. */
-   for (i = 1; i < VG_N_THREADS; i++) {
-      if (vg_threads[i].status == VgTs_Empty) 
-         continue;
-      if (vg_threads[i].status == VgTs_WaitMX 
-          && vg_threads[i].waited_on_mx == mutex)
-         break;
-   }
+   /* Release at max one thread waiting on this mutex. */
+   release_one_thread_waiting_on_mutex ( mutex, "pthread_mutex_lock" );
 
-   vg_assert(i <= VG_N_THREADS);
-   if (i == VG_N_THREADS) {
-      /* Nobody else is waiting on it. */
-      mutex->__m_count = 0;
-      mutex->__m_owner = VG_INVALID_THREADID;
-   } else {
-      /* Notionally transfer the hold to thread i, whose
-         pthread_mutex_lock() call now returns with 0 (success). */
-      /* The .count is already == 1. */
-      vg_assert(vg_threads[i].waited_on_mx == mutex);
-      mutex->__m_owner = (_pthread_descr)i;
-      vg_threads[i].status       = VgTs_Runnable;
-      vg_threads[i].waited_on_mx = NULL;
-      vg_threads[i].m_edx = 0; /* pth_lock() success */
-
-      if (VG_(clo_trace_pthread_level) >= 1) {
-         VG_(sprintf)(msg_buf, "pthread_mutex_lock   %p: RESUME", 
-                               mutex );
-         print_pthread_event(i, msg_buf);
-      }
-   }
-
-   /* In either case, our (tid's) pth_unlock() returns with 0
-      (success). */
+   /* Our (tid's) pth_unlock() returns with 0 (success). */
    vg_threads[tid].m_edx = 0; /* Success. */
 }
 
@@ -1833,14 +1865,172 @@ void do_pthread_mutex_unlock ( ThreadId tid,
 
    #define PTHREAD_COND_INITIALIZER {__LOCK_INITIALIZER, 0}
 
-   We'll just use the __c_waiting field to point to the head of the
-   list of threads waiting on this condition.  Note how the static
-   initialiser has __c_waiting == 0 == VG_INVALID_THREADID.
+   We don't use any fields of pthread_cond_t for anything at all.
+   Only the identity of the CVs is important.
 
    Linux pthreads supports no attributes on condition variables, so we
-   don't need to think too hard there.  
-*/
+   don't need to think too hard there.  */
 
+
+static
+void release_N_threads_waiting_on_cond ( pthread_cond_t* cond, 
+                                         Int n_to_release, 
+                                         Char* caller )
+{
+   Int              i;
+   Char             msg_buf[100];
+   pthread_mutex_t* mx;
+
+   while (True) {
+      if (n_to_release == 0)
+         return;
+
+      /* Find a thread waiting on this CV. */
+      for (i = 1; i < VG_N_THREADS; i++) {
+         if (vg_threads[i].status == VgTs_Empty) 
+            continue;
+         if (vg_threads[i].status == VgTs_WaitCV 
+             && vg_threads[i].associated_cv == cond)
+            break;
+      }
+      vg_assert(i <= VG_N_THREADS);
+
+      if (i == VG_N_THREADS) {
+         /* Nobody else is waiting on it. */
+         return;
+      }
+
+      mx = vg_threads[i].associated_mx;
+      vg_assert(mx != NULL);
+
+      if (mx->__m_owner == VG_INVALID_THREADID) {
+         /* Currently unheld; hand it out to thread i. */
+         vg_assert(mx->__m_count == 0);
+         vg_threads[i].status        = VgTs_Runnable;
+         vg_threads[i].associated_cv = NULL;
+         vg_threads[i].associated_mx = NULL;
+         mx->__m_owner = (_pthread_descr)i;
+         mx->__m_count = 1;
+         vg_threads[i].m_edx = 0; /* pthread_cond_wait returns success */
+
+         if (VG_(clo_trace_pthread_level) >= 1) {
+            VG_(sprintf)(msg_buf, "%s   cv %p: RESUME with mx %p", 
+                                  caller, cond, mx );
+            print_pthread_event(i, msg_buf);
+         }
+
+      } else {
+         /* Currently held.  Make thread i be blocked on it. */
+         vg_threads[i].status        = VgTs_WaitMX;
+         vg_threads[i].associated_cv = NULL;
+         vg_threads[i].associated_mx = mx;
+
+         if (VG_(clo_trace_pthread_level) >= 1) {
+            VG_(sprintf)(msg_buf, "%s   cv %p: BLOCK for mx %p", 
+                                  caller, cond, mx );
+            print_pthread_event(i, msg_buf);
+         }
+
+      }
+
+      n_to_release--;
+   }
+}
+
+
+static
+void do_pthread_cond_wait ( ThreadId tid,
+                            pthread_cond_t *cond, 
+                            pthread_mutex_t *mutex )
+{
+   Char msg_buf[100];
+
+   /* pre: mutex should be a valid mutex and owned by tid. */
+   if (VG_(clo_trace_pthread_level) >= 2) {
+      VG_(sprintf)(msg_buf, "pthread_cond_wait        cv %p, mx %p ...", 
+                            cond, mutex );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   /* Paranoia ... */
+   vg_assert(is_valid_tid(tid) 
+             && vg_threads[tid].status == VgTs_Runnable);
+
+   if (mutex == NULL || cond == NULL) {
+      vg_threads[tid].m_edx = EINVAL;
+      return;
+   }
+
+   /* More paranoia ... */
+   switch (mutex->__m_kind) {
+      case PTHREAD_MUTEX_TIMED_NP:
+      case PTHREAD_MUTEX_RECURSIVE_NP:
+      case PTHREAD_MUTEX_ERRORCHECK_NP:
+      case PTHREAD_MUTEX_ADAPTIVE_NP:
+         if (mutex->__m_count >= 0) break;
+         /* else fall thru */
+      default:
+         vg_threads[tid].m_edx = EINVAL;
+         return;
+   }
+
+   /* Barf if we don't currently hold the mutex. */
+   if (mutex->__m_count == 0 /* nobody holds it */
+       || (ThreadId)mutex->__m_owner != tid /* we don't hold it */) {
+      vg_threads[tid].m_edx = EINVAL;
+      return;
+   }
+
+   /* Queue ourselves on the condition. */
+   vg_threads[tid].status        = VgTs_WaitCV;
+   vg_threads[tid].associated_cv = cond;
+   vg_threads[tid].associated_mx = mutex;
+
+   if (VG_(clo_trace_pthread_level) >= 1) {
+      VG_(sprintf)(msg_buf, 
+                   "pthread_cond_wait        cv %p, mx %p: BLOCK", 
+                   cond, mutex );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   /* Release the mutex. */
+   release_one_thread_waiting_on_mutex ( mutex, "pthread_cond_wait " );
+}
+
+
+static
+void do_pthread_cond_signal_or_broadcast ( ThreadId tid, 
+                                           Bool broadcast,
+                                           pthread_cond_t *cond )
+{
+   Char  msg_buf[100];
+   Char* caller 
+      = broadcast ? "pthread_cond_broadcast" 
+                  : "pthread_cond_signal   ";
+
+   if (VG_(clo_trace_pthread_level) >= 2) {
+      VG_(sprintf)(msg_buf, "%s   cv %p ...", 
+                            caller, cond );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   /* Paranoia ... */
+   vg_assert(is_valid_tid(tid) 
+             && vg_threads[tid].status == VgTs_Runnable);
+
+   if (cond == NULL) {
+      vg_threads[tid].m_edx = EINVAL;
+      return;
+   }
+   
+   release_N_threads_waiting_on_cond ( 
+      cond,
+      broadcast ? VG_N_THREADS : 1, 
+      caller
+   );
+
+   vg_threads[tid].m_edx = 0; /* success */
+}
 
 
 /* ---------------------------------------------------------------------
@@ -1882,6 +2072,30 @@ void do_nontrivial_clientreq ( ThreadId tid )
          do_pthread_cancel( tid, (pthread_t)(arg[1]) );
          break;
 
+      case VG_USERREQ__PTHREAD_EXIT:
+         do_pthread_exit( tid, (void*)(arg[1]) );
+         break;
+
+      case VG_USERREQ__PTHREAD_COND_WAIT:
+         do_pthread_cond_wait( tid, 
+                               (pthread_cond_t *)(arg[1]),
+                               (pthread_mutex_t *)(arg[2]) );
+         break;
+
+      case VG_USERREQ__PTHREAD_COND_SIGNAL:
+         do_pthread_cond_signal_or_broadcast( 
+            tid, 
+	    False, /* signal, not broadcast */
+            (pthread_cond_t *)(arg[1]) );
+         break;
+
+      case VG_USERREQ__PTHREAD_COND_BROADCAST:
+         do_pthread_cond_signal_or_broadcast( 
+            tid, 
+	    True, /* broadcast, not signal */
+            (pthread_cond_t *)(arg[1]) );
+         break;
+
       case VG_USERREQ__MAKE_NOACCESS:
       case VG_USERREQ__MAKE_WRITABLE:
       case VG_USERREQ__MAKE_READABLE:
@@ -1917,17 +2131,27 @@ void do_nontrivial_clientreq ( ThreadId tid )
 static
 void scheduler_sanity ( void )
 {
-   pthread_mutex_t* mutex;
+   pthread_mutex_t* mx;
+   pthread_cond_t*  cv;
    Int              i;
    /* VG_(printf)("scheduler_sanity\n"); */
    for (i = 1; i < VG_N_THREADS; i++) {
+      mx = vg_threads[i].associated_mx;
+      cv = vg_threads[i].associated_cv;
       if (vg_threads[i].status == VgTs_WaitMX) {
-         mutex = vg_threads[i].waited_on_mx;
-         vg_assert(mutex != NULL);
-         vg_assert(mutex->__m_count > 0);
-         vg_assert(is_valid_tid((ThreadId)mutex->__m_owner));
+         vg_assert(cv == NULL);
+         vg_assert(mx != NULL);
+         vg_assert(mx->__m_count > 0);
+         vg_assert(is_valid_tid((ThreadId)mx->__m_owner));
+         vg_assert(i != (ThreadId)mx->__m_owner); 
+            /* otherwise thread i would be deadlocked. */
+      } else 
+      if (vg_threads[i].status == VgTs_WaitCV) {
+         vg_assert(cv != NULL);
+         vg_assert(mx != NULL);
       } else {
-         vg_assert(vg_threads[i].waited_on_mx == NULL);
+         vg_assert(cv == NULL);
+         vg_assert(mx == NULL);
       }
    }
 }

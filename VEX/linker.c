@@ -12,9 +12,9 @@
 
 
 #define IF_DEBUG(x,y) /* */
-static int debug_linker = 2;
+static int debug_linker = 0;
 
-// #define i386_TARGET_ARCH
+#define i386_TARGET_ARCH
 // #define arm_TARGET_ARCH
 
 #if !defined(i386_TARGET_ARCH) && !defined(arm_TARGET_ARCH)
@@ -348,6 +348,7 @@ findElfSection ( void* objImage, Elf_Word sh_type )
    return ptr;
 }
 
+#ifdef arm_TARGET_ARCH
 static
 char* alloc_fixup_bytes ( ObjectCode* oc, int nbytes )
 {
@@ -362,6 +363,7 @@ char* alloc_fixup_bytes ( ObjectCode* oc, int nbytes )
    }
    return res;
 }
+#endif
 
 
 ///////////////////////////////////////////////////////////////////
@@ -460,10 +462,10 @@ do_Elf_Rel_relocations ( ObjectCode* oc, char* ehdrC,
 	 } else {
             /* No, so look up the name in our global table. */
             symbol = strtab + sym.st_name;
-            (void*)S = lookupSymbol( symbol );
+            S = (Elf_Addr)lookupSymbol( symbol );
 	 }
          if (!S) {
-            (void*)S = lookup_magic_hacks(symbol);
+            S = (Elf_Addr)lookup_magic_hacks(symbol);
          }
          if (!S) {
             fprintf(stderr,"%s: unknown symbol `%s'\n", 
@@ -601,7 +603,7 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
 	 } else {
             /* No, so look up the name in our global table. */
             symbol = strtab + sym.st_name;
-            (void*)S = lookupSymbol( symbol );
+            S = (Elf_Addr)lookupSymbol( symbol );
 
 #ifdef ELF_FUNCTION_DESC
 	    /* If a function, already a function descriptor - we would
@@ -1285,35 +1287,12 @@ int resolveObjs( void )
  * Top-level linker.
  */
 
-#define N_OBJS 10
-
-static char* object_names[N_OBJS];
-static int   n_object_names = 0;
-
-/* Somewhat naff interface resulting from difficulties in 
-   marshalling arrays of strings from Haskell to C.
-*/
-void linker_top_level_INIT ( void )
-{
-   n_object_names = 0;
-}
-
-void linker_top_level_ADD ( char* obj_name )
-{
-   if (n_object_names >= N_OBJS) {
-      fprintf(stderr, "linker: linker_top_level_ADD: too many objs");
-      exit(1);
-   }
-   //fprintf(stderr, "ADD %d %s\n", n_object_names, obj_name);
-   object_names[n_object_names++] = strdup(obj_name);
-}
-
 /* Load and link a bunch of .o's, and return the address of
    'main'.  Or NULL if something borks.
 */
-void* linker_top_level_LINK ( void )
+void* linker_top_level_LINK ( int n_object_names, char** object_names )
 {
-   int   i, r;
+   int   r, i;
    void* mainp;
 
    initLinker();
@@ -1331,11 +1310,11 @@ void* linker_top_level_LINK ( void )
 }
 
 
-#if 0
+#if 1
 int main ( int argc, char** argv )
 {
    void* mainp;
-   linker_top( argc - 1 , &argv[1]);
+   linker_top_level_LINK( argc - 1 , &argv[1]);
    /* find and run "main" */
 
    mainp = search_StringMap ( global_symbol_table, "main" );

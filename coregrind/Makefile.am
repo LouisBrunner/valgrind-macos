@@ -80,10 +80,10 @@ stage2_SOURCES = \
 	vg_translate.c \
 	vg_transtab.c \
 	vg_cpuid.S
-stage2_DEPENDENCIES = $(srcdir)/valgrind.vs x86/stage2.lds
+stage2_DEPENDENCIES = $(srcdir)/valgrind.vs ${VG_ARCH}/stage2.lds
 stage2_LDFLAGS=-Wl,--export-dynamic -Wl,-e,_ume_entry  -g \
 	-Wl,-defsym,kickstart_base=$(KICKSTART_BASE) \
-	-Wl,-T,x86/stage2.lds \
+	-Wl,-T,${VG_ARCH}/stage2.lds \
 	-Wl,-version-script $(srcdir)/valgrind.vs 
 stage2_LDADD= \
 	demangle/cp-demangle.o \

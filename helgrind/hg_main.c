@@ -1802,9 +1802,6 @@ static VgHashTable hg_malloc_list = NULL;
 static Int freechunkptr = 0;
 static HG_Chunk *freechunks[N_FREED_CHUNKS];
 
-/* Use a small redzone (paranoia) */
-SizeT VG_(vg_malloc_redzone_szB) = 8;
-
 
 /* Allocate a user-chunk of size bytes.  Also allocate its shadow
    block, make the shadow block point at the user block.  Put the
@@ -3281,12 +3278,36 @@ void TL_(pre_clo_init)(void)
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 115 );
 
-   VG_(needs_core_errors)();
-   VG_(needs_tool_errors)();
-   VG_(needs_data_syms)();
-   VG_(needs_client_requests)();
-   VG_(needs_command_line_options)();
-   VG_(needs_shadow_memory)();
+   VG_(basic_tool_funcs)          (TL_(post_clo_init),
+                                   TL_(instrument),
+                                   TL_(fini));
+
+   VG_(needs_core_errors)         ();
+   VG_(needs_tool_errors)         (TL_(eq_Error),
+                                   TL_(pp_Error),
+                                   TL_(update_extra),
+                                   TL_(recognised_suppression),
+                                   TL_(read_extra_suppression_info),
+                                   TL_(error_matches_suppression),
+                                   TL_(get_error_name),
+                                   TL_(print_extra_suppression_info));
+   VG_(needs_data_syms)           ();
+   VG_(needs_client_requests)     (TL_(handle_client_request));
+   VG_(needs_command_line_options)(TL_(process_cmd_line_option),
+                                   TL_(print_usage),
+                                   TL_(print_debug_usage));
+   VG_(needs_shadow_memory)       ();
+
+   VG_(malloc_funcs)              (TL_(malloc),
+                                   TL_(__builtin_new),
+                                   TL_(__builtin_vec_new),
+                                   TL_(memalign),
+                                   TL_(calloc),
+                                   TL_(free),
+                                   TL_(__builtin_delete),
+                                   TL_(__builtin_vec_delete),
+                                   TL_(realloc),
+                                   8 );
 
    VG_(init_new_mem_startup)      (& eraser_new_mem_startup);
 

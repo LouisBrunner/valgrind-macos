@@ -148,12 +148,18 @@ static const UChar parity_table[256] = {
 };
 
 /* n must be a constant to be efficient */
-inline static Long lshift ( Long x, Int n )
+static inline Long lshift ( Long x, Int n )
 {
    if (n >= 0)
       return x << n;
    else
       return x >> (-n);
+}
+
+/* identity on ULong */
+static inline ULong idULong ( ULong x )
+{
+   return x;
 }
 
 
@@ -400,16 +406,20 @@ inline static Long lshift ( Long x, Int n )
 
 /*-------------------------------------------------------------*/
 
-#define ACTIONS_UMUL(DATA_BITS,DATA_UTYPE,DATA_U2TYPE)          \
+#define ACTIONS_UMUL(DATA_BITS, DATA_UTYPE,  NARROWtoU,         \
+                                DATA_U2TYPE, NARROWto2U)        \
 {                                                               \
    PREAMBLE(DATA_BITS);                                         \
    { Long cf, pf, af, zf, sf, of;                               \
      DATA_UTYPE  hi;                                            \
-     DATA_UTYPE  lo = ((DATA_UTYPE)CC_DEP1)                     \
-                      * ((DATA_UTYPE)CC_DEP2);                  \
-     DATA_U2TYPE rr = ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP1))      \
-                      * ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP2));   \
-     hi = (DATA_UTYPE)(rr >>/*u*/ DATA_BITS);                   \
+     DATA_UTYPE  lo                                             \
+        = NARROWtoU( ((DATA_UTYPE)CC_DEP1)                      \
+                     * ((DATA_UTYPE)CC_DEP2) );                 \
+     DATA_U2TYPE rr                                             \
+        = NARROWto2U(                                           \
+             ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP1))               \
+             * ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP2)) );          \
+     hi = NARROWtoU(rr >>/*u*/ DATA_BITS);                      \
      cf = (hi != 0);                                            \
      pf = parity_table[(UChar)lo];                              \
      af = 0; /* undefined */                                    \
@@ -422,16 +432,20 @@ inline static Long lshift ( Long x, Int n )
 
 /*-------------------------------------------------------------*/
 
-#define ACTIONS_SMUL(DATA_BITS,DATA_STYPE,DATA_S2TYPE)          \
+#define ACTIONS_SMUL(DATA_BITS, DATA_STYPE,  NARROWtoS,         \
+                                DATA_S2TYPE, NARROWto2S)        \
 {                                                               \
    PREAMBLE(DATA_BITS);                                         \
    { Long cf, pf, af, zf, sf, of;                               \
      DATA_STYPE  hi;                                            \
-     DATA_STYPE  lo = ((DATA_STYPE)CC_DEP1)                     \
-                      * ((DATA_STYPE)CC_DEP2);                  \
-     DATA_S2TYPE rr = ((DATA_S2TYPE)((DATA_STYPE)CC_DEP1))      \
-                      * ((DATA_S2TYPE)((DATA_STYPE)CC_DEP2));   \
-     hi = (DATA_STYPE)(rr >>/*s*/ DATA_BITS);                   \
+     DATA_STYPE  lo                                             \
+        = NARROWtoS( ((DATA_STYPE)CC_DEP1)                      \
+                     * ((DATA_STYPE)CC_DEP2) );                 \
+     DATA_S2TYPE rr                                             \
+        = NARROWto2S(                                           \
+             ((DATA_S2TYPE)((DATA_STYPE)CC_DEP1))               \
+             * ((DATA_S2TYPE)((DATA_STYPE)CC_DEP2)) );          \
+     hi = NARROWtoS(rr >>/*s*/ DATA_BITS);                      \
      cf = (hi != (lo >>/*s*/ (DATA_BITS-1)));                   \
      pf = parity_table[(UChar)lo];                              \
      af = 0; /* undefined */                                    \
@@ -479,7 +493,7 @@ inline static Long lshift ( Long x, Int n )
 }
 
 
-#if PROFILE_EFLAGS
+#if PROFILE_RFLAGS
 
 static Bool initted     = False;
 
@@ -501,7 +515,7 @@ static void showCounts ( void )
 {
    Int op, co;
    Char ch;
-   vex_printf("\nTotal calls: calc_all=%d   calc_cond=%d   calc_c=%d\n",
+   vex_printf("\nTotal calls: calc_all=%u   calc_cond=%u   calc_c=%u\n",
               n_calc_all, n_calc_cond, n_calc_c);
 
    vex_printf("      cSLOW  cFAST    O   NO    B   NB    Z   NZ   BE  NBE"
@@ -519,8 +533,8 @@ static void showCounts ( void )
          ch = 'L';
 
       vex_printf("%2d%c: ", op, ch);
-      vex_printf("%6d ", tabc_slow[op]);
-      vex_printf("%6d ", tabc_fast[op]);
+      vex_printf("%6u ", tabc_slow[op]);
+      vex_printf("%6u ", tabc_fast[op]);
       for (co = 0; co < 16; co++) {
          Int n = tab_cond[op][co];
          if (n >= 1000) {
@@ -548,7 +562,7 @@ static void initCounts ( void )
    }
 }
 
-#endif /* PROFILE_EFLAGS */
+#endif /* PROFILE_RFLAGS */
 
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
@@ -621,19 +635,26 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
       case AMD64G_CC_OP_RORL:   ACTIONS_ROR( 32, UInt   );
       case AMD64G_CC_OP_RORQ:   ACTIONS_ROR( 64, ULong  );
 
-      case AMD64G_CC_OP_UMULB:  ACTIONS_UMUL(  8, UChar,  UShort );
-      case AMD64G_CC_OP_UMULW:  ACTIONS_UMUL( 16, UShort, UInt   );
-      case AMD64G_CC_OP_UMULL:  ACTIONS_UMUL( 32, UInt,   ULong  );
+      case AMD64G_CC_OP_UMULB:  ACTIONS_UMUL(  8, UChar,  toUChar,
+                                                  UShort, toUShort );
+      case AMD64G_CC_OP_UMULW:  ACTIONS_UMUL( 16, UShort, toUShort,
+                                                  UInt,   toUInt );
+      case AMD64G_CC_OP_UMULL:  ACTIONS_UMUL( 32, UInt,   toUInt,
+                                                  ULong,  idULong );
 
-      case AMD64G_CC_OP_SMULB:  ACTIONS_SMUL(  8, Char,   Short );
-      case AMD64G_CC_OP_SMULW:  ACTIONS_SMUL( 16, Short,  Int   );
-      case AMD64G_CC_OP_SMULL:  ACTIONS_SMUL( 32, Int,    Long  );
+      case AMD64G_CC_OP_SMULB:  ACTIONS_SMUL(  8, Char,   toUChar,
+                                                  Short,  toUShort );
+      case AMD64G_CC_OP_SMULW:  ACTIONS_SMUL( 16, Short,  toUShort, 
+                                                  Int,    toUInt   );
+      case AMD64G_CC_OP_SMULL:  ACTIONS_SMUL( 32, Int,    toUInt,
+                                                  Long,   idULong );
+
       case AMD64G_CC_OP_SMULQ:  ACTIONS_SMULQ;
 
       default:
          /* shouldn't really make these calls from generated code */
          vex_printf("amd64g_calculate_rflags_all_WRK(AMD64)"
-                    "( %lld, 0x%llx, 0x%llx, 0x%llx )\n",
+                    "( %llu, 0x%llx, 0x%llx, 0x%llx )\n",
                     cc_op, cc_dep1_formal, cc_dep2_formal, cc_ndep_formal );
          vpanic("amd64g_calculate_rflags_all_WRK(AMD64)");
    }
@@ -647,7 +668,7 @@ ULong amd64g_calculate_rflags_all ( ULong cc_op,
                                     ULong cc_dep2,
                                     ULong cc_ndep )
 {
-#  if PROFILE_EFLAGS
+#  if PROFILE_RFLAGS
    if (!initted) initCounts();
    n_calc_all++;
    if (SHOW_COUNTS_NOW) showCounts();
@@ -664,7 +685,7 @@ ULong amd64g_calculate_rflags_c ( ULong cc_op,
                                   ULong cc_dep2,
                                   ULong cc_ndep )
 {
-#  if PROFILE_EFLAGS
+#  if PROFILE_RFLAGS
    if (!initted) initCounts();
    n_calc_c++;
    tabc_fast[cc_op]++;
@@ -695,7 +716,7 @@ ULong amd64g_calculate_rflags_c ( ULong cc_op,
          break;
    }
 
-#  if PROFILE_EFLAGS
+#  if PROFILE_RFLAGS
    tabc_fast[cc_op]--;
    tabc_slow[cc_op]++;
 #  endif
@@ -718,7 +739,7 @@ ULong amd64g_calculate_condition ( ULong/*AMD64Condcode*/ cond,
    ULong of,sf,zf,cf,pf;
    ULong inv = cond & 1;
 
-#  if PROFILE_EFLAGS
+#  if PROFILE_RFLAGS
    if (!initted) initCounts();
    tab_cond[cc_op][cond]++;
    n_calc_cond++;
@@ -777,7 +798,7 @@ ULong amd64g_calculate_condition ( ULong/*AMD64Condcode*/ cond,
       default:
          /* shouldn't really make these calls from generated code */
          vex_printf("amd64g_calculate_condition"
-                    "( %lld, %lld, 0x%llx, 0x%llx, 0x%llx )\n",
+                    "( %llu, %llu, 0x%llx, 0x%llx, 0x%llx )\n",
                     cond, cc_op, cc_dep1, cc_dep2, cc_ndep );
          vpanic("amd64g_calculate_condition");
    }

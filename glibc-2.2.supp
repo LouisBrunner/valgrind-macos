@@ -14,7 +14,7 @@
 #     (optionally: caller3 name)
 #  }
 #
-# For memcheck, the supp_kinds are:
+# For Memcheck, the supp_kinds are:
 #
 #     Param Value1 Value2 Value4 Value8
 #     Free Addr1 Addr2 Addr4 Addr8
@@ -27,33 +27,33 @@
 #-------- SuSE 8.1 stuff (gcc-3.2, glibc-2.2.5 + SuSE's hacks)
 {
    __stpcpy/*
-   memcheck:Cond
+   Memcheck:Cond
    fun:__stpcpy
    fun:*
 }
 {
    strlen/decompose_rpath/_dl_map_object
-   memcheck:Cond
+   Memcheck:Cond
    fun:strlen
    fun:decompose_rpath
    fun:_dl_map_object
 }
 {
    strlen/_dl_sym/dlsym_doit
-   memcheck:Cond
+   Memcheck:Cond
    fun:strlen
    fun:_dl_sym
    fun:dlsym_doit
 }
 {
    trecurse/__gconv_release_shlib(Addr4)
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:trecurse
    fun:__gconv_release_shlib
 }
 {
    do_release_shlib/trecurse(Addr4)
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:do_release_shlib
    fun:trecurse
 }
@@ -61,28 +61,28 @@
 #-------- R H Limbo (glibc-2.2.90) stuff
 {
    elf_dynamic_do_rela.8/_dl_relocate_object_internal
-   memcheck:Cond
+   Memcheck:Cond
    fun:elf_dynamic_do_rela.8
    fun:_dl_relocate_object_internal
 }
 
 {
    __strnlen/_nl_make_l10nflist(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:__strnlen
    fun:_nl_make_l10nflist
 }
 
 {
    __strnlen/*vfprintf*
-   memcheck:Cond
+   Memcheck:Cond
    fun:__strnlen
    fun:*vfprintf*
 }
 
 {
    libXaw.so.7.0(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:*libXaw.so.7.0
 }
 
@@ -91,20 +91,20 @@
 
 {
    __twalk/*(Addr4)
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:__twalk
 }
 
 {
    do_release_shlib/__twalk(Addr4)
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:do_release_shlib
    fun:__twalk
 }
 
 {
    __libc_freeres/free_mem/free(Free)
-   memcheck:Free
+   Memcheck:Free
    fun:free
    fun:free_mem
    fun:__libc_freeres
@@ -161,14 +161,14 @@
 # even more glibc suppressions ?
 {
    libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:*libc-2.2.?.so
    obj:*libc-2.2.?.so
    obj:*libc-2.2.?.so
 }
 {
    libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Value4)
-   memcheck:Value4
+   Memcheck:Value4
    obj:*libc-2.2.?.so
    obj:*libc-2.2.?.so
    obj:*libc-2.2.?.so
@@ -178,24 +178,24 @@
 ##### suppressions for coolo
 {
    strchr/dl_open_worker(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:strchr
    fun:dl_open_worker
 }
 { 
    __rawmemchr(Cond)
-   memcheck:Cond 
+   Memcheck:Cond 
    fun:__rawmemchr
 } 
 { 
    _IO_vfprintf/__strnlen(Cond)
-   memcheck:Cond 
+   Memcheck:Cond 
    fun:__strnlen
    fun:_IO_vfprintf
 } 
 { 
    __strchrnul/gethostbyname*(Cond)
-   memcheck:Cond 
+   Memcheck:Cond 
    fun:__strchrnul
    fun:gethostbyname*
 } 
@@ -204,28 +204,28 @@
 ##----
 {
    strlen/*dl_map_object*(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:strlen
    fun:*dl_map_object*
 }
 
 {
    strlen/*dl_open_worker*(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:strlen
    fun:*dl_open_worker*
 }
 
 {
    *rawmemchr*/*nss*(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:*rawmemchr*
    fun:*nss*
 }
 
 {
    *strchrnul*/*nss*(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:*strchrnul*
    fun:*nss*
 }
@@ -237,13 +237,13 @@
 # two:
 {
    __mpn_construct_double/*(Addr4)
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:__mpn_construct_double
    fun:*
 }
 {
    __mpn_construct_double/*(Addr8)
-   memcheck:Addr8
+   Memcheck:Addr8
    fun:__mpn_construct_double
    fun:*
 }
@@ -251,13 +251,13 @@
 # More of the same (gcc bug, I'm pretty sure)
 {
    __fabs/*(Addr4)
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:__fabs
    fun:*
 }
 {
    __fabs/*(Addr8)
-   memcheck:Addr8
+   Memcheck:Addr8
    fun:__fabs
    fun:*
 }
@@ -266,7 +266,7 @@
 # Not sure what this is about ... but anyway
 {
    pthread_sighandler/*(Addr4)
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:pthread_sighandler
    fun:*
 }
@@ -276,7 +276,7 @@
 
 {
    __strnlen/__argz_stringify/_nl_make_l10nflist(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:__strnlen
    fun:__argz_stringify
    fun:_nl_make_l10nflist
@@ -285,14 +285,14 @@
 #--------------
 {
    _dl_relocate_object*/dl_open_worker/_dl_catch_error*(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:_dl_relocate_object*
    fun:dl_open_worker
    fun:_dl_catch_error*
 }
 {
    _dl_relocate_object/libc-2.2.4.so/_dl_catch_error(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:_dl_relocate_object
    obj:*libc-2.2.?.so
    fun:_dl_catch_error
@@ -300,7 +300,7 @@
 
 {
    strrchr/_dl_map_object_from_fd/_dl_map_object(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:strrchr
    fun:_dl_map_object_from_fd
    fun:_dl_map_object
@@ -309,14 +309,14 @@
 #-------------------
 {
    socketcall.connect(serv_addr)/__libc_connect/*
-   memcheck:Param
+   Memcheck:Param
    socketcall.connect(serv_addr)
    fun:__libc_connect
    fun:*
 }
 {
    socketcall.connect(serv_addr)/libc-2.2.4.so/libc-2.2.4.so
-   memcheck:Param
+   Memcheck:Param
    socketcall.connect(serv_addr)
    obj:*libc-2.2.?.so
    obj:*libc-2.2.?.so
@@ -325,7 +325,7 @@
 #----------------------
 {
    write(buf)/__libc_write/libX11.so.6.2/libX11.so.6.2(Param)
-   memcheck:Param
+   Memcheck:Param
    write(buf)
    fun:__libc_write
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -333,7 +333,7 @@
 }
 {
    write(buf)/libc-2.2.4.so/libX11.so.6.2/libX11.so.6.2(Param)
-   memcheck:Param
+   Memcheck:Param
    write(buf)
    obj:*libc-2.2.?.so
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -350,7 +350,7 @@
 
 {
    writev(vector[...])/__writev/libX11.so.6.2/libX11.so.6.2
-   memcheck:Param
+   Memcheck:Param
    writev(vector[...])
    fun:__writev
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -360,14 +360,14 @@
 #----------------
 {
    __rawmemchr/libXt.so.6.0/libXt.so.6.0
-   memcheck:Cond
+   Memcheck:Cond
    fun:__rawmemchr
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
 }
 {
    libc-2.2.4.so/libXt.so.6.0/libXt.so.6.0
-   memcheck:Cond
+   Memcheck:Cond
    obj:*libc-2.2.?.so
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0

@@ -15,7 +15,7 @@
 #     (optionally: caller3 name)
 #  }
 #
-# For memcheck, the supp_kinds are:
+# For Memcheck, the supp_kinds are:
 #
 #     Param Value1 Value2 Value4 Value8
 #     Free Addr1 Addr2 Addr4 Addr8
@@ -29,7 +29,7 @@
 
 {
    socketcall.connect(serv_addr)/__libc_connect/*(Param)
-   memcheck:Param
+   Memcheck:Param
    socketcall.connect(serv_addr)
    fun:__libc_connect
    fun:*
@@ -37,7 +37,7 @@
 
 {
    strrchr/_dl_map_object_from_fd/_dl_map_object(Addr4)
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:strrchr
    fun:_dl_map_object_from_fd
    fun:_dl_map_object
@@ -45,7 +45,7 @@
 
 {
    strrchr/_dl_map_object_from_fd/_dl_map_object(Value1)
-   memcheck:Value1
+   Memcheck:Value1
    fun:strrchr
    fun:_dl_map_object_from_fd
    fun:_dl_map_object
@@ -53,7 +53,7 @@
 
 {
    llseek(result)/__libc_lseek64/_IO_file_seek(Param)
-   memcheck:Param
+   Memcheck:Param
    llseek(result)
    fun:__libc_lseek64
    fun:_IO_file_seek
@@ -61,7 +61,7 @@
 
 {
    __rawmemchr/_nl_*/*locale(Addr4)
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:__rawmemchr
    fun:_nl_*
    fun:*locale
@@ -70,20 +70,20 @@
 # new ones for RH62 ls -l 
 {
    __strchrnul/__nss_database_lookup(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:__strchrnul
    fun:__nss_database_lookup
 }
 {
    __strchrnul/__gethostbyname_r(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:__strchrnul
    fun:__gethostbyname_r
 }
 
 {
    strrchr/_dl_map*/_dl_map*(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:strrchr
    fun:_dl_map*
    fun:_dl_map*
@@ -91,7 +91,7 @@
 
 {
    strchr/dl_open_worker/_dl_catch_error(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:strchr
    fun:dl_open_worker
    fun:_dl_catch_error
@@ -99,7 +99,7 @@
 
 {
    __rawmemchr/???/__getgrgid_r(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:__rawmemchr
    fun:*
    fun:__getgrgid_r
@@ -107,7 +107,7 @@
 
 {
    __rawmemchr/_nl_*/*locale*(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:__rawmemchr
    fun:_nl_*
    fun:*locale*
@@ -115,7 +115,7 @@
 
 {
    _dl_relocate_object/dl_open_worker(Value0)
-   memcheck:Cond
+   Memcheck:Cond
    fun:_dl_relocate_object
    fun:dl_open_worker
 }
@@ -127,7 +127,7 @@
 
 {
    libc-2.1.3.so/libc-2.1.3.so/libc-2.1.3.so(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:*libc-2.1.3.so
    obj:*libc-2.1.3.so
    obj:*libc-2.1.3.so
@@ -135,21 +135,21 @@
 
 {
    strchr/libc-2.1.3.so(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    fun:*strchr*
    obj:*libc-2.1.3.so
 }
 
 {
    libc-2.1.3.so/libXt.so(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:*libc-2.1.3.so
    obj:*libXt.so*
 }
 
 {
    socketcall.connect(serv_addr)/__libc_connect/*(Param)
-   memcheck:Param
+   Memcheck:Param
    socketcall.connect(serv_addr)
    obj:*libc-2.1.3.so
    obj:*libX11.so*
@@ -160,14 +160,14 @@
 
 {
    X11-Cond-0
-   memcheck:Cond
+   Memcheck:Cond
    obj:*libXt.so.6.0
    obj:*libXt.so.6.0
    obj:*libXt.so.6.0
 }
 {
    X11-Cond-1
-   memcheck:Cond
+   Memcheck:Cond
    fun:__rawmemchr
    obj:*libXt.so.6.0
    obj:*libXt.so.6.0
@@ -178,7 +178,7 @@
 
 {
    X11-Addr4-1
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libX11.so.6.1
@@ -186,7 +186,7 @@
 
 {
    X11-Addr4-2
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -194,7 +194,7 @@
 
 {
    X11-Addr4-3
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -202,7 +202,7 @@
 
 {
    X11-Addr4-4
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -210,7 +210,7 @@
 
 {
    X11-Addr4-5
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:__rawmemchr
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -218,7 +218,7 @@
 
 {
    X11-Addr4-6
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXmu.so.6.0
    obj:/usr/X11R6/lib/libXmu.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -226,7 +226,7 @@
 
 {
    X11-Addr4-7
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXawXpm_posing_as_Xaw.so.6.1
@@ -234,7 +234,7 @@
 
 {
    X11-Param-1
-   memcheck:Param
+   Memcheck:Param
    write(buf)
    fun:__libc_write
    obj:/usr/X11R6/lib/libX11.so.6.1
@@ -243,7 +243,7 @@
 
 {
    X11-Addr4-8
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libXpm.so.4.11
    obj:/usr/X11R6/lib/libXpm.so.4.11
@@ -251,7 +251,7 @@
 
 {
    X11-Addr4-8
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXawXpm_posing_as_Xaw.so.6.1
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -259,7 +259,7 @@
 
 {
    X11-Addr4-9
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXaw.so.6.1
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -267,7 +267,7 @@
 
 {
    X11-Addr4-10
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXaw.so.6.1
    obj:/usr/X11R6/lib/libXaw.so.6.1
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -275,7 +275,7 @@
 
 {
    X11-Addr4-11
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXaw.so.6.1

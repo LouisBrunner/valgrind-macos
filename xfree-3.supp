@@ -14,7 +14,7 @@
 #     (optionally: caller3 name)
 #  }
 #
-# For memcheck, the supp_kinds are:
+# For Memcheck, the supp_kinds are:
 #
 #     Param Value1 Value2 Value4 Value8
 #     Free Addr1 Addr2 Addr4 Addr8
@@ -28,14 +28,14 @@
 
 {
    X11-Cond-0
-   memcheck:Cond
+   Memcheck:Cond
    obj:*libXt.so.6.0
    obj:*libXt.so.6.0
    obj:*libXt.so.6.0
 }
 {
    X11-Cond-1
-   memcheck:Cond
+   Memcheck:Cond
    fun:__rawmemchr
    obj:*libXt.so.6.0
    obj:*libXt.so.6.0
@@ -46,7 +46,7 @@
 
 {
    X11-Addr4-1
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libX11.so.6.1
@@ -54,7 +54,7 @@
 
 {
    X11-Addr4-2
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -62,7 +62,7 @@
 
 {
    X11-Addr4-3
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -70,7 +70,7 @@
 
 {
    X11-Addr4-4
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -78,7 +78,7 @@
 
 {
    X11-Addr4-5
-   memcheck:Addr4
+   Memcheck:Addr4
    fun:__rawmemchr
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -86,7 +86,7 @@
 
 {
    X11-Addr4-6
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXmu.so.6.0
    obj:/usr/X11R6/lib/libXmu.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -94,7 +94,7 @@
 
 {
    X11-Addr4-7
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXawXpm_posing_as_Xaw.so.6.1
@@ -102,7 +102,7 @@
 
 {
    X11-Param-1
-   memcheck:Param
+   Memcheck:Param
    write(buf)
    fun:__libc_write
    obj:/usr/X11R6/lib/libX11.so.6.1
@@ -111,7 +111,7 @@
 
 {
    X11-Addr4-8
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libX11.so.6.1
    obj:/usr/X11R6/lib/libXpm.so.4.11
    obj:/usr/X11R6/lib/libXpm.so.4.11
@@ -119,7 +119,7 @@
 
 {
    X11-Addr4-8
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXawXpm_posing_as_Xaw.so.6.1
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -127,7 +127,7 @@
 
 {
    X11-Addr4-9
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXaw.so.6.1
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -135,7 +135,7 @@
 
 {
    X11-Addr4-10
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXaw.so.6.1
    obj:/usr/X11R6/lib/libXaw.so.6.1
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -143,7 +143,7 @@
 
 {
    X11-Addr4-11
-   memcheck:Addr4
+   Memcheck:Addr4
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXaw.so.6.1

@@ -27,7 +27,7 @@
 
 {
    libX11.so.6.2/libX11.so.6.2/libX11.so.6.2(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -35,7 +35,7 @@
 
 {
    libXt.so.6.2/libXt.so.6.2/libXt.so.6.2(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -44,7 +44,7 @@
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXaw.so.7.0(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
@@ -52,7 +52,7 @@
 
 {
    libXmu.so.6.2/libXmu.so.6.2/libXmu.so.6.2(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:/usr/X11R6/lib/libXmu.so.6.2
    obj:/usr/X11R6/lib/libXmu.so.6.2
    obj:/usr/X11R6/lib/libXmu.so.6.2
@@ -60,7 +60,7 @@
 
 {
    libXt.so.6.0/libXt.so.6.0/libXaw.so.7.0(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
@@ -68,7 +68,7 @@
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXt.so.6.0(Value4)
-   memcheck:Value4
+   Memcheck:Value4
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -76,7 +76,7 @@
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXt.so.6.0(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -84,7 +84,7 @@
 
 {
    libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libXaw.so.7.0
@@ -92,7 +92,7 @@
 
 {
    libX11.so.6.2/libXaw.so.7.0/libXaw.so.7.0(Cond)
-   memcheck:Cond
+   Memcheck:Cond
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
@@ -100,7 +100,7 @@
 
 {
    libXpm.so.4.11/libXpm.so.4.11/libXpm.so.4.11
-   memcheck:Cond
+   Memcheck:Cond
    obj:/usr/X11R6/lib/libXpm.so.4.11
    obj:/usr/X11R6/lib/libXpm.so.4.11
    obj:/usr/X11R6/lib/libXpm.so.4.11

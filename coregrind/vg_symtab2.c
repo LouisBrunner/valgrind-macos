@@ -55,7 +55,8 @@
  *   Menapace, Kingdon and MacKenzie
  *   Cygnus Support
  */
-typedef enum { N_FUN   = 36,    /* Function start or end            */
+typedef enum { N_GSYM  = 32,    /* Global symbol                    */
+               N_FUN   = 36,    /* Function start or end            */
                N_STSYM = 38,    /* Data segment file-scope variable */
                N_LCSYM = 40,    /* BSS segment file-scope variable  */
                N_RSYM  = 64,    /* Register variable                */
@@ -943,7 +944,7 @@ void vg_read_lib_symbols ( SegInfo* si )
 
                   /* Boring one: skip, look for something more useful. */
                   case N_RSYM: case N_LSYM: case N_LBRAC: case N_RBRAC: 
-                  case N_STSYM: case N_LCSYM:
+                  case N_STSYM: case N_LCSYM: case N_GSYM:
                      i++;
                      goto LOOP;
                      

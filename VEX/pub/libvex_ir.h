@@ -213,6 +213,9 @@ typedef
 
       /* Division */
       /* TODO: clarify semantics wrt rounding, negative values, whatever */
+      Iop_DivU32,   // :: I32,I32 -> I32 (simple div, no mod)
+      Iop_DivS32,   // ditto, signed
+
       Iop_DivModU64to32, // :: I64,I32 -> I64
                          // of which lo half is div and hi half is mod
       Iop_DivModS64to32, // ditto, signed

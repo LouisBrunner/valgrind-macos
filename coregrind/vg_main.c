@@ -1550,7 +1550,7 @@ void usage ( Bool debug_help )
 "    --single-step=no|yes      translate each instr separately? [no]\n"
 "    --optimise=no|yes         improve intermediate code? [yes]\n"
 "    --profile=no|yes          profile? (tool must be built for it) [no]\n"
-"    --bbprofile=no|yes        profile bbs?\n"
+"    --bbprofile=no|yes        profile bbs? [no]\n"
 "    --branchpred=yes|no       generate branch prediction hints [no]\n"
 "    --trace-codegen=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"

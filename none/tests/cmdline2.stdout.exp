@@ -41,7 +41,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --single-step=no|yes      translate each instr separately? [no]
     --optimise=no|yes         improve intermediate code? [yes]
     --profile=no|yes          profile? (tool must be built for it) [no]
-    --chain-bb=no|yes         do basic-block chaining? [yes]
+    --bbprofile=no|yes        profile bbs? [no]
     --branchpred=yes|no       generate branch prediction hints [no]
     --trace-codegen=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
     --trace-syscalls=no|yes   show all system calls? [no]

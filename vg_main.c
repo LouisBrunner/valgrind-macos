@@ -987,6 +987,14 @@ void VG_(main) ( void )
    /* Process Valgrind's command-line opts (from env var VG_OPTS). */
    process_cmd_line_options();
 
+   /* Hook to delay things long enough so we can get the pid and
+      attach GDB in another shell. */
+   if (0) { 
+      Int p, q;
+      for (p = 0; p < 50000; p++)
+         for (q = 0; q < 50000; q++) ;
+   }
+
    /* Initialise the scheduler, and copy the client's state from
       baseBlock into VG_(threads)[1].  This has to come before signal
       initialisations. */
@@ -1003,10 +1011,6 @@ void VG_(main) ( void )
 
    /* Start calibration of our RDTSC-based clock. */
    VG_(start_rdtsc_calibration)();
-
-   /* Hook to delay things long enough so we can get the pid and
-      attach GDB in another shell. */
-   /* {extern unsigned int sleep(unsigned int seconds); sleep(10);} */
 
    if (VG_(clo_instrument) || VG_(clo_cachesim)) {
       VGP_PUSHCC(VgpInitAudit);

@@ -113,7 +113,7 @@ void pthread_condattr_setpshared ( void )  { unimp("pthread_condattr_setpshared"
 //void pthread_detach ( void )  { unimp("pthread_detach"); }
 //void pthread_equal ( void )  { unimp("pthread_equal"); }
 //void pthread_exit ( void )  { unimp("pthread_exit"); }
-void pthread_getattr_np ( void )  { unimp("pthread_getattr_np"); }
+//void pthread_getattr_np ( void )  { unimp("pthread_getattr_np"); }
 void pthread_getcpuclockid ( void )  { unimp("pthread_getcpuclockid"); }
 //void pthread_getschedparam ( void )  { unimp("pthread_getschedparam"); }
 //void pthread_getspecific ( void )  { unimp("pthread_getspecific"); }

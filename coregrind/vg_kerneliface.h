@@ -130,14 +130,14 @@ typedef
 #define VKI_SIGTERM         15
 #define VKI_SIGUSR1         10
 
-/* The following are copied from /usr/include/bits/mman.h, which in
-   turn claims to have got them from the kernel headers. */
+/* The following are copied from include/asm-i386/mman.h .*/
 
 #define VKI_PROT_READ      0x1             /* Page can be read.  */
 #define VKI_PROT_WRITE     0x2             /* Page can be written.  */
 #define VKI_PROT_EXEC      0x4             /* Page can be executed.  */
 #define VKI_MAP_ANONYMOUS  0x20            /* Don't use a file.  */
 #define VKI_MAP_PRIVATE    0x02            /* Changes are private.  */
+#define VKI_MAP_FIXED      0x10            /* Interpret addr exactly */
 
 
 /* Copied from /usr/src/linux-2.4.9-13/include/asm/errno.h */

@@ -288,6 +288,59 @@ int pthread_attr_getscope ( const pthread_attr_t *attr, int *scope )
    return 0;
 }
 
+
+/* Pretty bogus.  Avoid if possible. */
+int pthread_getattr_np (pthread_t thread, pthread_attr_t *attr)
+{
+   int    detached;
+   size_t limit;
+   ensure_valgrind("pthread_getattr_np");
+   kludged("pthread_getattr_np");
+   limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB 
+                                 - 1000; /* paranoia */
+   attr->__detachstate = PTHREAD_CREATE_JOINABLE;
+   attr->__schedpolicy = SCHED_OTHER;
+   attr->__schedparam.sched_priority = 0;
+   attr->__inheritsched = PTHREAD_EXPLICIT_SCHED;
+   attr->__scope = PTHREAD_SCOPE_SYSTEM;
+   attr->__guardsize = VKI_BYTES_PER_PAGE;
+   attr->__stackaddr = NULL;
+   attr->__stackaddr_set = 0;
+   attr->__stacksize = limit;
+   VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
+                           VG_USERREQ__SET_OR_GET_DETACH, 
+                           2 /* get */, thread, 0, 0);
+   assert(detached == 0 || detached == 1);
+   if (detached)
+      attr->__detachstate = PTHREAD_CREATE_DETACHED;
+   return 0;
+}
+
+
+/* Bogus ... */
+int pthread_attr_getstackaddr ( const pthread_attr_t * attr,
+                                void ** stackaddr )
+{
+   ensure_valgrind("pthread_attr_getstackaddr");
+   kludged("pthread_attr_getstackaddr");
+   if (stackaddr)
+      *stackaddr = NULL;
+   return 0;
+}
+
+/* Not bogus (!) */
+int pthread_attr_getstacksize ( const pthread_attr_t * _attr, 
+                                size_t * __stacksize )
+{
+   size_t limit;
+   ensure_valgrind("pthread_attr_getstacksize");
+   limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB 
+                                 - 1000; /* paranoia */
+   if (__stacksize)
+      *__stacksize = limit;
+   return 0;
+}
+
 /* --------------------------------------------------- 
    Helper functions for running a thread 
    and for clearing up afterwards.

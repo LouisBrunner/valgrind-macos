@@ -338,7 +338,7 @@ struct hg_mutex {
 
 static Int mutex_cmp(const hg_mutex_t *a, const hg_mutex_t *b);
 
-#define M_LOCKSET_TABLE 1000
+#define M_LOCKSET_TABLE 5000
 
 struct _LockSet {
    hg_mutex_t *mutex;

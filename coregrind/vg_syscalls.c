@@ -2583,6 +2583,13 @@ PRE(ipc)
    case 2: /* IPCOP_semget */
    case 3: /* IPCOP_semctl */
       break;
+   case 4: /* IPCOP_semtimedop */
+      SYSCALL_TRACK( pre_mem_read, tid, "semtimedop(sops)", arg5, 
+		     arg3 * sizeof(struct sembuf) );
+      if (arg6 != (UInt)NULL)
+         SYSCALL_TRACK( pre_mem_read, tid, "semtimedop(timeout)", arg5, 
+                        sizeof(struct timespec) );
+      break;
    case 11: /* IPCOP_msgsnd */
    {
       struct msgbuf *msgp = (struct msgbuf *)arg5;
@@ -2710,9 +2717,9 @@ POST(ipc)
 {
    switch (arg1 /* call */) {
    case 1: /* IPCOP_semop */
-      break;
    case 2: /* IPCOP_semget */
    case 3: /* IPCOP_semctl */
+   case 4: /* IPCOP_semtimedop */
       break;
    case 11: /* IPCOP_msgsnd */
       break;

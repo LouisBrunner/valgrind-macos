@@ -3084,6 +3084,7 @@ __attribute__ ((noreturn))
 static
 void failure_exit ( void )
 {
+   LibVEX_ClearTemporary(True);
    VG_(printf)("VEX did failure_exit.  Bye.\n");
    VG_(exit)(1);
 }
@@ -3126,10 +3127,10 @@ void VG_(translate) ( ThreadState* tst,
    if (!vex_init_done) {
       LibVEX_Init ( &failure_exit, &log_bytes, 
                     1,  /* debug_paranoia */ 
-                    1,  /* verbosity */
+                    0,  /* verbosity */
                     False, 
 		    //True, 
-                    1 /* max insns per bb */ );
+                    20 /* max insns per bb */ );
       vex_init_done = True;
    }
 

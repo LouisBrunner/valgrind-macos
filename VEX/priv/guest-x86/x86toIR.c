@@ -2830,17 +2830,16 @@ void dis_CMPS ( Int sz, IRTemp t_inc )
    putIReg(4, R_ESI, binop(Iop_Add32, mkexpr(ts), mkexpr(t_inc)) );
 }
 
-#if 0
 static 
 void dis_SCAS ( Int sz, IRTemp t_inc )
 {
    IRType ty  = szToITy(sz);
-   IRTemp ta  = newTemp(Ity_I32);  /*  EAX  */
+   IRTemp ta  = newTemp(ty);       /*  EAX  */
    IRTemp td  = newTemp(Ity_I32);  /*  EDI  */
    IRTemp tdv = newTemp(ty);       /* (EDI) */
 
    //uInstr2(cb, GET,  sz, ArchReg, R_EAX, TempReg, ta);
-   assign( ta, getIReg(sz, R_EAX) );
+   //assign( ta, getIReg(sz, R_EAX) );
 
    //uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
    assign( td, getIReg(4, R_EDI) );
@@ -2852,14 +2851,14 @@ void dis_SCAS ( Int sz, IRTemp t_inc )
    //uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, ta);
    //setFlagsFromUOpcode(cb, SUB);
 
-   assign( ta, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(ta), mkexpr(tdv)) );
+   assign( ta, binop(mkSizedOp(ty,Iop_Sub8), getIReg(sz, R_EAX), mkexpr(tdv)) );
    setFlags_SRC_DST1( Iop_Sub8, tdv, ta, ty );
 
    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
    //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
    putIReg(4, R_EDI, binop(Iop_Add32, mkexpr(td), mkexpr(t_inc)) );
 }
-#endif
+
 
 /* Wrap the appropriate string op inside a REP/REPE/REPNE.
    We assume the insn is the last one in the basic block, and so emit a jump
@@ -2931,7 +2930,7 @@ UInt dis_mul_E_G ( UChar       sorb,
                               nameIReg(size,gregOfRM(rm)));
       return 1+delta0;
    } else {
-     vassert(0+0==0);
+     vassert(0+1==0);
 #if 0
       UInt pair;
       vg_assert(signed_multiply);
@@ -6438,10 +6437,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    case 0x0C: /* OR Ib, AL */
       delta = dis_op_imm_A( 1, Iop_Or8, True, delta, "or" );
       break;
-//--    case 0x0D: /* OR Iv, eAX */
-//--       delta = dis_op_imm_A( sz, OR, True, delta, "or" );
-//--       break;
-//-- 
+   case 0x0D: /* OR Iv, eAX */
+      delta = dis_op_imm_A( sz, Iop_Or8, True, delta, "or" );
+      break;
+
 //--    case 0x14: /* ADC Ib, AL */
 //--       delta = dis_op_imm_A( 1, ADC, True, delta, "adc" );
 //--       break;
@@ -6904,19 +6903,19 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       uInstr0(cb, CALLM_E, 0);
 //--       DIP("cmc\n");
 //--       break;
-//-- 
-//--    /* REPNE prefix insn */
-//--    case 0xF2: { 
-//--       Addr eip_orig = eip - 1;
-//--       vg_assert(sorb == 0);
-//--       abyte = getIByte(delta); eip++;
-//-- 
-//--       if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); eip++; }
-//--       *isEnd = True;         
-//-- 
-//--       switch (abyte) {
-//--       /* According to the Intel manual, "repne movs" should never occur, but
-//--        * in practice it has happened, so allow for it here... */
+
+   /* REPNE prefix insn */
+   case 0xF2: { 
+      Addr32 eip_orig = guest_eip + delta - 1;
+      vassert(sorb == 0);
+      abyte = getIByte(delta); delta++;
+
+      if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); delta++; }
+      *isEnd = True;         
+
+      switch (abyte) {
+      /* According to the Intel manual, "repne movs" should never occur, but
+       * in practice it has happened, so allow for it here... */
 //--       case 0xA4: sz = 1;   /* REPNE MOVS<sz> */
 //--       case 0xA5: 
 //--          dis_REP_op ( cb, CondNZ, dis_MOVS, sz, eip_orig, eip, "repne movs" );
@@ -6927,16 +6926,17 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          dis_REP_op ( cb, CondNZ, dis_CMPS, sz, eip_orig, eip, "repne cmps" );
 //--          break;
 //-- 
-//--       case 0xAE: sz = 1;   /* REPNE SCAS<sz> */
+      case 0xAE: sz = 1;   /* REPNE SCAS<sz> */
 //--       case 0xAF:
-//--          dis_REP_op ( cb, CondNZ, dis_SCAS, sz, eip_orig, eip, "repne scas" );
-//--          break;
-//-- 
-//--       default:
-//--          goto decode_failure;
-//--       }
-//--       break;
-//--    }
+         dis_REP_op ( CondNZ, dis_SCAS, sz, eip_orig,
+                              guest_eip+delta, "repne scas" );
+         break;
+
+      default:
+         goto decode_failure;
+      }
+      break;
+   }
 
    /* REP/REPE prefix insn (for SCAS and CMPS, 0xF3 means REPE,
       for the rest, it means REP) */

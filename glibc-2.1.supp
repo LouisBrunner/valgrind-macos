@@ -37,17 +37,17 @@
 ##----------------------------------------------------------------------##
 
 {
-   __pthread_mutex_unlock/__register_frame_info_bases
+   pthread_mutex_unlock/__register_frame_info_bases
    core:PThread
-   fun:__pthread_mutex_unlock
+   fun:pthread_mutex_unlock
    fun:__register_frame_info_bases
 }
 
 {
-   socketcall.connect(serv_addr)/__libc_connect/*(Param)
+   socketcall.connect(serv_addr)/connect/*(Param)
    Addrcheck,Memcheck:Param
    socketcall.connect(serv_addr)
-   fun:__libc_connect
+   fun:connect
    fun:*
 }
 
@@ -68,10 +68,10 @@
 }
 
 {
-   llseek(result)/__libc_lseek64/_IO_file_seek(Param)
+   llseek(result)/lseek64/_IO_file_seek(Param)
    Addrcheck,Memcheck:Param
    llseek(result)
-   fun:__libc_lseek64
+   fun:lseek64
    fun:_IO_file_seek
 }
 
@@ -164,7 +164,7 @@
 }
 
 {
-   socketcall.connect(serv_addr)/__libc_connect/*(Param)
+   socketcall.connect(serv_addr)/connect/*(Param)
    Addrcheck,Memcheck:Param
    socketcall.connect(serv_addr)
    obj:*libc-2.1.3.so
@@ -174,10 +174,10 @@
 ##----------------------------------------------------------------------##
 ## For a leak in Valgrind's own libpthread.so :(
 {
-   my_malloc/get_or_allocate_specifics_ptr/__pthread_key_create(Leak)
+   my_malloc/get_or_allocate_specifics_ptr/pthread_key_create(Leak)
    Memcheck:Leak
    fun:my_malloc
    fun:get_or_allocate_specifics_ptr
-   fun:__pthread_key_create
+   fun:pthread_key_create
 }
 

@@ -398,6 +398,46 @@ static Int compare_RiSym(void *va, void *vb) {
    return a->addr - b->addr;
 }
 
+/* Two symbols have the same address.  Which name do we prefer?
+
+   In general we prefer the longer name, but if the choice is between
+   __libc_X and X, then choose X (similarly with __GI__ and __
+   prefixes).
+ */
+static RiSym *prefersym(RiSym *a, RiSym *b)
+{
+   Int pfx;
+
+   /* rearrange so that a is the long one */
+   if (VG_(strlen)(a->name) < VG_(strlen)(b->name)) {
+      RiSym *t;
+
+      t = a;
+      a = b;
+      b = t;
+   }
+
+   pfx = 0;
+   
+   if      (VG_(memcmp)(a->name, "__GI___libc_", 12) == 0)
+      pfx = 12;
+   else if (VG_(memcmp)(a->name, "__libc_", 7) == 0)
+      pfx = 7;
+   else if (VG_(memcmp)(a->name, "__GI___", 7) == 0)
+      pfx = 7;
+   else if (VG_(memcmp)(a->name, "__GI__", 6) == 0)
+      pfx = 6;
+   else if (VG_(memcmp)(a->name, "__GI_", 5) == 0)
+      pfx = 5;
+   else if (VG_(memcmp)(a->name, "__", 2) == 0)
+      pfx = 2;
+
+   if (pfx != 0 && VG_(strcmp)(a->name + pfx, b->name) == 0)
+      return b;
+
+   return a;
+}
+
 static 
 void canonicaliseSymtab ( SegInfo* si )
 {
@@ -427,12 +467,7 @@ void canonicaliseSymtab ( SegInfo* si )
              && si->symtab[i].size   == si->symtab[i+1].size) {
             n_merged++;
             /* merge the two into one */
-            if (VG_(strlen)(si->symtab[i].name) 
-                > VG_(strlen)(si->symtab[i+1].name)) {
-               si->symtab[si->symtab_used++] = si->symtab[i];
-            } else {
-               si->symtab[si->symtab_used++] = si->symtab[i+1];
-            }
+	    si->symtab[si->symtab_used++] = *prefersym(&si->symtab[i], &si->symtab[i+1]);
             i++;
          } else {
             si->symtab[si->symtab_used++] = si->symtab[i];

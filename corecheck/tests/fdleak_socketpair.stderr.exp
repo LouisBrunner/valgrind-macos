@@ -2,12 +2,12 @@
 
 FILE DESCRIPTORS: 5 open at exit.
 Open AF_UNIX socket .: <unknown>
-   at 0x........: __socketpair (in /...libc...)
+   at 0x........: socketpair (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
 Open AF_UNIX socket .: <unknown>
-   at 0x........: __socketpair (in /...libc...)
+   at 0x........: socketpair (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 

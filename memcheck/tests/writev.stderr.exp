@@ -1,19 +1,19 @@
 
 Test file created.
 Syscall param writev(vector[...]) contains uninitialised or unaddressable byte(s)
-   at 0x........: __libc_writev (...libc...)
+   at 0x........: writev (in /...libc...)
    by 0x........: main (writev.c:56)
  Address 0x........ is not stack'd, malloc'd or free'd
 Received EFAULT as expected
 
 Syscall param writev(vector) contains uninitialised or unaddressable byte(s)
-   at 0x........: __libc_writev (...libc...)
+   at 0x........: writev (in /...libc...)
    by 0x........: main (writev.c:68)
  Address 0x........ is not stack'd, malloc'd or free'd
 Received EINVAL as expected
 
 Syscall param readv(vector) contains uninitialised or unaddressable byte(s)
-   at 0x........: __libc_readv (...libc...)
+   at 0x........: readv (in /...libc...)
    by 0x........: main (writev.c:76)
  Address 0x........ is not stack'd, malloc'd or free'd
 Received EINVAL as expected

@@ -1,5 +1,5 @@
 Syscall param ioctl(TCSET{A,AW,AF}) contains uninitialised or unaddressable byte(s)
-   at 0x........: __ioctl (in /...libc...)
+   at 0x........: ioctl (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is on thread 1's stack

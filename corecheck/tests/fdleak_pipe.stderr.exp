@@ -2,12 +2,12 @@
 
 FILE DESCRIPTORS: 5 open at exit.
 Open file descriptor .:
-   at 0x........: __pipe (in /...libc...)
+   at 0x........: pipe (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 
 Open file descriptor .:
-   at 0x........: __pipe (in /...libc...)
+   at 0x........: pipe (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 

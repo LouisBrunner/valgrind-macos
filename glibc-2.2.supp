@@ -173,25 +173,25 @@
 #-------- Threading bugs?
 # glibc 'knows' that destroying a locked mutex will unlock it
 {
-   pthread_error/__pthread_mutex_destroy/__closedir
+   pthread_error/pthread_mutex_destroy/__closedir
    core:PThread
    fun:pthread_error
-   fun:__pthread_mutex_destroy
+   fun:pthread_mutex_destroy
    fun:__closedir
 }
 
 {
-   pthread_error/__pthread_mutex_destroy/_IO_default_finish
+   pthread_error/pthread_mutex_destroy/_IO_default_finish
    core:PThread
    fun:pthread_error
-   fun:__pthread_mutex_destroy
+   fun:pthread_mutex_destroy
    fun:_IO_default_finish*
 }
 
 {
-   __pthread_mutex_unlock/_IO_funlockfile
+   pthread_mutex_unlock/_IO_funlockfile
    core:PThread
-   fun:__pthread_mutex_unlock
+   fun:pthread_mutex_unlock
    fun:_IO_funlockfile
 }
 
@@ -345,10 +345,10 @@
 
 #-------------------
 {
-   socketcall.connect(serv_addr)/__libc_connect/*
+   socketcall.connect(serv_addr)/connect/*
    Addrcheck,Memcheck:Param
    socketcall.connect(serv_addr)
-   fun:__libc_connect
+   fun:connect
    fun:*
 }
 {
@@ -361,10 +361,10 @@
 
 #----------------------
 {
-   write(buf)/__libc_write/libX11.so.6.2/libX11.so.6.2(Param)
+   write(buf)/write/libX11.so.6.2/libX11.so.6.2(Param)
    Addrcheck,Memcheck:Param
    write(buf)
-   fun:__libc_write
+   fun:write
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
 }
@@ -378,10 +378,10 @@
 }
 
 #{
-#   llseek(result)/__libc_lseek64/_IO_file_seek(Param)
+#   llseek(result)/lseek64/_IO_file_seek(Param)
 #   Param
 #   llseek(result)
-#   fun:__libc_lseek64
+#   fun:lseek64
 #   fun:_IO_file_seek
 #}
 
@@ -413,11 +413,11 @@
 ##----------------------------------------------------------------------##
 ## For a leak in Valgrind's own libpthread.so :(
 {
-   my_malloc/get_or_allocate_specifics_ptr/__pthread_key_create(Leak)
+   my_malloc/get_or_allocate_specifics_ptr/pthread_key_create(Leak)
    Memcheck:Leak
    fun:my_malloc
    fun:get_or_allocate_specifics_ptr
-   fun:__pthread_key_create
+   fun:pthread_key_create
 }
 
 

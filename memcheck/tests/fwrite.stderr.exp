@@ -1,5 +1,5 @@
 Syscall param write(buf) contains uninitialised or unaddressable byte(s)
-   at 0x........: __libc_write (...libc...)
+   at 0x........: write (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is 0 bytes inside a block of size 10 alloc'd

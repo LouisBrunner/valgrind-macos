@@ -176,8 +176,18 @@ cpuid__99:
 VG_(helper_fstsw_AX):
 	pushl	%eax
 	pushl	%esi
-	movl	VGOFF_(m_fpustate), %esi
+	movl	VGOFF_(m_ssestate), %esi
+
+	pushfl
+	cmpb	$0, VG_(have_ssestate)
+	jz	aa1nosse
+	fxrstor	(%ebp, %esi, 4)
+	jmp	aa1merge
+aa1nosse:
 	frstor	(%ebp, %esi, 4)
+aa1merge:
+	popfl
+
 	fstsw	%ax
 	popl	%esi
 	movw	%ax, 8(%esp)

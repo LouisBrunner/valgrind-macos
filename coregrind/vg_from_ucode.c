@@ -1334,24 +1334,44 @@ static void emit_movzwl_regmem_reg ( Int reg1, Int reg2 )
 /*--- FPU instruction emitters                     ---*/
 /*----------------------------------------------------*/
 
-static void emit_get_fpu_state ( void )
+static void emit_get_sse_state ( void )
 {
-   Int off = 4 * VGOFF_(m_fpustate);
-   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
-   VG_(emitB) ( 0xDD ); VG_(emitB) ( 0xA5 ); /* frstor d32(%ebp) */
-   VG_(emitL) ( off );
-   if (dis)
-      VG_(printf)("\n\t\tfrstor\t%d(%%ebp)\n", off );
+   Int off = 4 * VGOFF_(m_ssestate);
+   if (VG_(have_ssestate)) {
+      VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+      VG_(emitB) ( 0x0F );
+      VG_(emitB) ( 0xAE ); VG_(emitB) ( 0x8D ); /* fxrstor d32(%ebp) */
+      VG_(emitL) ( off );
+      if (dis)
+         VG_(printf)("\n\t\tfxrstor\t%d(%%ebp)\n", off );
+   } else {
+      /* Not a SSE-capable CPU.  Just do frstor. */
+      VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+      VG_(emitB) ( 0xDD ); VG_(emitB) ( 0xA5 ); /* frstor d32(%ebp) */
+      VG_(emitL) ( off );
+      if (dis)
+         VG_(printf)("\n\t\tfrstor\t%d(%%ebp)\n", off );
+   }
 }
 
-static void emit_put_fpu_state ( void )
+static void emit_put_sse_state ( void )
 {
-   Int off = 4 * VGOFF_(m_fpustate);
-   VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
-   VG_(emitB) ( 0xDD ); VG_(emitB) ( 0xB5 ); /* fnsave d32(%ebp) */
-   VG_(emitL) ( off );
-   if (dis)
-      VG_(printf)("\n\t\tfnsave\t%d(%%ebp)\n", off );
+   Int off = 4 * VGOFF_(m_ssestate);
+   if (VG_(have_ssestate)) {
+      VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+      VG_(emitB) ( 0x0F );
+      VG_(emitB) ( 0xAE ); VG_(emitB) ( 0x85 ); /* fxsave d32(%ebp) */
+      VG_(emitL) ( off );
+      if (dis)
+         VG_(printf)("\n\t\tfxsave\t%d(%%ebp)\n", off );
+   } else {
+      /* Not a SSE-capable CPU.  Just do fnsave. */
+      VG_(new_emit)(False, FlagsEmpty, FlagsEmpty);
+      VG_(emitB) ( 0xDD ); VG_(emitB) ( 0xB5 ); /* fnsave d32(%ebp) */
+      VG_(emitL) ( off );
+      if (dis)
+         VG_(printf)("\n\t\tfnsave\t%d(%%ebp)\n", off );
+   }
 }
 
 static void emit_fpu_no_mem ( FlagSet uses_sflags, 
@@ -3024,18 +3044,19 @@ Bool anyFlagUse ( UInstr* u )
 }
 
 
-/* *fplive==True indicates that the simulated machine's FPU state is in
-   the real FPU.  If so we need to be very careful not to trash it.
-   If FPU state is live and we deem it necessary to copy it back to
-   the simulated machine's FPU state, we do so.  The final state of
-   fpliveness is returned.  In short we _must_ do put_fpu_state if
+/* *fplive==True indicates that the simulated machine's FPU/SSE state is in
+   the real machine's cpu.  If so we need to be very careful not to trash it.
+   If FPU/SSE state is live and we deem it necessary to copy it back to
+   the simulated machine's FPU/SSE state, we do so.  The final state of
+   fpliveness is returned.  In short we _must_ do put_sse_state if
    there is any chance at all that the code generated for a UInstr
-   will change the real FPU state.  
+   will change the real FPU/MMX/SSE/SSE2 state.  
 */
 static void emitUInstr ( UCodeBlock* cb, Int i, 
                          RRegSet regs_live_before, 
 			 /* Running state, which we update. */
-                         Bool* fplive,   /* True<==>FPU state in real FPU */
+                         Bool* sselive,   /* True<==>FPU/SSE 
+                                            state in real FPU */
                          Addr* orig_eip, /* previous curr_eip, or zero */
                          Addr* curr_eip ) /* current eip */
 {
@@ -3248,9 +3269,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag2 == RealReg);
          vg_assert(u->size == 0);
 
-	 if (*fplive) {
-	    emit_put_fpu_state();
-	    *fplive = False;
+	 if (*sselive) {
+	    emit_put_sse_state();
+	    *sselive = False;
 	 }
 
          VG_(synth_ccall) ( (Addr) & VG_(do_useseg), 
@@ -3339,9 +3360,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
       case JMP: {
          vg_assert(u->tag2 == NoValue);
          vg_assert(u->tag1 == RealReg || u->tag1 == Literal);
-	 if (*fplive) {
-	    emit_put_fpu_state();
-	    *fplive = False;
+	 if (*sselive) {
+	    emit_put_sse_state();
+	    *sselive = False;
 	 }
          if (u->cond == CondAlways) {
             switch (u->tag1) {
@@ -3382,9 +3403,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag1 == RealReg);
          vg_assert(u->tag2 == Literal);
          vg_assert(u->size == 4);
-	 if (*fplive) {
-	    emit_put_fpu_state();
-	    *fplive = False;
+	 if (*sselive) {
+	    emit_put_sse_state();
+	    *sselive = False;
 	 }
          synth_jmp_ifzero_reg_lit ( u->val1, u->lit32 );
          break;
@@ -3405,9 +3426,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == NoValue);
          vg_assert(u->size == 0);
-	 if (*fplive) {
-	    emit_put_fpu_state();
-	    *fplive = False;
+	 if (*sselive) {
+	    emit_put_sse_state();
+	    *sselive = False;
 	 }
 	 /* Call to a helper which is pretending to be a real CPU
 	    instruction (and therefore operates on Real flags and
@@ -3433,9 +3454,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          else                                vg_assert(u->tag3 == NoValue);
          vg_assert(u->size == 0);
 
-	 if (*fplive) {
-	    emit_put_fpu_state();
-	    *fplive = False;
+	 if (*sselive) {
+	    emit_put_sse_state();
+	    *sselive = False;
 	 }
          VG_(synth_ccall) ( u->lit32, u->argc, u->regparms_n, argv, tagv,
                             ret_reg, regs_live_before, u->regs_live_after );
@@ -3459,9 +3480,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
       case FPU_W:         
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == RealReg);
-	 if (!(*fplive)) {
-	    emit_get_fpu_state();
-	    *fplive = True;
+	 if (!(*sselive)) {
+	    emit_get_sse_state();
+	    *sselive = True;
 	 }
          synth_fpu_regmem ( u->flags_r, u->flags_w,
 			    (u->val1 >> 8) & 0xFF,
@@ -3472,9 +3493,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
       case FPU:
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == NoValue);
-	 if (!(*fplive)) {
-	    emit_get_fpu_state();
-	    *fplive = True;
+	 if (!(*sselive)) {
+	    emit_get_sse_state();
+	    *sselive = True;
 	 }
          synth_fpu_no_mem ( u->flags_r, u->flags_w,
 			    (u->val1 >> 8) & 0xFF,
@@ -3488,9 +3509,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag2 == RealReg);
          vg_assert(u->tag3 == NoValue);
          vg_assert(!anyFlagUse(u));
-         if (!(*fplive)) {
-            emit_get_fpu_state();
-            *fplive = True;
+         if (!(*sselive)) {
+            emit_get_sse_state();
+            *sselive = True;
          }
          synth_MMX2_regmem ( u->flags_r, u->flags_w,
                              (u->val1 >> 8) & 0xFF,
@@ -3503,9 +3524,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag2 == RealReg);
          vg_assert(u->tag3 == NoValue);
          vg_assert(!anyFlagUse(u));
-         if (!(*fplive)) {
-            emit_get_fpu_state();
-            *fplive = True;
+         if (!(*sselive)) {
+            emit_get_sse_state();
+            *sselive = True;
          }
          synth_MMX2_reg_to_mmxreg ( u->flags_r, u->flags_w,
                                     (u->val1 >> 8) & 0xFF,
@@ -3518,9 +3539,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag2 == RealReg);
          vg_assert(u->tag3 == NoValue);
          vg_assert(!anyFlagUse(u));
-         if (!(*fplive)) {
-            emit_get_fpu_state();
-            *fplive = True;
+         if (!(*sselive)) {
+            emit_get_sse_state();
+            *sselive = True;
          }
          synth_MMX2_mmxreg_to_reg ( u->flags_r, u->flags_w,
                                     (u->val1 >> 8) & 0xFF,
@@ -3532,9 +3553,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == NoValue);
          vg_assert(u->tag3 == NoValue);
-	 if (!(*fplive)) {
-	    emit_get_fpu_state();
-	    *fplive = True;
+	 if (!(*sselive)) {
+	    emit_get_sse_state();
+	    *sselive = True;
 	 }
          synth_MMX1_no_mem ( u->flags_r, u->flags_w,
                              u->val1 & 0xFF );
@@ -3544,9 +3565,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == NoValue);
          vg_assert(u->tag3 == NoValue);
-	 if (!(*fplive)) {
-	    emit_get_fpu_state();
-	    *fplive = True;
+	 if (!(*sselive)) {
+	    emit_get_sse_state();
+	    *sselive = True;
 	 }
          synth_MMX2_no_mem ( u->flags_r, u->flags_w,
 			     (u->val1 >> 8) & 0xFF,
@@ -3557,9 +3578,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == Lit16);
          vg_assert(u->tag3 == NoValue);
-	 if (!(*fplive)) {
-	    emit_get_fpu_state();
-	    *fplive = True;
+	 if (!(*sselive)) {
+	    emit_get_sse_state();
+	    *sselive = True;
 	 }
          synth_MMX3_no_mem ( u->flags_r, u->flags_w,
 			     (u->val1 >> 8) & 0xFF,
@@ -3569,9 +3590,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
 
       default: 
          if (VG_(needs).extended_UCode) {
-	    if (*fplive) {
-	       emit_put_fpu_state();
-	       *fplive = False;
+	    if (*sselive) {
+	       emit_put_sse_state();
+	       *sselive = False;
 	    }
             SK_(emit_XUInstr)(u, regs_live_before);
          } else {
@@ -3584,9 +3605,9 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          }
    }
 
-   if (0 && (*fplive)) {
-      emit_put_fpu_state();
-      *fplive = False;
+   if (0 && (*sselive)) {
+      emit_put_sse_state();
+      *sselive = False;
    }
 
    /* Update UInstr histogram */
@@ -3604,7 +3625,7 @@ UChar* VG_(emit_code) ( UCodeBlock* cb,
 {
    Int i;
    UChar regs_live_before = 0;   /* No regs live at BB start */
-   Bool fplive;
+   Bool sselive;
    Addr orig_eip, curr_eip;
    Int tgt;
 
@@ -3627,7 +3648,7 @@ UChar* VG_(emit_code) ( UCodeBlock* cb,
    VG_(target_forward)(&tgt);
 
    /* Set up running state. */
-   fplive   = False;
+   sselive  = False;
    orig_eip = cb->orig_eip;	/* we know EIP is up to date on BB entry */
    curr_eip = cb->orig_eip;
    vg_assert(curr_eip != 0); /* otherwise the incremental updating
@@ -3645,12 +3666,12 @@ UChar* VG_(emit_code) ( UCodeBlock* cb,
 	 }
          vg_assert(sane);
          emitUInstr( cb, i, regs_live_before, 
-                         &fplive, &orig_eip, &curr_eip );
+                         &sselive, &orig_eip, &curr_eip );
       }
       regs_live_before = u->regs_live_after;
    }
    if (dis) VG_(printf)("\n");
-   vg_assert(!fplive);			/* FPU state must be saved by end of BB */
+   vg_assert(!sselive);		  /* SSE state must be saved by end of BB */
    vg_assert(eflags_state != UPD_Real);	/* flags can't just be in CPU */
 
    if (j != NULL) {

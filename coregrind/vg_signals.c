@@ -904,7 +904,7 @@ typedef
       /* Safely-saved version of sigNo, as described above. */
       Int  sigNo_private;
       /* Saved processor state. */
-      UInt fpustate[VG_SIZE_OF_FPUSTATE_W];
+      UInt ssestate[VG_SIZE_OF_SSESTATE_W];
       UInt eax;
       UInt ecx;
       UInt edx;
@@ -988,8 +988,8 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
    frame->puContext  = (Addr)NULL;
    frame->magicPI    = 0x31415927;
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      frame->fpustate[i] = tst->m_fpu[i];
+   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
+      frame->ssestate[i] = tst->m_sse[i];
 
    frame->eax        = tst->m_eax;
    frame->ecx        = tst->m_ecx;
@@ -1050,8 +1050,8 @@ Int vg_pop_signal_frame ( ThreadId tid )
          "vg_pop_signal_frame (thread %d): valid magic", tid);
 
    /* restore machine state */
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      tst->m_fpu[i] = frame->fpustate[i];
+   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
+      tst->m_sse[i] = frame->ssestate[i];
 
    /* Mark the frame structure as nonaccessible. */
    VG_TRACK( die_mem_stack_signal, (Addr)frame, sizeof(VgSigFrame) );

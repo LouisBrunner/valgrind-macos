@@ -575,10 +575,19 @@ extern int VGR_(writev)(int fd,
    which need to go here to avoid ugly circularities.
    ------------------------------------------------------------------ */
 
-/* How big is the saved FPU state? */
-#define VG_SIZE_OF_FPUSTATE 108
+/* How big is the saved SSE/SSE2 state?  Note that this subsumes the
+   FPU state.  On machines without SSE, we just save/restore the FPU
+   state into the first part of this area. */
+/* A general comment about SSE save/restore: It appears that the 7th
+   word (which is the MXCSR) has to be &ed with 0x0000FFBF in order
+   that restoring from it later does not cause a GP fault (which is
+   delivered as a segfault).  I guess this will have to be done
+   any time we do fxsave :-(  7th word means word offset 6 or byte
+   offset 24 from the start address of the save area.
+ */
+#define VG_SIZE_OF_SSESTATE 512
 /* ... and in words ... */
-#define VG_SIZE_OF_FPUSTATE_W ((VG_SIZE_OF_FPUSTATE+3)/4)
+#define VG_SIZE_OF_SSESTATE_W ((VG_SIZE_OF_SSESTATE+3)/4)
 
 
 /* ---------------------------------------------------------------------
@@ -820,7 +829,12 @@ struct _ThreadState {
    UInt m_esp;
    UInt m_eflags;
    UInt m_eip;
-   UInt m_fpu[VG_SIZE_OF_FPUSTATE_W];
+
+   /* The SSE/FPU state.  This array does not (necessarily) have the
+      required 16-byte alignment required to get stuff in/out by
+      fxsave/fxrestore.  So we have to do it "by hand".
+   */
+   UInt m_sse[VG_SIZE_OF_SSESTATE_W];
 
    UInt sh_eax;
    UInt sh_ebx;
@@ -1243,6 +1257,12 @@ extern void VG_(mini_stack_dump)      ( ExeContext* ec );
    Exports of vg_main.c
    ------------------------------------------------------------------ */
 
+/* Is this a SSE/SSE2-capable CPU?  If so, we had better save/restore
+   the SSE state all over the place.  This is set up very early, in
+   vg_startup.S.  We have to determine it early since we can't even
+   correctly snapshot the startup machine state without it. */
+extern Bool VG_(have_ssestate);
+
 /* Tell the logging mechanism whether we are logging to a file
    descriptor or a socket descriptor. */
 extern Bool VG_(logging_to_filedes);
@@ -1253,13 +1273,18 @@ extern void VG_(do_sanity_checks) ( Bool force_expensive );
 /* A structure used as an intermediary when passing the simulated
    CPU's state to some assembly fragments, particularly system calls.
    Stuff is copied from baseBlock to here, the assembly magic runs,
-   and then the inverse copy is done. 
- */
+   and then the inverse copy is done.  Alignment: the SSE state must
+   be 16-byte aligned.  We ask for the whole struct to be 16-byte
+   aligned, and the SSE state starts at the 6+8+1+1th == 16th word,
+   so it too must be 16-byte aligned.  Consequence: change this struct
+   only _very carefully_ !  See also above comment re masking MXCSR. 
+*/
+__attribute__ ((aligned (16)))
 extern UInt VG_(m_state_static) [6 /* segment regs, Intel order */
                                  + 8 /* int regs, in Intel order */ 
                                  + 1 /* %eflags */ 
                                  + 1 /* %eip */
-                                 + VG_SIZE_OF_FPUSTATE_W /* FPU state */
+                                 + VG_SIZE_OF_SSESTATE_W /* SSE state */
                                 ];
 
 /* Handy fns for doing the copy back and forth. */
@@ -1543,7 +1568,7 @@ extern void VG_(signalreturn_bogusRA)( void );
    startup time, are given values denoting offsets into baseBlock.
    These offsets are in *words* from the start of baseBlock. */
 
-#define VG_BASEBLOCK_WORDS 200
+#define VG_BASEBLOCK_WORDS 400
 
 extern UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 
@@ -1562,7 +1587,7 @@ extern Int VGOFF_(m_ebp);
 extern Int VGOFF_(m_esi);
 extern Int VGOFF_(m_edi);
 extern Int VGOFF_(m_eflags);
-extern Int VGOFF_(m_fpustate);
+extern Int VGOFF_(m_ssestate);
 extern Int VGOFF_(m_eip);
 
 extern Int VGOFF_(m_dflag);	/* D flag is handled specially */

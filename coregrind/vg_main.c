@@ -49,7 +49,7 @@ Int VGOFF_(m_esi) = INVALID_OFFSET;
 Int VGOFF_(m_edi) = INVALID_OFFSET;
 Int VGOFF_(m_eflags) = INVALID_OFFSET;
 Int VGOFF_(m_dflag)  = INVALID_OFFSET;
-Int VGOFF_(m_fpustate) = INVALID_OFFSET;
+Int VGOFF_(m_ssestate) = INVALID_OFFSET;
 Int VGOFF_(ldt)   = INVALID_OFFSET;
 Int VGOFF_(m_cs)  = INVALID_OFFSET;
 Int VGOFF_(m_ss)  = INVALID_OFFSET;
@@ -256,7 +256,14 @@ static void vg_init_baseBlock ( void )
 
    VGOFF_(m_dflag) = alloc_BaB(1);
 
-   VGOFF_(m_fpustate) = alloc_BaB(VG_SIZE_OF_FPUSTATE_W);
+   /* The FPU/SSE state.  This _must_ be 16-byte aligned. */
+   (void)alloc_BaB(1); /* Padding, to achieve required alignment. */
+   VGOFF_(m_ssestate) = alloc_BaB(VG_SIZE_OF_SSESTATE_W);
+   vg_assert( 
+      (  ((UInt)(& VG_(baseBlock)[VGOFF_(m_ssestate)]))
+         % 16  )
+      == 0
+   );
 
    /* This thread's LDT pointer, and segment registers. */
    VGOFF_(ldt)   = alloc_BaB(1);
@@ -404,7 +411,8 @@ UInt VG_(stack)[10000];
 UInt VG_(sigstack)[10000];
 
 /* Saving stuff across system calls. */
-UInt VG_(real_fpu_state_saved_over_syscall)[VG_SIZE_OF_FPUSTATE_W];
+__attribute__ ((aligned (16)))
+UInt VG_(real_sse_state_saved_over_syscall)[VG_SIZE_OF_SSESTATE_W];
 Addr VG_(esp_saved_over_syscall);
 
 /* Counts downwards in vg_run_innerloop. */
@@ -427,6 +435,15 @@ UInt VG_(exitcode) = 0;
 /* Tell the logging mechanism whether we are logging to a file
    descriptor or a socket descriptor. */
 Bool VG_(logging_to_filedes) = True;
+
+/* Is this a SSE/SSE2-capable CPU?  If so, we had better save/restore
+   the SSE state all over the place.  This is set up very early, in
+   vg_startup.S.  We have to determine it early since we can't even
+   correctly snapshot the startup machine state without it. */
+/* Initially True.  Safer to err on the side of SSEness and get SIGILL
+   than to not notice for some reason that we have SSE and get wierd
+   errors later on. */
+Bool VG_(have_ssestate) = True;
 
 
 /* ---------------------------------------------------------------------
@@ -1177,11 +1194,15 @@ static void process_cmd_line_options ( void )
    Copying to/from m_state_static.
    ------------------------------------------------------------------ */
 
+/* See comment about this in vg_include.h.  Change only with
+   great care.
+*/
+__attribute__ ((aligned (16)))
 UInt VG_(m_state_static) [6 /* segment regs, Intel order */
                           + 8 /* int regs, in Intel order */ 
                           + 1 /* %eflags */ 
                           + 1 /* %eip */
-                          + VG_SIZE_OF_FPUSTATE_W /* FPU state */
+                          + VG_SIZE_OF_SSESTATE_W /* FPU state */
                          ];
 
 UInt VG_(insertDflag)(UInt eflags, Int d)
@@ -1226,13 +1247,14 @@ void VG_(copy_baseBlock_to_m_state_static) ( void )
    VG_(m_state_static)[48/4] = VG_(baseBlock)[VGOFF_(m_esi)];
    VG_(m_state_static)[52/4] = VG_(baseBlock)[VGOFF_(m_edi)];
 
-   VG_(m_state_static)[56/4] = VG_(insertDflag)(VG_(baseBlock)[VGOFF_(m_eflags)],
-						VG_(baseBlock)[VGOFF_(m_dflag)]);
+   VG_(m_state_static)[56/4] 
+      = VG_(insertDflag)(VG_(baseBlock)[VGOFF_(m_eflags)],
+                         VG_(baseBlock)[VGOFF_(m_dflag)]);
    VG_(m_state_static)[60/4] = VG_(baseBlock)[VGOFF_(m_eip)];
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
+   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
       VG_(m_state_static)[64/4 + i] 
-         = VG_(baseBlock)[VGOFF_(m_fpustate) + i];
+         = VG_(baseBlock)[VGOFF_(m_ssestate) + i];
 }
 
 
@@ -1255,13 +1277,15 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
    VG_(baseBlock)[VGOFF_(m_esi)] = VG_(m_state_static)[48/4];
    VG_(baseBlock)[VGOFF_(m_edi)] = VG_(m_state_static)[52/4];
 
-   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(m_state_static)[56/4] & ~EFlagD;
-   VG_(baseBlock)[VGOFF_(m_dflag)] = VG_(extractDflag)(VG_(m_state_static)[56/4]);
+   VG_(baseBlock)[VGOFF_(m_eflags)] 
+      = VG_(m_state_static)[56/4] & ~EFlagD;
+   VG_(baseBlock)[VGOFF_(m_dflag)] 
+      = VG_(extractDflag)(VG_(m_state_static)[56/4]);
 
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(m_state_static)[60/4];
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_fpustate) + i]
+   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
+      VG_(baseBlock)[VGOFF_(m_ssestate) + i]
          = VG_(m_state_static)[64/4 + i];
 }
 
@@ -1360,6 +1384,11 @@ void VG_(main) ( void )
    Int               i;
    VgSchedReturnCode src;
    ThreadState*      tst;
+
+   if (VG_(have_ssestate))
+      VG_(printf)("Looks like a SSE-capable CPU\n");
+   else
+      VG_(printf)("Looks like a MMX-only CPU\n");
 
    /* Check skin and core versions are compatible */
    if (VG_CORE_INTERFACE_MAJOR_VERSION != VG_(skin_interface_major_version)) {

@@ -46,15 +46,36 @@ VG_(do_syscall):
 
 	# and save the real FPU state too
 	fwait
-	fnsave	VG_(real_fpu_state_saved_over_syscall)
-	frstor	VG_(real_fpu_state_saved_over_syscall)
 
+	pushfl
+	cmpb	$0, VG_(have_ssestate)
+	jz	qq1nosse
+	fxsave	VG_(real_sse_state_saved_over_syscall)
+	andl	$0x0000FFBF, VG_(real_sse_state_saved_over_syscall)+24
+	fxrstor	VG_(real_sse_state_saved_over_syscall)
+	jmp	qq1merge
+qq1nosse:		
+	fnsave	VG_(real_sse_state_saved_over_syscall)
+	frstor	VG_(real_sse_state_saved_over_syscall)
+qq1merge:
+	popfl
+	
 	# remember what the simulators stack pointer is
 	movl	%esp, VG_(esp_saved_over_syscall)
 	
 	# Now copy the simulated machines state into the real one
 	# esp still refers to the simulators stack
+	pushfl
+	cmpb	$0, VG_(have_ssestate)
+	jz	qq2nosse
+	andl	$0x0000FFBF, VG_(m_state_static)+64+24
+	fxrstor	VG_(m_state_static)+64
+	jmp	qq2merge
+qq2nosse:	
 	frstor	VG_(m_state_static)+64
+qq2merge:
+	popfl
+	
 	movl	VG_(m_state_static)+56, %eax
 	pushl	%eax
 	popfl
@@ -111,11 +132,32 @@ VG_(do_syscall):
 	popl	%eax
 	movl	%eax, VG_(m_state_static)+56
 	fwait
+
+	pushfl
+	cmpb	$0, VG_(have_ssestate)
+	jz	pp2nosse
+	fxsave	VG_(m_state_static)+64
+	andl	$0x0000FFBF, VG_(m_state_static)+64+24
+	fxrstor	VG_(m_state_static)+64
+	jmp	pp2merge
+pp2nosse:
 	fnsave	VG_(m_state_static)+64
 	frstor	VG_(m_state_static)+64
-
+pp2merge:
+	popfl
+	
 	# Restore the state of the simulator
-	frstor	VG_(real_fpu_state_saved_over_syscall)
+	pushfl
+	cmpb	$0, VG_(have_ssestate)
+	jz	pp1nosse
+	andl	$0x0000FFBF, VG_(real_sse_state_saved_over_syscall)+24
+	fxrstor	VG_(real_sse_state_saved_over_syscall)
+	jmp	pp1merge
+pp1nosse:
+	frstor	VG_(real_sse_state_saved_over_syscall)
+pp1merge:
+	popfl
+
 	popal
 
 	ret

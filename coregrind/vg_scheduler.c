@@ -419,12 +419,15 @@ void VG_(load_thread_state) ( ThreadId tid )
    VG_(baseBlock)[VGOFF_(m_edi)] = VG_(threads)[tid].m_edi;
    VG_(baseBlock)[VGOFF_(m_ebp)] = VG_(threads)[tid].m_ebp;
    VG_(baseBlock)[VGOFF_(m_esp)] = VG_(threads)[tid].m_esp;
-   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(threads)[tid].m_eflags & ~EFlagD;
-   VG_(baseBlock)[VGOFF_(m_dflag)] = VG_(extractDflag)(VG_(threads)[tid].m_eflags);
+   VG_(baseBlock)[VGOFF_(m_eflags)] 
+      = VG_(threads)[tid].m_eflags & ~EFlagD;
+   VG_(baseBlock)[VGOFF_(m_dflag)] 
+      = VG_(extractDflag)(VG_(threads)[tid].m_eflags);
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(threads)[tid].m_eip;
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_fpustate) + i] = VG_(threads)[tid].m_fpu[i];
+   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
+      VG_(baseBlock)[VGOFF_(m_ssestate) + i] 
+         = VG_(threads)[tid].m_sse[i];
 
    if (VG_(needs).shadow_regs) {
       VG_(baseBlock)[VGOFF_(sh_eax)] = VG_(threads)[tid].sh_eax;
@@ -500,12 +503,14 @@ void VG_(save_thread_state) ( ThreadId tid )
    VG_(threads)[tid].m_edi = VG_(baseBlock)[VGOFF_(m_edi)];
    VG_(threads)[tid].m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
    VG_(threads)[tid].m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   VG_(threads)[tid].m_eflags = VG_(insertDflag)(VG_(baseBlock)[VGOFF_(m_eflags)],
-						 VG_(baseBlock)[VGOFF_(m_dflag)]);
+   VG_(threads)[tid].m_eflags 
+      = VG_(insertDflag)(VG_(baseBlock)[VGOFF_(m_eflags)],
+                         VG_(baseBlock)[VGOFF_(m_dflag)]);
    VG_(threads)[tid].m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(threads)[tid].m_fpu[i] = VG_(baseBlock)[VGOFF_(m_fpustate) + i];
+   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
+      VG_(threads)[tid].m_sse[i] 
+         = VG_(baseBlock)[VGOFF_(m_ssestate) + i];
 
    if (VG_(needs).shadow_regs) {
       VG_(threads)[tid].sh_eax = VG_(baseBlock)[VGOFF_(sh_eax)];
@@ -550,8 +555,8 @@ void VG_(save_thread_state) ( ThreadId tid )
    VG_(baseBlock)[VGOFF_(m_eflags)] = junk;
    VG_(baseBlock)[VGOFF_(m_eip)] = junk;
 
-   for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_fpustate) + i] = junk;
+   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
+      VG_(baseBlock)[VGOFF_(m_ssestate) + i] = junk;
 
    vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 }

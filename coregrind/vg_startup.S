@@ -105,10 +105,39 @@ really_start_up:
 	pushfl
 	popl	%eax
 	movl	%eax, VG_(m_state_static)+56
+
+	# now weve captured all the integer registers and
+	# flags, figure out whether this is an sse-enabled
+	# cpu or not.
+	movb	$0, VG_(have_ssestate)	# assume sse-disabled
+	movl	$0, %eax
+	cpuid
+	cmpl	$1, %eax
+	jl	get_fpu		# we cant do cpuid(1) ?!
+	movl	$1, %eax
+	cpuid
+	testl	$(1<<25), %edx
+	jz	get_fpu		# edx bit 25 is set iff sse
+	# well, it looks like were sse-enabled
+	movb	$1, VG_(have_ssestate)
+
+	# next, capture the FPU/SSE state
+get_fpu:
 	fwait
+
+	pushfl
+	cmpb	$0, VG_(have_ssestate)
+	jz	qq3nosse
+	fxsave	VG_(m_state_static)+64
+	andl	$0x0000FFBF, VG_(m_state_static)+64+24
+	fxrstor	VG_(m_state_static)+64
+	jmp	qq3merge
+qq3nosse:
 	fnsave	VG_(m_state_static)+64
 	frstor	VG_(m_state_static)+64
-	
+qq3merge:
+	popfl
+
 	# keep the first and last 10 words free to check for overruns	
 	movl	$VG_(stack)+39996 -40, %esp
 
@@ -145,7 +174,18 @@ VG_(switch_to_real_CPU):
 	# of the rest of the program continues on the real CPU,
 	# and there is no way for the simulator to regain control
 	# after this point.
+
+	pushfl
+	cmpb	$0, VG_(have_ssestate)
+	jz	qq4nosse
+	andl	$0x0000FFBF, VG_(m_state_static)+64+24
+	fxrstor	VG_(m_state_static)+64
+	jmp	qq4merge
+qq4nosse:
 	frstor	VG_(m_state_static)+64
+qq4merge:
+	popfl
+	
 	movl	VG_(m_state_static)+56, %eax
 	pushl	%eax
 	popfl
@@ -172,8 +212,19 @@ VG_(switch_to_real_CPU):
 	call	 VG_(sigshutdown_actions)
 	popfl
 	popal
+	
 	# re-restore the FPU state anyway ...
+	pushfl
+	cmpb	$0, VG_(have_ssestate)
+	jz	qq5nosse
+	andl	$0x0000FFBF, VG_(m_state_static)+64+24
+	fxrstor	VG_(m_state_static)+64
+	jmp	qq5merge
+qq5nosse:
 	frstor	VG_(m_state_static)+64
+qq5merge:
+	popfl
+
 	jmp	*VG_(m_state_static)+60
 
 

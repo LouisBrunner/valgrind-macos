@@ -414,7 +414,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
       seg->flags |= SF_CODE;        /* contains cached code */
 
    /* If doing any code printing, print a basic block start marker */
-   if (VG_(clo_trace_codegen)) {
+   if (VG_(clo_trace_codegen) || debugging_translation) {
       Char fnname[64] = "";
       VG_(get_fnname_w_offset)(orig_addr, fnname, 64);
       VG_(printf)(
@@ -425,10 +425,14 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
 
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
    verbosity = 0;
-   if ( debugging_translation
-        || (VG_(clo_trace_codegen) > 0
-            && VG_(get_bbs_translated)() >= VG_(clo_trace_notbelow) ))
+   if (debugging_translation) {
+      verbosity = 0xFE;
+   }
+   else
+   if ( (VG_(clo_trace_codegen) > 0
+        && VG_(get_bbs_translated)() >= VG_(clo_trace_notbelow) )) {
       verbosity = VG_(clo_trace_codegen);
+   }
 
    /* Actually do the translation. */
    tres = LibVEX_Translate ( 

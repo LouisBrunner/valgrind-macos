@@ -610,6 +610,12 @@ X86Instr* X86Instr_FpLdStCW ( Bool isLoad, X86AMode* addr )
    i->Xin.FpLdStCW.addr   = addr;
    return i;
 }
+X86Instr* X86Instr_FpStSW_AX ( void )
+{
+   X86Instr* i = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag      = Xin_FpStSW_AX;
+   return i;
+}
 X86Instr* X86Instr_FpCmp ( HReg srcL, HReg srcR, HReg dst )
 {
    X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
@@ -783,6 +789,9 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(i->Xin.FpLdStCW.isLoad ? "fldcw " : "fstcw ");
          ppX86AMode(i->Xin.FpLdStCW.addr);
          return;
+      case Xin_FpStSW_AX:
+         vex_printf("fstsw %%ax");
+         return;
       case Xin_FpCmp:
          vex_printf("gcmp ");
          ppHRegX86(i->Xin.FpCmp.srcL);
@@ -910,6 +919,9 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
       case Xin_FpLdStCW:
          addRegUsage_X86AMode(u, i->Xin.FpLdStCW.addr);
          return;
+      case Xin_FpStSW_AX:
+         addHRegUse(u, HRmWrite, hregX86_EAX());
+         return;
       case Xin_FpCmp:
          addHRegUse(u, HRmRead, i->Xin.FpCmp.srcL);
          addHRegUse(u, HRmRead, i->Xin.FpCmp.srcR);
@@ -1010,6 +1022,8 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          return;
       case Xin_FpLdStCW:
          mapRegs_X86AMode(m, i->Xin.FpLdStCW.addr);
+         return;
+      case Xin_FpStSW_AX:
          return;
       case Xin_FpCmp:
          mapReg(m, &i->Xin.FpCmp.srcL);
@@ -1822,12 +1836,29 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
    case Xin_FpBinary:
       if (i->Xin.FpBinary.op == Xfp_ATAN) {
          /* Have to do this specially. */
-         /* ffree %st7 ; fld %st(srcL) ; fld %st(srcR+1) ; fpatan ; fstp(1+dst) */
+         /* ffree %st7 ; fld %st(srcL) ; 
+            ffree %st7 ; fld %st(srcR+1) ; fpatan ; fstp(1+dst) */
          p = do_ffree_st7(p);
          p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
+         p = do_ffree_st7(p);
          p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcR));
          *p++ = 0xD9; *p++ = 0xF3;
          p = do_fstp_st(p, 1+hregNumber(i->Xin.FpBinary.dst));
+         goto done;
+      }
+      if (i->Xin.FpBinary.op == Xfp_PREM) {
+         /* Have to do this specially. */
+         /* ffree %st7 ; fld %st(srcR) ; 
+            ffree %st7 ; fld %st(srcL+1) ; fprem ; fstp(2+dst) ; 
+            fincstp ; ffree %st7 */
+         p = do_ffree_st7(p);
+         p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcR));
+         p = do_ffree_st7(p);
+         p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcL));
+         *p++ = 0xD9; *p++ = 0xF8;
+         p = do_fstp_st(p, 2+hregNumber(i->Xin.FpBinary.dst));
+         *p++ = 0xD9; *p++ = 0xF7;
+         p = do_ffree_st7(p);
          goto done;
       }
       /* General case */
@@ -1920,6 +1951,11 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       }
       goto done;
 
+   case Xin_FpStSW_AX:
+      /* note, this emits fnstsw %ax, not fstsw %ax */
+      *p++ = 0xDF;
+      *p++ = 0xE0;
+      goto done;
 
    case Xin_FpCmp:
       /* gcmp %fL, %fR, %dst

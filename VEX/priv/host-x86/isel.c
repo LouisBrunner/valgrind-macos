@@ -573,6 +573,21 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      /* C3210 flags following FPU partial remainder (fprem). */
+      if (e->Iex.Binop.op == Iop_PRemC3210F64) {
+         HReg junk = newVRegF(env);
+         HReg dst  = newVRegI(env);
+         HReg srcL = iselDblExpr(env, e->Iex.Binop.arg1);
+         HReg srcR = iselDblExpr(env, e->Iex.Binop.arg2);
+         addInstr(env, X86Instr_FpBinary(Xfp_PREM,srcL,srcR,junk));
+         /* The previous pseudo-insn will have left the FPU's C3210
+            flags set correctly.  So bag them. */
+         addInstr(env, X86Instr_FpStSW_AX());
+         addInstr(env, mk_MOVsd_RR(hregX86_EAX(), dst));
+	 addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(0x4700), dst));
+         return dst;
+      }
+
       break;
    }
 
@@ -1598,11 +1613,12 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Binop) {
       X86FpOp fpop = Xfp_INVALID;
       switch (e->Iex.Binop.op) {
-         case Iop_AddF64:    fpop = Xfp_ADD; break;
-         case Iop_SubF64:    fpop = Xfp_SUB; break;
-         case Iop_MulF64:    fpop = Xfp_MUL; break;
-         case Iop_DivF64:    fpop = Xfp_DIV; break;
-         case Iop_AtanF64:   fpop = Xfp_ATAN; break;
+         case Iop_AddF64:  fpop = Xfp_ADD; break;
+         case Iop_SubF64:  fpop = Xfp_SUB; break;
+         case Iop_MulF64:  fpop = Xfp_MUL; break;
+         case Iop_DivF64:  fpop = Xfp_DIV; break;
+         case Iop_AtanF64: fpop = Xfp_ATAN; break;
+         case Iop_PRemF64: fpop = Xfp_PREM; break;
          default: break;
       }
       if (fpop != Xfp_INVALID) {
@@ -1613,7 +1629,6 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
          return res;
       }
    }
-
 
    if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF64) {
       HReg rf   = iselDblExpr(env, e->Iex.Binop.arg2);

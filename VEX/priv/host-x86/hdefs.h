@@ -247,7 +247,8 @@ typedef
    enum {
       Xfp_INVALID,
       /* Binary */
-      Xfp_ADD, Xfp_SUB, Xfp_MUL, Xfp_DIV, Xfp_ATAN, Xfp_YL2X,
+      Xfp_ADD, Xfp_SUB, Xfp_MUL, Xfp_DIV, 
+      Xfp_ATAN, Xfp_YL2X, Xfp_PREM,
       /* Unary */
       Xfp_SQRT, Xfp_ABS, Xfp_NEG, Xfp_MOV, Xfp_SIN, Xfp_COS,
       Xfp_ROUND
@@ -282,6 +283,7 @@ typedef
       Xin_FpLdStI,   /* FP fake load/store, converting to/from Int */
       Xin_FpCMov,    /* FP fake floating point (un)conditional move */
       Xin_FpLdStCW,  /* fldcw / fstcw */
+      Xin_FpStSW_AX, /* fstsw %ax */
       Xin_FpCmp      /* FP compare, generating a C320 value into int reg */
    }
    X86InstrTag;
@@ -422,6 +424,11 @@ typedef
             X86AMode* addr;
          }
          FpLdStCW;
+         /* fstsw %ax */
+         struct {
+            /* no fields */
+         }
+         FpStSW_AX;
          /* Do a compare, generating the C320 bits into the dst. */
          struct {
             HReg    srcL;
@@ -432,30 +439,31 @@ typedef
    }
    X86Instr;
 
-extern X86Instr* X86Instr_Alu32R   ( X86AluOp, X86RMI*, HReg );
-extern X86Instr* X86Instr_Alu32M   ( X86AluOp, X86RI*,  X86AMode* );
-extern X86Instr* X86Instr_Unary32  ( X86UnaryOp op, X86RM* dst );
-extern X86Instr* X86Instr_Sh32     ( X86ShiftOp, UInt, X86RM* );
-extern X86Instr* X86Instr_Test32   ( X86RI* src, X86RM* dst );
-extern X86Instr* X86Instr_MulL     ( Bool syned, X86ScalarSz, X86RM* );
-extern X86Instr* X86Instr_Div      ( Bool syned, X86ScalarSz, X86RM* );
-extern X86Instr* X86Instr_Sh3232   ( X86ShiftOp, UInt amt, HReg src, HReg dst );
-extern X86Instr* X86Instr_Push     ( X86RMI* );
-extern X86Instr* X86Instr_Call     ( HReg );
-extern X86Instr* X86Instr_Goto     ( IRJumpKind, X86CondCode cond, X86RI* dst );
-extern X86Instr* X86Instr_CMov32   ( X86CondCode, X86RM* src, HReg dst );
-extern X86Instr* X86Instr_LoadEX   ( UChar szSmall, Bool syned,
-                                     X86AMode* src, HReg dst );
-extern X86Instr* X86Instr_Store    ( UChar sz, HReg src, X86AMode* dst );
-extern X86Instr* X86Instr_Set32    ( X86CondCode cond, HReg dst );
-extern X86Instr* X86Instr_Bsfr32   ( Bool isFwds, HReg src, HReg dst );
-extern X86Instr* X86Instr_FpUnary  ( X86FpOp op, HReg src, HReg dst );
-extern X86Instr* X86Instr_FpBinary ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );
-extern X86Instr* X86Instr_FpLdSt   ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
-extern X86Instr* X86Instr_FpLdStI  ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
-extern X86Instr* X86Instr_FpCMov   ( X86CondCode, HReg src, HReg dst );
-extern X86Instr* X86Instr_FpLdStCW ( Bool isLoad, X86AMode* );
-extern X86Instr* X86Instr_FpCmp    ( HReg srcL, HReg srcR, HReg dst );
+extern X86Instr* X86Instr_Alu32R    ( X86AluOp, X86RMI*, HReg );
+extern X86Instr* X86Instr_Alu32M    ( X86AluOp, X86RI*,  X86AMode* );
+extern X86Instr* X86Instr_Unary32   ( X86UnaryOp op, X86RM* dst );
+extern X86Instr* X86Instr_Sh32      ( X86ShiftOp, UInt, X86RM* );
+extern X86Instr* X86Instr_Test32    ( X86RI* src, X86RM* dst );
+extern X86Instr* X86Instr_MulL      ( Bool syned, X86ScalarSz, X86RM* );
+extern X86Instr* X86Instr_Div       ( Bool syned, X86ScalarSz, X86RM* );
+extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
+extern X86Instr* X86Instr_Push      ( X86RMI* );
+extern X86Instr* X86Instr_Call      ( HReg );
+extern X86Instr* X86Instr_Goto      ( IRJumpKind, X86CondCode cond, X86RI* dst );
+extern X86Instr* X86Instr_CMov32    ( X86CondCode, X86RM* src, HReg dst );
+extern X86Instr* X86Instr_LoadEX    ( UChar szSmall, Bool syned,
+                                      X86AMode* src, HReg dst );
+extern X86Instr* X86Instr_Store     ( UChar sz, HReg src, X86AMode* dst );
+extern X86Instr* X86Instr_Set32     ( X86CondCode cond, HReg dst );
+extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
+extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
+extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );
+extern X86Instr* X86Instr_FpLdSt    ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
+extern X86Instr* X86Instr_FpLdStI   ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
+extern X86Instr* X86Instr_FpCMov    ( X86CondCode, HReg src, HReg dst );
+extern X86Instr* X86Instr_FpLdStCW  ( Bool isLoad, X86AMode* );
+extern X86Instr* X86Instr_FpStSW_AX ( void );
+extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
 
 
 extern void ppX86Instr ( X86Instr* );

@@ -160,11 +160,13 @@ typedef
       /* ------ Floating point.  We try and be IEEE754 compliant. ------ */
 
       /* Binary operations mandated by IEEE754. */
-      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, Iop_RemF64, 
+      Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, /* Iop_RemF64, */
 
       /* Binary ops supported by IA32 but not mandated by 754. */
-      Iop_AtanF64,  /* FPATAN,  arctan(arg1/arg2) */
-      Iop_Yl2xF64,  /* FYL2X,   arg1 * log2(arg2)  */
+      Iop_AtanF64,      /* FPATAN,  arctan(arg1/arg2)       */
+      Iop_Yl2xF64,      /* FYL2X,   arg1 * log2(arg2)       */
+      Iop_PRemF64,      /* FPREM,   remainder(arg1/arg2)    */
+      Iop_PRemC3210F64, /* C3210 flags resulting from FPREM, :: I32 */
 
       /* Unary operations mandated by IEEE754. */
       Iop_NegF64, Iop_SqrtF64, 

@@ -1247,11 +1247,13 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
 static
 void cleanup_after_thread_exited ( ThreadId tid, Bool forcekill )
 {
+   Segment *seg;
+
    vg_assert(is_valid_or_empty_tid(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Empty);
    /* Its stack is now off-limits */
-   VG_TRACK( die_mem_stack, VG_(threads)[tid].stack_base,
-                            VG_(threads)[tid].stack_size );
+   seg = VG_(find_segment)( VG_(threads)[tid].stack_base );
+   VG_TRACK( die_mem_stack, seg->addr, seg->len );
 
    VGA_(cleanup_thread)( &VG_(threads)[tid].arch );
 

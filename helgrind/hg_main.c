@@ -531,7 +531,7 @@ void set_sword ( Addr a, shadow_word sword )
    if (VGE_IS_DISTINGUISHED_SM(sm)) {
       VG_(printf)("wrote to distinguished 2ndary map! 0x%x\n", a);
       // XXX: may be legit, but I want to know when it happens --njn
-      VG_(skin_panic)("wrote to distinguished 2ndary map!");
+      VG_(tool_panic)("wrote to distinguished 2ndary map!");
    }
 }
 
@@ -546,7 +546,7 @@ shadow_word* get_sword_addr ( Addr a )
    if (VGE_IS_DISTINGUISHED_SM(sm)) {
       VG_(printf)("accessed distinguished 2ndary map! 0x%x\n", a);
       // XXX: may be legit, but I want to know when it happens --njn
-      //VG_(skin_panic)("accessed distinguished 2ndary map!");
+      //VG_(tool_panic)("accessed distinguished 2ndary map!");
       return SEC_MAP_ACCESS;
    }
 
@@ -996,7 +996,7 @@ void sanity_check_locksets ( const Char* caller )
                "i = %d, ls=%p badness = %s, caller = %s\n", 
                i, ls, badness, caller);
    pp_all_LockSets();
-   VG_(skin_panic)("sanity_check_locksets");
+   VG_(tool_panic)("sanity_check_locksets");
 }
 
 static
@@ -1535,7 +1535,7 @@ static void set_mutex_state(Mutex *mutex, MutexState state, ThreadId tid)
 	    record_mutex_error(tid, mutex, "take lock we already hold", 
 			       mutex->location);
 
-	 VG_(skin_panic)("core should have checked this\n");
+	 VG_(tool_panic)("core should have checked this\n");
 	 break;
       }
 
@@ -1648,7 +1648,7 @@ void set_address_range_state ( Addr a, SizeT len /* in bytes */,
    
    default:
       VG_(printf)("init_status = %u\n", status);
-      VG_(skin_panic)("Unexpected Vge_InitStatus");
+      VG_(tool_panic)("Unexpected Vge_InitStatus");
    }
       
    /* Check that zero page and highest page have not been written to
@@ -1713,7 +1713,7 @@ static
 void eraser_pre_mem_read(CorePart part, ThreadId tid,
                          Char* s, Addr base, SizeT size )
 {
-   if (tid > 50) { VG_(printf)("pid = %d, s = `%s`, part = %d\n", tid, s, part); VG_(skin_panic)("a");}
+   if (tid > 50) { VG_(printf)("pid = %d, s = `%s`, part = %d\n", tid, s, part); VG_(tool_panic)("a");}
    eraser_mem_read(base, size, tid);
 }
 
@@ -2114,7 +2114,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	       case 2: help = eraser_mem_help_read_2; break;
 	       case 4: help = eraser_mem_help_read_4; break;
 	       default:
-		  VG_(skin_panic)("bad size");
+		  VG_(tool_panic)("bad size");
 	       }
 
 	       /* XXX all registers should be flushed to baseblock
@@ -2199,7 +2199,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	       case 2: help = eraser_mem_help_write_2; break;
 	       case 4: help = eraser_mem_help_write_4; break;
 	       default:
-		  VG_(skin_panic)("bad size");
+		  VG_(tool_panic)("bad size");
 	       }
 
 	       /* XXX all registers should be flushed to baseblock
@@ -2616,7 +2616,7 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
          break;
       }   
       default:
-         VG_(skin_panic)("pp_AddrInfo");
+         VG_(tool_panic)("pp_AddrInfo");
    }
 }
 

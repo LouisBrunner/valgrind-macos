@@ -2329,7 +2329,7 @@ Int VG_(helper_offset)(Addr a)
       VG_(printf)("%p ", VG_(noncompact_helper_addrs)[i]);
 
    VG_(printf)("\n");
-   VG_(skin_panic)("Unfound helper");
+   VG_(tool_panic)("Unfound helper");
 }
 
 

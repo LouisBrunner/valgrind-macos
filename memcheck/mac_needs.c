@@ -193,7 +193,7 @@ Bool SK_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
          return True;
 
       case LeakErr:
-         VG_(skin_panic)("Shouldn't get LeakErr in SK_(eq_Error),\n"
+         VG_(tool_panic)("Shouldn't get LeakErr in SK_(eq_Error),\n"
                          "since it's handled with VG_(unique_error)()!");
 
       case IllegalMempoolErr:
@@ -202,7 +202,7 @@ Bool SK_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
       default: 
          VG_(printf)("Error:\n  unknown error code %d\n",
                      VG_(get_error_kind)(e1));
-         VG_(skin_panic)("unknown error code in SK_(eq_Error)");
+         VG_(tool_panic)("unknown error code in SK_(eq_Error)");
    }
 }
 
@@ -260,7 +260,7 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
          tl_assert(0 == a);
          break;
       default:
-         VG_(skin_panic)("MAC_(pp_AddrInfo)");
+         VG_(tool_panic)("MAC_(pp_AddrInfo)");
    }
 }
 
@@ -297,7 +297,7 @@ void MAC_(pp_shared_Error) ( Error* err )
                                         "stated on the next line");
                break;
             default: 
-               VG_(skin_panic)("SK_(pp_shared_Error)(axskind)");
+               VG_(tool_panic)("SK_(pp_shared_Error)(axskind)");
          }
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
@@ -336,7 +336,7 @@ void MAC_(pp_shared_Error) ( Error* err )
       default: 
          VG_(printf)("Error:\n  unknown Memcheck/Addrcheck error code %d\n",
                      VG_(get_error_kind)(err));
-         VG_(skin_panic)("unknown error code in MAC_(pp_shared_Error)");
+         VG_(tool_panic)("unknown error code in MAC_(pp_shared_Error)");
    }
 }
 
@@ -543,7 +543,7 @@ UInt SK_(update_extra)( Error* err )
       VG_(unique_error)() so they're not copied anyway. */
    case LeakErr:     return 0;
    case OverlapErr:  return sizeof(OverlapExtra);
-   default: VG_(skin_panic)("update_extra: bad errkind");
+   default: VG_(tool_panic)("update_extra: bad errkind");
    }
 }
 
@@ -636,7 +636,7 @@ Bool SK_(error_matches_suppression)(Error* err, Supp* su)
          VG_(printf)("Error:\n"
                      "  unknown suppression type %d\n",
                      VG_(get_supp_kind)(su));
-         VG_(skin_panic)("unknown suppression type in "
+         VG_(tool_panic)("unknown suppression type in "
                          "SK_(error_matches_suppression)");
    }
 }
@@ -657,7 +657,7 @@ Char* SK_(get_error_name) ( Error* err )
       case 4:               return "Addr4";
       case 8:               return "Addr8";
       case 16:              return "Addr16";
-      default:              VG_(skin_panic)("unexpected size for Addr");
+      default:              VG_(tool_panic)("unexpected size for Addr");
       }
      
    case ValueErr:
@@ -668,12 +668,12 @@ Char* SK_(get_error_name) ( Error* err )
       case 4:               return "Value4";
       case 8:               return "Value8";
       case 16:              return "Value16";
-      default:              VG_(skin_panic)("unexpected size for Value");
+      default:              VG_(tool_panic)("unexpected size for Value");
       }
    case CoreMemErr:         return "CoreMem";
    case OverlapErr:         return "Overlap";
    case LeakErr:            return "Leak";
-   default:                 VG_(skin_panic)("get_error_name: unexpected type");
+   default:                 VG_(tool_panic)("get_error_name: unexpected type");
    }
    VG_(printf)(s);
 }
@@ -875,7 +875,7 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
    }
    case VG_USERREQ__MALLOCLIKE_BLOCK__OLD_DO_NOT_USE:
    case VG_USERREQ__FREELIKE_BLOCK__OLD_DO_NOT_USE:
-      VG_(skin_panic)(err);
+      VG_(tool_panic)(err);
 
    case VG_USERREQ__MALLOCLIKE_BLOCK: {
       Addr p         = (Addr)arg[1];
@@ -958,7 +958,7 @@ void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
       VG_(message)(Vg_DebugMsg,
                    "probable sanity check failure for syscall number %d\n",
                    syscallno );
-      VG_(skin_panic)("aborting due to the above ... bye!");
+      VG_(tool_panic)("aborting due to the above ... bye!");
    }
 }
 

@@ -93,7 +93,7 @@ Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
    case TAG2:   return LIT0 && SZ0 && CC0 &&  TR1 && TR2 && Ls3 && XOTHER;
    default:
       VG_(printf)("unhandled opcode: %u\n", u->opcode);
-      VG_(skin_panic)("SK_(sane_XUInstr): unhandled opcode");
+      VG_(tool_panic)("SK_(sane_XUInstr): unhandled opcode");
    }
 #  undef LIT0
 #  undef LIT1
@@ -154,7 +154,7 @@ static Char* nameOfTagOp ( TagOp h )
       case Tag_ImproveOR2_TQ:  return "ImproveOR2_TQ";
       case Tag_ImproveOR1_TQ:  return "ImproveOR1_TQ";
       case Tag_DebugFn:        return "DebugFn";
-      default: VG_(skin_panic)("vg_nameOfTagOp");
+      default: VG_(tool_panic)("vg_nameOfTagOp");
    }
 }
 
@@ -174,7 +174,7 @@ Char* SK_(name_XUOpcode)(Opcode opc)
       case SETV:    return "SETV";
       default:      
          VG_(printf)("unhandled opcode: %u\n", opc);
-         VG_(skin_panic)("SK_(name_XUOpcode): unhandled case");
+         VG_(tool_panic)("SK_(name_XUOpcode): unhandled case");
    }
 }
 
@@ -223,7 +223,7 @@ void SK_(pp_XUInstr)(UInstr* u)
 
       default:
          VG_(printf)("unhandled opcode: %u\n", u->opcode);
-         VG_(skin_panic)("SK_(pp_XUInstr): unhandled opcode");
+         VG_(tool_panic)("SK_(pp_XUInstr): unhandled opcode");
    }
 
 }
@@ -248,7 +248,7 @@ Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, Int* regs, Bool* isWrites)
 
       default: 
          VG_(printf)("unhandled opcode: %u\n", u->opcode);
-         VG_(skin_panic)("SK_(get_Xreg_usage): unhandled opcode");
+         VG_(tool_panic)("SK_(get_Xreg_usage): unhandled opcode");
    }
    return n;
 
@@ -267,7 +267,7 @@ TagOp get_Tag_ImproveOR_TQ ( Int sz )
       case 4: return Tag_ImproveOR4_TQ;
       case 2: return Tag_ImproveOR2_TQ;
       case 1: return Tag_ImproveOR1_TQ;
-      default: VG_(skin_panic)("get_Tag_ImproveOR_TQ");
+      default: VG_(tool_panic)("get_Tag_ImproveOR_TQ");
    }
 }
 
@@ -279,7 +279,7 @@ TagOp get_Tag_ImproveAND_TQ ( Int sz )
       case 4: return Tag_ImproveAND4_TQ;
       case 2: return Tag_ImproveAND2_TQ;
       case 1: return Tag_ImproveAND1_TQ;
-      default: VG_(skin_panic)("get_Tag_ImproveAND_TQ");
+      default: VG_(tool_panic)("get_Tag_ImproveAND_TQ");
    }
 }
 
@@ -291,7 +291,7 @@ TagOp get_Tag_Left ( Int sz )
       case 4: return Tag_Left4;
       case 2: return Tag_Left2;
       case 1: return Tag_Left1;
-      default: VG_(skin_panic)("get_Tag_Left");
+      default: VG_(tool_panic)("get_Tag_Left");
    }
 }
 
@@ -304,7 +304,7 @@ TagOp get_Tag_UifU ( Int sz )
       case 2: return Tag_UifU2;
       case 1: return Tag_UifU1;
       case 0: return Tag_UifU0;
-      default: VG_(skin_panic)("get_Tag_UifU");
+      default: VG_(tool_panic)("get_Tag_UifU");
    }
 }
 
@@ -316,7 +316,7 @@ TagOp get_Tag_DifD ( Int sz )
       case 4: return Tag_DifD4;
       case 2: return Tag_DifD2;
       case 1: return Tag_DifD1;
-      default: VG_(skin_panic)("get_Tag_DifD");
+      default: VG_(tool_panic)("get_Tag_DifD");
    }
 }
 
@@ -334,7 +334,7 @@ TagOp get_Tag_PCast ( Int szs, Int szd )
    if (szs == 1 && szd == 2) return Tag_PCast12;
    if (szs == 1 && szd == 1) return Tag_PCast11;
    VG_(printf)("get_Tag_PCast(%d,%d)\n", szs, szd);
-   VG_(skin_panic)("get_Tag_PCast");
+   VG_(tool_panic)("get_Tag_PCast");
 }
 
 
@@ -351,7 +351,7 @@ TagOp get_Tag_Widen ( Bool syned, Int szs, Int szd )
    if (szs == 2 && szd == 4 && !syned) return Tag_ZWiden24;
 
    VG_(printf)("get_Tag_Widen(%d,%d,%d)\n", (Int)syned, szs, szd);
-   VG_(skin_panic)("get_Tag_Widen");
+   VG_(tool_panic)("get_Tag_Widen");
 }
 
 /* Pessimally cast the spec'd shadow from one size to another. */
@@ -477,7 +477,7 @@ Int /* TempReg */ getOperandShadow ( UCodeBlock* cb,
       uInstr2(cb, GETV, sz, ArchReg, val, TempReg, sh);
       return sh;
    }
-   VG_(skin_panic)("getOperandShadow");
+   VG_(tool_panic)("getOperandShadow");
 }
 
 /* Create and return an instrumented version of cb_in.  Free cb_in
@@ -637,7 +637,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                               TempReg, SHADOW(u_in->val2));
                   break;
                default: 
-                  VG_(skin_panic)("memcheck_instrument: MOV");
+                  VG_(tool_panic)("memcheck_instrument: MOV");
             }
             VG_(copy_UInstr)(cb, u_in);
             break;
@@ -671,7 +671,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                case 2: shift = 1; break;
                case 4: shift = 2; break;
                case 8: shift = 3; break;
-               default: VG_(skin_panic)( "memcheck_instrument(LEA2)" );
+               default: VG_(tool_panic)( "memcheck_instrument(LEA2)" );
             }
             qs = SHADOW(u_in->val1);
             qt = SHADOW(u_in->val2);
@@ -1221,7 +1221,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
 
          default:
             VG_(pp_UInstr)(0, u_in);
-            VG_(skin_panic)( "memcheck_instrument: unhandled case");
+            VG_(tool_panic)( "memcheck_instrument: unhandled case");
 
       } /* end of switch (u_in->opcode) */
 
@@ -1439,7 +1439,7 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
                   case 4: u->lit32 = 0x00000000; break;
                   case 2: u->lit32 = 0xFFFF0000; break;
                   case 1: u->lit32 = 0xFFFFFF00; break;
-                  default: VG_(skin_panic)("vg_cleanup(PUTV)");
+                  default: VG_(tool_panic)("vg_cleanup(PUTV)");
                }
                if (dis) 
                   VG_(printf)(
@@ -1457,7 +1457,7 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
                   case 4: u->lit32 = 0x00000000; break;
                   case 2: u->lit32 = 0xFFFF0000; break;
                   case 1: u->lit32 = 0xFFFFFF00; break;
-                  default: VG_(skin_panic)("vg_cleanup(STOREV)");
+                  default: VG_(tool_panic)("vg_cleanup(STOREV)");
                }
                if (dis) 
                   VG_(printf)(

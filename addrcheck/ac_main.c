@@ -564,7 +564,7 @@ void ac_check_is_accessible ( CorePart part, ThreadId tid,
          break;
 
       default:
-         VG_(skin_panic)("ac_check_is_accessible: unexpected CorePart");
+         VG_(tool_panic)("ac_check_is_accessible: unexpected CorePart");
       }
    }
 
@@ -908,7 +908,7 @@ void ac_fpu_ACCESS_check ( Addr addr, SizeT size, Bool isWrite )
    }
 
    VG_(printf)("size is %d\n", size);
-   VG_(skin_panic)("fpu_ACCESS_check: unhandled size");
+   VG_(tool_panic)("fpu_ACCESS_check: unhandled size");
 #  endif
 }
 
@@ -979,7 +979,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                case 4:  helper = (Addr)ac_helperc_LOAD4; break;
                case 2:  helper = (Addr)ac_helperc_LOAD2; break;
                case 1:  helper = (Addr)ac_helperc_LOAD1; break;
-               default: VG_(skin_panic)
+               default: VG_(tool_panic)
                            ("addrcheck::SK_(instrument):LOAD");
             }
             uInstr1(cb, CCALL, 0, TempReg, u_in->val1);
@@ -992,7 +992,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                case 4:  helper = (Addr)ac_helperc_STORE4; break;
                case 2:  helper = (Addr)ac_helperc_STORE2; break;
                case 1:  helper = (Addr)ac_helperc_STORE1; break;
-               default: VG_(skin_panic)
+               default: VG_(tool_panic)
                            ("addrcheck::SK_(instrument):STORE");
             }
             uInstr1(cb, CCALL, 0, TempReg, u_in->val2);

@@ -100,7 +100,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x10: case 0x15: case 0x1a: 
       case 0x88: case 0x89: case 0x8a: case 0x8d:
       case 0x90: case 0x96: case 0x9b:
-         VG_(skin_panic)("IA-64 cache detected?!");
+         VG_(tool_panic)("IA-64 cache detected?!");
 
       case 0x22: case 0x23: case 0x25: case 0x29: 
           VG_(message)(Vg_DebugMsg, 

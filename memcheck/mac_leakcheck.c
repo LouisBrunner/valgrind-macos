@@ -521,7 +521,7 @@ void MAC_(do_detect_memory_leaks) (
          MAC_(bytes_reachable) += p_min->total_bytes;
 
       } else {
-         VG_(skin_panic)("generic_detect_memory_leaks: unknown loss mode");
+         VG_(tool_panic)("generic_detect_memory_leaks: unknown loss mode");
       }
       p_min->num_blocks = 0;
    }

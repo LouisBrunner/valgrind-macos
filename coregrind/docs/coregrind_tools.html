@@ -446,7 +446,7 @@ options and must do some initialisation after option processing takes place
 First of all, various ``details'' need to be set for a tool, using the
 functions <code>VG_(details_*)()</code>.  Some are all compulsory, some aren't. 
 Some are used when constructing the startup message,
-<code>detail_bug_reports_to</code> is used if <code>VG_(skin_panic)()</code> is
+<code>detail_bug_reports_to</code> is used if <code>VG_(tool_panic)()</code> is
 ever called, or a tool assertion fails.  Others have other uses.<p>
 
 Second, various ``needs'' can be set for a tool, using the functions

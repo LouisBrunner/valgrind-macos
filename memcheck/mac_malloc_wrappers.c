@@ -148,7 +148,7 @@ void add_MAC_Chunk ( Addr p, SizeT size, MAC_AllocKind kind, VgHashTable table)
       VG_(malloc) should be noaccess as far as the client is
       concerned. */
    if (!MAC_(check_noaccess)( (Addr)mc, sizeof(MAC_Chunk), NULL )) {
-      VG_(skin_panic)("add_MAC_chunk: shadow area is accessible");
+      VG_(tool_panic)("add_MAC_chunk: shadow area is accessible");
    } 
 
    VG_(HT_add_node)( table, (VgHashNode*)mc );
@@ -435,7 +435,7 @@ void MAC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
       VG_(malloc) should be noaccess as far as the client is
       concerned. */
    if (!MAC_(check_noaccess)( (Addr)mp, sizeof(MAC_Mempool), NULL )) {
-      VG_(skin_panic)("MAC_(create_mempool): shadow area is accessible");
+      VG_(tool_panic)("MAC_(create_mempool): shadow area is accessible");
    } 
 
    VG_(HT_add_node)( MAC_(mempool_list), (VgHashNode*)mp );

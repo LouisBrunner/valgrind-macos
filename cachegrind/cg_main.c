@@ -486,7 +486,7 @@ void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
                             TempReg, t_data_addr1,
                             TempReg, t_data_addr2);
    else
-      VG_(skin_panic)("argc... not 1 or 2 or 3?");
+      VG_(tool_panic)("argc... not 1 or 2 or 3?");
 
    uCCall(cb, helper, argc, argc, False);
 }

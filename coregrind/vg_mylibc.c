@@ -1182,7 +1182,7 @@ void VG_(core_panic_at) ( Char* str, ExeContext *ec )
    panic("valgrind", VG_BUGS_TO, str, ec);
 }
 
-void VG_(skin_panic) ( Char* str )
+void VG_(tool_panic) ( Char* str )
 {
    panic(VG_(details).name, VG_(details).bug_reports_to, str, NULL);
 }

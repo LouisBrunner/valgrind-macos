@@ -644,7 +644,7 @@ void mc_check_is_writable ( CorePart part, ThreadId tid, Char* s,
          break;
 
       default:
-         VG_(skin_panic)("mc_check_is_writable: unexpected CorePart");
+         VG_(tool_panic)("mc_check_is_writable: unexpected CorePart");
       }
    }
 
@@ -683,7 +683,7 @@ void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
          break;
 
       default:
-         VG_(skin_panic)("mc_check_is_readable: unexpected CorePart");
+         VG_(tool_panic)("mc_check_is_readable: unexpected CorePart");
       }
    }
    VGP_POPCC(VgpCheckMem);
@@ -774,7 +774,7 @@ static void mc_pre_reg_read(CorePart part, ThreadId tid, Char* s, UInt reg,
    case 4:  mask = 0xffffffff; break;
    case 2:  mask = 0xffff;     break;
    case 1:  mask = 0xff;       break;
-   default: VG_(skin_panic)("Unhandled size in mc_pre_reg_read");
+   default: VG_(tool_panic)("Unhandled size in mc_pre_reg_read");
    }
 
    if (VGM_WORD_VALID != (mask & VG_(get_thread_shadow_archreg)( tid, reg )) )
@@ -1237,7 +1237,7 @@ void MC_(fpu_read_check) ( Addr addr, SizeT size )
    }
 
    VG_(printf)("size is %d\n", size);
-   VG_(skin_panic)("MC_(fpu_read_check): unhandled size");
+   VG_(tool_panic)("MC_(fpu_read_check): unhandled size");
 #  endif
 }
 
@@ -1320,7 +1320,7 @@ void MC_(fpu_write_check) ( Addr addr, SizeT size )
    }
 
    VG_(printf)("size is %d\n", size);
-   VG_(skin_panic)("MC_(fpu_write_check): unhandled size");
+   VG_(tool_panic)("MC_(fpu_write_check): unhandled size");
 #  endif
 }
 

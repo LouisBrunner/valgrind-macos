@@ -48,7 +48,7 @@ void VG_(missing_tool_func) ( const Char* fn )
       "  The tool you have selected is missing the function `%s',\n"
       "  which is required.\n\n",
       fn);
-   VG_(skin_panic)("Missing tool function");
+   VG_(tool_panic)("Missing tool function");
 }
 
 static __attribute__ ((noreturn))
@@ -59,7 +59,7 @@ void malloc_panic ( const Char* fn )
       "  The tool you have selected is missing the function `%s'\n"
       "  required because it is replacing malloc() et al.\n\n",
       fn);
-   VG_(skin_panic)("Missing tool function");
+   VG_(tool_panic)("Missing tool function");
 }
 
 /*------------------------------------------------------------*/

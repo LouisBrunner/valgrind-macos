@@ -123,7 +123,7 @@ static void synth_LOADV ( Int sz, Int a_reg, Int tv_reg,
       case 4: helper = (Addr) & MC_(helperc_LOADV4); break;
       case 2: helper = (Addr) & MC_(helperc_LOADV2); break;
       case 1: helper = (Addr) & MC_(helperc_LOADV1); break;
-      default: VG_(skin_panic)("synth_LOADV");
+      default: VG_(tool_panic)("synth_LOADV");
    }
    VG_(synth_ccall) ( helper, 1, 1, argv, tagv, tv_reg,
                       regs_live_before, regs_live_after );
@@ -143,7 +143,7 @@ static void synth_STOREV ( Int sz, Int tv_tag, Int tv_val, Int a_reg,
       case 4: helper = (Addr) MC_(helperc_STOREV4); break;
       case 2: helper = (Addr) MC_(helperc_STOREV2); break;
       case 1: helper = (Addr) MC_(helperc_STOREV1); break;
-      default: VG_(skin_panic)("synth_STOREV");
+      default: VG_(tool_panic)("synth_STOREV");
    }
    VG_(synth_ccall) ( helper, 2, 2, argv, tagv, INVALID_REALREG,
                       regs_live_before, regs_live_after );
@@ -158,7 +158,7 @@ static void synth_SETV ( Int sz, Int reg )
       case 2: val = 0xFFFF0000; break;
       case 1: val = 0xFFFFFF00; break;
       case 0: val = 0xFFFFFFFE; break;
-      default: VG_(skin_panic)("synth_SETV");
+      default: VG_(tool_panic)("synth_SETV");
    }
    VG_(emit_movv_lit_reg) ( 4, val, reg );
 }
@@ -200,7 +200,7 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
          case 0: 
             /* should never happen */
          default: 
-            VG_(skin_panic)("synth_TESTV(ArchReg)");
+            VG_(tool_panic)("synth_TESTV(ArchReg)");
       }
    } else {
       switch (sz) {
@@ -223,7 +223,7 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
             synth_minimal_test_lit_reg ( 0x00000001, val );
             break;
          default: 
-            VG_(skin_panic)("synth_TESTV(RealReg)");
+            VG_(tool_panic)("synth_TESTV(RealReg)");
       }
    }
    
@@ -269,7 +269,7 @@ static void synth_GETV ( Int sz, Int arch, Int reg )
          VG_(emit_nonshiftopv_lit_reg) ( False, 4, OR, 0xFFFFFF00, reg );
          break;
       default: 
-         VG_(skin_panic)("synth_GETV");
+         VG_(tool_panic)("synth_GETV");
    }
 }
 
@@ -303,7 +303,7 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
             }
             break;
          default: 
-            VG_(skin_panic)("synth_PUTV(lit)");
+            VG_(tool_panic)("synth_PUTV(lit)");
       }
 
    } else {
@@ -339,7 +339,7 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
             }
             break;
          default: 
-            VG_(skin_panic)("synth_PUTV(reg)");
+            VG_(tool_panic)("synth_PUTV(reg)");
       }
 
       if (sz == 1 && lit_or_reg >= 4) {
@@ -508,7 +508,7 @@ static void synth_TAG1_op ( TagOp op, Int reg, RRegSet regs_live_after )
          break;
 
       default:
-         VG_(skin_panic)("synth_TAG1_op");
+         VG_(tool_panic)("synth_TAG1_op");
    }
 }
 
@@ -575,7 +575,7 @@ static void synth_TAG2_op ( TagOp op, Int regs, Int regd )
          break;
 
       default:
-         VG_(skin_panic)("synth_TAG2_op");
+         VG_(tool_panic)("synth_TAG2_op");
    }
 }
 
@@ -652,7 +652,7 @@ void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
       default: 
          VG_(printf)("emit_XUInstr: unhandled extension insn:\n");
          VG_(pp_UInstr)(0,u);
-         VG_(skin_panic)("emit_XUInstr: unhandled extension opcode");
+         VG_(tool_panic)("emit_XUInstr: unhandled extension opcode");
    }
 }
 

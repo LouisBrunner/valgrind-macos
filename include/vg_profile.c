@@ -71,14 +71,14 @@ void VGP_(register_profile_event) ( Int n, Char* name )
                   "If you really need this many profile events, increase\n"
                   "VGP_MAX_CCS and recompile Valgrind.\n",
                   n, VGP_MAX_CCS);
-      VG_(skin_panic)("profile event too high");
+      VG_(tool_panic)("profile event too high");
    }
    if (vgp_names[n] != NULL) {
       VG_(printf)("\nProfile event #%d being registered as `%s'\n"
                   "already registered as `%s'.\n"
                   "Note that tool and core event numbers must not overlap.\n",
                   n, name, vgp_names[n]);
-      VG_(skin_panic)("profile event already registered");
+      VG_(tool_panic)("profile event already registered");
    }
 
    vgp_names[n] = name;
@@ -115,7 +115,7 @@ void VGP_(init_profiling) ( void )
 
    signal(SIGPROF, VGP_(tick) );
    ret = setitimer(ITIMER_PROF, &value, NULL);
-   if (ret != 0) VG_(skin_panic)("vgp_init_profiling");
+   if (ret != 0) VG_(tool_panic)("vgp_init_profiling");
 }
 
 void VGP_(done_profiling) ( void )
@@ -141,7 +141,7 @@ void VGP_(pushcc) ( UInt cc )
          "Or if you are nesting profiling events very deeply, increase\n"
          "VGP_M_STACK and recompile Valgrind.\n",
          VGP_M_STACK, cc, vgp_names[cc]);
-      VG_(skin_panic)("Profiling stack overflow");
+      VG_(tool_panic)("Profiling stack overflow");
    }
    vgp_sp++;
    vgp_stack[vgp_sp] = cc;
@@ -154,7 +154,7 @@ void VGP_(popcc) ( UInt cc )
       VG_(printf)(
          "\nProfile stack underflow.  This is due to a VGP_(popcc)() without\n"
          "a matching VGP_(pushcc)().  Make sure they all match.\n");
-      VG_(skin_panic)("Profiling stack underflow");
+      VG_(tool_panic)("Profiling stack underflow");
    }
    if (vgp_stack[vgp_sp] != cc) {
       Int i;

@@ -68,7 +68,7 @@ void VG_(sanity_check_needs) ( void)
    if ((var)==(value)) {                                    \
       VG_(printf)("\nTool error: `%s' not initialised\n",   \
                   VG__STRING(var));                         \
-      VG_(skin_panic)("Uninitialised details field\n");     \
+      VG_(tool_panic)("Uninitialised details field\n");     \
    }
    
    /* Ones that must be set */
@@ -87,7 +87,7 @@ void VG_(sanity_check_needs) ( void)
    {
       VG_(printf)("\nTool error: one of the specialised `new_mem_stack_n'\n"
                   "events tracked, but not the generic `new_mem_stack' one.\n");
-      VG_(skin_panic)("`new_mem_stack' should be defined\n");
+      VG_(tool_panic)("`new_mem_stack' should be defined\n");
    }
 
    if ( (VG_(defined_die_mem_stack_4)()  ||
@@ -99,7 +99,7 @@ void VG_(sanity_check_needs) ( void)
    {
       VG_(printf)("\nTool error: one of the specialised `die_mem_stack_n'\n"
                   "events tracked, but not the generic `die_mem_stack' one.\n");
-      VG_(skin_panic)("`die_mem_stack' should be defined\n");
+      VG_(tool_panic)("`die_mem_stack' should be defined\n");
    }
 
    if ( (VG_(defined_post_reg_write_syscall_return)()    ||
@@ -111,7 +111,7 @@ void VG_(sanity_check_needs) ( void)
    {
       VG_(printf)("\nTool error: one of the `post_reg_write'\n"
                   "events tracked, but `shadow_regs' need not set.\n");
-      VG_(skin_panic)("`shadow_regs' should be set\n");
+      VG_(tool_panic)("`shadow_regs' should be set\n");
    }
 
    if (VG_(needs).shadow_memory != (VG_(get_shadow_size)() != 0)) {
@@ -121,7 +121,7 @@ void VG_(sanity_check_needs) ( void)
       else
 	 VG_(printf)("\nTool error: tool didn't allocate shadow memory, but apparently "
 		     "needs it.\n");
-      VG_(skin_panic)("VG_(needs).shadow_memory need should be set to match SK_(shadow_ratio)\n");
+      VG_(tool_panic)("VG_(needs).shadow_memory need should be set to match SK_(shadow_ratio)\n");
    }
 
 #undef CHECK_NOT

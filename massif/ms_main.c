@@ -453,7 +453,7 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
       if (L == n_eips) {
          overestimate += 2;
          if (overestimate > MAX_ALLOC_FNS)
-            VG_(skin_panic)("No stk snapshot big enough to find non-alloc fns");
+            VG_(tool_panic)("No stk snapshot big enough to find non-alloc fns");
       } else {
          break;
       }

@@ -219,7 +219,7 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
             VG_(printf)("\nUnhandled error type: %u. VG_(needs).tool_errors\n"
                         "probably needs to be set.\n",
                         e1->ekind);
-            VG_(skin_panic)("unhandled error type");
+            VG_(tool_panic)("unhandled error type");
          }
    }
 }
@@ -244,7 +244,7 @@ static void pp_Error ( Error* err, Bool printCount )
             VG_(printf)("\nUnhandled error type: %u.  VG_(needs).tool_errors\n"
                         "probably needs to be set?\n",
                         err->ekind);
-            VG_(skin_panic)("unhandled error type");
+            VG_(tool_panic)("unhandled error type");
          }
    }
 }
@@ -658,7 +658,7 @@ void VG_(show_all_errors) ( void )
             p_min = p;
          }
       }
-      if (p_min == NULL) VG_(skin_panic)("show_all_errors()");
+      if (p_min == NULL) VG_(tool_panic)("show_all_errors()");
 
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "%d errors in context %d of %d:",
@@ -963,7 +963,7 @@ Bool supp_matches_error(Supp* su, Error* err)
                "\nUnhandled suppression type: %u.  VG_(needs).tool_errors\n"
                "probably needs to be set.\n",
                err->ekind);
-            VG_(skin_panic)("unhandled suppression type");
+            VG_(tool_panic)("unhandled suppression type");
          }
    }
 }
@@ -982,7 +982,7 @@ Bool supp_matches_callers(Supp* su, Char caller_obj[][M_VG_ERRTXT],
          case FunName: if (VG_(string_match)(su->caller[i], 
                                              caller_fun[i])) break;
                        return False;
-         default: VG_(skin_panic)("supp_matches_callers");
+         default: VG_(tool_panic)("supp_matches_callers");
       }
    }
 

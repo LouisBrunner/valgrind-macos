@@ -1270,7 +1270,7 @@ static void process_cmd_line_options ( void )
          "Copyright (C) 2000-2003, and GNU GPL'd, by Julian Seward.");
    }
 
-   if (VG_(clo_log_to) != VgLogTo_Fd) {
+   if (VG_(clo_verbosity) > 0 && VG_(clo_log_to) != VgLogTo_Fd) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, 
          "My PID = %d, parent PID = %d.  Prog and args are:",

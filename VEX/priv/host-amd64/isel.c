@@ -1058,11 +1058,13 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      if (e->Iex.Binop.op == Iop_F64toI32) {
+      if (e->Iex.Binop.op == Iop_F64toI32
+          || e->Iex.Binop.op == Iop_F64toI64) {
+         Int  szD = e->Iex.Binop.op==Iop_F64toI32 ? 4 : 8;
          HReg rf  = iselDblExpr(env, e->Iex.Binop.arg2);
          HReg dst = newVRegI(env);
          set_SSE_rounding_mode( env, e->Iex.Binop.arg1 );
-         addInstr(env, AMD64Instr_SseSF2SI( 8, 4, rf, dst ));
+         addInstr(env, AMD64Instr_SseSF2SI( 8, szD, rf, dst ));
          set_SSE_rounding_default(env);
          return dst;
       }
@@ -3227,8 +3229,8 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_CmpLE32F0x4: op = Xsse_CMPLEF; goto do_32F0x4;
       case Iop_Add32F0x4:   op = Asse_ADDF;   goto do_32F0x4;
       case Iop_Div32F0x4:   op = Asse_DIVF;   goto do_32F0x4;
-//..       case Iop_Max32F0x4:   op = Xsse_MAXF;   goto do_32F0x4;
-//..       case Iop_Min32F0x4:   op = Xsse_MINF;   goto do_32F0x4;
+      case Iop_Max32F0x4:   op = Asse_MAXF;   goto do_32F0x4;
+      case Iop_Min32F0x4:   op = Asse_MINF;   goto do_32F0x4;
       case Iop_Mul32F0x4:   op = Asse_MULF;   goto do_32F0x4;
       case Iop_Sub32F0x4:   op = Asse_SUBF;   goto do_32F0x4;
       do_32F0x4: {

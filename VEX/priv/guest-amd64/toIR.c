@@ -4121,24 +4121,24 @@ static void fp_pop ( void )
 //..          ));
 //..    }
 //.. }
-//.. 
-//.. 
-//.. /* ST(dst) = ST(dst) `op` ST(src).
-//..    Check dst and src tags when reading but not on write.
-//.. */
-//.. static
-//.. void fp_do_op_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
-//..                       Bool pop_after )
-//.. {
-//..    DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"", st_src, st_dst );
-//..    put_ST_UNCHECKED( 
-//..       st_dst, 
-//..       binop(op, get_ST(st_dst), get_ST(st_src) ) 
-//..    );
-//..    if (pop_after)
-//..       fp_pop();
-//.. }
-//.. 
+
+
+/* ST(dst) = ST(dst) `op` ST(src).
+   Check dst and src tags when reading but not on write.
+*/
+static
+void fp_do_op_ST_ST ( HChar* op_txt, IROp op, UInt st_src, UInt st_dst,
+                      Bool pop_after )
+{
+   DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"", st_src, st_dst );
+   put_ST_UNCHECKED( 
+      st_dst, 
+      binop(op, get_ST(st_dst), get_ST(st_src) ) 
+   );
+   if (pop_after)
+      fp_pop();
+}
+
 //.. /* ST(dst) = ST(src) `op` ST(dst).
 //..    Check dst and src tags when reading but not on write.
 //.. */
@@ -4192,18 +4192,18 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
    UChar first_opcode = getUChar(delta-1);
    UChar modrm        = getUChar(delta+0);
 
-//..    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xD8 opcodes +-+-+-+-+-+-+-+ */
-//.. 
-//..    if (first_opcode == 0xD8) {
-//..       if (modrm < 0xC0) {
-//.. 
-//..          /* bits 5,4,3 are an opcode extension, and the modRM also
-//..            specifies an address. */
-//..          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
-//..          delta += len;
-//.. 
-//..          switch (gregOfRM(modrm)) {
-//.. 
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xD8 opcodes +-+-+-+-+-+-+-+ */
+
+   if (first_opcode == 0xD8) {
+      if (modrm < 0xC0) {
+
+         /* bits 5,4,3 are an opcode extension, and the modRM also
+           specifies an address. */
+         IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+         delta += len;
+
+         switch (gregOfRM(modrm)) {
+
 //..             case 0: /* FADD single-real */
 //..                fp_do_op_mem_ST_0 ( addr, "add", dis_buf, Iop_AddF64, False );
 //..                break;
@@ -4258,20 +4258,20 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..             case 7: /* FDIVR single-real */
 //..                fp_do_oprev_mem_ST_0 ( addr, "divr", dis_buf, Iop_DivF64, False );
 //..                break;
-//.. 
-//..             default:
-//..                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
-//..                vex_printf("first_opcode == 0xD8\n");
-//..                goto decode_fail;
-//..          }
-//..       } else {
-//..          delta++;
-//..          switch (modrm) {
-//.. 
-//..             case 0xC0 ... 0xC7: /* FADD %st(?),%st(0) */
-//..                fp_do_op_ST_ST ( "add", Iop_AddF64, modrm - 0xC0, 0, False );
-//..                break;
-//.. 
+
+            default:
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("first_opcode == 0xD8\n");
+               goto decode_fail;
+         }
+      } else {
+         delta++;
+         switch (modrm) {
+
+            case 0xC0 ... 0xC7: /* FADD %st(?),%st(0) */
+               fp_do_op_ST_ST ( "add", Iop_AddF64, modrm - 0xC0, 0, False );
+               break;
+
 //..             case 0xC8 ... 0xCF: /* FMUL %st(?),%st(0) */
 //..                fp_do_op_ST_ST ( "mul", Iop_MulF64, modrm - 0xC8, 0, False );
 //..                break;
@@ -4322,15 +4322,15 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..             case 0xF8 ... 0xFF: /* FDIVR %st(?),%st(0) */
 //..                fp_do_oprev_ST_ST ( "divr", Iop_DivF64, modrm - 0xF8, 0, False );
 //..                break;
-//.. 
-//..             default:
-//..                goto decode_fail;
-//..          }
-//..       }
-//..    }
+
+            default:
+               goto decode_fail;
+         }
+      }
+   }
 
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xD9 opcodes +-+-+-+-+-+-+-+ */
-//..    else
+   else
    if (first_opcode == 0xD9) {
       if (modrm < 0xC0) {
 
@@ -4829,16 +4829,16 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
                                     get_ST(0), get_ST(r_src)) );
                break;
 
-//..             case 0xD0 ... 0xD7: /* FCMOVBE ST(i), ST(0) */
-//..                r_src = (UInt)modrm - 0xD0;
-//..                DIP("fcmovbe %%st(%d), %%st(0)\n", r_src);
-//..                put_ST_UNCHECKED(0, 
-//..                                 IRExpr_Mux0X( 
-//..                                     unop(Iop_1Uto8,
-//..                                          mk_x86g_calculate_condition(X86CondBE)), 
-//..                                     get_ST(0), get_ST(r_src)) );
-//..                break;
-//.. 
+            case 0xD0 ... 0xD7: /* FCMOVBE ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xD0;
+               DIP("fcmovbe %%st(%d), %%st(0)\n", r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_amd64g_calculate_condition(AMD64CondBE)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
+
 //..             case 0xE9: /* FUCOMPP %st(0),%st(1) */
 //..                DIP("fucompp %%st(0),%%st(1)\n");
 //..                /* This forces C1 to zero, which isn't right. */
@@ -4884,14 +4884,14 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                storeLE( mkexpr(addr), 
 //..                         binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
 //..                break;
-//.. 
-//..             case 3: /* FISTP m32 */
-//..                DIP("fistpl %s\n", dis_buf);
-//..                storeLE( mkexpr(addr), 
-//..                         binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
-//..                fp_pop();
-//..                break;
-//.. 
+
+            case 3: /* FISTP m32 */
+               DIP("fistpl %s\n", dis_buf);
+               storeLE( mkexpr(addr), 
+                        binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
+               fp_pop();
+               break;
+
 //..             case 5: { /* FLD extended-real */
 //..                /* Uses dirty helper: 
 //..                      ULong loadF80le ( VexGuestX86State*, UInt )
@@ -5495,15 +5495,15 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                         binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
 //..                fp_pop();
 //..                break;
-//.. 
-//..             case 5: /* FILD m64 */
-//..                DIP("fildll %s\n", dis_buf);
-//..                fp_push();
-//..                put_ST(0, binop(Iop_I64toF64,
-//..                                get_roundingmode(),
-//..                                loadLE(Ity_I64, mkexpr(addr))));
-//..                break;
-//.. 
+
+            case 5: /* FILD m64 */
+               DIP("fildll %s\n", dis_buf);
+               fp_push();
+               put_ST(0, binop(Iop_I64toF64,
+                               get_roundingmode(),
+                               loadLE(Ity_I64, mkexpr(addr))));
+               break;
+
 //..             case 7: /* FISTP m64 */
 //..                DIP("fistpll %s\n", dis_buf);
 //..                storeLE( mkexpr(addr), 
@@ -7926,13 +7926,14 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSE_E_to_G_all_invG( sorb, delta+2, "andnps", Iop_And128 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 0F 54 = ANDPS -- G = G and E */
-//..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x54) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "andps", Iop_And128 );
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* 0F 54 = ANDPS -- G = G and E */
+   if (haveNo66noF2noF3(pfx) && sz == 4 
+       && insn[0] == 0x0F && insn[1] == 0x54) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "andps", Iop_AndV128 );
+      goto decode_success;
+   }
+
 //..    /* 0F C2 = CMPPS -- 32Fx4 comparison from R/M to R */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xC2) {
 //..       delta = dis_SSEcmp_E_to_G( sorb, delta+2, "cmpps", True, 4 );
@@ -8240,26 +8241,26 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "maxps", Iop_Max32Fx4 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* F3 0F 5F = MAXSS -- max 32F0x4 from R/M to R */
-//..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5F) {
-//..       vassert(sz == 4);
-//..       delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "maxss", Iop_Max32F0x4 );
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* F3 0F 5F = MAXSS -- max 32F0x4 from R/M to R */
+   if (haveF3no66noF2(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x5F) {
+      delta = dis_SSE_E_to_G_lo32( pfx, delta+2, "maxss", Iop_Max32F0x4 );
+      goto decode_success;
+   }
+
 //..    /* 0F 5D = MINPS -- min 32Fx4 from R/M to R */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x5D) {
 //..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "minps", Iop_Min32Fx4 );
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* F3 0F 5D = MINSS -- min 32F0x4 from R/M to R */
-//..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5D) {
-//..       vassert(sz == 4);
-//..       delta = dis_SSE_E_to_G_lo32( sorb, delta+3, "minss", Iop_Min32F0x4 );
-//..       goto decode_success;
-//..    }
+
+   /* F3 0F 5D = MINSS -- min 32F0x4 from R/M to R */
+   if (haveF3no66noF2(pfx) && sz == 4
+       && insn[0] == 0x0F && insn[1] == 0x5D) {
+      delta = dis_SSE_E_to_G_lo32( pfx, delta+2, "minss", Iop_Min32F0x4 );
+      goto decode_success;
+   }
 
    /* 0F 28 = MOVAPS -- move from E (mem or xmm) to G (xmm). */
    /* 0F 10 = MOVUPS -- move from E (mem or xmm) to G (xmm). */
@@ -9377,7 +9378,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          putIRegR( pfx, 4, gregOfRM(modrm),
                    binop( Iop_F64toI32, mkexpr(rmode), mkexpr(f64lo)) );
       } else {
-         goto decode_failure; /* awaiting test case */
          putIRegR( pfx, 8, gregOfRM(modrm),
                    binop( Iop_F64toI64, mkexpr(rmode), mkexpr(f64lo)) );
       }

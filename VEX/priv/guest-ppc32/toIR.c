@@ -1814,11 +1814,11 @@ static Bool dis_int_load ( UInt theInstr )
    } else {
       assign( Ra_or_0, mkexpr(Ra) );
    }
-   assign( EA_imm, binop(Iop_And32, mkexpr(Ra_or_0), mkU32(exts_d_imm)) );
+   assign( EA_imm, binop(Iop_Add32, mkexpr(Ra_or_0), mkU32(exts_d_imm)) );
    
    switch (opc1) {
    case 0x22: // lbz (Load B & Zero, p468)
-      DIP("lbz r%d,%u(r%d)\n", Rd_addr, d_imm, Ra_addr);
+      DIP("lbz r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_8Uto32,
                              loadBE(Ity_I8, mkexpr(EA_imm))) );
       break;
@@ -1828,14 +1828,14 @@ static Bool dis_int_load ( UInt theInstr )
          vex_printf("dis_int_load(PPC32)(lbzu,Ra_addr|Rd_addr)\n");
          return False;
       }
-      DIP("lbzu r%d,%u(r%d)\n", Rd_addr, d_imm, Ra_addr);
+      DIP("lbzu r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_8Uto32,
                              loadBE(Ity_I8, mkexpr(EA_imm))) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
       
    case 0x2A: // lha (Load HW Algebraic, p485)
-      DIP("lha r%d,%u(r%d)\n", Rd_addr, d_imm, Ra_addr);
+      DIP("lha r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_16Sto32,
                              loadBE(Ity_I16, mkexpr(EA_imm))) );
       break;
@@ -1845,14 +1845,14 @@ static Bool dis_int_load ( UInt theInstr )
          vex_printf("dis_int_load(PPC32)(lhau,Ra_addr|Rd_addr)\n");
          return False;
       }
-      DIP("lhau r%d,%u(r%d)\n", Rd_addr, d_imm, Ra_addr);
+      DIP("lhau r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_16Sto32,
                              loadBE(Ity_I16, mkexpr(EA_imm))) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
       
    case 0x28: // lhz (Load HW & Zero, p490)
-      DIP("lhz r%d,%u(r%d)\n", Rd_addr, d_imm, Ra_addr);
+      DIP("lhz r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
       putIReg( Rd_addr, unop(Iop_16Sto32,
                              loadBE(Ity_I16, mkexpr(EA_imm))) );
       break;
@@ -1862,13 +1862,13 @@ static Bool dis_int_load ( UInt theInstr )
          vex_printf("dis_int_load(PPC32)(lhzu,Ra_addr|Rd_addr)\n");
          return False;
       }
-      DIP("lhzu r%d,%u(r%d)\n", Rd_addr, d_imm, Ra_addr);
+      DIP("lhzu r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
       putIReg( Rd_addr, loadBE(Ity_I16, mkexpr(EA_imm)) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
 
    case 0x20: // lwz (Load W & Zero, p504)
-      DIP("lwz r%d,%u(r%d)\n", Rd_addr, d_imm, Ra_addr);
+      DIP("lwz r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
       putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA_imm)) );
       break;
       
@@ -1877,7 +1877,7 @@ static Bool dis_int_load ( UInt theInstr )
          vex_printf("dis_int_load(PPC32)(lwzu,Ra_addr|Rd_addr)\n");
          return False;
       }
-      DIP("lwzu r%d,%u(r%d)\n", Rd_addr, d_imm, Ra_addr);
+      DIP("lwzu r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
       putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA_imm)) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
@@ -2011,7 +2011,7 @@ static Bool dis_int_store ( UInt theInstr )
    
    switch (opc1) {
    case 0x26: // stb (Store B, p576)
-      DIP("stb r%d,%u(r%d)\n", Rs_addr, d_imm, Ra_addr);
+      DIP("stb r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
       storeBE( mkexpr(EA_imm), mkexpr(Rs_8) );
       break;
       
@@ -2020,13 +2020,13 @@ static Bool dis_int_store ( UInt theInstr )
          vex_printf("dis_int_store(PPC32)(stbu,Ra_addr)\n");
          return False;
       }
-      DIP("stbu r%d,%u(r%d)\n", Rs_addr, d_imm, Ra_addr);
+      DIP("stbu r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
       storeBE( mkexpr(EA_imm), mkexpr(Rs_8) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
 
    case 0x2C: // sth (Store HW, p595)
-      DIP("sth r%d,%u(r%d)\n", Rs_addr, d_imm, Ra_addr);
+      DIP("sth r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
       storeBE( mkexpr(EA_imm), mkexpr(Rs_16) );
       break;
       
@@ -2035,14 +2035,14 @@ static Bool dis_int_store ( UInt theInstr )
          vex_printf("dis_int_store(PPC32)(sthu,Ra_addr)\n");
          return False;
       }
-      DIP("sthu r%d,%u(r%d)\n", Rs_addr, d_imm, Ra_addr);
+      DIP("sthu r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
       assign( Rs_16, binop(Iop_And16, mkexpr(Rs), mkU16(0xFFFF)) );
       storeBE( mkexpr(EA_imm), mkexpr(Rs_16) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
 
    case 0x24: // stw (Store W, p603)
-      DIP("stw r%d,%u(r%d)\n", Rs_addr, d_imm, Ra_addr);
+      DIP("stw r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
       storeBE( mkexpr(EA_imm), mkexpr(Rs) );
       break;
 
@@ -2051,7 +2051,7 @@ static Bool dis_int_store ( UInt theInstr )
          vex_printf("dis_int_store(PPC32)(stwu,Ra_addr)\n");
          return False;
       }
-      DIP("stwu r%d,%u(r%d)\n", Rs_addr, d_imm, Ra_addr);
+      DIP("stwu r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
       storeBE( mkexpr(EA_imm), mkexpr(Rs) );
       putIReg( Ra_addr, mkexpr(EA_imm) );
       break;
@@ -2153,7 +2153,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
          vex_printf("dis_int_ldst_mult(PPC32)(lmw,Ra_addr)\n");
          return False;
       }
-      DIP("lmw r%d,%u(r%d)\n", Rd_addr, d_imm, Ra_addr);
+      DIP("lmw r%d,%d(r%d)\n", Rd_addr, (Int)d_imm, Ra_addr);
       for (reg_idx = Rd_addr; reg_idx<=31; reg_idx++) {
          putIReg( reg_idx,
                   loadBE(Ity_I32, binop(Iop_Add32, mkexpr(EA),
@@ -2163,7 +2163,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
       break;
       
    case 0x2F: // stmw (Store Multiple Word, p600)
-      DIP("stmw r%d,%u(r%d)\n", Rs_addr, d_imm, Ra_addr);
+      DIP("stmw r%d,%d(r%d)\n", Rs_addr, (Int)d_imm, Ra_addr);
       for (reg_idx = Rs_addr; reg_idx<=31; reg_idx++) {
          storeBE( binop(Iop_Add32, mkexpr(EA), mkU32(offset)),
                   getIReg(reg_idx) );
@@ -3242,8 +3242,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    if (theInstr == 0x7C0042A6) {
       // CAB: what's this?
+#if 0
       DIP("Invalid instruction! Would be 'mfspr 0,256'.  Passing through for now...\n");
       goto decode_success;
+#else
+      DIP("Invalid instruction! Would be 'mfspr 0,256'.\n");
+      goto decode_failure;
+#endif
    }
 
    // Note: all 'reserved' bits must be cleared, else invalid
@@ -3602,8 +3607,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       case 0x2F7:
       case 0x3D7:
          DIP("Floating Point Op => not implemented\n");
-         break;
-//         goto decode_failure;
+//         break;
+         goto decode_failure;
 
       /*
         AltiVec instructions

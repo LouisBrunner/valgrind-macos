@@ -277,12 +277,13 @@ struct elfinfo *readelf(int fd, const char *filename)
       fprintf(stderr, "valgrind: %s: bad ELF magic\n", filename);
       return NULL;
    }
-   if (e->e.e_ident[EI_CLASS] != ELFCLASS32) {
-      fprintf(stderr, "valgrind: Can only handle 32-bit executables\n");
+   if (e->e.e_ident[EI_CLASS] != VG_ELF_CLASS) {
+      fprintf(stderr, "valgrind: wrong executable class (eg. 32-bit instead\n"
+                      "valgrind: of 64-bit)\n");
       return NULL;
    }
-   if (e->e.e_ident[EI_DATA] != ELFDATA2LSB) {
-      fprintf(stderr, "valgrind: Expecting little-endian\n");
+   if (e->e.e_ident[EI_DATA] != VG_ELF_ENDIANNESS) {
+      fprintf(stderr, "valgrind: wrong endian-ness\n");
       return NULL;
    }
    if (!(e->e.e_type == ET_EXEC || e->e.e_type == ET_DYN)) {
@@ -290,8 +291,8 @@ struct elfinfo *readelf(int fd, const char *filename)
       return NULL;
    }
 
-   if (e->e.e_machine != EM_386) {
-      fprintf(stderr, "valgrind: need x86\n");
+   if (e->e.e_machine != VG_ELF_MACHINE) {
+      fprintf(stderr, "valgrind: wrong architecture\n");
       return NULL;
    }
 

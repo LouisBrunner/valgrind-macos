@@ -1014,12 +1014,12 @@ static void fill_ehdr(Elf32_Ehdr *ehdr, Int num_phdrs)
    VG_(memset)(ehdr, 0, sizeof(ehdr));
 
    VG_(memcpy)(ehdr->e_ident, ELFMAG, SELFMAG);
-   ehdr->e_ident[EI_CLASS] = ELFCLASS32;
-   ehdr->e_ident[EI_DATA] = ELFDATA2LSB;
+   ehdr->e_ident[EI_CLASS]   = VG_ELF_CLASS;
+   ehdr->e_ident[EI_DATA]    = VG_ELF_ENDIANNESS;
    ehdr->e_ident[EI_VERSION] = EV_CURRENT;
 
    ehdr->e_type = ET_CORE;
-   ehdr->e_machine = EM_386;
+   ehdr->e_machine = VG_ELF_MACHINE;
    ehdr->e_version = EV_CURRENT;
    ehdr->e_entry = 0;
    ehdr->e_phoff = sizeof(Elf32_Ehdr);

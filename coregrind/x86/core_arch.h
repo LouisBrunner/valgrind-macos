@@ -129,6 +129,15 @@ extern Int VGOFF_(helper_undefined_instruction);
 
 
 /* ---------------------------------------------------------------------
+   Elf stuff
+   ------------------------------------------------------------------ */
+
+#define VG_ELF_ENDIANNESS     ELFDATA2LSB
+#define VG_ELF_MACHINE        EM_386       
+#define VG_ELF_CLASS          ELFCLASS32
+
+
+/* ---------------------------------------------------------------------
    Exports of vg_helpers.S
    ------------------------------------------------------------------ */
 

@@ -758,11 +758,11 @@ Bool VG_(is_object_file)(const void *buf)
              && ehdr->e_ident[EI_MAG1] == 'E'
              && ehdr->e_ident[EI_MAG2] == 'L'
              && ehdr->e_ident[EI_MAG3] == 'F');
-      ok &= (ehdr->e_ident[EI_CLASS] == ELFCLASS32
-             && ehdr->e_ident[EI_DATA] == ELFDATA2LSB
+      ok &= (ehdr->e_ident[EI_CLASS] == VG_ELF_CLASS
+             && ehdr->e_ident[EI_DATA] == VG_ELF_ENDIANNESS
              && ehdr->e_ident[EI_VERSION] == EV_CURRENT);
       ok &= (ehdr->e_type == ET_EXEC || ehdr->e_type == ET_DYN);
-      ok &= (ehdr->e_machine == EM_386);
+      ok &= (ehdr->e_machine == VG_ELF_MACHINE);
       ok &= (ehdr->e_version == EV_CURRENT);
       ok &= (ehdr->e_shstrndx != SHN_UNDEF);
       ok &= (ehdr->e_shoff != 0 && ehdr->e_shnum != 0);

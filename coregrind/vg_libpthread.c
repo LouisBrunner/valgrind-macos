@@ -770,6 +770,13 @@ int system(const char* str)
    return __libc_system(str);
 }
 
+extern
+pid_t __libc_wait(int *status);
+pid_t wait(int *status)
+{
+   return __libc_wait(status);
+}
+
 
 /*--------------------------------------------------*/
 

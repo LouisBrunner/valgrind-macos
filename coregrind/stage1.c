@@ -248,7 +248,7 @@ static int prmap(char *start, char *end, const char *perm, off_t off, int maj,
    return 1;
 }
 
-static void hoops(void)
+static void main2(void)
 {
    int err, padfile;
    struct exeinfo info;
@@ -311,7 +311,7 @@ int main(void)
    setrlimit(RLIMIT_AS, &rlim);
 
    /* move onto another stack so we can play with the main one */
-   jmp_with_stack((addr_t)hoops, (addr_t)stack + sizeof(stack));
+   jmp_with_stack((addr_t)main2, (addr_t)stack + sizeof(stack));
 }
 
 /*--------------------------------------------------------------------*/

@@ -244,12 +244,6 @@ Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, RegUse* arr)
    Int n = 0;
    switch (u->opcode) {        
 
-      // JJJ: I don't understand this comment... what about reg alloc?  --njn
-
-      /* These sizes are only ever consulted when the instrumentation
-         code is being added, so the following can return
-         manifestly-bogus sizes. */
-
       case TAG1:    RD(1); WR(1);        break;
       case TAG2:    RD(1); RD(2); WR(2); break;
       case LOADV:   RD(1); WR(2);        break;

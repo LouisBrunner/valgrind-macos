@@ -782,6 +782,23 @@ X86Instr* genReload_X86 ( HReg rreg, Int offset )
    }
 }
 
+
+/* --------- The x86 assembler (bleh.) --------- */
+
+/* Emit an instruction into buf and return the number of bytes used.
+   Note that buf is not the insn's final place, and therefore it is
+   imperative to emit position-independent code. */
+
+Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
+{
+   switch (i->tag) {
+      default: 
+          ppX86Instr(i);
+         vpanic("emit_X86Instr");
+   }
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- end                                         x86h_defs.c ---*/
 /*---------------------------------------------------------------*/

@@ -96,7 +96,7 @@ int main ( int argc, char** argv )
       }
 
       //      if (bb_number == 50) exit(1);
-      { int i;
+      {
       for (i = 0; i < 1; i++)
       tres =
       LibVEX_Translate ( InsnSetX86, InsnSetX86,

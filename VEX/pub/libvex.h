@@ -72,13 +72,13 @@ TranslateResult LibVEX_Translate (
    InsnSet iset_guest,
    InsnSet iset_host,
    /* IN: the block to translate, and its guest address. */
-   Char*  guest_bytes,
+   UChar* guest_bytes,
    Addr64 guest_bytes_addr,
    /* OUT: the number of bytes actually read */
    Int* guest_bytes_read,
    /* IN: a place to put the resulting code, and its size */
-   Char* host_bytes,
-   Int   host_bytes_size,
+   UChar* host_bytes,
+   Int    host_bytes_size,
    /* OUT: how much of the output area is used. */
    Int* host_bytes_used,
    /* IN: optionally, an instrumentation function. */

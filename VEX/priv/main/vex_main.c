@@ -64,13 +64,13 @@ TranslateResult LibVEX_Translate (
    InsnSet iset_guest,
    InsnSet iset_host,
    /* IN: the block to translate, and its guest address. */
-   Char*  guest_bytes,
+   UChar* guest_bytes,
    Addr64 guest_bytes_addr,
    /* OUT: the number of bytes actually read */
    Int* guest_bytes_read,
    /* IN: a place to put the resulting code, and its size */
-   Char* host_bytes,
-   Int   host_bytes_size,
+   UChar* host_bytes,
+   Int    host_bytes_size,
    /* OUT: how much of the output area is used. */
    Int* host_bytes_used,
    /* IN: optionally, an instrumentation function. */
@@ -79,7 +79,9 @@ TranslateResult LibVEX_Translate (
    Bool (*byte_accessible) ( Addr64 )
 )
 {
-   /* Stuff we need to know for reg-alloc. */
+   /* This the bundle of functions we need to do the back-end stuff
+      (insn selection, reg-alloc, assembly) whilst being insulated
+      from the target instruction set. */
    HReg* available_real_regs;
    Int   n_available_real_regs;
    Bool         (*isMove)      (HInstr*, HReg*, HReg*);
@@ -92,12 +94,13 @@ TranslateResult LibVEX_Translate (
    HInstrArray* (*iselBB)      ( IRBB* );
    IRBB*        (*bbToIR)      ( UChar*, Addr64, Int*, 
                                          Bool(*)(Addr64), Bool );
+   Int          (*emit)        ( UChar*, Int, HInstr* );
 
    Bool         host_is_bigendian = False;
    IRBB*        irbb;
    HInstrArray* vcode;
    HInstrArray* rcode;
-   Int          i;
+   Int          i, j, k, out_used;
 
    vassert(vex_initdone);
    LibVEX_ClearTemporary(False);
@@ -116,6 +119,7 @@ TranslateResult LibVEX_Translate (
          ppInstr     = (void(*)(HInstr*)) ppX86Instr;
          ppReg       = (void(*)(HReg)) ppHRegX86;
          iselBB      = iselBB_X86;
+         emit        = (Int(*)(UChar*,Int,HInstr*)) emit_X86Instr;
 	 host_is_bigendian = False;
          break;
       default:
@@ -177,7 +181,23 @@ TranslateResult LibVEX_Translate (
       vex_printf("\n");
    }
 
-   /* Assemble, etc. */
+   /* Assemble */
+   UChar insn_bytes[32];
+   out_used = 0; /* tracks along the host_bytes array */
+   for (i = 0; i < rcode->arr_used; i++) {
+      j = (*emit)( insn_bytes, 32, rcode->arr[i] );
+      if (out_used + j > host_bytes_size) {
+         LibVEX_ClearTemporary(False);
+         return TransOutputFull;
+      }
+      for (k = 0; k < j; k++) {
+         host_bytes[out_used] = insn_bytes[k];
+         out_used++;
+      }
+      vassert(out_used <= host_bytes_size);
+   }
+   *host_bytes_used = out_used;
+
    //   LibVEX_ClearTemporary(True);
    LibVEX_ClearTemporary(False);
 

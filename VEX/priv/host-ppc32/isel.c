@@ -812,7 +812,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       HReg dst = newVRegI(env);
       PPC32AMode* am_src = iselIntExpr_AMode(env, e->Iex.LDle.addr);
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
-         addInstr(env, PPC32Instr_LoadEX( sizeofIRType(ty), False, dst, am_src ));
+         addInstr(env, PPC32Instr_Load( sizeofIRType(ty), False, dst, am_src ));
          return dst;
       }
       break;
@@ -1038,7 +1038,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //.. 
 //..          if (sz == 2) {
 //..             /* movzwl 0(%esp), %dst */
-//..             addInstr(env, X86Instr_LoadEX(2,False,zero_esp,dst));
+//..             addInstr(env, X86Instr_Load(2,False,zero_esp,dst));
 //..          } else {
 //..             /* movl 0(%esp), %dst */
 //..             vassert(sz == 4);
@@ -1099,7 +1099,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          if (matchIRExpr(&mi,p_LDle16_then_16Uto32,e)) {
             HReg dst = newVRegI(env);
             PPC32AMode* amode = iselIntExpr_AMode ( env, mi.bindee[0] );
-            addInstr(env, PPC32Instr_LoadEX(2,False,dst,amode));
+            addInstr(env, PPC32Instr_Load(2,False,dst,amode));
             return dst;
          }
       }
@@ -1248,7 +1248,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
          HReg dst = newVRegI(env);
          PPC32AMode* am_src = PPC32AMode_IR(e->Iex.Get.offset, GuestStatePtr );
-         addInstr(env, PPC32Instr_LoadEX( sizeofIRType(ty), False, dst, am_src ));
+         addInstr(env, PPC32Instr_Load( sizeofIRType(ty), False, dst, am_src ));
          return dst;
       }
       break;
@@ -1261,7 +1261,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..                    e->Iex.GetI.ix, e->Iex.GetI.bias );
 //..       HReg dst = newVRegI(env);
 //..       if (ty == Ity_I8) {
-//..          addInstr(env, X86Instr_LoadEX( 1, False, am, dst ));
+//..          addInstr(env, X86Instr_Load( 1, False, am, dst ));
 //..          return dst;
 //..       }
 //..       break;
@@ -1297,7 +1297,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    case Iex_Mux0X: {
       if ((ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
           && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
-         PPC32CondCode cond;
+         PPC32CondCode cond = mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
          HReg r8;
          HReg rX     = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
          PPC32RI* r0 = iselIntExpr_RI(env, e->Iex.Mux0X.expr0);
@@ -1305,8 +1305,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, mk_iMOVds_RR(dst,rX));
          r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
          addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 0, r8, PPC32RI_Imm(0)));
-         cond.flag = Pcf_EQ;
-         cond.test = Pct_TRUE;
          addInstr(env, PPC32Instr_CMov32(cond,dst,r0));
          return dst;
       }
@@ -1341,7 +1339,7 @@ static Bool sane_AMode ( PPC32AMode* am )
    case Pam_IR:
       return (hregClass(am->Pam.IR.base) == HRcInt32
               && hregIsVirtual(am->Pam.IR.base)
-              && (am->Pam.IR.index < 0x10000));      // CAB: This ok here?
+              && (am->Pam.IR.index < 0x10000));
    case Pam_RR:
       return (hregClass(am->Pam.RR.base) == HRcInt32
               && hregIsVirtual(am->Pam.IR.base)
@@ -1482,7 +1480,6 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_Not1) {
       /* Generate code for the arg, and negate the test condition */
       PPC32CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
-      vassert(cond.test != Pct_ALWAYS);
       cond.test = invertCondTest(cond.test);
       return cond;
    }
@@ -1506,12 +1503,9 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    /* pattern: 32to1(expr32) */
    DEFINE_PATTERN(p_32to1, unop(Iop_32to1,bind(0)));
    if (matchIRExpr(&mi,p_32to1,e)) {
-      PPC32CondCode cond;
       HReg dst = iselIntExpr_R(env, mi.bindee[0]);
       addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 0, dst, PPC32RI_Imm(1)));
-      cond.flag = Pcf_EQ;
-      cond.test = Pct_TRUE;
-      return cond;
+      return mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
    }
 
 //..    /* CmpEQ8 / CmpNE8 */
@@ -1570,38 +1564,21 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       HReg     r1  = iselIntExpr_R(env, e->Iex.Binop.arg1);
       PPC32RI* ri2 = iselIntExpr_RI(env, e->Iex.Binop.arg2);
       PPC32CmpOp cmp_op = Pcmp_U;
-      PPC32CondCode cond;
-      cond.test = Pct_TRUE;
+      if (e->Iex.Binop.op == Iop_CmpLT32S ||
+          e->Iex.Binop.op == Iop_CmpLE32S) {
+         cmp_op = Pcmp_S;
+      }
+      addInstr(env, PPC32Instr_Cmp32(cmp_op,0,r1,ri2));
 
       switch (e->Iex.Binop.op) {
-      case Iop_CmpEQ32:
-         cond.flag = Pcf_EQ;
-         break;
-      case Iop_CmpNE32:
-         cond.flag = Pcf_EQ;
-         cond.test = Pct_FALSE;
-         break;
-      case Iop_CmpLT32S:
-         cmp_op = Pcmp_S;
-         cond.flag = Pcf_LT;
-         break;
-      case Iop_CmpLT32U:
-         cond.flag = Pcf_LT;
-         break;
-      case Iop_CmpLE32S:
-         cmp_op = Pcmp_S;
-         cond.flag = Pcf_GT;
-         cond.test = Pct_FALSE;
-         break;
-      case Iop_CmpLE32U:
-         cond.flag = Pcf_GT;
-         cond.test = Pct_FALSE;
-         break;
+      case Iop_CmpEQ32:  return mk_PPCCondCode( Pct_TRUE,  Pcf_EQ );
+      case Iop_CmpNE32:  return mk_PPCCondCode( Pct_FALSE, Pcf_EQ );
+      case Iop_CmpLT32S: return mk_PPCCondCode( Pct_TRUE,  Pcf_LT );
+      case Iop_CmpLT32U: return mk_PPCCondCode( Pct_TRUE,  Pcf_LT );
+      case Iop_CmpLE32S: return mk_PPCCondCode( Pct_FALSE, Pcf_GT );
+      case Iop_CmpLE32U: return mk_PPCCondCode( Pct_FALSE, Pcf_GT );
       default: vpanic("iselCondCode(ppc32): CmpXX32");
       }
-
-      addInstr(env, PPC32Instr_Cmp32(cmp_op,0,r1,ri2));
-      return cond;
    }
 
 //..    /* CmpNE64(1Sto64(b), 0) ==> b */
@@ -3391,9 +3368,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
 static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 {
-   PPC32CondCode cond_always;
-   cond_always.flag = Pcf_EQ;
-   cond_always.test = Pct_ALWAYS;
+   PPC32CondCode cond;
    PPC32RI* ri;
    if (vex_traceflags & VEX_TRACE_VCODE) {
       vex_printf("\n-- goto {");
@@ -3402,8 +3377,9 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
       ppIRExpr(next);
       vex_printf("\n");
    }
+   cond = mk_PPCCondCode( Pct_ALWAYS,  Pcf_EQ );
    ri = iselIntExpr_RI(env, next);
-   addInstr(env, PPC32Instr_Goto(jk, cond_always, ri));
+   addInstr(env, PPC32Instr_Goto(jk, cond, ri));
 }
 
 

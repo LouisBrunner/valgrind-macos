@@ -125,67 +125,65 @@ extern HReg hregPPC32_FPR31 ( void );
 
 typedef
    enum {   /* Maps Condition Register (bc bitfield BI) */
-#if 0
-      // field 0
-      Pcf_f0_SO  = 0,  /* summary overflow   */
-      Pcf_f0_EQ  = 1,  /* zero | equal       */
-      Pcf_f0_GT  = 2,  /* pos  | gt          */
-      Pcf_f0_LT  = 3,  /* neg  | lt          */
-
-      // field 1
-      Pcf_f1_SO  = 4,  /* summary overflow   */
-      Pcf_f1_EQ  = 5,  /* zero | equal       */
-      Pcf_f1_GT  = 6,  /* pos  | gt          */
-      Pcf_f1_LT  = 7,  /* neg  | lt          */
-
-      // field 2
-      Pcf_f2_SO  = 8,  /* summary overflow   */
-      Pcf_f2_EQ  = 9,  /* zero | equal       */
-      Pcf_f2_GT  = 10, /* pos  | gt          */
-      Pcf_f2_LT  = 11, /* neg  | lt          */
-
-      // field 3
-      Pcf_f3_SO  = 12, /* summary overflow   */
-      Pcf_f3_EQ  = 13, /* zero | equal       */
-      Pcf_f3_GT  = 14, /* pos  | gt          */
-      Pcf_f3_LT  = 15, /* neg  | lt          */
-
-      // field 4
-      Pcf_f4_SO  = 16, /* summary overflow   */
-      Pcf_f4_EQ  = 17, /* zero | equal       */
-      Pcf_f4_GT  = 18, /* pos  | gt          */
-      Pcf_f4_LT  = 19, /* neg  | lt          */
-
-      // field 5
-      Pcf_f5_SO  = 20, /* summary overflow   */
-      Pcf_f5_EQ  = 21, /* zero | equal       */
-      Pcf_f5_GT  = 22, /* pos  | gt          */
-      Pcf_f5_LT  = 23, /* neg  | lt          */
+      // Note: IBM bit codes read left to right (@%!*?!)
+      // field 7 (integer only)
+      Pcf_LT  = 0,   /* neg  | lt          */
+      Pcf_GT  = 1,   /* pos  | gt          */
+      Pcf_EQ  = 2,   /* zero | equal       */
+      Pcf_SO  = 3,   /* summary overflow   */
 
       // field 6 (floating point only)
-      Pcf_OX     = 24, /* summary overflow   */
-      Pcf_VX     = 25, /* zero | equal       */
-      Pcf_FEX    = 26, /* pos  | gt          */
-      Pcf_FX     = 27, /* neg  | lt          */
-#endif
+      Pcf_FX     = 4,   /* neg  | lt          */
+      Pcf_FEX    = 5,   /* pos  | gt          */
+      Pcf_VX     = 6,   /* zero | equal       */
+      Pcf_OX     = 7,   /* summary overflow   */
+#if 0
+      // field 5
+      Pcf_f5_LT  = 8,   /* neg  | lt          */
+      Pcf_f5_GT  = 9,   /* pos  | gt          */
+      Pcf_f5_EQ  = 10,  /* zero | equal       */
+      Pcf_f5_SO  = 11,  /* summary overflow   */
 
-      // field 7 (integer only)
-      Pcf_SO  = 28, /* summary overflow   */
-      Pcf_EQ  = 29, /* zero | equal       */
-      Pcf_GT  = 30, /* pos  | gt          */
-      Pcf_LT  = 31, /* neg  | lt          */
+      // field 4
+      Pcf_f4_LT  = 12,  /* neg  | lt          */
+      Pcf_f4_GT  = 13,  /* pos  | gt          */
+      Pcf_f4_EQ  = 14,  /* zero | equal       */
+      Pcf_f4_SO  = 15,  /* summary overflow   */
+
+      // field 3
+      Pcf_f3_LT  = 16,  /* neg  | lt          */
+      Pcf_f3_GT  = 17,  /* pos  | gt          */
+      Pcf_f3_EQ  = 18,  /* zero | equal       */
+      Pcf_f3_SO  = 19,  /* summary overflow   */
+
+      // field 2
+      Pcf_f2_LT  = 20,  /* neg  | lt          */
+      Pcf_f2_GT  = 21,  /* pos  | gt          */
+      Pcf_f2_EQ  = 22,  /* zero | equal       */
+      Pcf_f2_SO  = 23,  /* summary overflow   */
+
+      // field 1
+      Pcf_f1_LT  = 24,  /* neg  | lt          */
+      Pcf_f1_GT  = 25,  /* pos  | gt          */
+      Pcf_f1_EQ  = 26,  /* zero | equal       */
+      Pcf_f1_SO  = 27,  /* summary overflow   */
+
+      // field 0
+      Pcf_f0_LT  = 28,  /* neg  | lt          */
+      Pcf_f0_GT  = 29,  /* pos  | gt          */
+      Pcf_f0_EQ  = 30,  /* zero | equal       */
+      Pcf_f0_SO  = 31,  /* summary overflow   */
+#endif
    }
    PPC32CondFlag;
 
 typedef
-   enum {   /* Reflects bc bitfield BO */
+   enum {   /* Maps bc bitfield BO */
       Pct_FALSE  = 0x4,
       Pct_TRUE   = 0xC,
       Pct_ALWAYS = 0x14
    }
    PPC32CondTest;
-
-extern PPC32CondTest invertCondTest ( PPC32CondTest );
 
 typedef
    struct {
@@ -196,6 +194,11 @@ typedef
 
 extern HChar* showPPC32CondCode ( PPC32CondCode );
 
+/* constructor */
+extern PPC32CondCode mk_PPCCondCode ( PPC32CondTest, PPC32CondFlag );
+
+/* false->true, true->false */
+extern PPC32CondTest invertCondTest ( PPC32CondTest );
 
 
 
@@ -344,7 +347,6 @@ typedef
    enum {
       Pin_Alu32,     /* 32-bit mov/arith/logical */
       Pin_Sh32,      /* 32-bit shift/rotate */
-//      Pin_Test32,    /* 32-bit test (AND, set flags, discard result) */
       Pin_Cmp32,     /* 32-bit compare (SUB, set flags, discard result) */
       Pin_Unary32,   /* 32-bit not, neg, clz */
       Pin_MulL,      /* widening multiply */
@@ -354,7 +356,7 @@ typedef
       Pin_Call,      /* call to address in register */
       Pin_Goto,      /* conditional/unconditional jmp to dst */
       Pin_CMov32,    /* conditional move */
-      Pin_LoadEX,    /* load a 8|16|32 bit value from mem */
+      Pin_Load,      /* load a 8|16|32 bit value from mem */
       Pin_Store,     /* store a 8|16|32 bit value to mem */
       Pin_Set32,     /* convert condition code to 32-bit value */
 //..       Xin_Bsfr32,    /* 32-bit bsf/bsr */
@@ -391,10 +393,6 @@ typedef
             HReg         src;
             PPC32RI*     shft;
          } Sh32;
-//         struct {
-//            HReg     dst;
-//            PPC32RI* src;
-//         } Test32;
          struct {
             PPC32CmpOp op;
             UInt     crfD;
@@ -415,7 +413,7 @@ typedef
             HReg     src1;
             PPC32RI* src2;
          } MulL;
-         /* ppc32 div/idiv instruction.  Modifies EDX and EAX and reads src. */
+         /* ppc32 div/idiv instruction. */
          struct {
             Bool syned;
             HReg dst;
@@ -462,7 +460,7 @@ typedef
             Bool        syned;
             HReg        dst;
             PPC32AMode* src;
-         } LoadEX;
+         } Load;
          /* 16/8 bit stores, which are troublesome (particularly 8-bit) */
          struct {
             UChar       sz; /* 1|2|4 */
@@ -552,7 +550,6 @@ typedef
 
 extern PPC32Instr* PPC32Instr_Alu32     ( PPC32AluOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
-//extern PPC32Instr* PPC32Instr_Test32    ( HReg dst, PPC32RI* src );
 extern PPC32Instr* PPC32Instr_Cmp32     ( PPC32CmpOp, UInt, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_MulL      ( Bool syned, Bool word, HReg, HReg, PPC32RI* );
@@ -562,7 +559,7 @@ extern PPC32Instr* PPC32Instr_Div       ( Bool syned, HReg dst, HReg src1, HReg 
 extern PPC32Instr* PPC32Instr_Call      ( PPC32CondCode, Addr32, Int );
 extern PPC32Instr* PPC32Instr_Goto      ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
 extern PPC32Instr* PPC32Instr_CMov32    ( PPC32CondCode, HReg dst, PPC32RI* src );
-extern PPC32Instr* PPC32Instr_LoadEX    ( UChar sz, Bool syned,
+extern PPC32Instr* PPC32Instr_Load      ( UChar sz, Bool syned,
                                           HReg dst, PPC32AMode* src );
 extern PPC32Instr* PPC32Instr_Store     ( UChar sz, PPC32AMode* dst, HReg src );
 extern PPC32Instr* PPC32Instr_Set32     ( PPC32CondCode cond, HReg dst );

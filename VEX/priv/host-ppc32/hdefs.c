@@ -227,6 +227,16 @@ HChar* showPPC32CondCode ( PPC32CondCode cond )
    }
 }
 
+/* constructor */
+PPC32CondCode mk_PPCCondCode ( PPC32CondTest test, PPC32CondFlag flag )
+{
+   PPC32CondCode cc;
+   cc.flag = flag;
+   cc.test = test;
+   return cc;
+}
+
+/* false->true, true->false */
 PPC32CondTest invertCondTest ( PPC32CondTest ct )
 {
    vassert(ct != Pct_ALWAYS);
@@ -465,13 +475,6 @@ PPC32Instr* PPC32Instr_Sh32 ( PPC32ShiftOp op, HReg dst, HReg src, PPC32RI* shft
    i->Pin.Sh32.shft = shft;
    return i;
 }
-//PPC32Instr* PPC32Instr_Test32  ( HReg dst, PPC32RI* src ) {
-//   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
-//   i->tag            = Pin_Test32;
-//   i->Pin.Test32.dst = dst;
-//   i->Pin.Test32.src = src;
-//   return i;
-//}
 PPC32Instr* PPC32Instr_Cmp32 ( PPC32CmpOp op, UInt crfD, HReg src1, PPC32RI* src2 ) {
    PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag            = Pin_Cmp32;
@@ -559,14 +562,14 @@ PPC32Instr* PPC32Instr_CMov32  ( PPC32CondCode cond, HReg dst, PPC32RI* src ) {
    vassert(cond.test != Pct_ALWAYS);
    return i;
 }
-PPC32Instr* PPC32Instr_LoadEX ( UChar sz, Bool syned,
-                                HReg dst, PPC32AMode* src ) {
-   PPC32Instr* i       = LibVEX_Alloc(sizeof(PPC32Instr));
-   i->tag              = Pin_LoadEX;
-   i->Pin.LoadEX.sz    = sz;
-   i->Pin.LoadEX.syned = syned;
-   i->Pin.LoadEX.src   = src;
-   i->Pin.LoadEX.dst   = dst;
+PPC32Instr* PPC32Instr_Load ( UChar sz, Bool syned,
+                              HReg dst, PPC32AMode* src ) {
+   PPC32Instr* i     = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag            = Pin_Load;
+   i->Pin.Load.sz    = sz;
+   i->Pin.Load.syned = syned;
+   i->Pin.Load.src   = src;
+   i->Pin.Load.dst   = dst;
    vassert(sz == 1 || sz == 2 || sz == 4);
    return i;
 }
@@ -715,12 +718,6 @@ void ppPPC32Instr ( PPC32Instr* i )
       vex_printf(",");
       ppPPC32RI(i->Pin.Sh32.shft);
       return;
-//      case Pin_Test32:
-//         vex_printf("test ");
-//         ppHRegPPC32(i->Pin.Test32.dst);
-//         vex_printf(",");
-//         ppPPC32RI(i->Pin.Test32.src);
-//         return;
    case Pin_Cmp32:
       vex_printf("cmp%s %%crf%d,",
                  i->Pin.Cmp32.src2->tag == Pri_Imm ? "i" : "",
@@ -804,30 +801,24 @@ void ppPPC32Instr ( PPC32Instr* i )
       vex_printf(",");
       ppPPC32RI(i->Pin.CMov32.src);
       return;
-   case Pin_LoadEX: {
-      UChar sz = i->Pin.LoadEX.sz;
-      Bool syned = i->Pin.LoadEX.syned;
-// CAB: How to get 'update'... ?
-      Bool update = False;
-      Bool idxd = (i->Pin.LoadEX.src->tag == Pam_IR) ? True : False;
-      vex_printf("l%c%c%s%s ",
+   case Pin_Load: {
+      UChar sz = i->Pin.Load.sz;
+      Bool syned = i->Pin.Load.syned;
+      Bool idxd = (i->Pin.Load.src->tag == Pam_IR) ? True : False;
+      vex_printf("l%c%c%s ",
                  (sz==1) ? 'b' : (sz==2 ? 'h' : 'w'),
                  syned ? 'a' : 'z',
-                 update ? "u" : "",
                  idxd ? "x" : "" );
-      ppHRegPPC32(i->Pin.LoadEX.dst);
+      ppHRegPPC32(i->Pin.Load.dst);
       vex_printf(",");
-      ppPPC32AMode(i->Pin.LoadEX.src);
+      ppPPC32AMode(i->Pin.Load.src);
       return;
    }
    case Pin_Store: {
       UChar sz = i->Pin.Store.sz;
-// CAB: How to get 'update'... ?
-      Bool update = False;
       Bool idxd = (i->Pin.Store.dst->tag == Pam_IR) ? True : False;
-      vex_printf("st%c%s%s ",
+      vex_printf("st%c%s ",
                  (sz==1) ? 'b' : (sz==2 ? 'h' : 'w'),
-                 update ? "u" : "",
                  idxd ? "x" : "" );
       ppHRegPPC32(i->Pin.Store.src);
       vex_printf(",");
@@ -997,26 +988,15 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
    case Pin_Alu32:
       addHRegUse(u, HRmRead, i->Pin.Alu32.src1);
       addRegUsage_PPC32RI(u, i->Pin.Alu32.src2);
-//         if (i->Pin.Alu32.op == Palu_CMP) { 
-//            addHRegUse(u, HRmRead, i->Pin.Alu32.dst);
-//            return;
-//         }
       addHRegUse(u, HRmWrite, i->Pin.Alu32.dst);
-// CAB TODO: Any circumstance where dst is read & written?
       return;
 
    case Pin_Sh32:
       addHRegUse(u, HRmWrite, i->Pin.Sh32.dst);
       addHRegUse(u, HRmRead, i->Pin.Sh32.src);
       addRegUsage_PPC32RI(u, i->Pin.Sh32.shft);
-// CAB TODO: Any circumstance where dst is read & written?
       return;
       
-//   case Pin_Test32:
-//      addHRegUse(u, HRmRead, i->Pin.Test32.dst);
-//      addRegUsage_PPC32RI(u, i->Pin.Test32.src);
-//      return;
-
    case Pin_Cmp32:
       addHRegUse(u, HRmRead, i->Pin.Cmp32.src1);
       addRegUsage_PPC32RI(u, i->Pin.Cmp32.src2);
@@ -1095,9 +1075,9 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
       addRegUsage_PPC32RI(u, i->Pin.CMov32.src);
       addHRegUse(u, HRmModify, i->Pin.CMov32.dst);
       return;
-   case Pin_LoadEX:
-      addRegUsage_PPC32AMode(u, i->Pin.LoadEX.src);
-      addHRegUse(u, HRmWrite, i->Pin.LoadEX.dst);
+   case Pin_Load:
+      addRegUsage_PPC32AMode(u, i->Pin.Load.src);
+      addHRegUse(u, HRmWrite, i->Pin.Load.dst);
       return;
    case Pin_Store:
       addHRegUse(u, HRmRead, i->Pin.Store.src);
@@ -1245,10 +1225,6 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       mapReg(m, &i->Pin.Sh32.src);
       mapRegs_PPC32RI(m, i->Pin.Sh32.shft);
       return;
-//      case Pin_Test32:
-//         mapReg(m, &i->Pin.Test32.dst);
-//         mapRegs_PPC32RI(m, i->Pin.Test32.src);
-//         return;
    case Pin_Cmp32:
       mapReg(m, &i->Pin.Cmp32.src1);
       mapRegs_PPC32RI(m, i->Pin.Cmp32.src2);
@@ -1283,9 +1259,9 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
       mapRegs_PPC32RI(m, i->Pin.CMov32.src);
       mapReg(m, &i->Pin.CMov32.dst);
       return;
-   case Pin_LoadEX:
-      mapRegs_PPC32AMode(m, i->Pin.LoadEX.src);
-      mapReg(m, &i->Pin.LoadEX.dst);
+   case Pin_Load:
+      mapRegs_PPC32AMode(m, i->Pin.Load.src);
+      mapReg(m, &i->Pin.Load.dst);
       return;
    case Pin_Store:
       mapReg(m, &i->Pin.Store.src);
@@ -1451,7 +1427,7 @@ PPC32Instr* genReload_PPC32 ( HReg rreg, Int offsetB )
 
    switch (hregClass(rreg)) {
    case HRcInt32:
-      return PPC32Instr_LoadEX( 4, False, rreg, am );
+      return PPC32Instr_Load( 4, False, rreg, am );
 //   case HRcFlt64:
 //      return PPC32Instr_FpLdSt ( True/*load*/, 8, rreg, am );
 //   case HRcVec128:
@@ -1861,8 +1837,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //.. 
 //..    UInt   xtra;
    UChar* p = &buf[0];
-//..    UChar* ptmp;
-//..    vassert(nbuf >= 32);
+   UChar* ptmp = p;
+   vassert(nbuf >= 32);
 //.. 
 //..    /* Wrap an integer as a int register, for use assembling
 //..       GrpN insns, in which the greg field is used as a sub-opcode
@@ -1967,17 +1943,6 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       }
       goto done;
    }
-
-//..    case Xin_Test32:
-//..       if (i->Xin.Test32.src->tag == Xri_Imm
-//..           && i->Xin.Test32.dst->tag == Xrm_Reg) {
-//..          /* testl $imm32, %reg */
-//..          *p++ = 0xF7;
-//..          p = doAMode_R(p, fake(0), i->Xin.Test32.dst->Xrm.Reg.reg);
-//..          p = emit32(p, i->Xin.Test32.src->Xri.Imm.imm32);
-//..          goto done;
-//..       }
-//..       break;
 
    case Pin_Cmp32: {
       UInt opc1, opc2=0;
@@ -2114,6 +2079,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 
    case Pin_Call: {
       Addr32 target;
+      PPC32CondCode cond = i->Pin.Call.cond;
 
       /* As per detailed comment for Ain_Call in
          getRegUsage_PPC32Instr above, %r12 is used as an address
@@ -2123,9 +2089,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       if (i->Pin.Call.cond.test != Pct_ALWAYS) {
          target = 16; /* num bytes in next insts */
          /* bca ct,cf,target */
-         p = mkFormB(p, invertCondTest(i->Pin.Call.cond.test),
-                     (31 - i->Pin.Call.cond.flag),
-                     target, 1, 0);
+         p = mkFormB(p, invertCondTest(cond.test), cond.flag, target, 1, 0);
       }
 
       /* addi r12,0,(target & 0xFFFF)
@@ -2159,8 +2123,9 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          /* jmp fwds if !condition */
          imm = 8; /* num bytes in next insts */
          /* bca ct,cf,imm */
-         p = mkFormB(p, invertCondTest(cond.test),
-                     (31 - cond.flag), imm, 1, 0);
+         p = mkFormB(p, invertCondTest(cond.test), cond.flag, imm, 1, 0);
+         ptmp = p; /* fill in this bit later */
+         *p++ = 0; /* # of bytes to jump over; don't know how many yet. */
       }
 
       /* If a non-boring, set GuestStatePtr appropriately. */
@@ -2206,13 +2171,18 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
             /* add r_dst, 0, r_src */
             r_src = iregNo(i->Pin.Goto.dst->Pri.Reg.reg);
             p = mkFormXO(p, 31, r_dst, 0, r_src, 0, 266, 0);
-            /* noop */
-            p = mkFormD(p, 24, 0, 0, 0);
          }
       }
 
       /* ret => bclr (always),0 */
       p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 16, 0);
+
+      /* Fix up the conditional jump, if there was one. */
+      if (cond.test != Pct_ALWAYS) {
+         Int delta = p - ptmp;
+         vassert(delta > 0 && delta < 20);
+         *ptmp = (UChar)(delta-1);
+      }
       goto done;
    }
 
@@ -2252,27 +2222,28 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       goto done;
    }
 
-   case Pin_LoadEX: {
-      UInt op1, op2, sz = i->Pin.LoadEX.sz;
-      switch (i->Pin.LoadEX.src->tag) {
+   case Pin_Load: {
+      Bool syned = i->Pin.Load.syned;
+      UInt op1, op2, sz = i->Pin.Load.sz;
+      switch (i->Pin.Load.src->tag) {
       case Pam_IR:
          if (sz == 2) {  // the only signed load
-            op1 = (i->Pin.LoadEX.syned) ? 42: 40;
+            op1 = (syned) ? 42: 40;
          } else {
-            vassert(i->Pin.LoadEX.syned == False);
+            vassert(syned == False);
             op1 = (sz == 1) ? 34 : 32;   // 1:4
          }
-         p = doAMode_IR(p, op1, i->Pin.LoadEX.dst, i->Pin.LoadEX.src);
+         p = doAMode_IR(p, op1, i->Pin.Load.dst, i->Pin.Load.src);
          goto done;
       case Pam_RR:
          op1 = 31;
          if (sz == 2) {  // the only signed load
-            op2 = (i->Pin.LoadEX.syned) ? 343: 279;
+            op2 = (syned) ? 343: 279;
          } else {
-            vassert(i->Pin.LoadEX.syned == False);
+            vassert(syned == False);
             op2 = (sz == 1) ? 87 : 23;   // 1:4
          }
-         p = doAMode_RR(p, op1, op2, i->Pin.LoadEX.dst, i->Pin.LoadEX.src);
+         p = doAMode_RR(p, op1, op2, i->Pin.Load.dst, i->Pin.Load.src);
          goto done;
       default:
          goto bad;
@@ -2284,14 +2255,14 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          the relevant condition holds. Yay! - mfcr doesn't change CR. */
       UInt r_dst = iregNo(i->Pin.Set32.dst);
       PPC32CondCode cond = i->Pin.Set32.cond;
-      UInt shft;
+      UInt rot_imm;
       UInt r_tmp;
 
       if (cond.test == Pct_ALWAYS) {
          // just load 1 to dst => li dst,1
          p = mkFormD(p, 14, r_dst, 0, 1);
       } else {
-         shft = 32 - cond.flag;
+         rot_imm = 1 + cond.flag;
          r_tmp = 1;
 // CAB: how choose r_tmp so don't kill anything else?
 
@@ -2299,8 +2270,8 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
          p = mkFormX(p, 31, r_tmp, 0, 0, 19, 0);
 
          // r_dst = flag (rotate left and mask)
-         //  => rlwinm r_dst,r_tmp,shft,31,31
-         p = mkFormM(p, 21, r_dst, r_tmp, shft, 31, 31, 0);
+         //  => rlwinm r_dst,r_tmp,rot_imm,31,31
+         p = mkFormM(p, 21, r_dst, r_tmp, rot_imm, 31, 31, 0);
 
          if (cond.test == Pct_FALSE) {
             // flip bit  => xori rD,rD,1

@@ -2217,40 +2217,6 @@ Char* VG_(describe_eip)(Addr eip, Char* buf, Int n_buf)
 #undef APPEND
 }
 
-/* Print a mini stack dump, showing the current location. */
-void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips )
-{
-   UInt  i;
-   static UChar buf[M_VG_ERRTXT];
-   Bool  main_done = False;
-
-   Int stop_at = n_eips;
-
-   vg_assert(stop_at > 0);
-
-   /* This loop is the basis for the one in VG_(gen_suppressions)();  if you
-      change this, change it too! */
-   i = 0;
-   do {
-      Addr eip = eips[i];
-      if (i > 0) 
-         eip -= MIN_INSTR_SIZE;     // point to calling line
-      VG_(describe_eip)(eip, buf, M_VG_ERRTXT);
-
-      if ( ! VG_(clo_show_below_main)) {
-         // Stop after "main";  if main() is recursive, stop after last main().
-         if (VG_(strstr)(buf, " main ("))
-            main_done = True;
-         else if (main_done)
-            break;
-      }
-      VG_(message)(Vg_UserMsg, "   %s %s", ( i == 0 ? "at" : "by" ), buf);
-      i++;
-
-   } while (i < (UInt)stop_at && eips[i] != 0);
-}
-
-
 /*------------------------------------------------------------*/
 /*--- SegInfo accessor functions                           ---*/
 /*------------------------------------------------------------*/

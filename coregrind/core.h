@@ -891,7 +891,6 @@ extern void VG_(print_ExeContext_stats) ( void );
 extern ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
                                           Addr fp_min, Addr fp_max );
 
-
 /* ---------------------------------------------------------------------
    Exports of vg_errcontext.c.
    ------------------------------------------------------------------ */
@@ -932,7 +931,6 @@ typedef struct _Segment Segment;
 typedef struct _CodeRedirect CodeRedirect;
 
 extern Bool VG_(is_object_file)   ( const void *hdr );
-extern void VG_(mini_stack_dump)  ( Addr ips[], UInt n_ips );
 extern SegInfo * VG_(read_seg_symbols) ( Segment *seg );
 extern void VG_(symtab_incref)	  ( SegInfo * );
 extern void VG_(symtab_decref)	  ( SegInfo *, Addr a );

@@ -340,11 +340,22 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    vg_assert( tid < VG_N_THREADS );
 }
 
+static void printSuppForIp(UInt n, Addr ip)
+{
+   static UChar buf[M_VG_ERRTXT];
+
+   if ( VG_(get_fnname_nodemangle) (ip, buf,  M_VG_ERRTXT) ) {
+      VG_(printf)("   fun:%s\n", buf);
+   } else if ( VG_(get_objname)(ip, buf+7, M_VG_ERRTXT-7) ) {
+      VG_(printf)("   obj:%s\n", buf);
+   } else {
+      VG_(printf)("   ???:???       "
+                  "# unknown, suppression will not work, sorry\n");
+   }
+}
+
 static void gen_suppression(Error* err)
 {
-   Int         i;
-   static UChar buf[M_VG_ERRTXT];
-   Bool        main_done = False;
    ExeContext* ec      = VG_(get_error_where)(err);
    Int         stop_at = VG_(clo_backtrace_size);
 
@@ -369,30 +380,8 @@ static void gen_suppression(Error* err)
       TL_(print_extra_suppression_info)(err);
    }
 
-   /* This loop condensed from VG_(mini_stack_dump)() */
-   i = 0;
-   do {
-      Addr eip = ec->ips[i];
-      if (i > 0) 
-         eip -= MIN_INSTR_SIZE;     // point to calling line
-      if ( VG_(get_fnname_nodemangle) (eip, buf,  M_VG_ERRTXT) ) {
-         // Stop after "main";  if main() is recursive, stop after last main().
-
-         if ( ! VG_(clo_show_below_main)) {
-            if (VG_STREQ(buf, "main"))
-               main_done = True;
-            else if (main_done)
-               break;
-         }
-         VG_(printf)("   fun:%s\n", buf);
-      } else if ( VG_(get_objname)(eip, buf, M_VG_ERRTXT) ) {
-         VG_(printf)("   obj:%s\n", buf);
-      } else {
-         VG_(printf)("   ???:???       "
-                     "# unknown, suppression will not work, sorry\n");
-      }
-      i++;
-   } while (i < stop_at && ec->ips[i] != 0);
+   // Print stack trace elements
+   VG_(apply_ExeContext)(printSuppForIp, ec, stop_at);
 
    VG_(printf)("}\n");
 }

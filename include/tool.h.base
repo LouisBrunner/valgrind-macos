@@ -604,10 +604,11 @@ extern void VG_(pp_ExeContext) ( ExeContext* );
 */
 extern ExeContext* VG_(get_ExeContext) ( ThreadId tid );
 
-/* Get the nth IP from the ExeContext.  0 is the IP of the top function, 1
-   is its caller, etc.  Returns 0 if there isn't one, or if n is greater
-   than VG_(clo_backtrace_size), set by the --num-callers option. */
-extern Addr VG_(get_EIP_from_ExeContext) ( ExeContext* e, UInt n );
+/* Apply a function to every element in the ExeContext.  The parameter 'n'
+   gives the index of the passed ip.  Doesn't go below main() unless
+   --show-below-main=yes is set. */
+extern void VG_(apply_ExeContext)( void(*action)(UInt n, Addr ip),
+                                   ExeContext* ec, UInt n_ips );
 
 /* Just grab the client's IP, as a much smaller and cheaper
    indication of where they are.  Use is basically same as for
@@ -620,11 +621,6 @@ extern Addr VG_(get_EIP)( ThreadId tid );
    'n_ips' addresses put into 'ips';  0 is the top of the stack, 1 is its
    caller, etc. */
 extern UInt VG_(stack_snapshot) ( ThreadId tid, Addr* ips, UInt n_ips );
-
-/* Does the same thing as VG_(pp_ExeContext)(), just with slightly
-   different input. */
-extern void VG_(mini_stack_dump) ( Addr ips[], UInt n_ips );
-
 
 /*====================================================================*/
 /*=== Error reporting                                              ===*/

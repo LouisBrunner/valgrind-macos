@@ -109,11 +109,19 @@ void VG_(print_ExeContext_stats) ( void )
 }
 
 
-/* Print an ExeContext. */
-void VG_(pp_ExeContext) ( ExeContext* e )
+static void printIpDesc(UInt n, Addr ip)
 {
-   init_ExeContext_storage();
-   VG_(mini_stack_dump) ( e->ips, VG_(clo_backtrace_size) );
+   static UChar buf[M_VG_ERRTXT];
+
+   VG_(describe_eip)(ip, buf, M_VG_ERRTXT);
+   VG_(message)(Vg_UserMsg, "   %s %s", ( n == 0 ? "at" : "by" ), buf);
+}
+
+/* Print an ExeContext. */
+void VG_(pp_ExeContext) ( ExeContext* ec )
+{
+   vg_assert( VG_(clo_backtrace_size) > 0 );
+   VG_(apply_ExeContext)( printIpDesc, ec, VG_(clo_backtrace_size) );
 }
 
 
@@ -154,6 +162,40 @@ Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
    default:
       VG_(core_panic)("VG_(eq_ExeContext): unrecognised VgRes");
    }
+}
+
+
+void VG_(apply_ExeContext)( void(*action)(UInt n, Addr ip),
+                            ExeContext* ec, UInt n_ips )
+{
+   #define MYBUF_LEN 10    // only needs to be long enough for "main"
+
+   Bool main_done = False;
+   Char mybuf[MYBUF_LEN];     // ok to stack allocate mybuf[] -- it's tiny
+   Int i = 0;
+
+   vg_assert(n_ips > 0);
+   do {
+      Addr ip = ec->ips[i];
+      if (i > 0) 
+         ip -= MIN_INSTR_SIZE;     // point to calling line
+
+      // Stop after "main";  if main() is recursive, stop after last main().
+      if ( ! VG_(clo_show_below_main)) {
+         VG_(get_fnname_nodemangle)( ip, mybuf, MYBUF_LEN );
+         if ( VG_STREQ("main", mybuf) )
+            main_done = True;
+         else if (main_done)
+            break;
+      }
+
+      // Act on the ip
+      action(i, ip);
+
+      i++;
+   } while (i < n_ips && ec->ips[i] != 0);
+
+   #undef MYBUF_LEN
 }
 
 
@@ -364,12 +406,6 @@ UInt VG_(stack_snapshot) ( ThreadId tid, Addr* ips, UInt n_ips )
    return stack_snapshot2(ips, n_ips, ip, fp, sp, stack_highest_word);
 }
 
-
-Addr VG_(get_EIP_from_ExeContext) ( ExeContext* e, UInt n )
-{
-   if (n > VG_(clo_backtrace_size)) return 0;
-   return e->ips[n];
-}
 
 Addr VG_(get_EIP) ( ThreadId tid )
 {

@@ -168,12 +168,7 @@ void VG_(pp_sched_status) ( void )
    for (i = 1; i < VG_N_THREADS; i++) {
       if (VG_(threads)[i].status == VgTs_Empty) continue;
       VG_(printf)("\nThread %d: status = %s\n", i, name_of_thread_state(VG_(threads)[i].status));
-      VG_(pp_ExeContext)( 
-         VG_(get_ExeContext2)( INSTR_PTR(VG_(threads)[i].arch),
-                               FRAME_PTR(VG_(threads)[i].arch),
-                               STACK_PTR(VG_(threads)[i].arch),
-                               VG_(threads)[i].stack_highest_word)
-      );
+      VG_(pp_ExeContext)( VG_(get_ExeContext)( i ) );
    }
    VG_(printf)("\n");
 }
@@ -1055,7 +1050,7 @@ void do_client_request ( ThreadId tid )
          ExeContext *e = VG_(get_ExeContext)( tid );
          int count =
             VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
-            VG_(mini_stack_dump)(e->ips, VG_(clo_backtrace_size));
+            VG_(pp_ExeContext)(e);
             SET_CLREQ_RETVAL( tid, count );
          break; }
 

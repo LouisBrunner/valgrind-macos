@@ -356,8 +356,7 @@ static
 void mostly_clear_thread_record ( ThreadId tid )
 {
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
-   VG_(threads)[tid].arch.ldt                  = NULL;
-   VG_(clear_TLS_for_thread)(VG_(threads)[tid].arch.tls);
+   VGA_(clear_thread)(&VG_(threads)[tid].arch);
    VG_(threads)[tid].tid                  = tid;
    VG_(threads)[tid].status               = VgTs_Empty;
    VG_(threads)[tid].associated_mx        = NULL;
@@ -422,7 +421,8 @@ void VG_(scheduler_init) ( void )
    /* Copy VG_(baseBlock) state to tid_main's slot. */
    vg_tid_currently_in_baseBlock = tid_main;
    vg_tid_last_in_baseBlock = tid_main;
-   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)VG_(threads)[tid_main].arch.tls;
+
+   VGA_(init_thread)(&VG_(threads)[tid_main].arch);
    save_thread_state ( tid_main );
 
    VG_(threads)[tid_main].stack_highest_word 
@@ -1252,12 +1252,7 @@ void cleanup_after_thread_exited ( ThreadId tid, Bool forcekill )
    VG_TRACK( die_mem_stack, VG_(threads)[tid].stack_base,
                             VG_(threads)[tid].stack_size );
 
-   /* Deallocate its LDT, if it ever had one. */
-   VG_(deallocate_LDT_for_thread)( VG_(threads)[tid].arch.ldt );
-   VG_(threads)[tid].arch.ldt = NULL;
-
-   /* Clear its TLS array. */
-   VG_(clear_TLS_for_thread)( VG_(threads)[tid].arch.tls );
+   VGA_(cleanup_thread)( &VG_(threads)[tid].arch );
 
    /* Not interested in the timeout anymore */
    VG_(threads)[tid].awaken_at = 0xFFFFFFFF;
@@ -1757,22 +1752,8 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    /* Copy the parent's CPU state into the child's, in a roundabout
       way (via baseBlock). */
    load_thread_state(parent_tid);
-
-   /* We inherit our parent's LDT. */
-   if (VG_(threads)[parent_tid].arch.ldt == NULL) {
-      /* We hope this is the common case. */
-      VG_(baseBlock)[VGOFF_(ldt)] = 0;
-   } else {
-      /* No luck .. we have to take a copy of the parent's. */
-      VG_(threads)[tid].arch.ldt
-        = VG_(allocate_LDT_for_thread)( VG_(threads)[parent_tid].arch.ldt );
-      VG_(baseBlock)[VGOFF_(ldt)] = (UInt)VG_(threads)[tid].arch.ldt;
-   }
-
-   /* Initialise the thread's TLS array */
-   VG_(clear_TLS_for_thread)( VG_(threads)[tid].arch.tls );
-   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)VG_(threads)[tid].arch.tls;
-
+   VGA_(setup_child)( &VG_(threads)[tid].arch,
+                      &VG_(threads)[parent_tid].arch );
    save_thread_state(tid);
    vg_tid_last_in_baseBlock = tid;
 

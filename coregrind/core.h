@@ -605,11 +605,9 @@ struct vg_mallocfunc_info {
 
 extern Bool VG_(sk_malloc_called_by_scheduler);
 
-
-/* Maximum number of LDT entries supported (by the x86). */
-#define VG_M_LDT_ENTRIES     8192
-/* The size of each LDT entry == sizeof(VgLdtEntry) */
-#define VG_LDT_ENTRY_SIZE  8
+/* ---------------------------------------------------------------------
+   Exports of vg_ldt.c
+   ------------------------------------------------------------------ */
 
 /* Alloc & copy, and dealloc. */
 extern VgLdtEntry* VG_(allocate_LDT_for_thread)   ( VgLdtEntry* parent_ldt );
@@ -1498,6 +1496,11 @@ extern void VGA_(init_high_baseBlock) ( Addr client_eip, Addr esp_at_startup );
 
 extern void VGA_(load_state) ( arch_thread_t*, ThreadId tid );
 extern void VGA_(save_state) ( arch_thread_t*, ThreadId tid );
+
+extern void VGA_(clear_thread)   ( arch_thread_t * );
+extern void VGA_(init_thread)    ( arch_thread_t * );
+extern void VGA_(cleanup_thread) ( arch_thread_t* );
+extern void VGA_(setup_child)    ( arch_thread_t*, arch_thread_t* );
 
 extern Bool VGA_(setup_pointercheck) ( void );
 

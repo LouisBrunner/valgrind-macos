@@ -448,6 +448,48 @@ n",
 }
 
 /*------------------------------------------------------------*/
+/*--- Thread stuff                                         ---*/
+/*------------------------------------------------------------*/
+
+void VGA_(clear_thread)( arch_thread_t *arch )
+{
+   arch->ldt = NULL;
+   VG_(clear_TLS_for_thread)(arch->tls);
+}  
+
+void VGA_(init_thread)( arch_thread_t *arch )
+{
+   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)arch->tls;
+}  
+
+void VGA_(cleanup_thread) ( arch_thread_t *arch )
+{  
+   /* Deallocate its LDT, if it ever had one. */
+   VG_(deallocate_LDT_for_thread)( arch->ldt ); 
+   arch->ldt = NULL;
+   
+   /* Clear its TLS array. */
+   VG_(clear_TLS_for_thread)( arch->tls );
+}  
+
+void VGA_(setup_child) ( arch_thread_t *regs, arch_thread_t *parent_regs )
+{  
+   /* We inherit our parent's LDT. */
+   if (parent_regs->ldt == NULL) {
+      /* We hope this is the common case. */
+      VG_(baseBlock)[VGOFF_(ldt)] = 0;
+   } else {
+      /* No luck .. we have to take a copy of the parent's. */
+      regs->ldt = VG_(allocate_LDT_for_thread)( parent_regs->ldt );
+      VG_(baseBlock)[VGOFF_(ldt)] = (UInt) regs->ldt;
+   }
+
+   /* Initialise the thread's TLS array */
+   VG_(clear_TLS_for_thread)( regs->tls );
+   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt) regs->tls;
+}  
+
+/*------------------------------------------------------------*/
 /*--- pointercheck                                         ---*/
 /*------------------------------------------------------------*/
 

@@ -65,7 +65,7 @@ static void test__find_auxv(void)
          break;
    
       default:
-         fprintf(stderr, "auxv->a_type = %lld\n", (Word)auxv->a_type);
+         fprintf(stderr, "auxv->a_type = %lld\n", (Long)auxv->a_type);
          assert(0);
       }
    }

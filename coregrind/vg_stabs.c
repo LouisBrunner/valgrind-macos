@@ -775,9 +775,26 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	 Char *name;
 	 UInt off, sz;
 	 SymType *fieldty;
+	 Int templ=0;
 
-	 end = SKIPPAST(p, ':', "struct/union field NAME");
-	 end--;			/* want to point to (first) ':' */
+	 /* Skip past field name, which ends with ':' or '::' - but
+	    '::' can appear within a template-mangled name, so keep
+	    track of '<' and '>'. */
+	 end = p;
+	 while(*end) {
+	     Char ch = *end++;
+
+	     if (ch == '<')
+		 templ++;
+	     else if (ch == '>')
+		 templ--;
+	     else if (templ == 0 && ch == ':') {
+		 end--;
+		 break;
+	     }
+	 }
+	 /* XXX check for *end != ':' */
+
 	 if (end[1] == ':') {
 	    /* c++ method names end in :: */
 	    method = True;

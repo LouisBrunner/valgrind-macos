@@ -1153,6 +1153,7 @@ static Bool dis_int_arith ( UInt theInstr )
 
    case 0x08: // subfic   (Subtract from Immediate Carrying, p613)
       DIP("subfic r%d,r%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
+      // rD = exts_simm - rA
       assign( Rd, binop(Iop_Sub32, mkU32(EXTS_SIMM), mkexpr(Ra)) );
       op = PPC32G_FLAG_OP_SUBFI;
       do_ca = True;
@@ -1301,9 +1302,8 @@ static Bool dis_int_arith ( UInt theInstr )
          DIP("subf%s%s r%d,r%d,r%d\n",
              flag_OE ? "o" : "", flag_Rc ? "." : "",
              Rd_addr, Ra_addr, Rb_addr);
-         // rD = (log not)rA + rB + 1
-         assign( Rd, binop(Iop_Add32, unop(Iop_Not32, mkexpr(Ra)),
-                           binop(Iop_Add32, mkexpr(Rb), mkU32(1))) );
+         // rD = rB - rA
+         assign( Rd, binop(Iop_Sub32, mkexpr(Rb), mkexpr(Ra)) );
          op = PPC32G_FLAG_OP_SUBF;
          do_ov = True;
          break;
@@ -1312,9 +1312,8 @@ static Bool dis_int_arith ( UInt theInstr )
          DIP("subfc%s%s r%d,r%d,r%d\n",
              flag_OE ? "o" : "", flag_Rc ? "." : "",
              Rd_addr, Ra_addr, Rb_addr);
-         // rD = (log not)rA + rB + 1
-         assign( Rd, binop(Iop_Add32, unop(Iop_Not32, mkexpr(Ra)),
-                           binop(Iop_Add32, mkexpr(Rb), mkU32(1))) );
+         // rD = rB - rA
+         assign( Rd, binop(Iop_Sub32, mkexpr(Rb), mkexpr(Ra)) );
          op = PPC32G_FLAG_OP_SUBFC;
          do_ca = True;
          do_ov = True;

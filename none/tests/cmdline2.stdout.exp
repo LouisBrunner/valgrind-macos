@@ -44,6 +44,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --bbprofile=no|yes        profile bbs? [no]
     --branchpred=yes|no       generate branch prediction hints [no]
     --trace-codegen=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]
+    --trace-notbelow=<number>    only show BBs above <number> [0]
     --trace-syscalls=no|yes   show all system calls? [no]
     --trace-signals=no|yes    show signal handling details? [no]
     --trace-symtab=no|yes     show symbol table details? [no]

@@ -450,12 +450,18 @@ extern void bz_internal_error ( int errcode );
 #define AssertH(cond,errcode) \
    { if (!(cond)) bz_internal_error ( errcode ); }
 #define AssertD(cond,msg) /* */
-#define VPrintf0(zf) /* */
-#define VPrintf1(zf,za1) /* */
-#define VPrintf2(zf,za1,za2) /* */
-#define VPrintf3(zf,za1,za2,za3) /* */
-#define VPrintf4(zf,za1,za2,za3,za4) /* */
-#define VPrintf5(zf,za1,za2,za3,za4,za5) /* */
+#define VPrintf0(zf) \
+   vex_printf(zf)
+#define VPrintf1(zf,za1) \
+   vex_printf(zf,za1)
+#define VPrintf2(zf,za1,za2) \
+   vex_printf(zf,za1,za2)
+#define VPrintf3(zf,za1,za2,za3) \
+   vex_printf(zf,za1,za2,za3)
+#define VPrintf4(zf,za1,za2,za3,za4) \
+   vex_printf(zf,za1,za2,za3,za4)
+#define VPrintf5(zf,za1,za2,za3,za4,za5) \
+   vex_printf(zf,za1,za2,za3,za4,za5)
 #endif
 
 
@@ -3057,7 +3063,7 @@ void BZ2_blockSort ( EState* s )
    Int32   budgetInit;
    Int32   i;
 
-   if (nblock < 10000) {
+   if (nblock < /* 10000 */1000 ) {
       fallbackSort ( s->arr1, s->arr2, ftab, nblock, verb );
    } else {
       /* Calculate the location for quadrant, remembering to get
@@ -3082,7 +3088,7 @@ void BZ2_blockSort ( EState* s )
       budget = budgetInit;
 
       mainSort ( ptr, block, quadrant, ftab, nblock, verb, &budget );
-      if (verb >= 3) 
+      if (0 && verb >= 3) 
          VPrintf3 ( "      %d work, %d block, ratio %5.2f\n",
                     budgetInit - budget,
                     nblock, 
@@ -3696,7 +3702,7 @@ void sendMTFValues ( EState* s )
             ge--;
          }
 
-         if (s->verbosity >= 3)
+         if (0 && s->verbosity >= 3)
             VPrintf5( "      initial group %d, [%d .. %d], "
                       "has %d syms (%4.1f%%)\n",
                       nPart, gs, ge, aFreq, 
@@ -5966,7 +5972,84 @@ void set_inbuf ( void )
 {
   inbuf[0] = 0;
   my_strcat(inbuf, "At her sixtieth birthday party, Margaret Thatcher ");
-  my_strcat(inbuf, "blew on the cake to light the candles.");
+  my_strcat(inbuf, "blew on the cake to light the candles.\n");
+  my_strcat(inbuf, "This program, bzip2, the associated library libbzip2, and all\n");
+  my_strcat(inbuf, "documentation, are copyright (C) 1996-2004 Julian R Seward.  All\n");
+  my_strcat(inbuf, "rights reserved.\n");
+  my_strcat(inbuf, "\n");
+  my_strcat(inbuf, "Redistribution and use in source and binary forms, with or without\n");
+  my_strcat(inbuf, "modification, are permitted provided that the following conditions\n");
+  my_strcat(inbuf, "are met:\n");
+  my_strcat(inbuf, "\n");
+  my_strcat(inbuf, "1. Redistributions of source code must retain the above copyright\n");
+  my_strcat(inbuf, "   notice, this list of conditions and the following disclaimer.\n");
+  my_strcat(inbuf, "\n");
+  my_strcat(inbuf, "2. The origin of this software must not be misrepresented; you must\n");
+  my_strcat(inbuf, "   not claim that you wrote the original software.  If you use this\n");
+  my_strcat(inbuf, "   software in a product, an acknowledgment in the product\n");
+  my_strcat(inbuf, "   documentation would be appreciated but is not required.\n");
+  my_strcat(inbuf, "\n");
+  my_strcat(inbuf, "3. Altered source versions must be plainly marked as such, and must\n");
+  my_strcat(inbuf, "   not be misrepresented as being the original software.\n");
+  my_strcat(inbuf, "\n");
+  my_strcat(inbuf, "4. The name of the author may not be used to endorse or promote\n");
+  my_strcat(inbuf, "   products derived from this software without specific prior written\n");
+  my_strcat(inbuf, "   permission.\n");
+  my_strcat(inbuf, "\n");
+  my_strcat(inbuf, "THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS\n");
+  my_strcat(inbuf, "OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n");
+  my_strcat(inbuf, "WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE\n");
+  my_strcat(inbuf, "ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY\n");
+  my_strcat(inbuf, "DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\n");
+  my_strcat(inbuf, "DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE\n");
+  my_strcat(inbuf, "GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS\n");
+  my_strcat(inbuf, "INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,\n");
+  my_strcat(inbuf, "WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING\n");
+  my_strcat(inbuf, "NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS\n");
+  my_strcat(inbuf, "SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "ababababababababababababababababababababababababababababababab");
+  my_strcat(inbuf, "\n");
 }
 
 
@@ -5984,7 +6067,7 @@ void entry ( HWord(*service)(HWord,HWord) )
 
    nZ = M_BLOCK;
    r = BZ2_bzBuffToBuffCompress (
-         zbuf, &nZ, inbuf, nIn, 9, 0, 30 );
+          zbuf, &nZ, inbuf, nIn, 9, 4/*verb*/, 30 );
 
    if (r != BZ_OK) {
      vex_printf("initial compress failed!\n");
@@ -5992,7 +6075,7 @@ void entry ( HWord(*service)(HWord,HWord) )
    }
    vex_printf( "%d after compression\n", nZ );
 
-   for (bit = 0; bit < nZ*8; bit++) {
+   for (bit = 0; bit < nZ*8; bit += (bit < 35 ? 1 : 377)) {
       vex_printf( "bit %d  ", bit );
       flip_bit ( bit );
       nOut = M_BLOCK_OUT;

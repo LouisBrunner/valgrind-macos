@@ -465,6 +465,7 @@ VgNeeds VG_(needs) = {
    .syscall_wrapper      = False,
    .alternative_free     = False,
    .sanity_checks        = False,
+   .data_syms	         = False,
 };
 
 VgTrackEvents VG_(track_events) = {

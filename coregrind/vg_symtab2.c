@@ -117,12 +117,16 @@ struct _SegInfo {
    */
    UInt   offset;
 
-   /* Bounds of PLT and GOT, so that skins can see what section an
-      address is in */
+   /* Bounds of data, BSS, PLT and GOT, so that skins can see what
+      section an address is in */
    Addr	  plt_start;
    UInt   plt_size;
    Addr   got_start;
    UInt   got_size;
+   Addr   data_start;
+   UInt   data_size;
+   Addr   bss_start;
+   UInt   bss_size;
 };
 
 
@@ -153,7 +157,7 @@ Int addStr ( SegInfo* si, Char* str )
 #  define NN       5
    
    /* prevN[0] has the most recent, prevN[NN-1] the least recent */
-   static UInt     prevN[] = { EMPTY, EMPTY, EMPTY, EMPTY, EMPTY };
+   static UInt     prevN[NN] = { EMPTY, EMPTY, EMPTY, EMPTY, EMPTY };
    static SegInfo* curr_si = NULL;
 
    Char* new_tab;
@@ -1345,7 +1349,7 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 /* Read the symbols from the object/exe specified by the SegInfo into
    the tables within the supplied SegInfo.  */
 static
-void vg_read_lib_symbols ( SegInfo* si )
+Bool vg_read_lib_symbols ( SegInfo* si )
 {
    Elf32_Ehdr*   ehdr;       /* The ELF header                          */
    Elf32_Shdr*   shdr;       /* The section table                       */
@@ -1374,14 +1378,14 @@ void vg_read_lib_symbols ( SegInfo* si )
    i = VG_(stat)(si->filename, &stat_buf);
    if (i != 0) {
       vg_symerr("Can't stat .so/.exe (to determine its size)?!");
-      return;
+      return False;
    }
    n_oimage = stat_buf.st_size;
 
    fd = VG_(open)(si->filename, VKI_O_RDONLY, 0);
    if (fd == -1) {
       vg_symerr("Can't open .so/.exe to read symbols?!");
-      return;
+      return False;
    }
 
    oimage = (Addr)VG_(mmap)( NULL, n_oimage, 
@@ -1390,7 +1394,7 @@ void vg_read_lib_symbols ( SegInfo* si )
       VG_(message)(Vg_UserMsg,
                    "mmap failed on %s", si->filename );
       VG_(close)(fd);
-      return;
+      return False;
    }
 
    VG_(close)(fd);
@@ -1414,12 +1418,81 @@ void vg_read_lib_symbols ( SegInfo* si )
       ok &= (ehdr->e_version == EV_CURRENT);
       ok &= (ehdr->e_shstrndx != SHN_UNDEF);
       ok &= (ehdr->e_shoff != 0 && ehdr->e_shnum != 0);
+      ok &= (ehdr->e_phoff != 0 && ehdr->e_phnum != 0);
    }
 
    if (!ok) {
       vg_symerr("Invalid ELF header, or missing stringtab/sectiontab.");
       VG_(munmap) ( (void*)oimage, n_oimage );
-      return;
+      return False;
+   }
+
+   /* Walk the LOAD headers in the phdr and update the SegInfo to
+      include them all, so that this segment also contains data and
+      bss memory.  Also computes correct symbol offset value for this
+      ELF file. */
+   if (ehdr->e_phoff + ehdr->e_phnum*sizeof(Elf32_Phdr) > n_oimage) {
+      vg_symerr("ELF program header is beyond image end?!");
+      VG_(munmap) ( (void*)oimage, n_oimage );
+      return False;
+   }
+   {
+      Bool offset_set = False;
+      Elf32_Addr prev_addr = 0;
+
+      si->offset = 0;
+
+      for(i = 0; i < ehdr->e_phnum; i++) {
+	 Elf32_Phdr *o_phdr;
+	 Elf32_Addr mapped, mapped_end;
+
+	 o_phdr = &((Elf32_Phdr *)(oimage + ehdr->e_phoff))[i];
+
+	 if (o_phdr->p_type != PT_LOAD)
+	    continue;
+
+	 if (!offset_set) {
+	    offset_set = True;
+	    si->offset = si->start - o_phdr->p_vaddr;
+	 }
+
+	 if (o_phdr->p_vaddr < prev_addr) {
+	    vg_symerr("ELF Phdrs are out of order!?");
+	    VG_(munmap) ( (void*)oimage, n_oimage );
+	    return False;
+	 }
+	 prev_addr = o_phdr->p_vaddr;
+
+	 mapped = o_phdr->p_vaddr + si->offset;
+	 mapped_end = mapped + o_phdr->p_memsz;
+
+	 if (si->data_start == 0 &&
+	     (o_phdr->p_flags & (PF_R|PF_W|PF_X)) == (PF_R|PF_W)) {
+	    si->data_start = mapped;
+	    si->data_size = o_phdr->p_filesz;
+	    si->bss_start = mapped + o_phdr->p_filesz;
+	    if (o_phdr->p_memsz > o_phdr->p_filesz)
+	       si->bss_size = o_phdr->p_memsz - o_phdr->p_filesz;
+	    else
+	       si->bss_size = 0;
+	 }
+
+	 mapped = mapped & ~(VKI_BYTES_PER_PAGE-1);
+	 mapped_end = (mapped_end + VKI_BYTES_PER_PAGE - 1) & ~(VKI_BYTES_PER_PAGE-1);
+
+	 if (VG_(needs).data_syms &&
+	     (mapped >= si->start && mapped <= (si->start+si->size)) &&
+	     (mapped_end > (si->start+si->size))) {
+	    UInt newsz = mapped_end - si->start;
+	    if (newsz > si->size) {
+	       if (0)
+		  VG_(printf)("extending mapping %p..%p %d -> ..%p %d\n", 
+			      si->start, si->start+si->size, si->size,
+			      si->start+newsz, newsz);
+	       si->size = newsz;
+	    }
+	 }
+      }
    }
 
    if (VG_(clo_trace_symtab))
@@ -1430,7 +1503,7 @@ void vg_read_lib_symbols ( SegInfo* si )
    if (ehdr->e_shoff + ehdr->e_shnum*sizeof(Elf32_Shdr) > n_oimage) {
       vg_symerr("ELF section header is beyond image end?!");
       VG_(munmap) ( (void*)oimage, n_oimage );
-      return;
+      return False;
    }
 
    shdr = (Elf32_Shdr*)(oimage + ehdr->e_shoff);
@@ -1519,17 +1592,18 @@ void vg_read_lib_symbols ( SegInfo* si )
          /* Perhaps should start at i = 1; ELF docs suggest that entry
             0 always denotes `unknown symbol'. */
          for (i = 1; i < o_symtab_sz/sizeof(Elf32_Sym); i++){
-#           if 0
-            VG_(printf)("raw symbol: ");
-            switch (ELF32_ST_BIND(o_symtab[i].st_info)) {
+#           if 1
+	    if (VG_(clo_trace_symtab)) {
+	       VG_(printf)("raw symbol: ");
+	       switch (ELF32_ST_BIND(o_symtab[i].st_info)) {
                case STB_LOCAL:  VG_(printf)("LOC "); break;
                case STB_GLOBAL: VG_(printf)("GLO "); break;
                case STB_WEAK:   VG_(printf)("WEA "); break;
                case STB_LOPROC: VG_(printf)("lop "); break;
                case STB_HIPROC: VG_(printf)("hip "); break;
                default:         VG_(printf)("??? "); break;
-            }
-            switch (ELF32_ST_TYPE(o_symtab[i].st_info)) {
+	       }
+	       switch (ELF32_ST_TYPE(o_symtab[i].st_info)) {
                case STT_NOTYPE:  VG_(printf)("NOT "); break;
                case STT_OBJECT:  VG_(printf)("OBJ "); break;
                case STT_FUNC:    VG_(printf)("FUN "); break;
@@ -1538,14 +1612,15 @@ void vg_read_lib_symbols ( SegInfo* si )
                case STT_LOPROC:  VG_(printf)("lop "); break;
                case STT_HIPROC:  VG_(printf)("hip "); break;
                default:          VG_(printf)("??? "); break;
-            }
-            VG_(printf)(
-                ": value %p, size %d, name %s\n",
-                si->offset+(UChar*)o_symtab[i].st_value,
-                o_symtab[i].st_size,
-                o_symtab[i].st_name 
-                   ? ((Char*)o_strtab+o_symtab[i].st_name) 
-                   : (Char*)"NONAME");                
+	       }
+	       VG_(printf)(
+		  ": value %p, size %d, name %s\n",
+		  si->offset+(UChar*)o_symtab[i].st_value,
+		  o_symtab[i].st_size,
+		  o_symtab[i].st_name 
+		  ? ((Char*)o_strtab+o_symtab[i].st_name) 
+		  : (Char*)"NONAME"); 
+	    }               
 #           endif
 
             /* Figure out if we're interested in the symbol.
@@ -1556,8 +1631,8 @@ void vg_read_lib_symbols ( SegInfo* si )
                      ELF32_ST_BIND(o_symtab[i].st_info) == STB_LOCAL /* ||
 		     ELF32_ST_BIND(o_symtab[i].st_info) == STB_WEAK */)
                     &&
-                    (ELF32_ST_TYPE(o_symtab[i].st_info) == STT_FUNC /*||
-                     ELF32_ST_TYPE(o_symtab[i].st_info) == STT_OBJECT*/)
+                    (ELF32_ST_TYPE(o_symtab[i].st_info) == STT_FUNC ||
+                     (VG_(needs).data_syms && ELF32_ST_TYPE(o_symtab[i].st_info) == STT_OBJECT))
                   );
 
             /* Secondly, if it's apparently in a GOT or PLT, it's really
@@ -1641,8 +1716,8 @@ void vg_read_lib_symbols ( SegInfo* si )
                vg_assert(nmoff >= 0 
                          /* && 0==VG_(strcmp)(t0,&vg_strtab[nmoff]) */ );
                vg_assert( (Int)o_symtab[i].st_value >= 0);
-               /* VG_(printf)("%p + %d:   %s\n", si->addr, 
-                              (Int)o_symtab[i].st_value, t0 ); */
+	       /* VG_(printf)("%p + %d:   %p %s\n", si->start, 
+			   (Int)o_symtab[i].st_value, sym_addr,  t0 ); */
                sym.addr  = sym_addr;
                sym.size  = o_symtab[i].st_size;
                sym.nmoff = nmoff;
@@ -1680,7 +1755,7 @@ void vg_read_lib_symbols ( SegInfo* si )
    if ((stab == NULL || stabstr == NULL) && dwarf2 == NULL) {
       vg_symerr("   object doesn't have any debug info");
       VG_(munmap) ( (void*)oimage, n_oimage );
-      return;
+      return False;
    }
 
    if ( stab_sz + (UChar*)stab > n_oimage + (UChar*)oimage
@@ -1688,13 +1763,13 @@ void vg_read_lib_symbols ( SegInfo* si )
            > n_oimage + (UChar*)oimage ) {
       vg_symerr("   ELF (stabs) debug data is beyond image end?!");
       VG_(munmap) ( (void*)oimage, n_oimage );
-      return;
+      return False;
    }
 
    if ( dwarf2_sz + (UChar*)dwarf2 > n_oimage + (UChar*)oimage ) {
       vg_symerr("   ELF (dwarf2) debug data is beyond image end?!");
       VG_(munmap) ( (void*)oimage, n_oimage );
-      return;
+      return False;
    }
 
    /* Looks plausible.  Go on and read debug data. */
@@ -1708,6 +1783,8 @@ void vg_read_lib_symbols ( SegInfo* si )
 
    /* Last, but not least, heave the oimage back overboard. */
    VG_(munmap) ( (void*)oimage, n_oimage );
+
+   return True;
 }
 
 
@@ -1741,6 +1818,8 @@ void VG_(read_symtab_callback) (
       return;
    if (0 == VG_(strcmp)(filename, "/dev/zero"))
       return;
+   if (foffset != 0)
+      return;
 
    /* Perhaps we already have this one?  If so, skip. */
    for (si = segInfo; si != NULL; si = si->next) {
@@ -1760,9 +1839,8 @@ void VG_(read_symtab_callback) (
 
    /* Get the record initialised right. */
    si = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(SegInfo));
-   si->next = segInfo;
-   segInfo = si;
 
+   VG_(memset)(si, 0, sizeof(*si));
    si->start    = start;
    si->size     = size;
    si->foffset  = foffset;
@@ -1776,13 +1854,23 @@ void VG_(read_symtab_callback) (
    si->strtab = NULL;
    si->strtab_size = si->strtab_used = 0;
 
-   /* Kludge ... */
-   si->offset = si->start==VG_ASSUMED_EXE_BASE ? 0 : si->start;
-
    /* And actually fill it up. */
-   vg_read_lib_symbols ( si );
-   canonicaliseSymtab ( si );
-   canonicaliseLoctab ( si );
+   if (!vg_read_lib_symbols ( si ) && 0) {
+      /* XXX this interacts badly with the prevN optimization in
+         addStr().  Since this frees the si, the si pointer value can
+         be recycled, which confuses the curr_si == si test.  For now,
+         this code is disabled, and everything is included in the
+         segment list, even if it is a bad ELF file.  Ironically,
+         running this under valgrind itself hides the problem, because
+         it doesn't recycle pointers... */
+      freeSegInfo( si );
+   } else {
+      si->next = segInfo;
+      segInfo = si;
+
+      canonicaliseSymtab ( si );
+      canonicaliseLoctab ( si );
+   }
 }
 
 
@@ -2190,13 +2278,19 @@ VgSectKind VG_(seg_sect_kind)(Addr a)
    for(seg = segInfo; seg != NULL; seg = seg->next) {
       if (a >= seg->start && a < (seg->start + seg->size)) {
 	 if (0)
-	    VG_(printf)("addr=%p seg=%p %s got=%p %d  plt=%p %d\n",
+	    VG_(printf)("addr=%p seg=%p %s got=%p %d  plt=%p %d data=%p %d bss=%p %d\n",
 			a, seg, seg->filename, 
 			seg->got_start, seg->got_size,
-			seg->plt_start, seg->plt_size);
+			seg->plt_start, seg->plt_size,
+			seg->data_start, seg->data_size,
+			seg->bss_start, seg->bss_size);
 	 ret = Vg_SectText;
 
-	 if (a >= seg->plt_start && a < (seg->plt_start + seg->plt_size))
+	 if (a >= seg->data_start && a < (seg->data_start + seg->data_size))
+	    ret = Vg_SectData;
+	 else if (a >= seg->bss_start && a < (seg->bss_start + seg->bss_size))
+	    ret = Vg_SectBSS;
+	 else if (a >= seg->plt_start && a < (seg->plt_start + seg->plt_size))
 	    ret = Vg_SectPLT;
 	 else if (a >= seg->got_start && a < (seg->got_start + seg->got_size))
 	    ret = Vg_SectGOT;

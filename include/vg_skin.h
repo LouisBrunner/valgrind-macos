@@ -1084,8 +1084,10 @@ typedef
    enum {
       Vg_SectUnknown,
       Vg_SectText,
+      Vg_SectData,
+      Vg_SectBSS,
       Vg_SectGOT,
-      Vg_SectPLT
+      Vg_SectPLT,
    }
    VgSectKind;
 
@@ -1231,6 +1233,9 @@ typedef
 
       /* Are skin-state sanity checks performed? */
       Bool sanity_checks;
+
+      /* Do we need to see data symbols? */
+      Bool data_syms;
    } 
    VgNeeds;
 

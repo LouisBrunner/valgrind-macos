@@ -85,8 +85,6 @@
 /* ---------------------------------------------------------------------
    Startup stuff                            
    ------------------------------------------------------------------ */
-/* linker-defined base address */
-extern char kickstart_base;	
 
 /* Client address space, lowest to highest (see top of ume.c) */
 Addr VG_(client_base);           /* client address space limits */
@@ -378,6 +376,10 @@ int scan_auxv(void* init_sp)
 	 vgexecfd = auxv->u.a_val;
 	 found |= 2;
 	 break;
+
+      case AT_PHDR:
+         VG_(valgrind_base) = PGROUNDDN(auxv->u.a_val);
+         break;
       }
 
    if ( found != (1|2) ) {
@@ -393,13 +395,21 @@ int scan_auxv(void* init_sp)
 /*=== Address space determination                                  ===*/
 /*====================================================================*/
 
+extern char _start[];
+
 static void layout_remaining_space(Addr argc_addr, float ratio)
 {
    Int    ires;
    void*  vres;
    addr_t client_size, shadow_size;
 
-   VG_(valgrind_base)  = (addr_t)&kickstart_base;
+   // VG_(valgrind_base) should have been set by scan_auxv, but if not,
+   // this is a workable approximation
+   if (VG_(valgrind_base) == 0) {
+      OINK(1);
+      VG_(valgrind_base) = PGROUNDDN(&_start);
+   }
+
    VG_(valgrind_last)  = ROUNDUP(argc_addr, 0x10000) - 1; // stack
 
    // This gives the client the largest possible address space while

@@ -281,13 +281,18 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
 {
    struct elfinfo *e;
    struct elfinfo *interp = NULL;
-   ESZ(Addr) exeoff = 0;	/* offset between link address and load address */
    ESZ(Addr) minaddr = ~0;	/* lowest mapped address */
    ESZ(Addr) maxaddr = 0;	/* highest mapped address */
    ESZ(Addr) interp_addr = 0;	/* interpreter (ld.so) address */
    ESZ(Word) interp_size = 0;	/* interpreter size */
+   ESZ(Word) interp_align = VKI_BYTES_PER_PAGE;
    int i;
    void *entry;
+   ESZ(Addr) ebase = 0;
+
+#ifdef HAVE_PIE
+   ebase = info->exe_base;
+#endif
 
    e = readelf(fd, name);
 
@@ -295,14 +300,14 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       return ENOEXEC;
 
    info->phnum = e->e.e_phnum;
-   info->entry = e->e.e_entry;
+   info->entry = e->e.e_entry + ebase;
 
    for(i = 0; i < e->e.e_phnum; i++) {
       ESZ(Phdr) *ph = &e->p[i];
 
       switch(ph->p_type) {
       case PT_PHDR:
-	 info->phdr = ph->p_vaddr;
+	 info->phdr = ph->p_vaddr + ebase;
 	 break;
 
       case PT_LOAD:
@@ -344,7 +349,8 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
 	       continue;
 	    
 	    if (!baseaddr_set) {
-	       interp_addr = iph->p_vaddr;
+	       interp_addr  = iph->p_vaddr;
+	       interp_align = iph->p_align;
 	       baseaddr_set = 1;
 	    }
 
@@ -363,29 +369,19 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       }
    }
 
-   if (e->e.e_type == ET_DYN) {
-	   /* PIE executable */
-	   exeoff = info->exe_base - minaddr;
-   }
-
-   minaddr += exeoff;
-   maxaddr += exeoff;
-   info->phdr += exeoff;
-   info->entry += exeoff;
-
    if (info->exe_base != info->exe_end) {
       if (minaddr >= maxaddr ||
-	  (minaddr < info->exe_base ||
-	   maxaddr > info->exe_end)) {
+	  (minaddr + ebase < info->exe_base ||
+	   maxaddr + ebase > info->exe_end)) {
 	 fprintf(stderr, "Executable range %p-%p is outside the\n"
                          "acceptable range %p-%p\n",
-		 (void *)minaddr,        (void *)maxaddr,
-		 (void *)info->exe_base, (void *)info->exe_end);
+		 (void *)minaddr + ebase, (void *)maxaddr + ebase,
+		 (void *)info->exe_base,  (void *)info->exe_end);
 	 return ENOMEM;
       }
    }
 
-   info->brkbase = mapelf(e, exeoff);		/* map the executable */
+   info->brkbase = mapelf(e, ebase);	/* map the executable */
 
    if (info->brkbase == 0)
       return ENOMEM;
@@ -398,7 +394,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       int flags = MAP_PRIVATE|MAP_ANONYMOUS;
 
       if (info->map_base != 0) {
-	 base = (char *)info->map_base;
+	 base = (char *)ROUNDUP(info->map_base, interp_align);
 	 flags |= MAP_FIXED;
       }
 
@@ -417,10 +413,10 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
 
       free(interp);
    } else
-      entry = (void *)e->e.e_entry + exeoff;
+      entry = (void *)e->e.e_entry;
 
-   info->exe_base = minaddr;
-   info->exe_end = maxaddr;
+   info->exe_base = minaddr + ebase;
+   info->exe_end  = maxaddr + ebase;
 
    info->init_eip = (addr_t)entry;
 

@@ -259,16 +259,19 @@ static void main2(void)
    int *esp;
    char buf[strlen(valgrind_lib) + sizeof(stage2) + 16];
 
+#ifdef HAVE_PIE
+   info.exe_base = ROUNDDN(info.exe_end - 0x02000000, 0x10000000);
+   assert(info.exe_base >= PGROUNDUP(&_end));
+   info.map_base = info.exe_base + 0x01000000;
+#else
+
+   // If this system doesn't have PIE (position-independent executables),
+   // we have to choose a hardwired location for stage2.
    info.exe_base = PGROUNDUP(&_end);
+   info.map_base = KICKSTART_BASE + 0x01000000;
+#endif
    info.exe_end  = PGROUNDDN(init_sp);
 
-   /* XXX FIXME: how can stage1 know where stage2 wants things placed?
-      Options:
-      - we could look for a symbol
-      - it could have a special PHDR (v. ELF specific)
-      - something else?
-    */
-   info.map_base = KICKSTART_BASE + 0x01000000;
    info.argv = NULL;
 
    snprintf(buf, sizeof(buf), "%s/%s", valgrind_lib, stage2);

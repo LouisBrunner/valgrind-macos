@@ -370,6 +370,23 @@ CFLAGS=$safe_CFLAGS
 AC_SUBST(PREFERRED_STACK_BOUNDARY)
 
 
+# Check for PIE support in the compiler and linker
+AC_CACHE_CHECK([for PIE support], vg_cv_pie,
+               [safe_CFLAGS=$CFLAGS
+                CFLAGS="$CFLAGS -fpie"
+                safe_LDFLAGS=$LDFLAGS
+                LDFLAGS="$LDFLAGS -pie"
+                AC_TRY_LINK([int foo;],
+                            [],
+                            [vg_cv_pie=yes],
+                            [vg_cv_pie=no])
+                CFLAGS=$safe_CFLAGS
+                LDFLAGS=$safe_LDFLAGS])
+if test "$vg_cv_pie" = yes; then
+AC_DEFINE([HAVE_PIE], 1, [can create position-independent executables])
+fi
+AM_CONDITIONAL(USE_PIE, test "$vg_cv_pie" = "yes")
+
 
 # Checks for header files.
 AC_HEADER_STDC

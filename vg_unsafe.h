@@ -62,6 +62,7 @@
 
 #include <asm/ioctls.h>   /* for stuff for dealing with ioctl :( */
 #include <sys/soundcard.h> /* for various soundcard ioctl constants :( */
+#include <linux/rtc.h>     /* for RTC_* ioctls */
 
 #include <termios.h>
 #include <pty.h>

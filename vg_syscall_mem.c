@@ -1687,6 +1687,37 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                 arg3, sizeof(int));
                KERNEL_DO_SYSCALL(tid,res);
                break;
+
+            /* Real Time Clock (/dev/rtc) ioctls */
+            case RTC_UIE_ON:
+            case RTC_UIE_OFF:
+            case RTC_AIE_ON:
+            case RTC_AIE_OFF:
+            case RTC_PIE_ON:
+            case RTC_PIE_OFF:
+            case RTC_IRQP_SET:
+               KERNEL_DO_SYSCALL(tid,res);
+               break;
+            case RTC_RD_TIME:
+            case RTC_ALM_READ:
+               must_be_writable(tst, "ioctl(RTC_RD_TIME/ALM_READ)", arg3,
+                                sizeof(struct rtc_time));
+               KERNEL_DO_SYSCALL(tid,res);
+               if (!VG_(is_kerror) && res == 0)
+                  make_readable(arg3, sizeof(struct rtc_time));
+               break;
+            case RTC_ALM_SET:
+               must_be_readable(tst, "ioctl(RTC_ALM_SET)", arg3,
+                                sizeof(struct rtc_time));
+               KERNEL_DO_SYSCALL(tid,res);
+               break;
+            case RTC_IRQP_READ:
+               must_be_writable(tst, "ioctl(RTC_IRQP_READ)", arg3,
+                                sizeof(unsigned long));
+               KERNEL_DO_SYSCALL(tid,res);
+               if(!VG_(is_kerror) && res == 0)
+                   make_readable(arg3, sizeof(unsigned long));
+               break;
           
             /* We don't have any specific information on it, so
                try to do something reasonable based on direction and

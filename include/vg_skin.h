@@ -1457,7 +1457,18 @@ EV VG_(track_post_mutex_lock)   ( void (*f)(ThreadId tid,
 EV VG_(track_post_mutex_unlock) ( void (*f)(ThreadId tid, 
                                           void* /*pthread_mutex_t* */ mutex) );
 
-/* Others... condition variable, signal events... */
+
+/* Signal events (not exhaustive) */
+
+/* Called before a signal is delivered;  `alt_stack' indicates if it is
+   delivered on an alternative stack. */
+EV VG_(track_pre_deliver_signal)  ( void (*f)(ThreadId tid, Int sigNum,
+                                             Bool alt_stack) );
+/* Called after a signal is delivered. */
+EV VG_(track_post_deliver_signal) ( void (*f)(ThreadId tid, Int sigNum ) );
+
+
+/* Others... condition variables... */
 /* ... */
 
 #undef EV

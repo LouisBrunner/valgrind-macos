@@ -481,6 +481,15 @@ static void config_error ( Char* msg )
    VG_(exit)(1);
 }
 
+static void args_grok_error ( Char* msg )
+{
+   VG_(shutdown_logging)();
+   VG_(clo_logfile_fd) = 2; /* stderr */
+   VG_(printf)("valgrind.so: When searching for "
+               "client's argc/argc/envp:\n\t%s\n", msg);
+   config_error("couldn't find client's argc/argc/envp");
+}   
+
 
 static void process_cmd_line_options ( void )
 {
@@ -488,7 +497,7 @@ static void process_cmd_line_options ( void )
    UInt   argc;
    UChar* p;
    UChar* str;
-   Int    i, eventually_logfile_fd;
+   Int    i, eventually_logfile_fd, ctr;
 
 #  define ISSPACE(cc)      ((cc) == ' ' || (cc) == '\t' || (cc) == '\n')
 #  define STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
@@ -532,160 +541,88 @@ static void process_cmd_line_options ( void )
    VG_(startup_logging)();
 
 
-   /* We look for the Linux ELF table and go down until we find the
+   /* (Suggested by Fabrice Bellard ... )
+      We look for the Linux ELF table and go down until we find the
       envc & envp. It is not full proof, but these structures should
       change less often than the libc ones. */
    {
-       unsigned long *sp;
-       int i;
+       UInt* sp = 0; /* bogus init to keep gcc -O happy */
+
        /* locate the top of the stack */
-       sp = (unsigned long *)(((unsigned long)VG_(esp_at_startup) & 
-                               0xF0000000) + 0x10000000);
+       if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
+                                  VG_STARTUP_STACK_BASE_1 )) {
+          sp = (UInt*)VG_STARTUP_STACK_BASE_1;
+       } else
+       if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
+                                  VG_STARTUP_STACK_BASE_2 )) {
+          sp = (UInt*)VG_STARTUP_STACK_BASE_2;
+       } else {
+          args_grok_error(
+             "startup %esp is not near any VG_STARTUP_STACK_BASE_*\n   "
+             "constants defined in vg_include.h.  You should investigate."
+          );
+       }
+ 
        /* we locate: NEW_AUX_ENT(1, AT_PAGESZ, ELF_EXEC_PAGESIZE) in
           the elf interpreter table */
        sp -= 2;
-
-#define VKI_AT_PAGESZ 6
-
        while (sp[0] != VKI_AT_PAGESZ || sp[1] != 4096) {
-	 /*  VG_(printf)("trying %p\n", sp); */
+           /* VG_(printf)("trying %p\n", sp); */
            sp--;
        }
-#define VKI_AT_BASE   7     /* base address of interpreter */
-#define VKI_AT_PAGESZ 6     /* system page size */
-#define VKI_AT_PHNUM  5     /* number of program headers */
-#define VKI_AT_PHENT  4     /* size of program header entry */
-#define VKI_AT_PHDR   3     /* program headers for program */
 
        if (sp[2] == VKI_AT_BASE 
            && sp[0] == VKI_AT_PAGESZ
            && sp[-2] == VKI_AT_PHNUM
            && sp[-4] == VKI_AT_PHENT
            && sp[-6] == VKI_AT_PHDR) {
-          VG_(printf)("Looks like you've got a 2.2.X kernel here.\n");
+          if (0)
+             VG_(printf)("Looks like you've got a 2.2.X kernel here.\n");
           sp -= 6;
-       }
+       } else
+       if (sp[2] == VKI_AT_CLKTCK
+           && sp[0] == VKI_AT_PAGESZ
+           && sp[-2] == VKI_AT_HWCAP) {
+          if (0)
+             VG_(printf)("Looks like you've got a 2.4.X kernel here.\n");
+          sp -= 2;
+       } else
+         args_grok_error(
+            "ELF frame does not look like 2.2.X or 2.4.X.\n   "
+            "See kernel sources linux/fs/binfmt_elf.c to make sense of this."
+         );
 
        sp--;
-       vg_assert(*sp == 0);
+       if (*sp != 0)
+	 args_grok_error("can't find NULL at end of env[]");
+
        /* sp now points to NULL at the end of env[] */
+       ctr = 0;
        while (True) {
            sp --;
            if (*sp == 0) break;
+           if (++ctr >= 1000)
+              args_grok_error(
+                 "suspiciously many (1000) env[] entries; giving up");
+           
        }
        /* sp now points to NULL at the end of argv[] */
-       VG_(client_envp) = sp+1;
+       VG_(client_envp) = (Char**)(sp+1);
 
+       ctr = 0;
        VG_(client_argc) = 0;
        while (True) {
           sp--;
           if (*sp == VG_(client_argc))
              break;
           VG_(client_argc)++;
+           if (++ctr >= 1000)
+              args_grok_error(
+                 "suspiciously many (1000) argv[] entries; giving up");
        }
 
-       VG_(client_argv) = sp+1;
+       VG_(client_argv) = (Char**)(sp+1);
    }
-
-
-#if 0
-   /* Magically find the client's argc/argv/envp.  This kludge is
-      entirely dependent on the stack layout imposed by libc at
-      startup.  Hence the magic offsets.  Then check (heuristically)
-      that the results are plausible.  There must be a better way to
-      do this ... */
-
-#  if 1
-   /* Use this to search for the correct offsets if the tests below
-      barf. */
-   { Int i;
-     VG_(printf)("startup %%esp is %p\n", VG_(esp_at_startup) );
-     for (i = -10; i < 20; i++) {
-        Char* p = ((Char**)VG_(esp_at_startup))[i];
-        VG_(printf)("%d:  %p\n", i, p);
-     }
-   }
-#  endif
-
-#  if defined(GLIBC_2_2)
-   /* These offsets (5,6,7) are right for my RedHat 7.2 (glibc-2.2.4)
-      box. */
-
-   VG_(client_argc) = (Int)   ( ((void**)VG_(esp_at_startup)) [5] );
-   VG_(client_argv) = (Char**)( ((void**)VG_(esp_at_startup)) [6] );
-   VG_(client_envp) = (Char**)( ((void**)VG_(esp_at_startup)) [7] );
-
-   if ( ((UInt)VG_(client_argc)) > 0 &&
-        ((UInt)VG_(client_argc)) < 10000 &&
-        (Addr)VG_(client_argv) >= 0x8000000 &&
-        (Addr)VG_(client_envp) >= 0x8000000)
-      goto argc_argv_envp_OK;
-
-   /* If that's no good, try some other offsets discovered by KDE
-      folks on 8 Feb 02:
-      For glibc > 2.2.4 the offset 9/10/11 did the trick. Coolo found
-      out those, on I think a Caldera 3.1 with glibc 2.2.4 -- the same
-      offsets worked for on a debian sid with glibc 2.2.5.  */
-
-   VG_(client_argc) = (Int)   ( ((void**)VG_(esp_at_startup)) [9] );
-   VG_(client_argv) = (Char**)( ((void**)VG_(esp_at_startup)) [10] );
-   VG_(client_envp) = (Char**)( ((void**)VG_(esp_at_startup)) [11] );
-
-   if ( ((UInt)VG_(client_argc)) > 0 &&
-        ((UInt)VG_(client_argc)) < 10000 &&
-        (Addr)VG_(client_argv) >= 0x8000000 &&
-        (Addr)VG_(client_envp) >= 0x8000000)
-      goto argc_argv_envp_OK;
-
-#  endif /* defined(GLIBC_2_2) */
-
-#  if defined(GLIBC_2_1)
-   /* Doesn't look promising.  Try offsets for RedHat 6.2
-      (glibc-2.1.3) instead.  In this case, the argv and envp vectors
-      are actually on the stack (bizarrely). */
-
-   VG_(client_argc) = (Int)      ( ((void**)VG_(esp_at_startup)) [4] );
-   VG_(client_argv) = (Char**) & ( ((void**)VG_(esp_at_startup)) [5] );
-   VG_(client_envp) 
-      = (Char**) & ( ((void**)VG_(esp_at_startup)) [6 + VG_(client_argc)] );
-
-   if ( ((UInt)VG_(client_argc)) > 0 &&
-        ((UInt)VG_(client_argc)) < 10000 &&
-        (Addr)VG_(client_argv) >= 0x8000000 &&
-        (Addr)VG_(client_envp) >= 0x8000000)
-      goto argc_argv_envp_OK;
-
-   /* Here's yet another variant, from <hansen> (irc.kde.org). */
-
-   VG_(client_argc) = (Int)      ( ((void**)VG_(esp_at_startup)) [9] );
-   VG_(client_argv) = (Char**) & ( ((void**)VG_(esp_at_startup)) [10] );
-   VG_(client_envp) 
-      = (Char**) & ( ((void**)VG_(esp_at_startup)) [11 + VG_(client_argc)] );
-
-   if ( ((UInt)VG_(client_argc)) > 0 &&
-        ((UInt)VG_(client_argc)) < 10000 &&
-        (Addr)VG_(client_argv) >= 0x8000000 &&
-        (Addr)VG_(client_envp) >= 0x8000000)
-      goto argc_argv_envp_OK;
-#  endif /* defined(GLIBC_2_1) */
-
-#  if !defined(GLIBC_2_2) && !defined(GLIBC_2_1)
-   config_error("autoconf/configure detected neither glibc 2.1.X nor 2.2.X");
-#  endif
-
-   /* VG_(printf)("%d %p %p\n", VG_(client_argc), VG_(client_argv), 
-                                                  VG_(client_envp));
-   */
-   /* We're hosed.  Give up :-( */
-   config_error(
-      "Can't get plausible values for client's argc/argv/envp.\n\t"
-      "You may be able to fix this; see process_cmd_line_options()\n\t"
-      "in vg_main.c"
-   );
-   /* NOTREACHED */
-
-  argc_argv_envp_OK:
-#endif
 
    /* Now that VG_(client_envp) has been set, we can extract the args
       for Valgrind itself.  Copy into global var so that we don't have to

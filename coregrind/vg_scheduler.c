@@ -524,9 +524,15 @@ void VG_(scheduler_init) ( void )
    ThreadId tid_main;
 
    startup_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   if ((startup_esp & VG_STARTUP_STACK_MASK) != VG_STARTUP_STACK_MASK) {
-      VG_(printf)("%%esp at startup = %p is not near %p; aborting\n", 
-                  (void*)startup_esp, (void*)VG_STARTUP_STACK_MASK);
+
+   if (VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_1)
+       || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_2)) {
+      /* Jolly good! */
+   } else {
+      VG_(printf)("%%esp at startup = %p is not near %p or %p; aborting\n", 
+                  (void*)startup_esp, 
+                  (void*)VG_STARTUP_STACK_BASE_1,
+                  (void*)VG_STARTUP_STACK_BASE_2 );
       VG_(panic)("unexpected %esp at startup");
    }
 
@@ -1922,7 +1928,9 @@ void do_pthread_mutex_lock( ThreadId tid,
       case PTHREAD_MUTEX_TIMED_NP:
       case PTHREAD_MUTEX_ADAPTIVE_NP:
 #     endif
+#     ifdef GLIBC_2_1
       case PTHREAD_MUTEX_FAST_NP:
+#     endif
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
          if (mutex->__m_count >= 0) break;
@@ -2016,7 +2024,9 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       case PTHREAD_MUTEX_TIMED_NP:
       case PTHREAD_MUTEX_ADAPTIVE_NP:
 #     endif
+#     ifdef GLIBC_2_1
       case PTHREAD_MUTEX_FAST_NP:
+#     endif
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
          if (mutex->__m_count >= 0) break;
@@ -2234,7 +2244,9 @@ void do_pthread_cond_wait ( ThreadId tid,
       case PTHREAD_MUTEX_TIMED_NP:
       case PTHREAD_MUTEX_ADAPTIVE_NP:
 #     endif
+#     ifdef GLIBC_2_1
       case PTHREAD_MUTEX_FAST_NP:
+#     endif
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
          if (mutex->__m_count >= 0) break;

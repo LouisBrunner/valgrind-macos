@@ -627,10 +627,22 @@ extern jmp_buf VG_(scheduler_jmpbuf);
 extern Int     VG_(longjmpd_on_signal);
 
 
-/* We check that the initial stack, which we can't move, is allocated
-   here.  VG_(scheduler_init) checks this.  
+/* Possible places where the main stack might be based.  We check that
+   the initial stack, which we can't move, is allocated here.
+   VG_(scheduler_init) checks this.  Andrea Archelangi's 2.4 kernels
+   have been rumoured to start stacks at 0x80000000, so that too is
+   considered.  
 */
-#define VG_STARTUP_STACK_MASK  (Addr)0xBFF80000
+#define VG_STARTUP_STACK_BASE_1  (Addr)0xC0000000
+#define VG_STARTUP_STACK_BASE_2  (Addr)0x80000000
+#define VG_STARTUP_STACK_SMALLERTHAN  0x100000 /* 1024k */
+
+#define VG_STACK_MATCHES_BASE(zzstack, zzbase)                 \
+   (                                                           \
+      ((zzstack) & ((zzbase) - VG_STARTUP_STACK_SMALLERTHAN))  \
+      ==                                                       \
+      ((zzbase) - VG_STARTUP_STACK_SMALLERTHAN)                \
+   )
 
 
 /* The red-zone size which we put at the bottom (highest address) of

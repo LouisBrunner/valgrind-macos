@@ -297,6 +297,24 @@ struct vki_stat {
 };
 
 
+/* To do with the ELF constructed by the kernel on a process' stack
+   just before it transfers control to the program's interpreter
+   (to use the ELF parlance).  
+   Constants from /usr/src/linux-2.4.9-31/include/linux/elf.h
+   Logic from     /usr/src/linux-2.4.9-31/fs/binfmt_elf.c
+                  and its counterpart in the 2.2.14 kernel sources 
+                  in Red Hat 6.2.
+*/
+#define VKI_AT_CLKTCK 17    /* frequency at which times() increments */
+#define VKI_AT_HWCAP  16    /* arch dependent hints at CPU capabilities */
+#define VKI_AT_BASE   7     /* base address of interpreter */
+#define VKI_AT_PAGESZ 6     /* system page size */
+#define VKI_AT_PHNUM  5     /* number of program headers */
+#define VKI_AT_PHENT  4     /* size of program header entry */
+#define VKI_AT_PHDR   3     /* program headers for program */
+
+
+
 #endif /* ndef __VG_KERNELIFACE_H */
 
 /*--------------------------------------------------------------------*/

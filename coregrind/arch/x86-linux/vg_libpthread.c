@@ -104,8 +104,6 @@ extern void VG_(startup) ( void );
 static __inline__
 void ensure_valgrind ( char* caller )
 {
-   char* str;
-   int is_valgrind; 
    VG_(startup)();
 }
 
@@ -333,7 +331,9 @@ int __pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
       case PTHREAD_MUTEX_TIMED_NP:
       case PTHREAD_MUTEX_ADAPTIVE_NP:
 #     endif
+#     ifdef GLIBC_2_1    
       case PTHREAD_MUTEX_FAST_NP:
+#     endif
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
          attr->__mutexkind = type;

@@ -4464,6 +4464,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* MOVNTDQ -- 16-byte store with temporal hint (which we
+      ignore). */
+   if (sz == 2
+       && insn[0] == 0x0F
+       && insn[1] == 0xE7) {
+      eip = dis_SSE3_load_store_or_mov 
+               (cb, sorb, eip+2, 16, True /* is_store */, "movntdq",
+                    0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
    /* MOVD -- 4-byte move between xmmregs and (ireg or memory). */
    if (sz == 2 
        && insn[0] == 0x0F 

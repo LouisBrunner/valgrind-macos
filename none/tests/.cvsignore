@@ -19,6 +19,8 @@ fucomip
 gxx304
 insn_basic
 insn_basic.c
+insn_fpu
+insn_fpu.c
 insn_cmov
 insn_cmov.c
 insn_mmx

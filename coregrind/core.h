@@ -983,6 +983,7 @@ extern void VG_(kill_self)(Int sigNo);
 extern void VG_(synth_fault)        (ThreadId tid);
 extern void VG_(synth_fault_mapping)(ThreadId tid, Addr addr);
 extern void VG_(synth_fault_perms)  (ThreadId tid, Addr addr);
+extern void VG_(synth_sigill)       (ThreadId tid, Addr addr);
 
 extern void VG_(get_sigstack_bounds)( Addr* low, Addr* high );
 

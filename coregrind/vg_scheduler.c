@@ -1090,6 +1090,14 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 	    unresumable_siginfo.si_signo = 0; /* done */
 	    break;
 
+         case VEX_TRC_JMP_NODECODE:
+            VG_(synth_sigill)(tid, INSTR_PTR(VG_(threads)[tid].arch));
+            break;
+
+         case VEX_TRC_JMP_MAPFAIL:
+            VG_(synth_fault)(tid);
+            break;
+
          default: 
             VG_(printf)("\ntrc = %d\n", trc);
             VG_(core_panic)("VG_(scheduler), phase 3: "

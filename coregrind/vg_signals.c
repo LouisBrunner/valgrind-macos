@@ -1493,6 +1493,22 @@ void VG_(synth_fault)(ThreadId tid)
    synth_fault_common(tid, 0, 0x80);
 }
 
+// Synthesise a SIGILL.
+void VG_(synth_sigill)(ThreadId tid, Addr addr)
+{
+   vki_siginfo_t info;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   info.si_signo = VKI_SIGILL;
+   info.si_code = 1; /* jrs: no idea what this should be */
+   info._sifields._sigfault._addr = (void*)addr;
+
+   VG_(resume_scheduler)(VKI_SIGILL, &info);
+   VG_(deliver_signal)(tid, &info, False);
+}
+
+
 void VG_(deliver_signal) ( ThreadId tid, const vki_siginfo_t *info, Bool async )
 {
    Int			sigNo = info->si_signo;

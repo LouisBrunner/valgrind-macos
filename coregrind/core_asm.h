@@ -49,9 +49,9 @@
 
 /* And some more of our own.  These must not have the same values as
    those from libvex_trc_values.h. */
-#define VG_TRC_INNER_FASTMISS     31 /* TRC only; means fast-cache miss. */
-#define VG_TRC_INNER_COUNTERZERO  29 /* TRC only; means bb ctr == 0 */
-#define VG_TRC_UNRESUMABLE_SIGNAL 37 /* TRC only; got sigsegv/sigbus */
+#define VG_TRC_INNER_FASTMISS     37 /* TRC only; means fast-cache miss. */
+#define VG_TRC_INNER_COUNTERZERO  41 /* TRC only; means bb ctr == 0 */
+#define VG_TRC_UNRESUMABLE_SIGNAL 43 /* TRC only; got sigsegv/sigbus */
 
 
 /* Constants for the fast translation lookup cache. */

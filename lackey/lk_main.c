@@ -35,7 +35,7 @@
 static ULong n_dlrr_calls   = 0;
 static ULong n_BBs          = 0;
 static ULong n_UInstrs      = 0;
-static ULong n_x86_instrs   = 0;
+static ULong n_machine_instrs   = 0;
 static ULong n_Jccs         = 0;
 static ULong n_Jccs_untaken = 0;
 
@@ -44,12 +44,12 @@ static void add_one_dlrr_call(void)
    n_dlrr_calls++;
 }
 
-/* See comment above SK_(instrument) for reason why n_x86_instrs is
+/* See comment above SK_(instrument) for reason why n_machine_instrs is
    incremented here. */
 static void add_one_BB(void)
 {
    n_BBs++;
-   n_x86_instrs++;
+   n_machine_instrs++;
 }
 
 static void add_one_UInstr(void)
@@ -57,9 +57,9 @@ static void add_one_UInstr(void)
    n_UInstrs++;
 }
 
-static void add_one_x86_instr(void)
+static void add_one_machine_instr(void)
 {
-   n_x86_instrs++;
+   n_machine_instrs++;
 }
 
 static void add_one_Jcc(void)
@@ -84,7 +84,7 @@ void SK_(pre_clo_init)(void)
 
    VG_(register_compact_helper)((Addr) & add_one_dlrr_call);
    VG_(register_compact_helper)((Addr) & add_one_BB);
-   VG_(register_compact_helper)((Addr) & add_one_x86_instr);
+   VG_(register_compact_helper)((Addr) & add_one_machine_instr);
    VG_(register_compact_helper)((Addr) & add_one_UInstr);
    VG_(register_compact_helper)((Addr) & add_one_Jcc);
    VG_(register_compact_helper)((Addr) & add_one_Jcc_untaken);
@@ -94,7 +94,7 @@ void SK_(post_clo_init)(void)
 {
 }
 
-/* Note: x86 instructions are marked by an INCEIP at the end of each one,
+/* Note: machine instructions are marked by an INCEIP at the end of each one,
    except for the final one in the basic block which ends in an
    unconditional JMP.  Sometimes the final unconditional JMP is preceded by
    a conditional JMP (Jcc), and thus it isn't reached.  Eg:
@@ -106,27 +106,27 @@ void SK_(post_clo_init)(void)
       Jcc ...
       JMP ...     (will not be reached if Jcc succeeds)
 
-   If we simplemindedly added calls to add_one_x86_instr() before INCEIPs
+   If we simplemindedly added calls to add_one_machine_instr() before INCEIPs
    and unconditional JMPs, we'd sometimes miss the final call (when a
-   preceding conditional JMP succeeds), underestimating the x86 instruction
+   preceding conditional JMP succeeds), underestimating the machine instruction
    count.
 
       <code a>
-      call add_one_x86_instr()
+      call add_one_machine_instr()
       INCEIP ...
 
       <code b>
       Jcc ...
-      call add_one_x86_instr()
+      call add_one_machine_instr()
       JMP ...
 
    Instead we add a call before each INCEIP, and also one at the start of the
    block, but not one at the end, viz:
 
-      call add_one_x86_instr()
+      call add_one_machine_instr()
 
       <code a>
-      call add_one_x86_instr()
+      call add_one_machine_instr()
       INCEIP ...
 
       <code b>
@@ -163,8 +163,8 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             break;
    
          case INCEIP:
-            /* Count x86 instr */
-            VG_(call_helper_0_0)(cb, (Addr) & add_one_x86_instr);
+            /* Count machine instr */
+            VG_(call_helper_0_0)(cb, (Addr) & add_one_machine_instr);
             VG_(copy_UInstr)(cb, u);
             break;
 
@@ -199,24 +199,24 @@ void SK_(fini)(Int exitcode)
 
     VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg, "Executed:");
-    VG_(message)(Vg_UserMsg, "  BBs:         %u", n_BBs);
-    VG_(message)(Vg_UserMsg, "  x86 instrs:  %u", n_x86_instrs);
-    VG_(message)(Vg_UserMsg, "  UInstrs:     %u", n_UInstrs);
+    VG_(message)(Vg_UserMsg, "  BBs:             %llu", n_BBs);
+    VG_(message)(Vg_UserMsg, "  machine instrs:  %llu", n_machine_instrs);
+    VG_(message)(Vg_UserMsg, "  UInstrs:         %llu", n_UInstrs);
 
     VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg, "Jccs:");
-    VG_(message)(Vg_UserMsg, "  total:       %u", n_Jccs);
-    VG_(message)(Vg_UserMsg, "  %% taken:     %u%%",
+    VG_(message)(Vg_UserMsg, "  total:           %llu", n_Jccs);
+    VG_(message)(Vg_UserMsg, "  %% taken:         %llu%%",
                              (n_Jccs - n_Jccs_untaken)*100 / n_Jccs);
 
     VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg, "Ratios:");
-    VG_(message)(Vg_UserMsg, "  x86 instrs : BB        = %3u : 10",
-                             10 * n_x86_instrs / n_BBs);
-    VG_(message)(Vg_UserMsg, "     UInstrs : BB        = %3u : 10",
+    VG_(message)(Vg_UserMsg, "  machine instrs : BB            = %3llu : 10",
+                             10 * n_machine_instrs / n_BBs);
+    VG_(message)(Vg_UserMsg, "         UInstrs : BB            = %3llu : 10",
                              10 * n_UInstrs / n_BBs);
-    VG_(message)(Vg_UserMsg, "     UInstrs : x86_instr = %3u : 10",
-                             10 * n_UInstrs / n_x86_instrs);
+    VG_(message)(Vg_UserMsg, "         UInstrs : machine_instr = %3llu : 10",
+                             10 * n_UInstrs / n_machine_instrs);
 
     VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg, "Exit code:     %d", exitcode);

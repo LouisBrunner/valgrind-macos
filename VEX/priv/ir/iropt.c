@@ -387,23 +387,23 @@ static IRExpr* fold_Expr ( IRExpr* e )
       switch (e->Iex.Unop.op) {
          case Iop_1Uto8:
             e2 = IRExpr_Const(IRConst_U8(
-                    e->Iex.Unop.arg->Iex.Const.con->Ico.Bit
+                    e->Iex.Unop.arg->Iex.Const.con->Ico.U1
                     ? 1 : 0));
             break;
          case Iop_1Uto32:
             e2 = IRExpr_Const(IRConst_U32(
-                    e->Iex.Unop.arg->Iex.Const.con->Ico.Bit
+                    e->Iex.Unop.arg->Iex.Const.con->Ico.U1
                     ? 1 : 0));
             break;
 
          case Iop_1Sto32:
             e2 = IRExpr_Const(IRConst_U32(
-                    e->Iex.Unop.arg->Iex.Const.con->Ico.Bit
+                    e->Iex.Unop.arg->Iex.Const.con->Ico.U1
                     ? 0xFFFFFFFF : 0));
             break;
          case Iop_1Sto64:
             e2 = IRExpr_Const(IRConst_U64(
-                    e->Iex.Unop.arg->Iex.Const.con->Ico.Bit
+                    e->Iex.Unop.arg->Iex.Const.con->Ico.U1
                     ? 0xFFFFFFFFFFFFFFFFULL : 0));
             break;
 
@@ -431,7 +431,7 @@ static IRExpr* fold_Expr ( IRExpr* e )
                     0xFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U32));
             break;
          case Iop_32to1:
-            e2 = IRExpr_Const(IRConst_Bit(
+            e2 = IRExpr_Const(IRConst_U1(
                     0==e->Iex.Unop.arg->Iex.Const.con->Ico.U32
                        ? False : True));
             break;
@@ -450,8 +450,8 @@ static IRExpr* fold_Expr ( IRExpr* e )
             break;
 
          case Iop_Not1:
-            e2 = IRExpr_Const(IRConst_Bit(
-                    notBool(e->Iex.Unop.arg->Iex.Const.con->Ico.Bit)));
+            e2 = IRExpr_Const(IRConst_U1(
+                    notBool(e->Iex.Unop.arg->Iex.Const.con->Ico.U1)));
             break;
 
          default: 
@@ -562,46 +562,46 @@ static IRExpr* fold_Expr ( IRExpr* e )
                break;
             }
             case Iop_CmpEQ32:
-               e2 = IRExpr_Const(IRConst_Bit(
+               e2 = IRExpr_Const(IRConst_U1(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         == e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
             case Iop_CmpNE32:
-               e2 = IRExpr_Const(IRConst_Bit(
+               e2 = IRExpr_Const(IRConst_U1(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         != e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
 
             case Iop_CmpNE64:
-               e2 = IRExpr_Const(IRConst_Bit(
+               e2 = IRExpr_Const(IRConst_U1(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
                         != e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
                break;
 
             case Iop_CmpNE8:
-               e2 = IRExpr_Const(IRConst_Bit(
+               e2 = IRExpr_Const(IRConst_U1(
                        ((0xFF & e->Iex.Binop.arg1->Iex.Const.con->Ico.U8)
                         != (0xFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
 
             case Iop_CmpLE32U:
-               e2 = IRExpr_Const(IRConst_Bit(
+               e2 = IRExpr_Const(IRConst_U1(
                        ((UInt)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         <= (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
             case Iop_CmpLE32S:
-               e2 = IRExpr_Const(IRConst_Bit(
+               e2 = IRExpr_Const(IRConst_U1(
                        ((Int)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         <= (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
 
             case Iop_CmpLT32S:
-               e2 = IRExpr_Const(IRConst_Bit(
+               e2 = IRExpr_Const(IRConst_U1(
                        ((Int)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         < (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
             case Iop_CmpLT32U:
-               e2 = IRExpr_Const(IRConst_Bit(
+               e2 = IRExpr_Const(IRConst_U1(
                        ((UInt)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         < (UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
@@ -844,12 +844,12 @@ static IRStmt* subst_and_fold_Stmt ( IRExpr** env, IRStmt* st )
          if (fcond->tag == Iex_Const) {
             /* Interesting.  The condition on this exit has folded down to
                a constant. */
-            vassert(fcond->Iex.Const.con->tag == Ico_Bit);
-            if (fcond->Iex.Const.con->Ico.Bit == False) {
+            vassert(fcond->Iex.Const.con->tag == Ico_U1);
+            if (fcond->Iex.Const.con->Ico.U1 == False) {
                /* exit is never going to happen, so dump the statement. */
                return NULL;
             } else {
-               vassert(fcond->Iex.Const.con->Ico.Bit == True);
+               vassert(fcond->Iex.Const.con->Ico.U1 == True);
                /* Hmmm.  The exit has become unconditional.  Leave it as
                   it is for now, since we'd have to truncate the BB at
                   this point, which is tricky. */
@@ -1031,12 +1031,12 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
 }
 
 
-/* Is this literally IRExpr_Const(IRConst_Bit(False)) ? */
-static Bool isZeroBit ( IRExpr* e )
+/* Is this literally IRExpr_Const(IRConst_U1(False)) ? */
+static Bool isZeroU1 ( IRExpr* e )
 {
    return e->tag == Iex_Const
-          && e->Iex.Const.con->tag == Ico_Bit
-          && e->Iex.Const.con->Ico.Bit == False;
+          && e->Iex.Const.con->tag == Ico_U1
+          && e->Iex.Const.con->Ico.U1 == False;
 }
 
 
@@ -1078,7 +1078,7 @@ static Bool isZeroBit ( IRExpr* e )
       else
       if (st->tag == Ist_Dirty
           && st->Ist.Dirty.details->guard
-          && isZeroBit(st->Ist.Dirty.details->guard)) {
+          && isZeroU1(st->Ist.Dirty.details->guard)) {
          /* This is a dirty helper which will never get called.  Delete it. */
          bb->stmts[i] = NULL;
        }

@@ -447,8 +447,8 @@ void doHelperCall ( ISelEnv* env,
    cc = Xcc_ALWAYS;
    if (guard) {
       if (guard->tag == Iex_Const 
-          && guard->Iex.Const.con->tag == Ico_Bit
-          && guard->Iex.Const.con->Ico.Bit == True) {
+          && guard->Iex.Const.con->tag == Ico_U1
+          && guard->Iex.Const.con->Ico.U1 == True) {
          /* unconditional -- do nothing */
       } else {
          cc = iselCondCode( env, guard );
@@ -1298,11 +1298,11 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    DECLARE_PATTERN(p_1Uto32_then_32to1);
 
    vassert(e);
-   vassert(typeOfIRExpr(env->type_env,e) == Ity_Bit);
+   vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
 
    /* Constant 1:Bit */
-   if (e->tag == Iex_Const && e->Iex.Const.con->Ico.Bit == True) {
-      vassert(e->Iex.Const.con->tag == Ico_Bit);
+   if (e->tag == Iex_Const && e->Iex.Const.con->Ico.U1 == True) {
+      vassert(e->Iex.Const.con->tag == Ico_U1);
       HReg r = newVRegI(env);
       addInstr(env, X86Instr_Alu32R(Xalu_MOV,X86RMI_Imm(0),r));
       addInstr(env, X86Instr_Alu32R(Xalu_XOR,X86RMI_Reg(r),r));
@@ -2330,7 +2330,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, mk_MOVsd_RR(rLo,dstLo) );
          return;
       }
-      if (ty == Ity_Bit) {
+      if (ty == Ity_I1) {
          X86CondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
          HReg dst = lookupIRTemp(env, tmp);
          addInstr(env, X86Instr_Set32(cond, dst));
@@ -2460,7 +2460,7 @@ HInstrArray* iselBB_X86 ( IRBB* bb )
    for (i = 0; i < env->n_vregmap; i++) {
       hregHI = hreg = INVALID_HREG;
       switch (bb->tyenv->types[i]) {
-         case Ity_Bit:
+         case Ity_I1:
          case Ity_I8:
          case Ity_I16:
          case Ity_I32: hreg   = mkHReg(j++, HRcInt, True); break;

@@ -48,7 +48,7 @@ void ppIRType ( IRType ty )
 {
   switch (ty) {
     case Ity_INVALID: vex_printf("Ity_INVALID"); break;
-    case Ity_Bit:     vex_printf( "Bit"); break;
+    case Ity_I1:      vex_printf( "I1");  break;
     case Ity_I8:      vex_printf( "I8");  break;
     case Ity_I16:     vex_printf( "I16"); break;
     case Ity_I32:     vex_printf( "I32"); break;
@@ -63,7 +63,7 @@ void ppIRType ( IRType ty )
 void ppIRConst ( IRConst* con )
 {
    switch (con->tag) {
-      case Ico_Bit:  vex_printf( "%d:Bit",       con->Ico.Bit ? 1 : 0); break;
+      case Ico_U1:   vex_printf( "%d:I1",        con->Ico.U1 ? 1 : 0); break;
       case Ico_U8:   vex_printf( "0x%x:I8",      (UInt)(con->Ico.U8)); break;
       case Ico_U16:  vex_printf( "0x%x:I16",     (UInt)(con->Ico.U16)); break;
       case Ico_U32:  vex_printf( "0x%x:I32",     (UInt)(con->Ico.U32)); break;
@@ -444,11 +444,11 @@ void ppIRBB ( IRBB* bb )
 
 /* Constructors -- IRConst */
 
-IRConst* IRConst_Bit ( Bool bit )
+IRConst* IRConst_U1 ( Bool bit )
 {
    IRConst* c = LibVEX_Alloc(sizeof(IRConst));
-   c->tag     = Ico_Bit;
-   c->Ico.Bit = bit;
+   c->tag     = Ico_U1;
+   c->Ico.U1  = bit;
    /* call me paranoid; I don't care :-) */
    vassert(bit == False || bit == True);
    return c;
@@ -522,7 +522,7 @@ IRArray* mkIRArray ( Int base, IRType elemTy, Int nElems )
    arr->elemTy  = elemTy;
    arr->nElems  = nElems;
    vassert(!(arr->base < 0 || arr->base > 10000 /* somewhat arbitrary */));
-   vassert(!(arr->elemTy == Ity_Bit));
+   vassert(!(arr->elemTy == Ity_I1));
    vassert(!(arr->nElems <= 0 || arr->nElems > 500 /* somewhat arbitrary */));
    return arr;
 }
@@ -787,7 +787,7 @@ IRExpr** dopyIRExprVec ( IRExpr** vec )
 IRConst* dopyIRConst ( IRConst* c )
 {
    switch (c->tag) {
-      case Ico_Bit:  return IRConst_Bit(c->Ico.Bit);
+      case Ico_U1:   return IRConst_U1(c->Ico.U1);
       case Ico_U8:   return IRConst_U8(c->Ico.U8);
       case Ico_U16:  return IRConst_U16(c->Ico.U16);
       case Ico_U32:  return IRConst_U32(c->Ico.U32);
@@ -933,7 +933,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
 #  define BINARY(_td,_ta1,_ta2)   \
      *t_dst = (_td); *t_arg1 = (_ta1); *t_arg2 = (_ta2); break
 #  define COMPARISON(_ta)         \
-     *t_dst = Ity_Bit; *t_arg1 = *t_arg2 = (_ta); break;
+     *t_dst = Ity_I1; *t_arg1 = *t_arg2 = (_ta); break;
 
    *t_dst  = Ity_INVALID;
    *t_arg1 = Ity_INVALID;
@@ -1008,13 +1008,13 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_32HLto64:
          BINARY(Ity_I64,Ity_I32,Ity_I32);
 
-      case Iop_Not1:   UNARY(Ity_Bit,Ity_Bit);
-      case Iop_1Uto8:  UNARY(Ity_I8,Ity_Bit);
-      case Iop_1Sto8:  UNARY(Ity_I8,Ity_Bit);
-      case Iop_1Sto16: UNARY(Ity_I16,Ity_Bit);
-      case Iop_1Uto32: case Iop_1Sto32: UNARY(Ity_I32,Ity_Bit);
-      case Iop_1Sto64: UNARY(Ity_I64,Ity_Bit);
-      case Iop_32to1:  UNARY(Ity_Bit,Ity_I32);
+      case Iop_Not1:   UNARY(Ity_I1,Ity_I1);
+      case Iop_1Uto8:  UNARY(Ity_I8,Ity_I1);
+      case Iop_1Sto8:  UNARY(Ity_I8,Ity_I1);
+      case Iop_1Sto16: UNARY(Ity_I16,Ity_I1);
+      case Iop_1Uto32: case Iop_1Sto32: UNARY(Ity_I32,Ity_I1);
+      case Iop_1Sto64: UNARY(Ity_I64,Ity_I1);
+      case Iop_32to1:  UNARY(Ity_I1,Ity_I32);
 
       case Iop_8Uto32: case Iop_8Sto32:
          UNARY(Ity_I32,Ity_I8);
@@ -1129,7 +1129,7 @@ IRType typeOfIRTemp ( IRTypeEnv* env, IRTemp tmp )
 IRType typeOfIRConst ( IRConst* con )
 {
    switch (con->tag) {
-      case Ico_Bit:   return Ity_Bit;
+      case Ico_U1:    return Ity_I1;
       case Ico_U8:    return Ity_I8;
       case Ico_U16:   return Ity_I16;
       case Ico_U32:   return Ity_I32;
@@ -1179,7 +1179,7 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
 Bool isPlausibleType ( IRType ty )
 {
    switch (ty) {
-      case Ity_INVALID: case Ity_Bit:
+      case Ity_INVALID: case Ity_I1:
       case Ity_I8: case Ity_I16: case Ity_I32: case Ity_I64: 
       case Ity_F32: case Ity_F64:
          return True;
@@ -1299,7 +1299,7 @@ static Bool saneIRArray ( IRArray* arr )
 {
    if (arr->base < 0 || arr->base > 10000 /* somewhat arbitrary */)
       return False;
-   if (arr->elemTy == Ity_Bit)
+   if (arr->elemTy == Ity_I1)
       return False;
    if (arr->nElems <= 0 || arr->nElems > 500 /* somewhat arbitrary */)
       return False;
@@ -1481,11 +1481,11 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
                sanityCheckFail(bb,stmt,"Iex.CCall: > 32 args");
             tcExpr(bb,stmt, expr->Iex.CCall.args[i], gWordTy);
          }
-         if (expr->Iex.CCall.retty == Ity_Bit)
-            sanityCheckFail(bb,stmt,"Iex.CCall.retty: cannot return :: Ity_Bit");
+         if (expr->Iex.CCall.retty == Ity_I1)
+            sanityCheckFail(bb,stmt,"Iex.CCall.retty: cannot return :: Ity_I1");
          for (i = 0; expr->Iex.CCall.args[i]; i++)
-            if (typeOfIRExpr(tyenv, expr->Iex.CCall.args[i]) == Ity_Bit)
-               sanityCheckFail(bb,stmt,"Iex.CCall.arg: arg :: Ity_Bit");
+            if (typeOfIRExpr(tyenv, expr->Iex.CCall.args[i]) == Ity_I1)
+               sanityCheckFail(bb,stmt,"Iex.CCall.arg: arg :: Ity_I1");
          break;
       case Iex_Const:
          break;
@@ -1514,14 +1514,14 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
    switch (stmt->tag) {
       case Ist_Put:
          tcExpr( bb, stmt, stmt->Ist.Put.data, gWordTy );
-         if (typeOfIRExpr(tyenv,stmt->Ist.Put.data) == Ity_Bit)
-            sanityCheckFail(bb,stmt,"IRStmt.Put.data: cannot Put :: Ity_Bit");
+         if (typeOfIRExpr(tyenv,stmt->Ist.Put.data) == Ity_I1)
+            sanityCheckFail(bb,stmt,"IRStmt.Put.data: cannot Put :: Ity_I1");
          break;
       case Ist_PutI:
          tcExpr( bb, stmt, stmt->Ist.PutI.data, gWordTy );
          tcExpr( bb, stmt, stmt->Ist.PutI.ix, gWordTy );
-         if (typeOfIRExpr(tyenv,stmt->Ist.PutI.data) == Ity_Bit)
-            sanityCheckFail(bb,stmt,"IRStmt.PutI.data: cannot PutI :: Ity_Bit");
+         if (typeOfIRExpr(tyenv,stmt->Ist.PutI.data) == Ity_I1)
+            sanityCheckFail(bb,stmt,"IRStmt.PutI.data: cannot PutI :: Ity_I1");
          if (typeOfIRExpr(tyenv,stmt->Ist.PutI.data) 
              != stmt->Ist.PutI.descr->elemTy)
             sanityCheckFail(bb,stmt,"IRStmt.PutI.data: data ty != elem ty");
@@ -1541,8 +1541,8 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          tcExpr( bb, stmt, stmt->Ist.STle.data, gWordTy );
          if (typeOfIRExpr(tyenv, stmt->Ist.STle.addr) != gWordTy)
             sanityCheckFail(bb,stmt,"IRStmt.STle.addr: not :: guest word type");
-         if (typeOfIRExpr(tyenv, stmt->Ist.STle.data) == Ity_Bit)
-            sanityCheckFail(bb,stmt,"IRStmt.STle.data: cannot STle :: Ity_Bit");
+         if (typeOfIRExpr(tyenv, stmt->Ist.STle.data) == Ity_I1)
+            sanityCheckFail(bb,stmt,"IRStmt.STle.data: cannot STle :: Ity_I1");
          break;
       case Ist_Dirty:
          /* Mostly check for various kinds of ill-formed dirty calls. */
@@ -1567,16 +1567,16 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          }
          /* check types, minimally */
          if (d->guard == NULL) goto bad_dirty;
-         if (typeOfIRExpr(tyenv, d->guard) != Ity_Bit)
-            sanityCheckFail(bb,stmt,"IRStmt.Dirty.guard not :: Ity_Bit");
+         if (typeOfIRExpr(tyenv, d->guard) != Ity_I1)
+            sanityCheckFail(bb,stmt,"IRStmt.Dirty.guard not :: Ity_I1");
          if (d->tmp != IRTemp_INVALID
-             && typeOfIRTemp(tyenv, d->tmp) == Ity_Bit)
-            sanityCheckFail(bb,stmt,"IRStmt.Dirty.dst :: Ity_Bit");
+             && typeOfIRTemp(tyenv, d->tmp) == Ity_I1)
+            sanityCheckFail(bb,stmt,"IRStmt.Dirty.dst :: Ity_I1");
          for (i = 0; d->args[i] != NULL; i++) {
             if (i >= 32)
                sanityCheckFail(bb,stmt,"IRStmt.Dirty: > 32 args");
-            if (typeOfIRExpr(tyenv, d->args[i]) == Ity_Bit)
-               sanityCheckFail(bb,stmt,"IRStmt.Dirty.arg[i] :: Ity_Bit");
+            if (typeOfIRExpr(tyenv, d->args[i]) == Ity_I1)
+               sanityCheckFail(bb,stmt,"IRStmt.Dirty.arg[i] :: Ity_I1");
          }
          break;
          bad_dirty:
@@ -1584,8 +1584,8 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
 
       case Ist_Exit:
          tcExpr( bb, stmt, stmt->Ist.Exit.cond, gWordTy );
-         if (typeOfIRExpr(tyenv,stmt->Ist.Exit.cond) != Ity_Bit)
-            sanityCheckFail(bb,stmt,"IRStmt.Exit.cond: not :: Ity_Bit");
+         if (typeOfIRExpr(tyenv,stmt->Ist.Exit.cond) != Ity_I1)
+            sanityCheckFail(bb,stmt,"IRStmt.Exit.cond: not :: Ity_I1");
          if (typeOfIRConst(stmt->Ist.Exit.dst) != gWordTy)
             sanityCheckFail(bb,stmt,"IRStmt.Exit.dst: not :: guest word type");
          break;
@@ -1672,7 +1672,7 @@ Bool eqIRConst ( IRConst* c1, IRConst* c2 )
       return False;
 
    switch (c1->tag) {
-      case Ico_Bit: return (1 & c1->Ico.Bit) == (1 & c2->Ico.Bit);
+      case Ico_U1:  return (1 & c1->Ico.U1) == (1 & c2->Ico.U1);
       case Ico_U8:  return c1->Ico.U8  == c2->Ico.U8;
       case Ico_U16: return c1->Ico.U16 == c2->Ico.U16;
       case Ico_U32: return c1->Ico.U32 == c2->Ico.U32;
@@ -1718,7 +1718,7 @@ IRDirty* unsafeIRDirty_0_N ( Int regparms, Char* name, void* addr,
 {
    IRDirty* d = emptyIRDirty();
    d->cee   = mkIRCallee ( regparms, name, addr );
-   d->guard = IRExpr_Const(IRConst_Bit(True));
+   d->guard = IRExpr_Const(IRConst_U1(True));
    d->args  = args;
    return d;
 }
@@ -1729,7 +1729,7 @@ IRDirty* unsafeIRDirty_1_N ( IRTemp dst,
 {
    IRDirty* d = emptyIRDirty();
    d->cee   = mkIRCallee ( regparms, name, addr );
-   d->guard = IRExpr_Const(IRConst_Bit(True));
+   d->guard = IRExpr_Const(IRConst_U1(True));
    d->args  = args;
    d->tmp   = dst;
    return d;

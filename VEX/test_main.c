@@ -526,7 +526,7 @@ static Bool sameKindedAtoms ( IRAtom* a1, IRAtom* a2 )
 static IRType shadowType ( IRType ty )
 {
    switch (ty) {
-      case Ity_Bit:
+      case Ity_I1:
       case Ity_I8:
       case Ity_I16:
       case Ity_I32: 
@@ -542,7 +542,7 @@ static IRType shadowType ( IRType ty )
    supplied shadow types (Bit/I8/I16/I32/UI64). */
 static IRExpr* definedOfType ( IRType ty ) {
    switch (ty) {
-      case Ity_Bit: return IRExpr_Const(IRConst_Bit(False));
+      case Ity_I1:  return IRExpr_Const(IRConst_U1(False));
       case Ity_I8:  return IRExpr_Const(IRConst_U8(0));
       case Ity_I16: return IRExpr_Const(IRConst_U16(0));
       case Ity_I32: return IRExpr_Const(IRConst_U32(0));
@@ -754,20 +754,20 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
    IRType  ty   = typeOfIRExpr(mce->bb->tyenv, vbits);
    IRAtom* tmp1 = NULL;
    switch (ty) {
-      case Ity_Bit:
+      case Ity_I1:
          tmp1 = vbits;
          break;
       case Ity_I8: 
-         tmp1 = assignNew(mce, Ity_Bit, binop(Iop_CmpNE8, vbits, mkU8(0)));
+         tmp1 = assignNew(mce, Ity_I1, binop(Iop_CmpNE8, vbits, mkU8(0)));
          break;
       case Ity_I16: 
-         tmp1 = assignNew(mce, Ity_Bit, binop(Iop_CmpNE16, vbits, mkU16(0)));
+         tmp1 = assignNew(mce, Ity_I1, binop(Iop_CmpNE16, vbits, mkU16(0)));
          break;
       case Ity_I32: 
-         tmp1 = assignNew(mce, Ity_Bit, binop(Iop_CmpNE32, vbits, mkU32(0)));
+         tmp1 = assignNew(mce, Ity_I1, binop(Iop_CmpNE32, vbits, mkU32(0)));
          break;
       case Ity_I64: 
-         tmp1 = assignNew(mce, Ity_Bit, binop(Iop_CmpNE64, vbits, mkU64(0)));
+         tmp1 = assignNew(mce, Ity_I1, binop(Iop_CmpNE64, vbits, mkU64(0)));
          break;
       default:
          VG_(skin_panic)("mkPCastTo(1)");
@@ -775,7 +775,7 @@ static IRAtom* mkPCastTo( MCEnv* mce, IRType dst_ty, IRAtom* vbits )
    sk_assert(tmp1);
    /* Now widen up to the dst type. */
    switch (dst_ty) {
-      case Ity_Bit:
+      case Ity_I1:
          return tmp1;
       case Ity_I8: 
          return assignNew(mce, Ity_I8, unop(Iop_1Sto8, tmp1));
@@ -836,9 +836,9 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
    IRType ty = typeOfIRExpr(mce->bb->tyenv, vatom);
 
    /* sz is only used for constructing the error message */
-   Int    sz = ty==Ity_Bit ? 0 : sizeofIRType(ty);
+   Int    sz = ty==Ity_I1 ? 0 : sizeofIRType(ty);
 
-   IRAtom* cond = mkPCastTo( mce, Ity_Bit, vatom );
+   IRAtom* cond = mkPCastTo( mce, Ity_I1, vatom );
    /* cond will be 0 if all defined, and 1 if any not defined. */
 
    IRDirty* di;
@@ -944,7 +944,7 @@ void do_shadow_PUT ( MCEnv* mce,  Int offset,
    }
 
    IRType ty = typeOfIRExpr(mce->bb->tyenv, vatom);
-   sk_assert(ty != Ity_Bit);
+   sk_assert(ty != Ity_I1);
    if (isAlwaysDefd(mce, offset, sizeofIRType(ty))) {
       /* later: no ... */
       /* emit code to emit a complaint if any of the vbits are 1. */
@@ -969,7 +969,7 @@ void do_shadow_PUTI ( MCEnv* mce,
    IRType ty   = descr->elemTy;
    IRType tyS  = shadowType(ty);
    Int arrSize = descr->nElems * sizeofIRType(ty);
-   sk_assert(ty != Ity_Bit);
+   sk_assert(ty != Ity_I1);
    sk_assert(isOriginalAtom(mce,ix));
    complainIfUndefined(mce,ix);
    if (isAlwaysDefd(mce, descr->base, arrSize)) {
@@ -994,7 +994,7 @@ static
 IRExpr* shadow_GET ( MCEnv* mce, Int offset, IRType ty )
 {
    IRType tyS = shadowType(ty);
-   sk_assert(ty != Ity_Bit);
+   sk_assert(ty != Ity_I1);
    if (isAlwaysDefd(mce, offset, sizeofIRType(ty))) {
       /* Always defined, return all zeroes of the relevant type */
       return definedOfType(tyS);
@@ -1015,7 +1015,7 @@ IRExpr* shadow_GETI ( MCEnv* mce, IRArray* descr, IRAtom* ix, Int bias )
    IRType ty   = descr->elemTy;
    IRType tyS  = shadowType(ty);
    Int arrSize = descr->nElems * sizeofIRType(ty);
-   sk_assert(ty != Ity_Bit);
+   sk_assert(ty != Ity_I1);
    sk_assert(isOriginalAtom(mce,ix));
    complainIfUndefined(mce,ix);
    if (isAlwaysDefd(mce, descr->base, arrSize)) {
@@ -1250,13 +1250,13 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_CmpLE32S: case Iop_CmpLE32U: 
       case Iop_CmpLT32U: case Iop_CmpLT32S:
       case Iop_CmpEQ32: case Iop_CmpNE32:
-         return mkPCastTo(mce, Ity_Bit, mkUifU32(mce, vatom1,vatom2));
+         return mkPCastTo(mce, Ity_I1, mkUifU32(mce, vatom1,vatom2));
 
       case Iop_CmpEQ16: case Iop_CmpNE16:
-         return mkPCastTo(mce, Ity_Bit, mkUifU16(mce, vatom1,vatom2));
+         return mkPCastTo(mce, Ity_I1, mkUifU16(mce, vatom1,vatom2));
 
       case Iop_CmpEQ8: case Iop_CmpNE8:
-         return mkPCastTo(mce, Ity_Bit, mkUifU8(mce, vatom1,vatom2));
+         return mkPCastTo(mce, Ity_I1, mkUifU8(mce, vatom1,vatom2));
 
       case Iop_Shl32: case Iop_Shr32: case Iop_Sar32:
          /* Complain if the shift amount is undefined.  Then simply
@@ -1371,7 +1371,7 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
          return assignNew(mce, Ity_I8, unop(op, vatom));
 
       case Iop_32to1:
-         return assignNew(mce, Ity_Bit, unop(Iop_32to1, vatom));
+         return assignNew(mce, Ity_I1, unop(Iop_32to1, vatom));
 
       case Iop_ReinterpF64asI64:
       case Iop_ReinterpI64asF64:

@@ -47,7 +47,7 @@
 
 typedef 
    enum { Ity_INVALID=0x10FFF,
-          Ity_Bit=0x11000, 
+          Ity_I1=0x11000, 
           Ity_I8, Ity_I16, Ity_I32, Ity_I64,
           Ity_F32, Ity_F64
    }
@@ -60,7 +60,7 @@ extern Int  sizeofIRType ( IRType );
 /* ------------------ Constants ------------------ */
 
 typedef
-   enum { Ico_Bit=0x12000,
+   enum { Ico_U1=0x12000,
           Ico_U8, Ico_U16, Ico_U32, Ico_U64,
           Ico_F64, /* 64-bit IEEE754 floating */
           Ico_F64i /* 64-bit unsigned int to be interpreted literally
@@ -72,7 +72,7 @@ typedef
    struct _IRConst {
       IRConstTag tag;
       union {
-         Bool   Bit;
+         Bool   U1;
          UChar  U8;
          UShort U16;
          UInt   U32;
@@ -83,7 +83,7 @@ typedef
    }
    IRConst;
 
-extern IRConst* IRConst_Bit  ( Bool );
+extern IRConst* IRConst_U1   ( Bool );
 extern IRConst* IRConst_U8   ( UChar );
 extern IRConst* IRConst_U16  ( UShort );
 extern IRConst* IRConst_U32  ( UInt );

@@ -708,6 +708,7 @@ VG_(map_file_segment)( Addr addr, SizeT len,
       file, then try reading symbols from it.
    */
    if (s->symtab == NULL
+       && (addr+len < VG_(valgrind_base) || addr > VG_(valgrind_last))
        && (flags & (SF_MMAP|SF_NOSYMS)) == SF_MMAP) {
       if (off == 0
 	  && s->fnIdx != -1

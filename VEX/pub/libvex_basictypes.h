@@ -90,6 +90,10 @@ static inline UShort toUShort ( Int x ) {
    x &= 0xFFFF;
    return (UShort)x;
 }
+static inline UInt toUInt ( Long x ) {
+   x &= 0xFFFFFFFFLL;
+   return (UInt)x;
+}
 
 /* 32/64 bit addresses. */
 typedef  UInt      Addr32;

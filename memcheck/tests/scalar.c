@@ -27,11 +27,11 @@ int main(void)
    // (see below)
 
    // __NR_exit 1 
-   GO(__NR_exit, "other");
+   GO(__NR_exit, "below");
    // (see below)
 
    // __NR_fork 2
-   GO(__NR_fork, "0s 0m");
+   GO(__NR_fork, "other");
    // (sse scalar_fork.c)
 
    // __NR_read 3
@@ -148,7 +148,8 @@ int main(void)
    // (obsolete, not handled by Valgrind)
 
    // __NR_pause 29
-   // XXX: will have to be tested separately
+   GO(__NR_pause, "ignore");
+   // (hard to test, and no args so not much to be gained -- don't bother)
 
    // __NR_utime 30
    GO(__NR_utime, "2s 2m");
@@ -321,8 +322,8 @@ int main(void)
 
    // __NR_sigsuspend 72
    // XXX: how do you use this function?
-// GO(__NR_sigsuspend, ".s .m");
-// SY(__NR_sigsuspend); FAIL;
+   GO(__NR_sigsuspend, "ignore");
+   // (I don't know how to test this...)
 
    // __NR_sigpending 73
    GO(__NR_sigpending, "1s 1m");
@@ -447,9 +448,8 @@ int main(void)
    SY(__NR_ioperm, x0, x0, x0); FAIL;
 
    // __NR_socketcall 102
-   // XXX: need to do properly
-// GO(__NR_socketcall, "2s 1m");
-// SY(__NR_socketcall, x0+SYS_SOCKETPAIR, x0); FAIL;
+   GO(__NR_socketcall, "XXX");
+   // (XXX: need to do all sub-cases properly)
 
    // __NR_syslog 103
    GO(__NR_syslog, "3s 1m");
@@ -508,7 +508,7 @@ int main(void)
    SY(__NR_sysinfo, x0); FAIL;
 
    // __NR_ipc 117
-   // XXX: This is simplistic -- doesn't treat any of the sub-ops.
+   // XXX: This is simplistic -- need to do all the sub-cases properly.
    // XXX: Also, should be 6 scalar errors, except glibc's syscall() doesn't
    //      use the 6th one!
    #include <asm/ipc.h>
@@ -520,8 +520,8 @@ int main(void)
    SY(__NR_fsync, x0-1); FAIL;
 
    // __NR_sigreturn 119
- //GO(__NR_sigreturn, ".s .m");
- //SY(__NR_sigreturn); FAIL;
+   GO(__NR_sigreturn, "n/a");
+ //SY(__NR_sigreturn); // (Not yet handled by Valgrind) FAIL;
 
    // __NR_clone 120
    #include <sched.h>
@@ -549,8 +549,8 @@ int main(void)
    SY(__NR_modify_ldt, x0+1, x0, x0+1); FAILx(EINVAL);
 
    // __NR_adjtimex 124
-   // XXX: need to do properly, but deref'ing NULL...
-//   GO(__NR_adjtimex, "1s 1m");
+   // XXX: need to do properly, but deref'ing NULL causing Valgrind to crash...
+     GO(__NR_adjtimex, "XXX");
 //   SY(__NR_adjtimex, x0); FAIL;
 
    // __NR_mprotect 125
@@ -594,8 +594,8 @@ int main(void)
  //SY(__NR_bdflush); // (Not yet handled by Valgrind) FAIL;
 
    // __NR_sysfs 135
- //GO(__NR_sysfs, ".s .m");
- //SY(__NR_sysfs); FAIL;
+   GO(__NR_sysfs, "n/a");
+ //SY(__NR_sysfs); // (Not yet handled by Valgrind) FAIL;
 
    // __NR_personality 136
    GO(__NR_personality, "1s 0m");
@@ -686,8 +686,8 @@ int main(void)
    SY(__NR_sched_getscheduler, x0-1); FAIL;
 
    // __NR_sched_yield 158
- //GO(__NR_sched_yield, ".s .m");
- //SY(__NR_sched_yield); FAIL;
+   GO(__NR_sched_yield, "0s 0m");
+   SY(__NR_sched_yield); SUCC;
 
    // __NR_sched_get_priority_max 159
    GO(__NR_sched_get_priority_max, "1s 0m");
@@ -706,8 +706,8 @@ int main(void)
    SY(__NR_nanosleep, x0, x0+1); FAIL;
 
    // __NR_mremap 163
- //GO(__NR_mremap, ".s .m");
- //SY(__NR_mremap); FAIL;
+   GO(__NR_mremap, "5s 0m");
+   SY(__NR_mremap, x0+1, x0, x0, x0, x0); FAILx(EINVAL);
 
    // __NR_setresuid 164
    GO(__NR_setresuid, "3s 0m");
@@ -770,8 +770,8 @@ int main(void)
    SY(__NR_rt_sigqueueinfo, x0, x0+1, x0); FAIL;
 
    // __NR_rt_sigsuspend 179
- //GO(__NR_rt_sigsuspend, ".s .m");
- //SY(__NR_rt_sigsuspend); FAIL;
+   GO(__NR_rt_sigsuspend, "ignore");
+   // (I don't know how to test this...)
 
    // __NR_pread64 180
    GO(__NR_pread64, "5s 1m");

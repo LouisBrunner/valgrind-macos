@@ -1,8 +1,8 @@
 -----------------------------------------------------
-  1:           __NR_exit other
+  1:           __NR_exit below
 -----------------------------------------------------
 -----------------------------------------------------
-  2:           __NR_fork 0s 0m
+  2:           __NR_fork other
 -----------------------------------------------------
 -----------------------------------------------------
   3:           __NR_read 1+3s 1m
@@ -417,6 +417,9 @@ Syscall param alarm(seconds) contains uninitialised byte(s)
  28:       __NR_oldfstat n/a
 -----------------------------------------------------
 -----------------------------------------------------
+ 29:          __NR_pause ignore
+-----------------------------------------------------
+-----------------------------------------------------
  30:          __NR_utime 2s 2m
 -----------------------------------------------------
 
@@ -827,6 +830,9 @@ Syscall param setregid16(egid) contains uninitialised byte(s)
    at 0x........: syscall (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
+-----------------------------------------------------
+ 72:     __NR_sigsuspend ignore
+-----------------------------------------------------
 -----------------------------------------------------
  73:     __NR_sigpending 1s 1m
 -----------------------------------------------------
@@ -1272,6 +1278,9 @@ Syscall param ioperm(turn_on) contains uninitialised byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 -----------------------------------------------------
+102:     __NR_socketcall XXX
+-----------------------------------------------------
+-----------------------------------------------------
 103:         __NR_syslog 3s 1m
 -----------------------------------------------------
 
@@ -1522,6 +1531,9 @@ Syscall param fsync(fd) contains uninitialised byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 -----------------------------------------------------
+119:      __NR_sigreturn n/a
+-----------------------------------------------------
+-----------------------------------------------------
 120:          __NR_clone 4s 0m
 -----------------------------------------------------
 
@@ -1585,6 +1597,9 @@ Syscall param modify_ldt(ptr) points to unaddressable byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+124:       __NR_adjtimex XXX
+-----------------------------------------------------
 -----------------------------------------------------
 125:       __NR_mprotect 3s 0m
 -----------------------------------------------------
@@ -1723,6 +1738,9 @@ Syscall param fchdir(fd) contains uninitialised byte(s)
    by 0x........: ...
 -----------------------------------------------------
 134:        __NR_bdflush n/a
+-----------------------------------------------------
+-----------------------------------------------------
+135:          __NR_sysfs n/a
 -----------------------------------------------------
 -----------------------------------------------------
 136:    __NR_personality 1s 0m
@@ -2084,6 +2102,9 @@ Syscall param sched_getscheduler(pid) contains uninitialised byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 -----------------------------------------------------
+158:    __NR_sched_yield 0s 0m
+-----------------------------------------------------
+-----------------------------------------------------
 159:__NR_sched_get_priority_max 1s 0m
 -----------------------------------------------------
 
@@ -2127,6 +2148,34 @@ Syscall param nanosleep(rem) points to unaddressable byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+163:         __NR_mremap 5s 0m
+-----------------------------------------------------
+
+Syscall param mremap(old_addr) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mremap(old_size) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mremap(new_size) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mremap(flags) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mremap(new_addr) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
 -----------------------------------------------------
 164:      __NR_setresuid 3s 0m
 -----------------------------------------------------
@@ -2453,6 +2502,9 @@ Syscall param rt_sigqueueinfo(uinfo) points to unaddressable byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+179:  __NR_rt_sigsuspend ignore
+-----------------------------------------------------
 -----------------------------------------------------
 180:        __NR_pread64 5s 1m
 -----------------------------------------------------

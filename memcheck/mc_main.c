@@ -9,7 +9,7 @@
    This file is part of MemCheck, a heavyweight Valgrind skin for
    detecting memory errors.
 
-   Copyright (C) 2000-2002 Julian Seward 
+   Copyright (C) 2000-2003 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -1530,7 +1530,7 @@ void SK_(pre_clo_init)(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a.k.a. Valgrind, a memory error detector");
    VG_(details_copyright_author)(
-      "Copyright (C) 2002, and GNU GPL'd, by Julian Seward.");
+      "Copyright (C) 2002-2003, and GNU GPL'd, by Julian Seward.");
    VG_(details_bug_reports_to)  ("jseward@acm.org");
    VG_(details_avg_translation_sizeB) ( 228 );
 

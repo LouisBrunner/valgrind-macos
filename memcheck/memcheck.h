@@ -12,7 +12,7 @@
    This file is part of MemCheck, a heavyweight Valgrind skin for
    detecting memory errors.
 
-   Copyright (C) 2000-2002 Julian Seward.  All rights reserved.
+   Copyright (C) 2002-2003 Julian Seward.  All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions

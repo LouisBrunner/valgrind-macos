@@ -6,7 +6,7 @@ Here is a sample run:
     hugh $ cc sha1.test.c
     hugh $ valgrind ./a.out
     ==26189== valgrind-20020227, a memory error detector for x86 GNU/Linux.
-    ==26189== Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.
+    ==26189== Copyright (C) 2000-200x, and GNU GPL'd, by Julian Seward.
     ==26189== For more details, rerun with: -v
     ==26189== 
 
@@ -15,7 +15,7 @@ Here is a sample run:
 
     hugh $ valgrind --instrument=no ./a.out
     ==26209== valgrind-20020227, a memory error detector for x86 GNU/Linux.
-    ==26209== Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.
+    ==26209== Copyright (C) 2000-200x, and GNU GPL'd, by Julian Seward.
     ==26209== For more details, rerun with: -v
     ==26209== 
     ==26209== 

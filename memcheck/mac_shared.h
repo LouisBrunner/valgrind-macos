@@ -9,7 +9,7 @@
    detecting memory errors, and AddrCheck, a lightweight Valgrind skin 
    for detecting memory errors.
 
-   Copyright (C) 2000-2002 Julian Seward 
+   Copyright (C) 2000-2003 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or

@@ -8,7 +8,7 @@
    This file is part of Valgrind, an extensible x86 protected-mode
    emulator for monitoring program execution on x86-Unixes.
 
-   Copyright (C) 2000-2002 Julian Seward 
+   Copyright (C) 2000-2003 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -629,7 +629,7 @@ static void usage ( void )
 "\n"
 "  Extra options are read from env variable $VALGRIND_OPTS\n"
 "\n"
-"  Valgrind is Copyright (C) 2000-2002 Julian Seward\n"
+"  Valgrind is Copyright (C) 2000-2003 Julian Seward\n"
 "  and licensed under the GNU General Public License, version 2.\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n"
@@ -1134,7 +1134,7 @@ static void process_cmd_line_options ( void )
          "Using valgrind-%s, a program supervision framework for x86-linux.",
          VERSION);
       VG_(message)(Vg_UserMsg, 
-         "Copyright (C) 2000-2002, and GNU GPL'd, by Julian Seward.");
+         "Copyright (C) 2000-2003, and GNU GPL'd, by Julian Seward.");
    }
 
    if (VG_(clo_log_to) != VgLogTo_Fd) {

@@ -8,7 +8,7 @@
    This file is part of Helgrind, a Valgrind skin for detecting
    data races in threaded programs.
 
-   Copyright (C) 2000-2002 Nicholas Nethercote
+   Copyright (C) 2002-2003 Nicholas Nethercote
       njn25@cam.ac.uk
 
    This program is free software; you can redistribute it and/or
@@ -3237,7 +3237,7 @@ void SK_(pre_clo_init)(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a data race detector");
    VG_(details_copyright_author)(
-      "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.");
+      "Copyright (C) 2002-2003, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  ("njn25@cam.ac.uk");
    VG_(details_avg_translation_sizeB) ( 115 );
 

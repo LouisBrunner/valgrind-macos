@@ -81,11 +81,12 @@ typedef
       UInt  guest_EBP;
       UInt  guest_ESI;
       UInt  guest_EDI;
-      /* 3-word thunk used to calculate O S Z A C P flags. */
+      /* 4-word thunk used to calculate O S Z A C P flags. */
       UInt  guest_CC_OP;
-      UInt  guest_CC_RES;
-      UInt  guest_CC_AUX;
-      /* The D flag is stored here, as either -1 or +1 */
+      UInt  guest_CC_DEP1;
+      UInt  guest_CC_DEP2;
+      UInt  guest_CC_NDEP;
+      /* The D flag is stored here, encoded as either -1 or +1 */
       UInt  guest_DFLAG;
       /* Bit 21 (ID) of eflags stored here, as either 0 or 1. */
       UInt  guest_IDFLAG;
@@ -105,7 +106,7 @@ typedef
       UShort guest_GS;
       UShort guest_SS;
       /* Padding to make it have an 8-aligned size */
-      /* UInt   padding; */
+      UInt   padding;
    }
    VexGuestX86State;
 

@@ -77,21 +77,24 @@ static IRBB* irbb;
 /*--- Offsets of various parts of the x86 guest state.     ---*/
 /*------------------------------------------------------------*/
 
-#define OFFB_FPREGS  offsetof(VexGuestX86State,guest_FPREG[0])
-#define OFFB_FPTAGS  offsetof(VexGuestX86State,guest_FPTAG[0])
-#define OFFB_EAX     offsetof(VexGuestX86State,guest_EAX)
-#define OFFB_EBX     offsetof(VexGuestX86State,guest_EBX)
-#define OFFB_ECX     offsetof(VexGuestX86State,guest_ECX)
-#define OFFB_EDX     offsetof(VexGuestX86State,guest_EDX)
-#define OFFB_EIP     offsetof(VexGuestX86State,guest_EIP)
-#define OFFB_CC_OP   offsetof(VexGuestX86State,guest_CC_OP)
-#define OFFB_CC_RES  offsetof(VexGuestX86State,guest_CC_RES)
-#define OFFB_CC_AUX  offsetof(VexGuestX86State,guest_CC_AUX)
-#define OFFB_DFLAG   offsetof(VexGuestX86State,guest_DFLAG)
-#define OFFB_IDFLAG  offsetof(VexGuestX86State,guest_IDFLAG)
-#define OFFB_FTOP    offsetof(VexGuestX86State,guest_FTOP)
-#define OFFB_FC3210  offsetof(VexGuestX86State,guest_FC3210)
-#define OFFB_FPUCW   offsetof(VexGuestX86State,guest_FPUCW)
+#define OFFB_FPREGS   offsetof(VexGuestX86State,guest_FPREG[0])
+#define OFFB_FPTAGS   offsetof(VexGuestX86State,guest_FPTAG[0])
+#define OFFB_EAX      offsetof(VexGuestX86State,guest_EAX)
+#define OFFB_EBX      offsetof(VexGuestX86State,guest_EBX)
+#define OFFB_ECX      offsetof(VexGuestX86State,guest_ECX)
+#define OFFB_EDX      offsetof(VexGuestX86State,guest_EDX)
+#define OFFB_EIP      offsetof(VexGuestX86State,guest_EIP)
+
+#define OFFB_CC_OP    offsetof(VexGuestX86State,guest_CC_OP)
+#define OFFB_CC_DEP1  offsetof(VexGuestX86State,guest_CC_DEP1)
+#define OFFB_CC_DEP2  offsetof(VexGuestX86State,guest_CC_DEP2)
+#define OFFB_CC_NDEP  offsetof(VexGuestX86State,guest_CC_NDEP)
+
+#define OFFB_DFLAG    offsetof(VexGuestX86State,guest_DFLAG)
+#define OFFB_IDFLAG   offsetof(VexGuestX86State,guest_IDFLAG)
+#define OFFB_FTOP     offsetof(VexGuestX86State,guest_FTOP)
+#define OFFB_FC3210   offsetof(VexGuestX86State,guest_FC3210)
+#define OFFB_FPUCW    offsetof(VexGuestX86State,guest_FPUCW)
 
 
 /*------------------------------------------------------------*/
@@ -552,21 +555,6 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
 {
    Int adj;
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-
-   switch (op8) {
-      case Iop_MullS8: 
-         return ty==Ity_I8 ? Iop_MullS8
-                : (ty==Ity_I16 ? Iop_MullS16 : Iop_MullS32);
-      case Iop_16HIto8: 
-         return ty==Ity_I8 ? Iop_16HIto8
-                : (ty==Ity_I16 ? Iop_32HIto16 : Iop_64HIto32);
-      case Iop_16to8: 
-         return ty==Ity_I8 ? Iop_16to8
-                : (ty==Ity_I16 ? Iop_32to16 : Iop_64to32);
-      default:
-         break;
-   }
-
    vassert(op8 == Iop_Add8 || op8 == Iop_Sub8 
            || op8 == Iop_Mul8 
            || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
@@ -591,15 +579,6 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
    vpanic("mkWidenOp(x86,guest)");
 }
 
-static IRType doubleLengthType ( IRType ty )
-{
-   switch (ty) {
-      case Ity_I8: return Ity_I16;
-      case Ity_I16: return Ity_I32;
-      case Ity_I32: return Ity_I64;
-      default: vpanic("doubleLengthType(x86,guest)");
-   }
-}
 
 /*------------------------------------------------------------*/
 /*--- Helpers for %eflags.                                 ---*/
@@ -608,13 +587,15 @@ static IRType doubleLengthType ( IRType ty )
 /* -------------- Evaluating the flags-thunk. -------------- */
 
 /* Build IR to calculate all the eflags from stored
-   CC_OP/CC_RES/CC_AUX.  Returns an expression :: Ity_I32. */
+   CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression ::
+   Ity_I32. */
 static IRExpr* mk_calculate_eflags_all ( void )
 {
    IRExpr** args
-      = mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,  Ity_I32),
-                       IRExpr_Get(OFFB_CC_RES, Ity_I32),
-                       IRExpr_Get(OFFB_CC_AUX, Ity_I32) );
+      = mkIRExprVec_4( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
+                       IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
+                       IRExpr_Get(OFFB_CC_DEP2, Ity_I32),
+                       IRExpr_Get(OFFB_CC_NDEP, Ity_I32) );
    IRExpr* call
       = mkIRExprCCall(
            Ity_I32,
@@ -622,21 +603,23 @@ static IRExpr* mk_calculate_eflags_all ( void )
            "calculate_eflags_all", &calculate_eflags_all,
            args
         );
-   /* Exclude OP and AUX from definedness checking.  We're only
-      interested in RES. */
-   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<2);
+   /* Exclude OP and NDEP from definedness checking.  We're only
+      interested in DEP1 and DEP2. */
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<3);
    return call;
 }
 
 /* Build IR to calculate some particular condition from stored
-   CC_OP/CC_RES/CC_AUX.  Returns an expression :: Ity_Bit. */
+   CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression ::
+   Ity_Bit. */
 static IRExpr* mk_calculate_condition ( Condcode cond )
 {
    IRExpr** args
-      = mkIRExprVec_4( mkU32(cond),
+      = mkIRExprVec_5( mkU32(cond),
                        IRExpr_Get(OFFB_CC_OP,  Ity_I32),
-                       IRExpr_Get(OFFB_CC_RES, Ity_I32),
-                       IRExpr_Get(OFFB_CC_AUX, Ity_I32) );
+                       IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
+                       IRExpr_Get(OFFB_CC_DEP2, Ity_I32),
+                       IRExpr_Get(OFFB_CC_NDEP, Ity_I32) );
    IRExpr* call
       = mkIRExprCCall(
            Ity_I32,
@@ -644,20 +627,21 @@ static IRExpr* mk_calculate_condition ( Condcode cond )
            "calculate_condition", &calculate_condition,
            args
         );
-   /* Exclude the requested condition, OP and AUX from definedness
-      checking.  We're only interested in RES. */
-   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<1) | (1 << 3);
+   /* Exclude the requested condition, OP and NDEP from definedness
+      checking.  We're only interested in DEP1 and DEP2. */
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<1) | (1<<4);
    return unop(Iop_32to1, call);
 }
 
 /* Build IR to calculate just the carry flag from stored
-   CC_OP/CC_RES/CC_AUX.  Returns an expression :: Ity_I32. */
+   CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression :: Ity_I32. */
 static IRExpr* mk_calculate_eflags_c ( void )
 {
    IRExpr** args
-      = mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,  Ity_I32),
-                       IRExpr_Get(OFFB_CC_RES, Ity_I32),
-                       IRExpr_Get(OFFB_CC_AUX, Ity_I32) );
+      = mkIRExprVec_4( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
+                       IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
+                       IRExpr_Get(OFFB_CC_DEP2, Ity_I32),
+                       IRExpr_Get(OFFB_CC_NDEP, Ity_I32) );
    IRExpr* call
       = mkIRExprCCall(
            Ity_I32,
@@ -665,9 +649,9 @@ static IRExpr* mk_calculate_eflags_c ( void )
            "calculate_eflags_c", &calculate_eflags_c,
            args
         );
-   /* Exclude OP and AUX from definedness checking.  We're only
-      interested in RES. */
-   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<2);
+   /* Exclude OP and NDEP from definedness checking.  We're only
+      interested in DEP1 and DEP2. */
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<3);
    return call;
 }
 
@@ -681,6 +665,11 @@ static IRExpr* mk_calculate_eflags_c ( void )
 static Bool isAddSub ( IROp op8 )
 {
    return op8 == Iop_Add8 || op8 == Iop_Sub8;
+}
+
+static Bool isLogic ( IROp op8 )
+{
+   return op8 == Iop_And8 || op8 == Iop_Or8 || op8 == Iop_Xor8;
 }
 
 /* U-widen 8/16/32 bit int expr to 32. */
@@ -726,13 +715,11 @@ static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
 }
 
 
-/* Set the flags thunk for add/sub operations..  The supplied op is
+/* Set the flags thunk OP, DEP1 and DEP2 fields.  The supplied op is
    auto-sized up to the real op. */
 
-static void setFlags_RES_AUX ( IROp    op8,
-                               IRTemp  res,
-                               IRTemp  aux,
-                               IRType  ty )
+static 
+void setFlags_DEP1_DEP2 ( IROp op8, IRTemp dep1, IRTemp dep2, IRType ty )
 {
    Int ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
 
@@ -742,20 +729,18 @@ static void setFlags_RES_AUX ( IROp    op8,
       case Iop_Add8: ccOp += CC_OP_ADDB;   break;
       case Iop_Sub8: ccOp += CC_OP_SUBB;   break;
       default:       ppIROp(op8);
-                     vpanic("setFlags_RES_AUX(x86)");
+                     vpanic("setFlags_DEP1_DEP2(x86)");
    }
-   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(ccOp)) );
-   stmt( IRStmt_Put( OFFB_CC_RES, widenUto32(mkexpr(res))) );
-   stmt( IRStmt_Put( OFFB_CC_AUX, widenUto32(mkexpr(aux))) );
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(dep2))) );
 }
 
 
-/* For and/or/xor, only the result is important.  However, put zero in
-   CC_AUX since we're paranoid. */
+/* Set the OP and DEP1 fields only, and write zero to DEP2. */
 
-static void setFlags_LOGIC ( IROp    op8,
-                             IRTemp  res,
-                             IRType  ty )
+static 
+void setFlags_DEP1 ( IROp op8, IRTemp dep1, IRType ty )
 {
    Int ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
 
@@ -766,11 +751,11 @@ static void setFlags_LOGIC ( IROp    op8,
       case Iop_And8:
       case Iop_Xor8: ccOp += CC_OP_LOGICB; break;
       default:       ppIROp(op8);
-                     vpanic("setFlags_LOGIC(x86)");
+                     vpanic("setFlags_DEP1(x86)");
    }
-   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(ccOp)) );
-   stmt( IRStmt_Put( OFFB_CC_RES, widenUto32(mkexpr(res))) );
-   stmt( IRStmt_Put( OFFB_CC_AUX, mkU32(0)) );
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)) );
 }
 
 
@@ -778,42 +763,44 @@ static void setFlags_LOGIC ( IROp    op8,
    result.  Except if the shift amount is zero, the thunk is left
    unchanged. */
 
-static void setFlags_RES_RESus ( IROp    op32,
-                                 IRTemp  res,
-                                 IRTemp  resUS,
-                                 IRType  ty,
-                                 IRTemp  guard )
+static void setFlags_DEP1_DEP2_shift ( IROp    op32,
+                                       IRTemp  res,
+                                       IRTemp  resUS,
+                                       IRType  ty,
+                                       IRTemp  guard )
 {
    Int ccOp = ty==Ity_I8 ? 2 : (ty==Ity_I16 ? 1 : 0);
 
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
    vassert(guard);
 
+   /* Both kinds of right shifts are handled by the same thunk
+      operation. */
    switch (op32) {
       case Iop_Shr32:
-      case Iop_Sar32: ccOp = CC_OP_SARL - ccOp; break;
+      case Iop_Sar32: ccOp = CC_OP_SHRL - ccOp; break;
       case Iop_Shl32: ccOp = CC_OP_SHLL - ccOp; break;
       default:        ppIROp(op32);
-                      vpanic("setFlags_RES_RESus(x86)");
+                      vpanic("setFlags_DEP1_DEP2_shift(x86)");
    }
 
-   /* RES contains the result, AUX contains the undershifted value. */
+   /* DEP1 contains the result, DEP2 contains the undershifted value. */
    stmt( IRStmt_Put( OFFB_CC_OP,
                      IRExpr_Mux0X( mkexpr(guard),
                                    IRExpr_Get(OFFB_CC_OP,Ity_I32),
                                    mkU32(ccOp))) );
-   stmt( IRStmt_Put( OFFB_CC_RES,
+   stmt( IRStmt_Put( OFFB_CC_DEP1,
                      IRExpr_Mux0X( mkexpr(guard),
-                                   IRExpr_Get(OFFB_CC_RES,Ity_I32),
+                                   IRExpr_Get(OFFB_CC_DEP1,Ity_I32),
                                    widenUto32(mkexpr(res)))) );
-   stmt( IRStmt_Put( OFFB_CC_AUX, 
+   stmt( IRStmt_Put( OFFB_CC_DEP2, 
                      IRExpr_Mux0X( mkexpr(guard),
-                                   IRExpr_Get(OFFB_CC_AUX,Ity_I32),
+                                   IRExpr_Get(OFFB_CC_DEP2,Ity_I32),
                                    widenUto32(mkexpr(resUS)))) );
 }
 
 
-/* For the inc/dec case, we store in RES the result value and in AUX
+/* For the inc/dec case, we store in DEP1 the result value and in NDEP
    the former value of the carry flag, which unfortunately we have to
    compute. */
 
@@ -825,44 +812,35 @@ static void setFlags_INC_DEC ( Bool inc, IRTemp res, IRType ty )
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
 
    /* This has to come first, because calculating the C flag 
-      may require reading all three OFFB_CC fields. */
-   stmt( IRStmt_Put( OFFB_CC_AUX, mk_calculate_eflags_c()) );
-   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(ccOp)) );
-   stmt( IRStmt_Put( OFFB_CC_RES, mkexpr(res)) );
+      may require reading all four thunk fields. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mk_calculate_eflags_c()) );
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(res)) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)) );
 }
 
 
-/* For multiplies, RES is the xor of the upper and lower halves of the
-   result, and AUX is the lower half.  See long comment in gdefs.h for
-   explanation of the weirdness involving Xor. */
+/* Multiplies are pretty much like add and sub: DEP1 and DEP2 hold the
+   two arguments. */
 
 static
-void setFlags_MUL ( IRType ty, IRTemp resHi, IRTemp resLo, UInt base_op )
+void setFlags_MUL ( IRType ty, IRTemp arg1, IRTemp arg2, UInt base_op )
 {
    switch (ty) {
-   case Ity_I8:
-      stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(base_op+0) ) );
-      stmt( IRStmt_Put( OFFB_CC_AUX, unop(Iop_8Uto32,mkexpr(resLo)) ) );
-      stmt( IRStmt_Put( OFFB_CC_RES, 
-                        unop(Iop_8Uto32,
-                             binop(Iop_Xor8, mkexpr(resHi), mkexpr(resLo))) ));
-      break;
-   case Ity_I16:
-      stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(base_op+1) ) );
-      stmt( IRStmt_Put( OFFB_CC_AUX, unop(Iop_16Uto32,mkexpr(resLo)) ) );
-      stmt( IRStmt_Put( OFFB_CC_RES, 
-                        unop(Iop_16Uto32,
-                             binop(Iop_Xor16, mkexpr(resHi), mkexpr(resLo))) ));
-      break;
-   case Ity_I32:
-      stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(base_op+2) ) );
-      stmt( IRStmt_Put( OFFB_CC_AUX, mkexpr(resLo) ) );
-      stmt( IRStmt_Put( OFFB_CC_RES,
-                        binop(Iop_Xor32, mkexpr(resHi), mkexpr(resLo)) ));
-      break;
-   default:
-      vpanic("setFlags_MUL(x86)");
+      case Ity_I8:
+         stmt( IRStmt_Put( OFFB_CC_OP, mkU32(base_op+0) ) );
+         break;
+      case Ity_I16:
+         stmt( IRStmt_Put( OFFB_CC_OP, mkU32(base_op+1) ) );
+         break;
+      case Ity_I32:
+         stmt( IRStmt_Put( OFFB_CC_OP, mkU32(base_op+2) ) );
+         break;
+      default:
+         vpanic("setFlags_MUL(x86)");
    }
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(arg1)) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(arg2)) ));
 }
 
 
@@ -911,80 +889,70 @@ static Condcode positiveIse_Condcode ( Condcode  cond,
 /* -------------- Helpers for ADD/SUB with carry. -------------- */
 
 /* Given ta1, ta2 and tres, compute tres = ADC(ta1,ta2) and set flags
-   appropriately.  Depends critically on the relative ordering of
-   CC_OP_ADD{B,W,L} vs CC_OP_ADC{B,W,L}.
+   appropriately.
 */
 static void helper_ADC ( Int sz,
 			 IRTemp tres, IRTemp ta1, IRTemp ta2 )
 {
    UInt    thunkOp;
-   IRExpr* thunkExpr;
-   IRType ty   = szToITy(sz);
-   IRTemp oldc = newTemp(Ity_I32);
-   IROp   plus = mkSizedOp(ty,Iop_Add8);
-
-   /* oldc = old carry flag, 0 or 1 */
-   assign( oldc, binop(Iop_And32,
-                       mk_calculate_eflags_c(),
-		       mkU32(1)) );
-
-   assign(tres, binop(plus,
-                      binop(plus,mkexpr(ta1),mkexpr(ta2)),
-                      narrowTo(ty,mkexpr(oldc))));
+   IRType  ty    = szToITy(sz);
+   IRTemp  oldc  = newTemp(Ity_I32);
+   IRTemp  oldcn = newTemp(ty);
+   IROp    plus  = mkSizedOp(ty, Iop_Add8);
+   IROp    xor   = mkSizedOp(ty, Iop_Xor8);
 
    vassert(sz == 1 || sz == 2 || sz == 4);
-   thunkOp = sz==4 ? CC_OP_ADDL : (sz==2 ? CC_OP_ADDW : CC_OP_ADDB);
+   thunkOp = sz==4 ? CC_OP_ADCL : (sz==2 ? CC_OP_ADCW : CC_OP_ADCB);
 
-   /* This dynamically calculates the thunk op number.  
-      3 * the old carry flag is added, so (eg) it gives
-      CC_OP_ADDL if old carry was zero, and CC_OP_ADCL if
-      old carry was one. */
-   thunkExpr = binop(Iop_Add32, 
-                     mkU32(thunkOp),
-		     binop(Iop_Mul32, mkexpr(oldc), mkU32(3)));
+   /* oldc = old carry flag, 0 or 1 */
+   assign( oldc,  binop(Iop_And32,
+                        mk_calculate_eflags_c(),
+		        mkU32(1)) );
 
-   stmt( IRStmt_Put( OFFB_CC_OP,  thunkExpr ) );
-   stmt( IRStmt_Put( OFFB_CC_RES, mkexpr(tres) ) );
-   stmt( IRStmt_Put( OFFB_CC_AUX, mkexpr(ta2) ) );
+   assign( oldcn, narrowTo(ty, mkexpr(oldc)) );
+
+   assign( tres, binop(plus,
+                       binop(plus,mkexpr(ta1),mkexpr(ta2)),
+                       mkexpr(oldcn)) );
+
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(ta1) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, binop(xor, mkexpr(ta2), mkexpr(oldcn)) ) );
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldc) ) );
 }
 
 
 /* Given ta1, ta2 and tres, compute tres = SBB(ta1,ta2) and set flags
-   appropriately.  Depends critically on the relative ordering of
-   CC_OP_SUB{B,W,L} vs CC_OP_SBB{B,W,L}.
+   appropriately.
 */
 static void helper_SBB ( Int sz,
 			 IRTemp tres, IRTemp ta1, IRTemp ta2 )
 {
    UInt    thunkOp;
-   IRExpr* thunkExpr;
-   IRType ty    = szToITy(sz);
-   IRTemp oldc  = newTemp(Ity_I32);
-   IROp   minus = mkSizedOp(ty,Iop_Sub8);
+   IRType  ty    = szToITy(sz);
+   IRTemp  oldc  = newTemp(Ity_I32);
+   IRTemp  oldcn = newTemp(ty);
+   IROp    minus = mkSizedOp(ty, Iop_Sub8);
+   IROp    xor   = mkSizedOp(ty, Iop_Xor8);
+
+   vassert(sz == 1 || sz == 2 || sz == 4);
+   thunkOp = sz==4 ? CC_OP_SBBL : (sz==2 ? CC_OP_SBBW : CC_OP_SBBB);
 
    /* oldc = old carry flag, 0 or 1 */
    assign( oldc, binop(Iop_And32,
                        mk_calculate_eflags_c(),
 		       mkU32(1)) );
 
-   assign(tres, binop(minus,
-                      binop(minus,mkexpr(ta1),mkexpr(ta2)),
-                      narrowTo(ty,mkexpr(oldc))));
+   assign( oldcn, narrowTo(ty, mkexpr(oldc)) );
 
-   vassert(sz == 1 || sz == 2 || sz == 4);
-   thunkOp = sz==4 ? CC_OP_SUBL : (sz==2 ? CC_OP_SUBW : CC_OP_SUBB);
+   assign( tres, binop(minus,
+                       binop(minus,mkexpr(ta1),mkexpr(ta2)),
+                       mkexpr(oldcn)) );
 
-   /* This dynamically calculates the thunk op number.  
-      3 * the old carry flag is added, so (eg) it gives
-      CC_OP_SUBL if old carry was zero, and CC_OP_SBBL if
-      old carry was one. */
-   thunkExpr = binop(Iop_Add32, 
-                     mkU32(thunkOp),
-		     binop(Iop_Mul32, mkexpr(oldc), mkU32(3)));
-
-   stmt( IRStmt_Put( OFFB_CC_OP,  thunkExpr ) );
-   stmt( IRStmt_Put( OFFB_CC_RES, mkexpr(tres) ) );
-   stmt( IRStmt_Put( OFFB_CC_AUX, mkexpr(ta2) ) );
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(ta1) ) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, binop(xor, mkexpr(ta2), mkexpr(oldcn)) ) );
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkexpr(oldc) ) );
 }
 
 
@@ -1801,9 +1769,9 @@ void codegen_XOR_reg_with_itself ( Int size, Int ge_reg )
    /* reg := 0 */
    putIReg(size, ge_reg, mkU(ty,0));
    /* Flags: C,A,O=0, Z=1, S=0, P=1 */
-   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
-   stmt( IRStmt_Put( OFFB_CC_RES, mkU32(CC_MASK_Z|CC_MASK_P) ));
-   stmt( IRStmt_Put( OFFB_CC_AUX, mkU32(0) ));
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkU32(CC_MASK_Z|CC_MASK_P) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
    DIP("xor%c %s, %s\n", nameISize(size),
                          nameIReg(size,ge_reg), nameIReg(size,ge_reg) );
 }
@@ -1884,9 +1852,9 @@ UInt dis_op2_E_G ( UChar       sorb,
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
 	 if (isAddSub(op8))
-            setFlags_RES_AUX(op8, dst1, src, ty);
+            setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
-            setFlags_LOGIC(op8, dst1, ty);
+            setFlags_DEP1(op8, dst1, ty);
          if (keep)
             putIReg(size, gregOfRM(rm), mkexpr(dst1));
       }
@@ -1911,9 +1879,9 @@ UInt dis_op2_E_G ( UChar       sorb,
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
 	 if (isAddSub(op8))
-            setFlags_RES_AUX(op8, dst1, src, ty);
+            setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
-            setFlags_LOGIC(op8, dst1, ty);
+            setFlags_DEP1(op8, dst1, ty);
          if (keep)
             putIReg(size, gregOfRM(rm), mkexpr(dst1));
       }
@@ -1992,9 +1960,9 @@ UInt dis_op2_G_E ( UChar       sorb,
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 	 if (isAddSub(op8))
-            setFlags_RES_AUX(op8, dst1, src, ty);
+            setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
-            setFlags_LOGIC(op8, dst1, ty);
+            setFlags_DEP1(op8, dst1, ty);
          if (keep)
             putIReg(size, eregOfRM(rm), mkexpr(dst1));
       }
@@ -2021,9 +1989,9 @@ UInt dis_op2_G_E ( UChar       sorb,
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 	 if (isAddSub(op8))
-            setFlags_RES_AUX(op8, dst1, src, ty);
+            setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
-            setFlags_LOGIC(op8, dst1, ty);
+            setFlags_DEP1(op8, dst1, ty);
          if (keep)
             storeLE(mkexpr(addr), mkexpr(dst1));
       }
@@ -2140,9 +2108,12 @@ UInt dis_op_imm_A ( Int    size,
    assign(src,  mkU(ty,lit));
    assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
    if (isAddSub(op8))
-      setFlags_RES_AUX(op8, dst1, src, ty);
+      setFlags_DEP1_DEP2(op8, dst0, src, ty);
    else
-      setFlags_LOGIC(op8, dst1, ty);
+   if (isLogic(op8))
+      setFlags_DEP1(op8, dst1, ty);
+   else
+      vpanic("dis_op_imm_A(x86,guest)");
 
    if (keep)
       putIReg(size, R_EAX, mkexpr(dst1));
@@ -2318,9 +2289,9 @@ UInt dis_Grp1 ( UChar sorb,
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 	 if (isAddSub(op8))
-            setFlags_RES_AUX(op8, dst1, src, ty);
+            setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
-            setFlags_LOGIC(op8, dst1, ty);
+            setFlags_DEP1(op8, dst1, ty);
       }
 
       if (gregOfRM(modrm) < 7)
@@ -2343,9 +2314,9 @@ UInt dis_Grp1 ( UChar sorb,
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 	 if (isAddSub(op8))
-            setFlags_RES_AUX(op8, dst1, src, ty);
+            setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
-            setFlags_LOGIC(op8, dst1, ty);
+            setFlags_DEP1(op8, dst1, ty);
       }
 
       if (gregOfRM(modrm) < 7)
@@ -2420,9 +2391,9 @@ UInt dis_Grp2 ( UChar  sorb,
             );
       /* new eflags in hi half r64; new value in lo half r64 */
       assign( dst1, narrowTo(ty, unop(Iop_64to32, mkexpr(r64))) );
-      stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
-      stmt( IRStmt_Put( OFFB_CC_RES, unop(Iop_64HIto32, mkexpr(r64)) ));
-      stmt( IRStmt_Put( OFFB_CC_AUX, mkU32(0) ));
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP1, unop(Iop_64HIto32, mkexpr(r64)) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
    }
 
    if (isShift) {
@@ -2470,7 +2441,7 @@ UInt dis_Grp2 ( UChar  sorb,
                           mkU8(31))) );
 
       /* Build the flags thunk. */
-      setFlags_RES_RESus(op32, res32, res32ss, ty, shift_amt);
+      setFlags_DEP1_DEP2_shift(op32, res32, res32ss, ty, shift_amt);
 
       /* Narrow the result back down. */
       assign( dst1, narrowTo(ty, mkexpr(res32)) );
@@ -2538,18 +2509,22 @@ UInt dis_Grp2 ( UChar  sorb,
 
       assign(oldFlags, mk_calculate_eflags_all());
 
-      /* CC_RES is the rotated value.  CC_AUX is flags before. */
+      /* CC_DEP1 is the rotated value.  CC_NDEP is flags before. */
       stmt( IRStmt_Put( OFFB_CC_OP,
                         IRExpr_Mux0X( mkexpr(rot_amt32),
                                       IRExpr_Get(OFFB_CC_OP,Ity_I32),
                                       mkU32(ccOp))) );
-      stmt( IRStmt_Put( OFFB_CC_RES, 
+      stmt( IRStmt_Put( OFFB_CC_DEP1, 
                         IRExpr_Mux0X( mkexpr(rot_amt32),
-                                      IRExpr_Get(OFFB_CC_RES,Ity_I32),
+                                      IRExpr_Get(OFFB_CC_DEP1,Ity_I32),
                                       widenUto32(mkexpr(dst1)))) );
-      stmt( IRStmt_Put( OFFB_CC_AUX, 
+      stmt( IRStmt_Put( OFFB_CC_DEP2, 
                         IRExpr_Mux0X( mkexpr(rot_amt32),
-                                      IRExpr_Get(OFFB_CC_AUX,Ity_I32),
+                                      IRExpr_Get(OFFB_CC_DEP2,Ity_I32),
+                                      mkU32(0))) );
+      stmt( IRStmt_Put( OFFB_CC_NDEP, 
+                        IRExpr_Mux0X( mkexpr(rot_amt32),
+                                      IRExpr_Get(OFFB_CC_NDEP,Ity_I32),
                                       mkexpr(oldFlags))) );
    } /* if (isRotate) */
 
@@ -2713,10 +2688,10 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
          IRTemp resLo   = newTemp(Ity_I32);
          IROp   mulOp   = syned ? Iop_MullS32 : Iop_MullU32;
          UInt   tBaseOp = syned ? CC_OP_SMULB : CC_OP_UMULB;
+         setFlags_MUL ( Ity_I32, t1, tmp, tBaseOp );
          assign( res64, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
          assign( resHi, unop(Iop_64HIto32,mkexpr(res64)));
          assign( resLo, unop(Iop_64to32,mkexpr(res64)));
-         setFlags_MUL ( Ity_I32, resHi, resLo, tBaseOp );
          putIReg(4, R_EDX, mkexpr(resHi));
          putIReg(4, R_EAX, mkexpr(resLo));
          break;
@@ -2727,10 +2702,10 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
          IRTemp resLo   = newTemp(Ity_I16);
          IROp   mulOp   = syned ? Iop_MullS16 : Iop_MullU16;
          UInt   tBaseOp = syned ? CC_OP_SMULB : CC_OP_UMULB;
+         setFlags_MUL ( Ity_I16, t1, tmp, tBaseOp );
          assign( res32, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
          assign( resHi, unop(Iop_32HIto16,mkexpr(res32)));
          assign( resLo, unop(Iop_32to16,mkexpr(res32)));
-         setFlags_MUL ( Ity_I16, resHi, resLo, tBaseOp );
          putIReg(2, R_EDX, mkexpr(resHi));
          putIReg(2, R_EAX, mkexpr(resLo));
          break;
@@ -2741,10 +2716,10 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
          IRTemp resLo   = newTemp(Ity_I8);
          IROp   mulOp   = syned ? Iop_MullS8 : Iop_MullU8;
          UInt   tBaseOp = syned ? CC_OP_SMULB : CC_OP_UMULB;
+         setFlags_MUL ( Ity_I8, t1, tmp, tBaseOp );
          assign( res16, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
          assign( resHi, unop(Iop_16HIto8,mkexpr(res16)));
          assign( resLo, unop(Iop_16to8,mkexpr(res16)));
-         setFlags_MUL ( Ity_I8, resHi, resLo, tBaseOp );
          putIReg(2, R_EAX, mkexpr(res16));
          break;
       }
@@ -2777,7 +2752,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 	    assign(dst1, binop(mkSizedOp(ty,Iop_And8),
 			       getIReg(sz,eregOfRM(modrm)),
                                mkU(ty,d32)));
-	    setFlags_LOGIC( Iop_And8, dst1, ty );
+	    setFlags_DEP1( Iop_And8, dst1, ty );
             DIP("test%c $0x%x, %s\n", nameISize(sz), d32, 
                                       nameIReg(sz, eregOfRM(modrm)));
             break;
@@ -2797,7 +2772,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 	    assign(dst0, mkU(ty,0));
             assign(src,  getIReg(sz,eregOfRM(modrm)));
 	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
-            setFlags_RES_AUX(Iop_Sub8, dst1, src, ty);
+            setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
 	    putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
             DIP("neg%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
             break;
@@ -2841,7 +2816,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 	    dst1 = newTemp(ty);
 	    assign(dst1, binop(mkSizedOp(ty,Iop_And8),
 			       mkexpr(t1), mkU(ty,d32)));
-	    setFlags_LOGIC( Iop_And8, dst1, ty );
+	    setFlags_DEP1( Iop_And8, dst1, ty );
             DIP("test%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
             break;
          }
@@ -2857,7 +2832,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 	    assign(dst0, mkU(ty,0));
             assign(src,  mkexpr(t1));
 	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
-            setFlags_RES_AUX(Iop_Sub8, dst1, src, ty);
+            setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
 	    storeLE( mkexpr(addr), mkexpr(dst1) );
             DIP("neg%c %s\n", nameISize(sz), dis_buf);
             break;
@@ -3139,7 +3114,7 @@ void dis_CMPS ( Int sz, IRTemp t_inc )
    IRType ty  = szToITy(sz);
    IRTemp tdv = newTemp(ty);      /* (EDI) */
    IRTemp tsv = newTemp(ty);      /* (ESI) */
-   IRTemp res = newTemp(ty);
+   //IRTemp res = newTemp(ty);
    IRTemp td  = newTemp(Ity_I32); /*  EDI  */
    IRTemp ts  = newTemp(Ity_I32); /*  ESI  */
 
@@ -3157,8 +3132,8 @@ void dis_CMPS ( Int sz, IRTemp t_inc )
 
    //uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, tsv); 
    //setFlagsFromUOpcode(cb, SUB);
-   assign( res, binop(mkSizedOp(ty, Iop_Sub8), mkexpr(tsv), mkexpr(tdv)) );
-   setFlags_RES_AUX ( Iop_Sub8, res, tdv, ty );
+   //assign( res, binop(mkSizedOp(ty, Iop_Sub8), mkexpr(tsv), mkexpr(tdv)) );
+   setFlags_DEP1_DEP2 ( Iop_Sub8, tsv, tdv, ty );
 
    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
@@ -3177,7 +3152,7 @@ void dis_SCAS ( Int sz, IRTemp t_inc )
    IRTemp ta  = newTemp(ty);       /*  EAX  */
    IRTemp td  = newTemp(Ity_I32);  /*  EDI  */
    IRTemp tdv = newTemp(ty);       /* (EDI) */
-   IRTemp res = newTemp(ty);
+   //IRTemp res = newTemp(ty);
 
    //uInstr2(cb, GET,  sz, ArchReg, R_EAX, TempReg, ta);
    assign( ta, getIReg(sz, R_EAX) );
@@ -3190,8 +3165,8 @@ void dis_SCAS ( Int sz, IRTemp t_inc )
 
    //uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, ta);
    //setFlagsFromUOpcode(cb, SUB);
-   assign( res, binop(mkSizedOp(ty, Iop_Sub8), mkexpr(ta), mkexpr(tdv)) );
-   setFlags_RES_AUX ( Iop_Sub8, res, tdv, ty );
+   //assign( res, binop(mkSizedOp(ty, Iop_Sub8), mkexpr(ta), mkexpr(tdv)) );
+   setFlags_DEP1_DEP2 ( Iop_Sub8, ta, tdv, ty );
 
    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
    //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
@@ -3239,12 +3214,11 @@ void dis_REP_op ( Condcode cond,
 /*--- Arithmetic, etc.                                     ---*/
 /*------------------------------------------------------------*/
 
-/* (I)MUL E, G.  Supplied eip points to the modR/M byte. */
+/* IMUL E, G.  Supplied eip points to the modR/M byte. */
 static
 UInt dis_mul_E_G ( UChar       sorb,
                    Int         size, 
-                   UInt        delta0,
-                   Bool        syned )
+                   UInt        delta0 )
 {
    Int    alen;
    UChar  dis_buf[50];
@@ -3252,11 +3226,7 @@ UInt dis_mul_E_G ( UChar       sorb,
    IRType ty = szToITy(size);
    IRTemp te = newTemp(ty);
    IRTemp tg = newTemp(ty);
-   IRTemp resHi = newTemp(ty);
    IRTemp resLo = newTemp(ty);
-   IRTemp res2L = newTemp(doubleLengthType(ty));
-
-   vassert(syned);
 
    assign( tg, getIReg(size, gregOfRM(rm)) );
    if (epartIsReg(rm)) {
@@ -3266,25 +3236,20 @@ UInt dis_mul_E_G ( UChar       sorb,
       assign( te, loadLE(ty,mkexpr(addr)) );
    }
 
-   assign( res2L, binop( mkSizedOp(ty, syned ? Iop_MullS8 : Iop_MullU8),
-                         mkexpr(te), mkexpr(tg) ));
-   assign( resHi, unop( mkSizedOp(ty, Iop_16HIto8), mkexpr(res2L) ));
-   assign( resLo, unop( mkSizedOp(ty, Iop_16to8), mkexpr(res2L) ));
+   setFlags_MUL ( ty, te, tg, CC_OP_SMULB );
 
-   setFlags_MUL ( ty, resHi, resLo, syned ? CC_OP_SMULB : CC_OP_UMULB );
+   assign( resLo, binop( mkSizedOp(ty, Iop_Mul8), mkexpr(te), mkexpr(tg) ) );
 
    putIReg(size, gregOfRM(rm), mkexpr(resLo) );
 
    if (epartIsReg(rm)) {
-      DIP("%smul%c %s, %s\n", syned ? "i" : "",
-                              nameISize(size), 
-                              nameIReg(size,eregOfRM(rm)),
-                              nameIReg(size,gregOfRM(rm)));
+      DIP("imul%c %s, %s\n", nameISize(size), 
+                             nameIReg(size,eregOfRM(rm)),
+                             nameIReg(size,gregOfRM(rm)));
       return 1+delta0;
    } else {
-      DIP("%smul%c %s, %s\n", syned ? "i" : "",
-                              nameISize(size), 
-                              dis_buf, nameIReg(size,gregOfRM(rm)));
+      DIP("imul%c %s, %s\n", nameISize(size), 
+                             dis_buf, nameIReg(size,gregOfRM(rm)));
       return alen+delta0;
    }
 }
@@ -3303,9 +3268,7 @@ UInt dis_imul_I_E_G ( UChar       sorb,
    IRType ty = szToITy(size);
    IRTemp te = newTemp(ty);
    IRTemp tl = newTemp(ty);
-   IRTemp resHi = newTemp(ty);
    IRTemp resLo = newTemp(ty);
-   IRTemp res2L = newTemp(doubleLengthType(ty));
 
    vassert(size == 1 || size == 2 || size == 4);
 
@@ -3325,12 +3288,9 @@ UInt dis_imul_I_E_G ( UChar       sorb,
 
    assign(tl, mkU(ty,d32));
 
-   assign( res2L, binop( mkSizedOp(ty, Iop_MullS8),
-                         mkexpr(te), mkexpr(tl) ));
-   assign( resHi, unop( mkSizedOp(ty, Iop_16HIto8), mkexpr(res2L) ));
-   assign( resLo, unop( mkSizedOp(ty, Iop_16to8), mkexpr(res2L) ));
+   assign( resLo, binop( mkSizedOp(ty, Iop_Mul8), mkexpr(te), mkexpr(tl) ));
 
-   setFlags_MUL ( ty, resHi, resLo, CC_OP_SMULB );
+   setFlags_MUL ( ty, te, tl, CC_OP_SMULB );
 
    putIReg(size, gregOfRM(rm), mkexpr(resLo));
 
@@ -3607,9 +3567,9 @@ static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
       Z,P,C,O correctly, but forces A and S to zero, whereas the Intel
       documentation implies A and S are unchanged. 
    */
-   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
-   stmt( IRStmt_Put( OFFB_CC_AUX, mkU32(0) ));
-   stmt( IRStmt_Put( OFFB_CC_RES,
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP1,
                      binop( Iop_And32,
                             binop(Iop_CmpF64, get_ST(0), get_ST(i)),
                             mkU32(0x45)
@@ -4970,8 +4930,8 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
                             binop(Iop_Sub8, mkexpr(tmpSH), mkU8(1) ),
                             mask))) );
 
-   setFlags_RES_RESus ( left_shift ? Iop_Shl32 : Iop_Sar32,
-                        tmpRes, tmpSubSh, ty, tmpSH );
+   setFlags_DEP1_DEP2_shift ( left_shift ? Iop_Shl32 : Iop_Sar32,
+                              tmpRes, tmpSubSh, ty, tmpSH );
 
    /* Put result back. */
 
@@ -5103,11 +5063,11 @@ UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
    }
  
    /* Side effect done; now get selected bit into Carry flag */
-      /* Flags: C=selected bit, O,S,Z,A,P undefined, so are set to zero. */
-   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
-   stmt( IRStmt_Put( OFFB_CC_AUX, mkU32(0) ));
+   /* Flags: C=selected bit, O,S,Z,A,P undefined, so are set to zero. */
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
    stmt( IRStmt_Put( 
-            OFFB_CC_RES,
+            OFFB_CC_DEP1,
             binop(Iop_And32,
                   binop(Iop_Shr32, 
                         unop(Iop_8Uto32, mkexpr(t_fetched)),
@@ -5175,10 +5135,10 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, UInt delta, Bool fwds )
 
    /* Flags: Z is 1 iff source value is zero.  All others 
       are undefined -- we force them to zero. */
-   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
-   stmt( IRStmt_Put( OFFB_CC_AUX, mkU32(0) ));
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
    stmt( IRStmt_Put( 
-            OFFB_CC_RES,
+            OFFB_CC_DEP1,
             IRExpr_Mux0X( mkexpr(src8),
                           /* src==0 */
                           mkU32(CC_MASK_Z),
@@ -5259,12 +5219,12 @@ void codegen_SAHF ( void )
       (calculate_flags_all() & CC_MASK_O)  -- retain the old O flag
       | (%AH & (CC_MASK_S|CC_MASK_Z|CC_MASK_A|CC_MASK_P|CC_MASK_C)
    */
-   UInt   mask_SZACP = CC_MASK_S|CC_MASK_Z|CC_MASK_A|CC_MASK_P|CC_MASK_C;
+   UInt   mask_SZACP = CC_MASK_S|CC_MASK_Z|CC_MASK_A|CC_MASK_C|CC_MASK_P;
    IRTemp oldflags   = newTemp(Ity_I32);
    assign( oldflags, mk_calculate_eflags_all() );
-   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
-   stmt( IRStmt_Put( OFFB_CC_AUX, mkU32(0) ));
-   stmt( IRStmt_Put( OFFB_CC_RES,
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP1,
          binop(Iop_Or32,
                binop(Iop_And32, mkexpr(oldflags), mkU32(CC_MASK_O)),
                binop(Iop_And32, 
@@ -5307,7 +5267,7 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
    IRType ty    = szToITy(size);
    IRTemp acc   = newTemp(ty);
    IRTemp src   = newTemp(ty);
-   IRTemp res   = newTemp(ty);
+   //IRTemp res   = newTemp(ty);
    IRTemp dest  = newTemp(ty);
    IRTemp dest2 = newTemp(ty);
    IRTemp acc2  = newTemp(ty);
@@ -5331,8 +5291,8 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
 
    assign( src, getIReg(size, gregOfRM(rm)) );
    assign( acc, getIReg(size, R_EAX) );
-   assign( res, binop( mkSizedOp(ty,Iop_Sub8), mkexpr(acc), mkexpr(dest) ));
-   setFlags_RES_AUX(Iop_Sub8, res, dest, ty);
+   //assign( res, binop( mkSizedOp(ty,Iop_Sub8), mkexpr(acc), mkexpr(dest) ));
+   setFlags_DEP1_DEP2(Iop_Sub8, acc, dest, ty);
    assign( cond8, unop(Iop_1Uto8, mk_calculate_condition(CondZ)) );
    assign( dest2, IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(src)) );
    assign( acc2,  IRExpr_Mux0X(mkexpr(cond8), mkexpr(dest), mkexpr(acc)) );
@@ -5517,7 +5477,7 @@ UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
       assign( tmpd,  loadLE(ty, mkexpr(addr)) );
       assign( tmpt0, getIReg(sz, gregOfRM(rm)) );
       assign( tmpt1, binop(mkSizedOp(ty,Iop_Add8), mkexpr(tmpd), mkexpr(tmpt0)) );
-      setFlags_RES_AUX( Iop_Add8, tmpt1, tmpt0, ty );
+      setFlags_DEP1_DEP2( Iop_Add8, tmpd, tmpt0, ty );
       storeLE( mkexpr(addr), mkexpr(tmpt1) );
       putIReg(sz, gregOfRM(rm), mkexpr(tmpd));
       DIP("xadd%c %s, %s\n",
@@ -8312,9 +8272,9 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t2), mkU32(sz)));
       /* t1 is the flag word.  Mask out everything except OSZACP and 
 	 set the flags thunk to CC_OP_COPY. */
-      stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
-      stmt( IRStmt_Put( OFFB_CC_AUX, mkU32(0) ));
-      stmt( IRStmt_Put( OFFB_CC_RES, 
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP1, 
 			binop(Iop_And32,
 			      mkexpr(t1), 
 			      mkU32( CC_MASK_C | CC_MASK_P | CC_MASK_A 
@@ -9175,7 +9135,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       /* =-=-=-=-=-=-=-=-=- MUL/IMUL =-=-=-=-=-=-=-=-=-= */
 
       case 0xAF: /* IMUL Ev, Gv */
-         delta = dis_mul_E_G ( sorb, sz, delta, True );
+         delta = dis_mul_E_G ( sorb, sz, delta );
          break;
 
       /* =-=-=-=-=-=-=-=-=- Jcond d32 -=-=-=-=-=-=-=-=-= */

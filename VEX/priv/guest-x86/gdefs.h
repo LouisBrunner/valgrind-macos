@@ -46,16 +46,27 @@ VexGuestLayout x86guest_layout;
 /*---------------------------------------------------------*/
 
 /* --- CLEAN HELPERS --- */
-extern UInt  calculate_eflags_all ( UInt cc_op, UInt cc_res, UInt cc_aux );
-extern UInt  calculate_eflags_c   ( UInt cc_op, UInt cc_res, UInt cc_aux );
+
+extern UInt  calculate_eflags_all ( UInt cc_op, 
+                                    UInt cc_dep1, UInt cc_dep2, UInt cc_ndep );
+
+extern UInt  calculate_eflags_c   ( UInt cc_op, 
+                                    UInt cc_dep1, UInt cc_dep2, UInt cc_ndep );
+
 extern UInt  calculate_condition  ( UInt/*Condcode*/ cond, 
-                                    UInt cc_op, UInt cc_res, UInt cc_aux );
+                                    UInt cc_op, 
+                                    UInt cc_dep1, UInt cc_dep2, UInt cc_ndep );
+
 extern UInt  calculate_FXAM ( UInt tag, ULong dbl );
+
 extern ULong calculate_RCR  ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz );
 
 /* --- DIRTY HELPERS --- */
+
 extern ULong loadF80le  ( UInt );
+
 extern void  storeF80le ( UInt, ULong );
+
 extern void  dirtyhelper_CPUID ( VexGuestX86State* );
 
 
@@ -84,84 +95,177 @@ extern void  dirtyhelper_CPUID ( VexGuestX86State* );
 #define FC_MASK_C1   (1 << 9)
 #define FC_MASK_C0   (1 << 8)
 
-/* %EFLAGS thunk descriptors.  This encoding is slightly non-obvious,
-   for the benefit of Memcheck.  The intention is to make RES be the
-   actual operation result -- or, in the case of multiply longs, at
-   least have a complete data dependency on the real result.  That
-   means that the AUX field needs to carry -- in the case of {S,U}MULL
-   -- a value which allows the real result to be recovered from the
-   RES field.
+/* %EFLAGS thunk descriptors.  A four-word thunk is used to record
+   details of the most recent flag-setting operation, so the flags can
+   be computed later if needed.  It is possible to do this a little
+   more efficiently using a 3-word thunk, but that makes it impossible
+   to describe the flag data dependencies sufficiently accurately for
+   Memcheck.  Hence 4 words are used, with minimal loss of efficiency.
 
-   Note, for cases in which some or all of the old flags are also an
-   input (INC, DEC, ROL, ROR) we could have chosen to xor in the old
-   flags into the RES field.  The effect would be that Memcheck then
-   considers the result of the operation to also be dependent on the
-   definedness of the old flags.  This seems a step too far -- if the
-   compiler creates conditional jumps/moves partially dependent on
-   flags it is unsure of the definedness of -- then it is generating
-   buggy code.  So we don't do this.
+   The four words are:
 
-   In short, we need to roll into the RES field all inputs to the
-   computation that we want Memcheck to think have a bearing on the
-   definedness of the result.  We then tell Memcheck that only the RES
-   field needs to have its definedness tracked, and the AUX and OP
-   fields can be ignored.  The upshot is that we need to put in the
-   AUX field whatever info is needed to actually compute the flags
-   given the potentially strange mixture of stuff in the RES field.  
+      CC_OP, which describes the operation.
+
+      CC_DEP1 and CC_DEP2.  These are arguments to the operation.
+         We want Memcheck to believe that the resulting flags are
+         data-dependent on both CC_DEP1 and CC_DEP2, hence the 
+         name DEP.
+
+      CC_NDEP.  This is a 3rd argument to the operation which is
+         sometimes needed.  We arrange things so that Memcheck does
+         not believe the resulting flags are data-dependent on CC_NDEP
+         ("not dependent").
+
+   To make Memcheck believe that (the definedness of) the encoded
+   flags depends only on (the definedness of) CC_DEP1 and CC_DEP2
+   requires two things:
+
+   (1) In the guest state layout info (x86guest_layout), CC_OP and
+       CC_NDEP are marked as always defined.
+
+   (2) When passing the thunk components to an evaluation function
+       (calculate_condition, calculate_eflags, calculate_eflags_c) the
+       IRCallee's mcx_mask must be set so as to exclude from
+       consideration all passed args except CC_DEP1 and CC_DEP2.
+
+   Strictly speaking only (2) is necessary for correctness.  However,
+   (1) helps efficiency in that since (2) means we never ask about the
+   definedness of CC_OP or CC_NDEP, we may as well not even bother to
+   track their definedness.
+
+   When building the thunk, it is always necessary to write words into
+   CC_DEP1 and CC_DEP2, even if those args are not used given the
+   CC_OP field (eg, CC_DEP2 is not used if CC_OP is CC_LOGIC1/2/4).
+   This is important because otherwise Memcheck could give false
+   positives as it does not understand the relationship between the
+   CC_OP field and CC_DEP1 and CC_DEP2, and so believes that the 
+   definedness of the stored flags always depends on both CC_DEP1 and
+   CC_DEP2.
+
+   However, it is only necessary to set CC_NDEP when the CC_OP value
+   requires it, because Memcheck ignores CC_NDEP, and the evaluation
+   functions do understand the CC_OP fields and will only examine
+   CC_NDEP for suitable values of CC_OP.
+
+   A summary of the field usages is:
+
+   Operation          DEP1               DEP2               NDEP
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   add/sub/mul        first arg          second arg         unused
+
+   adc/sbb            first arg          (second arg)
+                                         XOR old_carry      old_carry
+
+   and/or/xor         result             zero               unused
+
+   inc/dec            result             zero               old_carry
+
+   shl/shr/sar        result             subshifted-        unused
+                                         result
+
+   rol/ror            result             zero               old_flags
+
+   copy               old_flags          zero               unused.
+
+
+   Therefore Memcheck will believe the following:
+
+   * add/sub/mul -- definedness of result flags depends on definedness
+     of both args.
+
+   * adc/sbb -- definedness of result flags depends on definedness of
+     both args and definedness of the old C flag.  Because only two
+     DEP fields are available, the old C flag is XOR'd into the second
+     arg so that Memcheck sees the data dependency on it.  That means
+     the NDEP field must contain a second copy of the old C flag
+     so that the evaluation functions can correctly recover the second
+     arg.
+
+   * and/or/xor are straightforward -- definedness of result flags
+     depends on definedness of result value.
+
+   * inc/dec -- definedness of result flags depends only on
+     definedness of result.  This isn't really true -- it also depends
+     on the old C flag.  However, we don't want Memcheck to see that,
+     and so the old C flag must be passed in NDEP and not in DEP2.
+     It's inconceivable that a compiler would generate code that puts
+     the C flag in an undefined state, then does an inc/dec, which
+     leaves C unchanged, and then makes a conditional jump/move based
+     on C.  So our fiction seems a good approximation.
+
+   * shl/shr/sar -- straightforward, again, definedness of result
+     flags depends on definedness of result value.  The subshifted
+     value (value shifted one less) is also needed, but its
+     definedness is the same as the definedness of the shifted value.
+
+   * rol/ror -- these only set O and C, and leave A Z C P alone.
+     However it seems prudent (as per inc/dec) to say the definedness
+     of all resulting flags depends on the definedness of the result,
+     hence the old flags must go in as NDEP and not DEP2.
+
+   * rcl/rcr are too difficult to do in-line, and so are done by a
+     helper function.  They are not part of this scheme.  The helper
+     function takes the value to be rotated, the rotate amount and the
+     old flags, and returns the new flags and the rotated value.
+     Since the helper's mcx_mask does not have any set bits, Memcheck
+     will lazily propagate undefinedness from any of the 3 args into 
+     both results (flags and actual value).
 */
 enum {
-    CC_OP_COPY,    /* RES = current flags, AUX = 0, do nothing */
+    CC_OP_COPY,    /* DEP1 = current flags, DEP2 = 0, NDEP = unused */
+                   /* just copy DEP1 to output */
 
-    CC_OP_ADDB,    /* RES = argL+argR, AUX = argR */
-    CC_OP_ADDW,
+    CC_OP_ADDB,    /* 1 */
+    CC_OP_ADDW,    /* 2 DEP1 = argL, DEP2 = argR, NDEP = unused */
     CC_OP_ADDL,    /* 3 */
 
-    CC_OP_ADCB,    /* RES = argL+argR, AUX = argR */
-    CC_OP_ADCW,
-    CC_OP_ADCL,    /* 6 */
+    CC_OP_SUBB,    /* 4 */
+    CC_OP_SUBW,    /* 5 DEP1 = argL, DEP2 = argR, NDEP = unused */
+    CC_OP_SUBL,    /* 6 */
 
-    CC_OP_SUBB,    /* RES = argL-argR, AUX = argR */
-    CC_OP_SUBW,
-    CC_OP_SUBL,    /* 9 */
+    CC_OP_ADCB,    /* 7 */
+    CC_OP_ADCW,    /* 8 DEP1 = argL, DEP2 = argR ^ oldCarry, NDEP = oldCarry */
+    CC_OP_ADCL,    /* 9 */
 
-    CC_OP_SBBB,    /* RES = argL-argR, AUX = argR */
-    CC_OP_SBBW,
+    CC_OP_SBBB,    /* 10 */
+    CC_OP_SBBW,    /* 11 DEP1 = argL, DEP2 = argR ^ oldCarry, NDEP = oldCarry */
     CC_OP_SBBL,    /* 12 */
 
-    CC_OP_LOGICB,  /* RES = and/or/xor(argL,argR), AUX = 0 */
-    CC_OP_LOGICW,
+    CC_OP_LOGICB,  /* 13 */
+    CC_OP_LOGICW,  /* 14 DEP1 = result, DEP2 = 0, NDEP = unused */
     CC_OP_LOGICL,  /* 15 */
 
-    CC_OP_INCB,    /* RES = arg+1, AUX = old C flag (0 or 1) */
-    CC_OP_INCW,
+    CC_OP_INCB,    /* 16 */
+    CC_OP_INCW,    /* 17 DEP1 = result, DEP2 = 0, NDEP = oldCarry (0 or 1) */
     CC_OP_INCL,    /* 18 */
 
-    CC_OP_DECB,    /* RES = arg-1, AUX = old C flag (0 or 1) */
-    CC_OP_DECW,
+    CC_OP_DECB,    /* 19 */
+    CC_OP_DECW,    /* 20 DEP1 = result, DEP2 = 0, NDEP = oldCarry (0 or 1) */
     CC_OP_DECL,    /* 21 */
 
-    CC_OP_SHLB,    /* RES = res, AUX = res' */
-    CC_OP_SHLW,    /* where res' is like res but shifted one bit less */
+    CC_OP_SHLB,    /* 22 DEP1 = res, DEP2 = res', NDEP = unused */
+    CC_OP_SHLW,    /* 23 where res' is like res but shifted one bit less */
     CC_OP_SHLL,    /* 24 */
 
-    CC_OP_SARB,    /* RES = res, AUX = res' */
-    CC_OP_SARW,    /* where res' is like res but shifted one bit less */
-    CC_OP_SARL,    /* 27 */
+    CC_OP_SHRB,    /* 25 DEP1 = res, DEP2 = res', NDEP = unused */
+    CC_OP_SHRW,    /* 26 where res' is like res but shifted one bit less */
+    CC_OP_SHRL,    /* 27 */
 
-    CC_OP_ROLB,    /* RES = res, AUX = old flags */
-    CC_OP_ROLW,
+    CC_OP_ROLB,    /* 28 */
+    CC_OP_ROLW,    /* 29 DEP1 = res, DEP2 = 0, NDEP = old flags */
     CC_OP_ROLL,    /* 30 */
 
-    CC_OP_RORB,    /* RES = res, AUX = old flags */
-    CC_OP_RORW,
+    CC_OP_RORB,    /* 31 */
+    CC_OP_RORW,    /* 32 DEP1 = res, DEP2 = 0, NDEP = old flags */
     CC_OP_RORL,    /* 33 */
 
-    CC_OP_UMULB,   /* RES = hiHalf(result) ^ loHalf(result) */
-    CC_OP_UMULW,   /* AUX = loHalf(result) */
+    CC_OP_UMULB,   /* 34 */
+    CC_OP_UMULW,   /* 35 DEP1 = argL, DEP2 = argR, NDEP = unused */
     CC_OP_UMULL,   /* 36 */
 
-    CC_OP_SMULB,   /* RES = hiHalf(result) ^ loHalf(result) */
-    CC_OP_SMULW,   /* AUX = loHalf(result) */
+    CC_OP_SMULB,   /* 37 */
+    CC_OP_SMULW,   /* 38 DEP1 = argL, DEP2 = argR, NDEP = unused */
     CC_OP_SMULL,   /* 39 */
 
     CC_OP_NUMBER

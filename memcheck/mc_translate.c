@@ -1076,7 +1076,10 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          }
 
 	 /* SSE ins referencing scalar integer registers */
-	 case SSE3g_RegWr:
+         case SSE2g_RegWr:
+         case SSE2g1_RegWr:
+         case SSE2e1_RegRd:
+         case SSE3g_RegWr:
          case SSE3e_RegRd:
          case SSE3e_RegWr: 
          case SSE3g1_RegWr:

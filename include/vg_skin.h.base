@@ -710,6 +710,32 @@ typedef
       SSE2a_MemRd,
       SSE2a_MemWr,
 
+      /* 4 bytes, writes an integer register.  Insns of the form
+         bbbbbbbb:bbbbbbbb:11 ireg bbb.
+         Held in val1[15:0] and val2[7:0], and ireg is to be replaced
+         at codegen time by a reference to the relevant RealReg.
+         Transfer is always at size 4.  Arg3 holds this Temp/Real Reg.
+      */
+      SSE2g_RegWr,
+
+      /* 5 bytes, writes an integer register.  Insns of the form
+         bbbbbbbb:bbbbbbbb:11 ireg bbb :bbbbbbbb. Held in
+         val1[15:0] and val2[7:0] and lit32[7:0], and ireg is to be
+         replaced at codegen time by a reference to the relevant
+         RealReg.  Transfer is always at size 4.  Arg3 holds this
+         Temp/Real Reg.
+      */
+      SSE2g1_RegWr,
+
+      /* 5 bytes, reads an integer register.  Insns of the form
+         bbbbbbbb:bbbbbbbb:11 bbb ireg :bbbbbbbb. Held in
+         val1[15:0] and val2[7:0] and lit32[7:0], and ireg is to be
+         replaced at codegen time by a reference to the relevant
+         RealReg.  Transfer is always at size 4.  Arg3 holds this
+         Temp/Real Reg.
+      */
+      SSE2e1_RegRd,
+
       /* 4 bytes, no memrefs, no iregdefs, copy exactly to the
          output.  Held in val1[15:0] and val2[15:0]. */
       SSE4,

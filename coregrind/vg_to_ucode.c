@@ -3397,6 +3397,193 @@ Addr dis_SSE2_load_store_or_mov ( UCodeBlock* cb,
    return eip;
 }
 
+
+/* Simple SSE operations, either 
+       op   (src)xmmreg, (dst)mmxreg
+   or
+       op   (src)address, (dst)mmxreg
+   2 opcode bytes.
+   Supplied eip points to the first address mode byte.
+*/
+static
+Addr dis_SSE2_to_MMX ( UCodeBlock *cb,
+                       UChar sorb,
+                       Addr eip,
+                       Int sz, 
+                       Char* name, 
+                       UChar opc1, 
+                       UChar opc2 )
+{
+   UChar dis_buf[50];
+   UChar modrm = getUChar(eip);
+   if (epartIsReg(modrm)) {
+      /* Completely internal SSE insn. */
+      uInstr2(cb, SSE3, 0,  /* ignore sz for internal ops */
+                  Lit16, (((UShort)opc1) << 8) | (UShort)opc2,
+                  Lit16, (UShort)modrm );
+      if (dis)
+         VG_(printf)("%s %s, %s\n", name, 
+                     nameXMMReg(eregOfRM(modrm)), 
+                     nameMMXReg(gregOfRM(modrm)) );
+      eip++;
+   } else {
+      UInt pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+      Int  tmpa = LOW24(pair);
+      eip += HI8(pair);
+      uInstr3(cb, SSE2a_MemRd, sz,
+                  Lit16, (((UShort)(opc1)) << 8) | ((UShort)opc2),
+                  Lit16, ((UShort)modrm),
+                  TempReg, tmpa);
+      if (dis)
+         VG_(printf)("%s %s, %s\n", 
+                     name,
+                     dis_buf,
+                     nameMMXReg(gregOfRM(modrm)));
+   }
+   return eip;
+}
+
+
+/* Simple SSE operations, either 
+       op   (src)mmxreg, (dst)xmmreg
+   or
+       op   (src)address, (dst)xmmreg
+   2 opcode bytes.
+   Supplied eip points to the first address mode byte.
+*/
+static
+Addr dis_SSE2_from_MMX ( UCodeBlock *cb,
+                         UChar sorb,
+                         Addr eip,
+                         Int sz, 
+                         Char* name, 
+                         UChar opc1, 
+                         UChar opc2 )
+{
+   UChar dis_buf[50];
+   UChar modrm = getUChar(eip);
+   if (epartIsReg(modrm)) {
+      /* Completely internal SSE insn. */
+      uInstr2(cb, SSE3, 0,  /* ignore sz for internal ops */
+                  Lit16, (((UShort)opc1) << 8) | (UShort)opc2,
+                  Lit16, (UShort)modrm );
+      if (dis)
+         VG_(printf)("%s %s, %s\n", name, 
+                     nameMMXReg(eregOfRM(modrm)), 
+                     nameXMMReg(gregOfRM(modrm)) );
+      eip++;
+   } else {
+      UInt pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+      Int  tmpa = LOW24(pair);
+      eip += HI8(pair);
+      uInstr3(cb, SSE2a_MemRd, sz,
+                  Lit16, (((UShort)(opc1)) << 8) | ((UShort)opc2),
+                  Lit16, ((UShort)modrm),
+                  TempReg, tmpa);
+      if (dis)
+         VG_(printf)("%s %s, %s\n", 
+                     name,
+                     dis_buf,
+                     nameXMMReg(gregOfRM(modrm)));
+   }
+   return eip;
+}
+
+
+/* Simple SSE operations, either 
+       op   (src)xmmreg, (dst)mmxreg
+   or
+       op   (src)address, (dst)mmxreg
+   3 opcode bytes.
+   Supplied eip points to the first address mode byte.
+*/
+static
+Addr dis_SSE3_to_MMX ( UCodeBlock *cb,
+                       UChar sorb,
+                       Addr eip,
+                       Int sz,
+                       Char* name, 
+                       UChar opc1, 
+                       UChar opc2, 
+                       UChar opc3 )
+{
+   UChar dis_buf[50];
+   UChar modrm = getUChar(eip);
+   if (epartIsReg(modrm)) {
+      /* Completely internal SSE insn. */
+      uInstr2(cb, SSE4, 0,  /* ignore sz for internal ops */
+                  Lit16, (((UShort)opc1) << 8) | (UShort)opc2,
+                  Lit16, (((UShort)opc3) << 8) | (UShort)modrm );
+      if (dis)
+         VG_(printf)("%s %s, %s\n", name, 
+                     nameXMMReg(eregOfRM(modrm)), 
+                     nameMMXReg(gregOfRM(modrm)) );
+      eip++;
+   } else {
+      UInt pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+      Int  tmpa = LOW24(pair);
+      eip += HI8(pair);
+      uInstr3(cb, SSE3a_MemRd, sz,
+                  Lit16, (((UShort)(opc1)) << 8) | ((UShort)opc2),
+                  Lit16, (((UShort)(opc3)) << 8) | ((UShort)modrm),
+                  TempReg, tmpa);
+      if (dis)
+         VG_(printf)("%s %s, %s\n", 
+                     name,
+                     dis_buf,
+                     nameMMXReg(gregOfRM(modrm)));
+   }
+   return eip;
+}
+
+
+/* Simple SSE operations, either 
+       op   (src)mmxreg, (dst)xmmreg
+   or
+       op   (src)address, (dst)xmmreg
+   3 opcode bytes.
+   Supplied eip points to the first address mode byte.
+*/
+static
+Addr dis_SSE3_from_MMX ( UCodeBlock *cb,
+                         UChar sorb,
+                         Addr eip,
+                         Int sz,
+                         Char* name, 
+                         UChar opc1, 
+                         UChar opc2, 
+                         UChar opc3 )
+{
+   UChar dis_buf[50];
+   UChar modrm = getUChar(eip);
+   if (epartIsReg(modrm)) {
+      /* Completely internal SSE insn. */
+      uInstr2(cb, SSE4, 0,  /* ignore sz for internal ops */
+                  Lit16, (((UShort)opc1) << 8) | (UShort)opc2,
+                  Lit16, (((UShort)opc3) << 8) | (UShort)modrm );
+      if (dis)
+         VG_(printf)("%s %s, %s\n", name, 
+                     nameMMXReg(eregOfRM(modrm)), 
+                     nameXMMReg(gregOfRM(modrm)) );
+      eip++;
+   } else {
+      UInt pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+      Int  tmpa = LOW24(pair);
+      eip += HI8(pair);
+      uInstr3(cb, SSE3a_MemRd, sz,
+                  Lit16, (((UShort)(opc1)) << 8) | ((UShort)opc2),
+                  Lit16, (((UShort)(opc3)) << 8) | ((UShort)modrm),
+                  TempReg, tmpa);
+      if (dis)
+         VG_(printf)("%s %s, %s\n", 
+                     name,
+                     dis_buf,
+                     nameXMMReg(gregOfRM(modrm)));
+   }
+   return eip;
+}
+
+
 static 
 void dis_push_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
 {
@@ -3596,6 +3783,57 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* CLFLUSH -- flush cache line */
+   if (insn[0] == 0x0F && insn[1] == 0xAE
+       && (!epartIsReg(insn[2]))
+       && (gregOfRM(insn[2]) == 7))
+   {
+      vg_assert(sz == 4);
+      pair = disAMode ( cb, sorb, eip+2, dis?dis_buf:NULL );
+      t1   = LOW24(pair);
+      eip += 2+HI8(pair);
+      uInstr3(cb, SSE2a_MemRd, 0,  /* ignore sz for internal ops */
+                  Lit16, (((UShort)0x0F) << 8) | (UShort)0xAE,
+                  Lit16, (UShort)insn[2],
+                  TempReg, t1 );
+      if (dis)
+         VG_(printf)("clflush %s\n", dis_buf);
+      goto decode_success;
+   }
+
+   /* CVTPI2PS (0x0F,0x2A) -- mm/m64, xmm */
+   /* CVTPI2PD (0x66,0x0F,0x2A) -- mm/m64, xmm */
+   if (insn[0] == 0x0F && insn[1] == 0x2A) {
+      if (sz == 4) {
+         eip = dis_SSE2_from_MMX
+                  ( cb, sorb, eip+2, 8, "cvtpi2ps",
+                        insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_from_MMX
+                  ( cb, sorb, eip+2, 8, "cvtpi2pd",
+                        0x66, insn[0], insn[1] );
+      }
+      goto decode_success;
+   }
+
+   /* CVTTPS2PI (0x0F,0x2C) -- xmm/m64, mm */
+   /* CVTPS2PI (0x0F,0x2D) -- xmm/m64, mm */
+   /* CVTTPD2PI (0x66,0x0F,0x2C) -- xmm/m128, mm */
+   /* CVTPD2PI (0x66,0x0F,0x2D) -- xmm/m128, mm */
+   if (insn[0] == 0x0F
+       && (insn[1] == 0x2C || insn[1] == 0x2D)) {
+      if (sz == 4) {
+         eip = dis_SSE2_to_MMX
+                  ( cb, sorb, eip+2, 8, "cvt{t}ps2pi",
+                        insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_to_MMX
+                  ( cb, sorb, eip+2, 16, "cvt{t}pd2pi",
+                        0x66, insn[0], insn[1] );
+      }
+      goto decode_success;
+   }
+
    /* CVTTSD2SI (0xF2,0x0F,0x2C) -- convert a double-precision float
       value in memory or xmm reg to int and put it in an ireg.
       Truncate. */
@@ -3695,6 +3933,20 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* CVTPS2PD -- convert two packed floats to two packed doubles. */
+   /* 0x66: CVTPD2PS -- convert two packed doubles to two packed floats. */
+   if (insn[0] == 0x0F && insn[1] == 0x5A) {
+      vg_assert(sz == 2 || sz == 4);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 8, "cvtps2pd",
+                                         insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "cvtpd2ps",
+                                     0x66, insn[0], insn[1] );
+      }
+      goto decode_success;
+   }
+
    /* CVTSS2SD -- convert one single float to double. */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5A) {
       vg_assert(sz == 4);
@@ -3708,6 +3960,60 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       vg_assert(sz == 4);
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "cvtsd2ss",
                                       insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* CVTDQ2PS -- convert four ints to four packed floats. */
+   /* 0x66: CVTPS2DQ -- convert four packed floats to four ints. */
+   if (insn[0] == 0x0F && insn[1] == 0x5B) {
+      vg_assert(sz == 2 || sz == 4);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "cvtdq2ps",
+                                         insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "cvtps2dq",
+                                         0x66, insn[0], insn[1] );
+      }
+      goto decode_success;
+   }
+
+   /* CVTPD2DQ -- convert two packed doubles to two ints. */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0xE6) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 8, "cvtpd2dq",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* CVTTPD2DQ -- convert two packed doubles to two ints with truncation. */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0xE6) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "cvttpd2dq",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* CVTDQ2PD -- convert two ints to two packed doubles. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xE6) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "cvtdq2pd",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* CVTTPS2DQ -- convert four packed floats to four ints with truncation. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5B) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 16, "cvttps2dq",
+                                      insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* CMPSS -- compare scalar floats. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xC2) {
+      vg_assert(sz == 4);
+      eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+3, 8, "cmpss",
+                                       insn[0], insn[1], insn[2] );
       goto decode_success;
    }
 
@@ -3739,6 +4045,22 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+2, 16, 
                                            "pshufd",
                                            0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* PSHUFLW */
+   if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x70) {
+      eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+3, 16, 
+                                           "pshuflw",
+                                           insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* PSHUFHW */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x70) {
+      eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+3, 16, 
+                                           "pshufhw",
+                                           insn[0], insn[1], insn[2] );
       goto decode_success;
    }
 
@@ -3882,6 +4204,20 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* MINPS */
+   /* 0x66: MINPD */
+   if (insn[0] == 0x0F && insn[1] == 0x5D) {
+      vg_assert(sz == 4 || sz == 2);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "minps",
+                                         insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "minpd",
+                                         0x66, insn[0], insn[1] );
+      }
+      goto decode_success;
+   }
+
    /* 0xF3: MAXSD */
    /* 0xF3: MAXSS */
    if ((insn[0] == 0xF2 || insn[0] == 0xF3) 
@@ -3944,11 +4280,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* ORPD (src)xmmreg-or-mem, (dst)xmmreg */
-   if (sz == 2
-       && insn[0] == 0x0F && insn[1] == 0x56) {
+   /* ORPS */
+   /* 0x66: ORPD (src)xmmreg-or-mem, (dst)xmmreg */
+   if (insn[0] == 0x0F && insn[1] == 0x56) {
+      vg_assert(sz == 4 || sz == 2);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "orps",
+                                         insn[0], insn[1] );
+      } else {
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "orpd",
                                       0x66, insn[0], insn[1] );
+      }
       goto decode_success;
    }
 
@@ -4013,23 +4355,25 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
-   /* 0xE0: PAVGB(src)xmmreg-or-mem, (dst)xmmreg, size 4 */
-   if (sz == 4
-       && insn[0] == 0x0F 
-       && insn[1] == 0xE0 ) {
-      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "pavg{b,w}",
-                                      insn[0], insn[1] );
+ 
+   /* 0xF6: PSADBW(src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0xF6) {
+     eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psadbw",
+                                      0x66, insn[0], insn[1] );
       goto decode_success;
    }
  
    /* 0x60: PUNPCKLBW (src)xmmreg-or-mem, (dst)xmmreg */
    /* 0x61: PUNPCKLWD (src)xmmreg-or-mem, (dst)xmmreg */
    /* 0x62: PUNPCKLDQ (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x6C: PUNPCKQLQDQ (src)xmmreg-or-mem, (dst)xmmreg */
    if (sz == 2
        && insn[0] == 0x0F 
-       && (insn[1] == 0x60 || insn[1] == 0x61 || insn[1] == 0x62)) {
+       && (insn[1] == 0x60 || insn[1] == 0x61
+           || insn[1] == 0x62 || insn[1] == 0x6C)) {
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
-                                      "punpckl{bw,wd,dq}",
+                                      "punpckl{bw,wd,dq,qdq}",
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
@@ -4037,11 +4381,13 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* 0x68: PUNPCKHBW (src)xmmreg-or-mem, (dst)xmmreg */
    /* 0x69: PUNPCKHWD (src)xmmreg-or-mem, (dst)xmmreg */
    /* 0x6A: PUNPCKHDQ (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x6D: PUNPCKHQDQ (src)xmmreg-or-mem, (dst)xmmreg */
    if (sz == 2
        && insn[0] == 0x0F 
-       && (insn[1] == 0x68 || insn[1] == 0x69 || insn[1] == 0x6A)) {
+       && (insn[1] == 0x68 || insn[1] == 0x69
+           || insn[1] == 0x6A || insn[1] == 0x6D)) {
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
-                                      "punpckh{bw,wd,dq}",
+                                      "punpckh{bw,wd,dq,qdq}",
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
@@ -4142,12 +4488,21 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* 0xE4: PMULHUW(src)xmmreg-or-mem, (dst)xmmreg */
    /* 0xE5: PMULHW(src)xmmreg-or-mem, (dst)xmmreg */
    /* 0xD5: PMULLW(src)xmmreg-or-mem, (dst)xmmreg */
    if (sz == 2
        && insn[0] == 0x0F 
-       && (insn[1] == 0xE5 || insn[1] == 0xD5)) {
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmul{h,l}w",
+       && (insn[1] == 0xE4 || insn[1] == 0xE5 || insn[1] == 0xD5)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmul{hu,h,l}w",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xD5: PMULUDQ(src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0xF4) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmuludq",
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
@@ -4291,6 +4646,26 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* MOVDQ2Q -- move low 4 bytes of XMM reg to MMX reg. */
+   if (insn[0] == 0xF2
+       && insn[1] == 0x0F
+       && insn[2] == 0xD6) {
+      eip = dis_SSE3_to_MMX
+               ( cb, sorb, eip+3, 8, "movdq2q",
+                     insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
+   /* MOVQ2DQ -- move MMX reg to low 4 bytes of XMM reg. */
+   if (insn[0] == 0xF3
+       && insn[1] == 0x0F
+       && insn[2] == 0xD6) {
+      eip = dis_SSE3_from_MMX
+               ( cb, sorb, eip+3, 8, "movq2dq",
+                     insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
    /* MOVSS -- move 4 bytes of XMM reg to/from XMM reg or mem. */
    if (insn[0] == 0xF3
        && insn[1] == 0x0F 
@@ -4352,19 +4727,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       Bool is_store = insn[1]==0x7F;
       eip = dis_SSE3_load_store_or_mov
                (cb, sorb, eip+2, 16, is_store, "movdqa", 
-                    0x66, insn[0], insn[1] );
-      goto decode_success;
-   }
-
-   /* MOVLPD -- 8-byte load/store. */
-   if (sz == 2 
-       && insn[0] == 0x0F 
-       && (insn[1] == 0x12 || insn[1] == 0x13)) {
-      Bool is_store = insn[1]==0x13;
-      /* Cannot be used for reg-reg moves, according to Intel docs. */
-      vg_assert(!epartIsReg(insn[2]));
-      eip = dis_SSE3_load_store_or_mov
-               (cb, sorb, eip+2, 8, is_store, "movlpd", 
                     0x66, insn[0], insn[1] );
       goto decode_success;
    }
@@ -4522,20 +4884,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* MOVLPS -- 8-byte load/store.  How is this different from MOVLPS
-      ? */
-   if (insn[0] == 0x0F 
-       && (insn[1] == 0x12 || insn[1] == 0x13)) {
-      Bool is_store = insn[1]==0x13;
-      vg_assert(sz == 4);
-      /* Cannot be used for reg-reg moves, according to Intel docs. */
-      //      vg_assert(!epartIsReg(insn[2]));
-      eip = dis_SSE2_load_store_or_mov
-               (cb, sorb, eip+2, 8, is_store, "movlps", 
-                    insn[0], insn[1] );
-      goto decode_success;
-   }
-
    /* 0xF3: RCPSS -- reciprocal of scalar float */
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x53) {
       vg_assert(sz == 4);
@@ -4547,19 +4895,31 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
    /* MOVMSKPD -- extract 2 sign bits from a xmm reg and copy them to 
       an ireg.  Top 30 bits of ireg are set to zero. */
-   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x50) {
+   /* MOVMSKPS -- extract 4 sign bits from a xmm reg and copy them to 
+      an ireg.  Top 28 bits of ireg are set to zero. */
+   if (insn[0] == 0x0F && insn[1] == 0x50) {
+      vg_assert(sz == 4 || sz == 2);
       modrm = insn[2];
       /* Intel docs don't say anything about a memory source being
 	 allowed here. */
       vg_assert(epartIsReg(modrm));
       t1 = newTemp(cb);
-      uInstr3(cb, SSE3g_RegWr, 4,
-                  Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
-                  Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
-                  TempReg, t1 );
-      uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
+      if (sz == 4) {
+         uInstr3(cb, SSE2g_RegWr, 4,
+                     Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
+                     Lit16, (UShort)modrm,
+                     TempReg, t1 );
+         uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
+      } else {
+         uInstr3(cb, SSE3g_RegWr, 4,
+                     Lit16, (((UShort)0x66) << 8) | (UShort)insn[0],
+                     Lit16, (((UShort)insn[1]) << 8) | (UShort)modrm,
+                     TempReg, t1 );
+         uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
+      }
       if (dis)
-         VG_(printf)("movmskpd %s, %s\n", 
+         VG_(printf)("movmskp%c %s, %s\n",
+                      sz == 4 ? 's' : 'd',
                       nameXMMReg(eregOfRM(modrm)),
                       nameIReg(4,gregOfRM(modrm)));
       eip += 3;
@@ -4580,16 +4940,55 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* MOVHPD -- 8-byte load/store. */
-   if (sz == 2 
-       && insn[0] == 0x0F 
+   /* MOVHLPS -- move two packed floats from high quadword to low quadword */
+   /* MOVLPS -- load/store two packed floats to/from low quadword. */
+   /* MOVLPD -- load/store packed double to/from low quadword. */
+   if (insn[0] == 0x0F 
+       && (insn[1] == 0x12 || insn[1] == 0x13)) {
+      Bool is_store = insn[1]==0x13;
+      vg_assert(sz == 4 || sz == 2);
+      if (sz == 4) {
+         if (epartIsReg(insn[2])) {
+            vg_assert(insn[1]==0x12);
+            eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "movhlps",
+                                            insn[0], insn[1] );
+         } else {
+            eip = dis_SSE2_load_store_or_mov
+                     (cb, sorb, eip+2, 8, is_store, "movlps", 
+                          insn[0], insn[1] );
+         }
+      } else {
+         vg_assert(!epartIsReg(insn[2]));
+         eip = dis_SSE3_load_store_or_mov
+                  (cb, sorb, eip+2, 8, is_store, "movlpd", 
+                       0x66, insn[0], insn[1] );
+      }
+      goto decode_success;
+   }
+
+   /* MOVLHPS -- move two packed floats from low quadword to high quadword */
+   /* MOVHPS -- load/store two packed floats to/from high quadword. */
+   /* MOVHPD -- load/store packed double to/from high quadword. */
+   if (insn[0] == 0x0F 
        && (insn[1] == 0x16 || insn[1] == 0x17)) {
       Bool is_store = insn[1]==0x17;
-      /* Cannot be used for reg-reg moves, according to Intel docs. */
+      vg_assert(sz == 4 || sz == 2);
+      if (sz == 4) {
+         if (epartIsReg(insn[2])) {
+            vg_assert(insn[1]==0x16);
+            eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "movlhps",
+                                            insn[0], insn[1] );
+         } else {
+            eip = dis_SSE2_load_store_or_mov
+                     (cb, sorb, eip+2, 8, is_store, "movhps", 
+                          insn[0], insn[1] );
+         }
+      } else {
       vg_assert(!epartIsReg(insn[2]));
       eip = dis_SSE3_load_store_or_mov
                (cb, sorb, eip+2, 8, is_store, "movhpd", 
                     0x66, insn[0], insn[1] );
+      }
       goto decode_success;
    }
 
@@ -4614,28 +5013,28 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* CVTDQ2PD -- convert one single double. to float. */
-   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xE6) {
-      vg_assert(sz == 4);
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+3, 8, "cvtdq2pd",
-                                      insn[0], insn[1], insn[2] );
-      goto decode_success;
-   }
-
-   /* CVTPD2PS -- convert two doubles to two floats. */
-   if (sz == 2 &&
-       insn[0] == 0x0F && insn[1] == 0x5A) {
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "cvtpd2ps",
+   /* sz==4: SQRTPS: square root of packed float. */
+   /* sz==2: SQRTPD: square root of packed double. */
+   if (insn[0] == 0x0F && insn[1] == 0x51) {
+      vg_assert(sz == 2 || sz == 4);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, 
+                                         "sqrtps",
+                                         insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
+                                         "sqrtpd",
                                  0x66, insn[0], insn[1] );
+      }
       goto decode_success;
    }
 
-   /* SQRTPD: square root of packed double. */
-   if (sz == 2
-       && insn[0] == 0x0F && insn[1] == 0x51) {
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
-                                      "sqrtpd",
-                                      0x66, insn[0], insn[1] );
+   /* RSQRTPS: square root reciprocal of packed float. */
+   if (insn[0] == 0x0F && insn[1] == 0x52) {
+      vg_assert(sz == 4);
+      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, 
+                                      "rsqrtps",
+                                      insn[0], insn[1] );
       goto decode_success;
    }
 
@@ -6072,6 +6471,24 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          eip = dis_movx_E_G ( cb, sorb, eip, 2, 4, True );
          break;
 
+      /* =-=-=-=-=-=-=-=-=-=-= MOVNTI -=-=-=-=-=-=-=-=-= */
+
+      case 0xC3: /* MOVNTI Gv,Ev */
+         vg_assert(sz == 4);
+         modrm = getUChar(eip);
+         vg_assert(!epartIsReg(modrm));
+         t1 = newTemp(cb);
+         uInstr2(cb, GET, 4, ArchReg, gregOfRM(modrm), TempReg, t1);
+         pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
+         t2 = LOW24(pair);
+         eip += HI8(pair);
+         uInstr2(cb, STORE, 4, TempReg, t1, TempReg, t2);
+         if (dis)
+           VG_(printf)("movnti %s,%s\n",
+                       nameIReg(4,gregOfRM(modrm)),
+                       dis_buf);
+         break;
+
       /* =-=-=-=-=-=-=-=-=- MUL/IMUL =-=-=-=-=-=-=-=-=-= */
 
       case 0xAF: /* IMUL Ev, Gv */
@@ -6428,6 +6845,12 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "padd", True );
          break;
 
+      case 0xD4: 
+         /* PADDQ (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "paddq", False );
+         break;
+
       case 0xEC: case 0xED:
          /* PADDSgg (src)mmxreg-or-mem, (dst)mmxreg */
          vg_assert(sz == 4);
@@ -6440,7 +6863,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "paddus", True );
          break;
 
-      case 0xF8: case 0xF9: case 0xFA:
+      case 0xF8: case 0xF9: case 0xFA: case 0xFB:
          /* PSUBgg (src)mmxreg-or-mem, (dst)mmxreg */
          vg_assert(sz == 4);
          eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psub", True );
@@ -6458,6 +6881,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psubus", True );
          break;
 
+      case 0xE4: /* PMULHUW (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pmulhuw", False );
+         break;
+
       case 0xE5: /* PMULHW (src)mmxreg-or-mem, (dst)mmxreg */
          vg_assert(sz == 4);
          eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pmulhw", False );
@@ -6466,6 +6894,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       case 0xD5: /* PMULLW (src)mmxreg-or-mem, (dst)mmxreg */
          vg_assert(sz == 4);
          eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pmullw", False );
+         break;
+
+      case 0xF4: /* PMULUDQ (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pmuludq", False );
          break;
 
       case 0xF5: /* PMADDWD (src)mmxreg-or-mem, (dst)mmxreg */
@@ -6548,6 +6981,105 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          /* PSRAgg (src)mmxreg-or-mem, (dst)mmxreg */
          vg_assert(sz == 4);
          eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psra", True );
+         break;
+
+      case 0xDA:
+         /* PMINUB (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pminub", False );
+         break;
+
+      case 0xDE:
+         /* PMAXUB (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pmaxub", False );
+         break;
+
+      case 0xEA:
+         /* PMINSW (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pminsw", False );
+         break;
+
+      case 0xEE:
+         /* PMAXSW (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pmaxsw", False );
+         break;
+
+      case 0xE0:
+         /* PAVGB (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pavgb", False );
+         break;
+
+      case 0xE3:
+         /* PAVGW (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "pavgw", False );
+         break;
+
+      case 0xF6:
+         /* PSADBW (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psadbw", False );
+         break;
+
+      case 0xD7:
+         /* PMOVMSKB (src)mmxreg, (dst)ireg */
+         vg_assert(sz == 4);
+         modrm = getUChar(eip);
+         vg_assert(epartIsReg(modrm));
+         t1 = newTemp(cb);
+         uInstr3(cb, SSE2g_RegWr, 4,
+                     Lit16, (((UShort)(0x0F)) << 8) | (UShort)(opc),
+                     Lit16, (UShort)modrm,
+                     TempReg, t1 );
+         uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
+         if (dis)
+            VG_(printf)("pmovmskb %s, %s\n", 
+                        nameMMXReg(eregOfRM(modrm)),
+                        nameIReg(4,gregOfRM(modrm)));
+         eip++;         
+         break;
+
+      case 0xC5:
+         /* PEXTRW (src)mmxreg, (dst)ireg */
+         vg_assert(sz == 4);
+         t1 = newTemp(cb);
+         modrm = getUChar(eip); eip++;
+         abyte = getUChar(eip); eip++;
+         vg_assert(epartIsReg(modrm));
+         uInstr3(cb, SSE2g1_RegWr, 4,
+                     Lit16, (((UShort)(0x0F)) << 8) | (UShort)(opc),
+                     Lit16, (UShort)modrm,
+                     TempReg, t1 );
+         uLiteral(cb, abyte);
+         uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
+         if (dis)
+            VG_(printf)("pextrw %s, %d, %s\n",
+                        nameMMXReg(eregOfRM(modrm)), (Int)abyte, 
+                        nameIReg(4, gregOfRM(modrm)));
+         break;
+
+      case 0xC4:
+         /* PINSRW (src)ireg, (dst)mmxreg */
+         vg_assert(sz == 4);
+         t1 = newTemp(cb);
+         modrm = getUChar(eip); eip++;
+         abyte = getUChar(eip); eip++;
+         vg_assert(epartIsReg(modrm));
+         uInstr2(cb, GET, 2, ArchReg, eregOfRM(modrm), TempReg, t1);
+         uInstr3(cb, SSE2e1_RegRd, 2,
+                     Lit16, (((UShort)(0x0F)) << 8) | (UShort)(opc),
+                     Lit16, (UShort)modrm,
+                     TempReg, t1 );
+         uLiteral(cb, abyte);
+         if (dis)
+            VG_(printf)("pinsrw %s, %d, %s\n",
+                        nameIReg(2, eregOfRM(modrm)),
+                        (Int)abyte, 
+                        nameMMXReg(gregOfRM(modrm)));
          break;
 
       case 0xA1: /* POP %FS */

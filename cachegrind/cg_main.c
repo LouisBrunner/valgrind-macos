@@ -544,7 +544,7 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
 
          case SSE2a_MemRd:
          case SSE2a1_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 16 || u_in->size == 512);
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
             t_read = u_in->val3;
             is_FPU_R = True;
             break;
@@ -556,7 +556,7 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
             break;
 
          case SSE3a1_MemRd:
-            sk_assert(u_in->size == 16);
+            sk_assert(u_in->size == 8 || u_in->size == 16);
             t_read = u_in->val3;
             is_FPU_R = True;
             break;
@@ -577,7 +577,7 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
             break;
 
          case SSE2a_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 16 || u_in->size == 512);
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
             t_write = u_in->val3;
             is_FPU_W = True;
             break;
@@ -798,7 +798,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 
          case SSE2a_MemRd:
          case SSE2a1_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 16 || u_in->size == 512);
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
             t_read = u_in->val3;
             t_read_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
@@ -821,7 +821,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             break;
 
          case SSE3a1_MemRd:
-            sk_assert(u_in->size == 16);
+            sk_assert(u_in->size == 8 || u_in->size == 16);
             t_read = u_in->val3;
             t_read_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
@@ -861,7 +861,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             break;
 
          case SSE2a_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 16 || u_in->size == 512);
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
            /* fall through */
          case SSE3a_MemWr:
             sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);

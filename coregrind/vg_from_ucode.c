@@ -1518,6 +1518,78 @@ static void emit_SSE2a ( FlagSet uses_sflags,
                   nameIReg(4,ireg) );
 }
 
+static void emit_SSE2e1 ( FlagSet uses_sflags, 
+                          FlagSet sets_sflags,
+                          UChar first_byte, 
+                          UChar second_byte, 
+                         UChar third_byte,
+                          UChar fourth_byte,
+                          Int ireg )
+{
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
+   VG_(emitB) ( first_byte );
+   VG_(emitB) ( second_byte );
+   third_byte &= 0x38; /* mask out mod and rm fields */
+   third_byte |= 0xC0; /* set top two bits: mod = 11b */
+   third_byte |= (ireg & 7); /* patch in our ireg */
+   VG_(emitB) ( third_byte );
+   VG_(emitB) ( fourth_byte );
+   if (dis)
+      VG_(printf)(
+         "\n\t\tsse2e1--0x%x:0x%x:0x%x:0x%x-(%s)\n", 
+         (UInt)first_byte, (UInt)second_byte, 
+         (UInt)third_byte, (UInt)fourth_byte,
+         nameIReg(4,ireg) 
+      );
+}
+
+static void emit_SSE2g1 ( FlagSet uses_sflags, 
+                          FlagSet sets_sflags,
+                          UChar first_byte, 
+                          UChar second_byte, 
+                          UChar third_byte,
+                          UChar fourth_byte,
+                          Int ireg )
+{
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
+   VG_(emitB) ( first_byte );
+   VG_(emitB) ( second_byte );
+   third_byte &= 0xC7; /* mask out reg field */
+   third_byte |= 0xC0; /* set top two bits: mod = 11b */
+   third_byte |= ((ireg & 7) << 3); /* patch in our ireg */
+   VG_(emitB) ( third_byte );
+   VG_(emitB) ( fourth_byte );
+   if (dis)
+      VG_(printf)(
+         "\n\t\tsse2g1_reg_wr--0x%x:0x%x:0x%x:0x%x-(%s)\n", 
+         (UInt)first_byte, (UInt)second_byte, 
+         (UInt)third_byte, (UInt)fourth_byte,
+         nameIReg(4,ireg) 
+      );
+}
+
+static void emit_SSE2g ( FlagSet uses_sflags, 
+                         FlagSet sets_sflags,
+                         UChar first_byte, 
+                         UChar second_byte, 
+                        UChar third_byte,
+                         Int ireg )
+{
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
+   VG_(emitB) ( first_byte );
+   VG_(emitB) ( second_byte );
+   third_byte &= 0xC7; /* mask out reg field */
+   third_byte |= 0xC0; /* set top two bits: mod = 11b */
+   third_byte |= ((ireg & 7) << 3); /* patch in our ireg */
+   VG_(emitB) ( third_byte );
+   if (dis)
+      VG_(printf)(
+         "\n\t\tsse2g--0x%x:0x%x:0x%x-(%s)\n", 
+         (UInt)first_byte, (UInt)second_byte, (UInt)third_byte,
+         nameIReg(4,ireg) 
+      );
+}
+
 static void emit_SSE2a1 ( FlagSet uses_sflags, 
                           FlagSet sets_sflags,
                           UChar first_byte, 
@@ -4075,7 +4147,8 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
 
       case SSE2a_MemWr:
       case SSE2a_MemRd:
-         vg_assert(u->size == 4 || u->size == 16 || u->size == 512);
+         vg_assert(u->size == 4 || u->size == 8
+                   || u->size == 16 || u->size == 512);
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == Lit16);
          vg_assert(u->tag3 == RealReg);
@@ -4088,6 +4161,59 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                       u->val1 & 0xFF,
                       u->val2 & 0xFF,
                       u->val3 );
+         break;
+
+      case SSE2g_RegWr:
+         vg_assert(u->size == 4);
+         vg_assert(u->tag1 == Lit16);
+         vg_assert(u->tag2 == Lit16);
+         vg_assert(u->tag3 == RealReg);
+         vg_assert(!anyFlagUse(u));
+         if (!(*sselive)) {
+            emit_get_sse_state();
+            *sselive = True;
+         }
+         emit_SSE2g ( u->flags_r, u->flags_w,
+                      (u->val1 >> 8) & 0xFF,
+                      u->val1 & 0xFF,
+                      u->val2 & 0xFF,
+                      u->val3 );
+         break;
+
+      case SSE2g1_RegWr:
+         vg_assert(u->size == 4);
+         vg_assert(u->tag1 == Lit16);
+         vg_assert(u->tag2 == Lit16);
+         vg_assert(u->tag3 == RealReg);
+         vg_assert(!anyFlagUse(u));
+         if (!(*sselive)) {
+            emit_get_sse_state();
+            *sselive = True;
+         }
+         emit_SSE2g1 ( u->flags_r, u->flags_w,
+                       (u->val1 >> 8) & 0xFF,
+                       u->val1 & 0xFF,
+                       u->val2 & 0xFF,
+                       u->lit32 & 0xFF,
+                       u->val3 );
+         break;
+
+      case SSE2e1_RegRd:
+         vg_assert(u->size == 2);
+         vg_assert(u->tag1 == Lit16);
+         vg_assert(u->tag2 == Lit16);
+         vg_assert(u->tag3 == RealReg);
+         vg_assert(!anyFlagUse(u));
+         if (!(*sselive)) {
+            emit_get_sse_state();
+            *sselive = True;
+         }
+         emit_SSE2e1 ( u->flags_r, u->flags_w,
+                       (u->val1 >> 8) & 0xFF,
+                       u->val1 & 0xFF,
+                       u->val2 & 0xFF,
+                       u->lit32 & 0xFF,
+                       u->val3 );
          break;
 
       case SSE2a1_MemRd:
@@ -4194,7 +4320,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          break;
 
       case SSE3a1_MemRd:
-         vg_assert(u->size == 16);
+         vg_assert(u->size == 8 || u->size == 16);
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == Lit16);
          vg_assert(u->tag3 == RealReg);
@@ -4208,7 +4334,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                       u->val1 & 0xFF,
                       (u->val2 >> 8) & 0xFF,
                       u->val2 & 0xFF,
-                      (u->lit32 >> 8) & 0xFF,
+                      u->lit32 & 0xFF,
                       u->val3 );
          break;
 

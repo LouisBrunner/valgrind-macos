@@ -24,6 +24,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fpu_lazy_eflags.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
+	insn_mmx.stderr.exp insn_mmx.stdout.exp insn_mmx.vgtest \
+	insn_sse.stderr.exp insn_sse.stdout.exp insn_sse.vgtest \
+	insn_sse2.stderr.exp insn_sse2.stdout.exp insn_sse2.vgtest \
 	map_unmap.stdout.exp map_unmap.vgtest \
 	mremap.stdout.exp mremap.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
@@ -47,7 +50,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	args bitfield1 bt_everything bt_literal coolo_strlen \
 	cpuid dastest discard exec-sigmask floored fork fpu_lazy_eflags \
-	fucomip munmap_exe map_unmap mremap rcl_assert \
+	fucomip insn_mmx insn_sse insn_sse2 \
+	munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	pth_blockedsig \
 	syscall-restart1 syscall-restart2 \
@@ -71,6 +75,12 @@ floored_SOURCES 	= floored.c
 floored_LDADD 		= -lm
 fpu_lazy_eflags_SOURCES	= fpu_lazy_eflags.c
 fucomip_SOURCES 	= fucomip.c
+insn_mmx_SOURCES	= insn_mmx.def
+insn_mmx_LDADD		= -lm
+insn_sse_SOURCES	= insn_sse.def
+insn_sse_LDADD		= -lm
+insn_sse2_SOURCES	= insn_sse2.def
+insn_sse2_LDADD		= -lm
 map_unmap_SOURCES	= map_unmap.c
 mremap_SOURCES		= mremap.c
 munmap_exe_SOURCES 	= munmap_exe.c
@@ -99,3 +109,5 @@ gxx304_SOURCES		= gxx304.cpp
 # must be built with these flags -- bug only occurred with them
 fpu_lazy_eflags.o: CFLAGS += -O2 -mcpu=pentiumpro -march=pentiumpro
 
+.def.c:
+	$(PERL) gen_insn_test.pl < $< > $@

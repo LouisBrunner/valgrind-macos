@@ -12,12 +12,13 @@ noinst_SCRIPTS = \
 EXTRA_DIST = $(noinst_SCRIPTS)
 
 check_PROGRAMS = \
-	true
+	true \
+	cputest
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 # generic C ones
 true_SOURCES 	= true.c
-
+cputest_SOURCES = cputest.c
 

@@ -1048,6 +1048,8 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 
          case SSE3a_MemRd:
          case SSE2a_MemRd:
+         case SSE3a1_MemRd:
+         case SSE2a1_MemRd:
             helper = (Addr)ac_fpu_READ_check;
 	    goto do_Access_ARG3;
          case SSE2a_MemWr:
@@ -1066,12 +1068,6 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             uCCall(cb, helper, 2, 2, False );
             VG_(copy_UInstr)(cb, u_in);
             break;
-
-         case SSE2a1_MemRd:
-         case SSE3a1_MemRd:
-	    VG_(pp_UInstr)(0,u_in);
-	    VG_(skin_panic)("AddrCheck: unhandled SSE uinstr");
-	    break;
 
          case SSE3e1_RegRd:
          case SSE3e_RegWr:

@@ -49,6 +49,7 @@
 #   - vgopts: <Valgrind options>                    (default: none)
 #   - stdout_filter: <filter to run stdout through> (default: none)
 #   - stderr_filter: <filter to run stderr through> (default: ./filter_stderr)
+#   - cpu_test: <cpu feature required for test>     (default: none)
 #
 # Note that filters are necessary for stderr results to filter out things that
 # always change, eg. process id numbers.
@@ -80,6 +81,7 @@ my $prog;               # test prog
 my $args;               # test prog args
 my $stdout_filter;      # filter program to run stdout results file through
 my $stderr_filter;      # filter program to run stderr results file through
+my $cpu_test;           # cpu feature to check for before running test
 
 my @failures;           # List of failed tests
 
@@ -165,8 +167,8 @@ sub read_vgtest_file($)
     my ($f) = @_;
 
     # Defaults.
-    ($vgopts, $prog, $args, $stdout_filter, $stderr_filter) = 
-        ("", undef, "", undef, undef);
+    ($vgopts, $prog, $args, $stdout_filter, $stderr_filter, $cpu_test) = 
+        ("", undef, "", undef, undef, undef);
 
     # Every test directory must have a "filter_stderr"
     $stderr_filter = validate_program(".", $default_stderr_filter, 1);
@@ -184,6 +186,8 @@ sub read_vgtest_file($)
             $stdout_filter = validate_program(".", $1, 1);
         } elsif ($line =~ /^\s*stderr_filter:\s*(.*)$/) {
             $stderr_filter = validate_program(".", $1, 1);
+        } elsif ($line =~ /^\s*cpu_test:\s*(.*)$/) {
+            $cpu_test = $1;
         } else {
             die "Bad line in $f: $line\n";
         }
@@ -221,6 +225,10 @@ sub do_one_test($$)
     my $fullname = "$dir/$name"; 
 
     read_vgtest_file($vgtest);
+
+    if (defined $cpu_test) {
+        return unless system("../../tests/cputest $cpu_test") == 0;
+    }
 
     printf("%-16s valgrind $vgopts $prog $args\n", "$name:");
 

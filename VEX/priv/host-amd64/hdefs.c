@@ -2329,7 +2329,8 @@ vassert(0);
       if (i->Ain.Div.sz == 4) {
          switch (i->Ain.Div.src->tag)  {
             case Arm_Mem:
-               vassert(0);
+               goto bad;
+               /*FIXME*/
                *p++ = 0xF7;
                p = doAMode_M(p, fake(subopc),
                                 i->Ain.Div.src->Arm.Mem.am);
@@ -2337,6 +2338,25 @@ vassert(0);
             case Arm_Reg:
                *p++ = clearWBit(
                       rexAMode_R( fake(0), i->Ain.Div.src->Arm.Reg.reg));
+               *p++ = 0xF7;
+               p = doAMode_R(p, fake(subopc), 
+                                i->Ain.Div.src->Arm.Reg.reg);
+               goto done;
+            default:
+               goto bad;
+         }
+      }
+      if (i->Ain.Div.sz == 8) {
+         switch (i->Ain.Div.src->tag)  {
+            case Arm_Mem:
+               goto bad;
+               /*FIXME*/
+               *p++ = 0xF7;
+               p = doAMode_M(p, fake(subopc),
+                                i->Ain.Div.src->Arm.Mem.am);
+               goto done;
+            case Arm_Reg:
+               *p++ = rexAMode_R( fake(0), i->Ain.Div.src->Arm.Reg.reg);
                *p++ = 0xF7;
                p = doAMode_R(p, fake(subopc), 
                                 i->Ain.Div.src->Arm.Reg.reg);

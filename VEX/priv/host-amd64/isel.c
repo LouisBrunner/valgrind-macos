@@ -1241,7 +1241,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..          }
 //.. 
 //..          case Iop_16to8:
-//..          case Iop_32to8:
+         case Iop_32to8:
          case Iop_32to16:
          case Iop_64to32:
             /* These are no-ops. */
@@ -1943,6 +1943,33 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
             *rLo = tLo;
             return;
          }
+
+         /* 128 x 64 -> (64(rem),64(div)) division */
+         case Iop_DivModU128to64:
+         case Iop_DivModS128to64: {
+            /* Get the 128-bit operand into rdx:rax, and the other into
+               any old R/M. */
+            HReg sHi, sLo;
+            HReg     tLo     = newVRegI(env);
+            HReg     tHi     = newVRegI(env);
+            Bool     syned   = e->Iex.Binop.op == Iop_DivModS128to64;
+            AMD64RM* rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
+            iselInt128Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
+            addInstr(env, mk_iMOVsd_RR(sHi, hregAMD64_RDX()));
+            addInstr(env, mk_iMOVsd_RR(sLo, hregAMD64_RAX()));
+            addInstr(env, AMD64Instr_Div(syned, 8, rmRight));
+            addInstr(env, mk_iMOVsd_RR(hregAMD64_RDX(), tHi));
+            addInstr(env, mk_iMOVsd_RR(hregAMD64_RAX(), tLo));
+            *rHi = tHi;
+            *rLo = tLo;
+            return;
+         }
+
+         /* 64HLto128(e1,e2) */
+         case Iop_64HLto128:
+            *rHi = iselIntExpr_R(env, e->Iex.Binop.arg1);
+            *rLo = iselIntExpr_R(env, e->Iex.Binop.arg2);
+            return;
 
 //..          /* Or64/And64/Xor64 */
 //..          case Iop_Or64:

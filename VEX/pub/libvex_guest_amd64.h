@@ -78,6 +78,11 @@ typedef
          segment registers
       */
 
+     /* HACK to make tls on amd64-linux work.  %fs only ever seems to
+        hold zero, and so guest_FS_ZERO holds the 64-bit offset
+        associated with a %fs value of zero. */
+      ULong guest_FS_ZERO;
+
       /* Emulation warnings */
       UInt   guest_EMWARN;
       /* Padding to make it have an 8-aligned size */

@@ -1259,7 +1259,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
          BINARY(Ity_I64, Ity_I64,Ity_I32);
 
       case Iop_DivModU128to64: case Iop_DivModS128to64:
-         BINARY(Ity_V128, Ity_V128,Ity_I64);
+         BINARY(Ity_I128, Ity_I128,Ity_I64);
 
       case Iop_16HIto8: case Iop_16to8:
          UNARY(Ity_I8,Ity_I16);

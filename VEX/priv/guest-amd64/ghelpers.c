@@ -531,6 +531,7 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
       case AMD64G_CC_OP_SHRB:   ACTIONS_SHR(  8, UChar  );
       case AMD64G_CC_OP_SHRW:   ACTIONS_SHR( 16, UShort );
       case AMD64G_CC_OP_SHRL:   ACTIONS_SHR( 32, UInt   );
+      case AMD64G_CC_OP_SHRQ:   ACTIONS_SHR( 64, ULong  );
 
       case AMD64G_CC_OP_ROLB:   ACTIONS_ROL(  8, UChar  );
       case AMD64G_CC_OP_ROLW:   ACTIONS_ROL( 16, UShort );
@@ -1176,6 +1177,9 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_DFLAG   = 1; /* forwards */
    // XXX: add more here later, for D/ID flags
 
+   // HACK
+   vex_state->guest_FS_ZERO = 0;
+
    vex_state->guest_RIP = 0;
 
    // XXX: add more here later, for segment registers, FPU, etc.
@@ -1234,7 +1238,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 4,
+          .n_alwaysDefd = 5,
 
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
@@ -1245,6 +1249,7 @@ VexGuestLayout
 		 // /*  2 */ ALWAYSDEFD(guest_DFLAG),
                  // /*  3 */ ALWAYSDEFD(guest_IDFLAG),
                  /*  3 */ ALWAYSDEFD(guest_RIP),
+                 /*  4 */ ALWAYSDEFD(guest_FS_ZERO),
                  // /*  5 */ ALWAYSDEFD(guest_FTOP),
                  // /*  6 */ ALWAYSDEFD(guest_FPTAG),
                  // /*  7 */ ALWAYSDEFD(guest_FPROUND),

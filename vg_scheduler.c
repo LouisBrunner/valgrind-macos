@@ -148,6 +148,9 @@ static void do_pthread_mutex_unlock ( ThreadId,
 static void do_pthread_mutex_lock ( ThreadId, Bool, 
                                     void* /* pthread_cond_t* */ );
 
+static void do_pthread_getspecific ( ThreadId,
+                                     UInt /* pthread_key_t */ );
+
 
 /* ---------------------------------------------------------------------
    Helper functions for the scheduler.
@@ -676,6 +679,10 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
          do_pthread_mutex_lock( tid, True, (void *)(arg[1]) );
          return True;
 
+      case VG_USERREQ__PTHREAD_GETSPECIFIC:
+ 	 do_pthread_getspecific ( tid, (UInt)(arg[1]) );
+ 	 return True;
+
       default:
          /* Too hard; wimp out. */
          return False;
@@ -1057,14 +1064,16 @@ void complete_blocked_syscalls ( void )
 static
 void check_for_pthread_cond_timedwait ( void )
 {
-   Int i;
+   Int i, now;
    for (i = 1; i < VG_N_THREADS; i++) {
       if (vg_threads[i].status != VgTs_WaitCV)
          continue;
       if (vg_threads[i].awaken_at == 0xFFFFFFFF /* no timeout */)
          continue;
-      if (VG_(read_millisecond_timer)() >= vg_threads[i].awaken_at)
+      now = VG_(read_millisecond_timer)();
+      if (now >= vg_threads[i].awaken_at) {
          do_pthread_cond_timedwait_TIMEOUT(i);
+      }
    }
 }
 
@@ -1076,7 +1085,7 @@ void nanosleep_for_a_while ( void )
    struct vki_timespec req;
    struct vki_timespec rem;
    req.tv_sec = 0;
-   req.tv_nsec = 50 * 1000 * 1000;
+   req.tv_nsec = 20 * 1000 * 1000;
    res = VG_(nanosleep)( &req, &rem );   
    vg_assert(res == 0 /* ok */ || res == 1 /* interrupted by signal */);
 }
@@ -1096,7 +1105,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
    ThreadId tid, tid_next;
    UInt     trc;
    UInt     dispatch_ctr_SAVED;
-   Int      request_code, done_this_time, n_in_fdwait_or_sleep;
+   Int      request_code, done_this_time, n_in_bounded_wait;
    Char     msg_buf[100];
    Addr     trans_addr;
    Bool     sigs_delivered;
@@ -1166,13 +1175,15 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
          /* Try and find a thread (tid) to run. */
          tid_next = tid;
-         n_in_fdwait_or_sleep = 0;
+         n_in_bounded_wait = 0;
          while (True) {
             tid_next++;
             if (tid_next >= VG_N_THREADS) tid_next = 1;
             if (vg_threads[tid_next].status == VgTs_WaitFD
-                || vg_threads[tid_next].status == VgTs_Sleeping)
-               n_in_fdwait_or_sleep ++;
+                || vg_threads[tid_next].status == VgTs_Sleeping
+                || (vg_threads[tid_next].status == VgTs_WaitCV 
+                    && vg_threads[tid_next].awaken_at != 0xFFFFFFFF))
+               n_in_bounded_wait ++;
             if (vg_threads[tid_next].status == VgTs_Runnable) 
                break; /* We can run this one. */
             if (tid_next == tid) 
@@ -1188,7 +1199,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
 	 }
 
          /* We didn't find a runnable thread.  Now what? */
-         if (n_in_fdwait_or_sleep == 0) {
+         if (n_in_bounded_wait == 0) {
             /* No runnable threads and no prospect of any appearing
                even if we wait for an arbitrary length of time.  In
                short, we have a deadlock. */
@@ -1278,6 +1289,16 @@ VgSchedReturnCode VG_(scheduler) ( void )
 	    }
 	 }
 
+         if (trc == VG_TRC_EBP_JMP_SYSCALL) {
+            /* Do a syscall for the vthread tid.  This could cause it
+               to become non-runnable. */
+            sched_do_syscall(tid);
+            if (vg_threads[tid].status == VgTs_Runnable)
+               continue; /* with this thread */
+            else
+               goto stage1;          
+	 }
+
 	 /* It's an event we can't quickly deal with.  Give up running
             this thread and handle things the expensive way. */
 	 break;
@@ -1330,11 +1351,13 @@ VgSchedReturnCode VG_(scheduler) ( void )
                1, whereupon the signal will be "delivered". */
 	    break;
 
+#if 0
          case VG_TRC_EBP_JMP_SYSCALL:
             /* Do a syscall for the vthread tid.  This could cause it
                to become non-runnable. */
             sched_do_syscall(tid);
             break;
+#endif
 
          case VG_TRC_EBP_JMP_CLIENTREQ: 
             /* Do a client request for the vthread tid.  Note that
@@ -2386,11 +2409,6 @@ void do_nontrivial_clientreq ( ThreadId tid )
       case VG_USERREQ__PTHREAD_KEY_DELETE:
  	 do_pthread_key_delete ( tid, 
                                  (pthread_key_t)(arg[1]) );
- 	 break;
-
-      case VG_USERREQ__PTHREAD_GETSPECIFIC:
- 	 do_pthread_getspecific ( tid, 
-                                  (pthread_key_t)(arg[1]) );
  	 break;
 
       case VG_USERREQ__PTHREAD_SETSPECIFIC:

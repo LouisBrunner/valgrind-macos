@@ -424,6 +424,7 @@ Char* showX86FpOp ( X86FpOp op ) {
       case Xfp_MOV:    return "mov";
       case Xfp_SIN:    return "sin";
       case Xfp_COS:    return "cos";
+      case Xfp_TAN:    return "tan";
       case Xfp_2XM1:   return "2xm1";
       default: vpanic("showX86FpOp");
    }
@@ -1288,6 +1289,10 @@ static UChar* do_fop1_st ( UChar* p, X86FpOp op )
       case Xfp_COS:    *p++ = 0xD9; *p++ = 0xFF; break;
       case Xfp_2XM1:   *p++ = 0xD9; *p++ = 0xF0; break;
       case Xfp_MOV:    break;
+      case Xfp_TAN:    p = do_ffree_st7(p); /* since fptan pushes 1.0 */
+                       *p++ = 0xD9; *p++ = 0xF2; /* fptan */
+                       *p++ = 0xD9; *p++ = 0xF7; /* fincstp */
+                       break;
       default: vpanic("do_fop1_st: unknown op");
    }
    return p;

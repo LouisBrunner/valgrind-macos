@@ -1856,6 +1856,7 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
          case Iop_SqrtF64: fpop = Xfp_SQRT; break;
          case Iop_SinF64:  fpop = Xfp_SIN; break;
          case Iop_CosF64:  fpop = Xfp_COS; break;
+         case Iop_TanF64:  fpop = Xfp_TAN; break;
          case Iop_2xm1F64: fpop = Xfp_2XM1; break;
          default: break;
       }

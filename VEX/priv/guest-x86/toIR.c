@@ -3513,6 +3513,15 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_pop();
                break;
 
+            case 0xF2: /* FPTAN */
+               DIP("ftan\n");
+               put_ST_UNCHECKED(0, unop(Iop_TanF64, get_ST(0)));
+               fp_push();
+               put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
+               /* Should we mess with C3210 here?  The fact that we
+                  don't is a hack. */
+               break;
+
             case 0xF3: /* FPATAN */
                DIP("fpatan\n");
                put_ST_UNCHECKED(1, binop(Iop_AtanF64,

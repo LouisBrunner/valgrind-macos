@@ -187,6 +187,7 @@ typedef
       Iop_AbsF64,    /* FABS */
       Iop_SinF64,    /* FSIN */
       Iop_CosF64,    /* FCOS */
+      Iop_TanF64,    /* FTAN */
       Iop_2xm1F64,   /* (2^arg - 1.0) */
 
       /* Comparison, yielding GT/LT/EQ/UN(ordered), as per the following:

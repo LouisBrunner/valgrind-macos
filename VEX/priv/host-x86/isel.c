@@ -815,7 +815,7 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       /* Get the 64-bit operand into edx:eax, and the other
          into any old R/M. */
       HReg sHi, sLo;
-      Bool   syned   = e->Iex.Binop.op == Iop_MullS32;
+      Bool   syned   = e->Iex.Binop.op == Iop_DivModS64to32;
       X86RM* rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
       iselIntExpr64(&sHi,&sLo, env, e->Iex.Binop.arg1);
       addInstr(env, mk_MOVsd_RR(sHi, hregX86_EDX()));

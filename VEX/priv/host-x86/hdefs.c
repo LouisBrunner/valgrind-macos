@@ -1185,7 +1185,6 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
    case Xin_Div:
       subopc = i->Xin.Div.syned ? 7 : 6;
       if (i->Xin.Div.ssz == Xss_32) {
-         vassert(!i->Xin.Div.syned); // remove when a test case appears
          *p++ = 0xF7;
          switch (i->Xin.Div.src->tag)  {
             case Xrm_Mem:

@@ -395,8 +395,17 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
       break;
 
    case Ist_IMark:
-      *instrAddr = (Addr)st->Ist.IMark.addr;
-      tl_assert(*instrAddr == st->Ist.IMark.addr); // XXX: check no overflow
+      /* st->Ist.IMark.addr is a 64-bit int.  ULong_to_Ptr casts this
+         to the host's native pointer type; if that is 32 bits then it
+         discards the upper 32 bits.  If we are cachegrinding on a
+         32-bit host then we are also ensured that the guest word size
+         is 32 bits, due to the assertion in TL_(instrument) that the
+         host and guest word sizes must be the same.  Hence
+         st->Ist.IMark.addr will have been derived from a 32-bit guest
+         code address and truncation of it is safe.  I believe this
+         assignment should be correct for both 32- and 64-bit
+         machines. */
+      *instrAddr = (Addr)ULong_to_Ptr(st->Ist.IMark.addr);
       *instrLen =        st->Ist.IMark.len;
       addStmtToIRBB( bbOut, st );
       break;

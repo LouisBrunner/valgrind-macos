@@ -721,7 +721,7 @@ void ppPPC32Instr ( PPC32Instr* i )
    case Pin_Cmp32:
       vex_printf("cmp%s %%crf%d,",
                  i->Pin.Cmp32.src2->tag == Pri_Imm ? "i" : "",
-                 i->Pin.Cmp32.crfD);
+                 (7 - i->Pin.Cmp32.crfD));
       ppHRegPPC32(i->Pin.Alu32.src1);
       vex_printf(",");
       ppPPC32RI(i->Pin.Alu32.src2);
@@ -770,32 +770,37 @@ void ppPPC32Instr ( PPC32Instr* i )
 //..          ppX86RMI(i->Xin.Push.src);
 //..          return;
    case Pin_Call:
-      vex_printf("call: la r12, 0x%x ; mtctr r12 ; bcctrl[%d] %s",
-                 i->Pin.Call.target,
-                 i->Pin.Call.regparms,
-                 showPPC32CondCode(i->Pin.Call.cond));
+      vex_printf("call: ");
+      if (i->Pin.Call.cond.test != Pct_ALWAYS) {
+         vex_printf("if (%%crf0.%s) ", showPPC32CondCode(i->Pin.Call.cond));
+      }
+      vex_printf("{ ");
+      if (i->Pin.Call.target < 0x10000) {
+         vex_printf("li %%r12, 0x%x ;", i->Pin.Call.target);
+      } else {
+         vex_printf("lis %%r12,0x%x ; ", i->Pin.Call.target >> 16);
+         vex_printf("ori %%r12,%%r3,0x%x ; ", i->Pin.Call.target & 0xFFFF);
+      }
+      vex_printf("mtctr r12 ; bctrl[%d] }",i->Pin.Call.regparms);
       break;
    case Pin_Goto:
       vex_printf("goto: ");
       if (i->Pin.Goto.cond.test != Pct_ALWAYS) {
-         vex_printf("if (%%crf0.%s) { ", 
-                    showPPC32CondCode(i->Pin.Goto.cond));
+         vex_printf("if (%%crf0.%s) ", showPPC32CondCode(i->Pin.Goto.cond));
       }
+      vex_printf("{ ");
       if (i->Pin.Goto.jk != Ijk_Boring) {
          vex_printf("li %%r31, $");
          ppIRJumpKind(i->Pin.Goto.jk);
          vex_printf(" ; ");
       }
       if (i->Pin.Goto.dst->tag == Pri_Imm) {
-         if (i->Pin.Goto.dst->Pri.Imm.imm32 < 0x10000) {
-            vex_printf("li %%r3, ");
-            ppPPC32RI(i->Pin.Goto.dst);
-            vex_printf(" ; ");
+         UInt imm32 = i->Pin.Goto.dst->Pri.Imm.imm32;
+         if (imm32 < 0x10000) {
+            vex_printf("li %%r3, 0x%x ; ", imm32);
          } else {
-            vex_printf("lis %%r3,0x%x ; ",
-                       i->Pin.Goto.dst->Pri.Imm.imm32 >> 16);
-            vex_printf("la %%r3,0x%x(%%r3) ; ",
-                       i->Pin.Goto.dst->Pri.Imm.imm32 & 0xFFFF);
+            vex_printf("lis %%r3,0x%x ; ", imm32 >> 16);
+            vex_printf("ori %%r3,%%r3,0x%x ; ", imm32 & 0xFFFF);
          }
       } else {
          vex_printf("if (%%r3 != ");
@@ -804,20 +809,46 @@ void ppPPC32Instr ( PPC32Instr* i )
          ppHRegPPC32(i->Pin.Goto.dst->Pri.Reg.reg);
          vex_printf(" } ; ");
       }
-      vex_printf("blr");
-      //      vex_printf("mtctr %%r_dst ; ");
-      //      vex_printf("bctr");
-      if (i->Pin.Goto.cond.test != Pct_ALWAYS) {
-         vex_printf(" }");
-      }
+      vex_printf("blr }");
       return;
    case Pin_CMov32:
-// bc false,cond,8
-// li ...
       vex_printf("cmov32 (%s) ", showPPC32CondCode(i->Pin.CMov32.cond));
       ppHRegPPC32(i->Pin.CMov32.dst);
       vex_printf(",");
       ppPPC32RI(i->Pin.CMov32.src);
+      vex_printf(": ");
+      if (i->Pin.CMov32.cond.test != Pct_ALWAYS) {
+         vex_printf("if (%%crf0.%s) ", showPPC32CondCode(i->Pin.CMov32.cond));
+      }
+      vex_printf("{ ");
+      if (i->Pin.CMov32.src->tag == Pri_Imm) {
+         UInt imm32 = i->Pin.CMov32.src->Pri.Imm.imm32;
+         if (imm32 < 0x10000) {
+            vex_printf("li ");
+            ppHRegPPC32(i->Pin.CMov32.dst);
+            vex_printf(" 0x%x", imm32);
+         } else {
+            vex_printf("lis ");
+            ppHRegPPC32(i->Pin.CMov32.dst);
+            vex_printf(",0x%x ; ", imm32 >> 16);
+            vex_printf("ori ");
+            ppHRegPPC32(i->Pin.CMov32.dst);
+            vex_printf(",");
+            ppHRegPPC32(i->Pin.CMov32.dst);
+            vex_printf(",0x%x", imm32 & 0xFFFF);
+         }
+      } else {
+         vex_printf("if (");
+         ppHRegPPC32(i->Pin.CMov32.dst);
+         vex_printf(" != ");
+         ppHRegPPC32(i->Pin.CMov32.src->Pri.Reg.reg);
+         vex_printf(") { mr ");
+         ppHRegPPC32(i->Pin.CMov32.dst);
+         vex_printf(",");
+         ppHRegPPC32(i->Pin.CMov32.src->Pri.Reg.reg);
+         vex_printf(" }");
+      }
+      vex_printf(" }");
       return;
    case Pin_Load: {
       UChar sz = i->Pin.Load.sz;
@@ -2150,7 +2181,7 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
       /* mtspr 9,r_dst => move r_dst to count register */
       p = mkFormXFX(p, r_dst, 9, 467);
       
-      /* bcctrl 20,0 => branch w. link to count register */
+      /* bctrl => branch to count register (and save to lr) */
       p = mkFormXL(p, 19, Pct_ALWAYS, 0, 0, 528, 1);
 
       /* Fix up the conditional jump, if there was one. */

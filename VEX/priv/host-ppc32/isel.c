@@ -1469,15 +1469,15 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 
 //   vex_printf("@iselCondCode_wrk\n");
 
-//..    /* Constant 1:Bit */
-//..    if (e->tag == Iex_Const && e->Iex.Const.con->Ico.U1 == True) {
-//..       HReg r;
-//..       vassert(e->Iex.Const.con->tag == Ico_U1);
-//..       r = newVRegI(env);
-//..       addInstr(env, X86Instr_Alu32R(Xalu_MOV,X86RMI_Imm(0),r));
-//..       addInstr(env, X86Instr_Alu32R(Xalu_XOR,X86RMI_Reg(r),r));
-//..       return Xcc_Z;
-//..    }
+   /* Constant 1:Bit */
+   if (e->tag == Iex_Const && e->Iex.Const.con->Ico.U1 == True) {
+      // Make a compare that will always be true:
+      PPC32RI* ri_one = PPC32RI_Imm(1);
+      HReg r_one = newVRegI(env);
+      addInstr(env, mk_iMOVds_RRI(env, r_one, ri_one));
+      addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, r_one, ri_one));
+      return mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
+   }
 
    /* Not1(...) */
    if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_Not1) {

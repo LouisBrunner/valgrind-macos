@@ -3343,6 +3343,21 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          }
          break;
 
+      case __NR_waitpid: /* syscall 7 */
+         /* pid_t waitpid(pid_t pid, int *status, int options); */
+         
+         MAYBE_PRINTF("waitpid ( %d, %p, %d )\n",
+                        arg1,arg2,arg3);
+         if (arg2 != (Addr)NULL)
+            SYSCALL_TRACK( pre_mem_write, tid, "waitpid(status)",
+                                          arg2, sizeof(int) );
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res)) {
+            if (arg2 != (Addr)NULL)
+               VG_TRACK( post_mem_write, arg2, sizeof(int) );
+         }
+         break;
+
       case __NR_writev: { /* syscall 146 */
          /* int writev(int fd, const struct iovec * vector, size_t count); */
          UInt i;

@@ -3529,6 +3529,20 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_pop();
                break;
 
+            case 0xF5: { /* FPREM1 -- IEEE compliant */
+               IRTemp a1 = newTemp(Ity_F64);
+               IRTemp a2 = newTemp(Ity_F64);
+               DIP("fprem1\n");
+               /* Do FPREM1 twice, once to get the remainder, and once
+                  to get the C3210 flag values. */
+               assign( a1, get_ST(0) );
+               assign( a2, get_ST(1) );
+               put_ST_UNCHECKED(0, binop(Iop_PRem1F64,
+                                         mkexpr(a1), mkexpr(a2)));
+               put_C3210( binop(Iop_PRem1C3210F64, mkexpr(a1), mkexpr(a2)) );
+               break;
+            }
+
             case 0xF8: { /* FPREM -- not IEEE compliant */
                IRTemp a1 = newTemp(Ity_F64);
                IRTemp a2 = newTemp(Ity_F64);

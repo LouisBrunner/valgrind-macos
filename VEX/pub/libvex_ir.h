@@ -173,12 +173,17 @@ typedef
       Iop_AddF64, Iop_SubF64, Iop_MulF64, Iop_DivF64, /* Iop_RemF64, */
 
       /* Binary ops supported by IA32 but not mandated by 754. */
-      Iop_AtanF64,      /* FPATAN,  arctan(arg1/arg2)       */
-      Iop_Yl2xF64,      /* FYL2X,   arg1 * log2(arg2)       */
-      Iop_Yl2xp1F64,    /* FYL2XP1, arg1 * log2(arg2+1.0)   */
-      Iop_PRemF64,      /* FPREM,   remainder(arg1/arg2)    */
-      Iop_PRemC3210F64, /* C3210 flags resulting from FPREM, :: I32 */
-      Iop_ScaleF64,     /* FSCALE,  arg1 * (2^RoundTowardsZero(arg2)) */
+      Iop_AtanF64,       /* FPATAN,  arctan(arg1/arg2)       */
+      Iop_Yl2xF64,       /* FYL2X,   arg1 * log2(arg2)       */
+      Iop_Yl2xp1F64,     /* FYL2XP1, arg1 * log2(arg2+1.0)   */
+      Iop_PRemF64,       /* FPREM,   non-IEEE remainder(arg1/arg2)    */
+      Iop_PRemC3210F64,  /* C3210 flags resulting from FPREM, :: I32 */
+      Iop_PRem1F64,      /* FPREM1,  IEEE remainder(arg1/arg2)    */
+      Iop_PRem1C3210F64, /* C3210 flags resulting from FPREM1, :: I32 */
+      Iop_ScaleF64,      /* FSCALE,  arg1 * (2^RoundTowardsZero(arg2)) */
+      /* Note that on x86 guest, PRem1{C3210} has the same behaviour
+         as the IEEE mandated RemF64, except it is limited in the
+         range of its operand.  Hence the partialness. */
 
       /* Unary operations mandated by IEEE754. */
       Iop_NegF64, Iop_SqrtF64, 

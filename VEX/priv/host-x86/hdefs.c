@@ -427,6 +427,8 @@ Char* showX86FpOp ( X86FpOp op ) {
       case Xfp_TAN:    return "tan";
       case Xfp_2XM1:   return "2xm1";
       case Xfp_ATAN:   return "atan";
+      case Xfp_PREM:   return "prem";
+      case Xfp_PREM1:  return "prem1";
       default: vpanic("showX86FpOp");
    }
 }
@@ -1878,17 +1880,23 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          goto done;
       }
       if (i->Xin.FpBinary.op == Xfp_PREM
+          || i->Xin.FpBinary.op == Xfp_PREM1
           || i->Xin.FpBinary.op == Xfp_SCALE) {
          /* Have to do this specially. */
          /* ffree %st7 ; fld %st(srcR) ; 
-            ffree %st7 ; fld %st(srcL+1) ; fprem/fscale ; fstp(2+dst) ; 
+            ffree %st7 ; fld %st(srcL+1) ; fprem/fprem1/fscale ; fstp(2+dst) ; 
             fincstp ; ffree %st7 */
          p = do_ffree_st7(p);
          p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcR));
          p = do_ffree_st7(p);
          p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcL));
-         *p++ = 0xD9; 
-         *p++ = i->Xin.FpBinary.op==Xfp_PREM ? 0xF8 : 0xFD;
+         *p++ = 0xD9;
+         switch (i->Xin.FpBinary.op) {
+            case Xfp_PREM: *p++ = 0xF8; break;
+            case Xfp_PREM1: *p++ = 0xF5; break;
+            case Xfp_SCALE: *p++ =  0xFD; break;
+            default: vpanic("emitX86Instr(FpBinary,PREM/PREM1/SCALE)");
+         }
          p = do_fstp_st(p, 2+hregNumber(i->Xin.FpBinary.dst));
          *p++ = 0xD9; *p++ = 0xF7;
          p = do_ffree_st7(p);

@@ -248,7 +248,7 @@ typedef
       Xfp_INVALID,
       /* Binary */
       Xfp_ADD, Xfp_SUB, Xfp_MUL, Xfp_DIV, 
-      Xfp_SCALE, Xfp_ATAN, Xfp_YL2X, Xfp_YL2XP1, Xfp_PREM,
+      Xfp_SCALE, Xfp_ATAN, Xfp_YL2X, Xfp_YL2XP1, Xfp_PREM, Xfp_PREM1,
       /* Unary */
       Xfp_SQRT, Xfp_ABS, Xfp_NEG, Xfp_MOV, Xfp_SIN, Xfp_COS, Xfp_TAN,
       Xfp_ROUND, Xfp_2XM1

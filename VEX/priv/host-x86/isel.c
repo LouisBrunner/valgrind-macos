@@ -664,13 +664,18 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      /* C3210 flags following FPU partial remainder (fprem). */
-      if (e->Iex.Binop.op == Iop_PRemC3210F64) {
+      /* C3210 flags following FPU partial remainder (fprem), both
+         IEEE compliant (PREM1) and non-IEEE compliant (PREM). */
+      if (e->Iex.Binop.op == Iop_PRemC3210F64
+          || e->Iex.Binop.op == Iop_PRem1C3210F64) {
          HReg junk = newVRegF(env);
          HReg dst  = newVRegI(env);
          HReg srcL = iselDblExpr(env, e->Iex.Binop.arg1);
          HReg srcR = iselDblExpr(env, e->Iex.Binop.arg2);
-         addInstr(env, X86Instr_FpBinary(Xfp_PREM,srcL,srcR,junk));
+         addInstr(env, X86Instr_FpBinary(
+                           e->Iex.Binop.op==Iop_PRemC3210F64 ? Xfp_PREM : Xfp_PREM1,
+                           srcL,srcR,junk
+                 ));
          /* The previous pseudo-insn will have left the FPU's C3210
             flags set correctly.  So bag them. */
          addInstr(env, X86Instr_FpStSW_AX());
@@ -1786,6 +1791,7 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
          case Iop_Yl2xF64:   fpop = Xfp_YL2X; break;
          case Iop_Yl2xp1F64: fpop = Xfp_YL2XP1; break;
          case Iop_PRemF64:   fpop = Xfp_PREM; break;
+         case Iop_PRem1F64:  fpop = Xfp_PREM1; break;
          default: break;
       }
       if (fpop != Xfp_INVALID) {

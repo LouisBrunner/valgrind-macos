@@ -279,6 +279,9 @@ HInstrArray* doRegisterAllocation (
 
 
    /* --------- Stage 1: compute vreg live ranges. --------- */
+   /* --------- Stage 2: compute rreg live ranges. --------- */
+
+   /* ------ start of SET UP TO COMPUTE VREG LIVE RANGES ------ */
 
    /* This is relatively simple, because (1) we only seek the complete
       end-to-end live range of each vreg, and are not interested in
@@ -301,7 +304,33 @@ HInstrArray* doRegisterAllocation (
       vreg_info[j].preferred_rreg = INVALID_HREG;
    }
 
-   /* for each insn ... */
+   /* ------ end of SET UP TO COMPUTE VREG LIVE RANGES ------ */
+
+   /* ------ start of SET UP TO COMPUTE RREG LIVE RANGES ------ */
+
+   /* This is more complex than Stage 1, because we need to compute
+      exactly all the live ranges of all the allocatable real regs,
+      and we don't know in advance how many there will be. */
+
+   rreg_info_used = 0;
+   rreg_info_size = 4;
+   rreg_info = LibVEX_Alloc(rreg_info_size * sizeof(RRegInfo));
+
+   /* We'll need to track live range start/end points seperately for
+      each rreg.  Sigh. */
+   vassert(n_available_real_regs > 0);
+   rreg_live_after  = LibVEX_Alloc(n_available_real_regs * sizeof(Int));
+   rreg_dead_before = LibVEX_Alloc(n_available_real_regs * sizeof(Int));
+
+   for (j = 0; j < n_available_real_regs; j++) {
+      rreg_live_after[j] = 
+      rreg_dead_before[j] = INVALID_INSTRNO;
+   }
+
+   /* ------ end of SET UP TO COMPUTE RREG LIVE RANGES ------ */
+
+   /* ------ start of ITERATE OVER INSNS ------ */
+
    for (ii = 0; ii < instrs_in->arr_used; ii++) {
 
       (*getRegUsage)( &reg_usage, instrs_in->arr[ii] );
@@ -312,6 +341,8 @@ HInstrArray* doRegisterAllocation (
       vex_printf("\n");
       ppHRegUsage(&reg_usage);
 #     endif
+
+      /* ------ start of DEAL WITH VREG LIVE RANGES ------ */
 
       /* for each reg mentioned in the insn ... */
       for (j = 0; j < reg_usage.n_used; j++) {
@@ -364,39 +395,9 @@ HInstrArray* doRegisterAllocation (
 
       } /* iterate over registers */
 
-   } /* iterate over insns */
+      /* ------ end of DEAL WITH VREG LIVE RANGES ------ */
 
-#  if DEBUG_REGALLOC
-   for (j = 0; j < n_vregs; j++) {
-      vex_printf("vreg %d:  la = %d,  db = %d\n", 
-                 j, vreg_info[j].live_after, vreg_info[j].dead_before );
-   }
-#  endif
-
-   /* --------- Stage 2: compute rreg live ranges. --------- */
-
-   /* This is more complex than Stage 1, because we need to compute
-      exactly all the live ranges of all the allocatable real regs,
-      and we don't know in advance how many there will be. */
-
-   rreg_info_used = 0;
-   rreg_info_size = 4;
-   rreg_info = LibVEX_Alloc(rreg_info_size * sizeof(RRegInfo));
-
-   /* We'll need to track live range start/end points seperately for
-      each rreg.  Sigh. */
-   vassert(n_available_real_regs > 0);
-   rreg_live_after  = LibVEX_Alloc(n_available_real_regs * sizeof(Int));
-   rreg_dead_before = LibVEX_Alloc(n_available_real_regs * sizeof(Int));
-
-   for (j = 0; j < n_available_real_regs; j++)
-      rreg_live_after[j] = 
-      rreg_dead_before[j] = INVALID_INSTRNO;
-
-   /* for each insn ... */
-   for (ii = 0; ii < instrs_in->arr_used; ii++) {
-
-      (*getRegUsage)( &reg_usage, instrs_in->arr[ii] );
+      /* ------ start of DEAL WITH RREG LIVE RANGES ------ */
 
       /* for each reg mentioned in the insn ... */
       for (j = 0; j < reg_usage.n_used; j++) {
@@ -462,7 +463,13 @@ HInstrArray* doRegisterAllocation (
 
       } /* iterate over regs in the instr */
 
-   } /* iterate over instrs */
+      /* ------ end of DEAL WITH RREG LIVE RANGES ------ */
+
+   } /* iterate over insns */
+
+   /* ------ end of ITERATE OVER INSNS ------ */
+
+   /* ------ start of FINALISE RREG LIVE RANGES ------ */
 
    /* Now finish up any live ranges left over. */
    for (j = 0; j < n_available_real_regs; j++) {
@@ -491,8 +498,14 @@ HInstrArray* doRegisterAllocation (
       rreg_info_used++;
    }
 
-   /* free(rreg_live_after); */
-   /* free(rreg_dead_before); */
+   /* ------ end of FINALISE RREG LIVE RANGES ------ */
+
+#  if DEBUG_REGALLOC
+   for (j = 0; j < n_vregs; j++) {
+      vex_printf("vreg %d:  la = %d,  db = %d\n", 
+                 j, vreg_info[j].live_after, vreg_info[j].dead_before );
+   }
+#  endif
 
 #  if DEBUG_REGALLOC
    for (j = 0; j < rreg_info_used; j++) {

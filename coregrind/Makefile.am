@@ -53,7 +53,6 @@ stage2_SOURCES = \
 	vg_demangle.c \
 	vg_errcontext.c \
 	vg_execontext.c \
-	vg_from_ucode.c \
 	vg_hashtable.c \
 	vg_instrument.c \
 	vg_main.c \
@@ -72,7 +71,6 @@ stage2_SOURCES = \
 	vg_skiplist.c \
 	vg_symtypes.c \
 	vg_syscalls.c \
-	vg_to_ucode.c \
 	vg_toolint.c \
 	vg_translate.c \
 	vg_transtab.c

@@ -74,25 +74,6 @@ extern void ppIRTemp ( IRTemp );
 
 /* ------------------ Binary and unary ops ------------------ */
 
-/* Encoding of IEEE754-specified rounding modes in Float -> Int
-   conversions.  This is the same as the encoding used by Intel IA32
-   to indicate x87 rounding mode. */
-typedef
-   enum { Irrm_NEAREST=0, Irrm_NegINF=1, Irrm_PosINF=2, Irrm_ZERO=3 }
-   IRRoundingMode;
-
-/* Floating point comparison result values, as created by Iop_CmpF64.
-   This is also derived from what IA32 does. */
-typedef
-   enum {
-      Ircr_UN = 0x45,
-      Ircr_LT = 0x01,
-      Ircr_GT = 0x00,
-      Ircr_EQ = 0x40
-   }
-   IRCmpF64Result;
-
-
 typedef
    enum { 
       /* Do not change this ordering.  The IR generators
@@ -228,6 +209,26 @@ typedef
 
 
 extern void ppIROp ( IROp );
+
+
+
+/* Encoding of IEEE754-specified rounding modes in Float -> Int
+   conversions.  This is the same as the encoding used by Intel IA32
+   to indicate x87 rounding mode. */
+typedef
+   enum { Irrm_NEAREST=0, Irrm_NegINF=1, Irrm_PosINF=2, Irrm_ZERO=3 }
+   IRRoundingMode;
+
+/* Floating point comparison result values, as created by Iop_CmpF64.
+   This is also derived from what IA32 does. */
+typedef
+   enum {
+      Ircr_UN = 0x45,
+      Ircr_LT = 0x01,
+      Ircr_GT = 0x00,
+      Ircr_EQ = 0x40
+   }
+   IRCmpF64Result;
 
 
 /* ------------------ Expressions ------------------ */

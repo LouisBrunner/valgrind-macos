@@ -350,10 +350,12 @@ enum {
     AMD64G_CC_OP_UMULB,   /* 45 */
     AMD64G_CC_OP_UMULW,   /* 46 DEP1 = argL, DEP2 = argR, NDEP = unused */
     AMD64G_CC_OP_UMULL,   /* 47 */
+    AMD64G_CC_OP_UMULQ,   /* 48 */
 
-    AMD64G_CC_OP_SMULB,   /* 48 */
-    AMD64G_CC_OP_SMULW,   /* 49 DEP1 = argL, DEP2 = argR, NDEP = unused */
-    AMD64G_CC_OP_SMULL,   /* 50 */
+    AMD64G_CC_OP_SMULB,   /* 49 */
+    AMD64G_CC_OP_SMULW,   /* 50 DEP1 = argL, DEP2 = argR, NDEP = unused */
+    AMD64G_CC_OP_SMULL,   /* 51 */
+    AMD64G_CC_OP_SMULQ,   /* 52 */
 
     AMD64G_CC_OP_NUMBER
 };

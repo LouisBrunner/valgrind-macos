@@ -1349,28 +1349,31 @@ static void setFlags_INC_DEC ( Bool inc, IRTemp res, IRType ty )
 }
 
 
-//.. /* Multiplies are pretty much like add and sub: DEP1 and DEP2 hold the
-//..    two arguments. */
-//.. 
-//.. static
-//.. void setFlags_MUL ( IRType ty, IRTemp arg1, IRTemp arg2, UInt base_op )
-//.. {
-//..    switch (ty) {
-//..       case Ity_I8:
-//..          stmt( IRStmt_Put( OFFB_CC_OP, mkU32(base_op+0) ) );
-//..          break;
-//..       case Ity_I16:
-//..          stmt( IRStmt_Put( OFFB_CC_OP, mkU32(base_op+1) ) );
-//..          break;
-//..       case Ity_I32:
-//..          stmt( IRStmt_Put( OFFB_CC_OP, mkU32(base_op+2) ) );
-//..          break;
-//..       default:
-//..          vpanic("setFlags_MUL(x86)");
-//..    }
-//..    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(arg1)) ));
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(arg2)) ));
-//.. }
+/* Multiplies are pretty much like add and sub: DEP1 and DEP2 hold the
+   two arguments. */
+
+static
+void setFlags_MUL ( IRType ty, IRTemp arg1, IRTemp arg2, ULong base_op )
+{
+   switch (ty) {
+      case Ity_I8:
+         stmt( IRStmt_Put( OFFB_CC_OP, mkU64(base_op+0) ) );
+         break;
+      case Ity_I16:
+         stmt( IRStmt_Put( OFFB_CC_OP, mkU64(base_op+1) ) );
+         break;
+      case Ity_I32:
+         stmt( IRStmt_Put( OFFB_CC_OP, mkU64(base_op+2) ) );
+         break;
+      case Ity_I64:
+         stmt( IRStmt_Put( OFFB_CC_OP, mkU64(base_op+3) ) );
+         break;
+      default:
+         vpanic("setFlags_MUL(amd64)");
+   }
+   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto64(mkexpr(arg1)) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto64(mkexpr(arg2)) ));
+}
 
 
 /* -------------- Condition codes. -------------- */
@@ -2533,24 +2536,25 @@ UInt dis_op_imm_A ( Int    size,
 //..       return len+delta;
 //..    }
 //.. }
-//.. 
-//.. 
-//.. /* Generate code to divide ArchRegs EDX:EAX / DX:AX / AX by the 32 /
-//..    16 / 8 bit quantity in the given IRTemp.  */
-//.. static
-//.. void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
-//.. {
-//..    IROp   op    = signed_divide ? Iop_DivModS64to32 : Iop_DivModU64to32;
-//..    IRTemp src64 = newTemp(Ity_I64);
-//..    IRTemp dst64 = newTemp(Ity_I64);
-//..    switch (sz) {
-//..       case 4:
-//..          assign( src64, binop(Iop_32HLto64, 
-//..                               getIReg(4,R_EDX), getIReg(4,R_EAX)) );
-//..          assign( dst64, binop(op, mkexpr(src64), mkexpr(t)) );
-//..          putIReg( 4, R_EAX, unop(Iop_64to32,mkexpr(dst64)) );
-//..          putIReg( 4, R_EDX, unop(Iop_64HIto32,mkexpr(dst64)) );
-//..          break;
+
+
+/* Generate code to divide ArchRegs RDX:RAX / EDX:EAX / DX:AX / AX by the 32 /
+   16 / 8 bit quantity in the given IRTemp.  */
+static
+void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
+{
+   IROp   op    = signed_divide ? Iop_DivModS64to32 : Iop_DivModU64to32;
+   IRTemp src64 = newTemp(Ity_I64);
+   IRTemp dst64 = newTemp(Ity_I64);
+   switch (sz) {
+      case 4:
+         assign( src64, binop(Iop_32HLto64, 
+                              getIRegR(PFX_EMPTY,4,R_RDX), 
+                              getIRegR(PFX_EMPTY,4,R_RAX)) );
+         assign( dst64, binop(op, mkexpr(src64), mkexpr(t)) );
+         putIRegR( PFX_EMPTY, 4, R_RAX, unop(Iop_64to32,mkexpr(dst64)) );
+         putIRegR( PFX_EMPTY, 4, R_RDX, unop(Iop_64HIto32,mkexpr(dst64)) );
+         break;
 //..       case 2: {
 //..          IROp widen3264 = signed_divide ? Iop_32Sto64 : Iop_32Uto64;
 //..          IROp widen1632 = signed_divide ? Iop_16Sto32 : Iop_16Uto32;
@@ -2576,9 +2580,9 @@ UInt dis_op_imm_A ( Int    size,
 //..                            unop(Iop_64HIto32,mkexpr(dst64)))) );
 //..          break;
 //..       }
-//..       default: vpanic("codegen_div(x86)");
-//..    }
-//.. }
+      default: vpanic("codegen_div(amd64)");
+   }
+}
 
 static 
 UInt dis_Grp1 ( Prefix pfx,
@@ -3063,24 +3067,23 @@ UInt dis_Grp1 ( Prefix pfx,
 //..    }
 //..    DIP("%s%c %s\n", syned ? "imul" : "mul", nameISize(sz), tmp_txt);
 //.. }
-//.. 
-//.. 
-//.. /* Group 3 extended opcodes. */
-//.. static 
-//.. UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
-//.. {
+
+
+/* Group 3 extended opcodes. */
+static 
+ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
+{
 //..    UInt    d32;
-//..    UChar   modrm;
-//..    HChar   dis_buf[50];
-//..    Int     len;
-//..    IRTemp  addr;
-//..    IRType  ty = szToITy(sz);
-//..    IRTemp  t1 = newTemp(ty);
-//..    //   IRTemp  t2 = IRTemp_INVALID;
+   UChar   modrm;
+   HChar   dis_buf[50];
+   Int     len;
+   IRTemp  addr;
+   IRType  ty = szToITy(sz);
+   IRTemp  t1 = newTemp(ty);
 //..    IRTemp dst1, src, dst0;
-//..    modrm = getIByte(delta);
-//..    if (epartIsReg(modrm)) {
-//..       switch (gregOfRM(modrm)) {
+   modrm = getIByte(delta);
+   if (epartIsReg(modrm)) {
+      switch (gregOfRM(modrm)) {
 //..          case 0: { /* TEST */
 //..             delta++; d32 = getUDisp(sz, delta); delta += sz;
 //..             dst1 = newTemp(ty);
@@ -3129,23 +3132,24 @@ UInt dis_Grp1 ( Prefix pfx,
 //..             codegen_div ( sz, t1, False );
 //..             DIP("div%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
 //..             break;
-//..          case 7: /* IDIV */
-//..             delta++;
-//..             assign( t1, getIReg(sz, eregOfRM(modrm)) );
-//..             codegen_div ( sz, t1, True );
-//..             DIP("idiv%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
-//..             break;
-//..          default: 
-//..             vex_printf(
-//..                "unhandled Grp3(R) case %d\n", (UInt)gregOfRM(modrm));
-//..             vpanic("Grp3(x86)");
-//..       }
-//..    } else {
-//..       addr = disAMode ( &len, sorb, delta, dis_buf );
-//..       t1   = newTemp(ty);
-//..       delta += len;
-//..       assign(t1, loadLE(ty,mkexpr(addr)));
-//..       switch (gregOfRM(modrm)) {
+         case 7: /* IDIV */
+            delta++;
+            assign( t1, getIRegB(pfx, sz, eregOfRM(modrm)) );
+            codegen_div ( sz, t1, True );
+            DIP("idiv%c %s\n", nameISize(sz), 
+                               nameIRegB(pfx, sz, eregOfRM(modrm)));
+            break;
+         default: 
+            vex_printf(
+               "unhandled Grp3(R) case %d\n", (UInt)gregOfRM(modrm));
+            vpanic("Grp3(amd64)");
+      }
+   } else {
+      addr = disAMode ( &len, pfx, delta, dis_buf );
+      t1   = newTemp(ty);
+      delta += len;
+      assign(t1, loadLE(ty,mkexpr(addr)));
+      switch (gregOfRM(modrm)) {
 //..          case 0: { /* TEST */
 //..             d32 = getUDisp(sz, delta); delta += sz;
 //..             dst1 = newTemp(ty);
@@ -3185,16 +3189,16 @@ UInt dis_Grp1 ( Prefix pfx,
 //..             codegen_div ( sz, t1, True );
 //..             DIP("idiv%c %s\n", nameISize(sz), dis_buf);
 //..             break;
-//..          default: 
-//..             vex_printf(
-//..                "unhandled Grp3(M) case %d\n", (UInt)gregOfRM(modrm));
-//..             vpanic("Grp3(x86)");
-//..       }
-//..    }
-//..    return delta;
-//.. }
-//.. 
-//.. 
+         default: 
+            vex_printf(
+               "unhandled Grp3(M) case %d\n", (UInt)gregOfRM(modrm));
+            vpanic("Grp3(amd64)");
+      }
+   }
+   return delta;
+}
+
+
 //.. /* Group 4 extended opcodes. */
 //.. static
 //.. UInt dis_Grp4 ( UChar sorb, UInt delta )
@@ -3270,16 +3274,20 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
    if (epartIsReg(modrm)) {
       assign(t1, getIRegB(pfx,sz,eregOfRM(modrm)));
       switch (gregOfRM(modrm)) {
-//--          case 0: /* INC */
-//--             uInstr1(cb, INC, sz, TempReg, t1);
-//--             setFlagsFromUOpcode(cb, INC);
-//--             uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, eregOfRM(modrm));
-//--             break;
-//--          case 1: /* DEC */
-//--             uInstr1(cb, DEC, sz, TempReg, t1);
-//--             setFlagsFromUOpcode(cb, DEC);
-//--             uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, eregOfRM(modrm));
-//--             break;
+         case 0: /* INC */
+            t2 = newTemp(ty);
+            assign(t2, binop(mkSizedOp(ty,Iop_Add8),
+                             mkexpr(t1), mkU(ty,1)));
+            setFlags_INC_DEC( True, t2, ty );
+            putIRegB(pfx,sz,eregOfRM(modrm), mkexpr(t2));
+            break;
+         case 1: /* DEC */
+            t2 = newTemp(ty);
+            assign(t2, binop(mkSizedOp(ty,Iop_Sub8),
+                             mkexpr(t1), mkU(ty,1)));
+            setFlags_INC_DEC( False, t2, ty );
+            putIRegB(pfx,sz,eregOfRM(modrm), mkexpr(t2));
+            break;
          case 2: /* call Ev */
 vassert(0);
 #if 0
@@ -3314,15 +3322,12 @@ vassert(0);
       assign(t1, loadLE(ty,mkexpr(addr)));
       switch (gregOfRM(modrm)) {
          case 0: /* INC */ 
-vassert(0);
-#if 0
             t2 = newTemp(ty);
             assign(t2, binop(mkSizedOp(ty,Iop_Add8),
                              mkexpr(t1), mkU(ty,1)));
             setFlags_INC_DEC( True, t2, ty );
             storeLE(mkexpr(addr),mkexpr(t2));
             break;
-#endif
          case 1: /* DEC */ 
             t2 = newTemp(ty);
             assign(t2, binop(mkSizedOp(ty,Iop_Sub8),
@@ -3566,99 +3571,103 @@ vassert(0);
 //..    }
 //..    DIP("%s%c\n", name, nameISize(sz));
 //.. }
-//.. 
-//.. 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Arithmetic, etc.                                     ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. /* IMUL E, G.  Supplied eip points to the modR/M byte. */
-//.. static
-//.. UInt dis_mul_E_G ( UChar       sorb,
-//..                    Int         size, 
-//..                    UInt        delta0 )
-//.. {
-//..    Int    alen;
-//..    HChar  dis_buf[50];
-//..    UChar  rm = getIByte(delta0);
-//..    IRType ty = szToITy(size);
-//..    IRTemp te = newTemp(ty);
-//..    IRTemp tg = newTemp(ty);
-//..    IRTemp resLo = newTemp(ty);
-//.. 
-//..    assign( tg, getIReg(size, gregOfRM(rm)) );
-//..    if (epartIsReg(rm)) {
-//..       assign( te, getIReg(size, eregOfRM(rm)) );
-//..    } else {
-//..       IRTemp addr = disAMode( &alen, sorb, delta0, dis_buf );
-//..       assign( te, loadLE(ty,mkexpr(addr)) );
-//..    }
-//.. 
-//..    setFlags_MUL ( ty, te, tg, X86G_CC_OP_SMULB );
-//.. 
-//..    assign( resLo, binop( mkSizedOp(ty, Iop_Mul8), mkexpr(te), mkexpr(tg) ) );
-//.. 
-//..    putIReg(size, gregOfRM(rm), mkexpr(resLo) );
-//.. 
-//..    if (epartIsReg(rm)) {
-//..       DIP("imul%c %s, %s\n", nameISize(size), 
-//..                              nameIReg(size,eregOfRM(rm)),
-//..                              nameIReg(size,gregOfRM(rm)));
-//..       return 1+delta0;
-//..    } else {
-//..       DIP("imul%c %s, %s\n", nameISize(size), 
-//..                              dis_buf, nameIReg(size,gregOfRM(rm)));
-//..       return alen+delta0;
-//..    }
-//.. }
-//.. 
-//.. 
-//.. /* IMUL I * E -> G.  Supplied eip points to the modR/M byte. */
-//.. static
-//.. UInt dis_imul_I_E_G ( UChar       sorb,
-//..                       Int         size, 
-//..                       UInt        delta,
-//..                       Int         litsize )
-//.. {
-//..    Int    d32, alen;
-//..    HChar  dis_buf[50];
-//..    UChar  rm = getIByte(delta);
-//..    IRType ty = szToITy(size);
-//..    IRTemp te = newTemp(ty);
-//..    IRTemp tl = newTemp(ty);
-//..    IRTemp resLo = newTemp(ty);
-//.. 
-//..    vassert(size == 1 || size == 2 || size == 4);
-//.. 
-//..    if (epartIsReg(rm)) {
-//..       assign(te, getIReg(size, eregOfRM(rm)));
-//..       delta++;
-//..    } else {
-//..       IRTemp addr = disAMode( &alen, sorb, delta, dis_buf );
-//..       assign(te, loadLE(ty, mkexpr(addr)));
-//..       delta += alen;
-//..    }
-//..    d32 = getSDisp(litsize,delta);
-//..    delta += litsize;
-//.. 
-//..    if (size == 1) d32 &= 0xFF;
-//..    if (size == 2) d32 &= 0xFFFF;
-//.. 
-//..    assign(tl, mkU(ty,d32));
-//.. 
-//..    assign( resLo, binop( mkSizedOp(ty, Iop_Mul8), mkexpr(te), mkexpr(tl) ));
-//.. 
-//..    setFlags_MUL ( ty, te, tl, X86G_CC_OP_SMULB );
-//.. 
-//..    putIReg(size, gregOfRM(rm), mkexpr(resLo));
-//.. 
-//..    DIP("imul %d, %s, %s\n", d32, 
-//..        ( epartIsReg(rm) ? nameIReg(size,eregOfRM(rm)) : dis_buf ),
-//..        nameIReg(size,gregOfRM(rm)) );
-//..    return delta;
-//.. }
-//.. 
-//.. 
+
+
+/*------------------------------------------------------------*/
+/*--- Arithmetic, etc.                                     ---*/
+/*------------------------------------------------------------*/
+
+/* IMUL E, G.  Supplied eip points to the modR/M byte. */
+static
+ULong dis_mul_E_G ( Prefix      pfx,
+                    Int         size, 
+                    ULong       delta0 )
+{
+   Int    alen;
+   HChar  dis_buf[50];
+   UChar  rm = getIByte(delta0);
+   IRType ty = szToITy(size);
+   IRTemp te = newTemp(ty);
+   IRTemp tg = newTemp(ty);
+   IRTemp resLo = newTemp(ty);
+
+   assign( tg, getIRegR(pfx, size, gregOfRM(rm)) );
+   if (epartIsReg(rm)) {
+      assign( te, getIRegB(pfx, size, eregOfRM(rm)) );
+   } else {
+      IRTemp addr = disAMode( &alen, pfx, delta0, dis_buf );
+      assign( te, loadLE(ty,mkexpr(addr)) );
+   }
+
+   setFlags_MUL ( ty, te, tg, AMD64G_CC_OP_SMULB );
+
+   assign( resLo, binop( mkSizedOp(ty, Iop_Mul8), mkexpr(te), mkexpr(tg) ) );
+
+   putIRegR(pfx, size, gregOfRM(rm), mkexpr(resLo) );
+
+   if (epartIsReg(rm)) {
+      DIP("imul%c %s, %s\n", nameISize(size), 
+                             nameIRegB(pfx,size,eregOfRM(rm)),
+                             nameIRegR(pfx,size,gregOfRM(rm)));
+      return 1+delta0;
+   } else {
+      DIP("imul%c %s, %s\n", nameISize(size), 
+                             dis_buf, 
+                             nameIRegR(pfx,size,gregOfRM(rm)));
+      return alen+delta0;
+   }
+}
+
+
+/* IMUL I * E -> G.  Supplied rip points to the modR/M byte. */
+static
+ULong dis_imul_I_E_G ( Prefix      pfx,
+                       Int         size, 
+                       ULong       delta,
+                       Int         litsize )
+{
+   Long   d64;
+   Int    alen;
+   HChar  dis_buf[50];
+   UChar  rm = getIByte(delta);
+   IRType ty = szToITy(size);
+   IRTemp te = newTemp(ty);
+   IRTemp tl = newTemp(ty);
+   IRTemp resLo = newTemp(ty);
+
+   vassert(/*size == 1 || size == 2 ||*/ size == 4 || size == 8);
+
+   if (epartIsReg(rm)) {
+      assign(te, getIRegB(pfx, size, eregOfRM(rm)));
+      delta++;
+   } else {
+      IRTemp addr = disAMode( &alen, pfx, delta, dis_buf );
+      assign(te, loadLE(ty, mkexpr(addr)));
+      delta += alen;
+   }
+   d64 = getSDisp(imin(4,litsize),delta);
+   delta += imin(4,litsize);
+
+   if (size == 1) d64 &= 0xFF;
+   if (size == 2) d64 &= 0xFFFF;
+   if (size == 4) d64 &= 0xFFFFFFFF;
+
+   assign(tl, mkU(ty,d64));
+
+   assign( resLo, binop( mkSizedOp(ty, Iop_Mul8), mkexpr(te), mkexpr(tl) ));
+
+   setFlags_MUL ( ty, te, tl, AMD64G_CC_OP_SMULB );
+
+   putIRegR(pfx, size, gregOfRM(rm), mkexpr(resLo));
+
+   DIP("imul%c $%lld, %s, %s\n", 
+       nameISize(size), d64, 
+       ( epartIsReg(rm) ? nameIRegB(pfx,size,eregOfRM(rm)) : dis_buf ),
+       nameIRegR(pfx,size,gregOfRM(rm)) );
+   return delta;
+}
+
+
 //.. /*------------------------------------------------------------*/
 //.. /*---                                                      ---*/
 //.. /*--- x87 FLOATING POINT INSTRUCTIONS                      ---*/
@@ -11067,12 +11076,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. //--       whatNext = Dis_StopHere;
 //.. //--       DIP("loop 0x%x\n", d32);
 //.. //--       break;
-//.. 
-//..    /* ------------------------ IMUL ----------------------- */
-//.. 
-//..    case 0x69: /* IMUL Iv, Ev, Gv */
-//..       delta = dis_imul_I_E_G ( sorb, sz, delta, sz );
-//..       break;
+
+   /* ------------------------ IMUL ----------------------- */
+
+   case 0x69: /* IMUL Iv, Ev, Gv */
+      delta = dis_imul_I_E_G ( pfx, sz, delta, sz );
+      break;
 //..    case 0x6B: /* IMUL Ib, Ev, Gv */
 //..       delta = dis_imul_I_E_G ( sorb, sz, delta, 1 );
 //..       break;
@@ -12012,16 +12021,16 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
 //..                          getIReg(1,R_ECX), "%cl" );
 //..       break;
-//.. 
-//..    /* ------------------------ (Grp3 extensions) ---------- */
-//.. 
+
+   /* ------------------------ (Grp3 extensions) ---------- */
+
 //..    case 0xF6: /* Grp3 Eb */
 //..       delta = dis_Grp3 ( sorb, 1, delta );
 //..       break;
-//..    case 0xF7: /* Grp3 Ev */
-//..       delta = dis_Grp3 ( sorb, sz, delta );
-//..       break;
-//.. 
+   case 0xF7: /* Grp3 Ev */
+      delta = dis_Grp3 ( pfx, sz, delta );
+      break;
+
 //..    /* ------------------------ (Grp4 extensions) ---------- */
 //.. 
 //..    case 0xFE: /* Grp4 Eb */
@@ -12266,13 +12275,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. //--          uInstr2(cb, STORE, 4, TempReg, t1, TempReg, t2);
 //.. //--          DIP("movnti %s,%s\n", nameIReg(4,gregOfRM(modrm)), dis_buf);
 //.. //--          break;
-//.. 
-//..       /* =-=-=-=-=-=-=-=-=- MUL/IMUL =-=-=-=-=-=-=-=-=-= */
-//.. 
-//..       case 0xAF: /* IMUL Ev, Gv */
-//..          delta = dis_mul_E_G ( sorb, sz, delta );
-//..          break;
-//.. 
+
+      /* =-=-=-=-=-=-=-=-=- MUL/IMUL =-=-=-=-=-=-=-=-=-= */
+
+      case 0xAF: /* IMUL Ev, Gv */
+         delta = dis_mul_E_G ( pfx, sz, delta );
+         break;
+
 //..       /* =-=-=-=-=-=-=-=-=- Jcond d32 -=-=-=-=-=-=-=-=-= */
 //..       case 0x80:
 //..       case 0x81:

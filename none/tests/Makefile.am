@@ -1,7 +1,7 @@
 noinst_SCRIPTS = filter_cpuid  filter_none_discards filter_stderr filter_int gen_insn_test.pl
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
-INSN_TESTS=insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
+INSN_TESTS=insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	args.stderr.exp args.stdout.exp args.vgtest \
@@ -89,6 +89,8 @@ fpu_lazy_eflags_SOURCES	= fpu_lazy_eflags.c
 fucomip_SOURCES 	= fucomip.c
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm
+insn_fpu_SOURCES	= insn_fpu.def
+insn_fpu_LDADD		= -lm
 insn_cmov_SOURCES	= insn_cmov.def
 insn_cmov_LDADD		= -lm
 insn_mmx_SOURCES	= insn_mmx.def

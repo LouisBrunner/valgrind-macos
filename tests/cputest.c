@@ -23,7 +23,10 @@ int main(int argc, char **argv)
    unsigned int d;
 
    if ( argc == 2 ) {
-      if ( strcmp( argv[1], "cmov" ) == 0 ) {
+      if ( strcmp( argv[1], "fpu" ) == 0 ) {
+        level = 1;
+        mask = 1 << 0;
+      } else if ( strcmp( argv[1], "cmov" ) == 0 ) {
         level = 1;
         mask = 1 << 15;
       } else if ( strcmp( argv[1], "mmx" ) == 0 ) {

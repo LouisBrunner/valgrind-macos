@@ -77,15 +77,34 @@ typedef
    }
    RiSym;
 
+/* Line count at which overflow happens, due to line numbers being stored as
+ * shorts in `struct nlist' in a.out.h. */
+#define LINENO_OVERFLOW (1 << (sizeof(short) * 8))
 
-/* A structure to hold addr-to-source info for a single line. */
+#define LINENO_BITS     20
+#define LOC_SIZE_BITS  (32 - LINENO_BITS)
+#define MAX_LINENO     (1 << LINENO_BITS)
+
+/* Unlikely to have any lines with instruction ranges > 4096 bytes */
+#define MAX_LOC_SIZE   (1 << LOC_SIZE_BITS)
+
+/* Number used to detect line number overflows;  if one line is 60000-odd
+ * smaller than the previous, is was probably an overflow.  
+ */
+#define OVERFLOW_DIFFERENCE     (LINENO_OVERFLOW - 5000)
+
+/* A structure to hold addr-to-source info for a single line.  There can be a
+ * lot of these, hence the dense packing. */
 typedef
    struct {
-      Addr   addr;   /* lowest address for this line */
-      Int    fnmoff; /* source filename; offset in this SegInfo's str tab */
-      UShort lineno; /* source line number, or zero */
-      UShort size;   /* size in bytes; we go to a bit of trouble to
-                        catch overflows of this */
+      /* Word 1 */
+      Addr   addr;                  /* lowest address for this line */
+      /* Word 2 */
+      UShort size:LOC_SIZE_BITS;    /* byte size; we catch overflows of this */
+      UInt   lineno:LINENO_BITS;    /* source line number, or zero */
+      /* Word 3 */
+      UInt   fnmoff;                /* source filename; offset in this 
+                                       SegInfo's str tab */
    }
    RiLoc;
 
@@ -215,8 +234,8 @@ void addLoc ( SegInfo* si, RiLoc* loc )
    Int    new_sz, i;
    RiLoc* new_tab;
 
-   /* Ignore zero-sized locs. */
-   if (loc->size == 0) return;
+   /* Zero-sized locs should have been ignored earlier */
+   vg_assert(loc->size > 0);
 
    if (si->loctab_used == si->loctab_size) {
       new_sz = 2 * si->loctab_size;
@@ -547,20 +566,41 @@ void canonicaliseLoctab ( SegInfo* si )
 static __inline__
 void addLineInfo ( SegInfo* si,
                    Int      fnmoff,
-                   Addr     start,
-                   Addr     end,
-                   UInt     lineno )
+                   Addr     this,
+                   Addr     next,
+                   Int      lineno,
+                   Int      entry )
 {
    RiLoc loc;
-   UInt size = end - start + 1;
+   Int size = next - this;
 
-   /* Sanity ... */
-   if (size > 10000) return;
+   /* Ignore zero-sized locs */
+   if (this == next) return;
 
-   if (start >= si->start+si->size 
-       || end < si->start) return;
+   /* Maximum sanity checking.  Some versions of GNU as do a shabby job with
+    * stabs entries;  if anything looks suspicious, revert to a size of 1.
+    * This should catch the instruction of interest (since if using asm-level
+    * debug info, one instruction will correspond to one line, unlike with
+    * C-level debug info where multiple instructions can map to the one line), 
+    * but avoid catching any other instructions bogusly. */
+   if (this > next) {
+       VG_(message)(Vg_DebugMsg, 
+                    "warning: stabs addresses out of order "
+                    "at entry %d: 0x%x 0x%x", entry, this, next);
+       size = 1;
+   }
 
-   loc.addr      = start;
+   if (size > MAX_LOC_SIZE) {
+       VG_(message)(Vg_DebugMsg, 
+                    "warning: stabs line address range too large "
+                    "at entry %d: %d", entry, size);
+       size = 1;
+   }
+
+   vg_assert(this < si->start + si->size && next-1 > si->start);
+   vg_assert(lineno >= 0 && lineno < MAX_LINENO);
+
+   loc.addr      = this;
    loc.size      = (UShort)size;
    loc.lineno    = lineno;
    loc.fnmoff    = fnmoff;
@@ -590,13 +630,15 @@ void vg_read_lib_symbols ( SegInfo* si )
    /* for the .stabs reader */
    Int    curr_filenmoff;
    Addr   curr_fnbaseaddr;
-   Char*  curr_file_name;
+   Char  *curr_file_name, *curr_fn_name;
    Int    n_stab_entries;
+   Int    prev_lineno, lineno;
+   Int    lineno_overflows;
+   Bool   same_file;
 
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1)
-      VG_(message)(Vg_UserMsg, "Reading syms from %s", 
-                               si->filename );
+      VG_(message)(Vg_UserMsg, "Reading syms from %s", si->filename );
 
    /* mmap the object image aboard, so that we can read symbols and
       line number info out of it.  It will be munmapped immediately
@@ -905,7 +947,10 @@ void vg_read_lib_symbols ( SegInfo* si )
    */
    curr_filenmoff  = addStr(si,"???");
    curr_fnbaseaddr = (Addr)NULL;
-   curr_file_name  = (Char*)NULL;
+   curr_file_name = curr_fn_name = (Char*)NULL;
+   lineno = prev_lineno = 0;
+   lineno_overflows = 0;
+   same_file = True;
 
    n_stab_entries = stab_sz/(int)sizeof(struct nlist);
 
@@ -920,21 +965,45 @@ void vg_read_lib_symbols ( SegInfo* si )
       VG_(printf)("\n");
 #     endif
 
+      Char *no_fn_name = "???";
+
       switch (stab[i].n_type) {
          UInt next_addr;
 
-         /* To compute the instr address range covered by a single line, find
-          * the address of the next thing and compute the difference.  The
-          * approach used depends on what kind of entry/entries follow... */
+         /* Two complicated things here:
+          * 1. the n_desc field in 'struct n_list' in a.out.h is only 16-bits,
+          *    which gives a maximum of 65535 lines.  We handle files bigger
+          *    than this by detecting heuristically overflows -- if the line
+          *    count goes from 65000-odd to 0-odd within the same file, we
+          *    assume it's an overflow.  Once we switch files, we zero the
+          *    overflow count
+          *
+          * 2. To compute the instr address range covered by a single line,
+          *    find the address of the next thing and compute the difference.
+          *    The approach used depends on what kind of entry/entries
+          *    follow... 
+          */
          case N_SLINE: {
-            Int lineno = stab[i].n_desc;              
             Int this_addr = (UInt)stab[i].n_value;
+
+            /* Although stored as a short, neg values really are > 32768, hence
+             * the UShort cast.  Then we use an Int to handle overflows. */
+            prev_lineno = lineno;
+            lineno      = (Int)((UShort)stab[i].n_desc);
+
+            if (prev_lineno > lineno + OVERFLOW_DIFFERENCE && same_file) {
+                VG_(message)(Vg_DebugMsg, 
+                             "Line number overflow detected (%d --> %d) in %s", 
+                             prev_lineno, lineno, curr_file_name);
+                lineno_overflows++;
+            }
+            same_file = True;
 
             LOOP:
             if (i+1 >= n_stab_entries) {
                /* If it's the last entry, just guess the range is four;  can't
                 * do any better */
-               next_addr = 4;
+               next_addr = this_addr + 4;
             } else {    
                switch (stab[i+1].n_type) {
                   /* Easy, common case: use address of next entry */
@@ -953,9 +1022,11 @@ void vg_read_lib_symbols ( SegInfo* si )
                      if ('\0' == * (stabstr + stab[i+1].n_un.n_strx) ) {
                         next_addr = (UInt)stab[i+1].n_value;
                      } else {
-                        VG_(printf)("unhandled stabs case: N_FUN start %d %s\n",
-                                   i, (stabstr + stab[i+1].n_un.n_strx) );
-                        VG_(panic)("unhandled N_FUN stabs case");
+                        VG_(message)(Vg_DebugMsg, 
+                                     "warning: function %s missing closing "
+                                     "N_FUN stab at entry %d",
+                                     curr_fn_name, i );
+                        next_addr = this_addr;  /* assume zero-size loc */
                      }
                      break;
 
@@ -977,18 +1048,9 @@ void vg_read_lib_symbols ( SegInfo* si )
                }
             }
             
-            //Int offset2 = (i+1 < n_stab_entries && 68 == stab[i+1].n_type
-            //              ? (UInt)stab[i+1].n_value - 1
-            //              : offset + 1);
-            //if (i+1 < n_stab_entries) {
-            //    int x;
-            //    if (68 != (x = stab[i+1].n_type)) {
-            //        VG_(printf)("%d  ", x);
-            //    }
-            //}
-
             addLineInfo ( si, curr_filenmoff, curr_fnbaseaddr + this_addr, 
-                          curr_fnbaseaddr + next_addr - 1, lineno );
+                          curr_fnbaseaddr + next_addr,
+                          lineno + lineno_overflows * LINENO_OVERFLOW, i);
             break;
          }
 
@@ -996,11 +1058,22 @@ void vg_read_lib_symbols ( SegInfo* si )
             if ('\0' != (stabstr + stab[i].n_un.n_strx)[0] ) {
                /* N_FUN with a name -- indicates the start of a fn.  */
                curr_fnbaseaddr = si->offset + (Addr)stab[i].n_value;
+               curr_fn_name = stabstr + stab[i].n_un.n_strx;
+            } else {
+               curr_fn_name = no_fn_name;
             }
             break;
          }
 
-         case N_SO: case N_SOL:
+         case N_SOL:
+            if (lineno_overflows != 0) {
+               VG_(panic)("Can't currently handle include files in very long "
+                          "(> 65535 lines) files.  Sorry.");
+            }
+            /* fall through! */
+         case N_SO: 
+            lineno_overflows = 0;
+
          /* seems to give lots of locations in header files */
          /* case 130: */ /* BINCL */
          { 

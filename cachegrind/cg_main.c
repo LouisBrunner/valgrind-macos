@@ -47,7 +47,8 @@
 #define FN_NAME_LEN                       256
 #define BUF_LEN                           512
 #define COMMIFY_BUF_LEN                   128
-#define RESULTS_BUF                       128
+#define RESULTS_BUF_LEN                   128
+#define LINE_BUF_LEN                       64
 
 /*------------------------------------------------------------*/
 /*--- Output file related stuff                            ---*/
@@ -87,15 +88,14 @@ typedef enum { INSTR_CC, READ_CC, WRITE_CC, MOD_CC } CC_type;
  * vg_include.c 
  *
  * WARNING:  the 'tag' field *must* be the first byte of both CC types.
- *           the 'instr_addr' *must* be the second word of both CC types.
  *
- * This is because we use them when we don't know what type of CC we're dealing
- * with.
+ * This is because we use it to work out what kind of CC we're dealing with.
  */ 
 struct _iCC {
    /* word 1 */
    UChar tag;
    UChar instr_size;
+   /* 2 bytes padding */
 
    /* words 2+ */
    Addr instr_addr;
@@ -107,6 +107,7 @@ struct _idCC {
    UChar tag;
    UChar instr_size;
    UChar data_size;
+   /* 1 byte padding */
 
    /* words 2+ */
    Addr instr_addr;
@@ -133,25 +134,24 @@ static void init_idCC(CC_type X_CC, idCC* cc, Addr instr_addr,
    initCC(&cc->D);
 }
 
-static __inline__ void sprint_iCC(Char buf[BUF_LEN], UInt ln, iCC* cc)
+static __inline__ void sprint_iCC(Char buf[BUF_LEN], iCC* cc)
 {
-   VG_(sprintf)(buf, "%u %llu %llu %llu\n",
-                      ln, cc->I.a, cc->I.m1, cc->I.m2);
+   VG_(sprintf)(buf, "%llu %llu %llu\n",
+                      cc->I.a, cc->I.m1, cc->I.m2);
 }
 
-static __inline__ void sprint_read_or_mod_CC(Char buf[BUF_LEN], UInt ln, 
-                                             idCC* cc)
+static __inline__ void sprint_read_or_mod_CC(Char buf[BUF_LEN], idCC* cc)
 {
-   VG_(sprintf)(buf, "%u %llu %llu %llu %llu %llu %llu\n",
-                      ln, cc->I.a, cc->I.m1, cc->I.m2, 
-                          cc->D.a, cc->D.m1, cc->D.m2);
+   VG_(sprintf)(buf, "%llu %llu %llu %llu %llu %llu\n",
+                      cc->I.a, cc->I.m1, cc->I.m2, 
+                      cc->D.a, cc->D.m1, cc->D.m2);
 }
 
-static __inline__ void sprint_write_CC(Char buf[BUF_LEN], UInt ln, idCC* cc)
+static __inline__ void sprint_write_CC(Char buf[BUF_LEN], idCC* cc)
 {
-   VG_(sprintf)(buf, "%u %llu %llu %llu . . . %llu %llu %llu\n",
-                      ln, cc->I.a, cc->I.m1, cc->I.m2, 
-                          cc->D.a, cc->D.m1, cc->D.m2);
+   VG_(sprintf)(buf, "%llu %llu %llu . . . %llu %llu %llu\n",
+                      cc->I.a, cc->I.m1, cc->I.m2, 
+                      cc->D.a, cc->D.m1, cc->D.m2);
 }
 
 /*------------------------------------------------------------*/
@@ -211,14 +211,13 @@ static void init_BBCC_table()
       BBCC_table[i] = NULL;
 }
 
-static void get_file_fn_names(Addr instr_addr, Char filename[FILENAME_LEN],
-                       Char fn_name[FN_NAME_LEN])
+static void get_debug_info(Addr instr_addr, Char filename[FILENAME_LEN],
+                           Char fn_name[FN_NAME_LEN], Int* line_num)
 {
-   UInt dummy_line_num;
    Bool found1, found2, no_demangle = False;
 
    found1 = VG_(what_line_is_this)(instr_addr, filename,
-                                   FILENAME_LEN, &dummy_line_num);
+                                   FILENAME_LEN, line_num);
    found2 = VG_(what_fn_is_this)(no_demangle, instr_addr, fn_name, FN_NAME_LEN);
 
    if (!found1 && !found2) {
@@ -304,8 +303,9 @@ static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb,
    BBCC      *curr_BBCC;
    Char       filename[FILENAME_LEN], fn_name[FN_NAME_LEN];
    UInt       filename_hash, fnname_hash, BBCC_hash;
+   Int        dummy_line_num;
 
-   get_file_fn_names(bb_orig_addr, filename, fn_name);
+   get_debug_info(bb_orig_addr, filename, fn_name, &dummy_line_num);
 
    VGP_PUSHCC(VgpCacheGetBBCC);
    filename_hash = hash(filename, N_FILE_ENTRIES);
@@ -684,7 +684,7 @@ void VG_(init_cachesim)(void)
       }
    }
    VG_(close)(fd);
-    
+
    initCC(&Ir_total);
    initCC(&Dr_total);
    initCC(&Dw_total);
@@ -723,30 +723,17 @@ void VG_(cachesim_log_mem_instr)(idCC* cc, Addr data_addr)
 /*--- Printing of output file and summary stats            ---*/
 /*------------------------------------------------------------*/
 
-int get_line_num(Addr instr_addr) 
-{
-   Char filename[FILENAME_LEN] = "???";
-   UInt line_num;
-   Bool found;
-
-   found = VG_(what_line_is_this)(instr_addr, filename,
-                                  FILENAME_LEN, &line_num);
-   if (!found) {
-      line_num = 0; 
-   }
-   return line_num;
-}
-
 static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl, 
                                                  Char *first_instr_fn)
 {
    Addr BBCC_ptr0, BBCC_ptr;
-   Char buf[BUF_LEN], curr_file[BUF_LEN], fbuf[BUF_LEN+4];
+   Char buf[BUF_LEN], curr_file[BUF_LEN], fbuf[BUF_LEN+4], lbuf[LINE_BUF_LEN];
    UInt line_num;
 
    BBCC_ptr0 = BBCC_ptr = (Addr)(BBCC_node->array);
 
-   VG_(write)(fd, (void*)"\n", 1);
+   /* Mark start of basic block in output, just to ease debugging */
+   VG_(write)(fd, (void*)"\n", 1);  
 
    VG_(strcpy)(curr_file, first_instr_fl);
    
@@ -759,18 +746,7 @@ static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl,
       Char fl_buf[FILENAME_LEN];
       Char fn_buf[FN_NAME_LEN];
 
-      /* Assumes instr_addr position is same for both CCs. */
-      Addr instr_addr = ((iCC*)BBCC_ptr)->instr_addr;
-      get_file_fn_names(instr_addr, fl_buf, fn_buf);
-
-      /* Allow for filename switching in the middle of a BB;  if this happens,
-       * must print the new filename with the function name. */
-      if (0 != strcmp(fl_buf, curr_file)) {
-         VG_(strcpy)(curr_file, fl_buf);
-         VG_(sprintf)(fbuf, "fi=%s\n", curr_file);
-         VG_(write)(fd, (void*)fbuf, VG_(strlen)(fbuf));
-      }
-
+      Addr instr_addr;
       switch ( ((iCC*)BBCC_ptr)->tag ) {
 
 #define ADD_CC_TO(CC_type, cc, total)           \
@@ -779,24 +755,24 @@ static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl,
    total.m2 += ((CC_type*)BBCC_ptr)->cc.m2;
           
          case INSTR_CC:
-            line_num = get_line_num(((iCC*)BBCC_ptr)->instr_addr);
-            sprint_iCC(buf, line_num, (iCC*)BBCC_ptr);
+            instr_addr = ((iCC*)BBCC_ptr)->instr_addr;
+            sprint_iCC(buf, (iCC*)BBCC_ptr);
             ADD_CC_TO(iCC, I, Ir_total);
             BBCC_ptr += sizeof(iCC);
             break;
 
          case READ_CC:
          case  MOD_CC:
-            line_num = get_line_num(((idCC*)BBCC_ptr)->instr_addr);
-            sprint_read_or_mod_CC(buf, line_num, (idCC*)BBCC_ptr);
+            instr_addr = ((idCC*)BBCC_ptr)->instr_addr;
+            sprint_read_or_mod_CC(buf, (idCC*)BBCC_ptr);
             ADD_CC_TO(idCC, I, Ir_total);
             ADD_CC_TO(idCC, D, Dr_total);
             BBCC_ptr += sizeof(idCC);
             break;
 
          case WRITE_CC:
-            line_num = get_line_num(((idCC*)BBCC_ptr)->instr_addr);
-            sprint_write_CC(buf, line_num, (idCC*)BBCC_ptr);
+            instr_addr = ((idCC*)BBCC_ptr)->instr_addr;
+            sprint_write_CC(buf, (idCC*)BBCC_ptr);
             ADD_CC_TO(idCC, I, Ir_total);
             ADD_CC_TO(idCC, D, Dw_total);
             BBCC_ptr += sizeof(idCC);
@@ -810,19 +786,31 @@ static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl,
       }
       distinct_instrs++;
       
+      get_debug_info(instr_addr, fl_buf, fn_buf, &line_num);
+
+      /* Allow for filename switching in the middle of a BB;  if this happens,
+       * must print the new filename with the function name. */
+      if (0 != strcmp(fl_buf, curr_file)) {
+         VG_(strcpy)(curr_file, fl_buf);
+         VG_(sprintf)(fbuf, "fi=%s\n", curr_file);
+         VG_(write)(fd, (void*)fbuf, VG_(strlen)(fbuf));
+      }
+
       /* If the function name for this instruction doesn't match that of the
-       * first instruction in the BB, print out a warning. */
+       * first instruction in the BB, print warning. */
       if (VG_(clo_trace_symtab) && 0 != strcmp(fn_buf, first_instr_fn)) {
          VG_(printf)("Mismatched function names\n");
-         VG_(printf)("  filenames: BB:%s, instr:%s;  "
-                     "fn_names:  BB:%s, instr:%s;  "
-                     "line: %d\n", 
+         VG_(printf)("  filenames: BB:%s, instr:%s;"
+                     "  fn_names:  BB:%s, instr:%s;"
+                     "  line: %d\n", 
                      first_instr_fl, fl_buf, 
                      first_instr_fn, fn_buf, 
                      line_num);
       }
 
-      VG_(write)(fd, (void*)buf, VG_(strlen)(buf));
+      VG_(sprintf)(lbuf, "%u ", line_num);
+      VG_(write)(fd, (void*)lbuf, VG_(strlen)(lbuf));   /* line number */
+      VG_(write)(fd, (void*)buf, VG_(strlen)(buf));     /* cost centre */
    }
    /* If we switched filenames in the middle of the BB without switching back,
     * switch back now because the subsequent BB may be relying on falling under
@@ -831,7 +819,9 @@ static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl,
       VG_(sprintf)(fbuf, "fe=%s\n", first_instr_fl);
       VG_(write)(fd, (void*)fbuf, VG_(strlen)(fbuf));
    }
-   //VG_(write)(fd, (void*)"#}\n", 3);
+
+   /* Mark end of basic block */
+   /* VG_(write)(fd, (void*)"#}\n", 3); */
 
    vg_assert(BBCC_ptr - BBCC_ptr0 == BBCC_node->array_size);
 }
@@ -961,9 +951,9 @@ void VG_(show_cachesim_results)(Int client_argc, Char** client_argv)
    CC D_total;
    ULong L2_total_m, L2_total_mr, L2_total_mw,
          L2_total, L2_total_r, L2_total_w;
-   char buf1[RESULTS_BUF], 
-        buf2[RESULTS_BUF], 
-        buf3[RESULTS_BUF];
+   char buf1[RESULTS_BUF_LEN], 
+        buf2[RESULTS_BUF_LEN], 
+        buf3[RESULTS_BUF_LEN];
    Int l1, l2, l3;
    Int p;
 

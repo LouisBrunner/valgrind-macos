@@ -14,7 +14,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fdleak_creat.stderr.exp fdleak_creat.vgtest \
 	fdleak_dup.stderr.exp fdleak_dup.vgtest \
 	fdleak_dup2.stderr.exp fdleak_dup2.vgtest \
-	fdleak_fcntl.stderr.exp fdleak_fcntl.vgtest \
+	fdleak_fcntl.stderr.exp fdleak_fcntl.stderr.exp2 fdleak_fcntl.vgtest \
 	fdleak_ipv4.stderr.exp fdleak_ipv4.stdout.exp fdleak_ipv4.vgtest \
 	fdleak_open.stderr.exp fdleak_open.vgtest \
 	fdleak_pipe.stderr.exp fdleak_pipe.vgtest \

@@ -87,7 +87,7 @@ void VGE_(done_prof_mem) ( void )
 }
 
 #define PROF_EVENT(ev)                                  \
-   do { vg_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);   \
+   do { sk_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);   \
         event_ctr[ev]++;                                \
    } while (False);
 
@@ -201,7 +201,7 @@ ESecMap* alloc_secondary_map ( __attribute__ ((unused)) Char* caller )
    /* It just happens that a SecMap occupies exactly 18 pages --
       although this isn't important, so the following assert is
       spurious. (SSS: not true for ESecMaps -- they're 16 pages) */
-   vg_assert(0 == (sizeof(ESecMap) % VKI_BYTES_PER_PAGE));
+   sk_assert(0 == (sizeof(ESecMap) % VKI_BYTES_PER_PAGE));
    map = VG_(get_memory_from_mmap)( sizeof(ESecMap), caller );
 
    for (i = 0; i < ESEC_MAP_WORDS; i++)
@@ -223,13 +223,13 @@ void set_sword ( Addr a, shadow_word sword )
 
    /* Use bits 31..16 for primary, 15..2 for secondary lookup */
    sm     = primary_map[a >> 16];
-   vg_assert(sm != &distinguished_secondary_map);
+   sk_assert(sm != &distinguished_secondary_map);
    sm->swords[(a & 0xFFFC) >> 2] = sword;
 
    if (VGE_IS_DISTINGUISHED_SM(sm)) {
       VG_(printf)("wrote to distinguished 2ndary map! 0x%x\n", a);
       // XXX: may be legit, but I want to know when it happens --njn
-      VG_(panic)("wrote to distinguished 2ndary map!");
+      VG_(skin_panic)("wrote to distinguished 2ndary map!");
    }
 }
 
@@ -244,7 +244,7 @@ shadow_word* get_sword_addr ( Addr a )
    if (VGE_IS_DISTINGUISHED_SM(sm)) {
       VG_(printf)("accessed distinguished 2ndary map! 0x%x\n", a);
       // XXX: may be legit, but I want to know when it happens --njn
-      //VG_(panic)("accessed distinguished 2ndary map!");
+      //VG_(skin_panic)("accessed distinguished 2ndary map!");
       return SEC_MAP_ACCESS;
    }
 
@@ -271,7 +271,7 @@ void make_writable_aligned ( Addr a, UInt size )
    Addr a_past_end = a + size;
 
    //PROF_EVENT(??)  PPP
-   vg_assert(IS_ALIGNED4_ADDR(a));
+   sk_assert(IS_ALIGNED4_ADDR(a));
 
    for ( ; a < a_past_end; a += 4) {
       set_sword(a, virgin_sword);
@@ -298,7 +298,7 @@ void init_magically_inited_sword(Addr a)
 {
    shadow_word sword;
 
-   vg_assert(1 == VG_(get_current_tid_1_if_root)());
+   sk_assert(1 == VG_(get_current_tid_1_if_root)());
    sword.other = TID_INDICATING_NONVIRGIN;
    sword.state = Vge_Virgin;
    set_sword(a, virgin_sword);
@@ -341,7 +341,7 @@ static
 Int allocate_LockSet(LockSet* set)
 {
    if (n_lockset_table >= M_LOCKSET_TABLE) 
-      VG_(panic)("lockset table full -- increase M_LOCKSET_TABLE");
+      VG_(skin_panic)("lockset table full -- increase M_LOCKSET_TABLE");
    lockset_table[n_lockset_table] = set;
    n_lockset_table++;
 #  if DEBUG_MEM_LOCKSET_CHANGES || DEBUG_NEW_LOCKSETS
@@ -465,7 +465,7 @@ void sanity_check_locksets ( Char* caller )
                "i = %d, j = %d, badness = %d, caller = %s\n", 
                i, j, badness, caller);
    pp_all_LockSets();
-   VG_(panic)("sanity_check_locksets");
+   VG_(skin_panic)("sanity_check_locksets");
 }
 #endif /* LOCKSET_SANITY */
 
@@ -482,7 +482,7 @@ UInt remove ( UInt ia, pthread_mutex_t* mx )
    LockSet*  new_node;
    LockSet** prev_ptr = &new_vector;
    LockSet*  a = lockset_table[ia];
-   vg_assert(is_valid_lockset_id(ia));
+   sk_assert(is_valid_lockset_id(ia));
 
 #  if DEBUG_MEM_LOCKSET_CHANGES
    VG_(printf)("Removing from %d mutex %p:\n", ia, mx);
@@ -513,7 +513,7 @@ UInt remove ( UInt ia, pthread_mutex_t* mx )
       }
       *prev_ptr = NULL;
    }
-   vg_assert(found == 1 /* sigh .. if the client is buggy */ || found == 0 );
+   sk_assert(found == 1 /* sigh .. if the client is buggy */ || found == 0 );
 
    /* Preserve uniqueness invariants in face of client buggyness */
    if (found == 0) {
@@ -613,7 +613,7 @@ static UInt intersect(UInt ia, UInt ib)
          a = a->next;
       } else if (a->mutex > b->mutex) {
          b = b->next;
-      } else VG_(panic)("STOP PRESS: Laws of arithmetic broken");
+      } else VG_(skin_panic)("STOP PRESS: Laws of arithmetic broken");
 
       *prev_ptr = NULL;
    }
@@ -631,7 +631,7 @@ static UInt intersect(UInt ia, UInt ib)
    }
 
    /* Check we won't overflow the OTHER_BITS bits of sword->other */
-   vg_assert(i < (1 << OTHER_BITS));
+   sk_assert(i < (1 << OTHER_BITS));
 
 #  if LOCKSET_SANITY 
    sanity_check_locksets("intersect-OUT");
@@ -703,14 +703,14 @@ void set_address_range_state ( Addr a, UInt len /* in bytes */,
    
    default:
       VG_(printf)("init_status = %u\n", status);
-      VG_(panic)("Unexpected Vge_InitStatus");
+      VG_(skin_panic)("Unexpected Vge_InitStatus");
    }
       
    /* Check that zero page and highest page have not been written to
       -- this could happen with buggy syscall wrappers.  Today
       (2001-04-26) had precisely such a problem with
       __NR_setitimer. */
-   vg_assert(SK_(cheap_sanity_check)());
+   sk_assert(SK_(cheap_sanity_check)());
    VGP_POPCC(VgpSARP);
 }
 
@@ -893,7 +893,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
             uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
             uLiteral(cb, (UInt)u_in->size);
 
-            vg_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
+            sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
                       8 == u_in->size || 10 == u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, u_in->val1, TempReg, t_size);
             // SSS: make regparms(2) eventually...
@@ -908,7 +908,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
             uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
             uLiteral(cb, (UInt)u_in->size);
 
-            vg_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
+            sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
                       8 == u_in->size || 10 == u_in->size);
             uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
             uCCall(cb, (Addr) & eraser_mem_write, 2, 0, False);
@@ -957,7 +957,7 @@ static void record_eraser_error ( ThreadId tid, Addr a, Bool is_write )
 Bool SK_(eq_SkinError) ( VgRes not_used,
                           SkinError* e1, SkinError* e2 )
 {
-   vg_assert(EraserErr == e1->ekind && EraserErr == e2->ekind);
+   sk_assert(EraserErr == e1->ekind && EraserErr == e2->ekind);
    if (e1->string != e2->string) return False;
    if (0 != VG_(strcmp)(e1->string, e2->string)) return False;
    return True;
@@ -966,7 +966,7 @@ Bool SK_(eq_SkinError) ( VgRes not_used,
 
 void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 {
-   vg_assert(EraserErr == err->ekind);
+   sk_assert(EraserErr == err->ekind);
    VG_(message)(Vg_UserMsg, "Possible data race %s variable at 0x%x",
                 err->string, err->addr );
    pp_ExeContext();
@@ -1001,8 +1001,8 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf,
 
 Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
 {
-   vg_assert( su->skind == EraserSupp);
-   vg_assert(err->ekind == EraserErr);
+   sk_assert( su->skind == EraserSupp);
+   sk_assert(err->ekind == EraserErr);
    return True;
 }
 
@@ -1021,7 +1021,7 @@ static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
    VG_(printf)("lock  (%u, %x)\n", tid, mutex);
 #  endif
 
-   vg_assert(tid < VG_N_THREADS &&
+   sk_assert(tid < VG_N_THREADS &&
              thread_locks[tid] < M_LOCKSET_TABLE);
    /* VG_(printf)("LOCK: held %d, new %p\n", thread_locks[tid], mutex); */
 #  if LOCKSET_SANITY > 1
@@ -1030,7 +1030,7 @@ static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
 
    while (True) {
       if (i == M_LOCKSET_TABLE) 
-         VG_(panic)("lockset table full -- increase M_LOCKSET_TABLE");
+         VG_(skin_panic)("lockset table full -- increase M_LOCKSET_TABLE");
 
       /* the lockset didn't already exist */
       if (i == n_lockset_table) {
@@ -1063,7 +1063,7 @@ static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
          (*q) = new_node;
 
          p = lockset_table[i];
-         vg_assert(i == n_lockset_table);
+         sk_assert(i == n_lockset_table);
          n_lockset_table++;
 
 #        if DEBUG_NEW_LOCKSETS
@@ -1264,7 +1264,7 @@ static void eraser_mem_read(Addr a, UInt size)
          break;
 
       default:
-         VG_(panic)("Unknown eraser state");
+         VG_(skin_panic)("Unknown eraser state");
       }
    }
 }
@@ -1326,7 +1326,7 @@ static void eraser_mem_write(Addr a, UInt size)
          break;
 
       default:
-         VG_(panic)("Unknown eraser state");
+         VG_(skin_panic)("Unknown eraser state");
       }
    }
 }
@@ -1344,6 +1344,7 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
 
    needs->name                    = "helgrind";
    needs->description             = "a data race detector";
+   needs->description             = "njn25@cam.ac.uk";
 
    needs->core_errors             = True;
    needs->skin_errors             = True;

@@ -780,13 +780,13 @@ void read_debuginfo_stabs ( SegInfo* si,
                      } else {
                         VG_(printf)("unhandled N_SOL stabs case: %d %d %d", 
                                     stab[i+1].n_type, i, n_stab_entries);
-                        VG_(panic)("unhandled N_SOL stabs case");
+                        VG_(core_panic)("unhandled N_SOL stabs case");
                      }
 
                   default:
                      VG_(printf)("unhandled (other) stabs case: %d %d", 
                                  stab[i+1].n_type,i);
-                     /* VG_(panic)("unhandled (other) stabs case"); */
+                     /* VG_(core_panic)("unhandled (other) stabs case"); */
                      next_addr = this_addr + 4;
                      break;
                }

@@ -262,7 +262,7 @@ Superblock* findSb ( Arena* a, UInt* ch )
          return sb;
    VG_(printf)("findSb: can't find pointer %p in arena `%s'\n",
                ch, a->name );
-   VG_(panic)("findSb: vg_free() in wrong arena?");
+   VG_(core_panic)("findSb: vg_free() in wrong arena?");
    return NULL; /*NOTREACHED*/
 }
 
@@ -710,7 +710,7 @@ static void mallocSanityCheckArena ( ArenaId aid )
    UInt        arena_bytes_on_loan;
    Arena*      a;
 
-#  define BOMB VG_(panic)("mallocSanityCheckArena")
+#  define BOMB VG_(core_panic)("mallocSanityCheckArena")
 
    a = arenaId_to_ArenaP(aid);
    
@@ -1105,7 +1105,7 @@ void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
       default:
          VG_(printf)("vg_malloc_aligned(%p, %d, %d)\nbad alignment request", 
                      a, req_alignB, req_pszB );
-         VG_(panic)("vg_malloc_aligned");
+         VG_(core_panic)("vg_malloc_aligned");
          /*NOTREACHED*/
    }
 

@@ -78,7 +78,7 @@ static Char* nameGrp1 ( Int opc_aux )
 {
    static Char* grp1_names[8] 
      = { "add", "or", "adc", "sbb", "and", "sub", "xor", "cmp" };
-   if (opc_aux < 0 || opc_aux > 7) VG_(panic)("nameGrp1");
+   if (opc_aux < 0 || opc_aux > 7) VG_(core_panic)("nameGrp1");
    return grp1_names[opc_aux];
 }
 
@@ -86,7 +86,7 @@ static Char* nameGrp2 ( Int opc_aux )
 {
    static Char* grp2_names[8] 
      = { "rol", "ror", "rcl", "rcr", "shl", "shr", "shl", "sar" };
-   if (opc_aux < 0 || opc_aux > 7) VG_(panic)("nameGrp2");
+   if (opc_aux < 0 || opc_aux > 7) VG_(core_panic)("nameGrp2");
    return grp2_names[opc_aux];
 }
 
@@ -94,7 +94,7 @@ static Char* nameGrp4 ( Int opc_aux )
 {
    static Char* grp4_names[8] 
      = { "inc", "dec", "???", "???", "???", "???", "???", "???" };
-   if (opc_aux < 0 || opc_aux > 1) VG_(panic)("nameGrp4");
+   if (opc_aux < 0 || opc_aux > 1) VG_(core_panic)("nameGrp4");
    return grp4_names[opc_aux];
 }
 
@@ -102,7 +102,7 @@ static Char* nameGrp5 ( Int opc_aux )
 {
    static Char* grp5_names[8] 
      = { "inc", "dec", "call*", "call*", "jmp*", "jmp*", "push", "???" };
-   if (opc_aux < 0 || opc_aux > 6) VG_(panic)("nameGrp5");
+   if (opc_aux < 0 || opc_aux > 6) VG_(core_panic)("nameGrp5");
    return grp5_names[opc_aux];
 }
 
@@ -110,7 +110,7 @@ static Char* nameGrp8 ( Int opc_aux )
 {
    static Char* grp8_names[8] 
      = { "???", "???", "???", "???", "bt", "bts", "btr", "btc" };
-   if (opc_aux < 4 || opc_aux > 7) VG_(panic)("nameGrp8");
+   if (opc_aux < 4 || opc_aux > 7) VG_(core_panic)("nameGrp8");
    return grp8_names[opc_aux];
 }
 
@@ -130,7 +130,7 @@ Char* VG_(name_of_int_reg) ( Int size, Int reg )
       case 1: return ireg8_names[reg];
    }
   bad:
-   VG_(panic)("name_of_int_reg");
+   VG_(core_panic)("name_of_int_reg");
    return NULL; /*notreached*/
 }
 
@@ -143,7 +143,7 @@ Char* VG_(name_of_seg_reg) ( Int sreg )
       case R_DS: return "%ds";
       case R_FS: return "%fs";
       case R_GS: return "%gs";
-      default: VG_(panic)("nameOfSegReg");
+      default: VG_(core_panic)("nameOfSegReg");
    }
 }
 
@@ -153,7 +153,7 @@ Char VG_(name_of_int_size) ( Int size )
       case 4: return 'l';
       case 2: return 'w';
       case 1: return 'b';
-      default: VG_(panic)("name_of_int_size");
+      default: VG_(core_panic)("name_of_int_size");
    }
 }
 
@@ -225,7 +225,7 @@ __inline__ static UInt getUDisp ( Int size, Addr eip )
       case 4: return getUDisp32(eip);
       case 2: return getUDisp16(eip);
       case 1: return getUChar(eip);
-      default: VG_(panic)("getUDisp");
+      default: VG_(core_panic)("getUDisp");
   }
   return 0; /*notreached*/
 }
@@ -236,7 +236,7 @@ __inline__ static UInt getSDisp ( Int size, Addr eip )
       case 4: return getUDisp32(eip);
       case 2: return getSDisp16(eip);
       case 1: return getSDisp8(eip);
-      default: VG_(panic)("getUDisp");
+      default: VG_(core_panic)("getUDisp");
   }
   return 0; /*notreached*/
 }
@@ -281,7 +281,7 @@ static void setFlagsFromUOpcode ( UCodeBlock* cb, Int uopc )
       default: 
          VG_(printf)("unhandled case is %s\n", 
                      VG_(name_UOpcode)(True, uopc));
-         VG_(panic)("setFlagsFromUOpcode: unhandled case");
+         VG_(core_panic)("setFlagsFromUOpcode: unhandled case");
    }
 }
 
@@ -304,7 +304,7 @@ UChar* sorbTxt ( UChar sorb )
       case 0x26: return "%es:";
       case 0x64: return "%fs:";
       case 0x65: return "%gs:";
-      default: VG_(panic)("sorbTxt");
+      default: VG_(core_panic)("sorbTxt");
    }
 }
 
@@ -326,7 +326,7 @@ void handleSegOverride ( UCodeBlock* cb, UChar sorb, Int tmp )
       case 0x26: sreg = R_ES; break;
       case 0x64: sreg = R_FS; break;
       case 0x65: sreg = R_GS; break;
-      default: VG_(panic)("handleSegOverride");
+      default: VG_(core_panic)("handleSegOverride");
    }
 
    tsreg = newTemp(cb);
@@ -412,7 +412,7 @@ UInt disAMode ( UCodeBlock* cb, UChar sorb, Addr eip0, UChar* buf )
       /* a register, %eax .. %edi.  This shouldn't happen. */
       case 0x18: case 0x19: case 0x1A: case 0x1B:
       case 0x1C: case 0x1D: case 0x1E: case 0x1F:
-         VG_(panic)("disAMode: not an addr!");
+         VG_(core_panic)("disAMode: not an addr!");
 
       /* a 32-bit literal address
          --> MOV d32, tmp 
@@ -590,7 +590,7 @@ UInt disAMode ( UCodeBlock* cb, UChar sorb, Addr eip0, UChar* buf )
       }
 
       default:
-         VG_(panic)("disAMode");
+         VG_(core_panic)("disAMode");
          return 0; /*notreached*/
    }
 }
@@ -649,7 +649,7 @@ static UInt lengthAMode ( Addr eip0 )
       case 0x14: return 6;
 
       default:
-         VG_(panic)("amode_from_RM");
+         VG_(core_panic)("amode_from_RM");
          return 0; /*notreached*/
    }
 }
@@ -1084,7 +1084,7 @@ void codegen_div ( UCodeBlock* cb, Int sz, Int t, Bool signed_divide )
       case 1: helper = (signed_divide ? VGOFF_(helper_idiv_16_8)
                                       : VGOFF_(helper_div_16_8));
               break;
-      default: VG_(panic)("codegen_div");
+      default: VG_(core_panic)("codegen_div");
    }
    uInstr0(cb, CALLM_S, 0);
    if (sz == 4 || sz == 2) {
@@ -1137,7 +1137,7 @@ Addr dis_Grp1 ( UCodeBlock* cb,
          case 2: uopc = ADC; break;  case 3: uopc = SBB; break;
          case 4: uopc = AND; break;  case 5: uopc = SUB; break;
          case 6: uopc = XOR; break;  case 7: uopc = SUB; break;
-         default: VG_(panic)("dis_Grp1(Reg): unhandled case");
+         default: VG_(core_panic)("dis_Grp1(Reg): unhandled case");
       }
       if (uopc == AND || uopc == OR) {
          Int tao = newTemp(cb);
@@ -1169,7 +1169,7 @@ Addr dis_Grp1 ( UCodeBlock* cb,
          case 2: uopc = ADC; break;  case 3: uopc = SBB; break;
          case 4: uopc = AND; break;  case 5: uopc = SUB; break;
          case 6: uopc = XOR; break;  case 7: uopc = SUB; break;
-         default: VG_(panic)("dis_Grp1(Mem): unhandled case");
+         default: VG_(core_panic)("dis_Grp1(Mem): unhandled case");
       }
       if (uopc == AND || uopc == OR) {
          Int tao = newTemp(cb);
@@ -1229,7 +1229,7 @@ Addr dis_Grp2 ( UCodeBlock* cb,
          case 2: uopc = RCL; break;  case 3: uopc = RCR; break;
          case 4: uopc = SHL; break;  case 5: uopc = SHR; break;
          case 7: uopc = SAR; break;
-         default: VG_(panic)("dis_Grp2(Reg): unhandled case");
+         default: VG_(core_panic)("dis_Grp2(Reg): unhandled case");
       }
       if (src_tag == Literal) {
           uInstr2(cb, uopc, sz, Literal, 0, TempReg, t1);
@@ -1263,7 +1263,7 @@ Addr dis_Grp2 ( UCodeBlock* cb,
          case 2: uopc = RCL; break;  case 3: uopc = RCR; break;
          case 4: uopc = SHL; break;  case 5: uopc = SHR; break;
          case 7: uopc = SAR; break;
-         default: VG_(panic)("dis_Grp2(Reg): unhandled case");
+         default: VG_(core_panic)("dis_Grp2(Reg): unhandled case");
       }
       if (src_tag == Literal) {
          uInstr2(cb, uopc, sz, Literal, 0, TempReg, t2);
@@ -1338,7 +1338,7 @@ Addr dis_Grp8_BT ( UCodeBlock* cb,
    switch (sz) {
       case 2: src_val &= 15; break;
       case 4: src_val &= 31; break;
-      default: VG_(panic)("dis_Grp8_BT: invalid size");
+      default: VG_(core_panic)("dis_Grp8_BT: invalid size");
    }
 
    /* Invent a mask suitable for the operation. */
@@ -1352,7 +1352,7 @@ Addr dis_Grp8_BT ( UCodeBlock* cb,
             new function to handle the other cases (0 .. 3).  The
             Intel docs do however not indicate any use for 0 .. 3, so
             we don't expect this to happen. */
-      default: VG_(panic)("dis_Grp8_BT");
+      default: VG_(core_panic)("dis_Grp8_BT");
    }
    /* Probably excessively paranoid. */
    if (sz == 2)
@@ -1561,7 +1561,7 @@ Addr dis_Grp3 ( UCodeBlock* cb,
          default: 
             VG_(printf)(
                "unhandled Grp3(R) case %d\n", (UInt)gregOfRM(modrm));
-            VG_(panic)("Grp3");
+            VG_(core_panic)("Grp3");
       }
    } else {
       pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );
@@ -1616,7 +1616,7 @@ Addr dis_Grp3 ( UCodeBlock* cb,
          default: 
             VG_(printf)(
                "unhandled Grp3(M) case %d\n", (UInt)gregOfRM(modrm));
-            VG_(panic)("Grp3");
+            VG_(core_panic)("Grp3");
       }
    }
    return eip;
@@ -1653,7 +1653,7 @@ Addr dis_Grp4 ( UCodeBlock* cb,
          default: 
             VG_(printf)(
                "unhandled Grp4(R) case %d\n", (UInt)gregOfRM(modrm));
-            VG_(panic)("Grp4");
+            VG_(core_panic)("Grp4");
       }
       eip++;
       if (dis)
@@ -1678,7 +1678,7 @@ Addr dis_Grp4 ( UCodeBlock* cb,
          default: 
             VG_(printf)(
                "unhandled Grp4(M) case %d\n", (UInt)gregOfRM(modrm));
-            VG_(panic)("Grp4");
+            VG_(core_panic)("Grp4");
       }
       eip += HI8(pair);
       if (dis)
@@ -1737,7 +1737,7 @@ Addr dis_Grp5 ( UCodeBlock* cb,
          default: 
             VG_(printf)(
                "unhandled Grp5(R) case %d\n", (UInt)gregOfRM(modrm));
-            VG_(panic)("Grp5");
+            VG_(core_panic)("Grp5");
       }
       eip++;
       if (dis)
@@ -1789,7 +1789,7 @@ Addr dis_Grp5 ( UCodeBlock* cb,
          default: 
             VG_(printf)(
                "unhandled Grp5(M) case %d\n", (UInt)gregOfRM(modrm));
-            VG_(panic)("Grp5");
+            VG_(core_panic)("Grp5");
       }
       eip += HI8(pair);
       if (dis)
@@ -2212,7 +2212,7 @@ Addr dis_mul_E_G ( UCodeBlock* cb,
       case 1: helper = signed_multiply ? VGOFF_(helper_imul_8_16)
                                        : VGOFF_(helper_mul_8_16);
               break;
-      default: VG_(panic)("dis_mul_E_G");
+      default: VG_(core_panic)("dis_mul_E_G");
    }
 
    uInstr0(cb, CALLM_S, 0);
@@ -2274,7 +2274,7 @@ Addr dis_imul_I_E_G ( UCodeBlock* cb,
       case 4: helper = VGOFF_(helper_imul_32_64); break;
       case 2: helper = VGOFF_(helper_imul_16_32); break;
       case 1: helper = VGOFF_(helper_imul_8_16); break;
-      default: VG_(panic)("dis_imul_I_E_G");
+      default: VG_(core_panic)("dis_imul_I_E_G");
    }
 
    uInstr0(cb, CALLM_S, 0);
@@ -2591,7 +2591,7 @@ Addr dis_fpu ( UCodeBlock* cb,
    VG_(printf)("dis_fpu: unhandled memory case 0x%2x:0x%2x(%d)\n",
                (UInt)first_byte, (UInt)second_byte, 
                (UInt)((second_byte >> 3) & 7) );
-   VG_(panic)("dis_fpu: unhandled opcodes");
+   VG_(core_panic)("dis_fpu: unhandled opcodes");
 }
 
 
@@ -2689,7 +2689,7 @@ static Char* nameBtOp ( BtOp op )
       case BtOpSet:   return "s";
       case BtOpReset: return "r";
       case BtOpComp:  return "c";
-      default: VG_(panic)("nameBtOp");
+      default: VG_(core_panic)("nameBtOp");
    }
 }
 
@@ -2786,7 +2786,7 @@ Addr dis_bt_G_E ( UCodeBlock* cb,
             uInstr2(cb, AND, 4, TempReg, t_mask, TempReg, temp); 
             break;
          default: 
-            VG_(panic)("dis_bt_G_E");
+            VG_(core_panic)("dis_bt_G_E");
       }
       uInstr2(cb, STORE, 1, TempReg, temp, TempReg, t_addr);
    }
@@ -3491,7 +3491,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
    case 0xCD: /* INT imm8 */
       d32 = getUChar(eip); eip++;
-      if (d32 != 0x80) VG_(panic)("disInstr: INT but not 0x80 !");
+      if (d32 != 0x80) VG_(core_panic)("disInstr: INT but not 0x80 !");
       /* It's important that all ArchRegs carry their up-to-date value
          at this point.  So we declare an end-of-block here, which
          forces any TempRegs caching ArchRegs to be flushed. */
@@ -3623,7 +3623,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x8D: /* LEA M,Gv */
       modrm = getUChar(eip);
       if (epartIsReg(modrm)) 
-         VG_(panic)("LEA M,Gv: modRM refers to register");
+         VG_(core_panic)("LEA M,Gv: modRM refers to register");
       /* NOTE!  this is the one place where a segment override prefix
          has no effect on the address calculation.  Therefore we pass
          zero instead of sorb here. */
@@ -4210,7 +4210,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       }
       else {
          VG_(printf)("REPNE then 0x%x\n", (UInt)abyte);
-         VG_(panic)("Unhandled REPNE case");
+         VG_(core_panic)("Unhandled REPNE case");
       }
       break;
    }
@@ -4246,7 +4246,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          /* do nothing; apparently a hint to the P4 re spin-wait loop */
       } else {
          VG_(printf)("REPE then 0x%x\n", (UInt)abyte);
-         VG_(panic)("Unhandled REPE case");
+         VG_(core_panic)("Unhandled REPE case");
       }
       break;
    }
@@ -4692,7 +4692,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    default:
       VG_(printf)("disInstr: unhandled opcode 0x%x then 0x%x\n", 
                   (UInt)opc, (UInt)getUChar(eip));
-      VG_(panic)("unhandled x86 opcode");
+      VG_(core_panic)("unhandled x86 opcode");
    }
 
    if (dis)

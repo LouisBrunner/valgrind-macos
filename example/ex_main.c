@@ -7,8 +7,9 @@
 
 void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track) 
 {
-   needs->name        = "example";
-   needs->description = "an example Valgrind skin";
+   needs->name           = "example";
+   needs->description    = "an example Valgrind skin";
+   needs->report_bugs_to = "the North Pole";
 }
 
 void SK_(post_clo_init)(void)

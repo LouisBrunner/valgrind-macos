@@ -81,7 +81,7 @@ static Bool eq_CoreError ( VgRes res, CoreError* e1, CoreError* e2 )
             VG_(printf)("\nUnhandled error type: %u. VG_(needs).skin_errors\n"
                         "probably needs to be set.\n",
                         e1->skin_err.ekind);
-            VG_(skin_error)("unhandled error type");
+            VG_(skin_panic)("unhandled error type");
          }
    }
 }
@@ -113,7 +113,7 @@ static void pp_CoreError ( CoreError* err, Bool printCount )
             VG_(printf)("\nUnhandled error type: %u.  VG_(needs).skin_errors\n"
                         "probably needs to be set?\n",
                         err->skin_err.ekind);
-            VG_(skin_error)("unhandled error type");
+            VG_(skin_panic)("unhandled error type");
          }
    }
 }
@@ -410,7 +410,7 @@ void VG_(show_all_errors) ( void )
             p_min = p;
          }
       }
-      if (p_min == NULL) VG_(panic)("show_all_errors()");
+      if (p_min == NULL) VG_(skin_panic)("show_all_errors()");
 
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, "%d errors in context %d of %d:",
@@ -684,7 +684,7 @@ Bool supp_matches_error(CoreSupp* su, CoreError* err)
                "\nUnhandled suppression type: %u.  VG_(needs).skin_errors\n"
                "probably needs to be set.\n",
                err->skin_err.ekind);
-            VG_(skin_error)("unhandled suppression type");
+            VG_(skin_panic)("unhandled suppression type");
          }
    }
 }
@@ -703,7 +703,7 @@ Bool supp_matches_callers(CoreSupp* su, Char caller_obj[][M_VG_ERRTXT],
          case FunName: if (VG_(string_match)(su->caller[i], 
                                              caller_fun[i])) break;
                        return False;
-         default: VG_(panic)("is_suppressible_error");
+         default: VG_(skin_panic)("is_suppressible_error");
       }
    }
 

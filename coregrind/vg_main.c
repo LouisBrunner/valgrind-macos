@@ -126,7 +126,7 @@ static Int alloc_BaB ( Int words )
    Int off = baB_off;
    baB_off += words;
    if (baB_off >= VG_BASEBLOCK_WORDS)
-      VG_(panic)( "alloc_BaB: baseBlock is too small");
+      VG_(core_panic)( "alloc_BaB: baseBlock is too small");
 
    return off;   
 }
@@ -147,7 +147,7 @@ void VG_(register_compact_helper)(Addr a)
    if (MAX_COMPACT_HELPERS <= VG_(n_compact_helpers)) {
       VG_(printf)("Can only register %d compact helpers\n", 
                   MAX_COMPACT_HELPERS);
-      VG_(panic)("Too many compact helpers registered");
+      VG_(core_panic)("Too many compact helpers registered");
    }
    VG_(compact_helper_addrs)[VG_(n_compact_helpers)] = a;
    VG_(n_compact_helpers)++;
@@ -162,7 +162,7 @@ void VG_(register_noncompact_helper)(Addr a)
       VG_(printf)("Can only register %d non-compact helpers\n", 
                   MAX_NONCOMPACT_HELPERS);
       VG_(printf)("Try increasing MAX_NON_COMPACT_HELPERS\n");
-      VG_(panic)("Too many non-compact helpers registered");
+      VG_(core_panic)("Too many non-compact helpers registered");
    }
    VG_(noncompact_helper_addrs)[VG_(n_noncompact_helpers)] = a;
    VG_(n_noncompact_helpers)++;
@@ -441,6 +441,7 @@ UInt VG_(num_scheduling_events_MAJOR) = 0;
 VgNeeds VG_(needs) = {
    .name                    = NULL,
    .description             = NULL,
+   .bug_reports_to          = NULL,
 
    .core_errors             = False,
    .skin_errors             = False,
@@ -496,14 +497,16 @@ VgTrackEvents VG_(track_events) = {
 
 static void sanity_check_needs ( void )
 {
-#define CHECK_NOT(var, value)                                     \
-   if ((var)==(value)) {                                          \
-      VG_(printf)("\n`%s' not initialised\n", VG__STRING(var));   \
-      VG_(skin_error)("Uninitialised needs field\n");             \
+#define CHECK_NOT(var, value)                               \
+   if ((var)==(value)) {                                    \
+      VG_(printf)("\nSkin error: `%s' not initialised\n",   \
+                  VG__STRING(var));                         \
+      VG_(skin_panic)("Uninitialised needs field\n");       \
    }
    
-   CHECK_NOT(VG_(needs).name,        NULL);
-   CHECK_NOT(VG_(needs).description, NULL);
+   CHECK_NOT(VG_(needs).name,           NULL);
+   CHECK_NOT(VG_(needs).description,    NULL);
+   CHECK_NOT(VG_(needs).bug_reports_to, NULL);
 
 #undef CHECK_NOT
 #undef INVALID_Bool
@@ -1319,13 +1322,13 @@ void VG_(main) ( void )
             that arg. */
          VG_(exit)( VG_(exitcode) );
          /* NOT ALIVE HERE! */
-         VG_(panic)("entered the afterlife in vg_main() -- ExitSyscall");
+         VG_(core_panic)("entered the afterlife in vg_main() -- ExitSyscall");
          break; /* what the hell :) */
 
       case VgSrc_Deadlock:
          /* Just exit now.  No point in continuing. */
          VG_(exit)(0);
-         VG_(panic)("entered the afterlife in vg_main() -- Deadlock");
+         VG_(core_panic)("entered the afterlife in vg_main() -- Deadlock");
          break;
 
       case VgSrc_BbsDone: 
@@ -1345,7 +1348,7 @@ void VG_(main) ( void )
          VG_(switch_to_real_CPU)();
 
       default:
-         VG_(panic)("vg_main(): unexpected scheduler return code");
+         VG_(core_panic)("vg_main(): unexpected scheduler return code");
    }
 }
 
@@ -1460,7 +1463,7 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
       "scripts is also likely to cause problems.\n"
       "\n"
    );
-   VG_(panic)("VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) failed\n");
+   VG_(core_panic)("VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) failed\n");
 }
 
 

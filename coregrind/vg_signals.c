@@ -631,7 +631,7 @@ void do_sigprocmask_bitops ( Int vki_how,
          *orig_set = *modifier;
          break;
       default:
-         VG_(panic)("do_sigprocmask_bitops");
+         VG_(core_panic)("do_sigprocmask_bitops");
 	 break;
    }
 }
@@ -1353,7 +1353,7 @@ void vg_oursignalhandler ( Int sigNo )
       }
       /* Note: we panic with all signals blocked here.  Don't think
          that matters. */
-      VG_(panic)("vg_oursignalhandler: unexpected signal");
+      VG_(core_panic)("vg_oursignalhandler: unexpected signal");
    }
    /* End of the sanity check. */
 
@@ -1486,7 +1486,7 @@ void VG_(sigstartup_actions) ( void )
    altstack_info.ss_flags = 0;
    ret = VG_(ksigaltstack)(&altstack_info, NULL);
    if (ret != 0) {
-      VG_(panic)(
+      VG_(core_panic)(
          "vg_sigstartup_actions: couldn't install alternative sigstack");
    }
    if (VG_(clo_trace_signals)) {

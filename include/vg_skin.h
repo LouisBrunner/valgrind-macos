@@ -296,9 +296,10 @@ extern void  VG_(print_malloc_stats) ( void );
 
 extern void  VG_(exit)( Int status )
              __attribute__ ((__noreturn__));
-/* Prints a panic message (a constant string), appends newline, aborts. */
-extern void  VG_(panic) ( Char* str )
-             __attribute__ ((__noreturn__));
+/* Prints a panic message (a constant string), appends newline and bug
+   reporting info, aborts. */
+__attribute__ ((__noreturn__))
+extern void  VG_(skin_panic) ( Char* str );
 
 /* Looks up VG_(client_envp) */
 extern Char* VG_(getenv) ( Char* name );
@@ -369,15 +370,15 @@ extern Int  VG_(stat)  ( Char* file_name, struct vki_stat* buf );
 /* Asserts permanently enabled -- no turning off with NDEBUG.  Hurrah! */
 #define VG__STRING(__str)  #__str
 
-#define vg_assert(expr)                                               \
+#define sk_assert(expr)                                               \
   ((void) ((expr) ? 0 :						      \
-	   (VG_(assert_fail) (VG__STRING(expr),			      \
-			      __FILE__, __LINE__,                     \
-                              __PRETTY_FUNCTION__), 0)))
+	   (VG_(skin_assert_fail) (VG__STRING(expr),	              \
+			           __FILE__, __LINE__,                \
+                                   __PRETTY_FUNCTION__), 0)))
 
-extern void VG_(assert_fail) ( Char* expr, Char* file, 
-                               Int line, Char* fn )
-            __attribute__ ((__noreturn__));
+__attribute__ ((__noreturn__))
+extern void VG_(skin_assert_fail) ( Char* expr, Char* file, 
+                                    Int line, Char* fn );
 
 
 /* ------------------------------------------------------------------ */
@@ -1110,11 +1111,14 @@ extern ThreadId VG_(any_matching_thread_stack)
  */
 typedef
    struct {
-      /* Name and description used in the startup message. 'name' also
+      /* Name and description used in the startup message. `name' also
          determines the string used for identifying suppressions in a
-         suppression file as belonging to this skin. */
+         suppression file as belonging to this skin.  `bug_reports_to' 
+         (should be an email address) is printed if an `sk_assert' assertion
+         fails or VG_(skin_panic) is called. */
       Char* name;
       Char* description;
+      Char* bug_reports_to;
 
       /* Booleans that decide core behaviour, but don't require extra
          operations to be defined if `True' */

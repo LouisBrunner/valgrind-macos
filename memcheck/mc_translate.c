@@ -93,7 +93,7 @@ Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
    case TAG2:   return LIT0 && SZ0 && CC0 &&  TR1 && TR2 && Ls3 && XOTHER;
    default:
       VG_(printf)("unhandled opcode: %u\n", u->opcode);
-      VG_(panic)("SK_(sane_XUInstr): unhandled opcode");
+      VG_(skin_panic)("SK_(sane_XUInstr): unhandled opcode");
    }
 #  undef LIT0
 #  undef LIT1
@@ -155,7 +155,7 @@ static Char* nameOfTagOp ( TagOp h )
       case Tag_ImproveOR2_TQ:  return "ImproveOR2_TQ";
       case Tag_ImproveOR1_TQ:  return "ImproveOR1_TQ";
       case Tag_DebugFn:        return "DebugFn";
-      default: VG_(panic)("vg_nameOfTagOp");
+      default: VG_(skin_panic)("vg_nameOfTagOp");
    }
 }
 
@@ -175,7 +175,7 @@ Char* SK_(name_XUOpcode)(Opcode opc)
       case SETV:    return "SETV";
       default:      
          VG_(printf)("unhandled opcode: %u\n", opc);
-         VG_(panic)("SK_(name_XUOpcode): unhandled case");
+         VG_(skin_panic)("SK_(name_XUOpcode): unhandled case");
    }
 }
 
@@ -231,7 +231,7 @@ void SK_(pp_XUInstr)(UInstr* u)
 
       default:
          VG_(printf)("unhandled opcode: %u\n", u->opcode);
-         VG_(panic)("SK_(pp_XUInstr): unhandled opcode");
+         VG_(skin_panic)("SK_(pp_XUInstr): unhandled opcode");
    }
 
 }
@@ -257,7 +257,7 @@ Int SK_(get_Xreg_usage)(UInstr* u, Tag tag, RegUse* arr)
 
       default: 
          VG_(printf)("unhandled opcode: %u\n", u->opcode);
-         VG_(panic)("SK_(get_Xreg_usage): unhandled opcode");
+         VG_(skin_panic)("SK_(get_Xreg_usage): unhandled opcode");
    }
    return n;
 
@@ -284,7 +284,7 @@ TagOp get_Tag_ImproveOR_TQ ( Int sz )
       case 4: return Tag_ImproveOR4_TQ;
       case 2: return Tag_ImproveOR2_TQ;
       case 1: return Tag_ImproveOR1_TQ;
-      default: VG_(panic)("get_Tag_ImproveOR_TQ");
+      default: VG_(skin_panic)("get_Tag_ImproveOR_TQ");
    }
 }
 
@@ -296,7 +296,7 @@ TagOp get_Tag_ImproveAND_TQ ( Int sz )
       case 4: return Tag_ImproveAND4_TQ;
       case 2: return Tag_ImproveAND2_TQ;
       case 1: return Tag_ImproveAND1_TQ;
-      default: VG_(panic)("get_Tag_ImproveAND_TQ");
+      default: VG_(skin_panic)("get_Tag_ImproveAND_TQ");
    }
 }
 
@@ -308,7 +308,7 @@ TagOp get_Tag_Left ( Int sz )
       case 4: return Tag_Left4;
       case 2: return Tag_Left2;
       case 1: return Tag_Left1;
-      default: VG_(panic)("get_Tag_Left");
+      default: VG_(skin_panic)("get_Tag_Left");
    }
 }
 
@@ -321,7 +321,7 @@ TagOp get_Tag_UifU ( Int sz )
       case 2: return Tag_UifU2;
       case 1: return Tag_UifU1;
       case 0: return Tag_UifU0;
-      default: VG_(panic)("get_Tag_UifU");
+      default: VG_(skin_panic)("get_Tag_UifU");
    }
 }
 
@@ -333,7 +333,7 @@ TagOp get_Tag_DifD ( Int sz )
       case 4: return Tag_DifD4;
       case 2: return Tag_DifD2;
       case 1: return Tag_DifD1;
-      default: VG_(panic)("get_Tag_DifD");
+      default: VG_(skin_panic)("get_Tag_DifD");
    }
 }
 
@@ -351,7 +351,7 @@ TagOp get_Tag_PCast ( Int szs, Int szd )
    if (szs == 1 && szd == 2) return Tag_PCast12;
    if (szs == 1 && szd == 1) return Tag_PCast11;
    VG_(printf)("get_Tag_PCast(%d,%d)\n", szs, szd);
-   VG_(panic)("get_Tag_PCast");
+   VG_(skin_panic)("get_Tag_PCast");
 }
 
 
@@ -368,7 +368,7 @@ TagOp get_Tag_Widen ( Bool syned, Int szs, Int szd )
    if (szs == 2 && szd == 4 && !syned) return Tag_ZWiden24;
 
    VG_(printf)("get_Tag_Widen(%d,%d,%d)\n", (Int)syned, szs, szd);
-   VG_(panic)("get_Tag_Widen");
+   VG_(skin_panic)("get_Tag_Widen");
 }
 
 /* Pessimally cast the spec'd shadow from one size to another. */
@@ -494,7 +494,7 @@ Int /* TempReg */ getOperandShadow ( UCodeBlock* cb,
       uInstr2(cb, GETV, sz, ArchReg, val, TempReg, sh);
       return sh;
    }
-   VG_(panic)("getOperandShadow");
+   VG_(skin_panic)("getOperandShadow");
 }
 
 /* Create and return an instrumented version of cb_in.  Free cb_in
@@ -532,14 +532,14 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             all this is that instrumentation of USESEG is a no-op! */
 
          case PUTSEG:
-            vg_assert(u_in->tag1 == TempReg);
+            sk_assert(u_in->tag1 == TempReg);
             uInstr1(cb, TESTV, 2, TempReg, SHADOW(u_in->val1));
             uInstr1(cb, SETV,  2, TempReg, SHADOW(u_in->val1));
             VG_(copy_UInstr)(cb, u_in);
             break;
 
          case GETSEG:
-            vg_assert(u_in->tag2 == TempReg);
+            sk_assert(u_in->tag2 == TempReg);
             uInstr1(cb, SETV,  2, TempReg, SHADOW(u_in->val2));
             VG_(copy_UInstr)(cb, u_in);
             break;
@@ -621,7 +621,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                               TempReg, SHADOW(u_in->val2));
                   break;
                default: 
-                  VG_(panic)("memcheck_instrument: MOV");
+                  VG_(skin_panic)("memcheck_instrument: MOV");
             }
             VG_(copy_UInstr)(cb, u_in);
             break;
@@ -631,7 +631,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             Therefore: lea1#(qa) = left(qa) 
          */
          case LEA1:
-            vg_assert(u_in->size == 4 && !VG_(any_flag_use)(u_in));
+            sk_assert(u_in->size == 4 && !VG_(any_flag_use)(u_in));
             qs = SHADOW(u_in->val1);
             qd = SHADOW(u_in->val2);
             uInstr2(cb, MOV, 4, TempReg, qs, TempReg, qd);
@@ -649,13 +649,13 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          */
          case LEA2: {
             Int shift;
-            vg_assert(u_in->size == 4 && !VG_(any_flag_use)(u_in));
+            sk_assert(u_in->size == 4 && !VG_(any_flag_use)(u_in));
             switch (u_in->extra4b) {
                case 1: shift = 0; break;
                case 2: shift = 1; break;
                case 4: shift = 2; break;
                case 8: shift = 3; break;
-               default: VG_(panic)( "memcheck_instrument(LEA2)" );
+               default: VG_(skin_panic)( "memcheck_instrument(LEA2)" );
             }
             qs = SHADOW(u_in->val1);
             qt = SHADOW(u_in->val2);
@@ -690,7 +690,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             the eflags.
          */
          case RCL: case RCR:
-	    vg_assert(u_in->flags_r != FlagsEmpty);
+	    sk_assert(u_in->flags_r != FlagsEmpty);
             /* The following assertion looks like it makes sense, but is
                actually wrong.  Consider this:
                   rcll    %eax
@@ -699,7 +699,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                write of the rcll is annulled by the prior improvement pass.
                Noticed by Kevin Ryde <user42@zip.com.au>
             */
-	    /* vg_assert(u_in->flags_w != FlagsEmpty); */
+	    /* sk_assert(u_in->flags_w != FlagsEmpty); */
             qs = getOperandShadow(cb, u_in->size, u_in->tag1, u_in->val1);
             /* We can safely modify qs; cast it to 0-size. */
             create_PCast(cb, u_in->size, 0, qs);
@@ -737,8 +737,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          case SHR: case SAR:
          case ROL: case ROR: {
             Int t_amount = INVALID_TEMPREG;
-            vg_assert(u_in->tag1 == TempReg || u_in->tag1 == Literal);
-            vg_assert(u_in->tag2 == TempReg);
+            sk_assert(u_in->tag1 == TempReg || u_in->tag1 == Literal);
+            sk_assert(u_in->tag2 == TempReg);
             qd = SHADOW(u_in->val2);
 
             /* Make qs hold shift-count# and make
@@ -768,7 +768,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
 
          /* One simple tag operation. */
          case WIDEN:
-            vg_assert(u_in->tag1 == TempReg);
+            sk_assert(u_in->tag1 == TempReg);
             create_Widen(cb, u_in->signed_widen, u_in->extra4b, u_in->size, 
                              SHADOW(u_in->val1));
             VG_(copy_UInstr)(cb, u_in);
@@ -776,21 +776,21 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
 
          /* not#(x) = x (since bitwise independent) */
          case NOT:
-            vg_assert(u_in->tag1 == TempReg);
+            sk_assert(u_in->tag1 == TempReg);
             VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* neg#(x) = left(x) (derivable from case for SUB) */
          case NEG:
-            vg_assert(u_in->tag1 == TempReg);
+            sk_assert(u_in->tag1 == TempReg);
             create_Left(cb, u_in->size, SHADOW(u_in->val1));
             VG_(copy_UInstr)(cb, u_in);
             break;
 
          /* bswap#(x) = bswap(x) */
          case BSWAP:
-            vg_assert(u_in->tag1 == TempReg);
-            vg_assert(u_in->size == 4);
+            sk_assert(u_in->tag1 == TempReg);
+            sk_assert(u_in->size == 4);
             qd = SHADOW(u_in->val1);
             uInstr1(cb, BSWAP, 4, TempReg, qd);
             VG_(copy_UInstr)(cb, u_in);
@@ -798,8 +798,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
 
          /* cc2val#(qd) = pcast-0-to-size(eflags#) */
          case CC2VAL:
-            vg_assert(u_in->tag1 == TempReg);
-            vg_assert(u_in->flags_r != FlagsEmpty);
+            sk_assert(u_in->tag1 == TempReg);
+            sk_assert(u_in->flags_r != FlagsEmpty);
             qt = create_GETVF(cb, u_in->size);
             uInstr2(cb, MOV, 4, TempReg, qt, TempReg, SHADOW(u_in->val1));
             VG_(copy_UInstr)(cb, u_in);
@@ -811,11 +811,11 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             validity of the flags.
          */
          case CMOV:
-            vg_assert(u_in->size == 4);
-            vg_assert(u_in->tag1 == TempReg);
-            vg_assert(u_in->tag2 == TempReg);
-            vg_assert(u_in->flags_r != FlagsEmpty);
-            vg_assert(u_in->flags_w == FlagsEmpty);
+            sk_assert(u_in->size == 4);
+            sk_assert(u_in->tag1 == TempReg);
+            sk_assert(u_in->tag2 == TempReg);
+            sk_assert(u_in->flags_r != FlagsEmpty);
+            sk_assert(u_in->flags_w == FlagsEmpty);
             qs = SHADOW(u_in->val1);
             qd = SHADOW(u_in->val2);
             qt = create_GETVF(cb, 0);
@@ -847,7 +847,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             create_UifU(cb, u_in->size, qs, qd);
             create_Left(cb, u_in->size, qd);
             if (u_in->opcode == ADC || u_in->opcode == SBB) {
-               vg_assert(u_in->flags_r != FlagsEmpty);
+               sk_assert(u_in->flags_r != FlagsEmpty);
                qt = create_GETVF(cb, u_in->size);
                create_UifU(cb, u_in->size, qt, qd);
             }
@@ -881,8 +881,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                qd = qt `DifD` qd
          */
          case AND: case OR:
-            vg_assert(u_in->tag1 == TempReg);
-            vg_assert(u_in->tag2 == TempReg);
+            sk_assert(u_in->tag1 == TempReg);
+            sk_assert(u_in->tag2 == TempReg);
             qd = SHADOW(u_in->val2);
             qs = SHADOW(u_in->val1);
             qt = newShadow(cb);
@@ -1005,10 +1005,10 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
                uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val1));
                uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val1));
             } else {
-               vg_assert(u_in->tag1 == Literal);
+               sk_assert(u_in->tag1 == Literal);
             }
             if (u_in->cond != CondAlways) {
-               vg_assert(u_in->flags_r != FlagsEmpty);
+               sk_assert(u_in->flags_r != FlagsEmpty);
                qt = create_GETVF(cb, 0);
                uInstr1(cb, TESTV, 0, TempReg, qt);
                /* qt should never be referred to again.  Nevertheless
@@ -1029,7 +1029,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
          case FPU_R: case FPU_W: {
             Int t_size = INVALID_TEMPREG;
 
-            vg_assert(u_in->tag2 == TempReg);
+            sk_assert(u_in->tag2 == TempReg);
             uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val2));
             uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val2));
 
@@ -1053,7 +1053,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
 
          default:
             VG_(pp_UInstr)(0, u_in);
-            VG_(panic)( "memcheck_instrument: unhandled case");
+            VG_(skin_panic)( "memcheck_instrument: unhandled case");
 
       } /* end of switch (u_in->opcode) */
 
@@ -1162,7 +1162,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
 
       if (u->opcode == SETV) {
          if (u->tag1 == TempReg) {
-            vg_assert(VGC_IS_SHADOW(u->val1));
+            sk_assert(VGC_IS_SHADOW(u->val1));
             if (next_is_write[u->val1]) {
                /* This write is pointless, so annul it. */
                VG_(new_NOP)(u);
@@ -1179,7 +1179,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
       } else {
          /* Find out what this insn does to the temps. */
          k = VG_(get_reg_usage)(u, TempReg, &tempUse[0]);
-         vg_assert(k <= 3);
+         sk_assert(k <= 3);
          for (j = k-1; j >= 0; j--) {
             next_is_write[ tempUse[j].num ]
                          = tempUse[j].isWrite;
@@ -1233,15 +1233,15 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
 
          /* Make a tag defined. */
          case SETV:
-            vg_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
+            sk_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
             def[u->val1] = u->size;
             break;
 
          /* Check definedness of a tag. */
          case TESTV:
-            vg_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
+            sk_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
             if (def[u->val1] <= 4) { 
-               vg_assert(def[u->val1] == u->size); 
+               sk_assert(def[u->val1] == u->size); 
                NOP_no_msg(u);
                if (dis) 
                   VG_(printf)("   at %2d: delete TESTV on defd arg\n", i);
@@ -1252,26 +1252,26 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
             property through copies.  Note that this isn't optional;
             we *have* to do this to keep def[] correct. */
          case MOV:
-            vg_assert(u->tag2 == TempReg);
+            sk_assert(u->tag2 == TempReg);
             if (u->tag1 == TempReg) {
                if (VGC_IS_SHADOW(u->val1)) {
-                  vg_assert(VGC_IS_SHADOW(u->val2));
+                  sk_assert(VGC_IS_SHADOW(u->val2));
                   def[u->val2] = def[u->val1];
                }
             }
             break;
 
          case PUTV:
-            vg_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
+            sk_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
             if (def[u->val1] <= 4) {
-               vg_assert(def[u->val1] == u->size);
+               sk_assert(def[u->val1] == u->size);
                u->tag1 = Literal;
                u->val1 = 0;
                switch (u->size) {
                   case 4: u->lit32 = 0x00000000; break;
                   case 2: u->lit32 = 0xFFFF0000; break;
                   case 1: u->lit32 = 0xFFFFFF00; break;
-                  default: VG_(panic)("vg_cleanup(PUTV)");
+                  default: VG_(skin_panic)("vg_cleanup(PUTV)");
                }
                if (dis) 
                   VG_(printf)(
@@ -1280,16 +1280,16 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
             break;
 
          case STOREV:
-            vg_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
+            sk_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
             if (def[u->val1] <= 4) {
-               vg_assert(def[u->val1] == u->size);
+               sk_assert(def[u->val1] == u->size);
                u->tag1 = Literal;
                u->val1 = 0;
                switch (u->size) {
                   case 4: u->lit32 = 0x00000000; break;
                   case 2: u->lit32 = 0xFFFF0000; break;
                   case 1: u->lit32 = 0xFFFFFF00; break;
-                  default: VG_(panic)("vg_cleanup(STOREV)");
+                  default: VG_(skin_panic)("vg_cleanup(STOREV)");
                }
                if (dis) 
                   VG_(printf)(
@@ -1303,17 +1303,17 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
 
          /* Tag handling operations. */
          case TAG2:
-            vg_assert(u->tag2 == TempReg && VGC_IS_SHADOW(u->val2));
-            vg_assert(u->tag3 == Lit16);
+            sk_assert(u->tag2 == TempReg && VGC_IS_SHADOW(u->val2));
+            sk_assert(u->tag3 == Lit16);
             /* Ultra-paranoid "type" checking. */
             switch (u->val3) {
                case Tag_ImproveAND4_TQ: case Tag_ImproveAND2_TQ:
                case Tag_ImproveAND1_TQ: case Tag_ImproveOR4_TQ:
                case Tag_ImproveOR2_TQ: case Tag_ImproveOR1_TQ:
-                  vg_assert(u->tag1 == TempReg && !VGC_IS_SHADOW(u->val1));
+                  sk_assert(u->tag1 == TempReg && !VGC_IS_SHADOW(u->val1));
                   break;
                default:
-                  vg_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
+                  sk_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
                   break;
             }
             switch (u->val3) {
@@ -1327,12 +1327,12 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
                case Tag_UifU0:
                   sz = 0; goto do_UifU;
                do_UifU:
-                  vg_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
-                  vg_assert(u->tag2 == TempReg && VGC_IS_SHADOW(u->val2));
+                  sk_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
+                  sk_assert(u->tag2 == TempReg && VGC_IS_SHADOW(u->val2));
                   if (def[u->val1] <= 4) {
                      /* UifU.  The first arg is defined, so result is
                         simply second arg.  Delete this operation. */
-                     vg_assert(def[u->val1] == sz);
+                     sk_assert(def[u->val1] == sz);
                      NOP_no_msg(u);
                      if (dis) 
                         VG_(printf)(
@@ -1343,7 +1343,7 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
                   if (def[u->val2] <= 4) {
                      /* UifU.  The second arg is defined, so result is
                         simply first arg.  Copy to second. */
-                     vg_assert(def[u->val2] == sz);
+                     sk_assert(def[u->val2] == sz);
                      u->opcode = MOV; 
                      u->size = 4;
                      u->tag3 = NoValue;
@@ -1363,7 +1363,7 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
                   /* Implements Q = T OR Q.  So if Q is entirely defined,
                      ie all 0s, we get MOV T, Q. */
 		  if (def[u->val2] <= 4) {
-                     vg_assert(def[u->val2] == sz);
+                     sk_assert(def[u->val2] == sz);
                      u->size = 4; /* Regardless of sz */
                      u->opcode = MOV;
                      u->tag3 = NoValue;
@@ -1381,7 +1381,7 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
             break;
 
          case TAG1:
-            vg_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
+            sk_assert(u->tag1 == TempReg && VGC_IS_SHADOW(u->val1));
             if (def[u->val1] > 4) break;
             /* We now know that the arg to the op is entirely defined.
                If the op changes the size of the arg, we must replace
@@ -1390,36 +1390,36 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
             switch (u->val3) {
                /* Maintain the same size ... */
                case Tag_Left4: 
-                  vg_assert(def[u->val1] == 4);
+                  sk_assert(def[u->val1] == 4);
                   NOP_tag1_op(u);
                   break;
                case Tag_PCast11: 
-                  vg_assert(def[u->val1] == 1);
+                  sk_assert(def[u->val1] == 1);
                   NOP_tag1_op(u);
                   break;
                /* Change size ... */
                case Tag_PCast40: 
-                  vg_assert(def[u->val1] == 4);
+                  sk_assert(def[u->val1] == 4);
                   SETV_tag1_op(u,0);
                   def[u->val1] = 0;
                   break;
                case Tag_PCast14: 
-                  vg_assert(def[u->val1] == 1);
+                  sk_assert(def[u->val1] == 1);
                   SETV_tag1_op(u,4);
                   def[u->val1] = 4;
                   break;
                case Tag_PCast12: 
-                  vg_assert(def[u->val1] == 1);
+                  sk_assert(def[u->val1] == 1);
                   SETV_tag1_op(u,2);
                   def[u->val1] = 2;
                   break;
                case Tag_PCast10: 
-                  vg_assert(def[u->val1] == 1);
+                  sk_assert(def[u->val1] == 1);
                   SETV_tag1_op(u,0);
                   def[u->val1] = 0;
                   break;
                case Tag_PCast02: 
-                  vg_assert(def[u->val1] == 0);
+                  sk_assert(def[u->val1] == 0);
                   SETV_tag1_op(u,2);
                   def[u->val1] = 2;
                   break;
@@ -1437,10 +1437,10 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
             /* We don't know how to handle this uinstr.  Be safe, and 
                set to VGC_VALUE or VGC_UNDEF all temps written by it. */
             k = VG_(get_reg_usage)(u, TempReg, &tempUse[0]);
-            vg_assert(k <= 3);
+            sk_assert(k <= 3);
             for (j = 0; j < k; j++) {
                t = tempUse[j].num;
-               vg_assert(t >= 0 && t < n_temps);
+               sk_assert(t >= 0 && t < n_temps);
                if (!tempUse[j].isWrite) {
                   /* t is read; ignore it. */
                   if (0&& VGC_IS_SHADOW(t) && def[t] <= 4)

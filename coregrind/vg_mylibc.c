@@ -984,38 +984,56 @@ Bool VG_(string_match) ( Char* pat, Char* str )
    Assertery.
    ------------------------------------------------------------------ */
 
-void VG_(assert_fail) ( Char* expr, Char* file, Int line, Char* fn )
+__attribute__ ((noreturn))
+static void report_and_quit ( Char* report )
+{
+   VG_(pp_sched_status)();
+   VG_(printf)("Please report this bug to: %s\n\n", report);
+   VG_(shutdown_logging)();
+   VG_(exit)(1);
+}
+
+__attribute__ ((noreturn))
+static void assert_fail ( Char* expr, Char* name, Char* report,
+                          Char* file, Int line,   Char* fn )
 {
    static Bool entered = False;
    if (entered) 
      VG_(exit)(2);
    entered = True;
    VG_(printf)("\n%s: %s:%d (%s): Assertion `%s' failed.\n",
-               "valgrind", file, line, fn, expr );
-   VG_(pp_sched_status)();
-   VG_(printf)("Please report this bug to me at: %s\n\n", VG_EMAIL_ADDR);
-   VG_(shutdown_logging)();
-   VG_(exit)(1);
+               name, file, line, fn, expr );
+   report_and_quit(report);
 }
 
-void VG_(panic) ( Char* str )
+void VG_(skin_assert_fail) ( Char* expr, Char* file, Int line, Char* fn )
 {
-   VG_(printf)("\nvalgrind: the `impossible' happened:\n   %s\n", str);
+   assert_fail(expr, VG_(needs).name, VG_(needs).bug_reports_to, 
+               file, line, fn);
+}
+
+void VG_(core_assert_fail) ( Char* expr, Char* file, Int line, Char* fn )
+{
+   assert_fail(expr, "valgrind", VG_EMAIL_ADDR, file, line, fn);
+}
+
+__attribute__ ((noreturn))
+static void panic ( Char* name, Char* report, Char* str )
+{
+   VG_(printf)("\n%s: the `impossible' happened:\n   %s\n", name, str);
    VG_(printf)("Basic block ctr is approximately %llu\n", VG_(bbs_done) );
-   VG_(pp_sched_status)();
-   VG_(printf)("Please report this bug to me at: %s\n\n", VG_EMAIL_ADDR);
-   VG_(shutdown_logging)();
-   VG_(exit)(1);
+   report_and_quit(report);
 }
 
-void VG_(skin_error) ( Char* str )
+void VG_(core_panic) ( Char* str )
 {
-   VG_(printf)("\n%s: misconfigured skin:\n   %s\n\n", VG_(needs).name, str);
-   //VG_(printf)("Please report this bug to me at: %s\n\n", VG_EMAIL_ADDR);
-   VG_(shutdown_logging)();
-   VG_(exit)(1);
+   panic("valgrind", VG_EMAIL_ADDR, str);
 }
 
+void VG_(skin_panic) ( Char* str )
+{
+   panic(VG_(needs).name, VG_(needs).bug_reports_to, str);
+}
 
 /* ---------------------------------------------------------------------
    Primitive support for reading files.
@@ -1206,7 +1224,7 @@ void VG_(end_rdtsc_calibration) ( void )
       req = rem;
       loops++;
       if (loops > 100) 
-         VG_(panic)("calibration nanosleep loop failed?!");
+         VG_(core_panic)("calibration nanosleep loop failed?!");
    }
 
    /* Now read both timers, and do the Math. */
@@ -1245,7 +1263,7 @@ void VG_(end_rdtsc_calibration) ( void )
       VG_(message)(Vg_UserMsg, "Estimated CPU clock rate is %d MHz",
                                (UInt)cpu_clock_MHZ);
    if (cpu_clock_MHZ < 50 || cpu_clock_MHZ > 10000)
-      VG_(panic)("end_rdtsc_calibration: "
+      VG_(core_panic)("end_rdtsc_calibration: "
                  "estimated CPU MHz outside range 50 .. 10000");
    /* Paranoia about division by zero later. */
    vg_assert(rdtsc_ticks_per_millisecond != 0);

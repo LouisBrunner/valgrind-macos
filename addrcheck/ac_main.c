@@ -173,7 +173,7 @@ Bool SK_(eq_SkinError) ( VgRes res,
 
       default: 
          VG_(printf)("Error:\n  unknown AddrCheck error code %d\n", e1->ekind);
-         VG_(panic)("unknown error code in SK_(eq_SkinError)");
+         VG_(skin_panic)("unknown error code in SK_(eq_SkinError)");
    }
 }
 
@@ -223,7 +223,7 @@ static void pp_AcAddrInfo ( Addr a, AcAddrInfo* ai )
          break;
       }
       default:
-         VG_(panic)("pp_AcAddrInfo");
+         VG_(skin_panic)("pp_AcAddrInfo");
    }
 }
 
@@ -256,7 +256,7 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
                                         "stated on the next line");
                break;
             default: 
-               VG_(panic)("pp_SkinError(axskind)");
+               VG_(skin_panic)("pp_SkinError(axskind)");
          }
          pp_ExeContext();
          pp_AcAddrInfo(err->addr, &err_extra->addrinfo);
@@ -303,7 +303,7 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 
       default: 
          VG_(printf)("Error:\n  unknown AddrCheck error code %d\n", err->ekind);
-         VG_(panic)("unknown error code in SK_(pp_SkinError)");
+         VG_(skin_panic)("unknown error code in SK_(pp_SkinError)");
    }
 }
 
@@ -428,7 +428,7 @@ void SK_(record_param_error) ( ThreadState* tst, Addr a, Bool isWrite,
 {
    AddrCheckError err_extra;
 
-   vg_assert(NULL != tst);
+   sk_assert(NULL != tst);
    clear_AddrCheckError( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    err_extra.isWrite = isWrite;
@@ -439,7 +439,7 @@ void SK_(record_jump_error) ( ThreadState* tst, Addr a )
 {
    AddrCheckError err_extra;
 
-   vg_assert(NULL != tst);
+   sk_assert(NULL != tst);
 
    clear_AddrCheckError( &err_extra );
    err_extra.axskind = ExecAxs;
@@ -451,7 +451,7 @@ void SK_(record_free_error) ( ThreadState* tst, Addr a )
 {
    AddrCheckError err_extra;
 
-   vg_assert(NULL != tst);
+   sk_assert(NULL != tst);
 
    clear_AddrCheckError( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
@@ -462,7 +462,7 @@ void SK_(record_freemismatch_error) ( ThreadState* tst, Addr a )
 {
    AddrCheckError err_extra;
 
-   vg_assert(NULL != tst);
+   sk_assert(NULL != tst);
 
    clear_AddrCheckError( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
@@ -473,7 +473,7 @@ void SK_(record_user_error) ( ThreadState* tst, Addr a, Bool isWrite )
 {
    AddrCheckError err_extra;
 
-   vg_assert(NULL != tst);
+   sk_assert(NULL != tst);
 
    clear_AddrCheckError( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
@@ -542,8 +542,8 @@ extern Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
       default:
          VG_(printf)("Error:\n"
                      "  unknown AddrCheck suppression type %d\n", su->skind);
-         VG_(panic)("unknown suppression type in "
-                    "SK_(error_matches_suppression)");
+         VG_(skin_panic)("unknown suppression type in "
+                         "SK_(error_matches_suppression)");
    }
 }
 
@@ -659,7 +659,7 @@ static void done_prof_mem ( void )
 }
 
 #define PROF_EVENT(ev)                                  \
-   do { vg_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);   \
+   do { sk_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);   \
         event_ctr[ev]++;                                \
    } while (False);
 
@@ -883,7 +883,7 @@ static AcSecMap* alloc_secondary_map ( __attribute__ ((unused))
    /* It just happens that a AcSecMap occupies exactly 18 pages --
       although this isn't important, so the following assert is
       spurious. */
-   vg_assert(0 == (sizeof(AcSecMap) % VKI_BYTES_PER_PAGE));
+   sk_assert(0 == (sizeof(AcSecMap) % VKI_BYTES_PER_PAGE));
    map = VG_(get_memory_from_mmap)( sizeof(AcSecMap), caller );
 
    for (i = 0; i < 8192; i++)
@@ -934,7 +934,7 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
    UChar   abits8;
    PROF_EVENT(24);
 #  ifdef VG_DEBUG_MEMORY
-   vg_assert(IS_ALIGNED4_ADDR(a));
+   sk_assert(IS_ALIGNED4_ADDR(a));
 #  endif
    sm     = primary_map[a >> 16];
    sm_off = a & 0xFFFF;
@@ -975,10 +975,10 @@ static void set_address_range_perms ( Addr a, UInt len,
       indicate bugs in our machinery.  30,000,000 is arbitrary, but so
       far all legitimate requests have fallen beneath that size. */
    /* 4 Mar 02: this is just stupid; get rid of it. */
-   /* vg_assert(len < 30000000); */
+   /* sk_assert(len < 30000000); */
 
    /* Check the permissions make sense. */
-   vg_assert(example_a_bit == VGM_BIT_VALID 
+   sk_assert(example_a_bit == VGM_BIT_VALID 
              || example_a_bit == VGM_BIT_INVALID);
 
    /* In order that we can charge through the address space at 8
@@ -1018,7 +1018,7 @@ static void set_address_range_perms ( Addr a, UInt len,
       VGP_POPCC(VgpSetMem);
       return;
    }
-   vg_assert((a % 8) == 0 && len > 0);
+   sk_assert((a % 8) == 0 && len > 0);
 
    /* Once aligned, go fast. */
    while (True) {
@@ -1036,7 +1036,7 @@ static void set_address_range_perms ( Addr a, UInt len,
       VGP_POPCC(VgpSetMem);
       return;
    }
-   vg_assert((a % 8) == 0 && len > 0 && len < 8);
+   sk_assert((a % 8) == 0 && len > 0 && len < 8);
 
    /* Finish the upper fragment. */
    while (True) {
@@ -1051,7 +1051,7 @@ static void set_address_range_perms ( Addr a, UInt len,
    /* Check that zero page and highest page have not been written to
       -- this could happen with buggy syscall wrappers.  Today
       (2001-04-26) had precisely such a problem with __NR_setitimer. */
-   vg_assert(SK_(cheap_sanity_check)());
+   sk_assert(SK_(cheap_sanity_check)());
    VGP_POPCC(VgpSetMem);
 }
 
@@ -1170,8 +1170,8 @@ static void make_noaccess_aligned ( Addr a, UInt len )
 
    PROF_EVENT(50);
 #  ifdef VG_DEBUG_MEMORY
-   vg_assert(IS_ALIGNED4_ADDR(a));
-   vg_assert(IS_ALIGNED4_ADDR(len));
+   sk_assert(IS_ALIGNED4_ADDR(a));
+   sk_assert(IS_ALIGNED4_ADDR(len));
 #  endif
 
    for ( ; a < a_past_end; a += 4) {
@@ -1198,8 +1198,8 @@ static void make_writable_aligned ( Addr a, UInt len )
 
    PROF_EVENT(51);
 #  ifdef VG_DEBUG_MEMORY
-   vg_assert(IS_ALIGNED4_ADDR(a));
-   vg_assert(IS_ALIGNED4_ADDR(len));
+   sk_assert(IS_ALIGNED4_ADDR(a));
+   sk_assert(IS_ALIGNED4_ADDR(len));
 #  endif
 
    for ( ; a < a_past_end; a += 4) {
@@ -1240,7 +1240,7 @@ void check_is_writable ( CorePart part, ThreadState* tst,
          break;
 
       default:
-         VG_(panic)("check_is_readable: Unknown or unexpected CorePart");
+         VG_(skin_panic)("check_is_readable: Unknown or unexpected CorePart");
       }
    }
 
@@ -1276,7 +1276,7 @@ void check_is_readable ( CorePart part, ThreadState* tst,
          break;
 
       default:
-         VG_(panic)("check_is_readable: Unknown or unexpected CorePart");
+         VG_(skin_panic)("check_is_readable: Unknown or unexpected CorePart");
       }
    }
    VGP_POPCC(VgpCheckMem);
@@ -1292,7 +1292,7 @@ void check_is_readable_asciiz ( CorePart part, ThreadState* tst,
 
    VGP_PUSHCC(VgpCheckMem);
 
-   vg_assert(part == Vg_CoreSysCall);
+   sk_assert(part == Vg_CoreSysCall);
    ok = SK_(check_readable_asciiz) ( (Addr)str, &bad_addr );
    if (!ok) {
       SK_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
@@ -1463,7 +1463,7 @@ static void vgmext_ACCESS4_SLOWLY ( Addr a )
       (which is the default), and the address is 4-aligned.  
       If not, Case 2 will have applied.
    */
-   vg_assert(SK_(clo_partial_loads_ok));
+   sk_assert(SK_(clo_partial_loads_ok));
    {
       return;
    }
@@ -1584,7 +1584,7 @@ void SK_(fpu_ACCESS_check) ( Addr addr, Int size )
    }
 
    VG_(printf)("size is %d\n", size);
-   VG_(panic)("fpu_ACCESS_check: unhandled size");
+   VG_(skin_panic)("fpu_ACCESS_check: unhandled size");
 #  endif
 }
 
@@ -1658,7 +1658,7 @@ static __attribute__ ((unused))
    /* VG_(printf)("freelist sanity\n"); */
    for (sc = vg_freed_list_start; sc != NULL; sc = sc->next)
       n += sc->size;
-   vg_assert(n == vg_freed_list_volume);
+   sk_assert(n == vg_freed_list_volume);
 }
 
 /* Put a shadow chunk on the freed blocks queue, possibly freeing up
@@ -1669,11 +1669,11 @@ static void add_to_freed_queue ( ShadowChunk* sc )
 
    /* Put it at the end of the freed list */
    if (vg_freed_list_end == NULL) {
-      vg_assert(vg_freed_list_start == NULL);
+      sk_assert(vg_freed_list_start == NULL);
       vg_freed_list_end = vg_freed_list_start = sc;
       vg_freed_list_volume = sc->size;
    } else {    
-      vg_assert(vg_freed_list_end->next == NULL);
+      sk_assert(vg_freed_list_end->next == NULL);
       vg_freed_list_end->next = sc;
       vg_freed_list_end = sc;
       vg_freed_list_volume += sc->size;
@@ -1685,13 +1685,13 @@ static void add_to_freed_queue ( ShadowChunk* sc )
    
    while (vg_freed_list_volume > SK_(clo_freelist_vol)) {
       /* freelist_sanity(); */
-      vg_assert(vg_freed_list_start != NULL);
-      vg_assert(vg_freed_list_end != NULL);
+      sk_assert(vg_freed_list_start != NULL);
+      sk_assert(vg_freed_list_end != NULL);
 
       sc1 = vg_freed_list_start;
       vg_freed_list_volume -= sc1->size;
       /* VG_(printf)("volume now %d\n", vg_freed_list_volume); */
-      vg_assert(vg_freed_list_volume >= 0);
+      sk_assert(vg_freed_list_volume >= 0);
 
       if (vg_freed_list_start == vg_freed_list_end) {
          vg_freed_list_start = vg_freed_list_end = NULL;
@@ -1778,7 +1778,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                case 1: uCCall(cb, (Addr)&SK_(helperc_ACCESS1), 1, 1, False );
                   break;
                default: 
-                  VG_(panic)("addrcheck::SK_(instrument):LOAD/STORE");
+                  VG_(skin_panic)("addrcheck::SK_(instrument):LOAD/STORE");
             }
             VG_(copy_UInstr)(cb, u_in);
             break;
@@ -1848,33 +1848,33 @@ UInt VG_(scan_all_valid_memory) ( void (*notify_word)( Addr, UInt ) )
    sigbus_new.ksa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
    sigbus_new.ksa_restorer = NULL;
    res = VG_(ksigemptyset)( &sigbus_new.ksa_mask );
-   vg_assert(res == 0);
+   sk_assert(res == 0);
 
    sigsegv_new.ksa_handler = vg_scan_all_valid_memory_sighandler;
    sigsegv_new.ksa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
    sigsegv_new.ksa_restorer = NULL;
    res = VG_(ksigemptyset)( &sigsegv_new.ksa_mask );
-   vg_assert(res == 0+0);
+   sk_assert(res == 0+0);
 
    res =  VG_(ksigemptyset)( &unblockmask_new );
    res |= VG_(ksigaddset)( &unblockmask_new, VKI_SIGBUS );
    res |= VG_(ksigaddset)( &unblockmask_new, VKI_SIGSEGV );
    res |= VG_(ksigaddset)( &unblockmask_new, VKI_SIGTERM );
-   vg_assert(res == 0+0+0);
+   sk_assert(res == 0+0+0);
 
    res = VG_(ksigaction)( VKI_SIGBUS, &sigbus_new, &sigbus_saved );
-   vg_assert(res == 0+0+0+0);
+   sk_assert(res == 0+0+0+0);
 
    res = VG_(ksigaction)( VKI_SIGSEGV, &sigsegv_new, &sigsegv_saved );
-   vg_assert(res == 0+0+0+0+0);
+   sk_assert(res == 0+0+0+0+0);
 
    res = VG_(ksigprocmask)( VKI_SIG_UNBLOCK, &unblockmask_new, &blockmask_saved );
-   vg_assert(res == 0+0+0+0+0+0);
+   sk_assert(res == 0+0+0+0+0+0);
 
    /* The signal handlers are installed.  Actually do the memory scan. */
    numPages = 1 << (32-VKI_BYTES_PER_PAGE_BITS);
-   vg_assert(numPages == 1048576);
-   vg_assert(4096 == (1 << VKI_BYTES_PER_PAGE_BITS));
+   sk_assert(numPages == 1048576);
+   sk_assert(4096 == (1 << VKI_BYTES_PER_PAGE_BITS));
 
    nWordsNotified = 0;
 
@@ -1909,13 +1909,13 @@ UInt VG_(scan_all_valid_memory) ( void (*notify_word)( Addr, UInt ) )
 
    /* Restore signal state to whatever it was before. */
    res = VG_(ksigaction)( VKI_SIGBUS, &sigbus_saved, NULL );
-   vg_assert(res == 0 +0);
+   sk_assert(res == 0 +0);
 
    res = VG_(ksigaction)( VKI_SIGSEGV, &sigsegv_saved, NULL );
-   vg_assert(res == 0 +0 +0);
+   sk_assert(res == 0 +0 +0);
 
    res = VG_(ksigprocmask)( VKI_SIG_SETMASK, &blockmask_saved, NULL );
-   vg_assert(res == 0 +0 +0 +0);
+   sk_assert(res == 0 +0 +0 +0);
 
    return nWordsNotified;
 }
@@ -2005,13 +2005,13 @@ static Int find_shadow_for ( Addr          ptr,
          lo = mid+1;
          continue;
       }
-      vg_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
+      sk_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
       retVal = mid;
       break;
    }
 
 #  ifdef VG_DEBUG_LEAKCHECK
-   vg_assert(retVal == find_shadow_for_OLD ( ptr, shadows, n_shadows ));
+   sk_assert(retVal == find_shadow_for_OLD ( ptr, shadows, n_shadows ));
 #  endif
    /* VG_(printf)("%d\n", retVal); */
    return retVal;
@@ -2096,8 +2096,8 @@ void vg_detect_memory_leaks_notify_addr ( Addr a, UInt word_at_a )
       sh_no = find_shadow_for ( ptr, vglc_shadows, vglc_n_shadows );
       if (sh_no != -1) {
          /* Found a block at/into which ptr points. */
-         vg_assert(sh_no >= 0 && sh_no < vglc_n_shadows);
-         vg_assert(ptr < vglc_shadows[sh_no]->data 
+         sk_assert(sh_no >= 0 && sh_no < vglc_n_shadows);
+         sk_assert(ptr < vglc_shadows[sh_no]->data 
                          + vglc_shadows[sh_no]->size);
          /* Decide whether Proper-ly or Interior-ly reached. */
          if (ptr == vglc_shadows[sh_no]->data) {
@@ -2129,7 +2129,7 @@ void SK_(detect_memory_leaks) ( void )
    /* VG_(get_malloc_shadows) allocates storage for shadows */
    vglc_shadows = VG_(get_malloc_shadows)( &vglc_n_shadows );
    if (vglc_n_shadows == 0) {
-      vg_assert(vglc_shadows == NULL);
+      sk_assert(vglc_shadows == NULL);
       VG_(message)(Vg_UserMsg, 
                    "No malloc'd blocks -- no leaks are possible.\n");
       return;
@@ -2143,9 +2143,9 @@ void SK_(detect_memory_leaks) ( void )
    /* Sanity check; assert that the blocks are now in order and that
       they don't overlap. */
    for (i = 0; i < vglc_n_shadows-1; i++) {
-      vg_assert( ((Addr)vglc_shadows[i]->data)
+      sk_assert( ((Addr)vglc_shadows[i]->data)
                  < ((Addr)vglc_shadows[i+1]->data) );
-      vg_assert( ((Addr)vglc_shadows[i]->data) + vglc_shadows[i]->size
+      sk_assert( ((Addr)vglc_shadows[i]->data) + vglc_shadows[i]->size
                  < ((Addr)vglc_shadows[i+1]->data) );
    }
 
@@ -2235,7 +2235,7 @@ void SK_(detect_memory_leaks) ( void )
             p_min = p;
          }
       }
-      vg_assert(p_min != NULL);
+      sk_assert(p_min != NULL);
 
       if ( (!SK_(clo_show_reachable)) && p_min->loss_mode == Proper) {
          p_min->num_blocks = 0;
@@ -2332,7 +2332,7 @@ static void uint_to_bits ( UInt x, Char* str )
          str[w++] = ' ';
    }
    str[w++] = 0;
-   vg_assert(w == 36);
+   sk_assert(w == 36);
 }
 
 /* Caution!  Not vthread-safe; looks in VG_(baseBlock), not the thread
@@ -2428,7 +2428,7 @@ void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
       VG_(message)(Vg_DebugMsg,
                    "probable sanity check failure for syscall number %d\n",
                    syscallno );
-      VG_(panic)("aborting due to the above ... bye!");
+      VG_(skin_panic)("aborting due to the above ... bye!");
    }
 }
 
@@ -2519,6 +2519,7 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
 {
    needs->name                    = "addrcheck";
    needs->description             = "a fine-grained address checker";
+   needs->bug_reports_to          = "jseward@acm.org";
 
    needs->core_errors             = True;
    needs->skin_errors             = True;

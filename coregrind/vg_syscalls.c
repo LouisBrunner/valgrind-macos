@@ -405,7 +405,7 @@ void VG_(init_dataseg_end_for_brk) ( void )
 {
    curr_dataseg_end = (Addr)VG_(brk)(0);
    if (curr_dataseg_end == (Addr)(-1))
-      VG_(panic)("can't determine data-seg end for brk()");
+      VG_(core_panic)("can't determine data-seg end for brk()");
    if (0)
       VG_(printf)("DS END is %p\n", (void*)curr_dataseg_end);
 }
@@ -463,7 +463,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
    switch (syscallno) {
 
       case __NR_exit:
-         VG_(panic)("syscall exit() not caught by the scheduler?!");
+         VG_(core_panic)("syscall exit() not caught by the scheduler?!");
          break;
 
       case __NR_clone:
@@ -1623,7 +1623,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                VG_(message)(Vg_DebugMsg,
                             "FATAL: unhandled syscall(ipc) %d",
                             arg1 );
-               VG_(panic)("... bye!\n");
+               VG_(core_panic)("... bye!\n");
                break; /*NOTREACHED*/
          }
          }
@@ -2340,7 +2340,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                if (nReadThisBuf > res) nReadThisBuf = res;
                VG_TRACK( post_mem_write, (UInt)vec[i].iov_base, nReadThisBuf );
                res -= nReadThisBuf;
-               if (res < 0) VG_(panic)("readv: res < 0");
+               if (res < 0) VG_(core_panic)("readv: res < 0");
             }
          }
          break;
@@ -2768,7 +2768,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
             default:
                VG_(message)(Vg_DebugMsg,"FATAL: unhandled socketcall 0x%x",arg1);
-               VG_(panic)("... bye!\n");
+               VG_(core_panic)("... bye!\n");
                break; /*NOTREACHED*/
          }
          break;
@@ -3102,7 +3102,7 @@ void* VG_(pre_known_blocking_syscall) ( ThreadId tid, Int syscallno )
 
       default:
          VG_(printf)("pre_known_blocking_syscall: unexpected %d\n", syscallno);
-         VG_(panic)("pre_known_blocking_syscall");
+         VG_(core_panic)("pre_known_blocking_syscall");
          /*NOTREACHED*/
          break;
    }
@@ -3162,7 +3162,7 @@ void VG_(post_known_blocking_syscall) ( ThreadId tid,
       default:
          VG_(printf)("post_known_blocking_syscall: unexpected %d\n", 
                      syscallno);
-         VG_(panic)("post_known_blocking_syscall");
+         VG_(core_panic)("post_known_blocking_syscall");
          /*NOTREACHED*/
          break;
    }

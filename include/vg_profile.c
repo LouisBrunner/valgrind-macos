@@ -49,11 +49,6 @@
 #define VGP_M_STACK     20
 #define VGP_MAX_CCS     50
 
-/* Required function from coregrind/vg_include.h;  duplicated declaration
-   is a hack but will do. */
-__attribute__((noreturn))
-extern void VG_(skin_error) ( Char* s );
-
 
 /* All zeroed initially because they're static */
 static Int   vgp_nticks;
@@ -76,14 +71,14 @@ void VGP_(register_profile_event) ( Int n, Char* name )
                   "If you really need this many profile events, increase\n"
                   "VGP_MAX_CCS and recompile Valgrind.\n",
                   n, VGP_MAX_CCS);
-      VG_(skin_error)("profile event too high");
+      VG_(skin_panic)("profile event too high");
    }
    if (vgp_names[n] != NULL) {
       VG_(printf)("\nProfile event #%d being registered as `%s'\n"
                   "already registered as `%s'.\n"
                   "Note that skin and core event numbers must not overlap.\n",
                   n, name, vgp_names[n]);
-      VG_(skin_error)("profile event already registered");
+      VG_(skin_panic)("profile event already registered");
    }
 
    vgp_names[n] = name;
@@ -120,7 +115,7 @@ void VGP_(init_profiling) ( void )
 
    signal(SIGPROF, VGP_(tick) );
    ret = setitimer(ITIMER_PROF, &value, NULL);
-   if (ret != 0) VG_(panic)("vgp_init_profiling");
+   if (ret != 0) VG_(core_panic)("vgp_init_profiling");
 }
 
 void VGP_(done_profiling) ( void )
@@ -146,7 +141,7 @@ void VGP_(pushcc) ( UInt cc )
          "Or if you are nesting profiling events very deeply, increase\n"
          "VGP_M_STACK and recompile Valgrind.\n",
          VGP_M_STACK, cc, vgp_names[cc]);
-      VG_(skin_error)("Profiling stack overflow");
+      VG_(skin_panic)("Profiling stack overflow");
    }
    vgp_sp++;
    vgp_stack[vgp_sp] = cc;
@@ -159,7 +154,7 @@ void VGP_(popcc) ( UInt cc )
       VG_(printf)(
          "\nProfile stack underflow.  This is due to a VGP_(popcc)() without\n"
          "a matching VGP_(pushcc)().  Make sure they all match.\n");
-      VG_(skin_error)("Profiling stack underflow");
+      VG_(skin_panic)("Profiling stack underflow");
    }
    if (vgp_stack[vgp_sp] != cc) {
       Int i;

@@ -345,22 +345,22 @@ int __posix_memalign ( void **memptr, UInt alignment, UInt size )
 
 
 /* Bomb out if we get any of these. */
-/* HACK: We shouldn't call VG_(panic) or VG_(message) on the simulated
+/* HACK: We shouldn't call VG_(core_panic) or VG_(message) on the simulated
    CPU.  Really we should pass the request in the usual way, and
    Valgrind itself can do the panic.  Too tedious, however.  
 */
 void pvalloc ( void )
-{ VG_(panic)("call to pvalloc\n"); }
+{ VG_(core_panic)("call to pvalloc\n"); }
 void malloc_stats ( void )
-{ VG_(panic)("call to malloc_stats\n"); }
+{ VG_(core_panic)("call to malloc_stats\n"); }
 void malloc_usable_size ( void )
-{ VG_(panic)("call to malloc_usable_size\n"); }
+{ VG_(core_panic)("call to malloc_usable_size\n"); }
 void malloc_trim ( void )
-{ VG_(panic)("call to malloc_trim\n"); }
+{ VG_(core_panic)("call to malloc_trim\n"); }
 void malloc_get_state ( void )
-{ VG_(panic)("call to malloc_get_state\n"); }
+{ VG_(core_panic)("call to malloc_get_state\n"); }
 void malloc_set_state ( void )
-{ VG_(panic)("call to malloc_set_state\n"); }
+{ VG_(core_panic)("call to malloc_set_state\n"); }
 
 
 /* Yet another ugly hack.  Cannot include <malloc.h> because we

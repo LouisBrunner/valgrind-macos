@@ -58,7 +58,7 @@ static void emit_testv_lit_reg ( Int sz, UInt lit, Int reg )
    if (sz == 2) {
       VG_(emitB) ( 0x66 );
    } else {
-      vg_assert(sz == 4);
+      sk_assert(sz == 4);
    }
    VG_(emitB) ( 0xF7 ); /* Grp3 Ev */
    VG_(emit_amode_ereg_greg) ( reg, 0 /* Grp3 subopcode for TEST */ );
@@ -74,7 +74,7 @@ static void emit_testv_lit_offregmem ( Int sz, UInt lit, Int off, Int reg )
    if (sz == 2) {
       VG_(emitB) ( 0x66 );
    } else {
-      vg_assert(sz == 4);
+      sk_assert(sz == 4);
    }
    VG_(emitB) ( 0xF7 ); /* Grp3 Ev */
    VG_(emit_amode_offregmem_reg) ( off, reg, 0 /* Grp3 subopcode for TEST */ );
@@ -126,7 +126,7 @@ static void synth_LOADV ( Int sz, Int a_reg, Int tv_reg,
       case 4: helper = (Addr) & SK_(helperc_LOADV4); break;
       case 2: helper = (Addr) & SK_(helperc_LOADV2); break;
       case 1: helper = (Addr) & SK_(helperc_LOADV1); break;
-      default: VG_(panic)("synth_LOADV");
+      default: VG_(skin_panic)("synth_LOADV");
    }
    VG_(synth_ccall) ( helper, 1, 1, argv, tagv, tv_reg,
                       regs_live_before, regs_live_after );
@@ -141,12 +141,12 @@ static void synth_STOREV ( Int sz, Int tv_tag, Int tv_val, Int a_reg,
    UInt argv[] = { a_reg,   tv_val };
    Tag  tagv[] = { RealReg, tv_tag };
 
-   vg_assert(tv_tag == RealReg || tv_tag == Literal);
+   sk_assert(tv_tag == RealReg || tv_tag == Literal);
    switch (sz) {
       case 4: helper = (Addr) SK_(helperc_STOREV4); break;
       case 2: helper = (Addr) SK_(helperc_STOREV2); break;
       case 1: helper = (Addr) SK_(helperc_STOREV1); break;
-      default: VG_(panic)("synth_STOREV");
+      default: VG_(skin_panic)("synth_STOREV");
    }
    VG_(synth_ccall) ( helper, 2, 2, argv, tagv, INVALID_REALREG,
                       regs_live_before, regs_live_after );
@@ -161,7 +161,7 @@ static void synth_SETV ( Int sz, Int reg )
       case 2: val = 0xFFFF0000; break;
       case 1: val = 0xFFFFFF00; break;
       case 0: val = 0xFFFFFFFE; break;
-      default: VG_(panic)("synth_SETV");
+      default: VG_(skin_panic)("synth_SETV");
    }
    VG_(emit_movv_lit_reg) ( 4, val, reg );
 }
@@ -174,9 +174,9 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
       the codegen scheme used below.  Since there are a shortage of
       compact helper slots, and since the size==1 case is never
       actually used, we assert against it. */
-   vg_assert(sz == 0 || sz == 2 || sz == 4);
+   sk_assert(sz == 0 || sz == 2 || sz == 4);
 
-   vg_assert(tag == ArchReg || tag == RealReg);
+   sk_assert(tag == ArchReg || tag == RealReg);
    if (tag == ArchReg) {
       switch (sz) {
          case 4: 
@@ -199,7 +199,7 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
          case 0: 
             /* should never happen */
          default: 
-            VG_(panic)("synth_TESTV(ArchReg)");
+            VG_(skin_panic)("synth_TESTV(ArchReg)");
       }
    } else {
       switch (sz) {
@@ -222,7 +222,7 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
             synth_minimal_test_lit_reg ( 0x00000001, val );
             break;
          default: 
-            VG_(panic)("synth_TESTV(RealReg)");
+            VG_(skin_panic)("synth_TESTV(RealReg)");
       }
    }
    VG_(emit_jcondshort_delta) ( CondZ, 3 );
@@ -263,7 +263,7 @@ static void synth_GETV ( Int sz, Int arch, Int reg )
          VG_(emit_nonshiftopv_lit_reg) ( 4, OR, 0xFFFFFF00, reg );
          break;
       default: 
-         VG_(panic)("synth_GETV");
+         VG_(skin_panic)("synth_GETV");
    }
 }
 
@@ -276,17 +276,17 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
       UInt lit = lit_or_reg;
       switch (sz) {
          case 4:
-            vg_assert(lit == 0x00000000);
+            sk_assert(lit == 0x00000000);
             VG_(emit_movv_lit_offregmem) ( 4, 0x00000000, 
                                       VG_(shadow_reg_offset)(arch), R_EBP );
             break;
          case 2:
-            vg_assert(lit == 0xFFFF0000);
+            sk_assert(lit == 0xFFFF0000);
             VG_(emit_movv_lit_offregmem) ( 2, 0x0000, 
                                       VG_(shadow_reg_offset)(arch), R_EBP );
             break;
          case 1:
-            vg_assert(lit == 0xFFFFFF00);
+            sk_assert(lit == 0xFFFFFF00);
             if (arch < 4) {
                VG_(emit_movb_lit_offregmem) ( 0x00, 
                                          VG_(shadow_reg_offset)(arch), R_EBP );
@@ -297,13 +297,13 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
             }
             break;
          default: 
-            VG_(panic)("synth_PUTV(lit)");
+            VG_(skin_panic)("synth_PUTV(lit)");
       }
 
    } else {
 
       UInt reg;
-      vg_assert(srcTag == RealReg);
+      sk_assert(srcTag == RealReg);
 
       if (sz == 1 && lit_or_reg >= 4) {
          VG_(emit_swapl_reg_EAX) ( lit_or_reg );
@@ -312,7 +312,7 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
          reg = lit_or_reg;
       }
 
-      if (sz == 1) vg_assert(reg < 4);
+      if (sz == 1) sk_assert(reg < 4);
 
       switch (sz) {
          case 4:
@@ -333,7 +333,7 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
             }
             break;
          default: 
-            VG_(panic)("synth_PUTV(reg)");
+            VG_(skin_panic)("synth_PUTV(reg)");
       }
 
       if (sz == 1 && lit_or_reg >= 4) {
@@ -496,7 +496,7 @@ static void synth_TAG1_op ( TagOp op, Int reg, RRegSet regs_live_after )
          break;
 
       default:
-         VG_(panic)("synth_TAG1_op");
+         VG_(skin_panic)("synth_TAG1_op");
    }
 }
 
@@ -563,7 +563,7 @@ static void synth_TAG2_op ( TagOp op, Int regs, Int regd )
          break;
 
       default:
-         VG_(panic)("synth_TAG2_op");
+         VG_(skin_panic)("synth_TAG2_op");
    }
 }
 
@@ -576,13 +576,13 @@ void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
    switch (u->opcode) {
 
       case SETV:
-         vg_assert(u->tag1 == RealReg);
+         sk_assert(u->tag1 == RealReg);
          synth_SETV ( u->size, u->val1 );
          break;
 
       case STOREV:
-         vg_assert(u->tag1 == RealReg || u->tag1 == Literal);
-         vg_assert(u->tag2 == RealReg);
+         sk_assert(u->tag1 == RealReg || u->tag1 == Literal);
+         sk_assert(u->tag2 == RealReg);
          synth_STOREV ( u->size, u->tag1, 
                                  u->tag1==Literal ? u->lit32 : u->val1, 
                                  u->val2,
@@ -590,8 +590,8 @@ void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
          break;
 
       case LOADV:
-         vg_assert(u->tag1 == RealReg);
-         vg_assert(u->tag2 == RealReg);
+         sk_assert(u->tag1 == RealReg);
+         sk_assert(u->tag2 == RealReg);
          if (0)
             VG_(emit_AMD_prefetch_reg) ( u->val1 );
          synth_LOADV ( u->size, u->val1, u->val2,
@@ -599,33 +599,33 @@ void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
          break;
 
       case TESTV:
-         vg_assert(u->tag1 == RealReg || u->tag1 == ArchReg);
+         sk_assert(u->tag1 == RealReg || u->tag1 == ArchReg);
          synth_TESTV(u->size, u->tag1, u->val1);
          break;
 
       case GETV:
-         vg_assert(u->tag1 == ArchReg);
-         vg_assert(u->tag2 == RealReg);
+         sk_assert(u->tag1 == ArchReg);
+         sk_assert(u->tag2 == RealReg);
          synth_GETV(u->size, u->val1, u->val2);
          break;
 
       case GETVF:
-         vg_assert(u->tag1 == RealReg);
-         vg_assert(u->size == 0);
+         sk_assert(u->tag1 == RealReg);
+         sk_assert(u->size == 0);
          synth_GETVF(u->val1);
          break;
 
       case PUTV:
-         vg_assert(u->tag1 == RealReg || u->tag1 == Literal);
-         vg_assert(u->tag2 == ArchReg);
+         sk_assert(u->tag1 == RealReg || u->tag1 == Literal);
+         sk_assert(u->tag2 == ArchReg);
          synth_PUTV(u->size, u->tag1, 
                              u->tag1==Literal ? u->lit32 : u->val1, 
                              u->val2 );
          break;
 
       case PUTVF:
-         vg_assert(u->tag1 == RealReg);
-         vg_assert(u->size == 0);
+         sk_assert(u->tag1 == RealReg);
+         sk_assert(u->size == 0);
          synth_PUTVF(u->val1);
          break;
 
@@ -640,7 +640,7 @@ void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
       default: 
          VG_(printf)("emit_XUInstr: unhandled extension insn:\n");
          VG_(pp_UInstr)(0,u);
-         VG_(panic)("emit_XUInstr: unhandled extension opcode");
+         VG_(skin_panic)("emit_XUInstr: unhandled extension opcode");
    }
 }
 

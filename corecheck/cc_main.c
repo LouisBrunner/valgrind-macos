@@ -33,10 +33,11 @@
 
 void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track) 
 {
-   needs->name                    = "coregrind";
-   needs->description             = "a rudimentary error detector";
+   needs->name           = "coregrind";
+   needs->description    = "a rudimentary error detector";
+   needs->bug_reports_to = "njn25@cam.ac.uk";
 
-   needs->core_errors             = True;
+   needs->core_errors    = True;
 
    /* No core events to track */
 }

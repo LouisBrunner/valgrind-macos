@@ -58,7 +58,7 @@ VG_(signalreturn_bogusRA):
 	roll $19, %eax
 	# should never get here
 	pushl	$signalreturn_bogusRA_panic_msg
-	call	VG_(panic)
+	call	VG_(core_panic)
 	
 .data
 signalreturn_bogusRA_panic_msg:

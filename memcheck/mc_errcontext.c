@@ -179,7 +179,7 @@ Bool SK_(eq_SkinError) ( VgRes res,
 
       default: 
          VG_(printf)("Error:\n  unknown MemCheck error code %d\n", e1->ekind);
-         VG_(panic)("unknown error code in SK_(eq_SkinError)");
+         VG_(skin_panic)("unknown error code in SK_(eq_SkinError)");
    }
 }
 
@@ -234,7 +234,7 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
          break;
       }
       default:
-         VG_(panic)("pp_AddrInfo");
+         VG_(skin_panic)("pp_AddrInfo");
    }
 }
 
@@ -283,7 +283,7 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
                                         "stated on the next line");
                break;
             default: 
-               VG_(panic)("pp_SkinError(axskind)");
+               VG_(skin_panic)("pp_SkinError(axskind)");
          }
          pp_ExeContext();
          pp_AddrInfo(err->addr, &err_extra->addrinfo);
@@ -330,7 +330,7 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 
       default: 
          VG_(printf)("Error:\n  unknown MemCheck error code %d\n", err->ekind);
-         VG_(panic)("unknown error code in SK_(pp_SkinError)");
+         VG_(skin_panic)("unknown error code in SK_(pp_SkinError)");
    }
 }
 
@@ -470,7 +470,7 @@ void SK_(record_param_error) ( ThreadState* tst, Addr a, Bool isWrite,
 {
    MemCheckError err_extra;
 
-   vg_assert(NULL != tst);
+   sk_assert(NULL != tst);
    clear_MemCheckError( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    err_extra.isWrite = isWrite;
@@ -481,7 +481,7 @@ void SK_(record_jump_error) ( ThreadState* tst, Addr a )
 {
    MemCheckError err_extra;
 
-   vg_assert(NULL != tst);
+   sk_assert(NULL != tst);
 
    clear_MemCheckError( &err_extra );
    err_extra.axskind = ExecAxs;
@@ -493,7 +493,7 @@ void SK_(record_free_error) ( ThreadState* tst, Addr a )
 {
    MemCheckError err_extra;
 
-   vg_assert(NULL != tst);
+   sk_assert(NULL != tst);
 
    clear_MemCheckError( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
@@ -504,7 +504,7 @@ void SK_(record_freemismatch_error) ( ThreadState* tst, Addr a )
 {
    MemCheckError err_extra;
 
-   vg_assert(NULL != tst);
+   sk_assert(NULL != tst);
 
    clear_MemCheckError( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
@@ -515,7 +515,7 @@ void SK_(record_user_error) ( ThreadState* tst, Addr a, Bool isWrite )
 {
    MemCheckError err_extra;
 
-   vg_assert(NULL != tst);
+   sk_assert(NULL != tst);
 
    clear_MemCheckError( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
@@ -598,8 +598,8 @@ extern Bool SK_(error_matches_suppression)(SkinError* err, SkinSupp* su)
       default:
          VG_(printf)("Error:\n"
                      "  unknown MemCheck suppression type %d\n", su->skind);
-         VG_(panic)("unknown suppression type in "
-                    "SK_(error_matches_suppression)");
+         VG_(skin_panic)("unknown suppression type in "
+                         "SK_(error_matches_suppression)");
    }
 }
 

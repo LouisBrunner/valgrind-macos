@@ -187,7 +187,7 @@ dispatch_exceptional:
 
 	/* ebp has an invalid value ... crap out. */
 	pushl	$panic_msg_ebp
-	call	VG_(panic)
+	call	VG_(core_panic)
 	/* (never returns) */
 
 dispatch_syscall:

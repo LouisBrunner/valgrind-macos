@@ -33,8 +33,9 @@
 
 void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track) 
 {
-   needs->name                    = "nulgrind";
-   needs->description             = "a binary JIT-compiler";
+   needs->name           = "nulgrind";
+   needs->description    = "a binary JIT-compiler";
+   needs->bug_reports_to = "njn25@cam.ac.uk";
 
    /* No needs, no core events to track */
 }

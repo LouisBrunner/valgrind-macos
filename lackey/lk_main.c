@@ -78,6 +78,7 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* not_used)
 {
    needs->name        = "lackey";
    needs->description = "a UInstr counter";
+   needs->description = "njn25@cam.ac.uk";
 
    VG_(register_compact_helper)((Addr) & add_one_dlrr_call);
    VG_(register_compact_helper)((Addr) & add_one_BB);

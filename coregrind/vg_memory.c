@@ -175,7 +175,7 @@ void startup_segment_callback ( Addr start, UInt size,
             "naively assumes it is the executable.  ");
          VG_(message)(Vg_UserMsg,
             "In that case, rename it appropriately.");
-         VG_(panic)("VG_ASSUMED_EXE_BASE doesn't match reality");
+         VG_(core_panic)("VG_ASSUMED_EXE_BASE doesn't match reality");
       }
    }
 
@@ -187,7 +187,7 @@ void startup_segment_callback ( Addr start, UInt size,
 
    if (rr != 'r' && xx != 'x' && ww != 'w') {
       VG_(printf)("No permissions on the segment named %s\n", filename);
-      VG_(panic)("Non-readable, writable, executable segment at startup");
+      VG_(core_panic)("Non-readable, writable, executable segment at startup");
    }
 
    /* This parallels what happens when we mmap some new memory */

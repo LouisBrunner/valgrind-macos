@@ -199,7 +199,7 @@ miss_treatment:                                                             \
                                                                             \
    } else {                                                                 \
        VG_(printf)("addr: %x  size: %u  sets: %d %d", a, size, set1, set2); \
-       VG_(panic)("item straddles more than two cache sets");               \
+       VG_(skin_panic)("item straddles more than two cache sets");          \
    }                                                                        \
    return;                                                                  \
 }

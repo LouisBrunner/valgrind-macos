@@ -263,7 +263,7 @@ void add_waiting_fd ( ThreadId tid, Int fd, Int syscall_no, void* pre_res )
          break;
 
    if (i == VG_N_WAITING_FDS)
-      VG_(panic)("add_waiting_fd: VG_N_WAITING_FDS is too low");
+      VG_(core_panic)("add_waiting_fd: VG_N_WAITING_FDS is too low");
    /*
    VG_(printf)("add_waiting_fd: add (tid %d, fd %d) at slot %d\n", 
                tid, fd, i);
@@ -357,7 +357,7 @@ ThreadId vg_alloc_ThreadState ( void )
    }
    VG_(printf)("vg_alloc_ThreadState: no free slots available\n");
    VG_(printf)("Increase VG_N_THREADS, rebuild and try again.\n");
-   VG_(panic)("VG_N_THREADS is too low");
+   VG_(core_panic)("VG_N_THREADS is too low");
    /*NOTREACHED*/
 }
 
@@ -661,7 +661,7 @@ void VG_(scheduler_init) ( void )
          (void*)VG_STARTUP_STACK_BASE_3,
          (void*)VG_STARTUP_STACK_BASE_4 
       );
-      VG_(panic)("unexpected %esp at startup");
+      VG_(core_panic)("unexpected %esp at startup");
    }
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
@@ -828,7 +828,7 @@ void handle_signal_return ( ThreadId tid )
    }
 
    if (VG_(threads)[tid].status == VgTs_WaitFD) {
-      VG_(panic)("handle_signal_return: unknown interrupted syscall");
+      VG_(core_panic)("handle_signal_return: unknown interrupted syscall");
    }
 
    /* All other cases?  Just return. */
@@ -1055,7 +1055,7 @@ void poll_for_ready_fds ( void )
          case __NR_write: 
             VKI_FD_SET(fd, &writefds); break;
          default: 
-            VG_(panic)("poll_for_ready_fds: unexpected syscall");
+            VG_(core_panic)("poll_for_ready_fds: unexpected syscall");
             /*NOTREACHED*/
             break;
       }
@@ -1073,7 +1073,7 @@ void poll_for_ready_fds ( void )
                 ( fd_max+1, &readfds, &writefds, &exceptfds, &timeout);
    if (VG_(is_kerror)(n_ready)) {
       VG_(printf)("poll_for_ready_fds: select returned %d\n", n_ready);
-      VG_(panic)("poll_for_ready_fds: select failed?!");
+      VG_(core_panic)("poll_for_ready_fds: select failed?!");
       /*NOTREACHED*/
    }
    
@@ -1105,7 +1105,7 @@ void poll_for_ready_fds ( void )
          continue;
       if (n_ok > 1) {
          VG_(printf)("offending fd = %d\n", fd);
-         VG_(panic)("poll_for_ready_fds: multiple events on fd");
+         VG_(core_panic)("poll_for_ready_fds: multiple events on fd");
       }
 
       /* An I/O event completed for fd.  Find the thread which
@@ -1425,7 +1425,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
                   tid, VG_(threads)[tid].m_eip ); 
                trans_addr = VG_(search_transtab) ( VG_(threads)[tid].m_eip ); 
                if (trans_addr == (Addr)0)
-                  VG_(panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
+                  VG_(core_panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
             }
             continue; /* with this thread */
          }
@@ -1585,8 +1585,8 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
          default: 
             VG_(printf)("\ntrc = %d\n", trc);
-            VG_(panic)("VG_(scheduler), phase 3: "
-                       "unexpected thread return code");
+            VG_(core_panic)("VG_(scheduler), phase 3: "
+                            "unexpected thread return code");
             /* NOTREACHED */
             break;
 
@@ -1599,7 +1599,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
 
    /* NOTREACHED */
-   VG_(panic)("scheduler: post-main-loop ?!");
+   VG_(core_panic)("scheduler: post-main-loop ?!");
    /* NOTREACHED */
 
   debug_stop:
@@ -1790,7 +1790,7 @@ void do__cleanup_push ( ThreadId tid, CleanupEntry* cu )
    }
    vg_assert(sp >= 0 && sp <= VG_N_CLEANUPSTACK);
    if (sp == VG_N_CLEANUPSTACK)
-      VG_(panic)("do__cleanup_push: VG_N_CLEANUPSTACK is too small."
+      VG_(core_panic)("do__cleanup_push: VG_N_CLEANUPSTACK is too small."
                  "  Increase and recompile.");
    VG_(threads)[tid].custack[sp] = *cu;
    sp++;
@@ -1880,7 +1880,7 @@ void do__set_cancelstate ( ThreadId tid, Int state )
    if (state == PTHREAD_CANCEL_DISABLE) {
       VG_(threads)[tid].cancel_st = False;
    } else {
-      VG_(panic)("do__set_cancelstate");
+      VG_(core_panic)("do__set_cancelstate");
    }
    SET_EDX(tid, old_st ? PTHREAD_CANCEL_ENABLE 
                        : PTHREAD_CANCEL_DISABLE);
@@ -1907,7 +1907,7 @@ void do__set_canceltype ( ThreadId tid, Int type )
    if (type == PTHREAD_CANCEL_DEFERRED) {
       VG_(threads)[tid].cancel_ty = True;
    } else {
-      VG_(panic)("do__set_canceltype");
+      VG_(core_panic)("do__set_canceltype");
    }
    SET_EDX(tid, old_ty ? PTHREAD_CANCEL_DEFERRED 
                        : PTHREAD_CANCEL_ASYNCHRONOUS);
@@ -1965,7 +1965,7 @@ void do__set_or_get_detach ( ThreadId tid,
          SET_EDX(tid, 0);
          return;
       default:
-         VG_(panic)("do__set_or_get_detach");
+         VG_(core_panic)("do__set_or_get_detach");
    }
 }
 
@@ -2123,7 +2123,7 @@ void do__quit ( ThreadId tid )
 static 
 void do__apply_in_new_thread_bogusRA ( void )
 {
-   VG_(panic)("do__apply_in_new_thread_bogusRA");
+   VG_(core_panic)("do__apply_in_new_thread_bogusRA");
 }
 
 /* (Fn, Arg): Create a new thread and run Fn applied to Arg in it.  Fn
@@ -2814,8 +2814,8 @@ void do_pthread_key_create ( ThreadId tid,
       /* SET_EDX(tid, EAGAIN); 
          return; 
       */
-      VG_(panic)("pthread_key_create: VG_N_THREAD_KEYS is too low;"
-                 " increase and recompile");
+      VG_(core_panic)("pthread_key_create: VG_N_THREAD_KEYS is too low;"
+                      " increase and recompile");
    }
 
    vg_thread_keys[i].inuse      = True;
@@ -3440,7 +3440,7 @@ void do_client_request ( ThreadId tid )
                         "  unhandled client request: 0x%x.  Perhaps\n" 
                         "  VG_(needs).client_requests should be set?\n",
                         arg[0]);
-            VG_(panic)("do_client_request: unknown request");
+            VG_(core_panic)("do_client_request: unknown request");
             /*NOTREACHED*/
          }
          break;

@@ -56,7 +56,7 @@ void VG_(call_helper_1_0)(UCodeBlock* cb, Addr f, UInt arg1, UInt regparms_n)
 {
    UInt t1 = newTemp(cb);
 
-   vg_assert(regparms_n <= 1);
+   sk_assert(regparms_n <= 1);
    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t1);
    uLiteral(cb, arg1);
    uInstr1(cb, CCALL, 0, TempReg, t1);
@@ -69,7 +69,7 @@ void VG_(call_helper_2_0)(UCodeBlock* cb, Addr f, UInt arg1, UInt arg2,
    UInt t1 = newTemp(cb);
    UInt t2 = newTemp(cb);
 
-   vg_assert(regparms_n <= 2);
+   sk_assert(regparms_n <= 2);
    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t1);
    uLiteral(cb, arg1);
    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t2);

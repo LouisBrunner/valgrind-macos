@@ -51,7 +51,7 @@ void fund_panic ( Char* fn )
       "  The skin you have selected is missing the function `%s',\n"
       "  which is required.\n\n",
       fn);
-   VG_(skin_error)("Missing skin function");
+   VG_(skin_panic)("Missing skin function");
 }
 
 static __attribute__ ((noreturn))
@@ -62,7 +62,7 @@ void non_fund_panic ( Char* fn )
       "  The skin you have selected is missing the function `%s'\n"
       "  required by one of its needs.\n\n",
       fn);
-   VG_(skin_error)("Missing skin function");
+   VG_(skin_panic)("Missing skin function");
 }
 
 /* ---------------------------------------------------------------------

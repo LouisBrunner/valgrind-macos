@@ -218,7 +218,7 @@ static __inline__ UChar mkSIB ( Int scale, Int regindex, Int regbase )
       case 2: shift = 1; break;
       case 4: shift = 2; break;
       case 8: shift = 3; break;
-      default: VG_(panic)( "mkSIB" );
+      default: VG_(core_panic)( "mkSIB" );
    }
    return ((shift & 3) << 6) | ((regindex & 7) << 3) | (regbase & 7);
 }
@@ -234,7 +234,7 @@ static __inline__ void emit_amode_regmem_reg ( Int regmem, Int reg )
 {
    /* (regmem), reg */
    if (regmem == R_ESP) 
-      VG_(panic)("emit_amode_regmem_reg");
+      VG_(core_panic)("emit_amode_regmem_reg");
    if (regmem == R_EBP) {
       VG_(emitB) ( mkModRegRM(1, reg, 5) );
       VG_(emitB) ( 0x00 );
@@ -246,7 +246,7 @@ static __inline__ void emit_amode_regmem_reg ( Int regmem, Int reg )
 void VG_(emit_amode_offregmem_reg) ( Int off, Int regmem, Int reg )
 {
    if (regmem == R_ESP)
-      VG_(panic)("emit_amode_offregmem_reg(ESP)");
+      VG_(core_panic)("emit_amode_offregmem_reg(ESP)");
    if (off < -128 || off > 127) {
       /* Use a large offset */
       /* d32(regmem), reg */
@@ -263,7 +263,7 @@ static __inline__ void emit_amode_sib_reg ( Int off, Int scale, Int regbase,
                                             Int regindex, Int reg )
 {
    if (regindex == R_ESP)
-      VG_(panic)("emit_amode_sib_reg(ESP)");
+      VG_(core_panic)("emit_amode_sib_reg(ESP)");
    if (off < -128 || off > 127) {
       /* Use a 32-bit offset */
       VG_(emitB) ( mkModRegRM(2, reg, 4) ); /* SIB with 32-bit displacement */
@@ -304,7 +304,7 @@ static __inline__ Int mkGrp1opcode ( Opcode opc )
       case AND: return 4;
       case SUB: return 5;
       case XOR: return 6;
-      default: VG_(panic)("mkGrp1opcode");
+      default: VG_(core_panic)("mkGrp1opcode");
    }
 }
 
@@ -318,7 +318,7 @@ static __inline__ Int mkGrp2opcode ( Opcode opc )
       case SHL: return 4;
       case SHR: return 5;
       case SAR: return 7;
-      default: VG_(panic)("mkGrp2opcode");
+      default: VG_(core_panic)("mkGrp2opcode");
    }
 }
 
@@ -327,7 +327,7 @@ static __inline__ Int mkGrp3opcode ( Opcode opc )
    switch (opc) {
       case NOT: return 2;
       case NEG: return 3;
-      default: VG_(panic)("mkGrp3opcode");
+      default: VG_(core_panic)("mkGrp3opcode");
    }
 }
 
@@ -336,7 +336,7 @@ static __inline__ Int mkGrp4opcode ( Opcode opc )
    switch (opc) {
       case INC: return 0;
       case DEC: return 1;
-      default: VG_(panic)("mkGrp4opcode");
+      default: VG_(core_panic)("mkGrp4opcode");
    }
 }
 
@@ -345,7 +345,7 @@ static __inline__ Int mkGrp5opcode ( Opcode opc )
    switch (opc) {
       case CALLM: return 2;
       case JMP:   return 4;
-      default: VG_(panic)("mkGrp5opcode");
+      default: VG_(core_panic)("mkGrp5opcode");
    }
 }
 
@@ -359,7 +359,7 @@ static __inline__ UChar mkPrimaryOpcode ( Opcode opc )
       case OR:  return 0x08;
       case SBB: return 0x18;
       case SUB: return 0x28;
-      default: VG_(panic)("mkPrimaryOpcode");
+      default: VG_(core_panic)("mkPrimaryOpcode");
   }
 }
 
@@ -560,7 +560,7 @@ void VG_(emit_unaryopv_reg) ( Int sz, Opcode opc, Int reg )
                          nameISize(sz), nameIReg(sz,reg));
          break;
       default: 
-         VG_(panic)("VG_(emit_unaryopv_reg)");
+         VG_(core_panic)("VG_(emit_unaryopv_reg)");
    }
 }
 
@@ -794,7 +794,7 @@ void VG_(emit_unaryopb_reg) ( Opcode opc, Int reg )
             VG_(printf)( "\n\t\tnegb\t%s\n", nameIReg(1,reg));
          break;
       default: 
-         VG_(panic)("VG_(emit_unaryopb_reg)");
+         VG_(core_panic)("VG_(emit_unaryopb_reg)");
    }
 }
 
@@ -947,7 +947,7 @@ static void emit_addlit8_offregmem ( Int lit8, Int regmem, Int off )
 
 void VG_(emit_add_lit_to_esp) ( Int lit )
 {
-   if (lit < -128 || lit > 127) VG_(panic)("VG_(emit_add_lit_to_esp)");
+   if (lit < -128 || lit > 127) VG_(core_panic)("VG_(emit_add_lit_to_esp)");
    VG_(new_emit)();
    VG_(emitB) ( 0x83 );
    VG_(emitB) ( 0xC4 );
@@ -1122,7 +1122,7 @@ Int VG_(helper_offset)(Addr a)
       VG_(printf)("%p ", VG_(noncompact_helper_addrs)[i]);
 
    VG_(printf)("\n");
-   VG_(skin_error)("Unfound helper");
+   VG_(skin_panic)("Unfound helper");
 }
 
 /*----------------------------------------------------*/
@@ -1165,7 +1165,7 @@ static void maybe_emit_movl_litOrReg_reg ( UInt litOrReg, Tag tag, UInt reg )
       ccall_arg_setup_instrs++;
    }
    else
-      VG_(panic)("emit_movl_litOrReg_reg: unexpected tag");
+      VG_(core_panic)("emit_movl_litOrReg_reg: unexpected tag");
 }
 
 static
@@ -1225,7 +1225,7 @@ void emit_three_regs_args_setup ( UInt src1, UInt src2, UInt src3,
          emit_swapl_arg_regs ( dst1, dst2 );
 
       } else {
-         VG_(panic)("impossible 3-cycle");
+         VG_(core_panic)("impossible 3-cycle");
       }
    }
 }
@@ -1321,7 +1321,7 @@ void VG_(synth_ccall) ( Addr fn, Int argc, Int regparms_n, UInt argv[],
          break;
       default:
          VG_(printf)("tag=%d\n", tagv[i]);
-         VG_(panic)("VG_(synth_ccall): bad tag");
+         VG_(core_panic)("VG_(synth_ccall): bad tag");
       }
       stack_used += 4;
       ccall_arg_setup_instrs++;
@@ -1353,7 +1353,7 @@ void VG_(synth_ccall) ( Addr fn, Int argc, Int regparms_n, UInt argv[],
       break;
 
    default:
-      VG_(panic)("VG_(synth_call): regparms_n value not in range 0..3");
+      VG_(core_panic)("VG_(synth_call): regparms_n value not in range 0..3");
    }
    
    /* Call the function */
@@ -1396,7 +1396,7 @@ static void load_ebp_from_JmpKind ( JmpKind jmpkind )
          VG_(emit_movv_lit_reg) ( 4, VG_TRC_EBP_JMP_CLIENTREQ, R_EBP );
          break;
       default: 
-         VG_(panic)("load_ebp_from_JmpKind");
+         VG_(core_panic)("load_ebp_from_JmpKind");
    }
 }
 
@@ -1471,7 +1471,7 @@ static void synth_mov_regmem_reg ( Int size, Int reg1, Int reg2 )
       case 4: emit_movv_regmem_reg ( 4, reg1, reg2 ); break;
       case 2: emit_movzwl_regmem_reg ( reg1, reg2 ); break;
       case 1: emit_movzbl_regmem_reg ( reg1, reg2 ); break;
-      default: VG_(panic)("synth_mov_regmem_reg");
+      default: VG_(core_panic)("synth_mov_regmem_reg");
    }  
 }
 
@@ -1482,7 +1482,7 @@ static void synth_mov_offregmem_reg ( Int size, Int off, Int areg, Int reg )
       case 4: VG_(emit_movv_offregmem_reg) ( 4, off, areg, reg ); break;
       case 2: VG_(emit_movzwl_offregmem_reg) ( off, areg, reg ); break;
       case 1: VG_(emit_movzbl_offregmem_reg) ( off, areg, reg ); break;
-      default: VG_(panic)("synth_mov_offregmem_reg");
+      default: VG_(core_panic)("synth_mov_offregmem_reg");
    }  
 }
 
@@ -1502,7 +1502,7 @@ static void synth_mov_reg_offregmem ( Int size, Int reg,
                  VG_(emit_swapl_reg_EAX) ( reg );
               }
               break;
-      default: VG_(panic)("synth_mov_reg_offregmem");
+      default: VG_(core_panic)("synth_mov_reg_offregmem");
    }
 }
 
@@ -1524,7 +1524,7 @@ static void synth_mov_reg_memreg ( Int size, Int reg1, Int reg2 )
                  emit_swapl_reg_reg ( s1, reg1 );
               }
               break;
-      default: VG_(panic)("synth_mov_reg_litmem");
+      default: VG_(core_panic)("synth_mov_reg_litmem");
    }
 }
 
@@ -1555,7 +1555,7 @@ static void synth_unaryop_reg ( Bool wr_cc,
                  VG_(emit_swapl_reg_EAX) ( reg );
               }
               break;
-      default: VG_(panic)("synth_unaryop_reg");
+      default: VG_(core_panic)("synth_unaryop_reg");
    }
 }
 
@@ -1623,9 +1623,9 @@ static void synth_nonshiftop_reg_reg ( Bool rd_cc, Bool wr_cc,
             emit_swapl_reg_reg ( reg1, s1 );
             break;
          }
-         VG_(panic)("synth_nonshiftopb_reg_reg");
+         VG_(core_panic)("synth_nonshiftopb_reg_reg");
       }
-      default: VG_(panic)("synth_nonshiftop_reg_reg");
+      default: VG_(core_panic)("synth_nonshiftop_reg_reg");
    }
 }
 
@@ -1660,7 +1660,7 @@ static void synth_nonshiftop_offregmem_reg (
          }
          break;
       default: 
-         VG_(panic)("synth_nonshiftop_offregmem_reg");
+         VG_(core_panic)("synth_nonshiftop_offregmem_reg");
    }
 }
 
@@ -1690,7 +1690,7 @@ static void synth_nonshiftop_lit_reg ( Bool rd_cc, Bool wr_cc,
                  VG_(emit_swapl_reg_EAX) ( reg );
               }
               break;
-      default: VG_(panic)("synth_nonshiftop_lit_reg");
+      default: VG_(core_panic)("synth_nonshiftop_lit_reg");
    }
 }
 
@@ -1714,7 +1714,7 @@ static void synth_push_reg ( Int size, Int reg )
          if (reg != R_EAX) VG_(emit_swapl_reg_EAX) ( reg );
          break;
      default: 
-         VG_(panic)("synth_push_reg");
+         VG_(core_panic)("synth_push_reg");
    }
 }
 
@@ -1736,7 +1736,7 @@ static void synth_pop_reg ( Int size, Int reg )
          if (reg != R_EAX) VG_(emit_swapl_reg_EAX) ( reg );
          VG_(emit_add_lit_to_esp)(1);
          break;
-      default: VG_(panic)("synth_pop_reg");
+      default: VG_(core_panic)("synth_pop_reg");
    }
 }
 
@@ -1752,7 +1752,7 @@ static void synth_shiftop_reg_reg ( Bool rd_cc, Bool wr_cc,
       case 4: emit_shiftopv_cl_stack0 ( 4, opcode ); break;
       case 2: emit_shiftopv_cl_stack0 ( 2, opcode ); break;
       case 1: emit_shiftopb_cl_stack0 ( opcode ); break;
-      default: VG_(panic)("synth_shiftop_reg_reg");
+      default: VG_(core_panic)("synth_shiftop_reg_reg");
    }
    if (wr_cc) emit_put_eflags();
    if (regs != R_ECX) emit_swapl_reg_ECX ( regs );
@@ -1785,7 +1785,7 @@ static void synth_shiftop_lit_reg ( Bool rd_cc, Bool wr_cc,
                  VG_(emit_swapl_reg_EAX) ( reg );
               }
               break;
-      default: VG_(panic)("synth_shiftop_lit_reg");
+      default: VG_(core_panic)("synth_shiftop_lit_reg");
    }
 }
 
@@ -1869,7 +1869,7 @@ static Int spillOrArchOffset ( Int size, Tag tag, UInt value )
                      else return 4 * VGOFF_(m_edi);
       }
    }
-   VG_(panic)("spillOrArchOffset");
+   VG_(core_panic)("spillOrArchOffset");
 }
 
 static Int eflagsOffset ( void )
@@ -1886,7 +1886,7 @@ static Int segRegOffset ( UInt archregs )
       case R_ES: return 4 * VGOFF_(m_es);
       case R_FS: return 4 * VGOFF_(m_fs);
       case R_GS: return 4 * VGOFF_(m_gs);
-      default: VG_(panic)("segRegOffset");
+      default: VG_(core_panic)("segRegOffset");
    }
 }
 
@@ -1904,7 +1904,7 @@ Int VG_(shadow_reg_offset) ( Int arch )
       case R_EBP: return 4 * VGOFF_(sh_ebp);
       case R_ESI: return 4 * VGOFF_(sh_esi);
       case R_EDI: return 4 * VGOFF_(sh_edi);
-      default:    VG_(panic)( "shadowOffset");
+      default:    VG_(core_panic)( "shadowOffset");
    }
 }
 
@@ -1930,7 +1930,7 @@ static void synth_WIDEN_signed ( Int sz_src, Int sz_dst, Int reg )
       VG_(emit_shiftopv_lit_reg) ( 2, SAR, 8, reg );
    }
    else
-      VG_(panic)("synth_WIDEN");
+      VG_(core_panic)("synth_WIDEN");
 }
 
 
@@ -2191,7 +2191,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
                           break;
             case Literal: synth_mov_lit_reg ( u->size, u->lit32, u->val2 ); 
                           break;
-            default: VG_(panic)("emitUInstr:mov");
+            default: VG_(core_panic)("emitUInstr:mov");
 	 }
          break;
       }
@@ -2241,7 +2241,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
                              R_EBP,
                              u->val2 );
                           break;
-            default: VG_(panic)("emitUInstr:non-shift-op");
+            default: VG_(core_panic)("emitUInstr:non-shift-op");
          }
          break;
       }
@@ -2265,7 +2265,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
                              readFlagUse(u), writeFlagUse(u),
                              u->opcode, u->size, u->val1, u->val2 );
                           break;
-            default: VG_(panic)("emitUInstr:non-shift-op");
+            default: VG_(core_panic)("emitUInstr:non-shift-op");
          }
          break;
       }
@@ -2307,20 +2307,20 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
                   synth_jmp_lit ( u->lit32, u->jmpkind );
                   break;
                default: 
-                  VG_(panic)("emitUInstr(JMP, unconditional, default)");
+                  VG_(core_panic)("emitUInstr(JMP, unconditional, default)");
                   break;
             }
          } else {
             switch (u->tag1) {
                case RealReg:
-                  VG_(panic)("emitUInstr(JMP, conditional, RealReg)");
+                  VG_(core_panic)("emitUInstr(JMP, conditional, RealReg)");
                   break;
                case Literal:
                   vg_assert(u->jmpkind == JmpBoring);
                   synth_jcond_lit ( u->cond, u->lit32 );
                   break;
                default: 
-                  VG_(panic)("emitUInstr(JMP, conditional, default)");
+                  VG_(core_panic)("emitUInstr(JMP, conditional, default)");
                   break;
             }
          }
@@ -2421,7 +2421,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i, RRegSet regs_live_before )
                         " VG_(needs).extended_UCode should be set?\n",
                         u->opcode);
             VG_(pp_UInstr)(0,u);
-            VG_(panic)("emitUInstr: unimplemented opcode");
+            VG_(core_panic)("emitUInstr: unimplemented opcode");
          }
    }
 

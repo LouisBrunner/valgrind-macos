@@ -49,17 +49,17 @@ void VGP_(init_profiling) ( void )
 
 void VGP_(done_profiling) ( void )
 {
-   VG_(panic)("done_profiling");
+   VG_(core_panic)("done_profiling");
 }
 
 void VGP_(pushcc) ( UInt cc )
 {
-   VG_(panic)("pushcc");
+   VG_(core_panic)("pushcc");
 }
 
 void VGP_(popcc) ( UInt cc )
 {
-   VG_(panic)("popcc");
+   VG_(core_panic)("popcc");
 }
 
 /*--------------------------------------------------------------------*/

@@ -370,7 +370,7 @@ extern void VG_(add_to_trans_tab) ( TTEntry* tte )
    i = ((UInt)(tte->orig_addr)) % VG_TT_SIZE;
    while (True) {
       if (vg_tt[i].orig_addr == tte->orig_addr)
-         VG_(panic)("add_to_trans_tab: duplicate");
+         VG_(core_panic)("add_to_trans_tab: duplicate");
       if (vg_tt[i].orig_addr == VG_TTE_EMPTY) {
          /* Put it here, and set the back pointer. */
          vg_tt[i] = *tte;
@@ -393,7 +393,7 @@ Addr VG_(copy_to_transcache) ( Addr trans_addr, Int trans_size )
    Int i;
    Addr ret_addr;
    if (4+trans_size > VG_TC_SIZE-vg_tc_used)
-      VG_(panic)("copy_to_transcache: not enough free space?!");
+      VG_(core_panic)("copy_to_transcache: not enough free space?!");
    /* Leave a hole for the back pointer to the TT entry. */
    vg_tc_used += 4;
    ret_addr = (Addr)&vg_tc[vg_tc_used];

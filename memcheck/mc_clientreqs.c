@@ -93,7 +93,7 @@ Int vg_alloc_client_block ( void )
    }
 
    /* Ok, we have to allocate a new one. */
-   vg_assert(vg_cgb_used == vg_cgb_size);
+   sk_assert(vg_cgb_used == vg_cgb_size);
    sz_new = (vg_cgbs == NULL) ? 10 : (2 * vg_cgb_size);
 
    cgbs_new = VG_(malloc)( sz_new * sizeof(CGenBlock) );
@@ -161,7 +161,7 @@ void vg_add_client_stack_block ( ThreadState* tst, Addr aa, UInt sz )
    if (vg_csb_used >= vg_csb_size) {
 
       /* No; we have to expand the array. */
-      vg_assert(vg_csb_used == vg_csb_size);
+      sk_assert(vg_csb_used == vg_csb_size);
 
       sz_new = (vg_csbs == NULL) ? 10 : (2 * vg_csb_size);
 
@@ -186,7 +186,7 @@ void vg_add_client_stack_block ( ThreadState* tst, Addr aa, UInt sz )
    if (vg_csb_used > vg_csb_used_MAX)
       vg_csb_used_MAX = vg_csb_used;
 
-   vg_assert(vg_csb_used <= vg_csb_size);
+   sk_assert(vg_csb_used <= vg_csb_size);
 
    /* VG_(printf)("acsb  %p %d\n", aa, sz); */
    SK_(make_noaccess) ( aa, sz );
@@ -202,7 +202,7 @@ void vg_add_client_stack_block ( ThreadState* tst, Addr aa, UInt sz )
 
 #  if 1
    for (i = 1; i < vg_csb_used; i++)
-      vg_assert(vg_csbs[i-1].start >= vg_csbs[i].start);
+      sk_assert(vg_csbs[i-1].start >= vg_csbs[i].start);
 #  endif
 }
 
@@ -344,7 +344,7 @@ UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          if (vg_cgbs == NULL 
              || arg[2] >= vg_cgb_used || vg_cgbs[arg[2]].kind == CG_NotInUse)
             return 1;
-         vg_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
+         sk_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
          vg_cgbs[arg[2]].kind = CG_NotInUse;
          vg_cgb_discards++;
          return 0;

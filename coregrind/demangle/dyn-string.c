@@ -199,7 +199,7 @@ dyn_string_copy (dest, src)
      dyn_string_t src;
 {
   if (dest == src)
-      VG_(panic) ("dyn_string_copy: src==dest");
+      VG_(core_panic) ("dyn_string_copy: src==dest");
 
   /* Make room in DEST.  */
   if (dyn_string_resize (dest, src->length) == NULL)
@@ -270,7 +270,7 @@ dyn_string_insert (dest, pos, src)
   int i;
 
   if (src == dest)
-    VG_(panic)( "dyn_string_insert: src==dest" );
+    VG_(core_panic)( "dyn_string_insert: src==dest" );
 
   if (dyn_string_resize (dest, dest->length + src->length) == NULL)
     return 0;

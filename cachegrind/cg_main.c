@@ -451,15 +451,15 @@ static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb,
    }
    if (curr_BBCC == NULL) {
 
-      vg_assert(False == remove);
+      sk_assert(False == remove);
 
       curr_fn_node->BBCCs[BBCC_hash] = curr_BBCC = 
          new_BBCC(bb_orig_addr, cb, curr_fn_node->BBCCs[BBCC_hash]);
       *BB_seen_before = False;
 
    } else {
-      vg_assert(bb_orig_addr == curr_BBCC->orig_addr);
-      vg_assert(curr_BBCC->array_size > 0 && curr_BBCC->array_size < 1000000);
+      sk_assert(bb_orig_addr == curr_BBCC->orig_addr);
+      sk_assert(curr_BBCC->array_size > 0 && curr_BBCC->array_size < 1000000);
       if (VG_(clo_verbosity) > 2) {
           VG_(message)(Vg_DebugMsg, 
             "BB retranslation, retrieving from BBCC table");
@@ -530,7 +530,7 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
          case LOAD:
             /* Two LDBs are possible for a single instruction */
             /* Also, a STORE can come after a LOAD for bts/btr/btc */
-            vg_assert(/*!is_LOAD &&*/ /* !is_STORE && */ 
+            sk_assert(/*!is_LOAD &&*/ /* !is_STORE && */ 
                       !is_FPU_R && !is_FPU_W);
             t_read = u_in->val1;
             is_LOAD = True;
@@ -538,19 +538,19 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
 
          case STORE:
             /* Multiple STOREs are possible for 'pushal' */
-            vg_assert(            /*!is_STORE &&*/ !is_FPU_R && !is_FPU_W);
+            sk_assert(            /*!is_STORE &&*/ !is_FPU_R && !is_FPU_W);
             t_write = u_in->val2;
             is_STORE = True;
             break;
 
          case FPU_R:
-            vg_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
+            sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
             t_read = u_in->val2;
             is_FPU_R = True;
             break;
 
          case FPU_W:
-            vg_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
+            sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
             t_write = u_in->val2;
             is_FPU_W = True;
             break;
@@ -611,7 +611,7 @@ void log_1I_0D_cache_access_JIFZ(iCC* cc)
            I = &( ((iddCC*)cc)->I );
            break;
        default:
-           VG_(panic)("Unknown CC type in log_1I_0D_cache_access_JIFZ()\n");
+           VG_(skin_panic)("Unknown CC type in log_1I_0D_cache_access_JIFZ()\n");
            break;
    }
    cachesim_I1_doref(instr_addr, instr_size, &I->m1, &I->m2);
@@ -734,7 +734,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
        * The instrumentation is just a call to the appropriate helper function,
        * passing it the address of the instruction's CC.
        */
-      if (instrumented_Jcond) vg_assert(u_in->opcode == JMP);
+      if (instrumented_Jcond) sk_assert(u_in->opcode == JMP);
 
       switch (u_in->opcode) {
          case NOP:  case CALLM_E:  case CALLM_S:
@@ -807,18 +807,18 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
          /* JMP: insert instrumentation if the first JMP */
          case JMP:
             if (instrumented_Jcond) {
-               vg_assert(CondAlways == u_in->cond);
-               vg_assert(i+1 == cb_in->used);
+               sk_assert(CondAlways == u_in->cond);
+               sk_assert(i+1 == cb_in->used);
                VG_(copy_UInstr)(cb, u_in);
                instrumented_Jcond = False;    /* reset */
                break;
             }
             /* The first JMP... instrument. */
             if (CondAlways != u_in->cond) {
-               vg_assert(i+2 == cb_in->used);
+               sk_assert(i+2 == cb_in->used);
                instrumented_Jcond = True;
             } else {
-               vg_assert(i+1 == cb_in->used);
+               sk_assert(i+1 == cb_in->used);
             }
 
             /* Get x86 instr size from final JMP. */
@@ -834,14 +834,14 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
              * function, passing it the CC address. */
             stack_used = 0;
 
-            vg_assert(x86_instr_size >= 1 && 
+            sk_assert(x86_instr_size >= 1 && 
                       x86_instr_size <= MAX_x86_INSTR_SIZE);
 
 #define IS_(X)      (INVALID_TEMPREG != t_##X##_addr)
 
             if (!IS_(read) && !IS_(write)) {
-               vg_assert(INVALID_DATA_SIZE == data_size);
-               vg_assert(INVALID_TEMPREG == t_read_addr  && 
+               sk_assert(INVALID_DATA_SIZE == data_size);
+               sk_assert(INVALID_TEMPREG == t_read_addr  && 
                          INVALID_TEMPREG == t_read       && 
                          INVALID_TEMPREG == t_write_addr &&
                          INVALID_TEMPREG == t_write);
@@ -855,7 +855,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                argc = 1;
 
             } else { 
-               vg_assert(4 == data_size || 2  == data_size || 1 == data_size || 
+               sk_assert(4 == data_size || 2  == data_size || 1 == data_size || 
                          8 == data_size || 10 == data_size ||
                          MIN_LINE_SIZE == data_size);
                
@@ -872,7 +872,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                   if (!BB_seen_before)
                      init_idCC(ReadCC, (idCC*)BBCC_ptr, x86_instr_addr,
                                x86_instr_size, data_size);
-                  vg_assert(INVALID_TEMPREG != t_read_addr  && 
+                  sk_assert(INVALID_TEMPREG != t_read_addr  && 
                             INVALID_TEMPREG != t_read       && 
                             INVALID_TEMPREG == t_write_addr &&
                             INVALID_TEMPREG == t_write);
@@ -888,15 +888,15 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                   if (!BB_seen_before)
                      init_idCC(WriteCC, (idCC*)BBCC_ptr, x86_instr_addr,
                                x86_instr_size, data_size);
-                  vg_assert(INVALID_TEMPREG == t_read_addr  && 
+                  sk_assert(INVALID_TEMPREG == t_read_addr  && 
                             INVALID_TEMPREG == t_read       && 
                             INVALID_TEMPREG != t_write_addr &&
                             INVALID_TEMPREG != t_write);
                   t_data_addr1 = t_write_addr;
 
                } else {
-                  vg_assert(IS_(read) && IS_(write));
-                  vg_assert(INVALID_TEMPREG != t_read_addr  && 
+                  sk_assert(IS_(read) && IS_(write));
+                  sk_assert(INVALID_TEMPREG != t_read_addr  && 
                             INVALID_TEMPREG != t_read       && 
                             INVALID_TEMPREG != t_write_addr &&
                             INVALID_TEMPREG != t_write);
@@ -947,7 +947,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
                                         TempReg, t_data_addr1,
                                         TempReg, t_data_addr2);
                else
-                  VG_(panic)("argc... not 1 or 2 or 3?");
+                  VG_(skin_panic)("argc... not 1 or 2 or 3?");
                
                uCCall(cb, helper, argc, argc, False);
             }
@@ -971,7 +971,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    }
 
    /* Just check everything looks ok */
-   vg_assert(BBCC_ptr - BBCC_ptr0 == BBCC_node->array_size);
+   sk_assert(BBCC_ptr - BBCC_ptr0 == BBCC_node->array_size);
 
    VG_(free_UCodeBlock)(cb_in);
    return cb;
@@ -1072,7 +1072,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x90: case 0x96: case 0x9b:
          VG_(message)(Vg_DebugMsg,
             "error: IA-64 cache stats!  Cachegrind doesn't run on IA-64...");
-         VG_(panic)("IA-64 detected");
+         VG_(skin_panic)("IA-64 detected");
 
       case 0x22: case 0x23: case 0x25: case 0x29: 
           VG_(message)(Vg_DebugMsg, 
@@ -1234,10 +1234,10 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    sigill_new.ksa_flags    = 0;
    sigill_new.ksa_restorer = NULL;
    res = VG_(ksigemptyset)( &sigill_new.ksa_mask );
-   vg_assert(res == 0);
+   sk_assert(res == 0);
 
    res = VG_(ksigaction)( VKI_SIGILL, &sigill_new, &sigill_saved );
-   vg_assert(res == 0);
+   sk_assert(res == 0);
 
    /* Trap for illegal instruction, in case it's a really old processor that
     * doesn't support CPUID. */
@@ -1248,14 +1248,14 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 
       /* Restore old SIGILL handler */
       res = VG_(ksigaction)( VKI_SIGILL, &sigill_saved, NULL );
-      vg_assert(res == 0);
+      sk_assert(res == 0);
 
    } else  {
       VG_(message)(Vg_DebugMsg, "CPUID instruction not supported");
 
       /* Restore old SIGILL handler */
       res = VG_(ksigaction)( VKI_SIGILL, &sigill_saved, NULL );
-      vg_assert(res == 0);
+      sk_assert(res == 0);
       return -1;
    }
 
@@ -1466,7 +1466,7 @@ static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl,
             break;
 
          default:
-            VG_(panic)("Unknown CC type in fprint_BBCC()\n");
+            VG_(skin_panic)("Unknown CC type in fprint_BBCC()\n");
             break;
       }
       distinct_instrs++;
@@ -1508,7 +1508,7 @@ static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl,
    /* Mark end of basic block */
    /* VG_(write)(fd, (void*)"#}\n", 3); */
 
-   vg_assert(BBCC_ptr - BBCC_ptr0 == BBCC_node->array_size);
+   sk_assert(BBCC_ptr - BBCC_ptr0 == BBCC_node->array_size);
 }
 
 static void fprint_BBCC_table_and_calc_totals(void)
@@ -1812,7 +1812,7 @@ void SK_(discard_basic_block_info) ( Addr a, UInt size )
    BBCC_node = get_BBCC(a, NULL, /*remove=*/True, &BB_seen_before);
    BBCC_ptr0 = BBCC_ptr = (Addr)(BBCC_node->array);
 
-   vg_assert(True == BB_seen_before);
+   sk_assert(True == BB_seen_before);
 
    while (BBCC_ptr - BBCC_ptr0 < BBCC_node->array_size) {
 
@@ -1848,7 +1848,7 @@ void SK_(discard_basic_block_info) ( Addr a, UInt size )
             break;
 
          default:
-            VG_(panic)("Unknown CC type in VG_(discard_basic_block_info)()\n");
+            VG_(skin_panic)("Unknown CC type in VG_(discard_basic_block_info)()\n");
             break;
       }
    }
@@ -1926,6 +1926,7 @@ void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* not_used)
 {
    needs->name                    = "cachegrind";
    needs->description             = "an I1/D1/L2 cache profiler";
+   needs->bug_reports_to          = "njn25@cam.ac.uk";
 
    needs->basic_block_discards    = True;
    needs->command_line_options    = True;

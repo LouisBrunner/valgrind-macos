@@ -140,7 +140,7 @@ Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
       return True;
 
    default:
-      VG_(panic)("VG_(eq_ExeContext): unrecognised VgRes");
+      VG_(core_panic)("VG_(eq_ExeContext): unrecognised VgRes");
    }
 }
 

@@ -798,9 +798,16 @@ extern void VG_(restore_all_host_signals)
    Exports of vg_mylibc.c
    ------------------------------------------------------------------ */
 
-/* Note: this function is re-declared (cough, hack) in include/vg_profile.c */
-__attribute__((noreturn))
-extern void VG_(skin_error) ( Char* s );
+#define vg_assert(expr)                                               \
+  ((void) ((expr) ? 0 :						      \
+	   (VG_(core_assert_fail) (VG__STRING(expr),	              \
+			           __FILE__, __LINE__,                \
+                                   __PRETTY_FUNCTION__), 0)))
+__attribute__ ((__noreturn__))
+extern void VG_(core_assert_fail) ( Char* expr, Char* file, 
+                                    Int line, Char* fn );
+__attribute__ ((__noreturn__))
+extern void  VG_(core_panic)      ( Char* str );
 
 /* VG_(brk) not public so skins cannot screw with curr_dataseg_end */
 extern void* VG_(brk) ( void* end_data_segment );

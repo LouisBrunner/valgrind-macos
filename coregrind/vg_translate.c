@@ -280,7 +280,7 @@ Int VG_(rank_to_realreg) ( Int rank )
       case 1: return R_ESI;
       case 0: return R_EDI;
 #     endif
-      default: VG_(panic)("VG_(rank_to_realreg)");
+      default: VG_(core_panic)("VG_(rank_to_realreg)");
    }
 }
 
@@ -306,7 +306,7 @@ Int VG_(realreg_to_rank) ( Int realReg )
       case R_ESI: return 1;
       case R_EDI: return 0;
 #     endif
-      default: VG_(panic)("VG_(realreg_to_rank)");
+      default: VG_(core_panic)("VG_(realreg_to_rank)");
    }
 }
 
@@ -536,7 +536,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
          VG_(printf)("unhandled opcode: %u.  Perhaps " 
                      "VG_(needs).extended_UCode should be set?",
                      u->opcode);
-         VG_(panic)("VG_(saneUInstr): unhandled opcode");
+         VG_(core_panic)("VG_(saneUInstr): unhandled opcode");
       }
    }
 #  undef LIT0
@@ -718,7 +718,7 @@ Char* VG_(nameCondcode) ( Condcode cond )
       case CondLE:     return "le";
       case CondNLE:    return "nle";
       case CondAlways: return "MP"; /* hack! */
-      default: VG_(panic)("nameCondcode");
+      default: VG_(core_panic)("nameCondcode");
    }
 }
 
@@ -752,7 +752,7 @@ void VG_(pp_UOperand) ( UInstr* u, Int operandNo, Int sz, Bool parens )
       case 1: tag = u->tag1; val = u->val1; break;
       case 2: tag = u->tag2; val = u->val2; break;
       case 3: tag = u->tag3; val = u->val3; break;
-      default: VG_(panic)("VG_(pp_UOperand)(1)");
+      default: VG_(core_panic)("VG_(pp_UOperand)(1)");
    }
    if (tag == Literal) val = u->lit32;
 
@@ -766,7 +766,7 @@ void VG_(pp_UOperand) ( UInstr* u, Int operandNo, Int sz, Bool parens )
       case ArchReg:  VG_(printf)("%S",nameIReg(sz,val)); break;
       case ArchRegS: VG_(printf)("%S",nameSReg(val)); break;
       case SpillNo:  VG_(printf)("spill%d", val); break;
-      default: VG_(panic)("VG_(ppUOperand)(2)");
+      default: VG_(core_panic)("VG_(ppUOperand)(2)");
    }
    if (parens) VG_(printf)(")");
 }
@@ -796,7 +796,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case BSWAP: return (upper ? "BSWAP" : "bswap");
       default:    break;
    }
-   if (!upper) VG_(panic)("vg_name_UOpcode: invalid !upper");
+   if (!upper) VG_(core_panic)("vg_name_UOpcode: invalid !upper");
    switch (opc) {
       case CALLM_S: return "CALLM_S";
       case CALLM_E: return "CALLM_E";
@@ -834,7 +834,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
             VG_(printf)("unhandled opcode: %u.  Perhaps " 
                         "VG_(needs).extended_UCode should be set?",
                         opc);
-            VG_(panic)("name_UOpcode: unhandled opcode");
+            VG_(core_panic)("name_UOpcode: unhandled opcode");
          }
    }
 }
@@ -1031,7 +1031,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
             VG_(printf)("unhandled opcode: %u.  Perhaps " 
                         "VG_(needs).extended_UCode should be set?",
                         u->opcode);
-            VG_(panic)("pp_UInstr: unhandled opcode");
+            VG_(core_panic)("pp_UInstr: unhandled opcode");
          }
    }
    if (u->flags_r != FlagsEmpty || u->flags_w != FlagsEmpty) {
@@ -1150,7 +1150,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, RegUse* arr )
             VG_(printf)("unhandled opcode: %u.  Perhaps " 
                         "VG_(needs).extended_UCode should be set?",
                         u->opcode);
-            VG_(panic)("VG_(get_reg_usage): unhandled opcode");
+            VG_(core_panic)("VG_(get_reg_usage): unhandled opcode");
          }
    }
    return n;
@@ -1169,21 +1169,21 @@ void patchUInstr ( UInstr* u, RegUse temps[], UInt reals[], Int n_tmap )
    if (u->tag1 == TempReg) {
       for (i = 0; i < n_tmap; i++)
          if (temps[i].num == u->val1) break;
-      if (i == n_tmap) VG_(panic)("patchUInstr(1)");
+      if (i == n_tmap) VG_(core_panic)("patchUInstr(1)");
       u->tag1 = RealReg;
       u->val1 = reals[i];
    }
    if (u->tag2 == TempReg) {
       for (i = 0; i < n_tmap; i++)
          if (temps[i].num == u->val2) break;
-      if (i == n_tmap) VG_(panic)("patchUInstr(2)");
+      if (i == n_tmap) VG_(core_panic)("patchUInstr(2)");
       u->tag2 = RealReg;
       u->val2 = reals[i];
    }
    if (u->tag3 == TempReg) {
       for (i = 0; i < n_tmap; i++)
          if (temps[i].num == u->val3) break;
-      if (i == n_tmap) VG_(panic)("patchUInstr(3)");
+      if (i == n_tmap) VG_(core_panic)("patchUInstr(3)");
       u->tag3 = RealReg;
       u->val3 = reals[i];
    }
@@ -1201,7 +1201,7 @@ Int containingArchRegOf ( Int sz, Int aregno )
       case 4: return aregno;
       case 2: return aregno;
       case 1: return aregno >= 4 ? aregno-4 : aregno;
-      default: VG_(panic)("containingArchRegOf");
+      default: VG_(core_panic)("containingArchRegOf");
    }
 }
 
@@ -1249,7 +1249,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
 
       default: 
          VG_(pp_UInstr)(0,u);
-         VG_(panic)("maybe_uinstrReadsArchReg: unhandled opcode");
+         VG_(core_panic)("maybe_uinstrReadsArchReg: unhandled opcode");
    }
 }
 
@@ -1704,7 +1704,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
             break;
       if (j == VG_MAX_SPILLSLOTS) {
          VG_(printf)("VG_MAX_SPILLSLOTS is too low; increase and recompile.\n");
-         VG_(panic)("register allocation failed -- out of spill slots");
+         VG_(core_panic)("register allocation failed -- out of spill slots");
       }
       ss_busy_until_before[j] = temp_info[i].dead_before;
       temp_info[i].spill_no = j;
@@ -1880,7 +1880,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
 
          have_spill_cand:
          if (r == VG_MAX_REALREGS)
-            VG_(panic)("new reg alloc: out of registers ?!");
+            VG_(core_panic)("new reg alloc: out of registers ?!");
 
          /* Eject r.  Important refinement: don't bother if the
             associated TempReg is now dead. */

@@ -29,7 +29,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
 /* Used by the back end to look up addresses of helper
    function calls inserted by bbToIR_X86Instr. */
 extern
-Addr64 x86guest_findhelper ( Char* function_name );
+HWord x86guest_findhelper ( Char* function_name );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern

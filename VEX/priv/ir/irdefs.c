@@ -274,7 +274,9 @@ void ppIREffect ( IREffect fx )
 void ppIRDirty ( IRDirty* d )
 {
    Int i;
-   vex_printf("DIRTY ");
+   vex_printf("DIRTY");
+   if (d->needsBBP)
+      vex_printf(" NeedsBBP");
    if (d->mFx != Ifx_None) {
       ppIREffect(d->mFx);
       vex_printf("-mem(");
@@ -285,7 +287,7 @@ void ppIRDirty ( IRDirty* d )
       ppIREffect(d->fxState[i].fx);
       vex_printf("-gst(%d,%d) ", d->fxState[i].offset, d->fxState[i].size);
    }
-   vex_printf("::: ");
+   vex_printf(" ::: ");
    if (d->tmp != INVALID_IRTEMP) {
       ppIRTemp(d->tmp);
       vex_printf(" = ");
@@ -539,10 +541,32 @@ IRExpr* IRExpr_Mux0X ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX ) {
 }
 
 
+/* Constructors for NULL-terminated IRExpr expression vectors,
+   suitable for use as arg lists in clean/dirty helper calls. */
+
+IRExpr** mkIRExprVec_0 ( void ) {
+   IRExpr** vec = LibVEX_Alloc(1 * sizeof(IRExpr*));
+   vec[0] = NULL;
+   return vec;
+}
+IRExpr** mkIRExprVec_1 ( IRExpr* arg1 ) {
+   IRExpr** vec = LibVEX_Alloc(2 * sizeof(IRExpr*));
+   vec[0] = arg1;
+   vec[1] = NULL;
+   return vec;
+}
+IRExpr** mkIRExprVec_2 ( IRExpr* arg1, IRExpr* arg2 ) {
+   IRExpr** vec = LibVEX_Alloc(3 * sizeof(IRExpr*));
+   vec[0] = arg1;
+   vec[1] = arg2;
+   vec[2] = NULL;
+   return vec;
+}
+
+
 /* Constructors -- IRDirty */
 
-IRDirty* emptyIRDirty ( void )
-{
+IRDirty* emptyIRDirty ( void ) {
    IRDirty* d = LibVEX_Alloc(sizeof(IRDirty));
    d->name     = NULL;
    d->args     = NULL;
@@ -550,7 +574,22 @@ IRDirty* emptyIRDirty ( void )
    d->mFx      = Ifx_None;
    d->mAddr    = NULL;
    d->mSize    = 0;
+   d->needsBBP = False;
    d->nFxState = 0;
+   return d;
+}
+
+IRDirty* unsafeIRDirty_0_N ( Char* name, IRExpr** args ) {
+   IRDirty* d = emptyIRDirty();
+   d->name = name;
+   d->args = args;
+   return d;
+}
+IRDirty* unsafeIRDirty_1_N ( IRTemp dst, Char* name, IRExpr** args ) {
+   IRDirty* d = emptyIRDirty();
+   d->name = name;
+   d->args = args;
+   d->tmp  = dst;
    return d;
 }
 
@@ -733,6 +772,7 @@ IRDirty* dopyIRDirty ( IRDirty* d )
    d2->mFx   = d->mFx;
    d2->mAddr = d->mAddr==NULL ? NULL : dopyIRExpr(d->mAddr);
    d2->mSize = d->mSize;
+   d2->needsBBP = d->needsBBP;
    d2->nFxState = d->nFxState;
    for (i = 0; i < d2->nFxState; i++)
       d2->fxState[i] = d->fxState[i];
@@ -1334,6 +1374,8 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
                goto bad_dirty;
          }
          if (d->nFxState < 0 || d->nFxState > VEX_N_FXSTATE)
+            goto bad_dirty;
+         if (d->nFxState == 0 && d->needsBBP)
             goto bad_dirty;
          for (i = 0; i < d->nFxState; i++) {
             if (d->fxState[i].fx == Ifx_None) goto bad_dirty;

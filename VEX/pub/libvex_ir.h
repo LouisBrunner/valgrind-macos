@@ -322,8 +322,7 @@ typedef
    details about what the helper does (and you better be telling the
    truth, otherwise any derived instrumentation will be wrong).  Also
    IRStmt_Dirty inhibits various IR optimisations and so can cause
-   quite poor code to be generated.  Use it as little as possible, and
-   in non-performance-critical situations only.
+   quite poor code to be generated.  Try to avoid it.  
 */
 
 /* The possible kinds of expressions are as follows: */
@@ -404,11 +403,18 @@ extern IRExpr* IRExpr_CCall  ( Char* name, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
 
 extern IRExpr*  dopyIRExpr ( IRExpr* );
-extern IRExpr** sopyIRExprVec ( IRExpr** );
-extern IRExpr** dopyIRExprVec ( IRExpr** );
-
 
 extern void ppIRExpr ( IRExpr* );
+
+/* NULL-terminated IRExpr expression vectors, suitable for use as arg
+   lists in clean/dirty helper calls. */
+
+extern IRExpr** mkIRExprVec_0 ( void );
+extern IRExpr** mkIRExprVec_1 ( IRExpr* arg1 );
+extern IRExpr** mkIRExprVec_2 ( IRExpr* arg1, IRExpr* arg2 );
+
+extern IRExpr** sopyIRExprVec ( IRExpr** );
+extern IRExpr** dopyIRExprVec ( IRExpr** );
 
 
 /* ------------------ Dirty helper calls ------------------ */
@@ -420,30 +426,14 @@ extern void ppIRExpr ( IRExpr* );
    results and/or do different things when called repeated with the
    same arguments, by means of storing private state.
 
-   The supplied arguments are all IRTemps, to attempt to sidestep any
-   semantic difficulties created by allowing them to be arbitrary
-   expressions (although I can't think of any such).  If a value is
-   returned, it is assigned to the nominated return temporary.
+   If a value is returned, it is assigned to the nominated return
+   temporary.
 
    Dirty calls are statements rather than expressions for obvious
-   reasons.  IRTemps may or may not stay alive across them.  A precise
-   statement is: any IRTemp which depends, directly or indirectly, on
-   any memory or guest state segments which the call claims to write
-   or modify, must be regarded as invalid after the call and therefore
-   may not be used after it.
-
-   It would be nice to automatically check this in the sanity checker,
-   but doing so exactly is difficult (although probably possible).
-   Some approximation scheme will be needed.  This would rule out some
-   constructions which are actually valid, but not interesting, whilst
-   still catching all invalid constructions.
-
-   One obvious if pessimistic approximation is to say that *all*
-   IRTemps are killed across a Dirty call.  That's easy to
-   mechanically check, but it's not going to work with
-   instrumentation, as doing the shadow state updates after the call
-   will surely require reading temps defined before the call.  Needs
-   further consideration.
+   reasons.  If a dirty call is stated as writing guest state, any
+   values derived from the written parts of the guest state are
+   invalid.  Similarly, if the dirty call is stated as writing
+   memory, any loaded values are invalidated by it.
 
    In order that instrumentation is possible, the call must state, and
    state correctly
@@ -454,6 +444,13 @@ extern void ppIRExpr ( IRExpr* );
    * whether it reads, writes or modifies guest state, and if so which
      pieces (several pieces may be stated, and currently their extents
      must be known at translation-time).
+
+   Normally, code is generated to pass just the args to the helper.
+   However, if .needsBBP is set, then an extra first argument is
+   passed, which is the baseblock pointer, so that the callee can
+   access the guest state.  It is invalid for .nFxState to be zero
+   but .needsBBP to be True, since .nFxState==0 is a claim that the
+   call does not access guest state.
 */
 
 #define VEX_N_FXSTATE  4   /* enough for CPUID on x86 */
@@ -483,7 +480,8 @@ typedef
       Int      mSize;  /* of access, or zero if mFx==Ifx_None */
 
       /* Guest state effects; up to N allowed */
-      Int nFxState; /* must be 0 .. VEX_N_FXSTATE */
+      Bool needsBBP; /* True => also pass guest state ptr to callee */
+      Int  nFxState; /* must be 0 .. VEX_N_FXSTATE */
       struct {
          IREffect fx;   /* read, write or modify? */
          Int      offset;
@@ -496,6 +494,17 @@ extern void     ppIRDirty ( IRDirty* );
 extern IRDirty* emptyIRDirty ( void );
 
 extern IRDirty* dopyIRDirty ( IRDirty* );
+
+/* A handy function which takes some of the tedium out of constructing
+   dirty helper calls.  The called function impliedly does not return
+   any value.  The call is marked as accessing neither guest state nor
+   memory (hence the "unsafe" designation) -- you can mess with this
+   later if need be.*/
+extern IRDirty* unsafeIRDirty_0_N ( Char* name, IRExpr** args );
+
+/* Similarly, make a zero-annotation dirty call which returns a value,
+   and assign that to the given temp. */
+extern IRDirty* unsafeIRDirty_1_N ( IRTemp dst, Char* name, IRExpr** args );
 
 
 /* ------------------ Statements ------------------ */

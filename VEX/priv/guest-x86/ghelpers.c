@@ -24,9 +24,9 @@ static UInt  calculate_FXAM ( UInt tag, ULong dbl );
 static ULong calculate_RCR  ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz );
 
 /* --- DIRTY HELPERS --- */
-static ULong loadF80le  ( VexGuestX86State*, UInt );
-static void  storeF80le ( VexGuestX86State*, UInt, ULong );
-static void  dirtyhelper_CPUID ( VexGuestX86State* st );
+static ULong loadF80le  ( UInt );
+static void  storeF80le ( UInt, ULong );
+static void  dirtyhelper_CPUID ( VexGuestX86State* );
 
 
 /* This file contains helper functions for x86 guest code.
@@ -34,8 +34,6 @@ static void  dirtyhelper_CPUID ( VexGuestX86State* st );
    These calls are of course in the host machine code and 
    this file will be compiled to host machine code, so that
    all makes sense.  
-
-   x86guest_findhelper() is the only exported function. 
 
    Only change the signatures of these helper functions very
    carefully.  If you change the signature here, you'll have to change
@@ -598,26 +596,25 @@ static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
 }
 
 
-Addr64 x86guest_findhelper ( Char* function_name )
+HWord x86guest_findhelper ( Char* function_name )
 {
    if (vex_streq(function_name, "calculate_condition"))
-      return (Addr64)(Addr32)(& calculate_condition);
+      return (HWord)(& calculate_condition);
    if (vex_streq(function_name, "calculate_eflags_c"))
-      return (Addr64)(Addr32)(& calculate_eflags_c);
+      return (HWord)(& calculate_eflags_c);
    if (vex_streq(function_name, "calculate_eflags_all"))
-      return (Addr64)(Addr32)(& calculate_eflags_all);
+      return (HWord)(& calculate_eflags_all);
    if (vex_streq(function_name, "calculate_FXAM"))
-      return (Addr64)(Addr32)(& calculate_FXAM);
+      return (HWord)(& calculate_FXAM);
    if (vex_streq(function_name, "storeF80le"))
-      return (Addr64)(Addr32)(& storeF80le);
+      return (HWord)(& storeF80le);
    if (vex_streq(function_name, "loadF80le"))
-      return (Addr64)(Addr32)(& loadF80le);
+      return (HWord)(& loadF80le);
    if (vex_streq(function_name, "calculate_RCR"))
-      return (Addr64)(Addr32)(& calculate_RCR);
+      return (HWord)(& calculate_RCR);
    if (vex_streq(function_name, "dirtyhelper_CPUID"))
-      return (Addr64)(Addr32)(& dirtyhelper_CPUID);
-   vex_printf("\nx86 guest: can't find helper: %s\n", function_name);
-   vpanic("x86guest_findhelper");
+      return (HWord)(& dirtyhelper_CPUID);
+   return 0; /* not found */
 }
 
 /* Used by the optimiser to try specialisations.  Returns an
@@ -1194,7 +1191,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (reads guest memory) */
-static ULong loadF80le ( VexGuestX86State* st, UInt addrU )
+static ULong loadF80le ( UInt addrU )
 {
    ULong f64;
    convert_f80le_to_f64le ( (UChar*)addrU, (UChar*)&f64 );
@@ -1203,7 +1200,7 @@ static ULong loadF80le ( VexGuestX86State* st, UInt addrU )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (writes guest memory) */
-static void storeF80le ( VexGuestX86State* st, UInt addrU, ULong f64 )
+static void storeF80le ( UInt addrU, ULong f64 )
 {
    convert_f64le_to_f80le( (UChar*)&f64, (UChar*)addrU );
 }

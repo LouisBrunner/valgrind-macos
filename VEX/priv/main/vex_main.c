@@ -131,6 +131,7 @@ TranslateResult LibVEX_Translate (
    Int* host_bytes_used,
    /* IN: optionally, an instrumentation function. */
    IRBB* (*instrument) ( IRBB* ),
+   HWord (*tool_findhelper) ( Char* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
    /* IN: if > 0, use this verbosity for this bb */
@@ -149,11 +150,11 @@ TranslateResult LibVEX_Translate (
    HInstr*      (*genReload)   ( HReg, Int );
    void         (*ppInstr)     ( HInstr* );
    void         (*ppReg)       ( HReg );
-   HInstrArray* (*iselBB)      ( IRBB*, Addr64(*)(Char*) );
+   HInstrArray* (*iselBB)      ( IRBB*, HWord(*)(Char*), HWord(*)(Char*) );
    IRBB*        (*bbToIR)      ( UChar*, Addr64, Int*, 
                                          Bool(*)(Addr64), Bool );
    Int          (*emit)        ( UChar*, Int, HInstr* );
-   Addr64       (*findHelper)  ( Char* );
+   HWord        (*findHelper)  ( Char* );
    IRExpr*      (*specHelper)  ( Char*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
 
@@ -163,6 +164,7 @@ TranslateResult LibVEX_Translate (
    HInstrArray* rcode;
    Int          i, j, k, out_used, saved_verbosity, guest_sizeB;
    UChar        insn_bytes[32];
+   IRType       guest_word_size;
 
    available_real_regs    = NULL;
    n_available_real_regs  = 0;
@@ -179,6 +181,7 @@ TranslateResult LibVEX_Translate (
    findHelper             = NULL;
    specHelper             = NULL;
    preciseMemExnsFn       = NULL;
+   guest_word_size        = Ity_INVALID;
 
    saved_verbosity = vex_verbosity;
    if (bb_verbosity > 0)
@@ -215,6 +218,7 @@ TranslateResult LibVEX_Translate (
          findHelper       = x86guest_findhelper;
          specHelper       = x86guest_spechelper;
          guest_sizeB      = sizeof(VexGuestX86State);
+	 guest_word_size  = Ity_I32;
          break;
       default:
          vpanic("LibVEX_Translate: unsupported guest insn set");
@@ -244,12 +248,12 @@ TranslateResult LibVEX_Translate (
    }
 
    /* Sanity check the initial IR. */
-   sanityCheckIRBB(irbb, Ity_I32);
+   sanityCheckIRBB(irbb, guest_word_size);
 
    /* Clean it up, hopefully a lot. */
    irbb = do_iropt_BB ( irbb, specHelper, preciseMemExnsFn, 
                               guest_bytes_addr );
-   sanityCheckIRBB(irbb, Ity_I32);
+   sanityCheckIRBB(irbb, guest_word_size);
 
    if (vex_verbosity > 0) {
       vex_printf("\n-------- After IR optimisation --------\n");
@@ -258,11 +262,13 @@ TranslateResult LibVEX_Translate (
    }
 
    /* Get the thing instrumented. */
-   if (instrument)
+   if (instrument) {
       irbb = (*instrument)(irbb);
+      sanityCheckIRBB(irbb, guest_word_size);
+   }
 
    /* Turn it into virtual-registerised code. */
-   vcode = iselBB ( irbb, findHelper );
+   vcode = iselBB ( irbb, findHelper, tool_findhelper );
 
    if (vex_verbosity > 0) {
       vex_printf("\n-------- Virtual registerised code --------\n");
@@ -294,12 +300,12 @@ TranslateResult LibVEX_Translate (
    /* Assemble */
    out_used = 0; /* tracks along the host_bytes array */
    for (i = 0; i < rcode->arr_used; i++) {
-      if (vex_verbosity > 1) {
+      if (vex_verbosity > 2) {
          ppInstr(rcode->arr[i]);
          vex_printf("\n");
       }
       j = (*emit)( insn_bytes, 32, rcode->arr[i] );
-      if (vex_verbosity > 1) {
+      if (vex_verbosity > 2) {
          for (k = 0; k < j; k++)
 	    if (insn_bytes[k] < 16)
                vex_printf("0%x ",  (UInt)insn_bytes[k]);

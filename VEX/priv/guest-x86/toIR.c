@@ -4058,50 +4058,41 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                      ULong loadF80le ( VexGuestX86State*, UInt )
                   addr holds the address.  First, do a dirty call to
                   get hold of the data. */
-               /* give details of args, and where to call */
-               IRDirty* d;
-               DIP("fldt %s", dis_buf);
-               d          = emptyIRDirty();
-               d->name    = "loadF80le";
-               d->args    = LibVEX_Alloc(2 * sizeof(IRTemp));
-               d->args[0] = mkexpr(addr);
-               d->args[1] = NULL;
-               d->tmp     = newTemp(Ity_I64);
+               IRTemp   val  = newTemp(Ity_I64);
+               IRExpr** args = mkIRExprVec_1 ( mkexpr(addr) );
+
+               IRDirty* d = unsafeIRDirty_1_N ( val, "loadF80le", args );
                /* declare that we're reading memory */
                d->mFx   = Ifx_Read;
                d->mAddr = mkexpr(addr);
                d->mSize = 10;
-               /* declare that we don't mess with guest state */
-               d->nFxState = 0;
-               /* execute the dirty call, dumping the result in d->tmp. */
+
+               /* execute the dirty call, dumping the result in val. */
                stmt( IRStmt_Dirty(d) );
                fp_push();
-               put_ST(0, unop(Iop_ReinterpI64asF64, mkexpr(d->tmp)));
+               put_ST(0, unop(Iop_ReinterpI64asF64, mkexpr(val)));
+
+               DIP("fldt %s", dis_buf);
                break;
             }
 
             case 7: { /* FSTP extended-real */
                /* Uses dirty helper: void storeF80le ( UInt, ULong ) */
-               IRDirty* d;
-               DIP("fldt %s", dis_buf);
-               d          = emptyIRDirty();
-               d->name    = "storeF80le";
-               /* takes 2 args */
-               d->args = LibVEX_Alloc(3 * sizeof(IRTemp));
-               d->args[0] = mkexpr(addr);
-               d->args[1] = unop(Iop_ReinterpF64asI64, get_ST(0));
-               d->args[2] = NULL;
-               /* returns nothing */
-               d->tmp = INVALID_IRTEMP;
+               IRExpr** args 
+                  = mkIRExprVec_2( mkexpr(addr), 
+                                   unop(Iop_ReinterpF64asI64, get_ST(0)) );
+
+               IRDirty* d = unsafeIRDirty_0_N ( "storeF80le", args );
                /* declare we're writing memory */
                d->mFx   = Ifx_Write;
                d->mAddr = mkexpr(addr);
                d->mSize = 10;
-               /* declare that we don't mess with guest state */
-               d->nFxState = 0;
+
                /* execute the dirty call. */
                stmt( IRStmt_Dirty(d) );
                fp_pop();
+
+               DIP("fstpt %s", dis_buf);
                break;
             }
 
@@ -8985,18 +8976,10 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                void dirtyhelper_CPUID ( VexGuestX86State* )
             declared to mod eax, wr ebx, ecx, edx
          */
-         /* give details of args, and where to call */
-         IRDirty* d;
-         d          = emptyIRDirty();
-         d->name    = "dirtyhelper_CPUID";
-         d->args    = LibVEX_Alloc(1 * sizeof(IRTemp));
-         d->args[0] = NULL;
-         d->tmp     = INVALID_IRTEMP;
-         /* declare that we're not accessing memory */
-         d->mFx   = Ifx_None;
-         d->mAddr = NULL;
-         d->mSize = 0;
+         IRExpr** args = mkIRExprVec_0();
+         IRDirty* d    = unsafeIRDirty_0_N ( "dirtyhelper_CPUID", args );
          /* declare guest state effects */
+         d->needsBBP = True;
          d->nFxState = 4;
          d->fxState[0].fx     = Ifx_Modify;
          d->fxState[0].offset = OFFB_EAX;

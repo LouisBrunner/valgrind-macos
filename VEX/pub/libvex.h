@@ -118,6 +118,7 @@ TranslateResult LibVEX_Translate (
    Int* host_bytes_used,
    /* IN: optionally, an instrumentation function. */
    IRBB* (*instrument) ( IRBB* ),
+   HWord (*tool_findhelper) ( Char* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
    /* IN: if > 0, use this verbosity for this bb */

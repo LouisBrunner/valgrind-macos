@@ -3351,6 +3351,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, PUT,  4, TempReg, t2, ArchReg, R_EBP);
       uInstr2(cb, ADD,  4, Literal, 0, TempReg, t1);
       uLiteral(cb, 4);
+      /* This 2nd PUT looks redundant, but Julian thinks it's not.
+       * --njn 03-feb-2003 */
       uInstr2(cb, PUT,  4, TempReg, t1, ArchReg, R_ESP);
       if (dis) VG_(printf)("leave");
       break;

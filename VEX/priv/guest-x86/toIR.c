@@ -3276,6 +3276,7 @@ UInt dis_imul_I_E_G ( UChar       sorb,
 
 static void put_emwarn ( IRExpr* e /* :: Ity_I32 */ )
 {
+   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I32);
    stmt( IRStmt_Put( OFFB_EMWARN, e ) );
 }
 
@@ -3299,6 +3300,7 @@ static IRExpr* get_ftop ( void )
 
 static void put_ftop ( IRExpr* e )
 {
+   vassert(typeOfIRExpr(irbb->tyenv, e) == Ity_I32);
    stmt( IRStmt_Put( OFFB_FTOP, e ) );
 }
 

@@ -1851,7 +1851,11 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 
       if (0)
 	 VG_(kill_self)(sigNo);		/* generate a core dump */
-      VG_(core_panic)("Killed by fatal signal");
+      VG_(core_panic_at)("Killed by fatal signal",
+                         VG_(get_ExeContext2)(uc->uc_mcontext.eip,
+                                              uc->uc_mcontext.ebp,
+                                              uc->uc_mcontext.esp,
+                                              VG_(valgrind_last)));
    }
 }
 

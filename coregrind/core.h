@@ -1018,6 +1018,8 @@ extern void VG_(core_assert_fail) ( const Char* expr, const Char* file,
                                     Int line, const Char* fn );
 __attribute__ ((__noreturn__))
 extern void  VG_(core_panic)      ( Char* str );
+__attribute__ ((__noreturn__))
+extern void  VG_(core_panic_at)   ( Char* str, ExeContext *ec );
 
 /* Tools use VG_(strdup)() which doesn't expose ArenaId */
 extern Char* VG_(arena_strdup) ( ArenaId aid, const Char* s);

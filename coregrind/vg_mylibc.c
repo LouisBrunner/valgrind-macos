@@ -1104,9 +1104,11 @@ static inline ExeContext *get_real_execontext(Addr ret)
 }
 
 __attribute__ ((noreturn))
-static void report_and_quit ( const Char* report )
+static void report_and_quit ( const Char* report, ExeContext *ec )
 {
-   ExeContext *ec = get_real_execontext((Addr)__builtin_return_address(0));
+   if (ec == NULL)
+      ec = get_real_execontext((Addr)__builtin_return_address(0));
+
    VG_(pp_ExeContext)(ec);
    
    VG_(pp_sched_status)();
@@ -1131,7 +1133,7 @@ static void assert_fail ( const Char* expr, const Char* name, const Char* report
    entered = True;
    VG_(printf)("\n%s: %s:%d (%s): Assertion `%s' failed.\n",
                name, file, line, fn, expr );
-   report_and_quit(report);
+   report_and_quit(report, NULL);
 }
 
 void VG_(skin_assert_fail) ( const Char* expr, const Char* file, Int line, const Char* fn )
@@ -1146,21 +1148,26 @@ void VG_(core_assert_fail) ( const Char* expr, const Char* file, Int line, const
 }
 
 __attribute__ ((noreturn))
-static void panic ( Char* name, Char* report, Char* str )
+static void panic ( Char* name, Char* report, Char* str, Addr addr )
 {
    VG_(printf)("\n%s: the `impossible' happened:\n   %s\n", name, str);
    VG_(printf)("Basic block ctr is approximately %llu\n", VG_(bbs_done) );
-   report_and_quit(report);
+   report_and_quit(report, addr);
 }
 
 void VG_(core_panic) ( Char* str )
 {
-   panic("valgrind", VG_BUGS_TO, str);
+   panic("valgrind", VG_BUGS_TO, str, NULL);
+}
+
+void VG_(core_panic_at) ( Char* str, ExeContext *ec )
+{
+   panic("valgrind", VG_BUGS_TO, str, ec);
 }
 
 void VG_(skin_panic) ( Char* str )
 {
-   panic(VG_(details).name, VG_(details).bug_reports_to, str);
+   panic(VG_(details).name, VG_(details).bug_reports_to, str, NULL);
 }
 
 

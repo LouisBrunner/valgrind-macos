@@ -99,7 +99,7 @@
 
 #ifdef VG_PROFILE_MEMORY
 
-#define N_PROF_EVENTS 120
+#define N_PROF_EVENTS 150
 
 static UInt event_ctr[N_PROF_EVENTS];
 
@@ -204,16 +204,23 @@ static void init_prof_mem ( void ) { }
    101  handle_esp_assignment
    102  handle_esp_assignment(-4)
    103  handle_esp_assignment(+4)
-   104  handle_esp_assignment(+16)
-   105  handle_esp_assignment(-12)
-   106  handle_esp_assignment(+8)
-   107  handle_esp_assignment(-8)
+   104  handle_esp_assignment(-12)
+   105  handle_esp_assignment(-8)
+   106  handle_esp_assignment(+16)
+   107  handle_esp_assignment(+12)
+   108  handle_esp_assignment(0)
+   109  handle_esp_assignment(+8)
+   110  handle_esp_assignment(-16)
+   111  handle_esp_assignment(+20)
+   112  handle_esp_assignment(-20)
+   113  handle_esp_assignment(+24)
+   114  handle_esp_assignment(-24)
 
-   110  vg_handle_esp_assignment_SLOWLY
-   111  vg_handle_esp_assignment_SLOWLY(normal; move down)
-   112  vg_handle_esp_assignment_SLOWLY(normal; move up)
-   113  vg_handle_esp_assignment_SLOWLY(normal)
-   114  vg_handle_esp_assignment_SLOWLY(>= HUGE_DELTA)
+   120  vg_handle_esp_assignment_SLOWLY
+   121  vg_handle_esp_assignment_SLOWLY(normal; move down)
+   122  vg_handle_esp_assignment_SLOWLY(normal; move up)
+   123  vg_handle_esp_assignment_SLOWLY(normal)
+   124  vg_handle_esp_assignment_SLOWLY(>= HUGE_DELTA)
 */
 
 /*------------------------------------------------------------*/
@@ -712,7 +719,6 @@ static __inline__ UInt shiftRight16 ( UInt x )
    Under all other circumstances, it defers to the relevant _SLOWLY
    function, which can handle all situations.
 */
-
 UInt VG_(helperc_LOADV4) ( Addr a )
 {
 #  ifdef VG_DEBUG_MEMORY
@@ -1384,9 +1390,23 @@ void VGM_(handle_esp_assignment) ( Addr new_espA )
          return;
       }
 
-      if (delta == 16) {
-         /* Also surprisingly common. */
+      if (delta == -12) {
          PROF_EVENT(104);
+         make_aligned_word_WRITABLE(new_esp);
+         make_aligned_word_WRITABLE(new_esp+4);
+         make_aligned_word_WRITABLE(new_esp+8);
+         return;
+      }
+
+      if (delta == -8) {
+         PROF_EVENT(105);
+         make_aligned_word_WRITABLE(new_esp);
+         make_aligned_word_WRITABLE(new_esp+4);
+         return;
+      }
+
+      if (delta == 16) {
+         PROF_EVENT(106);
          make_aligned_word_NOACCESS(old_esp);
          make_aligned_word_NOACCESS(old_esp+4);
          make_aligned_word_NOACCESS(old_esp+8);
@@ -1394,27 +1414,77 @@ void VGM_(handle_esp_assignment) ( Addr new_espA )
          return;
       }
 
-      if (delta == -12) {
-         PROF_EVENT(105);
-         make_aligned_word_WRITABLE(new_esp);
-         make_aligned_word_WRITABLE(new_esp+4);
-         make_aligned_word_WRITABLE(new_esp+8);
+      if (delta == 12) {
+         PROF_EVENT(107);
+         make_aligned_word_NOACCESS(old_esp);
+         make_aligned_word_NOACCESS(old_esp+4);
+         make_aligned_word_NOACCESS(old_esp+8);
+         return;
+      }
+
+      if (delta == 0) {
+         PROF_EVENT(108);
          return;
       }
 
       if (delta == 8) {
-         PROF_EVENT(106);
+         PROF_EVENT(109);
          make_aligned_word_NOACCESS(old_esp);
          make_aligned_word_NOACCESS(old_esp+4);
          return;
       }
 
-      if (delta == -8) {
-         PROF_EVENT(107);
+      if (delta == -16) {
+         PROF_EVENT(110);
          make_aligned_word_WRITABLE(new_esp);
          make_aligned_word_WRITABLE(new_esp+4);
+         make_aligned_word_WRITABLE(new_esp+8);
+         make_aligned_word_WRITABLE(new_esp+12);
          return;
       }
+
+      if (delta == 20) {
+         PROF_EVENT(111);
+         make_aligned_word_NOACCESS(old_esp);
+         make_aligned_word_NOACCESS(old_esp+4);
+         make_aligned_word_NOACCESS(old_esp+8);
+         make_aligned_word_NOACCESS(old_esp+12);
+         make_aligned_word_NOACCESS(old_esp+16);
+         return;
+      }
+
+      if (delta == -20) {
+         PROF_EVENT(112);
+         make_aligned_word_WRITABLE(new_esp);
+         make_aligned_word_WRITABLE(new_esp+4);
+         make_aligned_word_WRITABLE(new_esp+8);
+         make_aligned_word_WRITABLE(new_esp+12);
+         make_aligned_word_WRITABLE(new_esp+16);
+         return;
+      }
+
+      if (delta == 24) {
+         PROF_EVENT(113);
+         make_aligned_word_NOACCESS(old_esp);
+         make_aligned_word_NOACCESS(old_esp+4);
+         make_aligned_word_NOACCESS(old_esp+8);
+         make_aligned_word_NOACCESS(old_esp+12);
+         make_aligned_word_NOACCESS(old_esp+16);
+         make_aligned_word_NOACCESS(old_esp+20);
+         return;
+      }
+
+      if (delta == -24) {
+         PROF_EVENT(114);
+         make_aligned_word_WRITABLE(new_esp);
+         make_aligned_word_WRITABLE(new_esp+4);
+         make_aligned_word_WRITABLE(new_esp+8);
+         make_aligned_word_WRITABLE(new_esp+12);
+         make_aligned_word_WRITABLE(new_esp+16);
+         make_aligned_word_WRITABLE(new_esp+20);
+         return;
+      }
+
    }
 
 #  endif
@@ -1431,23 +1501,23 @@ static void vg_handle_esp_assignment_SLOWLY ( Addr new_espA )
    UInt old_esp = VG_(baseBlock)[VGOFF_(m_esp)];
    UInt new_esp = (UInt)new_espA;
    Int  delta   = ((Int)new_esp) - ((Int)old_esp);
-
-   PROF_EVENT(110);
+   //   VG_(printf)("%d ", delta);
+   PROF_EVENT(120);
    if (-(VG_HUGE_DELTA) < delta && delta < VG_HUGE_DELTA) {
       /* "Ordinary" stack change. */
       if (new_esp < old_esp) {
          /* Moving down; the stack is growing. */
-         PROF_EVENT(111);
+         PROF_EVENT(121);
          VGM_(make_writable) ( new_esp, old_esp - new_esp );
          return;
       }
       if (new_esp > old_esp) {
          /* Moving up; the stack is shrinking. */
-         PROF_EVENT(112);
+         PROF_EVENT(122);
          VGM_(make_noaccess) ( old_esp, new_esp - old_esp );
          return;
       }
-      PROF_EVENT(113);
+      PROF_EVENT(123);
       return; /* when old_esp == new_esp */
    }
 
@@ -1470,7 +1540,7 @@ static void vg_handle_esp_assignment_SLOWLY ( Addr new_espA )
      Addr valid_up_to     = get_page_base(new_esp) + VKI_BYTES_PER_PAGE
                             + 0 * VKI_BYTES_PER_PAGE;
      ThreadState* tst     = VG_(get_current_thread_state)();
-     PROF_EVENT(114);
+     PROF_EVENT(124);
      if (VG_(clo_verbosity) > 1)
         VG_(message)(Vg_UserMsg, "Warning: client switching stacks?  "
                                  "%%esp: %p --> %p",

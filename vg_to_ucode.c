@@ -3704,10 +3704,42 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x59: /* POP eCX */
    case 0x5A: /* POP eDX */
    case 0x5B: /* POP eBX */
-   case 0x5C: /* POP eSP */
    case 0x5D: /* POP eBP */
    case 0x5E: /* POP eSI */
    case 0x5F: /* POP eDI */
+    { Int   n_pops;
+      Addr  eipS, eipE;
+      UChar ch;
+      if (sz != 4) goto normal_pop_case;
+      /* eip points at first pop insn + 1.  Make eipS and eipE
+         bracket the sequence. */
+      eipE = eipS = eip - 1;
+      while (True) { 
+         ch = getUChar(eipE+1);
+         if (ch < 0x58 || ch > 0x5F || ch == 0x5C) break;
+         eipE++;
+      }
+      n_pops = eipE - eipS + 1;
+      if (0 && n_pops > 1) VG_(printf)("%d pops\n", n_pops);
+      t1 = newTemp(cb); t3 = newTemp(cb);
+      uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg, t1);
+      for (; eipS <= eipE; eipS++) {
+         ch = getUChar(eipS);
+	 uInstr2(cb, LOAD, 4, TempReg, t1, TempReg, t3);
+         uInstr2(cb, PUT,  4, TempReg, t3, ArchReg, ch-0x58);
+         uInstr2(cb, ADD,  4, Literal, 0,        TempReg, t1);
+         uLiteral(cb, 4);
+         SMC_IF_ALL(cb);
+         if (dis) 
+            VG_(printf)("popl %s\n", nameIReg(4,ch-0x58));
+      }
+      uInstr2(cb, PUT,    4, TempReg, t1,       ArchReg, R_ESP);
+      eip = eipE + 1;
+      break;
+    }
+
+   case 0x5C: /* POP eSP */
+   normal_pop_case:
       t1 = newTemp(cb); t2 = newTemp(cb);
       uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg, t2);
       uInstr2(cb, LOAD,  sz, TempReg, t2,       TempReg, t1);
@@ -3780,11 +3812,46 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x50: /* PUSH eAX */
    case 0x51: /* PUSH eCX */
    case 0x52: /* PUSH eDX */
-   case 0x54: /* PUSH eSP */
    case 0x53: /* PUSH eBX */
    case 0x55: /* PUSH eBP */
    case 0x56: /* PUSH eSI */
    case 0x57: /* PUSH eDI */
+    { Int   n_pushes;
+      Addr  eipS, eipE;
+      UChar ch;
+      if (sz != 4) goto normal_push_case;
+      /* eip points at first push insn + 1.  Make eipS and eipE
+         bracket the sequence. */
+      eipE = eipS = eip - 1;
+      while (True) { 
+         ch = getUChar(eipE+1);
+         if (ch < 0x50 || ch > 0x57 || ch == 0x54) break;
+         eipE++;
+      }
+      n_pushes = eipE - eipS + 1;
+      if (0 && n_pushes > 1) VG_(printf)("%d pushes\n", n_pushes);
+      t1 = newTemp(cb); t2 = newTemp(cb); t3 = newTemp(cb);
+      uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg, t1);
+      uInstr2(cb, MOV,    4, TempReg, t1,       TempReg, t2);
+      uInstr2(cb, SUB,    4, Literal, 0,        TempReg, t2);
+      uLiteral(cb, 4 * n_pushes);
+      uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg, R_ESP);
+      for (; eipS <= eipE; eipS++) {
+         ch = getUChar(eipS);
+         uInstr2(cb, SUB,    4, Literal, 0,        TempReg, t1);
+         uLiteral(cb, 4);
+         uInstr2(cb, GET, 4, ArchReg, ch-0x50, TempReg, t3);
+	 uInstr2(cb, STORE, 4, TempReg, t3, TempReg, t1);
+         SMC_IF_ALL(cb);
+         if (dis) 
+            VG_(printf)("pushl %s\n", nameIReg(4,ch-0x50));
+      }
+      eip = eipE + 1;
+      break;
+    }
+
+   case 0x54: /* PUSH eSP */
+   normal_push_case:
       /* This is the Right Way, in that the value to be pushed is
          established before %esp is changed, so that pushl %esp
          correctly pushes the old value. */

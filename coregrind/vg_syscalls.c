@@ -2996,6 +2996,14 @@ PRE(ioctl)
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SG_GET_VERSION_NUM)", 
 		     arg3, sizeof(int) );
       break;
+   case SG_EMULATED_HOST: /* 0x2203 */
+      SYSCALL_TRACK( pre_mem_write, tid,  "ioctl(SG_EMULATED_HOST)",
+		     arg3, sizeof(int) );
+      break;
+   case SG_GET_SG_TABLESIZE: /* 0x227f */
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SG_GET_SG_TABLESIZE)",
+		     arg3, sizeof(int) );
+      break;
 #       endif
 
    case VKI_IIOCGETCPS:
@@ -3385,6 +3393,25 @@ PRE(ioctl)
 		     "ioctl(CDROMREADTOCENTRY)", arg3, 
 		     sizeof(struct cdrom_tocentry));
       break;
+   case CDROMMULTISESSION: /* 0x5310 */
+      SYSCALL_TRACK( pre_mem_write,tid, "ioctl(CDROMMULTISESSION)", arg3,
+		     sizeof(struct cdrom_multisession));
+      break;
+   case CDROMVOLREAD: /* 0x5313 */
+      SYSCALL_TRACK( pre_mem_write,tid, "ioctl(CDROMVOLREAD)", arg3,
+		     sizeof(struct cdrom_volctrl));
+      break;
+   case CDROMREADAUDIO: /* 0x530e */
+      SYSCALL_TRACK( pre_mem_read,tid, "ioctl(CDROMREADAUDIO)", arg3,
+		     sizeof (struct cdrom_read_audio));
+      if ( arg3 ) {
+         /* ToDo: don't do any of the following if the structure is invalid */
+         struct cdrom_read_audio *cra = (struct cdrom_read_audio *) arg3;
+	 SYSCALL_TRACK( pre_mem_write, tid, "ioctl(CDROMREADAUDIO).buf",
+	                (Addr)(cra->buf),
+                        (UInt)(cra->nframes * CD_FRAMESIZE_RAW));
+      }
+      break;      
    case CDROMPLAYMSF:
       SYSCALL_TRACK( pre_mem_read,tid, "ioctl(CDROMPLAYMSF)", arg3, 
 		     sizeof(struct cdrom_msf));
@@ -3662,6 +3689,12 @@ POST(ioctl)
       break;
    case SG_GET_VERSION_NUM:
       break;
+   case SG_EMULATED_HOST:
+      VG_TRACK( post_mem_write,arg3, sizeof(int));
+      break;
+   case SG_GET_SG_TABLESIZE:
+      VG_TRACK( post_mem_write,arg3, sizeof(int));
+      break;      
 #       endif
 
    case VKI_IIOCGETCPS:
@@ -3923,6 +3956,20 @@ POST(ioctl)
       if (res == 0)
 	 VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_tochdr));
       break;
+   case CDROMMULTISESSION:
+      VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_multisession));
+      break;
+   case CDROMVOLREAD:
+      VG_TRACK( post_mem_write,arg3, sizeof(struct cdrom_volctrl));
+      break;
+   case CDROMREADAUDIO:
+   {
+      struct cdrom_read_audio *cra = (struct cdrom_read_audio *) arg3;
+      VG_TRACK( post_mem_write, (Addr)(cra->buf),
+                (UInt)(cra->nframes * CD_FRAMESIZE_RAW));
+      break;
+   }
+      
    case CDROMPLAYMSF:
       break;
       /* The following two are probably bogus (should check args

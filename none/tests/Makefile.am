@@ -22,6 +22,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fpu_lazy_eflags.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
+	map_unmap.stdout.exp map_unmap.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
@@ -41,7 +42,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	args bitfield1 bt_everything bt_literal coolo_strlen \
 	cpuid dastest discard floored fork fpu_lazy_eflags \
-	fucomip munmap_exe rcl_assert \
+	fucomip munmap_exe map_unmap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	pth_blockedsig \
 	coolo_sigaction gxx304 yield
@@ -63,6 +64,7 @@ floored_SOURCES 	= floored.c
 floored_LDADD 		= -lm
 fpu_lazy_eflags_SOURCES	= fpu_lazy_eflags.c
 fucomip_SOURCES 	= fucomip.c
+map_unmap_SOURCES	= map_unmap.c
 munmap_exe_SOURCES 	= munmap_exe.c
 rcl_assert_SOURCES 	= rcl_assert.S
 rcrl_SOURCES 		= rcrl.c

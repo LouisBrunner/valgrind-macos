@@ -1322,6 +1322,9 @@ extern UInt VG_(m_state_static) [6 /* segment regs, Intel order */
 extern void VG_(copy_baseBlock_to_m_state_static) ( void );
 extern void VG_(copy_m_state_static_to_baseBlock) ( void );
 
+/* Determine if VG_(handle_esp_assignment)() will be used */
+extern Bool VG_(need_to_handle_esp_assignment) ( void );
+
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */
 extern void VG_(unimplemented) ( Char* msg )

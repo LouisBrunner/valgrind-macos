@@ -1767,6 +1767,7 @@ void VG_(emit_AMD_prefetch_reg) ( Int reg )
 Int VG_(helper_offset)(Addr a)
 {
    Int i;
+   Char buf[100];
 
    for (i = 0; i < VG_(n_compact_helpers); i++)
       if (VG_(compact_helper_addrs)[i] == a)
@@ -1776,9 +1777,11 @@ Int VG_(helper_offset)(Addr a)
          return VG_(noncompact_helper_offsets)[i];
 
    /* Shouldn't get here */
+   VG_(get_fnname)   ( a, buf, 100 );
+
    VG_(printf)(
-      "\nCouldn't find offset of helper from its address (%p).\n"
-      "A helper function probably used hasn't been registered?\n\n", a);
+      "\nCouldn't find offset of helper from its address (%p: %s).\n"
+      "A helper function probably used hasn't been registered?\n\n", a, buf);
 
    VG_(printf)("      compact helpers: ");
    for (i = 0; i < VG_(n_compact_helpers); i++)
@@ -2704,6 +2707,41 @@ static Int segRegOffset ( UInt archregs )
    }
 }
 
+UInt VG_(get_archreg) ( UInt arch )
+{
+   switch (arch) {
+      case R_EAX: return VG_(baseBlock)[ VGOFF_(m_eax) ];
+      case R_ECX: return VG_(baseBlock)[ VGOFF_(m_ecx) ];
+      case R_EDX: return VG_(baseBlock)[ VGOFF_(m_edx) ];
+      case R_EBX: return VG_(baseBlock)[ VGOFF_(m_ebx) ];
+      case R_ESP: return VG_(baseBlock)[ VGOFF_(m_esp) ];
+      case R_EBP: return VG_(baseBlock)[ VGOFF_(m_ebp) ];
+      case R_ESI: return VG_(baseBlock)[ VGOFF_(m_esi) ];
+      case R_EDI: return VG_(baseBlock)[ VGOFF_(m_edi) ];
+      default:    VG_(core_panic)( "get_thread_archreg");
+   }
+}
+
+UInt VG_(get_thread_archreg) ( ThreadId tid, UInt arch )
+{
+   ThreadState* tst;
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = & VG_(threads)[tid];
+
+   switch (arch) {
+      case R_EAX: return tst->m_eax;
+      case R_ECX: return tst->m_ecx;
+      case R_EDX: return tst->m_edx;
+      case R_EBX: return tst->m_ebx;
+      case R_ESP: return tst->m_esp;
+      case R_EBP: return tst->m_ebp;
+      case R_ESI: return tst->m_esi;
+      case R_EDI: return tst->m_edi;
+      default:    VG_(core_panic)( "get_thread_archreg");
+   }
+}
+
 /* Return the baseBlock index for the specified shadow register */
 Int shadow_reg_index ( Int arch )
 {
@@ -2743,11 +2781,50 @@ void VG_(set_shadow_archreg) ( UInt archreg, UInt val )
    VG_(baseBlock)[ shadow_reg_index(archreg) ] = val;
 }
 
+UInt VG_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg )
+{
+   ThreadState* tst;
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = & VG_(threads)[tid];
+
+   switch (archreg) {
+      case R_EAX: return tst->sh_eax;
+      case R_ECX: return tst->sh_ecx;
+      case R_EDX: return tst->sh_edx; 
+      case R_EBX: return tst->sh_ebx; 
+      case R_ESP: return tst->sh_esp; 
+      case R_EBP: return tst->sh_ebp; 
+      case R_ESI: return tst->sh_esi; 
+      case R_EDI: return tst->sh_edi; 
+      default:    VG_(core_panic)( "get_thread_shadow_archreg");
+   }
+}
+
+void VG_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg, UInt val )
+{
+   ThreadState* tst;
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   tst = & VG_(threads)[tid];
+
+   switch (archreg) {
+      case R_EAX: tst->sh_eax = val; break;
+      case R_ECX: tst->sh_ecx = val; break;
+      case R_EDX: tst->sh_edx = val; break;
+      case R_EBX: tst->sh_ebx = val; break;
+      case R_ESP: tst->sh_esp = val; break;
+      case R_EBP: tst->sh_ebp = val; break;
+      case R_ESI: tst->sh_esi = val; break;
+      case R_EDI: tst->sh_edi = val; break;
+      default:    VG_(core_panic)( "set_thread_shadow_archreg");
+   }
+}
+
 Addr VG_(shadow_archreg_address) ( UInt archreg )
 {
    return (Addr) & VG_(baseBlock)[ shadow_reg_index(archreg) ];
 }
-
 
 static void synth_WIDEN_signed ( Int sz_src, Int sz_dst, Int reg )
 {
@@ -2910,11 +2987,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
          if (u->tag2 == ArchReg 
              && u->val2 == R_ESP
              && u->size == 4
-             && (VG_(track_events).new_mem_stack         || 
-                 VG_(track_events).new_mem_stack_aligned ||
-                 VG_(track_events).die_mem_stack         ||
-                 VG_(track_events).die_mem_stack_aligned ||
-                 VG_(track_events).post_mem_write))
+             && VG_(need_to_handle_esp_assignment)())
          {
             synth_handle_esp_assignment ( i, u->val1, regs_live_before,
                                           u->regs_live_after );

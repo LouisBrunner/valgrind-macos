@@ -1273,8 +1273,8 @@ static __inline__
 Bool uInstrMentionsTempReg ( UInstr* u, Int tempreg )
 {
    Int i, k;
-   Int tempUse[3];
-   Bool notUsed[3];
+   Int tempUse[VG_MAX_REGS_USED];
+   Bool notUsed[VG_MAX_REGS_USED];
 
    k = VG_(get_reg_usage) ( u, TempReg, &tempUse[0], &notUsed[0] );
    for (i = 0; i < k; i++)
@@ -1300,8 +1300,8 @@ static void vg_improve ( UCodeBlock* cb )
    Int     i, j, k, m, n, ar, tr, told, actual_areg;
    Int     areg_map[8];
    Bool    annul_put[8];
-   Int     tempUse[3];
-   Bool    isWrites[3];
+   Int     tempUse[VG_MAX_REGS_USED];
+   Bool    isWrites[VG_MAX_REGS_USED];
    UInstr* u;
    Bool    wr;
    Int*    last_live_before;
@@ -1641,9 +1641,9 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
    Int          ss_busy_until_before[VG_MAX_SPILLSLOTS];
    Int          i, j, k, m, r, tno, max_ss_no;
    Bool         wr, defer, isRead, spill_reqd;
-   UInt         realUse[3];
-   Int          tempUse[3];
-   Bool         isWrites[3];
+   UInt         realUse[VG_MAX_REGS_USED];
+   Int          tempUse[VG_MAX_REGS_USED];
+   Bool         isWrites[VG_MAX_REGS_USED];
    UCodeBlock*  c2;
 
    /* Used to denote ... well, "no value" in this fn. */
@@ -1670,7 +1670,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
    for (i = 0; i < c1->used; i++) {
       k = VG_(get_reg_usage)(&c1->instrs[i], TempReg, &tempUse[0],
                              &isWrites[0]);
-      vg_assert(k >= 0 && k <= 3);
+      vg_assert(k >= 0 && k <= VG_MAX_REGS_USED);
 
       /* For each temp usage ... fwds in program order */
       for (j = 0; j < k; j++) {
@@ -1811,7 +1811,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
 
       k = VG_(get_reg_usage)(&c1->instrs[i], TempReg, &tempUse[0],
                              &isWrites[0]);
-      vg_assert(k >= 0 && k <= 3);
+      vg_assert(k >= 0 && k <= VG_MAX_REGS_USED);
 
       /* For each ***different*** temp mentioned in the insn .... */
       for (j = 0; j < k; j++) {
@@ -1980,8 +1980,8 @@ static void vg_realreg_liveness_analysis ( UCodeBlock* cb )
 {        
    Int      i, j, k;
    RRegSet  rregs_live;
-   Int      regUse[3];
-   Bool     isWrites[3];
+   Int      regUse[VG_MAX_REGS_USED];
+   Bool     isWrites[VG_MAX_REGS_USED];
    UInstr*  u;
 
    /* All regs are dead at the end of the block */

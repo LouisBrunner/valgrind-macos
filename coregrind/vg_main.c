@@ -105,7 +105,7 @@ Int VGOFF_(helper_undefined_instruction) = INVALID_OFFSET;
 /* MAX_NONCOMPACT_HELPERS can be increased easily.  If MAX_COMPACT_HELPERS is
  * increased too much, they won't really be compact any more... */
 #define  MAX_COMPACT_HELPERS     8
-#define  MAX_NONCOMPACT_HELPERS  8 
+#define  MAX_NONCOMPACT_HELPERS  24 
 
 UInt VG_(n_compact_helpers)    = 0;
 UInt VG_(n_noncompact_helpers) = 0;
@@ -177,13 +177,21 @@ static void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
    for (i = 0; i < n; i++) offsets[i] = alloc_BaB_1_set( addrs[i] );
 }
 
+/* Will we need to call VG_(handle_esp_assignment)() ? */
+Bool VG_(need_to_handle_esp_assignment)(void)
+{
+   return (VG_(track_events).new_mem_stack         || 
+           VG_(track_events).new_mem_stack_aligned || 
+           VG_(track_events).die_mem_stack         ||
+           VG_(track_events).die_mem_stack_aligned);
+}
+
 /* Here we assign actual offsets.  It's important to get the most
    popular referents within 128 bytes of the start, so we can take
    advantage of short addressing modes relative to %ebp.  Popularity
    of offsets was measured on 22 Feb 02 running a KDE application, and
    the slots rearranged accordingly, with a 1.5% reduction in total
    size of translations. */
-
 static void vg_init_baseBlock ( void )
 {
    /* Those with offsets under 128 are carefully chosen. */
@@ -216,8 +224,7 @@ static void vg_init_baseBlock ( void )
 
    /* (9 or 18) + n_compact_helpers  */
    /* Register VG_(handle_esp_assignment) if needed. */
-   if (VG_(track_events).new_mem_stack_aligned || 
-       VG_(track_events).die_mem_stack_aligned) 
+   if (VG_(need_to_handle_esp_assignment)())
       VG_(register_compact_helper)( (Addr) & VG_(handle_esp_assignment) );
 
    /* Allocate slots for compact helpers */

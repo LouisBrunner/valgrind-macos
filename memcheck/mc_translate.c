@@ -1137,8 +1137,8 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
    Int     n_temps = VG_(get_num_temps)(cb);
    Bool*   next_is_write;
    UInstr* u;
-   Int     tempUse[3];
-   Bool    isWrites[3];
+   Int     tempUse[VG_MAX_REGS_USED];
+   Bool    isWrites[VG_MAX_REGS_USED];
 
    if (n_temps == 0) return;
 
@@ -1208,7 +1208,7 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
       } else {
          /* Find out what this insn does to the temps. */
          k = VG_(get_reg_usage)(u, TempReg, &tempUse[0], &isWrites[0]);
-         sk_assert(k <= 3);
+         sk_assert(0 <= k && k <= VG_MAX_REGS_USED);
          for (j = k-1; j >= 0; j--) {
             next_is_write[ tempUse[j] ] = isWrites[j];
          }
@@ -1237,8 +1237,8 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
    Int     n_temps = VG_(get_num_temps)(cb);
    UChar*  def;
    UInstr* u;
-   Int     tempUse[3];
-   Bool    isWrites[3];
+   Int     tempUse[VG_MAX_REGS_USED];
+   Bool    isWrites[VG_MAX_REGS_USED];
 
    if (n_temps == 0) return;
 
@@ -1467,7 +1467,7 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
             /* We don't know how to handle this uinstr.  Be safe, and 
                set to VGC_VALUE or VGC_UNDEF all temps written by it. */
             k = VG_(get_reg_usage)(u, TempReg, &tempUse[0], &isWrites[0]);
-            sk_assert(k <= 3);
+            sk_assert(0 <= k && k <= VG_MAX_REGS_USED);
             for (j = 0; j < k; j++) {
                t = tempUse[j];
                sk_assert(t >= 0 && t < n_temps);

@@ -289,8 +289,8 @@ extern ThreadState* VG_(get_ThreadState)           ( ThreadId tid );
 /* Valgrind doesn't use libc at all, for good reasons (trust us).  So here
    are its own versions of C library functions, but with VG_ prefixes.  Note
    that the types of some are slightly different to the real ones.  Some
-   extra useful functions are provided too; descriptions of how they work
-   are given below. */
+   additional useful functions are provided too; descriptions of how they
+   work are given below. */
 
 #if !defined(NULL)
 #  define NULL ((void*)0)
@@ -726,14 +726,16 @@ extern UInstr* VG_(get_last_instr) (UCodeBlock* cb);
 /*=== Instrumenting UCode                                          ===*/
 /*====================================================================*/
 
-/* Find what this instruction does to its regs.  `tag' indicates whether we're
-   considering TempRegs (pre-reg-alloc) or RealRegs (post-reg-alloc).
-   `regs' is filled with the affected register numbers, `isWrites' parallels
-   it and indicates if the reg is read or written.  If a reg is read and
-   written, it will appear twice in `regs'.  `regs' and `isWrites' must be
-   able to fit 3 elements.
+/* Maximum number of registers read or written by a single UInstruction. */
+#define VG_MAX_REGS_USED   3
 
-   Useful for analysis/optimisation passes. */
+/* Find what this instruction does to its regs, useful for
+   analysis/optimisation passes.  `tag' indicates whether we're considering
+   TempRegs (pre-reg-alloc) or RealRegs (post-reg-alloc).  `regs' is filled
+   with the affected register numbers, `isWrites' parallels it and indicates
+   if the reg is read or written.  If a reg is read and written, it will
+   appear twice in `regs'.  `regs' and `isWrites' must be able to fit
+   VG_MAX_REGS_USED elements. */
 extern Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites );
 
 
@@ -836,11 +838,17 @@ extern void  VG_(pp_UOperand)    ( UInstr* u, Int operandNo,
                                    Int sz, Bool parens );
 
 /* ------------------------------------------------------------------ */
-/* Accessing shadow archregs */
+/* Accessing archregs and their shadows */
+extern UInt VG_(get_archreg)            ( UInt archreg );
+extern UInt VG_(get_thread_archreg)     ( ThreadId tid, UInt archreg );
+
 extern UInt VG_(get_shadow_archreg)     ( UInt archreg );
 extern void VG_(set_shadow_archreg)     ( UInt archreg, UInt val );
 extern Addr VG_(shadow_archreg_address) ( UInt archreg );
 
+extern UInt VG_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg );
+extern void VG_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg,
+                                             UInt val );
 
 /* ------------------------------------------------------------------ */
 /* Offsets of addresses of helper functions.  A "helper" function is one

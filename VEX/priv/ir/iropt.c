@@ -16,6 +16,14 @@
 /* Set to 1 for lots of debugging output. */
 #define DEBUG_IROPT 0
 
+/* Controls the enthusiasm of the loop unroller.  It tries to
+   unroll loops enough times to get somewhere near this number of SSA
+   statements, as measured after initial cleanup pass.  Set to zero to
+   disable the unroller. */
+
+#define UNROLL_TARGET 120
+//#define UNROLL_TARGET 0
+
 
 /* Implementation notes, 12 Oct 04.
    
@@ -2715,15 +2723,50 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
    X and Y must be literal (guest) addresses.
 */
 
+static Int calc_unroll_factor( IRBB* bb )
+{
+   Int n_stmts, i;
+
+   n_stmts = 0;
+   for (i = 0; i < bb->stmts_used; i++)
+     if (bb->stmts[i])
+        n_stmts++;
+
+   if (n_stmts <= UNROLL_TARGET/8) {
+      vex_printf("vex iropt: 8 x unrolling (%d sts -> %d sts)\n",
+                 n_stmts, 8* n_stmts);
+      return 8;
+   }
+   if (n_stmts <= UNROLL_TARGET/4) {
+      vex_printf("vex iropt: 4 x unrolling (%d sts -> %d sts)\n",
+                 n_stmts, 4* n_stmts);
+      return 4;
+   }
+
+   if (n_stmts <= UNROLL_TARGET/2) {
+      vex_printf("vex iropt: 2 x unrolling (%d sts -> %d sts)\n",
+                 n_stmts, 2* n_stmts);
+      return 2;
+   }
+
+   vex_printf("vex iropt: not unrolling (%d sts)\n", n_stmts);
+   return 1;
+}
+
+
 static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
 {
-   Int      i, n_vars;
+   Int      i, j, jmax, n_vars;
    Bool     xxx_known;
    Addr64   xxx_value, yyy_value;
    IRExpr*  udst;
    IRStmt*  st;
    IRConst* con;
    IRBB     *bb1, *bb2;
+   Int      unroll_factor;
+
+   if (UNROLL_TARGET <= 0)
+      return NULL;
 
    /* First off, figure out if we can unroll this loop.  Do this
       without modifying bb0. */
@@ -2756,6 +2799,9 @@ static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
       unrolling stage, first cloning the bb so the original isn't
       modified. */
    if (xxx_value == my_addr) {
+      unroll_factor = calc_unroll_factor( bb0 );
+      if (unroll_factor < 2)
+         return NULL;
       bb1 = dopyIRBB( bb0 );
       bb0 = NULL;
       udst = NULL; /* is now invalid */
@@ -2798,6 +2844,10 @@ static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
       unrolling proper.  This means finding (again) the last stmt, in
       the copied BB. */
 
+   unroll_factor = calc_unroll_factor( bb0 );
+   if (unroll_factor < 2)
+      return NULL;
+
    bb1 = dopyIRBB( bb0 );
    bb0 = NULL;
    udst = NULL; /* is now invalid */
@@ -2839,19 +2889,27 @@ static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
 
   do_unroll:
 
-   n_vars = bb1->tyenv->types_used;
+   vassert(unroll_factor == 2 
+           || unroll_factor == 4
+           || unroll_factor == 8);
 
-   bb2 = dopyIRBB(bb1);
-   for (i = 0; i < n_vars; i++)
-      (void)newIRTemp(bb1->tyenv, bb2->tyenv->types[i]);
+   jmax = unroll_factor==8 ? 3 : (unroll_factor==4 ? 2 : 1);
+   for (j = 1; j <= jmax; j++) {
 
-   for (i = 0; i < bb2->stmts_used; i++) {
-      if (bb2->stmts[i] == NULL)
-         continue;
-      /* deltaIRStmt destructively modifies the stmt, but 
-         that's OK since bb2 is a complete fresh copy of bb1. */
-      deltaIRStmt(bb2->stmts[i], n_vars);
-      addStmtToIRBB(bb1, bb2->stmts[i]);
+      n_vars = bb1->tyenv->types_used;
+
+      bb2 = dopyIRBB(bb1);
+      for (i = 0; i < n_vars; i++)
+         (void)newIRTemp(bb1->tyenv, bb2->tyenv->types[i]);
+
+      for (i = 0; i < bb2->stmts_used; i++) {
+         if (bb2->stmts[i] == NULL)
+            continue;
+         /* deltaIRStmt destructively modifies the stmt, but 
+            that's OK since bb2 is a complete fresh copy of bb1. */
+         deltaIRStmt(bb2->stmts[i], n_vars);
+         addStmtToIRBB(bb1, bb2->stmts[i]);
+      }
    }
 
    if (DEBUG_IROPT) {
@@ -3043,7 +3101,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
 
    bb2 = maybe_loop_unroll_BB( bb, guest_addr );
    if (bb2) {
-      show_res = True;
+      show_res = False; //True;
       bb = cheap_transformations( bb2, specHelper );
       if (do_expensive) {
          bb = expensive_transformations( bb );
@@ -3053,6 +3111,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
          cse_BB( bb );
          dead_BB( bb );
       }
+      if (0) vex_printf("vex iropt: unrolled a loop\n");
    }
 
    /* Finally, rebuild trees, for the benefit of instruction

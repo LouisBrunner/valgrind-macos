@@ -1,47 +1,44 @@
 #! /usr/bin/perl -w
+##--------------------------------------------------------------------##
+##--- Valgrind regression testing script                vg_regtest ---##
+##--------------------------------------------------------------------##
+# usage: vg_regtest [options] <dirs | files>
 #
-# Valgrind regression testing script.
+# Options:
+#   --stable:   use stable-branch stderr results (*.stderr.exp.hd)
+#   --dev:      use dev-branch stderr results    (*.stderr.exp - default)
+#   --all:      run tests in all subdirs
+#   --valgrind: valgrind to use.  Default is in ./inst/bin/valgrind
+#
+# You can specify individual files to test, or whole directories, or both.
+# The stable-branch/dev-branch distinction allows slight differences in stderr
+# results.
 #
 # Each test is defined in a file <test>.vgtest, containing one or more of the
-# following lines:
+# following lines, in any order:
 #   - prog:   <prog to run>                         (compulsory)
 #   - args:   <args for prog>                       (default: none)
 #   - vgopts: <Valgrind options>                    (default: none)
+#   - vgopts.st:  <options, --stable only>          (default: none)
+#   - vgopts.dev: <options, --dev only>             (default: none)
 #   - stdout_filter: <filter to run stdout through> (default: none)
-#   - stderr_filter: <filter to run stderr through> (default: filter_stderr)
+#   - stderr_filter: <filter to run stderr through> (default: ./filter_stderr)
 #
-# Also have "vgopts.hd:" for options to be only passed if --head true, and
-# corresponding "vgopts.er" for --eraser.
+# Note that filters are necessary for stderr results to filter out things that
+# always change, eg. process id numbers.
 #
-# Expected results (filtered) are kept in <test>.stderr.exp and
-# <test>.stdout.exp.  The latter can be missing if it would be empty.
+# Expected stdout (filtered) is kept in <test>.stdout.exp.  It can be missing
+# if it would be empty.
+#
+# Expected stderr (filtered) is kept in <test>.stderr.exp for --dev, and
+# <test>.stderr.exp.hd for --stable (silly ".hd" extension for historical
+# reasons).
 #
 # If results don't match, the output can be found in <test>.std<strm>.out,
 # and the diff between expected and actual in <test>.std<strm>.diff.
 #
-# usage: vg_regtest [options] <dirs | files>
-#
-# You can specify individual files to test, or whole directories, or both.
-#
-# Options:
-#   --head:     use 1.0.X expected stderr results
-#   --eraser:   use ERASER expected stderr results    (default)
-#   --all:      run tests in all subdirs
-#   --valgrind: valgrind to use.  Default is one in this build tree.
-#
-# The difference between the 1.0.X and ERASER results is that ERASER gives
-# shorter stack traces.  The ERASER stderr results are kept in 
-# <test>.stderr.er.
-#----------------------------------------------------------------------------
-# Adding a new tests subdirectory:
-# - Add directory to valgrind/configure.in
-# - Write a Makefile.am for it
-# - Write a filter_stderr for it;  it should always call
-#   ../../tests/filter_stderr_basic as its first step
-# - Add test programs, .vgtest, .stderr.exp{,.hd}, .stdout.exp files
-#
-# Note that if you add new basis filters in tests/, if they call other basic
-# filters, use the $dir trick to get the directory right as in filter_discards.
+# Notes on adding regression tests for a new skin are in
+# coregrind/docs/skins.html.
 #----------------------------------------------------------------------------
 
 use strict;
@@ -49,7 +46,7 @@ use strict;
 #----------------------------------------------------------------------------
 # Global vars
 #----------------------------------------------------------------------------
-my $usage="vg_regtest [--head|--eraser, --all]\n";
+my $usage="vg_regtest [--stable|--dev, --all, --valgrind]\n";
 
 my $tmp="vg_regtest.tmp.$$";
 
@@ -62,10 +59,10 @@ my $stderr_filter;      # filter program to run stderr results file through
 
 my @failures;           # List of failed tests
 
-my $exp = "";           # --eraser is default
+my $exp = "";           # --dev is default
 
 # Assumes we're in valgrind/
-my $valgrind = "bin/valgrind";
+my $valgrind = "inst/bin/valgrind";
 
 chomp(my $tests_dir = `pwd`);
 
@@ -106,9 +103,9 @@ sub process_command_line()
     
     for my $arg (@ARGV) {
         if ($arg =~ /^-/) {
-            if      ($arg =~ /^--head$/) {
+            if      ($arg =~ /^--stable$/) {
                 $exp = ".hd";
-            } elsif ($arg =~ /^--eraser$/) {
+            } elsif ($arg =~ /^--dev$/) {
                 $exp = "";
             } elsif ($arg =~ /^--all$/) {
                 $alldirs = 1;
@@ -158,9 +155,9 @@ sub read_vgtest_file($)
             $prog = validate_program(".", $1);
         } elsif ($line =~ /^\s*args:\s*(.*)$/) {
             $args = $1;
-        } elsif ($line =~ /^\s*vgopts\.hd:\s*(.*)$/) {
+        } elsif ($line =~ /^\s*vgopts\.st:\s*(.*)$/) {
             $vgopts = $1 if ($exp eq ".hd");
-        } elsif ($line =~ /^\s*vgopts\.er:\s*(.*)$/) {
+        } elsif ($line =~ /^\s*vgopts\.dev:\s*(.*)$/) {
             $vgopts = $1 if ($exp eq "");
         } elsif ($line =~ /^\s*stdout_filter:\s*(.*)$/) {
             $stdout_filter = validate_program(".", $1);
@@ -206,8 +203,8 @@ sub do_one_test($$)
 
     printf("%-30s valgrind $vgopts $prog $args\n", "$fullname:");
 
-    # If --eraser, pass the apt. --skin option for the directory (can be
-    # overridden by an "args:" or "args.er:" line, though)
+    # If --dev, pass the appropriate --skin option for the directory (can be
+    # overridden by an "args:" or "args.dev:" line, though)
     if ($exp eq ".hd") {
         mysystem("$valgrind $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
     } else {
@@ -229,9 +226,9 @@ sub do_one_test($$)
                      ? "$name.stdout.exp" 
                      : "/dev/null" );
 
-    # If 1.0.X/HEAD and ERASER versions have the same expected stderr output,
+    # If stable-branch and dev-branch have the same expected stderr output,
     # foo.stderr.exp.hd might be missing, so use foo.stderr.exp instead if
-    # --head is true.
+    # --stable is true.
     my $stderr_exp = "$name.stderr.exp$exp";
     if ($exp eq ".hd" && not -r $stderr_exp) {
        $stderr_exp = "$name.stderr.exp";

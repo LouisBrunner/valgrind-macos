@@ -1,2 +1,2 @@
-vgopts.hd: --cachesim=yes
+vgopts.st: --cachesim=yes
 prog: fpu-28-108

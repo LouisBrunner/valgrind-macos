@@ -1137,7 +1137,7 @@ static void fill_prpsinfo(const ThreadState *tst, struct elf_prpsinfo *prpsinfo)
    }
 }
 
-static void fill_prstatus(const ThreadState *tst, struct elf_prstatus *prs, const vki_ksiginfo_t *si)
+static void fill_prstatus(ThreadState *tst, struct elf_prstatus *prs, const vki_ksiginfo_t *si)
 {
    struct user_regs_struct *regs;
 
@@ -1733,7 +1733,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
       ThreadId tid = VG_(get_current_or_recent_tid)();
       Addr fault = (Addr)info->_sifields._sigfault._addr;
       Addr esp = VG_(is_running_thread)(tid)
-	       ? VG_(baseBlock)[VGOFF_STACK_PTR]
+	       ? BASEBLOCK_STACK_PTR
                : ARCH_STACK_PTR(VG_(threads)[tid].arch);
       Segment *seg;
 

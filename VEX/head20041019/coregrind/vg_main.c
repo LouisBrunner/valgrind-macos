@@ -197,11 +197,11 @@ static void print_all_stats ( void )
                 sanity_fast_count, sanity_slow_count );
 
    // C call stats
-   VG_(print_ccall_stats)();
+   //VG_(print_ccall_stats)();
 
    // UInstr histogram 
-   if (VG_(clo_verbosity) > 3)
-      VG_(print_UInstr_histogram)();
+   //if (VG_(clo_verbosity) > 3)
+   //   VG_(print_UInstr_histogram)();
 
    // Memory stats
    if (VG_(clo_verbosity) > 2) {
@@ -339,7 +339,7 @@ void VG_(unimplemented) ( Char* msg )
 
 Addr VG_(get_stack_pointer) ( void )
 {
-   return VG_(baseBlock)[VGOFF_(m_esp)];
+   return BASEBLOCK_STACK_PTR;
 }
 
 /* Debugging thing .. can be called from assembly with OYNK macro. */

@@ -1406,8 +1406,7 @@ extern Addr VG_(tt_fast)[VG_TT_FAST_SIZE];
 
 extern void VG_(init_tt_tc)       ( void );
 extern void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
-                                    Addr trans_addr, Int trans_size,
-				    UShort jumps[VG_MAX_JUMPS]);
+                                    Addr trans_addr, Int trans_size );
 extern Addr VG_(search_transtab)  ( Addr original_addr );
 
 extern void VG_(invalidate_translations) ( Addr start, UInt range,
@@ -1517,7 +1516,7 @@ extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, arch_thread_t* arch );
 // Making coredumps
 extern void VGA_(fill_elfregs_from_BB)     ( struct user_regs_struct* regs );
 extern void VGA_(fill_elfregs_from_tst)    ( struct user_regs_struct* regs,
-                                             const arch_thread_t* arch );
+                                             arch_thread_t* arch );
 extern void VGA_(fill_elffpregs_from_BB)   ( elf_fpregset_t* fpu );
 extern void VGA_(fill_elffpregs_from_tst)  ( elf_fpregset_t* fpu,
                                              const arch_thread_t* arch );

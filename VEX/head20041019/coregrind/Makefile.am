@@ -90,6 +90,7 @@ stage2_LDADD= \
 	demangle/safe-ctype.o \
 	${VG_ARCH}/libarch.a \
 	${VG_PLATFORM}/libplatform.a \
+	../../libvex.a \
 	-ldl
 
 vg_intercept.c: $(srcdir)/gen_intercepts.pl $(srcdir)/vg_intercept.c.base

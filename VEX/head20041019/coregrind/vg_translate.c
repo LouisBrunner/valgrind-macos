@@ -30,6 +30,7 @@
 */
 
 #include "core.h"
+#include "../../pub/libvex.h"
 
 /*------------------------------------------------------------*/
 /*--- Renamings of frequently-used global functions.       ---*/
@@ -719,110 +720,6 @@ void VG_(sanity_check_UInstr)( UInt n, UInstr* u )
    }
 }
 
-static void sanity_check_UCodeBlock ( UCodeBlock* cb )
-{
-   Int i;
-        
-   for (i = 0; i < cb->used; i++) {
-      Bool sane = is_sane_UInstr(&cb->instrs[i]);
-      if (!sane) {
-         VG_(printf)("Instruction failed sanity check:\n");
-         VG_(up_UInstr)(i, &cb->instrs[i]);
-      }
-      vg_assert(sane);
-   }
-}
-
-/* Sanity checks to do with CALLMs in UCodeBlocks. */
-static Bool is_sane_UCodeBlockCalls ( UCodeBlock* cb )
-{
-   Int  callm = 0;
-   Int  callm_s = 0;
-   Int  callm_e = 0;
-   Int  callm_ptr, calls_ptr;
-   Int  i, j, t;
-   Bool incall = False;
-
-   /* Ensure the number of CALLM, CALLM_S and CALLM_E are the same. */
-
-   for (i = 0; i < cb->used; i++) {
-      switch (cb->instrs[i].opcode) {
-         case CALLM:
-            if (!incall) return False;
-            callm++; 
-            break;
-         case CALLM_S: 
-            if (incall) return False;
-            incall = True;
-            callm_s++; 
-            break;
-         case CALLM_E: 
-            if (!incall) return False;
-            incall = False;
-            callm_e++; 
-            break;
-         case PUSH: case POP: case CLEAR:
-            if (!incall) return False;
-            break;
-         default:
-            break;
-      }
-   }
-   if (incall) return False;
-   if (callm != callm_s || callm != callm_e) return False;
-
-   /* Check the sections between CALLM_S and CALLM's.  Ensure that no
-      PUSH uinsn pushes any TempReg that any other PUSH in the same
-      section pushes.  Ie, check that the TempReg args to PUSHes in
-      the section are unique.  If not, the instrumenter generates
-      incorrect code for CALLM insns. */
-
-   callm_ptr = 0;
-
- find_next_CALLM:
-   /* Search for the next interval, making calls_ptr .. callm_ptr
-      bracket it. */
-   while (callm_ptr < cb->used 
-          && cb->instrs[callm_ptr].opcode != CALLM)
-      callm_ptr++;
-   if (callm_ptr == cb->used)
-      return True;
-   vg_assert(cb->instrs[callm_ptr].opcode == CALLM);
-
-   calls_ptr = callm_ptr - 1;
-   while (cb->instrs[calls_ptr].opcode != CALLM_S)
-      calls_ptr--;
-   vg_assert(cb->instrs[calls_ptr].opcode == CALLM_S);
-   vg_assert(calls_ptr >= 0);
-
-   /* VG_(printf)("interval from %d to %d\n", calls_ptr, callm_ptr ); */
-
-   /* For each PUSH insn in the interval ... */
-   for (i = calls_ptr + 1; i < callm_ptr; i++) {
-      if (cb->instrs[i].opcode != PUSH) continue;
-      t = cb->instrs[i].val1;
-      /* Ensure no later PUSH insns up to callm_ptr push the same
-         TempReg.  Return False if any such are found. */
-      for (j = i+1; j < callm_ptr; j++) {
-         if (cb->instrs[j].opcode == PUSH &&
-             cb->instrs[j].val1 == t)
-            return False;
-      }
-   }
-
-   /* This interval is clean.  Keep going ... */
-   callm_ptr++;
-   goto find_next_CALLM;
-}
-
-static void sanity_check_UCodeBlockCalls( UCodeBlock* cb )
-{
-   if ( ! is_sane_UCodeBlockCalls( cb ) ) {
-      VG_(pp_UCodeBlock)(cb, "block failing calls sanity check");
-      VG_(core_panic)("bad block");
-   }
-}
-
 /*------------------------------------------------------------*/
 /*--- Printing uinstrs.                                    ---*/
 /*------------------------------------------------------------*/
@@ -855,30 +752,10 @@ Char* VG_(name_UCondcode) ( Condcode cond )
 }
 
 
-static void vg_ppFlagSet ( Char* prefix, FlagSet set )
-{
-   VG_(printf)("%s", prefix);
-   if (set & FlagD) VG_(printf)("D");
-   if (set & FlagO) VG_(printf)("O");
-   if (set & FlagS) VG_(printf)("S");
-   if (set & FlagZ) VG_(printf)("Z");
-   if (set & FlagA) VG_(printf)("A");
-   if (set & FlagC) VG_(printf)("C");
-   if (set & FlagP) VG_(printf)("P");
-}
-
-
-static void ppTempReg ( Int tt )
-{
-   if ((tt & 1) == 0)
-      VG_(printf)("t%d", tt);
-   else
-      VG_(printf)("q%d", tt-1);
-}
-
-
 void VG_(pp_UOperand) ( UInstr* u, Int operandNo, Int sz, Bool parens )
 {
+   VG_(core_panic)("pp_UInstrWorker");
+#if 0
    UInt tag, val;
    switch (operandNo) {
       case 1: tag = u->tag1; val = u->val1; break;
@@ -901,6 +778,7 @@ void VG_(pp_UOperand) ( UInstr* u, Int operandNo, Int sz, Bool parens )
       default: VG_(core_panic)("VG_(ppUOperand)(2)");
    }
    if (parens) VG_(printf)(")");
+#endif
 }
 
 
@@ -1045,6 +923,8 @@ void VG_(up_UInstr) ( Int i, UInstr* u )
 static
 void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
 {
+   VG_(core_panic)("pp_UInstrWorker");
+#if 0
    VG_(printf)("\t%4d: %s", instrNo, 
                             VG_(name_UOpcode)(True, u->opcode));
    // For JMP, the condition goes before the size
@@ -1320,6 +1200,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
    }
 
    VG_(printf)("\n");
+#endif
 }
 
 void VG_(pp_UInstr) ( Int instrNo, UInstr* u )
@@ -1456,36 +1337,6 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
 }
 
 
-/* Change temp regs in u into real regs, as directed by the
- * temps[i]-->reals[i] mapping. */
-static
-void patchUInstr ( UInstr* u, Int temps[], UInt reals[], Int n_tmap )
-{
-   Int i;
-   if (u->tag1 == TempReg) {
-      for (i = 0; i < n_tmap; i++)
-         if (temps[i] == u->val1) break;
-      if (i == n_tmap) VG_(core_panic)("patchUInstr(1)");
-      u->tag1 = RealReg;
-      u->val1 = reals[i];
-   }
-   if (u->tag2 == TempReg) {
-      for (i = 0; i < n_tmap; i++)
-         if (temps[i] == u->val2) break;
-      if (i == n_tmap) VG_(core_panic)("patchUInstr(2)");
-      u->tag2 = RealReg;
-      u->val2 = reals[i];
-   }
-   if (u->tag3 == TempReg) {
-      for (i = 0; i < n_tmap; i++)
-         if (temps[i] == u->val3) break;
-      if (i == n_tmap) VG_(core_panic)("patchUInstr(3)");
-      u->tag3 = RealReg;
-      u->val3 = reals[i];
-   }
-}
-
-
 /* Tedious x86-specific hack which compensates for the fact that the
    register numbers for %ah .. %dh do not correspond to those for %eax
    .. %edx.  It maps a (reg size, reg no) pair to the number of the
@@ -1501,64 +1352,6 @@ Int containingArchRegOf ( Int sz, Int aregno )
    }
 }
 
-
-/* If u reads an ArchReg, return the number of the containing arch
-   reg.  Otherwise return -1.  Used in redundant-PUT elimination.
-   Note that this is not required for tools extending UCode because
-   this happens before instrumentation. */
-static
-Int maybe_uinstrReadsArchReg ( UInstr* u )
-{
-   switch (u->opcode) {
-      case GET:
-      case ADD: case ADC: case AND: case OR:  
-      case XOR: case SUB: case SBB:   
-      case SHL: case SHR: case SAR: case ROL: 
-      case ROR: case RCL: case RCR:
-      case MUL:
-         if (u->tag1 == ArchReg) 
-            return containingArchRegOf ( u->size, u->val1 ); 
-         else
-            return -1;
-
-      case GETF: case PUTF:
-      case CALLM_S: case CALLM_E:
-      case INCEIP:
-      case LEA1:
-      case LEA2:
-      case NOP:
-      case LOCK:
-      case PUT:
-      case LOAD:
-      case STORE:
-      case MOV:
-      case CMOV:
-      case JMP:
-      case CALLM: case CLEAR: case PUSH: case POP:
-      case NOT: case NEG: case INC: case DEC: case BSWAP:
-      case CC2VAL:
-      case JIFZ:
-      case FPU: case FPU_R: case FPU_W:
-      case MMX1: case MMX2: case MMX3:
-      case MMX2_MemRd: case MMX2_MemWr: case MMX2a1_MemRd:
-      case MMX2_ERegRd: case MMX2_ERegWr:
-      case SSE2a_MemWr: case SSE2a_MemRd: case SSE2a1_MemRd:
-      case SSE2g_RegWr: case SSE2g1_RegWr: case SSE2e1_RegRd:
-      case SSE3a_MemWr: case SSE3a_MemRd: case SSE3a1_MemRd:
-      case SSE3e_RegRd: case SSE3g_RegWr: case SSE3e_RegWr:
-      case SSE3g1_RegWr: case SSE3e1_RegRd:
-      case SSE4: case SSE3: case SSE5: case SSE3ag_MemRd_RegWr:
-      case WIDEN:
-      /* GETSEG and USESEG are to do with ArchRegS, not ArchReg */
-      case GETSEG: case PUTSEG: 
-      case USESEG:
-         return -1;
-
-      default: 
-         VG_(pp_UInstr)(0,u);
-         VG_(core_panic)("maybe_uinstrReadsArchReg: unhandled opcode");
-   }
-}
 
 static __inline__
 Bool uInstrMentionsTempReg ( UInstr* u, Int tempreg )
@@ -1579,846 +1372,43 @@ Bool uInstrMentionsTempReg ( UInstr* u, Int tempreg )
 /*--- ucode improvement.                                   ---*/
 /*------------------------------------------------------------*/
 
-/* Improve the code in cb by doing
-   -- Redundant ArchReg-fetch elimination
-   -- Redundant PUT elimination
-   -- Redundant cond-code restore/save elimination
-   The overall effect of these is to allow target registers to be
-   cached in host registers over multiple target insns.  
-*/
-static void vg_improve ( UCodeBlock* cb )
-{
-   Int     i, j, k, m, n, ar, tr, told, actual_areg;
-   Int     areg_map[N_ARCH_REGS];
-   Bool    annul_put[N_ARCH_REGS];
-   Int     tempUse[VG_MAX_REGS_USED];
-   Bool    isWrites[VG_MAX_REGS_USED];
-   UInstr* u;
-   Bool    wr;
-   Int*    last_live_before;
-   FlagSet future_dead_flags;
-
-   if (dis) 
-      VG_(printf) ("Improvements:\n");
-
-   if (cb->nextTemp > 0)
-      last_live_before = VG_(arena_malloc) ( VG_AR_JITTER, 
-                                             cb->nextTemp * sizeof(Int) );
-   else
-      last_live_before = NULL;
-
-   
-   /* PASS 1: redundant GET elimination.  (Actually, more general than
-      that -- eliminates redundant fetches of ArchRegs). */
-
-   /* Find the live-range-ends for all temporaries.  Duplicates code
-      in the register allocator :-( */
-
-   for (i = 0; i < cb->nextTemp; i++) last_live_before[i] = -1;
-
-   for (i = cb->used-1; i >= 0; i--) {
-      u = &cb->instrs[i];
-
-      k = VG_(get_reg_usage)(u, TempReg, &tempUse[0], &isWrites[0]);
-
-      /* For each temp usage ... bwds in program order. */
-      for (j = k-1; j >= 0; j--) {
-         tr = tempUse[j];
-         wr = isWrites[j];
-         if (last_live_before[tr] == -1) {
-            vg_assert(tr >= 0 && tr < cb->nextTemp);
-            last_live_before[tr] = wr ? (i+1) : i;
-         }
-      }
-
-   }
-
-#  define BIND_ARCH_TO_TEMP(archreg,tempreg)\
-   { Int q;                                           \
-     /* Invalidate any old binding(s) to tempreg. */  \
-     for (q = 0; q < N_ARCH_REGS; q++)                \
-        if (areg_map[q] == tempreg) areg_map[q] = -1; \
-     /* Add the new binding. */                       \
-     areg_map[archreg] = (tempreg);                   \
-   }
-
-   /* Set up the A-reg map. */
-   for (i = 0; i < N_ARCH_REGS; i++) areg_map[i] = -1;
-
-   /* Scan insns. */
-   for (i = 0; i < cb->used; i++) {
-      u = &cb->instrs[i];
-      if (u->opcode == GET && u->size == 4) {
-         /* GET; see if it can be annulled. */
-         vg_assert(u->tag1 == ArchReg);
-         vg_assert(u->tag2 == TempReg);
-         ar   = u->val1;
-         tr   = u->val2;
-         told = areg_map[ar];
-         if (told != -1 && last_live_before[told] <= i) {
-            /* ar already has an old mapping to told, but that runs
-               out here.  Annul this GET, rename tr to told for the
-               rest of the block, and extend told's live range to that
-               of tr.  */
-            VG_(new_NOP)(u);
-            n = last_live_before[tr] + 1;
-            if (n > cb->used) n = cb->used;
-            last_live_before[told] = last_live_before[tr];
-            last_live_before[tr] = i-1;
-            if (dis)
-               VG_(printf)(
-                  "   at %2d: delete GET, rename t%d to t%d in (%d .. %d)\n", 
-                  i, tr, told,i+1, n-1);
-            for (m = i+1; m < n; m++) {
-               if (cb->instrs[m].tag1 == TempReg 
-                   && cb->instrs[m].val1 == tr) 
-                 cb->instrs[m].val1 = told;
-               if (cb->instrs[m].tag2 == TempReg 
-                   && cb->instrs[m].val2 == tr) 
-                 cb->instrs[m].val2 = told;
-               if (cb->instrs[m].tag3 == TempReg 
-                   && cb->instrs[m].val3 == tr) 
-                 cb->instrs[m].val3 = told;
-            }
-            BIND_ARCH_TO_TEMP(ar,told);
-         }
-         else
-            BIND_ARCH_TO_TEMP(ar,tr);
-      }
-      else if (u->opcode == GET && u->size != 4) {
-         /* Invalidate any mapping for this archreg.  */
-         actual_areg = containingArchRegOf ( u->size, u->val1 );
-         areg_map[actual_areg] = -1;
-      } 
-      else if (u->opcode == PUT && u->size == 4) {
-         /* PUT; re-establish t -> a binding */
-         vg_assert(u->tag1 == TempReg);
-         vg_assert(u->tag2 == ArchReg);
-         BIND_ARCH_TO_TEMP(u->val2, u->val1);
-      }
-      else if (u->opcode == PUT && u->size != 4) {
-         /* Invalidate any mapping for this archreg. */
-         actual_areg = containingArchRegOf ( u->size, u->val2 );
-         areg_map[actual_areg] = -1;
-      } else {
-
-         /* see if insn has an archreg as a read operand; if so try to
-            map it. */
-         if (u->tag1 == ArchReg && u->size == 4 
-                                && areg_map[u->val1] != -1) {
-            switch (u->opcode) {
-               case ADD: case SUB: case AND: case OR: case XOR:
-               case ADC: case SBB:
-               case SHL: case SHR: case SAR: case ROL: case ROR:
-               case RCL: case RCR:
-	       case MUL:
-                  if (dis) 
-                     VG_(printf)(
-                        "   at %2d: change ArchReg %S to TempReg t%d\n", 
-                        i, nameIReg(4,u->val1), areg_map[u->val1]);
-                  u->tag1 = TempReg;
-                  u->val1 = areg_map[u->val1];
-                  /* Remember to extend the live range of the TempReg,
-                     if necessary. */
-                  if (last_live_before[u->val1] < i)
-                     last_live_before[u->val1] = i;
-                  break;
-               default: 
-                  break;
-            }
-         }
-
-         /* boring insn; invalidate any mappings to temps it writes */
-         k = VG_(get_reg_usage)(u, TempReg, &tempUse[0], &isWrites[0]);
-
-         for (j = 0; j < k; j++) {
-            wr  = isWrites[j];
-            if (!wr) continue;
-            tr = tempUse[j];
-            for (m = 0; m < N_ARCH_REGS; m++)
-               if (areg_map[m] == tr) areg_map[m] = -1;
-         }
-      }
-         
-   }
-
-#  undef BIND_ARCH_TO_TEMP
-
-   /* PASS 2: redundant PUT elimination.  Don't annul (delay) puts of
-      %ESP, since the memory check machinery always requires the
-      in-memory value of %ESP to be up to date.  Although this isn't
-      actually required by other analyses (cache simulation), it's
-      simplest to be consistent for all end-uses. */
-   for (j = 0; j < N_ARCH_REGS; j++)
-      annul_put[j] = False;
-
-   for (i = cb->used-1; i >= 0; i--) {
-      u = &cb->instrs[i];
-      if (u->opcode == NOP) continue;
-
-      if (u->opcode == PUT && u->size == 4) {
-         vg_assert(u->tag2 == ArchReg);
-         actual_areg = containingArchRegOf ( 4, u->val2 );
-         if (annul_put[actual_areg]) {
-            vg_assert(actual_areg != R_ESP);
-            VG_(new_NOP)(u);
-            if (dis) 
-               VG_(printf)("   at %2d: delete PUT\n", i );
-         } else {
-            if (actual_areg != R_ESP)
-               annul_put[actual_areg] = True;
-         }
-      } 
-      else if (u->opcode == PUT && u->size != 4) { 
-         actual_areg = containingArchRegOf ( u->size, u->val2 );
-         annul_put[actual_areg] = False;
-      } 
-      else if (u->opcode == JMP || u->opcode == JIFZ
-               || u->opcode == CALLM) {
-         for (j = 0; j < N_ARCH_REGS; j++)
-            annul_put[j] = False;
-      }
-      else {
-         /* If an instruction reads an ArchReg, the immediately
-            preceding PUT cannot be annulled. */
-         actual_areg = maybe_uinstrReadsArchReg ( u );
-         if (actual_areg != -1)      
-            annul_put[actual_areg] = False;
-      }
-   }
-
-   /* PASS 2a: redundant-move elimination.  Given MOV t1, t2 and t1 is
-      dead after this point, annul the MOV insn and rename t2 to t1.
-      Further modifies the last_live_before map. */
-
-#  if 0
-   VG_(pp_UCodeBlock)(cb, "Before MOV elimination" );
-   for (i = 0; i < cb->nextTemp; i++)
-     VG_(printf)("llb[t%d]=%d   ", i, last_live_before[i]);
-   VG_(printf)("\n");
-#  endif
-
-   for (i = 0; i < cb->used-1; i++) {
-      u = &cb->instrs[i];
-      if (u->opcode != MOV) continue;
-      if (u->tag1 == Literal) continue;
-      vg_assert(u->tag1 == TempReg);
-      vg_assert(u->tag2 == TempReg);
-      if (last_live_before[u->val1] == i) {
-         if (dis)
-            VG_(printf)(
-               "   at %2d: delete MOV, rename t%d to t%d in (%d .. %d)\n",
-               i, u->val2, u->val1, i+1, last_live_before[u->val2] );
-         for (j = i+1; j <= last_live_before[u->val2]; j++) {
-            if (cb->instrs[j].tag1 == TempReg 
-                && cb->instrs[j].val1 == u->val2)
-               cb->instrs[j].val1 = u->val1;
-            if (cb->instrs[j].tag2 == TempReg 
-                && cb->instrs[j].val2 == u->val2)
-               cb->instrs[j].val2 = u->val1;
-            if (cb->instrs[j].tag3 == TempReg 
-                && cb->instrs[j].val3 == u->val2)
-               cb->instrs[j].val3 = u->val1;
-         }
-         last_live_before[u->val1] = last_live_before[u->val2];
-         last_live_before[u->val2] = i-1;
-         VG_(new_NOP)(u);
-      }
-   }
-
-   /* PASS 3: redundant condition-code restore/save elimination.
-      Scan backwards from the end.  future_dead_flags records the set
-      of flags which are dead at this point, that is, will be written
-      before they are next read.  Earlier uinsns which write flags
-      already in future_dead_flags can have their writes annulled.  
-   */
-   future_dead_flags = FlagsEmpty;
-
-   for (i = cb->used-1; i >= 0; i--) {
-      u = &cb->instrs[i];
-
-      /* We might never make it to insns beyond this one, so be
-         conservative. */
-      if (u->opcode == JIFZ || u->opcode == JMP) {
-         future_dead_flags = FlagsEmpty;
-         continue;
-      } 
-
-      /* PUTF modifies the %EFLAGS in essentially unpredictable ways.
-         For example people try to mess with bit 21 to see if CPUID
-         works.  The setting may or may not actually take hold.  So we
-         play safe here. */
-      if (u->opcode == PUTF) {
-         future_dead_flags = FlagsEmpty;
-         continue;
-      } 
-
-      /* We can annul the flags written by this insn if it writes a
-         subset (or eq) of the set of flags known to be dead after
-         this insn.  If not, just record the flags also written by
-         this insn.*/
-      if (u->flags_w != FlagsEmpty
-          && VG_IS_FLAG_SUBSET(u->flags_w, future_dead_flags)) {
-         if (dis) {
-            VG_(printf)("   at %2d: annul flag write ", i);
-            vg_ppFlagSet("", u->flags_w);
-            VG_(printf)(" due to later ");
-            vg_ppFlagSet("", future_dead_flags);
-            VG_(printf)("\n");
-         }
-         u->flags_w = FlagsEmpty;
-      } else {
-        future_dead_flags 
-           = VG_UNION_FLAG_SETS ( u->flags_w, future_dead_flags );
-      }
-
-      /* If this insn also reads flags, empty out future_dead_flags so
-         as to force preceding writes not to be annulled. */
-      if (u->flags_r != FlagsEmpty)
-         future_dead_flags = FlagsEmpty;
-   }
-
-   if (last_live_before) 
-      VG_(arena_free) ( VG_AR_JITTER, last_live_before );
-
-   if (dis) {
-      VG_(printf)("\n");
-      VG_(pp_UCodeBlock) ( cb, "Improved UCode:" );
-   }
-}
-
 /*------------------------------------------------------------*/
 /*--- %ESP-update pass                                     ---*/
 /*------------------------------------------------------------*/
-
-/* For tools that want to know about %ESP changes, this pass adds
-   in the appropriate hooks.  We have to do it after the tool's
-   instrumentation, so the tool doesn't have to worry about the CCALLs
-   it adds in, and we must do it before register allocation because
-   spilled temps make it much harder to work out the %esp deltas.
-   Thus we have it as an extra phase between the two. 
-   
-   We look for "GETL %ESP, t_ESP", then track ADDs and SUBs of
-   literal values to t_ESP, and the total delta of the ADDs/SUBs.  Then if
-   "PUTL t_ESP, %ESP" happens, we call the helper with the known delta.  We
-   also cope with "MOVL t_ESP, tX", making tX the new t_ESP.  If any other
-   instruction clobbers t_ESP, we don't track it anymore, and fall back to
-   the delta-is-unknown case.  That case is also used when the delta is not
-   a nice small amount, or an unknown amount.
-*/
-static 
-UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
-{
-   UCodeBlock* cb;
-   UInstr*     u;
-   Int         delta = 0;
-   UInt        t_ESP = INVALID_TEMPREG;
-   Int         i;
-
-   cb = VG_(setup_UCodeBlock)(cb_in);
-
-   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
-      u = VG_(get_instr)(cb_in, i);
-
-      if (GET == u->opcode && R_ESP == u->val1) {
-         t_ESP = u->val2;
-         delta = 0;
-
-      } else if (PUT == u->opcode && R_ESP == u->val2 && 4 == u->size) {
-
-#           define DO_GENERIC					\
-               if (VG_(defined_new_mem_stack)() ||		\
-                   VG_(defined_die_mem_stack)()) {		\
-                  uInstr1(cb, CCALL, 0, TempReg, u->val1);	\
-                  uCCall(cb, (Addr) VG_(unknown_esp_update),	\
-                         1, 1, False);				\
-               } 
-
-#           define DO(kind, size)								\
-               if (VG_(defined_##kind##_mem_stack_##size)()) {					\
-                  uInstr1(cb, CCALL, 0, TempReg, u->val1);					\
-                  uCCall(cb, (Addr) VG_(tool_interface).track_##kind##_mem_stack_##size,	\
-                         1, 1, False);								\
-												\
-               } else										\
-                  DO_GENERIC									\
-               break
-
-         if (u->val1 == t_ESP) {
-            /* Known delta, common cases handled specially. */
-            switch (delta) {
-            case   0: break;
-            case   4: DO(die, 4);
-            case  -4: DO(new, 4);
-            case   8: DO(die, 8);
-            case  -8: DO(new, 8);
-            case  12: DO(die, 12);
-            case -12: DO(new, 12);
-            case  16: DO(die, 16);
-            case -16: DO(new, 16);
-            case  32: DO(die, 32);
-            case -32: DO(new, 32);
-            default:  DO_GENERIC;   break;
-            }           
-         } else {
-            /* Unknown delta */
-            DO_GENERIC;
-
-            /* now we know the temp that points to %ESP */
-            t_ESP = u->val1;
-         }
-         delta = 0;
-
-#        undef DO
-#        undef DO_GENERIC
-
-      } else if (ADD == u->opcode && Literal == u->tag1 && t_ESP == u->val2) {
-         delta += u->lit32;
-
-      } else if (SUB == u->opcode && Literal == u->tag1 && t_ESP == u->val2) {
-         delta -= u->lit32;
-
-      } else if (MOV == u->opcode && TempReg == u->tag1 && t_ESP == u->val1 &&
-                                     TempReg == u->tag2) {
-         // t_ESP is transferred
-         t_ESP = u->val2;
-
-      } else {
-         // Stop tracking t_ESP if it's clobbered by this instruction.
-         Int  tempUse [VG_MAX_REGS_USED];
-         Bool isWrites[VG_MAX_REGS_USED];
-         Int  j, n = VG_(get_reg_usage)(u, TempReg, tempUse, isWrites);
-
-         for (j = 0; j < n; j++) {
-            if (tempUse[j] == t_ESP && isWrites[j])
-               t_ESP = INVALID_TEMPREG;
-         }
-      }
-      VG_(copy_UInstr) ( cb, u );
-   }
-
-   VG_(free_UCodeBlock)(cb_in);
-   return cb;
-}
 
 /*------------------------------------------------------------*/
 /*--- The new register allocator.                          ---*/
 /*------------------------------------------------------------*/
 
-typedef
-   struct {
-      /* Becomes live for the first time after this insn ... */
-      Int live_after;
-      /* Becomes dead for the last time before this insn ... */
-      Int dead_before;
-      /* The "home" spill slot, if needed.  Never changes. */
-      Int spill_no;
-      /* Where is it?  VG_NOVALUE==in a spill slot; else in reg. */
-      Int real_no;
-   }
-   TempInfo;
-
-
-/* Take a ucode block and allocate its TempRegs to RealRegs, or put
-   them in spill locations, and add spill code, if there are not
-   enough real regs.  The usual register allocation deal, in short.  
-
-   Important redundancy of representation:
-
-     real_to_temp maps real reg ranks (RRRs) to TempReg nos, or
-     to VG_NOVALUE if the real reg has no currently assigned TempReg.
-
-     The .real_no field of a TempInfo gives the current RRR for
-     this TempReg, or VG_NOVALUE if the TempReg is currently
-     in memory, in which case it is in the SpillNo denoted by
-     spillno.
-
-   These pieces of information (a fwds-bwds mapping, really) must 
-   be kept consistent!
-
-   This allocator uses the so-called Second Chance Bin Packing
-   algorithm, as described in "Quality and Speed in Linear-scan
-   Register Allocation" (Traub, Holloway and Smith, ACM PLDI98,
-   pp142-151).  It is simple and fast and remarkably good at
-   minimising the amount of spill code introduced.
-*/
-
-static
-UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
-{
-   TempInfo*    temp_info;
-   Int          real_to_temp [VG_MAX_REALREGS];
-   Bool         is_spill_cand[VG_MAX_REALREGS];
-   Int          ss_busy_until_before[VG_MAX_SPILLSLOTS];
-   Int          i, j, k, m, r, tno, max_ss_no;
-   Bool         wr, defer, isRead, spill_reqd;
-   UInt         realUse [VG_MAX_REGS_USED];
-   Int          tempUse [VG_MAX_REGS_USED];
-   Bool         isWrites[VG_MAX_REGS_USED];
-   UCodeBlock*  c2;
-
-   /* Used to denote ... well, "no value" in this fn. */
-#  define VG_NOTHING (-2)
-
-   /* Initialise the TempReg info.  */
-   if (c1->nextTemp > 0)
-      temp_info = VG_(arena_malloc)(VG_AR_JITTER,
-                                    c1->nextTemp * sizeof(TempInfo) );
-   else
-      temp_info = NULL;
-
-   for (i = 0; i < c1->nextTemp; i++) {
-      temp_info[i].live_after  = VG_NOTHING;
-      temp_info[i].dead_before = VG_NOTHING;
-      temp_info[i].spill_no    = VG_NOTHING;
-      /* temp_info[i].real_no is not yet relevant. */
-   }
-
-   spill_reqd = False;
-
-   /* Scan fwds to establish live ranges. */
-
-   for (i = 0; i < c1->used; i++) {
-      k = VG_(get_reg_usage)(&c1->instrs[i], TempReg, &tempUse[0],
-                             &isWrites[0]);
-      vg_assert(k >= 0 && k <= VG_MAX_REGS_USED);
-
-      /* For each temp usage ... fwds in program order */
-      for (j = 0; j < k; j++) {
-         tno = tempUse[j];
-         wr  = isWrites[j];
-         if (wr) {
-            /* Writes hold a reg live until after this insn. */
-            if (temp_info[tno].live_after == VG_NOTHING)
-               temp_info[tno].live_after = i;
-            if (temp_info[tno].dead_before < i + 1)
-               temp_info[tno].dead_before = i + 1;
-         } else {
-            /* First use of a tmp should be a write. */
-            if (temp_info[tno].live_after == VG_NOTHING) {
-               VG_(printf)("At instr %d...\n", i);
-               VG_(core_panic)("First use of tmp not a write,"
-                               " probably a tool instrumentation error");
-            }
-            /* Reads only hold it live until before this insn. */
-            if (temp_info[tno].dead_before < i)
-               temp_info[tno].dead_before = i;
-         }
-      }
-   }
-
-#  if 0
-   /* Sanity check on live ranges.  Expensive but correct. */
-   for (i = 0; i < c1->nextTemp; i++) {
-      vg_assert( (temp_info[i].live_after == VG_NOTHING 
-                  && temp_info[i].dead_before == VG_NOTHING)
-                 || (temp_info[i].live_after != VG_NOTHING 
-                     && temp_info[i].dead_before != VG_NOTHING) );
-   }
-#  endif
-
-   /* Do a rank-based allocation of TempRegs to spill slot numbers.
-      We put as few as possible values in spill slots, but
-      nevertheless need to have an assignment to them just in case. */
-
-   max_ss_no = -1;
-
-   for (i = 0; i < VG_MAX_SPILLSLOTS; i++)
-      ss_busy_until_before[i] = 0;
-  
-   for (i = 0; i < c1->nextTemp; i++) {
-
-      /* True iff this temp is unused. */
-      if (temp_info[i].live_after == VG_NOTHING) 
-         continue;
-
-      /* Find the lowest-numbered spill slot which is available at the
-         start point of this interval, and assign the interval to
-         it. */
-      for (j = 0; j < VG_MAX_SPILLSLOTS; j++)
-         if (ss_busy_until_before[j] <= temp_info[i].live_after)
-            break;
-      if (j == VG_MAX_SPILLSLOTS) {
-         VG_(printf)("VG_MAX_SPILLSLOTS is too low; increase and recompile.\n");
-         VG_(core_panic)("register allocation failed -- out of spill slots");
-      }
-      ss_busy_until_before[j] = temp_info[i].dead_before;
-      temp_info[i].spill_no = j;
-      if (j > max_ss_no)
-         max_ss_no = j;
-   }
-
-   n_total_reg_rank += (max_ss_no+1);
-
-   /* Show live ranges and assigned spill slot nos. */
-
-   if (dis) {
-      VG_(printf)("Live range assignments:\n");
-
-      for (i = 0; i < c1->nextTemp; i++) {
-         if (temp_info[i].live_after == VG_NOTHING) 
-            continue;
-         VG_(printf)(
-            "   LR %d is  after %d to before %d\tspillno %d\n",
-            i,
-            temp_info[i].live_after,
-            temp_info[i].dead_before,
-            temp_info[i].spill_no
-         );
-      }
-      VG_(printf)("\n");
-   }
-
-   /* Now that we've established a spill slot number for each used
-      temporary, we can go ahead and do the core of the "Second-chance
-      binpacking" allocation algorithm. */
-
-   if (dis) VG_(printf)("Register allocated UCode:\n");
-      
-
-   /* Resulting code goes here.  We generate it all in a forwards
-      pass. */
-   c2 = alloc_UCodeBlock( c1->orig_eip );
-
-   /* At the start, no TempRegs are assigned to any real register.
-      Correspondingly, all temps claim to be currently resident in
-      their spill slots, as computed by the previous two passes. */
-   for (i = 0; i < VG_MAX_REALREGS; i++)
-      real_to_temp[i] = VG_NOTHING;
-   for (i = 0; i < c1->nextTemp; i++)
-      temp_info[i].real_no = VG_NOTHING;
-
-   /* Process each insn in turn. */
-   for (i = 0; i < c1->used; i++) {
-
-      if (c1->instrs[i].opcode == NOP) continue;
-      n_uinstrs_prealloc++;
-
-#     if 0
-      /* Check map consistency.  Expensive but correct. */
-      for (r = 0; r < VG_MAX_REALREGS; r++) {
-         if (real_to_temp[r] != VG_NOTHING) {
-            tno = real_to_temp[r];
-            vg_assert(tno >= 0 && tno < c1->nextTemp);
-            vg_assert(temp_info[tno].real_no == r);
-         }
-      }
-      for (tno = 0; tno < c1->nextTemp; tno++) {
-         if (temp_info[tno].real_no != VG_NOTHING) {
-            r = temp_info[tno].real_no;
-            vg_assert(r >= 0 && r < VG_MAX_REALREGS);
-            vg_assert(real_to_temp[r] == tno);
-         }
-      }
-#     endif
-
-      if (dis)
-         VG_(pp_UInstr)(i, &c1->instrs[i]);
-
-      /* First, free up enough real regs for this insn.  This may
-         generate spill stores since we may have to evict some TempRegs
-         currently in real regs.  Also generates spill loads. */
-
-      k = VG_(get_reg_usage)(&c1->instrs[i], TempReg, &tempUse[0],
-                             &isWrites[0]);
-      vg_assert(k >= 0 && k <= VG_MAX_REGS_USED);
-
-      /* For each ***different*** temp mentioned in the insn .... */
-      for (j = 0; j < k; j++) {
-
-         /* First check if the temp is mentioned again later; if so,
-            ignore this mention.  We only want to process each temp
-            used by the insn once, even if it is mentioned more than
-            once. */
-         defer = False;
-         tno = tempUse[j];
-         for (m = j+1; m < k; m++)
-            if (tempUse[m] == tno) 
-               defer = True;
-         if (defer) 
-            continue;
-
-         /* Now we're trying to find a register for tempUse[j].
-            First of all, if it already has a register assigned, we
-            don't need to do anything more. */
-         if (temp_info[tno].real_no != VG_NOTHING)
-            continue;
-
-         /* No luck.  The next thing to do is see if there is a
-            currently unassigned register available.  If so, bag it. */
-         for (r = 0; r < VG_MAX_REALREGS; r++) {
-            if (real_to_temp[r] == VG_NOTHING)
-               break;
-         }
-         if (r < VG_MAX_REALREGS) {
-            real_to_temp[r]        = tno;
-            temp_info[tno].real_no = r;
-            continue;
-         }
-
-         /* Unfortunately, that didn't pan out either.  So we'll have
-            to eject some other unfortunate TempReg into a spill slot
-            in order to free up a register.  Of course, we need to be
-            careful not to eject some other TempReg needed by this
-            insn.
-
-            Select r in 0 .. VG_MAX_REALREGS-1 such that
-            real_to_temp[r] is not mentioned in 
-            tempUse[0 .. k-1], since it would be just plain 
-            wrong to eject some other TempReg which we need to use in 
-            this insn.
-
-            It is here that it is important to make a good choice of
-            register to spill.  */
-
-         /* First, mark those regs which are not spill candidates. */
-         for (r = 0; r < VG_MAX_REALREGS; r++) {
-            is_spill_cand[r] = True;
-            for (m = 0; m < k; m++) {
-               if (real_to_temp[r] == tempUse[m]) {
-                  is_spill_cand[r] = False;
-                  break;
-               }
-            }
-         }
-
-         /* We can choose any r satisfying is_spill_cand[r].  However,
-            try to make a good choice.  First, try and find r such
-            that the associated TempReg is already dead. */
-         for (r = 0; r < VG_MAX_REALREGS; r++) {
-            if (is_spill_cand[r] && 
-                temp_info[real_to_temp[r]].dead_before <= i)
-               goto have_spill_cand;
-         }
-
-         /* No spill cand is mapped to a dead TempReg.  Now we really
-           _do_ have to generate spill code.  Choose r so that the
-           next use of its associated TempReg is as far ahead as
-           possible, in the hope that this will minimise the number of
-           consequent reloads required.  This is a bit expensive, but
-           we don't have to do it very often. */
-         {
-            Int furthest_r = VG_MAX_REALREGS;
-            Int furthest = 0;
-            for (r = 0; r < VG_MAX_REALREGS; r++) {
-               if (!is_spill_cand[r]) continue;
-               for (m = i+1; m < c1->used; m++)
-                  if (uInstrMentionsTempReg(&c1->instrs[m], 
-                                            real_to_temp[r]))
-                     break;
-               if (m > furthest) {
-                  furthest   = m;
-                  furthest_r = r;
-               }
-            }
-            r = furthest_r;
-            goto have_spill_cand;
-         }
-
-         have_spill_cand:
-         if (r == VG_MAX_REALREGS)
-            VG_(core_panic)("new reg alloc: out of registers ?!");
-
-         /* Eject r.  Important refinement: don't bother if the
-            associated TempReg is now dead. */
-         vg_assert(real_to_temp[r] != VG_NOTHING);
-         vg_assert(real_to_temp[r] != tno);
-         temp_info[real_to_temp[r]].real_no = VG_NOTHING;
-         if (temp_info[real_to_temp[r]].dead_before > i) {
-            uInstr2(c2, PUT, 4, 
-                        RealReg, VG_(rank_to_realreg)(r), 
-                        SpillNo, temp_info[real_to_temp[r]].spill_no);
-            n_uinstrs_spill++;
-            spill_reqd = True;
-            if (dis)
-               VG_(pp_UInstr)(c2->used-1, &LAST_UINSTR(c2));
-         }
-
-         /* Decide if tno is read. */
-         isRead = False;
-         for (m = 0; m < k; m++)
-            if (tempUse[m] == tno && !isWrites[m]) 
-               isRead = True;
-
-         /* If so, generate a spill load. */
-         if (isRead) {
-            uInstr2(c2, GET, 4, 
-                        SpillNo, temp_info[tno].spill_no, 
-                        RealReg, VG_(rank_to_realreg)(r) );
-            n_uinstrs_spill++;
-            spill_reqd = True;
-            if (dis)
-               VG_(pp_UInstr)(c2->used-1, &LAST_UINSTR(c2));
-         }
-
-         /* Update the forwards and backwards maps. */
-         real_to_temp[r]        = tno;
-         temp_info[tno].real_no = r;
-      }
-
-      /* By this point, all TempRegs mentioned by the insn have been
-         bought into real regs.  We now copy the insn to the output
-         and use patchUInstr to convert its rTempRegs into
-         realregs. */
-      for (j = 0; j < k; j++)
-         realUse[j] = VG_(rank_to_realreg)(temp_info[tempUse[j]].real_no);
-      VG_(copy_UInstr)(c2, &c1->instrs[i]);
-      patchUInstr(&LAST_UINSTR(c2), &tempUse[0], &realUse[0], k);
-
-      if (dis) {
-         VG_(pp_UInstr)(c2->used-1, &LAST_UINSTR(c2));
-         VG_(printf)("\n");
-      }
-   }
-
-   if (temp_info != NULL)
-      VG_(arena_free)(VG_AR_JITTER, temp_info);
-
-   VG_(free_UCodeBlock)(c1);
-
-   if (spill_reqd) 
-      n_translations_needing_spill++;
-
-   return c2;
-
-#  undef VG_NOTHING
-
-}
-
-/* Analysis records liveness of all general-use RealRegs in the UCode. */
-static void vg_realreg_liveness_analysis ( UCodeBlock* cb )
-{        
-   Int      i, j, k;
-   RRegSet  rregs_live;
-   Int      regUse[VG_MAX_REGS_USED];
-   Bool     isWrites[VG_MAX_REGS_USED];
-   UInstr*  u;
-
-   /* All regs are dead at the end of the block */
-   rregs_live = ALL_RREGS_DEAD;
-            
-   for (i = cb->used-1; i >= 0; i--) {
-      u = &cb->instrs[i];
-
-      u->regs_live_after = rregs_live;
-
-      k = VG_(get_reg_usage)(u, RealReg, &regUse[0], &isWrites[0]);
-
-      /* For each reg usage ... bwds in program order.  Variable is live
-         before this UInstr if it is read by this UInstr.
-         Note that regUse[j] holds the Intel reg number, so we must
-         convert it to our rank number.  */
-      for (j = k-1; j >= 0; j--) {
-         SET_RREG_LIVENESS ( VG_(realreg_to_rank)(regUse[j]),
-                             rregs_live,
-                             !isWrites[j] );
-      }
-   }
-}
-
 /*------------------------------------------------------------*/
 /*--- Main entry point for the JITter.                     ---*/
 /*------------------------------------------------------------*/
+
+/* Vex dumps the final code in here.  Then we can copy it off
+   wherever we like. */
+#define N_TMPBUF 5000
+static UChar tmpbuf[N_TMPBUF];
+
+/* Function pointers we must supply to LibVEX in order that it
+   can bomb out and emit messages under Valgrind's control. */
+__attribute__ ((noreturn))
+static
+void failure_exit ( void )
+{
+   LibVEX_ClearTemporary(True);
+   VG_(printf)("VEX did failure_exit.  Bye.\n");
+   VG_(exit)(1);
+}
+
+static
+void log_bytes ( Char* bytes, Int nbytes )
+{
+  Int i;
+  for (i = 0; i < nbytes-3; i += 4)
+     VG_(printf)("%c%c%c%c", bytes[i], bytes[i+1], bytes[i+2], bytes[i+3]);
+  for (; i < nbytes; i++) 
+     VG_(printf)("%c", bytes[i]);
+}
 
 /* Translate the basic block beginning at orig_addr, and add it to
    the translation cache & translation table.  Unless 'debugging' is true,
@@ -2431,21 +1421,28 @@ static void vg_realreg_liveness_analysis ( UCodeBlock* cb )
 Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
                       Bool debugging_translation )
 {
-   Addr        trans_addr, redir, orig_addr0 = orig_addr;
-   UShort      jumps[VG_MAX_JUMPS];
-   Int         i, orig_size, trans_size;
+   Addr        redir, orig_addr0 = orig_addr;
+   Int         orig_size, tmpbuf_used;
    UCodeBlock* cb;
    Bool        notrace_until_done;
    UInt        notrace_until_limit = 0;
    Segment     *seg;
 
+   /* Make sure Vex is initialised right. */
+   TranslateResult tres;
+   static Bool vex_init_done = False;
+
+   if (!vex_init_done) {
+      LibVEX_Init ( &failure_exit, &log_bytes, 
+                    1,     /* debug_paranoia */ 
+                    0,     /* verbosity */
+                    False, /* valgrind support */
+                    50     /* max insns per bb */ );
+      vex_init_done = True;
+   }
+
+   /* profiling ... */
    VGP_PUSHCC(VgpTranslate);
-
-   beforeRA        = True;
-   beforeLiveness  = True;
-
-   for (i = 0; i < VG_MAX_JUMPS; i++)
-      jumps[i] = (UShort)-1;
 
    /* Look in the code redirect table to see if we should
       translate an alternative address for orig_addr. */
@@ -2501,86 +1498,46 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    }
 
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
+#if 0
 #  define DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(n)               \
       ( debugging_translation                                   \
         || (notrace_until_done                                  \
             && (VG_(clo_trace_codegen) & (1 << (n-1))) ))
+#else
+#  define DECIDE_IF_PRINTING_CODEGEN                            \
+      ( debugging_translation                                   \
+        || (notrace_until_done                                  \
+            && (VG_(clo_trace_codegen) > 0)))
+#endif
 
-   /* Disassemble this basic block into cb. */
-   VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(1);
-   VGP_PUSHCC(VgpToUCode);
-   orig_size = VG_(disBB) ( cb, orig_addr );
-   sanity_check_UCodeBlock ( cb );
-   // Only sanity-check calls now because tools might remove the
-   // CALLM_[ES] pairs.
-   sanity_check_UCodeBlockCalls ( cb );
-   VGP_POPCC(VgpToUCode);
+   /* Actually do the translation. */
+   tres = LibVEX_Translate ( 
+             InsnSetX86, InsnSetX86,
+             (Char*)orig_addr, (Addr64)orig_addr, &orig_size,
+             tmpbuf, N_TMPBUF, &tmpbuf_used,
+             NULL, NULL,
+             DECIDE_IF_PRINTING_CODEGEN ? 2 : 0
+          );
 
-   /* Try and improve the code a bit. */
-   if (VG_(clo_optimise)) {
-      VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(2);
-      VGP_PUSHCC(VgpImprove);
-      vg_improve ( cb );
-      VGP_POPCC(VgpImprove);
-   }
-
-   /* Skin's instrumentation (Nb: must set VG_(print_codegen) in case
-      SK_(instrument) looks at it. */
-   VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(3);
-   VGP_PUSHCC(VgpInstrument);
-   cb = SK_(instrument) ( cb, orig_addr );
-   if (VG_(print_codegen))
-      VG_(pp_UCodeBlock) ( cb, "Instrumented UCode:" );
-   sanity_check_UCodeBlock( cb );
-   VGP_POPCC(VgpInstrument);
-
-   /* Add %ESP-update hooks if the tool requires them */
-   /* Nb: We don't print out this phase, because it doesn't do much */
-   if (VG_(need_to_handle_esp_assignment)()) {
-      VGP_PUSHCC(VgpESPUpdate);
-      cb = vg_ESP_update_pass ( cb );
-      VGP_POPCC(VgpESPUpdate);
-   }
-
-   /* Allocate registers. */
-   VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(4);
-   VGP_PUSHCC(VgpRegAlloc);
-   cb = vg_do_register_allocation ( cb );
-   beforeRA = False;
-   VGP_POPCC(VgpRegAlloc);
-
-   /* Do post reg-alloc %e[acd]x liveness analysis (too boring to print
-    * anything;  results can be seen when emitting final code). */
-   VGP_PUSHCC(VgpLiveness);
-   vg_realreg_liveness_analysis ( cb );
-   beforeLiveness = False;
-   VGP_POPCC(VgpLiveness);
-
-   /* Emit final code */
-   VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(5);
-   VGP_PUSHCC(VgpFromUcode);
-   trans_addr = (Addr)VG_(emit_code)(cb, &trans_size, jumps );
-   VGP_POPCC(VgpFromUcode);
-   VG_(free_UCodeBlock)(cb);
+   vg_assert(tres == TransOK);
+   vg_assert(tmpbuf_used <= N_TMPBUF);
+   vg_assert(tmpbuf_used > 0);
 
 #undef DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE
 
    /* Copy data at trans_addr into the translation cache. */
    /* Since the .orig_size and .trans_size fields are UShort, be paranoid. */
-   vg_assert(orig_size  > 0 && orig_size  < 65536);
-   vg_assert(trans_size > 0 && trans_size < 65536);
+   vg_assert(orig_size > 0 && orig_size < 65536);
+   vg_assert(tmpbuf_used > 0 && tmpbuf_used < 65536);
 
    // If debugging, don't do anything with the translated block;  we
    // only did this for the debugging output produced along the way.
    if (!debugging_translation) {
       // Note that we use orig_addr0, not orig_addr, which might have been
       // changed by the redirection
-      VG_(add_to_trans_tab)( orig_addr0, orig_size, trans_addr, trans_size,
-                             jumps );
+      VG_(add_to_trans_tab)( orig_addr0, orig_size, 
+                             (Addr)(&tmpbuf[0]), tmpbuf_used );
    }
-
-   /* Free the intermediary -- was allocated by VG_(emit_code). */
-   VG_(arena_free)( VG_AR_JITTER, (void*)trans_addr );
 
    VGP_POPCC(VgpTranslate);
 

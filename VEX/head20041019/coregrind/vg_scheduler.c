@@ -153,7 +153,7 @@ ThreadId VG_(first_matching_thread_stack)
       VG_(baseBlock). */
    if (vg_tid_currently_in_baseBlock != VG_INVALID_THREADID) {
       tid = vg_tid_currently_in_baseBlock;
-      if ( p ( VG_(baseBlock)[VGOFF_STACK_PTR], 
+      if ( p ( BASEBLOCK_STACK_PTR, 
                VG_(threads)[tid].stack_highest_word, d ) )
          return tid;
       else

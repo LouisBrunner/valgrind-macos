@@ -44,10 +44,13 @@ void VG_(lit_to_reg)(UCodeBlock* cb, UInt lit, UInt t)
 
 UInt VG_(lit_to_newreg)(UCodeBlock* cb, UInt lit)
 {
+   VG_(skin_panic)("lit_to_newreg");
+#if 0
    UInt t = newTemp(cb);
    uInstr2 (cb, MOV, 4, Literal, 0, TempReg, t);
    uLiteral(cb, lit);
    return t;
+#endif
 }
 
 // f()

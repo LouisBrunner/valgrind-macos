@@ -34,18 +34,26 @@
 #include "core_arch_asm.h"    // arch-specific asm  stuff
 #include "tool_arch.h"        // arch-specific tool stuff
 
+#include "../../../pub/libvex_guest_x86.h"
+
+
 /* ---------------------------------------------------------------------
    Interesting registers
    ------------------------------------------------------------------ */
 
-// Accessors for the arch_thread_t
-#define ARCH_INSTR_PTR(regs)           ((regs).m_eip)
-#define ARCH_STACK_PTR(regs)           ((regs).m_esp)
-#define ARCH_FRAME_PTR(regs)           ((regs).m_ebp)
+/* Generate a pointer into baseBlock via which we can prod the
+   Vex guest state. */
+#define BASEBLOCK_VEX  \
+   ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))
 
-#define ARCH_CLREQ_ARGS(regs)          ((regs).m_eax)
-#define ARCH_PTHREQ_RET(regs)          ((regs).m_edx)
-#define ARCH_CLREQ_RET(regs)           ((regs).m_edx)
+// Accessors for the arch_thread_t
+#define ARCH_INSTR_PTR(regs)           ((regs).vex.guest_EIP)
+#define ARCH_STACK_PTR(regs)           ((regs).vex.guest_ESP)
+#define ARCH_FRAME_PTR(regs)           ((regs).vex.guest_EBP)
+
+#define ARCH_CLREQ_ARGS(regs)          ((regs).vex.guest_EAX)
+#define ARCH_PTHREQ_RET(regs)          ((regs).vex.guest_EDX)
+#define ARCH_CLREQ_RET(regs)           ((regs).vex.guest_EDX)
 
 // Accessors for the baseBlock
 #define R_STACK_PTR                    R_ESP
@@ -59,10 +67,10 @@
 #define STACK_FRAME_RET(ebp)           (((UInt*)ebp)[1])
 #define STACK_FRAME_NEXT(ebp)          (((UInt*)ebp)[0])
 
-// Offsets of interesting registers
-#define VGOFF_INSTR_PTR                VGOFF_(m_eip)
-#define VGOFF_STACK_PTR                VGOFF_(m_esp)
-#define VGOFF_FRAME_PTR                VGOFF_(m_ebp)
+// Baseblock access to interesting registers
+#define BASEBLOCK_INSTR_PTR            BASEBLOCK_VEX->guest_EIP
+#define BASEBLOCK_STACK_PTR            BASEBLOCK_VEX->guest_ESP
+#define BASEBLOCK_FRAME_PTR            BASEBLOCK_VEX->guest_EBP
 
 // Get stack pointer and frame pointer
 #define ARCH_GET_REAL_STACK_PTR(esp) do {   \
@@ -79,19 +87,7 @@
    -------------------------------------------------- */
 
 /* State of the simulated CPU. */
-extern Int VGOFF_(m_eax);
-extern Int VGOFF_(m_ecx);
-extern Int VGOFF_(m_edx);
-extern Int VGOFF_(m_ebx);
-extern Int VGOFF_(m_esp);
-extern Int VGOFF_(m_ebp);
-extern Int VGOFF_(m_esi);
-extern Int VGOFF_(m_edi);
-extern Int VGOFF_(m_eflags);
-extern Int VGOFF_(m_ssestate);
-extern Int VGOFF_(m_eip);
-
-extern Int VGOFF_(m_dflag);	/* D flag is handled specially */
+extern Int VGOFF_(m_vex);
 
 extern Int VGOFF_(m_cs);
 extern Int VGOFF_(m_ss);
@@ -141,48 +137,12 @@ extern Int VGOFF_(helper_undefined_instruction);
    Exports of vg_helpers.S
    ------------------------------------------------------------------ */
 
-/* Mul, div, etc, -- we don't codegen these directly. */
-extern void VG_(helper_idiv_64_32);
-extern void VG_(helper_div_64_32);
-extern void VG_(helper_idiv_32_16);
-extern void VG_(helper_div_32_16);
-extern void VG_(helper_idiv_16_8);
-extern void VG_(helper_div_16_8);
-
-extern void VG_(helper_imul_32_64);
-extern void VG_(helper_mul_32_64);
-extern void VG_(helper_imul_16_32);
-extern void VG_(helper_mul_16_32);
-extern void VG_(helper_imul_8_16);
-extern void VG_(helper_mul_8_16);
-
-extern void VG_(helper_CLD);
-extern void VG_(helper_STD);
-extern void VG_(helper_get_dirflag);
-
-extern void VG_(helper_CLC);
-extern void VG_(helper_STC);
-extern void VG_(helper_CMC);
-
-extern void VG_(helper_shldl);
-extern void VG_(helper_shldw);
-extern void VG_(helper_shrdl);
-extern void VG_(helper_shrdw);
-
 extern void VG_(helper_IN);
 extern void VG_(helper_OUT);
 
 extern void VG_(helper_RDTSC);
 extern void VG_(helper_CPUID);
 
-extern void VG_(helper_bsfw);
-extern void VG_(helper_bsfl);
-extern void VG_(helper_bsrw);
-extern void VG_(helper_bsrl);
-
-extern void VG_(helper_fstsw_AX);
-extern void VG_(helper_SAHF);
-extern void VG_(helper_LAHF);
 extern void VG_(helper_DAS);
 extern void VG_(helper_DAA);
 extern void VG_(helper_AAS);
@@ -240,9 +200,9 @@ typedef struct _LDT_ENTRY {
    any time we do fxsave :-(  7th word means word offset 6 or byte
    offset 24 from the start address of the save area.
  */
-#define VG_SIZE_OF_SSESTATE 512
+//#define VG_SIZE_OF_SSESTATE 512
 /* ... and in words ... */
-#define VG_SIZE_OF_SSESTATE_W ((VG_SIZE_OF_SSESTATE+3)/4)
+//#define VG_SIZE_OF_SSESTATE_W ((VG_SIZE_OF_SSESTATE+3)/4)
 
 
 // Architecture-specific part of a ThreadState
@@ -276,22 +236,7 @@ typedef struct {
    UInt m_fs;
    UInt m_gs;
 
-   UInt m_eax;
-   UInt m_ebx;
-   UInt m_ecx;
-   UInt m_edx;
-   UInt m_esi;
-   UInt m_edi;
-   UInt m_ebp;
-   UInt m_esp;
-   UInt m_eflags;
-   UInt m_eip;
-
-   /* The SSE/FPU state.  This array does not (necessarily) have the
-      required 16-byte alignment required to get stuff in/out by
-      fxsave/fxrestore.  So we have to do it "by hand".
-   */
-   UInt m_sse[VG_SIZE_OF_SSESTATE_W];
+   VexGuestX86State vex;
 
    UInt sh_eax;
    UInt sh_ebx;

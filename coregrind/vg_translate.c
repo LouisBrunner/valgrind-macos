@@ -2240,7 +2240,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
 #  undef VG_NOTHING
 
 }
-extern void fooble(int);
+
 /* Analysis records liveness of all general-use RealRegs in the UCode. */
 static void vg_realreg_liveness_analysis ( UCodeBlock* cb )
 {        
@@ -2298,7 +2298,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
    UChar*      final_code;
    UCodeBlock* cb;
    Bool        notrace_until_done;
-   UInt        notrace_until_limit = 18000;
+   UInt        notrace_until_limit = 23000;
 
    VGP_PUSHCC(VgpTranslate);
    debugging_translation

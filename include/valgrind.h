@@ -59,6 +59,8 @@
 #ifndef __VALGRIND_H
 #define __VALGRIND_H
 
+#include <stdarg.h>
+
 
 /* This file is for inclusion into client (your!) code.
 
@@ -162,6 +164,9 @@ typedef
           VG_USERREQ__MALLOCLIKE_BLOCK = 0x1301,
           VG_USERREQ__FREELIKE_BLOCK   = 0x1302,
 
+          /* Allow printfs to valgrind log. */
+          VG_USERREQ__PRINTF = 0x1401,
+          VG_USERREQ__PRINTF_BACKTRACE = 0x1402,
    } Vg_ClientRequest;
 
 
@@ -187,6 +192,40 @@ typedef
                             _qzz_addr, _qzz_len, 0, 0);            \
    }
 
+#ifndef NVALGRIND
+
+__attribute__((weak))
+int
+VALGRIND_PRINTF(char *format, ...)
+{
+   unsigned int _qzz_res;
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__PRINTF,
+                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+   va_end(vargs);
+   return _qzz_res;
+}
+
+__attribute__((weak))
+int
+VALGRIND_PRINTF_BACKTRACE(char *format, ...)
+{
+   unsigned int _qzz_res;
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__PRINTF_BACKTRACE,
+                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+   va_end(vargs);
+   return _qzz_res;
+}
+
+#else /* NVALGRIND */
+
+#define VALGRIND_PRINTF(...)
+#define VALGRIND_PRINTF_BACKTRACE(...)
+
+#endif /* NVALGRIND */
 
 /* These requests allow control to move from the simulated CPU to the
    real CPU, calling an arbitary function */

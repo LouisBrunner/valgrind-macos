@@ -17,12 +17,14 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
 	sigkill.stderr.exp sigkill.vgtest \
-	res_search.stderr.exp res_search.stdout.exp res_search.vgtest
+	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
+	vgprintf.stderr.exp vgprintf.stdout.exp vgprintf.vgtest
 
 check_PROGRAMS = \
 	erringfds sigkill res_search \
 	pth_atfork1 pth_cancel2 pth_cvsimple pth_empty \
-	pth_exit pth_mutexspeed pth_once
+	pth_exit pth_mutexspeed pth_once \
+	vgprintf
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -O0
 AM_CXXFLAGS = $(AM_CFLAGS)
@@ -30,6 +32,7 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 # C ones
 erringfds_SOURCES 	= erringfds.c
 sigkill_SOURCES 	= sigkill.c
+vgprintf_SOURCES 	= vgprintf.c
 
 # Pthread ones
 pth_atfork1_SOURCES	= pth_atfork1.c

@@ -54,6 +54,7 @@
  * visible to core but not visible to any skins should go in this
  * file, vg_include.h. */
 #include "vg_skin.h"
+#include "valgrind.h"
 
 /* Total number of spill slots available for allocation, if a TempReg
    doesn't make it into a RealReg.  Just bomb the entire system if
@@ -558,6 +559,10 @@ extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
 /* Log a pthread error from client-space.  Cosmetic. */
 #define VG_USERREQ__PTHREAD_ERROR           0x3102
+/* Internal equivalent of VALGRIND_PRINTF . */
+#define VG_USERREQ__INTERNAL_PRINTF         0x3103
+/* Internal equivalent of VALGRIND_PRINTF_BACKTRACE . */
+#define VG_USERREQ__INTERNAL_PRINTF_BACKTRACE 0x3104
 
 /* 
 In vg_constants.h:
@@ -568,6 +573,32 @@ In vg_constants.h:
 /* The scheduler does need to know the address of it so it can be
    called at program exit. */
 extern void VG_(__libc_freeres_wrapper)( void );
+
+__attribute__((weak))
+int
+VALGRIND_INTERNAL_PRINTF(char *format, ...)
+{
+   unsigned int _qzz_res = 0;
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF,
+                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+   va_end(vargs);
+   return _qzz_res;
+}
+
+__attribute__((weak))
+int
+VALGRIND_INTERNAL_PRINTF_BACKTRACE(char *format, ...)
+{
+   unsigned int _qzz_res = 0;
+   va_list vargs;
+   va_start(vargs, format);
+   VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__INTERNAL_PRINTF_BACKTRACE,
+                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+   va_end(vargs);
+   return _qzz_res;
+}
 
 
 /* ---------------------------------------------------------------------

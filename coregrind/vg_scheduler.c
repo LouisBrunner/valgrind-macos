@@ -3114,6 +3114,34 @@ void do_client_request ( ThreadId tid )
          handle_signal_return(tid);
 	 break;
  
+      case VG_USERREQ__PRINTF: {
+         int count = 
+            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (va_list)arg[2] );
+            SET_CLREQ_RETVAL( tid, count );
+         break; }
+
+      case VG_USERREQ__INTERNAL_PRINTF: {
+         int count = 
+            VG_(vmessage)( Vg_UserMsg, (char *)arg[1], (va_list)arg[2] );
+            SET_CLREQ_RETVAL( tid, count );
+         break; }
+
+      case VG_USERREQ__PRINTF_BACKTRACE: {
+         ExeContext *e = VG_(get_ExeContext)( tid );
+         int count =
+            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (va_list)arg[2] );
+            VG_(mini_stack_dump)(e->eips, VG_(clo_backtrace_size));
+            SET_CLREQ_RETVAL( tid, count );
+         break; }
+
+      case VG_USERREQ__INTERNAL_PRINTF_BACKTRACE: {
+         ExeContext *e = VG_(get_ExeContext)( tid );
+         int count =
+            VG_(vmessage)( Vg_UserMsg, (char *)arg[1], (va_list)arg[2] );
+            VG_(mini_stack_dump)(e->eips, VG_(clo_backtrace_size));
+            SET_CLREQ_RETVAL( tid, count );
+         break; }
+
       /* Requests from the client program */
 
       case VG_USERREQ__DISCARD_TRANSLATIONS:

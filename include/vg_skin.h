@@ -170,18 +170,20 @@ extern Char** VG_(client_envp);
 typedef
    enum { Vg_UserMsg,         /* '?' == '=' */
           Vg_DebugMsg,        /* '?' == '-' */
-          Vg_DebugExtraMsg    /* '?' == '+' */
+          Vg_DebugExtraMsg,   /* '?' == '+' */
+          Vg_ClientMsg,       /* '?' == '*' */
    }
    VgMsgKind;
 
 /* Functions for building a message from multiple parts. */
-extern void VG_(start_msg)  ( VgMsgKind kind );
-extern void VG_(add_to_msg) ( Char* format, ... );
+extern int VG_(start_msg)  ( VgMsgKind kind );
+extern int VG_(add_to_msg) ( Char* format, ... );
 /* Ends and prints the message.  Appends a newline. */
-extern void VG_(end_msg)    ( void );
+extern int VG_(end_msg)    ( void );
 
 /* Send a single-part message.  Appends a newline. */
-extern void VG_(message)    ( VgMsgKind kind, Char* format, ... );
+extern int VG_(message)    ( VgMsgKind kind, Char* format, ... );
+extern int VG_(vmessage)   ( VgMsgKind kind, Char* format, va_list vargs );
 
 
 /*====================================================================*/

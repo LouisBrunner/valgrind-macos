@@ -3,8 +3,8 @@
 # This filter should be applied to *every* stderr results.  It removes Valgrind
 # startup stuff and pid numbers.
 
-# Remove ==pid== and --pid-- and ++pid++ strings 
-sed "s/\(==\|--\|++\)[0-9]\{1,5\}\1 //"                                |
+# Remove ==pid== and --pid-- and ++pid++ and **pid** strings 
+sed "s/\(==\|--\|\+\+\|\*\*\)[0-9]\{1,5\}\1 //"                            |
 
 # Remove "<name>, a <description> for x86-linux." line and the following
 # copyright notice line.  Works for skin and core intro lines.

@@ -974,6 +974,15 @@ skin-specific documentation for explanations of the skin-specific macros).
      <b>Warning:</b> Only use these if you <i>really</i> know what you are
      doing.
 <p>
+<li><code>VALGRIND_PRINTF(format, ...)</code>: printf a message to the
+    log file when running under Valgrind.  Nothing is output if not
+    running under Valgrind.  Returns the number of characters output.
+<p>
+<li><code>VALGRIND_PRINTF_BACKTRACE(format, ...)</code>: printf a message
+    to the log file along with a stack backtrace when running under
+    Valgrind.  Nothing is output if not running under Valgrind.
+    Returns the number of characters output.
+<p>
 </ul>
 Note that <code>valgrind.h</code> is included by all the skin-specific header
 files (such as <code>memcheck.h</code>), so you don't need to include it in

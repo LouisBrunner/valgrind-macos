@@ -46,27 +46,38 @@ static void add_to_buf ( Char c )
 
 /* Publically visible from here onwards. */
 
-void
+int
 VG_(add_to_msg) ( Char *format, ... )
 {
+   int count;
    va_list vargs;
    va_start(vargs,format);
-   VG_(vprintf) ( add_to_buf, format, vargs );
+   count = VG_(vprintf) ( add_to_buf, format, vargs );
    va_end(vargs);
+   return count;
+}
+
+int VG_(vmessage) ( VgMsgKind kind, Char* format, va_list vargs )
+{
+   int count;
+   count = VG_(start_msg) ( kind );
+   count += VG_(vprintf) ( add_to_buf, format, vargs );
+   count += VG_(end_msg)();
+   return count;
 }
 
 /* Send a simple single-part message. */
-void VG_(message) ( VgMsgKind kind, Char* format, ... )
+int VG_(message) ( VgMsgKind kind, Char* format, ... )
 {
+   int count;
    va_list vargs;
    va_start(vargs,format);
-   VG_(start_msg) ( kind );
-   VG_(vprintf) ( add_to_buf, format, vargs );
+   count = VG_(vmessage) ( kind, format, vargs );
    va_end(vargs);
-   VG_(end_msg)();
+   return count;
 }
 
-void VG_(start_msg) ( VgMsgKind kind )
+int VG_(start_msg) ( VgMsgKind kind )
 {
    Char c;
    vg_n_mbuf = 0;
@@ -75,20 +86,24 @@ void VG_(start_msg) ( VgMsgKind kind )
       case Vg_UserMsg:       c = '='; break;
       case Vg_DebugMsg:      c = '-'; break;
       case Vg_DebugExtraMsg: c = '+'; break;
+      case Vg_ClientMsg:     c = '*'; break;
       default:               c = '?'; break;
    }
-   VG_(add_to_msg)( "%c%c%d%c%c ", 
-                    c,c, VG_(getpid)(), c,c );
+   return VG_(add_to_msg)( "%c%c%d%c%c ", 
+                           c,c, VG_(getpid)(), c,c );
 }
 
 
-void VG_(end_msg) ( void )
+int VG_(end_msg) ( void )
 {
+   int count = 0;
    if (VG_(clo_logfile_fd) >= 0) {
       add_to_buf('\n');
       VG_(send_bytes_to_logging_sink) ( 
          vg_mbuf, VG_(strlen)(vg_mbuf) );
+      count = 1;
    }
+   return count;
 }
 
 

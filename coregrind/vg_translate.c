@@ -277,7 +277,7 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout,
 
 /* Vex dumps the final code in here.  Then we can copy it off
    wherever we like. */
-#define N_TMPBUF 10000
+#define N_TMPBUF 20000
 static UChar tmpbuf[N_TMPBUF];
 
 /* Function pointers we must supply to LibVEX in order that it

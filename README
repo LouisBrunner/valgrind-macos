@@ -7,6 +7,9 @@ about how to debug KDE3 applications with Valgrind.
 If you are building a binary package of Valgrind for distribution,
 please read README_PACKAGERS.  It contains some important information.
 
+If you are developing Valgrind, please read README_DEVELOPERS.  It contains
+some useful information.
+
 For instructions on how to build/install, see the end of this file.
 
 Valgrind works best on systems with glibc-2.1.X or 2.2.X, and with gcc

@@ -3931,154 +3931,148 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
 }
 
 
-//-- /* Handle BT/BTS/BTR/BTC Gv, Ev.  Apparently b-size is not
-//--    required. */
-//-- 
-//-- typedef enum { BtOpNone, BtOpSet, BtOpReset, BtOpComp } BtOp;
-//-- 
-//-- static Char* nameBtOp ( BtOp op )
-//-- {
-//--    switch (op) {
-//--       case BtOpNone:  return "";
-//--       case BtOpSet:   return "s";
-//--       case BtOpReset: return "r";
-//--       case BtOpComp:  return "c";
-//--       default: VG_(core_panic)("nameBtOp");
-//--    }
-//-- }
-//-- 
-//-- 
-//-- static
-//-- Addr dis_bt_G_E ( UCodeBlock* cb, 
-//--                   UChar       sorb,
-//--                   Int sz, Addr eip, BtOp op )
-//-- {
-//--    UInt  pair;
-//--     Char dis_buf[50];
-//--    UChar modrm;
-//-- 
-//--    Int t_addr, t_bitno, t_mask, t_fetched, t_esp, temp, lit;
-//-- 
-//--    vg_assert(sz == 2 || sz == 4);
-//-- 
-//--    t_addr = t_bitno = t_mask 
-//--           = t_fetched = t_esp = temp = INVALID_TEMPREG;
-//-- 
-//--    t_fetched = newTemp(cb);
-//--    t_bitno   = newTemp(cb);
-//--    temp      = newTemp(cb);
-//--    lit       = newTemp(cb);
-//-- 
-//--    modrm = getUChar(eip);
-//-- 
-//--    uInstr2(cb, GET,  sz, ArchReg, gregOfRM(modrm), TempReg, t_bitno);
-//-- 
-//--    if (sz == 2) {
-//--       uInstr1(cb, WIDEN, 4, TempReg, t_bitno);
-//--       uWiden(cb, 2, False);
-//--    }
-//--    
-//--    if (epartIsReg(modrm)) {
-//--       eip++;
-//--       /* Get it onto the client's stack. */
-//--       t_esp = newTemp(cb);
-//--       t_addr = newTemp(cb);
-//--       uInstr2(cb, GET,   4, ArchReg,  R_ESP, TempReg, t_esp);
-//--       uInstr2(cb, SUB,   4, Literal,  0,     TempReg, t_esp);
-//--       uLiteral(cb, sz);
-//--       uInstr2(cb, PUT,   4, TempReg,  t_esp, ArchReg, R_ESP);
-//--       uInstr2(cb, GET,   sz, ArchReg, eregOfRM(modrm), TempReg, temp);
-//--       uInstr2(cb, STORE, sz, TempReg, temp, TempReg, t_esp);
-//--       /* Make t_addr point at it. */
-//--       uInstr2(cb, MOV,   4,  TempReg, t_esp, TempReg, t_addr);
-//--       /* Mask out upper bits of the shift amount, since we're doing a
-//--          reg. */
-//--       uInstr2(cb, MOV, 4, Literal, 0, TempReg, lit);
-//--       uLiteral(cb, sz == 4 ? 31 : 15);
-//--       uInstr2(cb, AND, 4, TempReg, lit, TempReg, t_bitno);
-//--    } else {
-//--       pair   = disAMode ( cb, sorb, eip, dis_buf );
-//--       t_addr = LOW24(pair);
-//--       eip   += HI8(pair);
-//--    }
-//--   
-//--    /* At this point: t_addr points to the address being operated on.  If
-//--       it was a reg, we will have pushed it onto the client's stack.
-//--       t_bitno is the bit number, suitable masked in the case of a reg.  */
-//--    
-//--    /* Now the main sequence. */
-//-- 
-//--    uInstr2(cb, MOV, 4, TempReg, t_bitno, TempReg, temp);
-//--    uInstr2(cb, SAR, 4, Literal, 0, TempReg, temp);
-//--    uLiteral(cb, 3);
-//--    uInstr2(cb, ADD, 4, TempReg, temp, TempReg, t_addr);
-//--    /* t_addr now holds effective address */
-//-- 
-//--    uInstr2(cb, MOV, 4, Literal, 0, TempReg, lit);
-//--    uLiteral(cb, 7);
-//--    uInstr2(cb, AND, 4, TempReg, lit, TempReg, t_bitno);
-//--    /* t_bitno contains offset of bit within byte */
-//-- 
-//--    if (op != BtOpNone) {
-//--       t_mask = newTemp(cb);
-//--       uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_mask);
-//--       uLiteral(cb, 1);
-//--       uInstr2(cb, SHL, 4, TempReg, t_bitno, TempReg, t_mask);
-//--    }
-//--    /* t_mask is now a suitable byte mask */
-//-- 
-//--    uInstr2(cb, LOAD, 1, TempReg, t_addr, TempReg, t_fetched);
-//--    if (op != BtOpNone) {
-//--       uInstr2(cb, MOV, 4, TempReg, t_fetched, TempReg, temp);
-//--       switch (op) {
-//--          case BtOpSet: 
-//--             uInstr2(cb, OR, 4, TempReg, t_mask, TempReg, temp); 
-//--             break;
-//--          case BtOpComp: 
-//--             uInstr2(cb, XOR, 4, TempReg, t_mask, TempReg, temp); 
-//--             break;
-//--          case BtOpReset: 
-//--             uInstr1(cb, NOT, 4, TempReg, t_mask);
-//--             uInstr2(cb, AND, 4, TempReg, t_mask, TempReg, temp); 
-//--             break;
-//--          default: 
-//--             VG_(core_panic)("dis_bt_G_E");
-//--       }
-//--       uInstr2(cb, STORE, 1, TempReg, temp, TempReg, t_addr);
-//--    }
-//-- 
-//--    /* Side effect done; now get selected bit into Carry flag */
-//-- 
-//--    uInstr2(cb, SHR, 4, TempReg, t_bitno, TempReg, t_fetched);
-//--    /* at bit 0 of fetched */
-//-- 
-//--    uInstr2(cb, MOV, 4, Literal, 0, TempReg, lit);
-//--    uLiteral(cb, 1);
-//--    uInstr2(cb, AND, 4, TempReg, lit, TempReg, t_fetched);
-//--    /* t_fetched is now 1 or 0 */
-//-- 
-//--    /* NEG is a handy way to convert zero/nonzero into the carry
-//--       flag. */
-//--    uInstr1(cb, NEG, 4, TempReg, t_fetched);
-//--    setFlagsFromUOpcode(cb, NEG);
-//--    /* t_fetched is now in carry flag */
-//-- 
-//--    /* Move reg operand from stack back to reg */
-//--    if (epartIsReg(modrm)) {
-//--       /* t_esp still points at it. */
-//--       uInstr2(cb, LOAD, sz, TempReg, t_esp, TempReg, temp);
-//--       uInstr2(cb, PUT,  sz, TempReg, temp, ArchReg, eregOfRM(modrm));
-//--       uInstr2(cb, ADD,  4,  Literal, 0, TempReg, t_esp);
-//--       uLiteral(cb, sz);
-//--       uInstr2(cb, PUT,  4,  TempReg, t_esp, ArchReg, R_ESP);
-//--    }
-//-- 
-//--    DIP("bt%s%c %s, %s\n",
-//--        nameBtOp(op), nameISize(sz), nameIReg(sz, gregOfRM(modrm)), 
-//--        ( epartIsReg(modrm) ? nameIReg(sz, eregOfRM(modrm)) : dis_buf ) );
-//--  
-//--    return eip;
-//-- }
+/* Handle BT/BTS/BTR/BTC Gv, Ev.  Apparently b-size is not
+   required. */
+
+typedef enum { BtOpNone, BtOpSet, BtOpReset, BtOpComp } BtOp;
+
+static Char* nameBtOp ( BtOp op )
+{
+   switch (op) {
+      case BtOpNone:  return "";
+      case BtOpSet:   return "s";
+      case BtOpReset: return "r";
+      case BtOpComp:  return "c";
+      default: vpanic("nameBtOp(x86)");
+   }
+}
+
+
+static
+UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
+{
+   Char   dis_buf[50];
+   UChar  modrm;
+   Int    len;
+   IRTemp t_fetched, t_bitno0, t_bitno1, t_bitno2, t_addr0, 
+          t_addr1, t_esp, t_mask;
+
+   vassert(sz == 2 || sz == 4);
+
+   t_fetched = t_bitno0 = t_bitno1 = t_bitno2 
+             = t_addr0 = t_addr1 = t_esp = t_mask = INVALID_IRTEMP;
+
+   t_fetched = newTemp(Ity_I8);
+   t_bitno0  = newTemp(Ity_I32);
+   t_bitno1  = newTemp(Ity_I32);
+   t_bitno2  = newTemp(Ity_I8);
+   t_addr1   = newTemp(Ity_I32);
+   modrm     = getIByte(delta);
+
+   assign( t_bitno0, widenUto32(getIReg(sz, gregOfRM(modrm))) );
+   
+   if (epartIsReg(modrm)) {
+      vassert(0); /* awaiting test case */
+      delta++;
+      /* Get it onto the client's stack. */
+      t_esp = newTemp(Ity_I32);
+      t_addr0 = newTemp(Ity_I32);
+
+      assign( t_esp, binop(Iop_Sub32, getIReg(4, R_ESP), mkU32(sz)) );
+      putIReg(4, R_ESP, mkexpr(t_esp));
+
+      storeLE( mkexpr(t_esp), getIReg(sz, eregOfRM(modrm)) );
+
+      /* Make t_addr0 point at it. */
+      assign( t_addr0, mkexpr(t_esp) );
+
+      /* Mask out upper bits of the shift amount, since we're doing a
+         reg. */
+      assign( t_bitno1, binop(Iop_And32, 
+                              mkexpr(t_bitno0), 
+                              mkU32(sz == 4 ? 31 : 15)) );
+
+   } else {
+      t_addr0 = disAMode ( &len, sorb, delta, dis_buf );
+      delta += len;
+      assign( t_bitno1, mkexpr(t_bitno0) );
+   }
+  
+   /* At this point: t_addr0 is the address being operated on.  If it
+      was a reg, we will have pushed it onto the client's stack.
+      t_bitno1 is the bit number, suitably masked in the case of a
+      reg.  */
+  
+   /* Now the main sequence. */
+   assign( t_addr1, 
+           binop(Iop_Add32, 
+                 mkexpr(t_addr0), 
+                 binop(Iop_Sar32, mkexpr(t_bitno1), mkU8(3))) );
+
+   /* t_addr1 now holds effective address */
+
+   assign( t_bitno2, 
+           unop(Iop_32to8, 
+                binop(Iop_And32, mkexpr(t_bitno1), mkU32(7))) );
+
+   /* t_bitno2 contains offset of bit within byte */
+
+   if (op != BtOpNone) {
+      t_mask = newTemp(Ity_I8);
+      assign( t_mask, binop(Iop_Shl8, mkU8(1), mkexpr(t_bitno2)) );
+   }
+   /* t_mask is now a suitable byte mask */
+
+   assign( t_fetched, loadLE(Ity_I8, mkexpr(t_addr1)) );
+
+   if (op != BtOpNone) {
+      switch (op) {
+         case BtOpSet: 
+            storeLE( mkexpr(t_addr1), 
+                     binop(Iop_Or8, mkexpr(t_fetched), 
+                                    mkexpr(t_mask)) );
+            break;
+         case BtOpComp: 
+            storeLE( mkexpr(t_addr1), 
+                     binop(Iop_Xor8, mkexpr(t_fetched), 
+                                     mkexpr(t_mask)) );
+            break;
+         case BtOpReset: 
+            storeLE( mkexpr(t_addr1), 
+                     binop(Iop_And8, mkexpr(t_fetched), 
+                                     unop(Iop_Not8, mkexpr(t_mask))) );
+            break;
+         default: 
+            vpanic("dis_bt_G_E(x86)");
+      }
+   }
+ 
+   /* Side effect done; now get selected bit into Carry flag */
+      /* Flags: C=selected bit, O,S,Z,A,P undefined, so are set to zero. */
+   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DST, mkU32(0) ));
+   stmt( IRStmt_Put( 
+            OFFB_CC_SRC,
+            binop(Iop_And32,
+                  binop(Iop_Shr32, 
+                        unop(Iop_8Uto32, mkexpr(t_fetched)),
+		        mkexpr(t_bitno2)),
+	          mkU32(1)))
+       );
+
+   /* Move reg operand from stack back to reg */
+   if (epartIsReg(modrm)) {
+      /* t_esp still points at it. */
+      putIReg(sz, eregOfRM(modrm), loadLE(sz, mkexpr(t_esp)) );
+      putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t_esp), mkU32(sz)) );
+   }
+
+   DIP("bt%s%c %s, %s\n",
+       nameBtOp(op), nameISize(sz), nameIReg(sz, gregOfRM(modrm)), 
+       ( epartIsReg(modrm) ? nameIReg(sz, eregOfRM(modrm)) : dis_buf ) );
+ 
+   return delta;
+}
 
 
 
@@ -6694,26 +6688,23 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       uInstr2(cb, PUT, 2, TempReg, t1, ArchReg, R_EAX);
 //--       DIP(opc == 0xD4 ? "aam\n" : "aad\n");
 //--       break;
-//-- 
-//--    /* ------------------------ CWD/CDQ -------------------- */
-//-- 
-//--    case 0x98: /* CBW */
-//--       t1 = newTemp(cb);
-//--       if (sz == 4) {
-//--          uInstr2(cb, GET,   2, ArchReg, R_EAX, TempReg, t1);
-//--          uInstr1(cb, WIDEN, 4, TempReg, t1); /* 4 == dst size */
-//--          uWiden(cb, 2, True);
-//--          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, R_EAX);
-//--          DIP("cwd\n");
-//--       } else {
+
+   /* ------------------------ CWD/CDQ -------------------- */
+
+   case 0x98: /* CBW */
+      if (sz == 4) {
+         putIReg(4, R_EAX, unop(Iop_16Sto32, getIReg(2, R_EAX)));
+         DIP("cwde\n");
+      } else {
+         vassert(0);
 //--          vg_assert(sz == 2);
 //--          uInstr2(cb, GET,   1, ArchReg, R_EAX, TempReg, t1);
 //--          uInstr1(cb, WIDEN, 2, TempReg, t1); /* 2 == dst size */
 //--          uWiden(cb, 1, True);
 //--          uInstr2(cb, PUT, 2, TempReg, t1, ArchReg, R_EAX);
 //--          DIP("cbw\n");
-//--       }
-//--       break;
+      }
+      break;
 
    case 0x99: /* CWD/CDQ */
       ty = szToITy(sz);
@@ -7065,9 +7056,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       delta = dis_op_imm_A( sz, Iop_Sub8, True, delta, "sub" );
       break;
 
-//--    case 0x34: /* XOR Ib, AL */
-//--       delta = dis_op_imm_A( 1, XOR, True, delta, "xor" );
-//--       break;
+   case 0x34: /* XOR Ib, AL */
+      delta = dis_op_imm_A( 1, Iop_Xor8, True, delta, "xor" );
+      break;
    case 0x35: /* XOR Iv, eAX */
       delta = dis_op_imm_A( sz, Iop_Xor8, True, delta, "xor" );
       break;
@@ -7086,8 +7077,8 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       delta = dis_op_imm_A( sz, Iop_And8, False, delta, "test" );
       break;
 
-//--    /* ------------------------ opl Ev, Gv ----------------- */
-//-- 
+   /* ------------------------ opl Ev, Gv ----------------- */
+ 
 //--    case 0x02: /* ADD Eb,Gb */
 //--       delta = dis_op2_E_G ( cb, sorb, False, ADD, True, 1, delta, "add" );
 //--       break;
@@ -7116,9 +7107,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       delta = dis_op2_E_G ( sorb, True, Iop_Sub8, True, sz, delta, "sbb" );
       break;
 
-//--    case 0x22: /* AND Eb,Gb */
-//--       delta = dis_op2_E_G ( sorb, False, AND, True, 1, delta, "and" );
-//--       break;
+   case 0x22: /* AND Eb,Gb */
+      delta = dis_op2_E_G ( sorb, False, Iop_And8, True, 1, delta, "and" );
+      break;
    case 0x23: /* AND Ev,Gv */
       delta = dis_op2_E_G ( sorb, False, Iop_And8, True, sz, delta, "and" );
       break;
@@ -7487,7 +7478,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //-- 
 //--    case 0xAA: /* STOS, no REP prefix */
 //--    case 0xAB:
-//--       dis_string_op( cb, dis_STOS, ( opc == 0xAA ? 1 : sz ), "stos", sorb );
+//--       dis_string_op( dis_STOS, ( opc == 0xAA ? 1 : sz ), "stos", sorb );
 //--       break;
 //--    
 //--    case 0xAC: /* LODS, no REP prefix */
@@ -7893,7 +7884,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       case 0xCC:
 //--       case 0xCD:
       case 0xCE:
-//--       case 0xCF: /* BSWAP %edi */
+      case 0xCF: /* BSWAP %edi */
          /* AFAICS from the Intel docs, this only exists at size 4. */
          vassert(sz == 4);
          t1 = newTemp(Ity_I32);
@@ -7922,17 +7913,17 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
          DIP("bswapl %s\n", nameIReg(4, opc-0xC8));
          break;
 
-//--       /* =-=-=-=-=-=-=-=-=- BT/BTS/BTR/BTC =-=-=-=-=-=-= */
-//-- 
-//--       case 0xA3: /* BT Gv,Ev */
-//--          eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpNone );
-//--          break;
+      /* =-=-=-=-=-=-=-=-=- BT/BTS/BTR/BTC =-=-=-=-=-=-= */
+
+      case 0xA3: /* BT Gv,Ev */
+         delta = dis_bt_G_E ( sorb, sz, delta, BtOpNone );
+         break;
 //--       case 0xB3: /* BTR Gv,Ev */
 //--          eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpReset );
 //--          break;
-//--       case 0xAB: /* BTS Gv,Ev */
-//--          eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpSet );
-//--          break;
+      case 0xAB: /* BTS Gv,Ev */
+         delta = dis_bt_G_E ( sorb, sz, delta, BtOpSet );
+         break;
 //--       case 0xBB: /* BTC Gv,Ev */
 //--          eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpComp );
 //--          break;

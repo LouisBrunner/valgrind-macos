@@ -2393,6 +2393,7 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
       VG_(message)(Vg_UserMsg, "Possible data race %s variable at %p %(y",
 		   err->string, err->addr, err->addr );
       pp_ExeContext();
+      pp_AddrInfo(err->addr, &extra->addrinfo);
 
       switch(extra->prevstate.state) {
       case Vge_Virgin:
@@ -2428,14 +2429,12 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
       if (*msg)
 	 VG_(message)(Vg_UserMsg, "  Previous state: %s", msg);
 
-      pp_AddrInfo(err->addr, &extra->addrinfo);
-
       if (clo_execontext == EC_Some && extra->lasttouched.eip != 0) {
 	 Char file[100];
 	 UInt line;
 	 Addr eip = extra->lasttouched.eip;
 	 
-	 VG_(message)(Vg_UserMsg, "  Word at %p last accessed", err->addr);
+	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state", err->addr);
 	 
 	 if (VG_(get_filename_linenum)(eip, file, sizeof(file), &line)) {
 	    VG_(message)(Vg_UserMsg, "   at %p: %y (%s:%u)",
@@ -2447,7 +2446,7 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 	    VG_(message)(Vg_UserMsg, "   at %p: %y", eip, eip);
 	 }
       } else if (clo_execontext == EC_All && extra->lasttouched.ec != NULL) {
-	 VG_(message)(Vg_UserMsg, "  Word at %p last accessed", err->addr);
+	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state", err->addr);
 	 VG_(pp_ExeContext)(extra->lasttouched.ec);
       }
 
@@ -2642,15 +2641,111 @@ void dump_around_a(Addr a)
    #define DEBUG_STATE(args...)
 #endif
 
+static void eraser_mem_read_word(Addr a, ThreadId tid, ThreadState *tst)
+{
+   shadow_word* sword;
+   shadow_word  prevstate;
+   ThreadLifeSeg *tls;
+   const LockSet *ls;
+   Bool statechange = False;
+
+   static const void *const states[4] = {
+      [Vge_Virgin]  &&st_virgin,
+      [Vge_Excl]    &&st_excl,
+      [Vge_Shar]    &&st_shar,
+      [Vge_SharMod] &&st_sharmod,
+   };
+
+   tls = thread_seg[tid];
+   sk_assert(tls != NULL && tls->tid == tid);
+
+   sword = get_sword_addr(a);
+   if (sword == SEC_MAP_ACCESS) {
+      VG_(printf)("read distinguished 2ndary map! 0x%x\n", a);
+      return;
+   }
+
+   prevstate = *sword;
+
+   goto *states[sword->state];
+
+   /* This looks like reading of unitialised memory, may be legit.  Eg. 
+    * calloc() zeroes its values, so untouched memory may actually be 
+    * initialised.   Leave that stuff to Valgrind.  */
+  st_virgin:
+   if (TID_INDICATING_NONVIRGIN == sword->other) {
+      DEBUG_STATE("Read  VIRGIN --> EXCL:   %8x, %u\n", a, tid);
+      if (DEBUG_VIRGIN_READS)
+	 dump_around_a(a);
+   } else {
+      DEBUG_STATE("Read  SPECIAL --> EXCL:  %8x, %u\n", a, tid);
+   }
+   statechange = True;
+   *sword = SW(Vge_Excl, packTLS(tls));       /* remember exclusive owner */
+   tls->refcount++;
+   goto done;
+
+  st_excl: {
+      ThreadLifeSeg *sw_tls = unpackTLS(sword->other);
+
+      if (tls == sw_tls) {
+	 DEBUG_STATE("Read  EXCL:              %8x, %u\n", a, tid);
+      } else if (unpackTLS(TLSP_INDICATING_ALL) == sw_tls) {
+	 DEBUG_STATE("Read  EXCL/ERR:          %8x, %u\n", a, tid);
+      } else if (tlsIsDisjoint(tls, sw_tls)) {
+	 DEBUG_STATE("Read  EXCL(%u) --> EXCL:  %8x, %u\n", sw_tls->tid, a, tid);
+	 statechange = True;
+	 sword->other = packTLS(tls);
+	 sw_tls->refcount--;
+	 tls->refcount++;
+      } else {
+	 DEBUG_STATE("Read  EXCL(%u) --> SHAR:  %8x, %u\n", sw_tls->tid, a, tid);
+	 sw_tls->refcount--;
+	 statechange = True;
+	 *sword = SW(Vge_Shar, packLockSet(thread_locks[tid]));
+	    
+	 if (DEBUG_MEM_LOCKSET_CHANGES)
+	    print_LockSet("excl read locks", unpackLockSet(sword->other));
+      }
+      goto done;
+   }
+
+  st_shar:
+   DEBUG_STATE("Read  SHAR:              %8x, %u\n", a, tid);
+   sword->other = packLockSet(intersect(unpackLockSet(sword->other), 
+					thread_locks[tid]));
+   statechange = sword->other != prevstate.other;
+   goto done;
+
+  st_sharmod:
+   DEBUG_STATE("Read  SHAR_MOD:          %8x, %u\n", a, tid);
+   ls = intersect(unpackLockSet(sword->other), 
+		  thread_locks[tid]);
+   sword->other = packLockSet(ls);
+
+   statechange = sword->other != prevstate.other;
+
+   if (isempty(ls)) {
+      record_eraser_error(tst, a, False /* !is_write */, prevstate);
+   }
+   goto done;
+
+  done:
+   if (clo_execontext != EC_None && statechange) {
+      EC_EIP eceip;
+
+      if (clo_execontext == EC_Some)
+	 eceip.eip = VG_(get_EIP)(tst);
+      else
+	 eceip.ec = VG_(get_ExeContext)(tst);
+      setExeContext(a, eceip);
+   }
+}
 
 static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
 {
    ThreadId tid;
-   ThreadLifeSeg *tls;
-   shadow_word* sword;
    Addr     end;
-   shadow_word  prevstate;
-   const LockSet *ls;
 
    end = ROUNDUP(a+size, 4);
    a = ROUNDDN(a, 4);
@@ -2660,102 +2755,109 @@ static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
    else
       tid = VG_(get_tid_from_ThreadState)(tst);
 
+
+   for ( ; a < end; a += 4)
+      eraser_mem_read_word(a, tid, tst);
+}
+
+static void eraser_mem_write_word(Addr a, ThreadId tid, ThreadState *tst)
+{
+   ThreadLifeSeg *tls;
+   shadow_word* sword;
+   shadow_word  prevstate;
+   Bool statechange = False;
+   static const void *const states[4] = {
+      [Vge_Virgin]  &&st_virgin,
+      [Vge_Excl]    &&st_excl,
+      [Vge_Shar]    &&st_shar,
+      [Vge_SharMod] &&st_sharmod,
+   };
+
    tls = thread_seg[tid];
    sk_assert(tls != NULL && tls->tid == tid);
 
-   for ( ; a < end; a += 4) {
-      static const void *const states[4] = {
-	 [Vge_Virgin]  &&st_virgin,
-	 [Vge_Excl]    &&st_excl,
-	 [Vge_Shar]    &&st_shar,
-	 [Vge_SharMod] &&st_sharmod,
-      };
+   sword = get_sword_addr(a);
+   if (sword == SEC_MAP_ACCESS) {
+      VG_(printf)("read distinguished 2ndary map! 0x%x\n", a);
+      return;
+   }
 
-      sword = get_sword_addr(a);
-      if (sword == SEC_MAP_ACCESS) {
-         VG_(printf)("read distinguished 2ndary map! 0x%x\n", a);
-         continue;
-      }
+   prevstate = *sword;
 
-      prevstate = *sword;
+   goto *states[sword->state];
 
-      goto *states[sword->state];
+  st_virgin:
+   if (TID_INDICATING_NONVIRGIN == sword->other)
+      DEBUG_STATE("Write VIRGIN --> EXCL:   %8x, %u\n", a, tid);
+   else
+      DEBUG_STATE("Write SPECIAL --> EXCL:  %8x, %u\n", a, tid);
+   statechange = True;
+   *sword = SW(Vge_Excl, packTLS(tls));/* remember exclusive owner */
+   tls->refcount++;
+   goto done;
 
-      /* This looks like reading of unitialised memory, may be legit.  Eg. 
-       * calloc() zeroes its values, so untouched memory may actually be 
-       * initialised.   Leave that stuff to Valgrind.  */
-     st_virgin:
-         if (TID_INDICATING_NONVIRGIN == sword->other) {
-            DEBUG_STATE("Read  VIRGIN --> EXCL:   %8x, %u\n", a, tid);
-	    if (DEBUG_VIRGIN_READS)
-	       dump_around_a(a);
-         } else {
-            DEBUG_STATE("Read  SPECIAL --> EXCL:  %8x, %u\n", a, tid);
-         }
-         *sword = SW(Vge_Excl, packTLS(tls));       /* remember exclusive owner */
+  st_excl: {
+      ThreadLifeSeg *sw_tls = unpackTLS(sword->other);
+
+      if (tls == sw_tls) {
+	 DEBUG_STATE("Write EXCL:              %8x, %u\n", a, tid);
+	 goto done;
+      } else if (unpackTLS(TLSP_INDICATING_ALL) == sw_tls) {
+	 DEBUG_STATE("Write EXCL/ERR:          %8x, %u\n", a, tid);
+	 goto done;
+      } else if (tlsIsDisjoint(tls, sw_tls)) {
+	 DEBUG_STATE("Write EXCL(%u) --> EXCL: %8x, %u\n", sw_tls->tid, a, tid);
+	 sword->other = packTLS(tls);
+	 sw_tls->refcount--;
 	 tls->refcount++;
 	 goto done;
-
-     st_excl: {
-	 ThreadLifeSeg *sw_tls = unpackTLS(sword->other);
-
-         if (tls == sw_tls) {
-            DEBUG_STATE("Read  EXCL:              %8x, %u\n", a, tid);
-         } else if (unpackTLS(TLSP_INDICATING_ALL) == sw_tls) {
-            DEBUG_STATE("Read  EXCL/ERR:          %8x, %u\n", a, tid);
-	 } else if (tlsIsDisjoint(tls, sw_tls)) {
-            DEBUG_STATE("Read  EXCL(%u) --> EXCL:  %8x, %u\n", sw_tls->tid, a, tid);
-	    sword->other = packTLS(tls);
-	    sw_tls->refcount--;
-	    tls->refcount++;
-	 } else {
-            DEBUG_STATE("Read  EXCL(%u) --> SHAR:  %8x, %u\n", sw_tls->tid, a, tid);
-	    sw_tls->refcount--;
-            *sword = SW(Vge_Shar, packLockSet(thread_locks[tid]));
-	    
-	    if (DEBUG_MEM_LOCKSET_CHANGES)
-	       print_LockSet("excl read locks", unpackLockSet(sword->other));
-         }
-         goto done;
+      } else {
+	 DEBUG_STATE("Write EXCL(%u) --> SHAR_MOD: %8x, %u\n", sw_tls->tid, a, tid);
+	 statechange = True;
+	 sw_tls->refcount--;
+	 *sword = SW(Vge_SharMod, packLockSet(thread_locks[tid]));
+	 if(DEBUG_MEM_LOCKSET_CHANGES)
+	    print_LockSet("excl write locks", unpackLockSet(sword->other));
+	 goto SHARED_MODIFIED;
       }
+   }
 
-     st_shar:
-         DEBUG_STATE("Read  SHAR:              %8x, %u\n", a, tid);
-         sword->other = packLockSet(intersect(unpackLockSet(sword->other), 
-					      thread_locks[tid]));
-         goto done;
+  st_shar:
+   DEBUG_STATE("Write SHAR --> SHAR_MOD: %8x, %u\n", a, tid);
+   sword->state = Vge_SharMod;
+   sword->other = packLockSet(intersect(unpackLockSet(sword->other),
+					thread_locks[tid]));
+   statechange = True;
+   goto SHARED_MODIFIED;
 
-     st_sharmod:
-         DEBUG_STATE("Read  SHAR_MOD:          %8x, %u\n", a, tid);
-	 ls = intersect(unpackLockSet(sword->other), 
-			thread_locks[tid]);
-         sword->other = packLockSet(ls);
+  st_sharmod:
+   DEBUG_STATE("Write SHAR_MOD:          %8x, %u\n", a, tid);
+   sword->other = packLockSet(intersect(unpackLockSet(sword->other), 
+					thread_locks[tid]));
+   statechange = sword->other != prevstate.other;
 
-         if (isempty(ls)) {
-            record_eraser_error(tst, a, False /* !is_write */, prevstate);
-         }
-         goto done;
+  SHARED_MODIFIED:
+   if (isempty(unpackLockSet(sword->other))) {
+      record_eraser_error(tst, a, True /* is_write */, prevstate);
+   }
+   goto done;
 
-     done:
-      if (clo_execontext != EC_None) {
-	 EC_EIP eceip;
+  done:
+   if (clo_execontext != EC_None && statechange) {
+      EC_EIP eceip;
 
-	 if (clo_execontext == EC_Some)
-	    eceip.eip = VG_(get_EIP)(tst);
-	 else
-	    eceip.ec = VG_(get_ExeContext)(tst);
-	 setExeContext(a, eceip);
-      }
+      if (clo_execontext == EC_Some)
+	 eceip.eip = VG_(get_EIP)(tst);
+      else
+	 eceip.ec = VG_(get_ExeContext)(tst);
+      setExeContext(a, eceip);
    }
 }
 
 static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
 {
    ThreadId tid;
-   ThreadLifeSeg *tls;
-   shadow_word* sword;
    Addr     end;
-   shadow_word  prevstate;
 
    end = ROUNDUP(a+size, 4);
    a = ROUNDDN(a, 4);
@@ -2765,89 +2867,8 @@ static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
    else
       tid = VG_(get_tid_from_ThreadState)(tst);
    
-   tls = thread_seg[tid];
-   sk_assert(tls != NULL && tls->tid == tid);
-
-   for ( ; a < end; a += 4) {
-      static const void *const states[4] = {
-	 [Vge_Virgin]  &&st_virgin,
-	 [Vge_Excl]    &&st_excl,
-	 [Vge_Shar]    &&st_shar,
-	 [Vge_SharMod] &&st_sharmod,
-      };
-
-      sword = get_sword_addr(a);
-      if (sword == SEC_MAP_ACCESS) {
-         VG_(printf)("read distinguished 2ndary map! 0x%x\n", a);
-         continue;
-      }
-
-      prevstate = *sword;
-
-      goto *states[sword->state];
-
-     st_virgin:
-         if (TID_INDICATING_NONVIRGIN == sword->other)
-            DEBUG_STATE("Write VIRGIN --> EXCL:   %8x, %u\n", a, tid);
-         else
-            DEBUG_STATE("Write SPECIAL --> EXCL:  %8x, %u\n", a, tid);
-         *sword = SW(Vge_Excl, packTLS(tls));/* remember exclusive owner */
-	 tls->refcount++;
-         goto done;
-
-     st_excl: {
-	 ThreadLifeSeg *sw_tls = unpackTLS(sword->other);
-
-         if (tls == sw_tls) {
-            DEBUG_STATE("Write EXCL:              %8x, %u\n", a, tid);
-            goto done;
-         } else if (unpackTLS(TLSP_INDICATING_ALL) == sw_tls) {
-            DEBUG_STATE("Write EXCL/ERR:          %8x, %u\n", a, tid);
-	    goto done;
-	 } else if (tlsIsDisjoint(tls, sw_tls)) {
-            DEBUG_STATE("Write EXCL(%u) --> EXCL: %8x, %u\n", sw_tls->tid, a, tid);
-	    sword->other = packTLS(tls);
-	    sw_tls->refcount--;
-	    tls->refcount++;
-	    goto done;
-         } else {
-            DEBUG_STATE("Write EXCL(%u) --> SHAR_MOD: %8x, %u\n", sw_tls->tid, a, tid);
-	    sw_tls->refcount--;
-            *sword = SW(Vge_SharMod, packLockSet(thread_locks[tid]));
-	    if(DEBUG_MEM_LOCKSET_CHANGES)
-	       print_LockSet("excl write locks", unpackLockSet(sword->other));
-            goto SHARED_MODIFIED;
-         }
-      }
-
-     st_shar:
-         DEBUG_STATE("Write SHAR --> SHAR_MOD: %8x, %u\n", a, tid);
-         sword->state = Vge_SharMod;
-         sword->other = packLockSet(intersect(unpackLockSet(sword->other),
-					      thread_locks[tid]));
-         goto SHARED_MODIFIED;
-
-     st_sharmod:
-         DEBUG_STATE("Write SHAR_MOD:          %8x, %u\n", a, tid);
-         sword->other = packLockSet(intersect(unpackLockSet(sword->other), 
-					      thread_locks[tid]));
-     SHARED_MODIFIED:
-	 if (isempty(unpackLockSet(sword->other))) {
-            record_eraser_error(tst, a, True /* is_write */, prevstate);
-         }
-         goto done;
-
-     done:
-      if (clo_execontext != EC_None) {
-	 EC_EIP eceip;
-
-	 if (clo_execontext == EC_Some)
-	    eceip.eip = VG_(get_EIP)(tst);
-	 else
-	    eceip.ec = VG_(get_ExeContext)(tst);
-	 setExeContext(a, eceip);
-      }
-   }
+   for ( ; a < end; a += 4)
+      eraser_mem_write_word(a, tid, tst);
 }
 
 #undef DEBUG_STATE

@@ -95,8 +95,7 @@ Char *VG_(addStr) ( SegInfo* si, Char* str, Int len )
       for (i = NN-1; i >= 0; i--) {
          if (EMPTY != prevN[i] 
              && NULL != si->strchunks
-             && 0 == VG_(strncmp)(str, prevN[i], len) &&
-	     prevN[i+len] == '\0') {
+	     && 0 == VG_(memcmp)(str, prevN[i], len+1)) {
             return prevN[i];
          }
       }

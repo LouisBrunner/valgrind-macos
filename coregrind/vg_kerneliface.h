@@ -111,13 +111,11 @@ typedef
 #define VKI_SA_RESTORER     0x04000000
 #endif
 
-#define VKI_SIGABRT          6
 #define VKI_SIGSEGV         11
 #define VKI_SIGBUS           7
 #define VKI_SIGILL           4
 #define VKI_SIGFPE           8
 #define VKI_SIGKILL          9
-#define VKI_SIGABRT          6
 #define VKI_SIGSTOP         19
 #define VKI_SIGTERM         15
 

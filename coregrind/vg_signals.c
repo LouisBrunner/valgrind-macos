@@ -393,19 +393,6 @@ static void VG_(oursignalhandler) ( Int sigNo )
    vg_assert((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&dummy_local));
    vg_assert((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[10000])));
 
-   if (sigNo == VKI_SIGABRT && VG_(sighandler)[sigNo] == NULL) {
-      /* We get here if SIGABRT is delivered and the client hasn't
-         asked to catch it.  The aim is to exit in a controlled
-         manner. */
-      if (VG_(clo_trace_signals)) {
-         VG_(add_to_msg)("catching SIGABRT");
-         VG_(end_msg)();
-      }
-      VG_(ksignal)(VKI_SIGABRT, VKI_SIG_DFL);
-      VG_(longjmpd_on_signal) = VKI_SIGABRT;
-      __builtin_longjmp(VG_(scheduler_jmpbuf),1);
-   }
-
    VG_(block_all_host_signals)( &saved_procmask );
 
    if (VG_(sighandler)[sigNo] == NULL) {
@@ -555,8 +542,6 @@ void VG_(sigstartup_actions) ( void )
       }
    }
 
-   VG_(ksignal)(VKI_SIGABRT, &VG_(oursignalhandler));
-
    /* Finally, restore the blocking mask. */
    VG_(restore_host_signals)( &saved_procmask );
 }
@@ -634,7 +619,7 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    if ( (param1 == VKI_SIGKILL || param1 == VKI_SIGSTOP)
        && new_action
        && new_action->ksa_handler != VKI_SIG_DFL)
-      goto bad_sigkill;
+      goto bad_sigkill_or_sigstop;
 
    our_old_handler = VG_(sighandler)[param1];
    /* VG_(printf)("old handler = 0x%x\n", our_old_handler); */
@@ -673,7 +658,7 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
          vg_assert(our_old_handler == NULL);
       } else {
          /* There's a handler. */
-         if (param1 != VKI_SIGKILL && param1 != VKI_SIGABRT) {
+         if (param1 != VKI_SIGKILL && param1 != VKI_SIGSTOP) {
             vg_assert(old_action->ksa_handler == &VG_(oursignalhandler));
 	    vg_assert((old_action->ksa_flags & VKI_SA_ONSTACK) != 0);
          }
@@ -689,8 +674,6 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
             old_action->ksa_flags &= ~VKI_SA_RESTART;
       }
    }
-
-   VG_(ksignal)(VKI_SIGABRT, &VG_(oursignalhandler));
    goto good;
 
   good:
@@ -704,10 +687,11 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    VG_(baseBlock)[VGOFF_(m_eax)] = (UInt)(-VKI_EINVAL);
    return;
 
-  bad_sigkill:
+  bad_sigkill_or_sigstop:
    VG_(message)(Vg_UserMsg,
-                "Warning: attempt to set SIGKILL handler in __NR_sigaction.", 
-                param1);
+      "Warning: attempt to set %s handler in __NR_sigaction.", 
+      param1 == VKI_SIGKILL ? "SIGKILL" : "SIGSTOP" );
+
    VG_(baseBlock)[VGOFF_(m_eax)] = (UInt)(-VKI_EINVAL);
    return;
 }

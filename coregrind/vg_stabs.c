@@ -402,12 +402,33 @@ static UInt atou(Char **pp, Int base)
    return ret;
 }
 
-/* Skip to end of name (':'); "::" in the name indicate nesting, and
-   are included within the name */
-static Char *nested_name(Char *p) {
-   while(*p && (p[0] != ':' || p[1] == ':')) {
-      if (*p == ':')
-	 p++;
+/* Skip a ':'-delimited name which may have ::, 'char' or other things in
+   <> brackets */
+static Char *templ_name(Char *p)
+{
+   Int brac = 0;
+
+   for(;;) {
+      if (*p == '<')
+	 brac++;
+      if (*p == '>')
+	 brac--;
+      /* skip quoted character (note, it could be anything, even a
+	 literal \0)
+
+	 XXX This is a complete botch; we can't do anything sane here,
+	 like support \-quoting, because gcc doesn't seem to generate
+	 it, and even if it did, we wouldn't know what "'\'" means -
+	 the begining of '\'' or a char in itself ('\\')?
+       */
+      if (brac && p[0] == '\'' && p[2] == '\'')
+	 p += 3;
+      if (*p == ':') {
+	 if (brac && p[1] == ':')
+	    p++;
+	 else
+	    break;
+      }
       p++;
    }
 
@@ -668,24 +689,10 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 
    case 'x': {			/* reference to undefined type */
       /* 'x' ('s' | 'u' | 'e') NAME ':' */
-      Int brac = 0;		/* < > brackets in type */
       Char kind = *p++;		/* get kind */
       Char *name = p;
 
-      /* name is delimited by : except for :: within <> */
-      for(;;) {
-	 if (*p == '<')
-	    brac++;
-	 if (*p == '>')
-	    brac--;
-	 if (*p == ':') {
-	    if (brac && p[1] == ':')
-	       p += 1;
-	    else
-	       break;
-	 }
-	 p++;
-      }
+      p = templ_name(name);
       EXPECT(':', "struct/union/enum ref");
 
       name = VG_(addStr)(si, name, p-1-name);
@@ -784,25 +791,8 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 	 Char *name;
 	 UInt off, sz;
 	 SymType *fieldty;
-	 Int templ=0;
 
-	 /* Skip past field name, which ends with ':' or '::' - but
-	    '::' can appear within a template-mangled name, so keep
-	    track of '<' and '>'. */
-	 end = p;
-	 while(*end) {
-	     Char ch = *end++;
-
-	     if (ch == '<')
-		 templ++;
-	     else if (ch == '>')
-		 templ--;
-	     else if (templ == 0 && ch == ':') {
-		 end--;
-		 break;
-	     }
-	 }
-	 /* XXX check for *end != ':' */
+	 end = templ_name(p);
 
 	 if (end[1] == ':') {
 	    /* c++ method names end in :: */
@@ -980,7 +970,7 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
       VG_(printf)("initSym(si=%p, tab=%p, sym=%p, kind=%d, name=%p \"%s\", val=%d)\n",
 		  si, si->stab_typetab, sym, kind, name, name, val);
 
-   ty = nested_name(name);
+   ty = templ_name(name);
 
    len = ty - name;
 

@@ -6148,8 +6148,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	 VG_(sys_issue)(tid);
       } else {
 	 /* run the syscall directly */
-	 tst->m_eax = VG_(do_syscall)(syscallno, 
-				      arg1, arg2, arg3, arg4, arg5, arg6);
+	 res = VG_(do_syscall)(syscallno, arg1, arg2, arg3, arg4, arg5, arg6);
 	 syscall_done = True;
       }
    }
@@ -6238,7 +6237,7 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
 	 restarted = True;
 	 restart_syscall(tid);
       } else
-	 tst->m_eax = -VKI_EINTR;
+	 res = -VKI_EINTR;
    } 
 
    if (!restarted) {

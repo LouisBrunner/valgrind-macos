@@ -1,9 +1,9 @@
 
 
 <a name="core"></a>
-<h2>2&nbsp; Using and understanding the Valgrind core services</h2>
+<h2>2&nbsp; Using and understanding the Valgrind core</h2>
 
-This section describes the core services, flags and behaviours.  That
+This section describes the Valgrind core services, flags and behaviours.  That
 means it is relevant regardless of what particular tool you are using.
 A point of terminology: most references to "valgrind" in the rest of
 this section (Section 2) refer to the valgrind core services.
@@ -14,30 +14,26 @@ this section (Section 2) refer to the valgrind core services.
 
 Valgrind is designed to be as non-intrusive as possible. It works
 directly with existing executables. You don't need to recompile,
-relink, or otherwise modify, the program to be checked. Simply place
-the word <code>valgrind</code> at the start of the command line
-normally used to run the program, and tell it what tool you want to
-use.
+relink, or otherwise modify, the program to be checked.
 
-<p>
-So, for example, if you want to run the command <code>ls -l</code>
-using the heavyweight memory-checking tool, issue the command:
-<code>valgrind --tool=memcheck ls -l</code>.  The <code>--tool=</code>
-parameter tells the core which tool is to be used.
+Simply put <code>valgrind --tool=<i>tool_name</i></code> at the start of
+the command line normally used to run the program.  For example,
+if want to run the command <code>ls -l</code>
+using the heavyweight memory-checking tool Memcheck, issue the command:
 
-<p>
-To preserve compatibility with the 1.0.X series, if you do not specify
-a tool, the default is to use Memcheck.  That means the above
-example simplifies to: <code>valgrind ls -l</code>.
+  <blockquote>
+  <code>valgrind --tool=memcheck ls -l</code>.  
+  </blockquote>
 
 <p>Regardless of which tool is in use, Valgrind takes control of your
 program before it starts.  Debugging information is read from the
-executable and associated libraries, so that error messages can be
-phrased in terms of source code locations (if that is appropriate).
+executable and associated libraries, so that error messages and other
+outputs can be phrased in terms of source code locations (if that is
+appropriate)
 
 <p>
 Your program is then run on a synthetic x86 CPU provided by the
-valgrind core.  As new code is executed for the first time, the core
+Valgrind core.  As new code is executed for the first time, the core
 hands the code to the selected tool.  The tool adds its own
 instrumentation code to this and hands the result back to the core,
 which coordinates the continued execution of this instrumented code.
@@ -48,8 +44,8 @@ At one end of the scale, Memcheck adds code to check every
 memory access and every value computed, increasing the size of the
 code at least 12 times, and making it run 25-50 times slower than
 natively.  At the other end of the spectrum, the ultra-trivial "none"
-tool adds no instrumentation at all and causes in total "only" about a
-4 times slowdown.  
+tool (a.k.a. Nulgrind) adds no instrumentation at all and causes in total
+"only" about a 4 times slowdown.  
 
 <p>
 Valgrind simulates every single instruction your program executes.
@@ -59,29 +55,23 @@ code in your application but also in all supporting dynamically-linked
 X client libraries, Qt, if you work with KDE, and so on.  
 
 <p>
-If -- as is usually the case -- you're using one of the
-error-detection tools, valgrind will often detect errors in
-libraries, for example the GNU C or X11 libraries, which you have to
-use.  Since you're probably using valgrind to debug your own
-application, and not those libraries, you don't want to see those
-errors and probably can't fix them anyway.
+If you're using one of the error-detection tools, Valgrind will often
+detect errors in libraries, for example the GNU C or X11 libraries,
+which you have to use.  You might not be interested in these errors,
+since you probably have noo control over that code.  Therefore, Valgrind
+allows you to selectively suppress errors, by recording them in a
+suppressions file which is read when Valgrind starts up.  The build
+mechanism attempts to select suppressions which give reasonable
+behaviour for the libc and XFree86 versions detected on your machine.
+To make it easier to write suppressions, you can use the
+<code>--gen-suppressions=yes</code> option which tells Valgrind to print
+out a suppression for each error that appears, which you can then copy
+into a suppressions file.
 
 <p>
-So, rather than swamping you with errors in which you are not
-interested, Valgrind allows you to selectively suppress errors, by
-recording them in a suppressions file which is read when Valgrind
-starts up.  The build mechanism attempts to select suppressions which
-give reasonable behaviour for the libc and XFree86 versions detected
-on your machine.  To make it easier to write suppressions, you can use
-the <code>--gen-suppressions=yes</code> option which tells Valgrind to
-print out a suppression for each error that appears, which you can
-then copy into a suppressions file.
-
-<p>
-Different tools report different kinds of errors.  The suppression
-mechanism therefore allows you to say which tool or tool(s) each
-suppression applies to.
-
+Different error-checking tools report different kinds of errors.  The
+suppression mechanism therefore allows you to say which tool or tool(s)
+each suppression applies to.
 
 
 <a name="started"></a>
@@ -89,7 +79,7 @@ suppression applies to.
 
 First off, consider whether it might be beneficial to recompile your
 application and supporting libraries with debugging info enabled (the
-<code>-g</code> flag).  Without debugging info, the best valgrind
+<code>-g</code> flag).  Without debugging info, the best Valgrind tools
 will be able to do is guess which function a particular piece of code
 belongs to, which makes both error messages and profiling output
 nearly useless.  With <code>-g</code>, you'll hopefully get messages
@@ -100,7 +90,7 @@ Another flag you might like to consider, if you are working with
 C++, is <code>-fno-inline</code>.  That makes it easier to see the
 function-call chain, which can help reduce confusion when navigating
 around large C++ apps.  For whatever it's worth, debugging
-OpenOffice.org with Valgrind is a bit easier when using this flag.
+OpenOffice.org with Memcheck is a bit easier when using this flag.
 
 <p>
 You don't have to do this, but doing so helps Valgrind produce more
@@ -109,8 +99,8 @@ like this already, if you intended to debug your program with GNU gdb,
 or some other debugger.
 
 <p>
-This paragraph applies only if you plan to use Memcheck
-(which is the default): On rare occasions, optimisation levels
+This paragraph applies only if you plan to use Memcheck:
+On rare occasions, optimisation levels
 at <code>-O2</code> and above have been observed to generate code which
 fools Memcheck into wrongly reporting uninitialised value
 errors.  We have looked in detail into fixing this, and unfortunately 
@@ -132,7 +122,7 @@ newer DWARF2 reader.
 
 <p>
 When you're ready to roll, just run your application as you would
-normally, but place <code>valgrind --tool=the-selected-tool</code> in
+normally, but place <code>valgrind --tool=<i>tool_name</i></code> in
 front of your usual command-line invocation.  Note that you should run
 the real (machine-code) executable here.  If your application is
 started by, for example, a shell or perl script, you'll need to modify
@@ -147,7 +137,7 @@ can be confusing.  You can force the issue by giving the flag
 <a name="comment"></a>
 <h3>2.3&nbsp; The commentary</h3>
 
-Valgrind writes a commentary, a stream of text, detailing error
+Valgrind tools write a commentary, a stream of text, detailing error
 reports and other significant events.  All lines in the commentary
 have following form:<br>
 <pre>
@@ -159,14 +149,13 @@ to distinguish program output from Valgrind commentary, and also easy
 to differentiate commentaries from different processes which have
 become merged together, for whatever reason.
 
-<p>By default, Valgrind writes only essential messages to the commentary,
+<p>By default, Valgrind tools write only essential messages to the commentary,
 so as to avoid flooding you with information of secondary importance.
 If you want more information about what is happening, re-run, passing
 the <code>-v</code> flag to Valgrind.
 
 <p>
-Version 2 of valgrind gives significantly more flexibility than 1.0.X
-does about where that stream is sent to.  You have three options:
+You can direct the commentary to three different places:
 
 <ul>
 <li>The default: send it to a file descriptor, which is by default 2
@@ -195,9 +184,8 @@ does about where that stream is sent to.  You have three options:
     defined by the constant <code>VG_CLO_DEFAULT_LOGPORT</code>
     in the sources.
     <p>
-    Note, unfortunately, that you have to use an IP address here --
-    for technical reasons, valgrind's core itself can't use the GNU C
-    library, and this makes it difficult to do hostname-to-IP lookups.
+    Note, unfortunately, that you have to use an IP address here, rather
+    than a hostname.
     <p>
     Writing to a network socket is pretty useless if you don't have
     something listening at the other end.  We provide a simple
@@ -221,12 +209,12 @@ does about where that stream is sent to.  You have three options:
     <li><code>portnumber</code>: changes the port it listens on from
         the default (1500).  The specified port must be in the range
         1024 to 65535.  The same restriction applies to port numbers
-        specified by a <code>--logsocket=</code> to valgrind itself.
+        specified by a <code>--logsocket=</code> to Valgrind itself.
     </ul>
     <p>
     If a valgrinded process fails to connect to a listener, for
     whatever reason (the listener isn't running, invalid or
-    unreachable host or port, etc), valgrind switches back to writing
+    unreachable host or port, etc), Valgrind switches back to writing
     the commentary to stderr.  The same goes for any process which
     loses an established connection to a listener.  In other words,
     killing the listener doesn't kill the processes sending data to
@@ -235,7 +223,7 @@ does about where that stream is sent to.  You have three options:
 <p>
 Here is an important point about the relationship between the
 commentary and profiling output from tools.  The commentary contains a
-mix of messages from the valgrind core and the selected tool.  If the
+mix of messages from the Valgrind core and the selected tool.  If the
 tool reports errors, it will report them to the commentary.  However,
 if the tool does profiling, the profile data will be written to a file
 of some kind, depending on the tool, and independent of what
@@ -311,7 +299,7 @@ if necessary.
 
 <p>
 To avoid this cutoff you can use the <code>--error-limit=no</code>
-flag.  Then valgrind will always show errors, regardless of how many
+flag.  Then Valgrind will always show errors, regardless of how many
 there are.  Use this flag carefully, since it may have a dire effect
 on performance.
 
@@ -386,7 +374,7 @@ examples.
       </pre>
       (Nb: no spaces are allowed).
       <p>      
-      Recall that valgrind-2.0.X is a modular system, in which
+      Recall that Valgrind-2.0.X is a modular system, in which
       different instrumentation tools can observe your program whilst
       it is running.  Since different tools detect different kinds of
       errors, it is necessary to say which tool(s) the suppression is
@@ -478,18 +466,18 @@ styles of description within a single suppression record.
 <h3>2.6&nbsp; Command-line flags for the Valgrind core</h3>
 
 
-As mentioned above, valgrind's core accepts a common set of flags.
+As mentioned above, Valgrind's core accepts a common set of flags.
 The tools also accept tool-specific flags, which are documented
 seperately for each tool.  
 
 You invoke Valgrind like this:
 <pre>
-  valgrind [options-for-Valgrind] your-prog [options for your-prog]
+  valgrind --tool=<i>tool_name</i> [options-for-Valgrind] your-prog [options for your-prog]
 </pre>
 
 <p>Note that Valgrind also reads options from the environment variable
 <code>$VALGRIND_OPTS</code>, and processes them before the command-line
-options.  Options for the valgrind core may be freely mixed with those
+options.  Options for the Valgrind core may be freely mixed with those
 for the selected tool.
 
 <p>Valgrind's default settings succeed in giving reasonable behaviour
@@ -513,7 +501,7 @@ These options work with all tools.
       selected tool. </li><br><p>
 
   <li><code>--version</code><br> <p>Show the version number of the
-      valgrind core.  Tools can have their own version numbers.  There
+      Valgrind core.  Tools can have their own version numbers.  There
       is a scheme in place to ensure that tools only execute when the
       core version is one they are known to work with.  This was done
       to minimise the chances of strange problems arising from
@@ -558,7 +546,7 @@ These options work with all tools.
       <p>Specifies that Valgrind should send all of its messages to
       the specified port at the specified IP address.  The port may be
       omitted, in which case port 1500 is used.  If a connection
-      cannot be made to the specified socket, valgrind falls back to
+      cannot be made to the specified socket, Valgrind falls back to
       writing output to the standard error (stderr).  This option is
       intended to be used in conjunction with the
       <code>valgrind-listener</code> program.  For further details,
@@ -603,7 +591,7 @@ not Cachegrind.
       </li><br><p>
 
   <li><code>--error-limit=yes</code> [default]<br>
-      <code>--error-limit=no</code> <p>When enabled, valgrind stops
+      <code>--error-limit=no</code> <p>When enabled, Valgrind stops
       reporting errors after 30000 in total, or 300 different ones,
       have been seen.  This is to stop the error tracking machinery
       from becoming a huge performance overhead in programs with many
@@ -719,7 +707,7 @@ For tools that use their own version of <code>malloc()</code> (e.g. Memcheck
 and Addrcheck), the following options apply.
 <ul>
   <li><code>--alignment=&lt;number&gt;</code> [default: 4]<br> <p>By
-      default valgrind's <code>malloc</code>, <code>realloc</code>,
+      default Valgrind's <code>malloc</code>, <code>realloc</code>,
       etc, return 4-byte aligned addresses.  These are suitable for
       any accesses on x86 processors. 
       Some programs might however assume that <code>malloc</code> et
@@ -777,7 +765,7 @@ the Valgrind core.  Most people won't need to use these.
       segmentation faults.  This is particularly noticeable on Red Hat
       7.1.  So this flag is provided in order to inhibit the run of
       <code>__libc_freeres</code>.  If your program seems to run fine
-      on valgrind, but segfaults at exit, you may find that
+      on Valgrind, but segfaults at exit, you may find that
       <code>--run-libc-freeres=no</code> fixes that, although at the
       cost of possibly falsely reporting space leaks in
       <code>libc.so</code>.
@@ -889,9 +877,9 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
 
   <li><code>--profile=no</code><br>
       <code>--profile=yes</code> [default]
-      <p>When enabled, does crude internal profiling of valgrind 
+      <p>When enabled, does crude internal profiling of Valgrind 
       itself.  This is not for profiling your programs.  Rather it is
-      to allow the developers to assess where valgrind is spending
+      to allow the developers to assess where Valgrind is spending
       its time.  The tools must be built for profiling for this to
       work.
       </li><br><p>
@@ -993,7 +981,7 @@ tool-specific documentation for explanations of the tool-specific macros).
     of code in the specified address range.  Useful if you are
     debugging a JITter or some other dynamic code generation system.
     After this call, attempts to execute code in the invalidated
-    address range will cause valgrind to make new translations of that
+    address range will cause Valgrind to make new translations of that
     code, which is probably the semantics you want.  Note that this is
     implemented naively, and involves checking all 200191 entries in
     the translation table to see if any of them overlap the specified
@@ -1077,7 +1065,7 @@ natively.  This in itself may cause your program to behave differently
 if you have some kind of concurrency, critical race, locking, or
 similar, bugs.
 <p>
-As of the valgrind-1.0 release, the state of pthread support was as follows:
+As of the Valgrind-1.0 release, the state of pthread support was as follows:
 <ul>
 <li>Mutexes, condition variables, thread-specific data,
     <code>pthread_once</code>, reader-writer locks, semaphores,
@@ -1213,7 +1201,7 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       Valgrind's error checking won't be so effective.
       If you describe your program's memory management scheme
       using "client requests" (Section 3.7 of this manual),
-      valgrind can do better.  Nevertheless, using malloc/new
+      Memcheck can do better.  Nevertheless, using malloc/new
       and free/delete is still the best approach.
       </li>
       <p>
@@ -1479,16 +1467,10 @@ sewardj@phoenix:~/newmat10$
 ==25832== 223 translations, 3626 bytes in, 56801 bytes out.
 </pre>
 <p>The GCC folks fixed this about a week before gcc-3.0 shipped.
-<hr width="100%">
 <p>
 
-</body>
-</html>
-
-
-<h2>Misc text looking for a home</h2>
-
-<h4>2.6.6&nbsp; Warning messages you might see</h4>
+<a name="warnings"></a>
+<h3>2.15&nbsp; Warning messages you might see</h3>
 
 Most of these only appear if you run in verbose mode (enabled by
 <code>-v</code>):
@@ -1550,3 +1532,9 @@ Most of these only appear if you run in verbose mode (enabled by
      Diagnostic message, mostly for benefit of the valgrind
      developers, to do with memory permissions.
 </ul>
+
+</body>
+</html>
+
+
+

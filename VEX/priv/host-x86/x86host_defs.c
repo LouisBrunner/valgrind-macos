@@ -11,7 +11,7 @@
 
 #include "vex_util.h"
 #include "host_regs.h"
-#include "x86h_defs.h"
+#include "x86host_defs.h"
 
 
 /* --------- Registers. --------- */

@@ -1320,7 +1320,7 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
       switch (e->Iex.Binop.op) {
          case Iop_CmpEQ16:  return Xcc_Z;
          case Iop_CmpNE16:  return Xcc_NZ;
-         default: vpanic("iselCondCode(x86): CmpXX8");
+         default: vpanic("iselCondCode(x86): CmpXX16");
       }
    }
 
@@ -1343,6 +1343,25 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_CmpLE32S: return Xcc_LE;
          case Iop_CmpLE32U: return Xcc_BE;
          default: vpanic("iselCondCode(x86): CmpXX32");
+      }
+   }
+
+   /* CmpNE64 */
+   if (e->tag == Iex_Binop 
+       && e->Iex.Binop.op == Iop_CmpNE64) {
+      HReg hi1, hi2, lo1, lo2;
+      HReg tHi = newVRegI(env);
+      HReg tLo = newVRegI(env);
+      iselIntExpr64( &hi1, &lo1, env, e->Iex.Binop.arg1 );
+      iselIntExpr64( &hi2, &lo2, env, e->Iex.Binop.arg2 );
+      addInstr(env, mk_MOVsd_RR(hi1, tHi));
+      addInstr(env, X86Instr_Alu32R(Xalu_XOR,X86RMI_Reg(hi2), tHi));
+      addInstr(env, mk_MOVsd_RR(lo1, tLo));
+      addInstr(env, X86Instr_Alu32R(Xalu_XOR,X86RMI_Reg(lo2), tLo));
+      addInstr(env, X86Instr_Alu32R(Xalu_OR,X86RMI_Reg(tHi), tLo));
+      switch (e->Iex.Binop.op) {
+         case Iop_CmpNE64:  return Xcc_NZ;
+         default: vpanic("iselCondCode(x86): CmpXX64");
       }
    }
 
@@ -1485,6 +1504,22 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       addInstr(env, mk_MOVsd_RR(src,tHi));
       addInstr(env, mk_MOVsd_RR(src,tLo));
       addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(tHi)));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
+   /* 1Sto64(e) */
+   /* could do better than this, but for now ... */
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.op == Iop_1Sto64) {
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
+      X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
+      addInstr(env, X86Instr_Set32(cond,tLo));
+      addInstr(env, X86Instr_Sh32(Xsh_SHL, 31, X86RM_Reg(tLo)));
+      addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, X86RM_Reg(tLo)));
+      addInstr(env, mk_MOVsd_RR(tLo, tHi));
       *rHi = tHi;
       *rLo = tLo;
       return;

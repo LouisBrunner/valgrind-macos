@@ -193,6 +193,7 @@ typedef
       Iop_1Uto8,  /* :: Ity_Bit -> Ity_I8, unsigned widen */
       Iop_1Uto32, /* :: Ity_Bit -> Ity_I32, unsigned widen */
       Iop_1Sto32, /* :: Ity_Bit -> Ity_I32, signed widen */
+      Iop_1Sto64, /* :: Ity_Bit -> Ity_I64, signed widen */
 
       /* ------ Floating point.  We try and be IEEE754 compliant. ------ */
 

@@ -1007,7 +1007,7 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
    for (i = 0; i <  bb_in->stmts_used; i++) {
       st = bb_in->stmts[i];
-      if (!st) continue;
+      tl_assert(st);
 
       /* Examine each stmt in turn to figure out if it needs to be
          preceded by a memory access check.  If so, collect up the
@@ -1061,6 +1061,7 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
              }
              break;
 
+         case Ist_NoOp:
          case Ist_IMark:
          case Ist_MFence:
             break;

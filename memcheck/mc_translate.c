@@ -2371,6 +2371,7 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
                 || isBogusAtom(st->Ist.STle.data);
       case Ist_Exit:
          return isBogusAtom(st->Ist.Exit.guard);
+      case Ist_NoOp:
       case Ist_IMark:
       case Ist_MFence:
          return False;
@@ -2411,7 +2412,7 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 
    for (i = 0; i <  bb_in->stmts_used; i++) {
       st = bb_in->stmts[i];
-      if (!st) continue;
+      tl_assert(st);
 
       tl_assert(isFlatIRStmt(st));
 
@@ -2465,6 +2466,7 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             complainIfUndefined( &mce, st->Ist.Exit.guard );
             break;
 
+         case Ist_NoOp:
          case Ist_IMark:
          case Ist_MFence:
             break;

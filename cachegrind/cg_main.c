@@ -384,9 +384,6 @@ BB_info* get_BB_info(IRBB* bbIn, Addr origAddr, Bool* bbSeenBefore)
    return bbInfo;
 }
 
-// XXX: remove eventually
-#define Ist_Nop  99
-
 static 
 void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
                         Addr* instrAddr, UInt* instrLen,
@@ -394,7 +391,7 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
                         UInt* dataSize)
 {
    switch (st->tag) {
-   case Ist_Nop:
+   case Ist_NoOp:
       break;
 
    case Ist_IMark:
@@ -573,15 +570,6 @@ IRBB* TL_(instrument) ( IRBB* bbIn, VexGuestLayout* layout, IRType hWordTy )
    UInt     instrLen;
    IRExpr  *loadAddrExpr, *storeAddrExpr;
 
-   // Add Nops
-   // XXX: remove eventually
-   IRStmt xxx = { Ist_Nop };
-   IRStmt* myNOP = &xxx;
-   for (i = 0; i <  bbIn->stmts_used; i++) {
-      st = bbIn->stmts[i];
-      if (!st) bbIn->stmts[i] = myNOP;
-   }
-   
    /* Set up BB */
    bbOut           = emptyIRBB();
    bbOut->tyenv    = dopyIRTypeEnv(bbIn->tyenv);

@@ -1520,7 +1520,11 @@ void VG_(main) ( void )
    /* Remove valgrind.so from a LD_PRELOAD=... string so child
       processes don't get traced into.  Also mess up $libdir/valgrind
       so that our libpthread.so disappears from view. */
-   if (!VG_(clo_trace_children)) { 
+   /* 26 Apr 03: doing this often causes trouble for no reason, and is
+      pointless when we are just about to VgSrc_ExitSyscall.  So don't
+      bother in that case. */
+   if ((!VG_(clo_trace_children))
+       && src != VgSrc_ExitSyscall) { 
       VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH)(
          VG_(getenv)("LD_PRELOAD"),
          VG_(getenv)("LD_LIBRARY_PATH") 

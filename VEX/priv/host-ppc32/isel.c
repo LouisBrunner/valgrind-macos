@@ -1637,9 +1637,11 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 
    /* var */
    if (e->tag == Iex_Tmp) {
-      HReg src = lookupIRTemp(env, e->Iex.Tmp.tmp);
-      addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, src, PPC32RI_Imm(0)));
-      return mk_PPCCondCode( Pct_FALSE, Pcf_EQ );
+      HReg src        = lookupIRTemp(env, e->Iex.Tmp.tmp);
+      HReg src_masked = newVRegI(env);
+      addInstr(env, PPC32Instr_Alu32(Palu_AND, src_masked, src, PPC32RI_Imm(1)));
+      addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, src_masked, PPC32RI_Imm(1)));
+      return mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
    }
 
    ppIRExpr(e);

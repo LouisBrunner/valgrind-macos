@@ -616,7 +616,7 @@ not Cachegrind.
       <br>
       <code>---- Print suppression ? --- [Return/N/n/Y/y/C/c] ----</code>
       <p>
-      The prompt's behaviour is the same as for the <code>--gdb-attach</code>
+      The prompt's behaviour is the same as for the <code>--db-attach</code>
       option.
       <p>
       If you choose to, Valgrind will print out a suppression for this error.
@@ -646,28 +646,28 @@ not Cachegrind.
       socket details.
       <br><p>
 
-  <li><code>--gdb-attach=no</code> [default]<br>
-      <code>--gdb-attach=yes</code>
+  <li><code>--db-attach=no</code> [default]<br>
+      <code>--db-attach=yes</code>
       <p>When enabled, Valgrind will pause after every error shown,
       and print the line
       <br>
-      <code>---- Attach to GDB ? --- [Return/N/n/Y/y/C/c] ----</code>
+      <code>---- Attach to debugger ? --- [Return/N/n/Y/y/C/c] ----</code>
       <p>
       Pressing <code>Ret</code>, or <code>N</code> <code>Ret</code>
       or <code>n</code> <code>Ret</code>, causes Valgrind not to
-      start GDB for this error.
+      start a debugger for this error.
       <p>
       <code>Y</code> <code>Ret</code>
       or <code>y</code> <code>Ret</code> causes Valgrind to
-      start GDB, for the program at this point.  When you have
-      finished with GDB, quit from it, and the program will continue.
-      Trying to continue from inside GDB doesn't work.
+      start a debugger, for the program at this point.  When you have
+      finished with the debugger, quit from it, and the program will continue.
+      Trying to continue from inside the debugger doesn't work.
       <p>
       <code>C</code> <code>Ret</code>
       or <code>c</code> <code>Ret</code> causes Valgrind not to
-      start GDB, and not to ask again.
+      start a debugger, and not to ask again.
       <p>
-      <code>--gdb-attach=yes</code> conflicts with
+      <code>--db-attach=yes</code> conflicts with
       <code>--trace-children=yes</code>.  You can't use them together.
       Valgrind refuses to start up in this situation.  1 May 2002:
       this is a historical relic which could be easily fixed if it
@@ -678,16 +678,21 @@ not Cachegrind.
       socket, I guess this option doesn't make any sense.  Caveat emptor.
       </li><br><p>
 
-  <li><code>--gdb-path=/path/to/gdb</code>
-      <p>This specifies how Valgrind will invoke GDB.  By default, it
-      will use whatever GDB is detected at build time, 
+  <li><code>--db-command=&lt;command&gt;</code> [default: gdb -nw %f %p]<br>
+      <p>This specifies how Valgrind will invoke the debugger.  By
+      default it will use whatever GDB is detected at build time, 
       which is usually <code>/usr/bin/gdb</code>.  Using this command,
-      you can specify some alternative path to the GDB you want to
-      use.
+      you can specify some alternative command to invoke the debugger
+      you want to use.
+      <p>
+      The command string given can include one or instances of the
+      %p and %f expansions. Each instance of %p expands to the PID of
+      the process to be debugged and each instance of %f expands to
+      the path to the executable for the process to be debugged.
       </li><br><p>
 
   <li><code>--input-fd=&lt;number&gt;</code> [default=0, stdin]<br>
-      <p>When using <code>--gdb-attach=yes</code> and 
+      <p>When using <code>--db-attach=yes</code> and 
          <code>--gen-suppressions=yes</code>, Valgrind will stop
       so as to read keyboard input from you, when each error occurs. 
       By default it reads from the standard input (stdin), which is

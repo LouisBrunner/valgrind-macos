@@ -111,7 +111,7 @@ static void pp_Error ( Error* err, Bool printCount )
    }
 }
 
-/* Figure out if we want to attach for GDB for this error, possibly
+/* Figure out if we want to perform a given action for this error, possibly
    by asking the user. */
 Bool VG_(is_action_requested) ( Char* action, Bool* clo )
 {
@@ -247,14 +247,14 @@ static void gen_suppression(Error* err)
 }
 
 static 
-void do_actions_on_error(Error* err, Bool allow_GDB_attach)
+void do_actions_on_error(Error* err, Bool allow_db_attach)
 {
-   /* Perhaps we want a GDB attach at this point? */
-   if (allow_GDB_attach &&
-       VG_(is_action_requested)( "Attach to GDB", & VG_(clo_GDB_attach) )) 
+   /* Perhaps we want a debugger attach at this point? */
+   if (allow_db_attach &&
+       VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) )) 
    {
-      VG_(printf)("starting gdb\n");
-      VG_(start_GDB)( err->tid );
+      VG_(printf)("starting debugger\n");
+      VG_(start_debugger)( err->tid );
    }
    /* Or maybe we want to generate the error's suppression? */
    if (VG_(is_action_requested)( "Print suppression",
@@ -412,7 +412,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
       pp_Error(p, False);
       is_first_shown_context = False;
       vg_n_errs_shown++;
-      do_actions_on_error(p, /*allow_GDB_attach*/True);
+      do_actions_on_error(p, /*allow_db_attach*/True);
    } else {
       vg_n_errs_suppressed++;
       p->supp->count++;
@@ -428,7 +428,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
 */
 Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
                          void* extra, ExeContext* where, Bool print_error,
-                         Bool allow_GDB_attach, Bool count_error )
+                         Bool allow_db_attach, Bool count_error )
 {
    Error  err;
 
@@ -453,7 +453,7 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
          pp_Error(&err, False);
          is_first_shown_context = False;
       }
-      do_actions_on_error(&err, allow_GDB_attach);
+      do_actions_on_error(&err, allow_db_attach);
 
       return False;
 

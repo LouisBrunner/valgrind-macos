@@ -292,12 +292,12 @@ static void show_counts ( void )
 /*=== Miscellaneous global functions                               ===*/
 /*====================================================================*/
 
-/* Start GDB and get it to attach to this process.  Called if the user
-   requests this service after an error has been shown, so she can
+/* Start debugger and get it to attach to this process.  Called if the
+   user requests this service after an error has been shown, so she can
    poke around and look at parameters, memory, etc.  You can't
-   meaningfully get GDB to continue the program, though; to continue,
-   quit GDB.  */
-void VG_(start_GDB) ( Int tid )
+   meaningfully get the debugger to continue the program, though; to
+   continue, quit the debugger.  */
+void VG_(start_debugger) ( Int tid )
 {
    Int pid;
 
@@ -352,16 +352,51 @@ void VG_(start_GDB) ( Int tid )
           WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP &&
           ptrace(PTRACE_SETREGS, pid, NULL, &regs) == 0 &&
           ptrace(PTRACE_DETACH, pid, NULL, SIGSTOP) == 0) {
-         UChar buf[VG_(strlen)(VG_(clo_GDB_path)) + 100];
-
-         VG_(sprintf)(buf, "%s -nw /proc/%d/fd/%d %d",
-                      VG_(clo_GDB_path), VG_(main_pid), VG_(clexecfd), pid);
-         VG_(message)(Vg_UserMsg, "starting GDB with cmd: %s", buf);
+         Char pidbuf[15];
+         Char file[30];
+         Char buf[100];
+         Char *bufptr;
+         Char *cmdptr;
+         
+         VG_(sprintf)(pidbuf, "%d", pid);
+         VG_(sprintf)(file, "/proc/%d/fd/%d", pid, VG_(clexecfd));
+ 
+         bufptr = buf;
+         cmdptr = VG_(clo_db_command);
+         
+         while (*cmdptr) {
+            switch (*cmdptr) {
+               case '%':
+                  switch (*++cmdptr) {
+                     case 'f':
+                        VG_(memcpy)(bufptr, file, VG_(strlen)(file));
+                        bufptr += VG_(strlen)(file);
+                        cmdptr++;
+                        break;
+                  case 'p':
+                     VG_(memcpy)(bufptr, pidbuf, VG_(strlen)(pidbuf));
+                     bufptr += VG_(strlen)(pidbuf);
+                     cmdptr++;
+                     break;
+                  default:
+                     *bufptr++ = *cmdptr++;
+                     break;
+                  }
+                  break;
+               default:
+                  *bufptr++ = *cmdptr++;
+                  break;
+            }
+         }
+         
+         *bufptr++ = '\0';
+  
+         VG_(message)(Vg_UserMsg, "starting debugger with cmd: %s", buf);
          res = VG_(system)(buf);
          if (res == 0) {      
             VG_(message)(Vg_UserMsg, "");
             VG_(message)(Vg_UserMsg, 
-                         "GDB has detached.  Valgrind regains control.  We continue.");
+                         "Debugger has detached.  Valgrind regains control.  We continue.");
          } else {
             VG_(message)(Vg_UserMsg, "Apparently failed!");
             VG_(message)(Vg_UserMsg, "");
@@ -1363,8 +1398,8 @@ static void load_client(char* cl_argv[], const char* exec,
 
 /* Define, and set defaults. */
 Bool   VG_(clo_error_limit)    = True;
-Bool   VG_(clo_GDB_attach)     = False;
-Char*  VG_(clo_GDB_path)       = GDB_PATH;
+Bool   VG_(clo_db_attach)      = False;
+Char*  VG_(clo_db_command)     = VG_CLO_DEFAULT_DBCOMMAND;
 Bool   VG_(clo_gen_suppressions) = False;
 Int    VG_(sanity_level)       = 1;
 Int    VG_(clo_verbosity)      = 1;
@@ -1472,9 +1507,9 @@ void usage ( void )
 "    --suppressions=<filename> suppress errors described in <filename>\n"
 "    --gen-suppressions=no|yes print suppressions for errors detected [no]\n"
 
-"    --gdb-attach=no|yes       start GDB when errors detected? [no]\n"
-"    --gdb-path=/path/to/gdb   path to the GDB to use [/usr/bin/gdb]\n"
-"    --input-fd=<number>       file descriptor for (gdb) input [0=stdin]\n"
+"    --db-attach=no|yes        start debugger when errors detected? [no]\n"
+"    --db-command=<command>    command to start debugger [gdb -nw %%f %%p]\n"
+"    --input-fd=<number>       file descriptor for input [0=stdin]\n"
 "\n";
 
    Char* usage2 = 
@@ -1655,13 +1690,13 @@ static void process_cmd_line_options
       else if (VG_CLO_STREQ(arg, "--error-limit=no"))
          VG_(clo_error_limit) = False;
 
-      else if (VG_CLO_STREQ(arg, "--gdb-attach=yes"))
-         VG_(clo_GDB_attach) = True;
-      else if (VG_CLO_STREQ(arg, "--gdb-attach=no"))
-         VG_(clo_GDB_attach) = False;
+      else if (VG_CLO_STREQ(arg, "--db-attach=yes"))
+         VG_(clo_db_attach) = True;
+      else if (VG_CLO_STREQ(arg, "--db-attach=no"))
+         VG_(clo_db_attach) = False;
 
-      else if (VG_CLO_STREQN(11,arg, "--gdb-path="))
-         VG_(clo_GDB_path) = &arg[11];
+      else if (VG_CLO_STREQN(13,arg, "--db-command="))
+         VG_(clo_db_command) = &arg[13];
 
       else if (VG_CLO_STREQ(arg, "--gen-suppressions=yes"))
          VG_(clo_gen_suppressions) = True;
@@ -1848,13 +1883,13 @@ static void process_cmd_line_options
    if (VG_(clo_verbosity) < 0)
       VG_(clo_verbosity) = 0;
 
-   if (VG_(clo_GDB_attach) && VG_(clo_trace_children)) {
+   if (VG_(clo_db_attach) && VG_(clo_trace_children)) {
       VG_(message)(Vg_UserMsg, "");
       VG_(message)(Vg_UserMsg, 
-         "--gdb-attach=yes conflicts with --trace-children=yes");
+         "--db-attach=yes conflicts with --trace-children=yes");
       VG_(message)(Vg_UserMsg, 
          "Please choose one or the other, but not both.");
-      VG_(bad_option)("--gdb-attach=yes and --trace-children=yes");
+      VG_(bad_option)("--db-attach=yes and --trace-children=yes");
    }
 
    /* Set up logging now.  After this is done, VG_(clo_logfile_fd)

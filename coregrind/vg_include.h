@@ -163,6 +163,9 @@
 /* The max number of suppression files. */
 #define VG_CLO_MAX_SFILES 10
 
+/* Default debugger command. */
+#define VG_CLO_DEFAULT_DBCOMMAND GDB_PATH " -nw %f %p"
+
 /* Describes where logging output is to be sent. */
 typedef
    enum {
@@ -182,10 +185,10 @@ extern Int VG_(max_fd);
 
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
-/* Enquire about whether to attach to GDB at errors?   default: NO */
-extern Bool  VG_(clo_GDB_attach);
-/* The path to GDB?  default: whatever ./configure found */
-extern Char* VG_(clo_GDB_path);
+/* Enquire about whether to attach to a debugger at errors?   default: NO */
+extern Bool  VG_(clo_db_attach);
+/* The debugger command?  default: whatever gdb ./configure found */
+extern Char* VG_(clo_db_command);
 /* Enquire about generating a suppression for each error?   default: NO */
 extern Bool  VG_(clo_gen_suppressions);
 /* Sanity-check level: 0 = none, 1 (default), > 1 = expensive. */
@@ -1410,8 +1413,8 @@ extern Char **VG_(vg_argv);
 extern Bool VG_(sysinfo_page_exists);
 extern Addr VG_(sysinfo_page_addr);
 
-/* Something of a function looking for a home ... start up GDB. */
-extern void VG_(start_GDB) ( Int tid );
+/* Something of a function looking for a home ... start up debugger. */
+extern void VG_(start_debugger) ( Int tid );
 
 /* VG_(bbs_done) in include/vg_skin.h */
 

@@ -1391,8 +1391,8 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 	 }
       }
 
-      if (VG_(is_action_requested)( "Attach to GDB", & VG_(clo_GDB_attach) )) {
-	 VG_(start_GDB)( tid );
+      if (VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) )) {
+         VG_(start_debugger)( tid );
       }
 
       if (VG_(fatal_signal_set)) {

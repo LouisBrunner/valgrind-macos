@@ -81,12 +81,13 @@ typedef
 
 Char cachegrind_out_file[FILENAME_LEN];
 
-static void file_err()
+static void file_err ( void )
 {
    VG_(message)(Vg_UserMsg,
-                "error: can't open cache simulation output file `%s'",
-                cachegrind_out_file );
-   VG_(exit)(1);
+      "error: can't open cache simulation output file `%s'",
+      cachegrind_out_file );
+   VG_(message)(Vg_UserMsg,
+      "       ... so simulation results will be missing.");
 }
 
 /*------------------------------------------------------------*/
@@ -1516,7 +1517,12 @@ static void fprint_BBCC_table_and_calc_totals(void)
 
    VGP_PUSHCC(VgpCacheResults);
    fd = VG_(open)(cachegrind_out_file, VKI_O_WRONLY|VKI_O_TRUNC, 0);
-   if (-1 == fd) { file_err(); }
+   if (-1 == fd) { 
+      /* If the file can't be opened for whatever reason (conflict
+         between multiple cachegrinded processes?), give up now. */
+      file_err(); 
+      return;
+   }
 
    /* "desc:" lines (giving I1/D1/L2 cache configuration) */
    VG_(sprintf)(buf, "desc: I1 cache:         %s\n", I1.desc_line);
@@ -1954,7 +1960,8 @@ void SK_(post_clo_init)(void)
          file_err(); 
       }
    }
-   VG_(close)(fd);
+   if (-1 != fd)
+      VG_(close)(fd);
 
    initCC(&Ir_total);
    initCC(&Dr_total);

@@ -343,9 +343,11 @@ sub summarise_results
 #----------------------------------------------------------------------------
 
 # undefine $VALGRIND_OPTS
-if ( exists $ENV{VALGRIND_OPTS} ) {
-  undef $ENV{VALGRIND_OPTS};
-}
+# (Commented out 2002-Oct-30;  was causing "Use of uninitialized value in undef
+#  operator" warning  --njn)
+# if ( exists $ENV{VALGRIND_OPTS} ) {
+#   undef $ENV{VALGRIND_OPTS};
+# }
 
 my @fs = process_command_line();
 foreach my $f (@fs) {

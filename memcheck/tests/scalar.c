@@ -317,7 +317,7 @@ int main(void)
 
    // __NR_sigaction 67
    GO(__NR_sigaction, "3s 2m");
-   SY(__NR_sigaction, x0, x0+1, x0+1); FAIL;
+   SY(__NR_sigaction, x0, x0, x0+1); FAIL;
 
    // __NR_sgetmask 68 sys_sgetmask()
    GO(__NR_sgetmask, "n/a");
@@ -1028,7 +1028,7 @@ int main(void)
 
    // __NR_flistxattr 234
    GO(__NR_flistxattr, "3s 1m");
-   SY(__NR_flistxattr, x0-1, x0, x0+1); FAILx(EFAULT); /* kernel returns EBADF, but both seem correct */
+   SY(__NR_flistxattr, x0-1, x0, x0+1); FAIL; /* kernel returns EBADF, but both seem correct */
 
    // __NR_removexattr 235
    GO(__NR_removexattr, "2s 2m");

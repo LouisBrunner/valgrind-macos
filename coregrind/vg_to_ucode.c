@@ -40,6 +40,94 @@
 
 
 /*------------------------------------------------------------*/
+/*--- CPU feature set stuff                                ---*/
+/*--- This is a little out of place here, but it will do   ---*/
+/*--- for now.                                             ---*/
+/*------------------------------------------------------------*/
+
+#define VG_N_FEATURE_WORDS	2
+
+static Int cpuid_level = -2;	/* -2 -> not initialized */
+static UInt cpu_features[VG_N_FEATURE_WORDS];
+
+/* Standard macro to see if a specific flag is changeable */
+static inline Bool flag_is_changeable(UInt flag)
+{
+   UInt f1, f2;
+
+   asm("pushfl\n\t"
+       "pushfl\n\t"
+       "popl %0\n\t"
+       "movl %0,%1\n\t"
+       "xorl %2,%0\n\t"
+       "pushl %0\n\t"
+       "popfl\n\t"
+       "pushfl\n\t"
+       "popl %0\n\t"
+       "popfl\n\t"
+       : "=&r" (f1), "=&r" (f2)
+       : "ir" (flag));
+
+   return ((f1^f2) & flag) != 0;
+}
+
+
+/* Probe for the CPUID instruction */
+static Bool has_cpuid(void)
+{
+   return flag_is_changeable(EFlagID);
+}
+
+static inline UInt cpuid_eax(UInt eax)
+{
+   asm("cpuid" : "=a" (eax) : "0" (eax) : "bx", "cx", "dx");
+   return eax;
+}
+
+static inline void cpuid(UInt eax, 
+			 UInt *eax_ret, UInt *ebx_ret, UInt *ecx_ret, UInt *edx_ret)
+{
+   UInt ebx, ecx, edx;
+
+   asm("cpuid" : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "0" (eax));
+
+   if (eax_ret)
+      *eax_ret = eax;
+   if (ebx_ret)
+      *ebx_ret = ebx;
+   if (ecx_ret)
+      *ecx_ret = ecx;
+   if (edx_ret)
+      *edx_ret = edx;
+}
+
+static void get_cpu_features(void)
+{
+   if (!has_cpuid()) {
+      cpuid_level = -1;
+      return;
+   }
+
+   cpuid_level = cpuid_eax(0);
+
+   if (cpuid_level >= 1)
+      cpuid(1, NULL, NULL, &cpu_features[1], &cpu_features[0]);
+}
+
+Bool VG_(cpu_has_feature)(UInt feature)
+{
+   UInt word = feature / 32;
+   UInt bit  = feature % 32;
+
+   if (cpuid_level == -2)
+      get_cpu_features();
+
+   vg_assert(word >= 0 && word < VG_N_FEATURE_WORDS);
+
+   return !!(cpu_features[word] & (1 << bit));
+}
+
+/*------------------------------------------------------------*/
 /*--- Here so it can be inlined everywhere.                ---*/
 /*------------------------------------------------------------*/
 

@@ -502,14 +502,9 @@ Int VG_(exitcode) = 0;
    descriptor or a socket descriptor. */
 Bool VG_(logging_to_filedes) = True;
 
-/* Is this a SSE/SSE2-capable CPU?  If so, we had better save/restore
-   the SSE state all over the place.  This is set up very early, in
-   vg_startup.S.  We have to determine it early since we can't even
-   correctly snapshot the startup machine state without it. */
-/* Initially True.  Safer to err on the side of SSEness and get SIGILL
-   than to not notice for some reason that we have SSE and get weird
-   errors later on. */
-Bool VG_(have_ssestate) = True;
+/* This is set early to inidicate whether this CPU has the
+   SSE/fxsave/fxrestor features.  */
+Bool VG_(have_ssestate);
 
 
 /* ---------------------------------------------------------------------
@@ -1393,6 +1388,11 @@ void VG_(main) ( const KickstartParams *kp, void (*tool_init)(void), void *tool_
    VG_(memset)(&VG_(m_state_static), 0, sizeof(VG_(m_state_static)));
    VG_(m_state_static)[40/4] = kp->client_esp;
    VG_(m_state_static)[60/4] = kp->client_eip;
+
+   /* I assume that if we have SSE2 we also have SSE */
+   VG_(have_ssestate) = 
+	   VG_(cpu_has_feature)(VG_X86_FEAT_FXSR) &&
+	   VG_(cpu_has_feature)(VG_X86_FEAT_SSE);
 
    /* set up an initial FPU state (doesn't really matter what it is,
       so long as it's somewhat valid) */

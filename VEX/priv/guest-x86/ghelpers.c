@@ -1815,22 +1815,25 @@ static inline UChar cmpge8S ( SChar xx, SChar yy )
    return xx>yy ? 0xFF : 0;
 }
 
-static inline Short qnarrow32Sto16 ( Int xx )
+static inline Short qnarrow32Sto16 ( UInt xx0 )
 {
+   Int xx = (Int)xx0;
    if (xx < -32768) xx = -32768;
    if (xx > 32767)  xx = 32767;
    return (Short)xx;
 }
 
-static inline SChar qnarrow16Sto8 ( Int xx )
+static inline SChar qnarrow16Sto8 ( UShort xx0 )
 {
+   Short xx = (Short)xx0;
    if (xx < -128) xx = -128;
    if (xx > 127)  xx = 127;
    return (SChar)xx;
 }
 
-static inline UChar qnarrow16Uto8 ( Int xx )
+static inline UChar qnarrow16Uto8 ( UShort xx0 )
 {
+   Short xx = (Short)xx0;
    if (xx < 0)   xx = 0;
    if (xx > 255) xx = 255;
    return (UChar)xx;
@@ -2142,59 +2145,66 @@ ULong calculate_cmpge8Sx8 ( ULong xx, ULong yy )
 
 ULong calculate_packssdw ( ULong dst, ULong src )
 {
-   Int d = sel32x2_1(dst);
-   Int c = sel32x2_0(dst);
-   Int b = sel32x2_1(src);
-   Int a = sel32x2_0(src);
+   UInt d = sel32x2_1(dst);
+   UInt c = sel32x2_0(dst);
+   UInt b = sel32x2_1(src);
+   UInt a = sel32x2_0(src);
+   /* This just doesn't seem to match what the Intel documentation
+      says -- that implies that the new word should be made in the
+      sequence d c b a. */
    return mk16x4( 
-             qnarrow32Sto16(d),
-             qnarrow32Sto16(c),
              qnarrow32Sto16(b),
-             qnarrow32Sto16(a)
+             qnarrow32Sto16(a),
+             qnarrow32Sto16(d),
+             qnarrow32Sto16(c)
           );
 }
 
 ULong calculate_packsswb ( ULong dst, ULong src )
 {
-   Int h = sel16x4_3(dst);
-   Int g = sel16x4_2(dst);
-   Int f = sel16x4_1(dst);
-   Int e = sel16x4_0(dst);
-   Int d = sel16x4_3(src);
-   Int c = sel16x4_2(src);
-   Int b = sel16x4_1(src);
-   Int a = sel16x4_0(src);
+   UShort h = sel16x4_3(dst);
+   UShort g = sel16x4_2(dst);
+   UShort f = sel16x4_1(dst);
+   UShort e = sel16x4_0(dst);
+   UShort d = sel16x4_3(src);
+   UShort c = sel16x4_2(src);
+   UShort b = sel16x4_1(src);
+   UShort a = sel16x4_0(src);
+   /* As per packssdw, this sequence also seems to contradict the
+      Intel docs. */
    return mk8x8( 
-             qnarrow16Sto8(h),
-             qnarrow16Sto8(g),
-             qnarrow16Sto8(f),
-             qnarrow16Sto8(e),
              qnarrow16Sto8(d),
              qnarrow16Sto8(c),
              qnarrow16Sto8(b),
-             qnarrow16Sto8(a)
+             qnarrow16Sto8(a),
+             qnarrow16Sto8(h),
+             qnarrow16Sto8(g),
+             qnarrow16Sto8(f),
+             qnarrow16Sto8(e)
           );
 }
 
 ULong calculate_packuswb ( ULong dst, ULong src )
 {
-   Int h = sel16x4_3(dst);
-   Int g = sel16x4_2(dst);
-   Int f = sel16x4_1(dst);
-   Int e = sel16x4_0(dst);
-   Int d = sel16x4_3(src);
-   Int c = sel16x4_2(src);
-   Int b = sel16x4_1(src);
-   Int a = sel16x4_0(src);
+   UShort h = sel16x4_3(dst);
+   UShort g = sel16x4_2(dst);
+   UShort f = sel16x4_1(dst);
+   UShort e = sel16x4_0(dst);
+   UShort d = sel16x4_3(src);
+   UShort c = sel16x4_2(src);
+   UShort b = sel16x4_1(src);
+   UShort a = sel16x4_0(src);
+   /* As per packssdw, this sequence also seems to contradict the
+      Intel docs. */
    return mk8x8( 
-             qnarrow16Uto8(h),
-             qnarrow16Uto8(g),
-             qnarrow16Uto8(f),
-             qnarrow16Uto8(e),
              qnarrow16Uto8(d),
              qnarrow16Uto8(c),
              qnarrow16Uto8(b),
-             qnarrow16Uto8(a)
+             qnarrow16Uto8(a),
+             qnarrow16Uto8(h),
+             qnarrow16Uto8(g),
+             qnarrow16Uto8(f),
+             qnarrow16Uto8(e)
           );
 }
 
@@ -2267,18 +2277,18 @@ ULong calculate_punpckldq ( ULong dst, ULong src )
 ULong calculate_shl16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
-             shl16( sel16x4_3(xx), sel16x4_3(yy) ),
-             shl16( sel16x4_2(xx), sel16x4_2(yy) ),
-             shl16( sel16x4_1(xx), sel16x4_1(yy) ),
-             shl16( sel16x4_0(xx), sel16x4_0(yy) )
+             shl16( sel16x4_3(xx), yy ),
+             shl16( sel16x4_2(xx), yy ),
+             shl16( sel16x4_1(xx), yy ),
+             shl16( sel16x4_0(xx), yy )
           );
 }
 
 ULong calculate_shl32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(
-             shl32( sel32x2_1(xx), sel32x2_1(yy) ),
-             shl32( sel32x2_0(xx), sel32x2_0(yy) )
+             shl32( sel32x2_1(xx), yy ),
+             shl32( sel32x2_0(xx), yy )
           );
 }
 
@@ -2292,18 +2302,18 @@ ULong calculate_shl64x1 ( ULong xx, ULong yy )
 ULong calculate_shr16Ux4 ( ULong xx, ULong yy )
 {
    return mk16x4(
-             shr16U( sel16x4_3(xx), sel16x4_3(yy) ),
-             shr16U( sel16x4_2(xx), sel16x4_2(yy) ),
-             shr16U( sel16x4_1(xx), sel16x4_1(yy) ),
-             shr16U( sel16x4_0(xx), sel16x4_0(yy) )
+             shr16U( sel16x4_3(xx), yy ),
+             shr16U( sel16x4_2(xx), yy ),
+             shr16U( sel16x4_1(xx), yy ),
+             shr16U( sel16x4_0(xx), yy )
           );
 }
 
 ULong calculate_shr32Ux2 ( ULong xx, ULong yy )
 {
    return mk32x2(
-             shr32U( sel32x2_1(xx), sel32x2_1(yy) ),
-             shr32U( sel32x2_0(xx), sel32x2_0(yy) )
+             shr32U( sel32x2_1(xx), yy ),
+             shr32U( sel32x2_0(xx), yy )
           );
 }
 
@@ -2317,18 +2327,18 @@ ULong calculate_shr64Ux1 ( ULong xx, ULong yy )
 ULong calculate_shr16Sx4 ( ULong xx, ULong yy )
 {
    return mk16x4(
-             shr16S( sel16x4_3(xx), sel16x4_3(yy) ),
-             shr16S( sel16x4_2(xx), sel16x4_2(yy) ),
-             shr16S( sel16x4_1(xx), sel16x4_1(yy) ),
-             shr16S( sel16x4_0(xx), sel16x4_0(yy) )
+             shr16S( sel16x4_3(xx), yy ),
+             shr16S( sel16x4_2(xx), yy ),
+             shr16S( sel16x4_1(xx), yy ),
+             shr16S( sel16x4_0(xx), yy )
           );
 }
 
 ULong calculate_shr32Sx2 ( ULong xx, ULong yy )
 {
    return mk32x2(
-             shr32S( sel32x2_1(xx), sel32x2_1(yy) ),
-             shr32S( sel32x2_0(xx), sel32x2_0(yy) )
+             shr32S( sel32x2_1(xx), yy ),
+             shr32S( sel32x2_0(xx), yy )
           );
 }
 

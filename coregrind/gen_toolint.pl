@@ -23,12 +23,17 @@
 #
 #  The GNU General Public License is contained in the file COPYING.
 
+use strict;
+use warnings;
 
 my $output = shift @ARGV;
 my $indent = "";
 my $headerguard;
 my $include;
 my $passcomment = 1;
+my $pre;
+my $post;
+my $generate;
 
 my $struct = "VG_(tool_interface)";
 
@@ -210,6 +215,7 @@ my $state = "idle";
 
 my $buf;
 my $lines;
+my $prefix;
 
 while(<STDIN>) {
     # skip simple comments

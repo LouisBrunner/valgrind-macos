@@ -18,7 +18,7 @@ void _IO_ftrylockfile ( void )  { unimp("_IO_ftrylockfile"); }
 void __libc_allocate_rtsig ( void )  { unimp("__libc_allocate_rtsig"); }
 void __libc_current_sigrtmax ( void )  { unimp("__libc_current_sigrtmax"); }
 void __libc_current_sigrtmin ( void )  { unimp("__libc_current_sigrtmin"); }
-void __lseek ( void )  { unimp("__lseek"); }
+//void __lseek ( void )  { unimp("__lseek"); }
 //void __open ( void )  { unimp("__open"); }
 //void __open64 ( void )  { unimp("__open64"); }
 void __pread64 ( void )  { unimp("__pread64"); }
@@ -39,10 +39,10 @@ void __pread64 ( void )  { unimp("__pread64"); }
 void __pwrite64 ( void )  { unimp("__pwrite64"); }
 //void __read ( void )  { unimp("__read"); }
 //void __res_state ( void )  { unimp("__res_state"); }
-void __send ( void )  { unimp("__send"); }
+//void __send ( void )  { unimp("__send"); }
 //void __sigaction ( void )  { unimp("__sigaction"); }
 void __vfork ( void )  { unimp("__vfork"); }
-void __wait ( void )  { unimp("__wait"); }
+//void __wait ( void )  { unimp("__wait"); }
 //void __write ( void )  { unimp("__write"); }
 void _pthread_cleanup_pop ( void )  { unimp("_pthread_cleanup_pop"); }
 //void _pthread_cleanup_pop_restore ( void )  { unimp("_pthread_cleanup_pop_restore"); }
@@ -154,3 +154,29 @@ void pthread_attr_init@@GLIBC_2.1 ( void )  { unimp("pthread_attr_init@@GLIBC_2.
 void pthread_attr_init@GLIBC_2.0 ( void )  { unimp("pthread_attr_init@GLIBC_2.0"); }
 #endif
 
+
+
+# define strong_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((alias (#name)));
+
+# define weak_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
+
+weak_alias (__pread64, pread64)
+weak_alias (__pwrite64, pwrite64)
+
+weak_alias(pthread_rwlock_destroy, __pthread_rwlock_destroy)
+weak_alias(pthread_rwlock_init, __pthread_rwlock_init)
+weak_alias(pthread_rwlock_tryrdlock, __pthread_rwlock_tryrdlock)
+weak_alias(pthread_rwlock_trywrlock, __pthread_rwlock_trywrlock)
+weak_alias(pthread_rwlock_wrlock, __pthread_rwlock_wrlock)
+weak_alias(_IO_ftrylockfile, ftrylockfile)
+
+__attribute__((weak)) void pread ( void ) { vgPlain_unimp("pread"); }
+__attribute__((weak)) void msync ( void ) { vgPlain_unimp("msync"); }
+__attribute__((weak)) void pause ( void ) { vgPlain_unimp("pause"); }
+__attribute__((weak)) void recvfrom ( void ) { vgPlain_unimp("recvfrom"); }
+__attribute__((weak)) void recvmsg ( void ) { vgPlain_unimp("recvmsg"); }
+__attribute__((weak)) void sendmsg ( void ) { vgPlain_unimp("sendmsg"); }
+__attribute__((weak)) void tcdrain ( void ) { vgPlain_unimp("tcdrain"); }
+__attribute__((weak)) void vfork ( void ) { vgPlain_unimp("vfork"); }

@@ -270,13 +270,13 @@ int pthread_detach(pthread_t th)
    MUTEX ATTRIBUTES
    ------------------------------------------------ */
 
-int pthread_mutexattr_init(pthread_mutexattr_t *attr)
+int __pthread_mutexattr_init(pthread_mutexattr_t *attr)
 {
    attr->__mutexkind = PTHREAD_MUTEX_ERRORCHECK_NP;
    return 0;
 }
 
-int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
+int __pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
 {
    switch (type) {
 #     ifndef GLIBC_2_1    
@@ -292,7 +292,7 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
    }
 }
 
-int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
+int __pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 {
    return 0;
 }
@@ -302,8 +302,8 @@ int pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
    MUTEXes
    ------------------------------------------------ */
 
-int pthread_mutex_init(pthread_mutex_t *mutex, 
-                       const  pthread_mutexattr_t *mutexattr)
+int __pthread_mutex_init(pthread_mutex_t *mutex, 
+                         const  pthread_mutexattr_t *mutexattr)
 {
    mutex->__m_count = 0;
    mutex->__m_owner = (_pthread_descr)VG_INVALID_THREADID;
@@ -313,7 +313,7 @@ int pthread_mutex_init(pthread_mutex_t *mutex,
    return 0;
 }
 
-int pthread_mutex_lock(pthread_mutex_t *mutex)
+int __pthread_mutex_lock(pthread_mutex_t *mutex)
 {
    int res;
    static int moans = 3;
@@ -329,7 +329,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex)
    }
 }
 
-int pthread_mutex_trylock(pthread_mutex_t *mutex)
+int __pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
    int res;
    static int moans = 3;
@@ -345,7 +345,7 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex)
    }
 }
 
-int pthread_mutex_unlock(pthread_mutex_t *mutex)
+int __pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
    int res;
    static int moans = 3;
@@ -361,7 +361,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex)
    }
 }
 
-int pthread_mutex_destroy(pthread_mutex_t *mutex)
+int __pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
    /* Valgrind doesn't hold any resources on behalf of the mutex, so no
       need to involve it. */
@@ -548,8 +548,8 @@ void __pthread_kill_other_threads_np ( void )
    THREAD-SPECIFICs
    ------------------------------------------------ */
 
-int pthread_key_create(pthread_key_t *key,  
-                       void  (*destr_function)  (void *))
+int __pthread_key_create(pthread_key_t *key,  
+                         void  (*destr_function)  (void *))
 {
    int res;
    ensure_valgrind("pthread_key_create");
@@ -565,7 +565,7 @@ int pthread_key_delete(pthread_key_t key)
    return 0;
 }
 
-int pthread_setspecific(pthread_key_t key, const void *pointer)
+int __pthread_setspecific(pthread_key_t key, const void *pointer)
 {
    int res;
    ensure_valgrind("pthread_setspecific");
@@ -575,7 +575,7 @@ int pthread_setspecific(pthread_key_t key, const void *pointer)
    return res;
 }
 
-void * pthread_getspecific(pthread_key_t key)
+void * __pthread_getspecific(pthread_key_t key)
 {
    int res;
    ensure_valgrind("pthread_getspecific");
@@ -593,8 +593,8 @@ void * pthread_getspecific(pthread_key_t key)
 static pthread_mutex_t once_masterlock = PTHREAD_MUTEX_INITIALIZER;
 
 
-int pthread_once ( pthread_once_t *once_control, 
-                   void (*init_routine) (void) )
+int __pthread_once ( pthread_once_t *once_control, 
+                     void (*init_routine) (void) )
 {
    int res;
    ensure_valgrind("pthread_once");
@@ -620,9 +620,9 @@ int pthread_once ( pthread_once_t *once_control,
    MISC
    ------------------------------------------------ */
 
-int pthread_atfork ( void (*prepare)(void),
-                     void (*parent)(void),
-                     void (*child)(void) )
+int __pthread_atfork ( void (*prepare)(void),
+                       void (*parent)(void),
+                       void (*child)(void) )
 {
    ignored("pthread_atfork");
    return 0;
@@ -795,6 +795,7 @@ extern
 int  __libc_connect(int  sockfd,  
                     const  struct  sockaddr  *serv_addr, 
                     socklen_t addrlen);
+__attribute__((weak))
 int  connect(int  sockfd,  
              const  struct  sockaddr  *serv_addr, 
              socklen_t addrlen)
@@ -805,6 +806,7 @@ int  connect(int  sockfd,
 
 extern
 int __libc_fcntl(int fd, int cmd, long arg);
+__attribute__((weak))
 int fcntl(int fd, int cmd, long arg)
 {
    return __libc_fcntl(fd, cmd, arg);
@@ -813,6 +815,7 @@ int fcntl(int fd, int cmd, long arg)
 
 extern 
 ssize_t __libc_write(int fd, const void *buf, size_t count);
+__attribute__((weak))
 ssize_t write(int fd, const void *buf, size_t count)
 {
    return __libc_write(fd, buf, count);
@@ -821,6 +824,7 @@ ssize_t write(int fd, const void *buf, size_t count)
 
 extern 
 ssize_t __libc_read(int fd, void *buf, size_t count);
+__attribute__((weak))
 ssize_t read(int fd, void *buf, size_t count)
 {
    return __libc_read(fd, buf, count);
@@ -829,6 +833,7 @@ ssize_t read(int fd, void *buf, size_t count)
  
 extern
 int __libc_open64(const char *pathname, int flags, mode_t mode);
+__attribute__((weak))
 int open64(const char *pathname, int flags, mode_t mode)
 {
    return __libc_open64(pathname, flags, mode);
@@ -837,6 +842,7 @@ int open64(const char *pathname, int flags, mode_t mode)
 
 extern
 int __libc_open(const char *pathname, int flags, mode_t mode);
+__attribute__((weak))
 int open(const char *pathname, int flags, mode_t mode)
 {
    return __libc_open(pathname, flags, mode);
@@ -845,6 +851,7 @@ int open(const char *pathname, int flags, mode_t mode)
 
 extern
 int __libc_close(int fd);
+__attribute__((weak))
 int close(int fd)
 {
    return __libc_close(fd);
@@ -853,6 +860,7 @@ int close(int fd)
 
 extern
 int __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
+__attribute__((weak))
 int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
    return __libc_accept(s, addr, addrlen);
@@ -861,7 +869,7 @@ int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 
 extern
 pid_t __libc_fork(void);
-pid_t fork(void)
+pid_t __fork(void)
 {
    return __libc_fork();
 }
@@ -869,6 +877,7 @@ pid_t fork(void)
 
 extern
 pid_t __libc_waitpid(pid_t pid, int *status, int options);
+__attribute__((weak))
 pid_t waitpid(pid_t pid, int *status, int options)
 {
    return __libc_waitpid(pid, status, options);
@@ -877,6 +886,7 @@ pid_t waitpid(pid_t pid, int *status, int options)
 
 extern
 int __libc_nanosleep(const struct timespec *req, struct timespec *rem);
+__attribute__((weak))
 int nanosleep(const struct timespec *req, struct timespec *rem)
 {
    return __libc_nanosleep(req, rem);
@@ -885,6 +895,7 @@ int nanosleep(const struct timespec *req, struct timespec *rem)
 
 extern
 int __libc_fsync(int fd);
+__attribute__((weak))
 int fsync(int fd)
 {
    return __libc_fsync(fd);
@@ -893,6 +904,7 @@ int fsync(int fd)
 
 extern
 off_t __libc_lseek(int fildes, off_t offset, int whence);
+__attribute__((weak))
 off_t lseek(int fildes, off_t offset, int whence)
 {
    return __libc_lseek(fildes, offset, whence);
@@ -901,6 +913,7 @@ off_t lseek(int fildes, off_t offset, int whence)
 
 extern
 __off64_t __libc_lseek64(int fildes, __off64_t offset, int whence);
+__attribute__((weak))
 __off64_t lseek64(int fildes, __off64_t offset, int whence)
 {
    return __libc_lseek64(fildes, offset, whence);
@@ -909,6 +922,7 @@ __off64_t lseek64(int fildes, __off64_t offset, int whence)
 
 extern  
 void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
+/* not weak: __attribute__((weak)) */
 void longjmp(jmp_buf env, int val)
 {
    __libc_longjmp(env, val);
@@ -917,6 +931,7 @@ void longjmp(jmp_buf env, int val)
 
 extern
 int __libc_send(int s, const void *msg, size_t len, int flags);
+__attribute__((weak))
 int send(int s, const void *msg, size_t len, int flags)
 {
    return __libc_send(s, msg, len, flags);
@@ -925,6 +940,7 @@ int send(int s, const void *msg, size_t len, int flags)
 
 extern
 int __libc_recv(int s, void *buf, size_t len, int flags);
+__attribute__((weak))
 int recv(int s, void *buf, size_t len, int flags)
 {
    return __libc_recv(s, buf, len, flags);
@@ -934,6 +950,7 @@ int recv(int s, void *buf, size_t len, int flags)
 extern
 int __libc_sendto(int s, const void *msg, size_t len, int flags, 
                   const struct sockaddr *to, socklen_t tolen);
+__attribute__((weak))
 int sendto(int s, const void *msg, size_t len, int flags, 
            const struct sockaddr *to, socklen_t tolen)
 {
@@ -943,6 +960,7 @@ int sendto(int s, const void *msg, size_t len, int flags,
 
 extern 
 int __libc_system(const char* str);
+__attribute__((weak))
 int system(const char* str)
 {
    return __libc_system(str);
@@ -951,10 +969,12 @@ int system(const char* str)
 
 extern
 pid_t __libc_wait(int *status);
+__attribute__((weak))
 pid_t wait(int *status)
 {
    return __libc_wait(status);
 }
+
 
 
 /* ---------------------------------------------------------------------
@@ -1053,7 +1073,7 @@ int do_syscall_select( int n,
      kernel's error numbers (VKI_EINTR etc).
 */
 
-
+/* __attribute__((weak)) */
 int select ( int n, 
              fd_set *rfds, 
              fd_set *wfds, 
@@ -1182,6 +1202,7 @@ int select ( int n,
 typedef unsigned long int nfds_t;
 #endif
 
+/* __attribute__((weak)) */
 int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 {
    unsigned int        ms_now, ms_end;
@@ -1271,30 +1292,44 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 # define strong_alias(name, aliasname) \
   extern __typeof (name) aliasname __attribute__ ((alias (#name)));
 
-strong_alias(pthread_mutex_lock, __pthread_mutex_lock)
-strong_alias(pthread_mutex_trylock, __pthread_mutex_trylock)
-strong_alias(pthread_mutex_unlock, __pthread_mutex_unlock)
-strong_alias(pthread_mutexattr_init, __pthread_mutexattr_init)
-strong_alias(pthread_mutexattr_settype, __pthread_mutexattr_settype)
-strong_alias(pthread_mutex_init, __pthread_mutex_init)
-strong_alias(pthread_mutexattr_destroy, __pthread_mutexattr_destroy)
-strong_alias(pthread_mutex_destroy, __pthread_mutex_destroy)
-strong_alias(pthread_once, __pthread_once)
-strong_alias(pthread_atfork, __pthread_atfork)
+# define weak_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
 
-strong_alias(fork, __fork)
-strong_alias(close, __close)
-strong_alias(write, __write)
-strong_alias(read, __read)
-strong_alias(open, __open)
+#if 1
+strong_alias(__pthread_mutex_lock, pthread_mutex_lock)
+strong_alias(__pthread_mutex_trylock, pthread_mutex_trylock)
+strong_alias(__pthread_mutex_unlock, pthread_mutex_unlock)
+strong_alias(__pthread_mutexattr_init, pthread_mutexattr_init)
+  weak_alias(__pthread_mutexattr_settype, pthread_mutexattr_settype)
+strong_alias(__pthread_mutex_init, pthread_mutex_init)
+strong_alias(__pthread_mutexattr_destroy, pthread_mutexattr_destroy)
+strong_alias(__pthread_mutex_destroy, pthread_mutex_destroy)
+strong_alias(__pthread_once, pthread_once)
+strong_alias(__pthread_atfork, pthread_atfork)
+strong_alias(__pthread_key_create, pthread_key_create)
+strong_alias(__pthread_getspecific, pthread_getspecific)
+strong_alias(__pthread_setspecific, pthread_setspecific)
+
+//strong_alias(__sigaction, sigaction)
 strong_alias(sigaction, __sigaction)
 
-strong_alias(pthread_key_create, __pthread_key_create)
-strong_alias(pthread_getspecific, __pthread_getspecific)
-strong_alias(pthread_setspecific, __pthread_setspecific)
-strong_alias(open64, __open64)
+strong_alias(close, __close)
 strong_alias(fcntl, __fcntl)
+strong_alias(lseek, __lseek)
+strong_alias(open, __open)
+strong_alias(open64, __open64)
+//strong_alias(pread64, __pread64)
+//strong_alias(pwrite64, __pwrite64)
+strong_alias(read, __read)
+strong_alias(wait, __wait)
+strong_alias(write, __write)
 strong_alias(connect, __connect)
+strong_alias(send, __send)
+
+weak_alias(__fork, fork)
+//weak_alias(__vfork, vfork)
+
+#endif
 
 /*--------------------------------------------------*/
 
@@ -1305,7 +1340,7 @@ pthread_rwlock_rdlock (void* /* pthread_rwlock_t* */ rwlock)
    return 0;
 }
 
-strong_alias(pthread_rwlock_rdlock, __pthread_rwlock_rdlock)
+weak_alias(pthread_rwlock_rdlock, __pthread_rwlock_rdlock)
 
 
 int
@@ -1315,7 +1350,7 @@ pthread_rwlock_unlock (void* /* pthread_rwlock_t* */ rwlock)
    return 0;
 }
 
-strong_alias(pthread_rwlock_unlock, __pthread_rwlock_unlock)
+weak_alias(pthread_rwlock_unlock, __pthread_rwlock_unlock)
 
 
 /* I've no idea what these are, but they get called quite a lot.
@@ -1329,6 +1364,8 @@ void _IO_flockfile ( _IO_FILE * file )
    pthread_mutex_lock(file->_lock);
    //  barf("_IO_flockfile");
 }
+weak_alias(_IO_flockfile, flockfile);
+
 
 #undef _IO_funlockfile
 void _IO_funlockfile ( _IO_FILE * file )
@@ -1338,6 +1375,8 @@ void _IO_funlockfile ( _IO_FILE * file )
    pthread_mutex_unlock(file->_lock);
    //  barf("_IO_funlockfile");
 }
+weak_alias(_IO_funlockfile, funlockfile);
+
 
 void _pthread_cleanup_push_defer ( void )
 {

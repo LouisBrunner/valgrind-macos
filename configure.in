@@ -70,6 +70,7 @@ AC_SUBST(VG_ARCH)
 AC_SUBST(KICKSTART_BASE)
 AC_SUBST(ARCH_CORE_AM_CFLAGS)
 AC_SUBST(ARCH_TOOL_AM_CFLAGS)
+AC_SUBST(ARCH_CORE_AM_CCASFLAGS)
 
 case "${host_cpu}" in
      i?86) 
@@ -78,6 +79,7 @@ case "${host_cpu}" in
         KICKSTART_BASE="0xb0000000"
         ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=32"
         ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
+        ARCH_CORE_AM_CCASFLAGS=""
         ;;
 
      powerpc*)
@@ -86,6 +88,7 @@ case "${host_cpu}" in
         KICKSTART_BASE="0x70000000"
         ARCH_CORE_AM_CFLAGS="-DELFSZ=32"
         ARCH_TOOL_AM_CFLAGS="-fpic"
+        ARCH_CORE_AM_CCASFLAGS="-Wa,-maltivec"
         AC_MSG_ERROR([PowerPC not supported. Sorry])
         ;;
 

@@ -1,20 +1,12 @@
-## Process this file with automake to produce Makefile.in
-
 ##---------------------------------------------------------------------------
 ## Need more tests:
 ## - lots more mmap/munmap/mremap/mprotect ones
-
-## Notes:
-##   - HEAD and ERASER stderr.exp are different for signal2 due to lazy vs.
-##     strict EIP updating
 ##---------------------------------------------------------------------------
 
 noinst_SCRIPTS = filter_allocs filter_leak_check_size filter_stderr \
                  filter_stderr_backtrace
 
-
-EXTRA_DIST = \
-	$(noinst_SCRIPTS) \
+EXTRA_DIST = $(noinst_SCRIPTS) \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
 	badfree-2trace.stderr.exp badfree-2trace.vgtest \
@@ -73,9 +65,9 @@ check_PROGRAMS = \
 	trivialleak tronical weirdioctl	\
 	mismatches new_override
 
+AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
 AM_CXXFLAGS = $(AM_CFLAGS)
-INCLUDES = -I$(top_srcdir)/include
 
 # C ones
 badaddrvalue_SOURCES 	= badaddrvalue.c

@@ -2,10 +2,10 @@
 SUBDIRS = . docs tests
 
 # include memcheck/ for mac_shared.h
-INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/memcheck
-
-AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
-		-Winline -Wall -Wshadow -O -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -g
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/memcheck \
+		-DVG_LIBDIR="\"$(libdir)"\"
+AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
+		@PREFERRED_STACK_BOUNDARY@ -g
 
 valdir = $(libdir)/valgrind
 

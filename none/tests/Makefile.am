@@ -1,13 +1,6 @@
-## Process this file with automake to produce Makefile.in
-
-##---------------------------------------------------------------------------
-## These ones all work fine without producing errors in any skin.
-##---------------------------------------------------------------------------
-
 noinst_SCRIPTS = filter_stderr
 
-EXTRA_DIST = \
-	$(noinst_SCRIPTS) \
+EXTRA_DIST = $(noinst_SCRIPTS) \
 	args.stderr.exp args.stdout.exp args.vgtest \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bt_everything.stderr.exp \
@@ -89,6 +82,5 @@ coolo_sigaction_SOURCES	= coolo_sigaction.cpp
 gxx304_SOURCES		= gxx304.cpp
 
 # must be built with these flags -- bug only occurred with them
-fpu_lazy_eflags.o: fpu_lazy_eflags.c
-	$(COMPILE) -O2 -mcpu=pentiumpro -march=pentiumpro -c $<
+fpu_lazy_eflags.o: CFLAGS += -O2 -mcpu=pentiumpro -march=pentiumpro
 

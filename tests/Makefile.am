@@ -8,6 +8,8 @@ noinst_SCRIPTS = \
 	filter_stderr_basic \
 	filter_test_paths
 
+EXTRA_DIST = $(noinst_SCRIPTS)
+
 check_PROGRAMS = \
 	true
 
@@ -17,5 +19,4 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 # generic C ones
 true_SOURCES 	= true.c
 
-EXTRA_DIST = $(noinst_SCRIPTS)
 

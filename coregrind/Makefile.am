@@ -1,15 +1,14 @@
 
 SUBDIRS = demangle . docs
 
-AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
-		-Winline -Wall -Wshadow -O -fomit-frame-pointer \
+add_includes = -I$(srcdir)/demangle -I$(top_srcdir)/include
+
+AM_CPPFLAGS = $(add_includes) -DVG_LIBDIR="\"$(libdir)"\"
+AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g
+AM_CCASFLAGS = $(add_includes)
 
 valdir = $(libdir)/valgrind
-
-INCLUDES = -I$(srcdir)/demangle -I$(top_srcdir)/include
-
-AM_CCASFLAGS = $(INCLUDES)
 
 bin_SCRIPTS = valgrind
 
@@ -26,7 +25,8 @@ libpthread_so_SOURCES = \
 	vg_libpthread.c \
 	vg_libpthread_unimp.c
 libpthread_so_DEPENDENCIES = $(srcdir)/vg_libpthread.vs
-libpthread_so_LDFLAGS	   = -Werror -fno-omit-frame-pointer -UVG_LIBDIR -shared -fpic \
+libpthread_so_LDFLAGS	   = -Werror -fno-omit-frame-pointer -UVG_LIBDIR \
+	-shared -fpic \
 	-Wl,-version-script $(srcdir)/vg_libpthread.vs \
 	-Wl,-z,nodelete,-z,initfirst \
 	-Wl,--soname=libpthread.so.0
@@ -83,8 +83,6 @@ noinst_HEADERS = \
 	vg_unsafe.h
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) .in_place/libpthread.so.0
-
-vg_memory_c_CFLAGS = $(PREFERRED_STACK_BOUNDARY)
 
 vg_intercept.o vg_libpthread.o vg_replace_malloc.o: CFLAGS += -fno-omit-frame-pointer
 

@@ -1,12 +1,11 @@
 
 SUBDIRS = . docs tests
 
-AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
-		-Winline -Wall -Wshadow -O -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -g
+AM_CPPFLAGS = -I$(top_srcdir)/include -DVG_LIBDIR="\"$(libdir)"\"
+AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
+		@PREFERRED_STACK_BOUNDARY@ -g
 
 valdir = $(libdir)/valgrind
-
-INCLUDES = -I$(top_srcdir)/include
 
 val_PROGRAMS = vgskin_helgrind.so
 

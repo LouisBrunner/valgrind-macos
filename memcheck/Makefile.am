@@ -1,13 +1,12 @@
 
 SUBDIRS = . tests docs
 
-INCLUDES = -I$(top_srcdir)/include
+all_includes = -I$(top_srcdir)/include
 
-AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
-		-Winline -Wall -Wshadow -O -fomit-frame-pointer \
+AM_CPPFLAGS = $(all_includes) -DVG_LIBDIR="\"$(libdir)"\"
+AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g
-
-AM_CCASFLAGS = $(INCLUDES)
+AM_CCASFLAGS = $(all_includes)
 
 valdir = $(libdir)/valgrind
 

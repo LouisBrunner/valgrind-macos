@@ -1,5 +1,3 @@
-## Process this file with automake to produce Makefile.in
-
 ##---------------------------------------------------------------------------
 ## These test core error checking, eg. "silly values" for malloc/calloc,
 ## pthread errors (and suppressions), signal handling errors, invalid fds for
@@ -8,8 +6,7 @@
 
 noinst_SCRIPTS = filter_stderr
 
-EXTRA_DIST = \
-	$(noinst_SCRIPTS) \
+EXTRA_DIST = $(noinst_SCRIPTS) \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_cancel2.stderr.exp pth_cancel2.vgtest \

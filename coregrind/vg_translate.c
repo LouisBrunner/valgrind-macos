@@ -432,7 +432,8 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
 
    /* Actually do the translation. */
    tres = LibVEX_Translate ( 
-             InsnSetArch, InsnSetArch,
+             VG_(vex_arch), VG_(vex_subarch),
+             VG_(vex_arch), VG_(vex_subarch),
              (Char*)orig_addr, (Addr64)orig_addr, 
              chase_into_ok,
              &orig_size,

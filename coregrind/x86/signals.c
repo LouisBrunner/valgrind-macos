@@ -329,20 +329,17 @@ void VGA_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs,
 
 static void fill_fpu(vki_elf_fpregset_t *fpu, const Char *from)
 {
-   if (VG_(have_ssestate)) {
-      UShort *to;
-      Int i;
+   UShort *to;
+   Int i;
 
-      /* This is what the kernel does */
-      VG_(memcpy)(fpu, from, 7*sizeof(long));
+   /* This is what the kernel does */
+   VG_(memcpy)(fpu, from, 7*sizeof(long));
    
-      to = (UShort *)&fpu->st_space[0];
-      from += 18 * sizeof(UShort);
+   to = (UShort *)&fpu->st_space[0];
+   from += 18 * sizeof(UShort);
 
-      for (i = 0; i < 8; i++, to += 5, from += 8) 
-	 VG_(memcpy)(to, from, 5*sizeof(UShort));
-   } else
-      VG_(memcpy)(fpu, from, sizeof(*fpu));
+   for (i = 0; i < 8; i++, to += 5, from += 8) 
+      VG_(memcpy)(to, from, 5*sizeof(UShort));
 }
 
 void VGA_(fill_elffpregs_from_BB)( vki_elf_fpregset_t* fpu )

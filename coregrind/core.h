@@ -99,9 +99,6 @@ typedef struct _ThreadState ThreadState;
 #define TL_(x)	vgToolInternal_##x
 
 
-/* ToDo: nuke */
-#define INVALID_OFFSET (-1)
-
 /* ---------------------------------------------------------------------
    Build options and table sizes.  You should be able to change these
    options or sizes, recompile, and still have a working system.
@@ -182,6 +179,7 @@ typedef struct _ThreadState ThreadState;
 #define ROUNDUP(p, a)	ROUNDDN((p)+(a)-1, (a))
 #define PGROUNDDN(p)	ROUNDDN(p, VKI_PAGE_SIZE)
 #define PGROUNDUP(p)	ROUNDUP(p, VKI_PAGE_SIZE)
+
 
 /* ---------------------------------------------------------------------
    Environment variables
@@ -342,6 +340,7 @@ extern Bool VG_(clo_pointercheck);
 /* Set up the libc freeres wrapper */
 extern void VG_(intercept_libc_freeres_wrapper)(Addr);
 
+
 /* ---------------------------------------------------------------------
    Profiling stuff
    ------------------------------------------------------------------ */
@@ -353,6 +352,7 @@ extern void VGP_(done_profiling) ( void );
 #undef  VGP_POPCC
 #define VGP_PUSHCC(x)   if (VG_(clo_profile)) VGP_(pushcc)(x)
 #define VGP_POPCC(x)    if (VG_(clo_profile)) VGP_(popcc)(x)
+
 
 /* ---------------------------------------------------------------------
    Tool-related types
@@ -403,11 +403,13 @@ extern void VG_(tool_init_dlsym)(void *dlhandle);
 
 #include "vg_toolint.h"
 
+
 /* ---------------------------------------------------------------------
    Exports of vg_needs.c
    ------------------------------------------------------------------ */
 
 void VG_(sanity_check_needs)(void);
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_malloc2.c
@@ -466,6 +468,7 @@ extern void  VG_(sanity_check_malloc_all) ( void );
 extern void  VG_(print_all_arena_stats) ( void );
 
 extern Bool  VG_(is_empty_arena) ( ArenaId aid );
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_intercept.c
@@ -603,11 +606,13 @@ struct vg_mallocfunc_info {
    Bool	clo_trace_malloc;
 };
 
+
 /* ---------------------------------------------------------------------
    Exports of vg_defaults.c
    ------------------------------------------------------------------ */
 
 extern Bool VG_(tl_malloc_called_by_scheduler);
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_libpthread.c
@@ -987,6 +992,7 @@ extern void VG_(synth_sigill)       (ThreadId tid, Addr addr);
 
 extern void VG_(get_sigstack_bounds)( Addr* low, Addr* high );
 
+
 /* ---------------------------------------------------------------------
    Exports of vg_mylibc.c
    ------------------------------------------------------------------ */
@@ -1037,6 +1043,7 @@ extern Char **VG_(env_setenv)   ( Char ***envp, const Char* varname,
 extern void   VG_(env_unsetenv) ( Char **env, const Char *varname );
 extern void   VG_(env_remove_valgrind_env_stuff) ( Char** env ); 
 
+
 /* ---------------------------------------------------------------------
    Exports of vg_message.c
    ------------------------------------------------------------------ */
@@ -1086,13 +1093,6 @@ extern void VG_(demangle) ( Char* orig, Char* result, Int result_size );
 
 
 /* ---------------------------------------------------------------------
-   Exports of vg_to_ucode.c
-   ------------------------------------------------------------------ */
-
-Bool VG_(cpu_has_feature)(UInt feat);
-
-
-/* ---------------------------------------------------------------------
    Exports of vg_translate.c
    ------------------------------------------------------------------ */
 
@@ -1139,6 +1139,7 @@ extern Bool VG_(is_action_requested)  ( Char* action, Bool* clo );
 
 extern UInt VG_(get_n_errs_found)     ( void );
 
+
 /* ---------------------------------------------------------------------
    Exports of vg_procselfmaps.c
    ------------------------------------------------------------------ */
@@ -1176,6 +1177,7 @@ extern void VG_(setup_code_redirect_table) ( void );
 
 /* Redirection machinery */
 extern Addr VG_(code_redirect) ( Addr orig );
+
 
 /* ---------------------------------------------------------------------
    Exports of vg_main.c
@@ -1229,6 +1231,10 @@ extern OffT VG_(instr_ptr_offset);
 
 /* Stats ... */
 extern void VG_(print_scheduler_stats) ( void );
+
+/* Indicates what arch and subarch we are running on. */
+extern VexArch    VG_(vex_arch);
+extern VexSubArch VG_(vex_subarch);
 
 
 /* ---------------------------------------------------------------------
@@ -1785,6 +1791,13 @@ extern void VG_(missing_tool_func) ( const Char* fn );
 // ---------------------------------------------------------------------
 // Architecture-specific things defined in eg. x86/*.c
 // ---------------------------------------------------------------------
+
+// Returns the architecture and subarchitecture, or indicates
+// that this subarchitecture is unable to run Valgrind
+// Returns False to indicate we cannot proceed further.
+
+extern Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*, 
+                                     /*OUT*/VexSubArch* );
 
 // Accessors for the ThreadArchState
 #define INSTR_PTR(regs)    ((regs).vex.ARCH_INSTR_PTR)

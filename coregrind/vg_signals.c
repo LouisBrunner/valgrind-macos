@@ -1233,17 +1233,14 @@ static void make_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
    phdrs = VG_(arena_malloc)(VG_AR_CORE, sizeof(*phdrs) * num_phdrs);
 
    for(i = 1; i < VG_N_THREADS; i++) {
-      vki_elf_fpregset_t fpu;
+      vki_elf_fpregset_t  fpu;
+      vki_elf_fpxregset_t xfpu;
 
       if (VG_(threads)[i].status == VgTs_Empty)
 	 continue;
 
-      if (VG_(have_ssestate)) {
-	 vki_elf_fpxregset_t xfpu;
-
-	 fill_xfpu(&VG_(threads)[i], &xfpu);
-	 add_note(&notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
-      }
+      fill_xfpu(&VG_(threads)[i], &xfpu);
+      add_note(&notelist, "LINUX", NT_PRXFPREG, &xfpu, sizeof(xfpu));
 
       fill_fpu(&VG_(threads)[i], &fpu);
       add_note(&notelist, "CORE", NT_FPREGSET, &fpu, sizeof(fpu));

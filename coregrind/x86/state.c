@@ -34,11 +34,6 @@
 
 #include "libvex_guest_x86.h"
 
-/* This is set early to indicate whether this CPU has the
-   SSE/fxsave/fxrestor features.  */
-Bool VG_(have_ssestate);
-
-
 /* Global and Local descriptor tables for threads.
 
    See comments in libvex_guest_x86.h for LibVEX's model of x86
@@ -48,6 +43,102 @@ Bool VG_(have_ssestate);
    we will initially start off with LDTs and GDTs being (HWord)NULL
    and allocate them on demand.
 */
+
+
+/*------------------------------------------------------------*/
+/*--- Determining arch/subarch.                            ---*/
+/*------------------------------------------------------------*/
+
+/* Standard macro to see if a specific flag is changeable */
+
+static inline Bool flag_is_changeable(UInt flag)
+{
+   UInt f1, f2;
+
+   asm("pushfl\n\t"
+       "pushfl\n\t"
+       "popl %0\n\t"
+       "movl %0,%1\n\t"
+       "xorl %2,%0\n\t"
+       "pushl %0\n\t"
+       "popfl\n\t"
+       "pushfl\n\t"
+       "popl %0\n\t"
+       "popfl\n\t"
+       : "=&r" (f1), "=&r" (f2)
+       : "ir" (flag));
+
+   return ((f1^f2) & flag) != 0;
+}
+
+/* Does this CPU support the CPUID instruction? */
+
+static Bool has_cpuid ( void )
+{
+   /* 21 is the ID flag */
+   return flag_is_changeable(1<<21);
+}
+
+/* Actually do a CPUID on the host. */
+
+static void do_cpuid ( UInt n,
+                       UInt* a, UInt* b,
+                       UInt* c, UInt* d )
+{
+   __asm__ __volatile__ (
+      "cpuid"
+      : "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)      /* output */
+      : "0" (n)         /* input */
+   );
+}
+
+
+// Returns the architecture and subarchitecture, or indicates
+// that this subarchitecture is unable to run Valgrind
+// Returns False to indicate we cannot proceed further.
+Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*    vex_arch, 
+                              /*OUT*/VexSubArch* vex_subarch )
+{
+   Bool have_sse0, have_sse1, have_sse2;
+   UInt eax, ebx, ecx, edx;
+
+   if (!has_cpuid())
+      /* we can't do cpuid at all.  Give up. */
+      return False;
+
+   do_cpuid(0, &eax, &ebx, &ecx, &edx);
+   if (eax < 1)
+     /* we can't ask for cpuid(x) for x > 0.  Give up. */
+     return False;
+
+   /* get capabilities bits into edx */
+   do_cpuid(1, &eax, &ebx, &ecx, &edx);
+
+   have_sse0 = (edx & (1<<24)) != 0; /* True => have fxsave/fxrstor */
+   have_sse1 = (edx & (1<<25)) != 0; /* True => have sse insns */
+   have_sse2 = (edx & (1<<26)) != 0; /* True => have sse2 insns */
+
+   if (have_sse2 && have_sse1 && have_sse0) {
+      *vex_arch    = VexArchX86;
+      *vex_subarch = VexSubArchX86_sse2;
+      return True;
+   }
+
+   if (have_sse1 && have_sse0) {
+      *vex_arch    = VexArchX86;
+      *vex_subarch = VexSubArchX86_sse1;
+      return True;
+   }
+
+   if (have_sse0) {
+      *vex_arch    = VexArchX86;
+      *vex_subarch = VexSubArchX86_sse0;
+      return True;
+   }
+
+   /* we need at least SSE state to operate. */
+   return False;
+}
 
 
 /*------------------------------------------------------------*/
@@ -90,18 +181,6 @@ void VGA_(init_thread1state) ( Addr client_eip,
 
    VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
              sizeof(VexGuestArchState));
-
-   /* I assume that if we have SSE2 we also have SSE */
-   VG_(have_ssestate) = False;
-   //      VG_(cpu_has_feature)(VG_X86_FEAT_FXSR) &&
-   //   VG_(cpu_has_feature)(VG_X86_FEAT_SSE);
-
-   if (0) {
-      if (VG_(have_ssestate))
-         VG_(printf)("Looks like a SSE-capable CPU\n");
-      else
-         VG_(printf)("Looks like a MMX-only CPU\n");
-   }
 }
 
 

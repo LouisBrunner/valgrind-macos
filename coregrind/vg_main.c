@@ -141,6 +141,11 @@ Char** VG_(client_envp);
 // Instruction pointer guest state offset, used by $VG_ARCH/dispatch.S.
 OffT VG_(instr_ptr_offset);
 
+/* Indicates what arch and subarch we are running on. */
+VexArch    VG_(vex_arch)    = VexArch_INVALID;
+VexSubArch VG_(vex_subarch) = VexSubArch_INVALID;
+
+
 /* ---------------------------------------------------------------------
    Running stuff                            
    ------------------------------------------------------------------ */
@@ -2424,7 +2429,7 @@ int main(int argc, char **argv)
 
    //--------------------------------------------------------------
    // Check we were launched by stage1
-   //   p: n/a
+   //   p: none
    //--------------------------------------------------------------
    {
       void* init_sp = argv - 1;
@@ -2438,9 +2443,9 @@ int main(int argc, char **argv)
 
    //--------------------------------------------------------------
    // Look for alternative libdir                                  
-   //   p: n/a
+   //   p: none
    //--------------------------------------------------------------
-   {  char *cp = getenv(VALGRINDLIB);
+   {  HChar *cp = getenv(VALGRINDLIB);
       if (cp != NULL)
 	 VG_(libdir) = cp;
    }
@@ -2448,7 +2453,7 @@ int main(int argc, char **argv)
    //--------------------------------------------------------------
    // Get valgrind args + client args (inc. from VALGRIND_OPTS/.valgrindrc).
    // Pre-process the command line.
-   //   p: n/a
+   //   p: none
    //--------------------------------------------------------------
    get_command_line(argc, argv, &vg_argc, &vg_argv, &cl_argv);
    pre_process_cmd_line_options(&need_help, &tool, &exec);
@@ -2569,6 +2574,27 @@ int main(int argc, char **argv)
    process_cmd_line_options(client_auxv, tool);
 
    TL_(post_clo_init)();
+
+   //--------------------------------------------------------------
+   // Determine CPU architecture and subarchitecture
+   //   p: none
+   //--------------------------------------------------------------
+   {  Bool ok = VGA_(getArchAndSubArch)(
+                   & VG_(vex_arch), & VG_(vex_subarch) );
+      if (!ok) {
+         VG_(printf)("valgrind: fatal error: unsupported CPU.\n");
+         VG_(printf)("   supported CPUs are:\n");
+         VG_(printf)("   * x86 with SSE state (Pentium II or above,\n");
+         VG_(printf)("     AMD Athlon or above)\n");
+         VG_(exit)(1);
+      }
+      if (VG_(clo_verbosity) > 2) {
+         VG_(message)(Vg_DebugMsg, 
+                      "Host CPU: arch = %s, subarch = %s",
+                      LibVEX_ppVexArch( VG_(vex_arch) ),
+                      LibVEX_ppVexSubArch( VG_(vex_subarch) ) );
+      }
+   }
 
    //--------------------------------------------------------------
    // Build segment map (all segments)

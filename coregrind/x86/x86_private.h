@@ -41,12 +41,6 @@
    Exports of state.c that are not core-visible
    ------------------------------------------------------------------ */
 
-/* Is this a SSE/SSE2-capable CPU?  If so, we had better save/restore
-   the SSE state all over the place.  This is set up very early, since we
-   can't even correctly snapshot the startup machine state without it. 
-*/
-extern Bool VG_(have_ssestate);
-
 /* Create LDT/GDT arrays, as specified in libvex_guest_x86.h. */
 extern VexGuestX86SegDescr* VG_(alloc_zeroed_x86_GDT) ( void );
 extern VexGuestX86SegDescr* VG_(alloc_zeroed_x86_LDT) ( void );

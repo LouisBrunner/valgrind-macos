@@ -114,14 +114,9 @@ dispatch_boring:
 	   requested to the address in %eax.
 	
 	   If ebp is unchanged (== * 28(%esp)), just jump next to %eax.
-	 
-	   If ebp == VG_EBP_JMP_SYSCALL, do a system call before 
-	   continuing at eax.
-	
-	   If ebp == VG_EBP_JMP_CLIENTREQ, do a client request before 
-	   continuing at eax.
-	
-	   If %ebp has any other value, we panic.
+
+	   Otherwise fall out, back to the scheduler, and let it
+	   figure out what to do next.
 	*/
 
 	cmpl	28(%esp), %ebp

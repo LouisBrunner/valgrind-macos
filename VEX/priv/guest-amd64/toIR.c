@@ -33,11 +33,7 @@
    USA.
 */
 
-/* EFLAGS after multiply-Q is wrong because there is no way to do
-   a 128-bit multiply in C (directly). */
-
 //.. /* TODO:
-//..    SBB reg with itself
 //.. 
 //..    check flag settings for cmpxchg
 //..    FUCOMI(P): what happens to A and S flags?  Currently are forced
@@ -3563,11 +3559,11 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
             DIP("test%c $%lld, %s\n", nameISize(sz), d64, dis_buf);
             break;
          }
-//..          /* probably OK, but awaiting test case */
-//..          case 2: /* NOT */
-//..             storeLE( mkexpr(addr), unop(mkSizedOp(ty,Iop_Not8), mkexpr(t1)));
-//..             DIP("not%c %s\n", nameISize(sz), dis_buf);
-//..             break;
+         /* probably OK, but awaiting test case */
+         case 2: /* NOT */
+            storeLE( mkexpr(addr), unop(mkSizedOp(ty,Iop_Not8), mkexpr(t1)));
+            DIP("not%c %s\n", nameISize(sz), dis_buf);
+            break;
          case 3: /* NEG */
             dst0 = newTemp(ty);
             src  = newTemp(ty);
@@ -3589,10 +3585,10 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
             codegen_div ( sz, t1, False );
             DIP("div%c %s\n", nameISize(sz), dis_buf);
             break;
-//..          case 7: /* IDIV */
-//..             codegen_div ( sz, t1, True );
-//..             DIP("idiv%c %s\n", nameISize(sz), dis_buf);
-//..             break;
+         case 7: /* IDIV */
+            codegen_div ( sz, t1, True );
+            DIP("idiv%c %s\n", nameISize(sz), dis_buf);
+            break;
          default: 
             vex_printf(
                "unhandled Grp3(M) case %d\n", (Int)gregLO3ofRM(modrm));
@@ -8236,7 +8232,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
             DIP("cvtsi2ssq %s,%s\n", nameIReg64(eregOfRexRM(pfx,modrm)),
                                      nameXMMReg(gregOfRexRM(pfx,modrm)));
          } else {
-            goto decode_failure; /* awaiting test case */
+            addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+            assign( arg64, loadLE(Ity_I64, mkexpr(addr)) );
+            delta += 2+alen;
+            DIP("cvtsi2ssq %s,%s\n", dis_buf,
+                                     nameXMMReg(gregOfRexRM(pfx,modrm)) );
          }
          putXMMRegLane32F( 
             gregOfRexRM(pfx,modrm), 0,
@@ -8305,6 +8305,59 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..    /* F3 0F 2D = CVTSS2SI -- convert F32 in mem/low quarter xmm to
 //..       I32 in ireg, according to prevailing SSE rounding mode */
+   /* F3 0F 2C = CVTTSS2SI 
+      when sz==4 -- convert F32 in mem/low quarter xmm to I32 in ireg, 
+                    truncating towards zero
+      when sz==8 -- convert F32 in mem/low quarter xmm to I64 in ireg, 
+                    truncating towards zero 
+   */
+   if (haveF3no66noF2(pfx) 
+       && insn[0] == 0x0F 
+       && ( /* insn[1] == 0x2D || */ insn[1] == 0x2C)) {
+      IRTemp rmode  = newTemp(Ity_I32);
+      IRTemp f32lo  = newTemp(Ity_F32);
+      Bool   r2zero = toBool(insn[1] == 0x2C);
+      vassert(sz == 4 || sz == 8);
+
+      modrm = getUChar(delta+2);
+      if (epartIsReg(modrm)) {
+         delta += 2+1;
+         assign(f32lo, getXMMRegLane32F(eregOfRexRM(pfx,modrm), 0));
+         DIP("cvt%sss2si %s,%s\n", r2zero ? "t" : "",
+                                   nameXMMReg(eregOfRexRM(pfx,modrm)),
+                                   nameIReg(sz, gregOfRexRM(pfx,modrm), False));
+      } else {
+         addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
+         assign(f32lo, loadLE(Ity_F32, mkexpr(addr)));
+         delta += 2+alen;
+         DIP("cvt%sss2si %s,%s\n", r2zero ? "t" : "",
+                                   dis_buf,
+                                   nameIReg(sz, gregOfRexRM(pfx,modrm), False));
+      }
+
+      if (r2zero) {
+         assign( rmode, mkU32((UInt)Irrm_ZERO) );
+      } else {
+         assign( rmode, get_sse_roundingmode() );
+      }
+
+      if (sz == 4) {
+         putIReg32( gregOfRexRM(pfx,modrm),
+                    binop( Iop_F64toI32, 
+                           mkexpr(rmode), 
+                           unop(Iop_F32toF64, mkexpr(f32lo))) );
+      } else {
+         putIReg64( gregOfRexRM(pfx,modrm),
+                    binop( Iop_F64toI64, 
+                           mkexpr(rmode), 
+                           unop(Iop_F32toF64, mkexpr(f32lo))) );
+      }
+
+      goto decode_success;
+   }
+
+
+////////////////////////////////////////////////////////////////
 //..    /* F3 0F 2C = CVTTSS2SI -- convert F32 in mem/low quarter xmm to
 //..       I32 in ireg, according to prevailing SSE rounding mode */
 //..    if (insn[0] == 0xF3 && insn[1] == 0x0F 
@@ -8344,6 +8397,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..       goto decode_success;
 //..    }
+///////////////////////////////////////////////////////////////////
+
+
 //.. 
 //..    /* 0F 5E = DIVPS -- div 32Fx4 from R/M to R */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x5E) {
@@ -12785,41 +12841,44 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       case 0xBD: /* BSR Gv,Ev */
 //..          delta = dis_bs_E_G ( sorb, sz, delta, False );
 //..          break;
-//.. 
-//..       /* =-=-=-=-=-=-=-=-=- BSWAP -=-=-=-=-=-=-=-=-=-=-= */
-//.. 
-//..       case 0xC8: /* BSWAP %eax */
-//..       case 0xC9:
-//..       case 0xCA:
-//..       case 0xCB:
-//..       case 0xCC:
-//..       case 0xCD:
-//..       case 0xCE:
-//..       case 0xCF: /* BSWAP %edi */
-//..          /* AFAICS from the Intel docs, this only exists at size 4. */
-//..          vassert(sz == 4);
-//..          t1 = newTemp(Ity_I32);
-//..          t2 = newTemp(Ity_I32);
-//..          assign( t1, getIReg(4, opc-0xC8) );
-//.. 
-//..          assign( t2,
-//..             binop(Iop_Or32,
-//..                binop(Iop_Shl32, mkexpr(t1), mkU8(24)),
-//..             binop(Iop_Or32,
-//..                binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)), 
-//..                                 mkU32(0x00FF0000)),
-//..             binop(Iop_Or32,
-//..                binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(8)),
-//..                                 mkU32(0x0000FF00)),
-//..                binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(24)),
-//..                                 mkU32(0x000000FF) )
-//..             )))
-//..          );
-//.. 
-//..          putIReg(4, opc-0xC8, mkexpr(t2));
-//..          DIP("bswapl %s\n", nameIReg(4, opc-0xC8));
-//..          break;
-//.. 
+
+      /* =-=-=-=-=-=-=-=-=- BSWAP -=-=-=-=-=-=-=-=-=-=-= */
+
+      case 0xC8: /* BSWAP %eax */
+      case 0xC9:
+      case 0xCA:
+      case 0xCB:
+      case 0xCC:
+      case 0xCD:
+      case 0xCE:
+      case 0xCF: /* BSWAP %edi */
+         if (haveF2orF3(pfx)) goto decode_failure;
+         /* According to the AMD64 docs, this insn can have size 4 or
+            8. */
+         if (sz == 4) {
+            t1 = newTemp(Ity_I32);
+            t2 = newTemp(Ity_I32);
+            assign( t1, getIRegRexB(4, pfx, opc-0xC8) );
+            assign( t2,
+               binop(Iop_Or32,
+                  binop(Iop_Shl32, mkexpr(t1), mkU8(24)),
+               binop(Iop_Or32,
+                  binop(Iop_And32, binop(Iop_Shl32, mkexpr(t1), mkU8(8)), 
+                                   mkU32(0x00FF0000)),
+               binop(Iop_Or32,
+                  binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(8)),
+                                   mkU32(0x0000FF00)),
+                  binop(Iop_And32, binop(Iop_Shr32, mkexpr(t1), mkU8(24)),
+                                   mkU32(0x000000FF) )
+               )))
+            );
+            putIRegRexB(4, pfx, opc-0xC8, mkexpr(t2));
+            DIP("bswapl %s\n", nameIRegRexB(4, pfx, opc-0xC8));
+            break;
+         } else {
+            goto decode_failure;
+         }
+
 //..       /* =-=-=-=-=-=-=-=-=- BT/BTS/BTR/BTC =-=-=-=-=-=-= */
 //.. 
 //..       case 0xA3: /* BT Gv,Ev */
@@ -12933,7 +12992,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
       case 0xBE: /* MOVSXb Eb,Gv */
          if (haveF2orF3(pfx)) goto decode_failure;
-         if (sz != 4 && sz != 8)
+         if (sz != 2 && sz != 4 && sz != 8)
             goto decode_failure;
          delta = dis_movx_E_G ( pfx, delta, 1, sz, True );
          break;

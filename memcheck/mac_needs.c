@@ -801,10 +801,12 @@ Bool MAC_(handle_common_client_requests)(ThreadState* tst, UInt* arg,
    switch (arg[0]) {
    case VG_USERREQ__COUNT_LEAKS: { /* count leaked bytes */
       UInt** argp = (UInt**)arg;
-      *argp[1] = MAC_(total_bytes_leaked);
-      *argp[2] = MAC_(total_bytes_dubious);
-      *argp[3] = MAC_(total_bytes_reachable);
-      *argp[4] = MAC_(total_bytes_suppressed);
+      // MAC_(bytes_leaked) et al were set by the last leak check (or zero
+      // if no prior leak checks performed).
+      *argp[1] = MAC_(bytes_leaked);
+      *argp[2] = MAC_(bytes_dubious);
+      *argp[3] = MAC_(bytes_reachable);
+      *argp[4] = MAC_(bytes_suppressed);
       *ret = 0;
       return True;
    }

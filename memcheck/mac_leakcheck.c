@@ -356,10 +356,10 @@ void MAC_(pp_LeakError)(void* vl, UInt n_this_record, UInt n_total_records)
    VG_(pp_ExeContext)(l->allocated_at);
 }
 
-Int MAC_(total_bytes_leaked)     = 0;
-Int MAC_(total_bytes_dubious)    = 0;
-Int MAC_(total_bytes_reachable)  = 0;
-Int MAC_(total_bytes_suppressed) = 0;
+Int MAC_(bytes_leaked)     = 0;
+Int MAC_(bytes_dubious)    = 0;
+Int MAC_(bytes_reachable)  = 0;
+Int MAC_(bytes_suppressed) = 0;
 
 /* Top level entry point to leak detector.  Call here, passing in
    suitable address-validating functions (see comment at top of
@@ -376,10 +376,10 @@ void MAC_(do_detect_memory_leaks) (
 )
 {
    Int    i;
-   Int    blocks_leaked, bytes_leaked;
-   Int    blocks_dubious, bytes_dubious;
-   Int    blocks_reachable, bytes_reachable;
-   Int    blocks_suppressed, bytes_suppressed;
+   Int    blocks_leaked;
+   Int    blocks_dubious;
+   Int    blocks_reachable;
+   Int    blocks_suppressed;
    Int    n_lossrecords;
    UInt   bytes_notified;
    Bool   is_suppressed;
@@ -457,10 +457,10 @@ void MAC_(do_detect_memory_leaks) (
    }
 
    /* Print out the commoned-up blocks and collect summary stats. */
-   blocks_leaked     = bytes_leaked     = 0;
-   blocks_dubious    = bytes_dubious    = 0;
-   blocks_reachable  = bytes_reachable  = 0;
-   blocks_suppressed = bytes_suppressed = 0;
+   blocks_leaked     = MAC_(bytes_leaked)     = 0;
+   blocks_dubious    = MAC_(bytes_dubious)    = 0;
+   blocks_reachable  = MAC_(bytes_reachable)  = 0;
+   blocks_suppressed = MAC_(bytes_suppressed) = 0;
 
    for (i = 0; i < n_lossrecords; i++) {
       Bool        print_record;
@@ -488,20 +488,20 @@ void MAC_(do_detect_memory_leaks) (
                              /*allow_GDB_attach*/False, /*count_error*/False );
 
       if (is_suppressed) {
-         blocks_suppressed += p_min->num_blocks;
-         bytes_suppressed  += p_min->total_bytes;
+         blocks_suppressed      += p_min->num_blocks;
+         MAC_(bytes_suppressed) += p_min->total_bytes;
 
-      } else if (Unreached == p_min->loss_mode) {
-         blocks_leaked     += p_min->num_blocks;
-         bytes_leaked      += p_min->total_bytes;
+      } else if (Unreached  == p_min->loss_mode) {
+         blocks_leaked      += p_min->num_blocks;
+         MAC_(bytes_leaked) += p_min->total_bytes;
 
-      } else if (Interior  == p_min->loss_mode) {
-         blocks_dubious    += p_min->num_blocks;
-         bytes_dubious     += p_min->total_bytes;
+      } else if (Interior    == p_min->loss_mode) {
+         blocks_dubious      += p_min->num_blocks;
+         MAC_(bytes_dubious) += p_min->total_bytes;
 
-      } else if (Proper    == p_min->loss_mode) {
-         blocks_reachable  += p_min->num_blocks;
-         bytes_reachable   += p_min->total_bytes;
+      } else if (Proper        == p_min->loss_mode) {
+         blocks_reachable      += p_min->num_blocks;
+         MAC_(bytes_reachable) += p_min->total_bytes;
 
       } else {
          VG_(skin_panic)("generic_detect_memory_leaks: unknown loss mode");
@@ -512,13 +512,13 @@ void MAC_(do_detect_memory_leaks) (
    VG_(message)(Vg_UserMsg, "");
    VG_(message)(Vg_UserMsg, "LEAK SUMMARY:");
    VG_(message)(Vg_UserMsg, "   definitely lost: %d bytes in %d blocks.", 
-                            bytes_leaked, blocks_leaked );
+                            MAC_(bytes_leaked), blocks_leaked );
    VG_(message)(Vg_UserMsg, "   possibly lost:   %d bytes in %d blocks.", 
-                            bytes_dubious, blocks_dubious );
+                            MAC_(bytes_dubious), blocks_dubious );
    VG_(message)(Vg_UserMsg, "   still reachable: %d bytes in %d blocks.", 
-                            bytes_reachable, blocks_reachable );
+                            MAC_(bytes_reachable), blocks_reachable );
    VG_(message)(Vg_UserMsg, "        suppressed: %d bytes in %d blocks.", 
-                            bytes_suppressed, blocks_suppressed );
+                            MAC_(bytes_suppressed), blocks_suppressed );
    if (!MAC_(clo_show_reachable)) {
       VG_(message)(Vg_UserMsg, 
         "Reachable blocks (those to which a pointer was found) are not shown.");
@@ -526,11 +526,6 @@ void MAC_(do_detect_memory_leaks) (
          "To see them, rerun with: --show-reachable=yes");
    }
    VG_(message)(Vg_UserMsg, "");
-
-   MAC_(total_bytes_leaked)     += bytes_leaked;
-   MAC_(total_bytes_dubious)    += bytes_dubious;
-   MAC_(total_bytes_reachable)  += bytes_reachable;
-   MAC_(total_bytes_suppressed) += bytes_suppressed;
 
    VG_(free) ( lc_shadows );
    VG_(free) ( lc_reachedness );

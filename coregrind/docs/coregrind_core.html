@@ -1017,9 +1017,9 @@ A brief description of the available macros:
     occur.
 <p>
 <li><code>VALGRIND_COUNT_LEAKS</code>: fills in the four arguments with
-    the number of bytes of memory found by all previous leak checks that
-    were leaked, dubious, reachable and suppressed.  Again, useful for
-    test harness code.
+    the number of bytes of memory found by the previous leak check to
+    be leaked, dubious, reachable and suppressed.  Again, useful in
+    test harness code, after calling <code>VALGRIND_DO_LEAK_CHECK</code>.
 <p>
 <li><code>VALGRIND_MALLOCLIKE_BLOCK</code>: If your program manages its own
     memory instead of using the standard

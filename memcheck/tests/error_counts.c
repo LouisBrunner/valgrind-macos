@@ -41,6 +41,7 @@ int main(void)
    reachable = malloc(99);
 
    VALGRIND_DO_LEAK_CHECK;
+   VALGRIND_DO_LEAK_CHECK;
    VALGRIND_COUNT_LEAKS(n_leaked, n_dubious, n_reachable, n_suppressed);
    if (n_reachable == 147) n_reachable = 99; /* handle glibc differences */
    printf("leaks: %dB, %dB, %dB, %dB\n",

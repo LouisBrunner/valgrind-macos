@@ -1987,16 +1987,11 @@ UInt dis_mov_E_G ( UChar       sorb,
    UChar dis_buf[50];
 
    if (epartIsReg(rm)) {
-#if 0
-      Int tmpv = newTemp(cb);
-      uInstr2(cb, GET, size, ArchReg, eregOfRM(rm), TempReg, tmpv);
-      uInstr2(cb, PUT, size, TempReg, tmpv, ArchReg, gregOfRM(rm));
+      putIReg(size, gregOfRM(rm), getIReg(size, eregOfRM(rm)));
       DIP("mov%c %s,%s\n", nameISize(size), 
                            nameIReg(size,eregOfRM(rm)),
                            nameIReg(size,gregOfRM(rm)));
-      return 1+eip0;
-#endif
-      vassert(121221==0);
+      return 1+delta0;
    }
 
    /* E refers to memory */    
@@ -3549,7 +3544,22 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, False );
                break;
 
-            case 3: /* FCOM single-real */
+            case 2: /* FCOM single-real */
+               DIP("fcoms %s\n", dis_buf);
+               /* This forces C1 to zero, which isn't right. */
+               put_C3210( 
+                   binop( Iop_And32,
+                          binop(Iop_Shl32, 
+                                binop(Iop_CmpF64, 
+                                      get_ST(0),
+                                      unop(Iop_F32toF64, 
+                                           loadLE(Ity_F32,mkexpr(addr)))),
+                                mkU8(8)),
+                          mkU32(0x4500)
+                   ));
+               break;  
+
+            case 3: /* FCOMP single-real */
                DIP("fcomps %s\n", dis_buf);
                /* This forces C1 to zero, which isn't right. */
                put_C3210( 

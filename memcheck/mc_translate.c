@@ -1,4 +1,4 @@
-
+/* -*- c-basic-offset: 3 -*- */
 /*--------------------------------------------------------------------*/
 /*--- Instrument UCode to perform memory checking operations.      ---*/
 /*---                                               mc_translate.c ---*/
@@ -1081,7 +1081,23 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             break;
          }
 
-         /* ... and the same deal for SSE insns referencing memory. */
+	 /* SSE ins referencing registers */
+	 case SSE3g_RegWr:
+         case SSE3e_RegRd:
+         case SSE3e_RegWr: 
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            sk_assert(u_in->tag3 == TempReg);
+
+            /* is it a read ? Test for V */
+            if( u_in->opcode == SSE3e_RegRd )
+	       uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val3));
+
+	    uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val3));
+
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         /* ... and the same deal for SSE insns referencing memory */
          case SSE3a_MemRd:
          case SSE3a_MemWr:
          case SSE2a_MemWr:
@@ -1092,25 +1108,41 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
 
             t_size = INVALID_TEMPREG;
-            is_load = u_in->opcode==SSE2a_MemRd
-                      || u_in->opcode==SSE3a_MemRd;
-            sk_assert(u_in->tag3 == TempReg);
-            uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val3));
-            uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val3));
+            is_load = u_in->opcode==SSE2a_MemRd || u_in->opcode==SSE3a_MemRd;
 
-            t_size = newTemp(cb);
-            uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
-            uLiteral(cb, u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, u_in->val3, TempReg, t_size);
-            uCCall(cb, is_load ? (Addr) & MC_(fpu_read_check) 
-                               : (Addr) & MC_(fpu_write_check),
-                   2, 2, False);
+            sk_assert(u_in->tag3 == TempReg);
+
+	    uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val3));
+	    uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val3));
+	    t_size = newTemp(cb);
+	    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, u_in->size);
+	    uInstr2(cb, CCALL, 0, TempReg, u_in->val3, TempReg, t_size);
+	    uCCall(cb, is_load ? (Addr) & MC_(fpu_read_check) 
+		   : (Addr) & MC_(fpu_write_check),
+		   2, 2, False);
+
             VG_(copy_UInstr)(cb, u_in);
             break;
          }
+	 case SSE3ag_MemRd_RegWr:
+	 {
+	    Int t_size;
 
-         /* For FPU, MMX and SSE insns not referencing memory, just
-	    copy thru. */
+            sk_assert(u_in->size == 4 || u_in->size == 8);
+	    sk_assert(u_in->tag1 == TempReg);
+	    uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val1));
+	    uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val1));
+            t_size = newTemp(cb);
+	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, u_in->size);
+            uInstr2(cb, CCALL, 0, TempReg, u_in->val1, TempReg, t_size);
+            uCCall(cb, (Addr) MC_(fpu_read_check), 2, 2, False );
+	    uInstr1(cb, SETV, 4, TempReg, SHADOW(u_in->val2));
+            VG_(copy_UInstr)(cb, u_in);
+	    break;
+         }
+         /* For FPU, MMX and SSE insns not referencing memory, just copy thru. */
          case SSE4: case SSE3:
          case MMX1: case MMX2: case MMX3:
          case FPU: 

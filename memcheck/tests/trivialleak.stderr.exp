@@ -7,10 +7,6 @@ For counts of detected errors, rerun with: -v
 searching for pointers to 1000 not-freed blocks.
 checked ... bytes.
 
-definitely lost: 1000 bytes in 1000 blocks.
-possibly lost:   0 bytes in 0 blocks.
-still reachable: 0 bytes in 0 blocks.
-
 1000 bytes in 1000 blocks are definitely lost in loss record 1 of 1
    at 0x........: malloc (vg_clientfuncs.c:...)
    by 0x........: test (trivialleak.c:8)
@@ -21,6 +17,7 @@ LEAK SUMMARY:
    definitely lost: 1000 bytes in 1000 blocks.
    possibly lost:   0 bytes in 0 blocks.
    still reachable: 0 bytes in 0 blocks.
+        suppressed: 0 bytes in 0 blocks.
 Reachable blocks (those to which a pointer was found) are not shown.
 To see them, rerun with: --show-reachable=yes
 

@@ -405,12 +405,15 @@ void* VG_(brk) ( void* end_data_segment )
    }
 
    if (brkpage != endpage) {
-      if (brkpage > endpage)
-	 munmap_inner((void *)brkpage, brkpage-endpage);
-      else
-	 mmap_inner((void *)brkpage, endpage-brkpage, 
-		    VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
-		    VKI_MAP_FIXED|VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, -1, 0);
+      if (brkpage > endpage) {
+         Int res = munmap_inner((void *)brkpage, brkpage-endpage);
+         vg_assert(0 == res);
+      } else {
+         Addr res = mmap_inner((void *)brkpage, endpage-brkpage, 
+                       VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
+                       VKI_MAP_FIXED|VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, -1, 0);
+         vg_assert((Addr)-1 != res);
+      }
    }
    VG_(curbrk) = (Char *)__curbrk = end_data_segment;
 

@@ -1279,16 +1279,40 @@ int resolveObjs( void )
  * Top-level linker.
  */
 
+#define N_OBJS 10
+
+static char* object_names[N_OBJS];
+static int   n_object_names = 0;
+
+/* Somewhat naff interface resulting from difficulties in 
+   marshalling arrays of strings from Haskell to C.
+*/
+void linker_top_level_INIT ( void )
+{
+   n_object_names = 0;
+}
+
+void linker_top_level_ADD ( char* obj_name )
+{
+   if (n_object_names >= N_OBJS) {
+      fprintf(stderr, "linker: linker_top_level_ADD: too many objs");
+      exit(1);
+   }
+   //fprintf(stderr, "ADD %d %s\n", n_object_names, obj_name);
+   object_names[n_object_names++] = strdup(obj_name);
+}
+
 /* Load and link a bunch of .o's, and return the address of
    'main'.  Or NULL if something borks.
 */
-void* linker_top_level ( int n_objs, char** object_names )
+void* linker_top_level_LINK ( void )
 {
    int   i, r;
    void* mainp;
 
    initLinker();
-   for (i = 0; i < n_objs; i++) {
+   for (i = 0; i < n_object_names; i++) {
+      //fprintf(stderr, "linkloop %d %s\n", i, object_names[i] );
       r = loadObj( object_names[i] );
       if (r != 1) return NULL;
    }

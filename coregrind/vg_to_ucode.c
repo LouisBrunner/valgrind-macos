@@ -6822,7 +6822,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          vg_assert(sz == 4);
          modrm = getUChar(eip);
          if (epartIsReg(modrm)) {
-            goto decode_failure;
+            eip++;
+            uInstr1(cb, MMX2, 0, 
+                        Lit16, 
+                        (((UShort)(opc)) << 8) | ((UShort)modrm) );
+            if (dis)
+               VG_(printf)("movq %s, %s\n", 
+                           nameMMXReg(gregOfRM(modrm)),
+                           nameMMXReg(eregOfRM(modrm)));
          } else {
             Int tmpa;
             pair = disAMode ( cb, sorb, eip, dis?dis_buf:NULL );

@@ -1,4 +1,88 @@
 
+Stable release 2.2.0 (31 August 2004) -- CHANGES RELATIVE TO 2.0.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Stable release 2.2.0 (31 August 2004) -- CHANGES RELATIVE TO 2.1.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2.2.0 is not much different from 2.1.2, released seven weeks ago.
+A number of bugs have been fixed, most notably #85658, which gave
+problems for quite a few people.  There have been many internal
+cleanups, but those are not user visible.
+
+The following bugs have been fixed since 2.1.2:
+
+85658   Assert in coregrind/vg_libpthread.c:2326 (open64) !=
+        (void*)0 failed
+        This bug was reported multiple times, and so the following
+        duplicates of it are also fixed: 87620, 85796, 85935, 86065, 
+        86919, 86988, 87917, 88156
+
+80716   Semaphore mapping bug caused by unmap (sem_destroy)
+        (Was fixed prior to 2.1.2)
+
+86987   semctl and shmctl syscalls family is not handled properly
+
+86696   valgrind 2.1.2 + RH AS2.1 + librt
+
+86730   valgrind locks up at end of run with assertion failure 
+        in __pthread_unwind
+
+86641   memcheck doesn't work with Mesa OpenGL/ATI on Suse 9.1
+        (also fixes 74298, a duplicate of this)
+
+85947   MMX/SSE unhandled instruction 'sfence'
+
+84978   Wrong error "Conditional jump or move depends on
+        uninitialised value" resulting from "sbbl %reg, %reg"
+
+86254   ssort() fails when signed int return type from comparison is 
+        too small to handle result of unsigned int subtraction
+
+87089   memalign( 4, xxx) makes valgrind assert
+
+86407   Add partial support for the low-level parallel port driver ioctls.
+
+70587   Add timestamps to Valgrind output? (wishlist)
+
+84937   vg_libpthread.c:2505 (se_remap): Assertion `res == 0'
+        (fixed prior to 2.1.2)
+
+86317   cannot load libSDL-1.2.so.0 using valgrind
+
+86989   memcpy from mac_replace_strmem.c complains about
+        uninitialized pointers passed when length to copy is zero
+
+85811   gnu pascal symbol causes segmentation fault; ok in 2.0.0
+
+79138   writing to sbrk()'d memory causes segfault
+
+77369   sched deadlock while signal received during pthread_join
+        and the joined thread exited
+
+88115   In signal handler for SIGFPE,  siginfo->si_addr is wrong 
+        under Valgrind
+
+78765   Massif crashes on app exit if FP exceptions are enabled
+
+Additionally there are the following changes, which are not 
+connected to any bug report numbers, AFAICS:
+
+* Fix scary bug causing mis-identification of SSE stores vs
+  loads and so causing memcheck to sometimes give nonsense results
+  on SSE code.
+
+* Add support for the POSIX message queue system calls.
+
+* Fix to allow 32-bit Valgrind to run on AMD64 boxes.  Note: this does
+  NOT allow Valgrind to work with 64-bit executables - only with 32-bit
+  executables on an AMD64 box.
+
+* At configure time, only check whether linux/mii.h can be processed 
+  so that we don't generate ugly warnings by trying to compile it.
+
+
+
 Developer (cvs head) release 2.1.2 (18 July 2004)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 2.1.2 contains four months worth of bug fixes and refinements.

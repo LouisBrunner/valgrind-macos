@@ -1352,7 +1352,7 @@ static void load_tool( const char *toolname, void** handle_out,
 /*====================================================================*/
 
 static void load_client(char* cl_argv[], const char* exec,    
-                 /*inout*/Bool* need_help,
+                 /*inout*/Int* need_help,
                  /*out*/struct exeinfo* info, /*out*/Addr* client_eip)
 {
    // If they didn't specify an executable with --exec, and didn't specify 
@@ -1361,7 +1361,7 @@ static void load_client(char* cl_argv[], const char* exec,
       if (cl_argv[0] == NULL || 
           ( NULL == (exec = find_executable(cl_argv[0])) ) )
       {
-         *need_help = True;
+         *need_help = 1;
       }
    }
 
@@ -1469,7 +1469,7 @@ static void config_error ( Char* msg )
    VG_(exit)(1);
 }
 
-void usage ( void )
+void usage ( Bool debug_help )
 {
    Char* usage1 = 
 "usage: valgrind --tool=<toolname> [options] prog-and-args\n"
@@ -1477,6 +1477,7 @@ void usage ( void )
 "  common user options for all Valgrind tools, with defaults in [ ]:\n"
 "    --tool=<name>             Use the Valgrind tool named <name>\n"
 "    --help                    show this message\n"
+"    --help-debug              show this message, plus debugging options\n"
 "    --version                 show version\n"
 "    -q --quiet                run silently; only print error msgs\n"
 "    -v --verbose              be more verbose, incl counts of errors\n"
@@ -1557,15 +1558,17 @@ void usage ( void )
       else
 	 VG_(printf)("    (none)\n");
    }
-   VG_(printf)(usage2);
+   if (debug_help) {
+      VG_(printf)(usage2);
 
-   if (VG_(details).name) {
-      VG_(printf)("  debugging options for %s:\n", VG_(details).name);
-   
-      if (VG_(needs).command_line_options)
-	 SK_(print_debug_usage)();
-      else
-	 VG_(printf)("    (none)\n");
+      if (VG_(details).name) {
+         VG_(printf)("  debugging options for %s:\n", VG_(details).name);
+      
+         if (VG_(needs).command_line_options)
+            SK_(print_debug_usage)();
+         else
+            VG_(printf)("    (none)\n");
+      }
    }
    VG_(printf)(usage3, VG_BUGS_TO);
 
@@ -1576,7 +1579,7 @@ void usage ( void )
 }
 
 static void pre_process_cmd_line_options
-      ( Bool* need_help, const char** tool, const char** exec )
+      ( Int* need_help, const char** tool, const char** exec )
 {
    UInt i;
 
@@ -1588,7 +1591,10 @@ static void pre_process_cmd_line_options
          exit(1);
 
       } else if (strcmp(VG_(vg_argv)[i], "--help") == 0) {
-         *need_help = True;
+         *need_help = 1;
+
+      } else if (strcmp(VG_(vg_argv)[i], "--help-debug") == 0) {
+         *need_help = 2;
 
       } else if (strncmp(VG_(vg_argv)[i], "--tool=", 7) == 0 ||
 	         strncmp(VG_(vg_argv)[i], "--skin=", 7) == 0) {
@@ -1603,13 +1609,13 @@ static void pre_process_cmd_line_options
    if (*tool == NULL) {
       if (!need_help)
 	 list_tools();
-      usage();
+      usage(/*help-debug?*/False);
    }
 }
 
 static void process_cmd_line_options 
       ( UInt* client_auxv, Addr esp_at_startup, 
-        const char* toolname, Bool need_help )
+        const char* toolname, Int need_help )
 {
    Int  i, eventually_logfile_fd;
    Int *auxp;
@@ -1638,7 +1644,7 @@ static void process_cmd_line_options
    } 
 
    if (need_help)
-      usage();
+      usage(/*--help-debug?*/need_help == 2);
 
    /* We know the initial ESP is pointing at argc/argv */
    VG_(client_argc) = *(Int *)esp_at_startup;
@@ -1876,7 +1882,7 @@ static void process_cmd_line_options
 
       else if ( ! VG_(needs).command_line_options
              || ! SK_(process_cmd_line_option)(arg) ) {
-         usage();
+         usage(/*--help-debug?*/need_help == 2);
       }
    }
 
@@ -2688,7 +2694,7 @@ int main(int argc, char **argv)
    const char *exec = NULL;
    char *preload;          /* tool-specific LD_PRELOAD .so */
    char **env;
-   Bool need_help = False;
+   Int need_help = 0;      // 0 = no, 1 = --help, 2 = --help-debug
    struct exeinfo info;
    ToolInfo *toolinfo = NULL;
    void *tool_dlhandle;

@@ -422,6 +422,18 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+      case __NR_getitimer: /* syscall 105 */
+         /* int getitimer(int which, struct itimerval *value); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("getitimer ( %d, %p )\n", arg1, arg2);
+         must_be_writable( tst, "getitimer(timer)", arg2, 
+                           sizeof(struct itimerval) );
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res) && arg2 != (Addr)NULL) {
+            make_readable(arg2, sizeof(struct itimerval));
+         }
+         break;
+
 #     if defined(__NR_syslog)
       case __NR_syslog: /* syscall 103 */
          /* int syslog(int type, char *bufp, int len); */

@@ -57,8 +57,6 @@ suitable for use by anyone at all!
 - Read/write syscall starts: don't crap out when the initial
   nonblocking read/write returns an error.
 
-- 0xDEADBEEF syscall errors ... fix.
-
 */
 
 
@@ -507,45 +505,47 @@ static
 Bool maybe_do_trivial_clientreq ( ThreadId tid )
 {
 #  define SIMPLE_RETURN(vvv)                      \
-       { vg_threads[tid].m_edx = (vvv);           \
+       { tst->m_edx = (vvv);                      \
          return True;                             \
        }
 
-   UInt* arg    = (UInt*)(vg_threads[tid].m_eax);
-   UInt  req_no = arg[0];
+   ThreadState* tst    = &vg_threads[tid];
+   UInt*        arg    = (UInt*)(tst->m_eax);
+   UInt         req_no = arg[0];
+
    switch (req_no) {
       case VG_USERREQ__MALLOC:
          SIMPLE_RETURN(
-            (UInt)VG_(client_malloc) ( arg[1], Vg_AllocMalloc ) 
+            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocMalloc ) 
          );
       case VG_USERREQ__BUILTIN_NEW:
          SIMPLE_RETURN(
-            (UInt)VG_(client_malloc) ( arg[1], Vg_AllocNew )
+            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocNew )
          );
       case VG_USERREQ__BUILTIN_VEC_NEW:
          SIMPLE_RETURN(
-            (UInt)VG_(client_malloc) ( arg[1], Vg_AllocNewVec )
+            (UInt)VG_(client_malloc) ( tst, arg[1], Vg_AllocNewVec )
          );
       case VG_USERREQ__FREE:
-         VG_(client_free) ( (void*)arg[1], Vg_AllocMalloc );
+         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocMalloc );
 	 SIMPLE_RETURN(0); /* irrelevant */
       case VG_USERREQ__BUILTIN_DELETE:
-         VG_(client_free) ( (void*)arg[1], Vg_AllocNew );
+         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocNew );
 	 SIMPLE_RETURN(0); /* irrelevant */
       case VG_USERREQ__BUILTIN_VEC_DELETE:
-         VG_(client_free) ( (void*)arg[1], Vg_AllocNewVec );
+         VG_(client_free) ( tst, (void*)arg[1], Vg_AllocNewVec );
 	 SIMPLE_RETURN(0); /* irrelevant */
       case VG_USERREQ__CALLOC:
          SIMPLE_RETURN(
-            (UInt)VG_(client_calloc) ( arg[1], arg[2] )
+            (UInt)VG_(client_calloc) ( tst, arg[1], arg[2] )
          );
       case VG_USERREQ__REALLOC:
          SIMPLE_RETURN(
-            (UInt)VG_(client_realloc) ( (void*)arg[1], arg[2] )
+            (UInt)VG_(client_realloc) ( tst, (void*)arg[1], arg[2] )
          );
       case VG_USERREQ__MEMALIGN:
          SIMPLE_RETURN(
-            (UInt)VG_(client_memalign) ( arg[1], arg[2] )
+            (UInt)VG_(client_memalign) ( tst, arg[1], arg[2] )
          );
       default:
          /* Too hard; wimp out. */
@@ -1777,7 +1777,8 @@ void do_nontrivial_clientreq ( ThreadId tid )
       case VG_USERREQ__MAKE_NOACCESS_STACK:
       case VG_USERREQ__RUNNING_ON_VALGRIND:
       case VG_USERREQ__DO_LEAK_CHECK:
-         vg_threads[tid].m_edx = VG_(handle_client_request) ( arg );
+         vg_threads[tid].m_edx 
+            = VG_(handle_client_request) ( &vg_threads[tid], arg );
 	 break;
 
       case VG_USERREQ__SIGNAL_RETURNS: 

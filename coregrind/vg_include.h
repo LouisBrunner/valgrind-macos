@@ -1024,7 +1024,8 @@ extern void VG_(show_ExeContext_stats) ( void );
 /* Take a snapshot of the client's stack.  Search our collection of
    ExeContexts to see if we already have it, and if not, allocate a
    new one.  Either way, return a pointer to the context. */
-extern ExeContext* VG_(get_ExeContext) ( Bool skip_top_frame );
+extern ExeContext* VG_(get_ExeContext) ( Bool skip_top_frame,
+                                         Addr eip, Addr ebp );
 
 /* Print an ExeContext. */
 extern void VG_(pp_ExeContext) ( ExeContext* );
@@ -1052,10 +1053,13 @@ extern void VG_(record_freemismatch_error)    ( Addr a );
 extern void VG_(record_address_error) ( Addr a, Int size, 
                                         Bool isWrite );
 extern void VG_(record_jump_error) ( Addr a );
-extern void VG_(record_param_err) ( Addr a, 
+
+extern void VG_(record_param_err) ( ThreadState* tst,
+                                    Addr a, 
                                     Bool isWriteLack, 
                                     Char* msg );
-extern void VG_(record_user_err) ( Addr a, Bool isWriteLack );
+extern void VG_(record_user_err) ( ThreadState* tst,
+                                   Addr a, Bool isWriteLack );
 
 
 /* The classification of a faulting address. */
@@ -1084,7 +1088,7 @@ typedef
 
 extern Bool VG_(client_perm_maybe_describe)( Addr a, AddrInfo* ai );
 
-extern UInt VG_(handle_client_request) ( UInt* arg_block );
+extern UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block );
 
 extern void VG_(delete_client_stack_blocks_following_ESP_change) ( void );
 
@@ -1150,11 +1154,16 @@ extern ShadowChunk** VG_(get_malloc_shadows) ( /*OUT*/ UInt* n_shadows );
 
 /* These are called from the scheduler, when it intercepts a user
    request. */
-extern void* VG_(client_malloc)   ( UInt size, VgAllocKind kind );
-extern void* VG_(client_memalign) ( UInt align, UInt size );
-extern void  VG_(client_free)     ( void* ptrV, VgAllocKind  kind );
-extern void* VG_(client_calloc)   ( UInt nmemb, UInt size1 );
-extern void* VG_(client_realloc)  ( void* ptrV, UInt size_new );
+extern void* VG_(client_malloc)   ( ThreadState* tst, 
+                                    UInt size, VgAllocKind kind );
+extern void* VG_(client_memalign) ( ThreadState* tst, 
+                                    UInt align, UInt size );
+extern void  VG_(client_free)     ( ThreadState* tst, 
+                                    void* ptrV, VgAllocKind  kind );
+extern void* VG_(client_calloc)   ( ThreadState* tst, 
+                                    UInt nmemb, UInt size1 );
+extern void* VG_(client_realloc)  ( ThreadState* tst, 
+                                    void* ptrV, UInt size_new );
 
 
 /* ---------------------------------------------------------------------
@@ -1342,7 +1351,7 @@ UInt VG_(scan_all_valid_memory) ( void (*notify_word)( Addr, UInt ) );
 
 /* Is this address within some small distance below %ESP?  Used only
    for the --workaround-gcc296-bugs kludge. */
-extern Bool VG_(is_just_below_ESP)( Addr aa );
+extern Bool VG_(is_just_below_ESP)( Addr esp, Addr aa );
 
 /* Nasty kludgery to deal with applications which switch stacks,
    like netscape. */

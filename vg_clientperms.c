@@ -151,7 +151,7 @@ static UInt vg_csb_discards = 0;   /* Number of discards. */
 static UInt vg_csb_swaps    = 0;   /* Number of searches. */
 
 static
-void vg_add_client_stack_block ( Addr aa, UInt sz )
+void vg_add_client_stack_block ( ThreadState* tst, Addr aa, UInt sz )
 {
    UInt i, sz_new;
    CStackBlock* csbs_new;
@@ -180,7 +180,9 @@ void vg_add_client_stack_block ( Addr aa, UInt sz )
    /* Ok, we can use [vg_csb_used]. */
    vg_csbs[vg_csb_used].start = aa;
    vg_csbs[vg_csb_used].size  = sz;
-   vg_csbs[vg_csb_used].where = VG_(get_ExeContext) ( False );   
+   /* Actually running a thread at this point. */
+   vg_csbs[vg_csb_used].where 
+      = VG_(get_ExeContext) ( False, tst->m_eip, tst->m_ebp );
    vg_csb_used++;
 
    if (vg_csb_used > vg_csb_used_MAX)
@@ -289,7 +291,7 @@ void VG_(delete_client_stack_blocks_following_ESP_change) ( void )
 }
 
 
-UInt VG_(handle_client_request) ( UInt* arg_block )
+UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
 {
    Int   i;
    Bool  ok;
@@ -310,7 +312,8 @@ UInt VG_(handle_client_request) ( UInt* arg_block )
          vg_cgbs[i].kind  = CG_NoAccess;
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
-         vg_cgbs[i].where = VG_(get_ExeContext) ( False );
+         vg_cgbs[i].where 
+            = VG_(get_ExeContext) ( False, tst->m_eip, tst->m_ebp );
          VGM_(make_noaccess) ( arg[1], arg[2] );
          return i;
       case VG_USERREQ__MAKE_WRITABLE: /* make writable */
@@ -318,7 +321,8 @@ UInt VG_(handle_client_request) ( UInt* arg_block )
          vg_cgbs[i].kind  = CG_Writable;
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
-         vg_cgbs[i].where = VG_(get_ExeContext) ( False );
+         vg_cgbs[i].where 
+            = VG_(get_ExeContext) ( False, tst->m_eip, tst->m_ebp );
          VGM_(make_writable) ( arg[1], arg[2] );
          return i;
       case VG_USERREQ__MAKE_READABLE: /* make readable */
@@ -326,19 +330,20 @@ UInt VG_(handle_client_request) ( UInt* arg_block )
          vg_cgbs[i].kind  = CG_Readable;
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
-         vg_cgbs[i].where = VG_(get_ExeContext) ( False );
+         vg_cgbs[i].where 
+            = VG_(get_ExeContext) ( False, tst->m_eip, tst->m_ebp );
          VGM_(make_readable) ( arg[1], arg[2] );
          return i;
 
       case VG_USERREQ__CHECK_WRITABLE: /* check writable */
          ok = VGM_(check_writable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
-            VG_(record_user_err) ( bad_addr, True );
+            VG_(record_user_err) ( tst, bad_addr, True );
          return ok ? (UInt)NULL : bad_addr;
       case VG_USERREQ__CHECK_READABLE: /* check readable */
          ok = VGM_(check_readable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
-            VG_(record_user_err) ( bad_addr, False );
+            VG_(record_user_err) ( tst, bad_addr, False );
          return ok ? (UInt)NULL : bad_addr;
 
       case VG_USERREQ__DISCARD: /* discard */
@@ -351,7 +356,7 @@ UInt VG_(handle_client_request) ( UInt* arg_block )
          return 0;
 
       case VG_USERREQ__MAKE_NOACCESS_STACK: /* make noaccess stack block */
-         vg_add_client_stack_block ( arg[1], arg[2] );
+         vg_add_client_stack_block ( tst, arg[1], arg[2] );
          return 0;
 
       case VG_USERREQ__RUNNING_ON_VALGRIND:

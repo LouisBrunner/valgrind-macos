@@ -209,7 +209,8 @@ static void add_to_freed_queue ( ShadowChunk* sc )
    shadow chunk on the appropriate list, and set all memory
    protections correctly. */
 
-static ShadowChunk* client_malloc_shadow ( UInt align, UInt size, 
+static ShadowChunk* client_malloc_shadow ( ThreadState* tst,
+                                           UInt align, UInt size, 
                                            VgAllocKind kind )
 {
    ShadowChunk* sc;
@@ -229,7 +230,7 @@ static ShadowChunk* client_malloc_shadow ( UInt align, UInt size,
       p = (Addr)VG_(malloc_aligned)(VG_AR_CLIENT, align, size);
 
    sc        = VG_(malloc)(VG_AR_PRIVATE, sizeof(ShadowChunk));
-   sc->where = VG_(get_ExeContext)(True);
+   sc->where = VG_(get_ExeContext)(True, tst->m_eip, tst->m_ebp);
    sc->size  = size;
    sc->allockind = kind;
    sc->data  = p;
@@ -250,7 +251,7 @@ static ShadowChunk* client_malloc_shadow ( UInt align, UInt size,
 /* Allocate memory, noticing whether or not we are doing the full
    instrumentation thing. */
 
-void* VG_(client_malloc) ( UInt size, VgAllocKind kind )
+void* VG_(client_malloc) ( ThreadState* tst, UInt size, VgAllocKind kind )
 {
    ShadowChunk* sc;
 
@@ -271,13 +272,13 @@ void* VG_(client_malloc) ( UInt size, VgAllocKind kind )
       return VG_(malloc) ( VG_AR_CLIENT, size );
    }
 
-   sc = client_malloc_shadow ( 0, size, kind );
+   sc = client_malloc_shadow ( tst, 0, size, kind );
    VGP_POPCC;
    return (void*)(sc->data);
 }
 
 
-void* VG_(client_memalign) ( UInt align, UInt size )
+void* VG_(client_memalign) ( ThreadState* tst, UInt align, UInt size )
 {
    ShadowChunk* sc;
    VGP_PUSHCC(VgpCliMalloc);
@@ -296,13 +297,13 @@ void* VG_(client_memalign) ( UInt align, UInt size )
       VGP_POPCC;
       return VG_(malloc_aligned) ( VG_AR_CLIENT, align, size );
    }
-   sc = client_malloc_shadow ( align, size, Vg_AllocMalloc );
+   sc = client_malloc_shadow ( tst, align, size, Vg_AllocMalloc );
    VGP_POPCC;
    return (void*)(sc->data);
 }
 
 
-void VG_(client_free) ( void* ptrV, VgAllocKind kind )
+void VG_(client_free) ( ThreadState* tst, void* ptrV, VgAllocKind kind )
 {
    ShadowChunk* sc;
    UInt         ml_no;
@@ -350,7 +351,7 @@ void VG_(client_free) ( void* ptrV, VgAllocKind kind )
    VGM_(make_noaccess) ( sc->data - VG_AR_CLIENT_REDZONE_SZB, 
                          sc->size + 2*VG_AR_CLIENT_REDZONE_SZB );
    VGM_(make_noaccess) ( (Addr)sc, sizeof(ShadowChunk) );
-   sc->where = VG_(get_ExeContext)(True);
+   sc->where = VG_(get_ExeContext)(True, tst->m_eip, tst->m_ebp);
 
    /* Put it out of harm's way for a while. */
    add_to_freed_queue ( sc );
@@ -359,7 +360,7 @@ void VG_(client_free) ( void* ptrV, VgAllocKind kind )
 
 
 
-void* VG_(client_calloc) ( UInt nmemb, UInt size1 )
+void* VG_(client_calloc) ( ThreadState* tst, UInt nmemb, UInt size1 )
 {
    ShadowChunk* sc;
    Addr         p;
@@ -386,7 +387,7 @@ void* VG_(client_calloc) ( UInt nmemb, UInt size1 )
    size      = nmemb * size1;
    p         = (Addr)VG_(malloc)(VG_AR_CLIENT, size);
    sc        = VG_(malloc)(VG_AR_PRIVATE, sizeof(ShadowChunk));
-   sc->where = VG_(get_ExeContext)(True);
+   sc->where = VG_(get_ExeContext)(True, tst->m_eip, tst->m_ebp);
    sc->size  = size;
    sc->allockind = Vg_AllocMalloc; /* its a lie - but true. eat this :) */
    sc->data  = p;
@@ -407,7 +408,7 @@ void* VG_(client_calloc) ( UInt nmemb, UInt size1 )
 }
 
 
-void* VG_(client_realloc) ( void* ptrV, UInt size_new )
+void* VG_(client_realloc) ( ThreadState* tst, void* ptrV, UInt size_new )
 {
    ShadowChunk *sc, *sc_new;
    UInt         i, ml_no;
@@ -466,7 +467,7 @@ void* VG_(client_realloc) ( void* ptrV, UInt size_new )
       return ptrV;
    } else {
       /* new size is bigger */
-      sc_new = client_malloc_shadow ( 0, size_new, Vg_AllocMalloc );
+      sc_new = client_malloc_shadow ( tst, 0, size_new, Vg_AllocMalloc );
       for (i = 0; i < sc->size; i++)
          ((UChar*)(sc_new->data))[i] = ((UChar*)(sc->data))[i];
       VGM_(copy_address_range_perms) ( 

@@ -154,11 +154,13 @@ Bool VG_(eq_ExeContext_top4) ( ExeContext* e1, ExeContext* e2 )
    duplicates, and so exact equality can be quickly done as equality
    on the returned ExeContext* values themselves.  Inspired by Hugs's
    Text type.  
+
+   In order to be thread-safe, we pass in the thread's %EIP and %EBP.
 */
-ExeContext* VG_(get_ExeContext) ( Bool skip_top_frame )
+ExeContext* VG_(get_ExeContext) ( Bool skip_top_frame,
+                                  Addr eip, Addr ebp )
 {
    Int         i;
-   UInt        ebp;
    Addr        eips[VG_DEEPEST_BACKTRACE];
    Bool        same;
    UInt        hash;
@@ -185,13 +187,11 @@ ExeContext* VG_(get_ExeContext) ( Bool skip_top_frame )
       lval = ebp = 0;                                             \
    }
 
-   ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
-
    if (skip_top_frame) {
       for (i = 0; i < VG_(clo_backtrace_size); i++)
          GET_CALLER(eips[i]);
    } else {
-      eips[0] = VG_(baseBlock)[VGOFF_(m_eip)];
+      eips[0] = eip;
       for (i = 1; i < VG_(clo_backtrace_size); i++)
          GET_CALLER(eips[i]);
    }

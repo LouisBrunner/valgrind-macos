@@ -1331,11 +1331,10 @@ Bool VG_(is_plausible_stack_addr) ( Addr aa )
 
 /* Is this address within some small distance below %ESP?  Used only
    for the --workaround-gcc296-bugs kludge. */
-Bool VG_(is_just_below_ESP)( Addr aa )
+Bool VG_(is_just_below_ESP)( Addr esp, Addr aa )
 {
-   UInt esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   if (esp > (UInt)aa
-       && (esp - (UInt)aa) <= VG_GCC296_BUG_STACK_SLOP)
+   if ((UInt)esp > (UInt)aa
+       && ((UInt)esp - (UInt)aa) <= VG_GCC296_BUG_STACK_SLOP)
       return True;
    else
       return False;

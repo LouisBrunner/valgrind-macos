@@ -537,13 +537,19 @@ static void VG_(maybe_add_context) ( ErrContext* ec )
 /*--- Exported fns                                         ---*/
 /*------------------------------------------------------------*/
 
+/* These are all called from generated code, so that the %EIP/%EBP
+   values that we need in order to create proper error messages are
+   picked up out of VG_(baseBlock) rather than from the thread table
+   (vg_threads in vg_scheduler.c). */
+
 void VG_(record_value_error) ( Int size )
 {
    ErrContext ec;
    clear_ErrContext( &ec );
    ec.count = 1;
    ec.next  = NULL;
-   ec.where = VG_(get_ExeContext)( False );
+   ec.where = VG_(get_ExeContext)( False, VG_(baseBlock)[VGOFF_(m_eip)], 
+                                          VG_(baseBlock)[VGOFF_(m_ebp)] );
    ec.ekind = ValueErr;
    ec.size  = size;
    VG_(maybe_add_context) ( &ec );
@@ -555,13 +561,15 @@ void VG_(record_address_error) ( Addr a, Int size, Bool isWrite )
 
    /* If this is caused by an access immediately below %ESP, and the
       user asks nicely, we just ignore it. */
-   if (VG_(clo_workaround_gcc296_bugs) && VG_(is_just_below_ESP)(a))
+   if (VG_(clo_workaround_gcc296_bugs) 
+       && VG_(is_just_below_ESP)( VG_(baseBlock)[VGOFF_(m_esp)], a ))
       return;
 
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False );
+   ec.where   = VG_(get_ExeContext)( False, VG_(baseBlock)[VGOFF_(m_eip)], 
+                                            VG_(baseBlock)[VGOFF_(m_ebp)] );
    ec.ekind   = AddrErr;
    ec.axskind = isWrite ? WriteAxs : ReadAxs;
    ec.size    = size;
@@ -576,7 +584,8 @@ void VG_(record_jump_error) ( Addr a )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False );
+   ec.where   = VG_(get_ExeContext)( False, VG_(baseBlock)[VGOFF_(m_eip)], 
+                                            VG_(baseBlock)[VGOFF_(m_ebp)] );
    ec.ekind   = AddrErr;
    ec.axskind = ExecAxs;
    ec.addr    = a;
@@ -590,7 +599,8 @@ void VG_(record_free_error) ( Addr a )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( True );
+   ec.where   = VG_(get_ExeContext)( True, VG_(baseBlock)[VGOFF_(m_eip)], 
+                                           VG_(baseBlock)[VGOFF_(m_ebp)] );
    ec.ekind   = FreeErr;
    ec.addr    = a;
    VG_(describe_addr) ( a, &ec.addrinfo );
@@ -603,20 +613,26 @@ void VG_(record_freemismatch_error) ( Addr a )
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( True );
+   ec.where   = VG_(get_ExeContext)( True, VG_(baseBlock)[VGOFF_(m_eip)], 
+                                           VG_(baseBlock)[VGOFF_(m_ebp)] );
    ec.ekind   = FreeMismatchErr;
    ec.addr    = a;
    VG_(describe_addr) ( a, &ec.addrinfo );
    VG_(maybe_add_context) ( &ec );
 }
 
-void VG_(record_param_err) ( Addr a, Bool isWriteLack, Char* msg )
+/* These two are called not from generated code but in response to
+   requests passed back to the scheduler.  So we pick up %EIP/%EBP
+   values from the stored thread state, not from VG_(baseBlock).  */
+
+void VG_(record_param_err) ( ThreadState* tst, Addr a, Bool isWriteLack, 
+                             Char* msg )
 {
    ErrContext ec;
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False );
+   ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
    ec.ekind   = ParamErr;
    ec.addr    = a;
    VG_(describe_addr) ( a, &ec.addrinfo );
@@ -626,13 +642,13 @@ void VG_(record_param_err) ( Addr a, Bool isWriteLack, Char* msg )
 }
 
 
-void VG_(record_user_err) ( Addr a, Bool isWriteLack )
+void VG_(record_user_err) ( ThreadState* tst, Addr a, Bool isWriteLack )
 {
    ErrContext ec;
    clear_ErrContext( &ec );
    ec.count   = 1;
    ec.next    = NULL;
-   ec.where   = VG_(get_ExeContext)( False );
+   ec.where   = VG_(get_ExeContext)( False, tst->m_eip, tst->m_ebp );
    ec.ekind   = UserErr;
    ec.addr    = a;
    VG_(describe_addr) ( a, &ec.addrinfo );
@@ -640,6 +656,8 @@ void VG_(record_user_err) ( Addr a, Bool isWriteLack )
    VG_(maybe_add_context) ( &ec );
 }
 
+
+/*------------------------------*/
 
 void VG_(show_all_errors) ( void )
 {

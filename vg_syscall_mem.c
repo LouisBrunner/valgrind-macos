@@ -79,7 +79,8 @@ static void make_readwritable ( Addr a, UInt len )
 }
 
 static
-void must_be_writable ( Char* syscall_name, UInt base, UInt size )
+void must_be_writable ( ThreadState* tst, 
+                        Char* syscall_name, UInt base, UInt size )
 {
    Bool ok;
    Addr bad_addr;
@@ -89,11 +90,12 @@ void must_be_writable ( Char* syscall_name, UInt base, UInt size )
       return;
    ok = VGM_(check_writable) ( base, size, &bad_addr );
    if (!ok)
-      VG_(record_param_err) ( bad_addr, True, syscall_name );
+      VG_(record_param_err) ( tst, bad_addr, True, syscall_name );
 }
 
 static
-void must_be_readable ( Char* syscall_name, UInt base, UInt size )
+void must_be_readable ( ThreadState* tst, 
+                        Char* syscall_name, UInt base, UInt size )
 {
    Bool ok;
    Addr bad_addr;
@@ -103,11 +105,12 @@ void must_be_readable ( Char* syscall_name, UInt base, UInt size )
       return;
    ok = VGM_(check_readable) ( base, size, &bad_addr );
    if (!ok)
-      VG_(record_param_err) ( bad_addr, False, syscall_name );
+      VG_(record_param_err) ( tst, bad_addr, False, syscall_name );
 }
 
 static
-void must_be_readable_asciiz ( Char* syscall_name, UInt str )
+void must_be_readable_asciiz ( ThreadState* tst, 
+                               Char* syscall_name, UInt str )
 {
    Bool ok = True;
    Addr bad_addr;
@@ -116,7 +119,7 @@ void must_be_readable_asciiz ( Char* syscall_name, UInt str )
       return;
    ok = VGM_(check_readable_asciiz) ( (Addr)str, &bad_addr );
    if (!ok)
-      VG_(record_param_err) ( bad_addr, False, syscall_name );
+      VG_(record_param_err) ( tst, bad_addr, False, syscall_name );
 }
 
 
@@ -205,7 +208,7 @@ UInt get_shm_size ( Int shmid )
 }
  
 static
-Char *strdupcat( const Char *s1, const Char *s2, ArenaId aid )
+Char *strdupcat ( const Char *s1, const Char *s2, ArenaId aid )
 {
    UInt len = VG_(strlen) ( s1 ) + VG_(strlen) ( s2 ) + 1;
    Char *result = VG_(malloc) ( aid, len );
@@ -215,54 +218,64 @@ Char *strdupcat( const Char *s1, const Char *s2, ArenaId aid )
 }
 
 static 
-void must_be_readable_sendmsg( Char *msg, UInt base, UInt size )
+void must_be_readable_sendmsg ( ThreadState* tst, 
+                                Char *msg, UInt base, UInt size )
 {
    Char *outmsg = strdupcat ( "socketcall.sendmsg", msg, VG_AR_TRANSIENT );
-   must_be_readable ( outmsg, base, size );
+   must_be_readable ( tst, outmsg, base, size );
    VG_(free) ( VG_AR_TRANSIENT, outmsg );
 }
 
 static 
-void must_be_writable_recvmsg( Char *msg, UInt base, UInt size )
+void must_be_writable_recvmsg ( ThreadState* tst, 
+                                Char *msg, UInt base, UInt size )
 {
    Char *outmsg = strdupcat ( "socketcall.recvmsg", msg, VG_AR_TRANSIENT );
-   must_be_writable ( outmsg, base, size );
+   must_be_writable ( tst, outmsg, base, size );
    VG_(free) ( VG_AR_TRANSIENT, outmsg );
 }
 
 static
-void make_readable_recvmsg( Char *fieldName, UInt base, UInt size )
+void make_readable_recvmsg ( ThreadState* tst,
+                             Char *fieldName, UInt base, UInt size )
 {
    make_readable( base, size );
 }
  
 static
-void msghdr_foreachfield ( struct msghdr *msg, 
-                           void (*foreach_func)( Char *, UInt, UInt ) )
+void msghdr_foreachfield ( 
+        ThreadState* tst, 
+        struct msghdr *msg, 
+        void (*foreach_func)( ThreadState*, Char *, UInt, UInt ) 
+     )
 {
    if ( !msg )
       return;
 
-   foreach_func ( "(msg)", (Addr)msg, sizeof( struct msghdr ) );
+   foreach_func ( tst, "(msg)", (Addr)msg, sizeof( struct msghdr ) );
 
    if ( msg->msg_name )
-      foreach_func ( "(msg.msg_name)", 
+      foreach_func ( tst, 
+                     "(msg.msg_name)", 
                      (Addr)msg->msg_name, msg->msg_namelen );
 
    if ( msg->msg_iov ) {
       struct iovec *iov = msg->msg_iov;
       UInt i;
 
-      foreach_func ( "(msg.msg_iov)", 
+      foreach_func ( tst, 
+                     "(msg.msg_iov)", 
                      (Addr)iov, msg->msg_iovlen * sizeof( struct iovec ) );
 
       for ( i = 0; i < msg->msg_iovlen; ++i, ++iov )
-         foreach_func ( "(msg.msg_iov[i]", 
+         foreach_func ( tst, 
+                        "(msg.msg_iov[i]", 
                         (Addr)iov->iov_base, iov->iov_len );
    }
 
    if ( msg->msg_control )
-      foreach_func ( "(msg.msg_control)", 
+      foreach_func ( tst, 
+                     "(msg.msg_control)", 
                      (Addr)msg->msg_control, msg->msg_controllen );
 }
 
@@ -371,7 +384,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       /* int _sysctl(struct __sysctl_args *args); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("_sysctl ( %p )\n", arg1 );
-         must_be_writable ( "_sysctl(args)", arg1, 
+         must_be_writable ( tst, "_sysctl(args)", arg1, 
                             sizeof(struct __sysctl_args) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
@@ -395,7 +408,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (VG_(clo_trace_syscalls))
             VG_(printf)("sched_setscheduler ( %d, %d, %p )\n",arg1,arg2,arg3);
          if (arg3 != (UInt)NULL)
-            must_be_readable( "sched_setscheduler(struct sched_param *p)", 
+            must_be_readable( tst,
+                              "sched_setscheduler(struct sched_param *p)", 
                               arg3, sizeof(struct sched_param));
          KERNEL_DO_SYSCALL(tid,res);
          break;
@@ -472,7 +486,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                              size_t count) */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("sendfile ( %d, %d, %p, %d )\n",arg1,arg2,arg3,arg4);
-         must_be_writable( "sendfile(offset)", arg3, sizeof(off_t) );
+         must_be_writable( tst, "sendfile(offset)", arg3, sizeof(off_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res)) {
             make_readable( arg3, sizeof( off_t ) );
@@ -488,7 +502,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                             off_t offset); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("pwrite ( %d, %p, %d, %d )\n", arg1, arg2, arg3, arg4);
-         must_be_readable( "pwrite(buf)", arg2, arg3 );
+         must_be_readable( tst, "pwrite(buf)", arg2, arg3 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 #     endif
@@ -506,7 +520,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int fstatfs(int fd, struct statfs *buf); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("fstatfs ( %d, %p )\n",arg1,arg2);
-         must_be_writable( "stat(buf)", arg2, sizeof(struct statfs) );
+         must_be_writable( tst, "stat(buf)", arg2, sizeof(struct statfs) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             make_readable( arg2, sizeof(struct statfs) );
@@ -533,7 +547,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* ssize_t pread(int fd, void *buf, size_t count, off_t offset); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("pread ( %d, %p, %d, %d ) ...\n",arg1,arg2,arg3,arg4);
-         must_be_writable( "pread(buf)", arg2, arg3 );
+         must_be_writable( tst, "pread(buf)", arg2, arg3 );
          KERNEL_DO_SYSCALL(tid,res);
          if (VG_(clo_trace_syscalls))
             VG_(printf)("SYSCALL[%d]       pread ( %d, %p, %d, %d ) --> %d\n",
@@ -551,7 +565,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int mknod(const char *pathname, mode_t mode, dev_t dev); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("mknod ( %p, 0x%x, 0x%x )\n", arg1, arg2, arg3 );
-         must_be_readable_asciiz( "mknod(pathname)", arg1 );
+         must_be_readable_asciiz( tst, "mknod(pathname)", arg1 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -571,7 +585,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             VG_(printf)("sigsuspend ( %p )\n", arg1 );
          if (arg1 != (Addr)NULL) {
             /* above NULL test is paranoia */
-            must_be_readable( "sigsuspend(mask)", arg1, 
+            must_be_readable( tst, "sigsuspend(mask)", arg1, 
                               sizeof(vki_ksigset_t) );
          }
          KERNEL_DO_SYSCALL(tid,res);
@@ -582,8 +596,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int init_module(const char *name, struct module *image); */
          if (VG_(clo_trace_syscalls)) 
             VG_(printf)("init_module ( %p, %p )\n", arg1, arg2 );
-         must_be_readable_asciiz( "init_module(name)", arg1 );
-         must_be_readable( "init_module(image)", arg2, 
+         must_be_readable_asciiz( tst, "init_module(name)", arg1 );
+         must_be_readable( tst, "init_module(image)", arg2, 
                            sizeof(struct module) );
          KERNEL_DO_SYSCALL(tid,res);
          break;
@@ -599,9 +613,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int capget(cap_user_header_t header, cap_user_data_t data); */
          if (VG_(clo_trace_syscalls)) 
             VG_(printf)("capget ( %p, %p )\n", arg1, arg2 );
-         must_be_readable( "capget(header)", arg1, 
+         must_be_readable( tst, "capget(header)", arg1, 
                                              sizeof(vki_cap_user_header_t) );
-         must_be_writable( "capget(data)", arg2, 
+         must_be_writable( tst, "capget(data)", arg2, 
                                            sizeof( vki_cap_user_data_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && arg2 != (Addr)NULL)
@@ -654,7 +668,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int access(const char *pathname, int mode); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("access ( %p, %d )\n", arg1,arg2);
-         must_be_readable_asciiz( "access(pathname)", arg1 );
+         must_be_readable_asciiz( tst, "access(pathname)", arg1 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -702,7 +716,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int chdir(const char *path); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("chdir ( %p )\n", arg1);
-         must_be_readable_asciiz( "chdir(path)", arg1 );
+         must_be_readable_asciiz( tst, "chdir(path)", arg1 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -710,7 +724,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int chmod(const char *path, mode_t mode); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("chmod ( %p, %d )\n", arg1,arg2);
-         must_be_readable_asciiz( "chmod(path)", arg1 );
+         must_be_readable_asciiz( tst, "chmod(path)", arg1 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -724,7 +738,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int chown(const char *path, uid_t owner, gid_t group); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("chown ( %p, 0x%x, 0x%x )\n", arg1,arg2,arg3);
-         must_be_readable_asciiz( "chown(path)", arg1 );
+         must_be_readable_asciiz( tst, "chown(path)", arg1 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -812,7 +826,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int fstat(int filedes, struct stat *buf); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("fstat ( %d, %p )\n",arg1,arg2);
-         must_be_writable( "fstat", arg2, sizeof(struct stat) );
+         must_be_writable( tst, "fstat", arg2, sizeof(struct stat) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             make_readable( arg2, sizeof(struct stat) );
@@ -863,7 +877,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                          unsigned int count); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("getdents ( %d, %p, %d )\n",arg1,arg2,arg3);
-         must_be_writable( "getdents(dirp)", arg2, arg3 );
+         must_be_writable( tst, "getdents(dirp)", arg2, arg3 );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res > 0)
             make_readable( arg2, res );
@@ -875,7 +889,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                          unsigned int count); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("getdents64 ( %d, %p, %d )\n",arg1,arg2,arg3);
-         must_be_writable( "getdents64(dirp)", arg2, arg3 );
+         must_be_writable( tst, "getdents64(dirp)", arg2, arg3 );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res > 0)
             make_readable( arg2, res );
@@ -890,7 +904,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (VG_(clo_trace_syscalls))
             VG_(printf)("getgroups ( %d, %p )\n", arg1, arg2);
          if (arg1 > 0)
-            must_be_writable ( "getgroups(list)", arg2, 
+            must_be_writable ( tst, "getgroups(list)", arg2, 
                                arg1 * sizeof(gid_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (arg1 > 0 && !VG_(is_kerror)(res) && res > 0)
@@ -901,7 +915,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* char *getcwd(char *buf, size_t size); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("getcwd ( %p, %d )\n",arg1,arg2);
-         must_be_writable( "getcwd(buf)", arg1, arg2 );
+         must_be_writable( tst, "getcwd(buf)", arg1, arg2 );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res != (Addr)NULL)
             make_readable ( arg1, arg2 );
@@ -990,9 +1004,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int getresgid(gid_t *rgid, gid_t *egid, gid_t *sgid); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("getresgid ( %p, %p, %p )\n", arg1,arg2,arg3);
-         must_be_writable ( "getresgid(rgid)", arg1, sizeof(gid_t) );
-         must_be_writable ( "getresgid(egid)", arg2, sizeof(gid_t) );
-         must_be_writable ( "getresgid(sgid)", arg3, sizeof(gid_t) );
+         must_be_writable ( tst, "getresgid(rgid)", arg1, sizeof(gid_t) );
+         must_be_writable ( tst, "getresgid(egid)", arg2, sizeof(gid_t) );
+         must_be_writable ( tst, "getresgid(sgid)", arg3, sizeof(gid_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             make_readable ( arg1, sizeof(gid_t) );
@@ -1006,9 +1020,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int getresgid(gid_t *rgid, gid_t *egid, gid_t *sgid); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("getresgid32 ( %p, %p, %p )\n", arg1,arg2,arg3);
-         must_be_writable ( "getresgid32(rgid)", arg1, sizeof(gid_t) );
-         must_be_writable ( "getresgid32(egid)", arg2, sizeof(gid_t) );
-         must_be_writable ( "getresgid32(sgid)", arg3, sizeof(gid_t) );
+         must_be_writable ( tst, "getresgid32(rgid)", arg1, sizeof(gid_t) );
+         must_be_writable ( tst, "getresgid32(egid)", arg2, sizeof(gid_t) );
+         must_be_writable ( tst, "getresgid32(sgid)", arg3, sizeof(gid_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             make_readable ( arg1, sizeof(gid_t) );
@@ -1022,9 +1036,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int getresuid(uid_t *ruid, uid_t *euid, uid_t *suid); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("getresuid ( %p, %p, %p )\n", arg1,arg2,arg3);
-         must_be_writable ( "getresuid(ruid)", arg1, sizeof(uid_t) );
-         must_be_writable ( "getresuid(euid)", arg2, sizeof(uid_t) );
-         must_be_writable ( "getresuid(suid)", arg3, sizeof(uid_t) );
+         must_be_writable ( tst, "getresuid(ruid)", arg1, sizeof(uid_t) );
+         must_be_writable ( tst, "getresuid(euid)", arg2, sizeof(uid_t) );
+         must_be_writable ( tst, "getresuid(suid)", arg3, sizeof(uid_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             make_readable ( arg1, sizeof(uid_t) );
@@ -1038,9 +1052,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int getresuid(uid_t *ruid, uid_t *euid, uid_t *suid); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("getresuid32 ( %p, %p, %p )\n", arg1,arg2,arg3);
-         must_be_writable ( "getresuid32(ruid)", arg1, sizeof(uid_t) );
-         must_be_writable ( "getresuid32(euid)", arg2, sizeof(uid_t) );
-         must_be_writable ( "getresuid32(suid)", arg3, sizeof(uid_t) );
+         must_be_writable ( tst, "getresuid32(ruid)", arg1, sizeof(uid_t) );
+         must_be_writable ( tst, "getresuid32(euid)", arg2, sizeof(uid_t) );
+         must_be_writable ( tst, "getresuid32(suid)", arg3, sizeof(uid_t) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             make_readable ( arg1, sizeof(uid_t) );
@@ -1057,7 +1071,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int getrlimit (int resource, struct rlimit *rlim); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("getrlimit ( %d, %p )\n", arg1,arg2);
-         must_be_writable( "getrlimit(rlim)", arg2, sizeof(struct rlimit) );
+         must_be_writable( tst, "getrlimit(rlim)", arg2, 
+                           sizeof(struct rlimit) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0)
             make_readable( arg2, sizeof(struct rlimit) );
@@ -1067,7 +1082,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int getrusage (int who, struct rusage *usage); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("getrusage ( %d, %p )\n", arg1,arg2);
-         must_be_writable( "getrusage(usage)", arg2, sizeof(struct rusage) );
+         must_be_writable( tst, "getrusage(usage)", arg2, 
+                           sizeof(struct rusage) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0)
             make_readable(arg2, sizeof(struct rusage) );
@@ -1077,9 +1093,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int gettimeofday(struct timeval *tv, struct timezone *tz); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("gettimeofday ( %p, %p )\n",arg1,arg2);
-         must_be_writable( "gettimeofday(tv)", arg1, sizeof(struct timeval) );
+         must_be_writable( tst, "gettimeofday(tv)", arg1, 
+                           sizeof(struct timeval) );
          if (arg2 != 0)
-            must_be_writable( "gettimeofday(tz)", arg2, 
+            must_be_writable( tst, "gettimeofday(tz)", arg2, 
                               sizeof(struct timezone) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
@@ -1116,7 +1133,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                         arg1,arg2,arg3,arg4,arg5,arg6);
          switch (arg1 /* call */) {
             case 1: /* IPCOP_semop */
-               must_be_readable ( "semop(sops)", arg5, 
+               must_be_readable ( tst, "semop(sops)", arg5, 
                                   arg3 * sizeof(struct sembuf) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
@@ -1129,9 +1146,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   struct msgbuf *msgp = (struct msgbuf *)arg5;
                   Int msgsz = arg3;
 
-                  must_be_readable ( "msgsnd(msgp->mtype)", 
+                  must_be_readable ( tst, "msgsnd(msgp->mtype)", 
                                      (UInt)&msgp->mtype, sizeof(msgp->mtype) );
-                  must_be_readable ( "msgsnd(msgp->mtext)", 
+                  must_be_readable ( tst, "msgsnd(msgp->mtext)", 
                                      (UInt)msgp->mtext, msgsz );
 
                   KERNEL_DO_SYSCALL(tid,res);
@@ -1142,9 +1159,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   struct msgbuf *msgp = ((struct ipc_kludge *)arg5)->msgp;
                   Int msgsz = arg3;
 
-                  must_be_writable ( "msgsnd(msgp->mtype)", 
+                  must_be_writable ( tst, "msgsnd(msgp->mtype)", 
                                      (UInt)&msgp->mtype, sizeof(msgp->mtype) );
-                  must_be_writable ( "msgsnd(msgp->mtext)", 
+                  must_be_writable ( tst, "msgsnd(msgp->mtext)", 
                                      (UInt)msgp->mtext, msgsz );
 
                   KERNEL_DO_SYSCALL(tid,res);
@@ -1162,7 +1179,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                {
                   switch (arg3 /* cmd */) {
                      case IPC_STAT:
-                        must_be_writable ( "msgctl(buf)", arg5, 
+                        must_be_writable ( tst, "msgctl(buf)", arg5, 
                                            sizeof(struct msqid_ds) );
                         KERNEL_DO_SYSCALL(tid,res);
                         if ( !VG_(is_kerror)(res) && res > 0 ) {
@@ -1170,12 +1187,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                         }
                         break;
                      case IPC_SET:
-                        must_be_readable ( "msgctl(buf)", arg5, 
+                        must_be_readable ( tst, "msgctl(buf)", arg5, 
                                            sizeof(struct msqid_ds) );
                         KERNEL_DO_SYSCALL(tid,res);
                         break;
                      case IPC_STAT|IPC_64:
-                        must_be_writable ( "msgctl(buf)", arg5, 
+                        must_be_writable ( tst, "msgctl(buf)", arg5, 
                                            sizeof(struct msqid64_ds) );
                         KERNEL_DO_SYSCALL(tid,res);
                         if ( !VG_(is_kerror)(res) && res > 0 ) {
@@ -1183,7 +1200,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                         }
                         break;
                      case IPC_SET|IPC_64:
-                        must_be_readable ( "msgctl(buf)", arg5, 
+                        must_be_readable ( tst, "msgctl(buf)", arg5, 
                                            sizeof(struct msqid64_ds) );
                         KERNEL_DO_SYSCALL(tid,res);
                         break;
@@ -1235,11 +1252,11 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case 24: /* IPCOP_shmctl */
                {
                   if ( arg3 > 0 ) {
-                     must_be_readable ( "shmctl(buf)", arg3, 
+                     must_be_readable ( tst, "shmctl(buf)", arg3, 
                                         sizeof( struct shmid_ds ) ); 
 
                      if ( arg2 == SHM_STAT )
-                        must_be_writable( "shmctl(IPC_STAT,buf)", arg3, 
+                        must_be_writable( tst, "shmctl(IPC_STAT,buf)", arg3, 
                                           sizeof( struct shmid_ds ) );
                   }
 
@@ -1273,24 +1290,24 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case TCSETS:
             case TCSETSW:
             case TCSETSF:
-               must_be_readable( "ioctl(TCSETSW)", arg3, 
+               must_be_readable( tst, "ioctl(TCSETSW)", arg3, 
                                  VKI_SIZEOF_STRUCT_TERMIOS );
                KERNEL_DO_SYSCALL(tid,res);
                break; 
             case TCGETS:
-               must_be_writable( "ioctl(TCGETS)", arg3, 
+               must_be_writable( tst, "ioctl(TCGETS)", arg3, 
                                  VKI_SIZEOF_STRUCT_TERMIOS );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                   make_readable ( arg3, VKI_SIZEOF_STRUCT_TERMIOS );
                break;
             case TCSETA:
-               must_be_readable( "ioctl(TCSETA)", arg3,
+               must_be_readable( tst, "ioctl(TCSETA)", arg3,
                                  VKI_SIZEOF_STRUCT_TERMIO );
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case TCGETA:
-               must_be_writable( "ioctl(TCGETA)", arg3,
+               must_be_writable( tst, "ioctl(TCGETA)", arg3,
                                  VKI_SIZEOF_STRUCT_TERMIO );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
@@ -1303,26 +1320,26 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case TIOCGWINSZ:
-               must_be_writable( "ioctl(TIOCGWINSZ)", arg3, 
+               must_be_writable( tst, "ioctl(TIOCGWINSZ)", arg3, 
                                  sizeof(struct winsize) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                   make_readable ( arg3, sizeof(struct winsize) );
                break;
             case TIOCSWINSZ:
-               must_be_readable( "ioctl(TIOCSWINSZ)", arg3, 
+               must_be_readable( tst, "ioctl(TIOCSWINSZ)", arg3, 
                                  sizeof(struct winsize) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case TIOCGPGRP:
                /* Get process group ID for foreground processing group. */
-               must_be_writable( "ioctl(TIOCGPGRP)", arg3,
+               must_be_writable( tst, "ioctl(TIOCGPGRP)", arg3,
                                  sizeof(pid_t) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                   make_readable ( arg3, sizeof(pid_t) );
             case TIOCGPTN: /* Get Pty Number (of pty-mux device) */
-               must_be_writable("ioctl(TIOCGPTN)", arg3, sizeof(int) );
+               must_be_writable(tst, "ioctl(TIOCGPTN)", arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                    make_readable ( arg3, sizeof(int));
@@ -1332,19 +1349,19 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case TIOCSPTLCK: /* Lock/unlock Pty */
-               must_be_readable( "ioctl(TIOCSPTLCK)", arg3, sizeof(int) );
+               must_be_readable( tst, "ioctl(TIOCSPTLCK)", arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case FIONBIO:
-               must_be_readable( "ioctl(FIONBIO)", arg3, sizeof(int) );
+               must_be_readable( tst, "ioctl(FIONBIO)", arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case FIOASYNC:
-               must_be_readable( "ioctl(FIOASYNC)", arg3, sizeof(int) );
+               must_be_readable( tst, "ioctl(FIOASYNC)", arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case FIONREAD:
-               must_be_writable( "ioctl(FIONREAD)", arg3, sizeof(int) );
+               must_be_writable( tst, "ioctl(FIONREAD)", arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                   make_readable( arg3, sizeof(int) );
@@ -1355,12 +1372,13 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                vg_unsafe.h. */
 #       if 1
             case SG_SET_COMMAND_Q:
-               must_be_readable( "ioctl(SG_SET_COMMAND_Q)", arg3, sizeof(int) );
+               must_be_readable( tst, "ioctl(SG_SET_COMMAND_Q)", 
+                                 arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
 #           if defined(SG_IO)
             case SG_IO:
-               must_be_writable( "ioctl(SG_IO)", arg3, 
+               must_be_writable( tst, "ioctl(SG_IO)", arg3, 
                                  sizeof(struct sg_io_hdr) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
@@ -1369,36 +1387,38 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #           endif /* SG_IO */
             case SG_GET_SCSI_ID:
                /* Note: sometimes sg_scsi_id is called sg_scsi_id_t */
-               must_be_writable( "ioctl(SG_GET_SCSI_ID)", arg3, 
+               must_be_writable( tst, "ioctl(SG_GET_SCSI_ID)", arg3, 
                                  sizeof(struct sg_scsi_id) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                   make_readable (arg3, sizeof(struct sg_scsi_id));
                break;
             case SG_SET_RESERVED_SIZE:
-               must_be_readable( "ioctl(SG_SET_RESERVED_SIZE)", 
+               must_be_readable( tst, "ioctl(SG_SET_RESERVED_SIZE)", 
                                  arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case SG_SET_TIMEOUT:
-               must_be_readable( "ioctl(SG_SET_TIMEOUT)", arg3, sizeof(int) );
+               must_be_readable( tst, "ioctl(SG_SET_TIMEOUT)", arg3, 
+                                 sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case SG_GET_RESERVED_SIZE:
-               must_be_writable( "ioctl(SG_GET_RESERVED_SIZE)", arg3, 
+               must_be_writable( tst, "ioctl(SG_GET_RESERVED_SIZE)", arg3, 
                                  sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                   make_readable (arg3, sizeof(int));
                break;
             case SG_GET_TIMEOUT:
-               must_be_writable( "ioctl(SG_GET_TIMEOUT)", arg3, sizeof(int) );
+               must_be_writable( tst, "ioctl(SG_GET_TIMEOUT)", arg3, 
+                                 sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                   make_readable (arg3, sizeof(int));
                break;
             case SG_GET_VERSION_NUM:
-               must_be_readable( "ioctl(SG_GET_VERSION_NUM)", 
+               must_be_readable( tst, "ioctl(SG_GET_VERSION_NUM)", 
                                  arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
@@ -1410,7 +1430,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #              ifndef ISDN_MAX_CHANNELS
 #              define ISDN_MAX_CHANNELS 64
 #              endif
-               must_be_writable( "ioctl(IIOCGETCPS)", arg3,
+               must_be_writable( tst, "ioctl(IIOCGETCPS)", arg3,
                                  ISDN_MAX_CHANNELS 
                                  * 2 * sizeof(unsigned long) );
                KERNEL_DO_SYSCALL(tid,res);
@@ -1419,10 +1439,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                         * 2 * sizeof(unsigned long) );
                break;
             case IIOCNETGPN:
-               must_be_readable( "ioctl(IIOCNETGPN)",
+               must_be_readable( tst, "ioctl(IIOCNETGPN)",
                                  (UInt)&((isdn_net_ioctl_phone *)arg3)->name,
                                  sizeof(((isdn_net_ioctl_phone *)arg3)->name) );
-               must_be_writable( "ioctl(IIOCNETGPN)", arg3,
+               must_be_writable( tst, "ioctl(IIOCNETGPN)", arg3,
                                  sizeof(isdn_net_ioctl_phone) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
@@ -1442,7 +1462,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SIOCGIFDSTADDR:      /* get remote PA address        */
             case SIOCGIFBRDADDR:      /* get broadcast PA address     */
             case SIOCGIFNAME:         /* get iface name               */
-               must_be_writable("ioctl(SIOCGIFINDEX)", arg3, 
+               must_be_writable(tst, "ioctl(SIOCGIFINDEX)", arg3, 
                                 sizeof(struct ifreq));
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
@@ -1456,13 +1476,13 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                if (!VG_(is_kerror)(res) && res == 0)
                   make_readable (arg3, sizeof(struct ifconf));
                */
-               must_be_readable("ioctl(SIOCGIFCONF)", arg3, 
+               must_be_readable(tst, "ioctl(SIOCGIFCONF)", arg3, 
                                 sizeof(struct ifconf));
                if ( arg3 ) {
                   // TODO len must be readable and writable
                   // buf pointer only needs to be readable
                   struct ifconf *ifc = (struct ifconf *) arg3;
-                  must_be_writable("ioctl(SIOCGIFCONF).ifc_buf",
+                  must_be_writable(tst, "ioctl(SIOCGIFCONF).ifc_buf",
                                    (Addr)(ifc->ifc_buf), (UInt)(ifc->ifc_len) );
                }
                KERNEL_DO_SYSCALL(tid,res);
@@ -1472,7 +1492,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                }
                break;
             case SIOCGSTAMP:
-               must_be_writable("ioctl(SIOCGSTAMP)", arg3, 
+               must_be_writable(tst, "ioctl(SIOCGSTAMP)", arg3, 
                                 sizeof(struct timeval));
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
@@ -1480,7 +1500,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                break;
             case SIOCGRARP:           /* get RARP table entry         */
             case SIOCGARP:            /* get ARP table entry          */
-               must_be_writable("ioctl(SIOCGARP)", arg3, 
+               must_be_writable(tst, "ioctl(SIOCGARP)", arg3, 
                                 sizeof(struct arpreq));
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
@@ -1497,14 +1517,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SIOCSIFADDR:         /* set PA address               */
             case SIOCSIFMTU:          /* set MTU size                 */
             case SIOCSIFHWADDR:       /* set hardware address         */
-               must_be_readable("ioctl(SIOCSIFFLAGS)", arg3, 
+               must_be_readable(tst,"ioctl(SIOCSIFFLAGS)", arg3, 
                                 sizeof(struct ifreq));
                KERNEL_DO_SYSCALL(tid,res);
                break;
             /* Routing table calls.  */
             case SIOCADDRT:           /* add routing table entry      */
             case SIOCDELRT:           /* delete routing table entry   */
-               must_be_readable("ioctl(SIOCADDRT/DELRT)", arg3, 
+               must_be_readable(tst,"ioctl(SIOCADDRT/DELRT)", arg3, 
                                 sizeof(struct rtentry));
                KERNEL_DO_SYSCALL(tid,res);
                break;
@@ -1515,13 +1535,13 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             /* ARP cache control calls. */
             case SIOCSARP:            /* set ARP table entry          */
             case SIOCDARP:            /* delete ARP table entry       */
-               must_be_readable("ioctl(SIOCSIFFLAGS)", arg3, 
+               must_be_readable(tst, "ioctl(SIOCSIFFLAGS)", arg3, 
                                 sizeof(struct ifreq));
                KERNEL_DO_SYSCALL(tid,res);
                break;
 
             case SIOCSPGRP:
-               must_be_readable( "ioctl(SIOCSPGRP)", arg3, sizeof(int) );
+               must_be_readable( tst, "ioctl(SIOCSPGRP)", arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
 
@@ -1546,7 +1566,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SOUND_PCM_READ_BITS:
             case (SOUND_PCM_READ_BITS|0x40000000): /* what the fuck ? */
             case SOUND_PCM_READ_FILTER:
-               must_be_writable("ioctl(SNDCTL_XXX|SOUND_XXX (SIOR, int))", arg3,
+               must_be_writable(tst,"ioctl(SNDCTL_XXX|SOUND_XXX (SIOR, int))", 
+                                arg3,
                                 sizeof(int));
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
@@ -1571,15 +1592,18 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SNDCTL_TMR_SOURCE:
             case SNDCTL_MIDI_PRETIME:
             case SNDCTL_MIDI_MPUMODE:
-               must_be_readable("ioctl(SNDCTL_XXX|SOUND_XXX (SIOWR, int))", 
+               must_be_readable(tst, "ioctl(SNDCTL_XXX|SOUND_XXX "
+                                     "(SIOWR, int))", 
                                 arg3, sizeof(int));
-               must_be_writable("ioctl(SNDCTL_XXX|SOUND_XXX (SIOWR, int))", 
+               must_be_writable(tst, "ioctl(SNDCTL_XXX|SOUND_XXX "
+                                     "(SIOWR, int))", 
                                 arg3, sizeof(int));
                KERNEL_DO_SYSCALL(tid,res);
                break;
             case SNDCTL_DSP_GETOSPACE:
             case SNDCTL_DSP_GETISPACE:
-               must_be_writable("ioctl(SNDCTL_XXX|SOUND_XXX "
+               must_be_writable(tst, 
+                                "ioctl(SNDCTL_XXX|SOUND_XXX "
                                 "(SIOR, audio_buf_info))", arg3,
                                 sizeof(audio_buf_info));
                KERNEL_DO_SYSCALL(tid,res);
@@ -1587,7 +1611,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   make_readable (arg3, sizeof(audio_buf_info));
                break;
             case SNDCTL_DSP_SETTRIGGER:
-               must_be_readable("ioctl(SNDCTL_XXX|SOUND_XXX (SIOW, int))", 
+               must_be_readable(tst, "ioctl(SNDCTL_XXX|SOUND_XXX (SIOW, int))", 
                                 arg3, sizeof(int));
                KERNEL_DO_SYSCALL(tid,res);
                break;
@@ -1612,9 +1636,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                      " writing a proper wrapper." );
                } else {
                   if ((dir & _IOC_READ) && size > 0)
-                     must_be_readable("ioctl(generic)", arg3, size);
+                     must_be_readable(tst, "ioctl(generic)", arg3, size);
                   if ((dir & _IOC_WRITE) && size > 0)
-                     must_be_writable("ioctl(generic)", arg3, size);
+                     must_be_writable(tst, "ioctl(generic)", arg3, size);
                }
                KERNEL_DO_SYSCALL(tid,res);
                if (size > 0 && (dir & _IOC_WRITE)
@@ -1636,8 +1660,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int link(const char *oldpath, const char *newpath); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("link ( %p, %p)\n", arg1, arg2);
-         must_be_readable_asciiz( "link(oldpath)", arg1);
-         must_be_readable_asciiz( "link(newpath)", arg2);
+         must_be_readable_asciiz( tst, "link(oldpath)", arg1);
+         must_be_readable_asciiz( tst, "link(newpath)", arg2);
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -1655,7 +1679,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (VG_(clo_trace_syscalls))
             VG_(printf)("llseek ( %d, 0x%x, 0x%x, %p, %d )\n",
                         arg1,arg2,arg3,arg4,arg5);
-         must_be_writable( "llseek(result)", arg4, sizeof(loff_t));
+         must_be_writable( tst, "llseek(result)", arg4, sizeof(loff_t));
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0)
             make_readable( arg4, sizeof(loff_t) );
@@ -1665,8 +1689,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int lstat(const char *file_name, struct stat *buf); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("lstat ( %p, %p )\n",arg1,arg2);
-         must_be_readable_asciiz( "lstat(file_name)", arg1 );
-         must_be_writable( "lstat(buf)", arg2, sizeof(struct stat) );
+         must_be_readable_asciiz( tst, "lstat(file_name)", arg1 );
+         must_be_writable( tst, "lstat(buf)", arg2, sizeof(struct stat) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             make_readable( arg2, sizeof(struct stat) );
@@ -1678,8 +1702,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int lstat64(const char *file_name, struct stat64 *buf); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("lstat64 ( %p, %p )\n",arg1,arg2);
-         must_be_readable_asciiz( "lstat64(file_name)", arg1 );
-         must_be_writable( "lstat64(buf)", arg2, sizeof(struct stat64) );
+         must_be_readable_asciiz( tst, "lstat64(file_name)", arg1 );
+         must_be_writable( tst, "lstat64(buf)", arg2, sizeof(struct stat64) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0) {
             make_readable( arg2, sizeof(struct stat64) );
@@ -1691,7 +1715,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int mkdir(const char *pathname, mode_t mode); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("mkdir ( %p, %d )\n", arg1,arg2);
-         must_be_readable_asciiz( "mkdir(pathname)", arg1 );
+         must_be_readable_asciiz( tst, "mkdir(pathname)", arg1 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -1726,7 +1750,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                  = VG_(clo_instrument)
                  ? VGM_(check_readable)(arg1, 6*sizeof(UInt), NULL)
                  : True;
-         must_be_readable( "mmap(args)", arg1, 6*sizeof(UInt) );
+         must_be_readable( tst, "mmap(args)", arg1, 6*sizeof(UInt) );
          if (arg_block_readable) {
             UInt* arg_block = (UInt*)arg1;
             UInt arg6;
@@ -1799,10 +1823,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int nanosleep(const struct timespec *req, struct timespec *rem); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("nanosleep ( %p, %p )\n", arg1,arg2);
-         must_be_readable ( "nanosleep(req)", arg1, 
+         must_be_readable ( tst, "nanosleep(req)", arg1, 
                                               sizeof(struct timespec) );
          if (arg2 != (UInt)NULL)
-            must_be_writable ( "nanosleep(rem)", arg2, 
+            must_be_writable ( tst, "nanosleep(rem)", arg2, 
                                sizeof(struct timespec) );
          KERNEL_DO_SYSCALL(tid,res);
          /* Somewhat bogus ... is only written by the kernel if
@@ -1820,16 +1844,16 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             VG_(printf)("newselect ( %d, %p, %p, %p, %p )\n",
                         arg1,arg2,arg3,arg4,arg5);
          if (arg2 != 0)
-            must_be_readable( "newselect(readfds)",   
+            must_be_readable( tst, "newselect(readfds)",   
                               arg2, arg1/8 /* __FD_SETSIZE/8 */ );
          if (arg3 != 0)
-            must_be_readable( "newselect(writefds)",  
+            must_be_readable( tst, "newselect(writefds)",  
                               arg3, arg1/8 /* __FD_SETSIZE/8 */ );
          if (arg4 != 0)
-            must_be_readable( "newselect(exceptfds)", 
+            must_be_readable( tst, "newselect(exceptfds)", 
                               arg4, arg1/8 /* __FD_SETSIZE/8 */ );
          if (arg5 != 0)
-            must_be_readable( "newselect(timeout)", arg5, 
+            must_be_readable( tst, "newselect(timeout)", arg5, 
                               sizeof(struct timeval) );
          KERNEL_DO_SYSCALL(tid,res);
          break;
@@ -1838,7 +1862,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int open(const char *pathname, int flags); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("open ( %p(%s), %d ) --> ",arg1,arg1,arg2);
-         must_be_readable_asciiz( "open(pathname)", arg1 );
+         must_be_readable_asciiz( tst, "open(pathname)", arg1 );
          KERNEL_DO_SYSCALL(tid,res);
          if (VG_(clo_trace_syscalls))
             VG_(printf)("%d\n",res);
@@ -1848,7 +1872,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int pipe(int filedes[2]); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("pipe ( %p ) ...\n", arg1);
-         must_be_writable( "pipe(filedes)", arg1, 2*sizeof(int) );
+         must_be_writable( tst, "pipe(filedes)", arg1, 2*sizeof(int) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             make_readable ( arg1, 2*sizeof(int) );
@@ -1871,7 +1895,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             VG_(printf)("poll ( %d, %d, %d )\n",arg1,arg2,arg3);
          /* In fact some parts of this struct should be readable too.
             This should be fixed properly. */
-         must_be_writable( "poll(ufds)", arg1, arg2 * sizeof(struct pollfd) );
+         must_be_writable( tst, "poll(ufds)", 
+                           arg1, arg2 * sizeof(struct pollfd) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res > 0) {
             Int i;
@@ -1885,8 +1910,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int readlink(const char *path, char *buf, size_t bufsiz); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("readlink ( %p, %p, %d )\n", arg1,arg2,arg3);
-         must_be_readable_asciiz( "readlink(path)", arg1 );
-         must_be_writable ( "readlink(buf)", arg2,arg3 );
+         must_be_readable_asciiz( tst, "readlink(path)", arg1 );
+         must_be_writable ( tst, "readlink(buf)", arg2,arg3 );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res > 0) {
             make_readable ( arg2, res );
@@ -1899,12 +1924,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          struct iovec * vec;
          if (VG_(clo_trace_syscalls))
             VG_(printf)("readv ( %d, %p, %d )\n",arg1,arg2,arg3);
-         must_be_readable( "readv(vector)", 
+         must_be_readable( tst, "readv(vector)", 
                            arg2, arg3 * sizeof(struct iovec) );
          /* ToDo: don't do any of the following if the vector is invalid */
          vec = (struct iovec *)arg2;
          for (i = 0; i < arg3; i++)
-            must_be_writable( "readv(vector[...])",
+            must_be_writable( tst, "readv(vector[...])",
                               (UInt)vec[i].iov_base,vec[i].iov_len );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res > 0) {
@@ -1924,8 +1949,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int rename(const char *oldpath, const char *newpath); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("rename ( %p, %p )\n", arg1, arg2 );
-         must_be_readable_asciiz( "rename(oldpath)", arg1 );
-         must_be_readable_asciiz( "rename(newpath)", arg2 );
+         must_be_readable_asciiz( tst, "rename(oldpath)", arg1 );
+         must_be_readable_asciiz( tst, "rename(newpath)", arg2 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -1933,7 +1958,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int rmdir(const char *pathname); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("rmdir ( %p )\n", arg1);
-         must_be_readable_asciiz( "rmdir(pathname)", arg1 );
+         must_be_readable_asciiz( tst, "rmdir(pathname)", arg1 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -1965,7 +1990,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                  = VG_(clo_instrument)
                  ? VGM_(check_readable)(arg1, 5*sizeof(UInt), NULL)
                  : True;
-         must_be_readable ( "select(args)", arg1, 5*sizeof(UInt) );
+         must_be_readable ( tst, "select(args)", arg1, 5*sizeof(UInt) );
          if (arg_block_readable) {
             UInt* arg_struct = (UInt*)arg1;
             arg1 = arg_struct[0];
@@ -1978,16 +2003,16 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                VG_(printf)("select ( %d, %p, %p, %p, %p )\n", 
                            arg1,arg2,arg3,arg4,arg5);
             if (arg2 != (Addr)NULL)
-               must_be_readable("select(readfds)", arg2, 
+               must_be_readable(tst, "select(readfds)", arg2, 
                                 arg1/8 /* __FD_SETSIZE/8 */ );
             if (arg3 != (Addr)NULL)
-               must_be_readable("select(writefds)", arg3, 
+               must_be_readable(tst, "select(writefds)", arg3, 
                                 arg1/8 /* __FD_SETSIZE/8 */ );
             if (arg4 != (Addr)NULL)
-               must_be_readable("select(exceptfds)", arg4, 
+               must_be_readable(tst, "select(exceptfds)", arg4, 
                                 arg1/8 /* __FD_SETSIZE/8 */ );
             if (arg5 != (Addr)NULL)
-               must_be_readable("select(timeout)", arg5, 
+               must_be_readable(tst, "select(timeout)", arg5, 
                                 sizeof(struct timeval) );
          }
          }
@@ -1999,10 +2024,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                  struct itimerval *ovalue); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("setitimer ( %d, %p, %p )\n", arg1,arg2,arg3);
-         must_be_readable("setitimer(value)", 
+         must_be_readable(tst, "setitimer(value)", 
                           arg2, sizeof(struct itimerval) );
          if (arg3 != (Addr)NULL)
-            must_be_writable("setitimer(ovalue)", 
+            must_be_writable(tst, "setitimer(ovalue)", 
                              arg3, sizeof(struct itimerval));
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && arg3 != (Addr)NULL) {
@@ -2044,7 +2069,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (VG_(clo_trace_syscalls))
             VG_(printf)("setgroups ( %d, %p )\n", arg1, arg2);
          if (arg1 > 0)
-            must_be_readable ( "setgroups(list)", arg2, 
+            must_be_readable ( tst, "setgroups(list)", arg2, 
                                arg1 * sizeof(gid_t) );
          KERNEL_DO_SYSCALL(tid,res);
          break;
@@ -2088,7 +2113,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int setrlimit (int resource, const struct rlimit *rlim); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("setrlimit ( %d, %p )\n", arg1,arg2);
-         must_be_readable( "setrlimit(rlim)", arg2, sizeof(struct rlimit) );
+         must_be_readable( tst, "setrlimit(rlim)", arg2, sizeof(struct rlimit) );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -2110,9 +2135,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
             case SYS_SOCKETPAIR:
                /* int socketpair(int d, int type, int protocol, int sv[2]); */
-               must_be_readable( "socketcall.socketpair(args)", 
+               must_be_readable( tst, "socketcall.socketpair(args)", 
                                  arg2, 4*sizeof(Addr) );
-               must_be_writable( "socketcall.socketpair(sv)", 
+               must_be_writable( tst, "socketcall.socketpair(sv)", 
                                  ((UInt*)arg2)[3], 2*sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res))
@@ -2121,7 +2146,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
             case SYS_SOCKET:
                /* int socket(int domain, int type, int protocol); */
-               must_be_readable( "socketcall.socket(args)", 
+               must_be_readable( tst, "socketcall.socket(args)", 
                                  arg2, 3*sizeof(Addr) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
@@ -2129,16 +2154,16 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SYS_BIND:
                /* int bind(int sockfd, struct sockaddr *my_addr, 
                            int addrlen); */
-               must_be_readable( "socketcall.bind(args)", 
+               must_be_readable( tst, "socketcall.bind(args)", 
                                  arg2, 3*sizeof(Addr) );
-               must_be_readable( "socketcall.bind(my_addr)", 
+               must_be_readable( tst, "socketcall.bind(my_addr)", 
                                  ((UInt*)arg2)[1], ((UInt*)arg2)[2] );
                KERNEL_DO_SYSCALL(tid,res);
                break;
 
             case SYS_LISTEN:
                /* int listen(int s, int backlog); */
-               must_be_readable( "socketcall.listen(args)", 
+               must_be_readable( tst, "socketcall.listen(args)", 
                                  arg2, 2*sizeof(Addr) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
@@ -2148,15 +2173,15 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                Addr addr;
                Addr p_addrlen;
                UInt addrlen_in, addrlen_out;
-               must_be_readable( "socketcall.accept(args)", 
+               must_be_readable( tst, "socketcall.accept(args)", 
                                  arg2, 3*sizeof(Addr) );
                addr      = ((UInt*)arg2)[1];
                p_addrlen = ((UInt*)arg2)[2];
                if (p_addrlen != (Addr)NULL) {
-                  must_be_readable ( "socketcall.accept(addrlen)", 
+                  must_be_readable ( tst, "socketcall.accept(addrlen)", 
                                      p_addrlen, sizeof(int) );
                   addrlen_in = safe_dereference( p_addrlen, 0 );
-                  must_be_writable ( "socketcall.accept(addr)", 
+                  must_be_writable ( tst, "socketcall.accept(addr)", 
                                      addr, addrlen_in );
                }
                KERNEL_DO_SYSCALL(tid,res);
@@ -2172,12 +2197,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                /* int sendto(int s, const void *msg, int len, 
                              unsigned int flags, 
                              const struct sockaddr *to, int tolen); */
-               must_be_readable( "socketcall.sendto(args)", arg2, 
+               must_be_readable( tst, "socketcall.sendto(args)", arg2, 
                                  6*sizeof(Addr) );
-               must_be_readable( "socketcall.sendto(msg)",
+               must_be_readable( tst, "socketcall.sendto(msg)",
                                  ((UInt*)arg2)[1], /* msg */
                                  ((UInt*)arg2)[2]  /* len */ );
-               must_be_readable( "socketcall.sendto(to)",
+               must_be_readable( tst, "socketcall.sendto(to)",
                                  ((UInt*)arg2)[4], /* to */
                                  ((UInt*)arg2)[5]  /* tolen */ );
                KERNEL_DO_SYSCALL(tid,res);
@@ -2185,9 +2210,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
             case SYS_SEND:
                /* int send(int s, const void *msg, size_t len, int flags); */
-               must_be_readable( "socketcall.send(args)", arg2,
+               must_be_readable( tst, "socketcall.send(args)", arg2,
                                  4*sizeof(Addr) );
-               must_be_readable( "socketcall.send(msg)",
+               must_be_readable( tst, "socketcall.send(msg)",
                                  ((UInt*)arg2)[1], /* msg */
                                   ((UInt*)arg2)[2]  /* len */ );
                KERNEL_DO_SYSCALL(tid,res);
@@ -2196,18 +2221,18 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SYS_RECVFROM:
                /* int recvfrom(int s, void *buf, int len, unsigned int flags,
                                struct sockaddr *from, int *fromlen); */
-               must_be_readable( "socketcall.recvfrom(args)", 
+               must_be_readable( tst, "socketcall.recvfrom(args)", 
                                  arg2, 6*sizeof(Addr) );
                if ( ((UInt*)arg2)[4] /* from */ != 0) {
-                  must_be_readable( "socketcall.recvfrom(fromlen)",
+                  must_be_readable( tst, "socketcall.recvfrom(fromlen)",
                                     ((UInt*)arg2)[5] /* fromlen */, 
                                     sizeof(int) );
-                  must_be_writable( "socketcall.recvfrom(from)",
+                  must_be_writable( tst, "socketcall.recvfrom(from)",
                                     ((UInt*)arg2)[4], /*from*/
                                     safe_dereference( (Addr)
                                                       ((UInt*)arg2)[5], 0 ) );
                }
-               must_be_writable( "socketcall.recvfrom(buf)", 
+               must_be_writable( tst, "socketcall.recvfrom(buf)", 
                                  ((UInt*)arg2)[1], /* buf */
                                  ((UInt*)arg2)[2]  /* len */ );
                KERNEL_DO_SYSCALL(tid,res);
@@ -2230,9 +2255,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                (see connect(2)) and is identical to recvfrom with a  NULL
                from parameter.
                */
-               must_be_readable( "socketcall.recv(args)", 
+               must_be_readable( tst, "socketcall.recv(args)", 
                                  arg2, 4*sizeof(Addr) );
-               must_be_writable( "socketcall.recv(buf)", 
+               must_be_writable( tst, "socketcall.recv(buf)", 
                                  ((UInt*)arg2)[1], /* buf */
                                  ((UInt*)arg2)[2]  /* len */ );
                KERNEL_DO_SYSCALL(tid,res);
@@ -2247,21 +2272,21 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                struct sockaddr *sa;
                /* int connect(int sockfd, 
                               struct sockaddr *serv_addr, int addrlen ); */
-               must_be_readable( "socketcall.connect(args)", 
+               must_be_readable( tst, "socketcall.connect(args)", 
                                  arg2, 3*sizeof(Addr) );
-               must_be_readable( "socketcall.connect(serv_addr.sa_family)",
+               must_be_readable( tst, "socketcall.connect(serv_addr.sa_family)",
                                  ((UInt*)arg2)[1], /* serv_addr */
                                  sizeof (sa_family_t));
                sa = (struct sockaddr *) (((UInt*)arg2)[1]);
                if (sa->sa_family == AF_UNIX)
-                  must_be_readable_asciiz( 
+                  must_be_readable_asciiz( tst, 
                      "socketcall.connect(serv_addr.sun_path)",
                      (UInt) ((struct sockaddr_un *) sa)->sun_path);
                /* XXX There probably should be more cases here since not
                   all of the struct sockaddr_XXX must be initialized.  But
                   wait until something pops up.  */
                else
-                  must_be_readable( "socketcall.connect(serv_addr)",
+                  must_be_readable( tst, "socketcall.connect(serv_addr)",
                                     ((UInt*)arg2)[1], /* serv_addr */
                                     ((UInt*)arg2)[2]  /* addrlen */ );
                KERNEL_DO_SYSCALL(tid,res);
@@ -2271,9 +2296,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SYS_SETSOCKOPT:
                /* int setsockopt(int s, int level, int optname, 
                                  const void *optval, int optlen); */
-               must_be_readable( "socketcall.setsockopt(args)", 
+               must_be_readable( tst, "socketcall.setsockopt(args)", 
                                  arg2, 5*sizeof(Addr) );
-               must_be_readable( "socketcall.setsockopt(optval)",
+               must_be_readable( tst, "socketcall.setsockopt(optval)",
                                  ((UInt*)arg2)[3], /* optval */
                                  ((UInt*)arg2)[4]  /* optlen */ );
                KERNEL_DO_SYSCALL(tid,res);
@@ -2282,16 +2307,16 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SYS_GETSOCKOPT:
                /* int setsockopt(int s, int level, int optname, 
                                  void *optval, socklen_t *optlen); */
-               must_be_readable( "socketcall.getsockopt(args)", 
+               must_be_readable( tst, "socketcall.getsockopt(args)", 
                                  arg2, 5*sizeof(Addr) );
                {
                Addr optval_p = ((UInt*)arg2)[3];
                Addr optlen_p = ((UInt*)arg2)[4];
-               //vg_assert(sizeof(socklen_t) == sizeof(UInt));
+               /* vg_assert(sizeof(socklen_t) == sizeof(UInt)); */
                UInt optlen_after;
                UInt optlen = safe_dereference ( optlen_p, 0 );
                if (optlen > 0) 
-                  must_be_writable( "socketcall.getsockopt(optval)", 
+                  must_be_writable( tst, "socketcall.getsockopt(optval)", 
                                     optval_p, optlen );
                KERNEL_DO_SYSCALL(tid,res);
                optlen_after = safe_dereference ( optlen_p, 0 );
@@ -2303,12 +2328,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SYS_GETSOCKNAME:
                /* int getsockname(int s, struct sockaddr* name, 
                                   int* namelen) */
-               must_be_readable( "socketcall.getsockname(args)", 
+               must_be_readable( tst, "socketcall.getsockname(args)", 
                                  arg2, 3*sizeof(Addr) );
                {
                UInt namelen = safe_dereference( (Addr) ((UInt*)arg2)[2], 0);
                if (namelen > 0)
-                  must_be_writable( "socketcall.getsockname(name)", 
+                  must_be_writable( tst, "socketcall.getsockname(name)", 
                                     ((UInt*)arg2)[1], namelen );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res)) {
@@ -2323,12 +2348,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             case SYS_GETPEERNAME:
                /* int getpeername(int s, struct sockaddr* name, 
                                   int* namelen) */
-               must_be_readable( "socketcall.getpeername(args)", 
+               must_be_readable( tst, "socketcall.getpeername(args)", 
                                  arg2, 3*sizeof(Addr) );
                {
                UInt namelen = safe_dereference( (Addr) ((UInt*)arg2)[2], 0);
                if (namelen > 0)
-                  must_be_writable( "socketcall.getpeername(name)", 
+                  must_be_writable( tst, "socketcall.getpeername(name)", 
                                     ((UInt*)arg2)[1], namelen );
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res)) {
@@ -2342,8 +2367,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
             case SYS_SHUTDOWN:
                /* int shutdown(int s, int how); */
-               must_be_readable( "socketcall.shutdown(args)", 
-                                  arg2, 2*sizeof(Addr) );
+               must_be_readable( tst, "socketcall.shutdown(args)", 
+                                 arg2, 2*sizeof(Addr) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
 
@@ -2358,7 +2383,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   */
 
                   struct msghdr *msg = (struct msghdr *)((UInt *)arg2)[ 1 ];
-                  msghdr_foreachfield ( msg, must_be_readable_sendmsg );
+                  msghdr_foreachfield ( tst, msg, must_be_readable_sendmsg );
 
                   KERNEL_DO_SYSCALL(tid,res);
                   break;
@@ -2375,12 +2400,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   */
 
                   struct msghdr *msg = (struct msghdr *)((UInt *)arg2)[ 1 ];
-                  msghdr_foreachfield ( msg, must_be_writable_recvmsg );
+                  msghdr_foreachfield ( tst, msg, must_be_writable_recvmsg );
 
                   KERNEL_DO_SYSCALL(tid,res);
 
                   if ( !VG_(is_kerror)( res ) )
-                     msghdr_foreachfield( msg, make_readable_recvmsg );
+                     msghdr_foreachfield( tst, msg, make_readable_recvmsg );
 
                   break;
                }
@@ -2396,8 +2421,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int stat(const char *file_name, struct stat *buf); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("stat ( %p, %p )\n",arg1,arg2);
-         must_be_readable_asciiz( "stat(file_name)", arg1 );
-         must_be_writable( "stat(buf)", arg2, sizeof(struct stat) );
+         must_be_readable_asciiz( tst, "stat(file_name)", arg1 );
+         must_be_writable( tst, "stat(buf)", arg2, sizeof(struct stat) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             make_readable( arg2, sizeof(struct stat) );
@@ -2407,8 +2432,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int statfs(const char *path, struct statfs *buf); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("statfs ( %p, %p )\n",arg1,arg2);
-         must_be_readable_asciiz( "statfs(path)", arg1 );
-         must_be_writable( "stat(buf)", arg2, sizeof(struct statfs) );
+         must_be_readable_asciiz( tst, "statfs(path)", arg1 );
+         must_be_writable( tst, "stat(buf)", arg2, sizeof(struct statfs) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             make_readable( arg2, sizeof(struct statfs) );
@@ -2418,8 +2443,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int symlink(const char *oldpath, const char *newpath); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("symlink ( %p, %p )\n",arg1,arg2);
-         must_be_readable_asciiz( "symlink(oldpath)", arg1 );
-         must_be_readable_asciiz( "symlink(newpath)", arg2 );
+         must_be_readable_asciiz( tst, "symlink(oldpath)", arg1 );
+         must_be_readable_asciiz( tst, "symlink(newpath)", arg2 );
          KERNEL_DO_SYSCALL(tid,res);
          break; 
 
@@ -2428,8 +2453,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int stat64(const char *file_name, struct stat64 *buf); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("stat64 ( %p, %p )\n",arg1,arg2);
-         must_be_readable_asciiz( "stat64(file_name)", arg1 );
-         must_be_writable( "stat64(buf)", arg2, sizeof(struct stat64) );
+         must_be_readable_asciiz( tst, "stat64(file_name)", arg1 );
+         must_be_writable( tst, "stat64(buf)", arg2, sizeof(struct stat64) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             make_readable( arg2, sizeof(struct stat64) );
@@ -2441,7 +2466,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int fstat64(int filedes, struct stat64 *buf); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("fstat64 ( %d, %p )\n",arg1,arg2);
-         must_be_writable( "fstat64(buf)", arg2, sizeof(struct stat64) );
+         must_be_writable( tst, "fstat64(buf)", arg2, sizeof(struct stat64) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             make_readable( arg2, sizeof(struct stat64) );
@@ -2452,7 +2477,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int sysinfo(struct sysinfo *info); */
          if (VG_(clo_trace_syscalls)) 
             VG_(printf)("sysinfo ( %p )\n",arg1);
-         must_be_writable( "sysinfo(info)", arg1, sizeof(struct sysinfo) );
+         must_be_writable( tst, "sysinfo(info)", arg1, sizeof(struct sysinfo) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
             make_readable( arg1, sizeof(struct sysinfo) );
@@ -2463,7 +2488,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (VG_(clo_trace_syscalls))
             VG_(printf)("time ( %p )\n",arg1);
          if (arg1 != (UInt)NULL) {
-            must_be_writable( "time", arg1, sizeof(time_t) );
+            must_be_writable( tst, "time", arg1, sizeof(time_t) );
          }
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && arg1 != (UInt)NULL) {
@@ -2475,7 +2500,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* clock_t times(struct tms *buf); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("times ( %p )\n",arg1);
-         must_be_writable( "times(buf)", arg1, sizeof(struct tms) );
+         must_be_writable( tst, "times(buf)", arg1, sizeof(struct tms) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && arg1 != (UInt)NULL) {
             make_readable( arg1, sizeof(struct tms) );
@@ -2486,7 +2511,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int truncate(const char *path, size_t length); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("truncate ( %p, %d )\n", arg1,arg2);
-         must_be_readable_asciiz( "truncate(path)", arg1 );
+         must_be_readable_asciiz( tst, "truncate(path)", arg1 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -2501,7 +2526,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int unlink(const char *pathname) */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("ulink ( %p )\n",arg1);
-         must_be_readable_asciiz( "unlink(pathname)", arg1 );
+         must_be_readable_asciiz( tst, "unlink(pathname)", arg1 );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -2509,7 +2534,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int uname(struct utsname *buf); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("uname ( %p )\n",arg1);
-         must_be_writable( "uname(buf)", arg1, sizeof(struct utsname) );
+         must_be_writable( tst, "uname(buf)", arg1, sizeof(struct utsname) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && arg1 != (UInt)NULL) {
             make_readable( arg1, sizeof(struct utsname) );
@@ -2520,10 +2545,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          /* int utime(const char *filename, struct utimbuf *buf); */
          if (VG_(clo_trace_syscalls)) 
             VG_(printf)("utime ( %p, %p )\n", arg1,arg2);
-         must_be_readable_asciiz( "utime(filename)", arg1 );
+         must_be_readable_asciiz( tst, "utime(filename)", arg1 );
          if (arg2 != (UInt)NULL)
-            must_be_readable( "utime(buf)", arg2, 
-                                            sizeof(struct utimbuf) );
+            must_be_readable( tst, "utime(buf)", arg2, 
+                                                 sizeof(struct utimbuf) );
          KERNEL_DO_SYSCALL(tid,res);
          break;
 
@@ -2534,9 +2559,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             VG_(printf)("wait4 ( %d, %p, %d, %p )\n",
                       arg1,arg2,arg3,arg4);
          if (arg2 != (Addr)NULL)
-            must_be_writable( "wait4(status)", arg2, sizeof(int) );
+            must_be_writable( tst, "wait4(status)", arg2, sizeof(int) );
          if (arg4 != (Addr)NULL)
-            must_be_writable( "wait4(rusage)", arg4, sizeof(struct rusage) );
+            must_be_writable( tst, "wait4(rusage)", arg4, 
+                              sizeof(struct rusage) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res)) {
             if (arg2 != (Addr)NULL)
@@ -2552,12 +2578,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          struct iovec * vec;
          if (VG_(clo_trace_syscalls))
             VG_(printf)("writev ( %d, %p, %d )\n",arg1,arg2,arg3);
-         must_be_readable( "writev(vector)", 
+         must_be_readable( tst, "writev(vector)", 
                            arg2, arg3 * sizeof(struct iovec) );
          /* ToDo: don't do any of the following if the vector is invalid */
          vec = (struct iovec *)arg2;
          for (i = 0; i < arg3; i++)
-            must_be_readable( "writev(vector[...])",
+            must_be_readable( tst, "writev(vector[...])",
                               (UInt)vec[i].iov_base,vec[i].iov_len );
          KERNEL_DO_SYSCALL(tid,res);
          break;
@@ -2577,10 +2603,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (VG_(clo_trace_syscalls))
             VG_(printf)("sigaction ( %d, %p, %p )\n",arg1,arg2,arg3);
          if (arg2 != (UInt)NULL)
-            must_be_readable( "sigaction(act)", 
+            must_be_readable( tst, "sigaction(act)", 
                               arg2, sizeof(vki_ksigaction));
          if (arg3 != (UInt)NULL)
-            must_be_writable( "sigaction(oldact)", 
+            must_be_writable( tst, "sigaction(oldact)", 
                               arg3, sizeof(vki_ksigaction));
          /* We do this one ourselves! */
 #        if SIGNAL_SIMULATION
@@ -2601,10 +2627,10 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (VG_(clo_trace_syscalls))
             VG_(printf)("sigprocmask ( %d, %p, %p )\n",arg1,arg2,arg3);
          if (arg2 != (UInt)NULL)
-            must_be_readable( "sigprocmask(set)", 
+            must_be_readable( tst, "sigprocmask(set)", 
                               arg2, sizeof(vki_ksigset_t));
          if (arg3 != (UInt)NULL)
-            must_be_writable( "sigprocmask(oldset)", 
+            must_be_writable( tst, "sigprocmask(oldset)", 
                               arg3, sizeof(vki_ksigset_t));
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res == 0 && arg3 != (UInt)NULL)
@@ -2661,7 +2687,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
    and the result value afterwards, we can't reliably use it to get
    the syscall number.  So the caller has to pass it explicitly.  
 */
-void VG_(check_known_blocking_syscall) ( ThreadId tid, 
+void VG_(check_known_blocking_syscall) ( ThreadId tid,
                                          Int syscallno,
                                          Int* /*IN*/ res )
 {
@@ -2692,7 +2718,7 @@ void VG_(check_known_blocking_syscall) ( ThreadId tid,
                   "SYSCALL--PRE[%d,%d]       read ( %d, %p, %d )\n", 
                   VG_(getpid)(), tid,
                   arg1, arg2, arg3);
-            must_be_writable( "read(buf)", arg2, arg3 );
+            must_be_writable( tst, "read(buf)", arg2, arg3 );
          } else {
             /* POST */
             if (VG_(clo_trace_syscalls))
@@ -2715,7 +2741,7 @@ void VG_(check_known_blocking_syscall) ( ThreadId tid,
                   "SYSCALL--PRE[%d,%d]       write ( %d, %p, %d )\n", 
                   VG_(getpid)(), tid,
                   arg1, arg2, arg3);
-            must_be_readable( "write(buf)", arg2, arg3 );
+            must_be_readable( tst, "write(buf)", arg2, arg3 );
 	 } else {
             /* POST */
             if (VG_(clo_trace_syscalls))

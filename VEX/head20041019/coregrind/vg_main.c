@@ -1578,6 +1578,7 @@ void usage ( Bool debug_help )
 "    --trace-pthread=none|some|all  show pthread event details? [none]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "\n"
+"    --vex-iropt-verbosity             0 .. 9 [0]\n"
 "    --vex-iropt-level                 0 .. 2 [2]\n"
 "    --vex-iropt-precise-memory-exns   [no]\n"
 "    --vex-iropt-unroll-thresh         0 .. 400 [120]\n"

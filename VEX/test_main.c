@@ -36,10 +36,10 @@ void log_bytes ( Char* bytes, Int nbytes )
 static Char linebuf[N_LINEBUF];
 
 #define N_ORIGBUF 200
-#define N_TRANSBUF 1000
+#define N_TRANSBUF 5000
 
-static Char origbuf[N_ORIGBUF];
-static Char transbuf[N_TRANSBUF];
+static UChar origbuf[N_ORIGBUF];
+static UChar transbuf[N_TRANSBUF];
 
 static Bool verbose = True;
 
@@ -47,7 +47,7 @@ int main ( int argc, char** argv )
 {
    FILE* f;
    Int i;
-   UInt u;
+   UInt u, sum;
    Addr32 orig_addr;
    Int bb_number;
    Int orig_nbytes, trans_used, orig_used;
@@ -93,8 +93,8 @@ int main ( int argc, char** argv )
       /* second line is:   . byte byte byte etc */
       //printf("%s", linebuf);
       if (verbose)
-         printf("\n\n============ Basic Block %d, "
-                "Start %x, nbytes %d ============\n\n", 
+         printf("============ Basic Block %d, "
+                "Start %x, nbytes %2d ============", 
                 bb_number, orig_addr, orig_nbytes);
       assert(orig_nbytes >= 1 && orig_nbytes <= N_ORIGBUF);
       for (i = 0; i < orig_nbytes; i++) {
@@ -110,9 +110,15 @@ int main ( int argc, char** argv )
 			 origbuf, (Addr64)orig_addr, &orig_used,
 			 transbuf, N_TRANSBUF, &trans_used,
 			 NULL, NULL, 0 );
+      if (tres != TransOK)
+         printf("\ntres = %d\n", (Int)tres);
       assert(tres == TransOK);
       assert(orig_used == orig_nbytes);
       }
+      sum = 0;
+      for (i = 0; i < trans_used; i++)
+         sum += (UInt)transbuf[i];
+      printf ( " %6.2f ... %d\n", (double)trans_used / (double)orig_used, sum );
    }
 
    fclose(f);

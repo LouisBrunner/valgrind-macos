@@ -154,21 +154,29 @@
 }
 
 #-------- Data races
-#{
-#   _dl_lookup_symbol/fixup/_dl_runtime_resolve
-#   helgrind:Eraser
-#   fun:_dl_lookup_symbol
-#   fun:fixup
-#   fun:_dl_runtime_resolve
-#}
-#
-#{
-#   _dl_lookup_versioned_symbol/fixup/_dl_runtime_resolve
-#   helgrind:Eraser
-#   fun:_dl_lookup_versioned_symbol
-#   fun:fixup
-#   fun:_dl_runtime_resolve
-#}
+{
+   _dl_lookup_symbol/fixup/_dl_runtime_resolve
+   Helgrind:Eraser
+   fun:_dl_lookup_symbol
+   fun:fixup
+   fun:_dl_runtime_resolve
+}
+
+{
+   _dl_lookup_versioned_symbol/fixup/_dl_runtime_resolve
+   Helgrind:Eraser
+   fun:_dl_lookup_versioned_symbol
+   fun:fixup
+   fun:_dl_runtime_resolve
+}
+
+{
+   _dl_fini/exit/__libc_start_main
+   Helgrind:Eraser
+   fun:_dl_fini
+   fun:exit
+   fun:__libc_start_main
+}
 
 #-------- Threading bugs?
 # glibc 'knows' that destroying a locked mutex will unlock it
@@ -334,6 +342,14 @@
    obj:*libc-2.2.?.so
    fun:_dl_catch_error
 }
+{
+   _dl_relocate_object/dl_main/_dl_sysdep_start/_dl_start_final(Cond)
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start_final
+}
 
 {
    strrchr/_dl_map_object_from_fd/_dl_map_object(Cond)
@@ -341,6 +357,13 @@
    fun:strrchr
    fun:_dl_map_object_from_fd
    fun:_dl_map_object
+}
+
+{
+   _dl_init/ld-2.2.4.so(Cond)
+   Memcheck:Cond
+   fun:_dl_start
+   obj:/lib/ld-2.2.4.so
 }
 
 #-------------------

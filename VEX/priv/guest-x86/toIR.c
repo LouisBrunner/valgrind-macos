@@ -1240,13 +1240,13 @@ static HChar* nameGrp5 ( Int opc_aux )
    return grp5_names[opc_aux];
 }
 
-//-- static Char* nameGrp8 ( Int opc_aux )
-//-- {
-//--    static Char* grp8_names[8] 
-//--      = { "???", "???", "???", "???", "bt", "bts", "btr", "btc" };
-//--    if (opc_aux < 4 || opc_aux > 7) VG_(core_panic)("nameGrp8");
-//--    return grp8_names[opc_aux];
-//-- }
+static HChar* nameGrp8 ( Int opc_aux )
+{
+   static HChar* grp8_names[8] 
+     = { "???", "???", "???", "???", "bt", "bts", "btr", "btc" };
+   if (opc_aux < 4 || opc_aux > 7) vpanic("nameGrp8(x86)");
+   return grp8_names[opc_aux];
+}
 
 static HChar* nameIReg ( Int size, Int reg )
 {
@@ -2500,117 +2500,104 @@ UInt dis_Grp2 ( UChar  sorb,
 }
 
 
+/* Group 8 extended opcodes (but BT/BTS/BTC/BTR only). */
+static
+UInt dis_Grp8_Imm ( UChar       sorb,
+                    UInt delta, UChar modrm,
+                    Int am_sz, Int sz, UInt src_val,
+                    Bool* decode_OK )
+{
+   /* src_val denotes a d8.
+      And delta on entry points at the modrm byte. */
 
-//-- /* Group 8 extended opcodes (but BT/BTS/BTC/BTR only). */
-//-- static
-//-- Addr dis_Grp8_BT ( UCodeBlock* cb, 
-//--                    UChar       sorb,
-//--                    Addr eip, UChar modrm,
-//--                    Int am_sz, Int sz, UInt src_val )
-//-- {
-#  define MODIFY_t2_AND_SET_CARRY_FLAG                                        \
-      /* t2 is the value to be op'd on.  Copy to t_fetched, then        \
-         modify t2, if non-BT. */                                        \
-      uInstr2(cb, MOV,   4,  TempReg, t2, TempReg, t_fetched);                \
-      uInstr2(cb, MOV,  sz,  Literal, 0,  TempReg, t_mask);                \
-      uLiteral(cb, v_mask);                                                \
-      switch (gregOfRM(modrm)) {                                        \
-         case 4: /* BT */  break;                                        \
-         case 5: /* BTS */                                                 \
-            uInstr2(cb, OR, sz, TempReg, t_mask, TempReg, t2); break;        \
-         case 6: /* BTR */                                                \
-            uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t2); break;        \
-         case 7: /* BTC */                                                 \
-            uInstr2(cb, XOR, sz, TempReg, t_mask, TempReg, t2); break;        \
-      }                                                                        \
-      /* Copy relevant bit from t_fetched into carry flag. */                \
-      uInstr2(cb, SHR, sz, Literal, 0, TempReg, t_fetched);                \
-      uLiteral(cb, src_val);                                                \
-      uInstr2(cb, MOV, sz, Literal, 0, TempReg, t_mask);                \
-      uLiteral(cb, 1);                                                        \
-      uInstr2(cb, AND, sz, TempReg, t_mask, TempReg, t_fetched);        \
-      uInstr1(cb, NEG, sz, TempReg, t_fetched);                                \
-      setFlagsFromUOpcode(cb, NEG);
+   IRType ty     = szToITy(sz);
+   IRTemp t2     = newTemp(Ity_I32);
+   IRTemp t2m    = newTemp(Ity_I32);
+   IRTemp t_addr = IRTemp_INVALID;
+   HChar  dis_buf[50];
+   UInt   mask;
 
+   /* we're optimists :-) */
+   *decode_OK = True;
 
-//--    /* src_val denotes a d8.
-//--       And eip on entry points at the modrm byte. */
-//--    Int   t1, t2, t_fetched, t_mask;
-//--    UInt  pair;
-//--    HChar dis_buf[50];
-//--    UInt  v_mask;
-//-- 
-//--    /* There is no 1-byte form of this instruction, AFAICS. */
-//--    vg_assert(sz == 2 || sz == 4);
-//-- 
-//--    /* Limit src_val -- the bit offset -- to something within a word.
-//--       The Intel docs say that literal offsets larger than a word are
-//--       masked in this way. */
-//--    switch (sz) {
-//--       case 2: src_val &= 15; break;
-//--       case 4: src_val &= 31; break;
-//--       default: VG_(core_panic)("dis_Grp8_BT: invalid size");
-//--    }
-//-- 
-//--    /* Invent a mask suitable for the operation. */
-//-- 
-//--    switch (gregOfRM(modrm)) {
-//--       case 4: /* BT */  v_mask = 0; break;
-//--       case 5: /* BTS */ v_mask = 1 << src_val; break;
-//--       case 6: /* BTR */ v_mask = ~(1 << src_val); break;
-//--       case 7: /* BTC */ v_mask = 1 << src_val; break;
-//--          /* If this needs to be extended, probably simplest to make a
-//--             new function to handle the other cases (0 .. 3).  The
-//--             Intel docs do however not indicate any use for 0 .. 3, so
-//--             we don't expect this to happen. */
-//--       default: VG_(core_panic)("dis_Grp8_BT");
-//--    }
-//--    /* Probably excessively paranoid. */
-//--    if (sz == 2)
-//--       v_mask &= 0x0000FFFF;
-//-- 
-//--    t1        = INVALID_TEMPREG;
-//--    t_fetched = newTemp(cb);
-//--    t_mask    = newTemp(cb);
-//-- 
-//--    if (epartIsReg(modrm)) {
-//--       vg_assert(am_sz == 1);
-//--       t2 = newTemp(cb);
-//-- 
-//--       /* Fetch the value to be tested and modified. */
-//--       uInstr2(cb, GET, sz, ArchReg, eregOfRM(modrm), TempReg, t2);
-//--       /* Do it! */
-//--       MODIFY_t2_AND_SET_CARRY_FLAG;
-//--       /* Dump the result back, if non-BT. */
-//--       if (gregOfRM(modrm) != 4 /* BT */)
-//--          uInstr2(cb, PUT, sz, TempReg, t2, ArchReg, eregOfRM(modrm));
-//-- 
-//--       eip += (am_sz + 1);
-//--       DIP("%s%c $0x%x, %s\n", nameGrp8(gregOfRM(modrm)), nameISize(sz),
-//--                               src_val, nameIReg(sz,eregOfRM(modrm)));
-//--    } else {
-//--       pair = disAMode ( cb, sorb, eip, dis_buf);
-//--       t1   = LOW24(pair);
-//--       t2   = newTemp(cb);
-//--       eip  += HI8(pair);
-//--       eip  += 1;
-//-- 
-//--       /* Fetch the value to be tested and modified. */
-//--       uInstr2(cb, LOAD,  sz, TempReg, t1, TempReg, t2);
-//--       /* Do it! */
-//--       MODIFY_t2_AND_SET_CARRY_FLAG;
-//--       /* Dump the result back, if non-BT. */
-//--       if (gregOfRM(modrm) != 4 /* BT */) {
-//--          uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t1);
-//--       }
-//--       DIP("%s%c $0x%x, %s\n", nameGrp8(gregOfRM(modrm)), nameISize(sz),
-//--                               src_val, dis_buf);
-//--    }
-//--    return eip;
-//-- 
-//-- #  undef MODIFY_t2_AND_SET_CARRY_FLAG
-//-- }
+   /* Limit src_val -- the bit offset -- to something within a word.
+      The Intel docs say that literal offsets larger than a word are
+      masked in this way. */
+   switch (sz) {
+      case 2:  src_val &= 15; break;
+      case 4:  src_val &= 31; break;
+      default: *decode_OK = False; return delta;
+   }
 
+   /* Invent a mask suitable for the operation. */
+   switch (gregOfRM(modrm)) {
+      case 4: /* BT */  mask = 0;               break;
+      case 5: /* BTS */ mask = 1 << src_val;    break;
+      case 6: /* BTR */ mask = ~(1 << src_val); break;
+      case 7: /* BTC */ mask = 1 << src_val;    break;
+         /* If this needs to be extended, probably simplest to make a
+            new function to handle the other cases (0 .. 3).  The
+            Intel docs do however not indicate any use for 0 .. 3, so
+            we don't expect this to happen. */
+      default: *decode_OK = False; return delta;
+   }
+
+   /* Fetch the value to be tested and modified into t2, which is
+      32-bits wide regardless of sz. */
+   if (epartIsReg(modrm)) {
+      vassert(am_sz == 1);
+      assign( t2, getIReg(sz, eregOfRM(modrm)) );
+      delta += (am_sz + 1);
+      DIP("%s%c $0x%x, %s\n", nameGrp8(gregOfRM(modrm)), nameISize(sz),
+                              src_val, nameIReg(sz,eregOfRM(modrm)));
+   } else {
+      Int len;
+      t_addr = disAMode ( &len, sorb, delta, dis_buf);
+      delta  += (len+1);
+      assign( t2, widenUto32(loadLE(ty, mkexpr(t_addr))) );
+      DIP("%s%c $0x%x, %s\n", nameGrp8(gregOfRM(modrm)), nameISize(sz),
+                              src_val, dis_buf);
+   }
+
+   /* Copy relevant bit from t2 into the carry flag. */
+   /* Flags: C=selected bit, O,S,Z,A,P undefined, so are set to zero. */
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+   stmt( IRStmt_Put( 
+            OFFB_CC_DEP1,
+            binop(Iop_And32,
+                  binop(Iop_Shr32, mkexpr(t2), mkU8(src_val)),
+                  mkU32(1))
+       ));
+
+   /* Compute the new value into t2m, if non-BT. */
+   switch (gregOfRM(modrm)) {
+      case 4: /* BT */
+         break;
+      case 5: /* BTS */
+         assign( t2m, binop(Iop_Or32, mkU32(mask), mkexpr(t2)) );
+         break;
+      case 6: /* BTR */
+         assign( t2m, binop(Iop_And32, mkU32(mask), mkexpr(t2)) );
+         break;
+      case 7: /* BTC */
+         assign( t2m, binop(Iop_Xor32, mkU32(mask), mkexpr(t2)) );
+         break;
+     default: 
+         vassert(0);
+   }
+
+   /* Write the result back, if non-BT. */
+   if (gregOfRM(modrm) != 4 /* BT */) {
+      if (epartIsReg(modrm)) {
+	putIReg(sz, eregOfRM(modrm), narrowTo(ty, mkexpr(t2m)));
+      } else {
+	storeLE(mkexpr(t_addr), narrowTo(ty, mkexpr(t2m)));
+      }
+   }
+
+   return delta;
+}
 
 
 /* Signed/unsigned widening multiply.  Generate IR to multiply the
@@ -11566,14 +11553,19 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       opc = getIByte(delta); delta++;
       switch (opc) {
 
-//--       /* =-=-=-=-=-=-=-=-=- Grp8 =-=-=-=-=-=-=-=-=-=-=-= */
-//-- 
-//--       case 0xBA: /* Grp8 Ib,Ev */
-//--          modrm = getUChar(eip);
-//--          am_sz = lengthAMode(eip);
-//--          d32   = getSDisp8(eip + am_sz);
-//--          eip = dis_Grp8_BT ( cb, sorb, eip, modrm, am_sz, sz, d32 );
-//--          break;
+      /* =-=-=-=-=-=-=-=-=- Grp8 =-=-=-=-=-=-=-=-=-=-=-= */
+
+      case 0xBA: { /* Grp8 Ib,Ev */
+         Bool decode_OK = False;
+         modrm = getUChar(delta);
+         am_sz = lengthAMode(delta);
+         d32   = getSDisp8(delta + am_sz);
+         delta = dis_Grp8_Imm ( sorb, delta, modrm, am_sz, sz, d32,
+                                &decode_OK );
+         if (!decode_OK)
+            goto decode_failure;
+         break;
+      }
 
       /* =-=-=-=-=-=-=-=-=- BSF/BSR -=-=-=-=-=-=-=-=-=-= */
 

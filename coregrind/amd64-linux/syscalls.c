@@ -571,260 +571,21 @@ PRE(sys_arch_prctl, 0)
    SET_RESULT( 0 );
 }
 
-/* --- BEGIN socketcall unwrappers for amd64-linux. --- */
-
-PRE(sys_socketcall, MayBlock)
+PRE(sys_socket, 0)
 {
-#  define ARG2_0 (ARG2)
-#  define ARG2_1 (ARG3)
-#  define ARG2_2 (ARG4)
-#  define ARG2_3 (ARG5)
-#  define ARG2_4 (ARG6)
-
-   PRINT("sys_socketcall(amd64) %lld (0x%llx, 0x%llx, "
-         "0x%llx, 0x%llx, 0x%llx,  )",
-         ARG1,ARG2_0,ARG2_1,ARG2_2,ARG2_3,ARG2_4);
-
-   PRE_REG_READ2(long, "socketcall", int, call, unsigned long *, args);
-
-   switch (ARG1 /* request */) {
-
-//   case VKI_SYS_SOCKETPAIR:
-//      /* int socketpair(int d, int type, int protocol, int sv[2]); */
-//      PRE_MEM_READ( "socketcall.socketpair(args)", ARG2, 4*sizeof(Addr) );
-//      generic_PRE_sys_socketpair( tid, ARG2_0, ARG2_1, ARG2_2, ARG2_3 );
-//      break;
-
-   case VKI_SYS_SOCKET:
-      /* int socket(int domain, int type, int protocol); */
-      PRE_MEM_READ( "socketcall.socket(args)", ARG2, 3*sizeof(Addr) );
-      break;
-
-   case VKI_SYS_BIND:
-      /* int bind(int sockfd, struct sockaddr *my_addr, 
-                  int addrlen); */
-      PRE_MEM_READ( "socketcall.bind(args)", ARG2, 3*sizeof(Addr) );
-      VG_(generic_PRE_sys_bind)( tid, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-               
-//   case VKI_SYS_LISTEN:
-//      /* int listen(int s, int backlog); */
-//      PRE_MEM_READ( "socketcall.listen(args)", ARG2, 2*sizeof(Addr) );
-//      break;
-//
-//   case VKI_SYS_ACCEPT: {
-//      /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-//      PRE_MEM_READ( "socketcall.accept(args)", ARG2, 3*sizeof(Addr) );
-//      generic_PRE_sys_accept( tid, ARG2_0, ARG2_1, ARG2_2 );
-//      break;
-//   }
-//
-//   case VKI_SYS_SENDTO:
-//      /* int sendto(int s, const void *msg, int len, 
-//                    unsigned int flags, 
-//                    const struct sockaddr *to, int tolen); */
-//      PRE_MEM_READ( "socketcall.sendto(args)", ARG2, 6*sizeof(Addr) );
-//      generic_PRE_sys_sendto( tid, ARG2_0, ARG2_1, ARG2_2, 
-//                                   ARG2_3, ARG2_4, ARG2_5 );
-//      break;
-//
-//   case VKI_SYS_SEND:
-//      /* int send(int s, const void *msg, size_t len, int flags); */
-//      PRE_MEM_READ( "socketcall.send(args)", ARG2, 4*sizeof(Addr) );
-//      generic_PRE_sys_send( tid, ARG2_0, ARG2_1, ARG2_2 );
-//      break;
-//
-//   case VKI_SYS_RECVFROM:
-//      /* int recvfrom(int s, void *buf, int len, unsigned int flags,
-//	 struct sockaddr *from, int *fromlen); */
-//      PRE_MEM_READ( "socketcall.recvfrom(args)", ARG2, 6*sizeof(Addr) );
-//      generic_PRE_sys_recvfrom( tid, ARG2_0, ARG2_1, ARG2_2, 
-//                                     ARG2_3, ARG2_4, ARG2_5 );
-//      break;
-   
-   case VKI_SYS_RECV:
-      /* int recv(int s, void *buf, int len, unsigned int flags); */
-      /* man 2 recv says:
-	 The  recv call is normally used only on a connected socket
-	 (see connect(2)) and is identical to recvfrom with a NULL
-	 from parameter.
-      */
-      PRE_MEM_READ( "socketcall.recv(args)", ARG2, 4*sizeof(Addr) );
-      VG_(generic_PRE_sys_recv)( tid, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-
-//   case VKI_SYS_CONNECT:
-//      /* int connect(int sockfd, 
-//                     struct sockaddr *serv_addr, int addrlen ); */
-//      PRE_MEM_READ( "socketcall.connect(args)", ARG2, 3*sizeof(Addr) );
-//      generic_PRE_sys_connect( tid, ARG2_0, ARG2_1, ARG2_2 );
-//      break;
-//
-//   case VKI_SYS_SETSOCKOPT:
-//      /* int setsockopt(int s, int level, int optname, 
-//                        const void *optval, int optlen); */
-//      PRE_MEM_READ( "socketcall.setsockopt(args)", ARG2, 5*sizeof(Addr) );
-//      generic_PRE_sys_setsockopt( tid, ARG2_0, ARG2_1, ARG2_2, 
-//                                       ARG2_3, ARG2_4 );
-//      break;
-//
-//   case VKI_SYS_GETSOCKOPT:
-//      /* int getsockopt(int s, int level, int optname, 
-//                        void *optval, socklen_t *optlen); */
-//      PRE_MEM_READ( "socketcall.getsockopt(args)", ARG2, 5*sizeof(Addr) );
-//      generic_PRE_sys_getsockopt( tid, ARG2_0, ARG2_1, ARG2_2, 
-//                                       ARG2_3, ARG2_4 );
-//      break;
-//
-//   case VKI_SYS_GETSOCKNAME:
-//      /* int getsockname(int s, struct sockaddr* name, int* namelen) */
-//      PRE_MEM_READ( "socketcall.getsockname(args)", ARG2, 3*sizeof(Addr) );
-//      generic_PRE_sys_getsockname( tid, ARG2_0, ARG2_1, ARG2_2 );
-//      break;
-//
-//   case VKI_SYS_GETPEERNAME:
-//      /* int getpeername(int s, struct sockaddr* name, int* namelen) */
-//      PRE_MEM_READ( "socketcall.getpeername(args)", ARG2, 3*sizeof(Addr) );
-//      generic_PRE_sys_getpeername( tid, ARG2_0, ARG2_1, ARG2_2 );
-//      break;
-//
-//   case VKI_SYS_SHUTDOWN:
-//      /* int shutdown(int s, int how); */
-//      PRE_MEM_READ( "socketcall.shutdown(args)", ARG2, 2*sizeof(Addr) );
-//      break;
-//
-//   case VKI_SYS_SENDMSG: {
-//      /* int sendmsg(int s, const struct msghdr *msg, int flags); */
-//
-//      /* this causes warnings, and I don't get why. glibc bug?
-//       * (after all it's glibc providing the arguments array)
-//       PRE_MEM_READ( "socketcall.sendmsg(args)", ARG2, 3*sizeof(Addr) );
-//      */
-//      generic_PRE_sys_sendmsg( tid, ARG2_0, ARG2_1 );
-//      break;
-//   }
-//      
-//   case VKI_SYS_RECVMSG: {
-//      /* int recvmsg(int s, struct msghdr *msg, int flags); */
-//
-//      /* this causes warnings, and I don't get why. glibc bug?
-//       * (after all it's glibc providing the arguments array)
-//       PRE_MEM_READ("socketcall.recvmsg(args)", ARG2, 3*sizeof(Addr) );
-//      */
-//      generic_PRE_sys_recvmsg( tid, ARG2_0, ARG2_1 );
-//      break;
-//   }
-
-   default:
-      VG_(message)(Vg_DebugMsg,"Warning: amd64-linux: "
-                               "unhandled socketcall %lld",ARG1);
-      SET_RESULT( -VKI_EINVAL );
-      break;
-   }
-#  undef ARG2_0
-#  undef ARG2_1
-#  undef ARG2_2
-#  undef ARG2_3
-#  undef ARG2_4
+   PRINT("sys_socket ( %d, %d, %d )",ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "socket", int, domain, int, type, int, protocol);
 }
 
-POST(sys_socketcall)
+POST(sys_socket)
 {
-#  define ARG2_0 (ARG2)
-#  define ARG2_1 (ARG3)
-#  define ARG2_2 (ARG4)
-#  define ARG2_3 (ARG5)
-#  define ARG2_4 (ARG6)
-   UWord r;
-   switch (ARG1 /* request */) {
-
-//   case VKI_SYS_SOCKETPAIR:
-//      generic_POST_sys_socketpair( tid, RES, ARG2_0, 
-//                                        ARG2_1, ARG2_2, ARG2_3 );
-//      break;
-
-   case VKI_SYS_SOCKET:
-     r = VG_(generic_POST_sys_socket)( tid, RES );
-     SET_RESULT(r);
-     break;
-
-   case VKI_SYS_BIND:
-      /* int bind(int sockfd, struct sockaddr *my_addr, 
-                  int addrlen); */
-      break;
-               
-//   case VKI_SYS_LISTEN:
-//      /* int listen(int s, int backlog); */
-//      break;
-//
-//   case VKI_SYS_ACCEPT:
-//      /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-//     r = generic_POST_sys_accept( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
-//     SET_RESULT(r);
-//     break;
-//
-//   case VKI_SYS_SENDTO:
-//      break;
-//
-//   case VKI_SYS_SEND:
-//      break;
-//
-//   case VKI_SYS_RECVFROM:
-//      generic_POST_sys_recvfrom( tid, RES, ARG2_0, ARG2_1, ARG2_2,
-//                                           ARG2_3, ARG2_4, ARG2_5 );
-//      break;
-
-   case VKI_SYS_RECV:
-      VG_(generic_POST_sys_recv)( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
-      break;
-
-//   case VKI_SYS_CONNECT:
-//      break;
-//
-//   case VKI_SYS_SETSOCKOPT:
-//      break;
-//
-//   case VKI_SYS_GETSOCKOPT:
-//      generic_POST_sys_getsockopt( tid, RES, ARG2_0, ARG2_1, 
-//                                             ARG2_2, ARG2_3, ARG2_4 );
-//      break;
-//
-//   case VKI_SYS_GETSOCKNAME:
-//      generic_POST_sys_getsockname( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
-//      break;
-//
-//   case VKI_SYS_GETPEERNAME:
-//      generic_POST_sys_getpeername( tid, RES, ARG2_0, ARG2_1, ARG2_2 );
-//      break;
-//
-//   case VKI_SYS_SHUTDOWN:
-//      break;
-//
-//   case VKI_SYS_SENDMSG:
-//      break;
-//
-//   case VKI_SYS_RECVMSG:
-//     generic_POST_sys_recvmsg( tid, RES, ARG2_0, ARG2_1 );
-//     break;
-
-   default:
-      VG_(message)(Vg_DebugMsg,"FATAL: amd64-linux: "
-                               "unhandled socketcall %lld",ARG1);
-      VG_(core_panic)("... bye!\n");
-      break; /*NOTREACHED*/
-   }
-#  undef ARG2_0
-#  undef ARG2_1
-#  undef ARG2_2
-#  undef ARG2_3
-#  undef ARG2_4
+   UWord r = VG_(generic_POST_sys_socket)(tid, RES);
+   SET_RESULT(r);
 }
-
-/* --- END socketcall unwrappers for amd64-linux. --- */
 
 PRE(sys_setsockopt, 0)
 {
-   PRINT("sys_setsockopt ( %d, %d, %d, %p, %d ",ARG1,ARG2,ARG3,ARG4,ARG5);
+   PRINT("sys_setsockopt ( %d, %d, %d, %p, %d )",ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(long, "setsockopt",
                  int, s, int, level, int, optname,
                  const void *, optval, int, optlen);
@@ -1174,7 +935,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENX_(__NR_getpid,            sys_getpid),         // 39 
 
    //   (__NR_sendfile,          sys_sendfile64),     // 40 
-   PLAXY(__NR_socket,            sys_socketcall),     // 41 
+   PLAXY(__NR_socket,            sys_socket),         // 41 
    PLAX_(__NR_connect,           sys_connect),        // 42
    PLAXY(__NR_accept,            sys_accept),         // 43 
    PLAX_(__NR_sendto,            sys_sendto),         // 44 

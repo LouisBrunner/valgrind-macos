@@ -3905,43 +3905,50 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
             case 0xE8: /* FLD1 */
                DIP("fld1\n");
                fp_push();
-               put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
+               /* put_ST(0, IRExpr_Const(IRConst_F64(1.0))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x3ff0000000000000ULL)));
                break;
 
             case 0xE9: /* FLDL2T */
                DIP("fldl2t\n");
                fp_push();
-               put_ST(0, IRExpr_Const(IRConst_F64(3.32192809488736234781)));
+               /* put_ST(0, IRExpr_Const(IRConst_F64(3.32192809488736234781))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x400a934f0979a371ULL)));
                break;
 
             case 0xEA: /* FLDL2E */
                DIP("fldl2e\n");
                fp_push();
-               put_ST(0, IRExpr_Const(IRConst_F64(1.44269504088896340739)));
+               /* put_ST(0, IRExpr_Const(IRConst_F64(1.44269504088896340739))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x3ff71547652b82feULL)));
                break;
 
             case 0xEB: /* FLDPI */
                DIP("fldpi\n");
                fp_push();
-               put_ST(0, IRExpr_Const(IRConst_F64(3.14159265358979323851)));
+               /* put_ST(0, IRExpr_Const(IRConst_F64(3.14159265358979323851))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x400921fb54442d18ULL)));
                break;
 
             case 0xEC: /* FLDLG2 */
                DIP("fldlg2\n");
                fp_push();
-               put_ST(0, IRExpr_Const(IRConst_F64(0.301029995663981143)));
+               /* put_ST(0, IRExpr_Const(IRConst_F64(0.301029995663981143))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x3fd34413509f79ffULL)));
                break;
 
             case 0xED: /* FLDLN2 */
                DIP("fldln2\n");
                fp_push();
-               put_ST(0, IRExpr_Const(IRConst_F64(0.69314718055994530942)));
+               /* put_ST(0, IRExpr_Const(IRConst_F64(0.69314718055994530942))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x3fe62e42fefa39efULL)));
                break;
 
             case 0xEE: /* FLDZ */
                DIP("fldz\n");
                fp_push();
-               put_ST(0, IRExpr_Const(IRConst_F64(0.0)));
+               /* put_ST(0, IRExpr_Const(IRConst_F64(0.0))); */
+               put_ST(0, IRExpr_Const(IRConst_F64i(0x0000000000000000ULL)));
                break;
 
             case 0xF0: /* F2XM1 */

@@ -45,6 +45,27 @@
 
 
 /*---------------------------------------------------------*/
+/*--- x87 control word stuff                            ---*/
+/*---------------------------------------------------------*/
+
+/* Vex-generated code expects to run with the FPU set as follows: all
+   exceptions masked, round-to-nearest, precision = 53 bits.  This
+   corresponds to a FPU control word value of 0x027F.
+
+   Similarly the SSE control word (%mxcsr) should be 0x1F80.
+
+   %fpucw and %mxcsr should have these values on entry to
+   Vex-generated code, and should those values should be
+   unchanged at exit.
+*/
+
+#define DEFAULT_FPUCW 0x027F
+
+/* debugging only, do not use */
+/* define DEFAULT_FPUCW 0x037F */
+
+
+/*---------------------------------------------------------*/
 /*--- misc helpers                                      ---*/
 /*---------------------------------------------------------*/
 
@@ -572,16 +593,16 @@ X86AMode* genGuestArrayOffset ( ISelEnv* env, IRArray* descr,
 
 
 /* Mess with the FPU's rounding mode: set to the default rounding mode
-   (0x037F). */
+   (DEFAULT_FPUCW). */
 static 
 void set_FPU_rounding_default ( ISelEnv* env )
 {
-   /* pushl $0x037F
+   /* pushl $DEFAULT_FPUCW
       fldcw 0(%esp)
       addl $4, %esp 
    */
    X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
-   addInstr(env, X86Instr_Push(X86RMI_Imm(0x037F)));
+   addInstr(env, X86Instr_Push(X86RMI_Imm(DEFAULT_FPUCW)));
    addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
    add_to_esp(env, 4);
 }
@@ -602,7 +623,7 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
    /* movl  %rrm, %rrm2
       andl  $3, %rrm2   -- shouldn't be needed; paranoia
       shll  $10, %rrm2
-      orl   $0x037F, %rrm2
+      orl   $DEFAULT_FPUCW, %rrm2
       pushl %rrm2
       fldcw 0(%esp)
       addl  $4, %esp
@@ -610,7 +631,7 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
    addInstr(env, mk_iMOVsd_RR(rrm, rrm2));
    addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(3), rrm2));
    addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, X86RM_Reg(rrm2)));
-   addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(0x037F), rrm2));
+   addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(DEFAULT_FPUCW), rrm2));
    addInstr(env, X86Instr_Push(X86RMI_Reg(rrm2)));
    addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
    add_to_esp(env, 4);
@@ -633,6 +654,23 @@ static HReg do_sse_Not128 ( ISelEnv* env, HReg src )
    /* Finally, xor 'src' into it. */
    addInstr(env, X86Instr_SseReRg(Xsse_XOR, src, dst));
    return dst;
+}
+
+
+/* Round an x87 FPU value to 53-bit-mantissa precision, to be used
+   after most non-simple FPU operations (simple = +, -, *, / and
+   sqrt).
+
+   This could be done a lot more efficiently if needed, by loading
+   zero and adding it to the value to be rounded (fldz ; faddp?).
+*/
+static void roundToF64 ( ISelEnv* env, HReg reg )
+{
+   X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+   sub_from_esp(env, 8);
+   addInstr(env, X86Instr_FpLdSt(False/*store*/, 8, reg, zero_esp));
+   addInstr(env, X86Instr_FpLdSt(True/*load*/, 8, reg, zero_esp));
+   add_to_esp(env, 8);
 }
 
 
@@ -2245,6 +2283,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg srcL = iselDblExpr(env, e->Iex.Binop.arg1);
          HReg srcR = iselDblExpr(env, e->Iex.Binop.arg2);
          addInstr(env, X86Instr_FpBinary(fpop,srcL,srcR,res));
+	 if (fpop != Xfp_ADD && fpop != Xfp_SUB 
+	     && fpop != Xfp_MUL && fpop != Xfp_DIV)
+            roundToF64(env, res);
          return res;
       }
    }
@@ -2305,6 +2346,9 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg res = newVRegF(env);
          HReg src = iselDblExpr(env, e->Iex.Unop.arg);
          addInstr(env, X86Instr_FpUnary(fpop,src,res));
+	 if (fpop != Xfp_SQRT
+             && fpop != Xfp_NEG && fpop != Xfp_ABS)
+            roundToF64(env, res);
          return res;
       }
    }
@@ -2338,9 +2382,11 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 	    add_to_esp(env, 8);
             return dst;
 	 }
-         case Iop_F32toF64:
+         case Iop_F32toF64: {
             /* this is a no-op */
-            return iselFltExpr(env, e->Iex.Unop.arg);
+            HReg res = iselFltExpr(env, e->Iex.Unop.arg);
+            return res;
+	 }
          default: 
             break;
       }

@@ -117,7 +117,7 @@ if [ $# != 0 ] ; then
    # Ensure the program exists.  Ignore any error messages from 'which'.
    which_prog=`which $1 2> /dev/null`
    if [ z$which_prog = z ] ; then
-      echo "'$1' not found in \$PATH, aborting."
+      echo "$0: '$1' not found in \$PATH, aborting."
       exit
    fi
 

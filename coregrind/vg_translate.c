@@ -104,7 +104,7 @@ void VG_(jitfree) ( void* ptr )
 /*--- Basics                                               ---*/
 /*------------------------------------------------------------*/
 
-static UCodeBlock* allocCodeBlock ( void )
+UCodeBlock* VG_(allocCodeBlock) ( void )
 {
    UCodeBlock* cb = VG_(malloc)(VG_AR_PRIVATE, sizeof(UCodeBlock));
    cb->used = cb->size = cb->nextTemp = 0;
@@ -113,7 +113,7 @@ static UCodeBlock* allocCodeBlock ( void )
 }
 
 
-static void freeCodeBlock ( UCodeBlock* cb )
+void VG_(freeCodeBlock) ( UCodeBlock* cb )
 {
    if (cb->instrs) VG_(free)(VG_AR_PRIVATE, cb->instrs);
    VG_(free)(VG_AR_PRIVATE, cb);
@@ -239,16 +239,14 @@ void VG_(newUInstr0) ( UCodeBlock* cb, Opcode opcode, Int sz )
    ui->size   = sz;
 }
 
-
 /* Copy an instruction into the given codeblock. */
-static __inline__ 
-void copyUInstr ( UCodeBlock* cb, UInstr* instr )
+__inline__ 
+void VG_(copyUInstr) ( UCodeBlock* cb, UInstr* instr )
 {
    ensureUInstr(cb);
    cb->instrs[cb->used] = *instr;
    cb->used++;
 }
-
 
 /* Copy auxiliary info from one uinstr to another. */
 static __inline__ 
@@ -1654,7 +1652,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
 
    /* Resulting code goes here.  We generate it all in a forwards
       pass. */
-   c2 = allocCodeBlock();
+   c2 = VG_(allocCodeBlock)();
 
    /* At the start, no TempRegs are assigned to any real register.
       Correspondingly, all temps claim to be currently resident in
@@ -1841,7 +1839,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
       for (j = 0; j < k; j++)
          tempUse[j].realNo 
             = VG_(rankToRealRegNo)(temp_info[tempUse[j].tempNo].real_no);
-      copyUInstr(c2, &c1->instrs[i]);
+      VG_(copyUInstr)(c2, &c1->instrs[i]);
       patchUInstr(&LAST_UINSTR(c2), &tempUse[0], k);
 
       if (VG_(disassemble)) {
@@ -1853,7 +1851,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
    if (temp_info != NULL)
       VG_(jitfree)(temp_info);
 
-   freeCodeBlock(c1);
+   VG_(freeCodeBlock)(c1);
 
    if (spill_reqd) 
       VG_(translations_needing_spill)++;
@@ -2099,7 +2097,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
    Int         i, j;
    UInstr*     u_in;
    Int         qs, qd, qt, qtt;
-   cb = allocCodeBlock();
+   cb = VG_(allocCodeBlock)();
    cb->nextTemp = cb_in->nextTemp;
 
    for (i = 0; i < cb_in->used; i++) {
@@ -2115,7 +2113,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             break;
 
          case INCEIP:
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* Loads and stores.  Test the V bits for the address.  24
@@ -2136,7 +2134,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             uInstr2(cb, LOADV, u_in->size, 
                         TempReg, u_in->val1,
                         TempReg, SHADOW(u_in->val2));
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
          case STORE:
             if (VG_(clo_check_addrVs)) {
@@ -2146,7 +2144,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             uInstr2(cb, STOREV, u_in->size,
                         TempReg, SHADOW(u_in->val1), 
                         TempReg, u_in->val2);
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* Moving stuff around.  Make the V bits follow accordingly,
@@ -2156,24 +2154,24 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             uInstr2(cb, GETV, u_in->size,
                         ArchReg, u_in->val1,
                         TempReg, SHADOW(u_in->val2));
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
          case PUT:
             uInstr2(cb, PUTV, u_in->size, 
                         TempReg, SHADOW(u_in->val1),
                         ArchReg, u_in->val2);
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          case GETF:
             /* This is not the smartest way to do it, but should work. */
             qd = create_GETVF(cb, u_in->size);
             uInstr2(cb, MOV, 4, TempReg, qd, TempReg, SHADOW(u_in->val1));
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
          case PUTF:
             create_PUTVF(cb, u_in->size, SHADOW(u_in->val1));
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          case MOV:
@@ -2190,7 +2188,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
                default: 
                   VG_(panic)("vg_instrument: MOV");
             }
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* Special case of add, where one of the operands is a literal.
@@ -2203,7 +2201,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             qd = SHADOW(u_in->val2);
             uInstr2(cb, MOV, 4, TempReg, qs, TempReg, qd);
             create_Left(cb, u_in->size, qd);
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* Another form of add.  
@@ -2234,7 +2232,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             }
             create_UifU(cb, 4, qs, qd);
             create_Left(cb, u_in->size, qd);
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
          }
 
@@ -2244,7 +2242,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             create_Left(cb, u_in->size, qd);
             if (u_in->flags_w != FlagsEmpty)
                create_PUTVF(cb, u_in->size, qd);
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* This is a HACK (approximation :-) */
@@ -2279,7 +2277,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             create_UifU(cb, 0, qs, qd);
             create_PUTVF(cb, 0, qd);
             create_PCast(cb, 0, u_in->size, qd);
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* for OP in shl shr sar rol ror
@@ -2329,7 +2327,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             uInstr2(cb, MOV, 4, TempReg, qs, TempReg, qt);
             create_PCast(cb, 1, u_in->size, qt);
             create_UifU(cb, u_in->size, qt, qd);
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
          }
 
@@ -2338,20 +2336,20 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             vg_assert(u_in->tag1 == TempReg);
             create_Widen(cb, u_in->signed_widen, u_in->extra4b, u_in->size, 
                              SHADOW(u_in->val1));
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* not#(x) = x (since bitwise independent) */
          case NOT:
             vg_assert(u_in->tag1 == TempReg);
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* neg#(x) = left(x) (derivable from case for SUB) */
          case NEG:
             vg_assert(u_in->tag1 == TempReg);
             create_Left(cb, u_in->size, SHADOW(u_in->val1));
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* bswap#(x) = bswap(x) */
@@ -2360,7 +2358,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             vg_assert(u_in->size == 4);
             qd = SHADOW(u_in->val1);
             uInstr1(cb, BSWAP, 4, TempReg, qd);
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* cc2val#(qd) = pcast-0-to-size(eflags#) */
@@ -2369,7 +2367,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             vg_assert(u_in->flags_r != FlagsEmpty);
             qt = create_GETVF(cb, u_in->size);
             uInstr2(cb, MOV, 4, TempReg, qt, TempReg, SHADOW(u_in->val1));
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* cmov#(qs,qd) = cmov(qs,qd)
@@ -2395,7 +2393,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             LAST_UINSTR(cb).cond    = u_in->cond;
             LAST_UINSTR(cb).flags_r = u_in->flags_r;
 
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* add#/sub#(qs,qd) 
@@ -2421,7 +2419,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             if (u_in->flags_w != FlagsEmpty) {
                create_PUTVF(cb, u_in->size, qd);
             }
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* xor#(qs,qd) = qs `UifU` qd */
@@ -2432,7 +2430,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             if (u_in->flags_w != FlagsEmpty) {
                create_PUTVF(cb, u_in->size, qd);
             }
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* and#/or#(qs,qd) 
@@ -2476,7 +2474,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             if (u_in->flags_w != FlagsEmpty) {
                create_PUTVF(cb, u_in->size, qd);
             }
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* Machinery to do with supporting CALLM.  Copy the start and
@@ -2484,7 +2482,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             (debug); they generate no code and have no effect. 
          */
          case CALLM_S: case CALLM_E:
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* Copy PUSH and POP verbatim.  Arg/result absval
@@ -2493,7 +2491,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             needs to be copied.  
          */
          case PUSH: case POP: case CLEAR:
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* In short:
@@ -2562,7 +2560,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
                   ... */
                uInstr1(cb, SETV, 0, TempReg, qt);
             }
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
          }
          /* Whew ... */
@@ -2582,13 +2580,13 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
                   ... */
                uInstr1(cb, SETV, 0, TempReg, qt);
             }
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          case JIFZ:
             uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val1));
             uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val1));
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* Emit a check on the address used.  For FPU_R, the value
@@ -2598,12 +2596,12 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
             vg_assert(u_in->tag2 == TempReg);
             uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val2));
             uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val2));
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          /* For FPU insns not referencing memory, just copy thru. */
          case FPU: 
-            copyUInstr(cb, u_in);
+            VG_(copyUInstr)(cb, u_in);
             break;
 
          default:
@@ -2614,7 +2612,7 @@ static UCodeBlock* vg_instrument ( UCodeBlock* cb_in )
 
    } /* end of for loop */
 
-   freeCodeBlock(cb_in);
+   VG_(freeCodeBlock)(cb_in);
    return cb;
 }
 
@@ -3083,7 +3081,7 @@ void VG_(translate) ( ThreadState* tst,
               VG_(overall_in_osize), VG_(overall_in_tsize),
               orig_addr );
    }
-   cb = allocCodeBlock();
+   cb = VG_(allocCodeBlock)();
 
    /* Disassemble this basic block into cb. */
    VGP_PUSHCC(VgpToUCode);
@@ -3117,6 +3115,19 @@ void VG_(translate) ( ThreadState* tst,
       }
    }
 
+   //VG_(disassemble) = True;
+
+   /* Add cache simulation code. */
+   if (VG_(clo_cachesim)) {
+      VGP_PUSHCC(VgpCacheInstrument);
+      cb = VG_(cachesim_instrument)(cb, orig_addr);
+      VGP_POPCC;
+      if (VG_(disassemble)) 
+         VG_(ppUCodeBlock) ( cb, "Cachesim instrumented code:" );
+   }
+   
+   //VG_(disassemble) = False;
+   
    /* Allocate registers. */
    VGP_PUSHCC(VgpRegAlloc);
    cb = vg_do_register_allocation ( cb );
@@ -3132,7 +3143,7 @@ void VG_(translate) ( ThreadState* tst,
       and so must be VG_(jitfree)'d. */
    final_code = VG_(emit_code)(cb, &final_code_size );
    VGP_POPCC;
-   freeCodeBlock(cb);
+   VG_(freeCodeBlock)(cb);
 
    if (debugging_translation) {
       /* Only done for debugging -- throw away final result. */

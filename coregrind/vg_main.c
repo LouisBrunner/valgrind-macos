@@ -103,7 +103,8 @@ Int VGOFF_(helperc_STOREV1) = INVALID_OFFSET;
 Int VGOFF_(handle_esp_assignment) = INVALID_OFFSET;
 Int VGOFF_(fpu_write_check) = INVALID_OFFSET;
 Int VGOFF_(fpu_read_check) = INVALID_OFFSET;
-
+Int VGOFF_(cachesim_log_non_mem_instr) = INVALID_OFFSET;
+Int VGOFF_(cachesim_log_mem_instr)     = INVALID_OFFSET;
 
 /* This is the actual defn of baseblock. */
 UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
@@ -164,6 +165,13 @@ static void vg_init_baseBlock ( void )
    /* 15  */ VGOFF_(sh_esi)    = alloc_BaB(1);
    /* 16  */ VGOFF_(sh_edi)    = alloc_BaB(1);
    /* 17  */ VGOFF_(sh_eflags) = alloc_BaB(1);
+
+   /* 17a */ 
+   VGOFF_(cachesim_log_non_mem_instr)  
+      = alloc_BaB_1_set( (Addr) & VG_(cachesim_log_non_mem_instr) );
+   /* 17b */ 
+   VGOFF_(cachesim_log_mem_instr)  
+      = alloc_BaB_1_set( (Addr) & VG_(cachesim_log_mem_instr) );
 
    /* 18  */ 
    VGOFF_(helper_value_check4_fail) 
@@ -419,6 +427,7 @@ Bool   VG_(clo_single_step);
 Bool   VG_(clo_optimise);
 Bool   VG_(clo_instrument);
 Bool   VG_(clo_cleanup);
+Bool   VG_(clo_cachesim);
 Int    VG_(clo_smc_check);
 Bool   VG_(clo_trace_syscalls);
 Bool   VG_(clo_trace_signals);
@@ -745,6 +754,11 @@ static void process_cmd_line_options ( void )
       else if (STREQ(argv[i], "--cleanup=no"))
          VG_(clo_cleanup) = False;
 
+      else if (STREQ(argv[i], "--cachesim=yes"))
+         VG_(clo_cachesim) = True;     
+      else if (STREQ(argv[i], "--cachesim=no"))
+         VG_(clo_cachesim) = False;
+
       else if (STREQ(argv[i], "--smc-check=none"))
          VG_(clo_smc_check) = VG_CLO_SMC_NONE;
       else if (STREQ(argv[i], "--smc-check=some"))
@@ -820,6 +834,11 @@ static void process_cmd_line_options ( void )
    }
 
    VG_(clo_logfile_fd) = eventually_logfile_fd;
+
+   /* Don't do memory checking if simulating the cache. */
+   if (VG_(clo_cachesim)) {
+       VG_(clo_instrument) = False;
+   }
 
    if (VG_(clo_verbosity > 0))
       VG_(message)(Vg_UserMsg, 
@@ -978,7 +997,7 @@ void VG_(main) ( void )
       attach GDB in another shell. */
    /* {extern unsigned int sleep(unsigned int seconds); sleep(10);} */
 
-   if (VG_(clo_instrument)) {
+   if (VG_(clo_instrument) || VG_(clo_cachesim)) {
       VGP_PUSHCC(VgpInitAudit);
       VGM_(init_memory_audit)();
       VGP_POPCC;
@@ -1012,6 +1031,9 @@ void VG_(main) ( void )
       VGM_(make_readable) ( (Addr)&VG_(clo_sloppy_malloc), 1 );
    }
 
+   if (VG_(clo_cachesim)) 
+      VG_(init_cachesim)();
+
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "");
 
@@ -1038,6 +1060,9 @@ void VG_(main) ( void )
       if (VG_(clo_leak_check)) VG_(detect_memory_leaks)();
    }
    VG_(running_on_simd_CPU) = False;
+
+   if (VG_(clo_cachesim))
+      VG_(show_cachesim_results)(VG_(client_argc), VG_(client_argv));
 
    VG_(do_sanity_checks)( 1 /* root thread */, 
                           True /*include expensive checks*/ );

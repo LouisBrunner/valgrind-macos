@@ -1,0 +1,300 @@
+#! /usr/bin/perl -w
+##--------------------------------------------------------------------##
+##--- The cache simulator generator                                ---##
+##---                                                  vg_cachegen ---##
+##--------------------------------------------------------------------##
+
+#  This file is part of Valgrind, an x86 protected-mode emulator 
+#  designed for debugging and profiling binaries on x86-Unixes.
+#
+#  Copyright (C) 2000-2002 Julian Seward 
+#     jseward@acm.org
+#     Julian_Seward@muraroa.demon.co.uk
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as
+#  published by the Free Software Foundation; either version 2 of the
+#  License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+#  02111-1307, USA.
+#
+#  The GNU General Public License is contained in the file LICENSE.
+
+#----------------------------------------------------------------------------
+# Cache simulator generator, creates files vg_cachesim_{I1,D1,L2}.c to be
+# #included in vg_cachesim.c.
+#
+# Notes:
+# - simulates a write-allocate cache
+# - (block --> set) hash function uses simple bit selection
+# - handling references straddling two cache blocks:
+#     - counts as only one cache access (not two)
+#     - both blocks hit                  --> one hit
+#     - one block hits, the other misses --> one miss
+#     - both blocks miss                 --> one miss (not two)
+
+use strict;
+
+#----------------------------------------------------------------------------
+# Global variables
+#----------------------------------------------------------------------------
+my %log2 = 
+    (         1 => 0,
+              2 => 1,
+              4 => 2,
+              8 => 3,
+             16 => 4,
+             32 => 5,
+             64 => 6,
+            128 => 7,
+            256 => 8,
+            512 => 9,
+           1024 => 10,
+           2048 => 11,
+           4096 => 12,
+           8192 => 13,
+          16384 => 14,
+          32768 => 15,
+          65536 => 16,
+         131072 => 17,
+         262144 => 18,
+         524288 => 19,
+        1048576 => 20,
+        2097152 => 21,
+        4194304 => 22,
+        8388608 => 23,
+       16777216 => 24,
+       33554432 => 25,
+       67108864 => 26,
+      134217728 => 27,
+      268435456 => 28,
+      536870912 => 29,
+     1073741824 => 30);
+
+my @valid_types = 
+    ("I1", "D1", "L2");
+
+my @valid_sizes = 
+    (1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288,
+     1048576, 2097152, 4194304, 8388608, 16777216, 67108864, 134217728);
+
+my @valid_linesizes =
+    (8, 16, 32, 64, 128);
+
+my @valid_ways = 
+    (1, 2, 4, 8, 256);
+
+my %valid_types;     for my $i (@valid_types)     { $valid_types{$i}     = 1; }
+my %valid_sizes;     for my $i (@valid_sizes)     { $valid_sizes{$i}     = 1; }
+my %valid_linesizes; for my $i (@valid_linesizes) { $valid_linesizes{$i} = 1; }
+my %valid_ways;      for my $i (@valid_ways)      { $valid_ways{$i}      = 1; }
+     
+my ($L, $size, $line_size, $n_ways);
+
+my @caches;
+
+#----------------------------------------------------------------------------
+# Argument and option handling
+#----------------------------------------------------------------------------
+sub process_cmd_line ()
+{
+#----
+    my $usage = <<END
+usage: cachegen [options]
+
+  options are:
+    --I1=size,line_size,number_of_ways
+    --D1=size,line_size,number_of_ways
+    --L2=size,line_size,number_of_ways
+  
+  where
+  size           is one of @valid_sizes
+  line_size      is one of @valid_linesizes
+  number_of_ways is one of @valid_ways
+
+  Valgrind is Copyright (C) 2000-2002 Julian Seward
+  and licensed under the GNU General Public License, version 2.
+  Bug reports, feedback, admiration, abuse, etc, to: jseward\@acm.org.
+            
+END
+;
+#----
+    (@ARGV > 0) or die($usage);
+    for my $arg (@ARGV) { 
+
+        if ($arg =~ /--(I1|D1|L2)=(\d+),(\d+),(\d+)/) {
+            my ($L, $size, $line_size, $n_ways) = ($1, $2, $3, $4);
+
+            (defined $valid_sizes{$size} && 
+             defined $valid_linesizes{$line_size} && 
+             defined $valid_ways{$n_ways}) or die($usage);
+
+            # Remember cache type too, and save
+            push(@caches, [ $L, $size, $line_size, $n_ways ]); 
+
+        }
+
+        else {            # -h and --help fall under this case
+            die($usage);
+        }
+    }
+}
+
+#----------------------------------------------------------------------------
+# Printing machinery (I)
+#----------------------------------------------------------------------------
+sub shiftSequence ($$$)
+{
+    my $s = "";
+    my ($i, $n, $L) = @_;
+
+    while ($i > 0) {
+        $s .= "         ${L}_tags[set$n][$i] = ";
+        $i--;
+        $s .= "${L}_tags[set$n][$i];\n"
+    }
+    return $s;
+}
+
+sub trySet ($$$$$) 
+{
+    my $s = "";
+    my ($k, $n, $L, $hit_ending, $miss_ending) = @_;
+
+    for (my $i = 0; $i < $k; $i++) {
+        $s .= "      "
+           .  (0 == $i ? "if" : "else if")
+           .  " (tag == ${L}_tags[set$n][$i]) {\n"
+           .  shiftSequence($i, $n, $L)
+           .  (0 == $i ? "" : "         ${L}_tags[set$n][0] = tag;\n")
+           .  ("" eq $hit_ending ? "" : "         $hit_ending\n")
+           .  "      }\n";
+    }
+
+    $s .= "      else {\n"
+       .  "         /* A miss */\n"
+       .  shiftSequence($k - 1, $n, $L)             # not if exclusive
+       .  "         ${L}_tags[set$n][0] = tag;\n"   # not if exclusive
+       .  "\n"
+       .  "         $miss_ending\n"
+       .  "      }\n";
+    return $s;
+}
+
+sub print_cache_simulator (@)
+{
+    my ($L, $size, $line_size, $n_ways) = @_;
+
+    my $n_lines     = $size / $line_size;
+    my $n_sets      = $n_lines / $n_ways;
+    my $n_line_bits = $log2{$line_size};
+    my $n_set_bits  = $log2{$n_sets};
+
+    my $assoc = (1 == $n_ways ? "direct-mapped" : "$n_ways-way associative");
+    my $L1_args = "Addr a, UChar size, ULong* m1, ULong *m2";
+    my $L2_args = "Addr a, UChar size, ULong *m2";
+    my $L_args  = ($L ne "L2" ? $L1_args : $L2_args);
+
+#----
+    my $comments_cache_init_desc_and_doref_start = <<END
+/*  $L cache simulator, generated by vg_cachegen.
+ *     total size    = $size bytes
+ *     line size     = $line_size bytes
+ *     associativity = $assoc
+ *
+ *  This file should be #include-d into vg_cachesim.c
+ */
+
+static char ${L}_desc_line[] = 
+    "desc: ${L} cache:         $size B, $line_size B, $assoc\\n";
+
+static UInt ${L}_tags[$n_sets][$n_ways];
+
+static void cachesim_${L}_initcache(void)
+{
+   UInt set, way;
+   for (set = 0; set < $n_sets; set++)
+      for (way = 0; way < $n_ways; way++)
+         ${L}_tags[set][way] = 0;
+}
+
+static __inline__ 
+void cachesim_${L}_doref($L_args)
+{
+   register UInt set1 = ( a         >> $n_line_bits) & ($n_sets-1);
+   register UInt set2 = ((a + size) >> $n_line_bits) & ($n_sets-1);
+   register UInt tag  = a >> ($n_line_bits + $n_set_bits);
+
+   if (set1 == set2) {
+
+END
+;
+#----
+    my $doref_middle = <<END
+
+   } else if ((set1 + 1) % $n_sets == set2) {
+
+      Bool is_${L}_miss = False;
+
+END
+;
+#----
+    my $L1_miss_treatment = "(*m1)++;\n" .
+                   "         cachesim_L2_doref(a, size, m2);";
+    my $L2_miss_treatment = "(*m2)++;";
+    my $L_miss_treatment = 
+            ( $L ne "L2" ? $L1_miss_treatment : $L2_miss_treatment );
+
+    my $straddle_case_miss_treatment = <<END
+      /* Miss treatment */
+      if (is_${L}_miss) {
+         $L_miss_treatment
+      }
+END
+;
+#----
+    my $doref_end = <<END
+
+   } else {
+      VG_(printf)("\\nERROR: Data item 0x%x of size %u bytes is in two non-adjacent\\n", a, size);
+      VG_(printf)("sets %d and %d.\\n", set1, set2);
+      VG_(panic)("$L cache set mismatch");
+   }
+}
+END
+;
+#----
+    my $outfile = "vg_cachesim_${L}.c";
+    open(OUTFILE, "> $outfile") or die("Couldn't open $outfile for writing\n");
+
+    print(OUTFILE $comments_cache_init_desc_and_doref_start);
+    print(OUTFILE trySet($n_ways, 1, $L, "return;", $L_miss_treatment));
+    print(OUTFILE $doref_middle);
+    print(OUTFILE "      /* Block one */\n");
+    print(OUTFILE trySet($n_ways, 1, $L, "", "is_${L}_miss = True;"));
+    print(OUTFILE "\n");
+    print(OUTFILE "      /* Block two */\n");
+    print(OUTFILE trySet($n_ways, 2, $L, "", "is_${L}_miss = True;"));
+    print(OUTFILE "\n");
+    print(OUTFILE $straddle_case_miss_treatment);
+    print(OUTFILE $doref_end);
+
+    close(OUTFILE);
+}
+
+#----------------------------------------------------------------------------
+# main()
+#----------------------------------------------------------------------------
+process_cmd_line();
+foreach my $cache (@caches) {
+    print_cache_simulator(@$cache);
+}
+

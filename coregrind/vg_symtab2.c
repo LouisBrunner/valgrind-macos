@@ -1,4 +1,3 @@
-
 /*--------------------------------------------------------------------*/
 /*--- Management of symbols and debugging information.             ---*/
 /*---                                                 vg_symtab2.c ---*/
@@ -50,6 +49,23 @@
 /*--- Structs n stuff                                      ---*/
 /*------------------------------------------------------------*/
 
+/* Stabs entry types, from:
+ *   The "stabs" debug format
+ *   Menapace, Kingdon and MacKenzie
+ *   Cygnus Support
+ */
+typedef enum { N_FUN   = 36,    /* Function start or end            */
+               N_STSYM = 38,    /* Data segment file-scope variable */
+               N_LCSYM = 40,    /* BSS segment file-scope variable  */
+               N_RSYM  = 64,    /* Register variable                */
+               N_SLINE = 68,    /* Source line number               */
+               N_SO    = 100,   /* Source file path and name        */
+               N_LSYM  = 128,   /* Stack variable or type           */
+               N_SOL   = 132,   /* Include file name                */
+               N_LBRAC = 192,   /* Start of lexical block           */
+               N_RBRAC = 224    /* End   of lexical block           */
+             } stab_types;
+      
 /* A structure to hold an ELF symbol (very crudely). */
 typedef 
    struct { 
@@ -535,12 +551,7 @@ void addLineInfo ( SegInfo* si,
 {
    RiLoc loc;
    UInt size = end - start + 1;
-#  if 0
-   if (size > 10000)
-   VG_(printf)( "line %4d: %p .. %p, in %s\n",
-                lineno, start, end, 
-                &si->strtab[fnmoff] );
-#  endif
+
    /* Sanity ... */
    if (size > 10000) return;
 
@@ -577,8 +588,8 @@ void vg_read_lib_symbols ( SegInfo* si )
    /* for the .stabs reader */
    Int    curr_filenmoff;
    Addr   curr_fnbaseaddr;
-   Addr   range_startAddr;
-   Int    range_lineno;
+   Char*  curr_file_name;
+   Int    n_stab_entries;
 
    oimage = (Addr)NULL;
    if (VG_(clo_verbosity) > 1)
@@ -880,25 +891,23 @@ void vg_read_lib_symbols ( SegInfo* si )
    /* Ok.  It all looks plausible.  Go on and read debug data. 
          stab kinds: 100   N_SO     a source file name
                       68   N_SLINE  a source line number
-                      36   N_FUN ?  start of a function
+                      36   N_FUN    start of a function
 
-      In this loop, we maintain a current file name, updated
-      as N_SOs appear, and a current function base address,
-      updated as N_FUNs appear.  Based on that, address ranges
-      for N_SLINEs are calculated, and stuffed into the 
-      line info table.
+      In this loop, we maintain a current file name, updated as 
+      N_SO/N_SOLs appear, and a current function base address, 
+      updated as N_FUNs appear.  Based on that, address ranges for 
+      N_SLINEs are calculated, and stuffed into the line info table.
 
-      N_SLINE indicates the start of a source line.  Functions are
-      delimited by N_FUNS, at the start with a non-empty string and at
-      the end with an empty string.  The latter facilitates detecting
-      where to close the last N_SLINE for a function. 
+      Finding the instruction address range covered by an N_SLINE is
+      complicated;  see the N_SLINE case below.
    */
    curr_filenmoff  = addStr(si,"???");
    curr_fnbaseaddr = (Addr)NULL;
-   range_startAddr = 0;
-   range_lineno    = 0;
+   curr_file_name  = (Char*)NULL;
 
-   for (i = 0; i < stab_sz/(int)sizeof(struct nlist); i++) {
+   n_stab_entries = stab_sz/(int)sizeof(struct nlist);
+
+   for (i = 0; i < n_stab_entries; i++) {
 #     if 0
       VG_(printf) ( "   %2d  ", i );
       VG_(printf) ( "type=0x%x   othr=%d   desc=%d   value=0x%x   strx=%d  %s",
@@ -910,61 +919,95 @@ void vg_read_lib_symbols ( SegInfo* si )
 #     endif
 
       switch (stab[i].n_type) {
+         UInt next_addr;
 
-         case 68: { /* N_SLINE */
-            /* flush the current line, if any, and start a new one */
-            Addr range_endAddr 
-               = curr_fnbaseaddr 
-                    + (UInt)stab[i].n_value - 1;
-            if (range_startAddr != 0) {
-               addLineInfo ( si,
-                             curr_filenmoff,
-                             range_startAddr,
-                             range_endAddr,
-                             range_lineno );
+         /* To compute the instr address range covered by a single line, find
+          * the address of the next thing and compute the difference.  The
+          * approach used depends on what kind of entry/entries follow... */
+         case N_SLINE: {
+            Int lineno = stab[i].n_desc;              
+            Int this_addr = (UInt)stab[i].n_value;
+
+            LOOP:
+            vg_assert(i+1 < n_stab_entries);    /* Haven't reached end */
+            switch (stab[i+1].n_type) {
+               /* Easy, common case: use address of next entry */
+               case N_SLINE: case N_SO:
+                  next_addr = (UInt)stab[i+1].n_value;
+                  break;
+
+               /* Boring one: skip, look for something more useful. */
+               case N_RSYM: case N_LSYM: case N_LBRAC: case N_RBRAC: 
+               case N_STSYM: case N_LCSYM:
+                  i++;
+                  goto LOOP;
+                  
+               /* Should be an end of fun entry, use its address */
+               case N_FUN: 
+                  if ('\0' == * (stabstr + stab[i+1].n_un.n_strx) ) {
+                     next_addr = (UInt)stab[i+1].n_value;
+                  } else {
+                     VG_(printf)("unhandled stabs case: N_FUN start %d %s\n",
+                                i, (stabstr + stab[i+1].n_un.n_strx) );
+                     VG_(panic)("argh");
+                  }
+                  break;
+
+               /* N_SOL should be followed by an N_SLINE which can be used */
+               case N_SOL:
+                  if (i+2 < n_stab_entries && N_SLINE == stab[i+2].n_type) {
+                     next_addr = (UInt)stab[i+2].n_value;
+                     break;
+                  } else {
+                     VG_(printf)("unhandled N_SOL stabs case: %d %d %d", 
+                                 stab[i+1].n_type, i, n_stab_entries);
+                     VG_(panic)("argh");
+                  }
+
+               default:
+                  VG_(printf)("unhandled stabs case: %d %d", 
+                              stab[i+1].n_type,i);
+                  VG_(panic)("argh");
             }
-            range_startAddr = range_endAddr + 1;
-            range_lineno = stab[i].n_desc;              
+            
+            //Int offset2 = (i+1 < n_stab_entries && 68 == stab[i+1].n_type
+            //              ? (UInt)stab[i+1].n_value - 1
+            //              : offset + 1);
+            //if (i+1 < n_stab_entries) {
+            //    int x;
+            //    if (68 != (x = stab[i+1].n_type)) {
+            //        VG_(printf)("%d  ", x);
+            //    }
+            //}
+
+            addLineInfo ( si, curr_filenmoff, curr_fnbaseaddr + this_addr, 
+                          curr_fnbaseaddr + next_addr - 1, lineno );
             break;
          }
 
-         case 36: { /* N_FUN */
-            if ('\0' == * (stabstr + stab[i].n_un.n_strx) ) {
-               /* N_FUN with no name -- indicates the end of a fn.
-                  Flush the current line, if any, but don't start a
-                  new one. */
-               Addr range_endAddr 
-                  = curr_fnbaseaddr 
-                       + (UInt)stab[i].n_value - 1;
-               if (range_startAddr != 0) {
-                  addLineInfo ( si,
-                                curr_filenmoff,
-                                range_startAddr,
-                                range_endAddr,
-                                range_lineno );
-               }
-               range_startAddr = 0;
-            } else {
+         case N_FUN: {
+            if ('\0' != (stabstr + stab[i].n_un.n_strx)[0] ) {
                /* N_FUN with a name -- indicates the start of a fn.  */
-               curr_fnbaseaddr = si->offset
-                                 + (Addr)stab[i].n_value;
-               range_startAddr = curr_fnbaseaddr;
+               curr_fnbaseaddr = si->offset + (Addr)stab[i].n_value;
             }
             break;
          }
 
-         case 100: /* N_SO */
-         case 132: /* N_SOL */
+         case N_SO: case N_SOL:
          /* seems to give lots of locations in header files */
          /* case 130: */ /* BINCL */
          { 
             UChar* nm = stabstr + stab[i].n_un.n_strx;
             UInt len = VG_(strlen)(nm);
-            if (len > 0 && nm[len-1] != '/')
+            
+            if (len > 0 && nm[len-1] != '/') {
                curr_filenmoff = addStr ( si, nm );
+               curr_file_name = stabstr + stab[i].n_un.n_strx;
+            }
             else
                if (len == 0)
                   curr_filenmoff = addStr ( si, "?1\0" );
+
             break;
          }
 
@@ -1071,8 +1114,8 @@ void read_symtab_callback (
    which happen to correspond to the munmap()d area.  */
 void VG_(read_symbols) ( void )
 {
-   if (! VG_(clo_instrument)) 
-     return;
+   if (! VG_(clo_instrument) && ! VG_(clo_cachesim)) 
+      return;
 
    VG_(read_procselfmaps) ( read_symtab_callback );
 
@@ -1251,9 +1294,8 @@ static void search_all_loctabs ( Addr ptr, SegInfo** psi, Int* locno )
    Caller supplies buf and nbuf.  If no_demangle is True, don't do
    demangling, regardless of vg_clo_demangle -- probably because the
    call has come from vg_what_fn_or_object_is_this. */
-static
-Bool vg_what_fn_is_this ( Bool no_demangle, Addr a, 
-                          Char* buf, Int nbuf )
+Bool VG_(what_fn_is_this) ( Bool no_demangle, Addr a, 
+                            Char* buf, Int nbuf )
 {
    SegInfo* si;
    Int      sno;
@@ -1297,17 +1339,16 @@ void VG_(what_obj_and_fun_is_this) ( Addr a,
                                      Char* fun_buf, Int n_fun_buf )
 {
    (void)vg_what_object_is_this ( a, obj_buf, n_obj_buf );
-   (void)vg_what_fn_is_this ( True, a, fun_buf, n_fun_buf );
+   (void)VG_(what_fn_is_this) ( True, a, fun_buf, n_fun_buf );
 }
 
 
 /* Map a code address to a (filename, line number) pair.  
    Returns True if successful.
 */
-static
-Bool vg_what_line_is_this ( Addr a, 
-                            UChar* filename, Int n_filename, 
-                            UInt* lineno )
+Bool VG_(what_line_is_this)( Addr a, 
+                             UChar* filename, Int n_filename, 
+                             UInt* lineno )
 {
    SegInfo* si;
    Int      locno;
@@ -1317,6 +1358,7 @@ Bool vg_what_line_is_this ( Addr a,
    VG_(strncpy_safely)(filename, & si->strtab[si->loctab[locno].fnmoff], 
                        n_filename);
    *lineno = si->loctab[locno].lineno;
+
    return True;
 }
 
@@ -1348,11 +1390,11 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
 
    n = 0;
 
-   know_fnname  = vg_what_fn_is_this(False,ec->eips[0], buf_fn, M_VG_ERRTXT);
+   know_fnname  = VG_(what_fn_is_this)(False,ec->eips[0], buf_fn, M_VG_ERRTXT);
    know_objname = vg_what_object_is_this(ec->eips[0], buf_obj, M_VG_ERRTXT);
-   know_srcloc  = vg_what_line_is_this(ec->eips[0], 
-                                       buf_srcloc, M_VG_ERRTXT, 
-                                       &lineno);
+   know_srcloc  = VG_(what_line_is_this)(ec->eips[0], 
+                                         buf_srcloc, M_VG_ERRTXT, 
+                                         &lineno);
 
    APPEND("   at ");
    VG_(sprintf)(ibuf,"0x%x: ", ec->eips[0]);
@@ -1383,9 +1425,9 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
 
    clueless = 0;
    for (i = 1; i < stop_at; i++) {
-      know_fnname  = vg_what_fn_is_this(False,ec->eips[i], buf_fn, M_VG_ERRTXT);
+      know_fnname  = VG_(what_fn_is_this)(False,ec->eips[i], buf_fn, M_VG_ERRTXT);
       know_objname = vg_what_object_is_this(ec->eips[i],buf_obj, M_VG_ERRTXT);
-      know_srcloc  = vg_what_line_is_this(ec->eips[i], 
+      know_srcloc  = VG_(what_line_is_this)(ec->eips[i], 
                                           buf_srcloc, M_VG_ERRTXT, 
                                           &lineno);
       n = 0;

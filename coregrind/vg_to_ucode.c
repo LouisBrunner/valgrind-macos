@@ -4437,41 +4437,74 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
    Addr eip   = eip0;
    Bool isEnd = False;
    Bool block_sane;
+   Int INCEIP_allowed_lag = 4;
+   Int delta = 0;
+
    if (dis) VG_(printf)("\n");
+
+   /* When cache simulating, to ensure cache misses are attributed to the
+    * correct line we ensure EIP is always correct.   This is done by:
+    *
+    * a) Using eager INCEIP updating to cope with all instructions except those
+    *    at the end of a basic block.
+    *
+    * b) Patching in the size of the original x86 instr in the `extra4b' field
+    *    of JMPs at the end of a basic block.  Two cases:
+    *       - Jcond followed by Juncond:  patch the Jcond
+    *       - Juncond alone:              patch the Juncond
+    *
+    * See vg_cachesim_instrument() for how this is used. 
+    */
+   if (VG_(clo_cachesim)) {
+       INCEIP_allowed_lag = 0;
+   }
 
    if (VG_(clo_single_step)) {
       eip = disInstr ( cb, eip, &isEnd );
-      uInstr1(cb, JMP, 0, Literal, 0);
-      uLiteral(cb, eip);
-      uCond(cb, CondAlways);
-      if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
+
+      /* Add a JMP to the next (single x86 instruction) BB if it doesn't
+       * already end with a JMP instr. We also need to check for no UCode,
+       * which occurs if the x86 instr was a nop */
+      if (cb->used == 0 || LAST_UINSTR(cb).opcode != JMP) {
+         uInstr1(cb, JMP, 0, Literal, 0);
+         uLiteral(cb, eip);
+         uCond(cb, CondAlways);
+         if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
+      }
+      delta = eip - eip0;
+
    } else {
-      Int delta = 0;
       Addr eip2;
-      while (True) {
-         if (isEnd) break;
+      while (!isEnd) {
          eip2 = disInstr ( cb, eip, &isEnd );
          delta += (eip2 - eip);
          eip = eip2;
-         if (delta > 4 && !isEnd) {
-            uInstr1(cb, INCEIP, 0, Lit16, delta);
-            if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
-            delta = 0;
-         }
          /* Split up giant basic blocks into pieces, so the
             translations fall within 64k. */
-         if (eip - eip0 > 2000) {
+         if (eip - eip0 > 2000 && !isEnd) {
             if (VG_(clo_verbosity) > 0)
-               VG_(message)(Vg_DebugMsg, 
+               VG_(message)(Vg_DebugMsg,
                   "Warning: splitting giant basic block into pieces");
             uInstr1(cb, JMP, 0, Literal, 0);
             uLiteral(cb, eip);
             uCond(cb, CondAlways);
             if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
-            if (dis) VG_(printf)("\n");
-            break;
+            isEnd = True;
+
+         } else if (delta > INCEIP_allowed_lag && !isEnd) {
+            uInstr1(cb, INCEIP, 0, Lit16, delta);
+            if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
+            delta = 0;
          }
          if (dis) VG_(printf)("\n");
+      }
+   }
+   if (VG_(clo_cachesim)) {
+      /* Patch instruction size into earliest JMP. */
+      if (cb->used >= 2 && JMP == cb->instrs[cb->used - 2].opcode) {
+         cb->instrs[cb->used - 2].extra4b = delta;
+      } else {
+         LAST_UINSTR(cb).extra4b = delta;
       }
    }
 

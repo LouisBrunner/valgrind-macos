@@ -234,6 +234,8 @@ extern Bool  VG_(clo_optimise);
 extern Bool  VG_(clo_instrument);
 /* DEBUG: clean up instrumented code?  default: YES */
 extern Bool  VG_(clo_cleanup);
+/* Cache simulation instrumentation?  default: NO */
+extern Bool  VG_(clo_cachesim);
 /* SMC write checks?  default: SOME (1,2,4 byte movs to mem) */
 extern Int   VG_(clo_smc_check);
 /* DEBUG: print system calls?  default: NO */
@@ -287,7 +289,7 @@ extern void VG_(shutdown_logging) ( void );
 
 #define VGP_M_STACK 10
 
-#define VGP_M_CCS 20  /* == the # of elems in VGP_LIST */
+#define VGP_M_CCS 24  /* == the # of elems in VGP_LIST */
 #define VGP_LIST \
    VGP_PAIR(VgpRun=0,      "running"),                \
    VGP_PAIR(VgpMalloc,     "low-lev malloc/free"),    \
@@ -307,6 +309,10 @@ extern void VG_(shutdown_logging) ( void );
    VGP_PAIR(VgpAddToT,     "add-to-transtab"),        \
    VGP_PAIR(VgpSARP,       "set-addr-range-perms"),   \
    VGP_PAIR(VgpSyscall,    "syscall wrapper"),        \
+   VGP_PAIR(VgpCacheInstrument, "cache instrument"),  \
+   VGP_PAIR(VgpCacheGetBBCC,"cache get BBCC"),        \
+   VGP_PAIR(VgpCacheSimulate, "cache simulate"),      \
+   VGP_PAIR(VgpCacheDump,  "cache stats dump"),       \
    VGP_PAIR(VgpSpare1,     "spare 1"),                \
    VGP_PAIR(VgpSpare2,     "spare 2")
 
@@ -718,8 +724,10 @@ extern void VG_(assert_fail) ( Char* expr, Char* file,
                                Int line, Char* fn )
             __attribute__ ((__noreturn__));
 
-/* Reading files. */
+/* Reading and writing files. */
 extern Int  VG_(open_read) ( Char* pathname );
+extern Int  VG_(open_write)       ( Char* pathname );
+extern Int  VG_(create_and_write) ( Char* pathname );
 extern void VG_(close)     ( Int fd );
 extern Int  VG_(read)      ( Int fd, void* buf, Int count);
 extern Int  VG_(write)     ( Int fd, void* buf, Int count);
@@ -955,7 +963,9 @@ typedef
       UChar   tag3:4;     /* third  operand tag */
       UChar   extra4b:4;  /* Spare field, used by WIDEN for src
                              -size, and by LEA2 for scale 
-                             (1,2,4 or 8) */
+                             (1,2,4 or 8), and by unconditional JMPs for
+                             orig x86 instr size if --cachesim=yes */
+
 
       /* word 5 */
       UChar   cond;            /* condition, for jumps */
@@ -1043,6 +1053,10 @@ extern Bool VG_(anyFlagUse) ( UInstr* u );
 
 extern void  VG_(ppUInstr)        ( Int instrNo, UInstr* u );
 extern void  VG_(ppUCodeBlock)    ( UCodeBlock* cb, Char* title );
+
+extern UCodeBlock* VG_(allocCodeBlock) ( void );
+extern void  VG_(freeCodeBlock)        ( UCodeBlock* cb );
+extern void  VG_(copyUInstr)                ( UCodeBlock* cb, UInstr* instr );
 
 extern Char* VG_(nameCondcode)    ( Condcode cond );
 extern Bool  VG_(saneUInstr)      ( Bool beforeRA, UInstr* u );
@@ -1184,6 +1198,11 @@ extern void VG_(what_obj_and_fun_is_this)
                                      ( Addr a,
                                        Char* obj_buf, Int n_obj_buf,
                                        Char* fun_buf, Int n_fun_buf );
+extern Bool VG_(what_line_is_this) ( Addr a,
+                                     UChar* filename, Int n_filename,
+                                     UInt* lineno );
+extern Bool VG_(what_fn_is_this) ( Bool no_demangle, Addr a,
+                                     Char* fn_name, Int n_fn_name);
 
 extern void VG_(symtab_notify_munmap) ( Addr start, UInt length );
 
@@ -1590,6 +1609,20 @@ extern void VG_(helper_value_check0_fail);
 extern void VG_(signalreturn_bogusRA)( void );
 extern void VG_(pthreadreturn_bogusRA)( void );
 
+/* ---------------------------------------------------------------------
+   Exports of vg_cachesim.c
+   ------------------------------------------------------------------ */
+
+extern UCodeBlock* VG_(cachesim_instrument)(UCodeBlock* cb_in, Addr orig_addr);
+
+typedef struct  _iCC  iCC;
+typedef struct _idCC idCC;
+
+extern void VG_(init_cachesim)        ( void );
+extern void VG_(show_cachesim_results)( Int client_argc, Char** client_argv );
+
+extern void VG_(cachesim_log_non_mem_instr)(  iCC* cc );
+extern void VG_(cachesim_log_mem_instr)    ( idCC* cc, Addr data_addr );
 
 /* ---------------------------------------------------------------------
    The state of the simulated CPU.
@@ -1724,7 +1757,8 @@ extern Int VGOFF_(handle_esp_assignment); /* :: Addr -> void */
 extern Int VGOFF_(fpu_write_check);       /* :: Addr -> Int -> void */
 extern Int VGOFF_(fpu_read_check);        /* :: Addr -> Int -> void */
 
-
+extern Int VGOFF_(cachesim_log_non_mem_instr);
+extern Int VGOFF_(cachesim_log_mem_instr);
 
 #endif /* ndef __VG_INCLUDE_H */
 

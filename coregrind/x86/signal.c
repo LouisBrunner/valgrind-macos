@@ -301,6 +301,9 @@ Int VGA_(pop_signal_frame)(ThreadId tid)
 /*--- Making coredumps                                     ---*/
 /*------------------------------------------------------------*/
 
+// Nb: these functions do *not* represent the right way to abstract out the
+// arch-specific parts of coredumps.  Some rethinking is required.
+#if 0
 void VGA_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
                                  ThreadArchState* arch)
 {
@@ -324,7 +327,6 @@ void VGA_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs,
    regs->gs     = arch->vex.guest_GS;
 }
 
-#if 0
 static void fill_fpu(vki_elf_fpregset_t *fpu, const Char *from)
 {
    if (VG_(have_ssestate)) {
@@ -342,29 +344,29 @@ static void fill_fpu(vki_elf_fpregset_t *fpu, const Char *from)
    } else
       VG_(memcpy)(fpu, from, sizeof(*fpu));
 }
-#endif
 
 void VGA_(fill_elffpregs_from_BB)( vki_elf_fpregset_t* fpu )
 {
-  //fill_fpu(fpu, (const Char *)&VG_(baseBlock)[VGOFF_(m_ssestate)]);
+   fill_fpu(fpu, (const Char *)&VG_(baseBlock)[VGOFF_(m_ssestate)]);
 }
 
 void VGA_(fill_elffpregs_from_tst)( vki_elf_fpregset_t* fpu,
                                     const ThreadArchState* arch)
 {
-  //fill_fpu(fpu, (const Char *)&arch->m_sse);
+   fill_fpu(fpu, (const Char *)&arch->m_sse);
 }
 
 void VGA_(fill_elffpxregs_from_BB) ( vki_elf_fpxregset_t* xfpu )
 {
-  //VG_(memcpy)(xfpu, &VG_(baseBlock)[VGOFF_(m_ssestate)], sizeof(*xfpu));
+   VG_(memcpy)(xfpu, &VG_(baseBlock)[VGOFF_(m_ssestate)], sizeof(*xfpu));
 }
 
 void VGA_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
                                       const ThreadArchState* arch )
 {
-  //VG_(memcpy)(xfpu, arch->m_sse, sizeof(*xfpu));
+   VG_(memcpy)(xfpu, arch->m_sse, sizeof(*xfpu));
 }
+#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

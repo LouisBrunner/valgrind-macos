@@ -979,6 +979,9 @@ void VG_(kill_self)(Int sigNo)
    VG_(sigprocmask)(VKI_SIG_SETMASK, &origmask, NULL);
 }
 
+// Core dumping is disabled until someone can work out how to abstract out
+// the arch-specific and word-size-specific parts neatly.
+#if 0
 /*
   Dump core
    
@@ -1300,6 +1303,7 @@ static void make_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
 
    VG_(close)(core_fd);
 }
+#endif
 
 /* 
    Perform the default action of a signal.  Returns if the default
@@ -1433,6 +1437,8 @@ static void vg_default_action(const vki_siginfo_t *info, ThreadId tid)
          VG_(start_debugger)( tid );
       }
 
+      // See comment above about this temporary disabling of core dumps.
+      #if 0
       if (core) {
 	 static struct vki_rlimit zero = { 0, 0 };
 
@@ -1441,6 +1447,7 @@ static void vg_default_action(const vki_siginfo_t *info, ThreadId tid)
 	 /* make sure we don't get a confusing kernel-generated coredump */
 	 VG_(setrlimit)(VKI_RLIMIT_CORE, &zero);
       }
+      #endif
 
       VG_(scheduler_handle_fatal_signal)( sigNo );
    }

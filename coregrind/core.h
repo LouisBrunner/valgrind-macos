@@ -1779,14 +1779,6 @@ extern Bool VGA_(setup_pointercheck) ( void );
 // For attaching the debugger
 extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );
 
-// Making coredumps
-extern void VGA_(fill_elfregs_from_tst)    ( struct vki_user_regs_struct* regs,
-                                             ThreadArchState* arch );
-extern void VGA_(fill_elffpregs_from_tst)  ( vki_elf_fpregset_t* fpu,
-                                             const ThreadArchState* arch );
-extern void VGA_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
-                                             const ThreadArchState* arch );
-
 // Signal stuff
 extern void VGA_(push_signal_frame) ( ThreadId tid, Addr sp_top_of_frame,
                                       const vki_siginfo_t *siginfo,

@@ -457,7 +457,7 @@ void VG_(save_thread_state) ( ThreadId tid )
 static
 UInt run_thread_for_a_while ( ThreadId tid )
 {
-   UInt trc = 0;
+   volatile UInt trc = 0;
    vg_assert(is_valid_tid(tid));
    vg_assert(vg_threads[tid].status == VgTs_Runnable);
    vg_assert(VG_(bbs_to_go) > 0);

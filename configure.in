@@ -361,7 +361,6 @@ AC_OUTPUT(
    coregrind/x86-linux/Makefile
    addrcheck/Makefile
    addrcheck/tests/Makefile
-   addrcheck/tests/x86/Makefile
    addrcheck/docs/Makefile
    memcheck/Makefile
    memcheck/tests/Makefile
@@ -375,7 +374,6 @@ AC_OUTPUT(
    cachegrind/cg_annotate
    helgrind/Makefile
    helgrind/tests/Makefile
-   helgrind/tests/x86/Makefile
    helgrind/docs/Makefile
    massif/Makefile
    massif/hp2ps/Makefile

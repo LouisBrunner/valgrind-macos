@@ -1,4 +1,0 @@
-vgopts: -q
-prog: ../../../none/tests/x86/insn_sse2
-prereq: ../../../tests/cputest x86-sse2
-cleanup: rm cachegrind.out.*

@@ -1,4 +1,0 @@
-vgopts: -q
-prog: ../../../none/tests/x86/insn_mmxext
-prereq: ../../../tests/cputest x86-mmxext
-cleanup: rm cachegrind.out.*

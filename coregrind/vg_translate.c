@@ -366,6 +366,11 @@ UInstr* VG_(get_last_instr) ( UCodeBlock* cb )
 /*--- Sanity checking uinstrs.                             ---*/
 /*------------------------------------------------------------*/
 
+// Global variables that indicate where we are in the translation of a basic
+// block, and affect exactly how UInstrs are sanity-checked.
+static Bool beforeRA = True;
+static Bool beforeLiveness  = True;
+
 /* This seems as good a place as any to record some important stuff
    about ucode semantics.
 
@@ -438,7 +443,7 @@ UInstr* VG_(get_last_instr) ( UCodeBlock* cb )
    The size field should be 0 for insns for which it is meaningless,
    ie those which do not directly move/operate on data.
 */
-Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
+static Bool is_sane_UInstr ( UInstr* u )
 {
 #  define LIT0 (u->lit32 == 0)
 #  define LIT8 (((u->lit32) & 0xFFFFFF00) == 0)
@@ -703,12 +708,23 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef XOTHER
 }
 
-void VG_(saneUCodeBlock) ( UCodeBlock* cb )
+void VG_(sanity_check_UInstr)( UInt n, UInstr* u )
+{
+   Bool sane = is_sane_UInstr(u);
+   if (!sane) {
+      VG_(printf)("\nInsane instruction:\n");
+      VG_(pp_UInstr)(n, u);
+      VG_(up_UInstr)(n, u);
+      vg_assert(sane);
+   }
+}
+
+static void sanity_check_UCodeBlock ( UCodeBlock* cb )
 {
    Int i;
         
    for (i = 0; i < cb->used; i++) {
-      Bool sane = VG_(saneUInstr)(True, True, &cb->instrs[i]);
+      Bool sane = is_sane_UInstr(&cb->instrs[i]);
       if (!sane) {
          VG_(printf)("Instruction failed sanity check:\n");
          VG_(up_UInstr)(i, &cb->instrs[i]);
@@ -718,7 +734,7 @@ void VG_(saneUCodeBlock) ( UCodeBlock* cb )
 }
 
 /* Sanity checks to do with CALLMs in UCodeBlocks. */
-Bool VG_(saneUCodeBlockCalls) ( UCodeBlock* cb )
+static Bool is_sane_UCodeBlockCalls ( UCodeBlock* cb )
 {
    Int  callm = 0;
    Int  callm_s = 0;
@@ -799,6 +815,13 @@ Bool VG_(saneUCodeBlockCalls) ( UCodeBlock* cb )
    goto find_next_CALLM;
 }
 
+static void sanity_check_UCodeBlockCalls( UCodeBlock* cb )
+{
+   if ( ! is_sane_UCodeBlockCalls( cb ) ) {
+      VG_(pp_UCodeBlock)(cb, "block failing calls sanity check");
+      VG_(core_panic)("bad block");
+   }
+}
 
 /*------------------------------------------------------------*/
 /*--- Printing uinstrs.                                    ---*/
@@ -2418,6 +2441,9 @@ void VG_(translate) ( ThreadId tid, Addr orig_addr,
 
    VGP_PUSHCC(VgpTranslate);
 
+   beforeRA        = True;
+   beforeLiveness  = True;
+
    for (i = 0; i < VG_MAX_JUMPS; i++)
       jumps[i] = (UShort)-1;
 
@@ -2485,6 +2511,10 @@ void VG_(translate) ( ThreadId tid, Addr orig_addr,
    VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(1);
    VGP_PUSHCC(VgpToUCode);
    orig_size = VG_(disBB) ( cb, orig_addr );
+   sanity_check_UCodeBlock ( cb );
+   // Only sanity-check calls now because tools might remove the
+   // CALLM_[ES] pairs.
+   sanity_check_UCodeBlockCalls ( cb );
    VGP_POPCC(VgpToUCode);
 
    /* Try and improve the code a bit. */
@@ -2502,7 +2532,7 @@ void VG_(translate) ( ThreadId tid, Addr orig_addr,
    cb = SK_(instrument) ( cb, orig_addr );
    if (VG_(print_codegen))
       VG_(pp_UCodeBlock) ( cb, "Instrumented UCode:" );
-   VG_(saneUCodeBlock)( cb );
+   sanity_check_UCodeBlock( cb );
    VGP_POPCC(VgpInstrument);
 
    /* Add %ESP-update hooks if the tool requires them */
@@ -2517,12 +2547,14 @@ void VG_(translate) ( ThreadId tid, Addr orig_addr,
    VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(4);
    VGP_PUSHCC(VgpRegAlloc);
    cb = vg_do_register_allocation ( cb );
+   beforeRA = False;
    VGP_POPCC(VgpRegAlloc);
 
    /* Do post reg-alloc %e[acd]x liveness analysis (too boring to print
     * anything;  results can be seen when emitting final code). */
    VGP_PUSHCC(VgpLiveness);
    vg_realreg_liveness_analysis ( cb );
+   beforeLiveness = False;
    VGP_POPCC(VgpLiveness);
 
    /* Emit final code */

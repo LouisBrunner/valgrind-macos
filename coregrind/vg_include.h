@@ -379,9 +379,10 @@ extern void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB,
 
 extern Int   VG_(arena_payload_szB) ( ArenaId aid, void* payload );
 
-extern void  VG_(mallocSanityCheckAll)   ( void );
+extern void  VG_(sanity_check_malloc_all) ( void );
 
 extern void  VG_(print_all_arena_stats) ( void );
+
 extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 
 /* ---------------------------------------------------------------------
@@ -1129,10 +1130,7 @@ struct _UCodeBlock {
 
 extern void VG_(translate)  ( ThreadId tid, Addr orig_addr, Bool debugging );
 
-extern Bool VG_(saneUInstr)          ( Bool beforeRA, Bool beforeLiveness,
-                                       UInstr* u );
-extern void VG_(saneUCodeBlock)      ( UCodeBlock* cb );
-extern Bool VG_(saneUCodeBlockCalls) ( UCodeBlock* cb );
+extern void VG_(sanity_check_UInstr) ( UInt n, UInstr* u );
 
 extern void VG_(print_reg_alloc_stats) ( void );
 
@@ -1229,7 +1227,7 @@ extern Bool VG_(have_ssestate);
 extern Bool VG_(logging_to_filedes);
 
 /* Sanity checks which may be done at any time.  The scheduler decides when. */
-extern void VG_(do_sanity_checks) ( Bool force_expensive );
+extern void VG_(sanity_check_general) ( Bool force_expensive );
 
 /* Address space */
 extern Addr VG_(client_base);	/* client address space limits */
@@ -1402,7 +1400,7 @@ extern Int  VG_(proxy_resfd)    ( void ); // FD something can select on to know
                                           //  a syscall finished
 
 /* Sanity-check the whole proxy-LWP machinery */
-void VG_(proxy_sanity)(void);
+void VG_(sanity_check_proxy)(void);
 
 /* Send a signal from a thread's proxy to the thread.  This longjmps
    back into the proxy's main loop, so it doesn't return. */

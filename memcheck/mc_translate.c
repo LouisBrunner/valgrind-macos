@@ -36,8 +36,8 @@
    ------------------------------------------------------------------ */
 
 /* Compare this with the restrictions on core instructions in
-   vg_translate.c:VG_(saneUInstr)().  Everything general said there applies
-   here too.
+   vg_translate.c:is_sane_UInstr().  Everything general said there
+   applies here too.
 */
 Bool SK_(sane_XUInstr)(Bool beforeRA, Bool beforeLiveness, UInstr* u)
 {

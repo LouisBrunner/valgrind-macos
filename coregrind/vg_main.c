@@ -254,12 +254,13 @@ static void print_all_stats ( void )
       VG_(print_UInstr_histogram)();
 
    // Memory stats
-   if (0) {
+   if (VG_(clo_verbosity) > 2) {
       VG_(message)(Vg_DebugMsg, "");
       VG_(message)(Vg_DebugMsg, 
          "------ Valgrind's internal memory use stats follow ------" );
-      VG_(mallocSanityCheckAll)();
+      VG_(sanity_check_malloc_all)();
       VG_(print_all_arena_stats)();
+      VG_(message)(Vg_DebugMsg, "");
       VG_(message)(Vg_DebugMsg, 
          "------ Valgrind's ExeContext management stats follow ------" );
       VG_(print_ExeContext_stats)();
@@ -2577,7 +2578,7 @@ static void build_segment_map_callback
 /* A fast sanity check -- suitable for calling circa once per
    millisecond. */
 
-void VG_(do_sanity_checks) ( Bool force_expensive )
+void VG_(sanity_check_general) ( Bool force_expensive )
 {
    VGP_PUSHCC(VgpCoreCheapSanity);
 
@@ -2607,7 +2608,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
       VGP_PUSHCC(VgpCoreExpensiveSanity);
       sanity_slow_count++;
 
-      VG_(proxy_sanity)();
+      VG_(sanity_check_proxy)();
 
 #     if 0
       { void zzzmemscan(void); zzzmemscan(); }
@@ -2633,7 +2634,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
          in the client's code can cause this to fail, so we don't do
          this check unless specially asked for.  And because it's
          potentially very expensive. */
-      VG_(mallocSanityCheckAll)();
+      VG_(sanity_check_malloc_all)();
       VGP_POPCC(VgpCoreExpensiveSanity);
    }
    VGP_POPCC(VgpCoreCheapSanity);
@@ -3039,7 +3040,7 @@ int main(int argc, char **argv)
 
    SK_(fini)( exitcode );
 
-   VG_(do_sanity_checks)( True /*include expensive checks*/ );
+   VG_(sanity_check_general)( True /*include expensive checks*/ );
 
    if (VG_(clo_verbosity) > 1)
       print_all_stats();

@@ -1314,7 +1314,7 @@ Int VG_(sys_issue)(int tid)
 }
 
 /* Relatively expensive sanity tests for the syscall machinery */
-void VG_(proxy_sanity)(void)
+void VG_(sanity_check_proxy)(void)
 {
    Int tid;
    Bool sane = True;

@@ -865,7 +865,7 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
 	 Be paranoid.  Always a good idea. */
      stage1:
       scheduler_sanity();
-      VG_(do_sanity_checks)( False );
+      VG_(sanity_check_general)( False );
 
       /* ======================= Phase 1 of 3 =======================
          Handle I/O completions and signals.  This may change the

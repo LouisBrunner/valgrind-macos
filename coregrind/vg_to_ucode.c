@@ -7322,12 +7322,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* All decode successes end up here. */
    DIP("\n");
    for (; first_uinstr < cb->used; first_uinstr++) {
-      Bool sane = VG_(saneUInstr)(True, True, &cb->instrs[first_uinstr]);
-      if (!sane)
-         VG_(up_UInstr)(first_uinstr, &cb->instrs[first_uinstr]);
-      else if (VG_(print_codegen)) 
+      VG_(sanity_check_UInstr)( first_uinstr, &cb->instrs[first_uinstr] );
+      if (VG_(print_codegen)) 
          VG_(pp_UInstr)(first_uinstr, &cb->instrs[first_uinstr]);
-      vg_assert(sane);
    }
    return eip;
 }
@@ -7341,7 +7338,6 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
 {
    Addr eip   = eip0;
    Bool isEnd = False;
-   Bool block_sane;
    Int delta = 0;
 
    DIP("Original x86 code to UCode:\n\n");
@@ -7399,12 +7395,6 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
 
    /* Patch instruction size into final JMP. */
    LAST_UINSTR(cb).extra4b = delta;
-
-   block_sane = VG_(saneUCodeBlockCalls)(cb);
-   if (!block_sane) {
-      VG_(pp_UCodeBlock)(cb, "block failing sanity check");
-      vg_assert(block_sane);
-   }
 
    return eip - eip0;
 }

@@ -4492,17 +4492,10 @@ UChar* VG_(emit_code) ( UCodeBlock* cb,
    /* for each uinstr ... */
    for (i = 0; i < cb->used; i++) {
       UInstr* u = &cb->instrs[i];
+      VG_(sanity_check_UInstr)( i, u );
       if (cb->instrs[i].opcode != NOP) {
-
-         /* Check on the sanity of this insn. */
-         Bool sane = VG_(saneUInstr)( False, False, u );
-         if (!sane) {
-            VG_(printf)("\ninsane instruction\n");
-            VG_(up_UInstr)( i, u );
-	 }
-         vg_assert(sane);
          emitUInstr( cb, i, regs_live_before, 
-                         &sselive, &orig_eip, &curr_eip );
+                     &sselive, &orig_eip, &curr_eip );
       }
       regs_live_before = u->regs_live_after;
    }

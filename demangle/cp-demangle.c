@@ -1400,12 +1400,16 @@ demangle_number (dm, value, base, is_signed)
   *value = strtol (dyn_string_buf (number), NULL, base);
   */
   /* vg_assert( base == 10 ); */
-  if ( base != 10 ) {
+  if ( base != 10 && base != 36 ) {
      dyn_string_delete(number);
      return STATUS_UNIMPLEMENTED;
   }
 
-  *value = VG_(atoll) (dyn_string_buf (number));
+  if (base == 36) {
+     *value = VG_(atoll36) (dyn_string_buf (number));
+  } else {
+     *value = VG_(atoll) (dyn_string_buf (number));
+  }
   dyn_string_delete (number);
 
   return STATUS_OK;

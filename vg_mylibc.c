@@ -664,6 +664,33 @@ Long VG_(atoll) ( Char* str )
 }
 
 
+Long VG_(atoll36) ( Char* str )
+{
+   Bool neg = False;
+   Long n = 0;
+   if (*str == '-') { str++; neg = True; };
+   while (True) {
+      if (*str >= '0' && *str <= '9') {
+         n = 36*n + (Long)(*str - '0');
+      }
+      else 
+      if (*str >= 'A' && *str <= 'Z') {
+         n = 36*n + (Long)((*str - 'A') + 10);
+      }
+      else 
+      if (*str >= 'a' && *str <= 'z') {
+         n = 36*n + (Long)((*str - 'a') + 10);
+      }
+      else {
+	break;
+      }
+      str++;
+   }
+   if (neg) n = -n;
+   return n;
+}
+
+
 Char* VG_(strcat) ( Char* dest, const Char* src )
 {
    Char* dest_orig = dest;

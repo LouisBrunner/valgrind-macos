@@ -823,6 +823,7 @@ extern Bool VG_(isspace) ( Char c );
 extern Int VG_(strlen) ( const Char* str );
 
 extern Long VG_(atoll) ( Char* str );
+extern Long VG_(atoll36) ( Char* str );
 
 extern Char* VG_(strcat) ( Char* dest, const Char* src );
 extern Char* VG_(strncat) ( Char* dest, const Char* src, Int n );

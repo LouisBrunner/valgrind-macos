@@ -97,57 +97,70 @@
 /* CONST */
 static Bool host_is_bigendian;
 
-//.. /* Pointer to the guest code area. */
-//.. /* CONST */
-//.. static UChar* guest_code;
-//.. 
+/* Pointer to the guest code area. */
+/* CONST */
+static UChar* guest_code;
+
 //.. /* The guest address corresponding to guest_code[0]. */
 //.. /* CONST */
 //.. static Addr32 guest_eip_bbstart;
-//.. 
-//.. /* The guest address for the instruction currently being
-//..    translated. */
-//.. /* CONST for any specific insn, not for the entire BB */
-//.. static Addr32 guest_eip_curr_instr;
+
+/* The guest address for the instruction currently being
+   translated. */
+/* CONST for any specific insn, not for the entire BB */
+static Addr64 guest_eip_curr_instr;
 
 /* The IRBB* into which we're generating code. */
 static IRBB* irbb;
 
-//.. /* Emergency verboseness just for this insn?  DEBUG ONLY */
-//.. static Bool  insn_verbose = False;
+/* Emergency verboseness just for this insn?  DEBUG ONLY */
+static Bool  insn_verbose = False;
 
 
 /*------------------------------------------------------------*/
 /*--- Helpers for constructing IR.                         ---*/
 /*------------------------------------------------------------*/
  
+/* Generate a new temporary of the given type. */
+static IRTemp newTemp ( IRType ty )
+{
+   vassert(isPlausibleType(ty));
+   return newIRTemp( irbb->tyenv, ty );
+}
+
 /* Add a statement to the list held by "irbb". */
 static void stmt ( IRStmt* st )
 {
    addStmtToIRBB( irbb, st );
 }
- 
+
+/* Generate a statement "dst := e". */ 
+static void assign ( IRTemp dst, IRExpr* e )
+{
+   stmt( IRStmt_Tmp(dst, e) );
+}
+
 static IRExpr* unop ( IROp op, IRExpr* a )
 {
    return IRExpr_Unop(op, a);
 }
 
-//.. static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
-//.. {
-//..    return IRExpr_Binop(op, a1, a2);
-//.. }
-//.. 
+static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
+{
+   return IRExpr_Binop(op, a1, a2);
+}
+
 //.. static IRExpr* mkexpr ( IRTemp tmp )
 //.. {
 //..    return IRExpr_Tmp(tmp);
 //.. }
-//.. 
-//.. static IRExpr* mkU8 ( UInt i )
-//.. {
-//..    vassert(i < 256);
-//..    return IRExpr_Const(IRConst_U8(i));
-//.. }
-//.. 
+
+static IRExpr* mkU8 ( UInt i )
+{
+   vassert(i < 256);
+   return IRExpr_Const(IRConst_U8(i));
+}
+
 //.. static IRExpr* mkU16 ( UInt i )
 //.. {
 //..    vassert(i < 65536);
@@ -158,17 +171,24 @@ static IRExpr* unop ( IROp op, IRExpr* a )
 //.. {
 //..    return IRExpr_Const(IRConst_U32(i));
 //.. }
-//.. 
-//.. static IRExpr* mkU64 ( ULong i )
-//.. {
-//..    return IRExpr_Const(IRConst_U64(i));
-//.. }
-//.. 
+
+static IRExpr* mkU64 ( ULong i )
+{
+   return IRExpr_Const(IRConst_U64(i));
+}
 
 
 /*------------------------------------------------------------*/
 /*--- Debugging output                                     ---*/
 /*------------------------------------------------------------*/
+
+/* Bomb out if we can't handle something. */
+__attribute__ ((noreturn))
+static void unimplemented ( HChar* str )
+{
+   vex_printf("amd64toIR: unimplemented feature\n");
+   vpanic(str);
+}
 
 #define DIP(format, args...)           \
    if (insn_verbose || (vex_traceflags & VEX_TRACE_FE))  \
@@ -457,39 +477,29 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 #define R_GS 5
 
 
-//.. /* Generate a new temporary of the given type. */
-//.. static IRTemp newTemp ( IRType ty )
-//.. {
-//..    vassert(isPlausibleType(ty));
-//..    return newIRTemp( irbb->tyenv, ty );
-//.. }
-//.. 
-//.. /* Bomb out if we can't handle something. */
-//.. __attribute__ ((noreturn))
-//.. static void unimplemented ( Char* str )
-//.. {
-//..    vex_printf("x86toIR: unimplemented feature\n");
-//..    vpanic(str);
-//.. }
-//.. 
-//.. /* Various simple conversions */
-//.. 
-//.. static UInt extend_s_8to32( UInt x )
-//.. {
-//..    return (UInt)((((Int)x) << 24) >> 24);
-//.. }
-//.. 
-//.. static UInt extend_s_16to32 ( UInt x )
-//.. {
-//..    return (UInt)((((Int)x) << 16) >> 16);
-//.. }
-//.. 
-//.. /* Fetch a byte from the guest insn stream. */
-//.. static UChar getIByte ( UInt delta )
-//.. {
-//..    return guest_code[delta];
-//.. }
-//.. 
+/* Various simple conversions */
+
+static ULong extend_s_8to64 ( UChar x )
+{
+   return (ULong)((((Long)x) << 56) >> 56);
+}
+
+static ULong extend_s_16to64 ( UShort x )
+{
+   return (ULong)((((Long)x) << 48) >> 48);
+}
+
+static ULong extend_s_32to64 ( UInt x )
+{
+   return (ULong)((((Long)x) << 32) >> 32);
+}
+
+/* Fetch a byte from the guest insn stream. */
+static UChar getIByte ( UInt delta )
+{
+   return guest_code[delta];
+}
+
 //.. /* Extract the reg field from a modRM byte. */
 //.. static Int gregOfRM ( UChar mod_reg_rm )
 //.. {
@@ -525,15 +535,6 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 //..    return v & 0xFFFF;
 //.. }
 //.. 
-//.. static UInt getUDisp32 ( UInt delta )
-//.. {
-//..    UInt v = guest_code[delta+3]; v <<= 8;
-//..    v |= guest_code[delta+2]; v <<= 8;
-//..    v |= guest_code[delta+1]; v <<= 8;
-//..    v |= guest_code[delta+0];
-//..    return v;
-//.. }
-//.. 
 //.. static UInt getUDisp ( Int size, UInt delta )
 //.. {
 //..    switch (size) {
@@ -544,15 +545,26 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 //..    }
 //..    return 0; /*notreached*/
 //.. }
-//.. 
-//.. 
-//.. /* Get a byte value out of the insn stream and sign-extend to 32
-//..    bits. */
-//.. static UInt getSDisp8 ( UInt delta )
-//.. {
-//..    return extend_s_8to32( (UInt) (guest_code[delta]) );
-//.. }
-//.. 
+
+
+/* Get a byte value out of the insn stream and sign-extend to 64
+   bits. */
+static ULong getSDisp8 ( UInt delta )
+{
+   return extend_s_8to64( guest_code[delta] );
+}
+
+/* Get a 32-bit value out of the insn stream and sign-extend to 64
+   bits. */
+static ULong getSDisp32 ( UInt delta )
+{
+   UInt v = guest_code[delta+3]; v <<= 8;
+   v |= guest_code[delta+2]; v <<= 8;
+   v |= guest_code[delta+1]; v <<= 8;
+   v |= guest_code[delta+0];
+   return extend_s_32to64( v );
+}
+
 //.. static UInt getSDisp16 ( UInt delta0 )
 //.. {
 //..    UChar* eip = (UChar*)(&guest_code[delta0]);
@@ -606,11 +618,11 @@ typedef UInt  Prefix;
 #define PFX_GS   (1<<14)    /* GS segment prefix present (0x65) */
 #define PFX_SS   (1<<15)    /* SS segment prefix present (0x36) */
 
-static inline Bool IS_VALID_PFX ( Prefix pfx ) {
+static Bool IS_VALID_PFX ( Prefix pfx ) {
    return (pfx & 0xFFFF0000) == 0x31410000;
 }
 
-static inline Bool haveREX ( Prefix pfx ) {
+static Bool haveREX ( Prefix pfx ) {
    return (pfx & PFX_REX) ? True : False;
 }
 
@@ -628,7 +640,7 @@ typedef
 
 /* Fetches the relevant reg field extension bit from pfx.  Returns 1
    or 0. */
-static inline
+static
 UInt getRX ( Prefix pfx, RegField rf ) {
    switch (rf) {
       case RegR: return (pfx & PFX_REXR) ? 1 : 0;
@@ -651,6 +663,32 @@ static IRType szToITy ( UInt n )
 }
 
 
+/* Simplistic function, just gets the offset of one of the 16 integer
+   registers.  No consideration of the complexities of REX bytes. */
+static UInt integerGuestReg64Offset ( UInt reg )
+{
+   switch (reg) {
+      case R_RAX: return OFFB_RAX;
+      case R_RCX: return OFFB_RCX;
+      case R_RDX: return OFFB_RDX;
+      case R_RBX: return OFFB_RBX;
+      case R_RSP: return OFFB_RSP;
+      case R_RBP: return OFFB_RBP;
+      case R_RSI: return OFFB_RSI;
+      case R_RDI: return OFFB_RDI;
+      case R_R8:  return OFFB_R8;
+      case R_R9:  return OFFB_R9;
+      case R_R10: return OFFB_R10;
+      case R_R11: return OFFB_R11;
+      case R_R12: return OFFB_R12;
+      case R_R13: return OFFB_R13;
+      case R_R14: return OFFB_R14;
+      case R_R15: return OFFB_R15;
+      default: vpanic("integerGuestReg64Offset(amd64)");
+   }
+}
+
+
 /* A key function, to figure out what part of the integer register
    bank we're referring to.  This is like the x86 one but with the
    (not inconsiderable) added confusion of the REX byte hack.
@@ -661,7 +699,7 @@ static IRType szToITy ( UInt n )
    the full register.  
 */
 static 
-Int integerGuestRegOffset ( Prefix pfx, RegField rf, Int sz, UInt lo3bits )
+UInt integerGuestRegOffset ( Prefix pfx, RegField rf, Int sz, UInt lo3bits )
 {
    UInt hiBit;
    /* lo3bits contains the low 3 bits of register descriptor from the
@@ -699,25 +737,7 @@ Int integerGuestRegOffset ( Prefix pfx, RegField rf, Int sz, UInt lo3bits )
       contained in amodes, since they are always 64-bits long
       regardless of the presence of REX. */
 
-   switch ((hiBit << 3) | lo3bits) {
-      case R_RAX: return OFFB_RAX;
-      case R_RCX: return OFFB_RCX;
-      case R_RDX: return OFFB_RDX;
-      case R_RBX: return OFFB_RBX;
-      case R_RSP: return OFFB_RSP;
-      case R_RBP: return OFFB_RBP;
-      case R_RSI: return OFFB_RSI;
-      case R_RDI: return OFFB_RDI;
-      case R_R8:  return OFFB_R8;
-      case R_R9:  return OFFB_R9;
-      case R_R10: return OFFB_R10;
-      case R_R11: return OFFB_R11;
-      case R_R12: return OFFB_R12;
-      case R_R13: return OFFB_R13;
-      case R_R14: return OFFB_R14;
-      case R_R15: return OFFB_R15;
-      default: vpanic("integerGuestRegOffset(amd64,le)(reg)");
-   }
+   return integerGuestReg64Offset((hiBit << 3) | lo3bits);
 }
 
 
@@ -765,6 +785,10 @@ HChar* nameIReg ( Prefix pfx, RegField rf, Int sz, UInt lo3bits )
 
    vpanic("nameIReg(AMD64)");
    return NULL; /*notreached*/
+}
+
+static HChar* nameIRegB ( Prefix pfx, Int sz, UInt lo3bits ) {
+   return nameIReg ( pfx, RegB, sz, lo3bits );
 }
 
 
@@ -819,48 +843,25 @@ static void putIRegB ( Prefix pfx, Int sz, UInt lo3bits, IRExpr* e ) {
 }
 
 
+/* Simplistic functions to deal with 64-bit registers, no REX
+   consideration. */
+
+static IRExpr* getIReg64 ( UInt regno )
+{
+   return IRExpr_Get( integerGuestReg64Offset(regno),
+                      Ity_I64 );
+}
+
+static HChar* nameIReg64 ( UInt regno )
+{
+   static HChar* ireg64_names[16]
+     = { "%rax", "%rcx", "%rdx", "%rbx", "%rsp", "%rbp", "%rsi", "%rdi",
+         "%r8",  "%r9",  "%r10", "%r11", "%r12", "%r13", "%r14", "%r15" };
+   vassert(regno < 16);
+   return ireg64_names[regno];
+}
 
 
-
-//.. /* Create a 1/2/4 byte read of an x86 integer registers.  For 16/8 bit
-//..    register references, we need to take the host endianness into
-//..    account.  Supplied value is 0 .. 7 and in the Intel instruction
-//..    encoding. */
-//.. 
-//.. static Int integerGuestRegOffset ( Int sz, UInt archreg )
-//.. {
-//..    vassert(archreg < 8);
-//.. 
-//..    /* Correct for little-endian host only. */
-//..    vassert(!host_is_bigendian);
-//.. 
-//..    if (sz == 4 || sz == 2 || (sz == 1 && archreg < 4)) {
-//..       switch (archreg) {
-//..          case R_EAX: return OFFB_EAX;
-//..          case R_EBX: return OFFB_EBX;
-//..          case R_ECX: return OFFB_ECX;
-//..          case R_EDX: return OFFB_EDX;
-//..          case R_ESI: return OFFB_ESI;
-//..          case R_EDI: return OFFB_EDI;
-//..          case R_ESP: return OFFB_ESP;
-//..          case R_EBP: return OFFB_EBP;
-//..          default: vpanic("integerGuestRegOffset(x86,le)(4,2)");
-//..       }
-//..    }
-//.. 
-//..    vassert(archreg >= 4 && archreg < 8 && sz == 1);
-//..    switch (archreg-4) {
-//..       case R_EAX: return 1+ OFFB_EAX;
-//..       case R_EBX: return 1+ OFFB_EBX;
-//..       case R_ECX: return 1+ OFFB_ECX;
-//..       case R_EDX: return 1+ OFFB_EDX;
-//..       default: vpanic("integerGuestRegOffset(x86,le)(1h)");
-//..    }
-//.. 
-//..    /* NOTREACHED */
-//..    vpanic("integerGuestRegOffset(x86,le)");
-//.. }
-//.. 
 //.. static Int segmentGuestRegOffset ( UInt sreg )
 //.. {
 //..    switch (sreg) {
@@ -986,11 +987,6 @@ static void putIRegB ( Prefix pfx, Int sz, UInt lo3bits, IRExpr* e ) {
 //.. {
 //..    vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I16);
 //..    stmt( IRStmt_Put( xmmGuestRegLane16offset(xmmreg,laneno), e ) );
-//.. }
-//.. 
-//.. static void assign ( IRTemp dst, IRExpr* e )
-//.. {
-//..    stmt( IRStmt_Tmp(dst, e) );
 //.. }
 //.. 
 //.. static void storeLE ( IRExpr* addr, IRExpr* data )
@@ -1558,31 +1554,43 @@ static void putIRegB ( Prefix pfx, Int sz, UInt lo3bits, IRExpr* e ) {
 //..       irbb->jumpkind = Ijk_Boring;
 //..    }
 //.. }
-//.. 
-//.. 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Disassembling addressing modes                       ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. static 
-//.. UChar* sorbTxt ( UChar sorb )
-//.. {
-//..    switch (sorb) {
-//..       case 0:    return ""; /* no override */
-//..       case 0x3E: return "%ds";
-//..       case 0x26: return "%es:";
-//..       case 0x64: return "%fs:";
-//..       case 0x65: return "%gs:";
-//..       default: vpanic("sorbTxt(x86,guest)");
-//..    }
-//.. }
-//.. 
-//.. 
-//.. /* 'virtual' is an IRExpr* holding a virtual address.  Convert it to a
-//..    linear address by adding any required segment override as indicated
-//..    by sorb. */
-//.. static
-//.. IRExpr* handleSegOverride ( UChar sorb, IRExpr* virtual )
+
+
+/*------------------------------------------------------------*/
+/*--- Disassembling addressing modes                       ---*/
+/*------------------------------------------------------------*/
+
+static 
+UChar* sorbTxt ( Prefix pfx )
+{
+   if (pfx & PFX_CS) return "%cs:";
+   if (pfx & PFX_DS) return "%ds:";
+   if (pfx & PFX_ES) return "%es:";
+   if (pfx & PFX_FS) return "%fs:";
+   if (pfx & PFX_GS) return "%gs:";
+   if (pfx & PFX_SS) return "%ss:";
+   return ""; /* no override */
+}
+
+
+/* 'virtual' is an IRExpr* holding a virtual address.  Convert it to a
+   linear address by adding any required segment override as indicated
+   by sorb. */
+static
+IRExpr* handleSegOverride ( Prefix pfx, IRExpr* virtual )
+{
+   UChar cs = (pfx & PFX_CS) ? 1 : 0;
+   UChar ds = (pfx & PFX_DS) ? 1 : 0;
+   UChar es = (pfx & PFX_ES) ? 1 : 0;
+   UChar fs = (pfx & PFX_FS) ? 1 : 0;
+   UChar gs = (pfx & PFX_GS) ? 1 : 0;
+   UChar ss = (pfx & PFX_SS) ? 1 : 0;
+   if (cs + ds + es + fs + gs + ss == 0)
+      /* the common case - no override */
+      return virtual;
+
+   unimplemented("amd64 segment overrrides");
+}
 //.. {
 //..    Int    sreg;
 //..    IRType hWordTy;
@@ -1643,253 +1651,195 @@ static void putIRegB ( Prefix pfx, Int sz, UInt lo3bits, IRExpr* e ) {
 //..    /* otherwise, here's the translated result. */
 //..    return unop(Iop_64to32, mkexpr(r64));
 //.. }
-//.. 
-//.. 
-//.. /* Generate IR to calculate an address indicated by a ModRM and
-//..    following SIB bytes.  The expression, and the number of bytes in
-//..    the address mode, are returned.  Note that this fn should not be
-//..    called if the R/M part of the address denotes a register instead of
-//..    memory.  If print_codegen is true, text of the addressing mode is
-//..    placed in buf. 
-//.. 
-//..    The computed address is stored in a new tempreg, and the
-//..    identity of the tempreg is returned.  */
-//.. 
-//.. static IRTemp disAMode_copy2tmp ( IRExpr* addr32 )
-//.. {
-//..    IRTemp tmp = newTemp(Ity_I32);
-//..    assign( tmp, addr32 );
-//..    return tmp;
-//.. }
-//.. 
-//.. static 
-//.. IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
-//.. {
-//..    UChar mod_reg_rm = getIByte(delta);
-//..    delta++;
-//.. 
-//..    buf[0] = (UChar)0;
-//.. 
-//..    /* squeeze out the reg field from mod_reg_rm, since a 256-entry
-//..       jump table seems a bit excessive. 
-//..    */
-//..    mod_reg_rm &= 0xC7;               /* is now XX000YYY */
-//..    mod_reg_rm |= (mod_reg_rm >> 3);  /* is now XX0XXYYY */
-//..    mod_reg_rm &= 0x1F;               /* is now 000XXYYY */
-//..    switch (mod_reg_rm) {
-//.. 
-//..       /* (%eax) .. (%edi), not including (%esp) or (%ebp).
-//..          --> GET %reg, t 
-//..       */
-//..       case 0x00: case 0x01: case 0x02: case 0x03: 
-//..       /* ! 04 */ /* ! 05 */ case 0x06: case 0x07:
-//..          { UChar rm = mod_reg_rm;
-//..            DIS(buf, "%s(%s)", sorbTxt(sorb), nameIReg(4,rm));
-//..            *len = 1;
-//..            return disAMode_copy2tmp(
-//..                   handleSegOverride(sorb, getIReg(4,rm)));
-//..          }
-//.. 
-//..       /* d8(%eax) ... d8(%edi), not including d8(%esp) 
-//..          --> GET %reg, t ; ADDL d8, t
-//..       */
-//..       case 0x08: case 0x09: case 0x0A: case 0x0B: 
-//..       /* ! 0C */ case 0x0D: case 0x0E: case 0x0F:
-//..          { UChar rm = mod_reg_rm & 7;
-//..            UInt  d  = getSDisp8(delta);
-//..            DIS(buf, "%s%d(%s)", sorbTxt(sorb), d, nameIReg(4,rm));
-//..            *len = 2;
-//..            return disAMode_copy2tmp(
-//..                   handleSegOverride(sorb,
-//..                      binop(Iop_Add32,getIReg(4,rm),mkU32(d))));
-//..          }
-//.. 
-//..       /* d32(%eax) ... d32(%edi), not including d32(%esp)
-//..          --> GET %reg, t ; ADDL d8, t
-//..       */
-//..       case 0x10: case 0x11: case 0x12: case 0x13: 
-//..       /* ! 14 */ case 0x15: case 0x16: case 0x17:
-//..          { UChar rm = mod_reg_rm & 7;
-//..            UInt  d  = getUDisp32(delta);
-//..            DIS(buf, "%s0x%x(%s)", sorbTxt(sorb), d, nameIReg(4,rm));
-//..            *len = 5;
-//..            return disAMode_copy2tmp(
-//..                   handleSegOverride(sorb,
-//..                      binop(Iop_Add32,getIReg(4,rm),mkU32(d))));
-//..          }
-//.. 
-//..       /* a register, %eax .. %edi.  This shouldn't happen. */
-//..       case 0x18: case 0x19: case 0x1A: case 0x1B:
-//..       case 0x1C: case 0x1D: case 0x1E: case 0x1F:
-//..          vpanic("disAMode(x86): not an addr!");
-//.. 
-//..       /* a 32-bit literal address
-//..          --> MOV d32, tmp 
-//..       */
-//..       case 0x05: 
-//..          { UInt d = getUDisp32(delta);
-//..            *len = 5;
-//..            DIS(buf, "%s(0x%x)", sorbTxt(sorb), d);
-//..            return disAMode_copy2tmp( 
-//..                      handleSegOverride(sorb, mkU32(d)));
-//..          }
-//.. 
-//..       case 0x04: {
-//..          /* SIB, with no displacement.  Special cases:
-//..             -- %esp cannot act as an index value.  
-//..                If index_r indicates %esp, zero is used for the index.
-//..             -- when mod is zero and base indicates EBP, base is instead
-//..                a 32-bit literal.
-//..             It's all madness, I tell you.  Extract %index, %base and 
-//..             scale from the SIB byte.  The value denoted is then:
-//..                | %index == %ESP && %base == %EBP
-//..                = d32 following SIB byte
-//..                | %index == %ESP && %base != %EBP
-//..                = %base
-//..                | %index != %ESP && %base == %EBP
-//..                = d32 following SIB byte + (%index << scale)
-//..                | %index != %ESP && %base != %ESP
-//..                = %base + (%index << scale)
-//.. 
-//..             What happens to the souls of CPU architects who dream up such
-//..             horrendous schemes, do you suppose?  
-//..          */
-//..          UChar sib     = getIByte(delta);
-//..          UChar scale   = (sib >> 6) & 3;
-//..          UChar index_r = (sib >> 3) & 7;
-//..          UChar base_r  = sib & 7;
-//..          delta++;
-//.. 
-//..          if (index_r != R_ESP && base_r != R_EBP) {
-//..             DIS(buf, "%s(%s,%s,%d)", sorbTxt(sorb), 
-//..                       nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
-//..             *len = 2;
-//..             return
-//..                disAMode_copy2tmp( 
-//..                handleSegOverride(sorb,
-//..                   binop(Iop_Add32, 
-//..                         getIReg(4,base_r),
-//..                         binop(Iop_Shl32, getIReg(4,index_r),
-//..                               mkU8(scale)))));
-//..          }
-//.. 
-//..          if (index_r != R_ESP && base_r == R_EBP) {
-//..             UInt d = getUDisp32(delta);
-//..             DIS(buf, "%s0x%x(,%s,%d)", sorbTxt(sorb), d, 
-//..                       nameIReg(4,index_r), 1<<scale);
-//..             *len = 6;
-//..             return
-//..                disAMode_copy2tmp(
-//..                handleSegOverride(sorb, 
-//..                   binop(Iop_Add32,
-//..                         binop(Iop_Shl32, getIReg(4,index_r), mkU8(scale)),
-//..                         mkU32(d))));
-//..          }
-//.. 
-//..          if (index_r == R_ESP && base_r != R_EBP) {
-//..             DIS(buf, "%s(%s,,)", sorbTxt(sorb), nameIReg(4,base_r));
-//..             *len = 2;
-//..             return disAMode_copy2tmp(
-//..                    handleSegOverride(sorb, getIReg(4,base_r)));
-//..          }
-//.. 
-//..          if (index_r == R_ESP && base_r == R_EBP) {
-//..             UInt d = getUDisp32(delta);
-//..             DIS(buf, "%s0x%x()", sorbTxt(sorb), d);
-//..             *len = 6;
-//..             vpanic("amode 8");
-//..             return disAMode_copy2tmp(
-//..                    handleSegOverride(sorb, mkU32(d)));
-//..          }
-//.. 
-//..          vassert(0);
-//..       }
-//.. 
-//..       /* SIB, with 8-bit displacement.  Special cases:
-//..          -- %esp cannot act as an index value.  
-//..             If index_r indicates %esp, zero is used for the index.
-//..          Denoted value is:
-//..             | %index == %ESP
-//..             = d8 + %base
-//..             | %index != %ESP
-//..             = d8 + %base + (%index << scale)
-//..       */
-//..       case 0x0C: {
-//..          UChar sib     = getIByte(delta);
-//..          UChar scale   = (sib >> 6) & 3;
-//..          UChar index_r = (sib >> 3) & 7;
-//..          UChar base_r  = sib & 7;
-//..          UInt  d       = getSDisp8(delta+1);
-//.. 
-//..          if (index_r == R_ESP) {
-//..             DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), d, nameIReg(4,base_r));
-//..             *len = 3;
-//..             return disAMode_copy2tmp(
-//..                    handleSegOverride(sorb, 
-//..                       binop(Iop_Add32, getIReg(4,base_r), mkU32(d)) ));
-//..          } else {
-//..             DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), d, 
-//..                      nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
-//..             *len = 3;
-//..             return 
-//..                 disAMode_copy2tmp(
-//..                 handleSegOverride(sorb,
-//..                   binop(Iop_Add32,
-//..                         binop(Iop_Add32, 
-//..                               getIReg(4,base_r), 
-//..                               binop(Iop_Shl32, 
-//..                                     getIReg(4,index_r), mkU8(scale))),
-//..                         mkU32(d))));
-//..          }
-//..          vassert(0);
-//..       }
-//.. 
-//..       /* SIB, with 32-bit displacement.  Special cases:
-//..          -- %esp cannot act as an index value.  
-//..             If index_r indicates %esp, zero is used for the index.
-//..          Denoted value is:
-//..             | %index == %ESP
-//..             = d32 + %base
-//..             | %index != %ESP
-//..             = d32 + %base + (%index << scale)
-//..       */
-//..       case 0x14: {
-//..          UChar sib     = getIByte(delta);
-//..          UChar scale   = (sib >> 6) & 3;
-//..          UChar index_r = (sib >> 3) & 7;
-//..          UChar base_r  = sib & 7;
-//..          UInt d        = getUDisp32(delta+1);
-//.. 
-//..          if (index_r == R_ESP) {
-//..             DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), d, nameIReg(4,base_r));
-//..             *len = 6;
-//..             return disAMode_copy2tmp(
-//..                    handleSegOverride(sorb, 
-//..                       binop(Iop_Add32, getIReg(4,base_r), mkU32(d)) ));
-//..          } else {
-//..             DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), d, 
-//..                       nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
-//..             *len = 6;
-//..             return 
-//..                 disAMode_copy2tmp(
-//..                 handleSegOverride(sorb,
-//..                   binop(Iop_Add32,
-//..                         binop(Iop_Add32, 
-//..                               getIReg(4,base_r), 
-//..                               binop(Iop_Shl32, 
-//..                                     getIReg(4,index_r), mkU8(scale))),
-//..                         mkU32(d))));
-//..          }
-//..          vassert(0);
-//..       }
-//.. 
-//..       default:
-//..          vpanic("disAMode(x86)");
-//..          return 0; /*notreached*/
-//..    }
-//.. }
-//.. 
-//.. 
+
+
+/* Generate IR to calculate an address indicated by a ModRM and
+   following SIB bytes.  The expression, and the number of bytes in
+   the address mode, are returned (the latter in *len).  Note that
+   this fn should not be called if the R/M part of the address denotes
+   a register instead of memory.  If print_codegen is true, text of
+   the addressing mode is placed in buf.
+
+   The computed address is stored in a new tempreg, and the
+   identity of the tempreg is returned.  */
+
+static IRTemp disAMode_copy2tmp ( IRExpr* addr64 )
+{
+   IRTemp tmp = newTemp(Ity_I64);
+   assign( tmp, addr64 );
+   return tmp;
+}
+
+static 
+IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
+{
+   UChar mod_reg_rm = getIByte(delta);
+   delta++;
+
+   buf[0] = (UChar)0;
+
+   /* squeeze out the reg field from mod_reg_rm, since a 256-entry
+      jump table seems a bit excessive. 
+   */
+   mod_reg_rm &= 0xC7;               /* is now XX000YYY */
+   mod_reg_rm |= (mod_reg_rm >> 3);  /* is now XX0XXYYY */
+   mod_reg_rm &= 0x1F;               /* is now 000XXYYY */
+   switch (mod_reg_rm) {
+
+      /* REX.B==0: (%rax) .. (%rdi), not including (%rsp) or (%rbp).
+         REX.B==1: (%r8)  .. (%r15), not including (%r12) or (%r13).
+      */
+      case 0x00: case 0x01: case 0x02: case 0x03: 
+      /* ! 04 */ /* ! 05 */ case 0x06: case 0x07:
+         { UChar rm = mod_reg_rm & 7;
+           DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegB(pfx,8,rm));
+           *len = 1;
+           return disAMode_copy2tmp(
+                  handleSegOverride(pfx, getIRegB(pfx,8,rm)));
+         }
+
+      /* REX.B==0: d8(%rax) ... d8(%rdi), not including d8(%rsp) 
+         REX.B==1: d8(%r8)  ... d8(%r15), not including d8(%r12) 
+      */
+      case 0x08: case 0x09: case 0x0A: case 0x0B: 
+      /* ! 0C */ case 0x0D: case 0x0E: case 0x0F:
+         { UChar rm = mod_reg_rm & 7;
+           ULong d  = getSDisp8(delta);
+           DIS(buf, "%s%lld(%s)", sorbTxt(pfx), d, nameIRegB(pfx,8,rm));
+           *len = 2;
+           return disAMode_copy2tmp(
+                  handleSegOverride(pfx,
+                     binop(Iop_Add64,getIRegB(pfx,8,rm),mkU64(d))));
+         }
+
+      /* REX.B==0: d32(%rax) ... d32(%rdi), not including d32(%rsp)
+         REX.B==1: d32(%r8)  ... d32(%r15), not including d32(%r12)
+      */
+      case 0x10: case 0x11: case 0x12: case 0x13: 
+      /* ! 14 */ case 0x15: case 0x16: case 0x17:
+         { UChar rm = mod_reg_rm & 7;
+           ULong d  = getSDisp32(delta);
+           DIS(buf, "%s0x%llx(%s)", sorbTxt(pfx), d, nameIRegB(pfx,8,rm));
+           *len = 5;
+           return disAMode_copy2tmp(
+                  handleSegOverride(pfx,
+                     binop(Iop_Add64,getIRegB(pfx,8,rm),mkU64(d))));
+         }
+
+      /* REX.B==0: a register, %rax .. %rdi.  This shouldn't happen. */
+      /* REX.B==1: a register, %r8  .. %r16.  This shouldn't happen. */
+      case 0x18: case 0x19: case 0x1A: case 0x1B:
+      case 0x1C: case 0x1D: case 0x1E: case 0x1F:
+         vpanic("disAMode(amode): not an addr!");
+
+      /* RIP + disp32.  This assumes that guest_eip_curr_instr is set
+         correctly at the start of handling each instruction. */
+      case 0x05: 
+         { ULong d = getSDisp32(delta);
+           *len = 5;
+           DIS(buf, "%s(0x%llx)", sorbTxt(pfx), d);
+           return disAMode_copy2tmp( 
+                     handleSegOverride(pfx, 
+                        binop(Iop_Add64, mkU64(guest_eip_curr_instr), 
+                                         mkU64(d))));
+         }
+
+      case 0x04: /* SIB, with no displacement. */
+      case 0x0C: /* SIB, with 8-bit displacement. */
+      case 0x14: /* SIB, with 32-bit displacement. */
+         /* The AMD documentation for SIB amodes is much more
+            understandable than the Intel documentation.  Hence a more
+            understandable piece of code here. */
+         { HChar   base_txt[50];
+           IRExpr* ea        = NULL;
+           IRExpr* base      = NULL;
+           UChar   sib       = getIByte(delta);
+           UChar   sib_scale = (sib >> 6) & 3;
+           UChar   sib_index = (sib >> 3) & 7;
+           UChar   sib_base  = sib & 7;
+           UChar   modrm_mod = (mod_reg_rm >> 3) & 3;
+           UChar   rex_b     = haveREX(pfx) ? getRX(pfx,RegB) : 0;
+           UChar   rex_x     = haveREX(pfx) ? getRX(pfx,RegX) : 0;
+           vassert(sib_scale <= 3);
+           vassert(sib_index <= 7);
+           vassert(sib_base  <= 7);
+           vassert(modrm_mod <= 2); /* mod==11b should have been ruled out by now */
+           vassert(rex_b <= 1);
+           vassert(rex_x <= 1);
+           delta++;
+
+           /* First off, compute a value for the "base" field
+              reference, as per Table A-16 on page 402.  This can be
+              computed from sib_base, modrm_mod and rex_b. */
+           base_txt[0] = 0;
+           if (sib_base != 5) {
+              /* Simple case,  base = %reg. */
+              base = getIReg64((rex_b << 3) | sib_base);
+              DIS(base_txt, "%s(%s,", sorbTxt(pfx),
+                                      nameIReg64((rex_b << 3) | sib_base));
+           } 
+           else
+           if (sib_base == 5 && modrm_mod == 0) {
+              /* base = signed-widen(32-bit literal) */
+              ULong d = getSDisp32(delta);
+              delta += 4;
+              base = mkU64(d);
+              DIS(base_txt, "%s%lld(,", sorbTxt(pfx), d);
+           }
+           else
+           if (sib_base == 5 && modrm_mod == 1) {
+              /* base = %rbp/%r13 + signed-widen(8-bit literal) */
+              ULong d = getSDisp8(delta);
+              delta += 1;
+              base = binop(Iop_Add64, 
+                           getIReg64(rex_b==0 ? R_RBP : R_R13),
+                           mkU64(d));
+              DIS(base_txt, "%s%lld(%s", sorbTxt(pfx),
+                                         d, rex_b==0 ? "%rbp" : "%r13");
+           }
+           else
+           if (sib_base == 5 && modrm_mod == 2) {
+              /* base = %rbp/%r13 + signed-widen(32-bit literal) */
+              ULong d = getSDisp32(delta);
+              delta += 4;
+              base = binop(Iop_Add64, 
+                           getIReg64(rex_b==0 ? R_RBP : R_R13),
+                           mkU64(d));
+              DIS(base_txt, "%s%lld(%s", sorbTxt(pfx),
+                                         d, rex_b==0 ? "%rbp" : "%r13");
+           }
+           else
+              vassert(0); /*NOTREACHED*/
+
+           /* So base/base_txt now hold/show the base part.  Now add to that 
+              the scaled index component.  This depends on sib_scale, sib_index
+              and rex_x. */
+           if (rex_x == 0 && sib_index == 4) {
+              /* we just use base as it is */
+              ea = base;
+              DIS(buf, "%s)", base_txt);
+           } else {
+              ea = binop(Iop_Add64, 
+                         base, 
+                         binop(Iop_Shl64, 
+                               getIReg64((rex_x << 3) | sib_index),
+                               mkU8(sib_scale)));
+              DIS(buf, "%s%s,%d)", base_txt, 
+                        nameIReg64((rex_x << 3) | sib_index), (UInt)sib_scale);
+           }
+
+           /* and that's it (!) */
+           return 
+              disAMode_copy2tmp(handleSegOverride(pfx, ea));
+         }
+
+      default:
+         vpanic("disAMode(amd64)");
+         return 0; /*notreached*/
+   }
+}
+
+
 //.. /* Figure out the number of (insn-stream) bytes constituting the amode
 //..    beginning at delta.  Is useful for getting hold of literals beyond
 //..    the end of the amode before it has been disassembled.  */

@@ -80,6 +80,13 @@
 /* Proportion of client space for its heap (rest is for mmaps + stack) */
 #define CLIENT_HEAP_PROPORTION   0.333
 
+/* Number of file descriptors that Valgrind tries to reserve for
+   it's own use - just a small constant. */
+#define N_RESERVED_FDS (10)
+
+/* Default debugger command. */
+#define CLO_DEFAULT_DBCOMMAND GDB_PATH " -nw %f %p"
+
 /*====================================================================*/
 /*=== Global entities not referenced from generated code           ===*/
 /*====================================================================*/
@@ -1408,7 +1415,7 @@ static void as_closepadfile(int padfile)
 VexControl VG_(clo_vex_control);
 Bool   VG_(clo_error_limit)    = True;
 Bool   VG_(clo_db_attach)      = False;
-Char*  VG_(clo_db_command)     = VG_CLO_DEFAULT_DBCOMMAND;
+Char*  VG_(clo_db_command)     = CLO_DEFAULT_DBCOMMAND;
 Int    VG_(clo_gen_suppressions) = 0;
 Int    VG_(clo_sanity_level)   = 1;
 Int    VG_(clo_verbosity)      = 1;
@@ -2145,15 +2152,15 @@ static void setup_file_descriptors(void)
    }
 
    /* Work out where to move the soft limit to. */
-   if (rl.rlim_cur + VG_N_RESERVED_FDS <= rl.rlim_max) {
-      rl.rlim_cur = rl.rlim_cur + VG_N_RESERVED_FDS;
+   if (rl.rlim_cur + N_RESERVED_FDS <= rl.rlim_max) {
+      rl.rlim_cur = rl.rlim_cur + N_RESERVED_FDS;
    } else {
       rl.rlim_cur = rl.rlim_max;
    }
 
    /* Reserve some file descriptors for our use. */
-   VG_(fd_soft_limit) = rl.rlim_cur - VG_N_RESERVED_FDS;
-   VG_(fd_hard_limit) = rl.rlim_cur - VG_N_RESERVED_FDS;
+   VG_(fd_soft_limit) = rl.rlim_cur - N_RESERVED_FDS;
+   VG_(fd_hard_limit) = rl.rlim_cur - N_RESERVED_FDS;
 
    /* Update the soft limit. */
    VG_(setrlimit)(VKI_RLIMIT_NOFILE, &rl);

@@ -35,13 +35,15 @@
 #include <time.h>
 #include <sys/time.h>
 
+/* Size of a buffer used for creating messages. */
+#define M_MSGBUF 10000
 
-static char vg_mbuf[M_VG_MSGBUF];
+static char vg_mbuf[M_MSGBUF];
 static int vg_n_mbuf;
 
 static void add_to_buf ( Char c, void *p )
 {
-  if (vg_n_mbuf >= (M_VG_MSGBUF-1)) return;
+  if (vg_n_mbuf >= (M_MSGBUF-1)) return;
   vg_mbuf[vg_n_mbuf++] = c;
   vg_mbuf[vg_n_mbuf]   = 0;
 }

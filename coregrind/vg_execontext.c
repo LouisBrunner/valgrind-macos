@@ -36,10 +36,14 @@
 /*--- Low-level ExeContext storage.                        ---*/
 /*------------------------------------------------------------*/
 
+/* Number of lists in which we keep track of ExeContexts.  Should be
+   prime. */
+#define N_EC_LISTS 4999 /* a prime number */
+
 /* The idea is only to ever store any one context once, so as to save
    space and make exact comparisons faster. */
 
-static ExeContext* ec_list[VG_N_EC_LISTS];
+static ExeContext* ec_list[N_EC_LISTS];
 
 /* Stats only: the number of times the system was searched to locate a
    context. */
@@ -75,7 +79,7 @@ static void init_ExeContext_storage ( void )
    ec_cmp2s = 0;
    ec_cmp4s = 0;
    ec_cmpAlls = 0;
-   for (i = 0; i < VG_N_EC_LISTS; i++)
+   for (i = 0; i < N_EC_LISTS; i++)
       ec_list[i] = NULL;
    init_done = True;
 }
@@ -87,8 +91,8 @@ void VG_(print_ExeContext_stats) ( void )
    init_ExeContext_storage();
    VG_(message)(Vg_DebugMsg, 
       "   exectx: %d lists, %d contexts (avg %d per list)",
-      VG_N_EC_LISTS, ec_totstored, 
-      ec_totstored / VG_N_EC_LISTS 
+      N_EC_LISTS, ec_totstored, 
+      ec_totstored / N_EC_LISTS 
    );
    VG_(message)(Vg_DebugMsg, 
       "   exectx: %d searches, %d full compares (%d per 1000)",
@@ -264,7 +268,7 @@ ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
       hash ^= ips[i];
       hash = (hash << 29) | (hash >> 3);
    }
-   hash = hash % VG_N_EC_LISTS;
+   hash = hash % N_EC_LISTS;
 
    /* And (the expensive bit) look a matching entry in the list. */
 

@@ -100,62 +100,15 @@ typedef struct _ThreadState ThreadState;
 
 
 /* ---------------------------------------------------------------------
-   Build options and table sizes.  You should be able to change these
-   options or sizes, recompile, and still have a working system.
+   Global macros.
    ------------------------------------------------------------------ */
-
-/* Constants for the slow translation lookup cache. */
-#define VG_TRANSTAB_SLOW_BITS 11
-#define VG_TRANSTAB_SLOW_SIZE (1 << VG_TRANSTAB_SLOW_BITS)
-#define VG_TRANSTAB_SLOW_MASK ((VG_TRANSTAB_SLOW_SIZE) - 1)
-
-/* Size of a buffer used for creating messages. */
-#define M_VG_MSGBUF 10000
-
-/* Size of a smallish table used to read /proc/self/map entries. */
-#define M_PROCMAP_BUF 50000
-
-/* Max length of pathname to a .so/executable file. */
-#define M_VG_LIBNAMESTR 100
 
 /* Max length of a text fragment used to construct error messages. */
 #define M_VG_ERRTXT 4096
 
-/* Max length of the string copied from env var VG_ARGS at startup. */
-#define M_VG_CMDLINE_STRLEN 1000
-
-/* Max number of options for Valgrind which we can handle. */
-#define M_VG_CMDLINE_OPTS 100
-
-/* After this many different unsuppressed errors have been observed,
-   be more conservative about collecting new ones. */
-#define M_VG_COLLECT_ERRORS_SLOWLY_AFTER 50
-
-/* After this many different unsuppressed errors have been observed,
-   stop collecting errors at all, and tell the user their program is
-   evidently a steaming pile of camel dung. */
-#define M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN 300
-
-/* After this many total errors have been observed, stop collecting
-   errors at all.  Counterpart to M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN. */
-#define M_VG_COLLECT_NO_ERRORS_AFTER_FOUND 30000
-
 /* The maximum number of calls we're prepared to save in a
    backtrace. */
 #define VG_DEEPEST_BACKTRACE 50
-
-/* Number of lists in which we keep track of ExeContexts.  Should be
-   prime. */
-#define VG_N_EC_LISTS 4999 /* a prime number */
-
-/* Defines the thread-scheduling timeslice, in terms of the number of
-   basic blocks we attempt to run each thread for.  Smaller values
-   give finer interleaving but much increased scheduling overheads. */
-#define VG_SCHEDULING_QUANTUM   50000
-
-/* Number of file descriptors that Valgrind tries to reserve for
-   it's own use - just a small constant. */
-#define VG_N_RESERVED_FDS (10)
 
 /* Useful macros */
 /* a - alignment - must be a power of 2 */
@@ -201,9 +154,6 @@ typedef struct _ThreadState ThreadState;
 
 /* The max number of suppression files. */
 #define VG_CLO_MAX_SFILES 10
-
-/* Default debugger command. */
-#define VG_CLO_DEFAULT_DBCOMMAND GDB_PATH " -nw %f %p"
 
 /* Describes where logging output is to be sent. */
 typedef

@@ -67,6 +67,11 @@
 
 /* ThreadId and ThreadState are defined in core.h. */
 
+/* Defines the thread-scheduling timeslice, in terms of the number of
+   basic blocks we attempt to run each thread for.  Smaller values
+   give finer interleaving but much increased scheduling overheads. */
+#define SCHEDULING_QUANTUM   50000
+
 /* Globals.  A statically allocated array of threads.  NOTE: [0] is
    never used, to simplify the simulation of initialisers for
    LinuxThreads. */
@@ -718,7 +723,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
    
    vg_assert(VG_(is_running_thread)(tid));
 
-   VG_(dispatch_ctr) = VG_SCHEDULING_QUANTUM + 1;
+   VG_(dispatch_ctr) = SCHEDULING_QUANTUM + 1;
 
    while(!VG_(is_exiting)(tid)) {
       UInt remaining_bbs;
@@ -753,7 +758,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	    exceed zero before entering the innerloop.  Also also, the
 	    decrement is done before the bb is actually run, so you
 	    always get at least one decrement even if nothing happens. */
-         VG_(dispatch_ctr) = VG_SCHEDULING_QUANTUM + 1;
+         VG_(dispatch_ctr) = SCHEDULING_QUANTUM + 1;
 
 	 /* paranoia ... */
 	 vg_assert(tst->tid == tid);

@@ -32,6 +32,9 @@
 
 #include "core.h"
 
+/* Size of a smallish table used to read /proc/self/map entries. */
+#define M_PROCMAP_BUF 50000
+
 /* static ... to keep it out of the stack frame. */
 static Char procmap_buf[M_PROCMAP_BUF];
 

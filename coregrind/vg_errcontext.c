@@ -34,6 +34,19 @@
 /*--- Globals                                              ---*/
 /*------------------------------------------------------------*/
 
+/* After this many different unsuppressed errors have been observed,
+   be more conservative about collecting new ones. */
+#define M_COLLECT_ERRORS_SLOWLY_AFTER 50
+
+/* After this many different unsuppressed errors have been observed,
+   stop collecting errors at all, and tell the user their program is
+   evidently a steaming pile of camel dung. */
+#define M_COLLECT_NO_ERRORS_AFTER_SHOWN 300
+
+/* After this many total errors have been observed, stop collecting
+   errors at all.  Counterpart to M_COLLECT_NO_ERRORS_AFTER_SHOWN. */
+#define M_COLLECT_NO_ERRORS_AFTER_FOUND 30000
+
 /* The list of error contexts found, both suppressed and unsuppressed.
    Initially empty, and grows as errors are detected. */
 static Error* vg_errors = NULL;
@@ -427,28 +440,28 @@ void VG_(maybe_record_error) ( ThreadId tid,
    static Bool   slowdown_message       = False;
    static Int    vg_n_errs_shown        = 0;
 
-   /* After M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN different errors have
-      been found, or M_VG_COLLECT_NO_ERRORS_AFTER_FOUND total errors
+   /* After M_COLLECT_NO_ERRORS_AFTER_SHOWN different errors have
+      been found, or M_COLLECT_NO_ERRORS_AFTER_FOUND total errors
       have been found, just refuse to collect any more.  This stops
       the burden of the error-management system becoming excessive in
       extremely buggy programs, although it does make it pretty
       pointless to continue the Valgrind run after this point. */
    if (VG_(clo_error_limit) 
-       && (vg_n_errs_shown >= M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN
-           || n_errs_found >= M_VG_COLLECT_NO_ERRORS_AFTER_FOUND)) {
+       && (vg_n_errs_shown >= M_COLLECT_NO_ERRORS_AFTER_SHOWN
+           || n_errs_found >= M_COLLECT_NO_ERRORS_AFTER_FOUND)) {
       if (!stopping_message) {
          VG_(message)(Vg_UserMsg, "");
 
-	 if (vg_n_errs_shown >= M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN) {
+	 if (vg_n_errs_shown >= M_COLLECT_NO_ERRORS_AFTER_SHOWN) {
             VG_(message)(Vg_UserMsg, 
                "More than %d different errors detected.  "
                "I'm not reporting any more.",
-               M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN );
+               M_COLLECT_NO_ERRORS_AFTER_SHOWN );
          } else {
             VG_(message)(Vg_UserMsg, 
                "More than %d total errors detected.  "
                "I'm not reporting any more.",
-               M_VG_COLLECT_NO_ERRORS_AFTER_FOUND );
+               M_COLLECT_NO_ERRORS_AFTER_FOUND );
 	 }
 
          VG_(message)(Vg_UserMsg, 
@@ -465,16 +478,16 @@ void VG_(maybe_record_error) ( ThreadId tid,
       return;
    }
 
-   /* After M_VG_COLLECT_ERRORS_SLOWLY_AFTER different errors have
+   /* After M_COLLECT_ERRORS_SLOWLY_AFTER different errors have
       been found, be much more conservative about collecting new
       ones. */
-   if (vg_n_errs_shown >= M_VG_COLLECT_ERRORS_SLOWLY_AFTER) {
+   if (vg_n_errs_shown >= M_COLLECT_ERRORS_SLOWLY_AFTER) {
       exe_res = Vg_LowRes;
       if (!slowdown_message) {
          VG_(message)(Vg_UserMsg, "");
          VG_(message)(Vg_UserMsg, 
             "More than %d errors detected.  Subsequent errors",
-            M_VG_COLLECT_ERRORS_SLOWLY_AFTER);
+            M_COLLECT_ERRORS_SLOWLY_AFTER);
          VG_(message)(Vg_UserMsg, 
             "will still be recorded, but in less detail than before.");
          slowdown_message = True;

@@ -83,7 +83,7 @@ typedef
       UInt   guest_EMWARN;
 
       /* Padding to make it have an 8-aligned size */
-      /* UInt   padding; */
+      UInt   padding;
    }
    VexGuestARMState;
 

@@ -88,6 +88,8 @@ typedef __vki_restorefn_t __user *__vki_sigrestore_t;
 #define _VKI_NSIG_BPW	32
 #define _VKI_NSIG_WORDS	(_VKI_NSIG / _VKI_NSIG_BPW)
 
+typedef unsigned long vki_old_sigset_t;		/* at least 32 bits */
+
 typedef struct {
 	unsigned long sig[_VKI_NSIG_WORDS];
 } vki_sigset_t;

@@ -1649,10 +1649,10 @@ PRE(setfsgid)
    PRINT("setfsgid ( %d )", arg1);
 }
 
-PRE(setregid)
+PREx(sys_setregid16, 0)
 {
-   /* int setregid(gid_t rgid, gid_t egid); */
-   PRINT("setregid ( %d, %d )", arg1, arg2);
+   PRINT("sys_setregid16 ( %d, %d )", arg1, arg2);
+   PRE_REG_READ2(long, "setregid16", vki_old_gid_t, rgid, vki_old_gid_t, egid);
 }
 
 PRE(setresuid)
@@ -4528,10 +4528,10 @@ POST(sys_setpgid)
    VG_(main_pgrp) = VG_(getpgrp)();
 }
 
-PRE(setregid32)
+PREx(sys_setregid, 0)
 {
-   /* int setregid(gid_t rgid, gid_t egid); */
-   PRINT("setregid32(?) ( %d, %d )", arg1, arg2);
+   PRINT("sys_setregid ( %d, %d )", arg1, arg2);
+   PRE_REG_READ2(long, "setregid", vki_gid_t, rgid, vki_gid_t, egid);
 }
 
 PRE(setresuid32)
@@ -4540,18 +4540,25 @@ PRE(setresuid32)
    PRINT("setresuid32(?) ( %d, %d, %d )", arg1, arg2, arg3);
 }
 
-PRE(setreuid)
+PREx(sys_setreuid16, 0)
 {
-   /* int setreuid(uid_t ruid, uid_t euid); */
-   PRINT("setreuid ( 0x%x, 0x%x )", arg1, arg2);
+   PRINT("setreuid16 ( 0x%x, 0x%x )", arg1, arg2);
+   PRE_REG_READ2(long, "setreuid16", vki_old_uid_t, ruid, vki_old_uid_t, euid);
+}
+
+PREx(sys_setreuid, 0)
+{
+   PRINT("sys_setreuid ( 0x%x, 0x%x )", arg1, arg2);
+   PRE_REG_READ2(long, "setreuid", vki_uid_t, ruid, vki_uid_t, euid);
 }
 
 PREALIAS(setreuid32, setreuid);
 
-PRE(setrlimit)
+PREx(sys_setrlimit, 0)
 {
-   /* int setrlimit (int resource, const struct rlimit *rlim); */
-   PRINT("setrlimit ( %d, %p )", arg1,arg2);
+   PRINT("sys_setrlimit ( %d, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "setrlimit",
+                 unsigned int, resource, struct rlimit *, rlim);
    PRE_MEM_READ( "setrlimit(rlim)", arg2, sizeof(struct vki_rlimit) );
 
    if (arg1 == VKI_RLIMIT_NOFILE) {
@@ -5403,20 +5410,20 @@ POST(sigprocmask)
 PREALIAS(rt_sigprocmask, sigprocmask);
 POSTALIAS(rt_sigprocmask, sigprocmask);
 
-PRE(sigpending)
+PREx(sys_sigpending, NBRunInLWP)
 {
-   /* int sigpending( sigset_t *set ) ; */
-   PRINT( "sigpending ( %p )", arg1 );
-   PRE_MEM_WRITE( "sigpending(set)", arg1, sizeof(vki_sigset_t));
+   PRINT( "sys_sigpending ( %p )", arg1 );
+   PRE_REG_READ1(long, "sigpending", vki_old_sigset_t *, set);
+   PRE_MEM_WRITE( "sigpending(set)", arg1, sizeof(vki_old_sigset_t));
 }
 
-POST(sigpending)
+POST(sys_sigpending)
 {
-   POST_MEM_WRITE( arg1, sizeof( vki_sigset_t ) ) ;
+   POST_MEM_WRITE( arg1, sizeof( vki_old_sigset_t ) ) ;
 }
 
-PREALIAS(rt_sigpending, sigpending);
-POSTALIAS(rt_sigpending, sigpending);
+PREALIAS(rt_sigpending, sys_sigpending);
+POSTALIAS(rt_sigpending, sys_sigpending);
 
 PRE(io_setup)
 {
@@ -5902,13 +5909,13 @@ static const struct sys_info sys_info[] = {
    //   (__NR_sgetmask,         sys_sgetmask),     // 68 * (ANSI C)
    //   (__NR_ssetmask,         sys_ssetmask),     // 69 * (ANSI C)
 
-   SYSB_(setreuid,		0), // 70 sys_setreuid16 ##
-   SYSB_(setregid,		0), // 71 sys_setregid16 ##
+   SYSX_(__NR_setreuid,         sys_setreuid16),   // 70 ## (BSD4.3)
+   SYSX_(__NR_setregid,         sys_setregid16),   // 71 ## (BSD4.3)
    SYSB_(sigsuspend,		MayBlock), // 72 sys_sigsuspend
-   SYSBA(sigpending,		NBRunInLWP), // 73 sys_sigpending *
+   SYSXY(__NR_sigpending,       sys_sigpending),   // 73 * P
    //   (__NR_sethostname,      sys_sethostname),  // 74 * (almost P)
 
-   SYSB_(setrlimit,		0), // 75 sys_setrlimit *
+   SYSX_(__NR_setrlimit,        sys_setrlimit),    // 75 * (SVr4,BSD4.3)
    SYSBA(getrlimit,		0), // 76 sys_old_getrlimit *
    SYSBA(getrusage,		0), // 77 sys_getrusage *
    SYSBA(gettimeofday,		0), // 78 sys_gettimeofday *
@@ -6059,13 +6066,13 @@ static const struct sys_info sys_info[] = {
    SYSBA(lstat64,		0), // 196 sys_lstat64 %%
    SYSBA(fstat64,		0), // 197 sys_fstat64 %%
    SYSB_(lchown32,		0), // 198 sys_lchown *
-   SYSX_(__NR_getuid32,         sys_getuid), // 199 *
+   SYSX_(__NR_getuid32,         sys_getuid),       // 199 *
 
-   SYSX_(__NR_getgid32,         sys_getgid), // 200 *
-   SYSX_(__NR_geteuid32,        sys_geteuid), // 201 *
-   SYSX_(__NR_getegid32,        sys_getegid), // 202 *
-   SYSB_(setreuid32,		0), // 203 sys_setreuid *
-   SYSB_(setregid32,		0), // 204 sys_setregid *
+   SYSX_(__NR_getgid32,         sys_getgid),       // 200 *
+   SYSX_(__NR_geteuid32,        sys_geteuid),      // 201 *
+   SYSX_(__NR_getegid32,        sys_getegid),      // 202 *
+   SYSX_(__NR_setreuid32,       sys_setreuid),     // 203 * (BSD4.3)
+   SYSX_(__NR_setregid32,       sys_setregid),     // 204 * (BSD4.3)
 
    SYSBA(getgroups32,		0), // 205 sys_getgroups *
    SYSB_(setgroups32,		0), // 206 sys_setgroups *

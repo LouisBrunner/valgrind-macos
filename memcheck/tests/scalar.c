@@ -272,7 +272,7 @@ int main(void)
    GO(__NR_setsid, "0e");
    SY(__NR_setsid);
 
-   // __NR_sigaction 67
+   // __NR_sigaction 67 --> sys_sigaction()
    GO(__NR_sigaction, "3s 2m");
    SY(__NR_sigaction, x0, x0+1, x0+1);
 
@@ -282,15 +282,27 @@ int main(void)
    // __NR_ssetmask 69
    // (Not yet handled by Valgrind)
 
-   // __NR_setreuid 70
-   // __NR_setregid 71
-   // __NR_sigsuspend 72
-   // __NR_sigpending 73
+   // __NR_setreuid 70 --> sys_setreuid16()
+   GO(__NR_setreuid, "2s 0m");
+   SY(__NR_setreuid, x0, x0);
+
+   // __NR_setregid 71 --> sys_setregid16()
+   GO(__NR_setregid, "2s 0m");
+   SY(__NR_setregid, x0, x0);
+
+   // __NR_sigsuspend 72 --> sys_sigsuspend()
+
+   // __NR_sigpending 73 --> sys_sigpending()
+   GO(__NR_sigpending, "1s 1m");
+   SY(__NR_sigpending, x0);
 
    // __NR_sethostname 74
    // (Not yet handled by Valgrind)
 
-   // __NR_setrlimit 75
+   // __NR_setrlimit 75 --> sys_setrlimit()
+   GO(__NR_setrlimit, "2s 1m");
+   SY(__NR_setrlimit, x0, x0);
+
    // __NR_getrlimit 76
    // __NR_getrusage 77
    // __NR_gettimeofday 78
@@ -478,7 +490,13 @@ int main(void)
    SY(__NR_getegid32);
 
    // __NR_setreuid32 203
+   GO(__NR_setreuid32, "2s 0m");
+   SY(__NR_setreuid32, x0, x0);
+
    // __NR_setregid32 204
+   GO(__NR_setregid32, "2s 0m");
+   SY(__NR_setregid32, x0, x0);
+
    // __NR_getgroups32 205
    // __NR_setgroups32 206
    // __NR_fchown32 207

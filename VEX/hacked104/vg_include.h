@@ -1974,6 +1974,7 @@ extern Int VGOFF_(m_cc_dflag);
 
 extern Int VGOFF_(m_eip);
 
+extern Int VGOFF_(m_ftop);
 extern Int VGOFF_(m_f0);
 extern Int VGOFF_(m_f1);
 extern Int VGOFF_(m_f2);
@@ -1982,8 +1983,7 @@ extern Int VGOFF_(m_f4);
 extern Int VGOFF_(m_f5);
 extern Int VGOFF_(m_f6);
 extern Int VGOFF_(m_f7);
-extern Int VGOFF_(m_ftop);
-
+extern Int VGOFF_(m_ftag0);
 
 /* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
 extern Int VGOFF_(spillslots);

@@ -57,6 +57,7 @@ Int VGOFF_(m_cc_dflag) = INVALID_OFFSET;
 
 Int VGOFF_(m_eip) = INVALID_OFFSET;
 
+Int VGOFF_(m_ftop) = INVALID_OFFSET;
 Int VGOFF_(m_f0) = INVALID_OFFSET;
 Int VGOFF_(m_f1) = INVALID_OFFSET;
 Int VGOFF_(m_f2) = INVALID_OFFSET;
@@ -65,7 +66,7 @@ Int VGOFF_(m_f4) = INVALID_OFFSET;
 Int VGOFF_(m_f5) = INVALID_OFFSET;
 Int VGOFF_(m_f6) = INVALID_OFFSET;
 Int VGOFF_(m_f7) = INVALID_OFFSET;
-Int VGOFF_(m_ftop) = INVALID_OFFSET;
+Int VGOFF_(m_ftag0) = INVALID_OFFSET;
 
 Int VGOFF_(spillslots) = INVALID_OFFSET;
 Int VGOFF_(sh_eax) = INVALID_OFFSET;
@@ -166,86 +167,87 @@ static void vg_init_baseBlock ( void )
    /* Those with offsets under 128 are carefully chosen. */
 
    /* WORD offsets in this column */
-   /* 0   */ VGOFF_(m_eax)     = alloc_BaB(1);
-   /* 1   */ VGOFF_(m_ecx)     = alloc_BaB(1);
-   /* 2   */ VGOFF_(m_edx)     = alloc_BaB(1);
-   /* 3   */ VGOFF_(m_ebx)     = alloc_BaB(1);
-   /* 4   */ VGOFF_(m_esp)     = alloc_BaB(1);
-   /* 5   */ VGOFF_(m_ebp)     = alloc_BaB(1);
-   /* 6   */ VGOFF_(m_esi)     = alloc_BaB(1);
-   /* 7   */ VGOFF_(m_edi)     = alloc_BaB(1);
+   /* 0   */ VGOFF_(m_eax)      = alloc_BaB(1);
+   /* 1   */ VGOFF_(m_ecx)      = alloc_BaB(1);
+   /* 2   */ VGOFF_(m_edx)      = alloc_BaB(1);
+   /* 3   */ VGOFF_(m_ebx)      = alloc_BaB(1);
+   /* 4   */ VGOFF_(m_esp)      = alloc_BaB(1);
+   /* 5   */ VGOFF_(m_ebp)      = alloc_BaB(1);
+   /* 6   */ VGOFF_(m_esi)      = alloc_BaB(1);
+   /* 7   */ VGOFF_(m_edi)      = alloc_BaB(1);
 
-   /* 8   */ VGOFF_(m_cc_op)   = alloc_BaB(1);
-   /* 9   */ VGOFF_(m_cc_src)  = alloc_BaB(1);
-   /* 10  */ VGOFF_(m_cc_dst)  = alloc_BaB(1);
-   /* 11  */ VGOFF_(m_cc_dflag)= alloc_BaB(1);
+   /* 8   */ VGOFF_(m_cc_op)    = alloc_BaB(1);
+   /* 9   */ VGOFF_(m_cc_src)   = alloc_BaB(1);
+   /* 10  */ VGOFF_(m_cc_dst)   = alloc_BaB(1);
+   /* 11  */ VGOFF_(m_cc_dflag) = alloc_BaB(1);
 
-   /* 12  */ VGOFF_(m_eip)     = alloc_BaB(1);
+   /* 12  */ VGOFF_(m_eip)      = alloc_BaB(1);
 
-   /* 13 */ VGOFF_(m_f0) = alloc_BaB(2);
-   /* 15 */ VGOFF_(m_f1) = alloc_BaB(2);
-   /* 17 */ VGOFF_(m_f2) = alloc_BaB(2);
-   /* 19 */ VGOFF_(m_f3) = alloc_BaB(2);
-   /* 21 */ VGOFF_(m_f4) = alloc_BaB(2);
-   /* 23 */ VGOFF_(m_f5) = alloc_BaB(2);
-   /* 25 */ VGOFF_(m_f6) = alloc_BaB(2);
-   /* 27 */ VGOFF_(m_f7) = alloc_BaB(2);
-   /* 29 */ VGOFF_(m_ftop) = alloc_BaB(1);
+   /* 13 */ VGOFF_(m_ftop)  = alloc_BaB(1);
+   /* 14 */ VGOFF_(m_f0)    = alloc_BaB(2);
+   /* 16 */ VGOFF_(m_f1)    = alloc_BaB(2);
+   /* 18 */ VGOFF_(m_f2)    = alloc_BaB(2);
+   /* 20 */ VGOFF_(m_f3)    = alloc_BaB(2);
+   /* 22 */ VGOFF_(m_f4)    = alloc_BaB(2);
+   /* 24 */ VGOFF_(m_f5)    = alloc_BaB(2);
+   /* 26 */ VGOFF_(m_f6)    = alloc_BaB(2);
+   /* 28 */ VGOFF_(m_f7)    = alloc_BaB(2);
+   /* 30 */ VGOFF_(m_ftag0) = alloc_BaB(2);
+
+   /* 32  */ VGOFF_(sh_eax)    = alloc_BaB(1);
+   /* 33  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
+   /* 34  */ VGOFF_(sh_edx)    = alloc_BaB(1);
+   /* 35  */ VGOFF_(sh_ebx)    = alloc_BaB(1);
+   /* 36  */ VGOFF_(sh_esp)    = alloc_BaB(1);
+   /* 37  */ VGOFF_(sh_ebp)    = alloc_BaB(1);
+   /* 38  */ VGOFF_(sh_esi)    = alloc_BaB(1);
+   /* 39  */ VGOFF_(sh_edi)    = alloc_BaB(1);
+   /* 40  */ VGOFF_(sh_eflags) = alloc_BaB(1);
 
    /* stated offsets are wrong after here */
-   /* 13  */ VGOFF_(sh_eax)    = alloc_BaB(1);
-   /* 14  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
-   /* 15  */ VGOFF_(sh_edx)    = alloc_BaB(1);
-   /* 16  */ VGOFF_(sh_ebx)    = alloc_BaB(1);
-   /* 17  */ VGOFF_(sh_esp)    = alloc_BaB(1);
-   /* 18  */ VGOFF_(sh_ebp)    = alloc_BaB(1);
-   /* 19  */ VGOFF_(sh_esi)    = alloc_BaB(1);
-   /* 20  */ VGOFF_(sh_edi)    = alloc_BaB(1);
-   /* 21  */ VGOFF_(sh_eflags) = alloc_BaB(1);
-
-   /* 22 */ 
+   /* 41 */ 
    VGOFF_(log_1I_0D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_1I_0D_cache_access) );
-   /* 23 */ 
+   /* 42 */ 
    VGOFF_(log_0I_1D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_0I_1D_cache_access) );
-   /* 24 */ 
+   /* 43 */ 
    VGOFF_(log_1I_1D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_1I_1D_cache_access) );
-   /* 25 */ 
+   /* 44 */ 
    VGOFF_(log_0I_2D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_0I_2D_cache_access) );
-   /* 26 */ 
+   /* 45 */ 
    VGOFF_(log_1I_2D_cache_access)  
       = alloc_BaB_1_set( (Addr) & VG_(log_1I_2D_cache_access) );
 
-   /* 27  */ 
+   /* 46  */ 
    VGOFF_(helper_value_check4_fail) 
       = alloc_BaB_1_set( (Addr) & VG_(helper_value_check4_fail) );
-   /* 28 */
+   /* 47 */
    VGOFF_(helper_value_check0_fail)
       = alloc_BaB_1_set( (Addr) & VG_(helper_value_check0_fail) );
 
-   /* 29  */
+   /* 48  */
    VGOFF_(helperc_STOREV4)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_STOREV4) );
-   /* 30  */
+   /* 49  */
    VGOFF_(helperc_STOREV1)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_STOREV1) );
 
-   /* 31  */
+   /* 50 */
    VGOFF_(helperc_LOADV4)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_LOADV4) );
-   /* 32  */
+   /* 51 */
    VGOFF_(helperc_LOADV1)
       = alloc_BaB_1_set( (Addr) & VG_(helperc_LOADV1) );
 
-   /* 33  */
+   /* 52 */
    VGOFF_(handle_esp_assignment)
       = alloc_BaB_1_set( (Addr) & VGM_(handle_esp_assignment) );
 
    /* There are currently 24 spill slots */
-   /* 26 .. 49  This overlaps the magic boundary at >= 32 words, but
+   /* 53 .. 49  This overlaps the magic boundary at >= 32 words, but
       most spills are to low numbered spill slots, so the ones above
       the boundary don't see much action. */
    VGOFF_(spillslots) = alloc_BaB(VG_MAX_SPILLSLOTS);
@@ -1089,6 +1091,10 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
       should be zero, as the decrement then changes it to 7 so we end
       up first writing %f7. */
    VG_(baseBlock)[VGOFF_(m_ftop)] = 0;
+   /* HACK; we know the ftag array is 8 bytes long; therefore
+      conveniently initialise it with 2 32-bit stores. */
+   VG_(baseBlock)[VGOFF_(m_ftag0)+0] = 0;
+   VG_(baseBlock)[VGOFF_(m_ftag0)+1] = 0;
 }
 
 

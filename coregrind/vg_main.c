@@ -2581,7 +2581,7 @@ int main(int argc, char **argv)
    if (VG_(clo_wait_for_gdb)) {
       VG_(printf)("pid=%d\n", VG_(getpid)());
       /* do "jump *$eip" to skip this in gdb */
-      VG_(do_syscall)(__NR_pause);
+      VG_(do_syscall0)(__NR_pause);
    }
 
    //--------------------------------------------------------------

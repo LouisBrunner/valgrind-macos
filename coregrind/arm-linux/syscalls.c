@@ -111,7 +111,7 @@ PRE(sys_clone, Special)
      || ARG1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
    {
       VGA_(gen_sys_fork_before)(tid, tst);
-      SET_RESULT( VG_(do_syscall)(SYSNO, ARG1, ARG2, ARG3, ARG4, ARG5) );
+      SET_RESULT( VG_(do_syscall5)(SYSNO, ARG1, ARG2, ARG3, ARG4, ARG5) );
       VGA_(gen_sys_fork_after) (tid, tst);
    } else {
       VG_(unimplemented)

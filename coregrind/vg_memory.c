@@ -595,7 +595,7 @@ void VG_(unpad_address_space)(void)
 
    while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
-         ret = VG_(do_syscall)(__NR_munmap, addr, s->addr - addr);
+         ret = VG_(do_syscall2)(__NR_munmap, addr, s->addr - addr);
       }
          
       addr = s->addr + s->len;
@@ -603,7 +603,7 @@ void VG_(unpad_address_space)(void)
    }
 
    if (addr <= VG_(valgrind_last)) {
-      ret = VG_(do_syscall)(__NR_munmap, addr, (VG_(valgrind_last) - addr) + 1);
+      ret = VG_(do_syscall2)(__NR_munmap, addr, (VG_(valgrind_last) - addr) + 1);
    }
 
    return;

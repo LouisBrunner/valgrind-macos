@@ -446,7 +446,7 @@ PRE(sys_io_setup, Special)
    VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_EXEC, SF_FIXED);
    
    VG_(pad_address_space)();
-   SET_RESULT( VG_(do_syscall)(SYSNO, ARG1, ARG2) );
+   SET_RESULT( VG_(do_syscall2)(SYSNO, ARG1, ARG2) );
    VG_(unpad_address_space)();
 
    if (RES == 0) {
@@ -483,7 +483,7 @@ PRE(sys_io_destroy, Special)
    size = PGROUNDUP(sizeof(struct vki_aio_ring) + 
                     r->nr*sizeof(struct vki_io_event));
 
-   SET_RESULT( VG_(do_syscall)(SYSNO, ARG1) );
+   SET_RESULT( VG_(do_syscall1)(SYSNO, ARG1) );
 
    if (RES == 0 && s != NULL && VG_(seg_contains)(s, ARG1, size)) { 
       VG_TRACK( die_mem_munmap, ARG1, size );

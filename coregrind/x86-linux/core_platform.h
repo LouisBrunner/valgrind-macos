@@ -102,7 +102,7 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
    __args[4] = (fd);                                                    \
    __args[5] = (offset);                                                \
                                                                         \
-   ret = VG_(do_syscall)(__NR_mmap, (UWord)(&(__args[0])) );            \
+   ret = VG_(do_syscall1)(__NR_mmap, (UWord)(&(__args[0])) );           \
 } while (0)
 
 #define PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do {\

@@ -266,8 +266,8 @@ void ensure_valgrind ( char* caller )
    if (status == 2) {
       const char msg[] = "Error: this libpthread.so should "
                          "only be run with Valgrind\n";
-      VG_(do_syscall)(__NR_write, 2, msg, sizeof(msg)-1);
-      VG_(do_syscall)(__NR_exit, 1);
+      VG_(do_syscall3)(__NR_write, 2, (UWord)msg, sizeof(msg)-1);
+      VG_(do_syscall1)(__NR_exit, 1);
    }
    
    status = (RUNNING_ON_VALGRIND) ? 1 : 2;

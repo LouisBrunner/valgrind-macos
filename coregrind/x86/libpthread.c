@@ -151,7 +151,7 @@ void VGA_(thread_wrapper)(ThreadArchAux *aux)
       ldt_info.reserved = 0;
       
       /* Install the thread area */
-      VG_(do_syscall)(__NR_set_thread_area, &ldt_info);
+      VG_(do_syscall1)(__NR_set_thread_area, (UWord)&ldt_info);
       
       /* Setup the GS segment register */
       set_gs(ldt_info.entry_number * 8 + 3);

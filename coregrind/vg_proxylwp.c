@@ -794,9 +794,11 @@ void VG_(proxy_abort_syscall)(ThreadId tid)
    vg_assert(tst->status == VgTs_Runnable);
 }
 
-static Int do_futex(void *addr, Int op, Int val, struct vki_timespec *time, void *addr2)
+static Int do_futex(void *addr, Int op, Int val, struct vki_timespec *time,
+                    void *addr2)
 {
-   return VG_(do_syscall)(__NR_futex, addr, op, val, time, addr2);
+   return VG_(do_syscall5)(__NR_futex, (UWord)addr, op, val, (UWord)time,
+                                       (UWord)addr2);
 }
 
 static Int have_settid = -1;	/* -1 -> unknown */

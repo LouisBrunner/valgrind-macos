@@ -164,7 +164,7 @@ PRE(sys_clone, Special)
      || ARG1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
    {
       VGA_(gen_sys_fork_before)(tid, tst);
-      SET_RESULT( VG_(do_syscall)(SYSNO, ARG1, ARG2, ARG3, ARG4, ARG5) );
+      SET_RESULT( VG_(do_syscall5)(SYSNO, ARG1, ARG2, ARG3, ARG4, ARG5) );
       VGA_(gen_sys_fork_after) (tid, tst);
    } else {
       VG_(unimplemented)
@@ -290,7 +290,8 @@ static
 UInt get_shm_size ( Int shmid )
 {
    struct vki_shmid_ds buf;
-   long __res = VG_(do_syscall)(__NR_ipc, 24 /* IPCOP_shmctl */, shmid, VKI_IPC_STAT, 0, &buf);
+   long __res = VG_(do_syscall5)(__NR_ipc, 24 /* IPCOP_shmctl */, shmid,
+                                 VKI_IPC_STAT, 0, &buf);
     if ( VG_(is_kerror) ( __res ) )
        return 0;
  
@@ -306,7 +307,8 @@ UInt get_sem_count( Int semid )
 
   arg.buf = &buf;
   
-  res = VG_(do_syscall)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0, VKI_IPC_STAT, &arg);
+  res = VG_(do_syscall5)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0,
+                         VKI_IPC_STAT, &arg);
   if ( VG_(is_kerror)(res) )
     return 0;
 

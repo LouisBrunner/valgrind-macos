@@ -35,7 +35,8 @@
 	Perform a Linux syscall with int 0x80
 	
 	Syscall args are passed on the stack
-	Int VG_(do_syscall)(Int syscall_no, ...)
+	Int VG_(do_syscall)(Int syscall_no, UWord a1, UWord a2, UWord a3,
+					    UWord a4, UWord a5, UWord a6)
 
 	This has no effect on the virtual machine; the expectation is
 	that the syscall mechanism makes no useful changes to any

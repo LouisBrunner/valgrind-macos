@@ -268,8 +268,8 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
       /* we've nailed down the location */
       flags |=  VKI_MREMAP_FIXED|VKI_MREMAP_MAYMOVE;
 
-      ret = VG_(do_syscall)(__NR_mremap, old_addr, old_size, new_size, 
-			    flags, new_addr);
+      ret = VG_(do_syscall5)(__NR_mremap, old_addr, old_size, new_size, 
+			     flags, new_addr);
 
       if (ret != new_addr) {
 	 vg_assert(VG_(is_kerror)(ret));
@@ -308,8 +308,8 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
 	    VG_(printf)("mremap: old_addr=%p old_size=%d new_size=%d flags=%d\n",
 			old_addr, old_size, new_size, flags);
 
-	 ret = VG_(do_syscall)(__NR_mremap, old_addr, old_size, new_size, 
-			       flags, 0);
+	 ret = VG_(do_syscall5)(__NR_mremap, old_addr, old_size, new_size, 
+			        flags, 0);
 
 	 if (ret != old_addr)
 	    return ret;
@@ -1653,7 +1653,7 @@ PRE(sys_execve, Special)
    /* restore the DATA rlimit for the child */
    VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
 
-   SET_RESULT( VG_(do_syscall)(__NR_execve, ARG1, ARG2, ARG3) );
+   SET_RESULT( VG_(do_syscall3)(__NR_execve, ARG1, ARG2, ARG3) );
 
    /* If we got here, then the execve failed.  We've already made too much of a mess
       of ourselves to continue, so we have to abort. */
@@ -3934,7 +3934,7 @@ PRE(sys_readlink, Special)
     * /proc/<pid>/exe.
     */
 
-   SET_RESULT( VG_(do_syscall)(saved, ARG1, ARG2, ARG3));
+   SET_RESULT( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
    if ((Int)RES == -2) {
       char name[25];
 
@@ -3943,7 +3943,7 @@ PRE(sys_readlink, Special)
       if (VG_(strcmp)((Char *)ARG1, name) == 0 ||
           VG_(strcmp)((Char *)ARG1, "/proc/self/exe") == 0) {
          VG_(sprintf)(name, "/proc/self/fd/%d", VG_(clexecfd));
-         SET_RESULT( VG_(do_syscall)(saved, name, ARG2, ARG3));
+         SET_RESULT( VG_(do_syscall3)(saved, (UWord)name, ARG2, ARG3));
       }
    }
 
@@ -5329,7 +5329,7 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	 VG_(sys_issue)(tid);
       } else {
 	 /* run the syscall directly */
-	 RES = VG_(do_syscall)(syscallno, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+	 RES = VG_(do_syscall6)(syscallno, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
          PRINT(" --> %lld (0x%llx)\n", (Long)(Word)RES, (ULong)RES);
 	 syscall_done = True;
       }

@@ -204,7 +204,7 @@ Bool VGA_(setup_pointercheck)(void)
       0,                         // ! seg not present
       1,                         // useable
    };
-   int ret = VG_(do_syscall)(__NR_modify_ldt, 1, &ldt, sizeof(ldt));
+   int ret = VG_(do_syscall3)(__NR_modify_ldt, 1, (UWord)&ldt, sizeof(ldt));
    if (ret < 0) {
       VG_(message)(Vg_UserMsg,
                    "Warning: ignoring --pointercheck=yes, "

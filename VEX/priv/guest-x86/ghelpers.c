@@ -1839,34 +1839,34 @@ static inline UChar qnarrow16Uto8 ( UShort xx0 )
    return (UChar)xx;
 }
 
-static inline UShort shl16 ( UShort v, UShort n )
+static inline UShort shl16 ( UShort v, ULong n )
 {
    return n > 15 ? 0 : v << n;
 }
 
-static inline UShort shr16U ( UShort v, UShort n )
+static inline UShort shr16U ( UShort v, ULong n )
 {
    return n > 15 ? 0 : (((UShort)v) >> n);
 }
 
-static inline UShort shr16S ( UShort v, UShort n )
+static inline UShort shr16S ( UShort v, ULong n )
 {
    if (n <= 15) 
       return ((Short)v) >> n;
    return (v & 0x8000) ? 0xFFFF : 0;
 }
 
-static inline UInt shl32 ( UInt v, UInt n )
+static inline UInt shl32 ( UInt v, ULong n )
 {
    return n > 31 ? 0 : v << n;
 }
 
-static inline UInt shr32U ( UInt v, UInt n )
+static inline UInt shr32U ( UInt v, ULong n )
 {
    return n > 31 ? 0 : (((UInt)v) >> n);
 }
 
-static inline UInt shr32S ( UInt v, UInt n )
+static inline UInt shr32S ( UInt v, ULong n )
 {
    if (n <= 31) 
       return ((Int)v) >> n;

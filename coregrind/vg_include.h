@@ -137,9 +137,9 @@
 /* Max number of callers for context in a suppression. */
 #define VG_N_SUPP_CALLERS  4
 
-/* Valgrind's stack sizes */
-#define VG_STACK_SIZE       10000
-#define VG_SIGSTACK_SIZE    10000
+/* Valgrind's stack sizes, in words */
+#define VG_STACK_SIZE_W       10000
+#define VG_SIGSTACK_SIZE_W    10000
 
 
 /* ---------------------------------------------------------------------
@@ -1305,13 +1305,13 @@ extern void VG_(unimplemented) ( Char* msg )
 
 /* The stack on which Valgrind runs.  We can't use the same stack as the
    simulatee -- that's an important design decision.  */
-extern UInt VG_(stack)[VG_STACK_SIZE];
+extern UInt VG_(stack)[VG_STACK_SIZE_W];
 
 /* Similarly, we have to ask for signals to be delivered on an alternative
    stack, since it is possible, although unlikely, that we'll have to run
    client code from inside the Valgrind-installed signal handler.  If this
    happens it will be done by vg_deliver_signal_immediately(). */
-extern UInt VG_(sigstack)[VG_SIGSTACK_SIZE];
+extern UInt VG_(sigstack)[VG_SIGSTACK_SIZE_W];
 
 /* Holds client's %esp at the point we gained control.  From this the
    client's argc, argv and envp are deduced. */

@@ -153,7 +153,9 @@ static IRExpr* bind ( Int binder )
               IRTemps.  It holds the identity of a second
               32-bit virtual HReg, which holds the high half
               of the value.
- 
+
+    - A copy of the link reg, so helper functions don't kill it.
+
     - The code array, that is, the insns selected so far.
  
     - A counter, for generating new virtual registers.
@@ -173,6 +175,8 @@ typedef
       HReg*        vregmapHI;
       Int          n_vregmap;
  
+      HReg         savedLR;
+
       HInstrArray* code;
  
       Int          vreg_ctr;
@@ -3354,6 +3358,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          vpanic("isel_ppc32: Ist_Exit: dst is not a 32-bit value");
       dst = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
       cc  = iselCondCode(env,stmt->Ist.Exit.guard);
+      addInstr(env, PPC32Instr_RdWrLR(True, env->savedLR));
       addInstr(env, PPC32Instr_Goto(stmt->Ist.Exit.jk, cc, dst));
       return;
    }
@@ -3382,6 +3387,7 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
    }
    cond = mk_PPCCondCode( Pct_ALWAYS,  Pcf_EQ );
    ri = iselIntExpr_RI(env, next);
+   addInstr(env, PPC32Instr_RdWrLR(True, env->savedLR));
    addInstr(env, PPC32Instr_Goto(jk, cond, ri));
 }
 
@@ -3443,6 +3449,10 @@ HInstrArray* iselBB_PPC32 ( IRBB* bb, VexSubArch subarch_host )
       env->vregmapHI[i] = hregHI;
    }
    env->vreg_ctr = j;
+
+   /* Keep a copy of the link reg, so helper functions don't kill it. */
+   env->savedLR = newVRegI(env);
+   addInstr(env, PPC32Instr_RdWrLR(False, env->savedLR));
 
    /* Ok, finally we can iterate over the statements. */
    for (i = 0; i < bb->stmts_used; i++)

@@ -679,6 +679,16 @@ PPC32Instr* PPC32Instr_MFence ( void )
 //..    return i;
 //.. }
 
+/* Read/Write Link Register */
+PPC32Instr* PPC32Instr_RdWrLR ( Bool wrLR, HReg gpr )
+{
+   PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
+   i->tag             = Pin_RdWrLR;
+   i->Pin.RdWrLR.wrLR = wrLR;
+   i->Pin.RdWrLR.gpr  = gpr;
+   return i;
+}
+
 void ppPPC32Instr ( PPC32Instr* i )
 {
    switch (i->tag) {
@@ -1021,6 +1031,11 @@ void ppPPC32Instr ( PPC32Instr* i )
 //..          ppHRegX86(i->Xin.SseShuf.dst);
 //..          return;
 
+   case Pin_RdWrLR:
+      vex_printf("%s ", i->Pin.RdWrLR.wrLR ? "mtlr" : "mflr");
+      ppHRegPPC32(i->Pin.RdWrLR.gpr);
+      return;
+
    default:
       vex_printf("\nppPPC32Instr(ppc32): No such tag(%d)\n", i->tag);
       vpanic("ppPPC32Instr(ppc32)");
@@ -1250,6 +1265,12 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
 //..          addHRegUse(u, HRmRead,  i->Xin.SseShuf.src);
 //..          addHRegUse(u, HRmWrite, i->Xin.SseShuf.dst);
 //..          return;
+
+   case Pin_RdWrLR:
+      addHRegUse(u, (i->Pin.RdWrLR.wrLR ? HRmRead : HRmWrite),
+                 i->Pin.RdWrLR.gpr);
+      return;
+
    default:
       ppPPC32Instr(i);
       vpanic("getRegUsage_PPC32Instr");
@@ -1400,6 +1421,11 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
 //..          mapReg(m, &i->Xin.SseShuf.src);
 //..          mapReg(m, &i->Xin.SseShuf.dst);
 //..          return;
+
+   case Pin_RdWrLR:
+      mapReg(m, &i->Pin.RdWrLR.gpr);
+      return;
+
    default:
       ppPPC32Instr(i);
       vpanic("mapRegs_PPC32Instr");
@@ -2811,6 +2837,13 @@ Int emit_PPC32Instr ( UChar* buf, Int nbuf, PPC32Instr* i )
 //..                        fake(vregNo(i->Xin.SseShuf.src)) );
 //..       *p++ = (UChar)(i->Xin.SseShuf.order);
 //..       goto done;
+
+   case Pin_RdWrLR: {
+      UInt reg = iregNo(i->Pin.RdWrLR.gpr);
+      /* wrLR==True ? mtlr r4 : mflr r4 */
+      p = mkFormXFX(p, reg, 8, (i->Pin.RdWrLR.wrLR==True) ? 467 : 339);
+      goto done;
+   }
 
    default: 
       goto bad;

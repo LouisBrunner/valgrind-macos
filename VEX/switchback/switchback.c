@@ -301,7 +301,7 @@ void switchback ( void )
    sb_helper2 = LibVEX_GuestPPC32_get_flags(&gst);
 
    /* stay sane ... */
-   assert(p[0] == 24<<26);
+   assert(p[0] == 24<<26); /* nop */
 
 #if 0
    printf("addr of first nop = 0x%x\n", addr_of_nop);
@@ -666,6 +666,7 @@ int main ( Int argc, HChar** argv )
    LibVEX_default_VexControl(&vcon);
    vcon.guest_max_insns=1;
    vcon.guest_chase_thresh=0;
+//   vcon.iropt_level=2;
 
    LibVEX_Init( failure_exit, log_bytes, 1, False, &vcon );
    LibVEX_Guest_initialise(&gst);

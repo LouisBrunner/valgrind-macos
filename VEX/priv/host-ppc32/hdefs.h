@@ -334,7 +334,8 @@ typedef
 //..       Xin_FpLdStCW,  /* fldcw / fstcw */
 //..       Xin_FpStSW_AX, /* fstsw %ax */
 //..       Xin_FpCmp,     /* FP compare, generating a C320 value into int reg */
-      Pin_Nada // Nix
+
+      Pin_RdWrLR     /* Read/Write Link Register */
    }
    PPC32InstrTag;
 
@@ -506,6 +507,11 @@ typedef
 //..             HReg    dst;
 //..          } FpCmp;
 
+         /* Read/Write Link Register */
+         struct {
+            Bool wrLR;
+            HReg gpr;
+         } RdWrLR;
        } Pin;
    }
    PPC32Instr;
@@ -538,6 +544,8 @@ extern PPC32Instr* PPC32Instr_MFence    ( void );
 //.. extern X86Instr* X86Instr_FpLdStCW  ( Bool isLoad, X86AMode* );
 //.. extern X86Instr* X86Instr_FpStSW_AX ( void );
 //.. extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
+
+extern PPC32Instr* PPC32Instr_RdWrLR ( Bool wrLR, HReg gpr );
 
 
 extern void ppPPC32Instr ( PPC32Instr* );

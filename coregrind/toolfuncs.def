@@ -7,8 +7,8 @@
 #
 # Lines starting with : set the prefix
 
-## These are the parameterised functions in the core.  The default definitions
-## are overridden by LD_PRELOADed tool version.  At the very least, a tool
+## These are the parameterised functions in the core.  Some/all default 
+## definitions are overridden by the tool version.  At the very least, a tool
 ## must define the fundamental template functions.  Depending on what needs
 ## are set, extra template functions will be used too.  Functions are
 ## grouped under the needs that govern their use.
@@ -23,7 +23,6 @@ void,		post_clo_init
 ## Instrument a basic block.  Must be a true function, ie. the same input
 ## always results in the same output, because basic blocks can be
 ## retranslated.  Unless you're doing something really strange...
-## 'orig_addr' is the address of the first instruction in the block.
 IRBB*,  instrument,  IRBB* bb,  VexGuestLayout* layout,  IRType hWordTy
 
 ## Finish up, print out any results, etc.  `exitcode' is program's exit

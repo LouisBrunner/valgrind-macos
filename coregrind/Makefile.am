@@ -58,8 +58,8 @@ valgrind_so_SOURCES = \
 	vg_signals.c \
 	vg_startup.S \
 	vg_symtab2.c \
-	vg_symtab_dwarf.c \
-	vg_symtab_stabs.c \
+	vg_dwarf.c \
+	vg_stabs.c \
 	vg_symtypes.c \
 	vg_syscalls.c \
 	vg_syscall.S \

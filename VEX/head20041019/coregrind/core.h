@@ -1481,7 +1481,7 @@ extern void VG_(missing_tool_func) ( const Char* fn );
    startup time, are given values denoting offsets into baseBlock.
    These offsets are in *words* from the start of baseBlock. */
 
-#define VG_BASEBLOCK_WORDS 220 /* 206 */
+#define VG_BASEBLOCK_WORDS 288
 
 extern UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 

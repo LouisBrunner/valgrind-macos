@@ -177,7 +177,7 @@ extern void LibVEX_ShowStats ( void );
    On entry, the baseblock pointer register must be 8-aligned.
 */
 
-#define LibVEX_N_SPILL_BYTES 512
+#define LibVEX_N_SPILL_BYTES 768
 
 
 #endif /* ndef __LIBVEX_H */

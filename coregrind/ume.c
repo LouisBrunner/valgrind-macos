@@ -248,36 +248,35 @@ struct elfinfo *readelf(int fd, const char *filename)
    e->fd = fd;
 
    if (pread(fd, &e->e, sizeof(e->e), 0) != sizeof(e->e)) {
-      fprintf(stderr, "%s: can't read elf header: %s\n", 
+      fprintf(stderr, "valgrind: %s: can't read elf header: %s\n", 
 	      filename, strerror(errno));
       return NULL;
    }
 
    if (memcmp(&e->e.e_ident[0], ELFMAG, SELFMAG) != 0) {
-      fprintf(stderr, "%s: bad ELF magic\n",
-	      filename);
+      fprintf(stderr, "valgrind: %s: bad ELF magic\n", filename);
       return NULL;
    }
    if (e->e.e_ident[EI_CLASS] != ELFCLASS32) {
-      fprintf(stderr, "Can only handle 32-bit executables\n");
+      fprintf(stderr, "valgrind: Can only handle 32-bit executables\n");
       return NULL;
    }
    if (e->e.e_ident[EI_DATA] != ELFDATA2LSB) {
-      fprintf(stderr, "Expecting little-endian\n");
+      fprintf(stderr, "valgrind: Expecting little-endian\n");
       return NULL;
    }
    if (!(e->e.e_type == ET_EXEC || e->e.e_type == ET_DYN)) {
-      fprintf(stderr, "need executable\n");
+      fprintf(stderr, "valgrind: need executable\n");
       return NULL;
    }
 
    if (e->e.e_machine != EM_386) {
-      fprintf(stderr, "need x86\n");
+      fprintf(stderr, "valgrind: need x86\n");
       return NULL;
    }
 
    if (e->e.e_phentsize != sizeof(ESZ(Phdr))) {
-      fprintf(stderr, "sizeof Phdr wrong\n");
+      fprintf(stderr, "valgrind: sizeof Phdr wrong\n");
       return NULL;
    }
 
@@ -286,7 +285,7 @@ struct elfinfo *readelf(int fd, const char *filename)
    assert(e->p);
 
    if (pread(fd, e->p, phsz, e->e.e_phoff) != phsz) {
-      fprintf(stderr, "can't read phdr: %s\n", strerror(errno));
+      fprintf(stderr, "valgrind: can't read phdr: %s\n", strerror(errno));
       return NULL;
    }
 

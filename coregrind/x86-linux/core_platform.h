@@ -110,7 +110,7 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
 
 #define PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do {\
    UInt *arg_block = (UInt*)PLATFORM_SYSCALL_ARG1(tst->arch);   \
-   SYSCALL_TRACK( pre_mem_read, tst->tid, "mmap(args)", arg1, 6*sizeof(UWord) ); \
+   PRE_MEM_READ( "mmap(args)", arg1, 6*sizeof(UWord) );         \
    a1 = arg_block[0];                                           \
    a2 = arg_block[1];                                           \
    a3 = arg_block[2];                                           \

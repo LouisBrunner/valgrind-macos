@@ -49,16 +49,16 @@ Removing the debug printing clutter, it looks like this:
   PRE(time)
   {
      /* time_t time(time_t *t); */
-     MAYBE_PRINTF("time ( %p )\n",arg1);
-     if (arg1 != (UInt)NULL) {
-        SYSCALL_TRACK( pre_mem_write, tid, "time", arg1, sizeof(time_t) );
+     PRINT("time ( %p )",arg1);
+     if (arg1 != (UWord)NULL) {
+        PRE_MEM_WRITE( "time", arg1, sizeof(time_t) );
      }
   }
 
   POST(time)
   {  
-     if (arg1 != (UInt)NULL) {
-        VG_TRACK( post_mem_write, arg1, sizeof(time_t) );
+     if (arg1 != (UWord)NULL) {
+        POST_MEM_WRITE( arg1, sizeof(vki_time_t) );
      }
   }
 
@@ -66,8 +66,8 @@ The first thing we do happens before the syscall occurs, in the PRE() function:
 if a non-NULL buffer is passed in as the argument, tell the tool that the
 buffer is about to be written to:
 
-     if (arg1 != (UInt)NULL) {
-        SYSCALL_TRACK( pre_mem_write, tst, "time", arg1, sizeof(time_t) );
+     if (arg1 != (UWord)NULL) {
+        PRE_MEM_WRITE( "time", arg1, sizeof(vki_time_t) );
      }
 
 Finally, the really important bit, after the syscall occurs, in the POST()
@@ -75,7 +75,7 @@ function:  if, and only if, the system call was successful, tell the tool that
 the memory was written:
 
      if (arg1 != (UInt)NULL) {
-        VG_TRACK( post_mem_write, arg1, sizeof(time_t) );
+        POST_MEM_WRITE( arg1, sizeof(vki_time_t) );
      }
 
 The POST() function won't be called if the syscall failed, so you
@@ -84,6 +84,11 @@ don't need to worry about checking that in the POST() function.
 they "fail" - for example, nanosleep returns the amount of unslept
 time if interrupted. TODO: add another per-syscall flag for this
 case.)
+
+Note that we use the type 'vki_time_t'.  This is a copy of the kernel
+type, with 'vki_' prefixed.  Our copies of such types are kept in the
+appropriate vki*.h file(s).  We don't include kernel headers or glibc headers
+directly.
 
 
 Writing your own syscall wrappers (see below for ioctl wrappers)
@@ -97,6 +102,7 @@ following:
 
     This should tell you something like  __NR_mysyscallname.
     Copy this entry to coregrind/$(VG_PLATFORM)/vki_unistd.h.
+
 
 2.  Do 'man 2 mysyscallname' to get some idea of what the syscall
     does.  Note that the actual kernel interface can differ from this,
@@ -112,13 +118,13 @@ following:
     coregrind/vg_syscalls.c.  For each in-memory parameter which is 
     read or written by the syscall, do one of
     
-      SYSCALL_TRACK( pre_mem_read, ... )
-      SYSCALL_TRACK( pre_mem_read_asciiz, ... ) 
-      SYSCALL_TRACK( pre_mem_write, ... ) 
+      PRE_MEM_READ( ... )
+      PRE_MEM_RASCIIZ( ... ) 
+      PRE_MEM_WRITE( ... ) 
       
     for  that parameter.  Then do the syscall.  Then, if the syscall
-    succeeds, issue suitable VG_TRACK( post_mem_write, ... ) calls.
-    (There's no need for post_mem_read calls.)
+    succeeds, issue suitable POST_MEM_WRITE( ... ) calls.
+    (There's no need for POST_MEM_READ calls.)
 
     Also, add it to the sys_info[] array; use SYSBA if it requires a
     PRE() and POST() function, and SYSB_ if it only requires a PRE()
@@ -137,7 +143,7 @@ following:
 
     Test it.
 
-    Note that a common error is to call VG_TRACK( post_mem_write, ... )
+    Note that a common error is to call POST_MEM_WRITE( ... )
     with 0 (NULL) as the first (address) argument.  This usually means
     your logic is slightly inadequate.  It's a sufficiently common bug
     that there's a built-in check for it, and you'll get a "probably

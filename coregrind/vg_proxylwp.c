@@ -1014,15 +1014,16 @@ static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype,
 	 case PX_SetSigmask:
 	    /* Don't need to do anything */
 	    if (VG_(clo_trace_signals) || VG_(clo_trace_syscalls))
-	       VG_(message)(Vg_DebugMsg, "sys_wait_results: got PX_SetSigmask for TID %d",
+	       VG_(printf)("sys_wait_results: got PX_SetSigmask for TID %d\n",
 			    res.tid);
 	    break;
 
 	 case PX_RunSyscall:
 	    if (VG_(clo_trace_syscalls))
-	       VG_(message)(Vg_DebugMsg, "sys_wait_results: got PX_RunSyscall for TID %d: syscall %d result %lld",
-			    res.tid, tst->syscallno,
-                            (ULong)PLATFORM_SYSCALL_RET(tst->arch));
+	       VG_(printf)("sys_wait_results: got PX_RunSyscall for SYSCALL[%d,%d](%3d) --> %lld (%llx)\n",
+			   VG_(getpid)(), res.tid, tst->syscallno,
+                            (Long)(Word)PLATFORM_SYSCALL_RET(tst->arch),
+                           (ULong)PLATFORM_SYSCALL_RET(tst->arch));
 
 	    if (tst->status != VgTs_WaitSys)
 	       VG_(printf)("tid %d in status %d\n",
@@ -1055,8 +1056,8 @@ static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype,
             }
 
             if (VG_(clo_trace_signals) || VG_(clo_trace_syscalls))
-	       VG_(message)(Vg_DebugMsg, "sys_wait_results: got PX_Signal for TID %d, signal %d",
-			    res.tid, res.u.siginfo.si_signo);
+	       VG_(printf)("sys_wait_results: got PX_Signal for TID %d, signal %d\n",
+			   res.tid, res.u.siginfo.si_signo);
 
 	    vg_assert(res.u.siginfo.si_signo != 0);
 	    if (VG_(threads)[res.tid].proxy && 

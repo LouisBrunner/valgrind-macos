@@ -77,15 +77,23 @@ void ppHRegAMD64 ( HReg reg )
    }
 }
 
-//.. HReg hregAMD64_EAX ( void ) { return mkHReg(0, HRcInt32, False); }
-HReg hregAMD64_RCX ( void ) { return mkHReg(1, HRcInt64, False); }
-//.. HReg hregAMD64_EDX ( void ) { return mkHReg(2, HRcInt32, False); }
-//.. HReg hregAMD64_EBX ( void ) { return mkHReg(3, HRcInt32, False); }
-//.. HReg hregAMD64_ESP ( void ) { return mkHReg(4, HRcInt32, False); }
-HReg hregAMD64_RBP ( void ) { return mkHReg(5, HRcInt64, False); }
-//.. HReg hregAMD64_ESI ( void ) { return mkHReg(6, HRcInt32, False); }
-//.. HReg hregAMD64_EDI ( void ) { return mkHReg(7, HRcInt32, False); }
-//.. 
+HReg hregAMD64_RAX ( void ) { return mkHReg( 0, HRcInt64, False); }
+HReg hregAMD64_RCX ( void ) { return mkHReg( 1, HRcInt64, False); }
+HReg hregAMD64_RDX ( void ) { return mkHReg( 2, HRcInt64, False); }
+HReg hregAMD64_RBX ( void ) { return mkHReg( 3, HRcInt64, False); }
+HReg hregAMD64_RSP ( void ) { return mkHReg( 4, HRcInt64, False); }
+HReg hregAMD64_RBP ( void ) { return mkHReg( 5, HRcInt64, False); }
+HReg hregAMD64_RSI ( void ) { return mkHReg( 6, HRcInt64, False); }
+HReg hregAMD64_RDI ( void ) { return mkHReg( 7, HRcInt64, False); }
+HReg hregAMD64_R8  ( void ) { return mkHReg( 8, HRcInt64, False); }
+HReg hregAMD64_R9  ( void ) { return mkHReg( 9, HRcInt64, False); }
+HReg hregAMD64_R10 ( void ) { return mkHReg(10, HRcInt64, False); }
+HReg hregAMD64_R11 ( void ) { return mkHReg(11, HRcInt64, False); }
+HReg hregAMD64_R12 ( void ) { return mkHReg(12, HRcInt64, False); }
+HReg hregAMD64_R13 ( void ) { return mkHReg(13, HRcInt64, False); }
+HReg hregAMD64_R14 ( void ) { return mkHReg(14, HRcInt64, False); }
+HReg hregAMD64_R15 ( void ) { return mkHReg(15, HRcInt64, False); }
+
 //.. HReg hregAMD64_FAKE0 ( void ) { return mkHReg(0, HRcFlt64, False); }
 //.. HReg hregAMD64_FAKE1 ( void ) { return mkHReg(1, HRcFlt64, False); }
 //.. HReg hregAMD64_FAKE2 ( void ) { return mkHReg(2, HRcFlt64, False); }
@@ -93,68 +101,94 @@ HReg hregAMD64_RBP ( void ) { return mkHReg(5, HRcInt64, False); }
 //.. HReg hregAMD64_FAKE4 ( void ) { return mkHReg(4, HRcFlt64, False); }
 //.. HReg hregAMD64_FAKE5 ( void ) { return mkHReg(5, HRcFlt64, False); }
 //.. 
-//.. HReg hregAMD64_XMM0 ( void ) { return mkHReg(0, HRcVec128, False); }
-//.. HReg hregAMD64_XMM1 ( void ) { return mkHReg(1, HRcVec128, False); }
-//.. HReg hregAMD64_XMM2 ( void ) { return mkHReg(2, HRcVec128, False); }
-//.. HReg hregAMD64_XMM3 ( void ) { return mkHReg(3, HRcVec128, False); }
-//.. HReg hregAMD64_XMM4 ( void ) { return mkHReg(4, HRcVec128, False); }
-//.. HReg hregAMD64_XMM5 ( void ) { return mkHReg(5, HRcVec128, False); }
-//.. HReg hregAMD64_XMM6 ( void ) { return mkHReg(6, HRcVec128, False); }
-//.. HReg hregAMD64_XMM7 ( void ) { return mkHReg(7, HRcVec128, False); }
+HReg hregAMD64_XMM0  ( void ) { return mkHReg( 0, HRcVec128, False); }
+HReg hregAMD64_XMM1  ( void ) { return mkHReg( 1, HRcVec128, False); }
+HReg hregAMD64_XMM2  ( void ) { return mkHReg( 2, HRcVec128, False); }
+HReg hregAMD64_XMM3  ( void ) { return mkHReg( 3, HRcVec128, False); }
+HReg hregAMD64_XMM4  ( void ) { return mkHReg( 4, HRcVec128, False); }
+HReg hregAMD64_XMM5  ( void ) { return mkHReg( 5, HRcVec128, False); }
+HReg hregAMD64_XMM6  ( void ) { return mkHReg( 6, HRcVec128, False); }
+HReg hregAMD64_XMM7  ( void ) { return mkHReg( 7, HRcVec128, False); }
+HReg hregAMD64_XMM8  ( void ) { return mkHReg( 8, HRcVec128, False); }
+HReg hregAMD64_XMM9  ( void ) { return mkHReg( 9, HRcVec128, False); }
+HReg hregAMD64_XMM10 ( void ) { return mkHReg(10, HRcVec128, False); }
+HReg hregAMD64_XMM11 ( void ) { return mkHReg(11, HRcVec128, False); }
+HReg hregAMD64_XMM12 ( void ) { return mkHReg(12, HRcVec128, False); }
+HReg hregAMD64_XMM13 ( void ) { return mkHReg(13, HRcVec128, False); }
+HReg hregAMD64_XMM14 ( void ) { return mkHReg(14, HRcVec128, False); }
+HReg hregAMD64_XMM15 ( void ) { return mkHReg(15, HRcVec128, False); }
 
 
 void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
-{ *nregs= 0; *arr=NULL;
-//..    *nregs = 20;
-//..    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
-//..    (*arr)[0] = hregAMD64_EAX();
-//..    (*arr)[1] = hregAMD64_EBX();
-//..    (*arr)[2] = hregAMD64_ECX();
-//..    (*arr)[3] = hregAMD64_EDX();
-//..    (*arr)[4] = hregAMD64_ESI();
-//..    (*arr)[5] = hregAMD64_EDI();
-//..    (*arr)[6] = hregAMD64_FAKE0();
-//..    (*arr)[7] = hregAMD64_FAKE1();
-//..    (*arr)[8] = hregAMD64_FAKE2();
-//..    (*arr)[9] = hregAMD64_FAKE3();
-//..    (*arr)[10] = hregAMD64_FAKE4();
-//..    (*arr)[11] = hregAMD64_FAKE5();
-//..    (*arr)[12] = hregAMD64_XMM0();
-//..    (*arr)[13] = hregAMD64_XMM1();
-//..    (*arr)[14] = hregAMD64_XMM2();
-//..    (*arr)[15] = hregAMD64_XMM3();
-//..    (*arr)[16] = hregAMD64_XMM4();
-//..    (*arr)[17] = hregAMD64_XMM5();
-//..    (*arr)[18] = hregAMD64_XMM6();
-//..    (*arr)[19] = hregAMD64_XMM7();
+{
+   *nregs = 30;
+   *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
+
+   (*arr)[ 0] = hregAMD64_RAX();
+   (*arr)[ 1] = hregAMD64_RBX();
+   (*arr)[ 2] = hregAMD64_RCX();
+   (*arr)[ 3] = hregAMD64_RDX();
+   (*arr)[ 4] = hregAMD64_RSI();
+   (*arr)[ 5] = hregAMD64_RDI();
+   (*arr)[ 6] = hregAMD64_R8();
+   (*arr)[ 7] = hregAMD64_R9();
+   (*arr)[ 8] = hregAMD64_R10();
+   (*arr)[ 9] = hregAMD64_R11();
+   (*arr)[10] = hregAMD64_R12();
+   (*arr)[11] = hregAMD64_R13();
+   (*arr)[12] = hregAMD64_R14();
+   (*arr)[13] = hregAMD64_R15();
+
+   //   (*arr)[6] = hregAMD64_FAKE0();
+   //(*arr)[7] = hregAMD64_FAKE1();
+   //(*arr)[8] = hregAMD64_FAKE2();
+   //(*arr)[9] = hregAMD64_FAKE3();
+   //(*arr)[10] = hregAMD64_FAKE4();
+   //(*arr)[11] = hregAMD64_FAKE5();
+   (*arr)[14] = hregAMD64_XMM0();
+   (*arr)[15] = hregAMD64_XMM1();
+   (*arr)[16] = hregAMD64_XMM2();
+   (*arr)[17] = hregAMD64_XMM3();
+   (*arr)[18] = hregAMD64_XMM4();
+   (*arr)[19] = hregAMD64_XMM5();
+   (*arr)[20] = hregAMD64_XMM6();
+   (*arr)[21] = hregAMD64_XMM7();
+   (*arr)[22] = hregAMD64_XMM8();
+   (*arr)[23] = hregAMD64_XMM9();
+   (*arr)[24] = hregAMD64_XMM10();
+   (*arr)[25] = hregAMD64_XMM11();
+   (*arr)[26] = hregAMD64_XMM12();
+   (*arr)[27] = hregAMD64_XMM13();
+   (*arr)[28] = hregAMD64_XMM14();
+   (*arr)[29] = hregAMD64_XMM15();
 }
 
 
-//.. /* --------- Condition codes, Intel encoding. --------- */
-//.. 
-//.. HChar* showAMD64CondCode ( AMD64CondCode cond )
-//.. {
-//..    switch (cond) {
-//..       case Xcc_O:      return "o";
-//..       case Xcc_NO:     return "no";
-//..       case Xcc_B:      return "b";
-//..       case Xcc_NB:     return "nb";
-//..       case Xcc_Z:      return "z";
-//..       case Xcc_NZ:     return "nz";
-//..       case Xcc_BE:     return "be";
-//..       case Xcc_NBE:    return "nbe";
-//..       case Xcc_S:      return "s";
-//..       case Xcc_NS:     return "ns";
-//..       case Xcc_P:      return "p";
-//..       case Xcc_NP:     return "np";
-//..       case Xcc_L:      return "l";
-//..       case Xcc_NL:     return "nl";
-//..       case Xcc_LE:     return "le";
-//..       case Xcc_NLE:    return "nle";
-//..       case Xcc_ALWAYS: return "ALWAYS";
-//..       default: vpanic("ppAMD64CondCode");
-//..    }
-//.. }
+/* --------- Condition codes, Intel encoding. --------- */
+
+HChar* showAMD64CondCode ( AMD64CondCode cond )
+{
+   switch (cond) {
+      case Acc_O:      return "o";
+      case Acc_NO:     return "no";
+      case Acc_B:      return "b";
+      case Acc_NB:     return "nb";
+      case Acc_Z:      return "z";
+      case Acc_NZ:     return "nz";
+      case Acc_BE:     return "be";
+      case Acc_NBE:    return "nbe";
+      case Acc_S:      return "s";
+      case Acc_NS:     return "ns";
+      case Acc_P:      return "p";
+      case Acc_NP:     return "np";
+      case Acc_L:      return "l";
+      case Acc_NL:     return "nl";
+      case Acc_LE:     return "le";
+      case Acc_NLE:    return "nle";
+      case Acc_ALWAYS: return "ALWAYS";
+      default: vpanic("ppAMD64CondCode");
+   }
+}
 
 
 /* --------- AMD64AMode: memory address expressions. --------- */
@@ -211,33 +245,33 @@ void ppAMD64AMode ( AMD64AMode* am ) {
    }
 }
 
-//.. static void addRegUsage_AMD64AMode ( HRegUsage* u, AMD64AMode* am ) {
-//..    switch (am->tag) {
-//..       case Xam_IR: 
-//..          addHRegUse(u, HRmRead, am->Xam.IR.reg);
-//..          return;
-//..       case Xam_IRRS:
-//..          addHRegUse(u, HRmRead, am->Xam.IRRS.base);
-//..          addHRegUse(u, HRmRead, am->Xam.IRRS.index);
-//..          return;
-//..       default:
-//..          vpanic("addRegUsage_AMD64AMode");
-//..    }
-//.. }
-//.. 
-//.. static void mapRegs_AMD64AMode ( HRegRemap* m, AMD64AMode* am ) {
-//..    switch (am->tag) {
-//..       case Xam_IR: 
-//..          am->Xam.IR.reg = lookupHRegRemap(m, am->Xam.IR.reg);
-//..          return;
-//..       case Xam_IRRS:
-//..          am->Xam.IRRS.base = lookupHRegRemap(m, am->Xam.IRRS.base);
-//..          am->Xam.IRRS.index = lookupHRegRemap(m, am->Xam.IRRS.index);
-//..          return;
-//..       default:
-//..          vpanic("mapRegs_AMD64AMode");
-//..    }
-//.. }
+static void addRegUsage_AMD64AMode ( HRegUsage* u, AMD64AMode* am ) {
+   switch (am->tag) {
+      case Aam_IR: 
+         addHRegUse(u, HRmRead, am->Aam.IR.reg);
+         return;
+      case Aam_IRRS:
+         addHRegUse(u, HRmRead, am->Aam.IRRS.base);
+         addHRegUse(u, HRmRead, am->Aam.IRRS.index);
+         return;
+      default:
+         vpanic("addRegUsage_AMD64AMode");
+   }
+}
+
+static void mapRegs_AMD64AMode ( HRegRemap* m, AMD64AMode* am ) {
+   switch (am->tag) {
+      case Aam_IR: 
+         am->Aam.IR.reg = lookupHRegRemap(m, am->Aam.IR.reg);
+         return;
+      case Aam_IRRS:
+         am->Aam.IRRS.base = lookupHRegRemap(m, am->Aam.IRRS.base);
+         am->Aam.IRRS.index = lookupHRegRemap(m, am->Aam.IRRS.index);
+         return;
+      default:
+         vpanic("mapRegs_AMD64AMode");
+   }
+}
 
 /* --------- Operand, which can be reg, immediate or memory. --------- */
 
@@ -276,94 +310,94 @@ void ppAMD64RMI ( AMD64RMI* op ) {
    }
 }
 
-//.. /* An AMD64RMI can only be used in a "read" context (what would it mean
-//..    to write or modify a literal?) and so we enumerate its registers
-//..    accordingly. */
-//.. static void addRegUsage_AMD64RMI ( HRegUsage* u, AMD64RMI* op ) {
-//..    switch (op->tag) {
-//..       case Xrmi_Imm: 
-//..          return;
-//..       case Xrmi_Reg: 
-//..          addHRegUse(u, HRmRead, op->Xrmi.Reg.reg);
-//..          return;
-//..       case Xrmi_Mem: 
-//..          addRegUsage_AMD64AMode(u, op->Xrmi.Mem.am);
-//..          return;
-//..       default: 
-//..          vpanic("addRegUsage_AMD64RMI");
-//..    }
-//.. }
-//.. 
-//.. static void mapRegs_AMD64RMI ( HRegRemap* m, AMD64RMI* op ) {
-//..    switch (op->tag) {
-//..       case Xrmi_Imm: 
-//..          return;
-//..       case Xrmi_Reg: 
-//..          op->Xrmi.Reg.reg = lookupHRegRemap(m, op->Xrmi.Reg.reg);
-//..          return;
-//..       case Xrmi_Mem: 
-//..          mapRegs_AMD64AMode(m, op->Xrmi.Mem.am);
-//..          return;
-//..       default: 
-//..          vpanic("mapRegs_AMD64RMI");
-//..    }
-//.. }
-//.. 
-//.. 
-//.. /* --------- Operand, which can be reg or immediate only. --------- */
-//.. 
-//.. AMD64RI* AMD64RI_Imm ( UInt imm32 ) {
-//..    AMD64RI* op         = LibVEX_Alloc(sizeof(AMD64RI));
-//..    op->tag           = Xri_Imm;
-//..    op->Xri.Imm.imm32 = imm32;
-//..    return op;
-//.. }
-//.. AMD64RI* AMD64RI_Reg ( HReg reg ) {
-//..    AMD64RI* op       = LibVEX_Alloc(sizeof(AMD64RI));
-//..    op->tag         = Xri_Reg;
-//..    op->Xri.Reg.reg = reg;
-//..    return op;
-//.. }
-//.. 
-//.. void ppAMD64RI ( AMD64RI* op ) {
-//..    switch (op->tag) {
-//..       case Xri_Imm: 
-//..          vex_printf("$0x%x", op->Xri.Imm.imm32);
-//..          return;
-//..       case Xri_Reg: 
-//..          ppHRegAMD64(op->Xri.Reg.reg);
-//..          return;
-//..      default: 
-//..          vpanic("ppAMD64RI");
-//..    }
-//.. }
-//.. 
-//.. /* An AMD64RI can only be used in a "read" context (what would it mean
-//..    to write or modify a literal?) and so we enumerate its registers
-//..    accordingly. */
-//.. static void addRegUsage_AMD64RI ( HRegUsage* u, AMD64RI* op ) {
-//..    switch (op->tag) {
-//..       case Xri_Imm: 
-//..          return;
-//..       case Xri_Reg: 
-//..          addHRegUse(u, HRmRead, op->Xri.Reg.reg);
-//..          return;
-//..       default: 
-//..          vpanic("addRegUsage_AMD64RI");
-//..    }
-//.. }
-//.. 
-//.. static void mapRegs_AMD64RI ( HRegRemap* m, AMD64RI* op ) {
-//..    switch (op->tag) {
-//..       case Xri_Imm: 
-//..          return;
-//..       case Xri_Reg: 
-//..          op->Xri.Reg.reg = lookupHRegRemap(m, op->Xri.Reg.reg);
-//..          return;
-//..       default: 
-//..          vpanic("mapRegs_AMD64RI");
-//..    }
-//.. }
+/* An AMD64RMI can only be used in a "read" context (what would it mean
+   to write or modify a literal?) and so we enumerate its registers
+   accordingly. */
+static void addRegUsage_AMD64RMI ( HRegUsage* u, AMD64RMI* op ) {
+   switch (op->tag) {
+      case Armi_Imm: 
+         return;
+      case Armi_Reg: 
+         addHRegUse(u, HRmRead, op->Armi.Reg.reg);
+         return;
+      case Armi_Mem: 
+         addRegUsage_AMD64AMode(u, op->Armi.Mem.am);
+         return;
+      default: 
+         vpanic("addRegUsage_AMD64RMI");
+   }
+}
+
+static void mapRegs_AMD64RMI ( HRegRemap* m, AMD64RMI* op ) {
+   switch (op->tag) {
+      case Armi_Imm: 
+         return;
+      case Armi_Reg: 
+         op->Armi.Reg.reg = lookupHRegRemap(m, op->Armi.Reg.reg);
+         return;
+      case Armi_Mem: 
+         mapRegs_AMD64AMode(m, op->Armi.Mem.am);
+         return;
+      default: 
+         vpanic("mapRegs_AMD64RMI");
+   }
+}
+
+
+/* --------- Operand, which can be reg or immediate only. --------- */
+
+AMD64RI* AMD64RI_Imm ( UInt imm32 ) {
+   AMD64RI* op       = LibVEX_Alloc(sizeof(AMD64RI));
+   op->tag           = Ari_Imm;
+   op->Ari.Imm.imm32 = imm32;
+   return op;
+}
+AMD64RI* AMD64RI_Reg ( HReg reg ) {
+   AMD64RI* op     = LibVEX_Alloc(sizeof(AMD64RI));
+   op->tag         = Ari_Reg;
+   op->Ari.Reg.reg = reg;
+   return op;
+}
+
+void ppAMD64RI ( AMD64RI* op ) {
+   switch (op->tag) {
+      case Ari_Imm: 
+         vex_printf("$0x%x", op->Ari.Imm.imm32);
+         return;
+      case Ari_Reg: 
+         ppHRegAMD64(op->Ari.Reg.reg);
+         return;
+     default: 
+         vpanic("ppAMD64RI");
+   }
+}
+
+/* An AMD64RI can only be used in a "read" context (what would it mean
+   to write or modify a literal?) and so we enumerate its registers
+   accordingly. */
+static void addRegUsage_AMD64RI ( HRegUsage* u, AMD64RI* op ) {
+   switch (op->tag) {
+      case Ari_Imm: 
+         return;
+      case Ari_Reg: 
+         addHRegUse(u, HRmRead, op->Ari.Reg.reg);
+         return;
+      default: 
+         vpanic("addRegUsage_AMD64RI");
+   }
+}
+
+static void mapRegs_AMD64RI ( HRegRemap* m, AMD64RI* op ) {
+   switch (op->tag) {
+      case Ari_Imm: 
+         return;
+      case Ari_Reg: 
+         op->Ari.Reg.reg = lookupHRegRemap(m, op->Ari.Reg.reg);
+         return;
+      default: 
+         vpanic("mapRegs_AMD64RI");
+   }
+}
 
 
 /* --------- Operand, which can be reg or memory only. --------- */
@@ -394,41 +428,41 @@ void ppAMD64RM ( AMD64RM* op ) {
    }
 }
 
-//.. /* Because an AMD64RM can be both a source or destination operand, we
-//..    have to supply a mode -- pertaining to the operand as a whole --
-//..    indicating how it's being used. */
-//.. static void addRegUsage_AMD64RM ( HRegUsage* u, AMD64RM* op, HRegMode mode ) {
-//..    switch (op->tag) {
-//..       case Xrm_Mem: 
-//..          /* Memory is read, written or modified.  So we just want to
-//..             know the regs read by the amode. */
-//..          addRegUsage_AMD64AMode(u, op->Xrm.Mem.am);
-//..          return;
-//..       case Xrm_Reg: 
-//..          /* reg is read, written or modified.  Add it in the
-//..             appropriate way. */
-//..          addHRegUse(u, mode, op->Xrm.Reg.reg);
-//..          return;
-//..      default: 
-//..          vpanic("addRegUsage_AMD64RM");
-//..    }
-//.. }
-//.. 
-//.. static void mapRegs_AMD64RM ( HRegRemap* m, AMD64RM* op )
-//.. {
-//..    switch (op->tag) {
-//..       case Xrm_Mem: 
-//..          mapRegs_AMD64AMode(m, op->Xrm.Mem.am);
-//..          return;
-//..       case Xrm_Reg: 
-//..          op->Xrm.Reg.reg = lookupHRegRemap(m, op->Xrm.Reg.reg);
-//..          return;
-//..      default: 
-//..          vpanic("mapRegs_AMD64RM");
-//..    }
-//.. }
-//.. 
-//.. 
+/* Because an AMD64RM can be both a source or destination operand, we
+   have to supply a mode -- pertaining to the operand as a whole --
+   indicating how it's being used. */
+static void addRegUsage_AMD64RM ( HRegUsage* u, AMD64RM* op, HRegMode mode ) {
+   switch (op->tag) {
+      case Arm_Mem: 
+         /* Memory is read, written or modified.  So we just want to
+            know the regs read by the amode. */
+         addRegUsage_AMD64AMode(u, op->Arm.Mem.am);
+         return;
+      case Arm_Reg: 
+         /* reg is read, written or modified.  Add it in the
+            appropriate way. */
+         addHRegUse(u, mode, op->Arm.Reg.reg);
+         return;
+     default: 
+         vpanic("addRegUsage_AMD64RM");
+   }
+}
+
+static void mapRegs_AMD64RM ( HRegRemap* m, AMD64RM* op )
+{
+   switch (op->tag) {
+      case Arm_Mem: 
+         mapRegs_AMD64AMode(m, op->Arm.Mem.am);
+         return;
+      case Arm_Reg: 
+         op->Arm.Reg.reg = lookupHRegRemap(m, op->Arm.Reg.reg);
+         return;
+     default: 
+         vpanic("mapRegs_AMD64RM");
+   }
+}
+
+
 //.. /* --------- Instructions. --------- */
 //.. 
 //.. HChar* showAMD64ScalarSz ( AMD64ScalarSz sz ) {
@@ -579,15 +613,15 @@ AMD64Instr* AMD64Instr_Alu64R ( AMD64AluOp op, AMD64RMI* src, HReg dst ) {
    i->Ain.Alu64R.dst = dst;
    return i;
 }
-//.. AMD64Instr* AMD64Instr_Alu32M ( AMD64AluOp op, AMD64RI* src, AMD64AMode* dst ) {
-//..    AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag            = Xin_Alu32M;
-//..    i->Xin.Alu32M.op  = op;
-//..    i->Xin.Alu32M.src = src;
-//..    i->Xin.Alu32M.dst = dst;
-//..    vassert(op != Xalu_MUL);
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_Alu64M ( AMD64AluOp op, AMD64RI* src, AMD64AMode* dst ) {
+   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag            = Ain_Alu64M;
+   i->Ain.Alu64M.op  = op;
+   i->Ain.Alu64M.src = src;
+   i->Ain.Alu64M.dst = dst;
+   vassert(op != Aalu_MUL);
+   return i;
+}
 AMD64Instr* AMD64Instr_Sh64 ( AMD64ShiftOp op, UInt src, AMD64RM* dst ) {
    AMD64Instr* i   = LibVEX_Alloc(sizeof(AMD64Instr));
    i->tag          = Ain_Sh64;
@@ -651,14 +685,14 @@ AMD64Instr* AMD64Instr_Sh64 ( AMD64ShiftOp op, UInt src, AMD64RM* dst ) {
 //..    vassert(regparms >= 0 && regparms <= 3);
 //..    return i;
 //.. }
-//.. AMD64Instr* AMD64Instr_Goto ( IRJumpKind jk, AMD64CondCode cond, AMD64RI* dst ) {
-//..    AMD64Instr* i      = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag           = Xin_Goto;
-//..    i->Xin.Goto.cond = cond;
-//..    i->Xin.Goto.dst  = dst;
-//..    i->Xin.Goto.jk   = jk;
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_Goto ( IRJumpKind jk, AMD64CondCode cond, AMD64RI* dst ) {
+   AMD64Instr* i    = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag           = Ain_Goto;
+   i->Ain.Goto.cond = cond;
+   i->Ain.Goto.dst  = dst;
+   i->Ain.Goto.jk   = jk;
+   return i;
+}
 //.. AMD64Instr* AMD64Instr_CMov32  ( AMD64CondCode cond, AMD64RM* src, HReg dst ) {
 //..    AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
 //..    i->tag             = Xin_CMov32;
@@ -668,6 +702,13 @@ AMD64Instr* AMD64Instr_Sh64 ( AMD64ShiftOp op, UInt src, AMD64RM* dst ) {
 //..    vassert(cond != Xcc_ALWAYS);
 //..    return i;
 //.. }
+AMD64Instr* AMD64Instr_MovZLQ ( HReg src, HReg dst ) {
+   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag            = Ain_MovZLQ;
+   i->Ain.MovZLQ.src = src;
+   i->Ain.MovZLQ.dst = dst;
+   return i;
+}
 AMD64Instr* AMD64Instr_LoadEX ( UChar szSmall, Bool syned,
                                 AMD64AMode* src, HReg dst ) {
    AMD64Instr* i         = LibVEX_Alloc(sizeof(AMD64Instr));
@@ -679,15 +720,15 @@ AMD64Instr* AMD64Instr_LoadEX ( UChar szSmall, Bool syned,
    vassert(szSmall == 1 || szSmall == 2 || szSmall == 4);
    return i;
 }
-//.. AMD64Instr* AMD64Instr_Store ( UChar sz, HReg src, AMD64AMode* dst ) {
-//..    AMD64Instr* i      = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag           = Xin_Store;
-//..    i->Xin.Store.sz  = sz;
-//..    i->Xin.Store.src = src;
-//..    i->Xin.Store.dst = dst;
-//..    vassert(sz == 1 || sz == 2);
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_Store ( UChar sz, HReg src, AMD64AMode* dst ) {
+   AMD64Instr* i    = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag           = Ain_Store;
+   i->Ain.Store.sz  = sz;
+   i->Ain.Store.src = src;
+   i->Ain.Store.dst = dst;
+   vassert(sz == 1 || sz == 2 || sz == 4);
+   return i;
+}
 //.. AMD64Instr* AMD64Instr_Set32 ( AMD64CondCode cond, HReg dst ) {
 //..    AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
 //..    i->tag            = Xin_Set32;
@@ -887,12 +928,12 @@ void ppAMD64Instr ( AMD64Instr* i )
          vex_printf(",");
          ppHRegAMD64(i->Ain.Alu64R.dst);
          return;
-//..       case Xin_Alu32M:
-//..          vex_printf("%sl ", showAMD64AluOp(i->Xin.Alu32M.op));
-//..          ppAMD64RI(i->Xin.Alu32M.src);
-//..          vex_printf(",");
-//..          ppAMD64AMode(i->Xin.Alu32M.dst);
-//..          return;
+      case Ain_Alu64M:
+         vex_printf("%sq ", showAMD64AluOp(i->Ain.Alu64M.op));
+         ppAMD64RI(i->Ain.Alu64M.src);
+         vex_printf(",");
+         ppAMD64AMode(i->Ain.Alu64M.dst);
+         return;
       case Ain_Sh64:
          vex_printf("%sl ", showAMD64ShiftOp(i->Ain.Sh64.op));
          if (i->Ain.Sh64.src == 0)
@@ -944,29 +985,35 @@ void ppAMD64Instr ( AMD64Instr* i )
 //..                     i->Xin.Call.regparms);
 //..          vex_printf("0x%x", i->Xin.Call.target);
 //..          break;
-//..       case Xin_Goto:
-//..          if (i->Xin.Goto.cond != Xcc_ALWAYS) {
-//..             vex_printf("if (%%eflags.%s) { ", 
-//..                        showAMD64CondCode(i->Xin.Goto.cond));
-//.. 	 }
-//..          if (i->Xin.Goto.jk != Ijk_Boring) {
-//..             vex_printf("movl $");
-//..             ppIRJumpKind(i->Xin.Goto.jk);
-//..             vex_printf(",%%ebp ; ");
-//..          }
-//..          vex_printf("movl ");
-//..          ppAMD64RI(i->Xin.Goto.dst);
-//..          vex_printf(",%%eax ; ret");
-//..          if (i->Xin.Goto.cond != Xcc_ALWAYS) {
-//..             vex_printf(" }");
-//.. 	 }
-//..          return;
+      case Ain_Goto:
+         if (i->Ain.Goto.cond != Acc_ALWAYS) {
+            vex_printf("if (%%rflags.%s) { ", 
+                       showAMD64CondCode(i->Ain.Goto.cond));
+         }
+         if (i->Ain.Goto.jk != Ijk_Boring) {
+            vex_printf("movl $");
+            ppIRJumpKind(i->Ain.Goto.jk);
+            vex_printf(",%%rbp ; ");
+         }
+         vex_printf("movl ");
+         ppAMD64RI(i->Ain.Goto.dst);
+         vex_printf(",%%rax ; ret");
+         if (i->Ain.Goto.cond != Acc_ALWAYS) {
+            vex_printf(" }");
+         }
+         return;
 //..       case Xin_CMov32:
 //..          vex_printf("cmov%s ", showAMD64CondCode(i->Xin.CMov32.cond));
 //..          ppAMD64RM(i->Xin.CMov32.src);
 //..          vex_printf(",");
 //..          ppHRegAMD64(i->Xin.CMov32.dst);
 //..          return;
+      case Ain_MovZLQ:
+         vex_printf("movzlq ");
+         ppHRegAMD64(i->Ain.MovZLQ.src);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.MovZLQ.dst);
+         return;
       case Ain_LoadEX:
          vex_printf("mov%c%cq ",
                     i->Ain.LoadEX.syned ? 's' : 'z',
@@ -1143,27 +1190,27 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
   //   Bool unary;
    initHRegUsage(u);
    switch (i->tag) {
-//..       case Xin_Alu32R:
-//..          addRegUsage_AMD64RMI(u, i->Xin.Alu32R.src);
-//..          if (i->Xin.Alu32R.op == Xalu_MOV) {
-//..             addHRegUse(u, HRmWrite,  i->Xin.Alu32R.dst);
-//..             return;
-//..          }
-//..          if (i->Xin.Alu32R.op == Xalu_CMP) { 
-//..             addHRegUse(u, HRmRead,  i->Xin.Alu32R.dst);
-//..             return;
-//..          }
-//..          addHRegUse(u, HRmModify, i->Xin.Alu32R.dst);
-//..          return;
-//..       case Xin_Alu32M:
-//..          addRegUsage_AMD64RI(u, i->Xin.Alu32M.src);
-//..          addRegUsage_AMD64AMode(u, i->Xin.Alu32M.dst);
-//..          return;
-//..       case Xin_Sh32:
-//..          addRegUsage_AMD64RM(u, i->Xin.Sh32.dst, HRmModify);
-//..          if (i->Xin.Sh32.src == 0)
-//..             addHRegUse(u, HRmRead, hregAMD64_ECX());
-//..          return;
+      case Ain_Alu64R:
+         addRegUsage_AMD64RMI(u, i->Ain.Alu64R.src);
+         if (i->Ain.Alu64R.op == Aalu_MOV) {
+            addHRegUse(u, HRmWrite, i->Ain.Alu64R.dst);
+            return;
+         }
+         if (i->Ain.Alu64R.op == Aalu_CMP) { 
+            addHRegUse(u, HRmRead, i->Ain.Alu64R.dst);
+            return;
+         }
+         addHRegUse(u, HRmModify, i->Ain.Alu64R.dst);
+         return;
+      case Ain_Alu64M:
+         addRegUsage_AMD64RI(u, i->Ain.Alu64M.src);
+         addRegUsage_AMD64AMode(u, i->Ain.Alu64M.dst);
+         return;
+      case Ain_Sh64:
+         addRegUsage_AMD64RM(u, i->Ain.Sh64.dst, HRmModify);
+         if (i->Ain.Sh64.src == 0)
+            addHRegUse(u, HRmRead, hregAMD64_RCX());
+         return;
 //..       case Xin_Test32:
 //..          addRegUsage_AMD64RI(u, i->Xin.Test32.src);
 //..          addRegUsage_AMD64RM(u, i->Xin.Test32.dst, HRmRead);
@@ -1222,20 +1269,24 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
 //..             address temporary, depending on the regparmness: 0==EAX,
 //..             1==EDX, 2==ECX, 3==EDI. */
 //..          return;
-//..       case Xin_Goto:
-//..          addRegUsage_AMD64RI(u, i->Xin.Goto.dst);
-//..          addHRegUse(u, HRmWrite, hregAMD64_EAX());
-//..          if (i->Xin.Goto.jk != Ijk_Boring)
-//..             addHRegUse(u, HRmWrite, hregAMD64_EBP());
-//..          return;
+      case Ain_Goto:
+         addRegUsage_AMD64RI(u, i->Ain.Goto.dst);
+         addHRegUse(u, HRmWrite, hregAMD64_RAX());
+         if (i->Ain.Goto.jk != Ijk_Boring)
+            addHRegUse(u, HRmWrite, hregAMD64_RBP());
+         return;
 //..       case Xin_CMov32:
 //..          addRegUsage_AMD64RM(u, i->Xin.CMov32.src, HRmRead);
 //..          addHRegUse(u, HRmModify, i->Xin.CMov32.dst);
 //..          return;
-//..       case Xin_LoadEX:
-//..          addRegUsage_AMD64AMode(u, i->Xin.LoadEX.src);
-//..          addHRegUse(u, HRmWrite, i->Xin.LoadEX.dst);
-//..          return;
+      case Ain_MovZLQ:
+         addHRegUse(u, HRmRead,  i->Ain.MovZLQ.src);
+         addHRegUse(u, HRmWrite, i->Ain.MovZLQ.dst);
+         return;
+      case Ain_LoadEX:
+         addRegUsage_AMD64AMode(u, i->Ain.LoadEX.src);
+         addHRegUse(u, HRmWrite, i->Ain.LoadEX.dst);
+         return;
 //..       case Xin_Store:
 //..          addHRegUse(u, HRmRead, i->Xin.Store.src);
 //..          addRegUsage_AMD64AMode(u, i->Xin.Store.dst);
@@ -1362,27 +1413,27 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          vpanic("getRegUsage_AMD64Instr");
    }
 }
-//.. 
-//.. /* local helper */
-//.. static void mapReg(HRegRemap* m, HReg* r)
-//.. {
-//..    *r = lookupHRegRemap(m, *r);
-//.. }
+
+/* local helper */
+static void mapReg(HRegRemap* m, HReg* r)
+{
+   *r = lookupHRegRemap(m, *r);
+}
 
 void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
 {
    switch (i->tag) {
-//..       case Xin_Alu32R:
-//..          mapRegs_AMD64RMI(m, i->Xin.Alu32R.src);
-//..          mapReg(m, &i->Xin.Alu32R.dst);
-//..          return;
-//..       case Xin_Alu32M:
-//..          mapRegs_AMD64RI(m, i->Xin.Alu32M.src);
-//..          mapRegs_AMD64AMode(m, i->Xin.Alu32M.dst);
-//..          return;
-//..       case Xin_Sh32:
-//..          mapRegs_AMD64RM(m, i->Xin.Sh32.dst);
-//..          return;
+      case Ain_Alu64R:
+         mapRegs_AMD64RMI(m, i->Ain.Alu64R.src);
+         mapReg(m, &i->Ain.Alu64R.dst);
+         return;
+      case Ain_Alu64M:
+         mapRegs_AMD64RI(m, i->Ain.Alu64M.src);
+         mapRegs_AMD64AMode(m, i->Ain.Alu64M.dst);
+         return;
+      case Ain_Sh64:
+         mapRegs_AMD64RM(m, i->Ain.Sh64.dst);
+         return;
 //..       case Xin_Test32:
 //..          mapRegs_AMD64RI(m, i->Xin.Test32.src);
 //..          mapRegs_AMD64RM(m, i->Xin.Test32.dst);
@@ -1405,17 +1456,21 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
 //..          return;
 //..       case Xin_Call:
 //..          return;
-//..       case Xin_Goto:
-//..          mapRegs_AMD64RI(m, i->Xin.Goto.dst);
-//..          return;
+      case Ain_Goto:
+         mapRegs_AMD64RI(m, i->Ain.Goto.dst);
+         return;
 //..       case Xin_CMov32:
 //..          mapRegs_AMD64RM(m, i->Xin.CMov32.src);
 //..          mapReg(m, &i->Xin.CMov32.dst);
 //..          return;
-//..       case Xin_LoadEX:
-//..          mapRegs_AMD64AMode(m, i->Xin.LoadEX.src);
-//..          mapReg(m, &i->Xin.LoadEX.dst);
-//..          return;
+      case Ain_MovZLQ:
+         mapReg(m, &i->Ain.MovZLQ.src);
+         mapReg(m, &i->Ain.MovZLQ.dst);
+         return;
+      case Ain_LoadEX:
+         mapRegs_AMD64AMode(m, i->Ain.LoadEX.src);
+         mapReg(m, &i->Ain.LoadEX.dst);
+         return;
 //..       case Xin_Store:
 //..          mapReg(m, &i->Xin.Store.src);
 //..          mapRegs_AMD64AMode(m, i->Xin.Store.dst);
@@ -1515,16 +1570,16 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
 */
 Bool isMove_AMD64Instr ( AMD64Instr* i, HReg* src, HReg* dst )
 {
-//..    /* Moves between integer regs */
-//..    if (i->tag == Xin_Alu32R) {
-//..       if (i->Xin.Alu32R.op != Xalu_MOV)
-//..          return False;
-//..       if (i->Xin.Alu32R.src->tag != Xrmi_Reg)
-//..          return False;
-//..       *src = i->Xin.Alu32R.src->Xrmi.Reg.reg;
-//..       *dst = i->Xin.Alu32R.dst;
-//..       return True;
-//..    }
+   /* Moves between integer regs */
+   if (i->tag == Ain_Alu64R) {
+      if (i->Ain.Alu64R.op != Aalu_MOV)
+         return False;
+      if (i->Ain.Alu64R.src->tag != Armi_Reg)
+         return False;
+      *src = i->Ain.Alu64R.src->Armi.Reg.reg;
+      *dst = i->Ain.Alu64R.dst;
+      return True;
+   }
 //..    /* Moves between FP regs */
 //..    if (i->tag == Xin_FpUnary) {
 //..       if (i->Xin.FpUnary.op != Xfp_MOV)

@@ -745,11 +745,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    case Iex_LDle: {
       HReg dst = newVRegI(env);
       AMD64AMode* amode = iselIntExpr_AMode ( env, e->Iex.LDle.addr );
-//..       if (ty == Ity_I32) {
-//..          addInstr(env, X86Instr_Alu32R(Xalu_MOV,
-//..                                        X86RMI_Mem(amode), dst) );
-//..          return dst;
-//..       }
+      if (ty == Ity_I64) {
+         addInstr(env, AMD64Instr_Alu64R(Aalu_MOV,
+                                         AMD64RMI_Mem(amode), dst) );
+         return dst;
+      }
       if (ty == Ity_I32) {
          addInstr(env, AMD64Instr_LoadEX(4,False,amode,dst));
          return dst;
@@ -997,8 +997,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       break;
    }
 
-//..    /* --------- UNARY OP --------- */
-//..    case Iex_Unop: {
+   /* --------- UNARY OP --------- */
+   case Iex_Unop: {
 //..       /* 1Uto8(32to1(expr32)) */
 //..       DEFINE_PATTERN(p_32to1_then_1Uto8,
 //..                      unop(Iop_1Uto8,unop(Iop_32to1,bind(0))));
@@ -1024,8 +1024,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..             return dst;
 //..          }
 //..       }
-//.. 
-//..       switch (e->Iex.Unop.op) {
+
+      switch (e->Iex.Unop.op) {
+         case Iop_32Uto64: {
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, AMD64Instr_MovZLQ(src,dst) );
+            return dst;
+         }
 //..          case Iop_8Uto16:
 //..          case Iop_8Uto32:
 //..          case Iop_16Uto32: {
@@ -1132,12 +1138,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..          case Iop_32to16:
 //..             /* These are no-ops. */
 //..             return iselIntExpr_R(env, e->Iex.Unop.arg);
-//.. 
-//..          default: 
-//..             break;
-//..       }
-//..       break;
-//..    }
+
+         default: 
+            break;
+      }
+      break;
+   }
 
    /* --------- GET --------- */
    case Iex_Get: {
@@ -1357,53 +1363,62 @@ static AMD64RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e )
 }
 
 
-//.. /* --------------------- RIs --------------------- */
-//.. 
-//.. /* Calculate an expression into an X86RI operand.  As with
-//..    iselIntExpr_R, the expression can have type 32, 16 or 8 bits. */
-//.. 
-//.. static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    X86RI* ri = iselIntExpr_RI_wrk(env, e);
-//..    /* sanity checks ... */
-//..    switch (ri->tag) {
-//..       case Xri_Imm:
-//..          return ri;
-//..       case Xrmi_Reg:
-//..          vassert(hregClass(ri->Xri.Reg.reg) == HRcInt32);
-//..          vassert(hregIsVirtual(ri->Xri.Reg.reg));
-//..          return ri;
-//..       default:
-//..          vpanic("iselIntExpr_RI: unknown x86 RI tag");
-//..    }
-//.. }
-//.. 
-//.. /* DO NOT CALL THIS DIRECTLY ! */
-//.. static X86RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    IRType ty = typeOfIRExpr(env->type_env,e);
-//..    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
-//.. 
-//..    /* special case: immediate */
-//..    if (e->tag == Iex_Const) {
-//..       UInt u;
-//..       switch (e->Iex.Const.con->tag) {
-//..          case Ico_U32: u = e->Iex.Const.con->Ico.U32; break;
-//..          case Ico_U16: u = 0xFFFF & (e->Iex.Const.con->Ico.U16); break;
-//..          case Ico_U8:  u = 0xFF   & (e->Iex.Const.con->Ico.U8); break;
-//..          default: vpanic("iselIntExpr_RMI.Iex_Const(x86h)");
-//..       }
-//..       return X86RI_Imm(u);
-//..    }
-//.. 
-//..    /* default case: calculate into a register and return that */
-//..    {
-//..       HReg r = iselIntExpr_R ( env, e );
-//..       return X86RI_Reg(r);
-//..    }
-//.. }
-//.. 
-//.. 
+/* --------------------- RIs --------------------- */
+
+/* Calculate an expression into an AMD64RI operand.  As with
+   iselIntExpr_R, the expression can have type 64, 32, 16 or 8
+   bits. */
+
+static AMD64RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
+{
+   AMD64RI* ri = iselIntExpr_RI_wrk(env, e);
+   /* sanity checks ... */
+   switch (ri->tag) {
+      case Ari_Imm:
+         return ri;
+      case Armi_Reg:
+         vassert(hregClass(ri->Ari.Reg.reg) == HRcInt64);
+         vassert(hregIsVirtual(ri->Ari.Reg.reg));
+         return ri;
+      default:
+         vpanic("iselIntExpr_RI: unknown amd64 RI tag");
+   }
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static AMD64RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
+{
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I64 || ty == Ity_I32 
+           || ty == Ity_I16 || ty == Ity_I8);
+
+   /* special case: immediate */
+   if (e->tag == Iex_Const) {
+      switch (e->Iex.Const.con->tag) {
+        case Ico_U64:
+           if (fitsIn32Bits(e->Iex.Const.con->Ico.U64)) {
+              return AMD64RI_Imm(0xFFFFFFFF & e->Iex.Const.con->Ico.U64);
+           }
+           break;
+         case Ico_U32:
+            return AMD64RI_Imm(e->Iex.Const.con->Ico.U32);
+         case Ico_U16: 
+            return AMD64RI_Imm(0xFFFF & e->Iex.Const.con->Ico.U16);
+         case Ico_U8:
+            return AMD64RI_Imm(0xFF & e->Iex.Const.con->Ico.U8);
+         default:
+            vpanic("iselIntExpr_RMI.Iex_Const(amd64)");
+      }
+   }
+
+   /* default case: calculate into a register and return that */
+   {
+      HReg r = iselIntExpr_R ( env, e );
+      return AMD64RI_Reg(r);
+   }
+}
+
+
 //.. /* --------------------- RMs --------------------- */
 //.. 
 //.. /* Similarly, calculate an expression into an X86RM operand.  As with
@@ -3189,40 +3204,34 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //..       }
 //..       break;
 //..    }
-//.. 
-//..    /* --------- PUT --------- */
-//..    case Ist_Put: {
-//..       IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
-//..       if (ty == Ity_I32) {
-//..          /* We're going to write to memory, so compute the RHS into an
-//..             X86RI. */
-//..          X86RI* ri = iselIntExpr_RI(env, stmt->Ist.Put.data);
-//..          addInstr(env,
-//..                   X86Instr_Alu32M(
-//..                      Xalu_MOV,
-//..                      ri,
-//..                      X86AMode_IR(stmt->Ist.Put.offset,hregX86_EBP())
-//..                  ));
-//..          return;
-//..       }
-//..       if (ty == Ity_I8 || ty == Ity_I16) {
-//..          HReg r = iselIntExpr_R(env, stmt->Ist.Put.data);
-//..          addInstr(env, X86Instr_Store(
-//..                           ty==Ity_I8 ? 1 : 2,
-//..                           r,
-//..                           X86AMode_IR(stmt->Ist.Put.offset,
-//..                                       hregX86_EBP())));
-//..          return;
-//..       }
-//..       if (ty == Ity_I64) {
-//..          HReg vHi, vLo;
-//..          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
-//..          X86AMode* am4 = advance4(am);
-//..          iselInt64Expr(&vHi, &vLo, env, stmt->Ist.Put.data);
-//..          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(vLo), am ));
-//..          addInstr(env, X86Instr_Alu32M( Xalu_MOV, X86RI_Reg(vHi), am4 ));
-//..          return;
-//..       }
+
+   /* --------- PUT --------- */
+   case Ist_Put: {
+      IRType ty = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
+      if (ty == Ity_I64) {
+         /* We're going to write to memory, so compute the RHS into an
+            AMD64RI. */
+         AMD64RI* ri = iselIntExpr_RI(env, stmt->Ist.Put.data);
+         addInstr(env,
+                  AMD64Instr_Alu64M(
+                     Aalu_MOV,
+                     ri,
+                     AMD64AMode_IR(stmt->Ist.Put.offset,
+                                   hregAMD64_RBP())
+                 ));
+         return;
+      }
+#if 0
+      if (ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32) {
+         HReg r = iselIntExpr_R(env, stmt->Ist.Put.data);
+         addInstr(env, AMD64Instr_Store(
+                          ty==Ity_I8 ? 1 : (ty==Ity_I16 ? 2 : 4),
+                          r,
+                          AMD64AMode_IR(stmt->Ist.Put.offset,
+                                        hregAMD64_RBP())));
+         return;
+      }
+#endif
 //..       if (ty == Ity_V128) {
 //..          HReg      vec = iselVecExpr(env, stmt->Ist.Put.data);
 //..          X86AMode* am  = X86AMode_IR(stmt->Ist.Put.offset, hregX86_EBP());
@@ -3243,9 +3252,9 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //..          addInstr(env, X86Instr_FpLdSt( False/*store*/, 8, f64, am ));
 //..          return;
 //..       }
-//..       break;
-//..    }
-//.. 
+      break;
+   }
+
 //..    /* --------- Indexed PUT --------- */
 //..    case Ist_PutI: {
 //..       X86AMode* am 
@@ -3387,17 +3396,17 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 /*---------------------------------------------------------*/
 
 static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
-{vassert(0);
-//..    X86RI* ri;
-//..    if (vex_traceflags & VEX_TRACE_VCODE) {
-//..       vex_printf("\n-- goto {");
-//..       ppIRJumpKind(jk);
-//..       vex_printf("} ");
-//..       ppIRExpr(next);
-//..       vex_printf("\n");
-//..    }
-//..    ri = iselIntExpr_RI(env, next);
-//..    addInstr(env, X86Instr_Goto(jk, Xcc_ALWAYS,ri));
+{
+   AMD64RI* ri;
+   if (vex_traceflags & VEX_TRACE_VCODE) {
+      vex_printf("\n-- goto {");
+      ppIRJumpKind(jk);
+      vex_printf("} ");
+      ppIRExpr(next);
+      vex_printf("\n");
+   }
+   ri = iselIntExpr_RI(env, next);
+   addInstr(env, AMD64Instr_Goto(jk, Acc_ALWAYS,ri));
 }
 
 

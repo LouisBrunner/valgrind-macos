@@ -2549,6 +2549,9 @@ static void load_ebp_from_JmpKind ( JmpKind jmpkind )
       case JmpClientReq: 
          VG_(emit_movv_lit_reg) ( 4, VG_TRC_EBP_JMP_CLIENTREQ, R_EBP );
          break;
+      case JmpYield: 
+         VG_(emit_movv_lit_reg) ( 4, VG_TRC_EBP_JMP_YIELD, R_EBP );
+         break;
       default: 
          VG_(core_panic)("load_ebp_from_JmpKind");
    }

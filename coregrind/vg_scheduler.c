@@ -247,6 +247,7 @@ Char* name_of_sched_event ( UInt event )
    switch (event) {
       case VG_TRC_EBP_JMP_SYSCALL:    return "SYSCALL";
       case VG_TRC_EBP_JMP_CLIENTREQ:  return "CLIENTREQ";
+      case VG_TRC_EBP_JMP_YIELD:      return "YIELD";
       case VG_TRC_INNER_COUNTERZERO:  return "COUNTERZERO";
       case VG_TRC_INNER_FASTMISS:     return "FASTMISS";
       case VG_TRC_UNRESUMABLE_SIGNAL: return "FATALSIGNAL";
@@ -1185,6 +1186,15 @@ VgSchedReturnCode VG_(scheduler) ( void )
          stopped. */
 
       switch (trc) {
+
+         case VG_TRC_EBP_JMP_YIELD:
+            /* Explicit yield.  Let a new thread be scheduled,
+               simply by doing nothing, causing us to arrive back at
+               Phase 1. */
+            if (VG_(bbs_to_go) == 0) {
+               goto debug_stop;
+            }
+            break;
 
          case VG_TRC_INNER_COUNTERZERO:
             /* Timeslice is out.  Let a new thread be scheduled,

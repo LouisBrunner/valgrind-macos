@@ -1133,6 +1133,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
             case JmpRet:       VG_(printf)("-r"); break;
             case JmpSyscall:   VG_(printf)("-sys"); break;
             case JmpClientReq: VG_(printf)("-cli"); break;
+            case JmpYield:     VG_(printf)("-yld"); break;
             default: break;
          }
          VG_(pp_UOperand)(u, 1, u->size, False);

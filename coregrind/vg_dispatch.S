@@ -169,32 +169,13 @@ run_innerloop_exit:
 */
 dispatch_exceptional:
 	/* this is jumped to only, not fallen-through from above */
-	cmpl	$VG_TRC_EBP_JMP_SYSCALL, %ebp
-	jz	dispatch_syscall
-	cmpl	$VG_TRC_EBP_JMP_CLIENTREQ, %ebp
-	jz	dispatch_clientreq
 	cmpl	$VG_TRC_INNER_COUNTERZERO, %ebp
 	jz	counter_is_zero
-	
-	/* ebp has an invalid value ... crap out. */
-	pushl	$panic_msg_ebp
-	call	VG_(core_panic)
-	/* (never returns) */
 
-dispatch_syscall:
 	/* save %eax in %EIP and defer to sched */
-	movl	$VG_(baseBlock), %ebp
 	movl	VGOFF_(m_eip), %esi
-	movl	%eax, (%ebp, %esi, 4)
-	movl	$VG_TRC_EBP_JMP_SYSCALL, %eax
-	jmp	run_innerloop_exit
-	
-dispatch_clientreq:
-	/* save %eax in %EIP and defer to sched */
-	movl	$VG_(baseBlock), %ebp
-	movl	VGOFF_(m_eip), %esi
-	movl	%eax, (%ebp, %esi, 4)
-	movl	$VG_TRC_EBP_JMP_CLIENTREQ, %eax
+	movl	%eax, VG_(baseBlock)(,%esi, 4)
+	movl	%ebp, %eax
 	jmp	run_innerloop_exit
 
 

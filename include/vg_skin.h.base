@@ -876,7 +876,8 @@ typedef
      JmpCall=1,     /* jump due to an x86 call insn */
      JmpRet=2,      /* jump due to an x86 ret insn */
      JmpSyscall=3,  /* do a system call, then jump */
-     JmpClientReq=4 /* do a client request, then jump */
+     JmpClientReq=4,/* do a client request, then jump */
+     JmpYield=5     /* do a yield, then jump */
    }
    JmpKind;
 

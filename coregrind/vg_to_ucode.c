@@ -5555,7 +5555,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       else
       if (abyte == 0x90) { /* REP NOP (PAUSE) */
          if (dis) VG_(printf)("rep nop (P4 pause)\n");
-         /* do nothing; apparently a hint to the P4 re spin-wait loop */
+         uInstr1(cb, JMP,  0, Literal, 0);
+         uLiteral(cb, eip);
+         uCond(cb, CondAlways);
+         LAST_UINSTR(cb).jmpkind = JmpYield;
+         *isEnd = True;
       } 
       else {
          goto decode_failure;

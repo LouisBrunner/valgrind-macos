@@ -261,13 +261,7 @@ static void show_counts ( void )
                      VG_(num_scheduling_events_MINOR), 
                      VG_(tt_fast_misses));
 
-   VG_(message)(Vg_DebugMsg, 
-                "reg-alloc: %d t-req-spill, "
-                "%d+%d orig+spill uis, %d total-reg-r.",
-                VG_(translations_needing_spill),
-                VG_(uinstrs_prealloc),
-                VG_(uinstrs_spill),
-                VG_(total_reg_rank) );
+   VG_(print_reg_alloc_stats)();
    VG_(message)(Vg_DebugMsg, 
                 "   sanity: %d cheap, %d expensive checks.",
                 sanity_fast_count, sanity_slow_count );

@@ -37,6 +37,23 @@
 
 #define dis       VG_(print_codegen)
 
+/*------------------------------------------------------------*/
+/*--- Reg-alloc stats                                      ---*/
+/*------------------------------------------------------------*/
+
+static UInt n_uinstrs_prealloc;           // # uinstrs input to reg-alloc
+static UInt n_uinstrs_spill;              // # uinstrs added due to spill code
+static UInt n_translations_needing_spill; // # bbs requiring spill code
+static UInt n_total_reg_rank; // total of register ranks over all translations
+
+void VG_(print_reg_alloc_stats)(void)
+{
+   VG_(message)(Vg_DebugMsg, 
+                "reg-alloc: %d t-req-spill, "
+                "%d+%d orig+spill uis, %d total-reg-r.",
+                n_translations_needing_spill, 
+                n_uinstrs_prealloc, n_uinstrs_spill, n_total_reg_rank );
+}
 
 /*------------------------------------------------------------*/
 /*--- Basics                                               ---*/
@@ -2086,7 +2103,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
          max_ss_no = j;
    }
 
-   VG_(total_reg_rank) += (max_ss_no+1);
+   n_total_reg_rank += (max_ss_no+1);
 
    /* Show live ranges and assigned spill slot nos. */
 
@@ -2131,7 +2148,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
    for (i = 0; i < c1->used; i++) {
 
       if (c1->instrs[i].opcode == NOP) continue;
-      VG_(uinstrs_prealloc)++;
+      n_uinstrs_prealloc++;
 
 #     if 0
       /* Check map consistency.  Expensive but correct. */
@@ -2267,7 +2284,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
             uInstr2(c2, PUT, 4, 
                         RealReg, VG_(rank_to_realreg)(r), 
                         SpillNo, temp_info[real_to_temp[r]].spill_no);
-            VG_(uinstrs_spill)++;
+            n_uinstrs_spill++;
             spill_reqd = True;
             if (dis)
                VG_(pp_UInstr)(c2->used-1, &LAST_UINSTR(c2));
@@ -2284,7 +2301,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
             uInstr2(c2, GET, 4, 
                         SpillNo, temp_info[tno].spill_no, 
                         RealReg, VG_(rank_to_realreg)(r) );
-            VG_(uinstrs_spill)++;
+            n_uinstrs_spill++;
             spill_reqd = True;
             if (dis)
                VG_(pp_UInstr)(c2->used-1, &LAST_UINSTR(c2));
@@ -2316,7 +2333,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
    VG_(free_UCodeBlock)(c1);
 
    if (spill_reqd) 
-      VG_(translations_needing_spill)++;
+      n_translations_needing_spill++;
 
    return c2;
 

@@ -1172,18 +1172,19 @@ struct _UCodeBlock {
 
 extern UCodeBlock* VG_(alloc_UCodeBlock) ( void );
 
-extern void  VG_(translate)  ( ThreadId tid,
-                               Addr  orig_addr,
-                               UInt* orig_size,
-                               Addr* trans_addr,
-                               UInt* trans_size,
-			       UShort jumps[VG_MAX_JUMPS]);
+extern void VG_(translate)  ( ThreadId tid,
+                              Addr  orig_addr,
+                              UInt* orig_size,
+                              Addr* trans_addr,
+                              UInt* trans_size,
+                              UShort jumps[VG_MAX_JUMPS]);
 
-extern Bool  VG_(saneUInstr)          ( Bool beforeRA, Bool beforeLiveness,
-                                        UInstr* u );
-extern void  VG_(saneUCodeBlock)      ( UCodeBlock* cb );
-extern Bool  VG_(saneUCodeBlockCalls) ( UCodeBlock* cb );
+extern Bool VG_(saneUInstr)          ( Bool beforeRA, Bool beforeLiveness,
+                                       UInstr* u );
+extern void VG_(saneUCodeBlock)      ( UCodeBlock* cb );
+extern Bool VG_(saneUCodeBlockCalls) ( UCodeBlock* cb );
 
+extern void VG_(print_reg_alloc_stats) ( void );
 
 /* ---------------------------------------------------------------------
    Exports of vg_execontext.c.
@@ -1357,24 +1358,6 @@ extern UInt VG_(bb_dechain_count);
 /* Number of unchained jumps performed. */
 extern UInt VG_(unchained_jumps_done);
 
-
-/* Counts pertaining to the register allocator. */
-
-/* total number of uinstrs input to reg-alloc */
-extern UInt VG_(uinstrs_prealloc);
-
-/* total number of uinstrs added due to spill code */
-extern UInt VG_(uinstrs_spill);
-
-/* number of bbs requiring spill code */
-extern UInt VG_(translations_needing_spill);
-
-/* total of register ranks over all translations */
-extern UInt VG_(total_reg_rank);
-
-/* Counts pertaining to internal sanity checking. */
-extern UInt VG_(sanity_fast_count);
-extern UInt VG_(sanity_slow_count);
 
 /* Counts pertaining to the scheduler. */
 extern UInt VG_(num_scheduling_events_MINOR);

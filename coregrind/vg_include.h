@@ -123,7 +123,7 @@
 /* Defines the thread-scheduling timeslice, in terms of the number of
    basic blocks we attempt to run each thread for.  Smaller values
    give finer interleaving but much increased scheduling overheads. */
-#define VG_SCHEDULING_QUANTUM   20000
+#define VG_SCHEDULING_QUANTUM   50000
 
 /* The maximum number of pthreads that we support.  This is
    deliberately not very high since our implementation of some of the

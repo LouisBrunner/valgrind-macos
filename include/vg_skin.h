@@ -601,7 +601,7 @@ typedef UChar FlagSet;
 typedef UInt RRegSet;
 
 #define ALL_RREGS_DEAD      0                           /* 0000...00b */
-#define ALL_RREGS_LIVE      (1 << (VG_MAX_REALREGS-1))  /* 0011...11b */
+#define ALL_RREGS_LIVE      ((1 << VG_MAX_REALREGS)-1)  /* 0011...11b */
 #define UNIT_RREGSET(rank)  (1 << (rank))
 
 #define IS_RREG_LIVE(rank,rregs_live) (rregs_live & UNIT_RREGSET(rank))

@@ -1,0 +1,9 @@
+#! /bin/sh
+
+./filter_stderr |
+sed "s/: fooble ([^)]*)/: fooble (...)/" |
+
+sed "/by 0x........: operator .*(.*) (vg_replace_malloc.c:...)/d" |
+sed "/by 0x........: \.\.\./d"
+
+

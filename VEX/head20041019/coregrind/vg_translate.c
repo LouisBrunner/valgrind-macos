@@ -1379,9 +1379,11 @@ Bool uInstrMentionsTempReg ( UInstr* u, Int tempreg )
 static
 IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayoutInfo* layout )
 {
-   Int      i, szP, offP;
-   IRDirty* dcall;
+   Int      i, j, minoff_ST, maxoff_ST;
+   IRDirty  *dcall, *d;
    IRStmt*  st;
+   IRExpr*  e;
+   IRArray* descr;
 
    /* Set up BB */
    IRBB* bb     = emptyIRBB();
@@ -1389,6 +1391,170 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayoutInfo* layout )
    bb->next     = dopyIRExpr(bb_in->next);
    bb->jumpkind = bb_in->jumpkind;
 
+   IRTemp curr  = INVALID_IRTEMP;
+   Long   delta = 0;
+
+   Int    sizeof_SP = layout->sizeof_SP;
+   Int    offset_SP = layout->offset_SP;
+   IRType typeof_SP = sizeof_SP==4 ? Ity_I32 : Ity_I64;
+   vg_assert(sizeof_SP == 4 || sizeof_SP == 8);
+
+#  define IS_ADD(op) (sizeof_SP==4 ? ((op)==Iop_Add32) : ((op)==Iop_Add64))
+#  define IS_SUB(op) (sizeof_SP==4 ? ((op)==Iop_Sub32) : ((op)==Iop_Sub64))
+
+#  define IS_ADD_OR_SUB(op) (IS_ADD(op) || IS_SUB(op))
+
+#  define GET_CONST(con)                                                \
+       (sizeof_SP==4 ? (Long)(Int)(con->Ico.U32)                        \
+                     : (Long)(con->Ico.U64))
+
+#  define DO(kind, syze)                                                \
+      do {                                                              \
+         if (!VG_(defined_##kind##_mem_stack_##syze)())                 \
+            goto generic;                                               \
+                                                                        \
+         /* I don't know if it's really necessary to say that the */    \
+         /* call reads the stack pointer.  But anyway, we do. */        \
+         dcall = unsafeIRDirty_0_N(                                     \
+                    mkIRCallee(1, "track_" #kind "_mem_stack_" #syze,   \
+                       (HWord)VG_(tool_interface)                       \
+                               .track_##kind##_mem_stack_##syze),       \
+                    mkIRExprVec_1(IRExpr_Tmp(curr))                     \
+                 );                                                     \
+         dcall->nFxState = 1;                                           \
+         dcall->fxState[0].fx     = Ifx_Read;                           \
+         dcall->fxState[0].offset = layout->offset_SP;                  \
+         dcall->fxState[0].size   = layout->sizeof_SP;                  \
+                                                                        \
+         addStmtToIRBB( bb, IRStmt_Dirty(dcall) );                      \
+      } while (0)
+
+   for (i = 0; i <  bb_in->stmts_used; i++) {
+
+      st = bb_in->stmts[i];
+      if (!st)
+         continue;
+
+      /* t = Get(sp):   curr = t, delta = 0 */
+      if (st->tag != Ist_Tmp) goto case2;
+      e = st->Ist.Tmp.data;
+      if (e->tag != Iex_Get)              goto case2;
+      if (e->Iex.Get.offset != offset_SP) goto case2;
+      if (e->Iex.Get.ty != typeof_SP)     goto case2;
+      curr = st->Ist.Tmp.tmp;
+      delta = 0;
+      addStmtToIRBB( bb, st );
+      continue;
+
+     case2:
+      /* t' = curr +/- const:   curr = t',  delta +=/-= const */
+      if (st->tag != Ist_Tmp) goto case3;
+      e = st->Ist.Tmp.data;
+      if (e->tag != Iex_Binop) goto case3;
+      if (e->Iex.Binop.arg1->tag != Iex_Tmp) goto case3;
+      if (e->Iex.Binop.arg1->Iex.Tmp.tmp != curr) goto case3;
+      if (e->Iex.Binop.arg2->tag != Iex_Const) goto case3;
+      if (!IS_ADD_OR_SUB(e->Iex.Binop.op)) goto case3;
+      curr = st->Ist.Tmp.tmp;
+      if (IS_ADD(e->Iex.Binop.op))
+         delta += GET_CONST(e->Iex.Binop.arg2->Iex.Const.con);
+      else
+         delta -= GET_CONST(e->Iex.Binop.arg2->Iex.Const.con);
+      addStmtToIRBB( bb, st );
+      continue;
+
+     case3:
+      /* t' = curr:   curr = t' */
+      if (st->tag != Ist_Tmp) goto case4;
+      e = st->Ist.Tmp.data;
+      if (e->tag != Iex_Tmp) goto case4;
+      if (e->Iex.Tmp.tmp != curr) goto case4;
+      curr = st->Ist.Tmp.tmp;
+      addStmtToIRBB( bb, st );
+      continue;
+
+     case4:
+      /* Put(sp) = curr */
+      if (st->tag != Ist_Put) goto case5;
+      if (st->Ist.Put.offset != offset_SP) goto case5;
+      if (st->Ist.Put.data->tag != Iex_Tmp) goto case5;
+      if (st->Ist.Put.data->Iex.Tmp.tmp == curr) {
+         switch (delta) {
+#if 1
+            case   0:              addStmtToIRBB(bb,st); delta = 0; continue;
+            case   4: DO(die, 4);  addStmtToIRBB(bb,st); delta = 0; continue;
+            case  -4: DO(new, 4);  addStmtToIRBB(bb,st); delta = 0; continue;
+            case   8: DO(die, 8);  addStmtToIRBB(bb,st); delta = 0; continue;
+            case  -8: DO(new, 8);  addStmtToIRBB(bb,st); delta = 0; continue;
+            case  12: DO(die, 12); addStmtToIRBB(bb,st); delta = 0; continue;
+            case -12: DO(new, 12); addStmtToIRBB(bb,st); delta = 0; continue;
+            case  16: DO(die, 16); addStmtToIRBB(bb,st); delta = 0; continue;
+            case -16: DO(new, 16); addStmtToIRBB(bb,st); delta = 0; continue;
+            case  32: DO(die, 32); addStmtToIRBB(bb,st); delta = 0; continue;
+            case -32: DO(new, 32); addStmtToIRBB(bb,st); delta = 0; continue;
+#endif
+            default:  goto generic;
+         }
+      } else {
+        generic:
+         /* I don't know if it's really necessary to say that the call
+            reads the stack pointer.  But anyway, we do. */
+         dcall = unsafeIRDirty_0_N( 
+                    mkIRCallee(1, "VG_(unknown_esp_update)", 
+                               (HWord)&VG_(unknown_esp_update)),
+                    mkIRExprVec_1(st->Ist.Put.data) 
+                 );
+         dcall->nFxState = 1;
+         dcall->fxState[0].fx     = Ifx_Read;
+         dcall->fxState[0].offset = layout->offset_SP;
+         dcall->fxState[0].size   = layout->sizeof_SP;
+
+         addStmtToIRBB( bb, IRStmt_Dirty(dcall) );
+         addStmtToIRBB(bb,st);
+
+         curr = st->Ist.Put.data->Iex.Tmp.tmp;
+         delta = 0;
+         continue;
+      }
+
+     case5:
+      /* PutI or Dirty call which overlaps SP: complain.  We can't
+         deal with SP changing in weird ways (well, we can, but not at
+         this time of night).  */
+      if (st->tag == Ist_PutI) {
+         descr = st->Ist.PutI.descr;
+         minoff_ST = descr->base;
+         maxoff_ST = descr->base + descr->nElems * sizeofIRType(descr->elemTy) - 1;
+         if (!(offset_SP > maxoff_ST || (offset_SP + sizeof_SP - 1) < minoff_ST))
+            goto complain;
+      }
+      if (st->tag == Ist_Dirty) {
+         d = st->Ist.Dirty.details;
+         for (j = 0; j < d->nFxState; j++) {
+            minoff_ST = d->fxState[j].offset;
+            maxoff_ST = d->fxState[j].offset + d->fxState[j].size - 1;
+            if (d->fxState[j].fx == Ifx_Read || d->fxState[j].fx == Ifx_None)
+               continue;
+            if (!(offset_SP > maxoff_ST || (offset_SP + sizeof_SP - 1) < minoff_ST))
+               goto complain;
+         }
+      }
+
+      /* well, not interesting.  Just copy and keep going. */
+      addStmtToIRBB( bb, st );
+
+   } /* for (i = 0; i <  bb_in->stmts_used; i++) */
+
+   return bb;
+
+  complain:
+   VG_(core_panic)("vg_SP_update_pass: PutI or Dirty which overlaps SP");
+
+}
+
+
+
+#if 0
    for (i = 0; i <  bb_in->stmts_used; i++) {
       st = bb_in->stmts[i];
       if (!st)
@@ -1404,10 +1570,10 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayoutInfo* layout )
       vg_assert(isAtom(st->Ist.Put.data));
 
       /* I don't know if it's really necessary to say that the call reads
-	 the stack pointer.  But anyway, we do. */      
+         the stack pointer.  But anyway, we do. */      
       dcall = unsafeIRDirty_0_N( 
                  mkIRCallee(1, "VG_(unknown_esp_update)", 
-	                    (HWord)&VG_(unknown_esp_update)),
+                            (HWord)&VG_(unknown_esp_update)),
                  mkIRExprVec_1(st->Ist.Put.data) 
               );
       dcall->nFxState = 1;
@@ -1420,9 +1586,8 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayoutInfo* layout )
      boring:
       addStmtToIRBB( bb, st );
    }
+#endif
 
-   return bb;
-}
 
 /*------------------------------------------------------------*/
 /*--- Main entry point for the JITter.                     ---*/
@@ -1494,9 +1659,9 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
 
    if (redir != orig_addr && VG_(clo_verbosity) >= 2) {
       VG_(message)(Vg_UserMsg, 
-		   "TRANSLATE: %p redirected to %p",
-		   orig_addr, 
-		   redir );
+                   "TRANSLATE: %p redirected to %p",
+                   orig_addr, 
+                   redir );
    }
    orig_addr = redir;
 
@@ -1520,14 +1685,14 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
       vg_assert(!VG_(is_addressable)(orig_addr, 1));
 
       if (seg != NULL && VG_(seg_contains)(seg, orig_addr, 1)) {
-	 vg_assert((seg->prot & VKI_PROT_EXEC) == 0);
-	 VG_(synth_fault_perms)(tid, orig_addr);
+         vg_assert((seg->prot & VKI_PROT_EXEC) == 0);
+         VG_(synth_fault_perms)(tid, orig_addr);
       } else
-	 VG_(synth_fault_mapping)(tid, orig_addr);
+         VG_(synth_fault_mapping)(tid, orig_addr);
 
       return False;
    } else
-      seg->flags |= SF_CODE;	/* contains cached code */
+      seg->flags |= SF_CODE;        /* contains cached code */
 
    /* If doing any code printing, print a basic block start marker */
    if (VG_(clo_trace_codegen)) {

@@ -9783,6 +9783,76 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       goto decode_success;
    }
 
+   /* 66 0F 68 = PUNPCKHBW */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x68) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "punpckhbw",
+                                 Iop_InterleaveHI8x16, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 6A = PUNPCKHDQ */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6A) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "punpckhdq",
+                                 Iop_InterleaveHI32x4, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 6D = PUNPCKHQDQ */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6D) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "punpckhqdq",
+                                 Iop_InterleaveHI64x2, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 69 = PUNPCKHWD */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x69) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "punpckhwd",
+                                 Iop_InterleaveHI16x8, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 60 = PUNPCKLBW */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x60) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "punpcklbw",
+                                 Iop_InterleaveLO8x16, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 62 = PUNPCKLDQ */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x62) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "punpckldq",
+                                 Iop_InterleaveLO32x4, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 6C = PUNPCKLQDQ */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6C) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "punpcklqdq",
+                                 Iop_InterleaveLO64x2, True );
+      goto decode_success;
+   }
+
+   /* 66 0F 61 = PUNPCKLWD */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x61) {
+      delta = dis_SSEint_E_to_G( sorb, delta+2, 
+                                 "punpcklwd",
+                                 Iop_InterleaveLO16x8, True );
+      goto decode_success;
+   }
+
+   /* 66 0F EF = PXOR */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xEF) {
+      delta = dis_SSE_E_to_G_all( sorb, delta+2, "pxor", Iop_Xor128 );
+      goto decode_success;
+   }
+
 
 //-- 
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */

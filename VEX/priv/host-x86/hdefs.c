@@ -560,12 +560,14 @@ HChar* showX86SseOp ( X86SseOp op ) {
       case Xsse_PACKSSD:  return "packssdw";
       case Xsse_PACKSSW:  return "packsswb";
       case Xsse_PACKUSW:  return "packuswb";
-      case Xsse_PUNPCKHB: return "punpckhb";
-      case Xsse_PUNPCKHW: return "punpckhw";
-      case Xsse_PUNPCKHD: return "punpckhd";
-      case Xsse_PUNPCKLB: return "punpcklb";
-      case Xsse_PUNPCKLW: return "punpcklw";
-      case Xsse_PUNPCKLD: return "punpckld";
+      case Xsse_UNPCKHB:  return "punpckhb";
+      case Xsse_UNPCKHW:  return "punpckhw";
+      case Xsse_UNPCKHD:  return "punpckhd";
+      case Xsse_UNPCKHQ:  return "punpckhq";
+      case Xsse_UNPCKLB:  return "punpcklb";
+      case Xsse_UNPCKLW:  return "punpcklw";
+      case Xsse_UNPCKLD:  return "punpckld";
+      case Xsse_UNPCKLQ:  return "punpcklq";
       default: vpanic("showX86SseOp");
    }
 }
@@ -803,16 +805,6 @@ X86Instr* X86Instr_SseLdzLO  ( Int sz, HReg reg, X86AMode* addr )
    vassert(sz == 4 || sz == 8);
    return i;
 }
-X86Instr* X86Instr_Sse128 ( X86SseOp op, HReg src, HReg dst ) {
-   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag            = Xin_Sse128;
-   i->Xin.Sse128.op  = op;
-   i->Xin.Sse128.src = src;
-   i->Xin.Sse128.dst = dst;
-   vassert(op == Xsse_MOV 
-           || op == Xsse_AND || op == Xsse_OR || op == Xsse_XOR);
-   return i;
-}
 X86Instr* X86Instr_Sse32Fx4 ( X86SseOp op, HReg src, HReg dst ) {
    X86Instr* i         = LibVEX_Alloc(sizeof(X86Instr));
    i->tag              = Xin_Sse32Fx4;
@@ -855,7 +847,6 @@ X86Instr* X86Instr_SseReRg ( X86SseOp op, HReg re, HReg rg ) {
    i->Xin.SseReRg.op  = op;
    i->Xin.SseReRg.src = re;
    i->Xin.SseReRg.dst = rg;
-   vassert(op != Xsse_MOV);
    return i;
 }
 X86Instr* X86Instr_SseCMov ( X86CondCode cond, HReg src, HReg dst ) {
@@ -1071,16 +1062,6 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppHRegX86(i->Xin.SseLdzLO.reg);
          return;
-      case Xin_Sse128:
-         if (i->Xin.Sse128.op == Xsse_MOV) {
-            vex_printf("mov ");
-         } else {
-            vex_printf("p%s ", showX86SseOp(i->Xin.Sse128.op));
-         }
-         ppHRegX86(i->Xin.Sse128.src);
-         vex_printf(",");
-         ppHRegX86(i->Xin.Sse128.dst);
-         return;
       case Xin_Sse32Fx4:
          vex_printf("%sps ", showX86SseOp(i->Xin.Sse32Fx4.op));
          ppHRegX86(i->Xin.Sse32Fx4.src);
@@ -1285,11 +1266,6 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
       case Xin_SseConst:
          addHRegUse(u, HRmWrite, i->Xin.SseConst.dst);
          return;
-      case Xin_Sse128:
-         addHRegUse(u, HRmRead, i->Xin.Sse128.src);
-         addHRegUse(u, i->Xin.Sse128.op==Xsse_MOV ? HRmWrite : HRmModify,
-                       i->Xin.Sse128.dst);
-         return;
       case Xin_Sse32Fx4:
          vassert(i->Xin.Sse32Fx4.op != Xsse_MOV);
          unary = i->Xin.Sse32Fx4.op == Xsse_RCPF
@@ -1327,9 +1303,9 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
                        i->Xin.Sse64FLo.dst);
          return;
       case Xin_SseReRg:
-         vassert(i->Xin.SseReRg.op != Xsse_MOV);
-         addHRegUse(u, HRmRead,   i->Xin.SseReRg.src);
-         addHRegUse(u, HRmModify, i->Xin.SseReRg.dst);
+         addHRegUse(u, HRmRead, i->Xin.SseReRg.src);
+         addHRegUse(u, i->Xin.SseReRg.op == Xsse_MOV ? HRmWrite : HRmModify, 
+                       i->Xin.SseReRg.dst);
          return;
       case Xin_SseCMov:
          addHRegUse(u, HRmRead,   i->Xin.SseCMov.src);
@@ -1451,10 +1427,6 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          mapReg(m, &i->Xin.SseLdzLO.reg);
          mapRegs_X86AMode(m, i->Xin.SseLdzLO.addr);
          break;
-      case Xin_Sse128:
-         mapReg(m, &i->Xin.Sse128.src);
-         mapReg(m, &i->Xin.Sse128.dst);
-         return;
       case Xin_Sse32Fx4:
          mapReg(m, &i->Xin.Sse32Fx4.src);
          mapReg(m, &i->Xin.Sse32Fx4.dst);
@@ -1509,11 +1481,11 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
       *dst = i->Xin.FpUnary.dst;
       return True;
    }
-   if (i->tag == Xin_Sse128) {
-      if (i->Xin.Sse128.op != Xsse_MOV)
+   if (i->tag == Xin_SseReRg) {
+      if (i->Xin.SseReRg.op != Xsse_MOV)
          return False;
-      *src = i->Xin.Sse128.src;
-      *dst = i->Xin.Sse128.dst;
+      *src = i->Xin.SseReRg.src;
+      *dst = i->Xin.SseReRg.dst;
       return True;
    }
    return False;
@@ -2589,19 +2561,6 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                        i->Xin.SseLdzLO.addr);
       goto done;
 
-   case Xin_Sse128:
-      *p++ = 0x0F;
-      switch (i->Xin.Sse128.op) {
-         case Xsse_OR:  *p++ = 0x56; break;
-         case Xsse_XOR: *p++ = 0x57; break;
-         case Xsse_AND: *p++ = 0x54; break;
-         case Xsse_MOV: *p++ = 0x10; break;
-         default: goto bad;
-      }
-      p = doAMode_R(p, fake(vregNo(i->Xin.Sse128.dst)),
-                       fake(vregNo(i->Xin.Sse128.src)) );
-      goto done;
-
    case Xin_Sse32Fx4:
       xtra = 0;
       *p++ = 0x0F;
@@ -2704,6 +2663,10 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
    case Xin_SseReRg:
 #     define XX(_n) *p++ = (_n)
       switch (i->Xin.SseReRg.op) {
+         case Xsse_MOV:     /*movups*/ XX(0x0F); XX(0x10); break;
+         case Xsse_OR:                 XX(0x0F); XX(0x56); break;
+         case Xsse_XOR:                XX(0x0F); XX(0x57); break;
+         case Xsse_AND:                XX(0x0F); XX(0x54); break;
          case Xsse_PACKSSD:  XX(0x66); XX(0x0F); XX(0x6B); break;
          case Xsse_PACKSSW:  XX(0x66); XX(0x0F); XX(0x63); break;
          case Xsse_PACKUSW:  XX(0x66); XX(0x0F); XX(0x67); break;
@@ -2746,6 +2709,14 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_QSUB16S:  XX(0x66); XX(0x0F); XX(0xE9); break;
          case Xsse_QSUB8U:   XX(0x66); XX(0x0F); XX(0xD8); break;
          case Xsse_QSUB16U:  XX(0x66); XX(0x0F); XX(0xD9); break;
+         case Xsse_UNPCKHB:  XX(0x66); XX(0x0F); XX(0x68); break;
+         case Xsse_UNPCKHW:  XX(0x66); XX(0x0F); XX(0x69); break;
+         case Xsse_UNPCKHD:  XX(0x66); XX(0x0F); XX(0x6A); break;
+         case Xsse_UNPCKHQ:  XX(0x66); XX(0x0F); XX(0x6D); break;
+         case Xsse_UNPCKLB:  XX(0x66); XX(0x0F); XX(0x60); break;
+         case Xsse_UNPCKLW:  XX(0x66); XX(0x0F); XX(0x61); break;
+         case Xsse_UNPCKLD:  XX(0x66); XX(0x0F); XX(0x62); break;
+         case Xsse_UNPCKLQ:  XX(0x66); XX(0x0F); XX(0x6C); break;
          default: goto bad;
       }
       p = doAMode_R(p, fake(vregNo(i->Xin.SseReRg.dst)),

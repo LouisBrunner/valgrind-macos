@@ -324,7 +324,7 @@ static X86Instr* mk_vMOVsd_RR ( HReg src, HReg dst )
 {
    vassert(hregClass(src) == HRcVec128);
    vassert(hregClass(dst) == HRcVec128);
-   return X86Instr_Sse128(Xsse_MOV, src, dst);
+   return X86Instr_SseReRg(Xsse_MOV, src, dst);
 }
 
 /* Advance/retreat %esp by n. */
@@ -2590,19 +2590,6 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      case Iop_And128: op = Xsse_AND; goto do_128;
-      case Iop_Or128:  op = Xsse_OR;  goto do_128;
-      case Iop_Xor128: op = Xsse_XOR; goto do_128;
-      do_128: 
-      {
-         HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
-         HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
-         HReg dst = newVRegV(env);
-         addInstr(env, mk_vMOVsd_RR(argL, dst));
-         addInstr(env, X86Instr_Sse128(op, argR, dst));
-         return dst;
-      }
-
       case Iop_CmpEQ32Fx4: op = Xsse_CMPEQF; goto do_32Fx4;
       case Iop_CmpLT32Fx4: op = Xsse_CMPLTF; goto do_32Fx4;
       case Iop_CmpLE32Fx4: op = Xsse_CMPLEF; goto do_32Fx4;
@@ -2677,12 +2664,34 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-      case Iop_QNarrow32Sx4: op = Xsse_PACKSSD; 
-                             arg1isEReg = True; goto do_SseReRg;
-      case Iop_QNarrow16Sx8: op = Xsse_PACKSSW; 
-                             arg1isEReg = True; goto do_SseReRg;
-      case Iop_QNarrow16Ux8: op = Xsse_PACKUSW; 
-                             arg1isEReg = True; goto do_SseReRg;
+      case Iop_QNarrow32Sx4: 
+         op = Xsse_PACKSSD; arg1isEReg = True; goto do_SseReRg;
+      case Iop_QNarrow16Sx8: 
+         op = Xsse_PACKSSW; arg1isEReg = True; goto do_SseReRg;
+      case Iop_QNarrow16Ux8: 
+         op = Xsse_PACKUSW; arg1isEReg = True; goto do_SseReRg;
+
+      case Iop_InterleaveHI8x16: 
+         op = Xsse_UNPCKHB; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveHI16x8: 
+         op = Xsse_UNPCKHW; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveHI32x4: 
+         op = Xsse_UNPCKHD; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveHI64x2: 
+         op = Xsse_UNPCKHQ; arg1isEReg = True; goto do_SseReRg;
+
+      case Iop_InterleaveLO8x16: 
+         op = Xsse_UNPCKLB; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveLO16x8: 
+         op = Xsse_UNPCKLW; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveLO32x4: 
+         op = Xsse_UNPCKLD; arg1isEReg = True; goto do_SseReRg;
+      case Iop_InterleaveLO64x2: 
+         op = Xsse_UNPCKLQ; arg1isEReg = True; goto do_SseReRg;
+
+      case Iop_And128:     op = Xsse_AND;      goto do_SseReRg;
+      case Iop_Or128:      op = Xsse_OR;       goto do_SseReRg;
+      case Iop_Xor128:     op = Xsse_XOR;      goto do_SseReRg;
       case Iop_Add8x16:    op = Xsse_ADD8;     goto do_SseReRg;
       case Iop_Add16x8:    op = Xsse_ADD16;    goto do_SseReRg;
       case Iop_Add32x4:    op = Xsse_ADD32;    goto do_SseReRg;

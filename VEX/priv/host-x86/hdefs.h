@@ -337,9 +337,9 @@ typedef
       Xsse_SHL16, Xsse_SHL32, Xsse_SHL64,
       Xsse_SHR16, Xsse_SHR32, Xsse_SHR64,
       Xsse_SAR16, Xsse_SAR32, 
-      Xsse_PACKSSD,  Xsse_PACKSSW, Xsse_PACKUSW,
-      Xsse_PUNPCKHB, Xsse_PUNPCKHW, Xsse_PUNPCKHD,
-      Xsse_PUNPCKLB, Xsse_PUNPCKLW, Xsse_PUNPCKLD
+      Xsse_PACKSSD, Xsse_PACKSSW, Xsse_PACKUSW,
+      Xsse_UNPCKHB, Xsse_UNPCKHW, Xsse_UNPCKHD, Xsse_UNPCKHQ,
+      Xsse_UNPCKLB, Xsse_UNPCKLW, Xsse_UNPCKLD, Xsse_UNPCKLQ
    }
    X86SseOp;
 
@@ -379,7 +379,6 @@ typedef
       Xin_SseConst,  /* Generate restricted SSE literal */
       Xin_SseLdSt,   /* SSE load/store, no alignment constraints */
       Xin_SseLdzLO,  /* SSE load low 32/64 bits, zero remainder of reg */
-      Xin_Sse128,    /* SSE binary typeless (and/or/xor/andn) */
       Xin_Sse32Fx4,  /* SSE binary, 32Fx4 */
       Xin_Sse32FLo,  /* SSE binary, 32F in lowest lane only */
       Xin_Sse64Fx2,  /* SSE binary, 64Fx2 */
@@ -566,11 +565,6 @@ typedef
             X86AMode* addr;
          } SseLdzLO;
          struct {
-            X86SseOp op;  /* MOV/AND/OR/XOR/ANDN only */
-            HReg     src;
-            HReg     dst;
-         } Sse128;
-         struct {
             X86SseOp op;
             HReg     src;
             HReg     dst;
@@ -638,7 +632,6 @@ extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
 extern X86Instr* X86Instr_SseConst  ( UShort con, HReg dst );
 extern X86Instr* X86Instr_SseLdSt   ( Bool isLoad, HReg, X86AMode* );
 extern X86Instr* X86Instr_SseLdzLO  ( Int sz, HReg, X86AMode* );
-extern X86Instr* X86Instr_Sse128    ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse32Fx4  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse32FLo  ( X86SseOp, HReg, HReg );
 extern X86Instr* X86Instr_Sse64Fx2  ( X86SseOp, HReg, HReg );

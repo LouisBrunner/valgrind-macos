@@ -128,9 +128,6 @@
 /* Max number of callers for context in a suppression. */
 #define VG_N_SUPP_CALLERS  4
 
-/* Valgrind's signal stack size, in words */
-#define VG_SIGSTACK_SIZE_W    10000
-
 /* Useful macros */
 /* a - alignment - must be a power of 2 */
 #define ROUNDDN(p, a)	((Addr)(p) & ~((a)-1))
@@ -934,7 +931,8 @@ typedef
 
 
 /* The scheduler. */
-extern VgSchedReturnCode VG_(scheduler) ( Int* exit_code );
+extern VgSchedReturnCode VG_(scheduler) ( Int* exit_code,
+                                          ThreadId* last_run_thread );
 
 extern void VG_(scheduler_init) ( void );
 
@@ -1024,6 +1022,7 @@ extern void VG_(synth_fault)        (ThreadId tid);
 extern void VG_(synth_fault_mapping)(ThreadId tid, Addr addr);
 extern void VG_(synth_fault_perms)  (ThreadId tid, Addr addr);
 
+extern void VG_(get_sigstack_bounds)( Addr* low, Addr* high );
 
 /* ---------------------------------------------------------------------
    Exports of vg_mylibc.c
@@ -1252,12 +1251,6 @@ extern Bool VG_(need_to_handle_esp_assignment) ( void );
 extern void VG_(unimplemented) ( Char* msg )
             __attribute__((__noreturn__));
 
-/* Similarly, we have to ask for signals to be delivered on an alternative
-   stack, since it is possible, although unlikely, that we'll have to run
-   client code from inside the Valgrind-installed signal handler.  If this
-   happens it will be done by vg_deliver_signal_immediately(). */
-extern UInt VG_(sigstack)[VG_SIGSTACK_SIZE_W];
-
 /* Valgrind's argc and argv */
 extern Int    VG_(vg_argc);
 extern Char **VG_(vg_argv);
@@ -1267,9 +1260,6 @@ extern void VG_(start_debugger) ( Int tid );
 
 /* Counts downwards in vg_run_innerloop. */
 extern UInt VG_(dispatch_ctr);
-
-/* This is the ThreadId of the last thread the scheduler ran. */
-extern ThreadId VG_(last_run_tid);
 
 /* If we're doing the default action of a fatal signal */
 extern jmp_buf* VG_(fatal_signal_jmpbuf_ptr);

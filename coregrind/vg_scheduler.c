@@ -844,7 +844,7 @@ void idle ( void )
    * One thread asks to shutdown Valgrind
    * The specified number of basic blocks has gone by.
 */
-VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
+VgSchedReturnCode VG_(scheduler) ( Int* exitcode, ThreadId* last_run_tid )
 {
    ThreadId tid, tid_next;
    UInt     trc;
@@ -855,7 +855,7 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
 
    /* Start with the root thread.  tid in general indicates the
       currently runnable/just-finished-running thread. */
-   VG_(last_run_tid) = tid = 1;
+   *last_run_tid = tid = 1;
 
    /* This is the top level scheduler loop.  It falls into three
       phases. */
@@ -975,7 +975,7 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
       /* Actually run thread tid. */
       while (True) {
 
-         VG_(last_run_tid) = tid;
+         *last_run_tid = tid;
 
          /* For stats purposes only. */
          n_scheduling_events_MINOR++;

@@ -148,8 +148,6 @@ Char** VG_(client_envp);
 /* ---------------------------------------------------------------------
    Running stuff                            
    ------------------------------------------------------------------ */
-/* Our signal delivery stack. */
-UInt VG_(sigstack)[VG_SIGSTACK_SIZE_W];
 
 /* jmp_buf for fatal signals;  VG_(fatal_signal_jmpbuf_ptr) is NULL until
    the time is right that it can be used. */
@@ -162,9 +160,6 @@ UInt VG_(dispatch_ctr);
 
 /* 64-bit counter for the number of basic blocks done. */
 ULong VG_(bbs_done);
-
-/* This is the ThreadId of the last thread the scheduler ran. */
-ThreadId VG_(last_run_tid) = 0;
 
 /* Tell the logging mechanism whether we are logging to a file
    descriptor or a socket descriptor. */
@@ -2679,6 +2674,8 @@ int main(int argc, char **argv)
    Int exitcode = 0;
    vki_rlimit zero = { 0, 0 };
    Int padfile;
+   ThreadId last_run_tid = 0;    // Last thread the scheduler ran.
+
 
    //============================================================
    // Nb: startup is complex.  Prerequisites are shown at every step.
@@ -2973,7 +2970,7 @@ int main(int argc, char **argv)
 
    VG_(fatal_signal_jmpbuf_ptr) = &fatal_signal_jmpbuf;
    if (__builtin_setjmp(VG_(fatal_signal_jmpbuf_ptr)) == 0) {
-      src = VG_(scheduler)( &exitcode );
+      src = VG_(scheduler)( &exitcode, &last_run_tid );
    } else {
       src = VgSrc_FatalSig;
    }
@@ -3012,8 +3009,8 @@ int main(int argc, char **argv)
 
    /* We're exiting, so nuke all the threads and clean up the proxy LWPs */
    vg_assert(src == VgSrc_FatalSig ||
-	     VG_(threads)[VG_(last_run_tid)].status == VgTs_Runnable ||
-	     VG_(threads)[VG_(last_run_tid)].status == VgTs_WaitJoiner);
+	     VG_(threads)[last_run_tid].status == VgTs_Runnable ||
+	     VG_(threads)[last_run_tid].status == VgTs_WaitJoiner);
    VG_(nuke_all_threads_except)(VG_INVALID_THREADID);
 
    //--------------------------------------------------------------
@@ -3021,7 +3018,7 @@ int main(int argc, char **argv)
    //--------------------------------------------------------------
    switch (src) {
       case VgSrc_ExitSyscall: /* the normal way out */
-         vg_assert(VG_(last_run_tid) > 0 && VG_(last_run_tid) < VG_N_THREADS);
+         vg_assert(last_run_tid > 0 && last_run_tid < VG_N_THREADS);
 	 VG_(proxy_shutdown)();
 
          /* The thread's %EBX at the time it did __NR_exit() will hold

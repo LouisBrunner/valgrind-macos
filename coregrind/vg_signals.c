@@ -81,16 +81,6 @@
 #define DEBUG_SIGNALS
 
 
-/*
-   - The following causes an infinite loop: start Hugs, Feb 2001 
-     version, and do Control-C at the prompt.  There is an infinite
-     series of sigints delivered (to the client); but also seemingly
-     to valgrind, which is very strange.  I don't know why.
-
-     [I haven't re-tested this, but this is likely fixed - JSGF]
-*/
-
-
 /* ---------------------------------------------------------------------
    Forwards decls.
    ------------------------------------------------------------------ */
@@ -102,6 +92,24 @@ static void proxy_sigvg_handler	   ( Int sigNo, vki_ksiginfo_t *info, struct vki
 
 static Bool is_correct_sigmask(void);
 static const Char *signame(Int sigNo);
+
+/* ---------------------------------------------------------------------
+   Signal stack
+   ------------------------------------------------------------------ */
+
+/* Valgrind's signal stack size, in words */
+#define VG_SIGSTACK_SIZE_W    10000
+
+/* We have to ask for signals to be delivered on an alternative
+   stack, since it is possible, although unlikely, that we'll have to run
+   client code from inside the Valgrind-installed signal handler. */
+static Addr sigstack[VG_SIGSTACK_SIZE_W];
+
+extern void VG_(get_sigstack_bounds)( Addr* low, Addr* high )
+{
+   *low  = (Addr) & sigstack[0];
+   *high = (Addr) & sigstack[VG_SIGSTACK_SIZE_W]; 
+}
 
 /* ---------------------------------------------------------------------
    HIGH LEVEL STUFF TO DO WITH SIGNALS: POLICY (MOSTLY)
@@ -2042,9 +2050,9 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
    /* Sanity check.  Ensure we're really running on the signal stack
       we asked for. */
    if (!(
-         ((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&dummy_local))
+         ((Char*)(&(sigstack[0])) <= (Char*)(&dummy_local))
          &&
-         ((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[VG_SIGSTACK_SIZE_W])))
+         ((Char*)(&dummy_local) < (Char*)(&(sigstack[VG_SIGSTACK_SIZE_W])))
          )
       ) {
      VG_(message)(Vg_DebugMsg, 
@@ -2058,8 +2066,8 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
          "rebuild your prog without -p/-pg");
    }
 
-   vg_assert((Char*)(&(VG_(sigstack)[0])) <= (Char*)(&dummy_local));
-   vg_assert((Char*)(&dummy_local) < (Char*)(&(VG_(sigstack)[VG_SIGSTACK_SIZE_W])));
+   vg_assert((Char*)(&(sigstack[0])) <= (Char*)(&dummy_local));
+   vg_assert((Char*)(&dummy_local) < (Char*)(&(sigstack[VG_SIGSTACK_SIZE_W])));
 
    /* Special fault-handling case. We can now get signals which can
       act upon and immediately restart the faulting instruction.
@@ -2359,7 +2367,7 @@ void VG_(sigstartup_actions) ( void )
    VG_(proxy_setsigmask)(1);
 
    /* Register an alternative stack for our own signal handler to run on. */
-   altstack_info.ss_sp = &(VG_(sigstack)[0]);
+   altstack_info.ss_sp = &(sigstack[0]);
    altstack_info.ss_size = VG_SIGSTACK_SIZE_W * sizeof(UInt);
    altstack_info.ss_flags = 0;
    ret = VG_(ksigaltstack)(&altstack_info, NULL);

@@ -476,7 +476,7 @@ void test_mul(void)
     TEST_IMUL_IM("l", "", -45, 23);
     TEST_IMUL_IM("l", "", 0x8000, 0x80000000);
     TEST_IMUL_IM("l", "", 0x7fff, 0x1000);
-#if 0
+
     test_idivb(0x12341678, 0x127e);
     test_idivb(0x43210123, -5);
     test_idivb(0x12340004, -1);
@@ -485,12 +485,12 @@ void test_mul(void)
     test_idivw(0, -23223, -45);
     test_idivw(0, 0x12348000, -1);
     test_idivw(0x12343, 0x12345678, 0x81238567);
-#endif
+
     test_idivl(0, 0x12345678, 12347);
     test_idivl(0, -233223, -45);
     test_idivl(0, 0x80000000, -1);
     test_idivl(0x12343, 0x12345678, 0x81234567);
-#if 0
+
     test_divb(0x12341678, 0x127e);
     test_divb(0x43210123, -5);
     test_divb(0x12340004, -1);
@@ -499,7 +499,7 @@ void test_mul(void)
     test_divw(0, -23223, -45);
     test_divw(0, 0x12348000, -1);
     test_divw(0x12343, 0x12345678, 0x81238567);
-#endif
+
     test_divl(0, 0x12345678, 12347);
     test_divl(0, -233223, -45);
     test_divl(0, 0x80000000, -1);

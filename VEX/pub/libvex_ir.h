@@ -32,14 +32,15 @@ extern void ppIRType ( IRType );
 /* ------------------ Constants ------------------ */
 
 typedef
-   enum { Ico_U8=0x12000, 
-          Ico_U16, Ico_U32, Ico_U64, Ico_F64 }
+   enum { Ico_Bit=0x12000,
+          Ico_U8, Ico_U16, Ico_U32, Ico_U64, Ico_F64 }
    IRConstTag;
 
 typedef
    struct _IRConst {
       IRConstTag tag;
       union {
+         Bool   Bit;
          UChar  U8;
          UShort U16;
          UInt   U32;
@@ -49,6 +50,7 @@ typedef
    }
    IRConst;
 
+extern IRConst* IRConst_Bit ( Bool );
 extern IRConst* IRConst_U8  ( UChar );
 extern IRConst* IRConst_U16 ( UShort );
 extern IRConst* IRConst_U32 ( UInt );

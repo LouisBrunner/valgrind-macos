@@ -3,6 +3,8 @@ AC_INIT(vg_clientmalloc.c)
 AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE(valgrind, 20020324)
 
+AM_MAINTAINER_MODE
+
 # Checks for programs.
 CFLAGS=""
 

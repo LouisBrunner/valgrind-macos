@@ -3136,9 +3136,9 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 //..          case Xsse_RSQRTF: *p++ = 0x52; break;
          case Asse_SQRTF:  *p++ = 0x51; break;
          case Asse_SUBF:   *p++ = 0x5C; break;
-//..          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
+         case Asse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Asse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
-//..          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
+         case Asse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
          default: goto bad;
       }
       p = doAMode_R(p, vreg2ireg(i->Ain.Sse64FLo.dst),
@@ -3159,6 +3159,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
          case Asse_OR:                 XX(rex); XX(0x0F); XX(0x56); break;
          case Asse_XOR:                XX(rex); XX(0x0F); XX(0x57); break;
          case Asse_AND:                XX(rex); XX(0x0F); XX(0x54); break;
+         case Asse_ANDN:               XX(rex); XX(0x0F); XX(0x55); break;
 //..          case Xsse_PACKSSD:  XX(0x66); XX(rex); XX(0x0F); XX(0x6B); break;
 //..          case Xsse_PACKSSW:  XX(0x66); XX(rex); XX(0x0F); XX(0x63); break;
 //..          case Xsse_PACKUSW:  XX(0x66); XX(rex); XX(0x0F); XX(0x67); break;

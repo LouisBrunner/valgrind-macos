@@ -4339,21 +4339,21 @@ void fp_do_op_ST_ST ( HChar* op_txt, IROp op, UInt st_src, UInt st_dst,
       fp_pop();
 }
 
-//.. /* ST(dst) = ST(src) `op` ST(dst).
-//..    Check dst and src tags when reading but not on write.
-//.. */
-//.. static
-//.. void fp_do_oprev_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst,
-//..                          Bool pop_after )
-//.. {
-//..    DIP("f%s%s st(%d), st(%d)\n", op_txt, pop_after?"p":"", st_src, st_dst );
-//..    put_ST_UNCHECKED( 
-//..       st_dst, 
-//..       binop(op, get_ST(st_src), get_ST(st_dst) ) 
-//..    );
-//..    if (pop_after)
-//..       fp_pop();
-//.. }
+/* ST(dst) = ST(src) `op` ST(dst).
+   Check dst and src tags when reading but not on write.
+*/
+static
+void fp_do_oprev_ST_ST ( HChar* op_txt, IROp op, UInt st_src, UInt st_dst,
+                         Bool pop_after )
+{
+   DIP("f%s%s st(%u), st(%u)\n", op_txt, pop_after?"p":"", st_src, st_dst );
+   put_ST_UNCHECKED( 
+      st_dst, 
+      binop(op, get_ST(st_src), get_ST(st_dst) ) 
+   );
+   if (pop_after)
+      fp_pop();
+}
 
 /* %rflags(Z,P,C) = UCOMI( st(0), st(i) ) */
 static void fp_do_ucomi_ST0_STi ( UInt i, Bool pop_after )
@@ -4473,10 +4473,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_ST_ST ( "add", Iop_AddF64, modrm - 0xC0, 0, False );
                break;
 
-//..             case 0xC8 ... 0xCF: /* FMUL %st(?),%st(0) */
-//..                fp_do_op_ST_ST ( "mul", Iop_MulF64, modrm - 0xC8, 0, False );
-//..                break;
-//.. 
+            case 0xC8 ... 0xCF: /* FMUL %st(?),%st(0) */
+               fp_do_op_ST_ST ( "mul", Iop_MulF64, modrm - 0xC8, 0, False );
+               break;
+
 //.. #if 1
 //..             /* Dunno if this is right */
 //..             case 0xD0 ... 0xD7: /* FCOM %st(?),%st(0) */
@@ -4508,18 +4508,18 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                fp_pop();
 //..                break;
 //.. #endif
-//..             case 0xE0 ... 0xE7: /* FSUB %st(?),%st(0) */
-//..                fp_do_op_ST_ST ( "sub", Iop_SubF64, modrm - 0xE0, 0, False );
-//..                break;
-//.. 
+            case 0xE0 ... 0xE7: /* FSUB %st(?),%st(0) */
+               fp_do_op_ST_ST ( "sub", Iop_SubF64, modrm - 0xE0, 0, False );
+               break;
+
 //..             case 0xE8 ... 0xEF: /* FSUBR %st(?),%st(0) */
 //..                fp_do_oprev_ST_ST ( "subr", Iop_SubF64, modrm - 0xE8, 0, False );
 //..                break;
-//.. 
-//..             case 0xF0 ... 0xF7: /* FDIV %st(?),%st(0) */
-//..                fp_do_op_ST_ST ( "div", Iop_DivF64, modrm - 0xF0, 0, False );
-//..                break;
-//.. 
+
+            case 0xF0 ... 0xF7: /* FDIV %st(?),%st(0) */
+               fp_do_op_ST_ST ( "div", Iop_DivF64, modrm - 0xF0, 0, False );
+               break;
+
 //..             case 0xF8 ... 0xFF: /* FDIVR %st(?),%st(0) */
 //..                fp_do_oprev_ST_ST ( "divr", Iop_DivF64, modrm - 0xF8, 0, False );
 //..                break;
@@ -4754,11 +4754,11 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                put_ST_UNCHECKED(0, unop(Iop_NegF64, get_ST(0)));
                break;
 
-//..             case 0xE1: /* FABS */
-//..                DIP("fabs\n");
-//..                put_ST_UNCHECKED(0, unop(Iop_AbsF64, get_ST(0)));
-//..                break;
-//.. 
+            case 0xE1: /* FABS */
+               DIP("fabs\n");
+               put_ST_UNCHECKED(0, unop(Iop_AbsF64, get_ST(0)));
+               break;
+
 //..             case 0xE5: { /* FXAM */
 //..                /* This is an interesting one.  It examines %st(0),
 //..                   regardless of whether the tag says it's empty or not.
@@ -5171,23 +5171,31 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
             case 0xC8 ... 0xCF: /* FCMOVNE(NZ) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
                DIP("fcmovnz %%st(%d), %%st(0)\n", r_src);
-               put_ST_UNCHECKED(0, 
-                                IRExpr_Mux0X( 
-                                    unop(Iop_1Uto8,
-                                         mk_amd64g_calculate_condition(AMD64CondNZ)), 
-                                    get_ST(0), get_ST(r_src)) );
+               put_ST_UNCHECKED(
+                  0, 
+                  IRExpr_Mux0X( 
+                     unop(Iop_1Uto8,
+                          mk_amd64g_calculate_condition(AMD64CondNZ)), 
+                     get_ST(0), 
+                     get_ST(r_src)
+                  )
+               );
                break;
 
-//..             case 0xD0 ... 0xD7: /* FCMOVNBE ST(i), ST(0) */
-//..                r_src = (UInt)modrm - 0xD0;
-//..                DIP("fcmovnbe %%st(%d), %%st(0)\n", r_src);
-//..                put_ST_UNCHECKED(0, 
-//..                                 IRExpr_Mux0X( 
-//..                                     unop(Iop_1Uto8,
-//..                                          mk_x86g_calculate_condition(X86CondNBE)), 
-//..                                     get_ST(0), get_ST(r_src)) );
-//..                break;
-//.. 
+            case 0xD0 ... 0xD7: /* FCMOVNBE ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xD0;
+               DIP("fcmovnbe %%st(%d), %%st(0)\n", r_src);
+               put_ST_UNCHECKED(
+                  0, 
+                  IRExpr_Mux0X( 
+                     unop(Iop_1Uto8,
+                          mk_amd64g_calculate_condition(AMD64CondNBE)), 
+                     get_ST(0), 
+                     get_ST(r_src)
+                  ) 
+               );
+               break;
+
 //..             case 0xE2:
 //..                DIP("fnclex\n");
 //..                break;
@@ -5246,11 +5254,11 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
       }
    }
 
-//..    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDC opcodes +-+-+-+-+-+-+-+ */
-//..    else
-//..    if (first_opcode == 0xDC) {
-//..       if (modrm < 0xC0) {
-//.. 
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDC opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xDC) {
+      if (modrm < 0xC0) {
+
 //..          /* bits 5,4,3 are an opcode extension, and the modRM also
 //..             specifies an address. */
 //..          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
@@ -5316,16 +5324,16 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                vex_printf("first_opcode == 0xDC\n");
 //..                goto decode_fail;
 //..          }
-//.. 
-//..       } else {
-//.. 
-//..          delta++;
-//..          switch (modrm) {
-//.. 
-//..             case 0xC0 ... 0xC7: /* FADD %st(0),%st(?) */
-//..                fp_do_op_ST_ST ( "add", Iop_AddF64, 0, modrm - 0xC0, False );
-//..                break;
-//.. 
+
+      } else {
+
+         delta++;
+         switch (modrm) {
+
+            case 0xC0 ... 0xC7: /* FADD %st(0),%st(?) */
+               fp_do_op_ST_ST ( "add", Iop_AddF64, 0, modrm - 0xC0, False );
+               break;
+
 //..             case 0xC8 ... 0xCF: /* FMUL %st(0),%st(?) */
 //..                fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, False );
 //..                break;
@@ -5341,17 +5349,17 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..             case 0xF0 ... 0xF7: /* FDIVR %st(0),%st(?) */
 //..                fp_do_oprev_ST_ST ( "divr", Iop_DivF64, 0, modrm - 0xF0, False );
 //..                break;
-//.. 
-//..             case 0xF8 ... 0xFF: /* FDIV %st(0),%st(?) */
-//..                fp_do_op_ST_ST ( "div", Iop_DivF64, 0, modrm - 0xF8, False );
-//..                break;
-//.. 
-//..             default:
-//..                goto decode_fail;
-//..          }
-//.. 
-//..       }
-//..    }
+
+            case 0xF8 ... 0xFF: /* FDIV %st(0),%st(?) */
+               fp_do_op_ST_ST ( "div", Iop_DivF64, 0, modrm - 0xF8, False );
+               break;
+
+            default:
+               goto decode_fail;
+         }
+
+      }
+   }
 
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDD opcodes +-+-+-+-+-+-+-+ */
    else
@@ -5547,19 +5555,18 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
       }
    }
 
-//..    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDE opcodes +-+-+-+-+-+-+-+ */
-//..    else
-//..    if (first_opcode == 0xDE) {
-//.. 
-//..       if (modrm < 0xC0) {
-//.. 
+   /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDE opcodes +-+-+-+-+-+-+-+ */
+   else
+   if (first_opcode == 0xDE) {
+
+      if (modrm < 0xC0) {
+
 //..          /* bits 5,4,3 are an opcode extension, and the modRM also
 //..             specifies an address. */
-//..          IROp   fop;
-//..          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
+//..          IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
 //..          delta += len;
 //.. 
-//..          switch (gregOfRM(modrm)) {
+//..          switch (gregLO3ofRM(modrm)) {
 //.. 
 //..             case 0: /* FIADD m16int */ /* ST(0) += m16int */
 //..                DIP("fiaddw %s\n", dis_buf);
@@ -5610,24 +5617,24 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                break;
 //.. 
 //..             default:
-//..                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+//..                vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
 //..                vex_printf("first_opcode == 0xDE\n");
 //..                goto decode_fail;
 //..          }
-//.. 
-//..       } else {
-//.. 
-//..          delta++;
-//..          switch (modrm) {
-//.. 
-//..             case 0xC0 ... 0xC7: /* FADDP %st(0),%st(?) */
-//..                fp_do_op_ST_ST ( "add", Iop_AddF64, 0, modrm - 0xC0, True );
-//..                break;
-//.. 
-//..             case 0xC8 ... 0xCF: /* FMULP %st(0),%st(?) */
-//..                fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, True );
-//..                break;
-//.. 
+
+      } else {
+
+         delta++;
+         switch (modrm) {
+
+            case 0xC0 ... 0xC7: /* FADDP %st(0),%st(?) */
+               fp_do_op_ST_ST ( "add", Iop_AddF64, 0, modrm - 0xC0, True );
+               break;
+
+            case 0xC8 ... 0xCF: /* FMULP %st(0),%st(?) */
+               fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, True );
+               break;
+
 //..             case 0xD9: /* FCOMPP %st(0),%st(1) */
 //..                DIP("fuompp %%st(0),%%st(1)\n");
 //..                /* This forces C1 to zero, which isn't right. */
@@ -5641,29 +5648,29 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                fp_pop();
 //..                fp_pop();
 //..                break;
-//.. 
-//..             case 0xE0 ... 0xE7: /* FSUBRP %st(0),%st(?) */
-//..                fp_do_oprev_ST_ST ( "subr", Iop_SubF64, 0,  modrm - 0xE0, True );
-//..                break;
-//.. 
-//..             case 0xE8 ... 0xEF: /* FSUBP %st(0),%st(?) */
-//..                fp_do_op_ST_ST ( "sub", Iop_SubF64, 0,  modrm - 0xE8, True );
-//..                break;
-//.. 
-//..             case 0xF0 ... 0xF7: /* FDIVRP %st(0),%st(?) */
-//..                fp_do_oprev_ST_ST ( "divr", Iop_DivF64, 0, modrm - 0xF0, True );
-//..                break;
-//.. 
-//..             case 0xF8 ... 0xFF: /* FDIVP %st(0),%st(?) */
-//..                fp_do_op_ST_ST ( "div", Iop_DivF64, 0, modrm - 0xF8, True );
-//..                break;
-//.. 
-//..             default: 
-//..                goto decode_fail;
-//..          }
-//.. 
-//..       }
-//..    }
+
+            case 0xE0 ... 0xE7: /* FSUBRP %st(0),%st(?) */
+               fp_do_oprev_ST_ST ( "subr", Iop_SubF64, 0,  modrm - 0xE0, True );
+               break;
+
+            case 0xE8 ... 0xEF: /* FSUBP %st(0),%st(?) */
+               fp_do_op_ST_ST ( "sub", Iop_SubF64, 0,  modrm - 0xE8, True );
+               break;
+
+            case 0xF0 ... 0xF7: /* FDIVRP %st(0),%st(?) */
+               fp_do_oprev_ST_ST ( "divr", Iop_DivF64, 0, modrm - 0xF0, True );
+               break;
+
+            case 0xF8 ... 0xFF: /* FDIVP %st(0),%st(?) */
+               fp_do_op_ST_ST ( "div", Iop_DivF64, 0, modrm - 0xF8, True );
+               break;
+
+            default: 
+               goto decode_fail;
+         }
+
+      }
+   }
 
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xDF opcodes +-+-+-+-+-+-+-+ */
    else
@@ -5764,7 +5771,7 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
    }
 
    else
-      goto decode_fail; //vpanic("dis_FPU(amd64): invalid primary opcode");
+      goto decode_fail;
 
    *decode_ok = True;
    return delta;
@@ -11857,9 +11864,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_op_imm_A( sz, Iop_And8, True, delta, "and" );
       break;
 
-//..    case 0x2C: /* SUB Ib, AL */
-//..       delta = dis_op_imm_A(1, Iop_Sub8, True, delta, "sub" );
-//..       break;
+   case 0x2C: /* SUB Ib, AL */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op_imm_A(1, Iop_Sub8, True, delta, "sub" );
+      break;
    case 0x2D: /* SUB Iv, eAX */
       if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op_imm_A( sz, Iop_Sub8, True, delta, "sub" );

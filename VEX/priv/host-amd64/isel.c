@@ -2723,6 +2723,25 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return res;
    }
 
+   if (e->tag == Iex_Binop) {
+      AMD64SseOp op = Asse_INVALID;
+      switch (e->Iex.Binop.op) {
+         case Iop_AddF64: op = Asse_ADDF; break;
+         case Iop_SubF64: op = Asse_SUBF; break;
+         case Iop_MulF64: op = Asse_MULF; break;
+         case Iop_DivF64: op = Asse_DIVF; break;
+         default: break;
+      }
+      if (op != Asse_INVALID) {
+         HReg dst  = newVRegV(env);
+         HReg argL = iselDblExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselDblExpr(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_vMOVsd_RR(argL, dst));
+         addInstr(env, AMD64Instr_Sse64FLo(op, argR, dst));
+         return dst;
+      }
+   }
+
 //..    if (e->tag == Iex_Binop) {
 //..       X86FpOp fpop = Xfp_INVALID;
 //..       switch (e->Iex.Binop.op) {
@@ -2786,19 +2805,28 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
-   if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_NegF64) {
+   if (e->tag == Iex_Unop 
+       && (e->Iex.Unop.op == Iop_NegF64
+           || e->Iex.Unop.op == Iop_AbsF64)) {
       /* Sigh ... very rough code.  Could do much better. */
+      /* Get the 128-bit literal 00---0 10---0 into a register
+         and xor/nand it with the value to be negated. */
       HReg r1  = newVRegI(env);
       HReg dst = newVRegV(env);
-      HReg tv  = newVRegV(env);
+      HReg tmp = newVRegV(env);
       HReg src = iselDblExpr(env, e->Iex.Unop.arg);
       AMD64AMode* rsp0 = AMD64AMode_IR(0, hregAMD64_RSP());
-      addInstr(env, mk_vMOVsd_RR(src,dst));
+      addInstr(env, mk_vMOVsd_RR(src,tmp));
       addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
       addInstr(env, AMD64Instr_Imm64( 1ULL<<63, r1 ));
       addInstr(env, AMD64Instr_Push(AMD64RMI_Reg(r1)));
-      addInstr(env, AMD64Instr_SseLdSt(True, 16, tv, rsp0));
-      addInstr(env, AMD64Instr_SseReRg(Asse_XOR, tv, dst));
+      addInstr(env, AMD64Instr_SseLdSt(True, 16, dst, rsp0));
+
+      if (e->Iex.Unop.op == Iop_NegF64)
+         addInstr(env, AMD64Instr_SseReRg(Asse_XOR, tmp, dst));
+      else
+         addInstr(env, AMD64Instr_SseReRg(Asse_ANDN, tmp, dst));
+
       add_to_rsp(env, 16);
       return dst;
    }
@@ -3227,9 +3255,9 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-//..       case Iop_CmpEQ64F0x2: op = Xsse_CMPEQF; goto do_64F0x2;
+      case Iop_CmpEQ64F0x2: op = Asse_CMPEQF; goto do_64F0x2;
       case Iop_CmpLT64F0x2: op = Asse_CMPLTF; goto do_64F0x2;
-//..       case Iop_CmpLE64F0x2: op = Xsse_CMPLEF; goto do_64F0x2;
+      case Iop_CmpLE64F0x2: op = Asse_CMPLEF; goto do_64F0x2;
       case Iop_Add64F0x2:   op = Asse_ADDF;   goto do_64F0x2;
       case Iop_Div64F0x2:   op = Asse_DIVF;   goto do_64F0x2;
       case Iop_Max64F0x2:   op = Asse_MAXF;   goto do_64F0x2;

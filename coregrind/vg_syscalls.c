@@ -3949,10 +3949,8 @@ PRE(mmap2)
 
 POST(mmap2)
 {
-   if (!VG_(is_kerror)(res)) {
-      vg_assert(valid_client_addr(res, arg2, tid, "mmap2"));
-      mmap_segment( (Addr)res, arg2, arg3, arg4, arg5, arg6 * (ULong)VKI_BYTES_PER_PAGE );
-   }
+   vg_assert(valid_client_addr(res, arg2, tid, "mmap2"));
+   mmap_segment( (Addr)res, arg2, arg3, arg4, arg5, arg6 * (ULong)VKI_BYTES_PER_PAGE );
 }
 
 PRE(mmap)
@@ -4061,19 +4059,18 @@ PRE(mincore)
 
 POST(mincore)
 {
-   if (!VG_(is_kerror)(res))
-      VG_TRACK( post_mem_write, arg3, (arg2 + 4096 - 1) / 4096 );  
+   VG_TRACK( post_mem_write, arg3, (arg2 + 4096 - 1) / 4096 );  
 }
 
 PRE(nanosleep)
 {
-         /* int nanosleep(const struct timespec *req, struct timespec *rem); */
-         MAYBE_PRINTF("nanosleep ( %p, %p )\n", arg1,arg2);
-         SYSCALL_TRACK( pre_mem_read, tid, "nanosleep(req)", arg1, 
-                                              sizeof(struct timespec) );
-         if (arg2 != (UInt)NULL)
-            SYSCALL_TRACK( pre_mem_write, tid, "nanosleep(rem)", arg2, 
-			   sizeof(struct timespec) );
+   /* int nanosleep(const struct timespec *req, struct timespec *rem); */
+   MAYBE_PRINTF("nanosleep ( %p, %p )\n", arg1,arg2);
+   SYSCALL_TRACK( pre_mem_read, tid, "nanosleep(req)", arg1, 
+                                        sizeof(struct timespec) );
+   if (arg2 != (UInt)NULL)
+      SYSCALL_TRACK( pre_mem_write, tid, "nanosleep(rem)", arg2, 
+                     sizeof(struct timespec) );
 }
 
 POST(nanosleep)
@@ -5163,8 +5160,7 @@ PRE(clock_gettime)
 
 POST(clock_gettime)
 {
-    if (!VG_(is_kerror)(res) && res == 0)
-       VG_TRACK( post_mem_write, arg2, sizeof(struct timespec) );
+    VG_TRACK( post_mem_write, arg2, sizeof(struct timespec) );
 }
 
 PRE(utimes)
@@ -5191,16 +5187,14 @@ PRE(futex)
 
 POST(futex)
 {
-   if (!VG_(is_kerror)(res)) {
-      VG_TRACK( post_mem_write, arg1, sizeof(int) );
-      if (arg2 == VKI_FUTEX_FD) {
-         if (!fd_allowed(res, "futex", tid, True)) {
-            VG_(close)(res);
-            res = -VKI_EMFILE;
-         } else {
-            if (VG_(clo_track_fds))
-               record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
-         }
+   VG_TRACK( post_mem_write, arg1, sizeof(int) );
+   if (arg2 == VKI_FUTEX_FD) {
+      if (!fd_allowed(res, "futex", tid, True)) {
+         VG_(close)(res);
+         res = -VKI_EMFILE;
+      } else {
+         if (VG_(clo_track_fds))
+            record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
       }
    }
 }
@@ -5358,8 +5352,7 @@ PRE(sigpending)
 
 POST(sigpending)
 {
-   if ( !VG_( is_kerror )( res ) && res == 0 )
-      VG_TRACK( post_mem_write, arg1, sizeof( vki_ksigset_t ) ) ;
+   VG_TRACK( post_mem_write, arg1, sizeof( vki_ksigset_t ) ) ;
 }
 
 PREALIAS(rt_sigpending, sigpending);

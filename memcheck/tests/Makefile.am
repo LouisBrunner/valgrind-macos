@@ -86,7 +86,7 @@ check_PROGRAMS = \
 	nanoleak new_nothrow \
 	null_socket overlap \
 	realloc1 realloc2 realloc3 \
-	scalar scalar_fork scalar_supp scalar_vfork \ 
+	scalar scalar_fork scalar_supp scalar_vfork \
 	sigaltstack signal2 \
 	str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\

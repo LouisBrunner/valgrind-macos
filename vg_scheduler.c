@@ -1377,8 +1377,22 @@ VgSchedReturnCode VG_(scheduler) ( void )
                then run VG_(__libc_freeres_wrapper).  That quits by
                doing VG_USERREQ__LIBC_FREERES_DONE, and at that point
                we really exit.  To be safe we nuke all other threads
-               currently running. */
+               currently running. 
+
+               If not valgrinding (cachegrinding, etc) don't do this.
+               __libc_freeres does some invalid frees which crash
+               the unprotected malloc/free system. */
+            if (VG_(threads)[tid].m_eax == __NR_exit 
+                && !VG_(clo_instrument)) {
+               if (VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
+                  VG_(message)(Vg_DebugMsg, 
+                     "Caught __NR_exit; quitting");
+               }
+               return VgSrc_ExitSyscall;
+            }
+
             if (VG_(threads)[tid].m_eax == __NR_exit) {
+               vg_assert(VG_(clo_instrument));
                if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
                   VG_(message)(Vg_DebugMsg, 
                      "Caught __NR_exit; running __libc_freeres()");

@@ -1,7 +1,8 @@
 
 SUBDIRS = x86 demangle . docs
 
-add_includes = -I$(srcdir)/demangle -I$(top_srcdir)/include -I$(srcdir)/x86
+add_includes = -I$(srcdir)/demangle -I$(top_builddir)/include \
+		-I$(top_srcdir)/include -I$(srcdir)/x86
 
 valdir = $(libdir)/valgrind
 inplacedir = $(top_builddir)/.in_place
@@ -90,15 +91,15 @@ stage2_LDADD= \
 	demangle/safe-ctype.o \
 	-ldl
 
-vg_intercept.c: $(srcdir)/gen_intercepts.pl vg_intercept.c.base
+vg_intercept.c: $(srcdir)/gen_intercepts.pl $(srcdir)/vg_intercept.c.base
 	rm -f $@
-	$(PERL) $(srcdir)/gen_intercepts.pl < vg_intercept.c.base > $@
+	$(PERL) $(srcdir)/gen_intercepts.pl < $(srcdir)/vg_intercept.c.base > $@
 
-vg_replace_malloc.c: $(srcdir)/gen_intercepts.pl vg_replace_malloc.c.base
+vg_replace_malloc.c: $(srcdir)/gen_intercepts.pl $(srcdir)/vg_replace_malloc.c.base
 	rm -f $@
-	$(PERL) $(srcdir)/gen_intercepts.pl < vg_replace_malloc.c.base > $@
+	$(PERL) $(srcdir)/gen_intercepts.pl < $(srcdir)/vg_replace_malloc.c.base > $@
 
-vg_toolint.c: $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def $(srcdir)/Makefile
+vg_toolint.c: $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile
 	rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl callwrap     < $(srcdir)/toolfuncs.def >  $@ || rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl missingfuncs < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
@@ -106,7 +107,7 @@ vg_toolint.c: $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def $(srcdir)/Makefil
 	$(PERL) $(srcdir)/gen_toolint.pl initdlsym    < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl structdef    < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
 
-vg_toolint.h:  $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def $(srcdir)/Makefile
+vg_toolint.h:  $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile
 	rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl proto  < $(srcdir)/toolfuncs.def >  $@ || rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl struct < $(srcdir)/toolfuncs.def >> $@ || rm -f $@

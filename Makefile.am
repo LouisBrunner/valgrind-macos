@@ -53,7 +53,8 @@ install-exec-hook:
 all-local:
 	mkdir -p $(top_builddir)/.in_place
 	rm -f $(addprefix $(top_builddir)/.in_place/,default.supp $(SUPP_FILES))
-	ln -s $(addprefix $(top_srcdir)/../,default.supp $(SUPP_FILES)) $(top_builddir)/.in_place
+	ln -s ../default.supp $(top_builddir)/.in_place
+	ln -s $(addprefix ../$(top_srcdir)/,$(SUPP_FILES)) $(top_builddir)/.in_place
 
 distclean-local:
 	rm -rf $(top_builddir)/.in_place

@@ -1,7 +1,8 @@
 
 SUBDIRS = . 
 
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/coregrind \
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+		-I$(top_builddir)/coregrind -I$(top_srcdir)/coregrind \
 		-DVG_LIBDIR="\"$(libdir)"\"
 AM_CFLAGS = $(WERROR) -Winline -Wall -O -g
 

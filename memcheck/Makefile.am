@@ -1,7 +1,7 @@
 
 SUBDIRS = . tests docs
 
-all_includes = -I$(top_srcdir)/include
+all_includes = -I$(top_builddir)/include -I$(top_srcdir)/include
 
 AM_CPPFLAGS = $(all_includes) -DVG_LIBDIR="\"$(libdir)"\"
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O2 -fomit-frame-pointer \

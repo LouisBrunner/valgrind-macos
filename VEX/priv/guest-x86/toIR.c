@@ -483,11 +483,13 @@ static IRExpr* getSReg ( UInt sreg )
    return IRExpr_Get( segmentGuestRegOffset(sreg), Ity_I16 );
 }
 
+#if 0
 static void putSReg ( UInt sreg, IRExpr* e )
 {
    vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I16);
    stmt( IRStmt_Put( segmentGuestRegOffset(sreg), e ) );
 }
+#endif
 
 static void assign ( IRTemp dst, IRExpr* e )
 {
@@ -585,15 +587,14 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
    CC_OP/CC_SRC/CC_DST.  Returns an expression :: Ity_I32. */
 static IRExpr* mk_calculate_eflags_all ( void )
 {
-   IRExpr** args = LibVEX_Alloc(4 * sizeof(IRExpr*));
-   args[0]       = IRExpr_Get(OFFB_CC_OP,  Ity_I32);
-   args[1]       = IRExpr_Get(OFFB_CC_SRC, Ity_I32);
-   args[2]       = IRExpr_Get(OFFB_CC_DST, Ity_I32);
-   args[3]       = NULL;
-   return IRExpr_CCall(
-             mkIRCallee(0/*regparm*/, "calculate_eflags_all", 
-                        (HWord)&calculate_eflags_all),
-             Ity_I32, 
+   IRExpr** args
+      = mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,  Ity_I32),
+                       IRExpr_Get(OFFB_CC_SRC, Ity_I32),
+                       IRExpr_Get(OFFB_CC_DST, Ity_I32) );
+   return mkIRExprCCall(
+             Ity_I32,
+             0/*regparm*/, 
+             "calculate_eflags_all", &calculate_eflags_all,
              args
           );
 }
@@ -602,15 +603,14 @@ static IRExpr* mk_calculate_eflags_all ( void )
    CC_OP/CC_SRC/CC_DST.  Returns an expression :: Ity_I32. */
 static IRExpr* mk_calculate_eflags_c ( void )
 {
-   IRExpr** args = LibVEX_Alloc(4 * sizeof(IRExpr*));
-   args[0]       = IRExpr_Get(OFFB_CC_OP,  Ity_I32);
-   args[1]       = IRExpr_Get(OFFB_CC_SRC, Ity_I32);
-   args[2]       = IRExpr_Get(OFFB_CC_DST, Ity_I32);
-   args[3]       = NULL;
-   return IRExpr_CCall(
-             mkIRCallee(0/*regparm*/, "calculate_eflags_c", 
-                        (HWord)&calculate_eflags_c),
-             Ity_I32, 
+   IRExpr** args
+      = mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,  Ity_I32),
+                       IRExpr_Get(OFFB_CC_SRC, Ity_I32),
+                       IRExpr_Get(OFFB_CC_DST, Ity_I32) );
+   return mkIRExprCCall(
+             Ity_I32,
+             0/*regparm*/, 
+             "calculate_eflags_c", &calculate_eflags_c,
              args
           );
 }
@@ -619,20 +619,19 @@ static IRExpr* mk_calculate_eflags_c ( void )
    CC_OP/CC_SRC/CC_DST.  Returns an expression :: Ity_Bit. */
 static IRExpr* mk_calculate_condition ( Condcode cond )
 {
-   IRExpr** args = LibVEX_Alloc(5 * sizeof(IRExpr*));
-   args[0]       = mkU32(cond);
-   args[1]       = IRExpr_Get(OFFB_CC_OP,  Ity_I32);
-   args[2]       = IRExpr_Get(OFFB_CC_SRC, Ity_I32);
-   args[3]       = IRExpr_Get(OFFB_CC_DST, Ity_I32);
-   args[4]       = NULL;
+   IRExpr** args
+      = mkIRExprVec_4( mkU32(cond),
+                       IRExpr_Get(OFFB_CC_OP,  Ity_I32),
+                       IRExpr_Get(OFFB_CC_SRC, Ity_I32),
+                       IRExpr_Get(OFFB_CC_DST, Ity_I32) );
    return unop(Iop_32to1, 
-               IRExpr_CCall(
-                  mkIRCallee(0/*regparm*/, "calculate_condition", 
-                             (HWord)&calculate_condition),
-                  Ity_I32, 
+               mkIRExprCCall(
+                  Ity_I32,
+                  0/*regparm*/, 
+                  "calculate_condition", &calculate_condition,
                   args
                )
-              );
+          );
 }
 
 
@@ -2367,18 +2366,18 @@ UInt dis_Grp2 ( UChar  sorb,
       /* call a helper; this insn is so ridiculous it does not deserve
          better */
       IRTemp   r64  = newTemp(Ity_I64);
-      IRExpr** args = LibVEX_Alloc(5 * sizeof(IRExpr*));
-      args[0] = widenUto32(mkexpr(dst0)); /* thing to rotate */
-      args[1] = widenUto32(shift_expr);   /* rotate amount */
-      args[2] = widenUto32(mk_calculate_eflags_all());
-      args[3] = mkU32(sz);
-      args[4] = NULL;
-      assign( r64, IRExpr_CCall(
-                      mkIRCallee(0/*regparm*/, "calculate_RCR", 
-                                 (HWord)&calculate_RCR),
+      IRExpr** args 
+         = mkIRExprVec_4( widenUto32(mkexpr(dst0)), /* thing to rotate */
+                          widenUto32(shift_expr),   /* rotate amount */
+                          widenUto32(mk_calculate_eflags_all()),
+                          mkU32(sz) );
+      assign( r64, mkIRExprCCall(
                       Ity_I64, 
+                      0/*regparm*/, 
+                      "calculate_RCR", &calculate_RCR,
                       args
-            ));
+                   )
+            );
       /* new eflags in hi half r64; new value in lo half r64 */
       assign( dst1, narrowTo(ty, unop(Iop_64to32, mkexpr(r64))) );
       stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
@@ -3787,18 +3786,17 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                   Here, just pass both the tag (in our format) and the
                   value (as a double, actually a ULong) to a helper
                   function. */
-               IRExpr** args;
-               DIP("fxam");
-               args = LibVEX_Alloc(3 * sizeof(IRExpr*));
-               args[0] = unop(Iop_8Uto32, get_ST_TAG(0));
-               args[1] = unop(Iop_ReinterpF64asI64, get_ST_UNCHECKED(0));
-               args[2] = NULL;
-               put_C3210(IRExpr_CCall(
-                            mkIRCallee(0/*regparm*/, "calculate_FXAM", 
-                                       (HWord)&calculate_FXAM), 
+               IRExpr** args
+                  = mkIRExprVec_2( unop(Iop_8Uto32, get_ST_TAG(0)),
+                                   unop(Iop_ReinterpF64asI64, 
+                                        get_ST_UNCHECKED(0)) );
+               put_C3210(mkIRExprCCall(
                             Ity_I32, 
+                            0/*regparm*/, 
+                            "calculate_FXAM", &calculate_FXAM,
                             args
                         ));
+               DIP("fxam");
                break;
             }
 
@@ -4082,7 +4080,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
                IRDirty* d = unsafeIRDirty_1_N ( 
                                val, 
-                               mkIRCallee(0, "loadF80le", (HWord)&loadF80le), 
+                               0/*regparms*/, "loadF80le", &loadF80le, 
                                args 
                             );
                /* declare that we're reading memory */
@@ -4106,8 +4104,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                                    unop(Iop_ReinterpF64asI64, get_ST(0)) );
 
                IRDirty* d = unsafeIRDirty_0_N ( 
-                               mkIRCallee(0, "storeF80le", 
-                                             (HWord)&storeF80le), 
+                               0/*regparms*/, 
+                               "storeF80le", &storeF80le,
                                args 
                             );
                /* declare we're writing memory */
@@ -9003,12 +9001,11 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                void dirtyhelper_CPUID ( VexGuestX86State* )
             declared to mod eax, wr ebx, ecx, edx
          */
-         IRExpr** args = mkIRExprVec_0();
-         IRDirty* d    = unsafeIRDirty_0_N ( 
-                            mkIRCallee(0, "dirtyhelper_CPUID", 
-                                          (HWord)&dirtyhelper_CPUID), 
-                            args 
-                         );
+         IRDirty* d = unsafeIRDirty_0_N ( 
+                         0/*regparms*/, 
+                         "dirtyhelper_CPUID", &dirtyhelper_CPUID, 
+                         mkIRExprVec_0()
+                      );
          /* declare guest state effects */
          d->needsBBP = True;
          d->nFxState = 4;

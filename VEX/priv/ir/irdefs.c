@@ -465,7 +465,7 @@ IRConst* IRConst_F64i ( ULong f64i )
 
 /* Constructors -- IRCallee */
 
-IRCallee* mkIRCallee ( Int regparms, Char* name, HWord addr )
+IRCallee* mkIRCallee ( Int regparms, Char* name, void* addr )
 {
    IRCallee* ce = LibVEX_Alloc(sizeof(IRCallee));
    ce->regparms = regparms;
@@ -589,6 +589,24 @@ IRExpr** mkIRExprVec_2 ( IRExpr* arg1, IRExpr* arg2 ) {
    vec[2] = NULL;
    return vec;
 }
+IRExpr** mkIRExprVec_3 ( IRExpr* arg1, IRExpr* arg2, IRExpr* arg3 ) {
+   IRExpr** vec = LibVEX_Alloc(4 * sizeof(IRExpr*));
+   vec[0] = arg1;
+   vec[1] = arg2;
+   vec[2] = arg3;
+   vec[3] = NULL;
+   return vec;
+}
+IRExpr** mkIRExprVec_4 ( IRExpr* arg1, IRExpr* arg2, 
+                         IRExpr* arg3, IRExpr* arg4 ) {
+   IRExpr** vec = LibVEX_Alloc(5 * sizeof(IRExpr*));
+   vec[0] = arg1;
+   vec[1] = arg2;
+   vec[2] = arg3;
+   vec[3] = arg4;
+   vec[4] = NULL;
+   return vec;
+}
 
 
 /* Constructors -- IRDirty */
@@ -603,20 +621,6 @@ IRDirty* emptyIRDirty ( void ) {
    d->mSize    = 0;
    d->needsBBP = False;
    d->nFxState = 0;
-   return d;
-}
-
-IRDirty* unsafeIRDirty_0_N ( IRCallee* cee, IRExpr** args ) {
-   IRDirty* d = emptyIRDirty();
-   d->cee  = cee;
-   d->args = args;
-   return d;
-}
-IRDirty* unsafeIRDirty_1_N ( IRTemp dst, IRCallee* cee, IRExpr** args ) {
-   IRDirty* d = emptyIRDirty();
-   d->cee  = cee;
-   d->args = args;
-   d->tmp  = dst;
    return d;
 }
 
@@ -1560,11 +1564,40 @@ Int sizeofIRType ( IRType ty )
 
 IRExpr* mkIRExpr_HWord ( HWord hw )
 {
+   vassert(sizeof(void*) == sizeof(HWord));
    if (sizeof(HWord) == 4)
       return IRExpr_Const(IRConst_U32((UInt)hw));
    if (sizeof(HWord) == 8)
-      return IRExpr_Const(IRConst_U64((Long)hw));
+      return IRExpr_Const(IRConst_U64((ULong)hw));
    vpanic("mkIRExpr_HWord");
+}
+
+IRDirty* unsafeIRDirty_0_N ( Int regparms, Char* name, void* addr, 
+                             IRExpr** args ) 
+{
+   IRDirty* d = emptyIRDirty();
+   d->cee  = mkIRCallee ( regparms, name, addr );
+   d->args = args;
+   return d;
+}
+
+IRDirty* unsafeIRDirty_1_N ( IRTemp dst, 
+                             Int regparms, Char* name, void* addr, 
+                             IRExpr** args ) 
+{
+   IRDirty* d = emptyIRDirty();
+   d->cee  = mkIRCallee ( regparms, name, addr );
+   d->args = args;
+   d->tmp  = dst;
+   return d;
+}
+
+IRExpr* mkIRExprCCall ( IRType retty,
+                        Int regparms, Char* name, void* addr, 
+                        IRExpr** args )
+{
+   return IRExpr_CCall ( mkIRCallee ( regparms, name, addr ), 
+                         retty, args );
 }
 
 /*---------------------------------------------------------------*/

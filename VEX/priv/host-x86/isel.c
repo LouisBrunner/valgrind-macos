@@ -304,7 +304,7 @@ void callHelperAndClearArgs ( ISelEnv* env, IRCallee* cee, Int n_arg_ws )
    /* Complication.  Need to decide which reg to use as the fn address
       pointer, in a way that doesn't trash regparm-passed
       parameters. */
-   vassert(sizeof(HWord) == 4);
+   vassert(sizeof(void*) == 4);
 
    switch (cee->regparms) {
       case 0: freg = hregX86_EAX(); break;
@@ -316,7 +316,7 @@ void callHelperAndClearArgs ( ISelEnv* env, IRCallee* cee, Int n_arg_ws )
 
    addInstr(env, X86Instr_Alu32R(
                     Xalu_MOV,
-                    X86RMI_Imm(cee->addr),
+                    X86RMI_Imm((UInt)cee->addr),
                     freg));
    addInstr(env, X86Instr_Call(freg, cee->regparms));
    if (n_arg_ws > 0)

@@ -83,11 +83,11 @@ typedef
    struct {
       Int   regparms;
       Char* name;
-      HWord addr;
+      void* addr;
    }
    IRCallee;
 
-extern IRCallee* mkIRCallee ( Int regparms, Char* name, HWord addr );
+extern IRCallee* mkIRCallee ( Int regparms, Char* name, void* addr );
 
 extern IRCallee* dopyIRCallee ( IRCallee* );
 
@@ -426,7 +426,7 @@ extern IRExpr* IRExpr_Const  ( IRConst* con );
 extern IRExpr* IRExpr_CCall  ( IRCallee* cee, IRType retty, IRExpr** args );
 extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
 
-extern IRExpr*  dopyIRExpr ( IRExpr* );
+extern IRExpr* dopyIRExpr ( IRExpr* );
 
 extern void ppIRExpr ( IRExpr* );
 
@@ -434,15 +434,23 @@ extern void ppIRExpr ( IRExpr* );
    lists in clean/dirty helper calls. */
 
 extern IRExpr** mkIRExprVec_0 ( void );
-extern IRExpr** mkIRExprVec_1 ( IRExpr* arg1 );
-extern IRExpr** mkIRExprVec_2 ( IRExpr* arg1, IRExpr* arg2 );
+extern IRExpr** mkIRExprVec_1 ( IRExpr* );
+extern IRExpr** mkIRExprVec_2 ( IRExpr*, IRExpr* );
+extern IRExpr** mkIRExprVec_3 ( IRExpr*, IRExpr*, IRExpr* );
+extern IRExpr** mkIRExprVec_4 ( IRExpr*, IRExpr*, IRExpr*, IRExpr* );
 
 extern IRExpr** sopyIRExprVec ( IRExpr** );
 extern IRExpr** dopyIRExprVec ( IRExpr** );
 
-/* Make a constant expression from the given host word,
-   taking into account of course the host word size. */
+/* Make a constant expression from the given host word taking into
+   account of course the host word size. */
 extern IRExpr* mkIRExpr_HWord ( HWord );
+
+/* Convenience function for constructing clean helper calls. */
+extern 
+IRExpr* mkIRExprCCall ( IRType retty,
+                        Int regparms, Char* name, void* addr, 
+                        IRExpr** args );
 
 
 inline static Bool isAtom ( IRExpr* e ) {
@@ -532,12 +540,18 @@ extern IRDirty* dopyIRDirty ( IRDirty* );
    dirty helper calls.  The called function impliedly does not return
    any value.  The call is marked as accessing neither guest state nor
    memory (hence the "unsafe" designation) -- you can mess with this
-   later if need be.*/
-extern IRDirty* unsafeIRDirty_0_N ( IRCallee* cee, IRExpr** args );
+   later if need be.  A suitable IRCallee is constructed from the
+   supplied bits. */
+extern 
+IRDirty* unsafeIRDirty_0_N ( Int regparms, Char* name, void* addr, 
+                             IRExpr** args );
 
 /* Similarly, make a zero-annotation dirty call which returns a value,
    and assign that to the given temp. */
-extern IRDirty* unsafeIRDirty_1_N ( IRTemp dst, IRCallee* cee, IRExpr** args );
+extern 
+IRDirty* unsafeIRDirty_1_N ( IRTemp dst, 
+                             Int regparms, Char* name, void* addr, 
+                             IRExpr** args );
 
 
 /* ------------------ Statements ------------------ */

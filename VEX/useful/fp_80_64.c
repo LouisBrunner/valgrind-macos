@@ -59,6 +59,8 @@ static void convert_f64le_to_f80le_HW ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
 
 #endif /* ndef USED_AS_INCLUDE */
 
+
+
 /* 80 and 64-bit floating point formats:
 
    80-bit:
@@ -89,7 +91,6 @@ static void convert_f64le_to_f80le_HW ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
    sign bit, giving 64 in total.
 */
 
-
 /* Convert a IEEE754 double (64-bit) into an x87 extended double
    (80-bit), mimicing the hardware fairly closely.  Both numbers are
    stored little-endian.  Limitations, all of which could be fixed,
@@ -105,7 +106,7 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
    Int   bexp, i, j, shift;
    UChar sign;
 
-   sign = (f64[7] >> 7) & 1;
+   sign = toUChar( (f64[7] >> 7) & 1 );
    bexp = (f64[7] << 4) | ((f64[6] >> 4) & 0x0F);
    bexp &= 0x7FF;
 
@@ -115,16 +116,18 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
          all zeroes in order to handle these cases.  So figure it
          out. */
       mantissaIsZero
-         = (f64[6] & 0x0F) == 0 
-           && f64[5] == 0 && f64[4] == 0 && f64[3] == 0 
-           && f64[2] == 0 && f64[1] == 0 && f64[0] == 0;
+         = toBool( 
+              (f64[6] & 0x0F) == 0 
+              && f64[5] == 0 && f64[4] == 0 && f64[3] == 0 
+              && f64[2] == 0 && f64[1] == 0 && f64[0] == 0
+           );
    }
 
    /* If the exponent is zero, either we have a zero or a denormal.
       Produce a zero.  This is a hack in that it forces denormals to
       zero.  Could do better. */
    if (bexp == 0) {
-      f80[9] = sign << 7;
+      f80[9] = toUChar( sign << 7 );
       f80[8] = f80[7] = f80[6] = f80[5] = f80[4]
              = f80[3] = f80[2] = f80[1] = f80[0] = 0;
 
@@ -155,8 +158,8 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
       /* Set the exponent appropriately, and we're done. */
       bexp -= shift;
       bexp += (16383 - 1023);
-      f80[9] = (sign << 7) | ((bexp >> 8) & 0xFF);
-      f80[8] = bexp & 0xFF;
+      f80[9] = toUChar( (sign << 7) | ((bexp >> 8) & 0xFF) );
+      f80[8] = toUChar( bexp & 0xFF );
       return;
    }
 
@@ -172,7 +175,7 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
          /* Produce an appropriately signed infinity:
             S 1--1 (15)  1  0--0 (63)
          */
-         f80[9] = (sign << 7) | 0x7F;
+         f80[9] = toUChar( (sign << 7) | 0x7F );
          f80[8] = 0xFF;
          f80[7] = 0x80;
          f80[6] = f80[5] = f80[4] = f80[3] 
@@ -190,7 +193,7 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
          /* QNaN.  Make a QNaN:
             S 1--1 (15)  1  1--1 (63) 
          */
-         f80[9] = (sign << 7) | 0x7F;
+         f80[9] = toUChar( (sign << 7) | 0x7F );
          f80[8] = 0xFF;
          f80[7] = 0xFF;
          f80[6] = f80[5] = f80[4] = f80[3] 
@@ -199,7 +202,7 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
          /* SNaN.  Make a SNaN:
             S 1--1 (15)  0  1--1 (63) 
          */
-         f80[9] = (sign << 7) | 0x7F;
+         f80[9] = toUChar( (sign << 7) | 0x7F );
          f80[8] = 0xFF;
          f80[7] = 0x7F;
          f80[6] = f80[5] = f80[4] = f80[3] 
@@ -213,20 +216,19 @@ static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
       number.  */
    bexp += (16383 - 1023);
 
-   f80[9] = (sign << 7) | ((bexp >> 8) & 0xFF);
-   f80[8] = bexp & 0xFF;
-   f80[7] = (1 << 7) | ((f64[6] << 3) & 0x78) | ((f64[5] >> 5) & 7);
-   f80[6] = ((f64[5] << 3) & 0xF8) | ((f64[4] >> 5) & 7);
-   f80[5] = ((f64[4] << 3) & 0xF8) | ((f64[3] >> 5) & 7);
-   f80[4] = ((f64[3] << 3) & 0xF8) | ((f64[2] >> 5) & 7);
-   f80[3] = ((f64[2] << 3) & 0xF8) | ((f64[1] >> 5) & 7);
-   f80[2] = ((f64[1] << 3) & 0xF8) | ((f64[0] >> 5) & 7);
-   f80[1] = ((f64[0] << 3) & 0xF8);
-   f80[0] = 0;
+   f80[9] = toUChar( (sign << 7) | ((bexp >> 8) & 0xFF) );
+   f80[8] = toUChar( bexp & 0xFF );
+   f80[7] = toUChar( (1 << 7) | ((f64[6] << 3) & 0x78) 
+                              | ((f64[5] >> 5) & 7) );
+   f80[6] = toUChar( ((f64[5] << 3) & 0xF8) | ((f64[4] >> 5) & 7) );
+   f80[5] = toUChar( ((f64[4] << 3) & 0xF8) | ((f64[3] >> 5) & 7) );
+   f80[4] = toUChar( ((f64[3] << 3) & 0xF8) | ((f64[2] >> 5) & 7) );
+   f80[3] = toUChar( ((f64[2] << 3) & 0xF8) | ((f64[1] >> 5) & 7) );
+   f80[2] = toUChar( ((f64[1] << 3) & 0xF8) | ((f64[0] >> 5) & 7) );
+   f80[1] = toUChar( ((f64[0] << 3) & 0xF8) );
+   f80[0] = toUChar( 0 );
 }
 
-
-/////////////////////////////////////////////////////////////////
 
 /* Convert a x87 extended double (80-bit) into an IEEE 754 double
    (64-bit), mimicking the hardware fairly closely.  Both numbers are
@@ -245,7 +247,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
    Int   bexp, i, j;
    UChar sign;
 
-   sign = (f80[9] >> 7) & 1;
+   sign = toUChar((f80[9] >> 7) & 1);
    bexp = (((UInt)f80[9]) << 8) | (UInt)f80[8];
    bexp &= 0x7FFF;
 
@@ -254,7 +256,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
       zero, so in either case, just produce the appropriately signed
       zero. */
    if (bexp == 0) {
-      f64[7] = sign << 7;
+      f64[7] = toUChar(sign << 7);
       f64[6] = f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
       return;
    }
@@ -267,16 +269,19 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
       where at least one of the Xs is not zero.
    */
    if (bexp == 0x7FFF) {
-      isInf = (f80[7] & 0x7F) == 0 
-              && f80[6] == 0 && f80[5] == 0 && f80[4] == 0 
-              && f80[3] == 0 && f80[2] == 0 && f80[1] == 0 && f80[0] == 0;
+      isInf = toBool(
+                 (f80[7] & 0x7F) == 0 
+                 && f80[6] == 0 && f80[5] == 0 && f80[4] == 0 
+                 && f80[3] == 0 && f80[2] == 0 && f80[1] == 0 
+                 && f80[0] == 0
+              );
       if (isInf) {
          if (0 == (f80[7] & 0x80))
             goto wierd_NaN;
          /* Produce an appropriately signed infinity:
             S 1--1 (11)  0--0 (52)
          */
-         f64[7] = (sign << 7) | 0x7F;
+         f64[7] = toUChar((sign << 7) | 0x7F);
          f64[6] = 0xF0;
          f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
          return;
@@ -292,14 +297,14 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
          /* QNaN.  Make a QNaN:
             S 1--1 (11)  1  1--1 (51) 
          */
-         f64[7] = (sign << 7) | 0x7F;
+         f64[7] = toUChar((sign << 7) | 0x7F);
          f64[6] = 0xFF;
          f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0xFF;
       } else {
          /* SNaN.  Make a SNaN:
             S 1--1 (11)  0  1--1 (51) 
          */
-         f64[7] = (sign << 7) | 0x7F;
+         f64[7] = toUChar((sign << 7) | 0x7F);
          f64[6] = 0xF7;
          f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0xFF;
       }
@@ -327,7 +332,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
    bexp -= (16383 - 1023);
    if (bexp >= 0x7FF) {
       /* It's too big for a double.  Construct an infinity. */
-      f64[7] = (sign << 7) | 0x7F;
+      f64[7] = toUChar((sign << 7) | 0x7F);
       f64[6] = 0xF0;
       f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
       return;
@@ -336,7 +341,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
    if (bexp <= 0) {
       /* It's too small for a normalised double.  First construct a
          zero and then see if it can be improved into a denormal.  */
-      f64[7] = sign << 7;
+      f64[7] = toUChar(sign << 7);
       f64[6] = f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
 
       if (bexp < -52)
@@ -350,6 +355,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
       for (i = 63; i >= 0; i--) {
          j = i - 12 + bexp;
          if (j < 0) break;
+         /* We shouldn't really call vassert from generated code. */
          assert(j >= 0 && j < 52);
          write_bit_array ( f64,
                            j,
@@ -370,16 +376,16 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
                         i,
                         read_bit_array ( f80, i+11 ) );
    */
-   f64[0] = (f80[1] >> 3) | (f80[2] << 5);
-   f64[1] = (f80[2] >> 3) | (f80[3] << 5);
-   f64[2] = (f80[3] >> 3) | (f80[4] << 5);
-   f64[3] = (f80[4] >> 3) | (f80[5] << 5);
-   f64[4] = (f80[5] >> 3) | (f80[6] << 5);
-   f64[5] = (f80[6] >> 3) | (f80[7] << 5);
+   f64[0] = toUChar( (f80[1] >> 3) | (f80[2] << 5) );
+   f64[1] = toUChar( (f80[2] >> 3) | (f80[3] << 5) );
+   f64[2] = toUChar( (f80[3] >> 3) | (f80[4] << 5) );
+   f64[3] = toUChar( (f80[4] >> 3) | (f80[5] << 5) );
+   f64[4] = toUChar( (f80[5] >> 3) | (f80[6] << 5) );
+   f64[5] = toUChar( (f80[6] >> 3) | (f80[7] << 5) );
 
-   f64[6] = ((bexp << 4) & 0xF0) | ((f80[7] >> 3) & 0x0F);
+   f64[6] = toUChar( ((bexp << 4) & 0xF0) | ((f80[7] >> 3) & 0x0F) );
 
-   f64[7] = (sign << 7) | ((bexp >> 4) & 0x7F);
+   f64[7] = toUChar( (sign << 7) | ((bexp >> 4) & 0x7F) );
 
    /* Now consider any rounding that needs to happen as a result of
       truncating the mantissa. */
@@ -413,10 +419,10 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
          f64[1] = 0;
          f64[2]++;
       }
-
       /* else we don't round, but we should. */
    }
 }
+
 
 #ifndef USED_AS_INCLUDE
 

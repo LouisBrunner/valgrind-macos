@@ -1618,18 +1618,16 @@ void TL_(print_debug_usage)(void)
    over dead ones.  Instead we must use free/inuse flags and scan for
    an empty slot at allocation time.  This in turn means allocation is
    relatively expensive, so we hope this does not happen too often. 
-*/
 
-typedef
-   enum { CG_NotInUse, CG_NoAccess, CG_Writable, CG_Readable }
-   CGenBlockKind;
+   An unused block has start == size == 0
+*/
 
 typedef
    struct {
       Addr          start;
       SizeT         size;
       ExeContext*   where;
-      CGenBlockKind kind;
+      Char*	    desc;
    } 
    CGenBlock;
 
@@ -1655,7 +1653,7 @@ Int vg_alloc_client_block ( void )
 
    for (i = 0; i < vg_cgb_used; i++) {
       vg_cgb_search++;
-      if (vg_cgbs[i].kind == CG_NotInUse)
+      if (vg_cgbs[i].start == 0 && vg_cgbs[i].size == 0)
          return i;
    }
 
@@ -1708,7 +1706,7 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
 
    /* Perhaps it's a general block ? */
    for (i = 0; i < vg_cgb_used; i++) {
-      if (vg_cgbs[i].kind == CG_NotInUse) 
+      if (vg_cgbs[i].start == 0 && vg_cgbs[i].size == 0) 
          continue;
       if (VG_(addr_is_in_block)(a, vg_cgbs[i].start, vg_cgbs[i].size)) {
          MAC_Mempool **d, *mp;
@@ -1740,6 +1738,7 @@ static Bool client_perm_maybe_describe( Addr a, AddrInfo* ai )
          ai->blksize = vg_cgbs[i].size;
          ai->rwoffset  = (Int)(a) - (Int)(vg_cgbs[i].start);
          ai->lastchange = vg_cgbs[i].where;
+	 ai->desc = vg_cgbs[i].desc;
          return True;
       }
    }
@@ -1789,44 +1788,46 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
 	 break;
 
       case VG_USERREQ__MAKE_NOACCESS: /* make no access */
-         i = vg_alloc_client_block();
-         /* VG_(printf)("allocated %d %p\n", i, vg_cgbs); */
-         vg_cgbs[i].kind  = CG_NoAccess;
-         vg_cgbs[i].start = arg[1];
-         vg_cgbs[i].size  = arg[2];
-         vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
          mc_make_noaccess ( arg[1], arg[2] );
-	 *ret = i;
+	 *ret = -1;
 	 break;
 
       case VG_USERREQ__MAKE_WRITABLE: /* make writable */
-         i = vg_alloc_client_block();
-         vg_cgbs[i].kind  = CG_Writable;
-         vg_cgbs[i].start = arg[1];
-         vg_cgbs[i].size  = arg[2];
-         vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
          mc_make_writable ( arg[1], arg[2] );
-         *ret = i;
+         *ret = -1;
 	 break;
 
       case VG_USERREQ__MAKE_READABLE: /* make readable */
-         i = vg_alloc_client_block();
-         vg_cgbs[i].kind  = CG_Readable;
-         vg_cgbs[i].start = arg[1];
-         vg_cgbs[i].size  = arg[2];
-         vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
          mc_make_readable ( arg[1], arg[2] );
-	 *ret = i;
+	 *ret = -1;
          break;
+
+      case VG_USERREQ__CREATE_BLOCK: /* describe a block */
+	 if (arg[1] != 0 && arg[2] != 0) {
+	    i = vg_alloc_client_block();
+	    /* VG_(printf)("allocated %d %p\n", i, vg_cgbs); */
+	    vg_cgbs[i].start = arg[1];
+	    vg_cgbs[i].size  = arg[2];
+	    vg_cgbs[i].desc  = VG_(strdup)((Char *)arg[3]);
+	    vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
+
+	    *ret = i;
+	 } else
+	    *ret = -1;
+	 break;
 
       case VG_USERREQ__DISCARD: /* discard */
          if (vg_cgbs == NULL 
-             || arg[2] >= vg_cgb_used || vg_cgbs[arg[2]].kind == CG_NotInUse)
-            return 1;
-         tl_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
-         vg_cgbs[arg[2]].kind = CG_NotInUse;
-         vg_cgb_discards++;
-	 *ret = 0;
+             || arg[2] >= vg_cgb_used ||
+	     (vg_cgbs[arg[2]].start == 0 && vg_cgbs[arg[2]].size == 0)) {
+            *ret = 1;
+	 } else {
+	    tl_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
+	    vg_cgbs[arg[2]].start = vg_cgbs[arg[2]].size = 0;
+	    VG_(free)(vg_cgbs[arg[2]].desc);
+	    vg_cgb_discards++;
+	    *ret = 0;
+	 }
 	 break;
 
       case VG_USERREQ__GET_VBITS:
@@ -1857,6 +1858,7 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
    }
    return True;
 }
+
 
 /*------------------------------------------------------------*/
 /*--- Setup                                                ---*/

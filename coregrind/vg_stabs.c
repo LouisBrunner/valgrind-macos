@@ -721,7 +721,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 
       typeinfo = stabtype_parser(si, NULL, &p);
 
-      type = VG_(st_mkarray)(si, typeinfo, VG_(st_mkint)(NULL, 1, True));
+      type = VG_(st_mkarray)(def, typeinfo, VG_(st_mkint)(NULL, 1, True));
       break;
    }
 

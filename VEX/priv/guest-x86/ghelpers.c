@@ -1480,20 +1480,21 @@ VexGuestLayout
              See detailed comment in gdefs.h on meaning of thunk
              fields. */
           .alwaysDefd[0]  = ALWAYSDEFD(guest_CC_OP),
-          .alwaysDefd[14] = ALWAYSDEFD(guest_CC_AUX),
-          .alwaysDefd[1]  = ALWAYSDEFD(guest_DFLAG),
-          .alwaysDefd[2]  = ALWAYSDEFD(guest_IDFLAG),
-          .alwaysDefd[3]  = ALWAYSDEFD(guest_EIP),
-          .alwaysDefd[4]  = ALWAYSDEFD(guest_FTOP),
-          .alwaysDefd[5]  = ALWAYSDEFD(guest_FPTAG),
-          .alwaysDefd[6]  = ALWAYSDEFD(guest_FPUCW),
-          .alwaysDefd[7]  = ALWAYSDEFD(guest_FC3210),
-          .alwaysDefd[8]  = ALWAYSDEFD(guest_CS),
-          .alwaysDefd[9]  = ALWAYSDEFD(guest_DS),
-          .alwaysDefd[10] = ALWAYSDEFD(guest_ES),
-          .alwaysDefd[11] = ALWAYSDEFD(guest_FS),
-          .alwaysDefd[12] = ALWAYSDEFD(guest_GS),
-          .alwaysDefd[13] = ALWAYSDEFD(guest_SS)
+          .alwaysDefd[1]  = ALWAYSDEFD(guest_CC_AUX),
+
+          .alwaysDefd[2]  = ALWAYSDEFD(guest_DFLAG),
+          .alwaysDefd[3]  = ALWAYSDEFD(guest_IDFLAG),
+          .alwaysDefd[4]  = ALWAYSDEFD(guest_EIP),
+          .alwaysDefd[5]  = ALWAYSDEFD(guest_FTOP),
+          .alwaysDefd[6]  = ALWAYSDEFD(guest_FPTAG),
+          .alwaysDefd[7]  = ALWAYSDEFD(guest_FPUCW),
+          .alwaysDefd[8]  = ALWAYSDEFD(guest_FC3210),
+          .alwaysDefd[9]  = ALWAYSDEFD(guest_CS),
+          .alwaysDefd[10] = ALWAYSDEFD(guest_DS),
+          .alwaysDefd[11] = ALWAYSDEFD(guest_ES),
+          .alwaysDefd[12] = ALWAYSDEFD(guest_FS),
+          .alwaysDefd[13] = ALWAYSDEFD(guest_GS),
+          .alwaysDefd[14] = ALWAYSDEFD(guest_SS)
         };
 
 

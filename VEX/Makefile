@@ -10,6 +10,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_guest_ppc32.h
 
 PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
+		priv/host-amd64/hdefs.h			\
 		priv/host-arm/hdefs.h			\
 		priv/host-generic/h_generic_regs.h	\
 		priv/host-generic/h_generic_simd64.h	\
@@ -29,8 +30,10 @@ LIB_OBJS = 	priv/ir/irdefs.o			\
 		priv/main/vex_globals.o			\
 		priv/main/vex_util.o			\
 		priv/host-x86/hdefs.o			\
+		priv/host-amd64/hdefs.o			\
 		priv/host-arm/hdefs.o			\
 		priv/host-x86/isel.o			\
+		priv/host-amd64/isel.o			\
 		priv/host-arm/isel.o			\
 		priv/host-generic/h_generic_regs.o	\
 		priv/host-generic/h_generic_simd64.o	\
@@ -59,17 +62,15 @@ CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline \
 		$(EXTRA_CFLAGS)
 
 #CC = icc
-#CCFLAGS = -g  -Wbrief -Wall -wd981 -wd279 -wd1287 -wd869 \
-#	  -wd810 -wd1419 -wd181 -wd111 -wd167
+#CCFLAGS = -g -Wall -wd981 -wd279 -wd1287 -wd869 -wd111 -wd188
 # 981: operands are evaluated in unspecified order
 # 279: controlling expression is constant
 # 1287: invalid attribute for parameter
 # 869: parameter "..." was never referenced
-# 810: conversion from "int" to "Char={char}" may lose significant bits
-# 181: argument is incompatible with corresponding format string conversion
 # 111: statement is unreachable
-# 167: argument of type unsigned char incompatible with formal of type char
+# 188: enumerated type mixed with another type
 # (the above are for icc 8.0 -- 8.0.0.55 I think)
+
 
 all: vex
 
@@ -139,6 +140,10 @@ priv/host-x86/hdefs.o: $(ALL_HEADERS) priv/host-x86/hdefs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-x86/hdefs.o \
 					 -c priv/host-x86/hdefs.c
 
+priv/host-amd64/hdefs.o: $(ALL_HEADERS) priv/host-amd64/hdefs.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-amd64/hdefs.o \
+					 -c priv/host-amd64/hdefs.c
+
 priv/host-arm/hdefs.o: $(ALL_HEADERS) priv/host-arm/hdefs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-arm/hdefs.o \
 					 -c priv/host-arm/hdefs.c
@@ -146,6 +151,10 @@ priv/host-arm/hdefs.o: $(ALL_HEADERS) priv/host-arm/hdefs.c
 priv/host-x86/isel.o: $(ALL_HEADERS) priv/host-x86/isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-x86/isel.o \
 					 -c priv/host-x86/isel.c
+
+priv/host-amd64/isel.o: $(ALL_HEADERS) priv/host-amd64/isel.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-amd64/isel.o \
+					 -c priv/host-amd64/isel.c
 
 priv/host-arm/isel.o: $(ALL_HEADERS) priv/host-arm/isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-arm/isel.o \

@@ -1607,7 +1607,6 @@ void VG_(main) ( void )
             the end of vg_switch_to_real_CPU(), so as to ensure that
             the original stack and machine state is restored before
             the real signal mechanism is restored.  */
-	VG_(printf)("BBS DONE\n\n");
          VG_(switch_to_real_CPU)();
 
       default:

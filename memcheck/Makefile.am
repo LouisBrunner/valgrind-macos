@@ -14,9 +14,10 @@ valdir = $(libdir)/valgrind
 val_PROGRAMS = vgskin_memcheck.so
 
 vgskin_memcheck_so_SOURCES = \
+	mac_leakcheck.c \
+	mac_needs.c \
 	mc_main.c \
 	mc_clientreqs.c \
-	mc_common.c \
 	mc_errcontext.c \
 	mc_from_ucode.c \
 	mc_translate.c \
@@ -29,10 +30,7 @@ mcinclude_HEADERS = \
 	memcheck.h
 
 noinst_HEADERS =	\
-	mc_common.h	\
+	mac_shared.h	\
 	mc_constants.h	\
 	mc_include.h
 
-##vgskin_memcheck.so$(EXEEXT): $(vgskin_memcheck_so_OBJECTS)
-##	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o vgskin_memcheck.so \
-##		$(vgskin_memcheck_so_OBJECTS)

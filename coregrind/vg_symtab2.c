@@ -2272,10 +2272,9 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
       n = 0;
       if (i > 0)
 	 eip--;			/* point to calling line */
-      know_fnname  = get_fnname (True, eip, buf_fn,  M_VG_ERRTXT, True, False);
+      know_fnname  = VG_(get_fnname) (eip, buf_fn,  M_VG_ERRTXT);
       know_objname = VG_(get_objname)(eip, buf_obj, M_VG_ERRTXT);
-      know_srcloc  = VG_(get_filename_linenum)(eip, 
-                                               buf_srcloc, M_VG_ERRTXT, 
+      know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc, M_VG_ERRTXT, 
                                                &lineno);
       if (i == 0) APPEND("   at ") else APPEND("   by ");
       

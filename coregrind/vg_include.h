@@ -171,6 +171,8 @@ typedef
 extern Bool  VG_(clo_error_limit);
 /* Enquire about whether to attach to GDB at errors?   default: NO */
 extern Bool  VG_(clo_GDB_attach);
+/* Enquire about generating a suppression for each error?   default: NO */
+extern Bool  VG_(clo_gen_suppressions);
 /* Sanity-check level: 0 = none, 1 (default), > 1 = expensive. */
 extern Int   VG_(sanity_level);
 /* Automatically attempt to demangle C++ names?  default: YES */
@@ -1192,14 +1194,13 @@ extern void VG_(record_pthread_error) ( ThreadId tid, Char* msg );
 
 extern void VG_(show_all_errors)      ( void );
 
-extern void VG_(get_objname_fnname) ( Addr a,
-                                      Char* obj_buf, Int n_obj_buf,
-                                      Char* fun_buf, Int n_fun_buf );
-
 /* Get hold of the suppression list ... just so we don't have to
    make it global. */
 extern Supp* VG_(get_suppressions) ( void );
 
+extern Bool VG_(is_action_requested) ( Char* action, Bool* clo );
+
+extern void VG_(gen_suppression) ( Error* err );
 
 /* ---------------------------------------------------------------------
    Exports of vg_procselfmaps.c

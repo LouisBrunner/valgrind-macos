@@ -132,6 +132,15 @@ const Int VG_(skin_interface_minor_version) = VG_CORE_INTERFACE_MINOR_VERSION;
 /*=== Command-line options                                         ===*/
 /*====================================================================*/
 
+/* Use this for normal null-termination-style string comparison */
+#define VG_STREQ(s1,s2) (s1 != NULL && s2 != NULL \
+                         && VG_(strcmp)((s1),(s2))==0)
+
+/* Use these for recognising skin command line options -- stops comparing
+   once whitespace is reached. */
+#  define VG_CLO_STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
+#  define VG_CLO_STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
+
 /* Verbosity level: 0 = silent, 1 (default), > 1 = more verbose. */
 extern Int   VG_(clo_verbosity);
 
@@ -1175,15 +1184,24 @@ void*       VG_(get_error_extra)   ( Error* err );
    
    If the error occurs in generated code, 'tst' should be NULL.  If the
    error occurs in non-generated code, 'tst' should be non-NULL.  The
-   `extra' field can be stack-allocated;  it will be copied (using
-   SKN_(dup_extra_and_update)()) if needed.  But it won't be copied
-   if it's NULL.
+   `extra' field can be stack-allocated;  it will be copied by the core
+   if needed.  But it won't be copied if it's NULL.
 
    If no 'a', 's' or 'extra' of interest needs to be recorded, just use
    NULL for them.
 */
 extern void VG_(maybe_record_error) ( ThreadState* tst, ErrorKind ekind, 
                                       Addr a, Char* s, void* extra );
+
+/* Similar to VG_(maybe_record_error)(), except this one doesn't record the
+   error -- useful for errors that can only happen once.  The errors can be
+   suppressed, though.  Return value is True if it was suppressed.
+   `print_error' dictates whether to print the error, which is a bit of a 
+   hack that's useful sometimes if you just want to know if the error would
+   be suppressed without possibly printing it. */
+extern Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind,
+                                Addr a, Char* s, void* extra,
+                                ExeContext* where, Bool print_error );
 
 /* Gets a non-blank, non-comment line of at most nBuf chars from fd.
    Skips leading spaces on the line.  Returns True if EOF was hit instead. 
@@ -1296,12 +1314,12 @@ extern Bool VG_(addr_is_in_block) ( Addr a, Addr start, UInt size );
 /* Searches through currently malloc'd blocks until a matching one is found.
    Returns NULL if none match.  Extra arguments can be implicitly passed to
    p using nested functions; see memcheck/mc_errcontext.c for an example. */
-extern ShadowChunk* VG_(any_matching_mallocd_ShadowChunks) 
+extern ShadowChunk* VG_(first_matching_mallocd_ShadowChunk) 
                         ( Bool (*p) ( ShadowChunk* ));
 
 /* Searches through all thread's stacks to see if any match.  Returns
  * VG_INVALID_THREADID if none match. */
-extern ThreadId VG_(any_matching_thread_stack)
+extern ThreadId VG_(first_matching_thread_stack)
                         ( Bool (*p) ( Addr stack_min, Addr stack_max ));
 
 /* Do memory leak detection. */
@@ -1585,21 +1603,18 @@ extern void        SK_(fini)         ( void );
  */
 extern Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 );
 
-/* Print error context.  The passed function pp_ExeContext() can be (and
-   probably should be) used to print the location of the error. */
-extern void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) );
+/* Print error context. */
+extern void SK_(pp_SkinError) ( Error* err );
 
-/* Should copy the `extra' part which the core uses to override the old
-   version.  This is necessary to move from a temporary stack copy to a
-   permanent heap one.
-  
-   Then should fill in any details that could be postponed until after the
+/* Should fill in any details that could be postponed until after the
    decision whether to ignore the error (ie. details not affecting the
    result of SK_(eq_SkinError)()).  This saves time when errors are ignored.
-  
    Yuk.
+
+   Return value: must be the size of the `extra' part in bytes -- used by
+   the core to make a copy.
 */
-extern void* SK_(dup_extra_and_update) ( Error* err );
+extern UInt SK_(update_extra) ( Error* err );
 
 /* Return value indicates recognition.  If recognised, must set skind using
    VG_(set_supp_kind)(). */
@@ -1615,7 +1630,17 @@ extern Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf,
 /* This should just check the kinds match and maybe some stuff in the
    `string' and `extra' field if appropriate (using VG_(get_supp_*)() to
    get the relevant suppression parts). */
-extern Bool SK_(error_matches_suppression)(Error* err, Supp* su);
+extern Bool SK_(error_matches_suppression) ( Error* err, Supp* su );
+
+/* This should return the suppression name, for --gen-suppressions, or NULL
+   if that error type cannot be suppressed.  This is the inverse of
+   SK_(recognised_suppression)(). */
+extern Char* SK_(get_error_name) ( Error* err );
+
+/* This should print any extra info for the error, for --gen-suppressions,
+   including the newline.  This is the inverse of
+   SK_(read_extra_suppression_info)(). */
+extern void SK_(print_extra_suppression_info) ( Error* err );
 
 
 /* ------------------------------------------------------------------ */

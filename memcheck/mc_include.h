@@ -29,10 +29,19 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+/* Note: this header should contain declarations that are for use by
+   Memcheck only -- declarations shared with Addrcheck go in mac_shared.h.
+*/
+
 #ifndef __MC_INCLUDE_H
 #define __MC_INCLUDE_H
 
-#include "mc_common.h"
+#include "mac_shared.h"
+#include "mc_constants.h"
+
+/*------------------------------------------------------------*/
+/*--- Types                                                ---*/
+/*------------------------------------------------------------*/
 
 /* UCode extension for efficient memory checking operations */
 typedef
@@ -86,6 +95,18 @@ typedef
      Tag_DebugFn
    }
    TagOp;
+
+
+/*------------------------------------------------------------*/
+/*--- Command line options                                 ---*/
+/*------------------------------------------------------------*/
+
+/* DEBUG: clean up instrumented code?  default: YES */
+extern Bool MC_(clo_cleanup);
+
+/* When instrumenting, omit some checks if tell-tale literals for
+   inlined strlen() are visible in the basic block.  default: YES */
+extern Bool MC_(clo_avoid_strlen_errors);
 
 
 /*------------------------------------------------------------*/

@@ -153,6 +153,38 @@ void VG_(free_ShadowChunk) ( ShadowChunk* sc )
    VG_(arena_free) ( VG_AR_CORE,   sc );
 }
 
+static 
+void sort_malloc_shadows ( ShadowChunk** shadows, UInt n_shadows )
+{
+   Int   incs[14] = { 1, 4, 13, 40, 121, 364, 1093, 3280,
+                      9841, 29524, 88573, 265720,
+                      797161, 2391484 };
+   Int          lo = 0;
+   Int          hi = n_shadows-1;
+   Int          i, j, h, bigN, hp;
+   ShadowChunk* v;
+   
+   bigN = hi - lo + 1; if (bigN < 2) return;
+   hp = 0; while (hp < 14 && incs[hp] < bigN) hp++; hp--;
+   vg_assert(0 <= hp && hp < 14);
+   
+   for (; hp >= 0; hp--) {
+      h = incs[hp];
+      i = lo + h;
+      while (1) {
+         if (i > hi) break;
+         v = shadows[i];
+         j = i;
+         while (shadows[j-h]->data > v->data) {
+            shadows[j] = shadows[j-h];
+            j = j - h;
+            if (j <= (lo + h - 1)) break;
+         }
+         shadows[j] = v;
+         i++;
+      }
+   }
+}
 
 /* Allocate a suitably-sized array, copy all the malloc-d block
    shadows into it, and return both the array and the size of it.
@@ -180,6 +212,16 @@ ShadowChunk** VG_(get_malloc_shadows) ( /*OUT*/ UInt* n_shadows )
       }
    }
    vg_assert(i == *n_shadows);
+
+   sort_malloc_shadows(arr, *n_shadows);
+
+   /* Sanity check; assert that the blocks are now in order and that
+      they don't overlap. */
+   for (i = 0; i < *n_shadows-1; i++) {
+      sk_assert( arr[i]->data                < arr[i+1]->data );
+      sk_assert( arr[i]->data + arr[i]->size < arr[i+1]->data );
+   }
+
    return arr;
 }
 
@@ -190,7 +232,7 @@ Bool VG_(addr_is_in_block)( Addr a, Addr start, UInt size )
 }
 
 /* Return the first shadow chunk satisfying the predicate p. */
-ShadowChunk* VG_(any_matching_mallocd_ShadowChunks)
+ShadowChunk* VG_(first_matching_mallocd_ShadowChunk)
                         ( Bool (*p) ( ShadowChunk* ))
 {
    UInt ml_no;

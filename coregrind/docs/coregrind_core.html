@@ -72,7 +72,10 @@ interested, Valgrind allows you to selectively suppress errors, by
 recording them in a suppressions file which is read when Valgrind
 starts up.  The build mechanism attempts to select suppressions which
 give reasonable behaviour for the libc and XFree86 versions detected
-on your machine.
+on your machine.  To make it easier to write suppressions, you can use
+the <code>--gen-suppressions=yes</code> option which tells Valgrind to
+print out a suppression for each error that appears, which you can
+then copy into a suppressions file.
 
 <p>
 Different skins report different kinds of errors.  The suppression
@@ -189,7 +192,7 @@ does about where that stream is sent to.  You have three options:
     for technical reasons, valgrind's core itself can't use the GNU C
     library, and this makes it difficult to do hostname-to-IP lookups.
     <p>
-    Writing to a network socket it pretty useless if you don't have
+    Writing to a network socket is pretty useless if you don't have
     something listening at the other end.  We provide a simple
     listener program, <code>valgrind-listener</code>, which accepts 
     connections on the specified port and copies whatever it is sent
@@ -453,6 +456,34 @@ follows:
       socket, I guess this option doesn't make any sense.  Caveat emptor.
       </li><br><p>
 
+  <li><code>--gen-suppressions=no</code> [the default]<br>
+      <code>--gen-suppressions=yes</code>
+      <p>When enabled, Valgrind will pause after every error shown,
+      and print the line
+      <br>
+      <code>---- Print suppression ? --- [Return/N/n/Y/y/C/c] ----</code>
+      <p>
+      The prompt's behaviour is the same as for the <code>--gdb-attach</code>
+      option.
+      <p>
+      If you choose to, Valgrind will print out a suppression for this error.
+      You can then cut and paste it into a suppression file if you don't want
+      to hear about the error in the future.
+      <p>
+      This option is particularly useful with C++ programs, as it prints out
+      the suppressions with mangled names, as required.
+      <p>
+      Note that the suppressions printed are as specific as possible.  You
+      may want to common up similar ones, eg. by adding wildcards to function
+      names.  Also, sometimes two different errors are suppressed by the same
+      suppression, in which case Valgrind will output the suppression more than
+      once, but you only need to have one copy in your suppression file (but
+      having more than one won't cause problems).  Also, the suppression
+      name is given as <code>&lt;insert a suppression name here&gt;</code>;
+      the name doesn't really matter, it's only used with the
+      <code>-v</code> option which prints out all used suppression records.
+      </li><br><p>
+
   <li><code>--alignment=&lt;number></code> [default: 4]<br> <p>By
       default valgrind's <code>malloc</code>, <code>realloc</code>,
       etc, return 4-byte aligned addresses.  These are suitable for
@@ -620,6 +651,12 @@ follows:
           unexpectedly in the <code>write()</code> system call, you
           may find the <code>--trace-syscalls=yes
           --trace-sched=yes</code> flags useful.
+      <p>
+      <li><code>lax-ioctls</code> Be very lax about ioctl handling; the only
+          assumption is that the size is correct. Doesn't require the full
+          buffer to be initialized when writing.  Without this, using some
+          device drivers with a large number of strange ioctl commands becomes
+          very tiresome.
       </ul>
       </li><br><p>
 </ul>
@@ -685,6 +722,13 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
       </li><br>
       <p>
 
+  <li><code>--trace-codegen=XXXXX</code> [default: 00000]
+      <p>Enable/disable tracing of code generation.  Code can be printed
+      at five different stages of translation;  each <code>X</code> element
+      must be 0 or 1.
+      </li><br>
+      <p>
+
   <li><code>--stop-after=&lt;number></code> 
       [default: infinity, more or less]
       <p>After &lt;number> basic blocks have been executed, shut down
@@ -708,6 +752,11 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
 
 (NOTE 20021117: this subsection is illogical here now; it jumbles up
 core and skin issues.  To be fixed.).
+
+(NOTE 20030318: the most important correction is that
+<code>valgrind.h</code> should not be included in your program, but
+instead <code>memcheck.h</code> (for the Memcheck and Addrcheck skins)
+or <code>helgrind.h</code> (for Helgrind).)
 
 <p>
 Valgrind has a trapdoor mechanism via which the client program can
@@ -937,7 +986,7 @@ build problems.
 <h3>2.11&nbsp; If you have problems</h3>
 Mail me (<a href="mailto:jseward@acm.org">jseward@acm.org</a>).
 
-<p>See <a href="#limits">Section 4</a> for the known limitations of
+<p>See <a href="#limits">this section</a> for the known limitations of
 Valgrind, and for a list of programs which are known not to work on
 it.
 

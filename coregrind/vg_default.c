@@ -105,15 +105,15 @@ Bool SK_(eq_SkinError)(VgRes res, Error* e1, Error* e2)
 }
 
 __attribute__ ((weak))
-void SK_(pp_SkinError)(Error* err, void (*pp_ExeContext)(void))
+void SK_(pp_SkinError)(Error* err)
 {
    non_fund_panic("SK_(pp_SkinError)");
 }
 
 __attribute__ ((weak))
-void* SK_(dup_extra_and_update)(Error* err)
+UInt SK_(update_extra)(Error* err)
 {
-   non_fund_panic("SK_(dup_extra_and_update)");
+   non_fund_panic("SK_(update_extra)");
 }
 
 __attribute__ ((weak))
@@ -132,6 +132,18 @@ __attribute__ ((weak))
 Bool SK_(error_matches_suppression)(Error* err, Supp* su)
 {
    non_fund_panic("SK_(error_matches_suppression)");
+}
+
+__attribute__ ((weak))
+Char* SK_(get_error_name)(Error* err)
+{
+   non_fund_panic("SK_(get_error_name)");
+}
+
+__attribute__ ((weak))
+void SK_(print_extra_suppression_info)(Error* err)
+{
+   non_fund_panic("SK_(print_extra_suppression_info)");
 }
 
 

@@ -91,13 +91,6 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
 
 static void pp_Error ( Error* err, Bool printCount )
 {
-   /* Closure for printing where the error occurred.  Abstracts details
-      about the `where' field away from the skin. */
-   void pp_ExeContextClosure(void)
-   {
-      VG_(pp_ExeContext) ( err->where );
-   }
-   
    if (printCount)
       VG_(message)(Vg_UserMsg, "Observed %d times:", err->count );
    if (err->tid > 1)
@@ -111,7 +104,7 @@ static void pp_Error ( Error* err, Bool printCount )
          break;
       default: 
          if (VG_(needs).skin_errors)
-            SK_(pp_SkinError)( err, &pp_ExeContextClosure );
+            SK_(pp_SkinError)( err );
          else {
             VG_(printf)("\nUnhandled error type: %u.  VG_(needs).skin_errors\n"
                         "probably needs to be set?\n",
@@ -123,13 +116,12 @@ static void pp_Error ( Error* err, Bool printCount )
 
 /* Figure out if we want to attach for GDB for this error, possibly
    by asking the user. */
-static
-Bool vg_is_GDB_attach_requested ( void )
+Bool VG_(is_action_requested) ( Char* action, Bool* clo )
 {
    Char ch, ch2;
    Int res;
 
-   if (VG_(clo_GDB_attach) == False)
+   if (*clo == False)
       return False;
 
    VG_(message)(Vg_UserMsg, "");
@@ -137,8 +129,8 @@ Bool vg_is_GDB_attach_requested ( void )
   again:
    VG_(printf)(
       "==%d== "
-      "---- Attach to GDB ? --- [Return/N/n/Y/y/C/c] ---- ", 
-      VG_(getpid)()
+      "---- %s ? --- [Return/N/n/Y/y/C/c] ---- ", 
+      VG_(getpid)(), action
    );
 
    res = VG_(read)(0 /*stdin*/, &ch, 1);
@@ -152,15 +144,15 @@ Bool vg_is_GDB_attach_requested ( void )
    if (res != 1) goto ioerror;
    if (ch2 != '\n') goto again;
 
-   /* No, don't want to attach. */
+   /* No, don't want to do action. */
    if (ch == 'n' || ch == 'N') return False;
-   /* Yes, want to attach. */
+   /* Yes, want to do action. */
    if (ch == 'y' || ch == 'Y') return True;
-   /* No, don't want to attach, and don't ask again either. */
+   /* No, don't want to do action, and don't ask again either. */
    vg_assert(ch == 'c' || ch == 'C');
 
   ioerror:
-   VG_(clo_GDB_attach) = False;
+   *clo = False;
    return False;
 }
 
@@ -178,14 +170,17 @@ Bool vg_is_GDB_attach_requested ( void )
      stored thread state, not from VG_(baseBlock).  
 */
 static __inline__
-void construct_error ( Error* err, ThreadState* tst, 
-                       ErrorKind ekind, Addr a, Char* s, void* extra )
+void construct_error ( Error* err, ThreadState* tst, ErrorKind ekind, Addr a,
+                       Char* s, void* extra, ExeContext* where )
 {
    /* Core-only parts */
    err->next     = NULL;
    err->supp     = NULL;
    err->count    = 1;
-   err->where    = VG_(get_ExeContext)( tst );
+   if (NULL == where)
+      err->where = VG_(get_ExeContext)( tst );
+   else
+      err->where = where;
 
    if (NULL == tst) {
       err->tid   = VG_(get_current_tid)();
@@ -209,6 +204,66 @@ void construct_error ( Error* err, ThreadState* tst,
    vg_assert(err->tid >= 0 && err->tid < VG_N_THREADS);
 }
 
+void VG_(gen_suppression)(Error* err)
+{
+   UInt        i;
+   UChar       buf[M_VG_ERRTXT];
+   ExeContext* ec      = VG_(get_error_where)(err);
+   Int         stop_at = VG_(clo_backtrace_size);
+   Char*       name    = SK_(get_error_name)(err);
+
+   if (NULL == name) {
+      VG_(message)(Vg_UserMsg, "(skin does not allow error to be suppressed)");
+      return;
+   }
+
+   if (stop_at > 3) stop_at = 3;    /* At most three names */
+   vg_assert(stop_at > 0);
+
+   VG_(printf)("{\n");
+   VG_(printf)("   <insert a suppression name here>\n");
+   VG_(printf)("   %s:%s\n", VG_(details).name, name);
+   SK_(print_extra_suppression_info)(err);
+
+   /* This loop condensed from VG_(mini_stack_dump)() */
+   i = 0;
+   do {
+      Addr eip = ec->eips[i];
+      if (i > 0)
+         eip--;                 /* point to calling line */
+
+      if ( VG_(get_fnname_nodemangle) (eip, buf,  M_VG_ERRTXT) ) {
+         VG_(printf)("   fun:%s\n", buf);
+      } else if ( VG_(get_objname)(eip, buf, M_VG_ERRTXT) ) {
+         VG_(printf)("   obj:%s\n", buf);
+      } else {
+         VG_(printf)("   ???:???       "
+                     "# unknown, suppression will not work, sorry)\n");
+      }
+      i++;
+   } while (i < stop_at && ec->eips[i] != 0);
+
+   VG_(printf)("}\n");
+}
+
+void do_actions_on_error(Error* err)
+{
+   /* Perhaps we want a GDB attach at this point? */
+   if (VG_(is_action_requested)( "Attach to GDB", & VG_(clo_GDB_attach) )) {
+      VG_(swizzle_esp_then_start_GDB)(
+         err->m_eip, err->m_esp, err->m_ebp);
+   }
+   /* Or maybe we want to generate the error's suppression? */
+   if (VG_(is_action_requested)( "Print suppression",
+                                 & VG_(clo_gen_suppressions) )) {
+      VG_(gen_suppression)(err);
+   }
+}
+
+/* Shared between VG_(maybe_record_error)() and VG_(unique_error)(),
+   just for pretty printing purposes. */
+static Bool is_first_shown_context = True;
+
 /* Top-level entry point to the error management subsystem.
    All detected errors are notified here; this routine decides if/when the
    user should see the error. */
@@ -218,8 +273,8 @@ void VG_(maybe_record_error) ( ThreadState* tst,
           Error  err;
           Error* p;
           Error* p_prev;
+          UInt   extra_size;
           VgRes  exe_res                = Vg_MedRes;
-   static Bool   is_first_shown_context = True;
    static Bool   stopping_message       = False;
    static Bool   slowdown_message       = False;
    static Int    vg_n_errs_shown        = 0;
@@ -279,7 +334,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    }
 
    /* Build ourselves the error */
-   construct_error ( &err, tst, ekind, a, s, extra );
+   construct_error ( &err, tst, ekind, a, s, extra, NULL );
 
    /* First, see if we've got an error record matching this one. */
    p      = vg_errors;
@@ -312,20 +367,34 @@ void VG_(maybe_record_error) ( ThreadState* tst,
 
    /* Didn't see it.  Copy and add. */
 
-   /* OK, we're really going to collect it.  First make a copy,
-      because the error context is on the stack and will disappear shortly.
-      We can duplicate the main part ourselves, but use
-      SK_(dup_extra_and_update) to duplicate the `extra' part.
+   /* OK, we're really going to collect it.  The context is on the stack and
+      will disappear shortly, so we must copy it.  First do the main
+      (non-`extra') part.
      
-      SK_(dup_extra_and_update) can also update the `extra' part.  This is
-      for when there are more details to fill in which take time to work out
-      but don't affect our earlier decision to include the error -- by
+      Then SK_(update_extra) can update the `extra' part.  This is for when
+      there are more details to fill in which take time to work out but
+      don't affect our earlier decision to include the error -- by
       postponing those details until now, we avoid the extra work in the
       case where we ignore the error.  Ugly.
-    */
+
+      Then, if there is an `extra' part, copy it too, using the size that
+      SK_(update_extra) returned.
+   */
+
+   /* copy main part */
    p = VG_(arena_malloc)(VG_AR_ERRORS, sizeof(Error));
    *p = err;
-   p->extra = SK_(dup_extra_and_update)(p);
+
+   /* update `extra' */
+   extra_size = SK_(update_extra)(p);
+
+   /* copy `extra' if there is one */
+   if (NULL != p->extra) {
+      void* new_extra = VG_(malloc)(extra_size);
+      VG_(memcpy)(new_extra, p->extra, extra_size);
+      p->extra = new_extra;
+   }
+
    p->next = vg_errors;
    p->supp = is_suppressible_error(&err);
    vg_errors = p;
@@ -333,17 +402,53 @@ void VG_(maybe_record_error) ( ThreadState* tst,
       vg_n_errs_found++;
       if (!is_first_shown_context)
          VG_(message)(Vg_UserMsg, "");
-      pp_Error(p, False);      
+      pp_Error(p, False);
       is_first_shown_context = False;
       vg_n_errs_shown++;
-      /* Perhaps we want a GDB attach at this point? */
-      if (vg_is_GDB_attach_requested()) {
-         VG_(swizzle_esp_then_start_GDB)(
-            err.m_eip, err.m_esp, err.m_ebp);
-      }
+      do_actions_on_error(p);
    } else {
       vg_n_errs_suppressed++;
       p->supp->count++;
+   }
+}
+
+/* Second top-level entry point to the error management subsystem, for
+   errors that the skin want to report immediately, eg. because they're
+   guaranteed to only happen once.  This avoids all the recording and
+   comparing stuff.  But they can be suppressed;  returns True if it is
+   suppressed.  Bool `print_error' dictates whether to print the error. */
+Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind, Addr a, Char* s,
+                         void* extra, ExeContext* where, Bool print_error )
+{
+   Error  err;
+
+   /* Build ourselves the error */
+   construct_error ( &err, tst, ekind, a, s, extra, where );
+
+   /* Unless it's suppressed, we're going to show it.  Don't need to make
+      a copy, because it's only temporary anyway.
+
+      Then update the `extra' part with SK_(update_extra), because that can
+      have an affect on whether it's suppressed.  Ignore the size return
+      value of SK_(update_extra), because we're not copying `extra'. */
+   (void)SK_(update_extra)(&err);
+
+   if (NULL == is_suppressible_error(&err)) {
+      vg_n_errs_found++;
+
+      if (print_error) {
+         if (!is_first_shown_context)
+            VG_(message)(Vg_UserMsg, "");
+         pp_Error(&err, False);
+         is_first_shown_context = False;
+      }
+      do_actions_on_error(&err);
+
+      return False;
+
+   } else {
+      vg_n_errs_suppressed++;
+      return True;
    }
 }
 
@@ -529,9 +634,6 @@ Bool skin_name_present(Char *name, Char *names)
    return found;
 }
 
-#define STREQ(s1,s2) (s1 != NULL && s2 != NULL \
-                      && VG_(strcmp)((s1),(s2))==0)
-
 /* Read suppressions from the file specified in vg_clo_suppressions
    and place them in the suppressions list.  If there's any difficulty
    doing this, just give up -- there's no point in trying to recover.  
@@ -563,10 +665,10 @@ static void load_one_suppressions_file ( Char* filename )
       eof = VG_(get_line) ( fd, buf, N_BUF );
       if (eof) break;
 
-      if (!STREQ(buf, "{")) goto syntax_error;
+      if (!VG_STREQ(buf, "{")) goto syntax_error;
       
       eof = VG_(get_line) ( fd, buf, N_BUF );
-      if (eof || STREQ(buf, "}")) goto syntax_error;
+      if (eof || VG_STREQ(buf, "}")) goto syntax_error;
       supp->sname = VG_(arena_strdup)(VG_AR_CORE, buf);
 
       eof = VG_(get_line) ( fd, buf, N_BUF );
@@ -588,7 +690,7 @@ static void load_one_suppressions_file ( Char* filename )
       /* Is it a core suppression? */
       if (VG_(needs).core_errors && skin_name_present("core", skin_names))
       {
-         if (STREQ(supp_name, "PThread"))
+         if (VG_STREQ(supp_name, "PThread"))
             supp->skind = PThreadSupp;
          else
             goto syntax_error;
@@ -610,7 +712,7 @@ static void load_one_suppressions_file ( Char* filename )
          while (True) {
             eof = VG_(get_line) ( fd, buf, N_BUF );
             if (eof) goto syntax_error;
-            if (STREQ(buf, "}"))
+            if (VG_STREQ(buf, "}"))
                break;
          }
          continue;
@@ -624,7 +726,7 @@ static void load_one_suppressions_file ( Char* filename )
       for (i = 0; i < VG_N_SUPP_CALLERS; i++) {
          eof = VG_(get_line) ( fd, buf, N_BUF );
          if (eof) goto syntax_error;
-         if (i > 0 && STREQ(buf, "}")) 
+         if (i > 0 && VG_STREQ(buf, "}")) 
             break;
          supp->caller[i] = VG_(arena_strdup)(VG_AR_CORE, buf);
          if (!setLocationTy(&(supp->caller[i]), &(supp->caller_ty[i])))
@@ -673,9 +775,8 @@ void VG_(load_suppressions) ( void )
    Doesn't demangle the fn name, because we want to refer to 
    mangled names in the suppressions file.
 */
-void VG_(get_objname_fnname) ( Addr a,
-                               Char* obj_buf, Int n_obj_buf,
-                               Char* fun_buf, Int n_fun_buf )
+static void get_objname_fnname ( Addr a, Char* obj_buf, Int n_obj_buf,
+                                         Char* fun_buf, Int n_fun_buf )
 {     
    (void)VG_(get_objname)          ( a, obj_buf, n_obj_buf );
    (void)VG_(get_fnname_nodemangle)( a, fun_buf, n_fun_buf );
@@ -714,7 +815,7 @@ Bool supp_matches_callers(Supp* su, Char caller_obj[][M_VG_ERRTXT],
          case FunName: if (VG_(string_match)(su->caller[i], 
                                              caller_fun[i])) break;
                        return False;
-         default: VG_(skin_panic)("is_suppressible_error");
+         default: VG_(skin_panic)("supp_matches_callers");
       }
    }
 
@@ -736,7 +837,7 @@ static Supp* is_suppressible_error ( Error* err )
    Supp* su;
 
    /* get_objname_fnname() writes the function name and object name if
-      it finds them in the debug info.  so the strings in the suppression
+      it finds them in the debug info.  So the strings in the suppression
       file should match these.
    */
 
@@ -746,9 +847,8 @@ static Supp* is_suppressible_error ( Error* err )
       caller_obj[i][0] = caller_fun[i][0] = 0;
 
    for (i = 0; i < VG_N_SUPP_CALLERS && i < VG_(clo_backtrace_size); i++) {
-      VG_(get_objname_fnname) ( err->where->eips[i], 
-                                caller_obj[i], M_VG_ERRTXT,
-                                caller_fun[i], M_VG_ERRTXT );
+      get_objname_fnname ( err->where->eips[i], caller_obj[i], M_VG_ERRTXT,
+                                                caller_fun[i], M_VG_ERRTXT );
    }
 
    /* See if the error context matches any suppression. */
@@ -760,8 +860,6 @@ static Supp* is_suppressible_error ( Error* err )
    }
    return NULL;      /* no matches */
 }
-
-#undef STREQ
 
 /*--------------------------------------------------------------------*/
 /*--- end                                          vg_errcontext.c ---*/

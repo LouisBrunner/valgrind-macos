@@ -14,6 +14,3 @@ val_PROGRAMS = vgskin_addrcheck.so
 vgskin_addrcheck_so_SOURCES = ac_main.c
 vgskin_addrcheck_so_LDFLAGS = -shared
 
-##vgskin_addrcheck.so$(EXEEXT): $(vgskin_addrcheck_so_OBJECTS)
-##	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o vgskin_addrcheck.so \
-##		$(vgskin_addrcheck_so_OBJECTS)

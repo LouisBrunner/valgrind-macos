@@ -30,11 +30,12 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "mc_common.h"
+#include "mac_shared.h"
 #include "memcheck.h"
 //#include "vg_profile.c"
 
-#include "mc_common.c"
+#include "mac_leakcheck.c"
+#include "mac_needs.c"
 
 
 
@@ -44,22 +45,15 @@ VG_DETERMINE_INTERFACE_VERSION
 /*--- Comparing and printing errors                        ---*/
 /*------------------------------------------------------------*/
 
-void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
+void SK_(pp_SkinError) ( Error* err )
 {
-   MemCheckError* err_extra = VG_(get_error_extra)(err);
+   MAC_Error* err_extra = VG_(get_error_extra)(err);
 
    switch (VG_(get_error_kind)(err)) {
       case CoreMemErr:
-         if (err_extra->isWrite) {
-            VG_(message)(Vg_UserMsg, 
-               "%s contains unaddressable byte(s)", 
-               VG_(get_error_string)(err));
-         } else {
-            VG_(message)(Vg_UserMsg, 
-               "%s contains unaddressable byte(s)", 
-               VG_(get_error_string)(err));
-         }
-         pp_ExeContext();
+         VG_(message)(Vg_UserMsg, "%s contains unaddressable byte(s)", 
+         VG_(get_error_string)(err));
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          break;
       
       case AddrErr:
@@ -77,160 +71,39 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
             default: 
                VG_(skin_panic)("SK_(pp_SkinError)(axskind)");
          }
-         pp_ExeContext();
-         MC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
-         break;
-
-      case FreeErr:
-         VG_(message)(Vg_UserMsg,"Invalid free() / delete / delete[]");
-         /* fall through */
-      case FreeMismatchErr:
-         if (VG_(get_error_kind)(err) == FreeMismatchErr)
-            VG_(message)(Vg_UserMsg, 
-                         "Mismatched free() / delete / delete []");
-         pp_ExeContext();
-         MC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case ParamErr:
-         if (err_extra->isWrite) {
-            VG_(message)(Vg_UserMsg, 
-                         "Syscall param %s contains unaddressable byte(s)",
-                         VG_(get_error_string)(err) );
-         } else {
-            VG_(message)(Vg_UserMsg, 
-                "Syscall param %s contains uninitialised or "
-                "unaddressable byte(s)",
-                VG_(get_error_string)(err));
-         }
-         pp_ExeContext();
-         MC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
+         VG_(message)(Vg_UserMsg, 
+                      "Syscall param %s contains unaddressable byte(s)",
+                      VG_(get_error_string)(err) );
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       case UserErr:
-         if (err_extra->isWrite) {
-            VG_(message)(Vg_UserMsg, 
-               "Unaddressable byte(s) found during client check request");
-         } else {
-            VG_(message)(Vg_UserMsg, 
-               "Uninitialised or "
-               "unaddressable byte(s) found during client check request");
-         }
-         pp_ExeContext();
-         MC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
+         VG_(message)(Vg_UserMsg, 
+            "Unaddressable byte(s) found during client check request");
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
       default: 
-         VG_(printf)("Error:\n  unknown AddrCheck error code %d\n",
-                     VG_(get_error_kind)(err));
-         VG_(skin_panic)("unknown error code in SK_(pp_SkinError)");
+         MAC_(pp_shared_SkinError)(err);
+         break;
    }
-}
-
-/*------------------------------------------------------------*/
-/*--- Recording errors                                     ---*/
-/*------------------------------------------------------------*/
-
-/* Describe an address as best you can, for error messages,
-   putting the result in ai. */
-
-static void describe_addr ( Addr a, AddrInfo* ai )
-{
-   ShadowChunk* sc;
-   ThreadId     tid;
-
-   /* Nested functions, yeah.  Need the lexical scoping of 'a'. */ 
-
-   /* Closure for searching thread stacks */
-   Bool addr_is_in_bounds(Addr stack_min, Addr stack_max)
-   {
-      return (stack_min <= a && a <= stack_max);
-   }
-   /* Closure for searching malloc'd and free'd lists */
-   Bool addr_is_in_block(ShadowChunk *sh_ch)
-   {
-      return VG_(addr_is_in_block) ( a, VG_(get_sc_data)(sh_ch),
-                                        VG_(get_sc_size)(sh_ch) );
-   }
-   /* Perhaps it's on a thread's stack? */
-   tid = VG_(any_matching_thread_stack)(addr_is_in_bounds);
-   if (tid != VG_INVALID_THREADID) {
-      ai->akind     = Stack;
-      ai->stack_tid = tid;
-      return;
-   }
-   /* Search for a recently freed block which might bracket it. */
-   sc = MC_(any_matching_freed_ShadowChunks)(addr_is_in_block);
-   if (NULL != sc) {
-      ai->akind      = Freed;
-      ai->blksize    = VG_(get_sc_size)(sc);
-      ai->rwoffset   = (Int)(a) - (Int)(VG_(get_sc_data)(sc));
-      ai->lastchange = (ExeContext*)( VG_(get_sc_extra)(sc, 0) );
-      return;
-   }
-   /* Search for a currently malloc'd block which might bracket it. */
-   sc = VG_(any_matching_mallocd_ShadowChunks)(addr_is_in_block);
-   if (NULL != sc) {
-      ai->akind      = Mallocd;
-      ai->blksize    = VG_(get_sc_size)(sc);
-      ai->rwoffset   = (Int)(a) - (Int)(VG_(get_sc_data)(sc));
-      ai->lastchange = (ExeContext*)( VG_(get_sc_extra)(sc, 0) );
-      return;
-   } 
-   /* Clueless ... */
-   ai->akind = Unknown;
-   return;
-}
-
-
-/* Creates a copy of the `extra' part, updates the copy with address info if
-   necessary, and returns the copy. */
-void* SK_(dup_extra_and_update)(Error* err)
-{
-   MemCheckError* extra;
-   MemCheckError* new_extra = NULL;
-
-   extra = ((MemCheckError*)VG_(get_error_extra)(err));
-   if (extra != NULL) {
-      new_extra  = VG_(malloc)(sizeof(MemCheckError));
-      *new_extra = *extra;
-      if (new_extra->addrinfo.akind == Undescribed)
-         describe_addr ( VG_(get_error_address)(err), &(new_extra->addrinfo) );
-   }
-
-
-
-   return new_extra;
 }
 
 /*------------------------------------------------------------*/
 /*--- Suppressions                                         ---*/
 /*------------------------------------------------------------*/
 
-#define STREQ(s1,s2) (s1 != NULL && s2 != NULL \
-                      && VG_(strcmp)((s1),(s2))==0)
-
 Bool SK_(recognised_suppression) ( Char* name, Supp* su )
 {
-   SuppKind skind;
-   
-   if      (STREQ(name, "Param"))   skind = ParamSupp;
-   else if (STREQ(name, "CoreMem")) skind = CoreMemSupp;
-   else if (STREQ(name, "Addr1"))   skind = Addr1Supp;
-   else if (STREQ(name, "Addr2"))   skind = Addr2Supp;
-   else if (STREQ(name, "Addr4"))   skind = Addr4Supp;
-   else if (STREQ(name, "Addr8"))   skind = Addr8Supp;
-   else if (STREQ(name, "Free"))    skind = FreeSupp;
-   else if (STREQ(name, "Leak"))    skind = LeakSupp;
-   else 
-      return False;
-
-   VG_(set_supp_kind)(su, skind);
-   return True;
+   return MAC_(shared_recognised_suppression)(name, su);
 }
-
-#  undef STREQ
-
 
 #define DEBUG(fmt, args...) //VG_(printf)(fmt, ## args)
 
@@ -685,21 +558,21 @@ void ac_check_is_accessible ( CorePart part, ThreadState* tst,
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         MC_(record_param_error) ( tst, bad_addr, isWrite, s );
+         MAC_(record_param_error) ( tst, bad_addr, isWrite, s );
          break;
 
       case Vg_CoreSignal:
          sk_assert(isWrite);     /* Should only happen with isWrite case */
          /* fall through */
       case Vg_CorePThread:
-         MC_(record_core_mem_error)( tst, isWrite, s );
+         MAC_(record_core_mem_error)( tst, isWrite, s );
          break;
 
       /* If we're being asked to jump to a silly address, record an error 
          message before potentially crashing the entire system. */
       case Vg_CoreTranslate:
          sk_assert(!isWrite);    /* Should only happen with !isWrite case */
-         MC_(record_jump_error)( tst, bad_addr );
+         MAC_(record_jump_error)( tst, bad_addr );
          break;
 
       default:
@@ -737,7 +610,7 @@ void ac_check_is_readable_asciiz ( CorePart part, ThreadState* tst,
    sk_assert(part == Vg_CoreSysCall);
    ok = ac_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (!ok) {
-      MC_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
+      MAC_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
    }
 
    VGP_POPCC(VgpCheckMem);
@@ -890,20 +763,20 @@ static void ac_ACCESS4_SLOWLY ( Addr a )
       - emit addressing error
    */
    /* VG_(printf)("%p (%d %d %d %d)\n", a, a0ok, a1ok, a2ok, a3ok); */
-   if (!MC_(clo_partial_loads_ok) 
+   if (!MAC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      MC_(record_address_error)( a, 4, False );
+      MAC_(record_address_error)( a, 4, False );
       return;
    }
 
    /* Case 3: the address is partially valid.  
       - no addressing error
-      Case 3 is only allowed if MC_(clo_partial_loads_ok) is True
+      Case 3 is only allowed if MAC_(clo_partial_loads_ok) is True
       (which is the default), and the address is 4-aligned.  
       If not, Case 2 will have applied.
    */
-   sk_assert(MC_(clo_partial_loads_ok));
+   sk_assert(MAC_(clo_partial_loads_ok));
    {
       return;
    }
@@ -920,7 +793,7 @@ static void ac_ACCESS2_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MC_(record_address_error)( a, 2, False );
+      MAC_(record_address_error)( a, 2, False );
    }
 }
 
@@ -934,7 +807,7 @@ static void ac_ACCESS1_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MC_(record_address_error)( a, 1, False );
+      MAC_(record_address_error)( a, 1, False );
    }
 }
 
@@ -1039,7 +912,7 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size )
    }
 
    if (aerr) {
-      MC_(record_address_error)( addr, size, False );
+      MAC_(record_address_error)( addr, size, False );
    }
 }
 
@@ -1168,14 +1041,7 @@ Bool ac_is_valid_address ( Addr a )
    skin. */
 static void ac_detect_memory_leaks ( void )
 {
-   VG_(generic_detect_memory_leaks) ( 
-      ac_is_valid_64k_chunk,
-      ac_is_valid_address,
-      MC_(get_where),
-      MC_(clo_leak_resolution),
-      MC_(clo_show_reachable),
-      (UInt)LeakSupp
-   );
+   MAC_(do_detect_memory_leaks) ( ac_is_valid_64k_chunk, ac_is_valid_address );
 }
 
 
@@ -1285,7 +1151,7 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
 
 Bool SK_(process_cmd_line_option)(Char* arg)
 {
-   return MC_(process_common_cmd_line_option)(arg);
+   return MAC_(process_common_cmd_line_option)(arg);
 }
 
 Char* SK_(usage)(void)
@@ -1333,12 +1199,12 @@ void SK_(pre_clo_init)(void)
    VG_(track_new_mem_brk)          ( & ac_make_accessible );
    VG_(track_new_mem_mmap)         ( & ac_set_perms );
    
-   VG_(track_new_mem_stack_4)      ( & MC_(new_mem_stack_4)  );
-   VG_(track_new_mem_stack_8)      ( & MC_(new_mem_stack_8)  );
-   VG_(track_new_mem_stack_12)     ( & MC_(new_mem_stack_12) );
-   VG_(track_new_mem_stack_16)     ( & MC_(new_mem_stack_16) );
-   VG_(track_new_mem_stack_32)     ( & MC_(new_mem_stack_32) );
-   VG_(track_new_mem_stack)        ( & MC_(new_mem_stack)    );
+   VG_(track_new_mem_stack_4)      ( & MAC_(new_mem_stack_4)  );
+   VG_(track_new_mem_stack_8)      ( & MAC_(new_mem_stack_8)  );
+   VG_(track_new_mem_stack_12)     ( & MAC_(new_mem_stack_12) );
+   VG_(track_new_mem_stack_16)     ( & MAC_(new_mem_stack_16) );
+   VG_(track_new_mem_stack_32)     ( & MAC_(new_mem_stack_32) );
+   VG_(track_new_mem_stack)        ( & MAC_(new_mem_stack)    );
 
    VG_(track_copy_mem_heap)        ( & ac_copy_address_range_state );
    VG_(track_copy_mem_remap)       ( & ac_copy_address_range_state );
@@ -1352,15 +1218,15 @@ void SK_(pre_clo_init)(void)
    VG_(track_die_mem_brk)          ( & ac_make_noaccess );
    VG_(track_die_mem_munmap)       ( & ac_make_noaccess ); 
 
-   VG_(track_die_mem_stack_4)      ( & MC_(die_mem_stack_4)  );
-   VG_(track_die_mem_stack_8)      ( & MC_(die_mem_stack_8)  );
-   VG_(track_die_mem_stack_12)     ( & MC_(die_mem_stack_12) );
-   VG_(track_die_mem_stack_16)     ( & MC_(die_mem_stack_16) );
-   VG_(track_die_mem_stack_32)     ( & MC_(die_mem_stack_32) );
-   VG_(track_die_mem_stack)        ( & MC_(die_mem_stack)    );
+   VG_(track_die_mem_stack_4)      ( & MAC_(die_mem_stack_4)  );
+   VG_(track_die_mem_stack_8)      ( & MAC_(die_mem_stack_8)  );
+   VG_(track_die_mem_stack_12)     ( & MAC_(die_mem_stack_12) );
+   VG_(track_die_mem_stack_16)     ( & MAC_(die_mem_stack_16) );
+   VG_(track_die_mem_stack_32)     ( & MAC_(die_mem_stack_32) );
+   VG_(track_die_mem_stack)        ( & MAC_(die_mem_stack)    );
    
-   VG_(track_bad_free)             ( & MC_(record_free_error) );
-   VG_(track_mismatched_free)      ( & MC_(record_freemismatch_error) );
+   VG_(track_bad_free)             ( & MAC_(record_free_error) );
+   VG_(track_mismatched_free)      ( & MAC_(record_freemismatch_error) );
 
    VG_(track_pre_mem_read)         ( & ac_check_is_readable );
    VG_(track_pre_mem_read_asciiz)  ( & ac_check_is_readable_asciiz );
@@ -1377,7 +1243,7 @@ void SK_(pre_clo_init)(void)
    VGP_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
 
    init_shadow_memory();
-   MC_(init_prof_mem)();
+   MAC_(init_prof_mem)();
 }
 
 void SK_(post_clo_init) ( void )
@@ -1389,16 +1255,16 @@ void SK_(fini) ( void )
    VG_(print_malloc_stats)();
 
    if (VG_(clo_verbosity) == 1) {
-      if (!MC_(clo_leak_check))
+      if (!MAC_(clo_leak_check))
          VG_(message)(Vg_UserMsg, 
              "For a detailed leak analysis,  rerun with: --leak-check=yes");
 
       VG_(message)(Vg_UserMsg, 
                    "For counts of detected errors, rerun with: -v");
    }
-   if (MC_(clo_leak_check)) ac_detect_memory_leaks();
+   if (MAC_(clo_leak_check)) ac_detect_memory_leaks();
 
-   MC_(done_prof_mem)();
+   MAC_(done_prof_mem)();
 }
 
 /*--------------------------------------------------------------------*/

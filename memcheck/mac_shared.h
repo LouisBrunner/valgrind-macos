@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Code that is shared between MemCheck and AddrCheck.          ---*/
-/*---                                                  mc_common.h ---*/
+/*--- Declarations shared between MemCheck and AddrCheck.          ---*/
+/*---                                                 mac_shared.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -30,11 +30,15 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#ifndef __MC_COMMON_H
-#define __MC_COMMON_H
+/* Note: This header contains the declarations shared between
+   Addrcheck and Memcheck, and is #included by both. */
+
+#ifndef __MAC_SHARED_H
+#define __MAC_SHARED_H
 
 #include "vg_skin.h"
-#include "mc_constants.h"
+
+#define MAC_(str)    VGAPPEND(vgMAC_,str)
 
 /*------------------------------------------------------------*/
 /*--- Errors and suppressions                              ---*/
@@ -42,11 +46,12 @@
 
 /* The classification of a faulting address. */
 typedef 
-   enum { Undescribed,  /* as-yet unclassified */
-          Stack, 
-          Unknown,      /* classification yielded nothing useful */
-          Freed, Mallocd, 
-          UserG  /* in a user-defined block; Addrcheck & Memcheck only */
+   enum { 
+      Undescribed,  /* as-yet unclassified */
+      Stack, 
+      Unknown,      /* classification yielded nothing useful */
+      Freed, Mallocd, 
+      UserG  /* in a user-defined block; Addrcheck & Memcheck only */
    }
    AddrKind;
 
@@ -83,7 +88,7 @@ typedef
       /* Something to be suppressed in a leak check. */
       LeakSupp
    } 
-   MemCheckSuppKind;
+   MAC_SuppKind;
 
 /* What kind of error it is. */
 typedef 
@@ -91,9 +96,10 @@ typedef
           CoreMemErr,
           AddrErr, 
           ParamErr, UserErr,  /* behaves like an anonymous ParamErr */
-          FreeErr, FreeMismatchErr
+          FreeErr, FreeMismatchErr,
+          LeakErr
    }
-   MemCheckErrorKind;
+   MAC_ErrorKind;
 
 /* What kind of memory access is involved in the error? */
 typedef
@@ -112,7 +118,7 @@ typedef
       /* ParamErr, UserErr, CoreMemErr */
       Bool isWrite;
    }
-   MemCheckError;
+   MAC_Error;
 
 /*------------------------------------------------------------*/
 /*--- Profiling of skins and memory events                 ---*/
@@ -127,23 +133,23 @@ typedef
    VgpSkinCC;
 
 /* Define to collect detailed performance info. */
-/* #define VG_PROFILE_MEMORY */
+/* #define MAC_PROFILE_MEMORY */
 
-#ifdef VG_PROFILE_MEMORY
+#ifdef MAC_PROFILE_MEMORY
 #  define N_PROF_EVENTS 150
 
-extern UInt MC_(event_ctr)[N_PROF_EVENTS];
+extern UInt MAC_(event_ctr)[N_PROF_EVENTS];
 
-#  define PROF_EVENT(ev)                                  \
-   do { sk_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);   \
-        MC_(event_ctr)[ev]++;                           \
+#  define PROF_EVENT(ev)                                 \
+   do { sk_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);    \
+        MAC_(event_ctr)[ev]++;                           \
    } while (False);
 
 #else
 
 #  define PROF_EVENT(ev) /* */
 
-#endif   /* VG_PROFILE_MEMORY */
+#endif   /* MAC_PROFILE_MEMORY */
 
 /*------------------------------------------------------------*/
 /*--- V and A bits                                         ---*/
@@ -152,12 +158,12 @@ extern UInt MC_(event_ctr)[N_PROF_EVENTS];
 #define IS_DISTINGUISHED_SM(smap) \
    ((smap) == &distinguished_secondary_map)
 
-#define ENSURE_MAPPABLE(addr,caller)                                   \
-   do {                                                                \
+#define ENSURE_MAPPABLE(addr,caller)                              \
+   do {                                                           \
       if (IS_DISTINGUISHED_SM(primary_map[(addr) >> 16])) {       \
          primary_map[(addr) >> 16] = alloc_secondary_map(caller); \
-         /* VG_(printf)("new 2map because of %p\n", addr); */          \
-      }                                                                \
+         /* VG_(printf)("new 2map because of %p\n", addr); */     \
+      }                                                           \
    } while(0)
 
 #define BITARR_SET(aaa_p,iii_p)                         \
@@ -198,78 +204,85 @@ extern UInt MC_(event_ctr)[N_PROF_EVENTS];
 /*--- Command line options + defaults                      ---*/
 /*------------------------------------------------------------*/
 
-/* Most are shared between MemCheck and AddrCheck, the last two are
-   MemCheck only (but here anyway for simplicity) */
+/* Memcheck defines a couple more. */
 
 /* Allow loads from partially-valid addresses?  default: YES */
-extern Bool MC_(clo_partial_loads_ok);
+extern Bool MAC_(clo_partial_loads_ok);
 
 /* Max volume of the freed blocks queue. */
-extern Int MC_(clo_freelist_vol);
+extern Int MAC_(clo_freelist_vol);
 
 /* Do leak check at exit?  default: NO */
-extern Bool MC_(clo_leak_check);
+extern Bool MAC_(clo_leak_check);
 
 /* How closely should we compare ExeContexts in leak records? default: 2 */
-extern VgRes MC_(clo_leak_resolution);
+extern VgRes MAC_(clo_leak_resolution);
 
 /* In leak check, show reachable-but-not-freed blocks?  default: NO */
-extern Bool MC_(clo_show_reachable);
+extern Bool MAC_(clo_show_reachable);
 
 /* Assume accesses immediately below %esp are due to gcc-2.96 bugs.
  * default: NO*/
-extern Bool MC_(clo_workaround_gcc296_bugs);
+extern Bool MAC_(clo_workaround_gcc296_bugs);
 
-/* DEBUG: clean up instrumented code?  default: YES */
-extern Bool MC_(clo_cleanup);
-
-/* When instrumenting, omit some checks if tell-tale literals for
-   inlined strlen() are visible in the basic block.  default: YES */
-extern Bool MC_(clo_avoid_strlen_errors);
-
-extern Bool MC_(process_common_cmd_line_option)(Char* arg);
+extern Bool MAC_(process_common_cmd_line_option)(Char* arg);
 
 
 /*------------------------------------------------------------*/
 /*--- Functions                                            ---*/
 /*------------------------------------------------------------*/
 
-extern void        MC_(set_where) ( ShadowChunk* sc, ExeContext* ec );
-extern ExeContext *MC_(get_where) ( ShadowChunk* sc );
+extern void        MAC_(set_where) ( ShadowChunk* sc, ExeContext* ec );
+extern ExeContext *MAC_(get_where) ( ShadowChunk* sc );
 
-extern void MC_(pp_AddrInfo) ( Addr a, AddrInfo* ai );
+extern void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai );
 
-extern void MC_(clear_MemCheckError) ( MemCheckError* err_extra );
+extern void MAC_(clear_MAC_Error)          ( MAC_Error* err_extra );
 
-extern void MC_(record_address_error)     ( Addr a, Int size, Bool isWrite );
-extern void MC_(record_core_mem_error)    ( ThreadState* tst, Bool isWrite,
-                                            Char* s );
-extern void MC_(record_param_error)       ( ThreadState* tst, Addr a,   
-                                            Bool isWriteLack, Char* msg );
-extern void MC_(record_jump_error)        ( ThreadState* tst, Addr a );
-extern void MC_(record_free_error)        ( ThreadState* tst, Addr a );
-extern void MC_(record_freemismatch_error)( ThreadState* tst, Addr a );
+extern Bool (*MAC_(describe_addr_supp))    ( Addr a, AddrInfo* ai );
 
-extern void MC_(init_prof_mem) ( void );
-extern void MC_(done_prof_mem) ( void );
+extern Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su );
 
-extern Int          MC_(count_freelist)  ( void ) __attribute__ ((unused));
-extern void         MC_(freelist_sanity) ( void ) __attribute__ ((unused));
-extern ShadowChunk* MC_(any_matching_freed_ShadowChunks) 
-                           ( Bool (*p)(ShadowChunk*) );
+extern void MAC_(record_address_error)     ( Addr a, Int size, Bool isWrite );
+extern void MAC_(record_core_mem_error)    ( ThreadState* tst, Bool isWrite,
+                                             Char* s );
+extern void MAC_(record_param_error)       ( ThreadState* tst, Addr a,   
+                                             Bool isWriteLack, Char* msg );
+extern void MAC_(record_jump_error)        ( ThreadState* tst, Addr a );
+extern void MAC_(record_free_error)        ( ThreadState* tst, Addr a );
+extern void MAC_(record_freemismatch_error)( ThreadState* tst, Addr a );
 
-extern __attribute__((regparm(1))) void MC_(new_mem_stack_4)  ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MC_(die_mem_stack_4)  ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MC_(new_mem_stack_8)  ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MC_(die_mem_stack_8)  ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MC_(new_mem_stack_12) ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MC_(die_mem_stack_12) ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MC_(new_mem_stack_16) ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MC_(die_mem_stack_16) ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MC_(new_mem_stack_32) ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MC_(die_mem_stack_32) ( Addr old_ESP );
-extern                             void MC_(die_mem_stack) ( Addr a, UInt len );
-extern                             void MC_(new_mem_stack) ( Addr a, UInt len );
+extern void MAC_(pp_shared_SkinError)      ( Error* err);
+
+extern void MAC_(init_prof_mem) ( void );
+extern void MAC_(done_prof_mem) ( void );
+
+extern Int          MAC_(count_freelist)  ( void ) __attribute__ ((unused));
+extern void         MAC_(freelist_sanity) ( void ) __attribute__ ((unused));
+extern ShadowChunk* MAC_(any_matching_freed_ShadowChunks) 
+                            ( Bool (*p)(ShadowChunk*) );
+
+/* For leak checking */
+extern void MAC_(pp_LeakError)(void* vl, UInt n_this_record, 
+                                         UInt n_total_records); 
+                           
+extern void MAC_(do_detect_memory_leaks) (
+          Bool is_valid_64k_chunk ( UInt ),
+          Bool is_valid_address   ( Addr )
+       );
+
+extern __attribute__((regparm(1))) void MAC_(new_mem_stack_4)  ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MAC_(die_mem_stack_4)  ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MAC_(new_mem_stack_8)  ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MAC_(die_mem_stack_8)  ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MAC_(new_mem_stack_12) ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MAC_(die_mem_stack_12) ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MAC_(new_mem_stack_16) ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MAC_(die_mem_stack_16) ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MAC_(new_mem_stack_32) ( Addr old_ESP );
+extern __attribute__((regparm(1))) void MAC_(die_mem_stack_32) ( Addr old_ESP );
+extern                             void MAC_(die_mem_stack) ( Addr a, UInt len );
+extern                             void MAC_(new_mem_stack) ( Addr a, UInt len );
 
 
 /*------------------------------------------------------------*/
@@ -288,7 +301,7 @@ extern                             void MC_(new_mem_stack) ( Addr a, UInt len );
                             ALIGNED8_NEW,  ALIGNED8_DIE,                      \
                             UNALIGNED_NEW, UNALIGNED_DIE)                     \
                                                                               \
-void __attribute__((regparm(1))) MC_(new_mem_stack_4)(Addr new_ESP)           \
+void __attribute__((regparm(1))) MAC_(new_mem_stack_4)(Addr new_ESP)          \
 {                                                                             \
    PROF_EVENT(110);                                                           \
    if (IS_ALIGNED4_ADDR(new_ESP)) {                                           \
@@ -298,7 +311,7 @@ void __attribute__((regparm(1))) MC_(new_mem_stack_4)(Addr new_ESP)           \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MC_(die_mem_stack_4)(Addr new_ESP)           \
+void __attribute__((regparm(1))) MAC_(die_mem_stack_4)(Addr new_ESP)          \
 {                                                                             \
    PROF_EVENT(120);                                                           \
    if (IS_ALIGNED4_ADDR(new_ESP)) {                                           \
@@ -308,7 +321,7 @@ void __attribute__((regparm(1))) MC_(die_mem_stack_4)(Addr new_ESP)           \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MC_(new_mem_stack_8)(Addr new_ESP)           \
+void __attribute__((regparm(1))) MAC_(new_mem_stack_8)(Addr new_ESP)          \
 {                                                                             \
    PROF_EVENT(111);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -321,7 +334,7 @@ void __attribute__((regparm(1))) MC_(new_mem_stack_8)(Addr new_ESP)           \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MC_(die_mem_stack_8)(Addr new_ESP)           \
+void __attribute__((regparm(1))) MAC_(die_mem_stack_8)(Addr new_ESP)          \
 {                                                                             \
    PROF_EVENT(121);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -334,7 +347,7 @@ void __attribute__((regparm(1))) MC_(die_mem_stack_8)(Addr new_ESP)           \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MC_(new_mem_stack_12)(Addr new_ESP)          \
+void __attribute__((regparm(1))) MAC_(new_mem_stack_12)(Addr new_ESP)         \
 {                                                                             \
    PROF_EVENT(112);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -348,7 +361,7 @@ void __attribute__((regparm(1))) MC_(new_mem_stack_12)(Addr new_ESP)          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MC_(die_mem_stack_12)(Addr new_ESP)          \
+void __attribute__((regparm(1))) MAC_(die_mem_stack_12)(Addr new_ESP)         \
 {                                                                             \
    PROF_EVENT(122);                                                           \
    /* Note the -12 in the test */                                             \
@@ -363,7 +376,7 @@ void __attribute__((regparm(1))) MC_(die_mem_stack_12)(Addr new_ESP)          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MC_(new_mem_stack_16)(Addr new_ESP)          \
+void __attribute__((regparm(1))) MAC_(new_mem_stack_16)(Addr new_ESP)         \
 {                                                                             \
    PROF_EVENT(113);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -378,7 +391,7 @@ void __attribute__((regparm(1))) MC_(new_mem_stack_16)(Addr new_ESP)          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MC_(die_mem_stack_16)(Addr new_ESP)          \
+void __attribute__((regparm(1))) MAC_(die_mem_stack_16)(Addr new_ESP)         \
 {                                                                             \
    PROF_EVENT(123);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -393,7 +406,7 @@ void __attribute__((regparm(1))) MC_(die_mem_stack_16)(Addr new_ESP)          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MC_(new_mem_stack_32)(Addr new_ESP)          \
+void __attribute__((regparm(1))) MAC_(new_mem_stack_32)(Addr new_ESP)         \
 {                                                                             \
    PROF_EVENT(114);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -412,7 +425,7 @@ void __attribute__((regparm(1))) MC_(new_mem_stack_32)(Addr new_ESP)          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MC_(die_mem_stack_32)(Addr new_ESP)          \
+void __attribute__((regparm(1))) MAC_(die_mem_stack_32)(Addr new_ESP)         \
 {                                                                             \
    PROF_EVENT(124);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -431,20 +444,20 @@ void __attribute__((regparm(1))) MC_(die_mem_stack_32)(Addr new_ESP)          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void MC_(new_mem_stack) ( Addr a, UInt len )                                  \
+void MAC_(new_mem_stack) ( Addr a, UInt len )                                 \
 {                                                                             \
    PROF_EVENT(115);                                                           \
    UNALIGNED_NEW ( a, len );                                                  \
 }                                                                             \
                                                                               \
-void MC_(die_mem_stack) ( Addr a, UInt len )                                  \
+void MAC_(die_mem_stack) ( Addr a, UInt len )                                 \
 {                                                                             \
    PROF_EVENT(125);                                                           \
    UNALIGNED_DIE ( a, len );                                                  \
 }
 
-#endif   /* __MC_COMMON_H */
+#endif   /* __MAC_SHARED_H */
 
 /*--------------------------------------------------------------------*/
-/*--- end                                              mc_common.h ---*/
+/*--- end                                             mac_shared.h ---*/
 /*--------------------------------------------------------------------*/

@@ -487,6 +487,7 @@ UInt VG_(num_scheduling_events_MAJOR) = 0;
 /* Define, and set defaults. */
 Bool   VG_(clo_error_limit)    = True;
 Bool   VG_(clo_GDB_attach)     = False;
+Bool   VG_(clo_gen_suppressions) = False;
 Int    VG_(sanity_level)       = 1;
 Int    VG_(clo_verbosity)      = 1;
 Bool   VG_(clo_demangle)       = True;
@@ -588,6 +589,7 @@ static void usage ( void )
 "    -q --quiet                run silently; only print error msgs\n"
 "    -v --verbose              be more verbose, incl counts of errors\n"
 "    --gdb-attach=no|yes       start GDB when errors detected? [no]\n"
+"    --gen-suppressions=no|yes print suppressions for errors detected [no]\n"
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
 "    --num-callers=<number>    show <num> callers in stack traces [4]\n"
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
@@ -685,8 +687,6 @@ static void process_cmd_line_options ( void )
    Int   i, eventually_logfile_fd, ctr;
 
 #  define ISSPACE(cc)      ((cc) == ' ' || (cc) == '\t' || (cc) == '\n')
-#  define STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
-#  define STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
 
    eventually_logfile_fd = VG_(clo_logfile_fd);
 
@@ -863,64 +863,71 @@ static void process_cmd_line_options ( void )
 
    for (i = 0; i < argc; i++) {
 
-      if      (STREQ(argv[i], "-v") || STREQ(argv[i], "--verbose"))
+      if      (VG_CLO_STREQ(argv[i], "-v") ||
+               VG_CLO_STREQ(argv[i], "--verbose"))
          VG_(clo_verbosity)++;
-      else if (STREQ(argv[i], "-q") || STREQ(argv[i], "--quiet"))
+      else if (VG_CLO_STREQ(argv[i], "-q") ||
+               VG_CLO_STREQ(argv[i], "--quiet"))
          VG_(clo_verbosity)--;
 
-      else if (STREQ(argv[i], "--error-limit=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--error-limit=yes"))
          VG_(clo_error_limit) = True;
-      else if (STREQ(argv[i], "--error-limit=no"))
+      else if (VG_CLO_STREQ(argv[i], "--error-limit=no"))
          VG_(clo_error_limit) = False;
 
-      else if (STREQ(argv[i], "--gdb-attach=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--gdb-attach=yes"))
          VG_(clo_GDB_attach) = True;
-      else if (STREQ(argv[i], "--gdb-attach=no"))
+      else if (VG_CLO_STREQ(argv[i], "--gdb-attach=no"))
          VG_(clo_GDB_attach) = False;
 
-      else if (STREQ(argv[i], "--demangle=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--gen-suppressions=yes"))
+         VG_(clo_gen_suppressions) = True;
+      else if (VG_CLO_STREQ(argv[i], "--gen-suppressions=no"))
+         VG_(clo_gen_suppressions) = False;
+
+      else if (VG_CLO_STREQ(argv[i], "--demangle=yes"))
          VG_(clo_demangle) = True;
-      else if (STREQ(argv[i], "--demangle=no"))
+      else if (VG_CLO_STREQ(argv[i], "--demangle=no"))
          VG_(clo_demangle) = False;
 
-      else if (STREQ(argv[i], "--sloppy-malloc=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--sloppy-malloc=yes"))
          VG_(clo_sloppy_malloc) = True;
-      else if (STREQ(argv[i], "--sloppy-malloc=no"))
+      else if (VG_CLO_STREQ(argv[i], "--sloppy-malloc=no"))
          VG_(clo_sloppy_malloc) = False;
 
-      else if (STREQN(12, argv[i], "--alignment="))
+      else if (VG_CLO_STREQN(12, argv[i], "--alignment="))
          VG_(clo_alignment) = (Int)VG_(atoll)(&argv[i][12]);
 
-      else if (STREQ(argv[i], "--trace-children=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-children=yes"))
          VG_(clo_trace_children) = True;
-      else if (STREQ(argv[i], "--trace-children=no"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-children=no"))
          VG_(clo_trace_children) = False;
 
-      else if (STREQ(argv[i], "--run-libc-freeres=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--run-libc-freeres=yes"))
          VG_(clo_run_libc_freeres) = True;
-      else if (STREQ(argv[i], "--run-libc-freeres=no"))
+      else if (VG_CLO_STREQ(argv[i], "--run-libc-freeres=no"))
          VG_(clo_run_libc_freeres) = False;
 
-      else if (STREQN(15, argv[i], "--sanity-level="))
+      else if (VG_CLO_STREQN(15, argv[i], "--sanity-level="))
          VG_(sanity_level) = (Int)VG_(atoll)(&argv[i][15]);
 
-      else if (STREQN(13, argv[i], "--logfile-fd=")) {
+      else if (VG_CLO_STREQN(13, argv[i], "--logfile-fd=")) {
          VG_(clo_log_to)       = VgLogTo_Fd;
          VG_(clo_logfile_name) = NULL;
          eventually_logfile_fd = (Int)VG_(atoll)(&argv[i][13]);
       }
 
-      else if (STREQN(10, argv[i], "--logfile=")) {
+      else if (VG_CLO_STREQN(10, argv[i], "--logfile=")) {
          VG_(clo_log_to)       = VgLogTo_File;
          VG_(clo_logfile_name) = &argv[i][10];
       }
 
-      else if (STREQN(12, argv[i], "--logsocket=")) {
+      else if (VG_CLO_STREQN(12, argv[i], "--logsocket=")) {
          VG_(clo_log_to)       = VgLogTo_Socket;
          VG_(clo_logfile_name) = &argv[i][12];
       }
 
-      else if (STREQN(15, argv[i], "--suppressions=")) {
+      else if (VG_CLO_STREQN(15, argv[i], "--suppressions=")) {
          if (VG_(clo_n_suppressions) >= VG_CLO_MAX_SFILES) {
             VG_(message)(Vg_UserMsg, "Too many suppression files specified.");
             VG_(message)(Vg_UserMsg, 
@@ -930,28 +937,28 @@ static void process_cmd_line_options ( void )
          VG_(clo_suppressions)[VG_(clo_n_suppressions)] = &argv[i][15];
          VG_(clo_n_suppressions)++;
       }
-      else if (STREQ(argv[i], "--profile=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--profile=yes"))
          VG_(clo_profile) = True;
-      else if (STREQ(argv[i], "--profile=no"))
+      else if (VG_CLO_STREQ(argv[i], "--profile=no"))
          VG_(clo_profile) = False;
 
-      else if (STREQ(argv[i], "--chain-bb=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--chain-bb=yes"))
 	 VG_(clo_chain_bb) = True;
-      else if (STREQ(argv[i], "--chain-bb=no"))
+      else if (VG_CLO_STREQ(argv[i], "--chain-bb=no"))
 	 VG_(clo_chain_bb) = False;
 
-      else if (STREQ(argv[i], "--single-step=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--single-step=yes"))
          VG_(clo_single_step) = True;
-      else if (STREQ(argv[i], "--single-step=no"))
+      else if (VG_CLO_STREQ(argv[i], "--single-step=no"))
          VG_(clo_single_step) = False;
 
-      else if (STREQ(argv[i], "--optimise=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--optimise=yes"))
          VG_(clo_optimise) = True;
-      else if (STREQ(argv[i], "--optimise=no"))
+      else if (VG_CLO_STREQ(argv[i], "--optimise=no"))
          VG_(clo_optimise) = False;
 
       /* "vwxyz" --> 000zyxwv (binary) */
-      else if (STREQN(16, argv[i], "--trace-codegen=")) {
+      else if (VG_CLO_STREQN(16, argv[i], "--trace-codegen=")) {
          Int j;
          char* opt = & argv[i][16];
    
@@ -971,48 +978,48 @@ static void process_cmd_line_options ( void )
          }
       }
 
-      else if (STREQ(argv[i], "--trace-syscalls=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-syscalls=yes"))
          VG_(clo_trace_syscalls) = True;
-      else if (STREQ(argv[i], "--trace-syscalls=no"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-syscalls=no"))
          VG_(clo_trace_syscalls) = False;
 
-      else if (STREQ(argv[i], "--trace-signals=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-signals=yes"))
          VG_(clo_trace_signals) = True;
-      else if (STREQ(argv[i], "--trace-signals=no"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-signals=no"))
          VG_(clo_trace_signals) = False;
 
-      else if (STREQ(argv[i], "--trace-symtab=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-symtab=yes"))
          VG_(clo_trace_symtab) = True;
-      else if (STREQ(argv[i], "--trace-symtab=no"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-symtab=no"))
          VG_(clo_trace_symtab) = False;
 
-      else if (STREQ(argv[i], "--trace-malloc=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-malloc=yes"))
          VG_(clo_trace_malloc) = True;
-      else if (STREQ(argv[i], "--trace-malloc=no"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-malloc=no"))
          VG_(clo_trace_malloc) = False;
 
-      else if (STREQ(argv[i], "--trace-sched=yes"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-sched=yes"))
          VG_(clo_trace_sched) = True;
-      else if (STREQ(argv[i], "--trace-sched=no"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-sched=no"))
          VG_(clo_trace_sched) = False;
 
-      else if (STREQ(argv[i], "--trace-pthread=none"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-pthread=none"))
          VG_(clo_trace_pthread_level) = 0;
-      else if (STREQ(argv[i], "--trace-pthread=some"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-pthread=some"))
          VG_(clo_trace_pthread_level) = 1;
-      else if (STREQ(argv[i], "--trace-pthread=all"))
+      else if (VG_CLO_STREQ(argv[i], "--trace-pthread=all"))
          VG_(clo_trace_pthread_level) = 2;
 
-      else if (STREQN(14, argv[i], "--weird-hacks="))
+      else if (VG_CLO_STREQN(14, argv[i], "--weird-hacks="))
          VG_(clo_weird_hacks) = &argv[i][14];
 
-      else if (STREQN(13, argv[i], "--stop-after="))
+      else if (VG_CLO_STREQN(13, argv[i], "--stop-after="))
          VG_(clo_stop_after) = VG_(atoll)(&argv[i][13]);
 
-      else if (STREQN(13, argv[i], "--dump-error="))
+      else if (VG_CLO_STREQN(13, argv[i], "--dump-error="))
          VG_(clo_dump_error) = (Int)VG_(atoll)(&argv[i][13]);
 
-      else if (STREQN(14, argv[i], "--num-callers=")) {
+      else if (VG_CLO_STREQN(14, argv[i], "--num-callers=")) {
          /* Make sure it's sane. */
 	 VG_(clo_backtrace_size) = (Int)VG_(atoll)(&argv[i][14]);
          if (VG_(clo_backtrace_size) < 2)
@@ -1031,8 +1038,6 @@ static void process_cmd_line_options ( void )
    }
 
 #  undef ISSPACE
-#  undef STREQ
-#  undef STREQN
 
    if (VG_(clo_verbosity < 0))
       VG_(clo_verbosity) = 0;

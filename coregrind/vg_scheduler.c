@@ -197,7 +197,7 @@ Bool VG_(is_valid_or_empty_tid) ( ThreadId tid )
    if none do.  A small complication is dealing with any currently
    VG_(baseBlock)-resident thread. 
 */
-ThreadId VG_(any_matching_thread_stack)
+ThreadId VG_(first_matching_thread_stack)
               ( Bool (*p) ( Addr stack_min, Addr stack_max ))
 {
    ThreadId tid, tid_to_skip;

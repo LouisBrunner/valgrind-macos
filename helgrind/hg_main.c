@@ -2247,7 +2247,7 @@ static void describe_addr ( Addr a, AddrInfo* ai )
    }
 
    /* Search for a currently malloc'd block which might bracket it. */
-   sc = VG_(any_matching_mallocd_ShadowChunks)(addr_is_in_block);
+   sc = VG_(first_matching_mallocd_ShadowChunk)(addr_is_in_block);
    if (NULL != sc) {
       ai->akind      = Mallocd;
       ai->blksize    = VG_(get_sc_size)(sc);
@@ -2462,7 +2462,7 @@ static Char *lockset_str(const Char *prefix, const LockSet *lockset)
    return buf;
 }
 
-void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
+void SK_(pp_SkinError) ( Error* err )
 {
    HelgrindError *extra = (HelgrindError *)VG_(get_error_extra)(err);
    Char buf[100];
@@ -2477,7 +2477,7 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
                       
       VG_(message)(Vg_UserMsg, "Possible data race %s variable at %p %(y",
 		   VG_(get_error_string)(err), err_addr, err_addr);
-      pp_ExeContext();
+      VG_(pp_ExeContext)( VG_(get_error_where)(err) );
       pp_AddrInfo(err_addr, &extra->addrinfo);
 
       switch(extra->prevstate.state) {
@@ -2550,7 +2550,7 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
 		   VG_(get_error_address)(err),
 		   VG_(get_error_address)(err),
 		   VG_(get_error_string)(err));
-      pp_ExeContext();
+      VG_(pp_ExeContext)( VG_(get_error_where)(err) );
       if (extra->lasttouched.uu_ec_eip.ec != NULL) {
 	 VG_(message)(Vg_UserMsg, "  last touched by thread %d", extra->lasttid);
 	 VG_(pp_ExeContext)(extra->lasttouched.uu_ec_eip.ec);
@@ -2567,7 +2567,7 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
 
       VG_(message)(Vg_UserMsg, "Mutex %p%(y locked in inconsistent order",
 		   err_addr, err_addr);
-      pp_ExeContext();
+      VG_(pp_ExeContext)( VG_(get_error_where)(err) );
       VG_(message)(Vg_UserMsg, " while holding locks %s", msg);
 
       for(i = 0; i < heldset->setsize; i++) {
@@ -2620,6 +2620,19 @@ Bool SK_(error_matches_suppression)(Error* err, Supp* su)
    return True;
 }
 
+extern Char* SK_(get_error_name) ( Error* err )
+{
+   if (EraserErr == VG_(get_error_kind)(err)) {
+      return "Eraser";
+   } else {
+      return NULL;      /* Other errors types can't be suppressed */
+   }
+}
+
+extern void SK_(print_extra_suppression_info) ( Error* err )
+{
+   /* Do nothing */
+}
 
 static void eraser_pre_mutex_lock(ThreadId tid, void* void_mutex)
 {

@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- Code that is shared between MemCheck and AddrCheck.          ---*/
-/*---                                                  mc_common.c ---*/
+/*---                                                  mac_needs.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -31,7 +31,7 @@
 */
 
 
-#include "mc_common.h"
+#include "mac_shared.h"
 
 /*------------------------------------------------------------*/
 /*--- Defns                                                ---*/
@@ -45,64 +45,152 @@
 /*--- Command line options                                 ---*/
 /*------------------------------------------------------------*/
 
-Bool  MC_(clo_partial_loads_ok)       = True;
-Int   MC_(clo_freelist_vol)           = 1000000;
-Bool  MC_(clo_leak_check)             = False;
-VgRes MC_(clo_leak_resolution)        = Vg_LowRes;
-Bool  MC_(clo_show_reachable)         = False;
-Bool  MC_(clo_workaround_gcc296_bugs) = False;
-Bool  MC_(clo_cleanup)                = True;
-Bool  MC_(clo_avoid_strlen_errors)    = True;
+Bool  MAC_(clo_partial_loads_ok)       = True;
+Int   MAC_(clo_freelist_vol)           = 1000000;
+Bool  MAC_(clo_leak_check)             = False;
+VgRes MAC_(clo_leak_resolution)        = Vg_LowRes;
+Bool  MAC_(clo_show_reachable)         = False;
+Bool  MAC_(clo_workaround_gcc296_bugs) = False;
 
-Bool MC_(process_common_cmd_line_option)(Char* arg)
+Bool MAC_(process_common_cmd_line_option)(Char* arg)
 {
-#  define STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
-#  define STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
+   if      (VG_CLO_STREQ(arg, "--partial-loads-ok=yes"))
+      MAC_(clo_partial_loads_ok) = True;
+   else if (VG_CLO_STREQ(arg, "--partial-loads-ok=no"))
+      MAC_(clo_partial_loads_ok) = False;
 
-   if      (STREQ(arg, "--partial-loads-ok=yes"))
-      MC_(clo_partial_loads_ok) = True;
-   else if (STREQ(arg, "--partial-loads-ok=no"))
-      MC_(clo_partial_loads_ok) = False;
-
-   else if (STREQN(15, arg, "--freelist-vol=")) {
-      MC_(clo_freelist_vol) = (Int)VG_(atoll)(&arg[15]);
-      if (MC_(clo_freelist_vol) < 0) MC_(clo_freelist_vol) = 0;
+   else if (VG_CLO_STREQN(15, arg, "--freelist-vol=")) {
+      MAC_(clo_freelist_vol) = (Int)VG_(atoll)(&arg[15]);
+      if (MAC_(clo_freelist_vol) < 0) MAC_(clo_freelist_vol) = 0;
    }
 
-   else if (STREQ(arg, "--leak-check=yes"))
-      MC_(clo_leak_check) = True;
-   else if (STREQ(arg, "--leak-check=no"))
-      MC_(clo_leak_check) = False;
+   else if (VG_CLO_STREQ(arg, "--leak-check=yes"))
+      MAC_(clo_leak_check) = True;
+   else if (VG_CLO_STREQ(arg, "--leak-check=no"))
+      MAC_(clo_leak_check) = False;
 
-   else if (STREQ(arg, "--leak-resolution=low"))
-      MC_(clo_leak_resolution) = Vg_LowRes;
-   else if (STREQ(arg, "--leak-resolution=med"))
-      MC_(clo_leak_resolution) = Vg_MedRes;
-   else if (STREQ(arg, "--leak-resolution=high"))
-      MC_(clo_leak_resolution) = Vg_HighRes;
+   else if (VG_CLO_STREQ(arg, "--leak-resolution=low"))
+      MAC_(clo_leak_resolution) = Vg_LowRes;
+   else if (VG_CLO_STREQ(arg, "--leak-resolution=med"))
+      MAC_(clo_leak_resolution) = Vg_MedRes;
+   else if (VG_CLO_STREQ(arg, "--leak-resolution=high"))
+      MAC_(clo_leak_resolution) = Vg_HighRes;
    
-   else if (STREQ(arg, "--show-reachable=yes"))
-      MC_(clo_show_reachable) = True;
-   else if (STREQ(arg, "--show-reachable=no"))
-      MC_(clo_show_reachable) = False;
+   else if (VG_CLO_STREQ(arg, "--show-reachable=yes"))
+      MAC_(clo_show_reachable) = True;
+   else if (VG_CLO_STREQ(arg, "--show-reachable=no"))
+      MAC_(clo_show_reachable) = False;
 
-   else if (STREQ(arg, "--workaround-gcc296-bugs=yes"))
-      MC_(clo_workaround_gcc296_bugs) = True;
-   else if (STREQ(arg, "--workaround-gcc296-bugs=no"))
-      MC_(clo_workaround_gcc296_bugs) = False;
-
-   else if (STREQ(arg, "--cleanup=yes"))
-      MC_(clo_cleanup) = True;
-   else if (STREQ(arg, "--cleanup=no"))
-      MC_(clo_cleanup) = False;
+   else if (VG_CLO_STREQ(arg, "--workaround-gcc296-bugs=yes"))
+      MAC_(clo_workaround_gcc296_bugs) = True;
+   else if (VG_CLO_STREQ(arg, "--workaround-gcc296-bugs=no"))
+      MAC_(clo_workaround_gcc296_bugs) = False;
 
    else
       return False;
 
    return True;
+}
 
-#undef STREQ
-#undef STREQN
+/*------------------------------------------------------------*/
+/*--- Shadow chunks info                                   ---*/
+/*------------------------------------------------------------*/
+
+void MAC_(set_where)( ShadowChunk* sc, ExeContext* ec )
+{
+   VG_(set_sc_extra)( sc, 0, (UInt)ec );
+}
+
+ExeContext *MAC_(get_where)( ShadowChunk* sc )
+{
+   return (ExeContext*)VG_(get_sc_extra)(sc, 0);
+}
+
+void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
+{
+   VG_(set_sc_extra) ( sc, 0, (UInt)VG_(get_ExeContext)(tst) );
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Postponing free()ing                                 ---*/
+/*------------------------------------------------------------*/
+
+/* Holds blocks after freeing. */
+static ShadowChunk* freed_list_start  = NULL;
+static ShadowChunk* freed_list_end    = NULL;
+static Int          freed_list_volume = 0;
+
+__attribute__ ((unused))
+Int MAC_(count_freelist) ( void )
+{
+   ShadowChunk* sc;
+   Int n = 0;
+   for (sc = freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
+      n++;
+   return n;
+}
+
+__attribute__ ((unused))
+void MAC_(freelist_sanity) ( void )
+{
+   ShadowChunk* sc;
+   Int n = 0;
+   /* VG_(printf)("freelist sanity\n"); */
+   for (sc = freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
+      n += VG_(get_sc_size)(sc);
+   sk_assert(n == freed_list_volume);
+}
+
+/* Put a shadow chunk on the freed blocks queue, possibly freeing up
+   some of the oldest blocks in the queue at the same time. */
+static void add_to_freed_queue ( ShadowChunk* sc )
+{
+   ShadowChunk* sc1;
+
+   /* Put it at the end of the freed list */
+   if (freed_list_end == NULL) {
+      sk_assert(freed_list_start == NULL);
+      freed_list_end = freed_list_start = sc;
+      freed_list_volume = VG_(get_sc_size)(sc);
+   } else {    
+      sk_assert(VG_(get_sc_next)(freed_list_end) == NULL);
+      VG_(set_sc_next)(freed_list_end, sc);
+      freed_list_end = sc;
+      freed_list_volume += VG_(get_sc_size)(sc);
+   }
+   VG_(set_sc_next)(sc, NULL);
+
+   /* Release enough of the oldest blocks to bring the free queue
+      volume below vg_clo_freelist_vol. */
+   
+   while (freed_list_volume > MAC_(clo_freelist_vol)) {
+      /* freelist_sanity(); */
+      sk_assert(freed_list_start != NULL);
+      sk_assert(freed_list_end != NULL);
+
+      sc1 = freed_list_start;
+      freed_list_volume -= VG_(get_sc_size)(sc1);
+      /* VG_(printf)("volume now %d\n", freed_list_volume); */
+      sk_assert(freed_list_volume >= 0);
+
+      if (freed_list_start == freed_list_end) {
+         freed_list_start = freed_list_end = NULL;
+      } else {
+         freed_list_start = VG_(get_sc_next)(sc1);
+      }
+      VG_(set_sc_next)(sc1, NULL); /* just paranoia */
+      VG_(free_ShadowChunk) ( sc1 );
+   }
+}
+
+void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
+{
+   /* Record where freed */
+   MAC_(set_where)( sc, VG_(get_ExeContext) ( tst ) );
+
+   /* Put it out of harm's way for a while. */
+   add_to_freed_queue ( sc );
 }
 
 /*------------------------------------------------------------*/
@@ -120,7 +208,7 @@ void clear_AddrInfo ( AddrInfo* ai )
    ai->maybe_gcc  = False;
 }
 
-void MC_(clear_MemCheckError) ( MemCheckError* err_extra )
+void MAC_(clear_MAC_Error) ( MAC_Error* err_extra )
 {
    err_extra->axskind   = ReadAxs;
    err_extra->size      = 0;
@@ -150,8 +238,8 @@ static Bool eq_AddrInfo ( VgRes res, AddrInfo* ai1, AddrInfo* ai2 )
 
 Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
 {
-   MemCheckError* e1_extra = VG_(get_error_extra)(e1);
-   MemCheckError* e2_extra = VG_(get_error_extra)(e2);
+   MAC_Error* e1_extra = VG_(get_error_extra)(e1);
+   MAC_Error* e2_extra = VG_(get_error_extra)(e2);
 
    /* Guaranteed by calling function */
    sk_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
@@ -200,6 +288,10 @@ Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
          if (e1_extra->size != e2_extra->size) return False;
          return True;
 
+      case LeakErr:
+         VG_(skin_panic)("Shouldn't get LeakErr in SK_(eq_SkinError),\n"
+                         "since it's handled with VG_(unique_error)()!");
+
       default: 
          VG_(printf)("Error:\n  unknown error code %d\n",
                      VG_(get_error_kind)(e1));
@@ -207,7 +299,7 @@ Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
    }
 }
 
-void MC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
+void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
 {
    switch (ai->akind) {
       case Stack: 
@@ -251,13 +343,122 @@ void MC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
          break;
       }
       default:
-         VG_(skin_panic)("MC_(pp_AddrInfo)");
+         VG_(skin_panic)("MAC_(pp_AddrInfo)");
+   }
+}
+
+/* This prints out the message for the error types where Memcheck and
+   Addrcheck have identical messages */
+void MAC_(pp_shared_SkinError) ( Error* err )
+{
+   MAC_Error* err_extra = VG_(get_error_extra)(err);
+
+   switch (VG_(get_error_kind)(err)) {
+      case FreeErr:
+         VG_(message)(Vg_UserMsg,"Invalid free() / delete / delete[]");
+         /* fall through */
+      case FreeMismatchErr:
+         if (VG_(get_error_kind)(err) == FreeMismatchErr)
+            VG_(message)(Vg_UserMsg, 
+                         "Mismatched free() / delete / delete []");
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
+         break;
+
+      case LeakErr: {
+         /* Totally abusing the types of these spare fields... oh well. */
+         UInt n_this_record   = (UInt)VG_(get_error_address)(err);
+         UInt n_total_records = (UInt)VG_(get_error_string) (err);
+
+         MAC_(pp_LeakError)(err_extra, n_this_record, n_total_records);
+         break;
+      }
+
+      default: 
+         VG_(printf)("Error:\n  unknown Memcheck/Addrcheck error code %d\n",
+                     VG_(get_error_kind)(err));
+         VG_(skin_panic)("unknown error code in MAC_(pp_shared_SkinError)");
    }
 }
 
 /*------------------------------------------------------------*/
 /*--- Recording errors                                     ---*/
 /*------------------------------------------------------------*/
+
+/* Additional description function for describe_addr();  used by
+   MemCheck for user blocks, which Addrcheck doesn't support. */
+Bool (*MAC_(describe_addr_supp)) ( Addr a, AddrInfo* ai ) = NULL;
+   
+/* Return the first shadow chunk satisfying the predicate p. */
+static ShadowChunk* first_matching_freed_ShadowChunk ( Bool (*p)(ShadowChunk*) )
+{
+   ShadowChunk* sc;
+
+   /* No point looking through freed blocks if we're not keeping
+      them around for a while... */
+   for (sc = freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
+      if (p(sc))
+         return sc;
+
+   return NULL;
+}
+
+/* Describe an address as best you can, for error messages,
+   putting the result in ai. */
+static void describe_addr ( Addr a, AddrInfo* ai )
+{
+   ShadowChunk* sc;
+   ThreadId     tid;
+
+   /* Nested functions, yeah.  Need the lexical scoping of 'a'. */
+   
+   /* Closure for searching thread stacks */
+   Bool addr_is_in_bounds(Addr stack_min, Addr stack_max)
+   {
+      return (stack_min <= a && a <= stack_max);
+   }
+   /* Closure for searching malloc'd and free'd lists */
+   Bool addr_is_in_block(ShadowChunk *sh_ch)
+   {
+      return VG_(addr_is_in_block) ( a, VG_(get_sc_data)(sh_ch),
+                                        VG_(get_sc_size)(sh_ch) );
+   }
+
+   /* Perhaps it's a user-def'd block ?  (only check if requested, though) */
+   if (NULL != MAC_(describe_addr_supp)) {
+      if (MAC_(describe_addr_supp)( a, ai ))
+         return;
+   }
+   /* Perhaps it's on a thread's stack? */
+   tid = VG_(first_matching_thread_stack)(addr_is_in_bounds);
+   if (tid != VG_INVALID_THREADID) {
+      ai->akind     = Stack;
+      ai->stack_tid = tid;
+      return;
+   }
+   /* Search for a recently freed block which might bracket it. */
+   sc = first_matching_freed_ShadowChunk(addr_is_in_block);
+   if (NULL != sc) { 
+      ai->akind      = Freed;
+      ai->blksize    = VG_(get_sc_size)(sc);
+      ai->rwoffset   = (Int)a - (Int)VG_(get_sc_data)(sc);
+      ai->lastchange = MAC_(get_where)(sc);
+      return;
+   }
+   /* Search for a currently malloc'd block which might bracket it. */
+   sc = VG_(first_matching_mallocd_ShadowChunk)(addr_is_in_block);
+   if (NULL != sc) {
+      ai->akind      = Mallocd;
+      ai->blksize    = VG_(get_sc_size)(sc);
+      ai->rwoffset   = (Int)a - (Int)VG_(get_sc_data)(sc);
+      ai->lastchange = MAC_(get_where)(sc);
+      return;
+   }
+   /* Clueless ... */
+   ai->akind = Unknown;
+   return;
+}
+
 
 /* Is this address within some small distance below %ESP?  Used only
    for the --workaround-gcc296-bugs kludge. */
@@ -272,19 +473,19 @@ static Bool is_just_below_ESP( Addr esp, Addr aa )
 
 /* This one called from generated code. */
 
-void MC_(record_address_error) ( Addr a, Int size, Bool isWrite )
+void MAC_(record_address_error) ( Addr a, Int size, Bool isWrite )
 {
-   MemCheckError err_extra;
-   Bool          just_below_esp;
+   MAC_Error err_extra;
+   Bool      just_below_esp;
 
    just_below_esp = is_just_below_ESP( VG_(get_stack_pointer)(), a );
 
    /* If this is caused by an access immediately below %ESP, and the
       user asks nicely, we just ignore it. */
-   if (MC_(clo_workaround_gcc296_bugs) && just_below_esp)
+   if (MAC_(clo_workaround_gcc296_bugs) && just_below_esp)
       return;
 
-   MC_(clear_MemCheckError)( &err_extra );
+   MAC_(clear_MAC_Error)( &err_extra );
    err_extra.axskind = isWrite ? WriteAxs : ReadAxs;
    err_extra.size    = size;
    err_extra.addrinfo.akind     = Undescribed;
@@ -296,64 +497,103 @@ void MC_(record_address_error) ( Addr a, Int size, Bool isWrite )
 
 /* This is for memory errors in pthread functions, as opposed to pthread API
    errors which are found by the core. */
-void MC_(record_core_mem_error) ( ThreadState* tst, Bool isWrite, Char* msg )
+void MAC_(record_core_mem_error) ( ThreadState* tst, Bool isWrite, Char* msg )
 {
-   MemCheckError err_extra;
+   MAC_Error err_extra;
 
-   MC_(clear_MemCheckError)( &err_extra );
+   MAC_(clear_MAC_Error)( &err_extra );
    err_extra.isWrite = isWrite;
    VG_(maybe_record_error)( tst, CoreMemErr, /*addr*/0, msg, &err_extra );
 }
 
-void MC_(record_param_error) ( ThreadState* tst, Addr a, Bool isWrite, 
+void MAC_(record_param_error) ( ThreadState* tst, Addr a, Bool isWrite, 
                                Char* msg )
 {
-   MemCheckError err_extra;
+   MAC_Error err_extra;
 
    sk_assert(NULL != tst);
-   MC_(clear_MemCheckError)( &err_extra );
+   MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    err_extra.isWrite = isWrite;
    VG_(maybe_record_error)( tst, ParamErr, a, msg, &err_extra );
 }
 
-void MC_(record_jump_error) ( ThreadState* tst, Addr a )
+void MAC_(record_jump_error) ( ThreadState* tst, Addr a )
 {
-   MemCheckError err_extra;
+   MAC_Error err_extra;
 
    sk_assert(NULL != tst);
 
-   MC_(clear_MemCheckError)( &err_extra );
+   MAC_(clear_MAC_Error)( &err_extra );
    err_extra.axskind = ExecAxs;
    err_extra.addrinfo.akind = Undescribed;
    VG_(maybe_record_error)( tst, AddrErr, a, /*s*/NULL, &err_extra );
 }
 
-void MC_(record_free_error) ( ThreadState* tst, Addr a ) 
+void MAC_(record_free_error) ( ThreadState* tst, Addr a ) 
 {
-   MemCheckError err_extra;
+   MAC_Error err_extra;
 
    sk_assert(NULL != tst);
 
-   MC_(clear_MemCheckError)( &err_extra );
+   MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    VG_(maybe_record_error)( tst, FreeErr, a, /*s*/NULL, &err_extra );
 }
 
-void MC_(record_freemismatch_error) ( ThreadState* tst, Addr a )
+void MAC_(record_freemismatch_error) ( ThreadState* tst, Addr a )
 {
-   MemCheckError err_extra;
+   MAC_Error err_extra;
 
    sk_assert(NULL != tst);
 
-   MC_(clear_MemCheckError)( &err_extra );
+   MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    VG_(maybe_record_error)( tst, FreeMismatchErr, a, /*s*/NULL, &err_extra );
 }
 
+/* Updates the copy with address info if necessary (but not for LeakErrs). */
+UInt SK_(update_extra)( Error* err )
+{
+   MAC_Error* extra;
+
+   /* Don't need to return the correct size -- LeakErrs are always shown with
+      VG_(unique_error)() so they're not copied anyway. */
+   if (LeakErr == VG_(get_error_kind)(err))
+      return 0;
+
+   extra = (MAC_Error*)VG_(get_error_extra)(err);
+
+   if (extra != NULL && Undescribed == extra->addrinfo.akind) {
+      describe_addr ( VG_(get_error_address)(err), &(extra->addrinfo) );
+   }
+
+   return sizeof(MAC_Error);
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Suppressions                                         ---*/
 /*------------------------------------------------------------*/
+
+Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su )
+{
+   SuppKind skind;
+
+   if      (VG_STREQ(name, "Param"))   skind = ParamSupp;
+   else if (VG_STREQ(name, "CoreMem")) skind = CoreMemSupp;
+   else if (VG_STREQ(name, "Addr1"))   skind = Addr1Supp;
+   else if (VG_STREQ(name, "Addr2"))   skind = Addr2Supp;
+   else if (VG_STREQ(name, "Addr4"))   skind = Addr4Supp;
+   else if (VG_STREQ(name, "Addr8"))   skind = Addr8Supp;
+   else if (VG_STREQ(name, "Free"))    skind = FreeSupp;
+   else if (VG_STREQ(name, "Leak"))    skind = LeakSupp;
+   else
+      return False;
+
+   VG_(set_supp_kind)(su, skind);
+   return True;
+}
 
 Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
 {
@@ -367,23 +607,22 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
    return True;
 }
 
-#define STREQ(s1,s2) (s1 != NULL && s2 != NULL \
-                      && VG_(strcmp)((s1),(s2))==0)
-
 Bool SK_(error_matches_suppression)(Error* err, Supp* su)
 {
-   UInt su_size;
-   MemCheckError* err_extra = VG_(get_error_extra)(err);
-   ErrorKind      ekind     = VG_(get_error_kind )(err);
+   UInt       su_size;
+   MAC_Error* err_extra = VG_(get_error_extra)(err);
+   ErrorKind  ekind     = VG_(get_error_kind )(err);
 
    switch (VG_(get_supp_kind)(su)) {
       case ParamSupp:
          return (ekind == ParamErr 
-              && STREQ(VG_(get_error_string)(err), VG_(get_supp_string)(su)));
+              && VG_STREQ(VG_(get_error_string)(err), 
+                          VG_(get_supp_string)(su)));
 
       case CoreMemSupp:
          return (ekind == CoreMemErr
-              && STREQ(VG_(get_error_string)(err), VG_(get_supp_string)(su)));
+              && VG_STREQ(VG_(get_error_string)(err),
+                          VG_(get_supp_string)(su)));
 
       case Value0Supp: su_size = 0; goto value_case;
       case Value1Supp: su_size = 1; goto value_case;
@@ -404,7 +643,7 @@ Bool SK_(error_matches_suppression)(Error* err, Supp* su)
          return (ekind == FreeErr || ekind == FreeMismatchErr);
 
       case LeakSupp:
-         return False; /* Doesn't match any normal error */
+         return (ekind == LeakErr);
 
       default:
          VG_(printf)("Error:\n"
@@ -415,7 +654,45 @@ Bool SK_(error_matches_suppression)(Error* err, Supp* su)
    }
 }
 
-#  undef STREQ
+Char* SK_(get_error_name) ( Error* err )
+{
+   Char* s;
+   switch (VG_(get_error_kind)(err)) {
+   case ParamErr:           return "Param";
+   case UserErr:            return NULL;  /* Can't suppress User errors */
+   case FreeMismatchErr:    return "Free";
+   case FreeErr:            return "Free";
+   case AddrErr:            
+      switch ( ((MAC_Error*)VG_(get_error_extra)(err))->size ) {
+      case 1:               return "Addr1";
+      case 2:               return "Addr2";
+      case 4:               return "Addr4";
+      case 8:               return "Addr8";
+      default:              VG_(skin_panic)("unexpected size for Addr");
+      }
+     
+   case ValueErr:
+      switch ( ((MAC_Error*)VG_(get_error_extra)(err))->size ) {
+      case 0:               return "Cond";
+      case 1:               return "Value1";
+      case 2:               return "Value2";
+      case 4:               return "Value4";
+      case 8:               return "Value8";
+      default:              VG_(skin_panic)("unexpected size for Value");
+      }
+   case CoreMemErr:         return "CoreMem";
+   case LeakErr:            return "Leak";
+   default:                 VG_(skin_panic)("get_error_name: unexpected type");
+   }
+   VG_(printf)(s);
+}
+
+void SK_(print_extra_suppression_info) ( Error* err )
+{
+   if (ParamErr == VG_(get_error_kind)(err)) {
+      VG_(printf)("   %s\n", VG_(get_error_string)(err));
+   }
+}
 
 /*------------------------------------------------------------*/
 /*--- Crude profiling machinery.                           ---*/
@@ -517,150 +794,35 @@ M  89   fpu_write 10/28/108
    125  die_mem_stack
 */
 
-#ifdef VG_PROFILE_MEMORY
+#ifdef MAC_PROFILE_MEMORY
 
-UInt MC_(event_ctr)[N_PROF_EVENTS];
+UInt MAC_(event_ctr)[N_PROF_EVENTS];
 
-void MC_(init_prof_mem) ( void )
+void MAC_(init_prof_mem) ( void )
 {
    Int i;
    for (i = 0; i < N_PROF_EVENTS; i++)
-      MC_(event_ctr)[i] = 0;
+      MAC_(event_ctr)[i] = 0;
 }
 
-void MC_(done_prof_mem) ( void )
+void MAC_(done_prof_mem) ( void )
 {
    Int i;
    for (i = 0; i < N_PROF_EVENTS; i++) {
       if ((i % 10) == 0) 
          VG_(printf)("\n");
-      if (MC_(event_ctr)[i] > 0)
-         VG_(printf)( "prof mem event %2d: %d\n", i, MC_(event_ctr)[i] );
+      if (MAC_(event_ctr)[i] > 0)
+         VG_(printf)( "prof mem event %2d: %d\n", i, MAC_(event_ctr)[i] );
    }
    VG_(printf)("\n");
 }
 
 #else
 
-void MC_(init_prof_mem) ( void ) { }
-void MC_(done_prof_mem) ( void ) { }
+void MAC_(init_prof_mem) ( void ) { }
+void MAC_(done_prof_mem) ( void ) { }
 
 #endif
-
-/*------------------------------------------------------------*/
-/*--- Shadow chunks info                                   ---*/
-/*------------------------------------------------------------*/
-
-void MC_(set_where)( ShadowChunk* sc, ExeContext* ec )
-{
-   VG_(set_sc_extra)( sc, 0, (UInt)ec );
-}
-
-ExeContext *MC_(get_where)( ShadowChunk* sc )
-{
-   return (ExeContext*)VG_(get_sc_extra)(sc, 0);
-}
-
-void SK_(complete_shadow_chunk) ( ShadowChunk* sc, ThreadState* tst )
-{
-   VG_(set_sc_extra) ( sc, 0, (UInt)VG_(get_ExeContext)(tst) );
-}
-
-
-/*------------------------------------------------------------*/
-/*--- Postponing free()ing                                 ---*/
-/*------------------------------------------------------------*/
-
-/* Holds blocks after freeing. */
-static ShadowChunk* freed_list_start  = NULL;
-static ShadowChunk* freed_list_end    = NULL;
-static Int          freed_list_volume = 0;
-
-__attribute__ ((unused))
-Int MC_(count_freelist) ( void )
-{
-   ShadowChunk* sc;
-   Int n = 0;
-   for (sc = freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      n++;
-   return n;
-}
-
-__attribute__ ((unused))
-void MC_(freelist_sanity) ( void )
-{
-   ShadowChunk* sc;
-   Int n = 0;
-   /* VG_(printf)("freelist sanity\n"); */
-   for (sc = freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      n += VG_(get_sc_size)(sc);
-   sk_assert(n == freed_list_volume);
-}
-
-/* Put a shadow chunk on the freed blocks queue, possibly freeing up
-   some of the oldest blocks in the queue at the same time. */
-static void add_to_freed_queue ( ShadowChunk* sc )
-{
-   ShadowChunk* sc1;
-
-   /* Put it at the end of the freed list */
-   if (freed_list_end == NULL) {
-      sk_assert(freed_list_start == NULL);
-      freed_list_end = freed_list_start = sc;
-      freed_list_volume = VG_(get_sc_size)(sc);
-   } else {    
-      sk_assert(VG_(get_sc_next)(freed_list_end) == NULL);
-      VG_(set_sc_next)(freed_list_end, sc);
-      freed_list_end = sc;
-      freed_list_volume += VG_(get_sc_size)(sc);
-   }
-   VG_(set_sc_next)(sc, NULL);
-
-   /* Release enough of the oldest blocks to bring the free queue
-      volume below vg_clo_freelist_vol. */
-   
-   while (freed_list_volume > MC_(clo_freelist_vol)) {
-      /* freelist_sanity(); */
-      sk_assert(freed_list_start != NULL);
-      sk_assert(freed_list_end != NULL);
-
-      sc1 = freed_list_start;
-      freed_list_volume -= VG_(get_sc_size)(sc1);
-      /* VG_(printf)("volume now %d\n", freed_list_volume); */
-      sk_assert(freed_list_volume >= 0);
-
-      if (freed_list_start == freed_list_end) {
-         freed_list_start = freed_list_end = NULL;
-      } else {
-         freed_list_start = VG_(get_sc_next)(sc1);
-      }
-      VG_(set_sc_next)(sc1, NULL); /* just paranoia */
-      VG_(free_ShadowChunk) ( sc1 );
-   }
-}
-
-/* Return the first shadow chunk satisfying the predicate p. */
-ShadowChunk* MC_(any_matching_freed_ShadowChunks) ( Bool (*p)(ShadowChunk*) )
-{
-   ShadowChunk* sc;
-
-   /* No point looking through freed blocks if we're not keeping
-      them around for a while... */
-   for (sc = freed_list_start; sc != NULL; sc = VG_(get_sc_next)(sc))
-      if (p(sc))
-         return sc;
-
-   return NULL;
-}
-
-void SK_(alt_free) ( ShadowChunk* sc, ThreadState* tst )
-{
-   /* Record where freed */
-   MC_(set_where)( sc, VG_(get_ExeContext) ( tst ) );
-
-   /* Put it out of harm's way for a while. */
-   add_to_freed_queue ( sc );
-}
 
 /*------------------------------------------------------------*/
 /*--- Syscall wrappers                                     ---*/
@@ -688,5 +850,5 @@ void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
 }
 
 /*--------------------------------------------------------------------*/
-/*--- end                                              mc_common.c ---*/
+/*--- end                                              mac_needs.c ---*/
 /*--------------------------------------------------------------------*/

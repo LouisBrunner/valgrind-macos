@@ -586,12 +586,12 @@ void mc_check_is_writable ( CorePart part, ThreadState* tst,
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         MC_(record_param_error) ( tst, bad_addr, /*isWrite =*/True, s );
+         MAC_(record_param_error) ( tst, bad_addr, /*isWrite =*/True, s );
          break;
 
       case Vg_CorePThread:
       case Vg_CoreSignal:
-         MC_(record_core_mem_error)( tst, /*isWrite=*/True, s );
+         MAC_(record_core_mem_error)( tst, /*isWrite=*/True, s );
          break;
 
       default:
@@ -617,17 +617,17 @@ void mc_check_is_readable ( CorePart part, ThreadState* tst,
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         MC_(record_param_error) ( tst, bad_addr, /*isWrite =*/False, s );
+         MAC_(record_param_error) ( tst, bad_addr, /*isWrite =*/False, s );
          break;
       
       case Vg_CorePThread:
-         MC_(record_core_mem_error)( tst, /*isWrite=*/False, s );
+         MAC_(record_core_mem_error)( tst, /*isWrite=*/False, s );
          break;
 
       /* If we're being asked to jump to a silly address, record an error 
          message before potentially crashing the entire system. */
       case Vg_CoreTranslate:
-         MC_(record_jump_error)( tst, bad_addr );
+         MAC_(record_jump_error)( tst, bad_addr );
          break;
 
       default:
@@ -650,7 +650,7 @@ void mc_check_is_readable_asciiz ( CorePart part, ThreadState* tst,
    sk_assert(part == Vg_CoreSysCall);
    ok = mc_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (!ok) {
-      MC_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
+      MAC_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
    }
 
    VGP_POPCC(VgpCheckMem);
@@ -897,10 +897,10 @@ static UInt mc_rd_V4_SLOWLY ( Addr a )
       error arose in the first place from an invalid address. 
    */
    /* VG_(printf)("%p (%d %d %d %d)\n", a, a0ok, a1ok, a2ok, a3ok); */
-   if (!MC_(clo_partial_loads_ok) 
+   if (!MAC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      MC_(record_address_error)( a, 4, False );
+      MAC_(record_address_error)( a, 4, False );
       return (VGM_BYTE_VALID << 24) | (VGM_BYTE_VALID << 16) 
              | (VGM_BYTE_VALID << 8) | VGM_BYTE_VALID;
    }
@@ -913,7 +913,7 @@ static UInt mc_rd_V4_SLOWLY ( Addr a )
       (which is the default), and the address is 4-aligned.  
       If not, Case 2 will have applied.
    */
-   sk_assert(MC_(clo_partial_loads_ok));
+   sk_assert(MAC_(clo_partial_loads_ok));
    {
       UInt vw = VGM_WORD_INVALID;
       vw <<= 8; vw |= (a3ok ? vb3 : VGM_BYTE_INVALID);
@@ -943,7 +943,7 @@ static void mc_wr_V4_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MC_(record_address_error)( a, 4, True );
+      MAC_(record_address_error)( a, 4, True );
 }
 
 static UInt mc_rd_V2_SLOWLY ( Addr a )
@@ -962,7 +962,7 @@ static UInt mc_rd_V2_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MC_(record_address_error)( a, 2, False );
+      MAC_(record_address_error)( a, 2, False );
       vw = (VGM_BYTE_INVALID << 24) | (VGM_BYTE_INVALID << 16) 
            | (VGM_BYTE_VALID << 8) | (VGM_BYTE_VALID);
    }
@@ -984,7 +984,7 @@ static void mc_wr_V2_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MC_(record_address_error)( a, 2, True );
+      MAC_(record_address_error)( a, 2, True );
 }
 
 static UInt mc_rd_V1_SLOWLY ( Addr a )
@@ -1001,7 +1001,7 @@ static UInt mc_rd_V1_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MC_(record_address_error)( a, 1, False );
+      MAC_(record_address_error)( a, 1, False );
       vw = (VGM_BYTE_INVALID << 24) | (VGM_BYTE_INVALID << 16) 
            | (VGM_BYTE_INVALID << 8) | (VGM_BYTE_VALID);
    }
@@ -1020,7 +1020,7 @@ static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MC_(record_address_error)( a, 1, True );
+      MAC_(record_address_error)( a, 1, True );
 }
 
 
@@ -1250,7 +1250,7 @@ void mc_fpu_read_check_SLOWLY ( Addr addr, Int size )
    }
 
    if (aerr) {
-      MC_(record_address_error)( addr, size, False );
+      MAC_(record_address_error)( addr, size, False );
    } else {
      if (verr)
         MC_(record_value_error)( size );
@@ -1280,7 +1280,7 @@ void mc_fpu_write_check_SLOWLY ( Addr addr, Int size )
       }
    }
    if (aerr) {
-      MC_(record_address_error)( addr, size, True );
+      MAC_(record_address_error)( addr, size, True );
    }
 }
 
@@ -1329,14 +1329,7 @@ Bool mc_is_valid_address ( Addr a )
    skin. */
 void MC_(detect_memory_leaks) ( void )
 {
-   VG_(generic_detect_memory_leaks) ( 
-      mc_is_valid_64k_chunk,
-      mc_is_valid_address,
-      MC_(get_where),
-      MC_(clo_leak_resolution),
-      MC_(clo_show_reachable),
-      (UInt)LeakSupp
-   );
+   MAC_(do_detect_memory_leaks) ( mc_is_valid_64k_chunk, mc_is_valid_address );
 }
 
 
@@ -1489,23 +1482,25 @@ void SK_(written_shadow_regs_values)( UInt* gen_reg_value, UInt* eflags_value )
    *eflags_value  = VGM_EFLAGS_VALID;
 }
 
+Bool  MC_(clo_avoid_strlen_errors)    = True;
+Bool  MC_(clo_cleanup)                = True;
+
 Bool SK_(process_cmd_line_option)(Char* arg)
 {
-#  define STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
-#  define STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
-
-   if (STREQ(arg, "--avoid-strlen-errors=yes"))
+   if (VG_CLO_STREQ(arg, "--avoid-strlen-errors=yes"))
       MC_(clo_avoid_strlen_errors) = True;
-   else if (STREQ(arg, "--avoid-strlen-errors=no"))
+   else if (VG_CLO_STREQ(arg, "--avoid-strlen-errors=no"))
       MC_(clo_avoid_strlen_errors) = False;
 
+   else if (VG_CLO_STREQ(arg, "--cleanup=yes"))
+      MC_(clo_cleanup) = True;
+   else if (VG_CLO_STREQ(arg, "--cleanup=no"))
+      MC_(clo_cleanup) = False;
+
    else
-      return MC_(process_common_cmd_line_option)(arg);
+      return MAC_(process_common_cmd_line_option)(arg);
 
    return True;
-
-#undef STREQ
-#undef STREQN
 }
 
 Char* SK_(usage)(void)
@@ -1556,12 +1551,12 @@ void SK_(pre_clo_init)(void)
    VG_(track_new_mem_brk)          ( & MC_(make_writable) );
    VG_(track_new_mem_mmap)         ( & mc_set_perms );
    
-   VG_(track_new_mem_stack_4)      ( & MC_(new_mem_stack_4)  );
-   VG_(track_new_mem_stack_8)      ( & MC_(new_mem_stack_8)  );
-   VG_(track_new_mem_stack_12)     ( & MC_(new_mem_stack_12) );
-   VG_(track_new_mem_stack_16)     ( & MC_(new_mem_stack_16) );
-   VG_(track_new_mem_stack_32)     ( & MC_(new_mem_stack_32) );
-   VG_(track_new_mem_stack)        ( & MC_(new_mem_stack)    );
+   VG_(track_new_mem_stack_4)      ( & MAC_(new_mem_stack_4)  );
+   VG_(track_new_mem_stack_8)      ( & MAC_(new_mem_stack_8)  );
+   VG_(track_new_mem_stack_12)     ( & MAC_(new_mem_stack_12) );
+   VG_(track_new_mem_stack_16)     ( & MAC_(new_mem_stack_16) );
+   VG_(track_new_mem_stack_32)     ( & MAC_(new_mem_stack_32) );
+   VG_(track_new_mem_stack)        ( & MAC_(new_mem_stack)    );
 
    VG_(track_copy_mem_heap)        ( & mc_copy_address_range_state );
    VG_(track_copy_mem_remap)       ( & mc_copy_address_range_state );
@@ -1575,15 +1570,15 @@ void SK_(pre_clo_init)(void)
    VG_(track_die_mem_brk)          ( & MC_(make_noaccess) );
    VG_(track_die_mem_munmap)       ( & MC_(make_noaccess) ); 
 
-   VG_(track_die_mem_stack_4)      ( & MC_(die_mem_stack_4)  );
-   VG_(track_die_mem_stack_8)      ( & MC_(die_mem_stack_8)  );
-   VG_(track_die_mem_stack_12)     ( & MC_(die_mem_stack_12) );
-   VG_(track_die_mem_stack_16)     ( & MC_(die_mem_stack_16) );
-   VG_(track_die_mem_stack_32)     ( & MC_(die_mem_stack_32) );
-   VG_(track_die_mem_stack)        ( & MC_(die_mem_stack)    );
+   VG_(track_die_mem_stack_4)      ( & MAC_(die_mem_stack_4)  );
+   VG_(track_die_mem_stack_8)      ( & MAC_(die_mem_stack_8)  );
+   VG_(track_die_mem_stack_12)     ( & MAC_(die_mem_stack_12) );
+   VG_(track_die_mem_stack_16)     ( & MAC_(die_mem_stack_16) );
+   VG_(track_die_mem_stack_32)     ( & MAC_(die_mem_stack_32) );
+   VG_(track_die_mem_stack)        ( & MAC_(die_mem_stack)    );
    
-   VG_(track_bad_free)             ( & MC_(record_free_error) );
-   VG_(track_mismatched_free)      ( & MC_(record_freemismatch_error) );
+   VG_(track_bad_free)             ( & MAC_(record_free_error) );
+   VG_(track_mismatched_free)      ( & MAC_(record_freemismatch_error) );
 
    VG_(track_pre_mem_read)         ( & mc_check_is_readable );
    VG_(track_pre_mem_read_asciiz)  ( & mc_check_is_readable_asciiz );
@@ -1610,8 +1605,11 @@ void SK_(pre_clo_init)(void)
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );
    VGP_(register_profile_event) ( VgpESPAdj,   "adjust-ESP" );
 
+   /* Additional block description for VG_(describe_addr)() */
+   MAC_(describe_addr_supp) = MC_(client_perm_maybe_describe);
+
    init_shadow_memory();
-   MC_(init_prof_mem)();
+   MAC_(init_prof_mem)();
 }
 
 void SK_(post_clo_init) ( void )
@@ -1623,16 +1621,16 @@ void SK_(fini) ( void )
    VG_(print_malloc_stats)();
 
    if (VG_(clo_verbosity) == 1) {
-      if (!MC_(clo_leak_check))
+      if (!MAC_(clo_leak_check))
          VG_(message)(Vg_UserMsg, 
              "For a detailed leak analysis,  rerun with: --leak-check=yes");
 
       VG_(message)(Vg_UserMsg, 
                    "For counts of detected errors, rerun with: -v");
    }
-   if (MC_(clo_leak_check)) MC_(detect_memory_leaks)();
+   if (MAC_(clo_leak_check)) MC_(detect_memory_leaks)();
 
-   MC_(done_prof_mem)();
+   MAC_(done_prof_mem)();
 
    if (0) {
       VG_(message)(Vg_DebugMsg, 

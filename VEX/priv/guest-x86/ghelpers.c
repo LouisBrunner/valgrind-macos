@@ -1325,8 +1325,24 @@ UInt vex_to_eflags ( /*IN*/VexGuestX86State* vex_state )
    return eflags;
 }
 
+/* VISIBLE TO LIBVEX CLIENT */
+void vex_initialise_x87 ( /* MOD*/VexGuestX86State* vex_state )
+{
+   Int i;
+   for (i = 0; i < 8; i++) {
+      vex_state->guest_FPTAG[i] = 0; /* empty */
+      vex_state->guest_FPREG[i] = 0; /* IEEE754 64-bit zero */
+   }
+   vex_state->guest_FTOP = 0;
+   vex_state->guest_FC3210 = 0;
+
+   /* The default setting: all fp exceptions masked, rounding to
+      nearest, precision to 64 bits */
+   vex_state->guest_FPUCW = 0x03F7; 
+}
 
 
 /*---------------------------------------------------------------*/
 /*--- end                                guest-x86/ghelpers.c ---*/
 /*---------------------------------------------------------------*/
+

@@ -24,7 +24,10 @@ EXTRA_DIST = $(val_DATA) \
 	README_KDE3_FOLKS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO
 
-val_PROGRAMS = valgrind.so valgrinq.so libpthread.so.0
+val_PROGRAMS = valgrind.so valgrinq.so libpthread.so libpthread.so.0
+
+libpthread_so_SOURCES = vg_libpthread.c
+libpthread_so_0_SOURCES = vg_libpthread.c
 
 valgrinq_so_SOURCES = vg_valgrinq_dummy.c
 
@@ -79,12 +82,15 @@ vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 vg_clientmalloc.o: vg_clientmalloc.c $(MANUAL_DEPS)
 	$(COMPILE) -fno-omit-frame-pointer -c $<
 
-libpthread.so.0: vg_libpthread.c $(MANUAL_DEPS)
-	$(CC) -Wall -g -O -shared -fpic -o $@ $<
-
 valgrind.so: $(valgrind_so_OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o valgrind.so \
 	$(valgrind_so_OBJECTS) $(valgrind_so_LDADD)
 
 valgrinq.so: $(valgrinq_so_OBJECTS)
 	$(CC) $(CFLAGS) -shared -o valgrinq.so $(valgrinq_so_OBJECTS)
+
+libpthread.so: $(libpthread_so_OBJECTS)
+	$(CC) -Wall -g -O -shared -fpic -o libpthread.so $(libpthread_so_OBJECTS)
+
+libpthread.so.0: libpthread.so
+	ln -s libpthread.so libpthread.so.0

@@ -141,6 +141,7 @@ Segment *VG_(split_segment)(Addr a)
    ns->addr += delta;
    ns->offset += delta;
    ns->len -= delta;
+   s->len = delta;
 
    if (s->filename != NULL)
       ns->filename = VG_(arena_strdup)(VG_AR_CORE, s->filename);
@@ -159,7 +160,7 @@ void VG_(unmap_range)(Addr addr, UInt len)
 {
    Segment *s;
    Segment *next;
-   static const Bool debug = True || mem_debug;
+   static const Bool debug = False || mem_debug;
    Addr end;
 
    if (len == 0)
@@ -206,6 +207,20 @@ void VG_(unmap_range)(Addr addr, UInt len)
 
 	 if (debug)
 	    VG_(printf)("  case 1: s->len=%d\n", s->len);
+      } else if (addr <= s->addr && end > s->addr && end < seg_end) {
+	 /* this segment's head is truncated by [addr, addr+len)
+	    -> truncate head
+	 */
+	 Int delta = end - s->addr;
+
+	 if (debug)
+	    VG_(printf)("  case 2: s->addr=%p s->len=%d delta=%d\n", s->addr, s->len, delta);
+
+	 s->addr += delta;
+	 s->offset += delta;
+	 s->len -= delta;
+
+	 vg_assert(s->len != 0);
       } else if (addr <= s->addr && end >= seg_end) {
 	 /* this segment is completely contained within [addr, addr+len)
 	    -> delete segment
@@ -215,21 +230,7 @@ void VG_(unmap_range)(Addr addr, UInt len)
 	 freeseg(s);
 
 	 if (debug)
-	    VG_(printf)("  case 2: s==%p deleted\n", s);
-      } else if (addr <= s->addr && end > s->addr && end < seg_end) {
-	 /* this segment's head is truncated by [addr, addr+len)
-	    -> truncate head
-	 */
-	 Int delta = (addr+len) - s->addr;
-
-	 if (debug)
-	    VG_(printf)("  case 3: s->addr=%p s->len=%d delta=%d\n", s->addr, s->len, delta);
-
-	 s->addr += delta;
-	 s->offset += delta;
-	 s->len -= delta;
-
-	 vg_assert(s->len != 0);
+	    VG_(printf)("  case 3: s==%p deleted\n", s);
       } else if (addr > s->addr && end < seg_end) {
 	 /* [addr, addr+len) is contained within a single segment
 	    -> split segment into 3, delete middle portion
@@ -488,9 +489,9 @@ void VG_(mprotect_range)(Addr a, UInt len, UInt prot)
 
 Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
 {
+   static const Bool debug = False || mem_debug;
    Segment *s;
    Addr ret;
-   static const Bool debug = False || mem_debug;
    Addr limit = (for_client ? VG_(client_end) : VG_(valgrind_mmap_end));
 
    if (addr == 0)

@@ -26,13 +26,22 @@ static void nibblemap(void *p)
 	int off;
 	int i;
 
-	off = (random() & ~0x1fff) % LEN;
+	off = (random() % LEN) & ~(pagesize-1);
 	
 	for(i = 0; i < PAGES; i++) {
+		/* printf("unmapping off=%d\n", off/pagesize); */
 		munmap((char *)p + off, pagesize);
 		off += 619*pagesize;
 		off %= LEN;
 	}
+}
+
+static void prmaps()
+{
+	char buf[100];
+	sprintf(buf, "/bin/cat /proc/%d/maps", getpid());
+	system(buf);
+	exit(1);
 }
 
 int main()
@@ -46,19 +55,22 @@ int main()
 	expect2 = domap();
 	munmap(expect1, LEN);
 	munmap(expect2, LEN);
+
 	for(i = 0; i < 1000; i++) {
 		void *m1, *m2;
 
 		m1 = domap();
 		if (m1 != expect1) {
-			printf("FAIL: m=%p expect=%p\n",
-			       m1, expect1);
+			printf("FAIL i=%d: m1=%p expect1=%p\n",
+			       i, m1, expect1);
+			prmaps();
 			return 1;
 		}
 		m2 = domap();
 		if (m2 != expect2) {
-			printf("FAIL: m=%p expect=%p\n",
-			       m2, expect2);
+			printf("FAIL i=%d: m2=%p expect2=%p\n",
+			       i, m2, expect2);
+			prmaps();
 			return 1;
 		}
 		nibblemap(m2);

@@ -318,10 +318,25 @@ LIBS=$safe_LIBS
 
 AC_SUBST(NPTL_THREADING)
 
+# check if the GNU as supports CFI directives
+AC_MSG_CHECKING([if gas accepts .cfi])
+AC_TRY_COMPILE(, [
+
+__asm__ __volatile__ (".cfi_startproc\n"
+                      ".cfi_adjust_cfa_offset 0x0\n"
+                      ".cfi_endproc\n");
+],
+[
+  AC_DEFINE_UNQUOTED([HAVE_GAS_CFI], 1, [Define if your GNU as supports .cfi])
+  AC_MSG_RESULT(yes)
+],
+  AC_MSG_RESULT(no)
+)
 
 # does this compiler support -mpreferred-stack-boundary=2 ?
 AC_MSG_CHECKING([if gcc accepts -mpreferred-stack-boundary])
 
+safe_CFLAGS=$CFLAGS
 CFLAGS="-mpreferred-stack-boundary=2"
 
 AC_TRY_COMPILE(, [
@@ -331,11 +346,12 @@ int main () { return 0 ; }
 ],
 [
 PREFERRED_STACK_BOUNDARY="-mpreferred-stack-boundary=2"
-AC_MSG_RESULT([$PREFERRED_STACK_BOUNDARY])
+AC_MSG_RESULT([yes])
 ], [
 PREFERRED_STACK_BOUNDARY=""
 AC_MSG_RESULT([no])
 ])
+CFLAGS=$safe_CFLAGS
 
 AC_SUBST(PREFERRED_STACK_BOUNDARY)
 

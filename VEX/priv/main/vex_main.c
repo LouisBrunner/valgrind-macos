@@ -260,7 +260,7 @@ TranslateResult LibVEX_Translate (
 
       case InsnSetARM:
          preciseMemExnsFn = guest_arm_state_requires_precise_mem_exns;
-         bbToIR           = NULL; /*bbToIR_ARM;*/
+         bbToIR           = bbToIR_ARM;
          specHelper       = guest_arm_spechelper;
          guest_sizeB      = sizeof(VexGuestARMState);
          guest_word_type  = Ity_I32;

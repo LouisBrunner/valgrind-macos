@@ -119,10 +119,6 @@ extern void* LibVEX_Alloc ( Int nbytes );
 /* Describe the guest state enough that the instrumentation
    functions can work. */
 
-/* The max number of indexable guest state sections we can describe.
-   2 is enough for x86. */
-#define VEXGLO_N_DESCRS 2
-
 /* The max number of guest state chunks which we can describe as
    always defined (for the benefit of Memcheck). */
 #define VEXGLO_N_ALWAYSDEFD  16
@@ -152,7 +148,7 @@ typedef
 /* Translate a basic block. */
 
 typedef 
-   enum { InsnSetX86, InsnSetARM }
+   enum { InsnSetX86, InsnSetAMD64, InsnSetARM }
    InsnSet;
 
 typedef

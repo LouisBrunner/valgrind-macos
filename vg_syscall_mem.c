@@ -1382,18 +1382,46 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                 KERNEL_DO_SYSCALL(tid,res);
                 break;
             case 24: /* IPCOP_shmctl */
-               if ( arg3 ) {
-                  if ( arg2 == SHM_STAT )
-                     must_be_writable( tst, "shmctl(SHM_STAT,buf)", arg3,
-                                       sizeof(struct shmid_ds) );
-                  else
-                     must_be_readable( tst, "shmctl(SHM_XXXX,buf)", arg3,
-                                       sizeof(struct shmid_ds) );
+	      /* Subject: shmctl: The True Story
+                    Date: Thu, 9 May 2002 18:07:23 +0100 (BST)
+                    From: Reuben Thomas <rrt@mupsych.org>
+                      To: Julian Seward <jseward@acm.org>
+
+                 1. As you suggested, the syscall subop is in arg1.
+
+                 2. There are a couple more twists, so the arg order
+                    is actually:
+
+                 arg1 syscall subop
+                 arg2 file desc
+                 arg3 shm operation code (can have IPC_64 set)
+                 arg4 0 ??? is arg3-arg4 a 64-bit quantity when IPC_64
+                        is defined?
+                 arg5 pointer to buffer
+
+                 3. With this in mind, I've amended the case as below:
+	      */
+               {
+                  UInt cmd = arg3;
+                  Bool out_arg = False;
+                  if ( arg5 ) {
+#                    if defined(IPC_64)
+                     cmd = cmd & (~IPC_64);
+#                    endif
+                     out_arg = arg3 == SHM_STAT || arg3 == IPC_STAT;
+                     if ( out_arg )
+                        must_be_writable( tst, 
+                           "shmctl(SHM_STAT or IPC_STAT,buf)", 
+                           arg5, sizeof(struct shmid_ds) );
+                     else
+                        must_be_readable( tst, 
+                           "shmctl(SHM_XXXX,buf)", 
+                           arg5, sizeof(struct shmid_ds) );
+                  }
+                  KERNEL_DO_SYSCALL(tid,res);
+                  if ( arg5 && !VG_(is_kerror)(res) && res == 0 && out_arg )
+                          make_readable( arg5, sizeof(struct shmid_ds) );
                }
-               KERNEL_DO_SYSCALL(tid,res);
-               if ( arg3 && !VG_(is_kerror)(res) 
-                    && res == 0 && arg2 == SHM_STAT )
-                  make_readable( arg3, sizeof(struct shmid_ds) );
                break;
             default:
                VG_(message)(Vg_DebugMsg,

@@ -2595,67 +2595,76 @@ void do_redundant_PutI_elimination ( IRBB* bb )
 /*--- Loop unrolling                                          ---*/
 /*---------------------------------------------------------------*/
 
+/* Adjust all tmp values (names) in e by delta.  e is destructively
+   modified. */
+
 static void deltaIRExpr ( IRExpr* e, Int delta )
 {
-  Int i;
-  switch (e->tag) {
-  case Iex_Tmp:
-    e->Iex.Tmp.tmp += delta;
-    break;
-  case Iex_Get:
-  case Iex_Const:
-    break;
-  case Iex_GetI:
-    deltaIRExpr(e->Iex.GetI.off, delta);
-    break;
-  case Iex_Binop:
-    deltaIRExpr(e->Iex.Binop.arg1, delta);
-    deltaIRExpr(e->Iex.Binop.arg2, delta);
-    break;
-  case Iex_Unop:
-    deltaIRExpr(e->Iex.Unop.arg, delta);
-    break;
-  case Iex_LDle:
-    deltaIRExpr(e->Iex.LDle.addr, delta);
-    break;
-  case Iex_CCall:
-    for (i = 0; e->Iex.CCall.args[i]; i++)
-      deltaIRExpr(e->Iex.CCall.args[i], delta);
-    break;
-  case Iex_Mux0X:
-    deltaIRExpr(e->Iex.Mux0X.cond, delta);
-    deltaIRExpr(e->Iex.Mux0X.expr0, delta);
-    deltaIRExpr(e->Iex.Mux0X.exprX, delta);
-    break;
- default: vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
-    vpanic("deltaIRExpr");
-  }
+   Int i;
+   switch (e->tag) {
+      case Iex_Tmp:
+         e->Iex.Tmp.tmp += delta;
+         break;
+      case Iex_Get:
+      case Iex_Const:
+         break;
+      case Iex_GetI:
+         deltaIRExpr(e->Iex.GetI.off, delta);
+         break;
+      case Iex_Binop:
+         deltaIRExpr(e->Iex.Binop.arg1, delta);
+         deltaIRExpr(e->Iex.Binop.arg2, delta);
+         break;
+      case Iex_Unop:
+         deltaIRExpr(e->Iex.Unop.arg, delta);
+         break;
+      case Iex_LDle:
+         deltaIRExpr(e->Iex.LDle.addr, delta);
+         break;
+      case Iex_CCall:
+         for (i = 0; e->Iex.CCall.args[i]; i++)
+            deltaIRExpr(e->Iex.CCall.args[i], delta);
+         break;
+      case Iex_Mux0X:
+         deltaIRExpr(e->Iex.Mux0X.cond, delta);
+         deltaIRExpr(e->Iex.Mux0X.expr0, delta);
+         deltaIRExpr(e->Iex.Mux0X.exprX, delta);
+         break;
+      default: 
+         vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
+         vpanic("deltaIRExpr");
+   }
 }
+
+/* Adjust all tmp values (names) in st by delta.  st is destructively
+   modified. */
 
 static void deltaIRStmt ( IRStmt* st, Int delta )
 {
-  switch (st->tag) {
-  case Ist_Put:
-    deltaIRExpr(st->Ist.Put.data, delta);
-    break;
-  case Ist_PutI:
-    deltaIRExpr(st->Ist.PutI.off, delta);
-    deltaIRExpr(st->Ist.PutI.data, delta);
-    break;
-  case Ist_Tmp: st->Ist.Tmp.tmp += delta;
-    deltaIRExpr(st->Ist.Tmp.data, delta);
-    break;
-  case Ist_Exit:
-    deltaIRExpr(st->Ist.Exit.cond, delta);
-    break;
-  case Ist_STle:
-    deltaIRExpr(st->Ist.STle.addr, delta);
-    deltaIRExpr(st->Ist.STle.data, delta);
-    break;
-  default: vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
-    vpanic("deltaIRStmt");
-  }
+   switch (st->tag) {
+      case Ist_Put:
+         deltaIRExpr(st->Ist.Put.data, delta);
+         break;
+      case Ist_PutI:
+         deltaIRExpr(st->Ist.PutI.off, delta);
+         deltaIRExpr(st->Ist.PutI.data, delta);
+         break;
+      case Ist_Tmp: st->Ist.Tmp.tmp += delta;
+         deltaIRExpr(st->Ist.Tmp.data, delta);
+         break;
+      case Ist_Exit:
+         deltaIRExpr(st->Ist.Exit.cond, delta);
+         break;
+      case Ist_STle:
+         deltaIRExpr(st->Ist.STle.addr, delta);
+         deltaIRExpr(st->Ist.STle.data, delta);
+         break;
+      default: 
+         vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
+         vpanic("deltaIRStmt");
+   }
 }
+
 
 /* If possible, return a loop-unrolled version of bb0.  The original
    is changed.  If not possible, return NULL.  */
@@ -2677,138 +2686,153 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
 
 static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
 {
-  Int i, n_vars;
-  Bool xxx_known;
-  Addr64 xxx_value, yyy_value;
-  IRExpr* udst;
-  IRStmt* st;
-  IRConst* con;
-  IRBB* bb1;
-  IRBB* bb2;
+   Int      i, n_vars;
+   Bool     xxx_known;
+   Addr64   xxx_value, yyy_value;
+   IRExpr*  udst;
+   IRStmt*  st;
+   IRConst* con;
+   IRBB     *bb1, *bb2;
 
    /* First off, figure out if we can unroll this loop.  Do this
       without modifying bb0. */
 
-  if (bb0->jumpkind != Ijk_Boring)
-     return NULL;
+   if (bb0->jumpkind != Ijk_Boring)
+      return NULL;
 
-  xxx_known = False;
-  xxx_value = 0;
+   xxx_known = False;
+   xxx_value = 0;
 
-  /* Extract the next-guest address.  If it isn't a literal, we 
-     have to give up. */
+   /* Extract the next-guest address.  If it isn't a literal, we 
+      have to give up. */
 
-  udst = bb0->next;
-  if (udst->tag == Iex_Const
-      && (udst->Iex.Const.con->tag == Ico_U32
-          || udst->Iex.Const.con->tag == Ico_U64)) {
-  /* The BB ends in a jump to a literal location. */
-  xxx_known = True;
-  xxx_value
-     = udst->Iex.Const.con->tag == Ico_U64
-         ?  udst->Iex.Const.con->Ico.U64
-         : (Addr64)(udst->Iex.Const.con->Ico.U32);
-  }
+   udst = bb0->next;
+   if (udst->tag == Iex_Const
+       && (udst->Iex.Const.con->tag == Ico_U32
+           || udst->Iex.Const.con->tag == Ico_U64)) {
+      /* The BB ends in a jump to a literal location. */
+      xxx_known = True;
+      xxx_value = udst->Iex.Const.con->tag == Ico_U64
+                    ?  udst->Iex.Const.con->Ico.U64
+                    : (Addr64)(udst->Iex.Const.con->Ico.U32);
+   }
 
-  if (!xxx_known)
-    return NULL;
+   if (!xxx_known)
+      return NULL;
 
-  /* Now we know the BB ends to a jump to a literal location. 
-If it's a jump to itself (viz, idiom #1), move directly to the unrolling stage,
-first cloning the bb so the original isn't modified. */
-  if (xxx_value == my_addr) {
-    bb1 = dopyIRBB( bb0 );
-    bb0 = NULL;
-    udst = NULL; /* is now invalid */
-    goto do_unroll;
-  }
+   /* Now we know the BB ends to a jump to a literal location.  If
+      it's a jump to itself (viz, idiom #1), move directly to the
+      unrolling stage, first cloning the bb so the original isn't
+      modified. */
+   if (xxx_value == my_addr) {
+      bb1 = dopyIRBB( bb0 );
+      bb0 = NULL;
+      udst = NULL; /* is now invalid */
+      goto do_unroll;
+   }
 
-  /* Search for the second idiomatic form:
+   /* Search for the second idiomatic form:
         X: BODY; if (c) goto X; goto Y
-     We know Y, but need to establish that the last stmt
-is 'if (c) goto X'.
-  */
-  yyy_value = xxx_value;
-  for (i = bb0->stmts_used-1; i >= 0; i--)
-    if (bb0->stmts[i])
-      break;
+      We know Y, but need to establish that the last stmt
+      is 'if (c) goto X'.
+   */
+   yyy_value = xxx_value;
+   for (i = bb0->stmts_used-1; i >= 0; i--)
+      if (bb0->stmts[i])
+         break;
 
-  if (i < 0)
-    return NULL; /* block with no stmts.  Strange. */
-  st = bb0->stmts[i];
-  if (st->tag != Ist_Exit)
-    return NULL;
+   if (i < 0)
+      return NULL; /* block with no stmts.  Strange. */
 
-  con = st->Ist.Exit.dst;
-  vassert(con->tag == Ico_U32 || con->tag == Ico_U64);
-xxx_value
-= con->tag == Ico_U64 
-    ? st->Ist.Exit.dst->Ico.U64
-  : (Addr64)(st->Ist.Exit.dst->Ico.U32);
+   st = bb0->stmts[i];
+   if (st->tag != Ist_Exit)
+      return NULL;
 
-/* If this assertion fails, we have some kind of type error. */
- vassert(con->tag == udst->Iex.Const.con->tag);
+   con = st->Ist.Exit.dst;
+   vassert(con->tag == Ico_U32 || con->tag == Ico_U64);
 
- if (xxx_value != my_addr)
- /* We didn't find either idiom.  Give up. */
-   return NULL;
+   xxx_value = con->tag == Ico_U64 
+                  ? st->Ist.Exit.dst->Ico.U64
+                  : (Addr64)(st->Ist.Exit.dst->Ico.U32);
 
-   /* Ok, we found idiom #2.  Copy the BB, switch around the xxx and yyy values (which makes it look like idiom #1), and go into unrolling proper.  This means finding (again) the last stmt, in the copied BB. */
-    bb1 = dopyIRBB( bb0 );
-    bb0 = NULL;
-    udst = NULL; /* is now invalid */
-  for (i = bb1->stmts_used-1; i >= 0; i--)
-    if (bb1->stmts[i])
-      break;
-  /* The next bunch of assertions should be true since we already found and checked the last stmt in the original bb. */
-  vassert(i >= 0);
-  st = bb1->stmts[i];
-  vassert(st->tag == Ist_Exit);
-  con = st->Ist.Exit.dst;
-  vassert(con->tag == Ico_U32 || con->tag == Ico_U64);
-  udst = bb1->next;
-  vassert(udst->tag == Iex_Const);
-  vassert(udst->Iex.Const.con->tag == Ico_U32
+   /* If this assertion fails, we have some kind of type error. */
+   vassert(con->tag == udst->Iex.Const.con->tag);
+
+   if (xxx_value != my_addr)
+      /* We didn't find either idiom.  Give up. */
+      return NULL;
+
+   /* Ok, we found idiom #2.  Copy the BB, switch around the xxx and
+      yyy values (which makes it look like idiom #1), and go into
+      unrolling proper.  This means finding (again) the last stmt, in
+      the copied BB. */
+
+   bb1 = dopyIRBB( bb0 );
+   bb0 = NULL;
+   udst = NULL; /* is now invalid */
+   for (i = bb1->stmts_used-1; i >= 0; i--)
+      if (bb1->stmts[i])
+         break;
+
+   /* The next bunch of assertions should be true since we already
+      found and checked the last stmt in the original bb. */
+
+   vassert(i >= 0);
+
+   st = bb1->stmts[i];
+   vassert(st->tag == Ist_Exit);
+
+   con = st->Ist.Exit.dst;
+   vassert(con->tag == Ico_U32 || con->tag == Ico_U64);
+
+   udst = bb1->next;
+   vassert(udst->tag == Iex_Const);
+   vassert(udst->Iex.Const.con->tag == Ico_U32
           || udst->Iex.Const.con->tag == Ico_U64);
- vassert(con->tag == udst->Iex.Const.con->tag);
-  /* switch the xxx and yyy fields around */
- if (con->tag == Ico_U64) {
-   udst->Iex.Const.con->Ico.U64 = xxx_value;
-   con->Ico.U64 = yyy_value;
- } else {
-   udst->Iex.Const.con->Ico.U32 = (UInt)xxx_value;
-   con->Ico.U64 = (UInt)yyy_value;
- }
+   vassert(con->tag == udst->Iex.Const.con->tag);
+
+   /* switch the xxx and yyy fields around */
+   if (con->tag == Ico_U64) {
+      udst->Iex.Const.con->Ico.U64 = xxx_value;
+      con->Ico.U64 = yyy_value;
+   } else {
+      udst->Iex.Const.con->Ico.U32 = (UInt)xxx_value;
+      con->Ico.U64 = (UInt)yyy_value;
+   }
+
    /* negate the test condition; blargh */
    st->Ist.Exit.cond = IRExpr_Unop(Iop_32to1,IRExpr_Unop(Iop_Not32,IRExpr_Unop(Iop_1Uto32,dopyIRExpr(st->Ist.Exit.cond))));
 
- /* --- The unroller proper.  Both idioms are now converted to idiom 1. --- */
+   /* --- The unroller proper.  Both idioms are by now --- */
+   /* --- now converted to idiom 1. --- */
 
- do_unroll:
+  do_unroll:
 
    n_vars = bb1->tyenv->types_used;
 
    bb2 = dopyIRBB(bb1);
-   for (i = 0; i < n_vars; i++) {
-     (void)newIRTemp(bb1->tyenv, bb2->tyenv->types[i]);
-   }
+   for (i = 0; i < n_vars; i++)
+      (void)newIRTemp(bb1->tyenv, bb2->tyenv->types[i]);
+
    for (i = 0; i < bb2->stmts_used; i++) {
-     if (bb2->stmts[i] == NULL)
-       continue;
-     /* deltaIRStmt destructively modifies the stmt, but 
-	that's OK since bb2 is a complete fresh copy of bb1. */
-     deltaIRStmt(bb2->stmts[i], n_vars);
-     addStmtToIRBB(bb1, bb2->stmts[i]);
+      if (bb2->stmts[i] == NULL)
+         continue;
+      /* deltaIRStmt destructively modifies the stmt, but 
+         that's OK since bb2 is a complete fresh copy of bb1. */
+      deltaIRStmt(bb2->stmts[i], n_vars);
+      addStmtToIRBB(bb1, bb2->stmts[i]);
    }
 
-   if (0) {
-    vex_printf("\nUNROLLED (%llx)\n", my_addr);
-    ppIRBB(bb1);
-    vex_printf("\n");
+   if (DEBUG_IROPT) {
+      vex_printf("\nUNROLLED (%llx)\n", my_addr);
+      ppIRBB(bb1);
+      vex_printf("\n");
    }
 
-    return flatten_BB(bb1);
-
+   /* Flattening; sigh.  The unroller succeeds in breaking flatness
+      by negating the test condition.  This should be fixed properly.
+      For the moment use this shotgun approach.  */
+   return flatten_BB(bb1);
 }
 
 /*---------------------------------------------------------------*/

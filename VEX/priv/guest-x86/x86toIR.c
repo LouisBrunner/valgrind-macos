@@ -422,6 +422,16 @@ static void setFlags_SRC_DST1 ( IROp    op8,
    result except shifted one bit less.  And then only when the guard
    says we can. */
 
+static IRExpr* widenUTo32 ( IRExpr* e )
+{
+   switch (typeOfIRExpr(irbb->tyenv,e)) {
+      case Ity_I32: return e;
+      case Ity_I16: return unop(Iop_16Uto32,e);
+      case Ity_I8:  return unop(Iop_8Uto32,e);
+      default: vpanic("widenUto32");
+   }
+}
+
 static void setFlags_DSTus_DST1 ( IROp    op8,
                                   IRTemp  dstUS,
                                   IRTemp  dst1,
@@ -448,11 +458,11 @@ static void setFlags_DSTus_DST1 ( IROp    op8,
                                    IRExpr_Get(OFFB_CC_OP,Ity_I32))) );
    stmt( IRStmt_Put( OFFB_CC_SRC, 
                      IRExpr_Mux10( mkexpr(guard),
-                                   mkexpr(dstUS),
+                                   widenUTo32(mkexpr(dstUS)),
                                    IRExpr_Get(OFFB_CC_SRC,Ity_I32))) );
    stmt( IRStmt_Put( OFFB_CC_DST,
                      IRExpr_Mux10( mkexpr(guard),
-                                   mkexpr(dst1),
+                                   widenUTo32(mkexpr(dst1)),
                                    IRExpr_Get(OFFB_CC_DST,Ity_I32))) );
 }
 

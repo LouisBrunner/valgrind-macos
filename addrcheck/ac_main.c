@@ -716,34 +716,34 @@ static __inline__ void ac_helperc_ACCESS1 ( Addr a, Bool isWrite )
 }
 
 REGPARM(1)
-static void ac_helperc_LOAD4 ( Addr a )
+static void ach_LOAD4 ( Addr a )
 {
    ac_helperc_ACCESS4 ( a, /*isWrite*/False );
 }
 REGPARM(1)
-static void ac_helperc_STORE4 ( Addr a )
+static void ach_STORE4 ( Addr a )
 {
    ac_helperc_ACCESS4 ( a, /*isWrite*/True );
 }
 
 REGPARM(1)
-static void ac_helperc_LOAD2 ( Addr a )
+static void ach_LOAD2 ( Addr a )
 {
    ac_helperc_ACCESS2 ( a, /*isWrite*/False );
 }
 REGPARM(1)
-static void ac_helperc_STORE2 ( Addr a )
+static void ach_STORE2 ( Addr a )
 {
    ac_helperc_ACCESS2 ( a, /*isWrite*/True );
 }
 
 REGPARM(1)
-static void ac_helperc_LOAD1 ( Addr a )
+static void ach_LOAD1 ( Addr a )
 {
    ac_helperc_ACCESS1 ( a, /*isWrite*/False );
 }
 REGPARM(1)
-static void ac_helperc_STORE1 ( Addr a )
+static void ach_STORE1 ( Addr a )
 {
    ac_helperc_ACCESS1 ( a, /*isWrite*/True );
 }
@@ -913,13 +913,13 @@ void ac_fpu_ACCESS_check ( Addr addr, SizeT size, Bool isWrite )
 }
 
 REGPARM(2)
-static void ac_fpu_READ_check ( Addr addr, SizeT size )
+static void ach_LOADN ( Addr addr, SizeT size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/False );
 }
 
 REGPARM(2)
-static void ac_fpu_WRITE_check ( Addr addr, SizeT size )
+static void ach_STOREN ( Addr addr, SizeT size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/True );
 }
@@ -949,137 +949,143 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, SizeT size, Bool isWrite )
 /*--- Our instrumenter                                     ---*/
 /*------------------------------------------------------------*/
 
-UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
+IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
-/* Use this rather than eg. -1 because it's a UInt. */
-#define INVALID_DATA_SIZE   999999
+   Int         i, hsz;
+   IRStmt*     st;
+   IRExpr*     data;
+   IRExpr*     aexpr;
+   IRExpr*     guard;
+   IRDirty*    di;
+   Bool        isLoad;
 
-   UCodeBlock* cb;
-   Int         i;
-   UInstr*     u_in;
-   Int         t_addr, t_size;
-   Addr        helper;
+   /* Set up BB */
+   IRBB* bb     = emptyIRBB();
+   bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
+   bb->next     = dopyIRExpr(bb_in->next);
+   bb->jumpkind = bb_in->jumpkind;
 
-   cb = VG_(setup_UCodeBlock)(cb_in);
+   /* No loads to consider in ->next. */
+   tl_assert(isAtom(bb_in->next));
 
-   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
+   for (i = 0; i <  bb_in->stmts_used; i++) {
+      st = bb_in->stmts[i];
+      if (!st) continue;
 
-      t_addr = t_size = INVALID_TEMPREG;
-      u_in = VG_(get_instr)(cb_in, i);
+      /* Examine each stmt in turn to figure out if it needs to be
+         preceded by a memory access check.  If so, collect up the
+         relevant pieces of information. */
+      hsz    = 0;
+      aexpr  = NULL;
+      guard  = NULL;
+      isLoad = True;
 
-      switch (u_in->opcode) {
-         case NOP:  case LOCK:  case CALLM_E:  case CALLM_S:
+      switch (st->tag) {
+
+         case Ist_Tmp:
+            data = st->Ist.Tmp.data;
+            if (data->tag == Iex_LDle) {
+               aexpr  = data->Iex.LDle.addr;
+               hsz    = sizeofIRType(data->Iex.LDle.ty);
+               isLoad = True;
+	    }
+	    break;
+
+         case Ist_STle:
+            data  = st->Ist.STle.data;
+            aexpr = st->Ist.STle.addr;
+            tl_assert(isAtom(data));
+            tl_assert(isAtom(aexpr));
+            hsz    = sizeofIRType(typeOfIRExpr(bb_in->tyenv, data));
+	    isLoad = False;
+
+         case Ist_Put:
+            tl_assert(isAtom(st->Ist.Put.data));
             break;
 
-         /* For memory-ref instrs, copy the data_addr into a temporary
-          * to be passed to the helper at the end of the instruction.
-          */
-         case LOAD:
-            switch (u_in->size) {
-               case 4:  helper = (Addr)ac_helperc_LOAD4; break;
-               case 2:  helper = (Addr)ac_helperc_LOAD2; break;
-               case 1:  helper = (Addr)ac_helperc_LOAD1; break;
-               default: VG_(tool_panic)
-                           ("addrcheck::TL_(instrument):LOAD");
-            }
-            uInstr1(cb, CCALL, 0, TempReg, u_in->val1);
-            uCCall (cb, helper, 1, 1, False );
-            VG_(copy_UInstr)(cb, u_in);
+         case Ist_PutI:
+            tl_assert(isAtom(st->Ist.PutI.ix));
+            tl_assert(isAtom(st->Ist.PutI.data));
             break;
 
-         case STORE:
-            switch (u_in->size) {
-               case 4:  helper = (Addr)ac_helperc_STORE4; break;
-               case 2:  helper = (Addr)ac_helperc_STORE2; break;
-               case 1:  helper = (Addr)ac_helperc_STORE1; break;
-               default: VG_(tool_panic)
-                           ("addrcheck::TL_(instrument):STORE");
-            }
-            uInstr1(cb, CCALL, 0, TempReg, u_in->val2);
-            uCCall (cb, helper, 1, 1, False );
-            VG_(copy_UInstr)(cb, u_in);
+         case Ist_Exit:
+            tl_assert(isAtom(st->Ist.Exit.guard));
             break;
 
-	 case SSE3ag_MemRd_RegWr:
-            tl_assert(u_in->size == 4 || u_in->size == 8);
-            helper = (Addr)ac_fpu_READ_check;
-	    goto do_Access_ARG1;
-         do_Access_ARG1:
-	    tl_assert(u_in->tag1 == TempReg);
-            t_addr = u_in->val1;
-            t_size = newTemp(cb);
-	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
-	    uLiteral(cb, u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, helper, 2, 2, False );
-            VG_(copy_UInstr)(cb, u_in);
-            break;
+         case Ist_Dirty:
+            if (st->Ist.Dirty.details->mFx != Ifx_None) {
+               /* We classify Ifx_Modify as a load. */
+               isLoad = st->Ist.Dirty.details->mFx != Ifx_Write;
+               hsz    = st->Ist.Dirty.details->mSize;
+               aexpr  = st->Ist.Dirty.details->mAddr;
+               guard  = st->Ist.Dirty.details->guard;
+               tl_assert(isAtom(aexpr));
+             }
+             break;
 
-         case MMX2_MemRd:
-            tl_assert(u_in->size == 4 || u_in->size == 8);
-            helper = (Addr)ac_fpu_READ_check;
-	    goto do_Access_ARG2;
-         case MMX2_MemWr:
-            tl_assert(u_in->size == 4 || u_in->size == 8);
-            helper = (Addr)ac_fpu_WRITE_check;
-	    goto do_Access_ARG2;
-         case FPU_R:
-            helper = (Addr)ac_fpu_READ_check;
-            goto do_Access_ARG2;
-         case FPU_W:
-            helper = (Addr)ac_fpu_WRITE_check;
-            goto do_Access_ARG2;
-         do_Access_ARG2:
-	    tl_assert(u_in->tag2 == TempReg);
-            t_addr = u_in->val2;
-            t_size = newTemp(cb);
-	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
-	    uLiteral(cb, u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, helper, 2, 2, False );
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         case MMX2a1_MemRd:
-         case SSE3a_MemRd:
-         case SSE2a_MemRd:
-         case SSE3a1_MemRd:
-         case SSE2a1_MemRd:
-            helper = (Addr)ac_fpu_READ_check;
-	    goto do_Access_ARG3;
-         case SSE2a_MemWr:
-	 case SSE3a_MemWr:
-            helper = (Addr)ac_fpu_WRITE_check;
-	    goto do_Access_ARG3;
-         do_Access_ARG3:
-	    tl_assert(u_in->size == 4 || u_in->size == 8
-                      || u_in->size == 16 || u_in->size == 512);
-            tl_assert(u_in->tag3 == TempReg);
-            t_addr = u_in->val3;
-            t_size = newTemp(cb);
-	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
-	    uLiteral(cb, u_in->size);
-            uInstr2(cb, CCALL, 0, TempReg, t_addr, TempReg, t_size);
-            uCCall(cb, helper, 2, 2, False );
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         case SSE3e1_RegRd:
-         case SSE3e_RegWr:
-         case SSE3g1_RegWr:
-         case SSE5:
-         case SSE3g_RegWr:
-         case SSE3e_RegRd:
-         case SSE4:
-         case SSE3:
          default:
-            VG_(copy_UInstr)(cb, u_in);
-            break;
+            VG_(printf)("\n");
+            ppIRStmt(st);
+            VG_(printf)("\n");
+            VG_(tool_panic)("addrcheck: unhandled IRStmt");
       }
+
+      /* If needed, add a helper call. */
+      if (aexpr) {
+         tl_assert(hsz > 0);
+         switch (hsz) {
+            case 4:
+               if (isLoad)
+                  di = unsafeIRDirty_0_N( 1, "ach_LOAD4", &ach_LOAD4,
+                                          mkIRExprVec_1(aexpr));
+               else
+                  di = unsafeIRDirty_0_N( 1, "ach_STORE4", &ach_STORE4,
+                                          mkIRExprVec_1(aexpr));
+               break;
+            case 2:
+               if (isLoad)
+                  di = unsafeIRDirty_0_N( 1, "ach_LOAD2", &ach_LOAD2,
+                                          mkIRExprVec_1(aexpr));
+               else
+                  di = unsafeIRDirty_0_N( 1, "ach_STORE2", &ach_STORE2,
+                                          mkIRExprVec_1(aexpr));
+               break;
+            case 1:
+               if (isLoad)
+                  di = unsafeIRDirty_0_N( 1, "ach_LOAD1", &ach_LOAD1,
+                                          mkIRExprVec_1(aexpr));
+               else
+                  di = unsafeIRDirty_0_N( 1, "ach_STORE1", &ach_STORE1,
+                                          mkIRExprVec_1(aexpr));
+               break;
+            default:
+               if (isLoad)
+                  di = unsafeIRDirty_0_N( 
+                          2, "ach_LOADN", &ach_LOADN,
+                          mkIRExprVec_2(aexpr,mkIRExpr_HWord(hsz)));
+               else
+                  di = unsafeIRDirty_0_N( 
+                          2, "ach_STOREN", &ach_STOREN,
+                          mkIRExprVec_2(aexpr,mkIRExpr_HWord(hsz)));
+               break;
+	 }
+
+	 /* If the call has arisen as a result of a dirty helper which
+            references memory, we need to inherit the guard from the
+            dirty helper. */
+         if (guard)
+            di->guard = dopyIRExpr(guard);
+
+         /* emit the helper call */
+         addStmtToIRBB( bb, IRStmt_Dirty(di) );
+
+      }
+
+      /* And finally, copy the expr itself to the output. */
+      addStmtToIRBB( bb, dopyIRStmt(st));
    }
 
-   VG_(free_UCodeBlock)(cb_in);
-   return cb;
+   return bb;
 }
 
 
@@ -1306,15 +1312,6 @@ void TL_(pre_clo_init)(void)
    VG_(init_pre_mem_read_asciiz)  ( & ac_check_is_readable_asciiz );
    VG_(init_pre_mem_write)        ( & ac_check_is_writable );
    VG_(init_post_mem_write)       ( & ac_make_accessible );
-
-   VG_(register_compact_helper)((Addr) & ac_helperc_LOAD4);
-   VG_(register_compact_helper)((Addr) & ac_helperc_LOAD2);
-   VG_(register_compact_helper)((Addr) & ac_helperc_LOAD1);
-   VG_(register_compact_helper)((Addr) & ac_helperc_STORE4);
-   VG_(register_compact_helper)((Addr) & ac_helperc_STORE2);
-   VG_(register_compact_helper)((Addr) & ac_helperc_STORE1);
-   VG_(register_noncompact_helper)((Addr) & ac_fpu_READ_check);
-   VG_(register_noncompact_helper)((Addr) & ac_fpu_WRITE_check);
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );

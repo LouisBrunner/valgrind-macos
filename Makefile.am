@@ -18,7 +18,6 @@ SUBDIRS = 	include coregrind . docs tests auxprogs \
 		memcheck \
 		addrcheck \
 		corecheck \
-		massif \
 		lackey \
 		none
 

@@ -46,9 +46,9 @@ void TL_(post_clo_init)(void)
 {
 }
 
-UCodeBlock* TL_(instrument)(UCodeBlock* cb, Addr a)
+IRBB* TL_(instrument)(IRBB* bb, VexGuestLayout* layout, IRType hWordTy)
 {
-    return cb;
+    return bb;
 }
 
 void TL_(fini)(Int exitcode)

@@ -35,7 +35,7 @@
 static ULong n_dlrr_calls   = 0;
 static ULong n_BBs          = 0;
 static ULong n_UInstrs      = 0;
-static ULong n_machine_instrs   = 0;
+static ULong n_guest_instrs = 0;
 static ULong n_Jccs         = 0;
 static ULong n_Jccs_untaken = 0;
 
@@ -49,7 +49,7 @@ static void add_one_dlrr_call(void)
 static void add_one_BB(void)
 {
    n_BBs++;
-   n_machine_instrs++;
+   n_guest_instrs++;
 }
 
 static void add_one_UInstr(void)
@@ -57,9 +57,9 @@ static void add_one_UInstr(void)
    n_UInstrs++;
 }
 
-static void add_one_machine_instr(void)
+static void add_one_guest_instr(void)
 {
-   n_machine_instrs++;
+   n_guest_instrs++;
 }
 
 static void add_one_Jcc(void)
@@ -81,13 +81,6 @@ void TL_(pre_clo_init)(void)
       "Copyright (C) 2002-2004, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 175 );
-
-   VG_(register_compact_helper)((Addr) & add_one_dlrr_call);
-   VG_(register_compact_helper)((Addr) & add_one_BB);
-   VG_(register_compact_helper)((Addr) & add_one_machine_instr);
-   VG_(register_compact_helper)((Addr) & add_one_UInstr);
-   VG_(register_compact_helper)((Addr) & add_one_Jcc);
-   VG_(register_compact_helper)((Addr) & add_one_Jcc_untaken);
 }
 
 void TL_(post_clo_init)(void)
@@ -106,27 +99,27 @@ void TL_(post_clo_init)(void)
       Jcc ...
       JMP ...     (will not be reached if Jcc succeeds)
 
-   If we simplemindedly added calls to add_one_machine_instr() before INCEIPs
+   If we simplemindedly added calls to add_one_guest_instr() before INCEIPs
    and unconditional JMPs, we'd sometimes miss the final call (when a
    preceding conditional JMP succeeds), underestimating the machine instruction
    count.
 
       <code a>
-      call add_one_machine_instr()
+      call add_one_guest_instr()
       INCEIP ...
 
       <code b>
       Jcc ...
-      call add_one_machine_instr()
+      call add_one_guest_instr()
       JMP ...
 
    Instead we add a call before each INCEIP, and also one at the start of the
    block, but not one at the end, viz:
 
-      call add_one_machine_instr()
+      call add_one_guest_instr()
 
       <code a>
-      call add_one_machine_instr()
+      call add_one_guest_instr()
       INCEIP ...
 
       <code b>
@@ -136,21 +129,75 @@ void TL_(post_clo_init)(void)
    Which gives us the right answer.  And just to avoid two C calls, we fold
    the basic-block-beginning call in with add_one_BB().  Phew.
 */ 
-UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
+IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
+   IRDirty* di;
+   Int      i;
+
+   /* Set up BB */
+   IRBB* bb     = emptyIRBB();
+   bb->tyenv    = dopyIRTypeEnv(bb_in->tyenv);
+   bb->next     = dopyIRExpr(bb_in->next);
+   bb->jumpkind = bb_in->jumpkind;
+
+#if 0
+   /* We need to know the entry point for this bb to do this.  In any
+      case it's pretty meaningless in the presence of bb chasing since
+      we may enter this function part way through an IRBB. */
+   /* Count call to dlrr(), if this BB is dlrr()'s entry point */
+   if (VG_(get_fnname_if_entry)(orig_addr, fnname, 100) &&
+       0 == VG_(strcmp)(fnname, "_dl_runtime_resolve")) 
+   {
+      addStmtToIRBB( 
+         bb,
+         IRStmt_Dirty(
+            unsafeIRDirty_0_N( "add_one_dlrr_call", mkIRExprVec_0() )
+      ));
+   }
+#endif
+
+   /* Count this basic block */
+   di = unsafeIRDirty_0_N( 0, "add_one_BB", &add_one_BB, mkIRExprVec_0() );
+   addStmtToIRBB( bb, IRStmt_Dirty(di) );
+
+   for (i = 0; i < bb_in->stmts_used; i++) {
+      IRStmt* st = bb_in->stmts[i];
+      if (!st) continue;
+
+      switch (st->tag) {
+         case Ist_Exit:
+            /* Count Jcc */
+            addStmtToIRBB( 
+               bb,
+               IRStmt_Dirty(
+                  unsafeIRDirty_0_N( 0, "add_one_Jcc", &add_one_Jcc, 
+                                        mkIRExprVec_0() )
+            ));
+            addStmtToIRBB( bb, dopyIRStmt(st) );
+            /* Count non-taken Jcc */
+            addStmtToIRBB( 
+               bb,
+               IRStmt_Dirty(
+                  unsafeIRDirty_0_N( 0, "add_one_Jcc_untaken", &add_one_Jcc_untaken, 
+                                        mkIRExprVec_0() )
+            ));
+            break;
+
+         default:
+            addStmtToIRBB( bb, dopyIRStmt(st));
+      }
+   }
+
+   return bb;
+   
+
+#if 0
    UCodeBlock* cb;
    Int         i;
    UInstr*     u;
    Char        fnname[100];
 
    cb = VG_(setup_UCodeBlock)(cb_in);
-
-   /* Count call to dlrr(), if this BB is dlrr()'s entry point */
-   if (VG_(get_fnname_if_entry)(orig_addr, fnname, 100) &&
-       0 == VG_(strcmp)(fnname, "_dl_runtime_resolve")) 
-   {
-      VG_(call_helper_0_0)(cb, (Addr) & add_one_dlrr_call);
-   }
 
    /* Count basic block */
    VG_(call_helper_0_0)(cb, (Addr) & add_one_BB);
@@ -163,8 +210,8 @@ UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             break;
    
          case INCEIP:
-            /* Count machine instr */
-            VG_(call_helper_0_0)(cb, (Addr) & add_one_machine_instr);
+            /* Count x86 instr */
+            VG_(call_helper_0_0)(cb, (Addr) & add_one_x86_instr);
             VG_(copy_UInstr)(cb, u);
             break;
 
@@ -190,6 +237,7 @@ UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 
    VG_(free_UCodeBlock)(cb_in);
    return cb;
+#endif
 }
 
 void TL_(fini)(Int exitcode)
@@ -199,24 +247,25 @@ void TL_(fini)(Int exitcode)
 
     VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg, "Executed:");
-    VG_(message)(Vg_UserMsg, "  BBs:             %llu", n_BBs);
-    VG_(message)(Vg_UserMsg, "  machine instrs:  %llu", n_machine_instrs);
-    VG_(message)(Vg_UserMsg, "  UInstrs:         %llu", n_UInstrs);
+    VG_(message)(Vg_UserMsg, "  BBs:          %u", n_BBs);
+    VG_(message)(Vg_UserMsg, "  guest instrs: %u", n_guest_instrs);
+    VG_(message)(Vg_UserMsg, "  UInstrs:      %u", n_UInstrs);
 
     VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg, "Jccs:");
-    VG_(message)(Vg_UserMsg, "  total:           %llu", n_Jccs);
-    VG_(message)(Vg_UserMsg, "  %% taken:         %llu%%",
-                             (n_Jccs - n_Jccs_untaken)*100 / n_Jccs);
+    VG_(message)(Vg_UserMsg, "  total:       %u", n_Jccs);
+    VG_(message)(Vg_UserMsg, "  %% taken:     %u%%",
+                             (n_Jccs - n_Jccs_untaken)*100 / 
+                             (n_Jccs ? n_Jccs : 1));
 
     VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg, "Ratios:");
-    VG_(message)(Vg_UserMsg, "  machine instrs : BB            = %3llu : 10",
-                             10 * n_machine_instrs / n_BBs);
-    VG_(message)(Vg_UserMsg, "         UInstrs : BB            = %3llu : 10",
+    VG_(message)(Vg_UserMsg, "  guest instrs : BB      = %3u : 10",
+                             10 * n_guest_instrs / n_BBs);
+    VG_(message)(Vg_UserMsg, "     UInstrs : BB        = %3u : 10",
                              10 * n_UInstrs / n_BBs);
-    VG_(message)(Vg_UserMsg, "         UInstrs : machine_instr = %3llu : 10",
-                             10 * n_UInstrs / n_machine_instrs);
+    VG_(message)(Vg_UserMsg, "     UInstrs : x86_instr = %3u : 10",
+                             10 * n_UInstrs / n_guest_instrs);
 
     VG_(message)(Vg_UserMsg, "");
     VG_(message)(Vg_UserMsg, "Exit code:     %d", exitcode);

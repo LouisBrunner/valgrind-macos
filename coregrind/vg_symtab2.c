@@ -676,8 +676,10 @@ void read_symtab( SegInfo* si, Char* tab_name,
    Char* name;
 
    if (o_strtab == NULL || o_symtab == NULL) {
-      VG_(symerr)("object doesn't have a ");
-      VG_(symerr)(tab_name);
+      Char buf[80];
+      vg_assert(VG_(strlen)(tab_name) < 40);
+      VG_(sprintf)(buf, "   object doesn't have a %s", tab_name);
+      VG_(symerr)(buf);
       return;
    }
 

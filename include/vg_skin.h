@@ -616,18 +616,18 @@ typedef
          Held in val1[15:0] and val2[15:0], and mod and rm are to be
          replaced at codegen time by a reference to the Temp/RealReg
          holding the address.  Arg3 holds this Temp/Real Reg.
-         Transfer is always at size 16.  */
+         Transfer is at stated size.  */
       SSE3a_MemRd,
       SSE3a_MemWr,
 
-#if 0
       /* 4 bytes, reads/writes mem.  Insns of the form
          bbbbbbbb:bbbbbbbb:mod mmxreg r/m:bbbbbbbb
          Held in val1[15:0] and val2[15:0], and mod and rm are to be
          replaced at codegen time by a reference to the Temp/RealReg
          holding the address.  Arg3 holds this Temp/Real Reg.
-         Transfer is always at size 16.  */
+         Transfer is at stated size.  */
       SSE2a1_MemRd,
+#if 0
       SSE2a1_MemWr,
 #endif
       /* 4 bytes, writes an integer register.  Insns of the form

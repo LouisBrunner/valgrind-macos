@@ -561,6 +561,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    /* Fields checked:        lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
    case SSE2a_MemWr:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE2a_MemRd:  return LIT0 && SZ416 && CCa  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE2a1_MemRd: return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3a_MemWr:  return LIT0 && SZsse && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3a_MemRd:  return LIT0 && SZsse && CCa  && Ls1 && Ls2 && TR3 && XOTHER;
    case SSE3e_RegRd:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
@@ -887,6 +888,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case MMX2_ERegWr: return "MMX2_eRWr" ;
       case SSE2a_MemWr: return "SSE2a_MWr";
       case SSE2a_MemRd: return "SSE2a_MRd";
+      case SSE2a1_MemRd: return "SSE2a1_MRd";
       case SSE3e_RegRd: return "SSE3e_RRd";
       case SSE3e_RegWr: return "SSE3e_RWr";
       case SSE3g_RegWr: return "SSE3g_RWr";
@@ -1055,6 +1057,7 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          VG_(pp_UOperand)(u, 3, 4, True);
          break;
 
+      case SSE2a1_MemRd:
       case SSE3a_MemWr:
       case SSE3a_MemRd:
          VG_(printf)("0x%x:0x%x:0x%x:0x%x",
@@ -1253,6 +1256,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
       case LEA1: RD(1); WR(2); break;
       case LEA2: RD(1); RD(2); WR(3); break;
 
+      case SSE2a1_MemRd:
       case SSE3e_RegRd:
       case SSE3a_MemWr:
       case SSE3a_MemRd:
@@ -1421,7 +1425,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case MMX1: case MMX2: case MMX3:
       case MMX2_MemRd: case MMX2_MemWr:
       case MMX2_ERegRd: case MMX2_ERegWr:
-      case SSE2a_MemWr: case SSE2a_MemRd:
+      case SSE2a_MemWr: case SSE2a_MemRd: case SSE2a1_MemRd:
       case SSE3a_MemWr: case SSE3a_MemRd:
       case SSE3e_RegRd: case SSE3g_RegWr: case SSE3e_RegWr:
       case SSE3g1_RegWr: case SSE3e1_RegRd:

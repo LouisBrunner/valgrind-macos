@@ -2818,22 +2818,18 @@ PRE(ioctl)
    case VKI_TCSETS:
    case VKI_TCSETSW:
    case VKI_TCSETSF:
-      PRE_MEM_READ( "ioctl(TCSET{S,SW,SF})", arg3, 
-		     sizeof(struct vki_termios) );
+      PRE_MEM_READ( "ioctl(TCSET{S,SW,SF})", arg3, sizeof(struct vki_termios) );
       break; 
    case VKI_TCGETS:
-      PRE_MEM_WRITE( "ioctl(TCGETS)", arg3, 
-		     sizeof(struct vki_termios) );
+      PRE_MEM_WRITE( "ioctl(TCGETS)", arg3, sizeof(struct vki_termios) );
       break;
    case VKI_TCSETA:
    case VKI_TCSETAW:
    case VKI_TCSETAF:
-      PRE_MEM_READ( "ioctl(TCSET{A,AW,AF})", arg3,
-		     sizeof(struct vki_termio) );
+      PRE_MEM_READ( "ioctl(TCSET{A,AW,AF})", arg3, sizeof(struct vki_termio) );
       break;
    case VKI_TCGETA:
-      PRE_MEM_WRITE( "ioctl(TCGETA)", arg3,
-		     sizeof(struct vki_termio) );
+      PRE_MEM_WRITE( "ioctl(TCGETA)", arg3, sizeof(struct vki_termio) );
       break;
    case VKI_TCSBRK:
    case VKI_TCXONC:
@@ -2842,107 +2838,82 @@ PRE(ioctl)
       /* These just take an int by value */
       break;
    case VKI_TIOCGWINSZ:
-      PRE_MEM_WRITE( "ioctl(TIOCGWINSZ)", arg3, 
-		     sizeof(struct vki_winsize) );
+      PRE_MEM_WRITE( "ioctl(TIOCGWINSZ)", arg3, sizeof(struct vki_winsize) );
       break;
    case VKI_TIOCSWINSZ:
-      PRE_MEM_READ( "ioctl(TIOCSWINSZ)", arg3, 
-		     sizeof(struct vki_winsize) );
+      PRE_MEM_READ( "ioctl(TIOCSWINSZ)",  arg3, sizeof(struct vki_winsize) );
       break;
    case VKI_TIOCMBIS:
-      PRE_MEM_READ( "ioctl(TIOCMBIS)", arg3,
-                     sizeof(unsigned int) );
+      PRE_MEM_READ( "ioctl(TIOCMBIS)",    arg3, sizeof(unsigned int) );
       break;
    case VKI_TIOCMBIC:
-      PRE_MEM_READ( "ioctl(TIOCMBIC)", arg3,
-                     sizeof(unsigned int) );
+      PRE_MEM_READ( "ioctl(TIOCMBIC)",    arg3, sizeof(unsigned int) );
       break;
    case VKI_TIOCMSET:
-      PRE_MEM_READ( "ioctl(TIOCMSET)", arg3,
-                     sizeof(unsigned int) );
+      PRE_MEM_READ( "ioctl(TIOCMSET)",    arg3, sizeof(unsigned int) );
       break;
    case VKI_TIOCLINUX:
-      PRE_MEM_READ( "ioctl(TIOCLINUX)", arg3, 
-		     sizeof(char *) );
+      PRE_MEM_READ( "ioctl(TIOCLINUX)",   arg3, sizeof(char *) );
       if (*(char *)arg3 == 11) {
-	 PRE_MEM_READ( "ioctl(TIOCLINUX, 11)", 
-			arg3, 2 * sizeof(char *) );
+	 PRE_MEM_READ( "ioctl(TIOCLINUX, 11)", arg3, 2 * sizeof(char *) );
       }
       break;
    case VKI_TIOCGPGRP:
       /* Get process group ID for foreground processing group. */
-      PRE_MEM_WRITE( "ioctl(TIOCGPGRP)", arg3,
-		     sizeof(vki_pid_t) );
+      PRE_MEM_WRITE( "ioctl(TIOCGPGRP)", arg3, sizeof(vki_pid_t) );
       break;
    case VKI_TIOCSPGRP:
       /* Set a process group ID? */
-      PRE_MEM_WRITE( "ioctl(TIOCGPGRP)", arg3,
-		     sizeof(vki_pid_t) );
+      PRE_MEM_WRITE( "ioctl(TIOCGPGRP)", arg3, sizeof(vki_pid_t) );
       break;
    case VKI_TIOCGPTN: /* Get Pty Number (of pty-mux device) */
-      PRE_MEM_WRITE( "ioctl(TIOCGPTN)", 
-		     arg3, sizeof(int) );
+      PRE_MEM_WRITE( "ioctl(TIOCGPTN)", arg3, sizeof(int) );
       break;
    case VKI_TIOCSCTTY:
       /* Just takes an int value.  */
       break;
    case VKI_TIOCSPTLCK: /* Lock/unlock Pty */
-      PRE_MEM_READ( "ioctl(TIOCSPTLCK)", 
-		     arg3, sizeof(int) );
+      PRE_MEM_READ( "ioctl(TIOCSPTLCK)", arg3, sizeof(int) );
       break;
    case VKI_FIONBIO:
-      PRE_MEM_READ( "ioctl(FIONBIO)", 
-		     arg3, sizeof(int) );
+      PRE_MEM_READ( "ioctl(FIONBIO)",    arg3, sizeof(int) );
       break;
    case VKI_FIOASYNC:
-      PRE_MEM_READ( "ioctl(FIOASYNC)", 
-		     arg3, sizeof(int) );
+      PRE_MEM_READ( "ioctl(FIOASYNC)",   arg3, sizeof(int) );
       break;
    case VKI_FIONREAD:                /* identical to SIOCINQ */
-      PRE_MEM_WRITE( "ioctl(FIONREAD)", 
-		     arg3, sizeof(int) );
+      PRE_MEM_WRITE( "ioctl(FIONREAD)",  arg3, sizeof(int) );
       break;
 
    case VKI_SG_SET_COMMAND_Q:
-      PRE_MEM_READ( "ioctl(SG_SET_COMMAND_Q)", 
-		     arg3, sizeof(int) );
+      PRE_MEM_READ( "ioctl(SG_SET_COMMAND_Q)", arg3, sizeof(int) );
       break;
    case VKI_SG_IO:
-      PRE_MEM_WRITE( "ioctl(SG_IO)", arg3, 
-		     sizeof(vki_sg_io_hdr_t) );
+      PRE_MEM_WRITE( "ioctl(SG_IO)", arg3, sizeof(vki_sg_io_hdr_t) );
       break;
    case VKI_SG_GET_SCSI_ID:
-      PRE_MEM_WRITE( "ioctl(SG_GET_SCSI_ID)", arg3, 
-		     sizeof(vki_sg_scsi_id_t) );
+      PRE_MEM_WRITE( "ioctl(SG_GET_SCSI_ID)", arg3, sizeof(vki_sg_scsi_id_t) );
       break;
    case VKI_SG_SET_RESERVED_SIZE:
-      PRE_MEM_READ( "ioctl(SG_SET_RESERVED_SIZE)", 
-		     arg3, sizeof(int) );
+      PRE_MEM_READ( "ioctl(SG_SET_RESERVED_SIZE)", arg3, sizeof(int) );
       break;
    case VKI_SG_SET_TIMEOUT:
-      PRE_MEM_READ( "ioctl(SG_SET_TIMEOUT)", arg3, 
-		     sizeof(int) );
+      PRE_MEM_READ( "ioctl(SG_SET_TIMEOUT)", arg3, sizeof(int) );
       break;
    case VKI_SG_GET_RESERVED_SIZE:
-      PRE_MEM_WRITE( 
-		     "ioctl(SG_GET_RESERVED_SIZE)", arg3, 
-		     sizeof(int) );
+      PRE_MEM_WRITE( "ioctl(SG_GET_RESERVED_SIZE)", arg3, sizeof(int) );
       break;
    case VKI_SG_GET_TIMEOUT:
-      PRE_MEM_WRITE( "ioctl(SG_GET_TIMEOUT)", arg3, 
-		     sizeof(int) );
+      PRE_MEM_WRITE( "ioctl(SG_GET_TIMEOUT)", arg3, sizeof(int) );
       break;
    case VKI_SG_GET_VERSION_NUM:
-      PRE_MEM_READ( "ioctl(SG_GET_VERSION_NUM)", 
-		     arg3, sizeof(int) );
+      PRE_MEM_READ(  "ioctl(SG_GET_VERSION_NUM)",  arg3, sizeof(int) );
       break;
    case VKI_SG_EMULATED_HOST: /* 0x2203 */
-      PRE_MEM_WRITE(  "ioctl(SG_EMULATED_HOST)",
-		     arg3, sizeof(int) );
+      PRE_MEM_WRITE( "ioctl(SG_EMULATED_HOST)",    arg3, sizeof(int) );
       break;
    case VKI_SG_GET_SG_TABLESIZE: /* 0x227f */
-      PRE_MEM_WRITE( "ioctl(SG_GET_SG_TABLESIZE)",
-		     arg3, sizeof(int) );
+      PRE_MEM_WRITE( "ioctl(SG_GET_SG_TABLESIZE)", arg3, sizeof(int) );
       break;
 
    case VKI_IIOCGETCPS:
@@ -2952,8 +2923,7 @@ PRE(ioctl)
 #              define ISDN_MAX_CHANNELS 64
 #              endif
       PRE_MEM_WRITE( "ioctl(IIOCGETCPS)", arg3,
-		     ISDN_MAX_CHANNELS 
-		     * 2 * sizeof(unsigned long) );
+		     ISDN_MAX_CHANNELS * 2 * sizeof(unsigned long) );
       break;
    case VKI_IIOCNETGPN:
       PRE_MEM_READ( "ioctl(IIOCNETGPN)",
@@ -2967,81 +2937,68 @@ PRE(ioctl)
    case VKI_SIOCGIFINDEX:        /* get iface index              */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFINDEX)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFINDEX)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFINDEX)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFFLAGS:        /* get flags                    */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFFLAGS)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFFLAGS)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFFLAGS)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFHWADDR:       /* Get hardware address         */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFHWADDR)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFHWADDR)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFHWADDR)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFMTU:          /* get MTU size                 */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFMTU)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFMTU)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFMTU)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFADDR:         /* get PA address               */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFADDR)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFADDR)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFADDR)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFNETMASK:      /* get network PA mask          */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFNETMASK)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFNETMASK)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFNETMASK)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFMETRIC:       /* get metric                   */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFMETRIC)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFMETRIC)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFMETRIC)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFMAP:          /* Get device parameters        */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFMAP)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFMAP)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFMAP)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFTXQLEN:       /* Get the tx queue length      */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFTXQLEN)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFTXQLEN)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFTXQLEN)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFDSTADDR:      /* get remote PA address        */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFDSTADDR)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFDSTADDR)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFDSTADDR)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFBRDADDR:      /* get broadcast PA address     */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFBRDADDR)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFBRDADDR)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFBRDADDR)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGIFNAME:         /* get iface name               */
       PRE_MEM_READ( "ioctl(SIOCGIFNAME)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_ifindex,
                      sizeof(((struct vki_ifreq *)arg3)->vki_ifr_ifindex) );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFNAME)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFNAME)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGMIIPHY:         /* get hardware entry           */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFMIIPHY)",
                      (Addr)((struct vki_ifreq *)arg3)->vki_ifr_name );
-      PRE_MEM_WRITE( "ioctl(SIOCGIFMIIPHY)", arg3, 
-		     sizeof(struct vki_ifreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGIFMIIPHY)", arg3, sizeof(struct vki_ifreq));
       break;
    case VKI_SIOCGMIIREG:         /* get hardware entry registers */
       PRE_MEM_RASCIIZ( "ioctl(SIOCGIFMIIREG)",
@@ -3072,21 +3029,18 @@ PRE(ioctl)
       }
       break;
    case VKI_SIOCGSTAMP:
-      PRE_MEM_WRITE( "ioctl(SIOCGSTAMP)", arg3, 
-		     sizeof(struct vki_timeval));
+      PRE_MEM_WRITE( "ioctl(SIOCGSTAMP)", arg3, sizeof(struct vki_timeval));
       break;
       /* SIOCOUTQ is an ioctl that, when called on a socket, returns
 	 the number of bytes currently in that socket's send buffer.
 	 It writes this value as an int to the memory location
 	 indicated by the third argument of ioctl(2). */
    case VKI_SIOCOUTQ:
-      PRE_MEM_WRITE( "ioctl(SIOCOUTQ)", arg3, 
-		     sizeof(int));
+      PRE_MEM_WRITE( "ioctl(SIOCOUTQ)", arg3, sizeof(int));
       break;
    case VKI_SIOCGRARP:           /* get RARP table entry         */
    case VKI_SIOCGARP:            /* get ARP table entry          */
-      PRE_MEM_WRITE( "ioctl(SIOCGARP)", arg3, 
-		     sizeof(struct vki_arpreq));
+      PRE_MEM_WRITE( "ioctl(SIOCGARP)", arg3, sizeof(struct vki_arpreq));
       break;
                     
    case VKI_SIOCSIFFLAGS:        /* set flags                    */
@@ -3258,18 +3212,15 @@ PRE(ioctl)
 		     arg3, sizeof(struct vki_rtc_time));
       break;
    case VKI_RTC_ALM_SET:
-      PRE_MEM_READ( "ioctl(RTC_ALM_SET)", arg3,
-		     sizeof(struct vki_rtc_time));
+      PRE_MEM_READ( "ioctl(RTC_ALM_SET)", arg3, sizeof(struct vki_rtc_time));
       break;
    case VKI_RTC_IRQP_READ:
-      PRE_MEM_WRITE( "ioctl(RTC_IRQP_READ)", arg3,
-		     sizeof(unsigned long));
+      PRE_MEM_WRITE( "ioctl(RTC_IRQP_READ)", arg3, sizeof(unsigned long));
       break;
 
 #           ifdef BLKGETSIZE
    case BLKGETSIZE:
-      PRE_MEM_WRITE( "ioctl(BLKGETSIZE)", arg3,
-		     sizeof(unsigned long));
+      PRE_MEM_WRITE( "ioctl(BLKGETSIZE)", arg3, sizeof(unsigned long));
       break;
 #           endif /* BLKGETSIZE */
 
@@ -3289,34 +3240,27 @@ PRE(ioctl)
                     sizeof(struct vki_cdrom_generic_command));
       break;
    case VKI_CDROMSUBCHNL:
-      PRE_MEM_READ( 
-		     "ioctl(CDROMSUBCHNL (cdsc_format, char))",
-		     (Addr) &(((struct vki_cdrom_subchnl*) arg3)->cdsc_format),
-		     sizeof(((struct vki_cdrom_subchnl*) arg3)->cdsc_format));
-      PRE_MEM_WRITE( 
-		     "ioctl(CDROMSUBCHNL)", arg3, 
+      PRE_MEM_READ( "ioctl(CDROMSUBCHNL (cdsc_format, char))",
+		    (Addr) &(((struct vki_cdrom_subchnl*) arg3)->cdsc_format),
+		    sizeof(((struct vki_cdrom_subchnl*) arg3)->cdsc_format));
+      PRE_MEM_WRITE( "ioctl(CDROMSUBCHNL)", arg3, 
 		     sizeof(struct vki_cdrom_subchnl));
       break;
    case VKI_CDROMREADMODE2:
-      PRE_MEM_READ( "ioctl(CDROMREADMODE2)", arg3,
-                     VKI_CD_FRAMESIZE_RAW0 );
+      PRE_MEM_READ( "ioctl(CDROMREADMODE2)", arg3, VKI_CD_FRAMESIZE_RAW0 );
       break;
    case VKI_CDROMREADTOCHDR:
-      PRE_MEM_WRITE( 
-		     "ioctl(CDROMREADTOCHDR)", arg3, 
+      PRE_MEM_WRITE( "ioctl(CDROMREADTOCHDR)", arg3, 
 		     sizeof(struct vki_cdrom_tochdr));
       break;
    case VKI_CDROMREADTOCENTRY:
-      PRE_MEM_READ( 
-		     "ioctl(CDROMREADTOCENTRY (cdte_format, char))",
-		     (Addr) &(((struct vki_cdrom_tocentry*) arg3)->cdte_format),
-		     sizeof(((struct vki_cdrom_tocentry*) arg3)->cdte_format));
-      PRE_MEM_READ( 
-		     "ioctl(CDROMREADTOCENTRY (cdte_track, char))",
-		     (Addr) &(((struct vki_cdrom_tocentry*) arg3)->cdte_track), 
-		     sizeof(((struct vki_cdrom_tocentry*) arg3)->cdte_track));
-      PRE_MEM_WRITE( 
-		     "ioctl(CDROMREADTOCENTRY)", arg3, 
+      PRE_MEM_READ( "ioctl(CDROMREADTOCENTRY (cdte_format, char))",
+		    (Addr) &(((struct vki_cdrom_tocentry*) arg3)->cdte_format),
+		    sizeof(((struct vki_cdrom_tocentry*) arg3)->cdte_format));
+      PRE_MEM_READ( "ioctl(CDROMREADTOCENTRY (cdte_track, char))",
+		    (Addr) &(((struct vki_cdrom_tocentry*) arg3)->cdte_track), 
+		    sizeof(((struct vki_cdrom_tocentry*) arg3)->cdte_track));
+      PRE_MEM_WRITE( "ioctl(CDROMREADTOCENTRY)", arg3, 
 		     sizeof(struct vki_cdrom_tocentry));
       break;
    case VKI_CDROMMULTISESSION: /* 0x5310 */
@@ -3338,8 +3282,7 @@ PRE(ioctl)
       }
       break;      
    case VKI_CDROMPLAYMSF:
-      PRE_MEM_READ( "ioctl(CDROMPLAYMSF)", arg3, 
-		     sizeof(struct vki_cdrom_msf));
+      PRE_MEM_READ( "ioctl(CDROMPLAYMSF)", arg3, sizeof(struct vki_cdrom_msf));
       break;
       /* The following two are probably bogus (should check args
 	 for readability).  JRS 20021117 */
@@ -3348,12 +3291,10 @@ PRE(ioctl)
       break;
 
    case VKI_FIGETBSZ:
-      PRE_MEM_WRITE( "ioctl(FIGETBSZ)", arg3,
-                     sizeof(unsigned long));
+      PRE_MEM_WRITE( "ioctl(FIGETBSZ)", arg3, sizeof(unsigned long));
       break;
    case VKI_FIBMAP:
-      PRE_MEM_READ( "ioctl(FIBMAP)", arg3,
-                     sizeof(unsigned long));
+      PRE_MEM_READ( "ioctl(FIBMAP)", arg3, sizeof(unsigned long));
       break;
 
    case VKI_FBIOGET_VSCREENINFO: /* 0x4600 */
@@ -3371,13 +3312,13 @@ PRE(ioctl)
    case VKI_PPRELEASE:
       break;
    case VKI_PPSETMODE:
-      PRE_MEM_READ( "ioctl(PPSETMODE)", arg3, sizeof(int) );
+      PRE_MEM_READ( "ioctl(PPSETMODE)",   arg3, sizeof(int) );
       break;
    case VKI_PPGETMODE:
-      PRE_MEM_WRITE( "ioctl(PPGETMODE)", arg3, sizeof(int) );
+      PRE_MEM_WRITE( "ioctl(PPGETMODE)",  arg3, sizeof(int) );
       break;
    case VKI_PPSETPHASE:
-      PRE_MEM_READ( "ioctl(PPSETPHASE)", arg3, sizeof(int) );
+      PRE_MEM_READ(  "ioctl(PPSETPHASE)", arg3, sizeof(int) );
       break;
    case VKI_PPGETPHASE:
       PRE_MEM_WRITE( "ioctl(PPGETPHASE)", arg3, sizeof(int) );
@@ -3386,46 +3327,46 @@ PRE(ioctl)
       PRE_MEM_WRITE( "ioctl(PPGETMODES)", arg3, sizeof(unsigned int) );
       break;
    case VKI_PPSETFLAGS:
-      PRE_MEM_READ( "ioctl(PPSETFLAGS)", arg3, sizeof(int) );
+      PRE_MEM_READ(  "ioctl(PPSETFLAGS)", arg3, sizeof(int) );
       break;
    case VKI_PPGETFLAGS:
       PRE_MEM_WRITE( "ioctl(PPGETFLAGS)", arg3, sizeof(int) );
       break;
    case VKI_PPRSTATUS:
-      PRE_MEM_WRITE( "ioctl(PPRSTATUS)", arg3, sizeof(unsigned char) );
+      PRE_MEM_WRITE( "ioctl(PPRSTATUS)",  arg3, sizeof(unsigned char) );
       break;
    case VKI_PPRDATA:
-      PRE_MEM_WRITE( "ioctl(PPRDATA)", arg3, sizeof(unsigned char) );
+      PRE_MEM_WRITE( "ioctl(PPRDATA)",    arg3, sizeof(unsigned char) );
       break;
    case VKI_PPRCONTROL:
       PRE_MEM_WRITE( "ioctl(PPRCONTROL)", arg3, sizeof(unsigned char) );
       break;
    case VKI_PPWDATA:
-      PRE_MEM_READ( "ioctl(PPWDATA)", arg3, sizeof(unsigned char) );
+      PRE_MEM_READ(  "ioctl(PPWDATA)",    arg3, sizeof(unsigned char) );
       break;
    case VKI_PPWCONTROL:
-      PRE_MEM_READ( "ioctl(PPWCONTROL)", arg3, sizeof(unsigned char) );
+      PRE_MEM_READ(  "ioctl(PPWCONTROL)", arg3, sizeof(unsigned char) );
       break;
    case VKI_PPFCONTROL:
-      PRE_MEM_READ( "ioctl(PPFCONTROL)", arg3, 2 * sizeof(unsigned char) );
+      PRE_MEM_READ(  "ioctl(PPFCONTROL)", arg3, 2 * sizeof(unsigned char) );
       break;
    case VKI_PPDATADIR:
-      PRE_MEM_READ( "ioctl(PPDATADIR)", arg3, sizeof(int) );
+      PRE_MEM_READ(  "ioctl(PPDATADIR)",  arg3, sizeof(int) );
       break;
    case VKI_PPNEGOT:
-      PRE_MEM_READ( "ioctl(PPNEGOT)", arg3, sizeof(int) );
+      PRE_MEM_READ(  "ioctl(PPNEGOT)",    arg3, sizeof(int) );
       break;
    case VKI_PPWCTLONIRQ:
-      PRE_MEM_READ( "ioctl(PPWCTLONIRQ)", arg3, sizeof(unsigned char) );
+      PRE_MEM_READ(  "ioctl(PPWCTLONIRQ)",arg3, sizeof(unsigned char) );
       break;
    case VKI_PPCLRIRQ:
-      PRE_MEM_WRITE( "ioctl(PPCLRIRQ)", arg3, sizeof(int) );
+      PRE_MEM_WRITE( "ioctl(PPCLRIRQ)",   arg3, sizeof(int) );
       break;
    case VKI_PPSETTIME:
-      PRE_MEM_READ( "ioctl(PPSETTIME)", arg3, sizeof(struct vki_timeval) );
+      PRE_MEM_READ(  "ioctl(PPSETTIME)",  arg3, sizeof(struct vki_timeval) );
       break;
    case VKI_PPGETTIME:
-      PRE_MEM_WRITE( "ioctl(PPGETTIME)", arg3, sizeof(struct vki_timeval) );
+      PRE_MEM_WRITE( "ioctl(PPGETTIME)",  arg3, sizeof(struct vki_timeval) );
       break;
 
       /* We don't have any specific information on it, so

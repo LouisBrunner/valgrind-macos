@@ -1,0 +1,2 @@
+prog: metadata
+vgopts: -q

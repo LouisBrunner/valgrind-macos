@@ -53,7 +53,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	suppfree.stderr.exp suppfree.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest \
 	tronical.stderr.exp tronical.vgtest \
-	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest
+	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest \
+	metadata.stderr.exp metadata.stdout.exp metadata.vgtest
 
 check_PROGRAMS = \
 	badaddrvalue badfree badjump badloop buflen_check clientperm \
@@ -64,7 +65,7 @@ check_PROGRAMS = \
 	overlap pushfpopf \
 	realloc1 realloc2 sigaltstack signal2 supp1 supp2 suppfree \
 	trivialleak tronical weirdioctl	\
-	mismatches new_override
+	mismatches new_override metadata
 
 AM_CPPFLAGS = -I$(top_srcdir)/include
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
@@ -109,6 +110,7 @@ sigaltstack_SOURCES 	= sigaltstack.c
 trivialleak_SOURCES 	= trivialleak.c
 tronical_SOURCES 	= tronical.S
 weirdioctl_SOURCES 	= weirdioctl.c
+metadata_SOURCES	= metadata.c
 
 # C++ ones
 mismatches_SOURCES	= mismatches.cpp

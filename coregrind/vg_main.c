@@ -432,7 +432,7 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    addr_t client_size, shadow_size;
 
    VG_(valgrind_base)  = (addr_t)&kickstart_base;
-   VG_(valgrind_end)   = ROUNDUP(argc_addr, 0x10000); // stack
+   VG_(valgrind_end)   = ROUNDUP(argc_addr, 0x10000) - 1; // stack
 
    // This gives the client the largest possible address space while
    // taking into account the tool's shadow needs.

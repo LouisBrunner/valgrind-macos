@@ -1656,7 +1656,7 @@ void SK_(pre_clo_init)(void)
 {
    VG_(details_name)            ("Memcheck");
    VG_(details_version)         (NULL);
-   VG_(details_description)     ("a.k.a. Valgrind, a memory error detector");
+   VG_(details_description)     ("a memory error detector");
    VG_(details_copyright_author)(
       "Copyright (C) 2002-2003, and GNU GPL'd, by Julian Seward.");
    VG_(details_bug_reports_to)  ("jseward@acm.org");

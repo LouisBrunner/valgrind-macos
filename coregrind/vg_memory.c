@@ -1164,21 +1164,22 @@ Addr VG_(get_memory_from_mmap_for_client)
 
 
 /* We'll call any RW mmaped memory segment, within the client address
-   range, which isn't SF_CORE, a root. */
+   range, which isn't SF_CORE, a root. 
+*/
 void VG_(find_root_memory)(void (*add_rootrange)(Addr a, SizeT sz))
 {
-   //VG_(message)(Vg_UserMsg, "Warning: VG_(find_root_memory) -- doing nothing");
-   //VG_(message)(Vg_UserMsg, "leak checking probably won't work as a result");
-#if 0
+   Int     i;
+   UInt    flags;
    Segment *s;
 
-   for(s = VG_(first_segment)(); s != NULL; s = VG_(next_segment)(s)) {
-      UInt flags = s->flags & (SF_SHARED|SF_MMAP|SF_VALGRIND|SF_CORE|SF_STACK|SF
-_DEVICE);
+   for (i = 0; i < segments_used; i++) {
+      s = &segments[i];
+      flags = s->flags & (SF_SHARED|SF_MMAP|SF_VALGRIND
+                          |SF_CORE|SF_STACK|SF_DEVICE);
       if (flags != SF_MMAP && flags != SF_STACK)
          continue;
-      if ((s->prot & (VKI_PROT_READ|VKI_PROT_WRITE)) != (VKI_PROT_READ|VKI_PROT_
-WRITE))
+      if ((s->prot & (VKI_PROT_READ|VKI_PROT_WRITE)) 
+          != (VKI_PROT_READ|VKI_PROT_WRITE))
          continue;
       if (!VG_(is_client_addr)(s->addr) ||
           !VG_(is_client_addr)(s->addr+s->len))
@@ -1186,7 +1187,6 @@ WRITE))
 
       (*add_rootrange)(s->addr, s->len);
    }
-#endif
 }
 
 

@@ -1523,10 +1523,10 @@ PRE(personality)
    PRINT("personality ( %d )", arg1);
 }
 
-PRE(chroot)
+PREx(sys_chroot, 0)
 {
-   /* int chroot(const char *path); */
-   PRINT("chroot ( %p )", arg1);
+   PRINT("sys_chroot ( %p )", arg1);
+   PRE_REG_READ1(long, "chroot", const char *, path);
    PRE_MEM_RASCIIZ( "chroot(path)", arg1 );
 }
 
@@ -2041,17 +2041,17 @@ POST(sys_dup)
    }
 }
 
-PRE(dup2)
+PREx(sys_dup2, 0)
 {
-   /* int dup2(int oldfd, int newfd); */
-   PRINT("dup2 ( %d, %d )", arg1,arg2);
+   PRINT("sys_dup2 ( %d, %d )", arg1,arg2);
+   PRE_REG_READ2(long, "dup2", unsigned int, oldfd, unsigned int, newfd);
    if (!fd_allowed(arg2, "dup2", tid, True))
       set_result( -VKI_EBADF );
 }
 
-POST(dup2)
+POST(sys_dup2)
 {
-   if(VG_(clo_track_fds))
+   if (VG_(clo_track_fds))
       record_fd_open(tid, res, VG_(resolve_filename)(res));
 }
 
@@ -5352,11 +5352,13 @@ POST(sigaltstack)
       POST_MEM_WRITE( arg2, sizeof(vki_stack_t));
 }
 
-PRE(sigaction)
+// XXX: x86-specific
+PREx(sys_sigaction, SIG_SIM)
 {
-   /* int sigaction(int signum, struct k_sigaction *act, 
-      struct k_sigaction *oldact); */
-   PRINT("sigaction ( %d, %p, %p )",arg1,arg2,arg3);
+   PRINT("sys_sigaction ( %d, %p, %p )", arg1,arg2,arg3);
+   PRE_REG_READ3(int, "sigaction",
+                 int, signum, const struct old_sigaction *, act,
+                 struct old_sigaction *, oldact)
    if (arg2 != (UWord)NULL)
       PRE_MEM_READ( "sigaction(act)", arg2, sizeof(struct vki_sigaction));
    if (arg3 != (UWord)NULL)
@@ -5366,14 +5368,14 @@ PRE(sigaction)
       VG_(do_sys_sigaction)(tid);
 }
 
-POST(sigaction)
+POST(sys_sigaction)
 {
    if (res == 0 && arg3 != (UWord)NULL)
       POST_MEM_WRITE( arg3, sizeof(struct vki_sigaction));
 }
 
-PREALIAS(rt_sigaction, sigaction);
-POSTALIAS(rt_sigaction, sigaction);
+PREALIAS(rt_sigaction, sys_sigaction);
+POSTALIAS(rt_sigaction, sys_sigaction);
 
 PRE(sigprocmask)
 {
@@ -5889,14 +5891,14 @@ static const struct sys_info sys_info[] = {
    //   (__NR_oldolduname,      sys_olduname),     // 59 (?) L -- obsolete
 
    SYSX_(__NR_umask,            sys_umask),        // 60 * P
-   SYSB_(chroot,		0), // 61 sys_chroot *
-   //   (__NR_ustat,            sys_ustat)         // 62 * (SVr4, deprecated)
-   SYSBA(dup2,			0), // 63 sys_dup2 *
-   SYSX_(__NR_getppid,          sys_getppid), // 64 *
+   SYSX_(__NR_chroot,           sys_chroot),       // 61 * (almost P)
+   //   (__NR_ustat,            sys_ustat)         // 62 * (SVr4) -- deprecated
+   SYSXY(__NR_dup2,             sys_dup2),         // 63 * P
+   SYSX_(__NR_getppid,          sys_getppid),      // 64 * P
 
-   SYSX_(__NR_getpgrp,          sys_getpgrp), // 65 *
-   SYSX_(__NR_setsid,           sys_setsid), // 66 *
-   SYSBA(sigaction,		SIG_SIM), // 67 sys_sigaction
+   SYSX_(__NR_getpgrp,          sys_getpgrp),      // 65 * P
+   SYSX_(__NR_setsid,           sys_setsid),       // 66 * P
+   SYSXY(__NR_sigaction,        sys_sigaction),    // 67 (x86) P
    //   (__NR_sgetmask,         sys_sgetmask),     // 68 * (ANSI C)
    //   (__NR_ssetmask,         sys_ssetmask),     // 69 * (ANSI C)
 

@@ -250,8 +250,15 @@ int main(void)
    SY(__NR_umask, x0);
 
    // __NR_chroot 61
+   GO(__NR_chroot, "1s 1m");
+   SY(__NR_chroot, x0);
+
    // __NR_ustat 62
+   // (deprecated, not handled by Valgrind)
+
    // __NR_dup2 63
+   GO(__NR_dup2, "2s 0m");
+   SY(__NR_dup2, x0, x0);
 
    // __NR_getppid 64 --> sys_getppid()
    GO(__NR_getppid, "0e");
@@ -266,13 +273,23 @@ int main(void)
    SY(__NR_setsid);
 
    // __NR_sigaction 67
+   GO(__NR_sigaction, "3s 2m");
+   SY(__NR_sigaction, x0, x0+1, x0+1);
+
    // __NR_sgetmask 68
+   // (Not yet handled by Valgrind)
+
    // __NR_ssetmask 69
+   // (Not yet handled by Valgrind)
+
    // __NR_setreuid 70
    // __NR_setregid 71
    // __NR_sigsuspend 72
    // __NR_sigpending 73
+
    // __NR_sethostname 74
+   // (Not yet handled by Valgrind)
+
    // __NR_setrlimit 75
    // __NR_getrlimit 76
    // __NR_getrusage 77
@@ -287,10 +304,19 @@ int main(void)
    // (obsolete, not handled by Valgrind)
 
    // __NR_readlink 85
+
    // __NR_uselib 86
+   // (Not yet handled by Valgrind)
+
    // __NR_swapon 87
+   // (Not yet handled by Valgrind)
+
    // __NR_reboot 88
+   // (Not yet handled by Valgrind)
+
    // __NR_readdir 89
+   // (superseded, not handled by Valgrind)
+
    // __NR_mmap 90
    // __NR_munmap 91
    // __NR_truncate 92

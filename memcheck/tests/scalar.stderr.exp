@@ -703,6 +703,33 @@ Syscall param umask(mask) contains uninitialised byte(s)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
 -----------------------------------------------------
+ 61:         __NR_chroot 1s 1m
+-----------------------------------------------------
+
+Syscall param chroot(path) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param chroot(path) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+ 63:           __NR_dup2 2s 0m
+-----------------------------------------------------
+
+Syscall param dup2(oldfd) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param dup2(newfd) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
  64:        __NR_getppid 0e
 -----------------------------------------------------
 -----------------------------------------------------
@@ -711,6 +738,36 @@ Syscall param umask(mask) contains uninitialised byte(s)
 -----------------------------------------------------
  66:         __NR_setsid 0e
 -----------------------------------------------------
+-----------------------------------------------------
+ 67:      __NR_sigaction 3s 2m
+-----------------------------------------------------
+
+Syscall param sigaction(signum) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param sigaction(act) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param sigaction(oldact) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param sigaction(act) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param sigaction(oldact) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
 111:        __NR_vhangup 0e
 -----------------------------------------------------

@@ -344,6 +344,15 @@ void VG_(wrap_syscall) ( void )
          break;
 #     endif
 
+      /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
+
+      case __NR_nice: /* syscall 34 */
+         /* int nice(int inc); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("nice ( %d )\n", arg1);
+         KERNEL_DO_SYSCALL(res);
+         break;
+
       /* !!!!!!!!!! New, untested syscalls, 14 Mar 02 !!!!!!!!!! */
 
 #     if defined(__NR_setresgid32)
@@ -1324,6 +1333,10 @@ void VG_(wrap_syscall) ( void )
                KERNEL_DO_SYSCALL(res);
                if (!VG_(is_kerror)(res) && res == 0)
                    make_readable ( arg3, sizeof(int));
+               break;
+            case TIOCSCTTY:
+               /* Just takes an int value.  */
+               KERNEL_DO_SYSCALL(res);
                break;
             case TIOCSPTLCK: /* Lock/unlock Pty */
                must_be_readable( "ioctl(TIOCSPTLCK)", arg3, sizeof(int) );

@@ -1,3 +1,4 @@
+
 2002-03-29  Julian Seward  <sewardj@localhost.localdomain>
 
 	* vg_signals.c (VG_(do__NR_sigaction)): Don't allow setting of
@@ -7,7 +8,8 @@
 	
 2002-03-29  Alexandre Duret-Lutz  <duret_g@epita.fr>
 
-	* vg_syscall_mem.c: wrapper for ioctl TIOCGPGRP.
+	* vg_syscall_mem.c: wrappers for ioctl TIOCGPGRP and TIOCSCTTY,
+	and for syscall __NR_nice.
 
 2002-03-29  Tom Hughes <thh@cyberscience.com>
 

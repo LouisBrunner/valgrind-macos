@@ -88,8 +88,29 @@ static IRBB* irbb;
 /*------------------------------------------------------------*/
 
 #define OFFB_R0       offsetof(VexGuestARMState,guest_R0)
-// etc etc
+#define OFFB_R1       offsetof(VexGuestARMState,guest_R1)
+#define OFFB_R2       offsetof(VexGuestARMState,guest_R2)
+#define OFFB_R3       offsetof(VexGuestARMState,guest_R3)
+#define OFFB_R4       offsetof(VexGuestARMState,guest_R4)
+#define OFFB_R5       offsetof(VexGuestARMState,guest_R5)
+#define OFFB_R6       offsetof(VexGuestARMState,guest_R6)
+#define OFFB_R7       offsetof(VexGuestARMState,guest_R7)
+#define OFFB_R8       offsetof(VexGuestARMState,guest_R8)
+#define OFFB_R9       offsetof(VexGuestARMState,guest_R9)
+#define OFFB_R10      offsetof(VexGuestARMState,guest_R10)
+#define OFFB_R11      offsetof(VexGuestARMState,guest_R11)
+#define OFFB_R12      offsetof(VexGuestARMState,guest_R12)
+#define OFFB_R13      offsetof(VexGuestARMState,guest_R13)
+#define OFFB_R14      offsetof(VexGuestARMState,guest_R14)
 #define OFFB_R15      offsetof(VexGuestARMState,guest_R15)
+
+// CAB: ? guest_SYSCALLNO;
+
+#define OFFB_CC_OP    offsetof(VexGuestARMState,guest_CC_OP)
+#define OFFB_CC_DEP1  offsetof(VexGuestARMState,guest_CC_DEP1)
+#define OFFB_CC_DEP2  offsetof(VexGuestARMState,guest_CC_DEP2)
+
+// CAB: ? guest_EMWARN;
 
 
 /*------------------------------------------------------------*/
@@ -325,7 +346,7 @@ static UInt getUDisp ( Int size, UInt delta )
       case 4: return getUDisp32(delta);
       case 2: return getUDisp16(delta);
       case 1: return getUChar(delta);
-      default: vpanic("getUDisp(x86)");
+      default: vpanic("getUDisp(ARM)");
    }
    return 0; /*notreached*/
 }
@@ -352,7 +373,7 @@ static UInt getSDisp ( Int size, UInt delta )
       case 4: return getUDisp32(delta);
       case 2: return getSDisp16(delta);
       case 1: return getSDisp8(delta);
-      default: vpanic("getSDisp(x86)");
+      default: vpanic("getSDisp(ARM)");
   }
   return 0; /*notreached*/
 }
@@ -373,7 +394,7 @@ static IRType szToITy ( Int n )
       case 1: return Ity_I8;
       case 2: return Ity_I16;
       case 4: return Ity_I32;
-      default: vpanic("szToITy(x86)");
+      default: vpanic("szToITy(ARM)");
    }
 }
 
@@ -384,13 +405,25 @@ static Int integerGuestRegOffset ( UInt archreg )
    vassert(!host_is_bigendian);   //TODO: is this necessary?
 
    switch (archreg) {
-      case  0: return offsetof(VexGuestARMState,guest_R0);
-      //etc etc
+      case  0: return offsetof(VexGuestARMState, guest_R0);
+      case  1: return offsetof(VexGuestARMState, guest_R1);
+      case  2: return offsetof(VexGuestARMState, guest_R2);
+      case  3: return offsetof(VexGuestARMState, guest_R3);
+      case  4: return offsetof(VexGuestARMState, guest_R4);
+      case  5: return offsetof(VexGuestARMState, guest_R5);
+      case  6: return offsetof(VexGuestARMState, guest_R6);
+      case  7: return offsetof(VexGuestARMState, guest_R7);
+      case  8: return offsetof(VexGuestARMState, guest_R8);
+      case  9: return offsetof(VexGuestARMState, guest_R9);
+      case 10: return offsetof(VexGuestARMState,guest_R10);
+      case 11: return offsetof(VexGuestARMState,guest_R11);
+      case 12: return offsetof(VexGuestARMState,guest_R12);
+      case 13: return offsetof(VexGuestARMState,guest_R13);
+      case 14: return offsetof(VexGuestARMState,guest_R14);
       case 15: return offsetof(VexGuestARMState,guest_R15);
    }
 
-   /* NOTREACHED */
-   vpanic("integerGuestRegOffset(arm,le)");
+   vpanic("integerGuestRegOffset(arm,le)"); /*notreached*/
 }
 
 static IRExpr* getIReg ( UInt archreg )
@@ -455,7 +488,7 @@ static IRExpr* mkU ( IRType ty, UInt i )
    if (ty == Ity_I32) return mkU32(i);
    /* If this panics, it usually means you passed a size (1,2,4)
       value as the IRType, rather than a real IRType. */
-   vpanic("mkU(x86)");
+   vpanic("mkU(ARM)");
 }
 
 static IRExpr* loadLE ( IRType ty, IRExpr* data )
@@ -488,86 +521,109 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
    if (szSmall == 2 && szBig == 4) {
       return signd ? Iop_16Sto32 : Iop_16Uto32;
    }
-   vpanic("mkWidenOp(x86,guest)");
+   vpanic("mkWidenOp(ARM,guest)");
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*------------------------------------------------------------*/
 /*--- Helpers for %eflags.                                 ---*/
 /*------------------------------------------------------------*/
-#if 0
-// Ceri: you'll need to make simplified versions of these
-// for arm
+
 /* -------------- Evaluating the flags-thunk. -------------- */
 
 /* Build IR to calculate all the eflags from stored
-   CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression ::
-   Ity_I32. */
-static IRExpr* mk_x86g_calculate_eflags_all ( void )
+   CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.
+   Returns an expression :: Ity_I32. */
+static IRExpr* mk_armg_calculate_flags_all ( void )
 {
    IRExpr** args
-      = mkIRExprVec_4( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
+      = mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
                        IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
-                       IRExpr_Get(OFFB_CC_DEP2, Ity_I32),
-                       IRExpr_Get(OFFB_CC_NDEP, Ity_I32) );
+                       IRExpr_Get(OFFB_CC_DEP2, Ity_I32) );
    IRExpr* call
       = mkIRExprCCall(
            Ity_I32,
            0/*regparm*/, 
-           "x86g_calculate_eflags_all", &x86g_calculate_eflags_all,
+           "armg_calculate_flags_all", &armg_calculate_flags_all,
            args
         );
-   /* Exclude OP and NDEP from definedness checking.  We're only
+
+   /* Exclude OP from definedness checking.  We're only
       interested in DEP1 and DEP2. */
-   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<3);
+   call->Iex.CCall.cee->mcx_mask = 1;
    return call;
 }
 
+
+
 /* Build IR to calculate some particular condition from stored
-   CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression ::
-   Ity_Bit. */
-static IRExpr* mk_x86g_calculate_condition ( X86Condcode cond )
+   CC_OP/CC_DEP1/CC_DEP2.  Returns an expression
+*/
+static IRExpr* mk_armg_calculate_condition ( ARMCondcode cond )
 {
    IRExpr** args
-      = mkIRExprVec_5( mkU32(cond),
+      = mkIRExprVec_4( mkU32(cond),
                        IRExpr_Get(OFFB_CC_OP,  Ity_I32),
                        IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
-                       IRExpr_Get(OFFB_CC_DEP2, Ity_I32),
-                       IRExpr_Get(OFFB_CC_NDEP, Ity_I32) );
+                       IRExpr_Get(OFFB_CC_DEP2, Ity_I32) );
    IRExpr* call
       = mkIRExprCCall(
            Ity_I32,
            0/*regparm*/, 
-           "x86g_calculate_condition", &x86g_calculate_condition,
+           "armg_calculate_condition", &armg_calculate_condition,
            args
         );
-   /* Exclude the requested condition, OP and NDEP from definedness
+
+   /* Exclude the requested condition and OP from definedness
       checking.  We're only interested in DEP1 and DEP2. */
-   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<1) | (1<<4);
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<1);
    return unop(Iop_32to1, call);
 }
 
+
+
+#if 0
+/* CAB: This needed?
+   j removed armg_calculate_eflags_c() from ghelpers.c ?
+*/
 /* Build IR to calculate just the carry flag from stored
-   CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression :: Ity_I32. */
-static IRExpr* mk_x86g_calculate_eflags_c ( void )
+   CC_OP/CC_DEP1/CC_DEP2.  Returns an expression :: Ity_I32. */
+static IRExpr* mk_armg_calculate_eflags_c ( void )
 {
    IRExpr** args
-      = mkIRExprVec_4( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
+      = mkIRExprVec_3( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
                        IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
-                       IRExpr_Get(OFFB_CC_DEP2, Ity_I32),
-                       IRExpr_Get(OFFB_CC_NDEP, Ity_I32) );
+                       IRExpr_Get(OFFB_CC_DEP2, Ity_I32) );
    IRExpr* call
       = mkIRExprCCall(
            Ity_I32,
            0/*regparm*/, 
-           "x86g_calculate_eflags_c", &x86g_calculate_eflags_c,
+           "armg_calculate_eflags_c", &armg_calculate_eflags_c,
            args
         );
-   /* Exclude OP and NDEP from definedness checking.  We're only
+   /* Exclude OP from definedness checking.  We're only
       interested in DEP1 and DEP2. */
-   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<3);
+   call->Iex.CCall.cee->mcx_mask = 1;
    return call;
 }
+#endif
+
+
+
+
 
 
 /* -------------- Building the flags-thunk. -------------- */
@@ -625,7 +681,7 @@ static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
    vex_printf(", ");
    ppIRType(dst_ty);
    vex_printf("\n");
-   vpanic("narrowTo(x86)");
+   vpanic("narrowTo(ARM)");
 }
 
 
@@ -633,19 +689,10 @@ static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
    auto-sized up to the real op. */
 
 static 
-void setFlags_DEP1_DEP2 ( IROp op8, IRTemp dep1, IRTemp dep2, IRType ty )
+void setFlags_DEP1_DEP2 ( IROp op, IRTemp dep1, IRTemp dep2, IRType ty )
 {
-   Int ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
 
-   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-
-   switch (op8) {
-      case Iop_Add8: ccOp += X86G_CC_OP_ADDB;   break;
-      case Iop_Sub8: ccOp += X86G_CC_OP_SUBB;   break;
-      default:       ppIROp(op8);
-                     vpanic("setFlags_DEP1_DEP2(x86)");
-   }
-   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(op)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(dep2))) );
 }
@@ -654,20 +701,9 @@ void setFlags_DEP1_DEP2 ( IROp op8, IRTemp dep1, IRTemp dep2, IRType ty )
 /* Set the OP and DEP1 fields only, and write zero to DEP2. */
 
 static 
-void setFlags_DEP1 ( IROp op8, IRTemp dep1, IRType ty )
+void setFlags_DEP1 ( IROp op, IRTemp dep1, IRType ty )
 {
-   Int ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-
-   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-
-   switch (op8) {
-      case Iop_Or8:
-      case Iop_And8:
-      case Iop_Xor8: ccOp += X86G_CC_OP_LOGICB; break;
-      default:       ppIROp(op8);
-                     vpanic("setFlags_DEP1(x86)");
-   }
-   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(op)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(dep1))) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)) );
 }
@@ -677,32 +713,19 @@ void setFlags_DEP1 ( IROp op8, IRTemp dep1, IRType ty )
    result.  Except if the shift amount is zero, the thunk is left
    unchanged. */
 
-static void setFlags_DEP1_DEP2_shift ( IROp    op32,
+static void setFlags_DEP1_DEP2_shift ( IROp    op,
                                        IRTemp  res,
                                        IRTemp  resUS,
                                        IRType  ty,
                                        IRTemp  guard )
 {
-   Int ccOp = ty==Ity_I8 ? 2 : (ty==Ity_I16 ? 1 : 0);
-
-   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-   vassert(guard);
-
-   /* Both kinds of right shifts are handled by the same thunk
-      operation. */
-   switch (op32) {
-      case Iop_Shr32:
-      case Iop_Sar32: ccOp = X86G_CC_OP_SHRL - ccOp; break;
-      case Iop_Shl32: ccOp = X86G_CC_OP_SHLL - ccOp; break;
-      default:        ppIROp(op32);
-                      vpanic("setFlags_DEP1_DEP2_shift(x86)");
-   }
+    vassert(guard);
 
    /* DEP1 contains the result, DEP2 contains the undershifted value. */
    stmt( IRStmt_Put( OFFB_CC_OP,
                      IRExpr_Mux0X( mkexpr(guard),
                                    IRExpr_Get(OFFB_CC_OP,Ity_I32),
-                                   mkU32(ccOp))) );
+                                   mkU32(op))) );
    stmt( IRStmt_Put( OFFB_CC_DEP1,
                      IRExpr_Mux0X( mkexpr(guard),
                                    IRExpr_Get(OFFB_CC_DEP1,Ity_I32),
@@ -714,88 +737,85 @@ static void setFlags_DEP1_DEP2_shift ( IROp    op32,
 }
 
 
+
+
 /* For the inc/dec case, we store in DEP1 the result value and in NDEP
    the former value of the carry flag, which unfortunately we have to
    compute. */
-
+#if 0
 static void setFlags_INC_DEC ( Bool inc, IRTemp res, IRType ty )
 {
-   Int ccOp = inc ? X86G_CC_OP_INCB : X86G_CC_OP_DECB;
+   Int ccOp = inc ? ARMG_CC_OP_INC : ARMG_CC_OP_DEC;
+//   Int ccOp = inc ? X86G_CC_OP_INCB : X86G_CC_OP_DECB;
    
    ccOp += ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
 
    /* This has to come first, because calculating the C flag 
       may require reading all four thunk fields. */
-   stmt( IRStmt_Put( OFFB_CC_NDEP, mk_x86g_calculate_eflags_c()) );
+//   stmt( IRStmt_Put( OFFB_CC_NDEP, mk_armg_calculate_eflags_c()) );
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
    stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(res)) );
    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)) );
 }
+#endif
+
 
 
 /* Multiplies are pretty much like add and sub: DEP1 and DEP2 hold the
    two arguments. */
 
 static
-void setFlags_MUL ( IRType ty, IRTemp arg1, IRTemp arg2, UInt base_op )
+void setFlags_MUL ( IRTemp arg1, IRTemp arg2, UInt op )
 {
-   switch (ty) {
-      case Ity_I8:
-         stmt( IRStmt_Put( OFFB_CC_OP, mkU32(base_op+0) ) );
-         break;
-      case Ity_I16:
-         stmt( IRStmt_Put( OFFB_CC_OP, mkU32(base_op+1) ) );
-         break;
-      case Ity_I32:
-         stmt( IRStmt_Put( OFFB_CC_OP, mkU32(base_op+2) ) );
-         break;
-      default:
-         vpanic("setFlags_MUL(x86)");
-   }
-   stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(arg1)) ));
-   stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(arg2)) ));
+    stmt( IRStmt_Put( OFFB_CC_OP, mkU32(op) ) );
+    stmt( IRStmt_Put( OFFB_CC_DEP1, widenUto32(mkexpr(arg1)) ));
+    stmt( IRStmt_Put( OFFB_CC_DEP2, widenUto32(mkexpr(arg2)) ));
 }
-#endif
+
+
+
+
+
+
+
+
 
 
 /* -------------- Condition codes. -------------- */
 
-/* Condition codes, using the Intel encoding.  */
+/* Condition codes, using the ARM encoding.  */
 
+// CAB: Just used for debugging printouts ?
 static Char* name_ARMCondcode ( ARMCondcode cond )
 {
    switch (cond) {
-// ToDo: rehash for ARM
-#if 0
-      case X86CondO:      return "o";
-      case X86CondNO:     return "no";
-      case X86CondB:      return "b";
-      case X86CondNB:     return "nb";
-      case X86CondZ:      return "z";
-      case X86CondNZ:     return "nz";
-      case X86CondBE:     return "be";
-      case X86CondNBE:    return "nbe";
-      case X86CondS:      return "s";
-      case X86CondNS:     return "ns";
-      case X86CondP:      return "p";
-      case X86CondNP:     return "np";
-      case X86CondL:      return "l";
-      case X86CondNL:     return "nl";
-      case X86CondLE:     return "le";
-      case X86CondNLE:    return "nle";
-#endif
-      default: vpanic("name_ARMCondcode");
+       case ARMCondEQ:    return "eq";
+       case ARMCondNE:    return "ne";
+       case ARMCondHS:    return "hs";
+       case ARMCondLO:    return "no";
+       case ARMCondMI:    return "mi";
+       case ARMCondPL:    return "pl";
+       case ARMCondVS:    return "vs";
+       case ARMCondVC:    return "vc";
+       case ARMCondHI:    return "hi";
+       case ARMCondLS:    return "ls";
+       case ARMCondGE:    return "ge";
+       case ARMCondLT:    return "lt";
+       case ARMCondGT:    return "gt";
+       case ARMCondLE:    return "le";
+       case ARMCondAL:    return "al";
+       case ARMCondNV:    return "nv";
+       default: vpanic("name_ARMCondcode");
    }
 }
 
-#if 0
-// TODO: probably useful for ARM too
+
 static 
-X86Condcode positiveIse_X86Condcode ( X86Condcode  cond,
+ARMCondcode positiveIse_ARMCondcode ( ARMCondcode  cond,
                                       Bool*     needInvert )
 {
-   vassert(cond >= X86CondO && cond <= X86CondNLE);
+   vassert(cond >= ARMCondEQ && cond <= ARMCondNV);
    if (cond & 1) {
       *needInvert = True;
       return cond-1;
@@ -804,7 +824,154 @@ X86Condcode positiveIse_X86Condcode ( X86Condcode  cond,
       return cond;
    }
 }
-#endif
+
+
+
+
+
+
+
+
+static
+IRTemp dis_shift_lsl ( UInt theInstr )
+{
+    IRTemp tmp = newTemp(Ity_I32);
+    UChar set_flags = (theInstr >> 20) & 1;
+    UChar is_imm_shft = (theInstr >> 4) & 1;
+    IRTemp Rm = newTemp(Ity_I32);
+    IRTemp Rs = newTemp(Ity_I32);
+    UInt Rs_0;
+    UInt imm;
+
+    assign(Rm, getIReg(theInstr & 0xF));
+    
+    if (is_imm_shft) {  // Immediate shift
+	imm = (theInstr >> 7) & 0x1F;
+	if ( imm == 0 ) {  // op = Rm, carry = C Flag;
+	    return Rm;
+	}
+	else {             // op = Rm << imm, carry = Rm[32 - imm];
+	    return Rm;
+	}
+    }
+    else {  // Register Shift
+	assign(Rs, getIReg((theInstr >> 8) & 0xF));
+	Rs_0 = Rs & 0xFF;   // Rs[7:0]
+	if ( Rs_0 == 0 ) {        // op = Rm, carry = C Flag;
+	    return Rm;
+	}
+	else if ( Rs_0 < 32 ) {   // op = Rm LSL Rs, carry = Rm[32 - Rs]
+
+	    // CAB: How to express LSL?
+
+	    return 0;
+	}
+	else if ( Rs_0 == 32 ) {  // op = 0, carry = Rm[0];
+	    return 0;
+	}
+	else {                    // op = 0, carry = 0;
+	    return 0;
+	}
+    }
+
+//	    setFlags_DEP1_DEP2( op, dep1, dep2 )
+//   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(thunkOp) ) );
+//    putIReg(r0, getIReg(r1));
+//    DIP("mov %i,%i\n", r0, r1);
+
+    
+    return 0;  /*notreached*/
+}
+
+
+
+/* Returns shifted result to a temp */
+static
+IRTemp dis_shift ( UInt theInstr )
+{
+    UChar shift_op = (theInstr >> 5) & 0xF;  // second byte
+
+    // CAB TODO: Check what can do with R15... strict limits apply (ARM A5-9)
+   
+    // We shouldn't have any 'op' with bits 4=1 and 7=1 : 1xx1
+    switch (shift_op) {
+    case 0x0:
+    case 0x8:
+    case 0x1: return dis_shift_lsl(theInstr);
+/*
+    case 0x2:
+    case 0xA:
+    case 0x3: return dis_shift_lsr(theInstr);
+
+    case 0x4:
+    case 0xC:
+    case 0x5: return dis_shift_asr(theInstr);
+
+    case 0x6:
+    case 0xE:
+    case 0x7: return dis_shift_ror(theInstr);  // Also RRX
+*/
+    default:
+	// Error: Any other value shouldn't be here.
+	vpanic("dis_shift(ARM)");
+	return 0; 
+    }
+}
+
+
+
+
+
+/* -------------- Helper for MOV. -------------- */
+/* MOV R2, R0            ; R2 = R0
+   MOV R2, R0, LSL #2    ; shift R0 left by 2, write to R2  (R2 = R0 x 4)
+   MOV R2, R4, ROR R3    ; R2 = R4 rotated right by val of R3
+
+   <opcode>{<cond>}{S}  <Rd>, <shifter_op>
+   where <shifter_op> => #imm | <Rm> | <Rm>, LSL <Rs> | ... See ARM ARM A5-2
+   (<Rn> not used)
+*/
+/*
+  if cond_passed(cond)
+    Rd = shifter_op
+    if S bit set
+      if Rd is R15
+        => Err.  This is undefined when executed in User/System mode.
+      else
+        N flag = Rd[31]                   (post shift if shift)
+        Z flag = if Rd ==0 the 1 else 0   (post shift if shift)
+        C flag = shifter_carry_out
+	V flag = unaffected.
+
+  => Flags dep on Rd, Rm, Rs!
+  ... mind you, that's more than one IR instruction... lsl + move... ?
+*/
+static
+void dis_mov_reg ( UInt theInstr )
+{
+    UChar S = (theInstr >> 20) & 1;
+//    UChar Rn = (theInstr >> 16) & 0xF;  // Not used
+    UChar Rd = (theInstr >> 12) & 0xF;
+    UChar Rm = theInstr & 0xF;
+    UChar Rs;
+    UInt shift_imm;
+    UChar reg_shft = (theInstr >> 4) & 1;
+    IRTemp t1;
+
+//    vex_printf("dis_move_reg\n");
+    
+    putIReg(Rd, mkexpr(dis_shift( theInstr )));
+
+    return;
+}
+
+
+
+
+
+
+
+
 
 
 /*------------------------------------------------------------*/
@@ -828,6 +995,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    IRTemp    addr, t1, t2;
    Int       alen;
    UChar     opc, modrm, abyte;
+   ARMCondcode cond;
    UInt      d32;
    UChar     dis_buf[50];
    Int       am_sz, d_sz;
@@ -849,55 +1017,222 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    theInstr = *(UInt*)(&guest_code[delta]);
 
+   vex_printf("START: 0x%x\n", theInstr );
+
    DIP("\t0x%x:  ", guest_pc_bbstart+delta);
 
-#if 0
+
+
    // TODO: fix the client-request stuff, else nothing will work
+
    /* Spot the client-request magic sequence. */
+   // Essentially a v. unlikely sequence of noops that we can catch
    {
       UChar* code = (UChar*)(guest_code + delta);
-      /* Spot this:
-         C1C01D                roll $29, %eax
-         C1C003                roll $3,  %eax
-         C1C81B                rorl $27, %eax
-         C1C805                rorl $5,  %eax
-         C1C00D                roll $13, %eax
-         C1C013                roll $19, %eax      
+      /* Spot this:                                // CAB: easy way to rotate left?
+         E1A00EE0                   mov  r0, r0, ror #29
+	 E1A001E0                   mov  r0, r0, ror #3
+	 E1A00DE0                   mov  r0, r0, ror #27
+	 E1A002E0                   mov  r0, r0, ror #5
+	 E1A006E0                   mov  r0, r0, ror #13
+	 E1A009E0                   mov  r0, r0, ror #19
       */
-      if (code[ 0] == 0xC1 && code[ 1] == 0xC0 && code[ 2] == 0x1D &&
-          code[ 3] == 0xC1 && code[ 4] == 0xC0 && code[ 5] == 0x03 &&
-          code[ 6] == 0xC1 && code[ 7] == 0xC8 && code[ 8] == 0x1B &&
-          code[ 9] == 0xC1 && code[10] == 0xC8 && code[11] == 0x05 &&
-          code[12] == 0xC1 && code[13] == 0xC0 && code[14] == 0x0D &&
-          code[15] == 0xC1 && code[16] == 0xC0 && code[17] == 0x13
+      if (code[ 0] == 0xE1 && code[ 1] == 0xA0 && code[ 2] == 0x0E && code[ 3] == 0xE0 &&
+          code[ 4] == 0xE1 && code[ 5] == 0xA0 && code[ 6] == 0x01 && code[ 7] == 0xE0 &&
+          code[ 8] == 0xE1 && code[ 9] == 0xA0 && code[10] == 0x0D && code[11] == 0xE0 &&
+          code[12] == 0xE1 && code[13] == 0xA0 && code[14] == 0x02 && code[15] == 0xE0 &&
+          code[16] == 0xE1 && code[17] == 0xA0 && code[18] == 0x06 && code[19] == 0xE0 &&
+          code[20] == 0xE1 && code[21] == 0xA0 && code[22] == 0x09 && code[23] == 0xE0
          ) {
-         DIP("%%edx = client_request ( %%eax )\n");         
-         delta += 18;
-         jmp_lit(Ijk_ClientReq, guest_eip_bbstart+delta);
+         DIP("?CAB? = client_request ( ?CAB? )\n");
+
+         delta += 24;  // CAB: this right?  we're adding 24 UInts, rather than UChars...
+
+	 // CAB: This right?
+//         jmp_lit(Ijk_ClientReq, guest_pc_bbstart+delta);
+	 irbb->next     = mkU32(guest_pc_bbstart+delta);
+	 irbb->jumpkind = Ijk_ClientReq;
+
          whatNext = Dis_StopHere;
          goto decode_success;
       }
    }
-#endif
+
+
+
+
+   /*
+     Deal with condition first
+    */
+   cond = (theInstr >> 28) & 0xF;    /* opcode: bits 31:28 */
+   switch (cond) {
+   case 0xF:   // => Illegal instruction prior to v5 (see ARM ARM A3-5)
+       vex_printf("disInstr(arm): illegal condition\n");
+       goto decode_failure;
+
+   case 0xE:   // => Unconditional: go translate the instruction
+       break;
+
+   default:    // => Valid condition: translate the condition test first
+       stmt( IRStmt_Exit( mk_armg_calculate_condition(cond),
+			  Ijk_Boring,
+			  IRConst_U32(guest_pc_bbstart+delta+4) ) );
+//       irbb->next     = mkU32(guest_pc_bbstart+delta+4);
+//       irbb->jumpkind = Ijk_Boring;
+   }
+   
+
+
+
+
+   /*
+     Deal with multiplies, load/store instructions
+     ARM ARM A3-3
+     ...
+    */
+
+   
+   /*
+     Deal with 'misc instructions'
+     ARM ARM A3-4
+     ...
+    */
+
+
+
+
 
    /* As per ARM ARM v2 page A3-2, primary opcode appears to be in
       bits 27:21 of the instruction (roughly).  Hence ... */
+   opc = (theInstr >> 21) & 0x7F;    /* opcode: bits 27:21 */
 
-   switch ((theInstr >> 20) & 0x7F) {
+   switch (opc) {
 
-   /* ------------------------ ??? ------------------------ */
-  
+       /* DPI: xxxx 000a aaaS nnnn dddd ...
+               cond [opcode ] op1  dest op2
+	  24:21 => opcode
+	  20    => (S)et flag (sets NZCV flags of CPSR: opcode dependant)
+	  19:16 => Rn
+	  15:12 => Rd
+       */
+       /* DPI, Register: operand2 => cccc cttt mmmm
+	  11:7  => Rc (11:6, 7=0), or #c
+	  6:4   => shift instr
+	  3:0   => Rm
+       */
+       /* DPI, Immediate: operand2 => rrrr bbbb bbbb
+	  19:16 => Rn
+	  15:12 => Rd
+	  11:8  => Rr
+	  7:0   => Rb
+       */
+
+   case 0x00:            // AND   Boolean And           Rd = Rn AND Op2
+       goto decode_failure;
+   case 0x01:            // EOR   Boolean Eor           Rd = Rn EOR Op2
+       goto decode_failure;
+
+   case 0x02:            // SUB   Subtract              Rd = Rn  -  Op2
+       /*      e24cb004        sub     fp, ip, #4      ; 0x4
+	       1110 0010 0100 1100 1011 0000 0000 0100
+	*/
+       vex_printf("OPCODE: SUB\n");
+       goto decode_failure;
+
+   case 0x03:            // RSB   Reverse Subtract      Rd = Op2 -  Rn
+       goto decode_failure;
+   case 0x04:            // ADD   Addition              Rd = Rn  +  Op2
+       goto decode_failure;
+   case 0x05:            // ADC   Add with Carry        Rd = Rn  +  Op2 + C
+       goto decode_failure;
+   case 0x06:            // SBC   Subtract with carry   Rd = Rn  -  Op2 - (1-C)
+       goto decode_failure;
+   case 0x07:            // RSC   Reverse sub w/carry   Rd = Op2 -  Rn  - (1-C)
+       goto decode_failure;
+   case 0x08:            // TST   Test bit              Rn AND Op2
+       goto decode_failure;
+   case 0x09:            // TEQ   Test equality         Rn EOR Op2
+       goto decode_failure;
+   case 0x0A:            // CMP   Compare               Rn  -  Op2
+       goto decode_failure;
+   case 0x0B:            // CMN   Compare Negative      Rn  + Op2
+       goto decode_failure;
+   case 0x0C:            // ORR   Boolean Or            Rd = Rn OR  Op2
+       goto decode_failure;
+
+
+
+   case 0x0D:            // MOV (reg)
+       vex_printf("OPCODE: MOV(reg)\n");
+       dis_mov_reg(theInstr);
+       delta++;
+       break;
+
+
+   case 0x0E:            // BIC   Bit clear             Rd = Rn AND NOT Op2
+       goto decode_failure;
+   case 0x0F:            // MVN   Move Not              Rd =    NOT Op2
+       goto decode_failure;
+
+
+
+   case 0x1D:            // MOV (imm)
+       /*      e3a00014        mov     r0, #20 ; 0x14
+	       1110 0011 1010 0000 0000 0000 0001 0100
+	*/
+       vex_printf("OPCODE: MOV(imm)\n");
+       goto decode_failure;
+
+
+
+
+
+
+
+   case 0x49:     // STMDB: STM(1), decrement before
+	/* e92dd810        stmdb   sp!, {r4, fp, ip, lr, pc}
+	   1110 1001 0010 1101 1101 1000 0001 0000
+	   1110 100P U0W0 Rn   reg list
+	   P=1 => Rn included in range of mem
+	   U=0 => Rn lies at top of mem range
+	   W=1 => Base reg updated after transfer (U=1 => incremented 4x num regs)
+	   opc => 0100 1001 => 49
+	 */
+       vex_printf("OPCODE: STM-DB\n");
+       goto decode_failure;
+
+
+       
+   case 0x58:
+   case 0x59:
+   case 0x5A:
+   case 0x5B:
+   case 0x5D:
+   case 0x5E:
+   case 0x5F:
+       /* BL
+	  ebfffffe        bl      0 <newHHW>
+	  1110 1011 1111 1111 1111 1111 1111 1110
+	  cond 101L signed_immediate_24
+	  L=1 => return address stored in link register (R14)
+	  opcode => 101 1xxx => 0x58 to 0x5F
+       */
+       vex_printf("OPCODE: BL\n");
+       goto decode_failure;
+       
+
    default:
    decode_failure:
    /* All decode failures end up here. */
    vex_printf("disInstr(arm): unhandled instruction: "
-              "0x%x\n", theInstr );
+              "0x%x (opcode: 0x%x)\n", theInstr, opc );
    vpanic("armToIR: unimplemented insn");
 
    } /* switch (opc) for the main (primary) opcode switch. */
 
   decode_success:
    /* All decode successes end up here. */
+   vex_printf("disInstr(arm): success");
    DIP("\n");
 
    *size = 4;

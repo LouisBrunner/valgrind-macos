@@ -154,7 +154,11 @@ enum {
     ARMG_CC_OP_COPY,    /* DEP1 = current flags, DEP2 = 0 */
                         /* just copy DEP1 to output */
 
-    ARMG_CC_OP_ADD      /* 1   DEP1 = argL, DEP2 = argR */
+    ARMG_CC_OP_MOV,
+
+
+
+    ARMG_CC_OP_NUMBER
 };
 
 /* requires further study */
@@ -165,29 +169,33 @@ enum {
 
 typedef
    enum {
-      ARMCondEQ     = 0,  /* equal                               */
-      ARMCondNE     = 1,  /* not equal                           */
+      ARMCondEQ     = 0,  /* equal                               : Z=1 */
+      ARMCondNE     = 1,  /* not equal                           : Z=0 */
 
-      ARMCondHS     = 2,  /* >=u (higher or same)                */
-      ARMCondLO     = 3,  /* <u  (lower)                         */
+      ARMCondHS     = 2,  /* >=u (higher or same)                : C=1 */
+      ARMCondLO     = 3,  /* <u  (lower)                         : C=0 */
 
-      ARMCondMI     = 4,  /* minus (negative)                    */
-      ARMCondPL     = 5,  /* plus (zero or +ve)                  */
+      ARMCondMI     = 4,  /* minus (negative)                    : N=1 */
+      ARMCondPL     = 5,  /* plus (zero or +ve)                  : N=0 */
 
-      ARMCondVS     = 6,  /* overflow                            */
-      ARMCondVC     = 7,  /* no overflow                         */
+      ARMCondVS     = 6,  /* overflow                            : V=1 */
+      ARMCondVC     = 7,  /* no overflow                         : V=0 */
 
-      ARMCondHI     = 8,  /* >u   (higher)                       */
-      ARMCondLS     = 9,  /* <=u  (lower or same)                */
+      ARMCondHI     = 8,  /* >u   (higher)                       : C=1 && Z=0 */
+      ARMCondLS     = 9,  /* <=u  (lower or same)                : C=0 || Z=1 */
 
-      ARMCondGE     = 10, /* >=s (signed greater or equal)       */
-      ARMCondLT     = 11, /* <s  (signed less than)              */
+      ARMCondGE     = 10, /* >=s (signed greater or equal)       : N=V */
+      ARMCondLT     = 11, /* <s  (signed less than)              : N!=V */
 
-      ARMCondGT     = 12, /* >s  (signed greater)                */
-      ARMCondLE     = 13, /* <=s (signed less or equal)          */
+      ARMCondGT     = 12, /* >s  (signed greater)                : Z=0 && N=V */
+      ARMCondLE     = 13, /* <=s (signed less or equal)          : Z=1 || N!=V */
 
-      ARMCondAL     = 14, /* always (unconditional)              */
-      ARMCondNV     = 15  /* never (basically undefined meaning) */
+      ARMCondAL     = 14, /* always (unconditional)              : */
+      ARMCondNV     = 15  /* never (basically undefined meaning) : */
+                          /* NB: ARM have deprecated the use of the NV condition code
+                             - you are now supposed to use MOV R0,R0 as a noop
+                               rather than MOVNV R0,R0 as was previously recommended.
+                             Future processors may have the NV condition code reused to do other things.  */
    }
    ARMCondcode;
 

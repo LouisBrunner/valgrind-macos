@@ -55,38 +55,142 @@
 */
 
 
+#if 0
+#define PREAMBLE(__data_bits)					\
+   /* const */ UInt DATA_MASK 					\
+      = __data_bits==8 ? 0xFF 					\
+                       : (__data_bits==16 ? 0xFFFF 		\
+                                          : 0xFFFFFFFF); 	\
+   /* const */ UInt SIGN_MASK = 1 << (__data_bits - 1);		\
+   /* const */ UInt CC_DEP1 = cc_dep1_formal;			\
+   /* const */ UInt CC_DEP2 = cc_dep2_formal;			\
+   /* const */ UInt CC_NDEP = cc_ndep_formal;			\
+   /* Four bogus assignments, which hopefully gcc can     */	\
+   /* optimise away, and which stop it complaining about  */	\
+   /* unused variables.                                   */	\
+   SIGN_MASK = SIGN_MASK;					\
+   DATA_MASK = DATA_MASK;					\
+   CC_DEP2 = CC_DEP2;						\
+   CC_NDEP = CC_NDEP;
+#endif
+
+/*-------------------------------------------------------------*/
+
+#define ACTIONS_MOV()                           		\
+{								\
+   { Int nf, zf, cf;            				\
+     Int argL, argR, res;					\
+   }								\
+}
+/*
+  Need to calc the shift op...
+  
+*/
+
+/*
+#define ACTIONS_ADD()                           		\
+{								\
+   PREAMBLE(32);						\
+   { Int cf, pf, af, zf, sf, of;				\
+     Int argL, argR, res;					\
+     argL = CC_DEP1;						\
+     argR = CC_DEP2;						\
+     res  = argL + argR;					\
+     cf = (UInt)res < (UInt)argL;       			\
+     pf = parity_table[(UChar)res];				\
+     af = (res ^ argL ^ argR) & 0x10;				\
+     zf = ((UInt)res == 0) << 6;				\
+     sf = lshift(res, 8 - DATA_BITS) & 0x80;			\
+     of = lshift((argL ^ argR ^ -1) & (argL ^ res), 		\
+                 12 - DATA_BITS) & X86G_CC_MASK_O;		\
+     return cf | pf | af | zf | sf | of;			\
+*/
+
+
+
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate all the 4 flags from the supplied thunk parameters. */
-UInt calculate_eflags_all ( UInt cc_op, 
-                            UInt cc_dep1_formal, 
-                            UInt cc_dep2_formal )
+UInt armg_calculate_flags_all ( UInt cc_op, 
+				 UInt cc_dep1_formal, 
+				 UInt cc_dep2_formal )
 {
    switch (cc_op) {
+
+       /* CAB: ... all amd ops... */
+
+       case ARMG_CC_OP_MOV:  ACTIONS_MOV();
+
+
       default:
          /* shouldn't really make these calls from generated code */
-         vex_printf("calculate_eflags_all(ARM)( %d, 0x%x, 0x%x )\n",
+         vex_printf("armg_calculate_flags_all(ARM)( %d, 0x%x, 0x%x )\n",
                     cc_op, cc_dep1_formal, cc_dep2_formal );
-         vpanic("calculate_eflags_all(ARM)");
+         vpanic("armg_calculate_flags_all(ARM)");
    }
 }
 
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* returns 1 or 0 */
-/*static*/ UInt calculate_condition ( UInt/*Condcode*/ cond, 
-                                      UInt cc_op, 
-                                      UInt cc_dep1, 
-                                      UInt cc_dep2 )
+/*static*/
+UInt armg_calculate_condition ( UInt/*ARMCondcode*/ cond, 
+				UInt cc_op, 
+				UInt cc_dep1, 
+				UInt cc_dep2 )
 {
-  //UInt nzvc = calculate_eflags_all(cc_op, cc_dep1, cc_dep2);
+   UInt nf,zf,vf,cf;
+   UInt inv = cond & 1;
+
+   UInt nzvc = armg_calculate_flags_all(cc_op, cc_dep1, cc_dep2);
 
    switch (cond) {
-      default:
-         /* shouldn't really make these calls from generated code */
-         vex_printf("calculate_condition(ARM)( %d, %d, 0x%x, 0x%x )\n",
-                    cond, cc_op, cc_dep1, cc_dep2 );
-         vpanic("calculate_condition(ARM)");
+   case ARMCondEQ:    // Z=1         => z
+   case ARMCondNE:    // Z=0
+       zf = nzvc >> ARMG_CC_SHIFT_Z;
+       return 1 & (inv ^ zf);
+
+   case ARMCondHS:    // C=1         => c
+   case ARMCondLO:    // C=0
+       cf = nzvc >> ARMG_CC_SHIFT_C;
+       return 1 & (inv ^ cf);
+
+   case ARMCondMI:    // N=1         => n
+   case ARMCondPL:    // N=0
+       nf = nzvc >> ARMG_CC_SHIFT_N;
+       return 1 & (inv ^ nf);
+
+   case ARMCondVS:    // V=1         => v
+   case ARMCondVC:    // V=0
+       vf = nzvc >> ARMG_CC_SHIFT_V;
+       return 1 & (inv ^ vf);
+
+   case ARMCondHI:    // C=1 && Z=0   => c & ~z
+   case ARMCondLS:    // C=0 || Z=1
+       cf = nzvc >> ARMG_CC_SHIFT_C;
+       zf = nzvc >> ARMG_CC_SHIFT_Z;
+       return 1 & (inv ^ (cf & ~zf));
+
+   case ARMCondGE:    // N=V          => ~(n^v)
+   case ARMCondLT:    // N!=V
+       nf = nzvc >> ARMG_CC_SHIFT_N;
+       vf = nzvc >> ARMG_CC_SHIFT_V;
+       return 1 & (inv ^ ~(nf ^ vf));
+
+   case ARMCondGT:    // Z=0 && N=V   => (~z & ~(n^v)  =>  ~(z | (n^v)
+   case ARMCondLE:    // Z=1 || N!=V
+       nf = nzvc >> ARMG_CC_SHIFT_N;
+       vf = nzvc >> ARMG_CC_SHIFT_V;
+       zf = nzvc >> ARMG_CC_SHIFT_Z;
+       return 1 & (inv ^ ~(zf | (nf ^ vf)));
+
+   case ARMCondAL:   // should never get here: Always => no flags to calc
+   case ARMCondNV:   // should never get here: Illegal instr
+   default:
+       /* shouldn't really make these calls from generated code */
+       vex_printf("armg_calculate_condition(ARM)( %d, %d, 0x%x, 0x%x )\n",
+		  cond, cc_op, cc_dep1, cc_dep2 );
+       vpanic("armg_calculate_condition(ARM)");
    }
 }
 
@@ -94,14 +198,12 @@ UInt calculate_eflags_all ( UInt cc_op,
 /* Used by the optimiser to try specialisations.  Returns an
    equivalent expression, or NULL if none. */
 
-#if 0
 static Bool isU32 ( IRExpr* e, UInt n )
 {
    return e->tag == Iex_Const
           && e->Iex.Const.con->tag == Ico_U32
           && e->Iex.Const.con->Ico.U32 == n;
 }
-#endif
 IRExpr* guest_arm_spechelper ( Char* function_name,
                                IRExpr** args )
 {
@@ -114,49 +216,50 @@ IRExpr* guest_arm_spechelper ( Char* function_name,
 /*----------------------------------------------*/
 
 /* VISIBLE TO LIBVEX CLIENT */
+#if 0
 void LibVEX_GuestARM_put_flags ( UInt eflags_native,
                                  /*OUT*/VexGuestARMState* vex_state )
 {
    vassert(0); // FIXME
 #if 0
+   // CAB: what does this do?!
    vex_state->guest_DFLAG
       = (eflags_native & (1<<10)) ? 0xFFFFFFFF : 0x00000001;
    vex_state->guest_IDFLAG
       = (eflags_native & (1<<21)) ? 1 : 0;
+#endif
 
-   /* Mask out everything except O S Z A C P. */
+   /* Mask out everything except N Z V C. */
    eflags_native
-      &= (CC_MASK_C | CC_MASK_P | CC_MASK_A 
-          | CC_MASK_Z | CC_MASK_S | CC_MASK_O);
+      &= (ARMG_CC_MASK_N | ARMG_CC_MASK_Z | ARMG_CC_MASK_V | ARMG_CC_MASK_C);
 
-   vex_state->guest_CC_OP   = CC_OP_COPY;
+   vex_state->guest_CC_OP   = ARMG_CC_OP_COPY;
    vex_state->guest_CC_DEP1 = eflags_native;
    vex_state->guest_CC_DEP2 = 0;
-   vex_state->guest_CC_NDEP = 0; /* unnecessary paranoia */
-#endif
 }
-
+#endif
 
 /* VISIBLE TO LIBVEX CLIENT */
 UInt LibVEX_GuestARM_get_eflags ( /*IN*/VexGuestARMState* vex_state )
 {
    vassert(0); // FIXME
-#if 0
-   UInt eflags = calculate_eflags_all(
+
+   UInt eflags = armg_calculate_eflags_all(
                     vex_state->guest_CC_OP,
                     vex_state->guest_CC_DEP1,
-                    vex_state->guest_CC_DEP2,
-                    vex_state->guest_CC_NDEP
+                    vex_state->guest_CC_DEP2
                  );
+#if 0
+   // CAB: what does this do?!
    UInt dflag = vex_state->guest_DFLAG;
    vassert(dflag == 1 || dflag == 0xFFFFFFFF);
    if (dflag == 0xFFFFFFFF)
       eflags |= (1<<10);
    if (vex_state->guest_IDFLAG == 1)
       eflags |= (1<<21);
-					     
-   return eflags;
 #endif
+
+   return eflags;
 }
 
 /* VISIBLE TO LIBVEX CLIENT */
@@ -179,9 +282,15 @@ void LibVEX_GuestARM_initialise ( /*OUT*/VexGuestARMState* vex_state )
    vex_state->guest_R14 = 0;
    vex_state->guest_R15 = 0;
 
-   vex_state->guest_CC_OP   = ARMG_CC_OP_COPY;
+   // CAB: Want this?
+   //vex_state->guest_SYSCALLNO = 0;
+
+   vex_state->guest_CC_OP   = 0;// CAB: ? ARMG_CC_OP_COPY;
    vex_state->guest_CC_DEP1 = 0;
    vex_state->guest_CC_DEP2 = 0;
+
+   // CAB: Want this?   
+   //vex_state->guest_EMWARN = 0;
 
    vex_state->guest_SYSCALLNO = 0;
 }

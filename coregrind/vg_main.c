@@ -640,6 +640,16 @@ static void process_cmd_line_options ( void )
        if (sp[2] == VKI_AT_CLKTCK
            && sp[0] == VKI_AT_PAGESZ
            && sp[-2] == VKI_AT_HWCAP
+           && sp[-4] == VKI_AT_USER_AUX_SEGMENT
+           && sp[-4-1] == 0) {
+          if (0)
+             VG_(printf)("Looks like you've got a R-H Limbo 2.4.X "
+                         "kernel here.\n");
+          sp -= 4;
+       } else
+       if (sp[2] == VKI_AT_CLKTCK
+           && sp[0] == VKI_AT_PAGESZ
+           && sp[-2] == VKI_AT_HWCAP
            && sp[-2-20-1] == 0) {
           if (0)
              VG_(printf)("Looks like you've got a early 2.4.X kernel here.\n");

@@ -73,26 +73,13 @@ void VGA_(init_thread1state) ( Addr client_rip,
    VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestAMD64State));
 
    /* Put essential stuff into the new state. */
-   VG_(printf)("startup rsp 0x%llx  rip 0x%llx\n", rsp_at_startup, client_rip);
+   if (0) 
+      VG_(printf)("startup rsp 0x%llx  rip 0x%llx\n", 
+                  rsp_at_startup, client_rip);
    arch->vex.guest_RSP = rsp_at_startup;
    arch->vex.guest_RIP = client_rip;
-
-   // XXX: something will probably have to be done with the segment
-   // registers, once they're added to Vex-AMD64.
-#if 0
-   /* initialise %cs, %ds and %ss to point at the operating systems
-      default code, data and stack segments */
-   asm volatile("movw %%cs, %0"
-                :
-                : "m" (arch->vex.guest_CS));
-   asm volatile("movw %%ds, %0"
-                :
-                : "m" (arch->vex.guest_DS));
-   asm volatile("movw %%ss, %0"
-                :
-                : "m" (arch->vex.guest_SS));
-#endif
 }
+
 
 /*------------------------------------------------------------*/
 /*--- Thread stuff                                         ---*/

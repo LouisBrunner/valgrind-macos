@@ -12481,13 +12481,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          DIP("j%s-32 0x%llx\n", name_AMD64Condcode(opc - 0x80), d64);
          break;
 
-//..       /* =-=-=-=-=-=-=-=-=- RDTSC -=-=-=-=-=-=-=-=-=-=-= */
-//.. 
-//..       case 0x31: /* RDTSC */
-//..          if (0) vex_printf("vex x86->IR: kludged rdtsc\n");
-//..          putIReg(4, R_EAX, mkU32(0));
-//..          putIReg(4, R_EDX, mkU32(0));
-//.. 
+      /* =-=-=-=-=-=-=-=-=- RDTSC -=-=-=-=-=-=-=-=-=-=-= */
+
+      case 0x31: /* RDTSC */
+         if (1) vex_printf("vex amd64->IR: kludged rdtsc\n");
+         putIRegR( PFX_EMPTY, 4, R_RAX, mkU32(0));
+         putIRegR( PFX_EMPTY, 4, R_RDX, mkU32(0));
+
 //.. //--          t1 = newTemp(cb);
 //.. //--          t2 = newTemp(cb);
 //.. //--          t3 = newTemp(cb);
@@ -12508,9 +12508,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. //--          uInstr1(cb, POP,   4, TempReg, t3);
 //.. //--          uInstr2(cb, PUT,   4, TempReg, t3, ArchReg, R_EAX);
 //.. //--          uInstr0(cb, CALLM_E, 0);
-//..          DIP("rdtsc\n");
-//..          break;
-//.. 
+         DIP("rdtsc\n");
+         break;
+
 //..       /* =-=-=-=-=-=-=-=-=- PUSH/POP Sreg =-=-=-=-=-=-=-=-=-= */
 //.. 
 //..       case 0xA1: /* POP %FS */

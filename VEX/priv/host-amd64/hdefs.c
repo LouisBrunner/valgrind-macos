@@ -2149,7 +2149,8 @@ vassert(0);
                              i->Ain.Alu64R.dst);
             goto done;
          case Armi_Mem:
-vassert(0);
+            *p++ = rexAMode_M( i->Ain.Alu64R.dst,
+                               i->Ain.Alu64R.src->Armi.Mem.am);
             *p++ = opc;
             p = doAMode_M(p, i->Ain.Alu64R.dst,
                              i->Ain.Alu64R.src->Armi.Mem.am);

@@ -771,8 +771,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             aluOp = Aalu_SUB; break;
          case Iop_And8: case Iop_And16: case Iop_And32: case Iop_And64: 
             aluOp = Aalu_AND; break;
-//..          case Iop_Or8: case Iop_Or16: case Iop_Or32:  
-//..             aluOp = Xalu_OR; break;
+         case Iop_Or8: case Iop_Or16: case Iop_Or32: case Iop_Or64: 
+            aluOp = Aalu_OR; break;
 //..          case Iop_Xor8: case Iop_Xor16: case Iop_Xor32: 
 //..             aluOp = Xalu_XOR; break;
 //..          case Iop_Mul16: case Iop_Mul32: 
@@ -3231,11 +3231,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.STle.data);
       vassert(tya == Ity_I64);
       am = iselIntExpr_AMode(env, stmt->Ist.STle.addr);
-//..       if (tyd == Ity_I32) {
-//..          X86RI* ri = iselIntExpr_RI(env, stmt->Ist.STle.data);
-//..          addInstr(env, X86Instr_Alu32M(Xalu_MOV,ri,am));
-//..          return;
-//..       }
+      if (tyd == Ity_I64) {
+         AMD64RI* ri = iselIntExpr_RI(env, stmt->Ist.STle.data);
+         addInstr(env, AMD64Instr_Alu64M(Aalu_MOV,ri,am));
+         return;
+      }
       if (tyd == Ity_I8 || tyd == Ity_I16 || tyd == Ity_I32) {
          HReg r = iselIntExpr_R(env, stmt->Ist.STle.data);
          addInstr(env, AMD64Instr_Store(tyd==Ity_I8 ? 1 : (tyd==Ity_I16 ? 2 : 4),

@@ -457,6 +457,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 
 #  define COND0    (u->cond         == 0)
 #  define EXTRA4b0 (u->extra4b      == 0)
+#  define EXTRA4b12 (u->extra4b     == 1 || u->extra4b == 2)
 #  define SG_WD0   (u->signed_widen == 0)
 #  define JMPKIND0 (u->jmpkind      == 0)
 #  define CCALL0   (u->argc==0 && u->regparms_n==0 && u->has_ret_val==0 && \
@@ -465,8 +466,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
                     : True ))
 
 #  define XCONDi   (         EXTRA4b0 && SG_WD0 && JMPKIND0 && CCALL0)
-#  define Xextra4b (COND0             && SG_WD0 && JMPKIND0 && CCALL0)
-#  define XWIDEN   (COND0                       && JMPKIND0 && CCALL0)
+#  define XLEA2    (COND0             && SG_WD0 && JMPKIND0 && CCALL0)
+#  define XWIDEN   (COND0 && EXTRA4b12          && JMPKIND0 && CCALL0)
 #  define XJMP     (                     SG_WD0             && CCALL0)
 #  define XCCALL   (COND0 && EXTRA4b0 && SG_WD0 && JMPKIND0          )
 #  define XOTHER   (COND0 && EXTRA4b0 && SG_WD0 && JMPKIND0 && CCALL0)
@@ -531,7 +532,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case FPU_W:  return LIT0 && SZf  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
    case FPU:    return LIT0 && SZ0  && CCf &&  Ls1 &&  N2 &&  N3 && XOTHER;
    case LEA1:   return /*any*/ SZ4  && CC0 &&  TR1 && TR2 &&  N3 && XOTHER;
-   case LEA2:   return /*any*/ SZ4  && CC0 &&  TR1 && TR2 && TR3 && Xextra4b;
+   case LEA2:   return /*any*/ SZ4  && CC0 &&  TR1 && TR2 && TR3 && XLEA2;
    case INCEIP: return LIT0 && SZ0  && CC0 &&  Ls1 &&  N2 &&  N3 && XOTHER;
    case CCALL:  return LIT1 && SZ0  && CC0 && 
                        (u->argc > 0                   ? TR1 : N1) && 
@@ -591,6 +592,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef SZ42
 #  undef SZ48
 #  undef SZ416
+#  undef SZ816
 #  undef SZsse2
 #  undef SZsse3
 #  undef SZi
@@ -624,6 +626,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef Ls3
 #  undef TRL1
 #  undef TRAL1
+#  undef TRA1
+#  undef TRA2
 #  undef N1
 #  undef N2
 #  undef N3
@@ -631,10 +635,12 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef Se1
 #  undef COND0
 #  undef EXTRA4b0
+#  undef EXTRA4b12
 #  undef SG_WD0
 #  undef JMPKIND0
 #  undef CCALL0
-#  undef Xextra4b
+#  undef XCONDi
+#  undef XLEA2
 #  undef XWIDEN
 #  undef XJMP
 #  undef XCCALL

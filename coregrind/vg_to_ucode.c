@@ -1806,272 +1806,106 @@ Addr dis_Grp5 ( UCodeBlock* cb,
    return eip;
 }
 
-
-/* Template for REPE CMPS<sz>.  Assumes this insn is the last one in
-   the basic block, and so emits a jump to the next insn. */
-static 
-void codegen_REPE_CMPS ( UCodeBlock* cb, Int sz, Addr eip, Addr eip_next )
+static __inline__
+void dis_JMP_d32( UCodeBlock* cb, Addr d32 )
 {
-   Int tc,  /* ECX */
-       td,  /* EDI */   ts, /* ESI */
-       tdv, /* (EDI) */ tsv /* (ESI) */;
+   uInstr1(cb, JMP,   0, Literal, 0);
+   uLiteral(cb, d32);
+   uCond(cb, CondAlways);
+}
 
-   tdv = newTemp(cb);
-   tsv = newTemp(cb);
-   td = newTemp(cb);
-   ts = newTemp(cb);
-   tc = newTemp(cb);
+/*------------------------------------------------------------*/
+/*--- Disassembling string ops (including REP prefixes)    ---*/
+/*------------------------------------------------------------*/
 
-   uInstr2(cb, GET,   4, ArchReg, R_ECX, TempReg, tc);
-   uInstr2(cb, JIFZ,  4, TempReg, tc,    Literal, 0);
-   uLiteral(cb, eip_next);
-   uInstr1(cb, DEC,   4, TempReg, tc);
-   uInstr2(cb, PUT,   4, TempReg, tc,    ArchReg, R_ECX);
+/* Code shared by all the string ops */
+static
+void dis_string_op_increment(UCodeBlock* cb, Int sz, Int t_inc)
+{
+   uInstr0 (cb, CALLM_S, 0);
+   uInstr2 (cb, MOV,   4, Literal, 0, TempReg, t_inc);
+   uLiteral(cb, 0);
+   uInstr1 (cb, PUSH,  4, TempReg, t_inc);
+
+   uInstr1  (cb, CALLM, 0, Lit16, VGOFF_(helper_get_dirflag));
+   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
+
+   uInstr1(cb, POP,   4, TempReg, t_inc);
+   uInstr0(cb, CALLM_E, 0);
+
+   if (sz == 4 || sz == 2) {
+      uInstr2(cb, SHL, 4, Literal, 0, TempReg, t_inc);
+      uLiteral(cb, sz/2);
+   }
+}
+
+static
+void dis_string_op( UCodeBlock* cb, void (*dis_OP)( UCodeBlock*, Int, Int ), 
+                    Int sz, Char* name, UChar sorb )
+{
+   Int t_inc = newTemp(cb);
+   vg_assert(sorb == 0);
+   dis_string_op_increment(cb, sz, t_inc);
+   dis_OP( cb, sz, t_inc );
+   if (dis) VG_(printf)("%s%c\n", name, nameISize(sz));
+}
+
+
+static 
+void dis_MOVS ( UCodeBlock* cb, Int sz, Int t_inc )
+{
+   Int tv = newTemp(cb);   /* value being copied */
+   Int td = newTemp(cb);   /* EDI */
+   Int ts = newTemp(cb);   /* ESI */
 
    uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
    uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
 
-   uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tdv);
-   uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tsv);
+   uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tv);
+   uInstr2(cb, STORE,sz, TempReg, tv,    TempReg, td);
 
-   uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, tsv);
-   setFlagsFromUOpcode(cb, SUB);
-
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, tdv);
-   uLiteral(cb, 0);
-   uInstr1(cb, PUSH,  4, TempReg, tdv);
-
-   uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_get_dirflag));
-   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-
-   uInstr1(cb, POP,   4, TempReg, tdv);
-	uInstr0(cb, CALLM_E, 0);
-   if (sz == 4 || sz == 2) {
-      uInstr2(cb, SHL, 4, Literal, 0, TempReg, tdv);
-      uLiteral(cb, sz/2);
-   }
-   uInstr2(cb, ADD,   4, TempReg, tdv,    TempReg, td);
-   uInstr2(cb, ADD,   4, TempReg, tdv,    TempReg, ts);
-
-   uInstr2(cb, PUT,   4, TempReg, td,     ArchReg, R_EDI);
-   uInstr2(cb, PUT,   4, TempReg, ts,     ArchReg, R_ESI);
-
-   uInstr1(cb, JMP,   0, Literal, 0);
-   uLiteral(cb, eip);
-   uCond(cb, CondZ);
-   uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
-   uInstr1(cb, JMP,   0, Literal, 0);
-   uLiteral(cb, eip_next);
-   uCond(cb, CondAlways);
-}
-
-
-/* Template for REPNE SCAS<sz>.  Assumes this insn is the last one in
-   the basic block, and so emits a jump to the next insn. */
-static 
-void codegen_REPNE_SCAS ( UCodeBlock* cb, Int sz, Addr eip, Addr eip_next )
-{
-   Int ta /* EAX */, tc /* ECX */, td /* EDI */, tv;
-   ta = newTemp(cb);
-   tc = newTemp(cb);
-   tv = newTemp(cb);
-   td = newTemp(cb);
-
-   uInstr2(cb, GET,   4, ArchReg, R_ECX, TempReg, tc);
-   uInstr2(cb, JIFZ,  4, TempReg, tc,    Literal, 0);
-   uLiteral(cb, eip_next);
-   uInstr1(cb, DEC,   4, TempReg, tc);
-   uInstr2(cb, PUT,   4, TempReg, tc,    ArchReg, R_ECX);
-
-   uInstr2(cb, GET,  sz, ArchReg, R_EAX, TempReg, ta);
-   uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-   uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tv);
-   /* next uinstr kills ta, but that's ok -- don't need it again */
-   uInstr2(cb, SUB,  sz, TempReg, tv,    TempReg, ta);
-   setFlagsFromUOpcode(cb, SUB);
-
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, tv);
-   uLiteral(cb, 0);
-   uInstr1(cb, PUSH,  4, TempReg, tv);
-
-   uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_get_dirflag));
-   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-
-   uInstr1(cb, POP,   4, TempReg, tv);
-   uInstr0(cb, CALLM_E, 0);
-
-   if (sz == 4 || sz == 2) {
-      uInstr2(cb, SHL, 4, Literal, 0, TempReg, tv);
-      uLiteral(cb, sz/2);
-   }
-   uInstr2(cb, ADD,   4, TempReg, tv,    TempReg, td);
-   uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-   uInstr1(cb, JMP,   0, Literal, 0);
-   uLiteral(cb, eip);
-   uCond(cb, CondNZ);
-   uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
-   uInstr1(cb, JMP,   0, Literal, 0);
-   uLiteral(cb, eip_next);
-   uCond(cb, CondAlways);
-}
-
-/* Template for REPE SCAS<sz>.  Assumes this insn is the last one in
-   the basic block, and so emits a jump to the next insn. */
-static 
-void codegen_REPE_SCAS ( UCodeBlock* cb, Int sz, Addr eip, Addr eip_next )
-{
-   Int ta /* EAX */, tc /* ECX */, td /* EDI */, tv;
-   ta = newTemp(cb);
-   tc = newTemp(cb);
-   tv = newTemp(cb);
-   td = newTemp(cb);
-
-   uInstr2(cb, GET,   4, ArchReg, R_ECX, TempReg, tc);
-   uInstr2(cb, JIFZ,  4, TempReg, tc,    Literal, 0);
-   uLiteral(cb, eip_next);
-   uInstr1(cb, DEC,   4, TempReg, tc);
-   uInstr2(cb, PUT,   4, TempReg, tc,    ArchReg, R_ECX);
-
-   uInstr2(cb, GET,  sz, ArchReg, R_EAX, TempReg, ta);
-   uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-   uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tv);
-   /* next uinstr kills ta, but that's ok -- don't need it again */
-   uInstr2(cb, SUB,  sz, TempReg, tv,    TempReg, ta);
-   setFlagsFromUOpcode(cb, SUB);
-
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, tv);
-   uLiteral(cb, 0);
-   uInstr1(cb, PUSH,  4, TempReg, tv);
-
-   uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_get_dirflag));
-   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-
-   uInstr1(cb, POP,   4, TempReg, tv);
-   uInstr0(cb, CALLM_E, 0);
-
-   if (sz == 4 || sz == 2) {
-      uInstr2(cb, SHL, 4, Literal, 0, TempReg, tv);
-      uLiteral(cb, sz/2);
-   }
-   uInstr2(cb, ADD,   4, TempReg, tv,    TempReg, td);
-   uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-   uInstr1(cb, JMP,   0, Literal, 0);
-   uLiteral(cb, eip);
-   uCond(cb, CondZ);
-   uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
-   uInstr1(cb, JMP,   0, Literal, 0);
-   uLiteral(cb, eip_next);
-   uCond(cb, CondAlways);
-}
-
-
-/* Template for REPE MOVS<sz>.  Assumes this insn is the last one in
-   the basic block, and so emits a jump to the next insn. */
-static 
-void codegen_REPE_MOVS ( UCodeBlock* cb, Int sz, Addr eip, Addr eip_next )
-{
-   Int ts /* ESI */, tc /* ECX */, td /* EDI */, tv;
-   tc = newTemp(cb);
-   td = newTemp(cb);
-   ts = newTemp(cb);
-   tv = newTemp(cb);
-
-   uInstr2(cb, GET,   4, ArchReg, R_ECX, TempReg, tc);
-   uInstr2(cb, JIFZ,  4, TempReg, tc,    Literal, 0);
-   uLiteral(cb, eip_next);
-   uInstr1(cb, DEC,   4, TempReg, tc);
-   uInstr2(cb, PUT,   4, TempReg, tc,    ArchReg, R_ECX);
-
-   uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-   uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
-
-   uInstr2(cb, LOAD,  sz, TempReg, ts,    TempReg, tv);
-   uInstr2(cb, STORE, sz, TempReg, tv,    TempReg, td);
-
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, tv);
-   uLiteral(cb, 0);
-   uInstr1(cb, PUSH,  4, TempReg, tv);
-
-   uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_get_dirflag));
-   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-
-   uInstr1(cb, POP,   4, TempReg, tv);
-	uInstr0(cb, CALLM_E, 0);
-
-   if (sz == 4 || sz == 2) {
-      uInstr2(cb, SHL, 4, Literal, 0, TempReg, tv);
-      uLiteral(cb, sz/2);
-   }
-   uInstr2(cb, ADD,   4, TempReg, tv,    TempReg, td);
-   uInstr2(cb, ADD,   4, TempReg, tv,    TempReg, ts);
+   uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
+   uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
 
    uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
    uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
-
-   uInstr1(cb, JMP,   0, Literal, 0);
-   uLiteral(cb, eip);
-   uCond(cb, CondAlways);
 }
 
-
-/* Template for REPE STOS<sz>.  Assumes this insn is the last one in
-   the basic block, and so emits a jump to the next insn. */
 static 
-void codegen_REPE_STOS ( UCodeBlock* cb, Int sz, Addr eip, Addr eip_next )
+void dis_LODS ( UCodeBlock* cb, Int sz, Int t_inc )
 {
-   Int ta /* EAX */, tc /* ECX */, td /* EDI */;
-   ta = newTemp(cb);
-   tc = newTemp(cb);
-   td = newTemp(cb);
+   Int ta = newTemp(cb);   /* EAX */
+   Int ts = newTemp(cb);   /* ESI */
 
-   uInstr2(cb, GET,    4, ArchReg, R_ECX, TempReg, tc);
-   uInstr2(cb, JIFZ,   4, TempReg, tc,    Literal, 0);
-   uLiteral(cb, eip_next);
-   uInstr1(cb, DEC,    4, TempReg, tc);
-   uInstr2(cb, PUT,    4, TempReg, tc,    ArchReg, R_ECX);
+   uInstr2(cb, GET,    4, ArchReg, R_ESI, TempReg, ts);
+   uInstr2(cb, LOAD,  sz, TempReg, ts,    TempReg, ta);
+   uInstr2(cb, PUT,   sz, TempReg, ta,    ArchReg, R_EAX);
+
+   uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
+   uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
+}
+
+static 
+void dis_STOS ( UCodeBlock* cb, Int sz, Int t_inc )
+{
+   Int ta = newTemp(cb);   /* EAX */
+   Int td = newTemp(cb);   /* EDI */
 
    uInstr2(cb, GET,   sz, ArchReg, R_EAX, TempReg, ta);
    uInstr2(cb, GET,    4, ArchReg, R_EDI, TempReg, td);
    uInstr2(cb, STORE, sz, TempReg, ta,    TempReg, td);
 
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, ta);
-   uLiteral(cb, 0);
-   uInstr1(cb, PUSH,  4, TempReg, ta);
-
-   uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_get_dirflag));
-   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-
-   uInstr1(cb, POP,   4, TempReg, ta);
-	uInstr0(cb, CALLM_E, 0);
-
-   if (sz == 4 || sz == 2) {
-      uInstr2(cb, SHL, 4, Literal, 0, TempReg, ta);
-      uLiteral(cb, sz/2);
-   }
-   uInstr2(cb, ADD,   4, TempReg, ta,    TempReg, td);
+   uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
    uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-
-   uInstr1(cb, JMP,   0, Literal, 0);
-   uLiteral(cb, eip);
-   uCond(cb, CondAlways);
 }
 
-
-/* Template for CMPS<sz>, _not_ preceded by a REP prefix. */
 static 
-void codegen_CMPS ( UCodeBlock* cb, Int sz )
+void dis_CMPS ( UCodeBlock* cb, Int sz, Int t_inc )
 {
-   Int td,  /* EDI */   ts, /* ESI */
-       tdv, /* (EDI) */ tsv /* (ESI) */;
-   tdv = newTemp(cb);
-   tsv = newTemp(cb);
-   td  = newTemp(cb);
-   ts  = newTemp(cb);
+   Int tdv = newTemp(cb);  /* (EDI) */
+   Int tsv = newTemp(cb);  /* (ESI) */
+   Int td  = newTemp(cb);  /*  EDI  */
+   Int ts  = newTemp(cb);  /*  ESI  */
 
    uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
    uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
@@ -2082,167 +1916,69 @@ void codegen_CMPS ( UCodeBlock* cb, Int sz )
    uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, tsv); 
    setFlagsFromUOpcode(cb, SUB);
 
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, tdv);
-   uLiteral(cb, 0);
-   uInstr1(cb, PUSH,  4, TempReg, tdv);
-
-   uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_get_dirflag));
-   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-
-   uInstr1(cb, POP,   4, TempReg, tdv);
-	uInstr0(cb, CALLM_E, 0);
-
-   if (sz == 4 || sz == 2) {
-      uInstr2(cb, SHL, 4, Literal, 0, TempReg, tdv);
-      uLiteral(cb, sz/2);
-   }
-   uInstr2(cb, ADD,   4, TempReg, tdv,    TempReg, td);
-   uInstr2(cb, ADD,   4, TempReg, tdv,    TempReg, ts);
+   uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
+   uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
 
    uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
    uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
 }
 
-
-/* Template for MOVS<sz>, _not_ preceded by a REP prefix. */
 static 
-void codegen_MOVS ( UCodeBlock* cb, Int sz )
+void dis_SCAS ( UCodeBlock* cb, Int sz, Int t_inc )
 {
-   Int tv, /* the value being copied */
-       td, /* EDI */ ts /* ESI */;
-   tv = newTemp(cb);
-   td = newTemp(cb);
-   ts = newTemp(cb);
-
-   uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-   uInstr2(cb, GET,   4, ArchReg, R_ESI, TempReg, ts);
-
-   uInstr2(cb, LOAD,  sz, TempReg, ts,    TempReg, tv);
-   uInstr2(cb, STORE, sz, TempReg, tv,    TempReg, td);
-
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, tv);
-   uLiteral(cb, 0);
-   uInstr1(cb, PUSH,  4, TempReg, tv);
-
-   uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_get_dirflag));
-   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-
-   uInstr1(cb, POP,   4, TempReg, tv);
-	uInstr0(cb, CALLM_E, 0);
-
-   if (sz == 4 || sz == 2) {
-      uInstr2(cb, SHL, 4, Literal, 0, TempReg, tv);
-      uLiteral(cb, sz/2);
-   }
-   uInstr2(cb, ADD,   4, TempReg, tv,    TempReg, td);
-   uInstr2(cb, ADD,   4, TempReg, tv,    TempReg, ts);
-
-   uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-   uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
-}
-
-
-/* Template for STOS<sz>, _not_ preceded by a REP prefix. */
-static 
-void codegen_STOS ( UCodeBlock* cb, Int sz )
-{
-   Int ta /* EAX */, td /* EDI */;
-   ta = newTemp(cb);
-   td = newTemp(cb);
-
-   uInstr2(cb, GET,   sz, ArchReg, R_EAX, TempReg, ta);
-   uInstr2(cb, GET,    4, ArchReg, R_EDI, TempReg, td);
-   uInstr2(cb, STORE, sz, TempReg, ta,    TempReg, td);
-
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, ta);
-   uLiteral(cb, 0);
-   uInstr1(cb, PUSH,  4, TempReg, ta);
-
-   uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_get_dirflag));
-   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-
-   uInstr1(cb, POP,   4, TempReg, ta);
-	uInstr0(cb, CALLM_E, 0);
-
-   if (sz == 4 || sz == 2) {
-      uInstr2(cb, SHL, 4, Literal, 0, TempReg, ta);
-      uLiteral(cb, sz/2);
-   }
-   uInstr2(cb, ADD,   4, TempReg, ta,    TempReg, td);
-   uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
-}
-
-
-/* Template for LODS<sz>, _not_ preceded by a REP prefix. */
-static 
-void codegen_LODS ( UCodeBlock* cb, Int sz )
-{
-   Int ta /* EAX */, ts /* ESI */;
-   ta = newTemp(cb);
-   ts = newTemp(cb);
-
-   uInstr2(cb, GET,    4, ArchReg, R_ESI, TempReg, ts);
-   uInstr2(cb, LOAD,  sz, TempReg, ts,    TempReg, ta);
-   uInstr2(cb, PUT,   sz, TempReg, ta,    ArchReg, R_EAX);
-
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, ta);
-   uLiteral(cb, 0);
-   uInstr1(cb, PUSH,  4, TempReg, ta);
-
-   uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_get_dirflag));
-   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-
-   uInstr1(cb, POP,   4, TempReg, ta);
-	uInstr0(cb, CALLM_E, 0);
-
-   if (sz == 4 || sz == 2) {
-      uInstr2(cb, SHL, 4, Literal, 0, TempReg, ta);
-      uLiteral(cb, sz/2);
-   }
-   uInstr2(cb, ADD,   4, TempReg, ta,    TempReg, ts);
-   uInstr2(cb, PUT,   4, TempReg, ts,    ArchReg, R_ESI);
-}
-
-
-/* Template for SCAS<sz>, _not_ preceded by a REP prefix. */
-static 
-void codegen_SCAS ( UCodeBlock* cb, Int sz )
-{
-   Int ta /* EAX */, td /* EDI */, tv;
-   ta = newTemp(cb);
-   tv = newTemp(cb);
-   td = newTemp(cb);
+   Int ta  = newTemp(cb);  /*  EAX  */
+   Int td  = newTemp(cb);  /*  EDI  */
+   Int tdv = newTemp(cb);  /* (EDI) */
 
    uInstr2(cb, GET,  sz, ArchReg, R_EAX, TempReg, ta);
    uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
-   uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tv);
+   uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tdv);
    /* next uinstr kills ta, but that's ok -- don't need it again */
-   uInstr2(cb, SUB,  sz, TempReg, tv,    TempReg, ta);
+   uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, ta);
    setFlagsFromUOpcode(cb, SUB);
 
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, tv);
-   uLiteral(cb, 0);
-   uInstr1(cb, PUSH,  4, TempReg, tv);
-
-   uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_get_dirflag));
-   uFlagsRWU(cb, FlagD, FlagsEmpty, FlagsEmpty);
-
-   uInstr1(cb, POP,   4, TempReg, tv);
-	uInstr0(cb, CALLM_E, 0);
-
-   if (sz == 4 || sz == 2) {
-      uInstr2(cb, SHL, 4, Literal, 0, TempReg, tv);
-      uLiteral(cb, sz/2);
-   }
-   uInstr2(cb, ADD,   4, TempReg, tv,    TempReg, td);
+   uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
    uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
 }
 
+
+/* Wrap the appropriate string op inside a REP/REPE/REPNE.
+   We assume the insn is the last one in the basic block, and so emit a jump
+   to the next insn, rather than just falling through. */
+static 
+void dis_REP_op ( UCodeBlock* cb, Int cond,
+                  void (*dis_OP)(UCodeBlock*, Int, Int),
+                  Int sz, Addr eip, Addr eip_next, Char* name )
+{
+   Int t_inc = newTemp(cb);
+   Int tc    = newTemp(cb);  /*  ECX  */
+
+   dis_string_op_increment(cb, sz, t_inc);
+
+   uInstr2 (cb, GET,   4, ArchReg, R_ECX, TempReg, tc);
+   uInstr2 (cb, JIFZ,  4, TempReg, tc,    Literal, 0);
+   uLiteral(cb, eip_next);
+   uInstr1 (cb, DEC,   4, TempReg, tc);
+   uInstr2 (cb, PUT,   4, TempReg, tc,    ArchReg, R_ECX);
+
+   dis_OP  (cb, sz, t_inc);
+
+   if (cond == CondAlways) {
+      dis_JMP_d32  (cb, eip);
+   } else {
+      uInstr1      (cb, JMP,   0, Literal, 0);
+      uLiteral     (cb, eip);
+      uCond        (cb, cond);
+      uFlagsRWU    (cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
+
+      dis_JMP_d32  (cb, eip_next);
+   }
+   if (dis) VG_(printf)("%s%c\n", name, nameISize(sz));
+}
+
+/*------------------------------------------------------------*/
+/*--- Arithmetic, etc.                                     ---*/
+/*------------------------------------------------------------*/
 
 /* (I)MUL E, G.  Supplied eip points to the modR/M byte. */
 static
@@ -5110,7 +4846,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          VG_(printf)("j%sz 0x%x\n", nameIReg(sz, R_ECX), d32);
       break;
 
-   case 0xE2: /* LOOP disp8 */
+   case 0xE0: /* LOOPNE disp8 */
+   case 0xE1: /* LOOPE  disp8 */
+   case 0xE2: /* LOOP   disp8 */
       /* Again, the docs say this uses ECX/CX as a count depending on
          the address size override, not the operand one.  Since we
          don't handle address size overrides, I guess that means
@@ -5122,9 +4860,21 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, PUT,  4, TempReg, t1,    ArchReg, R_ECX);
       uInstr2(cb, JIFZ, 4, TempReg, t1,    Literal, 0);
       uLiteral(cb, eip);
-      uInstr1(cb, JMP,  0, Literal, 0);
-      uLiteral(cb, d32);
-      uCond(cb, CondAlways);
+
+      if (opc == 0xE2) {   /* LOOP */
+         uInstr1(cb, JMP,  0, Literal, 0);
+         uLiteral(cb, d32);
+         uCond(cb, CondAlways);
+      } else {             /* LOOPE/LOOPNE */
+         uInstr1(cb, JMP,  0, Literal, 0);
+         uLiteral(cb, eip);
+         uCond(cb, (opc == 0xE1 ? CondNZ : CondZ));
+         uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
+
+         uInstr1(cb, JMP,  0, Literal, 0);
+         uLiteral(cb, d32);
+         uCond(cb, CondAlways);
+      }
       *isEnd = True;
       if (dis)
          VG_(printf)("loop 0x%x\n", d32);
@@ -5699,56 +5449,31 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
    /* ------------------------ SCAS et al ----------------- */
 
-   case 0xA4: /* MOVSb, no REP prefix */
-      vg_assert(sorb == 0);
-      codegen_MOVS ( cb, 1 );
-      if (dis) VG_(printf)("movsb\n");
-      break;
-   case 0xA5: /* MOVSv, no REP prefix */
-      vg_assert(sorb == 0);
-      codegen_MOVS ( cb, sz );
-      if (dis) VG_(printf)("movs%c\n", nameISize(sz));
+   case 0xA4: /* MOVS, no REP prefix */
+   case 0xA5: 
+      dis_string_op( cb, dis_MOVS, ( opc == 0xA4 ? 1 : sz ), "movs", sorb );
       break;
 
    case 0xA6: /* CMPSb, no REP prefix */
-      vg_assert(sorb == 0);
-      codegen_CMPS ( cb, 1 );
-      if (dis) VG_(printf)("cmpsb\n");
+   case 0xA7:
+      dis_string_op( cb, dis_CMPS, ( opc == 0xA6 ? 1 : sz ), "cmps", sorb );
       break;
 
-   case 0xAA: /* STOSb, no REP prefix */
-      vg_assert(sorb == 0);
-      codegen_STOS ( cb, 1 );
-      if (dis) VG_(printf)("stosb\n");
+   case 0xAA: /* STOS, no REP prefix */
+   case 0xAB:
+      dis_string_op( cb, dis_STOS, ( opc == 0xAA ? 1 : sz ), "stos", sorb );
       break;
-   case 0xAB: /* STOSv, no REP prefix */
-      vg_assert(sorb == 0);
-      codegen_STOS ( cb, sz );
-      if (dis) VG_(printf)("stos%c\n", nameISize(sz));
-      break;
-
-   case 0xAC: /* LODSb, no REP prefix */
-      vg_assert(sorb == 0);
-      codegen_LODS ( cb, 1 );
-      if (dis) VG_(printf)("lodsb\n");
-      break;
-   case 0xAD: /* LODSv, no REP prefix */
-      vg_assert(sorb == 0);
-      codegen_LODS ( cb, sz );
-      if (dis) VG_(printf)("lods%c\n", nameISize(sz));
+   
+   case 0xAC: /* LODS, no REP prefix */
+   case 0xAD:
+      dis_string_op( cb, dis_LODS, ( opc == 0xAC ? 1 : sz ), "lods", sorb );
       break;
 
-   case 0xAE: /* SCASb, no REP prefix */
-      vg_assert(sorb == 0);
-      codegen_SCAS ( cb, 1 );
-      if (dis) VG_(printf)("scasb\n");
+   case 0xAE: /* SCAS, no REP prefix */
+   case 0xAF:
+      dis_string_op( cb, dis_SCAS, ( opc == 0xAE ? 1 : sz ), "scas", sorb );
       break;
 
-   case 0xAF: /* SCASl, no REP prefix */
-      vg_assert(sorb == 0);
-      codegen_SCAS ( cb, sz );
-      if (dis) VG_(printf)("scas;\n");
-      break;
 
    case 0xFC: /* CLD */
       uInstr0(cb, CALLM_S, 0);
@@ -5790,9 +5515,8 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
       if (abyte == 0xAE || abyte == 0xAF) { /* REPNE SCAS<sz> */
          if (abyte == 0xAE) sz = 1;
-         codegen_REPNE_SCAS ( cb, sz, eip_orig, eip );
+         dis_REP_op ( cb, CondNZ, dis_SCAS, sz, eip_orig, eip, "repne scas" );
          *isEnd = True;         
-         if (dis) VG_(printf)("repne scas%c\n", nameISize(sz));
       }
       else {
          goto decode_failure;
@@ -5800,44 +5524,44 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       break;
    }
 
-   case 0xF3: { /* REPE prefix insn */
+   /* REP/REPE prefix insn (for SCAS and CMPS, 0xF3 means REPE,
+      for the rest, it means REP) */
+   case 0xF3: { 
       Addr eip_orig = eip - 1;
       vg_assert(sorb == 0);
       abyte = getUChar(eip); eip++;
+
       if (abyte == 0x66) { sz = 2; abyte = getUChar(eip); eip++; }
 
-      if (abyte == 0xA4 || abyte == 0xA5) { /* REPE MOV<sz> */
+      if (abyte == 0xA4 || abyte == 0xA5) { /* REP MOV<sz> */
          if (abyte == 0xA4) sz = 1;
-         codegen_REPE_MOVS ( cb, sz, eip_orig, eip );
+         dis_REP_op ( cb, CondAlways, dis_MOVS, sz, eip_orig, eip, "rep movs" );
          *isEnd = True;
-         if (dis) VG_(printf)("repe mov%c\n", nameISize(sz));
       }
       else 
       if (abyte == 0xA6 || abyte == 0xA7) { /* REPE CMP<sz> */
          if (abyte == 0xA6) sz = 1;
-         codegen_REPE_CMPS ( cb, sz, eip_orig, eip );
+         dis_REP_op ( cb, CondZ, dis_CMPS, sz, eip_orig, eip, "repe cmps" );
          *isEnd = True;
-         if (dis) VG_(printf)("repe cmps%c\n", nameISize(sz));
       } 
       else
-      if (abyte == 0xAA || abyte == 0xAB) { /* REPE STOS<sz> */
+      if (abyte == 0xAA || abyte == 0xAB) { /* REP STOS<sz> */
          if (abyte == 0xAA) sz = 1;
-         codegen_REPE_STOS ( cb, sz, eip_orig, eip );
+         dis_REP_op ( cb, CondAlways, dis_STOS, sz, eip_orig, eip, "rep stos" );
          *isEnd = True;
-         if (dis) VG_(printf)("repe stos%c\n", nameISize(sz));
       }
       else
       if (abyte == 0xAE || abyte == 0xAF) { /* REPE SCAS<sz> */
          if (abyte == 0xAE) sz = 1;
-         codegen_REPE_SCAS ( cb, sz, eip_orig, eip );
+         dis_REP_op ( cb, CondZ, dis_SCAS, sz, eip_orig, eip, "repe scas" );
          *isEnd = True;         
-         if (dis) VG_(printf)("repe scas%c\n", nameISize(sz));
       }
       else
-      if (abyte == 0x90) { /* REPE NOP (PAUSE) */
-         if (dis) VG_(printf)("repe nop (P4 pause)\n");
+      if (abyte == 0x90) { /* REP NOP (PAUSE) */
+         if (dis) VG_(printf)("rep nop (P4 pause)\n");
          /* do nothing; apparently a hint to the P4 re spin-wait loop */
-      } else {
+      } 
+      else {
          goto decode_failure;
       }
       break;

@@ -1046,6 +1046,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             VG_(copy_UInstr)(cb, u_in);
             break;
 
+         case MMX2a1_MemRd:
          case SSE3a_MemRd:
          case SSE2a_MemRd:
          case SSE3a1_MemRd:

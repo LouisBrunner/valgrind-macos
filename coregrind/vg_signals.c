@@ -312,7 +312,11 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
           && sig != VKI_SIGKILL && sig != VKI_SIGSTOP)
          VG_(ksigaddset)( &dst->skss_sigmask, sig );
 
-      dst->skss_per_sig[sig].skss_handler = skss_handler;
+      if (sig != VKI_SIGKILL && sig != VKI_SIGSTOP)
+         dst->skss_per_sig[sig].skss_handler = skss_handler;
+      else
+         dst->skss_per_sig[sig].skss_handler = VKI_SIG_DFL;
+
       dst->skss_per_sig[sig].skss_flags   = skss_flags;
    }
 

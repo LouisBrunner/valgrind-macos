@@ -291,7 +291,7 @@ UInt get_shm_size ( Int shmid )
 {
    struct vki_shmid_ds buf;
    long __res = VG_(do_syscall5)(__NR_ipc, 24 /* IPCOP_shmctl */, shmid,
-                                 VKI_IPC_STAT, 0, &buf);
+                                 VKI_IPC_STAT, 0, (UWord)&buf);
     if ( VG_(is_kerror) ( __res ) )
        return 0;
  
@@ -308,7 +308,7 @@ UInt get_sem_count( Int semid )
   arg.buf = &buf;
   
   res = VG_(do_syscall5)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0,
-                         VKI_IPC_STAT, &arg);
+                         VKI_IPC_STAT, (UWord)&arg);
   if ( VG_(is_kerror)(res) )
     return 0;
 

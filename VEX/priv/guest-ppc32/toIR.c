@@ -1616,6 +1616,72 @@ static Bool dis_branch ( theInstr )
 
 
 
+static Bool dis_syslink ( UInt theInstr )
+{
+    if (theInstr != 0x44000010) { return False; }
+    // sc  (System Call, p565)
+    DIP("sc\n");
+    // ...
+    return False;
+}
+
+
+
+static Bool dis_memsync ( UInt theInstr )
+{
+    /* X-Form, XL-Form */
+    UChar opc1      = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar b11to25   = (theInstr >> 11) & 0x7FFF;    /* theInstr[11:25]  */
+    UChar Rd_addr   = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Rs_addr   = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr   = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar Rb_addr   = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  opc2      = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UChar b0        = (theInstr >>  0) & 1;         /* theInstr[0]     */
+
+    switch (opc1) {
+    /* XL-Form */
+    case 0x13:	// isync (Instruction Synchronize, p467)
+	if (opc2 != 0x096) { return False; }
+	if (b11to25 != 0 || b0 != 0) { return False; }
+	DIP("isync\n");
+	return False;
+
+    /* X-Form */
+    case 0x1F:
+	switch (opc2) {
+        case 0x356: // eieio (Enforce In-Order Execution of I/O, p425)
+	    if (b11to25 != 0 || b0 != 0) { return False; }
+	    DIP("eieio\n");
+	    return False;
+
+        case 0x014: // lwarx (Load Word and Reserve Indexed, p500)
+	    if (b0 != 0) { return False; }
+	    DIP("lwarx %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
+	    return False;
+
+        case 0x096: // stwcx. (Store Word Conditional Indexed, p605)
+	    if (b0 != 1) { return False; }
+	    DIP("stwcx. %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
+	    return False;
+
+        case 0x256: // sync (Synchronize, p616)
+	    if (b11to25 != 0 || b0 != 0) { return False; }
+	    DIP("sync\n");
+	    return False;
+
+        default:
+	    return False;
+	}
+	return True;
+    default:
+	return False;
+    }
+    return True;
+}
+
+
+
 static Bool dis_int_shift ( UInt theInstr )
 {
     /* X-Form */
@@ -1698,6 +1764,119 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 
 
 
+static Bool dis_proc_ctl ( UInt theInstr )
+{
+    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+
+    /* X-Form */
+    UChar crfD     = (theInstr >> 23) & 0x7;       /* theInstr[23:25] */
+    UChar b21to22  = (theInstr >> 21) & 0x3;       /* theInstr[21:22] */
+    UChar Rd_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UInt  b11to20  = (theInstr >> 11) & 0x3FF;     /* theInstr[11:20] */
+
+    /* XFX-Form */
+    UChar Rs_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UInt  SPR      = (theInstr >> 11) & 0x3FF;     /* theInstr[11:20] */
+    UInt  TBR      = (theInstr >> 11) & 0x3FF;     /* theInstr[11:20] */
+    UChar b20      = (theInstr >> 11) & 0x1;       /* theInstr[11]    */
+    UInt  CRM      = (theInstr >> 12) & 0xFF;      /* theInstr[12:19] */
+    UChar b11      = (theInstr >> 11) & 0x1;       /* theInstr[20]    */
+    UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UChar b0       = (theInstr >>  0) & 1;         /* theInstr[0]     */
+
+    if (opc1 != 0x1F || b0 != 0) {
+	return False;
+    }
+
+    switch (opc2) {
+    /* X-Form */
+    case 0x200: // mcrxr (Move to Condition Register from XER, p510)
+	if (b21to22 != 0 || b11to20 != 0) { return False; }
+	DIP("mcrxr %d\n", crfD);
+	return False;
+
+    case 0x013: // mfcr (Move from Condition Register, p511)
+	if (b11to20 != 0) { return False; }
+	DIP("mfcr %d\n", Rd_addr);
+	return False;
+
+    /* XFX-Form */
+    case 0x153: // mfspr (Move from Special-Purpose Register, p514)
+	DIP("mfspr %d,%d\n", Rd_addr, SPR);
+	return False;
+
+    case 0x173: // mftb (Move from Time Base, p521)
+	DIP("mftb %d,%d\n", Rd_addr, TBR);
+	return False;
+
+    case 0x090: // mtcrf (Move to Condition Register Fields, p523)
+	if (b11 != 0 || b20 != 0) { return False; }
+	DIP("mtcrf %d,%d\n", CRM, Rs_addr);
+	return False;
+
+    case 0x1D3: // mtspr (Move to Special-Purpose Register, p530)
+	DIP("mtspr %d,%d\n", SPR, Rs_addr);
+	return False;
+
+    default:
+	return False;
+    }
+    return True;
+}
+
+
+static Bool dis_cache_manage ( UInt theInstr )
+{
+    /* X-Form */
+    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar b21to25 = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UChar b0      = (theInstr >>  0) & 1;         /* theInstr[0]     */
+
+    if (opc1 != 0x1F || b21to25 != 0 || b0 != 0) {
+	return False;
+    }
+
+    switch (opc2) {
+    case 0x2F6: // dcba (Data Cache Block Allocate, p411)
+	DIP("dcba %d,%d\n", Ra_addr, Rb_addr);
+	return False;
+
+    case 0x056: // dcbf (Data Cache Block Flush, p413)
+	DIP("dcbf %d,%d\n", Ra_addr, Rb_addr);
+	return False;
+
+    case 0x036: // dcbst (Data Cache Block Store, p415)
+	DIP("dcbst %d,%d\n", Ra_addr, Rb_addr);
+	return False;
+
+    case 0x116: // dcbt (Data Cache Block Touch, p416)
+	DIP("dcbt %d,%d\n", Ra_addr, Rb_addr);
+	return False;
+
+    case 0x0F6: // dcbtst (Data Cache Block Touch for Store, p417)
+	DIP("dcbtst %d,%d\n", Ra_addr, Rb_addr);
+	return False;
+
+    case 0x3F6: // dcbz (Data Cache Block Clear to Zero, p418)
+	DIP("dcbz %d,%d\n", Ra_addr, Rb_addr);
+	return False;
+
+    case 0x3D6: // icbi (Instruction Cache Block Invalidate, p466)
+	DIP("icbi %d,%d\n", Ra_addr, Rb_addr);
+	return False;
+
+    default:
+	return False;
+    }
+    return True;
+}
+
+
+
+
 
 
 
@@ -1722,15 +1901,9 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*OUT*/ UInt*   size,
                             /*OUT*/ Addr64* whereNext )
 {
-//   IRType    ty;
-//   IRTemp    addr, t1, t2;
-//   Int       alen;
    UChar opc1;
    UInt opc2;
 //   PPC32Condcode cond;
-//   UInt      d32;
-//   UChar     dis_buf[50];
-//   Int       am_sz, d_sz;
    DisResult whatNext = Dis_Continue;
    UInt      theInstr;
 
@@ -1882,6 +2055,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        if (dis_branch(theInstr)) break;
        goto decode_failure;
 
+   /*
+     System Linkage Instructions
+   */
+   case 0x11: // sc
+       if (dis_syslink(theInstr)) break;
+       goto decode_failure;
+
 
    case 0x13:
        switch (opc2) {
@@ -1894,6 +2074,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 	   if (dis_branch(theInstr)) break;
 	   goto decode_failure;
 
+       /*
+	 Memory Synchronization Instructions
+       */
+       case 0x096: // isync
+	   if (dis_memsync(theInstr)) break;
+	   goto decode_failure;
+
        default:
 	   goto decode_failure;
        }
@@ -1901,7 +2088,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
 
     case 0x1F:
-       opc2 = (theInstr >> 1) & 0x1FF;    /* [1:9] */
+       opc2 = (theInstr >> 1) & 0x1FF;    /* theInstr[1:9] */
        switch (opc2) {
 
        /*
@@ -1920,7 +2107,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        }
 
 
-       opc2 = (theInstr >> 1) & 0x3FF;    /* [1:10] */
+       opc2 = (theInstr >> 1) & 0x3FF;    /* theInstr[1:10] */
        switch (opc2) {
 
        /*
@@ -1950,7 +2137,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
        /*
 	 Integer Shift Instructions
-	 No OE, yes Rc:
        */
        case 0x018: // slw
        case 0x318: // sraw
@@ -1961,7 +2147,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
        /*
 	 Integer Load Instructions
-	 Rc=0
        */
        case 0x057: // lbzx
        case 0x077: // lbzux
@@ -1988,7 +2173,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
        /*
 	 Integer Load and Store with Byte Reverse Instructions
-	 Rc=0
        */
        case 0x316: // lhbrx
        case 0x216: // lwbrx
@@ -2005,6 +2189,41 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        case 0x2D5: // stswi
        case 0x295: // stswx
 	   if (dis_int_ldst_str(theInstr)) break;
+	   goto decode_failure;
+
+       /*
+	 Memory Synchronization Instructions
+       */
+       case 0x356: // eieio
+       case 0x014: // lwarx
+       case 0x096: // stwcx.
+       case 0x256: // sync
+	   if (dis_memsync(theInstr)) break;
+	   goto decode_failure;
+
+       /*
+	 Processor Control Instructions
+       */
+       case 0x200: // mcrxr
+       case 0x013: // mfcr
+       case 0x153: // mfspr
+       case 0x173: // mftb
+       case 0x090: // mtcrf
+       case 0x1D3: // mtspr
+	   if (dis_proc_ctl(theInstr)) break;
+	   goto decode_failure;
+
+       /*
+	 Cache Management Instructions
+       */
+       case 0x2F6: // dcba
+       case 0x056: // dcbf
+       case 0x036: // dcbst
+       case 0x116: // dcbt
+       case 0x0F6: // dcbtst
+       case 0x3F6: // dcbz
+       case 0x3D6: // icbi
+	   if (dis_cache_manage(theInstr)) break;
 	   goto decode_failure;
 
        default:

@@ -485,8 +485,8 @@ extern void *VG_(shadow_alloc)(UInt size);
 
 extern Bool VG_(is_addressable)(Addr p, SizeT sz, UInt prot);
 
-extern Addr VG_(client_alloc)(Addr base, SizeT len, UInt prot, UInt flags);
-extern void VG_(client_free)(Addr addr);
+extern Addr VG_(get_memory_from_mmap_for_client)
+               (Addr base, SizeT len, UInt prot, UInt flags);
 
 extern Bool VG_(is_valgrind_addr)(Addr a);
 

@@ -468,8 +468,8 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
    } else if (a->clientmem) {
       // client allocation -- return 0 to client if it fails
       sb = (Superblock *)
-           VG_(client_alloc)(0, cszB,
-                             VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 0);
+           VG_(get_memory_from_mmap_for_client)
+              (0, cszB, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 0);
       if (NULL == sb)
          return 0;
    } else {

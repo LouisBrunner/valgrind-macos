@@ -1145,7 +1145,8 @@ Bool VG_(is_addressable)(Addr p, SizeT size, UInt prot)
 /*--------------------------------------------------------------------*/
 
 // Returns 0 on failure.
-Addr VG_(client_alloc)(Addr addr, SizeT len, UInt prot, UInt sf_flags)
+Addr VG_(get_memory_from_mmap_for_client)
+        (Addr addr, SizeT len, UInt prot, UInt sf_flags)
 {
    len = PGROUNDUP(len);
 
@@ -1161,18 +1162,6 @@ Addr VG_(client_alloc)(Addr addr, SizeT len, UInt prot, UInt sf_flags)
       return 0;
 }
 
-void VG_(client_free)(Addr addr)
-{
-   Segment *s = VG_(find_segment)(addr);
-
-vg_assert(0);
-   if (s == NULL || s->addr != addr || !(s->flags & SF_CORE)) {
-      VG_(message)(Vg_DebugMsg, "VG_(client_free)(%p) - no CORE memory found there", addr);
-      return;
-   }
-
-   VG_(munmap)((void *)s->addr, s->len);
-}
 
 /* We'll call any RW mmaped memory segment, within the client address
    range, which isn't SF_CORE, a root. */

@@ -1359,7 +1359,7 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
          VG_(threads)[tid].status        = VgTs_Runnable;
          VG_(threads)[tid].associated_cv = NULL;
          VG_(threads)[tid].associated_mx = NULL;
-         mx->__vg_m_owner = (_pthread_descr)tid;
+         mx->__vg_m_owner = (/*_pthread_descr*/void*)tid;
          mx->__vg_m_count = 1;
          /* .m_edx already holds pth_cond_wait success value (0) */
 

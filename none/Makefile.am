@@ -87,6 +87,9 @@ vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 vg_clientfuncs.o: vg_clientfuncs.c $(MANUAL_DEPS)
 	$(COMPILE) -fno-omit-frame-pointer -c $<
 
+vg_libpthread.o: vg_libpthread.c $(MANUAL_DEPS)
+	$(COMPILE) -fno-omit-frame-pointer -c $<
+
 valgrind.so$(EXEEXT): $(valgrind_so_OBJECTS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -shared -o valgrind.so \
 		$(valgrind_so_OBJECTS) $(valgrind_so_LDADD)

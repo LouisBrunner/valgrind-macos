@@ -16,6 +16,12 @@
 #     (optionally: caller3 name)
 #  }
 
+{
+   __pthread_mutex_unlock/__register_frame_info
+   PThread
+   fun:__pthread_mutex_unlock
+   fun:__register_frame_info
+}
 
 # even more glibc suppressions ?
 {

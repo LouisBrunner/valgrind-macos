@@ -217,6 +217,20 @@ void my_assert_fail ( Char* expr, Char* file, Int line, Char* fn )
 
 
 /* ---------------------------------------------------
+   Ummm ..
+   ------------------------------------------------ */
+
+static
+void pthread_error ( const char* msg )
+{
+   int res;
+   VALGRIND_MAGIC_SEQUENCE(res, 0,
+                           VG_USERREQ__PTHREAD_ERROR, 
+                           msg, 0, 0, 0);
+}
+
+
+/* ---------------------------------------------------
    THREAD ATTRIBUTES
    ------------------------------------------------ */
 
@@ -230,8 +244,11 @@ int pthread_attr_init(pthread_attr_t *attr)
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
 {
    if (detachstate != PTHREAD_CREATE_JOINABLE 
-       && detachstate != PTHREAD_CREATE_DETACHED)
+       && detachstate != PTHREAD_CREATE_DETACHED) {
+      pthread_error("pthread_attr_setdetachstate: "
+                    "detachstate is invalid");
       return EINVAL;
+   }
    attr->__detachstate = detachstate;
    return 0;
 }
@@ -301,6 +318,8 @@ int pthread_attr_setscope ( pthread_attr_t *attr, int scope )
    ensure_valgrind("pthread_attr_setscope");
    if (scope == PTHREAD_SCOPE_SYSTEM)
       return 0;
+   pthread_error("pthread_attr_setscope: "
+                 "invalid or unsupported scope");
    if (scope == PTHREAD_SCOPE_PROCESS)
       return ENOTSUP;
    return EINVAL;
@@ -581,10 +600,18 @@ int pthread_detach(pthread_t th)
    VALGRIND_MAGIC_SEQUENCE(res, (-2) /* default */,
                            VG_USERREQ__SET_OR_GET_DETACH,
                            2 /* get */, th, 0, 0);
-   if (res == -1) /* not found */ 
+   if (res == -1) {
+      /* not found */ 
+      pthread_error("pthread_detach: "
+                    "invalid target thread");
       return ESRCH;
-   if (res == 1) /* already detached */
+   }
+   if (res == 1) { 
+      /* already detached */
+      pthread_error("pthread_detach: "
+                    "target thread is already detached");
       return EINVAL;
+   }
    if (res == 0) {
       VALGRIND_MAGIC_SEQUENCE(res, (-2) /* default */,
                               VG_USERREQ__SET_OR_GET_DETACH,
@@ -709,6 +736,8 @@ int __pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
          attr->__mutexkind = type;
          return 0;
       default:
+         pthread_error("pthread_mutexattr_settype: "
+                       "invalid type");
          return EINVAL;
    }
 }
@@ -790,12 +819,15 @@ int __pthread_mutex_destroy(pthread_mutex_t *mutex)
 {
    /* Valgrind doesn't hold any resources on behalf of the mutex, so no
       need to involve it. */
-    if (mutex->__m_count > 0)
+   if (mutex->__m_count > 0) {
+       pthread_error("pthread_mutex_destroy: "
+                     "mutex is still in use");
        return EBUSY;
-    mutex->__m_count = 0;
-    mutex->__m_owner = (_pthread_descr)VG_INVALID_THREADID;
-    mutex->__m_kind  = PTHREAD_MUTEX_ERRORCHECK_NP;
-    return 0;
+   }
+   mutex->__m_count = 0;
+   mutex->__m_owner = (_pthread_descr)VG_INVALID_THREADID;
+   mutex->__m_kind  = PTHREAD_MUTEX_ERRORCHECK_NP;
+   return 0;
 }
 
 
@@ -937,8 +969,11 @@ int pthread_setcancelstate(int state, int *oldstate)
    int res;
    ensure_valgrind("pthread_setcancelstate");
    if (state != PTHREAD_CANCEL_ENABLE
-       && state != PTHREAD_CANCEL_DISABLE) 
+       && state != PTHREAD_CANCEL_DISABLE) {
+      pthread_error("pthread_setcancelstate: "
+                    "invalid state");
       return EINVAL;
+   }
    my_assert(-1 != PTHREAD_CANCEL_ENABLE);
    my_assert(-1 != PTHREAD_CANCEL_DISABLE);
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
@@ -955,8 +990,11 @@ int pthread_setcanceltype(int type, int *oldtype)
    int res;
    ensure_valgrind("pthread_setcanceltype");
    if (type != PTHREAD_CANCEL_DEFERRED
-       && type != PTHREAD_CANCEL_ASYNCHRONOUS) 
+       && type != PTHREAD_CANCEL_ASYNCHRONOUS) {
+      pthread_error("pthread_setcanceltype: "
+                    "invalid type");
       return EINVAL;
+   }
    my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
    my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
@@ -1038,7 +1076,8 @@ int pthread_sigmask(int how, const sigset_t *newmask,
       case SIG_SETMASK: how = VKI_SIG_SETMASK; break;
       case SIG_BLOCK:   how = VKI_SIG_BLOCK; break;
       case SIG_UNBLOCK: how = VKI_SIG_UNBLOCK; break;
-      default:          return EINVAL;
+      default: pthread_error("pthread_sigmask: invalid how");
+               return EINVAL;
    }
 
    /* Crude check */
@@ -1084,9 +1123,9 @@ int pthread_kill(pthread_t thread, int signo)
 int raise (int sig)
 {
   int retcode = pthread_kill(pthread_self(), sig);
-  if (retcode == 0)
+  if (retcode == 0) {
     return 0;
-  else {
+  } else {
     errno = retcode;
     return -1;
   }
@@ -1153,7 +1192,6 @@ int __pthread_once ( pthread_once_t *once_control,
    res = __pthread_mutex_lock(&once_masterlock);
 
    if (res != 0) {
-     printf("res = %d\n",res);
       barf("pthread_once: Looks like your program's "
            "init routine calls back to pthread_once() ?!");
    }
@@ -2040,6 +2078,7 @@ int sem_init(sem_t *sem, int pshared, unsigned int value)
    vg_sem_t* vg_sem;
    ensure_valgrind("sem_init");
    if (pshared != 0) {
+      pthread_error("sem_init: unsupported pshared value");
       errno = ENOSYS;
       return -1;
    }

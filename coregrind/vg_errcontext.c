@@ -53,7 +53,9 @@ typedef
       /* Invalid read/write attempt at given size */
       Addr1, Addr2, Addr4, Addr8,
       /* Invalid or mismatching free */
-      FreeS
+      FreeS,
+      /* Pthreading error */
+      PThread
    } 
    SuppressionKind;
 
@@ -108,7 +110,9 @@ typedef
 typedef 
    enum { ValueErr, AddrErr, 
           ParamErr, UserErr, /* behaves like an anonymous ParamErr */
-          FreeErr, FreeMismatchErr }
+          FreeErr, FreeMismatchErr,
+          PThreadErr /* pthread API error */
+   }
    ErrKind;
 
 /* What kind of memory access is involved in the error? */
@@ -138,7 +142,7 @@ typedef
       Addr addr;
       /* Addr, Free, Param, User */
       AddrInfo addrinfo;
-      /* Param */
+      /* Param; hijacked for PThread as a description */
       Char* syscall_param;
       /* Param, User */
       Bool isWriteableLack;
@@ -255,6 +259,12 @@ static Bool eq_ErrContext ( Bool cheap_addr_cmp,
       return False;
 
    switch (e1->ekind) {
+      case PThreadErr:
+         if (e1->syscall_param == e2->syscall_param) 
+            return True;
+         if (0 == VG_(strcmp)(e1->syscall_param, e2->syscall_param))
+            return True;
+         return False;
       case UserErr:
       case ParamErr:
          if (e1->isWriteableLack != e2->isWriteableLack) return False;
@@ -411,6 +421,10 @@ static void pp_ErrContext ( ErrContext* ec, Bool printCount )
          }
          VG_(pp_ExeContext)(ec->where);
          pp_AddrInfo(ec->addr, &ec->addrinfo);
+         break;
+      case PThreadErr:
+         VG_(message)(Vg_UserMsg, "%s", ec->syscall_param );
+         VG_(pp_ExeContext)(ec->where);
          break;
       default: 
          VG_(panic)("pp_ErrContext");
@@ -747,6 +761,25 @@ void VG_(record_user_err) ( ThreadState* tst, Addr a, Bool isWriteLack )
    VG_(maybe_add_context) ( &ec );
 }
 
+void VG_(record_pthread_err) ( ThreadId tid, Char* msg )
+{
+   ErrContext ec;
+   if (vg_ignore_errors) return;
+   if (!VG_(clo_instrument)) return;
+   clear_ErrContext( &ec );
+   ec.count   = 1;
+   ec.next    = NULL;
+   ec.where   = VG_(get_ExeContext)( False, VG_(threads)[tid].m_eip, 
+                                            VG_(threads)[tid].m_ebp );
+   ec.ekind   = PThreadErr;
+   ec.tid     = tid;
+   ec.syscall_param = msg;
+   ec.m_eip   = VG_(threads)[tid].m_eip;
+   ec.m_esp   = VG_(threads)[tid].m_esp;
+   ec.m_ebp   = VG_(threads)[tid].m_ebp;
+   VG_(maybe_add_context) ( &ec );
+}
+
 
 /*------------------------------*/
 
@@ -963,6 +996,7 @@ static void load_one_suppressions_file ( Char* filename )
       else if (STREQ(buf, "Addr4"))  supp->skind = Addr4;
       else if (STREQ(buf, "Addr8"))  supp->skind = Addr8;
       else if (STREQ(buf, "Free"))   supp->skind = FreeS;
+      else if (STREQ(buf, "PThread")) supp->skind = PThread;
       else goto syntax_error;
 
       if (supp->skind == Param) {
@@ -1100,7 +1134,7 @@ static Suppression* is_suppressible_error ( ErrContext* ec )
    /* See if the error context matches any suppression. */
    for (su = vg_suppressions; su != NULL; su = su->next) {
       switch (su->skind) {
-         case FreeS:
+         case FreeS:  case PThread:
          case Param:  case Value0: su_size = 0; break;
          case Value1: case Addr1:  su_size = 1; break;
          case Value2: case Addr2:  su_size = 2; break;
@@ -1122,7 +1156,11 @@ static Suppression* is_suppressible_error ( ErrContext* ec )
             if (ec->size  != su_size) continue;
             break;
          case FreeS:
-            if (ec->ekind != FreeErr && ec->ekind != FreeMismatchErr) continue;
+            if (ec->ekind != FreeErr 
+                && ec->ekind != FreeMismatchErr) continue;
+            break;
+         case PThread:
+            if (ec->ekind != PThreadErr) continue;
             break;
       }
 

@@ -26,7 +26,7 @@
 <a name="title">&nbsp;</a>
 <h1 align=center>Valgrind, snapshot 20020522</h1>
 <center>This manual was majorly updated on 20020501</center>
-<center>This manual was minorly updated on 20020522</center>
+<center>This manual was minorly updated on 20020603</center>
 <p>
 
 <center>
@@ -1021,7 +1021,9 @@ You can ask to add suppressions from another file, by specifying
       memory access of 1, 2, 4 or 8 bytes respectively.  Or 
       <code>Param</code>,
       meaning an invalid system call parameter error.  Or
-      <code>Free</code>, meaning an invalid or mismatching free.</li><br>
+      <code>Free</code>, meaning an invalid or mismatching free.
+      Or <code>PThread</code>, meaning any kind of complaint to do
+      with the PThreads API.</li><br>
       <p>
 
   <li>The "immediate location" specification.  For Value and Addr

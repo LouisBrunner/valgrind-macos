@@ -487,8 +487,11 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 
 #define VG_USERREQ__NUKE_OTHER_THREADS      0x3023
 
+
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
+/* Log a pthread error from client-space.  Cosmetic. */
+#define VG_USERREQ__PTHREAD_ERROR           0x3102
 
 /* 
 In vg_constants.h:
@@ -1306,6 +1309,8 @@ extern void VG_(record_param_err) ( ThreadState* tst,
                                     Char* msg );
 extern void VG_(record_user_err) ( ThreadState* tst,
                                    Addr a, Bool isWriteLack );
+extern void VG_(record_pthread_err) ( ThreadId tid, Char* msg );
+
 
 
 /* The classification of a faulting address. */

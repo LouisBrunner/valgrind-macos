@@ -65,12 +65,59 @@ VG_(do_syscall):
 	ret
 
 
+/*
+        Perform a clone system call.  clone is strange because it has
+        fork()-like return-twice semantics, so it needs special
+        handling here.
 
-# XXX: must reinstate comments also -- see x86-linux/syscall.S
+	Upon entry, we have:
 
+	    int (*fn)(void*)	in %rdi
+	    void*  child_stack	in %rsi
+	    int    flags	in %rdx
+	    void*  arg		in %rcx
+	    pid_t* child_tid	in %r8
+	    pid_t* parent_tid	in %r9
+ */
 .globl VG_(clone)
 VG_(clone):
-	ud2
+        // set up child stack, temporarily preserving fn and arg
+        subq    $16, %rsi               // make space on stack
+        movq    %rcx, 8(%rsi)           // save arg
+        movq    %rdi, 0(%rsi)           // save fn 
+        
+        // setup syscall
+        movl    $__NR_clone, %eax       // syscall number
+        movq    %rdx, %rdi              // syscall arg1: flags
+        // %rsi already setup           // syscall arg2: child_stack
+        movq    %r9,  %rdx              // syscall arg3: parent_tid
+        movq    %r8,  %rcx              // syscall arg4: child_tid
+
+        syscall                         // clone()
+
+        testq   %rax, %rax              // child if retval == 0
+        jnz     1f
+
+        // CHILD - call thread function
+        pop     %rax                    // pop fn
+        pop     %rdi                    // pop fn arg1: arg
+        call    *%eax                   // call fn
+
+        // exit with result
+        movq    %rax, %rdi              // arg1: return value from fn
+        movl    $__NR_exit, %eax
+
+        syscall
+
+        // Exit returned?!
+        ud2
+
+1:      // PARENT or ERROR
+        ret
+
+
+
+# XXX: must reinstate comments also -- see x86-linux/syscall.S
 
 .globl VG_(sigreturn)
 VG_(sigreturn):

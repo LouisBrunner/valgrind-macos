@@ -42,27 +42,29 @@
    thread), initialise the VEX guest state, and copy in essential
    starting values.
 */
-void VGA_(init_thread1state) ( Addr client_eip, 
-                               Addr esp_at_startup,
+void VGA_(init_thread1state) ( Addr client_rip, 
+                               Addr rsp_at_startup,
 			       /*MOD*/ ThreadArchState* arch )
 {
-   I_die_here;
-#if 0
-   vg_assert(0 == sizeof(VexGuestX86State) % 8);
+   vg_assert(0 == sizeof(VexGuestAMD64State) % 8);
 
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
-   LibVEX_GuestX86_initialise(&arch->vex);
+   LibVEX_GuestAMD64_initialise(&arch->vex);
 
    /* Zero out the shadow area. */
-   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestX86State));
+   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestAMD64State));
 
    /* Put essential stuff into the new state. */
+
+   arch->vex.guest_RSP = rsp_at_startup;
+   arch->vex.guest_RIP = client_rip;
+
+   // XXX: something will probably have to be done with the segment
+   // registers, once they're added to Vex-AMD64.
+#if 0
    /* initialise %cs, %ds and %ss to point at the operating systems
       default code, data and stack segments */
-   arch->vex.guest_ESP = esp_at_startup;
-   arch->vex.guest_EIP = client_eip;
-
    asm volatile("movw %%cs, %0"
                 :
                 : "m" (arch->vex.guest_CS));
@@ -72,21 +74,6 @@ void VGA_(init_thread1state) ( Addr client_eip,
    asm volatile("movw %%ss, %0"
                 :
                 : "m" (arch->vex.guest_SS));
-
-   VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
-             sizeof(VexGuestArchState));
-
-   /* I assume that if we have SSE2 we also have SSE */
-   VG_(have_ssestate) = False;
-   //      VG_(cpu_has_feature)(VG_X86_FEAT_FXSR) &&
-   //   VG_(cpu_has_feature)(VG_X86_FEAT_SSE);
-
-   if (0) {
-      if (VG_(have_ssestate))
-         VG_(printf)("Looks like a SSE-capable CPU\n");
-      else
-         VG_(printf)("Looks like a MMX-only CPU\n");
-   }
 #endif
 }
 

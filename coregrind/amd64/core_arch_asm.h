@@ -30,6 +30,15 @@
 #ifndef __AMD64_CORE_ARCH_ASM_H
 #define __AMD64_CORE_ARCH_ASM_H
 
+// Print a constant from asm code.
+#define OYNK(nnn) push %r8 ; push %r9 ; push %r10; push %r11; \
+                  push %rax; push %rbx; push %rcx; push %rdx; \
+                  push %rsi; push %rdi; \
+                  movl $nnn, %edi; call VG_(oynk); \
+                  pop %rdi; pop %rsi; pop %rdx; pop %rcx; \
+                  pop %rbx; pop %rax; pop %r11; pop %r10; \
+                  pop %r9 ; pop %r8
+
 #endif   // __AMD64_CORE_ARCH_ASM_H
 
 /*--------------------------------------------------------------------*/

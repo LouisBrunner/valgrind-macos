@@ -319,6 +319,12 @@ Addr VG_(get_stack_pointer) ( ThreadId tid )
    return STACK_PTR( VG_(threads)[tid].arch );
 }
 
+/* Debugging thing .. can be called from assembly with OYNK macro. */
+void VG_(oynk) ( Int n )
+{
+   OINK(n);
+}
+
 /* Initialize the PID and PGRP of scheduler LWP; this is also called
    in any new children after fork. */
 static void newpid(ThreadId unused)
@@ -2605,6 +2611,12 @@ int main(int argc, char **argv)
    //      setup_scheduler()      [for the rest of state 1 stuff]
    //--------------------------------------------------------------
    VGA_(init_thread1state)(client_eip, sp_at_startup, &VG_(threads)[1].arch );
+
+   // Tell the tool that we just wrote to the registers.
+   VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
+             sizeof(VexGuestArchState));
+
+   // Record the instr ptr offset, for use by asm code.
    VG_(instr_ptr_offset) = offsetof(VexGuestArchState, ARCH_INSTR_PTR);
 
    //--------------------------------------------------------------

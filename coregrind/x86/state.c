@@ -56,11 +56,12 @@ void VGA_(init_thread1state) ( Addr client_eip,
    VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestX86State));
 
    /* Put essential stuff into the new state. */
-   /* initialise %cs, %ds and %ss to point at the operating systems
-      default code, data and stack segments */
+
    arch->vex.guest_ESP = esp_at_startup;
    arch->vex.guest_EIP = client_eip;
 
+   /* initialise %cs, %ds and %ss to point at the operating systems
+      default code, data and stack segments */
    asm volatile("movw %%cs, %0"
                 :
                 : "m" (arch->vex.guest_CS));

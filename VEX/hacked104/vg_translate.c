@@ -3133,7 +3133,7 @@ void VG_(translate) ( ThreadState* tst,
                     0,  /* verbosity */
                     False, 
 		    //True, 
-                    20 /* max insns per bb */ );
+                    4 /* max insns per bb */ );
       vex_init_done = True;
    }
 
@@ -3174,7 +3174,10 @@ void VG_(translate) ( ThreadState* tst,
 
    if (debugging_translation) {
       UChar* p = (UChar*)orig_addr;
-      VG_(printf)(". %d %x %d\n.", 0, orig_addr, t_orig_size );
+      VG_(printf)("\n");
+      VG_(printf)(". %d %x %d\n.", 
+                  debugging_translation ? 0 : VG_(overall_in_count), 
+                  orig_addr, t_orig_size );
       for (i = 0; i < t_orig_size; i++)
          VG_(printf)(" %02x", (Int)p[i] );
       VG_(printf)("\n");

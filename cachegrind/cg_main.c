@@ -8,7 +8,7 @@
    This file is part of Cachegrind, a Valgrind tool for cache
    profiling programs.
 
-   Copyright (C) 2002-2004 Nicholas Nethercote
+   Copyright (C) 2002-2005 Nicholas Nethercote
       njn25@cam.ac.uk
 
    This program is free software; you can redistribute it and/or
@@ -1123,7 +1123,7 @@ void TL_(pre_clo_init)(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("an I1/D1/L2 cache profiler");
    VG_(details_copyright_author)(
-      "Copyright (C) 2002-2004, and GNU GPL'd, by Nicholas Nethercote et al.");
+      "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 155 );
 

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2004 Julian Seward 
+   Copyright (C) 2000-2005 Julian Seward 
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -1538,7 +1538,7 @@ static void usage ( Bool debug_help )
 "\n"
 "  Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc\n"
 "\n"
-"  Valgrind is Copyright (C) 2000-2004 Julian Seward et al.\n"
+"  Valgrind is Copyright (C) 2000-2005 Julian Seward et al.\n"
 "  and licensed under the GNU General Public License, version 2.\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n"
@@ -1991,7 +1991,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          "Using valgrind-%s, a dynamic binary instrumentation framework.",
          /*VERSION*/ "SVN >= 3207");
       VG_(message)(Vg_UserMsg, 
-         "Copyright (C) 2000-2004, and GNU GPL'd, by Julian Seward et al.");
+         "Copyright (C) 2000-2005, and GNU GPL'd, by Julian Seward et al.");
    }
 
    if (VG_(clo_verbosity) > 0 && VG_(clo_log_to) != VgLogTo_Fd) {

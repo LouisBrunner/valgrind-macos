@@ -31,6 +31,7 @@
 */
 
 #include "mc_common.h"
+#include "memcheck.h"
 //#include "vg_profile.c"
 
 VG_DETERMINE_INTERFACE_VERSION
@@ -1184,6 +1185,42 @@ Bool SK_(expensive_sanity_check) ( void )
    return True;
 }
       
+/* 
+   Client requests
+ */
+Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
+{
+   UInt* arg = arg_block;
+
+   /* Overload memcheck client reqs */
+   if (!VG_IS_SKIN_USERREQ('M','C',arg[0]))
+      return False;
+
+   switch (arg[0]) {
+      case VG_USERREQ__DO_LEAK_CHECK:
+         ac_detect_memory_leaks();
+	 *ret = 0; /* return value is meaningless */
+	 break;
+
+	 /* Ignore these quietly */
+      case VG_USERREQ__CHECK_WRITABLE: /* check writable */
+      case VG_USERREQ__CHECK_READABLE: /* check readable */
+      case VG_USERREQ__MAKE_NOACCESS: /* make no access */
+      case VG_USERREQ__MAKE_WRITABLE: /* make writable */
+      case VG_USERREQ__MAKE_READABLE: /* make readable */
+      case VG_USERREQ__DISCARD: /* discard */
+      case VG_USERREQ__MAKE_NOACCESS_STACK: /* make noaccess stack block */
+	 return False;
+
+      default:
+         VG_(message)(Vg_UserMsg, 
+                      "Warning: unknown memcheck client request code %d",
+                      arg[0]);
+         return False;
+   }
+   return True;
+}
+
 /*------------------------------------------------------------*/
 /*--- Setup                                                ---*/
 /*------------------------------------------------------------*/

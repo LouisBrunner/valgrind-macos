@@ -134,11 +134,13 @@ static void handle_sigill(int signum)
    siglongjmp(catchpoint, 1);
 }
 
+__attribute__((unused))
 static int eq_float(float f1, float f2)
 {
    return f1 == f2 || fabsf(f1 - f2) < fabsf(f1) * 1.5 * pow(2,-12);
 }
 
+__attribute__((unused))
 static int eq_double(double d1, double d2)
 {
    return d1 == d2 || fabs(d1 - d2) < fabs(d1) * 1.5 * pow(2,-12);

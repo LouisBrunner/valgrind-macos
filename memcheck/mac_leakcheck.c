@@ -421,8 +421,10 @@ void MAC_(do_detect_memory_leaks) (
       return;
    }
 
-   VG_(message)(Vg_UserMsg, "searching for pointers to %d not-freed blocks.", 
-                lc_n_shadows );
+   if (VG_(clo_verbosity) > 0)
+      VG_(message)(Vg_UserMsg, 
+                   "searching for pointers to %d not-freed blocks.", 
+                   lc_n_shadows );
 
    lc_min_mallocd_addr = lc_shadows[0]->data;
    lc_max_mallocd_addr = lc_shadows[lc_n_shadows-1]->data
@@ -441,7 +443,8 @@ void MAC_(do_detect_memory_leaks) (
               &vg_detect_memory_leaks_notify_addr
            );
 
-   VG_(message)(Vg_UserMsg, "checked %d bytes.", bytes_notified);
+   if (VG_(clo_verbosity) > 0)
+      VG_(message)(Vg_UserMsg, "checked %d bytes.", bytes_notified);
 
    /* Common up the lost blocks so we can print sensible error messages. */
    n_lossrecords = 0;
@@ -526,23 +529,24 @@ void MAC_(do_detect_memory_leaks) (
       p_min->num_blocks = 0;
    }
 
-   VG_(message)(Vg_UserMsg, "");
-   VG_(message)(Vg_UserMsg, "LEAK SUMMARY:");
-   VG_(message)(Vg_UserMsg, "   definitely lost: %d bytes in %d blocks.", 
-                            MAC_(bytes_leaked), blocks_leaked );
-   VG_(message)(Vg_UserMsg, "   possibly lost:   %d bytes in %d blocks.", 
-                            MAC_(bytes_dubious), blocks_dubious );
-   VG_(message)(Vg_UserMsg, "   still reachable: %d bytes in %d blocks.", 
-                            MAC_(bytes_reachable), blocks_reachable );
-   VG_(message)(Vg_UserMsg, "        suppressed: %d bytes in %d blocks.", 
-                            MAC_(bytes_suppressed), blocks_suppressed );
-   if (!MAC_(clo_show_reachable)) {
-      VG_(message)(Vg_UserMsg, 
-        "Reachable blocks (those to which a pointer was found) are not shown.");
-      VG_(message)(Vg_UserMsg, 
-         "To see them, rerun with: --show-reachable=yes");
+   if (VG_(clo_verbosity) > 0) {
+      VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "LEAK SUMMARY:");
+      VG_(message)(Vg_UserMsg, "   definitely lost: %d bytes in %d blocks.", 
+                               MAC_(bytes_leaked), blocks_leaked );
+      VG_(message)(Vg_UserMsg, "   possibly lost:   %d bytes in %d blocks.", 
+                               MAC_(bytes_dubious), blocks_dubious );
+      VG_(message)(Vg_UserMsg, "   still reachable: %d bytes in %d blocks.", 
+                               MAC_(bytes_reachable), blocks_reachable );
+      VG_(message)(Vg_UserMsg, "        suppressed: %d bytes in %d blocks.", 
+                               MAC_(bytes_suppressed), blocks_suppressed );
+      if (!MAC_(clo_show_reachable)) {
+         VG_(message)(Vg_UserMsg, 
+           "Reachable blocks (those to which a pointer was found) are not shown.");
+         VG_(message)(Vg_UserMsg, 
+            "To see them, rerun with: --show-reachable=yes");
+      }
    }
-   VG_(message)(Vg_UserMsg, "");
 
    VG_(free) ( lc_shadows );
    VG_(free) ( lc_reachedness );

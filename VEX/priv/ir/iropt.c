@@ -13,6 +13,9 @@
 #include "main/vex_util.h"
 #include "ir/iropt.h"
 
+/* Set to 1 for lots of debugging output. */
+#define DEBUG_IROPT 0
+
 
 /*---------------------------------------------------------------*/
 /*--- Should be made public (to vex)                          ---*/
@@ -352,6 +355,13 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         << e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
+            case Iop_32HLto64:
+               e2 = IRExpr_Const(IRConst_U64(
+                       (((ULong)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)) << 32)
+                       | ((ULong)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)) 
+                    ));
+               break;
+
 case Iop_CmpEQ32:
   vex_printf("FOLD: warning, missed CmpEQ32\n");
 break;
@@ -378,8 +388,8 @@ break;
       e2 = zero ? e->Iex.Mux0X.expr0 : e->Iex.Mux0X.exprX;
    }
 
-   if (e2 != e) {
-     vex_printf("FOLD: "); 
+   if (DEBUG_IROPT && e2 != e) {
+      vex_printf("FOLD: "); 
       ppIRExpr(e); vex_printf("  ->  ");
       ppIRExpr(e2); vex_printf("\n");
    }
@@ -705,7 +715,7 @@ static void dead_BB ( IRBB* bb )
       if (st->tag == Ist_Tmp
           && !lookupH64(set, NULL, (ULong)(st->Ist.Tmp.tmp))) {
           /* it's an IRTemp which never got used.  Delete it. */
-         if (1) {
+         if (DEBUG_IROPT) {
             vex_printf("DEAD: ");
             ppIRStmt(st);
             vex_printf("\n");
@@ -758,9 +768,9 @@ static UInt mk_key_GetIPutI ( UShort minoff16, UShort maxoff16 )
 static void redundant_get_removal_BB ( IRBB* bb )
 {
    Hash64* env = newH64();
-   UInt key;
-   Int i, j;
-   Bool isPut;
+   UInt    key;
+   Int     i, j;
+   Bool    isPut;
 
    for (i = 0; i < bb->stmts_used; i++) {
       IRStmt* st = bb->stmts[i];
@@ -779,7 +789,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
                                      get->Iex.Get.ty );
          if (lookupH64(env, &val, (ULong)key)) {
             /* found it */
-            if (1) {
+            if (DEBUG_IROPT) {
                vex_printf("rGET: "); ppIRExpr(get);
                vex_printf("  ->  "); ppIRExpr((IRExpr*)val);
                vex_printf("\n");

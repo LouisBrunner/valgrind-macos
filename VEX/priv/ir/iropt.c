@@ -2006,7 +2006,7 @@ static void cse_BB ( IRBB* bb )
       if (!eprime)
          continue;
 
-      vex_printf("considering: " ); ppIRStmt(st); vex_printf("\n");
+      /* vex_printf("considering: " ); ppIRStmt(st); vex_printf("\n"); */
 
       /* apply tenv */
       subst_AvailExpr( tenv, eprime );

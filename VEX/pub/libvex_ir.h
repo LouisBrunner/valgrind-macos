@@ -210,11 +210,16 @@ typedef
       Iop_CmpLE32S,
       Iop_CmpLT32U,
       Iop_CmpLE32U,
+
       /* Division */
       /* TODO: clarify semantics wrt rounding, negative values, whatever */
       Iop_DivModU64to32, // :: I64,I32 -> I64
                          // of which lo half is div and hi half is mod
       Iop_DivModS64to32, // ditto, signed
+
+      Iop_DivModU128to64, // :: V128,I64 -> V128
+                          // of which lo half is div and hi half is mod
+      Iop_DivModS128to64, // ditto, signed
 
       /* Widening conversions */
       Iop_8Uto16, Iop_8Uto32, Iop_16Uto32, Iop_32Uto64,

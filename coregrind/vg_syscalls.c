@@ -6452,7 +6452,7 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_fchown,           sys_fchown16),     // 95 ## (SVr4,BSD4.3)
    SYSX_(__NR_getpriority,      sys_getpriority),  // 96 * (SVr4,4.4BSD)
    SYSX_(__NR_setpriority,      sys_setpriority),  // 97 * (SVr4,4.4BSD)
-   //   (__NR_profil,           sys_ni_syscall),   // 98 * P -- unimplemented
+   SYSX_(__NR_profil,           sys_ni_syscall),   // 98 * P -- unimplemented
    SYSXY(__NR_statfs,           sys_statfs),       // 99 * (P-ish)
 
    SYSXY(__NR_fstatfs,          sys_fstatfs),      // 100 * (P-ish)

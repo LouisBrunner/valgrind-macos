@@ -473,7 +473,7 @@ static Int integerGuestRegOffset ( UInt archreg )
 {
    vassert(archreg < 32);
 
-   vassert(!host_is_bigendian);   //TODO: is this necessary?
+//   vassert(!host_is_bigendian);   //TODO: is this necessary?
    // jrs: probably not; only matters if we reference sub-parts
    // of the ppc32 registers, but that isn't the case
    switch (archreg) {

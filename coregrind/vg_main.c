@@ -132,6 +132,14 @@ static Int alloc_BaB ( Int words )
    return off;   
 }
 
+/* Align offset, in *bytes* */
+static void align_BaB ( UInt align )
+{
+   vg_assert(2 == align || 4 == align || 8 == align || 16 == align);
+   baB_off +=  (align-1);
+   baB_off &= ~(align-1);
+}
+
 /* Allocate 1 word in baseBlock and set it to the given value. */
 static Int alloc_BaB_1_set ( Addr a )
 {
@@ -257,7 +265,7 @@ static void vg_init_baseBlock ( void )
    VGOFF_(m_dflag) = alloc_BaB(1);
 
    /* The FPU/SSE state.  This _must_ be 16-byte aligned. */
-   (void)alloc_BaB(1); /* Padding, to achieve required alignment. */
+   align_BaB(16);
    VGOFF_(m_ssestate) = alloc_BaB(VG_SIZE_OF_SSESTATE_W);
    vg_assert( 
       (  ((UInt)(& VG_(baseBlock)[VGOFF_(m_ssestate)]))
@@ -1385,10 +1393,12 @@ void VG_(main) ( void )
    VgSchedReturnCode src;
    ThreadState*      tst;
 
-   if (VG_(have_ssestate))
-      VG_(printf)("Looks like a SSE-capable CPU\n");
-   else
-      VG_(printf)("Looks like a MMX-only CPU\n");
+   if (0) {
+      if (VG_(have_ssestate))
+         VG_(printf)("Looks like a SSE-capable CPU\n");
+      else
+         VG_(printf)("Looks like a MMX-only CPU\n");
+   }
 
    /* Check skin and core versions are compatible */
    if (VG_CORE_INTERFACE_MAJOR_VERSION != VG_(skin_interface_major_version)) {

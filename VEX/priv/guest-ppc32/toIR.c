@@ -69,10 +69,6 @@
    change during translation of a bb. 
 */
 
-/* We need to know this to do sub-register accesses correctly. */
-/* CONST */
-static Bool host_is_bigendian;
-
 /* Pointer to the guest code area. */
 /* CONST */
 static UChar* guest_code;
@@ -306,7 +302,6 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
    vge->len[0]  = 0;
 
    /* Set up globals. */
-   host_is_bigendian = host_bigendian;
    guest_code        = ppc32code;
    guest_pc_bbstart  = (Addr32)guest_pc_start;
    irbb              = emptyIRBB();
@@ -815,7 +810,7 @@ static IRExpr* getReg_field ( PPC32SPR reg, UInt field_idx )
    fld = getReg_masked( reg, (0xF << (field_idx*4)) );
    
    if (field_idx != 0) {
-      fld = binop(Iop_Shr32, fld, mkU8(field_idx * 4));
+      fld = binop(Iop_Shr32, fld, mkU8(toUChar(field_idx * 4)));
    }
    return fld;
 }
@@ -831,7 +826,7 @@ static IRExpr* getReg_bit ( PPC32SPR reg, UInt bit_idx )
    val = getReg_masked( reg, 1<<bit_idx );
 
    if (bit_idx != 0) {
-      val = binop(Iop_Shr32, val, mkU8(bit_idx));
+      val = binop(Iop_Shr32, val, mkU8(toUChar(bit_idx)));
    }
    return val;
 }
@@ -922,7 +917,7 @@ static void putReg_field ( PPC32SPR reg, IRExpr* src, UInt field_idx )
    vassert( reg < PPC32_SPR_MAX );
    
    if (field_idx != 0) {
-      src = binop(Iop_Shl32, src, mkU8(field_idx * 4));
+      src = binop(Iop_Shl32, src, mkU8(toUChar(field_idx * 4)));
    }   
    putReg_masked( reg, src, (0xF << (field_idx*4)) );
 }
@@ -935,7 +930,7 @@ static void putReg_bit ( PPC32SPR reg, IRExpr* src, UInt bit_idx )
    vassert( reg < PPC32_SPR_MAX );
    
    if (bit_idx != 0) {
-      src = binop(Iop_Shl32, src, mkU8(bit_idx));
+      src = binop(Iop_Shl32, src, mkU8(toUChar(bit_idx)));
    }   
    putReg_masked( reg, src, (1<<bit_idx) );
 }
@@ -1337,13 +1332,13 @@ static Bool dis_int_cmp ( UInt theInstr )
    switch (opc1) {
    case 0x0B: // cmpi (Compare Immediate, PPC32 p368)
       EXTS_SIMM = extend_s_16to32(SIMM_16);
-      DIP("cmpi crf%d,%u,r%d,0x%x\n", crfD, flag_L, Ra_addr, EXTS_SIMM);
+      DIP("cmpi crf%d,%d,r%d,0x%x\n", crfD, flag_L, Ra_addr, EXTS_SIMM);
       irx_cmp_lt = binop(Iop_CmpLT32S, mkexpr(Ra), mkU32(EXTS_SIMM));
       irx_cmp_eq = binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(EXTS_SIMM));
       break;
           
    case 0x0A: // cmpli (Compare Logical Immediate, PPC32 p370)
-      DIP("cmpli crf%d,%u,r%d,0x%x\n", crfD, flag_L, Ra_addr, UIMM_16);
+      DIP("cmpli crf%d,%d,r%d,0x%x\n", crfD, flag_L, Ra_addr, UIMM_16);
       irx_cmp_lt = binop(Iop_CmpLT32U, mkexpr(Ra), mkU32(UIMM_16));
       irx_cmp_eq = binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(UIMM_16));
       break;
@@ -1359,13 +1354,13 @@ static Bool dis_int_cmp ( UInt theInstr )
 
       switch (opc2) {
       case 0x000: // cmp (Compare, PPC32 p367)
-         DIP("cmp crf%d,%u,r%d,r%d\n", crfD, flag_L,
+         DIP("cmp crf%d,%d,r%d,r%d\n", crfD, flag_L,
              Ra_addr, Rb_addr);
          irx_cmp_lt = binop(Iop_CmpLT32S, mkexpr(Ra), mkexpr(Rb));
          break;
          
        case 0x020: // cmpl (Compare Logical, PPC32 p369)
-          DIP("cmpl crf%d,%u,r%d,r%d\n", crfD, flag_L,
+          DIP("cmpl crf%d,%d,r%d,r%d\n", crfD, flag_L,
               Ra_addr, Rb_addr);
           irx_cmp_lt = binop(Iop_CmpLT32U, mkexpr(Ra), mkexpr(Rb));
           break;
@@ -1609,7 +1604,7 @@ static Bool dis_int_rot ( UInt theInstr )
       
    switch (opc1) {
    case 0x14: // rlwimi (Rotate Left Word Immediate then Mask Insert, PPC32 p500)
-      DIP("rlwimi%s r%d,r%d,%d,%u,%u\n", flag_Rc ? "." : "",
+      DIP("rlwimi%s r%d,r%d,%d,%d,%d\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
       // Ra = (ROTL(Rs, Imm) & mask) | (Ra & ~mask);
       assign( Ra, binop(Iop_Or32,
@@ -1619,7 +1614,7 @@ static Bool dis_int_rot ( UInt theInstr )
       break;
 
    case 0x15: // rlwinm (Rotate Left Word Immediate then AND with Mask, PPC32 p501)
-      DIP("rlwinm%s r%d,r%d,%d,%u,%u\n", flag_Rc ? "." : "",
+      DIP("rlwinm%s r%d,r%d,%d,%d,%d\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, sh_imm, MaskBegin, MaskEnd);
       // Ra = ROTL(Rs, Imm) & mask
       assign( Ra, binop(Iop_And32, ROTL32(mkexpr(Rs),
@@ -1627,7 +1622,7 @@ static Bool dis_int_rot ( UInt theInstr )
       break;
 
    case 0x17: // rlwnm (Rotate Left Word then AND with Mask, PPC32 p503
-      DIP("rlwnm%s r%d,r%d,r%d,%u,%u\n", flag_Rc ? "." : "",
+      DIP("rlwnm%s r%d,r%d,r%d,%d,%d\n", flag_Rc ? "." : "",
           Ra_addr, Rs_addr, Rb_addr, MaskBegin, MaskEnd);
       // Ra = ROTL(Rs, Rb[0-4]) & mask
       assign( rot_amt,
@@ -2109,7 +2104,7 @@ static Bool dis_int_ldst_str ( UInt theInstr )
             return False;
          }
       }
-      DIP("lswi r%d,r%d,%u\n", Rd_addr, Ra_addr, NumBytes);
+      DIP("lswi r%d,r%d,%d\n", Rd_addr, Ra_addr, NumBytes);
       
       assign( EA, mkexpr(b_EA) );
       
@@ -2140,7 +2135,7 @@ static Bool dis_int_ldst_str ( UInt theInstr )
       return False;
 
    case 0x2D5: // stswi (Store String Word Immediate, PPC32 p528)
-      DIP("stswi r%d,r%d,%u\n", Rs_addr, Ra_addr, NumBytes);
+      DIP("stswi r%d,r%d,%d\n", Rs_addr, Ra_addr, NumBytes);
       if (Ra_addr == 0) {
          assign( EA, mkU32(0) );
       } else {
@@ -3189,22 +3184,22 @@ static Bool dis_fp_load ( UInt theInstr )
    case 0x1F:
       switch(opc2) {
       case 0x217: // lfs (Load Float Single, PPC32 p441)
-         DIP("lfs fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+         DIP("lfs fr%d,%u(r%d)\n", frD_addr, d_imm, rA_addr);
          DIP(" => not implemented\n");
          return False;
 
       case 0x237: // lfsu (Load Float Single with Update, PPC32 p442)
-         DIP("lfsu fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+         DIP("lfsu fr%d,%u(r%d)\n", frD_addr, d_imm, rA_addr);
          DIP(" => not implemented\n");
          return False;
 
       case 0x257: // lfd (Load Float Double, PPC32 p437)
-         DIP("lfd fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+         DIP("lfd fr%d,%u(r%d)\n", frD_addr, d_imm, rA_addr);
          DIP(" => not implemented\n");
          return False;
 
       case 0x277: // lfdu (Load Float Double with Update, PPC32 p438)
-         DIP("lfdu fr%d,%d(r%d)\n", frD_addr, d_imm, rA_addr);
+         DIP("lfdu fr%d,%u(r%d)\n", frD_addr, d_imm, rA_addr);
          DIP(" => not implemented\n");
          return False;
 
@@ -3279,22 +3274,22 @@ static Bool dis_fp_store ( UInt theInstr )
    case 0x1F:
       switch(opc2) {
       case 0x297: // stfs (Store Float Single, PPC32 p518)
-         DIP("stfs fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+         DIP("stfs fr%d,%u(r%d)\n", frS_addr, d_imm, rA_addr);
          DIP(" => not implemented\n");
          return False;
 
       case 0x2B7: // stfsu (Store Float Single with Update, PPC32 p519)
-         DIP("stfsu fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+         DIP("stfsu fr%d,%u(r%d)\n", frS_addr, d_imm, rA_addr);
          DIP(" => not implemented\n");
          return False;
 
       case 0x2D7: // stfd (Store Float Double, PPC32 p513)
-         DIP("stfd fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+         DIP("stfd fr%d,%u(r%d)\n", frS_addr, d_imm, rA_addr);
          DIP(" => not implemented\n");
          return False;
 
       case 0x2F7: // stfdu (Store Float Double with Update, PPC32 p514)
-         DIP("stfdu fr%d,%d(r%d)\n", frS_addr, d_imm, rA_addr);
+         DIP("stfdu fr%d,%u(r%d)\n", frS_addr, d_imm, rA_addr);
          DIP(" => not implemented\n");
          return False;
 

@@ -51,7 +51,7 @@ install-exec-hook:
 	$(LN_S) libpthread.so $(DESTDIR)$(valdir)/libpthread.so.0
 
 all-local:
-	mkdir -p .in_place
-	rm -f $(addprefix .in_place/,default.supp $(SUPP_FILES))
-	ln -s $(addprefix ../,default.supp $(SUPP_FILES)) $(top_srcdir)/.in_place
+	mkdir -p $(top_builddir)/.in_place
+	rm -f $(addprefix $(top_builddir)/.in_place/,default.supp $(SUPP_FILES))
+	ln -s $(addprefix $(top_srcdir)/../,default.supp $(SUPP_FILES)) $(top_builddir)/.in_place
 

@@ -7,6 +7,8 @@ noinst_SCRIPTS = filter_allocs filter_leak_check_size \
 		 filter_stderr filter_stderr_backtrace filter_pushfpopf \
 		 filter_tronical
 
+INSN_TESTS=insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
+
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
@@ -29,8 +31,9 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fwrite.stderr.exp fwrite.stdout.exp fwrite.vgtest \
 	inits.stderr.exp inits.vgtest \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
-	insn_basic.vgtest insn_cmov.vgtest insn_mmx.vgtest \
-	insn_mmxext.vgtest insn_sse.vgtest insn_sse2.vgtest \
+	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
+	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	malloc1.stderr.exp malloc1.vgtest \
 	malloc2.stderr.exp malloc2.vgtest \
 	malloc3.stderr.exp malloc3.stdout.exp malloc3.vgtest \

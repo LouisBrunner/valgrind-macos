@@ -1,11 +1,14 @@
 noinst_SCRIPTS = filter_stderr
 
+INSN_TESTS=insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
+
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	allok.stderr.exp allok.vgtest		\
 	deadlock.stderr.exp deadlock.vgtest	\
 	inherit.stderr.exp inherit.vgtest	\
-	insn_basic.vgtest insn_cmov.vgtest insn_mmx.vgtest \
-	insn_mmxext.vgtest insn_sse.vgtest insn_sse2.vgtest \
+	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
+	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	race.stderr.exp race.vgtest		\
 	race2.stderr.exp race2.vgtest		\
 	readshared.stderr.exp readshared.vgtest

@@ -1,11 +1,14 @@
 noinst_SCRIPTS = filter_stderr filter_cachesim_discards
 
+INSN_TESTS=insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
+
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	chdir.vgtest chdir.stderr.exp \
 	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp \
 	fpu-28-108.vgtest fpu-28-108.stderr.exp \
-	insn_basic.vgtest insn_cmov.vgtest insn_mmx.vgtest \
-	insn_mmxext.vgtest insn_sse.vgtest insn_sse2.vgtest
+	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
+	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
+	$(addsuffix .vgtest,$(INSN_TESTS))
 
 check_PROGRAMS = \
 	chdir dlclose fpu-28-108 myprint.so

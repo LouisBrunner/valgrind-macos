@@ -1,6 +1,6 @@
 
 valdir = $(libdir)/valgrind
-inplacedir = $(top_srcdir)/.in_place
+inplacedir = $(top_builddir)/.in_place
 
 AM_CPPFLAGS = $(add_includes)
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \

@@ -1,10 +1,10 @@
 
-SUBDIRS = arch x86 demangle . docs
+SUBDIRS = x86 demangle . docs
 
 add_includes = -I$(srcdir)/demangle -I$(top_srcdir)/include -I$(srcdir)/x86
 
 valdir = $(libdir)/valgrind
-inplacedir = $(top_srcdir)/.in_place
+inplacedir = $(top_builddir)/.in_place
 
 AM_CPPFLAGS = $(add_includes) -DVG_LIBDIR="\"$(valdir)"\"
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \
@@ -76,10 +76,10 @@ stage2_SOURCES = \
 	vg_translate.c \
 	vg_transtab.c \
 	vg_ldt.c
-stage2_DEPENDENCIES = $(srcdir)/valgrind.vs $(srcdir)/x86/stage2.lds
+stage2_DEPENDENCIES = $(srcdir)/valgrind.vs x86/stage2.lds
 stage2_LDFLAGS=-Wl,--export-dynamic -Wl,-e,_ume_entry  -g \
 	-Wl,-defsym,kickstart_base=0xb8000000 \
-	-Wl,-T,$(srcdir)/x86/stage2.lds \
+	-Wl,-T,x86/stage2.lds \
 	-Wl,-version-script $(srcdir)/valgrind.vs 
 stage2_LDADD= \
 	demangle/cp-demangle.o \
@@ -144,6 +144,6 @@ all-local:
 	for i in $(val_PROGRAMS); do \
 		to=$(inplacedir)/$$(echo $$i | sed 's,libpthread.so,libpthread.so.0,'); \
 		rm -f $$$to; \
-		ln -sf $(top_srcdir)/$(subdir)/$$i $$to; \
+		ln -sf $(top_builddir)/$(subdir)/$$i $$to; \
 	done
 

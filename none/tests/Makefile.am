@@ -1,4 +1,7 @@
-noinst_SCRIPTS = filter_cpuid  filter_none_discards filter_stderr
+noinst_SCRIPTS = filter_cpuid  filter_none_discards filter_stderr filter_int gen_insn_test.pl
+
+CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
+INSN_TESTS=insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	args.stderr.exp args.stdout.exp args.vgtest \
@@ -16,8 +19,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	dastest.vgtest \
 	discard.stderr.exp discard.stdout.exp \
 	discard.vgtest \
-	exec-sigmask.vgtest 
-	exec-sigmask.stdout.exp exec-sigmask.stderr.exp \
+	exec-sigmask.vgtest exec-sigmask.stdout.exp exec-sigmask.stderr.exp \
 	floored.stderr.exp floored.stdout.exp \
 	floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
@@ -25,15 +27,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	fpu_lazy_eflags.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
-	insn_basic.stderr.exp insn_basic.stdout.exp insn_basic.vgtest \
-	insn_cmov.stderr.exp insn_cmov.stdout.exp insn_cmov.vgtest \
-	insn_mmx.stderr.exp insn_mmx.stdout.exp insn_mmx.vgtest \
-	insn_mmxext.stderr.exp insn_mmxext.stdout.exp insn_mmxext.vgtest \
-	insn_sse.stderr.exp insn_sse.stdout.exp insn_sse.vgtest \
-	insn_sse2.stderr.exp insn_sse2.stdout.exp insn_sse2.vgtest \
+	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
+	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	int.stderr.exp int.stdout.exp int.vgtest \
-	map_unmap.stdout.exp map_unmap.vgtest \
-	mremap.stdout.exp mremap.vgtest \
+	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
+	mremap.stderr.exp mremap.stdout.exp mremap.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
@@ -52,13 +51,13 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	syscall-restart1.vgtest syscall-restart1.stdout.exp syscall-restart1.stderr.exp \
 	syscall-restart2.vgtest syscall-restart2.stdout.exp syscall-restart2.stderr.exp \
-	system.stdout.exp system.vgtest
-	yield.stdout.exp yield.vgtest
+	system.stderr.exp system.vgtest \
+	yield.stderr.exp yield.stdout.exp yield.vgtest
 
 check_PROGRAMS = \
 	args bitfield1 bt_everything bt_literal closeall coolo_strlen \
 	cpuid dastest discard exec-sigmask floored fork fpu_lazy_eflags \
-	fucomip insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2 \
+	fucomip $(INSN_TESTS) \
 	int munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	pth_blockedsig pushpopseg \
@@ -137,13 +136,5 @@ gxx304_SOURCES		= gxx304.cpp
 # must be built with these flags -- bug only occurred with them
 fpu_lazy_eflags.o: CFLAGS += -O2 -mcpu=pentiumpro -march=pentiumpro
 
-# rebuild instruction tests if test generator changes
-insn_basic.c: gen_insn_test.pl
-insn_cmov.c: gen_insn_test.pl
-insn_mmx.c: gen_insn_test.pl
-insn_mmxext.c: gen_insn_test.pl
-insn_sse.c: gen_insn_test.pl
-insn_sse2.c: gen_insn_test.pl
-
-.def.c:
-	$(PERL) gen_insn_test.pl < $< > $@
+.def.c: $(srcdir)/gen_insn_test.pl
+	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

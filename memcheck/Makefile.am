@@ -9,14 +9,14 @@ AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O2 -fomit-frame-pointer \
 AM_CCASFLAGS = $(all_includes)
 
 valdir = $(libdir)/valgrind
-inplacedir = $(top_srcdir)/.in_place
+inplacedir = $(top_builddir)/.in_place
 
 val_PROGRAMS = vgskin_memcheck.so vgpreload_memcheck.so
 
 vgpreload_memcheck_so_SOURCES = \
 	mac_replace_strmem.c
-vgpreload_memcheck_so_LDADD = $(top_srcdir)/coregrind/vg_replace_malloc.o
-vgpreload_memcheck_so_DEPENDENCIES = $(top_srcdir)/coregrind/vg_replace_malloc.o
+vgpreload_memcheck_so_LDADD = $(top_builddir)/coregrind/vg_replace_malloc.o
+vgpreload_memcheck_so_DEPENDENCIES = $(top_builddir)/coregrind/vg_replace_malloc.o
 vgpreload_memcheck_so_LDFLAGS = -shared -Wl,-z,interpose,-z,initfirst
 
 vgskin_memcheck_so_SOURCES = \
@@ -46,4 +46,4 @@ mac_replace_strmem.o: CFLAGS += -fno-omit-frame-pointer
 all-local:
 	mkdir -p $(inplacedir)
 	-rm -f $(addprefix $(inplacedir)/,$(val_PROGRAMS))
-	ln -f -s $(addprefix $(top_srcdir)/$(subdir)/,$(val_PROGRAMS)) $(inplacedir)
+	ln -f -s $(addprefix $(top_builddir)/$(subdir)/,$(val_PROGRAMS)) $(inplacedir)

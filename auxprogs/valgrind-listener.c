@@ -229,7 +229,7 @@ void sigint_handler ( int signo )
 
 int main (int argc, char** argv) 
 {
-   int    i, j, k, res;
+   int    i, j, k, res, one;
    int    main_sd, new_sd, client_len;
    struct sockaddr_in client_addr, server_addr;
 
@@ -262,7 +262,16 @@ int main (int argc, char** argv)
       perror("cannot open socket ");
       panic("main -- create socket");
    }
-  
+
+   /* allow address reuse to avoid "address already in use" errors */
+
+   one = 1;
+   if (setsockopt(main_sd, SOL_SOCKET, SO_REUSEADDR, 
+		  &one, sizeof(int)) < 0) {
+      perror("cannot enable address reuse ");
+      panic("main -- enable address reuse");
+   }
+
    /* bind server port */
    server_addr.sin_family      = AF_INET;
    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);

@@ -1791,6 +1791,9 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    VG_(threads)[tid].status = VgTs_Runnable;
 
    /* Copy the parent's CPU state into the child's. */
+   VG_(threads)[tid].arch.vex        = VG_(threads)[parent_tid].arch.vex;
+   VG_(threads)[tid].arch.vex_shadow = VG_(threads)[parent_tid].arch.vex_shadow;
+   /* and let setup_child do any needed target-specific setup. */
    VGA_(setup_child)( &VG_(threads)[tid].arch,
                       &VG_(threads)[parent_tid].arch );
 

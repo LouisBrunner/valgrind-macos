@@ -130,13 +130,13 @@ void pthread_mutex_timedlock ( void )  { unimp("pthread_mutex_timedlock"); }
 //void pthread_mutexattr_destroy ( void )  { unimp("pthread_mutexattr_destroy"); }
 //void pthread_mutexattr_init ( void )  { unimp("pthread_mutexattr_init"); }
 //void pthread_once ( void )  { unimp("pthread_once"); }
-void pthread_rwlock_destroy ( void )  { unimp("pthread_rwlock_destroy"); }
-void pthread_rwlock_init ( void )  { unimp("pthread_rwlock_init"); }
+//void pthread_rwlock_destroy ( void )  { unimp("pthread_rwlock_destroy"); }
+//void pthread_rwlock_init ( void )  { unimp("pthread_rwlock_init"); }
 //void pthread_rwlock_rdlock ( void )  { unimp("pthread_rwlock_rdlock"); }
 void pthread_rwlock_timedrdlock ( void )  { unimp("pthread_rwlock_timedrdlock"); }
 void pthread_rwlock_timedwrlock ( void )  { unimp("pthread_rwlock_timedwrlock"); }
-void pthread_rwlock_tryrdlock ( void )  { unimp("pthread_rwlock_tryrdlock"); }
-void pthread_rwlock_trywrlock ( void )  { unimp("pthread_rwlock_trywrlock"); }
+//void pthread_rwlock_tryrdlock ( void )  { unimp("pthread_rwlock_tryrdlock"); }
+//void pthread_rwlock_trywrlock ( void )  { unimp("pthread_rwlock_trywrlock"); }
 //void pthread_rwlock_unlock ( void )  { unimp("pthread_rwlock_unlock"); }
 //void pthread_rwlock_wrlock ( void )  { unimp("pthread_rwlock_wrlock"); }
 void pthread_rwlockattr_destroy ( void )  { unimp("pthread_rwlockattr_destroy"); }
@@ -193,10 +193,10 @@ void pthread_attr_init@GLIBC_2.0 ( void )  { unimp("pthread_attr_init@GLIBC_2.0"
 # define weak_alias(name, aliasname) \
   extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
 
-weak_alias(pthread_rwlock_destroy, __pthread_rwlock_destroy)
-weak_alias(pthread_rwlock_init, __pthread_rwlock_init)
-weak_alias(pthread_rwlock_tryrdlock, __pthread_rwlock_tryrdlock)
-weak_alias(pthread_rwlock_trywrlock, __pthread_rwlock_trywrlock)
+//weak_alias(pthread_rwlock_destroy, __pthread_rwlock_destroy)
+//weak_alias(pthread_rwlock_init, __pthread_rwlock_init)
+//weak_alias(pthread_rwlock_tryrdlock, __pthread_rwlock_tryrdlock)
+//weak_alias(pthread_rwlock_trywrlock, __pthread_rwlock_trywrlock)
 //weak_alias(pthread_rwlock_wrlock, __pthread_rwlock_wrlock)
 weak_alias(_IO_ftrylockfile, ftrylockfile)
 

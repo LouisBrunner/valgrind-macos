@@ -43,3 +43,4 @@ pth_yield
 *.stderr.diff
 *.stdout.out
 *.stderr.out
+yield

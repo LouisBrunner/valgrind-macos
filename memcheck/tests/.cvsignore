@@ -55,3 +55,4 @@ new_nothrow
 realloc3
 threadederrno
 writev
+zeropage

@@ -907,7 +907,7 @@ void ac_fpu_ACCESS_check ( Addr addr, Int size, Bool isWrite )
       return;
    }
 
-   if (size == 16 || size == 10 || size == 28 || size == 108) {
+   if (size == 16 || size == 10 || size == 28 || size == 108 || size == 512) {
       PROF_EVENT(94);
       ac_fpu_ACCESS_check_SLOWLY ( addr, size, isWrite );
       return;
@@ -1055,8 +1055,8 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             helper = (Addr)ac_fpu_WRITE_check;
 	    goto do_Access_ARG3;
          do_Access_ARG3:
-	    sk_assert(u_in->size == 4 
-                      || u_in->size == 8 || u_in->size == 16);
+	    sk_assert(u_in->size == 4 || u_in->size == 8
+                      || u_in->size == 16 || u_in->size == 512);
             sk_assert(u_in->tag3 == TempReg);
             t_addr = u_in->val3;
             t_size = newTemp(cb);

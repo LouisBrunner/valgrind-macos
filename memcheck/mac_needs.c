@@ -732,19 +732,19 @@ A  78   ACCESS1_SLOWLY
    81   fpu_read aligned 4
    82   fpu_read aligned 8
    83   fpu_read 2
-   84   fpu_read 10/28/108
+   84   fpu_read 10/28/108/512
 
 M  85   fpu_write
 M  86   fpu_write aligned 4
 M  87   fpu_write aligned 8
 M  88   fpu_write 2
-M  89   fpu_write 10/28/108
+M  89   fpu_write 10/28/108/512
 
    90   fpu_access
    91   fpu_access aligned 4
    92   fpu_access aligned 8
    93   fpu_access 2
-   94   fpu_access 10/28/108
+   94   fpu_access 10/28/108/512
 
    100  fpu_access_check_SLOWLY
    101  fpu_access_check_SLOWLY(byte loop)

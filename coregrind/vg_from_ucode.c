@@ -4075,7 +4075,7 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
 
       case SSE2a_MemWr:
       case SSE2a_MemRd:
-         vg_assert(u->size == 4 || u->size == 16);
+         vg_assert(u->size == 4 || u->size == 16 || u->size == 512);
          vg_assert(u->tag1 == Lit16);
          vg_assert(u->tag2 == Lit16);
          vg_assert(u->tag3 == RealReg);

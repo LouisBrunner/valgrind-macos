@@ -3545,8 +3545,27 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    if (VG_(have_ssestate)) {
    UChar* insn = (UChar*)eip;
 
+   /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */
+   if (insn[0] == 0x0F && insn[1] == 0xAE 
+       && (!epartIsReg(insn[2]))
+       && (gregOfRM(insn[2]) == 1 || gregOfRM(insn[2]) == 0) ) {
+      Bool store = gregOfRM(insn[2]) == 0;
+      vg_assert(sz == 4);
+      pair = disAMode ( cb, sorb, eip+2, dis?dis_buf:NULL );
+      t1   = LOW24(pair);
+      eip += 2+HI8(pair);
+      uInstr3(cb, store ? SSE2a_MemWr : SSE2a_MemRd, 512,
+                  Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
+                  Lit16, (UShort)insn[2],
+                  TempReg, t1 );
+      if (dis)
+         VG_(printf)("fx%s %s\n", store ? "save" : "rstor", dis_buf );
+      goto decode_success;
+   }
+
    /* STMXCSR/LDMXCSR m32 -- load/store the MXCSR register. */
    if (insn[0] == 0x0F && insn[1] == 0xAE 
+       && (!epartIsReg(insn[2]))
        && (gregOfRM(insn[2]) == 3 || gregOfRM(insn[2]) == 2) ) {
       Bool store = gregOfRM(insn[2]) == 3;
       vg_assert(sz == 4);

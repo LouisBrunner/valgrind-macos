@@ -544,7 +544,7 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
 
          case SSE2a_MemRd:
          case SSE2a1_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 16);
+            sk_assert(u_in->size == 4 || u_in->size == 16 || u_in->size == 512);
             t_read = u_in->val3;
             is_FPU_R = True;
             break;
@@ -577,7 +577,7 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
             break;
 
          case SSE2a_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 16);
+            sk_assert(u_in->size == 4 || u_in->size == 16 || u_in->size == 512);
             t_write = u_in->val3;
             is_FPU_W = True;
             break;
@@ -798,11 +798,16 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 
          case SSE2a_MemRd:
          case SSE2a1_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 16);
+            sk_assert(u_in->size == 4 || u_in->size == 16 || u_in->size == 512);
             t_read = u_in->val3;
             t_read_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
-            data_size = u_in->size;
+            /* 512 B data-sized instructions will be done inaccurately
+             * but they're very rare and this avoids errors from
+             * hitting more than two cache lines in the simulation. */
+            data_size = ( u_in->size <= MIN_LINE_SIZE
+                        ? u_in->size
+                        : MIN_LINE_SIZE);
             VG_(copy_UInstr)(cb, u_in);
             break;
 
@@ -856,14 +861,19 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             break;
 
          case SSE2a_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 16);
+            sk_assert(u_in->size == 4 || u_in->size == 16 || u_in->size == 512);
            /* fall through */
          case SSE3a_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
             t_write = u_in->val3;
             t_write_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val3, TempReg, t_write_addr);
-            data_size = u_in->size;
+            /* 512 B data-sized instructions will be done inaccurately
+             * but they're very rare and this avoids errors from
+             * hitting more than two cache lines in the simulation. */
+            data_size = ( u_in->size <= MIN_LINE_SIZE
+                        ? u_in->size
+                        : MIN_LINE_SIZE);
             VG_(copy_UInstr)(cb, u_in);
             break;
 

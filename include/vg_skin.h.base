@@ -960,7 +960,7 @@ typedef
       /* word 3 */
       UShort  val3;       /* third operand */
       UChar   opcode;     /* opcode */
-      UChar   size;       /* data transfer size */
+      UShort  size;       /* data transfer size */
 
       /* word 4 */
       FlagSet flags_r;    /* :: FlagSet */

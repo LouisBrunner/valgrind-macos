@@ -414,7 +414,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  define SZ42 (u->size == 4 || u->size == 2)
 #  define SZ48 (u->size == 4 || u->size == 8)
 #  define SZ416 (u->size == 4 || u->size == 16)
-#  define SZsse (u->size == 4 || u->size == 8 || u->size == 16)
+#  define SZsse2 (u->size == 4 || u->size == 16 || u->size == 512)
+#  define SZsse3 (u->size == 4 || u->size == 8 || u->size == 16)
 #  define SZi  (u->size == 4 || u->size == 2 || u->size == 1)
 #  define SZf  (  u->size ==  4 || u->size ==  8 || u->size ==   2     \
                || u->size == 10 || u->size == 28 || u->size == 108)
@@ -563,22 +564,22 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case MMX2_ERegWr: return LIT0 && SZ4  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
 
    /* Fields checked:        lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
-   case SSE2a_MemWr:  return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE2a_MemRd:  return LIT0 && SZ416 && CCa  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE2a1_MemRd: return LIT0 && SZ416 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3a_MemWr:  return LIT0 && SZsse && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3a_MemRd:  return LIT0 && SZsse && CCa  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3e_RegRd:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3e_RegWr:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3a1_MemRd: return LIT8 && SZ16  && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3g_RegWr:  return LIT0 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3g1_RegWr: return LIT8 && SZ4   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3e1_RegRd: return LIT8 && SZ2   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
-   case SSE3:         return LIT0 && SZ0   && CCa  && Ls1 && Ls2 && N3  && XOTHER;
-   case SSE4:         return LIT0 && SZ0   && CCa  && Ls1 && Ls2 && N3  && XOTHER;
-   case SSE5:         return LIT0 && SZ0   && CC0  && Ls1 && Ls2 && Ls3 && XOTHER;
+   case SSE2a_MemWr:  return LIT0 && SZsse2 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE2a_MemRd:  return LIT0 && SZsse2 && CCa  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE2a1_MemRd: return LIT0 && SZ416  && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3a_MemWr:  return LIT0 && SZsse3 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3a_MemRd:  return LIT0 && SZsse3 && CCa  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3e_RegRd:  return LIT0 && SZ4    && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3e_RegWr:  return LIT0 && SZ4    && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3a1_MemRd: return LIT8 && SZ16   && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3g_RegWr:  return LIT0 && SZ4    && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3g1_RegWr: return LIT8 && SZ4    && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3e1_RegRd: return LIT8 && SZ2    && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
+   case SSE3:         return LIT0 && SZ0    && CCa  && Ls1 && Ls2 && N3  && XOTHER;
+   case SSE4:         return LIT0 && SZ0    && CCa  && Ls1 && Ls2 && N3  && XOTHER;
+   case SSE5:         return LIT0 && SZ0    && CC0  && Ls1 && Ls2 && Ls3 && XOTHER;
    case SSE3ag_MemRd_RegWr:
-                      return         SZ48  && CC0  && TR1 && TR2 && N3  && XOTHER;
+                      return         SZ48   && CC0  && TR1 && TR2 && N3  && XOTHER;
    default: 
       if (VG_(needs).extended_UCode)
          return SK_(sane_XUInstr)(beforeRA, beforeLiveness, u);
@@ -602,7 +603,8 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
 #  undef SZ42
 #  undef SZ48
 #  undef SZ416
-#  undef SZsse
+#  undef SZsse2
+#  undef SZsse3
 #  undef SZi
 #  undef SZf
 #  undef SZ4m

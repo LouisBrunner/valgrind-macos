@@ -1129,7 +1129,7 @@ void VG_(main) ( void )
       attach GDB in another shell. */
    if (0) { 
       Int p, q;
-      for (p = 0; p < 50000; p++)
+      for (p = 0; p < 5000; p++)
          for (q = 0; q < 50000; q++) ;
    }
 
@@ -1284,7 +1284,6 @@ void VG_(main) ( void )
             presence of threads, or if the client happened to be
             running a signal handler. */
          /* Prepare to restore state to the real CPU. */
-	VG_(printf)("\n\nBBS done\n\n");
          VG_(load_thread_state)(1 /* root thread */ );
          VG_(copy_baseBlock_to_m_state_static)();
 

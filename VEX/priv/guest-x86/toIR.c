@@ -3078,82 +3078,182 @@ UInt dis_imul_I_E_G ( UChar       sorb,
 /*--- x87 floating point insns.                            ---*/
 /*------------------------------------------------------------*/
 
-/* Get/set the top-of-stack pointer. */
+/* --- Helper functions for dealing with the register stack. --- */
+
+/* --- Produce an IRExpr* denoting a 64-bit NaN. --- */
+
+static IRExpr* mkNaN64 ( void )
+{
+   return IRExpr_Const(IRConst_NaN64());
+}
+
+/* --------- Get/set the top-of-stack pointer. --------- */
 
 static IRExpr* get_ftop ( void )
 {
    return IRExpr_Get( OFFB_FTOP, Ity_I32 );
 }
 
-static IRStmt* put_ftop ( IRExpr* e )
+static void put_ftop ( IRExpr* e )
 {
-   return IRStmt_Put( OFFB_FTOP, e );
+   stmt( IRStmt_Put( OFFB_FTOP, e ) );
 }
 
-/* Given i, generate an expression which is the offset in the guest
-   state of ST(i), considering the current value of FTOP. */
 
+/* --------- Get/set FP register tag bytes. --------- */
+
+/* Given i, generate an expression which is the offset in the guest
+   state of ST(i)'s tag byte, considering the current value of FTOP.  The 
+   generated expression is:
+
+      ((Get(OFFB_FTOP) + i) & 7) + OFFB_FTAGO
+*/
+static IRExpr* off_ST_TAG ( Int i )
+{
+  vassert(i >= 0 && i <= 7);
+  return 
+     binop(Iop_Add32,
+           binop(Iop_And32, 
+                 binop(Iop_Add32, get_ftop(), mkU32(i)),
+                 mkU32(7)),
+           mkU32(OFFB_FTAG0)
+     );
+}
+
+/* Given i, and some expression e, generate 'ST_TAG(i) = e'. */
+
+static void put_ST_TAG ( Int i, IRExpr* value )
+{
+   vassert(typeOfIRExpr(irbb->tyenv, value) == Ity_I8);
+   stmt(
+	IRStmt_PutI( off_ST_TAG(i), value, OFFB_FTAG0, OFFB_FTAG0 +7 )
+   );
+}
+
+/* Given i, generate an expression yielding 'ST_TAG(i)'.  This will be
+   zero to indicate "Empty" and nonzero and indicate "NonEmpty".  */
+
+static IRExpr* get_ST_TAG ( Int i )
+{
+   return
+      IRExpr_GetI( off_ST_TAG(i), Ity_I8, OFFB_FTAG0, OFFB_FTAG0 +7 );
+}
+
+
+/* --------- Get/set FP registers. --------- */
+
+/* Given i, generate an expression which is the offset in the guest
+   state of ST(i), considering the current value of FTOP.  The 
+   generated expression is:
+
+      (((Get(OFFB_FTOP) + i) & 7) << 3) + OFFB_FO
+*/
 static IRExpr* off_ST ( Int i )
 {
   vassert(i >= 0 && i <= 7);
   return 
      binop(Iop_Add32,
-           binop(Iop_Mul32,
+           binop(Iop_Shl32,
                  binop(Iop_And32, 
                        binop(Iop_Add32, get_ftop(), mkU32(i)),
                        mkU32(7)),
-                 mkU32(8)),
+                 mkU8(3)),
            mkU32(OFFB_F0)
      );
 }
 
-/* Given i, and some expression e, generate 'ST(i) = e'. */
 
-static IRStmt* put_ST ( Int i, IRExpr* value )
+/* Given i, and some expression e, emit 'ST(i) = e'
+and set the register's tag to indicate the register is full.
+The previous state of the register is not checked. */
+
+static void put_ST_UNCHECKED ( Int i, IRExpr* value )
 {
-   return
-      IRStmt_PutI( off_ST(i), value, OFFB_F0, OFFB_F7+8-1 );
+   stmt( IRStmt_PutI( off_ST(i), value, OFFB_F0, OFFB_F7+8-1 ) );
+   /* Mark the register as in-use. */
+   put_ST_TAG(i, mkU8(1));
 }
+
+/* Given i, and some expression e, emit
+      ST(i) = is_full(i) ? NaN : e
+   and set the tag accordingly.
+*/
+
+static void put_ST ( Int i, IRExpr* value )
+{
+   put_ST_UNCHECKED( i,
+                     IRExpr_Mux0X(get_ST_TAG(i),
+                        /* 0 means empty */
+                        value,
+                        /* non-0 means full */
+                        mkNaN64()
+                   )
+   );
+}
+
 
 /* Given i, generate an expression yielding 'ST(i)'. */
 
-static IRExpr* get_ST ( Int i )
+static IRExpr* get_ST_UNCHECKED ( Int i )
 {
    return
       IRExpr_GetI( off_ST(i), Ity_F64, OFFB_F0, OFFB_F7+8-1 );
 }
 
+/* Given i, generate an expression yielding 
+  is_full(i) ? ST(i) : NaN
+*/
+
+static IRExpr* get_ST ( Int i )
+{
+   return
+      IRExpr_Mux0X( get_ST_TAG(i),
+                    /* 0 means empty */
+                    mkNaN64(),
+                    /* non-0 means full */
+                    get_ST_UNCHECKED(i));
+}
+
+
 /* Adjust FTOP downwards by one register. */
 
-static IRStmt* fp_push ( void )
+static void fp_push ( void )
 {
-   return
-      put_ftop(
-         binop(Iop_And32,
-               binop(Iop_Sub32, get_ftop(), mkU32(1)),
-	       mkU32(7))
-      );
+   put_ftop(
+      binop(Iop_And32,
+            binop(Iop_Sub32, get_ftop(), mkU32(1)),
+            mkU32(7))
+   );
 }
 
-/* Adjust FTOP upwards by one register. */
+/* Adjust FTOP upwards by one register, and mark the vacated register
+   as empty.  */
 
-static IRStmt* fp_pop ( void )
+static void fp_pop ( void )
 {
-   return
-      put_ftop(
-         binop(Iop_And32,
-               binop(Iop_Add32, get_ftop(), mkU32(1)),
-	       mkU32(7))
-      );
+   put_ST_TAG(0, mkU8(1));
+   put_ftop(
+      binop(Iop_And32,
+            binop(Iop_Add32, get_ftop(), mkU32(1)),
+            mkU32(7))
+   );
 }
 
+/* ------------------------------------------------------- */
+/* Given all that stack-mangling junk, we can now go ahead
+   and describe FP instructions. 
+*/
+
+/* ST(0) = ST(0) `op` mem64(addr)       (when dbl==True) 
+   Need to check ST(0)'s tag on read, but not on write.
+*/
 static
 void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
                          IROp op, Bool dbl )
 {
    DIP("f%s%c %s", op_txt, dbl?'l':'s', dis_buf);
    if (dbl) {
-      stmt( put_ST(0, binop(op, get_ST(0), loadLE(Ity_F64,mkexpr(addr)))));
+      put_ST_UNCHECKED(0, binop(op, get_ST(0), loadLE(Ity_F64,mkexpr(addr))));
    } else {
       vassert(0);
    }
@@ -3192,14 +3292,14 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                DIP("fld %%st(%d)\n", r_src);
 	       t1 = newTemp(Ity_F64);
 	       assign(t1, get_ST(r_src));
-	       stmt( fp_push() );
-	       stmt( put_ST(0, mkexpr(t1)) );
+	       fp_push();
+	       put_ST(0, mkexpr(t1));
                break;
 
             case 0xEE: /* FLDZ */
                DIP("fldz");
-               stmt( fp_push() );
-               stmt( put_ST(0, IRExpr_Const(IRConst_F64(0.0))) );
+               fp_push();
+               put_ST(0, IRExpr_Const(IRConst_F64(0.0)));
                break;
 
             default:
@@ -3220,14 +3320,14 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          delta += len;
 
          switch (gregOfRM(modrm)) {
-            case 1: /* FIMUL m32int */
+            case 1: /* FIMUL m32int */ /* ST(0) *= m32int */
                DIP("fimull %s", dis_buf);
-               stmt( put_ST(0, 
-                        binop(Iop_MulF64, 
-                              get_ST(0),
-                              unop(Iop_I64toF64,
-                                   unop(Iop_32Sto64,
-                                        loadLE(Ity_I32, mkexpr(addr)))))));
+               put_ST_UNCHECKED(0, 
+                  binop(Iop_MulF64, 
+                        get_ST(0),
+                        unop(Iop_I64toF64,
+                             unop(Iop_32Sto64,
+                                  loadLE(Ity_I32, mkexpr(addr))))));
                break;
 
             default:
@@ -3288,8 +3388,8 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0: /* FLD double-real */
                DIP("fldD %s\n", dis_buf);
-               stmt( fp_push() );
-               stmt( put_ST(0, IRExpr_LDle(Ity_F64, mkexpr(addr))) );
+               fp_push();
+               put_ST(0, IRExpr_LDle(Ity_F64, mkexpr(addr)));
                break;
 
 #if 0
@@ -3307,7 +3407,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
             case 3: /* FSTP double-real */
                DIP("fstpD %s", dis_buf);
 	       storeLE(mkexpr(addr), get_ST(0));
-	       stmt( fp_pop() );
+	       fp_pop();
                break;
 
             default:
@@ -3321,8 +3421,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
             case 0xD8 ... 0xDF: /* FSTP %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xD8;
                DIP("fstp %%st(0),%%st(%d)\n", r_dst);
-               stmt( put_ST(r_dst, get_ST(0)) );
-               stmt( fp_pop() );
+	       /* P4 manual says: "If the destination operand is a
+                  non-empty register, the invalid-operation exception
+                  is not generated.  Hence put_ST_UNCHECKED. */
+               put_ST_UNCHECKED(r_dst, get_ST(0));
+               fp_pop();
                break;
 	    default:
                goto decode_fail;

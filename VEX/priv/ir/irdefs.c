@@ -36,12 +36,13 @@ void ppIRType ( IRType ty )
 void ppIRConst ( IRConst* con )
 {
   switch (con->tag) {
-    case Ico_Bit: vex_printf( "%d:Bit",     con->Ico.Bit ? 1 : 0); break;
-    case Ico_U8:  vex_printf( "0x%x:I8",    (UInt)(con->Ico.U8)); break;
-    case Ico_U16: vex_printf( "0x%x:I16",   (UInt)(con->Ico.U16)); break;
-    case Ico_U32: vex_printf( "0x%x:I32",   (UInt)(con->Ico.U32)); break;
-    case Ico_U64: vex_printf( "0x%llx:I64", (ULong)(con->Ico.U64)); break;
-    case Ico_F64: vex_printf("(f64 value)"); break;
+    case Ico_Bit:   vex_printf( "%d:Bit",     con->Ico.Bit ? 1 : 0); break;
+    case Ico_U8:    vex_printf( "0x%x:I8",    (UInt)(con->Ico.U8)); break;
+    case Ico_U16:   vex_printf( "0x%x:I16",   (UInt)(con->Ico.U16)); break;
+    case Ico_U32:   vex_printf( "0x%x:I32",   (UInt)(con->Ico.U32)); break;
+    case Ico_U64:   vex_printf( "0x%llx:I64", (ULong)(con->Ico.U64)); break;
+    case Ico_F64:   vex_printf( "(f64 value)"); break;
+    case Ico_NaN64: vex_printf( "NaN:F64"); break;
     default: vpanic("ppIRConst");
   }
 }
@@ -348,6 +349,13 @@ IRConst* IRConst_F64 ( Double f64 )
    c->Ico.F64 = f64;
    return c;
 }
+IRConst* IRConst_NaN64 ( void )
+{
+   IRConst* c = LibVEX_Alloc(sizeof(IRConst));
+   c->tag     = Ico_NaN64;
+   return c;
+}
+
 
 /* Constructors -- IRExpr */
 
@@ -684,12 +692,13 @@ IRType lookupIRTypeEnv ( IRTypeEnv* env, IRTemp tmp )
 IRType typeOfIRConst ( IRConst* con )
 {
    switch (con->tag) {
-      case Ico_Bit: return Ity_Bit;
-      case Ico_U8:  return Ity_I8;
-      case Ico_U16: return Ity_I16;
-      case Ico_U32: return Ity_I32;
-      case Ico_U64: return Ity_I64;
-      case Ico_F64: return Ity_F64;
+      case Ico_Bit:   return Ity_Bit;
+      case Ico_U8:    return Ity_I8;
+      case Ico_U16:   return Ity_I16;
+      case Ico_U32:   return Ity_I32;
+      case Ico_U64:   return Ity_I64;
+      case Ico_F64:   return Ity_F64;
+      case Ico_NaN64: return Ity_F64;
       default: vpanic("typeOfIRConst");
    }
 }

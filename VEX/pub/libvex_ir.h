@@ -33,7 +33,9 @@ extern void ppIRType ( IRType );
 
 typedef
    enum { Ico_Bit=0x12000,
-          Ico_U8, Ico_U16, Ico_U32, Ico_U64, Ico_F64 }
+          Ico_U8, Ico_U16, Ico_U32, Ico_U64, Ico_F64,
+          Ico_NaN64 /* 64-bit IEEE NaN. */
+   }
    IRConstTag;
 
 typedef
@@ -50,12 +52,13 @@ typedef
    }
    IRConst;
 
-extern IRConst* IRConst_Bit ( Bool );
-extern IRConst* IRConst_U8  ( UChar );
-extern IRConst* IRConst_U16 ( UShort );
-extern IRConst* IRConst_U32 ( UInt );
-extern IRConst* IRConst_U64 ( ULong );
-extern IRConst* IRConst_F64 ( Double );
+extern IRConst* IRConst_Bit   ( Bool );
+extern IRConst* IRConst_U8    ( UChar );
+extern IRConst* IRConst_U16   ( UShort );
+extern IRConst* IRConst_U32   ( UInt );
+extern IRConst* IRConst_U64   ( ULong );
+extern IRConst* IRConst_F64   ( Double );
+extern IRConst* IRConst_NaN64 ( void );
 
 extern void ppIRConst ( IRConst* );
 

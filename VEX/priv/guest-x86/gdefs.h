@@ -165,14 +165,14 @@ typedef
 /* EIP */
 #define OFFB_EIP     (12*4)
 
-/* FPU.  For now, just simulate 8 64-bit registers and the reg-stack
-   top pointer, of which only the least significant three bits are
-   relevant.
+/* FPU.  For now, just simulate 8 64-bit registers, their tags, and
+   the reg-stack top pointer, of which only the least significant
+   three bits are relevant.
 
    The model is:
-     F0 .. F7 are the 8 registers.  ftop[2:0] contains the 
+     F0 .. F7 are the 8 registers.  FTOP[2:0] contains the 
      index of the current 'stack top' -- pretty meaningless, but
-     still.  
+     still.  FTOP is a 32-bit value.
 
      When a value is pushed onto the stack, ftop is first replaced by 
      (ftop-1) & 7, and then F[ftop] is assigned the value.
@@ -183,28 +183,41 @@ typedef
      In general, a reference to a register ST(i) actually references
      F[ (ftop+i) & 7 ].
 
-   There should be an array of 8 booleans corresponding to F0 .. F7,
-   indicating whether the corresponding F reg contains a value or not.
+   FTAG0 .. FTAG0+7 are the tags.  Each is a byte, zero means empty,
+   non-zero means non-empty.
 
-   A read of an F reg marked empty, for any reason, elicits a stack
-   underflow fault.
+   The general rule appears to be that a read or modify of a register
+   gets a stack underflow fault if the register is empty.  A write of
+   a register (only a write, not a modify) gets a stack overflow fault
+   if the register is full.  Note that "over" vs "under" is pretty
+   meaningless since the FP stack pointer can move around arbitrarily,
+   so it's really just two different kinds of exceptions:
+   register-empty and register full.
 
-   A load from memory into an F reg marked full elicits a stack overflow
-   fault.  This appears to be the only way a stack overflow fault can
-   happen.
+   Naturally Intel (in its infinite wisdom) has seen fit to throw in
+   some ad-hoc inconsistencies to the fault-generation rules of the
+   above para, just to complicate everything.  Known inconsistencies:
+
+   * fxam can read a register in any state without taking an underflow
+     fault.
+
+   * fst from st(0) to st(i) does not take an overflow fault even if the
+     destination is already full.
+
 */
-#define OFFB_F0      (13*4)
-#define OFFB_F1      (15*4)
-#define OFFB_F2      (17*4)
-#define OFFB_F3      (19*4)
-#define OFFB_F4      (21*4)
-#define OFFB_F5      (23*4)
-#define OFFB_F6      (25*4)
-#define OFFB_F7      (27*4)
-#define OFFB_FTOP    (29*4)
+#define OFFB_FTOP    (13*4)
+#define OFFB_F0      (14*4)
+#define OFFB_F1      (16*4)
+#define OFFB_F2      (18*4)
+#define OFFB_F3      (20*4)
+#define OFFB_F4      (22*4)
+#define OFFB_F5      (24*4)
+#define OFFB_F6      (26*4)
+#define OFFB_F7      (28*4)
+#define OFFB_FTAG0   (30*4) // up to 30*4 + 7
 
 /* Don't forget to keep this up to date. */
-#define SIZEOF_X86H_STATE  OFFB_FTOP
+#define SIZEOF_X86H_STATE  (OFFB_FTAG0 + 8)
 
 
 

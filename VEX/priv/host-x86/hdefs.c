@@ -426,6 +426,7 @@ Char* showX86FpOp ( X86FpOp op ) {
       case Xfp_COS:    return "cos";
       case Xfp_TAN:    return "tan";
       case Xfp_2XM1:   return "2xm1";
+      case Xfp_ATAN:   return "atan";
       default: vpanic("showX86FpOp");
    }
 }
@@ -1268,10 +1269,10 @@ static UChar* do_fstp_st ( UChar* p, Int i )
    return p;
 }
 
-/* Emit fld %st(i), 0 <= i <= 5 */
+/* Emit fld %st(i), 0 <= i <= 6 */
 static UChar* do_fld_st ( UChar* p, Int i )
 {
-   vassert(0 <= i && i <= 5);
+   vassert(0 <= i && i <= 6);
    *p++ = 0xD9;
    *p++ = 0xC0+i;
    return p;

@@ -18,3 +18,4 @@ share
 cachegrind.out.*
 autom4te.cache
 valgrind.pc
+.in_place

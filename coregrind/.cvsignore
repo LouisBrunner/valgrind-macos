@@ -1,4 +1,6 @@
 Makefile.in
 Makefile
 valgrind
-.in_place
+stage2
+vg_toolint.h
+vg_toolint.c

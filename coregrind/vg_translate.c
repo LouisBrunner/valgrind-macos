@@ -962,7 +962,8 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
 {
    VG_(printf)("\t%4d: %s", instrNo, 
                             VG_(name_UOpcode)(True, u->opcode));
-   if (u->opcode == JMP || u->opcode == CC2VAL)
+   // For JMP, the condition goes before the size
+   if (u->opcode == JMP)
       VG_(printf)("%s", VG_(name_UCondcode)(u->cond));
 
    switch (u->size) {
@@ -975,6 +976,21 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
       default: VG_(printf)("%d", (Int)u->size); break;
    }
 
+   // For CC2VAL and CMOV, the condition goes after the size
+   if (u->opcode == CC2VAL || u->opcode == CMOV)
+      VG_(printf)("%s", VG_(name_UCondcode)(u->cond));
+
+   // Append jmpkind
+   if (u->opcode == JMP) {
+      switch (u->jmpkind) {
+         case JmpCall:      VG_(printf)("-c"); break;
+         case JmpRet:       VG_(printf)("-r"); break;
+         case JmpSyscall:   VG_(printf)("-sys"); break;
+         case JmpClientReq: VG_(printf)("-cli"); break;
+         case JmpYield:     VG_(printf)("-yld"); break;
+         default: break;
+      }
+   }
    VG_(printf)("       \t");
 
    switch (u->opcode) {
@@ -1131,14 +1147,6 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
          break;
 
       case JMP:
-         switch (u->jmpkind) {
-            case JmpCall:      VG_(printf)("-c"); break;
-            case JmpRet:       VG_(printf)("-r"); break;
-            case JmpSyscall:   VG_(printf)("-sys"); break;
-            case JmpClientReq: VG_(printf)("-cli"); break;
-            case JmpYield:     VG_(printf)("-yld"); break;
-            default: break;
-         }
          VG_(pp_UOperand)(u, 1, u->size, False);
          if (CondAlways == u->cond) {
             /* Print x86 instruction size if filled in */

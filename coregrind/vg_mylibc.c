@@ -631,12 +631,8 @@ static void add_to_myprintf_buf ( Char c )
 {
    if (n_myprintf_buf >= 100-10 /*paranoia*/ ) {
       if (VG_(clo_logfile_fd) >= 0) {
-         if (VG_(logging_to_filedes))
-            VG_(write)
-              (VG_(clo_logfile_fd), myprintf_buf, VG_(strlen)(myprintf_buf));
-         else
-            VG_(write_socket)
-              (VG_(clo_logfile_fd), myprintf_buf, VG_(strlen)(myprintf_buf));
+         VG_(send_bytes_to_logging_sink)( 
+            myprintf_buf, VG_(strlen)(myprintf_buf) );
       }
       n_myprintf_buf = 0;
       myprintf_buf[n_myprintf_buf] = 0;      
@@ -656,12 +652,7 @@ UInt VG_(printf) ( const char *format, ... )
    ret = VG_(vprintf) ( add_to_myprintf_buf, format, vargs );
 
    if (n_myprintf_buf > 0 && VG_(clo_logfile_fd) >= 0) {
-      if (VG_(logging_to_filedes))
-         VG_(write)
-            ( VG_(clo_logfile_fd), myprintf_buf, n_myprintf_buf);
-      else
-         VG_(write_socket)
-            ( VG_(clo_logfile_fd), myprintf_buf, n_myprintf_buf);
+      VG_(send_bytes_to_logging_sink)( myprintf_buf, n_myprintf_buf );
    }
 
    va_end(vargs);
@@ -1455,6 +1446,7 @@ struct vki_in_addr {
 /* kernel, include/linux/socket.h */
 typedef unsigned short  vki_sa_family_t;
 #define AF_INET                2       /* Internet IP Protocol        */
+#define MSG_NOSIGNAL           0x4000  /* Do not generate SIGPIPE */
 
 /* kernel, ./include/asm-i386/socket.h */
 #define SOCK_STREAM 1                  /* stream (connection) socket  */
@@ -1625,7 +1617,12 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr,
 Int VG_(write_socket)( Int sd, void *msg, Int count )
 {
    /* This is actually send(). */
-   Int flags = 0;
+
+   /* Requests not to send SIGPIPE on errors on stream oriented
+      sockets when the other end breaks the connection. The EPIPE
+      error is still returned. */
+   Int flags = MSG_NOSIGNAL;
+
    Int res;
    UInt args[4];
    args[0] = sd;

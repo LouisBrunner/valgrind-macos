@@ -1102,14 +1102,18 @@ static void process_cmd_line_options ( void )
 	 }
          if (eventually_logfile_fd == -2) {
             VG_(message)(Vg_UserMsg, 
-               "Failed to connect to logging server `%s'; giving up",
+               "valgrind: failed to connect to logging server `%s'.",
                VG_(clo_logfile_name) ); 
-            VG_(bad_option)(
-               "--logsocket= (timeout during connect)");
-	 }
-	 vg_assert(eventually_logfile_fd > 0);
-         VG_(clo_logfile_fd) = eventually_logfile_fd;
-         VG_(logging_to_filedes) = False;
+            VG_(message)(Vg_UserMsg, 
+                "Log messages will sent to stderr instead." );
+            VG_(message)(Vg_UserMsg, 
+                "" );
+            /* We don't change anything here. */
+	 } else {
+            vg_assert(eventually_logfile_fd > 0);
+            VG_(clo_logfile_fd) = eventually_logfile_fd;
+            VG_(logging_to_filedes) = False;
+         }
          break;
       }
 

@@ -86,12 +86,28 @@ void VG_(end_msg) ( void )
 {
    if (VG_(clo_logfile_fd) >= 0) {
       add_to_buf('\n');
-      if (VG_(logging_to_filedes))
-         VG_(write)(
-            VG_(clo_logfile_fd), vg_mbuf, VG_(strlen)(vg_mbuf));
-      else
-         VG_(write_socket)(
-            VG_(clo_logfile_fd), vg_mbuf, VG_(strlen)(vg_mbuf));
+      VG_(send_bytes_to_logging_sink) ( 
+         vg_mbuf, VG_(strlen)(vg_mbuf) );
+   }
+}
+
+
+/* Do the low-level send of a message to the logging sink. */
+void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes )
+{
+   Int rc;
+   if (VG_(logging_to_filedes)) {
+      VG_(write)( VG_(clo_logfile_fd), msg, nbytes );
+   } else {
+      rc = VG_(write_socket)( VG_(clo_logfile_fd), msg, nbytes );
+      if (rc == -1) {
+         /* for example, the listener process died.  Switch back to
+            stderr. */
+         VG_(logging_to_filedes) = True;
+         VG_(clo_log_to) = VgLogTo_Fd;
+         VG_(clo_logfile_fd) = 2;
+         VG_(write)( VG_(clo_logfile_fd), msg, nbytes );
+      }
    }
 }
 

@@ -875,10 +875,20 @@ extern Int VG_(select)( Int n,
 extern Int VG_(nanosleep)( const struct vki_timespec *req, 
                            struct vki_timespec *rem );
 
-extern Int  VG_(write_socket)( Int sd, void *msg, Int count );
+extern Int VG_(write_socket)( Int sd, void *msg, Int count );
 
 /* --- Connecting over the network --- */
 extern Int VG_(connect_via_socket)( UChar* str );
+
+
+/* ---------------------------------------------------------------------
+   Exports of vg_message.c
+   ------------------------------------------------------------------ */
+
+/* Low-level -- send bytes directly to the message sink.  Do not
+   use. */
+extern void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes );
+
 
 /* ---------------------------------------------------------------------
    Definitions for the JITter (vg_translate.c, vg_to_ucode.c,

@@ -2668,8 +2668,14 @@ int VGL_(poll) (struct pollfd *__fds, nfds_t __nfds, int __timeout)
       nanosleep_interval.tv_nsec = 13 * 1000 * 1000; /* 13 milliseconds */
       /* It's critical here that valgrind's nanosleep implementation
          is nonblocking. */
-      (void)my_do_syscall2(__NR_nanosleep, 
+      res = my_do_syscall2(__NR_nanosleep, 
                            (int)(&nanosleep_interval), (int)NULL);
+      if (res == -VKI_EINTR) {
+         /* The poll was interrupted by a signal.  So we do the
+            same. */
+         * (__errno_location()) = EINTR;
+         return -1;
+      }
 
       /* Sleeping finished.  If a finite timeout, check to see if it
          has expired yet. */

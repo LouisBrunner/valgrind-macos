@@ -626,6 +626,7 @@ static IRExpr* calculate_condition ( Condcode cond )
       case CondZ: /* ZF == 1 */
          e = flag_to_bit0( CC_MASK_Z, eflags );
          break;
+      case CondNB:
       case CondB: /* CF == 1 */
          e = flag_to_bit0( CC_MASK_C, eflags );
          break;
@@ -2904,16 +2905,16 @@ UInt dis_mul_E_G ( UChar       sorb,
                    UInt        delta0,
                    Bool        signed_multiply )
 {
-   
-  //   UChar dis_buf[50];
+   Int    alen;
+   UChar  dis_buf[50];
    UChar  rm = getIByte(delta0);
    IRType ty = szToITy(size);
-   //IRTemp ta = INVALID_IRTEMP;
    IRTemp te = newTemp(ty);
    IRTemp tg = newTemp(ty);
 
+   vassert(signed_multiply);
+
    if (epartIsReg(rm)) {
-      vassert(signed_multiply);
       assign( tg, getIReg(size, gregOfRM(rm)) );
       assign( te, getIReg(size, eregOfRM(rm)) );
       setFlags_MUL ( ty, te, tg, CC_OP_MULB );
@@ -2927,23 +2928,18 @@ UInt dis_mul_E_G ( UChar       sorb,
                               nameIReg(size,gregOfRM(rm)));
       return 1+delta0;
    } else {
-     vassert(0+1==0);
-#if 0
-      UInt pair;
-      vg_assert(signed_multiply);
-      pair = disAMode ( cb, sorb, eip0, dis_buf );
-      ta = LOW24(pair);
-      uInstr2(cb, LOAD,  size, TempReg, ta, TempReg, te);
-      uInstr2(cb, GET,   size, ArchReg, gregOfRM(rm), TempReg, tg);
-      uInstr2(cb, MUL,	size, TempReg, te, TempReg, tg);
-      setFlagsFromUOpcode(cb, MUL);
-      uInstr2(cb, PUT,  size, TempReg, tg,    ArchReg, gregOfRM(rm));
+      IRTemp addr = disAMode( &alen, sorb, delta0, dis_buf );
+      assign( tg, getIReg(size, gregOfRM(rm)) );
+      assign( te, loadLE(ty,mkexpr(addr)) );
+      setFlags_MUL ( ty, te, tg, CC_OP_MULB );
+      putIReg(size, gregOfRM(rm), 
+	      binop(mkSizedOp(ty,Iop_Mul8),
+		    mkexpr(te), mkexpr(tg)));
 
       DIP("%smul%c %s, %s\n", signed_multiply ? "i" : "",
                               nameISize(size), 
                               dis_buf, nameIReg(size,gregOfRM(rm)));
-      return HI8(pair)+eip0;
-#endif
+      return alen+delta0;
    }
 }
 

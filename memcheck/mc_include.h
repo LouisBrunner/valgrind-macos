@@ -149,8 +149,6 @@ extern Bool SK_(clo_cleanup);
 /*--- Functions                                            ---*/
 /*------------------------------------------------------------*/
 
-// SSS: work out a consistent prefix convention here
-
 /* Functions defined in vg_memcheck_helpers.S */
 extern void SK_(helper_value_check4_fail) ( void );
 extern void SK_(helper_value_check2_fail) ( void );

@@ -44,12 +44,40 @@
    simpler versions.  THEY RUN ON SIMD CPU!
    ------------------------------------------------------------------ */
 
+/* Figure out if [dst .. dst+dstlen-1] overlaps with 
+                 [src .. src+srclen-1].
+   We assume that the address ranges do not wrap around
+   (which is safe since on Linux addresses >= 0xC0000000
+   are not accessible and the program will segfault in this
+   circumstance, presumably).
+*/
 static __inline__
-Bool is_overlap ( void* dst, const void* src, UInt len )
+Bool is_overlap ( void* dst, const void* src, UInt dstlen, UInt srclen )
 {
-   UInt diff = src > dst ? src-dst : dst-src;
-   return (diff < len);
+   Addr loS, hiS, loD, hiD;
+
+   if (dstlen == 0 || srclen == 0)
+      return False;
+
+   loS = (Addr)src;
+   loD = (Addr)dst;
+   hiS = loS + srclen - 1;
+   hiD = loD + dstlen - 1;
+
+   /* So figure out if [loS .. hiS] overlaps with [loD .. hiD]. */
+   if (loS < loD) {
+      return !(hiS < loD);
+   }
+   else if (loD < loS) {
+      return !(hiD < loS);
+   }
+   else { 
+      /* They start at same place.  Since we know neither of them has
+         zero length, they must overlap. */
+      return True;
+   }
 }
+
 
 static __inline__
 void complain2 ( Char* s, char* dst, const char* src )
@@ -100,7 +128,10 @@ char* strcat ( char* dst, const char* src )
 
    /* This is a bit redundant, I think;  any overlap and the strcat will
       go forever... or until a seg fault occurs. */
-   if (is_overlap(dst_orig, src_orig, (Addr)dst-(Addr)dst_orig+1))
+   if (is_overlap(dst_orig, 
+                  src_orig, 
+                  (Addr)dst-(Addr)dst_orig+1, 
+                  (Addr)src-(Addr)src_orig+1))
       complain2("strcat", dst_orig, src_orig);
 
    return dst_orig;
@@ -118,7 +149,10 @@ char* strncat ( char* dst, const char* src, int n )
 
    /* This checks for overlap after copying, unavoidable without
       pre-counting lengths... should be ok */
-   if (is_overlap(dst_orig, src_orig, (Addr)dst-(Addr)dst_orig+1))
+   if (is_overlap(dst_orig, 
+                  src_orig, 
+                  (Addr)dst-(Addr)dst_orig+1, 
+                  (Addr)src-(Addr)src_orig+1))
       complain3("strncat", dst_orig, src_orig, n);
 
    return dst_orig;
@@ -141,7 +175,10 @@ char* strcpy ( char* dst, const char* src )
 
    /* This checks for overlap after copying, unavoidable without
       pre-counting length... should be ok */
-   if (is_overlap(dst_orig, src_orig, (Addr)dst-(Addr)dst_orig+1))
+   if (is_overlap(dst_orig, 
+                  src_orig, 
+                  (Addr)dst-(Addr)dst_orig+1, 
+                  (Addr)src-(Addr)src_orig+1))
       complain2("strcpy", dst_orig, src_orig);
 
    return dst_orig;
@@ -152,7 +189,7 @@ char* strncpy ( char* dst, const char* src, int n )
    Char* dst_orig = dst;
    Int   m = 0;
 
-   if (is_overlap(dst, src, n))
+   if (is_overlap(dst, src, n, n))
       complain3("strncpy", dst, src, n);
 
    while (m   < n && *src) { m++; *dst++ = *src++; }
@@ -209,7 +246,7 @@ void* memcpy( void *dst, const void *src, unsigned int len )
    register char *d;
    register char *s;
 
-   if (is_overlap(dst, src, len))
+   if (is_overlap(dst, src, len, len))
       complain3("memcpy", dst, src, len);
       
    if ( dst > src ) {

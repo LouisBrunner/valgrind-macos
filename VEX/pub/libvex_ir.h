@@ -230,17 +230,36 @@ extern void ppIRStmt ( IRStmt* );
 */
 
 /* ------------------ Basic block enders. ------------------ */
+
+/* This describes unconditional jumps.  Conditional jumps -- which can
+   only be done with the IRStmt_Exit statement -- are implicitly of
+   the Ijk_Boring kind. */
+typedef
+   enum { 
+      Ijk_Boring=0x13000, /* not interesting; just goto next */
+      Ijk_Call,           /* guest is doing a call */
+      Ijk_Ret,            /* guest is doing a return */
+      Ijk_ClientReq,      /* do guest client req before continuing */
+      Ijk_Syscall,        /* do guest syscall before continuing */
+      Ijk_Yield           /* client is yielding to thread scheduler */
+   }
+   IRJumpKind;
+
+extern void ppIRJumpKind ( IRJumpKind );
+
+
 /*
-   IRConst represents a guest address, which is either a
-   32 or 64 bit integer, depending on the architecture we're simulating.
+   The IRConst and IRExpr in these must have type Ity_I32 or
+   Ity_I64, as dictated by the word size of the guest 
+   architecture.
 
 data Next
-   = UJump    Const              -- unconditional jump
-   | CJump01  Expr  Const Const  -- conditional jump, Expr::TY_Bit
-   | IJump    Expr               -- jump to unknown address
+   = DJump Const              -- direct jump to const
+   | IJump Expr               -- jump to unknown address
 */
+
 typedef
-   enum { Inx_UJump, Inx_CJump01, Inx_IJump } 
+   enum { Inx_DJump, Inx_IJump } 
    IRNextTag;
 
 typedef
@@ -248,23 +267,19 @@ typedef
       IRNextTag tag;
       union {
          struct {
-            IRConst* dst;
-         } UJump;
+            IRJumpKind kind;
+            IRConst*   dst;
+         } DJump;
          struct {
-            IRExpr*  cond;
-            IRConst* dst0;
-            IRConst* dst1;
-         } CJump01;
-         struct {
-            IRExpr* dst;
+            IRJumpKind kind;
+            IRExpr*    expr;
          } IJump;
       } Inx;
    }
    IRNext;
 
-extern IRNext* IRNext_UJump   ( IRConst* dst );
-extern IRNext* IRNext_CJump01 ( IRExpr* cond, IRConst* dst0, IRConst* dst1 );
-extern IRNext* IRNext_IJump   ( IRExpr* dst );
+extern IRNext* IRNext_DJump ( IRJumpKind, IRConst* dst );
+extern IRNext* IRNext_IJump ( IRJumpKind, IRExpr* expr );
 
 extern void ppIRNext ( IRNext* );
 

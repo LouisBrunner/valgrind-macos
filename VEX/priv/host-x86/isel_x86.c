@@ -338,11 +338,11 @@ static void iselNext ( ISelEnv* env, IRNext* next )
    vex_printf("\n");
 
    switch (next->tag) {
-   case Inx_UJump: {
-      vassert(next->Inx.UJump.dst->tag == Ico_U32);
+   case Inx_DJump: {
+      vassert(next->Inx.DJump.dst->tag == Ico_U32);
       addInstr(env, X86Instr_Alu32R(
                        Xalu_MOV, 
-                       X86RMI_Imm(next->Inx.UJump.dst->Ico.U32),
+                       X86RMI_Imm(next->Inx.DJump.dst->Ico.U32),
                        hregX86_EAX()));
       addInstr(env, X86Instr_RET());
       return;

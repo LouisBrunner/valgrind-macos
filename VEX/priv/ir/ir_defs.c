@@ -20,7 +20,7 @@ void ppIRType ( IRType ty )
 {
   switch (ty) {
     case Ity_Bit: vex_printf( "Bit"); break;
-    case Ity_I8:  vex_printf( "I8"); break;
+    case Ity_I8:  vex_printf( "I8");  break;
     case Ity_I16: vex_printf( "I16"); break;
     case Ity_I32: vex_printf( "I32"); break;
     case Ity_I64: vex_printf( "I64"); break;
@@ -186,24 +186,33 @@ void ppIRStmt ( IRStmt* s )
   }
 }
 
+void ppIRJumpKind ( IRJumpKind kind )
+{
+   switch (kind) {
+      case Ijk_Boring:    vex_printf("Boring"); break;
+      case Ijk_Call:      vex_printf("Call"); break;
+      case Ijk_Ret:       vex_printf("Return"); break;
+      case Ijk_ClientReq: vex_printf("ClientReq"); break;
+      case Ijk_Syscall:   vex_printf("Syscall"); break;
+      case Ijk_Yield:     vex_printf("Yield"); break;
+      default:            vpanic("ppIRJumpKind");
+  }
+}
+
 void ppIRNext ( IRNext* nx )
 {
   switch (nx->tag) {
-    case Inx_UJump: 
-      vex_printf( "UJump ");
-      ppIRConst(nx->Inx.UJump.dst);
-      break;
-    case Inx_CJump01:
-      vex_printf( "CJump01 (" );
-      ppIRExpr(nx->Inx.CJump01.cond);
-      vex_printf( ") ");
-      ppIRConst(nx->Inx.CJump01.dst0);
-      vex_printf( " ");
-      ppIRConst(nx->Inx.CJump01.dst1);
+    case Inx_DJump: 
+      vex_printf( "DJump {");
+      ppIRJumpKind(nx->Inx.DJump.kind);
+      vex_printf( "} ");
+      ppIRConst(nx->Inx.DJump.dst);
       break;
     case Inx_IJump:
-      vex_printf( "IJump ");
-      ppIRExpr(nx->Inx.IJump.dst);
+      vex_printf( "IJump {");
+      ppIRJumpKind(nx->Inx.IJump.kind);
+      vex_printf( "} ");
+      ppIRExpr(nx->Inx.IJump.expr);
       break;
     default: 
       vpanic("ppIRNext");
@@ -371,24 +380,18 @@ IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst ) {
 
 /* Constructors -- IRNext */
 
-IRNext* IRNext_UJump ( IRConst* dst ) {
-   IRNext* nx        = LibVEX_Alloc(sizeof(IRNext));
-   nx->tag           = Inx_UJump;
-   nx->Inx.UJump.dst = dst;
+IRNext* IRNext_DJump ( IRJumpKind kind, IRConst* dst ) {
+   IRNext* nx         = LibVEX_Alloc(sizeof(IRNext));
+   nx->tag            = Inx_DJump;
+   nx->Inx.DJump.kind = kind;
+   nx->Inx.DJump.dst  = dst;
    return nx;
 }
-IRNext* IRNext_CJump01 ( IRExpr* cond, IRConst* dst0, IRConst* dst1 ) {
-   IRNext* nx           = LibVEX_Alloc(sizeof(IRNext));
-   nx->tag              = Inx_CJump01;
-   nx->Inx.CJump01.cond = cond;
-   nx->Inx.CJump01.dst0 = dst0;
-   nx->Inx.CJump01.dst1 = dst1;
-   return nx;
-}
-IRNext* IRNext_IJump ( IRExpr* dst ) {
-   IRNext* nx        = LibVEX_Alloc(sizeof(IRNext));
-   nx->tag           = Inx_IJump;
-   nx->Inx.IJump.dst = dst;
+IRNext* IRNext_IJump ( IRJumpKind kind, IRExpr* expr ) {
+   IRNext* nx         = LibVEX_Alloc(sizeof(IRNext));
+   nx->tag            = Inx_IJump;
+   nx->Inx.IJump.kind = kind;
+   nx->Inx.IJump.expr = expr;
    return nx;
 }
 

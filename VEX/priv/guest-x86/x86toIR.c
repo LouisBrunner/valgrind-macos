@@ -7,7 +7,6 @@
 /*--------------------------------------------------------------------*/
 
 /* TODO:
-   fix jmpkind fields 
    XOR reg with itself
    is Iop_Neg* used?
 
@@ -1043,14 +1042,14 @@ static Char nameISize ( Int size )
 /*--- JMP helpers                                          ---*/
 /*------------------------------------------------------------*/
 
-static void jmp_lit( Addr32 d32 )
+static void jmp_lit( IRJumpKind kind, Addr32 d32 )
 {
-   irbb->next = IRNext_UJump( IRConst_U32(d32) );
+   irbb->next = IRNext_DJump( kind, IRConst_U32(d32) );
 }
 
-static void jmp_treg( IRTemp t )
+static void jmp_treg( IRJumpKind kind, IRTemp t )
 {
-   irbb->next = IRNext_IJump( mkexpr(t) );
+   irbb->next = IRNext_IJump( kind, mkexpr(t) );
 }
 
 static void jcc_01( Condcode cond, Addr32 d32_false, Addr32 d32_true )
@@ -1059,15 +1058,13 @@ static void jcc_01( Condcode cond, Addr32 d32_false, Addr32 d32_true )
    Condcode condPos;
    condPos = positiveIse_Condcode ( cond, &invert );
    if (invert) {
-      irbb->next 
-         = IRNext_CJump01( calculate_condition(condPos), 
-                           IRConst_U32(d32_true),
-                           IRConst_U32(d32_false) );
+      stmt( IRStmt_Exit( calculate_condition(condPos),
+                         IRConst_U32(d32_false) ) );
+      irbb->next = IRNext_DJump( Ijk_Boring, IRConst_U32(d32_true) );
    } else {
-      irbb->next 
-         = IRNext_CJump01( calculate_condition(condPos), 
-                           IRConst_U32(d32_false),
-                           IRConst_U32(d32_true) );
+      stmt( IRStmt_Exit( calculate_condition(condPos),
+                         IRConst_U32(d32_true) ) );
+      irbb->next = IRNext_DJump( Ijk_Boring, IRConst_U32(d32_false) );
    }
 }
 
@@ -2391,13 +2388,12 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
             assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
             putIReg(4, R_ESP, mkexpr(t2));
 	    storeLE( mkexpr(t2), mkU32(guest_eip+delta+1));
-	    jmp_treg(t1);
-	    //            LAST_UINSTR(cb).jmpkind = JmpCall;
+	    jmp_treg(Ijk_Call,t1);
             *isEnd = True;
             break;
          case 4: /* jmp Ev */
             vassert(sz == 4);
-            jmp_treg(t1);
+            jmp_treg(Ijk_Boring,t1);
             *isEnd = True;
             break;
          default: 
@@ -2432,13 +2428,12 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
             assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
             putIReg(4, R_ESP, mkexpr(t2));
 	    storeLE( mkexpr(t2), mkU32(guest_eip+delta+len));
-	    jmp_treg(t1);
-	    //            LAST_UINSTR(cb).jmpkind = JmpCall;
+	    jmp_treg(Ijk_Call,t1);
             *isEnd = True;
             break;
          case 4: /* JMP Ev */
             vassert(sz == 4);
-            jmp_treg(t1);
+            jmp_treg(Ijk_Boring,t1);
             *isEnd = True;
             break;
          case 6: /* PUSH Ev */
@@ -2647,11 +2642,11 @@ void dis_REP_op ( Condcode cond,
    dis_OP (sz, t_inc);
 
    if (cond == CondAlways) {
-      jmp_lit(eip);
+      jmp_lit(Ijk_Boring,eip);
    } else {
       stmt( IRStmt_Exit( calculate_condition(cond),
 	                 IRConst_U32(eip) ) );
-      jmp_lit(eip_next);
+      jmp_lit(Ijk_Boring,eip_next);
    }
    DIP("%s%c\n", name, nameISize(sz));
 }
@@ -4282,8 +4277,7 @@ void dis_ret ( UInt d32 )
    assign(t1, getIReg(4,R_ESP));
    assign(t2, loadLE(Ity_I32,mkexpr(t1)));
    putIReg(4, R_ESP,binop(Iop_Add32, mkexpr(t1), mkU32(4+d32)));
-   jmp_treg(t2);
-   // LAST_UINSTR(cb).jmpkind = JmpRet;
+   jmp_treg(Ijk_Ret,t2);
 }
 
 
@@ -5735,8 +5729,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
          assign(t1, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
          putIReg(4, R_ESP, mkexpr(t1));
 	 storeLE( mkexpr(t1), mkU32(guest_eip+delta));
-	 jmp_lit(d32);
-	 //         LAST_UINSTR(cb).jmpkind = JmpCall;
+	 jmp_lit(Ijk_Call,d32);
          *isEnd = True;
          DIP("call 0x%x\n",d32);
       }
@@ -5941,8 +5934,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       /* It's important that all ArchRegs carry their up-to-date value
          at this point.  So we declare an end-of-block here, which
          forces any TempRegs caching ArchRegs to be flushed. */
-      jmp_lit(((Addr32)guest_code)+delta);
-      //LAST_UINSTR(cb).jmpkind = JmpSyscall;
+      jmp_lit(Ijk_Syscall,((Addr32)guest_code)+delta);
       *isEnd = True;
       DIP("int $0x80\n");
       break;
@@ -5952,7 +5944,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    case 0xEB: /* Jb (jump, byte offset) */
       d32 = (((Addr32)guest_code)+delta+1) + getSDisp8(delta); 
       delta++;
-      jmp_lit(d32);
+      jmp_lit(Ijk_Boring,d32);
       *isEnd = True;
       DIP("jmp-8 0x%x\n", d32);
       break;
@@ -5961,7 +5953,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       vassert(sz == 4); /* JRS added 2004 July 11 */
       d32 = (((Addr32)guest_code)+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
-      jmp_lit(d32);
+      jmp_lit(Ijk_Boring,d32);
       *isEnd = True;
       DIP("jmp 0x%x\n", d32);
       break;

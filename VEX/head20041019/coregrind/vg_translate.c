@@ -1486,7 +1486,6 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
    if (!vex_init_done) {
       LibVEX_Init ( &failure_exit, &log_bytes, 
                     1,     /* debug_paranoia */ 
-                    0,     /* verbosity */
                     False, /* valgrind support */
                     &VG_(clo_vex_control) );
       vex_init_done = True;
@@ -1570,7 +1569,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
                 : NULL,
              hacky_findhelper, /* SK_(tool_findhelper), */
              NULL,
-             0+ DECIDE_IF_PRINTING_CODEGEN ? 2 : 0
+             VG_(clo_trace_codegen)
           );
 
    vg_assert(tres == TransOK);

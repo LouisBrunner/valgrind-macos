@@ -1570,7 +1570,7 @@ void usage ( Bool debug_help )
 "    --profile=no|yes          profile? (tool must be built for it) [no]\n"
 "    --chain-bb=no|yes         do basic-block chaining? [yes]\n"
 "    --branchpred=yes|no       generate branch prediction hints [no]\n"
-"    --trace-codegen=<XXXXX>   show generated code? (X = 0|1) [00000]\n"
+"    --trace-codegen=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
 "    --trace-signals=no|yes    show signal handling details? [no]\n"
 "    --trace-symtab=no|yes     show symbol table details? [no]\n"
@@ -1764,7 +1764,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_NUM_CLO ("--dump-error",        VG_(clo_dump_error))
       else VG_NUM_CLO ("--input-fd",          VG_(clo_input_fd))
       else VG_NUM_CLO ("--sanity-level",      VG_(clo_sanity_level))
-      else VG_NUM_CLO ("--signal­polltime",   VG_(clo_signal_polltime))
+      else VG_NUM_CLO ("--signal-polltime",   VG_(clo_signal_polltime))
       else VG_BNUM_CLO("--num-callers",       VG_(clo_backtrace_size), 1,
                                                 VG_DEEPEST_BACKTRACE)
 
@@ -1829,14 +1829,14 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          Int j;
          char* opt = & arg[16];
    
-         if (5 != VG_(strlen)(opt)) {
+         if (8 != VG_(strlen)(opt)) {
             VG_(message)(Vg_UserMsg, 
-                         "--trace-codegen argument must have 5 digits");
+                         "--trace-codegen argument must have 8 digits");
             VG_(bad_option)(arg);
          }
-         for (j = 0; j < 5; j++) {
+         for (j = 0; j < 8; j++) {
             if      ('0' == opt[j]) { /* do nothing */ }
-            else if ('1' == opt[j]) VG_(clo_trace_codegen) |= (1 << j);
+            else if ('1' == opt[j]) VG_(clo_trace_codegen) |= (1 << (7-j));
             else {
                VG_(message)(Vg_UserMsg, "--trace-codegen argument can only "
                                         "contain 0s and 1s");

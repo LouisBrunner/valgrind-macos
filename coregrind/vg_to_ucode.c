@@ -3984,17 +3984,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* LFENCE/MFENCE/SFENCE -- flush pending operations to memory */
+   /* LFENCE/MFENCE -- flush pending operations to memory */
    if (insn[0] == 0x0F && insn[1] == 0xAE
        && (epartIsReg(insn[2]))
-       && (gregOfRM(insn[2]) >= 5 && gregOfRM(insn[2]) <= 7))
+       && (gregOfRM(insn[2]) >= 5 && gregOfRM(insn[2]) <= 6))
    {
       vg_assert(sz == 4);
       eip += 3;
       uInstr2(cb, SSE3, 0,  /* ignore sz for internal ops */
                   Lit16, (((UShort)0x0F) << 8) | (UShort)0xAE,
                   Lit16, (UShort)insn[2] );
-      DIP("sfence\n");
+      DIP("%sfence\n", gregOfRM(insn[2]) == 5 ? "l" : "m");
       goto decode_success;
    }
 
@@ -6850,6 +6850,22 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
             }
             VG_(printf)("prefetch%s ...\n", hintstr);
          }
+         break;
+
+      case 0xAE: /* SFENCE */
+         vg_assert(sz == 4);
+         modrm = getUChar(eip);
+         if (!epartIsReg(modrm)) {
+            goto decode_failure;
+         }
+         if (gregOfRM(modrm) != 7) {
+            goto decode_failure;
+         }
+         eip += lengthAMode(eip);
+         uInstr2(cb, SSE3, 0,  /* ignore sz for internal ops */
+                     Lit16, (((UShort)0x0F) << 8) | (UShort)0xAE,
+                     Lit16, (UShort)modrm );
+         DIP("sfence\n");
          break;
 
       case 0x71: case 0x72: case 0x73: {

@@ -65,10 +65,10 @@ int main ( int argc, char** argv )
 
    LibVEX_Init ( &failure_exit, &log_bytes, 
                  1,  /* debug_paranoia */ 
-                 1,  /* verbosity */
+                 0,  /* verbosity */
                  //False, 
 		 True, 
-                 100 );
+                 20 /*100*/ /* max insns per bb */);
 
 #if 0
    {extern void test_asm86(void);

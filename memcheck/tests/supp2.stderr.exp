@@ -2,7 +2,7 @@
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: main (supp.c:8)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: __libc_start_main@@GLIBC_2.0 (...libc...)
+   by 0x........: (within /.../tests/supp2)
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 0 bytes in 0 blocks.

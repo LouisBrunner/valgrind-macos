@@ -15,7 +15,7 @@ still reachable: 0 bytes in 0 blocks.
    at 0x........: malloc (vg_clientfuncs.c:...)
    by 0x........: main (nanoleak.c:6)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: __libc_start_main@@GLIBC_2.0 (...libc...)
+   by 0x........: (within /.../tests/nanoleak)
 
 LEAK SUMMARY:
    definitely lost: 1000 bytes in 1 blocks.

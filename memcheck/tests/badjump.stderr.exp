@@ -2,5 +2,5 @@
 Jump to the invalid address stated on the next line
    at 0x........: ???
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: __libc_start_main@@GLIBC_2.0 (...libc...)
+   by 0x........: (within /.../tests/badjump)
    Address 0x........ is not stack'd, malloc'd or free'd

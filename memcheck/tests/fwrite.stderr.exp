@@ -2,12 +2,12 @@
 Syscall param write(buf) contains uninitialised or unaddressable byte(s)
    at 0x........: __libc_write (...libc...)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: __libc_start_main@@GLIBC_2.0 (...libc...)
+   by 0x........: (within /.../tests/fwrite)
    Address 0x........ is 0 bytes inside a block of size 10 alloc'd
    at 0x........: malloc (vg_clientfuncs.c:...)
    by 0x........: main (fwrite.c:6)
    by 0x........: __libc_start_main (...libc...)
-   by 0x........: __libc_start_main@@GLIBC_2.0 (...libc...)
+   by 0x........: (within /.../tests/fwrite)
 
 ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
 malloc/free: in use at exit: 10 bytes in 1 blocks.

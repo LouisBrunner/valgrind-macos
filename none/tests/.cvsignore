@@ -11,6 +11,7 @@ dastest
 discard
 floored
 fork
+fpu_lazy_eflags
 fucomip
 gxx304
 munmap_exe

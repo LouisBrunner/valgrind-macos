@@ -1148,11 +1148,11 @@ void VG_(core_assert_fail) ( const Char* expr, const Char* file, Int line, const
 }
 
 __attribute__ ((noreturn))
-static void panic ( Char* name, Char* report, Char* str, Addr addr )
+static void panic ( Char* name, Char* report, Char* str, ExeContext *ec )
 {
    VG_(printf)("\n%s: the `impossible' happened:\n   %s\n", name, str);
    VG_(printf)("Basic block ctr is approximately %llu\n", VG_(bbs_done) );
-   report_and_quit(report, addr);
+   report_and_quit(report, ec);
 }
 
 void VG_(core_panic) ( Char* str )

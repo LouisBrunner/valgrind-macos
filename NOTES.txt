@@ -48,6 +48,9 @@ Known breakage is:
 
 * Tracking of device segments is somehow broken (I forget how)
 
+* Core dumping is disabled (has been for a while in the 3.0 line)
+  because it needs to be factored per arch (or is it per arch+os).
+
 
 Other notes I made:
 

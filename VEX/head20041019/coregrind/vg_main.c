@@ -1992,7 +1992,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(message)(Vg_UserMsg, 
          "Copyright (C) 2000-2004, and GNU GPL'd, by Julian Seward et al.");
       VG_(message)(Vg_UserMsg,
-         "EXPERIMENTAL LibVEX/IR-based system.  Using LibVEX rev 437.");
+         "EXPERIMENTAL LibVEX/IR-based system.  Using LibVEX rev 549.");
       VG_(message)(Vg_UserMsg, 
          "Copyright (C) 2004, and GNU GPL'd, by OpenWorks LLP.");
    }

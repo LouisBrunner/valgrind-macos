@@ -49,9 +49,9 @@ void ppIRConst ( IRConst* con )
 
 void ppIRArray ( IRArray* arr )
 {
-   vex_printf("(%d:", arr->base);
+   vex_printf("(%d:%dx", arr->base, arr->nElems);
    ppIRType(arr->elemTy);
-   vex_printf(",%d)", arr->nElems);
+   vex_printf(")");
 }
 
 void ppIRTemp ( IRTemp tmp )

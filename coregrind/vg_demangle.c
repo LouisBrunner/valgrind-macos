@@ -61,19 +61,16 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
       ADD_TO_RESULT(orig, VG_(strlen)(orig));
    }
 
-   /* Check that the demangler isn't leaking. */
-   /* 15 Feb 02: if this assertion fails, this is not a disaster.
-      Comment it out, and let me know.  (jseward@acm.org). */
-   // 9 Feb 05: it fails very occasionally, as reported in bug #87480.
-   // It's very rare, and not a disaster, so let it slide.
-   //vg_assert(VG_(is_empty_arena)(VG_AR_DEMANGLE));
-
-   /* VG_(show_all_arena_stats)(); */
+   // 13 Mar 2005: We used to check here that the demangler wasn't leaking
+   // by calling the (now-removed) function VG_(is_empty_arena)().  But,
+   // very rarely (ie. I've heard of it twice in 3 years), the demangler
+   // does leak.  But, we can't do much about it, and it's not a disaster,
+   // so we just let it slide without aborting or telling the user.
 
    VGP_POPCC(VgpDemangle);
 }
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                            vg_demangle.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

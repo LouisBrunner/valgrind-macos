@@ -829,32 +829,6 @@ void VG_(sanity_check_malloc_all) ( void )
       sanity_check_malloc_arena ( i );
 }
 
-/* Really, this isn't the right place for this.  Nevertheless: find
-   out if an arena is empty -- currently has no bytes on loan.  This
-   is useful for checking for memory leaks (of valgrind, not the
-   client.) */
-Bool VG_(is_empty_arena) ( ArenaId aid )
-{
-   Arena*      a;
-   Superblock* sb;
-   Block*      b;
-   SizeT       b_bszB;
-
-   ensure_mm_init();
-   a = arenaId_to_ArenaP(aid);
-   for (sb = a->sblocks; sb != NULL; sb = sb->next) {
-      // If the superblock is empty, it should contain a single free
-      // block, of the right size.
-      b = (Block*)&sb->payload_bytes[0];
-      b_bszB = get_bszB_lo(b);
-      if (is_inuse_bszB(b_bszB)) return False;
-      if (mk_plain_bszB(b_bszB) != sb->n_payload_bytes) return False;
-      // If we reach here, this block is not in use and is of the right
-      // size, so keep going around the loop...
-   }
-   return True;
-}
-
 
 /*------------------------------------------------------------*/
 /*--- Creating and deleting blocks.                        ---*/

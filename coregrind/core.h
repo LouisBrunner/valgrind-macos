@@ -400,8 +400,6 @@ extern void  VG_(sanity_check_malloc_all) ( void );
 
 extern void  VG_(print_all_arena_stats) ( void );
 
-extern Bool  VG_(is_empty_arena) ( ArenaId aid );
-
 
 /* ---------------------------------------------------------------------
    Exports of vg_intercept.c

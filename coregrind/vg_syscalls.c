@@ -86,7 +86,7 @@ void mmap_segment ( Addr a, UInt len, UInt prot, Int fd )
 
    /* Records segment, reads debug symbols if necessary */
    if ((prot & PROT_EXEC) && fd != -1)
-      VG_(new_exe_segment) ( a, len );
+      VG_(new_exeseg_mmap) ( a, len );
 
    rr = prot & PROT_READ;
    ww = prot & PROT_WRITE;
@@ -113,7 +113,7 @@ void munmap_segment ( Addr a, UInt len )
       symbols. */
    // This doesn't handle partial unmapping of exe segs correctly, if that
    // ever happens...
-   VG_(remove_if_exe_segment) ( a, len );
+   VG_(remove_if_exeseg) ( a, len );
 
    VG_TRACK( die_mem_munmap, a, len );
 }

@@ -96,7 +96,7 @@ static void add_exe_segment_to_list( Addr a, UInt len )
    }
 }
 
-static Bool remove_if_exe_segment_from_list( Addr a )
+static Bool remove_if_exeseg_from_list( Addr a )
 {
    ExeSeg **prev_next_ptr = & exeSegsHead, 
           *curr = exeSegsHead;
@@ -121,25 +121,33 @@ static Bool remove_if_exe_segment_from_list( Addr a )
 /* Records the exe segment in the ExeSeg list (checking for overlaps), and
    reads debug info if required.  Note the entire /proc/pid/maps file is 
    read for the debug info, but it just reads symbols for newly added exe
-   segments.  This is required to find out their names if they have one.  So
-   we don't use this at startup because it's overkill and can screw reading
-   of /proc/pid/maps.
- */
-void VG_(new_exe_segment) ( Addr a, UInt len )
+   segments.  This is required to find out their names if they have one,
+   because with mmap() we only have the file descriptor, not the name.  We
+   don't use this at startup because we do have the names then. */
+void VG_(new_exeseg_mmap) ( Addr a, UInt len )
 {
    add_exe_segment_to_list( a, len );
-   VG_(read_symbols)();
+   VG_(read_all_symbols)();
+}
+
+/* Like VG_(new_exeseg_mmap)(), but here we do have the name, so we don't
+   need to grovel through /proc/self/maps to find it. */
+void VG_(new_exeseg_startup) ( Addr a, UInt len, Char rr, Char ww, Char xx,
+                               UInt foffset, UChar* filename )
+{
+   add_exe_segment_to_list( a, len );
+   VG_(read_seg_symbols)( a, len, rr, ww, xx, foffset, filename);
 }
 
 /* Invalidate translations as necessary (also discarding any basic
    block-specific info retained by the skin) and unload any debug
    symbols. */
-// Nb: remove_if_exe_segment_from_list() and VG_(maybe_unload_symbols)()
+// Nb: remove_if_exeseg_from_list() and VG_(maybe_unload_symbols)()
 // both ignore 'len', but that seems that's ok for most programs...  see
 // comment above vg_syscalls.c:mmap_segment() et al for more details.
-void VG_(remove_if_exe_segment) ( Addr a, UInt len )
+void VG_(remove_if_exeseg) ( Addr a, UInt len )
 {
-   if (remove_if_exe_segment_from_list( a )) {
+   if (remove_if_exeseg_from_list( a )) {
       VG_(invalidate_translations) ( a, len, False );
       VG_(unload_symbols)          ( a, len );
    }
@@ -188,9 +196,9 @@ void startup_segment_callback ( Addr start, UInt size,
       return;
    }
    
-   /* This parallels what happens when we mmap some new memory */
+   /* This is similar to what happens when we mmap some new memory */
    if (filename != NULL && xx == 'x') {
-      VG_(new_exe_segment)( start, size );
+      VG_(new_exeseg_startup)( start, size, rr, ww, xx, foffset, filename );
    }
 
    VG_TRACK( new_mem_startup, start, size, rr=='r', ww=='w', xx=='x' );
@@ -222,7 +230,7 @@ void startup_segment_callback ( Addr start, UInt size,
 void VG_(init_memory) ( void )
 {
    /* 1 */
-   VG_(read_procselfmaps) ( startup_segment_callback, /*read_from_file*/False );
+   VG_(parse_procselfmaps) ( startup_segment_callback );
 
    /* 2 */
    VG_(init_dataseg_end_for_brk)();
@@ -230,7 +238,10 @@ void VG_(init_memory) ( void )
    /* kludge: some newer kernels place a "sysinfo" page up high, with
       vsyscalls in it, and possibly some other stuff in the future. */
    if (VG_(sysinfo_page_exists)) {
-      VG_(new_exe_segment)( VG_(sysinfo_page_addr), 4096 );
+      // 2003-Sep-25, njn: Jeremy thinks the sysinfo page probably doesn't
+      // have any symbols that need to be loaded.  So just treat it like
+      // a non-executable page.
+      //VG_(new_exeseg_mmap)( VG_(sysinfo_page_addr), 4096 );
       VG_TRACK( new_mem_startup, VG_(sysinfo_page_addr), 4096, 
                 True, True, True );
      }

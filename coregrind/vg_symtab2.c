@@ -1857,10 +1857,9 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 */
 static SegInfo* segInfo = NULL;
 
-void VG_(read_symtab_callback) ( 
-        Addr start, UInt size, 
-        Char rr, Char ww, Char xx, 
-        UInt foffset, UChar* filename )
+void VG_(read_seg_symbols) ( Addr start, UInt size, 
+                             Char rr, Char ww, Char xx, 
+                             UInt foffset, UChar* filename )
 {
    SegInfo* si;
 
@@ -1877,6 +1876,8 @@ void VG_(read_symtab_callback) (
    if (foffset != 0)
       return;
 
+   VGP_PUSHCC(VgpReadSyms);
+
    /* Perhaps we already have this one?  If so, skip. */
    for (si = segInfo; si != NULL; si = si->next) {
       /*
@@ -1888,7 +1889,9 @@ void VG_(read_symtab_callback) (
          we don't use that to determine uniqueness. */
       if (si->start == start
           /* && si->size == size */
-          && 0==VG_(strcmp)(si->filename, filename)) {
+          && 0==VG_(strcmp)(si->filename, filename)) 
+      {
+         VGP_POPCC(VgpReadSyms);
          return;
       }
    }
@@ -1932,6 +1935,7 @@ void VG_(read_symtab_callback) (
       canonicaliseSymtab ( si );
       canonicaliseLoctab ( si );
    }
+   VGP_POPCC(VgpReadSyms);
 }
 
 
@@ -1943,16 +1947,13 @@ void VG_(read_symtab_callback) (
    libraries as they are dlopen'd.  Conversely, when the client does
    munmap(), vg_symtab_notify_munmap() throws away any symbol tables
    which happen to correspond to the munmap()d area.  */
-void VG_(read_symbols) ( void )
+void VG_(read_all_symbols) ( void )
 {
    /* 9 July 2003: In order to work around PLT bypassing in
       glibc-2.3.2 (see below VG_(setup_code_redirect_table)), we need
       to load debug info regardless of the skin, unfortunately.  */
-
-   VGP_PUSHCC(VgpReadSyms);
-      VG_(read_procselfmaps) ( VG_(read_symtab_callback),
-                               /*read_from_file*/True );
-   VGP_POPCC(VgpReadSyms);
+   VG_(read_procselfmaps)  ( );
+   VG_(parse_procselfmaps) ( VG_(read_seg_symbols) );
 }
 
 /* When an munmap() call happens, check to see whether it corresponds
@@ -1973,8 +1974,10 @@ void VG_(unload_symbols) ( Addr start, UInt length )
       prev = curr;
       curr = curr->next;
    }
-   if (curr == NULL) 
+   if (curr == NULL) {
+      VGP_POPCC(VgpReadSyms);
       return;
+   }
 
    VG_(message)(Vg_UserMsg, 
                 "discard syms in %s due to munmap()", 

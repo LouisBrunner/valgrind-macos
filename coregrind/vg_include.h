@@ -1258,16 +1258,16 @@ extern UInt VG_(n_errs_found);
    Exports of vg_procselfmaps.c
    ------------------------------------------------------------------ */
 
-/* Reads /proc/self/maps into a static buffer. */
-void VG_(read_procselfmaps_contents) ( void );
+/* Reads /proc/self/maps into a static buffer which can be parsed by
+   VG_(parse_procselfmaps)(). */
+extern void VG_(read_procselfmaps) ( void );
 
 /* Parses /proc/self/maps, calling `record_mapping' for each entry.  If
    `read_from_file' is True, /proc/self/maps is read directly, otherwise
    it's read from the buffer filled by VG_(read_procselfmaps_contents)(). */
 extern 
-void VG_(read_procselfmaps) (
-   void (*record_mapping)( Addr, UInt, Char, Char, Char, UInt, UChar* ),
-   Bool read_from_file
+void VG_(parse_procselfmaps) (
+   void (*record_mapping)( Addr, UInt, Char, Char, Char, UInt, UChar* )
 );
 
 
@@ -1275,13 +1275,12 @@ void VG_(read_procselfmaps) (
    Exports of vg_symtab2.c
    ------------------------------------------------------------------ */
 
-extern void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips );
-extern Char* VG_(describe_eip)(Addr eip, Char* buf, Int n_buf);
-extern void VG_(read_symbols)         ( void );
-extern void VG_(read_symtab_callback) ( Addr start, UInt size, 
-                                        Char rr, Char ww, Char xx,
-                                        UInt foffset, UChar* filename );
-extern void VG_(unload_symbols)       ( Addr start, UInt length );
+extern void VG_(mini_stack_dump)  ( Addr eips[], UInt n_eips );
+extern void VG_(read_all_symbols) ( void );
+extern void VG_(read_seg_symbols) ( Addr start, UInt size, 
+                                    Char rr, Char ww, Char xx,
+                                    UInt foffset, UChar* filename );
+extern void VG_(unload_symbols)   ( Addr start, UInt length );
 
 extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
 extern Int  VG_(setup_code_redirect_table) ( void );
@@ -1454,12 +1453,15 @@ extern UInt VG_(foundstack_size);
    Exports of vg_memory.c
    ------------------------------------------------------------------ */
 
-extern void VG_(init_memory)            ( void );
-extern void VG_(new_exe_segment)        ( Addr a, UInt len );
-extern void VG_(remove_if_exe_segment)  ( Addr a, UInt len );
+extern void VG_(init_memory)        ( void );
+extern void VG_(new_exeseg_startup) ( Addr a, UInt len, Char rr, Char ww,
+                                      Char xx, UInt foffset,
+                                      UChar* filename );
+extern void VG_(new_exeseg_mmap)    ( Addr a, UInt len );
+extern void VG_(remove_if_exeseg)   ( Addr a, UInt len );
 
 extern __attribute__((regparm(1))) 
-       void VG_(unknown_esp_update)     ( Addr new_ESP );
+       void VG_(unknown_esp_update) ( Addr new_ESP );
 
 /* ---------------------------------------------------------------------
    Exports of vg_syscalls.c

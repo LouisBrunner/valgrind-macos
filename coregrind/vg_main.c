@@ -744,7 +744,7 @@ static void process_cmd_line_options ( void )
           the /proc/self/maps contents read at the start of VG_(main)(),
           and doesn't re-read /proc/self/maps. */
 
-       VG_(read_procselfmaps)( vg_findstack_callback, /*read_from_file*/False );
+       VG_(parse_procselfmaps)( vg_findstack_callback );
 
        /* Now foundstack_start and foundstack_size should delimit the stack. */
        if (VG_(foundstack_size) == 0) {
@@ -1459,7 +1459,7 @@ void VG_(main) ( void )
         translation cache aren't identified as part of the client, which would
         waste > 20M of virtual address space, and be bad.
    */
-   VG_(read_procselfmaps_contents)();
+   VG_(read_procselfmaps)();
 
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */

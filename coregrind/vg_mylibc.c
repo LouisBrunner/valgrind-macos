@@ -1209,7 +1209,7 @@ Int VG_(stat) ( Char* file_name, struct vki_stat* buf )
 {
    Int res;
    res = VG_(do_syscall)(__NR_stat, (UInt)file_name, (UInt)buf);
-   return VG_(is_kerror)(res) ? (-1) : 0;
+   return res;			/* return -ve error */
 }
 
 Int VG_(fstat) ( Int fd, struct vki_stat* buf )

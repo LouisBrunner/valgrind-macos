@@ -358,6 +358,7 @@ struct vki_ucontext {
 #define VKI_ENOMEM          12      /* Out of memory */
 #define VKI_EWOULDBLOCK     VKI_EAGAIN  /* Operation would block */
 #define VKI_EAGAIN          11      /* Try again */
+#define	VKI_EACCES	    13      /* Permission denied */
 #define	VKI_EFAULT          14      /* Bad address */
 #define VKI_EEXIST	    17	    /* File exists */
 #define VKI_EINVAL          22      /* Invalid argument */

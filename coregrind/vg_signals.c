@@ -112,6 +112,12 @@ static const Char *signame(Int sigNo);
    thing with signals and LWPs, so we need to do our own. */
 Bool VG_(do_signal_routing) = False;
 
+/* Set of signal which are pending for the whole process.  This is
+   only used when we're doing signal routing, and this is a place to
+   remember pending signals which we can't keep actually pending for
+   some reason. */
+static vki_ksigset_t proc_pending; /* process-wide pending signals */
+
 /* Since we use a couple of RT signals, we need to handle allocating
    the rest for application use. */
 Int VG_(sig_rtmin) = VKI_SIGRTUSERMIN;
@@ -1419,8 +1425,7 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
 
       if (tst->m_eax == -VKI_ERESTARTSYS) {
 	  if (handler->scss_flags & VKI_SA_RESTART) {
-	     tst->m_eax = tst->syscallno;
-	     tst->m_eip -= 2;		/* sizeof(int $0x80) */
+	     VG_(restart_syscall)(tid);
 	  } else
 	     tst->m_eax = -VKI_EINTR;
       } else {
@@ -1619,38 +1624,17 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
    if (info->si_code <= VKI_SI_USER) {
       /* 
 	 OK, one of sync signals was sent from user-mode, so try to
-	 deliver it to someone who cares.  We've currently got the
-	 signal blocked because we're in the handler, so some other
-	 thread will pick it up if they want it.  If all the other
-	 threads have this signal blocked, it will remain pending.
-	 wait for .01sec to see if someone picks it up, then eat it if
-	 not (otherwise we will just keep spinning, since we *can't*
-	 block these signals).
+	 deliver it to someone who cares.  Just add it to the
+	 process-wide pending signal set - signal routing will deliver
+	 it to someone eventually.
 
-	 XXX This is crap.  All the proxy LWPs could easily be
-	 blocking this signal transiently (say, waiting for us to
-	 respond to a SigACK), but want it eventually.  Maybe we
-	 should just bite the bullet and scan the per-thread block
-	 sets and decide who to deliver it to.
-       */
-      static const struct vki_timespec ts = { 0, (Int)(.01 * 1000000000) };
-      static const struct vki_timespec zero = { 0, 0 };
-      vki_ksigset_t set;
-      vki_ksiginfo_t si;
-      Bool dropped = False;
-
-      VG_(kkill)(VG_(main_pid), sigNo);
-      VG_(nanosleep)(&ts, NULL);
-      VG_(ksigemptyset)(&set);
-      VG_(ksigaddset)(&set, sigNo);
-      while(VG_(ksigtimedwait)(&set, &si, &zero) == sigNo)
-	 dropped = True;
-
-      if (dropped)
-	 VG_(message)(Vg_UserMsg,
-		      "Dropped pending signal %d (%s) because all threads were blocking it,"
-		      "but we cannot block it forever.",
-		      sigNo, signame(sigNo));
+	 The only other place which touches proc_pending is
+	 VG_(route_signals), and it has signals blocked while doing
+	 so, so there's no race.
+      */
+      VG_(message)(Vg_DebugMsg, 
+		   "adding signal %d to pending set", sigNo);
+      VG_(ksigaddset)(&proc_pending, sigNo);
    } else {
       /* 
 	 A bad signal came from the kernel (indicating an instruction
@@ -1729,7 +1713,6 @@ void VG_(route_signals)(void)
    static const struct vki_timespec zero = { 0, 0 };
    static ThreadId start_tid = 1;	/* tid to start scanning from */
    vki_ksigset_t set;
-   vki_ksigset_t resend;
    vki_ksiginfo_t si;
    Int sigNo;
 
@@ -1739,22 +1722,28 @@ void VG_(route_signals)(void)
    if (!VG_(do_signal_routing))
       return;
 
-   VG_(ksigemptyset)(&resend);
-
    /* get the scheduler LWP's signal mask, and use it as the set of
-      signals we're polling for */
-   VG_(ksigprocmask)(VKI_SIG_SETMASK, NULL, &set);
+      signals we're polling for - also block all signals to prevent
+      races */
+   VG_(block_all_host_signals) ( &set );
 
-   while(VG_(ksigtimedwait)(&set, &si, &zero) > 0) {
+   /* grab any pending signals and add them to the pending signal set */
+   while(VG_(ksigtimedwait)(&set, &si, &zero) > 0)
+      VG_(ksigaddset)(&proc_pending, si.si_signo);
+
+   /* transfer signals from the process pending set to a particular
+      thread which has it unblocked */
+   for(sigNo = 0; sigNo < VKI_KNSIG; sigNo++) {
       ThreadId tid;
       ThreadId end_tid;
       Int target = -1;
       
+      if (!VG_(ksigismember)(&proc_pending, sigNo))
+	 continue;
+
       end_tid = start_tid - 1;
       if (end_tid < 0 || end_tid >= VG_N_THREADS)
 	      end_tid = VG_N_THREADS-1;
-
-      sigNo = si.si_signo;
 
       /* look for a suitable thread to deliver it to */
       for(tid = start_tid;
@@ -1773,22 +1762,18 @@ void VG_(route_signals)(void)
 	 }
       }
       
+      /* found one - deliver it and be done */
       if (target != -1) {
 	 if (VG_(clo_trace_signals))
 	    VG_(message)(Vg_DebugMsg, "Routing signal %d to tid %d",
 			 sigNo, tid);
-	 VG_(proxy_sendsig)(tid, sigNo);
-      } else {
-	 if (VG_(clo_trace_signals))
-	    VG_(message)(Vg_DebugMsg, "Adding signal %d to pending set",
-			 sigNo);
-	 VG_(ksigaddset)(&resend, sigNo);
+	 VG_(proxy_sendsig)(target, sigNo);
+	 VG_(ksigdelset)(&proc_pending, sigNo);
       }
    }
 
-   for(sigNo = 0; sigNo < VKI_KNSIG; sigNo++)
-      if (VG_(ksigismember)(&resend, sigNo))
-	 VG_(ktkill)(VG_(main_pid), sigNo);
+   /* restore signal mask */
+   VG_(restore_all_host_signals) (&set);
 }
 
 /* At startup, copy the process' real signal state to the SCSS.
@@ -1807,6 +1792,9 @@ void VG_(sigstartup_actions) ( void )
       which the first thread inherits.
    */
    VG_(block_all_host_signals)( &saved_procmask );
+
+   /* clear process-wide pending signal set */
+   VG_(ksigemptyset)(&proc_pending);
 
    /* Set the signal mask which the scheduler LWP should maintain from
       now on. */

@@ -435,6 +435,7 @@ extern Int  VG_(pipe)   ( Int fd[2] );
 extern Int  VG_(unlink) ( Char* file_name );
 extern Int  VG_(stat)   ( Char* file_name, struct vki_stat* buf );
 extern Int  VG_(fstat)  ( Int   fd,        struct vki_stat* buf );
+extern Int  VG_(dup2)   ( Int oldfd, Int newfd );
 
 extern Char* VG_(getcwd) ( Char* buf, Int size );
 
@@ -513,7 +514,6 @@ extern Int VG_(waitpid)	     ( Int pid, Int *status, Int options );
 /* ------------------------------------------------------------------ */
 /* other, randomly useful functions */
 extern UInt VG_(read_millisecond_timer) ( void );
-
 
 /*====================================================================*/
 /*=== UCode definition                                             ===*/

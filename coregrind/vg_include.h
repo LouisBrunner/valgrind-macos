@@ -1530,6 +1530,7 @@ extern void VG_(init_dataseg_end_for_brk) ( void );
 
 extern Bool VG_(pre_syscall) ( ThreadId tid );
 extern void VG_(post_syscall)( ThreadId tid );
+extern void VG_(restart_syscall) ( ThreadId tid );
 
 extern Bool VG_(is_kerror) ( Int res );
 

@@ -1223,9 +1223,35 @@ PRE(execve)
       char *const envp[]); */
    MAYBE_PRINTF("execve ( %p(%s), %p, %p ) --- NOT CHECKED\n", 
 		arg1, arg1, arg2, arg3);
-   /* Resistance is futile.  Nuke all other threads.  POSIX
-      mandates this. */
-   VG_(nuke_all_threads_except)( tid );
+
+   /* Erk.  If the exec fails, then the following will have made a
+      mess of things which makes it hard for us to continue.  The
+      right thing to do is piece everything together again in
+      POST(execve), but that's hard work.  Instead, we make an effort
+      to check that the execve will work before actually calling
+      exec. */
+   {
+      struct vki_stat st;
+      Int ret = VG_(stat)((Char *)arg1, &st);
+
+      if (ret < 0) {
+	 res = ret;
+	 return;
+      }
+      /* just look for any X bit set
+	 XXX do proper permissions check?
+       */
+      if ((st.st_mode & 0111) == 0) {
+	 res = -VKI_EACCES;
+	 return;
+      }
+   }
+
+   /* Resistance is futile.  Nuke all other threads.  POSIX mandates
+      this. (Really, nuke them all, since the new process will make
+      its own new thread.) */
+   VG_(nuke_all_threads_except)( VG_INVALID_THREADID );
+
    /* Make any binding for LD_PRELOAD disappear, so that child
       processes don't get traced into. */
    if (!VG_(clo_trace_children)) {
@@ -1242,15 +1268,15 @@ PRE(execve)
       VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH)(
 	 ld_preload_str, ld_library_path_str );
    }
-}
 
-POST(execve)
-{
-   /* Should we still be alive here?  Don't think so. */
-   /* Actually, above comment is wrong.  execve can fail, just
-      like any other syscall -- typically the file to exec does
-      not exist.  Hence: */
-   vg_assert(VG_(is_kerror)(res));
+   res = VG_(do_syscall)(__NR_execve, arg1, arg2, arg3);
+
+   /* If we got here, then the execve failed.  We've already made too much of a mess
+      of ourselves to continue, so we have to abort. */
+   VG_(message)(Vg_UserMsg, "execve(%p \"%s\", %p, %p) failed, errno %d",
+		arg1, arg1, arg2, arg3, -res);
+   VG_(core_panic)("EXEC FAILED: I can't recover from execve() failing, so I'm dying.\n"
+		   "Add more stringent tests in PRE(execve), or work out how to recover.");   
 }
 
 PRE(access)
@@ -4099,6 +4125,8 @@ static const struct sys_info special_sys[] = {
 
    SYSB_(modify_ldt,		False),
 
+   SYSB_(execve,		False),
+
 #if SIGNAL_SIMULATION
    SYSBA(sigaltstack,		False),
    SYSBA(rt_sigaction,		False),
@@ -4184,7 +4212,6 @@ static const struct sys_info sys_info[] = {
    SYSB_(ioperm,		False),
    SYSBA(capget,		False),
    SYSB_(capset,		False),
-   SYSBA(execve,		False),
    SYSB_(access,		False),
    SYSBA(brk,			False),
    SYSB_(chdir,			False),
@@ -4467,12 +4494,33 @@ void VG_(post_syscall) ( ThreadId tid )
       VGP_POPCC(VgpSkinSysWrap);
    }
 
+   if (tst->m_eax == -VKI_ERESTARTSYS) {
+      /* Applications never expect to see this, so we should actually
+	 restart the syscall (it means the signal happened before the
+	 syscall made any progress, so we can safely restart it and
+	 pretend the signal happened before the syscall even
+	 started)  */
+      VG_(restart_syscall)(tid);
+   }
+
    tst->status = VgTs_Runnable;	/* runnable again */
    tst->syscallno = -1;
 
    VGP_POPCC(VgpCoreSysWrap);
 }
 
+void VG_(restart_syscall)(ThreadId tid)
+{
+   ThreadState* tst;
+   tst = VG_(get_ThreadState)(tid);
+
+   vg_assert(tst != NULL);
+   vg_assert(tst->status == VgTs_WaitSys);
+   vg_assert(tst->syscallno != -1);
+
+   tst->m_eax = tst->syscallno;
+   tst->m_eip -= 2;		/* sizeof(int $0x80) */
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                            vg_syscalls.c ---*/

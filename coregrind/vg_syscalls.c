@@ -5314,19 +5314,6 @@ POST(adjtimex)
    VG_TRACK(post_mem_write, arg1, sizeof(struct timex));
 }
 
-PRE(clock_gettime)
-{
-    /* int clock_gettime(clockid_t clk_id, struct timespec *tp); */
-    MAYBE_PRINTF("clock_gettime(%d, %p)\n" ,arg1,arg2);
-    SYSCALL_TRACK(pre_mem_write, tid, "clock_gettime(tp)",
-                   arg2, sizeof(struct timespec));
-}
-
-POST(clock_gettime)
-{
-    VG_TRACK( post_mem_write, arg2, sizeof(struct timespec) );
-}
-
 PRE(utimes)
 {
     /* int utimes(const char *filename, struct timeval *tvp); */
@@ -5769,6 +5756,101 @@ POST(mq_getsetattr)
       VG_TRACK( post_mem_write, arg3, sizeof(struct vki_mq_attr) );
 }
 
+PRE(timer_create)
+{
+   /* int timer_create(clockid_t clock_id, struct sigevent *restrict evp,
+                       timer_t *restrict timerid); */
+   MAYBE_PRINTF("timer_create( %d, %p, %p )\n", arg1,arg2,arg3);
+   if (arg2 != 0)
+      SYSCALL_TRACK( pre_mem_read, tid, "timer_create(evp)", arg2,
+                     sizeof(struct sigevent) );
+   SYSCALL_TRACK( pre_mem_write, tid, "timer_create(timerid)", arg3,
+                  sizeof(timer_t) );
+}
+
+POST(timer_create)
+{
+   VG_TRACK( post_mem_write, arg3, sizeof(timer_t) );
+}
+
+PRE(timer_settime)
+{
+   /* int timer_settime(timer_t timerid, int flags,
+                        const struct itimerspec *restrict value,
+                        struct itimerspec *restrict ovalue); */
+   MAYBE_PRINTF("timer_settime( %p, %d, %p, %p )\n", arg1,arg2,arg3,arg4);
+   SYSCALL_TRACK( pre_mem_read, tid, "timer_settime(value)", arg3,
+                  sizeof(struct vki_itimerspec) );
+   if (arg4 != 0)
+       SYSCALL_TRACK( pre_mem_write, tid, "timer_settime(ovalue)", arg4,
+                      sizeof(struct vki_itimerspec) );
+}
+
+POST(timer_settime)
+{
+   if (arg4 != 0)
+      VG_TRACK( post_mem_write, arg4, sizeof(struct vki_itimerspec) );
+}
+
+PRE(timer_gettime)
+{
+   /* int timer_gettime(timer_t timerid, struct itimerspec *value); */
+   MAYBE_PRINTF("timer_gettime( %p, %p )\n", arg1,arg2);
+   SYSCALL_TRACK( pre_mem_write, tid, "timer_gettime(value)", arg2,
+                  sizeof(struct vki_itimerspec));
+}
+
+POST(timer_gettime)
+{
+   VG_TRACK( post_mem_write, arg2, sizeof(struct vki_itimerspec) );
+}
+
+PRE(timer_getoverrun)
+{
+   /* int timer_getoverrun(timer_t timerid); */
+   MAYBE_PRINTF("timer_getoverrun( %p )\n", arg1);
+}
+
+PRE(timer_delete)
+{
+   /* int timer_delete(timer_t timerid); */
+   MAYBE_PRINTF("timer_delete( %p )\n", arg1);
+}
+
+PRE(clock_settime)
+{
+    /* int clock_settime(clockid_t clk_id, const struct timespec *tp); */
+    MAYBE_PRINTF("clock_settime( %d, %p )\n", arg1,arg2);
+    SYSCALL_TRACK(pre_mem_read, tid, "clock_gettime(tp)",
+                  arg2, sizeof(struct timespec) );
+}
+
+PRE(clock_gettime)
+{
+    /* int clock_gettime(clockid_t clk_id, struct timespec *tp); */
+    MAYBE_PRINTF("clock_gettime( %d, %p )\n" , arg1,arg2);
+    SYSCALL_TRACK(pre_mem_write, tid, "clock_gettime(tp)",
+                  arg2, sizeof(struct timespec) );
+}
+
+POST(clock_gettime)
+{
+    VG_TRACK( post_mem_write, arg2, sizeof(struct timespec) );
+}
+
+PRE(clock_getres)
+{
+    /* int clock_getres(clockid_t clk_id, struct timespec *res); */
+    MAYBE_PRINTF("clock_getres( %d, %p )\n" , arg1,arg2);
+    SYSCALL_TRACK(pre_mem_write, tid, "clock_getres(res)",
+                  arg2, sizeof(struct timespec) );
+}
+
+POST(clock_getres)
+{
+    VG_TRACK( post_mem_write, arg2, sizeof(struct timespec) );
+}
+
 struct sys_info {
    UInt	flags;
    void	(*before)(ThreadId tid, ThreadState *tst);
@@ -6013,7 +6095,6 @@ static const struct sys_info sys_info[] = {
    SYSB_(prctl,			MayBlock),
    SYSBA(adjtimex,		0),
    SYSBA(mmap2,			0),
-   SYSBA(clock_gettime,         0),
    SYSBA(futex,                 MayBlock),
    SYSB_(acct,                  0),
 
@@ -6040,6 +6121,16 @@ static const struct sys_info sys_info[] = {
    SYSBA(mq_timedreceive,       MayBlock),
    SYSB_(mq_notify,             0),
    SYSBA(mq_getsetattr,         0),
+
+   SYSBA(timer_create,		0),
+   SYSBA(timer_settime,		0),
+   SYSBA(timer_gettime,		0),
+   SYSB_(timer_getoverrun,	0),
+   SYSB_(timer_delete,		0),
+
+   SYSB_(clock_settime,         0),
+   SYSBA(clock_gettime,         0),
+   SYSBA(clock_getres,          0),
 
 #if !SIGNAL_SIMULATION
    SYSBA(sigaltstack,		0),

@@ -273,6 +273,7 @@ typedef
       Xin_CMov32,    /* conditional move */
       Xin_LoadEX,    /* mov{s,z}{b,w}l from mem to reg */
       Xin_Store,     /* store 16/8 bit value in memory */
+      Xin_Set32,     /* convert condition code to 32-bit value */
       Xin_FpUnary,   /* FP fake unary op */
       Xin_FpBinary,  /* FP fake binary op */
       Xin_FpLdSt,    /* FP fake load/store */
@@ -366,6 +367,11 @@ typedef
             HReg      src;
             X86AMode* dst;
          } Store;
+         /* Convert a x86 condition code to a 32-bit value (0 or 1). */
+         struct {
+            X86CondCode cond;
+            HReg        dst;
+         } Set32;
          /* X86 Floating point (fake 3-operand, "flat reg file" insns) */
          struct {
             X86FpOp op;
@@ -409,6 +415,7 @@ extern X86Instr* X86Instr_CMov32   ( X86CondCode, X86RM* src, HReg dst );
 extern X86Instr* X86Instr_LoadEX   ( UChar szSmall, Bool syned,
                                      X86AMode* src, HReg dst );
 extern X86Instr* X86Instr_Store    ( UChar sz, HReg src, X86AMode* dst );
+extern X86Instr* X86Instr_Set32    ( X86CondCode cond, HReg dst );
 extern X86Instr* X86Instr_FpUnary  ( X86FpOp op, HReg src, HReg dst );
 extern X86Instr* X86Instr_FpBinary ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );
 extern X86Instr* X86Instr_FpLdSt   ( Bool isLoad, UChar sz, HReg reg, X86AMode* );

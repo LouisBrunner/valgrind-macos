@@ -537,6 +537,13 @@ X86Instr* X86Instr_Store ( UChar sz, HReg src, X86AMode* dst ) {
    vassert(sz == 1 || sz == 2);
    return i;
 }
+X86Instr* X86Instr_Set32 ( X86CondCode cond, HReg dst ) {
+   X86Instr* i       = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag            = Xin_Set32;
+   i->Xin.Set32.cond = cond;
+   i->Xin.Set32.dst  = dst;
+   return i;
+}
 X86Instr* X86Instr_FpUnary ( X86FpOp op, HReg src, HReg dst ) {
    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
    i->tag             = Xin_FpUnary;
@@ -675,6 +682,10 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf(",");
          ppX86AMode(i->Xin.Store.dst);
          return;
+      case Xin_Set32:
+         vex_printf("setl%s ", showX86CondCode(i->Xin.Set32.cond));
+         ppHRegX86(i->Xin.Set32.dst);
+         return;
       case Xin_FpUnary:
          vex_printf("g%sD ", showX86FpOp(i->Xin.FpUnary.op));
          ppHRegX86(i->Xin.FpUnary.src);
@@ -800,6 +811,9 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmRead, i->Xin.Store.src);
          addRegUsage_X86AMode(u, i->Xin.Store.dst);
          return;
+      case Xin_Set32:
+         addHRegUse(u, HRmWrite, i->Xin.Set32.dst);
+         return;
       case Xin_FpUnary:
          addHRegUse(u, HRmRead, i->Xin.FpUnary.src);
          addHRegUse(u, HRmWrite, i->Xin.FpUnary.dst);
@@ -886,6 +900,9 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_Store:
          mapReg(m, &i->Xin.Store.src);
          mapRegs_X86AMode(m, i->Xin.Store.dst);
+         return;
+      case Xin_Set32:
+         mapReg(m, &i->Xin.Set32.dst);
          return;
       case Xin_FpBinary:
          mapReg(m, &i->Xin.FpBinary.srcL);
@@ -1425,6 +1442,9 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             *p++ = 0x68;
             p = emit32(p, i->Xin.Push.src->Xrmi.Imm.imm32);
             goto done;
+         case Xrmi_Reg:
+            *p++ = 0x50 + iregNo(i->Xin.Push.src->Xrmi.Reg.reg);
+            goto done;
         default: 
             goto bad;
       }
@@ -1550,6 +1570,36 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       }
       break;
 
+   case Xin_Set32:
+      /* Make the destination register be 1 or 0, depending on whether
+         the relevant condition holds.  We have to dodge and weave
+         when the destination is %esi or %edi as we cannot directly
+         emit the native 'setb %reg' for those.  Further complication:
+         the top 24 bits of the destination should be forced to zero,
+         but doing 'xor %r,%r' kills the flag(s) we are about to read.
+         Sigh. */
+      /* First: movl $0, %dst */
+      *p++ = 0xB8 + iregNo(i->Xin.Set32.dst);
+      p = emit32(p, 0);
+      /* Do we need to swap in %eax? */
+
+      if (iregNo(i->Xin.Set32.dst) >= 4) {
+         /* xchg %eax, %dst */
+         *p++ = 0x90 + iregNo(i->Xin.Set32.dst);
+         /* setb lo8(%reg) */
+         *p++ = 0x0F; 
+         *p++ = 0x90 + (UChar)(i->Xin.Set32.cond);
+         p = doAMode_R(p, fake(0), hregX86_EAX());
+         /* xchg %eax, %dst */
+         *p++ = 0x90 + iregNo(i->Xin.Set32.dst);
+      } else {
+         /* setb lo8(%reg) */
+         *p++ = 0x0F; 
+         *p++ = 0x90 + (UChar)(i->Xin.Set32.cond);
+         p = doAMode_R(p, fake(0), i->Xin.Set32.dst);
+      }
+      goto done;
+
    case Xin_Store:
       if (i->Xin.Store.sz == 2) {
          /* This case, at least, is simple, given that we can
@@ -1652,13 +1702,13 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
         /* ffree %st(7) */
         p = do_ffree_st7(p);
         /* pushl %hi ; pushl %lo */
-        *p++ = 0x50 + hregNumber(i->Xin.FpI64.iregHi);
-        *p++ = 0x50 + hregNumber(i->Xin.FpI64.iregLo);
+        *p++ = 0x50 + iregNo(i->Xin.FpI64.iregHi);
+        *p++ = 0x50 + iregNo(i->Xin.FpI64.iregLo);
         /* fildll 0(%esp) */
         *p++ = 0xDF; *p++ = 0x6C; *p++ = 0x24; *p++ = 0x00; 
         /* addl $8, %esp */
         *p++ = 0x83; *p++ = 0xC4; *p++ = 0x08; 
-        p = do_fstp_st(p, 1+hregNumber(i->Xin.FpI64.freg));
+        p = do_fstp_st(p, 1+iregNo(i->Xin.FpI64.freg));
         goto done;
      }
 

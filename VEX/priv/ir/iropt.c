@@ -115,6 +115,152 @@ static void addToH64 ( Hash64* h, ULong key, ULong val )
    h->used++;
 }
 
+/*---------------------------------------------------------------*/
+/*--- Flattening out a BB into pure SSA form                  ---*/
+/*---------------------------------------------------------------*/
+
+/* Clone the NULL-terminated vector of IRExpr*s attached to a
+   CCall. */
+
+static IRExpr** copyIexCCallArgs ( IRExpr** vec )
+{
+   Int      i;
+   IRExpr** newvec;
+   for (i = 0; vec[i]; i++)
+      ;
+   newvec = LibVEX_Alloc((i+1)*sizeof(IRExpr*));
+   for (i = 0; vec[i]; i++)
+      newvec[i] = vec[i];
+   newvec[i] = NULL;
+   return newvec;
+}
+
+
+/* Flatten out 'ex' so it is atomic, returning a new expression with
+   the same value, after having appended extra IRTemp assignments to
+   the end of 'bb'. */
+
+static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
+{
+   Int i;
+   IRExpr** newargs;
+   IRType ty = typeOfIRExpr(bb->tyenv, ex);
+   IRTemp t1;
+
+   switch (ex->tag) {
+
+      case Iex_Get:
+         t1 = newIRTemp(bb->tyenv, ty);
+         addStmtToIRBB(bb, 
+            IRStmt_Tmp(t1, ex));
+         return IRExpr_Tmp(t1);
+
+      case Iex_Binop:
+         t1 = newIRTemp(bb->tyenv, ty);
+         addStmtToIRBB(bb, IRStmt_Tmp(t1, 
+            IRExpr_Binop(ex->Iex.Binop.op,
+                         flatten_Expr(bb, ex->Iex.Binop.arg1),
+                         flatten_Expr(bb, ex->Iex.Binop.arg2))));
+         return IRExpr_Tmp(t1);
+
+      case Iex_Unop:
+         t1 = newIRTemp(bb->tyenv, ty);
+         addStmtToIRBB(bb, IRStmt_Tmp(t1, 
+            IRExpr_Unop(ex->Iex.Unop.op,
+                        flatten_Expr(bb, ex->Iex.Unop.arg))));
+         return IRExpr_Tmp(t1);
+
+      case Iex_LDle:
+         t1 = newIRTemp(bb->tyenv, ty);
+         addStmtToIRBB(bb, IRStmt_Tmp(t1,
+            IRExpr_LDle(ex->Iex.LDle.ty, 
+                        flatten_Expr(bb, ex->Iex.LDle.addr))));
+         return IRExpr_Tmp(t1);
+
+      case Iex_CCall:
+         newargs = copyIexCCallArgs(ex->Iex.CCall.args);
+         for (i = 0; newargs[i]; i++)
+            newargs[i] = flatten_Expr(bb, newargs[i]);
+         t1 = newIRTemp(bb->tyenv, ty);
+         addStmtToIRBB(bb, IRStmt_Tmp(t1,
+            IRExpr_CCall(ex->Iex.CCall.name,
+                         ex->Iex.CCall.retty,
+                         newargs)));
+         return IRExpr_Tmp(t1);
+
+      case Iex_Mux0X:
+         t1 = newIRTemp(bb->tyenv, ty);
+         addStmtToIRBB(bb, IRStmt_Tmp(t1,
+            IRExpr_Mux0X(flatten_Expr(bb, ex->Iex.Mux0X.cond),
+                         flatten_Expr(bb, ex->Iex.Mux0X.expr0),
+                         flatten_Expr(bb, ex->Iex.Mux0X.exprX))));
+         return IRExpr_Tmp(t1);
+
+      case Iex_Const:
+      case Iex_Tmp:
+         return ex;
+
+      default:
+         vex_printf("\n");
+         ppIRExpr(ex); 
+         vex_printf("\n");
+         vpanic("flatten_Expr");
+   }
+}
+
+
+/* Append a completely flattened form of 'st' to the end of 'bb'. */
+
+static void flatten_Stmt ( IRBB* bb, IRStmt* st )
+{
+   IRExpr *e1, *e2;
+   switch (st->tag) {
+      case Ist_Put:
+         e1 = flatten_Expr(bb, st->Ist.Put.expr);
+         addStmtToIRBB(bb, IRStmt_Put(st->Ist.Put.offset, e1));
+         break;
+#if 0
+      case Ist_PutI:
+        e1 = flatten_Expr(bb, st->Ist.PutI.offset);
+        e2 = flatten_Expr(bb, st->Ist.PutI.expr);
+        addStmtToIRBB(bb, IRStmt_PutI(e1, e2, st->Ist.PutI.minoff,
+                          st->Ist.PutI.maxoff));
+        break;
+#endif
+      case Ist_Tmp:
+         e1 = flatten_Expr(bb, st->Ist.Tmp.expr);
+         addStmtToIRBB(bb, IRStmt_Tmp(st->Ist.Tmp.tmp, e1));
+         break;
+      case Ist_STle:
+         e1 = flatten_Expr(bb, st->Ist.STle.addr);
+         e2 = flatten_Expr(bb, st->Ist.STle.data);
+         addStmtToIRBB(bb, IRStmt_STle(e1,e2));
+         break;
+      case Ist_Exit:
+         e1 = flatten_Expr(bb, st->Ist.Exit.cond);
+         addStmtToIRBB(bb, IRStmt_Exit(e1, st->Ist.Exit.dst));
+         break;
+      default:
+         vex_printf("\n");
+         ppIRStmt(st); 
+         vex_printf("\n");
+         vpanic("flatten_Stmt");
+   }
+}
+
+static IRBB* flatten_BB ( IRBB* in )
+{
+   Int   i;
+   IRBB* out;
+   out = emptyIRBB();
+   out->tyenv = copyIRTypeEnv( in->tyenv );
+   for (i = 0; i < in->stmts_used; i++)
+      flatten_Stmt( out, in->stmts[i] );
+   out->next     = flatten_Expr( out, in->next );
+   out->jumpkind = in->jumpkind;
+   return out;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- iropt main                                              ---*/
@@ -130,7 +276,8 @@ static void addToH64 ( Hash64* h, ULong key, ULong val )
 /* exported from this file */
 IRBB* do_iropt_BB ( IRBB* bb0 )
 {
-   return bb0;
+   IRBB* flat = flatten_BB ( bb0 );
+   return flat;
 }
 
 

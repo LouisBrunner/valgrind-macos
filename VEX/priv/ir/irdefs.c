@@ -269,15 +269,17 @@ void ppIRTypeEnv ( IRTypeEnv* env ) {
 }
 
 
+
+
 void ppIRBB ( IRBB* bb )
 {
-   IRStmt* s;
+   Int i;
    vex_printf("IRBB {\n");
    ppIRTypeEnv(bb->tyenv);
    vex_printf("\n");
-   for (s = bb->stmts; s; s = s->link) {
+   for (i = 0; i < bb->stmts_used; i++) {
       vex_printf( "   ");
-      ppIRStmt(s);
+      ppIRStmt(bb->stmts[i]);
       vex_printf( "\n");
    }
    vex_printf( "   goto {");
@@ -413,7 +415,6 @@ IRExpr* IRExpr_Mux0X ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX ) {
 IRStmt* IRStmt_Put ( Int off, IRExpr* value ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
    s->tag            = Ist_Put;
-   s->link           = NULL;
    s->Ist.Put.offset = off;
    s->Ist.Put.expr   = value;
    return s;
@@ -422,7 +423,6 @@ IRStmt* IRStmt_PutI ( IRExpr* off, IRExpr* value,
                       UShort minoff, UShort maxoff ) {
    IRStmt* s          = LibVEX_Alloc(sizeof(IRStmt));
    s->tag             = Ist_PutI;
-   s->link            = NULL;
    s->Ist.PutI.offset = off;
    s->Ist.PutI.expr   = value;
    s->Ist.PutI.minoff = minoff;
@@ -432,7 +432,6 @@ IRStmt* IRStmt_PutI ( IRExpr* off, IRExpr* value,
 IRStmt* IRStmt_Tmp ( IRTemp tmp, IRExpr* expr ) {
    IRStmt* s       = LibVEX_Alloc(sizeof(IRStmt));
    s->tag          = Ist_Tmp;
-   s->link         = NULL;
    s->Ist.Tmp.tmp  = tmp;
    s->Ist.Tmp.expr = expr;
    return s;
@@ -440,7 +439,6 @@ IRStmt* IRStmt_Tmp ( IRTemp tmp, IRExpr* expr ) {
 IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value ) {
    IRStmt* s        = LibVEX_Alloc(sizeof(IRStmt));
    s->tag           = Ist_STle;
-   s->link          = NULL;
    s->Ist.STle.addr = addr;
    s->Ist.STle.data = value;
    return s;
@@ -448,22 +446,38 @@ IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value ) {
 IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst ) {
    IRStmt* s        = LibVEX_Alloc(sizeof(IRStmt));
    s->tag           = Ist_Exit;
-   s->link          = NULL;
    s->Ist.Exit.cond = cond;
    s->Ist.Exit.dst  = dst;
    return s;
 }
 
-/* Constructors -- IRBB */
+/* Constructors -- IRBB (sort of) */
 
-IRBB* mkIRBB ( IRTypeEnv* env, IRStmt* stmts, 
-               IRExpr* next, IRJumpKind jumpkind ) {
-   IRBB* bb     = LibVEX_Alloc(sizeof(IRBB));
-   bb->tyenv    = env;
-   bb->stmts    = stmts;
-   bb->next     = next;
-   bb->jumpkind = jumpkind;
+IRBB* emptyIRBB ( void )
+{
+   IRBB* bb       = LibVEX_Alloc(sizeof(IRBB));
+   bb->tyenv      = emptyIRTypeEnv();
+   bb->stmts_used = 0;
+   bb->stmts_size = 8;
+   bb->stmts      = LibVEX_Alloc(bb->stmts_size * sizeof(IRStmt*));
+   bb->next       = NULL;
+   bb->jumpkind   = Ijk_Boring;
    return bb;
+}
+
+void addStmtToIRBB ( IRBB* bb, IRStmt* st )
+{
+   Int i;
+   if (bb->stmts_used == bb->stmts_size) {
+      IRStmt** stmts2 = LibVEX_Alloc(2 * bb->stmts_size * sizeof(IRStmt*));
+      for (i = 0; i < bb->stmts_size; i++)
+         stmts2[i] = bb->stmts[i];
+      bb->stmts = stmts2;
+      bb->stmts_size *= 2;
+   }
+   vassert(bb->stmts_used < bb->stmts_size);
+   bb->stmts[bb->stmts_used] = st;
+   bb->stmts_used++;
 }
 
 
@@ -578,10 +592,12 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
 
 
 /*---------------------------------------------------------------*/
-/*--- Helper functions for the IR                             ---*/
+/*--- Helper functions for the IR -- IR Type Environments     ---*/
 /*---------------------------------------------------------------*/
 
-IRTypeEnv* newIRTypeEnv ( void )
+/* Make a new, empty IRTypeEnv. */
+
+IRTypeEnv* emptyIRTypeEnv ( void )
 {
    IRTypeEnv* env   = LibVEX_Alloc(sizeof(IRTypeEnv));
    env->types       = LibVEX_Alloc(8 * sizeof(IRType));
@@ -590,6 +606,22 @@ IRTypeEnv* newIRTypeEnv ( void )
    return env;
 }
 
+/* Make an exact copy of the given IRTypeEnv, usually so we can
+   add new stuff to the copy without messing up the original. */
+
+IRTypeEnv* copyIRTypeEnv ( IRTypeEnv* src )
+{
+   Int i;
+   IRTypeEnv* dst = LibVEX_Alloc(sizeof(IRTypeEnv));
+   dst->types_size = src->types_size;
+   dst->types_used = src->types_used;
+   dst->types = LibVEX_Alloc(dst->types_size * sizeof(IRType));
+   for (i = 0; i < src->types_used; i++)
+      dst->types[i] = src->types[i];
+   return dst;
+}
+
+/* Allocate a new IRTemp, given its type. */
 
 IRTemp newIRTemp ( IRTypeEnv* env, IRType ty )
 {
@@ -613,6 +645,8 @@ IRTemp newIRTemp ( IRTypeEnv* env, IRType ty )
    }
 }
 
+/* Find the type of a temporary previously allocated in an
+   environment. */
 
 IRType lookupIRTypeEnv ( IRTypeEnv* env, IRTemp tmp )
 {
@@ -621,6 +655,10 @@ IRType lookupIRTypeEnv ( IRTypeEnv* env, IRTemp tmp )
    return env->types[tmp];
 }
 
+
+/*---------------------------------------------------------------*/
+/*--- Helper functions for the IR -- finding types of exprs   ---*/
+/*---------------------------------------------------------------*/
 
 IRType typeOfIRConst ( IRConst* con )
 {
@@ -919,6 +957,11 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
    vassert(guest_word_size == Ity_I32
 	   || guest_word_size == Ity_I64);
 
+   if (bb->stmts_used < 0 || bb->stmts_size < 8
+       || bb->stmts_used > bb->stmts_size)
+      /* this BB is so strange we can't even print it */
+      vpanic("sanityCheckIRBB: stmts array limits wierd");
+
    /* Ensure each temp has a plausible type. */
    for (i = 0; i < n_temps; i++) {
       IRType ty = lookupIRTypeEnv(bb->tyenv,(IRTemp)i);
@@ -935,7 +978,8 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
    for (i = 0; i < n_temps; i++)
       def_counts[i] = 0;
 
-   for (stmt = bb->stmts; stmt; stmt=stmt->link) {
+   for (i = 0; i < bb->stmts_used; i++) {
+      stmt = bb->stmts[i];
       useBeforeDef_Stmt(bb,stmt,def_counts);
       if (stmt->tag == Ist_Tmp) {
          if (stmt->Ist.Tmp.tmp < 0 || stmt->Ist.Tmp.tmp >= n_temps)
@@ -947,8 +991,8 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
    }
 
    /* Typecheck everything. */
-   for (stmt = bb->stmts; stmt; stmt=stmt->link)
-      tcStmt( bb, stmt, guest_word_size );
+   for (i = 0; i < bb->stmts_used; i++)
+      tcStmt( bb, bb->stmts[i], guest_word_size );
    if (typeOfIRExpr(bb->tyenv,bb->next) != guest_word_size)
       sanityCheckFail(bb, NULL, "bb->next field has wrong type");
 }

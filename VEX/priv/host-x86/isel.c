@@ -230,6 +230,7 @@ static X86RM*    iselIntExpr_RM    ( ISelEnv* env, IRExpr* e );
 static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e );
 static void      iselIntExpr64     ( HReg* rHi, HReg* rLo, 
                                      ISelEnv* env, IRExpr* e );
+static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e );
 
 
 static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
@@ -485,6 +486,12 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
             Int shift = e->Iex.Unop.op == Iop_16HIto8 ? 8 : 16;
             addInstr(env, mk_MOVsd_RR(src,dst) );
             addInstr(env, X86Instr_Sh32(Xsh_SHR, shift, X86RM_Reg(dst)));
+            return dst;
+         }
+         case Iop_1Uto8: {
+            HReg dst         = newVRegI(env);
+            X86CondCode cond = iselCondCode(env, e->Iex.Unop.arg);
+            addInstr(env, X86Instr_Set32(cond,dst));
             return dst;
          }
          case Iop_16to8:
@@ -774,6 +781,15 @@ static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
       HReg src = iselIntExpr_R(env, mi.bindee[0]);
       addInstr(env, X86Instr_Alu32R(Xalu_CMP,X86RMI_Imm(0),src));
       return Xcc_Z;
+   }
+
+   /* var */
+   if (e->tag == Iex_Tmp) {
+      HReg r32 = lookupIRTemp(env, e->Iex.Tmp.tmp);
+      HReg dst = newVRegI(env);
+      addInstr(env, mk_MOVsd_RR(r32,dst));
+      addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(1),dst));
+      return Xcc_NZ;
    }
 
    ppIRExpr(e);
@@ -1145,6 +1161,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          addInstr(env, mk_MOVsd_RR(rLo,dstLo) );
          return;
       }
+      if (ty == Ity_Bit) {
+         X86CondCode cond = iselCondCode(env, stmt->Ist.Tmp.expr);
+         HReg dst = lookupIRTemp(env, tmp);
+         addInstr(env, X86Instr_Set32(cond, dst));
+         return;
+      }
       if (ty == Ity_F64) {
          HReg dst = lookupIRTemp(env, tmp);
          HReg src = iselDblExpr(env, stmt->Ist.Tmp.expr);
@@ -1202,7 +1224,6 @@ HInstrArray* iselBB_X86 ( IRBB* bb, Addr64(*find_helper)(Char*) )
 {
    Int     i, j;
    HReg    hreg, hregHI;
-   IRStmt* stmt;
 
    /* Make up an initial environment to use. */
    ISelEnv* env = LibVEX_Alloc(sizeof(ISelEnv));
@@ -1245,8 +1266,8 @@ HInstrArray* iselBB_X86 ( IRBB* bb, Addr64(*find_helper)(Char*) )
    env->vreg_ctr = j;
 
    /* Ok, finally we can iterate over the statements. */
-   for (stmt = bb->stmts; stmt; stmt=stmt->link)
-      iselStmt(env,stmt);
+   for (i = 0; i < bb->stmts_used; i++)
+      iselStmt(env,bb->stmts[i]);
 
    iselNext(env,bb->next,bb->jumpkind);
 

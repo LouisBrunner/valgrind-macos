@@ -174,6 +174,7 @@ TranslateResult LibVEX_Translate (
 
    /* Clean it up, hopefully a lot. */
    irbb = do_iropt_BB ( irbb );
+   sanityCheckIRBB(irbb, Ity_I32);
 
    if (vex_verbosity > 0) {
       vex_printf("\n-------- After IR optimisation --------\n");

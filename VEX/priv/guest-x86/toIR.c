@@ -47,26 +47,14 @@ static UChar* guest_code;
 /* CONST */
 static Addr32 guest_eip;
 
-/* The BBIR* into which we're generating code. */
-/* What it points to changes as we work through the bb. */
+/* The IRBB* into which we're generating code. */
 static IRBB* irbb;
-
-/* Points to the last stmt added to the statement list of irbb, so
-   that when a new stmt is added, the .link field can be correctly
-   updated. */
-static IRStmt* last_stmt;
 
 
 /* Add a statement to the list held by "irbb". */
-static void stmt ( IRStmt* stmt )
+static void stmt ( IRStmt* st )
 {
-   stmt->link = NULL;
-   if (irbb->stmts == NULL) {
-      irbb->stmts = stmt;
-   } else {
-      last_stmt->link = stmt;
-   }
-   last_stmt = stmt;
+   addStmtToIRBB( irbb, st );
 }
 
 /* Generate a new temporary of the given type. */
@@ -4970,7 +4958,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    UChar sorb = 0;
 
    /* For printing the stmts after each insn. */
-   IRStmt* first_stmt = last_stmt;
+   Int first_stmt_idx = irbb->stmts_used;
 
    *isEnd = False;
    addr = t1 = t2 = INVALID_IRTEMP; 
@@ -8437,21 +8425,14 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
   decode_success:
    /* All decode successes end up here. */
    DIP("\n");
-   if (first_stmt == NULL)
-      first_stmt = irbb->stmts;
-   else
-      first_stmt = first_stmt->link;
-   while (True) {
-      if (!first_stmt) 
-         break;
-      if (print_codegen) {
-         vex_printf("              ");
-         ppIRStmt(first_stmt);
-         vex_printf("\n");
-      }
-      if (first_stmt == last_stmt)
-	 break;
-      first_stmt = first_stmt->link;
+   { Int i;
+     for (i = first_stmt_idx; i < irbb->stmts_used; i++) {
+        if (print_codegen) {
+           vex_printf("              ");
+           ppIRStmt(irbb->stmts[i]);
+           vex_printf("\n");
+        }
+     }
    }
    if (*isEnd) {
       vassert(irbb->next != NULL);
@@ -8494,8 +8475,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
    print_codegen     = (vex_verbosity >= 1);
    guest_code        = x86code;
    guest_eip         = (Addr32)eip;
-   irbb              = mkIRBB( newIRTypeEnv(), NULL, NULL, Ijk_Boring );
-   last_stmt         = NULL;
+   irbb              = emptyIRBB();
 
    vassert((eip >> 32) == 0);
    vassert(vex_guest_insns_per_bb >= 1);

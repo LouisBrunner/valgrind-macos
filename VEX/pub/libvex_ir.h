@@ -285,7 +285,6 @@ typedef
             IRConst* dst;
          } Exit;
       } Ist;
-      struct _IRStmt* link;
    }
    IRStmt;
 
@@ -342,22 +341,27 @@ typedef
 extern void ppIRTypeEnv ( IRTypeEnv* );
 
 
-/* Basic blocks contain 4 fields:
+/* Basic blocks contain:
    - A table giving a type for each temp
-   - A list of statements
+   - An expandable array of statements
    - An expression of type 32 or 64 bits, depending on the
      guest's word size, indicating the next destination.
+   - An indication of any special actions (JumpKind) needed
+     for this final jump.
 */
 typedef
    struct _IRBB {
       IRTypeEnv* tyenv;
-      IRStmt*    stmts;
+      IRStmt**   stmts;
+      Int        stmts_size;
+      Int        stmts_used;
       IRExpr*    next;
       IRJumpKind jumpkind;
    }
    IRBB;
 
-extern IRBB* mkIRBB ( IRTypeEnv*, IRStmt*, IRExpr*, IRJumpKind );
+extern IRBB* emptyIRBB ( void );
+extern void  addStmtToIRBB ( IRBB*, IRStmt* );
 
 extern void ppIRBB ( IRBB* );
 
@@ -367,9 +371,10 @@ extern void ppIRBB ( IRBB* );
 /*---------------------------------------------------------------*/
 
 /* For messing with IR type environments */
-extern IRTypeEnv* newIRTypeEnv    ( void );
+extern IRTypeEnv* emptyIRTypeEnv  ( void );
 extern IRTemp     newIRTemp       ( IRTypeEnv*, IRType );
 extern IRType     lookupIRTypeEnv ( IRTypeEnv*, IRTemp );
+extern IRTypeEnv* copyIRTypeEnv   ( IRTypeEnv* );
 
 /* What is the type of this expression? */
 extern IRType typeOfIRConst ( IRConst* );

@@ -47,6 +47,7 @@
 
 #include "host-x86/hdefs.h"
 #include "host-amd64/hdefs.h"
+#include "host-ppc32/hdefs.h"
 
 #include "guest-x86/gdefs.h"
 #include "guest-amd64/gdefs.h"
@@ -281,6 +282,24 @@ VexTranslateResult LibVEX_Translate (
          host_is_bigendian = False;
          host_word_type    = Ity_I64;
          vassert(subarch_host == VexSubArch_NONE);
+         break;
+
+      case VexArchPPC32:
+         getAllocableRegs_PPC32 ( &n_available_real_regs,
+                                  &available_real_regs );
+         isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_PPC32Instr;
+         getRegUsage = (void(*)(HRegUsage*,HInstr*)) getRegUsage_PPC32Instr;
+         mapRegs     = (void(*)(HRegRemap*,HInstr*)) mapRegs_PPC32Instr;
+         genSpill    = (HInstr*(*)(HReg,Int)) genSpill_PPC32;
+         genReload   = (HInstr*(*)(HReg,Int)) genReload_PPC32;
+         ppInstr     = (void(*)(HInstr*)) ppPPC32Instr;
+         ppReg       = (void(*)(HReg)) ppHRegPPC32;
+         iselBB      = iselBB_PPC32;
+         emit        = (Int(*)(UChar*,Int,HInstr*)) emit_PPC32Instr;
+         host_is_bigendian = True;
+         host_word_type    = Ity_I32;
+         vassert(subarch_guest == VexSubArchPPC32_noAV
+                 || subarch_guest == VexSubArchPPC32_AV);
          break;
 
       default:

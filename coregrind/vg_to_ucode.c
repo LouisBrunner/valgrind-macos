@@ -3596,8 +3596,8 @@ Addr dis_SSE2_load_store_or_mov ( UCodeBlock* cb,
 static 
 void dis_push_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
 {
-    vg_assert(sz == 4);
     Int t1 = newTemp(cb), t2 = newTemp(cb);
+    vg_assert(sz == 4);
     uInstr2(cb, GETSEG, 2, ArchRegS, sreg,  TempReg, t1);
     uInstr2(cb, GET,    4, ArchReg,  R_ESP, TempReg, t2);
     uInstr2(cb, SUB,    4, Literal,  0,     TempReg, t2);
@@ -3611,8 +3611,8 @@ void dis_push_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
 static
 void dis_pop_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
 {
-   vg_assert(sz == 4);
    Int t1 = newTemp(cb), t2 = newTemp(cb);
+   vg_assert(sz == 4);
    uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg,  t2);
    uInstr2(cb, LOAD,   2, TempReg, t2,       TempReg,  t1);
    uInstr2(cb, ADD,    4, Literal, 0,        TempReg,  t2);

@@ -2371,6 +2371,7 @@ static Bool checkForBogusLiterals ( /*FLAT*/ IRStmt* st )
                 || isBogusAtom(st->Ist.STle.data);
       case Ist_Exit:
          return isBogusAtom(st->Ist.Exit.guard);
+      case Ist_IMark:
       case Ist_MFence:
          return False;
       default: 
@@ -2430,6 +2431,8 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
          VG_(printf)("\n\n");
       }
 
+      /* Generate instrumentation code for each stmt ... */
+
       switch (st->tag) {
 
          case Ist_Tmp:
@@ -2462,6 +2465,7 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
             complainIfUndefined( &mce, st->Ist.Exit.guard );
             break;
 
+         case Ist_IMark:
          case Ist_MFence:
             break;
 
@@ -2486,6 +2490,7 @@ IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
          VG_(printf)("\n");
       }
 
+      /* ... and finally copy the stmt itself to the output. */
       addStmtToIRBB(bb, st);
 
    }

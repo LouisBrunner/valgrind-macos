@@ -1060,6 +1060,7 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
              }
              break;
 
+         case Ist_IMark:
          case Ist_MFence:
             break;
 

@@ -49,7 +49,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	nanoleak.stderr.exp nanoleak.vgtest \
 	nanoleak_supp.stderr.exp nanoleak_supp.vgtest nanoleak.supp \
 	new_nothrow.stderr.exp new_nothrow.vgtest \
-	new_override.stderr.exp new_override.vgtest \
+	new_override.stderr.exp new_override.stdout.exp new_override.vgtest \
 	null_socket.stderr.exp null_socket.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \

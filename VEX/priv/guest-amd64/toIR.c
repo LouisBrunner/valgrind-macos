@@ -627,9 +627,9 @@ static ULong getSDisp8 ( ULong delta )
    bits. */
 static ULong getSDisp16 ( ULong delta )
 {
-   UShort v = guest_code[delta+1]; v <<= 8;
+   UInt v = guest_code[delta+1]; v <<= 8;
    v |= guest_code[delta+0];
-   return extend_s_16to64( v );
+   return extend_s_16to64( (UShort)v );
 }
 
 /* Get a 32-bit value out of the insn stream and sign-extend to 64
@@ -1132,34 +1132,34 @@ static HChar* nameIReg64 ( UInt regno )
 //..    return IRExpr_Const(IRConst_V128(mask));
 //.. }
 
-//.. /*------------------------------------------------------------*/
-//.. /*--- Helpers for %eflags.                                 ---*/
-//.. /*------------------------------------------------------------*/
-//.. 
-//.. /* -------------- Evaluating the flags-thunk. -------------- */
-//.. 
-//.. /* Build IR to calculate all the eflags from stored
-//..    CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression ::
-//..    Ity_I32. */
-//.. static IRExpr* mk_x86g_calculate_eflags_all ( void )
-//.. {
-//..    IRExpr** args
-//..       = mkIRExprVec_4( IRExpr_Get(OFFB_CC_OP,   Ity_I32),
-//..                        IRExpr_Get(OFFB_CC_DEP1, Ity_I32),
-//..                        IRExpr_Get(OFFB_CC_DEP2, Ity_I32),
-//..                        IRExpr_Get(OFFB_CC_NDEP, Ity_I32) );
-//..    IRExpr* call
-//..       = mkIRExprCCall(
-//..            Ity_I32,
-//..            0/*regparm*/, 
-//..            "x86g_calculate_eflags_all", &x86g_calculate_eflags_all,
-//..            args
-//..         );
-//..    /* Exclude OP and NDEP from definedness checking.  We're only
-//..       interested in DEP1 and DEP2. */
-//..    call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<3);
-//..    return call;
-//.. }
+/*------------------------------------------------------------*/
+/*--- Helpers for %eflags.                                 ---*/
+/*------------------------------------------------------------*/
+
+/* -------------- Evaluating the flags-thunk. -------------- */
+
+/* Build IR to calculate all the eflags from stored
+   CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression ::
+   Ity_I64. */
+static IRExpr* mk_amd64g_calculate_rflags_all ( void )
+{
+   IRExpr** args
+      = mkIRExprVec_4( IRExpr_Get(OFFB_CC_OP,   Ity_I64),
+                       IRExpr_Get(OFFB_CC_DEP1, Ity_I64),
+                       IRExpr_Get(OFFB_CC_DEP2, Ity_I64),
+                       IRExpr_Get(OFFB_CC_NDEP, Ity_I64) );
+   IRExpr* call
+      = mkIRExprCCall(
+           Ity_I64,
+           0/*regparm*/, 
+           "amd64g_calculate_rflags_all", &amd64g_calculate_rflags_all,
+           args
+        );
+   /* Exclude OP and NDEP from definedness checking.  We're only
+      interested in DEP1 and DEP2. */
+   call->Iex.CCall.cee->mcx_mask = (1<<0) | (1<<3);
+   return call;
+}
 
 /* Build IR to calculate some particular condition from stored
    CC_OP/CC_DEP1/CC_DEP2/CC_NDEP.  Returns an expression ::
@@ -1232,20 +1232,21 @@ static IRExpr* widenUto64 ( IRExpr* e )
       case Ity_I32: return unop(Iop_32Uto64, e);
       case Ity_I16: return unop(Iop_32Uto64, unop(Iop_16Uto32,e));
       case Ity_I8:  return unop(Iop_32Uto64, unop(Iop_8Uto32,e));
-      default: vpanic("widenUto32");
+      default: vpanic("widenUto64");
    }
 }
 
-//.. /* S-widen 8/16/32 bit int expr to 32. */
-//.. static IRExpr* widenSto32 ( IRExpr* e )
-//.. {
-//..    switch (typeOfIRExpr(irbb->tyenv,e)) {
-//..       case Ity_I32: return e;
-//..       case Ity_I16: return unop(Iop_16Sto32,e);
-//..       case Ity_I8:  return unop(Iop_8Sto32,e);
-//..       default: vpanic("widenSto32");
-//..    }
-//.. }
+/* S-widen 8/16/32/64 bit int expr to 32. */
+static IRExpr* widenSto64 ( IRExpr* e )
+{
+   switch (typeOfIRExpr(irbb->tyenv,e)) {
+      case Ity_I64: return e;
+      case Ity_I32: return unop(Iop_32Sto64, e);
+      case Ity_I16: return unop(Iop_32Sto64, unop(Iop_16Sto32,e));
+      case Ity_I8:  return unop(Iop_32Sto64, unop(Iop_8Sto32,e));
+      default: vpanic("widenSto64");
+   }
+}
 
 /* Narrow 8/16/32/64 bit int expr to 8/16/32/64.  Clearly only some
    of these combinations make sense. */
@@ -1258,6 +1259,10 @@ static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
       return unop(Iop_32to16, e);
    if (src_ty == Ity_I32 && dst_ty == Ity_I8)
       return unop(Iop_32to8, e);
+   if (src_ty == Ity_I64 && dst_ty == Ity_I32)
+      return unop(Iop_64to32, e);
+   if (src_ty == Ity_I64 && dst_ty == Ity_I16)
+      return unop(Iop_32to16, unop(Iop_64to32, e));
 
    vex_printf("\nsrc, dst tys are: ");
    ppIRType(src_ty);
@@ -1320,45 +1325,51 @@ void setFlags_DEP1 ( IROp op8, IRTemp dep1, IRType ty )
 }
 
 
-//.. /* For shift operations, we put in the result and the undershifted
-//..    result.  Except if the shift amount is zero, the thunk is left
-//..    unchanged. */
-//.. 
-//.. static void setFlags_DEP1_DEP2_shift ( IROp    op32,
-//..                                        IRTemp  res,
-//..                                        IRTemp  resUS,
-//..                                        IRType  ty,
-//..                                        IRTemp  guard )
-//.. {
-//..    Int ccOp = ty==Ity_I8 ? 2 : (ty==Ity_I16 ? 1 : 0);
-//.. 
-//..    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-//..    vassert(guard);
-//.. 
-//..    /* Both kinds of right shifts are handled by the same thunk
-//..       operation. */
-//..    switch (op32) {
-//..       case Iop_Shr32:
-//..       case Iop_Sar32: ccOp = X86G_CC_OP_SHRL - ccOp; break;
-//..       case Iop_Shl32: ccOp = X86G_CC_OP_SHLL - ccOp; break;
-//..       default:        ppIROp(op32);
-//..                       vpanic("setFlags_DEP1_DEP2_shift(x86)");
-//..    }
-//.. 
-//..    /* DEP1 contains the result, DEP2 contains the undershifted value. */
-//..    stmt( IRStmt_Put( OFFB_CC_OP,
-//..                      IRExpr_Mux0X( mkexpr(guard),
-//..                                    IRExpr_Get(OFFB_CC_OP,Ity_I32),
-//..                                    mkU32(ccOp))) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP1,
-//..                      IRExpr_Mux0X( mkexpr(guard),
-//..                                    IRExpr_Get(OFFB_CC_DEP1,Ity_I32),
-//..                                    widenUto32(mkexpr(res)))) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, 
-//..                      IRExpr_Mux0X( mkexpr(guard),
-//..                                    IRExpr_Get(OFFB_CC_DEP2,Ity_I32),
-//..                                    widenUto32(mkexpr(resUS)))) );
-//.. }
+/* For shift operations, we put in the result and the undershifted
+   result.  Except if the shift amount is zero, the thunk is left
+   unchanged. */
+
+static void setFlags_DEP1_DEP2_shift ( IROp    op64,
+                                       IRTemp  res,
+                                       IRTemp  resUS,
+                                       IRType  ty,
+                                       IRTemp  guard )
+{
+   Int ccOp = 0;
+   switch (ty) {
+      case Ity_I8:  ccOp = 0; break;
+      case Ity_I16: ccOp = 1; break;
+      case Ity_I32: ccOp = 2; break;
+      case Ity_I64: ccOp = 3; break;
+      default: vassert(0);
+   }
+
+   vassert(guard);
+
+   /* Both kinds of right shifts are handled by the same thunk
+      operation. */
+   switch (op64) {
+      case Iop_Shr64:
+      case Iop_Sar64: ccOp += AMD64G_CC_OP_SHRB; break;
+      case Iop_Shl64: ccOp += AMD64G_CC_OP_SHLB; break;
+      default:        ppIROp(op64);
+                      vpanic("setFlags_DEP1_DEP2_shift(amd64)");
+   }
+
+   /* DEP1 contains the result, DEP2 contains the undershifted value. */
+   stmt( IRStmt_Put( OFFB_CC_OP,
+                     IRExpr_Mux0X( mkexpr(guard),
+                                   IRExpr_Get(OFFB_CC_OP,Ity_I64),
+                                   mkU64(ccOp))) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1,
+                     IRExpr_Mux0X( mkexpr(guard),
+                                   IRExpr_Get(OFFB_CC_DEP1,Ity_I64),
+                                   widenUto64(mkexpr(res)))) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, 
+                     IRExpr_Mux0X( mkexpr(guard),
+                                   IRExpr_Get(OFFB_CC_DEP2,Ity_I64),
+                                   widenUto64(mkexpr(resUS)))) );
+}
 
 
 /* For the inc/dec case, we store in DEP1 the result value and in NDEP
@@ -1548,14 +1559,14 @@ static HChar* nameGrp1 ( Int opc_aux )
    return grp1_names[opc_aux];
 }
 
-//.. static HChar* nameGrp2 ( Int opc_aux )
-//.. {
-//..    static HChar* grp2_names[8] 
-//..      = { "rol", "ror", "rcl", "rcr", "shl", "shr", "shl", "sar" };
-//..    if (opc_aux < 0 || opc_aux > 7) vpanic("nameGrp2(x86)");
-//..    return grp2_names[opc_aux];
-//.. }
-//.. 
+static HChar* nameGrp2 ( Int opc_aux )
+{
+   static HChar* grp2_names[8] 
+     = { "rol", "ror", "rcl", "rcr", "shl", "shr", "shl", "sar" };
+   if (opc_aux < 0 || opc_aux > 7) vpanic("nameGrp2(x86)");
+   return grp2_names[opc_aux];
+}
+
 //.. static HChar* nameGrp4 ( Int opc_aux )
 //.. {
 //..    static HChar* grp4_names[8] 
@@ -2178,13 +2189,13 @@ ULong dis_op2_E_G ( Prefix      pfx,
    }
 
    if (epartIsReg(rm)) {
-      vassert(0); /* awaiting test case */
       /* Specially handle XOR reg,reg, because that doesn't really
          depend on reg, and doing the obvious thing potentially
          generates a spurious value check failure due to the bogus
          dependency. */
       if (op8 == Iop_Xor8 && gregOfRM(rm) == eregOfRM(rm)
                           && getRexR(pfx) == getRexB(pfx)) {
+         vassert(0); /* awaiting test case */
          codegen_XOR_reg_with_itself ( pfx, size, gregOfRM(rm) );
          return 1+delta0;
       }
@@ -2194,21 +2205,20 @@ ULong dis_op2_E_G ( Prefix      pfx,
       if (addSubCarry && op8 == Iop_Add8) {
          vassert(0); /* awaiting test case */
          helper_ADC( size, dst1, dst0, src );
-         putIRegB(pfx, size, gregOfRM(rm), mkexpr(dst1));
+         putIRegR(pfx, size, gregOfRM(rm), mkexpr(dst1));
       } else
       if (addSubCarry && op8 == Iop_Sub8) {
          vassert(0); /* awaiting test case */
          helper_SBB( size, dst1, dst0, src );
-         putIRegB(pfx, size, gregOfRM(rm), mkexpr(dst1));
+         putIRegR(pfx, size, gregOfRM(rm), mkexpr(dst1));
       } else {
-         vassert(0); /* awaiting test case */
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
          if (isAddSub(op8))
             setFlags_DEP1_DEP2(op8, dst0, src, ty);
          else
             setFlags_DEP1(op8, dst1, ty);
          if (keep)
-            putIRegB(pfx, size, gregOfRM(rm), mkexpr(dst1));
+            putIRegR(pfx, size, gregOfRM(rm), mkexpr(dst1));
       }
 
       DIP("%s%c %s,%s\n", t_amd64opc, nameISize(size), 
@@ -2658,50 +2668,51 @@ ULong dis_Grp1 ( Prefix pfx,
 }
 
 
-//.. /* Group 2 extended opcodes.  shift_expr must be an 8-bit typed
-//..    expression. */
-//.. 
-//.. static
-//.. UInt dis_Grp2 ( UChar  sorb,
-//..                 UInt delta, UChar modrm,
-//..                 Int am_sz, Int d_sz, Int sz, IRExpr* shift_expr,
-//..                 Char* shift_expr_txt )
-//.. {
-//..    /* delta on entry points at the modrm byte. */
-//..    HChar  dis_buf[50];
-//..    Int    len;
-//..    Bool   isShift, isRotate, isRotateRC;
-//..    IRType ty    = szToITy(sz);
-//..    IRTemp dst0  = newTemp(ty);
-//..    IRTemp dst1  = newTemp(ty);
-//..    IRTemp addr  = IRTemp_INVALID;
-//.. 
-//..    vassert(sz == 1 || sz == 2 || sz == 4);
-//.. 
-//..    /* Put value to shift/rotate in dst0. */
-//..    if (epartIsReg(modrm)) {
-//..       assign(dst0, getIReg(sz, eregOfRM(modrm)));
-//..       delta += (am_sz + d_sz);
-//..    } else {
-//..       addr = disAMode ( &len, sorb, delta, dis_buf);
-//..       assign(dst0, loadLE(ty,mkexpr(addr)));
-//..       delta += len + d_sz;
-//..    }
-//.. 
-//..    isShift = False;
-//..    switch (gregOfRM(modrm)) { case 4: case 5: case 7: isShift = True; }
-//.. 
-//..    isRotate = False;
-//..    switch (gregOfRM(modrm)) { case 0: case 1: isRotate = True; }
-//.. 
-//..    isRotateRC = gregOfRM(modrm) == 3;
-//.. 
-//..    if (!isShift && !isRotate && !isRotateRC) {
-//..       vex_printf("\ncase %d\n", gregOfRM(modrm));
-//..       vpanic("dis_Grp2(Reg): unhandled case(x86)");
-//..    }
-//.. 
-//..    if (isRotateRC) {
+/* Group 2 extended opcodes.  shift_expr must be an 8-bit typed
+   expression. */
+
+static
+ULong dis_Grp2 ( Prefix pfx,
+                 ULong delta, UChar modrm,
+                 Int am_sz, Int d_sz, Int sz, IRExpr* shift_expr,
+                 HChar* shift_expr_txt )
+{
+   /* delta on entry points at the modrm byte. */
+   HChar  dis_buf[50];
+   Int    len;
+   Bool   isShift, isRotate, isRotateRC;
+   IRType ty    = szToITy(sz);
+   IRTemp dst0  = newTemp(ty);
+   IRTemp dst1  = newTemp(ty);
+   IRTemp addr  = IRTemp_INVALID;
+
+   vassert(sz == 1 || sz == 2 || sz == 4 || sz == 8);
+
+   /* Put value to shift/rotate in dst0. */
+   if (epartIsReg(modrm)) {
+      assign(dst0, getIRegB(pfx, sz, eregOfRM(modrm)));
+      delta += (am_sz + d_sz);
+   } else {
+      addr = disAMode ( &len, pfx, delta, dis_buf);
+      assign(dst0, loadLE(ty,mkexpr(addr)));
+      delta += len + d_sz;
+   }
+
+   isShift = False;
+   switch (gregOfRM(modrm)) { case 4: case 5: case 7: isShift = True; }
+
+   isRotate = False;
+   switch (gregOfRM(modrm)) { case 0: case 1: isRotate = True; }
+
+   isRotateRC = toBool(gregOfRM(modrm) == 3);
+
+   if (!isShift && !isRotate && !isRotateRC) {
+      vex_printf("\ncase %d\n", gregOfRM(modrm));
+      vpanic("dis_Grp2(Reg): unhandled case(amd64)");
+   }
+
+   if (isRotateRC) {
+      vassert(0);
 //..       /* call a helper; this insn is so ridiculous it does not deserve
 //..          better */
 //..       IRTemp   r64  = newTemp(Ity_I64);
@@ -2722,169 +2733,170 @@ ULong dis_Grp1 ( Prefix pfx,
 //..       stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
 //..       stmt( IRStmt_Put( OFFB_CC_DEP1, unop(Iop_64HIto32, mkexpr(r64)) ));
 //..       stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
-//..    }
-//.. 
-//..    if (isShift) {
-//.. 
-//..       IRTemp pre32     = newTemp(Ity_I32);
-//..       IRTemp res32     = newTemp(Ity_I32);
-//..       IRTemp res32ss   = newTemp(Ity_I32);
-//..       IRTemp shift_amt = newTemp(Ity_I8);
-//..       IROp   op32;
-//.. 
-//..       switch (gregOfRM(modrm)) { 
-//..          case 4: op32 = Iop_Shl32; break;
-//..          case 5: op32 = Iop_Shr32; break;
-//..          case 7: op32 = Iop_Sar32; break;
-//..          default: vpanic("dis_Grp2:shift"); break;
-//..       }
-//.. 
-//..       /* Widen the value to be shifted to 32 bits, do the shift, and
-//..          narrow back down.  This seems surprisingly long-winded, but
-//..          unfortunately the Intel semantics requires that 8/16-bit
-//..          shifts give defined results for shift values all the way up
-//..          to 31, and this seems the simplest way to do it.  It has the
-//..          advantage that the only IR level shifts generated are of 32
-//..          bit values, and the shift amount is guaranteed to be in the
-//..          range 0 .. 31, thereby observing the IR semantics requiring
-//..          all shift values to be in the range 0 .. 2^word_size-1. */
-//.. 
-//..       /* shift_amt = shift_expr & 31, regardless of operation size */
-//..       assign( shift_amt, binop(Iop_And8, shift_expr, mkU8(31)) );
-//.. 
-//..       /* suitably widen the value to be shifted to 32 bits. */
-//..       assign( pre32, op32==Iop_Sar32 ? widenSto32(mkexpr(dst0))
-//..                                      : widenUto32(mkexpr(dst0)) );
-//.. 
-//..       /* res32 = pre32 `shift` shift_amt */
-//..       assign( res32, binop(op32, mkexpr(pre32), mkexpr(shift_amt)) );
-//.. 
-//..       /* res32ss = pre32 `shift` ((shift_amt - 1) & 31) */
-//..       assign( res32ss,
-//..               binop(op32,
-//..                     mkexpr(pre32), 
-//..                     binop(Iop_And8,
-//..                           binop(Iop_Sub8,
-//..                                 mkexpr(shift_amt), mkU8(1)),
-//..                           mkU8(31))) );
-//.. 
-//..       /* Build the flags thunk. */
-//..       setFlags_DEP1_DEP2_shift(op32, res32, res32ss, ty, shift_amt);
-//.. 
-//..       /* Narrow the result back down. */
-//..       assign( dst1, narrowTo(ty, mkexpr(res32)) );
-//.. 
-//..    } /* if (isShift) */
-//.. 
-//..    else 
-//..    if (isRotate) {
-//..       Int    ccOp      = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-//..       Bool   left      = gregOfRM(modrm) == 0;
-//..       IRTemp rot_amt   = newTemp(Ity_I8);
-//..       IRTemp rot_amt32 = newTemp(Ity_I8);
-//..       IRTemp oldFlags  = newTemp(Ity_I32);
-//.. 
-//..       /* rot_amt = shift_expr & mask */
-//..       /* By masking the rotate amount thusly, the IR-level Shl/Shr
-//..          expressions never shift beyond the word size and thus remain
-//..          well defined. */
-//..       assign(rot_amt32, binop(Iop_And8, shift_expr, mkU8(31)));
-//.. 
-//..       if (ty == Ity_I32)
-//..          assign(rot_amt, mkexpr(rot_amt32));
-//..       else
-//..          assign(rot_amt, binop(Iop_And8, mkexpr(rot_amt32), mkU8(8*sz-1)));
-//.. 
-//..       if (left) {
-//.. 
-//..          /* dst1 = (dst0 << rot_amt) | (dst0 >>u (wordsize-rot_amt)) */
-//..          assign(dst1, 
-//..             binop( mkSizedOp(ty,Iop_Or8),
-//..                    binop( mkSizedOp(ty,Iop_Shl8), 
-//..                           mkexpr(dst0),
-//..                           mkexpr(rot_amt)
-//..                    ),
-//..                    binop( mkSizedOp(ty,Iop_Shr8), 
-//..                           mkexpr(dst0), 
-//..                           binop(Iop_Sub8,mkU8(8*sz), mkexpr(rot_amt))
-//..                    )
-//..             )
-//..          );
-//..          ccOp += X86G_CC_OP_ROLB;
-//.. 
-//..       } else { /* right */
-//.. 
-//..          /* dst1 = (dst0 >>u rot_amt) | (dst0 << (wordsize-rot_amt)) */
-//..          assign(dst1, 
-//..             binop( mkSizedOp(ty,Iop_Or8),
-//..                    binop( mkSizedOp(ty,Iop_Shr8), 
-//..                           mkexpr(dst0),
-//..                           mkexpr(rot_amt)
-//..                    ),
-//..                    binop( mkSizedOp(ty,Iop_Shl8), 
-//..                           mkexpr(dst0), 
-//..                           binop(Iop_Sub8,mkU8(8*sz), mkexpr(rot_amt))
-//..                    )
-//..             )
-//..          );
-//..          ccOp += X86G_CC_OP_RORB;
-//.. 
-//..       }
-//.. 
-//..       /* dst1 now holds the rotated value.  Build flag thunk.  We
-//..          need the resulting value for this, and the previous flags.
-//..          Except don't set it if the rotate count is zero. */
-//.. 
-//..       assign(oldFlags, mk_x86g_calculate_eflags_all());
-//.. 
-//..       /* CC_DEP1 is the rotated value.  CC_NDEP is flags before. */
-//..       stmt( IRStmt_Put( OFFB_CC_OP,
-//..                         IRExpr_Mux0X( mkexpr(rot_amt32),
-//..                                       IRExpr_Get(OFFB_CC_OP,Ity_I32),
-//..                                       mkU32(ccOp))) );
-//..       stmt( IRStmt_Put( OFFB_CC_DEP1, 
-//..                         IRExpr_Mux0X( mkexpr(rot_amt32),
-//..                                       IRExpr_Get(OFFB_CC_DEP1,Ity_I32),
-//..                                       widenUto32(mkexpr(dst1)))) );
-//..       stmt( IRStmt_Put( OFFB_CC_DEP2, 
-//..                         IRExpr_Mux0X( mkexpr(rot_amt32),
-//..                                       IRExpr_Get(OFFB_CC_DEP2,Ity_I32),
-//..                                       mkU32(0))) );
-//..       stmt( IRStmt_Put( OFFB_CC_NDEP, 
-//..                         IRExpr_Mux0X( mkexpr(rot_amt32),
-//..                                       IRExpr_Get(OFFB_CC_NDEP,Ity_I32),
-//..                                       mkexpr(oldFlags))) );
-//..    } /* if (isRotate) */
-//.. 
-//..    /* Save result, and finish up. */
-//..    if (epartIsReg(modrm)) {
-//..       putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
-//..       if (vex_traceflags & VEX_TRACE_FE) {
-//..          vex_printf("%s%c ",
-//..                     nameGrp2(gregOfRM(modrm)), nameISize(sz) );
-//..          if (shift_expr_txt)
-//..             vex_printf("%s", shift_expr_txt);
-//..          else
-//..             ppIRExpr(shift_expr);
-//..          vex_printf(", %s\n", nameIReg(sz,eregOfRM(modrm)));
-//..       }
-//..    } else {
-//..       storeLE(mkexpr(addr), mkexpr(dst1));
-//..       if (vex_traceflags & VEX_TRACE_FE) {
-//..          vex_printf("%s%c ",
-//..                     nameGrp2(gregOfRM(modrm)), nameISize(sz) );
-//..          if (shift_expr_txt)
-//..             vex_printf("%s", shift_expr_txt);
-//..          else
-//..             ppIRExpr(shift_expr);
-//..          vex_printf(", %s\n", dis_buf);
-//..       }
-//..    }
-//..    return delta;
-//.. }
-//.. 
-//.. 
-//.. 
+   }
+
+   if (isShift) {
+
+      IRTemp pre64     = newTemp(Ity_I64);
+      IRTemp res64     = newTemp(Ity_I64);
+      IRTemp res64ss   = newTemp(Ity_I64);
+      IRTemp shift_amt = newTemp(Ity_I8);
+      IROp   op64;
+
+      switch (gregOfRM(modrm)) { 
+         case 4: op64 = Iop_Shl64; break;
+         case 5: op64 = Iop_Shr64; break;
+         case 7: op64 = Iop_Sar64; break;
+         default: vpanic("dis_Grp2:shift"); break;
+      }
+
+      /* Widen the value to be shifted to 64 bits, do the shift, and
+         narrow back down.  This seems surprisingly long-winded, but
+         unfortunately the AMD semantics requires that 8/16/32-bit
+         shifts give defined results for shift values all the way up
+         to 64, and this seems the simplest way to do it.  It has the
+         advantage that the only IR level shifts generated are of 64
+         bit values, and the shift amount is guaranteed to be in the
+         range 0 .. 63, thereby observing the IR semantics requiring
+         all shift values to be in the range 0 .. 2^word_size-1. */
+
+      /* shift_amt = shift_expr & 63, regardless of operation size */
+      assign( shift_amt, binop(Iop_And8, shift_expr, mkU8(63)) );
+
+      /* suitably widen the value to be shifted to 32 bits. */
+      assign( pre64, op64==Iop_Sar64 ? widenSto64(mkexpr(dst0))
+                                     : widenUto64(mkexpr(dst0)) );
+
+      /* res64 = pre64 `shift` shift_amt */
+      assign( res64, binop(op64, mkexpr(pre64), mkexpr(shift_amt)) );
+
+      /* res64ss = pre64 `shift` ((shift_amt - 1) & 63) */
+      assign( res64ss,
+              binop(op64,
+                    mkexpr(pre64), 
+                    binop(Iop_And8,
+                          binop(Iop_Sub8,
+                                mkexpr(shift_amt), mkU8(1)),
+                          mkU8(63))) );
+
+      /* Build the flags thunk. */
+      setFlags_DEP1_DEP2_shift(op64, res64, res64ss, ty, shift_amt);
+
+      /* Narrow the result back down. */
+      assign( dst1, narrowTo(ty, mkexpr(res64)) );
+
+   } /* if (isShift) */
+
+   else 
+   if (isRotate) {
+      Int    ccOp      = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 
+                                        : (ty==Ity_I32 ? 2 : 3));
+      Bool   left      = toBool(gregOfRM(modrm) == 0);
+      IRTemp rot_amt   = newTemp(Ity_I8);
+      IRTemp rot_amt64 = newTemp(Ity_I8);
+      IRTemp oldFlags  = newTemp(Ity_I64);
+
+      /* rot_amt = shift_expr & mask */
+      /* By masking the rotate amount thusly, the IR-level Shl/Shr
+         expressions never shift beyond the word size and thus remain
+         well defined. */
+      assign(rot_amt64, binop(Iop_And8, shift_expr, mkU8(63)));
+
+      if (ty == Ity_I64)
+         assign(rot_amt, mkexpr(rot_amt64));
+      else
+         assign(rot_amt, binop(Iop_And8, mkexpr(rot_amt64), mkU8(8*sz-1)));
+
+      if (left) {
+
+         /* dst1 = (dst0 << rot_amt) | (dst0 >>u (wordsize-rot_amt)) */
+         assign(dst1, 
+            binop( mkSizedOp(ty,Iop_Or8),
+                   binop( mkSizedOp(ty,Iop_Shl8), 
+                          mkexpr(dst0),
+                          mkexpr(rot_amt)
+                   ),
+                   binop( mkSizedOp(ty,Iop_Shr8), 
+                          mkexpr(dst0), 
+                          binop(Iop_Sub8,mkU8(8*sz), mkexpr(rot_amt))
+                   )
+            )
+         );
+         ccOp += AMD64G_CC_OP_ROLB;
+
+      } else { /* right */
+
+         /* dst1 = (dst0 >>u rot_amt) | (dst0 << (wordsize-rot_amt)) */
+         assign(dst1, 
+            binop( mkSizedOp(ty,Iop_Or8),
+                   binop( mkSizedOp(ty,Iop_Shr8), 
+                          mkexpr(dst0),
+                          mkexpr(rot_amt)
+                   ),
+                   binop( mkSizedOp(ty,Iop_Shl8), 
+                          mkexpr(dst0), 
+                          binop(Iop_Sub8,mkU8(8*sz), mkexpr(rot_amt))
+                   )
+            )
+         );
+         ccOp += AMD64G_CC_OP_RORB;
+
+      }
+
+      /* dst1 now holds the rotated value.  Build flag thunk.  We
+         need the resulting value for this, and the previous flags.
+         Except don't set it if the rotate count is zero. */
+
+      assign(oldFlags, mk_amd64g_calculate_rflags_all());
+
+      /* CC_DEP1 is the rotated value.  CC_NDEP is flags before. */
+      stmt( IRStmt_Put( OFFB_CC_OP,
+                        IRExpr_Mux0X( mkexpr(rot_amt64),
+                                      IRExpr_Get(OFFB_CC_OP,Ity_I64),
+                                      mkU64(ccOp))) );
+      stmt( IRStmt_Put( OFFB_CC_DEP1, 
+                        IRExpr_Mux0X( mkexpr(rot_amt64),
+                                      IRExpr_Get(OFFB_CC_DEP1,Ity_I64),
+                                      widenUto64(mkexpr(dst1)))) );
+      stmt( IRStmt_Put( OFFB_CC_DEP2, 
+                        IRExpr_Mux0X( mkexpr(rot_amt64),
+                                      IRExpr_Get(OFFB_CC_DEP2,Ity_I64),
+                                      mkU64(0))) );
+      stmt( IRStmt_Put( OFFB_CC_NDEP, 
+                        IRExpr_Mux0X( mkexpr(rot_amt64),
+                                      IRExpr_Get(OFFB_CC_NDEP,Ity_I64),
+                                      mkexpr(oldFlags))) );
+   } /* if (isRotate) */
+
+   /* Save result, and finish up. */
+   if (epartIsReg(modrm)) {
+      putIRegB(pfx, sz, eregOfRM(modrm), mkexpr(dst1));
+      if (vex_traceflags & VEX_TRACE_FE) {
+         vex_printf("%s%c ",
+                    nameGrp2(gregOfRM(modrm)), nameISize(sz) );
+         if (shift_expr_txt)
+            vex_printf("%s", shift_expr_txt);
+         else
+            ppIRExpr(shift_expr);
+         vex_printf(", %s\n", nameIRegB(pfx,sz,eregOfRM(modrm)));
+      }
+   } else {
+      storeLE(mkexpr(addr), mkexpr(dst1));
+      if (vex_traceflags & VEX_TRACE_FE) {
+         vex_printf("%s%c ",
+                    nameGrp2(gregOfRM(modrm)), nameISize(sz) );
+         if (shift_expr_txt)
+            vex_printf("%s", shift_expr_txt);
+         else
+            ppIRExpr(shift_expr);
+         vex_printf(", %s\n", dis_buf);
+      }
+   }
+   return delta;
+}
+
+
+
 //.. //-- /* Group 8 extended opcodes (but BT/BTS/BTC/BTR only). */
 //.. //-- static
 //.. //-- Addr dis_Grp8_BT ( UCodeBlock* cb, 
@@ -3062,7 +3074,7 @@ ULong dis_Grp1 ( Prefix pfx,
 static 
 ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 {
-//..    UInt    d32;
+   ULong   d64;
    UChar   modrm;
    HChar   dis_buf[50];
    Int     len;
@@ -3073,17 +3085,20 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
       switch (gregOfRM(modrm)) {
-//..          case 0: { /* TEST */
-//..             delta++; d32 = getUDisp(sz, delta); delta += sz;
-//..             dst1 = newTemp(ty);
-//..             assign(dst1, binop(mkSizedOp(ty,Iop_And8),
-//..                                getIReg(sz,eregOfRM(modrm)),
-//..                                mkU(ty,d32)));
-//..             setFlags_DEP1( Iop_And8, dst1, ty );
-//..             DIP("test%c $0x%x, %s\n", nameISize(sz), d32, 
-//..                                       nameIReg(sz, eregOfRM(modrm)));
-//..             break;
-//..          }
+         case 0: { /* TEST */
+            delta++; 
+            d64 = getSDisp(imin(4,sz), delta); 
+            delta += imin(4,sz);
+            dst1 = newTemp(ty);
+            assign(dst1, binop(mkSizedOp(ty,Iop_And8),
+                               getIRegB(pfx,sz,eregOfRM(modrm)),
+                               mkU(ty,d64)));
+            setFlags_DEP1( Iop_And8, dst1, ty );
+            DIP("test%c $0x%llx, %s\n", 
+                nameISize(sz), d64, 
+                nameIRegB(pfx, sz, eregOfRM(modrm)));
+            break;
+         }
          case 2: /* NOT */
             delta++;
             putIRegB(pfx, sz, 
@@ -11293,15 +11308,15 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_op_imm_A( sz, Iop_Sub8, False, delta, "cmp" );
       break;
 
-//..    case 0xA8: /* TEST Ib, AL */
-//..       delta = dis_op_imm_A( 1, Iop_And8, False, delta, "test" );
-//..       break;
-//..    case 0xA9: /* TEST Iv, eAX */
-//..       delta = dis_op_imm_A( sz, Iop_And8, False, delta, "test" );
-//..       break;
-//.. 
-//..    /* ------------------------ opl Ev, Gv ----------------- */
-//..  
+   case 0xA8: /* TEST Ib, AL */
+      delta = dis_op_imm_A( 1, Iop_And8, False, delta, "test" );
+      break;
+   case 0xA9: /* TEST Iv, eAX */
+      delta = dis_op_imm_A( sz, Iop_And8, False, delta, "test" );
+      break;
+
+   /* ------------------------ opl Ev, Gv ----------------- */
+ 
 //..    case 0x02: /* ADD Eb,Gb */
 //..       delta = dis_op2_E_G ( sorb, False, Iop_Add8, True, 1, delta, "add" );
 //..       break;
@@ -11341,10 +11356,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x2A: /* SUB Eb,Gb */
 //..       delta = dis_op2_E_G ( sorb, False, Iop_Sub8, True, 1, delta, "sub" );
 //..       break;
-//..    case 0x2B: /* SUB Ev,Gv */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_Sub8, True, sz, delta, "sub" );
-//..       break;
-//.. 
+   case 0x2B: /* SUB Ev,Gv */
+      delta = dis_op2_E_G ( pfx, False, Iop_Sub8, True, sz, delta, "sub" );
+      break;
+
 //..    case 0x32: /* XOR Eb,Gb */
 //..       delta = dis_op2_E_G ( sorb, False, Iop_Xor8, True, 1, delta, "xor" );
 //..       break;
@@ -11360,15 +11375,15 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_op2_E_G ( pfx, False, Iop_Sub8, False, sz, delta, "cmp" );
       break;
 
-//..    case 0x84: /* TEST Eb,Gb */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_And8, False, 1, delta, "test" );
-//..       break;
-//..    case 0x85: /* TEST Ev,Gv */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_And8, False, sz, delta, "test" );
-//..       break;
-//.. 
-//..    /* ------------------------ opl Gv, Ev ----------------- */
-//.. 
+   case 0x84: /* TEST Eb,Gb */
+      delta = dis_op2_E_G ( pfx, False, Iop_And8, False, 1, delta, "test" );
+      break;
+   case 0x85: /* TEST Ev,Gv */
+      delta = dis_op2_E_G ( pfx, False, Iop_And8, False, sz, delta, "test" );
+      break;
+
+   /* ------------------------ opl Gv, Ev ----------------- */
+
 //..    case 0x00: /* ADD Gb,Eb */
 //..       delta = dis_op2_G_E ( sorb, False, Iop_Add8, True, 1, delta, "add" );
 //..       break;
@@ -11410,16 +11425,16 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x28: /* SUB Gb,Eb */
 //..       delta = dis_op2_G_E ( sorb, False, Iop_Sub8, True, 1, delta, "sub" );
 //..       break;
-//..    case 0x29: /* SUB Gv,Ev */
-//..       delta = dis_op2_G_E ( sorb, False, Iop_Sub8, True, sz, delta, "sub" );
-//..       break;
-//.. 
+   case 0x29: /* SUB Gv,Ev */
+      delta = dis_op2_G_E ( pfx, False, Iop_Sub8, True, sz, delta, "sub" );
+      break;
+
 //..    case 0x30: /* XOR Gb,Eb */
 //..       delta = dis_op2_G_E ( sorb, False, Iop_Xor8, True, 1, delta, "xor" );
 //..       break;
-//..    case 0x31: /* XOR Gv,Ev */
-//..       delta = dis_op2_G_E ( sorb, False, Iop_Xor8, True, sz, delta, "xor" );
-//..       break;
+   case 0x31: /* XOR Gv,Ev */
+      delta = dis_op2_G_E ( pfx, False, Iop_Xor8, True, sz, delta, "xor" );
+      break;
 
    case 0x38: /* CMP Gb,Eb */
       if (haveF2orF3(pfx)) goto decode_failure;
@@ -11870,10 +11885,14 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..                                 nameIReg(sz,gregOfRM(modrm)), dis_buf);
 //..       }
 //..       break;
-//.. 
-//..    case 0x90: /* XCHG eAX,eAX */
-//..       DIP("nop\n");
-//..       break;
+
+   case 0x90: /* XCHG eAX,eAX */
+      if (!haveREX(pfx)) {
+         /* on AMD64, 0x90 is treated specially. */
+         DIP("nop\n");
+         break;
+      }
+      /* else fall through */
 //..    case 0x91: /* XCHG eAX,eCX */
 //..    case 0x92: /* XCHG eAX,eDX */
 //..    case 0x93: /* XCHG eAX,eBX */
@@ -12002,27 +12021,27 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_Grp1 ( pfx, delta, modrm, am_sz, d_sz, sz, d64 );
       break;
 
-//..    /* ------------------------ (Grp2 extensions) ---------- */
-//.. 
-//..    case 0xC0: /* Grp2 Ib,Eb */
-//..       modrm = getUChar(delta);
-//..       am_sz = lengthAMode(delta);
-//..       d_sz  = 1;
-//..       d32   = getUChar(delta + am_sz);
-//..       sz    = 1;
-//..       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
-//..                          mkU8(d32 & 0xFF), NULL );
-//..       break;
-//.. 
-//..    case 0xC1: /* Grp2 Ib,Ev */
-//..       modrm = getUChar(delta);
-//..       am_sz = lengthAMode(delta);
-//..       d_sz  = 1;
-//..       d32   = getUChar(delta + am_sz);
-//..       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
-//..                          mkU8(d32 & 0xFF), NULL );
-//..       break;
-//.. 
+   /* ------------------------ (Grp2 extensions) ---------- */
+#if 0
+   case 0xC0: /* Grp2 Ib,Eb */
+      modrm = getUChar(delta);
+      am_sz = lengthAMode(pfx,delta);
+      d_sz  = 1;
+      d64   = getUChar(delta + am_sz);
+      sz    = 1;
+      delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
+                         mkU8(d64 & 0xFF), NULL );
+      break;
+#endif
+   case 0xC1: /* Grp2 Ib,Ev */
+      modrm = getUChar(delta);
+      am_sz = lengthAMode(pfx,delta);
+      d_sz  = 1;
+      d64   = getUChar(delta + am_sz);
+      delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
+                         mkU8(d64 & 0xFF), NULL );
+      break;
+
 //..    case 0xD0: /* Grp2 1,Eb */
 //..       modrm = getUChar(delta);
 //..       am_sz = lengthAMode(delta);
@@ -12032,16 +12051,16 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
 //..                          mkU8(d32), NULL );
 //..       break;
-//.. 
-//..    case 0xD1: /* Grp2 1,Ev */
-//..       modrm = getUChar(delta);
-//..       am_sz = lengthAMode(delta);
-//..       d_sz  = 0;
-//..       d32   = 1;
-//..       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
-//..                          mkU8(d32), NULL );
-//..       break;
-//.. 
+
+   case 0xD1: /* Grp2 1,Ev */
+      modrm = getUChar(delta);
+      am_sz = lengthAMode(pfx,delta);
+      d_sz  = 0;
+      d64   = 1;
+      delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
+                         mkU8(d64), NULL );
+      break;
+
 //..    case 0xD2: /* Grp2 CL,Eb */
 //..       modrm = getUChar(delta);
 //..       am_sz = lengthAMode(delta);
@@ -12050,20 +12069,20 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
 //..                          getIReg(1,R_ECX), "%cl" );
 //..       break;
-//.. 
-//..    case 0xD3: /* Grp2 CL,Ev */
-//..       modrm = getUChar(delta);
-//..       am_sz = lengthAMode(delta);
-//..       d_sz  = 0;
-//..       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
-//..                          getIReg(1,R_ECX), "%cl" );
-//..       break;
+
+   case 0xD3: /* Grp2 CL,Ev */
+      modrm = getUChar(delta);
+      am_sz = lengthAMode(pfx,delta);
+      d_sz  = 0;
+      delta = dis_Grp2 ( pfx, delta, modrm, am_sz, d_sz, sz, 
+                         getIRegR(PFX_EMPTY,1,R_RCX), "%cl" );
+      break;
 
    /* ------------------------ (Grp3 extensions) ---------- */
 
-//..    case 0xF6: /* Grp3 Eb */
-//..       delta = dis_Grp3 ( sorb, 1, delta );
-//..       break;
+   case 0xF6: /* Grp3 Eb */
+      delta = dis_Grp3 ( pfx, 1, delta );
+      break;
    case 0xF7: /* Grp3 Ev */
       delta = dis_Grp3 ( pfx, sz, delta );
       break;
@@ -12390,40 +12409,40 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..          dis_push_segreg( R_FS, sz ); break;
 //..       case 0xA8: /* PUSH %GS */
 //..          dis_push_segreg( R_GS, sz ); break;
-//.. 
-//..       /* =-=-=-=-=-=-=-=-=- SETcc Eb =-=-=-=-=-=-=-=-=-= */
-//..       case 0x90:
-//..       case 0x91:
-//..       case 0x92: /* set-Bb/set-NAEb (jump below) */
-//..       case 0x93: /* set-NBb/set-AEb (jump not below) */
-//..       case 0x94: /* set-Zb/set-Eb (jump zero) */
-//..       case 0x95: /* set-NZb/set-NEb (jump not zero) */
-//..       case 0x96: /* set-BEb/set-NAb (jump below or equal) */
-//..       case 0x97: /* set-NBEb/set-Ab (jump not below or equal) */
-//..       case 0x98: /* set-Sb (jump negative) */
-//..       case 0x99: /* set-Sb (jump not negative) */
-//..       case 0x9A: /* set-P (jump parity even) */
-//..       case 0x9B: /* set-NP (jump parity odd) */
-//..       case 0x9C: /* set-Lb/set-NGEb (jump less) */
-//..       case 0x9D: /* set-GEb/set-NLb (jump greater or equal) */
-//..       case 0x9E: /* set-LEb/set-NGb (jump less or equal) */
-//..       case 0x9F: /* set-Gb/set-NLEb (jump greater) */
-//..          t1 = newTemp(Ity_I8);
-//..          assign( t1, unop(Iop_1Uto8,mk_x86g_calculate_condition(opc-0x90)) );
-//..          modrm = getUChar(delta);
-//..          if (epartIsReg(modrm)) {
-//..             delta++;
-//..             putIReg(1, eregOfRM(modrm), mkexpr(t1));
-//..             DIP("set%s %s\n", name_X86Condcode(opc-0x90), 
-//..                               nameIReg(1,eregOfRM(modrm)));
-//..          } else {
-//..            addr = disAMode ( &alen, sorb, delta, dis_buf );
-//..            delta += alen;
-//..            storeLE( mkexpr(addr), mkexpr(t1) );
-//..            DIP("set%s %s\n", name_X86Condcode(opc-0x90), dis_buf);
-//..          }
-//..          break;
-//.. 
+
+      /* =-=-=-=-=-=-=-=-=- SETcc Eb =-=-=-=-=-=-=-=-=-= */
+      case 0x90:
+      case 0x91:
+      case 0x92: /* set-Bb/set-NAEb (set if below) */
+      case 0x93: /* set-NBb/set-AEb (set if not below) */
+      case 0x94: /* set-Zb/set-Eb (set if zero) */
+      case 0x95: /* set-NZb/set-NEb (set if not zero) */
+      case 0x96: /* set-BEb/set-NAb (set if below or equal) */
+      case 0x97: /* set-NBEb/set-Ab (set if not below or equal) */
+      case 0x98: /* set-Sb (set if negative) */
+      case 0x99: /* set-Sb (set if not negative) */
+      case 0x9A: /* set-P (set if parity even) */
+      case 0x9B: /* set-NP (set if parity odd) */
+      case 0x9C: /* set-Lb/set-NGEb (set if less) */
+      case 0x9D: /* set-GEb/set-NLb (set if greater or equal) */
+      case 0x9E: /* set-LEb/set-NGb (set if less or equal) */
+      case 0x9F: /* set-Gb/set-NLEb (set if greater) */
+         t1 = newTemp(Ity_I8);
+         assign( t1, unop(Iop_1Uto8,mk_amd64g_calculate_condition(opc-0x90)) );
+         modrm = getUChar(delta);
+         if (epartIsReg(modrm)) {
+            delta++;
+            putIRegB(pfx, 1, eregOfRM(modrm), mkexpr(t1));
+            DIP("set%s %s\n", name_AMD64Condcode(opc-0x90), 
+                              nameIRegB(pfx,1,eregOfRM(modrm)));
+         } else {
+           addr = disAMode ( &alen, pfx, delta, dis_buf );
+           delta += alen;
+           storeLE( mkexpr(addr), mkexpr(t1) );
+           DIP("set%s %s\n", name_AMD64Condcode(opc-0x90), dis_buf);
+         }
+         break;
+
 //..       /* =-=-=-=-=-=-=-=-=- SHLD/SHRD -=-=-=-=-=-=-=-=-= */
 //.. 
 //..       case 0xA4: /* SHLDv imm8,Gv,Ev */

@@ -24,9 +24,8 @@
 <body bgcolor="#ffffff">
 
 <a name="title">&nbsp;</a>
-<h1 align=center>Valgrind, snapshot 20020522</h1>
-<center>This manual was majorly updated on 20020501</center>
-<center>This manual was minorly updated on 20020603</center>
+<h1 align=center>Valgrind, version 1.0</h1>
+<center>This manual was majorly updated on 20020613</center>
 <p>
 
 <center>
@@ -105,7 +104,9 @@ detect problems such as:
   <li>Reading/writing inappropriate areas on the stack</li>
   <li>Memory leaks -- where pointers to malloc'd blocks are lost
   forever</li>
-  <li>Mismatched use of malloc/new/new [] vs free/delete/delete []</li>
+  <li>Mismatched use of malloc/new/new [] vs free/delete/delete
+  []</li>
+  <li>Some misuses of the POSIX pthreads API</li>
 </ul>
 
 Problems like these can be difficult to find by other means, often
@@ -116,12 +117,12 @@ difficult-to-diagnose crashes.
 Valgrind is closely tied to details of the CPU, operating system and
 to a less extent, compiler and basic C libraries. This makes it
 difficult to make it portable, so I have chosen at the outset to
-concentrate on what I believe to be a widely used platform: Red Hat
-Linux 7.2, on x86s.  Valgrind uses the standard Unix
-<code>./configure</code>, <code>make</code>, <code>make install</code>
-mechanism, and I have attempted to ensure that it works on machines
-with kernel 2.2 or 2.4 and glibc 2.1.X or 2.2.X.  This should cover
-the vast majority of modern Linux installations.
+concentrate on what I believe to be a widely used platform: Linux on
+x86s.  Valgrind uses the standard Unix <code>./configure</code>,
+<code>make</code>, <code>make install</code> mechanism, and I have
+attempted to ensure that it works on machines with kernel 2.2 or 2.4
+and glibc 2.1.X or 2.2.X.  This should cover the vast majority of
+modern Linux installations.
 
 
 <p>
@@ -196,11 +197,9 @@ errors.  <code>-O</code> gets you the vast majority of the benefits of
 higher optimisation levels anyway, so you don't lose much there.
 
 <p>
-Note that as of 1 May 2002 Valgrind does not understand the DWARF 
-debugging format, which is unfortunate since the upcoming gcc-3.1 uses
-it by default.  Valgrind only knows about the older "stabs" format.
-If you use gcc-3.1 or above, you can still ask for stabs-format debug
-info by passing <code>-gstabs</code> to gcc.
+Valgrind understands both the older "stabs" debugging format, used by
+gcc versions prior to 3.1, and the newer DWARF2 format used by gcc 3.1
+and later.
 
 <p>
 Then just run your application, but place the word
@@ -291,6 +290,12 @@ Valgrind won't tell you anything else useful after this.  Note that
 the 300/30000 limits apply after suppressed errors are removed.  These
 limits are defined in <code>vg_include.h</code> and can be increased
 if necessary.
+
+<p>To avoid this cutoff you can use the
+<code>--error-limit=no</code> flag.  Then valgrind will always show
+errors, regardless of how many there are.  Use this flag carefully,
+since it may have a dire effect on performance.
+
 
 <a name="suppress"></a>
 <h3>2.4&nbsp; Suppressing errors</h3>
@@ -553,14 +558,22 @@ follows:
       Note that gcc 2.96 is the default compiler on some popular Linux
       distributions (RedHat 7.X, Mandrake) and so you may well need to
       use this flag.  Do not use it if you do not have to, as it can
-      cause real errors to be overlooked.  A better option is to use a
-      gcc/g++ which works properly; 2.95.3 seems to be a good choice.
+      cause real errors to be overlooked.  Another option is to use a
+      gcc/g++ which does not generate accesses below the stack
+      pointer.  2.95.3 seems to be a good choice in this respect.
       <p>
-      Unfortunately (27 Feb 02) it looks like g++ 3.0.4 is similarly
-      buggy, so you may need to issue this flag if you use 3.0.4.  A
+      Unfortunately (27 Feb 02) it looks like g++ 3.0.4 has a similar
+      bug, so you may need to issue this flag if you use 3.0.4.  A
       while later (early Apr 02) this is confirmed as a scheduling bug
       in g++-3.0.4.
       </li><br><p>
+
+  <li><code>--error-limit=yes</code> [default]<br>
+      <code>--error-limit=no</code> <p>When enabled, valgrind stops
+      reporting errors after 30000 in total, or 300 different ones,
+      have been seen.  This is to stop the error tracking machinery
+      from becoming a huge performance overhead in programs with many
+      errors.  </li><br><p>
 
   <li><code>--cachesim=no</code> [default]<br>
       <code>--cachesim=yes</code> <p>When enabled, turns off memory
@@ -921,17 +934,8 @@ Most of these only appear if you run in verbose mode (enabled by
      any more.  It seems unlikely that collecting even more different
      ones would be of practical help to anybody, and it avoids the
      danger that Valgrind spends more and more of its time comparing
-     new errors against an ever-growing collection.  As above, the 500
+     new errors against an ever-growing collection.  As above, the 300
      number is a compile-time constant.
-<p>
-<li> <code>Warning: client exiting by calling exit(&lt;number>).
-     Bye!</code>
-     <br>
-     Your program has called the <code>exit</code> system call, which
-     will immediately terminate the process.  You'll get no exit-time
-     error summaries or leak checks.  Note that this is not the same
-     as your program calling the ANSI C function <code>exit()</code>
-     -- that causes a normal, controlled shutdown of Valgrind.
 <p>
 <li> <code>Warning: client switching stacks?</code>
      <br>
@@ -961,19 +965,6 @@ Most of these only appear if you run in verbose mode (enabled by
      The call will still have gone through, but you may get spurious
      errors after this as a result of the non-update of the memory info.
 <p>
-<li> <code>Warning: unblocking signal &lt;number> due to
-     sigprocmask</code>
-     <br>
-     Really just a diagnostic from the signal simulation machinery.  
-     This message will appear if your program handles a signal by
-     first <code>longjmp</code>ing out of the signal handler,
-     and then unblocking the signal with <code>sigprocmask</code>
-     -- a standard signal-handling idiom.
-<p>
-<li> <code>Warning: bad signal number &lt;number> in __NR_sigaction.</code>
-     <br>
-     Probably indicates a bug in the signal simulation machinery.
-<p>
 <li> <code>Warning: set address range perms: large range &lt;number></code>
      <br> 
      Diagnostic message, mostly for my benefit, to do with memory 
@@ -988,7 +979,7 @@ A suppression file describes a bunch of errors which, for one reason
 or another, you don't want Valgrind to tell you about.  Usually the
 reason is that the system libraries are buggy but unfixable, at least
 within the scope of the current debugging session.  Multiple
-suppresions files are allowed.  By default, Valgrind uses
+suppressions files are allowed.  By default, Valgrind uses
 <code>$PREFIX/lib/valgrind/default.supp</code>.
 
 <p>
@@ -1206,8 +1197,8 @@ A brief description of the available macros:
 <h3>2.9&nbsp; Support for POSIX Pthreads</h3>
 
 As of late April 02, Valgrind supports programs which use POSIX
-pthreads.  Doing this has proved technically challenging and is still
-in progress, but it works well enough, for significant threaded
+pthreads.  Doing this has proved technically challenging but is now
+mostly complete.  It works well enough for significant threaded
 applications to work.
 <p>
 It works as follows: threaded apps are (dynamically) linked against
@@ -1223,52 +1214,41 @@ multiprocessor version of Valgrind, but it does mean that threaded
 apps run only on one CPU, even if you have a multiprocessor machine.
 <p>
 Valgrind schedules your threads in a round-robin fashion, with all
-threads having equal priority.  It switches threads every 20000 basic
-blocks (typically around 120000 x86 instructions), which means you'll
+threads having equal priority.  It switches threads every 50000 basic
+blocks (typically around 300000 x86 instructions), which means you'll
 get a much finer interleaving of thread executions than when run
 natively.  This in itself may cause your program to behave differently
 if you have some kind of concurrency, critical race, locking, or
 similar, bugs.
 <p>
-The current (18 May 02) state of pthread support is as follows.  Please
-note that things are advancing rapidly, so the situation may have
-improved by the time you read this -- check the web site for further
-updates.
+The current (valgrind-1.0 release) state of pthread support is as
+follows:
 <ul>
 <li>Mutexes, condition variables, thread-specific data,
-    <code>pthread_once</code> and basic semaphore functions
-    (<code>sem_*</code>) currently work.
-<p>
-<li>Various attribute-like calls are handled but ignored.  
-    You get a warning message.
-<p>
-<li>The main big omission is proper cleanup support for cancellation.
-    <code>pthread_cancel</code> works, but instantly nukes the target
-    thread without giving it any chance to clean up.  Also, when a
-    thread exits, it does not run any cleanup handlers.
-<p>
-<li>Other omissions are: the detachedness state of threads is ignored.
-    This means detached threads hang around and clog up scheduler
-    slots forever when they finish.  Calls for reader-writer locks are
-    have dummy stubs with no functionality right now.  You get a
+    <code>pthread_once</code>, reader-writer locks, semaphores,
+    cleanup stacks, cancellation and thread detaching currently work.
+    Various attribute-like calls are handled but ignored; you get a
     warning message.
 <p>
 <li>Currently the following syscalls are thread-safe (nonblocking):
     <code>write</code> <code>read</code> <code>nanosleep</code>
-    <code>sleep</code> <code>select</code> and <code>poll</code>.
+    <code>sleep</code> <code>select</code> <code>poll</code> 
+    <code>recvmsg</code> and
+    <code>accept</code>.
 <p>
-<li>The POSIX requirement that each thread have its own
-    signal-blocking mask is now implemented.
+<li>Signals in pthreads are now handled properly(ish): 
     <code>pthread_sigmask</code>, <code>pthread_kill</code>,
-    <code>pthread_sigwait</code> and <code>raise</code> should all now
-    work as POSIX requires.
+    <code>sigwait</code> and <code>raise</code> are now implemented.
+    Each thread has its own signal mask, as POSIX requires.
+    It's a bit kludgey -- there's a system-wide pending signal set,
+    rather than one for each thread.  But hey.
 </ul>
 
 
 As of 18 May 02, the following threaded programs now work fine on my
 RedHat 7.2 box: Opera 6.0Beta2, KNode in KDE 3.0, Mozilla-0.9.2.1 and
 Galeon-0.11.3, both as supplied with RedHat 7.2.  Also Mozilla 1.0RC2.
-
+OpenOffice 1.0.  MySQL 3.something (the current stable release).
 
 <a name="install"></a>
 <h3>2.10&nbsp; Building and installing</h3>
@@ -1279,8 +1259,18 @@ attempted to ensure that it works on machines with kernel 2.2 or 2.4
 and glibc 2.1.X or 2.2.X.  I don't think there is much else to say.
 There are no options apart from the usual <code>--prefix</code> that
 you should give to <code>./configure</code>.
+
 <p>
-Let me know if you have build problems.
+The <code>configure</code> script tests the version of the X server
+currently indicated by the current <code>$DISPLAY</code>.  This is a
+known bug.  The intention was to detect the version of the current
+XFree86 client libraries, so that correct suppressions could be
+selected for them, but instead the test checks the server version.
+This is just plain wrong.
+
+<p>
+Apart from that there is no excitement here.  Let me know if you have
+build problems.
 
 
 
@@ -2148,6 +2138,7 @@ Cachegrind accepts all the options that Valgrind does, although some of them
 
 The interesting cache-simulation specific options are:
 
+<ul>
   <li><code>--I1=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><br>
       <code>--D1=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><br> 
       <code>--L2=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><p> 

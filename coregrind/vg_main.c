@@ -657,9 +657,9 @@ static void usage ( void )
 }
 
 
-/* Callback for lookiing for the stackl segment. */
-static Addr vg_foundstack_start = (Addr)NULL;
-static UInt vg_foundstack_size  = 0;
+/* Callback for looking for the stack segment. */
+Addr VG_(foundstack_start) = (Addr)NULL;
+UInt VG_(foundstack_size)  = 0;
 
 static void vg_findstack_callback ( Addr start, UInt size, 
                                     Char r, Char w, Char x, 
@@ -673,9 +673,9 @@ static void vg_findstack_callback ( Addr start, UInt size,
    lastword = start + size - 4;
    if (start <= VG_(esp_at_startup) 
        && VG_(esp_at_startup) <= lastword) {
-      vg_foundstack_start = start;
-      vg_foundstack_size = size;
-      vg_assert(vg_foundstack_size > 0);
+      VG_(foundstack_start) = start;
+      VG_(foundstack_size) = size;
+      vg_assert(VG_(foundstack_size) > 0);
    }
 }
 
@@ -718,19 +718,18 @@ static void process_cmd_line_options ( void )
 
        VG_(read_procselfmaps)( vg_findstack_callback, /*read_from_file*/False );
 
-       /* Now vg_foundstack_start and vg_foundstack_size
-          should delimit the stack. */
-       if (vg_foundstack_size == 0) {
+       /* Now foundstack_start and foundstack_size should delimit the stack. */
+       if (VG_(foundstack_size) == 0) {
           args_grok_error("Cannot determine stack segment "
                           "from /proc/self/maps");
        }
 
        if (0)
           VG_(printf)("stack segment is %p .. %p\n", 
-                      vg_foundstack_start, 
-                      vg_foundstack_start + vg_foundstack_size - 4 );
+                      VG_(foundstack_start), 
+                      VG_(foundstack_start) + VG_(foundstack_size) - 4 );
 
-       sp = (UInt*)(vg_foundstack_start + vg_foundstack_size);
+       sp = (UInt*)(VG_(foundstack_start) + VG_(foundstack_size) );
        if ((((UInt)(sp)) % VKI_BYTES_PER_PAGE) != 0) {
           args_grok_error("Stack segment is not page aligned?!");
        }

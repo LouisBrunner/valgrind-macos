@@ -625,10 +625,7 @@ void mostly_clear_thread_record ( ThreadId tid )
 void VG_(scheduler_init) ( void )
 {
    Int      i;
-   Addr     startup_esp;
    ThreadId tid_main;
-
-   startup_esp = VG_(baseBlock)[VGOFF_(m_esp)];
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
       mostly_clear_thread_record(i);
@@ -659,7 +656,9 @@ void VG_(scheduler_init) ( void )
    VG_(save_thread_state) ( tid_main );
 
    VG_(threads)[tid_main].stack_highest_word 
-      = VG_(threads)[tid_main].m_esp /* -4  ??? */;
+      = VG_(foundstack_start) + VG_(foundstack_size) - 4;
+   VG_(threads)[tid_main].stack_base = VG_(foundstack_start);
+   VG_(threads)[tid_main].stack_size = VG_(foundstack_size);
 
    /* So now ... */
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);

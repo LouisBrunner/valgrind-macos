@@ -1341,6 +1341,11 @@ extern UInt VG_(num_scheduling_events_MAJOR);
 UInt VG_(insertDflag)(UInt eflags, Int d);
 Int VG_(extractDflag)(UInt eflags);
 
+/* start address and size of the initial stack */
+extern Addr VG_(foundstack_start);
+extern UInt VG_(foundstack_size);
+
+
 /* ---------------------------------------------------------------------
    Exports of vg_memory.c
    ------------------------------------------------------------------ */

@@ -899,6 +899,10 @@ static IRExpr* fold_Expr ( IRExpr* e )
                  )));
             break;
 
+         case Iop_Not64:
+            e2 = IRExpr_Const(IRConst_U64(
+                    ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U64)));
+            break;
          case Iop_Not32:
             e2 = IRExpr_Const(IRConst_U32(
                     ~ (e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
@@ -963,6 +967,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         | e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
+            case Iop_Or64:
+               e2 = IRExpr_Const(IRConst_U64(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
+                        | e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
+               break;
 
             /* -- Xor -- */
             case Iop_Xor8:
@@ -974,6 +983,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
                e2 = IRExpr_Const(IRConst_U32(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+            case Iop_Xor64:
+               e2 = IRExpr_Const(IRConst_U64(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
+                        ^ e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
                break;
 
             /* -- And -- */

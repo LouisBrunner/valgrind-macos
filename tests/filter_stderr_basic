@@ -14,6 +14,9 @@ sed "/^.*, .* for x86-linux\./ , /./ d"                                |
 sed "/Estimated CPU clock rate is [0-9]\+ MHz/d"                       |
 sed "/For more details, rerun with: -v/d"                              |
 
+# Anonymise line numbers in vg_replace_malloc.c
+sed "s/vg_replace_malloc.c:[0-9]\+/vg_replace_malloc.c:.../"           |
+
 # Reduce some libc incompatibility
 sed "s/ __getsockname / getsockname /"                                 |
 sed "s/ __sigaction / sigaction /"                                     |

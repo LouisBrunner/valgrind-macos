@@ -8,7 +8,7 @@ GPL version 2 (see COPYING).
   test/test-amd64.c          (Fabrice Bellard, GNU GPL)
   switchback/linker.c        (University of Glasgow, BSD-style license)
   switchback/test_emfloat.c  (BYTE magazine, public domain?)
-  switchback/test_ppc_jm1.c  (Jocelyn Mayer, BSD-style license)
+  switchback/test_ppc_jm1.c  (Jocelyn Mayer, GNU GPL)
 
 Changes: if you wish to contribute a change which is a significant one
 in terms of the amount of code changes, please be aware that OpenWorks

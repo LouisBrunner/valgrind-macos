@@ -18,6 +18,8 @@ Fixes some minor problems in 20030716.
   colon created by this mechanism in the LD_LIBRARY_PATH / LD_PRELOAD
   passed to non-traced children.
 
+- Fix file descriptor leak in valgrind-listener.
+
 
 
 Snapshot 20030716 (16 July 2003)

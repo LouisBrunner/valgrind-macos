@@ -107,6 +107,7 @@ system_SOURCES 		= system.c
 #tls2_so_SOURCES		= tls2_so.c
 #tls2_so_LDFLAGS		= -shared
 yield_SOURCES		= yield.c
+yield_CFLAGS		= $(AM_CFLAGS) -D__$(VG_ARCH)__
 yield_LDADD		= -lpthread
 
 # pthread C ones

@@ -35,7 +35,11 @@ static void *th2(void *v)
 
 	while(alive) {
 		rep_nop++;
+#ifdef __x86__
+                // This gives a hint to a P4, telling it to pause 
+                // (ie. we're in a spin-wait loop)
 		asm volatile ("rep; nop" : : : "memory");
+#endif
 	}
 
 	return 0;

@@ -3607,6 +3607,15 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       addInstr(env, AMD64Instr_MFence());
       return;
 
+   /* --------- INSTR MARK --------- */
+   /* Doesn't generate any executable code ... */
+   case Ist_IMark:
+       return;
+
+   /* --------- NO-OP --------- */
+   case Ist_NoOp:
+       return;
+
    /* --------- EXIT --------- */
    case Ist_Exit: {
       AMD64RI*      dst;

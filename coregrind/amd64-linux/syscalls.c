@@ -30,6 +30,15 @@
 
 #include "core.h"
 
+
+/* COPIED FROM /usr/include/asm-i386/prctl.h (amd64-linux) */
+#define ARCH_SET_GS 0x1001
+#define ARCH_SET_FS 0x1002
+#define ARCH_GET_FS 0x1003
+#define ARCH_GET_GS 0x1004
+
+
+
 // See the comment accompanying the declaration of VGA_(thread_syscall)() in
 // coregrind/core.h for an explanation of what this does, and why.
 asm(
@@ -150,10 +159,18 @@ void VGA_(restart_syscall)(ThreadArchState *arch)
 
 PRE(sys_arch_prctl, 0)
 {
-   // Nb: this wrapper might actually need a corresponding POST wrapper, and
-   // also a non-0 flag in the line above.  In other words, don't believe
-   // anything about the current stub implementation.
-   I_die_here;
+   PRINT( "arch_prctl ( %d, %llx )", ARG1, ARG2 );
+
+   // Nb: can't use "ARG2".."ARG5" here because that's our own macro...
+   PRE_REG_READ2(long, "arch_prctl",
+                 int, option, unsigned long, arg2);
+   // XXX: totally wrong... we need to look at the 'option' arg, and do
+   // PRE_MEM_READs/PRE_MEM_WRITEs as necessary...
+
+   /* "do" the syscall ourselves; the kernel never sees it */
+   vg_assert(ARG1 == ARCH_SET_FS);
+   tst->arch.vex.guest_FS_ZERO = ARG2;
+   SET_RESULT( 0 );
 }
 
 #undef PRE
@@ -177,7 +194,7 @@ PRE(sys_arch_prctl, 0)
 
 const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_read,              sys_read),           // 0 
-   //   (__NR_write,             sys_write),          // 1 
+   GENX_(__NR_write,             sys_write),          // 1 
    GENX_(__NR_open,              sys_open),           // 2 
    GENXY(__NR_close,             sys_close),          // 3 
    GENXY(__NR_stat,              sys_newstat),        // 4 
@@ -189,9 +206,9 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_mmap,              sys_mmap2),          // 9 
 
    GENXY(__NR_mprotect,          sys_mprotect),       // 10 
-   //   (__NR_munmap,            sys_munmap),         // 11 
+   GENXY(__NR_munmap,            sys_munmap),         // 11 
    GENX_(__NR_brk,               sys_brk),            // 12 
-   //   (__NR_rt_sigaction,      sys_rt_sigaction),   // 13 
+   GENXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 13 
    //   (__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 14 
 
    //   (__NR_rt_sigreturn,      stub_rt_sigreturn),  // 15 
@@ -222,7 +239,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (__NR_getitimer,         sys_getitimer),      // 36 
    //   (__NR_alarm,             sys_alarm),          // 37 
    //   (__NR_setitimer,         sys_setitimer),      // 38 
-   //   (__NR_getpid,            sys_getpid),         // 39 
+   GENX_(__NR_getpid,            sys_getpid),         // 39 
 
    //   (__NR_sendfile,          sys_sendfile64),     // 40 
    //   (__NR_socket,            sys_socket),         // 41 

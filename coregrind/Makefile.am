@@ -45,6 +45,7 @@ valgrind_so_SOURCES = \
 	vg_from_ucode.c \
 	vg_helpers.S \
 	vg_instrument.c \
+	vg_intercept.c \
 	vg_main.c \
 	vg_malloc2.c \
 	vg_memory.c \

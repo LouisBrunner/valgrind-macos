@@ -1453,6 +1453,7 @@ extern Int  VG_(compact_helper_offsets)[];
 extern Addr VG_(noncompact_helper_addrs)  [];
 extern Int  VG_(noncompact_helper_offsets)[];
 
+#define VGL_(x)		vgIntercept_##x
 
 #endif /* ndef __VG_INCLUDE_H */
 

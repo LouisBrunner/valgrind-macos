@@ -1826,8 +1826,8 @@ int close(int fd)
 
 extern
 int __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
-__attribute__((weak))
-int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
+
+int VGL_(accept)(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
    __my_pthread_testcancel();
    wait_for_fd_to_be_readable_or_erring(s);
@@ -3067,7 +3067,7 @@ static inline int sys_ipc(unsigned call, int first, int second, int third, void 
 
 /* Turn a blocking msgsnd() into a polling non-blocking one, so that
    other threads make progress */
-int msgsnd(int msgid, const void *msgp, size_t msgsz, int msgflg)
+int VGL_(msgsnd)(int msgid, const void *msgp, size_t msgsz, int msgflg)
 {
    struct vki_timespec nanosleep_interval;
    int err;
@@ -3102,7 +3102,7 @@ int msgsnd(int msgid, const void *msgp, size_t msgsz, int msgflg)
 
 /* Turn a blocking msgrcv() into a polling non-blocking one, so that
    other threads make progress */
-int msgrcv( int msqid, void  *msgp,  size_t msgsz, long msgtyp, int msgflg )
+int VGL_(msgrcv)( int msqid, void  *msgp,  size_t msgsz, long msgtyp, int msgflg )
 {
    struct vki_timespec nanosleep_interval;
    int err;

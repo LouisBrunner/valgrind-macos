@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 #  This file is part of Valgrind, an extensible x86 protected-mode
 #  emulator for monitoring program execution on x86-Unixes.
@@ -24,7 +24,6 @@
 #  The GNU General Public License is contained in the file COPYING.
 
 use strict;
-use warnings;
 
 my $output = shift @ARGV;
 my $indent = "";

@@ -2394,12 +2394,11 @@ int do_syscall_select( int n,
      kernel's error numbers (VKI_EINTR etc).
 */
 
-/* __attribute__((weak)) */
-int select ( int n, 
-             fd_set *rfds, 
-             fd_set *wfds, 
-             fd_set *xfds, 
-             struct timeval *timeout )
+int VGL_(select) ( int n, 
+		   fd_set *rfds, 
+		   fd_set *wfds, 
+		   fd_set *xfds, 
+		   struct timeval *timeout )
 {
    unsigned int ms_now, ms_end;
    int    res;
@@ -2543,8 +2542,7 @@ typedef unsigned long int nfds_t;
 #endif
 
 
-/* __attribute__((weak)) */
-int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
+int VGL_(poll) (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 {
    unsigned int        ms_now, ms_end;
    int                 res, i;
@@ -3340,8 +3338,6 @@ strong_alias(wait, __wait)
 strong_alias(write, __write)
 strong_alias(connect, __connect)
 strong_alias(send, __send)
-strong_alias(poll, __poll)
-strong_alias(select, __select)
 
 weak_alias (__pread64, pread64)
 weak_alias (__pwrite64, pwrite64)

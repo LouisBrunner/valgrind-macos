@@ -117,12 +117,97 @@ int __libc_recv(int s, void *buf, size_t len, int flags);
 
 WEAK int VGL_(recv)(int s, void *buf, size_t len, int flags)
 {
-     return __libc_recv(s, buf, len, flags);
+   return __libc_recv(s, buf, len, flags);
 }
 
 int recv(int s, void *buf, size_t len, int flags)
 {
-     return VGL_(recv)(s, buf, len, flags);
+   return VGL_(recv)(s, buf, len, flags);
 }
 
 strong_alias(recv, __recv)
+
+/* -------------------------------- poll -------------------------------- */
+
+static inline
+int my_do_syscall3 ( int syscallno, 
+                     int arg1, int arg2, int arg3 )
+{ 
+   int __res;
+   __asm__ volatile ("pushl %%ebx; movl %%esi,%%ebx ; int $0x80 ; popl %%ebx"
+                     : "=a" (__res)
+                     : "0" (syscallno),
+                       "S" (arg1),
+                       "c" (arg2),
+                       "d" (arg3) );
+   return __res;
+}
+
+#include <sys/poll.h>
+
+#ifndef HAVE_NFDS_T
+typedef unsigned long int nfds_t;
+#endif
+
+
+WEAK int VGL_(poll)(struct pollfd *__fds, nfds_t __nfds, int __timeout)
+{
+   int res = my_do_syscall3(__NR_poll, (int)__fds, __nfds, __timeout);
+
+   if (is_kerror(res)) {
+      * (__errno_location()) = -res;
+      return -1;
+   }
+   return res;
+}
+
+int poll(struct pollfd *__fds, nfds_t __nfds, int __timeout)
+{
+   return VGL_(poll)(__fds, __nfds, __timeout);
+}
+
+strong_alias(poll, __poll)
+
+
+/* -------------------------------- select -------------------------------- */
+
+
+static inline
+int my_do_syscall1 ( int syscallno, int arg1 )
+{ 
+   int __res;
+   __asm__ volatile ("pushl %%ebx; movl %%edx,%%ebx ; int $0x80 ; popl %%ebx"
+                     : "=a" (__res)
+                     : "0" (syscallno),
+                       "d" (arg1) );
+   return __res;
+}
+
+
+WEAK int VGL_(select)( int n, 
+		       fd_set* readfds, 
+		       fd_set* writefds, 
+		       fd_set* exceptfds, 
+		       struct timeval * timeout )
+{
+   int res;
+   int args[5];
+   args[0] = n;
+   args[1] = (int)readfds;
+   args[2] = (int)writefds;
+   args[3] = (int)exceptfds;
+   args[4] = (int)timeout;
+   res = my_do_syscall1(__NR_select, (int)(&(args[0])) );
+   return res;
+}
+
+int select ( int n, 
+             fd_set *rfds, 
+             fd_set *wfds, 
+             fd_set *xfds, 
+             struct timeval *timeout )
+{
+   return VGL_(select)(n, rfds, wfds, xfds, timeout);
+}
+
+strong_alias(select, __select)

@@ -4693,8 +4693,14 @@ PRE(setrlimit)
       }
    }
    else if (arg1 == VKI_RLIMIT_DATA) {
-      VG_(client_rlimit_data) = *(vki_rlimit *)arg2;
-      res = 0;
+      if (((vki_rlimit *)arg2)->rlim_cur > ((vki_rlimit *)arg2)->rlim_max ||
+          ((vki_rlimit *)arg2)->rlim_max > ((vki_rlimit *)arg2)->rlim_max) {
+         res = -VKI_EPERM;
+      }
+      else {
+         VG_(client_rlimit_data) = *(vki_rlimit *)arg2;
+         res = 0;
+      }
    }
    else if (arg1 == VKI_RLIMIT_STACK && tid == 1) {
       if (((vki_rlimit *)arg2)->rlim_cur > ((vki_rlimit *)arg2)->rlim_max ||

@@ -18,7 +18,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	sigkill.stderr.exp sigkill.vgtest
 
 check_PROGRAMS = \
-	erringfds sigkill \
+	erringfds sigkill res_search \
 	pth_atfork1 pth_cancel2 pth_cvsimple pth_empty \
 	pth_mutexspeed pth_once
 
@@ -42,5 +42,7 @@ pth_mutexspeed_SOURCES	= pth_mutexspeed.c
 pth_mutexspeed_LDADD	= -lpthread
 pth_once_SOURCES	= pth_once.c
 pth_once_LDADD		= -lpthread
+res_search_SOURCES      = res_search.c
+res_search_LDADD        = -lresolv -lpthread
 
 

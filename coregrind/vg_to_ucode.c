@@ -95,29 +95,6 @@ static Bool has_cpuid(void)
    return flag_is_changeable(EFlagID);
 }
 
-static inline UInt cpuid_eax(UInt eax)
-{
-   asm("cpuid" : "=a" (eax) : "0" (eax) : "bx", "cx", "dx");
-   return eax;
-}
-
-static inline void cpuid(UInt eax, 
-			 UInt *eax_ret, UInt *ebx_ret, UInt *ecx_ret, UInt *edx_ret)
-{
-   UInt ebx, ecx, edx;
-
-   asm("cpuid" : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx) : "0" (eax));
-
-   if (eax_ret)
-      *eax_ret = eax;
-   if (ebx_ret)
-      *ebx_ret = ebx;
-   if (ecx_ret)
-      *ecx_ret = ecx;
-   if (edx_ret)
-      *edx_ret = edx;
-}
-
 static void get_cpu_features(void)
 {
    Char vendorstr[13];
@@ -130,7 +107,7 @@ static void get_cpu_features(void)
 
    cpu_features[VG_INT_FEAT] |= (1 << (VG_X86_FEAT_CPUID%32));
 
-   cpuid(0, &cpuid_level, (UInt *)&vendorstr[0], (UInt *)&vendorstr[8], (UInt *)&vendorstr[4]);
+   VG_(cpuid)(0, &cpuid_level, (UInt *)&vendorstr[0], (UInt *)&vendorstr[8], (UInt *)&vendorstr[4]);
    vendorstr[12] = '\0';
 
    for(i = 0; i < sizeof(cpu_vendors)/sizeof(*cpu_vendors); i++)
@@ -140,12 +117,12 @@ static void get_cpu_features(void)
       }
 
    if (cpuid_level >= 1)
-      cpuid(1, NULL, NULL, &cpu_features[VG_EXT_FEAT], &cpu_features[VG_X86_FEAT]);
+      VG_(cpuid)(1, NULL, NULL, &cpu_features[VG_EXT_FEAT], &cpu_features[VG_X86_FEAT]);
 
    switch(cpu_vendor) {
    case VG_CPU_VENDOR_AMD:
       /* get AMD-specific flags */
-      cpuid(0x80000001, NULL, NULL, NULL, &cpu_features[VG_AMD_FEAT]);
+      VG_(cpuid)(0x80000001, NULL, NULL, NULL, &cpu_features[VG_AMD_FEAT]);
       break;
 
    default:
@@ -259,7 +236,7 @@ void VG_(helperc_CPUID)(UInt op, UInt *eax_ret, UInt *ebx_ret, UInt *ecx_ret, UI
    if (cpuid_level == -2)
       get_cpu_features();	/* for cpu_vendor */
 
-   cpuid(op, &eax, &ebx, &ecx, &edx);
+   VG_(cpuid)(op, &eax, &ebx, &ecx, &edx);
 
    /* Common mangling */
    switch(op) {

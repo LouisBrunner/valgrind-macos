@@ -1177,15 +1177,6 @@ static cache_t clo_L2_cache = UNDEFINED_CACHE;
  * them. 
  */
 
-static __inline__ void cpuid(Int n, UInt *a, UInt *b, UInt *c, UInt *d)
-{
-   __asm__ __volatile__ (
-    "cpuid"
-    : "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)      /* output */
-    : "0" (n)         /* input */
-    );
-}
-
 static void micro_ops_warn(Int actual_size, Int used_size, Int line_size)
 {
     VG_(message)(Vg_DebugMsg, 
@@ -1214,8 +1205,8 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       return -1;
    }
 
-   cpuid(2, (Int*)&info[0], (Int*)&info[4], 
-            (Int*)&info[8], (Int*)&info[12]);
+   VG_(cpuid)(2, (Int*)&info[0], (Int*)&info[4], 
+                 (Int*)&info[8], (Int*)&info[12]);
    trials  = info[0] - 1;   /* AL register - bits 0..7 of %eax */
    info[0] = 0x0;           /* reset AL */
 
@@ -1358,10 +1349,10 @@ static
 Int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
    UInt ext_level;
-   Int dummy, model;
-   Int I1i, D1i, L2i;
+   UInt dummy, model;
+   UInt I1i, D1i, L2i;
    
-   cpuid(0x80000000, &ext_level, &dummy, &dummy, &dummy);
+   VG_(cpuid)(0x80000000, &ext_level, &dummy, &dummy, &dummy);
 
    if (0 == (ext_level & 0x80000000) || ext_level < 0x80000006) {
       VG_(message)(Vg_UserMsg, 
@@ -1370,10 +1361,10 @@ Int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* L2c)
       return -1;
    }
 
-   cpuid(0x80000005, &dummy, &dummy, &D1i, &I1i);
-   cpuid(0x80000006, &dummy, &dummy, &L2i, &dummy);
+   VG_(cpuid)(0x80000005, &dummy, &dummy, &D1i, &I1i);
+   VG_(cpuid)(0x80000006, &dummy, &dummy, &L2i, &dummy);
 
-   cpuid(0x1, &model, &dummy, &dummy, &dummy);
+   VG_(cpuid)(0x1, &model, &dummy, &dummy, &dummy);
    /*VG_(message)(Vg_UserMsg,"CPU model %04x",model);*/
 
    /* Check for Duron bug */
@@ -1426,8 +1417,8 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    /* Trap for illegal instruction, in case it's a really old processor that
     * doesn't support CPUID. */
    if (__builtin_setjmp(cpuid_jmpbuf) == 0) {
-      cpuid(0, &level, (int*)&vendor_id[0], 
-                       (int*)&vendor_id[8], (int*)&vendor_id[4]);    
+      VG_(cpuid)(0, &level, (int*)&vendor_id[0], 
+                            (int*)&vendor_id[8], (int*)&vendor_id[4]);    
       vendor_id[12] = '\0';
 
       /* Restore old SIGILL handler */

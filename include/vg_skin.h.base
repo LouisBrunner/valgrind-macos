@@ -585,6 +585,10 @@ extern Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
 /* other, randomly useful functions */
 extern UInt VG_(read_millisecond_timer) ( void );
 
+extern void VG_(cpuid) ( UInt eax,
+                         UInt *eax_ret, UInt *ebx_ret,
+                         UInt *ecx_ret, UInt *edx_ret );
+
 /*====================================================================*/
 /*=== UCode definition                                             ===*/
 /*====================================================================*/

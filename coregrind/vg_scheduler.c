@@ -714,6 +714,38 @@ Bool fd_is_valid ( Int fd )
    for read or write, has been interrupted by a signal.  Find and
    clear the relevant vg_waiting_fd[] entry.  Most of the code in this
    procedure is total paranoia, if you look closely. */
+
+/* 4 Apr 2003: monty@mysql.com sent a fix, which adds the comparisons
+   against -1, and the following explaination.
+
+   Valgrind uses fd = -1 internally to tell that a file descriptor is
+   not in use, as the following code shows (at end of
+   cleanup_waiting_fd_table()).
+
+   vg_assert(waiters == 1);
+   for (i = 0; i < VG_N_WAITING_FDS; i++)
+     if (vg_waiting_fds[i].tid == tid && vg_waiting_fds[i].fd != -1)
+         break;
+   vg_assert(i < VG_N_WAITING_FDS);
+   vg_assert(vg_waiting_fds[i].fd != -1);
+   vg_waiting_fds[i].fd = -1;    -- not in use
+                     ^^^^^^^
+
+   The bug is that valrind is setting fd = -1 for a not used file
+   descriptor but vg_waiting_fds[i].tid is not reset.
+
+   What happens is that on a later call to cleanup_waiting_fd_table()
+   the function will find old files that was waited on before by the
+   same thread, even if they are marked as 'not in use' by the above
+   code.
+
+   I first tried to fix the bug by setting vg_waiting_fds[i].tid to 0
+   at the end of the above function but this didn't fix the bug.
+   (Maybe there is other places in the code where tid is not properly
+   reset).  After adding the test for 'fd == -1' to the loops in
+   cleanup_waiting_fd_table() all problems disappeared.
+*/
+
 static
 void cleanup_waiting_fd_table ( ThreadId tid )
 {
@@ -728,14 +760,14 @@ void cleanup_waiting_fd_table ( ThreadId tid )
       for, and mark it as not being waited on. */
    waiters = 0;
    for (i = 0; i < VG_N_WAITING_FDS; i++) {
-      if (vg_waiting_fds[i].tid == tid) {
+     if (vg_waiting_fds[i].tid == tid && vg_waiting_fds[i].fd != -1) {
          waiters++;
          vg_assert(vg_waiting_fds[i].syscall_no == VG_(threads)[tid].m_eax);
       }
    }
    vg_assert(waiters == 1);
    for (i = 0; i < VG_N_WAITING_FDS; i++)
-      if (vg_waiting_fds[i].tid == tid)
+     if (vg_waiting_fds[i].tid == tid && vg_waiting_fds[i].fd != -1)
          break;
    vg_assert(i < VG_N_WAITING_FDS);
    vg_assert(vg_waiting_fds[i].fd != -1);

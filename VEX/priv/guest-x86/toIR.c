@@ -8046,11 +8046,11 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0xAD:
 //--       dis_string_op( cb, dis_LODS, ( opc == 0xAC ? 1 : sz ), "lods", sorb );
 //--       break;
-//-- 
-//--    case 0xAE: /* SCAS, no REP prefix */
-//--    case 0xAF:
-//--       dis_string_op( dis_SCAS, ( opc == 0xAE ? 1 : sz ), "scas", sorb );
-//--       break;
+
+   case 0xAE: /* SCAS, no REP prefix */
+   case 0xAF:
+      dis_string_op( dis_SCAS, ( opc == 0xAE ? 1 : sz ), "scas", sorb );
+      break;
 
 
    case 0xFC: /* CLD */
@@ -8112,7 +8112,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          break;
 //-- 
       case 0xAE: sz = 1;   /* REPNE SCAS<sz> */
-//--       case 0xAF:
+      case 0xAF:
          dis_REP_op ( CondNZ, dis_SCAS, sz, eip_orig,
                               guest_eip+delta, "repne scas" );
          break;
@@ -8141,7 +8141,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
          break;
 
       case 0xA6: sz = 1;   /* REPE CMP<sz> */
-//--       case 0xA7:
+      case 0xA7:
          dis_REP_op ( CondZ, dis_CMPS, sz, eip_orig, 
                              guest_eip+delta, "repe cmps" );
          break;
@@ -8492,8 +8492,8 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 
       /* =-=-=-=-=-=-=-=-=- CMOV =-=-=-=-=-=-=-=-=-=-=-= */
  
-//--       case 0x40:
-//--       case 0x41:
+      case 0x40:
+      case 0x41:
       case 0x42: /* CMOVBb/CMOVNAEb (cmov below) */
       case 0x43: /* CMOVNBb/CMOVAEb (cmov not below) */
       case 0x44: /* CMOVZb/CMOVEb (cmov zero) */
@@ -8502,8 +8502,8 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       case 0x47: /* CMOVNBEb/CMOVAb (cmov not below or equal) */
       case 0x48: /* CMOVSb (cmov negative) */
       case 0x49: /* CMOVSb (cmov not negative) */
-//--       case 0x4A: /* CMOVP (cmov parity even) */
-//--       case 0x4B: /* CMOVNP (cmov parity odd) */
+      case 0x4A: /* CMOVP (cmov parity even) */
+      case 0x4B: /* CMOVNP (cmov parity odd) */
       case 0x4C: /* CMOVLb/CMOVNGEb (cmov less) */
       case 0x4D: /* CMOVGEb/CMOVNLb (cmov greater or equal) */
       case 0x4E: /* CMOVLEb/CMOVNGb (cmov less or equal) */

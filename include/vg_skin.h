@@ -1253,7 +1253,8 @@ extern void VG_(pp_ExeContext) ( ExeContext* );
 
 /* Take a snapshot of the client's stack.  Search our collection of
    ExeContexts to see if we already have it, and if not, allocate a
-   new one.  Either way, return a pointer to the context. 
+   new one.  Either way, return a pointer to the context.  Context size
+   controlled by --num-callers option.
    
    If called from generated code, use VG_(get_current_tid)() to get the
    current ThreadId.  If called from non-generated code, the current
@@ -1261,11 +1262,26 @@ extern void VG_(pp_ExeContext) ( ExeContext* );
 */
 extern ExeContext* VG_(get_ExeContext) ( ThreadId tid );
 
+/* Get the nth EIP from the ExeContext.  0 is the EIP of the top function, 1
+   is its caller, etc.  Returns 0 if there isn't one, or if n is greater
+   than VG_(clo_backtrace_size), set by the --num-callers option. */
+extern Addr VG_(get_EIP_from_ExeContext) ( ExeContext* e, UInt n );
+
 /* Just grab the client's EIP, as a much smaller and cheaper
    indication of where they are.  Use is basically same as for
    VG_(get_ExeContext)() above. 
 */
 extern Addr VG_(get_EIP)( ThreadId tid );
+
+/* For skins needing more control over stack traces:  walks the stack to get
+   %eips from the top stack frames for thread 'tid'.  Maximum of 'n_eips'
+   addresses put into 'eips';  0 is the top of the stack, 1 is its caller,
+   etc. */
+extern UInt VG_(stack_snapshot) ( ThreadId tid, Addr* eips, UInt n_eips );
+
+/* Does the same thing as VG_(pp_ExeContext)(), just with slightly
+   different input. */
+extern void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips );
 
 
 /*====================================================================*/
@@ -1398,6 +1414,15 @@ extern Bool VG_(get_fnname_if_entry) ( Addr a, Char* fnname, Int n_fnname );
 /* Succeeds if the address is within a shared object or the main executable.
    It doesn't matter if debug info is present or not. */
 extern Bool VG_(get_objname)  ( Addr a, Char* objname,  Int n_objname  );
+
+/* Puts into 'buf' info about the code address %eip:  the address, function
+   name (if known) and filename/line number (if known), like this:
+
+      0x4001BF05: realloc (vg_replace_malloc.c:339)
+
+   'n_buf' gives length of 'buf'.  Returns 'buf'.
+*/
+extern Char* VG_(describe_eip)(Addr eip, Char* buf, Int n_buf);
 
 /* A way to get information about what segments are mapped */
 typedef struct _SegInfo SegInfo;

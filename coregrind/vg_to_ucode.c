@@ -3578,6 +3578,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    Int   t1, t2, t3, t4;
    UChar dis_buf[50];
    Int   am_sz, d_sz;
+   Char  loc_buf[M_VG_ERRTXT];
 
    /* Holds eip at the start of the insn, so that we can print
       consistent error messages for unimplemented insns. */
@@ -6265,6 +6266,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                (Int)eip_start[1],
                (Int)eip_start[2],
                (Int)eip_start[3] );
+
+   /* Print address of failing instruction. */
+   VG_(describe_eip)(eip, loc_buf, M_VG_ERRTXT);
+   VG_(printf)("          at %s\n", loc_buf);
 
    uInstr0(cb, CALLM_S, 0);
    uInstr1(cb, CALLM,   0, Lit16, 

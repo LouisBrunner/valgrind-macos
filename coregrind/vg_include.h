@@ -732,7 +732,7 @@ typedef
    void* /*pthread_cond_t* */ associated_cv;
 
    /* If VgTs_Sleeping, this is when we should wake up, measured in
-      milliseconds as supplied by VG_(read_millisecond_counter). 
+      milliseconds as supplied by VG_(read_millisecond_timer). 
 
       If VgTs_WaitCV, this indicates the time at which
       pthread_cond_timedwait should wake up.  If == 0xFFFFFFFF,
@@ -1145,7 +1145,7 @@ extern Bool  VG_(saneUCodeBlockCalls) ( UCodeBlock* cb );
 struct _ExeContext {
    struct _ExeContext * next;
    /* Variable-length array.  The size is VG_(clo_backtrace_size); at
-      least 2, at most VG_DEEPEST_BACKTRACE.  [0] is the current %eip,
+      least 1, at most VG_DEEPEST_BACKTRACE.  [0] is the current %eip,
       [1] is its caller, [2] is the caller of [1], etc. */
    Addr eips[0];
 };
@@ -1282,7 +1282,6 @@ extern void VG_(read_symtab_callback) ( Addr start, UInt size,
 extern void VG_(unload_symbols)       ( Addr start, UInt length );
 
 extern Bool VG_(get_fnname_nodemangle)( Addr a, Char* fnname, Int n_fnname );
-extern void VG_(mini_stack_dump)      ( ExeContext* ec );
 extern Int  VG_(setup_code_redirect_table) ( void );
 
 typedef

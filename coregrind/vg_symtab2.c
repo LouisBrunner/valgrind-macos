@@ -1857,7 +1857,6 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 */
 static SegInfo* segInfo = NULL;
 
-
 void VG_(read_symtab_callback) ( 
         Addr start, UInt size, 
         Char rr, Char ww, Char xx, 
@@ -2285,77 +2284,80 @@ Bool VG_(get_filename_linenum)( Addr a,
    return True;
 }
 
-
-/* Print a mini stack dump, showing the current location. */
-void VG_(mini_stack_dump) ( ExeContext* ec )
+/* Print into buf info on code address, function name and filename */
+Char* VG_(describe_eip)(Addr eip, Char* buf, Int n_buf)
 {
-
-#define APPEND(str)                                              \
-   { UChar* sss;                                                 \
-     for (sss = str; n < M_VG_ERRTXT-1 && *sss != 0; n++,sss++)  \
-        buf[n] = *sss;                                           \
-     buf[n] = 0;                                                 \
+#define APPEND(str)                                         \
+   { UChar* sss;                                            \
+     for (sss = str; n < n_buf-1 && *sss != 0; n++,sss++)   \
+        buf[n] = *sss;                                      \
+     buf[n] = '\0';                                         \
    }
-
    Bool   know_fnname;
    Bool   know_objname;
    Bool   know_srcloc;
-   UInt   lineno; 
-   UChar  ibuf[20];
-   UInt   i, n;
-
-   UChar  buf[M_VG_ERRTXT];
    UChar  buf_fn[M_VG_ERRTXT];
    UChar  buf_obj[M_VG_ERRTXT];
    UChar  buf_srcloc[M_VG_ERRTXT];
+   UInt   lineno; 
+   UChar  ibuf[20];
+   UInt   n = 0;
 
-   Int stop_at = VG_(clo_backtrace_size);
+   know_fnname  = VG_(get_fnname) (eip, buf_fn,  M_VG_ERRTXT);
+   know_objname = VG_(get_objname)(eip, buf_obj, M_VG_ERRTXT);
+   know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc, M_VG_ERRTXT, 
+                                            &lineno);
+   VG_(sprintf)(ibuf,"0x%x: ", eip);
+   APPEND(ibuf);
+   if (know_fnname) { 
+      APPEND(buf_fn);
+      if (!know_srcloc && know_objname) {
+         APPEND(" (in ");
+         APPEND(buf_obj);
+         APPEND(")");
+      }
+   } else if (know_objname && !know_srcloc) {
+      APPEND("(within ");
+      APPEND(buf_obj);
+      APPEND(")");
+   } else {
+      APPEND("???");
+   }
+   if (know_srcloc) {
+      APPEND(" (");
+      APPEND(buf_srcloc);
+      APPEND(":");
+      VG_(sprintf)(ibuf,"%d",lineno);
+      APPEND(ibuf);
+      APPEND(")");
+   }
+   return buf;
+
+#undef APPEND
+}
+
+/* Print a mini stack dump, showing the current location. */
+void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips )
+{
+   UInt  i;
+   UChar buf[M_VG_ERRTXT];
+   Char* how;
+
+   Int stop_at = n_eips;
 
    vg_assert(stop_at > 0);
 
    i = 0;
    do {
-      Addr eip = ec->eips[i];
-      n = 0;
-      if (i > 0)
-	 eip--;			/* point to calling line */
-      know_fnname  = VG_(get_fnname) (eip, buf_fn,  M_VG_ERRTXT);
-      know_objname = VG_(get_objname)(eip, buf_obj, M_VG_ERRTXT);
-      know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc, M_VG_ERRTXT, 
-                                               &lineno);
-      if (i == 0) APPEND("   at ") else APPEND("   by ");
-      
-      VG_(sprintf)(ibuf,"0x%x: ", eip);
-      APPEND(ibuf);
-      if (know_fnname) { 
-         APPEND(buf_fn);
-         if (!know_srcloc && know_objname) {
-            APPEND(" (in ");
-            APPEND(buf_obj);
-            APPEND(")");
-         }
-      } else if (know_objname && !know_srcloc) {
-         APPEND("(within ");
-         APPEND(buf_obj);
-         APPEND(")");
-      } else {
-         APPEND("???");
-      }
-      if (know_srcloc) {
-         APPEND(" (");
-         APPEND(buf_srcloc);
-         APPEND(":");
-         VG_(sprintf)(ibuf,"%d",lineno);
-         APPEND(ibuf);
-         APPEND(")");
-      }
-      VG_(message)(Vg_UserMsg, "%s", buf);
+      Addr eip = eips[i];
+      if (i  > 0) eip--;            /* point to calling line */
+      if (i == 0) how = "at"; else how = "by";
+      VG_(describe_eip)(eip, buf, M_VG_ERRTXT);
+      VG_(message)(Vg_UserMsg, "   %s %s", how, buf);
       i++;
 
-   } while (i < (UInt)stop_at && ec->eips[i] != 0);
+   } while (i < (UInt)stop_at && eips[i] != 0);
 }
-
-#undef APPEND
 
 
 /*------------------------------------------------------------*/

@@ -1059,8 +1059,8 @@ static void process_cmd_line_options ( void )
       else if (VG_CLO_STREQN(14, argv[i], "--num-callers=")) {
          /* Make sure it's sane. */
 	 VG_(clo_backtrace_size) = (Int)VG_(atoll)(&argv[i][14]);
-         if (VG_(clo_backtrace_size) < 2)
-            VG_(clo_backtrace_size) = 2;
+         if (VG_(clo_backtrace_size) < 1)
+            VG_(clo_backtrace_size) = 1;
          if (VG_(clo_backtrace_size) >= VG_DEEPEST_BACKTRACE)
             VG_(clo_backtrace_size) = VG_DEEPEST_BACKTRACE;
       }

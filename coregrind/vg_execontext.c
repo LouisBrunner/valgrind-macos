@@ -109,7 +109,7 @@ void VG_(show_ExeContext_stats) ( void )
 void VG_(pp_ExeContext) ( ExeContext* e )
 {
    init_ExeContext_storage();
-   VG_(mini_stack_dump) ( e );
+   VG_(mini_stack_dump) ( e->eips, VG_(clo_backtrace_size) );
 }
 
 
@@ -129,8 +129,10 @@ Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
    case Vg_MedRes:
       /* Just compare the top four callers. */
       vg_ec_cmp4s++;
-      if (e1->eips[0] != e2->eips[0]
-          || e1->eips[1] != e2->eips[1]) return False;
+      if (e1->eips[0] != e2->eips[0]) return False;
+
+      if (VG_(clo_backtrace_size) < 2) return True;
+      if (e1->eips[1] != e2->eips[1]) return False;
 
       if (VG_(clo_backtrace_size) < 3) return True;
       if (e1->eips[2] != e2->eips[2]) return False;
@@ -151,38 +153,22 @@ Bool VG_(eq_ExeContext) ( VgRes res, ExeContext* e1, ExeContext* e2 )
 }
 
 
-/* This guy is the head honcho here.  Take a snapshot of the client's
-   stack.  Search our collection of ExeContexts to see if we already
-   have it, and if not, allocate a new one.  Either way, return a
-   pointer to the context.  If there is a matching context we
-   guarantee to not allocate a new one.  Thus we never store
-   duplicates, and so exact equality can be quickly done as equality
-   on the returned ExeContext* values themselves.  Inspired by Hugs's
-   Text type.  
-
-   In order to be thread-safe, we pass in the thread's %EIP and %EBP.
-*/
-ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
-                                   Addr ebp_min, Addr ebp_max_orig )
+/* Take a snapshot of the client's stack, putting the up to 'n_eips' %eips
+   into 'eips'.  In order to be thread-safe, we pass in the thread's %EIP
+   and %EBP.  Returns number of %eips put in 'eips'.  */
+static UInt stack_snapshot2 ( Addr* eips, UInt n_eips, Addr eip, Addr ebp,
+                              Addr ebp_min, Addr ebp_max_orig )
 {
    Int         i;
-   Addr        eips[VG_DEEPEST_BACKTRACE];
    Addr        ebp_max;
-   Bool        same;
-   UInt        hash;
-   ExeContext* new_ec;
-   ExeContext* list;
+   UInt        n_found = 0;
 
    VGP_PUSHCC(VgpExeContext);
 
-   init_ExeContext_storage();
-   vg_assert(VG_(clo_backtrace_size) >= 2 
-             && VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
-
-   /* First snaffle %EIPs from the client's stack into eips[0
-      .. VG_(clo_backtrace_size)-1], putting zeroes in when the trail
-      goes cold, which we guess to be when %ebp is not a reasonable
-      stack location.  We also assert that %ebp increases down the chain. */
+   /* First snaffle %EIPs from the client's stack into eips[0 .. n_eips-1], 
+      putting zeroes in when the trail goes cold, which we guess to be when
+      %ebp is not a reasonable stack location.  We also assert that %ebp
+      increases down the chain. */
 
    // Gives shorter stack trace for tests/badjump.c
    // JRS 2002-aug-16: I don't think this is a big deal; looks ok for
@@ -209,7 +195,7 @@ ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
    } else {
       /* Get whatever we safely can ... */
       eips[0] = eip;
-      for (i = 1; i < VG_(clo_backtrace_size); i++) {
+      for (i = 1; i < n_eips; i++) {
          if (!(ebp_min <= ebp && ebp <= ebp_max)) {
             //VG_(printf)("... out of range %p\n", ebp);
             break; /* ebp gone baaaad */
@@ -224,11 +210,44 @@ ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
          //VG_(printf)("     %p\n", eips[i]);
       }
    }
+   n_found = i;
 
    /* Put zeroes in the rest. */
-   for (;  i < VG_(clo_backtrace_size); i++) {
+   for (;  i < n_eips; i++) {
       eips[i] = 0;
    }
+   VGP_POPCC(VgpExeContext);
+
+   return n_found;
+}
+
+/* This guy is the head honcho here.  Take a snapshot of the client's
+   stack.  Search our collection of ExeContexts to see if we already
+   have it, and if not, allocate a new one.  Either way, return a
+   pointer to the context.  If there is a matching context we
+   guarantee to not allocate a new one.  Thus we never store
+   duplicates, and so exact equality can be quickly done as equality
+   on the returned ExeContext* values themselves.  Inspired by Hugs's
+   Text type.  
+*/
+ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
+                                   Addr ebp_min, Addr ebp_max_orig )
+{
+   Int         i;
+   Addr        eips[VG_DEEPEST_BACKTRACE];
+   Bool        same;
+   UInt        hash;
+   ExeContext* new_ec;
+   ExeContext* list;
+
+   VGP_PUSHCC(VgpExeContext);
+
+   init_ExeContext_storage();
+   vg_assert(VG_(clo_backtrace_size) >= 1 
+             && VG_(clo_backtrace_size) <= VG_DEEPEST_BACKTRACE);
+
+   stack_snapshot2( eips, VG_(clo_backtrace_size),
+                    eip, ebp, ebp_min, ebp_max_orig );
 
    /* Now figure out if we've seen this one before.  First hash it so
       as to determine the list number. */
@@ -283,23 +302,50 @@ ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
    return new_ec;
 }
 
-ExeContext* VG_(get_ExeContext) ( ThreadId tid )
+void get_needed_regs(ThreadId tid, Addr* eip, Addr* ebp, Addr* esp,
+                     Addr* stack_highest_word)
 {
-   ExeContext *ec;
-
    if (VG_(is_running_thread)(tid)) {
       /* thread currently in baseblock */
-      ec = VG_(get_ExeContext2)( VG_(baseBlock)[VGOFF_(m_eip)], 
-				 VG_(baseBlock)[VGOFF_(m_ebp)],
-				 VG_(baseBlock)[VGOFF_(m_esp)],
-				 VG_(threads)[tid].stack_highest_word);
+      *eip                = VG_(baseBlock)[VGOFF_(m_eip)];
+      *ebp                = VG_(baseBlock)[VGOFF_(m_ebp)];
+      *esp                = VG_(baseBlock)[VGOFF_(m_esp)];
+      *stack_highest_word = VG_(threads)[tid].stack_highest_word;
    } else {
       /* thread in thread table */
       ThreadState* tst = & VG_(threads)[ tid ];
-      ec = VG_(get_ExeContext2)( tst->m_eip, tst->m_ebp, tst->m_esp, 
-				 tst->stack_highest_word );
+      *eip                = tst->m_eip;
+      *ebp                = tst->m_ebp;
+      *esp                = tst->m_esp; 
+      *stack_highest_word = tst->stack_highest_word;
    }
-   return ec;
+}
+
+ExeContext* VG_(get_ExeContext) ( ThreadId tid )
+{
+   Addr eip, ebp, esp, stack_highest_word;
+
+   get_needed_regs(tid, &eip, &ebp, &esp, &stack_highest_word);
+   return VG_(get_ExeContext2)(eip, ebp, esp, stack_highest_word);
+}
+
+/* Take a snapshot of the client's stack, putting the up to 'n_eips' %eips
+   into 'eips'.  In order to be thread-safe, we pass in the thread's %EIP
+   and %EBP.  Returns number of %eips put in 'eips'.  */
+UInt VG_(stack_snapshot) ( ThreadId tid, Addr* eips, UInt n_eips )
+{
+   Addr eip, ebp, esp, stack_highest_word;
+
+   get_needed_regs(tid, &eip, &ebp, &esp, &stack_highest_word);
+   return stack_snapshot2(eips, n_eips, 
+                          eip, ebp, esp, stack_highest_word);
+}
+
+
+Addr VG_(get_EIP_from_ExeContext) ( ExeContext* e, UInt n )
+{
+   if (n > VG_(clo_backtrace_size)) return 0;
+   return e->eips[n];
 }
 
 Addr VG_(get_EIP) ( ThreadId tid )

@@ -211,3 +211,33 @@ in there: it's tracking a very complex and arcane underlying set of
 machinery.
 
     J
+
+--------------------------------------------------------------------
+
+>I've been seeing references to 'master thread' around the place.
+>What distinguishes the master thread from the rest?  Where does
+>the requirement to have a master thread come from?
+>
+It used to be tid 1, but I had to generalize it.
+
+The master_tid isn't very special; its main job is at process shutdown. 
+It waits for all the other threads to exit, and then produces all the
+final reports. Until it exits, it's just a normal thread, with no other
+responsibilities.
+
+The alternative to having a master thread would be to make whichever
+thread exits last be responsible for emitting all the output.  That
+would work, but it would make the results a bit asynchronous (that is,
+if the main thread exits and the other hang around for a while, anyone
+waiting on the process would see it as having exited, but no results
+would have been produced).
+
+VG_(master_tid) is a varable to handle the case where a threaded program
+forks.  In the first process, the master_tid will be 1.  If that program
+creates a few threads, and then, say, thread 3 forks, the child process
+will have a single thread in it.  In the child, master_tid will be 3. 
+It was easier to make the master thread a variable than to try to work
+out how to rename thread 3 to 1 after a fork.
+
+    J
+

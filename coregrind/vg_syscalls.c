@@ -2346,6 +2346,10 @@ POST(getrlimit)
     case VKI_RLIMIT_DATA:
 	*((vki_rlimit *)arg2) = VG_(client_rlimit_data);
 	break;
+
+    case VKI_RLIMIT_STACK:
+	*((vki_rlimit *)arg2) = VG_(client_rlimit_stack);
+	break;
     }
 }
 
@@ -4691,6 +4695,17 @@ PRE(setrlimit)
    else if (arg1 == VKI_RLIMIT_DATA) {
       VG_(client_rlimit_data) = *(vki_rlimit *)arg2;
       res = 0;
+   }
+   else if (arg1 == VKI_RLIMIT_STACK && tid == 1) {
+      if (((vki_rlimit *)arg2)->rlim_cur > ((vki_rlimit *)arg2)->rlim_max ||
+          ((vki_rlimit *)arg2)->rlim_max > ((vki_rlimit *)arg2)->rlim_max) {
+         res = -VKI_EPERM;
+      }
+      else {
+         VG_(threads)[tid].stack_size = ((vki_rlimit *)arg2)->rlim_cur;
+         VG_(client_rlimit_stack) = *(vki_rlimit *)arg2;
+         res = 0;
+      }
    }
 }
 

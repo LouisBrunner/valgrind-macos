@@ -1243,6 +1243,7 @@ extern Addr VG_(valgrind_base);	/* valgrind's address range */
 extern Addr VG_(valgrind_last); // Nb: last byte, rather than one past the end
 
 extern vki_rlimit VG_(client_rlimit_data); /* client's original rlimit data */
+extern vki_rlimit VG_(client_rlimit_stack); /* client's original rlimit stack */
 
 /* client executable file descriptor */
 extern Int  VG_(clexecfd);

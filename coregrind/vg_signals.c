@@ -2109,7 +2109,8 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 	    then extend the stack segment. 
 	 */
 	 Addr base = PGROUNDDN(esp);
-         if ((void*)-1 != VG_(mmap)((Char *)base, seg->addr - base,
+         if (seg->len + (seg->addr - base) <= VG_(threads)[tid].stack_size &&
+             (void*)-1 != VG_(mmap)((Char *)base, seg->addr - base,
                               VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
                               VKI_MAP_PRIVATE|VKI_MAP_FIXED|VKI_MAP_ANONYMOUS|VKI_MAP_CLIENT,
                               SF_STACK|SF_GROWDOWN,
@@ -2137,6 +2138,14 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 	    /* otherwise fall into normal SEGV handling */	    
 	    recursion--;
 	 }
+      }
+
+      if (info->si_code == 1		&&	/* SEGV_MAPERR */
+	  seg != NULL                   &&
+	  fault >= esp			&&
+	  fault < seg->addr		&&
+	  (seg->flags & SF_STACK)) {
+         VG_(message)(Vg_UserMsg, "Stack overflow in thread %d", tid);
       }
    }
 

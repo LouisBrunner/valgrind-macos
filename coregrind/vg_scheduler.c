@@ -394,7 +394,7 @@ void mostly_clear_thread_record ( ThreadId tid )
 */
 void VG_(scheduler_init) ( void )
 {
-   Int      i;
+   Int i;
    ThreadId tid_main;
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
@@ -428,7 +428,7 @@ void VG_(scheduler_init) ( void )
    VG_(threads)[tid_main].stack_highest_word 
       = VG_(clstk_end) - 4;
    VG_(threads)[tid_main].stack_base = VG_(clstk_base);
-   VG_(threads)[tid_main].stack_size = VG_(clstk_end) - VG_(clstk_base);
+   VG_(threads)[tid_main].stack_size = VG_(client_rlimit_stack).rlim_cur;
 
    /* So now ... */
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);

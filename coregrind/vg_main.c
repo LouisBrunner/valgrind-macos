@@ -113,6 +113,7 @@ Addr VG_(valgrind_base);	 /* valgrind's address range */
 Addr VG_(valgrind_last);
 
 vki_rlimit VG_(client_rlimit_data);
+vki_rlimit VG_(client_rlimit_stack);
 
 /* This is set early to indicate whether this CPU has the
    SSE/fxsave/fxrestor features.  */
@@ -2496,7 +2497,10 @@ int main(int argc, char **argv)
    VG_(getrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
    zero.rlim_max = VG_(client_rlimit_data).rlim_max;
    VG_(setrlimit)(VKI_RLIMIT_DATA, &zero);
-   
+
+   // Get the current process stack rlimit.
+   VG_(getrlimit)(VKI_RLIMIT_STACK, &VG_(client_rlimit_stack));
+
    //--------------------------------------------------------------
    // Check we were launched by stage1
    //   p: n/a

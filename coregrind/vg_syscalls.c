@@ -475,6 +475,95 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
+  
+#     if defined(__NR_ptrace)
+      case __NR_ptrace: { /* syscall 26 */
+         /* long ptrace (enum __ptrace_request request, pid_t pid, 
+                         void *addr, void *data); ... sort of. */
+         /* Sigh ... the /usr/include/sys/user.h on R H 6.2 doesn't 
+            define struct user_fpxregs_struct.  On the basis that it 
+            is defined as follows on my R H 7.2 (glibc-2.2.4) box, 
+            I kludge it.
+
+            struct user_fpxregs_struct
+            {
+               unsigned short int cwd;
+               unsigned short int swd;
+               unsigned short int twd;
+               unsigned short int fop;
+               long int fip;
+               long int fcs;
+               long int foo;
+               long int fos;
+               long int mxcsr;
+               long int reserved;
+               long int st_space[32];  8*16 bytes for each FP-reg = 128 bytes
+               long int xmm_space[32]; 8*16 bytes for each XMM-reg = 128 bytes
+               long int padding[56];
+            };
+         */
+         const Int sizeof_struct_user_fpxregs_struct
+            = sizeof(unsigned short) * (1 + 1 + 1 + 1) 
+              + sizeof(long int) * (1 + 1 + 1 + 1 + 1 + 1 + 32 + 32 + 56);
+
+         MAYBE_PRINTF("ptrace ( %d, %d, %p, %p )\n", arg1,arg2,arg3,arg4);
+         switch (arg1) {
+             case 12:   /* PTRACE_GETREGS */
+                 SYSCALL_TRACK( pre_mem_write, tst, "ptrace(getregs)", arg4, 
+                                   sizeof (struct user_regs_struct));
+                 break;
+             case 14:   /* PTRACE_GETFPREGS */
+                 SYSCALL_TRACK( pre_mem_write, tst, "ptrace(getfpregs)", arg4, 
+                                   sizeof (struct user_fpregs_struct));
+                 break;
+             case 18:   /* PTRACE_GETFPXREGS */
+                 SYSCALL_TRACK( pre_mem_write, tst, "ptrace(getfpxregs)", arg4, 
+                                   sizeof_struct_user_fpxregs_struct);
+                 break;
+            case 1: case 2: case 3:    /* PTRACE_PEEK{TEXT,DATA,USER} */
+                 SYSCALL_TRACK( pre_mem_write, tst, "ptrace(peek)", arg4, 
+                                   sizeof (long));
+                 break;
+             case 13:   /* PTRACE_SETREGS */
+                 SYSCALL_TRACK( pre_mem_read, tst, "ptrace(setregs)", arg4, 
+                                   sizeof (struct user_regs_struct));
+                 break;
+             case 15:   /* PTRACE_SETFPREGS */
+                 SYSCALL_TRACK( pre_mem_read, tst, "ptrace(setfpregs)", arg4, 
+                                   sizeof (struct user_fpregs_struct));
+                 break;
+             case 19:   /* PTRACE_SETFPXREGS */
+                 SYSCALL_TRACK( pre_mem_read, tst, "ptrace(setfpxregs)", arg4, 
+                                   sizeof_struct_user_fpxregs_struct);
+                 break;
+             default:
+                 break;
+         }
+         KERNEL_DO_SYSCALL(tid, res);
+         if (!VG_(is_kerror)(res)) {
+             switch (arg1) {
+                 case 12:  /* PTRACE_GETREGS */
+                     VG_TRACK( post_mem_write, arg4, 
+                               sizeof (struct user_regs_struct));
+                     break;
+                 case 14:  /* PTRACE_GETFPREGS */
+                     VG_TRACK( post_mem_write, arg4, 
+                               sizeof (struct user_fpregs_struct));
+                     break;
+                 case 18:  /* PTRACE_GETFPXREGS */
+                     VG_TRACK( post_mem_write, arg4, 
+                              sizeof_struct_user_fpxregs_struct);
+                     break;
+                case 1: case 2: case 3:    /* PTRACE_PEEK{TEXT,DATA,USER} */
+                     VG_TRACK( post_mem_write, arg4, sizeof (long));
+                     break;
+                 default:
+                     break;
+             }
+         }
+         }
+         break;
+#     endif
 
 #     if defined(__NR_mount)
       case __NR_mount:

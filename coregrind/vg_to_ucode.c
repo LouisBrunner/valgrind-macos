@@ -4343,6 +4343,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* MOVQ -- move 8 bytes of XMM reg or mem to XMM reg.  How
+      does this differ from MOVSD ?? */
+   if (insn[0] == 0xF3
+       && insn[1] == 0x0F
+       && insn[2] == 0x7E) {
+      eip = dis_SSE3_load_store_or_mov
+               ( cb, sorb, eip+3, 8, False /*load*/, "movq",
+                     insn[0], insn[1], insn[2] );
+      goto decode_success;
+   }
+
    /* MOVSS -- move 4 bytes of XMM reg to/from XMM reg or mem. */
    if (insn[0] == 0xF3
        && insn[1] == 0x0F 

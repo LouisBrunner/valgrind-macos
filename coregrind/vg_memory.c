@@ -804,7 +804,7 @@ void VG_(generic_detect_memory_leaks) (
    if (vglc_n_shadows == 0) {
       sk_assert(vglc_shadows == NULL);
       VG_(message)(Vg_UserMsg, 
-                   "No malloc'd blocks -- no leaks are possible.\n");
+                   "No malloc'd blocks -- no leaks are possible.");
       return;
    }
 

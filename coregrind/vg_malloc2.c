@@ -47,7 +47,7 @@ Bool VG_(clo_trace_malloc)   = False;
 
 /* Minimum alignment in functions that don't specify alignment explicitly.
    default: 0, i.e. use default of the machine (== 4) */
-Int  VG_(clo_alignment) = 4;
+Int  VG_(clo_alignment) = 8;
 
 
 Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)

@@ -30,12 +30,6 @@
 #ifndef __X86_CORE_ARCH_ASM_H
 #define __X86_CORE_ARCH_ASM_H
 
-/* size of call instruction put into generated code at jump sites */
-#define VG_PATCHME_CALLSZ	5
-
-/* size of jmp instruction which overwrites the call */
-#define VG_PATCHME_JMPSZ	5
-
 /* maximum number of normal jumps which can appear in a basic block */
 #define VG_MAX_JUMPS		2
 

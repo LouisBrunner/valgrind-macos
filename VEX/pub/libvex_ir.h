@@ -232,38 +232,77 @@ typedef
 
 
 /* ------------------ Expressions ------------------ */
-/*
-data Expr
-   = GET   Int Type        -- offset, size
-   | GETI  Expr Type Int Int -- offset, size, minoff, maxoff
-   | TMP   Temp            -- value of temporary
-   | BINOP Op Expr Expr    -- binary op
-   | UNOP  Op Expr         -- unary op
-   | LDle  Type Expr       -- load of the given type, Expr:: 32 or 64
-   | CONST Const           -- 8/16/32/64-bit int constant
+/* 
+   Some details of expression semantics:
 
-Re GETI.  It carries two ints, which give the lowest and highest
-possible byte offsets that the GetI can possibly reference.
-For example, if the type is Ity_I32, and the Expr may have
-a value of M, M+4 or M+8, where M is a translation-time known
-constant, then the low and high limits are M and M+11 respectively.
+   IRExpr_GetI (also IRStmt_PutI)
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   This carries two ints, which give the lowest and highest possible
+   byte offsets that the GetI can possibly reference.  For example, if
+   the type is Ity_I32, and the Expr may have a value of M, M+4 or
+   M+8, where M is a translation-time known constant, then the low and
+   high limits are M and M+11 respectively.
 
-PUTI carries similar limit values.
+   PutI's limit values are interpreted identically.
 
-These can be used by IR optimisers to establish aliasing/non-aliasing
-between seperate GETI and PUTI terms, which could be used to do
-reordering of them, or suchlike things.  Clearly it's critical to give
-the correct limit values -- this is something that can't be
-automatically checked (in general), and so the front-end writers must
-be very careful to tell the truth, since not doing so could lead to
-obscure IR optimisation bugs.
+   The limit values are used by IR optimisers to establish
+   aliasing/non-aliasing between seperate GetI and PutI events, which
+   could be used to do reordering of them, or suchlike things.
+   Clearly it's critical to give the correct limit values -- this is
+   something that can't be automatically checked (in general), and so
+   the front-end writers must be very careful to tell the truth, since
+   not doing so could lead to obscure IR optimisation bugs.
+
+   IRExpr_CCall
+   ~~~~~~~~~~~~
+   The name is the C helper function; the backends will call back to
+   the front ends to get the address of a host-code helper function to
+   be called.
+
+   The args are a NULL-terminated array of arguments.  The stated
+   return IRType, and the implied argument types, must match that of
+   the function being called well enough so that the back end can
+   actually generate correct code for the call.
+
+   The called function **must** satisfy the following:
+
+   * no side effects -- must be a pure function, the result of which
+     depends only on the passed parameters.
+
+   * it may not look at, nor modify, any of the guest state since that
+     would hide guest state transitions from instrumenters
+
+   * it may not access guest memory, since that would hide guest
+     memory transactions from the instrumenters
+
+   This is restrictive, but makes the semantics clean, and does
+   not interfere with IR optimisation.
+
+   If you want to call a helper which can mess with guest state and/or
+   memory, instead use IRStmt_Dirty.  This is a lot more flexible, but
+   you pay for that flexibility in that you have to give a bunch of
+   details about what the helper does (and you better be telling the
+   truth, otherwise any derived instrumentation will be wrong).  Also
+   IRStmt_Dirty inhibits various IR optimisations and so can cause
+   quite poor code to be generated.  Use it as little as possible, and
+   in non-performance-critical situations only.
 */
 
+/* The possible kinds of expressions are as follows: */
 typedef
-   enum { Iex_Binder, /* Used only in pattern matching.  
-                         Not an expression. */
-          Iex_Get, Iex_GetI, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, 
-          Iex_Const, Iex_CCall, Iex_Mux0X }
+   enum { 
+      Iex_Binder,  /* Used only in pattern matching.  
+                      Not an expression. */
+      Iex_Get,     /* read guest state, fixed offset */
+      Iex_GetI,    /* read guest state, run-time offset */
+      Iex_Tmp,     /* value of temporary */
+      Iex_Binop,   /* binary operation */
+      Iex_Unop,    /* unary operation */
+      Iex_LDle,    /* little-endian read from memory */ 
+      Iex_Const,   /* constant-valued expression */
+      Iex_Mux0X,   /* ternary if-then-else operator (STRICT) */
+      Iex_CCall    /* call to pure (side-effect-free) helper fn */
+   }
    IRExprTag;
 
 typedef 
@@ -330,35 +369,105 @@ extern IRExpr* IRExpr_Mux0X  ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX );
 
 extern void ppIRExpr ( IRExpr* );
 
-/* CCall info.  The name is the C helper function; the backends
-   will hand the name to the front ends to get the address of a 
-   host-code helper function to be called.
 
-   The args are a NULL-terminated array of arguments.  The stated
-   return IRType, and the implied argument types, must match that
-   of the function being called well enough so that the back end
-   can actually generate correct code for the call.  (too vague)
+/* ------------------ Dirty helper calls ------------------ */
 
-   The called function must satisfy the following:
+/* A dirty call is a flexible mechanism for calling a helper function
+   or procedure.  The helper function may read, write or modify client
+   memory, and may read, write or modify client state.  It can take
+   arguments and optionally return a value.  It may return different
+   results and/or do different things when called repeated with the
+   same arguments, by means of storing private state.
 
-   * no side effects -- must be a pure function
-   * it may not look at any of the guest state -- must depend
-     purely on passed parameters
-   * it may not access guest memory -- since that would
-     hide guest memory transactions from the instrumenters
+   The supplied arguments are all IRTemps, to attempt to sidestep any
+   semantic difficulties created by allowing them to be arbitrary
+   expressions (although I can't think of any such).  If a value is
+   returned, it is assigned to the nominated return temporary.
+
+   Dirty calls are statements rather than expressions for obvious
+   reasons.  IRTemps may or may not stay alive across them.  A precise
+   statement is: any IRTemp which depends, directly or indirectly, on
+   any memory or guest state segments which the call claims to write
+   or modify, must be regarded as invalid after the call and therefore
+   may not be used after it.
+
+   It would be nice to automatically check this in the sanity checker,
+   but doing so exactly is difficult (although probably possible).
+   Some approximation scheme will be needed.  This would rule out some
+   constructions which are actually valid, but not interesting, whilst
+   still catching all invalid constructions.
+
+   One obvious if pessimistic approximation is to say that *all*
+   IRTemps are killed across a Dirty call.  That's easy to
+   mechanically check, but it's not going to work with
+   instrumentation, as doing the shadow state updates after the call
+   will surely require reading temps defined before the call.  Needs
+   further consideration.
+
+   In order that instrumentation is possible, the call must state, and
+   state correctly
+
+   * whether it reads, writes or modifies memory, and if so where
+     (only one chunk can be stated)
+
+   * whether it reads, writes or modifies guest state, and if so which
+     pieces (several pieces may be stated, and currently their extents
+     must be known at translation-time).
 */
+
+#define VEX_N_FXSTATE  4   /* enough for CPUID on x86 */
+
+typedef
+   enum {
+      Ifx_None,   /* no effect */
+      Ifx_Read,   /* reads the resource */
+      Ifx_Write,  /* writes the resource */
+      Ifx_Modify, /* modifies the resource */
+   }
+   IREffect;
+
+extern void ppIREffect ( IREffect );
+
+
+typedef
+   struct {
+      /* What to call, and details of args/results */
+      Char*    name;   /* name of the function to call */
+      IRTemp*  args;   /* arg list, ends in INVALID_IRTEMP */
+      IRType   retty;  /* type of returned value, or IRType_INVALID if none */
+      IRTemp   tmp;    /* to assign result to, or INVALID_IRTEMP if none */
+
+      /* Mem effects; we allow only one R/W/M region to be stated */
+      IREffect mFx;    /* indicates memory effects, if any */
+      IRTemp   mAddr;  /* of access, or INVALID_IRTEMP if mFx==Ifx_None */
+      Int      mSize;  /* of access, or zero if mFx==Ifx_None */
+
+      /* Guest state effects; up to N allowed */
+      Int     nFxState; /* must be 0 .. VEX_N_FXSTATE */
+      struct {
+         IREffect fx;   /* read, write or modify? */
+         Int      offset;
+         Int      size;
+      } fxState[VEX_N_FXSTATE];
+   }
+   IRDirty;
+
+extern void     ppIRDirty ( IRDirty* );
+extern IRDirty* emptyIRDirty ( void );
+
 
 /* ------------------ Statements ------------------ */
-/*
-data Stmt
-   = PUT    Int Int Expr      -- offset, size, value
-   | TMP    Temp Expr         -- store value in Temp
-   | STle   Expr Expr         -- address (32 or 64 bit), value
-   | Exit   Expr Const        -- conditional exit from middle of BB
-                              -- Const is destination guest addr
-*/
+
+/* The possible kinds of statements are as follows: */
 typedef 
-   enum { Ist_Put, Ist_PutI, Ist_Tmp, Ist_STle, Ist_Exit } 
+   enum { 
+      Ist_Put,    /* write guest state, fixed offset */
+      Ist_PutI,   /* write guest state, run-time offset */
+      Ist_Tmp,    /* assign value to temporary */
+      Ist_STle,   /* little-endian write to memory */
+      Ist_Dirty,  /* call complex ("dirty") helper function */
+      Ist_Exit    /* conditional exit from BB */
+   } 
    IRStmtTag;
 
 typedef
@@ -384,6 +493,9 @@ typedef
             IRExpr* data;
          } STle;
          struct {
+            IRDirty* details;
+         } Dirty;
+         struct {
             IRExpr*  cond;
             IRConst* dst;
          } Exit;
@@ -391,12 +503,13 @@ typedef
    }
    IRStmt;
 
-extern IRStmt* IRStmt_Put  ( Int off, IRExpr* value );
-extern IRStmt* IRStmt_PutI ( IRExpr* off, IRExpr* value, 
-                             UShort minoff, UShort maxoff );
-extern IRStmt* IRStmt_Tmp  ( IRTemp tmp, IRExpr* expr );
-extern IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value );
-extern IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst );
+extern IRStmt* IRStmt_Put   ( Int off, IRExpr* value );
+extern IRStmt* IRStmt_PutI  ( IRExpr* off, IRExpr* value, 
+                              UShort minoff, UShort maxoff );
+extern IRStmt* IRStmt_Tmp   ( IRTemp tmp, IRExpr* expr );
+extern IRStmt* IRStmt_STle  ( IRExpr* addr, IRExpr* value );
+extern IRStmt* IRStmt_Dirty ( IRDirty* details );
+extern IRStmt* IRStmt_Exit  ( IRExpr* cond, IRConst* dst );
 
 extern void ppIRStmt ( IRStmt* );
 

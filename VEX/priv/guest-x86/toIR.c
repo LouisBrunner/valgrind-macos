@@ -3813,8 +3813,33 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                         binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
 	       fp_pop();
                break;
-
-           default:
+#if 0
+            case 5: { /* FLD extended-real */
+               /* addr holds the address.  First, do a dirty call to
+                  get hold of the data. */
+               /* give details of args, and where to call */
+               IRDirty* d = emptyIRDirty();
+               d->name    = "loadF80le";
+               d->args    = LibVEX_Alloc(2 * sizeof(IRTemp));
+               d->args[0] = addr;
+               d->args[1] = INVALID_IRTEMP;
+               d->retty   = Ity_I64;
+               d->tmp     = newTmp(Ity_I64);
+               /* declare that we're reading memory */
+               d->mFx   = Ifx_Read;
+               d->mAddr = addr;
+               d->mSize = 10;
+               /* declare that we don't mess with guest state */
+               d->nFxState = 0;
+               /* execute the dirty call, dumping the result in d->tmp. */
+               stmt( IRStmt_Dirty(d) );
+               fp_push();
+               put_ST(0, d->tmp);
+               DIP("fldt %s", dis_buf);
+               break;
+            }
+#endif
+            default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
                vex_printf("first_opcode == 0xDB\n");
                goto decode_fail;

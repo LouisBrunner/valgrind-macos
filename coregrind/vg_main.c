@@ -494,7 +494,13 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    if (shadow_size != 0) {
       vres = mmap((char *)VG_(shadow_base), shadow_size, PROT_NONE,
                   MAP_PRIVATE|MAP_ANON|MAP_FIXED, -1, 0);
-      vg_assert((void*)-1 != vres);
+      if ((void*)-1 == vres) {
+         fprintf(stderr, 
+          "valgrind: Couldn't allocate address space for shadow memory\n"
+          "valgrind: Are you using a kernel with a small user address space,\n"
+          "valgrind: or do you have your virtual memory size limited?\n");
+         exit(1);
+      }
    }
 }
 

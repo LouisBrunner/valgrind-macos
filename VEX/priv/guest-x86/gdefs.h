@@ -42,12 +42,19 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 /*---------------------------------------------------------*/
 
 /* eflags masks */
-#define CC_MASK_C    0x0001
-#define CC_MASK_P    0x0004
-#define CC_MASK_A    0x0010
-#define CC_MASK_Z    0x0040
-#define CC_MASK_S    0x0080
-#define CC_MASK_O    0x0800
+#define CC_SHIFT_O   11
+#define CC_SHIFT_S   7
+#define CC_SHIFT_Z   6
+#define CC_SHIFT_A   4
+#define CC_SHIFT_C   0
+#define CC_SHIFT_P   2
+
+#define CC_MASK_O    (1 << CC_SHIFT_O)
+#define CC_MASK_S    (1 << CC_SHIFT_S)
+#define CC_MASK_Z    (1 << CC_SHIFT_Z)
+#define CC_MASK_A    (1 << CC_SHIFT_A)
+#define CC_MASK_C    (1 << CC_SHIFT_C)
+#define CC_MASK_P    (1 << CC_SHIFT_P)
 
 /* FPU flag masks */
 #define FC_MASK_C3   (1 << 14)

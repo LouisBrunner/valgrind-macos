@@ -2296,7 +2296,7 @@ UInt dis_Grp2 ( UChar  sorb,
    /* delta on entry points at the modrm byte. */
    UChar  dis_buf[50];
    Int    len;
-   Bool   isShift, isRotate;
+   Bool   isShift, isRotate, isRotateRC;
    IRType ty    = szToITy(sz);
    IRTemp dst0  = newTemp(ty);
    IRTemp dst1  = newTemp(ty);
@@ -2320,9 +2320,29 @@ UInt dis_Grp2 ( UChar  sorb,
    isRotate = False;
    switch (gregOfRM(modrm)) { case 0: case 1: isRotate = True; }
 
-   if (!isShift && !isRotate) {
+   isRotateRC = gregOfRM(modrm) == 3;
+
+   if (!isShift && !isRotate && !isRotateRC) {
       vex_printf("\ncase %d\n", gregOfRM(modrm));
       vpanic("dis_Grp2(Reg): unhandled case(x86)");
+   }
+
+   if (isRotateRC) {
+      /* call a helper; this insn is so ridiculous it does not deserve
+         better */
+      IRTemp   r64  = newTemp(Ity_I64);
+      IRExpr** args = LibVEX_Alloc(5 * sizeof(IRExpr*));
+      args[0] = widenUto32(mkexpr(dst0)); /* thing to rotate */
+      args[1] = widenUto32(shift_expr);  /* rotate amount */
+      args[2] = widenUto32(mk_calculate_eflags_all());
+      args[3] = mkU32(sz);
+      args[4] = NULL;
+      assign( r64, IRExpr_CCall("calculate_RCR", Ity_I64, args) );
+      /* new eflags in hi half r64; new value in lo half r64 */
+      assign( dst1, narrowTo(ty, unop(Iop_64to32, mkexpr(r64))) );
+      stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_SRC, unop(Iop_64HIto32, mkexpr(r64)) ));
+      stmt( IRStmt_Put( OFFB_CC_DST, mkU32(0) ));
    }
 
    if (isShift) {

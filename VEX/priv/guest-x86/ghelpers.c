@@ -14,11 +14,16 @@
 #include "guest-x86/gdefs.h"
 
 /* --- Forwardses --- */
-       UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst );
-static UInt calculate_eflags_c   ( UInt cc_op, UInt cc_src, UInt cc_dst );
-static UInt calculate_condition  ( UInt/*Condcode*/ cond, 
-                                   UInt cc_op, UInt cc_src, UInt cc_dst );
-static UInt calculate_FXAM ( UInt tag, ULong dbl );
+
+/* --- CLEAN HELPERS --- */
+static UInt  calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst );
+static UInt  calculate_eflags_c   ( UInt cc_op, UInt cc_src, UInt cc_dst );
+static UInt  calculate_condition  ( UInt/*Condcode*/ cond, 
+                                    UInt cc_op, UInt cc_src, UInt cc_dst );
+static UInt  calculate_FXAM ( UInt tag, ULong dbl );
+static ULong calculate_RCR  ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz );
+
+/* --- DIRTY HELPERS --- */
 static ULong loadF80le ( UInt );
 static void  storeF80le ( UInt, ULong );
 
@@ -49,44 +54,40 @@ static void  storeF80le ( UInt, ULong );
 typedef UChar uint8_t;
 typedef UInt  uint32_t;
 
-#define CC_O CC_MASK_O
-#define CC_P CC_MASK_P
-#define CC_C CC_MASK_C
-
 
 static const uint8_t parity_table[256] = {
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    CC_P, 0, 0, CC_P, 0, CC_P, CC_P, 0,
-    0, CC_P, CC_P, 0, CC_P, 0, 0, CC_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    CC_MASK_P, 0, 0, CC_MASK_P, 0, CC_MASK_P, CC_MASK_P, 0,
+    0, CC_MASK_P, CC_MASK_P, 0, CC_MASK_P, 0, 0, CC_MASK_P,
 };
 
 /* n must be a constant to be efficient */
@@ -131,7 +132,7 @@ inline static Int lshift ( Int x, Int n )
    zf = ((DATA_UTYPE)dst == 0) << 6;				\
    sf = lshift(dst, 8 - DATA_BITS) & 0x80;			\
    of = lshift((src1 ^ src2 ^ -1) & (src1 ^ dst), 		\
-               12 - DATA_BITS) & CC_O;				\
+               12 - DATA_BITS) & CC_MASK_O;			\
    return cf | pf | af | zf | sf | of;				\
 }
 
@@ -151,7 +152,7 @@ inline static Int lshift ( Int x, Int n )
    zf = ((DATA_UTYPE)dst == 0) << 6;				\
    sf = lshift(dst, 8 - DATA_BITS) & 0x80;			\
    of = lshift((src1 ^ src2 ^ -1) & (src1 ^ dst), 		\
-                12 - DATA_BITS) & CC_O;				\
+                12 - DATA_BITS) & CC_MASK_O;			\
    return cf | pf | af | zf | sf | of;				\
 }
 
@@ -171,7 +172,7 @@ inline static Int lshift ( Int x, Int n )
    zf = ((DATA_UTYPE)dst == 0) << 6;				\
    sf = lshift(dst, 8 - DATA_BITS) & 0x80;			\
    of = lshift((src1 ^ src2) & (src1 ^ dst),	 		\
-               12 - DATA_BITS) & CC_O; 				\
+               12 - DATA_BITS) & CC_MASK_O; 			\
    return cf | pf | af | zf | sf | of;				\
 }
 
@@ -191,7 +192,7 @@ inline static Int lshift ( Int x, Int n )
    zf = ((DATA_UTYPE)dst == 0) << 6;				\
    sf = lshift(dst, 8 - DATA_BITS) & 0x80;			\
    of = lshift((src1 ^ src2) & (src1 ^ dst), 			\
-               12 - DATA_BITS) & CC_O;				\
+               12 - DATA_BITS) & CC_MASK_O;			\
    return cf | pf | af | zf | sf | of;				\
 }
 
@@ -253,13 +254,13 @@ inline static Int lshift ( Int x, Int n )
 {								\
    PREAMBLE(DATA_BITS);						\
    int cf, pf, af, zf, sf, of;					\
-   cf = (CC_SRC >> (DATA_BITS - 1)) & CC_C;			\
+   cf = (CC_SRC >> (DATA_BITS - 1)) & CC_MASK_C;		\
    pf = parity_table[(uint8_t)CC_DST];				\
    af = 0; /* undefined */					\
    zf = ((DATA_UTYPE)CC_DST == 0) << 6;				\
    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;			\
    /* of is defined if shift count == 1 */			\
-   of = lshift(CC_SRC ^ CC_DST, 12 - DATA_BITS) & CC_O;		\
+   of = lshift(CC_SRC ^ CC_DST, 12 - DATA_BITS) & CC_MASK_O;	\
    return cf | pf | af | zf | sf | of;				\
 }
 
@@ -275,7 +276,7 @@ inline static Int lshift ( Int x, Int n )
    zf = ((DATA_UTYPE)CC_DST == 0) << 6;				\
    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;			\
    /* of is defined if shift count == 1 */			\
-   of = lshift(CC_SRC ^ CC_DST, 12 - DATA_BITS) & CC_O;	 	\
+   of = lshift(CC_SRC ^ CC_DST, 12 - DATA_BITS) & CC_MASK_O;	\
    return cf | pf | af | zf | sf | of;				\
 }
 
@@ -287,9 +288,9 @@ inline static Int lshift ( Int x, Int n )
 {								\
    PREAMBLE(DATA_BITS);						\
    int fl 							\
-      = (CC_SRC & ~(CC_O | CC_C))				\
-        | (CC_C & CC_DST)					\
-        | (CC_O & (lshift(CC_DST, 11-(DATA_BITS-1)) 		\
+      = (CC_SRC & ~(CC_MASK_O | CC_MASK_C))			\
+        | (CC_MASK_C & CC_DST)					\
+        | (CC_MASK_O & (lshift(CC_DST, 11-(DATA_BITS-1)) 	\
                    ^ lshift(CC_DST, 11)));			\
    return fl;							\
 }
@@ -302,9 +303,9 @@ inline static Int lshift ( Int x, Int n )
 {								\
    PREAMBLE(DATA_BITS);						\
    int fl 							\
-      = (CC_SRC & ~(CC_O | CC_C))				\
-        | (CC_C & (CC_DST >> (DATA_BITS-1)))			\
-        | (CC_O & (lshift(CC_DST, 11-(DATA_BITS-1)) 		\
+      = (CC_SRC & ~(CC_MASK_O | CC_MASK_C))			\
+        | (CC_MASK_C & (CC_DST >> (DATA_BITS-1)))		\
+        | (CC_MASK_O & (lshift(CC_DST, 11-(DATA_BITS-1)) 	\
                    ^ lshift(CC_DST, 11-(DATA_BITS-1)+1)));	\
    return fl;							\
 }
@@ -414,9 +415,9 @@ static void initCounts ( void )
 
 #endif /* PROFILE_EFLAGS */
 
-/* CALLED FROM GENERATED CODE */
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate all the 6 flags from the supplied thunk parameters. */
-/*static*/ 
+static
 UInt calculate_eflags_all ( UInt cc_op, UInt cc_src_formal, UInt cc_dst_formal )
 {
 #  if PROFILE_EFLAGS
@@ -489,7 +490,7 @@ UInt calculate_eflags_all ( UInt cc_op, UInt cc_src_formal, UInt cc_dst_formal )
 }
 
 
-/* CALLED FROM GENERATED CODE */
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate just the carry flag from the supplied thunk parameters. */
 static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
@@ -523,7 +524,7 @@ static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
 }
 
 
-/* CALLED FROM GENERATED CODE */
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* returns 1 or 0 */
 /*static*/ UInt calculate_condition ( UInt/*Condcode*/ cond, 
                                       UInt cc_op, UInt cc_src, UInt cc_dst )
@@ -614,6 +615,8 @@ Addr64 x86guest_findhelper ( Char* function_name )
       return (Addr64)(Addr32)(& storeF80le);
    if (vex_streq(function_name, "loadF80le"))
       return (Addr64)(Addr32)(& loadF80le);
+   if (vex_streq(function_name, "calculate_RCR"))
+      return (Addr64)(Addr32)(& calculate_RCR);
    vex_printf("\nx86 guest: can't find helper: %s\n", function_name);
    vpanic("x86guest_findhelper");
 }
@@ -857,6 +860,7 @@ static inline Bool host_is_little_endian ( void )
    return (*p == 0x10);
 }
 
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
 static UInt calculate_FXAM ( UInt tag, ULong dbl ) 
 {
    Bool   mantissaIsZero;
@@ -1354,6 +1358,64 @@ void vex_initialise_x87 ( /* MOD*/VexGuestX86State* vex_state )
    vex_state->guest_FPUCW = 0x03F7; 
 }
 
+
+/*----------------------------------------------*/
+/*--- Misc integer helpers                   ---*/
+/*----------------------------------------------*/
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+/* Calculate both flags and value result for rotate right
+   through the carry bit.  Result in low 32 bits, 
+   new flags (OSZACP) in high 32 bits.
+*/
+static ULong calculate_RCR ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz )
+{
+   UInt tempCOUNT = rot_amt & 0x1F, cf=0, of=0, tempcf;
+
+   switch (sz) {
+      case 4:
+         cf        = (eflags_in >> CC_SHIFT_C) & 1;
+         of        = ((arg >> 31) ^ cf) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = arg & 1;
+            arg    = (arg >> 1) | (cf << 31);
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         break;
+      case 2:
+         while (tempCOUNT >= 17) tempCOUNT -= 17;
+         cf        = (eflags_in >> CC_SHIFT_C) & 1;
+         of        = ((arg >> 15) ^ cf) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = arg & 1;
+            arg    = ((arg >> 1) & 0x7FFF) | (cf << 15);
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         break;
+      case 1:
+         while (tempCOUNT >= 9) tempCOUNT -= 9;
+         cf        = (eflags_in >> CC_SHIFT_C) & 1;
+         of        = ((arg >> 7) ^ cf) & 1;
+         while (tempCOUNT > 0) {
+            tempcf = arg & 1;
+            arg    = ((arg >> 1) & 0x7F) | (cf << 7);
+            cf     = tempcf;
+            tempCOUNT--;
+         }
+         break;
+      default: 
+         vpanic("calculate_RCR: invalid size");
+   }
+
+   cf &= 1;
+   of &= 1;
+   eflags_in &= ~(CC_MASK_C | CC_MASK_O);
+   eflags_in |= (cf << CC_SHIFT_C) | (of << CC_SHIFT_O);
+
+   return (((ULong)eflags_in) << 32) | ((ULong)arg);
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                                guest-x86/ghelpers.c ---*/

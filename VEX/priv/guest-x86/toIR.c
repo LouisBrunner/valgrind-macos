@@ -4702,6 +4702,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          delta++;
          switch (modrm) {
 
+            case 0xC0 ... 0xC7: /* FFREE %st(?) */
+               r_dst = (UInt)modrm - 0xC0;
+               DIP("ffree %%st(%d)\n", r_dst);
+               put_ST_TAG ( r_dst, mkU8(0) );
+               break;
+
             case 0xD0 ... 0xD7: /* FST %st(0),%st(?) */
                r_dst = (UInt)modrm - 0xD0;
                DIP("fst %%st(0),%%st(%d)\n", (Int)r_dst);

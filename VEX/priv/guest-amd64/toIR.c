@@ -1322,28 +1322,33 @@ void setFlags_DEP1 ( IROp op8, IRTemp dep1, IRType ty )
 //..                                    IRExpr_Get(OFFB_CC_DEP2,Ity_I32),
 //..                                    widenUto32(mkexpr(resUS)))) );
 //.. }
-//.. 
-//.. 
-//.. /* For the inc/dec case, we store in DEP1 the result value and in NDEP
-//..    the former value of the carry flag, which unfortunately we have to
-//..    compute. */
-//.. 
-//.. static void setFlags_INC_DEC ( Bool inc, IRTemp res, IRType ty )
-//.. {
-//..    Int ccOp = inc ? X86G_CC_OP_INCB : X86G_CC_OP_DECB;
-//..    
-//..    ccOp += ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-//..    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-//.. 
-//..    /* This has to come first, because calculating the C flag 
-//..       may require reading all four thunk fields. */
-//..    stmt( IRStmt_Put( OFFB_CC_NDEP, mk_x86g_calculate_eflags_c()) );
-//..    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(ccOp)) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(res)) );
-//..    stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0)) );
-//.. }
-//.. 
-//.. 
+
+
+/* For the inc/dec case, we store in DEP1 the result value and in NDEP
+   the former value of the carry flag, which unfortunately we have to
+   compute. */
+
+static void setFlags_INC_DEC ( Bool inc, IRTemp res, IRType ty )
+{
+   Int ccOp = inc ? AMD64G_CC_OP_INCB : AMD64G_CC_OP_DECB;
+
+   switch (ty) {
+      case Ity_I8:  ccOp += 0; break;
+      case Ity_I16: ccOp += 1; break;
+      case Ity_I32: ccOp += 2; break;
+      case Ity_I64: ccOp += 3; break;
+      default: vassert(0);
+   }
+   
+   /* This has to come first, because calculating the C flag 
+      may require reading all four thunk fields. */
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mk_amd64g_calculate_rflags_c()) );
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU64(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_DEP1, mkexpr(res)) );
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU64(0)) );
+}
+
+
 //.. /* Multiplies are pretty much like add and sub: DEP1 and DEP2 hold the
 //..    two arguments. */
 //.. 
@@ -1518,15 +1523,15 @@ static HChar* nameGrp1 ( Int opc_aux )
 //..    if (opc_aux < 0 || opc_aux > 1) vpanic("nameGrp4(x86)");
 //..    return grp4_names[opc_aux];
 //.. }
-//.. 
-//.. static HChar* nameGrp5 ( Int opc_aux )
-//.. {
-//..    static HChar* grp5_names[8] 
-//..      = { "inc", "dec", "call*", "call*", "jmp*", "jmp*", "push", "???" };
-//..    if (opc_aux < 0 || opc_aux > 6) vpanic("nameGrp5(x86)");
-//..    return grp5_names[opc_aux];
-//.. }
-//.. 
+
+static HChar* nameGrp5 ( Int opc_aux )
+{
+   static HChar* grp5_names[8] 
+     = { "inc", "dec", "call*", "call*", "jmp*", "jmp*", "push", "???" };
+   if (opc_aux < 0 || opc_aux > 6) vpanic("nameGrp5(amd64)");
+   return grp5_names[opc_aux];
+}
+
 //.. //-- static Char* nameGrp8 ( Int opc_aux )
 //.. //-- {
 //.. //--    static Char* grp8_names[8] 
@@ -1764,7 +1769,6 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
          { UChar rm = mod_reg_rm & 7;
            DIS(buf, "%s(%s)", sorbTxt(pfx), nameIRegB(pfx,8,rm));
            *len = 1;
-           vpanic("disAMode(amd64):untested amode: 1");
            return disAMode_copy2tmp(
                   handleSegOverride(pfx, getIRegB(pfx,8,rm)));
          }
@@ -1801,15 +1805,14 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
       /* REX.B==1: a register, %r8  .. %r16.  This shouldn't happen. */
       case 0x18: case 0x19: case 0x1A: case 0x1B:
       case 0x1C: case 0x1D: case 0x1E: case 0x1F:
-         vpanic("disAMode(amode): not an addr!");
+         vpanic("disAMode(amd64): not an addr!");
 
       /* RIP + disp32.  This assumes that guest_rip_curr_instr is set
          correctly at the start of handling each instruction. */
       case 0x05: 
          { ULong d = getSDisp32(delta);
            *len = 5;
-           DIS(buf, "%s(0x%llx)", sorbTxt(pfx), d);
-           vpanic("disAMode(amd64):untested amode: 4");
+           DIS(buf, "%s0x%llx(%%rip)", sorbTxt(pfx), d);
            return disAMode_copy2tmp( 
                      handleSegOverride(pfx, 
                         binop(Iop_Add64, mkU64(guest_rip_curr_instr), 
@@ -1874,7 +1877,6 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
          if (index_is_SP && (!base_is_BPor13)) {
             DIS(buf, "%s(%s,,)", sorbTxt(pfx), nameIRegB(pfx,8,base_r));
             *len = 2;
-            vpanic("disAMode(amd64):untested amode: 7");
             return disAMode_copy2tmp(
                    handleSegOverride(pfx, getIRegB(pfx,8,base_r)));
          }
@@ -1911,7 +1913,6 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
             DIS(buf, "%s%lld(%s,,)", sorbTxt(pfx), 
                                      d, nameIRegB(pfx,8,base_r));
             *len = 3;
-            vpanic("disAMode(amd64):untested amode: 9");
             return disAMode_copy2tmp(
                    handleSegOverride(pfx, 
                       binop(Iop_Add64, getIRegB(pfx,8,base_r), mkU64(d)) ));
@@ -2004,7 +2005,6 @@ static UInt lengthAMode ( Prefix pfx, UInt delta )
       */
       case 0x00: case 0x01: case 0x02: case 0x03: 
       /* ! 04 */ /* ! 05 */ case 0x06: case 0x07:
-         vassert(0);
          return 1;
 
       /* REX.B==0: d8(%rax) ... d8(%rdi), not including d8(%rsp) 
@@ -2012,7 +2012,6 @@ static UInt lengthAMode ( Prefix pfx, UInt delta )
       */
       case 0x08: case 0x09: case 0x0A: case 0x0B: 
       /* ! 0C */ case 0x0D: case 0x0E: case 0x0F:
-         vassert(0);
          return 2;
 
       /* REX.B==0: d32(%rax) ... d32(%rdi), not including d32(%rsp)
@@ -2020,7 +2019,6 @@ static UInt lengthAMode ( Prefix pfx, UInt delta )
       */
       case 0x10: case 0x11: case 0x12: case 0x13: 
       /* ! 14 */ case 0x15: case 0x16: case 0x17:
-         vassert(0);
          return 5;
 
       /* REX.B==0: a register, %rax .. %rdi.  This shouldn't happen. */
@@ -2046,7 +2044,6 @@ static UInt lengthAMode ( Prefix pfx, UInt delta )
             vassert(0);
             return 6;
          } else {
-            vassert(0);
             return 2;
          }
       }
@@ -3255,108 +3252,127 @@ UInt dis_Grp1 ( Prefix pfx,
 //..    }
 //..    return delta;
 //.. }
-//.. 
-//.. 
-//.. /* Group 5 extended opcodes. */
-//.. static
-//.. UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* whatNext )
-//.. {
-//..    Int     len;
-//..    UChar   modrm;
-//..    HChar   dis_buf[50];
-//..    IRTemp  addr = IRTemp_INVALID;
-//..    IRType  ty = szToITy(sz);
-//..    IRTemp  t1 = newTemp(ty);
-//..    IRTemp  t2 = IRTemp_INVALID;
-//.. 
-//..    modrm = getIByte(delta);
-//..    if (epartIsReg(modrm)) {
-//..       assign(t1, getIReg(sz,eregOfRM(modrm)));
-//..       switch (gregOfRM(modrm)) {
-//.. //--          case 0: /* INC */
-//.. //--             uInstr1(cb, INC, sz, TempReg, t1);
-//.. //--             setFlagsFromUOpcode(cb, INC);
-//.. //--             uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, eregOfRM(modrm));
-//.. //--             break;
-//.. //--          case 1: /* DEC */
-//.. //--             uInstr1(cb, DEC, sz, TempReg, t1);
-//.. //--             setFlagsFromUOpcode(cb, DEC);
-//.. //--             uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, eregOfRM(modrm));
-//.. //--             break;
-//..          case 2: /* call Ev */
-//..             vassert(sz == 4);
-//..             t2 = newTemp(Ity_I32);
-//..             assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
-//..             putIReg(4, R_ESP, mkexpr(t2));
-//..             storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+1));
-//..             jmp_treg(Ijk_Call,t1);
-//..             *whatNext = Dis_StopHere;
-//..             break;
-//..          case 4: /* jmp Ev */
-//..             vassert(sz == 4);
-//..             jmp_treg(Ijk_Boring,t1);
-//..             *whatNext = Dis_StopHere;
-//..             break;
-//..          default: 
-//..             vex_printf(
-//..                "unhandled Grp5(R) case %d\n", (UInt)gregOfRM(modrm));
-//..             vpanic("Grp5(x86)");
-//..       }
-//..       delta++;
-//..       DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
-//..                        nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
-//..    } else {
-//..       addr = disAMode ( &len, sorb, delta, dis_buf );
-//..       assign(t1, loadLE(ty,mkexpr(addr)));
-//..       switch (gregOfRM(modrm)) {
-//..          case 0: /* INC */ 
-//..             t2 = newTemp(ty);
-//..             assign(t2, binop(mkSizedOp(ty,Iop_Add8),
-//..                              mkexpr(t1), mkU(ty,1)));
-//..             setFlags_INC_DEC( True, t2, ty );
-//..             storeLE(mkexpr(addr),mkexpr(t2));
-//..             break;
-//..          case 1: /* DEC */ 
-//..             t2 = newTemp(ty);
-//..             assign(t2, binop(mkSizedOp(ty,Iop_Sub8),
-//..                              mkexpr(t1), mkU(ty,1)));
-//..             setFlags_INC_DEC( False, t2, ty );
-//..             storeLE(mkexpr(addr),mkexpr(t2));
-//..             break;
-//..          case 2: /* call Ev */
-//..             vassert(sz == 4);
-//..             t2 = newTemp(Ity_I32);
-//..             assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
-//..             putIReg(4, R_ESP, mkexpr(t2));
-//..             storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+len));
-//..             jmp_treg(Ijk_Call,t1);
-//..             *whatNext = Dis_StopHere;
-//..             break;
-//..          case 4: /* JMP Ev */
-//..             vassert(sz == 4);
-//..             jmp_treg(Ijk_Boring,t1);
-//..             *whatNext = Dis_StopHere;
-//..             break;
-//..          case 6: /* PUSH Ev */
-//..             vassert(sz == 4 || sz == 2);
-//..             t2 = newTemp(Ity_I32);
-//..             assign( t2, binop(Iop_Sub32,getIReg(4,R_ESP),mkU32(sz)) );
-//..             putIReg(4, R_ESP, mkexpr(t2) );
-//..             storeLE( mkexpr(t2), mkexpr(t1) );
-//..             break;
-//..          default: 
-//..             vex_printf(
-//..                "unhandled Grp5(M) case %d\n", (UInt)gregOfRM(modrm));
-//..             vpanic("Grp5(x86)");
-//..       }
-//..       delta += len;
-//..       DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
-//..                        nameISize(sz), dis_buf);
-//..    }
-//..    return delta;
-//.. }
-//.. 
-//.. 
+
+
+/* Group 5 extended opcodes. */
+static
+ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
+{
+   Int     len;
+   UChar   modrm;
+   HChar   dis_buf[50];
+   IRTemp  addr = IRTemp_INVALID;
+   IRType  ty = szToITy(sz);
+   IRTemp  t1 = newTemp(ty);
+   IRTemp  t2 = IRTemp_INVALID;
+
+   modrm = getIByte(delta);
+   if (epartIsReg(modrm)) {
+      assign(t1, getIRegB(pfx,sz,eregOfRM(modrm)));
+      switch (gregOfRM(modrm)) {
+//--          case 0: /* INC */
+//--             uInstr1(cb, INC, sz, TempReg, t1);
+//--             setFlagsFromUOpcode(cb, INC);
+//--             uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, eregOfRM(modrm));
+//--             break;
+//--          case 1: /* DEC */
+//--             uInstr1(cb, DEC, sz, TempReg, t1);
+//--             setFlagsFromUOpcode(cb, DEC);
+//--             uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, eregOfRM(modrm));
+//--             break;
+         case 2: /* call Ev */
+vassert(0);
+#if 0
+            vassert(sz == 4);
+            t2 = newTemp(Ity_I32);
+            assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
+            putIReg(4, R_ESP, mkexpr(t2));
+            storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+1));
+            jmp_treg(Ijk_Call,t1);
+            *whatNext = Dis_StopHere;
+            break;
+#endif
+         case 4: /* jmp Ev */
+vassert(0);
+#if 0
+            vassert(sz == 4);
+            jmp_treg(Ijk_Boring,t1);
+            *whatNext = Dis_StopHere;
+            break;
+#endif
+         default: 
+            vex_printf(
+               "unhandled Grp5(R) case %d\n", (UInt)gregOfRM(modrm));
+            vpanic("Grp5(amd64)");
+      }
+      delta++;
+      DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
+                       nameISize(sz), 
+                       nameIRegB(pfx, sz, eregOfRM(modrm)));
+   } else {
+      addr = disAMode ( &len, pfx, delta, dis_buf );
+      assign(t1, loadLE(ty,mkexpr(addr)));
+      switch (gregOfRM(modrm)) {
+         case 0: /* INC */ 
+vassert(0);
+#if 0
+            t2 = newTemp(ty);
+            assign(t2, binop(mkSizedOp(ty,Iop_Add8),
+                             mkexpr(t1), mkU(ty,1)));
+            setFlags_INC_DEC( True, t2, ty );
+            storeLE(mkexpr(addr),mkexpr(t2));
+            break;
+#endif
+         case 1: /* DEC */ 
+            t2 = newTemp(ty);
+            assign(t2, binop(mkSizedOp(ty,Iop_Sub8),
+                             mkexpr(t1), mkU(ty,1)));
+            setFlags_INC_DEC( False, t2, ty );
+            storeLE(mkexpr(addr),mkexpr(t2));
+            break;
+         case 2: /* call Ev */
+vassert(0);
+#if 0
+            vassert(sz == 4);
+            t2 = newTemp(Ity_I32);
+            assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
+            putIReg(4, R_ESP, mkexpr(t2));
+            storeLE( mkexpr(t2), mkU32(guest_eip_bbstart+delta+len));
+            jmp_treg(Ijk_Call,t1);
+            *whatNext = Dis_StopHere;
+            break;
+#endif
+         case 4: /* JMP Ev */
+vassert(0);
+#if 0
+            vassert(sz == 4);
+            jmp_treg(Ijk_Boring,t1);
+            *whatNext = Dis_StopHere;
+            break;
+#endif
+         case 6: /* PUSH Ev */
+vassert(0);
+#if 0
+            vassert(sz == 4 || sz == 2);
+            t2 = newTemp(Ity_I32);
+            assign( t2, binop(Iop_Sub32,getIReg(4,R_ESP),mkU32(sz)) );
+            putIReg(4, R_ESP, mkexpr(t2) );
+            storeLE( mkexpr(t2), mkexpr(t1) );
+            break;
+#endif
+         default: 
+            vex_printf(
+               "unhandled Grp5(M) case %d\n", (UInt)gregOfRM(modrm));
+            vpanic("Grp5(amd64)");
+      }
+      delta += len;
+      DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
+                       nameISize(sz), dis_buf);
+   }
+   return delta;
+}
+
+
 //.. /*------------------------------------------------------------*/
 //.. /*--- Disassembling string ops (including REP prefixes)    ---*/
 //.. /*------------------------------------------------------------*/
@@ -11233,10 +11249,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x3C: /* CMP Ib, AL */
 //..       delta = dis_op_imm_A( 1, Iop_Sub8, False, delta, "cmp" );
 //..       break;
-//..    case 0x3D: /* CMP Iv, eAX */
-//..       delta = dis_op_imm_A( sz, Iop_Sub8, False, delta, "cmp" );
-//..       break;
-//.. 
+   case 0x3D: /* CMP Iv, eAX */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op_imm_A( sz, Iop_Sub8, False, delta, "cmp" );
+      break;
+
 //..    case 0xA8: /* TEST Ib, AL */
 //..       delta = dis_op_imm_A( 1, Iop_And8, False, delta, "test" );
 //..       break;
@@ -11299,10 +11316,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x3A: /* CMP Eb,Gb */
 //..       delta = dis_op2_E_G ( sorb, False, Iop_Sub8, False, 1, delta, "cmp" );
 //..       break;
-//..    case 0x3B: /* CMP Ev,Gv */
-//..       delta = dis_op2_E_G ( sorb, False, Iop_Sub8, False, sz, delta, "cmp" );
-//..       break;
-//.. 
+   case 0x3B: /* CMP Ev,Gv */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_E_G ( pfx, False, Iop_Sub8, False, sz, delta, "cmp" );
+      break;
+
 //..    case 0x84: /* TEST Eb,Gb */
 //..       delta = dis_op2_E_G ( sorb, False, Iop_And8, False, 1, delta, "test" );
 //..       break;
@@ -11316,6 +11334,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_op2_G_E ( sorb, False, Iop_Add8, True, 1, delta, "add" );
 //..       break;
    case 0x01: /* ADD Gv,Ev */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_G_E ( pfx, False, Iop_Add8, True, sz, delta, "add" );
       break;
 
@@ -11344,6 +11363,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       delta = dis_op2_G_E ( sorb, False, Iop_And8, True, 1, delta, "and" );
 //..       break;
    case 0x21: /* AND Gv,Ev */
+      if (haveF2orF3(pfx)) goto decode_failure;
       delta = dis_op2_G_E ( pfx, False, Iop_And8, True, sz, delta, "and" );
       break;
 //.. 
@@ -11360,14 +11380,16 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x31: /* XOR Gv,Ev */
 //..       delta = dis_op2_G_E ( sorb, False, Iop_Xor8, True, sz, delta, "xor" );
 //..       break;
-//.. 
-//..    case 0x38: /* CMP Gb,Eb */
-//..       delta = dis_op2_G_E ( sorb, False, Iop_Sub8, False, 1, delta, "cmp" );
-//..       break;
-//..    case 0x39: /* CMP Gv,Ev */
-//..       delta = dis_op2_G_E ( sorb, False, Iop_Sub8, False, sz, delta, "cmp" );
-//..       break;
-//.. 
+
+   case 0x38: /* CMP Gb,Eb */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_G_E ( pfx, False, Iop_Sub8, False, 1, delta, "cmp" );
+      break;
+   case 0x39: /* CMP Gv,Ev */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_G_E ( pfx, False, Iop_Sub8, False, sz, delta, "cmp" );
+      break;
+
 //..    /* ------------------------ POP ------------------------ */
 //.. 
 //..    case 0x58: /* POP eAX */
@@ -12005,12 +12027,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0xFE: /* Grp4 Eb */
 //..       delta = dis_Grp4 ( sorb, delta );
 //..       break;
-//.. 
-//..    /* ------------------------ (Grp5 extensions) ---------- */
-//.. 
-//..    case 0xFF: /* Grp5 Ev */
-//..       delta = dis_Grp5 ( sorb, sz, delta, &whatNext );
-//..       break;
+
+   /* ------------------------ (Grp5 extensions) ---------- */
+
+   case 0xFF: /* Grp5 Ev */
+      delta = dis_Grp5 ( pfx, sz, delta, &whatNext );
+      break;
 
    /* ------------------------ Escapes to 2-byte opcodes -- */
 

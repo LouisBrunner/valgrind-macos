@@ -770,12 +770,23 @@ void VG_(wrap_syscall) ( void )
          KERNEL_DO_SYSCALL(res);
          break;
 
+#     if defined(__NR_fchown32)
+      case __NR_fchown32: /* syscall 207 */
+#     endif
+      case __NR_fchown: /* syscall 95 */
+         /* int fchown(int filedes, uid_t owner, gid_t group); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("fchown ( %d, %d, %d )\n", arg1,arg2,arg3);
+         KERNEL_DO_SYSCALL(res);
+         break;
+
       case __NR_fchmod: /* syscall 94 */
          /* int fchmod(int fildes, mode_t mode); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("fchmod ( %d, %d )\n", arg1,arg2);
          KERNEL_DO_SYSCALL(res);
          break;
+
 #     if defined(__NR_fcntl64)
       case __NR_fcntl64: /* syscall 221 */
          /* I don't know what the prototype for this is supposed to be. */
@@ -826,11 +837,13 @@ void VG_(wrap_syscall) ( void )
          KERNEL_DO_SYSCALL(res);
          break;
 
-#     if defined(__NR_getalife)
-      case __NR_getalife: /* syscall 999 */
-         /* If you've read this far, you're a really sad person.  Turn
-            off your computer, leave the building, meet people, and get
-            a life.  Go learn to dance, or some such. */
+#     if defined(__NR_ftruncate64)
+      case __NR_ftruncate64: /* syscall 194 */
+         /* int ftruncate64(int fd, off64_t length); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("ftruncate64 ( %d, %lld )\n", 
+                        arg1,arg2|((long long) arg3 << 32));
+         KERNEL_DO_SYSCALL(res);
          break;
 #     endif
 
@@ -1190,6 +1203,18 @@ void VG_(wrap_syscall) ( void )
                KERNEL_DO_SYSCALL(res);
                if (!VG_(is_kerror)(res) && res == 0)
                   make_readable ( arg3, VKI_SIZEOF_STRUCT_TERMIOS );
+               break;
+            case TCSETA:
+               must_be_readable( "ioctl(TCSETA)", arg3,
+                                 VKI_SIZEOF_STRUCT_TERMIO );
+               KERNEL_DO_SYSCALL(res);
+               break;
+            case TCGETA:
+               must_be_writable( "ioctl(TCGETA)", arg3,
+                                 VKI_SIZEOF_STRUCT_TERMIO );
+               KERNEL_DO_SYSCALL(res);
+               if (!VG_(is_kerror)(res) && res == 0)
+                  make_readable ( arg3, VKI_SIZEOF_STRUCT_TERMIO );
                break;
             case TCSBRK:
             case TCSBRKP:
@@ -1933,6 +1958,8 @@ void VG_(wrap_syscall) ( void )
 
 #     if defined(__NR_setgroups32)
       case __NR_setgroups32: /* syscall 206 */
+#     endif
+      case __NR_setgroups: /* syscall 81 */
          /* int setgroups(size_t size, const gid_t *list); */
          if (VG_(clo_trace_syscalls))
             VG_(printf)("setgroups ( %d, %p )\n", arg1, arg2);
@@ -1941,7 +1968,6 @@ void VG_(wrap_syscall) ( void )
                                arg1 * sizeof(gid_t) );
          KERNEL_DO_SYSCALL(res);
          break;
-#     endif
 
       case __NR_setpgid: /* syscall 57 */
          /* int setpgid(pid_t pid, pid_t pgid); */

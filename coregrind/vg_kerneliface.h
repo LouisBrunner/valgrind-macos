@@ -157,6 +157,9 @@ typedef struct vki__user_cap_data_struct {
 
 #define VKI_SIZEOF_STRUCT_TERMIOS 36
 
+/* Adam Gundy <arg@cyberscience.com>, 20 Mar 2002, says: */
+#define VKI_SIZEOF_STRUCT_TERMIO 17
+
 
 #endif /* ndef __VG_KERNELIFACE_H */
 

@@ -1143,9 +1143,12 @@ static void redundant_get_removal_BB ( IRBB* bb )
 
 static void handle_gets_Stmt ( HashHW* env, IRStmt* st )
 {
+   Int     j;
    UInt    key = 0; /* keep gcc -O happy */
    Bool    isGet;
+   Bool    memRW = False;
    IRExpr* e;
+
    switch (st->tag) {
 
       /* This is the only interesting case.  Deal with Gets in the RHS
@@ -1161,6 +1164,10 @@ static void handle_gets_Stmt ( HashHW* env, IRStmt* st )
                isGet = True;
                key = mk_key_GetIPutI ( e->Iex.GetI.descr );
                break;
+            case Iex_LDle:
+               isGet = False;
+               memRW = True;
+               break;
             default: 
                isGet = False;
          }
@@ -1172,29 +1179,57 @@ static void handle_gets_Stmt ( HashHW* env, IRStmt* st )
          }
          break;
 
+      /* Be very conservative for dirty helper calls; dump the entire
+         environment.  The helper might read guest state, in which
+         case it needs to be flushed first.  Also, the helper might
+         access guest memory, in which case all parts of the guest
+         state requiring precise exceptions needs to be flushed.  The
+         crude solution is just to flush everything; we could easily
+         enough do a lot better if needed. */
+      case Ist_Dirty:
+         for (j = 0; j < env->used; j++)
+            env->inuse[j] = False;
+         break;
+
       /* all other cases are boring. */
       case Ist_STle:
          vassert(isAtom(st->Ist.STle.addr));
          vassert(isAtom(st->Ist.STle.data));
-         return;
-
-      case Ist_Dirty:
-         return;
+         memRW = True;
+         break;
 
       case Ist_Exit:
          vassert(isAtom(st->Ist.Exit.cond));
-         return;
+         break;
 
       case Ist_PutI:
          vassert(isAtom(st->Ist.PutI.off));
          vassert(isAtom(st->Ist.PutI.data));
-         return;
+         break;
 
       default:
          vex_printf("\n");
          ppIRStmt(st);
          vex_printf("\n");
          vpanic("handle_gets_Stmt");
+   }
+
+   if (memRW) {
+      /* This statement accesses memory.  So we need to dump all parts
+         of the environment corresponding to guest state that may not
+         be reordered with respect to memory references.  That means
+         at least the stack pointer. */
+      for (j = 0; j < env->used; j++) {
+#if 0
+         if (env->inuse[j]
+             && env->key[j] == (HWord)((16 << 16) | 19)) {
+            //vex_printf("found esp assignment\n");
+            env->inuse[j] = False;
+	 }
+#else
+         env->inuse[j] = False;
+#endif
+      }
    }
 }
 
@@ -3022,13 +3057,13 @@ IRBB* cheap_transformations (
       vex_printf("\n========= REDUNDANT GET\n\n" );
       ppIRBB(bb);
    }
-#if 0
+
    redundant_put_removal_BB ( bb );
    if (iropt_verbose) {
       vex_printf("\n========= REDUNDANT PUT\n\n" );
       ppIRBB(bb);
    }
-#endif
+
    bb = cprop_BB ( bb );
    if (iropt_verbose) {
       vex_printf("\n========= CPROPD\n\n" );

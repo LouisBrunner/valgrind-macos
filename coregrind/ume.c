@@ -244,6 +244,7 @@ struct elfinfo *readelf(int fd, const char *filename)
    struct elfinfo *e = malloc(sizeof(*e));
    int phsz;
 
+   assert(e);
    e->fd = fd;
 
    if (pread(fd, &e->e, sizeof(e->e), 0) != sizeof(e->e)) {
@@ -282,6 +283,7 @@ struct elfinfo *readelf(int fd, const char *filename)
 
    phsz = sizeof(ESZ(Phdr)) * e->e.e_phnum;
    e->p = malloc(phsz);
+   assert(e->p);
 
    if (pread(fd, e->p, phsz, e->e.e_phoff) != phsz) {
       fprintf(stderr, "can't read phdr: %s\n", strerror(errno));
@@ -422,6 +424,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name, struct exeinfo
 	 int intfd;
 	 int baseaddr_set;
 
+         assert(buf);
 	 pread(fd, buf, ph->p_filesz, ph->p_offset);
 	 buf[ph->p_filesz] = '\0';
 

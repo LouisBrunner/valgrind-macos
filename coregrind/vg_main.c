@@ -653,6 +653,7 @@ static void augment_command_line(Int* vg_argc_inout, char*** vg_argv_inout)
       from    = vg_argv;
       vg_argv = malloc( (vg_argc + env_arg_count + f1_arg_count 
                           + f2_arg_count + 2) * sizeof(char **));
+      vg_assert(vg_argv);
       to      = vg_argv;
 
       /* copy argv[0] */
@@ -711,6 +712,7 @@ static void get_command_line( int argc, char** argv,
 	    vg_argc++;
 
       vg_argv = malloc(sizeof(char **) * (vg_argc + 1));
+      vg_assert(vg_argv);
 
       cpp = vg_argv;
 
@@ -842,6 +844,7 @@ static char **fix_environment(char **origenv, const char *preload)
       library */
    inject_path_len = sizeof(inject_so) + vgliblen + preloadlen + 16;
    inject_path = malloc(inject_path_len);
+   vg_assert(inject_path);
 
    if (preload)
       snprintf(inject_path, inject_path_len, "%s/%s:%s", 
@@ -857,6 +860,7 @@ static char **fix_environment(char **origenv, const char *preload)
 
    /* Allocate a new space */
    ret = malloc(sizeof(char *) * (envc+3+1)); /* 3 new entries + NULL */
+   vg_assert(ret);
 
    /* copy it over */
    for (cpp = ret; *origenv; )
@@ -875,6 +879,7 @@ static char **fix_environment(char **origenv, const char *preload)
          if (!scan_colsep(*cpp + ld_library_path_len, contains)) {
 	    int len = strlen(*cpp) + vgliblen*2 + 16;
 	    char *cp = malloc(len);
+            vg_assert(cp);
 
 	    snprintf(cp, len, "%s%s:%s",
 		     ld_library_path, VG_(libdir),
@@ -887,6 +892,7 @@ static char **fix_environment(char **origenv, const char *preload)
       } else if (memcmp(*cpp, ld_preload, ld_preload_len) == 0) {
 	 int len = strlen(*cpp) + inject_path_len;
 	 char *cp = malloc(len);
+         vg_assert(cp);
 
 	 snprintf(cp, len, "%s%s:%s",
 		  ld_preload, inject_path, (*cpp)+ld_preload_len);
@@ -904,6 +910,7 @@ static char **fix_environment(char **origenv, const char *preload)
    if (!ld_library_path_done) {
       int len = ld_library_path_len + vgliblen*2 + 16;
       char *cp = malloc(len);
+      vg_assert(cp);
 
       snprintf(cp, len, "%s%s", ld_library_path, VG_(libdir));
 
@@ -913,6 +920,7 @@ static char **fix_environment(char **origenv, const char *preload)
    if (!ld_preload_done) {
       int len = ld_preload_len + inject_path_len;
       char *cp = malloc(len);
+      vg_assert(cp);
       
       snprintf(cp, len, "%s%s",
 	       ld_preload, inject_path);

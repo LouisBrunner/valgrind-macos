@@ -1501,9 +1501,8 @@ extern void VGA_(save_state) ( arch_thread_t*, ThreadId tid );
 
 extern Bool VGA_(setup_pointercheck) ( void );
 
-extern void VGA_(regs_for_ptrace_from_BB)  ( struct user_regs_struct* regs );
-extern void VGA_(regs_for_ptrace_from_tst) ( arch_thread_t* arch,
-                                             struct user_regs_struct* regs );
+extern Int  VGA_(ptrace_setregs_from_BB)  ( Int pid );
+extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, arch_thread_t* arch );
 
 /* ---------------------------------------------------------------------
    Finally - autoconf-generated settings

@@ -225,6 +225,14 @@ static void print_all_stats ( void )
 /*=== Miscellaneous global functions                               ===*/
 /*====================================================================*/
 
+static Int ptrace_setregs(Int pid, ThreadId tid)
+{
+   if (VG_(is_running_thread)( tid ))
+      return VGA_(ptrace_setregs_from_BB)(pid);
+   else
+      return VGA_(ptrace_setregs_from_tst)(pid, &VG_(threads)[tid].arch);
+}
+
 /* Start debugger and get it to attach to this process.  Called if the
    user requests this service after an error has been shown, so she can
    poke around and look at parameters, memory, etc.  You can't
@@ -239,18 +247,12 @@ void VG_(start_debugger) ( Int tid )
       VG_(kkill)(VG_(getpid)(), VKI_SIGSTOP);
 
    } else if (pid > 0) {
-      struct user_regs_struct regs;
       Int status;
       Int res;
 
-      if (VG_(is_running_thread)( tid ))
-         VGA_(regs_for_ptrace_from_BB)(&regs);
-      else
-         VGA_(regs_for_ptrace_from_tst)(&VG_(threads)[tid].arch, &regs);
-
       if ((res = VG_(waitpid)(pid, &status, 0)) == pid &&
           WIFSTOPPED(status) && WSTOPSIG(status) == SIGSTOP &&
-          ptrace(PTRACE_SETREGS, pid, NULL, &regs) == 0 &&
+          ptrace_setregs(pid, tid) == 0 &&
           kill(pid, SIGSTOP) == 0 &&
           ptrace(PTRACE_DETACH, pid, NULL, 0) == 0) {
          Char pidbuf[15];

@@ -40,17 +40,17 @@
 typedef
    struct {
       /* Becomes live for the first time after this insn ... */
-      Int live_after;
+      Short live_after;
       /* Becomes dead for the last time before this insn ... */
-      Int dead_before;
+      Short dead_before;
       /* The "home" spill slot, if needed.  Never changes. */
-      Int spill_offset;
-      Int spill_size;
+      Short spill_offset;
+      Short spill_size;
       /* What kind of register this is. */
       HRegClass reg_class;
       /* Preferencing info, if any.  Currently unused. */
-      Bool has_preference;
-      HReg preferred_rreg; /* if True, where I would like to be */
+      /* Bool has_preference; */
+      /* HReg preferred_rreg; */ /* if True, where I would like to be */
    }
    VRegInfo;
 
@@ -61,9 +61,9 @@ typedef
    struct {
       HReg rreg;
       /* Becomes live after this insn ... */
-      Int live_after;
+      Short live_after;
       /* Becomes dead before this insn ... */
-      Int dead_before;
+      Short dead_before;
    }
    RRegInfo;
 
@@ -258,6 +258,11 @@ HInstrArray* doRegisterAllocation (
    vassert(0 == LibVEX_N_SPILL_BYTES % 16);
    vassert(0 == guest_sizeB % 8);
 
+   /* The live range numbers are signed shorts, and so limiting the
+      number of insns to 10000 comfortably guards against them
+      overflowing 32k. */
+   vassert(instrs_in->arr_used <= 10000);
+
 #  define INVALID_INSTRNO (-2)
 
 #  define EMIT_INSTR(_instr)                  \
@@ -327,8 +332,8 @@ HInstrArray* doRegisterAllocation (
       vreg_info[j].spill_offset   = 0;
       vreg_info[j].spill_size     = 0;
       vreg_info[j].reg_class      = HRcINVALID;
-      vreg_info[j].has_preference = False;
-      vreg_info[j].preferred_rreg = INVALID_HREG;
+      /* vreg_info[j].has_preference = False;  */
+      /* vreg_info[j].preferred_rreg = INVALID_HREG; */
    }
 
    /* ------ end of SET UP TO COMPUTE VREG LIVE RANGES ------ */

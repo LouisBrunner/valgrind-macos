@@ -277,7 +277,7 @@ void ppPPC32AMode ( PPC32AMode* am ) {
    switch (am->tag) {
    case Pam_IR: 
       if (am->Pam.IR.index == 0)
-         vex_printf("(");
+         vex_printf("0(");
       else
          vex_printf("0x%x(", am->Pam.IR.index);
       ppHRegPPC32(am->Pam.IR.base);
@@ -884,10 +884,29 @@ void ppPPC32Instr ( PPC32Instr* i )
       ppPPC32AMode(i->Pin.Store.dst);
       return;
    }
-   case Pin_Set32:
-      vex_printf("set32 (%s) ", showPPC32CondCode(i->Pin.Set32.cond));
+   case Pin_Set32: {
+      PPC32CondCode cc = i->Pin.Set32.cond;
+      vex_printf("set32 (%s),", showPPC32CondCode(cc));
       ppHRegPPC32(i->Pin.Set32.dst);
+      if (cc.test == Pct_ALWAYS) {
+         vex_printf(": { li ");
+         ppHRegPPC32(i->Pin.Set32.dst);
+         vex_printf(",1 }");
+      } else {
+         vex_printf(": { mfcr r0 ; rlwinm ");
+         ppHRegPPC32(i->Pin.Set32.dst);
+         vex_printf(",r0,%d,31,31,0", cc.flag+1);
+         if (cc.test == Pct_FALSE) {
+            vex_printf("; xori ");
+            ppHRegPPC32(i->Pin.Set32.dst);
+            vex_printf(",");
+            ppHRegPPC32(i->Pin.Set32.dst);
+            vex_printf("1");
+         }
+         vex_printf(" }");
+      }
       return;
+   }
 //..       case Xin_Bsfr32:
 //..          vex_printf("bs%cl ", i->Xin.Bsfr32.isFwds ? 'f' : 'r');
 //..          ppHRegX86(i->Xin.Bsfr32.src);

@@ -1,4 +1,4 @@
 vgopts: -q
-prog: ../../none/tests/insn_fpu
+prog: ../../../none/tests/insn_fpu
 cpu_test: x86-fpu
 delete: cachegrind.out.*

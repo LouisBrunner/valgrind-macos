@@ -1,0 +1,4 @@
+#! /bin/sh
+
+# Use the generic Cachegrind stderr filter
+../filter_stderr

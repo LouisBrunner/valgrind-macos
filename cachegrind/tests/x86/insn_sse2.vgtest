@@ -1,4 +1,4 @@
 vgopts: -q
-prog: ../../none/tests/insn_sse2
+prog: ../../../none/tests/insn_sse2
 cpu_test: x86-sse2
 delete: cachegrind.out.*

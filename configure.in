@@ -414,6 +414,7 @@ AC_OUTPUT(
    cachegrind/Makefile
    cachegrind/x86/Makefile
    cachegrind/tests/Makefile
+   cachegrind/tests/x86/Makefile
    cachegrind/docs/Makefile
    cachegrind/cg_annotate
    helgrind/Makefile

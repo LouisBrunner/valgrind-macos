@@ -97,6 +97,7 @@ Int VGOFF_(helper_bsf) = INVALID_OFFSET;
 Int VGOFF_(helper_bsr) = INVALID_OFFSET;
 Int VGOFF_(helper_fstsw_AX) = INVALID_OFFSET;
 Int VGOFF_(helper_SAHF) = INVALID_OFFSET;
+Int VGOFF_(helper_LAHF) = INVALID_OFFSET;
 Int VGOFF_(helper_DAS) = INVALID_OFFSET;
 Int VGOFF_(helper_DAA) = INVALID_OFFSET;
 Int VGOFF_(helper_undefined_instruction) = INVALID_OFFSET;
@@ -368,6 +369,8 @@ static void vg_init_baseBlock ( void )
       = alloc_BaB_1_set( (Addr) & VG_(helper_fstsw_AX) );
    VGOFF_(helper_SAHF)
       = alloc_BaB_1_set( (Addr) & VG_(helper_SAHF) );
+   VGOFF_(helper_LAHF)
+      = alloc_BaB_1_set( (Addr) & VG_(helper_LAHF) );
    VGOFF_(helper_DAS)
       = alloc_BaB_1_set( (Addr) & VG_(helper_DAS) );
    VGOFF_(helper_DAA)

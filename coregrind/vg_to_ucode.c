@@ -2945,6 +2945,25 @@ void codegen_SAHF ( UCodeBlock* cb )
    uInstr0(cb, CALLM_E, 0);
 }
 
+static 
+void codegen_LAHF ( UCodeBlock* cb )
+{
+   Int t = newTemp(cb);
+
+   /* Pushed arg is ignored, it just provides somewhere to put the
+      return value. */
+   uInstr0(cb, CALLM_S, 0);
+   uInstr2(cb, MOV,   4, Literal, 0,     TempReg, t);
+   uLiteral(cb, 0);
+   uInstr1(cb, PUSH,  4, TempReg, t);
+   uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_LAHF));
+   uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
+   uInstr1(cb, POP,   4, TempReg, t);
+   uInstr0(cb, CALLM_E, 0);
+
+   uInstr2(cb, PUT,   1,  TempReg, t,   ArchReg, R_AH);
+}
+
 
 static
 Addr dis_cmpxchg_G_E ( UCodeBlock* cb, 
@@ -3920,6 +3939,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x9E: /* SAHF */
       codegen_SAHF ( cb );
       if (dis) VG_(printf)("sahf\n");
+      break;
+
+   case 0x9F: /* LAHF */
+      codegen_LAHF ( cb );
+      if (dis) VG_(printf)("lahf\n");
       break;
 
    case 0x9B: /* FWAIT */

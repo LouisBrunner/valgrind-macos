@@ -1560,6 +1560,7 @@ extern void VG_(helper_bsr);
 
 extern void VG_(helper_fstsw_AX);
 extern void VG_(helper_SAHF);
+extern void VG_(helper_LAHF);
 extern void VG_(helper_DAS);
 extern void VG_(helper_DAA);
 

@@ -208,6 +208,20 @@ VG_(helper_SAHF):
 	popl	%eax
 	ret
 
+/* Copy %eflags into %ah.
+   On entry:
+	value of %eax
+	RA   <- %esp
+*/
+.global VG_(helper_LAHF)
+VG_(helper_LAHF):
+	pushl	%eax
+	movl	8(%esp), %eax
+	lahf
+	movl	%eax, 8(%esp)
+	popl	%eax
+	ret
+
 
 /* Do %al = DAS(%al).  Note that the passed param has %AL as the least
    significant 8 bits, since it was generated with GETB %AL,

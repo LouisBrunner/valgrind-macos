@@ -1037,6 +1037,7 @@ extern Int VGOFF_(helper_bsr);
 
 extern Int VGOFF_(helper_fstsw_AX);
 extern Int VGOFF_(helper_SAHF);
+extern Int VGOFF_(helper_LAHF);
 extern Int VGOFF_(helper_DAS);
 extern Int VGOFF_(helper_DAA);
 

@@ -544,7 +544,7 @@ typedef
       Bool needsBBP; /* True => also pass guest state ptr to callee */
       Int  nFxState; /* must be 0 .. VEX_N_FXSTATE */
       struct {
-         IREffect fx;   /* read, write or modify? */
+         IREffect fx;   /* read, write or modify?  Ifx_None is invalid. */
          Int      offset;
          Int      size;
       } fxState[VEX_N_FXSTATE];

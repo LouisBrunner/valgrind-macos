@@ -3131,7 +3131,7 @@ static void put_ST_TAG ( Int i, IRExpr* value )
 }
 
 /* Given i, generate an expression yielding 'ST_TAG(i)'.  This will be
-   zero to indicate "Empty" and nonzero and indicate "NonEmpty".  */
+   zero to indicate "Empty" and nonzero to indicate "NonEmpty".  */
 
 static IRExpr* get_ST_TAG ( Int i )
 {
@@ -3169,6 +3169,7 @@ The previous state of the register is not checked. */
 
 static void put_ST_UNCHECKED ( Int i, IRExpr* value )
 {
+   vassert(typeOfIRExpr(irbb->tyenv, value) == Ity_F64);
    stmt( IRStmt_PutI( off_ST(i), value, OFFB_F0, OFFB_F7+8-1 ) );
    /* Mark the register as in-use. */
    put_ST_TAG(i, mkU8(1));
@@ -3182,11 +3183,11 @@ static void put_ST_UNCHECKED ( Int i, IRExpr* value )
 static void put_ST ( Int i, IRExpr* value )
 {
    put_ST_UNCHECKED( i,
-                     IRExpr_Mux0X(get_ST_TAG(i),
-                        /* 0 means empty */
-                        value,
-                        /* non-0 means full */
-                        mkNaN64()
+                     IRExpr_Mux0X( get_ST_TAG(i),
+                                   /* 0 means empty */
+                                   value,
+                                   /* non-0 means full */
+                                   mkNaN64()
                    )
    );
 }
@@ -3231,7 +3232,7 @@ static void fp_push ( void )
 
 static void fp_pop ( void )
 {
-   put_ST_TAG(0, mkU8(1));
+   put_ST_TAG(0, mkU8(0));
    put_ftop(
       binop(Iop_And32,
             binop(Iop_Add32, get_ftop(), mkU32(1)),
@@ -3260,6 +3261,20 @@ void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf,
 }
 
 
+/* ST(dst) = ST(dst) `op` ST(src).
+   Check dst and src tags when reading but not on write.
+*/
+static
+void fp_do_op_ST_ST ( UChar* op_txt, IROp op, UInt st_src, UInt st_dst )
+{
+   DIP("f%s st(%d), st(%d)\n", op_txt, st_src, st_dst );
+   put_ST_UNCHECKED( 
+      st_dst, 
+      binop(op, get_ST(st_dst), get_ST(st_src) ) 
+   );
+}
+
+
 static
 UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 {
@@ -3276,7 +3291,18 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xD8 opcodes +-+-+-+-+-+-+-+ */
 
    if (first_opcode == 0xD8) {
-      goto decode_fail;
+      if (modrm < 0xC0) {
+         goto decode_fail;
+      } else {
+         delta++;
+         switch (modrm) {
+            case 0xC0 ... 0xC7: /* FADD %st(?),%st(0) */
+               fp_do_op_ST_ST ( "add", Iop_AddF64, modrm - 0xC0, 0 );
+               break;
+            default:
+               goto decode_fail;
+         }
+      }
    }
 
    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xD9 opcodes +-+-+-+-+-+-+-+ */
@@ -3297,9 +3323,21 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                break;
 
             case 0xE8: /* FLD1 */
-               DIP("fldz");
+               DIP("fld1");
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
+               break;
+
+            case 0xEC: /* FLDLG2 */
+               DIP("fldlg2");
+               fp_push();
+               put_ST(0, IRExpr_Const(IRConst_F64(0.301029995663981143)));
+               break;
+
+            case 0xED: /* FLDLN2 */
+               DIP("fldln2");
+               fp_push();
+               put_ST(0, IRExpr_Const(IRConst_F64(0.69314718055994530942)));
                break;
 
             case 0xEE: /* FLDZ */
@@ -3326,6 +3364,11 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
          delta += len;
          switch (gregOfRM(modrm)) {
+
+            case 0: /* FIADD m32int */ /* ST(0) += m32int */
+               DIP("fiaddl %s", dis_buf);
+	       fop = Iop_AddF64;
+	       goto do_fop_m32;
 
             case 1: /* FIMUL m32int */ /* ST(0) *= m32int */
                DIP("fimull %s", dis_buf);

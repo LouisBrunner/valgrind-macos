@@ -475,7 +475,7 @@ void VG_(print_malloc_stats) ( void )
                 "malloc/free: in use at exit: %d bytes in %d blocks.",
                 nbytes, nblocks);
    VG_(message)(Vg_UserMsg, 
-                "malloc/free: %d allocs, %d frees, %d bytes allocated.",
+                "malloc/free: %d allocs, %d frees, %u bytes allocated.",
                 vg_cmalloc_n_mallocs,
                 vg_cmalloc_n_frees, vg_cmalloc_bs_mallocd);
    if (0)

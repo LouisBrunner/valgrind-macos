@@ -2902,6 +2902,18 @@ PRE(ioctl)
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(TIOCSWINSZ)", arg3, 
 		     sizeof(struct winsize) );
       break;
+   case TIOCMBIS:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(TIOCMBIS)", arg3,
+                     sizeof(unsigned int) );
+      break;
+   case TIOCMBIC:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(TIOCMBIC)", arg3,
+                     sizeof(unsigned int) );
+      break;
+   case TIOCMSET:
+      SYSCALL_TRACK( pre_mem_read, tid, "ioctl(TIOCMSET)", arg3,
+                     sizeof(unsigned int) );
+      break;
    case TIOCLINUX:
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(TIOCLINUX)", arg3, 
 		     sizeof(char *) );
@@ -3585,6 +3597,9 @@ POST(ioctl)
 	 VG_TRACK( post_mem_write, arg3, sizeof(struct winsize) );
       break;
    case TIOCSWINSZ:
+   case TIOCMBIS:
+   case TIOCMBIC:
+   case TIOCMSET:
       break;
    case TIOCLINUX:
       if (res == 0)

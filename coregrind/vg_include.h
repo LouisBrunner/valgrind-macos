@@ -99,13 +99,9 @@
    backtrace. */
 #define VG_DEEPEST_BACKTRACE 50
 
-/* Number of lists in which we keep track of malloc'd but not free'd
-   blocks.  Should be prime. */
-#define VG_N_MALLOCLISTS 997
-
 /* Number of lists in which we keep track of ExeContexts.  Should be
    prime. */
-#define VG_N_EC_LISTS /*997*/ 4999
+#define VG_N_EC_LISTS 4999 /* a prime number */
 
 /* Defines the thread-scheduling timeslice, in terms of the number of
    basic blocks we attempt to run each thread for.  Smaller values

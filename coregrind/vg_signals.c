@@ -543,9 +543,9 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
          "__NR_sigaction: tid %d, sigNo %d, "
-         "new %p, old %p, new flags 0x%x",
+         "new %p, old %p, new flags 0x%llx",
          tid, signo, (UWord)new_act, (UWord)old_act,
-         (UInt)(new_act ? new_act->sa_flags : 0) );
+         (ULong)(new_act ? new_act->sa_flags : 0) );
 
    /* Rule out various error conditions.  The aim is to ensure that if
       when the call is passed to the kernel it will definitely

@@ -73,7 +73,7 @@ Bool VG_(isfullsigset)( vki_sigset_t* set )
    Int i;
    vg_assert(set != NULL);
    for (i = 0; i < _VKI_NSIG_WORDS; i++)
-      if (set->sig[i] != (UWord)(~0x0)) return False;
+      if (set->sig[i] != ~(UWord)0x0) return False;
    return True;
 }
 

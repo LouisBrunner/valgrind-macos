@@ -262,9 +262,6 @@ extern void VG_(popcc)  ( UInt cc );
 /* ------------------------------------------------------------------ */
 /* General stuff */
 
-/* 64-bit counter for the number of basic blocks done. */
-extern ULong VG_(bbs_done);
-
 /* Check if an address/whatever is aligned */
 #define VG_IS_4_ALIGNED(aaa_p)      (0 == (((Addr)(aaa_p)) & 0x3))
 #define VG_IS_8_ALIGNED(aaa_p)      (0 == (((Addr)(aaa_p)) & 0x7))

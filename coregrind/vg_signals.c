@@ -824,11 +824,8 @@ static void set_main_sigmask(void)
    Linux kernel does.
    ------------------------------------------------------------------ */
 
-
-
 /* Set up a stack frame (VgSigContext) for the client's signal
-   handler.  This includes the signal number and a bogus return
-   address.  */
+   handler. */
 static
 void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
 {
@@ -1166,82 +1163,26 @@ static void fill_prstatus(const ThreadState *tst, struct elf_prstatus *prs, cons
    vg_assert(sizeof(*regs) == sizeof(prs->pr_reg));
 
    if (VG_(is_running_thread)(tst->tid)) {
-      regs->eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
-      regs->esp = VG_(baseBlock)[VGOFF_(m_esp)];
-      regs->eip = VG_(baseBlock)[VGOFF_(m_eip)];
-
-      regs->ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
-      regs->ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
-      regs->edx = VG_(baseBlock)[VGOFF_(m_edx)];
-      regs->esi = VG_(baseBlock)[VGOFF_(m_esi)];
-      regs->edi = VG_(baseBlock)[VGOFF_(m_edi)];
-      regs->ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
-      regs->eax = VG_(baseBlock)[VGOFF_(m_eax)];
-
-      regs->cs = VG_(baseBlock)[VGOFF_(m_cs)];
-      regs->ds = VG_(baseBlock)[VGOFF_(m_ds)];
-      regs->ss = VG_(baseBlock)[VGOFF_(m_ss)];
-      regs->es = VG_(baseBlock)[VGOFF_(m_es)];
-      regs->fs = VG_(baseBlock)[VGOFF_(m_fs)];
-      regs->gs = VG_(baseBlock)[VGOFF_(m_gs)];
+      VGA_(fill_elfregs_from_BB)(regs);
    } else {
-      regs->eflags = tst->arch.m_eflags;
-      regs->esp = tst->arch.m_esp;
-      regs->eip = tst->arch.m_eip;
-
-      regs->ebx = tst->arch.m_ebx;
-      regs->ecx = tst->arch.m_ecx;
-      regs->edx = tst->arch.m_edx;
-      regs->esi = tst->arch.m_esi;
-      regs->edi = tst->arch.m_edi;
-      regs->ebp = tst->arch.m_ebp;
-      regs->eax = tst->arch.m_eax;
-
-      regs->cs = tst->arch.m_cs;
-      regs->ds = tst->arch.m_ds;
-      regs->ss = tst->arch.m_ss;
-      regs->es = tst->arch.m_es;
-      regs->fs = tst->arch.m_fs;
-      regs->gs = tst->arch.m_gs;
+      VGA_(fill_elfregs_from_tst)(regs, &tst->arch);
    }
 }
 
 static void fill_fpu(const ThreadState *tst, elf_fpregset_t *fpu)
 {
-   const Char *from;
-
-   if (VG_(is_running_thread)(tst->tid)) {
-      from = (const Char *)&VG_(baseBlock)[VGOFF_(m_ssestate)];
-   } else {
-      from = (const Char *)&tst->arch.m_sse;
-   }
-
-   if (VG_(have_ssestate)) {
-      UShort *to;
-      Int i;
-
-      /* This is what the kernel does */
-      VG_(memcpy)(fpu, from, 7*sizeof(long));
-   
-      to = (UShort *)&fpu->st_space[0];
-      from += 18 * sizeof(UShort);
-
-      for(i = 0; i < 8; i++, to += 5, from += 8) 
-	 VG_(memcpy)(to, from, 5*sizeof(UShort));
-   } else
-      VG_(memcpy)(fpu, from, sizeof(*fpu));
+   if (VG_(is_running_thread)(tst->tid))
+      VGA_(fill_elffpregs_from_BB)(fpu);
+   else
+      VGA_(fill_elffpregs_from_tst)(fpu, &tst->arch);
 }
 
 static void fill_xfpu(const ThreadState *tst, elf_fpxregset_t *xfpu)
 {
-   UShort *from;
-
-   if (VG_(is_running_thread)(tst->tid)) 
-      from = (UShort *)&VG_(baseBlock)[VGOFF_(m_ssestate)];
-   else 
-      from = (UShort *)tst->arch.m_sse;
-
-   VG_(memcpy)(xfpu, from, sizeof(*xfpu));
+   if (VG_(is_running_thread)(tst->tid))
+      VGA_(fill_elffpxregs_from_BB)(xfpu);
+   else
+      VGA_(fill_elffpxregs_from_tst)(xfpu, &tst->arch);
 }
 
 static void make_coredump(ThreadId tid, const vki_ksiginfo_t *si, UInt max_size)

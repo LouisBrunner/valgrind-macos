@@ -1509,6 +1509,24 @@ extern void VGA_(thread_initial_stack)  ( ThreadId tid, UWord arg, Addr ret );
 extern UInt* VGA_(reg_addr_from_BB)  ( Int reg );
 extern UInt* VGA_(reg_addr_from_tst) ( Int reg, arch_thread_t* );
 
+// Pointercheck
+extern Bool VGA_(setup_pointercheck) ( void );
+
+// For attaching the debugger
+extern Int  VGA_(ptrace_setregs_from_BB)  ( Int pid );
+extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, arch_thread_t* arch );
+
+// Making coredumps
+extern void VGA_(fill_elfregs_from_BB)     ( struct user_regs_struct* regs );
+extern void VGA_(fill_elfregs_from_tst)    ( struct user_regs_struct* regs,
+                                             const arch_thread_t* arch );
+extern void VGA_(fill_elffpregs_from_BB)   ( elf_fpregset_t* fpu );
+extern void VGA_(fill_elffpregs_from_tst)  ( elf_fpregset_t* fpu,
+                                             const arch_thread_t* arch );
+extern void VGA_(fill_elffpxregs_from_BB)  ( elf_fpxregset_t* xfpu );
+extern void VGA_(fill_elffpxregs_from_tst) ( elf_fpxregset_t* xfpu,
+                                             const arch_thread_t* arch );
+
 // Signal stuff
 extern void VGA_(push_signal_frame) ( ThreadId tid, Addr esp_top_of_frame,
                                       const vki_ksiginfo_t *siginfo,
@@ -1516,12 +1534,7 @@ extern void VGA_(push_signal_frame) ( ThreadId tid, Addr esp_top_of_frame,
                                       const vki_ksigset_t *mask);
 extern Int  VGA_(pop_signal_frame)  ( ThreadId tid );
 
-// Pointercheck
-extern Bool VGA_(setup_pointercheck) ( void );
 
-// For attaching the debugger
-extern Int  VGA_(ptrace_setregs_from_BB)  ( Int pid );
-extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, arch_thread_t* arch );
 
 /* ---------------------------------------------------------------------
    Finally - autoconf-generated settings

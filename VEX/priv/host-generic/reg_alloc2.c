@@ -49,8 +49,8 @@ typedef
       /* What kind of register this is. */
       HRegClass reg_class;
       /* Preferencing info, if any.  Currently unused. */
-      /* Bool has_preference; */
-      /* HReg preferred_rreg; */ /* if True, where I would like to be */
+      HReg preferred_rreg; /* Where I would like to be.
+                              If INVALID_HREG, no preference. */
    }
    VRegInfo;
 
@@ -332,8 +332,7 @@ HInstrArray* doRegisterAllocation (
       vreg_info[j].spill_offset   = 0;
       vreg_info[j].spill_size     = 0;
       vreg_info[j].reg_class      = HRcINVALID;
-      /* vreg_info[j].has_preference = False;  */
-      /* vreg_info[j].preferred_rreg = INVALID_HREG; */
+      vreg_info[j].preferred_rreg = INVALID_HREG;
    }
 
    /* ------ end of SET UP TO COMPUTE VREG LIVE RANGES ------ */
@@ -636,11 +635,24 @@ HInstrArray* doRegisterAllocation (
       rregs, as a way of avoiding reg-reg moves later.  Here we
       establish which, if any, rreg each vreg would prefer to be in.
       Note that this constrains the allocator -- ideally we end up
-      with as few as possible vregs expressing a preference. */
+      with as few as possible vregs expressing a preference.  
 
-   /* For now, ignore this.  It's only an optimisation, not needed for
-      correctness. */
-
+      This is an optimisation: if the .preferred_rreg field is never
+      set to anything different from INVALID_HREG, the allocator still
+      works. */
+#if 0
+   /* This generally seems to make things worse. */
+   for (ii = 0; ii < instrs_in->arr_used; ii++) {
+      if ( (*isMove)( instrs_in->arr[ii], &vregS, &vregD ) ) {
+         if (hregIsVirtual(vregS)
+             && !hregIsVirtual(vregD)) {
+            m = hregNumber(vregS);
+            vassert(m >= 0 && m < n_vregs);
+            vreg_info[m].preferred_rreg = vregD;
+         }
+      }
+   }
+#endif
 
    /* --------- Stage 5: process instructions --------- */
 
@@ -893,6 +905,33 @@ HInstrArray* doRegisterAllocation (
             continue;
          }
 
+#if 0
+         /* Ok.  So figure out if vreg has stated a preference.  If
+            so, and that register is available, grab it. */
+         m = hregNumber(vreg);
+         vassert(m >= 0 && m < n_vregs);
+         if (vreg_info[m].preferred_rreg != INVALID_HREG) {
+            rreg = vreg_info[m].preferred_rreg;
+            if (0) {
+               (*ppReg)(vreg);
+               vex_printf(" prefers ");
+               (*ppReg)(rreg);
+               vex_printf("\n");
+            }
+            for (k = 0; k < n_state; k++) {
+               if (state[k].rreg == rreg)
+                  break;
+            }
+            vassert(k < n_state); /* rreg should be listed in state. */
+            if (state[k].disp == Free) {
+               if (0) vex_printf("preference ok\n");
+               goto have_rreg;
+            } else {
+               if (0) vex_printf("preference unavailable\n");
+            }
+         }
+#endif
+
          /* No luck.  The next thing to do is see if there is a
             currently free rreg available, of the correct class.  If
             so, bag it.  NOTE, we could improve this by selecting an
@@ -915,6 +954,8 @@ HInstrArray* doRegisterAllocation (
          }
          if (k_suboptimal >= 0)
             k = k_suboptimal;
+
+       have_rreg:
 
          if (k < n_state) {
             state[k].disp = Bound;

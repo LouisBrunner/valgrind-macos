@@ -690,8 +690,8 @@ static void helper_ADC ( Int sz,
 
    if (sz == 4) {
       assign(tdst, binop(plus,
-                         mkexpr(ta1),
-	                 binop(plus,mkexpr(ta2),mkexpr(oldc))));
+                         binop(plus,mkexpr(ta1),mkexpr(ta2)),
+                         mkexpr(oldc)));
       thunkOp = CC_OP_ADDL;
    } else {
       vassert(0);
@@ -700,6 +700,47 @@ static void helper_ADC ( Int sz,
    /* This dynamically calculates the thunk op number.  
       3 * the old carry flag is added, so (eg) it gives
       CC_OP_ADDL if old carry was zero, and CC_OP_ADCL if
+      old carry was one. */
+   thunkExpr = binop(Iop_Add32, 
+                     mkU32(thunkOp),
+		     binop(Iop_Mul32, mkexpr(oldc), mkU32(3)));
+
+   stmt( IRStmt_Put( OFFB_CC_OP,  thunkExpr ) );
+   stmt( IRStmt_Put( OFFB_CC_SRC, mkexpr(ta2) ) );
+   stmt( IRStmt_Put( OFFB_CC_DST, mkexpr(tdst) ) );
+}
+
+
+/* Given ta1, ta2 and tdst, compute tdst = SBB(ta1,ta2) and set flags
+   appropriately.  Depends critically on the relative ordering of
+   CC_OP_SUB{B,W,L} vs CC_OP_SBB{B,W,L}.
+*/
+static void helper_SBB ( Int sz,
+			 IRTemp tdst, IRTemp ta1, IRTemp ta2 )
+{
+   UInt    thunkOp;
+   IRExpr* thunkExpr;
+   IRType ty    = szToITy(sz);
+   IRTemp oldc  = newTemp(Ity_I32);
+   IROp   minus = mkSizedOp(ty,Iop_Sub8);
+
+   /* oldc = old carry flag, 0 or 1 */
+   assign( oldc, binop(mkSizedOp(ty,Iop_And8),
+                       mk_calculate_eflags_c(),
+		       mkU(ty,1)) );
+
+   if (sz == 4) {
+      assign(tdst, binop(minus,
+                         binop(minus,mkexpr(ta1),mkexpr(ta2)),
+                         mkexpr(oldc)));
+      thunkOp = CC_OP_SUBL;
+   } else {
+      vassert(0);
+   }
+
+   /* This dynamically calculates the thunk op number.  
+      3 * the old carry flag is added, so (eg) it gives
+      CC_OP_SUBL if old carry was zero, and CC_OP_SBBL if
       old carry was one. */
    thunkExpr = binop(Iop_Add32, 
                      mkU32(thunkOp),
@@ -1638,6 +1679,7 @@ UInt dis_op2_E_G ( UChar       sorb,
 */
 static
 UInt dis_op2_G_E ( UChar       sorb,
+                   Bool        addSubCarry,
                    IROp        op8, 
                    Bool        keep,
                    Int         size, 
@@ -1653,6 +1695,13 @@ UInt dis_op2_G_E ( UChar       sorb,
    UChar   rm   = getIByte(delta0);
    IRTemp  addr = INVALID_IRTEMP;
 
+   /* addSubCarry == True indicates the intended operation is
+      add-with-carry or subtract-with-borrow. */
+   if (addSubCarry) {
+      vassert(op8 == Iop_Add8 || op8 == Iop_Sub8);
+      vassert(keep);
+   }
+
    if (epartIsReg(rm)) {
       /* Specially handle XOR reg,reg, because that doesn't really
          depend on reg, and doing the obvious thing potentially
@@ -1664,11 +1713,19 @@ UInt dis_op2_G_E ( UChar       sorb,
       }
       assign(dst0, getIReg(size,eregOfRM(rm)));
       assign(src,  getIReg(size,gregOfRM(rm)));
-      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-      setFlags_SRC_DST1(op8, src, dst1, ty);
 
-      if (keep)
+      if (addSubCarry && op8 == Iop_Add8) {
+         vassert(0);
+      } else
+      if (addSubCarry && op8 == Iop_Sub8) {
+         helper_SBB( size, dst1, dst0, src );
          putIReg(size, eregOfRM(rm), mkexpr(dst1));
+      } else {
+         assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
+         setFlags_SRC_DST1(op8, src, dst1, ty);
+         if (keep)
+            putIReg(size, eregOfRM(rm), mkexpr(dst1));
+      }
 
       DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
                           nameIReg(size,gregOfRM(rm)),
@@ -1681,11 +1738,20 @@ UInt dis_op2_G_E ( UChar       sorb,
       addr = disAMode ( &len, sorb, delta0, dis_buf);
       assign(dst0, loadLE(ty,mkexpr(addr)));
       assign(src,  getIReg(size,gregOfRM(rm)));
-      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-      setFlags_SRC_DST1(op8, src, dst1, ty);
 
-      if (keep)
-          storeLE(mkexpr(addr), mkexpr(dst1));
+      if (addSubCarry && op8 == Iop_Add8) {
+         helper_ADC( size, dst1, dst0, src );
+         storeLE(mkexpr(addr), mkexpr(dst1));
+      } else
+      if (addSubCarry && op8 == Iop_Sub8) {
+         helper_SBB( size, dst1, dst0, src );
+         storeLE(mkexpr(addr), mkexpr(dst1));
+      } else {
+         assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
+         setFlags_SRC_DST1(op8, src, dst1, ty);
+         if (keep)
+            storeLE(mkexpr(addr), mkexpr(dst1));
+      }
 
       DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
                           nameIReg(size,gregOfRM(rm)), dis_buf);
@@ -2457,22 +2523,22 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
             delta++;
             codegen_mul_A_D_Reg ( sz, modrm, False );
             break;
-//--          case 5: /* IMUL */
-//--             eip++;
-//--             codegen_mul_A_D_Reg ( cb, sz, modrm, True );
-//--             break;
+         case 5: /* IMUL (signed widening) */
+            delta++;
+            codegen_mul_A_D_Reg ( sz, modrm, True );
+            break;
          case 6: /* DIV */
             delta++;
             assign( t1, getIReg(sz, eregOfRM(modrm)) );
             codegen_div ( sz, t1, False );
             DIP("div%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
             break;
-//--          case 7: /* IDIV */
-//--             eip++;
-//--             uInstr2(cb, GET, sz, ArchReg, eregOfRM(modrm), TempReg, t1);
-//--             codegen_div ( cb, sz, t1, True );
-//--             DIP("idiv%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
-//--             break;
+         case 7: /* IDIV */
+            delta++;
+            assign( t1, getIReg(sz, eregOfRM(modrm)) );
+            codegen_div ( sz, t1, True );
+            DIP("idiv%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
+            break;
          default: 
             vex_printf(
                "unhandled Grp3(R) case %d\n", (UInt)gregOfRM(modrm));
@@ -6468,10 +6534,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0x34: /* XOR Ib, AL */
 //--       delta = dis_op_imm_A( 1, XOR, True, delta, "xor" );
 //--       break;
-//--    case 0x35: /* XOR Iv, eAX */
-//--       delta = dis_op_imm_A( sz, XOR, True, delta, "xor" );
-//--       break;
-//-- 
+   case 0x35: /* XOR Iv, eAX */
+      delta = dis_op_imm_A( sz, Iop_Xor8, True, delta, "xor" );
+      break;
+
    case 0x3C: /* CMP Ib, AL */
       delta = dis_op_imm_A( 1, Iop_Sub8, False, delta, "cmp" );
       break;
@@ -6557,56 +6623,56 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       delta = dis_op2_G_E ( sorb, ADD, True, 1, delta, "add" );
 //--       break;
    case 0x01: /* ADD Gv,Ev */
-      delta = dis_op2_G_E ( sorb, Iop_Add8, True, sz, delta, "add" );
+      delta = dis_op2_G_E ( sorb, False, Iop_Add8, True, sz, delta, "add" );
       break;
 
    case 0x08: /* OR Gb,Eb */
-      delta = dis_op2_G_E ( sorb, Iop_Or8, True, 1, delta, "or" );
+      delta = dis_op2_G_E ( sorb, False, Iop_Or8, True, 1, delta, "or" );
       break;
    case 0x09: /* OR Gv,Ev */
-      delta = dis_op2_G_E ( sorb, Iop_Or8, True, sz, delta, "or" );
+      delta = dis_op2_G_E ( sorb, False, Iop_Or8, True, sz, delta, "or" );
       break;
 
 //--    case 0x10: /* ADC Gb,Eb */
-//--       delta = dis_op2_G_E ( sorb, ADC, True, 1, delta, "adc" );
+//--       delta = dis_op2_G_E ( sorb, False, ADC, True, 1, delta, "adc" );
 //--       break;
-//--    case 0x11: /* ADC Gv,Ev */
-//--       delta = dis_op2_G_E ( sorb, ADC, True, sz, delta, "adc" );
-//--       break;
-//-- 
+   case 0x11: /* ADC Gv,Ev */
+      delta = dis_op2_G_E ( sorb, True, Iop_Add8, True, sz, delta, "adc" );
+      break;
+
 //--    case 0x18: /* SBB Gb,Eb */
-//--       delta = dis_op2_G_E ( sorb, SBB, True, 1, delta, "sbb" );
+//--       delta = dis_op2_G_E ( sorb, False, SBB, True, 1, delta, "sbb" );
 //--       break;
-//--    case 0x19: /* SBB Gv,Ev */
-//--       delta = dis_op2_G_E ( sorb, SBB, True, sz, delta, "sbb" );
-//--       break;
-//-- 
+   case 0x19: /* SBB Gv,Ev */
+      delta = dis_op2_G_E ( sorb, True, Iop_Sub8, True, sz, delta, "sbb" );
+      break;
+
 //--    case 0x20: /* AND Gb,Eb */
-//--       delta = dis_op2_G_E ( sorb, AND, True, 1, delta, "and" );
+//--       delta = dis_op2_G_E ( sorb, False, AND, True, 1, delta, "and" );
 //--       break;
    case 0x21: /* AND Gv,Ev */
-      delta = dis_op2_G_E ( sorb, Iop_And8, True, sz, delta, "and" );
+      delta = dis_op2_G_E ( sorb, False, Iop_And8, True, sz, delta, "and" );
       break;
 
 //--    case 0x28: /* SUB Gb,Eb */
-//--       delta = dis_op2_G_E ( sorb, SUB, True, 1, delta, "sub" );
+//--       delta = dis_op2_G_E ( sorb, False, SUB, True, 1, delta, "sub" );
 //--       break;
    case 0x29: /* SUB Gv,Ev */
-      delta = dis_op2_G_E ( sorb, Iop_Sub8, True, sz, delta, "sub" );
+      delta = dis_op2_G_E ( sorb, False, Iop_Sub8, True, sz, delta, "sub" );
       break;
 
    case 0x30: /* XOR Gb,Eb */
-      delta = dis_op2_G_E ( sorb, Iop_Xor8, True, 1, delta, "xor" );
+      delta = dis_op2_G_E ( sorb, False, Iop_Xor8, True, 1, delta, "xor" );
       break;
    case 0x31: /* XOR Gv,Ev */
-      delta = dis_op2_G_E ( sorb, Iop_Xor8, True, sz, delta, "xor" );
+      delta = dis_op2_G_E ( sorb, False, Iop_Xor8, True, sz, delta, "xor" );
       break;
 
    case 0x38: /* CMP Gb,Eb */
-      delta = dis_op2_G_E ( sorb, Iop_Sub8, False, 1, delta, "cmp" );
+      delta = dis_op2_G_E ( sorb, False, Iop_Sub8, False, 1, delta, "cmp" );
       break;
    case 0x39: /* CMP Gv,Ev */
-      delta = dis_op2_G_E ( sorb, Iop_Sub8, False, sz, delta, "cmp" );
+      delta = dis_op2_G_E ( sorb, False, Iop_Sub8, False, sz, delta, "cmp" );
       break;
 
    /* ------------------------ POP ------------------------ */

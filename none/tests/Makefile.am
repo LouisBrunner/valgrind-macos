@@ -29,7 +29,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
-	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
 	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
@@ -54,7 +53,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	sha1_test.stderr.exp sha1_test.vgtest \
 	shortpush.stderr.exp shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \
-	sigcontext.stdout.exp sigcontext.stderr.exp sigcontext.vgtest \
 	sigstackgrowth.stdout.exp sigstackgrowth.stderr.exp sigstackgrowth.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	stackgrowth.stdout.exp stackgrowth.stderr.exp stackgrowth.vgtest \
@@ -69,11 +67,11 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 check_PROGRAMS = \
 	args async-sigs bitfield1 blockfault closeall coolo_strlen \
 	discard exec-sigmask execve faultstatus fcntl_setown floored fork \
-	fucomip getseg \
+	fucomip \
 	manythreads \
 	munmap_exe map_unaligned map_unmap mq mremap rcrl readline1 \
 	resolv rlimit_nofile selfrun sem semlimit sha1_test \
-	shortpush shorts sigcontext \
+	shortpush shorts \
 	stackgrowth sigstackgrowth \
 	smc1 susphello pending pth_blockedsig pth_stackalign \
 	syscall-restart1 syscall-restart2 system \
@@ -101,7 +99,6 @@ fork_SOURCES 		= fork.c
 floored_SOURCES 	= floored.c
 floored_LDADD 		= -lm
 fucomip_SOURCES 	= fucomip.c
-getseg_SOURCES 		= getseg.c
 pending_SOURCES		= pending.c
 manythreads_SOURCES	= manythreads.c
 manythreads_LDADD	= -lpthread
@@ -127,7 +124,6 @@ smc1_SOURCES 		= smc1.c
 sha1_test_SOURCES 	= sha1_test.c
 shortpush_SOURCES 	= shortpush.c
 shorts_SOURCES 		= shorts.c
-sigcontext_SOURCES	= sigcontext.c
 sigstackgrowth_SOURCES	= sigstackgrowth.c
 susphello_SOURCES	= susphello.c
 susphello_LDADD		= -lpthread
@@ -146,7 +142,8 @@ tls_LDADD		= tls.so -lpthread
 tls_so_SOURCES		= tls_so.c
 tls_so_LDADD		= tls2.so
 tls_so_DEPENDENCIES	= tls2.so
-tls_so_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests -shared
+tls_so_LDFLAGS		= -Wl,-rpath,$(top_builddir)/none/tests -shared -fPIC
+tls_so_CFLAGS		= -fPIC
 tls2_so_SOURCES		= tls2_so.c
 tls2_so_LDFLAGS		= -shared
 yield_SOURCES		= yield.c

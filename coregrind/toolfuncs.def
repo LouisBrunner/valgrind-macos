@@ -280,12 +280,12 @@ void,	init_shadow_page,	Addr p
 ## ================================================================================
 ## malloc and friends
 :malloc
-void*,	malloc,			SizeT n
-void*,	__builtin_new,		SizeT n
-void*,	__builtin_vec_new,	SizeT n
-void*,	memalign,		SizeT align, SizeT n
-void*,	calloc,			SizeT nmemb, SizeT n
-void,	free,			void* p
-void,	__builtin_delete,	void* p
-void,	__builtin_vec_delete,	void* p
-void*,	realloc,		void* p, SizeT size
+void*,	malloc,			ThreadId tid, SizeT n
+void*,	__builtin_new,		ThreadId tid, SizeT n
+void*,	__builtin_vec_new,	ThreadId tid, SizeT n
+void*,	memalign,		ThreadId tid, SizeT align, SizeT n
+void*,	calloc,			ThreadId tid, SizeT nmemb, SizeT n
+void,	free,			ThreadId tid, void* p
+void,	__builtin_delete,	ThreadId tid, void* p
+void,	__builtin_vec_delete,	ThreadId tid, void* p
+void*,	realloc,		ThreadId tid, void* p, SizeT size

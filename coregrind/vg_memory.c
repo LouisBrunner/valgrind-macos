@@ -667,10 +667,9 @@ Segment *VG_(next_segment)(Segment *s)
 /* This function gets called if new_mem_stack and/or die_mem_stack are
    tracked by the tool, and one of the specialised cases (eg. new_mem_stack_4)
    isn't used in preference */
-REGPARM(1)
-void VG_(unknown_SP_update)(Addr new_SP)
+REGPARM(2)
+void VG_(unknown_SP_update)( Addr old_SP, Addr new_SP )
 {
-   Addr old_SP = BASEBLOCK_STACK_PTR;
    Word delta  = (Word)new_SP - (Word)old_SP;
 
    if (delta < -(VG_HUGE_DELTA) || VG_HUGE_DELTA < delta) {

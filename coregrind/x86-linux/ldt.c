@@ -168,6 +168,7 @@ unsigned int wine_ldt_get_limit( const VgLdtEntry *ent )
 }
 
 
+#if 0
 /* Actually _DO_ the segment translation.  This is the whole entire
    point of this accursed, overcomplicated, baroque, pointless
    segment-override-and-LDT/GDT garbage foisted upon us all by Intel,
@@ -251,7 +252,7 @@ Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr )
 
    return base + virtual_addr;
 }
-
+#endif
 
 /* Translate a struct modify_ldt_ldt_s to an VgLdtEntry, using the
    Linux kernel's logic (cut-n-paste of code in linux/kernel/ldt.c).  */

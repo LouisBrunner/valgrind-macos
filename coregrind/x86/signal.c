@@ -299,31 +299,8 @@ Int VGA_(pop_signal_frame)(ThreadId tid)
 /*--- Making coredumps                                     ---*/
 /*------------------------------------------------------------*/
 
-void VGA_(fill_elfregs_from_BB)(struct vki_user_regs_struct* regs)
-{
-   regs->eflags = LibVEX_GuestX86_get_eflags(BASEBLOCK_VEX);
-   regs->esp    = BASEBLOCK_VEX->guest_ESP;
-   regs->eip    = BASEBLOCK_VEX->guest_EIP;
-
-   regs->ebx    = BASEBLOCK_VEX->guest_EBX;
-   regs->ecx    = BASEBLOCK_VEX->guest_ECX;
-   regs->edx    = BASEBLOCK_VEX->guest_EDX;
-   regs->esi    = BASEBLOCK_VEX->guest_ESI;
-   regs->edi    = BASEBLOCK_VEX->guest_EDI;
-   regs->ebp    = BASEBLOCK_VEX->guest_EBP;
-   regs->eax    = BASEBLOCK_VEX->guest_EAX;
-
-   regs->cs     = BASEBLOCK_VEX->guest_CS;
-   regs->ds     = BASEBLOCK_VEX->guest_DS;
-   regs->ss     = BASEBLOCK_VEX->guest_SS;
-   regs->es     = BASEBLOCK_VEX->guest_ES;
-   regs->fs     = BASEBLOCK_VEX->guest_FS;
-   regs->gs     = BASEBLOCK_VEX->guest_GS;
-}
-
-
 void VGA_(fill_elfregs_from_tst)(struct vki_user_regs_struct* regs, 
-                                 arch_thread_t* arch)
+                                 ThreadArchState* arch)
 {
    regs->eflags = LibVEX_GuestX86_get_eflags(&arch->vex);
    regs->esp    = arch->vex.guest_ESP;
@@ -371,7 +348,7 @@ void VGA_(fill_elffpregs_from_BB)( vki_elf_fpregset_t* fpu )
 }
 
 void VGA_(fill_elffpregs_from_tst)( vki_elf_fpregset_t* fpu,
-                                    const arch_thread_t* arch)
+                                    const ThreadArchState* arch)
 {
   //fill_fpu(fpu, (const Char *)&arch->m_sse);
 }
@@ -382,7 +359,7 @@ void VGA_(fill_elffpxregs_from_BB) ( vki_elf_fpxregset_t* xfpu )
 }
 
 void VGA_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
-                                      const arch_thread_t* arch )
+                                      const ThreadArchState* arch )
 {
   //VG_(memcpy)(xfpu, arch->m_sse, sizeof(*xfpu));
 }

@@ -100,6 +100,9 @@ typedef struct _ThreadState ThreadState;
 #define TL_(x)	vgToolInternal_##x
 
 
+/* ToDo: nuke */
+#define INVALID_OFFSET (-1)
+
 /* ---------------------------------------------------------------------
    Build options and table sizes.  You should be able to change these
    options or sizes, recompile, and still have a working system.
@@ -852,7 +855,7 @@ typedef struct ProxyLWP ProxyLWP;
    vki_stack_t altstack;
 
    /* Architecture-specific thread state */
-   arch_thread_t arch;
+   ThreadArchState arch;
 };
 //ThreadState;
 
@@ -863,15 +866,8 @@ extern ThreadState VG_(threads)[VG_N_THREADS];
 /* Check that tid is in range and denotes a non-Empty thread. */
 extern Bool VG_(is_valid_tid) ( ThreadId tid );
 
-/* Determine if 'tid' is that of the current running thread (Nb: returns
-   False if no thread is currently running. */
-extern Bool VG_(is_running_thread)(ThreadId tid);
-
 /* Get the ThreadState for a particular thread */
 extern ThreadState *VG_(get_ThreadState)(ThreadId tid);
-
-/* Similarly ... */
-extern ThreadId VG_(get_current_tid) ( void );
 
 /* Nuke all threads except tid. */
 extern void VG_(nuke_all_threads_except) ( ThreadId me );
@@ -1251,9 +1247,6 @@ extern UInt VG_(unchained_jumps_done); // Number of unchained jumps performed
 
 extern void VG_(print_scheduler_stats) ( void );
 
-extern Int  VG_(alloc_BaB)( Int );      // Allocate slots in baseBlock
-extern void VG_(align_BaB)( UInt );     // Align baseBlock offset
-extern Int  VG_(alloc_BaB_1_set)( Addr ); // Allocate & init baseBlock slot
 
 /* ---------------------------------------------------------------------
    Exports of vg_memory.c
@@ -1321,8 +1314,8 @@ extern Bool     VG_(seg_overlaps)(const Segment *s, Addr ptr, SizeT size);
 extern void VG_(pad_address_space)  (void);
 extern void VG_(unpad_address_space)(void);
 
-extern REGPARM(1)
-       void VG_(unknown_SP_update) ( Addr new_SP );
+extern REGPARM(2)
+       void VG_(unknown_SP_update) ( Addr old_SP, Addr new_SP );
 
 /* ---------------------------------------------------------------------
    Exports of vg_proxylwp.c
@@ -1726,8 +1719,9 @@ extern void VG_(sigreturn)(void);
    ------------------------------------------------------------------ */
 
 /* Run a thread for a (very short) while, until some event happens
-   which means we need to defer to the scheduler. */
-extern UInt VG_(run_innerloop) ( void );
+   which means we need to defer to the scheduler.  This is passed
+   a pointer to the VEX guest state (arch.vex). */
+extern UInt VG_(run_innerloop) ( void* guest_state );
 
 /* The patching routing called when a BB wants to chain itself to
    another. */
@@ -1756,64 +1750,42 @@ extern const Int  VG_(tramp_syscall_offset);
 __attribute__ ((noreturn))
 extern void VG_(missing_tool_func) ( const Char* fn );
 
-/* ---------------------------------------------------------------------
-   The baseBlock -- arch-neutral bits
-   ------------------------------------------------------------------ */
-
-#define INVALID_OFFSET (-1)
-
-/* An array of words.  In generated code, %ebp always points to the
-   start of this array.  Useful stuff, like the simulated CPU state,
-   can then be found by indexing off %ebp.  The following declares
-   variables which, at startup time, are given values denoting offsets
-   into baseBlock.  These offsets are in *words* from the start of
-   baseBlock. */
-
-#define VG_BASEBLOCK_WORDS 400
-
-extern UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
-
 // ---------------------------------------------------------------------
 // Architecture-specific things defined in eg. x86/*.c
 // ---------------------------------------------------------------------
 
-// For setting up the baseBlock
-extern void VGA_(init_baseBlock)  ( Addr client_ip, Addr sp_at_startup );
-
-// Register state moving
-extern void VGA_(load_state) ( arch_thread_t*, ThreadId tid );
-extern void VGA_(save_state) ( arch_thread_t*, ThreadId tid );
+// Setting up the initial thread (1) state
+extern void 
+       VGA_(init_thread1state) ( Addr client_eip, 
+                                 Addr esp_at_startup,
+                                 /*MOD*/ ThreadArchState* arch );
 
 // Thread stuff
-extern void VGA_(clear_thread)   ( arch_thread_t* );
-extern void VGA_(init_thread)    ( arch_thread_t* );
-extern void VGA_(cleanup_thread) ( arch_thread_t* );
-extern void VGA_(setup_child)    ( arch_thread_t*, arch_thread_t* );
+extern void VGA_(clear_thread)   ( ThreadArchState* );
+extern void VGA_(cleanup_thread) ( ThreadArchState* );
+extern void VGA_(setup_child)    ( ThreadArchState*, ThreadArchState* );
 
 extern void VGA_(set_arg_and_bogus_ret) ( ThreadId tid, UWord arg, Addr ret );
 extern void VGA_(thread_initial_stack)  ( ThreadId tid, UWord arg, Addr ret );
 
 // Symtab stuff
 extern UInt* VGA_(reg_addr_from_BB)  ( Int reg );
-extern UInt* VGA_(reg_addr_from_tst) ( Int reg, arch_thread_t* );
+extern UInt* VGA_(reg_addr_from_tst) ( Int reg, ThreadArchState* );
 
 // Pointercheck
 extern Bool VGA_(setup_pointercheck) ( void );
 
 // For attaching the debugger
 extern Int  VGA_(ptrace_setregs_from_BB)  ( Int pid );
-extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, arch_thread_t* arch );
+extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, ThreadArchState* arch );
 
 // Making coredumps
-extern void VGA_(fill_elfregs_from_BB)     ( struct vki_user_regs_struct* regs );
 extern void VGA_(fill_elfregs_from_tst)    ( struct vki_user_regs_struct* regs,
-                                             arch_thread_t* arch );
-extern void VGA_(fill_elffpregs_from_BB)   ( vki_elf_fpregset_t* fpu );
+                                             ThreadArchState* arch );
 extern void VGA_(fill_elffpregs_from_tst)  ( vki_elf_fpregset_t* fpu,
-                                             const arch_thread_t* arch );
-extern void VGA_(fill_elffpxregs_from_BB)  ( vki_elf_fpxregset_t* xfpu );
+                                             const ThreadArchState* arch );
 extern void VGA_(fill_elffpxregs_from_tst) ( vki_elf_fpxregset_t* xfpu,
-                                             const arch_thread_t* arch );
+                                             const ThreadArchState* arch );
 
 // Signal stuff
 extern void VGA_(push_signal_frame) ( ThreadId tid, Addr sp_top_of_frame,
@@ -1872,9 +1844,9 @@ extern const UInt VGA_(syscall_table_size);
 extern const Addr vga_sys_before, vga_sys_restarted,
                   vga_sys_after,  vga_sys_done;
 
-extern void VGA_(restart_syscall)(arch_thread_t* arch);
+extern void VGA_(restart_syscall)(ThreadArchState* arch);
 
-extern void VGA_(thread_syscall)(Int syscallno, arch_thread_t* arch, 
+extern void VGA_(thread_syscall)(Int syscallno, ThreadArchState* arch, 
                                  enum PXState* state, enum PXState poststate);
 
 /* ---------------------------------------------------------------------

@@ -49,13 +49,10 @@ static Int              vg_fhstack_used = 0;
 static ForkHandlerEntry vg_fhstack[VG_N_FORKHANDLERSTACK];
 
 
-/* The tid of the thread currently in VG_(baseBlock). */
-static ThreadId vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
+/* The tid of the thread currently running, or VG_INVALID_THREADID if
+   none. */
+static ThreadId vg_tid_currently_running = VG_INVALID_THREADID;
 
-/* The tid either currently in baseBlock, or was in baseBlock before
-   was saved it out; this is only updated when a new thread is loaded
-   into the baseBlock */
-static ThreadId vg_tid_last_in_baseBlock = VG_INVALID_THREADID;
 
 /* vg_oursignalhandler() might longjmp().  Here's the jmp_buf. */
 static jmp_buf scheduler_jmpbuf;
@@ -138,8 +135,7 @@ Bool is_valid_or_empty_tid ( ThreadId tid )
 
 /* For constructing error messages only: try and identify a thread
    whose stack satisfies the predicate p, or return VG_INVALID_THREADID
-   if none do.  A small complication is dealing with any currently
-   VG_(baseBlock)-resident thread. 
+   if none do.
 */
 ThreadId VG_(first_matching_thread_stack)
               ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
@@ -148,17 +144,6 @@ ThreadId VG_(first_matching_thread_stack)
    ThreadId tid, tid_to_skip;
 
    tid_to_skip = VG_INVALID_THREADID;
-
-   /* First check to see if there's a currently-loaded thread in
-      VG_(baseBlock). */
-   if (vg_tid_currently_in_baseBlock != VG_INVALID_THREADID) {
-      tid = vg_tid_currently_in_baseBlock;
-      if ( p ( BASEBLOCK_STACK_PTR, 
-               VG_(threads)[tid].stack_highest_word, d ) )
-         return tid;
-      else
-         tid_to_skip = tid;
-   }
 
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (VG_(threads)[tid].status == VgTs_Empty) continue;
@@ -252,71 +237,48 @@ ThreadState *VG_(get_ThreadState)(ThreadId tid)
    return &VG_(threads)[tid];
 }
 
-Bool VG_(is_running_thread)(ThreadId tid)
+/* Return True precisely when get_current_tid can return
+   successfully. */
+Bool VG_(running_a_thread) ( void )
 {
-   ThreadId curr = VG_(get_current_tid)();
-   return (curr == tid && VG_INVALID_THREADID != tid);
+   if (vg_tid_currently_running == VG_INVALID_THREADID)
+      return False;
+   /* Otherwise, it must be a valid thread ID. */
+   vg_assert(VG_(is_valid_tid)(vg_tid_currently_running));
+   return True;
 }
 
 ThreadId VG_(get_current_tid) ( void )
 {
-   if (!VG_(is_valid_tid)(vg_tid_currently_in_baseBlock))
-      return VG_INVALID_THREADID;
-   return vg_tid_currently_in_baseBlock;
+   if (vg_tid_currently_running == VG_INVALID_THREADID)
+      VG_(core_panic)("VG_(get_current_tid): not running generated code");
+   /* Otherwise, it must be a valid thread ID. */
+   vg_assert(VG_(is_valid_tid)(vg_tid_currently_running));
+   return vg_tid_currently_running;
 }
-
-ThreadId VG_(get_current_or_recent_tid) ( void )
-{
-   vg_assert(vg_tid_currently_in_baseBlock == vg_tid_last_in_baseBlock ||
-	     vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
-   vg_assert(VG_(is_valid_tid)(vg_tid_last_in_baseBlock));
-
-   return vg_tid_last_in_baseBlock;
-}
-
-/* Copy the saved state of a thread into VG_(baseBlock), ready for it
-   to be run. */
-static void load_thread_state ( ThreadId tid )
-{
-   vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
-
-   VGA_(load_state)(&VG_(threads)[tid].arch, tid);
-
-   vg_tid_currently_in_baseBlock = tid;
-   vg_tid_last_in_baseBlock = tid;
-}
-
-
-/* Copy the state of a thread from VG_(baseBlock), presumably after it
-   has been descheduled.  For sanity-check purposes, fill the vacated
-   VG_(baseBlock) with garbage so as to make the system more likely to
-   fail quickly if we erroneously continue to poke around inside
-   VG_(baseBlock) without first doing a load_thread_state().  
-*/
-static void save_thread_state ( ThreadId tid )
-{
-   vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
-
-   VGA_(save_state)(&VG_(threads)[tid].arch, tid);
-
-   vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
-}
-
 
 void VG_(resume_scheduler)(Int sigNo, vki_siginfo_t *info)
 {
    if (scheduler_jmpbuf_valid) {
       /* Can't continue; must longjmp back to the scheduler and thus
          enter the sighandler immediately. */
+      vg_assert(vg_tid_currently_running != VG_INVALID_THREADID);
       VG_(memcpy)(&unresumable_siginfo, info, sizeof(vki_siginfo_t));
    
       longjmpd_on_signal = sigNo;
       __builtin_longjmp(scheduler_jmpbuf,1);
+   } else {
+      vg_assert(vg_tid_currently_running == VG_INVALID_THREADID);
    }
 }
 
 /* Run the thread tid for a while, and return a VG_TRC_* value to the
    scheduler indicating what happened. */
+void VG_(oynk) ( Int n )
+{
+  VG_(printf)("OYNK %d\n", n);
+}
+
 static
 UInt run_thread_for_a_while ( ThreadId tid )
 {
@@ -327,30 +289,31 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
    vg_assert(!scheduler_jmpbuf_valid);
+   vg_assert(vg_tid_currently_running == VG_INVALID_THREADID);
 
    VGP_PUSHCC(VgpRun);
-   load_thread_state ( tid );
 
    /* there should be no undealt-with signals */
    vg_assert(unresumable_siginfo.si_signo == 0);
 
    if (__builtin_setjmp(scheduler_jmpbuf) == 0) {
       /* try this ... */
-      scheduler_jmpbuf_valid = True;
-      trc = VG_(run_innerloop)();
-      scheduler_jmpbuf_valid = False;
+      vg_tid_currently_running = tid;
+      scheduler_jmpbuf_valid   = True;
+      trc = VG_(run_innerloop)( &VG_(threads)[tid].arch.vex );
+      scheduler_jmpbuf_valid   = False;
+      vg_tid_currently_running = VG_INVALID_THREADID;
       /* We get here if the client didn't take a fault. */
    } else {
       /* We get here if the client took a fault, which caused our
          signal handler to longjmp. */
-      scheduler_jmpbuf_valid = False;
+      scheduler_jmpbuf_valid   = False;
+      vg_tid_currently_running = VG_INVALID_THREADID;
       vg_assert(trc == 0);
       trc = VG_TRC_UNRESUMABLE_SIGNAL;
    }
 
    vg_assert(!scheduler_jmpbuf_valid);
-
-   save_thread_state ( tid );
 
    done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 0;
 
@@ -400,8 +363,9 @@ void mostly_clear_thread_record ( ThreadId tid )
 
 
 /* Initialise the scheduler.  Create a single "main" thread ready to
-   run, with special ThreadId of one.  This is called at startup; the
-   caller takes care to park the client's state in VG_(baseBlock).  
+   run, with special ThreadId of one.  This is called at startup.  The
+   caller subsequently initialises the guest state components of
+   this main thread, thread 1.  
 */
 void VG_(scheduler_init) ( void )
 {
@@ -423,26 +387,15 @@ void VG_(scheduler_init) ( void )
 
    vg_fhstack_used = 0;
 
-   /* Assert this is thread zero, which has certain magic
+   /* Assert this is thread one, which has certain magic
       properties. */
    tid_main = vg_alloc_ThreadState();
    vg_assert(tid_main == 1); 
    VG_(threads)[tid_main].status = VgTs_Runnable;
 
-   /* Copy VG_(baseBlock) state to tid_main's slot. */
-   vg_tid_currently_in_baseBlock = tid_main;
-   vg_tid_last_in_baseBlock = tid_main;
-
-   VGA_(init_thread)(&VG_(threads)[tid_main].arch);
-   save_thread_state ( tid_main );
-
-   VG_(threads)[tid_main].stack_highest_word 
-      = VG_(clstk_end) - 4;
+   VG_(threads)[tid_main].stack_highest_word = VG_(clstk_end) - 4;
    VG_(threads)[tid_main].stack_base = VG_(clstk_base);
    VG_(threads)[tid_main].stack_size = VG_(client_rlimit_stack).rlim_cur;
-
-   /* So now ... */
-   vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
 
    /* Not running client code right now. */
    scheduler_jmpbuf_valid = False;
@@ -1802,13 +1755,9 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    mostly_clear_thread_record(tid);
    VG_(threads)[tid].status = VgTs_Runnable;
 
-   /* Copy the parent's CPU state into the child's, in a roundabout
-      way (via baseBlock). */
-   load_thread_state(parent_tid);
+   /* Copy the parent's CPU state into the child's. */
    VGA_(setup_child)( &VG_(threads)[tid].arch,
                       &VG_(threads)[parent_tid].arch );
-   save_thread_state(tid);
-   vg_tid_last_in_baseBlock = tid;
 
    /* Consider allocating the child a stack, if the one it already has
       is inadequate. */
@@ -2871,9 +2820,9 @@ void VG_(set_return_from_syscall_shadow) ( ThreadId tid, UInt ret_shadow )
    VGA_(set_thread_shadow_archreg)(tid, R_SYSCALL_RET, ret_shadow);
 }
 
-UInt VG_(get_exit_status_shadow) ( void )
+UInt VG_(get_exit_status_shadow) ( ThreadId tid )
 {
-   return VGA_(get_shadow_archreg)(R_SYSCALL_ARG1);
+   return VGA_(get_thread_shadow_archreg)(tid, R_SYSCALL_ARG1);
 }
 
 void VG_(intercept_libc_freeres_wrapper)(Addr addr)
@@ -2899,35 +2848,35 @@ void do_client_request ( ThreadId tid, UWord* arg )
    switch (req_no) {
 
       case VG_USERREQ__CLIENT_CALL0: {
-         UWord (*f)(void) = (void*)arg[1];
+         UWord (*f)(ThreadId) = (void*)arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL0: func=%p\n", f);
 	 else
-	    SET_CLCALL_RETVAL(tid, f ( ), (Addr)f);
+	    SET_CLCALL_RETVAL(tid, f ( tid ), (Addr)f);
          break;
       }
       case VG_USERREQ__CLIENT_CALL1: {
-         UWord (*f)(UWord) = (void*)arg[1];
+         UWord (*f)(ThreadId, UWord) = (void*)arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL1: func=%p\n", f);
 	 else
-	    SET_CLCALL_RETVAL(tid, f ( arg[2] ), (Addr)f );
+	    SET_CLCALL_RETVAL(tid, f ( tid, arg[2] ), (Addr)f );
          break;
       }
       case VG_USERREQ__CLIENT_CALL2: {
-         UWord (*f)(UWord, UWord) = (void*)arg[1];
+         UWord (*f)(ThreadId, UWord, UWord) = (void*)arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL2: func=%p\n", f);
 	 else
-	    SET_CLCALL_RETVAL(tid, f ( arg[2], arg[3] ), (Addr)f );
+	    SET_CLCALL_RETVAL(tid, f ( tid, arg[2], arg[3] ), (Addr)f );
          break;
       }
       case VG_USERREQ__CLIENT_CALL3: {
-         UWord (*f)(UWord, UWord, UWord) = (void*)arg[1];
+         UWord (*f)(ThreadId, UWord, UWord, UWord) = (void*)arg[1];
 	 if (f == NULL)
 	    VG_(message)(Vg_DebugMsg, "VG_USERREQ__CLIENT_CALL3: func=%p\n", f);
 	 else
-	    SET_CLCALL_RETVAL(tid, f ( arg[2], arg[3], arg[4] ), (Addr)f );
+	    SET_CLCALL_RETVAL(tid, f ( tid, arg[2], arg[3], arg[4] ), (Addr)f );
          break;
       }
 
@@ -2942,14 +2891,14 @@ void do_client_request ( ThreadId tid, UWord* arg )
       case VG_USERREQ__MALLOC:
          VG_(sk_malloc_called_by_scheduler) = True;
          SET_PTHREQ_RETVAL(
-            tid, (Addr)TL_(malloc) ( arg[1] ) 
+            tid, (Addr)TL_(malloc) ( tid, arg[1] ) 
          );
          VG_(sk_malloc_called_by_scheduler) = False;
          break;
 
       case VG_USERREQ__FREE:
          VG_(sk_malloc_called_by_scheduler) = True;
-         TL_(free) ( (void*)arg[1] );
+         TL_(free) ( tid, (void*)arg[1] );
          VG_(sk_malloc_called_by_scheduler) = False;
 	 SET_PTHREQ_RETVAL(tid, 0); /* irrelevant */
          break;

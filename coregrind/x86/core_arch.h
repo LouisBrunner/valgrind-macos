@@ -41,15 +41,6 @@
    Interesting registers
    ------------------------------------------------------------------ */
 
-/* Generate a pointer into baseBlock via which we can prod the
-   Vex guest state. */
-#define BASEBLOCK_VEX  \
-   ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex)]))
-
-/* Ditto the Vex shadow guest state. */
-#define BASEBLOCK_VEX_SHADOW  \
-   ((VexGuestX86State*)(&VG_(baseBlock)[VGOFF_(m_vex_shadow)]))
-
 // Accessors for the arch_thread_t
 #define ARCH_INSTR_PTR(regs)           ((regs).vex.guest_EIP)
 #define ARCH_STACK_PTR(regs)           ((regs).vex.guest_ESP)
@@ -71,11 +62,6 @@
 #define STACK_FRAME_RET(ebp)           (((UInt*)ebp)[1])
 #define STACK_FRAME_NEXT(ebp)          (((UInt*)ebp)[0])
 
-// Baseblock access to interesting registers
-#define BASEBLOCK_INSTR_PTR            BASEBLOCK_VEX->guest_EIP
-#define BASEBLOCK_STACK_PTR            BASEBLOCK_VEX->guest_ESP
-#define BASEBLOCK_FRAME_PTR            BASEBLOCK_VEX->guest_EBP
-
 // Get stack pointer and frame pointer
 #define ARCH_GET_REAL_STACK_PTR(esp) do {   \
    asm("movl %%esp, %0" : "=r" (esp));       \
@@ -85,28 +71,8 @@
    asm("movl %%ebp, %0" : "=r" (ebp));       \
 } while (0)
 
-
-/* -----------------------------------------------------
-   Read-write parts of baseBlock.
-   -------------------------------------------------- */
-
-/* State of the simulated CPU. */
-extern Int VGOFF_(m_vex);
-extern Int VGOFF_(m_vex_shadow);
-
-/* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
-extern Int VGOFF_(spillslots);
-
-
-/* -----------------------------------------------------
-   Read-only parts of baseBlock.
-   -------------------------------------------------- */
-
-/* This thread's LDT pointer. */
-extern Int VGOFF_(ldt);
-
-/* This thread's TLS pointer. */
-extern Int VGOFF_(tls_ptr);
+// So the dispatch loop can find %EIP
+extern Int VGOFF_(m_eip);
 
 
 /* ---------------------------------------------------------------------
@@ -151,35 +117,44 @@ typedef struct _LDT_ENTRY {
     LdtEnt;
 } VgLdtEntry;
 
+
 /* ---------------------------------------------------------------------
-   Constants pertaining to the simulated CPU state, VG_(baseBlock),
-   which need to go here to avoid ugly circularities.
+   Architecture-specific part of a ThreadState
    ------------------------------------------------------------------ */
 
 // Architecture-specific part of a ThreadState
 // XXX: eventually this should be made abstract, ie. the fields not visible
 //      to the core...  then VgLdtEntry can be made non-visible to the core
 //      also.
-typedef struct {
-   /* Pointer to this thread's Local (Segment) Descriptor Table.
-      Starts out as NULL, indicating there is no table, and we hope to
-      keep it that way.  If the thread does __NR_modify_ldt to create
-      entries, we allocate a 8192-entry table at that point.  This is
-      a straight copy of the Linux kernel's scheme.  Don't forget to
-      deallocate this at thread exit. */
-   VgLdtEntry* ldt;
+typedef 
+   struct {
+      /* Pointer to this thread's Local (Segment) Descriptor Table.
+         Starts out as NULL, indicating there is no table, and we hope
+         to keep it that way.  If the thread does __NR_modify_ldt to
+         create entries, we allocate a 8192-entry table at that point.
+         This is a straight copy of the Linux kernel's scheme.  Don't
+         forget to deallocate this at thread exit. */
+      VgLdtEntry* ldt;
 
-   /* TLS table. This consists of a small number (currently 3) of
-      entries from the Global Descriptor Table. */
-   VgLdtEntry tls[VKI_GDT_ENTRY_TLS_ENTRIES];
+      /* TLS table. This consists of a small number (currently 3) of
+         entries from the Global Descriptor Table. */
+      VgLdtEntry tls[VKI_GDT_ENTRY_TLS_ENTRIES];
 
-   /* Saved machine context. */
-   VexGuestX86State vex;
+      /* --- BEGIN vex-mandated guest state --- */
 
-   /* Saved shadow context. */
-   VexGuestX86State vex_shadow;
-} 
-arch_thread_t;
+      /* Saved machine context. */
+      VexGuestX86State vex;
+
+      /* Saved shadow context. */
+      VexGuestX86State vex_shadow;
+
+      /* Spill area. */
+      UChar vex_spill[LibVEX_N_SPILL_BYTES];
+
+      /* --- END vex-mandated guest state --- */
+   } 
+   ThreadArchState;
+
 
 /* ---------------------------------------------------------------------
    libpthread stuff

@@ -715,7 +715,7 @@ void VG_(proxy_sendsig)(ThreadId tid, Int sig)
       message gets sent back, thus making the signal synchronous. */
    if (sig != 0 && 
        !VG_(is_sig_ign)(sig) &&
-       tid == VG_(get_current_or_recent_tid)() && 
+       tid == VG_(get_current_tid)() && 
        !VG_(sigismember)(&tst->eff_sig_mask, sig)) {
       /* If the LWP is actually blocked in a sigtimedwait, then it
 	 will eat the signal rather than make it pending and deliver

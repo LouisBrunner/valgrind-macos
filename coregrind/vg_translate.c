@@ -174,21 +174,23 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout,
             default:  goto generic;
          }
       } else {
+         IRTemp old_SP;
         generic:
-         /* I don't know if it's really necessary to say that the call
-            reads the stack pointer.  But anyway, we do. */
-         dcall = unsafeIRDirty_0_N( 
-                    1/*regparms*/, 
-                    "VG_(unknown_SP_update)", &VG_(unknown_SP_update),
-                    mkIRExprVec_1(st->Ist.Put.data) 
-                 );
-         dcall->nFxState = 1;
-         dcall->fxState[0].fx     = Ifx_Read;
-         dcall->fxState[0].offset = layout->offset_SP;
-         dcall->fxState[0].size   = layout->sizeof_SP;
+         /* Pass both the old and new SP values to this helper. */
+         old_SP = newIRTemp(bb->tyenv, typeof_SP);
+         addStmtToIRBB( 
+            bb,
+            IRStmt_Tmp( old_SP, IRExpr_Get(offset_SP, typeof_SP) ) 
+         );
 
+         dcall = unsafeIRDirty_0_N( 
+                    2/*regparms*/, 
+                    "VG_(unknown_SP_update)", &VG_(unknown_SP_update),
+                    mkIRExprVec_2( IRExpr_Tmp(old_SP), st->Ist.Put.data ) 
+                 );
          addStmtToIRBB( bb, IRStmt_Dirty(dcall) );
-         addStmtToIRBB(bb,st);
+
+         addStmtToIRBB( bb, st );
 
          curr = st->Ist.Put.data->Iex.Tmp.tmp;
          delta = 0;

@@ -430,7 +430,10 @@ void MAC_(record_address_error) ( ThreadId tid, Addr a, Int size,
    MAC_Error err_extra;
    Bool      just_below_esp;
 
-   just_below_esp = is_just_below_ESP( VG_(get_stack_pointer)(), a );
+   just_below_esp = is_just_below_ESP( 
+                       VG_(get_stack_pointer)(tid),
+                       a 
+                    );
 
    /* If this is caused by an access immediately below %ESP, and the
       user asks nicely, we just ignore it. */
@@ -512,12 +515,11 @@ void MAC_(record_freemismatch_error) ( ThreadId tid, Addr a )
    VG_(maybe_record_error)( tid, FreeMismatchErr, a, /*s*/NULL, &err_extra );
 }
 
-
-// This one not passed a ThreadId, so it grabs it itself.
-void MAC_(record_overlap_error) ( Char* function, OverlapExtra* ov_extra )
+void MAC_(record_overlap_error) ( ThreadId tid, 
+                                  Char* function, OverlapExtra* ov_extra )
 {
-   VG_(maybe_record_error)( VG_(get_current_or_recent_tid)(), 
-                            OverlapErr, /*addr*/0, /*s*/function, ov_extra );
+   VG_(maybe_record_error)( 
+      tid, OverlapErr, /*addr*/0, /*s*/function, ov_extra );
 }
 
 
@@ -826,7 +828,7 @@ void MAC_(common_pre_clo_init)(void)
    init_prof_mem();
 }
 
-void MAC_(common_fini)(void (*leak_check)(void))
+void MAC_(common_fini)(void (*leak_check)(ThreadId))
 {
    MAC_(print_malloc_stats)();
 
@@ -838,7 +840,8 @@ void MAC_(common_fini)(void (*leak_check)(void))
       VG_(message)(Vg_UserMsg, 
                    "For counts of detected errors, rerun with: -v");
    }
-   if (MAC_(clo_leak_check)) leak_check();
+   if (MAC_(clo_leak_check)) 
+      leak_check( 1/*bogus ThreadID*/ );
 
    done_prof_mem();
 }
@@ -855,11 +858,6 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
       "   program to incorporate the updates in the Valgrind header files.\n"
       "   You shouldn't need to change the text of your program at all.\n"
       "   Everything should then work as before.  Sorry for the bother.\n";
-
-   // Not using 'tid' here because MAC_(new_block)() and MAC_(handle_free)()
-   // grab it themselves.  But what they grab should match 'tid', check
-   // this.
-   tl_assert(tid == VG_(get_current_or_recent_tid)());
    
    switch (arg[0]) {
    case VG_USERREQ__COUNT_LEAKS: { /* count leaked bytes */
@@ -883,7 +881,7 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
       UInt rzB       =       arg[3];
       Bool is_zeroed = (Bool)arg[4];
 
-      MAC_(new_block) ( p, sizeB, /*ignored*/0, rzB, is_zeroed, 
+      MAC_(new_block) ( tid, p, sizeB, /*ignored*/0, rzB, is_zeroed, 
                         MAC_AllocCustom, MAC_(malloc_list) );
       return True;
    }
@@ -891,7 +889,7 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
       Addr p         = (Addr)arg[1];
       UInt rzB       =       arg[2];
 
-      MAC_(handle_free) ( p, rzB, MAC_AllocCustom );
+      MAC_(handle_free) ( tid, p, rzB, MAC_AllocCustom );
       return True;
    }
 
@@ -920,7 +918,7 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
       Addr addr      = (Addr)arg[2];
       UInt size      =       arg[3];
 
-      MAC_(mempool_alloc) ( pool, addr, size );
+      MAC_(mempool_alloc) ( tid, pool, addr, size );
       return True;
    }
 

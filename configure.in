@@ -13,14 +13,14 @@ AM_MAINTAINER_MODE
 #    AS_HELP_STRING([--with-vex], [Vex directory (must be specified!)]),
 #
 AC_ARG_WITH(vex, 
-    [  --with-vex=<DIR>        Vex directory (must be specified!)],
+    [  --with-vex=/path/to/vex/dir    Vex directory (must be specified!)],
 [
     AC_CHECK_FILE($withval/pub/libvex.h,
         [VEX_DIR=$withval],
         [AC_MSG_ERROR([Directory '$withval' does not exist, or does not contain Vex])])
 ],
 [
-    AC_MSG_ERROR([You must specify --with-vex=<DIR>])
+    AC_MSG_ERROR([You must specify --with-vex=/path/to/vex/dir])
 ])
 AC_SUBST(VEX_DIR)
 

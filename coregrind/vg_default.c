@@ -79,7 +79,7 @@ Bool VG_(sk_malloc_called_by_scheduler) = False;
    malloc()-replacing tool cannot forget to implement TL_(malloc)() or
    TL_(free)().  */
 __attribute__ ((weak))
-void* TL_(malloc)( SizeT size )
+void* TL_(malloc)( ThreadId tid, SizeT size )
 {
    if (VG_(sk_malloc_called_by_scheduler))
       return VG_(cli_malloc)(VG_MIN_MALLOC_SZB, size);
@@ -88,7 +88,7 @@ void* TL_(malloc)( SizeT size )
 }
 
 __attribute__ ((weak))
-void  TL_(free)( void* p )
+void  TL_(free)( ThreadId tid, void* p )
 {
    /* see comment for TL_(malloc)() above */
    if (VG_(sk_malloc_called_by_scheduler))

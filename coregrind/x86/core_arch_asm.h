@@ -42,19 +42,6 @@
 /* Offset of code in a TCEntry */
 #define VG_CODE_OFFSET		(8 + VG_MAX_JUMPS * 2)
 
-/* Debugging hack for assembly code ... sigh. */
-#if 0
-#define OYNK(nnn) pushal;  pushl $nnn; call VG_(oynk) ; addl $4,%esp; popal
-#else
-#define OYNK(nnn)
-#endif
-
-#if 0
-#define OYNNK(nnn) pushal;  pushl $nnn; call VG_(oynk) ; addl $4,%esp; popal
-#else
-#define OYNNK(nnn)
-#endif
-
 
 #endif   // __X86_CORE_ARCH_ASM_H
 

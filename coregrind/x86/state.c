@@ -38,49 +38,45 @@
 /*--- baseBlock setup and operations                       ---*/
 /*------------------------------------------------------------*/
 
-/* The variables storing offsets. */
-Int VGOFF_(m_vex) = INVALID_OFFSET;
-Int VGOFF_(m_vex_shadow) = INVALID_OFFSET;
-
-Int VGOFF_(ldt)   = INVALID_OFFSET;
-Int VGOFF_(tls_ptr) = INVALID_OFFSET;
 Int VGOFF_(m_eip) = INVALID_OFFSET;
 
-Int VGOFF_(spillslots) = INVALID_OFFSET;
 
-
-
-/* Here we assign actual offsets.  VEX dictates the layout (see
-   comment at the end of libvex.h).  
+/* Given a pointer to the ThreadArchState for thread 1 (the root
+   thread), initialise the VEX guest state, and copy in essential
+   starting values.
 */
-void VGA_(init_baseBlock) ( Addr client_eip, Addr esp_at_startup )
+void VGA_(init_thread1state) ( Addr client_eip, 
+                               Addr esp_at_startup,
+			       /*MOD*/ ThreadArchState* arch )
 {
    vg_assert(0 == sizeof(VexGuestX86State) % 8);
 
-   /* First the guest state. */
-   VGOFF_(m_vex) = VG_(alloc_BaB)( sizeof(VexGuestX86State) / 4 );
-
-   /* Then equal sized shadow state. */
-   VGOFF_(m_vex_shadow) = VG_(alloc_BaB)( sizeof(VexGuestX86State) / 4 );
-
-   /* Finally the spill area. */
-   VGOFF_(spillslots) = VG_(alloc_BaB)( LibVEX_N_SPILL_BYTES/4 );
-   if (0) VG_(printf)("SPILL SLOTS start at %d\n", VGOFF_(spillslots));
-
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
-   LibVEX_GuestX86_initialise(BASEBLOCK_VEX);
+   LibVEX_GuestX86_initialise(&arch->vex);
 
    /* Zero out the shadow area. */
-   VG_(memset)(BASEBLOCK_VEX_SHADOW, 0, sizeof(VexGuestX86State));
+   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestX86State));
 
    /* Put essential stuff into the new state. */
-   BASEBLOCK_VEX->guest_ESP = esp_at_startup;
-   BASEBLOCK_VEX->guest_EIP = client_eip;
+   /* initialise %cs, %ds and %ss to point at the operating systems
+      default code, data and stack segments */
+   arch->vex.guest_ESP = esp_at_startup;
+   arch->vex.guest_EIP = client_eip;
 
-   /* The dispatch loop needs to be able to find %EIP. */
-   VGOFF_(m_eip)
-      = VGOFF_(m_vex) + offsetof(VexGuestX86State,guest_EIP)/4;
+   asm volatile("movw %%cs, %0"
+                :
+                : "m" (arch->vex.guest_CS));
+   asm volatile("movw %%ds, %0"
+                :
+                : "m" (arch->vex.guest_DS));
+   asm volatile("movw %%ss, %0"
+                :
+                : "m" (arch->vex.guest_SS));
+
+   /* The dispatch loop needs to be able to find %EIP given a pointer
+      to the start of the .vex field. */
+   VGOFF_(m_eip) = offsetof(VexGuestX86State,guest_EIP)/4;
 
    if (VG_(needs).shadow_regs) {
       VG_TRACK( post_regs_write_init );
@@ -97,112 +93,8 @@ void VGA_(init_baseBlock) ( Addr client_eip, Addr esp_at_startup )
       else
          VG_(printf)("Looks like a MMX-only CPU\n");
    }
-
-   /* LDT pointer: pretend the root thread has an empty LDT to start with. */
-   VGOFF_(ldt)   = VG_(alloc_BaB_1_set)((UInt)NULL);
-
-   /* TLS pointer: pretend the root thread has no TLS array for now. */
-   VGOFF_(tls_ptr) = VG_(alloc_BaB_1_set)((UInt)NULL);
-
-   /* initialise %cs, %ds and %ss to point at the operating systems
-      default code, data and stack segments */
-   asm volatile("movw %%cs, %0"
-                :
-                : "m" (BASEBLOCK_VEX->guest_CS));
-   asm volatile("movw %%ds, %0"
-                :
-                : "m" (BASEBLOCK_VEX->guest_DS));
-   asm volatile("movw %%ss, %0"
-                :
-                : "m" (BASEBLOCK_VEX->guest_SS));
 }
 
-/* Junk to fill up a thread's shadow regs with when shadow regs aren't
-   being used. */
-#define VG_UNUSED_SHADOW_REG_VALUE  0x27182818
-
-void VGA_(load_state) ( arch_thread_t* arch, ThreadId tid )
-{
-   VG_(baseBlock)[VGOFF_(ldt)]  = (UInt)arch->ldt;
-   VG_(baseBlock)[VGOFF_(tls_ptr)]  = (UInt)arch->tls;
-
-   *BASEBLOCK_VEX = arch->vex;
-
-   if (VG_(needs).shadow_regs) {
-      *BASEBLOCK_VEX_SHADOW = arch->vex_shadow;
-   } else {
-      /* Fields shouldn't be used -- check their values haven't changed. */
-     /* ummm ...
-      vg_assert(
-         VG_UNUSED_SHADOW_REG_VALUE == arch->sh_eax &&
-         VG_UNUSED_SHADOW_REG_VALUE == arch->sh_ebx &&
-         VG_UNUSED_SHADOW_REG_VALUE == arch->sh_ecx &&
-         VG_UNUSED_SHADOW_REG_VALUE == arch->sh_edx &&
-         VG_UNUSED_SHADOW_REG_VALUE == arch->sh_esi &&
-         VG_UNUSED_SHADOW_REG_VALUE == arch->sh_edi &&
-         VG_UNUSED_SHADOW_REG_VALUE == arch->sh_ebp &&
-         VG_UNUSED_SHADOW_REG_VALUE == arch->sh_esp &&
-         VG_UNUSED_SHADOW_REG_VALUE == arch->sh_eflags);
-     */
-   }
-}
-
-void VGA_(save_state)( arch_thread_t *arch, ThreadId tid )
-{
-   Int i;
-   const UInt junk = 0xDEADBEEF;
-
-   /* We don't copy out the LDT entry, because it can never be changed
-      by the normal actions of the thread, only by the modify_ldt
-      syscall, in which case we will correctly be updating
-      VG_(threads)[tid].ldt.  This printf happens iff the following
-      assertion fails. */
-   if ((void*)arch->ldt != (void*)VG_(baseBlock)[VGOFF_(ldt)])
-      VG_(printf)("VG_(threads)[%d].ldt=%p  VG_(baseBlock)[VGOFF_(ldt)]=%p\n",
-                 tid, (void*)arch->ldt,
-                       (void*)VG_(baseBlock)[VGOFF_(ldt)]);
-
-   vg_assert((void*)arch->ldt == (void*)VG_(baseBlock)[VGOFF_(ldt)]);
-
-   /* We don't copy out the TLS entry, because it can never be changed
-      by the normal actions of the thread, only by the set_thread_area
-      syscall, in which case we will correctly be updating
-      arch->tls.  This printf happens iff the following
-      assertion fails. */
-   if ((void*)arch->tls != (void*)VG_(baseBlock)[VGOFF_(tls_ptr)])
-      VG_(printf)("VG_(threads)[%d].tls=%p  VG_(baseBlock)[VGOFF_(tls_ptr)]=%p\
-n",
-                 tid, (void*)arch->tls,
-                       (void*)VG_(baseBlock)[VGOFF_(tls_ptr)]);
-
-   vg_assert((void*)arch->tls
-             == (void*)VG_(baseBlock)[VGOFF_(tls_ptr)]);
-
-   arch->vex = *BASEBLOCK_VEX;
-
-   if (VG_(needs).shadow_regs) {
-      arch->vex_shadow = *BASEBLOCK_VEX_SHADOW;
-   } else {
-      /* Fill with recognisable junk */
-      /* can't easily do this ...
-      arch->sh_eax =
-      arch->sh_ebx =
-      arch->sh_ecx =
-      arch->sh_edx =
-      arch->sh_esi =
-      arch->sh_edi =
-      arch->sh_ebp =
-      arch->sh_esp =
-      arch->sh_eflags = VG_UNUSED_SHADOW_REG_VALUE;
-      */
-   }
-   /* Fill it up with junk. */
-   VG_(baseBlock)[VGOFF_(ldt)] = junk;
-   VG_(baseBlock)[VGOFF_(tls_ptr)] = junk;
-
-   for (i = 0; i < (3 + sizeof(VexGuestX86State)) / 4; i++)
-      VG_(baseBlock)[VGOFF_(m_vex) + i] = junk;
-}
 
 /*------------------------------------------------------------*/
 /*--- Register access stuff                                ---*/
@@ -254,48 +146,18 @@ UInt VGA_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg )
    }
 }
 
-/* Return the baseBlock index for the specified shadow register */
-static Int shadow_reg_index ( Int arch )
-{
-   if (0)
-   VG_(printf)("shadow_reg_index(%d)\n",
-               arch);
-   switch (arch) {
-      case R_EAX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EAX)/4;
-      case R_ECX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_ECX)/4;
-      case R_EDX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EDX)/4;
-      case R_EBX: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EBX)/4;
-      case R_ESP: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_ESP)/4;
-      case R_EBP: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EBP)/4;
-      case R_ESI: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_ESI)/4;
-      case R_EDI: return VGOFF_(m_vex_shadow) + offsetof(VexGuestX86State,guest_EDI)/4;
-      default:    VG_(core_panic)( "shadow_reg_index");
-   }
-}
-
-/* Accessing shadow arch. registers */
-UInt VGA_(get_shadow_archreg) ( UInt archreg )
-{
-   return VG_(baseBlock)[ shadow_reg_index(archreg) ];
-}
-
 
 /*------------------------------------------------------------*/
 /*--- Thread stuff                                         ---*/
 /*------------------------------------------------------------*/
 
-void VGA_(clear_thread)( arch_thread_t *arch )
+void VGA_(clear_thread)( ThreadArchState *arch )
 {
    arch->ldt = NULL;
    VG_(clear_TLS_for_thread)(arch->tls);
 }  
 
-void VGA_(init_thread)( arch_thread_t *arch )
-{
-   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)arch->tls;
-}  
-
-void VGA_(cleanup_thread) ( arch_thread_t *arch )
+void VGA_(cleanup_thread) ( ThreadArchState *arch )
 {  
    /* Deallocate its LDT, if it ever had one. */
    VG_(deallocate_LDT_for_thread)( arch->ldt ); 
@@ -305,21 +167,19 @@ void VGA_(cleanup_thread) ( arch_thread_t *arch )
    VG_(clear_TLS_for_thread)( arch->tls );
 }  
 
-void VGA_(setup_child) ( arch_thread_t *regs, arch_thread_t *parent_regs )
+void VGA_(setup_child) ( ThreadArchState *arch, ThreadArchState *parent_arch )
 {  
    /* We inherit our parent's LDT. */
-   if (parent_regs->ldt == NULL) {
+   if (parent_arch->ldt == NULL) {
       /* We hope this is the common case. */
-      VG_(baseBlock)[VGOFF_(ldt)] = 0;
+      arch->ldt = NULL;
    } else {
       /* No luck .. we have to take a copy of the parent's. */
-      regs->ldt = VG_(allocate_LDT_for_thread)( parent_regs->ldt );
-      VG_(baseBlock)[VGOFF_(ldt)] = (UInt) regs->ldt;
+      arch->ldt = VG_(allocate_LDT_for_thread)( parent_arch->ldt );
    }
 
    /* Initialise the thread's TLS array */
-   VG_(clear_TLS_for_thread)( regs->tls );
-   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt) regs->tls;
+   VG_(clear_TLS_for_thread)( arch->tls );
 }  
 
 void VGA_(set_arg_and_bogus_ret)( ThreadId tid, UWord arg, Addr ret )
@@ -327,7 +187,8 @@ void VGA_(set_arg_and_bogus_ret)( ThreadId tid, UWord arg, Addr ret )
    /* Push the arg, and mark it as readable. */
    SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.vex.guest_ESP - sizeof(UWord));
    * (UInt*)(VG_(threads)[tid].arch.vex.guest_ESP) = arg;
-   VG_TRACK( post_mem_write, VG_(threads)[tid].arch.vex.guest_ESP, sizeof(void*) );
+   VG_TRACK( post_mem_write, VG_(threads)[tid].arch.vex.guest_ESP, 
+                             sizeof(void*) );
 
    /* Don't mark the pushed return address as readable; any attempt to read
       this is an internal valgrind bug since thread_exit_wrapper() should not
@@ -360,22 +221,7 @@ void VGA_(thread_initial_stack)(ThreadId tid, UWord arg, Addr ret)
 /*--- Symtab stuff                                         ---*/
 /*------------------------------------------------------------*/
 
-UInt *VGA_(reg_addr_from_BB)(Int regno)
-{
-   switch (regno) {
-   case R_EAX: return &(BASEBLOCK_VEX->guest_EAX);
-   case R_ECX: return &(BASEBLOCK_VEX->guest_ECX);
-   case R_EDX: return &(BASEBLOCK_VEX->guest_EDX);
-   case R_EBX: return &(BASEBLOCK_VEX->guest_EBX);
-   case R_ESP: return &(BASEBLOCK_VEX->guest_ESP);
-   case R_EBP: return &(BASEBLOCK_VEX->guest_EBP);
-   case R_ESI: return &(BASEBLOCK_VEX->guest_ESI);
-   case R_EDI: return &(BASEBLOCK_VEX->guest_EDI);
-   default:    return NULL;
-   }
-}
-
-UInt *VGA_(reg_addr_from_tst)(Int regno, arch_thread_t *arch)
+UInt *VGA_(reg_addr_from_tst)(Int regno, ThreadArchState *arch)
 {
    switch (regno) {
    case R_EAX: return &arch->vex.guest_EAX;
@@ -422,31 +268,7 @@ Bool VGA_(setup_pointercheck)(void)
 /*--- Debugger-related operations                          ---*/
 /*------------------------------------------------------------*/
 
-Int VGA_(ptrace_setregs_from_BB)(Int pid)
-{
-   struct vki_user_regs_struct regs;
-
-   regs.cs     = BASEBLOCK_VEX->guest_CS;
-   regs.ss     = BASEBLOCK_VEX->guest_SS;
-   regs.ds     = BASEBLOCK_VEX->guest_DS;
-   regs.es     = BASEBLOCK_VEX->guest_ES;
-   regs.fs     = BASEBLOCK_VEX->guest_FS;
-   regs.gs     = BASEBLOCK_VEX->guest_GS;
-   regs.eax    = BASEBLOCK_VEX->guest_EAX;
-   regs.ebx    = BASEBLOCK_VEX->guest_EBX;
-   regs.ecx    = BASEBLOCK_VEX->guest_ECX;
-   regs.edx    = BASEBLOCK_VEX->guest_EDX;
-   regs.esi    = BASEBLOCK_VEX->guest_ESI;
-   regs.edi    = BASEBLOCK_VEX->guest_EDI;
-   regs.ebp    = BASEBLOCK_VEX->guest_EBP;
-   regs.esp    = BASEBLOCK_VEX->guest_ESP;
-   regs.eflags = LibVEX_GuestX86_get_eflags(BASEBLOCK_VEX);
-   regs.eip    = BASEBLOCK_VEX->guest_EIP;
-
-   return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
-}
-
-Int VGA_(ptrace_setregs_from_tst)(Int pid, arch_thread_t* arch)
+Int VGA_(ptrace_setregs_from_tst)(Int pid, ThreadArchState* arch)
 {
    struct vki_user_regs_struct regs;
 

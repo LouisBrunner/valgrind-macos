@@ -213,10 +213,7 @@ static void print_all_stats ( void )
 
 static Int ptrace_setregs(Int pid, ThreadId tid)
 {
-   if (VG_(is_running_thread)( tid ))
-      return VGA_(ptrace_setregs_from_BB)(pid);
-   else
-      return VGA_(ptrace_setregs_from_tst)(pid, &VG_(threads)[tid].arch);
+   return VGA_(ptrace_setregs_from_tst)(pid, &VG_(threads)[tid].arch);
 }
 
 /* Start debugger and get it to attach to this process.  Called if the
@@ -326,15 +323,10 @@ void VG_(unimplemented) ( Char* msg )
    VG_(exit)(1);
 }
 
-Addr VG_(get_stack_pointer) ( void )
+/* Get the simulated stack pointer */
+Addr VG_(get_stack_pointer) ( ThreadId tid )
 {
-   return BASEBLOCK_STACK_PTR;
-}
-
-/* Debugging thing .. can be called from assembly with OYNK macro. */
-void VG_(oynk) ( Int n )
-{
-   OINK(n);
+   return ARCH_STACK_PTR( VG_(threads)[tid].arch );
 }
 
 /* Initialize the PID and PGRP of scheduler LWP; this is also called
@@ -1584,6 +1576,16 @@ void usage ( Bool debug_help )
 "    --vex-guest-max-insns             1 .. 100 [50]\n"
 "    --vex-guest-chase-thresh          0 .. 99  [10]\n"
 "\n"
+"    --trace-codegen values (omit the middle space):\n"
+"       1000 0000   show conversion into IR\n"
+"       0100 0000   show after initial opt\n"
+"       0010 0000   show after instrumentation\n"
+"       0001 0000   show after second opt\n"
+"       0000 1000   show after tree building\n"
+"       0000 0100   show selecting insns\n"
+"       0000 0010   show after reg-alloc\n"
+"       0000 0001   show final assembly\n"
+"\n"
 "  debugging options for Valgrind tools that report errors\n"
 "    --dump-error=<number>     show translation for basic block associated\n"
 "                              with <number>'th error context [0=show none]\n"
@@ -1827,7 +1829,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          Int j;
          char* opt = & arg[16];
    
-         if (5 != VG_(strlen)(opt)) {
+         if (8 != VG_(strlen)(opt)) {
             VG_(message)(Vg_UserMsg, 
                          "--trace-codegen argument must have 8 digits");
             VG_(bad_option)(arg);
@@ -2164,40 +2166,6 @@ static void setup_file_descriptors(void)
 /*=== baseBlock: definition + setup                                ===*/
 /*====================================================================*/
 
-/* This is the actual defn of baseblock. */
-UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
-
-/* Words. */
-static Int baB_off = 0;
-
-
-/* Returns the offset, in words. */
-Int VG_(alloc_BaB) ( Int words )
-{
-   Int off = baB_off;
-   baB_off += words;
-   if (baB_off >= VG_BASEBLOCK_WORDS)
-      VG_(core_panic)( "VG_(alloc_BaB): baseBlock is too small");
-
-   return off;   
-}
-
-/* Align offset, in *bytes* */
-void VG_(align_BaB) ( UInt align )
-{
-   vg_assert(2 == align || 4 == align || 8 == align || 16 == align);
-   baB_off +=  (align-1);
-   baB_off &= ~(align-1);
-}
-
-/* Allocate 1 word in baseBlock and set it to the given value. */
-Int VG_(alloc_BaB_1_set) ( Addr a )
-{
-   Int off = VG_(alloc_BaB)(1);
-   VG_(baseBlock)[off] = (UInt)a;
-   return off;
-}
-
 Bool VG_(need_to_handle_SP_assignment)(void)
 {
    return ( VG_(defined_new_mem_stack_4)()  ||
@@ -2213,14 +2181,6 @@ Bool VG_(need_to_handle_SP_assignment)(void)
             VG_(defined_new_mem_stack)()    ||
             VG_(defined_die_mem_stack)()
           );
-}
-
-// The low/high split is for x86, so that the more common helpers can be
-// in the first 128 bytes of the start, which allows the use of a more
-// compact addressing mode.
-static void init_baseBlock ( Addr client_eip, Addr sp_at_startup )
-{
-   VGA_(init_baseBlock)(client_eip, sp_at_startup);
 }
 
 
@@ -2652,14 +2612,6 @@ int main(int argc, char **argv)
    }
 
    //--------------------------------------------------------------
-   // Set up baseBlock
-   //   p: {pre,post}_clo_init()  [for tool helper registration]
-   //      load_client()          [for 'client_eip']
-   //      setup_client_stack()   [for 'sp_at_startup']
-   //--------------------------------------------------------------
-   init_baseBlock(client_eip, sp_at_startup);
-
-   //--------------------------------------------------------------
    // Search for file descriptors that are inherited from our parent
    //   p: process_cmd_line_options  [for VG_(clo_track_fds)]
    //--------------------------------------------------------------
@@ -2672,6 +2624,15 @@ int main(int argc, char **argv)
    //   p: setup_file_descriptors() [else VG_(safe_fd)() breaks]
    //--------------------------------------------------------------
    VG_(scheduler_init)();
+
+   //--------------------------------------------------------------
+   // Set up state of thread 1
+   //   p: {pre,post}_clo_init()  [for tool helper registration]
+   //      load_client()          [for 'client_eip']
+   //      setup_client_stack()   [for 'sp_at_startup']
+   //      setup_scheduler()      [for the rest of state 1 stuff]
+   //--------------------------------------------------------------
+   VGA_(init_thread1state)(client_eip, sp_at_startup, &VG_(threads)[1].arch );
 
    //--------------------------------------------------------------
    // Set up the ProxyLWP machinery

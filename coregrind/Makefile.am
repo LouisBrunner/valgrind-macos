@@ -7,6 +7,7 @@ AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
 		-DKICKSTART_BASE=@KICKSTART_BASE@ \
 		-DVG_PLATFORM="\"$(VG_PLATFORM)"\"
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -g @ARCH_CORE_AM_CFLAGS@
+AM_CFLAGS += -fno-omit-frame-pointer
 
 default.supp: $(SUPP_FILES)
 

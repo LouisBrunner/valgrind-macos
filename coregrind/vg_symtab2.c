@@ -2004,10 +2004,7 @@ static UInt *regaddr(ThreadId tid, Int regno)
 {
    UInt *ret = 0;
 
-   if (VG_(is_running_thread)(tid))
-      ret = VGA_(reg_addr_from_BB)(regno);
-   else
-      ret = VGA_(reg_addr_from_tst)(regno, &VG_(threads)[tid].arch);
+   ret = VGA_(reg_addr_from_tst)(regno, &VG_(threads)[tid].arch);
 
    if (ret == 0) {
       Char file[100];

@@ -305,14 +305,21 @@ extern void MAC_(clear_MAC_Error)          ( MAC_Error* err_extra );
 
 extern Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su );
 
-extern void* MAC_(new_block) ( Addr p, SizeT size, SizeT align, UInt rzB,
+extern void* MAC_(new_block) ( ThreadId tid,
+                               Addr p, SizeT size, SizeT align, UInt rzB,
                                Bool is_zeroed, MAC_AllocKind kind,
                                VgHashTable table);
-extern void MAC_(handle_free) ( Addr p, UInt rzB, MAC_AllocKind kind );
+
+extern void MAC_(handle_free) ( ThreadId tid,
+                                Addr p, UInt rzB, MAC_AllocKind kind );
 
 extern void MAC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed);
+
 extern void MAC_(destroy_mempool)(Addr pool);
-extern void MAC_(mempool_alloc)(Addr pool, Addr addr, SizeT size);
+
+extern void MAC_(mempool_alloc)(ThreadId tid, 
+                                Addr pool, Addr addr, SizeT size);
+
 extern void MAC_(mempool_free)(Addr pool, Addr addr);
 
 extern void MAC_(record_address_error)     ( ThreadId tid, Addr a,
@@ -324,7 +331,8 @@ extern void MAC_(record_param_error)       ( ThreadId tid, Addr a, Bool isReg,
 extern void MAC_(record_jump_error)        ( ThreadId tid, Addr a );
 extern void MAC_(record_free_error)        ( ThreadId tid, Addr a );
 extern void MAC_(record_freemismatch_error)( ThreadId tid, Addr a );
-extern void MAC_(record_overlap_error)     ( Char* function, OverlapExtra* oe );
+extern void MAC_(record_overlap_error)     ( ThreadId tid, 
+                                             Char* function, OverlapExtra* oe );
 extern void MAC_(record_illegal_mempool_error) ( ThreadId tid, Addr pool );
 
 extern void MAC_(pp_shared_Error)          ( Error* err);
@@ -332,7 +340,7 @@ extern void MAC_(pp_shared_Error)          ( Error* err);
 extern MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk)( Bool (*p)(MAC_Chunk*, void*), void* d );
 
 extern void MAC_(common_pre_clo_init) ( void );
-extern void MAC_(common_fini)         ( void (*leak_check)(void) );
+extern void MAC_(common_fini)         ( void (*leak_check)(ThreadId) );
 
 extern Bool MAC_(handle_common_client_requests) ( ThreadId tid, 
                                                   UWord* arg_block, UWord* ret );
@@ -344,6 +352,7 @@ extern void MAC_(pp_LeakError)(void* vl, UInt n_this_record,
                                          UInt n_total_records); 
                            
 extern void MAC_(do_detect_memory_leaks) (
+          ThreadId tid,
           Bool is_valid_64k_chunk ( UInt ),
           Bool is_valid_address   ( Addr )
        );

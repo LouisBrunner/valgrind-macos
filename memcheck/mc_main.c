@@ -1474,9 +1474,10 @@ Bool mc_is_valid_address ( Addr a )
 /* Leak detector for this tool.  We don't actually do anything, merely
    run the generic leak detector with suitable parameters for this
    tool. */
-static void mc_detect_memory_leaks ( void )
+static void mc_detect_memory_leaks ( ThreadId tid )
 {
-   MAC_(do_detect_memory_leaks) ( mc_is_valid_64k_chunk, mc_is_valid_address );
+   MAC_(do_detect_memory_leaks) ( 
+      tid, mc_is_valid_64k_chunk, mc_is_valid_address );
 }
 
 
@@ -1815,7 +1816,7 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
       }
 
       case VG_USERREQ__DO_LEAK_CHECK:
-         mc_detect_memory_leaks();
+         mc_detect_memory_leaks(tid);
 	 *ret = 0; /* return value is meaningless */
 	 break;
 

@@ -305,20 +305,11 @@ ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
 void get_needed_regs(ThreadId tid, Addr* ip, Addr* fp, Addr* sp,
                      Addr* stack_highest_word)
 {
-   if (VG_(is_running_thread)(tid)) {
-      /* thread currently in baseblock */
-      *ip                 = BASEBLOCK_INSTR_PTR;
-      *fp                 = BASEBLOCK_FRAME_PTR;
-      *sp                 = BASEBLOCK_STACK_PTR;
-      *stack_highest_word = VG_(threads)[tid].stack_highest_word;
-   } else {
-      /* thread in thread table */
-      ThreadState* tst = & VG_(threads)[ tid ];
-      *ip                 = ARCH_INSTR_PTR(tst->arch);
-      *fp                 = ARCH_FRAME_PTR(tst->arch);
-      *sp                 = ARCH_STACK_PTR(tst->arch);
-      *stack_highest_word = tst->stack_highest_word;
-   }
+   ThreadState* tst = & VG_(threads)[ tid ];
+   *ip                 = ARCH_INSTR_PTR(tst->arch);
+   *fp                 = ARCH_FRAME_PTR(tst->arch);
+   *sp                 = ARCH_STACK_PTR(tst->arch);
+   *stack_highest_word = tst->stack_highest_word;
 
    /* Nasty little hack to deal with sysinfo syscalls - if libc is
       using the sysinfo page for syscalls (the TLS version does), then
@@ -364,14 +355,7 @@ Addr VG_(get_EIP_from_ExeContext) ( ExeContext* e, UInt n )
 
 Addr VG_(get_EIP) ( ThreadId tid )
 {
-   Addr ret;
-
-   if (VG_(is_running_thread)(tid))
-      ret = BASEBLOCK_INSTR_PTR;
-   else
-      ret = ARCH_INSTR_PTR(VG_(threads)[ tid ].arch);
-
-   return ret;
+   return ARCH_INSTR_PTR(VG_(threads)[ tid ].arch);
 }
 
 /*--------------------------------------------------------------------*/

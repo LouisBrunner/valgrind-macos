@@ -129,7 +129,7 @@ asm(
    Assumes that the only thread state which matters is the contents of
    %eax-%ebp and the return value in %eax.
  */
-void VGA_(thread_syscall)(Int syscallno, arch_thread_t *arch, 
+void VGA_(thread_syscall)(Int syscallno, ThreadArchState *arch, 
                           enum PXState *state , enum PXState poststate)
 {
    do_thread_syscall(syscallno,            // syscall no.
@@ -147,7 +147,7 @@ void VGA_(thread_syscall)(Int syscallno, arch_thread_t *arch,
 
 
 // Back up to restart a system call.
-void VGA_(restart_syscall)(arch_thread_t *arch)
+void VGA_(restart_syscall)(ThreadArchState *arch)
 {
    arch->vex.guest_EIP -= 2;             // sizeof(int $0x80)
 

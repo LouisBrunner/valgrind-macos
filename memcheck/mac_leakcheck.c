@@ -375,6 +375,7 @@ static Int lc_compar(void* n1, void* n2)
    reachable blocks should be shown.
 */
 void MAC_(do_detect_memory_leaks) (
+   ThreadId tid,
    Bool is_valid_64k_chunk ( UInt ),
    Bool is_valid_address ( Addr )
 )
@@ -499,7 +500,7 @@ void MAC_(do_detect_memory_leaks) (
 
       print_record = ( MAC_(clo_show_reachable) || Proper != p_min->loss_mode );
       is_suppressed = 
-         VG_(unique_error) ( VG_(get_current_tid)(), LeakErr, (UInt)i+1,
+         VG_(unique_error) ( tid, LeakErr, (UInt)i+1,
                              (Char*)n_lossrecords, (void*) p_min,
                              p_min->allocated_at, print_record,
                              /*allow_GDB_attach*/False, /*count_error*/False );

@@ -39,13 +39,14 @@
 
 /* Magic values that %ebp might be set to when returning to the
    dispatcher.  The only other legitimate value is to point to the
-   start of VG_(baseBlock).  These also are return values from
+   start of the thread's VEX state.  These also are return values from
    VG_(run_innerloop) to the scheduler.
 
    EBP means %ebp can legitimately have this value when a basic block
    returns to the dispatch loop.  TRC means that this value is a valid
    thread return code, which the dispatch loop may return to the
-   scheduler.  */
+   scheduler.  
+*/
 #define VG_TRC_EBP_JMP_SYSCALL    19 /* EBP and TRC */
 #define VG_TRC_EBP_JMP_CLIENTREQ  23 /* EBP and TRC */
 #define VG_TRC_EBP_JMP_YIELD      27 /* EBP and TRC */

@@ -65,10 +65,12 @@
    signal, for example SIGSEGV.  It then longjmp()s back past here.
 */
 
+/* signature: UInt VG_(run_innerloop) ( void* guest_state ) */
+
 .globl VG_(run_innerloop)
 VG_(run_innerloop):
-	/* OYNK(1000) */
-
+	/* 4(%esp) holds guest_state */
+	
 	/* ----- entry point to VG_(run_innerloop) ----- */
 	pushl	%ebx
 	pushl	%ecx
@@ -76,20 +78,12 @@ VG_(run_innerloop):
 	pushl	%esi
 	pushl	%edi
 	pushl	%ebp
-
-	/* check to see if we're doing pointer checking */
-	movb	VG_(clo_pointercheck), %al
-	testb	%al,%al
-	jz	1f
 	
-	pushl	%fs						/* save %fs     */
-	mov	$(VG_POINTERCHECK_SEGIDX << 3) + 7, %eax	/* load new %fs */
-	movw	%ax,%fs
+	/* 28(%esp) holds guest_state */
 
-1:	
 	/* Set up the baseBlock pointer */
-	movl	$VG_(baseBlock), %ebp
-
+	movl	28(%esp), %ebp
+	
 	/* fetch m_eip into %eax */
 	movl	VGOFF_(m_eip), %esi
 	movl	(%ebp, %esi, 4), %eax
@@ -97,7 +91,7 @@ VG_(run_innerloop):
 	/* fall into main loop */
 
 dispatch_boring:
-	/* save the jump address at VG_(baseBlock)[VGOFF_(m_eip)] */
+	/* save the jump address in the guest state */
 	movl	VGOFF_(m_eip), %esi
 	movl	%eax, (%ebp, %esi, 4)
 
@@ -117,7 +111,7 @@ dispatch_boring:
 	   %ebp indicates further details of the control transfer
 	   requested to the address in %eax.
 	
-	   If ebp == & VG_(baseBlock), just jump next to %eax.
+	   If ebp is unchanged (== * 28(%esp)), just jump next to %eax.
 	 
 	   If ebp == VG_EBP_JMP_SYSCALL, do a system call before 
 	   continuing at eax.
@@ -128,7 +122,7 @@ dispatch_boring:
 	   If %ebp has any other value, we panic.
 	*/
 
-	cmpl	$VG_(baseBlock), %ebp
+	cmpl	28(%esp), %ebp
 	jz	dispatch_boring
 
 	jmp	dispatch_exceptional
@@ -147,14 +141,7 @@ counter_is_zero:
 	jmp	run_innerloop_exit
 	
 run_innerloop_exit:
-	movb	VG_(clo_pointercheck), %bl
-	testb	%bl,%bl
-	jz	1f
-
-	/* restore %fs */
-	popl	%fs
-	
-1:	popl	%ebp
+	popl	%ebp
 	popl	%edi
 	popl	%esi
 	popl	%edx
@@ -174,7 +161,8 @@ dispatch_exceptional:
 
 	/* save %eax in %EIP and defer to sched */
 	movl	VGOFF_(m_eip), %esi
-	movl	%eax, VG_(baseBlock)(,%esi, 4)
+	movl	28(%esp), %edi
+	movl	%eax, (%edi, %esi, 4)
 	movl	%ebp, %eax
 	jmp	run_innerloop_exit
 

@@ -274,9 +274,6 @@ extern void VGP_(popcc)  ( UInt cc );
 /* 64-bit counter for the number of basic blocks done. */
 extern ULong VG_(bbs_done);
 
-/* Get the simulated %esp */
-extern Addr VG_(get_stack_pointer) ( void );
-
 /* Check if an address is 4-byte aligned */
 #define IS_ALIGNED4_ADDR(aaa_p) (0 == (((UInt)(aaa_p)) & 3))
 #define IS_ALIGNED8_ADDR(aaa_p) (0 == (((UInt)(aaa_p)) & 7))
@@ -295,33 +292,23 @@ typedef
    UInt
    ThreadId;
 
-/* When looking for the current ThreadId, this is the safe option and
-   probably the one you want.
+/* Returns the tid of the currently running thread.  Only call it when
+   running generated code.  It will barf if there is no running thread.
+   Will never return zero.
+*/
+extern ThreadId VG_(get_current_tid) ( void );
 
-   Details: Use this one from non-generated code, eg. from functions called
-   on events like 'new_mem_heap'.  In such a case, the "current" thread is
-   temporarily suspended as Valgrind's dispatcher is running.  This function
-   is also suitable to be called from generated code (ie. from UCode, or a C
-   function called directly from UCode).
-
-   If you use VG_(get_current_tid)() from non-generated code, it will return
-   0 signifying the invalid thread, which is probably not what you want. */
-extern ThreadId VG_(get_current_or_recent_tid) ( void );
-
-/* When looking for the current ThreadId, only use this one if you know what
-   you are doing.
-
-   Details: Use this one from generated code, eg. from C functions called
-   from UCode.  (VG_(get_current_or_recent_tid)() is also suitable in that
-   case.)  If you use this function from non-generated code, it will return
-   0 signifying the invalid thread, which is probably not what you want. */
-extern ThreadId VG_(get_current_tid)           ( void );
+/* Does the scheduler think we are running generated code right now?  */
+extern Bool VG_(running_a_thread) ( void );
 
 /* Searches through all thread's stacks to see if any match.  Returns
    VG_INVALID_THREADID if none match. */
 extern ThreadId VG_(first_matching_thread_stack)
                         ( Bool (*p) ( Addr stack_min, Addr stack_max, void* d ),
                           void* d );
+
+/* Get the simulated %esp */
+extern Addr VG_(get_stack_pointer) ( ThreadId tid );
 
 
 /*====================================================================*/
@@ -974,7 +961,7 @@ extern void VG_(set_return_from_syscall_shadow) ( ThreadId tid,
 
 /* This can be called from TL_(fini)() to find the shadow of the argument
    to exit(), ie. the shadow of the program's return value. */
-extern UInt VG_(get_exit_status_shadow) ( void );
+extern UInt VG_(get_exit_status_shadow) ( ThreadId );
 
 
 /*====================================================================*/

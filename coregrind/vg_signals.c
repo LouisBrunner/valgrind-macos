@@ -1155,27 +1155,17 @@ static void fill_prstatus(ThreadState *tst, struct vki_elf_prstatus *prs, const 
 
    vg_assert(sizeof(*regs) == sizeof(prs->pr_reg));
 
-   if (VG_(is_running_thread)(tst->tid)) {
-      VGA_(fill_elfregs_from_BB)(regs);
-   } else {
-      VGA_(fill_elfregs_from_tst)(regs, &tst->arch);
-   }
+   VGA_(fill_elfregs_from_tst)(regs, &tst->arch);
 }
 
 static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 {
-   if (VG_(is_running_thread)(tst->tid))
-      VGA_(fill_elffpregs_from_BB)(fpu);
-   else
-      VGA_(fill_elffpregs_from_tst)(fpu, &tst->arch);
+   VGA_(fill_elffpregs_from_tst)(fpu, &tst->arch);
 }
 
 static void fill_xfpu(const ThreadState *tst, vki_elf_fpxregset_t *xfpu)
 {
-   if (VG_(is_running_thread)(tst->tid))
-      VGA_(fill_elffpxregs_from_BB)(xfpu);
-   else
-      VGA_(fill_elffpxregs_from_tst)(xfpu, &tst->arch);
+   VGA_(fill_elffpxregs_from_tst)(xfpu, &tst->arch);
 }
 
 static void make_coredump(ThreadId tid, const vki_siginfo_t *si, UInt max_size)
@@ -1656,7 +1646,7 @@ void vg_async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontex
 }
 
 /* 
-   Recieve a sync signal from the host. 
+   Receive a sync signal from the host. 
 
    This should always be called from the main thread, though it may be
    called in a proxy LWP if someone sends an async version of one of
@@ -1668,6 +1658,19 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
    Int           dummy_local;
 
    vg_assert(info != NULL);
+
+   if (VG_(clo_trace_signals)) {
+      VG_(message)(Vg_DebugMsg, "");
+      VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code = %d",
+                   sigNo, info->si_code );
+      if (VG_(running_a_thread)()) {
+         VG_(message)(Vg_DebugMsg, "   running thread %d", 
+                                   VG_(get_current_tid)());
+      } else {
+         VG_(message)(Vg_DebugMsg, "   not running a thread");
+      }
+   }
+
    vg_assert(info->si_signo == sigNo);
    vg_assert(sigNo == VKI_SIGSEGV ||
 	     sigNo == VKI_SIGBUS  ||
@@ -1696,11 +1699,6 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
    }
    */
 
-   if (VG_(clo_trace_signals)) {
-      VG_(message)(Vg_DebugMsg, "");
-      VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d",
-                   sigNo, info->si_code );
-   }
    vg_assert(sigNo >= 1 && sigNo <= _VKI_NSIG);
 
    /* Sanity check.  Ensure we're really running on the signal stack
@@ -1729,11 +1727,9 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
       act upon and immediately restart the faulting instruction.
     */
    if (info->si_signo == VKI_SIGSEGV) {
-      ThreadId tid = VG_(get_current_or_recent_tid)();
+      ThreadId tid = VG_(get_current_tid)();
       Addr fault = (Addr)info->_sifields._sigfault._addr;
-      Addr esp = VG_(is_running_thread)(tid)
-	       ? BASEBLOCK_STACK_PTR
-               : ARCH_STACK_PTR(VG_(threads)[tid].arch);
+      Addr esp   =  ARCH_STACK_PTR(VG_(threads)[tid].arch);
       Segment *seg;
 
       seg = VG_(find_segment)(fault);

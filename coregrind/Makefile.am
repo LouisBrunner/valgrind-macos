@@ -29,6 +29,7 @@ val_PROGRAMS = valgrind.so valgrinq.so
 valgrinq_so_SOURCES = vg_valgrinq_dummy.c
 
 valgrind_so_SOURCES = \
+	vg_clientfuncs.c \
 	vg_scheduler.c \
 	vg_clientmalloc.c \
 	vg_clientperms.c \

@@ -12,7 +12,6 @@ val_PROGRAMS = vgskin_helgrind.so vgpreload_helgrind.so
 
 vgskin_helgrind_so_SOURCES = hg_main.c
 vgskin_helgrind_so_LDFLAGS = -shared
-vgskin_helgrind_so_LDADD = ../coregrind/vg_replace_malloc.o
 
 vgpreload_helgrind_so_SOURCES = 
 vgpreload_helgrind_so_LDADD = $(top_srcdir)/coregrind/vg_replace_malloc.o

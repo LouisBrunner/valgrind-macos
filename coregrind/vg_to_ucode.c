@@ -4329,10 +4329,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* COMISD (src)xmmreg-or-mem, (dst)xmmreg */
+   /* (U)COMISD (src)xmmreg-or-mem, (dst)xmmreg */
    if (sz == 2
-       && insn[0] == 0x0F && insn[1] == 0x2F) {
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 8, "comisd",
+       && insn[0] == 0x0F
+       && ( insn[1] == 0x2E || insn[1] == 0x2F ) ) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 8, "{u}comisd",
                                       0x66, insn[0], insn[1] );
       vg_assert(LAST_UINSTR(cb).opcode == SSE3a_MemRd 
                 || LAST_UINSTR(cb).opcode == SSE4);

@@ -520,7 +520,7 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
 
 Bool SK_(error_matches_suppression)(Error* err, Supp* su)
 {
-   UInt       su_size;
+   Int        su_size;
    MAC_Error* err_extra = VG_(get_error_extra)(err);
    ErrorKind  ekind     = VG_(get_error_kind )(err);
 

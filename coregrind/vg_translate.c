@@ -1662,7 +1662,7 @@ UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
    UInstr*     u;
    Int         delta = 0;
    UInt        t_ESP = INVALID_TEMPREG;
-   UInt        i;
+   Int         i;
 
    cb = VG_(setup_UCodeBlock)(cb_in);
 

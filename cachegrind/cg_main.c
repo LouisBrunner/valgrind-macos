@@ -1006,7 +1006,7 @@ static cache_t clo_L2_cache = UNDEFINED_CACHE;
  * them. 
  */
 
-static __inline__ void cpuid(Int n, Int *a, Int *b, Int *c, Int *d)
+static __inline__ void cpuid(Int n, UInt *a, UInt *b, UInt *c, UInt *d)
 {
    __asm__ __volatile__ (
     "cpuid"
@@ -1181,7 +1181,8 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
 static
 Int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
-   Int dummy, model, ext_level;
+   UInt ext_level;
+   Int dummy, model;
    Int I1i, D1i, L2i;
    
    cpuid(0x80000000, &ext_level, &dummy, &dummy, &dummy);

@@ -629,8 +629,9 @@ void unlinkBlock ( Arena* a, UInt* b, Int listno )
 static
 void splitChunk ( Arena* a, UInt* b, Int b_listno, UInt req_bszW )
 {
-   Int b_bszW, frag_bszW;
-   b_bszW = mk_plain_bszW(get_bszW_lo(b));
+   UInt b_bszW;
+   Int  frag_bszW;
+   b_bszW = (UInt)mk_plain_bszW(get_bszW_lo(b));
    vg_assert(req_bszW < b_bszW);
    frag_bszW = b_bszW - req_bszW;
    vg_assert(frag_bszW >= overhead_szW(a));

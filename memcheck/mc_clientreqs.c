@@ -75,7 +75,7 @@ static UInt vg_cgb_search   = 0;   /* Number of searches. */
 static
 Int vg_alloc_client_block ( void )
 {
-   Int        i, sz_new;
+   UInt       i, sz_new;
    CGenBlock* cgbs_new;
 
    vg_cgb_allocs++;
@@ -126,7 +126,7 @@ void MC_(show_client_block_stats) ( void )
 
 Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
 {
-   Int i;
+   UInt i;
    /* VG_(printf)("try to identify %d\n", a); */
 
    /* Perhaps it's a general block ? */

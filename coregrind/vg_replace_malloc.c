@@ -422,7 +422,7 @@ struct mallinfo {
 struct mallinfo mallinfo ( void )
 {
    /* Should really try to return something a bit more meaningful */
-   Int             i;
+   UInt            i;
    struct mallinfo mi;
    UChar*          pmi = (UChar*)(&mi);
    for (i = 0; i < sizeof(mi); i++)

@@ -164,7 +164,7 @@ void VG_(print_UInstr_histogram)(void)
                      histogram[i].counts, count_pc, 
                      avg_size, size_pc);
 
-         for (j = 0; j < size_pc; j++) VG_(printf)("O");
+         for (j = 0; j < (Int)size_pc; j++) VG_(printf)("O");
          VG_(printf)("\n");
 
       } else {
@@ -1883,7 +1883,7 @@ void VG_(emit_AMD_prefetch_reg) ( Int reg )
  * Searches through compacts first, then non-compacts. */
 Int VG_(helper_offset)(Addr a)
 {
-   Int i;
+   UInt i;
    Char buf[100];
 
    for (i = 0; i < VG_(n_compact_helpers); i++)

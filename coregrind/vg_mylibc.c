@@ -168,7 +168,7 @@ Bool VG_(kisfullsigset)( vki_ksigset_t* set )
    Int i;
    vg_assert(set != NULL);
    for (i = 0; i < VKI_KNSIG_WORDS; i++)
-      if (set->ws[i] != ~0x0) return False;
+      if (set->ws[i] != (UInt)(~0x0)) return False;
    return True;
 }
 
@@ -664,7 +664,7 @@ UInt VG_(printf) ( const char *format, ... )
 /* A general replacement for sprintf(). */
 UInt VG_(sprintf) ( Char* buf, Char *format, ... )
 {
-   UInt ret;
+   Int ret;
    va_list vargs;
    Char *ptr = buf;
    static void add_to_vg_sprintf_buf ( Char c )
@@ -753,15 +753,18 @@ Long VG_(atoll36) ( UInt base, Char* str )
    vg_assert(base >= 2 && base <= 36);
    if (*str == '-') { str++; neg = True; };
    while (True) {
-      if (*str >= '0' && *str <=('9' - (10 - base))) {
+      if (*str >= '0' 
+          && *str <= (Char)('9' - (10 - base))) {
          n = base*n + (Long)(*str - '0');
       }
       else 
-      if (base > 10 && *str >= 'A' && *str <= ('Z' - (36 - base))) {
+      if (base > 10 && *str >= 'A' 
+          && *str <= (Char)('Z' - (36 - base))) {
          n = base*n + (Long)((*str - 'A') + 10);
       }
       else 
-      if (base > 10 && *str >= 'a' && *str <= ('z' - (36 - base))) {
+      if (base > 10 && *str >= 'a' 
+          && *str <= (Char)('z' - (36 - base))) {
          n = base*n + (Long)((*str - 'a') + 10);
       }
       else {

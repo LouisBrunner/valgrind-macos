@@ -125,7 +125,7 @@ typedef
       /* File descriptor waited for.  -1 means this slot is not in use */
       Int      fd;
       /* The syscall number the fd is used in. */
-      Int      syscall_no;
+      UInt     syscall_no;
 
       /* False => still waiting for select to tell us the fd is ready
          to go.  True => the fd is ready, but the results have not yet
@@ -1134,7 +1134,8 @@ void poll_for_ready_fds ( void )
 static
 void complete_blocked_syscalls ( void )
 {
-   Int      fd, i, res, syscall_no;
+   Int      fd, i, res;
+   UInt     syscall_no;
    void*    pre_res;
    ThreadId tid;
    Char     msg_buf[100];
@@ -1200,7 +1201,8 @@ void complete_blocked_syscalls ( void )
 static
 void check_for_pthread_cond_timedwait ( void )
 {
-   Int i, now;
+   Int  i;
+   UInt now;
    for (i = 1; i < VG_N_THREADS; i++) {
       if (VG_(threads)[i].status != VgTs_WaitCV)
          continue;
@@ -3621,7 +3623,7 @@ void scheduler_sanity ( void )
          /* 1 */ vg_assert(mx != NULL);
 	 /* 2 */ vg_assert(mx->__m_count > 0);
          /* 3 */ vg_assert(VG_(is_valid_tid)((ThreadId)mx->__m_owner));
-         /* 4 */ vg_assert(i != (ThreadId)mx->__m_owner); 
+         /* 4 */ vg_assert((UInt)i != (ThreadId)mx->__m_owner); 
       } else 
       if (VG_(threads)[i].status == VgTs_WaitCV) {
          vg_assert(cv != NULL);

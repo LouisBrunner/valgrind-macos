@@ -161,7 +161,8 @@ Int addStr ( SegInfo* si, Char* str )
    static SegInfo* curr_si = NULL;
 
    Char* new_tab;
-   Int   new_sz, i, space_needed;
+   Int   space_needed, i;
+   UInt  new_sz, u;
 
    /* Avoid gratuitous duplication:  if we saw `str' within the last NN,
     * within this segment, return that index.  Saves about 200KB in glibc,
@@ -192,8 +193,8 @@ Int addStr ( SegInfo* si, Char* str )
       if (new_sz == 0) new_sz = 5000;
       new_tab = VG_(arena_malloc)(VG_AR_SYMTAB, new_sz);
       if (si->strtab != NULL) {
-         for (i = 0; i < si->strtab_used; i++)
-            new_tab[i] = si->strtab[i];
+         for (u = 0; u < si->strtab_used; u++)
+            new_tab[u] = si->strtab[u];
          VG_(arena_free)(VG_AR_SYMTAB, si->strtab);
       }
       si->strtab      = new_tab;
@@ -214,7 +215,7 @@ Int addStr ( SegInfo* si, Char* str )
 static __inline__
 void addSym ( SegInfo* si, RiSym* sym )
 {
-   Int    new_sz, i;
+   UInt   new_sz, i;
    RiSym* new_tab;
 
    /* Ignore zero-sized syms. */
@@ -243,7 +244,7 @@ void addSym ( SegInfo* si, RiSym* sym )
 static __inline__
 void addLoc ( SegInfo* si, RiLoc* loc )
 {
-   Int    new_sz, i;
+   UInt   new_sz, i;
    RiLoc* new_tab;
 
    /* Zero-sized locs should have been ignored earlier */
@@ -482,7 +483,7 @@ void canonicaliseSymtab ( SegInfo* si )
    /* Detect and "fix" overlapping address ranges. */
    n_truncated = 0;
 
-   for (i = 0; i < si->symtab_used-1; i++) {
+   for (i = 0; i < ((Int)si->symtab_used) -1; i++) {
 
       vg_assert(si->symtab[i].addr <= si->symtab[i+1].addr);
 
@@ -529,7 +530,7 @@ void canonicaliseSymtab ( SegInfo* si )
       /* It may be that the i+1 entry now needs to be moved further
          along to maintain the address order requirement. */
       j = i+1;
-      while (j < si->symtab_used-1 
+      while (j < ((Int)si->symtab_used)-1 
              && si->symtab[j].addr > si->symtab[j+1].addr) {
          SWAP(RiSym,si->symtab[j],si->symtab[j+1]);
          j++;
@@ -540,7 +541,7 @@ void canonicaliseSymtab ( SegInfo* si )
    if (n_truncated > 0) goto cleanup_more;
 
    /* Ensure relevant postconditions hold. */
-   for (i = 0; i < si->symtab_used-1; i++) {
+   for (i = 0; i < ((Int)si->symtab_used)-1; i++) {
       /* No zero-sized symbols. */
       vg_assert(si->symtab[i].size > 0);
       /* In order. */
@@ -598,7 +599,7 @@ void canonicaliseLoctab ( SegInfo* si )
    }
 
    /* If two adjacent entries overlap, truncate the first. */
-   for (i = 0; i < si->loctab_used-1; i++) {
+   for (i = 0; i < ((Int)si->loctab_used)-1; i++) {
       vg_assert(si->loctab[i].size < 10000);
       if (si->loctab[i].addr + si->loctab[i].size > si->loctab[i+1].addr) {
          /* Do this in signed int32 because the actual .size fields
@@ -618,7 +619,7 @@ void canonicaliseLoctab ( SegInfo* si )
    /* Zap any zero-sized entries resulting from the truncation
       process. */
    j = 0;
-   for (i = 0; i < si->loctab_used; i++) {
+   for (i = 0; i < (Int)si->loctab_used; i++) {
       if (si->loctab[i].size > 0) {
          si->loctab[j] = si->loctab[i];
          j++;
@@ -627,7 +628,7 @@ void canonicaliseLoctab ( SegInfo* si )
    si->loctab_used = j;
 
    /* Ensure relevant postconditions hold. */
-   for (i = 0; i < si->loctab_used-1; i++) {
+   for (i = 0; i < ((Int)si->loctab_used)-1; i++) {
       /* 
       VG_(printf)("%d   (%d) %d 0x%x\n", 
                    i, si->loctab[i+1].confident, 
@@ -1102,7 +1103,7 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
          break;
        }
 
-      if (info.li_length + sizeof (external->li_length) > dwarf2_sz)
+      if (info.li_length + sizeof (external->li_length) > (UInt)dwarf2_sz)
        {
         vg_symerr("DWARF line info appears to be corrupt "
                   "- the section is too small");
@@ -1393,7 +1394,7 @@ Bool vg_read_lib_symbols ( SegInfo* si )
    Int           i;
    Bool          ok;
    Addr          oimage;
-   Int           n_oimage;
+   UInt          n_oimage;
    struct vki_stat stat_buf;
 
    oimage = (Addr)NULL;
@@ -1645,7 +1646,7 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
          /* Perhaps should start at i = 1; ELF docs suggest that entry
             0 always denotes `unknown symbol'. */
-         for (i = 1; i < o_symtab_sz/sizeof(Elf32_Sym); i++){
+         for (i = 1; i < (Int)(o_symtab_sz/sizeof(Elf32_Sym)); i++){
 #           if 1
 	    if (VG_(clo_trace_symtab)) {
 	       VG_(printf)("raw symbol [%d]: ", i);
@@ -2149,7 +2150,7 @@ Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
       len = VG_(sprintf)(buf2, "%c%d",
 			 offset < 0 ? '-' : '+',
 			 offset < 0 ? -offset : offset);
-      vg_assert(len < sizeof(buf2));
+      vg_assert(len < (Int)sizeof(buf2));
 
       if (len < (end - symend)) {
 	 Char *cp = buf2;
@@ -2342,7 +2343,7 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
       VG_(message)(Vg_UserMsg, "%s", buf);
       i++;
 
-   } while (i < stop_at && ec->eips[i] != 0);
+   } while (i < (UInt)stop_at && ec->eips[i] != 0);
 }
 
 #undef APPEND

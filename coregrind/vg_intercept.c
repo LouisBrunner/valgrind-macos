@@ -266,8 +266,8 @@ typedef unsigned long int nfds_t;
 
 int VGR_(poll) (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 {
-   unsigned int        ms_now, ms_end;
-   int                 res, i;
+   unsigned int        ms_now, ms_end, i;
+   int                 res;
    struct vki_timespec nanosleep_interval;
 
    __my_pthread_testcancel();

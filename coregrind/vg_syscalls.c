@@ -1363,7 +1363,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          MAYBE_PRINTF("close ( %d )\n",arg1);
          /* Detect and negate attempts by the client to close Valgrind's
             logfile fd ... */
-         if (arg1 == VG_(clo_logfile_fd)) {
+         if (arg1 == (UInt)VG_(clo_logfile_fd)) {
             VG_(message)(Vg_UserMsg, 
               "Warning: client attempted to close "
                "Valgrind's logfile fd (%d).", 
@@ -2655,7 +2655,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                            arg1, arg2 * sizeof(struct pollfd) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res) && res > 0) {
-            Int i;
+            UInt i;
             struct pollfd * arr = (struct pollfd *)arg1;
             for (i = 0; i < arg2; i++)
                VG_TRACK( post_mem_write, (Addr)(&arr[i].revents), 

@@ -1776,7 +1776,7 @@ demangle_expression (work, mangled, s, tk)
 
 	  len = strlen (*mangled);
 
-	  for (i = 0; i < ARRAY_SIZE (optable); ++i)
+	  for (i = 0; i < (size_t)ARRAY_SIZE (optable); ++i)
 	    {
 	      size_t l = strlen (optable[i].in);
 
@@ -4683,7 +4683,7 @@ demangle_function_name (work, mangled, declp, scan)
       if (declp->p - declp->b >= 10 /* op$assign_ */
 	  && memcmp (declp->b + 3, "assign_", 7) == 0)
 	{
-	  for (i = 0; i < ARRAY_SIZE (optable); i++)
+	  for (i = 0; i < (size_t)ARRAY_SIZE (optable); i++)
 	    {
 	      int len = declp->p - declp->b - 10;
 	      if ((int) strlen (optable[i].in) == len
@@ -4699,7 +4699,7 @@ demangle_function_name (work, mangled, declp, scan)
 	}
       else
 	{
-	  for (i = 0; i < ARRAY_SIZE (optable); i++)
+	  for (i = 0; i < (size_t)ARRAY_SIZE (optable); i++)
 	    {
 	      int len = declp->p - declp->b - 3;
 	      if ((int) strlen (optable[i].in) == len
@@ -4747,7 +4747,7 @@ demangle_function_name (work, mangled, declp, scan)
       if (declp->b[4] == '\0')
 	{
 	  /* Operator.  */
-	  for (i = 0; i < ARRAY_SIZE (optable); i++)
+	  for (i = 0; i < (size_t)ARRAY_SIZE (optable); i++)
 	    {
 	      if (strlen (optable[i].in) == 2
 		  && memcmp (optable[i].in, declp->b + 2, 2) == 0)
@@ -4764,7 +4764,7 @@ demangle_function_name (work, mangled, declp, scan)
 	  if (declp->b[2] == 'a' && declp->b[5] == '\0')
 	    {
 	      /* Assignment.  */
-	      for (i = 0; i < ARRAY_SIZE (optable); i++)
+	      for (i = 0; i < (size_t)ARRAY_SIZE (optable); i++)
 		{
 		  if (strlen (optable[i].in) == 3
 		      && memcmp (optable[i].in, declp->b + 2, 3) == 0)

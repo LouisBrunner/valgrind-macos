@@ -144,7 +144,7 @@ typedef
    struct _HG_Chunk {
       struct _HG_Chunk* next;
       Addr          data;           /* ptr to actual block              */
-      UInt          size;           /* size requested                   */
+      Int           size;           /* size requested                   */
       ExeContext*   where;          /* where it was allocated           */
       ThreadId      tid;            /* allocating thread                */
    }
@@ -642,7 +642,7 @@ static inline Int mutex_cmp(const Mutex *a, const Mutex *b)
 }
 
 struct _LockSet {
-   UInt		      setsize;	/* number of members */
+   Int		      setsize;	/* number of members */
    UInt		      hash;	/* hash code */
    LockSet           *next;	/* next in hash chain */
    const Mutex       *mutex[0];	/* locks */
@@ -676,8 +676,7 @@ static inline const LockSet *unpackLockSet(UInt id)
 static 
 void pp_LockSet(const LockSet* p)
 {
-   int i;
-
+   Int i;
    VG_(printf)("{ ");
    for(i = 0; i < p->setsize; i++) {
       const Mutex *mx = p->mutex[i];
@@ -699,7 +698,7 @@ static inline UInt hash_LockSet_w_wo(const LockSet *ls,
 				     const Mutex *with,
 				     const Mutex *without)
 {
-   UInt i;
+   Int  i;
    UInt hash = ls->setsize + (with != NULL) - (without != NULL);
    
    sk_assert(with == NULL || with != without);
@@ -978,7 +977,7 @@ void sanity_check_locksets ( const Char* caller )
 	    badness = "mismatched hash";
 	    goto bad;
 	 }
-	 if (ls->hash != i) {
+	 if (ls->hash != (UInt)i) {
 	    badness = "wrong bucket";
 	    goto bad;
 	 }
@@ -1956,7 +1955,7 @@ void* SK_(realloc) ( ThreadState* tst, void* p, Int new_size )
 {
    HG_Chunk  *hc;
    HG_Chunk **prev_chunks_next_ptr;
-   UInt       i;
+   Int        i;
 
    /* First try and find the block. */
    hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UInt)p,

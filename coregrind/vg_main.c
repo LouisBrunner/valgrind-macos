@@ -177,10 +177,12 @@ void VG_(register_noncompact_helper)(Addr a)
 }
 
 /* Allocate offsets in baseBlock for the skin helpers */
-static void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
+static 
+void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
 {
-   Int i;
-   for (i = 0; i < n; i++) offsets[i] = alloc_BaB_1_set( addrs[i] );
+   UInt i;
+   for (i = 0; i < n; i++) 
+      offsets[i] = alloc_BaB_1_set( addrs[i] );
 }
 
 Bool VG_(need_to_handle_esp_assignment)(void)
@@ -708,7 +710,7 @@ static void vg_findstack_callback ( Addr start, UInt size,
 static void process_cmd_line_options ( void )
 {
    Char* argv[M_VG_CMDLINE_OPTS];
-   UInt  argc;
+   Int   argc;
    Char* p;
    Char* str;
    Int   i, eventually_logfile_fd, ctr;
@@ -732,7 +734,7 @@ static void process_cmd_line_options ( void )
       envc & envp. It is not fool-proof, but these structures should
       change less often than the libc ones. */
    {
-       UInt* sp;
+       Int* sp;
 
        /* Look for the stack segment by parsing /proc/self/maps and
 	  looking for a section bracketing VG_(esp_at_startup) which

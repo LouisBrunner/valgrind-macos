@@ -599,7 +599,7 @@ void VG_(invalidate_translations) ( Addr start, UInt range, Bool unchain_blocks 
          /* make sure no other blocks chain to the one we just discarded */
          for(j = 0; j < VG_TC_N_SECTORS; j++) {
             if (vg_tc[j] != NULL)
-               unchain_sector(j, tce->payload, tce->trans_size);
+               unchain_sector(j, (Addr)tce->payload, tce->trans_size);
          }
       }
 

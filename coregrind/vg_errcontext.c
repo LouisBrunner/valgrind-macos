@@ -204,7 +204,7 @@ void construct_error ( Error* err, ThreadState* tst, ErrorKind ekind, Addr a,
 
 void VG_(gen_suppression)(Error* err)
 {
-   UInt        i;
+   Int         i;
    UChar       buf[M_VG_ERRTXT];
    ExeContext* ec      = VG_(get_error_where)(err);
    Int         stop_at = VG_(clo_backtrace_size);

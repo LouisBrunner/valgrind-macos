@@ -29,6 +29,22 @@ static int debug_linker = 0;
 #endif
 
 
+#define CALLOC_MAX 10000000
+static HChar calloc_area[CALLOC_MAX];
+static UInt calloc_used = 0;
+static void* calloc_below2G ( Int n, Int m )
+{
+   void* p;
+   int i;
+   while ((calloc_used % 16) > 0) calloc_used++;
+   assert(calloc_used + n*m < CALLOC_MAX);
+   p = &calloc_area[calloc_used];
+   for (i = 0; i < n*m; i++)
+     calloc_area[calloc_used+i] = 0;
+   calloc_used += n*m;
+   return p;
+}
+
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
@@ -578,7 +594,7 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
 #endif
       Elf_Addr  info   = rtab[j].r_info;
       Elf_Addr  A      = rtab[j].r_addend;
-      Elf_Addr  S;
+      Elf_Addr  S =0;
       Elf_Addr  value;
 #     if defined(sparc_TARGET_ARCH)
       Elf_Word* pP = (Elf_Word*)P;
@@ -631,11 +647,13 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
 	   fprintf(stderr,"%s: unknown symbol `%s'\n", oc->fileName, symbol);
 	   return 0;
          }
-         IF_DEBUG(linker,belch( "`%s' resolves to %p\n", symbol, (void*)S ));
+         if (0)
+            fprintf(stderr, "`%s' resolves to %p\n", symbol, (void*)S );
       }
 
-      IF_DEBUG(linker,fprintf ( stderr, "Reloc: P = %p   S = %p   A = %p\n",
-                                        (void*)P, (void*)S, (void*)A ));
+      if (0)
+         fprintf ( stderr, "Reloc: offset = %p   P = %p   S = %p   A = %p\n",
+                           (void*)offset, (void*)P, (void*)S, (void*)A );
       /* checkProddableBlock ( oc, (void*)P ); */
 
       value = S + A;
@@ -1040,10 +1058,9 @@ ocGetNames_ELF ( ObjectCode* oc )
             ehdrC + .sh_offset == addr_of_zeroed_space.  */
          char* zspace = calloc(1, shdr[i].sh_size);
          shdr[i].sh_offset = ((char*)zspace) - ((char*)ehdrC);
-	 /*
-         fprintf(stderr, "BSS section at 0x%x, size %d\n",
-                         zspace, shdr[i].sh_size);
-	 */
+	 if (1)
+         fprintf(stderr, "BSS section at %p, size %lld\n",
+                         zspace, (Long)shdr[i].sh_size);
       }
 
       /* When loading objects compiled with -g, it seems there are
@@ -1088,11 +1105,16 @@ ocGetNames_ELF ( ObjectCode* oc )
 
          if (secno == SHN_COMMON) {
             isLocal = FALSE;
+#           if defined(__amd64__)
+            ad = calloc_below2G(1, stab[j].st_size);
+#           else
             ad = calloc(1, stab[j].st_size);
-	    /*
-            fprintf(stderr, "COMMON symbol, size %d name %s\n",
-                            stab[j].st_size, nm);
-	    */
+#           endif
+	    assert( ((ULong)ad) < 0xF0000000ULL );
+
+	    if (0)
+            fprintf(stderr, "COMMON symbol, size %lld name %s  allocd %p\n",
+                            (Long)stab[j].st_size, nm, ad);
 	    /* Pointless to do addProddableBlock() for this area,
                since the linker should never poke around in it. */
 	 }
@@ -1130,7 +1152,7 @@ ocGetNames_ELF ( ObjectCode* oc )
                if (ELF_ST_TYPE(stab[j].st_info) == STT_FUNC)
                    ad = (char *)allocateFunctionDesc((Elf_Addr)ad);
 #endif
-               if (debug_linker) 
+               if (0|| debug_linker) 
                    fprintf(stderr, "addOTabName(GLOB): %10p  %s %s\n",
                                       ad, oc->fileName, nm );
                isLocal = FALSE;
@@ -1253,7 +1275,7 @@ int loadObj( char *path )
    pagesize = getpagesize();
    p = memalign(pagesize, N_FIXUP_PAGES * pagesize
                           + oc->fileSize);
-
+   fprintf(stderr,"XXXX p = %p\n", p);
    if (p == NULL) {
       fprintf(stderr,"loadObj: failed to allocate space for `%s'\n", path);
       exit(1);

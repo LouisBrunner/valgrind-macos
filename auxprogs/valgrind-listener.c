@@ -96,6 +96,7 @@ void copyout ( char* buf, int nbuf )
        fwrite(&buf[i], 1, 1, stdout);
      }
    }
+   fflush(stdout);
 }
 
 int read_from_sd ( int sd )
@@ -200,6 +201,7 @@ int main (int argc, char *argv[]) {
 	 printf("\n(%d) -------------------- CONNECT "
                 "--------------------\n(%d)\n(%d) ", 
                 conn_count, conn_count, conn_count);
+         fflush(stdout);
       }
     }
 
@@ -244,6 +246,7 @@ int main (int argc, char *argv[]) {
 	printf("\n(%d) ------------------- DISCONNECT "
                "-------------------\n(%d)\n(%d) ", 
                conn_count, conn_count, conn_count);
+         fflush(stdout);
       }
       else 
       if (conn_pollfd[i].revents & POLLIN) {

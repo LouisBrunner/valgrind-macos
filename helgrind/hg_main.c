@@ -3269,7 +3269,7 @@ void SK_(pre_clo_init)(void)
    VG_(track_post_thread_create)   (& hg_thread_create);
    VG_(track_post_thread_join)     (& hg_thread_join);
 
-   VG_(track_post_mutex_lock)      (& eraser_pre_mutex_lock);
+   VG_(track_pre_mutex_lock)       (& eraser_pre_mutex_lock);
    VG_(track_post_mutex_lock)      (& eraser_post_mutex_lock);
    VG_(track_post_mutex_unlock)    (& eraser_post_mutex_unlock);
 

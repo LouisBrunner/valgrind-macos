@@ -337,7 +337,8 @@ static void gen_suppression(Error* err)
    ExeContext* ec      = VG_(get_error_where)(err);
    Int         stop_at = VG_(clo_backtrace_size);
 
-   if (stop_at > 4) stop_at = 4;    /* At most four names */
+   /* At most VG_N_SUPP_CALLERS names */
+   if (stop_at > VG_N_SUPP_CALLERS) stop_at = VG_N_SUPP_CALLERS;
    vg_assert(stop_at > 0);
 
    VG_(printf)("{\n");

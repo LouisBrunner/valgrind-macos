@@ -26,11 +26,16 @@
 
 #include "ume_arch.h"
 
+/* 
+   Jump to a particular EIP with a particular ESP.  This is intended
+   to simulate the initial CPU state when the kernel starts an program
+   after exec; it therefore also clears all the other registers.
+ */
 void ume_go(addr_t eip, addr_t esp)
 {
-   asm volatile ("movl %1, %%esp;"
-		 "pushl %%eax;"
-		 "xorl	%%eax,%%eax;"
+   asm volatile ("movl %1, %%esp;"	/* set esp */
+		 "pushl %%eax;"		/* push esp */
+		 "xorl	%%eax,%%eax;"	/* clear registers */
 		 "xorl	%%ebx,%%ebx;"
 		 "xorl	%%ecx,%%ecx;"
 		 "xorl	%%edx,%%edx;"
@@ -42,5 +47,5 @@ void ume_go(addr_t eip, addr_t esp)
 		 : : "a" (eip), "r" (esp));
    /* we should never get here */
    for(;;)
-	   ;
+	   asm volatile("ud2");
 } 

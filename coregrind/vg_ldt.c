@@ -429,7 +429,12 @@ Int VG_(sys_set_thread_area) ( ThreadId tid,
 
    translate_to_hw_format(info, VG_(threads)[tid].tls + idx, 0);
 
+   VG_TRACK( pre_mem_write, Vg_CoreSysCall, tid,
+             "set_thread_area(info->entry)",
+             (Addr) & info->entry_number, sizeof(unsigned int) );
    info->entry_number = idx + VKI_GDT_TLS_MIN;
+   VG_TRACK( post_mem_write,
+             (Addr) & info->entry_number, sizeof(unsigned int) );
 
    return 0;
 }

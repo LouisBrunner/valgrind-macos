@@ -143,6 +143,9 @@ static void do_pthread_mutex_lock ( ThreadId, Bool,
 static void do_pthread_getspecific ( ThreadId,
                                      UInt /* pthread_key_t */ );
 
+static void do__cleanup_push ( ThreadId tid, CleanupEntry* cu );
+static void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu );
+static void do__set_canceltype ( ThreadId tid, Int type );
 
 /* ---------------------------------------------------------------------
    Helper functions for the scheduler.
@@ -520,10 +523,11 @@ void mostly_clear_thread_record ( ThreadId tid )
    VG_(threads)[tid].joinee_retval        = NULL;
    VG_(threads)[tid].joiner_thread_return = NULL;
    VG_(threads)[tid].joiner_jee_tid       = VG_INVALID_THREADID;
+   VG_(threads)[tid].detached             = False;
    VG_(threads)[tid].cancel_st   = True; /* PTHREAD_CANCEL_ENABLE */
    VG_(threads)[tid].cancel_ty   = True; /* PTHREAD_CANCEL_DEFERRED */
    VG_(threads)[tid].cancel_pend = NULL; /* not pending */
-   VG_(threads)[tid].detached             = False;
+   VG_(threads)[tid].custack_used = 0;
    VG_(ksigemptyset)(&VG_(threads)[tid].sig_mask);
    VG_(ksigemptyset)(&VG_(threads)[tid].sigs_waited_for);
    for (j = 0; j < VG_N_THREAD_KEYS; j++)
@@ -695,10 +699,6 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
       case VG_USERREQ__READ_MILLISECOND_TIMER:
          SIMPLE_RETURN(VG_(read_millisecond_timer)());
 
-      case VG_USERREQ__PTHREAD_MUTEX_UNLOCK:
-         do_pthread_mutex_unlock( tid, (void *)(arg[1]) );
-         return True;
-
       /* This may make thread tid non-runnable, but the scheduler
          checks for that on return from this function. */
       case VG_USERREQ__PTHREAD_MUTEX_LOCK:
@@ -709,8 +709,24 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
          do_pthread_mutex_lock( tid, True, (void *)(arg[1]) );
          return True;
 
+      case VG_USERREQ__PTHREAD_MUTEX_UNLOCK:
+         do_pthread_mutex_unlock( tid, (void *)(arg[1]) );
+         return True;
+
       case VG_USERREQ__PTHREAD_GETSPECIFIC:
  	 do_pthread_getspecific ( tid, (UInt)(arg[1]) );
+ 	 return True;
+
+      case VG_USERREQ__SET_CANCELTYPE:
+         do__set_canceltype ( tid, arg[1] );
+ 	 return True;
+
+      case VG_USERREQ__CLEANUP_PUSH:
+         do__cleanup_push ( tid, (CleanupEntry*)(arg[1]) );
+ 	 return True;
+
+      case VG_USERREQ__CLEANUP_POP:
+         do__cleanup_pop ( tid, (CleanupEntry*)(arg[1]) );
  	 return True;
 
       default:
@@ -1666,6 +1682,54 @@ void maybe_rendezvous_joiners_and_joinees ( void )
 /* -----------------------------------------------------------
    Thread CREATION, JOINAGE and CANCELLATION: REQUESTS
    -------------------------------------------------------- */
+
+static
+void do__cleanup_push ( ThreadId tid, CleanupEntry* cu )
+{
+   Int  sp;
+   Char msg_buf[100];
+   vg_assert(VG_(is_valid_tid)(tid));
+   sp = VG_(threads)[tid].custack_used;
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, 
+         "cleanup_push (fn %p, arg %p) -> slot %d", 
+         cu->fn, cu->arg, sp);
+      print_sched_event(tid, msg_buf);
+   }
+   vg_assert(sp >= 0 && sp <= VG_N_CLEANUPSTACK);
+   if (sp == VG_N_CLEANUPSTACK)
+      VG_(panic)("do__cleanup_push: VG_N_CLEANUPSTACK is too small."
+                 "  Increase and recompile.");
+   VG_(threads)[tid].custack[sp] = *cu;
+   sp++;
+   VG_(threads)[tid].custack_used = sp;
+   SET_EDX(tid, 0);
+}
+
+
+static
+void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu )
+{
+   Int  sp;
+   Char msg_buf[100];
+   vg_assert(VG_(is_valid_tid)(tid));
+   sp = VG_(threads)[tid].custack_used;
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, 
+         "cleanup_pop from slot %d", sp);
+      print_sched_event(tid, msg_buf);
+   }
+   vg_assert(sp >= 0 && sp <= VG_N_CLEANUPSTACK);
+   if (sp == 0) {
+     SET_EDX(tid, -1);
+     return;
+   }
+   sp--;
+   *cu = VG_(threads)[tid].custack[sp];
+   VG_(threads)[tid].custack_used = sp;
+   SET_EDX(tid, 0);
+}
+
 
 static
 void do_pthread_yield ( ThreadId tid )
@@ -2884,10 +2948,6 @@ void do_nontrivial_clientreq ( ThreadId tid )
 
       case VG_USERREQ__SET_CANCELSTATE:
          do__set_cancelstate ( tid, arg[1] );
-         break;
-
-      case VG_USERREQ__SET_CANCELTYPE:
-         do__set_canceltype ( tid, arg[1] );
          break;
 
       case VG_USERREQ__SET_OR_GET_DETACH:

@@ -279,8 +279,19 @@ static
 __attribute__((noreturn))
 void thread_exit_wrapper ( void* ret_val )
 {
-   int detached, res;
+   int          detached, res;
+   CleanupEntry cu;
    /* Run this thread's cleanup handlers. */
+   while (1) {
+      VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                              VG_USERREQ__CLEANUP_POP,
+                              &cu, 0, 0, 0);
+      if (res == -1) break; /* stack empty */
+      assert(res == 0);
+      if (0) printf("running exit cleanup handler");
+      cu.fn ( cu.arg );
+   }
+
    /* Run this thread's key finalizers. */
 
    /* Decide on my final disposition. */
@@ -467,6 +478,94 @@ int pthread_detach(pthread_t th)
       return 0;
    }
    barf("pthread_detach");
+}
+
+
+/* ---------------------------------------------------
+   CLEANUP STACKS
+   ------------------------------------------------ */
+
+void _pthread_cleanup_push (struct _pthread_cleanup_buffer *__buffer,
+                            void (*__routine) (void *),
+                            void *__arg)
+{
+   int          res;
+   CleanupEntry cu;
+   ensure_valgrind("_pthread_cleanup_push");
+   cu.fn  = __routine;
+   cu.arg = __arg;
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__CLEANUP_PUSH,
+                           &cu, 0, 0, 0);
+   assert(res == 0);
+}
+
+
+void _pthread_cleanup_push_defer (struct _pthread_cleanup_buffer *__buffer,
+                                  void (*__routine) (void *),
+                                  void *__arg)
+{
+   /* As _pthread_cleanup_push, but first save the thread's original
+      cancellation type in __buffer and set it to Deferred. */
+   int orig_ctype;
+   ensure_valgrind("_pthread_cleanup_push_defer");
+   /* Set to Deferred, and put the old cancellation type in res. */
+   assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
+   VALGRIND_MAGIC_SEQUENCE(orig_ctype, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELTYPE,
+                           PTHREAD_CANCEL_DEFERRED, 0, 0, 0);   
+   assert(orig_ctype != -1);
+   *((int*)(__buffer)) = orig_ctype;
+   /* Now push the cleanup. */
+   _pthread_cleanup_push(NULL, __routine, __arg);
+}
+
+
+void _pthread_cleanup_pop (struct _pthread_cleanup_buffer *__buffer,
+                           int __execute)
+{
+   int          res;
+   CleanupEntry cu;
+   ensure_valgrind("_pthread_cleanup_push");
+   cu.fn = cu.arg = NULL; /* paranoia */
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__CLEANUP_POP,
+                           &cu, 0, 0, 0);
+   if (res == 0) {
+      /* pop succeeded */
+     if (__execute) {
+        cu.fn ( cu.arg );
+     }
+     return;
+   }   
+   if (res == -1) {
+      /* stack underflow */
+      return;
+   }
+   barf("_pthread_cleanup_pop");
+}
+
+
+void _pthread_cleanup_pop_restore (struct _pthread_cleanup_buffer *__buffer,
+                                   int __execute)
+{
+   int orig_ctype, fake_ctype;
+   /* As _pthread_cleanup_pop, but after popping/running the handler,
+      restore the thread's original cancellation type from the first
+      word of __buffer. */
+   _pthread_cleanup_pop(NULL, __execute);
+   orig_ctype = *((int*)(__buffer));
+   assert(orig_ctype == PTHREAD_CANCEL_DEFERRED
+          || orig_ctype == PTHREAD_CANCEL_ASYNCHRONOUS);
+   assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   assert(sizeof(struct _pthread_cleanup_buffer) >= sizeof(int));
+   VALGRIND_MAGIC_SEQUENCE(fake_ctype, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELTYPE,
+                           orig_ctype, 0, 0, 0); 
+   assert(fake_ctype == PTHREAD_CANCEL_DEFERRED);
 }
 
 
@@ -2444,43 +2543,6 @@ void _IO_funlockfile ( _IO_FILE * file )
    pthread_mutex_unlock(file->_lock);
 }
 weak_alias(_IO_funlockfile, funlockfile);
-
-
-void _pthread_cleanup_push_defer ( void )
-{
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("_pthread_cleanup_push_defer");
-}
-
-void _pthread_cleanup_pop_restore ( void )
-{
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("_pthread_cleanup_pop_restore");
-}
-
-/*--------*/
-void _pthread_cleanup_push (struct _pthread_cleanup_buffer *__buffer,
-                            void (*__routine) (void *),
-                            void *__arg)
-{
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("_pthread_cleanup_push");
-}
-
-void _pthread_cleanup_pop (struct _pthread_cleanup_buffer *__buffer,
-                           int __execute)
-{
-   static int moans = N_MOANS;
-   if (moans-- > 0) {
-      if (__execute)
-         ignored("_pthread_cleanup_pop-EXECUTE");
-      else 
-         ignored("_pthread_cleanup_pop-NO-EXECUTE");
-   }
-}
 
 
 /* This doesn't seem to be needed to simulate libpthread.so's external

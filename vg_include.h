@@ -152,6 +152,9 @@
 /* Number of entries in the rwlock-remapping table. */
 #define VG_N_RWLOCKS 50
 
+/* Number of entries in each thread's cleanup stack. */
+#define VG_N_CLEANUPSTACK 8
+
 
 /* ---------------------------------------------------------------------
    Basic types
@@ -471,6 +474,9 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__PTHREAD_KILL            0x301A
 #define VG_USERREQ__PTHREAD_YIELD           0x301B
 
+#define VG_USERREQ__CLEANUP_PUSH            0x3020
+#define VG_USERREQ__CLEANUP_POP             0x3021
+
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
 
@@ -518,6 +524,14 @@ typedef
       VgTs_Sleeping    /* sleeping for a while */
    }
    ThreadStatus;
+
+/* An entry in a threads's cleanup stack. */
+typedef
+   struct {
+      void (*fn)(void*);
+      void* arg;
+   }
+   CleanupEntry;
  
 typedef
    struct {
@@ -565,6 +579,9 @@ typedef
       void**   joiner_thread_return;
       ThreadId joiner_jee_tid;      
 
+      /* Whether or not detached. */
+      Bool detached;
+
       /* Cancelability state and type. */
       Bool cancel_st; /* False==PTH_CANCEL_DISABLE; True==.._ENABLE */
       Bool cancel_ty; /* False==PTH_CANC_ASYNCH; True==..._DEFERRED */
@@ -575,8 +592,9 @@ typedef
          cancallation is pending. */
       void (*cancel_pend)(void*);
 
-      /* Whether or not detached. */
-      Bool detached;
+      /* The cleanup stack. */
+      Int          custack_used;
+      CleanupEntry custack[VG_N_CLEANUPSTACK];
 
       /* thread-specific data */
       void* specifics[VG_N_THREAD_KEYS];

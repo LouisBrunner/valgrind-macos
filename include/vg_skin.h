@@ -441,8 +441,8 @@ extern Char* VG_(getcwd) ( Char* buf, Int size );
                                    __PRETTY_FUNCTION__), 0)))
 
 __attribute__ ((__noreturn__))
-extern void VG_(skin_assert_fail) ( Char* expr, Char* file, 
-                                    Int line, Char* fn );
+extern void VG_(skin_assert_fail) ( const Char* expr, const Char* file, 
+                                    Int line, const Char* fn );
 
 
 /* ------------------------------------------------------------------ */

@@ -69,7 +69,7 @@ static void panic ( Char* str )
 }
 
 __attribute__ ((noreturn))
-static void my_assert_fail ( Char* expr, Char* file, Int line, Char* fn )
+static void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* fn )
 {
    fprintf(stderr,
            "\nvalgrind-listener: %s:%d (%s): Assertion `%s' failed.\n",

@@ -1637,6 +1637,18 @@ POST(fstatfs)
    VG_TRACK( post_mem_write, arg2, sizeof(struct vki_statfs) );
 }
 
+PRE(fstatfs64)
+{
+   /* int fstatfs64(int fd, size_t sz, struct statfs *buf); */
+   MAYBE_PRINTF("fstatfs64 ( %d, %p )\n",arg1,arg2);
+   SYSCALL_TRACK( pre_mem_write, tid, "stat(buf)", arg3, arg2 );
+}
+
+POST(fstatfs64)
+{
+   VG_TRACK( post_mem_write, arg3, arg2 );
+}
+
 PRE(getsid)
 {
    /* pid_t getsid(pid_t pid); */
@@ -5152,16 +5164,15 @@ POST(statfs)
 
 PRE(statfs64)
 {
-   /* int statfs64(const char *path, struct statfs64 *buf); */
+   /* int statfs64(const char *path, size_t sz, struct statfs64 *buf); */
    MAYBE_PRINTF("statfs64 ( %p, %p )\n",arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "statfs64(path)", arg1 );
-   SYSCALL_TRACK( pre_mem_write, tid, "statfs64(buf)", 
-		  arg2, sizeof(struct vki_statfs64) );
+   SYSCALL_TRACK( pre_mem_write, tid, "statfs64(buf)", arg3, arg2 );
 }
 
 POST(statfs64)
 {
-   VG_TRACK( post_mem_write, arg2, sizeof(struct vki_statfs64) );
+   VG_TRACK( post_mem_write, arg3, arg2 );
 }
 
 PRE(symlink)
@@ -6064,6 +6075,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(pwrite64,		MayBlock),
    SYSB_(sync,			MayBlock),
    SYSBA(fstatfs,		0),
+   SYSBA(fstatfs64,		0),
    SYSB_(getsid,		0),
    SYSBA(pread64,		MayBlock),
    SYSB_(mknod,			0),

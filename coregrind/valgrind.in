@@ -47,7 +47,7 @@ skin_arg=
 
 # Collect up args for Valgrind.  Only --version and --skin are intercepted 
 # here;  the rest are passed to vg_main.c.
-while [ $+ != 0 ]
+while [ $# != 0 ]
 do
   arg=$1
   case "$arg" in
@@ -79,16 +79,8 @@ if [ ! -r $VALGRIND/$skin_so ] ; then
    exit 1
 fi
 
-VG_CMD="$@"
 VG_ARGS="$VALGRIND_OPTS $vgsupp $vgopts"
 
-# If no command given, act like -h was given so vg_main.c prints out
-# the usage string.  And set VG_CMD to be any program, doesn't matter which
-# because it won't be run anyway (we use 'true').
-if [ z"$VG_CMD" = z ] ; then
-   VG_ARGS="$VG_ARGS -h"
-   VG_CMD=true
-fi
 export VG_ARGS
 
 # A bit subtle.  The LD_PRELOAD added entry must be absolute
@@ -106,10 +98,17 @@ export LD_PRELOAD
 #LD_DEBUG=files
 #LD_DEBUG=symbols
 #export LD_DEBUG
-
-exec $VG_CMD
+    
+# If no command given, act like -h was given so vg_main.c prints out
+# the usage string.  And pass to 'exec' tha name of any program -- it doesn't
+# which -- because it won't be run anyway (we use 'true').
+if [ $# != 0 ] ; then
+   exec "$@"
+else
+   VG_ARGS="$VG_ARGS -h" 
+   exec true
+fi
 
 ##--------------------------------------------------------------------##
 ##--- end                                                 valgrind ---##
 ##--------------------------------------------------------------------##
-

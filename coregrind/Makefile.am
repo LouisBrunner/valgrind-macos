@@ -19,7 +19,7 @@ bin_PROGRAMS = \
 	valgrind
 
 val_PROGRAMS = \
-	valgrind stage2 \
+	stage2 \
 	libpthread.so \
 	vg_inject.so
 

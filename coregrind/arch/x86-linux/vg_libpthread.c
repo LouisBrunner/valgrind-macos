@@ -66,12 +66,11 @@
 
 #include <unistd.h>
 #include <string.h>
-#ifdef GLIBC_2_1
 #include <sys/time.h>
-#endif
 #include <sys/stat.h>
 #include <sys/poll.h>
 #include <stdio.h>
+#include <errno.h>
 
 
 # define strong_alias(name, aliasname) \
@@ -264,9 +263,6 @@ void* my_malloc ( int nbytes )
 /* ---------------------------------------------------------------------
    Pass pthread_ calls to Valgrind's request mechanism.
    ------------------------------------------------------------------ */
-
-#include <errno.h>
-#include <sys/time.h> /* gettimeofday */
 
 
 /* ---------------------------------------------------

@@ -1295,7 +1295,7 @@ void VG_(target_forward)  ( Int *tgt )
    delta = emitted_code_used - (tgt_addr(*tgt) + 1);
    vg_assert(delta >= -128 && delta <= 127);
    vg_assert(tgt_addr(*tgt) >= 0);
-   vg_assert(tgt_addr(*tgt) < emitted_code_size);
+   vg_assert(tgt_addr(*tgt) < emitted_code_used);
    emitted_code[tgt_addr(*tgt)] = delta;
    if (dis)
       VG_(printf)("(target to jump site %d; delta: %d)\n", 

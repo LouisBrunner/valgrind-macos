@@ -1700,6 +1700,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
    */
 
    if (VG_(clo_trace_signals)) {
+      VG_(message)(Vg_DebugMsg, "");
       VG_(message)(Vg_DebugMsg, "signal %d arrived ... si_code=%d", sigNo, info->si_code );
    }
    vg_assert(sigNo >= 1 && sigNo <= VKI_KNSIG);
@@ -1767,6 +1768,9 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 	    then extend the stack segment. 
 	 */
 	 Addr base = PGROUNDDN(esp);
+         if (VG_(clo_trace_signals)) {
+            VG_(message)(Vg_DebugMsg, "attempt to extend stack downwards ...");
+         }
          if (seg->len + (seg->addr - base) <= VG_(threads)[tid].stack_size &&
              (void*)-1 != VG_(mmap)((Char *)base, seg->addr - base,
                               VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
@@ -1774,7 +1778,14 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
                               SF_STACK|SF_GROWDOWN,
                               -1, 0))
          {
-           return;             // extension succeeded, restart instruction
+            if (VG_(clo_trace_signals)) {
+               VG_(message)(Vg_DebugMsg, "... succeeded.");
+            }
+            return;             // extension succeeded, restart instruction
+	 } else {
+            if (VG_(clo_trace_signals)) {
+               VG_(message)(Vg_DebugMsg, "... failed.");
+            }
 	 }
 	 /* Otherwise fall into normal signal handling */
       } else if (info->si_code == 2 && /* SEGV_ACCERR */

@@ -286,7 +286,7 @@ myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
       buf[ind++] = '0';
    else {
       while (p > 0) {
-         if (flags & VG_MSG_COMMA && 10 == base &&
+         if ((flags & VG_MSG_COMMA) && 10 == base &&
              0 == (ind-nc) % 3 && 0 != ind) 
          {
             buf[ind++] = ',';

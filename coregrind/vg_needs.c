@@ -168,29 +168,6 @@ NEEDS(data_syms)
 NEEDS(shadow_memory)
 
 /*--------------------------------------------------------------------*/
-/* UCodeBlocks */
-
-Int VG_(get_num_instrs) ( UCodeBlock* cb )
-{
-   return cb->used;
-}
-
-Int VG_(get_num_temps) ( UCodeBlock* cb )
-{
-   return cb->nextTemp;
-}
-
-UInstr* VG_(get_instr) ( UCodeBlock* cb, Int i )
-{
-   return & cb->instrs[i];
-}
-
-UInstr* VG_(get_last_instr) ( UCodeBlock* cb )
-{
-   return & cb->instrs[cb->used-1];
-}
-   
-/*--------------------------------------------------------------------*/
 /*--- end                                               vg_needs.c ---*/
 /*--------------------------------------------------------------------*/
 

@@ -48,7 +48,7 @@ static UChar transbuf[N_TRANSBUF];
 static Bool verbose = True;
 
 /* Forwards */
-static IRBB* ac_instrument ( IRBB*, VexGuestLayout* );
+static IRBB* ac_instrument ( IRBB*, VexGuestLayout*, IRType );
 
 
 int main ( int argc, char** argv )
@@ -123,6 +123,7 @@ int main ( int argc, char** argv )
                  transbuf, N_TRANSBUF, &trans_used,
                  ac_instrument, //NULL, /* instrument1 */
                  NULL, /* instrument2 */
+		 False, /* cleanup after instrument */
                  NULL, /* access checker */
                  TEST_FLAGS 
               );
@@ -155,7 +156,7 @@ void panic ( Char* s )
 }
 
 static
-IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout)
+IRBB* ac_instrument (IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
 /* Use this rather than eg. -1 because it's a UInt. */
 #define INVALID_DATA_SIZE   999999

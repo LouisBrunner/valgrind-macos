@@ -1727,6 +1727,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
              VG_(need_to_handle_esp_assignment)()
                 ? vg_SP_update_pass
                 : NULL,
+             True, /* cleanup after instrumentation */
              NULL,
              VG_(clo_trace_codegen)
           );

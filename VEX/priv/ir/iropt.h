@@ -18,6 +18,10 @@ IRBB* do_iropt_BB ( IRBB* bb,
                     Bool (*preciseMemExnsFn)(Int,Int),
                     Addr64 guest_addr );
 
+/* Do a constant folding/propagation pass. */
+extern
+IRBB* cprop_BB ( IRBB* );
+
 /* Do a dead-code removal pass, which is generally needed to avoid
    crashing the tree-builder. bb is destructively modified. */
 extern

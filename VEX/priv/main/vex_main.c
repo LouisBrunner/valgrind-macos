@@ -128,6 +128,7 @@ TranslateResult LibVEX_Translate (
    /* IN: optionally, two instrumentation functions. */
    IRBB* (*instrument1) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
    IRBB* (*instrument2) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
+   Bool  cleanup_after_instrumentation,
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
    /* IN: debug: trace vex activity at various points */
@@ -280,6 +281,22 @@ TranslateResult LibVEX_Translate (
 
    if (instrument1 || instrument2)
       sanityCheckIRBB(irbb, guest_word_type);
+
+   /* Do a post-instrumentation cleanup pass. */
+   if (cleanup_after_instrumentation) {
+      do_deadcode_BB( irbb );
+      irbb = cprop_BB( irbb );
+      do_deadcode_BB( irbb );
+      sanityCheckIRBB(irbb, guest_word_type);
+   }
+
+   if (vex_traceflags & VEX_TRACE_OPT2) {
+      vex_printf("\n------------------------" 
+                   " After post-instr IR optimisation "
+                   "------------------------\n\n");
+      ppIRBB ( irbb );
+      vex_printf("\n");
+   }
 
    /* Turn it into virtual-registerised code. */
    do_deadcode_BB( irbb );

@@ -17,8 +17,11 @@
 #define N_SPILL64S  16
 
 
-/* Urk.  Need a way to statically establish the vreg classes,
-   else we can't allocate spill slots properly. */
+/* TODO (critical)
+   - Need a way to statically establish the vreg classes,
+     else we can't allocate spill slots properly.
+   - Better consistency checking from what isMove tells us.
+*/
 
 
 /* Records information on virtual register live ranges.  Computed once
@@ -180,7 +183,7 @@ HInstrArray* doRegisterAllocation (
 {
    /* Iterators and temporaries. */
    Int       ii, j, k, m, spillee;
-   HReg      rreg, vreg;
+   HReg      rreg, vreg, vregS, vregD;
    HRegUsage reg_usage;
 
    /* Info on vregs and rregs.  Computed once and remains
@@ -573,10 +576,43 @@ HInstrArray* doRegisterAllocation (
 
       /* Do various optimisations pertaining to register coalescing
          and preferencing:
-            MOV  v -> v   coalescing
-            MOV  v -> r   coalescing
-         Not yet.
+            MOV  v <-> v   coalescing (done here).
+            MOV  v <-> r   coalescing (not yet, if ever)
       */
+      /* If doing a reg-reg move between two vregs, and the src's live
+         range ends here and the dst's live range starts here, bind
+         the dst to the src's rreg, and that's all. */
+      if ( (*isMove)( instrs_in->arr[ii], &vregS, &vregD ) ) {
+         if (!hregIsVirtual(vregS)) goto cannot_coalesce;
+         if (!hregIsVirtual(vregD)) goto cannot_coalesce;
+	 /* Check that *isMove is not telling us a bunch of lies ... */
+	 assert(hregClass(vregS) == hregClass(vregD));
+         k = hregNumber(vregS);
+	 m = hregNumber(vregD);
+         assert(k >= 0 && k < n_vregs);
+         assert(m >= 0 && m < n_vregs);
+         if (vreg_info[k].dead_before != ii) goto cannot_coalesce;
+	 if (vreg_info[m].live_after != ii) goto cannot_coalesce;
+	 printf("COALESCE ");
+	 ppHReg(stdout, vregS);
+	 printf(" -> ");
+	 ppHReg(stdout, vregD);
+	 printf("\n");
+
+	 /* Ok, we can do it.  Find the state entry for vregS. */
+	 for (m = 0; m < n_state; m++)
+            if (state[m].disp == Bound && state[m].vreg == vregS)
+               break;
+	 /* If this fails, we have no binding for vregS, which 
+	    cannot be correct. */
+	 assert(m < n_state);
+	 /* Claim it for vregD. */
+	 state[m].vreg = vregD;
+	 /* Don't bother to copy this insn, just move on to the next
+            insn. */
+	 continue;
+      }
+     cannot_coalesce:
 
       /* ------ Pre-instruction actions for fixed rreg uses ------ */
 

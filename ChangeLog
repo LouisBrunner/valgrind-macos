@@ -1,3 +1,12 @@
+2002-04-15  Dirk Mueller  <dmuell@gmx.net>
+
+	* Makefile.am: use $(EXEEXT) to shut up newer automake versions.
+	Of course this is ugly and unportable, but it works for valgrind..
+	($(EXEEXT) is always empty on unix platforms)
+
+	* configure.in: Use AM_PROG_AS (required with automake 1.6,
+	works with automake 1.5 and newer) instead of selfhacking.
+
 2002-04-04  Frédéric Gobry  <frederic.gobry@smartdata.ch>
 
 	* configure.in, glibc-*.supp, xfree-*.supp: now, configure

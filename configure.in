@@ -18,12 +18,15 @@ if test "${GCC}" != "yes" ; then
    AC_MSG_ERROR([Valgrind relies on GCC to be compiled])
 fi
 
+# some older automake's don't have it so try something on our own
+ifdef([AM_PROG_AS],[AM_PROG_AS],
+[
 AS="${CC}"
 AC_SUBST(AS)
 
 ASFLAGS=""
 AC_SUBST(ASFLAGS)
-
+])
 
 # This variable will collect the individual suppression files
 # depending on the results of autoconf

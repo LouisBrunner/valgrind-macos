@@ -154,6 +154,8 @@ POST(sys_ipc)
 // This table maps from __NR_xxx syscall numbers (from
 // linux/include/asm-arm/unistd.h) to the appropriate PRE/POST sys_foo()
 // wrappers on ARM (as per sys_call_table in linux/arch/arm/kernel/entry.S).
+//
+// XXX: look at the x86-linux one to see how to do it.
 
 const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (restart_syscall)                             // 0

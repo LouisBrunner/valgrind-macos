@@ -317,7 +317,7 @@ static
 void create_translation_for ( ThreadId tid, Addr orig_addr )
 {
    Addr trans_addr;
-   Int  orig_size, trans_size, tcbytes_allocated;
+   Int  orig_size, trans_size;
 
    /* Make a translation, into temporary storage. */
    VG_(translate)( &VG_(threads)[tid],
@@ -329,19 +329,10 @@ void create_translation_for ( ThreadId tid, Addr orig_addr )
    vg_assert(orig_size > 0 && orig_size < 65536);
    vg_assert(trans_size > 0 && trans_size < 65536);
 
-   tcbytes_allocated
-      = VG_(add_to_trans_tab)( orig_addr, orig_size, trans_addr, trans_size );
+   VG_(add_to_trans_tab)( orig_addr, orig_size, trans_addr, trans_size );
 
    /* Free the intermediary -- was allocated by VG_(emit_code). */
    VG_(arena_free)( VG_AR_JITTER, (void*)trans_addr );
-
-   /* Update stats. */
-   VG_(this_epoch_in_count) ++;
-   VG_(this_epoch_in_osize) += orig_size;
-   VG_(this_epoch_in_tsize) += trans_size;
-   VG_(overall_in_count) ++;
-   VG_(overall_in_osize) += orig_size;
-   VG_(overall_in_tsize) += tcbytes_allocated; //trans_size; 
 }
 
 

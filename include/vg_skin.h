@@ -1195,11 +1195,17 @@ extern void VG_(generic_detect_memory_leaks) (
    surprisingly) no version info is printed; this mechanism is designed for
    skins distributed with Valgrind that share a version number with
    Valgrind.  Other skins not distributed as part of Valgrind should
-   probably have their own version number. */
-extern void VG_(details_name)             ( Char* name );
-extern void VG_(details_version)          ( Char* version );
-extern void VG_(details_description)      ( Char* description );
-extern void VG_(details_copyright_author) ( Char* copyright_author );
+   probably have their own version number.  */
+extern void VG_(details_name)                  ( Char* name );
+extern void VG_(details_version)               ( Char* version );
+extern void VG_(details_description)           ( Char* description );
+extern void VG_(details_copyright_author)      ( Char* copyright_author );
+
+/* Average size of a translation, in bytes, so that the translation
+   storage machinery can allocate memory appropriately.  Not critical.
+   If you're unsure, set to 100 (indicating typical code expansion of
+   about 6:1). */
+extern void VG_(details_avg_translation_sizeB) ( Int );
 
 /* String printed if an `sk_assert' assertion fails or VG_(skin_panic)
    is called.  Should probably be an email address. */

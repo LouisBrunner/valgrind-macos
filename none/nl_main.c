@@ -40,6 +40,7 @@ void SK_(pre_clo_init)(void)
    VG_(details_copyright_author)(
       "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  ("njn25@cam.ac.uk");
+   VG_(details_avg_translation_sizeB) ( 76 );
 
    /* No needs, no core events to track */
 }

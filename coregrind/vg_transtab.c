@@ -43,8 +43,8 @@
 /* Number of sectors the TC is divided into. */
 #define VG_TC_N_SECTORS 8
 
-#define VG_TC_QSIZE 2000000
-
+/* Calculated once at startup and never changed. */
+/* const */ Int vg_tc_sector_szB = 0;
 
 /* Number of entries in the translation table.  This must be a prime
    number in order to make the hashing work properly. */
@@ -109,6 +109,12 @@ static Int vg_tc_age[VG_TC_N_SECTORS];
 /* The number of the sector currently being allocated in. */
 static Int vg_tc_current;
 
+/* Count of number of translations, orig and new bytes in each sector.
+   For stats purposes only. */
+static Int vg_tc_stats_count[VG_TC_N_SECTORS];
+static Int vg_tc_stats_osize[VG_TC_N_SECTORS];
+static Int vg_tc_stats_tsize[VG_TC_N_SECTORS];
+
 
 /*------------------ TRANSLATION TABLE ------------------*/
 
@@ -126,6 +132,22 @@ Addr /* TCEntry*, really */ VG_(tt_fast)[VG_TT_FAST_SIZE];
 
 
 /*------------------ TT HELPERS ------------------*/
+
+static
+void pp_tt_tc_status ( Char* submsg )
+{
+   Int tc_used, s;
+   if (VG_(clo_verbosity) <= 2)
+      return;
+   tc_used = 0;
+   for (s = 0; s < VG_TC_N_SECTORS; s++)
+      tc_used += vg_tc_used[s];
+
+   VG_(message)(Vg_DebugMsg, 
+       "%luk bbs: tt %d, tc %d, %s",
+       VG_(bbs_done) / 1000,
+       vg_tt_used, tc_used, submsg );
+}
 
 /* Invalidate the tt_fast cache, for whatever reason, by pointing all
    entries at vg_tc_bogus_TCEntry.  */
@@ -218,8 +240,7 @@ void rebuild_TT ( void )
             add_tt_entry(tce);
       }
    }
-   VG_(printf)("TT: rebuild of TC complete, %d entries\n",
-               vg_tt_used );
+   pp_tt_tc_status ( "after  rebuild of TC" );
 }
 
 
@@ -250,12 +271,21 @@ Int find_oldest_sector ( void )
 static
 void discard_oldest_sector ( void )
 {
+   Char msg[100];
    Int s = find_oldest_sector();
    if (s != -1) {
       vg_assert(s >= 0 && s < VG_TC_N_SECTORS);
-      VG_(printf)("TT: discard sector %d (holding %d bytes)\n", 
-                  s, vg_tc_used[s]);
+      VG_(sprintf)(msg, "before discard of sector %d (%d bytes)", 
+                        s, vg_tc_used[s]);
+      pp_tt_tc_status ( msg );
+      VG_(overall_out_count) += vg_tc_stats_count[s];
+      VG_(overall_out_osize) += vg_tc_stats_osize[s];
+      VG_(overall_out_tsize) += vg_tc_stats_tsize[s]; 
       vg_tc_used[s] = 0;
+      vg_tc_stats_count[s] = 0;
+      vg_tc_stats_osize[s] = 0;
+      vg_tc_stats_tsize[s] = 0;
+      VG_(number_of_tc_discards) ++;
    }
 }
 
@@ -265,12 +295,15 @@ void discard_oldest_sector ( void )
 static
 Int maybe_commission_sector ( void )
 {
-   Int s;
+   Char msg[100];
+   Int  s;
    for (s = 0; s < VG_TC_N_SECTORS; s++) {
       if (vg_tc[s] != NULL && vg_tc_used[s] == 0) {
          vg_tc_age[s] = VG_(overall_in_count);
-         VG_(printf)("TT: commission sector %d at time %d\n",
-                     s, vg_tc_age[s] );
+         VG_(sprintf)(msg, "after  commission of sector %d "
+                           "at time %d", 
+                           s, vg_tc_age[s]);
+         pp_tt_tc_status ( msg );
 #        ifdef DEBUG_TRANSTAB
          VG_(sanity_check_tc_tt)();
 #        endif
@@ -280,34 +313,16 @@ Int maybe_commission_sector ( void )
    for (s = 0; s < VG_TC_N_SECTORS; s++) {
       if (vg_tc[s] == NULL) {
          vg_tc[s] = VG_(get_memory_from_mmap) 
-                       ( VG_TC_QSIZE, "trans-cache(sector)" );
+                       ( vg_tc_sector_szB, "trans-cache(sector)" );
          vg_tc_used[s] = 0;
-         VG_(printf)("TT: allocate   sector %d of %d bytes\n",
-                     s, VG_TC_QSIZE );
+         VG_(sprintf)(msg, "after  allocation of sector %d "
+                           "(size %d)", 
+                           s, vg_tc_sector_szB );
+         pp_tt_tc_status ( msg );
          return maybe_commission_sector();
       }
    }
    return -1;
-}
-
-void VG_(init_tt_tc) ( void )
-{
-   Int s;
-   for (s = 0; s < VG_TC_N_SECTORS; s++) {
-      vg_tc[s] = NULL;
-      vg_tc_used[s] = 0;
-      vg_tc_age[s] = 0;
-   }
-   vg_tc_current = 0;
-
-   vg_tt = VG_(get_memory_from_mmap) ( VG_TT_SIZE * sizeof(TTEntry),
-                                       "trans-table" );
-   /* The main translation table is empty. */
-   initialise_tt();
-
-#  ifdef DEBUG_TRANSTAB
-   VG_(sanity_check_tc_tt)();
-#  endif
 }
 
 
@@ -329,7 +344,7 @@ UChar* allocate ( Int nBytes )
    if (vg_tc_current >= 0 
        && vg_tc_current < VG_TC_N_SECTORS
        && vg_tc[vg_tc_current] != NULL
-       && vg_tc_used[vg_tc_current] + nBytes <= VG_TC_QSIZE) {
+       && vg_tc_used[vg_tc_current] + nBytes <= vg_tc_sector_szB) {
       /* Yes. */
       UChar* p = &(vg_tc[vg_tc_current][ vg_tc_used[vg_tc_current] ]);
       vg_tc_used[vg_tc_current] += nBytes;
@@ -374,11 +389,11 @@ void VG_(get_tt_tc_used) ( UInt* tt_used, UInt* tc_used )
 */
 void VG_(sanity_check_tc_tt) ( void )
 {
-  Int i, s;
-  TTEntry* tte;
-  TCEntry* tce;
-  /* Checks: 
-     - Each TT entry points to a valid and corresponding TC entry.
+   Int i, s;
+   TTEntry* tte;
+   TCEntry* tce;
+   /* Checks: 
+      - Each TT entry points to a valid and corresponding TC entry.
    */
    for (i = 0; i < VG_TT_SIZE; i++) {
       tte = &vg_tt[i];
@@ -398,36 +413,14 @@ void VG_(sanity_check_tc_tt) ( void )
          be VG_TTE_DELETED, or a real orig addr. */
       vg_assert(tte->orig_addr == tce->orig_addr);
    }
-
-
-#if 0
-   Int      i, counted_entries, counted_bytes;
-   TTEntry* tte;
-   counted_entries = 0;
-   counted_bytes   = 0;
-   for (i = 0; i < VG_TT_SIZE; i++) {
-      tte = &vg_tt[i];
-      if (tte->orig_addr == VG_TTE_EMPTY) continue;
-      vg_assert(tte->mru_epoch >= 0);
-      vg_assert(tte->mru_epoch <= VG_(current_epoch));
-      counted_entries++;
-      counted_bytes += 4+tte->trans_size;
-      vg_assert(tte->trans_addr >= (Addr)&vg_tc[4]);
-      vg_assert(tte->trans_addr < (Addr)&vg_tc[vg_tc_used]);
-      vg_assert(VG_READ_MISALIGNED_WORD(tte->trans_addr-4) == i);
-   }
-   vg_assert(counted_entries == vg_tt_used);
-   vg_assert(counted_bytes == vg_tc_used);
-#endif
 }
 
 
 /* Add this already-filled-in entry to the TT.  Assumes that the
    relevant code chunk has been placed in TC, along with a dummy back
-   pointer, which is inserted here.  Return # of tc bytes allocated,
-   for stats purposes only.
+   pointer, which is inserted here.
 */
-Int VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
+void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
                              Addr trans_addr, Int trans_size )
 {
    Int i, nBytes, trans_size_aligned;
@@ -447,6 +440,8 @@ Int VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
 
    tce = (TCEntry*)allocate(nBytes);
    /* VG_(printf)("allocate returned %p\n", tce); */
+   vg_assert(vg_tc_current >= 0 && vg_tc_current < VG_TC_N_SECTORS);
+
    tce->orig_addr  = orig_addr;
    tce->orig_size  = (UShort)orig_size;  /* what's the point of storing this? */
    tce->trans_size = (UShort)trans_size_aligned;
@@ -455,7 +450,15 @@ Int VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
    }
 
    add_tt_entry(tce);
-   return trans_size;  /* nBytes; */
+
+   /* Update stats. */
+   VG_(overall_in_count) ++;
+   VG_(overall_in_osize) += orig_size;
+   VG_(overall_in_tsize) += trans_size;
+
+   vg_tc_stats_count[vg_tc_current] ++;
+   vg_tc_stats_osize[vg_tc_current] += orig_size;
+   vg_tc_stats_tsize[vg_tc_current] += trans_size;
 }
 
 
@@ -516,9 +519,6 @@ void VG_(invalidate_translations) ( Addr start, UInt range )
 
       vg_tt[i].orig_addr = VG_TTE_DELETED;
       tce->orig_addr = VG_TTE_DELETED;
-      VG_(this_epoch_out_count) ++;
-      VG_(this_epoch_out_osize) += tce->orig_size;
-      VG_(this_epoch_out_tsize) += tce->trans_size;
       VG_(overall_out_count) ++;
       VG_(overall_out_osize) += tce->orig_size;
       VG_(overall_out_tsize) += tce->trans_size;
@@ -538,7 +538,7 @@ void VG_(invalidate_translations) ( Addr start, UInt range )
 #     endif
    }
 
-   if (1|| VG_(clo_verbosity) > 1)
+   if (VG_(clo_verbosity) > 2)
       VG_(message)(Vg_UserMsg,   
          "discard %d (%d -> %d) translations in range %p .. %p",
          out_count, out_osize, out_tsize, i_start, i_end );
@@ -548,6 +548,48 @@ void VG_(invalidate_translations) ( Addr start, UInt range )
 /*------------------------------------------------------------*/
 /*--- Initialisation.                                      ---*/
 /*------------------------------------------------------------*/
+
+void VG_(init_tt_tc) ( void )
+{
+   Int s;
+
+   /* Figure out how big each sector should be.  */
+   vg_tc_sector_szB 
+      = (VG_TT_LIMIT /* max TT entries we expect */
+         * VG_(details).avg_translation_sizeB)
+        / VG_TC_N_SECTORS;
+   /* Ensure the calculated value is not way crazy. */
+   vg_assert(vg_tc_sector_szB >= 200000);
+   vg_assert(vg_tc_sector_szB <= 6000000);
+
+   for (s = 0; s < VG_TC_N_SECTORS; s++) {
+      vg_tc[s] = NULL;
+      vg_tc_used[s] = 0;
+      vg_tc_age[s] = 0;
+      vg_tc_stats_count[s] = 0;
+      vg_tc_stats_osize[s] = 0;
+      vg_tc_stats_tsize[s] = 0;
+   }
+   vg_tc_current = 0;
+
+   vg_tt = VG_(get_memory_from_mmap) ( VG_TT_SIZE * sizeof(TTEntry),
+                                       "trans-table" );
+   /* The main translation table is empty. */
+   initialise_tt();
+
+   if (VG_(clo_verbosity) > 2) {
+      VG_(message)(Vg_DebugMsg,
+         "Translation Cache: using %d sectors of %d bytes each", 
+          VG_TC_N_SECTORS, vg_tc_sector_szB );
+      VG_(message)(Vg_DebugMsg,
+         "Translation Table: %d total entries, max occupancy %d (%d%%)",
+         VG_TT_SIZE, VG_TT_LIMIT, VG_TT_LIMIT_PERCENT );
+   }
+
+#  ifdef DEBUG_TRANSTAB
+   VG_(sanity_check_tc_tt)();
+#  endif
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                            vg_transtab.c ---*/

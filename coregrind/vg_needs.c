@@ -38,11 +38,12 @@
 
 /* Init with default values. */
 VgDetails VG_(details) = {
-   .name             = NULL,
-   .version          = NULL,
-   .description      = NULL,
-   .copyright_author = NULL,
-   .bug_reports_to   = NULL,
+   .name                  = NULL,
+   .version               = NULL,
+   .description           = NULL,
+   .copyright_author      = NULL,
+   .bug_reports_to        = NULL,
+   .avg_translation_sizeB = 0
 };
 
 VgNeeds VG_(needs) = {
@@ -116,6 +117,7 @@ void VG_(sanity_check_needs) ( void)
    CHECK_NOT(VG_(details).description,      NULL);
    CHECK_NOT(VG_(details).copyright_author, NULL);
    CHECK_NOT(VG_(details).bug_reports_to,   NULL);
+   CHECK_NOT(VG_(details).avg_translation_sizeB, 0);
 
 #undef CHECK_NOT
 #undef INVALID_Bool
@@ -125,17 +127,18 @@ void VG_(sanity_check_needs) ( void)
 /* Setting details */
 
 /* Use macro because they're so repetitive */
-#define DETAILS(detail)  \
-   extern void VG_(details_##detail)(Char* detail) \
-   {                                   \
-      VG_(details).detail = detail;          \
+#define DETAILS(type, detail)                       \
+   extern void VG_(details_##detail)(type detail)   \
+   {                                                \
+      VG_(details).detail = detail;                 \
    }
 
-DETAILS(name)
-DETAILS(version)
-DETAILS(description)
-DETAILS(copyright_author)
-DETAILS(bug_reports_to)
+DETAILS(Char*, name)
+DETAILS(Char*, version)
+DETAILS(Char*, description)
+DETAILS(Char*, copyright_author)
+DETAILS(Char*, bug_reports_to)
+DETAILS(Int, avg_translation_sizeB)
 
 /*--------------------------------------------------------------------*/
 /* Setting needs */

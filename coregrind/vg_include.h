@@ -291,6 +291,7 @@ typedef
       Char* description;
       Char* copyright_author;
       Char* bug_reports_to;
+      Int   avg_translation_sizeB;
    }
    VgDetails;
 
@@ -1344,9 +1345,6 @@ extern UInt VG_(dispatch_ctr);
 /* Is the client running on the simulated CPU or the real one? */
 extern Bool VG_(running_on_simd_CPU); /* Initially False */
 
-/* The current LRU epoch. */
-extern UInt VG_(current_epoch);
-
 /* This is the ThreadId of the last thread the scheduler ran. */
 extern ThreadId VG_(last_run_tid);
 
@@ -1361,16 +1359,8 @@ extern UInt VG_(exitcode);
 /* Number of lookups which miss the fast tt helper. */
 extern UInt VG_(tt_fast_misses);
 
-/* Counts for LRU informational messages. */
+/* Counts for TT/TC informational messages. */
 
-/* Number and total o/t size of new translations this epoch. */
-extern UInt VG_(this_epoch_in_count);
-extern UInt VG_(this_epoch_in_osize);
-extern UInt VG_(this_epoch_in_tsize);
-/* Number and total o/t size of discarded translations this epoch. */
-extern UInt VG_(this_epoch_out_count);
-extern UInt VG_(this_epoch_out_osize);
-extern UInt VG_(this_epoch_out_tsize);
 /* Number and total o/t size of translations overall. */
 extern UInt VG_(overall_in_count);
 extern UInt VG_(overall_in_osize);
@@ -1380,8 +1370,8 @@ extern UInt VG_(overall_out_count);
 extern UInt VG_(overall_out_osize);
 extern UInt VG_(overall_out_tsize);
 
-/* The number of LRU-clearings of TT/TC. */
-extern UInt VG_(number_of_lrus);
+/* The number of discards of TT/TC. */
+extern UInt VG_(number_of_tc_discards);
 
 /* Counts pertaining to the register allocator. */
 
@@ -1454,7 +1444,7 @@ extern Addr VG_(tt_fast)[VG_TT_FAST_SIZE];
 
 extern void VG_(get_tt_tc_used) ( UInt* tt_used, UInt* tc_used );
 
-extern Int  VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
+extern void VG_(add_to_trans_tab) ( Addr orig_addr,  Int orig_size,
                                     Addr trans_addr, Int trans_size );
 
 extern void VG_(invalidate_translations) ( Addr start, UInt range );

@@ -82,6 +82,7 @@ void SK_(pre_clo_init)(void)
    VG_(details_copyright_author)(
       "Copyright (C) 2002, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  ("njn25@cam.ac.uk");
+   VG_(details_avg_translation_sizeB) ( 175 );
 
    VG_(register_compact_helper)((Addr) & add_one_dlrr_call);
    VG_(register_compact_helper)((Addr) & add_one_BB);

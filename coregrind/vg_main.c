@@ -372,9 +372,6 @@ ULong VG_(bbs_done);
 /* 64-bit counter for the number of bbs to go before a debug exit. */
 ULong VG_(bbs_to_go);
 
-/* The current LRU epoch. */
-UInt VG_(current_epoch) = 0;
-
 /* This is the ThreadId of the last thread the scheduler ran. */
 ThreadId VG_(last_run_tid) = 0;
 
@@ -396,16 +393,8 @@ Bool VG_(logging_to_filedes) = True;
 UInt VG_(tt_fast_misses) = 0;
 
 
-/* Counts for LRU informational messages. */
+/* Counts for TT/TC informational messages. */
 
-/* Number and total o/t size of new translations this epoch. */
-UInt VG_(this_epoch_in_count) = 0;
-UInt VG_(this_epoch_in_osize) = 0;
-UInt VG_(this_epoch_in_tsize) = 0;
-/* Number and total o/t size of discarded translations this epoch. */
-UInt VG_(this_epoch_out_count) = 0;
-UInt VG_(this_epoch_out_osize) = 0;
-UInt VG_(this_epoch_out_tsize) = 0;
 /* Number and total o/t size of translations overall. */
 UInt VG_(overall_in_count) = 0;
 UInt VG_(overall_in_osize) = 0;
@@ -415,8 +404,8 @@ UInt VG_(overall_out_count) = 0;
 UInt VG_(overall_out_osize) = 0;
 UInt VG_(overall_out_tsize) = 0;
 
-/* The number of LRU-clearings of TT/TC. */
-UInt VG_(number_of_lrus) = 0;
+/* The number of discards of TT/TC. */
+UInt VG_(number_of_tc_discards) = 0;
 
 
 /* Counts pertaining to the register allocator. */
@@ -1182,9 +1171,8 @@ static __inline__ Int safe_idiv(Int a, Int b)
 static void vg_show_counts ( void )
 {
    VG_(message)(Vg_DebugMsg,
-		"      lru: %d epochs, %d clearings.",
-		VG_(current_epoch),
-                VG_(number_of_lrus) );
+		"    TT/TC: %d tc sectors discarded.",
+                VG_(number_of_tc_discards) );
    VG_(message)(Vg_DebugMsg,
                 "translate: new     %d (%d -> %d; ratio %d:10)",
                 VG_(overall_in_count),
@@ -1358,7 +1346,7 @@ void VG_(main) ( void )
    if (VG_(clo_verbosity) > 1)
       vg_show_counts();
 
-   if (VG_(clo_verbosity) > 2)
+   if (VG_(clo_verbosity) > 3)
       VG_(print_UInstr_histogram)();
 
    if (0) {

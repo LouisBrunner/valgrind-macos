@@ -38,6 +38,7 @@
 #include "libvex_guest_x86.h"
 #include "libvex_guest_amd64.h"
 #include "libvex_guest_arm.h"
+#include "libvex_guest_ppc32.h"
 
 #include "main/vex_globals.h"
 #include "main/vex_util.h"
@@ -49,6 +50,7 @@
 #include "guest-x86/gdefs.h"
 #include "guest-amd64/gdefs.h"
 #include "guest-arm/gdefs.h"
+#include "guest-ppc32/gdefs.h"
 
 
 /* This file contains the top level interface to the library. */
@@ -300,6 +302,16 @@ VexTranslateResult LibVEX_Translate (
          guest_word_type  = Ity_I32;
          guest_layout     = &armGuest_layout;
          vassert(subarch_guest == VexSubArchARM_v4);
+         break;
+
+      case VexArchPPC32:
+         preciseMemExnsFn = guest_ppc32_state_requires_precise_mem_exns;
+         bbToIR           = bbToIR_PPC32;
+         specHelper       = guest_ppc32_spechelper;
+         guest_sizeB      = sizeof(VexGuestPPC32State);
+         guest_word_type  = Ity_I32;
+         guest_layout     = &ppc32Guest_layout;
+         vassert(subarch_guest == VexSubArchPPC32);
          break;
 
       default:

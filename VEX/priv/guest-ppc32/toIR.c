@@ -185,13 +185,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    dumping the IR into global irbb.  Returns the size, in bytes, of
    the basic block.  
 */
-IRBB* bbToIR_PPC32 ( UChar*     ppc32Code, 
-                   Addr64     guest_pc_start, 
-                   Int*       guest_bytes_read, 
-                   Bool       (*byte_accessible)(Addr64),
-                   Bool       (*chase_into_ok)(Addr64),
-                   Bool       host_bigendian,
-                   VexSubArch subarch_guest )
+IRBB* bbToIR_PPC32 ( UChar*           ppc32code, 
+		     Addr64           guest_pc_start, 
+		     VexGuestExtents* vge, 
+		     Bool             (*byte_accessible)(Addr64),
+		     Bool             (*chase_into_ok)(Addr64),
+		     Bool             host_bigendian,
+		     VexSubArch       subarch_guest )
 {
    UInt       delta;
    Int        i, n_instrs, size, first_stmt_idx;
@@ -207,11 +207,16 @@ IRBB* bbToIR_PPC32 ( UChar*     ppc32Code,
    vassert(vex_control.guest_chase_thresh >= 0);
    vassert(vex_control.guest_chase_thresh < vex_control.guest_max_insns);
 
-//   vassert(subarch_guest == VexSubArchPPC_32);
+   vassert(subarch_guest == VexSubArchPPC32);
+
+   /* Start a new, empty extent. */
+   vge->n_used  = 1;
+   vge->base[0] = guest_pc_start;
+   vge->len[0]  = 0;
 
    /* Set up globals. */
    host_is_bigendian = host_bigendian;
-   guest_code        = ppc32Code;
+   guest_code        = ppc32code;
    guest_pc_bbstart  = (Addr32)guest_pc_start;
    irbb              = emptyIRBB();
 
@@ -221,7 +226,7 @@ IRBB* bbToIR_PPC32 ( UChar*     ppc32Code,
       have so far gone. */
    delta             = 0;
    n_instrs          = 0;
-   *guest_bytes_read = 0;
+//   *guest_bytes_read = 0;
 
    while (True) {
       vassert(n_instrs < vex_control.guest_max_insns);
@@ -261,7 +266,7 @@ IRBB* bbToIR_PPC32 ( UChar*     ppc32Code,
       }
 
       delta += size;
-      *guest_bytes_read += size;
+      vge->len[vge->n_used-1] += size;
       n_instrs++;
       DIP("\n");
 
@@ -963,13 +968,13 @@ static Bool dis_int_cmp ( UInt theInstr )
 
     case 0x0A: // cmpli (Compare Logical Immediate, p400)
 	assign( tmp, IRExpr_Mux0X(
-		    binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(SIMM_16)),
-		    IRExpr_Mux0X( binop(Iop_CmpLT32U, mkU32(SIMM_16), mkexpr(Ra)),
+		    binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(UIMM_16)),
+		    IRExpr_Mux0X( binop(Iop_CmpLT32U, mkU32(UIMM_16), mkexpr(Ra)),
 				  mkU32(2), mkU32(4) ), mkU32(8) ));
 
 	assign( cr_flags, binop(Iop_Or32, mkexpr(tmp), mkexpr(xer_so)) );
 
-	DIP("cmpli %i,%i,%i,%i\n", crfD, flag_L, Ra_addr, SIMM_16);
+	DIP("cmpli %i,%i,%i,%i\n", crfD, flag_L, Ra_addr, UIMM_16);
 	break;
 
     /* X Form */
@@ -1020,16 +1025,22 @@ static Bool dis_int_cmp ( UInt theInstr )
 static Bool dis_int_logic ( UInt theInstr )
 {
     UChar opc1    = (theInstr) & 0x3F;            /* theInstr[0:5]   */
+    UChar Rs_addr = (theInstr >> 6 ) & 0x1F;      /* theInstr[6:10]  */
+    UChar Ra_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
 
     /* D-Form */
-    UChar S       = (theInstr >> 6 ) & 0x1F;      /* theInstr[6:10]  */
-    UChar A       = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  UIMM    = (theInstr >> 16) & 0xFFFF;    /* theInstr[16:31] */
+    UInt  UIMM_16 = (theInstr >> 16) & 0xFFFF;    /* theInstr[16:31] */
 
     /* X-Form */
-    UChar B       = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar Rb_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
     UInt  opc2    = (theInstr >> 21) & 0x3F;      /* theInstr[21:30] */
-    UChar Rc      = (theInstr >> 31) & 1;         /* theInstr[31]    */
+    UChar flag_Rc = (theInstr >> 31) & 1;         /* theInstr[31]    */
+
+    IRTemp Rs = newTemp(Ity_I32);
+//    IRTemp Ra = newTemp(Ity_I32);
+//    IRTemp Rb = newTemp(Ity_I32);
+
+    assign( Rs, getIReg(Ra_addr) );
 
     switch (opc1) {
     case 0x1C: // andi.
@@ -1038,11 +1049,16 @@ static Bool dis_int_logic ( UInt theInstr )
     case 0x1D: // andis.
 	return False;
 
-    case 0x18: // ori
-	return False;
+    case 0x18: // ori (OR Immediate, p551)
+	putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs), mkU32(UIMM_16)) );
+	DIP("ori %i,%i,%i\n", Ra_addr, Rs_addr, UIMM_16);
+	break;
 
-    case 0x19: // oris
-	return False;
+    case 0x19: // oris (OR Immediate Shifted, p552)
+	putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs),
+				binop(Iop_Shl32, mkU32(UIMM_16), mkU32(16))) );
+	DIP("oris %i,%i,%i\n", Ra_addr, Rs_addr, UIMM_16);
+	break;
 
     case 0x1A: // xori
 	return False;
@@ -1060,18 +1076,18 @@ static Bool dis_int_logic ( UInt theInstr )
 	    return False;
 
 	case 0x01A: // cntlzw, B=0
-	    if (B!=0) { return False; }
+	    if (Rb_addr!=0) { return False; }
 	    return False;
 
 	case 0x11C: // eqv
 	    return False;
 
-	case 0x3BA: // extsb, B=0
-	    if (B!=0) { return False; }
+	case 0x3BA: // extsb
+	    if (Rb_addr!=0) { return False; }
 	    return False;
 
-	case 0x39A: // extsh, B=0
-	    if (B!=0) { return False; }
+	case 0x39A: // extsh
+	    if (Rb_addr!=0) { return False; }
 	    return False;
 
 	case 0x1DA: // nand
@@ -1080,11 +1096,24 @@ static Bool dis_int_logic ( UInt theInstr )
 	case 0x07C: // nor
 	    return False;
 
-	case 0x1BC: // or
-	    return False;
+	case 0x1BC: // or (OR, p549)
+	    putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs), getIReg(Rb_addr)) );
+  	    if (flag_Rc==1) {
+		// CAB: ?
+	    }
+	    DIP("or%s %i,%i,%i\n",
+		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
+	    break;
 
-	case 0x19C: // orc
-	    return False;
+	case 0x19C: // orc  (OR with Compement, p550)
+	    putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs),
+				    unop(Iop_Not32, getIReg(Rb_addr))) );
+  	    if (flag_Rc==1) {
+		// CAB: ?
+	    }
+	    DIP("orc%s %i,%i,%i\n",
+		flag_Rc ? "." : "", Ra_addr, Rs_addr, Rb_addr);
+	    break;
 
 	case 0x13C: // xor
 	    return False;
@@ -1319,6 +1348,9 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    {
 //      UInt* code = (UInt*)(guest_code + delta);
 
+       // Note: A prefferred no-op is "ori 0,0,0" (p551)
+
+
       // CAB: easy way to rotate left?
 
       /* Spot this:                                       
@@ -1357,8 +1389,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    opc1 = (theInstr) & 0x3F;           /* opcode1: [0:5] */
    opc2 = (theInstr >> 21) & 0x3FF;    /* opcode2: [21:30] */
 
-//   vex_printf("disInstr(ppc): opcode1: 0x%2x, %,09b\n", opc1, opc1 );
-//   vex_printf("disInstr(ppc): opcode2: 0x%2x, %,09b\n", opc2, opc2 );
+   vex_printf("disInstr(ppc32): opcode1: 0x%2x, %06b\n", opc1, opc1 );
+   vex_printf("disInstr(ppc32): opcode2: 0x%2x, %010b\n", opc2, opc2 );
 
    // Note: all 'reserved' bits must be cleared, else invalid
    switch (opc1) {

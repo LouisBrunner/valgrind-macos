@@ -55,7 +55,7 @@ typedef
       VexArchX86, 
       VexArchAMD64, 
       VexArchARM,
-      VexArchPPC
+      VexArchPPC32
    }
    VexArch;
 
@@ -67,7 +67,7 @@ typedef
       VexSubArchX86_sse1, /* SSE1 support (Pentium III) */
       VexSubArchX86_sse2, /* SSE2 support (Pentium 4) */
       VexSubArchARM_v4,   /* ARM version 4 */
-      VexSubArchPPC_32    /* 32 bit */
+      VexSubArchPPC32     /* CAB: ? */
    }
    VexSubArch;
 

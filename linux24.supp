@@ -107,13 +107,13 @@
 # two:
 {
    __mpn_construct_double/*(Addr4)
-   Memcheck:Addr4
+   Addrcheck,Memcheck:Addr4
    fun:__mpn_construct_double
    fun:*
 }
 {
    __mpn_construct_double/*(Addr8)
-   Memcheck:Addr8
+   Addrcheck,Memcheck:Addr8
    fun:__mpn_construct_double
    fun:*
 }
@@ -121,13 +121,13 @@
 # More of the same (gcc bug, I'm pretty sure)
 {
    __fabs/*(Addr4)
-   Memcheck:Addr4
+   Addrcheck,Memcheck:Addr4
    fun:__fabs
    fun:*
 }
 {
    __fabs/*(Addr8)
-   Memcheck:Addr8
+   Addrcheck,Memcheck:Addr8
    fun:__fabs
    fun:*
 }
@@ -136,7 +136,7 @@
 # Not sure what this is about ... but anyway
 {
    pthread_sighandler/*(Addr4)
-   Memcheck:Addr4
+   Addrcheck,Memcheck:Addr4
    fun:pthread_sighandler
    fun:*
 }
@@ -179,14 +179,14 @@
 #-------------------
 {
    socketcall.connect(serv_addr)/__libc_connect/*
-   Memcheck:Param
+   Addrcheck,Memcheck:Param
    socketcall.connect(serv_addr)
    fun:__libc_connect
    fun:*
 }
 {
    socketcall.connect(serv_addr)/libc-2.2.4.so/libc-2.2.4.so
-   Memcheck:Param
+   Addrcheck,Memcheck:Param
    socketcall.connect(serv_addr)
    obj:*libc-2.2.4.so
    obj:*libc-2.2.4.so
@@ -252,7 +252,7 @@
 #----------------------
 {
    write(buf)/__libc_write/libX11.so.6.2/libX11.so.6.2(Param)
-   Memcheck:Param
+   Addrcheck,Memcheck:Param
    write(buf)
    fun:__libc_write
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -260,7 +260,7 @@
 }
 {
    write(buf)/libc-2.2.4.so/libX11.so.6.2/libX11.so.6.2(Param)
-   Memcheck:Param
+   Addrcheck,Memcheck:Param
    write(buf)
    obj:*libc-2.2.4.so
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -269,7 +269,7 @@
 
 #{
 #   llseek(result)/__libc_lseek64/_IO_file_seek(Param)
-#   Memcheck:Param
+#   Addrcheck,Memcheck:Param
 #   llseek(result)
 #   fun:__libc_lseek64
 #   fun:_IO_file_seek
@@ -277,7 +277,7 @@
 
 {
    writev(vector[...])/__writev/libX11.so.6.2/libX11.so.6.2
-   Memcheck:Param
+   Addrcheck,Memcheck:Param
    writev(vector[...])
    fun:__writev
    obj:/usr/X11R6/lib/libX11.so.6.2

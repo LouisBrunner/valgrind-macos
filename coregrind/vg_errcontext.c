@@ -517,20 +517,36 @@ static Bool setLocationTy ( Char** p_caller, SuppLocTy* p_ty )
 }
 
 
+/* Look for "skin" in a string like "skin1,skin2,skin3" */
+static __inline__
+Bool skin_name_present(Char *name, Char *names)
+{
+   Bool  found;
+   Char *s = NULL;   /* Shut gcc up */
+   Int   len = VG_(strlen)(name);
+
+   found = (NULL != (s = VG_(strstr)(names, name)) &&
+            (s        == names || *(s-1)   == ',') &&
+            (*(s+len) == ','   || *(s+len) == '\0')
+           );
+
+   return found;
+}
+
+#define STREQ(s1,s2) (s1 != NULL && s2 != NULL \
+                      && VG_(strcmp)((s1),(s2))==0)
+
 /* Read suppressions from the file specified in vg_clo_suppressions
    and place them in the suppressions list.  If there's any difficulty
    doing this, just give up -- there's no point in trying to recover.  
 */
-#define STREQ(s1,s2) (s1 != NULL && s2 != NULL \
-                      && VG_(strcmp)((s1),(s2))==0)
-
 static void load_one_suppressions_file ( Char* filename )
 {
 #  define N_BUF 200
    Int   fd, i;
    Bool  eof;
    Char  buf[N_BUF+1];
-   Char* skin_name;
+   Char* skin_names;
    Char* supp_name;
 
    fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
@@ -561,7 +577,7 @@ static void load_one_suppressions_file ( Char* filename )
 
       if (eof) goto syntax_error;
 
-      /* Check it has the "skin_name:supp_name" form (ie. look for ':') */
+      /* Check it has the "skin1,skin2,...:supp" form (look for ':') */
       i = 0;
       while (True) {
          if (buf[i] == ':')  break;
@@ -570,20 +586,21 @@ static void load_one_suppressions_file ( Char* filename )
       }
       buf[i]    = '\0';    /* Replace ':', splitting into two strings */
 
-      skin_name = & buf[0];
-      supp_name = & buf[i+1];
+      skin_names = & buf[0];
+      supp_name  = & buf[i+1];
 
-      /* Is it a core suppression?  (core:<supp_name>) */
-      if (VG_(needs).core_errors && STREQ(skin_name, "core"))
+      /* Is it a core suppression? */
+      if (VG_(needs).core_errors && skin_name_present("core", skin_names))
       {
-         if (STREQ(supp_name, "PThread")) 
+         if (STREQ(supp_name, "PThread"))
             supp->skin_supp.skind = PThreadSupp;
          else
             goto syntax_error;
       }
 
-      /* Is it a skin suppression?  (<skin_name>:<supp_name>") */
-      else if (VG_(needs).skin_errors && STREQ(skin_name, VG_(details).name))
+      /* Is it a skin suppression? */
+      else if (VG_(needs).skin_errors && 
+               skin_name_present(VG_(details).name, skin_names))
       {
          if (SK_(recognised_suppression)(supp_name, & supp->skin_supp.skind)) 
          {
@@ -631,7 +648,7 @@ static void load_one_suppressions_file ( Char* filename )
                    filename );
    } else {
       VG_(message)(Vg_UserMsg, 
-                   "FATAL: in suppressions file `%s': syntax error on: %s", 
+                   "FATAL: in suppressions file: `%s': syntax error on: %s", 
                    filename, buf );
    }
    VG_(close)(fd);
@@ -718,8 +735,6 @@ Bool supp_matches_callers(CoreSupp* su, Char caller_obj[][M_VG_ERRTXT],
 */
 static CoreSupp* is_suppressible_error ( CoreError* err )
 {
-#  define STREQ(s1,s2) (s1 != NULL && s2 != NULL \
-                        && VG_(strcmp)((s1),(s2))==0)
    Int i;
 
    Char caller_obj[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
@@ -751,9 +766,9 @@ static CoreSupp* is_suppressible_error ( CoreError* err )
       }
    }
    return NULL;      /* no matches */
-
-#  undef STREQ
 }
+
+#undef STREQ
 
 /*--------------------------------------------------------------------*/
 /*--- end                                          vg_errcontext.c ---*/

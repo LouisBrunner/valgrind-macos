@@ -84,12 +84,11 @@ noinst_HEADERS = \
 
 MANUAL_DEPS = $(noinst_HEADERS) $(include_HEADERS) .in_place/libpthread.so.0
 
-vg_memory.o: vg_memory.c $(MANUAL_DEPS)
-	$(COMPILE) -O2 @PREFERRED_STACK_BOUNDARY@ -c $<
+vg_memory_c_CFLAGS = $(PREFERRED_STACK_BOUNDARY)
 
 vg_intercept.o vg_libpthread.o vg_replace_malloc.o: CFLAGS += -fno-omit-frame-pointer
 
-.in_place/libpthread.so.0:
+all-local:
 	mkdir -p .in_place
 	-rm -f .in_place/libpthread.so.0
 	-rm -f .in_place/valgrind.so

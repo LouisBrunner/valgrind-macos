@@ -9,7 +9,6 @@
 /* TODO
    fix jmpkind fields 
    XOR reg with itself
-   Clean up setFlagsARITH
 */
 
 /* Translates x86 code to IR. */
@@ -120,6 +119,11 @@ static UInt extend_s_8to32( UInt x )
    return (UInt)((((Int)x) << 24) >> 24);
 }
 
+static UInt extend_s_16to32 ( UInt x )
+{
+   return (UInt)((((Int)x) << 16) >> 16);
+}
+
 /* Fetch a byte from the guest insn stream. */
 static UChar getIByte ( UInt delta )
 {
@@ -189,6 +193,24 @@ static UInt getSDisp8 ( UInt delta )
    return extend_s_8to32( (UInt) (guest_code[delta]) );
 }
 
+static UInt getSDisp16 ( UInt delta0 )
+{
+   UChar* eip = (UChar*)(&guest_code[delta0]);
+   UInt d = *eip++;
+   d |= ((*eip++) << 8);
+   return extend_s_16to32(d);
+}
+
+static UInt getSDisp ( Int size, UInt delta )
+{
+   switch (size) {
+      case 4: return getUDisp32(delta);
+      case 2: return getSDisp16(delta);
+      case 1: return getSDisp8(delta);
+      default: vpanic("getSDisp(x86)");
+  }
+  return 0; /*notreached*/
+}
 
 
 /*------------------------------------------------------------*/
@@ -241,10 +263,6 @@ static void putIReg ( Int sz, UInt archreg, IRExpr* e )
 {
    vassert(sz == 1 || sz == 2 || sz == 4);
    vassert(archreg < 8);
-
-   vassert(!host_is_bigendian);
-   vassert(sz == 4);
-
    stmt( IRStmt_Put(NULL, integerGuestRegOffset(sz,archreg), e) );
 }
 
@@ -327,65 +345,8 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
 /*--- Helpers for %eflags.                                 ---*/
 /*------------------------------------------------------------*/
 
-/* Build the flag-thunk following a flag-setting operation.  If guard
-   is non-NULL, it is regarded as a controlling expression of type
-   Ity_Bit, and the thunk is only updated iff guard evaluates to 1 at
-   run-time.  If guard is NULL, the update is always done. */
 
-static void setFlagsARITH ( IROp    op8,
-                            IRTemp  cc_src,
-                            IRTemp  cc_dst,
-                            IRType  ty,
-                            IRExpr* guard )
-{
-   Int ccOp;
-   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-
-   ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
-   switch (op8) {
-      case Iop_Or8:
-      case Iop_And8:
-      case Iop_Xor8:
-         ccOp += CC_OP_LOGICB;
-         /* CC_DST = %d afterwards */
-	 stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
-         stmt( IRStmt_Put(guard, OFFB_CC_SRC, mkU32(0)) );
-         stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(cc_dst)) );
-         break;
-      case Iop_Add8:
-         ccOp += CC_OP_ADDB;
-         /* CC_SRC = %s, CC_DST = %d afterwards */
-	 stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
-         stmt( IRStmt_Put(guard, OFFB_CC_SRC, mkexpr(cc_src)) );
-         stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(cc_dst)) );
-         break;
-      case Iop_Sub8:
-         ccOp += CC_OP_SUBB;
-         /* CC_SRC = %s, CC_DST = %d afterwards */
-	 stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
-         stmt( IRStmt_Put(guard, OFFB_CC_SRC, mkexpr(cc_src)) );
-         stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(cc_dst)) );
-         break;
-      case Iop_Shr8:
-         ccOp += CC_OP_SARB;
-         /* CC_SRC = undershifted %d after, CC_DST = %d afterwards */
-	 stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
-         stmt( IRStmt_Put(guard, OFFB_CC_SRC, mkexpr(cc_src)) );
-         stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(cc_dst)) );
-         break;
-      case Iop_Shl8:
-         ccOp += CC_OP_SHLB;
-         /* CC_SRC = undershifted %d after, CC_DST = %d afterwards */
-	 stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
-         stmt( IRStmt_Put(guard, OFFB_CC_SRC, mkexpr(cc_src)) );
-         stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(cc_dst)) );
-         break;
-      default: 
-         ppIROp(op8);
-         vpanic("setFlagsARITH(x86)");
-   }
-}
-
+/* -------------- Evaluating the flags-thunk. -------------- */
 
 /* Build IR to calculate all the eflags from stored
    CC_OP/CC_SRC/CC_DST. */
@@ -412,7 +373,91 @@ static IRExpr* mk_calculate_eflags_c ( void )
 }
 
 
+/* -------------- Building the flags-thunk. -------------- */
+
+/* Build the flag-thunk following a flag-setting operation.  If guard
+   is non-NULL, it is regarded as a controlling expression of type
+   Ity_Bit, and the thunk is only updated iff guard evaluates to 1 at
+   run-time.  If guard is NULL, the update is always done. */
+
+/* This is for add/sub/adc/sbb/and/or/xor, where we need to
+   store the result value and the non-lvalue operand. */
+
+static void setFlags_SRC_DST1 ( IROp    op8,
+                                IRTemp  src,
+                                IRTemp  dst1,
+                                IRType  ty )
+{
+   Int     ccOp  = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+   IRExpr* guard = NULL;
+
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
+
+   switch (op8) {
+      case Iop_Or8:
+      case Iop_And8:
+      case Iop_Xor8: ccOp += CC_OP_LOGICB; break;
+      case Iop_Add8: ccOp += CC_OP_ADDB;   break;
+      case Iop_Sub8: ccOp += CC_OP_SUBB;   break;
+      default:       ppIROp(op8);
+                     vpanic("setFlags_SRC_DST1(x86)");
+   }
+   stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
+   stmt( IRStmt_Put(guard, OFFB_CC_SRC, mkexpr(src)) );
+   stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(dst1)) );
+}
+
+
+/* This is for shl/shr/sar, where we store the result value and the
+   result except shifted one bit less.  And then only when the guard
+   says we can. */
+
+static void setFlags_DSTus_DST1 ( IROp    op8,
+                                  IRTemp  dstUS,
+                                  IRTemp  dst1,
+                                  IRType  ty,
+                                  IRExpr* guard )
+{
+   Int ccOp  = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
+   vassert(guard);
+
+   switch (op8) {
+      case Iop_Shr8: ccOp += CC_OP_SARB; break;
+      case Iop_Shl8: ccOp += CC_OP_SHLB; break;
+      default:       ppIROp(op8);
+                     vpanic("setFlags_DSTus_DST1(x86)");
+   }
+
+   /* CC_SRC = undershifted %d after, CC_DST = %d afterwards */
+   stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
+   stmt( IRStmt_Put(guard, OFFB_CC_SRC, mkexpr(dstUS)) );
+   stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(dst1)) );
+}
+
+
+/* For the inc/dec case, we store the result value and the former
+   value of the carry flag, which unfortunately we have to compute. */
+
+static void setFlags_INC_DEC ( Bool inc, IRTemp dst, IRType ty )
+{
+   IRExpr* guard = NULL;
+   Int     ccOp  = inc ? CC_OP_INCB : CC_OP_DECB;
+   
+   ccOp += ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
+
+   /* This has to come first, because calculating the C flag 
+      may require reading all three OFFB_CC fields. */
+   stmt( IRStmt_Put(guard, OFFB_CC_SRC, mk_calculate_eflags_c()) );
+   stmt( IRStmt_Put(guard, OFFB_CC_OP,  mkU32(ccOp)) );
+   stmt( IRStmt_Put(guard, OFFB_CC_DST, mkexpr(dst)) );
+}
+
+
 /* Condition codes, using the Intel encoding.  */
+
 typedef
    enum {
       CondO      = 0,  /* overflow           */
@@ -516,6 +561,9 @@ static IRExpr* calculate_condition ( Condcode cond )
          e = binop(Iop_Or32,
                    flag_to_bit0(CC_MASK_C,eflags),
                    flag_to_bit0(CC_MASK_Z,eflags) );
+         break;
+      case CondP: /* PF == 1 */
+         e = flag_to_bit0( CC_MASK_P, eflags );
          break;
       case CondLE: /* ((SF xor OF) or ZF)  == 1 */
          e = binop(Iop_Or32,
@@ -819,15 +867,15 @@ static Char* nameGrp2 ( Int opc_aux )
 //--    if (opc_aux < 0 || opc_aux > 1) VG_(core_panic)("nameGrp4");
 //--    return grp4_names[opc_aux];
 //-- }
-//-- 
-//-- static Char* nameGrp5 ( Int opc_aux )
-//-- {
-//--    static Char* grp5_names[8] 
-//--      = { "inc", "dec", "call*", "call*", "jmp*", "jmp*", "push", "???" };
-//--    if (opc_aux < 0 || opc_aux > 6) VG_(core_panic)("nameGrp5");
-//--    return grp5_names[opc_aux];
-//-- }
-//-- 
+
+static Char* nameGrp5 ( Int opc_aux )
+{
+   static Char* grp5_names[8] 
+     = { "inc", "dec", "call*", "call*", "jmp*", "jmp*", "push", "???" };
+   if (opc_aux < 0 || opc_aux > 6) vpanic("nameGrp5(x86)");
+   return grp5_names[opc_aux];
+}
+
 //-- static Char* nameGrp8 ( Int opc_aux )
 //-- {
 //--    static Char* grp8_names[8] 
@@ -908,19 +956,6 @@ static Char nameISize ( Int size )
    }
 }
 
-//-- __inline__ static UInt extend_s_16to32 ( UInt x )
-//-- {
-//--    return (UInt)((((Int)x) << 16) >> 16);
-//-- }
-//-- 
-//-- 
-//-- __inline__ static UInt getSDisp16 ( Addr eip0 )
-//-- {
-//--    UChar* eip = (UChar*)eip0;
-//--    UInt d = *eip++;
-//--    d |= ((*eip++) << 8);
-//--    return extend_s_16to32(d);
-//-- }
 //-- __inline__ static UInt LOW24 ( UInt x )
 //-- {
 //--    return x & 0x00FFFFFF;
@@ -929,17 +964,6 @@ static Char nameISize ( Int size )
 //-- __inline__ static UInt HI8 ( UInt x )
 //-- {
 //--    return x >> 24;
-//-- }
-//-- 
-//-- __inline__ static UInt getSDisp ( Int size, Addr eip )
-//-- {
-//--    switch (size) {
-//--       case 4: return getUDisp32(eip);
-//--       case 2: return getSDisp16(eip);
-//--       case 1: return getSDisp8(eip);
-//--       default: VG_(core_panic)("getUDisp");
-//--   }
-//--   return 0; /*notreached*/
 //-- }
 //-- 
 //-- /*------------------------------------------------------------*/
@@ -1412,7 +1436,7 @@ UInt dis_op2_E_G ( UChar       sorb,
       assign( dst0, getIReg(size,gregOfRM(rm)) );
       assign( src,  getIReg(size,eregOfRM(rm)) );
       assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-      setFlagsARITH(op8, src, dst1, ty, NULL);
+      setFlags_SRC_DST1(op8, src, dst1, ty);
 
       if (keep)
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
@@ -1427,7 +1451,7 @@ UInt dis_op2_E_G ( UChar       sorb,
       assign( dst0, getIReg(size,gregOfRM(rm)) );
       assign( src,  loadLE(szToITy(size), addr) );
       assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-      setFlagsARITH(op8, src, dst1, ty, NULL);
+      setFlags_SRC_DST1(op8, src, dst1, ty);
 
       if (keep)
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
@@ -1491,7 +1515,7 @@ UInt dis_op2_G_E ( UChar       sorb,
       assign(dst0, getIReg(size,eregOfRM(rm)));
       assign(src,  getIReg(size,gregOfRM(rm)));
       assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-      setFlagsARITH(op8, src, dst1, ty, NULL);
+      setFlags_SRC_DST1(op8, src, dst1, ty);
 
       if (keep)
          putIReg(size, eregOfRM(rm), mkexpr(dst1));
@@ -1508,7 +1532,7 @@ UInt dis_op2_G_E ( UChar       sorb,
       assign(dst0, loadLE(ty,addr));
       assign(src,  getIReg(size,gregOfRM(rm)));
       assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-      setFlagsARITH(op8, src, dst1, ty, NULL);
+      setFlags_SRC_DST1(op8, src, dst1, ty);
 
       if (keep)
           storeLE(addr, mkexpr(dst1));
@@ -1613,35 +1637,31 @@ UInt dis_mov_G_E ( UChar       sorb,
 }
 
 
-//-- /* op $immediate, AL/AX/EAX. */
-//-- static
-//-- Addr dis_op_imm_A ( UCodeBlock* cb, 
-//--                     Int         size,
-//--                     Opcode      opc,
-//--                     Bool        keep,
-//--                     Addr        eip,
-//--                     Char*       t_x86opc )
-//-- {
-//--    Int  tmp = newTemp(cb);
-//--    UInt lit = getUDisp(size,eip);
-//--    uInstr2(cb, GET, size, ArchReg, R_EAX, TempReg, tmp);
-//--    if (opc == AND || opc == OR) {
-//--       Int tao = newTemp(cb);
-//--       uInstr2(cb, MOV, size, Literal, 0, TempReg, tao);
-//--       uLiteral(cb, lit);
-//--       uInstr2(cb, opc, size, TempReg, tao, TempReg, tmp);
-//--       setFlagsFromUOpcode(cb, opc);
-//--    } else {
-//--       uInstr2(cb, opc, size, Literal, 0, TempReg, tmp);
-//--       uLiteral(cb, lit);
-//--       setFlagsFromUOpcode(cb, opc);
-//--    }
-//--    if (keep)
-//--       uInstr2(cb, PUT, size, TempReg, tmp, ArchReg, R_EAX);
-//--    DIP("%s%c $0x%x, %s\n", t_x86opc, nameISize(size), 
-//--                            lit, nameIReg(size,R_EAX));
-//--    return eip+size;
-//-- }
+/* op $immediate, AL/AX/EAX. */
+static
+UInt dis_op_imm_A ( Int    size,
+                    IROp   op8,
+                    Bool   keep,
+                    UInt   delta,
+                    Char*  t_x86opc )
+{
+   IRType ty   = szToITy(size);
+   IRTemp dst0 = newTemp(ty);
+   IRTemp src  = newTemp(ty);
+   IRTemp dst1 = newTemp(ty);
+   UInt lit    = getUDisp(size,delta);
+   assign(dst0, getIReg(size,R_EAX));
+   assign(src,  mkU(ty,lit));
+   assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
+   setFlags_SRC_DST1(op8, src, dst1, ty);
+
+   if (keep)
+      putIReg(size, R_EAX, mkexpr(dst1));
+
+   DIP("%s%c $0x%x, %s\n", t_x86opc, nameISize(size), 
+                           lit, nameIReg(size,R_EAX));
+   return delta+size;
+}
 
 
 /* Sign- and Zero-extending moves. */
@@ -1649,7 +1669,6 @@ static
 UInt dis_movx_E_G ( UChar       sorb,
                     UInt delta, Int szs, Int szd, Bool sign_extend )
 {
-  //UChar dis_buf[50];
    UChar rm = getIByte(delta);
    if (epartIsReg(rm)) {
       putIReg(szd, gregOfRM(rm),
@@ -1664,19 +1683,17 @@ UInt dis_movx_E_G ( UChar       sorb,
 
    /* E refers to memory */    
    {
-#if 0
-      UInt pair = disAMode ( cb, sorb, eip, dis_buf);
-      Int  tmpa = LOW24(pair);
-      uInstr2(cb, LOAD, szs, TempReg, tmpa, TempReg, tmpa);
-      uInstr1(cb, WIDEN, szd, TempReg, tmpa);
-      uWiden(cb, szs, sign_extend);
-      uInstr2(cb, PUT, szd, TempReg, tmpa, ArchReg, gregOfRM(rm));
+      Int     len;
+      UChar   dis_buf[50];
+      IRExpr* addr = disAMode ( &len, sorb, delta, dis_buf );
+
+      putIReg(szd, gregOfRM(rm),
+	           unop(mkWidenOp(szs,szd,False), 
+                        loadLE(szToITy(szs),addr)));
       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
                                nameISize(szs), nameISize(szd),
                                dis_buf, nameIReg(szd,gregOfRM(rm)));
-      return HI8(pair)+eip;
-#endif
-      vassert(0);
+      return len+delta;
    }
 }
 
@@ -1764,7 +1781,7 @@ UInt dis_Grp1 ( UChar sorb,
       assign(src,  mkU(ty,d32));
       assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 
-      setFlagsARITH(op8, src, dst1, ty, NULL);
+      setFlags_SRC_DST1(op8, src, dst1, ty);
 
       if (gregOfRM(modrm) < 7)
          putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
@@ -1779,7 +1796,7 @@ UInt dis_Grp1 ( UChar sorb,
       assign(src, mkU(ty,d32));
       assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 
-      setFlagsARITH(op8, src, dst1, ty, NULL);
+      setFlags_SRC_DST1(op8, src, dst1, ty);
 
       if (gregOfRM(modrm) < 7)
           storeLE(addr, mkexpr(dst1));
@@ -1863,7 +1880,7 @@ UInt dis_Grp2 ( UChar  sorb,
                     mkexpr(shift_amt), mkU(ty,0)));
 
       /* Build the flags thunk. */
-      setFlagsARITH(op8, subshift, dst1, ty, mkexpr(guard));
+      setFlags_DSTus_DST1(op8, subshift, dst1, ty, mkexpr(guard));
    } else {
       /* Rotate */
       vpanic("dis_Grp2: rotate");
@@ -2296,25 +2313,26 @@ UInt dis_Grp2 ( UChar  sorb,
 //--    }
 //--    return eip;
 //-- }
-//-- 
-//-- 
-//-- /* Group 5 extended opcodes. */
-//-- static
-//-- Addr dis_Grp5 ( UCodeBlock* cb, 
-//--                 UChar       sorb,
-//--                 Int sz, Addr eip, Bool* isEnd )
-//-- {
-//--    Int   t1, t2, t3, t4;
-//--    UInt  pair;
-//--    UChar modrm;
-//--    UChar dis_buf[50];
-//--    t1 = t2 = t3 = t4 = INVALID_TEMPREG;
-//-- 
-//--    modrm = getIByte(delta);
-//--    if (epartIsReg(modrm)) {
+
+
+/* Group 5 extended opcodes. */
+static
+UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
+{
+   Int     len;
+   UChar   modrm;
+   UChar   dis_buf[50];
+   IRExpr* addr;
+   IRType  ty = szToITy(sz);
+   IRTemp  t1 = newTemp(ty);
+   IRTemp  t2 = INVALID_IRTEMP;
+
+   modrm = getIByte(delta);
+   if (epartIsReg(modrm)) {
 //--       t1 = newTemp(cb);
 //--       uInstr2(cb, GET, sz, ArchReg, eregOfRM(modrm), TempReg, t1);
-//--       switch (gregOfRM(modrm)) {
+      assign(t1, getIReg(sz,  eregOfRM(modrm)));
+      switch (gregOfRM(modrm)) {
 //--          case 0: /* INC */
 //--             uInstr1(cb, INC, sz, TempReg, t1);
 //--             setFlagsFromUOpcode(cb, INC);
@@ -2338,29 +2356,33 @@ UInt dis_Grp2 ( UChar  sorb,
 //--             LAST_UINSTR(cb).jmpkind = JmpCall;
 //--             *isEnd = True;
 //--             break;
-//--          case 4: /* jmp Ev */
-//--             jmp_treg(cb, t1);
-//--             *isEnd = True;
-//--             break;
-//--          default: 
-//--             VG_(printf)(
-//--                "unhandled Grp5(R) case %d\n", (UInt)gregOfRM(modrm));
-//--             VG_(core_panic)("Grp5");
-//--       }
-//--       eip++;
-//--       DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
-//--                        nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
-//--    } else {
-//--       pair = disAMode ( cb, sorb, eip, dis_buf );
+         case 4: /* jmp Ev */
+            vassert(sz == 4);
+            jmp_treg(t1);
+            *isEnd = True;
+            break;
+         default: 
+            vex_printf(
+               "unhandled Grp5(R) case %d\n", (UInt)gregOfRM(modrm));
+            vpanic("Grp5(x86)");
+      }
+      delta++;
+      DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
+                       nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
+   } else {
+      addr = disAMode ( &len, sorb, delta, dis_buf );
 //--       t2   = LOW24(pair);
 //--       t1   = newTemp(cb);
 //--       uInstr2(cb, LOAD, sz, TempReg, t2, TempReg, t1);
-//--       switch (gregOfRM(modrm)) {
-//--          case 0: /* INC */ 
-//--             uInstr1(cb, INC, sz, TempReg, t1);
-//--             setFlagsFromUOpcode(cb, INC);
-//--             uInstr2(cb, STORE, sz, TempReg, t1, TempReg, t2);
-//--             break;
+      assign(t1, loadLE(ty,addr));
+      switch (gregOfRM(modrm)) {
+         case 0: /* INC */ 
+            t2 = newTemp(ty);
+            assign(t2, binop(mkSizedOp(ty,Iop_Add8),
+                             mkexpr(t1), mkU(ty,1)));
+            setFlags_INC_DEC( True, t2, ty );
+            storeLE(addr,mkexpr(t2));
+            break;
 //--          case 1: /* DEC */
 //--             uInstr1(cb, DEC, sz, TempReg, t1);
 //--             setFlagsFromUOpcode(cb, DEC);
@@ -2391,18 +2413,18 @@ UInt dis_Grp2 ( UChar  sorb,
 //--             uInstr2(cb, PUT,    4, TempReg, t3,    ArchReg, R_ESP);
 //--             uInstr2(cb, STORE, sz, TempReg, t1,    TempReg, t3);
 //--             break;
-//--          default: 
-//--             VG_(printf)(
-//--                "unhandled Grp5(M) case %d\n", (UInt)gregOfRM(modrm));
-//--             VG_(core_panic)("Grp5");
-//--       }
-//--       eip += HI8(pair);
-//--       DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
-//--                        nameISize(sz), dis_buf);
-//--    }
-//--    return eip;
-//-- }
-//-- 
+         default: 
+            vex_printf(
+               "unhandled Grp5(M) case %d\n", (UInt)gregOfRM(modrm));
+            vpanic("Grp5(x86)");
+      }
+      delta += len;
+      DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
+                       nameISize(sz), dis_buf);
+   }
+   return delta;
+}
+
 //-- /*------------------------------------------------------------*/
 //-- /*--- Disassembling string ops (including REP prefixes)    ---*/
 //-- /*------------------------------------------------------------*/
@@ -5804,59 +5826,61 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0xDF:
 //--       eip = dis_fpu ( cb, sorb, opc, eip );
 //--       break;
-//-- 
-//--    /* ------------------------ INC & DEC ------------------ */
-//-- 
-//--    case 0x40: /* INC eAX */
-//--    case 0x41: /* INC eCX */
-//--    case 0x42: /* INC eDX */
-//--    case 0x43: /* INC eBX */
-//--    case 0x44: /* INC eSP */
-//--    case 0x45: /* INC eBP */
-//--    case 0x46: /* INC eSI */
-//--    case 0x47: /* INC eDI */
-//--       t1 = newTemp(cb);
-//--       uInstr2(cb, GET, sz, ArchReg, (UInt)(opc - 0x40),
-//--                              TempReg, t1);
-//--       uInstr1(cb, INC, sz, TempReg, t1);
-//--       setFlagsFromUOpcode(cb, INC);
-//--       uInstr2(cb, PUT, sz, TempReg, t1, ArchReg,
-//--                              (UInt)(opc - 0x40));
-//--       DIP("inc%c %s\n", nameISize(sz), nameIReg(sz,opc-0x40));
-//--       break;
-//-- 
-//--    case 0x48: /* DEC eAX */
-//--    case 0x49: /* DEC eCX */
-//--    case 0x4A: /* DEC eDX */
-//--    case 0x4B: /* DEC eBX */
-//--    case 0x4C: /* DEC eSP */
-//--    case 0x4D: /* DEC eBP */
-//--    case 0x4E: /* DEC eSI */
-//--    case 0x4F: /* DEC eDI */
-//--       t1 = newTemp(cb);
-//--       uInstr2(cb, GET, sz, ArchReg, (UInt)(opc - 0x48),
-//--                              TempReg, t1);
-//--       uInstr1(cb, DEC, sz, TempReg, t1);
-//--       setFlagsFromUOpcode(cb, DEC);
-//--       uInstr2(cb, PUT, sz, TempReg, t1, ArchReg,
-//--                              (UInt)(opc - 0x48));
-//--       DIP("dec%c %s\n", nameISize(sz), nameIReg(sz,opc-0x48));
-//--       break;
-//-- 
-//--    /* ------------------------ INT ------------------------ */
-//-- 
-//--    case 0xCD: /* INT imm8 */
-//--       d32 = getIByte(delta); delta++;
-//--       if (d32 != 0x80) goto decode_failure;
-//--       /* It's important that all ArchRegs carry their up-to-date value
-//--          at this point.  So we declare an end-of-block here, which
-//--          forces any TempRegs caching ArchRegs to be flushed. */
-//--       jmp_lit(cb, eip);
-//--       LAST_UINSTR(cb).jmpkind = JmpSyscall;
-//--       *isEnd = True;
-//--       DIP("int $0x80\n");
-//--       break;
-//-- 
+
+   /* ------------------------ INC & DEC ------------------ */
+
+   case 0x40: /* INC eAX */
+   case 0x41: /* INC eCX */
+   case 0x42: /* INC eDX */
+   case 0x43: /* INC eBX */
+   case 0x44: /* INC eSP */
+   case 0x45: /* INC eBP */
+   case 0x46: /* INC eSI */
+   case 0x47: /* INC eDI */
+      vassert(sz == 2 || sz == 4);
+      ty = szToITy(sz);
+      t1 = newTemp(ty);
+      assign( t1, binop(mkSizedOp(ty,Iop_Add8),
+                        getIReg(sz, (UInt)(opc - 0x40)),
+                        mkU(ty,1)) );
+      setFlags_INC_DEC( True, t1, ty );
+      putIReg(sz, (UInt)(opc - 0x40), mkexpr(t1));
+      DIP("inc%c %s\n", nameISize(sz), nameIReg(sz,opc-0x40));
+      break;
+
+   case 0x48: /* DEC eAX */
+   case 0x49: /* DEC eCX */
+   case 0x4A: /* DEC eDX */
+   case 0x4B: /* DEC eBX */
+   case 0x4C: /* DEC eSP */
+   case 0x4D: /* DEC eBP */
+   case 0x4E: /* DEC eSI */
+   case 0x4F: /* DEC eDI */
+      vassert(sz == 2 || sz == 4);
+      ty = szToITy(sz);
+      t1 = newTemp(ty);
+      assign( t1, binop(mkSizedOp(ty,Iop_Sub8),
+                        getIReg(sz, (UInt)(opc - 0x48)),
+                        mkU(ty,1)) );
+      setFlags_INC_DEC( False, t1, ty );
+      putIReg(sz, (UInt)(opc - 0x48), mkexpr(t1));
+      DIP("dec%c %s\n", nameISize(sz), nameIReg(sz,opc-0x48));
+      break;
+
+   /* ------------------------ INT ------------------------ */
+
+   case 0xCD: /* INT imm8 */
+      d32 = getIByte(delta); delta++;
+      if (d32 != 0x80) goto decode_failure;
+      /* It's important that all ArchRegs carry their up-to-date value
+         at this point.  So we declare an end-of-block here, which
+         forces any TempRegs caching ArchRegs to be flushed. */
+      jmp_lit(((Addr32)guest_code)+delta);
+      //LAST_UINSTR(cb).jmpkind = JmpSyscall;
+      *isEnd = True;
+      DIP("int $0x80\n");
+      break;
+
 //--    /* ------------------------ Jcond, byte offset --------- */
 //-- 
 //--    case 0xEB: /* Jb (jump, byte offset) */
@@ -5865,13 +5889,15 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       *isEnd = True;
 //--       DIP("jmp-8 0x%x\n", d32);
 //--       break;
-//-- 
-//--    case 0xE9: /* Jv (jump, 16/32 offset) */
-//--       d32 = (eip+sz) + getSDisp(sz,eip); eip += sz;
-//--       jmp_lit(cb, d32);
-//--       *isEnd = True;
-//--       DIP("jmp 0x%x\n", d32);
-//--       break;
+
+   case 0xE9: /* Jv (jump, 16/32 offset) */
+      vassert(sz == 4); /* JRS added 2004 July 11 */
+      d32 = (((Addr32)guest_code)+delta+sz) + getSDisp(sz,delta); 
+      delta += sz;
+      jmp_lit(d32);
+      *isEnd = True;
+      DIP("jmp 0x%x\n", d32);
+      break;
 
    case 0x70:
    case 0x71:
@@ -5937,12 +5963,12 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0x6B: /* IMUL Ib, Ev, Gv */
 //--       eip = dis_imul_I_E_G ( cb, sorb, sz, eip, 1 );
 //--       break;
-//-- 
-//--    /* ------------------------ MOV ------------------------ */
-//-- 
-//--    case 0x88: /* MOV Gb,Eb */
-//--       eip = dis_mov_G_E(cb, sorb, 1, eip);
-//--       break;
+
+   /* ------------------------ MOV ------------------------ */
+
+   case 0x88: /* MOV Gb,Eb */
+      delta = dis_mov_G_E(sorb, 1, delta);
+      break;
 
    case 0x89: /* MOV Gv,Ev */
       delta = dis_mov_G_E(sorb, sz, delta);
@@ -6098,10 +6124,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0x25: /* AND Iv, eAX */
 //--       delta = dis_op_imm_A(cb, sz, AND, True, delta, "and" );
 //--       break;
-//-- 
-//--    case 0x2C: /* SUB Ib, AL */
-//--       delta = dis_op_imm_A(cb, 1, SUB, True, delta, "sub" );
-//--       break;
+
+   case 0x2C: /* SUB Ib, AL */
+      delta = dis_op_imm_A(1, Iop_Sub8, True, delta, "sub" );
+      break;
 //--    case 0x2D: /* SUB Iv, eAX */
 //--       delta = dis_op_imm_A(cb, sz, SUB, True, delta, "sub" );
 //--       break;
@@ -6113,13 +6139,13 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       delta = dis_op_imm_A(cb, sz, XOR, True, delta, "xor" );
 //--       break;
 //-- 
-//--    case 0x3C: /* CMP Ib, AL */
-//--       delta = dis_op_imm_A(cb, 1, SUB, False, delta, "cmp" );
-//--       break;
-//--    case 0x3D: /* CMP Iv, eAX */
-//--       delta = dis_op_imm_A(cb, sz, SUB, False, delta, "cmp" );
-//--       break;
-//-- 
+   case 0x3C: /* CMP Ib, AL */
+      delta = dis_op_imm_A(1, Iop_Sub8, False, delta, "cmp" );
+      break;
+   case 0x3D: /* CMP Iv, eAX */
+      delta = dis_op_imm_A(sz, Iop_Sub8, False, delta, "cmp" );
+      break;
+
 //--    case 0xA8: /* TEST Ib, AL */
 //--       delta = dis_op_imm_A(cb, 1, AND, False, delta, "test" );
 //--       break;
@@ -6167,9 +6193,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0x2A: /* SUB Eb,Gb */
 //--       delta = dis_op2_E_G ( sorb, SUB, True, 1, delta, "sub" );
 //--       break;
-//--    case 0x2B: /* SUB Ev,Gv */
-//--       delta = dis_op2_E_G ( sorb, SUB, True, sz, delta, "sub" );
-//--       break;
+   case 0x2B: /* SUB Ev,Gv */
+      delta = dis_op2_E_G ( sorb, Iop_Sub8, True, sz, delta, "sub" );
+      break;
 //-- 
 //--    case 0x32: /* XOR Eb,Gb */
 //--       delta = dis_op2_E_G ( sorb, XOR, True, 1, delta, "xor" );
@@ -6185,9 +6211,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       delta = dis_op2_E_G ( sorb, Iop_Sub8, False, sz, delta, "cmp" );
       break;
 
-//--    case 0x84: /* TEST Eb,Gb */
-//--       delta = dis_op2_E_G ( sorb, AND, False, 1, delta, "test" );
-//--       break;
+   case 0x84: /* TEST Eb,Gb */
+      delta = dis_op2_E_G ( sorb, Iop_And8, False, 1, delta, "test" );
+      break;
    case 0x85: /* TEST Ev,Gv */
       delta = dis_op2_E_G ( sorb, Iop_And8, False, sz, delta, "test" );
       break;
@@ -6225,10 +6251,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0x20: /* AND Gb,Eb */
 //--       delta = dis_op2_G_E ( sorb, AND, True, 1, delta, "and" );
 //--       break;
-//--    case 0x21: /* AND Gv,Ev */
-//--       delta = dis_op2_G_E ( sorb, AND, True, sz, delta, "and" );
-//--       break;
-//-- 
+   case 0x21: /* AND Gv,Ev */
+      delta = dis_op2_G_E ( sorb, Iop_And8, True, sz, delta, "and" );
+      break;
+
 //--    case 0x28: /* SUB Gb,Eb */
 //--       delta = dis_op2_G_E ( sorb, SUB, True, 1, delta, "sub" );
 //--       break;
@@ -6243,9 +6269,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       delta = dis_op2_G_E ( sorb, Iop_Xor8, True, sz, delta, "xor" );
       break;
 
-//--    case 0x38: /* CMP Gb,Eb */
-//--       delta = dis_op2_G_E ( sorb, SUB, False, 1, delta, "cmp" );
-//--       break;
+   case 0x38: /* CMP Gb,Eb */
+      delta = dis_op2_G_E ( sorb, Iop_Sub8, False, 1, delta, "cmp" );
+      break;
    case 0x39: /* CMP Gv,Ev */
       delta = dis_op2_G_E ( sorb, Iop_Sub8, False, sz, delta, "cmp" );
       break;
@@ -6629,36 +6655,40 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--       }
 //--       break;
 //--    }
-//-- 
-//--    /* ------------------------ XCHG ----------------------- */
-//-- 
-//--    case 0x86: /* XCHG Gb,Eb */
-//--       sz = 1;
-//--       /* Fall through ... */
-//--    case 0x87: /* XCHG Gv,Ev */
-//--       modrm = getUChar(eip);
-//--       t1 = newTemp(cb); t2 = newTemp(cb);
-//--       if (epartIsReg(modrm)) {
-//--          uInstr2(cb, GET, sz, ArchReg, eregOfRM(modrm), TempReg, t1);
-//--          uInstr2(cb, GET, sz, ArchReg, gregOfRM(modrm), TempReg, t2);
-//--          uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, gregOfRM(modrm));
-//--          uInstr2(cb, PUT, sz, TempReg, t2, ArchReg, eregOfRM(modrm));
-//--          eip++;
-//--          DIP("xchg%c %s, %s\n", 
-//--              nameISize(sz), nameIReg(sz,gregOfRM(modrm)), 
-//--                             nameIReg(sz,eregOfRM(modrm)));
-//--       } else {
-//--          pair = disAMode ( cb, sorb, eip, dis_buf );
-//--          t3   = LOW24(pair);
-//--          uInstr2(cb, LOAD, sz, TempReg, t3, TempReg, t1);
-//--          uInstr2(cb, GET, sz, ArchReg, gregOfRM(modrm), TempReg, t2);
-//--          uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t3);
-//--          uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, gregOfRM(modrm));
-//--          eip += HI8(pair);
-//--          DIP("xchg%c %s, %s\n", nameISize(sz), 
-//--                                 nameIReg(sz,gregOfRM(modrm)), dis_buf);
-//--       }
-//--       break;
+
+   /* ------------------------ XCHG ----------------------- */
+
+   case 0x86: /* XCHG Gb,Eb */
+      sz = 1;
+      /* Fall through ... */
+   case 0x87: /* XCHG Gv,Ev */
+      modrm = getIByte(delta);
+      ty = szToITy(sz);
+      t1 = newTemp(ty); t2 = newTemp(ty);
+      if (epartIsReg(modrm)) {
+	 assign(t1, getIReg(sz, eregOfRM(modrm)));
+	 assign(t2, getIReg(sz, gregOfRM(modrm)));
+	 putIReg(sz, gregOfRM(modrm), mkexpr(t1));
+	 putIReg(sz, eregOfRM(modrm), mkexpr(t2));
+         delta++;
+         DIP("xchg%c %s, %s\n", 
+             nameISize(sz), nameIReg(sz,gregOfRM(modrm)), 
+                            nameIReg(sz,eregOfRM(modrm)));
+      } else {
+         vassert( 0);
+#if 0
+         pair = disAMode ( cb, sorb, eip, dis_buf );
+         t3   = LOW24(pair);
+         uInstr2(cb, LOAD, sz, TempReg, t3, TempReg, t1);
+         uInstr2(cb, GET, sz, ArchReg, gregOfRM(modrm), TempReg, t2);
+         uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t3);
+         uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, gregOfRM(modrm));
+         eip += HI8(pair);
+         DIP("xchg%c %s, %s\n", nameISize(sz), 
+                                nameIReg(sz,gregOfRM(modrm)), dis_buf);
+#endif
+      }
+      break;
 
    case 0x90: /* XCHG eAX,eAX */
       DIP("nop\n");
@@ -6761,17 +6791,17 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          DIP("out %%eax/%%ax/%%al, (%%dx)\n");
 //--       }
 //--       break;
-//-- 
-//--    /* ------------------------ (Grp1 extensions) ---------- */
-//-- 
-//--    case 0x80: /* Grp1 Ib,Eb */
-//--       modrm = getUChar(eip);
-//--       am_sz = lengthAMode(eip);
-//--       sz    = 1;
-//--       d_sz  = 1;
-//--       d32   = getSDisp8(eip + am_sz);
-//--       eip   = dis_Grp1 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, d32 );
-//--       break;
+
+   /* ------------------------ (Grp1 extensions) ---------- */
+
+   case 0x80: /* Grp1 Ib,Eb */
+      modrm = getIByte(delta);
+      am_sz = lengthAMode(delta);
+      sz    = 1;
+      d_sz  = 1;
+      d32   = getSDisp8(delta + am_sz);
+      delta = dis_Grp1 ( sorb, delta, modrm, am_sz, d_sz, sz, d32 );
+      break;
 
    case 0x81: /* Grp1 Iv,Ev */
       modrm = getIByte(delta);
@@ -6855,12 +6885,12 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    case 0xFE: /* Grp4 Eb */
 //--       eip = dis_Grp4 ( cb, sorb, eip );
 //--       break;
-//-- 
-//--    /* ------------------------ (Grp5 extensions) ---------- */
-//-- 
-//--    case 0xFF: /* Grp5 Ev */
-//--       eip = dis_Grp5 ( cb, sorb, sz, eip, isEnd );
-//--       break;
+
+   /* ------------------------ (Grp5 extensions) ---------- */
+
+   case 0xFF: /* Grp5 Ev */
+      delta = dis_Grp5 ( sorb, sz, delta, isEnd );
+      break;
 
    /* ------------------------ Escapes to 2-byte opcodes -- */
 
@@ -7008,9 +7038,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          eip = dis_movx_E_G ( cb, sorb, eip, 2, 4, False );
 //--          break;
 //-- 
-//--       case 0xBE: /* MOVSXb Eb,Gv */
-//--          eip = dis_movx_E_G ( cb, sorb, eip, 1, 4, True );
-//--          break;
+      case 0xBE: /* MOVSXb Eb,Gv */
+         delta = dis_movx_E_G ( sorb, delta, 1, 4, True );
+         break;
 //--       case 0xBF: /* MOVSXw Ew,Gv */
 //--          eip = dis_movx_E_G ( cb, sorb, eip, 2, 4, True );
 //--          break;

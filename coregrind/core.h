@@ -1260,19 +1260,19 @@ extern void VG_(print_scheduler_stats) ( void );
 #define SF_CODE     (1 << 14) // segment contains cached code
 
 struct _Segment {
-   UInt		prot;		/* VKI_PROT_*				*/
-   UInt		flags;		/* SF_*					*/
+   UInt         prot;         // VKI_PROT_*
+   UInt         flags;        // SF_*
 
-   Addr		addr;		/* mapped addr (page aligned)		*/
-   SizeT	len;		/* size of mapping (page aligned)	*/
+   Addr         addr;         // mapped addr (page aligned)
+   SizeT        len;          // size of mapping (page aligned)
 
-   /* These are valid if (flags & SF_FILE) */
-   ULong	offset;		/* file offset				*/
-   const Char	*filename;	/* filename (NULL if unknown)		*/
-   UInt		dev;		/* device				*/
-   UInt		ino;		/* inode				*/
+   // These are valid if (flags & SF_FILE)
+   OffT        offset;        // file offset
+   const Char* filename;      // filename (NULL if unknown)
+   UInt        dev;           // device
+   UInt        ino;           // inode
 
-   SegInfo	*symtab;	/* symbol table				*/
+   SegInfo*    symtab;        // symbol table
 };
 
 /* segment mapped from a file descriptor */

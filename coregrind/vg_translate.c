@@ -509,7 +509,7 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
    case STORE:  return LIT0 && SZi  && CC0 &&  TR1 && TR2 &&  N3 && XOTHER;
    case MOV:    return LITm && SZ4m && CC0 && TRL1 && TR2 &&  N3 && XOTHER;
    case CMOV:   return LIT0 && SZ4  && CCg &&  TR1 && TR2 &&  N3 && XCONDi;
-   case WIDEN:  return LIT0 && SZi  && CC0 &&  TR1 &&  N2 &&  N3 && XWIDEN;
+   case WIDEN:  return LIT0 && SZ42 && CC0 &&  TR1 &&  N2 &&  N3 && XWIDEN;
    case JMP:    return LITm && SZ0  && CCj && TRL1 &&  N2 &&  N3 && XJMP;
    case CALLM:  return LIT0 && SZ0 /*any*/ &&  Ls1 &&  N2 &&  N3 && XOTHER;
    case CALLM_S: 

@@ -535,6 +535,40 @@ In vg_constants.h:
    called at program exit. */
 extern void VG_(__libc_freeres_wrapper)( void );
 
+extern void VGR_(wait_for_fd_to_be_readable_or_erring) ( int fd );
+extern void VGR_(wait_for_fd_to_be_writable_or_erring) ( int fd );
+
+extern int VGR_(recv)(int s, void *buf, unsigned int/*size_t*/ len, 
+                                        int flags);
+
+extern int VGR_(accept)(int s, /*struct sockaddr*/ void *addr, 
+                               /*socklen_t*/ void *addrlen);
+
+
+extern int VGR_(select) ( int n, 
+                          /*fd_set*/ void *rfds, 
+                          /*fd_set*/ void *wfds, 
+                          /*fd_set*/ void *xfds, 
+                          /*struct timeval*/ void *timeout );
+
+extern int VGR_(msgsnd)(int msgid, 
+                        const void *msgp, 
+                        /*size_t*/ unsigned int msgsz, 
+                        int msgflg);
+
+extern int VGR_(msgrcv)( int msqid, 
+                         void* msgp,  
+                         /*size_t*/ unsigned int msgsz, 
+                         long msgtyp, 
+                         int msgflg );
+
+extern int VGR_(readv)(int fd, 
+                       const /*struct iovec*/ void *iovV, 
+                       int count);
+
+extern int VGR_(writev)(int fd, 
+                        const /*struct iovec*/ void *iovV, 
+                        int count);
 
 /* ---------------------------------------------------------------------
    Constants pertaining to the simulated CPU state, VG_(baseBlock),
@@ -1578,8 +1612,6 @@ extern Int  VG_(compact_helper_offsets)[];
 
 extern Addr VG_(noncompact_helper_addrs)  [];
 extern Int  VG_(noncompact_helper_offsets)[];
-
-#define VGL_(x)		vgIntercept_##x
 
 #endif /* ndef __VG_INCLUDE_H */
 

@@ -78,8 +78,8 @@
    Forwardses.
    ------------------------------------------------------------------ */
 
-static void wait_for_fd_to_be_readable_or_erring ( int fd );
-static void wait_for_fd_to_be_writable_or_erring ( int fd );
+#define WEAK	__attribute__((weak))
+
 
 static
 int my_do_syscall1 ( int syscallno, int arg1 );
@@ -350,7 +350,7 @@ int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit)
    return 0;
 }
 
-__attribute__((weak))
+WEAK
 int pthread_attr_setstacksize (pthread_attr_t *__attr,
                                size_t __stacksize)
 {
@@ -452,7 +452,7 @@ int pthread_getattr_np (pthread_t thread, pthread_attr_t *attr)
 
 
 /* Bogus ... */
-__attribute__((weak))
+WEAK
 int pthread_attr_getstackaddr ( const pthread_attr_t * attr,
                                 void ** stackaddr )
 {
@@ -464,7 +464,7 @@ int pthread_attr_getstackaddr ( const pthread_attr_t * attr,
 }
 
 /* Not bogus (!) */
-__attribute__((weak))
+WEAK
 int pthread_attr_getstacksize ( const pthread_attr_t * _attr, 
                                 size_t * __stacksize )
 {
@@ -495,7 +495,7 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
 /* This is completely bogus.  We reject all attempts to change it from
    VKI_BYTES_PER_PAGE.  I don't have a clue what it's for so it seems
    safest to be paranoid. */
-__attribute__((weak)) 
+WEAK 
 int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize)
 {
    static int moans = N_MOANS;
@@ -510,7 +510,7 @@ int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize)
 }
 
 /* A straight copy of the LinuxThreads code. */
-__attribute__((weak)) 
+WEAK 
 int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize)
 {
    *guardsize = attr->__guardsize;
@@ -521,7 +521,7 @@ int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize)
 
 static int concurrency_current_level = 0;
 
-__attribute__((weak)) 
+WEAK 
 int pthread_setconcurrency(int new_level)
 {
    if (new_level < 0)
@@ -532,7 +532,7 @@ int pthread_setconcurrency(int new_level)
    }
 }
 
-__attribute__((weak)) 
+WEAK 
 int pthread_getconcurrency(void)
 {
    return concurrency_current_level;
@@ -678,7 +678,7 @@ void thread_wrapper ( NewThreadInfo* info )
    THREADs
    ------------------------------------------------ */
 
-__attribute__((weak))
+WEAK
 int pthread_yield ( void )
 {
    int res;
@@ -1566,7 +1566,7 @@ int __pthread_atfork ( void (*prepare)(void),
 }
 
 
-__attribute__((weak)) 
+WEAK 
 void __pthread_initialize ( void )
 {
    ensure_valgrind("__pthread_initialize");
@@ -1775,10 +1775,6 @@ void ** (*__libc_internal_tsd_address)
    to the corresponding thread-unaware (?) libc routine.
    ------------------------------------------------------------------ */
 
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
 #ifdef GLIBC_2_1
 extern
 int __sigaction
@@ -1809,7 +1805,7 @@ extern
 int  __libc_connect(int  sockfd,  
                     const  struct  sockaddr  *serv_addr, 
                     socklen_t addrlen);
-__attribute__((weak))
+WEAK
 int  connect(int  sockfd,  
              const  struct  sockaddr  *serv_addr, 
              socklen_t addrlen)
@@ -1821,7 +1817,7 @@ int  connect(int  sockfd,
 
 extern
 int __libc_fcntl(int fd, int cmd, long arg);
-__attribute__((weak))
+WEAK
 int fcntl(int fd, int cmd, long arg)
 {
    __my_pthread_testcancel();
@@ -1831,7 +1827,7 @@ int fcntl(int fd, int cmd, long arg)
 
 extern 
 ssize_t __libc_write(int fd, const void *buf, size_t count);
-__attribute__((weak))
+WEAK
 ssize_t write(int fd, const void *buf, size_t count)
 {
    __my_pthread_testcancel();
@@ -1841,7 +1837,7 @@ ssize_t write(int fd, const void *buf, size_t count)
 
 extern 
 ssize_t __libc_read(int fd, void *buf, size_t count);
-__attribute__((weak))
+WEAK
 ssize_t read(int fd, void *buf, size_t count)
 {
    __my_pthread_testcancel();
@@ -1987,7 +1983,7 @@ static inline int _open(const char *pathname, int flags, mode_t mode,
 
 extern
 int __libc_open64(const char *pathname, int flags, mode_t mode);
-/* __attribute__((weak)) */
+/* WEAK */
 int open64(const char *pathname, int flags, mode_t mode)
 {
    return _open(pathname, flags, mode, __libc_open64);
@@ -1995,7 +1991,7 @@ int open64(const char *pathname, int flags, mode_t mode)
 
 extern
 int __libc_open(const char *pathname, int flags, mode_t mode);
-/* __attribute__((weak)) */
+/* WEAK */
 int open(const char *pathname, int flags, mode_t mode)
 {
    return _open(pathname, flags, mode, __libc_open);
@@ -2003,7 +1999,7 @@ int open(const char *pathname, int flags, mode_t mode)
 
 extern
 int __libc_close(int fd);
-__attribute__((weak))
+WEAK
 int close(int fd)
 {
    __my_pthread_testcancel();
@@ -2011,63 +2007,33 @@ int close(int fd)
 }
 
 
-extern
-int __libc_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
-
-int VGL_(accept)(int s, struct sockaddr *addr, socklen_t *addrlen)
+WEAK
+int accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
-   __my_pthread_testcancel();
-   wait_for_fd_to_be_readable_or_erring(s);
-   __my_pthread_testcancel();
-   return __libc_accept(s, addr, addrlen);
+   return VGR_(accept)(s, addr, addrlen);
 }
 
-extern
-int __libc_recv(int s, void *buf, size_t len, int flags);
-
-int VGL_(recv)(int s, void *buf, size_t len, int flags)
+WEAK
+int recv(int s, void *buf, size_t len, int flags)
 {
-   __my_pthread_testcancel();
-   wait_for_fd_to_be_readable_or_erring(s);
-   __my_pthread_testcancel();
-   return __libc_recv(s, buf, len, flags);
+   return VGR_(recv)(s, buf, len, flags);
 }
 
-int VGL_(readv)(int fd, const struct iovec *iov, int count)
+WEAK
+int readv(int fd, const struct iovec *iov, int count)
 {
-   int res;
-
-   __my_pthread_testcancel();
-   wait_for_fd_to_be_readable_or_erring(fd);
-   __my_pthread_testcancel();
-   res = my_do_syscall3(__NR_readv, fd, (unsigned)iov, count);
-
-   if (is_kerror(res)) {
-      *(__errno_location()) = -res;
-      return -1;
-   }
-   return res;
+  return VGR_(readv)(fd, iov, count);
 }
 
-int VGL_(writev)(int fd, struct iovec *iov, int count)
+WEAK
+int writev(int fd, const struct iovec *iov, int count)
 {
-   int res;
-
-   __my_pthread_testcancel();
-   wait_for_fd_to_be_writable_or_erring(fd);
-   __my_pthread_testcancel();
-   res = my_do_syscall3(__NR_writev, fd, (unsigned)iov, count);
-
-   if (is_kerror(res)) {
-      *(__errno_location()) = -res;
-      return -1;
-   }
-   return res;
+  return VGR_(writev)(fd, iov, count);
 }
 
 extern
 pid_t __libc_waitpid(pid_t pid, int *status, int options);
-__attribute__((weak))
+WEAK
 pid_t waitpid(pid_t pid, int *status, int options)
 {
    __my_pthread_testcancel();
@@ -2077,7 +2043,7 @@ pid_t waitpid(pid_t pid, int *status, int options)
 
 extern
 int __libc_nanosleep(const struct timespec *req, struct timespec *rem);
-__attribute__((weak))
+WEAK
 int nanosleep(const struct timespec *req, struct timespec *rem)
 {
    __my_pthread_testcancel();
@@ -2087,7 +2053,7 @@ int nanosleep(const struct timespec *req, struct timespec *rem)
 
 extern
 int __libc_fsync(int fd);
-__attribute__((weak))
+WEAK
 int fsync(int fd)
 {
    __my_pthread_testcancel();
@@ -2097,7 +2063,7 @@ int fsync(int fd)
 
 extern
 off_t __libc_lseek(int fildes, off_t offset, int whence);
-__attribute__((weak))
+WEAK
 off_t lseek(int fildes, off_t offset, int whence)
 {
    __my_pthread_testcancel();
@@ -2107,7 +2073,7 @@ off_t lseek(int fildes, off_t offset, int whence)
 
 extern
 __off64_t __libc_lseek64(int fildes, __off64_t offset, int whence);
-__attribute__((weak))
+WEAK
 __off64_t lseek64(int fildes, __off64_t offset, int whence)
 {
    __my_pthread_testcancel();
@@ -2139,7 +2105,7 @@ ssize_t __pwrite64 (int __fd, const void *__buf, size_t __nbytes,
 
 extern 
 ssize_t __libc_pwrite(int fd, const void *buf, size_t count, off_t offset);
-__attribute__((weak))
+WEAK
 ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
 {
    __my_pthread_testcancel();
@@ -2149,7 +2115,7 @@ ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
 
 extern 
 ssize_t __libc_pread(int fd, void *buf, size_t count, off_t offset);
-__attribute__((weak))
+WEAK
 ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 {
    __my_pthread_testcancel();
@@ -2159,7 +2125,7 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 
 extern  
 void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
-/* not weak: __attribute__((weak)) */
+/* not weak: WEAK */
 void longjmp(jmp_buf env, int val)
 {
    __libc_longjmp(env, val);
@@ -2177,7 +2143,7 @@ void siglongjmp(sigjmp_buf env, int val)
 
 extern
 int __libc_send(int s, const void *msg, size_t len, int flags);
-__attribute__((weak))
+WEAK
 int send(int s, const void *msg, size_t len, int flags)
 {
    __my_pthread_testcancel();
@@ -2185,21 +2151,9 @@ int send(int s, const void *msg, size_t len, int flags)
 }
 
 
-extern
-int __libc_recv(int s, void *buf, size_t len, int flags);
-__attribute__((weak))
-int recv(int s, void *buf, size_t len, int flags)
-{
-   __my_pthread_testcancel();
-   wait_for_fd_to_be_readable_or_erring(s);
-   __my_pthread_testcancel();
-   return __libc_recv(s, buf, len, flags);
-}
-
-
 extern 
 int __libc_sendmsg(int s, const struct msghdr *msg, int flags);
-__attribute__((weak))
+WEAK
 int sendmsg(int s, const struct msghdr *msg, int flags)
 {
    __my_pthread_testcancel();
@@ -2209,7 +2163,7 @@ int sendmsg(int s, const struct msghdr *msg, int flags)
 
 extern
 int __libc_recvmsg(int s, struct msghdr *msg, int flags);
-__attribute__((weak))
+WEAK
 int recvmsg(int s, struct msghdr *msg, int flags)
 {
    __my_pthread_testcancel();
@@ -2220,12 +2174,12 @@ int recvmsg(int s, struct msghdr *msg, int flags)
 extern
 int __libc_recvfrom(int s, void *buf, size_t len, int flags,
                     struct sockaddr *from, socklen_t *fromlen);
-__attribute__((weak))
+WEAK
 int recvfrom(int s, void *buf, size_t len, int flags,
              struct sockaddr *from, socklen_t *fromlen)
 {
    __my_pthread_testcancel();
-   wait_for_fd_to_be_readable_or_erring(s);
+   VGR_(wait_for_fd_to_be_readable_or_erring)(s);
    __my_pthread_testcancel();
    return __libc_recvfrom(s, buf, len, flags, from, fromlen);
 }
@@ -2234,7 +2188,7 @@ int recvfrom(int s, void *buf, size_t len, int flags,
 extern
 int __libc_sendto(int s, const void *msg, size_t len, int flags, 
                   const struct sockaddr *to, socklen_t tolen);
-__attribute__((weak))
+WEAK
 int sendto(int s, const void *msg, size_t len, int flags, 
            const struct sockaddr *to, socklen_t tolen)
 {
@@ -2245,7 +2199,7 @@ int sendto(int s, const void *msg, size_t len, int flags,
 
 extern 
 int __libc_system(const char* str);
-__attribute__((weak))
+WEAK
 int system(const char* str)
 {
    __my_pthread_testcancel();
@@ -2255,7 +2209,7 @@ int system(const char* str)
 
 extern
 pid_t __libc_wait(int *status);
-__attribute__((weak))
+WEAK
 pid_t wait(int *status)
 {
    __my_pthread_testcancel();
@@ -2265,7 +2219,7 @@ pid_t wait(int *status)
 
 extern
 int __libc_msync(const void *start, size_t length, int flags);
-__attribute__((weak))
+WEAK
 int msync(const void *start, size_t length, int flags)
 {
    __my_pthread_testcancel();
@@ -2352,15 +2306,6 @@ pid_t __vfork(void)
 }
 
 
-/* ---------------------------------------------------------------------
-   Nonblocking implementations of select() and poll().  This stuff will
-   surely rot your mind.
-   ------------------------------------------------------------------ */
-
-/*--------------------------------------------------*/
-
-#include "vg_kerneliface.h"
-
 static
 int my_do_syscall1 ( int syscallno, int arg1 )
 { 
@@ -2415,341 +2360,17 @@ int my_do_syscall5 ( int syscallno,
    return __res;
 }
 
-static
-int do_syscall_select( int n, 
-                       vki_fd_set* readfds, 
-                       vki_fd_set* writefds, 
-                       vki_fd_set* exceptfds, 
-                       struct vki_timeval * timeout )
+
+WEAK
+int select ( int n, 
+             fd_set *rfds, 
+             fd_set *wfds, 
+             fd_set *xfds, 
+             struct timeval *timeout )
 {
-   int res;
-   int args[5];
-   args[0] = n;
-   args[1] = (int)readfds;
-   args[2] = (int)writefds;
-   args[3] = (int)exceptfds;
-   args[4] = (int)timeout;
-   res = my_do_syscall1(__NR_select, (int)(&(args[0])) );
-   return res;
+   return VGR_(select)(n, rfds, wfds, xfds, timeout);
 }
 
-
-/* This is a wrapper round select(), which makes it thread-safe,
-   meaning that only this thread will block, rather than the entire
-   process.  This wrapper in turn depends on nanosleep() not to block
-   the entire process, but I think (hope? suspect?) that POSIX
-   pthreads guarantees that to be the case.
-
-   Basic idea is: modify the timeout parameter to select so that it
-   returns immediately.  Poll like this until select returns non-zero,
-   indicating something interesting happened, or until our time is up.
-   Space out the polls with nanosleeps of say 11 milliseconds, which
-   is required to be nonblocking; this allows other threads to run.  
-
-   Assumes:
-   * (checked via my_assert) types fd_set and vki_fd_set are identical.
-   * (checked via my_assert) types timeval and vki_timeval are identical.
-   * (unchecked) libc error numbers (EINTR etc) are the negation of the
-     kernel's error numbers (VKI_EINTR etc).
-*/
-
-int VGL_(select) ( int n, 
-		   fd_set *rfds, 
-		   fd_set *wfds, 
-		   fd_set *xfds, 
-		   struct timeval *timeout )
-{
-   unsigned int ms_now, ms_end;
-   int    res;
-   fd_set rfds_copy;
-   fd_set wfds_copy;
-   fd_set xfds_copy;
-   struct vki_timeval  t_now;
-   struct vki_timeval  zero_timeout;
-   struct vki_timespec nanosleep_interval;
-
-   __my_pthread_testcancel();
-
-   /* gcc's complains about ms_end being used uninitialised -- classic
-      case it can't understand, where ms_end is both defined and used
-      only if timeout != NULL.  Hence ... */
-   ms_end = 0;
-
-   /* We assume that the kernel and libc data layouts are identical
-      for the following types.  These asserts provide a crude
-      check. */
-   if (sizeof(fd_set) != sizeof(vki_fd_set)
-       || sizeof(struct timeval) != sizeof(struct vki_timeval))
-      barf("valgrind's hacky non-blocking select(): data sizes error");
-
-   /* Detect the current time and simultaneously find out if we are
-      running on Valgrind. */
-   VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
-                           VG_USERREQ__READ_MILLISECOND_TIMER,
-                           0, 0, 0, 0);
-
-   /* If a zero timeout specified, this call is harmless.  Also go
-      this route if we're not running on Valgrind, for whatever
-      reason. */
-   if ( (timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0)
-        || (ms_now == 0xFFFFFFFF) ) {
-      res = do_syscall_select( n, (vki_fd_set*)rfds, 
-                                   (vki_fd_set*)wfds, 
-                                   (vki_fd_set*)xfds, 
-                                   (struct vki_timeval*)timeout);
-      if (is_kerror(res)) {
-         * (__errno_location()) = -res;
-         return -1;
-      } else {
-         return res;
-      }
-   }
-
-   /* If a timeout was specified, set ms_end to be the end millisecond
-      counter [wallclock] time. */
-   if (timeout) {
-      res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
-      my_assert(res == 0);
-      ms_end = ms_now;
-      ms_end += (timeout->tv_usec / 1000);
-      ms_end += (timeout->tv_sec * 1000);
-      /* Stay sane ... */
-      my_assert (ms_end >= ms_now);
-   }
-
-   /* fprintf(stderr, "MY_SELECT: before loop\n"); */
-
-   /* Either timeout == NULL, meaning wait indefinitely, or timeout !=
-      NULL, in which case ms_end holds the end time. */
-
-   while (1) {
-
-      /* First, do a return-immediately select(). */
-
-      /* These could be trashed each time round the loop, so restore
-         them each time. */
-      if (rfds) rfds_copy = *rfds;
-      if (wfds) wfds_copy = *wfds;
-      if (xfds) xfds_copy = *xfds;
-
-      zero_timeout.tv_sec = zero_timeout.tv_usec = 0;
-
-      res = do_syscall_select( n, 
-                               rfds ? (vki_fd_set*)(&rfds_copy) : NULL,
-                               wfds ? (vki_fd_set*)(&wfds_copy) : NULL,
-                               xfds ? (vki_fd_set*)(&xfds_copy) : NULL,
-                               & zero_timeout );
-      if (is_kerror(res)) {
-         /* Some kind of error (including EINTR).  Set errno and
-            return.  The sets are unspecified in this case. */
-         * (__errno_location()) = -res;
-         return -1;
-      }
-      if (res > 0) {
-         /* one or more fds is ready.  Copy out resulting sets and
-            return. */
-         if (rfds) *rfds = rfds_copy;
-         if (wfds) *wfds = wfds_copy;
-         if (xfds) *xfds = xfds_copy;
-         return res;
-      }
-
-      /* Nothing interesting happened, so we go to sleep for a
-         while. */
-
-      /* fprintf(stderr, "MY_SELECT: nanosleep\n"); */
-      /* nanosleep and go round again */
-      nanosleep_interval.tv_sec  = 0;
-      nanosleep_interval.tv_nsec = 11 * 1000 * 1000; /* 11 milliseconds */
-      /* It's critical here that valgrind's nanosleep implementation
-         is nonblocking. */
-      res = my_do_syscall2(__NR_nanosleep, 
-                           (int)(&nanosleep_interval), (int)NULL);
-      if (res == -VKI_EINTR) {
-         /* The nanosleep was interrupted by a signal.  So we do the
-            same. */
-         * (__errno_location()) = EINTR;
-         return -1;
-      }
-
-      /* Sleeping finished.  If a finite timeout, check to see if it
-         has expired yet. */
-      if (timeout) {
-         VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
-                                 VG_USERREQ__READ_MILLISECOND_TIMER,
-                                 0, 0, 0, 0);
-         my_assert(ms_now != 0xFFFFFFFF);
-         if (ms_now >= ms_end) {
-            /* timeout; nothing interesting happened. */
-            if (rfds) FD_ZERO(rfds);
-            if (wfds) FD_ZERO(wfds);
-            if (xfds) FD_ZERO(xfds);
-            return 0;
-         }
-      }
-
-   }
-}
-
-
-
-
-#include <sys/poll.h>
-
-#ifndef HAVE_NFDS_T
-typedef unsigned long int nfds_t;
-#endif
-
-
-int VGL_(poll) (struct pollfd *__fds, nfds_t __nfds, int __timeout)
-{
-   unsigned int        ms_now, ms_end;
-   int                 res, i;
-   struct vki_timespec nanosleep_interval;
-
-   __my_pthread_testcancel();
-   ensure_valgrind("poll");
-
-   /* Detect the current time and simultaneously find out if we are
-      running on Valgrind. */
-   VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
-                           VG_USERREQ__READ_MILLISECOND_TIMER,
-                           0, 0, 0, 0);
-
-   if (/* CHECK SIZES FOR struct pollfd */
-       sizeof(struct timeval) != sizeof(struct vki_timeval))
-      barf("valgrind's hacky non-blocking poll(): data sizes error");
-
-   /* dummy initialisation to keep gcc -Wall happy */
-   ms_end = 0;
-
-   /* If a zero timeout specified, this call is harmless.  Also do
-      this if not running on Valgrind. */
-   if (__timeout == 0 || ms_now == 0xFFFFFFFF) {
-      res = my_do_syscall3(__NR_poll, (int)__fds, __nfds, __timeout);
-      if (is_kerror(res)) {
-         * (__errno_location()) = -res;
-         return -1;
-      } else {
-         return res;
-      }
-   }
-
-   /* If a timeout was specified, set ms_end to be the end wallclock
-      time.  Easy considering that __timeout is in milliseconds. */
-   if (__timeout > 0) {
-      ms_end = ms_now + (unsigned int)__timeout;
-   }
-
-   /* fprintf(stderr, "MY_POLL: before loop\n"); */
-
-   /* Either timeout < 0, meaning wait indefinitely, or timeout > 0,
-      in which case t_end holds the end time. */
-
-   my_assert(__timeout != 0);
-
-   while (1) {
-
-      /* Do a return-immediately poll. */
-
-      res = my_do_syscall3(__NR_poll, (int)__fds, __nfds, 0 );
-      if (is_kerror(res)) {
-         /* Some kind of error.  Set errno and return.  */
-         * (__errno_location()) = -res;
-         return -1;
-      }
-      if (res > 0) {
-         /* One or more fds is ready.  Return now. */
-         return res;
-      }
-
-      /* Nothing interesting happened, so we go to sleep for a
-         while. */
-
-      /* fprintf(stderr, "MY_POLL: nanosleep\n"); */
-      /* nanosleep and go round again */
-      nanosleep_interval.tv_sec  = 0;
-      nanosleep_interval.tv_nsec = 13 * 1000 * 1000; /* 13 milliseconds */
-      /* It's critical here that valgrind's nanosleep implementation
-         is nonblocking. */
-      res = my_do_syscall2(__NR_nanosleep, 
-                           (int)(&nanosleep_interval), (int)NULL);
-      if (res == -VKI_EINTR) {
-         /* The nanosleep was interrupted by a signal.  So we do the
-            same. */
-         * (__errno_location()) = EINTR;
-         return -1;
-      }
-
-      /* Sleeping finished.  If a finite timeout, check to see if it
-         has expired yet. */
-      if (__timeout > 0) {
-         VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
-                                 VG_USERREQ__READ_MILLISECOND_TIMER,
-                                 0, 0, 0, 0);
-         my_assert(ms_now != 0xFFFFFFFF);
-         if (ms_now >= ms_end) {
-            /* timeout; nothing interesting happened. */
-            for (i = 0; i < __nfds; i++) 
-               __fds[i].revents = 0;
-            return 0;
-         }
-      }
-
-   }
-}
-
-
-/* Helper function used to make accept() non-blocking.  Idea is to use
-   the above nonblocking poll() to make this thread ONLY wait for the
-   specified fd to become ready, and then return. */
-
-/* Sigh -- a hack.  We're not supposed to include this file directly;
-   should do it via /usr/include/fcntl.h, but that introduces a
-   varargs prototype for fcntl itself, which we can't mimic. */
-#define _FCNTL_H
-#include <bits/fcntl.h>
-
-static void wait_for_fd_to_be_readable_or_erring ( int fd )
-{
-   struct pollfd pfd;
-   int           res;
-
-   /* fprintf(stderr, "wait_for_fd_to_be_readable_or_erring %d\n", fd); */
-
-   /* First check to see if the fd is nonblocking, and/or invalid.  In
-      either case return immediately. */
-   res = __libc_fcntl(fd, F_GETFL, 0);
-   if (res == -1) return; /* fd is invalid somehow */
-   if (res & O_NONBLOCK) return; /* fd is nonblocking */
-
-   /* Ok, we'd better wait with poll. */
-   pfd.fd = fd;
-   pfd.events = POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL;
-   /* ... but not POLLOUT, you may notice. */
-   pfd.revents = 0;
-   (void)poll(&pfd, 1, -1 /* forever */);
-}
-
-static void wait_for_fd_to_be_writable_or_erring ( int fd )
-{
-   struct pollfd pfd;
-   int           res;
-
-   /* fprintf(stderr, "wait_for_fd_to_be_readable_or_erring %d\n", fd); */
-
-   /* First check to see if the fd is nonblocking, and/or invalid.  In
-      either case return immediately. */
-   res = __libc_fcntl(fd, F_GETFL, 0);
-   if (res == -1) return; /* fd is invalid somehow */
-   if (res & O_NONBLOCK) return; /* fd is nonblocking */
-
-   /* Ok, we'd better wait with poll. */
-   pfd.fd = fd;
-   pfd.events = POLLOUT | POLLERR | POLLHUP | POLLNVAL;
-   pfd.revents = 0;
-   (void)poll(&pfd, 1, -1 /* forever */);
-}
 
 /* ---------------------------------------------------------------------
    Hacky implementation of semaphores.
@@ -3302,94 +2923,21 @@ pthread_rwlockattr_setpshared (pthread_rwlockattr_t *attr, int pshared)
 
 
 /* ---------------------------------------------------------------------
-   Make SYSV IPC not block everything
+   Make SYSV IPC not block everything -- pass to vg_intercept.c.
    ------------------------------------------------------------------ */
 
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <asm/ipc.h>		/* for ipc_kludge */
-
-static inline int sys_ipc(unsigned call, int first, int second, int third, void *ptr)
+WEAK
+int msgsnd(int msgid, const void *msgp, size_t msgsz, int msgflg)
 {
-   return my_do_syscall5(__NR_ipc, call, first, second, third, (int)ptr);
+   return VGR_(msgsnd)(msgid, msgp, msgsz, msgflg);
 }
 
-/* Turn a blocking msgsnd() into a polling non-blocking one, so that
-   other threads make progress */
-int VGL_(msgsnd)(int msgid, const void *msgp, size_t msgsz, int msgflg)
+WEAK
+int msgrcv(int msqid, void* msgp, size_t msgsz, 
+           long msgtyp, int msgflg )
 {
-   struct vki_timespec nanosleep_interval;
-   int err;
-
-   ensure_valgrind("msgsnd");
-
-   nanosleep_interval.tv_sec  = 0;
-   nanosleep_interval.tv_nsec = 13 * 1000 * 1000; /* 13 milliseconds */
-
-   if (msgflg & IPC_NOWAIT) {
-      /* If we aren't blocking anyway, just do it */
-      err = sys_ipc(11, msgid, msgsz, msgflg, (void *)msgp);
-   } else {
-      /* Otherwise poll on the queue to let other things run */
-      for(;;) {
-	 err = sys_ipc(11, msgid, msgsz, msgflg | IPC_NOWAIT, (void *)msgp);
-
-	 if (err != -EAGAIN)
-	    break;
-
-	 (void)my_do_syscall2(__NR_nanosleep, 
-			      (int)(&nanosleep_interval), (int)NULL);
-      }  
-   }
-
-   if (is_kerror(err)) {
-      *(__errno_location()) = -err;
-      return -1;
-   }
-   return 0;
+   return VGR_(msgrcv)(msqid, msgp, msgsz, msgtyp, msgflg );
 }
-
-/* Turn a blocking msgrcv() into a polling non-blocking one, so that
-   other threads make progress */
-int VGL_(msgrcv)( int msqid, void  *msgp,  size_t msgsz, long msgtyp, int msgflg )
-{
-   struct vki_timespec nanosleep_interval;
-   int err;
-   struct ipc_kludge tmp;
-
-   ensure_valgrind("msgrcv");
-
-   nanosleep_interval.tv_sec  = 0;
-   nanosleep_interval.tv_nsec = 13 * 1000 * 1000; /* 13 milliseconds */
-
-   tmp.msgp = msgp;
-   tmp.msgtyp = msgtyp;
-
-   if (msgflg & IPC_NOWAIT) {
-      /* If we aren't blocking anyway, just do it */
-      err = sys_ipc(12, msqid, msgsz, msgflg, &tmp );
-   } else {
-      /* Otherwise poll on the queue to let other things run */
-      for(;;) {
-	 err = sys_ipc(12, msqid, msgsz, msgflg | IPC_NOWAIT, &tmp );
-
-	 if (err != -ENOMSG)
-	    break;
-
-	 (void)my_do_syscall2(__NR_nanosleep, 
-			      (int)(&nanosleep_interval), (int)NULL);
-      }  
-   }
-   
-   if (is_kerror(err)) {
-      *(__errno_location()) = -err;
-      return -1;
-   }
-
-   return err;
-}
-
-
 
 /* ---------------------------------------------------------------------
    B'stard.

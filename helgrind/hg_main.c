@@ -53,7 +53,7 @@ static UInt n_lockorder_warnings = 0;
 #define DEBUG_VIRGIN_READS  0   /* Dump around address on VIRGIN reads */
 
 #if SLOW_ASSERTS
-#define SK_ASSERT(x)	sk_assert(x)
+#define SK_ASSERT(x)	tl_assert(x)
 #else
 #define SK_ASSERT(x)
 #endif
@@ -113,7 +113,7 @@ void VGE_(done_prof_mem) ( void )
 }
 
 #define PROF_EVENT(ev)                                  \
-   do { sk_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);   \
+   do { tl_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);   \
         event_ctr[ev]++;                                \
    } while (False);
 
@@ -412,13 +412,13 @@ static void addPriorTLS(ThreadId tid, ThreadId prior)
       VG_(printf)("making TLS %p(%u) prior to TLS %p(%u)\n",
 		  thread_seg[prior], prior, tls, tid);
 
-   sk_assert(thread_seg[tid] != NULL);
-   sk_assert(thread_seg[prior] != NULL);
+   tl_assert(thread_seg[tid] != NULL);
+   tl_assert(thread_seg[prior] != NULL);
 
    if (tls->prior[0] == NULL)
       tls->prior[0] = thread_seg[prior];
    else {
-      sk_assert(tls->prior[1] == NULL);
+      tl_assert(tls->prior[1] == NULL);
       tls->prior[1] = thread_seg[prior];
    }
 }
@@ -514,7 +514,7 @@ void set_sword ( Addr a, shadow_word sword )
 
    /* Use bits 31..16 for primary, 15..2 for secondary lookup */
    sm     = primary_map[a >> 16];
-   sk_assert(sm != &distinguished_secondary_map);
+   tl_assert(sm != &distinguished_secondary_map);
    oldsw = &sm->swords[(a & 0xFFFC) >> 2];
    if (oldsw->state == Vge_Excl && oldsw->other != TLSP_INDICATING_ALL) {
       ThreadLifeSeg *tls = unpackTLS(oldsw->other);
@@ -579,7 +579,7 @@ void init_nonvirgin_sword(Addr a)
    ThreadId tid = VG_(get_current_or_recent_tid)();
    ThreadLifeSeg *tls;
 
-   sk_assert(tid != VG_INVALID_THREADID);
+   tl_assert(tid != VG_INVALID_THREADID);
    tls = thread_seg[tid];
 
    sword = SW(Vge_Excl, packTLS(tls));
@@ -596,7 +596,7 @@ void init_magically_inited_sword(Addr a)
 {
    shadow_word sword;
 
-   sk_assert(VG_INVALID_THREADID == VG_(get_current_tid)());
+   tl_assert(VG_INVALID_THREADID == VG_(get_current_tid)());
 
    sword = SW(Vge_Virgin, TID_INDICATING_NONVIRGIN);
 
@@ -695,7 +695,7 @@ static UInt hash_LockSet_w_wo(const LockSet *ls,
    Int  i;
    UInt hash = ls->setsize + (with != NULL) - (without != NULL);
    
-   sk_assert(with == NULL || with != without);
+   tl_assert(with == NULL || with != without);
 
    for(i = 0; with != NULL || i < ls->setsize; i++) {
       const Mutex *mx = i >= ls->setsize ? NULL : ls->mutex[i];
@@ -817,7 +817,7 @@ weird_LockSet_equals(const LockSet* a, const LockSet* b,
       print_LockSet("     2:      b", b);
    }
 
-   sk_assert(ia == a->setsize || mutex_cmp(a->mutex[ia], missing_mutex) >= 0);
+   tl_assert(ia == a->setsize || mutex_cmp(a->mutex[ia], missing_mutex) >= 0);
 
    if (ib == b->setsize || mutex_cmp(missing_mutex, b->mutex[ib]) != 0)
       return False;
@@ -885,7 +885,7 @@ static void insert_LockSet(LockSet *set)
    
    set->hash = hash;
 
-   sk_assert(lookup_LockSet(set) == NULL);
+   tl_assert(lookup_LockSet(set) == NULL);
 
    set->next = lockset_hash[hash];
    lockset_hash[hash] = set;
@@ -1014,7 +1014,7 @@ LockSet *add_LockSet(const LockSet *ls, const Mutex *mx)
    if (debug || LOCKSET_SANITY)
       sanity_check_locksets("add-IN");
 
-   sk_assert(!ismember(ls, mx));
+   tl_assert(!ismember(ls, mx));
 
    ret = alloc_LockSet(ls->setsize+1);
 
@@ -1033,7 +1033,7 @@ LockSet *add_LockSet(const LockSet *ls, const Mutex *mx)
    if (mx)
       ret->mutex[j++] = mx;
 
-   sk_assert(j == ret->setsize);
+   tl_assert(j == ret->setsize);
 
    if (debug || LOCKSET_SANITY) {
       print_LockSet("add-OUT", ret);
@@ -1060,7 +1060,7 @@ LockSet *remove_LockSet ( const LockSet *ls, const Mutex *mx )
    if (debug || LOCKSET_SANITY)
       sanity_check_locksets("remove-IN");
 
-   sk_assert(ismember(ls, mx));
+   tl_assert(ismember(ls, mx));
 
    ret = alloc_LockSet(ls->setsize-1);
 
@@ -1070,7 +1070,7 @@ LockSet *remove_LockSet ( const LockSet *ls, const Mutex *mx )
       ret->mutex[j++] = ls->mutex[i];
    }
 
-   sk_assert(j == ret->setsize);
+   tl_assert(j == ret->setsize);
 
    if (debug || LOCKSET_SANITY) {
       print_LockSet("remove-OUT", ret);
@@ -1110,7 +1110,7 @@ static const LockSet *_intersect(const LockSet *a, const LockSet *b)
       } else if (mutex_cmp(a->mutex[ia], b->mutex[ib]) < 0) {
 	 ia++;
       } else {
-	 sk_assert(mutex_cmp(a->mutex[ia], b->mutex[ib]) > 0);
+	 tl_assert(mutex_cmp(a->mutex[ia], b->mutex[ib]) > 0);
 	 ib++;
       } 
    }
@@ -1119,14 +1119,14 @@ static const LockSet *_intersect(const LockSet *a, const LockSet *b)
    ret = alloc_LockSet(size);
    for (iret = ia = ib = 0; ia < a->setsize && ib < b->setsize; ) {
       if (mutex_cmp(a->mutex[ia], b->mutex[ib]) == 0) {
-	 sk_assert(iret < ret->setsize);
+	 tl_assert(iret < ret->setsize);
 	 ret->mutex[iret++] = a->mutex[ia];
 	 ia++;
 	 ib++;
       } else if (mutex_cmp(a->mutex[ia], b->mutex[ib]) < 0) {
 	 ia++;
       } else {
-	 sk_assert(mutex_cmp(a->mutex[ia], b->mutex[ib]) > 0);
+	 tl_assert(mutex_cmp(a->mutex[ia], b->mutex[ib]) > 0);
 	 ib++;
       } 
    }
@@ -1229,7 +1229,7 @@ static const LockSet *ls_union(const LockSet *a, const LockSet *b)
 	 size++;
 	 ia++;
       } else {
-	 sk_assert(cmp > 0);
+	 tl_assert(cmp > 0);
 	 size++;
 	 ib++;
       } 
@@ -1239,7 +1239,7 @@ static const LockSet *ls_union(const LockSet *a, const LockSet *b)
    ret = alloc_LockSet(size);
    for (iret = ia = ib = 0; (ia < a->setsize) || (ib < b->setsize); ) {
       Int cmp;
-      sk_assert(iret < ret->setsize);
+      tl_assert(iret < ret->setsize);
 
       if ((ia < a->setsize) && (ib < b->setsize))
 	 cmp = mutex_cmp(a->mutex[ia], b->mutex[ib]);
@@ -1256,13 +1256,13 @@ static const LockSet *ls_union(const LockSet *a, const LockSet *b)
 	 ret->mutex[iret++] = a->mutex[ia];
 	 ia++;
       } else {
-	 sk_assert(cmp > 0);
+	 tl_assert(cmp > 0);
 	 ret->mutex[iret++] = b->mutex[ib];
 	 ib++;
       } 
    }
 
-   sk_assert(iret == ret->setsize);
+   tl_assert(iret == ret->setsize);
 
    ret->hash = hash_LockSet(ret);
 
@@ -1461,7 +1461,7 @@ static void test_mutex_state(Mutex *mutex, MutexState state, ThreadId tid)
 
    switch(state) {
    case MxLocked:
-      sk_assert(!check_cycle(mutex, mutex->lockdep));
+      tl_assert(!check_cycle(mutex, mutex->lockdep));
 
       if (debug)
 	 print_LockSet("thread holding", thread_locks[tid]);
@@ -1539,7 +1539,7 @@ static void set_mutex_state(Mutex *mutex, MutexState state, ThreadId tid)
 	 break;
       }
 
-      sk_assert(!check_cycle(mutex, mutex->lockdep));
+      tl_assert(!check_cycle(mutex, mutex->lockdep));
 
       mutex->tid = tid;
       break;
@@ -1557,7 +1557,7 @@ static void set_mutex_state(Mutex *mutex, MutexState state, ThreadId tid)
    case MxDead:
       if (mutex->state == MxLocked) {
 	 /* forcably remove offending lock from thread's lockset  */
-	 sk_assert(ismember(thread_locks[mutex->tid], mutex));
+	 tl_assert(ismember(thread_locks[mutex->tid], mutex));
 	 thread_locks[mutex->tid] = remove_LockSet(thread_locks[mutex->tid], mutex);
 	 mutex->tid = VG_INVALID_THREADID;
 
@@ -1655,7 +1655,7 @@ void set_address_range_state ( Addr a, SizeT len /* in bytes */,
       -- this could happen with buggy syscall wrappers.  Today
       (2001-04-26) had precisely such a problem with
       __NR_setitimer. */
-   sk_assert(SK_(cheap_sanity_check)());
+   tl_assert(SK_(cheap_sanity_check)());
    VGP_POPCC(VgpSARP);
 }
 
@@ -2074,9 +2074,9 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    break;
 
          case GET:
-	    sk_assert(u_in->tag1 == ArchReg);
-	    sk_assert(u_in->tag2 == TempReg);
-	    sk_assert(u_in->val2 < ntemps);
+	    tl_assert(u_in->tag1 == ArchReg);
+	    tl_assert(u_in->tag2 == TempReg);
+	    tl_assert(u_in->val2 < ntemps);
 
 	    stackref[u_in->val2] = (u_in->size == 4 &&
 				    (u_in->val1 == R_STACK_PTR ||
@@ -2086,7 +2086,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 
          case MOV:
 	    if (u_in->size == 4 && u_in->tag1 == TempReg) {
-	       sk_assert(u_in->tag2 == TempReg);
+	       tl_assert(u_in->tag2 == TempReg);
 	       stackref[u_in->val2] = stackref[u_in->val1];
 	    }
 	    VG_(copy_UInstr)(cb, u_in);
@@ -2095,7 +2095,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
          case LEA1:
          case ADD: case SUB:
 	    if (u_in->size == 4 && u_in->tag1 == TempReg) {
-	       sk_assert(u_in->tag2 == TempReg);
+	       tl_assert(u_in->tag2 == TempReg);
 	       stackref[u_in->val2] |= stackref[u_in->val1];
 	    }
 	    VG_(copy_UInstr)(cb, u_in);
@@ -2103,8 +2103,8 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 
          case LOAD: {
 	    void (*help)(Addr);
-	    sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size);
-	    sk_assert(u_in->tag1 == TempReg);
+	    tl_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size);
+	    tl_assert(u_in->tag1 == TempReg);
 
 	    if (!clo_priv_stacks || !stackref[u_in->val1]) {
 	       nonstk_ld++;
@@ -2131,7 +2131,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 
          case MMX2_MemRd:
          case FPU_R: {
-            sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
+            tl_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
                       8 == u_in->size || 10 == u_in->size || 108 == u_in->size);
 	    
 	    t_size = newTemp(cb);
@@ -2149,7 +2149,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	 } 
 
          case MMX2a1_MemRd: {
-            sk_assert(8 == u_in->size);
+            tl_assert(8 == u_in->size);
 	    
 	    t_size = newTemp(cb);
 	    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
@@ -2172,7 +2172,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
          case SSE3ag_MemRd_RegWr: {
 	    Int addr = (u_in->opcode == SSE3ag_MemRd_RegWr) ? u_in->val1 : u_in->val3;
 
-            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
+            tl_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
 	    
 	    t_size = newTemp(cb);
 	    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
@@ -2188,8 +2188,8 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 
          case STORE: {
 	    void (*help)(Addr, UInt);
-            sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size);
-	    sk_assert(u_in->tag2 == TempReg);
+            tl_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size);
+	    tl_assert(u_in->tag2 == TempReg);
 
 	    if (!clo_priv_stacks || !stackref[u_in->val2]) {
 	       nonstk_st++;
@@ -2216,7 +2216,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 
          case MMX2_MemWr:
          case FPU_W: {
-            sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
+            tl_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
                       8 == u_in->size || 10 == u_in->size || 108 == u_in->size);
 
 	    t_size = newTemp(cb);
@@ -2234,7 +2234,7 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 
          case SSE2a_MemWr:
          case SSE3a_MemWr: {
-            sk_assert(4 == u_in->size || 8 == u_in->size || 16 == u_in->size ||
+            tl_assert(4 == u_in->size || 8 == u_in->size || 16 == u_in->size ||
 		      512 == u_in->size);
 
 	    t_size = newTemp(cb);
@@ -2540,7 +2540,7 @@ Bool SK_(eq_SkinError) ( VgRes not_used, Error* e1, Error* e2 )
 {
    Char *e1s, *e2s;
 
-   sk_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
+   tl_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
 
    switch (VG_(get_error_kind)(e1)) {
    case EraserErr:
@@ -2672,7 +2672,7 @@ void SK_(pp_SkinError) ( Error* err )
       case Vge_Excl: {
 	 ThreadLifeSeg *tls = unpackTLS(extra->prevstate.other);
 
-	 sk_assert(tls != unpackTLS(TLSP_INDICATING_ALL));
+	 tl_assert(tls != unpackTLS(TLSP_INDICATING_ALL));
 	 VG_(sprintf)(buf, "exclusively owned by thread %u", tls->tid);
 	 break;
       }
@@ -2798,7 +2798,7 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp* su )
 
 Bool SK_(error_matches_suppression)(Error* err, Supp* su)
 {
-   sk_assert(VG_(get_supp_kind)(su) == EraserSupp);
+   tl_assert(VG_(get_supp_kind)(su) == EraserSupp);
 
    return (VG_(get_error_kind)(err) == EraserErr);
 }
@@ -2949,7 +2949,7 @@ static void eraser_mem_read_word(Addr a, ThreadId tid)
    };
 
    tls = thread_seg[tid];
-   sk_assert(tls != NULL && tls->tid == tid);
+   tl_assert(tls != NULL && tls->tid == tid);
 
    sword = get_sword_addr(a);
    if (sword == SEC_MAP_ACCESS) {
@@ -3059,7 +3059,7 @@ static void eraser_mem_write_word(Addr a, ThreadId tid)
    };
 
    tls = thread_seg[tid];
-   sk_assert(tls != NULL && tls->tid == tid);
+   tl_assert(tls != NULL && tls->tid == tid);
 
    sword = get_sword_addr(a);
    if (sword == SEC_MAP_ACCESS) {

@@ -79,11 +79,11 @@ static void add_to_freed_queue ( MAC_Chunk* mc )
 
    /* Put it at the end of the freed list */
    if (freed_list_end == NULL) {
-      sk_assert(freed_list_start == NULL);
+      tl_assert(freed_list_start == NULL);
       freed_list_end    = freed_list_start = mc;
       freed_list_volume = mc->size;
    } else {
-      sk_assert(freed_list_end->next == NULL);
+      tl_assert(freed_list_end->next == NULL);
       freed_list_end->next = mc;
       freed_list_end       = mc;
       freed_list_volume += mc->size;
@@ -94,13 +94,13 @@ static void add_to_freed_queue ( MAC_Chunk* mc )
       volume below vg_clo_freelist_vol. */
 
    while (freed_list_volume > MAC_(clo_freelist_vol)) {
-      sk_assert(freed_list_start != NULL);
-      sk_assert(freed_list_end != NULL);
+      tl_assert(freed_list_start != NULL);
+      tl_assert(freed_list_end != NULL);
 
       sc1 = freed_list_start;
       freed_list_volume -= sc1->size;
       /* VG_(printf)("volume now %d\n", freed_list_volume); */
-      sk_assert(freed_list_volume >= 0);
+      tl_assert(freed_list_volume >= 0);
 
       if (freed_list_start == freed_list_end) {
          freed_list_start = freed_list_end = NULL;
@@ -191,9 +191,9 @@ void* MAC_(new_block) ( Addr p, SizeT size, SizeT align, UInt rzB,
 
    // Allocate and zero if necessary
    if (p) {
-      sk_assert(MAC_AllocCustom == kind);
+      tl_assert(MAC_AllocCustom == kind);
    } else {
-      sk_assert(MAC_AllocCustom != kind);
+      tl_assert(MAC_AllocCustom != kind);
       p = (Addr)VG_(cli_malloc)( align, size );
       if (!p) {
          VGP_POPCC(VgpCliMalloc);

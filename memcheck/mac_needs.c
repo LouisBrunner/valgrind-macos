@@ -143,7 +143,7 @@ Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
    MAC_Error* e2_extra = VG_(get_error_extra)(e2);
 
    /* Guaranteed by calling function */
-   sk_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
+   tl_assert(VG_(get_error_kind)(e1) == VG_(get_error_kind)(e2));
    
    switch (VG_(get_error_kind)(e1)) {
       case CoreMemErr: {
@@ -257,7 +257,7 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
       }
       case Register:
          // print nothing
-         sk_assert(0 == a);
+         tl_assert(0 == a);
          break;
       default:
          VG_(skin_panic)("MAC_(pp_AddrInfo)");
@@ -463,7 +463,7 @@ void MAC_(record_param_error) ( ThreadId tid, Addr a, Bool isReg,
 {
    MAC_Error err_extra;
 
-   sk_assert(VG_INVALID_THREADID != tid);
+   tl_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = ( isReg ? Register : Undescribed );
    err_extra.isUnaddr = isUnaddr;
@@ -474,7 +474,7 @@ void MAC_(record_jump_error) ( ThreadId tid, Addr a )
 {
    MAC_Error err_extra;
 
-   sk_assert(VG_INVALID_THREADID != tid);
+   tl_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.axskind = ExecAxs;
    err_extra.size    = 1;     // size only used for suppressions
@@ -486,7 +486,7 @@ void MAC_(record_free_error) ( ThreadId tid, Addr a )
 {
    MAC_Error err_extra;
 
-   sk_assert(VG_INVALID_THREADID != tid);
+   tl_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    VG_(maybe_record_error)( tid, FreeErr, a, /*s*/NULL, &err_extra );
@@ -496,7 +496,7 @@ void MAC_(record_illegal_mempool_error) ( ThreadId tid, Addr a )
 {
    MAC_Error err_extra;
 
-   sk_assert(VG_INVALID_THREADID != tid);
+   tl_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    VG_(maybe_record_error)( tid, IllegalMempoolErr, a, /*s*/NULL, &err_extra );
@@ -506,7 +506,7 @@ void MAC_(record_freemismatch_error) ( ThreadId tid, Addr a )
 {
    MAC_Error err_extra;
 
-   sk_assert(VG_INVALID_THREADID != tid);
+   tl_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    VG_(maybe_record_error)( tid, FreeMismatchErr, a, /*s*/NULL, &err_extra );
@@ -859,7 +859,7 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UWord* arg, UWord* ret )
    // Not using 'tid' here because MAC_(new_block)() and MAC_(handle_free)()
    // grab it themselves.  But what they grab should match 'tid', check
    // this.
-   sk_assert(tid == VG_(get_current_or_recent_tid)());
+   tl_assert(tid == VG_(get_current_or_recent_tid)());
    
    switch (arg[0]) {
    case VG_USERREQ__COUNT_LEAKS: { /* count leaked bytes */

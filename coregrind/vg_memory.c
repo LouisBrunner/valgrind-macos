@@ -742,8 +742,8 @@ Addr VG_(client_alloc)(Addr addr, SizeT len, UInt prot, UInt sf_flags)
 {
    len = PGROUNDUP(len);
 
-   sk_assert(!(sf_flags & SF_FIXED));
-   sk_assert(0 == addr);
+   tl_assert(!(sf_flags & SF_FIXED));
+   tl_assert(0 == addr);
 
    addr = (Addr)VG_(mmap)((void *)addr, len, prot, 
                           VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,

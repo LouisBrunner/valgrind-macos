@@ -475,7 +475,7 @@ extern Bool VG_(getcwd_alloc) ( Char** cwd );
 /* Asserts permanently enabled -- no turning off with NDEBUG.  Hurrah! */
 #define VG__STRING(__str)  #__str
 
-#define sk_assert(expr)                                               \
+#define tl_assert(expr)                                               \
   ((void) ((expr) ? 0 :						      \
 	   (VG_(skin_assert_fail) (VG__STRING(expr),	              \
 			           __FILE__, __LINE__,                \
@@ -1797,7 +1797,7 @@ extern void VG_(details_copyright_author)      ( Char* copyright_author );
    setting is optional. */
 extern void VG_(details_avg_translation_sizeB) ( UInt size );
 
-/* String printed if an `sk_assert' assertion fails or VG_(skin_panic)
+/* String printed if an `tl_assert' assertion fails or VG_(skin_panic)
    is called.  Should probably be an email address. */
 extern void VG_(details_bug_reports_to)   ( Char* bug_reports_to );
 

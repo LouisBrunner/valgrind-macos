@@ -265,10 +265,10 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    sigill_new.sa_flags    = 0;
    sigill_new.sa_restorer = NULL;
    res = VG_(sigemptyset)( &sigill_new.sa_mask );
-   sk_assert(res == 0);
+   tl_assert(res == 0);
 
    res = VG_(sigaction)( VKI_SIGILL, &sigill_new, &sigill_saved );
-   sk_assert(res == 0);
+   tl_assert(res == 0);
 
    /* Trap for illegal instruction, in case it's a really old processor that
     * doesn't support CPUID. */
@@ -279,14 +279,14 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 
       /* Restore old SIGILL handler */
       res = VG_(sigaction)( VKI_SIGILL, &sigill_saved, NULL );
-      sk_assert(res == 0);
+      tl_assert(res == 0);
 
    } else  {
       VG_(message)(Vg_DebugMsg, "CPUID instruction not supported");
 
       /* Restore old SIGILL handler */
       res = VG_(sigaction)( VKI_SIGILL, &sigill_saved, NULL );
-      sk_assert(res == 0);
+      tl_assert(res == 0);
       return -1;
    }
 

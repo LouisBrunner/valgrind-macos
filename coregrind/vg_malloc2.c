@@ -396,7 +396,7 @@ void ensure_mm_init ( void )
    }
 
    /* No particular reason for this figure, it's just smallish */
-   sk_assert(VG_(vg_malloc_redzone_szB) < 128);
+   tl_assert(VG_(vg_malloc_redzone_szB) < 128);
    client_rz_szB = VG_(vg_malloc_redzone_szB);
 
    /* Use checked red zones (of various sizes) for our internal stuff,

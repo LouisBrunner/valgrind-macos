@@ -55,7 +55,7 @@ static void emit_testv_lit_reg ( Int sz, UInt lit, Int reg )
    if (sz == 2) {
       VG_(emitB) ( 0x66 );
    } else {
-      sk_assert(sz == 4);
+      tl_assert(sz == 4);
    }
    VG_(emitB) ( 0xF7 ); /* Grp3 Ev */
    VG_(emit_amode_ereg_greg) ( reg, 0 /* Grp3 subopcode for TEST */ );
@@ -71,7 +71,7 @@ static void emit_testv_lit_offregmem ( Int sz, UInt lit, Int off, Int reg )
    if (sz == 2) {
       VG_(emitB) ( 0x66 );
    } else {
-      sk_assert(sz == 4);
+      tl_assert(sz == 4);
    }
    VG_(emitB) ( 0xF7 ); /* Grp3 Ev */
    VG_(emit_amode_offregmem_reg) ( off, reg, 0 /* Grp3 subopcode for TEST */ );
@@ -138,7 +138,7 @@ static void synth_STOREV ( Int sz, Int tv_tag, Int tv_val, Int a_reg,
    UInt argv[] = { a_reg,   tv_val };
    Tag  tagv[] = { RealReg, tv_tag };
 
-   sk_assert(tv_tag == RealReg || tv_tag == Literal);
+   tl_assert(tv_tag == RealReg || tv_tag == Literal);
    switch (sz) {
       case 4: helper = (Addr) MC_(helperc_STOREV4); break;
       case 2: helper = (Addr) MC_(helperc_STOREV2); break;
@@ -173,11 +173,11 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
       the codegen scheme used below.  Since there are a shortage of
       compact helper slots, and since the size==1 case is never
       actually used, we assert against it. */
-   sk_assert(sz == 0 || sz == 2 || sz == 4);
+   tl_assert(sz == 0 || sz == 2 || sz == 4);
 
    VG_(init_target)(&tgt);
 
-   sk_assert(tag == ArchReg || tag == RealReg);
+   tl_assert(tag == ArchReg || tag == RealReg);
    if (tag == ArchReg) {
       switch (sz) {
          case 4: 
@@ -282,17 +282,17 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
       UInt lit = lit_or_reg;
       switch (sz) {
          case 4:
-            sk_assert(lit == 0x00000000);
+            tl_assert(lit == 0x00000000);
             VG_(emit_movv_lit_offregmem) ( 4, 0x00000000, 
                                       VG_(shadow_reg_offset)(arch), R_EBP );
             break;
          case 2:
-            sk_assert(lit == 0xFFFF0000);
+            tl_assert(lit == 0xFFFF0000);
             VG_(emit_movv_lit_offregmem) ( 2, 0x0000, 
                                       VG_(shadow_reg_offset)(arch), R_EBP );
             break;
          case 1:
-            sk_assert(lit == 0xFFFFFF00);
+            tl_assert(lit == 0xFFFFFF00);
             if (arch < 4) {
                VG_(emit_movb_lit_offregmem) ( 0x00, 
                                          VG_(shadow_reg_offset)(arch), R_EBP );
@@ -309,7 +309,7 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
    } else {
 
       UInt reg;
-      sk_assert(srcTag == RealReg);
+      tl_assert(srcTag == RealReg);
 
       if (sz == 1 && lit_or_reg >= 4) {
          VG_(emit_swapl_reg_EAX) ( lit_or_reg );
@@ -318,7 +318,7 @@ static void synth_PUTV ( Int sz, Int srcTag, UInt lit_or_reg, Int arch )
          reg = lit_or_reg;
       }
 
-      if (sz == 1) sk_assert(reg < 4);
+      if (sz == 1) tl_assert(reg < 4);
 
       switch (sz) {
          case 4:
@@ -588,13 +588,13 @@ void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
    switch (u->opcode) {
 
       case SETV:
-         sk_assert(u->tag1 == RealReg);
+         tl_assert(u->tag1 == RealReg);
          synth_SETV ( u->size, u->val1 );
          break;
 
       case STOREV:
-         sk_assert(u->tag1 == RealReg || u->tag1 == Literal);
-         sk_assert(u->tag2 == RealReg);
+         tl_assert(u->tag1 == RealReg || u->tag1 == Literal);
+         tl_assert(u->tag2 == RealReg);
          synth_STOREV ( u->size, u->tag1, 
                                  u->tag1==Literal ? u->lit32 : u->val1, 
                                  u->val2,
@@ -602,8 +602,8 @@ void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
          break;
 
       case LOADV:
-         sk_assert(u->tag1 == RealReg);
-         sk_assert(u->tag2 == RealReg);
+         tl_assert(u->tag1 == RealReg);
+         tl_assert(u->tag2 == RealReg);
          if (0)
             VG_(emit_AMD_prefetch_reg) ( u->val1 );
          synth_LOADV ( u->size, u->val1, u->val2,
@@ -611,33 +611,33 @@ void SK_(emit_XUInstr) ( UInstr* u, RRegSet regs_live_before )
          break;
 
       case TESTV:
-         sk_assert(u->tag1 == RealReg || u->tag1 == ArchReg);
+         tl_assert(u->tag1 == RealReg || u->tag1 == ArchReg);
          synth_TESTV(u->size, u->tag1, u->val1);
          break;
 
       case GETV:
-         sk_assert(u->tag1 == ArchReg);
-         sk_assert(u->tag2 == RealReg);
+         tl_assert(u->tag1 == ArchReg);
+         tl_assert(u->tag2 == RealReg);
          synth_GETV(u->size, u->val1, u->val2);
          break;
 
       case GETVF:
-         sk_assert(u->tag1 == RealReg);
-         sk_assert(u->size == 0);
+         tl_assert(u->tag1 == RealReg);
+         tl_assert(u->size == 0);
          synth_GETVF(u->val1);
          break;
 
       case PUTV:
-         sk_assert(u->tag1 == RealReg || u->tag1 == Literal);
-         sk_assert(u->tag2 == ArchReg);
+         tl_assert(u->tag1 == RealReg || u->tag1 == Literal);
+         tl_assert(u->tag2 == ArchReg);
          synth_PUTV(u->size, u->tag1, 
                              u->tag1==Literal ? u->lit32 : u->val1, 
                              u->val2 );
          break;
 
       case PUTVF:
-         sk_assert(u->tag1 == RealReg);
-         sk_assert(u->size == 0);
+         tl_assert(u->tag1 == RealReg);
+         tl_assert(u->size == 0);
          synth_PUTVF(u->val1);
          break;
 

@@ -65,7 +65,7 @@ void SK_(pp_SkinError) ( Error* err )
          Bool isReg = ( Register == err_extra->addrinfo.akind );
          Char* s1 = ( isReg ? "contains" : "points to" );
          Char* s2 = ( err_extra->isUnaddr ? "unaddressable" : "uninitialised" );
-         if (isReg) sk_assert(!err_extra->isUnaddr);
+         if (isReg) tl_assert(!err_extra->isUnaddr);
 
          VG_(message)(Vg_UserMsg, "Syscall param %s %s %s byte(s)",
                       VG_(get_error_string)(err), s1, s2);
@@ -114,7 +114,7 @@ void MC_(record_user_error) ( ThreadId tid, Addr a, Bool isWrite,
 {
    MAC_Error err_extra;
 
-   sk_assert(VG_INVALID_THREADID != tid);
+   tl_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    err_extra.isUnaddr       = isUnaddr;

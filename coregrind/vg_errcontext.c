@@ -307,7 +307,7 @@ static __inline__
 void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
                        Char* s, void* extra, ExeContext* where )
 {
-   sk_assert(tid < VG_N_THREADS);
+   tl_assert(tid < VG_N_THREADS);
 
    /* Core-only parts */
    err->next     = NULL;

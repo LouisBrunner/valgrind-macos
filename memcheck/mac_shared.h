@@ -178,7 +178,7 @@ typedef
 extern UInt MAC_(event_ctr)[N_PROF_EVENTS];
 
 #  define PROF_EVENT(ev)                                 \
-   do { sk_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);    \
+   do { tl_assert((ev) >= 0 && (ev) < N_PROF_EVENTS);    \
         MAC_(event_ctr)[ev]++;                           \
    } while (False);
 

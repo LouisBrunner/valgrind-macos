@@ -89,7 +89,7 @@ void VGP_(tick) ( int sigNo )
    Int cc;
    vgp_nticks++;
    cc = vgp_stack[vgp_sp];
-   sk_assert(cc >= 0 && cc < VGP_MAX_CCS);
+   tl_assert(cc >= 0 && cc < VGP_MAX_CCS);
    vgp_counts[ cc ]++;
 }
 
@@ -101,7 +101,7 @@ void VGP_(init_profiling) ( void )
    /* Register core events... tricky macro definition causes
       VGP_(register_profile_event)() to be called once for each core event
       in VGP_CORE_LIST. */
-   sk_assert(VgpUnc == 0);
+   tl_assert(VgpUnc == 0);
 #  define VGP_PAIR(n,name) VGP_(register_profile_event)(n,name)
    VGP_CORE_LIST;
 #  undef  VGP_PAIR

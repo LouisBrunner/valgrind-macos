@@ -375,7 +375,7 @@ static XPt* new_XPt(Addr eip, XPt* parent, Bool is_bottom)
    xpt->parent       = parent;
 
    // Check parent is not a bottom-XPt
-   sk_assert(parent == NULL || 0 != parent->max_children);
+   tl_assert(parent == NULL || 0 != parent->max_children);
 
    xpt->n_children   = 0;
 
@@ -447,7 +447,7 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
 
       // Must be at least one alloc function, unless client used
       // MALLOCLIKE_BLOCK
-      if (!custom_malloc) sk_assert(L > 0);    
+      if (!custom_malloc) tl_assert(L > 0);    
 
       // Should be at least one non-alloc function.  If not, try again.
       if (L == n_eips) {
@@ -482,8 +482,8 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
       while (True) {
          if (nC == xpt->n_children) {
             // not found, insert new XPt
-            sk_assert(xpt->max_children != 0);
-            sk_assert(xpt->n_children <= xpt->max_children);
+            tl_assert(xpt->max_children != 0);
+            tl_assert(xpt->n_children <= xpt->max_children);
             // Expand 'children' if necessary
             if (xpt->n_children == xpt->max_children) {
                xpt->max_children *= 2;
@@ -503,7 +503,7 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
 
       // Return found/built bottom-XPt.
       if (reached_bottom) {
-         sk_assert(0 == xpt->children[nC]->n_children);   // Must be bottom-XPt
+         tl_assert(0 == xpt->children[nC]->n_children);   // Must be bottom-XPt
          VGP_POPCC(VgpGetXPt);
          return xpt->children[nC];
       }
@@ -519,17 +519,17 @@ static void update_XCon(XPt* xpt, Int space_delta)
 {
    VGP_PUSHCC(VgpUpdateXCon);
 
-   sk_assert(True == clo_heap);
-   sk_assert(0    != space_delta);
-   sk_assert(NULL != xpt);
-   sk_assert(0    == xpt->n_children);    // must be bottom-XPt
+   tl_assert(True == clo_heap);
+   tl_assert(0    != space_delta);
+   tl_assert(NULL != xpt);
+   tl_assert(0    == xpt->n_children);    // must be bottom-XPt
 
    while (xpt != alloc_xpt) {
-      if (space_delta < 0) sk_assert(xpt->curr_space >= -space_delta);
+      if (space_delta < 0) tl_assert(xpt->curr_space >= -space_delta);
       xpt->curr_space += space_delta;
       xpt = xpt->parent;
    } 
-   if (space_delta < 0) sk_assert(alloc_xpt->curr_space >= -space_delta);
+   if (space_delta < 0) tl_assert(alloc_xpt->curr_space >= -space_delta);
    alloc_xpt->curr_space += space_delta;
 
    VGP_POPCC(VgpUpdateXCon);
@@ -602,7 +602,7 @@ static void adjust(Queue* q)
 {
    void** old_elems;
 
-   sk_assert(q->tail == q->max_elems);
+   tl_assert(q->tail == q->max_elems);
    if (q->head < 10) {
       old_elems     = q->elems;
       q->max_elems *= 2; 
@@ -655,7 +655,7 @@ HP_Chunk* get_HP_Chunk(void* p, HP_Chunk*** prev_chunks_next_ptr)
 static __inline__
 void remove_HP_Chunk(HP_Chunk* hc, HP_Chunk** prev_chunks_next_ptr)
 {
-   sk_assert(n_heap_blocks > 0);
+   tl_assert(n_heap_blocks > 0);
    n_heap_blocks--;
    *prev_chunks_next_ptr = hc->next;
 }
@@ -719,7 +719,7 @@ void die_block ( void* p, Bool custom_free )
    hc = get_HP_Chunk( p, &remove_handle );
    if (hc == NULL)
       return;   // must have been a bogus free(), or p==NULL
-   sk_assert(hc->data == (Addr)p);
+   tl_assert(hc->data == (Addr)p);
    remove_HP_Chunk(hc, remove_handle);
 
    if (clo_heap && hc->size != 0)
@@ -796,7 +796,7 @@ void* SK_(realloc) ( void* p_old, SizeT new_size )
       return NULL;   // must have been a bogus free()
    }
 
-   sk_assert(hc->data == (Addr)p_old);
+   tl_assert(hc->data == (Addr)p_old);
    old_size = hc->size;
   
    if (new_size <= old_size) {
@@ -933,7 +933,7 @@ static void halve_censi(void)
       FIND_CENSUS(j+1, jn);
       while (jn < MAX_N_CENSI) {
          Int timespan = censi[jn].ms_time - censi[jp].ms_time;
-         sk_assert(timespan >= 0);
+         tl_assert(timespan >= 0);
          if (timespan < min_span) {
             min_span = timespan;
             min_j    = j;
@@ -1053,7 +1053,7 @@ static void hp_census(void)
          VGP_PUSHCC(VgpCensusSnapshot);
          xtree_size2 = do_space_snapshot(alloc_xpt->children[i],
                                          census->xtree_snapshots[i], 0);
-         sk_assert(xtree_size == xtree_size2);
+         tl_assert(xtree_size == xtree_size2);
          VGP_POPCC(VgpCensusSnapshot);
       }
 //      VG_(printf)("\n\n");
@@ -1120,7 +1120,7 @@ static void new_mem_stack_signal(Addr a, SizeT len)
 
 static void die_mem_stack_signal(Addr a, SizeT len)
 {
-   sk_assert(sigstacks_space >= len);
+   tl_assert(sigstacks_space >= len);
    sigstacks_space -= len;
 }
 
@@ -1137,7 +1137,7 @@ Bool SK_(handle_client_request) ( ThreadId tid, UWord* argv, UWord* ret )
       SizeT sizeB     =        argv[2];
       *ret            = 0;
       res = new_block( p, sizeB, /*align -- ignored*/0, /*is_zeroed*/False );
-      sk_assert(res == p);
+      tl_assert(res == p);
       return True;
    }
    case VG_USERREQ__FREELIKE_BLOCK: {
@@ -1196,7 +1196,7 @@ void SK_(pre_clo_init)()
    // Dummy node at top of the context structure.
    alloc_xpt = new_XPt(0, NULL, /*is_bottom*/False);
 
-   sk_assert( VG_(getcwd_alloc)(&base_dir) );
+   tl_assert( VG_(getcwd_alloc)(&base_dir) );
 }
 
 void SK_(post_clo_init)(void)
@@ -1454,7 +1454,7 @@ static void write_hp_file(void)
    }
 
    // Close file
-   sk_assert(fd >= 0);
+   tl_assert(fd >= 0);
    VG_(close)(fd);
 
    // Attempt to convert file using hp2ps
@@ -1506,7 +1506,7 @@ static Char* make_perc(ULong spacetime, ULong total_spacetime)
    static Char mbuf[32];
    
    UInt  p = 10;
-   sk_assert(0 != total_spacetime);
+   tl_assert(0 != total_spacetime);
    percentify(spacetime * 100 * p / total_spacetime, p, 5, mbuf); 
    return mbuf;
 }
@@ -1522,7 +1522,7 @@ static UInt pp_XCon(Int fd, XPt* xpt)
    Char* maybe_br     = ( is_HTML ? "<br>" : "" );
    Char* maybe_indent = ( is_HTML ? "&nbsp;&nbsp;" : "" );
 
-   sk_assert(NULL != xpt);
+   tl_assert(NULL != xpt);
 
    while (True) {
       rev_eips[i] = xpt->eip;
@@ -1579,23 +1579,23 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
 
    while (NULL != (xpt = (XPt*)dequeue(q))) {
       // Check that non-top-level XPts have a zero .approx_ST field.
-      if (xpt->parent != alloc_xpt) sk_assert( 0 == xpt->approx_ST );
+      if (xpt->parent != alloc_xpt) tl_assert( 0 == xpt->approx_ST );
 
       // Check that the sum of all children .exact_ST_dbld fields equals
       // parent's (unless alloc_xpt, when it should == 0).
       if (alloc_xpt == xpt) {
-         sk_assert(0 == xpt->exact_ST_dbld);
+         tl_assert(0 == xpt->exact_ST_dbld);
       } else {
          sum = 0;
          for (i = 0; i < xpt->n_children; i++) {
             sum += xpt->children[i]->exact_ST_dbld;
          }
-         //sk_assert(sum == xpt->exact_ST_dbld);
+         //tl_assert(sum == xpt->exact_ST_dbld);
          // It's possible that not all the children were included in the
          // exact_ST_dbld calculations.  Hopefully almost all of them were, and
          // all the important ones.
-//         sk_assert(sum <= xpt->exact_ST_dbld);
-//         sk_assert(sum * 1.05 > xpt->exact_ST_dbld );
+//         tl_assert(sum <= xpt->exact_ST_dbld);
+//         tl_assert(sum * 1.05 > xpt->exact_ST_dbld );
 //         if (sum != xpt->exact_ST_dbld) {
 //            VG_(printf)("%ld, %ld\n", sum, xpt->exact_ST_dbld);
 //         }
@@ -1618,7 +1618,7 @@ static void pp_all_XPts2(Int fd, Queue* q, ULong heap_spacetime,
                          perc);
          }
          n = pp_XCon(fd, xpt);
-         sk_assert(n == L);
+         tl_assert(n == L);
       }
 
       // Sort children by exact_ST_dbld
@@ -1734,7 +1734,7 @@ write_text_file(ULong total_ST, ULong heap_ST)
    if (clo_heap)
       pp_all_XPts(fd, alloc_xpt, heap_ST, total_ST);
 
-   sk_assert(fd >= 0);
+   tl_assert(fd >= 0);
    VG_(close)(fd);
 
    VGP_POPCC(VgpPrintXPts);
@@ -1762,17 +1762,17 @@ print_summary(ULong total_ST, ULong heap_ST, ULong heap_admin_ST,
                    ( 0 == total_ST ? (Char*)"(n/a)"
                                    : make_perc(heap_admin_ST, total_ST) ) );
 
-   sk_assert( VG_(HT_count_nodes)(malloc_list) == n_heap_blocks );
+   tl_assert( VG_(HT_count_nodes)(malloc_list) == n_heap_blocks );
 
    // Stack(s) ----------------------------------------------------------
    if (clo_stacks) {
-      sk_assert(0 != total_ST);
+      tl_assert(0 != total_ST);
       VG_(message)(Vg_UserMsg, "stack(s):          %s", 
                    make_perc(stack_ST, total_ST) );
    }
 
    if (VG_(clo_verbosity) > 1) {
-      sk_assert(n_xpts > 0);  // always have alloc_xpt
+      tl_assert(n_xpts > 0);  // always have alloc_xpt
       VG_(message)(Vg_DebugMsg, "    allocs: %u", n_allocs);
       VG_(message)(Vg_DebugMsg, "zeroallocs: %u (%d%%)", n_zero_allocs,
                                 n_zero_allocs * 100 / n_allocs );

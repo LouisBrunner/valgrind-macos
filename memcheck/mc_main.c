@@ -225,7 +225,7 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
    UChar   abits8;
    PROF_EVENT(24);
 #  ifdef VG_DEBUG_MEMORY
-   sk_assert(IS_ALIGNED4_ADDR(a));
+   tl_assert(IS_ALIGNED4_ADDR(a));
 #  endif
    sm     = primary_map[a >> 16];
    sm_off = a & 0xFFFF;
@@ -241,7 +241,7 @@ static UInt __inline__ get_vbytes4_ALIGNED ( Addr a )
    UInt    sm_off = a & 0xFFFF;
    PROF_EVENT(25);
 #  ifdef VG_DEBUG_MEMORY
-   sk_assert(IS_ALIGNED4_ADDR(a));
+   tl_assert(IS_ALIGNED4_ADDR(a));
 #  endif
    return ((UInt*)(sm->vbyte))[sm_off >> 2];
 }
@@ -256,7 +256,7 @@ static void __inline__ set_vbytes4_ALIGNED ( Addr a, UInt vbytes )
    sm_off = a & 0xFFFF;
    PROF_EVENT(23);
 #  ifdef VG_DEBUG_MEMORY
-   sk_assert(IS_ALIGNED4_ADDR(a));
+   tl_assert(IS_ALIGNED4_ADDR(a));
 #  endif
    ((UInt*)(sm->vbyte))[sm_off >> 2] = vbytes;
 }
@@ -294,15 +294,15 @@ static void set_address_range_perms ( Addr a, SizeT len,
       indicate bugs in our machinery.  30,000,000 is arbitrary, but so
       far all legitimate requests have fallen beneath that size. */
    /* 4 Mar 02: this is just stupid; get rid of it. */
-   /* sk_assert(len < 30000000); */
+   /* tl_assert(len < 30000000); */
 
    /* Check the permissions make sense. */
-   sk_assert(example_a_bit == VGM_BIT_VALID 
+   tl_assert(example_a_bit == VGM_BIT_VALID 
              || example_a_bit == VGM_BIT_INVALID);
-   sk_assert(example_v_bit == VGM_BIT_VALID 
+   tl_assert(example_v_bit == VGM_BIT_VALID 
              || example_v_bit == VGM_BIT_INVALID);
    if (example_a_bit == VGM_BIT_INVALID)
-      sk_assert(example_v_bit == VGM_BIT_INVALID);
+      tl_assert(example_v_bit == VGM_BIT_INVALID);
 
    /* The validity bits to write. */
    vbyte = example_v_bit==VGM_BIT_VALID 
@@ -347,7 +347,7 @@ static void set_address_range_perms ( Addr a, SizeT len,
       VGP_POPCC(VgpSetMem);
       return;
    }
-   sk_assert((a % 8) == 0 && len > 0);
+   tl_assert((a % 8) == 0 && len > 0);
 
    /* Once aligned, go fast. */
    while (True) {
@@ -367,7 +367,7 @@ static void set_address_range_perms ( Addr a, SizeT len,
       VGP_POPCC(VgpSetMem);
       return;
    }
-   sk_assert((a % 8) == 0 && len > 0 && len < 8);
+   tl_assert((a % 8) == 0 && len > 0 && len < 8);
 
    /* Finish the upper fragment. */
    while (True) {
@@ -383,7 +383,7 @@ static void set_address_range_perms ( Addr a, SizeT len,
    /* Check that zero page and highest page have not been written to
       -- this could happen with buggy syscall wrappers.  Today
       (2001-04-26) had precisely such a problem with __NR_setitimer. */
-   sk_assert(SK_(cheap_sanity_check)());
+   tl_assert(SK_(cheap_sanity_check)());
    VGP_POPCC(VgpSetMem);
 }
 
@@ -699,7 +699,7 @@ void mc_check_is_readable_asciiz ( CorePart part, ThreadId tid,
 
    VGP_PUSHCC(VgpCheckMem);
 
-   sk_assert(part == Vg_CoreSysCall);
+   tl_assert(part == Vg_CoreSysCall);
    res = mc_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (MC_Ok != res) {
       Bool isUnaddr = ( MC_AddrErr == res ? True : False );
@@ -768,7 +768,7 @@ static void mc_pre_reg_read(CorePart part, ThreadId tid, Char* s, UInt reg,
    UWord mask;
    
    // XXX: the only one at the moment
-   sk_assert(Vg_CoreSysCall == part);
+   tl_assert(Vg_CoreSysCall == part);
 
    switch (size) {
    case 4:  mask = 0xffffffff; break;
@@ -1009,7 +1009,7 @@ static UInt mc_rd_V4_SLOWLY ( Addr a )
       (which is the default), and the address is 4-aligned.  
       If not, Case 2 will have applied.
    */
-   sk_assert(MAC_(clo_partial_loads_ok));
+   tl_assert(MAC_(clo_partial_loads_ok));
    {
       UInt vw = VGM_WORD_INVALID;
       vw <<= 8; vw |= (a3ok ? vb3 : VGM_BYTE_INVALID);
@@ -1467,7 +1467,7 @@ static Int mc_get_or_set_vbits_for_client (
 static
 Bool mc_is_valid_64k_chunk ( UInt chunk_number )
 {
-   sk_assert(chunk_number >= 0 && chunk_number < 65536);
+   tl_assert(chunk_number >= 0 && chunk_number < 65536);
    if (IS_DISTINGUISHED_SM(primary_map[chunk_number])) {
       /* Definitely not in use. */
       return False;
@@ -1484,7 +1484,7 @@ Bool mc_is_valid_address ( Addr a )
 {
    UInt vbytes;
    UChar abits;
-   sk_assert(IS_ALIGNED4_ADDR(a));
+   tl_assert(IS_ALIGNED4_ADDR(a));
    abits  = get_abits4_ALIGNED(a);
    vbytes = get_vbytes4_ALIGNED(a);
    if (abits == VGM_NIBBLE_VALID && vbytes == VGM_WORD_VALID) {
@@ -1554,7 +1554,7 @@ static void uint_to_bits ( UInt x, Char* str )
          str[w++] = ' ';
    }
    str[w++] = 0;
-   sk_assert(w == 36);
+   tl_assert(w == 36);
 }
 
 /* Caution!  Not vthread-safe; looks in VG_(baseBlock), not the thread
@@ -1723,7 +1723,7 @@ Int vg_alloc_client_block ( void )
    }
 
    /* Ok, we have to allocate a new one. */
-   sk_assert(vg_cgb_used == vg_cgb_size);
+   tl_assert(vg_cgb_used == vg_cgb_size);
    sz_new = (vg_cgbs == NULL) ? 10 : (2 * vg_cgb_size);
 
    cgbs_new = VG_(malloc)( sz_new * sizeof(CGenBlock) );
@@ -1880,7 +1880,7 @@ Bool SK_(handle_client_request) ( ThreadId tid, UWord* arg, UWord* ret )
          if (vg_cgbs == NULL 
              || arg[2] >= vg_cgb_used || vg_cgbs[arg[2]].kind == CG_NotInUse)
             return 1;
-         sk_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
+         tl_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
          vg_cgbs[arg[2]].kind = CG_NotInUse;
          vg_cgb_discards++;
 	 *ret = 0;

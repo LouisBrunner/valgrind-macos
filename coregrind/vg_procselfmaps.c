@@ -152,7 +152,7 @@ void VG_(parse_procselfmaps) (
    UInt	  ino;
    UWord  foffset, maj, min;
 
-   sk_assert( '\0' != procmap_buf[0] && 0 != buf_n_tot);
+   tl_assert( '\0' != procmap_buf[0] && 0 != buf_n_tot);
 
    if (0)
       VG_(message)(Vg_DebugMsg, "raw:\n%s", procmap_buf );

@@ -233,7 +233,7 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
    UChar   abits8;
    PROF_EVENT(24);
 #  ifdef VG_DEBUG_MEMORY
-   sk_assert(IS_ALIGNED4_ADDR(a));
+   tl_assert(IS_ALIGNED4_ADDR(a));
 #  endif
    sm     = primary_map[a >> 16];
    sm_off = a & 0xFFFF;
@@ -274,10 +274,10 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
       indicate bugs in our machinery.  30,000,000 is arbitrary, but so
       far all legitimate requests have fallen beneath that size. */
    /* 4 Mar 02: this is just stupid; get rid of it. */
-   /* sk_assert(len < 30000000); */
+   /* tl_assert(len < 30000000); */
 
    /* Check the permissions make sense. */
-   sk_assert(example_a_bit == VGM_BIT_VALID 
+   tl_assert(example_a_bit == VGM_BIT_VALID 
              || example_a_bit == VGM_BIT_INVALID);
 
    /* In order that we can charge through the address space at 8
@@ -317,7 +317,7 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
       VGP_POPCC(VgpSetMem);
       return;
    }
-   sk_assert((a % 8) == 0 && len > 0);
+   tl_assert((a % 8) == 0 && len > 0);
 
    /* Once aligned, go fast. */
    while (True) {
@@ -335,7 +335,7 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
       VGP_POPCC(VgpSetMem);
       return;
    }
-   sk_assert((a % 8) == 0 && len > 0 && len < 8);
+   tl_assert((a % 8) == 0 && len > 0 && len < 8);
 
    /* Finish the upper fragment. */
    while (True) {
@@ -350,7 +350,7 @@ void set_address_range_perms ( Addr a, SizeT len, UInt example_a_bit )
    /* Check that zero page and highest page have not been written to
       -- this could happen with buggy syscall wrappers.  Today
       (2001-04-26) had precisely such a problem with __NR_setitimer. */
-   sk_assert(SK_(cheap_sanity_check)());
+   tl_assert(SK_(cheap_sanity_check)());
    VGP_POPCC(VgpSetMem);
 }
 
@@ -550,7 +550,7 @@ void ac_check_is_accessible ( CorePart part, ThreadId tid,
          break;
 
       case Vg_CoreSignal:
-         sk_assert(isWrite);     /* Should only happen with isWrite case */
+         tl_assert(isWrite);     /* Should only happen with isWrite case */
          /* fall through */
       case Vg_CorePThread:
          MAC_(record_core_mem_error)( tid, /*isUnaddr*/True, s );
@@ -559,7 +559,7 @@ void ac_check_is_accessible ( CorePart part, ThreadId tid,
       /* If we're being asked to jump to a silly address, record an error 
          message before potentially crashing the entire system. */
       case Vg_CoreTranslate:
-         sk_assert(!isWrite);    /* Should only happen with !isWrite case */
+         tl_assert(!isWrite);    /* Should only happen with !isWrite case */
          MAC_(record_jump_error)( tid, bad_addr );
          break;
 
@@ -594,7 +594,7 @@ void ac_check_is_readable_asciiz ( CorePart part, ThreadId tid,
 
    VGP_PUSHCC(VgpCheckMem);
 
-   sk_assert(part == Vg_CoreSysCall);
+   tl_assert(part == Vg_CoreSysCall);
    ok = ac_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (!ok) {
       MAC_(record_param_error) ( tid, bad_addr, /*IsReg*/False,
@@ -793,7 +793,7 @@ static void ac_ACCESS4_SLOWLY ( Addr a, Bool isWrite )
       (which is the default), and the address is 4-aligned.  
       If not, Case 2 will have applied.
    */
-   sk_assert(MAC_(clo_partial_loads_ok));
+   tl_assert(MAC_(clo_partial_loads_ok));
    {
       return;
    }
@@ -1001,11 +1001,11 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             break;
 
 	 case SSE3ag_MemRd_RegWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
+            tl_assert(u_in->size == 4 || u_in->size == 8);
             helper = (Addr)ac_fpu_READ_check;
 	    goto do_Access_ARG1;
          do_Access_ARG1:
-	    sk_assert(u_in->tag1 == TempReg);
+	    tl_assert(u_in->tag1 == TempReg);
             t_addr = u_in->val1;
             t_size = newTemp(cb);
 	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
@@ -1016,11 +1016,11 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             break;
 
          case MMX2_MemRd:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
+            tl_assert(u_in->size == 4 || u_in->size == 8);
             helper = (Addr)ac_fpu_READ_check;
 	    goto do_Access_ARG2;
          case MMX2_MemWr:
-            sk_assert(u_in->size == 4 || u_in->size == 8);
+            tl_assert(u_in->size == 4 || u_in->size == 8);
             helper = (Addr)ac_fpu_WRITE_check;
 	    goto do_Access_ARG2;
          case FPU_R:
@@ -1030,7 +1030,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             helper = (Addr)ac_fpu_WRITE_check;
             goto do_Access_ARG2;
          do_Access_ARG2:
-	    sk_assert(u_in->tag2 == TempReg);
+	    tl_assert(u_in->tag2 == TempReg);
             t_addr = u_in->val2;
             t_size = newTemp(cb);
 	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
@@ -1052,9 +1052,9 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             helper = (Addr)ac_fpu_WRITE_check;
 	    goto do_Access_ARG3;
          do_Access_ARG3:
-	    sk_assert(u_in->size == 4 || u_in->size == 8
+	    tl_assert(u_in->size == 4 || u_in->size == 8
                       || u_in->size == 16 || u_in->size == 512);
-            sk_assert(u_in->tag3 == TempReg);
+            tl_assert(u_in->tag3 == TempReg);
             t_addr = u_in->val3;
             t_size = newTemp(cb);
 	    uInstr2(cb, MOV, 4, Literal, 0, TempReg, t_size);
@@ -1094,7 +1094,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 static
 Bool ac_is_valid_64k_chunk ( UInt chunk_number )
 {
-   sk_assert(chunk_number >= 0 && chunk_number < 65536);
+   tl_assert(chunk_number >= 0 && chunk_number < 65536);
    if (IS_DISTINGUISHED_SM(primary_map[chunk_number])) {
       /* Definitely not in use. */
       return False;
@@ -1110,7 +1110,7 @@ static
 Bool ac_is_valid_address ( Addr a )
 {
    UChar abits;
-   sk_assert(IS_ALIGNED4_ADDR(a));
+   tl_assert(IS_ALIGNED4_ADDR(a));
    abits = get_abits4_ALIGNED(a);
    if (abits == VGM_NIBBLE_VALID) {
       return True;

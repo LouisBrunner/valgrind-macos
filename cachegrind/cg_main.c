@@ -370,7 +370,7 @@ BB_info* get_BB_info(UCodeBlock* cb_in, Addr orig_addr, Bool* bb_seen_before)
    *bb_seen_before = ( NULL == bb_info ? False : True );
    if (*bb_seen_before) {
       // BB must have been translated before, but flushed from the TT
-      sk_assert(bb_info->n_instrs == n_instrs );
+      tl_assert(bb_info->n_instrs == n_instrs );
       BB_retranslations++;
    } else {
       // BB never translated before (at this address, at least;  could have
@@ -391,9 +391,9 @@ void do_details( instr_info* n, Bool bb_seen_before,
 {
    lineCC* parent = get_lineCC(instr_addr);
    if (bb_seen_before) {
-      sk_assert( n->instr_addr == instr_addr );
-      sk_assert( n->instr_size == instr_size );
-      sk_assert( n->data_size  == data_size );
+      tl_assert( n->instr_addr == instr_addr );
+      tl_assert( n->instr_size == instr_size );
+      tl_assert( n->data_size  == data_size );
       // Don't assert that (n->parent == parent)... it's conceivable that
       // the debug info might change;  the other asserts should be enough to
       // detect anything strange.
@@ -424,7 +424,7 @@ void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
            t_data_addr1 = INVALID_TEMPREG,
            t_data_addr2 = INVALID_TEMPREG;
 
-   sk_assert(instr_size >= MIN_INSTR_SIZE && 
+   tl_assert(instr_size >= MIN_INSTR_SIZE && 
              instr_size <= MAX_INSTR_SIZE);
 
 #define IS_(X)      (INVALID_TEMPREG != t_##X##_addr)
@@ -432,29 +432,29 @@ void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
 
    // Work out what kind of x86 instruction it is
    if (!IS_(read) && !IS_(write)) {
-      sk_assert( 0 == data_size );
-      sk_assert(INV(t_read) && INV(t_write));
+      tl_assert( 0 == data_size );
+      tl_assert(INV(t_read) && INV(t_write));
       helper = (Addr) & log_1I_0D_cache_access;
       argc = 1;
 
    } else if (IS_(read) && !IS_(write)) {
-      sk_assert( is_valid_data_size(data_size) );
-      sk_assert(!INV(t_read) && INV(t_write));
+      tl_assert( is_valid_data_size(data_size) );
+      tl_assert(!INV(t_read) && INV(t_write));
       helper = (Addr) & log_1I_1Dr_cache_access;
       argc = 2;
       t_data_addr1 = t_read_addr;
 
    } else if (!IS_(read) && IS_(write)) {
-      sk_assert( is_valid_data_size(data_size) );
-      sk_assert(INV(t_read) && !INV(t_write));
+      tl_assert( is_valid_data_size(data_size) );
+      tl_assert(INV(t_read) && !INV(t_write));
       helper = (Addr) & log_1I_1Dw_cache_access;
       argc = 2;
       t_data_addr1 = t_write_addr;
 
    } else {
-      sk_assert(IS_(read) && IS_(write));
-      sk_assert( is_valid_data_size(data_size) );
-      sk_assert(!INV(t_read) && !INV(t_write));
+      tl_assert(IS_(read) && IS_(write));
+      tl_assert( is_valid_data_size(data_size) );
+      tl_assert(!INV(t_read) && !INV(t_write));
       if (t_read == t_write) {
          helper = (Addr) & log_1I_1Dr_cache_access;
          argc = 2;
@@ -530,7 +530,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
       // x86 instruction sizes are obtained from INCEIPs (for case 1) or
       // from .extra4b field of the final JMP (for case 2 & 3).
 
-      if (instrumented_Jcc) sk_assert(u_in->opcode == JMP);
+      if (instrumented_Jcc) tl_assert(u_in->opcode == JMP);
 
       switch (u_in->opcode) {
 
@@ -599,18 +599,18 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
          // JMP: insert instrumentation if the first JMP
          case JMP:
             if (instrumented_Jcc) {
-               sk_assert(CondAlways == u_in->cond);
-               sk_assert(i+1 == VG_(get_num_instrs)(cb_in));
+               tl_assert(CondAlways == u_in->cond);
+               tl_assert(i+1 == VG_(get_num_instrs)(cb_in));
                VG_(copy_UInstr)(cb, u_in);
                instrumented_Jcc = False;     // rest
                break;
             } else {
                // The first JMP... instrument.
                if (CondAlways != u_in->cond) {
-                  sk_assert(i+2 == VG_(get_num_instrs)(cb_in));
+                  tl_assert(i+2 == VG_(get_num_instrs)(cb_in));
                   instrumented_Jcc = True;
                } else {
-                  sk_assert(i+1 == VG_(get_num_instrs)(cb_in));
+                  tl_assert(i+1 == VG_(get_num_instrs)(cb_in));
                }
                // Get x86 instr size from final JMP.
                x86_instr_size = VG_(get_last_instr)(cb_in)->extra4b;
@@ -646,8 +646,8 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    }
 
    // BB address should be the same as the first instruction's address.
-   sk_assert(bb_info->BB_addr == bb_info->instrs[0].instr_addr );
-   sk_assert(bb_info_i == bb_info->n_instrs);
+   tl_assert(bb_info->BB_addr == bb_info->instrs[0].instr_addr );
+   tl_assert(bb_info_i == bb_info->n_instrs);
 
    VG_(free_UCodeBlock)(cb_in);
    return cb;
@@ -1033,7 +1033,7 @@ void SK_(discard_basic_block_info) ( Addr a, SizeT size )
 
    // Get BB info, remove from table, free BB info.  Simple!
    bb_info = VG_(HT_get_node)(instr_info_table, a, &prev_next_ptr);
-   sk_assert(NULL != bb_info);
+   tl_assert(NULL != bb_info);
    *prev_next_ptr = bb_info->next;
    VG_(free)(bb_info);
 }
@@ -1130,7 +1130,7 @@ void SK_(pre_clo_init)(void)
    VG_(register_compact_helper)((Addr) & log_1I_2D_cache_access);
 
    /* Get working directory */
-   sk_assert( VG_(getcwd_alloc)(&base_dir) );
+   tl_assert( VG_(getcwd_alloc)(&base_dir) );
 
    /* Block is big enough for dir name + cachegrind.out.<pid> */
    cachegrind_out_file = VG_(malloc)((VG_(strlen)(base_dir) + 32)*sizeof(Char));

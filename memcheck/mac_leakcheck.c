@@ -93,33 +93,33 @@ UInt vg_scan_all_valid_memory ( Bool is_valid_64k_chunk ( UInt ),
    sigbus_new.sa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
    sigbus_new.sa_restorer = NULL;
    res = VG_(sigemptyset)( &sigbus_new.sa_mask );
-   sk_assert(res == 0);
+   tl_assert(res == 0);
 
    sigsegv_new.ksa_handler = vg_scan_all_valid_memory_sighandler;
    sigsegv_new.sa_flags = VKI_SA_ONSTACK | VKI_SA_RESTART;
    sigsegv_new.sa_restorer = NULL;
    res = VG_(sigemptyset)( &sigsegv_new.sa_mask );
-   sk_assert(res == 0+0);
+   tl_assert(res == 0+0);
 
    res =  VG_(sigemptyset)( &unblockmask_new );
    res |= VG_(sigaddset)( &unblockmask_new, VKI_SIGBUS );
    res |= VG_(sigaddset)( &unblockmask_new, VKI_SIGSEGV );
    res |= VG_(sigaddset)( &unblockmask_new, VKI_SIGTERM );
-   sk_assert(res == 0+0+0);
+   tl_assert(res == 0+0+0);
 
    res = VG_(sigaction)( VKI_SIGBUS, &sigbus_new, &sigbus_saved );
-   sk_assert(res == 0+0+0+0);
+   tl_assert(res == 0+0+0+0);
 
    res = VG_(sigaction)( VKI_SIGSEGV, &sigsegv_new, &sigsegv_saved );
-   sk_assert(res == 0+0+0+0+0);
+   tl_assert(res == 0+0+0+0+0);
 
    res = VG_(sigprocmask)( VKI_SIG_UNBLOCK, &unblockmask_new, &blockmask_saved );
-   sk_assert(res == 0+0+0+0+0+0);
+   tl_assert(res == 0+0+0+0+0+0);
 
    /* The signal handlers are installed.  Actually do the memory scan. */
    numPages = 1 << (32-VKI_PAGE_SHIFT);
-   sk_assert(numPages == 1048576);
-   sk_assert(4096 == (1 << VKI_PAGE_SHIFT));
+   tl_assert(numPages == 1048576);
+   tl_assert(4096 == (1 << VKI_PAGE_SHIFT));
 
    nWordsNotified = 0;
 
@@ -178,13 +178,13 @@ UInt vg_scan_all_valid_memory ( Bool is_valid_64k_chunk ( UInt ),
 
    /* Restore signal state to whatever it was before. */
    res = VG_(sigaction)( VKI_SIGBUS, &sigbus_saved, NULL );
-   sk_assert(res == 0 +0);
+   tl_assert(res == 0 +0);
 
    res = VG_(sigaction)( VKI_SIGSEGV, &sigsegv_saved, NULL );
-   sk_assert(res == 0 +0 +0);
+   tl_assert(res == 0 +0 +0);
 
    res = VG_(sigprocmask)( VKI_SIG_SETMASK, &blockmask_saved, NULL );
-   sk_assert(res == 0 +0 +0 +0);
+   tl_assert(res == 0 +0 +0 +0);
 
    return nWordsNotified;
 }
@@ -271,13 +271,13 @@ Int find_shadow_for ( Addr        ptr,
          lo = mid+1;
          continue;
       }
-      sk_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
+      tl_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
       retVal = mid;
       break;
    }
 
 #  ifdef VG_DEBUG_LEAKCHECK
-   sk_assert(retVal == find_shadow_for_OLD ( ptr, shadows, n_shadows ));
+   tl_assert(retVal == find_shadow_for_OLD ( ptr, shadows, n_shadows ));
 #  endif
    /* VG_(printf)("%d\n", retVal); */
    return retVal;
@@ -321,8 +321,8 @@ void vg_detect_memory_leaks_notify_addr ( Addr a, UInt word_at_a )
       sh_no = find_shadow_for ( ptr, lc_shadows, lc_n_shadows );
       if (sh_no != -1) {
          /* Found a block at/into which ptr points. */
-         sk_assert(sh_no >= 0 && sh_no < lc_n_shadows);
-         sk_assert(ptr < lc_shadows[sh_no]->data + lc_shadows[sh_no]->size);
+         tl_assert(sh_no >= 0 && sh_no < lc_n_shadows);
+         tl_assert(ptr < lc_shadows[sh_no]->data + lc_shadows[sh_no]->size);
          /* Decide whether Proper-ly or Interior-ly reached. */
          if (ptr == lc_shadows[sh_no]->data) {
             if (0) VG_(printf)("pointer at %p to %p\n", a, word_at_a );
@@ -400,17 +400,17 @@ void MAC_(do_detect_memory_leaks) (
 
    /* Sanity check; assert that the blocks are now in order */
    for (i = 0; i < lc_n_shadows-1; i++) {
-      sk_assert( lc_shadows[i]->data <= lc_shadows[i+1]->data);
+      tl_assert( lc_shadows[i]->data <= lc_shadows[i+1]->data);
    }
 
    /* Sanity check -- make sure they don't overlap */
    for (i = 0; i < lc_n_shadows-1; i++) {
-      sk_assert( lc_shadows[i]->data + lc_shadows[i]->size
+      tl_assert( lc_shadows[i]->data + lc_shadows[i]->size
                  < lc_shadows[i+1]->data );
    }
 
    if (lc_n_shadows == 0) {
-      sk_assert(lc_shadows == NULL);
+      tl_assert(lc_shadows == NULL);
       if (VG_(clo_verbosity) >= 1) {
          VG_(message)(Vg_UserMsg, 
                       "No malloc'd blocks -- no leaks are possible.");
@@ -489,7 +489,7 @@ void MAC_(do_detect_memory_leaks) (
             p_min = p;
          }
       }
-      sk_assert(p_min != NULL);
+      tl_assert(p_min != NULL);
 
       /* Ok to have tst==NULL;  it's only used if --gdb-attach=yes, and
          we disallow that when --leak-check=yes.  

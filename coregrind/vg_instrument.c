@@ -60,7 +60,7 @@ void VG_(ccall_0_0)(UCodeBlock* cb, Addr f)
 // f(reg)
 void VG_(ccall_R_0)(UCodeBlock* cb, Addr f, UInt t1, UInt regparms_n)
 {
-   sk_assert(regparms_n <= 1);
+   tl_assert(regparms_n <= 1);
    uInstr1(cb, CCALL, 0, TempReg, t1);
    uCCall(cb, f, 1, regparms_n, /*retval*/False);
 }
@@ -76,8 +76,8 @@ void VG_(ccall_L_0)(UCodeBlock* cb, Addr f, UInt lit1, UInt regparms_n)
 void VG_(ccall_R_R)(UCodeBlock* cb, Addr f, UInt t1, UInt t_ret,
                     UInt regparms_n)
 {
-   sk_assert(regparms_n <= 1);
-   sk_assert(t1 < VG_(get_num_temps)(cb)); // help catch lits accidentally passed in
+   tl_assert(regparms_n <= 1);
+   tl_assert(t1 < VG_(get_num_temps)(cb)); // help catch lits accidentally passed in
    uInstr3(cb, CCALL, 0, TempReg, t1, NoValue, 0, TempReg, t_ret);
    uCCall(cb, f, 1, regparms_n, /*retval*/True);
 }
@@ -93,9 +93,9 @@ void VG_(ccall_L_R)(UCodeBlock* cb, Addr f, UInt lit1, UInt t_ret,
 // f(reg, reg)
 void VG_(ccall_RR_0)(UCodeBlock* cb, Addr f, UInt t1, UInt t2, UInt regparms_n)
 {
-   sk_assert(regparms_n <= 2);
-   sk_assert(t1 < VG_(get_num_temps)(cb));
-   sk_assert(t2 < VG_(get_num_temps)(cb));
+   tl_assert(regparms_n <= 2);
+   tl_assert(t1 < VG_(get_num_temps)(cb));
+   tl_assert(t2 < VG_(get_num_temps)(cb));
    uInstr2(cb, CCALL, 0, TempReg, t1, TempReg, t2);
    uCCall(cb, f, 2, regparms_n, /*retval*/False);
 }
@@ -129,9 +129,9 @@ void VG_(ccall_LL_0)(UCodeBlock* cb, Addr f, UInt lit1, UInt lit2,
 void VG_(ccall_RR_R)(UCodeBlock* cb, Addr f, UInt t1, UInt t2, UInt t_ret,
                      UInt regparms_n)
 {
-   sk_assert(regparms_n <= 2);
-   sk_assert(t1 < VG_(get_num_temps)(cb));
-   sk_assert(t2 < VG_(get_num_temps)(cb));
+   tl_assert(regparms_n <= 2);
+   tl_assert(t1 < VG_(get_num_temps)(cb));
+   tl_assert(t2 < VG_(get_num_temps)(cb));
    uInstr3(cb, CCALL, 0, TempReg, t1, TempReg, t2, TempReg, t_ret);
    uCCall(cb, f, 2, regparms_n, /*retval*/True);
 }
@@ -165,10 +165,10 @@ void VG_(ccall_LL_R)(UCodeBlock* cb, Addr f, UInt lit1, UInt lit2, UInt t_ret,
 void VG_(ccall_RRR_0)(UCodeBlock* cb, Addr f, UInt t1, UInt t2,
                       UInt t3, UInt regparms_n)
 {
-   sk_assert(regparms_n <= 3);
-   sk_assert(t1 < VG_(get_num_temps)(cb));
-   sk_assert(t2 < VG_(get_num_temps)(cb));
-   sk_assert(t3 < VG_(get_num_temps)(cb));
+   tl_assert(regparms_n <= 3);
+   tl_assert(t1 < VG_(get_num_temps)(cb));
+   tl_assert(t2 < VG_(get_num_temps)(cb));
+   tl_assert(t3 < VG_(get_num_temps)(cb));
    uInstr3(cb, CCALL, 0, TempReg, t1, TempReg, t2, TempReg, t3);
    uCCall(cb, f, 3, regparms_n, /*retval*/False);
 }

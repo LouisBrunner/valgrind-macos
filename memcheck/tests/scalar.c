@@ -265,7 +265,11 @@ int main(void)
    // __NR_sigreturn 119
    // __NR_clone 120
    // __NR_setdomainname 121
+
    // __NR_uname 122
+   GO(__NR_uname, "1s 1m");
+   SY(__NR_uname, s0);
+
    // __NR_modify_ldt 123
    // __NR_adjtimex 124
    // __NR_mprotect 125

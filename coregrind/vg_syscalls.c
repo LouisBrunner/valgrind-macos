@@ -5094,14 +5094,14 @@ PREx(sys_unlink, MayBlock)
    PRE_MEM_RASCIIZ( "unlink(pathname)", arg1 );
 }
 
-PRE(uname)
+PREx(sys_newuname, 0)
 {
-   /* int uname(struct utsname *buf); */
-   PRINT("uname ( %p )",arg1);
+   PRINT("sys_newuname ( %p )", arg1);
+   PRE_REG_READ1(long, "uname", struct new_utsname *, buf);
    PRE_MEM_WRITE( "uname(buf)", arg1, sizeof(struct vki_new_utsname) );
 }
 
-POST(uname)
+POST(sys_newuname)
 {
    if (arg1 != (UWord)NULL) {
       POST_MEM_WRITE( arg1, sizeof(struct vki_new_utsname) );
@@ -5816,16 +5816,16 @@ static const struct sys_info bad_sys = { Special, NULL, bad_before, NULL };
 // PRE/POST sys_foo() wrappers on x86.
 static const struct sys_info sys_info[] = {
    // 0 is restart_syscall
-   SYSX_(__NR_exit,             sys_exit), // 1 * P
-   SYSXY(__NR_fork,             sys_fork), // 2 (quasi-generic...) P
-   SYSXY(__NR_read,             sys_read), // 3 * P
-   SYSX_(__NR_write,            sys_write), // 4 * P
+   SYSX_(__NR_exit,             sys_exit),         // 1 * P
+   SYSXY(__NR_fork,             sys_fork),         // 2 (quasi-generic...) P
+   SYSXY(__NR_read,             sys_read),         // 3 * P
+   SYSX_(__NR_write,            sys_write),        // 4 * P
 
-   SYSXY(__NR_open,             sys_open), // 5 * P
-   SYSXY(__NR_close,            sys_close), // 6 * P
-   SYSXY(__NR_waitpid,          sys_waitpid), // 7 * P
-   SYSXY(__NR_creat,            sys_creat), // 8 * P
-   SYSX_(__NR_link,             sys_link), // 9 * P
+   SYSXY(__NR_open,             sys_open),         // 5 * P
+   SYSXY(__NR_close,            sys_close),        // 6 * P
+   SYSXY(__NR_waitpid,          sys_waitpid),      // 7 * P
+   SYSXY(__NR_creat,            sys_creat),        // 8 * P
+   SYSX_(__NR_link,             sys_link),         // 9 * P
 
    SYSX_(__NR_unlink,           sys_unlink), // 10 * P
    SYSB_(execve,		Special), // 11  sys_execve () P
@@ -5833,23 +5833,23 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_time,             sys_time), // 13 *
    SYSX_(__NR_mknod,            sys_mknod), // 14 * P
 
-   SYSX_(__NR_chmod,            sys_chmod), // 15 * P
-   // lchown		        sys_lchown16 ## // 16
-   SYSX_(__NR_break,            sys_ni_syscall), // 17 * P
-   // oldstat		        sys_stat // 18 *
-   SYSX_(__NR_lseek,            sys_lseek), // 19 * P
+   SYSX_(__NR_chmod,            sys_chmod),        // 15 * P
+   //   (lchown,                sys_lchown16),     // 16 ##
+   SYSX_(__NR_break,            sys_ni_syscall),   // 17 * P
+   //   (__NR_oldstat,          sys_stat),         // 18 * L -- obsolete
+   SYSX_(__NR_lseek,            sys_lseek),        // 19 * P
 
-   SYSX_(__NR_getpid,           sys_getpid), // 20 *
-   SYSX_(__NR_mount,            sys_mount), // 21 * L
-   SYSX_(__NR_umount,           sys_oldumount), // 22 * L
-   SYSX_(__NR_setuid,           sys_setuid16), // 23 ## P
-   SYSX_(__NR_getuid,           sys_getuid16), // 24 ## P
+   SYSX_(__NR_getpid,           sys_getpid),       // 20 * P
+   SYSX_(__NR_mount,            sys_mount),        // 21 * L
+   SYSX_(__NR_umount,           sys_oldumount),    // 22 * L
+   SYSX_(__NR_setuid,           sys_setuid16),     // 23 ## P
+   SYSX_(__NR_getuid,           sys_getuid16),     // 24 ## P
 
    // stime		               25 sys_stime *
    SYSBA(ptrace,		0), // 26 sys_ptrace ()
-   SYSB_(alarm,			NBRunInLWP), // 27 sys_alarm *
-   // oldfstat		               28 sys_fstat *
-   SYSX_(__NR_pause,            sys_pause), // 29 *
+   SYSB_(alarm,			NBRunInLWP),    // 27 sys_alarm *
+   //   (__NR_oldfstat,         sys_fstat),     // 28 * L -- obsolete
+   SYSX_(__NR_pause,            sys_pause),     // 29 * P
 
    SYSB_(utime,			MayBlock), // 30 sys_utime *
    SYSX_(__NR_stty,             sys_ni_syscall), // 31 * P
@@ -5885,7 +5885,7 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_mpx,              sys_ni_syscall), // 56 * P
    SYSBA(setpgid,		0), // 57 sys_setpgid *
    SYSX_(__NR_ulimit,           sys_ni_syscall), // 58 * P
-   // oldolduname	               59 sys_olduname
+   //   (__NR_oldolduname,      sys_olduname), // 59 (?) L -- obsolete
 
    SYSB_(umask,			0), // 60 sys_umask *
    SYSB_(chroot,		0), // 61 sys_chroot *
@@ -5915,7 +5915,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(setgroups,		0), // 81 sys_setgroups16 ##
    SYSB_(select,		MayBlock), // 82 old_select
    SYSB_(symlink,		MayBlock), // 83 sys_symlink *
-   // oldlstat		               84   sys_lstat *
+   //   (__NR_oldlstat,         sys_lstat), // 84 * L -- obsolete
 
    SYSBA(readlink,		0), // 85 sys_readlink *
    // uselib		               86 sys_uselib *
@@ -5945,7 +5945,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(stat,			0), // 106 sys_newstat *
    SYSBA(lstat,			0), // 107 sys_newlstat *
    SYSBA(fstat,			0), // 108 sys_newfstat *
-   // olduname		               109 sys_uname
+   //   (__NR_olduname,         sys_uname), // 109 (?) L -- obsolete
 
    SYSB_(iopl,			0), // 110 sys_iopl
    SYSX_(__NR_vhangup,          sys_vhangup), // 111 *
@@ -5961,7 +5961,7 @@ static const struct sys_info sys_info[] = {
 
    SYSB_(clone,			Special), // 120 sys_clone (very non-gen)
    // setdomainname                    121 sys_setdomainname *
-   SYSBA(uname,			0), // 122 sys_newuname *
+   SYSXY(__NR_uname,            sys_newuname),     // 122 * P
    SYSB_(modify_ldt,		Special), // 123 sys_modify_ldt (x86,amd64)
    SYSBA(adjtimex,		0), // 124 sys_adjtimex *
    SYSBA(mprotect,		0), // 125 sys_mprotect *

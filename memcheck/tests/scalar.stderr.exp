@@ -399,6 +399,20 @@ Syscall param umount2(path) points to unaddressable byte(s)
 112:           __NR_idle 0e
 -----------------------------------------------------
 -----------------------------------------------------
+122:          __NR_uname 1s 1m
+-----------------------------------------------------
+
+Syscall param uname(buf) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param uname(buf) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
 127:  __NR_create_module 0e
 -----------------------------------------------------
 -----------------------------------------------------

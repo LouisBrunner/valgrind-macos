@@ -1398,6 +1398,18 @@ pthread_rwlock_unlock (void* /* pthread_rwlock_t* */ rwlock)
 weak_alias(pthread_rwlock_unlock, __pthread_rwlock_unlock)
 
 
+int
+pthread_rwlock_wrlock (void* /* pthread_rwlock_t* */ rwlock)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      kludged("pthread_rwlock_wrlock");
+   return 0;
+}
+
+weak_alias(pthread_rwlock_wrlock, __pthread_wrlock_unlock)
+
+
 /* I've no idea what these are, but they get called quite a lot.
    Anybody know? */
 

@@ -107,7 +107,7 @@ void pthread_rwlock_timedwrlock ( void )  { unimp("pthread_rwlock_timedwrlock");
 void pthread_rwlock_tryrdlock ( void )  { unimp("pthread_rwlock_tryrdlock"); }
 void pthread_rwlock_trywrlock ( void )  { unimp("pthread_rwlock_trywrlock"); }
 //void pthread_rwlock_unlock ( void )  { unimp("pthread_rwlock_unlock"); }
-void pthread_rwlock_wrlock ( void )  { unimp("pthread_rwlock_wrlock"); }
+//void pthread_rwlock_wrlock ( void )  { unimp("pthread_rwlock_wrlock"); }
 void pthread_rwlockattr_destroy ( void )  { unimp("pthread_rwlockattr_destroy"); }
 void pthread_rwlockattr_getkind_np ( void )  { unimp("pthread_rwlockattr_getkind_np"); }
 void pthread_rwlockattr_getpshared ( void )  { unimp("pthread_rwlockattr_getpshared"); }
@@ -169,7 +169,7 @@ weak_alias(pthread_rwlock_destroy, __pthread_rwlock_destroy)
 weak_alias(pthread_rwlock_init, __pthread_rwlock_init)
 weak_alias(pthread_rwlock_tryrdlock, __pthread_rwlock_tryrdlock)
 weak_alias(pthread_rwlock_trywrlock, __pthread_rwlock_trywrlock)
-weak_alias(pthread_rwlock_wrlock, __pthread_rwlock_wrlock)
+//weak_alias(pthread_rwlock_wrlock, __pthread_rwlock_wrlock)
 weak_alias(_IO_ftrylockfile, ftrylockfile)
 
 __attribute__((weak)) void pread ( void ) { vgPlain_unimp("pread"); }

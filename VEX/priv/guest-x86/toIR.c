@@ -7372,7 +7372,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* F3 0F 2D = CVTSS2SI -- convert F32 in mem/low quarter xmm to
       I32 in ireg, according to prevailing SSE rounding mode */
    /* F3 0F 2C = CVTTSS2SI -- convert F32 in mem/low quarter xmm to
-      I32 in ireg, according to prevailing SSE rounding mode */
+      I32 in ireg, rounding towards zero */
    if (insn[0] == 0xF3 && insn[1] == 0x0F 
        && (insn[2] == 0x2D || insn[2] == 0x2C)) {
       IRTemp rmode = newTemp(Ity_I32);
@@ -8562,7 +8562,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* F2 0F 2D = CVTSD2SI -- convert F64 in mem/low half xmm to
       I32 in ireg, according to prevailing SSE rounding mode */
    /* F2 0F 2C = CVTTSD2SI -- convert F64 in mem/low half xmm to
-      I32 in ireg, according to prevailing SSE rounding mode */
+      I32 in ireg, rounding towards zero */
    if (insn[0] == 0xF2 && insn[1] == 0x0F 
        && (insn[2] == 0x2D || insn[2] == 0x2C)) {
       IRTemp rmode = newTemp(Ity_I32);

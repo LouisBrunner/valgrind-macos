@@ -188,9 +188,9 @@ void usage ( void )
       "\n"
       "usage is:\n"
       "\n"
-      "   valgrind-listener [--exit-when-zero|-e] [port-number]\n"
+      "   valgrind-listener [--exit-at-zero|-e] [port-number]\n"
       "\n"
-      "   where   --exit-when-zero or -e causes the listener to exit\n"
+      "   where   --exit-at-zero or -e causes the listener to exit\n"
       "           when the number of connections falls back to zero\n"
       "           (the default is to keep listening forever)\n"
       "\n"
@@ -236,7 +236,7 @@ int main (int argc, char** argv)
    int           port = VG_CLO_DEFAULT_LOGPORT;
 
    for (i = 1; i < argc; i++) {
-      if (0==strcmp(argv[i], "--exit-when-zero")
+      if (0==strcmp(argv[i], "--exit-at-zero")
           || 0==strcmp(argv[i], "-e")) {
          exit_when_zero = 1;
       }

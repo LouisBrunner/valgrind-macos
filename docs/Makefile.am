@@ -1,6 +1,6 @@
 SUBDIRS = xml lib images
 
-EXTRA_DIST = README
+EXTRA_DIST = README porting-HOWTO
 
 ##-------------------------------------------------------------------
 ## Below here is more ordinary make stuff...

@@ -1,0 +1,108 @@
+This is a rough guide to porting Valgrind to a new architecture, or a new
+operating system.  It's quite preliminary, but should get you started.
+
+-----------------------------------------------------------------------------
+Porting Valgrind to a new architecture
+-----------------------------------------------------------------------------
+Note that this implies both a new architecture, and a new platform (ie. arch/OS
+combination).  Please add to this list if it is missing anything.
+
+To begin:
+
+- Create necessary subdirs (copy x86/ and x86-linux/ subdirs).  Yes, even the
+  test subdirectories.  (You should make arch-specific tests later to be
+  thorough!)  Put in Makefile.am files for them, edit them for the new
+  architecture name. 
+
+- Update configure.in (use x86 and x86-linux as a guide).  Don't forget to
+  update VG_ARCH_ALL, VG_PLATFORM_ALL.
+
+Once it configures ok, get it to compile:
+
+- Create the Vex guest state type, VexGuest<ARCH>State
+
+- Copy all the arch-specific and platform-specific files into the new
+  directories, eg. from x86 and x86-linux.  Files like (this list is not
+  exhaustive!):
+
+    include/x86/core_arch.h
+    include/x86-linux/core_platform.h
+    coregrind/x86/core_arch.h
+    coregrind/x86-linux/core_platform.h
+    coregrind/x86-linux/vki_arch.h
+    coregrind/x86-linux/vki_arch_posixtypes.h
+
+  Edit obvious things like the file headers, and the #ifdef __X86_TOOL_ARCH_H
+  guards, so they refer to the new architecture, rather than x86.
+
+  Comment all their contents out.
+
+- Try compiling.  When it falls over on missing functions/types/constants, just
+  uncomment and fix up the copied ones.  Just use stubs that fail (immediately
+  and obviously! -- use the "I_die_here" macro) for functions and macros to get
+  things compiling.
+
+  For the kernel types, you'll have to copy the types from the kernel source.
+  Use a recent kernel source, please.  Don't just pull in all the
+  corresponding types/macros that x86 provides, otherwise you might end up
+  providing more types/macros than the core actually needs;  only pull in types
+  as the compiler asks for them.  You'll need a lot of the types in
+  vki_arch_posixtypes.h early on.
+
+  You'll need to update the Makefile.am files if you add/remove files.
+
+Once it compiles ok, get it to run:
+
+- Try running.  When it falls over on stub function/macros, implement them
+  properly.  The syscall table and syscall wrappers will be painful;  do them
+  individually, on demand.
+
+- A lot of the arch-specific stuff has been abstracted out of the core, but
+  there undoubtedly remains some arch-specific stuff in there.  Abstract it out
+  as necessary, updating the other archs appropriately.
+
+- If it crashes without telling you why, use lots of diagnostic printfs (or
+  OINKs) to track down the exact location of the crash.
+
+Once it runs ok:
+
+- Add the cpu to the tests/cputest.c file so the reg test script will work.
+  (Don't forget to add it to all_archs[].)
+
+- Ensure the regression tests work, and add some arch-specific tests to
+  none/tests directory.
+
+- Add the relevant entries to valgrind.spec.in (copy the x86 and x86-linux
+  ones).
+
+-----------------------------------------------------------------------------
+Porting Valgrind to a new OS
+-----------------------------------------------------------------------------
+Similarly to above, this implies both a new OS, and a new platform.
+
+- Create necessary subdirs (copy linux/ and x86-linux/ subdirs).
+
+- Update configure.in (use linux and x86-linux as a guide).
+  Don't forget to update VG_OS_ALL, VG_PLATFORM_ALL.
+
+- Implement all the necessary OS-specific and platform-specific types,
+  functions, and macros... use the following as templates:
+    
+    include/linux/core_os.h
+    include/x86-linux/core_platform.h
+    coregrind/linux/core_os.h
+    coregrind/x86-linux/core_platform.h
+
+- You'll need to copy appropriate kernel types into vki*.h.
+  You'll have to ensure that everywhere that vki_*/VKI_* types and constants
+  are used, that they are suitable for your new OS, otherwise factor their
+  usage out somehow.  This will be painful.
+
+- In particular, you'll need to implement the VGA_(syscall_table).  You may be
+  able to reuse some of the generic (eg. POSIX) syscall wrappers, if the types
+  match.  Otherwise, you'll have to write your own new wrappers.  Do this
+  incrementally, as system calls are hit, otherwise you'll go crazy.
+
+- Probably lots more things;  this list should be added to!
+
+

@@ -17,4 +17,6 @@ int main(int argc, char** argv)
 
     if (g == 1.0f)
         return 0;
+    else
+        return 1;
 }

@@ -414,8 +414,10 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        | ((ULong)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)) 
                     ));
                break;
-           default:
-              goto unhandled;
+            case Iop_MullS32:
+               break;
+            default:
+               goto unhandled;
          }
 
       } else {

@@ -11,6 +11,8 @@ Snapshot 2003XXXX (XX XXXX 2003)
     - pavgb
     - ucomiss
     - enter
+    - mov imm32, %esp
+    - all "in" and "out" opcodes
 
 - Memcheck: Implemented handling of more SSE(2) constructs
 

@@ -70,7 +70,7 @@ void VG_(free_UCodeBlock) ( UCodeBlock* cb )
 
 
 /* Ensure there's enough space in a block to add one uinstr. */
-static __inline__
+static
 void ensureUInstr ( UCodeBlock* cb )
 {
    if (cb->used == cb->size) {

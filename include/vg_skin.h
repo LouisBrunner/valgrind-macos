@@ -1079,6 +1079,9 @@ extern Int VGOFF_(helper_shrdw);
 extern Int VGOFF_(helper_RDTSC);
 extern Int VGOFF_(helper_CPUID);
 
+extern Int VGOFF_(helper_IN);
+extern Int VGOFF_(helper_OUT);
+
 extern Int VGOFF_(helper_bsf);
 extern Int VGOFF_(helper_bsr);
 

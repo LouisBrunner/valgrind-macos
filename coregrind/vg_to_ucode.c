@@ -700,7 +700,6 @@ void codegen_XOR_reg_with_itself ( UCodeBlock* cb, Int size,
    uInstr2(cb, PUT, size, TempReg, tmp, ArchReg, ge_reg);
 }
 
-
 /* Handle binary integer instructions of the form
       op E, G  meaning
       op reg-or-mem, reg
@@ -5635,6 +5634,80 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
       if (dis)
          VG_(printf)("xlat%c [ebx]\n", nameISize(sz));
+      break;
+
+   /* ------------------------ IN / OUT ----------------------- */
+
+   case 0xE4: /* IN ib, %al        */
+   case 0xE5: /* IN ib, %{e}ax     */
+   case 0xEC: /* IN (%dx),%al      */
+   case 0xED: /* IN (%dx),%{e}ax   */
+      t1 = newTemp(cb);
+      t2 = newTemp(cb);
+      t3 = newTemp(cb);
+
+      uInstr0(cb, CALLM_S, 0);
+      /* operand size? */
+      uInstr2(cb, MOV,   4, Literal, 0, TempReg, t1);
+      uLiteral(cb, ( opc == 0xE4 || opc == 0xEC ) ? 1 : sz);
+      uInstr1(cb, PUSH,  4, TempReg, t1);
+      /* port number ? */
+      if ( opc == 0xE4 || opc == 0xE5 ) {
+         abyte = getUChar(eip); eip++;
+         uInstr2(cb, MOV,   4, Literal, 0, TempReg, t2);
+         uLiteral(cb, abyte);
+      }
+      else
+         uInstr2(cb, GET,   4, ArchReg, R_EDX, TempReg, t2);
+
+      uInstr1(cb, PUSH,  4, TempReg, t2);
+      uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_IN));
+      uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
+      uInstr1(cb, POP,   4, TempReg, t2);
+      uInstr1(cb, CLEAR, 0, Lit16,   4);
+      uInstr0(cb, CALLM_E, 0);
+      uInstr2(cb, PUT,   4, TempReg, t2, ArchReg, R_EAX);
+      if (dis) {
+         if ( opc == 0xE4 || opc == 0xE5 )
+            VG_(printf)("in 0x%x, %%eax/%%ax/%%al\n", getUChar(eip-1) );
+         else
+            VG_(printf)("in (%%dx), %%eax/%%ax/%%al\n");
+      }
+      break;
+   case 0xE6: /* OUT %al,ib       */
+   case 0xE7: /* OUT %{e}ax,ib    */
+   case 0xEE: /* OUT %al,(%dx)    */
+   case 0xEF: /* OUT %{e}ax,(%dx) */
+      t1 = newTemp(cb);
+      t2 = newTemp(cb);
+      t3 = newTemp(cb);
+
+      uInstr0(cb, CALLM_S, 0);
+      /* operand size? */
+      uInstr2(cb, MOV,   4, Literal, 0, TempReg, t1);
+      uLiteral(cb, ( opc == 0xE6 || opc == 0xEE ) ? 1 : sz);
+      uInstr1(cb, PUSH,  4, TempReg, t1);
+      /* port number ? */
+      if ( opc == 0xE6 || opc == 0xE7 ) {
+         abyte = getUChar(eip); eip++;
+         uInstr2(cb, MOV,   4, Literal, 0, TempReg, t2);
+         uLiteral(cb, abyte);
+      }
+      else
+         uInstr2(cb, GET,   4, ArchReg, R_EDX, TempReg, t2);
+      uInstr1(cb, PUSH,  4, TempReg, t2);
+      uInstr2(cb, GET,   4, ArchReg, R_EAX, TempReg, t3);
+      uInstr1(cb, PUSH,  4, TempReg, t3);
+      uInstr1(cb, CALLM, 0, Lit16,   VGOFF_(helper_OUT));
+      uFlagsRWU(cb, FlagsEmpty, FlagsEmpty, FlagsEmpty);
+      uInstr1(cb, CLEAR,  0, Lit16,  12);
+      uInstr0(cb, CALLM_E, 0);
+      if (dis) {
+         if ( opc == 0xE4 || opc == 0xE5 )
+            VG_(printf)("out %%eax/%%ax/%%al, 0x%x\n", getUChar(eip-1) );
+         else
+            VG_(printf)("out %%eax/%%ax/%%al, (%%dx)\n");
+      }
       break;
 
    /* ------------------------ (Grp1 extensions) ---------- */

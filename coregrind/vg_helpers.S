@@ -103,6 +103,68 @@ VG_(helper_RDTSC):
 	popl	%eax
 	ret
 
+/* 
+   Fetch a byte/word/dword from given port
+   On entry:
+         size     1, 2 or 4
+         port, replaced by result
+         RA
+*/
+.global VG_(helper_IN)
+VG_(helper_IN):
+	pushl	%eax
+	pushl   %edx
+	movl	16(%esp), %eax
+	movl	12(%esp), %edx
+	cmpl	$4, %eax
+	je	in_dword
+	cmpl	$2, %eax
+	je	in_word
+in_byte:
+	inb	(%dx), %al
+	jmp	in_done
+in_word:
+	in	(%dx), %ax
+	jmp	in_done
+in_dword:
+	inl	(%dx),%eax
+in_done:
+	movl	%eax,12(%esp)
+	popl	%edx
+	popl	%eax
+	ret
+
+/* 
+   Write a byte/word/dword to given port
+   On entry:
+         size     1, 2 or 4
+         port
+         value
+         RA
+*/
+.global VG_(helper_OUT)
+VG_(helper_OUT):
+	pushl	%eax
+	pushl   %edx
+	movl	16(%esp), %edx
+	movl	12(%esp), %eax
+	cmpl	$4, 20(%esp)
+	je	out_dword
+	cmpl	$2, 20(%esp)
+	je	out_word
+out_byte:
+	outb	%al,(%dx)
+	jmp	out_done
+out_word:
+	out	%ax,(%dx)
+	jmp	out_done
+out_dword:
+	outl	%eax,(%dx)
+out_done:
+	popl	%edx
+	popl	%eax
+	ret
+
 
 /* Do the CPUID instruction.
    On entry:

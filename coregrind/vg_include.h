@@ -1570,6 +1570,9 @@ extern void VG_(helper_shldw);
 extern void VG_(helper_shrdl);
 extern void VG_(helper_shrdw);
 
+extern void VG_(helper_IN);
+extern void VG_(helper_OUT);
+
 extern void VG_(helper_RDTSC);
 extern void VG_(helper_CPUID);
 

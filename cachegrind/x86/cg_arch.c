@@ -125,6 +125,7 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x45: *L2c = (cache_t) { 2048, 4, 32 }; L2_found = True; break;
 
       /* These are sectored, whatever that means */
+      case 0x60: *D1c = (cache_t) { 16, 8, 64 };  break;      /* sectored */
       case 0x66: *D1c = (cache_t) {  8, 4, 64 };  break;      /* sectored */
       case 0x67: *D1c = (cache_t) { 16, 4, 64 };  break;      /* sectored */
       case 0x68: *D1c = (cache_t) { 32, 4, 64 };  break;      /* sectored */

@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -274,9 +274,14 @@ static Bool eq_ErrContext ( Bool cheap_addr_cmp,
          return True;
       case FreeErr:
       case FreeMismatchErr:
-         if (e1->addr != e2->addr) return False;
-         if (!eq_AddrInfo(cheap_addr_cmp, &e1->addrinfo, &e2->addrinfo)) 
-            return False;
+         /* JRS 2002-Aug-26: comparing addrs seems overkill and can
+            cause excessive duplication of errors.  Not even AddrErr
+            below does that.  So don't compare either the .addr field
+            or the .addrinfo fields. */
+         /* if (e1->addr != e2->addr) return False; */
+         /* if (!eq_AddrInfo(cheap_addr_cmp, &e1->addrinfo, &e2->addrinfo)) 
+               return False;
+         */
          return True;
       case AddrErr:
          if (e1->axskind != e2->axskind) return False;

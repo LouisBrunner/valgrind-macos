@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -417,6 +417,24 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+#     if defined(__NR_vhangup)
+      case __NR_vhangup: /* syscall 111 */
+         /* int vhangup(void); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("vhangup()\n");
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
+#     if defined(__NR_iopl)
+      case __NR_iopl: /* syscall 110 */
+         /* int iopl(int level); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("iopl ( %d )\n", arg1);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_getxattr)
       case __NR_getxattr: /* syscall 229 */
          /* ssize_t getxattr (const char *path, const char* name,
@@ -630,9 +648,11 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             while ((start % VKI_BYTES_PER_PAGE) > 0) { start--; length++; }
             while (((start+length) % VKI_BYTES_PER_PAGE) > 0) { length++; }
             make_noaccess( start, length );
-            munmap_exe = VG_(symtab_notify_munmap) ( start, length );
-            if (munmap_exe)
+            munmap_exe = VG_(is_munmap_exe) ( start, length );
+            if (munmap_exe) {
+               VG_(symtab_notify_munmap)    ( start, length );
                VG_(invalidate_translations) ( start, length );
+            }
             approximate_mmap_permissions( (Addr)res, arg3, arg4 );
          }
          break;         
@@ -1693,6 +1713,16 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                  sizeof(struct winsize) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
+            case TIOCLINUX:
+               must_be_readable( tst, "ioctl(TIOCLINUX)", arg3, 
+                                 sizeof(char *) );
+               if (VGM_(check_readable)(arg3,1,NULL) && *(char *)arg3 == 11)
+                  must_be_readable( tst, "ioctl(TIOCLINUX, 11)", arg3, 
+                                    2 * sizeof(char *) );
+               KERNEL_DO_SYSCALL(tid,res);
+               if (!VG_(is_kerror)(res) && res == 0)
+                  make_readable ( arg3, sizeof(char *) );
+               break;
             case TIOCGPGRP:
                /* Get process group ID for foreground processing group. */
                must_be_writable( tst, "ioctl(TIOCGPGRP)", arg3,
@@ -2280,9 +2310,11 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             /* Tell our symbol table machinery about this, so that if
                this happens to be a .so being unloaded, the relevant
                symbols are removed too. */
-            munmap_exe = VG_(symtab_notify_munmap) ( start, length );
-            if (munmap_exe)
+            munmap_exe = VG_(is_munmap_exe) ( start, length );
+            if (munmap_exe) {
                VG_(invalidate_translations) ( start, length );
+               VG_(symtab_notify_munmap)    ( start, length );
+            }
          }
          break;
 

@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -2485,7 +2485,13 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
                return dis_fpu_mem(cb, 8, rd, eip, first_byte); 
             case 2: /* FST double-real */
             case 3: /* FSTP double-real */
-               return dis_fpu_mem(cb, 8, wr, eip, first_byte); 
+               return dis_fpu_mem(cb, 8, wr, eip, first_byte);
+            case 4: /* FRSTOR */
+               return dis_fpu_mem(cb, 108, rd, eip, first_byte);
+            case 6: /* FSAVE */
+               return dis_fpu_mem(cb, 108, wr, eip, first_byte);
+            case 7: /* FSTSW */
+               return dis_fpu_mem(cb, 2, wr, eip, first_byte);
             default: 
                goto unhandled;
          }
@@ -3556,6 +3562,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_op_imm_A(cb, sz, OR, True, eip, "or" );
       break;
 
+   case 0x15: /* ADC Iv, eAX */
+      eip = dis_op_imm_A(cb, sz, ADC, True, eip, "adc" );
+      break;
+
    case 0x1C: /* SBB Ib, AL */
       eip = dis_op_imm_A(cb, 1, SBB, True, eip, "sbb" );
       break;
@@ -3673,6 +3683,9 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_op2_G_E ( cb, OR, True, sz, eip, "or" );
       break;
 
+   case 0x10: /* ADC Gb,Eb */
+      eip = dis_op2_G_E ( cb, ADC, True, 1, eip, "adc" );
+      break;
    case 0x11: /* ADC Gv,Ev */
       eip = dis_op2_G_E ( cb, ADC, True, sz, eip, "adc" );
       break;
@@ -4231,6 +4244,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip   = dis_Grp2 ( cb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
       break;
 
+   case 0xD2: /* Grp2 CL,Eb */
+      modrm = getUChar(eip);
+      am_sz = lengthAMode(eip);
+      d_sz  = 0;
+      sz    = 1;
+      eip   = dis_Grp2 ( cb, eip, modrm, am_sz, d_sz, sz, ArchReg, R_ECX );
+      break;
+
    case 0xD3: /* Grp2 CL,Ev */
       modrm = getUChar(eip);
       am_sz = lengthAMode(eip);
@@ -4545,6 +4566,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       default:
          VG_(printf)("disInstr: unhandled 2-byte opcode 0x%x\n", 
                      (UInt)opc);
+	 VG_(printf)("This _might_ be the result of executing an "
+                     "MMX, SSE, SSE2 or 3DNow!\n" );
+	 VG_(printf)("instruction.  Valgrind does not currently "
+                     "support such instructions.  Sorry.\n" );
          VG_(unimplemented)("unhandled x86 0x0F 2-byte opcode");
       }
 

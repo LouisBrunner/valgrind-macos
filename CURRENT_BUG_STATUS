@@ -1,0 +1,176 @@
+
+This file contains a detailed log of bugs fixed in the stable (1.0.X)
+branch, so you can see the changes from version to version.  Also see
+the end of this file, which has a list of the bugs known in, but not
+fixed in, the current release.
+
+
+Release 1.0.2 (6 Sept 02)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+The main emphasis of 1.0.2 is to fix stability problems in the cache
+profiler (cachegrind).  We now believe to be as stable as valgrind
+itself, so that if a program runs on valgrind it should also run on
+cachegrind.  Hopefully this will mean that 1.0.2 is a more stable base
+for Josef Weidendorfer's kcachegrind visualisation tool and call-graph
+patch.  Specific fixes are:
+
+- Fix this: valgrind: vg_cachesim.c:389 (get_BBCC): 
+  Assertion `((Bool)0) == remove' failed.
+  which happened when cachegrind discards translations.
+
+- Do not abort execution if cache simulating entire trees of processes
+  causes conflicts over the logfile cachegrind.out.  This will be
+  fixed properly in future stable branches; this fix is a bit of a
+  kludge -- creation of cachegrind.out is skipped if opening it 
+  for writing results in an error.
+
+- cachesim: handle FPU insns with 28 and 108 byte data sizes
+  (fsave, frestore, fstenv, fldenv).  Pretends they are 16 byte
+  transactions -- a bit of a hack but these should be rare.
+
+- Improve accuracy of cache simulation for REP-prefix instructions.
+  They are now modelled as a single I-cache transaction for the whole
+  thing, regardless of the number of repeats.  This seems a plausible
+  model for what most contemporary CPUs do.
+
+- Implement primary opcode 0x10 (ADC Gb,Eb).
+
+- Fix bug causing incorrect warning:
+  valgrind's libpthread.so: libc_internal_tsd_get: dubious key 2
+
+- valgrind's strcmp() implementation (to clients) treated char as
+  signed whereas the libc implementation it replaces treats char as
+  unsigned.  Fixed!  God knows how anything much ever worked before
+  now.
+
+- Implement ioctl TIOCLINUX.
+
+- Include %defattr(-,root,root) in valgrind.spec.in so that the
+  ownership of the files is correct even if a non-root user builds the
+  RPM package.
+
+
+Release 1.0.1 (27 August 02)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Thank you to the hundreds of people who sent feedback, patches and/or
+bug reports for version 1.0.0.  I have fixed the following bugs
+(somewhat over half the total reported):
+
+- A bug in handling resolver (DNS-lookup) state in threaded programs,
+  which caused name-to-IP-addr lookups to fail in some circumstances.
+
+- Add support for C++ ABI for gccs > 3.1.
+
+- Implement pthread_attr_getdetachstate.
+
+- Fix bug causing exit status of programs to be incorrect when
+  running under valgrind.  Following this fix,
+     <prog> ; echo $?     and
+     valgrind <prog> ; echo $?
+  should give identical results.
+
+- Handle 0xD2 primary opcode (shift-Grp2 Eb, CL).  This fixes
+  some aborts when running GNU Ada programs:
+    disInstr: unhandled opcode 0xD2 then 0xE0
+
+- Handle primary opcode 0x15 (ADC Iv, eAX).  This fixes:
+    disInstr: unhandled opcode 0x15 then 0x0
+
+- Handle missing FPU operations:
+    FSTSW  m32
+    FSAVE  m32
+    FRSTOR m32
+
+- Handle syscall __NR_iopl (change I/O privilege level).  I suspect
+  this is pretty useless unless the x86 IN/OUT insns are also
+  implemented, but hey.
+
+- Handle syscall __NR_vhangup.
+
+- Cache simulator: add workaround for identifying cache params of
+  Duron stepping A0 which has a bug that causes CPUID to misreport L2
+  cache size.
+
+- Non-user-visible: Fix a bunch of bogus boundary checks of the form
+   if (n < lower_limit && n > upper_limit) {
+      /* error case */
+   }
+
+- Possibly-user-visible: fix buggy internal implementation of strncpy().
+  This may or may not fix some strange behaviour in the C++3 demangler.
+
+- Handle startup stacks starting at 0xE0000000.
+
+- Fix various documentation bugs.
+
+- For threaded programs: Give a binding for vfork() -- just behave
+  like fork().  I hope this is OK.
+
+- Fix the following:
+    vg_libpthread.c:1050 (__my_pthread_testcancel): 
+    Assertion `res == 0' failed.
+  which happened when running a threaded program linked with -pg.
+
+- Print a more helpful set of messages when we've run out of memory.
+
+- Change the license for valgrind.h ONLY to a BSD-style license.
+  The entire rest of the system stays GPL'd.
+
+- Add this file!
+
+
+Bugs known but not fixed in 1.0.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The following bugs were reported and are NOT FIXED in 1.0.2,
+due to one or more of the following: lack of time, technical
+difficulty, or the report is really a feature request, in which case
+it will not make it into the 1.0.X branch.  Anyway, for the record:
+
+- Unimplemented _libc_current_sigrt_min for threaded programs.
+  (ought to be fixed in the 1.0.X series; any volunteers?)
+
+- Leak reports cannot be suppressed -- will definitely defer 
+  beyond 1.0.X.
+
+- modify_ldt syscall and supporting stuff for segment override 
+  prefixes.  Undecided whether to implement in 1.0.X series or
+  not; glibc-2.3.X will probably need it.
+
+- Missing symbols pthread_clock_{get,set}time.  Too difficult to
+  establish a fix which will work for all distros.  Help appreciated!
+
+- Primary opcodes 0xEC .. 0xEF.  These are the x86 IN/OUT insns.
+  Deferred beyond 1.0.X.
+
+- Primary opcode 0xF5 (Complement carry flag insn).
+
+- Request for machine-parseable output (error format).  
+
+- sigcontexts are not passed to signal handlers; the signal
+  context structure pointer is always NULL.
+
+- dlclose() / munmap() discards symbols and so leak reports sometimes
+  lack location information.  I know how to fix this, but will push
+  beyond 1.0.X.
+
+- pthread_{set,get}_concurrency.  Someone send me a patch for
+  this, please!
+
+- A few inexplicable segfaults.
+
+- Probably a few more; those are the main ones.
+
+- There's some kind of problem with missing debug info (line numbers, 
+  especially) with gcc-3.2 generated code.  Further info about this 
+  would be appreciated.
+
+- I'm getting reports of this assertion failure
+    valgrind: vg_scheduler.c:2270 (do_pthread_mutex_lock): 
+    Assertion `vgPlain_is_valid_tid((ThreadId)mutex->__m_owner)' failed.
+
+  One person reported that ...
+    The "bad" thing I did was to use fprintf(stderr) in a child process, 
+    right after fork().  The file descriptors stdout and stderr were 
+    still open.
+
+  Further info on this would be much appreciated.

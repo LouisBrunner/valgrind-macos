@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -107,7 +107,6 @@ void* malloc ( Int n )
    return (void*)v;
 }
 
-
 void* __builtin_new ( Int n )
 {
    void* v;
@@ -133,6 +132,11 @@ void* __builtin_new ( Int n )
    return v;
 }
 
+/* gcc 3.X.X mangles them differently. */
+void* _Znwj ( Int n )
+{
+  return __builtin_new(n);
+}
 
 void* __builtin_vec_new ( Int n )
 {
@@ -159,6 +163,11 @@ void* __builtin_vec_new ( Int n )
    return v;
 }
 
+/* gcc 3.X.X mangles them differently. */
+void* _Znaj ( Int n )
+{
+  return __builtin_vec_new(n);
+}
 
 void free ( void* p )
 {
@@ -174,7 +183,6 @@ void free ( void* p )
    }
 }
 
-
 void __builtin_delete ( void* p )
 {
    if (VG_(clo_trace_malloc))
@@ -189,6 +197,11 @@ void __builtin_delete ( void* p )
    }
 }
 
+/* gcc 3.X.X mangles them differently. */
+void _ZdlPv ( void* p )
+{
+  __builtin_delete(p);
+}
 
 void __builtin_vec_delete ( void* p )
 {
@@ -204,6 +217,11 @@ void __builtin_vec_delete ( void* p )
    }
 }
 
+/* gcc 3.X.X mangles them differently. */
+void _ZdaPv ( void* p )
+{
+  __builtin_vec_delete(p);
+}
 
 void* calloc ( Int nmemb, Int size )
 {
@@ -424,7 +442,8 @@ char* strcpy ( char* dest, const char* src )
    return dest_orig;
 }
 
-int strncmp ( const char* s1, const char* s2, unsigned int nmax )
+int strncmp ( const unsigned char* s1, const unsigned char* s2, 
+              unsigned int nmax )
 {
    unsigned int n = 0;
    while (True) {
@@ -433,8 +452,8 @@ int strncmp ( const char* s1, const char* s2, unsigned int nmax )
       if (*s1 == 0) return -1;
       if (*s2 == 0) return 1;
 
-      if (*(UChar*)s1 < *(UChar*)s2) return -1;
-      if (*(UChar*)s1 > *(UChar*)s2) return 1;
+      if (*(unsigned char*)s1 < *(unsigned char*)s2) return -1;
+      if (*(unsigned char*)s1 > *(unsigned char*)s2) return 1;
 
       s1++; s2++; n++;
    }
@@ -442,16 +461,17 @@ int strncmp ( const char* s1, const char* s2, unsigned int nmax )
 
 int strcmp ( const char* s1, const char* s2 )
 {
-   register char c1, c2;
+   register unsigned char c1;
+   register unsigned char c2;
    while (True) {
-      c1 = *s1;
-      c2 = *s2;
+      c1 = *(unsigned char *)s1;
+      c2 = *(unsigned char *)s2;
       if (c1 != c2) break;
       if (c1 == 0) break;
       s1++; s2++;
    }
-   if (c1 < c2) return -1;
-   if (c1 > c2) return 1;
+   if ((unsigned char)c1 < (unsigned char)c2) return -1;
+   if ((unsigned char)c1 > (unsigned char)c2) return 1;
    return 0;
 }
 

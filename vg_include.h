@@ -27,7 +27,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #ifndef __VG_INCLUDE_H
@@ -795,12 +795,14 @@ extern Int     VG_(longjmpd_on_signal);
    the initial stack, which we can't move, is allocated here.
    VG_(scheduler_init) checks this.  Andrea Archelangi's 2.4 kernels
    have been rumoured to start stacks at 0x80000000, so that too is
-   considered. It seems systems with longer uptimes tend to to use
-   stacks which start at 0x40000000 sometimes.  
-*/
+   considered.  It seems systems with longer uptimes tend to to use
+   stacks which start at 0x40000000 sometimes.  JRS 2002-Aug-21: I
+   also have reports of stacks starting at 0xE0000000.*/
+
 #define VG_STARTUP_STACK_BASE_1  (Addr)0xC0000000
 #define VG_STARTUP_STACK_BASE_2  (Addr)0x80000000
 #define VG_STARTUP_STACK_BASE_3  (Addr)0x40000000
+#define VG_STARTUP_STACK_BASE_4  (Addr)0xE0000000
 #define VG_STARTUP_STACK_SMALLERTHAN  0x100000 /* 1024k */
 
 #define VG_STACK_MATCHES_BASE(zzstack, zzbase)                 \
@@ -927,7 +929,7 @@ extern Char VG_(toupper) ( Char c );
 
 extern void VG_(strncpy_safely) ( Char* dest, const Char* src, Int ndest );
 
-extern void VG_(strncpy) ( Char* dest, const Char* src, Int ndest );
+extern Char* VG_(strncpy) ( Char* dest, const Char* src, Int ndest );
 
 extern Bool VG_(stringMatch) ( Char* pat, Char* str );
 
@@ -1451,7 +1453,9 @@ extern Bool VG_(what_line_is_this) ( Addr a,
 extern Bool VG_(what_fn_is_this) ( Bool no_demangle, Addr a,
                                      Char* fn_name, Int n_fn_name);
 
-extern Bool VG_(symtab_notify_munmap) ( Addr start, UInt length );
+extern Bool VG_(is_munmap_exe) ( Addr start, UInt length );
+
+extern void VG_(symtab_notify_munmap) ( Addr start, UInt length );
 
 
 /* ---------------------------------------------------------------------
@@ -1568,6 +1572,11 @@ extern UInt VG_(current_epoch);
 
 /* This is the ThreadId of the last thread the scheduler ran. */
 extern ThreadId VG_(last_run_tid);
+
+/* This is the argument to __NR_exit() supplied by the first thread to
+   call that syscall.  We eventually pass that to __NR_exit() for
+   real. */
+extern UInt VG_(exitcode);
 
 
 /* --- Counters, for informational purposes only. --- */
@@ -1858,14 +1867,20 @@ extern Int VG_(log2) ( Int x );
 extern UCodeBlock* VG_(cachesim_instrument) ( UCodeBlock* cb_in, 
                                               Addr orig_addr );
 
-typedef struct  _iCC  iCC;
-typedef struct _idCC idCC;
+typedef struct   _iCC   iCC;
+typedef struct  _idCC  idCC;
+typedef struct _iddCC iddCC;
 
 extern void VG_(init_cachesim)      ( void );
 extern void VG_(do_cachesim_results)( Int client_argc, Char** client_argv );
 
-extern void VG_(cachesim_log_non_mem_instr)(  iCC* cc );
-extern void VG_(cachesim_log_mem_instr)    ( idCC* cc, Addr data_addr );
+extern void VG_(log_1I_0D_cache_access)( iCC*   cc );
+extern void VG_(log_0I_1D_cache_access)( idCC*  cc, Addr data_addr );
+extern void VG_(log_1I_1D_cache_access)( idCC*  cc, Addr data_addr );
+extern void VG_(log_0I_2D_cache_access)( iddCC* cc, Addr data_addr1, 
+                                                    Addr data_addr2 );
+extern void VG_(log_1I_2D_cache_access)( iddCC* cc, Addr data_addr1,
+                                                    Addr data_addr2 );
 
 extern void VG_(cachesim_notify_discard) ( TTEntry* tte );
 
@@ -2006,8 +2021,11 @@ extern Int VGOFF_(handle_esp_assignment); /* :: Addr -> void */
 extern Int VGOFF_(fpu_write_check);       /* :: Addr -> Int -> void */
 extern Int VGOFF_(fpu_read_check);        /* :: Addr -> Int -> void */
 
-extern Int VGOFF_(cachesim_log_non_mem_instr);
-extern Int VGOFF_(cachesim_log_mem_instr);
+extern Int VGOFF_(log_1I_0D_cache_access);
+extern Int VGOFF_(log_0I_1D_cache_access);
+extern Int VGOFF_(log_1I_1D_cache_access);
+extern Int VGOFF_(log_0I_2D_cache_access);
+extern Int VGOFF_(log_1I_2D_cache_access);
 
 #endif /* ndef __VG_INCLUDE_H */
 

@@ -1,27 +1,58 @@
 
 /*
+   ----------------------------------------------------------------
+
+   Notice that the following BSD-style license applies to this one
+   file (valgrind.h) only.  The entire rest of Valgrind is licensed
+   under the terms of the GNU General Public License, version 2.  See
+   the COPYING file in the source distribution for details.
+
+   ----------------------------------------------------------------
+
    This file is part of Valgrind, an x86 protected-mode emulator 
    designed for debugging and profiling binaries on x86-Unixes.
 
-   Copyright (C) 2000-2002 Julian Seward 
-      jseward@acm.org
+   Copyright (C) 2000-2002 Julian Seward.  All rights reserved.
 
-   This program is free software; you can redistribute it and/or
-   modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions
+   are met:
 
-   This program is distributed in the hope that it will be useful, but
-   WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   1. Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
-   02111-1307, USA.
+   2. The origin of this software must not be misrepresented; you must 
+      not claim that you wrote the original software.  If you use this 
+      software in a product, an acknowledgment in the product 
+      documentation would be appreciated but is not required.
 
-   The GNU General Public License is contained in the file LICENSE.
+   3. Altered source versions must be plainly marked as such, and must
+      not be misrepresented as being the original software.
+
+   4. The name of the author may not be used to endorse or promote 
+      products derived from this software without specific prior written 
+      permission.
+
+   THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+   DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+   DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+   GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+   WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+   ----------------------------------------------------------------
+
+   Notice that the above BSD-style license applies to this one file
+   (valgrind.h) only.  The entire rest of Valgrind is licensed under
+   the terms of the GNU General Public License, version 2.  See the
+   COPYING file in the source distribution for details.
+
+   ---------------------------------------------------------------- 
 */
 
 

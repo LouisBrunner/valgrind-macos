@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -39,12 +39,18 @@
 
    Stabs reader greatly improved by Nick Nethercode, Apr 02.
 
-   16 May 02: when notified about munmap, return a Bool indicating
-   whether or not the area being munmapped had executable permissions.
-   This is then used to determine whether or not
-   VG_(invalid_translations) should be called for that area.  In order
-   that this work even if --instrument=no, in this case we still keep
-   track of the mapped executable segments, but do not load any debug
+   NJN 30 Aug 2002: when notified about munmap, use VG_(is_munmap_exe) to
+   return a Bool indicating whether or not the area being munmapped had
+   executable permissions.  This is then used to determine whether or not
+   VG_(invalidate_translations) and VG_(symtab_notify_munmap) should be
+   called for that area.  
+
+   Note that for Cachegrind to work, VG_(invalidate_translations) *must* be
+   called before VG_(symtab_notify_munmap), because Cachegrind uses the
+   symbols during the invalidation step.
+   
+   In order that this work even if --instrument=no, in this case we still
+   keep track of the mapped executable segments, but do not load any debug
    info or symbols.
 */
 
@@ -1761,30 +1767,47 @@ void VG_(read_symbols) ( void )
 }
 
 
-/* When an munmap() call happens, check to see whether it corresponds
-   to a segment for a .so, and if so discard the relevant SegInfo.
-   This might not be a very clever idea from the point of view of
-   accuracy of error messages, but we need to do it in order to
-   maintain the no-overlapping invariant.
-
-   16 May 02: Returns a Bool indicating whether or not the discarded
-   range falls inside a known executable segment.  See comment at top
-   of file for why.
-*/
-Bool VG_(symtab_notify_munmap) ( Addr start, UInt length )
+/* Determine if the munmapped segment is executable, so we know if we have
+   to unload symbols and invalidate translations. */
+Bool VG_(is_munmap_exe) ( Addr start, UInt length )
 {
    SegInfo *prev, *curr;
 
    prev = NULL;
    curr = segInfo;
    while (True) {
-      if (curr == NULL) break;
+      if (curr == NULL) return False;
       if (start == curr->start) break;
       prev = curr;
       curr = curr->next;
    }
-   if (curr == NULL) 
-      return False;
+
+   vg_assert(prev == NULL || prev->next == curr);
+   return True;
+}
+
+
+/* When an munmap() call happens, check to see whether it corresponds
+   to a segment for a .so, and if so discard the relevant SegInfo.
+   This might not be a very clever idea from the point of view of
+   accuracy of error messages, but we need to do it in order to
+   maintain the no-overlapping invariant.
+*/
+void VG_(symtab_notify_munmap) ( Addr start, UInt length )
+{
+   SegInfo *prev, *curr;
+
+   prev = NULL;
+   curr = segInfo;
+   while (True) {
+      /* VG_(is_munmap_exe) does exactly the same search, and this function
+       * is only called if it succeeds, so this search should not fail */
+      vg_assert(curr != NULL);
+
+      if (start == curr->start) break;
+      prev = curr;
+      curr = curr->next;
+   }
 
    VG_(message)(Vg_UserMsg, 
                 "discard syms in %s due to munmap()", 
@@ -1797,9 +1820,7 @@ Bool VG_(symtab_notify_munmap) ( Addr start, UInt length )
    } else {
       prev->next = curr->next;
    }
-
    freeSegInfo(curr);
-   return True;
 }
 
 

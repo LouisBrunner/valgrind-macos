@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 /* ---------------------------------------------------------------------
@@ -82,7 +82,7 @@ void __libc_current_sigrtmin ( void )  { unimp("__libc_current_sigrtmin"); }
 //void longjmp ( void )  { unimp("longjmp"); }
 //void pthread_atfork ( void )  { unimp("pthread_atfork"); }
 //void pthread_attr_destroy ( void )  { unimp("pthread_attr_destroy"); }
-void pthread_attr_getdetachstate ( void )  { unimp("pthread_attr_getdetachstate"); }
+//void pthread_attr_getdetachstate ( void )  { unimp("pthread_attr_getdetachstate"); }
 void pthread_attr_getinheritsched ( void )  { unimp("pthread_attr_getinheritsched"); }
 //void pthread_attr_getschedparam ( void )  { unimp("pthread_attr_getschedparam"); }
 //void pthread_attr_getschedpolicy ( void )  { unimp("pthread_attr_getschedpolicy"); }

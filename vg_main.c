@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -105,8 +105,11 @@ Int VGOFF_(helperc_STOREV1) = INVALID_OFFSET;
 Int VGOFF_(handle_esp_assignment) = INVALID_OFFSET;
 Int VGOFF_(fpu_write_check) = INVALID_OFFSET;
 Int VGOFF_(fpu_read_check) = INVALID_OFFSET;
-Int VGOFF_(cachesim_log_non_mem_instr) = INVALID_OFFSET;
-Int VGOFF_(cachesim_log_mem_instr)     = INVALID_OFFSET;
+Int VGOFF_(log_1I_0D_cache_access) = INVALID_OFFSET;
+Int VGOFF_(log_0I_1D_cache_access) = INVALID_OFFSET;
+Int VGOFF_(log_1I_1D_cache_access) = INVALID_OFFSET;
+Int VGOFF_(log_0I_2D_cache_access) = INVALID_OFFSET;
+Int VGOFF_(log_1I_2D_cache_access) = INVALID_OFFSET;
 
 /* This is the actual defn of baseblock. */
 UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
@@ -169,11 +172,20 @@ static void vg_init_baseBlock ( void )
    /* 17  */ VGOFF_(sh_eflags) = alloc_BaB(1);
 
    /* 17a */ 
-   VGOFF_(cachesim_log_non_mem_instr)  
-      = alloc_BaB_1_set( (Addr) & VG_(cachesim_log_non_mem_instr) );
+   VGOFF_(log_1I_0D_cache_access)  
+      = alloc_BaB_1_set( (Addr) & VG_(log_1I_0D_cache_access) );
    /* 17b */ 
-   VGOFF_(cachesim_log_mem_instr)  
-      = alloc_BaB_1_set( (Addr) & VG_(cachesim_log_mem_instr) );
+   VGOFF_(log_0I_1D_cache_access)  
+      = alloc_BaB_1_set( (Addr) & VG_(log_0I_1D_cache_access) );
+   /* 17c */ 
+   VGOFF_(log_1I_1D_cache_access)  
+      = alloc_BaB_1_set( (Addr) & VG_(log_1I_1D_cache_access) );
+   /* 17d */ 
+   VGOFF_(log_0I_2D_cache_access)  
+      = alloc_BaB_1_set( (Addr) & VG_(log_0I_2D_cache_access) );
+   /* 17e */ 
+   VGOFF_(log_1I_2D_cache_access)  
+      = alloc_BaB_1_set( (Addr) & VG_(log_1I_2D_cache_access) );
 
    /* 18  */ 
    VGOFF_(helper_value_check4_fail) 
@@ -338,6 +350,11 @@ UInt VG_(current_epoch) = 0;
 
 /* This is the ThreadId of the last thread the scheduler ran. */
 ThreadId VG_(last_run_tid) = 0;
+
+/* This is the argument to __NR_exit() supplied by the first thread to
+   call that syscall.  We eventually pass that to __NR_exit() for
+   real. */
+UInt VG_(exitcode) = 0;
 
 
 /* ---------------------------------------------------------------------
@@ -603,7 +620,10 @@ static void process_cmd_line_options ( void )
        if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
                                   VG_STARTUP_STACK_BASE_3 )) {
           sp = (UInt*)VG_STARTUP_STACK_BASE_3;
- 
+       } else 
+       if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
+                                  VG_STARTUP_STACK_BASE_4 )) {
+          sp = (UInt*)VG_STARTUP_STACK_BASE_4;
        } else {
           args_grok_error(
              "startup %esp is not near any VG_STARTUP_STACK_BASE_*\n   "
@@ -1222,7 +1242,7 @@ void VG_(main) ( void )
          vg_assert(tst->status == VgTs_Runnable);
          /* The thread's %EBX will hold the arg to exit(), so we just
             do exit with that arg. */
-         VG_(exit)( tst->m_ebx );
+         VG_(exit)( VG_(exitcode) );
          /* NOT ALIVE HERE! */
          VG_(panic)("entered the afterlife in vg_main() -- ExitSyscall");
          break; /* what the hell :) */

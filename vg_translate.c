@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -3094,10 +3094,11 @@ void VG_(translate) ( ThreadState* tst,
    cb = VG_(allocCodeBlock)();
 
    /* Disassemble this basic block into cb. */
+   //dis=True;
    /* VGP_PUSHCC(VgpToUCode); */
    n_disassembled_bytes = VG_(disBB) ( cb, orig_addr );
    /* VGP_POPCC; */
-   /* dis=True; */
+   //dis=False;
    /* if (0&& VG_(translations_done) < 617)  */
    /*    dis=False; */
    /* Try and improve the code a bit. */
@@ -3108,7 +3109,7 @@ void VG_(translate) ( ThreadState* tst,
          VG_(ppUCodeBlock) ( cb, "Improved code:" );
       /* VGP_POPCC; */
    }
-   /* dis=False; */
+   //dis = True;
    /* Add instrumentation code. */
    if (VG_(clo_instrument)) {
       /* VGP_PUSHCC(VgpInstrument); */
@@ -3124,9 +3125,9 @@ void VG_(translate) ( ThreadState* tst,
             VG_(ppUCodeBlock) ( cb, "Cleaned-up instrumented code:" );
       }
    }
+   //dis = False;
 
-   //VG_(disassemble) = True;
-
+   //dis = True;
    /* Add cache simulation code. */
    if (VG_(clo_cachesim)) {
       /* VGP_PUSHCC(VgpCacheInstrument); */
@@ -3135,14 +3136,14 @@ void VG_(translate) ( ThreadState* tst,
       if (VG_(disassemble)) 
          VG_(ppUCodeBlock) ( cb, "Cachesim instrumented code:" );
    }
-   
-   //VG_(disassemble) = False;
+   //dis = False;
    
    /* Allocate registers. */
+   //dis = True;
    /* VGP_PUSHCC(VgpRegAlloc); */
    cb = vg_do_register_allocation ( cb );
    /* VGP_POPCC; */
-   /* dis=False; */
+   //dis = False;
    /* 
    if (VG_(disassemble))
       VG_(ppUCodeBlock) ( cb, "After Register Allocation:");

@@ -1607,7 +1607,7 @@ extern void VG_(proxy_setsigmask)(ThreadId tid);
 extern void VG_(proxy_sigack)   ( ThreadId tid, const vki_ksigset_t *);
 extern void VG_(proxy_abort_syscall) ( ThreadId tid );
 extern void VG_(proxy_waitsig)  ( void );
-extern void VG_(proxy_wait_sys)	(ThreadId tid);
+extern void VG_(proxy_wait_sys)	(ThreadId tid, Bool restart);
 
 extern void VG_(proxy_shutdown) ( void );	/* shut down the syscall workers */
 extern Int  VG_(proxy_resfd)    ( void );	/* FD something can select on to know 
@@ -1630,7 +1630,7 @@ extern void VG_(proxy_handlesig)( const vki_ksiginfo_t *siginfo,
 extern Char *VG_(resolve_filename)(Int fd);
 
 extern Bool VG_(pre_syscall) ( ThreadId tid );
-extern void VG_(post_syscall)( ThreadId tid );
+extern void VG_(post_syscall)( ThreadId tid, Bool restart );
 extern void VG_(restart_syscall) ( ThreadId tid );
 
 extern Bool VG_(is_kerror) ( Int res );

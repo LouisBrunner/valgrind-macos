@@ -180,7 +180,7 @@ struct ProxyLWP {
    jmp_buf		jumpbuf;
 };
 
-static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype);
+static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype, Bool restart);
 
 struct PX_Request {
    enum RequestType	request;
@@ -841,9 +841,9 @@ void VG_(proxy_sendsig)(ThreadId tid, Int sig)
 	 it by the normal mechanism.  In this case, just wait for the
 	 syscall to dinish. */
       if (tst->status == VgTs_WaitSys && tst->syscallno == __NR_rt_sigtimedwait)
-	 sys_wait_results(True, tid, PX_RunSyscall);
+	 sys_wait_results(True, tid, PX_RunSyscall, True);
       else
-	 sys_wait_results(True, tid, PX_Signal);
+	 sys_wait_results(True, tid, PX_Signal, True);
    }
 }
 
@@ -866,7 +866,7 @@ void VG_(proxy_abort_syscall)(ThreadId tid)
    if (lwp != 0)
       VG_(ktkill)(lwp, VKI_SIGVGINT);
 
-   sys_wait_results(True, tid, PX_RunSyscall);
+   sys_wait_results(True, tid, PX_RunSyscall, False);
 
    vg_assert(tst->status == VgTs_Runnable);
 }
@@ -1063,7 +1063,7 @@ void VG_(proxy_delete)(ThreadId tid, Bool force)
       proxy_wait, because if we don't read the results pipe, the proxy
       may be blocked writing to it, causing a deadlock with us as we
       wait for it to exit. */
-   sys_wait_results(True, tid, PX_Exiting);
+   sys_wait_results(True, tid, PX_Exiting, True);
    res = proxy_wait(proxy, True, &status);
 
    if ((!res || status != 0) && VG_(clo_verbosity) > 1)
@@ -1091,7 +1091,7 @@ void VG_(proxy_delete)(ThreadId tid, Bool force)
    reply, otherwise it will block forever).  If tid != 0, then it will
    wait for a reply for that particular tid.
  */
-static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype)
+static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype, Bool restart)
 {
    Bool found_reply = (reqtype == PX_BAD);
    struct PX_Reply res;
@@ -1153,7 +1153,7 @@ static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype)
 	    vg_assert(res.u.syscallno == tst->syscallno);
 	    vg_assert(tst->status == VgTs_WaitSys);
 
-	    VG_(post_syscall)(res.tid);
+	    VG_(post_syscall)(res.tid, restart);
 	    break;
 
 	 case PX_Signal:
@@ -1187,16 +1187,16 @@ static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype)
 /* External version */
 void VG_(proxy_results)(void)
 {
-   sys_wait_results(False, 0, PX_BAD);
+   sys_wait_results(False, 0, PX_BAD, True);
 }
 
-void VG_(proxy_wait_sys)(ThreadId tid)
+void VG_(proxy_wait_sys)(ThreadId tid, Bool restart)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
    vg_assert(tst->status == VgTs_WaitSys);
 
-   sys_wait_results(True, tid, PX_RunSyscall);
+   sys_wait_results(True, tid, PX_RunSyscall, restart);
 }
 
 /* Tell proxy about it's thread's updated signal mask */
@@ -1226,7 +1226,7 @@ void VG_(proxy_setsigmask)(ThreadId tid)
       with respect to each other (ie, if thread A then thread B
       updates their signal masks, A's update must be done before B's
       is).  */
-   sys_wait_results(True, tid, PX_SetSigmask);
+   sys_wait_results(True, tid, PX_SetSigmask, True);
 }
 
 void VG_(proxy_sigack)(ThreadId tid, const vki_ksigset_t *mask)
@@ -1271,7 +1271,7 @@ void VG_(proxy_waitsig)(void)
    if (VG_(do_signal_routing))
       VG_(route_signals)();
    else
-      sys_wait_results(True, VG_INVALID_THREADID /* any */, PX_Signal);
+      sys_wait_results(True, VG_INVALID_THREADID /* any */, PX_Signal, True);
 }
 
 /* Issue a syscall to the thread's ProxyLWP */
@@ -1364,7 +1364,7 @@ void VG_(proxy_sanity)(void)
 			 tid, px->lwp, ret);
 	    sane = False;
 	 }
-	 sys_wait_results(True, tid, PX_Ping);
+	 sys_wait_results(True, tid, PX_Ping, True);
 	 /* Can't make an assertion here, fortunately; this will
 	    either come back or it won't. */
       }

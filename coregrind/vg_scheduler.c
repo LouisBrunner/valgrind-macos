@@ -699,7 +699,7 @@ void sched_do_syscall ( ThreadId tid )
 
    /* If pre_syscall returns true, then we're done immediately */
    if (VG_(pre_syscall)(tid)) {
-      VG_(post_syscall(tid));
+      VG_(post_syscall(tid, True));
       vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
    } else {
       vg_assert(VG_(threads)[tid].status == VgTs_WaitSys);

@@ -38,6 +38,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	shortpush.stderr.exp shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
+	syscall-restart1.vgtest syscall-restart1.stdout.exp syscall-restart1.stderr.exp \
+	syscall-restart2.vgtest syscall-restart2.stdout.exp syscall-restart2.stderr.exp \
 	yield.stdout.exp yield.vgtest
 
 check_PROGRAMS = \
@@ -46,6 +48,7 @@ check_PROGRAMS = \
 	fucomip munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
 	pth_blockedsig \
+	syscall-restart1 syscall-restart2 \
 	coolo_sigaction gxx304 yield
 
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g -I$(top_srcdir)/include
@@ -77,6 +80,8 @@ smc1_SOURCES 		= smc1.c
 sha1_test_SOURCES 	= sha1_test.c
 shortpush_SOURCES 	= shortpush.c
 shorts_SOURCES 		= shorts.c
+syscall_restart1_SOURCES = syscall-restart1.c
+syscall_restart2_SOURCES = syscall-restart2.c
 yield_SOURCES		= yield.c
 yield_LDADD		= -lpthread
 

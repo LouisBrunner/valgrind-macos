@@ -5242,12 +5242,13 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 }
 
 
-void VG_(post_syscall) ( ThreadId tid )
+void VG_(post_syscall) ( ThreadId tid, Bool restart )
 {
    ThreadState* tst;
    UInt syscallno;
    const struct sys_info *sys;
    Bool special = False;
+   Bool restarted = False;
    void *pre_res;
 
    VGP_PUSHCC(VgpCoreSysWrap);
@@ -5272,27 +5273,45 @@ void VG_(post_syscall) ( ThreadId tid )
       special = True;
    }
 
-   if (!VG_(is_kerror)(tst->m_eax) && sys->after != NULL)
-      (sys->after)(tst->tid, tst);
-
-   /* Do any post-syscall actions */
-   if (VG_(needs).syscall_wrapper) {
-      VGP_PUSHCC(VgpSkinSysWrap);
-      SK_(post_syscall)(tid, syscallno, pre_res, tst->m_eax, /*isBlocking*/True); // did block
-      VGP_POPCC(VgpSkinSysWrap);
-   }
-
    if (tst->m_eax == -VKI_ERESTARTSYS) {
-      /* Applications never expect to see this, so we should actually
-	 restart the syscall (it means the signal happened before the
-	 syscall made any progress, so we can safely restart it and
-	 pretend the signal happened before the syscall even
-	 started)  */
-      VG_(restart_syscall)(tid);
+      /* Applications never expect to see this, so we should either
+	 restart the syscall or fail it with EINTR, depending on what
+	 our caller wants.  Generally they'll want to restart, but if
+	 client set the signal state to not restart, then we fail with
+	 EINTR.  Either way, ERESTARTSYS means the syscall made no
+	 progress, and so can be failed or restarted without
+	 consequence. */
+      if (0)
+	 VG_(printf)("syscall %d returned ERESTARTSYS; restart=%d\n",
+		     syscallno, restart);
+
+      if (restart) {
+	 restarted = True;
+	 VG_(restart_syscall)(tid);
+      } else
+	 tst->m_eax = -VKI_EINTR;
+   } 
+
+   if (!restarted) {
+      if (!VG_(is_kerror)(tst->m_eax) && sys->after != NULL)
+	 (sys->after)(tst->tid, tst);
+
+      /* Do any post-syscall actions
+
+	 NOTE: this is only called if the syscall completed.  If the
+	 syscall was restarted, then it will call the Tool's
+	 pre_syscall again, without calling post_syscall (ie, more
+	 pre's than post's)
+       */
+      if (VG_(needs).syscall_wrapper) {
+	 VGP_PUSHCC(VgpSkinSysWrap);
+	 SK_(post_syscall)(tid, syscallno, pre_res, tst->m_eax, /*isBlocking*/True); // did block
+	 VGP_POPCC(VgpSkinSysWrap);
+      }
    }
 
    tst->status = VgTs_Runnable;	/* runnable again */
-   tst->syscallno = -1;
+   tst->syscallno = -1;		/* no current syscall */
 
    VGP_POPCC(VgpCoreSysWrap);
 }

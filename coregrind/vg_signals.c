@@ -1447,22 +1447,12 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
 	 came.  Either way, it is going to give us some syscall
 	 results right now, so wait for them to appear.  This makes
 	 the thread runnable again, so we're in the right state to run
-	 the handler, and resume the syscall when we're done. */
-      VG_(proxy_wait_sys)(tid);
-
+	 the handler.  We ask post_syscall to restart based on the
+	 client's sigaction flags. */
       if (0)
-	 VG_(printf)("signal %d interrupting syscall %d\n",
-		     sigNo, tst->syscallno);
-
-      if (tst->m_eax == -VKI_ERESTARTSYS) {
-	  if (handler->scss_flags & VKI_SA_RESTART) {
-	     VG_(restart_syscall)(tid);
-	  } else
-	     tst->m_eax = -VKI_EINTR;
-      } else {
-	 /* return value is already in eax - either EINTR or the
-	    normal return value */
-      }
+	 VG_(printf)("signal %d interrupted syscall %d; restart=%d\n",
+		     sigNo, tst->syscallno, !!(handler->scss_flags & VKI_SA_RESTART));
+      VG_(proxy_wait_sys)(tid, !!(handler->scss_flags & VKI_SA_RESTART));
    }
 
    /* If the client specifies SIG_IGN, treat it as SIG_DFL */

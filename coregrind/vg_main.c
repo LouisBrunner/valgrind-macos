@@ -1480,7 +1480,7 @@ void VG_(main) ( void )
    if (VG_(needs).core_errors || VG_(needs).skin_errors)
       VG_(show_all_errors)();
 
-   SK_(fini)();
+   SK_(fini)( VG_(exitcode) );
 
    VG_(do_sanity_checks)( True /*include expensive checks*/ );
 

@@ -89,7 +89,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb, Addr not_used)
 }
 
 __attribute__ ((weak))
-void SK_(fini)(void)
+void SK_(fini)(Int exitcode)
 {
    fund_panic("SK_(fini)");
 }

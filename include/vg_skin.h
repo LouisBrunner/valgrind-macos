@@ -1653,8 +1653,11 @@ extern void        SK_(post_clo_init)( void );
    'orig_addr' is the address of the first instruction in the block. */
 extern UCodeBlock* SK_(instrument)   ( UCodeBlock* cb, Addr orig_addr );
 
-/* Finish up, print out any results, etc. */
-extern void        SK_(fini)         ( void );
+/* Finish up, print out any results, etc.  `exitcode' is program's exit
+   code.  The shadow (if the `shadow_regs' need is set) can be found with
+   VG_(get_shadow_archreg)(R_EBX), since %ebx holds the argument to the
+   exit() syscall.  */
+extern void        SK_(fini)         ( Int exitcode );
 
 
 /* ------------------------------------------------------------------ */

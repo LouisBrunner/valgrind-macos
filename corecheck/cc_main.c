@@ -56,7 +56,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb, Addr a)
     return cb;
 }
 
-void SK_(fini)(void)
+void SK_(fini)(Int exitcode)
 {
 }
 

@@ -3394,7 +3394,7 @@ void SK_(post_clo_init)(void)
 }
 
 
-void SK_(fini)(void)
+void SK_(fini)(Int exitcode)
 {
    if (DEBUG_LOCK_TABLE) {
       pp_all_LockSets();

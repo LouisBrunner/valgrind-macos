@@ -1243,7 +1243,7 @@ void SK_(post_clo_init) ( void )
 {
 }
 
-void SK_(fini) ( void )
+void SK_(fini) ( Int exitcode )
 {
    MAC_(common_fini)( ac_detect_memory_leaks );
 }

@@ -22,6 +22,8 @@ $dir/../../tests/filter_stderr_basic    |
 #       UInstrs : BB        = 111 : 10
 #       UInstrs : x86_instr =  27 : 10
 #
+#  Exit code:     0
+#
 # ...so chop all lines between first and last (inclusive)
 sed "/^Counted [0-9]\+ calls to _dl_runtime_resolve()$/ ,   \
      /UInstrs : x86_instrs = [0-9]\+ : [0-9]\+/             \

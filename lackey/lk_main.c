@@ -201,7 +201,7 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
    return cb;
 }
 
-void SK_(fini)(void)
+void SK_(fini)(Int exitcode)
 {
     VG_(message)(Vg_UserMsg,
                  "Counted %d calls to _dl_runtime_resolve()", n_dlrr_calls);
@@ -227,6 +227,8 @@ void SK_(fini)(void)
     VG_(message)(Vg_UserMsg, "     UInstrs : x86_instr = %3u : 10",
                              10 * n_UInstrs / n_x86_instrs);
 
+    VG_(message)(Vg_UserMsg, "");
+    VG_(message)(Vg_UserMsg, "Exit code:     %d", exitcode);
 }
 
 /*--------------------------------------------------------------------*/

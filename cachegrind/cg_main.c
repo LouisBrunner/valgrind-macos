@@ -1674,7 +1674,7 @@ void percentify(Int n, Int pow, Int field_width, char buf[])
    for (i = 0; i < space; i++)  buf[i] = ' ';
 }
 
-void SK_(fini)(void)
+void SK_(fini)(Int exitcode)
 {
    CC D_total;
    ULong L2_total_m, L2_total_mr, L2_total_mw,

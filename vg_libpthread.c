@@ -2097,10 +2097,27 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 /* Helper function used to make accept() non-blocking.  Idea is to use
    the above nonblocking poll() to make this thread ONLY wait for the
    specified fd to become ready, and then return. */
+
+/* Sigh -- a hack.  We're not supposed to include this file directly;
+   should do it via /usr/include/fcntl.h, but that introduces a
+   varargs prototype for fcntl itself, which we can't mimic. */
+#define _FCNTL_H
+#include <bits/fcntl.h>
+
 static void wait_for_fd_to_be_readable_or_erring ( int fd )
 {
    struct pollfd pfd;
+   int           res;
+
    /* fprintf(stderr, "wait_for_fd_to_be_readable_or_erring %d\n", fd); */
+
+   /* First check to see if the fd is nonblocking, and/or invalid.  In
+      either case return immediately. */
+   res = __libc_fcntl(fd, F_GETFL, 0);
+   if (res == -1) return; /* fd is invalid somehow */
+   if (res & O_NONBLOCK) return; /* fd is nonblocking */
+
+   /* Ok, we'd better wait with poll. */
    pfd.fd = fd;
    pfd.events = POLLIN | POLLPRI | POLLERR | POLLHUP | POLLNVAL;
    /* ... but not POLLOUT, you may notice. */

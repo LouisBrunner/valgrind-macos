@@ -1875,7 +1875,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
       case 0x10: case 0x11: case 0x12: case 0x13: 
       /* ! 14 */ case 0x15: case 0x16: case 0x17:
          { UChar rm = and8(mod_reg_rm, 7);
-           ULong d  = getSDisp32(delta);
+           Long  d  = getSDisp32(delta);
            DIS(buf, "%s%lld(%s)", sorbTxt(pfx), d, nameIRegB(pfx,8,rm));
            *len = 5;
            return disAMode_copy2tmp(
@@ -1892,7 +1892,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
       /* RIP + disp32.  This assumes that guest_rip_curr_instr is set
          correctly at the start of handling each instruction. */
       case 0x05: 
-         { ULong d = getSDisp32(delta);
+         { Long d = getSDisp32(delta);
            *len = 5;
            DIS(buf, "%s%lld(%%rip)", sorbTxt(pfx), d);
            return disAMode_copy2tmp( 
@@ -1948,7 +1948,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
          }
 
          if ((!index_is_SP) && base_is_BPor13) {
-            ULong d = getSDisp32(delta);
+            Long d = getSDisp32(delta);
             DIS(buf, "%s%lld(,%s,%d)", sorbTxt(pfx), d, 
                       nameIRegX(pfx,8,index_r), 1<<scale);
             *len = 6;
@@ -1969,7 +1969,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
          }
 
          if (index_is_SP && base_is_BPor13) {
-            ULong d = getSDisp32(delta);
+            Long d = getSDisp32(delta);
             DIS(buf, "%s%lld", sorbTxt(pfx), d);
             *len = 6;
             return disAMode_copy2tmp(
@@ -2650,7 +2650,7 @@ void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
 static 
 ULong dis_Grp1 ( Prefix pfx,
                  ULong delta, UChar modrm, 
-                 Int am_sz, Int d_sz, Int sz, ULong d32 )
+                 Int am_sz, Int d_sz, Int sz, Long d64 )
 {
    Int     len;
    HChar   dis_buf[50];
@@ -2675,7 +2675,7 @@ ULong dis_Grp1 ( Prefix pfx,
       vassert(am_sz == 1);
 
       assign(dst0, getIRegB(pfx,sz,eregOfRM(modrm)));
-      assign(src,  mkU(ty,d32 & mask));
+      assign(src,  mkU(ty,d64 & mask));
 
       if (gregOfRM(modrm) == 2 /* ADC */) {
          vassert(0); /* awaiting test case */
@@ -2697,13 +2697,13 @@ ULong dis_Grp1 ( Prefix pfx,
 
       delta += (am_sz + d_sz);
       DIP("%s%c $%lld, %s\n", 
-          nameGrp1(gregOfRM(modrm)), nameISize(sz), d32, 
+          nameGrp1(gregOfRM(modrm)), nameISize(sz), d64, 
           nameIRegB(pfx,sz,eregOfRM(modrm)));
    } else {
       addr = disAMode ( &len, pfx, delta, dis_buf);
 
       assign(dst0, loadLE(ty,mkexpr(addr)));
-      assign(src, mkU(ty,d32 & mask));
+      assign(src, mkU(ty,d64 & mask));
 
       if (gregOfRM(modrm) == 2 /* ADC */) {
          vassert(0); /* awaiting test case */
@@ -2726,7 +2726,7 @@ ULong dis_Grp1 ( Prefix pfx,
       delta += (len+d_sz);
       DIP("%s%c $%lld, %s\n", 
           nameGrp1(gregOfRM(modrm)), nameISize(sz),
-          d32, dis_buf);
+          d64, dis_buf);
    }
    return delta;
 }
@@ -3138,7 +3138,7 @@ ULong dis_Grp2 ( Prefix pfx,
 static 
 ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 {
-   ULong   d64;
+   Long    d64;
    UChar   modrm;
    HChar   dis_buf[50];
    Int     len;
@@ -3299,7 +3299,7 @@ ULong dis_Grp4 ( Prefix pfx, ULong delta )
             break;
          default: 
             vex_printf(
-               "unhandled Grp4(R) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp4(R) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp4(amd64,R)");
       }
       delta++;
@@ -3321,7 +3321,7 @@ ULong dis_Grp4 ( Prefix pfx, ULong delta )
 //..             break;
          default: 
             vex_printf(
-               "unhandled Grp4(M) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp4(M) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp4(amd64,M)");
       }
       delta += alen;
@@ -11271,14 +11271,15 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          d64 = getDisp64(delta);
          delta += 8;
          putIRegB(pfx, 8, opc-0xB8, mkU64(d64));
-         DIP("movabsq $%lld,%s\n", d64, 
+         DIP("movabsq $%lld,%s\n", (Long)d64, 
                                    nameIRegB(pfx,8,opc-0xB8));
       } else {
          d64 = getSDisp(imin(4,sz),delta);
          delta += imin(4,sz);
          putIRegB(pfx, sz, opc-0xB8, 
                        mkU(szToITy(sz), d64 & mkSizeMask(sz)));
-         DIP("mov%c $%lld,%s\n", nameISize(sz), d64, 
+         DIP("mov%c $%lld,%s\n", nameISize(sz), 
+                                 (Long)d64, 
                                  nameIRegB(pfx,sz,opc-0xB8));
       }
       break;
@@ -11297,7 +11298,8 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          delta += imin(4,sz);
          putIRegB(pfx, sz, eregOfRM(modrm), 
                        mkU(szToITy(sz), d64 & mkSizeMask(sz)));
-         DIP("mov%c $%lld, %s\n", nameISize(sz), d64, 
+         DIP("mov%c $%lld, %s\n", nameISize(sz), 
+                                  (Long)d64, 
                                   nameIRegB(pfx,sz,eregOfRM(modrm)));
       } else {
          addr = disAMode ( &alen, pfx, delta, dis_buf );
@@ -11306,7 +11308,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          delta += imin(4,sz);
          storeLE(mkexpr(addr), 
                  mkU(szToITy(sz), d64 & mkSizeMask(sz)));
-         DIP("mov%c $%lld, %s\n", nameISize(sz), d64, dis_buf);
+         DIP("mov%c $%lld, %s\n", nameISize(sz), (Long)d64, dis_buf);
       }
       break;
 

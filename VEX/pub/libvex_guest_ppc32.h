@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (libvex_guest_ppc.h) is                       ---*/
+/*--- This file (libvex_guest_ppc32.h) is                     ---*/
 /*--- Copyright (c) 2005 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -33,15 +33,15 @@
    USA.
 */
 
-#ifndef __LIBVEX_PUB_GUEST_PPC_H
-#define __LIBVEX_PUB_GUEST_PPC_H
+#ifndef __LIBVEX_PUB_GUEST_PPC32_H
+#define __LIBVEX_PUB_GUEST_PPC32_H
 
 #include "libvex_basictypes.h"
 #include "libvex_emwarn.h"
 
 
 /*---------------------------------------------------------------*/
-/*--- Vex's representation of the PPC CPU state (32 bit)      ---*/
+/*--- Vex's representation of the PPC32 CPU state             ---*/
 /*---------------------------------------------------------------*/
 
 typedef
@@ -107,34 +107,34 @@ typedef
       UInt guest_EMWARN;
 
       /* Padding to make it have an 8-aligned size */
-      UChar padding_1b;
-      UChar padding_1b;
-      UChar padding_1b;
+      UChar padding_1b1;
+      UChar padding_1b2;
+      UChar padding_1b3;
       UInt  padding_4b;
    }
-   VexGuestPPCState;
+   VexGuestPPC32State;
 
 
 /*---------------------------------------------------------------*/
-/*--- Utility functions for PPC guest stuff.                  ---*/
+/*--- Utility functions for PPC32 guest stuff.                ---*/
 /*---------------------------------------------------------------*/
 
 /* ALL THE FOLLOWING ARE VISIBLE TO LIBRARY CLIENT */
 
-/* Initialise all guest PPC state. */
+/* Initialise all guest PPC32 state. */
 
 extern
-void LibVEX_GuestPPC_initialise ( /*OUT*/VexGuestPPCState* vex_state );
+void LibVEX_GuestPPC32_initialise ( /*OUT*/VexGuestPPC32State* vex_state );
 
-/* Calculate the PPC flag state from the saved data. */
+/* Calculate the PPC32 flag state from the saved data. */
 
 extern
-UInt LibVEX_GuestPPC_get_flags ( /*IN*/VexGuestPPCState* vex_state );
+UInt LibVEX_GuestPPC32_get_flags ( /*IN*/VexGuestPPC32State* vex_state );
 
 
-#endif /* ndef __LIBVEX_PUB_GUEST_PPC_H */
+#endif /* ndef __LIBVEX_PUB_GUEST_PPC32_H */
 
 
 /*---------------------------------------------------------------*/
-/*---                                      libvex_guest_ppc.h ---*/
+/*---                                    libvex_guest_ppc32.h ---*/
 /*---------------------------------------------------------------*/

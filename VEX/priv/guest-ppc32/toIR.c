@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*---                                                              ---*/
-/*--- This file (guest-ppc/toIR.c) is                              ---*/
+/*--- This file (guest-ppc32/toIR.c) is                            ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                              ---*/
 /*--------------------------------------------------------------------*/
@@ -33,16 +33,16 @@
    USA.
 */
 
-/* Translates PPC(v4) code to IR. */
+/* Translates PPC32 code to IR. */
 
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
 #include "libvex.h"
-#include "libvex_guest_ppc.h"
+#include "libvex_guest_ppc32.h"
 
 #include "main/vex_util.h"
 #include "main/vex_globals.h"
-#include "guest-ppc/gdefs.h"
+#include "guest-ppc32/gdefs.h"
 
 
 /*------------------------------------------------------------*/
@@ -86,43 +86,43 @@ static IRBB* irbb;
 
 
 /*------------------------------------------------------------*/
-/*--- Offsets of various parts of the ppc guest state.     ---*/
+/*--- Offsets of various parts of the ppc32 guest state.     ---*/
 /*------------------------------------------------------------*/
 
-#define OFFB_GPR0       offsetof(VexGuestPPCState,guest_GPR0)
-#define OFFB_GPR1       offsetof(VexGuestPPCState,guest_GPR1)
-#define OFFB_GPR2       offsetof(VexGuestPPCState,guest_GPR2)
-#define OFFB_GPR3       offsetof(VexGuestPPCState,guest_GPR3)
-#define OFFB_GPR4       offsetof(VexGuestPPCState,guest_GPR4)
-#define OFFB_GPR5       offsetof(VexGuestPPCState,guest_GPR5)
-#define OFFB_GPR6       offsetof(VexGuestPPCState,guest_GPR6)
-#define OFFB_GPR7       offsetof(VexGuestPPCState,guest_GPR7)
-#define OFFB_GPR8       offsetof(VexGuestPPCState,guest_GPR8)
-#define OFFB_GPR9       offsetof(VexGuestPPCState,guest_GPR9)
-#define OFFB_GPR10      offsetof(VexGuestPPCState,guest_GPR10)
-#define OFFB_GPR11      offsetof(VexGuestPPCState,guest_GPR11)
-#define OFFB_GPR12      offsetof(VexGuestPPCState,guest_GPR12)
-#define OFFB_GPR13      offsetof(VexGuestPPCState,guest_GPR13)
-#define OFFB_GPR14      offsetof(VexGuestPPCState,guest_GPR14)
-#define OFFB_GPR15      offsetof(VexGuestPPCState,guest_GPR15)
-#define OFFB_GPR16      offsetof(VexGuestPPCState,guest_GPR16)
-#define OFFB_GPR17      offsetof(VexGuestPPCState,guest_GPR17)
-#define OFFB_GPR18      offsetof(VexGuestPPCState,guest_GPR18)
-#define OFFB_GPR19      offsetof(VexGuestPPCState,guest_GPR19)
-#define OFFB_GPR20      offsetof(VexGuestPPCState,guest_GPR20)
-#define OFFB_GPR21      offsetof(VexGuestPPCState,guest_GPR21)
-#define OFFB_GPR22      offsetof(VexGuestPPCState,guest_GPR22)
-#define OFFB_GPR23      offsetof(VexGuestPPCState,guest_GPR23)
-#define OFFB_GPR24      offsetof(VexGuestPPCState,guest_GPR24)
-#define OFFB_GPR25      offsetof(VexGuestPPCState,guest_GPR25)
-#define OFFB_GPR26      offsetof(VexGuestPPCState,guest_GPR26)
-#define OFFB_GPR27      offsetof(VexGuestPPCState,guest_GPR27)
-#define OFFB_GPR28      offsetof(VexGuestPPCState,guest_GPR28)
-#define OFFB_GPR29      offsetof(VexGuestPPCState,guest_GPR29)
-#define OFFB_GPR30      offsetof(VexGuestPPCState,guest_GPR30)
-#define OFFB_GPR31      offsetof(VexGuestPPCState,guest_GPR31)
+#define OFFB_GPR0       offsetof(VexGuestPPC32State,guest_GPR0)
+#define OFFB_GPR1       offsetof(VexGuestPPC32State,guest_GPR1)
+#define OFFB_GPR2       offsetof(VexGuestPPC32State,guest_GPR2)
+#define OFFB_GPR3       offsetof(VexGuestPPC32State,guest_GPR3)
+#define OFFB_GPR4       offsetof(VexGuestPPC32State,guest_GPR4)
+#define OFFB_GPR5       offsetof(VexGuestPPC32State,guest_GPR5)
+#define OFFB_GPR6       offsetof(VexGuestPPC32State,guest_GPR6)
+#define OFFB_GPR7       offsetof(VexGuestPPC32State,guest_GPR7)
+#define OFFB_GPR8       offsetof(VexGuestPPC32State,guest_GPR8)
+#define OFFB_GPR9       offsetof(VexGuestPPC32State,guest_GPR9)
+#define OFFB_GPR10      offsetof(VexGuestPPC32State,guest_GPR10)
+#define OFFB_GPR11      offsetof(VexGuestPPC32State,guest_GPR11)
+#define OFFB_GPR12      offsetof(VexGuestPPC32State,guest_GPR12)
+#define OFFB_GPR13      offsetof(VexGuestPPC32State,guest_GPR13)
+#define OFFB_GPR14      offsetof(VexGuestPPC32State,guest_GPR14)
+#define OFFB_GPR15      offsetof(VexGuestPPC32State,guest_GPR15)
+#define OFFB_GPR16      offsetof(VexGuestPPC32State,guest_GPR16)
+#define OFFB_GPR17      offsetof(VexGuestPPC32State,guest_GPR17)
+#define OFFB_GPR18      offsetof(VexGuestPPC32State,guest_GPR18)
+#define OFFB_GPR19      offsetof(VexGuestPPC32State,guest_GPR19)
+#define OFFB_GPR20      offsetof(VexGuestPPC32State,guest_GPR20)
+#define OFFB_GPR21      offsetof(VexGuestPPC32State,guest_GPR21)
+#define OFFB_GPR22      offsetof(VexGuestPPC32State,guest_GPR22)
+#define OFFB_GPR23      offsetof(VexGuestPPC32State,guest_GPR23)
+#define OFFB_GPR24      offsetof(VexGuestPPC32State,guest_GPR24)
+#define OFFB_GPR25      offsetof(VexGuestPPC32State,guest_GPR25)
+#define OFFB_GPR26      offsetof(VexGuestPPC32State,guest_GPR26)
+#define OFFB_GPR27      offsetof(VexGuestPPC32State,guest_GPR27)
+#define OFFB_GPR28      offsetof(VexGuestPPC32State,guest_GPR28)
+#define OFFB_GPR29      offsetof(VexGuestPPC32State,guest_GPR29)
+#define OFFB_GPR30      offsetof(VexGuestPPC32State,guest_GPR30)
+#define OFFB_GPR31      offsetof(VexGuestPPC32State,guest_GPR31)
 
-#define OFFB_RESULT    offsetof(VexGuestPPCState,guest_Result)
+#define OFFB_RESULT    offsetof(VexGuestPPC32State,guest_Result)
 
 
 /*------------------------------------------------------------*/
@@ -171,7 +171,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    dumping the IR into global irbb.  Returns the size, in bytes, of
    the basic block.  
 */
-IRBB* bbToIR_PPC ( UChar*     ppcCode, 
+IRBB* bbToIR_PPC32 ( UChar*     ppc32Code, 
                    Addr64     guest_pc_start, 
                    Int*       guest_bytes_read, 
                    Bool       (*byte_accessible)(Addr64),
@@ -197,7 +197,7 @@ IRBB* bbToIR_PPC ( UChar*     ppcCode,
 
    /* Set up globals. */
    host_is_bigendian = host_bigendian;
-   guest_code        = ppcCode;
+   guest_code        = ppc32Code;
    guest_pc_bbstart  = (Addr32)guest_pc_start;
    irbb              = emptyIRBB();
 
@@ -312,7 +312,7 @@ static IRTemp newTemp ( IRType ty )
 __attribute__ ((noreturn))
 static void unimplemented ( Char* str )
 {
-   vex_printf("ppcToIR: unimplemented feature\n");
+   vex_printf("ppc32ToIR: unimplemented feature\n");
    vpanic(str);
 }
 #endif
@@ -383,7 +383,7 @@ static UInt getUDisp ( Int size, UInt delta )
       case 4: return getUDisp32(delta);
       case 2: return getUDisp16(delta);
       case 1: return getUChar(delta);
-      default: vpanic("getUDisp(PPC)");
+      default: vpanic("getUDisp(PPC32)");
    }
    return 0; /*notreached*/
 }
@@ -415,7 +415,7 @@ static UInt getSDisp ( Int size, UInt delta )
       case 4: return getUDisp32(delta);
       case 2: return getSDisp16(delta);
       case 1: return getSDisp8(delta);
-      default: vpanic("getSDisp(PPC)");
+      default: vpanic("getSDisp(PPC32)");
   }
   return 0; /*notreached*/
 }
@@ -438,7 +438,7 @@ static IRType szToITy ( Int n )
       case 1: return Ity_I8;
       case 2: return Ity_I16;
       case 4: return Ity_I32;
-      default: vpanic("szToITy(PPC)");
+      default: vpanic("szToITy(PPC32)");
    }
 }
 #endif
@@ -450,43 +450,43 @@ static Int integerGuestRegOffset ( UInt archreg )
 
    vassert(!host_is_bigendian);   //TODO: is this necessary?
    // jrs: probably not; only matters if we reference sub-parts
-   // of the ppc registers, but that isn't the case
+   // of the ppc32 registers, but that isn't the case
    switch (archreg) {
-      case  0: return offsetof(VexGuestPPCState, guest_GPR0);
-      case  1: return offsetof(VexGuestPPCState, guest_GPR1);
-      case  2: return offsetof(VexGuestPPCState, guest_GPR2);
-      case  3: return offsetof(VexGuestPPCState, guest_GPR3);
-      case  4: return offsetof(VexGuestPPCState, guest_GPR4);
-      case  5: return offsetof(VexGuestPPCState, guest_GPR5);
-      case  6: return offsetof(VexGuestPPCState, guest_GPR6);
-      case  7: return offsetof(VexGuestPPCState, guest_GPR7);
-      case  8: return offsetof(VexGuestPPCState, guest_GPR8);
-      case  9: return offsetof(VexGuestPPCState, guest_GPR9);
-      case 10: return offsetof(VexGuestPPCState, guest_GPR10);
-      case 11: return offsetof(VexGuestPPCState, guest_GPR11);
-      case 12: return offsetof(VexGuestPPCState, guest_GPR12);
-      case 13: return offsetof(VexGuestPPCState, guest_GPR13);
-      case 14: return offsetof(VexGuestPPCState, guest_GPR14);
-      case 15: return offsetof(VexGuestPPCState, guest_GPR15);
-      case 16: return offsetof(VexGuestPPCState, guest_GPR16);
-      case 17: return offsetof(VexGuestPPCState, guest_GPR17);
-      case 18: return offsetof(VexGuestPPCState, guest_GPR18);
-      case 19: return offsetof(VexGuestPPCState, guest_GPR19);
-      case 20: return offsetof(VexGuestPPCState, guest_GPR20);
-      case 21: return offsetof(VexGuestPPCState, guest_GPR21);
-      case 22: return offsetof(VexGuestPPCState, guest_GPR22);
-      case 23: return offsetof(VexGuestPPCState, guest_GPR23);
-      case 24: return offsetof(VexGuestPPCState, guest_GPR24);
-      case 25: return offsetof(VexGuestPPCState, guest_GPR25);
-      case 26: return offsetof(VexGuestPPCState, guest_GPR26);
-      case 27: return offsetof(VexGuestPPCState, guest_GPR27);
-      case 28: return offsetof(VexGuestPPCState, guest_GPR28);
-      case 29: return offsetof(VexGuestPPCState, guest_GPR29);
-      case 30: return offsetof(VexGuestPPCState, guest_GPR30);
-      case 31: return offsetof(VexGuestPPCState, guest_GPR31);
+      case  0: return offsetof(VexGuestPPC32State, guest_GPR0);
+      case  1: return offsetof(VexGuestPPC32State, guest_GPR1);
+      case  2: return offsetof(VexGuestPPC32State, guest_GPR2);
+      case  3: return offsetof(VexGuestPPC32State, guest_GPR3);
+      case  4: return offsetof(VexGuestPPC32State, guest_GPR4);
+      case  5: return offsetof(VexGuestPPC32State, guest_GPR5);
+      case  6: return offsetof(VexGuestPPC32State, guest_GPR6);
+      case  7: return offsetof(VexGuestPPC32State, guest_GPR7);
+      case  8: return offsetof(VexGuestPPC32State, guest_GPR8);
+      case  9: return offsetof(VexGuestPPC32State, guest_GPR9);
+      case 10: return offsetof(VexGuestPPC32State, guest_GPR10);
+      case 11: return offsetof(VexGuestPPC32State, guest_GPR11);
+      case 12: return offsetof(VexGuestPPC32State, guest_GPR12);
+      case 13: return offsetof(VexGuestPPC32State, guest_GPR13);
+      case 14: return offsetof(VexGuestPPC32State, guest_GPR14);
+      case 15: return offsetof(VexGuestPPC32State, guest_GPR15);
+      case 16: return offsetof(VexGuestPPC32State, guest_GPR16);
+      case 17: return offsetof(VexGuestPPC32State, guest_GPR17);
+      case 18: return offsetof(VexGuestPPC32State, guest_GPR18);
+      case 19: return offsetof(VexGuestPPC32State, guest_GPR19);
+      case 20: return offsetof(VexGuestPPC32State, guest_GPR20);
+      case 21: return offsetof(VexGuestPPC32State, guest_GPR21);
+      case 22: return offsetof(VexGuestPPC32State, guest_GPR22);
+      case 23: return offsetof(VexGuestPPC32State, guest_GPR23);
+      case 24: return offsetof(VexGuestPPC32State, guest_GPR24);
+      case 25: return offsetof(VexGuestPPC32State, guest_GPR25);
+      case 26: return offsetof(VexGuestPPC32State, guest_GPR26);
+      case 27: return offsetof(VexGuestPPC32State, guest_GPR27);
+      case 28: return offsetof(VexGuestPPC32State, guest_GPR28);
+      case 29: return offsetof(VexGuestPPC32State, guest_GPR29);
+      case 30: return offsetof(VexGuestPPC32State, guest_GPR30);
+      case 31: return offsetof(VexGuestPPC32State, guest_GPR31);
    }
 
-   vpanic("integerGuestRegOffset(ppc,le)"); /*notreached*/
+   vpanic("integerGuestRegOffset(ppc32,le)"); /*notreached*/
 }
 #endif
 
@@ -557,7 +557,7 @@ static IRExpr* mkU ( IRType ty, UInt i )
    if (ty == Ity_I32) return mkU32(i);
    /* If this panics, it usually means you passed a size (1,2,4)
       value as the IRType, rather than a real IRType. */
-   vpanic("mkU(PPC)");
+   vpanic("mkU(PPC32)");
 }
 #endif
 
@@ -596,7 +596,7 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
    if (szSmall == 2 && szBig == 4) {
       return signd ? Iop_16Sto32 : Iop_16Uto32;
    }
-   vpanic("mkWidenOp(PPC,guest)");
+   vpanic("mkWidenOp(PPC32,guest)");
 }
 #endif
 
@@ -620,7 +620,7 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
 /* -------------- Evaluating the flags-thunk. -------------- */
 
 #if 0
-static IRExpr* mk_ppcg_calculate_flags_cr0 ( void )
+static IRExpr* mk_ppc32g_calculate_flags_cr0 ( void )
 {
    IRExpr** args
       = mkIRExprVec_1( IRExpr_Get(OFFB_RESULT,  Ity_I32) );
@@ -628,8 +628,8 @@ static IRExpr* mk_ppcg_calculate_flags_cr0 ( void )
    IRExpr* call
       = mkIRExprCCall(
            Ity_I32,
-           0/*regpppc*/, 
-           "ppcg_calculate_flags_all", &ppcg_calculate_flags_all,
+           0/*regpppc32*/, 
+           "ppc32g_calculate_flags_all", &ppc32g_calculate_flags_all,
            args
         );
 
@@ -682,7 +682,7 @@ static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
    vex_printf(", ");
    ppIRType(dst_ty);
    vex_printf("\n");
-   vpanic("narrowTo(PPC)");
+   vpanic("narrowTo(PPC32)");
 }
 
 
@@ -707,11 +707,11 @@ void setFlags_DEP1_DEP2 ( IRTemp result )
 /* -------------- Condition codes. -------------- */
 
 #if 0
-/* Condition codes, using the PPC encoding.  */
-static HChar* name_PPCCondcode ( PPCCondcode cond )
+/* Condition codes, using the PPC32 encoding.  */
+static HChar* name_PPC32Condcode ( PPC32Condcode cond )
 {
    switch (cond) {
-       default: vpanic("name_PPCCondcode");
+       default: vpanic("name_PPC32Condcode");
    }
 }
 #endif
@@ -749,7 +749,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
   //  IRTemp    addr, t1, t2;
   //   Int       alen;
    UChar opc;
-//   PPCCondcode cond;
+//   PPC32Condcode cond;
    //  UInt      d32;
    // UChar     dis_buf[50];
    // Int       am_sz, d_sz;
@@ -757,12 +757,12 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    UInt      theInstr;
 
 
-   /* At least this is simple on PPC: insns are all 4 bytes long, and
+   /* At least this is simple on PPC32: insns are all 4 bytes long, and
       4-aligned.  So just fish the whole thing out of memory right now
       and have done. */
 
    /* We will set *size to 4 if the insn is successfully decoded.
-      Setting it to 0 by default makes bbToIR_PPC abort if we fail the
+      Setting it to 0 by default makes bbToIR_PPC32 abort if we fail the
       decode. */
    *size = 0;
 
@@ -792,7 +792,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 	 E1A009E0                   mov  r0, r0, ror #19
       */
       /* I suspect these will have to be turned the other way round to
-	 work on little-endian ppc. */
+	 work on little-endian ppc32. */
       if (code[0] == 0xE1A00EE0 &&
           code[1] == 0xE1A001E0 &&
           code[2] == 0xE1A00DE0 &&
@@ -818,7 +818,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    
 
    opc = 0;//(theInstr >> 20) & 0xFF;    /* opcode1: bits 27:20 */
-//   vex_printf("disInstr(ppc): opcode: 0x%2x, %,09b\n", opc, opc );
+//   vex_printf("disInstr(ppc32): opcode: 0x%2x, %,09b\n", opc, opc );
 
 
 
@@ -829,15 +829,15 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    default:
    decode_failure:
    /* All decode failures end up here. */
-   vex_printf("disInstr(ppc): unhandled instruction: "
+   vex_printf("disInstr(ppc32): unhandled instruction: "
               "0x%x\n", theInstr);
-   vpanic("ppcToIR: unimplemented insn");
+   vpanic("ppc32ToIR: unimplemented insn");
 
    } /* switch (opc) for the main (primary) opcode switch. */
 
   decode_success:
    /* All decode successes end up here. */
-//   vex_printf("disInstr(ppc): success");
+//   vex_printf("disInstr(ppc32): success");
    DIP("\n");
 
    *size = 4;
@@ -848,5 +848,5 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 #undef DIS
 
 /*--------------------------------------------------------------------*/
-/*--- end                                         guest-ppc/toIR.c ---*/
+/*--- end                                       guest-ppc32/toIR.c ---*/
 /*--------------------------------------------------------------------*/

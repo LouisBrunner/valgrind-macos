@@ -618,8 +618,7 @@ HInstrArray* doRegisterAllocation (
    /* --------- Stage 3: allocate spill slots. --------- */
 
    /* Each spill slot is 8 bytes long.  For 128-bit vregs
-      we'll have to allocate two spill slots.  For now, tho,
-      ignore the 128-bit problem.
+      we have to allocate two spill slots.
 
       Do a rank-based allocation of vregs to spill slot numbers.  We
       put as few values as possible in spill slows, but nevertheless
@@ -641,7 +640,9 @@ HInstrArray* doRegisterAllocation (
 
       /* The spill slots are 64 bits in size.  That means, to spill a
          Vec128-class vreg, we'll need to find two adjacent spill
-         slots to use.  */
+         slots to use.  Note, this special-casing needs to happen for
+         all 128-bit sized register classes.  Currently though
+         HRcVector is the only such class. */
 
       if (vreg_lrs[j].reg_class != HRcVec128) {
 

@@ -808,7 +808,7 @@ be told that -- making duplicate frees of the same block easy to spot.
 
 <h4>2.6.4&nbsp; When a block is freed with an inappropriate
 deallocation function</h4>
-In the following example, a block allocated with <code>new []</code>
+In the following example, a block allocated with <code>new[]</code>
 has wrongly been deallocated with <code>free</code>:
 <pre>
   Mismatched free() / delete / delete []
@@ -831,8 +831,8 @@ how it was allocated.  The deal is:
 <li>If allocated with <code>malloc</code>, <code>calloc</code>,
     <code>realloc</code>, <code>valloc</code> or
     <code>memalign</code>, you must deallocate with <code>free</code>.
-<li>If allocated with <code>new []</code>, you must deallocate with
-    <code>delete []</code>.
+<li>If allocated with <code>new[]</code>, you must deallocate with
+    <code>delete[]</code>.
 <li>If allocated with <code>new</code>, you must deallocate with
     <code>delete</code>.
 </ul>
@@ -841,7 +841,17 @@ do muddle these up, and it all seems to work ok, but the same program
 may then crash on a different platform, Solaris for example.  So it's
 best to fix it properly.  According to the KDE folks "it's amazing how
 many C++ programmers don't know this".  
-
+<p>
+Pascal Massimino adds the following clarification:
+<code>delete[]</code> must be called associated with a
+<code>new[]</code> because the compiler stores the size of the array
+and the pointer-to-member to the destructor of the array's content
+just before the pointer actually returned.  This implies a
+variable-sized overhead in what's returned by <code>new</code> or
+<code>new[]</code>.  It rather surprising how compilers [Ed:
+runtime-support libraries?] are robust to mismatch in
+<code>new</code>/<code>delete</code>
+<code>new[]</code>/<code>delete[]</code>.
 
 
 <h4>2.6.5&nbsp; Passing system call parameters with inadequate

@@ -1194,6 +1194,10 @@ static void process_cmd_line_options ( void )
    if (VG_(clo_verbosity) > 1) {
       if (VG_(clo_log_to) != VgLogTo_Fd)
          VG_(message)(Vg_UserMsg, "");
+      VG_(message)(Vg_UserMsg, "Command line");
+      for (i = 0; i < VG_(client_argc); i++)
+         VG_(message)(Vg_UserMsg, "   %s", VG_(client_argv)[i]);
+
       VG_(message)(Vg_UserMsg, "Startup, with flags:");
       for (i = 0; i < argc; i++) {
          VG_(message)(Vg_UserMsg, "   %s", argv[i]);

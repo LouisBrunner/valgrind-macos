@@ -351,20 +351,16 @@
    fun:_dl_catch_error
 }
 {
-   _dl_relocate_object/dl_main/_dl_sysdep_start/_dl_start_final(Cond)
+   _dl_relocate_object/dl_main(Cond)
    Memcheck:Cond
    fun:_dl_relocate_object
    fun:dl_main
-   fun:_dl_sysdep_start
-   fun:_dl_start_final
 }
 {
-   _dl_relocate_object_internal/dl_main/_dl_sysdep_start/_dl_start_final(Cond)
+   _dl_relocate_object_internal/dl_main(Cond)
    Memcheck:Cond
    fun:_dl_relocate_object_internal
    fun:dl_main
-   fun:_dl_sysdep_start
-   fun:_dl_start_final
 }
 
 {

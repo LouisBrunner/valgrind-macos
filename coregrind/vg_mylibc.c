@@ -1087,16 +1087,21 @@ Int VG_(stat) ( Char* file_name, struct vki_stat* buf )
 {
    Int res;
    res = vg_do_syscall2(__NR_stat, (UInt)file_name, (UInt)buf);
-   return
-      VG_(is_kerror)(res) ? (-1) : 0;
+   return VG_(is_kerror)(res) ? (-1) : 0;
+}
+
+Int VG_(rename) ( Char* old_name, Char* new_name )
+{
+   Int res;
+   res = vg_do_syscall2(__NR_rename, (UInt)old_name, (UInt)new_name);
+   return VG_(is_kerror)(res) ? (-1) : 0;
 }
 
 Int VG_(unlink) ( Char* file_name )
 {
    Int res;
    res = vg_do_syscall1(__NR_unlink, (UInt)file_name);
-   return
-      VG_(is_kerror)(res) ? (-1) : 0;
+   return VG_(is_kerror)(res) ? (-1) : 0;
 }
 
 /* Misc functions looking for a proper home. */

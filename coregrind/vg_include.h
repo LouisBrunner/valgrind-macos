@@ -1098,8 +1098,8 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
    the client program really was running on the real cpu. */
 extern void VG_(start_GDB_whilst_on_client_stack) ( void );
 
-/* 64-bit counter for the number of basic blocks done. */
-extern ULong VG_(bbs_done);
+/* VG_(bbs_done) in include/vg_skin.h */
+
 /* 64-bit counter for the number of bbs to go before a debug exit. */
 extern ULong VG_(bbs_to_go);
 

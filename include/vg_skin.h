@@ -218,6 +218,9 @@ extern void VGP_(popcc)  ( UInt cc );
 /* ------------------------------------------------------------------ */
 /* General stuff */
 
+/* 64-bit counter for the number of basic blocks done. */
+extern ULong VG_(bbs_done);
+
 /* Get the simulated %esp */
 extern Addr VG_(get_stack_pointer) ( void );
 
@@ -281,6 +284,8 @@ extern void VG_(printf)  ( const char *format, ... );
 extern void VG_(sprintf) ( Char* buf, Char *format, ... );
 extern void VG_(vprintf) ( void(*send)(Char), 
                            const Char *format, va_list vargs );
+
+extern Int  VG_(rename) ( Char* old_name, Char* new_name );
 
 /* ------------------------------------------------------------------ */
 /* stdlib.h */
@@ -362,6 +367,7 @@ extern Int  VG_(read)   ( Int fd, void* buf, Int count);
 extern Int  VG_(write)  ( Int fd, void* buf, Int count);
 extern void VG_(close)  ( Int fd );
 
+/* Nb: VG_(rename)() declared in stdio.h section above */
 extern Int  VG_(unlink) ( Char* file_name );
 extern Int  VG_(stat)   ( Char* file_name, struct vki_stat* buf );
 

@@ -1114,8 +1114,8 @@ it.
 
 We now use the standard Unix <code>./configure</code>,
 <code>make</code>, <code>make install</code> mechanism, and I have
-attempted to ensure that it works on machines with kernel 2.2 or 2.4
-and glibc 2.1.X or 2.2.X.  I don't think there is much else to say.
+attempted to ensure that it works on machines with kernel 2.4 or 2.6
+and glibc 2.2.X or 2.3.X.  I don't think there is much else to say.
 There are no options apart from the usual <code>--prefix</code> that
 you should give to <code>./configure</code>.
 
@@ -1168,7 +1168,7 @@ The following list of limitations seems depressingly long.  However,
 most programs actually work fine.
 
 <p>Valgrind will run x86-GNU/Linux ELF dynamically linked binaries, on
-a kernel 2.2.X or 2.4.X system, subject to the following constraints:
+a kernel 2.4.X or 2.6.X system, subject to the following constraints:
 
 <ul>
   <li>No support for 3DNow instructions.  If the translator encounters
@@ -1241,6 +1241,21 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       than the original (!) so you can easily end up with 30+ MB of
       translations when running (eg) a web browser.
       </li>
+      <p>
+
+  <li>Valgrind can handle dynamically-generated code just fine.
+      However, if you regenerate code over the top of old code 
+      (ie. at the same memory addresses) Valgrind will not realise the 
+      code has changed, and will run its old translations, which will 
+      be out-of-date.  You need to use the VALGRIND_DISCARD_TRANSLATIONS 
+      client request in that case. For the same reason gcc's
+      <a href="http://gcc.gnu.org/onlinedocs/gcc/Nested-Functions.html">
+      trampolines for nested functions</a> are currently
+      unsupported, see <a href="http://bugs.kde.org/show_bug.cgi?id=69511">
+      bug 69511</a>.
+      </li>
+      <p>
+      
 </ul>
 
 Programs which are known not to work are:

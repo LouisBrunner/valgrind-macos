@@ -6,8 +6,17 @@ AM_INIT_AUTOMAKE
 
 AM_MAINTAINER_MODE
 
-# Where is VEX ? ToDo: --with-vex=
-VEX_DIR=/home/sewardj/VEX/vex/trunk
+# Where is VEX ?
+AC_ARG_WITH(vex, 
+    AS_HELP_STRING([--with-vex], [Vex directory (must be specified!)]),
+[
+    AC_CHECK_FILE($withval/pub/libvex.h,
+        [VEX_DIR=$withval],
+        [AC_MSG_ERROR([Directory '$withval' does not exist, or does not contain Vex])])
+],
+[
+    AC_MSG_ERROR([You must specify --with-vex=<DIR>])
+])
 AC_SUBST(VEX_DIR)
 
 # Checks for programs.

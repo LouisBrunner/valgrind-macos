@@ -96,7 +96,7 @@ check_PROGRAMS = \
 	writev zeropage
 
 
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include -I@VEX_DIR@/pub
 AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g 
 AM_CXXFLAGS = $(AM_CFLAGS)
 

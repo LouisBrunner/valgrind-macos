@@ -1929,7 +1929,11 @@ particular, it records:
 </ul>
 On a modern x86 machine, an L1 miss will typically cost around 10 cycles,
 and an L2 miss can cost as much as 200 cycles. Detailed cache profiling can be
-very useful for improving the performance of your program.
+very useful for improving the performance of your program.<p>
+
+Also, since one instruction cache read is performed per instruction executed,
+you can find out how many instructions are executed per line, which can be
+useful for optimisation and test coverage.<p>
 
 Please note that this is an experimental feature.  Any feedback, bug-fixes,
 suggestions, etc, welcome.

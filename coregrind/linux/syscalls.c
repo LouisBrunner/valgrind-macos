@@ -345,7 +345,7 @@ PRE(sys_sendfile, MayBlock)
    PRE_REG_READ4(ssize_t, "sendfile",
                  int, out_fd, int, in_fd, vki_off_t *, offset,
                  vki_size_t, count);
-   if (arg3 != (UWord)NULL)
+   if (arg3 != 0)
       PRE_MEM_WRITE( "sendfile(offset)", arg3, sizeof(vki_off_t) );
 }
 
@@ -360,13 +360,13 @@ PRE(sys_sendfile64, MayBlock)
    PRE_REG_READ4(ssize_t, "sendfile64",
                  int, out_fd, int, in_fd, vki_loff_t *, offset,
                  vki_size_t, count);
-   if (arg3 != (UWord)NULL)
+   if (arg3 != 0)
       PRE_MEM_WRITE( "sendfile64(offset)", arg3, sizeof(vki_loff_t) );
 }
 
 POST(sys_sendfile64)
 {
-   if (arg3 != (UWord)NULL ) {
+   if (arg3 != 0 ) {
       POST_MEM_WRITE( arg3, sizeof(vki_loff_t) );
    }
 }
@@ -378,7 +378,7 @@ PRE(sys_futex, MayBlock)
                  vki_u32 *, futex, int, op, int, val,
                  struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
    PRE_MEM_READ( "futex(futex)", arg1, sizeof(int) );
-   if (arg2 == VKI_FUTEX_WAIT && arg4 != (UWord)NULL)
+   if (arg2 == VKI_FUTEX_WAIT && arg4 != 0)
       PRE_MEM_READ( "futex(timeout)", arg4, sizeof(struct vki_timespec) );
    if (arg2 == VKI_FUTEX_REQUEUE)
       PRE_MEM_READ( "futex(futex2)", arg4, sizeof(int) );
@@ -519,7 +519,7 @@ PRE(sys_io_getevents, MayBlock)
    if (arg3 > 0)
       PRE_MEM_WRITE( "io_getevents(events)",
                      arg4, sizeof(struct vki_io_event)*arg3 );
-   if (arg5 != (UWord)NULL)
+   if (arg5 != 0)
       PRE_MEM_READ( "io_getevents(timeout)",
                      arg5, sizeof(struct vki_timespec));
 }
@@ -560,7 +560,7 @@ PRE(sys_io_submit, 0)
                  vki_aio_context_t, ctx_id, long, nr,
                  struct iocb **, iocbpp);
    PRE_MEM_READ( "io_submit(iocbpp)", arg3, arg2*sizeof(struct vki_iocb *) );
-   if (arg3 != (UWord)NULL) {
+   if (arg3 != 0) {
       for (i = 0; i < arg2; i++) {
          struct vki_iocb *cb = ((struct vki_iocb **)arg3)[i];
          PRE_MEM_READ( "io_submit(iocb)", (Addr)cb, sizeof(struct vki_iocb) );

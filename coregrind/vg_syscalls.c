@@ -1482,7 +1482,7 @@ PRE(sys_sched_setscheduler, 0)
    PRINT("sys_sched_setscheduler ( %d, %d, %p )", arg1,arg2,arg3);
    PRE_REG_READ3(long, "sched_setscheduler", 
                  vki_pid_t, pid, int, policy, struct sched_param *, p);
-   if (arg3 != (UWord)NULL)
+   if (arg3 != 0)
       PRE_MEM_READ( "sched_setscheduler(p)", 
 		    arg3, sizeof(struct vki_sched_param));
 }
@@ -1680,9 +1680,9 @@ PRE(sys_execve, Special)
    PRE_REG_READ3(vki_off_t, "execve",
                  char *, filename, char **, argv, char **, envp);
    PRE_MEM_RASCIIZ( "execve(filename)", arg1 );
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       pre_argv_envp( arg2, tid, "execve(argv)", "execve(argv[i])" );
-   if (arg3 != (UWord)NULL)
+   if (arg3 != 0)
       pre_argv_envp( arg3, tid, "execve(envp)", "execve(envp[i])" );
 
    /* Erk.  If the exec fails, then the following will have made a
@@ -2440,7 +2440,7 @@ PRE(sys_ipc, 0)
    case 4: /* IPCOP_semtimedop */
       PRE_MEM_READ( "semtimedop(sops)", arg5, 
 		     arg3 * sizeof(struct vki_sembuf) );
-      if (arg6 != (UWord)NULL)
+      if (arg6 != 0)
          PRE_MEM_READ( "semtimedop(timeout)", arg6, 
                         sizeof(struct vki_timespec) );
       tst->sys_flags |= MayBlock;
@@ -4254,13 +4254,13 @@ PRE(sys_nanosleep, MayBlock|PostOnFail)
    PRE_REG_READ2(long, "nanosleep", 
                  struct timespec *, req, struct timespec *, rem);
    PRE_MEM_READ( "nanosleep(req)", arg1, sizeof(struct vki_timespec) );
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       PRE_MEM_WRITE( "nanosleep(rem)", arg2, sizeof(struct vki_timespec) );
 }
 
 POST(sys_nanosleep)
 {
-   if (arg2 != (UWord)NULL && res == -VKI_EINTR)
+   if (arg2 != 0 && res == -VKI_EINTR)
       POST_MEM_WRITE( arg2, sizeof(struct vki_timespec) );
 }
 
@@ -4428,7 +4428,7 @@ PRE(sys_readv, MayBlock)
    } else {
       PRE_MEM_READ( "readv(vector)", arg2, arg3 * sizeof(struct vki_iovec) );
 
-      if (arg2 != (UWord)NULL) {
+      if (arg2 != 0) {
          /* ToDo: don't do any of the following if the vector is invalid */
          vec = (struct vki_iovec *)arg2;
          for (i = 0; i < (Int)arg3; i++)
@@ -4914,8 +4914,7 @@ POST(sys_socketcall)
       break;
 
    case VKI_SYS_RECV:
-      if (res >= 0 
-	  && ((UWord*)arg2)[1] != (UWord)NULL) {
+      if (res >= 0 && ((UWord*)arg2)[1] != 0) {
 	 POST_MEM_WRITE( ((UWord*)arg2)[1], /* buf */
 		         ((UWord*)arg2)[2]  /* len */ );
       }
@@ -5059,14 +5058,14 @@ PRE(sys_time, 0)
    /* time_t time(time_t *t); */
    PRINT("sys_time ( %p )",arg1);
    PRE_REG_READ1(long, "time", int *, t);
-   if (arg1 != (UWord)NULL) {
+   if (arg1 != 0) {
       PRE_MEM_WRITE( "time(t)", arg1, sizeof(vki_time_t) );
    }
 }
 
 POST(sys_time)
 {
-   if (arg1 != (UWord)NULL) {
+   if (arg1 != 0) {
       POST_MEM_WRITE( arg1, sizeof(vki_time_t) );
    }
 }
@@ -5080,7 +5079,7 @@ PRE(sys_times, 0)
 
 POST(sys_times)
 {
-   if (arg1 != (UWord)NULL) {
+   if (arg1 != 0) {
       POST_MEM_WRITE( arg1, sizeof(struct vki_tms) );
    }
 }
@@ -5107,7 +5106,7 @@ PRE(sys_newuname, 0)
 
 POST(sys_newuname)
 {
-   if (arg1 != (UWord)NULL) {
+   if (arg1 != 0) {
       POST_MEM_WRITE( arg1, sizeof(struct vki_new_utsname) );
    }
 }
@@ -5117,7 +5116,7 @@ PRE(sys_utime, MayBlock)
    PRINT("sys_utime ( %p, %p )", arg1,arg2);
    PRE_REG_READ2(long, "utime", char *, filename, struct utimbuf *, buf);
    PRE_MEM_RASCIIZ( "utime(filename)", arg1 );
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       PRE_MEM_READ( "utime(buf)", arg2, sizeof(struct vki_utimbuf) );
 }
 
@@ -5172,7 +5171,7 @@ PRE(sys_writev, MayBlock)
    } else {
       PRE_MEM_READ( "writev(vector)", 
 		     arg2, arg3 * sizeof(struct vki_iovec) );
-      if (arg2 != (UWord)NULL) {
+      if (arg2 != 0) {
          /* ToDo: don't do any of the following if the vector is invalid */
          vec = (struct vki_iovec *)arg2;
          for (i = 0; i < (Int)arg3; i++)
@@ -5187,7 +5186,7 @@ PRE(sys_utimes, 0)
    PRINT("sys_utimes ( %p, %p )", arg1,arg2);
    PRE_REG_READ2(long, "utimes", char *, filename, struct timeval *, tvp);
    PRE_MEM_RASCIIZ( "utimes(filename)", arg1 );
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       PRE_MEM_READ( "utimes(tvp)", arg2, sizeof(struct vki_timeval) );
 }
 
@@ -5266,9 +5265,9 @@ PRE(sys_rt_sigtimedwait, MayBlock)
    PRE_REG_READ4(long, "rt_sigtimedwait", 
                  const vki_sigset_t *, set, vki_siginfo_t *, info,
                  const struct timespec *, timeout, vki_size_t, sigsetsize);
-   if (arg1 != (UWord)NULL) 
+   if (arg1 != 0) 
       PRE_MEM_READ(  "rt_sigtimedwait(set)",  arg1, sizeof(vki_sigset_t));
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       PRE_MEM_WRITE( "rt_sigtimedwait(info)", arg2, sizeof(vki_siginfo_t) );
    PRE_MEM_READ( "rt_sigtimedwait(timeout)",
                  arg4, sizeof(struct vki_timespec) );
@@ -5276,7 +5275,7 @@ PRE(sys_rt_sigtimedwait, MayBlock)
 
 POST(sys_rt_sigtimedwait)
 {
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       POST_MEM_WRITE( arg2, sizeof(vki_siginfo_t) );
 }
 
@@ -5285,7 +5284,7 @@ PRE(sys_rt_sigqueueinfo, 0)
    PRINT("sys_rt_sigqueueinfo(%d, %d, %p)", arg1, arg2, arg3);
    PRE_REG_READ3(long, "rt_sigqueueinfo", 
                  int, pid, int, sig, vki_siginfo_t *, uinfo);
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       PRE_MEM_READ( "rt_sigqueueinfo(uinfo)", arg3, sizeof(vki_siginfo_t) );
 }
 
@@ -5315,10 +5314,10 @@ PRE(sys_sigaltstack, SIG_SIM)
    PRINT("sigaltstack ( %p, %p )",arg1,arg2);
    PRE_REG_READ2(int, "sigaltstack",
                  const vki_stack_t *, ss, vki_stack_t *, oss);
-   if (arg1 != (UWord)NULL) {
+   if (arg1 != 0) {
       PRE_MEM_READ( "sigaltstack(ss)", arg1, sizeof(vki_stack_t) );
    }
-   if (arg2 != (UWord)NULL) {
+   if (arg2 != 0) {
       PRE_MEM_WRITE( "sigaltstack(oss)", arg2, sizeof(vki_stack_t) );
    }
 
@@ -5328,7 +5327,7 @@ PRE(sys_sigaltstack, SIG_SIM)
 
 POST(sys_sigaltstack)
 {
-   if (res == 0 && arg2 != (UWord)NULL)
+   if (res == 0 && arg2 != 0)
       POST_MEM_WRITE( arg2, sizeof(vki_stack_t));
 }
 
@@ -5339,9 +5338,9 @@ PRE(sys_sigaction, SIG_SIM)
    PRE_REG_READ3(int, "sigaction",
                  int, signum, const struct old_sigaction *, act,
                  struct old_sigaction *, oldact)
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       PRE_MEM_READ( "sigaction(act)", arg2, sizeof(struct vki_old_sigaction));
-   if (arg3 != (UWord)NULL)
+   if (arg3 != 0)
       PRE_MEM_WRITE( "sigaction(oldact)", arg3, sizeof(struct vki_old_sigaction));
 
    if (SIGNAL_SIMULATION)
@@ -5350,7 +5349,7 @@ PRE(sys_sigaction, SIG_SIM)
 
 POST(sys_sigaction)
 {
-   if (res == 0 && arg3 != (UWord)NULL)
+   if (res == 0 && arg3 != 0)
       POST_MEM_WRITE( arg3, sizeof(struct vki_old_sigaction));
 }
 
@@ -5362,9 +5361,9 @@ PRE(sys_rt_sigaction, SIG_SIM)
                  int, signum, const struct sigaction *, act,
                  struct sigaction *, oldact, vki_size_t, sigsetsize);
 
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       PRE_MEM_READ( "rt_sigaction(act)", arg2, sizeof(struct vki_sigaction));
-   if (arg3 != (UWord)NULL)
+   if (arg3 != 0)
       PRE_MEM_WRITE( "rt_sigaction(oldact)", arg3, sizeof(struct vki_sigaction));
 
    // XXX: hmm... doesn't seem quite right...
@@ -5374,7 +5373,7 @@ PRE(sys_rt_sigaction, SIG_SIM)
 
 POST(sys_rt_sigaction)
 {
-   if (res == 0 && arg3 != (UWord)NULL)
+   if (res == 0 && arg3 != 0)
       POST_MEM_WRITE( arg3, sizeof(struct vki_sigaction));
 }
 
@@ -5383,9 +5382,9 @@ PRE(sys_sigprocmask, SIG_SIM)
    PRINT("sys_sigprocmask ( %d, %p, %p )",arg1,arg2,arg3);
    PRE_REG_READ3(long, "sigprocmask", 
                  int, how, vki_old_sigset_t *, set, vki_old_sigset_t *, oldset);
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       PRE_MEM_READ( "sigprocmask(set)", arg2, sizeof(vki_old_sigset_t));
-   if (arg3 != (UWord)NULL)
+   if (arg3 != 0)
       PRE_MEM_WRITE( "sigprocmask(oldset)", arg3, sizeof(vki_old_sigset_t));
 
    if (SIGNAL_SIMULATION) {
@@ -5411,7 +5410,7 @@ PRE(sys_sigprocmask, SIG_SIM)
 
 POST(sys_sigprocmask)
 {
-   if (res == 0 && arg3 != (UWord)NULL)
+   if (res == 0 && arg3 != 0)
       POST_MEM_WRITE( arg3, sizeof(vki_old_sigset_t));
 }
 
@@ -5421,9 +5420,9 @@ PRE(sys_rt_sigprocmask, SIG_SIM)
    PRE_REG_READ4(long, "rt_sigprocmask", 
                  int, how, vki_sigset_t *, set, vki_sigset_t *, oldset,
                  vki_size_t, sigsetsize);
-   if (arg2 != (UWord)NULL)
+   if (arg2 != 0)
       PRE_MEM_READ( "rt_sigprocmask(set)", arg2, sizeof(vki_sigset_t));
-   if (arg3 != (UWord)NULL)
+   if (arg3 != 0)
       PRE_MEM_WRITE( "rt_sigprocmask(oldset)", arg3, sizeof(vki_sigset_t));
 
    // Like the kernel, we fail if the sigsetsize is not exactly what we expect.
@@ -5438,7 +5437,7 @@ PRE(sys_rt_sigprocmask, SIG_SIM)
 
 POST(sys_rt_sigprocmask)
 {
-   if (res == 0 && arg3 != (UWord)NULL)
+   if (res == 0 && arg3 != 0)
       POST_MEM_WRITE( arg3, sizeof(vki_sigset_t));
 }
 

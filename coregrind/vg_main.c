@@ -512,6 +512,7 @@ UInt VG_(num_scheduling_events_MAJOR) = 0;
 /* Define, and set defaults. */
 Bool   VG_(clo_error_limit)    = True;
 Bool   VG_(clo_GDB_attach)     = False;
+Char*  VG_(clo_GDB_path)       = GDB_PATH;
 Bool   VG_(clo_gen_suppressions) = False;
 Int    VG_(sanity_level)       = 1;
 Int    VG_(clo_verbosity)      = 1;
@@ -523,6 +524,7 @@ VgLogTo VG_(clo_log_to)        = VgLogTo_Fd;
 Int     VG_(clo_logfile_fd)    = 2;
 Char*   VG_(clo_logfile_name)  = NULL;
 
+Int    VG_(clo_input_fd)       = 0; /* stdin */
 Int    VG_(clo_n_suppressions) = 0;
 Char*  VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 Bool   VG_(clo_profile)        = False;
@@ -610,6 +612,7 @@ static void usage ( void )
 "    -q --quiet                run silently; only print error msgs\n"
 "    -v --verbose              be more verbose, incl counts of errors\n"
 "    --gdb-attach=no|yes       start GDB when errors detected? [no]\n"
+"    --gdb-path=/path/to/gdb   path to the GDB to use [/usr/bin/gdb]\n"
 "    --gen-suppressions=no|yes print suppressions for errors detected [no]\n"
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
 "    --num-callers=<number>    show <num> callers in stack traces [4]\n"
@@ -618,6 +621,7 @@ static void usage ( void )
 "    --run-libc-freeres=no|yes Free up glibc memory at exit? [yes]\n"
 "    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
 "    --logfile=<file>          log messages to <file>.pid<pid>\n"
+"    --input-fd=<number>       file descriptor for (gdb) input [0=stdin]\n"
 "    --logsocket=ipaddr:port   log messages to socket ipaddr:port\n"
 "    --suppressions=<filename> suppress errors described in\n"
 "                              suppressions file <filename>\n"
@@ -920,6 +924,9 @@ static void process_cmd_line_options ( void )
       else if (VG_CLO_STREQ(argv[i], "--gdb-attach=no"))
          VG_(clo_GDB_attach) = False;
 
+      else if (VG_CLO_STREQN(11,argv[i], "--gdb-path="))
+         VG_(clo_GDB_path) = &argv[i][11];
+
       else if (VG_CLO_STREQ(argv[i], "--gen-suppressions=yes"))
          VG_(clo_gen_suppressions) = True;
       else if (VG_CLO_STREQ(argv[i], "--gen-suppressions=no"))
@@ -958,6 +965,9 @@ static void process_cmd_line_options ( void )
          VG_(clo_log_to)       = VgLogTo_Socket;
          VG_(clo_logfile_name) = &argv[i][12];
       }
+
+      else if (VG_CLO_STREQN(11, argv[i], "--input-fd="))
+         VG_(clo_input_fd)     = (Int)VG_(atoll)(&argv[i][11]);
 
       else if (VG_CLO_STREQN(15, argv[i], "--suppressions=")) {
          if (VG_(clo_n_suppressions) >= VG_CLO_MAX_SFILES) {
@@ -1764,11 +1774,8 @@ extern void VG_(start_GDB_whilst_on_client_stack) ( void )
    Int   res;
    UChar buf[100];
 
-#define TO_STRING(x)    TO_STRING2(x)
-#define TO_STRING2(x)   #x
-   
    VG_(sprintf)(buf, "%s -nw /proc/%d/exe %d",
-                TO_STRING(GDB_PATH), VG_(getpid)(), VG_(getpid)());
+                VG_(clo_GDB_path), VG_(getpid)(), VG_(getpid)());
    VG_(message)(Vg_UserMsg, "starting GDB with cmd: %s", buf);
    res = VG_(system)(buf);
    if (res == 0) {      
@@ -1779,8 +1786,6 @@ extern void VG_(start_GDB_whilst_on_client_stack) ( void )
       VG_(message)(Vg_UserMsg, "Apparently failed!");
       VG_(message)(Vg_UserMsg, "");
    }
-#undef TO_STRING
-#undef TO_STRING2
 }
 
 

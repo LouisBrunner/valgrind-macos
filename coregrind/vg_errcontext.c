@@ -130,14 +130,14 @@ Bool VG_(is_action_requested) ( Char* action, Bool* clo )
       VG_(getpid)(), action
    );
 
-   res = VG_(read)(0 /*stdin*/, &ch, 1);
+   res = VG_(read)(VG_(clo_input_fd), &ch, 1);
    if (res != 1) goto ioerror;
    /* res == 1 */
    if (ch == '\n') return False;
    if (ch != 'N' && ch != 'n' && ch != 'Y' && ch != 'y' 
       && ch != 'C' && ch != 'c') goto again;
 
-   res = VG_(read)(0 /*stdin*/, &ch2, 1);
+   res = VG_(read)(VG_(clo_input_fd), &ch2, 1);
    if (res != 1) goto ioerror;
    if (ch2 != '\n') goto again;
 

@@ -175,6 +175,8 @@ typedef
 extern Bool  VG_(clo_error_limit);
 /* Enquire about whether to attach to GDB at errors?   default: NO */
 extern Bool  VG_(clo_GDB_attach);
+/* The path to GDB?  default: whatever ./configure found */
+extern Char* VG_(clo_GDB_path);
 /* Enquire about generating a suppression for each error?   default: NO */
 extern Bool  VG_(clo_gen_suppressions);
 /* Sanity-check level: 0 = none, 1 (default), > 1 = expensive. */
@@ -205,6 +207,8 @@ extern VgLogTo VG_(clo_log_to);
 extern Int     VG_(clo_logfile_fd);
 extern Char*   VG_(clo_logfile_name);
 
+/* The file descriptor to read for input.  default: 0 == stdin */
+extern Int   VG_(clo_input_fd);
 /* The number of suppression files specified. */
 extern Int   VG_(clo_n_suppressions);
 /* The names of the suppression files. */

@@ -577,6 +577,24 @@ follows:
       socket, I guess this option doesn't make any sense.  Caveat emptor.
       </li><br><p>
 
+  <li><code>--gdb-path=/path/to/gdb</code>
+      <p>This specifies how Valgrind will invoke GDB.  By default, it
+      will use whatever GDB is detected at build time, 
+      which is usually <code>/usr/bin/gdb</code>.  Using this command,
+      you can specify some alternative path to the GDB you want to
+      use.
+      </li><br><p>
+
+  <li><code>--input-fd=&lt;number&gt;</code> [default=0, stdin]<br>
+      <p>When using <code>--gdb-attach=yes</code> and 
+         <code>--gen-suppressions=yes</code>, Valgrind will stop
+      so as to read keyboard input from you, when each error occurs. 
+      By default it reads from the standard input (stdin), which is
+      problematic for programs which close stdin.  This option
+      allows you to specify an alternative file descriptor from
+      which to read input.  
+      </li><br><p>
+
   <li><code>--gen-suppressions=no</code> [the default]<br>
       <code>--gen-suppressions=yes</code>
       <p>When enabled, Valgrind will pause after every error shown,

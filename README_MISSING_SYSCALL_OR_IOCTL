@@ -143,6 +143,6 @@ Is pretty much the same as writing syscall wrappers.
 There's a default case, sometimes it isn't correct and you have to write a
 more specific case to get the right behaviour.
 
-As above, please do send me the resulting patch.
-
+As above, please create a bugreport and attach the patch as described
+on http://valgrind.kde.org/bugs.html
 

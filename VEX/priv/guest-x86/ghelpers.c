@@ -1643,7 +1643,7 @@ static inline UShort sel16x4_2 ( ULong w64 )
 static inline UShort sel16x4_1 ( ULong w64 ) 
 {
    UInt lo32 = (UInt)w64;
-   return 0xFFFF & (UInt)(lo32 >> 16);
+   return 0xFFFF & (UShort)(lo32 >> 16);
 }
 static inline UShort sel16x4_0 ( ULong w64 ) 
 {
@@ -1815,13 +1815,31 @@ static inline UChar cmpge8S ( SChar xx, SChar yy )
    return xx>yy ? 0xFF : 0;
 }
 
+static inline Short qnarrow32Sto16 ( Int xx )
+{
+   if (xx < -32768) xx = -32768;
+   if (xx > 32767)  xx = 32767;
+   return (Short)xx;
+}
+
+static inline SChar qnarrow16Sto8 ( Int xx )
+{
+   if (xx < -128) xx = -128;
+   if (xx > 127)  xx = 127;
+   return (SChar)xx;
+}
+
+static inline UChar qnarrow16Uto8 ( Int xx )
+{
+   if (xx < 0)   xx = 0;
+   if (xx > 255) xx = 255;
+   return (UChar)xx;
+}
 
 
-/* Actually do something interesting! */
+/* ------------ Normal addition ------------ */
 
-/* Normal adds. */
-
-ULong calculate_vadd32x2 ( ULong xx, ULong yy )
+ULong calculate_add32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              sel32x2_1(xx) + sel32x2_1(yy),
@@ -1829,7 +1847,7 @@ ULong calculate_vadd32x2 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vadd16x4 ( ULong xx, ULong yy )
+ULong calculate_add16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              sel16x4_3(xx) + sel16x4_3(yy),
@@ -1839,7 +1857,7 @@ ULong calculate_vadd16x4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vadd8x8 ( ULong xx, ULong yy )
+ULong calculate_add8x8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              sel8x8_7(xx) + sel8x8_7(yy),
@@ -1853,9 +1871,9 @@ ULong calculate_vadd8x8 ( ULong xx, ULong yy )
           );
 }
 
-/* Saturated adds. */
+/* ------------ Saturating addition ------------ */
 
-ULong calculate_vqadd16Sx4 ( ULong xx, ULong yy )
+ULong calculate_qadd16Sx4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              qadd16S( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -1865,7 +1883,7 @@ ULong calculate_vqadd16Sx4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vqadd8Sx8 ( ULong xx, ULong yy )
+ULong calculate_qadd8Sx8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              qadd8S( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -1879,7 +1897,7 @@ ULong calculate_vqadd8Sx8 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vqadd16Ux4 ( ULong xx, ULong yy )
+ULong calculate_qadd16Ux4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              qadd16U( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -1889,7 +1907,7 @@ ULong calculate_vqadd16Ux4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vqadd8Ux8 ( ULong xx, ULong yy )
+ULong calculate_qadd8Ux8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              qadd8U( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -1903,9 +1921,9 @@ ULong calculate_vqadd8Ux8 ( ULong xx, ULong yy )
           );
 }
 
-/* Normal subtracts. */
+/* ------------ Normal subtraction ------------ */
 
-ULong calculate_vsub32x2 ( ULong xx, ULong yy )
+ULong calculate_sub32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              sel32x2_1(xx) - sel32x2_1(yy),
@@ -1913,7 +1931,7 @@ ULong calculate_vsub32x2 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vsub16x4 ( ULong xx, ULong yy )
+ULong calculate_sub16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              sel16x4_3(xx) - sel16x4_3(yy),
@@ -1923,7 +1941,7 @@ ULong calculate_vsub16x4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vsub8x8 ( ULong xx, ULong yy )
+ULong calculate_sub8x8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              sel8x8_7(xx) - sel8x8_7(yy),
@@ -1937,9 +1955,9 @@ ULong calculate_vsub8x8 ( ULong xx, ULong yy )
           );
 }
 
-/* Saturated subtracts. */
+/* ------------ Saturating subtraction ------------ */
 
-ULong calculate_vqsub16Sx4 ( ULong xx, ULong yy )
+ULong calculate_qsub16Sx4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              qsub16S( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -1949,7 +1967,7 @@ ULong calculate_vqsub16Sx4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vqsub8Sx8 ( ULong xx, ULong yy )
+ULong calculate_qsub8Sx8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              qsub8S( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -1963,7 +1981,7 @@ ULong calculate_vqsub8Sx8 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vqsub16Ux4 ( ULong xx, ULong yy )
+ULong calculate_qsub16Ux4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              qsub16U( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -1973,7 +1991,7 @@ ULong calculate_vqsub16Ux4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vqsub8Ux8 ( ULong xx, ULong yy )
+ULong calculate_qsub8Ux8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              qsub8U( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -1987,9 +2005,9 @@ ULong calculate_vqsub8Ux8 ( ULong xx, ULong yy )
           );
 }
 
-/* Multiplication. */
+/* ------------ Multiplication ------------ */
 
-ULong calculate_vmulhi16x4 ( ULong xx, ULong yy )
+ULong calculate_mulhi16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              mulhi16S( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -1999,7 +2017,7 @@ ULong calculate_vmulhi16x4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vmullo16x4 ( ULong xx, ULong yy )
+ULong calculate_mullo16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              mullo16S( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -2020,9 +2038,9 @@ ULong calculate_pmaddwd ( ULong xx, ULong yy )
       );
 }
 
-/* Comparison. */
+/* ------------ Comparison ------------ */
 
-ULong calculate_vcmpeq32x2 ( ULong xx, ULong yy )
+ULong calculate_cmpeq32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              cmpeq32( sel32x2_1(xx), sel32x2_1(yy) ),
@@ -2030,7 +2048,7 @@ ULong calculate_vcmpeq32x2 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vcmpeq16x4 ( ULong xx, ULong yy )
+ULong calculate_cmpeq16x4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              cmpeq16( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -2040,7 +2058,7 @@ ULong calculate_vcmpeq16x4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vcmpeq8x8 ( ULong xx, ULong yy )
+ULong calculate_cmpeq8x8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              cmpeq8( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -2054,7 +2072,7 @@ ULong calculate_vcmpeq8x8 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vcmpge32Sx2 ( ULong xx, ULong yy )
+ULong calculate_cmpge32Sx2 ( ULong xx, ULong yy )
 {
    return mk32x2(
              cmpge32S( sel32x2_1(xx), sel32x2_1(yy) ),
@@ -2062,7 +2080,7 @@ ULong calculate_vcmpge32Sx2 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vcmpge16Sx4 ( ULong xx, ULong yy )
+ULong calculate_cmpge16Sx4 ( ULong xx, ULong yy )
 {
    return mk16x4(
              cmpge16S( sel16x4_3(xx), sel16x4_3(yy) ),
@@ -2072,7 +2090,7 @@ ULong calculate_vcmpge16Sx4 ( ULong xx, ULong yy )
           );
 }
 
-ULong calculate_vcmpge8Sx8 ( ULong xx, ULong yy )
+ULong calculate_cmpge8Sx8 ( ULong xx, ULong yy )
 {
    return mk8x8(
              cmpge8S( sel8x8_7(xx), sel8x8_7(yy) ),
@@ -2086,6 +2104,129 @@ ULong calculate_vcmpge8Sx8 ( ULong xx, ULong yy )
           );
 }
 
+/* ------------ Pack / unpack ------------ */
+
+ULong calculate_packssdw ( ULong dst, ULong src )
+{
+   Int d = sel32x2_1(dst);
+   Int c = sel32x2_0(dst);
+   Int b = sel32x2_1(src);
+   Int a = sel32x2_0(src);
+   return mk16x4( 
+             qnarrow32Sto16(d),
+             qnarrow32Sto16(c),
+             qnarrow32Sto16(b),
+             qnarrow32Sto16(a)
+          );
+}
+
+ULong calculate_packsswb ( ULong dst, ULong src )
+{
+   Int h = sel16x4_3(dst);
+   Int g = sel16x4_2(dst);
+   Int f = sel16x4_1(dst);
+   Int e = sel16x4_0(dst);
+   Int d = sel16x4_3(src);
+   Int c = sel16x4_2(src);
+   Int b = sel16x4_1(src);
+   Int a = sel16x4_0(src);
+   return mk8x8( 
+             qnarrow16Sto8(h),
+             qnarrow16Sto8(g),
+             qnarrow16Sto8(f),
+             qnarrow16Sto8(e),
+             qnarrow16Sto8(d),
+             qnarrow16Sto8(c),
+             qnarrow16Sto8(b),
+             qnarrow16Sto8(a)
+          );
+}
+
+ULong calculate_packuswb ( ULong dst, ULong src )
+{
+   Int h = sel16x4_3(dst);
+   Int g = sel16x4_2(dst);
+   Int f = sel16x4_1(dst);
+   Int e = sel16x4_0(dst);
+   Int d = sel16x4_3(src);
+   Int c = sel16x4_2(src);
+   Int b = sel16x4_1(src);
+   Int a = sel16x4_0(src);
+   return mk8x8( 
+             qnarrow16Uto8(h),
+             qnarrow16Uto8(g),
+             qnarrow16Uto8(f),
+             qnarrow16Uto8(e),
+             qnarrow16Uto8(d),
+             qnarrow16Uto8(c),
+             qnarrow16Uto8(b),
+             qnarrow16Uto8(a)
+          );
+}
+
+ULong calculate_punpckhbw ( ULong dst, ULong src )
+{
+  return mk8x8(
+            sel8x8_7(src),
+            sel8x8_7(dst),
+            sel8x8_6(src),
+            sel8x8_6(dst),
+            sel8x8_5(src),
+            sel8x8_5(dst),
+            sel8x8_4(src),
+            sel8x8_4(dst)
+         );
+}
+
+ULong calculate_punpcklbw ( ULong dst, ULong src )
+{
+  return mk8x8(
+            sel8x8_3(src),
+            sel8x8_3(dst),
+            sel8x8_2(src),
+            sel8x8_2(dst),
+            sel8x8_1(src),
+            sel8x8_1(dst),
+            sel8x8_0(src),
+            sel8x8_0(dst)
+         );
+}
+
+ULong calculate_punpckhwd ( ULong dst, ULong src )
+{
+  return mk16x4(
+            sel16x4_3(src),
+            sel16x4_3(dst),
+            sel16x4_2(src),
+            sel16x4_2(dst)
+         );
+}
+
+ULong calculate_punpcklwd ( ULong dst, ULong src )
+{
+  return mk16x4(
+            sel16x4_1(src),
+            sel16x4_1(dst),
+            sel16x4_0(src),
+            sel16x4_0(dst)
+         );
+}
+
+ULong calculate_punpckhdq ( ULong dst, ULong src )
+{
+  return mk32x2(
+            sel32x2_1(src),
+            sel32x2_1(dst)
+         );
+}
+
+ULong calculate_punpckldq ( ULong dst, ULong src )
+{
+  return mk32x2(
+            sel32x2_0(src),
+            sel32x2_0(dst)
+         );
+}
 
 
 /*-----------------------------------------------------------*/

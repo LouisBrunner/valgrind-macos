@@ -91,37 +91,48 @@ extern ULong calculate_RCR  ( UInt arg, UInt rot_amt, UInt eflags_in, UInt sz );
 
 /* --- Clean helpers for MMX --- */
 
-extern ULong calculate_vadd32x2 ( ULong, ULong );
-extern ULong calculate_vadd16x4 ( ULong, ULong );
-extern ULong calculate_vadd8x8  ( ULong, ULong );
+extern ULong calculate_add32x2 ( ULong, ULong );
+extern ULong calculate_add16x4 ( ULong, ULong );
+extern ULong calculate_add8x8  ( ULong, ULong );
 
-extern ULong calculate_vqadd16Sx4 ( ULong, ULong );
-extern ULong calculate_vqadd8Sx8  ( ULong, ULong );
+extern ULong calculate_qadd16Sx4 ( ULong, ULong );
+extern ULong calculate_qadd8Sx8  ( ULong, ULong );
 
-extern ULong calculate_vqadd16Ux4 ( ULong, ULong );
-extern ULong calculate_vqadd8Ux8  ( ULong, ULong );
+extern ULong calculate_qadd16Ux4 ( ULong, ULong );
+extern ULong calculate_qadd8Ux8  ( ULong, ULong );
 
-extern ULong calculate_vsub32x2 ( ULong, ULong );
-extern ULong calculate_vsub16x4 ( ULong, ULong );
-extern ULong calculate_vsub8x8  ( ULong, ULong );
+extern ULong calculate_sub32x2 ( ULong, ULong );
+extern ULong calculate_sub16x4 ( ULong, ULong );
+extern ULong calculate_sub8x8  ( ULong, ULong );
 
-extern ULong calculate_vqsub16Sx4 ( ULong, ULong );
-extern ULong calculate_vqsub8Sx8  ( ULong, ULong );
+extern ULong calculate_qsub16Sx4 ( ULong, ULong );
+extern ULong calculate_qsub8Sx8  ( ULong, ULong );
 
-extern ULong calculate_vqsub16Ux4 ( ULong, ULong );
-extern ULong calculate_vqsub8Ux8  ( ULong, ULong );
+extern ULong calculate_qsub16Ux4 ( ULong, ULong );
+extern ULong calculate_qsub8Ux8  ( ULong, ULong );
 
-extern ULong calculate_vmulhi16x4 ( ULong, ULong );
-extern ULong calculate_vmullo16x4 ( ULong, ULong );
+extern ULong calculate_mulhi16x4 ( ULong, ULong );
+extern ULong calculate_mullo16x4 ( ULong, ULong );
 
 extern ULong calculate_pmaddwd ( ULong, ULong );
 
-extern ULong calculate_vcmpeq32x2  ( ULong, ULong );
-extern ULong calculate_vcmpeq16x4  ( ULong, ULong );
-extern ULong calculate_vcmpeq8x8   ( ULong, ULong );
-extern ULong calculate_vcmpge32Sx2 ( ULong, ULong );
-extern ULong calculate_vcmpge16Sx4 ( ULong, ULong );
-extern ULong calculate_vcmpge8Sx8  ( ULong, ULong );
+extern ULong calculate_cmpeq32x2  ( ULong, ULong );
+extern ULong calculate_cmpeq16x4  ( ULong, ULong );
+extern ULong calculate_cmpeq8x8   ( ULong, ULong );
+extern ULong calculate_cmpge32Sx2 ( ULong, ULong );
+extern ULong calculate_cmpge16Sx4 ( ULong, ULong );
+extern ULong calculate_cmpge8Sx8  ( ULong, ULong );
+
+extern ULong calculate_packssdw ( ULong, ULong );
+extern ULong calculate_packsswb ( ULong, ULong );
+extern ULong calculate_packuswb ( ULong, ULong );
+
+extern ULong calculate_punpckhbw ( ULong, ULong );
+extern ULong calculate_punpcklbw ( ULong, ULong );
+extern ULong calculate_punpckhwd ( ULong, ULong );
+extern ULong calculate_punpcklwd ( ULong, ULong );
+extern ULong calculate_punpckhdq ( ULong, ULong );
+extern ULong calculate_punpckldq ( ULong, ULong );
 
 
 /* --- DIRTY HELPERS --- */

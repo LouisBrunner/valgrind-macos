@@ -4636,46 +4636,66 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
                                Char* name,
                                Bool  show_granularity )
 {
-   Char  dis_buf[50];
-   UChar modrm = getIByte(delta);
-   Bool  isReg = epartIsReg(modrm);
+   Char    dis_buf[50];
+   UChar   modrm = getIByte(delta);
+   Bool    isReg = epartIsReg(modrm);
+   IRExpr* argL  = NULL;
+   IRExpr* argR  = NULL;
+   IRTemp  res   = newTemp(Ity_I64);
 
 #  define XXX(_name) hAddr = &_name; hName = #_name;
 
    void* hAddr = NULL;
    Char* hName = NULL;
    switch (opc) {
-      case 0xFC: XXX(calculate_vadd8x8); break;
-      case 0xFD: XXX(calculate_vadd16x4); break;
-      case 0xFE: XXX(calculate_vadd32x2); break;
+      case 0xFC: XXX(calculate_add8x8); break;
+      case 0xFD: XXX(calculate_add16x4); break;
+      case 0xFE: XXX(calculate_add32x2); break;
 
-      case 0xEC: XXX(calculate_vqadd8Sx8); break;
-      case 0xED: XXX(calculate_vqadd16Sx4); break;
+      case 0xEC: XXX(calculate_qadd8Sx8); break;
+      case 0xED: XXX(calculate_qadd16Sx4); break;
 
-      case 0xDC: XXX(calculate_vqadd8Ux8); break;
-      case 0xDD: XXX(calculate_vqadd16Ux4); break;
+      case 0xDC: XXX(calculate_qadd8Ux8); break;
+      case 0xDD: XXX(calculate_qadd16Ux4); break;
 
-      case 0xF8: XXX(calculate_vsub8x8);  break;
-      case 0xF9: XXX(calculate_vsub16x4); break;
-      case 0xFA: XXX(calculate_vsub32x2); break;
+      case 0xF8: XXX(calculate_sub8x8);  break;
+      case 0xF9: XXX(calculate_sub16x4); break;
+      case 0xFA: XXX(calculate_sub32x2); break;
 
-      case 0xE8: XXX(calculate_vqsub8Sx8); break;
-      case 0xE9: XXX(calculate_vqsub16Sx4); break;
+      case 0xE8: XXX(calculate_qsub8Sx8); break;
+      case 0xE9: XXX(calculate_qsub16Sx4); break;
 
-      case 0xD8: XXX(calculate_vqsub8Ux8); break;
-      case 0xD9: XXX(calculate_vqsub16Ux4); break;
+      case 0xD8: XXX(calculate_qsub8Ux8); break;
+      case 0xD9: XXX(calculate_qsub16Ux4); break;
 
-      case 0xE5: XXX(calculate_vmulhi16x4); break;
-      case 0xD5: XXX(calculate_vmullo16x4); break;
+      case 0xE5: XXX(calculate_mulhi16x4); break;
+      case 0xD5: XXX(calculate_mullo16x4); break;
       case 0xF5: XXX(calculate_pmaddwd); break;
 
-      case 0x74: XXX(calculate_vcmpeq8x8); break;
-      case 0x75: XXX(calculate_vcmpeq16x4); break;
-      case 0x76: XXX(calculate_vcmpeq32x2); break;
+      case 0x74: XXX(calculate_cmpeq8x8); break;
+      case 0x75: XXX(calculate_cmpeq16x4); break;
+      case 0x76: XXX(calculate_cmpeq32x2); break;
 
-      case 0x64: XXX(calculate_vcmpge8Sx8); break;
-      case 0x65: XXX(calculate_vcmpge16Sx4); break;
-      case 0x66: XXX(calculate_vcmpge32Sx2); break;
+      case 0x64: XXX(calculate_cmpge8Sx8); break;
+      case 0x65: XXX(calculate_cmpge16Sx4); break;
+      case 0x66: XXX(calculate_cmpge32Sx2); break;
+
+      case 0x6B: XXX(calculate_packssdw); break;
+      case 0x63: XXX(calculate_packsswb); break;
+      case 0x67: XXX(calculate_packuswb); break;
+
+      case 0x68: XXX(calculate_punpckhbw); break;
+      case 0x69: XXX(calculate_punpckhwd); break;
+      case 0x6A: XXX(calculate_punpckhdq); break;
+
+      case 0x60: XXX(calculate_punpcklbw); break;
+      case 0x61: XXX(calculate_punpcklwd); break;
+      case 0x62: XXX(calculate_punpckldq); break;
+
+      case 0xDB: break; /* AND */
+      case 0xDF: break; /* ANDN */
+      case 0xEB: break; /* OR */
+      case 0xEF: break; /* XOR */
 
       default: 
          vex_printf("\n0x%x\n", (Int)opc);
@@ -4684,32 +4704,47 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
 
 #  undef XXX
 
+   argL = getMMXReg(gregOfRM(modrm));
+
    if (isReg) {
-vassert(0);
+      vassert(0);
       delta++;
-      putMMXReg( 
-         gregOfRM(modrm),
-         mkIRExprCCall(
-            Ity_I64, 
-            0/*regparms*/, hName, hAddr,
-            mkIRExprVec_2( getMMXReg(gregOfRM(modrm)),
-                           getMMXReg(eregOfRM(modrm)) )
-         ) 
-      );
+      argR = getMMXReg(eregOfRM(modrm));
    } else {
       Int    len;
       IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
       delta += len;
-      putMMXReg( 
-         gregOfRM(modrm),
-         mkIRExprCCall(
-            Ity_I64, 
-            0/*regparms*/, hName, hAddr,
-            mkIRExprVec_2( getMMXReg(gregOfRM(modrm)),
-                           loadLE(Ity_I64, mkexpr(addr)) )
-         ) 
-      );
+      argR = loadLE(Ity_I64, mkexpr(addr));
    }
+
+   switch (opc) {
+      case 0xDB: 
+         assign(res, binop(Iop_And64, argL, argR) ); 
+         break;
+      case 0xDF: 
+         assign(res, binop(Iop_And64, argL, unop(Iop_Not64, argR)) ); 
+         break;
+      case 0xEB: 
+         assign(res, binop(Iop_Or64, argL, argR) ); 
+         break;
+      case 0xEF: 
+         /* Possibly do better here if argL and argR are the same reg */
+         assign(res, binop(Iop_Xor64, argL, argR) ); 
+         break;
+      default:
+         vassert(hAddr);
+         vassert(hName);
+         assign( res, 
+                 mkIRExprCCall(
+                    Ity_I64, 
+                    0/*regparms*/, hName, hAddr,
+                    mkIRExprVec_2( argL, argR )
+                 ) 
+               );
+         break;
+   }
+
+   putMMXReg( gregOfRM(modrm), mkexpr(res) );
 
    DIP("%s%s %s, %s\n", 
        name, show_granularity ? nameMMXGran(opc & 3) : (Char*)"",
@@ -4760,7 +4795,7 @@ UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
          vassert(sz == 4);
          modrm = getIByte(delta);
          if (epartIsReg(modrm)) {
-vassert(0);
+         vassert(0);
 #if 0
             eip++;
             uInstr1(cb, MMX2, 0, 
@@ -4843,6 +4878,55 @@ vassert(0);
       case 0x66: /* PCMPGTgg (src)mmxreg-or-mem, (dst)mmxreg */
          vassert(sz == 4);
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pcmpgt", True );
+         break;
+
+      case 0x6B: /* PACKSSDW (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "packssdw", False );
+         break;
+
+      case 0x63: /* PACKSSWB (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "packsswb", False );
+         break;
+
+      case 0x67: /* PACKUSWB (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "packuswb", False );
+         break;
+
+      case 0x68: 
+      case 0x69: 
+      case 0x6A: /* PUNPCKHgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "punpckh", True );
+         break;
+
+      case 0x60: 
+      case 0x61: 
+      case 0x62: /* PUNPCKLgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "punpckl", True );
+         break;
+
+      case 0xDB: /* PAND (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pand", False );
+         break;
+
+      case 0xDF: /* PANDN (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pandn", False );
+         break;
+
+      case 0xEB: /* POR (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "por", False );
+         break;
+
+      case 0xEF: /* PXOR (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pxor", False );
          break;
 
       default:
@@ -9487,6 +9571,23 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       case 0x64: 
       case 0x65: 
       case 0x66: /* PCMPGTgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0x6B: /* PACKSSDW (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0x63: /* PACKSSWB (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0x67: /* PACKUSWB (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0x68: 
+      case 0x69: 
+      case 0x6A: /* PUNPCKHgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0x60: 
+      case 0x61: 
+      case 0x62: /* PUNPCKLgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0xDB: /* PAND (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0xDF: /* PANDN (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0xEB: /* POR (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0xEF: /* PXOR (src)mmxreg-or-mem, (dst)mmxreg */
 
       case 0x6F: /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
       {

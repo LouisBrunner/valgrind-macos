@@ -77,6 +77,18 @@ static UInt n_lockorder_warnings = 0;
 #define ROUNDDN(a, N)	((a) & ~(N-1))
 
 /*------------------------------------------------------------*/
+/*--- Command line options                                 ---*/
+/*------------------------------------------------------------*/
+
+static enum {
+   EC_None,
+   EC_Some,
+   EC_All
+} clo_execontext = EC_None;
+
+static Bool clo_priv_stacks = True;
+
+/*------------------------------------------------------------*/
 /*--- Crude profiling machinery.                           ---*/
 /*------------------------------------------------------------*/
 
@@ -188,12 +200,6 @@ static const shadow_word error_sword = SW(Vge_Excl, TLSP_INDICATING_ALL);
 
 /* Parallel map which contains execution contexts when words were last
    accessed (if required) */
-
-static enum {
-   EC_None,
-   EC_Some,
-   EC_All
-} clo_execontext = EC_None;
 
 typedef union EC_EIP {
    ExeContext *ec;
@@ -516,23 +522,6 @@ static __inline__
 void init_error_sword(Addr a)
 {
    set_sword(a, error_sword);
-}
-
-/* 'a' is guaranteed to be 4-byte aligned here (not that that's important,
- * really) */
-static 
-void make_writable_aligned ( Addr a, UInt size )
-{
-   Addr a_past_end = a + size;
-
-   //PROF_EVENT(??)  PPP
-   sk_assert(IS_ALIGNED4_ADDR(a));
-
-   for ( ; a < a_past_end; a += 4) {
-      if (clo_execontext != EC_None)
-	 setExeContext(a, NULL_EC_EIP);
-      set_sword(a, virgin_sword);
-   }
 }
 
 static __inline__ 
@@ -1793,6 +1782,17 @@ void eraser_set_perms (Addr a, UInt len,
    /* else do nothing */
 }
 
+static
+void eraser_new_mem_stack_private(Addr a, UInt len)
+{
+   set_address_range_state(a, len, Vge_NonVirginInit);
+}
+
+static
+void eraser_new_mem_stack(Addr a, UInt len)
+{
+   set_address_range_state(a, len, Vge_VirginInit);
+}
 
 /*--------------------------------------------------------------*/
 /*--- Initialise the memory audit system on program startup. ---*/
@@ -1851,6 +1851,8 @@ Bool SK_(expensive_sanity_check)(void)
 /*--- Instrumentation                                        ---*/
 /*--------------------------------------------------------------*/
 
+static UInt stk_ld, nonstk_ld, stk_st, nonstk_st;
+
 /* Create and return an instrumented version of cb_in.  Free cb_in
    before returning. */
 UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
@@ -1859,9 +1861,19 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
    Int         i;
    UInstr*     u_in;
    Int         t_size = INVALID_TEMPREG;
+   Int	       ntemps;
+   Bool	       *stackref = NULL;
 
    cb = VG_(alloc_UCodeBlock)();
    cb->nextTemp = cb_in->nextTemp;
+
+   /* stackref[] is used for super-simple value tracking to keep note
+      of which tempregs currently hold a value which is derived from
+      ESP or EBP, and is therefore likely stack-relative if used as
+      the address for LOAD or STORE. */
+   ntemps = cb->nextTemp;
+   stackref = VG_(malloc)(sizeof(*stackref) * ntemps);
+   VG_(memset)(stackref, 0, sizeof(*stackref) * ntemps);
 
    for (i = 0; i < cb_in->used; i++) {
       u_in = &cb_in->instrs[i];
@@ -1870,21 +1882,54 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 
          case NOP: case CALLM_S: case CALLM_E:
             break;
+    
+         case GET:
+	    sk_assert(u_in->tag1 == ArchReg);
+	    sk_assert(u_in->tag2 == TempReg);
+	    sk_assert(u_in->val2 < ntemps);
+
+	    stackref[u_in->val2] = (u_in->size == 4 &&
+				    (u_in->val1 == R_ESP || u_in->val1 == R_EBP));
+	    VG_(copy_UInstr)(cb, u_in);
+	    break;
+
+         case MOV:
+	    if (u_in->size == 4 && u_in->tag1 == TempReg) {
+	       sk_assert(u_in->tag2 == TempReg);
+	       stackref[u_in->val2] = stackref[u_in->val1];
+	    }
+	    VG_(copy_UInstr)(cb, u_in);
+	    break;
+
+         case LEA1:
+         case ADD: case SUB:
+	    if (u_in->size == 4 && u_in->tag1 == TempReg) {
+	       sk_assert(u_in->tag2 == TempReg);
+	       stackref[u_in->val2] |= stackref[u_in->val1];
+	    }
+	    VG_(copy_UInstr)(cb, u_in);
+	    break;
 
          case LOAD: {
 	    void (*help)(Addr);
 	    sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size);
+	    sk_assert(u_in->tag1 == TempReg);
+
+	    if (!clo_priv_stacks || !stackref[u_in->val1]) {
+	       nonstk_ld++;
+
+	       switch(u_in->size) {
+	       case 1: help = eraser_mem_help_read_1; break;
+	       case 2: help = eraser_mem_help_read_2; break;
+	       case 4: help = eraser_mem_help_read_4; break;
+	       default:
+		  VG_(skin_panic)("bad size");
+	       }
 	    
-	    switch(u_in->size) {
-	    case 1: help = eraser_mem_help_read_1; break;
-	    case 2: help = eraser_mem_help_read_2; break;
-	    case 4: help = eraser_mem_help_read_4; break;
-	    default:
-	       VG_(skin_panic)("bad size");
-	    }
-	    
-	    uInstr1(cb, CCALL, 0, TempReg, u_in->val1);
-	    uCCall(cb, (Addr)help, 1, 1, False);
+	       uInstr1(cb, CCALL, 0, TempReg, u_in->val1);
+	       uCCall(cb, (Addr)help, 1, 1, False);
+	    } else
+	       stk_ld++;
 
 	    VG_(copy_UInstr)(cb, u_in);
 	    t_size = INVALID_TEMPREG;
@@ -1910,17 +1955,23 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
          case STORE: {
 	    void (*help)(Addr, UInt);
             sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size);
-	    
-	    switch(u_in->size) {
-	    case 1: help = eraser_mem_help_write_1; break;
-	    case 2: help = eraser_mem_help_write_2; break;
-	    case 4: help = eraser_mem_help_write_4; break;
-	    default:
-	       VG_(skin_panic)("bad size");
-	    }
+	    sk_assert(u_in->tag2 == TempReg);
 
-	    uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, u_in->val1);
-	    uCCall(cb, (Addr)help, 2, 2, False);
+	    if (!clo_priv_stacks || !stackref[u_in->val2]) {
+	       nonstk_st++;
+
+	       switch(u_in->size) {
+	       case 1: help = eraser_mem_help_write_1; break;
+	       case 2: help = eraser_mem_help_write_2; break;
+	       case 4: help = eraser_mem_help_write_4; break;
+	       default:
+		  VG_(skin_panic)("bad size");
+	       }
+
+	       uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, u_in->val1);
+	       uCCall(cb, (Addr)help, 2, 2, False);
+	    } else
+	       stk_st++;
 
 	    VG_(copy_UInstr)(cb, u_in);
 	    t_size = INVALID_TEMPREG;
@@ -1943,11 +1994,19 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	 }
 
          default:
+	    /* conservative tromping */
+	    if (0 && u_in->tag1 == TempReg) /* can val1 ever be dest? */
+	       stackref[u_in->val1] = False;
+	    if (u_in->tag2 == TempReg)
+	       stackref[u_in->val2] = False;
+	    if (u_in->tag3 == TempReg)
+	       stackref[u_in->val3] = False;
             VG_(copy_UInstr)(cb, u_in);
             break;
       }
    }
 
+   VG_(free)(stackref);
    VG_(free_UCodeBlock)(cb_in);
    return cb;
 }
@@ -2909,9 +2968,9 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
 
    track->new_mem_startup       = & eraser_new_mem_startup;
    track->new_mem_heap          = & eraser_new_mem_heap;
-   track->new_mem_stack         = & make_writable;
-   track->new_mem_stack_aligned = & make_writable_aligned;
-   track->new_mem_stack_signal  = & make_writable;
+   track->new_mem_stack         = & eraser_new_mem_stack_private;
+   track->new_mem_stack_aligned = & eraser_new_mem_stack_private;
+   track->new_mem_stack_signal  = & eraser_new_mem_stack_private;
    track->new_mem_brk           = & make_writable;
    track->new_mem_mmap          = & eraser_new_mem_startup;
 
@@ -2967,6 +3026,23 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    init_shadow_memory();
 }
 
+static Bool match_Bool(Char *arg, Char *argstr, Bool *ret)
+{
+   Int len = VG_(strlen)(argstr);
+
+   if (VG_(strncmp)(arg, argstr, len) == 0) {
+      if (VG_(strcmp)(arg+len, "yes") == 0) {
+	 *ret = True;
+	 return True;
+      } else if (VG_(strcmp)(arg+len, "no") == 0) {
+	 *ret = False;
+	 return True;
+      } else
+	 VG_(bad_option)(arg);
+   }
+   return False;
+}
+
 static Bool match_str(Char *arg, Char *argstr, Char **ret)
 {
    Int len = VG_(strlen)(argstr);
@@ -3001,6 +3077,9 @@ Bool SK_(process_cmd_line_option)(Char* arg)
 	 return True;
    }
 
+   if (match_Bool(arg, "--private-stacks=", &clo_priv_stacks))
+      return True;
+
    return False;
 }
 
@@ -3008,6 +3087,7 @@ Char *SK_(usage)(void)
 {
    return ""
 "    --show-last-access=no|some|all  show location of last word access on error [no]\n"
+"    --private-stacks=yes|no         assume thread stacks are used privately [yes]\n"
       ;
 }
 
@@ -3017,6 +3097,14 @@ void SK_(post_clo_init)(void)
    if (clo_execontext) {
       execontext_map = VG_(malloc)(sizeof(ExeContextMap *) * 65536);
       VG_(memset)(execontext_map, 0, sizeof(ExeContextMap *) * 65536);
+   }
+
+   if (!clo_priv_stacks) {
+      VgTrackEvents *track = &VG_(track_events);
+
+      track->new_mem_stack         = & eraser_new_mem_stack;
+      track->new_mem_stack_aligned = & eraser_new_mem_stack;
+      track->new_mem_stack_signal  = & eraser_new_mem_stack;
    }
 }
 
@@ -3033,6 +3121,12 @@ void SK_(fini)(void)
 
    VG_(message)(Vg_UserMsg, "%u possible data races found; %u lock order problems",
 		n_eraser_warnings, n_lockorder_warnings);
+
+   if (0)
+      VG_(printf)("stk_ld:%u+stk_st:%u = %u  nonstk_ld:%u+nonstk_st:%u = %u  %u%%\n",
+		  stk_ld, stk_st, stk_ld + stk_st,
+		  nonstk_ld, nonstk_st, nonstk_ld + nonstk_st,
+		  ((stk_ld+stk_st)*100) / (stk_ld + stk_st + nonstk_ld + nonstk_st));
 }
 
 /*--------------------------------------------------------------------*/

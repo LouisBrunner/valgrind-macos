@@ -2177,10 +2177,17 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    /* do this early, before the child gets any memory writes */
    VG_TRACK ( post_thread_create, parent_tid, tid );
 
+   /* Create new thread with default attrs:
+      deferred cancellation, not detached 
+   */
+   mostly_clear_thread_record(tid);
+   VG_(threads)[tid].status = VgTs_Runnable;
+
    /* Copy the parent's CPU state into the child's, in a roundabout
       way (via baseBlock). */
    VG_(load_thread_state)(parent_tid);
    VG_(save_thread_state)(tid);
+   vg_tid_last_in_baseBlock = tid;
 
    /* Consider allocating the child a stack, if the one it already has
       is inadequate. */
@@ -2238,12 +2245,6 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
       VG_(sprintf)(msg_buf, "new thread, created by %d", parent_tid );
       print_sched_event(tid, msg_buf);
    }
-
-   /* Create new thread with default attrs:
-      deferred cancellation, not detached 
-   */
-   mostly_clear_thread_record(tid);
-   VG_(threads)[tid].status = VgTs_Runnable;
 
    /* We inherit our parent's signal mask. */
    VG_(threads)[tid].sig_mask = VG_(threads)[parent_tid].sig_mask;

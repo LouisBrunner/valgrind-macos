@@ -1151,12 +1151,7 @@ struct _UCodeBlock {
 
 extern UCodeBlock* VG_(alloc_UCodeBlock) ( void );
 
-extern void VG_(translate)  ( ThreadId tid,
-                              Addr  orig_addr,
-                              UInt* orig_size,
-                              Addr* trans_addr,
-                              UInt* trans_size,
-                              UShort jumps[VG_MAX_JUMPS]);
+extern void VG_(translate)  ( ThreadId tid, Addr orig_addr, Bool debugging );
 
 extern Bool VG_(saneUInstr)          ( Bool beforeRA, Bool beforeLiveness,
                                        UInstr* u );

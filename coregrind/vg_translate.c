@@ -2396,45 +2396,40 @@ static void vg_realreg_liveness_analysis ( UCodeBlock* cb )
 /*--- Main entry point for the JITter.                     ---*/
 /*------------------------------------------------------------*/
 
-/* Translate the basic block beginning at orig_addr, placing the
-   translation in a vg_malloc'd block, the address and size of which
-   are returned in trans_addr and trans_size.  Length of the original
-   block is also returned in orig_size.  If the latter three are NULL,
-   this call is being done for debugging purposes, in which case (a)
-   throw away the translation once it is made, and (b) produce a load
-   of debugging output. 
+/* Translate the basic block beginning at orig_addr, and add it to
+   the translation cache & translation table.  Unless 'debugging' is true,
+   in which case the call is being done for debugging purposes, so
+   (a) throw away the translation once it is made, and (b) produce a
+   load of debugging output. 
 
-   'tst' is the identity of the thread needing this block.
+   'tid' is the identity of the thread needing this block.
 */
-void VG_(translate) ( /*IN*/  ThreadId tid, 
-		      /*IN*/  Addr  orig_addr,  
-                      /*OUT*/ UInt* orig_size,
-                      /*OUT*/ Addr* trans_addr, 
-                      /*OUT*/ UInt* trans_size,
-		      /*OUT*/ UShort jumps[VG_MAX_JUMPS])
+void VG_(translate) ( ThreadId tid, Addr orig_addr,
+                      Bool debugging_translation )
 {
-   Int         n_disassembled_bytes, final_code_size;
-   Bool        debugging_translation;
-   UChar*      final_code;
+   Addr        trans_addr, redir, orig_addr0 = orig_addr;
+   UShort      jumps[VG_MAX_JUMPS];
+   Int         i, orig_size, trans_size;
    UCodeBlock* cb;
    Bool        notrace_until_done;
    UInt        notrace_until_limit = 0;
    Segment     *seg;
-   Addr		redir;
 
    VGP_PUSHCC(VgpTranslate);
-   debugging_translation
-      = orig_size == NULL || trans_addr == NULL || trans_size == NULL;
+
+   for (i = 0; i < VG_MAX_JUMPS; i++)
+      jumps[i] = (UShort)-1;
 
    /* Look in the code redirect table to see if we should
       translate an alternative address for orig_addr. */
    redir = VG_(code_redirect)(orig_addr);
 
-   if (redir != orig_addr && VG_(clo_verbosity) >= 2)
+   if (redir != orig_addr && VG_(clo_verbosity) >= 2) {
       VG_(message)(Vg_UserMsg, 
 		   "TRANSLATE: %p redirected to %p",
 		   orig_addr, 
 		   redir );
+   }
    orig_addr = redir;
 
    /* If codegen tracing, don't start tracing until
@@ -2443,8 +2438,7 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
       few blocks translated prior to a failure.  Set
       notrace_until_limit to be the number of translations to be made
       before --trace-codegen= style printing takes effect. */
-   notrace_until_done
-      = VG_(overall_in_count) >= notrace_until_limit;
+   notrace_until_done = VG_(overall_in_count) >= notrace_until_limit;
 
    seg = VG_(find_segment)(orig_addr);
 
@@ -2490,7 +2484,7 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
    /* Disassemble this basic block into cb. */
    VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(1);
    VGP_PUSHCC(VgpToUCode);
-   n_disassembled_bytes = VG_(disBB) ( cb, orig_addr );
+   orig_size = VG_(disBB) ( cb, orig_addr );
    VGP_POPCC(VgpToUCode);
 
    /* Try and improve the code a bit. */
@@ -2533,25 +2527,33 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
 
    /* Emit final code */
    VG_(print_codegen) = DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE(5);
-
    VGP_PUSHCC(VgpFromUcode);
-   final_code = VG_(emit_code)(cb, &final_code_size, jumps );
+   trans_addr = (Addr)VG_(emit_code)(cb, &trans_size, jumps );
    VGP_POPCC(VgpFromUcode);
    VG_(free_UCodeBlock)(cb);
 
 #undef DECIDE_IF_PRINTING_CODEGEN_FOR_PHASE
 
-   if (debugging_translation) {
-      /* Only done for debugging -- throw away final result. */
-      VG_(arena_free)(VG_AR_JITTER, final_code);
-   } else {
-      /* Doing it for real -- return values to caller. */
-      *orig_size = n_disassembled_bytes;
-      *trans_addr = (Addr)final_code;
-      *trans_size = final_code_size;
+   /* Copy data at trans_addr into the translation cache. */
+   /* Since the .orig_size and .trans_size fields are UShort, be paranoid. */
+   vg_assert(orig_size  > 0 && orig_size  < 65536);
+   vg_assert(trans_size > 0 && trans_size < 65536);
+
+   // If debugging, don't do anything with the translated block;  we
+   // only did this for the debugging output produced along the way.
+   if (!debugging_translation) {
+      // Note that we use orig_addr0, not orig_addr, which might have been
+      // changed by the redirection
+      VG_(add_to_trans_tab)( orig_addr0, orig_size, trans_addr, trans_size,
+                             jumps );
    }
+
+   /* Free the intermediary -- was allocated by VG_(emit_code). */
+   VG_(arena_free)( VG_AR_JITTER, (void*)trans_addr );
+
    VGP_POPCC(VgpTranslate);
 }
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                           vg_translate.c ---*/

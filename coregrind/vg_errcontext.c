@@ -665,8 +665,8 @@ void VG_(show_all_errors) ( void )
       pp_Error( p_min, False );
 
       if ((i+1 == VG_(clo_dump_error))) {
-	VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to below NULLs */,
-                         p_min->where->eips[0], NULL, NULL, NULL, NULL );
+	VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to debugging*/,
+                         p_min->where->eips[0], /*debugging*/True);
       }
 
       p_min->count = 1 << 30;

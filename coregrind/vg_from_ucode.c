@@ -4510,11 +4510,10 @@ UChar* VG_(emit_code) ( UCodeBlock* cb,
    vg_assert(!sselive);		  /* SSE state must be saved by end of BB */
    vg_assert(eflags_state != UPD_Real);	/* flags can't just be in CPU */
 
-   if (j != NULL) {
-      vg_assert(jumpidx <= VG_MAX_JUMPS);
-      for(i = 0; i < jumpidx; i++)
-	 j[i] = jumps[i];
-   }
+   vg_assert(NULL != j);
+   vg_assert(jumpidx <= VG_MAX_JUMPS);
+   for(i = 0; i < jumpidx; i++)
+      j[i] = jumps[i];
 
    /* Returns a pointer to the emitted code.  This will have to be
       copied by the caller into the translation cache, and then freed */

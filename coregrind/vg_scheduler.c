@@ -228,37 +228,6 @@ Char* name_of_sched_event ( UInt event )
 }
 
 
-/* Create a translation of the client basic block beginning at
-   orig_addr, and add it to the translation cache & translation table.
-   This probably doesn't really belong here, but, hey ... 
-*/
-static
-void create_translation_for ( ThreadId tid, Addr orig_addr )
-{
-   Addr   trans_addr;
-   Int    orig_size, trans_size;
-   UShort jumps[VG_MAX_JUMPS];
-   Int    i;
-
-   for(i = 0; i < VG_MAX_JUMPS; i++)
-      jumps[i] = (UShort)-1;
-
-   /* Make a translation, into temporary storage. */
-   VG_(translate)( tid, orig_addr,                                /* in */
-                   &orig_size, &trans_addr, &trans_size, jumps ); /* out */
-
-   /* Copy data at trans_addr into the translation cache. */
-   /* Since the .orig_size and .trans_size fields are UShort, be paranoid. */
-   vg_assert(orig_size  > 0 && orig_size  < 65536);
-   vg_assert(trans_size > 0 && trans_size < 65536);
-
-   VG_(add_to_trans_tab)( orig_addr, orig_size, trans_addr, trans_size, jumps );
-
-   /* Free the intermediary -- was allocated by VG_(emit_code). */
-   VG_(arena_free)( VG_AR_JITTER, (void*)trans_addr );
-}
-
-
 /* Allocate a completely empty ThreadState record. */
 static
 ThreadId vg_alloc_ThreadState ( void )
@@ -1018,7 +987,7 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
          if (VG_(bbs_done) > 31700000 + 0) {
             dispatch_ctr_SAVED = VG_(dispatch_ctr) = 2;
             VG_(translate)(&VG_(threads)[tid], VG_(threads)[tid].m_eip,
-                           NULL,NULL,NULL);
+                           /*debugging*/True);
          }
          vg_assert(VG_(threads)[tid].m_eip != 0);
 #        endif
@@ -1040,11 +1009,10 @@ VgSchedReturnCode VG_(scheduler) ( Int* exitcode )
 
             /* Trivial event.  Miss in the fast-cache.  Do a full
                lookup for it. */
-            trans_addr 
-               = VG_(search_transtab) ( VG_(threads)[tid].m_eip );
+            trans_addr = VG_(search_transtab) ( VG_(threads)[tid].m_eip );
             if (trans_addr == (Addr)0) {
                /* Not found; we need to request a translation. */
-               create_translation_for( tid, VG_(threads)[tid].m_eip ); 
+               VG_(translate)( tid, VG_(threads)[tid].m_eip, /*debug*/False ); 
                trans_addr = VG_(search_transtab) ( VG_(threads)[tid].m_eip ); 
                if (trans_addr == (Addr)0)
                   VG_(core_panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");

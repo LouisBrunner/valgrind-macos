@@ -1,12 +1,12 @@
 
 SUBDIRS = . tests docs
 
-AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
+CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
 		-Winline -Wall -Wshadow -O -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -g
 
 valdir = $(libdir)/valgrind
 
-AM_CPPFLAGS = -I$(top_srcdir)/include
+CPPFLAGS = -I$(top_srcdir)/include
 
 val_PROGRAMS = vgskin_corecheck.so
 

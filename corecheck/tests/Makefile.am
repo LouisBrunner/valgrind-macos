@@ -31,8 +31,8 @@ noinst_PROGRAMS = \
 	pth_atfork1 pth_cancel2 pth_cvsimple pth_empty \
 	pth_mutexspeed pth_once
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
-AM_CXXFLAGS = $(AM_CFLAGS)
+CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+CXXFLAGS = $(CFLAGS)
 
 # C ones
 erringfds_SOURCES 	= erringfds.c

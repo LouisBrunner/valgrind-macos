@@ -1,7 +1,7 @@
 
 SUBDIRS = . tests docs
 
-AM_CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
+CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
 		-Winline -Wall -Wshadow -O -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -g
 
 valdir = $(libdir)/valgrind

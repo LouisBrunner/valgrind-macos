@@ -8,9 +8,9 @@ EXTRA_DIST = filter_stderr \
 noinst_PROGRAMS = \
 	dlclose fpu-28-108 myprint.so
 
-AM_CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
-AM_CXXFLAGS = $(AM_CFLAGS)
-AM_CCASFLAGS = $(AM_CFLAGS)
+CFLAGS   = $(WERROR) -Winline -Wall -Wshadow -g
+CXXFLAGS = $(CFLAGS)
+CCASFLAGS = $(CFLAGS)
 
 # C ones
 dlclose_SOURCES		= dlclose.c

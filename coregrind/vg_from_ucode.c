@@ -1246,6 +1246,79 @@ static void emit_movb_zeroESPmem_AL ( void )
       VG_(printf)( "\n\t\tmovb 0(%%esp), %%al\n" );
 }
 
+/* Jump target states */
+#define TGT_UNDEF	(1 << 16)
+#define TGT_FORWARD	(2 << 16)
+#define TGT_BACKWARD	(3 << 16)
+
+static inline Int tgt_state(Int tgt)
+{
+   return tgt & 0xffff0000;
+}
+
+static inline Int tgt_addr(Int tgt)
+{
+   return tgt & 0x0000ffff;
+}
+
+static inline Int mk_tgt(Int state, Int addr)
+{
+   vg_assert(state == TGT_UNDEF 
+             || state == TGT_FORWARD || state == TGT_BACKWARD);
+   vg_assert((addr & 0xffff0000) == 0);
+
+   return state | addr;
+}
+   
+void VG_(init_target) ( Int *tgt )
+{
+   *tgt = TGT_UNDEF;
+}
+
+void VG_(target_back) ( Int *tgt )
+{
+   vg_assert(tgt_state(*tgt) == TGT_UNDEF);
+
+   *tgt = mk_tgt(TGT_BACKWARD, emitted_code_used);
+}
+
+void VG_(target_forward)  ( Int *tgt )
+{
+   Int delta;
+
+   vg_assert(tgt_state(*tgt) == TGT_FORWARD ||
+	     tgt_state(*tgt) == TGT_UNDEF);
+   
+   if (tgt_state(*tgt) == TGT_UNDEF)
+      return;			/* target not used */
+   
+   delta = emitted_code_used - (tgt_addr(*tgt) + 1);
+   vg_assert(delta >= -128 && delta <= 127);
+   vg_assert(tgt_addr(*tgt) >= 0);
+   vg_assert(tgt_addr(*tgt) < emitted_code_size);
+   emitted_code[tgt_addr(*tgt)] = delta;
+   if (dis)
+      VG_(printf)("(target to jump site %d; delta: %d)\n", 
+                  tgt_addr(*tgt), delta);
+}
+
+void VG_(emit_target_delta) ( Int *tgt )
+{
+   vg_assert(tgt_state(*tgt) == TGT_UNDEF ||
+	     tgt_state(*tgt) == TGT_BACKWARD);
+
+   if (tgt_state(*tgt) == TGT_UNDEF) {
+      /* forward jump */
+      *tgt = mk_tgt(TGT_FORWARD, emitted_code_used);
+      VG_(emitB) (0x00);
+   } else {
+      /* backward jump */
+      Int delta = emitted_code_used - (tgt_addr(*tgt) + 1);
+      vg_assert(delta >= -128 && delta <= 127);
+      VG_(emitB) (delta);
+   }
+}
+
 
 /* Emit a jump short with an 8-bit signed offset.  Note that the
    offset is that which should be added to %eip once %eip has been
@@ -1260,6 +1333,19 @@ void VG_(emit_jcondshort_delta) ( Bool simd, Condcode cond, Int delta )
       VG_(printf)( "\n\t\tj%s-8\t%%eip+%d\n", 
                    VG_(nameCondcode)(cond), delta );
 }
+
+/* Same as above, but defers emitting the delta  */
+void VG_(emit_jcondshort_target) ( Bool simd, Condcode cond, Int *tgt )
+{
+   VG_(new_emit)(simd, FlagsOSZCP, False);
+   VG_(emitB) ( 0x70 + (UInt)cond );
+   VG_(emit_target_delta) (tgt);
+   if (dis)
+      VG_(printf)( "\n\t\tj%s-8\t%%eip+(%d)\n", 
+                   VG_(nameCondcode)(cond), tgt_addr(*tgt) );
+}
+
+
 
 static void emit_setb_reg ( Int reg, Condcode cond )
 {
@@ -1800,47 +1886,11 @@ static void synth_jcond_lit ( Condcode cond,
                               Bool eax_trashable )
 {
    UInt mask;
-   Int  delta;
    Bool simd;
+   Int tgt;
 
-   if (VG_(clo_chain_bb)) {
-      /* When using BB chaining, the jump sequence is:
-         ensure that simulated eflags are up-to-date
-         jmp short if not cond to xyxyxy, using the real
-            machine eflags if we can, synthesising a suitable sequence 
-            to examine the simulated ones otherwise
-         addr -> eax
-         call VG_(patch_me)/jmp target
-         xyxyxy
-         
-                 <possibly sequence to compute some condition>
-                 j<cond>    xyxyxy
-                 mov    $0x4000d190,%eax                     // 5
-                 mov    %eax, VGOFF_(m_eip)(%ebp)            // 3
-                 call   0x40050f9a <vgPlain_patch_me>        // 5
-         xyxyxy: mov    $0x4000d042,%eax
-                 call   0x40050f9a <vgPlain_patch_me>
-      */
-      delta = 5+3+5;
-   } else {
-      /* When not using BB chaining:
-         ensure that simulated eflags are up-to-date
-         jmp short if not cond to xyxyxy, using the real
-            machine eflags if we can, synthesising a suitable sequence 
-            to examine the simulated ones otherwise
-         addr -> eax
-         ret
-         xyxyxy
+   VG_(init_target)(&tgt);
 
-                 <possibly sequence to compute some condition>
-                 j<cond>     xyxyxy
-                 movl    $0x44556677, %eax    // 5
-                 ret                          // 1
-         xyxyxy:
-      */
-      delta = 5+1;
-   }
-   
    /* Ensure simulated %EFLAGS are up-to-date, by copying back %eflags
       if need be */
    maybe_emit_put_eflags();
@@ -1967,26 +2017,26 @@ static void synth_jcond_lit ( Condcode cond,
       }
    }
 
-   VG_(emit_jcondshort_delta) ( simd, cond, delta );
+   VG_(emit_jcondshort_target) ( simd, cond, &tgt );
    synth_jmp_lit ( addr, JmpBoring );
+
+   VG_(target_forward)(&tgt);
 }
 
 
 
 static void synth_jmp_ifzero_reg_lit ( Int reg, Addr addr )
 {
-   /* 0000 83FF00                cmpl    $0, %edi
-      0003 750A                  jnz     next
-      0005 B844332211            movl    $0x11223344, %eax
-      000a C3                    ret
-      next:
-   */
+   Int tgt;
+ 
+   VG_(init_target)(&tgt);
+ 
    VG_(emit_cmpl_zero_reg) ( False, reg );
-   if (VG_(clo_chain_bb))
-      VG_(emit_jcondshort_delta) ( False, CondNZ, 5+3+5 );
-   else
-      VG_(emit_jcondshort_delta) ( False, CondNZ, 5+1 );
+
+   VG_(emit_jcondshort_target) ( False, CondNZ, &tgt );
    synth_jmp_lit ( addr, JmpBoring );
+ 
+   VG_(target_forward)(&tgt);
 }
 
 
@@ -2352,9 +2402,14 @@ static void synth_movl_reg_reg ( Int src, Int dst )
 
 static void synth_cmovl_reg_reg ( Condcode cond, Int src, Int dst )
 {
-   VG_(emit_jcondshort_delta) ( True, invertCondition(cond), 
-                           2 /* length of the next insn */ );
+   Int tgt;
+
+   VG_(init_target)(&tgt);
+
+   VG_(emit_jcondshort_target) ( True, invertCondition(cond), &tgt);
    emit_movl_reg_reg ( src, dst );
+
+   VG_(target_forward)(&tgt);
 }
 
 
@@ -3008,7 +3063,8 @@ UChar* VG_(emit_code) ( UCodeBlock* cb,
    UChar regs_live_before = 0;   /* No regs live at BB start */
    Bool fplive;
    Addr orig_eip, curr_eip;
-  
+   Int tgt;
+
    reset_state();
 
    if (dis) VG_(printf)("Generated x86 code:\n");
@@ -3016,14 +3072,16 @@ UChar* VG_(emit_code) ( UCodeBlock* cb,
    /* Generate decl VG_(dispatch_ctr) and drop into dispatch if we hit
       zero.  We have to do this regardless of whether we're t-chaining
       or not. */
+   VG_(init_target)(&tgt);
    VG_(new_emit)(False, FlagsEmpty, FlagsOSZAP);
    VG_(emitB) (0xFF);	/* decl */
    emit_amode_litmem_reg((Addr)&VG_(dispatch_ctr), 1);
    if (dis)
       VG_(printf)("\n\t\tdecl (%p)\n", &VG_(dispatch_ctr));
-   VG_(emit_jcondshort_delta)(False, CondNZ, 5+1);
+   VG_(emit_jcondshort_target)(False, CondNZ, &tgt);
    VG_(emit_movv_lit_reg) ( 4, VG_TRC_INNER_COUNTERZERO, R_EBP );
    emit_ret();
+   VG_(target_forward)(&tgt);
 
    /* Set up running state. */
    fplive   = False;

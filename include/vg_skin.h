@@ -955,10 +955,19 @@ extern void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg );
 /* misc instruction emitters */
 extern void VG_(emit_call_reg)         ( Int reg );
 extern void VG_(emit_add_lit_to_esp)   ( Int lit );
-extern void VG_(emit_jcondshort_delta) ( Bool simd_cc, Condcode cond, Int delta );
 extern void VG_(emit_pushal)           ( void );
 extern void VG_(emit_popal)            ( void );
 extern void VG_(emit_AMD_prefetch_reg) ( Int reg );
+
+/* jump emitters */
+extern void VG_(init_target)	       ( Int *tgt );
+
+extern void VG_(target_back)	       ( Int *tgt );
+extern void VG_(target_forward)	       ( Int *tgt );
+extern void VG_(emit_target_delta)     ( Int *tgt );
+
+extern void VG_(emit_jcondshort_delta) ( Bool simd_cc, Condcode cond, Int delta );
+extern void VG_(emit_jcondshort_target)( Bool simd_cc, Condcode cond, Int *tgt );
 
 
 /*====================================================================*/

@@ -1928,7 +1928,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
 		   "si_code=%x Fault EIP: %p%s; Faulting address: %p",
 		   info->si_code, context_ip, buf, info->_sifields._sigfault._addr);
       VG_(message)(Vg_DebugMsg, 
-		   "  esp=%p\n", uc->uc_mcontext.esp);
+		   "  sp=%p\n", UCONTEXT_STACK_PTR(uc));
 
       if (0)
 	 VG_(kill_self)(sigNo);		/* generate a core dump */

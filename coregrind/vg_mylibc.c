@@ -1455,12 +1455,14 @@ Char *VG_(getenv)(Char *varname)
 /* Support for getrlimit. */
 Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
 {
-   Int res;
+   Int res = -VKI_ENOSYS;
    /* res = getrlimit( resource, rlim ); */
+#  ifdef __NR_ugetrlimit
    res = VG_(do_syscall2)(__NR_ugetrlimit, resource, (UWord)rlim);
+#  endif
    if (res == -VKI_ENOSYS)
       res = VG_(do_syscall2)(__NR_getrlimit, resource, (UWord)rlim);
-   if(VG_(is_kerror)(res)) res = -1;
+   if (VG_(is_kerror)(res)) res = -1;
    return res;
 }
 
@@ -1471,7 +1473,7 @@ Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
    Int res;
    /* res = setrlimit( resource, rlim ); */
    res = VG_(do_syscall2)(__NR_setrlimit, resource, (UWord)rlim);
-   if(VG_(is_kerror)(res)) res = -1;
+   if (VG_(is_kerror)(res)) res = -1;
    return res;
 }
 

@@ -26,7 +26,7 @@
 
 #include "ume.h"
 
-void jmp_with_stack(Addr rip, Addr rsp)
+void jmp_with_stack(void(*rip)(void), Addr rsp)
 {
    asm volatile (
       "movq  %1, %%rsp;"       // set rsp

@@ -36,6 +36,12 @@
 #include "core.h"
 #include "ume.h"                /* for jmp_with_stack */
 
+
+/* ---------------------------------------------------------------------
+   Stacks, thread wrappers, clone
+   Note.  Why is this stuff here?
+   ------------------------------------------------------------------ */
+
 /* These are addresses within VGA_(client_syscall).  See syscall.S for details. */
 extern const Word VGA_(blksys_setup);
 extern const Word VGA_(blksys_restart);
@@ -204,6 +210,7 @@ static UInt *allocstack(ThreadId tid)
    return esp;
 }
 
+/* NB: this is identical the the amd64 version. */
 /* Return how many bytes of this stack have not been used */
 Int VGA_(stack_unused)(ThreadId tid)
 {

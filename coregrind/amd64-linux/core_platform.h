@@ -103,6 +103,14 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
    I_die_here; \
 } while (0)
 
+
+/* Use libc setjmp/longjmp.  longjmp must not restore signal mask
+   state, but does need to pass though "val". */
+#include <setjmp.h>       /* for jmp_buf         */
+
+#define SETJMP(env)		setjmp(env)
+#define LONGJMP(env, val)	longjmp(env, val)
+
 #endif   // __AMD64_LINUX_CORE_PLATFORM_H
 
 /*--------------------------------------------------------------------*/

@@ -214,7 +214,7 @@ struct vki_sigcontext {
 #define VKI_PROT_READ	0x1		/* page can be read */
 #define VKI_PROT_WRITE	0x2		/* page can be written */
 #define VKI_PROT_EXEC	0x4		/* page can be executed */
-//#define VKI_PROT_NONE	0x0		/* page can not be accessed */
+#define VKI_PROT_NONE	0x0		/* page can not be accessed */
 
 #define VKI_MAP_SHARED	0x01		/* Share changes */
 #define VKI_MAP_PRIVATE	0x02		/* Changes are private */
@@ -516,6 +516,8 @@ struct vki_user_desc {
 // [[Nb: for our convenience within Valgrind, use a more specific name]]
 typedef struct vki_user_desc vki_modify_ldt_t;
 #endif
+
+typedef void vki_modify_ldt_t;
 
 //----------------------------------------------------------------------
 // And that's it!

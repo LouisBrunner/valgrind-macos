@@ -148,6 +148,91 @@ void VGA_(restart_syscall)(ThreadArchState *arch)
 }
 
 /* ---------------------------------------------------------------------
+   Stacks, thread wrappers, clone
+   Note.  Why is this stuff here?
+   ------------------------------------------------------------------ */
+
+/* 
+   Allocate a stack for this thread.
+
+   They're allocated lazily, but never freed.
+ */
+#define FILL	0xdeadbeef
+
+
+/* NB: this is identical the the x86 version. */
+/* Return how many bytes of this stack have not been used */
+Int VGA_(stack_unused)(ThreadId tid)
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   UInt *p;
+
+   for (p = tst->os_state.stack; 
+	p && (p < (tst->os_state.stack + tst->os_state.stacksize)); 
+	p++)
+      if (*p != FILL)
+	 break;
+
+   if (0)
+      VG_(printf)("p=%p %x tst->os_state.stack=%p\n", p, *p, tst->os_state.stack);
+
+   return (p - tst->os_state.stack) * sizeof(*p);
+}
+
+static ULong *allocstack(ThreadId tid)
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   ULong* rsp;
+   UInt*  pUInt;
+
+   if (tst->os_state.stack == NULL) {
+      void *stk = VG_(mmap)(0, VG_STACK_SIZE_W * sizeof(Int) + VKI_PAGE_SIZE,
+			    VKI_PROT_READ|VKI_PROT_WRITE,
+			    VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS,
+			    SF_VALGRIND,
+			    -1, 0);
+
+      if (stk != (void *)-1) {
+	 VG_(mprotect)(stk, VKI_PAGE_SIZE, VKI_PROT_NONE); /* guard page */
+	 tst->os_state.stack = (UInt *)stk + VKI_PAGE_SIZE/sizeof(UInt);
+	 tst->os_state.stacksize = VG_STACK_SIZE_W;
+      } else 
+	 return (ULong *)-1;
+   }
+
+   for (pUInt = tst->os_state.stack; 
+        pUInt < (tst->os_state.stack + tst->os_state.stacksize); 
+        pUInt++)
+      *pUInt = FILL;
+   /* rsp is left at top of stack */
+   rsp = pUInt;
+
+   if (0)
+      VG_(printf)("stack for tid %d at %p (%x); esp=%p\n",
+		  tid, tst->os_state.stack, *tst->os_state.stack,
+		  rsp);
+
+   return rsp;
+}
+
+
+/*
+   Allocate a stack for the main thread, and call VGA_(thread_wrapper)
+   on that stack.
+ */
+void VGA_(main_thread_wrapper)(ThreadId tid)
+{
+   ULong *rsp = allocstack(tid);
+
+   vg_assert(tid == VG_(master_tid));
+
+   VG_(threads)[tid].arch.vex.guest_RDI = (ULong)tid; /* set arg */
+   *--rsp = 0;			/* bogus return address */
+   jmp_with_stack((void (*)(void))VGA_(thread_wrapper), (Addr)rsp);
+}
+
+
+/* ---------------------------------------------------------------------
    PRE/POST wrappers for AMD64/Linux-specific syscalls
    ------------------------------------------------------------------ */
 

@@ -157,7 +157,8 @@ static void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
 void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
                              const vki_siginfo_t *siginfo,
                              void *handler, UInt flags,
-                             const vki_sigset_t *mask)
+                             const vki_sigset_t *mask,
+                             void* restorer)
 {
    I_die_here;
 #if 0

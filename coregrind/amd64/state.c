@@ -91,23 +91,53 @@ void VGA_(cleanup_thread) ( ThreadArchState *arch )
 }  
 
 
-void VGA_(setup_child) ( ThreadArchState *arch, ThreadArchState *parent_arch )
+void VGA_(setup_child) ( /*OUT*/ ThreadArchState *child, 
+                         /*IN*/  ThreadArchState *parent )
 {  
    I_die_here;
 #if 0
+   /* We inherit our parent's guest state. */
+   child->vex = parent->vex;
+   child->vex_shadow = parent->vex_shadow;
    /* We inherit our parent's LDT. */
-   if (parent_arch->ldt == NULL) {
+   if (parent->vex.guest_LDT == (HWord)NULL) {
       /* We hope this is the common case. */
-      arch->ldt = NULL;
+      child->vex.guest_LDT = (HWord)NULL;
    } else {
       /* No luck .. we have to take a copy of the parent's. */
-      arch->ldt = VG_(allocate_LDT_for_thread)( parent_arch->ldt );
+      child->vex.guest_LDT = (HWord)VG_(alloc_zeroed_x86_LDT)();
+      copy_LDT_from_to( (VexGuestX86SegDescr*)parent->vex.guest_LDT, 
+                        (VexGuestX86SegDescr*)child->vex.guest_LDT );
    }
 
-   /* Initialise the thread's TLS array */
-   VG_(clear_TLS_for_thread)( arch->tls );
+   /* We need an empty GDT. */
+   child->vex.guest_GDT = (HWord)NULL;
 #endif
 }  
+
+void VGA_(mark_from_registers)(ThreadId tid, void (*marker)(Addr))
+{
+   ThreadState *tst = VG_(get_ThreadState)(tid);
+   ThreadArchState *arch = &tst->arch;
+
+   /* XXX ask tool about validity? */
+   (*marker)(arch->vex.guest_RAX);
+   (*marker)(arch->vex.guest_RCX);
+   (*marker)(arch->vex.guest_RDX);
+   (*marker)(arch->vex.guest_RBX);
+   (*marker)(arch->vex.guest_RSI);
+   (*marker)(arch->vex.guest_RDI);
+   (*marker)(arch->vex.guest_RSP);
+   (*marker)(arch->vex.guest_RBP);
+   (*marker)(arch->vex.guest_R8);
+   (*marker)(arch->vex.guest_R9);
+   (*marker)(arch->vex.guest_R10);
+   (*marker)(arch->vex.guest_R11);
+   (*marker)(arch->vex.guest_R12);
+   (*marker)(arch->vex.guest_R13);
+   (*marker)(arch->vex.guest_R14);
+   (*marker)(arch->vex.guest_R15);
+}
 
 
 /*------------------------------------------------------------*/

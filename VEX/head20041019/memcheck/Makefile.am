@@ -34,4 +34,4 @@ noinst_HEADERS =	\
 	mc_include.h
 
 mac_replace_strmem.o: CFLAGS += -fno-omit-frame-pointer
-
+mc_main.o:  CFLAGS += -fomit-frame-pointer

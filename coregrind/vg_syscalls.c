@@ -5945,7 +5945,7 @@ PREx(sys_sigprocmask, SIG_SIM)
 				&bigger_oldset );
 
       if (oldset)
-        *oldset = bigger_oldset.sig[0];
+         *oldset = bigger_oldset.sig[0];
    }
 }
 
@@ -6007,16 +6007,21 @@ POSTx(sys_rt_sigpending)
    POST_MEM_WRITE( arg1, sizeof(vki_sigset_t) ) ;
 }
 
-PRE(io_setup)
+// Nb: this wrapper is "Special" because we have to pad/unpad memory around
+// the syscall itself, and this allows us to control exactly the code that
+// gets run while the padding is in place.
+PREx(sys_io_setup, Special)
 {
    SizeT size;
    Addr addr;
 
-   /* long io_setup (unsigned nr_events, aio_context_t *ctxp); */
-   PRINT("io_setup ( %ul, %p )",arg1,arg2);
+   PRINT("sys_io_setup ( %u, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "io_setup",
+                 unsigned, nr_events, vki_aio_context_t *, ctxp);
    PRE_MEM_WRITE( "io_setup(ctxp)", arg2, sizeof(vki_aio_context_t) );
    
-   size = PGROUNDUP(sizeof(struct vki_aio_ring) + arg1 * sizeof(struct vki_io_event));
+   size = PGROUNDUP(sizeof(struct vki_aio_ring) +
+                    arg1*sizeof(struct vki_io_event));
    addr = VG_(find_map_space)(0, size, True);
    VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_EXEC, SF_FIXED);
    
@@ -6038,28 +6043,42 @@ PRE(io_setup)
    }
 }
 
-PRE(io_destroy)
-{
+// Nb: This wrapper is "Special" because we need 'size' to do the unmap
+// after the syscall.  We must get 'size' from the aio_ring structure,
+// before the syscall, while the aio_ring structure still exists.  (And we
+// know that we must look at the aio_ring structure because Tom inspected the
+// kernel and glibc sources to see what they do, yuk.)
+PREx(sys_io_destroy, Special)
+{     
    Segment *s = VG_(find_segment)(arg1);
-   struct vki_aio_ring *r = *(struct vki_aio_ring **)arg1;
-   SizeT size = PGROUNDUP(sizeof(struct vki_aio_ring) + r->nr * sizeof(struct vki_io_event));
+   struct vki_aio_ring *r;
+   SizeT size;
+      
+   PRINT("sys_io_destroy ( %llu )", (ULong)arg1);
+   PRE_REG_READ1(long, "io_destroy", vki_aio_context_t, ctx);
 
-   /* long io_destroy (aio_context_t ctx); */
-   PRINT("io_destroy ( %ul )",arg1);
+   // If we are going to seg fault (due to a bogus arg1) do it as late as
+   // possible...
+   r = *(struct vki_aio_ring **)arg1;
+   size = PGROUNDUP(sizeof(struct vki_aio_ring) + 
+                    r->nr*sizeof(struct vki_io_event));
 
    set_result( VG_(do_syscall)(SYSNO, arg1) );
-   
-   if (res == 0 && s != NULL && VG_(seg_contains)(s, arg1, size)) {
+
+   if (res == 0 && s != NULL && VG_(seg_contains)(s, arg1, size)) { 
       VG_TRACK( die_mem_munmap, arg1, size );
       VG_(unmap_range)(arg1, size);
-   }
-}
+   }  
+}  
 
-PRE(io_getevents)
+PREx(sys_io_getevents, MayBlock)
 {
-   /* long io_getevents (aio_context_t ctx_id, long min_nr, long nr,
-                         struct io_event *events, struct timespec *timeout); */
-   PRINT("io_getevents ( %ul, %l, %l, %p, %p )",arg1,arg2,arg3,arg4,arg5);
+   PRINT("sys_io_getevents ( %llu, %lld, %lld, %p, %p )",
+         (ULong)arg1,(Long)arg2,(Long)arg3,arg4,arg5);
+   PRE_REG_READ5(long, "io_getevents",
+                 vki_aio_context_t, ctx_id, long, min_nr, long, nr,
+                 struct io_event *, events,
+                 struct timespec *, timeout);
    if (arg3 > 0)
       PRE_MEM_WRITE( "io_getevents(events)",
                      arg4, sizeof(struct vki_io_event)*arg3 );
@@ -6068,7 +6087,7 @@ PRE(io_getevents)
                      arg5, sizeof(struct vki_timespec));
 }
 
-POST(io_getevents)
+POSTx(sys_io_getevents)
 {
    int i;
 
@@ -6095,51 +6114,59 @@ POST(io_getevents)
    }
 }
 
-PRE(io_submit)
+PREx(sys_io_submit, 0)
 {
    int i;
 
-   /* long io_submit (aio_context_t ctx_id, long nr, struct iocb **iocbpp); */
-   PRINT("io_submit( %ul, %l, %p )",arg1,arg2,arg3);
-   PRE_MEM_READ( "io_submit(iocbpp)", arg3, sizeof(struct vki_iocb *)*arg2 );
-   for (i = 0; i < arg2; i++) {
-      struct vki_iocb *cb = ((struct vki_iocb **)arg3)[i];
-      PRE_MEM_READ( "io_submit(iocb)",
-                     (Addr)cb, sizeof(struct vki_iocb) );
-      switch (cb->aio_lio_opcode) {
-      case VKI_IOCB_CMD_PREAD:
-         PRE_MEM_WRITE( "io_submit(PREAD)", cb->aio_buf, cb->aio_nbytes );
-         break;
+   PRINT("sys_io_submit( %llu, %lld, %p )", (ULong)arg1,(Long)arg2,arg3);
+   PRE_REG_READ3(long, "io_submit",
+                 vki_aio_context_t, ctx_id, long, nr,
+                 struct iocb **, iocbpp);
+   PRE_MEM_READ( "io_submit(iocbpp)", arg3, arg2*sizeof(struct vki_iocb *) );
+   if (arg3 != (UWord)NULL) {
+      for (i = 0; i < arg2; i++) {
+         struct vki_iocb *cb = ((struct vki_iocb **)arg3)[i];
+         PRE_MEM_READ( "io_submit(iocb)", (Addr)cb, sizeof(struct vki_iocb) );
+         switch (cb->aio_lio_opcode) {
+         case VKI_IOCB_CMD_PREAD:
+            PRE_MEM_WRITE( "io_submit(PREAD)", cb->aio_buf, cb->aio_nbytes );
+            break;
 
-      case VKI_IOCB_CMD_PWRITE:
-         PRE_MEM_READ( "io_submit(PWRITE)", cb->aio_buf, cb->aio_nbytes );
-         break;
-        
-      default:
-         VG_(message)(Vg_DebugMsg,"Warning: unhandled io_submit opcode: %u\n",cb->aio_lio_opcode);
-         break;
+         case VKI_IOCB_CMD_PWRITE:
+            PRE_MEM_READ( "io_submit(PWRITE)", cb->aio_buf, cb->aio_nbytes );
+            break;
+           
+         default:
+            VG_(message)(Vg_DebugMsg,"Warning: unhandled io_submit opcode: %u\n",
+                         cb->aio_lio_opcode);
+            break;
+         }
       }
    }
 }
 
-PRE(io_cancel)
+PREx(sys_io_cancel, 0)
 {
-   /* long io_cancel (aio_context_t ctx_id, struct iocb *iocb,
-                      struct io_event *result); */
-   PRINT("io_cancel( %ul, %p, %p )",arg1,arg2,arg3);
+   PRINT("sys_io_cancel( %llu, %p, %p )", (ULong)arg1,arg2,arg3);
+   PRE_REG_READ3(long, "io_cancel",
+                 vki_aio_context_t, ctx_id, struct iocb *, iocb,
+                 struct io_event *, result);
    PRE_MEM_READ( "io_cancel(iocb)", arg2, sizeof(struct vki_iocb) );
    PRE_MEM_WRITE( "io_cancel(result)", arg3, sizeof(struct vki_io_event) );
 }
 
-POST(io_cancel)
+POSTx(sys_io_cancel)
 {
    POST_MEM_WRITE( arg3, sizeof(struct vki_io_event) );
 }
 
-PRE(mq_open)
+PREx(sys_mq_open, 0)
 {
-   /* mqd_t mq_open(const char *name, int oflag, ...); */
-   PRINT("mq_open( %p(%s), %d )", arg1,arg1,arg2);
+   PRINT("sys_mq_open( %p(%s), %d, %lld, %p )",
+         arg1,arg1,arg2,(ULong)arg3,arg4);
+   PRE_REG_READ4(long, "mq_open",
+                 const char *, name, int, oflag, vki_mode_t, mode,
+                 struct mq_attr *, attr);
    PRE_MEM_RASCIIZ( "mq_open(name)", arg1 );
    if ((arg2 & VKI_O_CREAT) != 0 && arg4 != 0) {
       const struct vki_mq_attr *attr = (struct vki_mq_attr *)arg4;
@@ -6150,7 +6177,7 @@ PRE(mq_open)
    }
 }
 
-POST(mq_open)
+POSTx(sys_mq_open)
 {
    if (!fd_allowed(res, "mq_open", tid, True)) {
       VG_(close)(res);
@@ -6161,19 +6188,20 @@ POST(mq_open)
    }
 }
 
-PRE(mq_unlink)
+PREx(sys_mq_unlink, 0)
 {
-   /* int mq_unlink(const char *name) */
-   PRINT("mq_unlink ( %p(%s) )",arg1, arg1);
+   PRINT("sys_mq_unlink ( %p(%s) )", arg1,arg1);
+   PRE_REG_READ1(long, "mq_unlink", const char *, name);
    PRE_MEM_RASCIIZ( "mq_unlink(name)", arg1 );
 }
 
-PRE(mq_timedsend)
+PREx(sys_mq_timedsend, MayBlock)
 {
-   /* int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
-                       unsigned msg_prio, const struct timespec *abs_timeout); */
-   PRINT("mq_timedsend ( %d, %p, %llu, %d, %p )",
-                arg1,arg2,(ULong)arg3,arg4,arg5);
+   PRINT("sys_mq_timedsend ( %d, %p, %llu, %d, %p )",
+         arg1,arg2,(ULong)arg3,arg4,arg5);
+   PRE_REG_READ5(long, "mq_timedsend",
+                 vki_mqd_t, mqdes, const char *, msg_ptr, vki_size_t, msg_len,
+                 unsigned int, msg_prio, const struct timespec *, abs_timeout);
    if (!fd_allowed(arg1, "mq_timedsend", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
@@ -6184,13 +6212,14 @@ PRE(mq_timedsend)
    }
 }
 
-PRE(mq_timedreceive)
+PREx(sys_mq_timedreceive, MayBlock)
 {
-   /* ssize_t mq_timedreceive(mqd_t mqdes, char *restrict msg_ptr,
-                              size_t msg_len, unsigned *restrict msg_prio,
-                              const struct timespec *restrict abs_timeout); */
-   PRINT("mq_timedreceive( %d, %p, %llu, %p, %p )",
-                arg1,arg2,(ULong)arg3,arg4,arg5);
+   PRINT("sys_mq_timedreceive( %d, %p, %llu, %p, %p )",
+         arg1,arg2,(ULong)arg3,arg4,arg5);
+   PRE_REG_READ5(ssize_t, "mq_timedreceive",
+                 vki_mqd_t, mqdes, char *, msg_ptr, vki_size_t, msg_len,
+                 unsigned int *, msg_prio,
+                 const struct timespec *, abs_timeout);
    if (!fd_allowed(arg1, "mq_timedreceive", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
@@ -6204,28 +6233,31 @@ PRE(mq_timedreceive)
    }
 }
 
-POST(mq_timedreceive)
+POSTx(sys_mq_timedreceive)
 {
    POST_MEM_WRITE( arg2, arg3 );
    if (arg4 != 0)
       POST_MEM_WRITE( arg4, sizeof(unsigned int) );
 }
 
-PRE(mq_notify)
+PREx(sys_mq_notify, 0)
 {
-   /* int mq_notify(mqd_t mqdes, const struct sigevent *notification); */
-   PRINT("mq_notify( %d, %p )", arg1,arg2 );
+   PRINT("sys_mq_notify( %d, %p )", arg1,arg2 );
+   PRE_REG_READ2(long, "mq_notify",
+                 vki_mqd_t, mqdes, const struct sigevent *, notification);
    if (!fd_allowed(arg1, "mq_notify", tid, False))
       set_result( -VKI_EBADF );
    else if (arg2 != 0)
-      PRE_MEM_READ( "mq_notify", arg2, sizeof(struct vki_sigevent) );
+      PRE_MEM_READ( "mq_notify(notification)",
+                    arg2, sizeof(struct vki_sigevent) );
 }
 
-PRE(mq_getsetattr)
+PREx(sys_mq_getsetattr, 0)
 {
-   /* int mq_getsetattr(mqd_t mqdes, const struct mq_attr *restrict mqstat,
-                        struct mq_attr *restrict omqstat); */
-   PRINT("mq_getsetattr( %d, %p, %p )", arg1,arg2,arg3 );
+   PRINT("sys_mq_getsetattr( %d, %p, %p )", arg1,arg2,arg3 );
+   PRE_REG_READ3(long, "mq_getsetattr",
+                 vki_mqd_t, mqdes, const struct mq_attr *, mqstat,
+                 struct mq_attr *, omqstat);
    if (!fd_allowed(arg1, "mq_getsetattr", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
@@ -6240,7 +6272,7 @@ PRE(mq_getsetattr)
    }   
 }
 
-POST(mq_getsetattr)
+POSTx(sys_mq_getsetattr)
 {
    if (arg3 != 0)
       POST_MEM_WRITE( arg3, sizeof(struct vki_mq_attr) );
@@ -6707,11 +6739,11 @@ static const struct sys_info sys_info[] = {
    SYSB_(__NR_set_thread_area,  sys_set_thread_area, Special), // 243 
    SYSB_(__NR_get_thread_area,  sys_get_thread_area, Special), // 244  
 
-   SYSB_(__NR_io_setup,         sys_io_setup, Special), // 245  *
-   SYSB_(__NR_io_destroy,       sys_io_destroy, Special), // 246 *
-   SYSBA(__NR_io_getevents,     sys_io_getevents, MayBlock), // 247 *
-   SYSB_(__NR_io_submit,        sys_io_submit, 0), // 248 *
-   SYSBA(__NR_io_cancel,        sys_io_cancel, 0), // 249 *
+   SYSX_(__NR_io_setup,         sys_io_setup),        // 245 * L
+   SYSX_(__NR_io_destroy,       sys_io_destroy),      // 246 * L
+   SYSXY(__NR_io_getevents,     sys_io_getevents),    // 247 * L
+   SYSX_(__NR_io_submit,        sys_io_submit),       // 248 * L
+   SYSXY(__NR_io_cancel,        sys_io_cancel),       // 249 * L
 
    //   (__NR_fadvise64,        sys_fadvise64),       // 250 * ()
    SYSX_(251,                   sys_ni_syscall),      // 251 * P -- unused
@@ -6744,16 +6776,16 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_vserver,          sys_ni_syscall),   // 273 * P -- unimplemented
    //   (__NR_mbind,            sys_mbind),        // 274 () ()
 
-   //   (__NR_get_mempolicy,    sys_get_mempolicy),   // 275 () ()
-   //   (__NR_set_mempolicy,    sys_set_mempolicy),   // 276 () ()
-   SYSBA(__NR_mq_open,          sys_mq_open, 0),   // 277 *
-   SYSB_(__NR_mq_unlink,        sys_mq_unlink, 0), // (mq_open+1) *
-   SYSB_(__NR_mq_timedsend,     sys_mq_timedsend, MayBlock), // (mq_open+2) *
+   //   (__NR_get_mempolicy,    sys_get_mempolicy),// 275 () ()
+   //   (__NR_set_mempolicy,    sys_set_mempolicy),// 276 () ()
+   SYSXY(__NR_mq_open,          sys_mq_open),      // 277 * P?
+   SYSX_(__NR_mq_unlink,        sys_mq_unlink),    // (mq_open+1) * P?
+   SYSX_(__NR_mq_timedsend,     sys_mq_timedsend), // (mq_open+2) * P?
 
-   SYSBA(__NR_mq_timedreceive,  sys_mq_timedreceive, MayBlock), // (mq_open+3) *
-   SYSB_(__NR_mq_notify,        sys_mq_notify, 0), // (mq_open+4) *
-   SYSBA(__NR_mq_getsetattr,    sys_mq_getsetarr, 0), // (mq_open+5) *
-   SYSX_(__NR_sys_kexec_load,   sys_ni_syscall),   // 283 * P
+   SYSXY(__NR_mq_timedreceive,  sys_mq_timedreceive), // (mq_open+3) * P?
+   SYSX_(__NR_mq_notify,        sys_mq_notify),       // (mq_open+4) * P?
+   SYSXY(__NR_mq_getsetattr,    sys_mq_getsetattr),    // (mq_open+5) * P?
+   SYSX_(__NR_sys_kexec_load,   sys_ni_syscall),      // 283 * P
 };
 #define MAX_SYS_INFO    (sizeof(sys_info)/sizeof(sys_info[0]))
 

@@ -1628,7 +1628,7 @@ Syscall param sigprocmask(set) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:7)
+   by 0x........: main (scalar.c:20)
 
 Syscall param sigprocmask(oldset) points to unaddressable byte(s)
    at 0x........: syscall (in /...libc...)
@@ -1636,7 +1636,7 @@ Syscall param sigprocmask(oldset) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:7)
+   by 0x........: main (scalar.c:20)
 -----------------------------------------------------
 127:  __NR_create_module ni
 -----------------------------------------------------
@@ -3678,6 +3678,127 @@ Syscall param sched_getaffinity(mask) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
+245:       __NR_io_setup 2s 1m
+-----------------------------------------------------
+
+Syscall param io_setup(nr_events) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_setup(ctxp) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_setup(ctxp) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+246:     __NR_io_destroy 1s 0m
+-----------------------------------------------------
+
+Syscall param io_destroy(ctx) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+-----------------------------------------------------
+247:   __NR_io_getevents 5s 2m
+-----------------------------------------------------
+
+Syscall param io_getevents(ctx_id) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_getevents(min_nr) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_getevents(nr) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_getevents(events) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_getevents(timeout) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_getevents(events) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param io_getevents(timeout) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+248:      __NR_io_submit 3s 1m
+-----------------------------------------------------
+
+Syscall param io_submit(ctx_id) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_submit(nr) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_submit(iocbpp) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_submit(iocbpp) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+249:      __NR_io_cancel 3s 2m
+-----------------------------------------------------
+
+Syscall param io_cancel(ctx_id) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_cancel(iocb) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_cancel(result) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param io_cancel(iocb) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param io_cancel(result) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
 250:      __NR_fadvise64 n/a
 -----------------------------------------------------
 -----------------------------------------------------
@@ -3889,6 +4010,196 @@ Syscall param utimes(tvp) points to unaddressable byte(s)
 -----------------------------------------------------
 276:  __NR_set_mempolicy n/a
 -----------------------------------------------------
+-----------------------------------------------------
+277:        __NR_mq_open 4s 2m
+-----------------------------------------------------
+
+Syscall param mq_open(name) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_open(oflag) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_open(mode) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_open(attr) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_open(name) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param mq_open(attr->mq_maxmsg) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param mq_open(attr->mq_msgsize) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+278:      __NR_mq_unlink 1s 1m
+-----------------------------------------------------
+
+Syscall param mq_unlink(name) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_unlink(name) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+279:   __NR_mq_timedsend 5s 2m
+-----------------------------------------------------
+
+Syscall param mq_timedsend(mqdes) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_timedsend(msg_ptr) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_timedsend(msg_len) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_timedsend(msg_prio) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_timedsend(abs_timeout) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_timedsend(msg_ptr) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param mq_timedsend(abs_timeout) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+280:__NR_mq_timedreceive 5s 3m
+-----------------------------------------------------
+
+Syscall param mq_timedreceive(mqdes) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_timedreceive(msg_ptr) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_timedreceive(msg_len) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_timedreceive(msg_prio) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_timedreceive(abs_timeout) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_timedreceive(msg_ptr) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param mq_timedreceive(msg_prio) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param mq_timedreceive(abs_timeout) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+281:      __NR_mq_notify 2s 1m
+-----------------------------------------------------
+
+Syscall param mq_notify(mqdes) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_notify(notification) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_notify(notification) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
+282:  __NR_mq_getsetattr 3s 2m
+-----------------------------------------------------
+
+Syscall param mq_getsetattr(mqdes) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_getsetattr(mqstat) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_getsetattr(omqstat) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param mq_getsetattr(mqstat->mq_flags) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param mq_getsetattr(omqstat) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 -----------------------------------------------------
 283: __NR_sys_kexec_load ni
 -----------------------------------------------------

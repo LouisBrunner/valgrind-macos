@@ -1,6 +1,19 @@
 #include "../memcheck.h"
 #include "scalar.h"
 
+// Here we are trying to trigger every syscall error (scalar errors and
+// memory errors) for every syscall.  We do this by passing a lot of bogus
+// arguments, mostly 0 and 1 (often it's 1 because NULL ptr args often aren't
+// checked for memory errors, or in order to have a non-zero length used
+// with some buffer).  So most of the syscalls don't actually succeed and do
+// anything.
+//
+// Occasionally we have to be careful not to cause Valgrind to seg fault in
+// its pre-syscall wrappers;  it does so because it can't know in general
+// when memory is unaddressable, and so tries to dereference it when doing
+// PRE_MEM_READ/PRE_MEM_WRITE calls.  (Note that Memcheck and Addrcheck will
+// always issue an error message immediately before these seg faults occur).
+
 int main(void)
 {
    // uninitialised, but we know px[0] is 0x0
@@ -1024,24 +1037,34 @@ int main(void)
  //SY(__NR_get_thread_area);
 
    // __NR_io_setup 245
- //GO(__NR_io_setup, ".s .m");
- //SY(__NR_io_setup);
+   GO(__NR_io_setup, "2s 1m");
+   SY(__NR_io_setup, x0, x0);
 
    // __NR_io_destroy 246
- //GO(__NR_io_destroy, ".s .m");
- //SY(__NR_io_destroy);
+   {
+      // jump through hoops to prevent the PRE(io_destroy) wrapper crashing.
+      struct fake_aio_ring {   
+        unsigned        id;     /* kernel internal index number */
+        unsigned        nr;     /* number of io_events */
+        // There are more fields in the real aio_ring, but the 'nr' field is
+        // the only one used by the PRE() wrapper.
+      } ring = { 0, 0 };
+      struct fake_aio_ring* ringptr = &ring;
+      GO(__NR_io_destroy, "1s 0m");
+      SY(__NR_io_destroy, x0+&ringptr);
+   }
 
    // __NR_io_getevents 247
- //GO(__NR_io_getevents, ".s .m");
- //SY(__NR_io_getevents);
+   GO(__NR_io_getevents, "5s 2m");
+   SY(__NR_io_getevents, x0, x0, x0+1, x0, x0+1);
 
    // __NR_io_submit 248
- //GO(__NR_io_submit, ".s .m");
- //SY(__NR_io_submit);
+   GO(__NR_io_submit, "3s 1m");
+   SY(__NR_io_submit, x0, x0+1, x0);
 
    // __NR_io_cancel 249
- //GO(__NR_io_cancel, ".s .m");
- //SY(__NR_io_cancel);
+   GO(__NR_io_cancel, "3s 2m");
+   SY(__NR_io_cancel, x0, x0, x0);
 
    // __NR_fadvise64 250
    GO(__NR_fadvise64, "n/a");
@@ -1152,28 +1175,28 @@ int main(void)
  //SY(__NR_set_mempolicy); // (Not yet handled by Valgrind)
 
    // __NR_mq_open 277
- //GO(__NR_mq_open, ".s .m");
- //SY(__NR_mq_open);
+   GO(__NR_mq_open, "4s 2m");
+   SY(__NR_mq_open, x0, x0+O_CREAT, x0, x0+1);
 
    // __NR_mq_unlink (__NR_mq_open+1)
- //GO(__NR_mq_unlink, ".s .m");
- //SY(__NR_mq_unlink);
+   GO(__NR_mq_unlink, "1s 1m");
+   SY(__NR_mq_unlink, x0);
 
    // __NR_mq_timedsend (__NR_mq_open+2)
- //GO(__NR_mq_timedsend, ".s .m");
- //SY(__NR_mq_timedsend);
+   GO(__NR_mq_timedsend, "5s 2m");
+   SY(__NR_mq_timedsend, x0, x0, x0+1, x0, x0+1);
 
    // __NR_mq_timedreceive (__NR_mq_open+3)
- //GO(__NR_mq_timedreceive, ".s .m");
- //SY(__NR_mq_timedreceive);
-
+   GO(__NR_mq_timedreceive, "5s 3m");
+   SY(__NR_mq_timedreceive, x0, x0, x0+1, x0+1, x0+1);
+  
    // __NR_mq_notify (__NR_mq_open+4)
- //GO(__NR_mq_notify, ".s .m");
- //SY(__NR_mq_notify);
+   GO(__NR_mq_notify, "2s 1m");
+   SY(__NR_mq_notify, x0, x0+1);
 
    // __NR_mq_getsetattr (__NR_mq_open+5)
- //GO(__NR_mq_getsetattr, ".s .m");
- //SY(__NR_mq_getsetattr);
+   GO(__NR_mq_getsetattr, "3s 2m");
+   SY(__NR_mq_getsetattr, x0, x0+1, x0+1);
    
    // __NR_sys_kexec_load 283
    GO(__NR_sys_kexec_load, "ni");

@@ -100,6 +100,7 @@ typedef struct {
 } __vki_kernel_fd_set;
 
 typedef int __vki_kernel_key_t;
+typedef int __vki_kernel_mqd_t;
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/types.h
@@ -112,6 +113,7 @@ typedef __vki_kernel_pid_t	vki_pid_t;
 typedef __vki_kernel_key_t	vki_key_t;
 typedef __vki_kernel_suseconds_t	vki_suseconds_t;
 typedef __vki_kernel_timer_t	vki_timer_t;
+typedef __vki_kernel_mqd_t	vki_mqd_t;
 
 // [[Nb: it's a bit unclear due to a #ifdef, but I think this is right. --njn]]
 typedef __vki_kernel_uid32_t	vki_uid_t;

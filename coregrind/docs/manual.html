@@ -2462,8 +2462,16 @@ programs.
 
   <li><code>--threshold=X</code> [default: 99%] <p>
       Sets the threshold for the function-by-function summary.  Functions are
-      shown that account for more than X% of all the primary sort events.  If
-      auto-annotating, also affects which files are annotated.</li><p>
+      shown that account for more than X% of the primary sort event.  If
+      auto-annotating, also affects which files are annotated.
+      
+      Note: thresholds can be set for more than one of the events by appending
+      any events for the <code>--sort</code> option with a colon and a number
+      (no spaces, though).  E.g. if you want to see the functions that cover
+      99% of L2 read misses and 99% of L2 write misses, use this option:
+      
+      <blockquote><code>--sort=D2mr:99,D2mw:99</code></blockquote>
+      </li><p>
 
   <li><code>--auto=no</code> [default]<br>
       <code>--auto=yes</code> <p>
@@ -2568,13 +2576,21 @@ Some odd things that can occur during annotation:
       number.  Valgrind can handle some files with more than 65,535 lines
       correctly by making some guesses to identify line number overflows.  But
       some cases are beyond it, in which case you'll get a warning message
-      explaining that annotations for the file might be incorrect.
+      explaining that annotations for the file might be incorrect.<p>
+  </li>
+
+  <li>If you compile some files with <code>-g</code> and some without, some
+      events that take place in a file without debug info could be attributed
+      to the last line of a file with debug info (whichever one gets placed
+      before the non-debug-info file in the executable).<p>
   </li>
 </ul>
 
+This list looks long, but these cases should be fairly rare.<p>
+
 Note: stabs is not an easy format to read.  If you come across bizarre
 annotations that look like might be caused by a bug in the stabs reader,
-please let us know.
+please let us know.<p>
 
 
 <h3>7.11&nbsp; Accuracy</h3>
@@ -2593,6 +2609,10 @@ Valgrind's cache profiling has a number of shortcomings:
 
   <li>It doesn't account for cache misses not visible at the instruction level,
       eg. those arising from TLB misses, or speculative execution.</li><p>
+
+  <li>Valgrind's custom <code>malloc()</code> will allocate memory in different
+      ways to the standard <code>malloc()</code>, which could warp the results.
+      </li><p>
 
   <li>The instructions <code>bts</code>, <code>btr</code> and <code>btc</code>
       will incorrectly be counted as doing a data read if both the arguments

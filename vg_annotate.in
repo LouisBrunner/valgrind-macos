@@ -112,15 +112,18 @@ my @show_order;
 my @sort_events;
 
 # Map from @sort_events indices to @events indices, eg. (3,2).  Same idea as
-# for @show_order
+# for @show_order.
 my @sort_order;
 
-# Threshold;  whatever event is the primary sort, we print out functions
-# representing more than this proportion of 'event' events.
-my $threshold = 99;
+# Thresholds, one for each sort event (or default to 1 if no sort events
+# specified).  We print out functions and do auto-annotations until we've
+# handled this proportion of all the events thresholded.
+my @thresholds;
+
+my $default_threshold = 99;
 
 # If on, automatically annotates all files that are involved in getting over
-# the threshold count of the primary sort event.
+# all the threshold counts.
 my $auto_annotate = 0;
 
 # Number of lines to show around each annotated line.
@@ -145,7 +148,7 @@ usage: vg_annotate [options] [source-files]
     --show=A,B,C          only show figures for events A,B,C [all]
     --sort=A,B,C          sort columns by events A,B,C [event column order]
     --threshold=<0--100>  percentage of counts (of primary sort event) we
-                          are interested in [$threshold%]
+                          are interested in [$default_threshold%]
     --auto=yes|no         annotate all source files containing functions
                           that helped reach the event count threshold [no]
     --context=N           print N lines of context before and after
@@ -184,13 +187,22 @@ sub process_cmd_line()
             # --sort=A,B,C
             } elsif ($arg =~ /^--sort=(.*)$/) {
                 @sort_events = split(/,/, $1);
+                foreach my $i (0 .. scalar @sort_events - 1) {
+                    if ($sort_events[$i] =~#/.*:(\d+)$/) {
+                                            /.*:([\d\.]+)%?$/) {
+                        my $th = $1;
+                        ($th >= 0 && $th <= 100) or die($usage);
+                        $sort_events[$i] =~ s/:.*//;
+                        $thresholds[$i] = $th;
+                    } else {
+                        $thresholds[$i] = 0;
+                    }
+                }
 
             # --threshold=X (tolerates a trailing '%')
             } elsif ($arg =~ /^--threshold=([\d\.]+)%?$/) {
-                $threshold = $1;
-                if ($threshold < 0 || $threshold > 100) {
-                    die($usage);
-                }
+                $thresholds[0] = $1;
+                ($1 >= 0 && $1 <= 100) or die($usage);
 
             # --auto=yes|no
             } elsif ($arg =~ /^--auto=(yes|no)$/) {
@@ -242,8 +254,9 @@ sub max ($$)
 # 1. If $a2->[$i] is undefined, it defaults to 0 which is what we want; we turn
 #    off warnings to allow this.  This makes things about 10% faster than
 #    checking for definedness ourselves.
-# 2. We don't add a ".", even though it's value is 0, because we don't want to
-#    make an $a2->[$i] that is undef become 0 unnecessarily.
+# 2. We don't add an undefined count or a ".", even though it's value is 0,
+#    because we don't want to make an $a2->[$i] that is undef become 0
+#    unnecessarily.
 sub add_array_a_to_b ($$) 
 {
     my ($a1, $a2) = @_;
@@ -251,7 +264,7 @@ sub add_array_a_to_b ($$)
     my $n = max(scalar @$a1, scalar @$a2);
     $^W = 0;
     foreach my $i (0 .. $n-1) {
-        $a2->[$i] += $a1->[$i] if ("." ne $a1->[$i]);
+        $a2->[$i] += $a1->[$i] if (defined $a1->[$i] && "." ne $a1->[$i]);
     }
     $^W = 1;
 }
@@ -329,6 +342,15 @@ sub read_input_file()
     }
     foreach my $sort_event (@sort_events) {
         push(@sort_order, $events{$sort_event});
+    }
+
+    # If no --threshold args give, default to 99% for the primary sort event,
+    # and 0% for the rest.
+    if (not @thresholds) {
+        foreach my $e (@sort_order) {
+            push(@thresholds, 0);
+        }
+        $thresholds[0] = $default_threshold;
     }
 
     my $curr_file;
@@ -424,7 +446,7 @@ sub print_options ()
     print("Events recorded:  @events\n");
     print("Events shown:     @show_events\n");
     print("Event sort order: @sort_events\n");
-    print("Threshold:        $threshold%\n");
+    print("Thresholds:       @thresholds\n");
 
     my @include_dirs2 = @include_dirs;  # copy @include_dirs
     shift(@include_dirs2);       # remove "" entry, which is always the first
@@ -534,7 +556,7 @@ sub print_events ($)
 # Prints summary and function totals (with separate column widths, so that
 # function names aren't pushed over unnecessarily by huge summary figures).
 # Also returns a hash containing all the files that are involved in getting the
-# events count above the threshold (ie. all the interesting ones).
+# events count above the thresholds (ie. all the interesting ones).
 sub print_summary_and_fn_totals ()
 {
     my @fn_fullnames = keys   %fn_totals;
@@ -564,29 +586,43 @@ sub print_summary_and_fn_totals ()
         mycmp($fn_totals{$a}, $fn_totals{$b})
     } @fn_fullnames;
 
-    # The thresholded event is the one that is the primary sort event.
+
+    # Assertion
+    (scalar @sort_order == scalar @thresholds) or 
+        die("sort_order length != thresholds length:\n",
+            "  @sort_order\n  @thresholds\n");
+
     my $threshold_files       = {};
-    my $threshold_event_index = $sort_order[0];
-    my $threshold_total       = $summary_CC->[$threshold_event_index];
-    my $curr_total            = 0;
+    # @curr_totals has the same shape as @sort_order and @thresholds
+    my @curr_totals = ();
+    foreach my $e (@thresholds) {
+        push(@curr_totals, 0);
+    }
 
     # Print functions, stopping when the threshold has been reached.
     foreach my $fn_name (@fn_fullnames) {
 
-        # Stop when we've reached the threshold
-        last if ($curr_total * 100 / $threshold_total >= $threshold);
+        # Stop when we've reached all the thresholds
+        my $reached_all_thresholds = 1;
+        foreach my $i (scalar @thresholds - 1) {
+            my $prop = $curr_totals[$i] * 100 / $summary_CC->[$sort_order[$i]];
+            $reached_all_thresholds &= ($prop >= $thresholds[$i]);
+        }
+        last if $reached_all_thresholds;
 
         # Print function results
         my $fn_CC = $fn_totals{$fn_name};
         print_CC($fn_CC, $fn_CC_col_widths);
         print(" $fn_name\n");
 
-        # Update the threshold counting
+        # Update the threshold counts
         my $filename = $fn_name;
         $filename =~ s/:.+$//;    # remove function name
         $threshold_files->{$filename} = 1;
-        $curr_total += $fn_CC->[$threshold_event_index] 
-            if (defined $fn_CC->[$threshold_event_index]);
+        foreach my $i (0 .. scalar @sort_order - 1) {
+            $curr_totals[$i] += $fn_CC->[$sort_order[$i]] 
+                if (defined $fn_CC->[$sort_order[$i]]);
+        }
     }
     print("\n");
 

@@ -549,6 +549,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
    Segment* s;
    Addr     end, s_end;
    Int      i;
+   Bool     deleted;
 
    if (len == 0)
       return;
@@ -565,6 +566,11 @@ void VG_(unmap_range)(Addr addr, SizeT len)
    vg_assert(IS_PAGE_ALIGNED(len));
 
    for (i = 0; i < segments_used; i++) {
+
+      /* do not delete .. even though it looks stupid */
+      vg_assert(i >= 0);
+
+      deleted = False;
       s = &segments[i];
       s_end = s->addr + s->len;
 
@@ -612,6 +618,7 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 	 */
          dump_translations_from(s);
          delete_segment_at(i);
+         deleted = True;
 
 	 if (debug)
 	    VG_(printf)("  case 3: seg %d deleted\n", i);
@@ -626,11 +633,19 @@ void VG_(unmap_range)(Addr addr, SizeT len)
 	 (void)split_segment(addr+len);
 	 vg_assert(segments[i_middle].addr == addr);
 	 delete_segment_at(i_middle);
+	 deleted = True;
 
 	 if (debug)
 	    VG_(printf)("  case 4: subrange %p-%p deleted\n",
 			addr, addr+len);
       }
+
+      /* If we deleted this segment (or any above), those above will
+         have been moved down to fill in the hole in the segment
+         array.  In order that we don't miss them, we have to
+         re-consider this slot number; hence the i--. */
+      if (deleted)
+         i--;
    }
    preen_segments();
    if (0) show_segments("unmap_range(AFTER)");

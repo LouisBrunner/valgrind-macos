@@ -144,7 +144,7 @@ void pthread_rwlockattr_getkind_np ( void )  { unimp("pthread_rwlockattr_getkind
 void pthread_rwlockattr_getpshared ( void )  { unimp("pthread_rwlockattr_getpshared"); }
 //void pthread_rwlockattr_init ( void )  { unimp("pthread_rwlockattr_init"); }
 void pthread_rwlockattr_setkind_np ( void )  { unimp("pthread_rwlockattr_setkind_np"); }
-void pthread_rwlockattr_setpshared ( void )  { unimp("pthread_rwlockattr_setpshared"); }
+//void pthread_rwlockattr_setpshared ( void )  { unimp("pthread_rwlockattr_setpshared"); }
 //void pthread_self ( void )  { unimp("pthread_self"); }
 //void pthread_setcancelstate ( void )  { unimp("pthread_setcancelstate"); }
 //void pthread_setcanceltype ( void )  { unimp("pthread_setcanceltype"); }

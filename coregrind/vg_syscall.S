@@ -46,11 +46,11 @@ VG_(do_syscall):
 
 	# and save the real FPU state too
 	fwait
-	fnsave	VG_(real_fpu_state_saved_over_syscall_d1)
-	frstor	VG_(real_fpu_state_saved_over_syscall_d1)
+	fnsave	VG_(real_fpu_state_saved_over_syscall)
+	frstor	VG_(real_fpu_state_saved_over_syscall)
 
 	# remember what the simulators stack pointer is
-	movl	%esp, VG_(esp_saved_over_syscall_d1)
+	movl	%esp, VG_(esp_saved_over_syscall)
 	
 	# Now copy the simulated machines state into the real one
 	# esp still refers to the simulators stack
@@ -74,7 +74,7 @@ VG_(do_syscall):
 	# restore stack as soon as possible
 	# esp refers to simulatees stack
 	movl	%esp, VG_(m_state_static)+16
-	movl	VG_(esp_saved_over_syscall_d1), %esp
+	movl	VG_(esp_saved_over_syscall), %esp
 	# esp refers to simulators stack
 
 	# ... and undo everything else.  
@@ -94,7 +94,7 @@ VG_(do_syscall):
 	frstor	VG_(m_state_static)+40
 
 	# Restore the state of the simulator
-	frstor	VG_(real_fpu_state_saved_over_syscall_d1)
+	frstor	VG_(real_fpu_state_saved_over_syscall)
 	popal
 
 	ret

@@ -803,7 +803,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_32HLto64:
          return assignNew(mce, Ity_I64,
-                          binop(Iop_32HLto64, atom1, atom2));
+                          binop(Iop_32HLto64, vatom1, vatom2));
 
       case Iop_MullS32:
       case Iop_MullU32: {

@@ -877,11 +877,24 @@ HInstrArray* doRegisterAllocation (
             so, bag it.  NOTE, we could improve this by selecting an
             rreg for which the next live-range event is as far ahead
             as possible. */
+         k_suboptimal = -1;
          for (k = 0; k < n_state; k++) {
-            if (state[k].disp == Free
-                && hregClass(state[k].rreg) == hregClass(vreg))
+            if (state[k].disp != Free
+                || hregClass(state[k].rreg) != hregClass(vreg))
+               continue;
+            if (state[k].has_hlrs) {
+               /* Well, at least we can use k_suboptimal if we really
+                  have to.  Keep on looking for a better candidate. */
+               k_suboptimal = k;
+            } else {
+               /* Found a preferable reg.  Use it. */
+               k_suboptimal = -1;
                break;
+            }
          }
+         if (k_suboptimal >= 0)
+            k = k_suboptimal;
+
          if (k < n_state) {
             state[k].disp = Bound;
             state[k].vreg = vreg;

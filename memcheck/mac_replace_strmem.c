@@ -2,7 +2,7 @@
 /*--------------------------------------------------------------------*/
 /*--- Replacements for strcpy(), memcpy() et al, which run on the  ---*/
 /*--- simulated CPU.                                               ---*/
-/*---                                          mc_replace_strmem.c ---*/
+/*---                                         mac_replace_strmem.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -84,7 +84,7 @@ void complain2 ( Char* s, char* dst, const char* src )
 {
    Char buf[256];
    snprintf(buf, 100, "%s(%p, %p)", s, dst, src );
-   VALGRIND_NON_SIMD_tstCALL1( MC_(record_overlap_error), buf );
+   VALGRIND_NON_SIMD_tstCALL1( MAC_(record_overlap_error), buf );
 }
 
 static __inline__
@@ -92,7 +92,7 @@ void complain3 ( Char* s, void* dst, const void* src, int n )
 {
    Char buf[256];
    snprintf(buf, 100, "%s(%p, %p, %d)", s, dst, src, n );
-   VALGRIND_NON_SIMD_tstCALL1( MC_(record_overlap_error), buf );
+   VALGRIND_NON_SIMD_tstCALL1( MAC_(record_overlap_error), buf );
 }
 
 char* strrchr ( const char* s, int c )
@@ -281,5 +281,5 @@ void* memcpy( void *dst, const void *src, unsigned int len )
 
 
 /*--------------------------------------------------------------------*/
-/*--- end                                      mc_replace_strmem.c ---*/
+/*--- end                                     mac_replace_strmem.c ---*/
 /*--------------------------------------------------------------------*/

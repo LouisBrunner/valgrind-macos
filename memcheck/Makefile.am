@@ -16,11 +16,11 @@ vgskin_memcheck_so_SOURCES = \
 	mac_leakcheck.c \
 	mac_malloc_wrappers.c \
 	mac_needs.c \
+	mac_replace_strmem.c \
 	mc_main.c \
 	mc_clientreqs.c \
 	mc_errcontext.c \
 	mc_from_ucode.c \
-	mc_replace_strmem.c \
 	mc_translate.c \
 	mc_helpers.S
 vgskin_memcheck_so_LDFLAGS = -shared
@@ -36,5 +36,5 @@ noinst_HEADERS =	\
 	mc_constants.h	\
 	mc_include.h
 
-mc_replace_strmem.o: CFLAGS += -fno-omit-frame-pointer
+mac_replace_strmem.o: CFLAGS += -fno-omit-frame-pointer
 

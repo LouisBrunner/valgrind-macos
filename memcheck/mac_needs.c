@@ -287,6 +287,13 @@ void MAC_(pp_shared_SkinError) ( Error* err )
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
+      case OverlapErr:
+         VG_(message)(Vg_UserMsg, 
+                      "Source and destination overlap in %s",
+                      VG_(get_error_string)(err));
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         break;
+
       case LeakErr: {
          /* Totally abusing the types of these spare fields... oh well. */
          UInt n_this_record   = (UInt)VG_(get_error_address)(err);
@@ -463,6 +470,16 @@ void MAC_(record_freemismatch_error) ( ThreadState* tst, Addr a )
    err_extra.addrinfo.akind = Undescribed;
    VG_(maybe_record_error)( tst, FreeMismatchErr, a, /*s*/NULL, &err_extra );
 }
+
+
+void MAC_(record_overlap_error) ( ThreadState* tst, Char* function )
+{
+   MAC_Error err_extra;
+
+   MAC_(clear_MAC_Error)( &err_extra );
+   VG_(maybe_record_error)( tst, OverlapErr, /*addr*/0, function, &err_extra );
+}
+
 
 /* Updates the copy with address info if necessary (but not for LeakErrs). */
 UInt SK_(update_extra)( Error* err )

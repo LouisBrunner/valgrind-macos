@@ -113,14 +113,14 @@ extern Bool MC_(clo_avoid_strlen_errors);
 /*--- Functions                                            ---*/
 /*------------------------------------------------------------*/
 
-/* Functions defined in vg_memcheck_helpers.S */
+/* Functions defined in mc_helpers.S */
 extern void MC_(helper_value_check4_fail) ( void );
 extern void MC_(helper_value_check2_fail) ( void );
 extern void MC_(helper_value_check1_fail) ( void );
 extern void MC_(helper_value_check0_fail) ( void );
 
 
-/* Functions defined in vg_memcheck.c */
+/* Functions defined in mc_main.c */
 extern void MC_(helperc_STOREV4) ( Addr, UInt );
 extern void MC_(helperc_STOREV2) ( Addr, UInt );
 extern void MC_(helperc_STOREV1) ( Addr, UInt );
@@ -151,15 +151,14 @@ extern Int  MC_(get_or_set_vbits_for_client) (
                Bool setting /* True <=> set vbits,  False <=> get vbits */ 
             );
 
-/* Functions defined in vg_memcheck_clientreqs.c */
+/* Functions defined in mc_clientreqs.c */
 extern Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai );
 extern void MC_(show_client_block_stats) ( void );
 
 
-/* Functions defined in vg_memcheck_errcontext.c */
+/* Functions defined in mc_errcontext.c */
 extern void MC_(record_value_error)  ( ThreadState* tst, Int size );
 extern void MC_(record_user_error)   ( ThreadState* tst, Addr a, Bool isWrite );
-extern void MC_(record_overlap_error)( ThreadState* tst, Char* function );
 
 
 #endif

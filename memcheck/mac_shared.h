@@ -304,6 +304,7 @@ extern void MAC_(record_param_error)       ( ThreadState* tst, Addr a,
 extern void MAC_(record_jump_error)        ( ThreadState* tst, Addr a );
 extern void MAC_(record_free_error)        ( ThreadState* tst, Addr a );
 extern void MAC_(record_freemismatch_error)( ThreadState* tst, Addr a );
+extern void MAC_(record_overlap_error)     ( ThreadState* tst, Char* function );
 
 extern void MAC_(pp_shared_SkinError)      ( Error* err);
 

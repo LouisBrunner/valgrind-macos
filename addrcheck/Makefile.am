@@ -17,5 +17,6 @@ vgskin_addrcheck_so_LDADD = \
 	../memcheck/mac_leakcheck.o \
 	../memcheck/mac_malloc_wrappers.o \
 	../memcheck/mac_needs.o \
+	../memcheck/mac_replace_strmem.o \
 	../coregrind/vg_replace_malloc.o
 

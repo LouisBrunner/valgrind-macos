@@ -114,13 +114,6 @@ void SK_(pp_SkinError) ( Error* err )
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
          break;
 
-      case OverlapErr:
-         VG_(message)(Vg_UserMsg, 
-                      "Source and destination overlap in %s",
-                      VG_(get_error_string)(err));
-         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         break;
-
       default: 
          MAC_(pp_shared_SkinError)(err);
          break;
@@ -143,7 +136,7 @@ void MC_(record_value_error) ( ThreadState* tst, Int size )
    VG_(maybe_record_error)( tst, ValueErr, /*addr*/0, /*s*/NULL, &err_extra );
 }
 
-/* These two called from non-generated code */
+/* This called from non-generated code */
 
 void MC_(record_user_error) ( ThreadState* tst, Addr a, Bool isWrite )
 {
@@ -155,14 +148,6 @@ void MC_(record_user_error) ( ThreadState* tst, Addr a, Bool isWrite )
    err_extra.addrinfo.akind = Undescribed;
    err_extra.isWrite        = isWrite;
    VG_(maybe_record_error)( tst, UserErr, a, /*s*/NULL, &err_extra );
-}
-
-void MC_(record_overlap_error) ( ThreadState* tst, Char* function )
-{
-   MAC_Error err_extra;
-
-   MAC_(clear_MAC_Error)( &err_extra );
-   VG_(maybe_record_error)( tst, OverlapErr, /*addr*/0, function, &err_extra );
 }
 
 /*------------------------------------------------------------*/

@@ -1756,6 +1756,7 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
       } else {
          /* Someone else has it; we have to wait.  Mark ourselves
             thusly. */
+         /* GUARD: __m_count > 0 && __m_owner is valid */
          vg_threads[tid].status        = VgTs_WaitMX;
          vg_threads[tid].associated_mx = mutex;
          /* No assignment to %EDX, since we're blocking. */
@@ -1902,6 +1903,8 @@ void release_N_threads_waiting_on_cond ( pthread_cond_t* cond,
 
       mx = vg_threads[i].associated_mx;
       vg_assert(mx != NULL);
+      vg_assert(mx->__m_count > 0);
+      vg_assert(is_valid_tid((ThreadId)mx->__m_owner));
 
       if (mx->__m_owner == VG_INVALID_THREADID) {
          /* Currently unheld; hand it out to thread i. */
@@ -2139,19 +2142,29 @@ void scheduler_sanity ( void )
       mx = vg_threads[i].associated_mx;
       cv = vg_threads[i].associated_cv;
       if (vg_threads[i].status == VgTs_WaitMX) {
+	/* If we're waiting on a MX: (1) the mx is not null, (2, 3)
+           it's actually held by someone, since otherwise this thread
+           is deadlocked, (4) the mutex's owner is not us, since
+           otherwise this thread is also deadlocked.  The logic in
+           do_pthread_mutex_lock rejects attempts by a thread to lock
+           a (non-recursive) mutex which it already owns. 
+
+           (2) has been seen to fail sometimes.  I don't know why.
+           Possibly to do with signals. */
          vg_assert(cv == NULL);
-         vg_assert(mx != NULL);
-         vg_assert(mx->__m_count > 0);
-         vg_assert(is_valid_tid((ThreadId)mx->__m_owner));
-         vg_assert(i != (ThreadId)mx->__m_owner); 
-            /* otherwise thread i would be deadlocked. */
+         /* 1 */ vg_assert(mx != NULL);
+	 /* 2 */ vg_assert(mx->__m_count > 0);
+         /* 3 */ vg_assert(is_valid_tid((ThreadId)mx->__m_owner));
+         /* 4 */ vg_assert(i != (ThreadId)mx->__m_owner); 
       } else 
       if (vg_threads[i].status == VgTs_WaitCV) {
          vg_assert(cv != NULL);
          vg_assert(mx != NULL);
       } else {
-         vg_assert(cv == NULL);
-         vg_assert(mx == NULL);
+         /* Unfortunately these don't hold true when a sighandler is
+            running.  To be fixed. */
+         /* vg_assert(cv == NULL); */
+         /* vg_assert(mx == NULL); */
       }
    }
 }

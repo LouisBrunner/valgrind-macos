@@ -3745,11 +3745,11 @@ static
 void dis_push_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
 {
     Int t1 = newTemp(cb), t2 = newTemp(cb);
-    vg_assert(sz == 4);
+    vg_assert(sz == 2 || sz == 4);
     uInstr2(cb, GETSEG, 2, ArchRegS, sreg,  TempReg, t1);
     uInstr2(cb, GET,    4, ArchReg,  R_ESP, TempReg, t2);
     uInstr2(cb, SUB,    4, Literal,  0,     TempReg, t2);
-    uLiteral(cb, 4);
+    uLiteral(cb, sz);
     uInstr2(cb, PUT,    4, TempReg,  t2,    ArchReg, R_ESP);
     uInstr2(cb, STORE,  2, TempReg,  t1,    TempReg, t2);
     DIP("push %s\n", VG_(name_of_seg_reg)(sreg));
@@ -3759,7 +3759,7 @@ static
 void dis_pop_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
 {
    Int t1 = newTemp(cb), t2 = newTemp(cb);
-   vg_assert(sz == 4);
+   vg_assert(sz == 2 || sz == 4);
    uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg,  t2);
    uInstr2(cb, LOAD,   2, TempReg, t2,       TempReg,  t1);
    uInstr2(cb, ADD,    4, Literal, 0,        TempReg,  t2);

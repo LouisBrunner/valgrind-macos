@@ -1,0 +1,6 @@
+sp change after push = -2
+sp change after pop = 2
+fs after push and pop = 0003
+sp change after push = -4
+sp change after pop = 4
+fs after push and pop = 0003

@@ -36,6 +36,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
+	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	rcl_assert.stderr.exp rcl_assert.vgtest \
 	rcrl.stderr.exp rcrl.stdout.exp rcrl.vgtest \
 	readline1.stderr.exp readline1.stdout.exp \
@@ -59,7 +60,7 @@ check_PROGRAMS = \
 	fucomip insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2 \
 	munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
-	pth_blockedsig \
+	pth_blockedsig pushpopseg \
 	syscall-restart1 syscall-restart2 system \
 	coolo_sigaction gxx304 yield
 
@@ -97,6 +98,7 @@ insn_sse2_LDADD		= -lm
 map_unmap_SOURCES	= map_unmap.c
 mremap_SOURCES		= mremap.c
 munmap_exe_SOURCES 	= munmap_exe.c
+pushpopseg_SOURCES	= pushpopseg.c
 rcl_assert_SOURCES 	= rcl_assert.S
 rcrl_SOURCES 		= rcrl.c
 readline1_SOURCES 	= readline1.c

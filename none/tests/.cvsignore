@@ -56,6 +56,7 @@ pth_simple_mutex
 pth_simple_threads
 pth_specific
 pth_yield
+pushpopseg
 *.stdout.diff
 *.stderr.diff
 *.stdout.out

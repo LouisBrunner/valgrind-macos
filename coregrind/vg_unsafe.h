@@ -37,7 +37,7 @@
 #include <sys/mman.h>     /* for PROT_* */
 #include <sys/utsname.h>  /* for uname */
 #include <sys/time.h>     /* for struct timeval & struct timezone */
-#ifdef KERNEL_2_6
+#if defined(KERNEL_2_6) || defined(KERNEL_2_4)
 /* ugly hack to avoid that kernel headers redefine stuff from sys/time.h */
 #define _LINUX_TIME_H
 #endif

@@ -16,6 +16,7 @@ our %ArgTypes = (
                  m128 => "reg128_t",
                  eflags => "reg32_t",
                  st => "reg64_t",
+                 fpucw => "reg16_t",
                  fpusw => "reg16_t"
                  );
 
@@ -194,6 +195,8 @@ while (<>)
     my $presetc = 0;
     my $eflagsmask;
     my $eflagsset;
+    my $fpucwmask;
+    my $fpucwset;
     my $fpuswmask;
     my $fpuswset;
 
@@ -281,8 +284,19 @@ while (<>)
             $values[0] = oct($values[0]) if $values[0] =~ /^0/;
             $values[1] = oct($values[1]) if $values[1] =~ /^0/;
 
-            $eflagsmask = sprintf "0x%x", ~$values[0];
-            $eflagsset = sprintf "0x%x", $values[1];
+            $eflagsmask = sprintf "0x%08x", $values[0] ^ 0xffffffff;
+            $eflagsset = sprintf "0x%08x", $values[1];
+        }
+        elsif ($preset =~ /^(fpucw)\[([^\]]+)\]$/)
+        {
+            my $type = $1;
+            my @values = split(/,/, $2);
+
+            $values[0] = oct($values[0]) if $values[0] =~ /^0/;
+            $values[1] = oct($values[1]) if $values[1] =~ /^0/;
+
+            $fpucwmask = sprintf "0x%04x", $values[0] ^ 0xffff;
+            $fpucwset = sprintf "0x%04x", $values[1];
         }
         elsif ($preset =~ /^(fpusw)\[([^\]]+)\]$/)
         {
@@ -292,8 +306,8 @@ while (<>)
             $values[0] = oct($values[0]) if $values[0] =~ /^0/;
             $values[1] = oct($values[1]) if $values[1] =~ /^0/;
 
-            $fpuswmask = sprintf "0x%x", ~$values[0];
-            $fpuswset = sprintf "0x%x", $values[1];
+            $fpuswmask = sprintf "0x%04x", $values[0] ^ 0xffff;
+            $fpuswset = sprintf "0x%04x", $values[1];
         }
         else
         {
@@ -512,7 +526,7 @@ while (<>)
                 name => $name,
                 type => "eflags",
                 subtype => "ud",
-                values => [ map { sprintf "0x%x", $_ } @values ]
+                values => [ map { sprintf "0x%08x", $_ } @values ]
             };
 
             push @results, $result;
@@ -521,8 +535,32 @@ while (<>)
 
             if (!defined($eflagsmask) && !defined($eflagsset))
             {
-                $eflagsmask = sprintf "0x%x", ~$values[0];
-                $eflagsset = sprintf "0x%x", $values[0] & ~$values[1];
+                $eflagsmask = sprintf "0x%08x", $values[0] ^ 0xffffffff;
+                $eflagsset = sprintf "0x%08x", $values[0] & ~$values[1];
+            }
+        }
+        elsif ($result =~ /^fpucw\[([^\]]+)\]$/)
+        {
+            my @values = split(/,/, $1);
+            
+            $values[0] = oct($values[0]) if $values[0] =~ /^0/;
+            $values[1] = oct($values[1]) if $values[1] =~ /^0/;
+            
+            my $result = {
+                name => $name,
+                type => "fpucw",
+                subtype => "ud",
+                values => [ map { sprintf "0x%04x", $_ } @values ]
+            };
+
+            push @results, $result;
+            
+            print qq|   $ArgTypes{fpucw} $name;\n|;
+
+            if (!defined($fpucwmask) && !defined($fpucwset))
+            {
+                $fpucwmask = sprintf "0x%04x", $values[0] ^ 0xffff;
+                $fpucwset = sprintf "0x%04x", $values[0] & ~$values[1];
             }
         }
         elsif ($result =~ /^fpusw\[([^\]]+)\]$/)
@@ -536,7 +574,7 @@ while (<>)
                 name => $name,
                 type => "fpusw",
                 subtype => "ud",
-                values => [ map { sprintf "0x%x", $_ } @values ]
+                values => [ map { sprintf "0x%04x", $_ } @values ]
             };
 
             push @results, $result;
@@ -545,8 +583,8 @@ while (<>)
 
             if (!defined($fpuswmask) && !defined($fpuswset))
             {
-                $fpuswmask = sprintf "0x%x", ~$values[0];
-                $fpuswset = sprintf "0x%x", $values[0] & ~$values[1];
+                $fpuswmask = sprintf "0x%04x", $values[0] ^ 0xffff;
+                $fpuswset = sprintf "0x%04x", $values[0] & ~$values[1];
             }
         }
         else
@@ -561,7 +599,7 @@ while (<>)
 
     foreach my $result (@results)
     {
-        if ($result->{type} =~ /^(m(8|16|32|64|128)|st|eflags|fpusw)$/)
+        if ($result->{type} =~ /^(m(8|16|32|64|128)|st|eflags|fpu[cs]w)$/)
         {
             $result->{argnum} = $argnum++;
         }
@@ -650,6 +688,16 @@ while (<>)
         print qq|         \"popfl\\n\"\n|;
     }
 
+    if (defined($fpucwmask) || defined($fpucwset))
+    {
+        print qq|         \"subl \$2, %%esp\\n\"\n|;
+        print qq|         \"fstcw (%%esp)\\n\"\n|;
+        print qq|         \"andw \$$fpucwmask, (%%esp)\\n\"\n| if defined($fpucwmask);
+        print qq|         \"orw \$$fpucwset, (%%esp)\\n\"\n| if defined($fpucwset);
+        print qq|         \"fldcw (%%esp)\\n\"\n|;
+        print qq|         \"addl \$2, %%esp\\n\"\n|;
+    }
+
     print qq|         \"$insn|;
     
     my $prefix = " ";
@@ -725,6 +773,10 @@ while (<>)
             print qq|         \"pushfl\\n\"\n|;
             print qq|         \"popl %$result->{argnum}\\n\"\n|;
         }
+        elsif ($result->{type} eq "fpucw")
+        {
+            print qq|         \"fstcw %$result->{argnum}\\n\"\n|;
+        }
         elsif ($result->{type} eq "fpusw")
         {
             print qq|         \"fstsw %$result->{argnum}\\n\"\n|;
@@ -758,7 +810,7 @@ while (<>)
 
     foreach my $result (@results)
     {
-        if ($result->{type} =~ /^(m(8|16|32|64|128)|st|eflags|fpusw)$/)
+        if ($result->{type} =~ /^(m(8|16|32|64|128)|st|eflags|fpu[cs]w)$/)
         {
             print qq|$prefix\"=m\" \($result->{name}\)|;
             $prefix = ", ";
@@ -820,7 +872,7 @@ while (<>)
         {
             print qq|${prefix}\($result->{name}.ud[0] & $values[0]UL\) == $values[1]UL|;
         }
-        elsif ($type eq "fpusw")
+        elsif ($type =~ /^fpu[cs]w$/)
         {
             print qq|${prefix}\($result->{name}.uw[0] & $values[0]\) == $values[1]|;
         }
@@ -867,9 +919,9 @@ while (<>)
         {
             print qq|         printf("  eflags & 0x%lx = 0x%lx (expected 0x%lx)\\n", $values[0]UL, $result->{name}.ud\[0\] & $values[0]UL, $values[1]UL);\n|;
         }
-        elsif ($type eq "fpusw")
+        elsif ($type =~ /^fpu[cs]w$/)
         {
-            print qq|         printf("  fpusw & 0x%x = 0x%x (expected 0x%x)\\n", $values[0], $result->{name}.uw\[0\] & $values[0], $values[1]);\n|;
+            print qq|         printf("  $type & 0x%x = 0x%x (expected 0x%x)\\n", $values[0], $result->{name}.uw\[0\] & $values[0], $values[1]);\n|;
         }
         else
         {

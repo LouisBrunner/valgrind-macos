@@ -226,4 +226,7 @@ extern void getRegUsage_X86Instr ( HRegUsage*, X86Instr* );
 
 extern void mapRegs_X86Instr ( HRegRemap*, X86Instr* );
 
+extern Bool isMove_X86Instr ( X86Instr*, HReg*, HReg* );
+
+
 #endif /* ndef __X86H_DEFS_H */

@@ -39,7 +39,6 @@ void welcome(void)
 
 void *identify_yourself(void *arg)
 {
-        int *pid=(int *)arg;
 	int rtn;
 
 	if ((rtn = pthread_once(&welcome_once_block,
@@ -47,7 +46,7 @@ void *identify_yourself(void *arg)
 		fprintf(stderr, "pthread_once failed with %d",rtn);
 		pthread_exit((void *)NULL);
 	}
-	printf("identify_yourself: Hi, I'm thread # %d\n",*pid);
+	printf("identify_yourself: Hi, I'm a thread\n");
         return(NULL);
 }
 

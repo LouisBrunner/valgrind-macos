@@ -113,101 +113,6 @@ Int vg_alloc_client_block ( void )
 
 
 /*------------------------------------------------------------*/
-/*--- Stack block management.                              ---*/
-/*------------------------------------------------------------*/
-
-/* This is managed as an expanding array of CStackBlocks.  They are
-   packed up against the left-hand end of the array, with no holes.
-   They are kept sorted by the start field, with the [0] having the
-   highest value.  This means it's pretty cheap to put new blocks at
-   the end, corresponding to stack pushes, since the additions put
-   blocks on in what is presumably fairly close to strictly descending
-   order.  If this assumption doesn't hold the performance
-   consequences will be horrible.
-
-   When the client's %ESP jumps back upwards as the result of a RET
-   insn, we shrink the array backwards from the end, in a
-   guaranteed-cheap linear scan.  
-*/
-
-typedef
-   struct {
-      Addr        start;
-      UInt        size;
-      ExeContext* where;
-   } 
-   CStackBlock;
-
-/* This subsystem is self-initialising. */
-static UInt         vg_csb_size = 0;
-static UInt         vg_csb_used = 0;
-static CStackBlock* vg_csbs     = NULL;
-
-/* Stats for this subsystem. */
-static UInt vg_csb_used_MAX = 0;   /* Max in use. */
-static UInt vg_csb_allocs   = 0;   /* Number of allocs. */
-static UInt vg_csb_discards = 0;   /* Number of discards. */
-static UInt vg_csb_swaps    = 0;   /* Number of searches. */
-
-static
-void vg_add_client_stack_block ( ThreadState* tst, Addr aa, UInt sz )
-{
-   UInt i, sz_new;
-   CStackBlock* csbs_new;
-   vg_csb_allocs++;
-
-   /* Ensure there is space for a new block. */
-
-   if (vg_csb_used >= vg_csb_size) {
-
-      /* No; we have to expand the array. */
-      sk_assert(vg_csb_used == vg_csb_size);
-
-      sz_new = (vg_csbs == NULL) ? 10 : (2 * vg_csb_size);
-
-      csbs_new = VG_(malloc)( sz_new * sizeof(CStackBlock) );
-      for (i = 0; i < vg_csb_used; i++) 
-        csbs_new[i] = vg_csbs[i];
-
-      if (vg_csbs != NULL)
-         VG_(free)( vg_csbs );
-      vg_csbs = csbs_new;
-
-      vg_csb_size = sz_new;
-   }
-
-   /* Ok, we can use [vg_csb_used]. */
-   vg_csbs[vg_csb_used].start = aa;
-   vg_csbs[vg_csb_used].size  = sz;
-   /* Actually running a thread at this point. */
-   vg_csbs[vg_csb_used].where = VG_(get_ExeContext) ( tst );
-   vg_csb_used++;
-
-   if (vg_csb_used > vg_csb_used_MAX)
-      vg_csb_used_MAX = vg_csb_used;
-
-   sk_assert(vg_csb_used <= vg_csb_size);
-
-   /* VG_(printf)("acsb  %p %d\n", aa, sz); */
-   MC_(make_noaccess) ( aa, sz );
-
-   /* And make sure that they are in descending order of address. */
-   i = vg_csb_used;
-   while (i > 0 && vg_csbs[i-1].start < vg_csbs[i].start) {
-      CStackBlock tmp = vg_csbs[i-1];
-      vg_csbs[i-1] = vg_csbs[i];
-      vg_csbs[i] = tmp;
-      vg_csb_swaps++;
-   }
-
-#  if 1
-   for (i = 1; i < vg_csb_used; i++)
-      sk_assert(vg_csbs[i-1].start >= vg_csbs[i].start);
-#  endif
-}
-
-
-/*------------------------------------------------------------*/
 /*--- Externally visible functions.                        ---*/
 /*------------------------------------------------------------*/
 
@@ -217,10 +122,6 @@ void MC_(show_client_block_stats) ( void )
       "general CBs: %d allocs, %d discards, %d maxinuse, %d search",
       vg_cgb_allocs, vg_cgb_discards, vg_cgb_used_MAX, vg_cgb_search 
    );
-   VG_(message)(Vg_DebugMsg, 
-      "  stack CBs: %d allocs, %d discards, %d maxinuse, %d swap",
-      vg_csb_allocs, vg_csb_discards, vg_csb_used_MAX, vg_csb_swaps
-   );
 }
 
 Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
@@ -228,34 +129,7 @@ Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
    Int i;
    /* VG_(printf)("try to identify %d\n", a); */
 
-   /* First see if it's a stack block.  We do two passes, one exact
-      and one with a bit of slop, so as to try and get the most
-      accurate fix. */
-   for (i = 0; i < vg_csb_used; i++) {
-      if (vg_csbs[i].start <= a
-          && a < vg_csbs[i].start + vg_csbs[i].size) {
-         ai->akind = UserS;
-         ai->blksize = vg_csbs[i].size;
-         ai->rwoffset  = (Int)(a) - (Int)(vg_csbs[i].start);
-         ai->lastchange = vg_csbs[i].where;
-         return True;
-      }
-   }
-
-   /* No exact match on the stack.  Re-do the stack scan with a bit of
-      slop. */
-   for (i = 0; i < vg_csb_used; i++) {
-      if (vg_csbs[i].start - 8 <= a
-          && a < vg_csbs[i].start + vg_csbs[i].size + 8) {
-         ai->akind = UserS;
-         ai->blksize = vg_csbs[i].size;
-         ai->rwoffset  = (Int)(a) - (Int)(vg_csbs[i].start);
-         ai->lastchange = vg_csbs[i].where;
-         return True;
-      }
-   }
-
-   /* No match on the stack.  Perhaps it's a general block ? */
+   /* Perhaps it's a general block ? */
    for (i = 0; i < vg_cgb_used; i++) {
       if (vg_cgbs[i].kind == CG_NotInUse) 
          continue;
@@ -269,24 +143,6 @@ Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
    }
    return False;
 }
-
-static __attribute__ ((unused))
-void delete_client_stack_blocks_following_ESP_change ( void )
-{
-   Addr newESP = VG_(get_stack_pointer)();
-
-   while (vg_csb_used > 0 
-          && vg_csbs[vg_csb_used-1].start + vg_csbs[vg_csb_used-1].size 
-             <= newESP) {
-      vg_csb_used--;
-      vg_csb_discards++;
-      if (VG_(clo_verbosity) > 2)
-         VG_(printf)("discarding stack block %p for %d\n", 
-            (void*)vg_csbs[vg_csb_used].start, 
-            vg_csbs[vg_csb_used].size);
-   }
-}
-
 
 Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
 {
@@ -356,11 +212,6 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
          sk_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
          vg_cgbs[arg[2]].kind = CG_NotInUse;
          vg_cgb_discards++;
-	 *ret = 0;
-	 break;
-
-      case VG_USERREQ__MAKE_NOACCESS_STACK: /* make noaccess stack block */
-         vg_add_client_stack_block ( tst, arg[1], arg[2] );
 	 *ret = 0;
 	 break;
 

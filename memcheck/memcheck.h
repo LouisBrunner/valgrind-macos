@@ -3,7 +3,7 @@
    ----------------------------------------------------------------
 
    Notice that the following BSD-style license applies to this one
-   file (vg_memcheck.h) only.  The entire rest of Valgrind is licensed
+   file (memcheck.h) only.  The entire rest of Valgrind is licensed
    under the terms of the GNU General Public License, version 2.  See
    the COPYING file in the source distribution for details.
 
@@ -48,7 +48,7 @@
    ----------------------------------------------------------------
 
    Notice that the above BSD-style license applies to this one file
-   (vg_memcheck.h) only.  The entire rest of Valgrind is licensed under
+   (memcheck.h) only.  The entire rest of Valgrind is licensed under
    the terms of the GNU General Public License, version 2.  See the
    COPYING file in the source distribution for details.
 
@@ -78,7 +78,6 @@ typedef
       VG_USERREQ__DISCARD,
       VG_USERREQ__CHECK_WRITABLE,
       VG_USERREQ__CHECK_READABLE,
-      VG_USERREQ__MAKE_NOACCESS_STACK,
       VG_USERREQ__DO_LEAK_CHECK, /* untested */
    } Vg_MemCheckClientRequest;
 
@@ -168,20 +167,6 @@ typedef
    VALGRIND_CHECK_READABLE(                                        \
       (volatile unsigned char *)&(__lvalue),                       \
                       (unsigned int)(sizeof (__lvalue)))
-
-/* Mark memory, intended to be on the client's stack, at _qzz_addr as
-   unaddressible and undefined for _qzz_len bytes.  Does not return a
-   value.  The record associated with this setting will be
-   automatically removed by Valgrind when the containing routine
-   exits. */
-#define VALGRIND_MAKE_NOACCESS_STACK(_qzz_addr,_qzz_len)           \
-   {unsigned int _qzz_res;                                         \
-    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
-                            VG_USERREQ__MAKE_NOACCESS_STACK,       \
-                            _qzz_addr, _qzz_len, 0, 0);            \
-   }
-
-
 
 /* Do a memory leak check mid-execution.
    Currently implemented but untested.

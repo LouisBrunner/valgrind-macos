@@ -1214,12 +1214,11 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
       case VG_USERREQ__MAKE_WRITABLE: /* make writable */
       case VG_USERREQ__MAKE_READABLE: /* make readable */
       case VG_USERREQ__DISCARD: /* discard */
-      case VG_USERREQ__MAKE_NOACCESS_STACK: /* make noaccess stack block */
 	 return False;
 
       default:
          VG_(message)(Vg_UserMsg, 
-                      "Warning: unknown memcheck client request code %d",
+                      "Warning: unknown addrcheck client request code %d",
                       arg[0]);
          return False;
    }

@@ -42,7 +42,7 @@ typedef
           Stack, 
           Unknown,      /* classification yielded nothing useful */
           Freed, Mallocd, 
-          UserG, UserS  /* MemCheck only */
+          UserG  /* in a user-defined block; Addrcheck & Memcheck only */
    }
    AddrKind;
 

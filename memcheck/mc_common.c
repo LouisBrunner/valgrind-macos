@@ -227,7 +227,7 @@ void MC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
                "   Address 0x%x is not stack'd, malloc'd or free'd", a);
          }
          break;
-      case Freed: case Mallocd: case UserG: case UserS: {
+      case Freed: case Mallocd: case UserG: {
          UInt delta;
          UChar* relative;
          if (ai->rwoffset < 0) {
@@ -240,20 +240,13 @@ void MC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
             delta    = ai->rwoffset;
             relative = "inside";
          }
-         if (ai->akind == UserS) {
-            VG_(message)(Vg_UserMsg, 
-               "   Address 0x%x is %d bytes %s a %d-byte stack red-zone created",
-               a, delta, relative, 
-               ai->blksize );
-	 } else {
-            VG_(message)(Vg_UserMsg, 
-               "   Address 0x%x is %d bytes %s a block of size %d %s",
-               a, delta, relative, 
-               ai->blksize,
-               ai->akind==Mallocd ? "alloc'd" 
-                  : ai->akind==Freed ? "free'd" 
-                                     : "client-defined");
-         }
+         VG_(message)(Vg_UserMsg, 
+            "   Address 0x%x is %d bytes %s a block of size %d %s",
+            a, delta, relative, 
+            ai->blksize,
+            ai->akind==Mallocd ? "alloc'd" 
+               : ai->akind==Freed ? "free'd" 
+                                  : "client-defined");
          VG_(pp_ExeContext)(ai->lastchange);
          break;
       }

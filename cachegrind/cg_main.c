@@ -290,7 +290,7 @@ static lineCC* get_lineCC(Addr orig_addr)
 /*--- Cache simulation functions                           ---*/
 /*------------------------------------------------------------*/
 
-static __attribute__ ((regparm (1)))
+static REGPARM(1)
 void log_1I_0D_cache_access(instr_info* n)
 {
    //VG_(printf)("1I_0D: CCaddr=0x%x, iaddr=0x%x, isize=%u\n",
@@ -302,7 +302,7 @@ void log_1I_0D_cache_access(instr_info* n)
    VGP_POPCC(VgpCacheSimulate);
 }
 
-static __attribute__ ((regparm (2)))
+static REGPARM(2)
 void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr)
 {
    //VG_(printf)("1I_1Dr: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
@@ -318,7 +318,7 @@ void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr)
    VGP_POPCC(VgpCacheSimulate);
 }
 
-static __attribute__ ((regparm (2)))
+static REGPARM(2)
 void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr)
 {
    //VG_(printf)("1I_1Dw: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
@@ -334,7 +334,7 @@ void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr)
    VGP_POPCC(VgpCacheSimulate);
 }
 
-static __attribute__ ((regparm (3)))
+static REGPARM(3)
 void log_1I_2D_cache_access(instr_info* n, Addr data_addr1, Addr data_addr2)
 {
    //VG_(printf)("1I_2D: CCaddr=%p, iaddr=%p, isize=%u, daddr1=%p, daddr2=%p, dsize=%u\n",

@@ -676,7 +676,7 @@ Segment *VG_(next_segment)(Segment *s)
 /* This function gets called if new_mem_stack and/or die_mem_stack are
    tracked by the tool, and one of the specialised cases (eg. new_mem_stack_4)
    isn't used in preference */
-__attribute__((regparm(1)))
+REGPARM(1)
 void VG_(unknown_esp_update)(Addr new_ESP)
 {
    Addr old_ESP = VG_(get_archreg)(R_ESP);

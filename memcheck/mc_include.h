@@ -121,16 +121,16 @@ extern void MC_(helper_value_check0_fail) ( void );
 
 
 /* Functions defined in mc_main.c */
-extern __attribute__ ((regparm(2))) void MC_(helperc_STOREV4) ( Addr, UInt );
-extern __attribute__ ((regparm(2))) void MC_(helperc_STOREV2) ( Addr, UInt );
-extern __attribute__ ((regparm(2))) void MC_(helperc_STOREV1) ( Addr, UInt );
+extern REGPARM(2) void MC_(helperc_STOREV4) ( Addr, UInt );
+extern REGPARM(2) void MC_(helperc_STOREV2) ( Addr, UInt );
+extern REGPARM(2) void MC_(helperc_STOREV1) ( Addr, UInt );
    
-extern __attribute__ ((regparm(1))) UInt MC_(helperc_LOADV1) ( Addr );
-extern __attribute__ ((regparm(1))) UInt MC_(helperc_LOADV2) ( Addr );
-extern __attribute__ ((regparm(1))) UInt MC_(helperc_LOADV4) ( Addr );
+extern REGPARM(1) UInt MC_(helperc_LOADV1)  ( Addr );
+extern REGPARM(1) UInt MC_(helperc_LOADV2)  ( Addr );
+extern REGPARM(1) UInt MC_(helperc_LOADV4)  ( Addr );
 
-extern __attribute__ ((regparm(2))) void MC_(fpu_write_check) ( Addr addr, Int size );
-extern __attribute__ ((regparm(2))) void MC_(fpu_read_check)  ( Addr addr, Int size );
+extern REGPARM(2) void MC_(fpu_write_check) ( Addr addr, Int size );
+extern REGPARM(2) void MC_(fpu_read_check)  ( Addr addr, Int size );
 
 
 /* For client requests */

@@ -1375,7 +1375,7 @@ extern Bool     VG_(seg_overlaps)(const Segment *s, Addr ptr, UInt size);
 extern void VG_(pad_address_space)(void);
 extern void VG_(unpad_address_space)(void);
 
-extern __attribute__((regparm(1))) 
+extern REGPARM(1)
        void VG_(unknown_esp_update) ( Addr new_ESP );
 
 /* ---------------------------------------------------------------------

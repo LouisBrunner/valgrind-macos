@@ -715,34 +715,34 @@ static __inline__ void ac_helperc_ACCESS1 ( Addr a, Bool isWrite )
 #  endif
 }
 
-__attribute__ ((regparm(1)))
+REGPARM(1)
 static void ac_helperc_LOAD4 ( Addr a )
 {
    ac_helperc_ACCESS4 ( a, /*isWrite*/False );
 }
-__attribute__ ((regparm(1)))
+REGPARM(1)
 static void ac_helperc_STORE4 ( Addr a )
 {
    ac_helperc_ACCESS4 ( a, /*isWrite*/True );
 }
 
-__attribute__ ((regparm(1)))
+REGPARM(1)
 static void ac_helperc_LOAD2 ( Addr a )
 {
    ac_helperc_ACCESS2 ( a, /*isWrite*/False );
 }
-__attribute__ ((regparm(1)))
+REGPARM(1)
 static void ac_helperc_STORE2 ( Addr a )
 {
    ac_helperc_ACCESS2 ( a, /*isWrite*/True );
 }
 
-__attribute__ ((regparm(1)))
+REGPARM(1)
 static void ac_helperc_LOAD1 ( Addr a )
 {
    ac_helperc_ACCESS1 ( a, /*isWrite*/False );
 }
-__attribute__ ((regparm(1)))
+REGPARM(1)
 static void ac_helperc_STORE1 ( Addr a )
 {
    ac_helperc_ACCESS1 ( a, /*isWrite*/True );
@@ -912,13 +912,13 @@ void ac_fpu_ACCESS_check ( Addr addr, Int size, Bool isWrite )
 #  endif
 }
 
-__attribute__ ((regparm(2)))
+REGPARM(2)
 static void ac_fpu_READ_check ( Addr addr, Int size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/False );
 }
 
-__attribute__ ((regparm(2)))
+REGPARM(2)
 static void ac_fpu_WRITE_check ( Addr addr, Int size )
 {
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/True );

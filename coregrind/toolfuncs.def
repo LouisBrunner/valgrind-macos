@@ -199,7 +199,7 @@ void,	die_mem_munmap,	Addr a, UInt len
 ## specialising can optimise things significantly.  If any of the
 ## specialised cases are defined, the general case must be defined too.
 
-## Nb: they must all use the __attribute__((regparm(n))) attribute.
+## Nb: they must all use the REGPARM(n) attribute.
 void,	new_mem_stack_4,	Addr new_ESP
 void,	new_mem_stack_8,	Addr new_ESP
 void,	new_mem_stack_12,	Addr new_ESP

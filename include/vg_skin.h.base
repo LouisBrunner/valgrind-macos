@@ -36,6 +36,8 @@
 
 #include "vg_constants_skin.h"
 
+// XXX: here temporarily, will eventually go in arch-specific headers...
+#define REGPARM(x)     __attribute__((regparm (x)))
 
 /* ---------------------------------------------------------------------
    Where to send bug reports to.

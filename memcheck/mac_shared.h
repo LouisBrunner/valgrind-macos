@@ -347,18 +347,18 @@ extern void MAC_(do_detect_memory_leaks) (
           Bool is_valid_address   ( Addr )
        );
 
-extern __attribute__((regparm(1))) void MAC_(new_mem_stack_4)  ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MAC_(die_mem_stack_4)  ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MAC_(new_mem_stack_8)  ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MAC_(die_mem_stack_8)  ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MAC_(new_mem_stack_12) ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MAC_(die_mem_stack_12) ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MAC_(new_mem_stack_16) ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MAC_(die_mem_stack_16) ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MAC_(new_mem_stack_32) ( Addr old_ESP );
-extern __attribute__((regparm(1))) void MAC_(die_mem_stack_32) ( Addr old_ESP );
-extern                             void MAC_(die_mem_stack) ( Addr a, UInt len);
-extern                             void MAC_(new_mem_stack) ( Addr a, UInt len);
+extern REGPARM(1) void MAC_(new_mem_stack_4)  ( Addr old_ESP );
+extern REGPARM(1) void MAC_(die_mem_stack_4)  ( Addr old_ESP );
+extern REGPARM(1) void MAC_(new_mem_stack_8)  ( Addr old_ESP );
+extern REGPARM(1) void MAC_(die_mem_stack_8)  ( Addr old_ESP );
+extern REGPARM(1) void MAC_(new_mem_stack_12) ( Addr old_ESP );
+extern REGPARM(1) void MAC_(die_mem_stack_12) ( Addr old_ESP );
+extern REGPARM(1) void MAC_(new_mem_stack_16) ( Addr old_ESP );
+extern REGPARM(1) void MAC_(die_mem_stack_16) ( Addr old_ESP );
+extern REGPARM(1) void MAC_(new_mem_stack_32) ( Addr old_ESP );
+extern REGPARM(1) void MAC_(die_mem_stack_32) ( Addr old_ESP );
+extern            void MAC_(die_mem_stack) ( Addr a, UInt len);
+extern            void MAC_(new_mem_stack) ( Addr a, UInt len);
 
 
 /*------------------------------------------------------------*/
@@ -377,7 +377,7 @@ extern                             void MAC_(new_mem_stack) ( Addr a, UInt len);
                             ALIGNED8_NEW,  ALIGNED8_DIE,                      \
                             UNALIGNED_NEW, UNALIGNED_DIE)                     \
                                                                               \
-void __attribute__((regparm(1))) MAC_(new_mem_stack_4)(Addr new_ESP)          \
+void REGPARM(1) MAC_(new_mem_stack_4)(Addr new_ESP)                           \
 {                                                                             \
    PROF_EVENT(110);                                                           \
    if (IS_ALIGNED4_ADDR(new_ESP)) {                                           \
@@ -387,7 +387,7 @@ void __attribute__((regparm(1))) MAC_(new_mem_stack_4)(Addr new_ESP)          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MAC_(die_mem_stack_4)(Addr new_ESP)          \
+void REGPARM(1) MAC_(die_mem_stack_4)(Addr new_ESP)                           \
 {                                                                             \
    PROF_EVENT(120);                                                           \
    if (IS_ALIGNED4_ADDR(new_ESP)) {                                           \
@@ -397,7 +397,7 @@ void __attribute__((regparm(1))) MAC_(die_mem_stack_4)(Addr new_ESP)          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MAC_(new_mem_stack_8)(Addr new_ESP)          \
+void REGPARM(1) MAC_(new_mem_stack_8)(Addr new_ESP)                           \
 {                                                                             \
    PROF_EVENT(111);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -410,7 +410,7 @@ void __attribute__((regparm(1))) MAC_(new_mem_stack_8)(Addr new_ESP)          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MAC_(die_mem_stack_8)(Addr new_ESP)          \
+void REGPARM(1) MAC_(die_mem_stack_8)(Addr new_ESP)                           \
 {                                                                             \
    PROF_EVENT(121);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -423,7 +423,7 @@ void __attribute__((regparm(1))) MAC_(die_mem_stack_8)(Addr new_ESP)          \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MAC_(new_mem_stack_12)(Addr new_ESP)         \
+void REGPARM(1) MAC_(new_mem_stack_12)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(112);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -437,7 +437,7 @@ void __attribute__((regparm(1))) MAC_(new_mem_stack_12)(Addr new_ESP)         \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MAC_(die_mem_stack_12)(Addr new_ESP)         \
+void REGPARM(1) MAC_(die_mem_stack_12)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(122);                                                           \
    /* Note the -12 in the test */                                             \
@@ -452,7 +452,7 @@ void __attribute__((regparm(1))) MAC_(die_mem_stack_12)(Addr new_ESP)         \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MAC_(new_mem_stack_16)(Addr new_ESP)         \
+void REGPARM(1) MAC_(new_mem_stack_16)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(113);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -467,7 +467,7 @@ void __attribute__((regparm(1))) MAC_(new_mem_stack_16)(Addr new_ESP)         \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MAC_(die_mem_stack_16)(Addr new_ESP)         \
+void REGPARM(1) MAC_(die_mem_stack_16)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(123);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -482,7 +482,7 @@ void __attribute__((regparm(1))) MAC_(die_mem_stack_16)(Addr new_ESP)         \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MAC_(new_mem_stack_32)(Addr new_ESP)         \
+void REGPARM(1) MAC_(new_mem_stack_32)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(114);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \
@@ -501,7 +501,7 @@ void __attribute__((regparm(1))) MAC_(new_mem_stack_32)(Addr new_ESP)         \
    }                                                                          \
 }                                                                             \
                                                                               \
-void __attribute__((regparm(1))) MAC_(die_mem_stack_32)(Addr new_ESP)         \
+void REGPARM(1) MAC_(die_mem_stack_32)(Addr new_ESP)                          \
 {                                                                             \
    PROF_EVENT(124);                                                           \
    if (IS_ALIGNED8_ADDR(new_ESP)) {                                           \

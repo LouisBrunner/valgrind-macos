@@ -1696,8 +1696,6 @@ static void copy_address_range_state(Addr src, Addr dst, UInt len)
 static void eraser_mem_read (Addr a, UInt data_size, ThreadId tid);
 static void eraser_mem_write(Addr a, UInt data_size, ThreadId tid);
 
-#define REGPARM(x)	__attribute__((regparm (x)))
-
 static void eraser_mem_help_read_1(Addr a) REGPARM(1);
 static void eraser_mem_help_read_2(Addr a) REGPARM(1);
 static void eraser_mem_help_read_4(Addr a) REGPARM(1);

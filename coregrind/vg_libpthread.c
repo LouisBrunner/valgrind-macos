@@ -654,8 +654,8 @@ int pthread_getconcurrency(void)
    and for clearing up afterwards.
    ------------------------------------------------ */
 
-typedef void *(*__attribute__ ((regparm (3), stdcall)) allocate_tls_t) (void *result);
-typedef void (*__attribute__ ((regparm (3), stdcall)) deallocate_tls_t) (void *tcb, int dealloc_tcb);
+typedef void *(*__attribute__ ((stdcall)) REGPARM(3) allocate_tls_t) (void *result);
+typedef void (*__attribute__ ((stdcall)) REGPARM(3) deallocate_tls_t) (void *tcb, int dealloc_tcb);
 
 static allocate_tls_t allocate_tls = NULL;
 static deallocate_tls_t deallocate_tls = NULL;
@@ -965,7 +965,7 @@ void _pthread_cleanup_pop_restore (struct _pthread_cleanup_buffer *__buffer,
 }
 
 
-__attribute ((regparm (1)))
+REGPARM(1)
 void __pthread_register_cancel (__pthread_unwind_buf_t *__buf)
 {
    int          res;
@@ -980,7 +980,7 @@ void __pthread_register_cancel (__pthread_unwind_buf_t *__buf)
 }
 
 
-__attribute ((regparm (1)))
+REGPARM(1)
 void __pthread_register_cancel_defer (__pthread_unwind_buf_t *__buf)
 {
    /* As __pthread_register cancel, but save the thread's original
@@ -1006,7 +1006,7 @@ void __pthread_register_cancel_defer (__pthread_unwind_buf_t *__buf)
 }
 
 
-__attribute ((regparm (1)))
+REGPARM(1)
 void __pthread_unregister_cancel (__pthread_unwind_buf_t *__buf)
 {
    int          res;
@@ -1022,7 +1022,7 @@ void __pthread_unregister_cancel (__pthread_unwind_buf_t *__buf)
 }
 
 
-__attribute ((regparm (1)))
+REGPARM(1)
 void __pthread_unregister_restore (__pthread_unwind_buf_t *__buf)
 {
    int          res;
@@ -1049,7 +1049,7 @@ void __pthread_unregister_restore (__pthread_unwind_buf_t *__buf)
    return;
 }
 
-__attribute ((regparm (1)))
+REGPARM(1)
 __attribute ((__noreturn__))
 void __pthread_unwind (__pthread_unwind_buf_t *__buf)
 {
@@ -1073,7 +1073,7 @@ void __pthread_unwind (__pthread_unwind_buf_t *__buf)
 }
 
 
-__attribute ((regparm (1)))
+REGPARM(1)
 __attribute ((__noreturn__))
 void __pthread_unwind_next (__pthread_unwind_buf_t *__buf)
 {

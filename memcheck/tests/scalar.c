@@ -633,8 +633,8 @@ int main(void)
    SY(__NR_fdatasync, x0-1);
 
    // __NR__sysctl 149
- //GO(__NR__sysctl, ".s .m");
- //SY(__NR__sysctl);
+   GO(__NR__sysctl, "1s 1m");
+   SY(__NR__sysctl, x0);
 
    // __NR_mlock 150
    GO(__NR_mlock, "2s 0m");
@@ -724,9 +724,9 @@ int main(void)
    GO(__NR_getresgid, "3s 3m");
    SY(__NR_getresgid, x0, x0, x0);
 
-   // __NR_prctl              172
- //GO(__NR_prctl, ".s .m");
- //SY(__NR_prctl);
+   // __NR_prctl 172
+   GO(__NR_prctl, "5s 0m");
+   SY(__NR_prctl);
 
    // __NR_rt_sigreturn 173
    GO(__NR_rt_sigreturn, "n/a");

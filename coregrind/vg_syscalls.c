@@ -1663,17 +1663,16 @@ PREx(sys_setfsuid, 0)
    PRE_REG_READ1(long, "setfsuid", vki_uid_t, uid);
 }
 
-PRE(_sysctl)
+PREx(sys_sysctl, 0)
 {
-   /* int _sysctl(struct __sysctl_args *args); */
-   PRINT("_sysctl ( %p )", arg1 );
-   PRE_MEM_WRITE( "_sysctl(args)", arg1, sizeof(struct __vki_sysctl_args) );
+   PRINT("sys_sysctl ( %p )", arg1 );
+   PRE_REG_READ1(long, "sysctl", struct __sysctl_args *, args);
+   PRE_MEM_WRITE( "sysctl(args)", arg1, sizeof(struct __vki_sysctl_args) );
 }
 
-POST(_sysctl)
+POSTx(sys_sysctl)
 {
    POST_MEM_WRITE( arg1, sizeof(struct __vki_sysctl_args) );
-
 }
 
 PREx(sys_sched_getscheduler, 0/*???*/)
@@ -5659,11 +5658,16 @@ PREx(sys_writev, MayBlock)
    }
 }
 
-PRE(prctl)
+PREx(sys_prctl, MayBlock)
 {
-   /* int prctl(int option, unsigned long arg2, unsigned long arg3,
-      unsigned long arg4, unsigned long arg5); */
    PRINT( "prctl ( %d, %d, %d, %d, %d )", arg1, arg2, arg3, arg4, arg5 );
+   // XXX: too simplistic, often not all args are used
+   // Nb: can't use "arg2".."arg5" here because that's our own macro...
+   PRE_REG_READ5(long, "prctl",
+                 int, option, unsigned long, parg2, unsigned long, parg3,
+                 unsigned long, parg4, unsigned long, parg5);
+   // XXX: totally wrong... we need to look at the 'option' arg, and do
+   // PRE_MEM_READs/PRE_MEM_WRITEs as necessary...
 }
 
 PREx(sys_adjtimex, 0)
@@ -6528,7 +6532,7 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_writev,           sys_writev),       // 146 * P
    SYSX_(__NR_getsid,           sys_getsid),       // 147 * P
    SYSX_(__NR_fdatasync,        sys_fdatasync),    // 148 * P
-   SYSBA(__NR__sysctl,          sys_sysctl, 0),    // 149 *
+   SYSXY(__NR__sysctl,          sys_sysctl),       // 149 * L
 
    SYSX_(__NR_mlock,            sys_mlock),           // 150 * P
    SYSX_(__NR_munlock,          sys_munlock),         // 151 * P
@@ -6556,7 +6560,7 @@ static const struct sys_info sys_info[] = {
 
    SYSX_(__NR_setresgid,        sys_setresgid16),  // 170 ## (non-standard)
    SYSXY(__NR_getresgid,        sys_getresgid16),  // 171 ## L
-   SYSB_(__NR_prctl,            sys_prctl, MayBlock), // 172 *
+   SYSX_(__NR_prctl,            sys_prctl),        // 172 * L
    //   (__NR_rt_sigreturn,     sys_rt_sigreturn), // 173 (x86) ()
    SYSXY(__NR_rt_sigaction,     sys_rt_sigaction), // 174 (x86) ()
 

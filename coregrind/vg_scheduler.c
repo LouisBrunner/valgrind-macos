@@ -94,7 +94,7 @@ typedef UInt ThreadKey;
 static Addr __libc_freeres_wrapper;
 
 /* Forwards */
-static void do_client_request ( ThreadId tid );
+static void do_client_request ( ThreadId tid, UInt* args );
 static void scheduler_sanity ( void );
 static void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid );
 static void maybe_rendezvous_joiners_and_joinees ( void );
@@ -876,7 +876,8 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          }
 
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
-            UInt reqno = *(UInt*)(VG_(threads)[tid].arch.m_eax);
+            UInt* args = (UInt*)(ARCH_CLREQ_ARGS(VG_(threads)[tid].arch));
+            UInt reqno = args[0];
             /* VG_(printf)("request 0x%x\n", reqno); */
 
             /* Are we really absolutely totally quitting? */
@@ -888,7 +889,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                return VgSrc_ExitSyscall;
             }
 
-            do_client_request(tid);
+            do_client_request(tid,args);
             /* Following the request, we try and continue with the
                same thread if still runnable.  If not, go back to
                Stage 1 to select a new thread to run. */
@@ -2820,13 +2821,12 @@ void VG_(intercept_libc_freeres_wrapper)(Addr addr)
    choose a new thread to run.  
 */
 static
-void do_client_request ( ThreadId tid )
+void do_client_request ( ThreadId tid, UInt* arg )
 {
-   UInt* arg    = (UInt*)(VG_(threads)[tid].arch.m_eax);
-   UInt  req_no = arg[0];
+   UInt req_no = arg[0];
 
    if (0)
-      VG_(printf)("req no = 0x%x\n", req_no);
+      VG_(printf)("req no = 0x%x, arg = %p\n", req_no, arg);
    switch (req_no) {
 
       case VG_USERREQ__CLIENT_CALL0: {
@@ -3087,21 +3087,21 @@ void do_client_request ( ThreadId tid )
 
       case VG_USERREQ__PRINTF: {
          int count = 
-            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (va_list)arg[2] );
+            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
             SET_CLREQ_RETVAL( tid, count );
          break; }
 
 
       case VG_USERREQ__INTERNAL_PRINTF: {
          int count = 
-            VG_(vmessage)( Vg_UserMsg, (char *)arg[1], (va_list)arg[2] );
+            VG_(vmessage)( Vg_UserMsg, (char *)arg[1], (void*)arg[2] );
             SET_CLREQ_RETVAL( tid, count );
          break; }
 
       case VG_USERREQ__PRINTF_BACKTRACE: {
          ExeContext *e = VG_(get_ExeContext)( tid );
          int count =
-            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (va_list)arg[2] );
+            VG_(vmessage)( Vg_ClientMsg, (char *)arg[1], (void*)arg[2] );
             VG_(mini_stack_dump)(e->ips, VG_(clo_backtrace_size));
             SET_CLREQ_RETVAL( tid, count );
          break; }
@@ -3109,7 +3109,7 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__INTERNAL_PRINTF_BACKTRACE: {
          ExeContext *e = VG_(get_ExeContext)( tid );
          int count =
-            VG_(vmessage)( Vg_UserMsg, (char *)arg[1], (va_list)arg[2] );
+            VG_(vmessage)( Vg_UserMsg, (char *)arg[1], (void*)arg[2] );
             VG_(mini_stack_dump)(e->ips, VG_(clo_backtrace_size));
             SET_CLREQ_RETVAL( tid, count );
          break; }

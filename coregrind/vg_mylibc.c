@@ -1263,9 +1263,10 @@ void VG_(end_rdtsc_calibration) ( void )
 void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
 {
    static UInt tot_alloc = 0;
-   void* p = VG_(mmap)( 0, nBytes,
-                        VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 
-                        VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, -1, 0 );
+   void* p;
+   p = VG_(mmap)( 0, nBytes,
+                     VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 
+                     VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, -1, 0 );
    if (p != ((void*)(-1))) {
       tot_alloc += (UInt)nBytes;
       if (0)
@@ -1274,6 +1275,7 @@ void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
             tot_alloc, nBytes, p, ((char*)p) + nBytes - 1, who );
       return p;
    }
+
    VG_(printf)("\n");
    VG_(printf)("VG_(get_memory_from_mmap): request for %d bytes failed.\n", 
                nBytes);

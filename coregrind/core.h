@@ -289,10 +289,9 @@ extern Int   VG_(clo_n_suppressions);
 /* The names of the suppression files. */
 extern Char* VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 
-/* Single stepping?  default: NO */
-extern Bool  VG_(clo_single_step);
-/* Code improvement?  default: YES */
-extern Bool  VG_(clo_optimise);
+/* PROFILE: collect bb profiling data?  default: NO */
+extern Bool  VG_(clo_bbprofile);
+
 /* DEBUG: print generated code?  default: 00000 ( == NO ) */
 extern Bool  VG_(clo_trace_codegen);
 /* DEBUG: print system calls?  default: NO */
@@ -330,8 +329,6 @@ extern Bool  VG_(clo_track_fds);
    is ignored.  Ie if a tool says no, I don't want this to run, that
    cannot be overridden from the command line. */
 extern Bool  VG_(clo_run_libc_freeres);
-/* Use the basic-block chaining optimisation?  Default: YES */
-extern Bool VG_(clo_chain_bb);
 /* Generate branch-prediction hints? */
 extern Bool VG_(clo_branchpred);
 /* Continue stack traces below main()?  Default: NO */
@@ -1747,10 +1744,6 @@ extern void VG_(sigreturn)(void);
    which means we need to defer to the scheduler.  This is passed
    a pointer to the VEX guest state (arch.vex). */
 extern UInt VG_(run_innerloop) ( void* guest_state );
-
-/* The patching routing called when a BB wants to chain itself to
-   another. */
-extern UInt VG_(patch_me);
 
 /* ---------------------------------------------------------------------
    Exports of vg_helpers.S

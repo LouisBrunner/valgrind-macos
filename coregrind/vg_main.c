@@ -1475,8 +1475,7 @@ Int    VG_(clo_input_fd)       = 0; /* stdin */
 Int    VG_(clo_n_suppressions) = 0;
 Char*  VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
 Bool   VG_(clo_profile)        = False;
-Bool   VG_(clo_single_step)    = False;
-Bool   VG_(clo_optimise)       = True;
+Bool   VG_(clo_bbprofile)      = False;
 UChar  VG_(clo_trace_codegen)  = 0; // 00000000b
 Bool   VG_(clo_trace_syscalls) = False;
 Bool   VG_(clo_trace_signals)  = False;
@@ -1488,7 +1487,6 @@ Int    VG_(clo_backtrace_size) = 4;
 Char*  VG_(clo_weird_hacks)    = NULL;
 Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_track_fds)      = False;
-Bool   VG_(clo_chain_bb)       = True;
 Bool   VG_(clo_show_below_main) = False;
 Bool   VG_(clo_pointercheck)   = True;
 Bool   VG_(clo_branchpred)     = False;
@@ -1551,7 +1549,7 @@ void usage ( Bool debug_help )
 "    --single-step=no|yes      translate each instr separately? [no]\n"
 "    --optimise=no|yes         improve intermediate code? [yes]\n"
 "    --profile=no|yes          profile? (tool must be built for it) [no]\n"
-"    --chain-bb=no|yes         do basic-block chaining? [yes]\n"
+"    --bbprofile=no|yes        profile bbs?\n"
 "    --branchpred=yes|no       generate branch prediction hints [no]\n"
 "    --trace-codegen=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
@@ -1732,19 +1730,17 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(clo_verbosity)--;
 
       else VG_BOOL_CLO("--branchpred",       VG_(clo_branchpred))
-      else VG_BOOL_CLO("--chain-bb",         VG_(clo_chain_bb))
       else VG_BOOL_CLO("--db-attach",        VG_(clo_db_attach))
       else VG_BOOL_CLO("--demangle",         VG_(clo_demangle))
       else VG_BOOL_CLO("--error-limit",      VG_(clo_error_limit))
       else VG_BOOL_CLO("--gen-suppressions", VG_(clo_gen_suppressions))
       else VG_BOOL_CLO("--lowlat-signals",   VG_(clo_lowlat_signals))
       else VG_BOOL_CLO("--lowlat-syscalls",  VG_(clo_lowlat_syscalls))
-      else VG_BOOL_CLO("--optimise",         VG_(clo_optimise))
       else VG_BOOL_CLO("--pointercheck",     VG_(clo_pointercheck))
       else VG_BOOL_CLO("--profile",          VG_(clo_profile))
+      else VG_BOOL_CLO("--bbprofile",        VG_(clo_bbprofile))
       else VG_BOOL_CLO("--run-libc-freeres", VG_(clo_run_libc_freeres))
       else VG_BOOL_CLO("--show-below-main",  VG_(clo_show_below_main))
-      else VG_BOOL_CLO("--single-step",      VG_(clo_single_step))
       else VG_BOOL_CLO("--time-stamp",       VG_(clo_time_stamp))
       else VG_BOOL_CLO("--track-fds",        VG_(clo_track_fds))
       else VG_BOOL_CLO("--trace-children",   VG_(clo_trace_children))

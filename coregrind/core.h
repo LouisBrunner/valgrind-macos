@@ -41,12 +41,9 @@
 /* For system call numbers __NR_... */
 #include "vg_unistd.h"
 
-#include "core_asm.h"
+#include "core_asm.h"      // asm stuff
+#include "tool.h"          // tool stuff
 
-/* All stuff visible to core and tools goes in tool.h.  Things
- * visible to core but not visible to any tools should go in this
- * file, core.h. */
-#include "tool.h"
 #include "valgrind.h"
 
 #undef SK_

@@ -1170,7 +1170,7 @@ void VG_(main) ( void )
       attach GDB in another shell. */
    if (0) { 
       Int p, q;
-      for (p = 0; p < 5000; p++)
+      for (p = 0; p < 25000; p++)
          for (q = 0; q < 50000; q++) ;
    }
 

@@ -730,12 +730,7 @@ int do_syscall_select( int n,
    args[3] = (int)exceptfds;
    args[4] = (int)timeout;
    res = my_do_syscall1(__NR_select, (int)(&(args[0])) );
-   if (is_kerror(res)) {
-      * (__errno_location()) = -res;
-      return -1;
-   } else {
-      return res;
-   }
+   return res;
 }
 
 
@@ -750,6 +745,12 @@ int do_syscall_select( int n,
    indicating something interesting happened, or until our time is up.
    Space out the polls with nanosleeps of say 20 milliseconds, which
    is required to be nonblocking; this allows other threads to run.  
+
+   Assumes:
+   * (checked via assert) types fd_set and vki_fd_set are identical.
+   * (checked via assert) types timeval and vki_timeval are identical.
+   * (unchecked) libc error numbers (EINTR etc) are the negation of the
+     kernel's error numbers (VKI_EINTR etc).
 */
 #include <assert.h>
 
@@ -768,6 +769,7 @@ int select ( int n,
    struct vki_timeval  t_end;
    struct vki_timeval  zero_timeout;
    struct vki_timespec nanosleep_interval;
+   int                 nanosleep_usec;
 
    ensure_valgrind("select");
 
@@ -779,14 +781,27 @@ int select ( int n,
       barf("valgrind's hacky non-blocking select(): data sizes error");
 
    /* If a zero timeout specified, this call is harmless. */
-   if (timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0)
-      return do_syscall_select( n, (vki_fd_set*)rfds, 
+   if (timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0) {
+      res = do_syscall_select( n, (vki_fd_set*)rfds, 
                                    (vki_fd_set*)wfds, 
                                    (vki_fd_set*)xfds, 
                                    (struct vki_timeval*)timeout);
+      if (is_kerror(res)) {
+         * (__errno_location()) = -res;
+         return -1;
+      } else {
+         return res;
+      }
+   }
 
    /* If a timeout was specified, set t_end to be the end wallclock
       time. */
+
+   /* Sleep in 50 millisecond intervals, unless the total duration is
+      one second or less, in which case sleep in 20 millisecond
+      intervals. */
+   nanosleep_usec = 50 * 1000;
+
    if (timeout) {
       res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
       assert(res == 0);
@@ -801,6 +816,8 @@ int select ( int n,
       assert (t_end.tv_sec > t_now.tv_sec
               || (t_end.tv_sec == t_now.tv_sec 
                   && t_end.tv_usec >= t_now.tv_usec));
+      if (timeout->tv_sec == 0)
+         nanosleep_usec = 20 * 1000;
    }
 
    /* fprintf(stderr, "MY_SELECT: before loop\n"); */
@@ -835,10 +852,11 @@ int select ( int n,
                                wfds ? (vki_fd_set*)(&wfds_copy) : NULL,
                                xfds ? (vki_fd_set*)(&xfds_copy) : NULL,
                                & zero_timeout );
-      if (res < 0) {
-         /* some kind of error (including EINTR); errno is set, so just
+      if (is_kerror(res)) {
+         /* Some kind of error (including EINTR).  Set errno and
             return.  The sets are unspecified in this case. */
-         return res;
+         * (__errno_location()) = -res;
+         return -1;
       }
       if (res > 0) {
          /* one or more fds is ready.  Copy out resulting sets and
@@ -850,8 +868,8 @@ int select ( int n,
       }
       /* fprintf(stderr, "MY_SELECT: nanosleep\n"); */
       /* nanosleep and go round again */
-      nanosleep_interval.tv_sec = 0;
-      nanosleep_interval.tv_nsec = 20 * 1000 * 1000; /* 20 milliseconds */
+      nanosleep_interval.tv_sec  = 0;
+      nanosleep_interval.tv_nsec = 1000 * nanosleep_usec;
       /* It's critical here that valgrind's nanosleep implementation
          is nonblocking. */
       (void)my_do_syscall2(__NR_nanosleep, 

@@ -161,9 +161,9 @@ extern void SK_(helper_value_check1_fail) ( void );
 extern void SK_(helper_value_check0_fail) ( void );
 
 /* Functions defined in vg_memcheck.c */
-extern void SK_(helperc_STOREV4) ( UInt, Addr );
-extern void SK_(helperc_STOREV2) ( UInt, Addr );
-extern void SK_(helperc_STOREV1) ( UInt, Addr );
+extern void SK_(helperc_STOREV4) ( Addr, UInt );
+extern void SK_(helperc_STOREV2) ( Addr, UInt );
+extern void SK_(helperc_STOREV1) ( Addr, UInt );
    
 extern UInt SK_(helperc_LOADV1) ( Addr );
 extern UInt SK_(helperc_LOADV2) ( Addr );

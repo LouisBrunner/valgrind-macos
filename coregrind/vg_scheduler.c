@@ -1959,7 +1959,7 @@ void do__set_or_get_detach ( ThreadId tid,
                SET_EDX(tid, 0);
                if (VG_(clo_trace_sched)) {
                   VG_(sprintf)(msg_buf,
-                     "tid %d not detached because %d in join-wait for it %d",
+                     "tid %d not detached because %d in join-wait for it",
                      det, i);
                   print_sched_event(tid, msg_buf);
                }

@@ -2186,7 +2186,7 @@ static void vg_show_reg_tags ( void )
    z_eflags = VG_(baseBlock)[VGOFF_(sh_eflags)];
    
    uint_to_bits(z_eflags, buf1);
-   VG_(message)(Vg_DebugMsg, "efl %\n", buf1);
+   VG_(message)(Vg_DebugMsg, "efl %s\n", buf1);
 
    uint_to_bits(z_eax, buf1);
    uint_to_bits(z_ebx, buf2);

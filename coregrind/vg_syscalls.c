@@ -1057,14 +1057,13 @@ static Addr do_brk(Addr newbrk)
 /* Return true if we're allowed to use or create this fd */
 static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid)
 {
-   if (fd < 0 || fd > VG_(max_fd) || fd == VG_(clo_logfile_fd)) {
+   if (fd < 0 || fd > VG_(max_fd) || fd == VG_(clo_log_fd)) {
       VG_(message)(Vg_UserMsg, 
          "Warning: invalid file descriptor %d in syscall %s()",
          fd, syscall);
-      if (fd == VG_(clo_logfile_fd))
+      if (fd == VG_(clo_log_fd))
 	 VG_(message)(Vg_UserMsg, 
-            "   Use --logfile-fd=<number> to select an alternative "
-	    "logfile fd.");
+            "   Use --log-fd=<number> to select an alternative log fd.");
       if (VG_(clo_verbosity) > 1) {
 	 ExeContext *ec = VG_(get_ExeContext)(tid);
 	 VG_(pp_ExeContext)(ec);
@@ -2099,8 +2098,7 @@ PRE(close)
 {
    /* int close(int fd); */
    MAYBE_PRINTF("close ( %d )\n",arg1);
-   /* Detect and negate attempts by the client to close Valgrind's
-      logfile fd ... */
+   /* Detect and negate attempts by the client to close Valgrind's log fd */
    if (!fd_allowed(arg1, "close", tid))
       res = -VKI_EBADF;
 }

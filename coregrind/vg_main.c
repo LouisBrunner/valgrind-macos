@@ -1366,8 +1366,8 @@ static void load_tool( const char *toolname, void** handle_out,
 
 static void abort_msg ( void )
 {
-   VG_(clo_log_to)     = VgLogTo_Fd;
-   VG_(clo_logfile_fd) = 2; /* stderr */
+   VG_(clo_log_to) = VgLogTo_Fd;
+   VG_(clo_log_fd) = 2; /* stderr */
 }
 
 void VG_(bad_option) ( Char* opt )
@@ -1465,8 +1465,8 @@ Bool   VG_(clo_trace_children) = False;
    fd is initially stdout, for --help, but gets moved to stderr by default
    immediately afterwards. */
 VgLogTo VG_(clo_log_to)        = VgLogTo_Fd;
-Int     VG_(clo_logfile_fd)    = 1;
-Char*   VG_(clo_logfile_name)  = NULL;
+Int     VG_(clo_log_fd)        = 1;
+Char*   VG_(clo_log_name)      = NULL;
 
 Int    VG_(clo_input_fd)       = 0; /* stdin */
 Int    VG_(clo_n_suppressions) = 0;
@@ -1531,16 +1531,15 @@ void usage ( Bool debug_help )
 "    --pointercheck=no|yes     enforce client address space limits [yes]\n"
 "\n"
 "  user options for Valgrind tools that report errors:\n"
-"    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
-"    --logfile=<file>          log messages to <file>.pid<pid>\n"
-"    --logsocket=ipaddr:port   log messages to socket ipaddr:port\n"
+"    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
+"    --log-file=<file>         log messages to <file>.pid<pid>\n"
+"    --log-socket=ipaddr:port  log messages to socket ipaddr:port\n"
 "    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
 "    --num-callers=<number>    show <num> callers in stack traces [4]\n"
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
 "    --show-below-main=no|yes  continue stack traces below main() [no]\n"
 "    --suppressions=<filename> suppress errors described in <filename>\n"
 "    --gen-suppressions=no|yes print suppressions for errors detected [no]\n"
-
 "    --db-attach=no|yes        start debugger when errors detected? [no]\n"
 "    --db-command=<command>    command to start debugger [gdb -nw %%f %%p]\n"
 "    --input-fd=<number>       file descriptor for input [0=stdin]\n"
@@ -1647,12 +1646,12 @@ static void pre_process_cmd_line_options
 static void process_cmd_line_options
       ( UInt* client_auxv, Addr esp_at_startup, const char* toolname )
 {
-   Int  i, eventually_logfile_fd;
+   Int  i, eventually_log_fd;
    Int *auxp;
    Int  toolname_len = VG_(strlen)(toolname);
 
    /* log to stderr by default, but usage message goes to stdout */
-   eventually_logfile_fd = 2; 
+   eventually_log_fd = 2; 
 
    /* Check for sane path in ./configure --prefix=... */
    if (VG_LIBDIR[0] != '/') 
@@ -1748,20 +1747,36 @@ static void process_cmd_line_options
       else VG_BNUM_CLO("--num-callers",       VG_(clo_backtrace_size), 1,
                                                 VG_DEEPEST_BACKTRACE)
 
+      // for backwards compatibility, replaced by --log-fd
       else if (VG_CLO_STREQN(13, arg, "--logfile-fd=")) {
-         VG_(clo_log_to)       = VgLogTo_Fd;
-         VG_(clo_logfile_name) = NULL;
-         eventually_logfile_fd = (Int)VG_(atoll)(&arg[13]);
+         VG_(clo_log_to)   = VgLogTo_Fd;
+         VG_(clo_log_name) = NULL;
+         eventually_log_fd = (Int)VG_(atoll)(&arg[13]);
+      }
+      else if (VG_CLO_STREQN(9,  arg, "--log-fd=")) {
+         VG_(clo_log_to)   = VgLogTo_Fd;
+         VG_(clo_log_name) = NULL;
+         eventually_log_fd = (Int)VG_(atoll)(&arg[9]);
       }
 
+      // for backwards compatibility, replaced by --log-file
       else if (VG_CLO_STREQN(10, arg, "--logfile=")) {
-         VG_(clo_log_to)       = VgLogTo_File;
-         VG_(clo_logfile_name) = &arg[10];
+         VG_(clo_log_to)   = VgLogTo_File;
+         VG_(clo_log_name) = &arg[10];
+      }
+      else if (VG_CLO_STREQN(11, arg, "--log-file=")) {
+         VG_(clo_log_to)   = VgLogTo_File;
+         VG_(clo_log_name) = &arg[11];
       }
 
+      // for backwards compatibility, replaced by --log-socket
       else if (VG_CLO_STREQN(12, arg, "--logsocket=")) {
-         VG_(clo_log_to)       = VgLogTo_Socket;
-         VG_(clo_logfile_name) = &arg[12];
+         VG_(clo_log_to)   = VgLogTo_Socket;
+         VG_(clo_log_name) = &arg[12];
+      }
+      else if (VG_CLO_STREQN(13, arg, "--log-socket=")) {
+         VG_(clo_log_to)   = VgLogTo_Socket;
+         VG_(clo_log_name) = &arg[13];
       }
 
       else if (VG_CLO_STREQN(15, arg, "--suppressions=")) {
@@ -1823,7 +1838,7 @@ static void process_cmd_line_options
       VG_(bad_option)("--db-attach=yes and --trace-children=yes");
    }
 
-   /* Set up logging now.  After this is done, VG_(clo_logfile_fd)
+   /* Set up logging now.  After this is done, VG_(clo_log_fd)
       should be connected to whatever sink has been selected, and we
       indiscriminately chuck stuff into it without worrying what the
       nature of it is.  Oh the wonder of Unix streams. */
@@ -1831,14 +1846,14 @@ static void process_cmd_line_options
    /* So far we should be still attached to stdout, so we can show on
       the terminal any problems to do with processing command line
       opts. */
-   vg_assert(VG_(clo_logfile_fd) == 1 /* stdout */);
+   vg_assert(VG_(clo_log_fd) == 1 /* stdout */);
    vg_assert(VG_(logging_to_filedes) == True);
 
    switch (VG_(clo_log_to)) {
 
       case VgLogTo_Fd: 
-         vg_assert(VG_(clo_logfile_name) == NULL);
-         VG_(clo_logfile_fd) = eventually_logfile_fd;
+         vg_assert(VG_(clo_log_name) == NULL);
+         VG_(clo_log_fd) = eventually_log_fd;
          break;
 
       case VgLogTo_File: {
@@ -1846,32 +1861,32 @@ static void process_cmd_line_options
 	 Int seq = 0;
 	 Int pid = VG_(getpid)();
 
-         vg_assert(VG_(clo_logfile_name) != NULL);
-         vg_assert(VG_(strlen)(VG_(clo_logfile_name)) <= 900); /* paranoia */
+         vg_assert(VG_(clo_log_name) != NULL);
+         vg_assert(VG_(strlen)(VG_(clo_log_name)) <= 900); /* paranoia */
 
 	 for (;;) {
 	    if (seq == 0)
 	       VG_(sprintf)(logfilename, "%s.pid%d",
-			    VG_(clo_logfile_name), pid );
+			    VG_(clo_log_name), pid );
 	    else
 	       VG_(sprintf)(logfilename, "%s.pid%d.%d",
-			    VG_(clo_logfile_name), pid, seq );
+			    VG_(clo_log_name), pid, seq );
 	    seq++;
 
-	    eventually_logfile_fd 
+	    eventually_log_fd 
 	       = VG_(open)(logfilename, 
 			   VKI_O_CREAT|VKI_O_WRONLY|VKI_O_EXCL|VKI_O_TRUNC, 
 			   VKI_S_IRUSR|VKI_S_IWUSR);
-	    if (eventually_logfile_fd >= 0) {
-	       VG_(clo_logfile_fd) = VG_(safe_fd)(eventually_logfile_fd);
+	    if (eventually_log_fd >= 0) {
+	       VG_(clo_log_fd) = VG_(safe_fd)(eventually_log_fd);
 	       break;
 	    } else {
-	       if (eventually_logfile_fd != -VKI_EEXIST) {
+	       if (eventually_log_fd != -VKI_EEXIST) {
 		  VG_(message)(Vg_UserMsg, 
 			       "Can't create/open log file `%s.pid%d'; giving up!", 
-			       VG_(clo_logfile_name), pid);
+			       VG_(clo_log_name), pid);
 		  VG_(bad_option)(
-		     "--logfile=<file> didn't work out for some reason.");
+		     "--log-file=<file> didn't work out for some reason.");
 		  break;
 	       }
 	    }
@@ -1880,30 +1895,29 @@ static void process_cmd_line_options
       }
 
       case VgLogTo_Socket: {
-         vg_assert(VG_(clo_logfile_name) != NULL);
-         vg_assert(VG_(strlen)(VG_(clo_logfile_name)) <= 900); /* paranoia */
-         eventually_logfile_fd 
-            = VG_(connect_via_socket)( VG_(clo_logfile_name) );
-         if (eventually_logfile_fd == -1) {
+         vg_assert(VG_(clo_log_name) != NULL);
+         vg_assert(VG_(strlen)(VG_(clo_log_name)) <= 900); /* paranoia */
+         eventually_log_fd = VG_(connect_via_socket)( VG_(clo_log_name) );
+         if (eventually_log_fd == -1) {
             VG_(message)(Vg_UserMsg, 
-               "Invalid --logsocket=ipaddr or --logsocket=ipaddr:port spec"); 
+               "Invalid --log-socket=ipaddr or --log-socket=ipaddr:port spec"); 
             VG_(message)(Vg_UserMsg, 
-               "of `%s'; giving up!", VG_(clo_logfile_name) );
+               "of `%s'; giving up!", VG_(clo_log_name) );
             VG_(bad_option)(
-               "--logsocket=");
+               "--log-socket=");
 	 }
-         if (eventually_logfile_fd == -2) {
+         if (eventually_log_fd == -2) {
             VG_(message)(Vg_UserMsg, 
                "valgrind: failed to connect to logging server `%s'.",
-               VG_(clo_logfile_name) ); 
+               VG_(clo_log_name) ); 
             VG_(message)(Vg_UserMsg, 
                 "Log messages will sent to stderr instead." );
             VG_(message)(Vg_UserMsg, 
                 "" );
             /* We don't change anything here. */
 	 } else {
-            vg_assert(eventually_logfile_fd > 0);
-            VG_(clo_logfile_fd) = eventually_logfile_fd;
+            vg_assert(eventually_log_fd > 0);
+            VG_(clo_log_fd) = eventually_log_fd;
             VG_(logging_to_filedes) = False;
          }
          break;
@@ -1911,13 +1925,13 @@ static void process_cmd_line_options
 
    }
 
-   /* Move logfile_fd into the safe range, so it doesn't conflict with any app fds */
-   eventually_logfile_fd = VG_(fcntl)(VG_(clo_logfile_fd), VKI_F_DUPFD, VG_(max_fd)+1);
-   if (eventually_logfile_fd < 0)
+   /* Move log_fd into the safe range, so it doesn't conflict with any app fds */
+   eventually_log_fd = VG_(fcntl)(VG_(clo_log_fd), VKI_F_DUPFD, VG_(max_fd)+1);
+   if (eventually_log_fd < 0)
       VG_(message)(Vg_UserMsg, "valgrind: failed to move logfile fd into safe range");
    else {
-      VG_(clo_logfile_fd) = eventually_logfile_fd;
-      VG_(fcntl)(VG_(clo_logfile_fd), VKI_F_SETFD, VKI_FD_CLOEXEC);
+      VG_(clo_log_fd) = eventually_log_fd;
+      VG_(fcntl)(VG_(clo_log_fd), VKI_F_SETFD, VKI_FD_CLOEXEC);
    }
 
    /* Ok, the logging sink is running now.  Print a suitable preamble.

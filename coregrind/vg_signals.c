@@ -1555,9 +1555,9 @@ static void make_coredump(ThreadId tid, const vki_ksiginfo_t *si, UInt max_size)
    struct elf_prpsinfo prpsinfo;
    struct elf_prstatus prstatus;
 
-   if (VG_(clo_logfile_name) != NULL) {
+   if (VG_(clo_log_name) != NULL) {
       coreext = ".core";
-      basename = VG_(clo_logfile_name);
+      basename = VG_(clo_log_name);
    }
 
    for(;;) {

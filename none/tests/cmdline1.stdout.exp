@@ -24,9 +24,9 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --pointercheck=no|yes     enforce client address space limits [yes]
 
   user options for Valgrind tools that report errors:
-    --logfile-fd=<number>     file descriptor for messages [2=stderr]
-    --logfile=<file>          log messages to <file>.pid<pid>
-    --logsocket=ipaddr:port   log messages to socket ipaddr:port
+    --log-fd=<number>         log messages to file descriptor [2=stderr]
+    --log-file=<file>         log messages to <file>.pid<pid>
+    --log-socket=ipaddr:port  log messages to socket ipaddr:port
     --demangle=no|yes         automatically demangle C++ names? [yes]
     --num-callers=<number>    show <num> callers in stack traces [4]
     --error-limit=no|yes      stop showing new errors if too many? [yes]

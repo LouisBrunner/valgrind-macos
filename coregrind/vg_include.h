@@ -197,24 +197,24 @@ extern Bool  VG_(clo_trace_children);
 
 /* Where logging output is to be sent to.
 
-   When log_to == VgLogTo_Fd, clo_logfile_fd holds the file id, and is
-   taken from the command line.  clo_logfile_name is irrelevant.
+   When log_to == VgLogTo_Fd, clo_log_fd holds the file id, and is
+   taken from the command line.  clo_log_name is irrelevant.
 
-   When log_to == VgLogTo_File, clo_logfile_name holds the logfile
-   name, and is taken from the command line.  clo_logfile_fd is then
-   made to hold the relevant file id, by opening clo_logfile_name
+   When log_to == VgLogTo_File, clo_log_name holds the log-file
+   name, and is taken from the command line.  clo_log_fd is then
+   made to hold the relevant file id, by opening clo_log_name
    (concatenated with the process ID) for writing.
 
-   When log_to == VgLogTo_Socket, clo_logfile_name holds the
+   When log_to == VgLogTo_Socket, clo_log_name holds the
    hostname:portnumber pair, and is taken from the command line.
-   clo_logfile_fd is then made to hold the relevant file handle, by
+   clo_log_fd is then made to hold the relevant file handle, by
    opening a connection to said hostname:portnumber pair. 
 
-   Global default is to set log_to == VgLogTo_Fd and logfile_fd == 2
+   Global default is to set log_to == VgLogTo_Fd and log_fd == 2
    (stderr). */
 extern VgLogTo VG_(clo_log_to);
-extern Int     VG_(clo_logfile_fd);
-extern Char*   VG_(clo_logfile_name);
+extern Int     VG_(clo_log_fd);
+extern Char*   VG_(clo_log_name);
 
 /* The file descriptor to read for input.  default: 0 == stdin */
 extern Int   VG_(clo_input_fd);
@@ -281,7 +281,7 @@ extern void VG_(intercept_libc_freeres_wrapper)(Addr);
    Debugging and profiling stuff
    ------------------------------------------------------------------ */
 
-/* Create a logfile into which messages can be dumped. */
+/* Create a log file into which messages can be dumped. */
 extern void VG_(startup_logging) ( void );
 extern void VG_(shutdown_logging)( void );
 

@@ -700,7 +700,7 @@ static int  n_myprintf_buf;
 static void add_to_myprintf_buf ( Char c )
 {
    if (n_myprintf_buf >= 100-10 /*paranoia*/ ) {
-      if (VG_(clo_logfile_fd) >= 0) {
+      if (VG_(clo_log_fd) >= 0) {
          VG_(send_bytes_to_logging_sink)( 
             myprintf_buf, VG_(strlen)(myprintf_buf) );
       }
@@ -721,7 +721,7 @@ UInt VG_(printf) ( const char *format, ... )
    myprintf_buf[n_myprintf_buf] = 0;      
    ret = VG_(vprintf) ( add_to_myprintf_buf, format, vargs );
 
-   if (n_myprintf_buf > 0 && VG_(clo_logfile_fd) >= 0) {
+   if (n_myprintf_buf > 0 && VG_(clo_log_fd) >= 0) {
       VG_(send_bytes_to_logging_sink)( myprintf_buf, n_myprintf_buf );
    }
 

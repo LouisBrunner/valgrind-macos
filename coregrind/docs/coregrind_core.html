@@ -162,10 +162,10 @@ You can direct the commentary to three different places:
     (stderr).  So, if you give the core no options, it will write 
     commentary to the standard error stream.  If you want to send 
     it to some other file descriptor, for example number 9,
-    you can specify <code>--logfile-fd=9</code>.
+    you can specify <code>--log-fd=9</code>.
 <p>
 <li>A less intrusive option is to write the commentary to a file, 
-    which you specify by <code>--logfile=filename</code>.  Note 
+    which you specify by <code>--log-file=filename</code>.  Note 
     carefully that the commentary is <b>not</b> written to the file
     you specify, but instead to one called
     <code>filename.pid12345</code>, if for example the pid of the
@@ -176,10 +176,10 @@ You can direct the commentary to three different places:
 <p>
 <li>The least intrusive option is to send the commentary to a network
     socket.  The socket is specified as an IP address and port number
-    pair, like this: <code>--logsocket=192.168.0.1:12345</code> if you
+    pair, like this: <code>--log-socket=192.168.0.1:12345</code> if you
     want to send the output to host IP 192.168.0.1 port 12345 (I have
     no idea if 12345 is a port of pre-existing significance).  You can
-    also omit the port number: <code>--logsocket=192.168.0.1</code>, 
+    also omit the port number: <code>--log-socket=192.168.0.1</code>, 
     in which case a default port of 1500 is used.  This default is
     defined by the constant <code>VG_CLO_DEFAULT_LOGPORT</code>
     in the sources.
@@ -209,7 +209,7 @@ You can direct the commentary to three different places:
     <li><code>portnumber</code>: changes the port it listens on from
         the default (1500).  The specified port must be in the range
         1024 to 65535.  The same restriction applies to port numbers
-        specified by a <code>--logsocket=</code> to Valgrind itself.
+        specified by a <code>--log-socket=</code> to Valgrind itself.
     </ul>
     <p>
     If a valgrinded process fails to connect to a listener, for
@@ -227,7 +227,7 @@ mix of messages from the Valgrind core and the selected tool.  If the
 tool reports errors, it will report them to the commentary.  However,
 if the tool does profiling, the profile data will be written to a file
 of some kind, depending on the tool, and independent of what
-<code>--log*</code> options are in force.  The commentary is intended
+<code>--log-*</code> options are in force.  The commentary is intended
 to be a low-bandwidth, human-readable channel.  Profiling data, on the
 other hand, is usually voluminous and not meaningful without further
 processing, which is why we have chosen this arrangement.
@@ -526,14 +526,14 @@ These options work with all tools.
       default.
       </li><br><p>
 
-  <li><code>--logfile-fd=&lt;number&gt;</code> [default: 2, stderr]
+  <li><code>--log-fd=&lt;number&gt;</code> [default: 2, stderr]
       <p>Specifies that Valgrind should send all of its
       messages to the specified file descriptor.  The default, 2, is
       the standard error channel (stderr).  Note that this may
       interfere with the client's own use of stderr.  
       </li><br><p>
 
-  <li><code>--logfile=&lt;filename&gt;</code>
+  <li><code>--log-file=&lt;filename&gt;</code>
       <p>Specifies that Valgrind should send all of its
       messages to the specified file.  In fact, the file name used
       is created by concatenating the text <code>filename</code>,
@@ -541,7 +541,7 @@ These options work with all tools.
       The specified file name may not be the empty string.
       </li><br><p>
 
-  <li><code>--logsocket=&lt;ip-address:port-number&gt;</code>
+  <li><code>--log-socket=&lt;ip-address:port-number&gt;</code>
       <p>Specifies that Valgrind should send all of its messages to
       the specified port at the specified IP address.  The port may be
       omitted, in which case port 1500 is used.  If a connection
@@ -965,7 +965,7 @@ tool-specific documentation for explanations of the tool-specific macros).
 <p>
 <li><code>VALGRIND_COUNT_ERRORS</code>: returns the number of errors
     found so far by Valgrind.  Can be useful in test harness code when
-    combined with the <code>--logfile-fd=-1</code> option;  this runs
+    combined with the <code>--log-fd=-1</code> option;  this runs
     Valgrind silently, but the client program can detect when errors
     occur.  Only useful for tools that report errors, e.g. it's useful for
     Memcheck, but for Cachegrind it will always return zero because 
@@ -1501,7 +1501,7 @@ Most of these only appear if you run in verbose mode (enabled by
      Valgrind doesn't allow the client
      to close the logfile, because you'd never see any diagnostic
      information after that point.  If you see this message,
-     you may want to use the <code>--logfile-fd=&lt;number></code> 
+     you may want to use the <code>--log-fd=&lt;number></code> 
      option to specify a different logfile file-descriptor number.
      Or 
 <p>

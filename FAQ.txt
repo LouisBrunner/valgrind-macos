@@ -343,7 +343,7 @@ To trace child processes, use the --trace-children=yes option.
 
 If you are tracing large trees of processes, it can be less disruptive
 to have the output sent over the network.  Give Valgrind the flag
---logsocket=127.0.0.1:12345 (if you want logging output sent to port
+--log-socket=127.0.0.1:12345 (if you want logging output sent to port
 12345 on localhost).  You can use the valgrind-listener program to
 listen on that port:
 

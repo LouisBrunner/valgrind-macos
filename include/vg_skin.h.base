@@ -382,8 +382,8 @@ extern ThreadId VG_(first_matching_thread_stack)
 /* stdio.h
  *
  * Note that they all output to the file descriptor given by the
- * --logfile-fd=N argument, which defaults to 2 (stderr).  Hence no
- * need for VG_(fprintf)().
+ * --log-fd/--log-file/--log-socket argument, which defaults to 2 (stderr).
+ * Hence no need for VG_(fprintf)().
  */
 extern UInt VG_(printf)  ( const char *format, ... );
 /* too noisy ...  __attribute__ ((format (printf, 1, 2))) ; */

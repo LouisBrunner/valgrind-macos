@@ -1,2 +1,2 @@
-vgopts: --logfile-fd=-1
+vgopts: --log-fd=-1
 prog:   error_counts

@@ -133,15 +133,16 @@ VG_(helper_CPUID):
 	pushl	%ecx
 	pushl	%edx
 	movl	32(%esp), %eax
-/*
+
 	cpuid
-*/
+
 /*
         xor     %eax,%eax
         xor     %ebx,%ebx
         xor     %ecx,%ecx
         xor     %edx,%edx
 */
+/*
 	cmpl	$0, %eax
 	jz	cpuid__0
 	movl	$0x52b, %eax
@@ -155,7 +156,7 @@ cpuid__0:
 	movl	$0x6c65746e, %ecx
 	movl	$0x49656e69, %edx
 cpuid__99:
-		
+*/	
 	movl	%edx, 20(%esp)
 	movl	%ecx, 24(%esp)
 	movl	%ebx, 28(%esp)

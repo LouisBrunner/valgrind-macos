@@ -2278,7 +2278,6 @@ IRExpr* findPutI ( IRBB* bb, Int startHere,
                    IRArray* descrG, IRExpr* ixG, Int biasG )
 {
    Int        j;
-   UInt       minoffP, maxoffP, minoffG, maxoffG;
    IRStmt*    st;
    GSAliasing relation;
 
@@ -2291,8 +2290,7 @@ IRExpr* findPutI ( IRBB* bb, Int startHere,
    }
 
    /* Scan backwards in bb from startHere to find a suitable PutI
-      binding for (descr, tmp, bias), if any. */
-   getArrayBounds( descrG, &minoffG, &maxoffG );
+      binding for (descrG, ixG, biasG), if any. */
 
    for (j = startHere; j >= 0; j--) {
       st = bb->stmts[j];
@@ -2350,6 +2348,9 @@ IRExpr* findPutI ( IRBB* bb, Int startHere,
          return st->Ist.PutI.data;
 
       } /* if (st->tag == Ist_PutI) */
+
+      /* Figure out what to do here -- be conservative. */
+      vassert(st->tag != Ist_Dirty);
 
    } /* for */
 

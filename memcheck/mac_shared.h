@@ -51,7 +51,8 @@ typedef
       Stack, 
       Unknown,      /* classification yielded nothing useful */
       Freed, Mallocd, 
-      UserG  /* in a user-defined block; Addrcheck & Memcheck only */
+      UserG,        /* in a user-defined block; Addrcheck & Memcheck only */
+      Mempool,      /* in a mempool; Addrcheck & Memcheck only */
    }
    AddrKind;
 
@@ -88,7 +89,9 @@ typedef
       /* Overlapping blocks in memcpy(), strcpy(), etc */
       OverlapSupp,
       /* Something to be suppressed in a leak check. */
-      LeakSupp
+      LeakSupp,
+      /* Memory pool suppression. */
+      MempoolSupp,
    } 
    MAC_SuppKind;
 
@@ -100,7 +103,8 @@ typedef
           ParamErr, UserErr,  /* behaves like an anonymous ParamErr */
           FreeErr, FreeMismatchErr,
           OverlapErr,
-          LeakErr
+          LeakErr,
+          IllegalMempoolErr,
    }
    MAC_ErrorKind;
 
@@ -152,6 +156,18 @@ typedef
       ExeContext*   where;          /* where it was allocated           */
    }
    MAC_Chunk;
+
+/* Memory pool.  Nb: first two fields must match core's VgHashNode. */
+typedef
+   struct _MAC_Mempool {
+      struct _MAC_Mempool* next;
+      Addr          pool;           /* pool identifier                       */
+      UInt          rzB;            /* pool red-zone size                    */
+      Bool          is_zeroed;      /* allocations from this pool are zeroed */
+      VgHashTable   chunks;         /* chunks associated with this pool      */
+   }
+   MAC_Mempool;
+
 
 /*------------------------------------------------------------*/
 /*--- Profiling of tools and memory events                 ---*/
@@ -270,6 +286,9 @@ extern void MAC_(print_common_debug_usage)       ( void );
 /* For tracking malloc'd blocks */
 extern VgHashTable MAC_(malloc_list);
 
+/* For tracking memory pools. */
+extern VgHashTable MAC_(mempool_list);
+
 /* Function pointers for the two tools to track interesting events. */
 extern void (*MAC_(new_mem_heap)) ( Addr a, UInt len, Bool is_inited );
 extern void (*MAC_(ban_mem_heap)) ( Addr a, UInt len );
@@ -298,9 +317,15 @@ extern void MAC_(clear_MAC_Error)          ( MAC_Error* err_extra );
 
 extern Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su );
 
-extern void MAC_(new_block) ( Addr p, UInt size, UInt rzB,
-                              Bool is_zeroed, MAC_AllocKind kind );
+extern MAC_Chunk* MAC_(new_block) ( Addr p, UInt size, UInt rzB,
+                                    Bool is_zeroed, MAC_AllocKind kind,
+                                    VgHashTable table);
 extern void MAC_(handle_free) ( Addr p, UInt rzB, MAC_AllocKind kind );
+
+extern void MAC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed);
+extern void MAC_(destroy_mempool)(Addr pool);
+extern void MAC_(mempool_alloc)(Addr pool, Addr addr, UInt size);
+extern void MAC_(mempool_free)(Addr pool, Addr addr);
 
 extern void MAC_(record_address_error)     ( ThreadId tid, Addr a,
                                              Int size, Bool isWrite );
@@ -312,6 +337,7 @@ extern void MAC_(record_jump_error)        ( ThreadId tid, Addr a );
 extern void MAC_(record_free_error)        ( ThreadId tid, Addr a );
 extern void MAC_(record_freemismatch_error)( ThreadId tid, Addr a );
 extern void MAC_(record_overlap_error)     ( Char* function, OverlapExtra* oe );
+extern void MAC_(record_illegal_mempool_error) ( ThreadId tid, Addr pool );
 
 extern void MAC_(pp_shared_SkinError)      ( Error* err);
 

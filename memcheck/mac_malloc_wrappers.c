@@ -61,6 +61,10 @@ Bool (*MAC_(check_noaccess))( Addr a, UInt len, Addr* bad_addr ) = NULL;
 /* Record malloc'd blocks.  Nb: Addrcheck and Memcheck construct this
    separately in their respective initialisation functions. */
 VgHashTable MAC_(malloc_list) = NULL;
+
+/* Memory pools.  Nb: Addrcheck and Memcheck construct this separately
+   in their respective initialisation functions. */
+VgHashTable MAC_(mempool_list) = NULL;
    
 /* Records blocks after freeing. */
 static MAC_Chunk* freed_list_start  = NULL;
@@ -127,7 +131,8 @@ MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk) ( Bool (*p)(MAC_Chunk*) )
 
 /* Allocate its shadow chunk, put it on the appropriate list. */
 static
-void add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind )
+MAC_Chunk* add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind,
+                           VgHashTable table)
 {
    MAC_Chunk* mc;
 
@@ -146,7 +151,9 @@ void add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind )
       VG_(skin_panic)("add_MAC_chunk: shadow area is accessible");
    } 
 
-   VG_(HT_add_node)( MAC_(malloc_list), (VgHashNode*)mc );
+   VG_(HT_add_node)( table, (VgHashNode*)mc );
+
+   return mc;
 }
 
 /*------------------------------------------------------------*/
@@ -155,21 +162,26 @@ void add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind )
 
 /* Allocate memory and note change in memory available */
 __inline__
-void MAC_(new_block) ( Addr p, UInt size,
-                       UInt rzB, Bool is_zeroed, MAC_AllocKind kind )
+MAC_Chunk* MAC_(new_block) ( Addr p, UInt size,
+                             UInt rzB, Bool is_zeroed, MAC_AllocKind kind,
+                             VgHashTable table)
 {
+   MAC_Chunk *mc;
+
    VGP_PUSHCC(VgpCliMalloc);
 
    cmalloc_n_mallocs ++;
    cmalloc_bs_mallocd += size;
 
-   add_MAC_Chunk( p, size, kind );
+   mc = add_MAC_Chunk( p, size, kind, table );
 
    MAC_(ban_mem_heap)( p-rzB, rzB );
    MAC_(new_mem_heap)( p, size, is_zeroed );
    MAC_(ban_mem_heap)( p+size, rzB );
 
    VGP_POPCC(VgpCliMalloc);
+
+   return mc;
 }
 
 void* SK_(malloc) ( Int n )
@@ -180,7 +192,8 @@ void* SK_(malloc) ( Int n )
    } else {
       Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
       MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
-                        /*is_zeroed*/False, MAC_AllocMalloc );
+                        /*is_zeroed*/False, MAC_AllocMalloc,
+                        MAC_(malloc_list));
       return (void*)p;
    }
 }
@@ -193,7 +206,8 @@ void* SK_(__builtin_new) ( Int n )
    } else {
       Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
       MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
-                        /*is_zeroed*/False, MAC_AllocNew );
+                        /*is_zeroed*/False, MAC_AllocNew,
+                        MAC_(malloc_list));
       return (void*)p;
    }
 }
@@ -207,7 +221,8 @@ void* SK_(__builtin_vec_new) ( Int n )
    } else {
       Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
       MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
-                        /*is_zeroed*/False, MAC_AllocNewVec );
+                        /*is_zeroed*/False, MAC_AllocNewVec,
+                        MAC_(malloc_list));
       return (void*)p;
    }
 }
@@ -220,7 +235,8 @@ void* SK_(memalign) ( Int align, Int n )
    } else {
       Addr p = (Addr)VG_(cli_malloc)( align, n );
       MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
-                        /*is_zeroed*/False, MAC_AllocMalloc );
+                        /*is_zeroed*/False, MAC_AllocMalloc,
+                        MAC_(malloc_list));
       return (void*)p;
    }
 }
@@ -238,7 +254,8 @@ void* SK_(calloc) ( Int nmemb, Int size1 )
    } else {
       Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
       MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
-                        /*is_zeroed*/True, MAC_AllocMalloc );
+                        /*is_zeroed*/True, MAC_AllocMalloc,
+                        MAC_(malloc_list));
       for (i = 0; i < n; i++) 
          ((UChar*)p)[i] = 0;
       return (void*)p;
@@ -261,16 +278,14 @@ void die_and_free_mem ( MAC_Chunk* mc,
       describe_addr() which looks for it in malloclist. */
    *prev_chunks_next_ptr = mc->next;
 
-   /* Record where freed */
-   mc->where = VG_(get_ExeContext) ( VG_(get_current_or_recent_tid)() );
-
    /* Put it out of harm's way for a while, if not from a client request */
-   if (MAC_AllocCustom != mc->allockind)
+   if (MAC_AllocCustom != mc->allockind) {
+      /* Record where freed */
+      mc->where = VG_(get_ExeContext) ( VG_(get_current_or_recent_tid)() );
       add_to_freed_queue ( mc );
-   else
+   } else
       VG_(free) ( mc );
 }
-
 
 __inline__
 void MAC_(handle_free) ( Addr p, UInt rzB, MAC_AllocKind kind )
@@ -392,11 +407,117 @@ void* SK_(realloc) ( void* p, Int new_size )
       /* this has to be after die_and_free_mem, otherwise the
          former succeeds in shorting out the new block, not the
          old, in the case when both are on the same list.  */
-      add_MAC_Chunk ( p_new, new_size, MAC_AllocMalloc );
+      add_MAC_Chunk ( p_new, new_size, MAC_AllocMalloc,  MAC_(malloc_list) );
 
       VGP_POPCC(VgpCliMalloc);
       return (void*)p_new;
    }  
+}
+
+/* Memory pool stuff. */
+
+void MAC_(create_mempool)(Addr pool, UInt rzB, Bool is_zeroed)
+{
+   MAC_Mempool* mp;
+
+   mp            = VG_(malloc)(sizeof(MAC_Mempool));
+   mp->pool      = pool;
+   mp->rzB       = rzB;
+   mp->is_zeroed = is_zeroed;
+   mp->chunks    = VG_(HT_construct)();
+
+   /* Paranoia ... ensure this area is off-limits to the client, so
+      the mp->data field isn't visible to the leak checker.  If memory
+      management is working correctly, anything pointer returned by
+      VG_(malloc) should be noaccess as far as the client is
+      concerned. */
+   if (!MAC_(check_noaccess)( (Addr)mp, sizeof(MAC_Mempool), NULL )) {
+      VG_(skin_panic)("MAC_(create_mempool): shadow area is accessible");
+   } 
+
+   VG_(HT_add_node)( MAC_(mempool_list), (VgHashNode*)mp );
+   
+}
+
+void MAC_(destroy_mempool)(Addr pool)
+{
+   MAC_Mempool*  mp;
+   MAC_Mempool** prev_next;
+
+   void nuke_chunk(VgHashNode *node)
+   {
+      MAC_Chunk *mc = (MAC_Chunk *)node;
+
+      /* Note: ban redzones again -- just in case user de-banned them
+         with a client request... */
+      MAC_(ban_mem_heap)(mc->data-mp->rzB, mp->rzB );
+      MAC_(die_mem_heap)(mc->data, mc->size );
+      MAC_(ban_mem_heap)(mc->data+mc->size, mp->rzB );
+   }
+
+   mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list), (UInt)pool,
+                                        (VgHashNode***)&prev_next );
+
+   if (mp == NULL) {
+      ThreadId      tid = VG_(get_current_or_recent_tid)();
+
+      MAC_(record_illegal_mempool_error) ( tid, pool );
+      return;
+   }
+
+   *prev_next = mp->next;
+   VG_(HT_apply_to_all_nodes)(mp->chunks, nuke_chunk);
+   VG_(HT_destruct)(mp->chunks);
+
+   VG_(free)(mp);
+}
+
+void MAC_(mempool_alloc)(Addr pool, Addr addr, UInt size)
+{
+   MAC_Mempool*  mp;
+   MAC_Mempool** prev_next;
+   MAC_Chunk*    mc;
+
+   mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list), (UInt)pool,
+                                        (VgHashNode***)&prev_next );
+
+   if (mp == NULL) {
+      ThreadId      tid = VG_(get_current_or_recent_tid)();
+
+      MAC_(record_illegal_mempool_error) ( tid, pool );
+      return;
+   }
+
+   mc = MAC_(new_block)(addr, size, mp->rzB, mp->is_zeroed, MAC_AllocCustom,
+                        mp->chunks);
+}
+
+void MAC_(mempool_free)(Addr pool, Addr addr)
+{
+   MAC_Mempool*  mp;
+   MAC_Mempool** prev_pool;
+   MAC_Chunk*    mc;
+   MAC_Chunk**   prev_chunk;
+   ThreadId      tid = VG_(get_current_or_recent_tid)();
+
+
+   mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list), (UInt)pool,
+                                       (VgHashNode***)&prev_pool);
+
+   if (mp == NULL) {
+      MAC_(record_illegal_mempool_error)(tid, pool);
+      return;
+   }
+
+   mc = (MAC_Chunk*)VG_(HT_get_node)(mp->chunks, (UInt)addr,
+                                     (VgHashNode***)&prev_chunk);
+
+   if (mc == NULL) {
+      MAC_(record_free_error)(tid, (Addr)addr);
+      return;
+   }
+
+   die_and_free_mem(mc, prev_chunk, mp->rzB);
 }
 
 void MAC_(print_malloc_stats) ( void )

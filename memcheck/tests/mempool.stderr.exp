@@ -1,0 +1,38 @@
+Invalid write of size 1
+   at 0x........: test (mempool.c:124)
+   by 0x........: main (mempool.c:148)
+ Address 0x........ is 1 bytes before a block of size 10 client-defined
+   at 0x........: allocate (mempool.c:99)
+   by 0x........: test (mempool.c:115)
+   by 0x........: main (mempool.c:148)
+
+Invalid write of size 1
+   at 0x........: test (mempool.c:125)
+   by 0x........: main (mempool.c:148)
+ Address 0x........ is 0 bytes after a block of size 10 client-defined
+   at 0x........: allocate (mempool.c:99)
+   by 0x........: test (mempool.c:115)
+   by 0x........: main (mempool.c:148)
+
+Invalid write of size 1
+   at 0x........: test (mempool.c:129)
+   by 0x........: main (mempool.c:148)
+ Address 0x........ is 70 bytes inside a mempool of size 100000 client-defined
+   at 0x........: make_pool (mempool.c:43)
+   by 0x........: test (mempool.c:111)
+   by 0x........: main (mempool.c:148)
+
+Invalid write of size 1
+   at 0x........: test (mempool.c:130)
+   by 0x........: main (mempool.c:148)
+ Address 0x........ is 96 bytes inside a mempool of size 100000 client-defined
+   at 0x........: make_pool (mempool.c:43)
+   by 0x........: test (mempool.c:111)
+   by 0x........: main (mempool.c:148)
+
+
+20 bytes in 1 blocks are definitely lost in loss record 2 of 3
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: make_pool (mempool.c:37)
+   by 0x........: test (mempool.c:111)
+   by 0x........: main (mempool.c:148)

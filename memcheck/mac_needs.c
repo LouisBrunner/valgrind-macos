@@ -196,6 +196,9 @@ Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
          VG_(skin_panic)("Shouldn't get LeakErr in SK_(eq_SkinError),\n"
                          "since it's handled with VG_(unique_error)()!");
 
+      case IllegalMempoolErr:
+         return True;
+
       default: 
          VG_(printf)("Error:\n  unknown error code %d\n",
                      VG_(get_error_kind)(e1));
@@ -223,9 +226,15 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
                " Address 0x%x is not stack'd, malloc'd or (recently) free'd",a);
          }
          break;
-      case Freed: case Mallocd: case UserG: {
+      case Freed: case Mallocd: case UserG: case Mempool: {
          UInt delta;
          UChar* relative;
+         UChar* kind;
+         if (ai->akind == Mempool) {
+            kind = "mempool";
+         } else {
+            kind = "block";
+         }
          if (ai->rwoffset < 0) {
             delta    = (UInt)(- ai->rwoffset);
             relative = "before";
@@ -237,8 +246,8 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
             relative = "inside";
          }
          VG_(message)(Vg_UserMsg, 
-            " Address 0x%x is %d bytes %s a block of size %d %s",
-            a, delta, relative, 
+            " Address 0x%x is %d bytes %s a %s of size %d %s",
+            a, delta, relative, kind,
             ai->blksize,
             ai->akind==Mallocd ? "alloc'd" 
                : ai->akind==Freed ? "free'd" 
@@ -313,6 +322,12 @@ void MAC_(pp_shared_SkinError) ( Error* err )
          MAC_(pp_LeakError)(err_extra, n_this_record, n_total_records);
          break;
       }
+
+      case IllegalMempoolErr:
+         VG_(message)(Vg_UserMsg, "Illegal memory pool address");
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
+         break;
 
       default: 
          VG_(printf)("Error:\n  unknown Memcheck/Addrcheck error code %d\n",
@@ -470,6 +485,16 @@ void MAC_(record_free_error) ( ThreadId tid, Addr a )
    VG_(maybe_record_error)( tid, FreeErr, a, /*s*/NULL, &err_extra );
 }
 
+void MAC_(record_illegal_mempool_error) ( ThreadId tid, Addr a ) 
+{
+   MAC_Error err_extra;
+
+   sk_assert(VG_INVALID_THREADID != tid);
+   MAC_(clear_MAC_Error)( &err_extra );
+   err_extra.addrinfo.akind = Undescribed;
+   VG_(maybe_record_error)( tid, IllegalMempoolErr, a, /*s*/NULL, &err_extra );
+}
+
 void MAC_(record_freemismatch_error) ( ThreadId tid, Addr a )
 {
    MAC_Error err_extra;
@@ -499,6 +524,7 @@ UInt SK_(update_extra)( Error* err )
    case ParamErr:
    case UserErr:
    case FreeErr:
+   case IllegalMempoolErr:
    case FreeMismatchErr: {
       MAC_Error* extra = (MAC_Error*)VG_(get_error_extra)(err);
       if (extra != NULL && Undescribed == extra->addrinfo.akind) {
@@ -533,6 +559,7 @@ Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su )
    else if (VG_STREQ(name, "Free"))    skind = FreeSupp;
    else if (VG_STREQ(name, "Leak"))    skind = LeakSupp;
    else if (VG_STREQ(name, "Overlap")) skind = OverlapSupp;
+   else if (VG_STREQ(name, "Mempool")) skind = MempoolSupp;
    else
       return False;
 
@@ -595,6 +622,9 @@ Bool SK_(error_matches_suppression)(Error* err, Supp* su)
       case LeakSupp:
          return (ekind == LeakErr);
 
+      case MempoolSupp:
+         return (ekind == IllegalMempoolErr);
+
       default:
          VG_(printf)("Error:\n"
                      "  unknown suppression type %d\n",
@@ -611,6 +641,7 @@ Char* SK_(get_error_name) ( Error* err )
    case ParamErr:           return "Param";
    case UserErr:            return NULL;  /* Can't suppress User errors */
    case FreeMismatchErr:    return "Free";
+   case IllegalMempoolErr:  return "Mempool";
    case FreeErr:            return "Free";
    case AddrErr:            
       switch ( ((MAC_Error*)VG_(get_error_extra)(err))->size ) {
@@ -784,6 +815,7 @@ static void done_prof_mem ( void ) { }
 void MAC_(common_pre_clo_init)(void)
 {
    MAC_(malloc_list) = VG_(HT_construct)();
+   MAC_(mempool_list) = VG_(HT_construct)();
    init_prof_mem();
 }
 
@@ -844,7 +876,8 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UInt* arg, UInt* ret )
       UInt rzB       =       arg[3];
       Bool is_zeroed = (Bool)arg[4];
 
-      MAC_(new_block) ( p, sizeB, rzB, is_zeroed, MAC_AllocCustom );
+      MAC_(new_block) ( p, sizeB, rzB, is_zeroed, MAC_AllocCustom,
+                        MAC_(malloc_list) );
       return True;
    }
    case VG_USERREQ__FREELIKE_BLOCK: {
@@ -858,6 +891,39 @@ Bool MAC_(handle_common_client_requests)(ThreadId tid, UInt* arg, UInt* ret )
    case _VG_USERREQ__MEMCHECK_GET_RECORD_OVERLAP:
       *ret = (Addr)MAC_(record_overlap_error);
       return True;
+
+   case VG_USERREQ__CREATE_MEMPOOL: {
+      Addr pool      = (Addr)arg[1];
+      UInt rzB       =       arg[2];
+      Bool is_zeroed = (Bool)arg[3];
+
+      MAC_(create_mempool) ( pool, rzB, is_zeroed );
+      return True;
+   }
+
+   case VG_USERREQ__DESTROY_MEMPOOL: {
+      Addr pool      = (Addr)arg[1];
+
+      MAC_(destroy_mempool) ( pool );
+      return True;
+   }
+
+   case VG_USERREQ__MEMPOOL_ALLOC: {
+      Addr pool      = (Addr)arg[1];
+      Addr addr      = (Addr)arg[2];
+      UInt size      =       arg[3];
+
+      MAC_(mempool_alloc) ( pool, addr, size );
+      return True;
+   }
+
+   case VG_USERREQ__MEMPOOL_FREE: {
+      Addr pool      = (Addr)arg[1];
+      Addr addr      = (Addr)arg[2];
+
+      MAC_(mempool_free) ( pool, addr );
+      return True;
+   }
 
    default:
       return False;

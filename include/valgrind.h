@@ -163,6 +163,11 @@ typedef
              malloc() et al, by using vg_replace_malloc.c. */
           VG_USERREQ__MALLOCLIKE_BLOCK = 0x1301,
           VG_USERREQ__FREELIKE_BLOCK   = 0x1302,
+          /* Memory pool support. */
+          VG_USERREQ__CREATE_MEMPOOL   = 0x1303,
+          VG_USERREQ__DESTROY_MEMPOOL  = 0x1304,
+          VG_USERREQ__MEMPOOL_ALLOC    = 0x1305,
+          VG_USERREQ__MEMPOOL_FREE     = 0x1306,
 
           /* Allow printfs to valgrind log. */
           VG_USERREQ__PRINTF = 0x1401,
@@ -320,6 +325,38 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
     VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
                             VG_USERREQ__FREELIKE_BLOCK,            \
                             addr, rzB, 0, 0);                      \
+   }
+
+/* Create a memory pool. */
+#define VALGRIND_CREATE_MEMPOOL(pool, rzB, is_zeroed)              \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__CREATE_MEMPOOL,            \
+                            pool, rzB, is_zeroed, 0);              \
+   }
+
+/* Destroy a memory pool. */
+#define VALGRIND_DESTROY_MEMPOOL(pool)                             \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__DESTROY_MEMPOOL,           \
+                            pool, 0, 0, 0);                        \
+   }
+
+/* Associate a piece of memory with a memory pool. */
+#define VALGRIND_MEMPOOL_ALLOC(pool, addr, size)                   \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__MEMPOOL_ALLOC,             \
+                            pool, addr, size, 0);                  \
+   }
+
+/* Disassociate a piece of memory from a memory pool. */
+#define VALGRIND_MEMPOOL_FREE(pool, addr)                          \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__MEMPOOL_FREE,              \
+                            pool, addr, 0, 0);                     \
    }
 
 #endif   /* __VALGRIND_H */

@@ -134,6 +134,37 @@ Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
       if (vg_cgbs[i].kind == CG_NotInUse) 
          continue;
       if (VG_(addr_is_in_block)(a, vg_cgbs[i].start, vg_cgbs[i].size)) {
+         MAC_Mempool **d, *mp;
+
+         /* OK - maybe it's a mempool, too? */
+         mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list),
+                                             (UInt)vg_cgbs[i].start,
+                                             (VgHashNode***)&d);
+         if(mp != NULL) {
+            if(mp->chunks != NULL) {
+               MAC_Chunk *mc;
+
+               Bool find_addr(VgHashNode* sh_ch)
+               {
+                  MAC_Chunk *m = (MAC_Chunk*)sh_ch;
+                  return VG_(addr_is_in_block)(a, m->data, m->size);
+               }
+
+               mc = (MAC_Chunk*)VG_(HT_first_match)(mp->chunks, find_addr);
+               if(mc != NULL) {
+                  ai->akind = UserG;
+                  ai->blksize = mc->size;
+                  ai->rwoffset = (Int)(a) - (Int)mc->data;
+                  ai->lastchange = mc->where;
+                  return True;
+               }
+            }
+            ai->akind = Mempool;
+            ai->blksize = vg_cgbs[i].size;
+            ai->rwoffset  = (Int)(a) - (Int)(vg_cgbs[i].start);
+            ai->lastchange = vg_cgbs[i].where;
+            return True;
+         }
          ai->akind = UserG;
          ai->blksize = vg_cgbs[i].size;
          ai->rwoffset  = (Int)(a) - (Int)(vg_cgbs[i].start);
@@ -152,7 +183,11 @@ Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg, UInt* ret )
 
    if (!VG_IS_SKIN_USERREQ('M','C',arg[0])
     && VG_USERREQ__MALLOCLIKE_BLOCK != arg[0]
-    && VG_USERREQ__FREELIKE_BLOCK   != arg[0])
+    && VG_USERREQ__FREELIKE_BLOCK   != arg[0]
+    && VG_USERREQ__CREATE_MEMPOOL   != arg[0]
+    && VG_USERREQ__DESTROY_MEMPOOL  != arg[0]
+    && VG_USERREQ__MEMPOOL_ALLOC    != arg[0]
+    && VG_USERREQ__MEMPOOL_FREE     != arg[0])
       return False;
 
    switch (arg[0]) {

@@ -43,6 +43,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	manuel3.stderr.exp manuel3.vgtest \
 	memalign_test.stderr.exp memalign_test.vgtest \
 	memcmptest.stderr.exp memcmptest.stdout.exp memcmptest.vgtest \
+	mempool.stderr.exp mempool.vgtest \
 	mismatches.stderr.exp mismatches.vgtest \
 	mmaptest.stderr.exp mmaptest.vgtest \
 	nanoleak.stderr.exp nanoleak.vgtest \
@@ -78,8 +79,8 @@ check_PROGRAMS = \
 	doublefree error_counts errs1 exitprog execve \
 	fpeflags fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
-	memalign_test memcmptest mmaptest nanoleak new_nothrow null_socket \
-	overlap pushfpopf \
+	memalign_test memcmptest mempool mmaptest nanoleak new_nothrow \
+	null_socket overlap pushfpopf \
 	realloc1 realloc2 realloc3 sigaltstack signal2 supp1 supp2 suppfree \
 	trivialleak tronical weirdioctl	\
 	mismatches new_override metadata threadederrno writev zeropage
@@ -117,6 +118,7 @@ manuel3_SOURCES 	= manuel3.c
 mmaptest_SOURCES 	= mmaptest.c
 memalign_test_SOURCES 	= memalign_test.c
 memcmptest_SOURCES 	= memcmptest.c
+mempool_SOURCES 	= mempool.c
 nanoleak_SOURCES 	= nanoleak.c
 null_socket_SOURCES 	= null_socket.c
 overlap_SOURCES 	= overlap.c

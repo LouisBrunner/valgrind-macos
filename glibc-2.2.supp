@@ -16,6 +16,33 @@
 #     (optionally: caller3 name)
 # }
 
+#-------- R H Limbo (glibc-2.2.90) stuff
+{
+   elf_dynamic_do_rela.8/_dl_relocate_object_internal
+   Cond
+   fun:elf_dynamic_do_rela.8
+   fun:_dl_relocate_object_internal
+}
+
+{
+   __strnlen/_nl_make_l10nflist(Cond)
+   Cond
+   fun:__strnlen
+   fun:_nl_make_l10nflist
+}
+
+{
+   __strnlen/*vfprintf*
+   Cond
+   fun:__strnlen
+   fun:*vfprintf*
+}
+
+{
+   libXaw.so.7.0(Cond)
+   Cond
+   obj:*libXaw.so.7.0
+}
 
 #-------- Suppress errors appearing as a result of calling
 #-------- __libc_freeres()

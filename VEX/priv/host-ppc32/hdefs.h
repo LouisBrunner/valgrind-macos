@@ -181,41 +181,6 @@ extern PPC32AMode* dopyPPC32AMode ( PPC32AMode* );
 extern void ppPPC32AMode ( PPC32AMode* );
 
 
-/* --------- Operand, which can be reg, immediate or memory. --------- */
-
-typedef 
-   enum {
-      Prmi_Imm,
-      Prmi_Reg,
-      Prmi_Mem
-   }
-   PPC32RMITag;
-
-typedef
-   struct {
-      PPC32RMITag tag;
-      union {
-         struct {
-            UInt imm32;
-         } Imm;
-         struct {
-            HReg reg;
-         } Reg;
-         struct {
-            PPC32AMode* am;
-         } Mem;
-      }
-      Prmi;
-   }
-   PPC32RMI;
-
-extern PPC32RMI* PPC32RMI_Imm ( UInt );
-extern PPC32RMI* PPC32RMI_Reg ( HReg );
-extern PPC32RMI* PPC32RMI_Mem ( PPC32AMode* );
-
-extern void ppPPC32RMI ( PPC32RMI* );
-
-
 /* --------- Operand, which can be reg or immediate only. --------- */
 
 typedef 
@@ -246,38 +211,8 @@ extern PPC32RI* PPC32RI_Reg ( HReg );
 extern void ppPPC32RI ( PPC32RI* );
 
 
-/* --------- Operand, which can be reg or memory only. --------- */
+/* --------- Instructions. --------- */
 
-typedef 
-   enum {
-      Prm_Reg,
-      Prm_Mem
-   }
-   PPC32RMTag;
-
-typedef
-   struct {
-      PPC32RMTag tag;
-      union {
-         struct {
-            HReg reg;
-         } Reg;
-         struct {
-            PPC32AMode* am;
-         } Mem;
-      }
-      Prm;
-   }
-   PPC32RM;
-
-extern PPC32RM* PPC32RM_Reg ( HReg );
-extern PPC32RM* PPC32RM_Mem ( PPC32AMode* );
-
-extern void ppPPC32RM ( PPC32RM* );
-
-
-//.. /* --------- Instructions. --------- */
-//.. 
 //.. /* --------- */
 //.. typedef
 //..    enum {
@@ -287,46 +222,44 @@ extern void ppPPC32RM ( PPC32RM* );
 //..    X86ScalarSz;
 //.. 
 //.. extern HChar* showX86ScalarSz ( X86ScalarSz );
-//.. 
-//.. 
+
 //.. /* --------- */
 //.. typedef
 //..    enum {
-//..       Xun_NEG,
-//..       Xun_NOT
+//..       Pun_NEG,
+//..       Pun_NOT
 //..    }
-//..    X86UnaryOp;
+//..    PPC32UnaryOp;
 //.. 
-//.. extern HChar* showX86UnaryOp ( X86UnaryOp );
-//.. 
-//.. 
-//.. /* --------- */
-//.. typedef 
-//..    enum {
-//..       Xalu_INVALID,
-//..       Xalu_MOV,
-//..       Xalu_CMP,
-//..       Xalu_ADD, Xalu_SUB, Xalu_ADC, Xalu_SBB, 
-//..       Xalu_AND, Xalu_OR, Xalu_XOR,
-//..       Xalu_MUL
-//..    }
-//..    X86AluOp;
-//.. 
-//.. extern HChar* showX86AluOp ( X86AluOp );
-//.. 
-//.. 
-//.. /* --------- */
-//.. typedef
-//..    enum {
-//..       Xsh_INVALID,
-//..       Xsh_SHL, Xsh_SHR, Xsh_SAR, 
-//..       Xsh_ROL, Xsh_ROR
-//..    }
-//..    X86ShiftOp;
-//.. 
-//.. extern HChar* showX86ShiftOp ( X86ShiftOp );
-//.. 
-//.. 
+//.. extern HChar* showPPC32UnaryOp ( PPC32UnaryOp );
+
+
+/* --------- */
+typedef 
+   enum {
+      Palu_INVALID,
+      Palu_CMP,
+      Palu_ADD, Palu_SUB, Palu_ADC, Palu_SBB,
+      Palu_AND, Palu_OR, Palu_XOR,
+      Palu_MUL
+   }
+   PPC32AluOp;
+
+extern HChar* showPPC32AluOp ( PPC32AluOp );
+
+
+/* --------- */
+typedef
+   enum {
+      Psh_INVALID,
+      Psh_SHL, Psh_SHR, Psh_SAR, 
+      Psh_ROL
+   }
+   PPC32ShiftOp;
+
+extern HChar* showPPC32ShiftOp ( PPC32ShiftOp );
+
+
 //.. /* --------- */
 //.. typedef
 //..    enum {
@@ -341,58 +274,13 @@ extern void ppPPC32RM ( PPC32RM* );
 //..    X86FpOp;
 //.. 
 //.. extern HChar* showX86FpOp ( X86FpOp );
-//.. 
-//.. 
-//.. /* --------- */
-//.. typedef
-//..    enum {
-//..       Xsse_INVALID,
-//..       /* mov */
-//..       Xsse_MOV,
-//..       /* Floating point binary */
-//..       Xsse_ADDF, Xsse_SUBF, Xsse_MULF, Xsse_DIVF,
-//..       Xsse_MAXF, Xsse_MINF,
-//..       Xsse_CMPEQF, Xsse_CMPLTF, Xsse_CMPLEF, Xsse_CMPUNF,
-//..       /* Floating point unary */
-//..       Xsse_RCPF, Xsse_RSQRTF, Xsse_SQRTF, 
-//..       /* Bitwise */
-//..       Xsse_AND, Xsse_OR, Xsse_XOR, Xsse_ANDN,
-//..       /* Integer binary */
-//..       Xsse_ADD8,   Xsse_ADD16,   Xsse_ADD32,   Xsse_ADD64,
-//..       Xsse_QADD8U, Xsse_QADD16U,
-//..       Xsse_QADD8S, Xsse_QADD16S,
-//..       Xsse_SUB8,   Xsse_SUB16,   Xsse_SUB32,   Xsse_SUB64,
-//..       Xsse_QSUB8U, Xsse_QSUB16U,
-//..       Xsse_QSUB8S, Xsse_QSUB16S,
-//..       Xsse_MUL16,
-//..       Xsse_MULHI16U,
-//..       Xsse_MULHI16S,
-//..       Xsse_AVG8U, Xsse_AVG16U,
-//..       Xsse_MAX16S,
-//..       Xsse_MAX8U,
-//..       Xsse_MIN16S,
-//..       Xsse_MIN8U,
-//..       Xsse_CMPEQ8,  Xsse_CMPEQ16,  Xsse_CMPEQ32,
-//..       Xsse_CMPGT8S, Xsse_CMPGT16S, Xsse_CMPGT32S,
-//..       Xsse_SHL16, Xsse_SHL32, Xsse_SHL64,
-//..       Xsse_SHR16, Xsse_SHR32, Xsse_SHR64,
-//..       Xsse_SAR16, Xsse_SAR32, 
-//..       Xsse_PACKSSD, Xsse_PACKSSW, Xsse_PACKUSW,
-//..       Xsse_UNPCKHB, Xsse_UNPCKHW, Xsse_UNPCKHD, Xsse_UNPCKHQ,
-//..       Xsse_UNPCKLB, Xsse_UNPCKLW, Xsse_UNPCKLD, Xsse_UNPCKLQ
-//..    }
-//..    X86SseOp;
-//.. 
-//.. extern HChar* showX86SseOp ( X86SseOp );
 
 
 /* --------- */
 typedef
    enum {
-      Pin_Nada,    /* nix */
-//..       Xin_Alu32R,    /* 32-bit mov/arith/logical, dst=REG */
-//..       Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
-//..       Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
+      Pin_Alu32,     /* 32-bit mov/arith/logical */
+      Pin_Sh32,      /* 32-bit shift/rotate */
 //..       Xin_Test32,    /* 32-bit test (AND, set flags, discard result) */
 //..       Xin_Unary32,   /* 32-bit not and neg */
 //..       Xin_MulL,      /* widening multiply */
@@ -402,12 +290,12 @@ typedef
 //..       Xin_Call,      /* call to address in register */
 //..       Xin_Goto,      /* conditional/unconditional jmp to dst */
 //..       Xin_CMov32,    /* conditional move */
-//..       Xin_LoadEX,    /* mov{s,z}{b,w}l from mem to reg */
-//..       Xin_Store,     /* store 16/8 bit value in memory */
+      Pin_LoadEX,    /* load a 8|16|32 bit value from mem */
+      Pin_Store,     /* store a 8|16|32 bit value to mem */
 //..       Xin_Set32,     /* convert condition code to 32-bit value */
 //..       Xin_Bsfr32,    /* 32-bit bsf/bsr */
 //..       Xin_MFence,    /* mem fence (not just sse2, but sse0 and 1 too) */
-//.. 
+
 //..       Xin_FpUnary,   /* FP fake unary op */
 //..       Xin_FpBinary,  /* FP fake binary op */
 //..       Xin_FpLdSt,    /* FP fake load/store */
@@ -417,41 +305,28 @@ typedef
 //..       Xin_FpLdStCW,  /* fldcw / fstcw */
 //..       Xin_FpStSW_AX, /* fstsw %ax */
 //..       Xin_FpCmp,     /* FP compare, generating a C320 value into int reg */
-//.. 
-//..       Xin_SseConst,  /* Generate restricted SSE literal */
-//..       Xin_SseLdSt,   /* SSE load/store, no alignment constraints */
-//..       Xin_SseLdzLO,  /* SSE load low 32/64 bits, zero remainder of reg */
-//..       Xin_Sse32Fx4,  /* SSE binary, 32Fx4 */
-//..       Xin_Sse32FLo,  /* SSE binary, 32F in lowest lane only */
-//..       Xin_Sse64Fx2,  /* SSE binary, 64Fx2 */
-//..       Xin_Sse64FLo,  /* SSE binary, 64F in lowest lane only */
-//..       Xin_SseReRg,   /* SSE binary general reg-reg, Re, Rg */
-//..       Xin_SseCMov,   /* SSE conditional move */
-//..       Xin_SseShuf    /* SSE2 shuffle (pshufd) */
+      Pin_Nada // Nix
    }
    PPC32InstrTag;
 
-/* Destinations are on the RIGHT (second operand) */
+/* Destinations are on the LEFT (first operand) */
 
 typedef
    struct {
       PPC32InstrTag tag;
-//..       union {
-//..          struct {
-//..             X86AluOp op;
-//..             X86RMI*  src;
-//..             HReg     dst;
-//..          } Alu32R;
-//..          struct {
-//..             X86AluOp  op;
-//..             X86RI*    src;
-//..             X86AMode* dst;
-//..          } Alu32M;
-//..          struct {
-//..             X86ShiftOp op;
-//..             UInt       src;  /* shift amount, or 0 means %cl */
-//..             X86RM*     dst;
-//..          } Sh32;
+      union {
+         struct {
+            PPC32AluOp op;
+            HReg       dst;
+            HReg       src1;
+            PPC32RI*   src2;
+         } Alu32;
+         struct {
+            PPC32ShiftOp op;
+            HReg         dst;
+            HReg         src;
+            PPC32RI*     shft;
+         } Sh32;
 //..          struct {
 //..             X86RI* src;
 //..             X86RM* dst;
@@ -507,20 +382,19 @@ typedef
 //..             X86RM*      src;
 //..             HReg        dst;
 //..          } CMov32;
-//..          /* Sign/Zero extending loads.  Dst size is always 32 bits. */
-//..          struct {
-//..             UChar     szSmall;
-//..             Bool      syned;
-//..             X86AMode* src;
-//..             HReg      dst;
-//..          } LoadEX;
-//..          /* 16/8 bit stores, which are troublesome (particularly
-//..             8-bit) */
-//..          struct {
-//..             UChar     sz; /* only 1 or 2 */
-//..             HReg      src;
-//..             X86AMode* dst;
-//..          } Store;
+         /* Sign/Zero extending loads.  Dst size is always 32 bits. */
+         struct {
+            UChar       szSmall; /* 1|2|4 */
+            Bool        syned;
+            HReg        dst;
+            PPC32AMode* src;
+         } LoadEX;
+         /* 16/8 bit stores, which are troublesome (particularly 8-bit) */
+         struct {
+            UChar       sz; /* 1|2|4 */
+            PPC32AMode* dst;
+            HReg        src;
+         } Store;
 //..          /* Convert a x86 condition code to a 32-bit value (0 or 1). */
 //..          struct {
 //..             X86CondCode cond;
@@ -542,7 +416,7 @@ typedef
 //..          struct {
 //..             VexSubArch subarch;
 //..          } MFence;
-//.. 
+
 //..          /* X86 Floating point (fake 3-operand, "flat reg file" insns) */
 //..          struct {
 //..             X86FpOp op;
@@ -601,68 +475,15 @@ typedef
 //..             HReg    srcR;
 //..             HReg    dst;
 //..          } FpCmp;
-//.. 
-//..          /* Simplistic SSE[123] */
-//..          struct {
-//..             UShort  con;
-//..             HReg    dst;
-//..          } SseConst;
-//..          struct {
-//..             Bool      isLoad;
-//..             HReg      reg;
-//..             X86AMode* addr;
-//..          } SseLdSt;
-//..          struct {
-//..             Int       sz; /* 4 or 8 only */
-//..             HReg      reg;
-//..             X86AMode* addr;
-//..          } SseLdzLO;
-//..          struct {
-//..             X86SseOp op;
-//..             HReg     src;
-//..             HReg     dst;
-//..          } Sse32Fx4;
-//..          struct {
-//..             X86SseOp op;
-//..             HReg     src;
-//..             HReg     dst;
-//..          } Sse32FLo;
-//..          struct {
-//..             X86SseOp op;
-//..             HReg     src;
-//..             HReg     dst;
-//..          } Sse64Fx2;
-//..          struct {
-//..             X86SseOp op;
-//..             HReg     src;
-//..             HReg     dst;
-//..          } Sse64FLo;
-//..          struct {
-//..             X86SseOp op;
-//..             HReg     src;
-//..             HReg     dst;
-//..          } SseReRg;
-//..          /* Mov src to dst on the given condition, which may not
-//..             be the bogus Xcc_ALWAYS. */
-//..          struct {
-//..             X86CondCode cond;
-//..             HReg        src;
-//..             HReg        dst;
-//..          } SseCMov;
-//..          struct {
-//..             Int    order; /* 0 <= order <= 0xFF */
-//..             HReg   src;
-//..             HReg   dst;
-//..          } SseShuf;
-//.. 
-//..       } Xin;
+
+       } Pin;
    }
    PPC32Instr;
 
-//.. extern X86Instr* X86Instr_Alu32R    ( X86AluOp, X86RMI*, HReg );
-//.. extern X86Instr* X86Instr_Alu32M    ( X86AluOp, X86RI*,  X86AMode* );
+
+extern PPC32Instr* PPC32Instr_Alu32     ( PPC32AluOp, HReg, HReg, PPC32RI* );
 //.. extern X86Instr* X86Instr_Unary32   ( X86UnaryOp op, X86RM* dst );
-//.. extern X86Instr* X86Instr_Sh32      ( X86ShiftOp, UInt, X86RM* );
+extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
 //.. extern X86Instr* X86Instr_Test32    ( X86RI* src, X86RM* dst );
 //.. extern X86Instr* X86Instr_MulL      ( Bool syned, X86ScalarSz, X86RM* );
 //.. extern X86Instr* X86Instr_Div       ( Bool syned, X86ScalarSz, X86RM* );
@@ -671,9 +492,9 @@ typedef
 //.. extern X86Instr* X86Instr_Call      ( X86CondCode, Addr32, Int );
 //.. extern X86Instr* X86Instr_Goto      ( IRJumpKind, X86CondCode cond, X86RI* dst );
 //.. extern X86Instr* X86Instr_CMov32    ( X86CondCode, X86RM* src, HReg dst );
-//.. extern X86Instr* X86Instr_LoadEX    ( UChar szSmall, Bool syned,
-//..                                       X86AMode* src, HReg dst );
-//.. extern X86Instr* X86Instr_Store     ( UChar sz, HReg src, X86AMode* dst );
+extern PPC32Instr* PPC32Instr_LoadEX    ( UChar szSmall, Bool syned,
+					  HReg dst, PPC32AMode* src );
+extern PPC32Instr* PPC32Instr_Store     ( UChar sz, PPC32AMode* dst, HReg src );
 //.. extern X86Instr* X86Instr_Set32     ( X86CondCode cond, HReg dst );
 //.. extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
 //.. extern X86Instr* X86Instr_MFence    ( VexSubArch );
@@ -687,17 +508,6 @@ typedef
 //.. extern X86Instr* X86Instr_FpLdStCW  ( Bool isLoad, X86AMode* );
 //.. extern X86Instr* X86Instr_FpStSW_AX ( void );
 //.. extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
-//.. 
-//.. extern X86Instr* X86Instr_SseConst  ( UShort con, HReg dst );
-//.. extern X86Instr* X86Instr_SseLdSt   ( Bool isLoad, HReg, X86AMode* );
-//.. extern X86Instr* X86Instr_SseLdzLO  ( Int sz, HReg, X86AMode* );
-//.. extern X86Instr* X86Instr_Sse32Fx4  ( X86SseOp, HReg, HReg );
-//.. extern X86Instr* X86Instr_Sse32FLo  ( X86SseOp, HReg, HReg );
-//.. extern X86Instr* X86Instr_Sse64Fx2  ( X86SseOp, HReg, HReg );
-//.. extern X86Instr* X86Instr_Sse64FLo  ( X86SseOp, HReg, HReg );
-//.. extern X86Instr* X86Instr_SseReRg   ( X86SseOp, HReg, HReg );
-//.. extern X86Instr* X86Instr_SseCMov   ( X86CondCode, HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_SseShuf   ( Int order, HReg src, HReg dst );
 
 
 extern void ppPPC32Instr ( PPC32Instr* );

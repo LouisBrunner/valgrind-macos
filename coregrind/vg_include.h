@@ -98,11 +98,11 @@
 /* After this many different unsuppressed errors have been observed,
    stop collecting errors at all, and tell the user their program is
    evidently a steaming pile of camel dung. */
-#define M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN 500
+#define M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN 300
 
 /* After this many total errors have been observed, stop collecting
    errors at all.  Counterpart to M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN. */
-#define M_VG_COLLECT_NO_ERRORS_AFTER_FOUND 5000
+#define M_VG_COLLECT_NO_ERRORS_AFTER_FOUND 30000
 
 /* These many bytes below %ESP are considered addressible if we're
    doing the --workaround-gcc296-bugs hack. */

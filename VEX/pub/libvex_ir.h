@@ -241,11 +241,13 @@ extern void ppIRStmt ( IRStmt* );
    the guard is.
 */
 
-/* ------------------ Basic block enders. ------------------ */
+/* ------------------ Basic Blocks ------------------ */
 
-/* This describes unconditional jumps.  Conditional jumps -- which can
-   only be done with the IRStmt_Exit statement -- are implicitly of
-   the Ijk_Boring kind. */
+/* This describes the unconditional jumps which implicitly happen at
+   the end of each basic block.  Conditional jumps -- which can only
+   be done with the IRStmt_Exit statement -- are implicitly of the
+   Ijk_Boring kind. */
+
 typedef
    enum { 
       Ijk_Boring=0x13000, /* not interesting; just goto next */
@@ -260,80 +262,38 @@ typedef
 extern void ppIRJumpKind ( IRJumpKind );
 
 
-/*
-   The IRConst and IRExpr in these must have type Ity_I32 or
-   Ity_I64, as dictated by the word size of the guest 
-   architecture.
-
-data Next
-   = DJump Const              -- direct jump to const
-   | IJump Expr               -- jump to unknown address
-*/
-
-typedef
-   enum { Inx_DJump, Inx_IJump } 
-   IRNextTag;
-
-typedef
-   struct {
-      IRNextTag tag;
-      union {
-         struct {
-            IRJumpKind kind;
-            IRConst*   dst;
-         } DJump;
-         struct {
-            IRJumpKind kind;
-            IRExpr*    expr;
-         } IJump;
-      } Inx;
-   }
-   IRNext;
-
-extern IRNext* IRNext_DJump ( IRJumpKind, IRConst* dst );
-extern IRNext* IRNext_IJump ( IRJumpKind, IRExpr* expr );
-
-extern void ppIRNext ( IRNext* );
-
-
-/* ------------------ Basic Blocks ------------------ */
-
 /* A bunch of statements, expressions, etc, are incomplete without an
    environment indicating the type of each IRTemp.  So this provides
-   one. 
+   one.  IR temporaries are really just unsigned ints and so this
+   provides an array, 0 .. n_types_used-1 of them.
 */
 typedef
-   struct { 
-      IRTemp name; 
-      IRType type; 
-   }
-   IRTypeEnvMaplet;
-
-typedef
    struct {
-      IRTypeEnvMaplet* map;
-      Int map_size;
-      Int map_used;
+      IRType* types;
+      Int     types_size;
+      Int     types_used;
    }
    IRTypeEnv;
 
 extern void ppIRTypeEnv ( IRTypeEnv* );
 
 
-/* Basic blocks contain 3 fields:
+/* Basic blocks contain 4 fields:
    - A table giving a type for each temp
    - A list of statements
-   - A Next
+   - An expression of type 32 or 64 bits, depending on the
+     guest's word size, indicating the next destination.
 */
 typedef
    struct _IRBB {
       IRTypeEnv* tyenv;
       IRStmt*    stmts;
-      IRNext*    next;
+      IRExpr*    next;
+      IRJumpKind jumpkind;
    }
    IRBB;
 
-extern IRBB* mkIRBB ( IRTypeEnv*, IRStmt*, IRNext* );
+extern IRBB* mkIRBB ( IRTypeEnv*, IRStmt*, IRExpr*, IRJumpKind );
 
 extern void ppIRBB ( IRBB* );
 
@@ -344,7 +304,7 @@ extern void ppIRBB ( IRBB* );
 
 /* For messing with IR type environments */
 extern IRTypeEnv* newIRTypeEnv    ( void );
-extern void       addToIRTypeEnv  ( IRTypeEnv*, IRTemp, IRType );
+extern IRTemp     newIRTemp       ( IRTypeEnv*, IRType );
 extern IRType     lookupIRTypeEnv ( IRTypeEnv*, IRTemp );
 
 /* What is the type of this expression? */

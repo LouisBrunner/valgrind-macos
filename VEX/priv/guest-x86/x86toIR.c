@@ -54,9 +54,6 @@ static IRBB* irbb;
    updated. */
 static IRStmt* last_stmt;
 
-/* Used to generate new IRTemps. */
-static IRTemp next_irtemp;
-
 
 /* Add a statement to the list held by "irbb". */
 static void stmt ( IRStmt* stmt )
@@ -73,8 +70,7 @@ static void stmt ( IRStmt* stmt )
 /* Generate a new temporary of the given type. */
 static IRTemp newTemp ( IRType ty )
 {
-   addToIRTypeEnv ( irbb->tyenv, next_irtemp, ty );
-   return next_irtemp++;
+   return newIRTemp( irbb->tyenv, ty );
 }
 
 /* Bomb out if we can't handle something. */
@@ -1116,12 +1112,14 @@ static Char nameISize ( Int size )
 
 static void jmp_lit( IRJumpKind kind, Addr32 d32 )
 {
-   irbb->next = IRNext_DJump( kind, IRConst_U32(d32) );
+  irbb->next     = mkU32(d32);
+  irbb->jumpkind = kind;
 }
 
 static void jmp_treg( IRJumpKind kind, IRTemp t )
 {
-   irbb->next = IRNext_IJump( kind, mkexpr(t) );
+   irbb->next = mkexpr(t);
+   irbb->jumpkind = kind;
 }
 
 static void jcc_01( Condcode cond, Addr32 d32_false, Addr32 d32_true )
@@ -1132,11 +1130,13 @@ static void jcc_01( Condcode cond, Addr32 d32_false, Addr32 d32_true )
    if (invert) {
       stmt( IRStmt_Exit( calculate_condition(condPos),
                          IRConst_U32(d32_false) ) );
-      irbb->next = IRNext_DJump( Ijk_Boring, IRConst_U32(d32_true) );
+      irbb->next     = mkU32(d32_true);
+      irbb->jumpkind = Ijk_Boring;
    } else {
       stmt( IRStmt_Exit( calculate_condition(condPos),
                          IRConst_U32(d32_true) ) );
-      irbb->next = IRNext_DJump( Ijk_Boring, IRConst_U32(d32_false) );
+      irbb->next     = mkU32(d32_false);
+      irbb->jumpkind = Ijk_Boring;
    }
 }
 
@@ -3184,7 +3184,6 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
    IROp   mkpair;
    IROp   getres;
    IROp   shift;
-   UInt   thunkOp;
    IRExpr* mask = NULL;
 
    vassert(sz == 2 || sz == 4);
@@ -3225,11 +3224,10 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
       tmpL     = newTemp(Ity_I64);
       tmpRes   = newTemp(Ity_I32);
       tmpSubSh = newTemp(Ity_I32);
-      mkpair = Iop_32HLto64;
-      getres = left_shift ? Iop_64HIto32 : Iop_64LOto32;
-      shift = left_shift ? Iop_Shl64 : Iop_Shr64;
-      thunkOp = left_shift ? CC_OP_SHLL : CC_OP_SARL;
-      mask = mkU8(31);
+      mkpair   = Iop_32HLto64;
+      getres   = left_shift ? Iop_64HIto32 : Iop_64LOto32;
+      shift    = left_shift ? Iop_Shl64 : Iop_Shr64;
+      mask     = mkU8(31);
       assign( tmpSH, binop(Iop_And8, shift_amt, mask) );
    } else {
       /* sz == 2 */
@@ -7908,9 +7906,14 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    }
    if (*isEnd) {
       vassert(irbb->next != NULL);
-      vex_printf("              ");
-      ppIRNext(irbb->next);
-      DIP("\n");
+      if (print_codegen) {
+         vex_printf("              ");
+         vex_printf( "goto {");
+         ppIRJumpKind(irbb->jumpkind);
+         vex_printf( "} ");
+         ppIRExpr( irbb->next );
+         vex_printf( "\n");
+      }
    }
    //for (; first_uinstr < cb->used; first_uinstr++) {
    //   Bool sane = VG_(saneUInstr)(True, True, &cb->instrs[first_uinstr]);
@@ -7942,9 +7945,8 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
    print_codegen     = (vex_verbosity >= 1);
    guest_code        = x86code;
    guest_eip         = (Addr32)eip;
-   irbb              = mkIRBB( newIRTypeEnv(), NULL, NULL );
+   irbb              = mkIRBB( newIRTypeEnv(), NULL, NULL, Ijk_Boring );
    last_stmt         = NULL;
-   next_irtemp       = (IRTemp)0;
 
    vassert((eip >> 32) == 0);
 

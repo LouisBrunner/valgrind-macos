@@ -214,40 +214,20 @@ void ppIRJumpKind ( IRJumpKind kind )
   }
 }
 
-void ppIRNext ( IRNext* nx )
-{
-  switch (nx->tag) {
-    case Inx_DJump: 
-      vex_printf( "DJump {");
-      ppIRJumpKind(nx->Inx.DJump.kind);
-      vex_printf( "} ");
-      ppIRConst(nx->Inx.DJump.dst);
-      break;
-    case Inx_IJump:
-      vex_printf( "IJump {");
-      ppIRJumpKind(nx->Inx.IJump.kind);
-      vex_printf( "} ");
-      ppIRExpr(nx->Inx.IJump.expr);
-      break;
-    default: 
-      vpanic("ppIRNext");
-  }
-}
-
 void ppIRTypeEnv ( IRTypeEnv* env ) {
    UInt i;
-   for (i = 0; i < env->map_used; i++) {
+   for (i = 0; i < env->types_used; i++) {
       if (i % 8 == 0)
          vex_printf( "   ");
-      ppIRTemp(env->map[i].name);
+      ppIRTemp(i);
       vex_printf( ":");
-      ppIRType(env->map[i].type);
+      ppIRType(env->types[i]);
       if (i % 8 == 7) 
          vex_printf( "\n"); 
       else 
          vex_printf( "   ");
    }
-   if (env->map_used > 0 && env->map_used % 8 != 7) 
+   if (env->types_used > 0 && env->types_used % 8 != 7) 
       vex_printf( "\n"); 
 }
 
@@ -261,8 +241,10 @@ void ppIRBB ( IRBB* bb )
       ppIRStmt(s);
       vex_printf( "\n");
    }
-   vex_printf( "   ");
-   ppIRNext(bb->next);
+   vex_printf( "   goto {");
+   ppIRJumpKind(bb->jumpkind);
+   vex_printf( "} ");
+   ppIRExpr( bb->next );
    vex_printf( "\n");
 }
 
@@ -393,31 +375,15 @@ IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst ) {
    return s;
 }
 
-/* Constructors -- IRNext */
-
-IRNext* IRNext_DJump ( IRJumpKind kind, IRConst* dst ) {
-   IRNext* nx         = LibVEX_Alloc(sizeof(IRNext));
-   nx->tag            = Inx_DJump;
-   nx->Inx.DJump.kind = kind;
-   nx->Inx.DJump.dst  = dst;
-   return nx;
-}
-IRNext* IRNext_IJump ( IRJumpKind kind, IRExpr* expr ) {
-   IRNext* nx         = LibVEX_Alloc(sizeof(IRNext));
-   nx->tag            = Inx_IJump;
-   nx->Inx.IJump.kind = kind;
-   nx->Inx.IJump.expr = expr;
-   return nx;
-}
-
-
 /* Constructors -- IRBB */
 
-IRBB* mkIRBB ( IRTypeEnv* env, IRStmt* stmts, IRNext* next ) {
-   IRBB* bb  = LibVEX_Alloc(sizeof(IRBB));
-   bb->tyenv = env;
-   bb->stmts = stmts;
-   bb->next  = next;
+IRBB* mkIRBB ( IRTypeEnv* env, IRStmt* stmts, 
+               IRExpr* next, IRJumpKind jumpkind ) {
+   IRBB* bb     = LibVEX_Alloc(sizeof(IRBB));
+   bb->tyenv    = env;
+   bb->stmts    = stmts;
+   bb->next     = next;
+   bb->jumpkind = jumpkind;
    return bb;
 }
 
@@ -428,45 +394,42 @@ IRBB* mkIRBB ( IRTypeEnv* env, IRStmt* stmts, IRNext* next ) {
 
 IRTypeEnv* newIRTypeEnv ( void )
 {
-   IRTypeEnv* env = LibVEX_Alloc(sizeof(IRTypeEnv));
-   env->map       = NULL;
-   env->map_size  = 0;
-   env->map_used  = 0;
+   IRTypeEnv* env   = LibVEX_Alloc(sizeof(IRTypeEnv));
+   env->types       = LibVEX_Alloc(8 * sizeof(IRType));
+   env->types_size  = 8;
+   env->types_used  = 0;
    return env;
 }
 
 
-void addToIRTypeEnv ( IRTypeEnv* env, IRTemp tmp, IRType ty )
+IRTemp newIRTemp ( IRTypeEnv* env, IRType ty )
 {
    vassert(env);
-   vassert(env->map_used >= 0);
-   vassert(env->map_size >= 0);
-   vassert(env->map_used <= env->map_size);
-   if (env->map_used < env->map_size) {
-      env->map[env->map_used].name = tmp;
-      env->map[env->map_used].type = ty;
-      env->map_used++;
+   vassert(env->types_used >= 0);
+   vassert(env->types_size >= 0);
+   vassert(env->types_used <= env->types_size);
+   if (env->types_used < env->types_size) {
+      env->types[env->types_used] = ty;
+      return env->types_used++;
    } else {
       Int i;
-      Int new_size = env->map_size==0 ? 8 : 2*env->map_size;
-      IRTypeEnvMaplet* new_map 
-         = LibVEX_Alloc(new_size * sizeof(IRTypeEnvMaplet));
-      for (i = 0; i < env->map_used; i++)
-         new_map[i] = env->map[i];
-      env->map      = new_map;
-      env->map_size = new_size;
-      return addToIRTypeEnv(env, tmp, ty);
+      Int new_size = env->types_size==0 ? 8 : 2*env->types_size;
+      IRType* new_types 
+         = LibVEX_Alloc(new_size * sizeof(IRType));
+      for (i = 0; i < env->types_used; i++)
+         new_types[i] = env->types[i];
+      env->types      = new_types;
+      env->types_size = new_size;
+      return newIRTemp(env, ty);
    }
 }
 
 
 IRType lookupIRTypeEnv ( IRTypeEnv* env, IRTemp tmp )
 {
-   Int i;
-   for (i = 0; i < env->map_used; i++)
-      if (env->map[i].name == tmp)
-         return env->map[i].type;
-   vpanic("lookupIRTypeEnv");
+   vassert(tmp >= 0);
+   vassert(tmp < env->types_used);
+   return env->types[tmp];
 }
 
 
@@ -502,6 +465,23 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
    }
    ppIRExpr(e);
    vpanic("typeOfIRExpr");
+}
+
+/*---------------------------------------------------------------*/
+/*--- Sanity checking                                         ---*/
+/*---------------------------------------------------------------*/
+
+/* Checks:
+
+   Everything is type-consistent.  No ill-typed anything.
+
+   Each temp is assigned only once, before its uses.
+
+
+ */
+
+void sanityCheckIRBB ( IRBB* bb )
+{
 }
 
 /*---------------------------------------------------------------*/

@@ -40,16 +40,9 @@
 
 typedef
    struct {
-      IRTemp ir_name;
-      HReg   vreg;
-   }
-   VRegMaplet;
-
-typedef
-   struct {
       IRTypeEnv*   type_env;
 
-      VRegMaplet*  vregmap;
+      HReg*        vregmap;
       Int          n_vregmap;
 
       HInstrArray* code;
@@ -61,11 +54,9 @@ typedef
 
 static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 {
-   Int i;
-   for (i = 0; i < env->n_vregmap; i++)
-      if (env->vregmap[i].ir_name == tmp)
-         return env->vregmap[i].vreg;
-   vpanic("lookupIRTemp");
+   vassert(tmp >= 0);
+   vassert(tmp < env->n_vregmap);
+   return env->vregmap[tmp];
 }
 
 static void addInstr ( ISelEnv* env, X86Instr* instr )
@@ -331,13 +322,14 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 /*--- ISEL: Basic block terminators (Nexts)             ---*/
 /*---------------------------------------------------------*/
 
-static void iselNext ( ISelEnv* env, IRNext* next )
+static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 {
-   vex_printf("-- ");
-   ppIRNext(next);
+   vex_printf("-- goto ");
+   ppIRExpr(next);
    vex_printf("\n");
 
    switch (next->tag) {
+#if 0
    case Inx_DJump: {
       vassert(next->Inx.DJump.dst->tag == Ico_U32);
       addInstr(env, X86Instr_Alu32R(
@@ -347,8 +339,8 @@ static void iselNext ( ISelEnv* env, IRNext* next )
       addInstr(env, X86Instr_RET());
       return;
    }
+#endif
    default:
-      ppIRNext(next);
       vpanic("iselNext");
    }
 }
@@ -378,18 +370,17 @@ HInstrArray* iselBB_X86 ( IRBB* bb )
 
    /* Make up an IRTemp -> virtual HReg mapping.  This doesn't
       change as we go along. */
-   env->n_vregmap = bb->tyenv->map_used;
-   env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(VRegMaplet));
+   env->n_vregmap = bb->tyenv->types_used;
+   env->vregmap   = LibVEX_Alloc(env->n_vregmap * sizeof(HReg));
 
    /* For each IR temporary, allocate a suitably-kinded virtual
       register. */
    for (i = 0; i < env->n_vregmap; i++) {
-      env->vregmap[i].ir_name = bb->tyenv->map[i].name;
-      switch (bb->tyenv->map[i].type) {
+      switch (bb->tyenv->types[i]) {
          case Ity_I32: hreg = mkHReg(i, HRcInt, True); break;
          default: vpanic("iselBB: IRTemp type");
       }
-      env->vregmap[i].vreg = hreg;
+      env->vregmap[i] = hreg;
    }
    env->vreg_ctr = env->n_vregmap;
 
@@ -397,7 +388,7 @@ HInstrArray* iselBB_X86 ( IRBB* bb )
    for (stmt = bb->stmts; stmt; stmt=stmt->link)
       iselStmt(env,stmt);
 
-   iselNext(env,bb->next);
+   iselNext(env,bb->next,bb->jumpkind);
 
    /* record the number of vregs we used. */
    env->code->n_vregs = env->vreg_ctr;

@@ -26,6 +26,7 @@ LIB_OBJS = 	priv/ir/irdefs.o			\
 		priv/host-generic/h_generic_regs.o	\
 		priv/host-generic/reg_alloc2.o		\
 		priv/guest-x86/ghelpers.o		\
+		priv/guest-amd64/ghelpers.o		\
 		priv/guest-arm/ghelpers.o		\
 		priv/guest-x86/toIR.o			\
 		priv/guest-arm/toIR.o
@@ -124,6 +125,10 @@ priv/guest-x86/toIR.o: $(ALL_HEADERS) priv/guest-x86/toIR.c
 priv/guest-x86/ghelpers.o: $(ALL_HEADERS) priv/guest-x86/ghelpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-x86/ghelpers.o \
 					 -c priv/guest-x86/ghelpers.c
+
+priv/guest-amd64/ghelpers.o: $(ALL_HEADERS) priv/guest-amd64/ghelpers.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-amd64/ghelpers.o \
+					 -c priv/guest-amd64/ghelpers.c
 
 priv/guest-arm/ghelpers.o: $(ALL_HEADERS) priv/guest-arm/ghelpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-arm/ghelpers.o \

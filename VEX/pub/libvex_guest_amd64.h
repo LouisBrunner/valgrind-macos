@@ -89,14 +89,14 @@ typedef
 /*--- Utility functions for amd64 guest stuff.                ---*/
 /*---------------------------------------------------------------*/
 
-#if 0
 /* ALL THE FOLLOWING ARE VISIBLE TO LIBRARY CLIENT */
 
 /* Initialise all guest x86 state.  The FPU is put in default mode. */
 extern
-void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state );
+void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state );
 
 
+#if 0
 /* Convert a saved x87 FPU image (as created by fsave) and write it
    into the supplied VexGuestX86State structure.  The non-FP parts of
    said structure are left unchanged.  

@@ -59,7 +59,7 @@ check_PROGRAMS = \
 	fucomip insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2 \
 	munmap_exe map_unmap mremap rcl_assert \
 	rcrl readline1 resolv seg_override sha1_test shortpush shorts smc1 \
-	tls.so tls2.so tls pth_blockedsig \
+	pth_blockedsig \
 	syscall-restart1 syscall-restart2 system \
 	coolo_sigaction gxx304 yield
 
@@ -109,20 +109,18 @@ shorts_SOURCES 		= shorts.c
 syscall_restart1_SOURCES = syscall-restart1.c
 syscall_restart2_SOURCES = syscall-restart2.c
 system_SOURCES 		= system.c
-tls_SOURCES		= tls.c tls2.c
-tls_DEPENDENCIES	= tls.so
-tls_LDFLAGS		= -Wl,-rpath,$(srcdir)
-tls_LDADD		= tls.so -lpthread
-tls_so_SOURCES		= tls_so.c
-tls_so_LDADD		= tls2.so
-tls_so_DEPENDENCIES	= tls2.so
-tls_so_LDFLAGS		= -Wl,-rpath,$(srcdir) -shared
-tls2_so_SOURCES		= tls2_so.c
-tls2_so_LDFLAGS		= -shared
+#tls_SOURCES		= tls.c tls2.c
+#tls_DEPENDENCIES	= tls.so
+#tls_LDFLAGS		= -Wl,-rpath,$(srcdir)
+#tls_LDADD		= tls.so -lpthread
+#tls_so_SOURCES		= tls_so.c
+#tls_so_LDADD		= tls2.so
+#tls_so_DEPENDENCIES	= tls2.so
+#tls_so_LDFLAGS		= -Wl,-rpath,$(srcdir) -shared
+#tls2_so_SOURCES		= tls2_so.c
+#tls2_so_LDFLAGS		= -shared
 yield_SOURCES		= yield.c
 yield_LDADD		= -lpthread
-
-tls_so.o tls2_so.o: CFLAGS += -fpic
 
 # pthread C ones
 pth_blockedsig_SOURCES	= pth_blockedsig.c

@@ -485,6 +485,7 @@ UInt vg_scan_all_valid_memory ( Bool is_valid_64k_chunk ( UInt ),
                                 void (*notify_word)( Addr, UInt ) )
 {
    /* All volatile, because some gccs seem paranoid about longjmp(). */
+   volatile Bool anyValid;
    volatile Addr pageBase, addr;
    volatile UInt res, numPages, page, primaryMapNo;
    volatile UInt page_first_word, nWordsNotified;
@@ -543,6 +544,24 @@ UInt vg_scan_all_valid_memory ( Bool is_valid_64k_chunk ( UInt ),
       primaryMapNo = pageBase >> 16;
       if (!is_valid_64k_chunk(primaryMapNo))
          continue;
+
+      /* Next, establish whether or not we want to consider any
+         locations on this page.  We need to do so before actually
+         prodding it, because prodding it when in fact it is not
+         needed can cause a page fault which under some rare
+         circumstances can cause the kernel to extend the stack
+         segment all the way down to here, which is seriously bad.
+         Hence: */
+      anyValid = False;
+      for (addr = pageBase; addr < pageBase+VKI_BYTES_PER_PAGE; addr += 4) {
+         if (is_valid_address(addr)) {
+            anyValid = True;
+            break;
+         }
+      }
+
+      if (!anyValid)
+         continue;  /* nothing interesting here .. move to the next page */
 
       /* Ok, we have to prod cautiously at the page and see if it
          explodes or not. */

@@ -282,7 +282,7 @@ void* VG_(mmap)( void* start, UInt length,
    // Check it ended up in the right place.
    if (!VG_(is_kerror)(res)) {
       if (flags & VKI_MAP_CLIENT) {
-         vg_assert(VG_(client_base) <= res && res+length < VG_(client_end));
+         vg_assert(VG_(client_base) <= res && res+length <= VG_(client_end));
       } else {
          vg_assert(VG_(valgrind_base) <= res && res+length-1 <= VG_(valgrind_last));
       }

@@ -162,9 +162,11 @@ int main(void)
    GO(__NR_getegid, "0e");
    SY(__NR_getegid);
 
-   // __NR_acct 51
+   // __NR_acct 51 --> sys_acct()
+   GO(__NR_acct, "1s 1m");
+   SY(__NR_acct, s0);
 
-   // __NR_umount2 52
+   // __NR_umount2 52 --> sys_umount()
    GO(__NR_umount2, "2s 1m");
    SY(__NR_umount2, s0, i0);
 

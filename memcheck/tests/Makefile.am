@@ -56,6 +56,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	scalar.stderr.exp scalar.vgtest scalar.supp \
 	scalar_fork.stderr.exp scalar_fork.vgtest \
 	scalar_supp.stderr.exp scalar_supp.vgtest \
+	scalar_vfork.stderr.exp scalar_vfork.vgtest \
 	sigaltstack.stderr.exp sigaltstack.vgtest \
 	signal2.stderr.exp \
 	signal2.stdout.exp signal2.vgtest \
@@ -85,7 +86,7 @@ check_PROGRAMS = \
 	nanoleak new_nothrow \
 	null_socket overlap \
 	realloc1 realloc2 realloc3 scalar scalar_fork \
-	scalar_supp sigaltstack signal2 \
+	scalar_supp scalar_vfork sigaltstack signal2 \
 	str_tester supp1 supp2 suppfree \
 	trivialleak weirdioctl	\
 	mismatches new_override metadata threadederrno \
@@ -140,6 +141,7 @@ realloc3_SOURCES 	= realloc3.c
 scalar_SOURCES 		= scalar.c
 scalar_fork_SOURCES 	= scalar_fork.c
 scalar_supp_SOURCES 	= scalar_supp.c
+scalar_vfork_SOURCES 	= scalar_vfork.c
 signal2_SOURCES 	= signal2.c
 supp1_SOURCES 		= supp.c
 supp2_SOURCES 		= supp.c

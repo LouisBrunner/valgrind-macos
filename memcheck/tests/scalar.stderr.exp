@@ -362,6 +362,20 @@ Syscall param setuid16(uid) contains uninitialised byte(s)
  50:        __NR_getegid 0e
 -----------------------------------------------------
 -----------------------------------------------------
+ 51:           __NR_acct 1s 1m
+-----------------------------------------------------
+
+Syscall param acct(filename) contains uninitialised byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+
+Syscall param acct(filename) points to unaddressable byte(s)
+   at 0x........: syscall (in /...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+-----------------------------------------------------
  52:        __NR_umount2 2s 1m
 -----------------------------------------------------
 

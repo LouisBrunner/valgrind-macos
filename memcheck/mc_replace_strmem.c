@@ -124,7 +124,7 @@ char* strncat ( char* dst, const char* src, int n )
 
    while (*dst) dst++;
    while (m   < n && *src) { m++; *dst++ = *src++; } /* concat <= n chars */
-   *dst = 0;                                         /* always add null ) */
+   *dst = 0;                                         /* always add null   */
 
    /* This checks for overlap after copying, unavoidable without
       pre-counting lengths... should be ok */

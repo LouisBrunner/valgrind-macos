@@ -46,7 +46,6 @@ KICKSTART_BASE=0xb0000000
 stage2_SOURCES = \
 	ume.c \
 	x86/ume_entry.S \
-	x86/ume_go.c \
 	\
 	vg_scheduler.c \
 	vg_default.c \

@@ -2391,7 +2391,7 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
 
       info.si_signo = VKI_SIGSEGV;
       info.si_code = 1;		/* address not mapped to object */
-      info._sifields._sigfault._addr = orig_addr;
+      info._sifields._sigfault._addr = (void*)orig_addr;
 
       VG_(deliver_signal)(tid, &info, False);
       return;

@@ -45,7 +45,8 @@ typedef UInt HReg;
 
 /* When extending this, do not use any value > 14 or < 0. */
 typedef
-enum { HRcInt=4,       /* 32-bit int */
+enum { HRcINVALID=1,   /* NOT A VALID REGISTER CLASS */
+       HRcInt=4,       /* 32-bit int */
        HRcInt64=5,     /* 64-bit int */
        HRcFloat=6,     /* 64-bit float */
        HRcVector=7,    /* 64-bit SIMD */

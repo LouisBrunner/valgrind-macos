@@ -27,7 +27,8 @@ HRegClass hregClass ( HReg r )
 {
    UInt rc = r;
    rc = (rc >> 28) & 0x0F;
-   assert(rc == HRcInt || rc == HRcFloat || rc == HRcVector);
+   assert(rc == HRcInt || rc == HRcFloat || rc == HRcVector
+          || rc == HRcInt64 || rc == HRcVector128);
    return (HRegClass)rc;
 }
 
@@ -59,9 +60,11 @@ void ppHReg ( FILE* f, HReg r )
    Char* maybe_v = hregIsVirtual(r) ? "v" : "";
    Int   regNo   = hregNumber(r);
    switch (hregClass(r)) {
-      case HRcInt:    fprintf(f, "%%%sr%d", maybe_v, regNo); return;
-      case HRcFloat:  fprintf(f, "%%%sf%d", maybe_v, regNo); return;
-      case HRcVector: fprintf(f, "%%%sv%d", maybe_v, regNo); return;
+      case HRcInt:       fprintf(f, "%%%sr%d", maybe_v, regNo); return;
+      case HRcInt64:     fprintf(f, "%%%sR%d", maybe_v, regNo); return;
+      case HRcFloat:     fprintf(f, "%%%sf%d", maybe_v, regNo); return;
+      case HRcVector:    fprintf(f, "%%%sv%d", maybe_v, regNo); return;
+      case HRcVector128: fprintf(f, "%%%sV%d", maybe_v, regNo); return;
       default: panic("ppHReg");
    }
 }

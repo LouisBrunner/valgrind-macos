@@ -35,7 +35,9 @@ typedef
       /* The "home" spill slot, if needed.  Never changes. */
       Int spill_offset;
       Int spill_size;
-      /* Preferencing info, if any. */
+      /* What kind of register this is. */
+      HRegClass reg_class;
+      /* Preferencing info, if any.  Currently unused. */
       Bool has_preference;
       HReg preferred_rreg; /* if True, where I would like to be */
    }
@@ -249,6 +251,7 @@ HInstrArray* doRegisterAllocation (
       vreg_info[j].dead_before    = INVALID_INSTRNO;
       vreg_info[j].spill_offset   = 0;
       vreg_info[j].spill_size     = 0;
+      vreg_info[j].reg_class      = HRcINVALID;
       vreg_info[j].has_preference = False;
       vreg_info[j].preferred_rreg = INVALID_HREG;
    }
@@ -266,12 +269,25 @@ HInstrArray* doRegisterAllocation (
       /* for each reg mentioned in the insn ... */
       for (j = 0; j < reg_usage.n_used; j++) {
 
+         vreg = reg_usage.hreg[j];
          /* only interested in virtual registers right now. */
-         if (!hregIsVirtual(reg_usage.hreg[j]))
+         if (!hregIsVirtual(vreg))
             continue;
-         k = hregNumber(reg_usage.hreg[j]);
+         k = hregNumber(vreg);
          if (k < 0 || k >= n_vregs)
             panic("doRegisterAllocation: out-of-range vreg");
+
+         /* Take the opportunity to note its regclass.  We'll need
+            that when allocating spill slots. */
+         if (vreg_info[k].reg_class == HRcINVALID) {
+            /* First mention of this vreg. */
+            vreg_info[k].reg_class = hregClass(vreg);
+         } else {
+            /* Seen it before, so check for consistency. */
+            assert(vreg_info[k].reg_class == hregClass(vreg));
+         }
+
+         /* Now consider live ranges. */
          switch (reg_usage.mode[j]) {
             case HRmRead: 
                if (vreg_info[k].live_after == INVALID_INSTRNO)
@@ -331,8 +347,8 @@ HInstrArray* doRegisterAllocation (
       /* for each reg mentioned in the insn ... */
       for (j = 0; j < reg_usage.n_used; j++) {
 
-        /* Dummy initialisations of flush_la and flush_db to avoid
-	   possible bogus uninit-var warnings from gcc. */
+         /* Dummy initialisations of flush_la and flush_db to avoid
+            possible bogus uninit-var warnings from gcc. */
          Int  flush_la = INVALID_INSTRNO, flush_db = INVALID_INSTRNO;
          Bool flush;
 
@@ -356,7 +372,7 @@ HInstrArray* doRegisterAllocation (
             case HRmWrite:
                flush_la = rreg_live_after[k];
                flush_db = rreg_dead_before[k];
-	       if (flush_la != INVALID_INSTRNO 
+               if (flush_la != INVALID_INSTRNO 
                    && flush_db != INVALID_INSTRNO)
                   flush = True;
                rreg_live_after[k]  = ii;
@@ -388,7 +404,7 @@ HInstrArray* doRegisterAllocation (
             rreg_info[rreg_info_used].rreg        = rreg;
             rreg_info[rreg_info_used].live_after  = flush_la;
             rreg_info[rreg_info_used].dead_before = flush_db;
-	    rreg_info_used++;
+            rreg_info_used++;
          }
 
       } /* iterate over regs in the instr */
@@ -448,9 +464,16 @@ HInstrArray* doRegisterAllocation (
 
    for (j = 0; j < n_vregs; j++) {
 
-      /* True iff this vreg is unused. */
-      if (vreg_info[j].live_after == INVALID_INSTRNO)
+      /* True iff this vreg is unused.  In which case we also expect
+         that the reg_class field for it has not been set.  */
+      if (vreg_info[j].live_after == INVALID_INSTRNO) {
+         assert(vreg_info[j].reg_class == HRcINVALID);
          continue;
+      }
+
+      /* Need to allocate two 64-bit spill slots for this. */
+      if (vreg_info[j].reg_class == HRcVector128)
+         panic("can't deal with spilling 128-bit values (yet)");
 
       /* Find the lowest-numbered spill slot which is available at the
          start point of this interval, and assign the interval to
@@ -470,7 +493,7 @@ HInstrArray* doRegisterAllocation (
    fprintf(stdout, "\n\n");
    for (j = 0; j < n_vregs; j++)
      fprintf(stdout, "vreg %d    --> spill offset %d\n",
-	     j, vreg_info[j].spill_offset);
+             j, vreg_info[j].spill_offset);
 
    /* --------- Stage 4: establish rreg preferences --------- */
 
@@ -510,14 +533,14 @@ HInstrArray* doRegisterAllocation (
       fprintf(stdout, "\n");
       for (j = 0; j < n_state; j++) {
          ppHReg(stdout, state[j].rreg);
-	 fprintf(stdout, "\t  ");
-	 switch (state[j].disp) {
-	    case Free: fprintf(stdout, "Free\n"); break;
-	    case Unavail: fprintf(stdout, "Unavail\n"); break;
-	    case Bound: fprintf(stdout, "BoundTo "); 
+         fprintf(stdout, "\t  ");
+         switch (state[j].disp) {
+            case Free: fprintf(stdout, "Free\n"); break;
+            case Unavail: fprintf(stdout, "Unavail\n"); break;
+            case Bound: fprintf(stdout, "BoundTo "); 
                         ppHReg(stdout, state[j].vreg);
                         fprintf(stdout, "\n"); break;
-	 }
+         }
       }
       fprintf(stdout, "\n");
 
@@ -586,32 +609,36 @@ HInstrArray* doRegisterAllocation (
       if ( (*isMove)( instrs_in->arr[ii], &vregS, &vregD ) ) {
          if (!hregIsVirtual(vregS)) goto cannot_coalesce;
          if (!hregIsVirtual(vregD)) goto cannot_coalesce;
-	 /* Check that *isMove is not telling us a bunch of lies ... */
-	 assert(hregClass(vregS) == hregClass(vregD));
+         /* Check that *isMove is not telling us a bunch of lies ... */
+         assert(hregClass(vregS) == hregClass(vregD));
          k = hregNumber(vregS);
-	 m = hregNumber(vregD);
+         m = hregNumber(vregD);
          assert(k >= 0 && k < n_vregs);
          assert(m >= 0 && m < n_vregs);
          if (vreg_info[k].dead_before != ii) goto cannot_coalesce;
-	 if (vreg_info[m].live_after != ii) goto cannot_coalesce;
-	 printf("COALESCE ");
-	 ppHReg(stdout, vregS);
-	 printf(" -> ");
-	 ppHReg(stdout, vregD);
-	 printf("\n");
+         if (vreg_info[m].live_after != ii) goto cannot_coalesce;
+         printf("COALESCE ");
+         ppHReg(stdout, vregS);
+         printf(" -> ");
+         ppHReg(stdout, vregD);
+         printf("\n");
 
-	 /* Ok, we can do it.  Find the state entry for vregS. */
-	 for (m = 0; m < n_state; m++)
+         /* Find the state entry for vregS. */
+         for (m = 0; m < n_state; m++)
             if (state[m].disp == Bound && state[m].vreg == vregS)
                break;
-	 /* If this fails, we have no binding for vregS, which 
-	    cannot be correct. */
-	 assert(m < n_state);
-	 /* Claim it for vregD. */
-	 state[m].vreg = vregD;
-	 /* Don't bother to copy this insn, just move on to the next
+         if (m == n_state)
+            /* We failed to find a binding for vregS, which means it's
+               currently not in a register.  So we can't do the
+               coalescing.  Give up. */
+            goto cannot_coalesce;
+
+         /* Finally, we can do the coalescing.  It's trivial -- merely
+            claim vregS's register for vregD. */
+         state[m].vreg = vregD;
+         /* Don't bother to copy this insn, just move on to the next
             insn. */
-	 continue;
+         continue;
       }
      cannot_coalesce:
 
@@ -627,7 +654,7 @@ HInstrArray* doRegisterAllocation (
          * Could move it into some other free rreg, if one is available 
          * Don't bother to spill if the spill-slot value is known to
            be consistent.
-	 * If the associated vreg live range ends at this insn,
+         * If the associated vreg live range ends at this insn,
            no point in spilling or moving, since (in principle) the
            rreg will be free anyway after that.
 
@@ -638,23 +665,32 @@ HInstrArray* doRegisterAllocation (
          if (rreg_info[j].live_after == ii) {
             /* rreg_info[j].rreg needs to be freed up.  Find 
                the associated state entry. */
-	   printf("need to free up rreg: ");
-	   ppHReg(stdout, rreg_info[j].rreg);
-	   printf("\n");
+            /* Note, re rreg_info[j].live_after == ii.  Real register
+               live ranges are guaranteed to be well-formed in that
+               they start with a write to the register -- Stage 2
+               rejects any code not satisfying this.  So the correct
+               question to ask is whether rreg_info[j].live_after ==
+               ii, that is, whether the reg becomes live after this
+               insn -- rather than before it. */
+            printf("need to free up rreg: ");
+            ppHReg(stdout, rreg_info[j].rreg);
+            printf("\n");
             for (k = 0; k < n_state; k++)
-	      if (state[k].rreg == rreg_info[j].rreg)
-		break;
-	    /* If this fails, we don't have an entry for this rreg.
+               if (state[k].rreg == rreg_info[j].rreg)
+                  break;
+            /* If this fails, we don't have an entry for this rreg.
                Which we should. */
-	    assert(k < n_state);
+            assert(k < n_state);
             if (state[k].disp == Bound) {
                /* Yes, there is an associated vreg.  Spill it if it's
                   still live. */
                m = hregNumber(state[k].vreg);
                assert(m >= 0 && m < n_vregs);
-	       if (vreg_info[m].dead_before > ii)
+               if (vreg_info[m].dead_before > ii) {
+                  assert(vreg_info[m].reg_class != HRcINVALID);
                   EMIT_INSTR( (*genSpill)( state[k].rreg,
                                            vreg_info[m].spill_offset ) );
+               }
             }
             state[k].disp = Unavail;
             state[k].vreg = INVALID_HREG;
@@ -683,7 +719,7 @@ HInstrArray* doRegisterAllocation (
          if (!hregIsVirtual(vreg)) 
             continue;
 
-	 printf("considering "); ppHReg(stdout, vreg); printf("\n");
+         printf("considering "); ppHReg(stdout, vreg); printf("\n");
 
          /* Now we're trying to find a rreg for "vreg".  First of all,
             if it already has an rreg assigned, we don't need to do
@@ -710,45 +746,47 @@ HInstrArray* doRegisterAllocation (
             state[k].disp = Bound;
             state[k].vreg = vreg;
             addToHRegRemap(&remap, vreg, state[k].rreg);
-	    /* Generate a reload if needed. */
+            /* Generate a reload if needed. */
             if (reg_usage.mode[j] != HRmWrite) {
                m = hregNumber(vreg);
                assert(m >= 0 && m < n_vregs);
-	       EMIT_INSTR( (*genReload)( state[k].rreg,
+               assert(vreg_info[m].reg_class != HRcINVALID);
+               EMIT_INSTR( (*genReload)( state[k].rreg,
                                          vreg_info[m].spill_offset ) );
             }
             continue;
          }
 
-	 /* There are no free rregs, but perhaps we can find one which
+         /* There are no free rregs, but perhaps we can find one which
             is bound to a vreg which is now dead.  If so, use that.
             NOTE, we could improve this by selecting an rreg for which
             the next live-range event is as far ahead as possible. */
          for (k = 0; k < n_state; k++) {
             if (state[k].disp == Bound
                 && hregClass(state[k].rreg) == hregClass(vreg)) {
-	       m = hregNumber(state[k].vreg);
-	       assert(m >= 0 && m < n_vregs);
-	       if (vreg_info[m].dead_before <= ii) {
+               m = hregNumber(state[k].vreg);
+               assert(m >= 0 && m < n_vregs);
+               if (vreg_info[m].dead_before <= ii) {
                   /* Ok, it's gone dead before this insn.  We can use
                      it. */
                   break;
-	       }
-	    }
-	 }
+               }
+            }
+         }
          if (k < n_state) {
             assert(state[k].disp == Bound);
             state[k].vreg = vreg;
             addToHRegRemap(&remap, vreg, state[k].rreg);
-	    /* Generate a reload if needed. */
+            /* Generate a reload if needed. */
             if (reg_usage.mode[j] != HRmWrite) {
                m = hregNumber(vreg);
                assert(m >= 0 && m < n_vregs);
-	       EMIT_INSTR( (*genReload)( state[k].rreg,
+               assert(vreg_info[m].reg_class != HRcINVALID);
+               EMIT_INSTR( (*genReload)( state[k].rreg,
                                          vreg_info[m].spill_offset ) );
             }
             continue;
-	 }
+         }
 
          /* Well, now we have no option but to spill a vreg.  It's
             important to make a good choice of vreg to spill, and of
@@ -778,7 +816,7 @@ HInstrArray* doRegisterAllocation (
             the next use of its associated vreg is as far ahead as
             possible, in the hope that this will minimise the number
             of consequent reloads required. */
-	 spillee
+         spillee
             = findMostDistantlyMentionedVReg ( 
                  getRegUsage, instrs_in, ii+1, state, n_state );
 
@@ -792,7 +830,7 @@ HInstrArray* doRegisterAllocation (
          }
 
          /* Right.  So we're going to spill state[spillee]. */
-	 assert(spillee >= 0 && spillee < n_state);
+         assert(spillee >= 0 && spillee < n_state);
          assert(state[spillee].disp == Bound);
          /* check it's the right class */
          assert(hregClass(state[spillee].rreg) == hregClass(vreg));
@@ -806,6 +844,7 @@ HInstrArray* doRegisterAllocation (
          /* So here's the spill store.  Assert that we're spilling a
             live vreg. */
          assert(vreg_info[m].dead_before > ii);
+         assert(vreg_info[m].reg_class != HRcINVALID);
          EMIT_INSTR( (*genSpill)( state[spillee].rreg,
                                   vreg_info[m].spill_offset ) );
 
@@ -818,7 +857,8 @@ HInstrArray* doRegisterAllocation (
          if (reg_usage.mode[j] != HRmWrite) {
             m = hregNumber(vreg);
             assert(m >= 0 && m < n_vregs);
-	    EMIT_INSTR( (*genReload)( state[spillee].rreg,
+            assert(vreg_info[m].reg_class != HRcINVALID);
+            EMIT_INSTR( (*genReload)( state[spillee].rreg,
                                       vreg_info[m].spill_offset ) );
                                       
          }
@@ -847,7 +887,7 @@ HInstrArray* doRegisterAllocation (
       /* ------ Post-instruction actions for fixed rreg uses ------ */
 
       /* Now we need to check for rregs exiting fixed live ranges
-	 after this instruction, and if so mark them as free. */
+         after this instruction, and if so mark them as free. */
 
       for (j = 0; j < rreg_info_used; j++) {
          if (rreg_info[j].dead_before == ii+1) {

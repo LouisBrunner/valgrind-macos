@@ -226,7 +226,7 @@ static __inline__ UChar get_abits4_ALIGNED ( Addr a )
    UChar   abits8;
    PROF_EVENT(24);
 #  ifdef VG_DEBUG_MEMORY
-   tl_assert(IS_ALIGNED4_ADDR(a));
+   tl_assert(IS_4_ALIGNED(a));
 #  endif
    sm     = primary_map[a >> 16];
    sm_off = a & 0xFFFF;
@@ -242,7 +242,7 @@ static UInt __inline__ get_vbytes4_ALIGNED ( Addr a )
    UInt    sm_off = a & 0xFFFF;
    PROF_EVENT(25);
 #  ifdef VG_DEBUG_MEMORY
-   tl_assert(IS_ALIGNED4_ADDR(a));
+   tl_assert(IS_4_ALIGNED(a));
 #  endif
    return ((UInt*)(sm->vbyte))[sm_off >> 2];
 }
@@ -257,7 +257,7 @@ static void __inline__ set_vbytes4_ALIGNED ( Addr a, UInt vbytes )
    sm_off = a & 0xFFFF;
    PROF_EVENT(23);
 #  ifdef VG_DEBUG_MEMORY
-   tl_assert(IS_ALIGNED4_ADDR(a));
+   tl_assert(IS_4_ALIGNED(a));
 #  endif
    ((UInt*)(sm->vbyte))[sm_off >> 2] = vbytes;
 }
@@ -819,7 +819,7 @@ ULong MC_(helperc_LOADV8) ( Addr a )
 #  ifdef VG_DEBUG_MEMORY
    return mc_rd_V8_SLOWLY(a);
 #  else
-   if (IS_ALIGNED8_ADDR(a)) {
+   if (IS_4_ALIGNED(a)) {
       UInt    sec_no = shiftRight16(a) & 0xFFFF;
       SecMap* sm     = primary_map[sec_no];
       UInt    a_off  = (a & 0xFFFF) >> 3;
@@ -836,7 +836,7 @@ ULong MC_(helperc_LOADV8) ( Addr a )
       }
    }
    else
-   if (IS_ALIGNED4_ADDR(a)) {
+   if (IS_4_ALIGNED(a)) {
       /* LITTLE-ENDIAN */
       UInt vLo =  MC_(helperc_LOADV4)(a+0);
       UInt vHi =  MC_(helperc_LOADV4)(a+4);
@@ -853,7 +853,7 @@ void MC_(helperc_STOREV8) ( Addr a, ULong vbytes )
 #  ifdef VG_DEBUG_MEMORY
    mc_wr_V8_SLOWLY(a, vbytes);
 #  else
-   if (IS_ALIGNED8_ADDR(a)) {
+   if (IS_4_ALIGNED(a)) {
       UInt    sec_no = shiftRight16(a) & 0xFFFF;
       SecMap* sm     = primary_map[sec_no];
       UInt    a_off  = (a & 0xFFFF) >> 3;
@@ -872,7 +872,7 @@ void MC_(helperc_STOREV8) ( Addr a, ULong vbytes )
       return;
    }
    else
-   if (IS_ALIGNED4_ADDR(a)) {
+   if (IS_4_ALIGNED(a)) {
       UInt vHi = (UInt)(vbytes >> 32);
       UInt vLo = (UInt)vbytes;
       /* LITTLE-ENDIAN */
@@ -1385,7 +1385,7 @@ static Int mc_get_or_set_vbits_for_client (
    UInt* vbitsP = NULL; /* ditto */
 
    /* Check alignment of args. */
-   if (!(IS_ALIGNED4_ADDR(data) && IS_ALIGNED4_ADDR(vbits)))
+   if (!(IS_4_ALIGNED(data) && IS_4_ALIGNED(vbits)))
       return 2;
    if ((size & 3) != 0)
       return 2;
@@ -1462,7 +1462,7 @@ Bool mc_is_valid_address ( Addr a )
 {
    UInt vbytes;
    UChar abits;
-   tl_assert(IS_ALIGNED4_ADDR(a));
+   tl_assert(IS_4_ALIGNED(a));
    abits  = get_abits4_ALIGNED(a);
    vbytes = get_vbytes4_ALIGNED(a);
    if (abits == VGM_NIBBLE_VALID && vbytes == VGM_WORD_VALID) {

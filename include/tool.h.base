@@ -274,10 +274,11 @@ extern void VGP_(popcc)  ( UInt cc );
 /* 64-bit counter for the number of basic blocks done. */
 extern ULong VG_(bbs_done);
 
-/* Check if an address is aligned */
-#define IS_ALIGNED4_ADDR(aaa_p)     (0 == (((Addr)(aaa_p)) & 3))
-#define IS_ALIGNED8_ADDR(aaa_p)     (0 == (((Addr)(aaa_p)) & 7))
-#define IS_WORD_ALIGNED_ADDR(aaa_p) (0 == (((Addr)(aaa_p)) & (sizeof(Addr)-1)))
+/* Check if an address/whatever is aligned */
+#define IS_4_ALIGNED(aaa_p)     (0 == (((Addr)(aaa_p)) & 0x3))
+#define IS_8_ALIGNED(aaa_p)     (0 == (((Addr)(aaa_p)) & 0x7))
+#define IS_16_ALIGNED(aaa_p)    (0 == (((Addr)(aaa_p)) & 0xf))
+#define IS_WORD_ALIGNED(aaa_p)  (0 == (((Addr)(aaa_p)) & (sizeof(Addr)-1)))
 
 
 /* ------------------------------------------------------------------ */

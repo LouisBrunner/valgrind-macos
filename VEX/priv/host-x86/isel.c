@@ -1611,6 +1611,29 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
+   /* --------- CCALL --------- */
+   if (e->tag == Iex_CCall) {
+      Int     i, n_args, n_arg_ws;
+      HReg tLo  = newVRegI(env);
+      HReg tHi  = newVRegI(env);
+
+      /* push args on the stack, right to left. */
+      n_arg_ws = n_args = 0;
+      while (e->Iex.CCall.args[n_args]) n_args++;
+
+      for (i = n_args-1; i >= 0; i--)
+         n_arg_ws += pushArg(env, e->Iex.CCall.args[i]);
+
+      /* call the helper, and get the args off the stack afterwards. */
+      callHelperAndClearArgs( env, e->Iex.CCall.name, n_arg_ws );
+
+      addInstr(env, mk_MOVsd_RR(hregX86_EDX(), tHi));
+      addInstr(env, mk_MOVsd_RR(hregX86_EAX(), tLo));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
 #if 0
    if (e->tag == Iex_GetI) {
       /* First off, compute the index expression into an integer reg.

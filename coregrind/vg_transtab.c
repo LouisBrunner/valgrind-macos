@@ -49,7 +49,7 @@ static /* const */ Int vg_tc_sector_szB = 0;
 
 /* Number of entries in the translation table.  This must be a prime
    number in order to make the hashing work properly. */
-#define VG_TT_SIZE /*5281*/ /*100129*/ 200191 /*250829*/
+#define VG_TT_SIZE /*5281*/ /*100129*/ /*200191*/ /*250829*/ 300007
 
 /* Do an LRU pass when the translation table becomes this full. */
 #define VG_TT_LIMIT_PERCENT /*67*/ 80
@@ -651,7 +651,7 @@ void VG_(init_tt_tc) ( void )
         / VG_TC_N_SECTORS;
    /* Ensure the calculated value is not way crazy. */
    vg_assert(vg_tc_sector_szB >= 200000);
-   vg_assert(vg_tc_sector_szB <= 6000000);
+   vg_assert(vg_tc_sector_szB <= 8000000);
 
    for (s = 0; s < VG_TC_N_SECTORS; s++) {
       vg_tc[s] = NULL;

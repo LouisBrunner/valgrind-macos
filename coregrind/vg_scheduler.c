@@ -1686,6 +1686,24 @@ void maybe_rendezvous_joiners_and_joinees ( void )
 }
 
 
+/* Nuke all threads other than tid.  POSIX specifies that this should
+   happen in __NR_exec, and after a __NR_fork() when I am the child,
+   as POSIX requires. */
+void VG_(nuke_all_threads_except) ( ThreadId me )
+{
+   ThreadId tid;
+   for (tid = 1; tid < VG_N_THREADS; tid++) {
+      if (tid == me
+          || VG_(threads)[tid].status == VgTs_Empty) 
+         continue;
+      VG_(printf)(
+         "VG_(nuke_all_threads_except): nuking tid %d\n", tid);
+      VG_(threads)[tid].status = VgTs_Empty;
+      cleanup_after_thread_exited( tid );
+   }
+}
+
+
 /* -----------------------------------------------------------
    Thread CREATION, JOINAGE and CANCELLATION: REQUESTS
    -------------------------------------------------------- */

@@ -895,6 +895,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (VG_(clo_trace_syscalls)) 
             VG_(printf)("execve ( %p(%s), %p, %p ) --- NOT CHECKED\n", 
                         arg1, arg1, arg2, arg3);
+         /* Resistance is futile.  Nuke all other threads.  POSIX
+            mandates this. */
+            VG_(nuke_all_threads_except)( tid );
          /* Make any binding for LD_PRELOAD disappear, so that child
             processes don't get traced into. */
          if (!VG_(clo_trace_children)) {
@@ -1103,6 +1106,11 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (VG_(clo_trace_syscalls))
             VG_(printf)("fork ()\n");
          KERNEL_DO_SYSCALL(tid,res);
+         if (res == 0) {
+            /* I am the child.  Nuke all other threads which I might
+               have inherited from my parent.  POSIX mandates this. */
+            VG_(nuke_all_threads_except)( tid );
+         }
          break;
 
       case __NR_fsync: /* syscall 118 */

@@ -691,6 +691,9 @@ extern ThreadId VG_(get_current_tid) ( void );
    error message generation. */
 extern ThreadId VG_(identify_stack_addr)( Addr a );
 
+/* Nuke all threads except tid. */
+extern void VG_(nuke_all_threads_except) ( ThreadId me );
+
 
 /* Return codes from the scheduler. */
 typedef

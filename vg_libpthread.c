@@ -171,6 +171,7 @@ static void not_inside ( char* msg )
    VG_(startup)();
 }
 
+__attribute__((noreturn))
 void vgPlain_unimp ( char* what )
 {
    char* ig = "valgrind's libpthread.so: UNIMPLEMENTED FUNCTION: ";
@@ -896,6 +897,9 @@ void pthread_testcancel ( void )
 
 
 /*-------------------*/
+/* If this is indeed used by LinuxThreads to implement thread nuking
+   post fork and pre exec, we should really nuke em, not do
+   pthread_cancel. */
 static pthread_mutex_t massacre_mx = PTHREAD_MUTEX_INITIALIZER;
 
 void __pthread_kill_other_threads_np ( void )
@@ -1079,10 +1083,9 @@ int __pthread_atfork ( void (*prepare)(void),
                        void (*parent)(void),
                        void (*child)(void) )
 {
-   static int moans = N_MOANS;
-   if (moans-- > 0) 
-      ignored("pthread_atfork");
-   return 0;
+   /* We have to do this properly or not at all; faking it isn't an
+      option. */
+   vgPlain_unimp("__pthread_atfork");
 }
 
 

@@ -386,7 +386,8 @@ void VG_(maybe_record_error) ( ThreadId tid,
       case where we ignore the error.  Ugly.
 
       Then, if there is an `extra' part, copy it too, using the size that
-      SK_(update_extra) returned.
+      SK_(update_extra) returned.  Also allow for people using the void*
+      extra field for a scalar value like an integer.
    */
 
    /* copy main part */
@@ -394,11 +395,11 @@ void VG_(maybe_record_error) ( ThreadId tid,
    *p = err;
 
    /* update `extra', for non-core errors (core ones don't use 'extra') */
-   if (VG_(needs).skin_errors) {
+   if (VG_(needs).skin_errors && PThreadErr != ekind) {
       extra_size = SK_(update_extra)(p);
 
-      /* copy `extra' if there is one */
-      if (NULL != p->extra) {
+      /* copy block pointed to by `extra', if there is one */
+      if (NULL != p->extra && 0 != extra_size) { 
          void* new_extra = VG_(malloc)(extra_size);
          VG_(memcpy)(new_extra, p->extra, extra_size);
          p->extra = new_extra;

@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*---                                                              ---*/
-/*--- This file (x86toIR.c) is                                     ---*/
+/*--- This file (guest-x86/toIR.c) is                              ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved.      ---*/
 /*---                                                              ---*/
 /*--------------------------------------------------------------------*/
@@ -18,9 +18,10 @@
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
 #include "libvex.h"
-#include "vex_util.h"
-#include "vex_globals.h"
-#include "x86guest_defs.h"
+
+#include "main/vex_util.h"
+#include "main/vex_globals.h"
+#include "guest-x86/gdefs.h"
 
 
 /*------------------------------------------------------------*/
@@ -8099,5 +8100,5 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
 #undef DIS
 
 /*--------------------------------------------------------------------*/
-/*--- end                                            vg_to_ucode.c ---*/
+/*--- end                                         guest-x86/toIR.c ---*/
 /*--------------------------------------------------------------------*/

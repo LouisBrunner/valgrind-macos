@@ -1,18 +1,18 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (vex_main.c) is                               ---*/
+/*--- This file (main/vex_main.c) is                          ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
 #include "libvex.h"
 
-#include "vex_globals.h"
-#include "vex_util.h"
-#include "host_regs.h"
-#include "x86host_defs.h"
-#include "x86guest_defs.h"
+#include "main/vex_globals.h"
+#include "main/vex_util.h"
+#include "host-generic/h_generic_regs.h"
+#include "host-x86/hdefs.h"
+#include "guest-x86/gdefs.h"
 
 
 /* This file contains the top level interface to the library. */
@@ -235,5 +235,5 @@ TranslateResult LibVEX_Translate (
 
 
 /*---------------------------------------------------------------*/
-/*--- end                                          vex_main.c ---*/
+/*--- end                                     main/vex_main.c ---*/
 /*---------------------------------------------------------------*/

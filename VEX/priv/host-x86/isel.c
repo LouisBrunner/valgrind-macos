@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (isel_x86.c) is                               ---*/
+/*--- This file (host-x86/isel.c) is                          ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -10,10 +10,10 @@
 #include "libvex_ir.h"
 #include "libvex.h"
 
-#include "vex_util.h"
-#include "vex_globals.h"
-#include "host_regs.h"
-#include "x86host_defs.h"
+#include "main/vex_util.h"
+#include "main/vex_globals.h"
+#include "host-generic/h_generic_regs.h"
+#include "host-x86/hdefs.h"
 
 
 /*---------------------------------------------------------*/
@@ -994,5 +994,5 @@ HInstrArray* iselBB_X86 ( IRBB* bb, Addr64(*find_helper)(Char*) )
 
 
 /*---------------------------------------------------------------*/
-/*--- end                                          isel_x86.c ---*/
+/*--- end                                     host-x86/isel.c ---*/
 /*---------------------------------------------------------------*/

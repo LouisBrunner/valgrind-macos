@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (host_regs.c) is                              ---*/
+/*--- This file (host-generic/h_generic_regs.c) is            ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -9,8 +9,8 @@
 #include "libvex_basictypes.h"
 #include "libvex.h"
 
-#include "vex_util.h"
-#include "host_regs.h"
+#include "main/vex_util.h"
+#include "host-generic/h_generic_regs.h"
 
 
 HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual )
@@ -200,5 +200,5 @@ void addHInstr ( HInstrArray* ha, HInstr* instr )
 
 
 /*---------------------------------------------------------------*/
-/*--- end                                         host_regs.c ---*/
+/*--- end                       host-generic/h_generic_regs.c ---*/
 /*---------------------------------------------------------------*/

@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (x86h_defs.c) is                              ---*/
+/*--- This file (host-x86/hdefs.c) is                         ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -9,9 +9,9 @@
 #include "libvex_basictypes.h"
 #include "libvex.h"
 
-#include "vex_util.h"
-#include "host_regs.h"
-#include "x86host_defs.h"
+#include "main/vex_util.h"
+#include "host-generic/h_generic_regs.h"
+#include "host-x86/hdefs.h"
 
 
 /* --------- Registers. --------- */
@@ -1514,5 +1514,5 @@ T( X86Instr_Alu32M(Xalu_SUB, X86RI_Reg(ecx), X86AMode_IR(0x7F,ebp)) );
 
 
 /*---------------------------------------------------------------*/
-/*--- end                                         x86h_defs.c ---*/
+/*--- end                                    host-x86/hdefs.c ---*/
 /*---------------------------------------------------------------*/

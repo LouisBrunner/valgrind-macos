@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (reg_alloc.c) is                              ---*/
+/*--- This file (host-generic/reg_alloc.c) is                 ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -9,8 +9,8 @@
 #include "libvex_basictypes.h"
 #include "libvex.h"
 
-#include "vex_util.h"
-#include "host_regs.h"
+#include "main/vex_util.h"
+#include "host-generic/h_generic_regs.h"
 
 /* Set to 1 for lots of debugging output. */
 #define DEBUG_REGALLOC 0
@@ -1007,5 +1007,5 @@ HInstrArray* doRegisterAllocation (
 
 
 /*---------------------------------------------------------------*/
-/*---                                             reg_alloc.c ---*/
+/*---                                host-generic/reg_alloc.c ---*/
 /*---------------------------------------------------------------*/

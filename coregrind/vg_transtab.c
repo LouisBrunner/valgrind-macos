@@ -150,7 +150,7 @@ static TTEntry* vg_tt = NULL;
 static Int vg_tt_used = 0;
 
 /* Fast helper for the TT.  A direct-mapped cache which holds a
-   pointer to a TT entry which may or may not be the correct one, but
+   pointer to a TC entry which may or may not be the correct one, but
    which we hope usually is.  This array is referred to directly from
    vg_dispatch.S. */
 Addr /* TCEntry*, really */ VG_(tt_fast)[VG_TT_FAST_SIZE];

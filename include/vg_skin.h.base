@@ -1102,6 +1102,7 @@ extern void VG_(set_lit_field)    ( UCodeBlock* cb, UInt lit32 );
 extern void VG_(set_ccall_fields) ( UCodeBlock* cb, Addr fn, UChar argc,
                                     UChar regparms_n, Bool has_ret_val );
 extern void VG_(set_cond_field)   ( UCodeBlock* cb, Condcode code );
+extern void VG_(set_widen_fields) ( UCodeBlock* cb, UInt szs, Bool is_signed );
 
 extern void VG_(copy_UInstr) ( UCodeBlock* cb, UInstr* instr );
 
@@ -1115,6 +1116,7 @@ extern Bool VG_(any_flag_use)( UInstr* u );
 #define uLiteral  VG_(set_lit_field)
 #define uCCall    VG_(set_ccall_fields)
 #define uCond     VG_(set_cond_field)
+#define uWiden    VG_(set_widen_fields)
 #define uFlagsRWU VG_(set_flag_fields)
 #define newTemp   VG_(get_new_temp)
 #define newShadow VG_(get_new_shadow)

@@ -561,12 +561,6 @@ static void setFlagsFromUOpcode ( UCodeBlock* cb, Int uopc )
    }
 }
 
-__inline__
-void VG_(set_cond_field) ( UCodeBlock* cb, Condcode cond )
-{
-   LAST_UINSTR(cb).cond = cond;
-}
-
 /*------------------------------------------------------------*/
 /*--- JMP helpers                                          ---*/
 /*------------------------------------------------------------*/
@@ -1329,8 +1323,7 @@ Addr dis_movx_E_G ( UCodeBlock* cb,
       Int tmpv = newTemp(cb);
       uInstr2(cb, GET, szs, ArchReg, eregOfRM(rm), TempReg, tmpv);
       uInstr1(cb, WIDEN, szd, TempReg, tmpv);
-      LAST_UINSTR(cb).extra4b = szs;
-      LAST_UINSTR(cb).signed_widen = sign_extend;
+      uWiden(cb, szs, sign_extend);
       uInstr2(cb, PUT, szd, TempReg, tmpv, ArchReg, gregOfRM(rm));
       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
                                nameISize(szs), nameISize(szd),
@@ -1345,8 +1338,7 @@ Addr dis_movx_E_G ( UCodeBlock* cb,
       Int  tmpa = LOW24(pair);
       uInstr2(cb, LOAD, szs, TempReg, tmpa, TempReg, tmpa);
       uInstr1(cb, WIDEN, szd, TempReg, tmpa);
-      LAST_UINSTR(cb).extra4b = szs;
-      LAST_UINSTR(cb).signed_widen = sign_extend;
+      uWiden(cb, szs, sign_extend);
       uInstr2(cb, PUT, szd, TempReg, tmpa, ArchReg, gregOfRM(rm));
       DIP("mov%c%c%c %s,%s\n", sign_extend ? 's' : 'z',
                                nameISize(szs), nameISize(szd),
@@ -2719,8 +2711,7 @@ Addr dis_bt_G_E ( UCodeBlock* cb,
 
    if (sz == 2) {
       uInstr1(cb, WIDEN, 4, TempReg, t_bitno);
-      LAST_UINSTR(cb).extra4b = 2;
-      LAST_UINSTR(cb).signed_widen = False;
+      uWiden(cb, 2, False);
    }
    
    if (epartIsReg(modrm)) {
@@ -5350,8 +5341,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, GET, 1, ArchReg, R_AL, TempReg, t1);
       /* Widen %AL to 32 bits, so it's all defined when we push it. */
       uInstr1(cb, WIDEN, 4, TempReg, t1);
-      LAST_UINSTR(cb).extra4b = 1;
-      LAST_UINSTR(cb).signed_widen = False;
+      uWiden(cb, 1, False);
       uInstr0(cb, CALLM_S, 0);
       uInstr1(cb, PUSH, 4, TempReg, t1);
       uInstr1(cb, CALLM, 0, Lit16, 
@@ -5369,8 +5359,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, GET, 2, ArchReg, R_EAX, TempReg, t1);
       /* Widen %AL to 32 bits, so it's all defined when we push it. */
       uInstr1(cb, WIDEN, 4, TempReg, t1);
-      LAST_UINSTR(cb).extra4b = 2;
-      LAST_UINSTR(cb).signed_widen = False;
+      uWiden(cb, 2, False);
       uInstr0(cb, CALLM_S, 0);
       uInstr1(cb, PUSH, 4, TempReg, t1);
       uInstr1(cb, CALLM, 0, Lit16, 
@@ -5390,8 +5379,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, GET, 2, ArchReg, R_EAX, TempReg, t1);
       /* Widen %AX to 32 bits, so it's all defined when we push it. */
       uInstr1(cb, WIDEN, 4, TempReg, t1);
-      LAST_UINSTR(cb).extra4b = 2;
-      LAST_UINSTR(cb).signed_widen = False;
+      uWiden(cb, 2, False);
       uInstr0(cb, CALLM_S, 0);
       uInstr1(cb, PUSH, 4, TempReg, t1);
       uInstr1(cb, CALLM, 0, Lit16, 
@@ -5410,16 +5398,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (sz == 4) {
          uInstr2(cb, GET,   2, ArchReg, R_EAX, TempReg, t1);
          uInstr1(cb, WIDEN, 4, TempReg, t1); /* 4 == dst size */
-         LAST_UINSTR(cb).extra4b = 2; /* the source size */
-         LAST_UINSTR(cb).signed_widen = True;
+         uWiden(cb, 2, True);
          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, R_EAX);
          DIP("cwd\n");
       } else {
          vg_assert(sz == 2);
          uInstr2(cb, GET,   1, ArchReg, R_EAX, TempReg, t1);
          uInstr1(cb, WIDEN, 2, TempReg, t1); /* 2 == dst size */
-         LAST_UINSTR(cb).extra4b = 1; /* the source size */
-         LAST_UINSTR(cb).signed_widen = True;
+         uWiden(cb, 1, True);
          uInstr2(cb, PUT, 2, TempReg, t1, ArchReg, R_EAX);
          DIP("cbw\n");
       }
@@ -6343,8 +6329,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, GET, 1, ArchReg, R_AL, TempReg, t2); /* get AL */
       /* Widen %AL to 32 bits, so it's all defined when we add it. */
       uInstr1(cb, WIDEN, 4, TempReg, t2);
-      LAST_UINSTR(cb).extra4b = 1;
-      LAST_UINSTR(cb).signed_widen = False;
+      uWiden(cb, 1, False);
       uInstr2(cb, ADD, sz, TempReg, t2, TempReg, t1);  /* add AL to eBX */
       uInstr2(cb, LOAD, 1, TempReg, t1,  TempReg, t2); /* get byte at t1 into t2 */
       uInstr2(cb, PUT, 1, TempReg, t2, ArchReg, R_AL); /* put byte into AL */

@@ -234,6 +234,17 @@ void VG_(set_flag_fields) ( UCodeBlock* cb,
    LAST_UINSTR(cb).flags_w = uw;
 }
 
+void VG_(set_cond_field) ( UCodeBlock* cb, Condcode cond )
+{
+   LAST_UINSTR(cb).cond = cond;
+}
+
+void VG_(set_widen_fields) ( UCodeBlock* cb, UInt szs, Bool is_signed )
+{
+   LAST_UINSTR(cb).extra4b = szs;
+   LAST_UINSTR(cb).signed_widen = is_signed;
+}
+
 
 Bool VG_(any_flag_use) ( UInstr* u )
 {

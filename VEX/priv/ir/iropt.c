@@ -17,6 +17,15 @@
 #define DEBUG_IROPT 0
 
 
+/* Implementation notes, 12 Oct 04.
+   
+   F64i constants are treated differently from other constants.
+   They are not regarded as atoms, and instead lifted off and
+   bound to temps.  This allows them to participate in CSE, which
+   is important for getting good performance for x86 guest code.
+*/
+
+
 /*---------------------------------------------------------------*/
 /*--- Finite mappery, of a sort                               ---*/
 /*---------------------------------------------------------------*/
@@ -234,6 +243,18 @@ static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
          return IRExpr_Tmp(t1);
 
       case Iex_Const:
+         /* Lift F64i constants out onto temps so they can be CSEd
+            later. */
+         if (ex->Iex.Const.con->tag == Ico_F64i) {
+            t1 = newIRTemp(bb->tyenv, ty);
+            addStmtToIRBB(bb, IRStmt_Tmp(t1,
+               IRExpr_Const(ex->Iex.Const.con)));
+            return IRExpr_Tmp(t1);
+         } else {
+            /* Leave all other constants alone. */
+            return ex;
+         }
+
       case Iex_Tmp:
          return ex;
 
@@ -757,9 +778,13 @@ static IRBB* cprop_BB ( IRBB* in )
       /* Now consider what the stmt looks like.  If it's of the form
          't = const' or 't1 = t2', add it to the running environment
          and not to the output BB.  Otherwise, add it to the output
-         BB. */
+         BB.  Note, we choose not to propagate const when const is an
+         F64i, so that F64i literals can be CSE'd later.  This helps
+         x86 floating point code generation. */
 
-      if (st2->tag == Ist_Tmp && st2->Ist.Tmp.data->tag == Iex_Const) {
+      if (st2->tag == Ist_Tmp 
+          && st2->Ist.Tmp.data->tag == Iex_Const
+          && st2->Ist.Tmp.data->Iex.Const.con->tag != Ico_F64i) {
          /* 't = const' -- add to env.  
              The pair (IRTemp, IRExpr*) is added. */
          addToH64(env, (ULong)(st2->Ist.Tmp.tmp),
@@ -1774,23 +1799,29 @@ static void treebuild_BB ( IRBB* bb )
 
 typedef
    struct {
-      enum { Ut, Btt, Btc } tag;
+      enum { Ut, Btt, Btc, Cf64i } tag;
       union {
          /* unop(tmp) */
          struct {
             IROp op;
             IRTemp arg;
          } Ut;
+         /* binop(tmp,tmp) */
          struct {
             IROp op;
             IRTemp arg1;
             IRTemp arg2;
          } Btt;
+         /* binop(tmp,const) */
          struct {
             IROp op;
             IRTemp arg1;
             IRConst con2;
          } Btc;
+         /* F64i-style const */
+         struct {
+            ULong f64i;
+         } Cf64i;
       } u;
    }
    AvailExpr;
@@ -1808,6 +1839,7 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
       case Btc: return a1->u.Btc.op == a2->u.Btc.op
                        && a1->u.Btc.arg1 == a2->u.Btc.arg1
                        && eqIRConst(&a1->u.Btc.con2, &a2->u.Btc.con2);
+      case Cf64i: return a1->u.Cf64i.f64i == a2->u.Cf64i.f64i;
       default: vpanic("eq_AvailExpr");
    }
 }
@@ -1827,6 +1859,8 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
          *con = ae->u.Btc.con2;
          return IRExpr_Binop( ae->u.Btc.op,
                               IRExpr_Tmp(ae->u.Btc.arg1), IRExpr_Const(con) );
+      case Cf64i:
+         return IRExpr_Const(IRConst_F64i(ae->u.Cf64i.f64i));
       default:
          vpanic("availExpr_to_IRExpr");
    }
@@ -1856,6 +1890,8 @@ static void subst_AvailExpr ( Hash64* env, AvailExpr* ae )
          break;
       case Btc:
          ae->u.Btc.arg1 = subst_AvailExpr_Temp( env, ae->u.Btc.arg1 );
+         break;
+      case Cf64i:
          break;
       default: 
          vpanic("subst_AvailExpr");
@@ -1894,6 +1930,14 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
       ae->u.Btc.op   = e->Iex.Binop.op;
       ae->u.Btc.arg1 = e->Iex.Binop.arg1->Iex.Tmp.tmp;
       ae->u.Btc.con2 = *(e->Iex.Binop.arg2->Iex.Const.con);
+      return ae;
+   }
+
+   if (e->tag == Iex_Const
+       && e->Iex.Const.con->tag == Ico_F64i) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag          = Cf64i;
+      ae->u.Cf64i.f64i = e->Iex.Const.con->Ico.F64i;
       return ae;
    }
 
@@ -1941,7 +1985,7 @@ static void cse_BB ( IRBB* bb )
       if (!eprime)
          continue;
 
-      //vex_printf("considering: " ); ppIRStmt(st); vex_printf("\n");
+      /* vex_printf("considering: " ); ppIRStmt(st); vex_printf("\n"); */
 
       /* apply tenv */
       subst_AvailExpr( tenv, eprime );

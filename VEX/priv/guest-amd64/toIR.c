@@ -1174,7 +1174,7 @@ static HChar* nameIRegRexB ( Int sz, Prefix pfx, UInt lo3bits )
    vassert(IS_VALID_PFX(pfx));
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
    return nameIReg( sz, lo3bits | (getRexB(pfx) << 3), 
-                        sz==1 && !haveREX(pfx) );
+                        toBool(sz==1 && !haveREX(pfx)) );
 }
 
 static IRExpr* getIRegRexB ( Int sz, Prefix pfx, UInt lo3bits )
@@ -1184,7 +1184,7 @@ static IRExpr* getIRegRexB ( Int sz, Prefix pfx, UInt lo3bits )
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
    return IRExpr_Get(
              offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), 
-                             sz==1 && !haveREX(pfx) ),
+                             toBool(sz==1 && !haveREX(pfx)) ),
              szToITy(sz)
           );
 }
@@ -1196,7 +1196,7 @@ static void putIRegRexB ( Int sz, Prefix pfx, UInt lo3bits, IRExpr* e )
    vassert(typeOfIRExpr(irbb->tyenv, e) == szToITy(sz));
    stmt( IRStmt_Put( 
             offsetIReg( sz, lo3bits | (getRexB(pfx) << 3), 
-                            sz==1 && !haveREX(pfx) ),
+                            toBool(sz==1 && !haveREX(pfx)) ),
             sz==4 ? unop(Iop_32Uto64,e) : e
    ));
 }
@@ -1245,7 +1245,7 @@ static UInt offsetIRegG ( Int sz, Prefix pfx, UChar mod_reg_rm )
    vassert(IS_VALID_PFX(pfx));
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
    reg = gregOfRexRM( pfx, mod_reg_rm );
-   return offsetIReg( sz, reg, sz == 1 && !haveREX(pfx) );
+   return offsetIReg( sz, reg, toBool(sz == 1 && !haveREX(pfx)) );
 }
 
 static 
@@ -1269,7 +1269,7 @@ static
 HChar* nameIRegG ( Int sz, Prefix pfx, UChar mod_reg_rm )
 {
    return nameIReg( sz, gregOfRexRM(pfx,mod_reg_rm),
-                        sz==1 && !haveREX(pfx) );
+                        toBool(sz==1 && !haveREX(pfx)) );
 }
 
 
@@ -1285,7 +1285,7 @@ static UInt offsetIRegE ( Int sz, Prefix pfx, UChar mod_reg_rm )
    vassert(IS_VALID_PFX(pfx));
    vassert(sz == 8 || sz == 4 || sz == 2 || sz == 1);
    reg = eregOfRexRM( pfx, mod_reg_rm );
-   return offsetIReg( sz, reg, sz == 1 && !haveREX(pfx) );
+   return offsetIReg( sz, reg, toBool(sz == 1 && !haveREX(pfx)) );
 }
 
 static 
@@ -1309,7 +1309,7 @@ static
 HChar* nameIRegE ( Int sz, Prefix pfx, UChar mod_reg_rm )
 {
    return nameIReg( sz, eregOfRexRM(pfx,mod_reg_rm),
-                        sz==1 && !haveREX(pfx) );
+                        toBool(sz==1 && !haveREX(pfx)) );
 }
 
 

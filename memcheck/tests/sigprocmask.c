@@ -9,7 +9,12 @@
 
 int main(void)
 {
-   int x[6], *s, *os, i;
+   int x[6], *s, *os, i, sysno;
+
+   sysno = __NR_rt_sigprocmask;
+#ifdef __NR_sigprocmask
+   sysno = __NR_sigprocmask;
+#endif
 
    x[0] = 0x11111111;
    x[1] = 0x89abcdef;
@@ -25,7 +30,7 @@ int main(void)
    // blocked as perl has been known to leave some signals blocked
    // when starting child processes which can cause failures in
    // this test unless we reset things here.
-   syscall(__NR_sigprocmask, SIG_SETMASK, os, NULL);
+   syscall(sysno, SIG_SETMASK, os, NULL);
 
    fprintf(stderr, "before\n");
    for (i = 0; i < 6; i++) {
@@ -33,7 +38,7 @@ int main(void)
    }
    fprintf(stderr, "\n");
 
-   syscall(__NR_sigprocmask, SIG_BLOCK, s, os);
+   syscall(sysno, SIG_BLOCK, s, os);
 
    fprintf(stderr, "after1\n");
    for (i = 0; i < 6; i++) {
@@ -41,7 +46,7 @@ int main(void)
    }
    fprintf(stderr, "\n");
    
-   syscall(__NR_sigprocmask, SIG_BLOCK, s, os);
+   syscall(sysno, SIG_BLOCK, s, os);
 
    fprintf(stderr, "after2\n");
    for (i = 0; i < 6; i++) {

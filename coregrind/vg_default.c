@@ -31,10 +31,6 @@
 */
 
 
-/* These functions aren't intended to be run.  Replacement functions used by
- * the chosen tool are substituted by compiling the tool into a .so and
- * LD_PRELOADing it.  Nasty :) */
-
 #include "vg_include.h"
 
 /* ---------------------------------------------------------------------
@@ -65,17 +61,6 @@ void malloc_panic ( const Char* fn )
       fn);
    VG_(skin_panic)("Missing tool function");
 }
-
-#define MALLOC(proto)                     \
-__attribute__((weak))                     \
-proto                                     \
-{                                         \
-   malloc_panic(__PRETTY_FUNCTION__);     \
-}
-
-/* ---------------------------------------------------------------------
-   Default functions
-   ------------------------------------------------------------------ */
 
 /*------------------------------------------------------------*/
 /*--- Replacing malloc et al                               ---*/

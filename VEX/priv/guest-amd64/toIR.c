@@ -13022,7 +13022,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
       case 0x31: /* RDTSC */
          if (haveF2orF3(pfx)) goto decode_failure;
-         if (1) vex_printf("vex amd64->IR: kludged rdtsc\n");
+         if (0) vex_printf("vex amd64->IR: kludged rdtsc\n");
          putIRegRAX(4, mkU32(1));
          putIRegRDX(4, mkU32(0));
 

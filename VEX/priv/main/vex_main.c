@@ -192,7 +192,10 @@ TranslateResult LibVEX_Translate (
       j = (*emit)( insn_bytes, 32, rcode->arr[i] );
       if (vex_verbosity > 0) {
          for (k = 0; k < j; k++)
-            vex_printf("0x%-2x ", (UInt)insn_bytes[k]);
+	    if (insn_bytes[k] < 16)
+               vex_printf("0%x ",  (UInt)insn_bytes[k]);
+            else
+               vex_printf("%x ", (UInt)insn_bytes[k]);
          vex_printf("\n\n");
       }
       if (out_used + j > host_bytes_size) {

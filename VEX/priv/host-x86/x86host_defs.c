@@ -911,7 +911,7 @@ static UChar* doAMode_R ( UChar* p, HReg greg, HReg ereg )
 
 Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 {
-  UInt opc, opc_rr, subopc_imm, opc_imma;
+   UInt opc, opc_rr, subopc_imm, opc_imma;
 
    UChar* p = &buf[0];
    vassert(nbuf >= 32);
@@ -952,6 +952,8 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                         subopc_imm = 0; opc_imma = 0x05; break;
          case Xalu_SUB: opc = 0x2B; opc_rr = 0x29; 
                         subopc_imm = 5; opc_imma = 0x2D; break;
+         case Xalu_AND: opc = 0x23; opc_rr = 0x21; 
+                        subopc_imm = 4; opc_imma = 0x25; break;
          default: goto bad;
       }
       switch (i->Xin.Alu32R.src->tag) {
@@ -1008,6 +1010,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       opc = subopc_imm = opc_imma = 0;
       switch (i->Xin.Alu32M.op) {
          case Xalu_ADD: opc = 0x01; subopc_imm = 0; break;
+         case Xalu_SUB: opc = 0x29; subopc_imm = 5; break;
          default: goto bad;
       }
       switch (i->Xin.Alu32M.src->tag) {
@@ -1032,6 +1035,26 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
             goto bad;
       }
       break;
+
+   case Xin_Goto:
+      if (i->Xin.Goto.cond == Xcc_ALWAYS
+          && i->Xin.Goto.dst->tag == Xri_Imm) {
+         /* movl $immediate, %eax ; ret */
+         *p++ = 0xB8;
+         p = emit32(p, i->Xin.Goto.dst->Xri.Imm.imm32);
+         *p++ = 0xC3;
+         goto done;
+       }
+      if (i->Xin.Goto.cond == Xcc_ALWAYS
+          && i->Xin.Goto.dst->tag == Xri_Reg) {
+         /* movl %reg, %eax ; ret */
+         *p++ = 0x89;
+	 p = doAMode_R(p, i->Xin.Goto.dst->Xri.Reg.reg, hregX86_EAX());
+         *p++ = 0xC3;
+         goto done;
+       }
+
+       goto bad;
 
    default: 
       goto bad;
@@ -1063,19 +1086,19 @@ void test_asm86 ( void )
   HReg eax = hregX86_EAX();
   HReg esp = hregX86_ESP();
 
-#define T(_iii)                                        \
-  do { X86Instr* iii = _iii;                        \
-       vex_printf("\n   ");                        \
-       ppX86Instr(iii);                                \
-       vex_printf("\n   ");                        \
+#define T(_iii)                                  \
+  do { X86Instr* iii = _iii;                     \
+       vex_printf("\n   ");                      \
+       ppX86Instr(iii);                          \
+       vex_printf("\n   ");                      \
        n = emit_X86Instr( buf, 32, iii );        \
-       for (i = 0; i < n; i++) {                \
-           if (buf[i] < 0x10)                   \
-              vex_printf("0%x ", (Int)buf[i]);  \
-           else                                 \
-              vex_printf("%x ", (Int)buf[i]);        \
-       }                                        \
-       vex_printf("\n");                        \
+       for (i = 0; i < n; i++) {                 \
+           if (buf[i] < 0x10)                    \
+              vex_printf("0%x ", (Int)buf[i]);   \
+           else                                  \
+              vex_printf("%x ", (Int)buf[i]);    \
+       }                                         \
+       vex_printf("\n");                         \
   } while (0)
 
 #if 0
@@ -1124,6 +1147,14 @@ T( X86Instr_Alu32M(Xalu_ADD, X86RI_Imm(0x4243), X86AMode_IR(0x99,esi)) );
 T( X86Instr_Alu32M(Xalu_ADD, X86RI_Reg(ecx), X86AMode_IR(0x99,ebp)) );
 T( X86Instr_Alu32M(Xalu_ADD, X86RI_Reg(ecx), X86AMode_IR(0x80,ebp)) );
 T( X86Instr_Alu32M(Xalu_ADD, X86RI_Reg(ecx), X86AMode_IR(0x7F,ebp)) );
+#endif
+
+#if 1
+T( X86Instr_Alu32M(Xalu_SUB, X86RI_Imm(0x42), X86AMode_IR(0x99,esi)) );
+T( X86Instr_Alu32M(Xalu_SUB, X86RI_Imm(0x4243), X86AMode_IR(0x99,esi)) );
+T( X86Instr_Alu32M(Xalu_SUB, X86RI_Reg(ecx), X86AMode_IR(0x99,ebp)) );
+T( X86Instr_Alu32M(Xalu_SUB, X86RI_Reg(ecx), X86AMode_IR(0x80,ebp)) );
+T( X86Instr_Alu32M(Xalu_SUB, X86RI_Reg(ecx), X86AMode_IR(0x7F,ebp)) );
 #endif
 
 #undef T

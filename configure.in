@@ -169,6 +169,34 @@ case "${glibc}" in
 	;;
 esac
 
+# APIs introduced in recent glibc versions
+
+AC_MSG_CHECKING([whether sched_param has a sched_priority member])
+AC_CACHE_VAL(vg_have_sched_priority,
+[
+AC_TRY_COMPILE([#include <pthread.h>],[
+struct sched_param p; p.sched_priority=1;],
+vg_have_sched_priority=yes,
+vg_have_sched_priority=no)
+])
+AC_MSG_RESULT($vg_have_sched_priority)
+if test "$vg_have_sched_priority" = yes; then
+AC_DEFINE(HAVE_SCHED_PRIORITY)
+fi
+
+AC_MSG_CHECKING([whether nfds_t is defined])
+AC_CACHE_VAL(vg_have_nfds_t,
+[
+AC_TRY_COMPILE([#include <sys/poll.h>],[
+nfds_t i=0;],
+vg_have_nfds_t=yes,
+vg_have_nfds_t=no)
+])
+AC_MSG_RESULT($vg_have_nfds_t)
+if test "$vg_have_nfds_t" = yes; then
+AC_DEFINE(HAVE_NFDS_T)
+fi
+
 # try to detect the XFree version
 
 AC_PATH_X

@@ -266,7 +266,7 @@ int  pthread_attr_getschedparam(const  pthread_attr_t  *attr,
    static int moans = N_MOANS;
    if (moans-- > 0) 
       kludged("pthread_attr_getschedparam");
-#  ifdef GLIBC_2_1
+#  ifdef HAVE_SCHED_PRIORITY
    if (param) param->sched_priority = 0; /* who knows */
 #  else
    if (param) param->__sched_priority = 0; /* who knows */
@@ -840,7 +840,7 @@ int   pthread_getschedparam(pthread_t  target_thread,
    if (moans-- > 0) 
       kludged("pthread_getschedparam");
    if (policy) *policy = SCHED_OTHER;
-#  ifdef GLIBC_2_1
+#  ifdef HAVE_SCHED_PRIORITY
    if (param) param->sched_priority = 0; /* who knows */
 #  else
    if (param) param->__sched_priority = 0; /* who knows */
@@ -1877,7 +1877,7 @@ int select ( int n,
 
 #include <sys/poll.h>
 
-#ifdef GLIBC_2_1
+#ifndef HAVE_NFDS_T
 typedef unsigned long int nfds_t;
 #endif
 

@@ -743,6 +743,14 @@ static void load_one_suppressions_file ( Char* filename )
             goto syntax_error;
       }
 
+      /* make sure to grab the '}' if the num callers is >=
+         VG_N_SUPP_CALLERS */
+      if (!VG_STREQ(buf, "}")) {
+         do {
+           eof = VG_(get_line) ( fd, buf, N_BUF );
+        } while (!eof && !VG_STREQ(buf, "}"));
+      }
+
       supp->next = vg_suppressions;
       vg_suppressions = supp;
    }

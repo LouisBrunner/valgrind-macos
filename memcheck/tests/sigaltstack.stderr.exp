@@ -2,7 +2,7 @@ calling sigaltstack, stack base is 0x........
 setting sigaction
 Syscall param sigaction(act) contains uninitialised or unaddressable byte(s)
    at 0x........: __libc_sigaction (...libc...)
-   Address 0x........ is on thread 1's stack
+ Address 0x........ is on thread 1's stack
 res = 0
 raising the signal
 caught signal, local var is on 0x........

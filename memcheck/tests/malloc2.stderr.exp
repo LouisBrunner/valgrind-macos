@@ -1,12 +1,12 @@
 Invalid write of size 1
    at 0x........: main (malloc2.c:39)
-   Address 0x........ is 0 bytes inside a block of size 429 free'd
+ Address 0x........ is 0 bytes inside a block of size 429 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (malloc2.c:38)
 
 Invalid free() / delete / delete[]
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (malloc2.c:43)
-   Address 0x........ is 0 bytes inside a block of size 429 free'd
+ Address 0x........ is 0 bytes inside a block of size 429 free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (malloc2.c:38)

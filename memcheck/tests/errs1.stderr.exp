@@ -3,7 +3,7 @@ Invalid read of size 1
    by 0x........: bbb (errs1.c:9)
    by 0x........: aaa (errs1.c:10)
    by 0x........: main (errs1.c:17)
-   Address 0x........ is 1 bytes before a block of size 10 alloc'd
+ Address 0x........ is 1 bytes before a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: zzzzzzz (errs1.c:12)
    by 0x........: yyy (errs1.c:13)
@@ -14,7 +14,7 @@ Invalid write of size 1
    by 0x........: bbb (errs1.c:9)
    by 0x........: aaa (errs1.c:10)
    by 0x........: main (errs1.c:17)
-   Address 0x........ is 1 bytes before a block of size 10 alloc'd
+ Address 0x........ is 1 bytes before a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: zzzzzzz (errs1.c:12)
    by 0x........: yyy (errs1.c:13)

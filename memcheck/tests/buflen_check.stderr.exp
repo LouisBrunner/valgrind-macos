@@ -2,12 +2,12 @@ Syscall param socketcall.getsockname(name) contains unaddressable byte(s)
    at 0x........: getsockname (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
-   Address 0x........ is not stack'd, malloc'd or free'd
+ Address 0x........ is not stack'd, malloc'd or free'd
 
 Syscall param socketcall.getsockname(namelen_in) contains uninitialised or unaddressable byte(s)
    at 0x........: getsockname (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
-   Address 0x........ is not stack'd, malloc'd or free'd
+ Address 0x........ is not stack'd, malloc'd or free'd
 getsockname(1) failed
 getsockname(2) failed

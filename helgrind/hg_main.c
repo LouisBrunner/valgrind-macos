@@ -2528,32 +2528,34 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
 {
    if (ai->expr != NULL)
       VG_(message)(Vg_UserMsg, 
-		   "  Address %p == %s", a, ai->expr);
+		   " Address %p == %s", a, ai->expr);
    
    switch (ai->akind) {
       case Stack: 
          VG_(message)(Vg_UserMsg, 
-                      "  Address %p is on thread %d's stack", 
+                      " Address %p is on thread %d's stack", 
                       a, ai->stack_tid);
          break;
       case Unknown:
 	 if (ai->expr != NULL)
 	    break;
 
+         /* maybe_gcc is never set to True!  This is a hangover from code
+            in Memcheck */
          if (ai->maybe_gcc) {
             VG_(message)(Vg_UserMsg, 
-               "  Address %p is just below %%esp.  Possibly a bug in GCC/G++",
+               " Address %p is just below %%esp.  Possibly a bug in GCC/G++",
                a);
             VG_(message)(Vg_UserMsg, 
                "   v 2.96 or 3.0.X.  To suppress, use: --workaround-gcc296-bugs=yes");
 	 } else {
             VG_(message)(Vg_UserMsg, 
-               "  Address %p is not stack'd, malloc'd or free'd", a);
+               " Address %p is not stack'd, malloc'd or free'd", a);
          }
          break;
       case Segment:
 	VG_(message)(Vg_UserMsg,
-		     "  Address %p is in %s section of %s", 
+		     " Address %p is in %s section of %s", 
 		     a, ai->section, ai->filename);
 	break;
       case Mallocd:
@@ -2571,7 +2573,7 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
             relative = "inside";
          }
 	 VG_(message)(Vg_UserMsg, 
-		      "  Address %p is %d bytes %s a block of size %d %s by thread %d",
+		      " Address %p is %d bytes %s a block of size %d %s by thread %d",
 		      a, delta, relative, 
 		      ai->blksize,
 		      ai->akind == Mallocd ? "alloc'd" : "freed",
@@ -2660,7 +2662,7 @@ void SK_(pp_SkinError) ( Error* err )
       }
 
       if (*msg)
-	 VG_(message)(Vg_UserMsg, "  Previous state: %s", msg);
+	 VG_(message)(Vg_UserMsg, " Previous state: %s", msg);
 
       if (clo_execontext == EC_Some 
           && extra->lasttouched.uu_ec_eip.eip != 0) {
@@ -2668,7 +2670,7 @@ void SK_(pp_SkinError) ( Error* err )
 	 UInt line;
 	 Addr eip = extra->lasttouched.uu_ec_eip.eip;
 	 
-	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state from %s by thread %u",
+	 VG_(message)(Vg_UserMsg, " Word at %p last changed state from %s by thread %u",
 		      err_addr,
 		      pp_state(extra->lasttouched.state),
 		      unpackTLS(extra->lasttouched.tls)->tid);
@@ -2684,7 +2686,7 @@ void SK_(pp_SkinError) ( Error* err )
 	 }
       } else if (clo_execontext == EC_All 
                  && extra->lasttouched.uu_ec_eip.ec != NULL) {
-	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state from %s in tid %u",
+	 VG_(message)(Vg_UserMsg, " Word at %p last changed state from %s in tid %u",
 		      err_addr,
 		      pp_state(extra->lasttouched.state),
 		      unpackTLS(extra->lasttouched.tls)->tid);
@@ -2700,7 +2702,7 @@ void SK_(pp_SkinError) ( Error* err )
 		   VG_(get_error_string)(err));
       VG_(pp_ExeContext)( VG_(get_error_where)(err) );
       if (extra->lasttouched.uu_ec_eip.ec != NULL) {
-	 VG_(message)(Vg_UserMsg, "  last touched by thread %d", extra->lasttid);
+	 VG_(message)(Vg_UserMsg, " last touched by thread %d", extra->lasttid);
 	 VG_(pp_ExeContext)(extra->lasttouched.uu_ec_eip.ec);
       }
       pp_AddrInfo(VG_(get_error_address)(err), &extra->addrinfo);
@@ -2725,12 +2727,12 @@ void SK_(pp_SkinError) ( Error* err )
 	 if (0 && !ismember(lsmx->lockdep, extra->mutex))
 	    continue;
       
-	 VG_(message)(Vg_UserMsg, "  %p%(y last locked at", 
+	 VG_(message)(Vg_UserMsg, " %p%(y last locked at", 
 		      lsmx->mutexp, lsmx->mutexp);
 	 VG_(pp_ExeContext)(lsmx->location);
 	 VG_(free)(msg);
 	 msg = lockset_str(NULL, lsmx->lockdep);
-	 VG_(message)(Vg_UserMsg, "  while depending on locks %s", msg);
+	 VG_(message)(Vg_UserMsg, " while depending on locks %s", msg);
       }
       
       break;

@@ -1322,28 +1322,28 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 	    switch(sigNo) {
 	    case VKI_SIGSEGV:
 	       switch(info->si_code) {
-	       case 1: event = "address not mapped to object"; break;
-	       case 2: event = "invalid permissions for mapped object"; break;
+	       case 1: event = "Address not mapped to object"; break;
+	       case 2: event = "Invalid permissions for mapped object"; break;
 	       }
 	       break;
 
 	    case VKI_SIGILL:
 	       switch(info->si_code) {
-	       case 1: event = "illegal opcode"; break;
-	       case 2: event = "illegal operand"; break;
-	       case 3: event = "illegal addressing mode"; break;
-	       case 4: event = "illegal trap"; break;
-	       case 5: event = "privileged opcode"; break;
-	       case 6: event = "privileged register"; break;
-	       case 7: event = "coprocessor error"; break;
-	       case 8: event = "internal stack error"; break;
+	       case 1: event = "Illegal opcode"; break;
+	       case 2: event = "Illegal operand"; break;
+	       case 3: event = "Illegal addressing mode"; break;
+	       case 4: event = "Illegal trap"; break;
+	       case 5: event = "Privileged opcode"; break;
+	       case 6: event = "Privileged register"; break;
+	       case 7: event = "Coprocessor error"; break;
+	       case 8: event = "Internal stack error"; break;
 	       }
 	       break;
 
 	    case VKI_SIGFPE:
 	       switch (info->si_code) {
-	       case 1: event = "integer divide by zero"; break;
-	       case 2: event = "integer overflow"; break;
+	       case 1: event = "Integer divide by zero"; break;
+	       case 2: event = "Integer overflow"; break;
 	       case 3: event = "FP divide by zero"; break;
 	       case 4: event = "FP overflow"; break;
 	       case 5: event = "FP underflow"; break;
@@ -1355,15 +1355,15 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 
 	    case VKI_SIGBUS:
 	       switch (info->si_code) {
-	       case 1: event = "invalid address alignment"; break;
-	       case 2: event = "non-existent physical address"; break;
-	       case 3: event = "hardware error"; break;
+	       case 1: event = "Invalid address alignment"; break;
+	       case 2: event = "Non-existent physical address"; break;
+	       case 3: event = "Hardware error"; break;
 	       }
 	       break;
 	    }
 
 	    if (event != NULL)
-	       VG_(message)(Vg_UserMsg, "  %s at address %p", 
+	       VG_(message)(Vg_UserMsg, " %s at address %p", 
 			    event, info->_sifields._sigfault._addr);
 	 }
 

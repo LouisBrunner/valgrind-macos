@@ -13,8 +13,11 @@
 #include "main/vex_util.h"
 #include "ir/iropt.h"
 
-/* Set to 1 to completely disable iropt, for drastic debugging. */
-#define DISABLE_IROPT 0
+/* Possibly disable iropt for drastic debugging:
+   Set to 0 to completely disable iropt
+          1 for simple optimisation
+          2 for maximum optimisation (the default) */
+#define IROPT_LEVEL 0
 
 /* Set to 1 for lots of debugging output. */
 #define DEBUG_IROPT 0
@@ -23,7 +26,6 @@
    unroll loops enough times to get somewhere near this number of SSA
    statements, as measured after initial cleanup pass.  Set to zero to
    disable the unroller. */
-
 #define UNROLL_TARGET 120
 
 /* Set to 1 to get details of loop unrolling. */
@@ -3178,7 +3180,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
    IRBB *bb, *bb2;
 
    /* Completely disable iropt? */
-   if (DISABLE_IROPT) return bb0;
+   if (IROPT_LEVEL <= 0) return bb0;
 
    n_total++;
 
@@ -3199,32 +3201,36 @@ IRBB* do_iropt_BB ( IRBB* bb0,
       cleanup pass. */
 
    bb = cheap_transformations( bb, specHelper );
-   do_expensive = hasGetIorPutI(bb);
-   if (do_expensive) {
-      n_expensive++;
-      //show_res = True;
-      if (DEBUG_IROPT)
-         vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
-      bb = expensive_transformations( bb );
-      bb = cheap_transformations( bb, specHelper );
-   }
 
-   /* Now have a go at unrolling simple (single-BB) loops.  If
-      successful, clean up the results as much as possible. */
-
-   bb2 = maybe_loop_unroll_BB( bb, guest_addr );
-   if (bb2) {
-      show_res = False; //True;
-      bb = cheap_transformations( bb2, specHelper );
+   if (IROPT_LEVEL >= 1) {
+      do_expensive = hasGetIorPutI(bb);
       if (do_expensive) {
+         n_expensive++;
+         //show_res = True;
+         if (DEBUG_IROPT)
+            vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
          bb = expensive_transformations( bb );
          bb = cheap_transformations( bb, specHelper );
-      } else {
-	 /* at least do CSE and dead code removal */
-         cse_BB( bb );
-         dead_BB( bb );
       }
-      if (0) vex_printf("vex iropt: unrolled a loop\n");
+
+      /* Now have a go at unrolling simple (single-BB) loops.  If
+         successful, clean up the results as much as possible. */
+
+      bb2 = maybe_loop_unroll_BB( bb, guest_addr );
+      if (bb2) {
+         show_res = False; //True;
+         bb = cheap_transformations( bb2, specHelper );
+         if (do_expensive) {
+            bb = expensive_transformations( bb );
+            bb = cheap_transformations( bb, specHelper );
+         } else {
+            /* at least do CSE and dead code removal */
+            cse_BB( bb );
+            dead_BB( bb );
+         }
+         if (0) vex_printf("vex iropt: unrolled a loop\n");
+      }
+
    }
 
    /* Finally, rebuild trees, for the benefit of instruction

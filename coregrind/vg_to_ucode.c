@@ -2963,7 +2963,6 @@ Addr dis_cmpxchg_G_E ( UCodeBlock* cb,
                           nameISize(size),
                           nameIReg(size,gregOfRM(rm)),
                           nameIReg(size,eregOfRM(rm)) );
-     nameIReg(size,eregOfRM(rm));
    } else {
       UInt pair = disAMode ( cb, sorb, eip0, dis?dis_buf:NULL );
       ta        = LOW24(pair);

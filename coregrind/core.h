@@ -1149,9 +1149,9 @@ extern void VG_(print_reg_alloc_stats) ( void );
 struct _ExeContext {
    struct _ExeContext * next;
    /* Variable-length array.  The size is VG_(clo_backtrace_size); at
-      least 1, at most VG_DEEPEST_BACKTRACE.  [0] is the current %eip,
+      least 1, at most VG_DEEPEST_BACKTRACE.  [0] is the current IP,
       [1] is its caller, [2] is the caller of [1], etc. */
-   Addr eips[0];
+   Addr ips[0];
 };
 
 

@@ -35,6 +35,32 @@
 #include "tool_arch.h"        // arch-specific tool stuff
 
 /* ---------------------------------------------------------------------
+   Interesting registers
+   ------------------------------------------------------------------ */
+
+// Accessors for the arch_thread_t
+#define ARCH_INSTR_PTR(regs)           ((regs).m_eip)
+#define ARCH_STACK_PTR(regs)           ((regs).m_esp)
+#define ARCH_FRAME_PTR(regs)           ((regs).m_ebp)
+
+#define ARCH_CLREQ_ARGS(regs)          ((regs).m_eax)
+
+// Interesting register numbers
+#define R_STACK_PTR                    R_ESP
+#define R_FRAME_PTR                    R_EBP
+
+// Stack frame layout and linkage
+#define FIRST_STACK_FRAME(ebp)         (ebp)
+#define STACK_FRAME_RET(ebp)           (((UInt*)ebp)[1])
+#define STACK_FRAME_NEXT(ebp)          (((UInt*)ebp)[0])
+
+// Offsets of interesting registers
+#define VGOFF_INSTR_PTR                VGOFF_(m_eip)
+#define VGOFF_STACK_PTR                VGOFF_(m_esp)
+#define VGOFF_FRAME_PTR                VGOFF_(m_ebp)
+
+
+/* ---------------------------------------------------------------------
    Exports of vg_ldt.c
    ------------------------------------------------------------------ */
 

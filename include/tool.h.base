@@ -1483,26 +1483,26 @@ extern void VG_(pp_ExeContext) ( ExeContext* );
 */
 extern ExeContext* VG_(get_ExeContext) ( ThreadId tid );
 
-/* Get the nth EIP from the ExeContext.  0 is the EIP of the top function, 1
+/* Get the nth IP from the ExeContext.  0 is the IP of the top function, 1
    is its caller, etc.  Returns 0 if there isn't one, or if n is greater
    than VG_(clo_backtrace_size), set by the --num-callers option. */
 extern Addr VG_(get_EIP_from_ExeContext) ( ExeContext* e, UInt n );
 
-/* Just grab the client's EIP, as a much smaller and cheaper
+/* Just grab the client's IP, as a much smaller and cheaper
    indication of where they are.  Use is basically same as for
    VG_(get_ExeContext)() above.
 */
 extern Addr VG_(get_EIP)( ThreadId tid );
 
 /* For tools needing more control over stack traces:  walks the stack to get
-   %eips from the top stack frames for thread 'tid'.  Maximum of 'n_eips'
-   addresses put into 'eips';  0 is the top of the stack, 1 is its caller,
-   etc. */
-extern UInt VG_(stack_snapshot) ( ThreadId tid, Addr* eips, UInt n_eips );
+   instruction pointers from the top stack frames for thread 'tid'.  Maximum of
+   'n_ips' addresses put into 'ips';  0 is the top of the stack, 1 is its
+   caller, etc. */
+extern UInt VG_(stack_snapshot) ( ThreadId tid, Addr* ips, UInt n_ips );
 
 /* Does the same thing as VG_(pp_ExeContext)(), just with slightly
    different input. */
-extern void VG_(mini_stack_dump) ( Addr eips[], UInt n_eips );
+extern void VG_(mini_stack_dump) ( Addr ips[], UInt n_ips );
 
 
 /*====================================================================*/

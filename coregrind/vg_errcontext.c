@@ -360,7 +360,7 @@ static void gen_suppression(Error* err)
    /* This loop condensed from VG_(mini_stack_dump)() */
    i = 0;
    do {
-      Addr eip = ec->eips[i];
+      Addr eip = ec->ips[i];
       if (i > 0) 
          eip -= MIN_INSTR_SIZE;     // point to calling line
       if ( VG_(get_fnname_nodemangle) (eip, buf,  M_VG_ERRTXT) ) {
@@ -380,7 +380,7 @@ static void gen_suppression(Error* err)
                      "# unknown, suppression will not work, sorry\n");
       }
       i++;
-   } while (i < stop_at && ec->eips[i] != 0);
+   } while (i < stop_at && ec->ips[i] != 0);
 
    VG_(printf)("}\n");
 }
@@ -667,7 +667,7 @@ void VG_(show_all_errors) ( void )
 
       if ((i+1 == VG_(clo_dump_error))) {
 	VG_(translate) ( 0 /* dummy ThreadId; irrelevant due to debugging*/,
-                         p_min->where->eips[0], /*debugging*/True);
+                         p_min->where->ips[0], /*debugging*/True);
       }
 
       p_min->count = 1 << 30;
@@ -1002,8 +1002,8 @@ static Supp* is_suppressible_error ( Error* err )
       caller_obj[i][0] = caller_fun[i][0] = 0;
 
    for (i = 0; i < VG_N_SUPP_CALLERS && i < VG_(clo_backtrace_size); i++) {
-      get_objname_fnname ( err->where->eips[i], caller_obj[i], M_VG_ERRTXT,
-                                                caller_fun[i], M_VG_ERRTXT );
+      get_objname_fnname ( err->where->ips[i], caller_obj[i], M_VG_ERRTXT,
+                                               caller_fun[i], M_VG_ERRTXT );
    }
 
    /* See if the error context matches any suppression. */

@@ -73,6 +73,12 @@ static Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
 	 if (!matchWrk(mi, p->Iex.Binop.arg2, e->Iex.Binop.arg2))
             return False;
          return True;
+      case Iex_LDle:
+         if (e->tag != Iex_LDle) return False;
+         if (p->Iex.LDle.ty != e->Iex.LDle.ty) return False;
+         if (!matchWrk(mi, p->Iex.LDle.addr, e->Iex.LDle.addr))
+            return False;
+         return True;
       case Iex_Const:
 	if (e->tag != Iex_Const) return False;
 	switch (p->Iex.Const.con->tag) {
@@ -219,19 +225,7 @@ static HReg newVRegF ( ISelEnv* env )
    return reg;
 }
 
-
-/*---------------------------------------------------------*/
-/*--- ISEL: Integer expressions (32/16/8 bit)           ---*/
-/*---------------------------------------------------------*/
-
-/* forwards ... */
-static X86RMI*   iselIntExpr_RMI   ( ISelEnv* env, IRExpr* e );
-static X86RM*    iselIntExpr_RM    ( ISelEnv* env, IRExpr* e );
-static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e );
-static void      iselIntExpr64     ( HReg* rHi, HReg* rLo, 
-                                     ISelEnv* env, IRExpr* e );
-static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e );
-
+/* Misc helpers looking for a proper home. */
 
 static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
 {
@@ -241,20 +235,72 @@ static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
 }
 
 
+/*---------------------------------------------------------*/
+/*--- ISEL: Forward declarations                        ---*/
+/*---------------------------------------------------------*/
+
+/* These are organised as iselXXX and iselXXX_wrk pairs.  The
+   iselXXX_wrk do the real work, but are not to be called directly.
+   For each XXX, iselXXX calls its iselXXX_wrk counterpart, then
+   checks that all returned registers are virtual. 
+*/
+
+static X86RMI*   iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e );
+static X86RMI*   iselIntExpr_RMI     ( ISelEnv* env, IRExpr* e );
+
+static X86RI*    iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e );
+static X86RI*    iselIntExpr_RI     ( ISelEnv* env, IRExpr* e );
+
+static X86RM*    iselIntExpr_RM_wrk ( ISelEnv* env, IRExpr* e );
+static X86RM*    iselIntExpr_RM     ( ISelEnv* env, IRExpr* e );
+
+static HReg      iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e );
+static HReg      iselIntExpr_R     ( ISelEnv* env, IRExpr* e );
+
+static X86AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e );
+static X86AMode* iselIntExpr_AMode     ( ISelEnv* env, IRExpr* e );
+
+static void      iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, 
+                                     ISelEnv* env, IRExpr* e );
+static void      iselIntExpr64     ( HReg* rHi, HReg* rLo, 
+                                     ISelEnv* env, IRExpr* e );
+
+static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e );
+static X86CondCode iselCondCode     ( ISelEnv* env, IRExpr* e );
+
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Integer expressions (32/16/8 bit)           ---*/
+/*---------------------------------------------------------*/
+
 /* Select insns for an integer-typed expression, and add them to the
-   code list.  Return a reg holding the result.  This reg may be
-   either a real or virtual reg; you get no guarantees.  THE RETURNED
-   REG MUST NOT BE MODIFIED.  If you want to modify it, ask for a new
-   vreg, copy it in there, and modify the copy.  The register
-   allocator will do its best to map both vregs to the same real
-   register, so the copies will often disappear later in the game.
+   code list.  Return a reg holding the result.  This reg will be a
+   virtual register.  THE RETURNED REG MUST NOT BE MODIFIED.  If you
+   want to modify it, ask for a new vreg, copy it in there, and modify
+   the copy.  The register allocator will do its best to map both
+   vregs to the same real register, so the copies will often disappear
+   later in the game.
 
    This should handle expressions of 32, 16 and 8-bit type.  All
    results are returned in a 32-bit register.  For 16- and 8-bit
-   expressions, the upper 16/24 bits are arbitrary, so you should
-   mask or sign extend partial values if necessary.  
+   expressions, the upper 16/24 bits are arbitrary, so you should mask
+   or sign extend partial values if necessary.
 */
+
 static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
+{
+   HReg r = iselIntExpr_R_wrk(env, e);
+   /* sanity checks ... */
+#  if 0
+   vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
+#  endif
+   vassert(hregClass(r) == HRcInt);
+   vassert(hregIsVirtual(r));
+   return r;
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 {
    MatchInfo mi;
    DECLARE_PATTERN(p_32to1_then_1Uto8);
@@ -472,6 +518,19 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
+      /* 16Uto32(LDle(expr32)) */
+      {
+         DECLARE_PATTERN(p_LDle16_then_16Uto32);
+         DEFINE_PATTERN(p_LDle16_then_16Uto32,
+            unop(Iop_16Uto32,IRExpr_LDle(Ity_I16,bind(0))) );
+         if (matchIRExpr(&mi,p_LDle16_then_16Uto32,e)) {
+            HReg dst = newVRegI(env);
+            X86AMode* amode = iselIntExpr_AMode ( env, mi.bindee[0] );
+            addInstr(env, X86Instr_LoadEX(2,False,amode,dst));
+            return dst;
+         }
+      }
+
       switch (e->Iex.Unop.op) {
          case Iop_8Uto32:
          case Iop_16Uto32: {
@@ -569,11 +628,12 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
       Int    i, nargs;
       UInt   target;
       IRExpr* arg;
+      HReg    dst = newVRegI(env);
       vassert(ty == Ity_I32);
       /* be very restrictive for now.  Only 32-bit ints allowed
          for args and return type. */
       if (e->Iex.CCall.retty != Ity_I32)
-         break;
+         goto irreducible;
       /* push args on the stack, right to left. */
       nargs = 0;
       while (e->Iex.CCall.args[nargs]) nargs++;
@@ -598,7 +658,8 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_Alu32R(Xalu_ADD,
                           X86RMI_Imm(4*nargs),
                           hregX86_ESP()));
-      return hregX86_EAX();
+      addInstr(env, mk_MOVsd_RR(hregX86_EAX(), dst));
+      return dst;
    }
 
    /* --------- LITERAL --------- */
@@ -642,13 +703,39 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
 /*--- ISEL: Integer expression auxiliaries              ---*/
 /*---------------------------------------------------------*/
 
-/* --------------- AMODEs --------------- */
+/* --------------------- AMODEs --------------------- */
 
 /* Return an AMode which computes the value of the specified
    expression, possibly also adding insns to the code list as a
    result.  The expression may only be a 32-bit one.
 */
+
+static Bool sane_AMode ( X86AMode* am )
+{
+   switch (am->tag) {
+      case Xam_IR:
+         return hregClass(am->Xam.IR.reg) == HRcInt
+                && (hregIsVirtual(am->Xam.IR.reg)
+                    || am->Xam.IR.reg == hregX86_EBP());
+      case Xam_IRRS:
+         return hregClass(am->Xam.IRRS.base) == HRcInt
+                && hregIsVirtual(am->Xam.IRRS.base)
+                && hregClass(am->Xam.IRRS.index) == HRcInt
+                && hregIsVirtual(am->Xam.IRRS.index);
+      default:
+        vpanic("sane_AMode: unknown x86 amode tag");
+   }
+}
+
 static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
+{
+   X86AMode* am = iselIntExpr_AMode_wrk(env, e);
+   vassert(sane_AMode(am));
+   return am;
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static X86AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32);
@@ -659,9 +746,9 @@ static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
        && e->Iex.Binop.arg2->tag == Iex_Binop
        && e->Iex.Binop.arg2->Iex.Binop.op == Iop_Shl32
        && e->Iex.Binop.arg2->Iex.Binop.arg2->tag == Iex_Const
-       && e->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U32) {
-      UInt shift = e->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
-      if (shift == 2 || shift == 4 || shift == 8) {
+       && e->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8) {
+      UInt shift = e->Iex.Binop.arg2->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+      if (shift == 1 || shift == 2 || shift == 3) {
          HReg r1 = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg r2 = iselIntExpr_R(env, e->Iex.Binop.arg2->Iex.Binop.arg1 );
          return X86AMode_IRRS(0, r1, r2, shift);
@@ -686,12 +773,32 @@ static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 }
 
 
-/* --------------- RMIs --------------- */
+/* --------------------- RMIs --------------------- */
 
 /* Similarly, calculate an expression into an X86RMI operand.  As with
    iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
 
 static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
+{
+   X86RMI* rmi = iselIntExpr_RMI_wrk(env, e);
+   /* sanity checks ... */
+   switch (rmi->tag) {
+      case Xrmi_Imm:
+         return rmi;
+      case Xrmi_Reg:
+         vassert(hregClass(rmi->Xrmi.Reg.reg) == HRcInt);
+         vassert(hregIsVirtual(rmi->Xrmi.Reg.reg));
+         return rmi;
+      case Xrmi_Mem:
+         vassert(sane_AMode(rmi->Xrmi.Mem.am));
+         return rmi;
+      default:
+         vpanic("iselIntExpr_RMI: unknown x86 RMI tag");
+   }
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static X86RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
@@ -724,12 +831,29 @@ static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
 }
 
 
-/* --------------- RIs --------------- */
+/* --------------------- RIs --------------------- */
 
 /* Calculate an expression into an X86RI operand.  As with
    iselIntExpr_R, the expression can have type 32, 16 or 8 bits. */
 
 static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
+{
+   X86RI* ri = iselIntExpr_RI_wrk(env, e);
+   /* sanity checks ... */
+   switch (ri->tag) {
+      case Xri_Imm:
+         return ri;
+      case Xrmi_Reg:
+         vassert(hregClass(ri->Xri.Reg.reg) == HRcInt);
+         vassert(hregIsVirtual(ri->Xri.Reg.reg));
+         return ri;
+      default:
+         vpanic("iselIntExpr_RI: unknown x86 RI tag");
+   }
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static X86RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
@@ -754,12 +878,30 @@ static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
 }
 
 
-/* --------------- RMs --------------- */
+/* --------------------- RMs --------------------- */
 
 /* Similarly, calculate an expression into an X86RM operand.  As with
    iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
 
 static X86RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
+{
+   X86RM* rm = iselIntExpr_RM_wrk(env, e);
+   /* sanity checks ... */
+   switch (rm->tag) {
+      case Xrm_Reg:
+         vassert(hregClass(rm->Xrm.Reg.reg) == HRcInt);
+         vassert(hregIsVirtual(rm->Xrm.Reg.reg));
+         return rm;
+      case Xrm_Mem:
+         vassert(sane_AMode(rm->Xrm.Mem.am));
+         return rm;
+      default:
+         vpanic("iselIntExpr_RM: unknown x86 RM tag");
+   }
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static X86RM* iselIntExpr_RM_wrk ( ISelEnv* env, IRExpr* e )
 {
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
@@ -780,13 +922,20 @@ static X86RM* iselIntExpr_RM ( ISelEnv* env, IRExpr* e )
 }
 
 
-/* --------------- CONDCODE --------------- */
+/* --------------------- CONDCODE --------------------- */
 
 /* Generate code to evaluated a bit-typed expression, returning the
    condition code which would correspond when the expression would
    notionally have returned 1. */
 
 static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
+{
+   /* Uh, there's nothing we can sanity check here, unfortunately. */
+   return iselCondCode_wrk(env,e);
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 {
    MatchInfo mi;
    DECLARE_PATTERN(p_32to1);
@@ -896,6 +1045,19 @@ static X86CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
 
 static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 {
+   iselIntExpr64_wrk(rHi, rLo, env, e);
+#  if 0
+   vex_printf("\n"); ppIRExpr(e); vex_printf("\n");
+#  endif
+   vassert(hregClass(*rHi) == HRcInt);
+   vassert(hregIsVirtual(*rHi));
+   vassert(hregClass(*rLo) == HRcInt);
+   vassert(hregIsVirtual(*rLo));
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
+{
   //   MatchInfo mi;
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I64);
@@ -926,14 +1088,18 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
            || e->Iex.Binop.op == Iop_MullS32)) {
       /* get one operand into %eax, and the other into a R/M.  Need to
          make an educated guess about which is better in which. */
+      HReg   tLo    = newVRegI(env);
+      HReg   tHi    = newVRegI(env);
       Bool   syned  = e->Iex.Binop.op == Iop_MullS32;
       X86RM* rmLeft = iselIntExpr_RM(env, e->Iex.Binop.arg1);
       HReg   rRight = iselIntExpr_R(env, e->Iex.Binop.arg2);
       addInstr(env, mk_MOVsd_RR(rRight, hregX86_EAX()));
       addInstr(env, X86Instr_MulL(syned, Xss_32, rmLeft));
       /* Result is now in EDX:EAX.  Tell the caller. */
-      *rHi = hregX86_EDX();
-      *rLo = hregX86_EAX();
+      addInstr(env, mk_MOVsd_RR(hregX86_EDX(), tHi));
+      addInstr(env, mk_MOVsd_RR(hregX86_EAX(), tLo));
+      *rHi = tHi;
+      *rLo = tLo;
       return;
    }
 
@@ -944,14 +1110,18 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       /* Get the 64-bit operand into edx:eax, and the other
          into any old R/M. */
       HReg sHi, sLo;
+      HReg   tLo     = newVRegI(env);
+      HReg   tHi     = newVRegI(env);
       Bool   syned   = e->Iex.Binop.op == Iop_DivModS64to32;
       X86RM* rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
       iselIntExpr64(&sHi,&sLo, env, e->Iex.Binop.arg1);
       addInstr(env, mk_MOVsd_RR(sHi, hregX86_EDX()));
       addInstr(env, mk_MOVsd_RR(sLo, hregX86_EAX()));
       addInstr(env, X86Instr_Div(syned, Xss_32, rmRight));
-      *rHi = hregX86_EDX();
-      *rLo = hregX86_EAX();
+      addInstr(env, mk_MOVsd_RR(hregX86_EDX(), tHi));
+      addInstr(env, mk_MOVsd_RR(hregX86_EAX(), tLo));
+      *rHi = tHi;
+      *rLo = tLo;
       return;
    }
 

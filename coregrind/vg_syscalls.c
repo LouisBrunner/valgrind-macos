@@ -4968,6 +4968,13 @@ POST(futex)
    }
 }
 
+PRE(acct)
+{
+   /* int acct(const char *filename); */
+   MAYBE_PRINTF("acct ( %p )\n", arg1);
+   SYSCALL_TRACK( pre_mem_read_asciiz, tid, "acct(filename)", arg1 );
+}
+
 #define SIGNAL_SIMULATION	1
 
 PRE(pause)
@@ -5373,6 +5380,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(mmap2,			False),
    SYSBA(clock_gettime,         False),
    SYSBA(futex,                 True),
+   SYSB_(acct,                  False),
 
    /* new signal handling makes these normal blocking syscalls */
    SYSB_(pause,			True),

@@ -1563,11 +1563,11 @@ static void emit_SSE3g_RegWr ( FlagSet uses_sflags,
 }
 
 static void emit_SSE4 ( FlagSet uses_sflags, 
-                         FlagSet sets_sflags,
-                         UChar first_byte, 
-                         UChar second_byte, 
-			 UChar third_byte,
-                         UChar fourth_byte )
+                        FlagSet sets_sflags,
+                        UChar first_byte, 
+                        UChar second_byte, 
+		        UChar third_byte,
+                        UChar fourth_byte )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
    VG_(emitB) ( first_byte );
@@ -1581,12 +1581,12 @@ static void emit_SSE4 ( FlagSet uses_sflags,
 }
 
 static void emit_SSE5 ( FlagSet uses_sflags, 
-                         FlagSet sets_sflags,
-                         UChar first_byte, 
-                         UChar second_byte, 
-			 UChar third_byte,
-			 UChar fourth_byte,
-			 UChar fifth_byte )
+                        FlagSet sets_sflags,
+                        UChar first_byte, 
+                        UChar second_byte, 
+			UChar third_byte,
+			UChar fourth_byte,
+			UChar fifth_byte )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
    VG_(emitB) ( first_byte );
@@ -1602,10 +1602,10 @@ static void emit_SSE5 ( FlagSet uses_sflags,
 }
 
 static void emit_SSE3 ( FlagSet uses_sflags, 
-                         FlagSet sets_sflags,
-                         UChar first_byte, 
-                         UChar second_byte, 
-                         UChar third_byte )
+                        FlagSet sets_sflags,
+                        UChar first_byte, 
+                        UChar second_byte, 
+                        UChar third_byte )
 {
    VG_(new_emit)(True, uses_sflags, sets_sflags);
    VG_(emitB) ( first_byte );
@@ -1615,6 +1615,28 @@ static void emit_SSE3 ( FlagSet uses_sflags,
       VG_(printf)("\n\t\tsse-0x%x:0x%x:0x%x\n", 
                   (UInt)first_byte, (UInt)second_byte, 
                   (UInt)third_byte );
+}
+
+static void emit_SSE3ag_MemRd_RegWr ( FlagSet uses_sflags, 
+                                      FlagSet sets_sflags,
+                                      UChar first_byte, 
+                                      UChar second_byte, 
+                                      UChar third_byte,
+				      Int addr_reg,
+				      Int dest_reg )
+{
+   VG_(new_emit)(True, uses_sflags, sets_sflags);
+   VG_(emitB) ( first_byte );
+   VG_(emitB) ( second_byte );
+   VG_(emitB) ( third_byte );
+   /* 4th byte can be completely synthesised from addr_reg and
+      dest_reg. */
+   emit_amode_regmem_reg ( addr_reg, dest_reg );
+   if (dis)
+      VG_(printf)("\n\t\tsse-0x%x:0x%x:0x%x(addr=%s, dest=%s)\n", 
+                  (UInt)first_byte, (UInt)second_byte, 
+            	  (UInt)third_byte, nameIReg(4, addr_reg), 
+                                    nameIReg(4, dest_reg));
 }
 
 static void emit_MMX2_reg_to_mmxreg ( FlagSet uses_sflags, 
@@ -3943,6 +3965,23 @@ static void emitUInstr ( UCodeBlock* cb, Int i,
                      u->val1 & 0xFF,
                      u->val2 & 0xFF );
          break;
+
+      case SSE3ag_MemRd_RegWr:
+         vg_assert(u->size == 4 || u->size == 8);
+         vg_assert(u->tag1 == RealReg);
+         vg_assert(u->tag2 == RealReg);
+         vg_assert(u->tag3 == NoValue);
+         vg_assert(!anyFlagUse(u));
+         if (!(*sselive)) {
+            emit_get_sse_state();
+            *sselive = True;
+         }
+         emit_SSE3ag_MemRd_RegWr ( u->flags_r, u->flags_w,
+                                   (u->lit32 >> 24) & 0xFF,
+                                   (u->lit32 >> 16) & 0xFF,
+                                   (u->lit32 >> 8) & 0xFF,
+				   u->val1, u->val2 );
+	 break;
 
       default: 
          if (VG_(needs).extended_UCode) {

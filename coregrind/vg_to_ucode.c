@@ -3659,19 +3659,24 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* CVTTSD2SI (0xF2) -- convert a double-precision float value in
-      memory or xmm reg to int and put it in an ireg. */
-   /* CVTTSS2SI (0xF3) -- convert a single-precision float value in
-      memory or xmm reg to int and put it in an ireg. */
+   /* CVTTSD2SI (0xF2,0x0F,0x2C) -- convert a double-precision float value in
+      memory or xmm reg to int and put it in an ireg.  Truncate. */
+   /* CVTTSS2SI (0xF3,0x0F,0x2C) -- convert a single-precision float value in
+      memory or xmm reg to int and put it in an ireg.  Truncate. */
+   /* CVTSD2SI (0xF2,0x0F,0x2D) -- convert a double-precision float value in
+      memory or xmm reg to int and put it in an ireg.  Round as per MXCSR. */
+   /* CVTSS2SI (0xF3,0x0F,0x2D) -- convert a single-precision float value in
+      memory or xmm reg to int and put it in an ireg.  Round as per MXCSR. */
    if ((insn[0] == 0xF2 || insn[0] == 0xF3)
-       && insn[1] == 0x0F && insn[2] == 0x2C) {
+       && insn[1] == 0x0F 
+       && (insn[2] == 0x2C || insn[2] == 0x2D)) {
       vg_assert(sz == 4);
       modrm = insn[3];
       if (epartIsReg(modrm)) {
          /* We're moving a value in an xmm reg to an ireg. */
          eip += 4;
 	 t1 = newTemp(cb);
-         /* sz is 4 for both CVTTSD2SI and CVTTSS2SI. */
+         /* sz is 4 for all 4 insns. */
          vg_assert(epartIsReg(modrm));
          uInstr3(cb, SSE3g_RegWr, 4,
                      Lit16, (((UShort)insn[0]) << 8) | (UShort)insn[1],
@@ -3679,27 +3684,34 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
                      TempReg, t1 );
          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
 	 if (dis)
-            VG_(printf)("cvtts{s,d}2si %s, %s\n", 
+            VG_(printf)("cvt{t}s{s,d}2si %s, %s\n", 
                         nameXMMReg(eregOfRM(modrm)),
                         nameIReg(4,gregOfRM(modrm)) );
       } else {
-#if 0
          /* So, we're reading memory and writing an ireg.  This calls
-            for the ultra-horrible SSE3ag_MemRd_RegWr uinstr. */
+            for the ultra-horrible SSE3ag_MemRd_RegWr uinstr.  We
+            can't do it in a roundabout route because it does some
+            kind of conversion on the way, which we need to have
+            happen too.  So our only choice is to re-emit a suitably
+            rehashed version of the instruction. */
+ 	 /* Destination ireg is GREG.  Address goes as EREG as
+	    usual. */
          t1 = newTemp(cb); /* t1 holds value on its way to ireg */
          pair = disAMode ( cb, sorb, eip+3, dis?dis_buf:NULL );
          t2   = LOW24(pair); /* t2 holds addr */
          eip += 3+HI8(pair);
-         uInstr2(cb, SSE3ag_MemRd_RegWr, 8,
+         uInstr2(cb, SSE3ag_MemRd_RegWr, insn[0]==0xF2 ? 8 : 4,
                      TempReg, t2, /* address */
                      TempReg, t1 /* dest */);
-         uLiteral(cb, (((UInt)insn[0]) << 16)
-                      | (((UInt)insn[1]) << 8)
-                      | ((UInt)insn[2]) );
+         uLiteral(cb  , (((UInt)insn[0]) << 24)
+                      | (((UInt)insn[1]) << 16)
+                      | (((UInt)insn[2]) << 8) 
+                      | ((UInt)modrm) );
          uInstr2(cb, PUT, 4, TempReg, t1, ArchReg, gregOfRM(modrm));
-	 /* PRINTING CODE */
-#endif
-         VG_(core_panic)("CVTTSD2SI mem");
+	 if (dis)
+            VG_(printf)("cvt{t}s{s,d}2si %s, %s\n", 
+                        dis_buf,
+                        nameIReg(4,gregOfRM(modrm)) );
       }
       goto decode_success;
    }
@@ -3836,6 +3848,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       vg_assert(sz == 4);
       eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "addps",
                                       insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* XORPD (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x57) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "xorpd",
+                                      0x66, insn[0], insn[1] );
       goto decode_success;
    }
 

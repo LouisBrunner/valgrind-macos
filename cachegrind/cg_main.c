@@ -111,14 +111,14 @@ static fileCC *CC_table[N_FILE_ENTRIES];
 // - Holds the cached info about each instr that is used for simulation.
 // - table(BB_start_addr, list(instr_info))
 // - For each BB, each instr_info in the list holds info about the
-//   instruction (instr_size, instr_addr, etc), plus a pointer to its line
+//   instruction (instr_len, instr_addr, etc), plus a pointer to its line
 //   CC.  This node is what's passed to the simulation function.
 // - When BBs are discarded the relevant list(instr_details) is freed.
 
 typedef struct _instr_info instr_info;
 struct _instr_info {
    Addr    instr_addr;
-   UChar   instr_size;
+   UChar   instr_len;
    UChar   data_size;
    lineCC* parent;       // parent line-CC
 };
@@ -216,7 +216,7 @@ lineCC* new_lineCC(Int line, lineCC* next)
 static __inline__ 
 instr_info* new_instr_info(Addr instr_addr, lineCC* parent, instr_info* next)
 {
-   // Using calloc() zeroes instr_size and data_size
+   // Using calloc() zeroes instr_len and data_size
    instr_info* ii = VG_(calloc)(1, sizeof(instr_info));
    ii->instr_addr = instr_addr;
    ii->parent     = parent; 
@@ -226,7 +226,7 @@ instr_info* new_instr_info(Addr instr_addr, lineCC* parent, instr_info* next)
 // Do a three step traversal: by file, then fn, then line.
 // In all cases prepends new nodes to their chain.  Returns a pointer to the
 // line node, creates a new one if necessary.
-static lineCC* get_lineCC(Addr orig_addr)
+static lineCC* get_lineCC(Addr origAddr)
 {
    fileCC *curr_fileCC;
    fnCC   *curr_fnCC;
@@ -235,7 +235,7 @@ static lineCC* get_lineCC(Addr orig_addr)
    Int     line;
    UInt    file_hash, fn_hash, line_hash;
 
-   get_debug_info(orig_addr, file, fn, &line);
+   get_debug_info(origAddr, file, fn, &line);
 
    VGP_PUSHCC(VgpGetLineCC);
 
@@ -286,10 +286,10 @@ static lineCC* get_lineCC(Addr orig_addr)
 static REGPARM(1)
 void log_1I_0D_cache_access(instr_info* n)
 {
-   //VG_(printf)("1I_0D: CCaddr=0x%x, iaddr=0x%x, isize=%u\n",
-   //            n, n->instr_addr, n->instr_size)
+   //VG_(printf)("1I_0D : CCaddr=0x%x, iaddr=0x%x, isize=%u\n",
+   //            n, n->instr_addr, n->instr_len);
    VGP_PUSHCC(VgpCacheSimulate);
-   cachesim_I1_doref(n->instr_addr, n->instr_size, 
+   cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
    n->parent->Ir.a++;
    VGP_POPCC(VgpCacheSimulate);
@@ -299,9 +299,9 @@ static REGPARM(2)
 void log_1I_1Dr_cache_access(instr_info* n, Addr data_addr)
 {
    //VG_(printf)("1I_1Dr: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
-   //            n, n->instr_addr, n->instr_size, data_addr, n->data_size)
+   //            n, n->instr_addr, n->instr_len, data_addr, n->data_size);
    VGP_PUSHCC(VgpCacheSimulate);
-   cachesim_I1_doref(n->instr_addr, n->instr_size, 
+   cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
    n->parent->Ir.a++;
 
@@ -315,9 +315,9 @@ static REGPARM(2)
 void log_1I_1Dw_cache_access(instr_info* n, Addr data_addr)
 {
    //VG_(printf)("1I_1Dw: CCaddr=%p, iaddr=%p, isize=%u, daddr=%p, dsize=%u\n",
-   //            n, n->instr_addr, n->instr_size, data_addr, n->data_size)
+   //            n, n->instr_addr, n->instr_len, data_addr, n->data_size);
    VGP_PUSHCC(VgpCacheSimulate);
-   cachesim_I1_doref(n->instr_addr, n->instr_size, 
+   cachesim_I1_doref(n->instr_addr, n->instr_len, 
                      &n->parent->Ir.m1, &n->parent->Ir.m2);
    n->parent->Ir.a++;
 
@@ -331,9 +331,9 @@ static REGPARM(3)
 void log_1I_2D_cache_access(instr_info* n, Addr data_addr1, Addr data_addr2)
 {
    //VG_(printf)("1I_2D: CCaddr=%p, iaddr=%p, isize=%u, daddr1=%p, daddr2=%p, dsize=%u\n",
-   //            n, n->instr_addr, n->instr_size, data_addr1, data_addr2, n->data_size)
+   //            n, n->instr_addr, n->instr_len, data_addr1, data_addr2, n->data_size);
    VGP_PUSHCC(VgpCacheSimulate);
-   cachesim_I1_doref(n->instr_addr, n->instr_size,
+   cachesim_I1_doref(n->instr_addr, n->instr_len,
                      &n->parent->Ir.m1,  &n->parent->Ir.m2);
    n->parent->Ir.a++;
 
@@ -350,321 +350,292 @@ void log_1I_2D_cache_access(instr_info* n, Addr data_addr1, Addr data_addr2)
 /*--- Instrumentation                                      ---*/
 /*------------------------------------------------------------*/
 
-#if 0
 static
-BB_info* get_BB_info(UCodeBlock* cb_in, Addr orig_addr, Bool* bb_seen_before)
+BB_info* get_BB_info(IRBB* bbIn, Addr origAddr, Bool* bbSeenBefore)
 {
    Int          i, n_instrs;
-   UInstr*      u_in;
-   BB_info*     bb_info;
+   IRStmt*      st;
+   BB_info*     bbInfo;
    VgHashNode** dummy;
    
-   // Count number of x86 instrs in BB
-   n_instrs = 1;     // start at 1 because last x86 instr has no INCEIP
-   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
-      u_in = VG_(get_instr)(cb_in, i);
-      if (INCEIP == u_in->opcode) n_instrs++;
+   // Count number of original instrs in BB
+   n_instrs = 0;
+   for (i = 0; i < bbIn->stmts_used; i++) {
+      st = bbIn->stmts[i];
+      if (Ist_IMark == st->tag) n_instrs++;
    }
 
    // Get the BB_info
-   bb_info = (BB_info*)VG_(HT_get_node)(instr_info_table, orig_addr, &dummy);
-   *bb_seen_before = ( NULL == bb_info ? False : True );
-   if (*bb_seen_before) {
+   bbInfo = (BB_info*)VG_(HT_get_node)(instr_info_table, origAddr, &dummy);
+   *bbSeenBefore = ( NULL == bbInfo ? False : True );
+   if (*bbSeenBefore) {
       // BB must have been translated before, but flushed from the TT
-      tl_assert(bb_info->n_instrs == n_instrs );
+      tl_assert(bbInfo->n_instrs == n_instrs );
       BB_retranslations++;
    } else {
       // BB never translated before (at this address, at least;  could have
       // been unloaded and then reloaded elsewhere in memory)
-      bb_info = 
-         VG_(calloc)(1, sizeof(BB_info) + n_instrs*sizeof(instr_info)); 
-      bb_info->BB_addr = orig_addr;
-      bb_info->n_instrs = n_instrs;
-      VG_(HT_add_node)( instr_info_table, (VgHashNode*)bb_info );
+      bbInfo = VG_(calloc)(1, sizeof(BB_info) + n_instrs*sizeof(instr_info)); 
+      bbInfo->BB_addr = origAddr;
+      bbInfo->n_instrs = n_instrs;
+      VG_(HT_add_node)( instr_info_table, (VgHashNode*)bbInfo );
       distinct_instrs++;
    }
-   return bb_info;
+   return bbInfo;
 }
-#endif
+
+// XXX: remove eventually
+#define Ist_Nop  99
+
+static 
+void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
+                        Addr* instrAddr, UInt* instrLen,
+                        IRExpr** loadAddrExpr, IRExpr** storeAddrExpr,
+                        UInt* dataSize)
+{
+   switch (st->tag) {
+   case Ist_Nop:
+      break;
+
+   case Ist_IMark:
+      *instrAddr = (Addr)st->Ist.IMark.addr;
+      tl_assert(*instrAddr == st->Ist.IMark.addr); // XXX: check no overflow
+      *instrLen =        st->Ist.IMark.len;
+      addStmtToIRBB( bbOut, st );
+      break;
+
+   case Ist_Tmp: {
+      IRExpr* data = st->Ist.Tmp.data;
+      if (data->tag == Iex_LDle) {
+         IRExpr* aexpr = data->Iex.LDle.addr;
+         tl_assert( isAtom(aexpr) );
+
+         // XXX: repe cmpsb does two loads... the first one is ignored here!
+         //tl_assert( NULL == *loadAddrExpr );          // XXX: ???
+         *loadAddrExpr = aexpr;
+         *dataSize = sizeofIRType(data->Iex.LDle.ty);
+      }
+      addStmtToIRBB( bbOut, st );
+      break;
+   }
+      
+   case Ist_STle: {
+      IRExpr* data  = st->Ist.STle.data;
+      IRExpr* aexpr = st->Ist.STle.addr;
+      tl_assert( isAtom(aexpr) );
+      tl_assert( NULL == *storeAddrExpr );          // XXX: ???
+      *storeAddrExpr = aexpr;
+      *dataSize = sizeofIRType(typeOfIRExpr(tyenv, data));
+      addStmtToIRBB( bbOut, st );
+      break;
+   }
+   
+   case Ist_Put:
+   case Ist_PutI:
+   case Ist_Exit:
+   case Ist_Dirty:
+   case Ist_MFence:
+      addStmtToIRBB( bbOut, st );
+      break;
+
+   default:
+      VG_(printf)("\n");
+      ppIRStmt(st);
+      VG_(printf)("\n");
+      VG_(tool_panic)("Cachegrind: unhandled IRStmt");
+   }
+}
 
 static
-void do_details( instr_info* n, Bool bb_seen_before,
-                 Addr instr_addr, Int instr_size, Int data_size )
+void do_details( instr_info* n, Bool bbSeenBefore,
+                 Addr instr_addr, Int instr_len, Int data_size )
 {
-   lineCC* parent = get_lineCC(instr_addr);
-   if (bb_seen_before) {
+   if (bbSeenBefore) {
       tl_assert( n->instr_addr == instr_addr );
-      tl_assert( n->instr_size == instr_size );
+      tl_assert( n->instr_len  == instr_len );
       tl_assert( n->data_size  == data_size );
-      // Don't assert that (n->parent == parent)... it's conceivable that
+      // Don't check that (n->parent == parent)... it's conceivable that
       // the debug info might change;  the other asserts should be enough to
       // detect anything strange.
    } else {
+      lineCC* parent = get_lineCC(instr_addr);
       n->instr_addr = instr_addr;
-      n->instr_size = instr_size;
+      n->instr_len  = instr_len;
       n->data_size  = data_size;
       n->parent     = parent;
    }
 }
 
+// XXX: very x86-specific...
 static Bool is_valid_data_size(Int data_size)
 {
    return (4 == data_size || 2  == data_size || 1 == data_size || 
            8 == data_size || 10 == data_size || MIN_LINE_SIZE == data_size);
 }
 
-#if 0
-// Instrumentation for the end of each x86 instruction.
-static
-void end_of_x86_instr(UCodeBlock* cb, instr_info* i_node, Bool bb_seen_before,
-                      UInt instr_addr, UInt instr_size, UInt data_size,
-                      Int t_read,  Int t_read_addr, 
-                      Int t_write, Int t_write_addr)
+static Bool loadStoreAddrsMatch(IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
 {
-   Addr    helper;
-   Int     argc;
-   Int     t_CC_addr, 
-           t_data_addr1 = INVALID_TEMPREG,
-           t_data_addr2 = INVALID_TEMPREG;
-
-   tl_assert(instr_size >= MIN_INSTR_SIZE && 
-             instr_size <= MAX_INSTR_SIZE);
-
-#define IS_(X)      (INVALID_TEMPREG != t_##X##_addr)
-#define INV(qqt)    (INVALID_TEMPREG == (qqt))
-
-   // Work out what kind of x86 instruction it is
-   if (!IS_(read) && !IS_(write)) {
-      tl_assert( 0 == data_size );
-      tl_assert(INV(t_read) && INV(t_write));
-      helper = (Addr) & log_1I_0D_cache_access;
-      argc = 1;
-
-   } else if (IS_(read) && !IS_(write)) {
-      tl_assert( is_valid_data_size(data_size) );
-      tl_assert(!INV(t_read) && INV(t_write));
-      helper = (Addr) & log_1I_1Dr_cache_access;
-      argc = 2;
-      t_data_addr1 = t_read_addr;
-
-   } else if (!IS_(read) && IS_(write)) {
-      tl_assert( is_valid_data_size(data_size) );
-      tl_assert(INV(t_read) && !INV(t_write));
-      helper = (Addr) & log_1I_1Dw_cache_access;
-      argc = 2;
-      t_data_addr1 = t_write_addr;
-
+  // I'm assuming that for 'modify' instructions, that Vex always makes
+  // the loadAddrExpr and storeAddrExpr be of the same type, ie. both Tmp
+  // expressions, or both Const expressions.
+   if ( (Iex_Tmp ==  loadAddrExpr->tag && 
+         Iex_Tmp == storeAddrExpr->tag &&
+         loadAddrExpr->Iex.Tmp.tmp == storeAddrExpr->Iex.Tmp.tmp)
+      ||
+        (Iex_Const ==  loadAddrExpr->tag && 
+         Iex_Const == storeAddrExpr->tag &&
+         loadAddrExpr->Iex.Const.con == storeAddrExpr->Iex.Const.con) ) 
+   {
+      return True;
    } else {
-      tl_assert(IS_(read) && IS_(write));
-      tl_assert( is_valid_data_size(data_size) );
-      tl_assert(!INV(t_read) && !INV(t_write));
-      if (t_read == t_write) {
-         helper = (Addr) & log_1I_1Dr_cache_access;
+      return False;
+   }
+}
+
+// Instrumentation for the end of each original instruction.
+static
+void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
+                UInt instrAddr, UInt instrLen, UInt dataSize,
+                IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
+{
+   IRDirty* di;
+   IRExpr  *arg1, *arg2, *arg3, **argv;
+   Int      argc;
+   Char*    helperName;
+   void*    helperAddr;
+
+   // Nb: instrLen will be zero if Vex failed to decode it.
+   tl_assert( 0 == instrLen ||
+              (instrLen >= MIN_INSTR_SIZE && instrLen <= MAX_INSTR_SIZE) );
+
+   // Setup 1st arg: instr_info node's address
+   // XXX: not 64-bit clean
+   do_details(i_node, bbSeenBefore, instrAddr, instrLen, dataSize );
+   arg1 = IRExpr_Const(IRConst_U32( (UInt)i_node ));
+
+   if (!loadAddrExpr && !storeAddrExpr) {
+      // no load/store
+      tl_assert(0 == dataSize);
+      helperName = "log_1I_0D_cache_access";
+      helperAddr = &log_1I_0D_cache_access;
+      argc = 1;
+      argv = mkIRExprVec_1(arg1);
+
+   } else if (loadAddrExpr && !storeAddrExpr) {
+      // load
+      tl_assert( is_valid_data_size(dataSize) );
+      tl_assert( isAtom(loadAddrExpr) );
+      helperName = "log_1I_1Dr_cache_access";
+      helperAddr = &log_1I_1Dr_cache_access;
+      argc = 2;
+      arg2 = loadAddrExpr;
+      argv = mkIRExprVec_2(arg1, arg2);
+
+   } else if (!loadAddrExpr && storeAddrExpr) {
+      // store
+      tl_assert( is_valid_data_size(dataSize) );
+      tl_assert( isAtom(storeAddrExpr) );
+      helperName = "log_1I_1Dw_cache_access";
+      helperAddr = &log_1I_1Dw_cache_access;
+      argc = 2;
+      arg2 = storeAddrExpr;
+      argv = mkIRExprVec_2(arg1, arg2);
+ 
+   } else {
+      tl_assert( loadAddrExpr && storeAddrExpr );
+      tl_assert( is_valid_data_size(dataSize) );
+      tl_assert( isAtom(loadAddrExpr) );
+      tl_assert( isAtom(storeAddrExpr) );
+
+      if ( loadStoreAddrsMatch(loadAddrExpr, storeAddrExpr) ) {
+         // modify
+         helperName = "log_1I_1Dr_cache_access";
+         helperAddr = &log_1I_1Dr_cache_access;
          argc = 2;
-         t_data_addr1 = t_read_addr;
+         arg2 = loadAddrExpr;
+         argv = mkIRExprVec_2(arg1, arg2);
+
       } else {
-         helper = (Addr) & log_1I_2D_cache_access;
+         // load/store
+         helperName = "log_1I_2D_cache_access";
+         helperAddr = &log_1I_2D_cache_access;
          argc = 3;
-         t_data_addr1 = t_read_addr;
-         t_data_addr2 = t_write_addr;
-      }
-   }
-#undef IS_
-#undef INV
-
-   // Setup 1st arg: CC addr
-   do_details( i_node, bb_seen_before, instr_addr, instr_size, data_size );
-   t_CC_addr = newTemp(cb);
-   uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_CC_addr);
-   uLiteral(cb, (Addr)i_node);
-
-   // Call the helper
-   if      (1 == argc)
-      uInstr1(cb, CCALL, 0, TempReg, t_CC_addr);
-   else if (2 == argc)
-      uInstr2(cb, CCALL, 0, TempReg, t_CC_addr, 
-                            TempReg, t_data_addr1);
-   else if (3 == argc)
-      uInstr3(cb, CCALL, 0, TempReg, t_CC_addr, 
-                            TempReg, t_data_addr1,
-                            TempReg, t_data_addr2);
-   else
-      VG_(tool_panic)("argc... not 1 or 2 or 3?");
-
-   uCCall(cb, helper, argc, argc, False);
-}
-#endif
-
-#if 0
-UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
-{
-   UCodeBlock* cb;
-   UInstr*     u_in;
-   Int         i, bb_info_i;
-   BB_info*    bb_info;
-   Bool        bb_seen_before = False;
-   Int         t_read_addr, t_write_addr, t_read, t_write;
-   Addr        x86_instr_addr = orig_addr;
-   UInt        x86_instr_size, data_size = 0;
-   Bool        instrumented_Jcc = False;
-
-   bb_info = get_BB_info(cb_in, orig_addr, &bb_seen_before);
-   bb_info_i = 0;
-
-   cb = VG_(setup_UCodeBlock)(cb_in);
-
-   t_read_addr = t_write_addr = t_read = t_write = INVALID_TEMPREG;
-
-   for (i = 0; i < VG_(get_num_instrs)(cb_in); i++) {
-      u_in = VG_(get_instr)(cb_in, i);
-
-      // We want to instrument each x86 instruction with a call to the
-      // appropriate simulation function, which depends on whether the
-      // instruction does memory data reads/writes.  x86 instructions can
-      // end in three ways, and this is how they are instrumented:
-      //
-      // 1. UCode, INCEIP   --> UCode, Instrumentation, INCEIP
-      // 2. UCode, JMP      --> UCode, Instrumentation, JMP
-      // 3. UCode, Jcc, JMP --> UCode, Instrumentation, Jcc, JMP
-      //
-      // The last UInstr in a BB is always a JMP.  Jccs, when they appear,
-      // are always second last.  This is checked with assertions.
-      // Instrumentation must go before any jumps.  (JIFZ is the exception;
-      // if a JIFZ succeeds, no simulation is done for the instruction.)
-      //
-      // x86 instruction sizes are obtained from INCEIPs (for case 1) or
-      // from .extra4b field of the final JMP (for case 2 & 3).
-
-      if (instrumented_Jcc) tl_assert(u_in->opcode == JMP);
-
-      switch (u_in->opcode) {
-
-         // For memory-ref instrs, copy the data_addr into a temporary to be
-         // passed to the cachesim_* helper at the end of the instruction.
-         case LOAD: 
-         case SSE3ag_MemRd_RegWr:
-            t_read      = u_in->val1;
-            t_read_addr = newTemp(cb);
-            uInstr2(cb, MOV, 4, TempReg, u_in->val1,  TempReg, t_read_addr);
-            data_size = u_in->size;
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         case FPU_R:
-         case MMX2_MemRd:
-            t_read      = u_in->val2;
-            t_read_addr = newTemp(cb);
-            uInstr2(cb, MOV, 4, TempReg, u_in->val2,  TempReg, t_read_addr);
-            data_size = u_in->size; 
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-            break;
-
-         case MMX2a1_MemRd:
-         case SSE2a_MemRd:
-         case SSE2a1_MemRd:
-         case SSE3a_MemRd:
-         case SSE3a1_MemRd:
-            t_read = u_in->val3;
-            t_read_addr = newTemp(cb);
-            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
-            data_size = u_in->size;
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         // Note that we must set t_write_addr even for mod instructions;
-         // That's how the code above determines whether it does a write.
-         // Without it, it would think a mod instruction is a read.
-         // As for the MOV, if it's a mod instruction it's redundant, but it's
-         // not expensive and mod instructions are rare anyway. */
-         case STORE:
-         case FPU_W:
-         case MMX2_MemWr:
-            t_write      = u_in->val2;
-            t_write_addr = newTemp(cb);
-            uInstr2(cb, MOV, 4, TempReg, u_in->val2, TempReg, t_write_addr);
-            data_size = u_in->size;
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         case SSE2a_MemWr:
-         case SSE3a_MemWr:
-            t_write = u_in->val3;
-            t_write_addr = newTemp(cb);
-            uInstr2(cb, MOV, 4, TempReg, u_in->val3, TempReg, t_write_addr);
-            data_size = u_in->size; 
-            VG_(copy_UInstr)(cb, u_in);
-            break;
-
-         // INCEIP: insert instrumentation
-         case INCEIP:
-            x86_instr_size = u_in->val1;
-            goto instrument_x86_instr;
-
-         // JMP: insert instrumentation if the first JMP
-         case JMP:
-            if (instrumented_Jcc) {
-               tl_assert(CondAlways == u_in->cond);
-               tl_assert(i+1 == VG_(get_num_instrs)(cb_in));
-               VG_(copy_UInstr)(cb, u_in);
-               instrumented_Jcc = False;     // rest
-               break;
-            } else {
-               // The first JMP... instrument.
-               if (CondAlways != u_in->cond) {
-                  tl_assert(i+2 == VG_(get_num_instrs)(cb_in));
-                  instrumented_Jcc = True;
-               } else {
-                  tl_assert(i+1 == VG_(get_num_instrs)(cb_in));
-               }
-               // Get x86 instr size from final JMP.
-               x86_instr_size = VG_(get_last_instr)(cb_in)->extra4b;
-               goto instrument_x86_instr;
-            }
-
-            // Code executed at the end of each x86 instruction.
-         instrument_x86_instr:
-            // Large (eg. 28B, 108B, 512B) data-sized instructions will be
-            // done inaccurately but they're very rare and this avoids
-            // errors from hitting more than two cache lines in the
-            // simulation.
-            if (data_size > MIN_LINE_SIZE) data_size = MIN_LINE_SIZE;
-
-            end_of_x86_instr(cb, &bb_info->instrs[ bb_info_i ], bb_seen_before,
-                             x86_instr_addr, x86_instr_size, data_size,
-                             t_read, t_read_addr, t_write, t_write_addr);
-
-            // Copy original UInstr (INCEIP or JMP)
-            VG_(copy_UInstr)(cb, u_in);
-
-            // Update loop state for next x86 instr
-            bb_info_i++;
-            x86_instr_addr += x86_instr_size;
-            t_read_addr = t_write_addr = t_read = t_write = INVALID_TEMPREG;
-            data_size = 0;
-            break;
-
-         default:
-            VG_(copy_UInstr)(cb, u_in);
-            break;
+         arg2 = loadAddrExpr;
+         arg3 = storeAddrExpr;
+         argv = mkIRExprVec_3(arg1, arg2, arg3);
       }
    }
 
-   // BB address should be the same as the first instruction's address.
-   tl_assert(bb_info->BB_addr == bb_info->instrs[0].instr_addr );
-   tl_assert(bb_info_i == bb_info->n_instrs);
-
-   VG_(free_UCodeBlock)(cb_in);
-   return cb;
-
-#undef INVALID_DATA_SIZE
+   // Add call to the instrumentation function
+   di = unsafeIRDirty_0_N( argc, helperName, helperAddr, argv);
+   addStmtToIRBB( bbOut, IRStmt_Dirty(di) );
 }
-#endif
 
-IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
+IRBB* TL_(instrument) ( IRBB* bbIn, VexGuestLayout* layout, IRType hWordTy )
 {
-   VG_(message)(Vg_DebugMsg, "Cachegrind is not yet ready to handle Vex IR");
-   VG_(exit)(1);
+   Int      i, dataSize = 0, bbInfo_i;
+   IRBB*    bbOut;
+   IRStmt*  st;
+   BB_info* bbInfo;
+   Bool     bbSeenBefore = False;
+   Addr     instrAddr, origAddr;
+   UInt     instrLen;
+   IRExpr  *loadAddrExpr, *storeAddrExpr;
+
+   // Add Nops
+   // XXX: remove eventually
+   IRStmt xxx = { Ist_Nop };
+   IRStmt* myNOP = &xxx;
+   for (i = 0; i <  bbIn->stmts_used; i++) {
+      st = bbIn->stmts[i];
+      if (!st) bbIn->stmts[i] = myNOP;
+   }
+   
+   /* Set up BB */
+   bbOut           = emptyIRBB();
+   bbOut->tyenv    = dopyIRTypeEnv(bbIn->tyenv);
+   bbOut->next     = dopyIRExpr(bbIn->next);
+   bbOut->jumpkind = bbIn->jumpkind;
+
+   // Get the first statement, and origAddr from it
+   i = 0;
+   tl_assert(bbIn->stmts_used > 0);
+   st = bbIn->stmts[0];
+   tl_assert(Ist_IMark == st->tag);
+   origAddr = (Addr)st->Ist.IMark.addr;
+   tl_assert(origAddr == st->Ist.IMark.addr);  // XXX: check no overflow
+
+   // Get block info
+   bbInfo = get_BB_info(bbIn, origAddr, &bbSeenBefore);
+   bbInfo_i = 0;
+
+   do {
+      // We should be at an IMark statement
+      tl_assert(Ist_IMark == st->tag);
+
+      // Reset stuff for this original instruction
+      loadAddrExpr = storeAddrExpr = NULL;
+      dataSize = 0;
+
+      // Process all the statements for this original instruction (ie. until
+      // the next IMark statement, or the end of the block)
+      do {
+         handleOneStatement(bbIn->tyenv, bbOut, st, &instrAddr, &instrLen,
+                            &loadAddrExpr, &storeAddrExpr, &dataSize);
+         i++;
+         st = ( i < bbIn->stmts_used ? bbIn->stmts[i] : NULL );
+      } 
+      while (st && Ist_IMark != st->tag);
+
+      // Add instrumentation for this original instruction.
+      endOfInstr(bbOut, &bbInfo->instrs[ bbInfo_i ], bbSeenBefore,
+                 instrAddr, instrLen, dataSize, loadAddrExpr, storeAddrExpr);
+
+      bbInfo_i++;
+   } 
+   while (st);
+
+   return bbOut;
 }
 
 /*------------------------------------------------------------*/
@@ -703,9 +674,9 @@ void check_cache(cache_t* cache, Char *name)
       VG_(exit)(1);
    }
 
-   /* Then check line size >= 16 -- any smaller and a single instruction could
-    * straddle three cache lines, which breaks a simulation assertion and is
-    * stupid anyway. */
+   // Then check line size >= 16 -- any smaller and a single instruction could
+   // straddle three cache lines, which breaks a simulation assertion and is
+   // stupid anyway.
    if (cache->line_size < MIN_LINE_SIZE) {
       VG_(message)(Vg_UserMsg,
          "error: %s line size of %dB too small; aborting.", 
@@ -1033,15 +1004,15 @@ void TL_(fini)(Int exitcode)
 void TL_(discard_basic_block_info) ( Addr a, SizeT size )
 {
    VgHashNode** prev_next_ptr;
-   VgHashNode*  bb_info;
+   VgHashNode*  bbInfo;
 
    if (0) VG_(printf)( "discard_basic_block_info: %p, %llu\n", a, (ULong)size);
 
    // Get BB info, remove from table, free BB info.  Simple!
-   bb_info = VG_(HT_get_node)(instr_info_table, a, &prev_next_ptr);
-   tl_assert(NULL != bb_info);
-   *prev_next_ptr = bb_info->next;
-   VG_(free)(bb_info);
+   bbInfo = VG_(HT_get_node)(instr_info_table, a, &prev_next_ptr);
+   tl_assert(NULL != bbInfo);
+   *prev_next_ptr = bbInfo->next;
+   VG_(free)(bbInfo);
 }
 
 /*--------------------------------------------------------------------*/

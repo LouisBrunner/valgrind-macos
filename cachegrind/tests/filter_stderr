@@ -4,6 +4,9 @@ dir=`dirname $0`
 
 $dir/../../tests/filter_stderr_basic                |
 
+# Remove "Cachegrind, ..." line and the following copyright line.
+sed "/^Cachegrind, an I1\/D1\/L2 cache profiler./ , /./ d" |
+
 # Remove numbers from I/D/L2 "refs:" lines
 sed "s/\(\(I\|D\|L2\) *refs:\)[ 0-9,()+rdw]*$/\1/"  |
 

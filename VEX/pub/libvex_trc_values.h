@@ -50,6 +50,9 @@
 #define VEX_TRC_JMP_CLIENTREQ  23  /* do a client req before continuing */
 #define VEX_TRC_JMP_YIELD      27  /* yield to thread sched 
                                       before continuing */
+#define VEX_TRC_JMP_NODECODE   29  /* next instruction in not decodable */
+#define VEX_TRC_JMP_MAPFAIL    31  /* address translation failed */
+
 
 #endif /* ndef __LIBVEX_TRC_VALUES_H */
 

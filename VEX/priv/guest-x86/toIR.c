@@ -49,6 +49,9 @@
      even when it isn't.
    * some of the FCOM cases could do with testing -- not convinced
      that the args are the right way round.
+
+   This module uses global variables and so is not MT-safe (if that
+   should ever become relevant).
 */
 
 /* Translates x86 code to IR. */
@@ -81,6 +84,11 @@ static UChar* guest_code;
 /* The guest address corresponding to guest_code[0]. */
 /* CONST */
 static Addr32 guest_eip_bbstart;
+
+/* The guest address for the instruction currently being
+   translated. */
+/* CONST for any specific insn, not for the entire BB */
+static Addr32 guest_eip_curr_instr;
 
 /* The IRBB* into which we're generating code. */
 static IRBB* irbb;
@@ -242,6 +250,8 @@ IRBB* bbToIR_X86 ( UChar* x86code,
          stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_eip_bbstart + delta)) );
       }
 
+      guest_eip_curr_instr = guest_eip_bbstart + delta;
+
       dres = disInstr( resteerOK, chase_into_ok, 
                        delta, &size, &guest_next );
 
@@ -271,7 +281,7 @@ IRBB* bbToIR_X86 ( UChar* x86code,
       n_instrs++;
       DIP("\n");
 
-      vassert(size > 0 && size <= 18);
+      vassert(size >= 0 && size <= 18);
       if (!resteerOK) 
          vassert(dres != Dis_Resteer);
       if (dres != Dis_Resteer) 
@@ -1592,6 +1602,19 @@ IRExpr* handleSegOverride ( UChar sorb, IRExpr* virtual )
       )
    );
 
+   /* If the high 32 of the result are non-zero, there was a 
+      failure in address translation.  In which case, make a
+      quick exit.
+   */
+   stmt( 
+      IRStmt_Exit(
+         binop(Iop_CmpNE32, unop(Iop_64HIto32, mkexpr(r64)), mkU32(0)),
+         Ijk_MapFail,
+         IRConst_U32( guest_eip_curr_instr )
+      )
+   );
+
+   /* otherwise, here's the translated result. */
    return unop(Iop_64to32, mkexpr(r64));
 }
 
@@ -12956,13 +12979,22 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
   default:
   decode_failure:
    /* All decode failures end up here. */
-   vex_printf("disInstr(x86): unhandled instruction bytes: "
+   vex_printf("vex x86->IR: unhandled instruction bytes: "
               "0x%x 0x%x 0x%x 0x%x\n",
               (Int)getIByte(delta_start+0),
               (Int)getIByte(delta_start+1),
               (Int)getIByte(delta_start+2),
               (Int)getIByte(delta_start+3) );
-   vpanic("x86toIR: unimplemented insn");
+
+   /* Tell the dispatcher that this insn cannot be decoded,
+      and so has not been executed, and (is currently) the
+      next to be executed. */
+   stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_eip_curr_instr) ) );
+   jmp_lit(Ijk_NoDecode, guest_eip_curr_instr);
+   whatNext = Dis_StopHere;
+   *size = 0;
+   return whatNext;
+
    /* Print address of failing instruction. */
    //VG_(describe_eip)((Addr)eip_start, loc_buf, M_VG_ERRTXT);
    //VG_(printf)("          at %s\n", loc_buf);

@@ -650,7 +650,9 @@ typedef
       Ijk_ClientReq,      /* do guest client req before continuing */
       Ijk_Syscall,        /* do guest syscall before continuing */
       Ijk_Yield,          /* client is yielding to thread scheduler */
-      Ijk_EmWarn          /* report emulation warning before continuing */
+      Ijk_EmWarn,         /* report emulation warning before continuing */
+      Ijk_NoDecode,       /* next instruction cannot be decoded */
+      Ijk_MapFail         /* Vex-provided address translation failed */
    }
    IRJumpKind;
 

@@ -504,6 +504,8 @@ void ppIRJumpKind ( IRJumpKind kind )
       case Ijk_Syscall:   vex_printf("Syscall"); break;
       case Ijk_Yield:     vex_printf("Yield"); break;
       case Ijk_EmWarn:    vex_printf("EmWarn"); break;
+      case Ijk_NoDecode:  vex_printf("NoDecode"); break;
+      case Ijk_MapFail:   vex_printf("MapFail"); break;
       default:            vpanic("ppIRJumpKind");
    }
 }

@@ -2166,6 +2166,12 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Ijk_EmWarn:
             *p++ = 0xBD;
             p = emit32(p, VEX_TRC_JMP_EMWARN); break;
+         case Ijk_MapFail:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_MAPFAIL); break;
+         case Ijk_NoDecode:
+            *p++ = 0xBD;
+            p = emit32(p, VEX_TRC_JMP_NODECODE); break;
          case Ijk_Ret:
 	 case Ijk_Call:
          case Ijk_Boring:

@@ -51,6 +51,9 @@ typedef char *		__vki_kernel_caddr_t;
 typedef unsigned int	__vki_kernel_uid32_t;
 typedef unsigned int	__vki_kernel_gid32_t;
 
+typedef unsigned short	__vki_kernel_old_uid_t;
+typedef unsigned short	__vki_kernel_old_gid_t;
+
 typedef long long	__vki_kernel_loff_t;
 
 typedef struct {

@@ -17,6 +17,8 @@
                    "-----------------------------------------------------\n", \
                    __NR_xxx, #__NR_xxx, s);
 
+#define SY  syscall
+
 int main(void)
 {
    // uninitialised, but we know pi[0] is 0x0
@@ -36,55 +38,92 @@ int main(void)
 
    // __NR_read 3 --> sys_read()
    // Nb: here we are also getting an error from the syscall arg itself.
-   GO(__NR_read, "1+3 scalar errors");
-   syscall(i0+__NR_read, i0, s0, i0);
+   GO(__NR_read, "1+3s 0m");
+   SY(__NR_read+i0, i0, s0, i0);
 
    // __NR_write 4 --> sys_write()
-   GO(__NR_write, "3 scalar errors, 1 memory error");
-   syscall(__NR_write, i0, s0, i0+1);
+   GO(__NR_write, "3S 1m");
+   SY(__NR_write, i0, s0, i0+1);
 
-   // __NR_open 5
-   GO(__NR_open, "(2-args), 2 scalar errors, 1 memory error");
-   syscall(__NR_open, s0, i0, i0+1);
+   // __NR_open 5 --> sys_open()
+   GO(__NR_open, "(2-args) 2s 1m");
+   SY(__NR_open, s0, i0, i0+1);
 
-   GO(__NR_open, "(3-args), 1 scalar error");
-   syscall(__NR_open, "tmp_write_file_foo", O_CREAT, i0);
+   GO(__NR_open, "(3-args) 1s 0m");
+   SY(__NR_open, "tmp_write_file_foo", O_CREAT, i0);
 
-   // __NR_close 6
-   // __NR_waitpid 7
-   // __NR_creat 8
-   // __NR_link 9
-   // __NR_unlink 10
+   // __NR_close 6 --> sys_close()
+   GO(__NR_close, "1s 0m");
+   SY(__NR_close, i0-1);
+
+   // __NR_waitpid 7 --> sys_waitpid()
+   GO(__NR_waitpid, "3s 1m");
+   SY(__NR_waitpid, i0-1);
+
+   // __NR_creat 8 --> sys_creat()
+   GO(__NR_creat, "2s 1m");
+   SY(__NR_creat, s0, i0);
+
+   // __NR_link 9 --> sys_link()
+   GO(__NR_link, "2s 2m");
+   SY(__NR_link, s0, s0);
+
+   // __NR_unlink 10 --> sys_unlink()
+   GO(__NR_unlink, "1s 1m");
+   SY(__NR_unlink, s0);
+
    // __NR_execve 11
-   // __NR_chdir 12
-   // __NR_time 13
-   // __NR_mknod 14
-   // __NR_chmod 15
+   
+   // __NR_chdir 12 --> sys_chdir()
+   GO(__NR_chdir, "1s 1m");
+   SY(__NR_chdir, s0);
+
+   // __NR_time 13 --> sys_time()
+   GO(__NR_time, "1s 1m");
+   SY(__NR_time, s0+1);
+
+   // __NR_mknod 14 --> sys_mknod()
+   GO(__NR_mknod, "3S 1M");
+   SY(__NR_mknod, s0, i0, i0);
+
+   // __NR_chmod 15 --> sys_chmod()
+   GO(__NR_chmod, "2S 1M");
+   SY(__NR_chmod, s0, i0);
+
    // __NR_lchown 16
    // __NR_break 17
    // __NR_oldstat 18
-   // __NR_lseek 19
+
+   // __NR_lseek 19 --> sys_lseek()
+   GO(__NR_lseek, "3S 0M");
+   SY(__NR_lseek, i0, i0, i0);
+
    // __NR_getpid 20 --> sys_getpid()
-   GO(__NR_getpid, "0 errors");
-   syscall(__NR_getpid);
+   GO(__NR_getpid, "0S 0M");
+   SY(__NR_getpid);
 
-   // __NR_mount 21
-   GO(__NR_mount, "4 scalar errors, 3 memory errors");
-   syscall(__NR_mount, s0, s0, s0, i0, s0);
+   // __NR_mount 21 --> sys_mount()
+   GO(__NR_mount, "5s 3m");
+   SY(__NR_mount, s0, s0, s0, i0, s0);
    
-   // __NR_umount 22
-   // __NR_setuid 23
+   // __NR_umount 22 --> sys_oldumount()
+   GO(__NR_umount, "1s 1m");
+   SY(__NR_umount, s0);
 
-   // __NR_getuid 24
-   GO(__NR_getuid, "0 errors");
-   syscall(__NR_getuid);
+   // __NR_setuid 23 --> sys_setuid16()
+   GO(__NR_setuid, "1s 0m");
+   SY(__NR_setuid, i0);
+
+   // __NR_getuid 24 --> sys_getuid16()
+   GO(__NR_getuid, "0e");
+   SY(__NR_getuid);
 
    // __NR_stime 25
    // __NR_ptrace 26
    // __NR_alarm 27
    // __NR_oldfstat 28
 
-   // __NR_pause 29
+   // __NR_pause 29 --> sys_pause()
    // XXX: will have to be tested separately
 
    // __NR_utime 30
@@ -94,9 +133,9 @@ int main(void)
    // __NR_nice 34
    // __NR_ftime 35
 
-   // __NR_sync 36
-   GO(__NR_sync, "0 errors");
-   syscall(__NR_sync);
+   // __NR_sync 36 --> sys_sync()
+   GO(__NR_sync, "0e");
+   SY(__NR_sync);
 
    // __NR_kill 37
    // __NR_rename 38
@@ -109,22 +148,26 @@ int main(void)
    // __NR_brk 45
    // __NR_setgid 46
 
-   // __NR_getgid 47
-   GO(__NR_getgid, "0 errors");
-   syscall(__NR_getgid);
+   // __NR_getgid 47 --> sys_getgid16()
+   GO(__NR_getgid, "0e");
+   SY(__NR_getgid);
 
    // __NR_signal 48
 
-   // __NR_geteuid 49
-   GO(__NR_geteuid, "0 errors");
-   syscall(__NR_geteuid);
+   // __NR_geteuid 49 --> sys_geteuid16()
+   GO(__NR_geteuid, "0e");
+   SY(__NR_geteuid);
 
-   // __NR_getegid 50
-   GO(__NR_getegid, "0 errors");
-   syscall(__NR_getegid);
+   // __NR_getegid 50 --> sys_getegid16()
+   GO(__NR_getegid, "0e");
+   SY(__NR_getegid);
 
    // __NR_acct 51
+
    // __NR_umount2 52
+   GO(__NR_umount2, "2s 1m");
+   SY(__NR_umount2, s0, i0);
+
    // __NR_lock 53
    // __NR_ioctl 54
    // __NR_fcntl 55
@@ -137,17 +180,17 @@ int main(void)
    // __NR_ustat 62
    // __NR_dup2 63
 
-   // __NR_getppid 64
-   GO(__NR_getppid, "0 errors");
-   syscall(__NR_getppid);
+   // __NR_getppid 64 --> sys_getppid()
+   GO(__NR_getppid, "0e");
+   SY(__NR_getppid);
 
-   // __NR_getpgrp 65
-   GO(__NR_getpgrp, "0 errors");
-   syscall(__NR_getpgrp);
+   // __NR_getpgrp 65 --> sys_getpgrp()
+   GO(__NR_getpgrp, "0e");
+   SY(__NR_getpgrp);
 
-   // __NR_setsid 66
-   GO(__NR_setsid, "0 errors");
-   syscall(__NR_setsid);
+   // __NR_setsid 66 --> sys_setsid()
+   GO(__NR_setsid, "0e");
+   SY(__NR_setsid);
 
    // __NR_sigaction 67
    // __NR_sgetmask 68
@@ -194,9 +237,9 @@ int main(void)
    // __NR_olduname 109
    // __NR_iopl 110
 
-   // __NR_vhangup 111
-   GO(__NR_vhangup, "0 errors");
-   syscall(__NR_vhangup);
+   // __NR_vhangup 111 --> sys_vhangup()
+   GO(__NR_vhangup, "0e");
+   SY(__NR_vhangup);
    
    // __NR_idle 112
    // __NR_vm86old 113
@@ -240,9 +283,9 @@ int main(void)
    // __NR_munlock 151
    // __NR_mlockall 152
 
-   // __NR_munlockall 153
-   GO(__NR_munlockall, "0 errors");
-   syscall(__NR_munlockall);
+   // __NR_munlockall 153 --> sys_munlockall()
+   GO(__NR_munlockall, "0e");
+   SY(__NR_munlockall);
 
    // __NR_sched_setparam 154
    // __NR_sched_getparam 155
@@ -290,21 +333,21 @@ int main(void)
    // __NR_fstat64 197
    // __NR_lchown32 198
 
-   // __NR_getuid32 199
-   GO(__NR_getuid32, "0 errors");
-   syscall(__NR_getuid32);
+   // __NR_getuid32 199 --> sys_getuid()
+   GO(__NR_getuid32, "0e");
+   SY(__NR_getuid32);
 
-   // __NR_getgid32 200
-   GO(__NR_getgid32, "0 errors");
-   syscall(__NR_getgid32);
+   // __NR_getgid32 200 --> sys_getgid()
+   GO(__NR_getgid32, "0e");
+   SY(__NR_getgid32);
 
-   // __NR_geteuid32 201
-   GO(__NR_geteuid32, "0 errors");
-   syscall(__NR_geteuid32);
+   // __NR_geteuid32 201 --> sys_geteuid()
+   GO(__NR_geteuid32, "0e");
+   SY(__NR_geteuid32);
 
-   // __NR_getegid32 202
-   GO(__NR_getegid32, "0 errors");
-   syscall(__NR_getegid32);
+   // __NR_getegid32 202 --> sys_getegid()
+   GO(__NR_getegid32, "0e");
+   SY(__NR_getegid32);
 
    // __NR_setreuid32 203
    // __NR_setregid32 204
@@ -316,7 +359,11 @@ int main(void)
    // __NR_setresgid32 210
    // __NR_getresgid32 211
    // __NR_chown32 212
-   // __NR_setuid32 213
+
+   // __NR_setuid32 213 --> sys_setuid()
+   GO(__NR_setuid32, "1s 0m");
+   SY(__NR_setuid32, i0);
+
    // __NR_setgid32 214
    // __NR_setfsuid32 215
    // __NR_setfsgid32 216
@@ -387,12 +434,12 @@ int main(void)
    // __NR_mq_getsetattr (__NR_mq_open+5)
    // __NR_sys_kexec_load 283
 
-   GO(9999, "1 message");
-   syscall(9999);
+   GO(9999, "1e");
+   SY(9999);
 
-   // __NR_exit 1 --> sys_exit() 
-   GO(__NR_exit, "1 scalar error");
-   syscall(__NR_exit, i0);
+   // __NR_exit 1 --> sys_exit()
+   GO(__NR_exit, "1s 0m");
+   SY(__NR_exit, i0);
 
    assert(0);
 }

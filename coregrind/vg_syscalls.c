@@ -1058,8 +1058,11 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
    Note that for the PRE_REG_READ tests, we pass a somewhat generic name
    for the syscall (eg. "write")... this should be good enough for the
    average user to understand what is happening, without confusing them 
-   with names like "sys_write".  However, for the --trace-syscalls=yes
-   output, we use the sys_foo() name to avoid ambiguity.
+   with names like "sys_write".  Also, the arg names sometimes are taken
+   from the man pages for the glibc equivalent functions, rather than those
+   used in the Linux source code, for the same reason.  However, for the
+   --trace-syscalls=yes output, we use the sys_foo() name to avoid
+   ambiguity.
 
    XXX: some of these are arch-specific, and should be factored out.
 */
@@ -1181,11 +1184,18 @@ PREx(sys_mount, MayBlock)
    PRE_MEM_RASCIIZ( "mount(type)", arg3);
 }
 
-PRE(umount)
+PREx(sys_oldumount, 0)
 {
-   /* int umount(const char *path) */
-   PRINT("umount( %p )", arg1);
-   PRE_MEM_RASCIIZ( "umount(path)",arg1);
+   PRINT("sys_oldumount( %p )", arg1);
+   PRE_REG_READ1(long, "umount", char *, path);
+   PRE_MEM_RASCIIZ( "umount(path)", arg1);
+}
+
+PREx(sys_umount, 0)
+{
+   PRINT("sys_umount( %p )", arg1);
+   PRE_REG_READ2(long, "umount2", char *, path, int, flags);
+   PRE_MEM_RASCIIZ( "umount2(path)", arg1);
 }
 
 PRE(modify_ldt)
@@ -1726,10 +1736,11 @@ POST(pread64)
    }
 }
 
-PRE(mknod)
+PREx(sys_mknod, 0)
 {
-   /* int mknod(const char *pathname, mode_t mode, dev_t dev); */
-   PRINT("mknod ( %p, 0x%x, 0x%x )", arg1, arg2, arg3 );
+   PRINT("sys_mknod ( %p, 0x%x, 0x%x )", arg1, arg2, arg3 );
+   PRE_REG_READ3(long, "mknod",
+                 const char *, pathname, int, mode, unsigned, dev);
    PRE_MEM_RASCIIZ( "mknod(pathname)", arg1 );
 }
 
@@ -1953,17 +1964,17 @@ PRE(brk)
    }
 }
 
-PRE(chdir)
+PREx(sys_chdir, 0)
 {
-   /* int chdir(const char *path); */
-   PRINT("chdir ( %p )", arg1);
+   PRINT("sys_chdir ( %p )", arg1);
+   PRE_REG_READ1(long, "chdir", const char *, path);
    PRE_MEM_RASCIIZ( "chdir(path)", arg1 );
 }
 
-PRE(chmod)
+PREx(sys_chmod, 0)
 {
-   /* int chmod(const char *path, mode_t mode); */
-   PRINT("chmod ( %p, %d )", arg1,arg2);
+   PRINT("sys_chmod ( %p, %d )", arg1,arg2);
+   PRE_REG_READ2(long, "chmod", const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "chmod(path)", arg1 );
 }
 
@@ -1977,18 +1988,19 @@ PRE(chown)
 PREALIAS(chown32, chown);
 PREALIAS(lchown32, chown);
 
-PRE(close)
+PREx(sys_close, 0)
 {
-   /* int close(int fd); */
-   PRINT("close ( %d )",arg1);
+   PRINT("sys_close ( %d )", arg1);
+   PRE_REG_READ1(long, "close", unsigned int, fd);
+
    /* Detect and negate attempts by the client to close Valgrind's log fd */
    if (!fd_allowed(arg1, "close", tid, False))
       set_result( -VKI_EBADF );
 }
 
-POST(close)
+POST(sys_close)
 {
-   if(VG_(clo_track_fds)) record_fd_close(tid, arg1);
+   if (VG_(clo_track_fds)) record_fd_close(tid, arg1);
 }
 
 PRE(dup)
@@ -3915,18 +3927,19 @@ POST(kill)
    }
 }
 
-PRE(link)
+PREx(sys_link, MayBlock)
 {
-   /* int link(const char *oldpath, const char *newpath); */
-   PRINT("link ( %p, %p)", arg1, arg2);
+   PRINT("sys_link ( %p, %p)", arg1, arg2);
+   PRE_REG_READ2(long, "link", const char *, oldpath, const char *, newpath);
    PRE_MEM_RASCIIZ( "link(oldpath)", arg1);
    PRE_MEM_RASCIIZ( "link(newpath)", arg2);
 }
 
-PRE(lseek)
+PREx(sys_lseek, 0)
 {
-   /* off_t lseek(int fildes, off_t offset, int whence); */
-   PRINT("lseek ( %d, %d, %d )",arg1,arg2,arg3);
+   PRINT("sys_lseek ( %d, %d, %d )", arg1,arg2,arg3);
+   PRE_REG_READ3(vki_off_t, "lseek",
+                 unsigned int, fd, vki_off_t, offset, unsigned int, whence);
 }
 
 PRE(_llseek)
@@ -4194,14 +4207,14 @@ PREx(sys_write, MayBlock)
       PRE_MEM_READ( "write(buf)", arg2, arg3 );
 }
 
-PRE(creat)
+PREx(sys_creat, MayBlock)
 {
-   /* int creat(const char *pathname, mode_t mode); */
-   PRINT("creat ( %p(%s), %d )",arg1,arg1,arg2);
+   PRINT("sys_creat ( %p(%s), %d )", arg1,arg1,arg2);
+   PRE_REG_READ2(long, "creat", const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "creat(pathname)", arg1 );
 }
 
-POST(creat)
+POST(sys_creat)
 {
    if (!fd_allowed(res, "creat", tid, True)) {
       VG_(close)(res);
@@ -4573,13 +4586,17 @@ PRE(settimeofday)
    }
 }
 
-PRE(setuid)
+PREx(sys_setuid16, 0)
 {
-   /* int setuid(uid_t uid); */
-   PRINT("setuid ( %d )", arg1);
+   PRINT("sys_setuid16 ( %d )", arg1);
+   PRE_REG_READ1(long, "setuid16", vki_old_uid_t, uid);
 }
 
-PREALIAS(setuid32, setuid);
+PREx(sys_setuid, 0)
+{
+   PRINT("sys_setuid ( %d )", arg1);
+   PRE_REG_READ1(long, "setuid", vki_uid_t, uid);
+}
 
 PRE(socketcall)
 {
@@ -5016,16 +5033,17 @@ POST(sysinfo)
    POST_MEM_WRITE( arg1, sizeof(struct vki_sysinfo) );
 }
 
-PRE(time)
+PREx(sys_time, 0)
 {
    /* time_t time(time_t *t); */
-   PRINT("time ( %p )",arg1);
+   PRINT("sys_time ( %p )",arg1);
+   PRE_REG_READ1(long, "time", int *, t);
    if (arg1 != (UWord)NULL) {
-      PRE_MEM_WRITE( "time", arg1, sizeof(vki_time_t) );
+      PRE_MEM_WRITE( "time(t)", arg1, sizeof(vki_time_t) );
    }
 }
 
-POST(time)
+POST(sys_time)
 {
    if (arg1 != (UWord)NULL) {
       POST_MEM_WRITE( arg1, sizeof(vki_time_t) );
@@ -5059,10 +5077,10 @@ PRE(umask)
    PRINT("umask ( %d )", arg1);
 }
 
-PRE(unlink)
+PREx(sys_unlink, MayBlock)
 {
-   /* int unlink(const char *pathname) */
-   PRINT("unlink ( %p(%s) )",arg1, arg1);
+   PRINT("sys_unlink ( %p(%s) )", arg1,arg1);
+   PRE_REG_READ1(long, "unlink", const char *, pathname);
    PRE_MEM_RASCIIZ( "unlink(pathname)", arg1 );
 }
 
@@ -5089,16 +5107,17 @@ PRE(utime)
       PRE_MEM_READ( "utime(buf)", arg2, sizeof(struct vki_utimbuf) );
 }
 
-PRE(waitpid)
+PREx(sys_waitpid, MayBlock)
 {
-   /* pid_t waitpid(pid_t pid, int *status, int options); */
+   PRINT("sys_waitpid ( %d, %p, %d )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "waitpid", 
+                 vki_pid_t, pid, unsigned int *, status, int, options);
 
-   PRINT("waitpid ( %d, %p, %d )", arg1,arg2,arg3);
    if (arg2 != (Addr)NULL)
       PRE_MEM_WRITE( "waitpid(status)", arg2, sizeof(int) );
 }
 
-POST(waitpid)
+POST(sys_waitpid)
 {
    if (arg2 != (Addr)NULL)
       POST_MEM_WRITE( arg2, sizeof(int) );
@@ -5777,6 +5796,8 @@ static const struct sys_info bad_sys = { Special, NULL, bad_before, NULL };
 // Those with "##" are generic, but within a "#ifdef CONFIG_UID16".
 // Those with "%%" are generic, but within a "#if BITS_PER_LONG == 32"
 
+// Those with 'P' are generic/POSIX.  Those with 'L' are Linux-only.
+
 // XXX: this does duplicate the vki_unistd.h file somewhat -- could make
 // this table replace that somehow...
 
@@ -5784,37 +5805,37 @@ static const struct sys_info bad_sys = { Special, NULL, bad_before, NULL };
 // PRE/POST sys_foo() wrappers on x86.
 static const struct sys_info sys_info[] = {
    // 0 is restart_syscall
-   SYSX_(__NR_exit,             sys_exit), // 1 *
-   SYSBA(fork,			0), // 2 sys_fork
-   SYSXY(__NR_read,             sys_read), // 3 *
-   SYSX_(__NR_write,            sys_write), // 4 *
+   SYSX_(__NR_exit,             sys_exit), // 1 * P
+   SYSBA(fork,			0), // 2 sys_fork P
+   SYSXY(__NR_read,             sys_read), // 3 * P
+   SYSX_(__NR_write,            sys_write), // 4 * P
 
-   SYSXY(__NR_open,             sys_open), // 5 *
-   SYSBA(close,			0), // 6 sys_close *
-   SYSBA(waitpid,		MayBlock), // 7 sys_waitpid *
-   SYSBA(creat,			MayBlock), // 8 sys_creat *
-   SYSB_(link,			MayBlock), // 9 sys_link *
+   SYSXY(__NR_open,             sys_open), // 5 * P
+   SYSXY(__NR_close,            sys_close), // 6 * P
+   SYSXY(__NR_waitpid,          sys_waitpid), // 7 * P
+   SYSXY(__NR_creat,            sys_creat), // 8 * P
+   SYSX_(__NR_link,             sys_link), // 9 * P
 
-   SYSB_(unlink,		MayBlock), // 10 sys_unlink *
-   SYSB_(execve,		Special), // 11  sys_execve
-   SYSB_(chdir,			0), // 12 sys_chdir *
-   SYSBA(time,			0), // 13 sys_time *
-   SYSB_(mknod,			0), // 14 sys_mknod *
+   SYSX_(__NR_unlink,           sys_unlink), // 10 * P
+   SYSB_(execve,		Special), // 11  sys_execve () P
+   SYSX_(__NR_chdir,            sys_chdir), // 12 *
+   SYSXY(__NR_time,             sys_time), // 13 *
+   SYSX_(__NR_mknod,            sys_mknod), // 14 * P
 
-   SYSB_(chmod,			0), // 15 sys_chmod *
-   // lchown		               16 sys_lchown16 ##
-   // break		               17 sys_ni_syscall
-   // oldstat		               18 sys_stat *
-   SYSB_(lseek,			0), // 19 sys_lseek *
+   SYSX_(__NR_chmod,            sys_chmod), // 15 * P
+   // lchown		        sys_lchown16 ## // 16
+   // break		        sys_ni_syscall // 17
+   // oldstat		        sys_stat // 18 *
+   SYSX_(__NR_lseek,            sys_lseek), // 19 * P
 
    SYSX_(__NR_getpid,           sys_getpid), // 20 *
-   SYSX_(__NR_mount,            sys_mount), // 21 *
-   SYSB_(umount,		0), // 22 sys_oldumount *
-   SYSB_(setuid,		0), // 23 sys_setuid16 ##
-   SYSX_(__NR_getuid,           sys_getuid16), // 24 ##
+   SYSX_(__NR_mount,            sys_mount), // 21 * L
+   SYSX_(__NR_umount,           sys_oldumount), // 22 * L
+   SYSX_(__NR_setuid,           sys_setuid16), // 23 ## P
+   SYSX_(__NR_getuid,           sys_getuid16), // 24 ## P
 
    // stime		               25 sys_stime *
-   SYSBA(ptrace,		0), // 26 sys_ptrace
+   SYSBA(ptrace,		0), // 26 sys_ptrace ()
    SYSB_(alarm,			MayBlock), /* not blocking, but must run in LWP context */ // 27 sys_alarm *
    // oldfstat		               28 sys_fstat *
    SYSX_(__NR_pause,            sys_pause), // 29 *
@@ -5845,7 +5866,7 @@ static const struct sys_info sys_info[] = {
 
    SYSX_(__NR_getegid,          sys_getegid16), // 50 ##
    SYSB_(acct,                  0), // 51 sys_acct *
-   // umount2		               52 sys_umount
+   SYSX_(__NR_umount2,          sys_umount), // 52 * L
    // lock		               53 sys_ni_syscall
    SYSBA(ioctl,			MayBlock), // 54 sys_ioctl *
 
@@ -6040,7 +6061,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(setresgid32,		0), // 210 sys_setresgid *
    SYSBA(getresgid32,		0), // 211 sys_getresgid *
    SYSB_(chown32,		0), // 212 sys_chown *
-   SYSB_(setuid32,		0), // 213 sys_setuid *
+   SYSX_(__NR_setuid32,         sys_setuid), // 213 *
    SYSB_(setgid32,		0), // 214 sys_setgid *
 
    SYSB_(setfsuid32,		0), // 215 sys_setfsuid *

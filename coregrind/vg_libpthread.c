@@ -1252,6 +1252,14 @@ pid_t wait(int *status)
 }
 
 
+extern
+int __libc_msync(const void *start, size_t length, int flags);
+__attribute__((weak))
+int msync(const void *start, size_t length, int flags)
+{
+   return __libc_msync(start, length, flags);
+}
+
 
 /* ---------------------------------------------------------------------
    Nonblocking implementations of select() and poll().  This stuff will

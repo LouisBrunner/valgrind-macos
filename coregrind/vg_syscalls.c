@@ -4054,6 +4054,12 @@ PRE(old_mmap, Special)
       return;
    }
 
+   if (/*(a4 & VKI_MAP_FIXED) &&*/ (0 != (a1 & (VKI_PAGE_SIZE-1)))) {
+      /* zap any misaligned addresses. */
+      SET_RESULT( -VKI_EINVAL );
+      return;
+   }
+
    if (a4 & VKI_MAP_FIXED) {
       if (!VG_(valid_client_addr)(a1, a2, tid, "old_mmap")) {
          PRINT("old_mmap failing: %p-%p\n", a1, a1+a2);
@@ -4094,6 +4100,12 @@ PRE(sys_mmap2, 0)
    if (ARG2 == 0) {
       /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
          shall be established. */
+      SET_RESULT( -VKI_EINVAL );
+      return;
+   }
+
+   if (/*(ARG4 & VKI_MAP_FIXED) && */ (0 != (ARG1 & (VKI_PAGE_SIZE-1)))) {
+      /* zap any misaligned addresses. */
       SET_RESULT( -VKI_EINVAL );
       return;
    }

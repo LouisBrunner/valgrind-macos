@@ -11150,10 +11150,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       dis_string_op( dis_MOVS, ( opc == 0xA4 ? 1 : sz ), "movs", sorb );
       break;
 
-//--    case 0xA6: /* CMPSb, no REP prefix */
+  case 0xA6: /* CMPSb, no REP prefix */
 //--    case 0xA7:
-//--       dis_string_op( cb, dis_CMPS, ( opc == 0xA6 ? 1 : sz ), "cmps", sorb );
-//--       break;
+     dis_string_op( dis_CMPS, ( opc == 0xA6 ? 1 : sz ), "cmps", sorb );
+     break;
 //-- 
    case 0xAA: /* STOS, no REP prefix */
    case 0xAB:

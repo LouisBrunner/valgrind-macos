@@ -154,7 +154,7 @@ Int VG_(main_pid);
 Int VG_(main_pgrp);
 
 /* Maximum allowed application-visible file descriptor */
-Int VG_(max_fd);
+Int VG_(max_fd) = -1;
 
 /* Words. */
 static Int baB_off = 0;
@@ -1403,11 +1403,6 @@ void VG_(main) ( const KickstartParams *kp, void (*tool_init)(void), void *tool_
 
    vg_assert(VG_(clstk_end) == VG_(client_end));
 
-   if (kp->vgexecfd != -1)
-      VG_(vgexecfd) = VG_(safe_fd)(kp->vgexecfd);
-   if (kp->clexecfd != -1)
-      VG_(clexecfd) = VG_(safe_fd)(kp->clexecfd);
-
    if (0) {
       if (VG_(have_ssestate))
          VG_(printf)("Looks like a SSE-capable CPU\n");
@@ -1436,6 +1431,11 @@ void VG_(main) ( const KickstartParams *kp, void (*tool_init)(void), void *tool_
 
    /* Update the soft limit. */
    VG_(setrlimit)(VKI_RLIMIT_NOFILE, &rl);
+
+   if (kp->vgexecfd != -1)
+      VG_(vgexecfd) = VG_(safe_fd)(kp->vgexecfd);
+   if (kp->clexecfd != -1)
+      VG_(clexecfd) = VG_(safe_fd)(kp->clexecfd);
 
    /* Read /proc/self/maps into a buffer.  Must be before:
       - SK_(pre_clo_init)(): so that if it calls VG_(malloc)(), any mmap'd

@@ -1203,6 +1203,8 @@ Int VG_(safe_fd)(Int oldfd)
 {
    Int newfd;
 
+   vg_assert(VG_(max_fd) != -1);
+
    newfd = VG_(fcntl)(oldfd, VKI_F_DUPFD, VG_(max_fd)+1);
    if (newfd != -1)
       VG_(close)(oldfd);

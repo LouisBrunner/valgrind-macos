@@ -33,6 +33,8 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --db-command=<command>    command to start debugger [gdb -nw %f %p]
     --input-fd=<number>       file descriptor for input [0=stdin]
 
+  user options for Nulgrind:
+    (none)
 
   debugging options for all Valgrind tools:
     --sanity-level=<number>   level of sanity checking to do [1]
@@ -70,6 +72,8 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
     --dump-error=<number>     show translation for basic block associated
                               with <number>'th error context [0=show none]
 
+  debugging options for Nulgrind:
+    (none)
 
   Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc
 

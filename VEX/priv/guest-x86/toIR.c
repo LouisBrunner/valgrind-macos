@@ -9738,13 +9738,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          assign( lo64r, mkU64(0) );
          assign( hi64r, mkexpr(lo64) );
       }
-      else {
-         vex_printf("pslldq $%d,%s\n", imm, nameXMMReg(reg));
-         goto decode_failure;
-      }
-#if 0
-      /* I think this is correct, but check carefully before enabling. */
-      else 
+      else
       if (imm > 8) {
          vassert(0); /* awaiting test case */
          assign( lo64r, mkU64(0) );
@@ -9764,7 +9758,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                       )
                );
       }
-#endif
       assign( dV, binop(Iop_64HLto128, mkexpr(hi64r), mkexpr(lo64r)) );
       putXMMReg(reg, mkexpr(dV));
       goto decode_success;

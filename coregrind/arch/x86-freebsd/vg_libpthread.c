@@ -1,0 +1,2790 @@
+
+/*--------------------------------------------------------------------*/
+/*--- A replacement for the standard libpthread.so.                ---*/
+/*---                                              vg_libpthread.c ---*/
+/*--------------------------------------------------------------------*/
+
+/*
+   This file is part of Valgrind, an extensible x86 protected-mode
+   emulator for monitoring program execution on x86-Unixes.
+
+   Copyright (C) 2000-2003 Julian Seward
+      jseward@acm.org
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   02111-1307, USA.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
+
+/* ALL THIS CODE RUNS ON THE SIMULATED CPU.
+
+   This is a replacement for the standard libpthread.so.  It is loaded
+   as part of the client's image (if required) and directs pthread
+   calls through to Valgrind's request mechanism.
+
+   A couple of caveats.
+
+   1.  Since it's a binary-compatible replacement for an existing library,
+       we must take care to used exactly the same data layouts, etc, as
+       the standard pthread.so does.
+
+   2.  Since this runs as part of the client, there are no specific
+       restrictions on what headers etc we can include, so long as
+       this libpthread.so does not end up having dependencies on .so's
+       which the real one doesn't.
+
+   Later ... it appears we cannot call file-related stuff in libc here,
+   perhaps fair enough.  Be careful what you call from here.  Even exit()
+   doesn't work (gives infinite recursion and then stack overflow); hence
+   myexit().  Also fprintf doesn't seem safe.
+*/
+
+#include "valgrind.h"    /* For the request-passing mechanism */
+#include "vg_include.h"  /* For the VG_USERREQ__* constants */
+
+#define __USE_UNIX98
+#include <sys/types.h>
+#include <pthread.h>
+#undef __USE_UNIX98
+
+#include <unistd.h>
+#include <string.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/poll.h>
+#include <stdio.h>
+#include <errno.h>
+
+#include <stdlib.h>
+
+# define strong_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((alias (#name)));
+
+# define weak_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
+
+
+/* ---------------------------------------------------------------------
+   Forwardses.
+   ------------------------------------------------------------------ */
+
+#define WEAK	__attribute__((weak))
+
+static
+__inline__
+int is_kerror ( int res )
+{
+   if (res >= -4095 && res <= -1)
+      return 1;
+   else
+      return 0;
+}
+
+
+#ifdef GLIBC_2_3
+   /* kludge by JRS (not from glibc) ... */
+   typedef void* __locale_t;
+
+   /* Copied from locale/locale.h in glibc-2.2.93 sources */
+   /* This value can be passed to `uselocale' and may be returned by
+      it.  Passing this value to any other function has undefined
+      behavior.  */
+#  define LC_GLOBAL_LOCALE       ((__locale_t) -1L)
+   extern __locale_t __uselocale ( __locale_t );
+#endif
+
+static
+void init_libc_tsd_keys ( void );
+
+
+/* ---------------------------------------------------------------------
+   Helpers.  We have to be pretty self-sufficient.
+   ------------------------------------------------------------------ */
+
+/* Number of times any given error message is printed. */
+#define N_MOANS 3
+
+/* Extract from Valgrind the value of VG_(clo_trace_pthread_level).
+   Returns 0 (none) if not running on Valgrind. */
+static
+int get_pt_trace_level ( void )
+{
+   int res;
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__GET_PTHREAD_TRACE_LEVEL,
+                           0, 0, 0, 0);
+   return res;
+}
+
+/* Don't do anything if we're not under Valgrind */
+static __inline__
+void ensure_valgrind ( char* caller )
+{
+   if (!RUNNING_ON_VALGRIND) {
+      const char msg[] = "Warning: this libpthread.so should only be run with Valgrind\n";
+      VG_(do_syscall)(__NR_write, 2, msg, sizeof(msg)-1);
+      VG_(do_syscall)(__NR_exit, 1);
+   }
+}
+
+/* While we're at it ... hook our own startup function into this
+   game. */
+
+static
+__attribute__((noreturn))
+void barf ( const char* str )
+{
+   char buf[1000];
+   strcpy(buf, "\nvalgrind's libpthread.so: ");
+   strcat(buf, str);
+   strcat(buf, "\nPlease report this bug at: ");
+   strcat(buf, VG_BUGS_TO);
+   strcat(buf, "\n\n");
+   VALGRIND_INTERNAL_PRINTF(buf);
+   _exit(1);
+   /* We have to persuade gcc into believing this doesn't return. */
+   while (1) { };
+}
+
+
+static void cat_n_send ( char* s1, char* s2, char* s3 )
+{
+   char  buf[1000];
+   if (get_pt_trace_level() >= 0) {
+      snprintf(buf, sizeof(buf), "%s%s%s", s1, s2, s3);
+      buf[sizeof(buf)-1] = '\0';
+      VALGRIND_INTERNAL_PRINTF(buf);
+   }
+}
+
+static void oh_dear ( char* fn, char* aux, char* s )
+{
+   cat_n_send    ( "warning: Valgrind's ", fn, s );
+   if (NULL != aux)
+      cat_n_send ( "         ", aux, "" );
+   cat_n_send    ( "         your program may misbehave as a result", "", "" );
+}
+
+static void ignored ( char* fn, char* aux )
+{
+   oh_dear ( fn, aux, " does nothing" );
+}
+
+static void kludged ( char* fn, char* aux )
+{
+   oh_dear ( fn, aux, " is incomplete" );
+}
+
+
+__attribute__((noreturn))
+void vgPlain_unimp ( char* fn )
+{
+   cat_n_send ( "valgrind's libpthread.so: UNIMPLEMENTED FUNCTION: ", fn, "" );
+   barf("unimplemented function");
+}
+
+
+static
+void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* fn )
+{
+   char buf[1000];
+   static Bool entered = False;
+   if (entered)
+      _exit(2);
+   entered = True;
+   sprintf(buf, "\n%s: %s:%d (%s): Assertion `%s' failed.\n",
+                "valgrind", file, line, fn, expr );
+   cat_n_send ( "", buf, "" );
+   sprintf(buf, "Please report this bug at: %s\n\n", VG_BUGS_TO);
+   cat_n_send ( "", buf, "" );
+   _exit(1);
+}
+
+#define MY__STRING(__str)  #__str
+
+#define my_assert(expr)                                               \
+  ((void) ((expr) ? 0 :						      \
+	   (my_assert_fail  (MY__STRING(expr),			      \
+			      __FILE__, __LINE__,                     \
+                              __PRETTY_FUNCTION__), 0)))
+
+static
+void my_free ( void* ptr )
+{
+#if 0
+   int res;
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__FREE, ptr, 0, 0, 0);
+   my_assert(res == 0);
+#else
+   free(ptr);
+#endif
+}
+
+
+static
+void* my_malloc ( int nbytes )
+{
+   void* res;
+#if 0
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__MALLOC, nbytes, 0, 0, 0);
+#else
+   res = malloc(nbytes);
+#endif
+   my_assert(res != (void*)0);
+   return res;
+}
+
+
+
+/* ---------------------------------------------------------------------
+   Pass pthread_ calls to Valgrind's request mechanism.
+   ------------------------------------------------------------------ */
+
+
+/* ---------------------------------------------------
+   Ummm ..
+   ------------------------------------------------ */
+
+static
+void pthread_error ( const char* msg )
+{
+   int res;
+   VALGRIND_MAGIC_SEQUENCE(res, 0,
+                           VG_USERREQ__PTHREAD_ERROR,
+                           msg, 0, 0, 0);
+}
+
+
+/* ---------------------------------------------------
+   Here so it can be inlined without complaint.
+   ------------------------------------------------ */
+
+__inline__
+pthread_t pthread_self(void)
+{
+   int tid;
+   ensure_valgrind("pthread_self");
+   VALGRIND_MAGIC_SEQUENCE(tid, 0 /* default */,
+                           VG_USERREQ__PTHREAD_GET_THREADID,
+                           0, 0, 0, 0);
+   if (tid < 1 || tid >= VG_N_THREADS)
+      barf("pthread_self: invalid ThreadId");
+   return (pthread_t) tid;
+}
+
+
+/* ---------------------------------------------------
+   THREAD ATTRIBUTES
+   ------------------------------------------------ */
+
+int pthread_attr_init(pthread_attr_t *attrp)
+{
+   struct pthread_attr *attr = my_malloc(sizeof(struct pthread_attr));
+   *attrp = attr;
+   /* Just initialise the fields which we might look at. */
+   attr->__detachstate = PTHREAD_CREATE_JOINABLE;
+   /* Linuxthreads sets this field to the value __getpagesize(), so I
+      guess the following is OK. */
+   attr->__guardsize = VKI_BYTES_PER_PAGE;   return 0;
+}
+
+int pthread_attr_setdetachstate(pthread_attr_t *attrp, int detachstate)
+{
+   struct pthread_attr *attr = *attrp;
+   if (detachstate != PTHREAD_CREATE_JOINABLE
+       && detachstate != PTHREAD_CREATE_DETACHED) {
+      pthread_error("pthread_attr_setdetachstate: "
+                    "detachstate is invalid");
+      return EINVAL;
+   }
+   attr->__detachstate = detachstate;
+   return 0;
+}
+
+int pthread_attr_getdetachstate(const pthread_attr_t *attrp, int *detachstate)
+{
+   struct pthread_attr *attr = *attrp;
+   *detachstate = attr->__detachstate;
+   return 0;
+}
+
+int pthread_attr_setinheritsched(pthread_attr_t *attrp, int inherit)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0)
+      ignored("pthread_attr_setinheritsched", NULL);
+   return 0;
+}
+
+WEAK
+int pthread_attr_setstacksize (pthread_attr_t *__attrp,
+                               size_t __stacksize)
+{
+   size_t limit;
+   char buf[1024];
+   ensure_valgrind("pthread_attr_setstacksize");
+   limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB
+                                 - 1000; /* paranoia */
+   if (__stacksize < limit)
+      return 0;
+   snprintf(buf, sizeof(buf), "pthread_attr_setstacksize: "
+            "requested size %d >= VG_PTHREAD_STACK_SIZE\n   "
+            "edit vg_include.h and rebuild.", __stacksize);
+   buf[sizeof(buf)-1] = '\0'; /* Make sure it is zero terminated */
+   barf(buf);
+}
+
+
+/* This is completely bogus. */
+int  pthread_attr_getschedparam(const  pthread_attr_t  *attrp,
+                                struct sched_param *param)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0)
+      kludged("pthread_attr_getschedparam", NULL);
+#  ifdef HAVE_SCHED_PRIORITY
+   if (param) param->sched_priority = 0; /* who knows */
+#  else
+   if (param) param->__sched_priority = 0; /* who knows */
+#  endif
+   return 0;
+}
+
+int  pthread_attr_setschedparam(pthread_attr_t  *attrp,
+                                const  struct sched_param *param)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0)
+      ignored("pthread_attr_setschedparam", "(scheduling not changeable)");
+   return 0;
+}
+
+int pthread_attr_destroy(pthread_attr_t *attrp)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0)
+      ignored("pthread_attr_destroy", NULL);
+   if (*attrp) {
+      my_free(*attrp);
+      *attrp = 0;
+   }
+   return 0;
+}
+
+/* These are no-ops, as with LinuxThreads. */
+int pthread_attr_setscope ( pthread_attr_t *attrp, int scope )
+{
+   ensure_valgrind("pthread_attr_setscope");
+   if (scope == PTHREAD_SCOPE_SYSTEM)
+      return 0;
+   pthread_error("pthread_attr_setscope: "
+                 "invalid or unsupported scope");
+   if (scope == PTHREAD_SCOPE_PROCESS)
+      return ENOTSUP;
+   return EINVAL;
+}
+
+int pthread_attr_getscope ( const pthread_attr_t *attrp, int *scope )
+{
+   ensure_valgrind("pthread_attr_setscope");
+   if (scope)
+      *scope = PTHREAD_SCOPE_SYSTEM;
+   return 0;
+}
+
+/* Bogus ... */
+WEAK
+int pthread_attr_getstackaddr ( const pthread_attr_t * attr,
+                                void ** stackaddr )
+{
+   ensure_valgrind("pthread_attr_getstackaddr");
+   kludged("pthread_attr_getstackaddr", "(it always sets stackaddr to zero)");
+   if (stackaddr)
+      *stackaddr = NULL;
+   return 0;
+}
+
+/* Not bogus (!) */
+WEAK
+int pthread_attr_getstacksize ( const pthread_attr_t * _attr,
+                                size_t * __stacksize )
+{
+   size_t limit;
+   ensure_valgrind("pthread_attr_getstacksize");
+   limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB
+                                 - 1000; /* paranoia */
+   if (__stacksize)
+      *__stacksize = limit;
+   return 0;
+}
+
+int pthread_attr_setschedpolicy(pthread_attr_t *attrp, int policy)
+{
+  struct pthread_attr *attr = *attrp;
+  if (policy != SCHED_OTHER && policy != SCHED_FIFO && policy != SCHED_RR)
+    return EINVAL;
+  attr->__schedpolicy = policy;
+  return 0;
+}
+
+int pthread_attr_getschedpolicy(const pthread_attr_t *attrp, int *policy)
+{
+  struct pthread_attr *attr = *attrp;
+  *policy = attr->__schedpolicy;
+  return 0;
+}
+
+
+/* This is completely bogus.  We reject all attempts to change it from
+   VKI_BYTES_PER_PAGE.  I don't have a clue what it's for so it seems
+   safest to be paranoid. */
+WEAK
+int pthread_attr_setguardsize(pthread_attr_t *attrp, size_t guardsize)
+{
+   static int moans = N_MOANS;
+
+   if (guardsize == VKI_BYTES_PER_PAGE)
+      return 0;
+
+   if (moans-- > 0)
+       ignored("pthread_attr_setguardsize",
+               "(it ignores any guardsize != 4096)");
+
+   return 0;
+}
+
+/* A straight copy of the LinuxThreads code. */
+WEAK
+int pthread_attr_getguardsize(const pthread_attr_t *attrp, size_t *guardsize)
+{
+   struct pthread_attr *attr = *attrp;
+   *guardsize = attr->__guardsize;
+   return 0;
+}
+
+/* Again, like LinuxThreads. */
+
+static int concurrency_current_level = 0;
+
+WEAK
+int pthread_setconcurrency(int new_level)
+{
+   if (new_level < 0)
+      return EINVAL;
+   else {
+      concurrency_current_level = new_level;
+      return 0;
+   }
+}
+
+WEAK
+int pthread_getconcurrency(void)
+{
+   return concurrency_current_level;
+}
+
+
+
+/* ---------------------------------------------------
+   Helper functions for running a thread
+   and for clearing up afterwards.
+   ------------------------------------------------ */
+
+/* All exiting threads eventually pass through here, bearing the
+   return value, or PTHREAD_CANCELED, in ret_val. */
+static
+__attribute__((noreturn))
+void thread_exit_wrapper ( void* ret_val )
+{
+   int           detached, res;
+   CleanupEntry  cu;
+   pthread_key_t key;
+   void**        specifics_ptr;
+
+   /* Run this thread's cleanup handlers. */
+   while (1) {
+      VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                              VG_USERREQ__CLEANUP_POP,
+                              &cu, 0, 0, 0);
+      if (res == -1) break; /* stack empty */
+      my_assert(res == 0);
+      if (0) printf("running exit cleanup handler");
+      cu.fn ( cu.arg );
+   }
+
+   /* Run this thread's key finalizers.  Really this should be run
+      PTHREAD_DESTRUCTOR_ITERATIONS times. */
+   for (key = 0; key < VG_N_THREAD_KEYS; key++) {
+      VALGRIND_MAGIC_SEQUENCE(res, (-2) /* default */,
+                              VG_USERREQ__GET_KEY_D_AND_S,
+                              key, &cu, 0, 0 );
+      if (res == 0) {
+         /* valid key */
+         if (cu.fn && cu.arg)
+            cu.fn /* destructor for key */
+                  ( cu.arg /* specific for key for this thread */ );
+         continue;
+      }
+      my_assert(res == -1);
+   }
+
+   /* Free up my specifics space, if any. */
+   VALGRIND_MAGIC_SEQUENCE(specifics_ptr, 3 /* default */,
+                           VG_USERREQ__PTHREAD_GETSPECIFIC_PTR,
+                           pthread_self(), 0, 0, 0);
+   my_assert(specifics_ptr != (void**)3);
+   my_assert(specifics_ptr != (void**)1); /* 1 means invalid thread */
+   if (specifics_ptr != NULL)
+      my_free(specifics_ptr);
+
+   /* Decide on my final disposition. */
+   VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
+                           VG_USERREQ__SET_OR_GET_DETACH,
+                           2 /* get */, pthread_self(), 0, 0);
+   my_assert(detached == 0 || detached == 1);
+
+   if (detached) {
+      /* Detached; I just quit right now. */
+      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                              VG_USERREQ__QUIT, 0, 0, 0, 0);
+   } else {
+      /* Not detached; so I wait for a joiner. */
+      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                              VG_USERREQ__WAIT_JOINER, ret_val, 0, 0, 0);
+   }
+   /* NOTREACHED */
+   barf("thread_exit_wrapper: still alive?!");
+}
+
+
+/* This function is a wrapper function for running a thread.  It runs
+   the root function specified in pthread_create, and then, should the
+   root function return a value, it arranges to run the thread's
+   cleanup handlers and exit correctly. */
+
+/* Struct used to convey info from pthread_create to thread_wrapper.
+   Must be careful not to pass to the child thread any pointers to
+   objects which might be on the parent's stack.  */
+typedef
+   struct {
+      int   attr__detachstate;
+      void* (*root_fn) ( void* );
+      void* arg;
+   }
+   NewThreadInfo;
+
+
+/* This is passed to the VG_USERREQ__APPLY_IN_NEW_THREAD and so must
+   not return.  Note that this runs in the new thread, not the
+   parent. */
+static
+__attribute__((noreturn))
+void thread_wrapper ( NewThreadInfo* info )
+{
+   int   attr__detachstate;
+   void* (*root_fn) ( void* );
+   void* arg;
+   void* ret_val;
+
+   attr__detachstate = info->attr__detachstate;
+   root_fn           = info->root_fn;
+   arg               = info->arg;
+
+   /* Free up the arg block that pthread_create malloced. */
+   my_free(info);
+
+   /* Minimally observe the attributes supplied. */
+   if (attr__detachstate != PTHREAD_CREATE_DETACHED
+       && attr__detachstate != PTHREAD_CREATE_JOINABLE)
+      pthread_error("thread_wrapper: invalid attr->__detachstate");
+   if (attr__detachstate == PTHREAD_CREATE_DETACHED)
+      pthread_detach(pthread_self());
+
+#  ifdef GLIBC_2_3
+   /* Set this thread's locale to the global (default) locale.  A hack
+      in support of glibc-2.3.  This does the biz for the all new
+      threads; the root thread is done with a horrible hack in
+      init_libc_tsd_keys() below.
+   */
+   __uselocale(LC_GLOBAL_LOCALE);
+#  endif
+
+   /* The root function might not return.  But if it does we simply
+      move along to thread_exit_wrapper.  All other ways out for the
+      thread (cancellation, or calling pthread_exit) lead there
+      too. */
+   ret_val = root_fn(arg);
+   thread_exit_wrapper(ret_val);
+   /* NOTREACHED */
+}
+
+
+/* ---------------------------------------------------
+   THREADs
+   ------------------------------------------------ */
+
+static void __valgrind_pthread_yield ( void )
+{
+   int res;
+   ensure_valgrind("pthread_yield");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_YIELD, 0, 0, 0, 0);
+}
+
+WEAK
+void pthread_yield ( void )
+{
+   __valgrind_pthread_yield();
+}
+
+
+int pthread_equal(pthread_t thread1, pthread_t thread2)
+{
+   return thread1 == thread2 ? 1 : 0;
+}
+
+
+/* Bundle up the args into a malloc'd block and create a new thread
+   consisting of thread_wrapper() applied to said malloc'd block. */
+int
+pthread_create (pthread_t *__restrict __thredd,
+                __const pthread_attr_t *__restrict __attr,
+                void *(*__start_routine) (void *),
+                void *__restrict __arg)
+{
+   int            tid_child;
+   NewThreadInfo* info;
+
+   ensure_valgrind("pthread_create");
+
+   /* make sure the tsd keys, and hence locale info, are initialised
+      before we get into complications making new threads. */
+   init_libc_tsd_keys();
+
+   /* Allocate space for the arg block.  thread_wrapper will free
+      it. */
+   info = my_malloc(sizeof(NewThreadInfo));
+   my_assert(info != NULL);
+
+   if (__attr)
+      info->attr__detachstate = (*__attr)->__detachstate;
+   else
+      info->attr__detachstate = PTHREAD_CREATE_JOINABLE;
+
+   info->root_fn = __start_routine;
+   info->arg     = __arg;
+   VALGRIND_MAGIC_SEQUENCE(tid_child, VG_INVALID_THREADID /* default */,
+                           VG_USERREQ__APPLY_IN_NEW_THREAD,
+                           &thread_wrapper, info, 0, 0);
+   my_assert(tid_child != VG_INVALID_THREADID);
+
+   if (__thredd)
+      *__thredd = (pthread_t) tid_child;
+   return 0; /* success */
+}
+
+
+int
+pthread_join (pthread_t __th, void **__thread_return)
+{
+   int res;
+   ensure_valgrind("pthread_join");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_JOIN,
+                           __th, __thread_return, 0, 0);
+   return res;
+}
+
+
+void pthread_exit(void *retval)
+{
+   ensure_valgrind("pthread_exit");
+   /* Simple! */
+   thread_exit_wrapper(retval);
+}
+
+
+int pthread_detach(pthread_t th)
+{
+   int res;
+   ensure_valgrind("pthread_detach");
+   /* First we enquire as to the current detach state. */
+   VALGRIND_MAGIC_SEQUENCE(res, (-2) /* default */,
+                           VG_USERREQ__SET_OR_GET_DETACH,
+                           2 /* get */, th, 0, 0);
+   if (res == -1) {
+      /* not found */
+      pthread_error("pthread_detach: "
+                    "invalid target thread");
+      return ESRCH;
+   }
+   if (res == 1) {
+      /* already detached */
+      pthread_error("pthread_detach: "
+                    "target thread is already detached");
+      return EINVAL;
+   }
+   if (res == 0) {
+      VALGRIND_MAGIC_SEQUENCE(res, (-2) /* default */,
+                              VG_USERREQ__SET_OR_GET_DETACH,
+                              1 /* set */, th, 0, 0);
+      my_assert(res == 0);
+      return 0;
+   }
+   barf("pthread_detach");
+}
+
+
+/* ---------------------------------------------------
+   CLEANUP STACKS
+   ------------------------------------------------ */
+
+void pthread_cleanup_push (void (*__routine) (void *), void *__arg)
+{
+   int          res;
+   CleanupEntry cu;
+   ensure_valgrind("pthread_cleanup_push");
+   cu.fn  = __routine;
+   cu.arg = __arg;
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__CLEANUP_PUSH,
+                           &cu, 0, 0, 0);
+   my_assert(res == 0);
+}
+
+
+void pthread_cleanup_pop (int __execute)
+{
+   int          res;
+   CleanupEntry cu;
+   ensure_valgrind("_pthread_cleanup_push");
+   cu.fn = cu.arg = NULL; /* paranoia */
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__CLEANUP_POP,
+                           &cu, 0, 0, 0);
+   if (res == 0) {
+      /* pop succeeded */
+     if (__execute) {
+        cu.fn ( cu.arg );
+     }
+     return;
+   }
+   if (res == -1) {
+      /* stack underflow */
+      return;
+   }
+   barf("_pthread_cleanup_pop");
+}
+
+
+
+/* ---------------------------------------------------
+   MUTEX ATTRIBUTES
+   ------------------------------------------------ */
+
+int __pthread_mutexattr_init(pthread_mutexattr_t *attrp)
+{
+   struct pthread_mutex_attr *attr = my_malloc(sizeof(struct pthread_mutex_attr));
+   *attrp = attr;
+   attr->__mutexkind = PTHREAD_MUTEX_ERRORCHECK;
+   return 0;
+}
+
+int __pthread_mutexattr_settype(pthread_mutexattr_t *attrp, int type)
+{
+   struct pthread_mutex_attr *attr = *attrp;
+   switch (type) {
+      case PTHREAD_MUTEX_RECURSIVE:
+      case PTHREAD_MUTEX_ERRORCHECK:
+      case PTHREAD_MUTEX_NORMAL:
+         attr->__mutexkind = type;
+         return 0;
+      default:
+         pthread_error("pthread_mutexattr_settype: "
+                       "invalid type");
+         return EINVAL;
+   }
+}
+
+int __pthread_mutexattr_destroy(pthread_mutexattr_t *attrp)
+{
+   if (*attrp) {
+      my_free(*attrp);
+      *attrp = 0;
+   }
+   return 0;
+}
+
+int __pthread_mutexattr_setpshared ( pthread_mutexattr_t* attr, int pshared)
+{
+  if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_SHARED)
+    return EINVAL;
+
+  /* For now it is not possible to shared a conditional variable.  */
+  if (pshared != PTHREAD_PROCESS_PRIVATE)
+    return ENOSYS;
+
+  return 0;
+}
+
+
+/* ---------------------------------------------------
+   MUTEXes
+   ------------------------------------------------ */
+
+int __pthread_mutex_init(pthread_mutex_t *mutexp,
+                         const  pthread_mutexattr_t *mutexattrp)
+{
+   struct pthread_mutex *mutex = my_malloc(sizeof(struct pthread_mutex));
+   *mutexp = mutex;
+   mutex->__m_count = 0;
+   mutex->__m_owner = VG_INVALID_THREADID;
+   mutex->__m_kind  = PTHREAD_MUTEX_ERRORCHECK;
+   if (mutexattrp)
+      mutex->__m_kind = (*mutexattrp)->__mutexkind;
+   return 0;
+}
+
+
+int __pthread_mutex_lock(pthread_mutex_t *mutexp)
+{
+   struct pthread_mutex *mutex = *mutexp;
+   int res;
+
+   if (*mutexp == PTHREAD_MUTEX_INITIALIZER) {
+      __pthread_mutex_init(mutexp, 0);
+      mutex = *mutexp;
+   }
+
+   if (RUNNING_ON_VALGRIND) {
+      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                              VG_USERREQ__PTHREAD_MUTEX_LOCK,
+                              mutexp, 0, 0, 0);
+      return res;
+   } else {
+      /* Play at locking */
+      if (0)
+	 kludged("prehistoric lock", NULL);
+      mutex->__m_owner = 1;
+      mutex->__m_count = 1;
+      mutex->__m_kind |= VG_PTHREAD_PREHISTORY;
+      return 0; /* success */
+   }
+}
+
+
+int __pthread_mutex_trylock(pthread_mutex_t *mutexp)
+{
+   struct pthread_mutex *mutex = *mutexp;
+   int res;
+
+   if (RUNNING_ON_VALGRIND) {
+      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                              VG_USERREQ__PTHREAD_MUTEX_TRYLOCK,
+                              mutexp, 0, 0, 0);
+      return res;
+   } else {
+      /* Play at locking */
+      if (0)
+	 kludged("prehistoric trylock", NULL);
+      mutex->__m_owner = 1;
+      mutex->__m_count = 1;
+      mutex->__m_kind |= VG_PTHREAD_PREHISTORY;
+      return 0; /* success */
+   }
+}
+
+
+int __pthread_mutex_unlock(pthread_mutex_t *mutexp)
+{
+   struct pthread_mutex *mutex = *mutexp;
+   int res;
+
+   if (RUNNING_ON_VALGRIND) {
+      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                              VG_USERREQ__PTHREAD_MUTEX_UNLOCK,
+                              mutexp, 0, 0, 0);
+      return res;
+   } else {
+      /* Play at locking */
+      if (0)
+	 kludged("prehistoric unlock", NULL);
+      mutex->__m_owner = 0;
+      mutex->__m_count = 0;
+      mutex->__m_kind &= ~VG_PTHREAD_PREHISTORY;
+      return 0; /* success */
+   }
+}
+
+
+int __pthread_mutex_destroy(pthread_mutex_t *mutexp)
+{
+   struct pthread_mutex *mutex = *mutexp;
+
+   /* Valgrind doesn't hold any resources on behalf of the mutex, so no
+      need to involve it. */
+   if (mutex->__m_count > 0) {
+      /* Oh, the horror.  glibc's internal use of pthreads "knows"
+	 that destroying a lock does an implicit unlock.  Make it
+	 explicit. */
+      __pthread_mutex_unlock(mutexp);
+      pthread_error("pthread_mutex_destroy: "
+		    "mutex is still in use");
+      return EBUSY;
+   }
+   mutex->__m_count = 0;
+   mutex->__m_owner = VG_INVALID_THREADID;
+   mutex->__m_kind  = PTHREAD_MUTEX_ERRORCHECK;
+   my_free(mutex);
+   *mutexp = 0;
+   return 0;
+}
+
+
+/* ---------------------------------------------------
+   CONDITION VARIABLES
+   ------------------------------------------------ */
+
+/* LinuxThreads supports no attributes for conditions.  Hence ... */
+
+int pthread_condattr_init(pthread_condattr_t *attrp)
+{
+   return 0;
+}
+
+int pthread_condattr_destroy(pthread_condattr_t *attrp)
+{
+   return 0;
+}
+
+int pthread_cond_init( pthread_cond_t *condp,
+                       const pthread_condattr_t *cond_attr)
+{
+   struct pthread_cond *cond = my_malloc(sizeof(struct pthread_cond));
+   *condp = cond;
+   cond->__c_waiting = VG_INVALID_THREADID;
+   return 0;
+}
+
+int pthread_cond_destroy(pthread_cond_t *condp)
+{
+   /* should check that no threads are waiting on this CV */
+   static int moans = N_MOANS;
+   if (moans-- > 0)
+      kludged("pthread_cond_destroy",
+              "(it doesn't check if the cond is waited on)" );
+   my_free(*condp);
+   *condp = 0;
+   return 0;
+}
+
+/* ---------------------------------------------------
+   SCHEDULING
+   ------------------------------------------------ */
+
+/* This is completely bogus. */
+int   pthread_getschedparam(pthread_t  target_thread,
+                            int  *policy,
+                            struct sched_param *param)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0)
+      kludged("pthread_getschedparam", NULL);
+   if (policy) *policy = SCHED_OTHER;
+#  ifdef HAVE_SCHED_PRIORITY
+   if (param) param->sched_priority = 0; /* who knows */
+#  else
+   if (param) param->__sched_priority = 0; /* who knows */
+#  endif
+   return 0;
+}
+
+int pthread_setschedparam(pthread_t target_thread,
+                          int policy,
+                          const struct sched_param *param)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0)
+      ignored("pthread_setschedparam", "(scheduling not changeable)");
+   return 0;
+}
+
+int pthread_cond_wait(pthread_cond_t *condp, pthread_mutex_t *mutexp)
+{
+   int res;
+   ensure_valgrind("pthread_cond_wait");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_COND_WAIT,
+			   condp, mutexp, 0, 0);
+   return res;
+}
+
+int pthread_cond_timedwait ( pthread_cond_t *condp,
+                             pthread_mutex_t *mutexp,
+                             const struct  timespec *abstime )
+{
+   int res;
+   unsigned int ms_now, ms_end;
+   struct  timeval timeval_now;
+   unsigned long long int ull_ms_now_after_1970;
+   unsigned long long int ull_ms_end_after_1970;
+
+   ensure_valgrind("pthread_cond_timedwait");
+   VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
+                           VG_USERREQ__READ_MILLISECOND_TIMER,
+                           0, 0, 0, 0);
+   my_assert(ms_now != 0xFFFFFFFF);
+   res = gettimeofday(&timeval_now, NULL);
+   my_assert(res == 0);
+
+   ull_ms_now_after_1970
+      = 1000ULL * ((unsigned long long int)(timeval_now.tv_sec))
+        + ((unsigned long long int)(timeval_now.tv_usec / 1000000));
+   ull_ms_end_after_1970
+      = 1000ULL * ((unsigned long long int)(abstime->tv_sec))
+        + ((unsigned long long int)(abstime->tv_nsec / 1000000));
+   if (ull_ms_end_after_1970 < ull_ms_now_after_1970)
+      ull_ms_end_after_1970 = ull_ms_now_after_1970;
+   ms_end
+      = ms_now + (unsigned int)(ull_ms_end_after_1970 - ull_ms_now_after_1970);
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_COND_TIMEDWAIT,
+			   condp, mutexp, ms_end, 0);
+   return res;
+}
+
+
+int pthread_cond_signal(pthread_cond_t *cond)
+{
+   int res;
+   ensure_valgrind("pthread_cond_signal");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_COND_SIGNAL,
+			   cond, 0, 0, 0);
+   return res;
+}
+
+int pthread_cond_broadcast(pthread_cond_t *cond)
+{
+   int res;
+   ensure_valgrind("pthread_cond_broadcast");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_COND_BROADCAST,
+			   cond, 0, 0, 0);
+   return res;
+}
+
+
+/* ---------------------------------------------------
+   CANCELLATION
+   ------------------------------------------------ */
+
+int pthread_setcancelstate(int state, int *oldstate)
+{
+   int res;
+   ensure_valgrind("pthread_setcancelstate");
+   if (state != PTHREAD_CANCEL_ENABLE
+       && state != PTHREAD_CANCEL_DISABLE) {
+      pthread_error("pthread_setcancelstate: "
+                    "invalid state");
+      return EINVAL;
+   }
+   my_assert(-1 != PTHREAD_CANCEL_ENABLE);
+   my_assert(-1 != PTHREAD_CANCEL_DISABLE);
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELSTATE,
+                           state, 0, 0, 0);
+   my_assert(res != -1);
+   if (oldstate)
+      *oldstate = res;
+   return 0;
+}
+
+int pthread_setcanceltype(int type, int *oldtype)
+{
+   int res;
+   ensure_valgrind("pthread_setcanceltype");
+   if (type != PTHREAD_CANCEL_DEFERRED
+       && type != PTHREAD_CANCEL_ASYNCHRONOUS) {
+      pthread_error("pthread_setcanceltype: "
+                    "invalid type");
+      return EINVAL;
+   }
+   my_assert(-1 != PTHREAD_CANCEL_DEFERRED);
+   my_assert(-1 != PTHREAD_CANCEL_ASYNCHRONOUS);
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELTYPE,
+                           type, 0, 0, 0);
+   my_assert(res != -1);
+   if (oldtype)
+      *oldtype = res;
+   return 0;
+}
+
+int pthread_cancel(pthread_t thread)
+{
+   int res;
+   ensure_valgrind("pthread_cancel");
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__SET_CANCELPEND,
+                           thread, &thread_exit_wrapper, 0, 0);
+   my_assert(res != -1);
+   return res;
+}
+
+static
+void __my_pthread_testcancel(void)
+{
+   int res;
+   ensure_valgrind("__my_pthread_testcancel");
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__TESTCANCEL,
+                           0, 0, 0, 0);
+   my_assert(res == 0);
+}
+
+void pthread_testcancel ( void )
+{
+   __my_pthread_testcancel();
+}
+
+
+/* Not really sure what this is for.  I suspect for doing the POSIX
+   requirements for fork() and exec().  We do this internally anyway
+   whenever those syscalls are observed, so this could be superfluous,
+   but hey ...
+*/
+void __pthread_kill_other_threads_np ( void )
+{
+   int res;
+   ensure_valgrind("__pthread_kill_other_threads_np");
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__NUKE_OTHER_THREADS,
+                           0, 0, 0, 0);
+   my_assert(res == 0);
+}
+
+
+/* ---------------------------------------------------
+   SIGNALS
+   ------------------------------------------------ */
+
+#include <signal.h>
+
+int pthread_sigmask(int how, const sigset_t *newmask,
+                             sigset_t *oldmask)
+{
+   int res;
+
+   /* A bit subtle, because the scheduler expects newmask and oldmask
+      to be vki_sigset_t* rather than sigset_t*, and the two are
+      different.  Fortunately the first 64 bits of a sigset_t are
+      exactly a vki_sigset_t, so we just pass the pointers through
+      unmodified.  Haaaack!
+
+      Also mash the how value so that the SIG_ constants from glibc
+      constants to VKI_ constants, so that the former do not have to
+      be included into vg_scheduler.c. */
+
+   ensure_valgrind("pthread_sigmask");
+
+   switch (how) {
+      case SIG_SETMASK: how = VKI_SIG_SETMASK; break;
+      case SIG_BLOCK:   how = VKI_SIG_BLOCK; break;
+      case SIG_UNBLOCK: how = VKI_SIG_UNBLOCK; break;
+      default: pthread_error("pthread_sigmask: invalid how");
+               return EINVAL;
+   }
+
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_SIGMASK,
+                           how, newmask, oldmask, 0);
+
+   /* The scheduler tells us of any memory violations. */
+   return res == 0 ? 0 : EFAULT;
+}
+
+int sigwait ( const sigset_t* set, int* sig )
+{
+   int res;
+   siginfo_t si;
+
+   __my_pthread_testcancel();
+
+   si.si_signo = 0;
+   res = sigtimedwait(set, &si, NULL);
+   *sig = si.si_signo;
+
+   return 0;			/* always returns 0 */
+}
+
+
+int pthread_kill(pthread_t thread, int signo)
+{
+   int res;
+   ensure_valgrind("pthread_kill");
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_KILL,
+                           thread, signo, 0, 0);
+   return res;
+}
+
+
+/* Copied verbatim from Linuxthreads */
+/* Redefine raise() to send signal to calling thread only,
+   as per POSIX 1003.1c */
+int raise (int sig)
+{
+  int retcode = pthread_kill(pthread_self(), sig);
+  if (retcode == 0) {
+    return 0;
+  } else {
+    *(__error()) = retcode;
+    return -1;
+  }
+}
+
+
+
+/* ---------------------------------------------------
+   THREAD-SPECIFICs
+   ------------------------------------------------ */
+
+static
+int key_is_valid (pthread_key_t key)
+{
+   int res;
+   VALGRIND_MAGIC_SEQUENCE(res, 2 /* default */,
+                           VG_USERREQ__PTHREAD_KEY_VALIDATE,
+                           key, 0, 0, 0);
+   my_assert(res != 2);
+   return res;
+}
+
+
+/* Returns NULL if thread is invalid.  Otherwise, if the thread
+   already has a specifics area, return that.  Otherwise allocate it
+   one. */
+static
+void** get_or_allocate_specifics_ptr ( pthread_t thread )
+{
+   int    res, i;
+   void** specifics_ptr;
+   ensure_valgrind("get_or_allocate_specifics_ptr");
+
+   /* Returns zero if the thread has no specific_ptr.  One if thread
+      is invalid.  Otherwise, the specific_ptr value.  This is
+      allocated with my_malloc and so is aligned and cannot be
+      confused with 1 or 3. */
+   VALGRIND_MAGIC_SEQUENCE(specifics_ptr, 3 /* default */,
+                           VG_USERREQ__PTHREAD_GETSPECIFIC_PTR,
+                           thread, 0, 0, 0);
+   my_assert(specifics_ptr != (void**)3);
+
+   if (specifics_ptr == (void**)1)
+      return NULL; /* invalid thread */
+
+   if (specifics_ptr != NULL)
+      return specifics_ptr; /* already has a specifics ptr. */
+
+   /* None yet ... allocate a new one.  Should never fail. */
+   specifics_ptr = my_malloc( VG_N_THREAD_KEYS * sizeof(void*) );
+   my_assert(specifics_ptr != NULL);
+
+   VALGRIND_MAGIC_SEQUENCE(res, -1 /* default */,
+                           VG_USERREQ__PTHREAD_SETSPECIFIC_PTR,
+                           specifics_ptr, 0, 0, 0);
+   my_assert(res == 0);
+
+   /* POSIX sez: "Upon thread creation, the value NULL shall be
+      associated with all defined keys in the new thread."  This
+      allocation is in effect a delayed allocation of the specific
+      data for a thread, at its first-use.  Hence we initialise it
+      here. */
+   for (i = 0; i < VG_N_THREAD_KEYS; i++) {
+      specifics_ptr[i] = NULL;
+   }
+
+   return specifics_ptr;
+}
+
+
+int __pthread_key_create(pthread_key_t *key,
+                         void  (*destr_function)  (void *))
+{
+   void** specifics_ptr;
+   int    res, i;
+   ensure_valgrind("pthread_key_create");
+
+   /* This writes *key if successful.  It should never fail. */
+   VALGRIND_MAGIC_SEQUENCE(res, 1 /* default */,
+                           VG_USERREQ__PTHREAD_KEY_CREATE,
+                           key, destr_function, 0, 0);
+
+   if (res == 0) {
+      /* POSIX sez: "Upon key creation, the value NULL shall be
+	 associated with the new key in all active threads." */
+      for (i = 0; i < VG_N_THREADS; i++) {
+	 specifics_ptr = get_or_allocate_specifics_ptr((pthread_t)i);
+	 /* we get NULL if i is an invalid thread. */
+	 if (specifics_ptr != NULL)
+	    specifics_ptr[*key] = NULL;
+      }
+   }
+
+   return res;
+}
+
+int pthread_key_delete(pthread_key_t key)
+{
+   int res;
+   ensure_valgrind("pthread_key_delete");
+   if (!key_is_valid(key))
+      return EINVAL;
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_KEY_DELETE,
+                           key, 0, 0, 0);
+   my_assert(res == 0);
+   return 0;
+}
+
+int __pthread_setspecific(pthread_key_t key, const void *pointer)
+{
+   void** specifics_ptr;
+   ensure_valgrind("pthread_setspecific");
+
+   if (!key_is_valid(key))
+      return EINVAL;
+
+   specifics_ptr = get_or_allocate_specifics_ptr(pthread_self());
+   specifics_ptr[key] = (void*)pointer;
+   return 0;
+}
+
+void * __pthread_getspecific(pthread_key_t key)
+{
+   void** specifics_ptr;
+   ensure_valgrind("pthread_getspecific");
+
+   if (!key_is_valid(key))
+      return NULL;
+
+   specifics_ptr = get_or_allocate_specifics_ptr(pthread_self());
+   return specifics_ptr[key];
+}
+
+
+#ifdef GLIBC_2_3
+static
+void ** __pthread_getspecific_addr(pthread_key_t key)
+{
+   void** specifics_ptr;
+   ensure_valgrind("pthread_getspecific_addr");
+
+   if (!key_is_valid(key))
+      return NULL;
+
+   specifics_ptr = get_or_allocate_specifics_ptr(pthread_self());
+   return &(specifics_ptr[key]);
+}
+#endif
+
+
+/* ---------------------------------------------------
+   ONCEry
+   ------------------------------------------------ */
+
+/* This protects reads and writes of the once_control variable
+   supplied.  It is never held whilst any particular initialiser is
+   running. */
+static pthread_mutex_t once_masterlock = PTHREAD_MUTEX_INITIALIZER;
+
+int __pthread_once ( pthread_once_t *once_control,
+                     void (*init_routine) (void) )
+{
+   int res;
+   int done;
+
+#  define TAKE_LOCK                                   \
+      res = __pthread_mutex_lock(&once_masterlock);   \
+      my_assert(res == 0);
+
+#  define RELEASE_LOCK                                \
+      res = __pthread_mutex_unlock(&once_masterlock); \
+      my_assert(res == 0);
+
+   void cleanup(void *v) {
+      TAKE_LOCK;
+      once_control->state = PTHREAD_NEEDS_INIT;
+      RELEASE_LOCK;
+   }
+
+   ensure_valgrind("pthread_once");
+
+   /* Grab the lock transiently, so we can safely see what state this
+      once_control is in. */
+
+   TAKE_LOCK;
+
+   switch (once_control->state) {
+
+      case PTHREAD_NEEDS_INIT:
+ 	 /* Not started.  Change state to indicate running, drop the
+	    lock and run.  */
+         once_control->state = 2; /* XXX */
+	 pthread_cleanup_push(cleanup, NULL);
+	 RELEASE_LOCK;
+         init_routine();
+         /* re-take the lock, and set state to indicate done. */
+	 TAKE_LOCK;
+	 pthread_cleanup_pop(False);
+         once_control->state = PTHREAD_DONE_INIT;
+	 RELEASE_LOCK;
+	 break;
+
+      case 2:
+	 /* This is the tricky case.  The initialiser is running in
+            some other thread, but we have to delay this thread till
+            the other one completes.  So we sort-of busy wait.  In
+            fact it makes sense to yield now, because what we want to
+            happen is for the thread running the initialiser to
+            complete ASAP. */
+	 RELEASE_LOCK;
+         done = 0;
+         while (1) {
+            /* Let others run for a while. */
+	    __valgrind_pthread_yield();
+	    /* Grab the lock and see if we're done waiting. */
+	    TAKE_LOCK;
+            if (once_control->state == PTHREAD_DONE_INIT)
+               done = 1;
+	    RELEASE_LOCK;
+	    if (done)
+               break;
+	 }
+	 break;
+
+      case PTHREAD_DONE_INIT:
+      default:
+ 	 /* Easy.  It's already done.  Just drop the lock. */
+         RELEASE_LOCK;
+	 break;
+   }
+
+   return 0;
+
+#  undef TAKE_LOCK
+#  undef RELEASE_LOCK
+}
+
+#undef P_ONCE_NOT_DONE
+#undef P_ONCE_RUNNING
+#undef P_ONCE_COMPLETED
+
+
+/* ---------------------------------------------------
+   MISC
+   ------------------------------------------------ */
+
+static pthread_mutex_t pthread_atfork_lock
+   = PTHREAD_MUTEX_INITIALIZER;
+
+int __pthread_atfork ( void (*prepare)(void),
+                       void (*parent)(void),
+                       void (*child)(void) )
+{
+   int n, res;
+   ForkHandlerEntry entry;
+
+   ensure_valgrind("pthread_atfork");
+   __pthread_mutex_lock(&pthread_atfork_lock);
+
+   /* Fetch old counter */
+   VALGRIND_MAGIC_SEQUENCE(n, -2 /* default */,
+                           VG_USERREQ__GET_FHSTACK_USED,
+                           0, 0, 0, 0);
+   my_assert(n >= 0 && n < VG_N_FORKHANDLERSTACK);
+   if (n == VG_N_FORKHANDLERSTACK-1)
+      barf("pthread_atfork: VG_N_FORKHANDLERSTACK is too low; "
+           "increase and recompile");
+
+   /* Add entry */
+   entry.prepare = *prepare;
+   entry.parent  = *parent;
+   entry.child   = *child;
+   VALGRIND_MAGIC_SEQUENCE(res, -2 /* default */,
+                           VG_USERREQ__SET_FHSTACK_ENTRY,
+                           n, &entry, 0, 0);
+   my_assert(res == 0);
+
+   /* Bump counter */
+   VALGRIND_MAGIC_SEQUENCE(res, -2 /* default */,
+                           VG_USERREQ__SET_FHSTACK_USED,
+                           n+1, 0, 0, 0);
+   my_assert(res == 0);
+
+   __pthread_mutex_unlock(&pthread_atfork_lock);
+   return 0;
+}
+
+
+#ifdef GLIBC_2_3
+/* This seems to be a hook which appeared in glibc-2.3.2. */
+int __register_atfork ( void (*prepare)(void),
+                        void (*parent)(void),
+                        void (*child)(void) )
+{
+   return __pthread_atfork(prepare,parent,child);
+}
+#endif
+
+WEAK
+void __pthread_initialize ( void )
+{
+   ensure_valgrind("__pthread_initialize");
+}
+
+
+/* ---------------------------------------------------
+   LIBRARY-PRIVATE THREAD SPECIFIC STATE
+   ------------------------------------------------ */
+
+#include <netinet/in.h>
+#include <resolv.h>
+static int thread_specific_errno[VG_N_THREADS];
+static int thread_specific_h_errno[VG_N_THREADS];
+static struct __res_state
+           thread_specific_res_state[VG_N_THREADS];
+
+#undef errno
+extern int errno;
+int* __errno_location ( void )
+{
+   int tid;
+   int *ret;
+
+   ensure_valgrind("__errno_location");
+   VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
+                           VG_USERREQ__PTHREAD_GET_THREADID,
+                           0, 0, 0, 0);
+   /* 'cos I'm paranoid ... */
+   if (tid < 1 || tid >= VG_N_THREADS)
+      barf("__errno_location: invalid ThreadId");
+   if (tid == 1)
+      ret = &errno;
+   else
+      ret = &thread_specific_errno[tid];
+
+   return ret;
+}
+
+#undef h_errno
+extern int h_errno;
+int* __h_errno_location ( void )
+{
+   int tid;
+   /* ensure_valgrind("__h_errno_location"); */
+   VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
+                           VG_USERREQ__PTHREAD_GET_THREADID,
+                           0, 0, 0, 0);
+   /* 'cos I'm paranoid ... */
+   if (tid < 1 || tid >= VG_N_THREADS)
+      barf("__h_errno_location: invalid ThreadId");
+   if (tid == 1)
+      return &h_errno;
+   return & thread_specific_h_errno[tid];
+}
+
+
+#undef _res
+extern struct __res_state _res;
+struct __res_state* __res_state ( void )
+{
+   int tid;
+   /* ensure_valgrind("__res_state"); */
+   VALGRIND_MAGIC_SEQUENCE(tid, 1 /* default */,
+                           VG_USERREQ__PTHREAD_GET_THREADID,
+                           0, 0, 0, 0);
+   /* 'cos I'm paranoid ... */
+   if (tid < 1 || tid >= VG_N_THREADS)
+      barf("__res_state: invalid ThreadId");
+   if (tid == 1)
+      return & _res;
+   return & thread_specific_res_state[tid];
+}
+
+
+/* ---------------------------------------------------
+   LIBC-PRIVATE SPECIFIC DATA
+   ------------------------------------------------ */
+
+/* Relies on assumption that initial private data is NULL.  This
+   should be fixed somehow. */
+
+/* The allowable keys (indices) (all 3 of them).
+   From sysdeps/pthread/bits/libc-tsd.h
+*/
+/* as per glibc anoncvs HEAD of 20021001. */
+enum __libc_tsd_key_t { _LIBC_TSD_KEY_MALLOC = 0,
+                        _LIBC_TSD_KEY_DL_ERROR,
+                        _LIBC_TSD_KEY_RPC_VARS,
+                        _LIBC_TSD_KEY_LOCALE,
+                        _LIBC_TSD_KEY_CTYPE_B,
+                        _LIBC_TSD_KEY_CTYPE_TOLOWER,
+                        _LIBC_TSD_KEY_CTYPE_TOUPPER,
+                        _LIBC_TSD_KEY_N };
+
+/* Auto-initialising subsystem.  libc_specifics_inited is set
+   after initialisation.  libc_specifics_inited_mx guards it. */
+static int             libc_specifics_inited    = 0;
+static pthread_mutex_t libc_specifics_inited_mx = PTHREAD_MUTEX_INITIALIZER;
+
+
+/* These are the keys we must initialise the first time. */
+static pthread_key_t libc_specifics_keys[_LIBC_TSD_KEY_N];
+
+
+/* Initialise the keys, if they are not already initialised. */
+static
+void init_libc_tsd_keys ( void )
+{
+   int res, i;
+   pthread_key_t k;
+
+   /* Don't fall into deadlock if we get called again whilst we still
+      hold the lock, via the __uselocale() call herein. */
+   if (libc_specifics_inited != 0)
+      return;
+
+   /* Take the lock. */
+   res = __pthread_mutex_lock(&libc_specifics_inited_mx);
+   if (res != 0) barf("init_libc_tsd_keys: lock");
+
+   /* Now test again, to be sure there is no mistake. */
+   if (libc_specifics_inited != 0) {
+      res = __pthread_mutex_unlock(&libc_specifics_inited_mx);
+      if (res != 0) barf("init_libc_tsd_keys: unlock(1)");
+      return;
+   }
+
+   /* Actually do the initialisation. */
+   /* printf("INIT libc specifics\n"); */
+   for (i = 0; i < _LIBC_TSD_KEY_N; i++) {
+      res = __pthread_key_create(&k, NULL);
+      if (res != 0) barf("init_libc_tsd_keys: create");
+      libc_specifics_keys[i] = k;
+   }
+
+   /* Signify init done. */
+   libc_specifics_inited = 1;
+
+#  ifdef GLIBC_2_3
+   /* Set the initialising thread's locale to the global (default)
+      locale.  A hack in support of glibc-2.3.  This does the biz for
+      the root thread.  For all other threads we run this in
+      thread_wrapper(), which does the real work of
+      pthread_create(). */
+   /* assert that we are the root thread.  I don't know if this is
+      really a valid assertion to make; if it breaks I'll reconsider
+      it. */
+   my_assert(pthread_self() == 1);
+   __uselocale(LC_GLOBAL_LOCALE);
+#  endif
+
+   /* Unlock and return. */
+   res = __pthread_mutex_unlock(&libc_specifics_inited_mx);
+   if (res != 0) barf("init_libc_tsd_keys: unlock");
+}
+
+
+static int
+libc_internal_tsd_set ( enum __libc_tsd_key_t key,
+                        const void * pointer )
+{
+   int res;
+   /* printf("SET SET SET key %d ptr %p\n", key, pointer); */
+   if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
+      barf("libc_internal_tsd_set: invalid key");
+   init_libc_tsd_keys();
+   res = __pthread_setspecific(libc_specifics_keys[key], pointer);
+   if (res != 0) barf("libc_internal_tsd_set: setspecific failed");
+   return 0;
+}
+
+static void *
+libc_internal_tsd_get ( enum __libc_tsd_key_t key )
+{
+   void* v;
+   /* printf("GET GET GET key %d\n", key); */
+   if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
+      barf("libc_internal_tsd_get: invalid key");
+   init_libc_tsd_keys();
+   v = __pthread_getspecific(libc_specifics_keys[key]);
+   /* if (v == NULL) barf("libc_internal_tsd_set: getspecific failed"); */
+   return v;
+}
+
+
+int (*__libc_internal_tsd_set)
+    (enum __libc_tsd_key_t key, const void * pointer)
+   = libc_internal_tsd_set;
+
+void* (*__libc_internal_tsd_get)
+      (enum __libc_tsd_key_t key)
+   = libc_internal_tsd_get;
+
+
+#ifdef GLIBC_2_3
+/* This one was first spotted be me in the glibc-2.2.93 sources. */
+static void**
+libc_internal_tsd_address ( enum __libc_tsd_key_t key )
+{
+   void** v;
+   /* printf("ADDR ADDR ADDR key %d\n", key); */
+   if (key < _LIBC_TSD_KEY_MALLOC || key >= _LIBC_TSD_KEY_N)
+      barf("libc_internal_tsd_address: invalid key");
+   init_libc_tsd_keys();
+   v = __pthread_getspecific_addr(libc_specifics_keys[key]);
+   return v;
+}
+
+void ** (*__libc_internal_tsd_address)
+        (enum __libc_tsd_key_t key)
+   = libc_internal_tsd_address;
+#endif
+
+
+/* ---------------------------------------------------------------------
+   These are here (I think) because they are deemed cancellation
+   points by POSIX.  For the moment we'll simply pass the call along
+   to the corresponding thread-unaware (?) libc routine.
+   ------------------------------------------------------------------ */
+
+#ifdef GLIBC_2_1
+extern
+int __sigaction
+             (int signum,
+              const struct sigaction *act,
+              struct  sigaction *oldact);
+#else
+extern
+int _sigaction
+             (int signum,
+              const struct sigaction *act,
+              struct  sigaction *oldact);
+#endif
+int sigaction(int signum,
+              const struct sigaction *act,
+              struct  sigaction *oldact)
+{
+   __my_pthread_testcancel();
+#  ifdef GLIBC_2_1
+   return __sigaction(signum, act, oldact);
+#  else
+   return _sigaction(signum, act, oldact);
+#  endif
+}
+
+extern
+int _accept(int fd, struct sockaddr *addr, socklen_t *len);
+
+WEAK int __accept(int fd, struct sockaddr *addr, socklen_t *len)
+{
+   __my_pthread_testcancel();
+   return _accept(fd, addr, len);
+}
+strong_alias(__accept, accept);
+
+extern
+int  _connect(int  sockfd,
+                    const  struct  sockaddr  *serv_addr,
+                    socklen_t addrlen);
+WEAK
+int  connect(int  sockfd,
+             const  struct  sockaddr  *serv_addr,
+             socklen_t addrlen)
+{
+   __my_pthread_testcancel();
+   return _connect(sockfd, serv_addr, addrlen);
+}
+
+
+extern
+int _fcntl(int fd, int cmd, long arg);
+WEAK
+int fcntl(int fd, int cmd, long arg)
+{
+   __my_pthread_testcancel();
+   return _fcntl(fd, cmd, arg);
+}
+
+
+extern
+ssize_t _write(int fd, const void *buf, size_t count);
+WEAK
+ssize_t write(int fd, const void *buf, size_t count)
+{
+   __my_pthread_testcancel();
+   return _write(fd, buf, count);
+}
+
+
+extern
+ssize_t _read(int fd, void *buf, size_t count);
+WEAK
+ssize_t read(int fd, void *buf, size_t count)
+{
+   __my_pthread_testcancel();
+   return _read(fd, buf, count);
+}
+
+extern
+int _open(const char *pathname, int flags, mode_t mode);
+/* WEAK */
+int open(const char *pathname, int flags, mode_t mode)
+{
+   return _open(pathname, flags, mode);
+}
+
+extern
+int _close(int fd);
+WEAK
+int close(int fd)
+{
+   __my_pthread_testcancel();
+   return _close(fd);
+}
+
+
+extern
+pid_t _waitpid(pid_t pid, int *status, int options);
+WEAK
+pid_t waitpid(pid_t pid, int *status, int options)
+{
+   __my_pthread_testcancel();
+   return _waitpid(pid, status, options);
+}
+
+
+extern
+int _nanosleep(const struct timespec *req, struct timespec *rem);
+WEAK
+int __nanosleep(const struct timespec *req, struct timespec *rem)
+{
+   __my_pthread_testcancel();
+   return _nanosleep(req, rem);
+}
+
+extern
+int _pause(void);
+WEAK
+int __pause(void)
+{
+   __my_pthread_testcancel();
+   return _pause();
+}
+
+
+extern
+int _fsync(int fd);
+WEAK
+int fsync(int fd)
+{
+   __my_pthread_testcancel();
+   return _fsync(fd);
+}
+
+extern
+int _sendmsg(int s, const struct msghdr *msg, int flags);
+WEAK
+int sendmsg(int s, const struct msghdr *msg, int flags)
+{
+   __my_pthread_testcancel();
+   return _sendmsg(s, msg, flags);
+}
+
+
+extern
+int _recvmsg(int s, struct msghdr *msg, int flags);
+WEAK
+int recvmsg(int s, struct msghdr *msg, int flags)
+{
+   __my_pthread_testcancel();
+   return _recvmsg(s, msg, flags);
+}
+
+
+extern
+int _recvfrom(int s, void *buf, size_t len, int flags,
+                    struct sockaddr *from, socklen_t *fromlen);
+WEAK
+int recvfrom(int s, void *buf, size_t len, int flags,
+             struct sockaddr *from, socklen_t *fromlen)
+{
+   __my_pthread_testcancel();
+   return _recvfrom(s, buf, len, flags, from, fromlen);
+}
+
+
+extern
+int _sendto(int s, const void *msg, size_t len, int flags,
+                  const struct sockaddr *to, socklen_t tolen);
+WEAK
+int sendto(int s, const void *msg, size_t len, int flags,
+           const struct sockaddr *to, socklen_t tolen)
+{
+   __my_pthread_testcancel();
+   return _sendto(s, msg, len, flags, to, tolen);
+}
+
+
+extern
+int _system(const char* str);
+WEAK
+int system(const char* str)
+{
+   __my_pthread_testcancel();
+   return _system(str);
+}
+
+
+extern
+pid_t _wait(int *status);
+WEAK
+pid_t wait(int *status)
+{
+   __my_pthread_testcancel();
+   return _wait(status);
+}
+
+
+extern
+int _msync(const void *start, size_t length, int flags);
+WEAK
+int msync(const void *start, size_t length, int flags)
+{
+   __my_pthread_testcancel();
+   return _msync(start, length, flags);
+}
+
+strong_alias(close, __close)
+strong_alias(fcntl, __fcntl)
+strong_alias(open, __open)
+strong_alias(read, __read)
+strong_alias(wait, __wait)
+strong_alias(write, __write)
+strong_alias(connect, __connect)
+strong_alias(send, __send)
+
+weak_alias(__nanosleep, nanosleep)
+weak_alias(__pause, pause)
+
+
+extern
+void _longjmp(jmp_buf env, int val) __attribute((noreturn));
+/* not weak: WEAK */
+void longjmp(jmp_buf env, int val)
+{
+   _longjmp(env, val);
+}
+
+
+/*--- fork and its helper ---*/
+
+static
+void run_fork_handlers ( int what )
+{
+   ForkHandlerEntry entry;
+   int n_h, n_handlers, i, res;
+
+   my_assert(what == 0 || what == 1 || what == 2);
+
+   /* Fetch old counter */
+   VALGRIND_MAGIC_SEQUENCE(n_handlers, -2 /* default */,
+                           VG_USERREQ__GET_FHSTACK_USED,
+                           0, 0, 0, 0);
+   my_assert(n_handlers >= 0 && n_handlers < VG_N_FORKHANDLERSTACK);
+
+   /* Prepare handlers (what == 0) are called in opposite order of
+      calls to pthread_atfork.  Parent and child handlers are called
+      in the same order as calls to pthread_atfork. */
+   if (what == 0)
+      n_h = n_handlers - 1;
+   else
+      n_h = 0;
+
+   for (i = 0; i < n_handlers; i++) {
+      VALGRIND_MAGIC_SEQUENCE(res, -2 /* default */,
+                              VG_USERREQ__GET_FHSTACK_ENTRY,
+                              n_h, &entry, 0, 0);
+      my_assert(res == 0);
+      switch (what) {
+         case 0:  if (entry.prepare) entry.prepare();
+                  n_h--; break;
+         case 1:  if (entry.parent) entry.parent();
+                  n_h++; break;
+         case 2:  if (entry.child) entry.child();
+                  n_h++; break;
+         default: barf("run_fork_handlers: invalid what");
+      }
+   }
+
+   if (what != 0 /* prepare */) {
+      /* Empty out the stack. */
+      VALGRIND_MAGIC_SEQUENCE(res, -2 /* default */,
+                              VG_USERREQ__SET_FHSTACK_USED,
+                              0, 0, 0, 0);
+      my_assert(res == 0);
+   }
+}
+
+extern
+pid_t _fork(void);
+pid_t __fork(void)
+{
+   pid_t pid;
+   __my_pthread_testcancel();
+   __pthread_mutex_lock(&pthread_atfork_lock);
+
+   run_fork_handlers(0 /* prepare */);
+   pid = _fork();
+   if (pid == 0) {
+      /* I am the child */
+      run_fork_handlers(2 /* child */);
+      __pthread_mutex_unlock(&pthread_atfork_lock);
+      __pthread_mutex_init(&pthread_atfork_lock, NULL);
+   } else {
+      /* I am the parent */
+      run_fork_handlers(1 /* parent */);
+      __pthread_mutex_unlock(&pthread_atfork_lock);
+   }
+   return pid;
+}
+
+
+pid_t __vfork(void)
+{
+   return __fork();
+}
+
+
+
+/* ---------------------------------------------------------------------
+   Hacky implementation of semaphores.
+   ------------------------------------------------------------------ */
+
+#include <semaphore.h>
+
+/* This is a terrible way to do the remapping.  Plan is to import an
+   AVL tree at some point. */
+
+typedef
+   struct {
+      pthread_mutex_t se_mx;
+      pthread_cond_t se_cv;
+      int count;
+   }
+   vg_sem_t;
+
+static pthread_mutex_t se_remap_mx = PTHREAD_MUTEX_INITIALIZER;
+
+static int      se_remap_used = 0;
+static sem_t*   se_remap_orig[VG_N_SEMAPHORES];
+static vg_sem_t se_remap_new[VG_N_SEMAPHORES];
+
+static vg_sem_t* se_remap ( sem_t* orig )
+{
+   int res, i;
+   res = __pthread_mutex_lock(&se_remap_mx);
+   my_assert(res == 0);
+
+   for (i = 0; i < se_remap_used; i++) {
+      if (se_remap_orig[i] == orig)
+         break;
+   }
+   if (i == se_remap_used) {
+      if (se_remap_used == VG_N_SEMAPHORES) {
+         res = pthread_mutex_unlock(&se_remap_mx);
+         my_assert(res == 0);
+         barf("VG_N_SEMAPHORES is too low.  Increase and recompile.");
+      }
+      se_remap_used++;
+      se_remap_orig[i] = orig;
+      /* printf("allocated semaphore %d\n", i); */
+   }
+   res = __pthread_mutex_unlock(&se_remap_mx);
+   my_assert(res == 0);
+   return &se_remap_new[i];
+}
+
+
+int sem_init(sem_t *sem, int pshared, unsigned int value)
+{
+   int       res;
+   vg_sem_t* vg_sem;
+   ensure_valgrind("sem_init");
+   if (pshared != 0) {
+      pthread_error("sem_init: unsupported pshared value");
+      *(__errno_location()) = ENOSYS;
+      return -1;
+   }
+   vg_sem = se_remap(sem);
+   res = pthread_mutex_init(&vg_sem->se_mx, NULL);
+   my_assert(res == 0);
+   res = pthread_cond_init(&vg_sem->se_cv, NULL);
+   my_assert(res == 0);
+   vg_sem->count = value;
+   return 0;
+}
+
+
+int sem_wait ( sem_t* sem )
+{
+   int       res;
+   vg_sem_t* vg_sem;
+   ensure_valgrind("sem_wait");
+   vg_sem = se_remap(sem);
+   res = __pthread_mutex_lock(&vg_sem->se_mx);
+   my_assert(res == 0);
+   while (vg_sem->count == 0) {
+      res = pthread_cond_wait(&vg_sem->se_cv, &vg_sem->se_mx);
+      my_assert(res == 0);
+   }
+   vg_sem->count--;
+   res = __pthread_mutex_unlock(&vg_sem->se_mx);
+   my_assert(res == 0);
+   return 0;
+}
+
+int sem_post ( sem_t* sem )
+{
+   int       res;
+   vg_sem_t* vg_sem;
+   ensure_valgrind("sem_post");
+   vg_sem = se_remap(sem);
+   res = __pthread_mutex_lock(&vg_sem->se_mx);
+   my_assert(res == 0);
+   if (vg_sem->count == 0) {
+      vg_sem->count++;
+      res = pthread_cond_broadcast(&vg_sem->se_cv);
+      my_assert(res == 0);
+   } else {
+      vg_sem->count++;
+   }
+   res = __pthread_mutex_unlock(&vg_sem->se_mx);
+   my_assert(res == 0);
+   return 0;
+}
+
+
+int sem_trywait ( sem_t* sem )
+{
+   int       ret, res;
+   vg_sem_t* vg_sem;
+   ensure_valgrind("sem_trywait");
+   vg_sem = se_remap(sem);
+   res = __pthread_mutex_lock(&vg_sem->se_mx);
+   my_assert(res == 0);
+   if (vg_sem->count > 0) {
+      vg_sem->count--;
+      ret = 0;
+   } else {
+      ret = -1;
+      *(__errno_location()) = EAGAIN;
+   }
+   res = __pthread_mutex_unlock(&vg_sem->se_mx);
+   my_assert(res == 0);
+   return ret;
+}
+
+
+int sem_getvalue(sem_t* sem, int * sval)
+{
+   vg_sem_t* vg_sem;
+   ensure_valgrind("sem_trywait");
+   vg_sem = se_remap(sem);
+   *sval = vg_sem->count;
+   return 0;
+}
+
+
+int sem_destroy(sem_t * sem)
+{
+   kludged("sem_destroy", "(it always succeeds, even if semaphore waited on)");
+   /* if someone waiting on this semaphore, errno = EBUSY, return -1 */
+   return 0;
+}
+
+
+int sem_timedwait(sem_t* sem, const struct timespec *abstime)
+{
+   int       res;
+   vg_sem_t* vg_sem;
+   ensure_valgrind("sem_timedwait");
+   vg_sem = se_remap(sem);
+   res = __pthread_mutex_lock(&vg_sem->se_mx);
+   my_assert(res == 0);
+   while ( vg_sem->count == 0 && res != ETIMEDOUT ) {
+      res = pthread_cond_timedwait(&vg_sem->se_cv, &vg_sem->se_mx, abstime);
+   }
+   if ( vg_sem->count > 0 ) {
+      vg_sem->count--;
+      res = __pthread_mutex_unlock(&vg_sem->se_mx);
+      my_assert(res == 0 );
+      return 0;
+   } else {
+      res = __pthread_mutex_unlock(&vg_sem->se_mx);
+      my_assert(res == 0 );
+      *(__errno_location()) = ETIMEDOUT;
+      return -1;
+   }
+}
+
+
+/* ---------------------------------------------------------------------
+   Reader-writer locks.
+   ------------------------------------------------------------------ */
+
+typedef
+   struct {
+      int             initted;  /* != 0 --> in use; sanity check only */
+      int             prefer_w; /* != 0 --> prefer writer */
+      int             nwait_r;  /* # of waiting readers */
+      int             nwait_w;  /* # of waiting writers */
+      pthread_cond_t  cv_r;     /* for signalling readers */
+      pthread_cond_t  cv_w;     /* for signalling writers */
+      pthread_mutex_t mx;
+      int             status;
+      /* allowed range for status: >= -1.  -1 means 1 writer currently
+         active, >= 0 means N readers currently active. */
+   }
+   vg_rwlock_t;
+
+
+static pthread_mutex_t rw_remap_mx = PTHREAD_MUTEX_INITIALIZER;
+
+static int                 rw_remap_used = 0;
+static pthread_rwlock_t    rw_remap_orig[VG_N_RWLOCKS];
+static vg_rwlock_t         rw_remap_new[VG_N_RWLOCKS];
+
+
+static
+void init_vg_rwlock ( vg_rwlock_t* vg_rwl )
+{
+   int res = 0;
+   vg_rwl->initted = 1;
+   vg_rwl->prefer_w = 1;
+   vg_rwl->nwait_r = 0;
+   vg_rwl->nwait_w = 0;
+   vg_rwl->status = 0;
+   res = pthread_mutex_init(&vg_rwl->mx, NULL);
+   res |= pthread_cond_init(&vg_rwl->cv_r, NULL);
+   res |= pthread_cond_init(&vg_rwl->cv_w, NULL);
+   my_assert(res == 0);
+}
+
+
+/* Take the address of a LinuxThreads rwlock_t and return the shadow
+   address of our version.  Further, if the LinuxThreads version
+   appears to have been statically initialised, do the same to the one
+   we allocate here.  The pthread_rwlock_t.__rw_readers field is set
+   to zero by PTHREAD_RWLOCK_INITIALIZER, so we take zero as meaning
+   uninitialised and non-zero meaning initialised.
+*/
+static vg_rwlock_t* rw_remap ( pthread_rwlock_t orig )
+{
+   int          res, i;
+   vg_rwlock_t* vg_rwl;
+   res = __pthread_mutex_lock(&rw_remap_mx);
+   my_assert(res == 0);
+
+   for (i = 0; i < rw_remap_used; i++) {
+      if (rw_remap_orig[i] == orig)
+         break;
+   }
+   if (i == rw_remap_used) {
+      if (rw_remap_used == VG_N_RWLOCKS) {
+         res = __pthread_mutex_unlock(&rw_remap_mx);
+         my_assert(res == 0);
+         barf("VG_N_RWLOCKS is too low.  Increase and recompile.");
+      }
+      rw_remap_used++;
+      rw_remap_orig[i] = orig;
+      rw_remap_new[i].initted = 0;
+      if (0) printf("allocated rwlock %d\n", i);
+   }
+   res = __pthread_mutex_unlock(&rw_remap_mx);
+   my_assert(res == 0);
+   vg_rwl = &rw_remap_new[i];
+
+   /* Initialise the shadow, if required. */
+   if (orig->__rw_readers == 0) {
+      orig->__rw_readers = 1;
+      init_vg_rwlock(vg_rwl);
+      vg_rwl->prefer_w = 0;
+   }
+
+   return vg_rwl;
+}
+
+
+int pthread_rwlock_init ( pthread_rwlock_t* origp,
+                          const pthread_rwlockattr_t* attrp )
+{
+   struct pthread_rwlock *orig = my_malloc(sizeof(struct pthread_rwlock));
+   *origp = orig;
+   vg_rwlock_t* rwl;
+   if (0) printf ("pthread_rwlock_init\n");
+   /* Force the remapper to initialise the shadow. */
+   orig->__rw_readers = 0;
+   /* Install the lock preference; the remapper needs to know it. */
+   orig->__rw_kind = 0;
+   if (attrp)
+      orig->__rw_kind = (*attrp)->__lockkind;
+   rwl = rw_remap ( orig );
+   return 0;
+}
+
+
+static
+void pthread_rwlock_rdlock_CANCEL_HDLR ( void* rwl_v )
+{
+   vg_rwlock_t* rwl = (vg_rwlock_t*)rwl_v;
+   rwl->nwait_r--;
+   pthread_mutex_unlock (&rwl->mx);
+}
+
+
+int pthread_rwlock_rdlock ( pthread_rwlock_t* origp )
+{
+   int res;
+   vg_rwlock_t* rwl;
+   if (0) printf ("pthread_rwlock_rdlock\n");
+   rwl = rw_remap ( *origp );
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      my_assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status < 0) {
+      my_assert(rwl->status == -1);
+      rwl->nwait_r++;
+      pthread_cleanup_push( pthread_rwlock_rdlock_CANCEL_HDLR, rwl );
+      while (1) {
+         if (rwl->status == 0) break;
+         res = pthread_cond_wait(&rwl->cv_r, &rwl->mx);
+         my_assert(res == 0);
+      }
+      pthread_cleanup_pop(0);
+      rwl->nwait_r--;
+   }
+   my_assert(rwl->status >= 0);
+   rwl->status++;
+   res = __pthread_mutex_unlock(&rwl->mx);
+   my_assert(res == 0);
+   return 0;
+}
+
+
+int pthread_rwlock_tryrdlock ( pthread_rwlock_t* origp )
+{
+   int res;
+   vg_rwlock_t* rwl;
+   if (0) printf ("pthread_rwlock_tryrdlock\n");
+   rwl = rw_remap ( *origp );
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      my_assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status == -1) {
+      /* Writer active; we have to give up. */
+      res = __pthread_mutex_unlock(&rwl->mx);
+      my_assert(res == 0);
+      return EBUSY;
+   }
+   /* Success */
+   my_assert(rwl->status >= 0);
+   rwl->status++;
+   res = __pthread_mutex_unlock(&rwl->mx);
+   my_assert(res == 0);
+   return 0;
+}
+
+
+static
+void pthread_rwlock_wrlock_CANCEL_HDLR ( void* rwl_v )
+{
+   vg_rwlock_t* rwl = (vg_rwlock_t*)rwl_v;
+   rwl->nwait_w--;
+   pthread_mutex_unlock (&rwl->mx);
+}
+
+
+int pthread_rwlock_wrlock ( pthread_rwlock_t* origp )
+{
+   int res;
+   vg_rwlock_t* rwl;
+   if (0) printf ("pthread_rwlock_wrlock\n");
+   rwl = rw_remap ( *origp );
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      my_assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status != 0) {
+      rwl->nwait_w++;
+      pthread_cleanup_push( pthread_rwlock_wrlock_CANCEL_HDLR, rwl );
+      while (1) {
+         if (rwl->status == 0) break;
+         res = pthread_cond_wait(&rwl->cv_w, &rwl->mx);
+         my_assert(res == 0);
+      }
+      pthread_cleanup_pop(0);
+      rwl->nwait_w--;
+   }
+   my_assert(rwl->status == 0);
+   rwl->status = -1;
+   res = __pthread_mutex_unlock(&rwl->mx);
+   my_assert(res == 0);
+   return 0;
+}
+
+
+int pthread_rwlock_trywrlock ( pthread_rwlock_t* origp )
+{
+   int res;
+   vg_rwlock_t* rwl;
+   if (0) printf ("pthread_wrlock_trywrlock\n");
+   rwl = rw_remap ( *origp );
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      my_assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status != 0) {
+      /* Reader(s) or a writer active; we have to give up. */
+      res = __pthread_mutex_unlock(&rwl->mx);
+      my_assert(res == 0);
+      return EBUSY;
+   }
+   /* Success */
+   my_assert(rwl->status == 0);
+   rwl->status = -1;
+   res = __pthread_mutex_unlock(&rwl->mx);
+   my_assert(res == 0);
+   return 0;
+}
+
+
+int pthread_rwlock_unlock ( pthread_rwlock_t* origp )
+{
+   int res;
+   vg_rwlock_t* rwl;
+   if (0) printf ("pthread_rwlock_unlock\n");
+   rwl = rw_remap ( *origp );
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      my_assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status == 0) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      my_assert(res == 0);
+      return EPERM;
+   }
+   my_assert(rwl->status != 0);
+   if (rwl->status == -1) {
+     rwl->status = 0;
+   } else {
+     my_assert(rwl->status > 0);
+     rwl->status--;
+   }
+
+   my_assert(rwl->status >= 0);
+
+   if (rwl->prefer_w) {
+
+      /* Favour waiting writers, if any. */
+      if (rwl->nwait_w > 0) {
+         /* Writer(s) are waiting. */
+         if (rwl->status == 0) {
+            /* We can let a writer in. */
+            res = pthread_cond_signal(&rwl->cv_w);
+            my_assert(res == 0);
+         } else {
+            /* There are still readers active.  Do nothing; eventually
+               they will disappear, at which point a writer will be
+               admitted. */
+         }
+      }
+      else
+      /* No waiting writers. */
+      if (rwl->nwait_r > 0) {
+         /* Let in a waiting reader. */
+         res = pthread_cond_signal(&rwl->cv_r);
+         my_assert(res == 0);
+      }
+
+   } else {
+
+      /* Favour waiting readers, if any. */
+      if (rwl->nwait_r > 0) {
+         /* Reader(s) are waiting; let one in. */
+         res = pthread_cond_signal(&rwl->cv_r);
+         my_assert(res == 0);
+      }
+      else
+      /* No waiting readers. */
+      if (rwl->nwait_w > 0 && rwl->status == 0) {
+         /* We have waiting writers and no active readers; let a
+            writer in. */
+         res = pthread_cond_signal(&rwl->cv_w);
+         my_assert(res == 0);
+      }
+   }
+
+   res = __pthread_mutex_unlock(&rwl->mx);
+   my_assert(res == 0);
+   return 0;
+}
+
+
+int pthread_rwlock_destroy ( pthread_rwlock_t *origp )
+{
+   int res;
+   vg_rwlock_t* rwl;
+   if (0) printf ("pthread_rwlock_destroy\n");
+   rwl = rw_remap ( *origp );
+   res = __pthread_mutex_lock(&rwl->mx);
+   my_assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      my_assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status != 0 || rwl->nwait_r > 0 || rwl->nwait_w > 0) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      my_assert(res == 0);
+      return EBUSY;
+   }
+   rwl->initted = 0;
+   res = __pthread_mutex_unlock(&rwl->mx);
+   my_assert(res == 0);
+   my_free(*origp);
+   *origp = 0;
+   return 0;
+}
+
+
+/* Copied directly from LinuxThreads. */
+int
+pthread_rwlockattr_init (pthread_rwlockattr_t *attrp)
+{
+  struct pthread_rwlockattr *attr = my_malloc(sizeof(struct pthread_rwlockattr));
+  *attrp = attr;
+  attr->__lockkind = 0;
+  attr->__pshared = PTHREAD_PROCESS_PRIVATE;
+
+  return 0;
+}
+
+/* Copied directly from LinuxThreads. */
+int
+pthread_rwlockattr_destroy (pthread_rwlockattr_t *attrp)
+{
+   if (*attrp) {
+      my_free(*attrp);
+      *attrp = 0;
+   }
+   return 0;
+}
+
+/* Copied directly from LinuxThreads. */
+int
+pthread_rwlockattr_setpshared (pthread_rwlockattr_t *attrp, int pshared)
+{
+  if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_SHARED)
+    return EINVAL;
+
+  /* For now it is not possible to shared a conditional variable.  */
+  if (pshared != PTHREAD_PROCESS_PRIVATE)
+    return ENOSYS;
+
+  (*attrp)->__pshared = pshared;
+
+  return 0;
+}
+
+
+
+/* ---------------------------------------------------------------------
+   Manage the allocation and use of RT signals.  The Valgrind core
+   uses one.  glibc needs us to implement this to make RT signals
+   work; things just seem to crash if we don't.
+   ------------------------------------------------------------------ */
+int _current_sigrtmin (void)
+{
+   int res;
+
+   VALGRIND_MAGIC_SEQUENCE(res, 0,
+			   VG_USERREQ__GET_SIGRT_MIN,
+			   0, 0, 0, 0);
+
+   return res;
+}
+
+int _current_sigrtmax (void)
+{
+   int res;
+
+   VALGRIND_MAGIC_SEQUENCE(res, 0,
+			   VG_USERREQ__GET_SIGRT_MAX,
+			   0, 0, 0, 0);
+
+   return res;
+}
+
+int _allocate_rtsig (int high)
+{
+   int res;
+
+   VALGRIND_MAGIC_SEQUENCE(res, 0,
+			   VG_USERREQ__ALLOC_RTSIG,
+			   high, 0, 0, 0);
+
+   return res;
+}
+
+/* ---------------------------------------------------------------------
+   B'stard.
+   ------------------------------------------------------------------ */
+strong_alias(__pthread_mutex_lock, pthread_mutex_lock)
+strong_alias(__pthread_mutex_trylock, pthread_mutex_trylock)
+strong_alias(__pthread_mutex_unlock, pthread_mutex_unlock)
+strong_alias(__pthread_mutexattr_init, pthread_mutexattr_init)
+  weak_alias(__pthread_mutexattr_settype, pthread_mutexattr_settype)
+  weak_alias(__pthread_mutexattr_setpshared, pthread_mutexattr_setpshared)
+strong_alias(__pthread_mutex_init, pthread_mutex_init)
+strong_alias(__pthread_mutexattr_destroy, pthread_mutexattr_destroy)
+strong_alias(__pthread_mutex_destroy, pthread_mutex_destroy)
+strong_alias(__pthread_once, pthread_once)
+strong_alias(__pthread_atfork, pthread_atfork)
+strong_alias(__pthread_key_create, pthread_key_create)
+strong_alias(__pthread_getspecific, pthread_getspecific)
+strong_alias(__pthread_setspecific, pthread_setspecific)
+
+#ifndef GLIBC_2_1
+strong_alias(sigaction, __sigaction)
+#endif
+
+weak_alias(__fork, fork)
+weak_alias(__vfork, vfork)
+weak_alias (__pthread_kill_other_threads_np, pthread_kill_other_threads_np)
+
+/*--------------------------------------------------*/
+
+weak_alias(pthread_rwlock_rdlock, __pthread_rwlock_rdlock)
+weak_alias(pthread_rwlock_unlock, __pthread_rwlock_unlock)
+weak_alias(pthread_rwlock_wrlock, __pthread_rwlock_wrlock)
+
+weak_alias(pthread_rwlock_destroy, __pthread_rwlock_destroy)
+weak_alias(pthread_rwlock_init, __pthread_rwlock_init)
+weak_alias(pthread_rwlock_tryrdlock, __pthread_rwlock_tryrdlock)
+weak_alias(pthread_rwlock_trywrlock, __pthread_rwlock_trywrlock)
+
+
+
+/* This doesn't seem to be needed to simulate libpthread.so's external
+   interface, but many people complain about its absence. */
+
+strong_alias(__pthread_mutexattr_settype, __pthread_mutexattr_setkind_np)
+weak_alias(__pthread_mutexattr_setkind_np, pthread_mutexattr_setkind_np)
+
+/* POSIX spinlocks, taken from glibc linuxthreads/sysdeps/i386 */
+
+int pthread_spin_init(pthread_spinlock_t *lockp, int pshared)
+{
+   struct pthread_spinlock *lock = my_malloc(sizeof(struct pthread_spinlock));
+   *lockp = lock;
+
+   /* We can ignore the `pshared' parameter.  Since we are busy-waiting
+      all processes which can access the memory location `lock' points
+      to can use the spinlock.  */
+   lock->__lock = 1;
+   return 0;
+}
+
+int pthread_spin_lock(pthread_spinlock_t *lockp)
+{
+   asm volatile
+      ("\n"
+       "1:\n\t"
+       "lock; decl %0\n\t"
+       "js 2f\n\t"
+       ".section .text.spinlock,\"ax\"\n"
+       "2:\n\t"
+       "cmpl $0,%0\n\t"
+       "rep; nop\n\t"
+       "jle 2b\n\t"
+       "jmp 1b\n\t"
+       ".previous"
+       : "=m" (**lockp));
+   return 0;
+}
+
+int pthread_spin_unlock(pthread_spinlock_t *lockp)
+{
+  asm volatile
+    ("movl $1,%0"
+     : "=m" (**lockp));
+  return 0;
+}
+
+int pthread_spin_destroy(pthread_spinlock_t *lockp)
+{
+  my_free(*lockp);
+  *lockp = 0;
+  return 0;
+}
+
+int pthread_spin_trylock(pthread_spinlock_t *lockp)
+{
+  int oldval;
+
+  asm volatile
+    ("xchgl %0,%1"
+     : "=r" (oldval), "=m" (**lockp)
+     : "0" (0));
+  return oldval > 0 ? 0 : EBUSY;
+}
+
+/*--------------------------------------------------------------------*/
+/*--- end                                          vg_libpthread.c ---*/
+/*--------------------------------------------------------------------*/
+

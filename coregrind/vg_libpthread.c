@@ -1398,6 +1398,7 @@ struct __res_state* __res_state ( void )
 enum __libc_tsd_key_t { _LIBC_TSD_KEY_MALLOC = 0,
                         _LIBC_TSD_KEY_DL_ERROR,
                         _LIBC_TSD_KEY_RPC_VARS,
+                        _LIBC__SOME_OTHER_KEY_NEEDED_FOR_RH_NULL,
                         _LIBC_TSD_KEY_N };
 
 /* Auto-initialising subsystem.  libc_specifics_inited is set 

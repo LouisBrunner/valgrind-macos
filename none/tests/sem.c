@@ -7,61 +7,13 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
-#ifndef HAVE_SEMTIMEDOP
-
-#include <signal.h>
-#include <sys/time.h>
-
-static int semtimedop(int  semid, struct sembuf *sops, unsigned nsops,
-                      struct timespec *timeout)
-{
-   struct sigaction act;
-   struct sigaction oldact;
-   struct itimerval itv;
-   int rv;
-
-   act.sa_handler = SIG_IGN;
-   sigemptyset( &act.sa_mask );
-   act.sa_flags = 0;
-   
-   if (sigaction(SIGALRM, &act, &oldact) < 0)
-   {
-      perror("sigaction");
-      exit(1);
-   }
-   
-   itv.it_interval.tv_sec = 0;
-   itv.it_interval.tv_usec = 0;
-   itv.it_value.tv_sec = timeout->tv_sec;
-   itv.it_value.tv_usec = timeout->tv_nsec / 1000;
-   
-   if (setitimer(ITIMER_REAL, &itv, NULL) < 0)
-   {
-      perror("setitimer");
-      exit(1);
-   }
-   
-   if ((rv = semop(semid, sops, nsops)) < 0 && errno == EINTR)
-   {
-      errno = EAGAIN;
-   }
-
-   if (sigaction(SIGALRM, &oldact, NULL) < 0)
-   {
-      perror("sigaction");
-      exit(1);
-   }
-   
-   return rv;
-}
-
-#endif
-
 int main(int argc, char **argv)
 {
    int semid;
    struct sembuf sop;
+#ifdef HAVE_SEMTIMEDOP
    struct timespec ts;
+#endif
    
    if ((semid = semget(IPC_PRIVATE, 1, 0600)) < 0)
    {
@@ -80,12 +32,13 @@ int main(int argc, char **argv)
       exit(1);
    }
 
+#ifdef HAVE_SEMTIMEDOP
    sop.sem_num = 0;
    sop.sem_op = 0;
    sop.sem_flg = 0;
 
    ts.tv_sec = 0;
-   ts.tv_nsec = 1000;
+   ts.tv_nsec = 1000000;
    
    if (semtimedop(semid, &sop, 1, &ts) < 0 && errno != EAGAIN)
    {
@@ -93,6 +46,7 @@ int main(int argc, char **argv)
       semctl(semid, 0, IPC_RMID);
       exit(1);
    }
+#endif
 
    sop.sem_num = 0;
    sop.sem_op = -1;
@@ -105,6 +59,7 @@ int main(int argc, char **argv)
       exit(1);
    }
 
+#ifdef HAVE_SEMTIMEDOP
    sop.sem_num = 0;
    sop.sem_op = 0;
    sop.sem_flg = 0;
@@ -118,6 +73,7 @@ int main(int argc, char **argv)
       semctl(semid, 0, IPC_RMID);
       exit(1);
    }
+#endif
 
    if (semctl(semid, 0, IPC_RMID) < 0)
    {

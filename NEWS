@@ -60,7 +60,7 @@ there.
 83998   Assertion `newfd > vgPlain_max_fd' failed (see below)
 82722   Unchecked mmap in as_pad leads to mysterious failures later
 78958   memcheck seg faults while running Mozilla 
-
+85416   Arguments with colon (e.g. --logsocket) ignored
 
 
 Additionally there are the following changes, which are not 

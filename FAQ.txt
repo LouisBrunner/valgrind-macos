@@ -1,8 +1,10 @@
 
-A mini-FAQ for valgrind, version 1.9.5
+A mini-FAQ for valgrind, version 1.9.6
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Last revised 22 Apr 2003
 ~~~~~~~~~~~~~~~~~~~~~~~~
+
+-----------------------------------------------------------------
 
 Q1. Programs run OK on valgrind, but at exit produce a bunch
     of errors a bit like this
@@ -30,16 +32,13 @@ A1. When the program exits, valgrind runs the procedure
     Problem is that running __libc_freeres() in older glibc versions
     causes this crash.  
 
-    WORKAROUND FOR 1.0.X versions of valgrind: The simple fix is to
-    find in valgrind's sources, the one and only call to
-    __libc_freeres() and comment it out, then rebuild the system.  In
-    the 1.0.3 version, this call is on line 584 of vg_clientfuncs.c.
-    This may mean you get false reports of space leaks in glibc, but
-    it at least avoids the crash.
-
     WORKAROUND FOR 1.1.X and later versions of valgrind: use the
-    --run-libc-freeres=no flag.
+    --run-libc-freeres=no flag.  You may then get space leak
+    reports for glibc-allocations (please _don't_ report these
+    to the glibc people, since they are not real leaks), but at
+    least the program runs.
 
+-----------------------------------------------------------------
 
 Q2. My program dies complaining that syscall 197 is unimplemented.
 
@@ -49,17 +48,17 @@ A2. 197, which is fstat64, is supported by valgrind.  The problem is
     specific, glibc is asking your kernel to do a syscall which is
     not listed in /usr/include/asm/unistd.h.
 
-    The fix is simple.  Somewhere near the top of vg_syscall_mem.c,
-    add the following line:
+    The fix is simple.  Somewhere near the top of
+    coregrind/vg_syscalls.c, add the following line:
 
        #define __NR_fstat64            197
 
     Rebuild and try again.  The above line should appear before any
     uses of the __NR_fstat64 symbol in that file.  If you look at the
-    place where __NR_fstat64 is used in vg_syscall_mem.c, it will be
-    obvious why this fix works.  NOTE for valgrind versions 1.1.0
-    and later, the relevant file is actually coregrind/vg_syscalls.c.
+    place where __NR_fstat64 is used in vg_syscalls.c, it will be
+    obvious why this fix works.
 
+-----------------------------------------------------------------
 
 Q3. My (buggy) program dies like this:
       valgrind: vg_malloc2.c:442 (bszW_to_pszW): 
@@ -74,37 +73,16 @@ A3. If valgrind shows any invalid reads, invalid writes and invalid
     is to fix your program so that it doesn't do any illegal memory
     accesses.  The above failure will hopefully go away after that.
 
+-----------------------------------------------------------------
 
 Q4. I'm running Red Hat Advanced Server.  Valgrind always segfaults at
     startup.  
 
-A4. Known issue with RHAS 2.1.  The following kludge works, but 
-    is too gruesome to put in the sources permanently.  Try it.
-    Last verified as working on RHAS 2.1 at 20021008.
+A4. Known issue with RHAS 2.1, due to funny stack permissions at
+    startup.  However, valgrind-1.9.4 and later automatically handle
+    this correctly, and should not segfault.
 
-    Find the following comment in vg_main.c -- in 1.0.4 this is at
-    line 636:
-
-       /* we locate: NEW_AUX_ENT(1, AT_PAGESZ, ELF_EXEC_PAGESIZE) in
-          the elf interpreter table */
-
-    Immediately _before_ this comment add the following:
-
-       /* HACK for R H Advanced server.  Ignore all the above and
-          start the search 18 pages below the "obvious" start point.
-          God knows why.  Seems like we can't go into the highest 18
-          pages of the stack.  This is not good! -- the 18 pages is
-          determined just by looking for the highest proddable
-          address.  It would be nice to see some kernel or libc or
-          something code to justify this.  */
-
-       /* 0xBFFEE000 is 0xC0000000 - 18 pages */
-       sp = 0xBFFEE000; 
-
-       /* end of HACK for R H Advanced server. */
-
-    Obviously the assignment to sp is the only important line.
-
+-----------------------------------------------------------------
 
 Q5. I try running "valgrind my_program", but my_program runs normally,
     and Valgrind doesn't emit any output at all.
@@ -121,6 +99,7 @@ A5. Is my_program statically linked?  Valgrind doesn't work with
 
     it my_program is statically linked.
 
+-----------------------------------------------------------------
 
 Q6. I try running "valgrind my_program" and get Valgrind's startup message,
     but I don't get any errors and I know my program has errors.
@@ -133,5 +112,197 @@ A6. By default, Valgrind only traces the top-level process.  So if your
 
     To trace child processes, use the --trace-children=yes option.
 
+    If you are tracing large trees of processes, it can be less
+    disruptive to have the output sent over the network.  Give
+    valgrind the flag --logsocket=127.0.0.1:12345 (if you want 
+    logging output sent to port 12345 on localhost).  You can
+    use the valgrind-listener program to listen on that port:
+       valgrind-listener 12345
+    Obviously you have to start the listener process first.
+    See the documentation for more details.
+
+-----------------------------------------------------------------
+
+Q7. My threaded server process runs unbelievably slowly on
+    valgrind.  So slowly, in fact, that at first I thought it
+    had completely locked up.
+
+A7. We are not completely sure about this, but one possibility
+    is that laptops with power management fool valgrind's 
+    timekeeping mechanism, which is (somewhat in error) based
+    on the x86 RDTSC instruction.  A "fix" which is claimed to
+    work is to run some other cpu-intensive process at the same
+    time, so that the laptop's power-management clock-slowing
+    does not kick in.  We would be interested in hearing more
+    feedback on this.
+
+-----------------------------------------------------------------
+
+Q8. My program dies (exactly) like this:
+
+      REPE then 0xF
+      valgrind: the `impossible' happened:
+         Unhandled REPE case
+
+A8. Yeah ... that I believe is a P4 specific instruction.  Are you
+    building your app with -march=pentium4 or something like that?
+    Others have reported that removing the flag works around this.
+    In fact this is pretty easy to fix and I do have it on my
+    to-do-for-1.9.6 list.
+
+    I'd be interested to hear if you can get rid of it by changing
+    your application build flags.
+
+-----------------------------------------------------------------
+
+Q9. My program dies complaining that __libc_current_sigrtmin
+    is unimplemented.
+
+A9. Try the following.  It is an experiment, but it might work.
+    We would very much appreciate you telling us if it does/
+    does not work for you.
+
+    In vg_libpthread.c, add the 3 functions below.
+
+    In vg_libpthread_unimp.c, remove the stubs for the same 3
+    functions.
+
+    Let me know if it helps.  Quite a lot of other valgrind users
+    complain about this, but I have never been able to reproduce it,
+    so fixing it isn't easy.  So it's useful if you can try.
+
+       int __libc_current_sigrtmin (void)
+       {
+         return -1;
+       }
+
+       int __libc_current_sigrtmax (void)
+       {
+         return -1;
+       }
+
+       int __libc_allocate_rtsig (int high)
+       {
+         return -1;
+       }
+
+-----------------------------------------------------------------
+
+Q10. I upgraded to Red Hat 9 and threaded programs now act
+     strange / deadlock when they didn't before.
+
+A10. Thread support on glibc 2.3.2+ with NPTL is not as 
+     good as on older LinuxThreads-based systems.  We have
+     this under consideration.  Avoid Red Hat >= 8.1 for
+     the time being, if you can.
+
+-----------------------------------------------------------------
+
+Q11. I really need to use the NVidia libGL.so in my app.
+     Help!
+
+A11. NVidia also noticed this it seems, and the "latest" drivers
+     (version 4349, apparently) come with this text
+
+        DISABLING CPU SPECIFIC FEATURES
+
+        Setting the environment variable __GL_FORCE_GENERIC_CPU to a
+        non-zero value will inhibit the use of CPU specific features
+        such as MMX, SSE, or 3DNOW!.  Use of this option may result in
+        performance loss.  This option may be useful in conjunction with
+        software such as the Valgrind memory debugger.
+
+     Set __GL_FORCE_GENERIC_CPU=1 and Valgrind should work.  This has
+     been confirmed by various people.  Thanks NVidia!
+
+-----------------------------------------------------------------
+
+Q12. My program dies like this (often at exit):
+
+     VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH): internal error:
+     (loads of text)
+
+A12. We're not entirely sure about this, and would appreciate
+     someone sending a simple test case for us to look at.
+     One possible cause is that your program modifies its
+     environment variables, possibly including zeroing them
+     all.  Avoid this if you can.
+
+     In any case, you may be able to work around it like this:
+     Comment out the 
+     call to VG_(core_panic) at coregrind/vg_main.c:1647 and see
+     if that helps.  The text of coregrind/vg_main.c:1647 is as follows:
+
+     VG_(core_panic)("VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) failed\n");
+
+     and so it's this call you want to comment out.
+
+-----------------------------------------------------------------
+
+Q13.  My program dies like this:
+
+      error: /lib/librt.so.1: symbol __pthread_clock_settime, version
+      GLIBC_PRIVATE not defined in file libpthread.so.0 with link time
+      reference
+
+A13.  This is a total swamp.  Nevertheless there is a way out.
+      It's a problem which is not easy to fix.  Really the problem is
+      that /lib/librt.so.1 refers to some symbols
+      __pthread_clock_settime and __pthread_clock_gettime in
+      /lib/libpthread.so which are not intended to be exported, ie
+      they are private.
+
+      Best solution is to ensure your program does not use
+      /lib/librt.so.1.
+
+      However .. since you're probably not using it directly, or even
+      knowingly, that's hard to do.  You might instead be able to fix
+      it by playing around with coregrind/vg_libpthread.vs.  Things to
+      try:
+
+      Remove this
+
+         GLIBC_PRIVATE {
+            __pthread_clock_gettime;
+            __pthread_clock_settime;
+         };
+
+      or maybe remove this
+
+         GLIBC_2.2.3 {
+            __pthread_clock_gettime;
+            __pthread_clock_settime;
+         } GLIBC_2.2;
+
+      or maybe add this
+
+         GLIBC_2.2.4 {
+            __pthread_clock_gettime;
+            __pthread_clock_settime;
+         } GLIBC_2.2;
+
+         GLIBC_2.2.5 {
+            __pthread_clock_gettime;
+            __pthread_clock_settime;
+         } GLIBC_2.2;
+
+      or some combination of the above.  After each change you need to
+      delete coregrind/libpthread.so and do make && make install.
+
+      I just don't know if any of the above will work.  If you can
+      find a solution which works, I would be interested to hear it.
+
+      To which someone replied:
+
+      I deleted this:
+
+          GLIBC_2.2.3 { 
+             __pthread_clock_gettime; 
+             __pthread_clock_settime; 
+          } GLIBC_2.2; 
+
+      and it worked.
+
+-----------------------------------------------------------------
 
 (this is the end of the FAQ.)

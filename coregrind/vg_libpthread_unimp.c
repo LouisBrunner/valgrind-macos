@@ -119,9 +119,9 @@ void pthread_barrierattr_setpshared ( void )  { unimp("pthread_barrierattr_setps
 //void pthread_cond_timedwait ( void )  { unimp("pthread_cond_timedwait"); }
 //void pthread_cond_wait ( void )  { unimp("pthread_cond_wait"); }
 //void pthread_condattr_destroy ( void )  { unimp("pthread_condattr_destroy"); }
-void pthread_condattr_getpshared ( void )  { unimp("pthread_condattr_getpshared"); }
+//void pthread_condattr_getpshared ( void )  { unimp("pthread_condattr_getpshared"); }
 //void pthread_condattr_init ( void )  { unimp("pthread_condattr_init"); }
-void pthread_condattr_setpshared ( void )  { unimp("pthread_condattr_setpshared"); }
+//void pthread_condattr_setpshared ( void )  { unimp("pthread_condattr_setpshared"); }
 //void pthread_detach ( void )  { unimp("pthread_detach"); }
 //void pthread_equal ( void )  { unimp("pthread_equal"); }
 //void pthread_exit ( void )  { unimp("pthread_exit"); }

@@ -138,6 +138,11 @@ typedef struct
    int __vg_mutexkind;
 } vg_pthread_mutexattr_t;
 
+typedef struct
+{
+   int __vg_pshared;
+} vg_pthread_condattr_t;
+
 typedef struct _vg_pthread_rwlock_t
 {
    struct _vg_pthread_fastlock __vg_rw_lock; /* Lock to guarantee mutual exclusion */
@@ -1068,7 +1073,7 @@ pthread_create (pthread_t *__restrict __thredd,
    info->arg     = __arg;
    sigprocmask(SIG_SETMASK, NULL, &info->sigmask);
 
-   if (__vg_attr) {
+   if (__attr) {
       si.base = (Addr)__vg_attr->__vg_stackaddr;
       si.size = __vg_attr->__vg_stacksize;
       si.guardsize = __vg_attr->__vg_guardsize;
@@ -1341,11 +1346,41 @@ int __pthread_mutex_destroy(pthread_mutex_t *mutex)
 
 int pthread_condattr_init(pthread_condattr_t *attr)
 {
+   vg_pthread_condattr_t* vg_attr;
+   CONVERT(condattr, attr, vg_attr);
+
+   vg_attr->__vg_pshared = 0;
    return 0;
 }
 
 int pthread_condattr_destroy(pthread_condattr_t *attr)
 {
+   return 0;
+}
+ 
+int pthread_condattr_setpshared(pthread_condattr_t *attr, int pshared)
+{ 
+   static int moans = N_MOANS;
+   vg_pthread_condattr_t* vg_attr;
+   CONVERT(condattr, attr, vg_attr);
+
+   if (pshared != PTHREAD_PROCESS_PRIVATE && 
+       pshared != PTHREAD_PROCESS_SHARED)
+      return EINVAL;
+
+   if (pshared == PTHREAD_PROCESS_SHARED && moans-- > 0) 
+      kludged("pthread_setschedparam", "(process shared condition variables not supported)");
+
+   vg_attr->__vg_pshared = pshared;
+   return 0;
+}
+
+int pthread_condattr_getpshared (const pthread_condattr_t *attr, int *pshared)
+{
+   vg_pthread_condattr_t* vg_attr;
+   CONVERT(condattr, attr, vg_attr);
+
+   *pshared = vg_attr->__vg_pshared;
    return 0;
 }
 

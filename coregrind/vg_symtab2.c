@@ -41,8 +41,6 @@
    Stabs reader greatly improved by Nick Nethercote, Apr 02.
 */
 
-
-
 static void freeSegInfo ( SegInfo* si )
 {
    struct strchunk *chunk, *next;
@@ -344,6 +342,9 @@ void printSym ( SegInfo* si, Int i )
 	       si->symtab[i].name );
 }
 
+#define TRACE_SYMTAB(format, args...) \
+   if (VG_(clo_trace_symtab)) { VG_(printf)(format, ## args); }
+
 
 #if 0
 /* Print the entire sym tab. */
@@ -384,10 +385,11 @@ void safeCopy ( UChar* dst, UInt maxlen, UChar* src )
 /*------------------------------------------------------------*/
 
 /* Sort the symtab by starting address, and emit warnings if any
-   symbols have overlapping address ranges.  Mash the table around so as to
-   establish the property that addresses are in order and the ranges to not
-   overlap.  This facilitates using binary search to map addresses to
-   symbols when we come to query the table.
+   symbols have overlapping address ranges.  We use that old chestnut,
+   shellsort.  Mash the table around so as to establish the property
+   that addresses are in order and the ranges to not overlap.  This
+   facilitates using binary search to map addresses to symbols when we
+   come to query the table.
 */
 static Int compare_RiSym(void *va, void *vb) {
    RiSym *a = (RiSym *)va;
@@ -436,8 +438,7 @@ void canonicaliseSymtab ( SegInfo* si )
             si->symtab[si->symtab_used++] = si->symtab[i];
          }
       }
-      if (VG_(clo_trace_symtab))
-         VG_(printf)( "%d merged\n", n_merged);
+      TRACE_SYMTAB( "%d merged\n", n_merged);
    }
    while (n_merged > 0);
 
@@ -662,20 +663,153 @@ void canonicaliseLoctab ( SegInfo* si )
 /*--- Read info from a .so/exe file.                       ---*/
 /*------------------------------------------------------------*/
 
+/* Read a symbol table (normal or dynamic) */
+static
+void read_symtab( SegInfo* si, Char* tab_name,
+                  Elf32_Sym* o_symtab, UInt o_symtab_sz,
+                  UChar*     o_strtab, UInt o_strtab_sz )
+{
+   Int   i;
+   Addr  sym_addr;
+   RiSym risym;
+   
+   if (o_strtab == NULL || o_symtab == NULL) {
+      VG_(symerr)("object doesn't have a ");
+      VG_(symerr)(tab_name);
+      return;
+   }
+
+   TRACE_SYMTAB("Reading %s (%d entries)\n", tab_name, 
+                o_symtab_sz/sizeof(Elf32_Sym) );
+
+   /* Perhaps should start at i = 1; ELF docs suggest that entry
+      0 always denotes `unknown symbol'. */
+   for (i = 1; i < (Int)(o_symtab_sz/sizeof(Elf32_Sym)); i++) {
+      Elf32_Sym* sym = & o_symtab[i];
+#     if 1
+      sym_addr = si->offset + (UInt)sym->st_value;
+
+      if (VG_(clo_trace_symtab)) {
+         VG_(printf)("raw symbol [%d]: ", i);
+         switch (ELF32_ST_BIND(sym->st_info)) {
+         case STB_LOCAL:  VG_(printf)("LOC "); break;
+         case STB_GLOBAL: VG_(printf)("GLO "); break;
+         case STB_WEAK:   VG_(printf)("WEA "); break;
+         case STB_LOPROC: VG_(printf)("lop "); break;
+         case STB_HIPROC: VG_(printf)("hip "); break;
+         default:         VG_(printf)("??? "); break;
+         }
+         switch (ELF32_ST_TYPE(sym->st_info)) {
+         case STT_NOTYPE:  VG_(printf)("NOT "); break;
+         case STT_OBJECT:  VG_(printf)("OBJ "); break;
+         case STT_FUNC:    VG_(printf)("FUN "); break;
+         case STT_SECTION: VG_(printf)("SEC "); break;
+         case STT_FILE:    VG_(printf)("FIL "); break;
+         case STT_LOPROC:  VG_(printf)("lop "); break;
+         case STT_HIPROC:  VG_(printf)("hip "); break;
+         default:          VG_(printf)("??? "); break;
+         }
+         VG_(printf)(
+            ": value %p, size %d, name %s\n",
+            sym_addr, sym->st_size,
+            ( sym->st_name 
+            ? ((Char*)o_strtab+sym->st_name) 
+            : (Char*)"NONAME" ) ); 
+      }               
+#     endif
+
+      /* Figure out if we're interested in the symbol.
+         Firstly, is it of the right flavour?  */
+      if ( ! ( (ELF32_ST_BIND(sym->st_info) == STB_GLOBAL ||
+                ELF32_ST_BIND(sym->st_info) == STB_LOCAL ||
+                ELF32_ST_BIND(sym->st_info) == STB_WEAK)
+             &&
+               (ELF32_ST_TYPE(sym->st_info) == STT_FUNC ||
+                (VG_(needs).data_syms 
+                 && ELF32_ST_TYPE(sym->st_info) == STT_OBJECT))
+             )
+         )
+         continue;
+
+      /* Secondly, if it's apparently in a GOT or PLT, it's really
+         a reference to a symbol defined elsewhere, so ignore it. */
+      if (si->got_start != 0
+          && sym_addr >= si->got_start 
+          && sym_addr <  si->got_start + si->got_size) {
+         TRACE_SYMTAB("in GOT: %s\n", o_strtab+sym->st_name);
+         continue;
+      }
+      if (si->plt_start != 0
+          && sym_addr >= si->plt_start
+          && sym_addr <  si->plt_start + si->plt_size) {
+         TRACE_SYMTAB("in PLT: %s\n", o_strtab+sym->st_name);
+         continue;
+      }
+
+      /* Don't bother if nameless, or zero-sized. */
+      if (sym->st_name == (Elf32_Word)NULL
+          || /* VG_(strlen)(o_strtab+sym->st_name) == 0 */
+             /* equivalent but cheaper ... */
+             * ((UChar*)(o_strtab+sym->st_name)) == 0
+          || sym->st_size == 0) {
+         TRACE_SYMTAB("size=0: %s\n", o_strtab+sym->st_name);
+         continue;
+      }
+
+#     if 0
+      /* Avoid _dl_ junk.  (Why?) */
+      /* 01-02-24: disabled until I find out if it really helps. */
+      if (VG_(strncmp)("_dl_", o_strtab+sym->st_name, 4) == 0
+          || VG_(strncmp)("_r_debug", 
+                          o_strtab+sym->st_name, 8) == 0) {
+         TRACE_SYMTAB("_dl_ junk: %s\n", o_strtab+sym->st_name);
+         continue;
+      }
+#     endif
+
+      /* This seems to significantly reduce the number of junk
+         symbols, and particularly reduces the number of
+         overlapping address ranges.  Don't ask me why ... */
+      if ((Int)sym->st_value == 0) {
+         TRACE_SYMTAB( "valu=0: %s\n", o_strtab+sym->st_name);
+         continue;
+      }
+
+      /* If no part of the symbol falls within the mapped range,
+         ignore it. */
+      if (sym_addr+sym->st_size <= si->start
+          || sym_addr >= si->start+si->size) {
+         TRACE_SYMTAB( "outside mapped range" );
+         continue;
+      }
+
+      /* If we reach here, it's an interesting symbol; record it. */
+      Char* t0 = sym->st_name 
+                    ? (Char*)(o_strtab+sym->st_name) 
+                    : (Char*)"NONAME";
+      Char *name = VG_(addStr) ( si, t0, -1 );
+      vg_assert(name != NULL
+                /* && 0==VG_(strcmp)(t0,&vg_strtab[nmoff]) */ );
+      vg_assert( (Int)sym->st_value >= 0);
+      /* VG_(printf)("%p + %d:   %p %s\n", si->start, 
+                  (Int)sym->st_value, sym_addr,  t0 ); */
+      risym.addr  = sym_addr;
+      risym.size  = sym->st_size;
+      risym.name  = name;
+      addSym ( si, &risym );
+   }
+}
+
+
 /* Read the symbols from the object/exe specified by the SegInfo into
    the tables within the supplied SegInfo.  */
 static
 Bool vg_read_lib_symbols ( SegInfo* si )
 {
+   Bool          res;
    Elf32_Ehdr*   ehdr;       /* The ELF header                          */
    Elf32_Shdr*   shdr;       /* The section table                       */
    UChar*        sh_strtab;  /* The section table's string table        */
-   UChar*        stab;       /* The .stab table                         */
-   UChar*        stabstr;    /* The .stab string table                  */
-   UChar*        dwarf2;     /* The DWARF2 location info table          */
-   Int           stab_sz;    /* Size in bytes of the .stab table        */
-   Int           stabstr_sz; /* Size in bytes of the .stab string table */
-   Int           dwarf2_sz;  /* Size in bytes of the DWARF2 srcloc table*/
    Int           fd;
    Int           i;
    Bool          ok;
@@ -706,18 +840,18 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
    oimage = (Addr)VG_(mmap)( NULL, n_oimage, 
                              VKI_PROT_READ, VKI_MAP_PRIVATE, fd, 0 );
+   VG_(close)(fd);
+
    if (oimage == ((Addr)(-1))) {
       VG_(message)(Vg_UserMsg,
                    "mmap failed on %s", si->filename );
-      VG_(close)(fd);
       return False;
    }
-
-   VG_(close)(fd);
 
    /* Ok, the object image is safely in oimage[0 .. n_oimage-1]. 
       Now verify that it is a valid ELF .so or executable image.
    */
+   res = False;
    ok = (n_oimage >= sizeof(Elf32_Ehdr));
    ehdr = (Elf32_Ehdr*)oimage;
 
@@ -739,8 +873,7 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
    if (!ok) {
       VG_(symerr)("Invalid ELF header, or missing stringtab/sectiontab.");
-      VG_(munmap) ( (void*)oimage, n_oimage );
-      return False;
+      goto out;
    }
 
    /* Walk the LOAD headers in the phdr and update the SegInfo to
@@ -749,8 +882,7 @@ Bool vg_read_lib_symbols ( SegInfo* si )
       ELF file. */
    if (ehdr->e_phoff + ehdr->e_phnum*sizeof(Elf32_Phdr) > n_oimage) {
       VG_(symerr)("ELF program header is beyond image end?!");
-      VG_(munmap) ( (void*)oimage, n_oimage );
-      return False;
+      goto out;
    }
    {
       Bool offset_set = False;
@@ -758,7 +890,7 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
       si->offset = 0;
 
-      for(i = 0; i < ehdr->e_phnum; i++) {
+      for (i = 0; i < ehdr->e_phnum; i++) {
 	 Elf32_Phdr *o_phdr;
 	 Elf32_Addr mapped, mapped_end;
 
@@ -774,8 +906,7 @@ Bool vg_read_lib_symbols ( SegInfo* si )
 
 	 if (o_phdr->p_vaddr < prev_addr) {
 	    VG_(symerr)("ELF Phdrs are out of order!?");
-	    VG_(munmap) ( (void*)oimage, n_oimage );
-	    return False;
+            goto out;
 	 }
 	 prev_addr = o_phdr->p_vaddr;
 
@@ -811,327 +942,108 @@ Bool vg_read_lib_symbols ( SegInfo* si )
       }
    }
 
-   if (VG_(clo_trace_symtab))
-      VG_(printf)( 
-          "shoff = %d,  shnum = %d,  size = %d,  n_vg_oimage = %d\n",
-          ehdr->e_shoff, ehdr->e_shnum, sizeof(Elf32_Shdr), n_oimage );
+   TRACE_SYMTAB("shoff = %d,  shnum = %d,  size = %d,  n_vg_oimage = %d\n",
+                ehdr->e_shoff, ehdr->e_shnum, sizeof(Elf32_Shdr), n_oimage );
 
    if (ehdr->e_shoff + ehdr->e_shnum*sizeof(Elf32_Shdr) > n_oimage) {
       VG_(symerr)("ELF section header is beyond image end?!");
-      VG_(munmap) ( (void*)oimage, n_oimage );
-      return False;
+      goto out;
    }
 
    shdr = (Elf32_Shdr*)(oimage + ehdr->e_shoff);
    sh_strtab = (UChar*)(oimage + shdr[ehdr->e_shstrndx].sh_offset);
 
-   /* try and read the object's symbol table */
+   /* Find interesting sections, read the symbol table(s), read any debug
+      information */
    {
-      UChar*     o_strtab    = NULL;
-      Elf32_Sym* o_symtab    = NULL;
-      UChar*     o_dynstr    = NULL;
-      Elf32_Sym* o_dynsym    = NULL;
-      UInt       o_strtab_sz = 0;
-      UInt       o_symtab_sz = 0;
-      UInt       o_dynstr_sz = 0;
-      UInt       o_dynsym_sz = 0;
+      /* Pointers to start of sections */
+      UChar*     o_strtab     = NULL; /* .strtab */
+      Elf32_Sym* o_symtab     = NULL; /* .symtab */
+      UChar*     o_dynstr     = NULL; /* .dynstr */
+      Elf32_Sym* o_dynsym     = NULL; /* .dynsym */
+      UChar*     stab         = NULL; /* .stab         (stabs)  */
+      UChar*     stabstr      = NULL; /* .stabstr      (stabs)  */
+      UChar*     debug_line   = NULL; /* .debug_line   (dwarf2) */
 
-      UChar*     o_got = NULL;
-      UChar*     o_plt = NULL;
-      UInt       o_got_sz = 0;
-      UInt       o_plt_sz = 0;
+      /* Section sizes, in bytes */
+      UInt       o_strtab_sz     = 0;
+      UInt       o_symtab_sz     = 0;
+      UInt       o_dynstr_sz     = 0;
+      UInt       o_dynsym_sz     = 0;
+      UInt       stab_sz         = 0;
+      UInt       stabstr_sz      = 0;
+      UInt       debug_line_sz   = 0;
 
-      Bool       snaffle_it;
-      Addr       sym_addr;
-
-      /* find the .stabstr and .stab sections */
+      /* Find all interesting sections */
       for (i = 0; i < ehdr->e_shnum; i++) {
-
-         if (0 == VG_(strcmp)(".dynsym",sh_strtab + shdr[i].sh_name)) {
-            o_dynsym    = (Elf32_Sym*)(oimage + shdr[i].sh_offset);
-            o_dynsym_sz = shdr[i].sh_size;
-            vg_assert((o_dynsym_sz % sizeof(Elf32_Sym)) == 0);
-            /* check image overrun here */
-         }
-         if (0 == VG_(strcmp)(".dynstr",sh_strtab + shdr[i].sh_name)) {
-            o_dynstr    = (UChar*)(oimage + shdr[i].sh_offset);
-            o_dynstr_sz = shdr[i].sh_size;
-            /* check image overrun here */
-         }
- 
-         if (0 == VG_(strcmp)(".symtab",sh_strtab + shdr[i].sh_name)) {
-            o_symtab    = (Elf32_Sym*)(oimage + shdr[i].sh_offset);
-            o_symtab_sz = shdr[i].sh_size;
-            vg_assert((o_symtab_sz % sizeof(Elf32_Sym)) == 0);
-            /* check image overrun here */
-         }
-         if (0 == VG_(strcmp)(".strtab",sh_strtab + shdr[i].sh_name)) {
-            o_strtab    = (UChar*)(oimage + shdr[i].sh_offset);
-            o_strtab_sz = shdr[i].sh_size;
-            /* check image overrun here */
+         #define FIND(sec_name, sec_data, sec_size, in_exec, type) \
+         if (0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
+            if (0 != sec_data) \
+               VG_(core_panic)("repeated section!\n"); \
+            if (in_exec) { \
+               sec_data = (type)(si->offset + shdr[i].sh_addr); \
+               sec_size = shdr[i].sh_size; \
+            } else { \
+               sec_data = (type)(oimage + shdr[i].sh_offset); \
+               sec_size = shdr[i].sh_size; \
+            } \
+            TRACE_SYMTAB( "%18s: %p .. %p\n", \
+                          sec_name, sec_data, sec_data + sec_size - 1); \
+            if ( sec_size  + (UChar*)sec_data > n_oimage + (UChar*)oimage) \
+            { \
+               VG_(symerr)("   section beyond image end?!"); \
+               goto out; \
+            } \
          }
 
-         /* find out where the .got and .plt sections will be in the
-            executable image, not in the object image transiently loaded.
-         */
-         if (0 == VG_(strcmp)(".got",sh_strtab + shdr[i].sh_name)) {
-            o_got    = (UChar*)(si->offset
-                                + shdr[i].sh_addr);
-            o_got_sz = shdr[i].sh_size;
-	    si->got_start= (Addr)o_got;
-	    si->got_size = o_got_sz;
-            /* check image overrun here */
-         }
-         if (0 == VG_(strcmp)(".plt",sh_strtab + shdr[i].sh_name)) {
-            o_plt    = (UChar*)(si->offset
-                                + shdr[i].sh_addr);
-            o_plt_sz = shdr[i].sh_size;
-	    si->plt_start= (Addr)o_plt;
-	    si->plt_size = o_plt_sz;
-            /* check image overrun here */
-         }
+         /* Nb: must find where .got and .plt sections will be in the
+          * executable image, not in the object image transiently loaded. */
+              FIND(".dynsym",       o_dynsym,     o_dynsym_sz,   0, Elf32_Sym*)
+         else FIND(".dynstr",       o_dynstr,     o_dynstr_sz,   0, UChar*)
+         else FIND(".symtab",       o_symtab,     o_symtab_sz,   0, Elf32_Sym*)
+         else FIND(".strtab",       o_strtab,     o_strtab_sz,   0, UChar*)
 
+         else FIND(".stab",         stab,         stab_sz,       0, UChar*)
+         else FIND(".stabstr",      stabstr,      stabstr_sz,    0, UChar*)
+         else FIND(".debug_line",   debug_line,   debug_line_sz, 0, UChar*)
+
+         else FIND(".got",         si->got_start, si->got_size,  1, Addr)
+         else FIND(".plt",         si->plt_start, si->plt_size,  1, Addr)
+
+         #undef FIND
+         
+         /* Check some sizes */
+         vg_assert((o_dynsym_sz % sizeof(Elf32_Sym)) == 0);
+         vg_assert((o_symtab_sz % sizeof(Elf32_Sym)) == 0);
       }
 
-      if (VG_(clo_trace_symtab)) {
-         if (o_plt) VG_(printf)( "PLT: %p .. %p\n",
-                                 o_plt, o_plt + o_plt_sz - 1 );
-         if (o_got) VG_(printf)( "GOT: %p .. %p\n",
-                                 o_got, o_got + o_got_sz - 1 );
-      }
+      read_symtab(si, "symbol table", 
+                  o_symtab, o_symtab_sz,
+                  o_strtab, o_strtab_sz);
 
-      if (o_strtab == NULL || o_symtab == NULL) {
-         VG_(symerr)("   object doesn't have a symbol table");
-      }
-      if (o_dynstr == NULL || o_dynsym == NULL) {
-         VG_(symerr)("   object doesn't have a dynamic symbol table");
-      }
+      read_symtab(si, "dynamic symbol table",
+                  o_dynsym, o_dynsym_sz,
+                  o_dynstr, o_dynstr_sz);
 
-      while (True) {
-	 if (o_strtab == NULL || o_symtab == NULL) {
+      /* Read the stabs and/or dwarf2 debug information, if any. */
+      if (stab != NULL && stabstr != NULL) {
+         VG_(read_debuginfo_stabs) ( si, stab, stab_sz, stabstr, stabstr_sz );
 
-	    o_strtab    = o_dynstr;
-	    o_symtab    = o_dynsym;
-	    o_strtab_sz = o_dynstr_sz;
-	    o_symtab_sz = o_dynsym_sz;
+      } else if (debug_line) {
+         VG_(read_debuginfo_dwarf2) ( si, debug_line, debug_line_sz );
 
-	    if (o_strtab == NULL || o_symtab == NULL) break;
-
-	    o_dynstr = NULL;
-	    o_dynsym = NULL;
-
-	    if (VG_(clo_trace_symtab))
-	       VG_(printf)("Reading dynamic symbol table (%d entries)\n",
-			    o_symtab_sz/sizeof(Elf32_Sym) );
-	 }
-	 else if (VG_(clo_trace_symtab)) {
-	      
-	    VG_(printf)("Reading symbol table (%d entries)\n",
-			o_symtab_sz/sizeof(Elf32_Sym) );
-	 }
-
-         /* Perhaps should start at i = 1; ELF docs suggest that entry
-            0 always denotes `unknown symbol'. */
-         for (i = 1; i < (Int)(o_symtab_sz/sizeof(Elf32_Sym)); i++){
-#           if 1
-	    if (VG_(clo_trace_symtab)) {
-	       VG_(printf)("raw symbol [%d]: ", i);
-	       switch (ELF32_ST_BIND(o_symtab[i].st_info)) {
-               case STB_LOCAL:  VG_(printf)("LOC "); break;
-               case STB_GLOBAL: VG_(printf)("GLO "); break;
-               case STB_WEAK:   VG_(printf)("WEA "); break;
-               case STB_LOPROC: VG_(printf)("lop "); break;
-               case STB_HIPROC: VG_(printf)("hip "); break;
-               default:         VG_(printf)("??? "); break;
-	       }
-	       switch (ELF32_ST_TYPE(o_symtab[i].st_info)) {
-               case STT_NOTYPE:  VG_(printf)("NOT "); break;
-               case STT_OBJECT:  VG_(printf)("OBJ "); break;
-               case STT_FUNC:    VG_(printf)("FUN "); break;
-               case STT_SECTION: VG_(printf)("SEC "); break;
-               case STT_FILE:    VG_(printf)("FIL "); break;
-               case STT_LOPROC:  VG_(printf)("lop "); break;
-               case STT_HIPROC:  VG_(printf)("hip "); break;
-               default:          VG_(printf)("??? "); break;
-	       }
-	       VG_(printf)(
-		  ": value %p, size %d, name %s\n",
-		  si->offset+(UChar*)o_symtab[i].st_value,
-		  o_symtab[i].st_size,
-		  o_symtab[i].st_name 
-		  ? ((Char*)o_strtab+o_symtab[i].st_name) 
-		  : (Char*)"NONAME"); 
-	    }               
-#           endif
-
-            /* Figure out if we're interested in the symbol.
-               Firstly, is it of the right flavour? 
-            */
-            snaffle_it
-               =  ( (ELF32_ST_BIND(o_symtab[i].st_info) == STB_GLOBAL ||
-                     ELF32_ST_BIND(o_symtab[i].st_info) == STB_LOCAL ||
-		     ELF32_ST_BIND(o_symtab[i].st_info) == STB_WEAK)
-                    &&
-                    (ELF32_ST_TYPE(o_symtab[i].st_info) == STT_FUNC ||
-                     (VG_(needs).data_syms 
-                      && ELF32_ST_TYPE(o_symtab[i].st_info) == STT_OBJECT))
-                  );
-
-            /* Secondly, if it's apparently in a GOT or PLT, it's really
-               a reference to a symbol defined elsewhere, so ignore it. 
-            */
-            sym_addr = si->offset
-                       + (UInt)o_symtab[i].st_value;
-            if (o_got != NULL
-                && sym_addr >= (Addr)o_got 
-                && sym_addr < (Addr)(o_got+o_got_sz)) {
-               snaffle_it = False;
-               if (VG_(clo_trace_symtab)) {
-	          VG_(printf)( "in GOT: %s\n", 
-                               o_strtab+o_symtab[i].st_name);
-               }
-            }
-            if (o_plt != NULL
-                && sym_addr >= (Addr)o_plt 
-                && sym_addr < (Addr)(o_plt+o_plt_sz)) {
-               snaffle_it = False;
-               if (VG_(clo_trace_symtab)) {
-	          VG_(printf)( "in PLT: %s\n", 
-                               o_strtab+o_symtab[i].st_name);
-               }
-            }
-
-            /* Don't bother if nameless, or zero-sized. */
-            if (snaffle_it
-                && (o_symtab[i].st_name == (Elf32_Word)NULL
-                    || /* VG_(strlen)(o_strtab+o_symtab[i].st_name) == 0 */
-                       /* equivalent but cheaper ... */
-                       * ((UChar*)(o_strtab+o_symtab[i].st_name)) == 0
-                    || o_symtab[i].st_size == 0)) {
-               snaffle_it = False;
-               if (VG_(clo_trace_symtab)) {
-	          VG_(printf)( "size=0: %s\n", 
-                               o_strtab+o_symtab[i].st_name);
-               }
-            }
-
-#           if 0
-            /* Avoid _dl_ junk.  (Why?) */
-            /* 01-02-24: disabled until I find out if it really helps. */
-            if (snaffle_it
-                && (VG_(strncmp)("_dl_", o_strtab+o_symtab[i].st_name, 4) == 0
-                    || VG_(strncmp)("_r_debug", 
-                                   o_strtab+o_symtab[i].st_name, 8) == 0)) {
-               snaffle_it = False;
-               if (VG_(clo_trace_symtab)) {
-                  VG_(printf)( "_dl_ junk: %s\n", 
-                               o_strtab+o_symtab[i].st_name);
-               }
-            }
-#           endif
-
-            /* This seems to significantly reduce the number of junk
-               symbols, and particularly reduces the number of
-               overlapping address ranges.  Don't ask me why ... */
-	    if (snaffle_it && (Int)o_symtab[i].st_value == 0) {
-               snaffle_it = False;
-               if (VG_(clo_trace_symtab)) {
-                  VG_(printf)( "valu=0: %s\n", 
-                               o_strtab+o_symtab[i].st_name);
-               }
-            }
-
-	    /* If no part of the symbol falls within the mapped range,
-               ignore it. */
-            if (sym_addr+o_symtab[i].st_size <= si->start
-                || sym_addr >= si->start+si->size) {
-               snaffle_it = False;
-	    }
-
-            if (snaffle_it) {
-               /* it's an interesting symbol; record ("snaffle") it. */
-               RiSym sym;
-               Char* t0 = o_symtab[i].st_name 
-                             ? (Char*)(o_strtab+o_symtab[i].st_name) 
-                             : (Char*)"NONAME";
-               Char *name = VG_(addStr) ( si, t0, -1 );
-               vg_assert(name != NULL
-                         /* && 0==VG_(strcmp)(t0,&vg_strtab[nmoff]) */ );
-               vg_assert( (Int)o_symtab[i].st_value >= 0);
-	       /* VG_(printf)("%p + %d:   %p %s\n", si->start, 
-			   (Int)o_symtab[i].st_value, sym_addr,  t0 ); */
-               sym.addr  = sym_addr;
-               sym.size  = o_symtab[i].st_size;
-               sym.name  = name;
-               addSym ( si, &sym );
-	    }
-         }
-	 /* If there's dynamic symbol info, force reading in next loop */
-	 o_strtab    = NULL;
-	 o_symtab    = NULL;
+      } else {
+         VG_(symerr)("   object doesn't have any debug info");
+         goto out;
       }
    }
+   res = True;
 
-   /* Reading of the stabs and/or dwarf2 debug format information, if
-      any. */
-   stabstr    = NULL;
-   stab       = NULL;
-   dwarf2     = NULL;
-   stabstr_sz = 0;
-   stab_sz    = 0;
-   dwarf2_sz  = 0;
-
-   /* find the .stabstr / .stab / .debug_line sections */
-   for (i = 0; i < ehdr->e_shnum; i++) {
-      if (0 == VG_(strcmp)(".stab",sh_strtab + shdr[i].sh_name)) {
-         stab = (UChar*)(oimage + shdr[i].sh_offset);
-         stab_sz = shdr[i].sh_size;
-      }
-      if (0 == VG_(strcmp)(".stabstr",sh_strtab + shdr[i].sh_name)) {
-         stabstr = (UChar*)(oimage + shdr[i].sh_offset);
-         stabstr_sz = shdr[i].sh_size;
-      }
-      if (0 == VG_(strcmp)(".debug_line",sh_strtab + shdr[i].sh_name)) {
-         dwarf2 = (UChar *)(oimage + shdr[i].sh_offset);
-	 dwarf2_sz = shdr[i].sh_size;
-      }
-   }
-
-   if ((stab == NULL || stabstr == NULL) && dwarf2 == NULL) {
-      VG_(symerr)("   object doesn't have any debug info");
-      VG_(munmap) ( (void*)oimage, n_oimage );
-      return False;
-   }
-
-   if ( stab_sz + (UChar*)stab > n_oimage + (UChar*)oimage
-        || stabstr_sz + (UChar*)stabstr 
-           > n_oimage + (UChar*)oimage ) {
-      VG_(symerr)("   ELF (stabs) debug data is beyond image end?!");
-      VG_(munmap) ( (void*)oimage, n_oimage );
-      return False;
-   }
-
-   if ( dwarf2_sz + (UChar*)dwarf2 > n_oimage + (UChar*)oimage ) {
-      VG_(symerr)("   ELF (dwarf2) debug data is beyond image end?!");
-      VG_(munmap) ( (void*)oimage, n_oimage );
-      return False;
-   }
-
-   /* Looks plausible.  Go on and read debug data. */
-   if (stab != NULL && stabstr != NULL) {
-      VG_(read_debuginfo_stabs) ( si, stab, stab_sz, stabstr, stabstr_sz );
-   }
-
-   if (dwarf2 != NULL) {
-      VG_(read_debuginfo_dwarf2) ( si, dwarf2, dwarf2_sz );
-   }
-
+  out:
    /* Last, but not least, heave the oimage back overboard. */
    VG_(munmap) ( (void*)oimage, n_oimage );
-
-   return True;
+   return res;
 }
-
 
 /*------------------------------------------------------------*/
 /*--- Main entry point for symbols table reading.          ---*/
@@ -1204,10 +1116,10 @@ void VG_(read_seg_symbols) ( Addr start, UInt size,
 
    si->stab_typetab = NULL;
 
-   si->plt_start  = si->plt_size = 0;
-   si->got_start  = si->got_size = 0;
+   si->plt_start  = si->plt_size  = 0;
+   si->got_start  = si->got_size  = 0;
    si->data_start = si->data_size = 0;
-   si->bss_start  = si->bss_size = 0;
+   si->bss_start  = si->bss_size  = 0;
 
    /* And actually fill it up. */
    if (!vg_read_lib_symbols ( si ) && 0) {
@@ -1581,7 +1493,7 @@ SegInfo* VG_(get_obj) ( Addr a )
          return si;
       }
    }
-   return False;
+   return NULL;
 }
 
 
@@ -1807,20 +1719,16 @@ Char* VG_(describe_eip)(Addr eip, Char* buf, Int n_buf)
         buf[n] = *sss;                                      \
      buf[n] = '\0';                                         \
    }
-   Bool   know_fnname;
-   Bool   know_objname;
-   Bool   know_srcloc;
-   UChar  buf_fn[M_VG_ERRTXT];
-   UChar  buf_obj[M_VG_ERRTXT];
-   UChar  buf_srcloc[M_VG_ERRTXT];
-   UInt   lineno; 
-   UChar  ibuf[20];
-   UInt   n = 0;
-
-   know_fnname  = VG_(get_fnname) (eip, buf_fn,  M_VG_ERRTXT);
-   know_objname = VG_(get_objname)(eip, buf_obj, M_VG_ERRTXT);
-   know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc, M_VG_ERRTXT, 
-                                            &lineno);
+   UInt  lineno; 
+   UChar ibuf[20];
+   UInt  n = 0;
+   UChar buf_fn[M_VG_ERRTXT];
+   UChar buf_obj[M_VG_ERRTXT];
+   UChar buf_srcloc[M_VG_ERRTXT];
+   Bool  know_fnname  = VG_(get_fnname) (eip, buf_fn,  M_VG_ERRTXT);
+   Bool  know_objname = VG_(get_objname)(eip, buf_obj, M_VG_ERRTXT);
+   Bool  know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc, M_VG_ERRTXT, 
+                                                  &lineno);
    VG_(sprintf)(ibuf,"0x%x: ", eip);
    APPEND(ibuf);
    if (know_fnname) { 

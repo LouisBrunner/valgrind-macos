@@ -144,7 +144,7 @@ static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si,
 
    SC2(eip,EIP);
    SC2(cs,CS);
-   sc->eflags = vex_to_eflags(&tst->arch.vex);
+   sc->eflags = LibVEX_GuestX86_get_eflags(&tst->arch.vex);
    SC2(ss,SS);
    /* XXX esp_at_signal */
    /* XXX trapno */
@@ -334,7 +334,7 @@ Int VGA_(pop_signal_frame)(ThreadId tid)
 
 void VGA_(fill_elfregs_from_BB)(struct user_regs_struct* regs)
 {
-   regs->eflags = vex_to_eflags(BASEBLOCK_VEX);
+   regs->eflags = LibVEX_GuestX86_get_eflags(BASEBLOCK_VEX);
    regs->esp    = BASEBLOCK_VEX->guest_ESP;
    regs->eip    = BASEBLOCK_VEX->guest_EIP;
 
@@ -358,7 +358,7 @@ void VGA_(fill_elfregs_from_BB)(struct user_regs_struct* regs)
 void VGA_(fill_elfregs_from_tst)(struct user_regs_struct* regs, 
                                  arch_thread_t* arch)
 {
-   regs->eflags = vex_to_eflags(&arch->vex);
+   regs->eflags = LibVEX_GuestX86_get_eflags(&arch->vex);
    regs->esp    = arch->vex.guest_ESP;
    regs->eip    = arch->vex.guest_EIP;
 

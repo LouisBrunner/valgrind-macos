@@ -112,33 +112,13 @@ void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
    /* WORD offsets in this column */
    VGOFF_(m_vex) = VG_(alloc_BaB)( (3 + sizeof(VexGuestX86State)) / 4 );
 
-   /* Set up the new vex integer state in a marginally safe way. */
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestX86_initialise(BASEBLOCK_VEX);
+
+   /* Put essential stuff into the new state. */
    BASEBLOCK_VEX->guest_ESP = esp_at_startup;
    BASEBLOCK_VEX->guest_EIP = client_eip;
-   BASEBLOCK_VEX->guest_CC_OP = 0; /* CC_OP_COPY */
-   BASEBLOCK_VEX->guest_CC_SRC = 0;
-   BASEBLOCK_VEX->guest_CC_DST = 0;
-
-   BASEBLOCK_VEX->guest_EAX = BASEBLOCK_VEX->guest_EBX
-                            = BASEBLOCK_VEX->guest_ECX
-                            = BASEBLOCK_VEX->guest_EDX
-                            = BASEBLOCK_VEX->guest_ESI
-                            = BASEBLOCK_VEX->guest_EDI
-                            = BASEBLOCK_VEX->guest_EBP
-                            = 0;
-
-   BASEBLOCK_VEX->guest_DFLAG = 1; /* forwards */
-
-   BASEBLOCK_VEX->guest_CS = BASEBLOCK_VEX->guest_DS
-                           = BASEBLOCK_VEX->guest_ES
-                           = BASEBLOCK_VEX->guest_FS
-                           = BASEBLOCK_VEX->guest_GS
-                           = BASEBLOCK_VEX->guest_SS
-                           = 0;
-
-   /* set up an initial FPU state (doesn't really matter what it is,
-      so long as it's somewhat valid) */
-   vex_initialise_x87(BASEBLOCK_VEX);
 
    if (VG_(needs).shadow_regs) {
       /* 9   */ VGOFF_(sh_eax)    = VG_(alloc_BaB_1_set)(0);
@@ -491,7 +471,7 @@ Int VGA_(ptrace_setregs_from_BB)(Int pid)
    regs.edi    = BASEBLOCK_VEX->guest_EDI;
    regs.ebp    = BASEBLOCK_VEX->guest_EBP;
    regs.esp    = BASEBLOCK_VEX->guest_ESP;
-   regs.eflags = vex_to_eflags(BASEBLOCK_VEX);
+   regs.eflags = LibVEX_GuestX86_get_eflags(BASEBLOCK_VEX);
    regs.eip    = BASEBLOCK_VEX->guest_EIP;
 
    return ptrace(PTRACE_SETREGS, pid, NULL, &regs);
@@ -515,7 +495,7 @@ Int VGA_(ptrace_setregs_from_tst)(Int pid, arch_thread_t* arch)
    regs.edi    = arch->vex.guest_EDI;
    regs.ebp    = arch->vex.guest_EBP;
    regs.esp    = arch->vex.guest_ESP;
-   regs.eflags = vex_to_eflags(&arch->vex);
+   regs.eflags = LibVEX_GuestX86_get_eflags(&arch->vex);
    regs.eip    = arch->vex.guest_EIP;
 
    return ptrace(PTRACE_SETREGS, pid, NULL, &regs);

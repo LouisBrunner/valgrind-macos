@@ -2515,7 +2515,7 @@ weak_alias (__pread64, pread64)
 weak_alias (__pwrite64, pwrite64)
 weak_alias(__fork, fork)
 
-
+weak_alias (__pthread_kill_other_threads_np, pthread_kill_other_threads_np)
 
 /*--------------------------------------------------*/
 

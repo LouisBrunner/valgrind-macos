@@ -29,8 +29,9 @@ dousage=0
 doversion=0
 
 # Collect up args for Valgrind
-for arg
+while [ $+ != 0 ]
 do
+  arg=$1
   case "$arg" in
 #   options for the user
     --help)                 dousage=1; break;;
@@ -97,20 +98,12 @@ do
   esac
 done
 
-# Collect up the prog and args to run
-for arg
-do
-  case "$arg" in
-   *)     argopts="$argopts $arg"; shift;;
-  esac
-done
-
 if [ z"$doversion" = z1 ]; then
    echo "valgrind-$version"
    exit 1
 fi
 
-if [ z"$argopts" = z   -o   z"$dousage" = z1 ]; then
+if [ $# = 0 ] || [ z"$dousage" = z1 ]; then
    echo
    echo "usage: $vgname [options] prog-and-args"
    echo
@@ -174,4 +167,4 @@ LD_PRELOAD=valgrind.so:$LD_PRELOAD
 export LD_PRELOAD
 #LD_DEBUG=files
 #export LD_DEBUG
-exec $argopts
+exec "$@"

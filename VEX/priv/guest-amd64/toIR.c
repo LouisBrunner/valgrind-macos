@@ -622,14 +622,11 @@ static Bool epartIsReg ( UChar mod_reg_rm )
    return toBool(0xC0 == (mod_reg_rm & 0xC0));
 }
 
-/* ... and extract the register number ... */
-static Int eregOfRM ( UChar mod_reg_rm )
-{
-   return (Int)(mod_reg_rm & 0x7);
-}
-
-/* Extract the reg field from a modRM byte. */
-static Int gregOfRM ( UChar mod_reg_rm )
+/* Extract the 'g' field from a modRM byte.  This only produces 3
+   bits, which is not a complete register number.  You should avoid
+   this function if at all possible. */
+inline
+static Int gregLO3ofRM ( UChar mod_reg_rm )
 {
    return (Int)( (mod_reg_rm >> 3) & 7 );
 }
@@ -795,9 +792,11 @@ static Bool haveREX ( Prefix pfx ) {
 static Int getRexW ( Prefix pfx ) {
    return (pfx & PFX_REXW) ? 1 : 0;
 }
+/* Apparently unused.
 static Int getRexR ( Prefix pfx ) {
    return (pfx & PFX_REXR) ? 1 : 0;
 }
+*/
 static Int getRexX ( Prefix pfx ) {
    return (pfx & PFX_REXX) ? 1 : 0;
 }
@@ -2967,7 +2966,7 @@ ULong dis_Grp1 ( Prefix pfx,
    IROp    op8  = Iop_INVALID;
    ULong   mask = mkSizeMask(sz);
 
-   switch (gregOfRM(modrm)) {
+   switch (gregLO3ofRM(modrm)) {
       case 0: op8 = Iop_Add8; break;  case 1: op8 = Iop_Or8;  break;
       case 2: break;  // ADC
       case 3: break;  // SBB
@@ -2982,11 +2981,11 @@ ULong dis_Grp1 ( Prefix pfx,
       assign(dst0, getIRegE(sz,pfx,modrm));
       assign(src,  mkU(ty,d64 & mask));
 
-      if (gregOfRM(modrm) == 2 /* ADC */) {
+      if (gregLO3ofRM(modrm) == 2 /* ADC */) {
          vassert(0); /* awaiting test case */
          helper_ADC( sz, dst1, dst0, src );
       } else 
-      if (gregOfRM(modrm) == 3 /* SBB */) {
+      if (gregLO3ofRM(modrm) == 3 /* SBB */) {
          helper_SBB( sz, dst1, dst0, src );
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
@@ -2996,12 +2995,12 @@ ULong dis_Grp1 ( Prefix pfx,
             setFlags_DEP1(op8, dst1, ty);
       }
 
-      if (gregOfRM(modrm) < 7)
+      if (gregLO3ofRM(modrm) < 7)
          putIRegE(sz, pfx, modrm, mkexpr(dst1));
 
       delta += (am_sz + d_sz);
       DIP("%s%c $%lld, %s\n", 
-          nameGrp1(gregOfRM(modrm)), nameISize(sz), d64, 
+          nameGrp1(gregLO3ofRM(modrm)), nameISize(sz), d64, 
           nameIRegE(sz,pfx,modrm));
    } else {
       addr = disAMode ( &len, pfx, delta, dis_buf, /*xtra*/d_sz );
@@ -3009,11 +3008,11 @@ ULong dis_Grp1 ( Prefix pfx,
       assign(dst0, loadLE(ty,mkexpr(addr)));
       assign(src, mkU(ty,d64 & mask));
 
-      if (gregOfRM(modrm) == 2 /* ADC */) {
+      if (gregLO3ofRM(modrm) == 2 /* ADC */) {
          vassert(0); /* awaiting test case */
          helper_ADC( sz, dst1, dst0, src );
       } else 
-      if (gregOfRM(modrm) == 3 /* SBB */) {
+      if (gregLO3ofRM(modrm) == 3 /* SBB */) {
          vassert(0); /* awaiting test case */
          helper_SBB( sz, dst1, dst0, src );
       } else {
@@ -3024,12 +3023,12 @@ ULong dis_Grp1 ( Prefix pfx,
             setFlags_DEP1(op8, dst1, ty);
       }
 
-      if (gregOfRM(modrm) < 7)
+      if (gregLO3ofRM(modrm) < 7)
           storeLE(mkexpr(addr), mkexpr(dst1));
 
       delta += (len+d_sz);
       DIP("%s%c $%lld, %s\n", 
-          nameGrp1(gregOfRM(modrm)), nameISize(sz),
+          nameGrp1(gregLO3ofRM(modrm)), nameISize(sz),
           d64, dis_buf);
    }
    return delta;
@@ -3067,15 +3066,15 @@ ULong dis_Grp2 ( Prefix pfx,
    }
 
    isShift = False;
-   switch (gregOfRM(modrm)) { case 4: case 5: case 7: isShift = True; }
+   switch (gregLO3ofRM(modrm)) { case 4: case 5: case 7: isShift = True; }
 
    isRotate = False;
-   switch (gregOfRM(modrm)) { case 0: case 1: isRotate = True; }
+   switch (gregLO3ofRM(modrm)) { case 0: case 1: isRotate = True; }
 
-   isRotateRC = toBool(gregOfRM(modrm) == 3);
+   isRotateRC = toBool(gregLO3ofRM(modrm) == 3);
 
    if (!isShift && !isRotate && !isRotateRC) {
-      vex_printf("\ncase %d\n", gregOfRM(modrm));
+      vex_printf("\ncase %d\n", gregLO3ofRM(modrm));
       vpanic("dis_Grp2(Reg): unhandled case(amd64)");
    }
 
@@ -3113,7 +3112,7 @@ ULong dis_Grp2 ( Prefix pfx,
       UChar  mask      = toUChar(sz==8 ? 63 : 31);
       IROp   op64;
 
-      switch (gregOfRM(modrm)) { 
+      switch (gregLO3ofRM(modrm)) { 
          case 4: op64 = Iop_Shl64; break;
          case 5: op64 = Iop_Shr64; break;
          case 7: op64 = Iop_Sar64; break;
@@ -3164,7 +3163,7 @@ ULong dis_Grp2 ( Prefix pfx,
    if (isRotate) {
       Int    ccOp      = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 
                                         : (ty==Ity_I32 ? 2 : 3));
-      Bool   left      = toBool(gregOfRM(modrm) == 0);
+      Bool   left      = toBool(gregLO3ofRM(modrm) == 0);
       IRTemp rot_amt   = newTemp(Ity_I8);
       IRTemp rot_amt64 = newTemp(Ity_I8);
       IRTemp oldFlags  = newTemp(Ity_I64);
@@ -3247,7 +3246,7 @@ ULong dis_Grp2 ( Prefix pfx,
       putIRegE(sz, pfx, modrm, mkexpr(dst1));
       if (vex_traceflags & VEX_TRACE_FE) {
          vex_printf("%s%c ",
-                    nameGrp2(gregOfRM(modrm)), nameISize(sz) );
+                    nameGrp2(gregLO3ofRM(modrm)), nameISize(sz) );
          if (shift_expr_txt)
             vex_printf("%s", shift_expr_txt);
          else
@@ -3258,7 +3257,7 @@ ULong dis_Grp2 ( Prefix pfx,
       storeLE(mkexpr(addr), mkexpr(dst1));
       if (vex_traceflags & VEX_TRACE_FE) {
          vex_printf("%s%c ",
-                    nameGrp2(gregOfRM(modrm)), nameISize(sz) );
+                    nameGrp2(gregLO3ofRM(modrm)), nameISize(sz) );
          if (shift_expr_txt)
             vex_printf("%s", shift_expr_txt);
          else
@@ -3473,7 +3472,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
    IRTemp dst1, src, dst0;
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
-      switch (gregOfRM(modrm)) {
+      switch (gregLO3ofRM(modrm)) {
          case 0: { /* TEST */
             delta++; 
             d64 = getSDisp(imin(4,sz), delta); 
@@ -3538,21 +3537,21 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
             break;
          default: 
             vex_printf(
-               "unhandled Grp3(R) case %d\n", (Int)gregOfRM(modrm));
+               "unhandled Grp3(R) case %d\n", (Int)gregLO3ofRM(modrm));
             vpanic("Grp3(amd64)");
       }
    } else {
       addr = disAMode ( &len, pfx, delta, dis_buf,
                         /* we have to inform disAMode of any immediate
 			   bytes used */
-                        gregOfRM(modrm)==0/*TEST*/
+                        gregLO3ofRM(modrm)==0/*TEST*/
                            ? imin(4,sz)
                            : 0
                       );
       t1   = newTemp(ty);
       delta += len;
       assign(t1, loadLE(ty,mkexpr(addr)));
-      switch (gregOfRM(modrm)) {
+      switch (gregLO3ofRM(modrm)) {
          case 0: { /* TEST */
             d64 = getSDisp(imin(4,sz), delta); 
             delta += imin(4,sz);
@@ -3596,7 +3595,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 //..             break;
          default: 
             vex_printf(
-               "unhandled Grp3(M) case %d\n", (Int)gregOfRM(modrm));
+               "unhandled Grp3(M) case %d\n", (Int)gregLO3ofRM(modrm));
             vpanic("Grp3(amd64)");
       }
    }
@@ -3618,7 +3617,7 @@ ULong dis_Grp4 ( Prefix pfx, ULong delta )
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
       assign(t1, getIRegE(1, pfx, modrm));
-      switch (gregOfRM(modrm)) {
+      switch (gregLO3ofRM(modrm)) {
          case 0: /* INC */
             assign(t2, binop(Iop_Add8, mkexpr(t1), mkU8(1)));
             putIRegE(1, pfx, modrm, mkexpr(t2));
@@ -3631,16 +3630,16 @@ ULong dis_Grp4 ( Prefix pfx, ULong delta )
             break;
          default: 
             vex_printf(
-               "unhandled Grp4(R) case %d\n", (Int)gregOfRM(modrm));
+               "unhandled Grp4(R) case %d\n", (Int)gregLO3ofRM(modrm));
             vpanic("Grp4(amd64,R)");
       }
       delta++;
-      DIP("%sb %s\n", nameGrp4(gregOfRM(modrm)),
+      DIP("%sb %s\n", nameGrp4(gregLO3ofRM(modrm)),
                       nameIRegE(1, pfx, modrm));
    } else {
       IRTemp addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
       assign( t1, loadLE(ty, mkexpr(addr)) );
-      switch (gregOfRM(modrm)) {
+      switch (gregLO3ofRM(modrm)) {
 //..          case 0: /* INC */
 //..             assign(t2, binop(Iop_Add8, mkexpr(t1), mkU8(1)));
 //..             storeLE( mkexpr(addr), mkexpr(t2) );
@@ -3653,11 +3652,11 @@ ULong dis_Grp4 ( Prefix pfx, ULong delta )
 //..             break;
          default: 
             vex_printf(
-               "unhandled Grp4(M) case %d\n", (Int)gregOfRM(modrm));
+               "unhandled Grp4(M) case %d\n", (Int)gregLO3ofRM(modrm));
             vpanic("Grp4(amd64,M)");
       }
       delta += alen;
-      DIP("%sb %s\n", nameGrp4(gregOfRM(modrm)), dis_buf);
+      DIP("%sb %s\n", nameGrp4(gregLO3ofRM(modrm)), dis_buf);
    }
    return delta;
 }
@@ -3680,7 +3679,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
       assign(t1, getIRegE(sz,pfx,modrm));
-      switch (gregOfRM(modrm)) {
+      switch (gregLO3ofRM(modrm)) {
          case 0: /* INC */
             t2 = newTemp(ty);
             assign(t2, binop(mkSizedOp(ty,Iop_Add8),
@@ -3721,20 +3720,20 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
             break;
          default: 
             vex_printf(
-               "unhandled Grp5(R) case %d\n", (Int)gregOfRM(modrm));
+               "unhandled Grp5(R) case %d\n", (Int)gregLO3ofRM(modrm));
             vpanic("Grp5(amd64)");
       }
       delta++;
-      DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
+      DIP("%s%c %s\n", nameGrp5(gregLO3ofRM(modrm)),
                        showSz ? nameISize(sz) : ' ', 
                        nameIRegE(sz, pfx, modrm));
    } else {
       addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
-      if (gregOfRM(modrm) != 2 && gregOfRM(modrm) != 4
-                               && gregOfRM(modrm) != 6) {
+      if (gregLO3ofRM(modrm) != 2 && gregLO3ofRM(modrm) != 4
+                                  && gregLO3ofRM(modrm) != 6) {
          assign(t1, loadLE(ty,mkexpr(addr)));
       }
-      switch (gregOfRM(modrm)) {
+      switch (gregLO3ofRM(modrm)) {
          case 0: /* INC */ 
             t2 = newTemp(ty);
             assign(t2, binop(mkSizedOp(ty,Iop_Add8),
@@ -3791,11 +3790,11 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
          default: 
          unhandled:
             vex_printf(
-               "unhandled Grp5(M) case %d\n", (Int)gregOfRM(modrm));
+               "unhandled Grp5(M) case %d\n", (Int)gregLO3ofRM(modrm));
             vpanic("Grp5(amd64)");
       }
       delta += len;
-      DIP("%s%c %s\n", nameGrp5(gregOfRM(modrm)),
+      DIP("%s%c %s\n", nameGrp5(gregLO3ofRM(modrm)),
                        showSz ? nameISize(sz) : ' ', 
                        dis_buf);
    }
@@ -4001,13 +4000,13 @@ ULong dis_mul_E_G ( Prefix      pfx,
 
    if (epartIsReg(rm)) {
       DIP("imul%c %s, %s\n", nameISize(size), 
-                             nameIRegE(size,pfx,eregOfRM(rm)),
-                             nameIRegG(size,pfx,gregOfRM(rm)));
+                             nameIRegE(size,pfx,rm),
+                             nameIRegG(size,pfx,rm));
       return 1+delta0;
    } else {
       DIP("imul%c %s, %s\n", nameISize(size), 
                              dis_buf, 
-                             nameIRegG(size,pfx,gregOfRM(rm)));
+                             nameIRegG(size,pfx,rm));
       return alen+delta0;
    }
 }
@@ -4373,7 +4372,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
          //IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
          //delta += len;
 
-         switch (gregOfRM(modrm)) {
+         switch (gregLO3ofRM(modrm)) {
 
 //..             case 0: /* FADD single-real */
 //..                fp_do_op_mem_ST_0 ( addr, "add", dis_buf, Iop_AddF64, False );
@@ -4431,7 +4430,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                break;
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
                vex_printf("first_opcode == 0xD8\n");
                goto decode_fail;
          }
@@ -4510,7 +4509,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
          IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
          delta += len;
 
-         switch (gregOfRM(modrm)) {
+         switch (gregLO3ofRM(modrm)) {
 
             case 0: /* FLD single-real */
                DIP("flds %s\n", dis_buf);
@@ -4690,7 +4689,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                break;
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
                vex_printf("first_opcode == 0xD9\n");
                goto decode_fail;
          }
@@ -4921,7 +4920,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
          //IROp   fop;
          //IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
          delta += len;
-         switch (gregOfRM(modrm)) {
+         switch (gregLO3ofRM(modrm)) {
 
 //..             case 0: /* FIADD m32int */ /* ST(0) += m32int */
 //..                DIP("fiaddl %s\n", dis_buf);
@@ -4970,7 +4969,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                break;
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
                vex_printf("first_opcode == 0xDA\n");
                goto decode_fail;
          }
@@ -5041,7 +5040,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
          IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
          delta += len;
 
-         switch (gregOfRM(modrm)) {
+         switch (gregLO3ofRM(modrm)) {
 
 //..             case 0: /* FILD m32int */
 //..                DIP("fildl %s\n", dis_buf);
@@ -5116,7 +5115,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..             }
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
                vex_printf("first_opcode == 0xDB\n");
                goto decode_fail;
          }
@@ -5332,7 +5331,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
          IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
          delta += len;
 
-         switch (gregOfRM(modrm)) {
+         switch (gregLO3ofRM(modrm)) {
 
             case 0: /* FLD double-real */
                DIP("fldl %s\n", dis_buf);
@@ -5455,7 +5454,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..             }
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
                vex_printf("first_opcode == 0xDD\n");
                goto decode_fail;
          }
@@ -5644,7 +5643,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
          IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
          delta += len;
 
-         switch (gregOfRM(modrm)) {
+         switch (gregLO3ofRM(modrm)) {
 
 //..             case 0: /* FILD m16int */
 //..                DIP("fildw %s\n", dis_buf);
@@ -5683,7 +5682,7 @@ ULong dis_FPU ( Bool* decode_ok, Prefix pfx, ULong delta )
 //..                break;
 
             default:
-               vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
                vex_printf("first_opcode == 0xDF\n");
                goto decode_fail;
          }
@@ -8839,7 +8838,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    if (insn[0] == 0x0F && insn[1] == 0x18
        && !haveF2orF3(pfx)
        && !epartIsReg(insn[2]) 
-       && gregOfRM(insn[2]) >= 0 && gregOfRM(insn[2]) <= 3) {
+       && gregLO3ofRM(insn[2]) >= 0 && gregLO3ofRM(insn[2]) <= 3) {
       HChar* hintstr = "??";
 
       modrm = getUChar(delta+2);
@@ -8848,7 +8847,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       addr = disAMode ( &alen, pfx, delta+2, dis_buf, 0 );
       delta += 2+alen;
 
-      switch (gregOfRM(modrm)) {
+      switch (gregLO3ofRM(modrm)) {
          case 0: hintstr = "nta"; break;
          case 1: hintstr = "t0"; break;
          case 2: hintstr = "t1"; break;

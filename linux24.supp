@@ -7,28 +7,35 @@
 # Format of this file is:
 # {
 #     name_of_suppression
-#     kind: one of Param Value1 Value2 Value4 Value8
-#                   Free Addr1 Addr2 Addr4 Addr8
-#                   Cond (previously known as Value0)
-#     (if Param: name of system call param, if Free: name of free-ing fn)
+#     skin_name:supp_kind
+#     (optional extra info for some suppression types)
 #     caller0 name, or /name/of/so/file.so
 #     caller1 name, or ditto
 #     (optionally: caller2 name)
 #     (optionally: caller3 name)
 #  }
-
+#
+# For memcheck, the supp_kinds are:
+#
+#     Param Value1 Value2 Value4 Value8
+#     Free Addr1 Addr2 Addr4 Addr8
+#     Cond (previously known as Value0)
+#
+# and the optional extra info is:
+#     if Param: name of system call param
+#     if Free: name of free-ing fn)
 
 # even more glibc suppressions ?
 {
    libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Cond)
-   Cond
+   memcheck:Cond
    obj:*libc-2.2.4.so
    obj:*libc-2.2.4.so
    obj:*libc-2.2.4.so
 }
 {
    libc-2.2.4.so/libc-2.2.4.so/libc-2.2.4.so(Value4)
-   Value4
+   memcheck:Value4
    obj:*libc-2.2.4.so
    obj:*libc-2.2.4.so
    obj:*libc-2.2.4.so
@@ -38,25 +45,25 @@
 ##### suppressions for coolo
 {
    strchr/dl_open_worker(Cond)
-   Cond
+   memcheck:Cond
    fun:strchr
    fun:dl_open_worker
 }
 { 
    __rawmemchr/internal_getgrgid_r(Cond)
-   Cond 
+   memcheck:Cond 
    fun:__rawmemchr
    fun:internal_getgrgid_r
 } 
 { 
    _IO_vfprintf/__strnlen(Cond)
-   Cond 
+   memcheck:Cond 
    fun:__strnlen
    fun:_IO_vfprintf
 } 
 { 
    __strchrnul/gethostbyname*(Cond)
-   Cond 
+   memcheck:Cond 
    fun:__strchrnul
    fun:gethostbyname*
 } 
@@ -65,28 +72,28 @@
 ##----
 {
    strlen/*dl_map_object*(Cond)
-   Cond
+   memcheck:Cond
    fun:strlen
    fun:*dl_map_object*
 }
 
 {
    strlen/*dl_open_worker*(Cond)
-   Cond
+   memcheck:Cond
    fun:strlen
    fun:*dl_open_worker*
 }
 
 {
    *rawmemchr*/*nss*(Cond)
-   Cond
+   memcheck:Cond
    fun:*rawmemchr*
    fun:*nss*
 }
 
 {
    *strchrnul*/*nss*(Cond)
-   Cond
+   memcheck:Cond
    fun:*strchrnul*
    fun:*nss*
 }
@@ -100,13 +107,13 @@
 # two:
 {
    __mpn_construct_double/*(Addr4)
-   Addr4
+   memcheck:Addr4
    fun:__mpn_construct_double
    fun:*
 }
 {
    __mpn_construct_double/*(Addr8)
-   Addr8
+   memcheck:Addr8
    fun:__mpn_construct_double
    fun:*
 }
@@ -114,13 +121,13 @@
 # More of the same (gcc bug, I'm pretty sure)
 {
    __fabs/*(Addr4)
-   Addr4
+   memcheck:Addr4
    fun:__fabs
    fun:*
 }
 {
    __fabs/*(Addr8)
-   Addr8
+   memcheck:Addr8
    fun:__fabs
    fun:*
 }
@@ -129,7 +136,7 @@
 # Not sure what this is about ... but anyway
 {
    pthread_sighandler/*(Addr4)
-   Addr4
+   memcheck:Addr4
    fun:pthread_sighandler
    fun:*
 }
@@ -139,7 +146,7 @@
 
 {
    __strnlen/__argz_stringify/_nl_make_l10nflist(Cond)
-   Cond
+   memcheck:Cond
    fun:__strnlen
    fun:__argz_stringify
    fun:_nl_make_l10nflist
@@ -148,14 +155,14 @@
 #--------------
 {
    _dl_relocate_object/dl_open_worker/_dl_catch_error(Cond)
-   Cond
+   memcheck:Cond
    fun:_dl_relocate_object
    fun:dl_open_worker
    fun:_dl_catch_error
 }
 {
    _dl_relocate_object/libc-2.2.4.so/_dl_catch_error(Cond)
-   Cond
+   memcheck:Cond
    fun:_dl_relocate_object
    obj:*libc-2.2.4.so
    fun:_dl_catch_error
@@ -163,7 +170,7 @@
 
 {
    strrchr/_dl_map_object_from_fd/_dl_map_object(Cond)
-   Cond
+   memcheck:Cond
    fun:strrchr
    fun:_dl_map_object_from_fd
    fun:_dl_map_object
@@ -172,14 +179,14 @@
 #-------------------
 {
    socketcall.connect(serv_addr)/__libc_connect/*
-   Param
+   memcheck:Param
    socketcall.connect(serv_addr)
    fun:__libc_connect
    fun:*
 }
 {
    socketcall.connect(serv_addr)/libc-2.2.4.so/libc-2.2.4.so
-   Param
+   memcheck:Param
    socketcall.connect(serv_addr)
    obj:*libc-2.2.4.so
    obj:*libc-2.2.4.so
@@ -187,7 +194,7 @@
 
 {
    libX11.so.6.2/libX11.so.6.2/libX11.so.6.2(Cond)
-   Cond
+   memcheck:Cond
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -195,7 +202,7 @@
 
 {
    libXt.so.6.2/libXt.so.6.2/libXt.so.6.2(Cond)
-   Cond
+   memcheck:Cond
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -204,7 +211,7 @@
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXaw.so.7.0(Cond)
-   Cond
+   memcheck:Cond
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
@@ -212,7 +219,7 @@
 
 {
    libXmu.so.6.2/libXmu.so.6.2/libXmu.so.6.2(Cond)
-   Cond
+   memcheck:Cond
    obj:/usr/X11R6/lib/libXmu.so.6.2
    obj:/usr/X11R6/lib/libXmu.so.6.2
    obj:/usr/X11R6/lib/libXmu.so.6.2
@@ -220,7 +227,7 @@
 
 {
    libXt.so.6.0/libXt.so.6.0/libXaw.so.7.0(Cond)
-   Cond
+   memcheck:Cond
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
@@ -228,7 +235,7 @@
 
 {
    libXaw.so.7.0/libXaw.so.7.0/libXt.so.6.0(Value4)
-   Value4
+   memcheck:Value4
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXaw.so.7.0
    obj:/usr/X11R6/lib/libXt.so.6.0
@@ -236,7 +243,7 @@
 
 {
    libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0(Cond)
-   Cond
+   memcheck:Cond
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libX11.so.6.2
    obj:/usr/X11R6/lib/libXaw.so.7.0
@@ -245,7 +252,7 @@
 #----------------------
 {
    write(buf)/__libc_write/libX11.so.6.2/libX11.so.6.2(Param)
-   Param
+   memcheck:Param
    write(buf)
    fun:__libc_write
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -253,7 +260,7 @@
 }
 {
    write(buf)/libc-2.2.4.so/libX11.so.6.2/libX11.so.6.2(Param)
-   Param
+   memcheck:Param
    write(buf)
    obj:*libc-2.2.4.so
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -262,7 +269,7 @@
 
 #{
 #   llseek(result)/__libc_lseek64/_IO_file_seek(Param)
-#   Param
+#   memcheck:Param
 #   llseek(result)
 #   fun:__libc_lseek64
 #   fun:_IO_file_seek
@@ -270,7 +277,7 @@
 
 {
    writev(vector[...])/__writev/libX11.so.6.2/libX11.so.6.2
-   Param
+   memcheck:Param
    writev(vector[...])
    fun:__writev
    obj:/usr/X11R6/lib/libX11.so.6.2
@@ -280,14 +287,14 @@
 #----------------
 {
    __rawmemchr/libXt.so.6.0/libXt.so.6.0
-   Cond
+   memcheck:Cond
    fun:__rawmemchr
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0
 }
 {
    libc-2.2.4.so/libXt.so.6.0/libXt.so.6.0
-   Cond
+   memcheck:Cond
    obj:*libc-2.2.4.so
    obj:/usr/X11R6/lib/libXt.so.6.0
    obj:/usr/X11R6/lib/libXt.so.6.0

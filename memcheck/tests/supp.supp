@@ -1,6 +1,6 @@
 {
   name_of_this_suppression
-  Cond
+  memcheck:Cond
   obj:*supp1
   fun:__libc_start_main
 }

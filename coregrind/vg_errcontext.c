@@ -527,10 +527,12 @@ static Bool setLocationTy ( Char** p_caller, SuppLocTy* p_ty )
 static void load_one_suppressions_file ( Char* filename )
 {
 #  define N_BUF 200
-   Int  fd, i;
-   Bool eof;
-   Bool is_unrecognised_suppressions = False;
-   Char buf[N_BUF+1];
+   Int   fd, i;
+   Bool  eof;
+   Char  buf[N_BUF+1];
+   Char* skin_name;
+   Char* supp_name;
+
    fd = VG_(open)( filename, VKI_O_RDONLY, 0 );
    if (fd == -1) {
       VG_(message)(Vg_UserMsg, "FATAL: can't open suppressions file `%s'", 
@@ -541,7 +543,7 @@ static void load_one_suppressions_file ( Char* filename )
    while (True) {
       /* Assign and initialise the two suppression halves (core and skin) */
       CoreSupp* supp;
-      supp            = VG_(arena_malloc)(VG_AR_CORE, sizeof(CoreSupp));
+      supp        = VG_(arena_malloc)(VG_AR_CORE, sizeof(CoreSupp));
       supp->count = 0;
       for (i = 0; i < VG_N_SUPP_CALLERS; i++) supp->caller[i] = NULL;
       supp->skin_supp.string = supp->skin_supp.extra = NULL;
@@ -559,29 +561,39 @@ static void load_one_suppressions_file ( Char* filename )
 
       if (eof) goto syntax_error;
 
-      /* Is it a core suppression? */
-      else if (VG_(needs).core_errors && STREQ(buf, "PThread")) 
-         supp->skin_supp.skind = PThreadSupp;
-
-      /* Is it a skin suppression? */
-      else if (VG_(needs).skin_errors && 
-               SK_(recognised_suppression)(buf, &(supp->skin_supp.skind))) {
-         /* do nothing, function fills in supp->skin_supp.skind */
+      /* Check it has the "skin_name:supp_name" form (ie. look for ':') */
+      i = 0;
+      while (True) {
+         if (buf[i] == ':')  break;
+         if (buf[i] == '\0') goto syntax_error;
+         i++;
       }
-      //else goto syntax_error;
+      buf[i]    = '\0';    /* Replace ':', splitting into two strings */
+
+      skin_name = & buf[0];
+      supp_name = & buf[i+1];
+
+      /* Is it a core suppression?  (core:<supp_name>) */
+      if (VG_(needs).core_errors && STREQ(skin_name, "core"))
+      {
+         if (STREQ(supp_name, "PThread")) 
+            supp->skin_supp.skind = PThreadSupp;
+         else
+            goto syntax_error;
+      }
+
+      /* Is it a skin suppression?  (<skin_name>:<supp_name>") */
+      else if (VG_(needs).skin_errors && STREQ(skin_name, VG_(needs).name))
+      {
+         if (SK_(recognised_suppression)(supp_name, & supp->skin_supp.skind)) 
+         {
+            /* Do nothing, function fills in supp->skin_supp.skind */
+         } else
+            goto syntax_error;
+      }
+
       else {
-         /* SSS: if we don't recognise the suppression name, ignore entire
-          * entry.  Not sure if this is a good long-term approach -- makes
-          * it impossible to spot incorrect suppression names?  (apart
-          * from the warning given) */
-         if (! is_unrecognised_suppressions) {
-            is_unrecognised_suppressions = True;
-            VG_(start_msg)(Vg_DebugMsg);
-            VG_(add_to_msg)("Ignoring unrecognised suppressions: ");
-            VG_(add_to_msg)("'%s'", buf);
-         } else {
-            VG_(add_to_msg)(", '%s'", buf);
-         }
+         /* Ignore rest of suppression */
          while (True) {
             eof = VG_(get_line) ( fd, buf, N_BUF );
             if (eof) goto syntax_error;
@@ -608,10 +620,6 @@ static void load_one_suppressions_file ( Char* filename )
 
       supp->next = vg_suppressions;
       vg_suppressions = supp;
-   }
-   if (is_unrecognised_suppressions) {
-      /* Print out warning about any ignored suppressions */
-      //VG_(end_msg)();
    }
    VG_(close)(fd);
    return;

@@ -2351,7 +2351,7 @@ Char* SK_(usage)(void)
 
 void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* track)
 {
-   needs->name                    = "valgrind";
+   needs->name                    = "memcheck";
    needs->description             = "a memory error detector";
 
    needs->core_errors             = True;

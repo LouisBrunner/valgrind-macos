@@ -2,10 +2,14 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@/valgrind
+arch=@VG_ARCH@
+os=@VG_OS@
+platform=@VG_PLATFORM@
 
 Name: Valgrind
 Description: Program supervision framework for x86-GNU/Linux
 Version: @VERSION@
 Requires:
 Libs:
-Cflags: -I${includedir} -I${includedir}/@VG_ARCH@ -I${includedir}/@VG_OS@ -I${includedir}/@VG_PLATFORM@ @ARCH_TOOL_AM_CFLAGS@
+Cflags: -I${includedir} -I${includedir}/${arch} -I${includedir}/${os} -I${includedir}/${platform} @ARCH_TOOL_AM_CFLAGS@
+

@@ -271,6 +271,7 @@ struct vki_sigcontext {
 #define VKI_O_CREAT	   0100	/* not fcntl */
 #define VKI_O_EXCL	   0200	/* not fcntl */
 #define VKI_O_TRUNC	  01000	/* not fcntl */
+#define VKI_O_APPEND	  02000
 #define VKI_O_NONBLOCK	  04000
 
 #define VKI_F_DUPFD		0	/* dup */

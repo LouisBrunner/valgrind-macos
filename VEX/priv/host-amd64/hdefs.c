@@ -2606,54 +2606,12 @@ vassert(0);
          p = doAMode_M(p, i->Ain.Store.src, i->Ain.Store.dst);
          goto done;
       }
-//.. 
-//..       if (i->Xin.Store.sz == 1) {
-//..          /* We have to do complex dodging and weaving if src is not
-//..             the low 8 bits of %eax/%ebx/%ecx/%edx. */
-//..          if (iregNo(i->Xin.Store.src) < 4) {
-//..             /* we're OK, can do it directly */
-//..             *p++ = 0x88;
-//..             p = doAMode_M(p, i->Xin.Store.src, i->Xin.Store.dst);
-//..            goto done;
-//..          } else {
-//..             /* Bleh.  This means the source is %edi or %esi.  Since
-//..                the address mode can only mention three registers, at
-//..                least one of %eax/%ebx/%ecx/%edx must be available to
-//..                temporarily swap the source into, so the store can
-//..                happen.  So we have to look at the regs mentioned
-//..                in the amode. */
-//..             HReg swap = INVALID_HREG;
-//..             HReg  eax = hregAMD64_EAX(), ebx = hregAMD64_EBX(), 
-//..                   ecx = hregAMD64_ECX(), edx = hregAMD64_EDX();
-//..             Bool a_ok = True, b_ok = True, c_ok = True, d_ok = True;
-//..             HRegUsage u;
-//..             Int j;
-//..             initHRegUsage(&u);
-//..             addRegUsage_AMD64AMode(&u,  i->Xin.Store.dst);
-//..             for (j = 0; j < u.n_used; j++) {
-//..                HReg r = u.hreg[j];
-//..                if (r == eax) a_ok = False;
-//..                if (r == ebx) b_ok = False;
-//..                if (r == ecx) c_ok = False;
-//..                if (r == edx) d_ok = False;
-//..             }
-//..             if (a_ok) swap = eax;
-//..             if (b_ok) swap = ebx;
-//..             if (c_ok) swap = ecx;
-//..             if (d_ok) swap = edx;
-//..             vassert(swap != INVALID_HREG);
-//..             /* xchgl %source, %swap. Could do better if swap is %eax. */
-//..             *p++ = 0x87;
-//..             p = doAMode_R(p, i->Xin.Store.src, swap);
-//..             /* movb lo8{%swap}, (dst) */
-//..             *p++ = 0x88;
-//..             p = doAMode_M(p, swap, i->Xin.Store.dst);
-//..             /* xchgl %source, %swap. Could do better if swap is %eax. */
-//..             *p++ = 0x87;
-//..             p = doAMode_R(p, i->Xin.Store.src, swap);
-//..             goto done;
-//..          }
-//..       } /* if (i->Xin.Store.sz == 1) */
+      if (i->Ain.Store.sz == 1) {
+	 *p++ = clearWBit( rexAMode_M( i->Ain.Store.src, i->Ain.Store.dst) );
+         *p++ = 0x88;
+         p = doAMode_M(p, i->Ain.Store.src, i->Ain.Store.dst);
+         goto done;
+      }
       break;
 
 //..    case Xin_FpUnary:

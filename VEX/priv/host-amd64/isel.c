@@ -784,10 +784,10 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             aluOp = Aalu_SUB; break;
          case Iop_And8: case Iop_And16: case Iop_And32: case Iop_And64: 
             aluOp = Aalu_AND; break;
-         case Iop_Or8: case Iop_Or16: case Iop_Or32: case Iop_Or64: 
+         case Iop_Or8:  case Iop_Or16:  case Iop_Or32:  case Iop_Or64: 
             aluOp = Aalu_OR; break;
-//..          case Iop_Xor8: case Iop_Xor16: case Iop_Xor32: 
-//..             aluOp = Xalu_XOR; break;
+         case Iop_Xor8: case Iop_Xor16: case Iop_Xor32: case Iop_Xor64: 
+            aluOp = Aalu_XOR; break;
 //..          case Iop_Mul16: case Iop_Mul32: 
 //..             aluOp = Xalu_MUL; break;
          default:

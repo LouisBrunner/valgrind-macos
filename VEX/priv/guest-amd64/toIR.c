@@ -497,6 +497,11 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
 	 bug in disInstr. */
       if (guest_rip_next_mustcheck 
           && guest_rip_next_assumed != guest_rip_curr_instr+size) {
+         vex_printf("\n");
+         vex_printf("assumed next %%rip = 0x%llx\n", 
+                    guest_rip_next_assumed );
+         vex_printf(" actual next %%rip = 0x%llx\n", 
+                    guest_rip_curr_instr+size );
          vpanic("bbToIR_AMD64: disInstr miscalculated next %rip");
       }
 
@@ -1845,7 +1850,14 @@ IRExpr* handleSegOverride ( Prefix pfx, IRExpr* virtual )
    the addressing mode is placed in buf.
 
    The computed address is stored in a new tempreg, and the
-   identity of the tempreg is returned.  */
+   identity of the tempreg is returned.
+
+   extra_bytes holds the number of bytes after the amode, as supplied
+   by the caller.  This is needed to make sense of %rip-relative
+   addresses.  Note that the value that *len is set to is only the
+   length of the amode itself and does not include the value supplied
+   in xtra_bytes.
+ */
 
 static IRTemp disAMode_copy2tmp ( IRExpr* addr64 )
 {
@@ -1855,12 +1867,14 @@ static IRTemp disAMode_copy2tmp ( IRExpr* addr64 )
 }
 
 static 
-IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
+IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, 
+                  HChar* buf, Int extra_bytes )
 {
    UChar mod_reg_rm = getUChar(delta);
    delta++;
 
    buf[0] = (UChar)0;
+   vassert(extra_bytes >= 0 && extra_bytes < 10);
 
    /* squeeze out the reg field from mod_reg_rm, since a 256-entry
       jump table seems a bit excessive. 
@@ -1933,7 +1947,8 @@ IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
               guessed right, after the instruction is completely
               decoded. */
            guest_rip_next_mustcheck = True;
-           guest_rip_next_assumed = guest_rip_bbstart + delta+4;
+           guest_rip_next_assumed = guest_rip_bbstart 
+                                    + delta+4 + extra_bytes;
            return disAMode_copy2tmp( 
                      handleSegOverride(pfx, 
                         binop(Iop_Add64, mkU64(guest_rip_next_assumed), 
@@ -2316,7 +2331,7 @@ ULong dis_op2_E_G ( Prefix      pfx,
       return 1+delta0;
    } else {
       /* E refers to memory */
-      addr = disAMode ( &len, pfx, delta0, dis_buf);
+      addr = disAMode ( &len, pfx, delta0, dis_buf, 0 );
       assign( dst0, getIRegR(pfx,size,gregOfRM(rm)) );
       assign( src,  loadLE(szToITy(size), mkexpr(addr)) );
 
@@ -2430,7 +2445,7 @@ ULong dis_op2_G_E ( Prefix      pfx,
 
    /* E refers to memory */    
    {
-      addr = disAMode ( &len, pfx, delta0, dis_buf);
+      addr = disAMode ( &len, pfx, delta0, dis_buf, 0 );
       assign(dst0, loadLE(ty,mkexpr(addr)));
       assign(src,  getIRegR(pfx,size,gregOfRM(rm)));
 
@@ -2496,7 +2511,7 @@ ULong dis_mov_E_G ( Prefix      pfx,
 
    /* E refers to memory */    
    {
-      IRTemp addr = disAMode ( &len, pfx, delta0, dis_buf );
+      IRTemp addr = disAMode ( &len, pfx, delta0, dis_buf, 0 );
       putIRegR(pfx, size, gregOfRM(rm), 
                           loadLE(szToITy(size), mkexpr(addr)));
       DIP("mov%c %s,%s\n", nameISize(size), 
@@ -2542,7 +2557,7 @@ ULong dis_mov_G_E ( Prefix      pfx,
 
    /* E refers to memory */    
    {
-      IRTemp addr = disAMode ( &len, pfx, delta0, dis_buf);
+      IRTemp addr = disAMode ( &len, pfx, delta0, dis_buf, 0 );
       storeLE( mkexpr(addr), getIRegR(pfx, size, gregOfRM(rm)) );
       DIP("mov%c %s,%s\n", nameISize(size), 
                            nameIRegR(pfx,size,gregOfRM(rm)), dis_buf);
@@ -2609,7 +2624,7 @@ ULong dis_movx_E_G ( Prefix pfx,
    {
       Int    len;
       HChar  dis_buf[50];
-      IRTemp addr = disAMode ( &len, pfx, delta, dis_buf );
+      IRTemp addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
       putIRegR(pfx, szd, 
                     gregOfRM(rm),
                     doScalarWidening(
@@ -2741,7 +2756,7 @@ ULong dis_Grp1 ( Prefix pfx,
           nameGrp1(gregOfRM(modrm)), nameISize(sz), d64, 
           nameIRegB(pfx,sz,eregOfRM(modrm)));
    } else {
-      addr = disAMode ( &len, pfx, delta, dis_buf);
+      addr = disAMode ( &len, pfx, delta, dis_buf, /*xtra*/d_sz );
 
       assign(dst0, loadLE(ty,mkexpr(addr)));
       assign(src, mkU(ty,d64 & mask));
@@ -2798,7 +2813,7 @@ ULong dis_Grp2 ( Prefix pfx,
       assign(dst0, getIRegB(pfx, sz, eregOfRM(modrm)));
       delta += (am_sz + d_sz);
    } else {
-      addr = disAMode ( &len, pfx, delta, dis_buf);
+      addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
       assign(dst0, loadLE(ty,mkexpr(addr)));
       delta += len + d_sz;
    }
@@ -3272,7 +3287,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
             vpanic("Grp3(amd64)");
       }
    } else {
-      addr = disAMode ( &len, pfx, delta, dis_buf );
+      addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
       t1   = newTemp(ty);
       delta += len;
       assign(t1, loadLE(ty,mkexpr(addr)));
@@ -3362,7 +3377,7 @@ ULong dis_Grp4 ( Prefix pfx, ULong delta )
       DIP("%sb %s\n", nameGrp4(gregOfRM(modrm)),
                       nameIRegB(pfx, 1, eregOfRM(modrm)));
    } else {
-      IRTemp addr = disAMode ( &alen, pfx, delta, dis_buf );
+      IRTemp addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
       assign( t1, loadLE(ty, mkexpr(addr)) );
       switch (gregOfRM(modrm)) {
 //..          case 0: /* INC */
@@ -3453,7 +3468,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
                        showSz ? nameISize(sz) : ' ', 
                        nameIRegB(pfx, sz, eregOfRM(modrm)));
    } else {
-      addr = disAMode ( &len, pfx, delta, dis_buf );
+      addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
       if (gregOfRM(modrm) != 2 && gregOfRM(modrm) != 4)
          assign(t1, loadLE(ty,mkexpr(addr)));
       switch (gregOfRM(modrm)) {
@@ -3736,7 +3751,7 @@ ULong dis_mul_E_G ( Prefix      pfx,
    if (epartIsReg(rm)) {
       assign( te, getIRegB(pfx, size, eregOfRM(rm)) );
    } else {
-      IRTemp addr = disAMode( &alen, pfx, delta0, dis_buf );
+      IRTemp addr = disAMode( &alen, pfx, delta0, dis_buf, 0 );
       assign( te, loadLE(ty,mkexpr(addr)) );
    }
 
@@ -3782,7 +3797,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
       assign(te, getIRegB(pfx, size, eregOfRM(rm)));
       delta++;
    } else {
-      IRTemp addr = disAMode( &alen, pfx, delta, dis_buf );
+      IRTemp addr = disAMode( &alen, pfx, delta, dis_buf, 0 );
       assign(te, loadLE(ty, mkexpr(addr)));
       delta += alen;
    }
@@ -6734,7 +6749,7 @@ ULong dis_cmov_E_G ( Prefix        pfx,
 
    /* E refers to memory */    
    {
-      IRTemp addr = disAMode ( &len, pfx, delta0, dis_buf );
+      IRTemp addr = disAMode ( &len, pfx, delta0, dis_buf, 0 );
       assign( tmps, loadLE(ty, mkexpr(addr)) );
       assign( tmpd, getIRegR(pfx, sz, gregOfRM(rm)) );
 
@@ -10930,20 +10945,25 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. //--       }
 //.. //--       DIP("enter 0x%x, 0x%x", d32, abyte);
 //.. //--       break;
-//.. 
-//..    case 0xC9: /* LEAVE */
-//..       vassert(sz == 4);
-//..       t1 = newTemp(Ity_I32); t2 = newTemp(Ity_I32);
-//..       assign(t1, getIReg(4,R_EBP));
-//..       /* First PUT ESP looks redundant, but need it because ESP must
-//..          always be up-to-date for Memcheck to work... */
-//..       putIReg(4, R_ESP, mkexpr(t1));
-//..       assign(t2, loadLE(Ity_I32,mkexpr(t1)));
-//..       putIReg(4, R_EBP, mkexpr(t2));
-//..       putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t1), mkU32(4)) );
-//..       DIP("leave\n");
-//..       break;
-//.. 
+
+   case 0xC9: /* LEAVE */
+      /* In 64-bit mode this defaults to a 64-bit operand size.  There
+         is no way to encode a 32-bit variant.  Hence sz==4 but we do
+         it as if sz=8. */
+      if (sz != 4) 
+         goto decode_failure;
+      t1 = newTemp(Ity_I64); 
+      t2 = newTemp(Ity_I64);
+      assign(t1, getIReg64(R_RBP));
+      /* First PUT RSP looks redundant, but need it because RSP must
+         always be up-to-date for Memcheck to work... */
+      putIReg64(R_RSP, mkexpr(t1));
+      assign(t2, loadLE(Ity_I64,mkexpr(t1)));
+      putIReg64(R_RBP, mkexpr(t2));
+      putIReg64(R_RSP, binop(Iop_Add64, mkexpr(t1), mkU64(8)) );
+      DIP("leave\n");
+      break;
+
 //.. //--    /* ---------------- Misc weird-ass insns --------------- */
 //.. //-- 
 //.. //--    case 0x27: /* DAA */
@@ -11113,19 +11133,6 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       putIReg(sz, (UInt)(opc - 0x48), mkexpr(t1));
 //..       DIP("dec%c %s\n", nameISize(sz), nameIReg(sz,opc-0x48));
 //..       break;
-//.. 
-//..    /* ------------------------ INT ------------------------ */
-//.. 
-//..    case 0xCD: /* INT imm8 */
-//..       d32 = getUChar(delta); delta++;
-//..       if (d32 != 0x80) goto decode_failure;
-//..       /* It's important that all ArchRegs carry their up-to-date value
-//..          at this point.  So we declare an end-of-block here, which
-//..          forces any TempRegs caching ArchRegs to be flushed. */
-//..       jmp_lit(Ijk_Syscall,((Addr32)guest_eip_bbstart)+delta);
-//..       whatNext = Dis_StopHere;
-//..       DIP("int $0x80\n");
-//..       break;
 
    /* ------------------------ Jcond, byte offset --------- */
 
@@ -11260,7 +11267,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       /* NOTE!  this is the one place where a segment override prefix
          has no effect on the address calculation.  Therefore we clear
          any segment override bits in pfx. */
-      addr = disAMode ( &alen, clearSegBits(pfx), delta, dis_buf );
+      addr = disAMode ( &alen, clearSegBits(pfx), delta, dis_buf, 0 );
       delta += alen;
       /* This is a hack.  But it isn't clear that really doing the
          calculation at 32 bits is really worth it.  Hence for leal,
@@ -11366,7 +11373,8 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                                   (Long)d64, 
                                   nameIRegB(pfx,sz,eregOfRM(modrm)));
       } else {
-         addr = disAMode ( &alen, pfx, delta, dis_buf );
+        addr = disAMode ( &alen, pfx, delta, dis_buf, 
+                          /*xtra*/imin(4,sz) );
          delta += alen;
          d64 = getSDisp(imin(4,sz),delta);
          delta += imin(4,sz);
@@ -11393,7 +11401,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
                 nameIRegR(pfx, 8, gregOfRM(modrm)));
             break;
          } else {
-            addr = disAMode ( &alen, pfx, delta, dis_buf );
+            addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
             delta += alen;
             putIRegR(pfx, 8, gregOfRM(modrm), 
                              unop(Iop_32Sto64, 
@@ -12616,7 +12624,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
             DIP("set%s %s\n", name_AMD64Condcode(opc-0x90), 
                               nameIRegB(pfx,1,eregOfRM(modrm)));
          } else {
-           addr = disAMode ( &alen, pfx, delta, dis_buf );
+           addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
            delta += alen;
            storeLE( mkexpr(addr), mkexpr(t1) );
            DIP("set%s %s\n", name_AMD64Condcode(opc-0x90), dis_buf);
@@ -12658,7 +12666,20 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..                     getIReg(1,R_ECX), False, /* not literal */
 //..                     "%cl", False );
 //..          break;
-//.. 
+
+      /* =-=-=-=-=-=-=-=-=- SYSCALL -=-=-=-=-=-=-=-=-=-= */
+      case 0x05: /* SYSCALL */
+         guest_rip_next_mustcheck = True;
+         guest_rip_next_assumed = guest_rip_bbstart + delta;
+         putIReg64( R_RCX, mkU64(guest_rip_next_assumed) );
+         /* It's important that all guest state is up-to-date
+            at this point.  So we declare an end-of-block here, which
+            forces any cached guest state to be flushed. */
+        jmp_lit(Ijk_Syscall, guest_rip_next_assumed);
+        whatNext = Dis_StopHere;
+        DIP("syscall\n");
+        break;
+
 //..       /* =-=-=-=-=-=-=-=-=- XADD -=-=-=-=-=-=-=-=-=-= */
 //.. 
 //.. //--       case 0xC0: /* XADD Gb,Eb */

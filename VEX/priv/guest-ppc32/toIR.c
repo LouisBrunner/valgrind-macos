@@ -196,7 +196,7 @@ static void stmt ( IRStmt* st );
 static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
                             /*IN*/  UInt    delta, 
-                            /*OUT*/ UInt*   size,
+                            /*OUT*/ Int*    size,
                             /*OUT*/ Addr64* whereNext );
 
 
@@ -254,7 +254,7 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
       vassert(n_instrs < vex_control.guest_max_insns);
 
       guest_next = 0;
-      resteerOK = n_instrs < vex_control.guest_chase_thresh;
+      resteerOK = toBool(n_instrs < vex_control.guest_chase_thresh);
       first_stmt_idx = irbb->stmts_used;
 
       guest_cia_curr_instr = guest_pc_bbstart + delta;
@@ -323,7 +323,7 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
             if (0 && (n_resteers & 0xFF) == 0)
             vex_printf("resteer[%d,%d] to %p (delta = %d)\n",
                        n_resteers, d_resteers,
-                       ULong_to_Ptr(guest_next), delta);
+                       ULong_to_Ptr(guest_next), (Int)delta);
             break;
       }
    }
@@ -505,16 +505,16 @@ static IRExpr* mkexpr ( IRTemp tmp )
 static IRExpr* mkU1 ( UInt i )
 {
    vassert(i < 2);
-   return IRExpr_Const(IRConst_U1(i));
+   return IRExpr_Const(IRConst_U1( toBool(i) ));
 }
 
-static IRExpr* mkU8 ( UInt i )
+static IRExpr* mkU8 ( UChar i )
 {
    vassert(i < 256);
    return IRExpr_Const(IRConst_U8(i));
 }
 
-static IRExpr* mkU16 ( UInt i )
+static IRExpr* mkU16 ( UShort i )
 {
    vassert(i < 65536);
    return IRExpr_Const(IRConst_U16(i));
@@ -934,7 +934,8 @@ static void putReg_CR ( UInt field_idx, IRExpr* src, UInt mask )
     } else {
 	// Assign lowest nibble of src to given field_idx of CR
 	assign( src_mskd, binop(Iop_And32, src, mkU32(0xF)) );
-	assign( tmp, binop(Iop_Shl32, mkexpr(src_mskd), mkU8(bit_idx)) );
+	assign( tmp, binop(Iop_Shl32, mkexpr(src_mskd), 
+                                      mkU8(toUChar(bit_idx))) );
 	
 	if (field_idx == 7) {
 	    setFlags_CR0_Imm( mkexpr(tmp) );
@@ -1000,16 +1001,16 @@ static void vex_printf_binary( UInt x, UInt len, Bool spaces )
 */
 static Bool dis_int_arith ( UInt theInstr )
 {
-    UChar opc1    = (theInstr >> 26) & 0x3F;    /* theInstr[26:31] */
-    UChar Rd_addr = (theInstr >> 21) & 0x1F;    /* theInstr[21:25] */
-    UChar Ra_addr = (theInstr >> 16) & 0x1F;    /* theInstr[16:20] */
+    UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
+    UChar Rd_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+    UChar Ra_addr = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
 
-    UInt  SIMM_16 = (theInstr >>  0) & 0xFFFF;  /* theInstr[0:15]  */
+    UInt  SIMM_16 =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
 
-    UChar Rb_addr = (theInstr >> 11) & 0x1F;    /* theInstr[11:15] */
-    UChar flag_OE = (theInstr >> 10) & 1;       /* theInstr[10]    */
-    UInt  opc2    = (theInstr >>  1) & 0x1FF;   /* theInstr[1:9]   */
-    UChar flag_Rc = (theInstr >>  0) & 1;       /* theInstr[0]     */
+    UChar Rb_addr = toUChar((theInstr >> 11) & 0x1F);  /* theInstr[11:15] */
+    UChar flag_OE = toUChar((theInstr >> 10) & 1);     /* theInstr[10]    */
+    UInt  opc2    =         (theInstr >>  1) & 0x1FF;  /* theInstr[1:9]   */
+    UChar flag_Rc = toUChar((theInstr >>  0) & 1);     /* theInstr[0]     */
 
     UInt EXTS_SIMM = 0;
 
@@ -1364,20 +1365,20 @@ static Bool dis_int_arith ( UInt theInstr )
 
 static Bool dis_int_cmp ( UInt theInstr )
 {
-    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar crfD    = (theInstr >> 23) & 0x7;       /* theInstr[23:25] */
-    UChar b9      = (theInstr >> 22) & 0x1;       /* theInstr[22]    */
-    UChar flag_L  = (theInstr >> 21) & 0x1;       /* theInstr[21]    */
-    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
+    UChar crfD    = toUChar((theInstr >> 23) & 0x7);   /* theInstr[23:25] */
+    UChar b9      = toUChar((theInstr >> 22) & 0x1);   /* theInstr[22]    */
+    UChar flag_L  = toUChar((theInstr >> 21) & 0x1);   /* theInstr[21]    */
+    UChar Ra_addr = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
 
     /* D-Form */
-    UInt  SIMM_16 = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15]  */
-    UInt  UIMM_16 = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15]  */
+    UInt  SIMM_16 =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
+    UInt  UIMM_16 =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
 
     /* X-Form */
-    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UChar b0      = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar Rb_addr = toUChar((theInstr >> 11) & 0x1F);  /* theInstr[11:15] */
+    UInt  opc2    =         (theInstr >>  1) & 0x3FF;  /* theInstr[1:10]  */
+    UChar b0      = toUChar((theInstr >>  0) & 1);     /* theInstr[0]     */
 
     UInt EXTS_SIMM = 0;
     IRTemp Ra = newTemp(Ity_I32);
@@ -1400,14 +1401,14 @@ static Bool dis_int_cmp ( UInt theInstr )
 
     switch (opc1) {
     case 0x0B: // cmpi (Compare Immediate, p398)
-	DIP("cmpi %d,%d,%d,%d\n", crfD, flag_L, Ra_addr, SIMM_16);
+	DIP("cmpi %d,%d,%d,%u\n", crfD, flag_L, Ra_addr, SIMM_16);
 	EXTS_SIMM = extend_s_16to32(SIMM_16);
 	assign( tst1, binop(Iop_CmpEQ32, mkU32(EXTS_SIMM), mkexpr(Ra)) );
 	assign( tst2, binop(Iop_CmpLT32S, mkU32(EXTS_SIMM), mkexpr(Ra)) );
 	break;
 
     case 0x0A: // cmpli (Compare Logical Immediate, p400)
-	DIP("cmpli %d,%d,%d,%d\n", crfD, flag_L, Ra_addr, UIMM_16);
+	DIP("cmpli %d,%d,%d,%u\n", crfD, flag_L, Ra_addr, UIMM_16);
 	assign( tst1, binop(Iop_CmpEQ32, mkU32(UIMM_16), mkexpr(Ra)) );
 	assign( tst2, binop(Iop_CmpLT32U, mkU32(UIMM_16), mkexpr(Ra)) );
 	break;
@@ -1458,17 +1459,17 @@ static Bool dis_int_cmp ( UInt theInstr )
 
 static Bool dis_int_logic ( UInt theInstr )
 {
-    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar Rs_addr = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
+    UChar Rs_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+    UChar Ra_addr = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
 
     /* D-Form */
-    UInt  UIMM_16 = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15]  */
+    UInt  UIMM_16 =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
 
     /* X-Form */
-    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UChar flag_Rc = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar Rb_addr = toUChar((theInstr >> 11) & 0x1F);  /* theInstr[11:15] */
+    UInt  opc2    =         (theInstr >>  1) & 0x3FF;  /* theInstr[1:10]  */
+    UChar flag_Rc = toUChar((theInstr >>  0) & 1);     /* theInstr[0]     */
 
     IRTemp Rs = newTemp(Ity_I32);
     IRTemp Ra = newTemp(Ity_I32);
@@ -1480,36 +1481,36 @@ static Bool dis_int_logic ( UInt theInstr )
 
     switch (opc1) {
     case 0x1C: // andi. (AND Immediate, p388)
-	DIP("andi %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
+	DIP("andi %d,%d,%u\n", Ra_addr, Rs_addr, UIMM_16);
 	assign( Ra, binop(Iop_And32, mkexpr(Rs), mkU32(UIMM_16)) );
 	putIReg( Ra_addr, mkexpr(Ra) );
 	setFlags_CR0_Result( mkexpr(Ra) );
 	break;
 
     case 0x1D: // andis. (AND Immediate Shifted, p389)
-	DIP("andis %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
+	DIP("andis %d,%d,%u\n", Ra_addr, Rs_addr, UIMM_16);
 	assign( Ra, binop(Iop_And32, mkexpr(Rs), mkU32(UIMM_16 << 16)) );
 	putIReg( Ra_addr, mkexpr(Ra) );
 	setFlags_CR0_Result( mkexpr(Ra) );
 	break;
 
     case 0x18: // ori (OR Immediate, p551)
-	DIP("ori %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
+	DIP("ori %d,%d,%u\n", Ra_addr, Rs_addr, UIMM_16);
 	putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs), mkU32(UIMM_16)) );
 	break;
 
     case 0x19: // oris (OR Immediate Shifted, p552)
-	DIP("oris %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
+	DIP("oris %d,%d,%u\n", Ra_addr, Rs_addr, UIMM_16);
 	putIReg( Ra_addr, binop(Iop_Or32, mkexpr(Rs), mkU32(UIMM_16 << 16)) );
 	break;
 
     case 0x1A: // xori (XOR Immediate, p625)
-	DIP("xori %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
+	DIP("xori %d,%d,%u\n", Ra_addr, Rs_addr, UIMM_16);
 	putIReg( Ra_addr, binop(Iop_Xor32, mkexpr(Rs), mkU32(UIMM_16)) );
 	break;
 
     case 0x1B: // xoris (XOR Immediate Shifted, p626)
-	DIP("xoris %d,%d,%d\n", Ra_addr, Rs_addr, UIMM_16);
+	DIP("xoris %d,%d,%u\n", Ra_addr, Rs_addr, UIMM_16);
 	putIReg( Ra_addr, binop(Iop_Xor32, mkexpr(Rs), mkU32(UIMM_16 << 16)) );
 	break;
 
@@ -1633,14 +1634,14 @@ static Bool dis_int_logic ( UInt theInstr )
 static Bool dis_int_rot ( UInt theInstr )
 {
     /* M-Form */
-    UChar opc1      = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar Rs_addr   = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr   = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
-    UChar Rb_addr   = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UChar Shift_Imm = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UChar MaskBegin = (theInstr >>  6) & 0x1F;      /* theInstr[6:10]  */
-    UChar MaskEnd   = (theInstr >>  1) & 0x1F;      /* theInstr[1:5]   */
-    UChar flag_Rc   = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar opc1      = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+    UChar Rs_addr   = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+    UChar Ra_addr   = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+    UChar Rb_addr   = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UChar Shift_Imm = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UChar MaskBegin = toUChar((theInstr >>  6) & 0x1F); /* theInstr[6:10]  */
+    UChar MaskEnd   = toUChar((theInstr >>  1) & 0x1F); /* theInstr[1:5]   */
+    UChar flag_Rc   = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
     UInt mask = CreateMask(MaskBegin, MaskEnd);
     IRTemp rot_amt = newTemp(Ity_I8);
@@ -1694,25 +1695,25 @@ static Bool dis_int_rot ( UInt theInstr )
 
 static Bool dis_int_load ( UInt theInstr )
 {
-    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar Rd_addr = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
+    UChar Rd_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+    UChar Ra_addr = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
 
     /* D-Form */
-    UInt  d_imm   = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15] */
+    UInt  d_imm   =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15] */
 
     /* X-Form */
-    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UChar b0      = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar Rb_addr = toUChar((theInstr >> 11) & 0x1F);  /* theInstr[11:15] */
+    UInt  opc2    =         (theInstr >>  1) & 0x3FF;  /* theInstr[1:10]  */
+    UChar b0      = toUChar((theInstr >>  0) & 1);     /* theInstr[0]     */
 
     UInt exts_d_imm = extend_s_16to32(d_imm);
 
     IRTemp Ra_or_0 = newTemp(Ity_I32);
-    IRTemp EA_imm = newTemp(Ity_I32);
-    IRTemp EA_reg = newTemp(Ity_I32);
-    IRTemp Ra = newTemp(Ity_I32);
-    IRTemp Rb = newTemp(Ity_I32);
+    IRTemp EA_imm  = newTemp(Ity_I32);
+    IRTemp EA_reg  = newTemp(Ity_I32);
+    IRTemp Ra      = newTemp(Ity_I32);
+    IRTemp Rb      = newTemp(Ity_I32);
 
     assign( Ra, getIReg(Ra_addr) );
     assign( Rb, getIReg(Rb_addr) );
@@ -1726,7 +1727,7 @@ static Bool dis_int_load ( UInt theInstr )
 
     switch (opc1) {
     case 0x22: // lbz (Load B & Zero, p468)
-	DIP("lbz %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
+	DIP("lbz %d,%u(%d)\n", Rd_addr, d_imm, Ra_addr);
 	putIReg( Rd_addr, unop(Iop_8Uto32,
 			       loadBE(Ity_I8, mkexpr(EA_imm))) );
 	break;
@@ -1736,14 +1737,14 @@ static Bool dis_int_load ( UInt theInstr )
 	    vex_printf("dis_int_load(PPC32)(lbzu,Ra_addr|Rd_addr)\n");
 	    return False;
 	}
-	DIP("lbzu %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
+	DIP("lbzu %d,%u(%d)\n", Rd_addr, d_imm, Ra_addr);
 	putIReg( Rd_addr, unop(Iop_8Uto32,
 			       loadBE(Ity_I8, mkexpr(EA_imm))) );
 	putIReg( Ra_addr, mkexpr(EA_imm) );
 	break;
 
     case 0x2A: // lha (Load HW Algebraic, p485)
-	DIP("lha %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
+	DIP("lha %d,%u(%d)\n", Rd_addr, d_imm, Ra_addr);
 	putIReg( Rd_addr, unop(Iop_16Sto32,
 			       loadBE(Ity_I16, mkexpr(EA_imm))) );
 	break;
@@ -1753,14 +1754,14 @@ static Bool dis_int_load ( UInt theInstr )
 	    vex_printf("dis_int_load(PPC32)(lhau,Ra_addr|Rd_addr)\n");
 	    return False;
 	}
-	DIP("lhau %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
+	DIP("lhau %d,%u(%d)\n", Rd_addr, d_imm, Ra_addr);
 	putIReg( Rd_addr, unop(Iop_16Sto32,
 			       loadBE(Ity_I16, mkexpr(EA_imm))) );
 	putIReg( Ra_addr, mkexpr(EA_imm) );
 	break;
 
     case 0x28: // lhz (Load HW & Zero, p490)
-	DIP("lhz %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
+	DIP("lhz %d,%u(%d)\n", Rd_addr, d_imm, Ra_addr);
 	putIReg( Rd_addr, unop(Iop_16Sto32,
 			       loadBE(Ity_I16, mkexpr(EA_imm))) );
 	break;
@@ -1770,13 +1771,13 @@ static Bool dis_int_load ( UInt theInstr )
 	    vex_printf("dis_int_load(PPC32)(lhzu,Ra_addr|Rd_addr)\n");
 	    return False;
 	}
-	DIP("lhzu %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
+	DIP("lhzu %d,%u(%d)\n", Rd_addr, d_imm, Ra_addr);
 	putIReg( Rd_addr, loadBE(Ity_I16, mkexpr(EA_imm)) );
 	putIReg( Ra_addr, mkexpr(EA_imm) );
 	break;
 
     case 0x20: // lwz (Load W & Zero, p504)
-	DIP("lwz %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
+	DIP("lwz %d,%u(%d)\n", Rd_addr, d_imm, Ra_addr);
 	putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA_imm)) );
 	break;
 
@@ -1785,7 +1786,7 @@ static Bool dis_int_load ( UInt theInstr )
 	    vex_printf("dis_int_load(PPC32)(lwzu,Ra_addr|Rd_addr)\n");
 	    return False;
 	}
-	DIP("lwzu %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
+	DIP("lwzu %d,%u(%d)\n", Rd_addr, d_imm, Ra_addr);
 	putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA_imm)) );
 	putIReg( Ra_addr, mkexpr(EA_imm) );
 	break;
@@ -1881,28 +1882,28 @@ static Bool dis_int_load ( UInt theInstr )
 
 static Bool dis_int_store ( UInt theInstr )
 {
-    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar Rs_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr  = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UChar opc1     = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
+    UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+    UChar Ra_addr  = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
 
     /* D-Form */
-    UInt  d_imm   = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15] */
+    UInt  d_imm   =          (theInstr >>  0) & 0xFFFF; /* theInstr[0:15] */
 
     /* X-Form */
-    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UChar b0      = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar Rb_addr = toUChar((theInstr >> 11) & 0x1F);   /* theInstr[11:15] */
+    UInt  opc2    =         (theInstr >>  1) & 0x3FF;   /* theInstr[1:10]  */
+    UChar b0      = toUChar((theInstr >>  0) & 1);      /* theInstr[0]     */
 
     UInt exts_d_imm = extend_s_16to32(d_imm);
 
-    IRTemp Ra = newTemp(Ity_I32);
+    IRTemp Ra      = newTemp(Ity_I32);
     IRTemp Ra_or_0 = newTemp(Ity_I32);
-    IRTemp Rb = newTemp(Ity_I32);
-    IRTemp Rs = newTemp(Ity_I32);
-    IRTemp Rs_8 = newTemp(Ity_I8);
-    IRTemp Rs_16 = newTemp(Ity_I16);
-    IRTemp EA_imm = newTemp(Ity_I32);
-    IRTemp EA_reg = newTemp(Ity_I32);
+    IRTemp Rb      = newTemp(Ity_I32);
+    IRTemp Rs      = newTemp(Ity_I32);
+    IRTemp Rs_8    = newTemp(Ity_I8);
+    IRTemp Rs_16   = newTemp(Ity_I16);
+    IRTemp EA_imm  = newTemp(Ity_I32);
+    IRTemp EA_reg  = newTemp(Ity_I32);
 
     assign( Ra, getIReg(Ra_addr) );
     assign( Rb, getIReg(Rb_addr) );
@@ -1919,7 +1920,7 @@ static Bool dis_int_store ( UInt theInstr )
 
     switch (opc1) {
     case 0x26: // stb (Store B, p576)
-	DIP("stb %d,%d(%d)\n", Rs_addr, d_imm, Ra_addr);
+	DIP("stb %d,%u(%d)\n", Rs_addr, d_imm, Ra_addr);
 	storeBE( mkexpr(EA_imm), mkexpr(Rs_8) );
 	break;
 
@@ -1928,13 +1929,13 @@ static Bool dis_int_store ( UInt theInstr )
 	    vex_printf("dis_int_store(PPC32)(stbu,Ra_addr)\n");
 	    return False;
 	}
-	DIP("stbu %d,%d(%d)\n", Rs_addr, d_imm, Ra_addr);
+	DIP("stbu %d,%u(%d)\n", Rs_addr, d_imm, Ra_addr);
 	storeBE( mkexpr(EA_imm), mkexpr(Rs_8) );
 	putIReg( Ra_addr, mkexpr(EA_imm) );
 	break;
 
     case 0x2C: // sth (Store HW, p595)
-	DIP("sth %d,%d(%d)\n", Rs_addr, d_imm, Ra_addr);
+	DIP("sth %d,%u(%d)\n", Rs_addr, d_imm, Ra_addr);
 	storeBE( mkexpr(EA_imm), mkexpr(Rs_16) );
 	break;
 
@@ -1943,14 +1944,14 @@ static Bool dis_int_store ( UInt theInstr )
 	    vex_printf("dis_int_store(PPC32)(sthu,Ra_addr)\n");
 	    return False;
 	}
-	DIP("sthu %d,%d(%d)\n", Rs_addr, d_imm, Ra_addr);
+	DIP("sthu %d,%u(%d)\n", Rs_addr, d_imm, Ra_addr);
 	assign( Rs_16, binop(Iop_And16, mkexpr(Rs), mkU16(0xFFFF)) );
 	storeBE( mkexpr(EA_imm), mkexpr(Rs_16) );
 	putIReg( Ra_addr, mkexpr(EA_imm) );
 	break;
 
     case 0x24: // stw (Store W, p603)
-	DIP("stw %d,%d(%d)\n", Rs_addr, d_imm, Ra_addr);
+	DIP("stw %d,%u(%d)\n", Rs_addr, d_imm, Ra_addr);
 	storeBE( mkexpr(EA_imm), mkexpr(Rs) );
 	break;
 
@@ -1959,7 +1960,7 @@ static Bool dis_int_store ( UInt theInstr )
 	    vex_printf("dis_int_store(PPC32)(stwu,Ra_addr)\n");
 	    return False;
 	}
-	DIP("stwu %d,%d(%d)\n", Rs_addr, d_imm, Ra_addr);
+	DIP("stwu %d,%u(%d)\n", Rs_addr, d_imm, Ra_addr);
 	storeBE( mkexpr(EA_imm), mkexpr(Rs) );
 	putIReg( Ra_addr, mkexpr(EA_imm) );
 	break;
@@ -2035,11 +2036,11 @@ static Bool dis_int_store ( UInt theInstr )
 static Bool dis_int_ldst_mult ( UInt theInstr )
 {
     /* D-Form */
-    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar Rd_addr = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Rs_addr = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
-    UInt  d_imm   = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15]  */
+    UChar opc1    = toUChar((theInstr >> 26) & 0x3F);  /* theInstr[26:31] */
+    UChar Rd_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+    UChar Rs_addr = toUChar((theInstr >> 21) & 0x1F);  /* theInstr[21:25] */
+    UChar Ra_addr = toUChar((theInstr >> 16) & 0x1F);  /* theInstr[16:20] */
+    UInt  d_imm   =         (theInstr >>  0) & 0xFFFF; /* theInstr[0:15]  */
 
     UInt exts_d_imm = extend_s_16to32(d_imm);
     UInt reg_idx = 0;
@@ -2061,7 +2062,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
 	    vex_printf("dis_int_ldst_mult(PPC32)(lmw,Ra_addr)\n");
 	    return False;
 	}
-	DIP("lmw %d,%d(%d)\n", Rd_addr, d_imm, Ra_addr);
+	DIP("lmw %d,%u(%d)\n", Rd_addr, d_imm, Ra_addr);
 	for (reg_idx = Rd_addr; reg_idx<=31; reg_idx++) {
 	    putIReg( reg_idx,
 		     loadBE(Ity_I32, binop(Iop_Add32, mkexpr(EA),
@@ -2071,7 +2072,7 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
 	break;
 
     case 0x2F: // stmw (Store Multiple Word, p600)
-	DIP("stmw %d,%d(%d)\n", Rs_addr, d_imm, Ra_addr);
+	DIP("stmw %d,%u(%d)\n", Rs_addr, d_imm, Ra_addr);
 	for (reg_idx = Rs_addr; reg_idx<=31; reg_idx++) {
 	    storeBE( binop(Iop_Add32, mkexpr(EA), mkU32(offset)),
 		     getIReg(reg_idx) );
@@ -2091,14 +2092,14 @@ static Bool dis_int_ldst_mult ( UInt theInstr )
 static Bool dis_int_ldst_str ( UInt theInstr )
 {
     /* X-Form */
-    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar Rd_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Rs_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr  = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
-    UChar NumBytes = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UChar Rb_addr  = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UChar b0       = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+    UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+    UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+    UChar Ra_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+    UChar NumBytes = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UChar Rb_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
     UInt reg_idx, bit_idx, n_byte;
     UInt EA_offset = 0;
@@ -2158,7 +2159,8 @@ static Bool dis_int_ldst_str ( UInt theInstr )
 	    irx_byte = loadBE(Ity_I8, binop(Iop_Add32,
 					    mkexpr(EA),
 					    mkU32(EA_offset)));
-	    irx_shl = binop(Iop_Shl32, irx_byte, mkU8(24 - bit_idx));
+	    irx_shl = binop(Iop_Shl32, irx_byte, 
+                                       mkU8(toUChar(24 - bit_idx)));
 	    putIReg( reg_idx, binop(Iop_Or32, getIReg(reg_idx), irx_shl) );
 	    bit_idx += 8;
 	    if (bit_idx == 32) { bit_idx = 0; }
@@ -2189,7 +2191,8 @@ static Bool dis_int_ldst_str ( UInt theInstr )
 	    }
 	    irx_byte = unop(Iop_32to8,
 			    binop(Iop_Shr32,
-				  getIReg(reg_idx), mkU8(24 - bit_idx)));
+				  getIReg(reg_idx), 
+                                  mkU8(toUChar(24 - bit_idx))));
 	    storeBE( binop(Iop_Add32, mkexpr(EA), mkU32(EA_offset)),
 		     irx_byte );
 
@@ -2296,15 +2299,15 @@ static IRExpr* branch_cond_ok( UInt BO, UInt BI )
 
 static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
 {
-    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar BO       = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar BI       = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
-    UInt  BD       = (theInstr >>  2) & 0x3FFF;    /* theInstr[2:15]  */
-    UChar b11to15  = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UInt  LI_24    = (theInstr >>  2) & 0xFFFFFF;  /* theInstr[2:25]  */
-    UChar flag_AA  = (theInstr >>  1) & 1;         /* theInstr[1]     */
-    UChar flag_LK  = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar opc1     = toUChar((theInstr >> 26) & 0x3F);    /* theInstr[26:31] */
+    UChar BO       = toUChar((theInstr >> 21) & 0x1F);    /* theInstr[21:25] */
+    UChar BI       = toUChar((theInstr >> 16) & 0x1F);    /* theInstr[16:20] */
+    UInt  BD       =        (theInstr >>  2) & 0x3FFF;    /* theInstr[2:15]  */
+    UChar b11to15  = toUChar((theInstr >> 11) & 0x1F);    /* theInstr[11:15] */
+    UInt  opc2     =         (theInstr >>  1) & 0x3FF;    /* theInstr[1:10]  */
+    UInt  LI_24    =         (theInstr >>  2) & 0xFFFFFF; /* theInstr[2:25]  */
+    UChar flag_AA  = toUChar((theInstr >>  1) & 1);       /* theInstr[1]     */
+    UChar flag_LK  = toUChar((theInstr >>  0) & 1);       /* theInstr[0]     */
 
     UInt exts_BD = extend_s_24to32(BD << 2);
     UInt exts_LI = extend_s_24to32(LI_24 << 2);
@@ -2488,14 +2491,14 @@ static Bool dis_syslink ( UInt theInstr, DisResult *whatNext )
 static Bool dis_memsync ( UInt theInstr )
 {
     /* X-Form, XL-Form */
-    UChar opc1      = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar b11to25   = (theInstr >> 11) & 0x7FFF;    /* theInstr[11:25]  */
-    UChar Rd_addr   = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Rs_addr   = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr   = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
-    UChar Rb_addr   = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  opc2      = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UChar b0        = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar opc1      = toUChar((theInstr >> 26) & 0x3F);   /* theInstr[26:31] */
+    UChar b11to25   = toUChar((theInstr >> 11) & 0x7FFF); /* theInstr[11:25]  */
+    UChar Rd_addr   = toUChar((theInstr >> 21) & 0x1F);   /* theInstr[21:25] */
+    UChar Rs_addr   = toUChar((theInstr >> 21) & 0x1F);   /* theInstr[21:25] */
+    UChar Ra_addr   = toUChar((theInstr >> 16) & 0x1F);   /* theInstr[16:20] */
+    UChar Rb_addr   = toUChar((theInstr >> 11) & 0x1F);   /* theInstr[11:15] */
+    UInt  opc2      =         (theInstr >>  1) & 0x3FF;   /* theInstr[1:10]  */
+    UChar b0        = toUChar((theInstr >>  0) & 1);      /* theInstr[0]     */
 
     IRTemp EA = newTemp(Ity_I32);
     IRTemp Ra = newTemp(Ity_I32);
@@ -2601,24 +2604,24 @@ static Bool dis_memsync ( UInt theInstr )
 static Bool dis_int_shift ( UInt theInstr )
 {
     /* X-Form */
-    UChar opc1      = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar Rs_addr   = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr   = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
-    UChar Rb_addr   = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UChar Shift_Imm = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  opc2      = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UChar flag_Rc   = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar opc1      = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+    UChar Rs_addr   = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+    UChar Ra_addr   = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+    UChar Rb_addr   = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UChar Shift_Imm = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UInt  opc2      =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+    UChar flag_Rc   = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
     IRTemp shft_amt = newTemp(Ity_I8);
-    IRTemp sign = newTemp(Ity_I32);
-    IRTemp sign_rb = newTemp(Ity_I32);
-    IRTemp sext = newTemp(Ity_I32);
-    IRTemp Rs = newTemp(Ity_I32);
-    IRTemp Rs_shft = newTemp(Ity_I32);
-    IRTemp Rs_out = newTemp(Ity_I32);
-    IRTemp Ra = newTemp(Ity_I32);
-    IRTemp Rb = newTemp(Ity_I32);
-    IRTemp tmp = newTemp(Ity_I32);
+    IRTemp sign     = newTemp(Ity_I32);
+    IRTemp sign_rb  = newTemp(Ity_I32);
+    IRTemp sext     = newTemp(Ity_I32);
+    IRTemp Rs       = newTemp(Ity_I32);
+    IRTemp Rs_shft  = newTemp(Ity_I32);
+    IRTemp Rs_out   = newTemp(Ity_I32);
+    IRTemp Ra       = newTemp(Ity_I32);
+    IRTemp Rb       = newTemp(Ity_I32);
+    IRTemp tmp      = newTemp(Ity_I32);
 
     assign( Rs, getIReg(Rs_addr) );
     assign( Rb, getIReg(Rb_addr) );
@@ -2737,17 +2740,17 @@ static Bool dis_int_shift ( UInt theInstr )
 static Bool dis_int_ldst_rev ( UInt theInstr )
 {
     /* X-Form */
-    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar Rd_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Rs_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr  = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
-    UChar Rb_addr  = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UChar b0       = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+    UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+    UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+    UChar Ra_addr  = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+    UChar Rb_addr  = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
-    IRTemp EA = newTemp(Ity_I32);
-    IRTemp Rd = newTemp(Ity_I32);
-    IRTemp Rs = newTemp(Ity_I32);
+    IRTemp EA    = newTemp(Ity_I32);
+    IRTemp Rd    = newTemp(Ity_I32);
+    IRTemp Rs    = newTemp(Ity_I32);
     IRTemp byte0 = newTemp(Ity_I32);
     IRTemp byte1 = newTemp(Ity_I32);
     IRTemp byte2 = newTemp(Ity_I32);
@@ -2837,26 +2840,26 @@ static Bool dis_int_ldst_rev ( UInt theInstr )
 
 static Bool dis_proc_ctl ( UInt theInstr )
 {
-    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar opc1     = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
 
     /* X-Form */
-    UChar crfD     = (theInstr >> 23) & 0x7;       /* theInstr[23:25] */
-    UChar b21to22  = (theInstr >> 21) & 0x3;       /* theInstr[21:22] */
-    UChar Rd_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UInt  b11to20  = (theInstr >> 11) & 0x3FF;     /* theInstr[11:20] */
+    UChar crfD     = toUChar((theInstr >> 23) & 0x7);  /* theInstr[23:25] */
+    UChar b21to22  = toUChar((theInstr >> 21) & 0x3);  /* theInstr[21:22] */
+    UChar Rd_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+    UInt  b11to20  =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
 
     /* XFX-Form */
-    UChar Rs_addr  = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UInt  SPR      = (theInstr >> 11) & 0x3FF;     /* theInstr[11:20] */
-    UInt  TBR      = (theInstr >> 11) & 0x3FF;     /* theInstr[11:20] */
-    UChar b20      = (theInstr >> 11) & 0x1;       /* theInstr[11]    */
-    UInt  CRM      = (theInstr >> 12) & 0xFF;      /* theInstr[12:19] */
-    UChar b11      = (theInstr >> 11) & 0x1;       /* theInstr[20]    */
-    UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UChar b0       = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar Rs_addr  = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+    UInt  SPR      =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
+    UInt  TBR      =         (theInstr >> 11) & 0x3FF; /* theInstr[11:20] */
+    UChar b20      = toUChar((theInstr >> 11) & 0x1);  /* theInstr[11]    */
+    UInt  CRM      =         (theInstr >> 12) & 0xFF;  /* theInstr[12:19] */
+    UChar b11      = toUChar((theInstr >> 11) & 0x1);  /* theInstr[20]    */
+    UInt  opc2     =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+    UChar b0       = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
-    UInt SPR_flipped = ((SPR & 0x1F) << 5) | ((SPR >> 5) & 0x1F);
-    UInt mask;
+    UInt  SPR_flipped = ((SPR & 0x1F) << 5) | ((SPR >> 5) & 0x1F);
+    UInt  mask;
     UChar i;
 
     IRTemp Rs = newTemp(Ity_I32);
@@ -2896,7 +2899,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 
     /* XFX-Form */
     case 0x153: // mfspr (Move from Special-Purpose Register, p514)
-	DIP("mfspr %d,%d\n", Rd_addr, SPR_flipped);
+	DIP("mfspr %d,%u\n", Rd_addr, SPR_flipped);
 
 	switch (SPR_flipped) {  // Choose a register...
 	case 0x1:            // XER
@@ -2929,7 +2932,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 	break;
 
     case 0x173: // mftb (Move from Time Base, p521)
-	DIP("mftb %d,%d\n", Rd_addr, TBR);
+	DIP("mftb %d,%u\n", Rd_addr, TBR);
 	return False;
 
     case 0x090: // mtcrf (Move to Condition Register Fields, p523)
@@ -2937,7 +2940,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 	    vex_printf("dis_proc_ctl(PPC32)(mtcrf,b11|b20)\n");
 	    return False;
 	}
-	DIP("mtcrf %d,%d\n", CRM, Rs_addr);
+	DIP("mtcrf %u,%d\n", CRM, Rs_addr);
 	mask=0;
 	for (i=0; i<8; i++) {
 	    if (CRM & (1<<i)) {
@@ -2948,7 +2951,7 @@ static Bool dis_proc_ctl ( UInt theInstr )
 	break;
 
     case 0x1D3: // mtspr (Move to Special-Purpose Register, p530)
-	DIP("mtspr %d,%d\n", SPR_flipped, Rs_addr);
+	DIP("mtspr %u,%d\n", SPR_flipped, Rs_addr);
 
 	switch (SPR_flipped) {  // Choose a register...
 	case 0x1:            // XER
@@ -2991,12 +2994,12 @@ static Bool dis_proc_ctl ( UInt theInstr )
 static Bool dis_cache_manage ( UInt theInstr )
 {
     /* X-Form */
-    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
-    UChar b21to25 = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
-    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
-    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
-    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
-    UChar b0      = (theInstr >>  0) & 1;         /* theInstr[0]     */
+    UChar opc1    = toUChar((theInstr >> 26) & 0x3F); /* theInstr[26:31] */
+    UChar b21to25 = toUChar((theInstr >> 21) & 0x1F); /* theInstr[21:25] */
+    UChar Ra_addr = toUChar((theInstr >> 16) & 0x1F); /* theInstr[16:20] */
+    UChar Rb_addr = toUChar((theInstr >> 11) & 0x1F); /* theInstr[11:15] */
+    UInt  opc2    =         (theInstr >>  1) & 0x3FF; /* theInstr[1:10]  */
+    UChar b0      = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
 
     if (opc1 != 0x1F || b21to25 != 0 || b0 != 0) {
 	vex_printf("dis_cache_manage(PPC32)(opc1|b21to25|b0)\n");
@@ -3070,7 +3073,7 @@ static Bool dis_cache_manage ( UInt theInstr )
 static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
                             /*IN*/  UInt    delta, 
-                            /*OUT*/ UInt*   size,
+                            /*OUT*/ Int*    size,
                             /*OUT*/ Addr64* whereNext )
 {
    UChar opc1;
@@ -3132,8 +3135,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
 
-   opc1 = (theInstr >> 26) & 0x3F;     /* theInstr[26:31] */
-   opc2 = (theInstr >> 1 ) & 0x3FF;    /* theInstr[1:10]  */
+   opc1 = toUChar((theInstr >> 26) & 0x3F);   /* theInstr[26:31] */
+   opc2 = (theInstr >> 1 ) & 0x3FF;           /* theInstr[1:10]  */
 
 #if 0
    vex_printf("\ndisInstr(ppc32): instr:   0x%x\n", theInstr);

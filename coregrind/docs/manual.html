@@ -26,7 +26,7 @@
 <a name="title">&nbsp;</a>
 <h1 align=center>Valgrind, snapshot 20020516</h1>
 <center>This manual was majorly updated on 20020501</center>
-<center>This manual was minorly updated on 20020516</center>
+<center>This manual was minorly updated on 20020518</center>
 <p>
 
 <center>
@@ -1206,8 +1206,8 @@ A brief description of the available macros:
 
 As of late April 02, Valgrind supports programs which use POSIX
 pthreads.  Doing this has proved technically challenging and is still
-in progress, but it works well enough, as of 1 May 02, for significant 
-threaded applications to work.
+in progress, but it works well enough, for significant threaded
+applications to work.
 <p>
 It works as follows: threaded apps are (dynamically) linked against
 <code>libpthread.so</code>.  Usually this is the one installed with
@@ -1229,13 +1229,14 @@ natively.  This in itself may cause your program to behave differently
 if you have some kind of concurrency, critical race, locking, or
 similar, bugs.
 <p>
-The current (1 May 02) state of pthread support is as follows.  Please
+The current (18 May 02) state of pthread support is as follows.  Please
 note that things are advancing rapidly, so the situation may have
 improved by the time you read this -- check the web site for further
 updates.
 <ul>
-<li>Mutexes, condition variables, thread-specific data and
-    <code>pthread_once</code> currently work.
+<li>Mutexes, condition variables, thread-specific data,
+    <code>pthread_once</code> and basic semaphore functions
+    (<code>sem_*</code>) currently work.
 <p>
 <li>Various attribute-like calls are handled but ignored.  
     You get a warning message.
@@ -1245,29 +1246,27 @@ updates.
     thread without giving it any chance to clean up.  Also, when a
     thread exits, it does not run any cleanup handlers.
 <p>
+<li>Other omissions are: the detachedness state of threads is ignored.
+    This means detached threads hang around and clog up scheduler
+    slots forever when they finish.  Calls for reader-writer locks are
+    have dummy stubs with no functionality right now.  You get a
+    warning message.
+<p>
 <li>Currently the following syscalls are thread-safe (nonblocking):
     <code>write</code> <code>read</code> <code>nanosleep</code>
     <code>sleep</code> <code>select</code> and <code>poll</code>.
 <p>
 <li>The POSIX requirement that each thread have its own
-    signal-blocking mask is not done; the signal handling mechanism is
-    thread-unaware and all signals are delivered to the main thread,
-    antidisirregardless.
+    signal-blocking mask is now implemented.
+    <code>pthread_sigmask</code>, <code>pthread_kill</code>,
+    <code>pthread_sigwait</code> and <code>raise</code> should all now
+    work as POSIX requires.
 </ul>
 
 
-As of 1 May 02, the following programs now work fine on my RedHat 7.2
-box: Opera 6.0Beta2, KNode in KDE 3.0, Mozilla-0.9.2.1 and
-Galeon-0.11.3, both as supplied with RedHat 7.2.
-<p>
-Mozilla 1.0RC1 works fine too, provided that you patch it as described
-here: <a href="http://bugzilla.mozilla.org/show_bug.cgi?id=124335">
-http://bugzilla.mozilla.org/show_bug.cgi?id=124335</a>.  This fixes a
-bug in Mozilla which assumes that memory returned from
-<code>malloc</code> is 8-aligned.  Valgrind's allocator only
-guarantees 4-alignment, so without the patch Mozilla makes an illegal
-memory access, which Valgrind of course spots, and then bombs.
-Mozilla 1.0RC2 works fine out-of-the-box.
+As of 18 May 02, the following threaded programs now work fine on my
+RedHat 7.2 box: Opera 6.0Beta2, KNode in KDE 3.0, Mozilla-0.9.2.1 and
+Galeon-0.11.3, both as supplied with RedHat 7.2.  Also Mozilla 1.0RC2.
 
 
 <a name="install"></a>

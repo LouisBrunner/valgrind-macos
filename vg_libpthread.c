@@ -1542,6 +1542,153 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 
 
 /* ---------------------------------------------------------------------
+   Hacky implementation of semaphores.
+   ------------------------------------------------------------------ */
+
+#include <semaphore.h>
+
+/* This is a terrible way to do the remapping.  Plan is to import an
+   AVL tree at some point. */
+#define VG_N_SEMAPHORES 50
+
+typedef
+   struct {
+      pthread_mutex_t se_mx;
+      pthread_cond_t se_cv;
+      int count;
+   }
+   vg_sem_t;
+
+static pthread_mutex_t se_remap_mx = PTHREAD_MUTEX_INITIALIZER;
+
+static int      se_remap_used = 0;
+static sem_t*   se_remap_orig[VG_N_SEMAPHORES];
+static vg_sem_t se_remap_new[VG_N_SEMAPHORES];
+
+static vg_sem_t* se_remap ( sem_t* orig )
+{
+   int res, i;
+   res = __pthread_mutex_lock(&se_remap_mx);
+   assert(res == 0);
+
+   for (i = 0; i < se_remap_used; i++) {
+      if (se_remap_orig[i] == orig)
+         break;
+   }
+   if (i == se_remap_used) {
+      if (se_remap_used == VG_N_SEMAPHORES) {
+         res = pthread_mutex_unlock(&se_remap_mx);
+         assert(res == 0);
+         barf("N_SEMAPHORES is too low.  Increase and recompile.");
+      }
+      se_remap_used++;
+      se_remap_orig[i] = orig;
+      /* printf("allocated semaphore %d\n", i); */
+   }
+   res = __pthread_mutex_unlock(&se_remap_mx);
+   assert(res == 0);
+   return &se_remap_new[i];
+}
+
+
+int sem_init(sem_t *sem, int pshared, unsigned int value)
+{
+   int       res;
+   vg_sem_t* vg_sem;
+   ensure_valgrind("sem_init");
+   if (pshared != 0) {
+      errno = ENOSYS;
+      return -1;
+   }
+   vg_sem = se_remap(sem);
+   res = pthread_mutex_init(&vg_sem->se_mx, NULL);
+   assert(res == 0);
+   res = pthread_cond_init(&vg_sem->se_cv, NULL);
+   assert(res == 0);
+   vg_sem->count = value;
+   return 0;
+}
+
+
+int sem_wait ( sem_t* sem ) 
+{
+   int       res;
+   vg_sem_t* vg_sem;
+   ensure_valgrind("sem_wait");
+   vg_sem = se_remap(sem);
+   res = __pthread_mutex_lock(&vg_sem->se_mx);
+   assert(res == 0);
+   while (vg_sem->count == 0) {
+      res = pthread_cond_wait(&vg_sem->se_cv, &vg_sem->se_mx);
+      assert(res == 0);
+   }
+   vg_sem->count--;
+   res = __pthread_mutex_unlock(&vg_sem->se_mx);
+   assert(res == 0);
+   return 0;
+}
+
+int sem_post ( sem_t* sem ) 
+{
+   int       res;
+   vg_sem_t* vg_sem; 
+   ensure_valgrind("sem_post");
+   vg_sem = se_remap(sem);
+   res = __pthread_mutex_lock(&vg_sem->se_mx);
+   assert(res == 0);
+   if (vg_sem->count == 0) {
+      vg_sem->count++;
+      res = pthread_cond_broadcast(&vg_sem->se_cv);
+      assert(res == 0);
+   } else {
+      vg_sem->count++;
+   }
+   res = __pthread_mutex_unlock(&vg_sem->se_mx);
+   assert(res == 0);
+   return 0;
+}
+
+
+int sem_trywait ( sem_t* sem ) 
+{
+   int       ret, res;
+   vg_sem_t* vg_sem; 
+   ensure_valgrind("sem_trywait");
+   vg_sem = se_remap(sem);
+   res = __pthread_mutex_lock(&vg_sem->se_mx);
+   assert(res == 0);
+   if (vg_sem->count > 0) { 
+      vg_sem->count--; 
+      ret = 0; 
+   } else { 
+      ret = -1; 
+      errno = EAGAIN; 
+   }
+   res = __pthread_mutex_unlock(&vg_sem->se_mx);
+   assert(res == 0);
+   return ret;
+}
+
+
+int sem_getvalue(sem_t* sem, int * sval)
+{
+   vg_sem_t* vg_sem; 
+   ensure_valgrind("sem_trywait");
+   vg_sem = se_remap(sem);
+   *sval = vg_sem->count;
+   return 0;
+}
+
+
+int sem_destroy(sem_t * sem)
+{
+   kludged("sem_destroy");
+   /* if someone waiting on this semaphore, errno = EBUSY, return -1 */
+   return 0;
+}
+
+
+/* ---------------------------------------------------------------------
    B'stard.
    ------------------------------------------------------------------ */
 

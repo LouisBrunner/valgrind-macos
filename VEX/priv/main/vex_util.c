@@ -504,7 +504,7 @@ static void add_to_vg_sprintf_buf ( Char c )
    *vg_sprintf_ptr++ = c;
 }
 
-UInt vex_sprintf ( Char* buf, const Char *format, ... )
+UInt vex_sprintf ( Char* buf, const HChar *format, ... )
 {
    Int ret;
    va_list vargs;

@@ -42,8 +42,10 @@
 
 /* Always 8 bits. */
 typedef  unsigned char   UChar;
-typedef    signed char   SChar;
-typedef           char   Char;        /* platform-dependent signfulness */
+typedef    signed char   Char;
+typedef           char   HChar; /* signfulness depends on host */
+                                /* Only to be used for printf etc 
+                                   format strings */
 
 /* Always 16 bits. */
 typedef  unsigned short  UShort;

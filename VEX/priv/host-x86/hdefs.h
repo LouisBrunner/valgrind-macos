@@ -87,7 +87,7 @@ typedef
    }
    X86CondCode;
 
-extern Char* showX86CondCode ( X86CondCode );
+extern HChar* showX86CondCode ( X86CondCode );
 
 
 /* --------- Memory address expressions (amodes). --------- */

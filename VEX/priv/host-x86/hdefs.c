@@ -109,7 +109,7 @@ void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
 
 /* --------- Condition codes, Intel encoding. --------- */
 
-Char* showX86CondCode ( X86CondCode cond )
+HChar* showX86CondCode ( X86CondCode cond )
 {
    switch (cond) {
       case Xcc_O:      return "o";

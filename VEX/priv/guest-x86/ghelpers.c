@@ -1731,12 +1731,12 @@ static inline Short qadd16S ( Short xx, Short yy )
    return (Short)t;
 }
 
-static inline SChar qadd8S ( SChar xx, SChar yy )
+static inline Char qadd8S ( Char xx, Char yy )
 {
    Int t = ((Int)xx) + ((Int)yy);
    if (t < -128) t = -128;
    if (t > 127)  t = 127;
-   return (SChar)t;
+   return (Char)t;
 }
 
 static inline UShort qadd16U ( UShort xx, UShort yy )
@@ -1761,12 +1761,12 @@ static inline Short qsub16S ( Short xx, Short yy )
    return (Short)t;
 }
 
-static inline SChar qsub8S ( SChar xx, SChar yy )
+static inline Char qsub8S ( Char xx, Char yy )
 {
    Int t = ((Int)xx) - ((Int)yy);
    if (t < -128) t = -128;
    if (t > 127)  t = 127;
-   return (SChar)t;
+   return (Char)t;
 }
 
 static inline UShort qsub16U ( UShort xx, UShort yy )
@@ -1823,7 +1823,7 @@ static inline UShort cmpge16S ( Short xx, Short yy )
    return xx>yy ? 0xFFFF : 0;
 }
 
-static inline UChar cmpge8S ( SChar xx, SChar yy )
+static inline UChar cmpge8S ( Char xx, Char yy )
 {
    return xx>yy ? 0xFF : 0;
 }
@@ -1836,12 +1836,12 @@ static inline Short qnarrow32Sto16 ( UInt xx0 )
    return (Short)xx;
 }
 
-static inline SChar qnarrow16Sto8 ( UShort xx0 )
+static inline Char qnarrow16Sto8 ( UShort xx0 )
 {
    Short xx = (Short)xx0;
    if (xx < -128) xx = -128;
    if (xx > 127)  xx = 127;
-   return (SChar)xx;
+   return (Char)xx;
 }
 
 static inline UChar qnarrow16Uto8 ( UShort xx0 )

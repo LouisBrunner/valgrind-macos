@@ -62,7 +62,7 @@ PRIV_INCLUDES = -Ipriv
 CC = gcc
 CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline \
 		-Wpointer-arith -Wbad-function-cast -Wcast-qual \
-		-Wcast-align -Wmissing-declarations -Wmissing-format-attribute \
+		-Wcast-align -Wmissing-declarations \
 		$(EXTRA_CFLAGS)
 
 #CC = icc

@@ -2868,10 +2868,11 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..             return dst;
 //..          }
          case Iop_F32toF64: {
+            HReg f32;
             HReg f64 = newVRegV(env);
             /* this shouldn't be necessary, but be paranoid ... */
             set_SSE_rounding_default(env);
-            HReg f32 = iselFltExpr(env, e->Iex.Unop.arg);
+            f32 = iselFltExpr(env, e->Iex.Unop.arg);
             addInstr(env, AMD64Instr_SseSDSS(False/*S->D*/, f32, f64));
             return f64;
          }
@@ -3648,14 +3649,15 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 HInstrArray* iselBB_AMD64 ( IRBB* bb, VexSubArch subarch_host )
 {
-   Int     i, j;
-   HReg    hreg, hregHI;
+   Int      i, j;
+   HReg     hreg, hregHI;
+   ISelEnv* env;
 
    /* sanity ... */
    vassert(subarch_host == VexSubArch_NONE);
 
    /* Make up an initial environment to use. */
-   ISelEnv* env = LibVEX_Alloc(sizeof(ISelEnv));
+   env = LibVEX_Alloc(sizeof(ISelEnv));
    env->vreg_ctr = 0;
 
    /* Set up output code array. */

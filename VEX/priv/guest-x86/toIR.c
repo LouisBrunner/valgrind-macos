@@ -7092,6 +7092,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* 0F AE /0 = FXSAVE m512 -- write x87 and SSE state to memory */
    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xAE
        && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 0) {
+      IRDirty* d;
       modrm = getIByte(delta+2);
       vassert(sz == 4);
       vassert(!epartIsReg(modrm));
@@ -7103,12 +7104,12 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
       /* Uses dirty helper: 
             void x86g_do_FXSAVE ( VexGuestX86State*, UInt ) */
-      IRDirty* d = unsafeIRDirty_0_N ( 
-                      0/*regparms*/, 
-                      "x86g_dirtyhelper_FXSAVE", 
-                      &x86g_dirtyhelper_FXSAVE,
-                      mkIRExprVec_1( mkexpr(addr) )
-                   );
+      d = unsafeIRDirty_0_N ( 
+             0/*regparms*/, 
+             "x86g_dirtyhelper_FXSAVE", 
+             &x86g_dirtyhelper_FXSAVE,
+             mkIRExprVec_1( mkexpr(addr) )
+          );
       d->needsBBP = True;
 
       /* declare we're writing memory */

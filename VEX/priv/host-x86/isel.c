@@ -3418,8 +3418,9 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 HInstrArray* iselBB_X86 ( IRBB* bb, VexSubArch subarch_host )
 {
-   Int     i, j;
-   HReg    hreg, hregHI;
+   Int      i, j;
+   HReg     hreg, hregHI;
+   ISelEnv* env;
 
    /* sanity ... */
    vassert(subarch_host == VexSubArchX86_sse0
@@ -3427,7 +3428,7 @@ HInstrArray* iselBB_X86 ( IRBB* bb, VexSubArch subarch_host )
            || subarch_host == VexSubArchX86_sse2);
 
    /* Make up an initial environment to use. */
-   ISelEnv* env = LibVEX_Alloc(sizeof(ISelEnv));
+   env = LibVEX_Alloc(sizeof(ISelEnv));
    env->vreg_ctr = 0;
 
    /* Set up output code array. */

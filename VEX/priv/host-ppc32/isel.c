@@ -288,12 +288,13 @@ static PPC32CondCode iselCondCode     ( ISelEnv* env, IRExpr* e );
 static PPC32Instr* mk_sh32 ( ISelEnv* env, PPC32ShiftOp shOp,
                              HReg dst, HReg src1, PPC32RI* src2 )
 {
+   HReg zero, tmp;
    vassert(hregClass(dst) == HRcInt32);
    vassert(hregClass(src1) == HRcInt32);
    
    // Note: In this context, GPR0 is NOT read -> just gives _value_ 0
-   HReg zero = hregPPC32_GPR0();
-   HReg tmp = newVRegI(env);
+   zero = hregPPC32_GPR0();
+   tmp = newVRegI(env);
 
    switch (shOp) {
    case Psh_SHL:
@@ -330,9 +331,10 @@ static PPC32Instr* mk_iMOVds_RR ( HReg dst, HReg src )
 
 static PPC32Instr* mk_iMOVds_RRI ( ISelEnv* env, HReg dst, PPC32RI* src )
 {
+   HReg zero;
    vassert(hregClass(dst) == HRcInt32);
    // Note: In this context, GPR0 is NOT read -> just gives _value_ 0
-   HReg zero = hregPPC32_GPR0();
+   zero = hregPPC32_GPR0();
 
    if (src->tag == Pri_Imm) {
       UInt imm = src->Pri.Imm.imm32;
@@ -3427,15 +3429,16 @@ static void iselNext ( ISelEnv* env, IRExpr* next, IRJumpKind jk )
 
 HInstrArray* iselBB_PPC32 ( IRBB* bb, VexSubArch subarch_host )
 {
-   Int     i, j;
-   HReg    hreg, hregHI;
+   Int      i, j;
+   HReg     hreg, hregHI;
+   ISelEnv* env;
 
    /* sanity ... */
    vassert(subarch_host == VexSubArchPPC32_noAV
            || subarch_host == VexSubArchPPC32_AV);
 
    /* Make up an initial environment to use. */
-   ISelEnv* env = LibVEX_Alloc(sizeof(ISelEnv));
+   env = LibVEX_Alloc(sizeof(ISelEnv));
    env->vreg_ctr = 0;
 
    /* Set up output code array. */

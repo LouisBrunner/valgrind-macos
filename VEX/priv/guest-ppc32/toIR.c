@@ -577,13 +577,14 @@ static IRExpr* loadBE ( IRType ty, IRExpr* data )
 // ROTL(src32, rot_amt5)
 static IRExpr* ROTL32 ( IRExpr* src, IRExpr* rot_amt )
 {
+   IRTemp rot_amt5;
    vassert(typeOfIRExpr(irbb->tyenv,src) == Ity_I32);
    vassert(typeOfIRExpr(irbb->tyenv,rot_amt) == Ity_I8);
    
    /* By masking the rotate amount thusly, the IR-level Shl/Shr
       expressions never shift beyond the word size and thus remain
       well defined. */
-   IRTemp rot_amt5 = newTemp(Ity_I8);
+   rot_amt5 = newTemp(Ity_I8);
    assign(rot_amt5, binop(Iop_And8, rot_amt, mkU8(0x1F)));
    
    // (src << rot_amt) | (src >> (32-rot_amt))
@@ -633,16 +634,18 @@ static IRExpr* mk_ppc32g_calculate_cr7_all ( void )
 static IRExpr* mk_ppc32g_calculate_xer_ov ( UInt op, IRExpr* res,
                                             IRExpr* argL, IRExpr* argR )
 {
+   IRExpr** args;
+   IRExpr*  call;
    vassert(op < PPC32G_FLAG_OP_NUMBER);
    vassert(typeOfIRExpr(irbb->tyenv,res) == Ity_I32);
    vassert(typeOfIRExpr(irbb->tyenv,argL) == Ity_I32);
    vassert(typeOfIRExpr(irbb->tyenv,argR) == Ity_I32);
 
-   IRExpr** args =
+   args =
       mkIRExprVec_5( mkU32(op), res, argL, argR,
                      getReg_bit( PPC32_SPR_XER, SHIFT_XER_OV ) );
 
-   IRExpr* call
+   call
       = mkIRExprCCall(
            Ity_I32,
            0/*regparm*/,
@@ -656,16 +659,18 @@ static IRExpr* mk_ppc32g_calculate_xer_ov ( UInt op, IRExpr* res,
 static IRExpr* mk_ppc32g_calculate_xer_ca ( UInt op, IRExpr* res,
                                             IRExpr* argL, IRExpr* argR )
 {
+   IRExpr*  xer_ca;
+   IRExpr** args;
+   IRExpr*  call;
    vassert(op < PPC32G_FLAG_OP_NUMBER);
    vassert(typeOfIRExpr(irbb->tyenv,res) == Ity_I32);
    vassert(typeOfIRExpr(irbb->tyenv,argL) == Ity_I32);
    vassert(typeOfIRExpr(irbb->tyenv,argR) == Ity_I32);
 
-   IRExpr* xer_ca = getReg_bit( PPC32_SPR_XER, SHIFT_XER_CA );
+   xer_ca = getReg_bit( PPC32_SPR_XER, SHIFT_XER_CA );
+   args   = mkIRExprVec_5( mkU32(op), res, argL, argR, xer_ca );
 
-   IRExpr** args = mkIRExprVec_5( mkU32(op), res, argL, argR, xer_ca );
-
-   IRExpr* call
+   call
       = mkIRExprCCall(
            Ity_I32,
            0/*regparm*/,
@@ -683,11 +688,12 @@ static IRExpr* mk_ppc32g_calculate_xer_ca ( UInt op, IRExpr* res,
 */
 
 /* Set the flags thunk OP=0, DEP1, DEP2 fields. */
-static  void setFlags_CR7 ( IRExpr* result )
+static void setFlags_CR7 ( IRExpr* result )
 {
+   IRExpr* xer_so;
    vassert(typeOfIRExpr(irbb->tyenv,result) == Ity_I32);
 
-   IRExpr* xer_so = getReg_bit( PPC32_SPR_XER, SHIFT_XER_SO );
+   xer_so = getReg_bit( PPC32_SPR_XER, SHIFT_XER_SO );
 
    // => Delaying calculating result until needed...
    stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(0) ));
@@ -698,13 +704,14 @@ static  void setFlags_CR7 ( IRExpr* result )
 static void setFlags_XER_OV_SO( UInt op, IRExpr* res,
                                 IRExpr* argL, IRExpr* argR )
 {
+   IRExpr* xer_ov;
    vassert(op < PPC32G_FLAG_OP_NUMBER);
    vassert(typeOfIRExpr(irbb->tyenv,res) == Ity_I32);
    vassert(typeOfIRExpr(irbb->tyenv,argL) == Ity_I32);
    vassert(typeOfIRExpr(irbb->tyenv,argR) == Ity_I32);
 
    // => Calculate result immediately
-   IRExpr* xer_ov = mk_ppc32g_calculate_xer_ov(op, res, argL, argR);
+   xer_ov = mk_ppc32g_calculate_xer_ov(op, res, argL, argR);
 
    putReg_bit( PPC32_SPR_XER, xer_ov, SHIFT_XER_OV );
    putReg_bit( PPC32_SPR_XER, xer_ov, SHIFT_XER_SO );
@@ -713,13 +720,14 @@ static void setFlags_XER_OV_SO( UInt op, IRExpr* res,
 static void setFlags_XER_CA( UInt op, IRExpr* res,
                              IRExpr* argL, IRExpr* argR )
 {
+   IRExpr* xer_ca;
    vassert(op < PPC32G_FLAG_OP_NUMBER);
    vassert(typeOfIRExpr(irbb->tyenv,res) == Ity_I32);
    vassert(typeOfIRExpr(irbb->tyenv,argL) == Ity_I32);
    vassert(typeOfIRExpr(irbb->tyenv,argR) == Ity_I32);
    
    // => Calculate result immediately
-   IRExpr* xer_ca = mk_ppc32g_calculate_xer_ca(op, res, argL, argR);
+   xer_ca = mk_ppc32g_calculate_xer_ca(op, res, argL, argR);
 
    putReg_bit( PPC32_SPR_XER, xer_ca, SHIFT_XER_CA );
 }
@@ -738,8 +746,8 @@ static void setFlags_XER_CA( UInt op, IRExpr* res,
 /* Get a masked word from the given reg */
 static IRExpr* getReg_masked ( PPC32SPR reg, UInt mask )
 {
-   vassert( reg < PPC32_SPR_MAX );
    IRTemp val = newTemp(Ity_I32);
+   vassert( reg < PPC32_SPR_MAX );
     
    switch (reg) {
    case PPC32_SPR_CIA:
@@ -800,10 +808,11 @@ static IRExpr* getReg ( PPC32SPR reg )
    returns zero padded word */
 static IRExpr* getReg_field ( PPC32SPR reg, UInt field_idx )
 {
+   IRExpr* fld;
    vassert( field_idx < 8 );
    vassert( reg < PPC32_SPR_MAX );
    
-   IRExpr* fld = getReg_masked( reg, (0xF << (field_idx*4)) );
+   fld = getReg_masked( reg, (0xF << (field_idx*4)) );
    
    if (field_idx != 0) {
       fld = binop(Iop_Shr32, fld, mkU8(field_idx * 4));
@@ -815,10 +824,11 @@ static IRExpr* getReg_field ( PPC32SPR reg, UInt field_idx )
    returns zero padded word */
 static IRExpr* getReg_bit ( PPC32SPR reg, UInt bit_idx )
 {
+   IRExpr* val;
    vassert( bit_idx <= 32 );
    vassert( reg < PPC32_SPR_MAX );
    
-   IRExpr* val = getReg_masked( reg, 1<<bit_idx );
+   val = getReg_masked( reg, 1<<bit_idx );
 
    if (bit_idx != 0) {
       val = binop(Iop_Shr32, val, mkU8(bit_idx));
@@ -831,12 +841,12 @@ static IRExpr* getReg_bit ( PPC32SPR reg, UInt bit_idx )
 /* Write masked src to the given reg */
 static void putReg_masked ( PPC32SPR reg, IRExpr* src, UInt mask )
 {
-   vassert( reg < PPC32_SPR_MAX );
-   vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
-   
    IRTemp src_mskd = newTemp(Ity_I32);
    IRTemp reg_old  = newTemp(Ity_I32);
 
+   vassert( reg < PPC32_SPR_MAX );
+   vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
+   
    switch (reg) {
    case PPC32_SPR_CIA:
       vassert(mask == 0xFFFFFFFF);    // Only ever need whole reg

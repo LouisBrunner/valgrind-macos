@@ -335,8 +335,17 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 void VGA_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
                             Bool all_caches_clo_defined)
 {
-   VG_(printf)("VGA_(configure_caches)() not yet implemented for AMD64\n");
-   VG_(exit)(1);
+   // Set caches to default.
+   *I1c = (cache_t) {  65536, 2, 64 };
+   *D1c = (cache_t) {  65536, 2, 64 };
+   *L2c = (cache_t) { 524288, 8, 64 };
+
+   if (1) {
+      VG_(message)(Vg_DebugMsg, 
+                   "Warning: Couldn't auto-detect cache config, using one "
+                   "or more defaults ");
+   }
+
 #if 0
    Int res;
    

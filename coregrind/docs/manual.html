@@ -24,8 +24,8 @@
 <body bgcolor="#ffffff">
 
 <a name="title">&nbsp;</a>
-<h1 align=center>Valgrind, snapshot 20020324</h1>
-<center>This manual was minimally updated on 20020415</center>
+<h1 align=center>Valgrind, snapshot 20020501</h1>
+<center>This manual was majorly updated on 20020501</center>
 <p>
 
 <center>
@@ -57,8 +57,10 @@ Linux-x86 executables.
     2.5&nbsp; <a href="#flags">Command-line flags</a><br>
     2.6&nbsp; <a href="#errormsgs">Explaination of error messages</a><br>
     2.7&nbsp; <a href="#suppfiles">Writing suppressions files</a><br>
-    2.8&nbsp; <a href="#install">Building and installing</a><br>
-    2.9&nbsp; <a href="#problems">If you have problems</a><br>
+    2.8&nbsp; <a href="#clientreq">The Client Request mechanism</a><br>
+    2.9&nbsp; <a href="#pthreads">Support for POSIX pthreads</a><br>
+    2.10&nbsp; <a href="#install">Building and installing</a><br>
+    2.11&nbsp; <a href="#problems">If you have problems</a><br>
 
 <h4>3&nbsp; <a href="#machine">Details of the checking machinery</a></h4>
     3.1&nbsp; <a href="#vvalue">Valid-value (V) bits</a><br>
@@ -112,18 +114,12 @@ Valgrind is closely tied to details of the CPU, operating system and
 to a less extent, compiler and basic C libraries. This makes it
 difficult to make it portable, so I have chosen at the outset to
 concentrate on what I believe to be a widely used platform: Red Hat
-Linux 7.2, on x86s. I believe that it will work without significant
-difficulty on other x86 GNU/Linux systems which use the 2.4 kernel and
-GNU libc 2.2.X, for example SuSE 7.1 and Mandrake 8.0.  Red Hat 6.2 is
-also supported.  It has worked in the past, and probably still does,
-on RedHat 7.1 and 6.2.  Note that I haven't compiled it on RedHat 7.1
-and 6.2 for a while, so they may no longer work now.
-<p>
-(Early Feb 02: after feedback from the KDE people it also works better
-on other Linuxes).
-<p>
-At some point in the past, Valgrind has also worked on Red Hat 6.2
-(x86), thanks to the efforts of Rob Noble.
+Linux 7.2, on x86s.  Valgrind uses the standard Unix
+<code>./configure</code>, <code>make</code>, <code>make install</code>
+mechanism, and I have attempted to ensure that it works on machines
+with kernel 2.2 or 2.4 and glibc 2.1.X or 2.2.X.  This should cover
+the vast majority of modern Linux installations.
+
 
 <p>
 Valgrind is licensed under the GNU General Public License, version
@@ -148,26 +144,27 @@ checks every memory access. All detected errors are written to a
 log. When the program finishes, Valgrind searches for and reports on
 leaked memory.
 
-<p>You can run pretty much any dynamically linked ELF x86 executable using
-Valgrind. Programs run 25 to 50 times slower, and take a lot more
-memory, than they usually would. It works well enough to run large
-programs. For example, the Konqueror web browser from the KDE Desktop
-Environment, version 2.1.1, runs slowly but usably on Valgrind.
+<p>You can run pretty much any dynamically linked ELF x86 executable
+using Valgrind. Programs run 25 to 50 times slower, and take a lot
+more memory, than they usually would. It works well enough to run
+large programs. For example, the Konqueror web browser from the KDE
+Desktop Environment, version 3.0, runs slowly but usably on Valgrind.
 
 <p>Valgrind simulates every single instruction your program executes.
 Because of this, it finds errors not only in your application but also
-in all supporting dynamically-linked (.so-format) libraries, including
-the GNU C library, the X client libraries, Qt, if you work with KDE, and
-so on. That often includes libraries, for example the GNU C library,
-which contain memory access violations, but which you cannot or do not
-want to fix.
+in all supporting dynamically-linked (<code>.so</code>-format)
+libraries, including the GNU C library, the X client libraries, Qt, if
+you work with KDE, and so on. That often includes libraries, for
+example the GNU C library, which contain memory access violations, but
+which you cannot or do not want to fix.
 
 <p>Rather than swamping you with errors in which you are not
 interested, Valgrind allows you to selectively suppress errors, by
 recording them in a suppressions file which is read when Valgrind
-starts up. As supplied, Valgrind comes with a suppressions file
-designed to give reasonable behaviour on Red Hat 7.2 (also 7.1 and
-6.2) when running text-only and simple X applications.
+starts up.  The build mechanism attempts to select suppressions which
+give reasonable behaviour for the libc and XFree86 versions detected
+on your machine.
+
 
 <p><a href="#example">Section 6</a> shows an example of use.
 <p>
@@ -185,9 +182,25 @@ debugging info enabled (the <code>-g</code> flag).  You don't have to
 do this, but doing so helps Valgrind produce more accurate and less
 confusing error reports.  Chances are you're set up like this already,
 if you intended to debug your program with GNU gdb, or some other
-debugger.
+debugger.  
 
-<p>Then just run your application, but place the word
+<p>
+A plausible compromise is to use <code>-g -O</code>.
+Optimisation levels above <code>-O</code> have been observed, on very
+rare occasions, to cause gcc to generate code which fools Valgrind's
+error tracking machinery into wrongly reporting uninitialised value
+errors.  <code>-O</code> gets you the vast majority of the benefits of
+higher optimisation levels anyway, so you don't lose much there.
+
+<p>
+Note that as of 1 May 2002 Valgrind does not understand the DWARF 
+debugging format, which is unfortunate since the upcoming gcc-3.1 uses
+it by default.  Valgrind only knows about the older "stabs" format.
+If you use gcc-3.1 or above, you can still ask for stabs-format debug
+info by passing <code>-gstabs</code> to gcc.
+
+<p>
+Then just run your application, but place the word
 <code>valgrind</code> in front of your usual command-line invokation.
 Note that you should run the real (machine-code) executable here.  If
 your application is started by, for example, a shell or perl script,
@@ -195,7 +208,7 @@ you'll need to modify it to invoke Valgrind on the real executables.
 Running such scripts directly under Valgrind will result in you
 getting error reports pertaining to <code>/bin/sh</code>,
 <code>/usr/bin/perl</code>, or whatever interpreter you're using.
-This almost certainly isn't what you want and can be hugely confusing.
+This almost certainly isn't what you want and can be confusing.
 
 <a name="comment"></a>
 <h3>2.2&nbsp; The commentary</h3>
@@ -265,6 +278,17 @@ later uses them, will generate several error messages.  The first such
 error message may well give the most direct clue to the root cause of
 the problem.
 
+<p>The process of detecting duplicate errors is quite an expensive
+one and can become a significant performance overhead if your program
+generates huge quantities of errors.  To avoid serious problems here,
+Valgrind will simply stop collecting errors after 300 different errors
+have been seen, or 30000 errors in total have been seen.  In this
+situation you might as well stop your program and fix it, because
+Valgrind won't tell you anything else useful after this.  Note that
+the 300/30000 limits apply after suppressed errors are removed.  These
+limits are defined in <code>vg_include.h</code> and can be increased
+if necessary.
+
 <a name="suppress"></a>
 <h3>2.4&nbsp; Suppressing errors</h3>
 
@@ -272,14 +296,15 @@ Valgrind detects numerous problems in the base libraries, such as the
 GNU C library, and the XFree86 client libraries, which come
 pre-installed on your GNU/Linux system.  You can't easily fix these,
 but you don't want to see these errors (and yes, there are many!)  So
-Valgrind reads a list of errors to suppress at startup.  By default
-this file is <code>redhat72.supp</code>, located in the Valgrind
-installation directory.  
+Valgrind reads a list of errors to suppress at startup.  
+A default suppression file is cooked up by the
+<code>./configure</code> script.
 
-<p>You can modify and add to the suppressions file at your leisure, or
-write your own.  Multiple suppression files are allowed.  This is
-useful if part of your project contains errors you can't or don't want
-to fix, yet you don't want to continuously be reminded of them.
+<p>You can modify and add to the suppressions file at your leisure,
+or, better, write your own.  Multiple suppression files are allowed.
+This is useful if part of your project contains errors you can't or
+don't want to fix, yet you don't want to continuously be reminded of
+them.
 
 <p>Each error to be suppressed is described very specifically, to
 minimise the possibility that a suppression-directive inadvertantly
@@ -304,6 +329,10 @@ You invoke Valgrind like this:
 <pre>
   valgrind [options-for-Valgrind] your-prog [options for your-prog]
 </pre>
+
+<p>Note that Valgrind also reads options from the environment variable
+<code>$VALGRIND</code>, and processes them before the command-line
+options.
 
 <p>Valgrind's default settings succeed in giving reasonable behaviour
 in most cases.  Available options, in no particular order, are as
@@ -380,10 +409,12 @@ follows:
       or <code>c</code> <code>Ret</code> causes Valgrind not to
       start GDB, and not to ask again.
       <p>
-      <code>--gdb-attach=yes</code> conflicts with 
-      <code>--trace-children=yes</code>.  You can't use them
-      together.  Valgrind refuses to start up in this situation.
-      </li><br><p>
+      <code>--gdb-attach=yes</code> conflicts with
+      <code>--trace-children=yes</code>.  You can't use them together.
+      Valgrind refuses to start up in this situation.  1 May 2002:
+      this is a historical relic which could be easily fixed if it
+      gets in your way.  Mail me and complain if this is a problem for
+      you.  </li><br><p>
      
   <li><code>--partial-loads-ok=yes</code> [the default]<br>
       <code>--partial-loads-ok=no</code>
@@ -411,16 +442,25 @@ follows:
       safely rely on malloc/calloc requests being rounded up in this
       fashion.  Without the workaround, these libraries tend to
       generate large numbers of errors when they access the ends of
-      these areas.  Valgrind snapshots dated 17 Feb 2002 and later are
+      these areas.  
+      <p>
+      Valgrind snapshots dated 17 Feb 2002 and later are
       cleverer about this problem, and you should no longer need to 
-      use this flag.
+      use this flag.  To put it bluntly, if you do need to use this
+      flag, your program violates the ANSI C semantics defined for
+      <code>malloc</code> and <code>free</code>, even if it appears to
+      work correctly, and you should fix it, at least if you hope for
+      maximum portability.
       </li><br><p>
 
   <li><code>--trace-children=no</code> [the default]</br>
       <code>--trace-children=yes</code>
       <p>When enabled, Valgrind will trace into child processes.  This
       is confusing and usually not what you want, so is disabled by
-      default.</li><br><p>
+      default.  As of 1 May 2002, tracing into a child process from a
+      parent which uses <code>libpthread.so</code> is probably broken
+      and is likely to cause breakage.  Please report any such
+      problems to me.  </li><br><p>
 
   <li><code>--freelist-vol=&lt;number></code> [default: 1000000]
       <p>When the client program releases memory using free (in C) or
@@ -451,41 +491,41 @@ follows:
       and ask the shell to route file descriptor 9 to "logfile".
       </li><br><p>
 
-  <li><code>--suppressions=&lt;filename></code> [default:
-      /installation/directory/redhat72.supp] <p>Specifies an extra
+  <li><code>--suppressions=&lt;filename></code> 
+      [default: $PREFIX/lib/valgrind/default.supp]
+      <p>Specifies an extra
       file from which to read descriptions of errors to suppress.  You
       may use as many extra suppressions files as you
       like.</li><br><p>
 
   <li><code>--leak-check=no</code> [default]<br>
-      <code>--leak-check=yes</code>
+      <code>--leak-check=yes</code> 
       <p>When enabled, search for memory leaks when the client program
       finishes.  A memory leak means a malloc'd block, which has not
       yet been free'd, but to which no pointer can be found.  Such a
       block can never be free'd by the program, since no pointer to it
-      exists.  Leak checking is disabled by default
-      because it tends to generate dozens of error messages.
-      </li><br><p>
+      exists.  Leak checking is disabled by default because it tends
+      to generate dozens of error messages.  </li><br><p>
 
   <li><code>--show-reachable=no</code> [default]<br>
-      <code>--show-reachable=yes</code> <p>When disabled, the memory
-      leak detector only shows blocks for which it cannot find a
-      pointer to at all, or it can only find a pointer to the middle
-      of.  These blocks are prime candidates for memory leaks.  When
-      enabled, the leak detector also reports on blocks which it could
-      find a pointer to.  Your program could, at least in principle,
-      have freed such blocks before exit.  Contrast this to blocks for
-      which no pointer, or only an interior pointer could be found:
-      they are more likely to indicate memory leaks, because
-      you do not actually have a pointer to the start of the block
-      which you can hand to free(), even if you wanted to.
-      </li><br><p>
+      <code>--show-reachable=yes</code> 
+      <p>When disabled, the memory leak detector only shows blocks for
+      which it cannot find a pointer to at all, or it can only find a
+      pointer to the middle of.  These blocks are prime candidates for
+      memory leaks.  When enabled, the leak detector also reports on
+      blocks which it could find a pointer to.  Your program could, at
+      least in principle, have freed such blocks before exit.
+      Contrast this to blocks for which no pointer, or only an
+      interior pointer could be found: they are more likely to
+      indicate memory leaks, because you do not actually have a
+      pointer to the start of the block which you can hand to
+      <code>free</code>, even if you wanted to.  </li><br><p>
 
   <li><code>--leak-resolution=low</code> [default]<br>
       <code>--leak-resolution=med</code> <br>
       <code>--leak-resolution=high</code>
       <p>When doing leak checking, determines how willing Valgrind is
-      to consider different backtraces the same.  When set to
+      to consider different backtraces to be the same.  When set to
       <code>low</code>, the default, only the first two entries need
       match.  When <code>med</code>, four entries have to match.  When
       <code>high</code>, all entries need to match.  
@@ -499,7 +539,7 @@ follows:
       <p>
       Note that the <code>--leak-resolution=</code> setting does not
       affect Valgrind's ability to find leaks.  It only changes how
-      the results are presented to you.
+      the results are presented.
       </li><br><p>
 
   <li><code>--workaround-gcc296-bugs=no</code> [default]<br>
@@ -514,7 +554,9 @@ follows:
       gcc/g++ which works properly; 2.95.3 seems to be a good choice.
       <p>
       Unfortunately (27 Feb 02) it looks like g++ 3.0.4 is similarly
-      buggy, so you may need to issue this flag if you use 3.0.4.
+      buggy, so you may need to issue this flag if you use 3.0.4.  A
+      while later (early Apr 02) this is confirmed as a scheduling bug
+      in g++-3.0.4.
       </li><br><p>
 
   <li><code>--cachesim=no</code> [default]<br>
@@ -595,13 +637,13 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
       </li><br>
       <p>
 
-  <li><code>--dump-error=&lt;number></code>
-      [default: inactive]
+  <li><code>--dump-error=&lt;number></code> [default: inactive]
       <p>After the program has exited, show gory details of the
       translation of the basic block containing the &lt;number>'th
-      error context.  When used with <code>--single-step=yes</code>, 
-      can show the
-      exact x86 instruction causing an error.</li><br>
+      error context.  When used with <code>--single-step=yes</code>,
+      can show the exact x86 instruction causing an error.  This is
+      all fairly dodgy and doesn't work at all if threads are
+      involved.</li><br>
       <p>
 
   <li><code>--smc-check=none</code><br>
@@ -613,7 +655,15 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
       resulting from moves from integer registers to memory are
       checked.  When "all", all memory writes are checked, even those
       with which are no sane program would generate code -- for
-      example, floating-point writes.</li>
+      example, floating-point writes.
+      <p>
+      NOTE that this is all a bit bogus.  This mechanism has never
+      been enabled in any snapshot of Valgrind which was made
+      available to the general public, because the extra checks reduce
+      performance, increase complexity, and I have yet to come across
+      any programs which actually use self-modifying code.  I think
+      the flag is ignored.
+      </li>
 </ul>
 
 
@@ -632,12 +682,12 @@ precise behaviour of the error-checking machinery is described in
 <h4>2.6.1&nbsp; Illegal read / Illegal write errors</h4>
 For example:
 <pre>
-  ==30975== Invalid read of size 4
-  ==30975==    at 0x40F6BBCC: (within /usr/lib/libpng.so.2.1.0.9)
-  ==30975==    by 0x40F6B804: (within /usr/lib/libpng.so.2.1.0.9)
-  ==30975==    by 0x40B07FF4: read_png_image__FP8QImageIO (kernel/qpngio.cpp:326)
-  ==30975==    by 0x40AC751B: QImageIO::read() (kernel/qimage.cpp:3621)
-  ==30975==    Address 0xBFFFF0E0 is not stack'd, malloc'd or free'd
+  Invalid read of size 4
+     at 0x40F6BBCC: (within /usr/lib/libpng.so.2.1.0.9)
+     by 0x40F6B804: (within /usr/lib/libpng.so.2.1.0.9)
+     by 0x40B07FF4: read_png_image__FP8QImageIO (kernel/qpngio.cpp:326)
+     by 0x40AC751B: QImageIO::read() (kernel/qimage.cpp:3621)
+     Address 0xBFFFF0E0 is not stack'd, malloc'd or free'd
 </pre>
 
 <p>This happens when your program reads or writes memory at a place
@@ -658,7 +708,8 @@ fact, and also where the block was malloc'd.
 <p>In this example, Valgrind can't identify the address.  Actually the
 address is on the stack, but, for some reason, this is not a valid
 stack address -- it is below the stack pointer, %esp, and that isn't
-allowed.
+allowed.  In this particular case it's probably caused by gcc
+generating invalid code, a known bug in various flavours of gcc.
 
 <p>Note that Valgrind only tells you that your program is about to
 access memory at an illegal address.  It can't stop the access from
@@ -672,11 +723,11 @@ non-fatal, and the program stays alive.
 <h4>2.6.2&nbsp; Use of uninitialised values</h4>
 For example:
 <pre>
-  ==19146== Conditional jump or move depends on uninitialised value(s)
-  ==19146==    at 0x402DFA94: _IO_vfprintf (_itoa.h:49)
-  ==19146==    by 0x402E8476: _IO_printf (printf.c:36)
-  ==19146==    by 0x8048472: main (tests/manuel1.c:8)
-  ==19146==    by 0x402A6E5E: __libc_start_main (libc-start.c:129)
+  Conditional jump or move depends on uninitialised value(s)
+     at 0x402DFA94: _IO_vfprintf (_itoa.h:49)
+     by 0x402E8476: _IO_printf (printf.c:36)
+     by 0x8048472: main (tests/manuel1.c:8)
+     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
 </pre>
 
 <p>An uninitialised-value use error is reported when your program uses
@@ -697,11 +748,10 @@ junk (uninitialised) data to its heart's content.  Valgrind observes
 this and keeps track of the data, but does not complain.  A complaint
 is issued only when your program attempts to make use of uninitialised
 data.  In this example, x is uninitialised.  Valgrind observes the
-value being passed to _IO_printf and thence to
-_IO_vfprintf, but makes no comment.  However,
-_IO_vfprintf has to examine the value of x
-so it can turn it into the corresponding ASCII string, and it is at
-this point that Valgrind complains.
+value being passed to _IO_printf and thence to _IO_vfprintf, but makes
+no comment.  However, _IO_vfprintf has to examine the value of x so it
+can turn it into the corresponding ASCII string, and it is at this
+point that Valgrind complains.
 
 <p>Sources of uninitialised data tend to be:
 <ul>
@@ -720,16 +770,16 @@ this point that Valgrind complains.
 <h4>2.6.3&nbsp; Illegal frees</h4>
 For example:
 <pre>
-  ==7593== Invalid free()
-  ==7593==    at 0x4004FFDF: free (ut_clientmalloc.c:577)
-  ==7593==    by 0x80484C7: main (tests/doublefree.c:10)
-  ==7593==    by 0x402A6E5E: __libc_start_main (libc-start.c:129)
-  ==7593==    by 0x80483B1: (within tests/doublefree)
-  ==7593==    Address 0x3807F7B4 is 0 bytes inside a block of size 177 free'd
-  ==7593==    at 0x4004FFDF: free (ut_clientmalloc.c:577)
-  ==7593==    by 0x80484C7: main (tests/doublefree.c:10)
-  ==7593==    by 0x402A6E5E: __libc_start_main (libc-start.c:129)
-  ==7593==    by 0x80483B1: (within tests/doublefree)
+  Invalid free()
+     at 0x4004FFDF: free (ut_clientmalloc.c:577)
+     by 0x80484C7: main (tests/doublefree.c:10)
+     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
+     by 0x80483B1: (within tests/doublefree)
+     Address 0x3807F7B4 is 0 bytes inside a block of size 177 free'd
+     at 0x4004FFDF: free (ut_clientmalloc.c:577)
+     by 0x80484C7: main (tests/doublefree.c:10)
+     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
+     by 0x80483B1: (within tests/doublefree)
 </pre>
 <p>Valgrind keeps track of the blocks allocated by your program with
 malloc/new, so it can know exactly whether or not the argument to
@@ -740,7 +790,44 @@ here, the address is one which has previously been freed, you wil
 be told that -- making duplicate frees of the same block easy to spot.
 
 
-<h4>2.6.4&nbsp; Passing system call parameters with inadequate
+<h4>2.6.4&nbsp; When a block is freed with an inappropriate
+deallocation function</h4>
+For example:
+<pre>
+  Mismatched free() / delete / delete []
+     at 0x40303847: DeviceContextImpl::~DeviceContextImpl(void)
+     by 0x45149BCB: nsDeviceContextGTK::~nsDeviceContextGTK(void)
+     by 0x4030341A: DeviceContextImpl::Release(void)
+     by 0x460C0CAC: nsBaseWidget::OnDestroy(void)
+     Address 0x41C11A7C is 0 bytes inside a block of size 120 alloc'd
+     at 0x40040BEC: malloc (vg_clientfuncs.c:100)
+     by 0x4516DAAC: ??? (../../gcc-2.95.3/gcc/cp/new1.cc:78)
+     by 0x4515FA11: nsDeviceContextGTKConstructor(nsISupports *, ...
+     by 0x40553ABB: nsGenericFactory::CreateInstance(nsISupports *, ...
+</pre>
+The following was told to me be the KDE 3 developers.  I didn't know
+any of it myself.  They also implemented the check itself.
+<p>
+In C++ it's important to deallocate memory in a way compatible with
+how it was allocated.  The deal is:
+<ul>
+<li>If allocated with <code>malloc</code>, <code>calloc</code>,
+    <code>realloc</code>, <code>valloc</code> or
+    <code>memalign</code>, you must deallocate with <code>free</code>.
+<li>If allocated with <code>new []</code>, you must deallocate with
+    <code>delete []</code>.
+<li>If allocated with <code>new</code>, you must deallocate with
+    <code>delete</code>.
+</ul>
+The worst thing is that on Linux apparently it doesn't matter if you
+do muddle these up, and it all seems to work ok, but the same program
+may then crash on a different platform, Solaris for example.  So it's
+best to fix it properly.  According to the KDE folks "it's amazing how
+many C++ programmers don't know this".  
+
+
+
+<h4>2.6.5&nbsp; Passing system call parameters with inadequate
 read/write permissions</h4>
 
 Valgrind checks all parameters to system calls.  If a system call
@@ -766,23 +853,23 @@ system call.
 
 <p>You get this complaint ...
 <pre>
-  ==8230== Syscall param write(buf) lacks read permissions
-  ==8230==    at 0x4035E072: __libc_write
-  ==8230==    by 0x402A6E5E: __libc_start_main (libc-start.c:129)
-  ==8230==    by 0x80483B1: (within tests/badwrite)
-  ==8230==    by &lt;bogus frame pointer> ???
-  ==8230==    Address 0x3807E6D0 is 0 bytes inside a block of size 10 alloc'd
-  ==8230==    at 0x4004FEE6: malloc (ut_clientmalloc.c:539)
-  ==8230==    by 0x80484A0: main (tests/badwrite.c:6)
-  ==8230==    by 0x402A6E5E: __libc_start_main (libc-start.c:129)
-  ==8230==    by 0x80483B1: (within tests/badwrite)
+  Syscall param write(buf) contains uninitialised or unaddressable byte(s)
+     at 0x4035E072: __libc_write
+     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
+     by 0x80483B1: (within tests/badwrite)
+     by &lt;bogus frame pointer> ???
+     Address 0x3807E6D0 is 0 bytes inside a block of size 10 alloc'd
+     at 0x4004FEE6: malloc (ut_clientmalloc.c:539)
+     by 0x80484A0: main (tests/badwrite.c:6)
+     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
+     by 0x80483B1: (within tests/badwrite)
 </pre>
 
 <p>... because the program has tried to write uninitialised junk from
 the malloc'd block to the standard output.
 
 
-<h4>2.6.5&nbsp; Warning messages you might see</h4>
+<h4>2.6.6&nbsp; Warning messages you might see</h4>
 
 Most of these only appear if you run in verbose mode (enabled by
 <code>-v</code>):
@@ -799,11 +886,11 @@ Most of these only appear if you run in verbose mode (enabled by
      appearance of new errors after the first 50.  The 50 constant can
      be changed by recompiling Valgrind.
 <p>
-<li> <code>More than 500 errors detected.  I'm not reporting any more.
+<li> <code>More than 300 errors detected.  I'm not reporting any more.
      Final error counts may be inaccurate.  Go fix your
      program!</code>
      <br>
-     After 500 different errors have been detected, Valgrind ignores
+     After 300 different errors have been detected, Valgrind ignores
      any more.  It seems unlikely that collecting even more different
      ones would be of practical help to anybody, and it avoids the
      danger that Valgrind spends more and more of its time comparing
@@ -875,7 +962,7 @@ or another, you don't want Valgrind to tell you about.  Usually the
 reason is that the system libraries are buggy but unfixable, at least
 within the scope of the current debugging session.  Multiple
 suppresions files are allowed.  By default, Valgrind uses
-<code>linux24.supp</code> in the directory where it is installed.
+<code>$PREFIX/lib/valgrind/default.supp</code>.
 
 <p>
 You can ask to add suppressions from another file, by specifying
@@ -977,28 +1064,13 @@ you can freely mix the <code>obj:</code> and <code>fun:</code>
 styles of description within a single suppression record.
 
 
-<a name="install"></a>
-<h3>2.8&nbsp; Building and installing</h3>
-At the moment, very rudimentary.
-
-<p>The tarball is set up for a standard Red Hat 7.1 (6.2) machine.  To
-build, just do "make".  No configure script, no autoconf, no nothing.
-
-<p>The files needed for installation are: valgrind.so, valgring.so,
-valgrind, VERSION, redhat72.supp (or redhat62.supp). You can copy
-these to any directory you like. However, you then need to edit the
-shell script "valgrind". On line 4, set the environment variable
-<code>VALGRIND</code> to point to the directory you have copied the
-installation into.
-
-
-<a name="install"></a>
-<h3>2.9&nbsp; The Client Request mechanism</h3>
+<a name="clientreq"></a>
+<h3>2.8&nbsp; The Client Request mechanism</h3>
 
 Valgrind has a trapdoor mechanism via which the client program can
 pass all manner of requests and queries to Valgrind.  Internally, this
-is used extensively to make malloc, free, signals, etc, work, although
-you don't see that.
+is used extensively to make malloc, free, signals, threads, etc, work,
+although you don't see that.
 <p>
 For your convenience, a subset of these so-called client requests is
 provided to allow you to tell Valgrind facts about the behaviour of
@@ -1012,6 +1084,8 @@ make this work.  The macros therein have the magical property that
 they generate code in-line which Valgrind can spot.  However, the code
 does nothing when not run on Valgrind, so you are not forced to run
 your program on Valgrind just because you use the macros in this file.
+Also, you are not required to link your program with any extra
+supporting libraries.
 <p>
 A brief description of the available macros:
 <ul>
@@ -1070,14 +1144,107 @@ A brief description of the available macros:
     automatically discards this information when the stack
     retreats past such blocks.  Beware: hacky and flaky, and
     probably interacts badly with the new pthread support.
-</ul>
-</li>
 <p>
+<li><code>RUNNING_ON_VALGRIND</code>: returns 1 if running on
+    Valgrind, 0 if running on the real CPU.
+<p>
+<li><code>VALGRIND_DO_LEAK_CHECK</code>: run the memory leak detector
+    right now.  Returns no value.  I guess this could be used to
+    incrementally check for leaks between arbitrary places in the
+    program's execution.  Warning: not properly tested!
+</ul>
+<p>
+
+
+<a name="pthreads"></a>
+<h3>2.9&nbsp; Support for POSIX Pthreads</h3>
+
+As of late April 02, Valgrind supports programs which use POSIX
+pthreads.  Doing this has proved technically challenging and is still
+in progress, but it works well enough, as of 1 May 02, for significant 
+threaded applications to work.
+<p>
+It works as follows: threaded apps are (dynamically) linked against
+<code>libpthread.so</code>.  Usually this is the one installed with
+your Linux distribution.  Valgrind, however, supplies its own
+<code>libpthread.so</code> and automatically connects your program to
+it instead.
+<p>
+The fake <code>libpthread.so</code> and Valgrind cooperate to
+implement a user-space pthreads package.  This approach avoids the 
+horrible implementation problems of implementing a truly
+multiprocessor version of Valgrind, but it does mean that threaded
+apps run only on one CPU, even if you have a multiprocessor machine.
+<p>
+Valgrind schedules your threads in a round-robin fashion, with all
+threads having equal priority.  It switches threads every 20000 basic
+blocks (typically around 120000 x86 instructions), which means you'll
+get a much finer interleaving of thread executions than when run
+natively.  This in itself may cause your program to behave differently
+if you have some kind of concurrency, critical race, locking, or
+similar, bugs.
+<p>
+The current (1 May 02) state of pthread support is as follows.  Please
+note that things are advancing rapidly, so the situation may have
+improved by the time you read this -- check the web site for further
+updates.
+<ul>
+<li>Mutexes, condition variables, thread-specific data and
+    <code>pthread_once</code> currently work.
+<p>
+<li>Various attribute-like calls are handled but ignored.  
+    You get a warning message.
+<p>
+<li>The main big omission is proper cleanup support for cancellation.
+    <code>pthread_cancel</code> works, but instantly nukes the target
+    thread without giving it any chance to clean up.  Also, when a
+    thread exits, it does not run any cleanup handlers.
+<p>
+<li>Currently the following syscalls are thread-safe (nonblocking):
+    <code>write</code> <code>read</code> <code>nanosleep</code>
+    <code>sleep</code> <code>select</code> and <code>poll</code>.
+<p>
+<li>The POSIX requirement that each thread have its own
+    signal-blocking mask is not done; the signal handling mechanism is
+    thread-unaware and all signals are delivered to the main thread,
+    antidisirregardless.
+</ul>
+
+
+As of 1 May 02, the following programs now work fine on my RedHat 7.2
+box: Opera 6.0Beta2, KNode in KDE 3.0, Mozilla-0.9.2.1 and
+Galeon-0.11.3, both as supplied with RedHat 7.2.
+<p>
+Mozilla 1.0RC1 crashes because it jumps to location zero: <code>Jump
+to the invalid address stated on the next line</code>.  Other people
+have reported the same thing.  Despite considerable effort in tracking
+this down, I cannot figure out what's going on.  If you have a program
+which does this, is small enough that I have half a hope of making
+sense of it, and is open-source (or at least you'd be happy for me to
+look at), I'd be very grateful to have it.
+<p>
+On the other hand, I have received mail from at least one person
+who appears to be successful in running CVS builds of Mozilla on
+Valgrind.
+
+
+
+<a name="install"></a>
+<h3>2.10&nbsp; Building and installing</h3>
+
+We now use the standard Unix <code>./configure</code>,
+<code>make</code>, <code>make install</code> mechanism, and I have
+attempted to ensure that it works on machines with kernel 2.2 or 2.4
+and glibc 2.1.X or 2.2.X.  I don't think there is much else to say.
+There are no options apart from the usual <code>--prefix</code> that
+you should give to <code>./configure</code>.
+<p>
+Let me know if you have build problems.
 
 
 
 <a name="problems"></a>
-<h3>2.10&nbsp; If you have problems</h3>
+<h3>2.11&nbsp; If you have problems</h3>
 Mail me (<a href="mailto:jseward@acm.org">jseward@acm.org</a>).
 
 <p>See <a href="#limits">Section 4</a> for the known limitations of
@@ -1115,7 +1282,7 @@ which says whether or not the accompanying bit has a legitimate value.
 In the discussions which follow, this bit is referred to as the V
 (valid-value) bit.
 
-<p>Each byte in the system therefore has a 8 V bits which accompanies
+<p>Each byte in the system therefore has a 8 V bits which follow
 it wherever it goes.  For example, when the CPU loads a word-size item
 (4 bytes) from memory, it also loads the corresponding 32 V bits from
 a bitmap which stores the V bits for the process' entire address
@@ -1125,7 +1292,8 @@ stored back in the V-bit bitmap.
 
 <p>In short, each bit in the system has an associated V bit, which
 follows it around everywhere, even inside the CPU.  Yes, the CPU's
-(integer) registers have their own V bit vectors.
+(integer and <code>%eflags</code>) registers have their own V bit
+vectors.
 
 <p>Copying values around does not cause Valgrind to check for, or
 report on, errors.  However, when a value is used in a way which might
@@ -1166,7 +1334,7 @@ used to generate a memory address, and where control flow decision
 needs to be made.  Also, when a system call is detected, valgrind
 checks definedness of parameters as required.
 
-<p>If a check should detect undefinedness, and error message is
+<p>If a check should detect undefinedness, an error message is
 issued.  The resulting value is subsequently regarded as well-defined.
 To do otherwise would give long chains of error messages.  In effect,
 we say that undefined values are non-infectious.
@@ -1264,6 +1432,10 @@ themselves do not change the A bits, only consult them.
       example, mmap() magically makes files appear in the process's
       address space, so the A bits must be updated if mmap()
       succeeds.</li><br>
+      <p>
+
+  <li>Optionally, your program can tell Valgrind about such changes
+      explicitly, using the client request mechanism described above.
 </ul>
 
 
@@ -1450,7 +1622,7 @@ The following list of limitations seems depressingly long.  However,
 most programs actually work fine.
 
 <p>Valgrind will run x86-GNU/Linux ELF dynamically linked binaries, on
-a kernel 2.4.X system, subject to the following constraints:
+a kernel 2.2.X or 2.4.X system, subject to the following constraints:
 
 <ul>
   <li>No MMX, SSE, SSE2, 3DNow instructions.  If the translator
@@ -1462,11 +1634,13 @@ a kernel 2.4.X system, subject to the following constraints:
       the 486 instruction set.</li><br>
       <p>
 
-  <li>Multithreaded programs are not supported, since I haven't yet
-      figured out how to do this.  To be more specific, it is the
-      "clone" system call which is not supported.  A program calls
-      "clone" to create threads.  Valgrind will abort if this
-      happens.</li><nr>
+  <li>Pthreads support is improving, but there are still significant
+      limitations in that department.  See the section above on
+      Pthreads.  Note that your program must be dynamically linked
+      against <code>libpthread.so</code>, so that Valgrind can
+      substitute its own implementation at program startup time.  If
+      you're statically linked against it, things will fail
+      badly.</li><br>
       <p>
 
   <li>Valgrind assumes that the floating point registers are not used
@@ -1491,8 +1665,9 @@ a kernel 2.4.X system, subject to the following constraints:
       possible.</li><br>
       <p>
 
-  <li>I have no idea what happens if programs try to handle signals on
-      an alternate stack (sigaltstack).  YMMV.</li><br>
+  <li>Programs which try to handle signals on
+      an alternate stack (sigaltstack) are not supported, although
+      they could be, with a bit of effort.</li><br>
       <p>
 
   <li>Programs which switch stacks are not well handled.  Valgrind
@@ -1501,7 +1676,8 @@ a kernel 2.4.X system, subject to the following constraints:
       large change in %esp is as a result of the program switching
       stacks, or merely allocating a large object temporarily on the
       current stack -- yet Valgrind needs to handle the two situations
-      differently.</li><br>
+      differently.  1 May 02: this probably interacts badly with the
+      new pthread support.  I haven't checked properly.</li><br>
       <p>
 
   <li>x86 instructions, and system calls, have been implemented on
@@ -1527,50 +1703,30 @@ a kernel 2.4.X system, subject to the following constraints:
       cause is that Valgrind dynamically translates the original
       executable and never throws any translation away, except in
       those rare cases where self-modifying code is detected.
-      Translated, instrumented code is 8-12 times larger than the
+      Translated, instrumented code is 12-14 times larger than the
       original (!) so you can easily end up with 15+ MB of
-      translations when running (eg) a web browser.  There's not a lot
-      you can do about this -- use Valgrind on a fast machine with a lot
-      of memory and swap space.  At some point I may implement a LRU
-      caching scheme for translations, so as to bound the maximum
-      amount of memory devoted to them, to say 8 or 16 MB.</li>
+      translations when running (eg) a web browser.
+      </li>
 </ul>
 
 
 Programs which are known not to work are:
 
 <ul>
-  <li>Netscape 4.76 works pretty well on some platforms -- quite
-      nicely on my AMD K6-III (400 MHz).  I can surf, do mail, etc, no
-      problem.  On other platforms is has been observed to crash
-      during startup.  Despite much investigation I can't figure out
-      why.</li><br>
-      <p>
-
-  <li>kpackage (a KDE front end to rpm) dies because the CPUID
-      instruction is unimplemented.  Easy to fix.</li><br>
-      <p>
-
-  <li>knode (a KDE newsreader) tries to do multithreaded things, and
-      fails.</li><br>
-      <p>
-
   <li>emacs starts up but immediately concludes it is out of memory
       and aborts.  Emacs has it's own memory-management scheme, but I
       don't understand why this should interact so badly with
-      Valgrind.</li><br>
+      Valgrind.  Emacs works fine if you build it to use the standard
+      malloc/free routines.</li><br>
       <p>
-
-  <li>Gimp and Gnome and GTK-based apps die early on because
-      of unimplemented system call wrappers.  (I'm a KDE user :)
-      This wouldn't be hard to fix.
-      </li><br>
-      <p>
-
-  <li>As a consequence of me being a KDE user, almost all KDE apps
-      work ok -- except those which are multithreaded.
-      </li><br>
-      <p>
+  <li>Mozilla 1.0RC1 crashes because it jumps to location zero:
+      <code>Jump to the invalid address stated on the next
+      line</code>.  Other people have reported the same thing.
+      Despite considerable effort in tracking this down, I cannot
+      figure out what's going on.  If you have a program which does
+      this, is small enough that I have half a hope of making sense of
+      it, and is open-source (or at least you'd be happy for me to
+      look at), I'd be very grateful to have it.
 </ul>
 
 

@@ -419,19 +419,19 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
    *t_arg1 = Ity_INVALID;
    *t_arg2 = Ity_INVALID;
    switch (op) {
-      case Iop_Add8: case Iop_Sub8: case Iop_Adc8: case Iop_Sbb8:
+      case Iop_Add8: case Iop_Sub8: //case Iop_Adc8: case Iop_Sbb8:
       case Iop_Mul8: case Iop_Or8:  case Iop_And8: case Iop_Xor8:
          BINARY(Ity_I8,Ity_I8,Ity_I8);
 
-      case Iop_Add16: case Iop_Sub16: case Iop_Adc16: case Iop_Sbb16:
+      case Iop_Add16: case Iop_Sub16: //case Iop_Adc16: case Iop_Sbb16:
       case Iop_Mul16: case Iop_Or16:  case Iop_And16: case Iop_Xor16:
          BINARY(Ity_I16,Ity_I16,Ity_I16);
 
-      case Iop_Add32: case Iop_Sub32: case Iop_Adc32: case Iop_Sbb32:
+      case Iop_Add32: case Iop_Sub32: //case Iop_Adc32: case Iop_Sbb32:
       case Iop_Mul32: case Iop_Or32:  case Iop_And32: case Iop_Xor32:
          BINARY(Ity_I32,Ity_I32,Ity_I32);
 
-      case Iop_Add64: case Iop_Sub64: case Iop_Adc64: case Iop_Sbb64:
+      case Iop_Add64: case Iop_Sub64: //case Iop_Adc64: case Iop_Sbb64:
       case Iop_Mul64: case Iop_Or64:  case Iop_And64: case Iop_Xor64:
          BINARY(Ity_I64,Ity_I64,Ity_I64);
 

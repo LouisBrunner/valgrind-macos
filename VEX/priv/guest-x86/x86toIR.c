@@ -326,7 +326,7 @@ static IROp mkSizedOp ( IRType ty, IROp op8 )
    Int adj;
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
    vassert(op8 == Iop_Add8 || op8 == Iop_Sub8 
-           || op8 == Iop_Adc8 || op8 == Iop_Sbb8 
+           // || op8 == Iop_Adc8 || op8 == Iop_Sbb8 
            || op8 == Iop_Mul8 
            || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
            || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
@@ -1921,7 +1921,6 @@ UInt dis_Grp1 ( UChar sorb,
                 UInt delta, UChar modrm, 
                 Int am_sz, Int d_sz, Int sz, UInt d32 )
 {
-   IROp    op8;
    Int     len;
    UChar   dis_buf[50];
    IRType  ty   = szToITy(sz);
@@ -1929,10 +1928,12 @@ UInt dis_Grp1 ( UChar sorb,
    IRTemp  src  = newTemp(ty);
    IRTemp  dst0 = newTemp(ty);
    IRTemp  addr = INVALID_IRTEMP;
+   IROp    op8  = Iop_INVALID;
 
    switch (gregOfRM(modrm)) {
       case 0: op8 = Iop_Add8; break;  case 1: op8 = Iop_Or8;  break;
-      case 2: op8 = Iop_Adc8; break;  //case 3: op8 = Iop_Sbb8; break;
+      case 2: break;  // ADC
+      case 3: break;  // SBB
       case 4: op8 = Iop_And8; break;  case 5: op8 = Iop_Sub8; break;
       case 6: op8 = Iop_Xor8; break;  case 7: op8 = Iop_Sub8; break;
       default: vpanic("dis_Grp1: unhandled case");
@@ -1940,7 +1941,7 @@ UInt dis_Grp1 ( UChar sorb,
 
    if (epartIsReg(modrm)) {
       vassert(am_sz == 1);
-      vassert(op8 != Iop_Adc8 && op8 != Iop_Sbb8);
+      vassert(op8 != Iop_INVALID);
 
       assign(dst0, getIReg(sz,eregOfRM(modrm)));
       assign(src,  mkU(ty,d32));
@@ -1960,10 +1961,10 @@ UInt dis_Grp1 ( UChar sorb,
       assign(dst0, loadLE(ty,mkexpr(addr)));
       assign(src, mkU(ty,d32));
 
-      if (op8 == Iop_Adc8) {
+      if (gregOfRM(modrm) == 2 /* ADC */) {
          helper_ADC( sz, dst1, dst0, src );
       } else 
-      if (op8 == Iop_Sbb8) {
+      if (gregOfRM(modrm) == 3 /* SBB */) {
          vassert(0);
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));

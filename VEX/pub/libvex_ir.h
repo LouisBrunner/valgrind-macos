@@ -69,11 +69,11 @@ typedef
    enum { 
       /* Do not change this ordering.  The IR generators
          rely on (eg) Iop_Add64 == IopAdd8 + 3. */
-      Iop_Add8=0x13000,  
-                 Iop_Add16,  Iop_Add32,  Iop_Add64,
+      Iop_INVALID=0x13000,
+      Iop_Add8,  Iop_Add16,  Iop_Add32,  Iop_Add64,
       Iop_Sub8,  Iop_Sub16,  Iop_Sub32,  Iop_Sub64,
-      Iop_Adc8,  Iop_Adc16,  Iop_Adc32,  Iop_Adc64,
-      Iop_Sbb8,  Iop_Sbb16,  Iop_Sbb32,  Iop_Sbb64,
+//Iop_Adc8,  Iop_Adc16,  Iop_Adc32,  Iop_Adc64,
+//Iop_Sbb8,  Iop_Sbb16,  Iop_Sbb32,  Iop_Sbb64,
       /* Signless mul.  MullS/MullU is elsewhere. */
       Iop_Mul8,  Iop_Mul16,  Iop_Mul32,  Iop_Mul64,
       Iop_Or8,   Iop_Or16,   Iop_Or32,   Iop_Or64,

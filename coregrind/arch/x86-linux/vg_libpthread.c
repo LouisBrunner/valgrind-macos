@@ -79,6 +79,8 @@ static
 int my_do_syscall2 ( int syscallno, 
                      int arg1, int arg2 );
 
+__attribute__((weak))
+ssize_t write(int fd, const void *buf, size_t count);
 
 /* ---------------------------------------------------------------------
    Helpers.  We have to be pretty self-sufficient.

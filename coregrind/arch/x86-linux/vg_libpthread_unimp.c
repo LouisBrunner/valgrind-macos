@@ -48,9 +48,9 @@ void _IO_ftrylockfile ( void )  { unimp("_IO_ftrylockfile"); }
 //void __fcntl ( void )  { unimp("__fcntl"); }
 //void __fork ( void )  { unimp("__fork"); }
 //void __h_errno_location ( void )  { unimp("__h_errno_location"); }
-void __libc_allocate_rtsig ( void )  { unimp("__libc_allocate_rtsig"); }
-void __libc_current_sigrtmax ( void )  { unimp("__libc_current_sigrtmax"); }
-void __libc_current_sigrtmin ( void )  { unimp("__libc_current_sigrtmin"); }
+//void __libc_allocate_rtsig ( void )  { unimp("__libc_allocate_rtsig"); }
+//void __libc_current_sigrtmax ( void )  { unimp("__libc_current_sigrtmax"); }
+//void __libc_current_sigrtmin ( void )  { unimp("__libc_current_sigrtmin"); }
 //void __lseek ( void )  { unimp("__lseek"); }
 //void __open ( void )  { unimp("__open"); }
 //void __open64 ( void )  { unimp("__open64"); }

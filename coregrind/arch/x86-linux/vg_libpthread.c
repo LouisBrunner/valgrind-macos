@@ -2939,6 +2939,37 @@ int msgrcv(int msqid, void* msgp, size_t msgsz,
    return VGR_(msgrcv)(msqid, msgp, msgsz, msgtyp, msgflg );
 }
 
+
+/* ---------------------------------------------------------------------
+   The glibc sources say that returning -1 in these 3 functions
+   causes real time signals not to be used.
+   ------------------------------------------------------------------ */
+
+int __libc_current_sigrtmin (void)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      kludged("__libc_current_sigrtmin");
+   return -1;
+}
+
+int __libc_current_sigrtmax (void)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      kludged("__libc_current_sigrtmax");
+   return -1;
+}
+
+int __libc_allocate_rtsig (int high)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      kludged("__libc_allocate_rtsig");
+   return -1;
+}
+
+
 /* ---------------------------------------------------------------------
    B'stard.
    ------------------------------------------------------------------ */

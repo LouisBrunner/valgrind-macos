@@ -65,9 +65,13 @@ typedef
       ULong  guest_CC_DEP1;
       ULong  guest_CC_DEP2;
       ULong  guest_CC_NDEP;
+      /* EIP */
+      ULong  guest_RIP;
       /* Probably a lot more stuff too. 
+         D,ID flags
          16  128-bit SSE registers
          all the old x87 FPU gunk
+         segment registers
       */
 
       /* Padding to make it have an 8-aligned size */

@@ -62,7 +62,7 @@ int __GI_raise(int) __attribute__((alias("raise"), visibility("protected")));
    message instead of "raise" */
 int gsignal(int sig)
 {
-   raise(sig);
+   return raise(sig);
 }
 
 /* ---------------------------------------------------------------------

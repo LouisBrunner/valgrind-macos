@@ -65,7 +65,7 @@ static int scan_auxv(void)
 	 break;
 
       case AT_UME_EXECFD:
-	 kp.execfd = auxv->a_val;
+	 kp.vgexecfd = auxv->a_val;
 	 found |= 2;
 	 break;
       }
@@ -593,7 +593,7 @@ int main(int argc, char **argv)
 
    if (!scan_auxv()) {
       fprintf(stderr, "stage2 must be launched by stage1\n");
-      exit(1);
+      exit(127);
    }
 
    if (0) {
@@ -867,7 +867,7 @@ int main(int argc, char **argv)
 
       fprintf(stderr, "Aborting: couldn't initialize valgrind\n");
       list_tools();
-      exit(1);
+      exit(127);
    }
    
    /* Work out overall shape of the address space. This tries to give
@@ -900,11 +900,13 @@ int main(int argc, char **argv)
    info.setbrk = 0;
    info.argv = cl_argv;
 
+   kp.clexecfd = open(exec, O_RDONLY);
+
    {
       int ret = do_exec(exec, &info);
       if (ret != 0) {
 	 fprintf(stderr, "do_exec(%s) failed: %s\n", exec, strerror(ret));
-	 exit(1);
+	 exit(127);
       }
    }
 

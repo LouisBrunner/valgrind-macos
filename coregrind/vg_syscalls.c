@@ -1716,7 +1716,7 @@ PRE(execve)
       exec = VG_(arena_malloc)(VG_AR_CORE, VG_(strlen)(exec) + 7 /* --exec= */ + 1 /* \0 */);
 
       VG_(sprintf)(exec, "--exec=%s", (Char *)arg1);
-      VG_(sprintf)(exename, "/proc/self/fd/%d", VG_(execfd));
+      VG_(sprintf)(exename, "/proc/self/fd/%d", VG_(vgexecfd));
 
       optlen += VG_(strlen)(exec)+1;
 

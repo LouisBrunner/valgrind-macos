@@ -608,6 +608,11 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
       gid_t groups[32];
       int ngrp = getgroups(32, groups);
 
+      if (st.st_mode & (S_ISUID | S_ISGID)) {
+	 fprintf(stderr, "Can't execute suid/sgid executable %s\n", exe);
+	 return EACCES;
+      }
+
       if (uid == st.st_uid && !(st.st_mode & S_IXUSR))
 	 return EACCES;
 

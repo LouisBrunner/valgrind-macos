@@ -3,9 +3,18 @@ noinst_HEADERS = \
 
 EXTRA_DIST =		\
 	Make.inc	\
-	stage2.lds	\
 	ume_archdefs.c	\
 	ume_archdefs.h	\
 	ume_entry.S	\
 	ume_go.c
 
+BUILT_SOURCES = stage2.lds
+CLEANFILES = stage2.lds
+
+# Extract ld's default linker script and hack it to our needs
+stage2.lds: Makefile
+	ld --verbose | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/d' \
+		-e 's/ENTRY(_start)/ENTRY(_ume_entry)/' \
+		-e 's/0x08048000/kickstart_base/' > $@ || rm -f $@

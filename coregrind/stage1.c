@@ -135,9 +135,7 @@ static void hoops(void)
    info.setbrk = 1;		/* ask do_exec to move the brk-base */
    info.argv = NULL;
 
-   strcpy(buf, valgrind_lib);
-   strcat(buf, "/");
-   strcat(buf, stage2);
+   snprintf(buf, sizeof(buf), "%s/%s", valgrind_lib, stage2);
 
    err = do_exec(buf, &info);
 

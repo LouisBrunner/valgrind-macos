@@ -1335,7 +1335,8 @@ typedef struct {
    Char **argv;
    const Char *libdir;		/* library directory                    */
 
-   Int  execfd;			/* fd of our own (stage1) executable    */
+   Int  vgexecfd;		/* fd of our own (stage1) executable    */
+   Int  clexecfd;		/* fd of the client executable          */
 
    Addr client_base;		/* start of client address space	*/
    Addr	client_end;		/* end of client address space		*/
@@ -1384,7 +1385,10 @@ extern Addr VG_(valgrind_mmap_end);
 extern Addr VG_(valgrind_end);
 
 /* stage1 executable file descriptor */
-extern Int  VG_(execfd);
+extern Int  VG_(vgexecfd);
+
+/* client executable file descriptor */
+extern Int  VG_(clexecfd);
 
 /* Path to all our library/aux files */
 extern const Char *VG_(libdir);

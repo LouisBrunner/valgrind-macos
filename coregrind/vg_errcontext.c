@@ -265,6 +265,8 @@ void do_actions_on_error(Error* err, Bool allow_GDB_attach)
          m_esp = tst->m_esp;
          m_ebp = tst->m_ebp;
       }
+      VG_(printf)("starting gdb with eip=%p esp=%p ebp=%p\n",
+		  m_eip, m_esp, m_ebp);
       VG_(swizzle_esp_then_start_GDB)( m_eip, m_esp, m_ebp );
    }
    /* Or maybe we want to generate the error's suppression? */

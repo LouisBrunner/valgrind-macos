@@ -135,7 +135,10 @@ Addr VG_(valgrind_mmap_end);	/* valgrind's mmaps are between valgrind_base and h
 Addr VG_(valgrind_end);
 
 /* stage1 (main) executable */
-Int  VG_(execfd) = -1;
+Int  VG_(vgexecfd) = -1;
+
+/* client executable */
+Int  VG_(clexecfd) = -1;
 
 /* Path to library directory */
 const Char *VG_(libdir) = VG_LIBDIR;
@@ -1389,8 +1392,10 @@ void VG_(main) ( const KickstartParams *kp, void (*tool_init)(void), void *tool_
 
    vg_assert(VG_(clstk_end) == VG_(client_end));
 
-   if (kp->execfd != -1)
-      VG_(execfd) = VG_(safe_fd)(kp->execfd);
+   if (kp->vgexecfd != -1)
+      VG_(vgexecfd) = VG_(safe_fd)(kp->vgexecfd);
+   if (kp->clexecfd != -1)
+      VG_(clexecfd) = VG_(safe_fd)(kp->clexecfd);
 
    if (0) {
       if (VG_(have_ssestate))
@@ -1709,13 +1714,13 @@ void VG_(mash_colon_env)(Char *varp, const Char *remove_pattern)
    service after an error has been shown, so she can poke around and
    look at parameters, memory, etc.  You can't meaningfully get GDB to
    continue the program, though; to continue, quit GDB.  */
-extern void VG_(start_GDB_whilst_on_client_stack) ( void )
+void VG_(start_GDB_whilst_on_client_stack) ( void )
 {
    Int   res;
    UChar buf[100];
 
-   VG_(sprintf)(buf, "%s -nw /proc/%d/exe %d",
-                VG_(clo_GDB_path), VG_(getpid)(), VG_(getpid)());
+   VG_(sprintf)(buf, "%s -nw /proc/%d/fd/%d %d",
+                VG_(clo_GDB_path), VG_(getpid)(), VG_(clexecfd), VG_(getpid)());
    VG_(message)(Vg_UserMsg, "starting GDB with cmd: %s", buf);
    res = VG_(system)(buf);
    if (res == 0) {      

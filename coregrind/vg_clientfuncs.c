@@ -584,7 +584,7 @@ void VG_(__libc_freeres_wrapper)( void )
 {
    int res;
    extern void __libc_freeres(void);
-   //__libc_freeres();
+   __libc_freeres();
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__LIBC_FREERES_DONE, 0, 0, 0, 0);
    /*NOTREACHED*/

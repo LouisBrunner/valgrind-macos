@@ -1479,30 +1479,41 @@ VgSchedReturnCode VG_(scheduler) ( void )
                __libc_freeres does some invalid frees which crash
                the unprotected malloc/free system. */
 
-            /* If __NR_exit, remember the supplied argument. */
-            if (VG_(threads)[tid].m_eax == __NR_exit)
+            if (VG_(threads)[tid].m_eax == __NR_exit) {
+
+               /* If __NR_exit, remember the supplied argument. */
                VG_(exitcode) = VG_(threads)[tid].m_ebx; /* syscall arg1 */
 
-            if (VG_(threads)[tid].m_eax == __NR_exit 
-                && ! VG_(needs).libc_freeres) {
-               if (VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
-                  VG_(message)(Vg_DebugMsg, 
-                     "Caught __NR_exit; quitting");
-               }
-               return VgSrc_ExitSyscall;
+               /* Only run __libc_freeres if the skin says it's ok and
+                  it hasn't been overridden with --run-libc-freeres=no
+                  on the command line. */
+
+               if (VG_(needs).libc_freeres && VG_(clo_run_libc_freeres)) {
+
+                  if (VG_(clo_verbosity) >= 2 
+                      || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
+                     VG_(message)(Vg_DebugMsg, 
+                        "Caught __NR_exit; running __libc_freeres()");
+                  }
+                  VG_(nuke_all_threads_except) ( tid );
+                  VG_(threads)[tid].m_eip = (UInt)(&VG_(__libc_freeres_wrapper));
+                  vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+                  goto stage1; /* party on, dudes (but not for much longer :) */
+
+               } else {
+                  /* We won't run __libc_freeres; just exit now. */
+                  if (VG_(clo_verbosity) >= 2 
+                      || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
+                     VG_(message)(Vg_DebugMsg, 
+                        "Caught __NR_exit; quitting");
+                  }
+                  return VgSrc_ExitSyscall;
+	       }
+
             }
 
-            if (VG_(threads)[tid].m_eax == __NR_exit) {
-               vg_assert(VG_(needs).libc_freeres);
-               if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
-                  VG_(message)(Vg_DebugMsg, 
-                     "Caught __NR_exit; running __libc_freeres()");
-               }
-               VG_(nuke_all_threads_except) ( tid );
-               VG_(threads)[tid].m_eip = (UInt)(&VG_(__libc_freeres_wrapper));
-	       vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
-               goto stage1; /* party on, dudes (but not for much longer :) */
-            }
+            /* We've dealt with __NR_exit at this point. */
+            vg_assert(VG_(threads)[tid].m_eax != __NR_exit);
 
             /* Trap syscalls to __NR_sched_yield and just have this
                thread yield instead.  Not essential, just an

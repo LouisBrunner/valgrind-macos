@@ -585,18 +585,39 @@ follows:
       in g++-3.0.4.
       </li><br><p>
 
+  <li><code>--run-libc-freeres=yes</code> [the default]<br>
+      <code>--run-libc-freeres=no</code>
+      <p>The GNU C library (<code>libc.so</code>), which is used by
+      all programs, may allocate memory for its own uses.  Usually it
+      doesn't bother to free that memory when the program ends - there
+      would be no point, since the Linux kernel reclaims all process
+      resources when a process exits anyway, so it would just slow
+      things down.
+      <p>
+      The glibc authors realised that this behaviour causes leak checkers, such
+      as Valgrind, to falsely report leaks in glibc, when a leak check
+      is done at exit.  In order to avoid this, they provided a
+      routine called <code>__libc_freeres</code> specifically to make
+      glibc release all memory it has allocated.  The MemCheck and
+      AddrCheck skins (normal and lightweight valgrinding) therefore
+      try and run <code>__libc_freeres</code> at exit.
+      <p>
+      Unfortunately, in some versions of glibc,
+      <code>__libc_freeres</code> is sufficiently buggy to cause
+      segmentation faults.  This is particularly noticeable on Red Hat
+      7.1.  So this flag is provided in order to inhibit the run of
+      <code>__libc_freeres</code>.  If your program seems to run fine
+      on valgrind, but segfaults at exit, you may find that
+      <code>--run-libc-freeres=no</code> fixes that, although at the
+      cost of possibly falsely reporting space leaks in
+      <code>libc.so</code>.
+
   <li><code>--error-limit=yes</code> [default]<br>
       <code>--error-limit=no</code> <p>When enabled, valgrind stops
       reporting errors after 30000 in total, or 300 different ones,
       have been seen.  This is to stop the error tracking machinery
       from becoming a huge performance overhead in programs with many
       errors.  </li><br><p>
-
-  <li><code>--cachesim=no</code> [default]<br>
-      <code>--cachesim=yes</code> <p>When enabled, turns off memory
-      checking, and turns on cache profiling.  Cache profiling is
-      described in detail in <a href="#cache">Section 7</a>.
-      </li><br><p>
 
   <li><code>--weird-hacks=hack1,hack2,...</code>
       Pass miscellaneous hints to Valgrind which slightly modify the

@@ -204,6 +204,12 @@ extern Int   VG_(clo_dump_error);
 extern Int   VG_(clo_backtrace_size);
 /* Engage miscellaneous wierd hacks needed for some progs. */
 extern Char* VG_(clo_weird_hacks);
+/* Should we run __libc_freeres at exit?  Sometimes causes crashes.
+   Default: YES.  Note this is subservient to VG_(needs).libc_freeres;
+   if the latter says False, then the setting of VG_(clo_weird_hacks)
+   is ignored.  Ie if a skin says no, I don't want this to run, that
+   cannot be overridden from the command line. */
+extern Bool  VG_(clo_run_libc_freeres);
 
 
 /* ---------------------------------------------------------------------

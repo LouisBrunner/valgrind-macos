@@ -550,6 +550,7 @@ ULong  VG_(clo_stop_after)     = 1000000000000LL;
 Int    VG_(clo_dump_error)     = 0;
 Int    VG_(clo_backtrace_size) = 4;
 Char*  VG_(clo_weird_hacks)    = NULL;
+Bool   VG_(clo_run_libc_freeres) = True;
 
 /* This Bool is needed by wrappers in vg_clientmalloc.c to decide how
    to behave.  Initially we say False. */
@@ -618,6 +619,7 @@ static void usage ( void )
 "    --sloppy-malloc=no|yes    round malloc sizes to next word? [no]\n"
 "    --alignment=<number>      set minimum alignment of allocations [4]\n"
 "    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
+"    --run-libc-freeres=no|yes Free up glibc memory at exit? [yes]\n"
 "    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
 "    --suppressions=<filename> suppress errors described in\n"
 "                              suppressions file <filename>\n"
@@ -868,6 +870,11 @@ static void process_cmd_line_options ( void )
          VG_(clo_trace_children) = True;
       else if (STREQ(argv[i], "--trace-children=no"))
          VG_(clo_trace_children) = False;
+
+      else if (STREQ(argv[i], "--run-libc-freeres=yes"))
+         VG_(clo_run_libc_freeres) = True;
+      else if (STREQ(argv[i], "--run-libc-freeres=no"))
+         VG_(clo_run_libc_freeres) = False;
 
       else if (STREQN(15, argv[i], "--sanity-level="))
          VG_(sanity_level) = (Int)VG_(atoll)(&argv[i][15]);

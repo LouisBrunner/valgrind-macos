@@ -166,31 +166,20 @@ Bool VG_(is_action_requested) ( Char* action, Bool* clo )
      stored thread state, not from VG_(baseBlock).  
 */
 static __inline__
-void construct_error ( Error* err, ThreadState* tst, ErrorKind ekind, Addr a,
-                       Char* s, void* extra, ExeContext* where,
-                       /*out*/Addr* m_eip, /*out*/Addr* m_esp,
-                       /*out*/Addr* m_ebp )
+void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
+                       Char* s, void* extra, ExeContext* where )
 {
+   sk_assert(tid < VG_N_THREADS);
+
    /* Core-only parts */
    err->next     = NULL;
    err->supp     = NULL;
    err->count    = 1;
+   err->tid      = tid;
    if (NULL == where)
-      err->where = VG_(get_ExeContext)( tst );
+      err->where = VG_(get_ExeContext)( tid );
    else
       err->where = where;
-
-   if (NULL == tst) {
-      err->tid   = VG_(get_current_tid)();
-      *m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
-      *m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-      *m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
-   } else {
-      err->tid   = tst->tid;
-      *m_eip = tst->m_eip;
-      *m_esp = tst->m_esp;
-      *m_ebp = tst->m_ebp;
-   }
 
    /* Skin-relevant parts */
    err->ekind  = ekind;
@@ -199,7 +188,7 @@ void construct_error ( Error* err, ThreadState* tst, ErrorKind ekind, Addr a,
    err->extra  = extra;
 
    /* sanity... */
-   vg_assert(err->tid >= 0 && err->tid < VG_N_THREADS);
+   vg_assert( tid < VG_N_THREADS );
 }
 
 void VG_(gen_suppression)(Error* err)
@@ -251,13 +240,24 @@ void VG_(gen_suppression)(Error* err)
 }
 
 static 
-void do_actions_on_error(Error* err, Bool allow_GDB_attach,
-                         Addr m_eip, Addr m_esp, Addr m_ebp )
+void do_actions_on_error(Error* err, Bool allow_GDB_attach)
 {
    /* Perhaps we want a GDB attach at this point? */
    if (allow_GDB_attach &&
        VG_(is_action_requested)( "Attach to GDB", & VG_(clo_GDB_attach) )) 
    {
+      Addr m_eip, m_esp, m_ebp; 
+      
+      if (VG_(is_running_thread)( err->tid )) {
+         m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
+         m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
+         m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
+      } else {
+         ThreadState* tst = & VG_(threads)[ err->tid ];
+         m_eip = tst->m_eip;
+         m_esp = tst->m_esp;
+         m_ebp = tst->m_ebp;
+      }
       VG_(swizzle_esp_then_start_GDB)( m_eip, m_esp, m_ebp );
    }
    /* Or maybe we want to generate the error's suppression? */
@@ -274,10 +274,9 @@ static Bool is_first_shown_context = True;
 /* Top-level entry point to the error management subsystem.
    All detected errors are notified here; this routine decides if/when the
    user should see the error. */
-void VG_(maybe_record_error) ( ThreadState* tst, 
+void VG_(maybe_record_error) ( ThreadId tid, 
                                ErrorKind ekind, Addr a, Char* s, void* extra )
 {
-          Addr   m_eip, m_esp, m_ebp;
           Error  err;
           Error* p;
           Error* p_prev;
@@ -342,8 +341,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    }
 
    /* Build ourselves the error */
-   construct_error ( &err, tst, ekind, a, s, extra, NULL,
-                     &m_eip, &m_esp, &m_ebp );
+   construct_error ( &err, tid, ekind, a, s, extra, NULL );
 
    /* First, see if we've got an error record matching this one. */
    p      = vg_errors;
@@ -416,7 +414,7 @@ void VG_(maybe_record_error) ( ThreadState* tst,
       pp_Error(p, False);
       is_first_shown_context = False;
       vg_n_errs_shown++;
-      do_actions_on_error(p, /*allow_GDB_attach*/True, m_eip, m_esp, m_ebp );
+      do_actions_on_error(p, /*allow_GDB_attach*/True);
    } else {
       vg_n_errs_suppressed++;
       p->supp->count++;
@@ -430,16 +428,14 @@ void VG_(maybe_record_error) ( ThreadState* tst,
    suppressed.  Bool `print_error' dictates whether to print the error. 
    Bool `count_error' dictates whether to count the error in VG_(n_errs_found)
 */
-Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind, Addr a, Char* s,
+Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, Char* s,
                          void* extra, ExeContext* where, Bool print_error,
                          Bool allow_GDB_attach, Bool count_error )
 {
    Error  err;
-   Addr   m_eip, m_esp, m_ebp;
 
    /* Build ourselves the error */
-   construct_error ( &err, tst, ekind, a, s, extra, where,
-                     &m_eip, &m_esp, &m_ebp );
+   construct_error ( &err, tid, ekind, a, s, extra, where );
 
    /* Unless it's suppressed, we're going to show it.  Don't need to make
       a copy, because it's only temporary anyway.
@@ -459,7 +455,7 @@ Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind, Addr a, Char* s,
          pp_Error(&err, False);
          is_first_shown_context = False;
       }
-      do_actions_on_error(&err, allow_GDB_attach, m_eip, m_esp, m_ebp);
+      do_actions_on_error(&err, allow_GDB_attach);
 
       return False;
 
@@ -479,8 +475,7 @@ Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind, Addr a, Char* s,
 void VG_(record_pthread_error) ( ThreadId tid, Char* msg )
 {
    if (! VG_(needs).core_errors) return;
-   VG_(maybe_record_error)( &VG_(threads)[tid], PThreadErr, /*addr*/0, msg, 
-                            /*extra*/NULL );
+   VG_(maybe_record_error)( tid, PThreadErr, /*addr*/0, msg, /*extra*/NULL );
 }
 
 /*------------------------------*/

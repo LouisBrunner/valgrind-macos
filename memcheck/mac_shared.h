@@ -289,22 +289,20 @@ extern void MAC_(clear_MAC_Error)          ( MAC_Error* err_extra );
 
 extern Bool MAC_(shared_recognised_suppression) ( Char* name, Supp* su );
 
-extern void MAC_(new_block) ( ThreadState* tst, Addr p, UInt size,
-                              UInt rzB, Bool is_zeroed,
-                              MAC_AllocKind kind );
-extern void MAC_(handle_free) ( ThreadState* tst, Addr p, UInt rzB,
-                                MAC_AllocKind kind );
+extern void MAC_(new_block) ( Addr p, UInt size, UInt rzB,
+                              Bool is_zeroed, MAC_AllocKind kind );
+extern void MAC_(handle_free) ( Addr p, UInt rzB, MAC_AllocKind kind );
 
-extern void MAC_(record_address_error)     ( ThreadState* tst, Addr a,
+extern void MAC_(record_address_error)     ( ThreadId tid, Addr a,
                                              Int size, Bool isWrite );
-extern void MAC_(record_core_mem_error)    ( ThreadState* tst, Bool isWrite,
+extern void MAC_(record_core_mem_error)    ( ThreadId tid, Bool isWrite,
                                              Char* s );
-extern void MAC_(record_param_error)       ( ThreadState* tst, Addr a,   
+extern void MAC_(record_param_error)       ( ThreadId tid, Addr a,   
                                              Bool isWriteLack, Char* msg );
-extern void MAC_(record_jump_error)        ( ThreadState* tst, Addr a );
-extern void MAC_(record_free_error)        ( ThreadState* tst, Addr a );
-extern void MAC_(record_freemismatch_error)( ThreadState* tst, Addr a );
-extern void MAC_(record_overlap_error)     ( ThreadState* tst, Char* function );
+extern void MAC_(record_jump_error)        ( ThreadId tid, Addr a );
+extern void MAC_(record_free_error)        ( ThreadId tid, Addr a );
+extern void MAC_(record_freemismatch_error)( ThreadId tid, Addr a );
+extern void MAC_(record_overlap_error)     ( Char* function );
 
 extern void MAC_(pp_shared_SkinError)      ( Error* err);
 
@@ -313,8 +311,8 @@ extern MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk)( Bool (*p)(MAC_Chunk*) );
 extern void MAC_(common_pre_clo_init) ( void );
 extern void MAC_(common_fini)         ( void (*leak_check)(void) );
 
-extern Bool MAC_(handle_common_client_requests) 
-                  ( ThreadState* tst, UInt* arg_block, UInt* ret );
+extern Bool MAC_(handle_common_client_requests) ( ThreadId tid, 
+                                                  UInt* arg_block, UInt* ret );
 
 extern void MAC_(print_malloc_stats) ( void );
 

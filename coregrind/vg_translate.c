@@ -2307,7 +2307,7 @@ static void vg_realreg_liveness_analysis ( UCodeBlock* cb )
 
    'tst' is the identity of the thread needing this block.
 */
-void VG_(translate) ( /*IN*/  ThreadState* tst, 
+void VG_(translate) ( /*IN*/  ThreadId tid, 
 		      /*IN*/  Addr  orig_addr,  
                       /*OUT*/ UInt* orig_size,
                       /*OUT*/ Addr* trans_addr, 
@@ -2349,7 +2349,7 @@ void VG_(translate) ( /*IN*/  ThreadState* tst,
       = VG_(overall_in_count) > notrace_until_limit;
 
    if (!debugging_translation)
-      VG_TRACK( pre_mem_read, Vg_CoreTranslate, tst, "", orig_addr, 1 );
+      VG_TRACK( pre_mem_read, Vg_CoreTranslate, tid, "", orig_addr, 1 );
 
    cb = VG_(alloc_UCodeBlock)();
    cb->orig_eip = orig_addr;

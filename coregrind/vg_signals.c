@@ -991,7 +991,7 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
               == ((Char*)(esp_top_of_frame)) );
 
    /* retaddr, sigNo, psigInfo, puContext fields are to be written */
-   VG_TRACK( pre_mem_write, Vg_CoreSignal, tst, "signal handler frame", 
+   VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame", 
                             (Addr)esp, 16 );
    frame->retaddr    = (UInt)(&VG_(signalreturn_bogusRA));
    frame->sigNo      = sigNo;

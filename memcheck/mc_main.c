@@ -608,8 +608,8 @@ static Bool mc_check_readable_asciiz ( Addr a, Addr* bad_addr )
 /*------------------------------------------------------------*/
 
 static
-void mc_check_is_writable ( CorePart part, ThreadState* tst,
-                            Char* s, Addr base, UInt size )
+void mc_check_is_writable ( CorePart part, ThreadId tid, Char* s,
+                            Addr base, UInt size )
 {
    Bool ok;
    Addr bad_addr;
@@ -622,12 +622,12 @@ void mc_check_is_writable ( CorePart part, ThreadState* tst,
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         MAC_(record_param_error) ( tst, bad_addr, /*isWrite =*/True, s );
+         MAC_(record_param_error) ( tid, bad_addr, /*isWrite =*/True, s );
          break;
 
       case Vg_CorePThread:
       case Vg_CoreSignal:
-         MAC_(record_core_mem_error)( tst, /*isWrite=*/True, s );
+         MAC_(record_core_mem_error)( tid, /*isWrite=*/True, s );
          break;
 
       default:
@@ -639,8 +639,8 @@ void mc_check_is_writable ( CorePart part, ThreadState* tst,
 }
 
 static
-void mc_check_is_readable ( CorePart part, ThreadState* tst,
-                            Char* s, Addr base, UInt size )
+void mc_check_is_readable ( CorePart part, ThreadId tid, Char* s,
+                            Addr base, UInt size )
 {     
    Bool ok;
    Addr bad_addr;
@@ -653,17 +653,17 @@ void mc_check_is_readable ( CorePart part, ThreadState* tst,
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         MAC_(record_param_error) ( tst, bad_addr, /*isWrite =*/False, s );
+         MAC_(record_param_error) ( tid, bad_addr, /*isWrite =*/False, s );
          break;
       
       case Vg_CorePThread:
-         MAC_(record_core_mem_error)( tst, /*isWrite=*/False, s );
+         MAC_(record_core_mem_error)( tid, /*isWrite=*/False, s );
          break;
 
       /* If we're being asked to jump to a silly address, record an error 
          message before potentially crashing the entire system. */
       case Vg_CoreTranslate:
-         MAC_(record_jump_error)( tst, bad_addr );
+         MAC_(record_jump_error)( tid, bad_addr );
          break;
 
       default:
@@ -674,7 +674,7 @@ void mc_check_is_readable ( CorePart part, ThreadState* tst,
 }
 
 static
-void mc_check_is_readable_asciiz ( CorePart part, ThreadState* tst,
+void mc_check_is_readable_asciiz ( CorePart part, ThreadId tid,
                                    Char* s, Addr str )
 {
    Bool ok = True;
@@ -686,7 +686,7 @@ void mc_check_is_readable_asciiz ( CorePart part, ThreadState* tst,
    sk_assert(part == Vg_CoreSysCall);
    ok = mc_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (!ok) {
-      MAC_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
+      MAC_(record_param_error) ( tid, bad_addr, /*is_writable =*/False, s );
    }
 
    VGP_POPCC(VgpCheckMem);
@@ -959,7 +959,7 @@ static UInt mc_rd_V4_SLOWLY ( Addr a )
    if (!MAC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      MAC_(record_address_error)( /*tst*/NULL, a, 4, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 4, False );
       return (VGM_BYTE_VALID << 24) | (VGM_BYTE_VALID << 16) 
              | (VGM_BYTE_VALID << 8) | VGM_BYTE_VALID;
    }
@@ -1002,7 +1002,7 @@ static void mc_wr_V4_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MAC_(record_address_error)( /*tst*/NULL, a, 4, True );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 4, True );
 }
 
 static UInt mc_rd_V2_SLOWLY ( Addr a )
@@ -1021,7 +1021,7 @@ static UInt mc_rd_V2_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( /*tst*/NULL, a, 2, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 2, False );
       vw = (VGM_BYTE_INVALID << 24) | (VGM_BYTE_INVALID << 16) 
            | (VGM_BYTE_VALID << 8) | (VGM_BYTE_VALID);
    }
@@ -1043,7 +1043,7 @@ static void mc_wr_V2_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MAC_(record_address_error)( /*tst*/NULL, a, 2, True );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 2, True );
 }
 
 static UInt mc_rd_V1_SLOWLY ( Addr a )
@@ -1060,7 +1060,7 @@ static UInt mc_rd_V1_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( /*tst*/NULL, a, 1, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 1, False );
       vw = (VGM_BYTE_INVALID << 24) | (VGM_BYTE_INVALID << 16) 
            | (VGM_BYTE_INVALID << 8) | (VGM_BYTE_VALID);
    }
@@ -1079,7 +1079,7 @@ static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes )
 
    /* If an address error has happened, report it. */
    if (aerr)
-      MAC_(record_address_error)( /*tst*/NULL, a, 1, True );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 1, True );
 }
 
 
@@ -1090,22 +1090,22 @@ static void mc_wr_V1_SLOWLY ( Addr a, UInt vbytes )
 
 void MC_(helperc_value_check0_fail) ( void )
 {
-   MC_(record_value_error) ( /*tst*/NULL, 0 );
+   MC_(record_value_error) ( VG_(get_current_tid)(), 0 );
 }
 
 void MC_(helperc_value_check1_fail) ( void )
 {
-   MC_(record_value_error) ( /*tst*/NULL, 1 );
+   MC_(record_value_error) ( VG_(get_current_tid)(), 1 );
 }
 
 void MC_(helperc_value_check2_fail) ( void )
 {
-   MC_(record_value_error) ( /*tst*/NULL, 2 );
+   MC_(record_value_error) ( VG_(get_current_tid)(), 2 );
 }
 
 void MC_(helperc_value_check4_fail) ( void )
 {
-   MC_(record_value_error) ( /*tst*/NULL, 4 );
+   MC_(record_value_error) ( VG_(get_current_tid)(), 4 );
 }
 
 
@@ -1311,10 +1311,10 @@ void mc_fpu_read_check_SLOWLY ( Addr addr, Int size )
    }
 
    if (aerr) {
-      MAC_(record_address_error)( /*tst*/NULL, addr, size, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), addr, size, False );
    } else {
      if (verr)
-        MC_(record_value_error)( /*tst*/NULL, size );
+        MC_(record_value_error)( VG_(get_current_tid)(), size );
    }
 }
 
@@ -1341,7 +1341,7 @@ void mc_fpu_write_check_SLOWLY ( Addr addr, Int size )
       }
    }
    if (aerr) {
-      MAC_(record_address_error)( /*tst*/NULL, addr, size, True );
+      MAC_(record_address_error)( VG_(get_current_tid)(), addr, size, True );
    }
 }
 
@@ -1353,7 +1353,7 @@ void mc_fpu_write_check_SLOWLY ( Addr addr, Int size )
 /* Copy Vbits for src into vbits. Returns: 1 == OK, 2 == alignment
    error, 3 == addressing error. */
 Int MC_(get_or_set_vbits_for_client) ( 
-   ThreadState* tst,
+   ThreadId tid,
    Addr dataV, 
    Addr vbitsV, 
    UInt size, 
@@ -1389,12 +1389,12 @@ Int MC_(get_or_set_vbits_for_client) (
       }
    }
    if (!addressibleD) {
-      MAC_(record_address_error)( tst, (Addr)dataP, 4, 
+      MAC_(record_address_error)( tid, (Addr)dataP, 4, 
                                   setting ? True : False );
       return 3;
    }
    if (!addressibleV) {
-      MAC_(record_address_error)( tst, (Addr)vbitsP, 4, 
+      MAC_(record_address_error)( tid, (Addr)vbitsP, 4, 
                                   setting ? False : True );
       return 3;
    }
@@ -1404,7 +1404,7 @@ Int MC_(get_or_set_vbits_for_client) (
       /* setting */
       for (i = 0; i < szW; i++) {
          if (get_vbytes4_ALIGNED( (Addr)&vbits[i] ) != VGM_WORD_VALID)
-            MC_(record_value_error)(tst, 4);
+            MC_(record_value_error)(tid, 4);
          set_vbytes4_ALIGNED( (Addr)&data[i], vbits[i] );
       }
    } else {

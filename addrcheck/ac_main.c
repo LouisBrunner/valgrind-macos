@@ -561,7 +561,7 @@ Bool ac_check_readable_asciiz ( Addr a, Addr* bad_addr )
 /*------------------------------------------------------------*/
 
 static __inline__
-void ac_check_is_accessible ( CorePart part, ThreadState* tst,
+void ac_check_is_accessible ( CorePart part, ThreadId tid,
                               Char* s, Addr base, UInt size, Bool isWrite )
 {
    Bool ok;
@@ -573,21 +573,21 @@ void ac_check_is_accessible ( CorePart part, ThreadState* tst,
    if (!ok) {
       switch (part) {
       case Vg_CoreSysCall:
-         MAC_(record_param_error) ( tst, bad_addr, isWrite, s );
+         MAC_(record_param_error) ( tid, bad_addr, isWrite, s );
          break;
 
       case Vg_CoreSignal:
          sk_assert(isWrite);     /* Should only happen with isWrite case */
          /* fall through */
       case Vg_CorePThread:
-         MAC_(record_core_mem_error)( tst, isWrite, s );
+         MAC_(record_core_mem_error)( tid, isWrite, s );
          break;
 
       /* If we're being asked to jump to a silly address, record an error 
          message before potentially crashing the entire system. */
       case Vg_CoreTranslate:
          sk_assert(!isWrite);    /* Should only happen with !isWrite case */
-         MAC_(record_jump_error)( tst, bad_addr );
+         MAC_(record_jump_error)( tid, bad_addr );
          break;
 
       default:
@@ -599,21 +599,21 @@ void ac_check_is_accessible ( CorePart part, ThreadState* tst,
 }
 
 static
-void ac_check_is_writable ( CorePart part, ThreadState* tst,
+void ac_check_is_writable ( CorePart part, ThreadId tid,
                             Char* s, Addr base, UInt size )
 {
-   ac_check_is_accessible ( part, tst, s, base, size, /*isWrite*/True );
+   ac_check_is_accessible ( part, tid, s, base, size, /*isWrite*/True );
 }
 
 static
-void ac_check_is_readable ( CorePart part, ThreadState* tst,
+void ac_check_is_readable ( CorePart part, ThreadId tid,
                             Char* s, Addr base, UInt size )
 {     
-   ac_check_is_accessible ( part, tst, s, base, size, /*isWrite*/False );
+   ac_check_is_accessible ( part, tid, s, base, size, /*isWrite*/False );
 }
 
 static
-void ac_check_is_readable_asciiz ( CorePart part, ThreadState* tst,
+void ac_check_is_readable_asciiz ( CorePart part, ThreadId tid,
                                    Char* s, Addr str )
 {
    Bool ok = True;
@@ -625,7 +625,7 @@ void ac_check_is_readable_asciiz ( CorePart part, ThreadState* tst,
    sk_assert(part == Vg_CoreSysCall);
    ok = ac_check_readable_asciiz ( (Addr)str, &bad_addr );
    if (!ok) {
-      MAC_(record_param_error) ( tst, bad_addr, /*is_writable =*/False, s );
+      MAC_(record_param_error) ( tid, bad_addr, /*is_writable =*/False, s );
    }
 
    VGP_POPCC(VgpCheckMem);
@@ -781,7 +781,7 @@ static void ac_ACCESS4_SLOWLY ( Addr a )
    if (!MAC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      MAC_(record_address_error)( /*tst*/NULL, a, 4, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 4, False );
       return;
    }
 
@@ -808,7 +808,7 @@ static void ac_ACCESS2_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( /*tst*/NULL, a, 2, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 2, False );
    }
 }
 
@@ -822,7 +822,7 @@ static void ac_ACCESS1_SLOWLY ( Addr a )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( /*tst*/NULL, a, 1, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), a, 1, False );
    }
 }
 
@@ -927,7 +927,7 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size )
    }
 
    if (aerr) {
-      MAC_(record_address_error)( /*tst*/NULL, addr, size, False );
+      MAC_(record_address_error)( VG_(get_current_tid)(), addr, size, False );
    }
 }
 
@@ -1147,7 +1147,7 @@ Bool SK_(expensive_sanity_check) ( void )
 /*--- Client requests                                      ---*/
 /*------------------------------------------------------------*/
 
-Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
+Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg_block, UInt *ret )
 {
 #define IGNORE(what)                                                    \
    do {                                                                 \
@@ -1193,7 +1193,7 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
          return False;
 
       default:
-         if (MAC_(handle_common_client_requests)(tst, arg_block, ret )) {
+         if (MAC_(handle_common_client_requests)(tid, arg_block, ret )) {
             return True;
          } else {
             VG_(message)(Vg_UserMsg, 

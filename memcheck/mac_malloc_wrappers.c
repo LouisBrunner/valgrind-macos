@@ -127,7 +127,7 @@ MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk) ( Bool (*p)(MAC_Chunk*) )
 
 /* Allocate its shadow chunk, put it on the appropriate list. */
 static
-void add_MAC_Chunk ( ThreadState* tst, Addr p, UInt size, MAC_AllocKind kind )
+void add_MAC_Chunk ( Addr p, UInt size, MAC_AllocKind kind )
 {
    MAC_Chunk* mc;
 
@@ -135,7 +135,7 @@ void add_MAC_Chunk ( ThreadState* tst, Addr p, UInt size, MAC_AllocKind kind )
    mc->data      = p;
    mc->size      = size;
    mc->allockind = kind;
-   mc->where     = VG_(get_ExeContext)(tst);
+   mc->where     = VG_(get_ExeContext)(VG_(get_current_or_recent_tid)());
 
    /* Paranoia ... ensure this area is off-limits to the client, so
       the mc->data field isn't visible to the leak checker.  If memory
@@ -155,15 +155,15 @@ void add_MAC_Chunk ( ThreadState* tst, Addr p, UInt size, MAC_AllocKind kind )
 
 /* Allocate memory and note change in memory available */
 __inline__
-void MAC_(new_block) ( ThreadState* tst, Addr p, UInt size,
-                        UInt rzB, Bool is_zeroed, MAC_AllocKind kind )
+void MAC_(new_block) ( Addr p, UInt size,
+                       UInt rzB, Bool is_zeroed, MAC_AllocKind kind )
 {
    VGP_PUSHCC(VgpCliMalloc);
 
    cmalloc_n_mallocs ++;
    cmalloc_bs_mallocd += size;
 
-   add_MAC_Chunk( tst, p, size, kind );
+   add_MAC_Chunk( p, size, kind );
 
    MAC_(ban_mem_heap)( p-rzB, rzB );
    MAC_(new_mem_heap)( p, size, is_zeroed );
@@ -172,33 +172,33 @@ void MAC_(new_block) ( ThreadState* tst, Addr p, UInt size,
    VGP_POPCC(VgpCliMalloc);
 }
 
-void* SK_(malloc) ( ThreadState* tst, Int n )
+void* SK_(malloc) ( Int n )
 {
    if (n < 0) {
       VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to malloc()", n );
       return NULL;
    } else {
       Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
-      MAC_(new_block) ( tst, p, n, VG_(vg_malloc_redzone_szB),
+      MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
                         /*is_zeroed*/False, MAC_AllocMalloc );
       return (void*)p;
    }
 }
 
-void* SK_(__builtin_new) ( ThreadState* tst, Int n )
+void* SK_(__builtin_new) ( Int n )
 {
    if (n < 0) {
       VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to __builtin_new()", n);
       return NULL;
    } else {
       Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
-      MAC_(new_block) ( tst, p, n, VG_(vg_malloc_redzone_szB),
+      MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
                         /*is_zeroed*/False, MAC_AllocNew );
       return (void*)p;
    }
 }
 
-void* SK_(__builtin_vec_new) ( ThreadState* tst, Int n )
+void* SK_(__builtin_vec_new) ( Int n )
 {
    if (n < 0) {
       VG_(message)(Vg_UserMsg, 
@@ -206,26 +206,26 @@ void* SK_(__builtin_vec_new) ( ThreadState* tst, Int n )
       return NULL;
    } else {
       Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
-      MAC_(new_block) ( tst, p, n, VG_(vg_malloc_redzone_szB),
+      MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
                         /*is_zeroed*/False, MAC_AllocNewVec );
       return (void*)p;
    }
 }
 
-void* SK_(memalign) ( ThreadState* tst, Int align, Int n )
+void* SK_(memalign) ( Int align, Int n )
 {
    if (n < 0) {
       VG_(message)(Vg_UserMsg, "Warning: silly arg (%d) to memalign()", n);
       return NULL;
    } else {
       Addr p = (Addr)VG_(cli_malloc)( align, n );
-      MAC_(new_block) ( tst, p, n, VG_(vg_malloc_redzone_szB),
+      MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
                         /*is_zeroed*/False, MAC_AllocMalloc );
       return (void*)p;
    }
 }
 
-void* SK_(calloc) ( ThreadState* tst, Int nmemb, Int size1 )
+void* SK_(calloc) ( Int nmemb, Int size1 )
 {
    Int   n, i;
 
@@ -237,7 +237,7 @@ void* SK_(calloc) ( ThreadState* tst, Int nmemb, Int size1 )
       return NULL;
    } else {
       Addr p = (Addr)VG_(cli_malloc)( VG_(clo_alignment), n );
-      MAC_(new_block) ( tst, p, n, VG_(vg_malloc_redzone_szB),
+      MAC_(new_block) ( p, n, VG_(vg_malloc_redzone_szB),
                         /*is_zeroed*/True, MAC_AllocMalloc );
       for (i = 0; i < n; i++) 
          ((UChar*)p)[i] = 0;
@@ -246,7 +246,7 @@ void* SK_(calloc) ( ThreadState* tst, Int nmemb, Int size1 )
 }
 
 static
-void die_and_free_mem ( ThreadState* tst, MAC_Chunk* mc,
+void die_and_free_mem ( MAC_Chunk* mc,
                         MAC_Chunk** prev_chunks_next_ptr, UInt rzB )
 {
    /* Note: ban redzones again -- just in case user de-banned them
@@ -262,7 +262,7 @@ void die_and_free_mem ( ThreadState* tst, MAC_Chunk* mc,
    *prev_chunks_next_ptr = mc->next;
 
    /* Record where freed */
-   mc->where = VG_(get_ExeContext) ( tst );
+   mc->where = VG_(get_ExeContext) ( VG_(get_current_or_recent_tid)() );
 
    /* Put it out of harm's way for a while, if not from a client request */
    if (MAC_AllocCustom != mc->allockind)
@@ -273,11 +273,11 @@ void die_and_free_mem ( ThreadState* tst, MAC_Chunk* mc,
 
 
 __inline__
-void MAC_(handle_free) ( ThreadState* tst, Addr p, UInt rzB,
-                         MAC_AllocKind kind )
+void MAC_(handle_free) ( Addr p, UInt rzB, MAC_AllocKind kind )
 {
    MAC_Chunk*  mc;
    MAC_Chunk** prev_chunks_next_ptr;
+   ThreadId    tid = VG_(get_current_or_recent_tid)();
 
    VGP_PUSHCC(VgpCliMalloc);
 
@@ -286,40 +286,41 @@ void MAC_(handle_free) ( ThreadState* tst, Addr p, UInt rzB,
    mc = (MAC_Chunk*)VG_(HT_get_node) ( MAC_(malloc_list), (UInt)p,
                                        (VgHashNode***)&prev_chunks_next_ptr );
    if (mc == NULL) {
-      MAC_(record_free_error) ( tst, p );
+      MAC_(record_free_error) ( tid, p );
       VGP_POPCC(VgpCliMalloc);
       return;
    }
 
    /* check if its a matching free() / delete / delete [] */
    if (kind != mc->allockind) {
-      MAC_(record_freemismatch_error) ( tst, p );
+      MAC_(record_freemismatch_error) ( tid, p );
    }
 
-   die_and_free_mem ( tst, mc, prev_chunks_next_ptr, rzB );
+   die_and_free_mem ( mc, prev_chunks_next_ptr, rzB );
    VGP_POPCC(VgpCliMalloc);
 }
 
-void SK_(free) ( ThreadState* tst, void* p )
+void SK_(free) ( void* p )
 {
-   MAC_(handle_free)(tst, (Addr)p, VG_(vg_malloc_redzone_szB), MAC_AllocMalloc);
+   MAC_(handle_free)((Addr)p, VG_(vg_malloc_redzone_szB), MAC_AllocMalloc);
 }
 
-void SK_(__builtin_delete) ( ThreadState* tst, void* p )
+void SK_(__builtin_delete) ( void* p )
 {
-   MAC_(handle_free)(tst, (Addr)p, VG_(vg_malloc_redzone_szB), MAC_AllocNew);
+   MAC_(handle_free)((Addr)p, VG_(vg_malloc_redzone_szB), MAC_AllocNew);
 }
 
-void SK_(__builtin_vec_delete) ( ThreadState* tst, void* p )
+void SK_(__builtin_vec_delete) ( void* p )
 {
-   MAC_(handle_free)(tst, (Addr)p, VG_(vg_malloc_redzone_szB), MAC_AllocNewVec);
+   MAC_(handle_free)((Addr)p, VG_(vg_malloc_redzone_szB), MAC_AllocNewVec);
 }
 
-void* SK_(realloc) ( ThreadState* tst, void* p, Int new_size )
+void* SK_(realloc) ( void* p, Int new_size )
 {
    MAC_Chunk  *mc;
    MAC_Chunk **prev_chunks_next_ptr;
    UInt        i;
+   ThreadId    tid = VG_(get_current_or_recent_tid)();
 
    VGP_PUSHCC(VgpCliMalloc);
 
@@ -338,7 +339,7 @@ void* SK_(realloc) ( ThreadState* tst, void* p, Int new_size )
                                        (VgHashNode***)&prev_chunks_next_ptr );
 
    if (mc == NULL) {
-      MAC_(record_free_error) ( tst, (Addr)p );
+      MAC_(record_free_error) ( tid, (Addr)p );
       /* Perhaps we should return to the program regardless. */
       VGP_POPCC(VgpCliMalloc);
       return NULL;
@@ -347,7 +348,7 @@ void* SK_(realloc) ( ThreadState* tst, void* p, Int new_size )
    /* check if its a matching free() / delete / delete [] */
    if (MAC_AllocMalloc != mc->allockind) {
       /* can not realloc a range that was allocated with new or new [] */
-      MAC_(record_freemismatch_error) ( tst, (Addr)p );
+      MAC_(record_freemismatch_error) ( tid, (Addr)p );
       /* but keep going anyway */
    }
 
@@ -383,13 +384,13 @@ void* SK_(realloc) ( ThreadState* tst, void* p, Int new_size )
          ((UChar*)p_new)[i] = ((UChar*)p)[i];
 
       /* Free old memory */
-      die_and_free_mem ( tst, mc, prev_chunks_next_ptr,
+      die_and_free_mem ( mc, prev_chunks_next_ptr,
                          VG_(vg_malloc_redzone_szB) );
 
       /* this has to be after die_and_free_mem, otherwise the
          former succeeds in shorting out the new block, not the
          old, in the case when both are on the same list.  */
-      add_MAC_Chunk ( tst, p_new, new_size, MAC_AllocMalloc );
+      add_MAC_Chunk ( p_new, new_size, MAC_AllocMalloc );
 
       VGP_POPCC(VgpCliMalloc);
       return (void*)p_new;

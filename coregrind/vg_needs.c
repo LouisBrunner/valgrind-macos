@@ -247,10 +247,10 @@ TRACK(die_mem_stack,         Addr a, UInt len)
 
 TRACK(ban_mem_stack, Addr a, UInt len)
 
-TRACK(pre_mem_read,        CorePart part, ThreadState* tst, Char* s, Addr a,
+TRACK(pre_mem_read,        CorePart part, ThreadId tid, Char* s, Addr a,
                            UInt size)
-TRACK(pre_mem_read_asciiz, CorePart part, ThreadState* tst, Char* s, Addr a)
-TRACK(pre_mem_write,       CorePart part, ThreadState* tst, Char* s, Addr a,
+TRACK(pre_mem_read_asciiz, CorePart part, ThreadId tid, Char* s, Addr a)
+TRACK(pre_mem_write,       CorePart part, ThreadId tid, Char* s, Addr a,
                            UInt size)
 TRACK(post_mem_write,      Addr a, UInt size)
 

@@ -116,7 +116,7 @@ typedef unsigned char          Bool;
    interface;  if the core and skin major versions don't match, Valgrind
    will abort.  The minor version indicates binary-compatible changes.
 */
-#define VG_CORE_INTERFACE_MAJOR_VERSION   2
+#define VG_CORE_INTERFACE_MAJOR_VERSION   3
 #define VG_CORE_INTERFACE_MINOR_VERSION   0
 
 extern const Int VG_(skin_interface_major_version);
@@ -275,29 +275,35 @@ extern Bool VG_(within_m_state_static_OR_threads)(Addr a);
    pthread_mutex_t.__m_owner and pthread_cond_t.__c_waiting. */
 #define VG_INVALID_THREADID ((ThreadId)(0))
 
-/* ThreadIds are simply indices into the vg_threads[] array. */
+/* ThreadIds are simply indices into the VG_(threads)[] array. */
 typedef 
    UInt 
    ThreadId;
 
-/* struct _ThreadState defined elsewhere;  ThreadState is abstract as its
-   definition is not important for skins. */
-typedef
-   struct _ThreadState
-   ThreadState;
+/* When looking for the current ThreadId, this is the safe option and
+   probably the one you want.
+  
+   Details: Use this one from non-generated code, eg. from functions called
+   on events like 'new_mem_heap'.  In such a case, the "current" thread is
+   temporarily suspended as Valgrind's dispatcher is running.  This function
+   is also suitable to be called from generated code (ie. from UCode, or a C
+   function called directly from UCode).
+   
+   If you use VG_(get_current_tid)() from non-generated code, it will return
+   0 signifying the invalid thread, which is probably not what you want. */
+extern ThreadId VG_(get_current_or_recent_tid) ( void );
 
-/* Use this one from generated code */
-extern ThreadId     VG_(get_current_tid)           ( void );
-
-/* Use this one from non-generated code -- if you use VG_(get_current_tid)(),
-   it will return 0 for the invalid thread, which is not what you want. */
-extern ThreadId     VG_(get_current_or_recent_tid) ( void );
-
-extern ThreadId     VG_(get_tid_from_ThreadState)  ( ThreadState* );
-extern ThreadState* VG_(get_ThreadState)           ( ThreadId tid );
+/* When looking for the current ThreadId, only use this one if you know what
+   you are doing.
+  
+   Details: Use this one from generated code, eg. from C functions called
+   from UCode.  (VG_(get_current_or_recent_tid)() is also suitable in that
+   case.)  If you use this function from non-generated code, it will return
+   0 signifying the invalid thread, which is probably not what you want. */
+extern ThreadId VG_(get_current_tid)           ( void );
 
 /* Searches through all thread's stacks to see if any match.  Returns
- * VG_INVALID_THREADID if none match. */
+   VG_INVALID_THREADID if none match. */
 extern ThreadId VG_(first_matching_thread_stack)
                         ( Bool (*p) ( Addr stack_min, Addr stack_max ));
 
@@ -1249,16 +1255,17 @@ extern void VG_(pp_ExeContext) ( ExeContext* );
    ExeContexts to see if we already have it, and if not, allocate a
    new one.  Either way, return a pointer to the context. 
    
-   If called from generated code, `tst' can be NULL and it will use the
-   ThreadState of the current thread.  If called from elsewhere, `tst'
-   should not be NULL.
+   If called from generated code, use VG_(get_current_tid)() to get the
+   current ThreadId.  If called from non-generated code, the current
+   ThreadId should be passed in by the core. 
 */
-extern ExeContext* VG_(get_ExeContext) ( ThreadState *tst );
+extern ExeContext* VG_(get_ExeContext) ( ThreadId tid );
 
 /* Just grab the client's EIP, as a much smaller and cheaper
-   indication of where they are.  ThreadState should be NULL if it's called
-   from within generated code. */
-extern Addr VG_(get_EIP)( ThreadState *tst );
+   indication of where they are.  Use is basically same as for
+   VG_(get_ExeContext)() above. 
+*/
+extern Addr VG_(get_EIP)( ThreadId tid );
 
 
 /*====================================================================*/
@@ -1330,14 +1337,13 @@ void*       VG_(get_error_extra)   ( Error* err );
    seen before.  If it has, the existing error record will have its count
    incremented.  
    
-   If the error occurs in generated code, 'tst' should be NULL.  If the
-   error occurs in non-generated code, 'tst' should be non-NULL.  The
-   `extra' field can be stack-allocated;  it will be copied by the core
-   if needed.  But it won't be copied if it's NULL.
+   'tid' can be found as for VG_(get_ExeContext)().  The `extra' field can
+   be stack-allocated;  it will be copied by the core if needed (but it
+   won't be copied if it's NULL).
 
    If no 'a', 's' or 'extra' of interest needs to be recorded, just use
    NULL for them.  */
-extern void VG_(maybe_record_error) ( ThreadState* tst, ErrorKind ekind, 
+extern void VG_(maybe_record_error) ( ThreadId tid, ErrorKind ekind, 
                                       Addr a, Char* s, void* extra );
 
 /* Similar to VG_(maybe_record_error)(), except this one doesn't record the
@@ -1347,7 +1353,7 @@ extern void VG_(maybe_record_error) ( ThreadState* tst, ErrorKind ekind,
    hack that's useful sometimes if you just want to know if the error would
    be suppressed without possibly printing it.  `count_error' dictates 
    whether to add the error in the error total count (another mild hack). */
-extern Bool VG_(unique_error) ( ThreadState* tst, ErrorKind ekind,
+extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
                                 Addr a, Char* s, void* extra,
                                 ExeContext* where, Bool print_error,
                                 Bool allow_GDB_attach, Bool count_error );
@@ -1418,55 +1424,6 @@ typedef
    VgSectKind;
 
 extern VgSectKind VG_(seg_sect_kind)(Addr);
-
-
-/*====================================================================*/
-/*=== Calling functions from the sim'd CPU                         ===*/
-/*====================================================================*/
-
-#define VG_USERREQ__CLIENT_tstCALL0         0x2101
-#define VG_USERREQ__CLIENT_tstCALL1         0x2102
-#define VG_USERREQ__CLIENT_tstCALL2         0x2103
-#define VG_USERREQ__CLIENT_tstCALL3         0x2104
-
-/* These requests are like VALGRIND_NON_SIMD_CALL[0123] in valgrind.h,
-   except they insert the current ThreadState as the first argument to the
-   called function. */
-#define VALGRIND_NON_SIMD_tstCALL0(_qyy_fn)                    \
-   ({unsigned int _qyy_res;                                    \
-    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
-                            VG_USERREQ__CLIENT_tstCALL0,       \
-                            _qyy_fn,                           \
-                            0, 0, 0);                          \
-    _qyy_res;                                                  \
-   })
-
-#define VALGRIND_NON_SIMD_tstCALL1(_qyy_fn, _qyy_arg1)         \
-   ({unsigned int _qyy_res;                                    \
-    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
-                            VG_USERREQ__CLIENT_tstCALL1,       \
-                            _qyy_fn,                           \
-                            _qyy_arg1, 0, 0);                  \
-    _qyy_res;                                                  \
-   })
-
-#define VALGRIND_NON_SIMD_tstCALL2(_qyy_fn, _qyy_arg1, _qyy_arg2)    \
-   ({unsigned int _qyy_res;                                    \
-    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
-                            VG_USERREQ__CLIENT_tstCALL2,       \
-                            _qyy_fn,                           \
-                            _qyy_arg1, _qyy_arg2, 0);          \
-    _qyy_res;                                                  \
-   })
-
-#define VALGRIND_NON_SIMD_tstCALL3(_qyy_fn, _qyy_arg1, _qyy_arg2, _qyy_arg3)  \
-   ({unsigned int _qyy_res;                                             \
-    VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,           \
-                            VG_USERREQ__CLIENT_tstCALL3,                \
-                            _qyy_fn,                                    \
-                            _qyy_arg1, _qyy_arg2, _qyy_arg3);           \
-    _qyy_res;                                                           \
-   })
 
 
 /*====================================================================*/
@@ -1581,15 +1538,15 @@ extern UInt VG_(vg_malloc_redzone_szB);
 
 /* If a skin links with vg_replace_malloc.c, the following functions will be
    called appropriately when malloc() et al are called. */
-extern void* SK_(malloc)               ( ThreadState* tst, Int n );
-extern void* SK_(__builtin_new)        ( ThreadState* tst, Int n );
-extern void* SK_(__builtin_vec_new)    ( ThreadState* tst, Int n );
-extern void* SK_(memalign)             ( ThreadState* tst, Int align, Int n );
-extern void* SK_(calloc)               ( ThreadState* tst, Int nmemb, Int n );
-extern void  SK_(free)                 ( ThreadState* tst, void* p );
-extern void  SK_(__builtin_delete)     ( ThreadState* tst, void* p );
-extern void  SK_(__builtin_vec_delete) ( ThreadState* tst, void* p );
-extern void* SK_(realloc)              ( ThreadState* tst, void* p, Int size );
+extern void* SK_(malloc)               ( Int n );
+extern void* SK_(__builtin_new)        ( Int n );
+extern void* SK_(__builtin_vec_new)    ( Int n );
+extern void* SK_(memalign)             ( Int align, Int n );
+extern void* SK_(calloc)               ( Int nmemb, Int n );
+extern void  SK_(free)                 ( void* p );
+extern void  SK_(__builtin_delete)     ( void* p );
+extern void  SK_(__builtin_vec_delete) ( void* p );
+extern void* SK_(realloc)              ( void* p, Int size );
 
 /* Can be called from SK_(malloc) et al to do the actual alloc/freeing. */
 extern void* VG_(cli_malloc) ( UInt align, Int nbytes ); 
@@ -1713,7 +1670,14 @@ typedef
 
 /* Events happening in core to track.  To be notified, pass a callback
    function to the appropriate function.  To ignore an event, don't do
-   anything (default is for events to be ignored). */
+   anything (default is for events to be ignored). 
+   
+   Note that most events aren't passed a ThreadId.  To find out the ThreadId
+   of the affected thread, use VG_(get_current_or_recent_tid)().  For the
+   ones passed a ThreadId, use that instead, since
+   VG_(get_current_or_recent_tid)() might not give the right ThreadId in
+   that case.
+*/
 
 
 /* Memory events (Nb: to track heap allocation/freeing, a skin must replace
@@ -1762,15 +1726,15 @@ EV VG_(track_die_mem_stack)    ( void (*f)(Addr a, UInt len) );
 EV VG_(track_ban_mem_stack)   ( void (*f)(Addr a, UInt len) );
 
 /* These ones occur around syscalls, signal handling, etc */
-EV VG_(track_pre_mem_read)    ( void (*f)(CorePart part, ThreadState* tst,
+EV VG_(track_pre_mem_read)    ( void (*f)(CorePart part, ThreadId tid,
                                           Char* s, Addr a, UInt size) );
-EV VG_(track_pre_mem_read_asciiz) ( void (*f)(CorePart part, ThreadState* tst,
+EV VG_(track_pre_mem_read_asciiz) ( void (*f)(CorePart part, ThreadId tid,
                                               Char* s, Addr a) );
-EV VG_(track_pre_mem_write)   ( void (*f)(CorePart part, ThreadState* tst,
+EV VG_(track_pre_mem_write)   ( void (*f)(CorePart part, ThreadId tid,
                                           Char* s, Addr a, UInt size) );
 /* Not implemented yet -- have to add in lots of places, which is a
    pain.  Won't bother unless/until there's a need. */
-/* EV VG_(track_post_mem_read)  ( void (*f)(ThreadState* tst, Char* s, 
+/* EV VG_(track_post_mem_read)  ( void (*f)(ThreadId tid, Char* s, 
                                             Addr a, UInt size) ); */
 EV VG_(track_post_mem_write) ( void (*f)(Addr a, UInt size) );
 
@@ -1988,7 +1952,7 @@ extern void SK_(print_debug_usage)       ( void );
    not recognised.  arg_block[0] holds the request number, any further args
    from the request are in arg_block[1..].  'ret' is for the return value...
    it should probably be filled, if only with 0. */
-extern Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block,
+extern Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg_block,
                                          UInt *ret );
 
 

@@ -344,11 +344,11 @@ typedef
 
       void (*ban_mem_stack)  ( Addr a, UInt len );
 
-      void (*pre_mem_read)   ( CorePart part, ThreadState* tst,
+      void (*pre_mem_read)   ( CorePart part, ThreadId tid,
                                Char* s, Addr a, UInt size );
-      void (*pre_mem_read_asciiz) ( CorePart part, ThreadState* tst,
+      void (*pre_mem_read_asciiz) ( CorePart part, ThreadId tid,
                                     Char* s, Addr a );
-      void (*pre_mem_write)  ( CorePart part, ThreadState* tst,
+      void (*pre_mem_write)  ( CorePart part, ThreadId tid,
                                Char* s, Addr a, UInt size );
       /* Not implemented yet -- have to add in lots of places, which is a
          pain.  Won't bother unless/until there's a need. */
@@ -468,15 +468,6 @@ extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
 
 #define VG_USERREQ__MALLOC                  0x2001
 #define VG_USERREQ__FREE                    0x2002
-
-/* 
-In vg_skin.h, so skins can use it.
-Call an arbitrary function with ThreadState as the first arg.
-#define VG_USERREQ__CLIENT_tstCALL0         0x2101
-#define VG_USERREQ__CLIENT_tstCALL1         0x2102
-#define VG_USERREQ__CLIENT_tstCALL2         0x2103
-#define VG_USERREQ__CLIENT_tstCALL3         0x2104
-*/
 
 /* (Fn, Arg): Create a new thread and run Fn applied to Arg in it.  Fn
    MUST NOT return -- ever.  Eventually it will do either __QUIT or
@@ -711,7 +702,8 @@ typedef
    ForkHandlerEntry;
 
 
-struct _ThreadState {
+typedef
+   struct _ThreadState {
    /* ThreadId == 0 (and hence vg_threads[0]) is NEVER USED.
       The thread identity is simply the index in vg_threads[].
       ThreadId == 1 is the root thread and has the special property
@@ -872,7 +864,8 @@ struct _ThreadState {
    UInt sh_ebp;
    UInt sh_esp;
    UInt sh_eflags;
-};
+} 
+ThreadState;
 
 
 /* The thread table. */
@@ -883,6 +876,10 @@ extern Bool VG_(is_valid_tid) ( ThreadId tid );
 
 /* Check that tid is in range. */
 extern Bool VG_(is_valid_or_empty_tid) ( ThreadId tid );
+
+/* Determine if 'tid' is that of the current running thread (Nb: returns
+   False if no thread is currently running. */
+extern Bool VG_(is_running_thread)(ThreadId tid);
 
 /* Copy the specified thread's state into VG_(baseBlock) in
    preparation for running it. */
@@ -1123,7 +1120,7 @@ struct _UCodeBlock {
 
 extern UCodeBlock* VG_(alloc_UCodeBlock) ( void );
 
-extern void  VG_(translate)  ( ThreadState* tst,
+extern void  VG_(translate)  ( ThreadId tid,
                                Addr  orig_addr,
                                UInt* orig_size,
                                Addr* trans_addr,

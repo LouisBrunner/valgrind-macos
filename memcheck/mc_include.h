@@ -144,7 +144,7 @@ extern Bool MC_(check_readable) ( Addr a, UInt len, Addr* bad_addr );
 extern void MC_(detect_memory_leaks) ( void );
 
 extern Int  MC_(get_or_set_vbits_for_client) ( 
-               ThreadState* tst,
+               ThreadId tid,
                Addr dataV, 
                Addr vbitsV, 
                UInt size, 
@@ -157,8 +157,8 @@ extern void MC_(show_client_block_stats) ( void );
 
 
 /* Functions defined in mc_errcontext.c */
-extern void MC_(record_value_error)  ( ThreadState* tst, Int size );
-extern void MC_(record_user_error)   ( ThreadState* tst, Addr a, Bool isWrite );
+extern void MC_(record_value_error)  ( ThreadId tid, Int size );
+extern void MC_(record_user_error)   ( ThreadId tid, Addr a, Bool isWrite );
 
 
 #endif

@@ -1306,8 +1306,7 @@ static void record_lockgraph_error(ThreadId tid, Mutex *mutex,
 				   const LockSet *lockset_holding, 
 				   const LockSet *lockset_prev);
 
-static void set_mutex_state(Mutex *mutex, MutexState state,
-			    ThreadId tid, ThreadState *tst);
+static void set_mutex_state(Mutex *mutex, MutexState state, ThreadId tid);
 
 #define M_MUTEX_HASHSZ	1021
 
@@ -1447,8 +1446,7 @@ static Bool check_cycle(const Mutex *start, const LockSet* lockset)
 /* test to see if a mutex state change would be problematic; this
    makes no changes to the mutex state.  This should be called before
    the locking thread has actually blocked. */
-static void test_mutex_state(Mutex *mutex, MutexState state,
-			     ThreadId tid, ThreadState *tst)
+static void test_mutex_state(Mutex *mutex, MutexState state, ThreadId tid)
 {
    static const Bool debug = False;
 
@@ -1518,8 +1516,7 @@ static void test_mutex_state(Mutex *mutex, MutexState state,
    a result of any thread freeing memory; in this case set_mutex_state
    does all the error reporting as well.
 */
-static void set_mutex_state(Mutex *mutex, MutexState state,
-			    ThreadId tid, ThreadState *tst)
+static void set_mutex_state(Mutex *mutex, MutexState state, ThreadId tid)
 {
    static const Bool debug = False;
 
@@ -1578,7 +1575,7 @@ static void set_mutex_state(Mutex *mutex, MutexState state,
       break;
    }
 
-   mutex->location = VG_(get_ExeContext)(tst);
+   mutex->location = VG_(get_ExeContext)(tid);
    mutex->state = state;
 }
 
@@ -1701,8 +1698,8 @@ static void copy_address_range_state(Addr src, Addr dst, UInt len)
 }
 
 // SSS: put these somewhere better
-static void eraser_mem_read (Addr a, UInt data_size, ThreadState *tst);
-static void eraser_mem_write(Addr a, UInt data_size, ThreadState *tst);
+static void eraser_mem_read (Addr a, UInt data_size, ThreadId tid);
+static void eraser_mem_write(Addr a, UInt data_size, ThreadId tid);
 
 #define REGPARM(x)	__attribute__((regparm (x)))
 
@@ -1720,24 +1717,25 @@ static void bus_lock(void);
 static void bus_unlock(void);
 
 static
-void eraser_pre_mem_read(CorePart part, ThreadState* tst,
+void eraser_pre_mem_read(CorePart part, ThreadId tid,
                          Char* s, UInt base, UInt size )
 {
-   eraser_mem_read(base, size, tst);
+   if (tid > 50) { VG_(printf)("pid = %d, s = `%s`, part = %d\n", tid, s, part); VG_(skin_panic)("a");}
+   eraser_mem_read(base, size, tid);
 }
 
 static
-void eraser_pre_mem_read_asciiz(CorePart part, ThreadState* tst,
+void eraser_pre_mem_read_asciiz(CorePart part, ThreadId tid,
                                 Char* s, UInt base )
 {
-   eraser_mem_read(base, VG_(strlen)((Char*)base), tst);
+   eraser_mem_read(base, VG_(strlen)((Char*)base), tid);
 }
 
 static
-void eraser_pre_mem_write(CorePart part, ThreadState* tst,
+void eraser_pre_mem_write(CorePart part, ThreadId tid,
                           Char* s, UInt base, UInt size )
 {
-   eraser_mem_write(base, size, tst);
+   eraser_mem_write(base, size, tid);
 }
 
 
@@ -1819,77 +1817,75 @@ UInt VG_(vg_malloc_redzone_szB) = 4;
    shadow chunk on the appropriate list, and set all memory
    protections correctly. */
 
-static void add_HG_Chunk ( ThreadState* tst, Addr p, UInt size )
+static void add_HG_Chunk ( ThreadId tid, Addr p, UInt size )
 {
    HG_Chunk* hc;
 
    hc            = VG_(malloc)(sizeof(HG_Chunk));
    hc->data      = p;
    hc->size      = size;
-   hc->where     = VG_(get_ExeContext)(tst);
-   hc->tid       = VG_(get_tid_from_ThreadState)(tst);
+   hc->where     = VG_(get_ExeContext)(tid);
+   hc->tid       = tid;
 
    VG_(HT_add_node)( hg_malloc_list, (VgHashNode*)hc );
 }
 
 /* Allocate memory and note change in memory available */
 static __inline__
-void* alloc_and_new_mem ( ThreadState* tst, UInt size, UInt alignment,
-                          Bool is_zeroed )
+void* alloc_and_new_mem ( UInt size, UInt alignment, Bool is_zeroed )
 {
    Addr p;
 
    p = (Addr)VG_(cli_malloc)(alignment, size);
-   add_HG_Chunk ( tst, p, size );
+   add_HG_Chunk ( VG_(get_current_or_recent_tid)(), p, size );
    eraser_new_mem_heap( p, size, is_zeroed );
 
    return (void*)p;
 }
 
-void* SK_(malloc) ( ThreadState* tst, Int n )
+void* SK_(malloc) ( Int n )
 {
-   return alloc_and_new_mem ( tst, n, VG_(clo_alignment), /*is_zeroed*/False );
+   return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(__builtin_new) ( ThreadState* tst, Int n )
+void* SK_(__builtin_new) ( Int n )
 {
-   return alloc_and_new_mem ( tst, n, VG_(clo_alignment), /*is_zeroed*/False );
+   return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(__builtin_vec_new) ( ThreadState* tst, Int n )
+void* SK_(__builtin_vec_new) ( Int n )
 {
-   return alloc_and_new_mem ( tst, n, VG_(clo_alignment), /*is_zeroed*/False );
+   return alloc_and_new_mem ( n, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-void* SK_(memalign) ( ThreadState* tst, Int align, Int n )
+void* SK_(memalign) ( Int align, Int n )
 {
-   return alloc_and_new_mem ( tst, n, align,              /*is_zeroed*/False );
+   return alloc_and_new_mem ( n, align,              /*is_zeroed*/False );
 }
 
-void* SK_(calloc) ( ThreadState* tst, Int nmemb, Int size1 )
+void* SK_(calloc) ( Int nmemb, Int size1 )
 {
    void* p;
    Int  size, i;
 
    size = nmemb * size1;
 
-   p = alloc_and_new_mem ( tst, size, VG_(clo_alignment), /*is_zeroed*/True );
+   p = alloc_and_new_mem ( size, VG_(clo_alignment), /*is_zeroed*/True );
    for (i = 0; i < size; i++)    /* calloc() is zeroed */
       ((UChar*)p)[i] = 0;
    return p;
 }
 
 static
-void die_and_free_mem ( ThreadState* tst, HG_Chunk* hc,
+void die_and_free_mem ( ThreadId tid, HG_Chunk* hc,
                         HG_Chunk** prev_chunks_next_ptr )
 {
-   ThreadId tid   = VG_(get_tid_from_ThreadState)(tst);
-   Addr     start = hc->data;
-   Addr     end   = start + hc->size;
+   Addr start = hc->data;
+   Addr end   = start + hc->size;
 
    Bool deadmx(Mutex *mx) {
       if (mx->state != MxDead)
-         set_mutex_state(mx, MxDead, tid, tst);
+         set_mutex_state(mx, MxDead, tid);
 
       return False;
    }
@@ -1901,7 +1897,7 @@ void die_and_free_mem ( ThreadState* tst, HG_Chunk* hc,
    *prev_chunks_next_ptr = hc->next;
 
    /* Record where freed */
-   hc->where = VG_(get_ExeContext) ( tst );
+   hc->where = VG_(get_ExeContext) ( tid );
 
    /* maintain a small window so that the error reporting machinery
       knows about this memory */
@@ -1923,7 +1919,7 @@ void die_and_free_mem ( ThreadState* tst, HG_Chunk* hc,
 
 
 static __inline__
-void handle_free ( ThreadState* tst, void* p )
+void handle_free ( void* p )
 {
    HG_Chunk*  hc;
    HG_Chunk** prev_chunks_next_ptr;
@@ -1933,29 +1929,31 @@ void handle_free ( ThreadState* tst, void* p )
    if (hc == NULL) {
       return;
    }
-   die_and_free_mem ( tst, hc, prev_chunks_next_ptr );
+   die_and_free_mem ( VG_(get_current_or_recent_tid)(),
+                      hc, prev_chunks_next_ptr );
 }
 
-void SK_(free) ( ThreadState* tst, void* p )
+void SK_(free) ( void* p )
 {
-   handle_free(tst, p);
+   handle_free(p);
 }
 
-void SK_(__builtin_delete) ( ThreadState* tst, void* p )
+void SK_(__builtin_delete) ( void* p )
 {
-   handle_free(tst, p);
+   handle_free(p);
 }
 
-void SK_(__builtin_vec_delete) ( ThreadState* tst, void* p )
+void SK_(__builtin_vec_delete) ( void* p )
 {
-   handle_free(tst, p);
+   handle_free(p);
 }
 
-void* SK_(realloc) ( ThreadState* tst, void* p, Int new_size )
+void* SK_(realloc) ( void* p, Int new_size )
 {
    HG_Chunk  *hc;
    HG_Chunk **prev_chunks_next_ptr;
    Int        i;
+   ThreadId   tid = VG_(get_current_or_recent_tid)();
 
    /* First try and find the block. */
    hc = (HG_Chunk*)VG_(HT_get_node) ( hg_malloc_list, (UInt)p,
@@ -1991,12 +1989,12 @@ void* SK_(realloc) ( ThreadState* tst, void* p, Int new_size )
          ((UChar*)p_new)[i] = ((UChar*)p)[i];
 
       /* Free old memory */
-      die_and_free_mem ( tst, hc, prev_chunks_next_ptr );
+      die_and_free_mem ( tid, hc, prev_chunks_next_ptr );
 
       /* this has to be after die_and_free_mem, otherwise the
          former succeeds in shorting out the new block, not the
          old, in the case when both are on the same list.  */
-      add_HG_Chunk ( tst, p_new, new_size );
+      add_HG_Chunk ( tid, p_new, new_size );
 
       return (void*)p_new;
    }  
@@ -2433,7 +2431,7 @@ UInt SK_(update_extra)(Error* err)
    return sizeof(HelgrindError);
 }
 
-static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
+static void record_eraser_error ( ThreadId tid, Addr a, Bool is_write,
 				  shadow_word prevstate )
 {
    shadow_word *sw;
@@ -2447,7 +2445,7 @@ static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
    err_extra.prevstate = prevstate;
    if (clo_execontext)
       err_extra.lasttouched = getExeContext(a);
-   VG_(maybe_record_error)( tst, EraserErr, a, 
+   VG_(maybe_record_error)( tid, EraserErr, a, 
                             (is_write ? "writing" : "reading"),
                             &err_extra);
 
@@ -2471,7 +2469,7 @@ static void record_mutex_error(ThreadId tid, Mutex *mutex,
    err_extra.lasttouched = EC(ec, virgin_sword, thread_seg[tid]);
    err_extra.lasttid = tid;
 
-   VG_(maybe_record_error)(VG_(get_ThreadState)(tid), MutexErr, 
+   VG_(maybe_record_error)(tid, MutexErr, 
 			   (Addr)mutex->mutexp, str, &err_extra);
 }
 
@@ -2491,8 +2489,7 @@ static void record_lockgraph_error(ThreadId tid, Mutex *mutex,
    err_extra.held_lockset = lockset_holding;
    err_extra.prev_lockset = lockset_prev;
    
-   VG_(maybe_record_error)(VG_(get_ThreadState)(tid), LockGraphErr, 
-			   mutex->mutexp, "", &err_extra);
+   VG_(maybe_record_error)(tid, LockGraphErr, mutex->mutexp, "", &err_extra);
 }
 
 Bool SK_(eq_SkinError) ( VgRes not_used, Error* e1, Error* e2 )
@@ -2771,7 +2768,7 @@ static void eraser_pre_mutex_lock(ThreadId tid, void* void_mutex)
 {
    Mutex *mutex = get_mutex((Addr)void_mutex);
 
-   test_mutex_state(mutex, MxLocked, tid, VG_(get_ThreadState)(tid));
+   test_mutex_state(mutex, MxLocked, tid);
 }
 
 static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
@@ -2780,7 +2777,7 @@ static void eraser_post_mutex_lock(ThreadId tid, void* void_mutex)
    Mutex *mutex = get_mutex((Addr)void_mutex);
    const LockSet*  ls;
 
-   set_mutex_state(mutex, MxLocked, tid, VG_(get_ThreadState)(tid));
+   set_mutex_state(mutex, MxLocked, tid);
 
 #  if DEBUG_LOCKS
    VG_(printf)("lock  (%u, %p)\n", tid, mutex->mutexp);
@@ -2815,8 +2812,8 @@ static void eraser_post_mutex_unlock(ThreadId tid, void* void_mutex)
    Mutex *mutex = get_mutex((Addr)void_mutex);
    const LockSet *ls;
 
-   test_mutex_state(mutex, MxUnlocked, tid, VG_(get_ThreadState)(tid));
-   set_mutex_state(mutex, MxUnlocked, tid, VG_(get_ThreadState)(tid));
+   test_mutex_state(mutex, MxUnlocked, tid);
+   set_mutex_state(mutex, MxUnlocked, tid);
 
    if (!ismember(thread_locks[tid], mutex))
        return;
@@ -2883,7 +2880,7 @@ void dump_around_a(Addr a)
    #define DEBUG_STATE(args...)
 #endif
 
-static void eraser_mem_read_word(Addr a, ThreadId tid, ThreadState *tst)
+static void eraser_mem_read_word(Addr a, ThreadId tid)
 {
    shadow_word* sword /* egcs-2.91.66 complains uninit */ = NULL; 
    shadow_word  prevstate;
@@ -2968,7 +2965,7 @@ static void eraser_mem_read_word(Addr a, ThreadId tid, ThreadState *tst)
    statechange = sword->other != prevstate.other;
 
    if (isempty(ls)) {
-      record_eraser_error(tst, a, False /* !is_write */, prevstate);
+      record_eraser_error(tid, a, False /* !is_write */, prevstate);
    }
    goto done;
 
@@ -2977,32 +2974,25 @@ static void eraser_mem_read_word(Addr a, ThreadId tid, ThreadState *tst)
       EC_EIP eceip;
 
       if (clo_execontext == EC_Some)
-	 eceip = EIP(VG_(get_EIP)(tst), prevstate, tls);
+	 eceip = EIP(VG_(get_EIP)(tid), prevstate, tls);
       else
-	 eceip = EC(VG_(get_ExeContext)(tst), prevstate, tls);
+	 eceip = EC(VG_(get_ExeContext)(tid), prevstate, tls);
       setExeContext(a, eceip);
    }
 }
 
-static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
+static void eraser_mem_read(Addr a, UInt size, ThreadId tid)
 {
-   ThreadId tid;
-   Addr     end;
+   Addr end;
 
    end = ROUNDUP(a+size, 4);
    a = ROUNDDN(a, 4);
 
-   if (tst == NULL)
-      tid = VG_(get_current_tid)();
-   else
-      tid = VG_(get_tid_from_ThreadState)(tst);
-
-
    for ( ; a < end; a += 4)
-      eraser_mem_read_word(a, tid, tst);
+      eraser_mem_read_word(a, tid);
 }
 
-static void eraser_mem_write_word(Addr a, ThreadId tid, ThreadState *tst)
+static void eraser_mem_write_word(Addr a, ThreadId tid)
 {
    ThreadLifeSeg *tls;
    shadow_word* sword /* egcs-2.91.66 complains uninit */ = NULL;
@@ -3080,7 +3070,7 @@ static void eraser_mem_write_word(Addr a, ThreadId tid, ThreadState *tst)
 
   SHARED_MODIFIED:
    if (isempty(unpackLockSet(sword->other))) {
-      record_eraser_error(tst, a, True /* is_write */, prevstate);
+      record_eraser_error(tid, a, True /* is_write */, prevstate);
    }
    goto done;
 
@@ -3089,70 +3079,64 @@ static void eraser_mem_write_word(Addr a, ThreadId tid, ThreadState *tst)
       EC_EIP eceip;
 
       if (clo_execontext == EC_Some)
-	 eceip = EIP(VG_(get_EIP)(tst), prevstate, tls);
+	 eceip = EIP(VG_(get_EIP)(tid), prevstate, tls);
       else
-	 eceip = EC(VG_(get_ExeContext)(tst), prevstate, tls);
+	 eceip = EC(VG_(get_ExeContext)(tid), prevstate, tls);
       setExeContext(a, eceip);
    }
 }
 
-static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
+static void eraser_mem_write(Addr a, UInt size, ThreadId tid)
 {
-   ThreadId tid;
    Addr     end;
 
    end = ROUNDUP(a+size, 4);
    a = ROUNDDN(a, 4);
 
-   if (tst == NULL)
-      tid = VG_(get_current_tid)();
-   else
-      tid = VG_(get_tid_from_ThreadState)(tst);
-   
    for ( ; a < end; a += 4)
-      eraser_mem_write_word(a, tid, tst);
+      eraser_mem_write_word(a, tid);
 }
 
 #undef DEBUG_STATE
 
 static void eraser_mem_help_read_1(Addr a)
 {
-   eraser_mem_read(a, 1, NULL);
+   eraser_mem_read(a, 1, VG_(get_current_tid)());
 }
 
 static void eraser_mem_help_read_2(Addr a)
 {
-   eraser_mem_read(a, 2, NULL);
+   eraser_mem_read(a, 2, VG_(get_current_tid)());
 }
 
 static void eraser_mem_help_read_4(Addr a)
 {
-   eraser_mem_read(a, 4, NULL);
+   eraser_mem_read(a, 4, VG_(get_current_tid)());
 }
 
 static void eraser_mem_help_read_N(Addr a, UInt size)
 {
-   eraser_mem_read(a, size, NULL);
+   eraser_mem_read(a, size, VG_(get_current_tid)());
 }
 
 static void eraser_mem_help_write_1(Addr a, UInt val)
 {
    if (*(UChar *)a != val)
-      eraser_mem_write(a, 1, NULL);
+      eraser_mem_write(a, 1, VG_(get_current_tid)());
 }
 static void eraser_mem_help_write_2(Addr a, UInt val)
 {
    if (*(UShort *)a != val)
-      eraser_mem_write(a, 2, NULL);
+      eraser_mem_write(a, 2, VG_(get_current_tid)());
 }
 static void eraser_mem_help_write_4(Addr a, UInt val)
 {
    if (*(UInt *)a != val)
-      eraser_mem_write(a, 4, NULL);
+      eraser_mem_write(a, 4, VG_(get_current_tid)());
 }
 static void eraser_mem_help_write_N(Addr a, UInt size)
 {
-   eraser_mem_write(a, size, NULL);
+   eraser_mem_write(a, size, VG_(get_current_tid)());
 }
 
 static void hg_thread_create(ThreadId parent, ThreadId child)
@@ -3196,7 +3180,7 @@ static void bus_unlock(void)
 /*--- Client requests                                              ---*/
 /*--------------------------------------------------------------------*/
 
-Bool SK_(handle_client_request)(ThreadState *tst, UInt *args, UInt *ret)
+Bool SK_(handle_client_request)(ThreadId tid, UInt *args, UInt *ret)
 {
    if (!VG_IS_SKIN_USERREQ('H','G',args[0]))
       return False;

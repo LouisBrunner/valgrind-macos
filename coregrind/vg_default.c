@@ -131,7 +131,7 @@ NON_FUND( void SK_(print_usage)(void) );
 NON_FUND( void SK_(print_debug_usage)(void) );
 
 /* Client request template function */
-NON_FUND( Bool SK_(handle_client_request)(ThreadState* tst, UInt* arg_block,
+NON_FUND( Bool SK_(handle_client_request)(ThreadId tid, UInt* arg_block,
                                           UInt *ret) );
 
 /* UCode extension */
@@ -170,7 +170,7 @@ Bool VG_(sk_malloc_called_by_scheduler) = False;
    malloc()-replacing skin cannot forget to implement SK_(malloc)() or
    SK_(free)().  */
 __attribute__ ((weak))
-void* SK_(malloc)( ThreadState* tst, Int size )
+void* SK_(malloc)( Int size )
 {
    if (VG_(sk_malloc_called_by_scheduler))
       return VG_(cli_malloc)(4, size);
@@ -179,7 +179,7 @@ void* SK_(malloc)( ThreadState* tst, Int size )
 }
 
 __attribute__ ((weak))
-void  SK_(free)( ThreadState* tst, void* p )
+void  SK_(free)( void* p )
 {
    /* see comment for SK_(malloc)() above */
    if (VG_(sk_malloc_called_by_scheduler))
@@ -188,15 +188,14 @@ void  SK_(free)( ThreadState* tst, void* p )
       malloc_panic(__PRETTY_FUNCTION__);
 }
 
-MALLOC( void* SK_(__builtin_new)    ( ThreadState* tst, Int size ) );
-MALLOC( void* SK_(__builtin_vec_new)( ThreadState* tst, Int size ) );
-MALLOC( void* SK_(memalign)         ( ThreadState* tst, Int align, Int size ) );
-MALLOC( void* SK_(calloc)           ( ThreadState* tst, Int nmemb, Int size ) );
+MALLOC( void* SK_(__builtin_new)    ( Int size ) );
+MALLOC( void* SK_(__builtin_vec_new)( Int size ) );
+MALLOC( void* SK_(memalign)         ( Int align, Int size ) );
+MALLOC( void* SK_(calloc)           ( Int nmemb, Int size ) );
 
-MALLOC( void  SK_(__builtin_delete)     ( ThreadState* tst, void* p ) );
-MALLOC( void  SK_(__builtin_vec_delete) ( ThreadState* tst, void* p ) );
-MALLOC( void* SK_(realloc)              ( ThreadState* tst, void* p,
-                                          Int new_size ) );
+MALLOC( void  SK_(__builtin_delete)     ( void* p ) );
+MALLOC( void  SK_(__builtin_vec_delete) ( void* p ) );
+MALLOC( void* SK_(realloc)              ( void* p, Int new_size ) );
 
 /*--------------------------------------------------------------------*/
 /*--- end                                            vg_defaults.c ---*/

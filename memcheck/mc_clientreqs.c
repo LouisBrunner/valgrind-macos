@@ -144,7 +144,7 @@ Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
    return False;
 }
 
-Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg, UInt* ret )
+Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg, UInt* ret )
 {
    Int   i;
    Bool  ok;
@@ -157,14 +157,14 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg, UInt* ret )
       case VG_USERREQ__CHECK_WRITABLE: /* check writable */
          ok = MC_(check_writable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
-            MC_(record_user_error) ( tst, bad_addr, True );
+            MC_(record_user_error) ( tid, bad_addr, True );
          *ret = ok ? (UInt)NULL : bad_addr;
 	 break;
 
       case VG_USERREQ__CHECK_READABLE: /* check readable */
          ok = MC_(check_readable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
-            MC_(record_user_error) ( tst, bad_addr, False );
+            MC_(record_user_error) ( tid, bad_addr, False );
          *ret = ok ? (UInt)NULL : bad_addr;
 	 break;
 
@@ -179,7 +179,7 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg, UInt* ret )
          vg_cgbs[i].kind  = CG_NoAccess;
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
-         vg_cgbs[i].where = VG_(get_ExeContext) ( tst );
+         vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
          MC_(make_noaccess) ( arg[1], arg[2] );
 	 *ret = i;
 	 break;
@@ -189,7 +189,7 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg, UInt* ret )
          vg_cgbs[i].kind  = CG_Writable;
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
-         vg_cgbs[i].where = VG_(get_ExeContext) ( tst );
+         vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
          MC_(make_writable) ( arg[1], arg[2] );
          *ret = i;
 	 break;
@@ -199,7 +199,7 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg, UInt* ret )
          vg_cgbs[i].kind  = CG_Readable;
          vg_cgbs[i].start = arg[1];
          vg_cgbs[i].size  = arg[2];
-         vg_cgbs[i].where = VG_(get_ExeContext) ( tst );
+         vg_cgbs[i].where = VG_(get_ExeContext) ( tid );
          MC_(make_readable) ( arg[1], arg[2] );
 	 *ret = i;
          break;
@@ -219,7 +219,7 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg, UInt* ret )
             error. */
          /* VG_(printf)("get_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
          *ret = MC_(get_or_set_vbits_for_client)
-                   ( tst, arg[1], arg[2], arg[3], False /* get them */ );
+                   ( tid, arg[1], arg[2], arg[3], False /* get them */ );
          break;
 
       case VG_USERREQ__SET_VBITS:
@@ -227,11 +227,11 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg, UInt* ret )
             error. */
          /* VG_(printf)("set_vbits %p %p %d\n", arg[1], arg[2], arg[3] ); */
          *ret = MC_(get_or_set_vbits_for_client)
-                   ( tst, arg[1], arg[2], arg[3], True /* set them */ );
+                   ( tid, arg[1], arg[2], arg[3], True /* set them */ );
          break;
 
       default:
-         if (MAC_(handle_common_client_requests)(tst, arg, ret )) {
+         if (MAC_(handle_common_client_requests)(tid, arg, ret )) {
             return True;
          } else {
             VG_(message)(Vg_UserMsg, 

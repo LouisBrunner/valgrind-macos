@@ -332,8 +332,8 @@ void create_translation_for ( ThreadId tid, Addr orig_addr )
       jumps[i] = (UShort)-1;
 
    /* Make a translation, into temporary storage. */
-   VG_(translate)( &VG_(threads)[tid],
-                   orig_addr, &orig_size, &trans_addr, &trans_size, jumps );
+   VG_(translate)( tid, orig_addr,                                /* in */
+                   &orig_size, &trans_addr, &trans_size, jumps ); /* out */
 
    /* Copy data at trans_addr into the translation cache. */
    /* Since the .orig_size and .trans_size fields are
@@ -363,18 +363,11 @@ ThreadId vg_alloc_ThreadState ( void )
    /*NOTREACHED*/
 }
 
-ThreadState* VG_(get_ThreadState)( ThreadId tid )
+Bool VG_(is_running_thread)(ThreadId tid)
 {
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
-   return & VG_(threads)[tid];
+   ThreadId curr = VG_(get_current_tid)();
+   return (curr == tid && VG_INVALID_THREADID != tid);
 }
-
-ThreadState* VG_(get_current_thread_state) ( void )
-{
-   vg_assert(VG_(is_valid_tid)(vg_tid_currently_in_baseBlock));
-   return & VG_(threads)[vg_tid_currently_in_baseBlock];
-}
-
 
 ThreadId VG_(get_current_tid) ( void )
 {
@@ -390,12 +383,6 @@ ThreadId VG_(get_current_or_recent_tid) ( void )
    vg_assert(VG_(is_valid_tid)(vg_tid_last_in_baseBlock));
 
    return vg_tid_last_in_baseBlock;
-}
-
-ThreadId VG_(get_tid_from_ThreadState) (ThreadState* tst)
-{
-   vg_assert(tst >= &VG_(threads)[1] && tst < &VG_(threads)[VG_N_THREADS]);
-   return tst->tid;
 }
 
 /* Copy the saved state of a thread into VG_(baseBlock), ready for it
@@ -1626,7 +1613,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
       throwing away the result. */
    VG_(printf)(
       "======vvvvvvvv====== LAST TRANSLATION ======vvvvvvvv======\n");
-   VG_(translate)( &VG_(threads)[tid], 
+   VG_(translate)( tid, 
                    VG_(threads)[tid].m_eip, NULL, NULL, NULL, NULL );
    VG_(printf)("\n");
    VG_(printf)(
@@ -1766,7 +1753,7 @@ void maybe_rendezvous_joiners_and_joinees ( void )
       thread_return = VG_(threads)[jnr].joiner_thread_return;
       if (thread_return != NULL) {
          /* CHECK thread_return writable */
-         VG_TRACK( pre_mem_write, Vg_CorePThread, &VG_(threads)[jnr],
+         VG_TRACK( pre_mem_write, Vg_CorePThread, jnr,
                                   "pthread_join: thread_return",
                                   (Addr)thread_return, sizeof(void*));
 
@@ -1859,7 +1846,7 @@ void do__cleanup_pop ( ThreadId tid, CleanupEntry* cu )
      return;
    }
    sp--;
-   VG_TRACK( pre_mem_write, Vg_CorePThread, & VG_(threads)[tid],
+   VG_TRACK( pre_mem_write, Vg_CorePThread, tid,
                             "cleanup pop", (Addr)cu, sizeof(CleanupEntry) );
    *cu = VG_(threads)[tid].custack[sp];
    VG_TRACK( post_mem_write, (Addr)cu, sizeof(CleanupEntry) );
@@ -2257,8 +2244,7 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    SET_PTHREQ_ESP(tid, VG_(threads)[tid].m_esp - 8);
 
    VG_TRACK ( new_mem_stack, (Addr)VG_(threads)[tid].m_esp, 2 * 4 );
-   VG_TRACK ( pre_mem_write, Vg_CorePThread, & VG_(threads)[tid], 
-                             "new thread: stack",
+   VG_TRACK ( pre_mem_write, Vg_CorePThread, tid, "new thread: stack",
                              (Addr)VG_(threads)[tid].m_esp, 2 * 4 );
  
    /* push arg and (bogus) return address */
@@ -2918,8 +2904,7 @@ void do_pthread_key_create ( ThreadId tid,
    vg_thread_keys[i].destructor = destructor;
 
    /* check key for addressibility */
-   VG_TRACK( pre_mem_write, Vg_CorePThread, &VG_(threads)[tid], 
-                            "pthread_key_create: key",
+   VG_TRACK( pre_mem_write, Vg_CorePThread, tid, "pthread_key_create: key",
                             (Addr)key, sizeof(pthread_key_t));
    *key = i;
    VG_TRACK( post_mem_write, (Addr)key, sizeof(pthread_key_t) );
@@ -3024,15 +3009,14 @@ void do__get_key_destr_and_spec ( ThreadId tid,
       SET_PTHREQ_RETVAL(tid, -1);
       return;
    }
-   VG_TRACK( pre_mem_write, Vg_CorePThread, & VG_(threads)[tid], 
-                            "get_key_destr_and_spec: cu", (Addr)cu,
-                            sizeof(CleanupEntry) );
+   VG_TRACK( pre_mem_write, Vg_CorePThread, tid, "get_key_destr_and_spec: cu",
+                            (Addr)cu, sizeof(CleanupEntry) );
 
    cu->fn = vg_thread_keys[key].destructor;
    if (VG_(threads)[tid].specifics_ptr == NULL) {
       cu->arg = NULL;
    } else {
-      VG_TRACK( pre_mem_read, Vg_CorePThread, & VG_(threads)[tid],
+      VG_TRACK( pre_mem_read, Vg_CorePThread, tid,
                 "get_key_destr_and_spec: key",
                 (Addr)(&VG_(threads)[tid].specifics_ptr[key]), 
                 sizeof(void*) );
@@ -3071,12 +3055,10 @@ void do_pthread_sigmask ( ThreadId tid,
              && VG_(threads)[tid].status == VgTs_Runnable);
 
    if (newmask)
-      VG_TRACK( pre_mem_read, Vg_CorePThread, &VG_(threads)[tid],
-                              "pthread_sigmask: newmask",
+      VG_TRACK( pre_mem_read, Vg_CorePThread, tid, "pthread_sigmask: newmask",
                               (Addr)newmask, sizeof(vki_ksigset_t));
    if (oldmask)
-      VG_TRACK( pre_mem_write, Vg_CorePThread, &VG_(threads)[tid],
-                               "pthread_sigmask: oldmask",
+      VG_TRACK( pre_mem_write, Vg_CorePThread, tid, "pthread_sigmask: oldmask",
                                (Addr)oldmask, sizeof(vki_ksigset_t));
 
    VG_(do_pthread_sigmask_SCSS_upd) ( tid, vki_how, newmask, oldmask );
@@ -3204,7 +3186,7 @@ void do__set_fhstack_entry ( ThreadId tid, Int n, ForkHandlerEntry* fh )
 
    vg_assert(VG_(is_valid_tid)(tid) 
              && VG_(threads)[tid].status == VgTs_Runnable);
-   VG_TRACK( pre_mem_read, Vg_CorePThread, &VG_(threads)[tid],
+   VG_TRACK( pre_mem_read, Vg_CorePThread, tid,
                            "pthread_atfork: prepare/parent/child",
                            (Addr)fh, sizeof(ForkHandlerEntry));
 
@@ -3230,8 +3212,7 @@ void do__get_fhstack_entry ( ThreadId tid, Int n, /*OUT*/
 
    vg_assert(VG_(is_valid_tid)(tid) 
              && VG_(threads)[tid].status == VgTs_Runnable);
-   VG_TRACK( pre_mem_write, Vg_CorePThread, &VG_(threads)[tid],
-                            "fork: prepare/parent/child",
+   VG_TRACK( pre_mem_write, Vg_CorePThread, tid, "fork: prepare/parent/child",
                             (Addr)fh, sizeof(ForkHandlerEntry));
 
    if (n < 0 || n >= VG_N_FORKHANDLERSTACK) {
@@ -3271,7 +3252,6 @@ UInt VG_(get_exit_status_shadow) ( void )
 static
 void do_client_request ( ThreadId tid )
 {
-   ThreadState* tst    = &VG_(threads)[tid];
    UInt*        arg    = (UInt*)(VG_(threads)[tid].m_eax);
    UInt         req_no = arg[0];
 
@@ -3299,27 +3279,6 @@ void do_client_request ( ThreadId tid )
          break;
       }
 
-      case VG_USERREQ__CLIENT_tstCALL0: {
-         UInt (*f)(ThreadState*) = (void*)arg[1];
-         SET_CLCALL_RETVAL(tid, f ( tst ), (Addr)f );
-         break;
-      }
-      case VG_USERREQ__CLIENT_tstCALL1: {
-         UInt (*f)(ThreadState*, UInt) = (void*)arg[1];
-         SET_CLCALL_RETVAL(tid, f ( tst, arg[2] ), (Addr)f );
-         break;
-      }
-      case VG_USERREQ__CLIENT_tstCALL2: {
-         UInt (*f)(ThreadState*, UInt, UInt) = (void*)arg[1];
-         SET_CLCALL_RETVAL(tid, f ( tst, arg[2], arg[3] ), (Addr)f );
-         break;
-      }
-      case VG_USERREQ__CLIENT_tstCALL3: {
-         UInt (*f)(ThreadState*, UInt, UInt, UInt) = (void*)arg[1];
-         SET_CLCALL_RETVAL(tid, f ( tst, arg[2], arg[3], arg[4] ), (Addr)f );
-         break;
-      }
-
       /* Note:  for skins that replace malloc() et al, we want to call
          the replacement versions.  For those that don't, we want to call
          VG_(cli_malloc)() et al.  We do this by calling SK_(malloc)(), which
@@ -3331,14 +3290,14 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__MALLOC:
          VG_(sk_malloc_called_by_scheduler) = True;
          SET_PTHREQ_RETVAL(
-            tid, (UInt)SK_(malloc) ( tst, arg[1] ) 
+            tid, (UInt)SK_(malloc) ( arg[1] ) 
          );
          VG_(sk_malloc_called_by_scheduler) = False;
          break;
 
       case VG_USERREQ__FREE:
          VG_(sk_malloc_called_by_scheduler) = True;
-         SK_(free) ( tst, (void*)arg[1] );
+         SK_(free) ( (void*)arg[1] );
          VG_(sk_malloc_called_by_scheduler) = False;
 	 SET_PTHREQ_RETVAL(tid, 0); /* irrelevant */
          break;
@@ -3561,7 +3520,7 @@ void do_client_request ( ThreadId tid )
                VG_(printf)("client request: code %d,  addr %p,  len %d\n",
                            arg[0], (void*)arg[1], arg[2] );
 
-	    if (SK_(handle_client_request) ( &VG_(threads)[tid], arg, &ret ))
+	    if (SK_(handle_client_request) ( tid, arg, &ret ))
 		SET_CLREQ_RETVAL(tid, ret);
          } else {
 	    static Bool whined = False;

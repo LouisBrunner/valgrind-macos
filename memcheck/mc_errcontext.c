@@ -127,27 +127,26 @@ void SK_(pp_SkinError) ( Error* err )
 /* Creates a copy of the `extra' part, updates the copy with address info if
    necessary, and returns the copy. */
 /* This one called from generated code and non-generated code. */
-void MC_(record_value_error) ( ThreadState* tst, Int size )
+void MC_(record_value_error) ( ThreadId tid, Int size )
 {
    MAC_Error err_extra;
 
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.size = size;
-   VG_(maybe_record_error)( tst, ValueErr, /*addr*/0, /*s*/NULL, &err_extra );
+   VG_(maybe_record_error)( tid, ValueErr, /*addr*/0, /*s*/NULL, &err_extra );
 }
 
 /* This called from non-generated code */
 
-void MC_(record_user_error) ( ThreadState* tst, Addr a, Bool isWrite )
+void MC_(record_user_error) ( ThreadId tid, Addr a, Bool isWrite )
 {
    MAC_Error err_extra;
 
-   sk_assert(NULL != tst);
-
+   sk_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    err_extra.isWrite        = isWrite;
-   VG_(maybe_record_error)( tst, UserErr, a, /*s*/NULL, &err_extra );
+   VG_(maybe_record_error)( tid, UserErr, a, /*s*/NULL, &err_extra );
 }
 
 /*------------------------------------------------------------*/

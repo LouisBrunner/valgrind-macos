@@ -391,7 +391,7 @@ static Bool is_just_below_ESP( Addr esp, Addr aa )
 
 /* This one called from generated code and non-generated code. */
 
-void MAC_(record_address_error) ( ThreadState* tst, Addr a, Int size,
+void MAC_(record_address_error) ( ThreadId tid, Addr a, Int size,
                                   Bool isWrite )
 {
    MAC_Error err_extra;
@@ -409,75 +409,74 @@ void MAC_(record_address_error) ( ThreadState* tst, Addr a, Int size,
    err_extra.size    = size;
    err_extra.addrinfo.akind     = Undescribed;
    err_extra.addrinfo.maybe_gcc = just_below_esp;
-   VG_(maybe_record_error)( tst, AddrErr, a, /*s*/NULL, &err_extra );
+   VG_(maybe_record_error)( tid, AddrErr, a, /*s*/NULL, &err_extra );
 }
 
 /* These ones are called from non-generated code */
 
 /* This is for memory errors in pthread functions, as opposed to pthread API
    errors which are found by the core. */
-void MAC_(record_core_mem_error) ( ThreadState* tst, Bool isWrite, Char* msg )
+void MAC_(record_core_mem_error) ( ThreadId tid, Bool isWrite, Char* msg )
 {
    MAC_Error err_extra;
 
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.isWrite = isWrite;
-   VG_(maybe_record_error)( tst, CoreMemErr, /*addr*/0, msg, &err_extra );
+   VG_(maybe_record_error)( tid, CoreMemErr, /*addr*/0, msg, &err_extra );
 }
 
-void MAC_(record_param_error) ( ThreadState* tst, Addr a, Bool isWrite, 
+void MAC_(record_param_error) ( ThreadId tid, Addr a, Bool isWrite, 
                                Char* msg )
 {
    MAC_Error err_extra;
 
-   sk_assert(NULL != tst);
+   sk_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
    err_extra.isWrite = isWrite;
-   VG_(maybe_record_error)( tst, ParamErr, a, msg, &err_extra );
+   VG_(maybe_record_error)( tid, ParamErr, a, msg, &err_extra );
 }
 
-void MAC_(record_jump_error) ( ThreadState* tst, Addr a )
+void MAC_(record_jump_error) ( ThreadId tid, Addr a )
 {
    MAC_Error err_extra;
 
-   sk_assert(NULL != tst);
-
+   sk_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.axskind = ExecAxs;
    err_extra.addrinfo.akind = Undescribed;
-   VG_(maybe_record_error)( tst, AddrErr, a, /*s*/NULL, &err_extra );
+   VG_(maybe_record_error)( tid, AddrErr, a, /*s*/NULL, &err_extra );
 }
 
-void MAC_(record_free_error) ( ThreadState* tst, Addr a ) 
+void MAC_(record_free_error) ( ThreadId tid, Addr a ) 
 {
    MAC_Error err_extra;
 
-   sk_assert(NULL != tst);
-
+   sk_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
-   VG_(maybe_record_error)( tst, FreeErr, a, /*s*/NULL, &err_extra );
+   VG_(maybe_record_error)( tid, FreeErr, a, /*s*/NULL, &err_extra );
 }
 
-void MAC_(record_freemismatch_error) ( ThreadState* tst, Addr a )
+void MAC_(record_freemismatch_error) ( ThreadId tid, Addr a )
 {
    MAC_Error err_extra;
 
-   sk_assert(NULL != tst);
-
+   sk_assert(VG_INVALID_THREADID != tid);
    MAC_(clear_MAC_Error)( &err_extra );
    err_extra.addrinfo.akind = Undescribed;
-   VG_(maybe_record_error)( tst, FreeMismatchErr, a, /*s*/NULL, &err_extra );
+   VG_(maybe_record_error)( tid, FreeMismatchErr, a, /*s*/NULL, &err_extra );
 }
 
 
-void MAC_(record_overlap_error) ( ThreadState* tst, Char* function )
+// This one not passed a ThreadId, so it grabs it itself.
+void MAC_(record_overlap_error) ( Char* function )
 {
    MAC_Error err_extra;
 
    MAC_(clear_MAC_Error)( &err_extra );
-   VG_(maybe_record_error)( tst, OverlapErr, /*addr*/0, function, &err_extra );
+   VG_(maybe_record_error)( VG_(get_current_or_recent_tid)(), 
+                            OverlapErr, /*addr*/0, function, &err_extra );
 }
 
 
@@ -793,10 +792,14 @@ void MAC_(common_fini)(void (*leak_check)(void))
 /*--- Common client request handling                       ---*/
 /*------------------------------------------------------------*/
 
-Bool MAC_(handle_common_client_requests)(ThreadState* tst, UInt* arg,
-                                         UInt* ret )
+Bool MAC_(handle_common_client_requests)(ThreadId tid, UInt* arg, UInt* ret )
 {
    UInt* argv = (UInt*)arg;
+
+   // Not using 'tid' here because MAC_(new_block)() and MAC_(handle_free)()
+   // grab it themselves.  But what they grab should match 'tid', check
+   // this.
+   sk_assert(tid == VG_(get_current_or_recent_tid)());
    
    switch (arg[0]) {
    case VG_USERREQ__COUNT_LEAKS: { /* count leaked bytes */
@@ -816,14 +819,14 @@ Bool MAC_(handle_common_client_requests)(ThreadState* tst, UInt* arg,
       UInt rzB       =       argv[3];
       Bool is_zeroed = (Bool)argv[4];
 
-      MAC_(new_block) ( tst, p, sizeB, rzB, is_zeroed, MAC_AllocCustom );
+      MAC_(new_block) ( p, sizeB, rzB, is_zeroed, MAC_AllocCustom );
       return True;
    }
    case VG_USERREQ__FREELIKE_BLOCK: {
       Addr p         = (Addr)argv[1];
       UInt rzB       =       argv[2];
 
-      MAC_(handle_free) ( tst, p, rzB, MAC_AllocCustom );
+      MAC_(handle_free) ( p, rzB, MAC_AllocCustom );
       return True;
    }
    default:

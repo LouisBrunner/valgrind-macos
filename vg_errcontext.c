@@ -144,6 +144,14 @@ typedef
       Bool isWriteableLack;
       /* ALL */
       ThreadId tid;
+      /* ALL */
+      /* These record %EIP, %ESP and %EBP at the error point.  They
+         are only used to make GDB-attaching convenient; there is no
+         other purpose; specifically they are not used to do
+         comparisons between errors. */
+      UInt m_eip;
+      UInt m_esp;
+      UInt m_ebp;
    } 
    ErrContext;
 
@@ -192,6 +200,9 @@ static void clear_ErrContext ( ErrContext* ec )
    clear_AddrInfo ( &ec->addrinfo );
    ec->syscall_param   = NULL;
    ec->isWriteableLack = False;
+   ec->m_eip   = 0xDEADB00F;
+   ec->m_esp   = 0xDEADBE0F;
+   ec->m_ebp   = 0xDEADB0EF;
    ec->tid     = VG_INVALID_THREADID;
 }
 
@@ -531,7 +542,8 @@ static void VG_(maybe_add_context) ( ErrContext* ec )
       vg_n_errs_shown++;
       /* Perhaps we want a GDB attach at this point? */
       if (vg_is_GDB_attach_requested()) {
-         VG_(swizzle_esp_then_start_GDB)();
+         VG_(swizzle_esp_then_start_GDB)(
+            ec->m_eip, ec->m_esp, ec->m_ebp);
       }
    } else {
       vg_n_errs_suppressed++;
@@ -562,6 +574,9 @@ void VG_(record_value_error) ( Int size )
    ec.ekind = ValueErr;
    ec.size  = size;
    ec.tid   = VG_(get_current_tid)();
+   ec.m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
+   ec.m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
+   ec.m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
    VG_(maybe_add_context) ( &ec );
 }
 
@@ -585,6 +600,9 @@ void VG_(record_address_error) ( Addr a, Int size, Bool isWrite )
    ec.size    = size;
    ec.addr    = a;
    ec.tid     = VG_(get_current_tid)();
+   ec.m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
+   ec.m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
+   ec.m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
    VG_(describe_addr) ( a, &ec.addrinfo );
    VG_(maybe_add_context) ( &ec );
 }
@@ -604,6 +622,9 @@ void VG_(record_free_error) ( ThreadState* tst, Addr a )
    ec.ekind   = FreeErr;
    ec.addr    = a;
    ec.tid     = tst->tid;
+   ec.m_eip   = tst->m_eip;
+   ec.m_esp   = tst->m_esp;
+   ec.m_ebp   = tst->m_ebp;
    VG_(describe_addr) ( a, &ec.addrinfo );
    VG_(maybe_add_context) ( &ec );
 }
@@ -618,6 +639,9 @@ void VG_(record_freemismatch_error) ( ThreadState* tst, Addr a )
    ec.ekind   = FreeMismatchErr;
    ec.addr    = a;
    ec.tid     = tst->tid;
+   ec.m_eip   = tst->m_eip;
+   ec.m_esp   = tst->m_esp;
+   ec.m_ebp   = tst->m_ebp;
    VG_(describe_addr) ( a, &ec.addrinfo );
    VG_(maybe_add_context) ( &ec );
 }
@@ -633,6 +657,9 @@ void VG_(record_jump_error) ( ThreadState* tst, Addr a )
    ec.axskind = ExecAxs;
    ec.addr    = a;
    ec.tid     = tst->tid;
+   ec.m_eip   = tst->m_eip;
+   ec.m_esp   = tst->m_esp;
+   ec.m_ebp   = tst->m_ebp;
    VG_(describe_addr) ( a, &ec.addrinfo );
    VG_(maybe_add_context) ( &ec );
 }
@@ -648,6 +675,9 @@ void VG_(record_param_err) ( ThreadState* tst, Addr a, Bool isWriteLack,
    ec.ekind   = ParamErr;
    ec.addr    = a;
    ec.tid     = tst->tid;
+   ec.m_eip   = tst->m_eip;
+   ec.m_esp   = tst->m_esp;
+   ec.m_ebp   = tst->m_ebp;
    VG_(describe_addr) ( a, &ec.addrinfo );
    ec.syscall_param = msg;
    ec.isWriteableLack = isWriteLack;
@@ -664,6 +694,9 @@ void VG_(record_user_err) ( ThreadState* tst, Addr a, Bool isWriteLack )
    ec.ekind   = UserErr;
    ec.addr    = a;
    ec.tid     = tst->tid;
+   ec.m_eip   = tst->m_eip;
+   ec.m_esp   = tst->m_esp;
+   ec.m_ebp   = tst->m_ebp;
    VG_(describe_addr) ( a, &ec.addrinfo );
    ec.isWriteableLack = isWriteLack;
    VG_(maybe_add_context) ( &ec );

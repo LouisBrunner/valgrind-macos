@@ -233,7 +233,7 @@ static int thread_specific_errno[VG_N_THREADS];
 int* __errno_location ( void )
 {
    int tid;
-   ensure_valgrind("__errno_location");
+   /* ensure_valgrind("__errno_location"); */
    VALGRIND_MAGIC_SEQUENCE(tid, 0 /* default */,
                            VG_USERREQ__PTHREAD_GET_THREADID,
                            0, 0, 0, 0);

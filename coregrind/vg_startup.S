@@ -175,6 +175,12 @@ VG_(switch_to_real_CPU):
 /*--- %esp/%ebp and then start up GDB.                     ---*/
 /*------------------------------------------------------------*/
 
+/*
+extern void VG_(swizzle_esp_then_start_GDB) ( Addr m_eip_at_error,
+                                              Addr m_esp_at_error,
+                                              Addr m_ebp_at_error );
+*/
+
 /*--- This is clearly not re-entrant! ---*/
 .data
 vg_ebp_saved_over_GDB_start:
@@ -190,12 +196,15 @@ VG_(swizzle_esp_then_start_GDB):
 	# remember the simulators current stack/frame pointers
 	movl	%ebp, vg_ebp_saved_over_GDB_start
 	movl	%esp, vg_esp_saved_over_GDB_start
-	
-	movl	$VG_(baseBlock), %ebx
 
-	# fetch %ESP into %esp
-	movl	VGOFF_(m_esp), %esi
-	movl	(%ebx, %esi, 4), %esp
+	# get args into regs
+	movl	44(%esp), %eax		# client %EBP
+	movl	40(%esp), %ebx		# client %ESP
+	movl	36(%esp), %ecx		# client %EIP
+
+	# Now thatn we don't need to refer to simulators stack any more,
+	# put %ESP into %esp
+	movl	%ebx, %esp
 
 	### %esp now refers to clients stack
 	### mess with the clients stack to make it look as if it
@@ -203,14 +212,10 @@ VG_(swizzle_esp_then_start_GDB):
 	### as if the top (currently executing) stack frame of the
 	### client is missing.
 	
-	# push %EIP, via %eax.  This is a faked-up return address.
-	movl	VGOFF_(m_eip), %esi
-	movl	(%ebx, %esi, 4), %eax
-	pushl	%eax
+	# push %EIP.  This is a faked-up return address.
+	pushl	%ecx
 
-	# push %EBP, via %eax.  This is a faked %ebp-chain pointer.
-	movl	VGOFF_(m_ebp), %esi
-	movl	(%ebx, %esi, 4), %eax
+	# push %EBP.  This is a faked %ebp-chain pointer.
 	pushl	%eax
 
 	movl	%esp, %ebp

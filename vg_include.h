@@ -1490,7 +1490,9 @@ extern void VG_(do_syscall) ( void );
 extern void VG_(shutdown);
 extern void VG_(switch_to_real_CPU) ( void );
 
-extern void VG_(swizzle_esp_then_start_GDB) ( void );
+extern void VG_(swizzle_esp_then_start_GDB) ( Addr m_eip_at_error,
+                                              Addr m_esp_at_error,
+                                              Addr m_ebp_at_error );
 
 
 /* ---------------------------------------------------------------------

@@ -146,16 +146,15 @@ extern UInt  armg_calculate_condition (
 
 */
 enum {
-    ARMG_CC_OP_COPY,    /* DEP1 = current flags, DEP2 = 0 */
-                        /* just copy DEP1 to output */
+   ARMG_CC_OP_COPY,    /* DEP1 = current flags, DEP2 = 0 */
+                       /* just copy DEP1 to output */
 
-    ARMG_CC_OP_LOGIC,   /* DEP1 = result, DEP2 = shifter_carry_out */
-
-    ARMG_CC_OP_SUB,     /* DEP1 = arg1(Rn), DEP2 = arg2 (shifter_op) */
-    ARMG_CC_OP_ADD,     /* DEP1 = arg1(Rn), DEP2 = arg2 (shifter_op) */
-
-
-    ARMG_CC_OP_NUMBER
+   ARMG_CC_OP_LOGIC,   /* DEP1 = result, DEP2 = shifter_carry_out */
+   
+   ARMG_CC_OP_SUB,     /* DEP1 = arg1(Rn), DEP2 = arg2 (shifter_op) */
+   ARMG_CC_OP_ADD,     /* DEP1 = arg1(Rn), DEP2 = arg2 (shifter_op) */
+   
+   ARMG_CC_OP_NUMBER
 };
 
 /* requires further study */

@@ -46,12 +46,12 @@
 
 extern
 IRBB* bbToIR_PPC32 ( UChar*           ppc32code, 
-		     Addr64           eip, 
-		     VexGuestExtents* vge,
-		     Bool             (*byte_accessible)(Addr64),
-		     Bool             (*resteerOkFn)(Addr64),
-		     Bool             host_bigendian,
-		     VexSubArch       subarch_guest );
+                     Addr64           eip, 
+                     VexGuestExtents* vge,
+                     Bool             (*byte_accessible)(Addr64),
+                     Bool             (*resteerOkFn)(Addr64),
+                     Bool             host_bigendian,
+                     VexSubArch       subarch_guest );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
@@ -88,24 +88,24 @@ extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt arg1, UInt arg2, 
   Handy enumeration for flag calculation helper functions (xer_ca, ov)
  */
 enum {
-    PPC32G_FLAG_OP_ADD=0,   // addc, addo, addic
-    PPC32G_FLAG_OP_ADDE,    // adde, addeo
-    PPC32G_FLAG_OP_ADDME,   // addme, addmeo
-    PPC32G_FLAG_OP_ADDZE,   // addze, addzeo
-    PPC32G_FLAG_OP_DIVW,    // divwo
-    PPC32G_FLAG_OP_DIVWU,   // divwuo
-    PPC32G_FLAG_OP_MULLW,   // mullwo
-    PPC32G_FLAG_OP_NEG,     // nego
-    PPC32G_FLAG_OP_SUBF,    // subfo
-    PPC32G_FLAG_OP_SUBFC,   // subfc, subfco
-    PPC32G_FLAG_OP_SUBFE,   // subfe, subfeo
-    PPC32G_FLAG_OP_SUBFI,   // subfic
-    PPC32G_FLAG_OP_SUBFME,  // subfme, subfmeo
-    PPC32G_FLAG_OP_SUBFZE,  // subfze, subfzeo
-    PPC32G_FLAG_OP_SRAW,    // sraw
-    PPC32G_FLAG_OP_SRAWI,   // srawi
-
-    PPC32G_FLAG_OP_NUMBER
+   PPC32G_FLAG_OP_ADD=0,   // addc, addo, addic
+   PPC32G_FLAG_OP_ADDE,    // adde, addeo
+   PPC32G_FLAG_OP_ADDME,   // addme, addmeo
+   PPC32G_FLAG_OP_ADDZE,   // addze, addzeo
+   PPC32G_FLAG_OP_DIVW,    // divwo
+   PPC32G_FLAG_OP_DIVWU,   // divwuo
+   PPC32G_FLAG_OP_MULLW,   // mullwo
+   PPC32G_FLAG_OP_NEG,     // nego
+   PPC32G_FLAG_OP_SUBF,    // subfo
+   PPC32G_FLAG_OP_SUBFC,   // subfc, subfco
+   PPC32G_FLAG_OP_SUBFE,   // subfe, subfeo
+   PPC32G_FLAG_OP_SUBFI,   // subfic
+   PPC32G_FLAG_OP_SUBFME,  // subfme, subfmeo
+   PPC32G_FLAG_OP_SUBFZE,  // subfze, subfzeo
+   PPC32G_FLAG_OP_SRAW,    // sraw
+   PPC32G_FLAG_OP_SRAWI,   // srawi
+   
+   PPC32G_FLAG_OP_NUMBER
 };
 
 

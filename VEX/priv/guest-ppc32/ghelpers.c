@@ -66,118 +66,118 @@
  */
 UInt ppc32g_calculate_cr7_all ( UInt op, UInt word1, UInt xer_so )
 {
-    Int sword1 = (Int)word1;
-    if (op) {
-	return (word1 & 0xF0000000);
-    } else {
-	return
-	    ((xer_so & 1) << 28)
-	    | (((sword1 == 0) ? 1:0) << 29)
-	    | (((sword1 >  0) ? 1:0) << 30)
-	    | (((sword1 <  0) ? 1:0) << 31);
-    }
+   Int sword1 = (Int)word1;
+   if (op) {
+      return (word1 & 0xF0000000);
+   } else {
+      return
+         ((xer_so & 1) << 28)
+         | (((sword1 == 0) ? 1:0) << 29)
+         | (((sword1 >  0) ? 1:0) << 30)
+         | (((sword1 <  0) ? 1:0) << 31);
+   }
 }
 
 
 
 // Calculate XER_OV
 UInt ppc32g_calculate_xer_ov ( UInt op, UInt res,
-			       UInt arg1, UInt arg2, UInt ov )
+                               UInt arg1, UInt arg2, UInt ov )
 {
-    ULong ul_tmp=0;
+   ULong ul_tmp=0;
+   
+   switch (op) {
+   case PPC32G_FLAG_OP_ADD:     // addo, addc
+   case PPC32G_FLAG_OP_ADDE:    // addeo
+      return ((arg1^arg2^-1) & (arg1^res) & (1<<31)) ? 1:0;
+      // i.e. ((both_same_sign) & (sign_changed) & (sign_mask))
+      
+   case PPC32G_FLAG_OP_ADDME:   // addmeo
+      return ((arg1) & (arg1 ^ res) & (1<<31)) ? 1:0;
+      // i.e. (neg & (sign_changed) & sign_mask)
+      
+   case PPC32G_FLAG_OP_ADDZE:   // addzeo
+      return ((arg1^(-1)) & (arg1 ^ res) & (1<<31)) ? 1:0;
+      // i.e. (pos & (sign_changed) & sign_mask)
+      
+   case PPC32G_FLAG_OP_DIVW:    // divwo
+      return ((arg1 == INT32_MIN && arg2 == -1) || arg2 == 0) ? 1:0;
+      
+   case PPC32G_FLAG_OP_DIVWU:   // divwuo
+      return (arg2 == 0) ? 1:0;
+      
+   case PPC32G_FLAG_OP_MULLW:   // mullwo
+      ul_tmp = (ULong)arg1 * (ULong)arg2;
+      return (res != res) ? 1:0;
 
-    switch (op) {
-    case PPC32G_FLAG_OP_ADD:     // addo, addc
-    case PPC32G_FLAG_OP_ADDE:    // addeo
-	return ((arg1^arg2^-1) & (arg1^res) & (1<<31)) ? 1:0;
-	// i.e. ((both_same_sign) & (sign_changed) & (sign_mask))
+   case PPC32G_FLAG_OP_NEG:     // nego
+      return (arg1 == 0x80000000) ? 1:0;
+      
+   case PPC32G_FLAG_OP_SUBF:    // subfo
+   case PPC32G_FLAG_OP_SUBFC:   // subfco
+   case PPC32G_FLAG_OP_SUBFE:   // subfeo
+      return (((~arg1)^arg2^(-1)) & ((~arg1)^res) & (1<<31)) ? 1:0;
 
-    case PPC32G_FLAG_OP_ADDME:   // addmeo
-	return ((arg1) & (arg1 ^ res) & (1<<31)) ? 1:0;
-	// i.e. (neg & (sign_changed) & sign_mask)
+   case PPC32G_FLAG_OP_SUBFME:  // subfmeo
+      return ((~arg1) & ((~arg1)^res) & (1<<31)) ? 1:0;
 
-    case PPC32G_FLAG_OP_ADDZE:   // addzeo
-	return ((arg1^(-1)) & (arg1 ^ res) & (1<<31)) ? 1:0;
-	// i.e. (pos & (sign_changed) & sign_mask)
+   case PPC32G_FLAG_OP_SUBFZE:  // subfzeo
+      return (((~arg1)^(-1)) & ((~arg1)^res) & (1<<31)) ? 1:0;
 
-    case PPC32G_FLAG_OP_DIVW:    // divwo
-	return ((arg1 == INT32_MIN && arg2 == -1) || arg2 == 0) ? 1:0;
+   default:
+      break;
+   }
 
-    case PPC32G_FLAG_OP_DIVWU:   // divwuo
-	return (arg2 == 0) ? 1:0;
-
-    case PPC32G_FLAG_OP_MULLW:   // mullwo
-	ul_tmp = (ULong)arg1 * (ULong)arg2;
-	return (res != res) ? 1:0;
-
-    case PPC32G_FLAG_OP_NEG:     // nego
-	return (arg1 == 0x80000000) ? 1:0;
-
-    case PPC32G_FLAG_OP_SUBF:    // subfo
-    case PPC32G_FLAG_OP_SUBFC:   // subfco
-    case PPC32G_FLAG_OP_SUBFE:   // subfeo
-	return (((~arg1)^arg2^(-1)) & ((~arg1)^res) & (1<<31)) ? 1:0;
-
-    case PPC32G_FLAG_OP_SUBFME:  // subfmeo
-	return ((~arg1) & ((~arg1)^res) & (1<<31)) ? 1:0;
-
-    case PPC32G_FLAG_OP_SUBFZE:  // subfzeo
-	return (((~arg1)^(-1)) & ((~arg1)^res) & (1<<31)) ? 1:0;
-
-    default:
-	break;
-    }
-
-    vpanic("ppc32g_calculate_xer_ov(ppc32)");
-    return 0; // notreached
+   vpanic("ppc32g_calculate_xer_ov(ppc32)");
+   return 0; // notreached
 }
 
 // Calculate XER_CA
 UInt ppc32g_calculate_xer_ca ( UInt op, UInt res,
-			       UInt arg1, UInt arg2, UInt ca )
+                               UInt arg1, UInt arg2, UInt ca )
 {
-    switch (op) {
-    case PPC32G_FLAG_OP_ADD:     // addc, addco, addic
-    case PPC32G_FLAG_OP_ADDZE:   // addze, addzeo
-	return (res < arg1) ? 1:0;
+   switch (op) {
+   case PPC32G_FLAG_OP_ADD:     // addc, addco, addic
+   case PPC32G_FLAG_OP_ADDZE:   // addze, addzeo
+      return (res < arg1) ? 1:0;
 
-    case PPC32G_FLAG_OP_ADDE:    // adde, addeo
-	return (res < arg1 || (ca==1 && res==arg1)) ? 1:0;
+   case PPC32G_FLAG_OP_ADDE:    // adde, addeo
+      return (res < arg1 || (ca==1 && res==arg1)) ? 1:0;
 
-    case PPC32G_FLAG_OP_ADDME:   // addme, addmeo
-	return (arg1 != 0) ? 1:0;
+   case PPC32G_FLAG_OP_ADDME:   // addme, addmeo
+      return (arg1 != 0) ? 1:0;
 
-    case PPC32G_FLAG_OP_SUBFC:   // subfc, subfco
-    case PPC32G_FLAG_OP_SUBFI:   // subfic
-    case PPC32G_FLAG_OP_SUBFZE:  // subfze, subfzeo
-	return (res <= arg2) ? 1:0;
+   case PPC32G_FLAG_OP_SUBFC:   // subfc, subfco
+   case PPC32G_FLAG_OP_SUBFI:   // subfic
+   case PPC32G_FLAG_OP_SUBFZE:  // subfze, subfzeo
+      return (res <= arg2) ? 1:0;
 
-    case PPC32G_FLAG_OP_SUBFE:   // subfe, subfeo
-	return ((res < arg2) || (ca == 1 && res == arg2)) ? 1:0;
+   case PPC32G_FLAG_OP_SUBFE:   // subfe, subfeo
+      return ((res < arg2) || (ca == 1 && res == arg2)) ? 1:0;
 
-    case PPC32G_FLAG_OP_SUBFME:  // subfme, subfmeo
-	return (res != -1) ? 1:0;
+   case PPC32G_FLAG_OP_SUBFME:  // subfme, subfmeo
+      return (res != -1) ? 1:0;
 
-    case PPC32G_FLAG_OP_SRAW:    // sraw
-	if ((arg2 & 0x20) == 0) {  // shift <= 31
-	    // ca = sign && (bits_shifted_out != 0)
-	    return (((arg1 & 0x80000000) &&
-		    ((arg1 & (0xFFFFFFFF >> (32-arg2))) != 0)) != 0) ? 1:0;
-	}
-	// shift > 31
-	// ca = sign && src != 0
-	return (((arg1 & 0x80000000) && (arg2 != 0)) != 0) ? 1:0;
+   case PPC32G_FLAG_OP_SRAW:    // sraw
+      if ((arg2 & 0x20) == 0) {  // shift <= 31
+         // ca = sign && (bits_shifted_out != 0)
+         return (((arg1 & 0x80000000) &&
+                  ((arg1 & (0xFFFFFFFF >> (32-arg2))) != 0)) != 0) ? 1:0;
+      }
+      // shift > 31
+      // ca = sign && src != 0
+      return (((arg1 & 0x80000000) && (arg2 != 0)) != 0) ? 1:0;
 
-    case PPC32G_FLAG_OP_SRAWI:   // srawi
-	// ca = sign && (bits_shifted_out != 0)
-	return (((arg1 & 0x80000000) &&
-		 ((arg1 & (0xFFFFFFFF >> (32-arg2))) != 0)) != 0) ? 1:0;
+   case PPC32G_FLAG_OP_SRAWI:   // srawi
+      // ca = sign && (bits_shifted_out != 0)
+      return (((arg1 & 0x80000000) &&
+               ((arg1 & (0xFFFFFFFF >> (32-arg2))) != 0)) != 0) ? 1:0;
 
-    default:
-	break;
-    }
-    vpanic("ppc32g_calculate_xer_ov(ppc32)");
-    return 0; // notreached
+   default:
+      break;
+   }
+   vpanic("ppc32g_calculate_xer_ov(ppc32)");
+   return 0; // notreached
 }
 
 
@@ -193,9 +193,9 @@ UInt ppc32g_calculate_xer_ca ( UInt op, UInt res,
 /* temporarily unused */
 static Bool isU32 ( IRExpr* e, UInt n )
 {
-   return e->tag == Iex_Const
-          && e->Iex.Const.con->tag == Ico_U32
-          && e->Iex.Const.con->Ico.U32 == n;
+   return (e->tag == Iex_Const
+           && e->Iex.Const.con->tag == Ico_U32
+           && e->Iex.Const.con->Ico.U32 == n);
 }
 #endif
 IRExpr* guest_ppc32_spechelper ( HChar* function_name,
@@ -222,10 +222,10 @@ void LibVEX_GuestPPC32_put_flags ( UInt flags_native,
 UInt LibVEX_GuestPPC32_get_flags ( /*IN*/VexGuestPPC32State* vex_state )
 {
    UInt flags = ppc32g_calculate_cr7_all(
-       vex_state->guest_CC_OP,
-       vex_state->guest_CC_DEP1,
-       vex_state->guest_CC_DEP2
-       );
+      vex_state->guest_CC_OP,
+      vex_state->guest_CC_DEP1,
+      vex_state->guest_CC_DEP2
+      );
    return flags;
 }
 

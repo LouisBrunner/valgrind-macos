@@ -1404,7 +1404,7 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_ShlN16x8: case Iop_ShlN32x4: case Iop_ShlN64x2:
       case Iop_ShrN16x8: case Iop_ShrN32x4: case Iop_ShrN64x2:
       case Iop_SarN16x8: case Iop_SarN32x4:
-	 BINARY(Ity_V128, Ity_V128, Ity_I8);
+         BINARY(Ity_V128, Ity_V128, Ity_I8);
 
       default:
          ppIROp(op);

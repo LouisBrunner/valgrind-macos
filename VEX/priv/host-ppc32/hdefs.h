@@ -289,7 +289,7 @@ typedef
    enum {
       Palu_INVALID,
       Palu_ADD, Palu_SUB,
-      // Palu_ADC, Palu_SBB,
+//      Palu_ADC, Palu_SBB,
       Palu_AND, Palu_OR, Palu_XOR,
       Palu_MUL
    }
@@ -408,7 +408,7 @@ typedef
          /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
          struct {
             Bool     syned;
-	    Bool     word;   /* low=0, hi=1 */
+            Bool     word;   /* low=0, hi=1 */
             HReg     dst;
             HReg     src1;
             PPC32RI* src2;
@@ -566,7 +566,7 @@ extern PPC32Instr* PPC32Instr_Call      ( PPC32CondCode, Addr32, Int );
 extern PPC32Instr* PPC32Instr_Goto      ( IRJumpKind, PPC32CondCode cond, PPC32RI* dst );
 extern PPC32Instr* PPC32Instr_CMov32    ( PPC32CondCode, HReg dst, PPC32RI* src );
 extern PPC32Instr* PPC32Instr_LoadEX    ( UChar sz, Bool syned,
-					  HReg dst, PPC32AMode* src );
+                                          HReg dst, PPC32AMode* src );
 extern PPC32Instr* PPC32Instr_Store     ( UChar sz, PPC32AMode* dst, HReg src );
 extern PPC32Instr* PPC32Instr_Set32     ( PPC32CondCode cond, HReg dst );
 //.. extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );

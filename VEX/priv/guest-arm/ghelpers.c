@@ -77,16 +77,16 @@
   c: shifter_carry_out
   v: unaffected
 */
-#define ACTIONS_LOGIC()                           		\
-{								\
-   { Int nf, zf, cf, vf;					\
-     Int oldV=0;    /* CAB: vf unaffected: what todo? */	\
-     nf = cc_dep1_formal & ARMG_CC_MASK_N;			\
-     zf = cc_dep1_formal == 0 ? 1 : 0;				\
-     cf = (cc_dep2_formal << ARMG_CC_SHIFT_C) & ARMG_CC_MASK_C;	\
-     vf = oldV & ARMG_CC_MASK_V;				\
-     return nf | zf | cf | vf;					\
-   }								\
+#define ACTIONS_LOGIC()                                          \
+{                                                                \
+   { Int nf, zf, cf, vf;                                         \
+     Int oldV=0;    /* CAB: vf unaffected: what todo? */         \
+     nf = cc_dep1_formal & ARMG_CC_MASK_N;                       \
+     zf = cc_dep1_formal == 0 ? 1 : 0;                           \
+     cf = (cc_dep2_formal << ARMG_CC_SHIFT_C) & ARMG_CC_MASK_C;  \
+     vf = oldV & ARMG_CC_MASK_V;                                 \
+     return nf | zf | cf | vf;                                   \
+   }                                                             \
 }
 
 /*-------------------------------------------------------------*/
@@ -98,20 +98,20 @@
   c: CarryFrom(Rn + shifter_op)
   v: OverflowFrom(Rn + shifter_op)
 */
-#define ACTIONS_ADD()                           		\
-{								\
-   { Int nf, zf, cf, vf;            				\
-     Int argL, argR, res;					\
-     argL = cc_dep1_formal;					\
-     argR = cc_dep2_formal;					\
-     res  = argL + argR;					\
-     nf = res & ARMG_CC_MASK_N;					\
-     zf = (res == 0) << ARMG_CC_SHIFT_Z;		 	\
-     cf = ((UInt)argL < (UInt)argR) << ARMG_CC_SHIFT_C;		\
-     vf = (((argL ^ argR ^ -1) & (argL ^ res)) >>		\
-	   (32 - ARMG_CC_SHIFT_V)) & ARMG_CC_MASK_V;		\
-     return nf | zf | cf | vf;					\
-   }								\
+#define ACTIONS_ADD()                                            \
+{                                                                \
+   { Int nf, zf, cf, vf;                                         \
+     Int argL, argR, res;                                        \
+     argL = cc_dep1_formal;                                      \
+     argR = cc_dep2_formal;                                      \
+     res  = argL + argR;                                         \
+     nf = res & ARMG_CC_MASK_N;                                  \
+     zf = (res == 0) << ARMG_CC_SHIFT_Z;                         \
+     cf = ((UInt)argL < (UInt)argR) << ARMG_CC_SHIFT_C;          \
+     vf = (((argL ^ argR ^ -1) & (argL ^ res)) >>                \
+           (32 - ARMG_CC_SHIFT_V)) & ARMG_CC_MASK_V;             \
+     return nf | zf | cf | vf;                                   \
+   }                                                             \
 }
 
 /*-------------------------------------------------------------*/
@@ -124,21 +124,21 @@
   v: OverflowFrom(Rn - shifter_op)
 */
 // CAB: cf right? ARM ARM A4-99
-#define ACTIONS_SUB()                           		\
-{								\
-   { Int nf, zf, cf, vf;            				\
-     Int argL, argR, res;					\
-     argL = cc_dep1_formal;					\
-     argR = cc_dep2_formal;					\
-     res  = argL - argR;					\
-     nf = res & ARMG_CC_MASK_N;					\
-     zf = (res == 0) << ARMG_CC_SHIFT_Z;			\
-     cf = (~((UInt)argL < (UInt)argR) <<			\
-	   ARMG_CC_SHIFT_C) & ARMG_CC_MASK_C;			\
-     vf = (((argL ^ argR ^ -1) & (argL ^ res)) >>		\
-	   (32 - ARMG_CC_SHIFT_V)) & ARMG_CC_MASK_V;		\
-     return nf | zf | cf | vf;					\
-   }								\
+#define ACTIONS_SUB()                                            \
+{                                                                \
+   { Int nf, zf, cf, vf;                                         \
+     Int argL, argR, res;                                        \
+     argL = cc_dep1_formal;                                      \
+     argR = cc_dep2_formal;                                      \
+     res  = argL - argR;                                         \
+     nf = res & ARMG_CC_MASK_N;                                  \
+     zf = (res == 0) << ARMG_CC_SHIFT_Z;                         \
+     cf = (~((UInt)argL < (UInt)argR) <<                         \
+           ARMG_CC_SHIFT_C) & ARMG_CC_MASK_C;                    \
+     vf = (((argL ^ argR ^ -1) & (argL ^ res)) >>                \
+           (32 - ARMG_CC_SHIFT_V)) & ARMG_CC_MASK_V;             \
+     return nf | zf | cf | vf;                                   \
+   }                                                             \
 }
 
 
@@ -183,38 +183,33 @@
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate all the 4 flags from the supplied thunk parameters. */
 UInt armg_calculate_flags_all ( UInt cc_op, 
-				 UInt cc_dep1_formal, 
-				 UInt cc_dep2_formal )
+                                UInt cc_dep1_formal, 
+                                UInt cc_dep2_formal )
 {
    switch (cc_op) {
+   case ARMG_CC_OP_LOGIC:  ACTIONS_LOGIC();
+   case ARMG_CC_OP_ADD:  ACTIONS_ADD();
+   case ARMG_CC_OP_SUB:  ACTIONS_SUB();
 
-       case ARMG_CC_OP_LOGIC:  ACTIONS_LOGIC();
-	   
-       case ARMG_CC_OP_ADD:  ACTIONS_ADD();
-
-       case ARMG_CC_OP_SUB:  ACTIONS_SUB();
-
-
-       default:
-	   /* shouldn't really make these calls from generated code */
-	   vex_printf("armg_calculate_flags_all(ARM)( %d, 0x%x, 0x%x )\n",
-		      cc_op, cc_dep1_formal, cc_dep2_formal );
-	   vpanic("armg_calculate_flags_all(ARM)");
+   default:
+      /* shouldn't really make these calls from generated code */
+      vex_printf("armg_calculate_flags_all(ARM)( %d, 0x%x, 0x%x )\n",
+                 cc_op, cc_dep1_formal, cc_dep2_formal );
+      vpanic("armg_calculate_flags_all(ARM)");
    }
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate just the carry flag from the supplied thunk parameters. */
 UInt armg_calculate_flags_c ( UInt cc_op, 
-			      UInt cc_dep1, 
-			      UInt cc_dep2 )
+                              UInt cc_dep1, 
+                              UInt cc_dep2 )
 {
    /* Fast-case some common ones. */
    switch (cc_op) {
-      default: 
-         break;
+   default: 
+      break;
    }
-
    return armg_calculate_flags_all(cc_op,cc_dep1,cc_dep2) & ARMG_CC_MASK_C;
 }
 
@@ -224,9 +219,9 @@ UInt armg_calculate_flags_c ( UInt cc_op,
 /* returns 1 or 0 */
 /*static*/
 UInt armg_calculate_condition ( UInt/*ARMCondcode*/ cond, 
-				UInt cc_op, 
-				UInt cc_dep1, 
-				UInt cc_dep2 )
+                                UInt cc_op, 
+                                UInt cc_dep1, 
+                                UInt cc_dep2 )
 {
    UInt nf,zf,vf,cf;
    UInt inv = cond & 1;
@@ -236,50 +231,50 @@ UInt armg_calculate_condition ( UInt/*ARMCondcode*/ cond,
    switch (cond) {
    case ARMCondEQ:    // Z=1         => z
    case ARMCondNE:    // Z=0
-       zf = nzvc >> ARMG_CC_SHIFT_Z;
-       return 1 & (inv ^ zf);
+      zf = nzvc >> ARMG_CC_SHIFT_Z;
+      return 1 & (inv ^ zf);
 
    case ARMCondHS:    // C=1         => c
    case ARMCondLO:    // C=0
-       cf = nzvc >> ARMG_CC_SHIFT_C;
-       return 1 & (inv ^ cf);
+      cf = nzvc >> ARMG_CC_SHIFT_C;
+      return 1 & (inv ^ cf);
 
    case ARMCondMI:    // N=1         => n
    case ARMCondPL:    // N=0
-       nf = nzvc >> ARMG_CC_SHIFT_N;
-       return 1 & (inv ^ nf);
+      nf = nzvc >> ARMG_CC_SHIFT_N;
+      return 1 & (inv ^ nf);
 
    case ARMCondVS:    // V=1         => v
    case ARMCondVC:    // V=0
-       vf = nzvc >> ARMG_CC_SHIFT_V;
-       return 1 & (inv ^ vf);
+      vf = nzvc >> ARMG_CC_SHIFT_V;
+      return 1 & (inv ^ vf);
 
    case ARMCondHI:    // C=1 && Z=0   => c & ~z
    case ARMCondLS:    // C=0 || Z=1
-       cf = nzvc >> ARMG_CC_SHIFT_C;
-       zf = nzvc >> ARMG_CC_SHIFT_Z;
-       return 1 & (inv ^ (cf & ~zf));
+      cf = nzvc >> ARMG_CC_SHIFT_C;
+      zf = nzvc >> ARMG_CC_SHIFT_Z;
+      return 1 & (inv ^ (cf & ~zf));
 
    case ARMCondGE:    // N=V          => ~(n^v)
    case ARMCondLT:    // N!=V
-       nf = nzvc >> ARMG_CC_SHIFT_N;
-       vf = nzvc >> ARMG_CC_SHIFT_V;
-       return 1 & (inv ^ ~(nf ^ vf));
+      nf = nzvc >> ARMG_CC_SHIFT_N;
+      vf = nzvc >> ARMG_CC_SHIFT_V;
+      return 1 & (inv ^ ~(nf ^ vf));
 
    case ARMCondGT:    // Z=0 && N=V   => (~z & ~(n^v)  =>  ~(z | (n^v)
    case ARMCondLE:    // Z=1 || N!=V
-       nf = nzvc >> ARMG_CC_SHIFT_N;
-       vf = nzvc >> ARMG_CC_SHIFT_V;
-       zf = nzvc >> ARMG_CC_SHIFT_Z;
+      nf = nzvc >> ARMG_CC_SHIFT_N;
+      vf = nzvc >> ARMG_CC_SHIFT_V;
+      zf = nzvc >> ARMG_CC_SHIFT_Z;
        return 1 & (inv ^ ~(zf | (nf ^ vf)));
 
    case ARMCondAL:   // should never get here: Always => no flags to calc
    case ARMCondNV:   // should never get here: Illegal instr
    default:
-       /* shouldn't really make these calls from generated code */
-       vex_printf("armg_calculate_condition(ARM)( %d, %d, 0x%x, 0x%x )\n",
-		  cond, cc_op, cc_dep1, cc_dep2 );
-       vpanic("armg_calculate_condition(ARM)");
+      /* shouldn't really make these calls from generated code */
+      vex_printf("armg_calculate_condition(ARM)( %d, %d, 0x%x, 0x%x )\n",
+                 cond, cc_op, cc_dep1, cc_dep2 );
+      vpanic("armg_calculate_condition(ARM)");
    }
 }
 
@@ -291,9 +286,9 @@ UInt armg_calculate_condition ( UInt/*ARMCondcode*/ cond,
 /* temporarily unused */
 static Bool isU32 ( IRExpr* e, UInt n )
 {
-   return e->tag == Iex_Const
-          && e->Iex.Const.con->tag == Ico_U32
-          && e->Iex.Const.con->Ico.U32 == n;
+   return (e->tag == Iex_Const
+           && e->Iex.Const.con->tag == Ico_U32
+           && e->Iex.Const.con->Ico.U32 == n);
 }
 #endif
 IRExpr* guest_arm_spechelper ( HChar* function_name,
@@ -317,7 +312,7 @@ void LibVEX_GuestARM_put_flags ( UInt flags_native,
    /* Mask out everything except N Z V C. */
    flags_native
       &= (ARMG_CC_MASK_N | ARMG_CC_MASK_Z | ARMG_CC_MASK_V | ARMG_CC_MASK_C);
-
+   
    vex_state->guest_CC_OP   = ARMG_CC_OP_COPY;
    vex_state->guest_CC_DEP1 = flags_native;
    vex_state->guest_CC_DEP2 = 0;

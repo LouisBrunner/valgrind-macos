@@ -314,7 +314,7 @@ myvprintf_int64 ( void(*send)(HChar), Int flags, Int base, Int width, ULong p)
    }
    if (width > 0 && (flags & VG_MSG_LJUSTIFY)) {
       for(; ind < width; ind++) {
-	 ret++;
+         ret++;
          send(' ');  // Never pad with zeroes on RHS -- changes the value!
       }
    }
@@ -340,7 +340,7 @@ UInt vprintf_wrk ( void(*send)(HChar), const HChar *format, va_list vargs )
    for (i = 0; format[i] != 0; i++) {
       if (format[i] != '%') {
          send(format[i]);
-	 ret++;
+         ret++;
          continue;
       }
       i++;
@@ -350,15 +350,15 @@ UInt vprintf_wrk ( void(*send)(HChar), const HChar *format, va_list vargs )
       if (format[i] == '%') {
          /* `%%' is replaced by `%'. */
          send('%');
-	 ret++;
+         ret++;
          continue;
       }
       flags = 0;
       is_long = False;
       width = 0; /* length of the field. */
       if (format[i] == '(') {
-	 flags |= VG_MSG_PAREN;
-	 i++;
+         flags |= VG_MSG_PAREN;
+         i++;
       }
       /* If ',' follows '%', commas will be inserted. */
       if (format[i] == ',') {
@@ -390,36 +390,36 @@ UInt vprintf_wrk ( void(*send)(HChar), const HChar *format, va_list vargs )
             flags |= VG_MSG_SIGNED;
             if (is_long)
                ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, Long)));
+                                      (ULong)(va_arg (vargs, Long)));
             else
                ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, Int)));
+                                      (ULong)(va_arg (vargs, Int)));
             break;
          case 'u': /* %u */
             if (is_long)
                ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, ULong)));
+                                      (ULong)(va_arg (vargs, ULong)));
             else
                ret += myvprintf_int64(send, flags, 10, width, 
-				      (ULong)(va_arg (vargs, UInt)));
+                                      (ULong)(va_arg (vargs, UInt)));
             break;
          case 'p': /* %p */
-	    ret += 2;
+            ret += 2;
             send('0');
             send('x');
             ret += myvprintf_int64(send, flags, 16, width, 
-				   (ULong)((HWord)va_arg (vargs, void *)));
+                                   (ULong)((HWord)va_arg (vargs, void *)));
             break;
          case 'x': /* %x */
             if (is_long)
                ret += myvprintf_int64(send, flags, 16, width, 
-				      (ULong)(va_arg (vargs, ULong)));
+                                      (ULong)(va_arg (vargs, ULong)));
             else
                ret += myvprintf_int64(send, flags, 16, width, 
-				      (ULong)(va_arg (vargs, UInt)));
+                                      (ULong)(va_arg (vargs, UInt)));
             break;
          case 'c': /* %c */
-	    ret++;
+            ret++;
             send(toHChar(va_arg (vargs, int)));
             break;
          case 's': case 'S': { /* %s */
@@ -428,25 +428,25 @@ UInt vprintf_wrk ( void(*send)(HChar), const HChar *format, va_list vargs )
             ret += myvprintf_str(send, flags, width, str, 
                                  toBool(format[i]=='S'));
             break;
-	 }
+         }
 #        if 0
-	 case 'y': { /* %y - print symbol */
-	    Char buf[100];
-	    Char *cp = buf;
-	    Addr a = va_arg(vargs, Addr);
+         case 'y': { /* %y - print symbol */
+            Char buf[100];
+            Char *cp = buf;
+            Addr a = va_arg(vargs, Addr);
 
-	    if (flags & VG_MSG_PAREN)
-	       *cp++ = '(';
-	    if (VG_(get_fnname_w_offset)(a, cp, sizeof(buf)-4)) {
-	       if (flags & VG_MSG_PAREN) {
-		  cp += VG_(strlen)(cp);
-		  *cp++ = ')';
-		  *cp = '\0';
-	       }
-	       ret += myvprintf_str(send, flags, width, buf, 0);
-	    }
-	    break;
-	 }
+            if (flags & VG_MSG_PAREN)
+               *cp++ = '(';
+            if (VG_(get_fnname_w_offset)(a, cp, sizeof(buf)-4)) {
+               if (flags & VG_MSG_PAREN) {
+                  cp += VG_(strlen)(cp);
+                  *cp++ = ')';
+                  *cp = '\0';
+               }
+               ret += myvprintf_str(send, flags, width, buf, 0);
+            }
+            break;
+         }
 #        endif
          default:
             break;

@@ -296,7 +296,7 @@ typedef
 
       /* --- Int to/from FP conversions. --- */
       /* For the most part, these take a first argument :: Ity_I32
-	 (as IRRoundingMode) which is an indication of the rounding
+         (as IRRoundingMode) which is an indication of the rounding
          mode to use, as per the following encoding:
             00b  to nearest (the default)
             01b  to -infinity
@@ -405,7 +405,7 @@ typedef
       /* --- 32x4 lowest-lane-only scalar FP --- */
 
       /* In binary cases, upper 3/4 is copied from first operand.  In
-	 unary cases, upper 3/4 is copied from the operand. */
+         unary cases, upper 3/4 is copied from the operand. */
 
       /* binary */
       Iop_Add32F0x4, Iop_Sub32F0x4, Iop_Mul32F0x4, Iop_Div32F0x4, 
@@ -428,7 +428,7 @@ typedef
       /* --- 64x2 lowest-lane-only scalar FP --- */
 
       /* In binary cases, upper half is copied from first operand.  In
-	 unary cases, upper half is copied from the operand. */
+         unary cases, upper half is copied from the operand. */
 
       /* binary */
       Iop_Add64F0x2, Iop_Sub64F0x2, Iop_Mul64F0x2, Iop_Div64F0x2, 
@@ -610,7 +610,7 @@ typedef
    struct _IRExpr {
       IRExprTag tag;
       union {
-	 struct {
+         struct {
             Int binder;
          } Binder;
          struct {

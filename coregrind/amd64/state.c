@@ -34,6 +34,23 @@
 
 #include "libvex_guest_amd64.h"
 
+
+/*------------------------------------------------------------*/
+/*--- Determining arch/subarch.                            ---*/
+/*------------------------------------------------------------*/
+
+// Returns the architecture and subarchitecture, or indicates
+// that this subarchitecture is unable to run Valgrind
+// Returns False to indicate we cannot proceed further.
+Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*    vex_arch, 
+                              /*OUT*/VexSubArch* vex_subarch )
+{
+   *vex_arch = VexArchAMD64;
+   *vex_subarch = VexSubArch_NONE;
+   return True;
+}
+
+
 /*------------------------------------------------------------*/
 /*--- Initialising the first thread                        ---*/
 /*------------------------------------------------------------*/

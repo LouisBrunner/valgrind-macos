@@ -1319,13 +1319,14 @@ VgSchedReturnCode VG_(scheduler) ( void )
          }
 
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
-            /* VG_(printf)("request 0x%x\n", 
-                           *(UInt*)(VG_(threads)[tid].m_eax)); */
+            UInt reqno = *(UInt*)(VG_(threads)[tid].m_eax);
+            /* VG_(printf)("request 0x%x\n", reqno); */
             do_client_request(tid);
             /* Following the request, we try and continue with the
                same thread if still runnable.  If not, go back to
                Stage 1 to select a new thread to run. */
-            if (VG_(threads)[tid].status == VgTs_Runnable)
+            if (VG_(threads)[tid].status == VgTs_Runnable
+                && reqno != VG_USERREQ__PTHREAD_YIELD)
                continue; /* with this thread */
             else
                goto stage1;
@@ -3194,9 +3195,8 @@ void do_client_request ( ThreadId tid )
 
       case VG_USERREQ__PTHREAD_YIELD:
          do_pthread_yield ( tid );
-         /* because this is classified as a non-trivial client
-            request, the scheduler should now select a new thread to
-            run. */
+         /* On return from do_client_request(), the scheduler will
+            select a new thread to run. */
 	 break;
 
       case VG_USERREQ__SET_CANCELSTATE:

@@ -1491,7 +1491,7 @@ static void vg_propagate_definedness ( UCodeBlock* cb )
                case Tag_ImproveAND1_TQ:
                   sz = 1; goto do_ImproveAND;
                do_ImproveAND:
-                  /* Implements Q = T OR Q.  So if Q is entirely defined,
+                  /* Implements Q = T AND Q.  So if Q is entirely defined,
                      ie all 0s, we get MOV T, Q. */
 		  if (def[u->val2] <= 4) {
                      sk_assert(def[u->val2] == sz);

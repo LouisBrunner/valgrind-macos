@@ -154,6 +154,15 @@ Int VG_(ksigemptyset)( vki_ksigset_t* set )
    return 0;
 }
 
+Bool VG_(kisemptysigset)( vki_ksigset_t* set )
+{
+   Int i;
+   vg_assert(set != NULL);
+   for (i = 0; i < VKI_KNSIG_WORDS; i++)
+      if (set->ws[i] != 0x0) return False;
+   return True;
+}
+
 Int VG_(ksigaddset)( vki_ksigset_t* set, Int signum )
 {
    if (set == NULL)
@@ -168,14 +177,33 @@ Int VG_(ksigaddset)( vki_ksigset_t* set, Int signum )
 Int VG_(ksigismember) ( vki_ksigset_t* set, Int signum )
 {
    if (set == NULL)
-      return -1;
+      return 0;
    if (signum < 1 && signum > VKI_KNSIG)
-      return -1;
+      return 0;
    signum--;
    if (1 & ((set->ws[signum / VKI_KNSIG_BPW]) >> (signum % VKI_KNSIG_BPW)))
       return 1;
    else
       return 0;
+}
+
+
+/* Add all signals in src to dst. */
+void VG_(ksigaddset_from_set)( vki_ksigset_t* dst, vki_ksigset_t* src )
+{
+   Int i;
+   vg_assert(dst != NULL && src != NULL);
+   for (i = 0; i < VKI_KNSIG_WORDS; i++)
+      dst->ws[i] |= src->ws[i];
+}
+
+/* Remove all signals in src from dst. */
+void VG_(ksigdelset_from_set)( vki_ksigset_t* dst, vki_ksigset_t* src )
+{
+   Int i;
+   vg_assert(dst != NULL && src != NULL);
+   for (i = 0; i < VKI_KNSIG_WORDS; i++)
+      dst->ws[i] &= ~(src->ws[i]);
 }
 
 

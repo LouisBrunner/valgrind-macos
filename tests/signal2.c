@@ -13,7 +13,7 @@ int main ( void )
    printf ( "installing sig handler\n" );
    signal(SIGSEGV, sig_hdlr);
    printf ( "doing bad thing\n" );
-   * (int*) 0 = 0;
+   * (int*) 65536 = 0;
    printf ( "exited normally ?!\n" );
    return 0;
 }

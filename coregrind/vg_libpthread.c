@@ -617,6 +617,61 @@ void __pthread_kill_other_threads_np ( void )
 
 
 /* ---------------------------------------------------
+   SIGNALS
+   ------------------------------------------------ */
+
+#include <signal.h>
+
+int pthread_sigmask(int how, const sigset_t *newmask, 
+                             sigset_t *oldmask)
+{
+   int res;
+
+   /* A bit subtle, because the scheduler expects newmask and oldmask
+      to be vki_sigset_t* rather than sigset_t*, and the two are
+      different.  Fortunately the first 64 bits of a sigset_t are
+      exactly a vki_sigset_t, so we just pass the pointers through
+      unmodified.  Haaaack! 
+
+      Also mash the how value so that the SIG_ constants from glibc
+      do not have to be included into vg_scheduler.c. */
+
+   ensure_valgrind("pthread_sigmask");
+
+   switch (how) {
+      case SIG_SETMASK: how = 1; break;
+      case SIG_BLOCK:   how = 2; break;
+      case SIG_UNBLOCK: how = 3; break;
+      default:          return EINVAL;
+   }
+
+   /* Crude check */
+   if (newmask == NULL)
+      return EFAULT;
+
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_SIGMASK,
+                           how, newmask, oldmask, 0);
+
+   /* The scheduler tells us of any memory violations. */
+   return res == 0 ? 0 : EFAULT;
+}
+
+
+int sigwait ( const sigset_t* set, int* sig )
+{
+   int res;
+   ensure_valgrind("sigwait");
+   /* As with pthread_sigmask we deliberately confuse sigset_t with
+      vki_ksigset_t. */
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__SIGWAIT,
+                           set, sig, 0, 0);
+   return res;
+}
+
+
+/* ---------------------------------------------------
    THREAD-SPECIFICs
    ------------------------------------------------ */
 
@@ -872,7 +927,6 @@ void* (*__libc_internal_tsd_get)
    ------------------------------------------------------------------ */
 
 #include <stdlib.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 

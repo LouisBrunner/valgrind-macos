@@ -71,6 +71,7 @@ typedef
    }
    vki_ksigset_t;
 
+
 typedef
    struct {
       void*         ksa_handler;
@@ -87,6 +88,8 @@ typedef
       UInt  ss_size;
    } 
    vki_kstack_t;
+
+
 
 
 #define VKI_SIG_BLOCK          0    /* for blocking signals */
@@ -297,14 +300,13 @@ struct vki_stat {
 };
 
 
-/* To do with the ELF constructed by the kernel on a process' stack
-   just before it transfers control to the program's interpreter
-   (to use the ELF parlance).  
+/* To do with the ELF frame constructed by the kernel on a process'
+   stack just before it transfers control to the program's interpreter
+   (to use the ELF parlance).
    Constants from /usr/src/linux-2.4.9-31/include/linux/elf.h
    Logic from     /usr/src/linux-2.4.9-31/fs/binfmt_elf.c
                   and its counterpart in the 2.2.14 kernel sources 
-                  in Red Hat 6.2.
-*/
+                  in Red Hat 6.2.  */
 #define VKI_AT_CLKTCK 17    /* frequency at which times() increments */
 #define VKI_AT_HWCAP  16    /* arch dependent hints at CPU capabilities */
 #define VKI_AT_BASE   7     /* base address of interpreter */

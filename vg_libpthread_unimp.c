@@ -150,7 +150,7 @@ void pthread_rwlockattr_setpshared ( void )  { unimp("pthread_rwlockattr_setpsha
 //void pthread_setcanceltype ( void )  { unimp("pthread_setcanceltype"); }
 //void pthread_setschedparam ( void )  { unimp("pthread_setschedparam"); }
 //void pthread_setspecific ( void )  { unimp("pthread_setspecific"); }
-void pthread_sigmask ( void )  { unimp("pthread_sigmask"); }
+//void pthread_sigmask ( void )  { unimp("pthread_sigmask"); }
 //void pthread_testcancel ( void )  { unimp("pthread_testcancel"); }
 void raise ( void )  { unimp("raise"); }
 void sem_close ( void )  { unimp("sem_close"); }
@@ -159,7 +159,7 @@ void sem_timedwait ( void )  { unimp("sem_timedwait"); }
 void sem_unlink ( void )  { unimp("sem_unlink"); }
 //void sigaction ( void )  { unimp("sigaction"); }
 void siglongjmp ( void )  { unimp("siglongjmp"); }
-void sigwait ( void )  { unimp("sigwait"); }
+//void sigwait ( void )  { unimp("sigwait"); }
 
 #if 0
 void pthread_create@@GLIBC_2.1 ( void )  { unimp("pthread_create@@GLIBC_2.1"); }

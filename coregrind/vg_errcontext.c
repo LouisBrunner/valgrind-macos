@@ -288,7 +288,7 @@ static void pp_AddrInfo ( Addr a, AddrInfo* ai )
       case Stack: 
          VG_(message)(Vg_UserMsg, 
                       "   Address 0x%x is on thread %d's stack", 
-                      ai->stack_tid, a);
+                      a, ai->stack_tid);
          break;
       case Unknown:
          if (ai->maybe_gcc) {

@@ -433,6 +433,8 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 #define VG_USERREQ__PTHREAD_SETSPECIFIC     0x300F
 #define VG_USERREQ__PTHREAD_GETSPECIFIC     0x3010
 #define VG_USERREQ__READ_MILLISECOND_TIMER  0x3011
+#define VG_USERREQ__PTHREAD_SIGMASK         0x3012
+#define VG_USERREQ__SIGWAIT                 0x3013
 
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
@@ -478,6 +480,7 @@ typedef
       VgTs_WaitFD,     /* waiting for I/O completion on a fd */
       VgTs_WaitMX,     /* waiting on a mutex */
       VgTs_WaitCV,     /* waiting on a condition variable */
+      VgTs_WaitSIG,    /* waiting due to sigwait() */
       VgTs_Sleeping    /* sleeping for a while */
    }
    ThreadStatus;
@@ -530,6 +533,19 @@ typedef
       /* thread-specific data */
       void* specifics[VG_N_THREAD_KEYS];
 
+      /* This thread's blocked-signals mask.  Semantics is that for a
+         signal to be delivered to this thread, the signal must not be
+         blocked by either the process-wide signal mask nor by this
+         one.  So, if this thread is prepared to handle any signal that
+         the process as a whole is prepared to handle, this mask should
+         be made empty -- and that it is its default, starting
+         state. */
+      vki_ksigset_t sig_mask;
+
+      /* When not VgTs_WaitSIG, has no meaning.  When VgTs_WaitSIG,
+         is the set of signals for which we are sigwait()ing. */
+      vki_ksigset_t sigs_waited_for;
+
       /* Stacks.  When a thread slot is freed, we don't deallocate its
          stack; we just leave it lying around for the next use of the
          slot.  If the next use of the slot requires a larger stack,
@@ -581,6 +597,9 @@ typedef
    ThreadState;
 
 
+/* Trivial range check on tid. */
+extern Bool VG_(is_valid_tid) ( ThreadId tid );
+
 /* Copy the specified thread's state into VG_(baseBlock) in
    preparation for running it. */
 extern void VG_(load_thread_state)( ThreadId );
@@ -591,6 +610,7 @@ extern void VG_(save_thread_state)( ThreadId );
 
 /* Get the thread state block for the specified thread. */
 extern ThreadState* VG_(get_thread_state)( ThreadId );
+extern ThreadState* VG_(get_thread_state_UNCHECKED)( ThreadId );
 
 /* And for the currently running one, if valid. */
 extern ThreadState* VG_(get_current_thread_state) ( void );
@@ -663,9 +683,10 @@ extern Int     VG_(longjmpd_on_signal);
 
 extern void VG_(sigstartup_actions) ( void );
 
-extern Bool VG_(deliver_signals) ( ThreadId );
+extern Bool VG_(deliver_signals) ( void );
 extern void VG_(unblock_host_signal) ( Int sigNo );
-
+extern void VG_(notify_signal_machinery_of_thread_exit) ( ThreadId tid );
+extern void VG_(update_sigstate_following_WaitSIG_change) ( void );
 
 /* Fake system calls for signal handling. */
 extern void VG_(do__NR_sigaction)     ( ThreadId tid );
@@ -797,9 +818,10 @@ extern Int VG_(system) ( Char* cmd );
    definitions, which are different in places from those that glibc
    defines.  Since we're operating right at the kernel interface,
    glibc's view of the world is entirely irrelevant. */
-extern Int VG_(ksigfillset)( vki_ksigset_t* set );
-extern Int VG_(ksigemptyset)( vki_ksigset_t* set );
-extern Int VG_(ksigaddset)( vki_ksigset_t* set, Int signum );
+extern Int  VG_(ksigfillset)( vki_ksigset_t* set );
+extern Int  VG_(ksigemptyset)( vki_ksigset_t* set );
+extern Bool VG_(kisemptysigset)( vki_ksigset_t* set );
+extern Int  VG_(ksigaddset)( vki_ksigset_t* set, Int signum );
 
 extern Int VG_(ksigprocmask)( Int how, const vki_ksigset_t* set, 
                                        vki_ksigset_t* oldset );
@@ -807,6 +829,11 @@ extern Int VG_(ksigaction) ( Int signum,
                              const vki_ksigaction* act,  
                              vki_ksigaction* oldact );
 extern Int VG_(ksigismember) ( vki_ksigset_t* set, Int signum );
+extern void VG_(ksigaddset_from_set)( vki_ksigset_t* dst, 
+                                      vki_ksigset_t* src );
+extern void VG_(ksigdelset_from_set)( vki_ksigset_t* dst, 
+                                      vki_ksigset_t* src );
+
 
 extern Int VG_(ksignal)(Int signum, void (*sighandler)(Int));
 

@@ -249,14 +249,17 @@ int pthread_attr_setstacksize (pthread_attr_t *__attr,
                                size_t __stacksize)
 {
    size_t limit;
+   char buf[1024];
    ensure_valgrind("pthread_attr_setstacksize");
    limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB 
                                  - 1000; /* paranoia */
    if (__stacksize < limit)
       return 0;
-   barf("pthread_attr_setstacksize: "
-        "requested size >= VG_PTHREAD_STACK_SIZE\n   "
-        "edit vg_include.h and rebuild.");
+   snprintf(buf, sizeof(buf), "pthread_attr_setstacksize: "
+            "requested size %d >= VG_PTHREAD_STACK_SIZE\n   "
+            "edit vg_include.h and rebuild.", __stacksize);
+   buf[sizeof(buf)-1] = '\0'; /* Make sure it is zero terminated */
+   barf(buf);
 }
 
 

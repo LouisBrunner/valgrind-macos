@@ -22,22 +22,33 @@
 
    Registers are a 32-bit Int, thusly:
 
-     bits 31-8  register number
-     bits 7-4   are 0000b for real register, 0001b for virtual register
-     bits 3-0   are the register class.
+     bits 31-28  are the register class.
+     bits 27-23  are 0000b for real register, 0001b for virtual register
+     bits 23-0   register number
+
+   Note (importantly) that by arranging that the class field is never
+   0000b, any valid register looks like an extremely large int -- at
+   least 2^28 -- and so there is little chance of confusing it with an
+   integer array index in the register allocator.
+
+   Note further that since the class field is never 1111b, no valid
+   register can have the value INVALID_HREG.
 
    There are currently 3 register classes:
 
      int
      floating
-     vector.
+     vector 
 */
 
 typedef UInt HReg;
 
+/* When extending this, do not use any value > 14 or < 0. */
 typedef
-   enum { HRcInt=0, HRcFloat=1, HRcVector=2 }
+   enum { HRcInt=4, HRcFloat=5, HRcVector=6 }
    HRegClass;
+
+extern void ppHRegClass ( FILE*, HRegClass );
 
 
 /* Print an HReg in a generic (non-target-specific) way. */
@@ -49,6 +60,7 @@ extern HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual );
 extern HRegClass hregClass     ( HReg );
 extern Bool      hregIsVirtual ( HReg );
 extern UInt      hregNumber    ( HReg );
+
 
 #define INVALID_HREG ((HReg)0xFFFFFFFF)
 
@@ -106,6 +118,18 @@ extern void ppHRegRemap     ( FILE*, HRegRemap* );
 extern void initHRegRemap   ( HRegRemap* );
 extern void addToHRegRemap  ( HRegRemap*, HReg, HReg );
 extern HReg lookupHRegRemap ( HRegRemap*, HReg );
+
+
+/*---------------------------------------------------------*/
+/*--- Abstract instructions                             ---*/
+/*---------------------------------------------------------*/
+
+/* A type is needed to refer to pointers to instructions of any
+   target.  Defining it like this means that HInstr* can stand in for
+   X86Instr*, ArmInstr*, etc. */
+
+typedef  void  HInstr;
+
 
 
 #endif /* ndef __HOST_REGS_H */

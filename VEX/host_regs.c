@@ -14,25 +14,30 @@
 
 HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual )
 {
-   assert((regno & 0xFF000000) == 0);
-   return (regno << 8) | (((UInt)rc) << 4) | (virtual ? 1 : 0);
+   UInt r24 = regno & 0x00FFFFFF;
+   /* This is critical.  The register number field may only
+      occupy 24 bits. */
+   if (r24 != regno)
+     panic("mkHReg: regno exceeds 2^24");
+   return regno | (((UInt)rc) << 28) | (virtual ? (1<<24) : 0);
 }
 
 HRegClass hregClass ( HReg r )
 {
-   UInt rc = (r & 0x000000F0) >> 4;
-   assert(rc <= 2);
+   UInt rc = r;
+   rc = (rc >> 28) & 0x0F;
+   assert(rc == HRcInt || rc == HRcFloat || rc == HRcVector);
    return (HRegClass)rc;
 }
 
 Bool hregIsVirtual ( HReg r )
 {
-   return (r & 1) ? True : False;
+   return (((UInt)r) & (1<<24)) ? True : False;
 }
 
 UInt hregNumber ( HReg r )
 {
-   return (((UInt)r) >> 8);
+   return ((UInt)r) & 0x00FFFFFF;
 }
 
 
@@ -122,9 +127,9 @@ void ppHRegRemap ( FILE* f, HRegRemap* map )
    fprintf(f, "HRegRemap {\n");
    for (i = 0; i < map->n_used; i++) {
       fprintf(f, "   ");
-      ppHReg(f, tab->orig[i]);
+      ppHReg(f, map->orig[i]);
       fprintf(f, "  -->  ");
-      ppHReg(f, tab->replacement[i]);
+      ppHReg(f, map->replacement[i]);
       fprintf(f, "\n");
    }
    fprintf(f, "}\n");

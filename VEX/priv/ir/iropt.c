@@ -3022,13 +3022,13 @@ IRBB* cheap_transformations (
       vex_printf("\n========= REDUNDANT GET\n\n" );
       ppIRBB(bb);
    }
-
+#if 0
    redundant_put_removal_BB ( bb );
    if (iropt_verbose) {
       vex_printf("\n========= REDUNDANT PUT\n\n" );
       ppIRBB(bb);
    }
-
+#endif
    bb = cprop_BB ( bb );
    if (iropt_verbose) {
       vex_printf("\n========= CPROPD\n\n" );
@@ -3138,7 +3138,6 @@ IRBB* do_iropt_BB ( IRBB* bb0,
 
    Bool show_res = False;
    Bool do_expensive;
-return bb0;
    IRBB *bb, *bb2;
 
    n_total++;
@@ -3190,7 +3189,7 @@ return bb0;
 
    /* Finally, rebuild trees, for the benefit of instruction
       selection. */
-
+   dead_BB(bb);
    treebuild_BB( bb );
    if (show_res || iropt_verbose) {
       vex_printf("\n========= TREEd \n\n" );

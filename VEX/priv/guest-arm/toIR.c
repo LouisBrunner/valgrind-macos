@@ -150,8 +150,8 @@ static void stmt ( IRStmt* st );
    
 static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
-                            /*IN*/  UInt    delta, 
-                            /*OUT*/ UInt*   size,
+                            /*IN*/  Long    delta, 
+                            /*OUT*/ Int*    size,
                             /*OUT*/ Addr64* whereNext );
 
 
@@ -169,7 +169,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
                    Bool             host_bigendian,
                    VexSubArch       subarch_guest )
 {
-   UInt       delta;
+   Long       delta;
    Int        i, n_instrs, size, first_stmt_idx;
    Addr64     guest_next;
    Bool       resteerOK;
@@ -198,7 +198,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
 
    vassert((guest_pc_start >> 32) == 0);
 
-   /* Delta keeps track of how far along the x86code array we
+   /* Delta keeps track of how far along the armCode array we
       have so far gone. */
    delta             = 0;
    n_instrs          = 0;
@@ -207,13 +207,13 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
       vassert(n_instrs < vex_control.guest_max_insns);
 
       guest_next = 0;
-      resteerOK = n_instrs < vex_control.guest_chase_thresh;
+      resteerOK = toBool(n_instrs < vex_control.guest_chase_thresh);
       first_stmt_idx = irbb->stmts_used;
 
       if (n_instrs > 0) {
          /* for the first insn, the dispatch loop will have set
             R15, but for all the others we have to do it ourselves. */
-         stmt( IRStmt_Put( OFFB_R15, mkU32(guest_pc_bbstart + delta)) );
+         stmt( IRStmt_Put( OFFB_R15, mkU32(toUInt(guest_pc_bbstart + delta))) );
       }
 
       dres = disInstr( resteerOK, chase_into_ok, 
@@ -257,7 +257,7 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
          if (n_instrs < vex_control.guest_max_insns) {
             /* keep going */
          } else {
-            irbb->next = mkU32(((Addr32)guest_pc_start)+delta);
+            irbb->next = mkU32(toUInt(guest_pc_start+delta));
             return irbb;
          }
          break;
@@ -270,11 +270,11 @@ IRBB* bbToIR_ARM ( UChar*           armCode,
          vassert(irbb->next == NULL);
          /* figure out a new delta to continue at. */
          vassert(chase_into_ok(guest_next));
-         delta = (UInt)(guest_next - guest_pc_start);
+         delta = guest_next - guest_pc_start;
          n_resteers++;
          d_resteers++;
          if (0 && (n_resteers & 0xFF) == 0)
-            vex_printf("resteer[%d,%d] to %p (delta = %d)\n",
+            vex_printf("resteer[%d,%d] to %p (delta = %lld)\n",
                        n_resteers, d_resteers,
                        ULong_to_Ptr(guest_next), delta);
          break;
@@ -502,7 +502,7 @@ static IRExpr* mkexpr ( IRTemp tmp )
    return IRExpr_Tmp(tmp);
 }
 
-static IRExpr* mkU8 ( UInt i )
+static IRExpr* mkU8 ( UChar i )
 {
    vassert(i < 256);
    return IRExpr_Const(IRConst_U8(i));
@@ -916,17 +916,22 @@ static HChar* name_ARMDataProcOp ( UChar opc )
 static
 Bool dis_loadstore_mult ( UInt theInstr )
 {
-   UChar flags   = (theInstr >> 20) & 0x1F;   // theInstr[24:20]
-   UChar Rn_addr = (theInstr >> 16) & 0xF;
+   UChar flags   = toUChar((theInstr >> 20) & 0x1F); // theInstr[24:20]
+   UChar Rn_addr = toUChar((theInstr >> 16) & 0xF);
    IRTemp Rn = newTemp(Ity_I32);
    IRTemp Rn_orig = newTemp(Ity_I32);
    UInt reg_list = theInstr & 0xFFFF;  // each bit addresses a register: R15 to R0
    
-   UChar L  = (flags >> 0) & 1;  // Load(1) | Store(0)
-   UChar W  = (flags >> 1) & 1;  // (W)riteback Rn (incr(U=1) | decr(U=0) by n_bytes)
-   UChar S  = (flags >> 2) & 1;  // Priviledged mode flag - *** CAB TODO ***
-   UChar U  = (flags >> 3) & 1;  // Txfr ctl: Direction = upwards(1) | downwards(0)
-   UChar PU = (flags >> 3) & 3;  // Txfr ctl: Rn within(P=1) | outside(P=0) accessed mem
+              // Load(1) | Store(0)
+   UChar L  = toUChar((flags >> 0) & 1);
+              // (W)riteback Rn (incr(U=1) | decr(U=0) by n_bytes)
+   UChar W  = toUChar((flags >> 1) & 1);
+              // Priviledged mode flag - *** CAB TODO ***
+   UChar S  = toUChar((flags >> 2) & 1);  
+              // Txfr ctl: Direction = upwards(1) | downwards(0)
+   UChar U  = toUChar((flags >> 3) & 1);
+              // Txfr ctl: Rn within(P=1) | outside(P=0) accessed mem
+   UChar PU = toUChar((flags >> 3) & 3);  
    
    IRTemp start_addr = newTemp(Ity_I32);
    IRTemp end_addr   = newTemp(Ity_I32);
@@ -1031,9 +1036,9 @@ Bool dis_loadstore_mult ( UInt theInstr )
          reg_names[buf_offset++] = 'R';
          if (reg_idx > 9) {
             reg_names[buf_offset++] = '1';
-            reg_names[buf_offset++] = 38 + reg_idx;
+            reg_names[buf_offset++] = (HChar)toUChar(38 + reg_idx);
          } else {
-            reg_names[buf_offset++] = 48 + reg_idx;
+            reg_names[buf_offset++] = (HChar)toUChar(48 + reg_idx);
          }
          reg_names[buf_offset++] = ',';
          // CAB: Eugh!  Where's strcpy?!
@@ -1064,19 +1069,20 @@ Bool dis_loadstore_mult ( UInt theInstr )
 static
 Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address, HChar* buf )
 {
-   UChar is_reg   = (theInstr >> 25) & 0x1;   // immediate | register offset/index
-   UInt flags     = (theInstr >> 20) & 0x3F;  // theInstr[25:20]
-   UChar Rn_addr  = (theInstr >> 16) & 0xF;
-   UChar Rm_addr  = (theInstr >> 00) & 0xF;
-   UChar shift_op = (theInstr >> 04) & 0xFF;
-   UInt offset_12 = (theInstr >> 00) & 0xFFF;
+   UChar is_reg    = toUChar((theInstr >> 25) & 0x1); 
+                     // immediate | register offset/index
+   UInt  flags     =         (theInstr >> 20) & 0x3F; // theInstr[25:20]
+   UChar Rn_addr   = toUChar((theInstr >> 16) & 0xF);
+   UChar Rm_addr   = toUChar((theInstr >> 00) & 0xF);
+   UChar shift_op  = toUChar((theInstr >> 04) & 0xFF);
+   UInt  offset_12 =         (theInstr >> 00) & 0xFFF;
    IRTemp Rn = newTemp(Ity_I32);
    IRTemp Rm = newTemp(Ity_I32);
    UChar shift_imm, shift;
    
-   UChar W  = (flags >> 1) & 1;   // base register writeback flag - See *Note
-   UChar U  = (flags >> 3) & 1;   // offset is added(1)|subtracted(0) from the base
-   UChar P  = (flags >> 4) & 1;   // addressing mode flag - See *Note
+   UChar W = toUChar((flags >> 1) & 1); // base register writeback flag - See *Note
+   UChar U = toUChar((flags >> 3) & 1); // offset is added(1)|subtracted(0) from the base
+   UChar P = toUChar((flags >> 4) & 1); // addressing mode flag - See *Note
    /* *Note
       P==0: post-indexed addressing: addr -> Rn
       W==0: normal mem access
@@ -1125,8 +1131,8 @@ Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address, HChar* buf )
       if (shift_op == 0) {  // Register addressing
          assign( reg_offset, mkexpr(Rm) );
       } else {              // Scaled Register addressing
-         shift_imm = (shift_op >> 3) & 0x1F;
-         shift = (shift_op >> 1) & 0x3;
+         shift_imm = toUChar((shift_op >> 3) & 0x1F);
+         shift     = toUChar((shift_op >> 1) & 0x3);
          
          switch (shift) {
          case 0x0: // LSL
@@ -1182,16 +1188,18 @@ Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address, HChar* buf )
          assign( reg_offset, mkexpr(scaled_index) );
          
          if (shift == 0x3 && shift_imm == 0) {
-            DIS(buf3, ", %s", name_ARMShiftOp(shift_op * 2, shift_imm));
+            DIS(buf3, ", %s", name_ARMShiftOp(toUChar(shift_op * 2), shift_imm));
          } else {
-            DIS(buf3, ", %s #%d", name_ARMShiftOp(shift_op * 2, shift_imm), shift_imm);
+            DIS(buf3, ", %s #%d", 
+                      name_ARMShiftOp(toUChar(shift_op * 2), shift_imm), 
+                      shift_imm);
          }
       }
       DIS(buf2, "%cR%d%s", (U==1) ? '+' : '-', Rm_addr, buf3);
    } else { // immediate
       assign( reg_offset, mkU32(offset_12) );
       
-      DIS(buf2, "#%c%d", (U==1) ? '+' : '-', offset_12);
+      DIS(buf2, "#%c%u", (U==1) ? '+' : '-', offset_12);
    }
    DIS(buf, "[R%d%s, %s%s", Rn_addr,
        (P==0) ? "]" : "", buf2,
@@ -1230,14 +1238,14 @@ Bool dis_loadstore_w_ub_address ( UInt theInstr, IRTemp* address, HChar* buf )
 static
 Bool dis_loadstore_w_ub ( UInt theInstr )
 {
-   UInt flags     = (theInstr >> 20) & 0x3F;  // theInstr[25:20]
-   UChar Rn_addr  = (theInstr >> 16) & 0xF;
-   UChar Rd_addr  = (theInstr >> 12) & 0xF;
+   UInt   flags   =         (theInstr >> 20) & 0x3F;  // theInstr[25:20]
+   UChar  Rn_addr = toUChar((theInstr >> 16) & 0xF);
+   UChar  Rd_addr = toUChar((theInstr >> 12) & 0xF);
    IRTemp address = newTemp(Ity_I32);
-   
-   UChar L  = (flags >> 0) & 1;   // Load(1) | Store(0)
-   UChar W  = (flags >> 1) & 1;   // base register writeback
-   UChar B  = (flags >> 2) & 1;   // access = unsigned byte(1) | word(0)
+  
+   UChar L  = toUChar((flags >> 0) & 1); // Load(1) | Store(0)
+   UChar W  = toUChar((flags >> 1) & 1); // base register writeback
+   UChar B  = toUChar((flags >> 2) & 1); // access = unsigned byte(1) | word(0)
    
    IRTemp value      = newTemp(Ity_I32);
    IRTemp data       = newTemp(Ity_I32);
@@ -1367,21 +1375,21 @@ Bool dis_loadstore_w_ub ( UInt theInstr )
 static
 IRExpr* dis_shift( Bool* decode_ok, UInt theInstr, IRTemp* carry_out, HChar* buf )
 {
-   UChar Rn_addr   = (theInstr >> 16) & 0xF;
-   UChar Rd_addr   = (theInstr >> 12) & 0xF;
-   UChar Rs_addr   = (theInstr >>  8) & 0xF;
-   UChar Rm_addr   = (theInstr >>  0) & 0xF;
-   UChar by_reg    = (theInstr >>  4) & 0x1;  // instr[4]
-   UChar shift_imm = (theInstr >>  7) & 0x1F; // instr[11:7]
-   UChar shift_op  = (theInstr >>  4) & 0xF;  // instr[7:4]
-   IRTemp Rm          = newTemp(Ity_I32);
-   IRTemp Rs          = newTemp(Ity_I32);
-   IRTemp shift_amt   = newTemp(Ity_I8);
-   IRTemp carry_shift = newTemp(Ity_I8);
-   IRTemp oldFlagC    = newTemp(Ity_I32);
-   IRTemp mux_false   = newTemp(Ity_I32);
+   UChar   Rn_addr     = toUChar((theInstr >> 16) & 0xF);
+   UChar   Rd_addr     = toUChar((theInstr >> 12) & 0xF);
+   UChar   Rs_addr     = toUChar((theInstr >>  8) & 0xF);
+   UChar   Rm_addr     = toUChar((theInstr >>  0) & 0xF);
+   UChar   by_reg      = toUChar((theInstr >>  4) & 0x1);  // instr[4]
+   UChar   shift_imm   = toUChar((theInstr >>  7) & 0x1F); // instr[11:7]
+   UChar   shift_op    = toUChar((theInstr >>  4) & 0xF);  // instr[7:4]
+   IRTemp  Rm          = newTemp(Ity_I32);
+   IRTemp  Rs          = newTemp(Ity_I32);
+   IRTemp  shift_amt   = newTemp(Ity_I8);
+   IRTemp  carry_shift = newTemp(Ity_I8);
+   IRTemp  oldFlagC    = newTemp(Ity_I32);
+   IRTemp  mux_false   = newTemp(Ity_I32);
    IRExpr* expr;
-   IROp op;
+   IROp    op;
    
    assign( oldFlagC, binop(Iop_Shr32,
                            mk_armg_calculate_flags_c(),
@@ -1516,12 +1524,12 @@ IRExpr* dis_shift( Bool* decode_ok, UInt theInstr, IRTemp* carry_out, HChar* buf
 static
 IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out, HChar* buf )
 {
-   UChar Rn_addr  = (theInstr >> 16) & 0xF;
-   UChar Rd_addr  = (theInstr >> 12) & 0xF;
-   UChar Rs_addr  = (theInstr >> 8) & 0xF;
-   UChar Rm_addr  = (theInstr >> 0) & 0xF;
-   UChar by_reg   = (theInstr >> 4) & 0x1;  // instr[4]
-   UInt rot_imm   = (theInstr >> 7) & 0x1F; // instr[11:7]
+   UChar  Rn_addr  = toUChar((theInstr >> 16) & 0xF);
+   UChar  Rd_addr  = toUChar((theInstr >> 12) & 0xF);
+   UChar  Rs_addr  = toUChar((theInstr >> 8) & 0xF);
+   UChar  Rm_addr  = toUChar((theInstr >> 0) & 0xF);
+   UChar  by_reg   = toUChar((theInstr >> 4) & 0x1);  // instr[4]
+   UChar  rot_imm  = toUChar((theInstr >> 7) & 0x1F); // instr[11:7]
    IRTemp Rm       = newTemp(Ity_I32);
    IRTemp Rs       = newTemp(Ity_I32);
    IRTemp rot_amt  = newTemp(Ity_I8);      // Rs[7:0]
@@ -1599,7 +1607,7 @@ IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out, HChar* b
                       binop(Iop_Shl32, mkexpr(Rm),
                             binop(Iop_Sub8, mkU8(32), mkU8(rot_imm))));
          
-         DIS(buf, "R%d, ror #%d", Rm_addr, rot_imm);
+         DIS(buf, "R%d, ror #%u", Rm_addr, (UInt)rot_imm);
       }
    }
    return expr;
@@ -1625,8 +1633,8 @@ IRExpr* dis_rotate ( Bool* decode_ok, UInt theInstr, IRTemp* carry_out, HChar* b
 static
 IRExpr* dis_shifter_op ( Bool *decode_ok, UInt theInstr, IRTemp* carry_out, HChar* buf )
 {
-   UChar is_immed  = (theInstr >> 25) & 1;    // immediate / register shift
-   UChar shift_op = (theInstr >> 4) & 0xF;    // second byte
+   UChar is_immed  = toUChar((theInstr >> 25) & 1);  // immediate / register shift
+   UChar shift_op  = toUChar((theInstr >> 4) & 0xF); // second byte
    UInt immed_8, rot_imm;
    UInt imm;
    IRTemp oldFlagC = newTemp(Ity_I32);
@@ -1646,7 +1654,7 @@ IRExpr* dis_shifter_op ( Bool *decode_ok, UInt theInstr, IRTemp* carry_out, HCha
       } else {
          assign( *carry_out, binop(Iop_Shr32, mkU32(imm), mkU8(31)) );
       }
-      DIS(buf, "#%d", imm);
+      DIS(buf, "#%u", imm);
       return mkU32(imm);
    } else {
       
@@ -1677,10 +1685,10 @@ IRExpr* dis_shifter_op ( Bool *decode_ok, UInt theInstr, IRTemp* carry_out, HCha
 static
 Bool dis_dataproc ( UInt theInstr )
 {
-   UChar opc       = (theInstr >> 21) & 0xF;
-   UChar set_flags = (theInstr >> 20) & 1;
-   UChar Rn_addr   = (theInstr >> 16) & 0xF;
-   UChar Rd_addr   = (theInstr >> 12) & 0xF;
+   UChar opc       = toUChar((theInstr >> 21) & 0xF);
+   UChar set_flags = toUChar((theInstr >> 20) & 1);
+   UChar Rn_addr   = toUChar((theInstr >> 16) & 0xF);
+   UChar Rd_addr   = toUChar((theInstr >> 12) & 0xF);
    IRTemp Rn = newTemp(Ity_I32);
    IRTemp Rd = newTemp(Ity_I32);
    IRTemp alu_out = newTemp(Ity_I32);
@@ -1830,7 +1838,7 @@ Bool dis_dataproc ( UInt theInstr )
 static
 void dis_branch ( UInt theInstr )
 {
-   UChar link = (theInstr >> 24) & 1;
+   UChar link = toUChar((theInstr >> 24) & 1);
    UInt signed_immed_24 = theInstr & 0xFFFFFF;
    UInt branch_offset;
    IRTemp addr = newTemp(Ity_I32);
@@ -1884,8 +1892,8 @@ void dis_branch ( UInt theInstr )
    
 static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*IN*/  Bool    (*resteerOkFn) ( Addr64 ),
-                            /*IN*/  UInt    delta, 
-                            /*OUT*/ UInt*   size,
+                            /*IN*/  Long    delta, 
+                            /*OUT*/ Int*    size,
                             /*OUT*/ Addr64* whereNext )
 {
    //   IRType    ty;
@@ -1913,7 +1921,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
 //   vex_printf("START: 0x%x, %,b\n", theInstr, theInstr );
 
-   DIP("\t0x%x:  ", guest_pc_bbstart+delta);
+   DIP("\t0x%x:  ", toUInt(guest_pc_bbstart+delta));
 
 
 
@@ -1946,7 +1954,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          
          *size = 24;
          
-         irbb->next     = mkU32(guest_pc_bbstart+delta);
+         irbb->next     = mkU32(toUInt(guest_pc_bbstart+delta));
          irbb->jumpkind = Ijk_ClientReq;
          
          whatNext = Dis_StopHere;
@@ -1976,7 +1984,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       // => Valid condition: translate the condition test first
       stmt( IRStmt_Exit( mk_armg_calculate_condition(cond),
                          Ijk_Boring,
-                         IRConst_U32(guest_pc_bbstart+delta+4) ) );
+                         IRConst_U32(toUInt(guest_pc_bbstart+delta+4)) ) );
       //irbb->next     = mkU32(guest_pc_bbstart+delta+4);
       //irbb->jumpkind = Ijk_Boring;
    }
@@ -1985,8 +1993,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
    /* Primary opcode is roughly bits 27:20 (ARM ARM(v2) A3-2)
       secondary opcode is bits 4:0 */
-   opc1 = (theInstr >> 20) & 0xFF;    /* opcode1: bits 27:20 */
-   opc2 = (theInstr >> 4 ) & 0xF;     /* opcode2: bits 7:4   */
+   opc1 = toUChar((theInstr >> 20) & 0xFF);    /* opcode1: bits 27:20 */
+   opc2 = toUChar((theInstr >> 4 ) & 0xF);     /* opcode2: bits 7:4   */
 //   vex_printf("disInstr(arm): opcode1: 0x%2x, %,09b\n", opc1, opc1 );
 //   vex_printf("disInstr(arm): opcode2: 0x%02x, %,04b\n", opc2, opc2 );
    
@@ -2035,7 +2043,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
          'Misc' Instructions: ARM ARM A3-4
       */
       if ((opc1 & 0xF9) == 0x10) {  // 0001 0xx0
-         opc_tmp = (opc1 >> 1) & 0x3;
+         opc_tmp = toUChar((opc1 >> 1) & 0x3);
          switch (opc2) {
          case 0x0:
             if ((opc_tmp & 0x1) == 0x0) { // move stat reg -> reg

@@ -375,158 +375,57 @@ partially trashed by the copying.
 <a name="suppfiles"></a>
 <h3>3.4&nbsp; Writing suppressions files</h3>
 
+The basic suppression format was described in <a
+href="coregrind_core.html#suppress">this section</a>.
 <p>
-A suppression file describes a bunch of errors which, for one reason
-or another, you don't want Valgrind to tell you about.  Usually the
-reason is that the system libraries are buggy but unfixable, at least
-within the scope of the current debugging session.  Multiple
-suppressions files are allowed.  By default, Valgrind uses
-<code>$PREFIX/lib/valgrind/default.supp</code>.
-
-<p>
-You can ask to add suppressions from another file, by specifying
-<code>--suppressions=/path/to/file.supp</code>.
-
-<p>
-A good way to get started writing your own suppressions is to 
-look at an existing suppressions file whilst reading the following
-documentation.  The file <code>glibc-2.2.supp</code>, in the source
-distribution, provides some good examples.
-
-<p>Each suppression has the following components:<br>
-<ul>
-
-  <li>Its name.  This merely gives a handy name to the suppression, by
-      which it is referred to in the summary of used suppressions
-      printed out when a program finishes.  It's not important what
-      the name is; any identifying string will do.
-      </li><br>
-      <p>
-
-  <li>Something to indicate which skin(s) the suppression is intended
-      for.  Recall that valgrind-2.0.X is a modular system, in which
-      different instrumentation tools can observe your program whilst
-      it is running.  Since different tools detect different kinds of
-      errors, it is necessary to say which skin(s) the suppression is
-      meaningful to.
-      <p>
-      Skins will complain, at startup, if a skin does not understand
-      any suppression directed to it.  Skins ignore suppressions which
-      are not directed to them.  As a result, it is quite practical to
-      put suppressions for all skins into the same suppression file.
-      <p>
-      A suppression indicates the skins it is intended for by listing
-      their names, separated by commas, then a colon.  No spaces are
-      allowed, since our parser is very inflexible.  An example is:
-      <pre>
-         Addrcheck,Memcheck:
-      </pre>
-      meaning that the suppression is intended for both the Memcheck
-      and the Addrcheck skins.
-      </li><br>
-      <p>
-
-  <li>The nature of the error to suppress.  Either: 
-      <code>Value1</code>, 
-      <code>Value2</code>,
-      <code>Value4</code> or
-      <code>Value8</code>,
-      meaning an uninitialised-value error when
-      using a value of 1, 2, 4 or 8 bytes.
-      Or
-      <code>Cond</code> (or its old name, <code>Value0</code>),
-      meaning use of an uninitialised CPU condition code.  Or: 
-      <code>Addr1</code>,
-      <code>Addr2</code>, 
-      <code>Addr4</code> or 
-      <code>Addr8</code>, meaning an invalid address during a
-      memory access of 1, 2, 4 or 8 bytes respectively.  Or 
-      <code>Param</code>,
-      meaning an invalid system call parameter error.  Or
-      <code>Free</code>, meaning an invalid or mismatching free.
-      <code>Overlap</code>, meaning a <code>src</code>/<code>dst</code>
-      overlap in <code>memcpy() or a similar function</code>.
-      Or <code>PThread</code>, meaning any kind of complaint to do
-      with the PThreads API.  
-      <p>
-      Last but not least,
-      you can suppress leak reports with <code>Leak</code>.  Leak
-      suppression was added in valgrind-1.9.3, I believe.
-      </li><br>
-      <p>
-
-  <li>The "immediate location" specification.  For Value and Addr
-      errors, it is either the name of the function in which the error
-      occurred, or, failing that, the full path of the .so file or
-      executable containing the error location.  For Param errors,
-      is the name of the offending system call parameter.  For Free
-      errors, is the name of the function doing the freeing (eg,
-      <code>free</code>, <code>__builtin_vec_delete</code>, etc).
-      For Overlap errors, is the name of the function with the overlapping
-      arguments (eg. <code>memcpy()</code>, <code>strcpy()</code>, etc).
-      </li><br>
-      <p>
-
-  <li>The caller of the above "immediate location".  Again, either a
-      function or shared-object/executable name.</li><br>
-      <p>
-
-  <li>Optionally, one or two extra calling-function or object names,
-      for greater precision.</li>
-</ul>
-
-<p>
-Locations may be either names of shared objects/executables or wildcards
-matching function names.  They begin <code>obj:</code> and <code>fun:</code>
-respectively.  Function and object names to match against may use the 
-wildcard characters <code>*</code> and <code>?</code>.
-
-A suppression only suppresses an error when the error matches all the
-details in the suppression.  Here's an example:
+The suppression (2nd) line should have the form:
 <pre>
-  {
-    __gconv_transform_ascii_internal/__mbrtowc/mbtowc
-    Memcheck:Value4
-    fun:__gconv_transform_ascii_internal
-    fun:__mbr*toc
-    fun:mbtowc
-  }
+Memcheck:suppression_type
+</pre>
+Or, since some of the suppressions are shared with the Addrcheck skin:
+<pre>
+Memcheck,Addrcheck:suppression_type
 </pre>
 
-<p>What is means is: in the Memcheck skin only, suppress a
-use-of-uninitialised-value error, when the data size is 4, when it
-occurs in the function <code>__gconv_transform_ascii_internal</code>,
-when that is called from any function of name matching
-<code>__mbr*toc</code>, when that is called from <code>mbtowc</code>.
-It doesn't apply under any other circumstances.  The string by which
-this suppression is identified to the user is
-__gconv_transform_ascii_internal/__mbrtowc/mbtowc.
+<p>
+The Memcheck suppression types are as follows:
+<code>Value1</code>, 
+<code>Value2</code>,
+<code>Value4</code> or
+<code>Value8</code>,
+meaning an uninitialised-value error when
+using a value of 1, 2, 4 or 8 bytes.
+Or
+<code>Cond</code> (or its old name, <code>Value0</code>),
+meaning use of an uninitialised CPU condition code.  Or: 
+<code>Addr1</code>,
+<code>Addr2</code>, 
+<code>Addr4</code> or 
+<code>Addr8</code>, meaning an invalid address during a
+memory access of 1, 2, 4 or 8 bytes respectively.  Or 
+<code>Param</code>,
+meaning an invalid system call parameter error.  Or
+<code>Free</code>, meaning an invalid or mismatching free.
+<code>Overlap</code>, meaning a <code>src</code>/<code>dst</code>
+overlap in <code>memcpy() or a similar function</code>.  Last but not least,
+you can suppress leak reports with <code>Leak</code>.  Leak suppression was
+added in valgrind-1.9.3, I believe.
+<p>
 
-<p>Another example, again for the Memcheck skin:
-<pre>
-  {
-    libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0
-    Memcheck:Value4
-    obj:/usr/X11R6/lib/libX11.so.6.2
-    obj:/usr/X11R6/lib/libX11.so.6.2
-    obj:/usr/X11R6/lib/libXaw.so.7.0
-  }
-</pre>
-
-<p>Suppress any size 4 uninitialised-value error which occurs anywhere
-in <code>libX11.so.6.2</code>, when called from anywhere in the same
-library, when called from anywhere in <code>libXaw.so.7.0</code>.  The
-inexact specification of locations is regrettable, but is about all
-you can hope for, given that the X11 libraries shipped with Red Hat
-7.2 have had their symbol tables removed.
-
-<p>Note -- since the above two examples did not make it clear -- that
-you can freely mix the <code>obj:</code> and <code>fun:</code>
-styles of description within a single suppression record.
-
-
-
-
+The extra information line: for Param errors, is the name of the offending
+system call parameter.  
+No other error kinds have this extra line.
+<p>
+The first line of the calling context: for Value and Addr errors, it is either
+the name of the function in which the error occurred, or, failing that, the
+full path of the .so file or executable containing the error location.  For
+Free errors, is the name of the function doing the freeing (eg,
+<code>free</code>, <code>__builtin_vec_delete</code>, etc).  For Overlap
+errors, is the name of the function with the overlapping arguments (eg.
+<code>memcpy()</code>, <code>strcpy()</code>, etc).
+<p>
+Lastly, there's the rest of the calling context.
+<p>
 
 <a name="machine"></a>
 <h3>3.5&nbsp; Details of Memcheck's checking machinery</h3>

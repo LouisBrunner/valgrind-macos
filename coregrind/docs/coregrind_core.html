@@ -328,6 +328,11 @@ don't want to fix, yet you don't want to continuously be reminded of
 them.
 
 <p>
+<b>Note:</b> By far the easiest way to add suppressions is to use the
+<code>--gen-suppressions=yes</code> flag described in <a href="#flags">this
+section</a>.
+
+<p>
 Each error to be suppressed is described very specifically, to
 minimise the possibility that a suppression-directive inadvertantly
 suppresses a bunch of similar errors which you did want to see.  The
@@ -345,6 +350,122 @@ number of times it got used.  Here's the suppressions used by a run of
   --27579-- supp: 6 strrchr/_dl_map_object_from_fd/_dl_map_object
 </pre>
 
+<p>
+Multiple suppressions files are allowed.  By default, Valgrind uses
+<code>$PREFIX/lib/valgrind/default.supp</code>.  You can ask to add
+suppressions from another file, by specifying
+<code>--suppressions=/path/to/file.supp</code>.
+
+<p>
+If you want to understand more about suppressions, look at an existing
+suppressions file whilst reading the following documentation.  The file
+<code>glibc-2.2.supp</code>, in the source distribution, provides some good
+examples.
+
+<p>Each suppression has the following components:<br>
+<ul>
+  <li>First line: its name.  This merely gives a handy name to the suppression,
+      by which it is referred to in the summary of used suppressions printed
+      out when a program finishes.  It's not important what the name is; any
+      identifying string will do.
+      </li>
+      <p>
+
+  <li>Second line: name of the skin(s) that the suppression is for (if more
+      than one, comma-separated), and the name of the suppression itself,
+      separated by a colon, eg:
+      <pre>
+      skin_name1,skin_name2:suppression_name
+      </pre>
+      (Nb: no spaces are allowed).
+      <p>      
+      Recall that valgrind-2.0.X is a modular system, in which
+      different instrumentation tools can observe your program whilst
+      it is running.  Since different tools detect different kinds of
+      errors, it is necessary to say which skin(s) the suppression is
+      meaningful to.
+      <p>
+      Skins will complain, at startup, if a skin does not understand
+      any suppression directed to it.  Skins ignore suppressions which
+      are not directed to them.  As a result, it is quite practical to
+      put suppressions for all skins into the same suppression file.
+      <p>
+      Valgrind's core can detect certain PThreads API errors, for which this
+      line reads:
+      <pre>
+      core:PThread
+      </pre>
+
+  <li>Next line: a small number of suppression types have extra information
+      after the second line (eg. the <code>Param</code> suppression for
+      Memcheck)<p>
+
+  <li>Remaining lines: This is the calling context for the error -- the chain
+      of function calls that led to it.  There can be up to four of these lines.
+      <p>
+      Locations may be either names of shared objects/executables or wildcards
+      matching function names.  They begin <code>obj:</code> and
+      <code>fun:</code> respectively.  Function and object names to match
+      against may use the wildcard characters <code>*</code> and
+      <code>?</code>.
+      <p>
+      <b>Important note:</b> C++ function names must be <b>mangled</b>.  If
+      you are writing suppressions by hand, use the <code>--demangle=no</code>
+      option to get the mangled names in your error messages.
+      <p>
+    
+  <li>Finally, the entire suppression must be between curly braces. Each
+      brace must be the first character on its own line.
+</ul>
+
+<p>
+
+A suppression only suppresses an error when the error matches all the
+details in the suppression.  Here's an example:
+<pre>
+  {
+    __gconv_transform_ascii_internal/__mbrtowc/mbtowc
+    Memcheck:Value4
+    fun:__gconv_transform_ascii_internal
+    fun:__mbr*toc
+    fun:mbtowc
+  }
+</pre>
+
+<p>What is means is: in the Memcheck skin only, suppress a
+use-of-uninitialised-value error, when the data size is 4, when it
+occurs in the function <code>__gconv_transform_ascii_internal</code>,
+when that is called from any function of name matching
+<code>__mbr*toc</code>, when that is called from <code>mbtowc</code>.
+It doesn't apply under any other circumstances.  The string by which
+this suppression is identified to the user is
+__gconv_transform_ascii_internal/__mbrtowc/mbtowc.
+<p>
+(See <a href="mc_main.html#suppfiles">this section</a> for more details on
+the specifics of Memcheck's suppression kinds.)
+
+<p>Another example, again for the Memcheck skin:
+<pre>
+  {
+    libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0
+    Memcheck:Value4
+    obj:/usr/X11R6/lib/libX11.so.6.2
+    obj:/usr/X11R6/lib/libX11.so.6.2
+    obj:/usr/X11R6/lib/libXaw.so.7.0
+  }
+</pre>
+
+<p>Suppress any size 4 uninitialised-value error which occurs anywhere
+in <code>libX11.so.6.2</code>, when called from anywhere in the same
+library, when called from anywhere in <code>libXaw.so.7.0</code>.  The
+inexact specification of locations is regrettable, but is about all
+you can hope for, given that the X11 libraries shipped with Red Hat
+7.2 have had their symbol tables removed.
+
+<p>Note -- since the above two examples did not make it clear -- that
+you can freely mix the <code>obj:</code> and <code>fun:</code>
+styles of description within a single suppression record.
+<p>
 
 <a name="flags"></a>
 <h3>2.6&nbsp; Command-line flags for the Valgrind core</h3>

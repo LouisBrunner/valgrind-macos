@@ -561,17 +561,27 @@ static void process_cmd_line_options ( void )
            && sp[0] == VKI_AT_PAGESZ
            && sp[-2] == VKI_AT_PHNUM
            && sp[-4] == VKI_AT_PHENT
-           && sp[-6] == VKI_AT_PHDR) {
+           && sp[-6] == VKI_AT_PHDR
+           && sp[-6-1] == 0) {
           if (0)
              VG_(printf)("Looks like you've got a 2.2.X kernel here.\n");
           sp -= 6;
        } else
        if (sp[2] == VKI_AT_CLKTCK
            && sp[0] == VKI_AT_PAGESZ
-           && sp[-2] == VKI_AT_HWCAP) {
+           && sp[-2] == VKI_AT_HWCAP
+           && sp[-2-1] == 0) {
           if (0)
              VG_(printf)("Looks like you've got a 2.4.X kernel here.\n");
           sp -= 2;
+       } else
+       if (sp[2] == VKI_AT_CLKTCK
+           && sp[0] == VKI_AT_PAGESZ
+           && sp[-2] == VKI_AT_HWCAP
+           && sp[-2-20-1] == 0) {
+          if (0)
+             VG_(printf)("Looks like you've got a early 2.4.X kernel here.\n");
+          sp -= 22;
        } else
          args_grok_error(
             "ELF frame does not look like 2.2.X or 2.4.X.\n   "

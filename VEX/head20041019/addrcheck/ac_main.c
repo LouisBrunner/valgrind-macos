@@ -980,9 +980,9 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
 /* Use this rather than eg. -1 because it's a UInt. */
 #define INVALID_DATA_SIZE   999999
 
-   Int         i;
-   Int         sz;
-   IRCallee*   helper;
+   Int         i, sz, regparms;
+   Char*       hname;
+   void*       haddr;   
    IRStmt*     st;
    IRExpr*     data;
    IRExpr*     addr;
@@ -1009,32 +1009,35 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
                addr = data->Iex.LDle.addr;
                sz = sizeofIRType(data->Iex.LDle.ty);
                needSz = False;
+               regparms = 1;
                switch (sz) {
-                  case 4: helper = mkIRCallee(1, 
-                                      "ac_helperc_LOAD4", 
-                                      (HWord)&ac_helperc_LOAD4); break;
-                  case 2: helper = mkIRCallee(1, 
-                                      "ac_helperc_LOAD2",
-                                      (HWord)&ac_helperc_LOAD2); break;
-                  case 1: helper = mkIRCallee(1, 
-                                      "ac_helperc_LOAD1",
-                                      (HWord)&ac_helperc_LOAD1); break;
-                  default: helper = mkIRCallee(2, "ac_helperc_LOADN",
-                                      (HWord)&ac_helperc_LOADN);
-                           needSz = True; break;
+                  case 4:  hname = "ac_helperc_LOAD4", 
+                           haddr = &ac_helperc_LOAD4; 
+                           break;
+                  case 2:  hname = "ac_helperc_LOAD2";
+                           haddr = &ac_helperc_LOAD2; 
+                           break;
+                  case 1:  hname = "ac_helperc_LOAD1";
+                           haddr = &ac_helperc_LOAD1; 
+                           break;
+                  default: hname = "ac_helperc_LOADN";
+                           haddr = &ac_helperc_LOADN;
+                           regparms = 2;
+                           needSz = True;
+                           break;
                }
                if (needSz) {
                   addStmtToIRBB( 
                      bb,
                      IRStmt_Dirty(
-                        unsafeIRDirty_0_N( helper, 
+                        unsafeIRDirty_0_N( regparms, hname, haddr, 
                                            mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
                   ));
                } else {
                   addStmtToIRBB( 
                      bb,
                      IRStmt_Dirty(
-                        unsafeIRDirty_0_N( helper, 
+                        unsafeIRDirty_0_N( regparms, hname, haddr,
                                            mkIRExprVec_1(addr) )
                   ));
                }
@@ -1048,32 +1051,35 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
             sk_assert(isAtom(addr));
             sz = sizeofIRType(typeOfIRExpr(bb_in->tyenv, data));
             needSz = False;
+            regparms = 1;
             switch (sz) {
-               case 4: helper = mkIRCallee(1, 
-                                   "ac_helperc_STORE4", 
-                                   (HWord)&ac_helperc_STORE4); break;
-               case 2: helper = mkIRCallee(1, 
-                                   "ac_helperc_STORE2",
-                                   (HWord)&ac_helperc_STORE2); break;
-               case 1: helper = mkIRCallee(1, 
-                                   "ac_helperc_STORE1",
-                                   (HWord)&ac_helperc_STORE1); break;
-               default: helper = mkIRCallee(2, "ac_helperc_STOREN",
-                                   (HWord)&ac_helperc_STOREN);
-                        needSz = True; break;
+               case 4:  hname = "ac_helperc_STORE4", 
+                        haddr = &ac_helperc_STORE4; 
+                        break;
+               case 2:  hname = "ac_helperc_STORE2";
+                        haddr = &ac_helperc_STORE2; 
+                        break;
+               case 1:  hname = "ac_helperc_STORE1";
+                        haddr = &ac_helperc_STORE1; 
+                        break;
+               default: hname = "ac_helperc_STOREN";
+                        haddr = &ac_helperc_STOREN;
+                        regparms = 2;
+                        needSz = True;
+                        break;
             }
             if (needSz) {
                addStmtToIRBB( 
                   bb,
                   IRStmt_Dirty(
-                     unsafeIRDirty_0_N( helper, 
+                     unsafeIRDirty_0_N( regparms, hname, haddr, 
                                         mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
                ));
             } else {
                addStmtToIRBB( 
                   bb,
                   IRStmt_Dirty(
-                     unsafeIRDirty_0_N( helper, 
+                     unsafeIRDirty_0_N( regparms, hname, haddr, 
                                         mkIRExprVec_1(addr) )
                ));
             }

@@ -1416,9 +1416,10 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayoutInfo* layout )
          /* I don't know if it's really necessary to say that the */    \
          /* call reads the stack pointer.  But anyway, we do. */        \
          dcall = unsafeIRDirty_0_N(                                     \
-                    mkIRCallee(1, "track_" #kind "_mem_stack_" #syze,   \
-                       (HWord)VG_(tool_interface)                       \
-                               .track_##kind##_mem_stack_##syze),       \
+                    1/*regparms*/,                                      \
+                    "track_" #kind "_mem_stack_" #syze,                 \
+                    VG_(tool_interface)                                 \
+                               .track_##kind##_mem_stack_##syze,        \
                     mkIRExprVec_1(IRExpr_Tmp(curr))                     \
                  );                                                     \
          dcall->nFxState = 1;                                           \
@@ -1500,8 +1501,8 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayoutInfo* layout )
          /* I don't know if it's really necessary to say that the call
             reads the stack pointer.  But anyway, we do. */
          dcall = unsafeIRDirty_0_N( 
-                    mkIRCallee(1, "VG_(unknown_esp_update)", 
-                               (HWord)&VG_(unknown_esp_update)),
+                    1/*regparms*/, 
+                    "VG_(unknown_esp_update)", &VG_(unknown_esp_update),
                     mkIRExprVec_1(st->Ist.Put.data) 
                  );
          dcall->nFxState = 1;

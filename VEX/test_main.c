@@ -191,27 +191,29 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayoutInfo* layout)
                needSz = False;
                switch (sz) {
                   case 4: helper = mkIRCallee(1, "ac_helperc_LOAD4", 
-                                                 0x12345601); break;
+                                                 (void*)0x12345601); break;
                   case 2: helper = mkIRCallee(0, "ac_helperc_LOAD2",
-                                                 0x12345602); break;
+                                                 (void*)0x12345602); break;
                   case 1: helper = mkIRCallee(1, "ac_helperc_LOAD1",
-                                                 0x12345603); break;
+                                                 (void*)0x12345603); break;
                   default: helper = mkIRCallee(0, "ac_helperc_LOADN",
-                                                  0x12345604);
+                                                  (void*)0x12345604);
                                                   needSz = True; break;
                }
                if (needSz) {
                   addStmtToIRBB( 
                      bb,
                      IRStmt_Dirty(
-                        unsafeIRDirty_0_N( helper, 
+                        unsafeIRDirty_0_N( helper->regparms, 
+					   helper->name, helper->addr,
                                            mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
                   ));
                } else {
                   addStmtToIRBB( 
                      bb,
                      IRStmt_Dirty(
-                        unsafeIRDirty_0_N( helper, 
+                        unsafeIRDirty_0_N( helper->regparms, 
+					   helper->name, helper->addr, 
                                            mkIRExprVec_1(addr) )
                   ));
                }
@@ -227,27 +229,29 @@ IRBB* ac_instrument (IRBB* bb_in, VexGuestLayoutInfo* layout)
             needSz = False;
             switch (sz) {
                case 4: helper = mkIRCallee(1, "ac_helperc_STORE4", 
-                                              0x12345605); break;
+                                              (void*)0x12345605); break;
                case 2: helper = mkIRCallee(0, "ac_helperc_STORE2", 
-                                              0x12345606); break;
+                                              (void*)0x12345606); break;
                case 1: helper = mkIRCallee(1, "ac_helperc_STORE1", 
-                                              0x12345607); break;
+                                              (void*)0x12345607); break;
                default: helper = mkIRCallee(0, "ac_helperc_STOREN", 
-                                               0x12345608);
+                                               (void*)0x12345608);
                                                needSz = True; break;
             }
             if (needSz) {
                addStmtToIRBB( 
                   bb,
                   IRStmt_Dirty(
-                     unsafeIRDirty_0_N( helper, 
+                     unsafeIRDirty_0_N( helper->regparms, 
+    				        helper->name, helper->addr, 
                                         mkIRExprVec_2(addr, mkIRExpr_HWord(sz)))
                ));
             } else {
                addStmtToIRBB( 
                   bb,
                   IRStmt_Dirty(
-                     unsafeIRDirty_0_N( helper, 
+                     unsafeIRDirty_0_N( helper->regparms,
+                                        helper->name, helper->addr, 
                                         mkIRExprVec_1(addr) )
                ));
             }

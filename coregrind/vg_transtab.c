@@ -400,7 +400,7 @@ Int maybe_commission_sector ( void )
 	 fd = VG_(open)(buf, VKI_O_RDWR|VKI_O_CREAT|VKI_O_TRUNC, 0700);
 	 //VG_(unlink)(buf);
 	 VG_(do_syscall)(__NR_ftruncate, fd, PGROUNDUP(vg_tc_sector_szB));
-	 vg_tc[s] = VG_(mmap)(0, PGROUNDUP(vg_tc_sector_szB), VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, VKI_MAP_SHARED, fd, 0);
+	 vg_tc[s] = VG_(mmap)(0, PGROUNDUP(vg_tc_sector_szB), VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, VKI_MAP_SHARED, 0, fd, 0);
 	 VG_(close)(fd);
 #endif
          vg_tc_used[s] = 0;

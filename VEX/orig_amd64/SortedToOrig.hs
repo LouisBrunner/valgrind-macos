@@ -2,12 +2,12 @@
 module Main where
 
 main 
-  = do x1 <- readFile "sorted3.txt"
+  = do x1 <- readFile "test2.sorted"
        let x2 = lines x1
            x3 = zip [1 ..] x2
            x4 = concat (map qq x3)
        --putStr x4
-       writeFile "test1.orig" x4
+       writeFile "test2.orig" x4
 
 
 qq :: (Int, String) -> String

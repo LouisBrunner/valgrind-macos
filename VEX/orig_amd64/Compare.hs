@@ -21,7 +21,7 @@ import Char ( isSpace )
 /home/sewardj/Tools/HugsInst/bin/runhugs Compare.hs | grep FAIL 
 -}
 
-main = mayn "test1.sorted" "out.txt"
+main = mayn "test2.sorted" "out.txt"
 
 mayn :: String -> String -> IO ()
 

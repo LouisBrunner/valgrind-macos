@@ -1,8 +1,8 @@
 
-Snapshot 20030715 (15 July 2003)
+Snapshot 20030716 (16 July 2003)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-20030715 is a snapshot of our current CVS head (development) branch.
+20030716 is a snapshot of our current CVS head (development) branch.
 This is the branch which will become valgrind-2.0.  It contains
 significant enhancements over the 1.9.X branch.
 
@@ -19,12 +19,12 @@ Two reasons for releasing a snapshot now are:
 
 - So as to make available improvements in the 2.0 line.
 
-Major changes in 20030715, as compared to 1.9.6:
+Major changes in 20030716, as compared to 1.9.6:
 
 - More fixes to threading support on glibc-2.3.1 and 2.3.2-based
   systems (SuSE 8.2, Red Hat 9).  If you have had problems
   with inconsistent/illogical behaviour of errno, h_errno or the DNS
-  resolver functions in threaded programs, 20030715 should improve
+  resolver functions in threaded programs, 20030716 should improve
   matters.  This snapshot seems stable enough to run OpenOffice.org
   1.1rc on Red Hat 7.3, SuSE 8.2 and Red Hat 9, and that's a big
   threaded app if ever I saw one.
@@ -58,6 +58,37 @@ Major changes in 20030715, as compared to 1.9.6:
   obscure x86 instructions.
 
 - Lots of other minor bug fixes.
+
+- We have a decent regression test system, for the first time.
+  This doesn't help you directly, but it does make it a lot easier
+  for us to track the quality of the system, especially across
+  multiple linux distributions.  
+
+  You can run the regression tests with 'make regtest' after 'make
+  install' completes.  On SuSE 8.2 and Red Hat 9 I get this:
+ 
+     == 84 tests, 0 stderr failures, 0 stdout failures ==
+
+  On Red Hat 8, I get this:
+
+     == 84 tests, 2 stderr failures, 1 stdout failure ==
+     corecheck/tests/res_search               (stdout)
+     memcheck/tests/sigaltstack               (stderr)
+
+  sigaltstack is probably harmless.  res_search doesn't work
+  on R H 8 even running natively, so I'm not too worried.   
+
+  On Red Hat 7.3, a glibc-2.2.5 system, I get these harmless failures:
+
+     == 84 tests, 2 stderr failures, 1 stdout failure ==
+     corecheck/tests/pth_atfork1              (stdout)
+     corecheck/tests/pth_atfork1              (stderr)
+     memcheck/tests/sigaltstack               (stderr)
+
+  You need to run on a PII system, at least, since some tests
+  contain P6-specific instructions, and the test machine needs
+  access to the internet so that corecheck/tests/res_search
+  (a test that the DNS resolver works) can function.
 
 As ever, thanks for the vast amount of feedback :) and bug reports :(
 We may not answer all messages, but we do at least look at all of

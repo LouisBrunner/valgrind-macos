@@ -1736,7 +1736,7 @@ extern Int  VG_(get_bbs_translated) ( void );
 // cause problems when passing 32-bit integers on 64-bit platforms, because
 // the top 32-bits might not be zeroed appropriately, eg. as would happen
 // with the 6th arg on AMD64 which is passed on the stack.
-extern Int VG_(do_syscall) ( UInt, UWord, UWord, UWord, UWord, UWord, UWord );
+extern Word VG_(do_syscall) ( UInt, UWord, UWord, UWord, UWord, UWord, UWord );
 
 // Macros make life easier.
 #define vgPlain_do_syscall0(s)             VG_(do_syscall)((s),0,0,0,0,0,0)

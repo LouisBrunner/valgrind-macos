@@ -19,6 +19,12 @@ main (void)
   int i;
   int rc;
   for (i = 1; i <= 65; i++) {
+     // skip signals 32 and 33: some systems say "warning, ignored attempt
+     // to catch 32 because it's used internally by Valgrind", others say
+     // "invalid argument".
+     if (i == 32 || i == 33) {
+        continue;       
+     }                  // different systems
      sa.sa_flags   = 0;
      sigemptyset( &sa.sa_mask );
      sa.sa_handler = abend;

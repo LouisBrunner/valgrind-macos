@@ -455,6 +455,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
                     notBool(e->Iex.Unop.arg->Iex.Const.con->Ico.U1)));
             break;
 
+         case Iop_64to32:
+            e2 = IRExpr_Const(IRConst_U32(
+                    (UInt)(e->Iex.Unop.arg->Iex.Const.con->Ico.U64)));
+            break;
+
          default: 
             goto unhandled;
       }

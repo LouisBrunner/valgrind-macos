@@ -9,6 +9,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_guest_arm.h
 
 PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
+		priv/host-arm/hdefs.h			\
 		priv/host-generic/h_generic_regs.h	\
 		priv/main/vex_globals.h			\
 		priv/main/vex_util.h			\
@@ -22,6 +23,7 @@ LIB_OBJS = 	priv/ir/irdefs.o			\
 		priv/main/vex_globals.o			\
 		priv/main/vex_util.o			\
 		priv/host-x86/hdefs.o			\
+		priv/host-arm/hdefs.o			\
 		priv/host-x86/isel.o			\
 		priv/host-generic/h_generic_regs.o	\
 		priv/host-generic/reg_alloc2.o		\
@@ -105,6 +107,10 @@ priv/main/vex_util.o: $(ALL_HEADERS) priv/main/vex_util.c
 priv/host-x86/hdefs.o: $(ALL_HEADERS) priv/host-x86/hdefs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-x86/hdefs.o \
 					 -c priv/host-x86/hdefs.c
+
+priv/host-arm/hdefs.o: $(ALL_HEADERS) priv/host-arm/hdefs.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-arm/hdefs.o \
+					 -c priv/host-arm/hdefs.c
 
 priv/host-x86/isel.o: $(ALL_HEADERS) priv/host-x86/isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host-x86/isel.o \

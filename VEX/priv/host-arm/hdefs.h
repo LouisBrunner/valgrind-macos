@@ -121,13 +121,13 @@ typedef UInt ARMImm24; // Branch imm
 /* --- Addressing Mode 1 --- */
 typedef
    enum {
-       ARMam_I12A,    /* Imm12A: extended (rotated) immedate */
-       ARMam_ShlI,    /* ShlI  reg  Imm5 */
-       ARMam_ShrI,    /* ShrI  reg  Imm5 */
-       ARMam_SarI,    /* SarI  reg  Imm5 */
-       ARMam_ShlR,    /* ShlR  reg  reg */
-       ARMam_ShrR,    /* ShrR  reg  reg */
-       ARMam_SarR,    /* SarR  reg  reg */
+       ARMam1_I12A,    /* Imm12A: extended (rotated) immedate */
+       ARMam1_ShlI,    /* ShlI  reg  Imm5 */
+       ARMam1_ShrI,    /* ShrI  reg  Imm5 */
+       ARMam1_SarI,    /* SarI  reg  Imm5 */
+       ARMam1_ShlR,    /* ShlR  reg  reg */
+       ARMam1_ShrR,    /* ShrR  reg  reg */
+       ARMam1_SarR,    /* SarR  reg  reg */
    }
    ARMAMode1Tag;
 
@@ -162,12 +162,11 @@ typedef
 	       HReg Rm;
 	       HReg Rs;
 	   } SarR;
-       } ARMam;
+       } ARMam1;
    }
    ARMAMode1;
 
 extern ARMAMode1* ARMAMode1_I12A ( ARMImm12A );
-
 extern ARMAMode1* ARMAMode1_ShlI ( HReg, ARMImm5 );
 extern ARMAMode1* ARMAMode1_ShrI ( HReg, ARMImm5 );
 extern ARMAMode1* ARMAMode1_SarI ( HReg, ARMImm5 );
@@ -184,9 +183,9 @@ extern void ppARMAMode1 ( ARMAMode1* );
 /* --- Addressing Mode 2 --- */
 typedef
    enum {
-     ARMam_RI12,      /* Reg +/- Imm12 */
-     ARMam_RR2,       /* Reg +/- Reg */
-     ARMam_RRS,       /* Reg +/- (Reg << Imm5) */
+     ARMam2_RI,      /* Reg +/- Imm12 */
+     ARMam2_RR,       /* Reg +/- Reg */
+     ARMam2_RRS,       /* Reg +/- (Reg << Imm5) */
    }
    ARMAMode2Tag;
 
@@ -207,15 +206,15 @@ typedef
             HReg Rm;
             ARMImm5 shift;
 	 } RRS;
-      } ARMam;
+      } ARMam2;
    }
    ARMAMode2;
 
-extern ARMAMode2* ARMAMode2_RI12 ( HReg, Int );
-extern ARMAMode2* ARMAMode2_RR2 ( HReg, HReg );
-extern ARMAMode2* ARMAMode2_RRS ( HReg, HReg, Int );
+extern ARMAMode2* ARMAMode2_RI ( HReg, ARMImm12 );
+extern ARMAMode2* ARMAMode2_RR ( HReg, HReg );
+extern ARMAMode2* ARMAMode2_RRS ( HReg, HReg, ARMImm5 );
 
-extern ARMAMode2* dopyARMMode2 ( ARMAMode2* );
+extern ARMAMode2* dopyARMAMode2 ( ARMAMode2* );
 
 extern void ppARMAMode2 ( ARMAMode2* );
 
@@ -223,8 +222,8 @@ extern void ppARMAMode2 ( ARMAMode2* );
 /* --- Addressing Mode 3 --- */
 typedef
    enum {
-     ARMam_RI8,       /* Reg +/- Imm8 */
-     ARMam_RR3,       /* Reg +/- Reg */
+     ARMam3_RI,       /* Reg +/- Imm8 */
+     ARMam3_RR,       /* Reg +/- Reg */
    }
    ARMAMode3Tag;
 
@@ -233,20 +232,20 @@ typedef
       ARMAMode3Tag tag;
       union {
          struct {
-            HReg reg;
+            HReg Rn;
             ARMImm8 imm;
          } RI;
          struct {
             HReg Rn;
             HReg Rm;
 	 } RR;
-      } ARMam;
+      } ARMam3;
    }
    ARMAMode3;
 
 
-extern ARMAMode3* ARMAMode3_RI8 ( HReg, Int );
-extern ARMAMode3* ARMAMode3_RR3 ( HReg, HReg );
+extern ARMAMode3* ARMAMode3_RI ( HReg, ARMImm8 );
+extern ARMAMode3* ARMAMode3_RR ( HReg, HReg );
 
 extern ARMAMode3* dopyARMAMode3 ( ARMAMode3* );
 
@@ -258,7 +257,7 @@ extern void ppARMAMode3 ( ARMAMode3* );
 /* ------ Branch destination ------ */
 typedef
    enum {
-       ARMbdImm24,
+       ARMbdImm,
        ARMbdReg
    }
    ARMBranchTag;
@@ -268,8 +267,8 @@ typedef
       ARMBranchTag tag;
       union {
 	  struct {
-	      ARMImm24 imm;
-	  } Imm24;
+	      ARMImm24 imm24;
+	  } Imm;
 	  struct {
 	      HReg reg;
 	  } Reg;
@@ -277,6 +276,10 @@ typedef
   }
   ARMBranchDest;
 
+extern ARMBranchDest* ARMBranchDest_Imm ( ARMImm24 );
+extern ARMBranchDest* ARMBranchDest_Reg ( HReg );
+
+extern void ppARMBranchDest ( ARMBranchDest* );
 
 
 /* --------- Instructions. --------- */
@@ -285,11 +288,10 @@ typedef
 /* --- DPI's --- */
 typedef
    enum {
-       ARMalu_And, ARMalu_Orr, ARMalu_Eor,  // Logic
+       ARMalu_And, ARMalu_Orr, ARMalu_Eor, ARMalu_Bic, // Logic
        ARMalu_Sub, ARMalu_Rsb, ARMalu_Add, ARMalu_Adc, ARMalu_Sbc, ARMalu_Rsc,  // Arith
        ARMalu_Tst, ARMalu_Teq, ARMalu_Cmp, ARMalu_Cmn,  // test
-       ARMalu_Mov, ARMalu_Mvn,  // Move
-       ARMalu_Bic  // Bit clear
+       ARMalu_Mov, ARMalu_Mvn  // Move
    }
    ARMAluOp;
 
@@ -379,6 +381,7 @@ typedef
 	  } StoreH;
 
 
+	  /* Branch */
 	  struct {
 	      ARMCondCode cond;
 	      ARMBranchDest dest;
@@ -387,7 +390,7 @@ typedef
 	      ARMBranchDest dest;
 	  } BranchL;       // -- don't want to do conditional BLs
 
-
+	  /* Literal */
 	  struct {
 	      HReg reg;
 	      ARMImm12A imm12a;
@@ -417,10 +420,9 @@ extern ARMInstr* ARMInstr_Literal   ( HReg, ARMImm12A );
 extern void ppARMInstr ( ARMInstr* );
 
 
-
-#if 0
 /* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
+extern void         getAllocableRegs_ARM ( Int*, HReg** );
 extern void         getRegUsage_ARMInstr ( HRegUsage*, ARMInstr* );
 extern void         mapRegs_ARMInstr     ( HRegRemap*, ARMInstr* );
 extern Bool         isMove_ARMInstr      ( ARMInstr*, HReg*, HReg* );
@@ -429,7 +431,6 @@ extern ARMInstr*    genSpill_ARM         ( HReg rreg, Int offset );
 extern ARMInstr*    genReload_ARM        ( HReg rreg, Int offset );
 extern void         getAllocableRegs_ARM ( Int*, HReg** );
 extern HInstrArray* iselBB_ARM           ( IRBB* );
-#endif
 
 #endif /* ndef __LIBVEX_ARMH_DEFS_H */
 

@@ -751,7 +751,7 @@ void VG_(send_signal_to_thread) ( ThreadId thread, Int sig )
             actions, the simple thing is to send someone round to the
             front door and signal there.  Then the kernel will do
             whatever it does with the default action. */
-         res = VG_(kill)( VG_(getpid)(), sig );
+         res = VG_(kkill)( VG_(getpid)(), sig );
          vg_assert(res == 0);
          break;
 
@@ -792,7 +792,7 @@ void VG_(do_sigpending) ( ThreadId tid, vki_ksigset_t* set )
 
    /* Get the set of signals which are pending for the process as a
       whole. */
-   res = VG_(sigpending)( &process_pending );
+   res = VG_(ksigpending)( &process_pending );
    vg_assert(res == 0);
 
    VG_(ksigemptyset)(set);

@@ -280,14 +280,14 @@ Int VG_(ksignal)(Int signum, void (*sighandler)(Int))
 }
 
 
-Int VG_(kill)( Int pid, Int signo )
+Int VG_(kkill)( Int pid, Int signo )
 {
    Int res = vg_do_syscall2(__NR_kill, pid, signo);
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
 
-Int VG_(sigpending) ( vki_ksigset_t* set )
+Int VG_(ksigpending) ( vki_ksigset_t* set )
 {
    Int res = vg_do_syscall1(__NR_sigpending, (UInt)set);
    return VG_(is_kerror)(res) ? -1 : 0;

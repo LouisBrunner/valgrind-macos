@@ -422,8 +422,8 @@ extern Int VG_(ksigaction)   ( Int signum,
 extern Int VG_(ksignal)      ( Int signum, void (*sighandler)(Int) );
 extern Int VG_(ksigaltstack) ( const vki_kstack_t* ss, vki_kstack_t* oss );
 
-extern Int VG_(kill)         ( Int pid, Int signo );
-extern Int VG_(sigpending)   ( vki_ksigset_t* set );
+extern Int VG_(kkill)        ( Int pid, Int signo );
+extern Int VG_(ksigpending)  ( vki_ksigset_t* set );
 
 
 /*====================================================================*/

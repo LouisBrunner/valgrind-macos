@@ -4435,7 +4435,10 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 	    anything - just pretend the syscall happened. */
 	 syscall_done = True;
       } else if (sys->may_block) {
-	 /* issue to worker */
+	 /* Issue to worker.  If we're waiting on the syscall because
+	    it's in the hands of the ProxyLWP, then set the thread
+	    state to WaitSys. */
+	 tst->status = VgTs_WaitSys;
 	 VG_(sys_issue)(tid);
       } else {
 	 /* run the syscall directly */
@@ -4452,10 +4455,8 @@ Bool VG_(pre_syscall) ( ThreadId tid )
 
    VGP_POPCC(VgpCoreSysWrap);
 
-   /* If we're waiting on the syscall because it's in the hands of the
-      ProxyLWP, then set the thread state to WaitSys. */
-   if (!syscall_done)
-      tst->status = VgTs_WaitSys;
+   vg_assert(( syscall_done && tst->status == VgTs_Runnable) ||
+	     (!syscall_done && tst->status == VgTs_WaitSys ));
 
    return syscall_done;
 }

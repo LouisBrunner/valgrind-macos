@@ -371,22 +371,17 @@ static void proxy_fork_cleanup(ThreadId tid)
       tst->proxy = NULL;
    }
 
-   /* Create a proxy for calling thread
-      
-      We need to temporarily set the state back to Runnable for
-      proxy_create's benefit.
+   /* Create a proxy for calling thread.
+
+      Since fork() is non-blocking, the thread status should already
+      be Runnable.
     */
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(VG_(threads)[tid].proxy == NULL);
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
-   {
-      ThreadState *tst = VG_(get_ThreadState)(tid);
-
-      vg_assert(tst->proxy == NULL);
-      vg_assert(tst->status == VgTs_WaitSys);
-      tst->status = VgTs_Runnable;
-      VG_(proxy_create)(tid);
-      VG_(proxy_setsigmask)(tid);
-      tst->status = VgTs_WaitSys;
-   }
+   VG_(proxy_create)(tid);
+   VG_(proxy_setsigmask)(tid);
 }
 
 Int VG_(proxy_resfd)(void)
@@ -442,7 +437,8 @@ void VG_(proxy_handlesig)(const vki_ksiginfo_t *siginfo,
 	 signal, or the syscall completed normally.  In either case
 	 eax contains the correct syscall return value, and the new
 	 state is effectively PXS_SysDone. */
-      vg_assert(px->state == PXS_RunSyscall || px->state == PXS_SysDone);
+      vg_assert(px->state == PXS_RunSyscall ||
+		px->state == PXS_SysDone);
       px->state = PXS_SysDone;
       px->tst->m_eax = eax;
    }

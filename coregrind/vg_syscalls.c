@@ -1207,9 +1207,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
  
       /* Added by Gerald Carter <jerry@samba.org> 2002-12-17 */
-#     if defined(__NR_capset) /* 185 */
+#     if defined(__NR_capset)
       /* int capset(cap_user_header_t header, const cap_user_data_t data); */
-      case __NR_capset:
+      case __NR_capset: /* syscall 185 */ 
          SYSCALL_TRACK( pre_mem_read, tst, "capset(header)", 
                         arg1, sizeof(vki_cap_user_header_t) );
          SYSCALL_TRACK( pre_mem_read, tst, "capset(data)", 
@@ -1221,7 +1221,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!!!!!!!!!!!!! mutant ones !!!!!!!!!!!!!!!!!!!!! */
 
-      case __NR_execve:
+      case __NR_execve: /* syscall 11 */
          /* int execve (const char *filename, 
                         char *const argv [], 
                         char *const envp[]); */

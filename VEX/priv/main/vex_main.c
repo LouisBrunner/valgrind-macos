@@ -77,7 +77,7 @@ void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon )
    vcon->iropt_level                = 2;
    vcon->iropt_precise_memory_exns  = False;
    vcon->iropt_unroll_thresh        = 120;
-   vcon->guest_max_insns            = 50;
+   vcon->guest_max_insns            = 60;
    vcon->guest_chase_thresh         = 10;
 }
 

@@ -51,7 +51,7 @@
    MByte/sec.  Once the size increases enough to fall out of the cache
    into memory, the rate falls by about a factor of 3. 
 */
-#define N_TEMPORARY_BYTES 1000000
+#define N_TEMPORARY_BYTES 1200000
 
 static Char temporary[N_TEMPORARY_BYTES];
 static Int  temporary_used = 0;

@@ -1239,31 +1239,31 @@ static void list_tools(void)
 
    if (dir == NULL) {
       fprintf(stderr, "Can't open %s: %s (installation problem?)\n",
-	      VG_(libdir), strerror(errno));
+              VG_(libdir), strerror(errno));
       return;
    }
 
-   while((de = readdir(dir)) != NULL) {
+   while ((de = readdir(dir)) != NULL) {
       int len = strlen(de->d_name);
 
       /* look for vgskin_TOOL.so names */
       if (len > (7+1+3) &&   /* "vgskin_" + at least 1-char toolname + ".so" */
-	  strncmp(de->d_name, "vgskin_", 7) == 0 &&
-	  VG_STREQ(de->d_name + len - 3, ".so")) {
-	 if (first) {
-	    printf("Available tools:\n");
-	    first = 0;
-	 }
-	 de->d_name[len-3] = '\0';
-	 printf("\t%s\n", de->d_name+7);
+         strncmp(de->d_name, "vgskin_", 7) == 0 &&
+         VG_STREQ(de->d_name + len - 3, ".so")) {
+         if (first) {
+            fprintf(stderr, "Available tools:\n");
+            first = 0;
+         }
+         de->d_name[len-3] = '\0';
+         fprintf(stderr, "\t%s\n", de->d_name+7);
       }
    }
 
    closedir(dir);
 
    if (first)
-      printf("No tools available in \"%s\" (installation problem?)\n",
-	     VG_(libdir));
+      fprintf(stderr, "No tools available in \"%s\" (installation problem?)\n",
+             VG_(libdir));
 }
 
 
@@ -1354,26 +1354,70 @@ static void load_tool( const char *toolname, void** handle_out,
    if (handle != NULL)
       dlclose(handle);
 
-   fprintf(stderr, "Aborting: couldn't load tool\n");
+   fprintf(stderr, "valgrind: couldn't load tool\n");
    list_tools();
    exit(127);
 }
+
+
+/*====================================================================*/
+/*=== Command line errors                                          ===*/
+/*====================================================================*/
+
+static void abort_msg ( void )
+{
+   VG_(clo_log_to)     = VgLogTo_Fd;
+   VG_(clo_logfile_fd) = 2; /* stderr */
+}
+
+void VG_(bad_option) ( Char* opt )
+{
+   abort_msg();
+   VG_(printf)("valgrind: Bad option `%s'; aborting.\n", opt);
+   VG_(printf)("valgrind: Use --help for more information.\n");
+   VG_(exit)(1);
+}
+
+static void missing_tool_option ( void  )
+{
+   abort_msg();
+   VG_(printf)("valgrind: Missing --tool option\n");
+   list_tools();
+   VG_(printf)("valgrind: Use --help for more information.\n");
+   VG_(exit)(1);
+}
+
+static void missing_prog ( void  )
+{
+   abort_msg();
+   VG_(printf)("valgrind: no program specified\n");
+   VG_(printf)("valgrind: Use --help for more information.\n");
+   VG_(exit)(1);
+}
+
+static void config_error ( Char* msg )
+{
+   abort_msg();
+   VG_(printf)("valgrind: Startup or configuration error:\n   %s\n", msg);
+   VG_(printf)("valgrind: Unable to start up properly.  Giving up.\n");
+   VG_(exit)(1);
+}
+
 
 /*====================================================================*/
 /*=== Loading the client                                           ===*/
 /*====================================================================*/
 
-static void load_client(char* cl_argv[], const char* exec,    
-                 /*inout*/Int* need_help,
+static void load_client(char* cl_argv[], const char* exec, Int need_help,
                  /*out*/struct exeinfo* info, /*out*/Addr* client_eip)
 {
    // If they didn't specify an executable with --exec, and didn't specify 
    // --help, then use client argv[0] (searching $PATH if necessary).
-   if (NULL == exec && !*need_help) {
+   if (NULL == exec && !need_help) {
       if (cl_argv[0] == NULL || 
           ( NULL == (exec = find_executable(cl_argv[0])) ) )
       {
-         *need_help = 1;
+         missing_prog();
       }
    }
 
@@ -1383,7 +1427,7 @@ static void load_client(char* cl_argv[], const char* exec,
    info->exe_end  = VG_(client_end);
    info->argv     = cl_argv;
 
-   if (*need_help) {
+   if (need_help) {
       VG_(clexecfd) = -1;
       info->argv0 = NULL;
       info->argv1 = NULL;
@@ -1392,7 +1436,7 @@ static void load_client(char* cl_argv[], const char* exec,
       VG_(clexecfd) = VG_(open)(exec, O_RDONLY, VKI_S_IRUSR);
       ret = do_exec(exec, info);
       if (ret != 0) {
-         fprintf(stderr, "do_exec(%s) failed: %s\n", exec, strerror(ret));
+         fprintf(stderr, "valgrind: do_exec(%s) failed: %s\n", exec, strerror(ret));
          exit(127);
       }
    }
@@ -1457,27 +1501,6 @@ Int    VG_(clo_signal_polltime) = 50;
 Bool   VG_(clo_lowlat_syscalls) = False; /* low-latency syscalls */
 Bool   VG_(clo_lowlat_signals)  = False; /* low-latency signals */
 
-
-void VG_(bad_option) ( Char* opt )
-{
-   VG_(shutdown_logging)();
-   VG_(clo_log_to)     = VgLogTo_Fd;
-   VG_(clo_logfile_fd) = 2; /* stderr */
-   VG_(printf)("valgrind.so: Bad option `%s'; aborting.\n", opt);
-   VG_(exit)(1);
-}
-
-static void config_error ( Char* msg )
-{
-   VG_(shutdown_logging)();
-   VG_(clo_log_to)     = VgLogTo_Fd;
-   VG_(clo_logfile_fd) = 2; /* stderr */
-   VG_(printf)(
-      "valgrind: Startup or configuration error:\n   %s\n", msg);
-   VG_(printf)(
-      "valgrind: Unable to start up properly.  Giving up.\n");
-   VG_(exit)(1);
-}
 
 void usage ( Bool debug_help )
 {
@@ -1560,7 +1583,6 @@ void usage ( Bool debug_help )
    VG_(printf)(usage1);
    if (VG_(details).name) {
       VG_(printf)("  user options for %s:\n", VG_(details).name);
-      /* Don't print skin string directly for security, ha! */
       if (VG_(needs).command_line_options)
 	 SK_(print_usage)();
       else
@@ -1579,11 +1601,7 @@ void usage ( Bool debug_help )
       }
    }
    VG_(printf)(usage3, VG_BUGS_TO);
-
-   VG_(shutdown_logging)();
-   VG_(clo_log_to)     = VgLogTo_Fd;
-   VG_(clo_logfile_fd) = 2; /* stderr */
-   VG_(exit)(1);
+   VG_(exit)(0);
 }
 
 static void pre_process_cmd_line_options
@@ -1596,34 +1614,37 @@ static void pre_process_cmd_line_options
 
       if (strcmp(VG_(vg_argv)[i], "--version") == 0) {
          printf("valgrind-" VERSION "\n");
-         exit(1);
+         exit(0);
 
-      } else if (strcmp(VG_(vg_argv)[i], "--help") == 0) {
+      } else if (VG_CLO_STREQ(VG_(vg_argv)[i], "--help")) {
          *need_help = 1;
 
-      } else if (strcmp(VG_(vg_argv)[i], "--help-debug") == 0) {
+      } else if (VG_CLO_STREQ(VG_(vg_argv)[i], "--help-debug")) {
          *need_help = 2;
 
-      } else if (strncmp(VG_(vg_argv)[i], "--tool=", 7) == 0 ||
-	         strncmp(VG_(vg_argv)[i], "--skin=", 7) == 0) {
+      } else if (VG_CLO_STREQN(7, VG_(vg_argv)[i], "--tool=") ||
+	         VG_CLO_STREQN(7, VG_(vg_argv)[i], "--skin=")) {
 	 *tool = &VG_(vg_argv)[i][7];
 	 
-      } else if (strncmp(VG_(vg_argv)[i], "--exec=", 7) == 0) {
+      } else if (VG_CLO_STREQN(7, VG_(vg_argv)[i], "--exec=")) {
 	 *exec = &VG_(vg_argv)[i][7];
       }
    }
 
-   /* If no tool specified, can give usage message without loading tool */
+   /* If no tool specified, can act appropriately without loading tool */
    if (*tool == NULL) {
-      if (!need_help)
-	 list_tools();
-      usage(/*help-debug?*/False);
+      if (0 == *need_help) {
+         // neither --tool nor --help/--help-debug specified
+         missing_tool_option();
+      } else {
+         // Give help message, without any tool-specific help
+         usage(/*help-debug?*/2 == *need_help);
+      }
    }
 }
 
-static void process_cmd_line_options 
-      ( UInt* client_auxv, Addr esp_at_startup, 
-        const char* toolname, Int need_help )
+static void process_cmd_line_options
+      ( UInt* client_auxv, Addr esp_at_startup, const char* toolname )
 {
    Int  i, eventually_logfile_fd;
    Int *auxp;
@@ -1631,10 +1652,6 @@ static void process_cmd_line_options
 
    /* log to stderr by default, but usage message goes to stdout */
    eventually_logfile_fd = 2; 
-
-   /* Once logging is started, we can safely send messages pertaining
-      to failures in initialisation. */
-   VG_(startup_logging)();
 
    /* Check for sane path in ./configure --prefix=... */
    if (VG_LIBDIR[0] != '/') 
@@ -1650,9 +1667,6 @@ static void process_cmd_line_options
 	 break;
       }
    } 
-
-   if (need_help)
-      usage(/*--help-debug?*/need_help == 2);
 
    /* We know the initial ESP is pointing at argc/argv */
    VG_(client_argc) = *(Int *)esp_at_startup;
@@ -1887,7 +1901,7 @@ static void process_cmd_line_options
 
       else if ( ! VG_(needs).command_line_options
              || ! SK_(process_cmd_line_option)(arg) ) {
-         usage(/*--help-debug?*/need_help == 2);
+         VG_(bad_option)(arg);
       }
    }
 
@@ -2080,8 +2094,11 @@ static void process_cmd_line_options
 
    if (VG_(clo_gen_suppressions) && 
        !VG_(needs).core_errors && !VG_(needs).skin_errors) {
-      config_error("Can't use --gen-suppressions=yes with this skin,\n"
-                   "   as it doesn't generate errors.");
+      VG_(message)(Vg_UserMsg, 
+                   "Can't use --gen-suppressions=yes with this tool,");
+      VG_(message)(Vg_UserMsg, 
+                   "as it doesn't generate errors.");
+      VG_(bad_option)("--gen-suppressions=yes");
    }
 }
 
@@ -2717,6 +2734,15 @@ int main(int argc, char **argv)
    // *** Be very careful when messing with the order ***
    //============================================================
 
+   //============================================================
+   // Command line argument handling order:
+   // * If --help/--help-debug are present, show usage message 
+   //   (if --tool is also present, that includes the tool-specific usage)
+   // * Then, if --tool is missing, abort with error msg
+   // * Then, if client is missing, abort with error msg
+   // * Then, if any cmdline args are bad, abort with error msg
+   //============================================================
+
    // Get the current process datasize rlimit, and set it to zero.
    // This prevents any internal uses of brk() from having any effect.
    // We remember the old value so we can restore it on exec, so that
@@ -2795,7 +2821,7 @@ int main(int argc, char **argv)
    //   p: pre_process_cmd_line_options()  [for 'exec', 'need_help']
    //   p: layout_remaining_space          [so there's space]
    //--------------------------------------------------------------
-   load_client(cl_argv, exec, /*inout*/&need_help, &info, &client_eip);
+   load_client(cl_argv, exec, need_help, &info, &client_eip);
 
    //--------------------------------------------------------------
    // Everything in place, unpad us
@@ -2861,13 +2887,21 @@ int main(int argc, char **argv)
    VG_(sanity_check_needs)();
 
    //--------------------------------------------------------------
+   // If --tool and --help/--help-debug was given, now give the core+tool
+   // help message
+   //   p: pre_clo_init()
+   //--------------------------------------------------------------
+   if (need_help) {
+      usage(/*--help-debug?*/2 == need_help);
+   }
+
+   //--------------------------------------------------------------
    // Process Valgrind's + tool's command-line options
    //   p: load_tool()               [for 'tool']
-   //   p: load_client()             [for 'need_help']
    //   p: setup_file_descriptors()  [for 'VG_(max_fd)']
    //   p: sk_pre_clo_init           [to set 'command_line_options' need]
    //--------------------------------------------------------------
-   process_cmd_line_options(client_auxv, esp_at_startup, tool, need_help);
+   process_cmd_line_options(client_auxv, esp_at_startup, tool);
 
    //--------------------------------------------------------------
    // Allow GDB attach
@@ -3086,9 +3120,6 @@ int main(int argc, char **argv)
  
    if (VG_(clo_profile))
       VGP_(done_profiling)();
-
-   /* Must be after all messages are done */
-   VG_(shutdown_logging)();
 
    /* We're exiting, so nuke all the threads and clean up the proxy LWPs */
    vg_assert(src == VgSrc_FatalSig ||

@@ -1,0 +1,2 @@
+prog: ../../tests/true
+vgopts: --bad-bad-option

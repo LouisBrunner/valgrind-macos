@@ -12,6 +12,12 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	bt_literal.stderr.exp bt_literal.stdout.exp \
 	bt_literal.vgtest \
 	closeall.stderr.exp closeall.vgtest \
+	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \
+	cmdline2.stderr.exp cmdline2.stdout.exp cmdline2.vgtest \
+	cmdline3.stderr.exp cmdline3.vgtest \
+	cmdline4.stderr.exp cmdline4.vgtest \
+	cmdline5.stderr.exp cmdline5.vgtest \
+	cmdline6.stderr.exp cmdline6.vgtest \
 	coolo_sigaction.stderr.exp \
 	coolo_sigaction.stdout.exp coolo_sigaction.vgtest \
 	coolo_strlen.stderr.exp coolo_strlen.vgtest \

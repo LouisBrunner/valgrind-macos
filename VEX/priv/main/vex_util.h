@@ -58,7 +58,7 @@ __attribute__ ((__noreturn__))
 extern void vex_assert_fail ( const Char* expr, const Char* file,
                               Int line, const Char* fn );
 __attribute__ ((__noreturn__))
-extern void vpanic ( Char* str );
+extern void vpanic ( HChar* str );
 
 
 /* Printing */
@@ -67,7 +67,7 @@ __attribute__ ((format (printf, 1, 2)))
 extern UInt vex_printf ( const HChar *format, ... );
 
 __attribute__ ((format (printf, 2, 3)))
-extern UInt vex_sprintf ( Char* buf, const HChar *format, ... );
+extern UInt vex_sprintf ( HChar* buf, const HChar *format, ... );
 
 
 /* String ops */

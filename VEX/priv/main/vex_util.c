@@ -153,7 +153,7 @@ void vex_assert_fail ( const Char* expr,
 }
 
 __attribute__ ((noreturn))
-void vpanic ( Char* str )
+void vpanic ( HChar* str )
 {
    vex_printf("\nvex: the `impossible' happened:\n   %s\n", str);
    (*vex_failure_exit)();
@@ -502,7 +502,7 @@ static void add_to_vg_sprintf_buf ( Char c )
    *vg_sprintf_ptr++ = c;
 }
 
-UInt vex_sprintf ( Char* buf, const HChar *format, ... )
+UInt vex_sprintf ( HChar* buf, const HChar *format, ... )
 {
    Int ret;
    va_list vargs;

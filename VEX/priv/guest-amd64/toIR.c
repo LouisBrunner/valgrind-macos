@@ -324,7 +324,7 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
                      Bool             host_bigendian,
                      VexSubArch       subarch_guest )
 {
-   ULong      delta;
+   Long       delta;
    Int        i, n_instrs, size, first_stmt_idx;
    Addr64     guest_next;
    Bool       resteerOK;
@@ -439,9 +439,9 @@ IRBB* bbToIR_AMD64 ( UChar*           amd64code,
             n_resteers++;
             d_resteers++;
             if (0 && (n_resteers & 0xFF) == 0)
-            vex_printf("resteer[%d,%d] to %p (delta = %lld)\n",
+            vex_printf("resteer[%d,%d] to 0x%llx (delta = %lld)\n",
                        n_resteers, d_resteers,
-                       (void*)(UInt)(guest_next), delta);
+                       guest_next, delta);
             break;
       }
    }
@@ -500,12 +500,6 @@ static ULong extend_s_32to64 ( UInt x )
    return (ULong)((((Long)x) << 32) >> 32);
 }
 
-/* Fetch a byte from the guest insn stream. */
-static UChar getIByte ( ULong delta )
-{
-   return guest_code[delta];
-}
-
 /* Figure out whether the mod and rm parts of a modRM byte refer to a
    register or memory.  If so, the byte will have the form 11XXXYYY,
    where YYY is the register number. */
@@ -528,10 +522,10 @@ static Int gregOfRM ( UChar mod_reg_rm )
 
 /* Get a 8/16/32-bit unsigned value out of the insn stream. */
 
-static ULong getUChar ( UInt delta )
+static UChar getUChar ( ULong delta )
 {
-   ULong v = guest_code[delta+0];
-   return v & 0xFF;
+   UChar v = guest_code[delta+0];
+   return v;
 }
 
 //.. static UInt getUDisp16 ( UInt delta )
@@ -555,14 +549,14 @@ static ULong getUChar ( UInt delta )
 
 /* Get a byte value out of the insn stream and sign-extend to 64
    bits. */
-static ULong getSDisp8 ( UInt delta )
+static ULong getSDisp8 ( ULong delta )
 {
    return extend_s_8to64( guest_code[delta] );
 }
 
 /* Get a 32-bit value out of the insn stream and sign-extend to 64
    bits. */
-static ULong getSDisp32 ( UInt delta )
+static ULong getSDisp32 ( ULong delta )
 {
    UInt v = guest_code[delta+3]; v <<= 8;
    v |= guest_code[delta+2]; v <<= 8;
@@ -581,7 +575,7 @@ static ULong getSDisp32 ( UInt delta )
 
 /* Note: because AMD64 doesn't allow 64-bit literals, it is an error
    if this is called with size==8.  Should not happen. */
-static ULong getSDisp ( Int size, UInt delta )
+static ULong getSDisp ( Int size, ULong delta )
 {
    switch (size) {
       case 4: return getSDisp32(delta);
@@ -1380,7 +1374,7 @@ void setFlags_MUL ( IRType ty, IRTemp arg1, IRTemp arg2, ULong base_op )
 
 /* Condition codes, using the AMD encoding.  */
 
-static Char* name_AMD64Condcode ( AMD64Condcode cond )
+static HChar* name_AMD64Condcode ( AMD64Condcode cond )
 {
    switch (cond) {
       case AMD64CondO:      return "o";
@@ -1584,7 +1578,7 @@ static HChar* nameGrp5 ( Int opc_aux )
 //..    }
 //.. }
 
-static Char nameISize ( Int size )
+static HChar nameISize ( Int size )
 {
    switch (size) {
       case 8: return 'q';
@@ -1639,7 +1633,7 @@ static void jmp_treg( IRJumpKind kind, IRTemp t )
 /*------------------------------------------------------------*/
 
 static 
-UChar* sorbTxt ( Prefix pfx )
+HChar* sorbTxt ( Prefix pfx )
 {
    if (pfx & PFX_CS) return "%cs:";
    if (pfx & PFX_DS) return "%ds:";
@@ -1749,9 +1743,9 @@ static IRTemp disAMode_copy2tmp ( IRExpr* addr64 )
 }
 
 static 
-IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
+IRTemp disAMode ( Int* len, Prefix pfx, ULong delta, HChar* buf )
 {
-   UChar mod_reg_rm = getIByte(delta);
+   UChar mod_reg_rm = getUChar(delta);
    delta++;
 
    buf[0] = (UChar)0;
@@ -1782,7 +1776,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
       case 0x08: case 0x09: case 0x0A: case 0x0B: 
       /* ! 0C */ case 0x0D: case 0x0E: case 0x0F:
          { UChar rm = mod_reg_rm & 7;
-           ULong d  = getSDisp8(delta);
+           Long d   = getSDisp8(delta);
            DIS(buf, "%s%lld(%s)", sorbTxt(pfx), d, nameIRegB(pfx,8,rm));
            *len = 2;
            return disAMode_copy2tmp(
@@ -1839,7 +1833,7 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
                | %index != %RSP && !(%base == %RBP || %base == %R13)
                = %base + (%index << scale)
          */
-         UChar sib     = getIByte(delta);
+         UChar sib     = getUChar(delta);
          UChar scale   = (sib >> 6) & 3;
          UChar index_r = (sib >> 3) & 7;
          UChar base_r  = sib & 7;
@@ -1906,11 +1900,11 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
             = d8 + %base + (%index << scale)
       */
       case 0x0C: {
-         UChar sib     = getIByte(delta);
+         UChar sib     = getUChar(delta);
          UChar scale   = (sib >> 6) & 3;
          UChar index_r = (sib >> 3) & 7;
          UChar base_r  = sib & 7;
-         ULong d       = getSDisp8(delta+1);
+         Long d        = getSDisp8(delta+1);
 
          if (index_r == R_RSP && 0==getRexX(pfx)) {
             DIS(buf, "%s%lld(%s,,)", sorbTxt(pfx), 
@@ -1947,11 +1941,11 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
             = d32 + %base + (%index << scale)
       */
       case 0x14: {
-         UChar sib     = getIByte(delta);
+         UChar sib     = getUChar(delta);
          UChar scale   = (sib >> 6) & 3;
          UChar index_r = (sib >> 3) & 7;
          UChar base_r  = sib & 7;
-         ULong d       = getSDisp32(delta+1);
+         Long d        = getSDisp32(delta+1);
 
          if (index_r == R_RSP && 0==getRexX(pfx)) {
             DIS(buf, "%s%lld(%s,,)", sorbTxt(pfx), 
@@ -1990,9 +1984,9 @@ IRTemp disAMode ( Int* len, Prefix pfx, UInt delta, UChar* buf )
    beginning at delta.  Is useful for getting hold of literals beyond
    the end of the amode before it has been disassembled.  */
 
-static UInt lengthAMode ( Prefix pfx, UInt delta )
+static UInt lengthAMode ( Prefix pfx, ULong delta )
 {
-   UChar mod_reg_rm = getIByte(delta);
+   UChar mod_reg_rm = getUChar(delta);
    delta++;
 
    /* squeeze out the reg field from mod_reg_rm, since a 256-entry
@@ -2038,7 +2032,7 @@ static UInt lengthAMode ( Prefix pfx, UInt delta )
 
       case 0x04: {
          /* SIB, with no displacement. */
-         UChar sib     = getIByte(delta);
+         UChar sib     = getUChar(delta);
          UChar base_r  = sib & 7;
          /* correct since #(R13) == 8 + #(RBP) */
          Bool  base_is_BPor13 = base_r == R_RBP;
@@ -2072,7 +2066,7 @@ static UInt lengthAMode ( Prefix pfx, UInt delta )
 //.. 
 //.. static UInt lengthAMode ( UInt delta )
 //.. {
-//..    UChar mod_reg_rm = getIByte(delta); delta++;
+//..    UChar mod_reg_rm = getUChar(delta); delta++;
 //.. 
 //..    /* squeeze out the reg field from mod_reg_rm, since a 256-entry
 //..       jump table seems a bit excessive. 
@@ -2107,7 +2101,7 @@ static UInt lengthAMode ( Prefix pfx, UInt delta )
 //.. 
 //..       /* SIB, no displacement.  */
 //..       case 0x04: {
-//..          UChar sib    = getIByte(delta);
+//..          UChar sib    = getUChar(delta);
 //..          UChar base_r = sib & 7;
 //..          if (base_r == R_EBP) return 6; else return 2;
 //..       }
@@ -2179,7 +2173,7 @@ ULong dis_op2_E_G ( Prefix      pfx,
                     Bool        keep,
                     Int         size, 
                     ULong       delta0,
-                    Char*       t_amd64opc )
+                    HChar*      t_amd64opc )
 {
    HChar   dis_buf[50];
    Int     len;
@@ -2288,13 +2282,13 @@ ULong dis_op2_E_G ( Prefix      pfx,
                        ST tmpv, (tmpa)
 */
 static
-UInt dis_op2_G_E ( Prefix      pfx,
-                   Bool        addSubCarry,
-                   IROp        op8, 
-                   Bool        keep,
-                   Int         size, 
-                   ULong       delta0,
-                   Char*       t_amd64opc )
+ULong dis_op2_G_E ( Prefix      pfx,
+                    Bool        addSubCarry,
+                    IROp        op8, 
+                    Bool        keep,
+                    Int         size, 
+                    ULong       delta0,
+                    HChar*      t_amd64opc )
 {
    HChar   dis_buf[50];
    Int     len;
@@ -2302,7 +2296,7 @@ UInt dis_op2_G_E ( Prefix      pfx,
    IRTemp  dst1 = newTemp(ty);
    IRTemp  src  = newTemp(ty);
    IRTemp  dst0 = newTemp(ty);
-   UChar   rm   = getIByte(delta0);
+   UChar   rm   = getUChar(delta0);
    IRTemp  addr = IRTemp_INVALID;
 
    /* addSubCarry == True indicates the intended operation is
@@ -2404,7 +2398,7 @@ UInt dis_op2_G_E ( Prefix      pfx,
 //..                    UInt        delta0 )
 //.. {
 //..    Int len;
-//..    UChar rm = getIByte(delta0);
+//..    UChar rm = getUChar(delta0);
 //..    HChar dis_buf[50];
 //.. 
 //..    if (epartIsReg(rm)) {
@@ -2448,7 +2442,7 @@ UInt dis_op2_G_E ( Prefix      pfx,
 //..                    UInt        delta0 )
 //.. {
 //..    Int len;
-//..    UChar rm = getIByte(delta0);
+//..    UChar rm = getUChar(delta0);
 //..    HChar dis_buf[50];
 //.. 
 //..    if (epartIsReg(rm)) {
@@ -2472,18 +2466,18 @@ UInt dis_op2_G_E ( Prefix      pfx,
 
 /* op $immediate, AL/AX/EAX/RAX. */
 static
-UInt dis_op_imm_A ( Int    size,
-                    IROp   op8,
-                    Bool   keep,
-                    ULong  delta,
-                    Char*  t_amd64opc )
+ULong dis_op_imm_A ( Int    size,
+                     IROp   op8,
+                     Bool   keep,
+                     ULong  delta,
+                     HChar* t_amd64opc )
 {
    Int    size4 = imin(size,4);
    IRType ty    = szToITy(size);
    IRTemp dst0  = newTemp(ty);
    IRTemp src   = newTemp(ty);
    IRTemp dst1  = newTemp(ty);
-   ULong  lit   = getSDisp(size4,delta);
+   Long  lit    = getSDisp(size4,delta);
    assign(dst0, getIRegR(PFX_EMPTY,size,R_RAX));
    assign(src,  mkU(ty,lit & mkSzMask(size)));
    assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
@@ -2509,7 +2503,7 @@ UInt dis_op_imm_A ( Int    size,
 //.. UInt dis_movx_E_G ( UChar       sorb,
 //..                     UInt delta, Int szs, Int szd, Bool sign_extend )
 //.. {
-//..    UChar rm = getIByte(delta);
+//..    UChar rm = getUChar(delta);
 //..    if (epartIsReg(rm)) {
 //..       putIReg(szd, gregOfRM(rm),
 //..                    unop(mkWidenOp(szs,szd,sign_extend), 
@@ -2585,9 +2579,9 @@ void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
 }
 
 static 
-UInt dis_Grp1 ( Prefix pfx,
-                UInt delta, UChar modrm, 
-                Int am_sz, Int d_sz, Int sz, ULong d32 )
+ULong dis_Grp1 ( Prefix pfx,
+                 ULong delta, UChar modrm, 
+                 Int am_sz, Int d_sz, Int sz, ULong d32 )
 {
    Int     len;
    HChar   dis_buf[50];
@@ -3081,7 +3075,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
    IRType  ty = szToITy(sz);
    IRTemp  t1 = newTemp(ty);
 //..    IRTemp dst1, src, dst0;
-   modrm = getIByte(delta);
+   modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
       switch (gregOfRM(modrm)) {
 //..          case 0: { /* TEST */
@@ -3141,7 +3135,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
             break;
          default: 
             vex_printf(
-               "unhandled Grp3(R) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp3(R) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp3(amd64)");
       }
    } else {
@@ -3191,7 +3185,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 //..             break;
          default: 
             vex_printf(
-               "unhandled Grp3(M) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp3(M) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp3(amd64)");
       }
    }
@@ -3210,7 +3204,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 //..    IRTemp t1 = newTemp(ty);
 //..    IRTemp t2 = newTemp(ty);
 //.. 
-//..    modrm = getIByte(delta);
+//..    modrm = getUChar(delta);
 //..    if (epartIsReg(modrm)) {
 //..       assign(t1, getIReg(1, eregOfRM(modrm)));
 //..       switch (gregOfRM(modrm)) {
@@ -3270,7 +3264,7 @@ ULong dis_Grp5 ( Prefix pfx, Int sz, ULong delta, DisResult* whatNext )
    IRTemp  t1 = newTemp(ty);
    IRTemp  t2 = IRTemp_INVALID;
 
-   modrm = getIByte(delta);
+   modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
       assign(t1, getIRegB(pfx,sz,eregOfRM(modrm)));
       switch (gregOfRM(modrm)) {
@@ -3310,7 +3304,7 @@ vassert(0);
 #endif
          default: 
             vex_printf(
-               "unhandled Grp5(R) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp5(R) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp5(amd64)");
       }
       delta++;
@@ -3367,7 +3361,7 @@ vassert(0);
 #endif
          default: 
             vex_printf(
-               "unhandled Grp5(M) case %d\n", (UInt)gregOfRM(modrm));
+               "unhandled Grp5(M) case %d\n", (Int)gregOfRM(modrm));
             vpanic("Grp5(amd64)");
       }
       delta += len;
@@ -3585,7 +3579,7 @@ ULong dis_mul_E_G ( Prefix      pfx,
 {
    Int    alen;
    HChar  dis_buf[50];
-   UChar  rm = getIByte(delta0);
+   UChar  rm = getUChar(delta0);
    IRType ty = szToITy(size);
    IRTemp te = newTemp(ty);
    IRTemp tg = newTemp(ty);
@@ -3629,7 +3623,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
    Long   d64;
    Int    alen;
    HChar  dis_buf[50];
-   UChar  rm = getIByte(delta);
+   UChar  rm = getUChar(delta);
    IRType ty = szToITy(size);
    IRTemp te = newTemp(ty);
    IRTemp tl = newTemp(ty);
@@ -3964,8 +3958,8 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //.. 
 //..    /* On entry, delta points at the second byte of the insn (the modrm
 //..       byte).*/
-//..    UChar first_opcode = getIByte(delta-1);
-//..    UChar modrm        = getIByte(delta+0);
+//..    UChar first_opcode = getUChar(delta-1);
+//..    UChar modrm        = getUChar(delta+0);
 //.. 
 //..    /* -+-+-+-+-+-+-+-+-+-+-+-+ 0xD8 opcodes +-+-+-+-+-+-+-+ */
 //.. 
@@ -5409,7 +5403,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..                                Bool  show_granularity )
 //.. {
 //..    HChar   dis_buf[50];
-//..    UChar   modrm = getIByte(delta);
+//..    UChar   modrm = getUChar(delta);
 //..    Bool    isReg = epartIsReg(modrm);
 //..    IRExpr* argL  = NULL;
 //..    IRExpr* argR  = NULL;
@@ -5558,7 +5552,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..    Int     alen, size;
 //..    IRTemp  addr;
 //..    Bool    shl, shr, sar;
-//..    UChar   rm   = getIByte(delta);
+//..    UChar   rm   = getUChar(delta);
 //..    IRTemp  g0   = newTemp(Ity_I64);
 //..    IRTemp  g1   = newTemp(Ity_I64);
 //..    IRTemp  amt  = newTemp(Ity_I32);
@@ -5630,14 +5624,14 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //.. UInt dis_MMX_shiftE_imm ( UInt delta, HChar* opname, IROp op )
 //.. {
 //..    Bool    shl, shr, sar;
-//..    UChar   rm   = getIByte(delta);
+//..    UChar   rm   = getUChar(delta);
 //..    IRTemp  e0   = newTemp(Ity_I64);
 //..    IRTemp  e1   = newTemp(Ity_I64);
 //..    UChar   amt, size;
 //..    vassert(epartIsReg(rm));
 //..    vassert(gregOfRM(rm) == 2 
 //..            || gregOfRM(rm) == 4 || gregOfRM(rm) == 6);
-//..    amt = (Int)(getIByte(delta+1));
+//..    amt = (Int)(getUChar(delta+1));
 //..    delta += 2;
 //..    DIP("%s $%d,%s\n", opname,
 //..                       (Int)amt,
@@ -5687,7 +5681,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..    Int   len;
 //..    UChar modrm;
 //..    HChar dis_buf[50];
-//..    UChar opc = getIByte(delta);
+//..    UChar opc = getUChar(delta);
 //..    delta++;
 //.. 
 //..    /* dis_MMX handles all insns except emms. */
@@ -5699,7 +5693,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..          /* MOVD (src)ireg-or-mem (E), (dst)mmxreg (G)*/
 //..          if (sz != 4) 
 //..             goto mmx_decode_failure;
-//..          modrm = getIByte(delta);
+//..          modrm = getUChar(delta);
 //..          if (epartIsReg(modrm)) {
 //..             delta++;
 //..             putMMXReg(
@@ -5724,7 +5718,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..       case 0x7E: /* MOVD (src)mmxreg (G), (dst)ireg-or-mem (E) */
 //..          if (sz != 4) 
 //..             goto mmx_decode_failure;
-//..          modrm = getIByte(delta);
+//..          modrm = getUChar(delta);
 //..          if (epartIsReg(modrm)) {
 //..             delta++;
 //..             putIReg( 4, eregOfRM(modrm),
@@ -5744,7 +5738,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..          /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
 //..          if (sz != 4) 
 //..             goto mmx_decode_failure;
-//..          modrm = getIByte(delta);
+//..          modrm = getUChar(delta);
 //..          if (epartIsReg(modrm)) {
 //..             delta++;
 //..             putMMXReg( gregOfRM(modrm), getMMXReg(eregOfRM(modrm)) );
@@ -5763,7 +5757,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..          /* MOVQ (src)mmxreg, (dst)mmxreg-or-mem */
 //..          if (sz != 4) 
 //..             goto mmx_decode_failure;
-//..          modrm = getIByte(delta);
+//..          modrm = getUChar(delta);
 //..          if (epartIsReg(modrm)) {
 //..             /* Fall through.  The assembler doesn't appear to generate
 //..                these. */
@@ -5942,7 +5936,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..          if (sz != 4) 
 //..             goto mmx_decode_failure;
 //..          byte1  = opc;                       /* 0x71/72/73 */
-//..          byte2  = getIByte(delta);           /* amode / sub-opcode */
+//..          byte2  = getUChar(delta);           /* amode / sub-opcode */
 //..          subopc = (byte2 >> 3) & 7;
 //.. 
 //.. #        define SHIFT_BY_IMM(_name,_op)                         \
@@ -6150,7 +6144,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..    t_bitno1  = newTemp(Ity_I32);
 //..    t_bitno2  = newTemp(Ity_I8);
 //..    t_addr1   = newTemp(Ity_I32);
-//..    modrm     = getIByte(delta);
+//..    modrm     = getUChar(delta);
 //.. 
 //..    assign( t_bitno0, widenUto32(getIReg(sz, gregOfRM(modrm))) );
 //..    
@@ -6277,7 +6271,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //.. 
 //..    vassert(sz == 4 || sz == 2);
 //.. 
-//..    modrm = getIByte(delta);
+//..    modrm = getUChar(delta);
 //.. 
 //..    isReg = epartIsReg(modrm);
 //..    if (isReg) {
@@ -6569,7 +6563,7 @@ ULong dis_cmov_E_G ( Prefix        pfx,
                      AMD64Condcode cond,
                      ULong         delta0 )
 {
-   UChar rm  = getIByte(delta0);
+   UChar rm  = getUChar(delta0);
    HChar dis_buf[50];
    Int   len;
 
@@ -6623,7 +6617,7 @@ ULong dis_cmov_E_G ( Prefix        pfx,
 //.. UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
 //.. {
 //..    Int   len;
-//..    UChar rm = getIByte(delta0);
+//..    UChar rm = getUChar(delta0);
 //..    HChar dis_buf[50];
 //.. 
 //..    //   Int tmpd = newTemp(cb);
@@ -6668,7 +6662,7 @@ ULong dis_cmov_E_G ( Prefix        pfx,
 //.. {
 //..    Int    len;
 //..    IRTemp addr;
-//..    UChar  rm  = getIByte(delta0);
+//..    UChar  rm  = getUChar(delta0);
 //..    HChar  dis_buf[50];
 //.. 
 //..    if (epartIsReg(rm)) {
@@ -6693,7 +6687,7 @@ ULong dis_cmov_E_G ( Prefix        pfx,
 //.. {
 //..    Int    len;
 //..    IRTemp addr;
-//..    UChar  rm  = getIByte(delta0);
+//..    UChar  rm  = getUChar(delta0);
 //..    HChar  dis_buf[50];
 //.. 
 //..    vassert(sz == 2 || sz == 4);
@@ -6773,7 +6767,7 @@ void dis_ret ( ULong d64 )
 //..    HChar   dis_buf[50];
 //..    Int     alen;
 //..    IRTemp  addr;
-//..    UChar   rm = getIByte(delta);
+//..    UChar   rm = getUChar(delta);
 //..    IRExpr* gpart
 //..       = invertG ? unop(Iop_Not128, getXMMReg(gregOfRM(rm)))
 //..                 : getXMMReg(gregOfRM(rm));
@@ -6824,7 +6818,7 @@ void dis_ret ( ULong d64 )
 //..    HChar   dis_buf[50];
 //..    Int     alen;
 //..    IRTemp  addr;
-//..    UChar   rm = getIByte(delta);
+//..    UChar   rm = getUChar(delta);
 //..    IRExpr* gpart = getXMMReg(gregOfRM(rm));
 //..    if (epartIsReg(rm)) {
 //..       putXMMReg( gregOfRM(rm), 
@@ -6859,7 +6853,7 @@ void dis_ret ( ULong d64 )
 //..    HChar   dis_buf[50];
 //..    Int     alen;
 //..    IRTemp  addr;
-//..    UChar   rm = getIByte(delta);
+//..    UChar   rm = getUChar(delta);
 //..    IRExpr* gpart = getXMMReg(gregOfRM(rm));
 //..    if (epartIsReg(rm)) {
 //..       putXMMReg( gregOfRM(rm), 
@@ -6896,7 +6890,7 @@ void dis_ret ( ULong d64 )
 //..    HChar   dis_buf[50];
 //..    Int     alen;
 //..    IRTemp  addr;
-//..    UChar   rm = getIByte(delta);
+//..    UChar   rm = getUChar(delta);
 //..    if (epartIsReg(rm)) {
 //..       putXMMReg( gregOfRM(rm), 
 //..                  unop(op, getXMMReg(eregOfRM(rm))) );
@@ -6928,7 +6922,7 @@ void dis_ret ( ULong d64 )
 //..    HChar   dis_buf[50];
 //..    Int     alen;
 //..    IRTemp  addr;
-//..    UChar   rm = getIByte(delta);
+//..    UChar   rm = getUChar(delta);
 //..    IRTemp  oldG0 = newTemp(Ity_V128);
 //..    IRTemp  oldG1 = newTemp(Ity_V128);
 //.. 
@@ -6971,7 +6965,7 @@ void dis_ret ( ULong d64 )
 //..    HChar   dis_buf[50];
 //..    Int     alen;
 //..    IRTemp  addr;
-//..    UChar   rm = getIByte(delta);
+//..    UChar   rm = getUChar(delta);
 //..    IRTemp  oldG0 = newTemp(Ity_V128);
 //..    IRTemp  oldG1 = newTemp(Ity_V128);
 //.. 
@@ -7015,7 +7009,7 @@ void dis_ret ( ULong d64 )
 //..    HChar   dis_buf[50];
 //..    Int     alen;
 //..    IRTemp  addr;
-//..    UChar   rm = getIByte(delta);
+//..    UChar   rm = getUChar(delta);
 //..    IRExpr* gpart = getXMMReg(gregOfRM(rm));
 //..    IRExpr* epart = NULL;
 //..    if (epartIsReg(rm)) {
@@ -7102,11 +7096,11 @@ void dis_ret ( ULong d64 )
 //..    Bool    needNot = False;
 //..    IROp    op      = Iop_INVALID;
 //..    IRTemp  plain   = newTemp(Ity_V128);
-//..    UChar   rm      = getIByte(delta);
+//..    UChar   rm      = getUChar(delta);
 //..    UShort  mask    = 0;
 //..    vassert(sz == 4 || sz == 8);
 //..    if (epartIsReg(rm)) {
-//..       imm8 = getIByte(delta+1);
+//..       imm8 = getUChar(delta+1);
 //..       findSSECmpOp(&needNot, &op, imm8, all_lanes, sz);
 //..       assign( plain, binop(op, getXMMReg(gregOfRM(rm)), 
 //..                                getXMMReg(eregOfRM(rm))) );
@@ -7117,7 +7111,7 @@ void dis_ret ( ULong d64 )
 //..                             nameXMMReg(gregOfRM(rm)) );
 //..    } else {
 //..       addr = disAMode ( &alen, sorb, delta, dis_buf );
-//..       imm8 = getIByte(delta+alen);
+//..       imm8 = getUChar(delta+alen);
 //..       findSSECmpOp(&needNot, &op, imm8, all_lanes, sz);
 //..       assign( plain, binop(op, getXMMReg(gregOfRM(rm)), 
 //..                                loadLE(Ity_V128, mkexpr(addr))) );
@@ -7156,7 +7150,7 @@ void dis_ret ( ULong d64 )
 //..    Int     alen, size;
 //..    IRTemp  addr;
 //..    Bool    shl, shr, sar;
-//..    UChar   rm   = getIByte(delta);
+//..    UChar   rm   = getUChar(delta);
 //..    IRTemp  g0   = newTemp(Ity_V128);
 //..    IRTemp  g1   = newTemp(Ity_V128);
 //..    IRTemp  amt  = newTemp(Ity_I32);
@@ -7226,14 +7220,14 @@ void dis_ret ( ULong d64 )
 //.. UInt dis_SSE_shiftE_imm ( UInt delta, HChar* opname, IROp op )
 //.. {
 //..    Bool    shl, shr, sar;
-//..    UChar   rm   = getIByte(delta);
+//..    UChar   rm   = getUChar(delta);
 //..    IRTemp  e0   = newTemp(Ity_V128);
 //..    IRTemp  e1   = newTemp(Ity_V128);
 //..    UChar   amt, size;
 //..    vassert(epartIsReg(rm));
 //..    vassert(gregOfRM(rm) == 2 
 //..            || gregOfRM(rm) == 4 || gregOfRM(rm) == 6);
-//..    amt = (Int)(getIByte(delta+1));
+//..    amt = (Int)(getUChar(delta+1));
 //..    delta += 2;
 //..    DIP("%s $%d,%s\n", opname,
 //..                       (Int)amt,
@@ -7448,7 +7442,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    n_prefixes = 0;
    while (True) {
       if (n_prefixes > 5) goto decode_failure;
-      pre = getIByte(delta);
+      pre = getUChar(delta);
       switch (pre) {
          case 0x66: pfx |= PFX_66; break;
          case 0x67: pfx |= PFX_ASO; break;
@@ -7518,7 +7512,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       a memory barrier, for example  lock addl $0,0(%esp)
 //..       and emit an IR MFence construct.
 //..    */
-//..    if (getIByte(delta) == 0xF0) {
+//..    if (getUChar(delta) == 0xF0) {
 //.. 
 //..       UChar* code = (UChar*)(guest_code + delta);
 //.. 
@@ -7541,28 +7535,28 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    }
 //.. 
 //..    /* Detect operand-size overrides. */
-//..    if (getIByte(delta) == 0x66) { sz = 2; delta++; };
+//..    if (getUChar(delta) == 0x66) { sz = 2; delta++; };
 //.. 
 //..    /* segment override prefixes come after the operand-size override,
 //..       it seems */
-//..    switch (getIByte(delta)) {
+//..    switch (getUChar(delta)) {
 //..       case 0x3E: /* %DS: */
 //..       case 0x26: /* %ES: */
 //..       case 0x64: /* %FS: */
 //..       case 0x65: /* %GS: */
-//..          sorb = getIByte(delta); delta++; 
+//..          sorb = getUChar(delta); delta++; 
 //..          break;
 //..       case 0x2E: /* %CS: */
 //..          /* 2E prefix on a conditional branch instruction is a
 //..             branch-prediction hint, which can safely be ignored.  */
 //..          {
-//..             UChar op1 = getIByte(delta+1);
-//..             UChar op2 = getIByte(delta+2);
+//..             UChar op1 = getUChar(delta+1);
+//..             UChar op2 = getUChar(delta+2);
 //..             if ((op1 >= 0x70 && op1 <= 0x7F)
 //..                 || (op1 == 0xE3)
 //..                 || (op1 == 0x0F && op2 >= 0x80 && op2 <= 0x8F)) {
 //..                vex_printf("vex x86->IR: ignoring branch hint\n");
-//..                sorb = getIByte(delta); delta++;
+//..                sorb = getUChar(delta); delta++;
 //..                break;
 //..             }
 //..          }
@@ -7597,7 +7591,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* 0F AE /0 = FXSAVE m512 -- write x87 and SSE state to memory */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0xAE
 //..        && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 0) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       vassert(sz == 4);
 //..       vassert(!epartIsReg(modrm));
 //.. 
@@ -7716,7 +7710,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    if (sz == 4 && insn[0] == 0x0F && (insn[1] == 0x2F || insn[1] == 0x2E)) {
 //..       IRTemp argL = newTemp(Ity_F32);
 //..       IRTemp argR = newTemp(Ity_F32);
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          assign( argR, getXMMRegLane32F( eregOfRM(modrm), 0/*lowest lane*/ ) );
 //..          delta += 2+1;
@@ -7752,7 +7746,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp rmode = newTemp(Ity_I32);
 //..       vassert(sz == 4);
 //.. 
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       do_MMX_preamble();
 //..       if (epartIsReg(modrm)) {
 //..          assign( arg64, getMMXReg(eregOfRM(modrm)) );
@@ -7793,7 +7787,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp rmode = newTemp(Ity_I32);
 //..       vassert(sz == 4);
 //.. 
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          assign( arg32, getIReg(4, eregOfRM(modrm)) );
 //..          delta += 3+1;
@@ -7830,7 +7824,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       Bool   r2zero = insn[1] == 0x2C;
 //.. 
 //..       do_MMX_preamble();
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //.. 
 //..       if (epartIsReg(modrm)) {
 //..          delta += 2+1;
@@ -7884,7 +7878,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       Bool   r2zero = insn[2] == 0x2C;
 //..       vassert(sz == 4);
 //.. 
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 3+1;
 //.. 	 assign(f32lo, getXMMRegLane32F(eregOfRM(modrm), 0));
@@ -7935,7 +7929,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp t64 = newTemp(Ity_I64);
 //..       IRTemp ew = newTemp(Ity_I32);
 //.. 
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       vassert(!epartIsReg(modrm));
 //..       vassert(sz == 4);
 //.. 
@@ -8004,7 +7998,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* 0F 28 = MOVAPS -- move from E (mem or xmm) to G (xmm). */
 //..    /* 0F 10 = MOVUPS -- move from E (mem or xmm) to G (xmm). */
 //..    if (sz == 4 && insn[0] == 0x0F && (insn[1] == 0x28 || insn[1] == 0x10)) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          putXMMReg( gregOfRM(modrm), 
 //..                     getXMMReg( eregOfRM(modrm) ));
@@ -8024,7 +8018,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..    /* 0F 29 = MOVAPS -- move from G (xmm) to E (mem or xmm). */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x29) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          /* fall through; awaiting test case */
 //..       } else {
@@ -8040,7 +8034,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* 0F 16 = MOVHPS -- move from mem to high half of XMM. */
 //..    /* 0F 16 = MOVLHPS -- move from lo half to hi half of XMM. */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x16) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 2+1;
 //..          putXMMRegLane64( gregOfRM(modrm), 1/*upper lane*/,
@@ -8077,7 +8071,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* 0F 12 = MOVLPS -- move from mem to low half of XMM. */
 //..    /* OF 12 = MOVHLPS -- from from hi half to lo half of XMM. */
 //..    if (sz == 4 && insn[0] == 0x0F && insn[1] == 0x12) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 2+1;
 //..          putXMMRegLane64( gregOfRM(modrm),  
@@ -8115,7 +8109,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* 0F 50 = MOVMSKPS - move 4 sign bits from 4 x F32 in xmm(E)
 //..       to 4 lowest bits of ireg(G) */
 //..    if (insn[0] == 0x0F && insn[1] == 0x50) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (sz == 4 && epartIsReg(modrm)) {
 //..          Int src;
 //..          t0 = newTemp(Ity_I32);
@@ -8151,7 +8145,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..    /* 0F 2B = MOVNTPS -- for us, just a plain SSE store. */
 //..    if (insn[0] == 0x0F && insn[1] == 0x2B) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (!epartIsReg(modrm)) {
 //..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
 //..          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
@@ -8170,7 +8164,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       So we just leave them alone. 
 //..    */
 //..    if (insn[0] == 0x0F && insn[1] == 0xE7) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (sz == 4 && !epartIsReg(modrm)) {
 //..          /* do_MMX_preamble(); Intel docs don't specify this */
 //..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
@@ -8187,7 +8181,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       (lo 1/4 xmm).  If E is mem, upper 3/4 of G is zeroed out. */
 //..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x10) {
 //..       vassert(sz == 4);
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          putXMMRegLane32( gregOfRM(modrm), 0,
 //..                           getXMMRegLane32( eregOfRM(modrm), 0 ));
@@ -8210,7 +8204,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       or lo 1/4 xmm). */
 //..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x11) {
 //..       vassert(sz == 4);
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          /* fall through, we don't yet have a test case */
 //..       } else {
@@ -8408,7 +8402,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..        && gregOfRM(insn[2]) >= 0 && gregOfRM(insn[2]) <= 3) {
 //..       HChar* hintstr = "??";
 //.. 
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       vassert(!epartIsReg(modrm));
 //.. 
 //..       addr = disAMode ( &alen, sorb, delta+2, dis_buf );
@@ -8583,7 +8577,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* 0F AE /3 = STMXCSR m32 -- store %mxcsr */
 //..    if (insn[0] == 0x0F && insn[1] == 0xAE
 //..        && !epartIsReg(insn[2]) && gregOfRM(insn[2]) == 3) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       vassert(sz == 4);
 //..       vassert(!epartIsReg(modrm));
 //.. 
@@ -8722,7 +8716,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    if (sz == 2 && insn[0] == 0x0F && (insn[1] == 0x2F || insn[1] == 0x2E)) {
 //..       IRTemp argL = newTemp(Ity_F64);
 //..       IRTemp argR = newTemp(Ity_F64);
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          assign( argR, getXMMRegLane64F( eregOfRM(modrm), 0/*lowest lane*/ ) );
 //..          delta += 2+1;
@@ -8755,7 +8749,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp arg64 = newTemp(Ity_I64);
 //..       vassert(sz == 4);
 //.. 
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          assign( arg64, getXMMRegLane64(eregOfRM(modrm), 0) );
 //..          delta += 3+1;
@@ -8788,7 +8782,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp argV  = newTemp(Ity_V128);
 //..       IRTemp rmode = newTemp(Ity_I32);
 //.. 
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          assign( argV, getXMMReg(eregOfRM(modrm)) );
 //..          delta += 2+1;
@@ -8826,7 +8820,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp rmode = newTemp(Ity_I32);
 //..       vassert(sz == 4);
 //.. 
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          assign( argV, getXMMReg(eregOfRM(modrm)) );
 //..          delta += 3+1;
@@ -8874,7 +8868,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       Bool   r2zero = insn[1] == 0x2C;
 //.. 
 //..       do_MMX_preamble();
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //.. 
 //..       if (epartIsReg(modrm)) {
 //..          delta += 2+1;
@@ -8922,7 +8916,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp argV  = newTemp(Ity_V128);
 //..       IRTemp rmode = newTemp(Ity_I32);
 //.. 
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          assign( argV, getXMMReg(eregOfRM(modrm)) );
 //..          delta += 2+1;
@@ -8963,7 +8957,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x2A) {
 //..       IRTemp arg64 = newTemp(Ity_I64);
 //.. 
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       do_MMX_preamble();
 //..       if (epartIsReg(modrm)) {
 //..          assign( arg64, getMMXReg(eregOfRM(modrm)) );
@@ -8997,7 +8991,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp argV  = newTemp(Ity_V128);
 //..       IRTemp rmode = newTemp(Ity_I32);
 //.. 
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          assign( argV, getXMMReg(eregOfRM(modrm)) );
 //..          delta += 2+1;
@@ -9038,7 +9032,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp f32lo = newTemp(Ity_F32);
 //..       IRTemp f32hi = newTemp(Ity_F32);
 //.. 
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          assign( f32lo, getXMMRegLane32F(eregOfRM(modrm), 0) );
 //..          assign( f32hi, getXMMRegLane32F(eregOfRM(modrm), 1) );
@@ -9074,7 +9068,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       Bool   r2zero = insn[2] == 0x2C;
 //..       vassert(sz == 4);
 //.. 
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 3+1;
 //.. 	 assign(f64lo, getXMMRegLane64F(eregOfRM(modrm), 0));
@@ -9109,7 +9103,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp f64lo = newTemp(Ity_F64);
 //..       vassert(sz == 4);
 //.. 
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 3+1;
 //.. 	 assign(f64lo, getXMMRegLane64F(eregOfRM(modrm), 0));
@@ -9138,7 +9132,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp arg32 = newTemp(Ity_I32);
 //..       vassert(sz == 4);
 //.. 
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          assign( arg32, getIReg(4, eregOfRM(modrm)) );
 //..          delta += 3+1;
@@ -9165,7 +9159,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp f32lo = newTemp(Ity_F32);
 //..       vassert(sz == 4);
 //.. 
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 3+1;
 //.. 	 assign(f32lo, getXMMRegLane32F(eregOfRM(modrm), 0));
@@ -9191,7 +9185,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp argV  = newTemp(Ity_V128);
 //..       IRTemp rmode = newTemp(Ity_I32);
 //.. 
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          assign( argV, getXMMReg(eregOfRM(modrm)) );
 //..          delta += 2+1;
@@ -9235,7 +9229,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       IRTemp rmode = newTemp(Ity_I32);
 //..       vassert(sz == 4);
 //.. 
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          assign( argV, getXMMReg(eregOfRM(modrm)) );
 //..          delta += 3+1;
@@ -9330,7 +9324,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..        && (insn[1] == 0x28 || insn[1] == 0x10 || insn[1] == 0x6F)) {
 //..       HChar* wot = insn[1]==0x28 ? "apd" :
 //..                    insn[1]==0x10 ? "upd" : "dqa";
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          putXMMReg( gregOfRM(modrm), 
 //..                     getXMMReg( eregOfRM(modrm) ));
@@ -9350,7 +9344,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..    /* 66 0F 29 = MOVAPD -- move from G (xmm) to E (mem or xmm). */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x29) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          /* fall through; awaiting test case */
 //..       } else {
@@ -9365,7 +9359,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..    /* 66 0F 6E = MOVD from r/m32 to xmm, zeroing high 3/4 of xmm. */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6E) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 2+1;
 //..          putXMMReg(
@@ -9388,7 +9382,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..    /* 66 0F 7E = MOVD from xmm low 1/4 to r/m32. */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x7E) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 2+1;
 //..          putIReg( 4, eregOfRM(modrm),
@@ -9407,7 +9401,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..    /* 66 0F 7F = MOVDQA -- move from G (xmm) to E (mem or xmm). */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x7F) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 2+1;
 //..          putXMMReg( eregOfRM(modrm),
@@ -9428,7 +9422,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       prefix lengths are different (66 vs F3) */
 //..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x6F) {
 //..       vassert(sz == 4);
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          putXMMReg( gregOfRM(modrm), 
 //..                     getXMMReg( eregOfRM(modrm) ));
@@ -9451,7 +9445,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       prefix lengths are different (66 vs F3) */
 //..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x7F) {
 //..       vassert(sz == 4);
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          delta += 3+1;
 //..          putXMMReg( eregOfRM(modrm),
@@ -9470,7 +9464,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* F2 0F D6 = MOVDQ2Q -- move from E (lo half xmm, not mem) to G (mmx). */
 //..    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0xD6) {
 //..       vassert(sz == 4);
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          do_MMX_preamble();
 //..          putMMXReg( gregOfRM(modrm), 
@@ -9488,7 +9482,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* These seems identical to MOVHPS.  This instruction encoding is
 //..       completely crazy. */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x16) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          /* fall through; apparently reg-reg is not possible */
 //..       } else {
@@ -9522,7 +9516,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* 66 0F 12 = MOVLPD -- move from mem to low half of XMM. */
 //..    /* Identical to MOVLPS ? */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x12) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          /* fall through; apparently reg-reg is not possible */
 //..       } else {
@@ -9556,7 +9550,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* 66 0F 50 = MOVMSKPD - move 2 sign bits from 2 x F64 in xmm(E) to
 //..       2 lowest bits of ireg(G) */
 //..    if (insn[0] == 0x0F && insn[1] == 0x50) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (sz == 2 && epartIsReg(modrm)) {
 //..          Int src;
 //..          t0 = newTemp(Ity_I32);
@@ -9581,7 +9575,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..    /* 66 0F E7 = MOVNTDQ -- for us, just a plain SSE store. */
 //..    if (insn[0] == 0x0F && insn[1] == 0xE7) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (sz == 2 && !epartIsReg(modrm)) {
 //..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
 //..          storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
@@ -9596,7 +9590,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* 0F C3 = MOVNTI -- for us, just a plain ireg store. */
 //..    if (insn[0] == 0x0F && insn[1] == 0xC3) {
 //..       vassert(sz == 4);
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (!epartIsReg(modrm)) {
 //..          addr = disAMode ( &alen, sorb, delta+2, dis_buf );
 //..          storeLE( mkexpr(addr), getIReg(4, gregOfRM(modrm)) );
@@ -9611,7 +9605,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* 66 0F D6 = MOVQ -- move 64 bits from G (lo half xmm) to E (mem
 //..       or lo half xmm).  */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0xD6) {
-//..       modrm = getIByte(delta+2);
+//..       modrm = getUChar(delta+2);
 //..       if (epartIsReg(modrm)) {
 //..          /* fall through, awaiting test case */
 //..       } else {
@@ -9628,7 +9622,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       hi half). */
 //..    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xD6) {
 //..       vassert(sz == 4);
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          do_MMX_preamble();
 //..          putXMMReg( gregOfRM(modrm), 
@@ -9650,7 +9644,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    if ((insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x10)
 //..        || (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x7E)) {
 //..       vassert(sz == 4);
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          putXMMRegLane64( gregOfRM(modrm), 0,
 //..                           getXMMRegLane64( eregOfRM(modrm), 0 ));
@@ -9673,7 +9667,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       or lo half xmm). */
 //..    if (insn[0] == 0xF2 && insn[1] == 0x0F && insn[2] == 0x11) {
 //..       vassert(sz == 4);
-//..       modrm = getIByte(delta+3);
+//..       modrm = getUChar(delta+3);
 //..       if (epartIsReg(modrm)) {
 //..          /* fall through, we don't yet have a test case */
 //..       } else {
@@ -10726,7 +10720,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    after_sse_decoders:
 
    /* Get the primary opcode. */
-   opc = getIByte(delta); delta++;
+   opc = getUChar(delta); delta++;
 
    /* We get here if the current insn isn't SSE, or this CPU doesn't
       support SSE. */
@@ -10771,7 +10765,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
 //.. //--    case 0xC8: /* ENTER */ 
 //.. //--       d32 = getUDisp16(eip); eip += 2;
-//.. //--       abyte = getIByte(delta); delta++;
+//.. //--       abyte = getUChar(delta); delta++;
 //.. //-- 
 //.. //--       vg_assert(sz == 4);           
 //.. //--       vg_assert(abyte == 0);
@@ -10845,7 +10839,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. //-- 
 //.. //--    case 0xD4: /* AAM */
 //.. //--    case 0xD5: /* AAD */
-//.. //--       d32 = getIByte(delta); delta++;
+//.. //--       d32 = getUChar(delta); delta++;
 //.. //--       if (d32 != 10) VG_(core_panic)("disInstr: AAM/AAD but base not 10 !");
 //.. //--       t1 = newTemp(cb);
 //.. //--       uInstr2(cb, GET, 2, ArchReg, R_EAX, TempReg, t1);
@@ -10975,7 +10969,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* ------------------------ INT ------------------------ */
 //.. 
 //..    case 0xCD: /* INT imm8 */
-//..       d32 = getIByte(delta); delta++;
+//..       d32 = getUChar(delta); delta++;
 //..       if (d32 != 0x80) goto decode_failure;
 //..       /* It's important that all ArchRegs carry their up-to-date value
 //..          at this point.  So we declare an end-of-block here, which
@@ -11106,7 +11100,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..  
 //..    case 0x8D: /* LEA M,Gv */
 //..       vassert(sz == 4);
-//..       modrm = getIByte(delta);
+//..       modrm = getUChar(delta);
 //..       if (epartIsReg(modrm)) 
 //..          vpanic("LEA M,Gv: modRM refers to register (x86)");
 //..       /* NOTE!  this is the one place where a segment override prefix
@@ -11161,7 +11155,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0xB5: /* MOV imm,CH */
 //..    case 0xB6: /* MOV imm,DH */
 //..    case 0xB7: /* MOV imm,BH */
-//..       d32 = getIByte(delta); delta += 1;
+//..       d32 = getUChar(delta); delta += 1;
 //..       putIReg(1, opc-0xB0, mkU8(d32));
 //..       DIP("movb $0x%x,%s\n", d32, nameIReg(1,opc-0xB0));
 //..       break;
@@ -11186,7 +11180,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       goto do_Mov_I_E;
 //.. 
 //..    do_Mov_I_E:
-//..       modrm = getIByte(delta);
+//..       modrm = getUChar(delta);
 //..       if (epartIsReg(modrm)) {
 //..          delta++; /* mod/rm byte */
 //..          d32 = getUDisp(sz,delta); delta += sz;
@@ -11493,7 +11487,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..    case 0x8F: /* POPL/POPW m32 */
 //..      { Int len;
-//..        UChar rm = getIByte(delta);
+//..        UChar rm = getUChar(delta);
 //.. 
 //..        /* make sure this instruction is correct POP */
 //..        vassert(!epartIsReg(rm) && (gregOfRM(rm) == 0));
@@ -11719,9 +11713,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0xF2: { 
 //..       Addr32 eip_orig = guest_eip_bbstart + delta - 1;
 //..       vassert(sorb == 0);
-//..       abyte = getIByte(delta); delta++;
+//..       abyte = getUChar(delta); delta++;
 //.. 
-//..       if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); delta++; }
+//..       if (abyte == 0x66) { sz = 2; abyte = getUChar(delta); delta++; }
 //..       whatNext = Dis_StopHere;         
 //.. 
 //..       switch (abyte) {
@@ -11756,9 +11750,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0xF3: { 
 //..       Addr32 eip_orig = guest_eip_bbstart + delta - 1;
 //..       vassert(sorb == 0);
-//..       abyte = getIByte(delta); delta++;
+//..       abyte = getUChar(delta); delta++;
 //.. 
-//..       if (abyte == 0x66) { sz = 2; abyte = getIByte(delta); delta++; }
+//..       if (abyte == 0x66) { sz = 2; abyte = getUChar(delta); delta++; }
 //..       whatNext = Dis_StopHere;
 //.. 
 //..       switch (abyte) {
@@ -11810,7 +11804,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       sz = 1;
 //..       /* Fall through ... */
 //..    case 0x87: /* XCHG Gv,Ev */
-//..       modrm = getIByte(delta);
+//..       modrm = getUChar(delta);
 //..       ty = szToITy(sz);
 //..       t1 = newTemp(ty); t2 = newTemp(ty);
 //..       if (epartIsReg(modrm)) {
@@ -11939,7 +11933,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* ------------------------ (Grp1 extensions) ---------- */
 
    case 0x80: /* Grp1 Ib,Eb */
-      modrm = getIByte(delta);
+      modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
       sz    = 1;
       d_sz  = 1;
@@ -11949,7 +11943,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    case 0x81: /* Grp1 Iv,Ev */
       if (haveF2orF3(pfx)) goto decode_failure;
-      modrm = getIByte(delta);
+      modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
       d_sz  = imin(sz,4);
       d64   = getSDisp(d_sz, delta + am_sz);
@@ -11958,7 +11952,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
    case 0x83: /* Grp1 Ib,Ev */
       if (haveF2orF3(pfx)) goto decode_failure;
-      modrm = getIByte(delta);
+      modrm = getUChar(delta);
       am_sz = lengthAMode(pfx,delta);
       d_sz  = 1;
       d64   = getSDisp8(delta + am_sz);
@@ -11968,7 +11962,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    /* ------------------------ (Grp2 extensions) ---------- */
 //.. 
 //..    case 0xC0: /* Grp2 Ib,Eb */
-//..       modrm = getIByte(delta);
+//..       modrm = getUChar(delta);
 //..       am_sz = lengthAMode(delta);
 //..       d_sz  = 1;
 //..       d32   = getUChar(delta + am_sz);
@@ -11978,7 +11972,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       break;
 //.. 
 //..    case 0xC1: /* Grp2 Ib,Ev */
-//..       modrm = getIByte(delta);
+//..       modrm = getUChar(delta);
 //..       am_sz = lengthAMode(delta);
 //..       d_sz  = 1;
 //..       d32   = getUChar(delta + am_sz);
@@ -11987,7 +11981,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       break;
 //.. 
 //..    case 0xD0: /* Grp2 1,Eb */
-//..       modrm = getIByte(delta);
+//..       modrm = getUChar(delta);
 //..       am_sz = lengthAMode(delta);
 //..       d_sz  = 0;
 //..       d32   = 1;
@@ -12015,7 +12009,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       break;
 //.. 
 //..    case 0xD3: /* Grp2 CL,Ev */
-//..       modrm = getIByte(delta);
+//..       modrm = getUChar(delta);
 //..       am_sz = lengthAMode(delta);
 //..       d_sz  = 0;
 //..       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
@@ -12046,7 +12040,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* ------------------------ Escapes to 2-byte opcodes -- */
 
    case 0x0F: {
-      opc = getIByte(delta); delta++;
+      opc = getUChar(delta); delta++;
       switch (opc) {
 
 //.. //--       /* =-=-=-=-=-=-=-=-=- Grp8 =-=-=-=-=-=-=-=-=-=-=-= */
@@ -12369,7 +12363,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       case 0x9F: /* set-Gb/set-NLEb (jump greater) */
 //..          t1 = newTemp(Ity_I8);
 //..          assign( t1, unop(Iop_1Uto8,mk_x86g_calculate_condition(opc-0x90)) );
-//..          modrm = getIByte(delta);
+//..          modrm = getUChar(delta);
 //..          if (epartIsReg(modrm)) {
 //..             delta++;
 //..             putIReg(1, eregOfRM(modrm), mkexpr(t1));
@@ -12386,16 +12380,16 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       /* =-=-=-=-=-=-=-=-=- SHLD/SHRD -=-=-=-=-=-=-=-=-= */
 //.. 
 //..       case 0xA4: /* SHLDv imm8,Gv,Ev */
-//..          modrm = getIByte(delta);
+//..          modrm = getUChar(delta);
 //..          d32   = delta + lengthAMode(delta);
 //..          vex_sprintf(dis_buf, "$%d", delta);
 //..          delta = dis_SHLRD_Gv_Ev ( 
 //..                   sorb, delta, modrm, sz, 
-//..                   mkU8(getIByte(d32)), True, /* literal */
+//..                   mkU8(getUChar(d32)), True, /* literal */
 //..                   dis_buf, True );
 //..          break;
 //..       case 0xA5: /* SHLDv %cl,Gv,Ev */
-//..          modrm = getIByte(delta);
+//..          modrm = getUChar(delta);
 //..          delta = dis_SHLRD_Gv_Ev ( 
 //..                     sorb, delta, modrm, sz,
 //..                     getIReg(1,R_ECX), False, /* not literal */
@@ -12403,16 +12397,16 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..          break;
 //.. 
 //..       case 0xAC: /* SHRDv imm8,Gv,Ev */
-//..          modrm = getIByte(delta);
+//..          modrm = getUChar(delta);
 //..          d32   = delta + lengthAMode(delta);
 //..          vex_sprintf(dis_buf, "$%d", delta);
 //..          delta = dis_SHLRD_Gv_Ev ( 
 //..                     sorb, delta, modrm, sz, 
-//..                     mkU8(getIByte(d32)), True, /* literal */
+//..                     mkU8(getUChar(d32)), True, /* literal */
 //..                     dis_buf, False );
 //..          break;
 //..       case 0xAD: /* SHRDv %cl,Gv,Ev */
-//..          modrm = getIByte(delta);
+//..          modrm = getUChar(delta);
 //..          delta = dis_SHLRD_Gv_Ev ( 
 //..                     sorb, delta, modrm, sz, 
 //..                     getIReg(1,R_ECX), False, /* not literal */
@@ -12538,10 +12532,10 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* All decode failures end up here. */
    vex_printf("vex amd64->IR: unhandled instruction bytes: "
               "0x%x 0x%x 0x%x 0x%x\n",
-              (Int)getIByte(delta_start+0),
-              (Int)getIByte(delta_start+1),
-              (Int)getIByte(delta_start+2),
-              (Int)getIByte(delta_start+3) );
+              (Int)getUChar(delta_start+0),
+              (Int)getUChar(delta_start+1),
+              (Int)getUChar(delta_start+2),
+              (Int)getUChar(delta_start+3) );
 
    /* Tell the dispatcher that this insn cannot be decoded, and so has
       not been executed, and (is currently) the next to be executed.

@@ -69,7 +69,7 @@ int main ( void )
    ppIRBB(stdout, bb);
    printf("\n");
 
-   if (1)
+   if (0)
    vcode = iselBB_X86Instr(bb);
    else
    {
@@ -84,6 +84,7 @@ int main ( void )
      HReg edx = hregX86_EDX();
      HReg ebp = hregX86_EBP();
      vcode = newHInstrArray();
+     vcode->n_vregs = 4;
 
      addHInstr(vcode, X86Instr_Alu32R(Xalu_MOV, 
 				      X86RMI_Imm(0x10001), vr0));
@@ -130,7 +131,7 @@ int main ( void )
 
      rcode =
      doRegisterAllocation(vcode,
-                          rregs_to_use, 4, /* rregs */
+                          rregs_to_use, 3, /* rregs */
 			  isMove_X86Instr,
 			  getRegUsage_X86Instr,
 			  mapRegs_X86Instr,

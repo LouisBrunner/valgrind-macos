@@ -11891,7 +11891,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
       case 0x31: /* RDTSC */
          if (0) vex_printf("vex x86->IR: kludged rdtsc\n");
-         putIReg(4, R_EAX, mkU32(0));
+         putIReg(4, R_EAX, mkU32(1));
          putIReg(4, R_EDX, mkU32(0));
 
 //--          t1 = newTemp(cb);

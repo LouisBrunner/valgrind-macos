@@ -3555,11 +3555,13 @@ PRE(mmap2)
 
 POST(mmap2)
 {
-   if (!valid_client_addr(res, arg2, tid, "mmap2")) {
-      VG_(munmap)((void *)res, arg2);
-      res = -VKI_ENOMEM;
-   } else
-      mmap_segment( (Addr)res, arg2, arg3, arg4, arg5, arg6 * (ULong)VKI_BYTES_PER_PAGE );
+   if (!VG_(is_kerror)(res)) {
+      if (!valid_client_addr(res, arg2, tid, "mmap2")) {
+         VG_(munmap)((void *)res, arg2);
+         res = -VKI_ENOMEM;
+      } else
+         mmap_segment( (Addr)res, arg2, arg3, arg4, arg5, arg6 * (ULong)VKI_BYTES_PER_PAGE );
+   }
 }
 
 PRE(mmap)
@@ -3596,15 +3598,24 @@ PRE(mmap)
    }
 
    if (res != -VKI_ENOMEM) {
-      res = (Int)VG_(mmap)((void *)a1, a2, a3, a4 | VKI_MAP_CLIENT, a5, a6);
+      UInt new_arg_block[6];
+
+      new_arg_block[0] = a1;
+      new_arg_block[1] = a2;
+      new_arg_block[2] = a3;
+      new_arg_block[3] = a4;
+      new_arg_block[4] = a5;
+      new_arg_block[5] = a6;
       
-      if (res == -1)
-	 res = -VKI_ENOMEM;
-      else if (!valid_client_addr(res, a2, tid, "mmap")) {
-	 VG_(munmap)((void *)res, a2);
-	 res = -VKI_ENOMEM;
-      } else
-	 mmap_segment( (Addr)res, a2, a3, a4, a5, a6 );
+      res = VG_(do_syscall)(__NR_mmap, new_arg_block);
+
+      if (!VG_(is_kerror)(res)) {
+         if (!valid_client_addr(res, a2, tid, "mmap")) {
+	    VG_(munmap)((void *)res, a2);
+	    res = -VKI_ENOMEM;
+         } else
+	    mmap_segment( (Addr)res, a2, a3, a4, a5, a6 );
+      }
    }
 }
 

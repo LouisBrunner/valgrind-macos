@@ -43,7 +43,6 @@ typedef ESZ(Addr) addr_t;
 
 struct exeinfo
 {
-   int		setbrk;		/* INPUT: if true, set the brk segment base */
    addr_t	map_base;	/* INPUT: if non-zero, base address of mappings  */
 
    addr_t	exe_base;	/* INOUT: lowest (allowed) address of exe	*/
@@ -82,7 +81,7 @@ struct elfinfo
 };
 
 struct elfinfo *readelf(int fd, const char *filename);
-ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base, int setbrk);
+ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base);
 
 struct ume_auxv
 {

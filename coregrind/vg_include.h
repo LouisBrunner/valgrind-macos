@@ -1359,6 +1359,8 @@ extern Addr VG_(valgrind_base);	/* valgrind's address range */
 extern Addr VG_(valgrind_mmap_end);
 extern Addr VG_(valgrind_end);
 
+extern vki_rlimit VG_(client_rlimit_data); /* client's original rlimit data */
+
 /* stage1 executable file descriptor */
 extern Int  VG_(vgexecfd);
 

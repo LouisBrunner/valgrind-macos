@@ -698,7 +698,17 @@ typedef struct vki_rlimit {
 	unsigned long rlim_max;
 } vki_rlimit;
 
-#define VKI_RLIMIT_NOFILE 7
+#define VKI_RLIMIT_CPU		0		/* CPU time in ms */
+#define VKI_RLIMIT_FSIZE	1		/* Maximum filesize */
+#define VKI_RLIMIT_DATA		2		/* max data size */
+#define VKI_RLIMIT_STACK	3		/* max stack size */
+#define VKI_RLIMIT_CORE		4		/* max core file size */
+#define VKI_RLIMIT_RSS		5		/* max resident set size */
+#define VKI_RLIMIT_NPROC	6		/* max number of processes */
+#define VKI_RLIMIT_NOFILE	7		/* max number of open files */
+#define VKI_RLIMIT_MEMLOCK	8		/* max locked-in-memory address space */
+#define VKI_RLIMIT_AS		9		/* address space limit */
+#define VKI_RLIMIT_LOCKS	10		/* maximum file locks held */
 
 /* Socket stuff. */
 /*

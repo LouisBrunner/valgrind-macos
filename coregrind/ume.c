@@ -90,6 +90,7 @@
 #include <assert.h>
 
 #include "ume.h"
+#include "vg_include.h"
 
 static int padfile = -1;
 static struct stat padstat;
@@ -309,7 +310,7 @@ struct elfinfo *readelf(int fd, const char *filename)
 #define REMAINS(x, a)   ((x)        & ((a)-1))
 
 /* Map an ELF file.  Returns the brk address. */
-ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base, int setbrk)
+ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
 {
    int i;
    ESZ(Addr) elfbrk = 0;
@@ -328,33 +329,6 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base, int setbrk)
 
       if (brkaddr > elfbrk)
 	 elfbrk = brkaddr;
-   }
-
-   if (setbrk) {
-      /* sneaking up on the brk limit works better than actually
-	 jumping directly there.  Unfortunately, setting the brk is
-	 tested against the datasize rlimit, even though we're not
-	 actually using any memory. */
-      char *b = sbrk(0);
-      char *initb = (char *)PGROUNDUP(b);
-
-      while(b < (char *)elfbrk) {
-	 unsigned delta = (char *)elfbrk - b;
-	 static const unsigned limit = 256*1024*1024;
-	 char *bb;
-
-	 if (delta > limit)
-	    delta = limit;
-	 //printf("elfbrk=%p b=%p delta=%u\n", elfbrk, b, delta);
-	 bb = sbrk(delta);
-	 if (bb != b) {
-	    fprintf(stderr, "sbrk failed while adjusting brk base: "
-		    "perhaps we hit the datasize ulimit?\n");
-	    return 0;
-	 }
-	 b += delta;
-      }
-      munmap(initb, (char *)PGROUNDDN(elfbrk)-initb);
    }
 
    for(i = 0; i < e->e.e_phnum; i++) {
@@ -508,7 +482,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name, struct exeinfo
       }
    }
 
-   info->brkbase = mapelf(e, 0, info->setbrk);		/* map the executable */
+   info->brkbase = mapelf(e, 0);		/* map the executable */
 
    if (info->brkbase == 0)
       return ENOMEM;
@@ -528,7 +502,7 @@ static int load_ELF(char *hdr, int len, int fd, const char *name, struct exeinfo
 
       baseoff = base - interp_addr;
 
-      mapelf(interp, (ESZ(Addr))baseoff, 0);
+      mapelf(interp, (ESZ(Addr))baseoff);
 
       close(interp->fd);
       free(interp);

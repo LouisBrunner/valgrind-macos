@@ -244,12 +244,30 @@ Int VG_(gettid)(void)
    mmap/munmap, exit, fcntl
    ------------------------------------------------------------------ */
 
+static Int munmap_inner(void *start, UInt length)
+{
+   return VG_(do_syscall)(__NR_munmap, (UInt)start, (UInt)length );
+}
+
+static Addr mmap_inner(void *start, UInt length, UInt prot, UInt flags, UInt fd, UInt offset)
+{
+   UInt args[6];
+
+   args[0] = (UInt)start;
+   args[1] = length;
+   args[2] = prot;
+   args[3] = flags & ~(VKI_MAP_NOSYMS|VKI_MAP_CLIENT);
+   args[4] = fd;
+   args[5] = offset;
+
+   return VG_(do_syscall)(__NR_mmap, (UInt)(&(args[0])) );   
+}
+
 /* Returns -1 on failure. */
 void* VG_(mmap)( void* start, UInt length, 
                  UInt prot, UInt flags, UInt fd, UInt offset)
 {
    Addr  res;
-   UInt args[6];
 
    if (!(flags & VKI_MAP_FIXED)) {
       start = (void *)VG_(find_map_space)((Addr)start, length, !!(flags & VKI_MAP_CLIENT));
@@ -259,13 +277,7 @@ void* VG_(mmap)( void* start, UInt length,
       flags |= VKI_MAP_FIXED;
    }
 
-   args[0] = (UInt)start;
-   args[1] = length;
-   args[2] = prot;
-   args[3] = flags & ~(VKI_MAP_NOSYMS|VKI_MAP_CLIENT);
-   args[4] = fd;
-   args[5] = offset;
-   res = VG_(do_syscall)(__NR_mmap, (UInt)(&(args[0])) );
+   res = mmap_inner(start, length, prot, flags, fd, offset);
 
    if (!VG_(is_kerror)(res)) {
       UInt sf_flags = SF_MMAP;
@@ -305,7 +317,7 @@ void* VG_(mmap)( void* start, UInt length,
 /* Returns -1 on failure. */
 Int VG_(munmap)( void* start, Int length )
 {
-   Int res = VG_(do_syscall)(__NR_munmap, (UInt)start, (UInt)length );
+   Int res = munmap_inner(start, length);
    if (!VG_(is_kerror)(res))
       VG_(unmap_range)((Addr)start, length);
    return VG_(is_kerror)(res) ? -1 : 0;
@@ -372,11 +384,49 @@ Int VG_(nanosleep)( const struct vki_timespec *req,
    return 0;
 }
 
+extern Char _end;
+Char *VG_(curbrk) = NULL;
+extern void *__curbrk;		/* in glibc */
+
 void* VG_(brk) ( void* end_data_segment )
 {
-   Int res;
-   res = VG_(do_syscall)(__NR_brk, (UInt)end_data_segment);
-   return (void*)(  VG_(is_kerror)(res) ? -1 : res  );
+   Addr end;
+   Addr brkpage;
+   Addr endpage;
+
+   if (VG_(curbrk) == NULL) {
+      VG_(curbrk) = &_end;
+      __curbrk = (void *)VG_(curbrk);
+   }
+   
+   end = (Addr)end_data_segment;
+   brkpage = PGROUNDUP(VG_(curbrk));
+   endpage = PGROUNDUP(end);
+
+   if (0 && VG_(curbrk) != __curbrk)
+      VG_(printf)("__curbrk changed unexpectedly: VG_(curbrk)=%p, __curbrk=%p\n",
+		  VG_(curbrk), __curbrk);
+
+   if (0)
+      VG_(printf)("brk(end_data_segment=%p); brkpage=%p endpage=%p end=%p curbrk=%p &_end=%p\n",
+		  end_data_segment, brkpage, endpage, end, VG_(curbrk), &_end);
+
+   if (endpage < (Addr)&_end) {
+      __curbrk = (void *)VG_(curbrk);
+      return (void *)VG_(curbrk);
+   }
+
+   if (brkpage != endpage) {
+      if (brkpage > endpage)
+	 munmap_inner((void *)brkpage, brkpage-endpage);
+      else
+	 mmap_inner((void *)brkpage, endpage-brkpage, 
+		    VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
+		    VKI_MAP_FIXED|VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, -1, 0);
+   }
+   VG_(curbrk) = (Char *)__curbrk = end_data_segment;
+
+   return end_data_segment;
 }
 
 
@@ -1532,6 +1582,9 @@ Int VG_(system) ( Char* cmd )
       static Char** envp = NULL;
       Char* argv[4];
 
+      /* restore the DATA rlimit for the child */
+      VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
+
       if (envp == NULL) {
          Int i;
          Char* ld_preload_str = NULL;
@@ -1616,24 +1669,13 @@ void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
 {
    static UInt tot_alloc = 0;
    void* p;
+   Char *b = VG_(brk)(0);
 
-#if 0
-   p = VG_(mmap)( (void *)VG_(valgrind_base), nBytes,
-		  VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC, 
-		  VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS, -1, 0 );
-#else
-   /* use brk, because it will definitely be in the valgrind address space */
-   {
-      Char *b = VG_(brk)(0);
+   p = (void *)PGROUNDUP(b);
+   b = VG_(brk)(p + PGROUNDUP(nBytes));
 
-      p = (void *)PGROUNDUP(b);
-      
-      b = VG_(brk)(p + PGROUNDUP(nBytes));
-
-      if (b != (p + PGROUNDUP(nBytes)))
-	 p = (void *)-1;
-   }
-#endif
+   if (b != (p + PGROUNDUP(nBytes)))
+       p = (void *)-1;
 
    if (p != ((void*)(-1))) {
       vg_assert(p >= (void *)VG_(valgrind_mmap_end) && p < (void *)VG_(valgrind_end));

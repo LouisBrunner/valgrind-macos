@@ -50,6 +50,7 @@ stage2_SOURCES = \
 	vg_errcontext.c \
 	vg_execontext.c \
 	vg_from_ucode.c \
+	vg_glibc.c \
 	vg_hashtable.c \
 	vg_helpers.S \
 	vg_instrument.c \

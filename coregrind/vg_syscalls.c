@@ -1994,6 +1994,9 @@ PRE(execve)
       VG_(ksigprocmask)(VKI_SIG_SETMASK, &tst->sig_mask, NULL);
    }
 
+   /* restore the DATA rlimit for the child */
+   VG_(setrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
+
    res = VG_(do_syscall)(__NR_execve, arg1, arg2, arg3);
 
    /* If we got here, then the execve failed.  We've already made too much of a mess
@@ -2482,16 +2485,22 @@ PRE(getrlimit)
    /* int getrlimit (int resource, struct rlimit *rlim); */
    MAYBE_PRINTF("getrlimit ( %d, %p )\n", arg1,arg2);
    SYSCALL_TRACK( pre_mem_write, tid, "getrlimit(rlim)", arg2, 
-		  sizeof(struct rlimit) );
+		  sizeof(struct vki_rlimit) );
 }
 
 POST(getrlimit)
 {
-   if (res == 0)
-      VG_TRACK( post_mem_write, arg2, sizeof(struct rlimit) );
+    VG_TRACK( post_mem_write, arg2, sizeof(struct vki_rlimit) );
 
-   if (res == 0 && arg1 == VKI_RLIMIT_NOFILE)
-      ((struct rlimit *)arg2)->rlim_cur = VG_(max_fd);
+    switch(arg1) {
+    case VKI_RLIMIT_NOFILE:
+	((vki_rlimit *)arg2)->rlim_cur = VG_(max_fd);
+	break;
+
+    case VKI_RLIMIT_DATA:
+	*((vki_rlimit *)arg2) = VG_(client_rlimit_data);
+	break;
+    }
 }
 
 PREALIAS(ugetrlimit, getrlimit);
@@ -4245,7 +4254,12 @@ PRE(setrlimit)
    /* int setrlimit (int resource, const struct rlimit *rlim); */
    MAYBE_PRINTF("setrlimit ( %d, %p )\n", arg1,arg2);
    SYSCALL_TRACK( pre_mem_read, tid, "setrlimit(rlim)", 
-		  arg2, sizeof(struct rlimit) );
+		  arg2, sizeof(struct vki_rlimit) );
+
+   if (arg1 == VKI_RLIMIT_DATA) {
+      VG_(client_rlimit_data) = *(vki_rlimit *)arg2;
+      res = 0;
+   }
 }
 
 PRE(setuid)

@@ -105,6 +105,8 @@ Addr VG_(valgrind_base);	 /* valgrind's address range */
 Addr VG_(valgrind_mmap_end);	 /* valgrind's mmaps are between valgrind_base and here */
 Addr VG_(valgrind_end);
 
+vki_rlimit VG_(client_rlimit_data);
+
 /* This is set early to indicate whether this CPU has the
    SSE/fxsave/fxrestor features.  */
 Bool VG_(have_ssestate);
@@ -1364,7 +1366,6 @@ static void load_client(char* cl_argv[], const char* exec,
    }
 
    info->map_base = VG_(client_mapbase);
-   info->setbrk   = False;
 
    info->exe_base = VG_(client_base);
    info->exe_end  = VG_(client_end);
@@ -2664,6 +2665,7 @@ int main(int argc, char **argv)
    Addr esp_at_startup;    /* client's %esp at the point we gained control. */
    UInt * client_auxv;
    VgSchedReturnCode src;
+   vki_rlimit zero = { 0, 0 };
 
    //============================================================
    // Nb: startup is complex.  Prerequisites are shown at every step.
@@ -2671,6 +2673,14 @@ int main(int argc, char **argv)
    // *** Be very careful when messing with the order ***
    //============================================================
 
+   // Get the current process datasize rlimit, and set it to zero.
+   // This prevents any internal uses of brk() from having any effect.
+   // We remember the old value so we can restore it on exec, so that
+   // child processes will have a reasonable brk value.
+   VG_(getrlimit)(VKI_RLIMIT_DATA, &VG_(client_rlimit_data));
+   zero.rlim_max = VG_(client_rlimit_data).rlim_max;
+   VG_(setrlimit)(VKI_RLIMIT_DATA, &zero);
+   
    //--------------------------------------------------------------
    // Check we were launched by stage1
    //   p: n/a  [must be first step]

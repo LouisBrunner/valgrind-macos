@@ -162,7 +162,6 @@ static void hoops(void)
       - something else?
     */
    info.map_base = 0xb0000000;
-   info.setbrk = 1;		/* ask do_exec to move the brk-base */
    info.argv = NULL;
 
    snprintf(buf, sizeof(buf), "%s/%s", valgrind_lib, stage2);

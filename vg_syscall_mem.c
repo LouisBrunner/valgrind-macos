@@ -1312,6 +1312,13 @@ void VG_(wrap_syscall) ( void )
                                  sizeof(struct winsize) );
                KERNEL_DO_SYSCALL(res);
                break;
+            case TIOCGPGRP:
+               /* Get process group ID for foreground processing group. */
+               must_be_writable( "ioctl(TIOCGPGRP)", arg3,
+                                 sizeof(pid_t) );
+               KERNEL_DO_SYSCALL(res);
+               if (!VG_(is_kerror)(res) && res == 0)
+                  make_readable ( arg3, sizeof(pid_t) );
             case TIOCGPTN: /* Get Pty Number (of pty-mux device) */
                must_be_writable("ioctl(TIOCGPTN)", arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(res);

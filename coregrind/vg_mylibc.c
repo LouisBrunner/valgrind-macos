@@ -652,7 +652,7 @@ UInt VG_(printf) ( const char *format, ... )
 
    if (n_myprintf_buf > 0 && VG_(clo_logfile_fd) >= 0)
       VG_(write)
-         ( VG_(clo_logfile_fd), myprintf_buf, ret);
+         ( VG_(clo_logfile_fd), myprintf_buf, n_myprintf_buf);
 
    va_end(vargs);
 

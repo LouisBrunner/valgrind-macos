@@ -28,4 +28,4 @@ EXTRA_DIST = \
 	bt_everything.c bt_literal.c \
 	pth_threadpool.c pth_specific.c pth_mutexspeed.c malloc3.c \
 	pth_once.c weirdioctl.c pth_signal1.c pth_signal2.c \
-	discard.c
+	discard.c pth_semaphore1.c

@@ -76,8 +76,14 @@ libvex.a: $(LIB_OBJS)
 	ar clq libvex.a $(LIB_OBJS)
 
 clean:
-	rm -f $(LIB_OBJS) libvex.a vex test_main.o
+	rm -f $(LIB_OBJS) libvex.a vex test_main.o priv/main/vex_svnversion.h
 	(cd head20041019 && make --quiet clean)
+
+version:
+	rm -f priv/main/vex_svnversion.h
+	echo -n "\""  > priv/main/vex_svnversion.h
+	svnversion -n . >> priv/main/vex_svnversion.h
+	echo "\""  >> priv/main/vex_svnversion.h
 
 
 ALL_HEADERS  = $(PUB_HEADERS) $(PRIV_HEADERS)

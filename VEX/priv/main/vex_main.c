@@ -55,6 +55,16 @@
 
 /* Exported to library client. */
 
+HChar* LibVEX_Version ( void )
+{
+return
+#include "main/vex_svnversion.h"
+    ;
+}
+
+
+/* Exported to library client. */
+
 void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon )
 {
    vcon->iropt_verbosity            = 0;

@@ -81,6 +81,11 @@ typedef
 extern void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon );
 
 
+/* Returns the Vex SVN version. */
+
+extern HChar* LibVEX_Version ( void );
+
+
 /* Initialise the translator. */
 
 extern void LibVEX_Init (

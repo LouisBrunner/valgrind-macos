@@ -1716,6 +1716,18 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 		   sigNo, terminate ? "terminate" : "", core ? "+core" : "");
 
    if (terminate) {
+      if (core) {
+	 /* If they set the core-size limit to zero, don't generate a
+	    core file */
+	 static struct vki_rlimit zero = { 0, 0 };
+	 struct vki_rlimit corelim;
+	 
+	 VG_(getrlimit)(VKI_RLIMIT_CORE, &corelim);
+
+	 if (corelim.rlim_cur == 0)
+	    core = False;
+      }
+
       if (VG_(clo_verbosity) != 0 && (core || VG_(clo_verbosity) > 1)) {
 	 VG_(message)(Vg_UserMsg, "");
 	 VG_(message)(Vg_UserMsg, "Process terminating with default action of signal %d (%s)%s", 
@@ -1784,13 +1796,7 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
       }
 
       if (core) {
-	 static struct vki_rlimit zero = { 0, 0 };
-	 struct vki_rlimit corelim;
-
-	 VG_(getrlimit)(VKI_RLIMIT_CORE, &corelim);
-
-	 if (corelim.rlim_cur > 0)
-	    make_coredump(tid, info, corelim.rlim_cur);
+	 make_coredump(tid, info, corelim.rlim_cur);
 
 	 /* make sure we don't get a confusing kernel-generated coredump */
 	 VG_(setrlimit)(VKI_RLIMIT_CORE, &zero);

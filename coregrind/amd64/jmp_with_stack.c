@@ -26,33 +26,30 @@
 
 #include "ume.h"
 
-/* 
-   Jump to a particular IP with a particular SP.  This is intended
-   to simulate the initial CPU state when the kernel starts an program
-   after exec; it therefore also clears all the other registers.
- */
-void jmp_with_stack(Addr eip, Addr esp)
+void jmp_with_stack(Addr rip, Addr rsp)
 {
-   // XXX: temporary only
-extern int printf (__const char *__restrict __format, ...);
-extern void exit (int __status);
-   printf("jmp_with_stack: argh\n");
-   exit(1);
-#if 0
-   asm volatile ("movl %1, %%esp;"	/* set esp */
-		 "pushl %%eax;"		/* push esp */
-		 "xorl	%%eax,%%eax;"	/* clear registers */
-		 "xorl	%%ebx,%%ebx;"
-		 "xorl	%%ecx,%%ecx;"
-		 "xorl	%%edx,%%edx;"
-		 "xorl	%%esi,%%esi;"
-		 "xorl	%%edi,%%edi;"
-		 "xorl	%%ebp,%%ebp;"
+   asm volatile (
+      "movq  %1, %%rsp;"       // set rsp
+      "pushq %%rax;"          // push rsp
+      "xorq  %%rax,%%rax;"    // clear registers
+      "xorq  %%rbx,%%rbx;"
+      "xorq  %%rcx,%%rcx;"
+      "xorq  %%rdx,%%rdx;"
+      "xorq  %%rsi,%%rsi;"
+      "xorq  %%rdi,%%rdi;"
+      "xorq  %%rbp,%%rbp;"
+      "xorq  %%r8, %%r8;"
+      "xorq  %%r9, %%r9;"
+      "xorq  %%r10,%%r10;"
+      "xorq  %%r11,%%r11;"
+      "xorq  %%r12,%%r12;"
+      "xorq  %%r13,%%r13;"
+      "xorq  %%r14,%%r14;"
+      "xorq  %%r15,%%r15;"
+      "ret"                   // return into entry
+      : : "a" (rip), "r" (rsp));
 
-		 "ret"			/* return into entry */
-		 : : "a" (eip), "r" (esp));
-   /* we should never get here */
+   // we should never get here
    for(;;)
-	   asm volatile("ud2");
-#endif
+      asm volatile("ud2");
 } 

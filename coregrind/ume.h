@@ -46,7 +46,9 @@ void foreach_map(int (*fn)(char *start, char *end,
 			   int maj, int min, int ino, void* extra),
                  void* extra);
 
-// Jump to a new 'ip' with the stack 'sp'.
+// Jump to a new 'ip' with the stack 'sp'.  This is intended
+// to simulate the initial CPU state when the kernel starts an program
+// after exec; and so should clear all the other registers.
 void jmp_with_stack(Addr ip, Addr sp) __attribute__((noreturn));
 
 /*------------------------------------------------------------*/

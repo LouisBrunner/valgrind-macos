@@ -26,11 +26,6 @@
 
 #include "ume.h"
 
-/* 
-   Jump to a particular IP with a particular SP.  This is intended
-   to simulate the initial CPU state when the kernel starts an program
-   after exec; it therefore also clears all the other registers.
- */
 void jmp_with_stack(Addr eip, Addr esp)
 {
    // XXX: temporary only
@@ -38,21 +33,6 @@ extern int printf (__const char *__restrict __format, ...);
 extern void exit (int __status);
    printf("jmp_with_stack: argh\n");
    exit(1);
-#if 0
-   asm volatile ("movl %1, %%esp;"	/* set esp */
-		 "pushl %%eax;"		/* push esp */
-		 "xorl	%%eax,%%eax;"	/* clear registers */
-		 "xorl	%%ebx,%%ebx;"
-		 "xorl	%%ecx,%%ecx;"
-		 "xorl	%%edx,%%edx;"
-		 "xorl	%%esi,%%esi;"
-		 "xorl	%%edi,%%edi;"
-		 "xorl	%%ebp,%%ebp;"
 
-		 "ret"			/* return into entry */
-		 : : "a" (eip), "r" (esp));
-   /* we should never get here */
-   for(;;)
-	   asm volatile("ud2");
-#endif
+   // XXX: see x86/jmp_with_stack.c for how to implement this
 } 

@@ -115,6 +115,8 @@ extern Bool MC_(clo_avoid_strlen_errors);
 
 /* Functions defined in mc_main.c */
 extern REGPARM(1) void MC_(helperc_complain_undef) ( HWord );
+extern void MC_(helperc_value_check4_fail) ( void );
+extern void MC_(helperc_value_check0_fail) ( void );
 
 extern REGPARM(1) void MC_(helperc_STOREV8) ( Addr, ULong );
 extern REGPARM(2) void MC_(helperc_STOREV4) ( Addr, UInt );

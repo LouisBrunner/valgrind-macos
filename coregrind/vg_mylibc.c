@@ -1625,14 +1625,14 @@ Int VG_(system) ( Char* cmd )
                             (UInt)"/bin/sh", (UInt)argv, (UInt)envp);
 
       /* If we're still alive here, execve failed. */
-      return -1;
+      VG_(exit)(1);
    } else {
       /* parent */
-      res = VG_(do_syscall)(__NR_waitpid, pid, (UInt)NULL, 0);
+      res = VG_(waitpid)(pid, NULL, 0);
       if (VG_(is_kerror)(res)) {
          return -1;
       } else {
-	return 0;
+	 return 0;
       }
    }
 }

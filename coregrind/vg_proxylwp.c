@@ -519,11 +519,12 @@ static Int proxylwp(void *v)
 	    }
 	 } else {
 	    /* We got VKI_SIGVGKILL, which means we just skip all the
-	       below and get back to the state machine - probably to
-	       exit. */
+	       below and exit.  (Don't bother dealing with any pending
+	       requests, because we'll probably just get confused.) */
 	    px->state = PXS_WaitReq;
 	    px->siginfo.si_signo = 0;
-	    goto state_machine;
+	    ret = 0;
+	    goto out;
 	 }
 
 	 px->siginfo.si_signo = 0;
@@ -628,7 +629,7 @@ static Int proxylwp(void *v)
 	    VG_(need_resched)(px->tid);
       }
 
-     state_machine:
+      /* state_machine: */
       px_printf("proxylwp main: state %s\n", pxs_name(px->state));
 
       switch(px->state) {

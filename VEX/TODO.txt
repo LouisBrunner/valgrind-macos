@@ -39,9 +39,6 @@ JIT speedups
 ~~~~~~~~~~~~
 Ensure incremental flatness throughout
 
-Make sanity checker check flatness; also pass name of caller to
-sanity check so as to know after which pass it fails
-
 Profile again with memcheck
 
 change IRTemp to 16 bits?

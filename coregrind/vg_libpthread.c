@@ -3073,6 +3073,8 @@ strong_alias(wait, __wait)
 strong_alias(write, __write)
 strong_alias(connect, __connect)
 strong_alias(send, __send)
+strong_alias(poll, __poll)
+strong_alias(select, __select)
 
 weak_alias (__pread64, pread64)
 weak_alias (__pwrite64, pwrite64)

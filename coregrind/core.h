@@ -1083,14 +1083,6 @@ extern void VG_(demangle) ( Char* orig, Char* result, Int result_size );
 
 
 /* ---------------------------------------------------------------------
-   Exports of vg_from_ucode.c
-   ------------------------------------------------------------------ */
-
-extern void   VG_(print_ccall_stats)      ( void );
-extern void   VG_(print_UInstr_histogram) ( void );
-
-
-/* ---------------------------------------------------------------------
    Exports of vg_to_ucode.c
    ------------------------------------------------------------------ */
 
@@ -1795,6 +1787,7 @@ extern void VG_(missing_tool_func) ( const Char* fn );
 #define CLREQ_ARGS(regs)   ((regs).vex.ARCH_CLREQ_ARGS)
 #define PTHREQ_RET(regs)   ((regs).vex.ARCH_PTHREQ_RET)
 #define CLREQ_RET(regs)    ((regs).vex.ARCH_CLREQ_RET)
+
 
 // Offsets for the Vex state
 #define O_STACK_PTR        (offsetof(VexGuestArchState, ARCH_STACK_PTR))

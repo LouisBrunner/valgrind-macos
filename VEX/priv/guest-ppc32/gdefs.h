@@ -78,7 +78,7 @@ VexGuestLayout ppc32Guest_layout;
 extern UInt ppc32g_calculate_cr7_all ( UInt op, UInt val, UInt xer_so );
 
 // Calculate XER flags
-extern UInt ppc32g_calculate_xer_ov  ( UInt op, UInt res, UInt argL, UInt argR, UInt ca );
+extern UInt ppc32g_calculate_xer_ov  ( UInt op, UInt res, UInt argL, UInt argR );
 extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt argL, UInt argR, UInt ca );
 
 
@@ -116,20 +116,16 @@ extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt argL, UInt argR, 
   Enumeration for xer_ca/ov calculation helper functions
 */
 enum {
-   PPC32G_FLAG_OP_ADD=0,   // addc, addo, addic
-   PPC32G_FLAG_OP_ADDE,    // adde, addeo
-   PPC32G_FLAG_OP_ADDME,   // addme, addmeo
-   PPC32G_FLAG_OP_ADDZE,   // addze, addzeo
+   PPC32G_FLAG_OP_ADD=0,   // addc[o], addic
+   PPC32G_FLAG_OP_ADDE,    // adde[o], addme[o], addze[o]
    PPC32G_FLAG_OP_DIVW,    // divwo
    PPC32G_FLAG_OP_DIVWU,   // divwuo
    PPC32G_FLAG_OP_MULLW,   // mullwo
    PPC32G_FLAG_OP_NEG,     // nego
    PPC32G_FLAG_OP_SUBF,    // subfo
-   PPC32G_FLAG_OP_SUBFC,   // subfc, subfco
-   PPC32G_FLAG_OP_SUBFE,   // subfe, subfeo
+   PPC32G_FLAG_OP_SUBFC,   // subfc[o]
+   PPC32G_FLAG_OP_SUBFE,   // subfe[o], subfme[o], subfze[o]
    PPC32G_FLAG_OP_SUBFI,   // subfic
-   PPC32G_FLAG_OP_SUBFME,  // subfme, subfmeo
-   PPC32G_FLAG_OP_SUBFZE,  // subfze, subfzeo
    PPC32G_FLAG_OP_SRAW,    // sraw
    PPC32G_FLAG_OP_SRAWI,   // srawi
    

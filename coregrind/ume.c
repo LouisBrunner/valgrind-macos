@@ -128,7 +128,7 @@ static int fillgap(char *segstart, char *segend, const char *perm, off_t off,
 
    if (segstart > extra->fillgap_start) {
       void* res = mmap(extra->fillgap_start, segstart - extra->fillgap_start,
-                       PROT_NONE, MAP_FIXED|MAP_PRIVATE, 
+                       PROT_NONE, MAP_FIXED|MAP_PRIVATE|MAP_NORESERVE, 
                        extra->fillgap_padfile, 0);
       check_mmap(res, extra->fillgap_start, segstart - extra->fillgap_start);
    }
@@ -169,7 +169,7 @@ void as_pad(void *start, void *end, int padfile)
    if (extra.fillgap_start < extra.fillgap_end) {
       void* res = mmap(extra.fillgap_start, 
                        extra.fillgap_end - extra.fillgap_start,
-                       PROT_NONE, MAP_FIXED|MAP_PRIVATE, padfile, 0);
+                       PROT_NONE, MAP_FIXED|MAP_PRIVATE|MAP_NORESERVE, padfile, 0);
       check_mmap(res, extra.fillgap_start, 
                  extra.fillgap_end - extra.fillgap_start);
    }

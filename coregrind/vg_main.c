@@ -441,7 +441,7 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
 
    // Ban redzone
    vres = mmap((void *)VG_(client_end), REDZONE_SIZE, PROT_NONE,
-               MAP_FIXED|MAP_ANON|MAP_PRIVATE, -1, 0);
+               MAP_FIXED|MAP_ANON|MAP_PRIVATE|MAP_NORESERVE, -1, 0);
    vg_assert((void*)-1 != vres);
 
    // Make client hole
@@ -452,7 +452,7 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    // Initially all inaccessible, incrementally initialized as it is used
    if (shadow_size != 0) {
       vres = mmap((char *)VG_(shadow_base), shadow_size, PROT_NONE,
-                  MAP_PRIVATE|MAP_ANON|MAP_FIXED, -1, 0);
+                  MAP_PRIVATE|MAP_ANON|MAP_FIXED|MAP_NORESERVE, -1, 0);
       if ((void*)-1 == vres) {
          fprintf(stderr, 
           "valgrind: Couldn't allocate address space for shadow memory\n"

@@ -18,22 +18,6 @@
 
 
 /*---------------------------------------------------------------*/
-/*--- Should be made public (to vex)                          ---*/
-/*---------------------------------------------------------------*/
-
-static Int sizeofIRType ( IRType ty )
-{
-   switch (ty) {
-      case Ity_I8:  return 1;
-      case Ity_I16: return 2;
-      case Ity_I32: return 4;
-      default: vex_printf("\n"); ppIRType(ty); vex_printf("\n");
-               vpanic("sizeofIType");
-   }
-}
-
-
-/*---------------------------------------------------------------*/
 /*--- Finite mappery, of a sort                               ---*/
 /*---------------------------------------------------------------*/
 
@@ -195,10 +179,9 @@ static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
       case Iex_GetI:
          t1 = newIRTemp(bb->tyenv, ty);
          addStmtToIRBB(bb, IRStmt_Tmp(t1,
-            IRExpr_GetI(flatten_Expr(bb, ex->Iex.GetI.offset),
-                        ex->Iex.GetI.ty,
-                        ex->Iex.GetI.minoff,
-                        ex->Iex.GetI.maxoff)));
+            IRExpr_GetI(ex->Iex.GetI.descr,
+                        flatten_Expr(bb, ex->Iex.GetI.off),
+                        ex->Iex.GetI.bias)));
          return IRExpr_Tmp(t1);
 
       case Iex_Get:
@@ -274,11 +257,12 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
          addStmtToIRBB(bb, IRStmt_Put(st->Ist.Put.offset, e1));
          break;
       case Ist_PutI:
-         e1 = flatten_Expr(bb, st->Ist.PutI.offset);
-         e2 = flatten_Expr(bb, st->Ist.PutI.expr);
-         addStmtToIRBB(bb, IRStmt_PutI(e1, e2, 
-                                       st->Ist.PutI.minoff,
-                                       st->Ist.PutI.maxoff));
+         e1 = flatten_Expr(bb, st->Ist.PutI.off);
+         e2 = flatten_Expr(bb, st->Ist.PutI.data);
+         addStmtToIRBB(bb, IRStmt_PutI(st->Ist.PutI.descr,
+                                       e1,
+                                       st->Ist.PutI.bias,
+                                       e2));
          break;
       case Ist_Tmp:
          if (isFlat(st->Ist.Tmp.expr)) {
@@ -566,12 +550,11 @@ static IRExpr* subst_Expr ( Hash64* env, IRExpr* ex )
       return ex;
 
    if (ex->tag == Iex_GetI) {
-      vassert(isAtom(ex->Iex.GetI.offset));
+      vassert(isAtom(ex->Iex.GetI.off));
       return IRExpr_GetI(
-         subst_Expr(env, ex->Iex.GetI.offset),
-         ex->Iex.GetI.ty,
-         ex->Iex.GetI.minoff,
-         ex->Iex.GetI.maxoff
+         ex->Iex.GetI.descr,
+         subst_Expr(env, ex->Iex.GetI.off),
+         ex->Iex.GetI.bias
       );
    }
 
@@ -653,13 +636,13 @@ static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
    }
 
    if (st->tag == Ist_PutI) {
-      vassert(isAtom(st->Ist.PutI.offset));
-      vassert(isAtom(st->Ist.PutI.expr));
+      vassert(isAtom(st->Ist.PutI.off));
+      vassert(isAtom(st->Ist.PutI.data));
       return IRStmt_PutI(
-                fold_Expr(subst_Expr(env, st->Ist.PutI.offset)),
-                fold_Expr(subst_Expr(env, st->Ist.PutI.expr)),
-                st->Ist.PutI.minoff,
-                st->Ist.PutI.maxoff
+                st->Ist.PutI.descr,
+                fold_Expr(subst_Expr(env, st->Ist.PutI.off)),
+                st->Ist.PutI.bias,
+                fold_Expr(subst_Expr(env, st->Ist.PutI.data))
              );
    }
 
@@ -813,7 +796,7 @@ static void addUses_Expr ( Hash64* set, IRExpr* e )
    Int i;
    switch (e->tag) {
       case Iex_GetI:
-         addUses_Expr(set, e->Iex.GetI.offset);
+         addUses_Expr(set, e->Iex.GetI.off);
          return;
       case Iex_Mux0X:
          addUses_Expr(set, e->Iex.Mux0X.cond);
@@ -853,8 +836,8 @@ static void addUses_Stmt ( Hash64* set, IRStmt* st )
    IRDirty* d;
    switch (st->tag) {
       case Ist_PutI:
-         addUses_Expr(set, st->Ist.PutI.offset);
-         addUses_Expr(set, st->Ist.PutI.expr);
+         addUses_Expr(set, st->Ist.PutI.off);
+         addUses_Expr(set, st->Ist.PutI.data);
          return;
       case Ist_Tmp:
          addUses_Expr(set, st->Ist.Tmp.expr);
@@ -950,10 +933,12 @@ static UInt mk_key_GetPut ( Int offset, IRType ty )
    return (minoff << 16) | maxoff;
 }
 
-static UInt mk_key_GetIPutI ( UShort minoff16, UShort maxoff16 )
+static UInt mk_key_GetIPutI ( IRArray* descr )
 {
-   UInt minoff = (UInt)minoff16;
-   UInt maxoff = (UInt)maxoff16;
+   UInt minoff = descr->base;
+   UInt maxoff = minoff + descr->nElems*sizeofIRType(descr->elemTy) - 1;
+   vassert((minoff & 0xFFFF0000) == 0);
+   vassert((maxoff & 0xFFFF0000) == 0);
    return (minoff << 16) | maxoff;
 }
 
@@ -1035,8 +1020,7 @@ static void redundant_get_removal_BB ( IRBB* bb )
             break;
          case Ist_PutI:
             isPut = True;
-            key = mk_key_GetIPutI( st->Ist.PutI.minoff, 
-                                   st->Ist.PutI.maxoff );
+            key = mk_key_GetIPutI( st->Ist.PutI.descr );
             break;
          default: 
             isPut = False;
@@ -1087,8 +1071,7 @@ static void handle_gets_Stmt ( Hash64* env, IRStmt* st )
                break;
             case Iex_GetI:
                isGet = True;
-               key = mk_key_GetIPutI ( e->Iex.GetI.minoff, 
-                                       e->Iex.GetI.maxoff );
+               key = mk_key_GetIPutI ( e->Iex.GetI.descr );
                break;
             default: 
                isGet = False;
@@ -1115,8 +1098,8 @@ static void handle_gets_Stmt ( Hash64* env, IRStmt* st )
          return;
 
       case Ist_PutI:
-         vassert(isAtom(st->Ist.PutI.offset));
-         vassert(isAtom(st->Ist.PutI.expr));
+         vassert(isAtom(st->Ist.PutI.off));
+         vassert(isAtom(st->Ist.PutI.data));
          return;
 
       default:
@@ -1175,10 +1158,9 @@ static void redundant_put_removal_BB ( IRBB* bb )
             break;
          case Ist_PutI:
             isPut = True;
-            key = mk_key_GetIPutI( st->Ist.PutI.minoff, 
-                                   st->Ist.PutI.maxoff );
-            vassert(isAtom(st->Ist.PutI.offset));
-            vassert(isAtom(st->Ist.PutI.expr));
+            key = mk_key_GetIPutI( st->Ist.PutI.descr );
+            vassert(isAtom(st->Ist.PutI.off));
+            vassert(isAtom(st->Ist.PutI.data));
             break;
          default: 
             isPut = False;
@@ -1329,7 +1311,7 @@ static void occCount_Expr ( Hash64* env, IRExpr* e )
          return;
 
       case Iex_GetI:
-         occCount_Expr(env, e->Iex.GetI.offset);
+         occCount_Expr(env, e->Iex.GetI.off);
          return;
 
       case Iex_Const:
@@ -1359,8 +1341,8 @@ static void occCount_Stmt ( Hash64* env, IRStmt* st )
          occCount_Expr(env, st->Ist.Put.expr);
          return;
       case Ist_PutI:
-         occCount_Expr(env, st->Ist.PutI.offset);
-         occCount_Expr(env, st->Ist.PutI.expr);
+         occCount_Expr(env, st->Ist.PutI.off);
+         occCount_Expr(env, st->Ist.PutI.data);
          return;
       case Ist_STle: 
          occCount_Expr(env, st->Ist.STle.addr);
@@ -1454,11 +1436,10 @@ static IRExpr* tbSubst_Expr ( Hash64* env, IRExpr* e )
                 );
       case Iex_GetI:
          return IRExpr_GetI(
-                   tbSubst_Expr(env, e->Iex.GetI.offset),
-                   e->Iex.GetI.ty,
-                   e->Iex.GetI.minoff,
-                   e->Iex.GetI.maxoff
-         );
+                   e->Iex.GetI.descr,
+                   tbSubst_Expr(env, e->Iex.GetI.off),
+                   e->Iex.GetI.bias
+                );
       case Iex_Const:
       case Iex_Get:
          return e;
@@ -1493,11 +1474,11 @@ static IRStmt* tbSubst_Stmt ( Hash64* env, IRStmt* st )
                 );
       case Ist_PutI:
          return IRStmt_PutI(
-                   tbSubst_Expr(env, st->Ist.PutI.offset),
-                   tbSubst_Expr(env, st->Ist.PutI.expr),
-                   st->Ist.PutI.minoff,
-                   st->Ist.PutI.maxoff
-         );
+                   st->Ist.PutI.descr,
+                   tbSubst_Expr(env, st->Ist.PutI.off),
+                   st->Ist.PutI.bias,
+                   tbSubst_Expr(env, st->Ist.PutI.data)
+                );
 
       case Ist_Exit:
          return IRStmt_Exit(
@@ -1553,7 +1534,7 @@ static void setHints_Expr (Bool* doesLoad, Bool* doesGet, IRExpr* e )
          return;
       case Iex_GetI:
          *doesGet |= True;
-         setHints_Expr(doesLoad, doesGet, e->Iex.GetI.offset);
+         setHints_Expr(doesLoad, doesGet, e->Iex.GetI.off);
          return;
       case Iex_Tmp:
       case Iex_Const:

@@ -3062,32 +3062,14 @@ static IRExpr* /* :: Ity_I32 */ get_roundingmode ( void )
 
 /* --------- Get/set FP register tag bytes. --------- */
 
-/* Given i, generate an expression which is the offset in the guest
-   state of ST(i)'s tag byte, considering the current value of FTOP.  The 
-   generated expression is:
-
-      ((Get(OFFB_FTOP) + i) & 7) + OFFB_FTAGO
-*/
-static IRExpr* off_ST_TAG ( Int i )
-{
-  vassert(i >= 0 && i <= 7);
-  return 
-     binop(Iop_Add32,
-           binop(Iop_And32, 
-                 binop(Iop_Add32, get_ftop(), mkU32(i)),
-                 mkU32(7)),
-           mkU32(OFFB_FTAG0)
-     );
-}
-
 /* Given i, and some expression e, generate 'ST_TAG(i) = e'. */
 
 static void put_ST_TAG ( Int i, IRExpr* value )
 {
+   IRArray* descr;
    vassert(typeOfIRExpr(irbb->tyenv, value) == Ity_I8);
-   stmt(
-	IRStmt_PutI( off_ST_TAG(i), value, OFFB_FTAG0, OFFB_FTAG0 +7 )
-   );
+   descr = mkIRArray( OFFB_FTAG0, Ity_I8, 8 );
+   stmt( IRStmt_PutI( descr, get_ftop(), i, value ) );
 }
 
 /* Given i, generate an expression yielding 'ST_TAG(i)'.  This will be
@@ -3095,42 +3077,23 @@ static void put_ST_TAG ( Int i, IRExpr* value )
 
 static IRExpr* get_ST_TAG ( Int i )
 {
-   return
-      IRExpr_GetI( off_ST_TAG(i), Ity_I8, OFFB_FTAG0, OFFB_FTAG0 +7 );
+   IRArray* descr = mkIRArray( OFFB_FTAG0, Ity_I8, 8 );
+   return IRExpr_GetI( descr, get_ftop(), i );
 }
 
 
 /* --------- Get/set FP registers. --------- */
 
-/* Given i, generate an expression which is the offset in the guest
-   state of ST(i), considering the current value of FTOP.  The 
-   generated expression is:
-
-      (((Get(OFFB_FTOP) + i) & 7) << 3) + OFFB_FO
-*/
-static IRExpr* off_ST ( Int i )
-{
-  vassert(i >= 0 && i <= 7);
-  return 
-     binop(Iop_Add32,
-           binop(Iop_Shl32,
-                 binop(Iop_And32, 
-                       binop(Iop_Add32, get_ftop(), mkU32(i)),
-                       mkU32(7)),
-                 mkU8(3)),
-           mkU32(OFFB_F0)
-     );
-}
-
-
-/* Given i, and some expression e, emit 'ST(i) = e'
-and set the register's tag to indicate the register is full.
-The previous state of the register is not checked. */
+/* Given i, and some expression e, emit 'ST(i) = e' and set the
+   register's tag to indicate the register is full.  The previous
+   state of the register is not checked. */
 
 static void put_ST_UNCHECKED ( Int i, IRExpr* value )
 {
+   IRArray* descr;
    vassert(typeOfIRExpr(irbb->tyenv, value) == Ity_F64);
-   stmt( IRStmt_PutI( off_ST(i), value, OFFB_F0, OFFB_F7+8-1 ) );
+   descr = mkIRArray( OFFB_F0, Ity_F64, 8 );
+   stmt( IRStmt_PutI( descr, get_ftop(), i, value ) );
    /* Mark the register as in-use. */
    put_ST_TAG(i, mkU8(1));
 }
@@ -3157,8 +3120,8 @@ static void put_ST ( Int i, IRExpr* value )
 
 static IRExpr* get_ST_UNCHECKED ( Int i )
 {
-   return
-      IRExpr_GetI( off_ST(i), Ity_F64, OFFB_F0, OFFB_F7+8-1 );
+   IRArray* descr = mkIRArray( OFFB_F0, Ity_F64, 8 );
+   return IRExpr_GetI( descr, get_ftop(), i );
 }
 
 
@@ -3181,11 +3144,14 @@ static IRExpr* get_ST ( Int i )
 
 static void fp_push ( void )
 {
+#if 0
    put_ftop(
       binop(Iop_And32,
             binop(Iop_Sub32, get_ftop(), mkU32(1)),
             mkU32(7))
    );
+#endif
+   put_ftop( binop(Iop_Sub32, get_ftop(), mkU32(1)) );
 }
 
 /* Adjust FTOP upwards by one register, and mark the vacated register
@@ -3194,11 +3160,14 @@ static void fp_push ( void )
 static void fp_pop ( void )
 {
    put_ST_TAG(0, mkU8(0));
+#if 0
    put_ftop(
       binop(Iop_And32,
             binop(Iop_Add32, get_ftop(), mkU32(1)),
             mkU32(7))
    );
+#endif
+   put_ftop( binop(Iop_Add32, get_ftop(), mkU32(1)) );
 }
 
 /* ------------------------------------------------------- */

@@ -27,6 +27,7 @@ typedef
    IRType;
 
 extern void ppIRType ( IRType );
+extern Int  sizeofIRType ( IRType );
 
 
 /* ------------------ Constants ------------------ */
@@ -65,6 +66,21 @@ extern IRConst* IRConst_F64i ( ULong );
 
 extern void ppIRConst ( IRConst* );
 extern Bool eqIRConst ( IRConst*, IRConst* );
+
+
+/* ------------------ Guest state arrays ------------------ */
+
+typedef
+   struct {
+      Int    base;
+      IRType elemTy;
+      Int    nElems;
+   }
+   IRArray;
+
+extern IRArray* mkIRArray ( Int, IRType, Int );
+
+extern void ppIRArray ( IRArray* );
 
 
 /* ------------------ Temporaries ------------------ */
@@ -325,10 +341,9 @@ typedef
             IRType ty;
          } Get;
          struct {
-            struct _IRExpr* offset;
-            IRType  ty;
-            UShort  minoff;
-            UShort  maxoff;
+            IRArray* descr;
+            struct _IRExpr* off;
+            Int bias;
          } GetI;
          struct {
             IRTemp tmp;
@@ -365,8 +380,7 @@ typedef
 
 extern IRExpr* IRExpr_Binder ( Int binder );
 extern IRExpr* IRExpr_Get    ( Int off, IRType ty );
-extern IRExpr* IRExpr_GetI   ( IRExpr* off, IRType ty,  
-                               UShort minoff, UShort maxoff );
+extern IRExpr* IRExpr_GetI   ( IRArray* descr, IRExpr* off, Int bias );
 extern IRExpr* IRExpr_Tmp    ( IRTemp tmp );
 extern IRExpr* IRExpr_Binop  ( IROp op, IRExpr* arg1, IRExpr* arg2 );
 extern IRExpr* IRExpr_Unop   ( IROp op, IRExpr* arg );
@@ -486,10 +500,10 @@ typedef
             IRExpr* expr;
          } Put;
          struct {
-            IRExpr* offset;
-            IRExpr* expr;
-            UShort  minoff;
-            UShort  maxoff;
+            IRArray* descr;
+            IRExpr*  off;
+            Int      bias;
+            IRExpr*  data;
          } PutI;
          struct {
             IRTemp  tmp;
@@ -511,8 +525,8 @@ typedef
    IRStmt;
 
 extern IRStmt* IRStmt_Put   ( Int off, IRExpr* value );
-extern IRStmt* IRStmt_PutI  ( IRExpr* off, IRExpr* value, 
-                              UShort minoff, UShort maxoff );
+extern IRStmt* IRStmt_PutI  ( IRArray* descr, IRExpr* off, Int bias, 
+                              IRExpr* data );
 extern IRStmt* IRStmt_Tmp   ( IRTemp tmp, IRExpr* expr );
 extern IRStmt* IRStmt_STle  ( IRExpr* addr, IRExpr* value );
 extern IRStmt* IRStmt_Dirty ( IRDirty* details );

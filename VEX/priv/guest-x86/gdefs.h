@@ -178,7 +178,8 @@ typedef
    The model is:
      F0 .. F7 are the 8 registers.  FTOP[2:0] contains the 
      index of the current 'stack top' -- pretty meaningless, but
-     still.  FTOP is a 32-bit value.
+     still.  FTOP is a 32-bit value.  FTOP[31:3] can be anything
+     (not guaranteed to be zero).
 
      When a value is pushed onto the stack, ftop is first replaced by 
      (ftop-1) & 7, and then F[ftop] is assigned the value.

@@ -35,16 +35,23 @@ void ppIRType ( IRType ty )
 
 void ppIRConst ( IRConst* con )
 {
-  switch (con->tag) {
-    case Ico_Bit:  vex_printf( "%d:Bit",       con->Ico.Bit ? 1 : 0); break;
-    case Ico_U8:   vex_printf( "0x%x:I8",      (UInt)(con->Ico.U8)); break;
-    case Ico_U16:  vex_printf( "0x%x:I16",     (UInt)(con->Ico.U16)); break;
-    case Ico_U32:  vex_printf( "0x%x:I32",     (UInt)(con->Ico.U32)); break;
-    case Ico_U64:  vex_printf( "0x%llx:I64",   (ULong)(con->Ico.U64)); break;
-    case Ico_F64:  vex_printf( "F64{0x%llx}",  *(ULong*)(&con->Ico.F64)); break;
-    case Ico_F64i: vex_printf( "F64i{0x%llx}", con->Ico.F64i); break;
-    default: vpanic("ppIRConst");
-  }
+   switch (con->tag) {
+      case Ico_Bit:  vex_printf( "%d:Bit",       con->Ico.Bit ? 1 : 0); break;
+      case Ico_U8:   vex_printf( "0x%x:I8",      (UInt)(con->Ico.U8)); break;
+      case Ico_U16:  vex_printf( "0x%x:I16",     (UInt)(con->Ico.U16)); break;
+      case Ico_U32:  vex_printf( "0x%x:I32",     (UInt)(con->Ico.U32)); break;
+      case Ico_U64:  vex_printf( "0x%llx:I64",   (ULong)(con->Ico.U64)); break;
+      case Ico_F64:  vex_printf( "F64{0x%llx}",  *(ULong*)(&con->Ico.F64)); break;
+      case Ico_F64i: vex_printf( "F64i{0x%llx}", con->Ico.F64i); break;
+      default: vpanic("ppIRConst");
+   }
+}
+
+void ppIRArray ( IRArray* arr )
+{
+   vex_printf("(%d:", arr->base);
+   ppIRType(arr->elemTy);
+   vex_printf(",%d)", arr->nElems);
 }
 
 void ppIRTemp ( IRTemp tmp )
@@ -190,10 +197,11 @@ void ppIRExpr ( IRExpr* e )
       vex_printf(")");
       break;
     case Iex_GetI:
-      vex_printf( "GETI[%d,%d](", e->Iex.GetI.minoff, e->Iex.GetI.maxoff);
-      ppIRExpr(e->Iex.GetI.offset);
-      vex_printf("):");
-      ppIRType(e->Iex.GetI.ty);
+      vex_printf( "GETI" );
+      ppIRArray(e->Iex.GetI.descr);
+      vex_printf("[");
+      ppIRExpr(e->Iex.GetI.off);
+      vex_printf(",%d]", e->Iex.GetI.bias);
       break;
     case Iex_Tmp:
       ppIRTemp(e->Iex.Tmp.tmp);
@@ -294,10 +302,12 @@ void ppIRStmt ( IRStmt* s )
          ppIRExpr(s->Ist.Put.expr);
          break;
       case Ist_PutI:
-         vex_printf( "PUTI[%d,%d](", s->Ist.PutI.minoff, s->Ist.PutI.maxoff);
-         ppIRExpr(s->Ist.PutI.offset);
-         vex_printf( ") = " );
-         ppIRExpr(s->Ist.PutI.expr);
+         vex_printf( "PUTI" );
+         ppIRArray(s->Ist.PutI.descr);
+         vex_printf("[");
+         ppIRExpr(s->Ist.PutI.off);
+         vex_printf(",%d] = ", s->Ist.PutI.bias);
+         ppIRExpr(s->Ist.PutI.data);
          break;
       case Ist_Tmp:
          ppIRTemp(s->Ist.Tmp.tmp);
@@ -435,6 +445,21 @@ IRConst* IRConst_F64i ( ULong f64i )
 
 /* Constructors -- IRExpr */
 
+IRArray* mkIRArray ( Int base, IRType elemTy, Int nElems )
+{
+   IRArray* arr = LibVEX_Alloc(sizeof(IRArray));
+   arr->base    = base;
+   arr->elemTy  = elemTy;
+   arr->nElems  = nElems;
+   vassert(!(arr->base < 0 || arr->base > 10000 /* somewhat arbitrary */));
+   vassert(!(arr->elemTy == Ity_Bit));
+   vassert(!(arr->nElems <= 0 || arr->nElems > 500 /* somewhat arbitrary */));
+   return arr;
+}
+
+
+/* Constructors -- IRExpr */
+
 IRExpr* IRExpr_Binder ( Int binder ) {
    IRExpr* e            = LibVEX_Alloc(sizeof(IRExpr));
    e->tag               = Iex_Binder;
@@ -448,14 +473,12 @@ IRExpr* IRExpr_Get ( Int off, IRType ty ) {
    e->Iex.Get.ty     = ty;
    return e;
 }
-IRExpr* IRExpr_GetI ( IRExpr* off, IRType ty, 
-                      UShort minoff, UShort maxoff ) {
-   IRExpr* e          = LibVEX_Alloc(sizeof(IRExpr));
-   e->tag             = Iex_GetI;
-   e->Iex.GetI.offset = off;
-   e->Iex.GetI.ty     = ty;
-   e->Iex.GetI.minoff = minoff;
-   e->Iex.GetI.maxoff = maxoff;
+IRExpr* IRExpr_GetI ( IRArray* descr, IRExpr* off, Int bias ) {
+   IRExpr* e         = LibVEX_Alloc(sizeof(IRExpr));
+   e->tag            = Iex_GetI;
+   e->Iex.GetI.descr = descr;
+   e->Iex.GetI.off   = off;
+   e->Iex.GetI.bias  = bias;
    return e;
 }
 IRExpr* IRExpr_Tmp ( IRTemp tmp ) {
@@ -535,14 +558,14 @@ IRStmt* IRStmt_Put ( Int off, IRExpr* value ) {
    s->Ist.Put.expr   = value;
    return s;
 }
-IRStmt* IRStmt_PutI ( IRExpr* off, IRExpr* value, 
-                      UShort minoff, UShort maxoff ) {
-   IRStmt* s          = LibVEX_Alloc(sizeof(IRStmt));
-   s->tag             = Ist_PutI;
-   s->Ist.PutI.offset = off;
-   s->Ist.PutI.expr   = value;
-   s->Ist.PutI.minoff = minoff;
-   s->Ist.PutI.maxoff = maxoff;
+IRStmt* IRStmt_PutI ( IRArray* descr, IRExpr* off,
+                      Int bias, IRExpr* data ) {
+   IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag            = Ist_PutI;
+   s->Ist.PutI.descr = descr;
+   s->Ist.PutI.off   = off;
+   s->Ist.PutI.bias  = bias;
+   s->Ist.PutI.data  = data;
    return s;
 }
 IRStmt* IRStmt_Tmp ( IRTemp tmp, IRExpr* expr ) {
@@ -839,7 +862,7 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
       case Iex_Get:
          return e->Iex.Get.ty;
       case Iex_GetI:
-         return e->Iex.GetI.ty;
+         return e->Iex.GetI.descr->elemTy;
       case Iex_Tmp:
          return typeOfIRTemp(tyenv, e->Iex.Tmp.tmp);
       case Iex_Const:
@@ -905,6 +928,17 @@ void sanityCheckFail ( IRBB* bb, IRStmt* stmt, Char* what )
    vpanic("sanityCheckFail: exiting due to bad IR");
 }
 
+static Bool saneIRArray ( IRArray* arr )
+{
+   if (arr->base < 0 || arr->base > 10000 /* somewhat arbitrary */)
+      return False;
+   if (arr->elemTy == Ity_Bit)
+      return False;
+   if (arr->nElems <= 0 || arr->nElems > 500 /* somewhat arbitrary */)
+      return False;
+   return True;
+}
+
 
 /* Traverse a Stmt/Expr, inspecting IRTemp uses.  Report any out of
    range ones.  Report any which are read and for which the current
@@ -927,7 +961,7 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
       case Iex_Get: 
          break;
       case Iex_GetI:
-         useBeforeDef_Expr(bb,stmt,expr->Iex.GetI.offset,def_counts);
+         useBeforeDef_Expr(bb,stmt,expr->Iex.GetI.off,def_counts);
          break;
       case Iex_Tmp:
          useBeforeDef_Temp(bb,stmt,expr->Iex.Tmp.tmp,def_counts);
@@ -968,8 +1002,8 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.expr,def_counts);
          break;
       case Ist_PutI:
-         useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.offset,def_counts);
-         useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.expr,def_counts);
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.off,def_counts);
+         useBeforeDef_Expr(bb,stmt,stmt->Ist.PutI.data,def_counts);
          break;
       case Ist_Tmp:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Tmp.expr,def_counts);
@@ -1004,9 +1038,11 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
       case Iex_Tmp:
          break;
       case Iex_GetI:
-         tcExpr(bb,stmt, expr->Iex.GetI.offset, gWordTy );
-         if (typeOfIRExpr(tyenv,expr->Iex.GetI.offset) != Ity_I32)
-            sanityCheckFail(bb,stmt,"IRExpr.GetI.offset: not :: Ity_I32");
+         tcExpr(bb,stmt, expr->Iex.GetI.off, gWordTy );
+         if (typeOfIRExpr(tyenv,expr->Iex.GetI.off) != Ity_I32)
+            sanityCheckFail(bb,stmt,"IRExpr.GetI.off: not :: Ity_I32");
+         if (!saneIRArray(expr->Iex.GetI.descr))
+            sanityCheckFail(bb,stmt,"IRExpr.GetI.descr: invalid descr");
          break;
       case Iex_Binop: {
          IRType ttarg1, ttarg2;
@@ -1092,18 +1128,20 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
    IRTypeEnv* tyenv = bb->tyenv;
    switch (stmt->tag) {
       case Ist_Put:
-          tcExpr( bb, stmt, stmt->Ist.Put.expr, gWordTy );
-          if (typeOfIRExpr(tyenv,stmt->Ist.Put.expr) == Ity_Bit)
-             sanityCheckFail(bb,stmt,"IRStmt.Put.expr: cannot Put :: Ity_Bit");
-          break;
+         tcExpr( bb, stmt, stmt->Ist.Put.expr, gWordTy );
+         if (typeOfIRExpr(tyenv,stmt->Ist.Put.expr) == Ity_Bit)
+            sanityCheckFail(bb,stmt,"IRStmt.Put.expr: cannot Put :: Ity_Bit");
+         break;
       case Ist_PutI:
-          tcExpr( bb, stmt, stmt->Ist.PutI.expr, gWordTy );
-          tcExpr( bb, stmt, stmt->Ist.PutI.offset, gWordTy );
-          if (typeOfIRExpr(tyenv,stmt->Ist.PutI.expr) == Ity_Bit)
-             sanityCheckFail(bb,stmt,"IRStmt.PutI.expr: cannot PutI :: Ity_Bit");
-          if (typeOfIRExpr(tyenv,stmt->Ist.PutI.offset) != Ity_I32)
-             sanityCheckFail(bb,stmt,"IRStmt.PutI.offset: not :: Ity_I32");
-          break;
+         tcExpr( bb, stmt, stmt->Ist.PutI.data, gWordTy );
+         tcExpr( bb, stmt, stmt->Ist.PutI.off, gWordTy );
+         if (typeOfIRExpr(tyenv,stmt->Ist.PutI.data) == Ity_Bit)
+            sanityCheckFail(bb,stmt,"IRStmt.PutI.expr: cannot PutI :: Ity_Bit");
+         if (typeOfIRExpr(tyenv,stmt->Ist.PutI.off) != Ity_I32)
+            sanityCheckFail(bb,stmt,"IRStmt.PutI.off: not :: Ity_I32");
+         if (!saneIRArray(stmt->Ist.PutI.descr))
+            sanityCheckFail(bb,stmt,"IRStmt.PutI.descr: invalid descr");
+         break;
       case Ist_Tmp:
          tcExpr( bb, stmt, stmt->Ist.Tmp.expr, gWordTy );
          if (typeOfIRTemp(tyenv, stmt->Ist.Tmp.tmp)
@@ -1244,6 +1282,18 @@ Bool eqIRConst ( IRConst* c1, IRConst* c2 )
       case Ico_U64: return c1->Ico.U64 == c2->Ico.U64;
       case Ico_F64: return c1->Ico.F64 == c2->Ico.F64;
       default: vpanic("eqIRConst");
+   }
+}
+
+Int sizeofIRType ( IRType ty )
+{
+   switch (ty) {
+      case Ity_I8:  return 1;
+      case Ity_I16: return 2;
+      case Ity_I32: return 4;
+      case Ity_F64: return 8;
+      default: vex_printf("\n"); ppIRType(ty); vex_printf("\n");
+               vpanic("sizeofIRType");
    }
 }
 

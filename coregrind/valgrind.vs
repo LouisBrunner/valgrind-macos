@@ -1,4 +1,4 @@
-{
+VALGRIND_2.1 {
 	global:
 		vgPlain_*;
 		vgSkin_*;

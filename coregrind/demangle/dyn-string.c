@@ -23,13 +23,13 @@ Boston, MA 02111-1307, USA.  */
 #include "config.h"
 #endif
 
-#ifdef HAVE_STRING_H
+/*#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
+#endif*/
 
-#ifdef HAVE_STDLIB_H
+/*#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
+#endif*/
 
 #include "vg_include.h"
 #include "ansidecl.h"

@@ -31,7 +31,7 @@ Boston, MA 02111-1307, USA.  */
 
 #include "ansidecl.h"
 #include <safe-ctype.h>
-#include <stdio.h>  /* for EOF */
+/*#include <stdio.h>*/  /* for EOF */
 
 /* Shorthand */
 #define bl _sch_isblank
@@ -66,7 +66,7 @@ Boston, MA 02111-1307, USA.  */
 /* Are we ASCII? */
 #if '\n' == 0x0A && ' ' == 0x20 && '0' == 0x30 \
   && 'A' == 0x41 && 'a' == 0x61 && '!' == 0x21 \
-  && EOF == -1
+/*  && EOF == -1*/
 
 const unsigned short _sch_istable[256] =
 {

@@ -964,6 +964,25 @@ void* VG_(memset) ( void *dest, Int c, Int sz )
    return dest;
 }
 
+Int VG_(memcmp) ( const void* s1, const void* s2, Int n )
+{
+   Int res;
+   Char a0;
+   Char b0;
+   vg_assert(n >= 0);
+
+   while (n != 0) {
+      a0 = ((Char *) s1)[0];
+      b0 = ((Char *) s2)[0];
+      s1 += 1;
+      s2 += 1;
+      res = a0 - b0;
+      if (res != 0)
+         return res;
+      n -= 1;
+   }
+   return 0;
+}
 
 Char VG_(toupper) ( Char c )
 {

@@ -365,6 +365,7 @@ extern Char* VG_(strchr)         ( const Char* s, Char c );
 extern Char* VG_(strdup)         ( const Char* s);
 extern void* VG_(memcpy)         ( void *d, const void *s, Int sz );
 extern void* VG_(memset)         ( void *s, Int c, Int sz );
+extern Int   VG_(memcmp)         ( const void* s1, const void* s2, Int n );
 
 /* Like strcmp() and strncmp(), but stop comparing at any whitespace. */
 extern Int   VG_(strcmp_ws)      ( const Char* s1, const Char* s2 );

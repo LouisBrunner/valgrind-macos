@@ -26,19 +26,19 @@
    executable (functionally similar to c++filt, but includes this
    demangler only).  */
 
-#include <sys/types.h>
+/*#include <sys/types.h>*/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#ifdef HAVE_STDLIB_H
+/*#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
+#endif*/
 
-#ifdef HAVE_STRING_H
+/*#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
+#endif*/
 
 #include "vg_include.h"
 #include "ansidecl.h"
@@ -46,6 +46,8 @@
 #include "demangle.h"
 
 #ifndef STANDALONE
+#define size_t       Int
+
 #define malloc(s)    VG_(arena_malloc) (VG_AR_DEMANGLE, s)
 #define free(p)      VG_(arena_free)   (VG_AR_DEMANGLE, p)
 #define realloc(p,s) VG_(arena_realloc)(VG_AR_DEMANGLE, p, /*alignment*/4, s)

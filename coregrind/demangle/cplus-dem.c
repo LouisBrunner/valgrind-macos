@@ -39,16 +39,16 @@ Boston, MA 02111-1307, USA.  */
 #include "safe-ctype.h"
 #include "vg_include.h"
 
-#include <sys/types.h>
+/*#include <sys/types.h>
 #include <string.h>
-#include <stdio.h>
+#include <stdio.h>*/
 
-#ifdef HAVE_STDLIB_H
+/*#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #else
 char * malloc ();
 char * realloc ();
-#endif
+#endif*/
 
 #include <demangle.h>
 #include "dyn-string.h"
@@ -70,6 +70,8 @@ static char *ada_demangle  PARAMS ((const char *, int));
 #endif
 
 #ifndef STANDALONE
+#define size_t  Int
+
 #define xstrdup(ptr)        VG_(arena_strdup) (VG_AR_DEMANGLE, ptr)
 #define free(ptr)           VG_(arena_free)   (VG_AR_DEMANGLE, ptr)
 #define xmalloc(size)       VG_(arena_malloc) (VG_AR_DEMANGLE, size)
@@ -79,10 +81,17 @@ static char *ada_demangle  PARAMS ((const char *, int));
 #undef strstr
 #define strstr  VG_(strstr)
 #define sprintf VG_(sprintf)
+#define strcpy  VG_(strcpy)
 #define strncpy VG_(strncpy)
 #define strncat VG_(strncat)
 #define strchr  VG_(strchr)
 #define strpbrk VG_(strpbrk)
+#define strlen  VG_(strlen)
+#define strcmp  VG_(strcmp)
+#define strncmp VG_(strncmp)
+#define memcpy  VG_(memcpy)
+#define memset  VG_(memset)
+#define memcmp  VG_(memcmp)
 #endif
 
 extern void fancy_abort PARAMS ((void)) ATTRIBUTE_NORETURN;

@@ -33,7 +33,7 @@
    All the code in this file runs on the SIMULATED CPU.  It is intended
    for various reasons as drop-in replacements for malloc() and friends.
    These functions have global scope, but are not intended to be called
-   directly.  See the comments in coregrind/vg_intercept.c.base for the
+   directly.  See the comments in coregrind/vg_intercept.c for the
    gory details.
 
    This file can be linked into the injected so file for any tool that

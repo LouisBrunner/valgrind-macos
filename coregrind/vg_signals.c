@@ -253,6 +253,13 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
       case VKI_SIGCONT:
 	 /* Let the kernel handle SIGCONT unless the client is actually
 	    catching it. */
+      case VKI_SIGCHLD:                                                        
+      case VKI_SIGWINCH:                                                       
+      case VKI_SIGURG:                                                         
+         /* For signals which are have a default action of Ignore,             
+            only set a handler if the client has set a signal handler.         
+            Otherwise the kernel will interrupt a syscall which                
+            wouldn't have otherwise been interrupted. */                 
 	 if (vg_scss.scss_per_sig[sig].scss_handler == VKI_SIG_DFL)
 	    skss_handler = VKI_SIG_DFL;
 	 else if (vg_scss.scss_per_sig[sig].scss_handler == VKI_SIG_IGN)
@@ -262,6 +269,8 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
 	 break;
 
       default:
+         // VKI_SIGVG* are runtime variables, so we can't make them            
+         // cases in the switch, so we handle them in the 'default' case.
 	 if (sig == VKI_SIGVGKILL)
 	    skss_handler = sigvgkill_handler;
 	 else if (sig == VKI_SIGVGCHLD)

@@ -5,7 +5,8 @@ SUBDIRS = . tests docs
 
 ## Need $(top_builddir)/include because tool.h is built from tool.h.base;
 ## otherwise it will not work if builddir != srcdir.
-add_includes = -I$(top_builddir)/include -I$(top_srcdir)/include
+add_includes = -I$(top_builddir)/include -I$(top_srcdir)/include \
+		-I$(top_srcdir)/include/$(VG_ARCH)
 
 AM_CPPFLAGS = $(add_includes)
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer \

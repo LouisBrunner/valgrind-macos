@@ -35,9 +35,7 @@
 #include <setjmp.h>       /* for jmp_buf         */
 
 #include "tool_asm.h"           // asm stuff
-
-// XXX: here temporarily, will eventually go in arch-specific headers...
-#define REGPARM(x)     __attribute__((regparm (x)))
+#include "tool_arch.h"          // arch-specific tool stuff
 
 /* ---------------------------------------------------------------------
    Where to send bug reports to.

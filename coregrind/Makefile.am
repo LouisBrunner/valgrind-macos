@@ -1,10 +1,9 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
-SUBDIRS = x86 demangle . docs
+SUBDIRS = $(VG_ARCH) demangle . docs
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
-		-I$(srcdir)/x86 \
 		-DKICKSTART_BASE=$(KICKSTART_BASE)
 AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fno-omit-frame-pointer \
 		@PREFERRED_STACK_BOUNDARY@ -g -DELFSZ=32
@@ -92,6 +91,7 @@ stage2_LDADD= \
 	demangle/cplus-dem.o \
 	demangle/dyn-string.o \
 	demangle/safe-ctype.o \
+	${VG_ARCH}/libarch.a \
 	-ldl
 
 vg_intercept.c: $(srcdir)/gen_intercepts.pl $(srcdir)/vg_intercept.c.base

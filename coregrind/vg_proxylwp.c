@@ -151,13 +151,13 @@ static void thread_syscall(Int syscallno, ThreadState *tst,
 			   enum PXState *state , enum PXState poststate)
 {
    do_thread_syscall(syscallno,   /* syscall no. */
-		     tst->m_ebx,  /* arg 1 */
-		     tst->m_ecx,  /* arg 2 */
-		     tst->m_edx,  /* arg 3 */
-		     tst->m_esi,  /* arg 4 */
-		     tst->m_edi,  /* arg 5 */
-		     tst->m_ebp,  /* arg 6 */
-		     &tst->m_eax, /* result */
+		     tst->arch.m_ebx,  /* arg 1 */
+		     tst->arch.m_ecx,  /* arg 2 */
+		     tst->arch.m_edx,  /* arg 3 */
+		     tst->arch.m_esi,  /* arg 4 */
+		     tst->arch.m_edi,  /* arg 5 */
+		     tst->arch.m_ebp,  /* arg 6 */
+		     &tst->arch.m_eax, /* result */
 		     state,	  /* state to update */
 		     poststate);  /* state when syscall has finished */
 }
@@ -430,7 +430,7 @@ void VG_(proxy_handlesig)(const vki_ksiginfo_t *siginfo,
 	 anywhere else, except that we can make some assertions about
 	 the proxy and machine state here. */
       vg_assert(px->state == PXS_RunSyscall);
-      vg_assert(px->tst->m_eax == -VKI_ERESTARTSYS);
+      vg_assert(px->tst->arch.m_eax == -VKI_ERESTARTSYS);
    } else if (sys_after <= eip && eip <= sys_done) {
       /* We're after the syscall.  Either it was interrupted by the
 	 signal, or the syscall completed normally.  In either case
@@ -439,7 +439,7 @@ void VG_(proxy_handlesig)(const vki_ksiginfo_t *siginfo,
       vg_assert(px->state == PXS_RunSyscall ||
 		px->state == PXS_SysDone);
       px->state = PXS_SysDone;
-      px->tst->m_eax = eax;
+      px->tst->arch.m_eax = eax;
    }
    px_printf("  signalled in state %s\n", pxs_name(px->state));
 
@@ -556,7 +556,7 @@ static Int proxylwp(void *v)
 	       */
 	       reply.u.syscallno = tst->syscallno;
 
-	       tst->m_eax = -VKI_ERESTARTSYS;
+	       tst->arch.m_eax = -VKI_ERESTARTSYS;
 	       px->state = PXS_IntReply;
 	       break;
 
@@ -726,14 +726,14 @@ static Int proxylwp(void *v)
 	       */
 	       px_printf("RunSyscall in SigACK: rejecting syscall %d with ERESTARTSYS\n",
 			 reply.u.syscallno);
-	       tst->m_eax = -VKI_ERESTARTSYS;
+	       tst->arch.m_eax = -VKI_ERESTARTSYS;
 	    } else {
 	       Int syscallno = tst->syscallno;
 	       
 	       px->state = PXS_RunSyscall;
 	       /* If we're interrupted before we get to the syscall
 		  itself, we want the syscall restarted. */
-	       tst->m_eax = -VKI_ERESTARTSYS;
+	       tst->arch.m_eax = -VKI_ERESTARTSYS;
 
 	       /* set our process group ID to match parent */
 	       if (VG_(getpgrp)() != VG_(main_pgrp))
@@ -1142,7 +1142,7 @@ static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype,
 	 case PX_RunSyscall:
 	    if (VG_(clo_trace_syscalls))
 	       VG_(message)(Vg_DebugMsg, "sys_wait_results: got PX_RunSyscall for TID %d: syscall %d result %d",
-			    res.tid, tst->syscallno, tst->m_eax);
+			    res.tid, tst->syscallno, tst->arch.m_eax);
 
 	    if (tst->status != VgTs_WaitSys)
 	       VG_(printf)("tid %d in status %d\n",
@@ -1301,8 +1301,8 @@ Int VG_(sys_issue)(int tid)
 
    req.request = PX_RunSyscall;
 
-   tst->syscallno = tst->m_eax;
-   tst->m_eax = -VKI_ERESTARTSYS;
+   tst->syscallno = tst->arch.m_eax;
+   tst->arch.m_eax = -VKI_ERESTARTSYS;
 
    res = VG_(write)(proxy->topx, &req, sizeof(req));
 

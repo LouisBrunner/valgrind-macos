@@ -1,3 +1,6 @@
+
+SUBDIRS = $(VG_ARCH) .
+
 EXTRA_DIST = \
 	vg_profile.c \
 	tool.h.base

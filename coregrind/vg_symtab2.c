@@ -2024,14 +2024,14 @@ static UInt *regaddr(ThreadId tid, Int regno)
       ThreadState *tst = &VG_(threads)[tid];
 
       switch(regno) {
-      case R_EAX:	ret = &tst->m_eax; break;
-      case R_ECX:	ret = &tst->m_ecx; break;
-      case R_EDX:	ret = &tst->m_edx; break;
-      case R_EBX:	ret = &tst->m_ebx; break;
-      case R_ESP:	ret = &tst->m_esp; break;
-      case R_EBP:	ret = &tst->m_ebp; break;
-      case R_ESI:	ret = &tst->m_esi; break;
-      case R_EDI:	ret = &tst->m_edi; break;
+      case R_EAX:	ret = &tst->arch.m_eax; break;
+      case R_ECX:	ret = &tst->arch.m_ecx; break;
+      case R_EDX:	ret = &tst->arch.m_edx; break;
+      case R_EBX:	ret = &tst->arch.m_ebx; break;
+      case R_ESP:	ret = &tst->arch.m_esp; break;
+      case R_EBP:	ret = &tst->arch.m_ebp; break;
+      case R_ESI:	ret = &tst->arch.m_esi; break;
+      case R_EDI:	ret = &tst->arch.m_edi; break;
       default:	
 	 break;
       }

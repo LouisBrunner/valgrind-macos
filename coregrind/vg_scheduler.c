@@ -162,7 +162,7 @@ ThreadId VG_(first_matching_thread_stack)
    for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (VG_(threads)[tid].status == VgTs_Empty) continue;
       if (tid == tid_to_skip) continue;
-      if ( p ( VG_(threads)[tid].m_esp,
+      if ( p ( VG_(threads)[tid].arch.m_esp,
                VG_(threads)[tid].stack_highest_word, d ) )
          return tid;
    }
@@ -194,8 +194,8 @@ void VG_(pp_sched_status) ( void )
                   VG_(threads)[i].associated_mx,
                   VG_(threads)[i].associated_cv );
       VG_(pp_ExeContext)( 
-         VG_(get_ExeContext2)( VG_(threads)[i].m_eip, VG_(threads)[i].m_ebp,
-                               VG_(threads)[i].m_esp, 
+         VG_(get_ExeContext2)( VG_(threads)[i].arch.m_eip, VG_(threads)[i].arch.m_ebp,
+                               VG_(threads)[i].arch.m_esp, 
                                VG_(threads)[i].stack_highest_word)
       );
    }
@@ -272,80 +272,13 @@ ThreadId VG_(get_current_or_recent_tid) ( void )
    return vg_tid_last_in_baseBlock;
 }
 
-static UInt insertDflag(UInt eflags, Int d)
-{
-   vg_assert(d == 1 || d == -1);
-   eflags &= ~EFlagD;
-   if (d < 0) eflags |= EFlagD;
-   return eflags;
-}
-
-static Int extractDflag(UInt eflags)
-{
-   return ( eflags & EFlagD ? -1 : 1 );
-}
-
-/* Junk to fill up a thread's shadow regs with when shadow regs aren't
-   being used. */
-#define VG_UNUSED_SHADOW_REG_VALUE  0x27182818
-
 /* Copy the saved state of a thread into VG_(baseBlock), ready for it
    to be run. */
 static void load_thread_state ( ThreadId tid )
 {
-   Int i;
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
 
-   VG_(baseBlock)[VGOFF_(ldt)]  = (UInt)VG_(threads)[tid].ldt;
-   VG_(baseBlock)[VGOFF_(tls_ptr)]  = (UInt)VG_(threads)[tid].tls;
-   VG_(baseBlock)[VGOFF_(m_cs)] = VG_(threads)[tid].m_cs;
-   VG_(baseBlock)[VGOFF_(m_ss)] = VG_(threads)[tid].m_ss;
-   VG_(baseBlock)[VGOFF_(m_ds)] = VG_(threads)[tid].m_ds;
-   VG_(baseBlock)[VGOFF_(m_es)] = VG_(threads)[tid].m_es;
-   VG_(baseBlock)[VGOFF_(m_fs)] = VG_(threads)[tid].m_fs;
-   VG_(baseBlock)[VGOFF_(m_gs)] = VG_(threads)[tid].m_gs;
-
-   VG_(baseBlock)[VGOFF_(m_eax)] = VG_(threads)[tid].m_eax;
-   VG_(baseBlock)[VGOFF_(m_ebx)] = VG_(threads)[tid].m_ebx;
-   VG_(baseBlock)[VGOFF_(m_ecx)] = VG_(threads)[tid].m_ecx;
-   VG_(baseBlock)[VGOFF_(m_edx)] = VG_(threads)[tid].m_edx;
-   VG_(baseBlock)[VGOFF_(m_esi)] = VG_(threads)[tid].m_esi;
-   VG_(baseBlock)[VGOFF_(m_edi)] = VG_(threads)[tid].m_edi;
-   VG_(baseBlock)[VGOFF_(m_ebp)] = VG_(threads)[tid].m_ebp;
-   VG_(baseBlock)[VGOFF_(m_esp)] = VG_(threads)[tid].m_esp;
-   VG_(baseBlock)[VGOFF_(m_eflags)] 
-      = VG_(threads)[tid].m_eflags & ~EFlagD;
-   VG_(baseBlock)[VGOFF_(m_dflag)] 
-      = extractDflag(VG_(threads)[tid].m_eflags);
-   VG_(baseBlock)[VGOFF_(m_eip)] = VG_(threads)[tid].m_eip;
-
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_ssestate) + i] 
-         = VG_(threads)[tid].m_sse[i];
-
-   if (VG_(needs).shadow_regs) {
-      VG_(baseBlock)[VGOFF_(sh_eax)] = VG_(threads)[tid].sh_eax;
-      VG_(baseBlock)[VGOFF_(sh_ebx)] = VG_(threads)[tid].sh_ebx;
-      VG_(baseBlock)[VGOFF_(sh_ecx)] = VG_(threads)[tid].sh_ecx;
-      VG_(baseBlock)[VGOFF_(sh_edx)] = VG_(threads)[tid].sh_edx;
-      VG_(baseBlock)[VGOFF_(sh_esi)] = VG_(threads)[tid].sh_esi;
-      VG_(baseBlock)[VGOFF_(sh_edi)] = VG_(threads)[tid].sh_edi;
-      VG_(baseBlock)[VGOFF_(sh_ebp)] = VG_(threads)[tid].sh_ebp;
-      VG_(baseBlock)[VGOFF_(sh_esp)] = VG_(threads)[tid].sh_esp;
-      VG_(baseBlock)[VGOFF_(sh_eflags)] = VG_(threads)[tid].sh_eflags;
-   } else {
-      /* Fields shouldn't be used -- check their values haven't changed. */
-      vg_assert(
-         VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_eax &&
-         VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_ebx &&
-         VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_ecx &&
-         VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_edx &&
-         VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_esi &&
-         VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_edi &&
-         VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_ebp &&
-         VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_esp &&
-         VG_UNUSED_SHADOW_REG_VALUE == VG_(threads)[tid].sh_eflags);
-   }
+   VGA_(load_state)(&VG_(threads)[tid].arch, tid);
 
    vg_tid_currently_in_baseBlock = tid;
    vg_tid_last_in_baseBlock = tid;
@@ -360,108 +293,9 @@ static void load_thread_state ( ThreadId tid )
 */
 static void save_thread_state ( ThreadId tid )
 {
-   Int i;
-   const UInt junk = 0xDEADBEEF;
-
    vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
 
-
-   /* We don't copy out the LDT entry, because it can never be changed
-      by the normal actions of the thread, only by the modify_ldt
-      syscall, in which case we will correctly be updating
-      VG_(threads)[tid].ldt.  This printf happens iff the following
-      assertion fails. */
-   if ((void*)VG_(threads)[tid].ldt != (void*)VG_(baseBlock)[VGOFF_(ldt)])
-      VG_(printf)("VG_(threads)[%d].ldt=%p  VG_(baseBlock)[VGOFF_(ldt)]=%p\n",
-		  tid, (void*)VG_(threads)[tid].ldt, 
-                       (void*)VG_(baseBlock)[VGOFF_(ldt)]);
-
-   vg_assert((void*)VG_(threads)[tid].ldt 
-             == (void*)VG_(baseBlock)[VGOFF_(ldt)]);
-
-   /* We don't copy out the TLS entry, because it can never be changed
-      by the normal actions of the thread, only by the set_thread_area
-      syscall, in which case we will correctly be updating
-      VG_(threads)[tid].tls.  This printf happens iff the following
-      assertion fails. */
-   if ((void*)VG_(threads)[tid].tls != (void*)VG_(baseBlock)[VGOFF_(tls_ptr)])
-      VG_(printf)("VG_(threads)[%d].tls=%p  VG_(baseBlock)[VGOFF_(tls_ptr)]=%p\n",
-		  tid, (void*)VG_(threads)[tid].tls, 
-                       (void*)VG_(baseBlock)[VGOFF_(tls_ptr)]);
-
-   vg_assert((void*)VG_(threads)[tid].tls 
-             == (void*)VG_(baseBlock)[VGOFF_(tls_ptr)]);
-
-   VG_(threads)[tid].m_cs = VG_(baseBlock)[VGOFF_(m_cs)];
-   VG_(threads)[tid].m_ss = VG_(baseBlock)[VGOFF_(m_ss)];
-   VG_(threads)[tid].m_ds = VG_(baseBlock)[VGOFF_(m_ds)];
-   VG_(threads)[tid].m_es = VG_(baseBlock)[VGOFF_(m_es)];
-   VG_(threads)[tid].m_fs = VG_(baseBlock)[VGOFF_(m_fs)];
-   VG_(threads)[tid].m_gs = VG_(baseBlock)[VGOFF_(m_gs)];
-
-   VG_(threads)[tid].m_eax = VG_(baseBlock)[VGOFF_(m_eax)];
-   VG_(threads)[tid].m_ebx = VG_(baseBlock)[VGOFF_(m_ebx)];
-   VG_(threads)[tid].m_ecx = VG_(baseBlock)[VGOFF_(m_ecx)];
-   VG_(threads)[tid].m_edx = VG_(baseBlock)[VGOFF_(m_edx)];
-   VG_(threads)[tid].m_esi = VG_(baseBlock)[VGOFF_(m_esi)];
-   VG_(threads)[tid].m_edi = VG_(baseBlock)[VGOFF_(m_edi)];
-   VG_(threads)[tid].m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
-   VG_(threads)[tid].m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   VG_(threads)[tid].m_eflags 
-      = insertDflag(VG_(baseBlock)[VGOFF_(m_eflags)],
-                    VG_(baseBlock)[VGOFF_(m_dflag)]);
-   VG_(threads)[tid].m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
-
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      VG_(threads)[tid].m_sse[i] 
-         = VG_(baseBlock)[VGOFF_(m_ssestate) + i];
-
-   if (VG_(needs).shadow_regs) {
-      VG_(threads)[tid].sh_eax = VG_(baseBlock)[VGOFF_(sh_eax)];
-      VG_(threads)[tid].sh_ebx = VG_(baseBlock)[VGOFF_(sh_ebx)];
-      VG_(threads)[tid].sh_ecx = VG_(baseBlock)[VGOFF_(sh_ecx)];
-      VG_(threads)[tid].sh_edx = VG_(baseBlock)[VGOFF_(sh_edx)];
-      VG_(threads)[tid].sh_esi = VG_(baseBlock)[VGOFF_(sh_esi)];
-      VG_(threads)[tid].sh_edi = VG_(baseBlock)[VGOFF_(sh_edi)];
-      VG_(threads)[tid].sh_ebp = VG_(baseBlock)[VGOFF_(sh_ebp)];
-      VG_(threads)[tid].sh_esp = VG_(baseBlock)[VGOFF_(sh_esp)];
-      VG_(threads)[tid].sh_eflags = VG_(baseBlock)[VGOFF_(sh_eflags)];
-   } else {
-      /* Fill with recognisable junk */
-      VG_(threads)[tid].sh_eax =
-      VG_(threads)[tid].sh_ebx =
-      VG_(threads)[tid].sh_ecx =
-      VG_(threads)[tid].sh_edx =
-      VG_(threads)[tid].sh_esi =
-      VG_(threads)[tid].sh_edi =
-      VG_(threads)[tid].sh_ebp =
-      VG_(threads)[tid].sh_esp = 
-      VG_(threads)[tid].sh_eflags = VG_UNUSED_SHADOW_REG_VALUE;
-   }
-
-   /* Fill it up with junk. */
-   VG_(baseBlock)[VGOFF_(ldt)] = junk;
-   VG_(baseBlock)[VGOFF_(tls_ptr)] = junk;
-   VG_(baseBlock)[VGOFF_(m_cs)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ss)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ds)] = junk;
-   VG_(baseBlock)[VGOFF_(m_es)] = junk;
-   VG_(baseBlock)[VGOFF_(m_fs)] = junk;
-   VG_(baseBlock)[VGOFF_(m_gs)] = junk;
-
-   VG_(baseBlock)[VGOFF_(m_eax)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ebx)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ecx)] = junk;
-   VG_(baseBlock)[VGOFF_(m_edx)] = junk;
-   VG_(baseBlock)[VGOFF_(m_esi)] = junk;
-   VG_(baseBlock)[VGOFF_(m_edi)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ebp)] = junk;
-   VG_(baseBlock)[VGOFF_(m_esp)] = junk;
-   VG_(baseBlock)[VGOFF_(m_eflags)] = junk;
-   VG_(baseBlock)[VGOFF_(m_eip)] = junk;
-
-   for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      VG_(baseBlock)[VGOFF_(m_ssestate) + i] = junk;
+   VGA_(save_state)(&VG_(threads)[tid].arch, tid);
 
    vg_tid_currently_in_baseBlock = VG_INVALID_THREADID;
 }
@@ -521,8 +355,8 @@ static
 void mostly_clear_thread_record ( ThreadId tid )
 {
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
-   VG_(threads)[tid].ldt                  = NULL;
-   VG_(clear_TLS_for_thread)(VG_(threads)[tid].tls);
+   VG_(threads)[tid].arch.ldt                  = NULL;
+   VG_(clear_TLS_for_thread)(VG_(threads)[tid].arch.tls);
    VG_(threads)[tid].tid                  = tid;
    VG_(threads)[tid].status               = VgTs_Empty;
    VG_(threads)[tid].associated_mx        = NULL;
@@ -587,7 +421,7 @@ void VG_(scheduler_init) ( void )
    /* Copy VG_(baseBlock) state to tid_main's slot. */
    vg_tid_currently_in_baseBlock = tid_main;
    vg_tid_last_in_baseBlock = tid_main;
-   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)VG_(threads)[tid_main].tls;
+   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)VG_(threads)[tid_main].arch.tls;
    save_thread_state ( tid_main );
 
    VG_(threads)[tid_main].stack_highest_word 
@@ -632,12 +466,12 @@ void handle_signal_return ( ThreadId tid )
       return;
 
    if (VG_(threads)[tid].status == VgTs_Sleeping
-       && VG_(threads)[tid].m_eax == __NR_nanosleep) {
+       && VG_(threads)[tid].arch.m_eax == __NR_nanosleep) {
       /* We interrupted a nanosleep().  The right thing to do is to
          write the unused time to nanosleep's second param, but that's
          too much effort ... we just say that 1 nanosecond was not
          used, and return EINTR. */
-      rem = (struct vki_timespec *)VG_(threads)[tid].m_ecx; /* arg2 */
+      rem = (struct vki_timespec *)VG_(threads)[tid].arch.m_ecx; /* arg2 */
       if (rem != NULL) {
          rem->tv_sec = 0;
          rem->tv_nsec = 1;
@@ -691,7 +525,7 @@ void sched_do_syscall ( ThreadId tid )
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
 
-   syscall_no = VG_(threads)[tid].m_eax; /* syscall number */
+   syscall_no = VG_(threads)[tid].arch.m_eax; /* syscall number */
 
    /* Special-case nanosleep because we can.  But should we?
 
@@ -701,7 +535,7 @@ void sched_do_syscall ( ThreadId tid )
    if (0 && syscall_no == __NR_nanosleep) {
       UInt t_now, t_awaken;
       struct vki_timespec* req;
-      req = (struct vki_timespec*)VG_(threads)[tid].m_ebx; /* arg1 */
+      req = (struct vki_timespec*)VG_(threads)[tid].arch.m_ebx; /* arg1 */
 
       if (req->tv_sec < 0 || req->tv_nsec < 0 || req->tv_nsec >= 1000000000) {
 	 SET_SYSCALL_RETVAL(tid, -VKI_EINVAL);
@@ -1002,18 +836,18 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 #        if 0
          if (VG_(bbs_done) > 31700000 + 0) {
             dispatch_ctr_SAVED = VG_(dispatch_ctr) = 2;
-            VG_(translate)(&VG_(threads)[tid], VG_(threads)[tid].m_eip,
+            VG_(translate)(&VG_(threads)[tid], VG_(threads)[tid].arch.m_eip,
                            /*debugging*/True);
          }
-         vg_assert(VG_(threads)[tid].m_eip != 0);
+         vg_assert(VG_(threads)[tid].arch.m_eip != 0);
 #        endif
 
          trc = run_thread_for_a_while ( tid );
 
 #        if 0
-         if (0 == VG_(threads)[tid].m_eip) {
+         if (0 == VG_(threads)[tid].arch.m_eip) {
             VG_(printf)("tid = %d,  dc = %llu\n", tid, VG_(bbs_done));
-            vg_assert(0 != VG_(threads)[tid].m_eip);
+            vg_assert(0 != VG_(threads)[tid].arch.m_eip);
          }
 #        endif
 
@@ -1025,11 +859,11 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 
             /* Trivial event.  Miss in the fast-cache.  Do a full
                lookup for it. */
-            trans_addr = VG_(search_transtab) ( VG_(threads)[tid].m_eip );
+            trans_addr = VG_(search_transtab) ( VG_(threads)[tid].arch.m_eip );
             if (trans_addr == (Addr)0) {
                /* Not found; we need to request a translation. */
-               VG_(translate)( tid, VG_(threads)[tid].m_eip, /*debug*/False ); 
-               trans_addr = VG_(search_transtab) ( VG_(threads)[tid].m_eip ); 
+               VG_(translate)( tid, VG_(threads)[tid].arch.m_eip, /*debug*/False ); 
+               trans_addr = VG_(search_transtab) ( VG_(threads)[tid].arch.m_eip ); 
                if (trans_addr == (Addr)0)
                   VG_(core_panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
             }
@@ -1037,7 +871,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          }
 
          if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
-            UInt reqno = *(UInt*)(VG_(threads)[tid].m_eax);
+            UInt reqno = *(UInt*)(VG_(threads)[tid].arch.m_eax);
             /* VG_(printf)("request 0x%x\n", reqno); */
 
             /* Are we really absolutely totally quitting? */
@@ -1067,7 +901,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                to exit. */
 #           if 0
             { UInt* esp; Int i;
-              esp=(UInt*)VG_(threads)[tid].m_esp;
+              esp=(UInt*)VG_(threads)[tid].arch.m_esp;
               VG_(printf)("\nBEFORE\n");
               for (i = 10; i >= -10; i--)
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
@@ -1085,12 +919,12 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                __libc_freeres does some invalid frees which crash
                the unprotected malloc/free system. */
 
-            if (VG_(threads)[tid].m_eax == __NR_exit
-                || VG_(threads)[tid].m_eax == __NR_exit_group
+            if (VG_(threads)[tid].arch.m_eax == __NR_exit
+                || VG_(threads)[tid].arch.m_eax == __NR_exit_group
                ) {
 
                /* If __NR_exit, remember the supplied argument. */
-               *exitcode = VG_(threads)[tid].m_ebx; /* syscall arg1 */
+               *exitcode = VG_(threads)[tid].arch.m_ebx; /* syscall arg1 */
 
                /* Only run __libc_freeres if the tool says it's ok and
                   it hasn't been overridden with --run-libc-freeres=no
@@ -1105,7 +939,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                         "Caught __NR_exit; running __libc_freeres()");
                   }
                   VG_(nuke_all_threads_except) ( tid );
-                  VG_(threads)[tid].m_eip = (UInt)__libc_freeres_wrapper;
+                  VG_(threads)[tid].arch.m_eip = (UInt)__libc_freeres_wrapper;
                   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
                   goto stage1; /* party on, dudes (but not for much longer :) */
 
@@ -1122,13 +956,13 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             }
 
             /* We've dealt with __NR_exit at this point. */
-	    vg_assert(VG_(threads)[tid].m_eax != __NR_exit && 
-		      VG_(threads)[tid].m_eax != __NR_exit_group);
+	    vg_assert(VG_(threads)[tid].arch.m_eax != __NR_exit && 
+		      VG_(threads)[tid].arch.m_eax != __NR_exit_group);
 
             /* Trap syscalls to __NR_sched_yield and just have this
                thread yield instead.  Not essential, just an
                optimisation. */
-	    if (VG_(threads)[tid].m_eax == __NR_sched_yield) {
+	    if (VG_(threads)[tid].arch.m_eax == __NR_sched_yield) {
                SET_SYSCALL_RETVAL(tid, 0); /* syscall returns with success */
                goto stage1; /* find a new thread to run */
 	    }
@@ -1137,7 +971,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 
 #           if 0
             { UInt* esp; Int i;
-              esp=(UInt*)VG_(threads)[tid].m_esp;
+              esp=(UInt*)VG_(threads)[tid].arch.m_esp;
               VG_(printf)("AFTER\n");
               for (i = 10; i >= -10; i--)
                  VG_(printf)("%2d  %p  =  0x%x\n", i, &esp[i], esp[i]);
@@ -1319,19 +1153,19 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
    vg_assert(VG_(threads)[tid].cancel_pend != NULL);
 
    /* Push a suitable arg, and mark it as readable. */
-   SET_PTHREQ_ESP(tid, VG_(threads)[tid].m_esp - 4);
-   * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)PTHREAD_CANCELED;
-   VG_TRACK( post_mem_write, VG_(threads)[tid].m_esp, sizeof(void*) );
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.m_esp - 4);
+   * (UInt*)(VG_(threads)[tid].arch.m_esp) = (UInt)PTHREAD_CANCELED;
+   VG_TRACK( post_mem_write, VG_(threads)[tid].arch.m_esp, sizeof(void*) );
 
    /* Push a bogus return address.  It will not return, but we still
       need to have it so that the arg is at the correct stack offset.
       Don't mark as readable; any attempt to read this is and internal
       valgrind bug since thread_exit_wrapper should not return. */
-   SET_PTHREQ_ESP(tid, VG_(threads)[tid].m_esp - 4);
-   * (UInt*)(VG_(threads)[tid].m_esp) = 0xBEADDEEF;
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.m_esp - 4);
+   * (UInt*)(VG_(threads)[tid].arch.m_esp) = 0xBEADDEEF;
 
    /* .cancel_pend will hold &thread_exit_wrapper */
-   VG_(threads)[tid].m_eip = (UInt)VG_(threads)[tid].cancel_pend;
+   VG_(threads)[tid].arch.m_eip = (UInt)VG_(threads)[tid].cancel_pend;
 
    VG_(proxy_abort_syscall)(tid);
 
@@ -1413,11 +1247,11 @@ void cleanup_after_thread_exited ( ThreadId tid, Bool forcekill )
                             VG_(threads)[tid].stack_size );
 
    /* Deallocate its LDT, if it ever had one. */
-   VG_(deallocate_LDT_for_thread)( VG_(threads)[tid].ldt );
-   VG_(threads)[tid].ldt = NULL;
+   VG_(deallocate_LDT_for_thread)( VG_(threads)[tid].arch.ldt );
+   VG_(threads)[tid].arch.ldt = NULL;
 
    /* Clear its TLS array. */
-   VG_(clear_TLS_for_thread)( VG_(threads)[tid].tls );
+   VG_(clear_TLS_for_thread)( VG_(threads)[tid].arch.tls );
 
    /* Not interested in the timeout anymore */
    VG_(threads)[tid].awaken_at = 0xFFFFFFFF;
@@ -1919,19 +1753,19 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    load_thread_state(parent_tid);
 
    /* We inherit our parent's LDT. */
-   if (VG_(threads)[parent_tid].ldt == NULL) {
+   if (VG_(threads)[parent_tid].arch.ldt == NULL) {
       /* We hope this is the common case. */
       VG_(baseBlock)[VGOFF_(ldt)] = 0;
    } else {
       /* No luck .. we have to take a copy of the parent's. */
-      VG_(threads)[tid].ldt
-        = VG_(allocate_LDT_for_thread)( VG_(threads)[parent_tid].ldt );
-      VG_(baseBlock)[VGOFF_(ldt)] = (UInt)VG_(threads)[tid].ldt;
+      VG_(threads)[tid].arch.ldt
+        = VG_(allocate_LDT_for_thread)( VG_(threads)[parent_tid].arch.ldt );
+      VG_(baseBlock)[VGOFF_(ldt)] = (UInt)VG_(threads)[tid].arch.ldt;
    }
 
    /* Initialise the thread's TLS array */
-   VG_(clear_TLS_for_thread)( VG_(threads)[tid].tls );
-   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)VG_(threads)[tid].tls;
+   VG_(clear_TLS_for_thread)( VG_(threads)[tid].arch.tls );
+   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)VG_(threads)[tid].arch.tls;
 
    save_thread_state(tid);
    vg_tid_last_in_baseBlock = tid;
@@ -1980,25 +1814,25 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    VG_TRACK ( die_mem_stack, VG_(threads)[tid].stack_base, 
                              VG_(threads)[tid].stack_size
                              - VG_AR_CLIENT_STACKBASE_REDZONE_SZB);
-   VG_TRACK ( ban_mem_stack, VG_(threads)[tid].m_esp, 
+   VG_TRACK ( ban_mem_stack, VG_(threads)[tid].arch.m_esp, 
                              VG_AR_CLIENT_STACKBASE_REDZONE_SZB );
    
    /* push two args */
-   SET_PTHREQ_ESP(tid, VG_(threads)[tid].m_esp - 8);
+   SET_PTHREQ_ESP(tid, VG_(threads)[tid].arch.m_esp - 8);
 
-   VG_TRACK ( new_mem_stack, (Addr)VG_(threads)[tid].m_esp, 2 * 4 );
+   VG_TRACK ( new_mem_stack, (Addr)VG_(threads)[tid].arch.m_esp, 2 * 4 );
    VG_TRACK ( pre_mem_write, Vg_CorePThread, tid, "new thread: stack",
-                             (Addr)VG_(threads)[tid].m_esp, 2 * 4 );
+                             (Addr)VG_(threads)[tid].arch.m_esp, 2 * 4 );
  
    /* push arg and (bogus) return address */
-   * (UInt*)(VG_(threads)[tid].m_esp+4) = (UInt)arg;
-   * (UInt*)(VG_(threads)[tid].m_esp) 
+   * (UInt*)(VG_(threads)[tid].arch.m_esp+4) = (UInt)arg;
+   * (UInt*)(VG_(threads)[tid].arch.m_esp) 
       = (UInt)&do__apply_in_new_thread_bogusRA;
 
-   VG_TRACK ( post_mem_write, VG_(threads)[tid].m_esp, 2 * 4 );
+   VG_TRACK ( post_mem_write, VG_(threads)[tid].arch.m_esp, 2 * 4 );
 
    /* this is where we start */
-   VG_(threads)[tid].m_eip = (UInt)fn;
+   VG_(threads)[tid].arch.m_eip = (UInt)fn;
 
    if (VG_(clo_trace_sched)) {
       VG_(sprintf)(msg_buf, "new thread, created by %d", parent_tid );
@@ -3001,7 +2835,7 @@ void VG_(intercept_libc_freeres_wrapper)(Addr addr)
 static
 void do_client_request ( ThreadId tid )
 {
-   UInt* arg    = (UInt*)(VG_(threads)[tid].m_eax);
+   UInt* arg    = (UInt*)(VG_(threads)[tid].arch.m_eax);
    UInt  req_no = arg[0];
 
    if (0)
@@ -3430,7 +3264,7 @@ void scheduler_sanity ( void )
       if (VG_(threads)[i].status != VgTs_Empty) {
          Int
          stack_used = (Addr)VG_(threads)[i].stack_highest_word 
-                      - (Addr)VG_(threads)[i].m_esp;
+                      - (Addr)VG_(threads)[i].arch.m_esp;
          Int
          stack_avail = VG_(threads)[i].stack_size
                        - VG_AR_CLIENT_STACKBASE_REDZONE_SZB

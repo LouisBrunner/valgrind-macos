@@ -31,7 +31,8 @@
 #ifndef __CORE_ASM_H
 #define __CORE_ASM_H
 
-#include "tool_asm.h"
+#include "tool_asm.h"            // tool asm stuff
+#include "core_arch_asm.h"       // arch-specific asm stuff
 
 /* This file is included in all Valgrind source files, including
    assembly ones. */
@@ -52,12 +53,6 @@
 #define VG_TRC_INNER_FASTMISS     31 /* TRC only; means fast-cache miss. */
 #define VG_TRC_INNER_COUNTERZERO  29 /* TRC only; means bb ctr == 0 */
 #define VG_TRC_UNRESUMABLE_SIGNAL 37 /* TRC only; got sigsegv/sigbus */
-
-/* size of call instruction put into generated code at jump sites */
-#define VG_PATCHME_CALLSZ	5
-
-/* size of jmp instruction which overwrites the call */
-#define VG_PATCHME_JMPSZ	5
 
 /* maximum number of normal jumps which can appear in a basic block */
 #define VG_MAX_JUMPS		2

@@ -489,9 +489,9 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
    Addr          m_esp;
 
    vg_assert(VG_(is_valid_tid)(tid));
-   ss    = (vki_kstack_t*)(VG_(threads)[tid].m_ebx);
-   oss   = (vki_kstack_t*)(VG_(threads)[tid].m_ecx);
-   m_esp = VG_(threads)[tid].m_esp;
+   ss    = (vki_kstack_t*)(VG_(threads)[tid].arch.m_ebx);
+   oss   = (vki_kstack_t*)(VG_(threads)[tid].arch.m_ecx);
+   m_esp = VG_(threads)[tid].arch.m_esp;
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
@@ -506,7 +506,7 @@ void VG_(do__NR_sigaltstack) ( ThreadId tid )
    }
 
    if (ss != NULL) {
-      if (on_sig_stack(tid, VG_(threads)[tid].m_esp)) {
+      if (on_sig_stack(tid, VG_(threads)[tid].arch.m_esp)) {
          SET_SYSCALL_RETVAL(tid, -VKI_EPERM);
          return;
       }
@@ -542,9 +542,9 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    vg_assert(is_correct_sigmask());
 
    vg_assert(VG_(is_valid_tid)(tid));
-   signo     = VG_(threads)[tid].m_ebx; /* int sigNo */
-   new_act   = (vki_ksigaction*)(VG_(threads)[tid].m_ecx);
-   old_act   = (vki_ksigaction*)(VG_(threads)[tid].m_edx);
+   signo     = VG_(threads)[tid].arch.m_ebx; /* int sigNo */
+   new_act   = (vki_ksigaction*)(VG_(threads)[tid].arch.m_ecx);
+   old_act   = (vki_ksigaction*)(VG_(threads)[tid].arch.m_edx);
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugExtraMsg, 
@@ -921,7 +921,7 @@ static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si,
    uc->uc_sigmask = *set;
    uc->uc_stack = tst->altstack;
 
-#define SC(reg)	sc->reg = tst->m_##reg
+#define SC(reg)	sc->reg = tst->arch.m_##reg
    SC(gs);
    SC(fs);
    SC(es);
@@ -973,7 +973,7 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
        && /* there is a defined and enabled alt stack, which we're not
              already using.  Logic from get_sigframe in
              arch/i386/kernel/signal.c. */
-          sas_ss_flags(tid, tst->m_esp) == 0
+          sas_ss_flags(tid, tst->arch.m_esp) == 0
       ) {
       esp_top_of_frame 
          = (Addr)(tst->altstack.ss_sp) + tst->altstack.ss_size;
@@ -986,7 +986,7 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/True );
       
    } else {
-      esp_top_of_frame = tst->m_esp;
+      esp_top_of_frame = tst->arch.m_esp;
 
       /* Signal delivery to tools */
       VG_TRACK( pre_deliver_signal, tid, sigNo, /*alt_stack*/False );
@@ -1025,7 +1025,7 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
 		(Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
       VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_ksiginfo_t));
       if (sigNo == VKI_SIGFPE) {
-         frame->sigInfo._sifields._sigfault._addr = (void *)tst->m_eip;
+         frame->sigInfo._sifields._sigfault._addr = (void *)tst->arch.m_eip;
       }
       VG_TRACK( post_mem_write, (Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
 
@@ -1053,29 +1053,29 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
    frame->magicPI    = 0x31415927;
 
    for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      frame->m_sse[i] = tst->m_sse[i];
+      frame->m_sse[i] = tst->arch.m_sse[i];
 
-   frame->m_eax      = tst->m_eax;
-   frame->m_ecx      = tst->m_ecx;
-   frame->m_edx      = tst->m_edx;
-   frame->m_ebx      = tst->m_ebx;
-   frame->m_ebp      = tst->m_ebp;
-   frame->m_esp      = tst->m_esp;
-   frame->m_esi      = tst->m_esi;
-   frame->m_edi      = tst->m_edi;
-   frame->m_eflags   = tst->m_eflags;
-   frame->m_eip      = tst->m_eip;
+   frame->m_eax      = tst->arch.m_eax;
+   frame->m_ecx      = tst->arch.m_ecx;
+   frame->m_edx      = tst->arch.m_edx;
+   frame->m_ebx      = tst->arch.m_ebx;
+   frame->m_ebp      = tst->arch.m_ebp;
+   frame->m_esp      = tst->arch.m_esp;
+   frame->m_esi      = tst->arch.m_esi;
+   frame->m_edi      = tst->arch.m_edi;
+   frame->m_eflags   = tst->arch.m_eflags;
+   frame->m_eip      = tst->arch.m_eip;
 
    if (VG_(needs).shadow_regs) {
-      frame->sh_eax     = tst->sh_eax;
-      frame->sh_ecx     = tst->sh_ecx;
-      frame->sh_edx     = tst->sh_edx;
-      frame->sh_ebx     = tst->sh_ebx;
-      frame->sh_ebp     = tst->sh_ebp;
-      frame->sh_esp     = tst->sh_esp;
-      frame->sh_esi     = tst->sh_esi;
-      frame->sh_edi     = tst->sh_edi;
-      frame->sh_eflags  = tst->sh_eflags;
+      frame->sh_eax     = tst->arch.sh_eax;
+      frame->sh_ecx     = tst->arch.sh_ecx;
+      frame->sh_edx     = tst->arch.sh_edx;
+      frame->sh_ebx     = tst->arch.sh_ebx;
+      frame->sh_ebp     = tst->arch.sh_ebp;
+      frame->sh_esp     = tst->arch.sh_esp;
+      frame->sh_esi     = tst->arch.sh_esi;
+      frame->sh_edi     = tst->arch.sh_edi;
+      frame->sh_eflags  = tst->arch.sh_eflags;
    }
 
    frame->mask = tst->sig_mask;
@@ -1092,16 +1092,16 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
    /* Ensure 'tid' and 'tst' correspond */
    vg_assert(& VG_(threads)[tid] == tst);
    /* Set the thread so it will next run the handler. */
-   /* tst->m_esp  = esp; */
+   /* tst->arch.m_esp  = esp; */
    SET_SIGNAL_ESP(tid, esp);
 
-   tst->m_eip  = (Addr)vg_scss.scss_per_sig[sigNo].scss_handler;
+   tst->arch.m_eip  = (Addr)vg_scss.scss_per_sig[sigNo].scss_handler;
    /* This thread needs to be marked runnable, but we leave that the
       caller to do. */
 
    if (0)
       VG_(printf)("pushed signal frame; %%ESP now = %p, next %%EBP = %p, status=%d\n", 
-		  esp, tst->m_eip, tst->status);
+		  esp, tst->arch.m_eip, tst->status);
 }
 
 /* Clear the signal frame created by vg_push_signal_frame, restore the
@@ -1119,7 +1119,7 @@ Int vg_pop_signal_frame ( ThreadId tid )
    tst = & VG_(threads)[tid];
 
    /* Correctly reestablish the frame base address. */
-   esp   = tst->m_esp;
+   esp   = tst->arch.m_esp;
    frame = (VgSigFrame*)
               (esp -4 /* because the handler's RET pops the RA */
                   +20 /* because signalreturn_bogusRA pushes 5 words */);
@@ -1135,29 +1135,29 @@ Int vg_pop_signal_frame ( ThreadId tid )
 
    /* restore machine state */
    for (i = 0; i < VG_SIZE_OF_SSESTATE_W; i++)
-      tst->m_sse[i] = frame->m_sse[i];
+      tst->arch.m_sse[i] = frame->m_sse[i];
 
-   tst->m_eax     = frame->m_eax;
-   tst->m_ecx     = frame->m_ecx;
-   tst->m_edx     = frame->m_edx;
-   tst->m_ebx     = frame->m_ebx;
-   tst->m_ebp     = frame->m_ebp; 
-   tst->m_esp     = frame->m_esp;
-   tst->m_esi     = frame->m_esi;
-   tst->m_edi     = frame->m_edi;
-   tst->m_eflags  = frame->m_eflags;
-   tst->m_eip     = frame->m_eip;
+   tst->arch.m_eax     = frame->m_eax;
+   tst->arch.m_ecx     = frame->m_ecx;
+   tst->arch.m_edx     = frame->m_edx;
+   tst->arch.m_ebx     = frame->m_ebx;
+   tst->arch.m_ebp     = frame->m_ebp; 
+   tst->arch.m_esp     = frame->m_esp;
+   tst->arch.m_esi     = frame->m_esi;
+   tst->arch.m_edi     = frame->m_edi;
+   tst->arch.m_eflags  = frame->m_eflags;
+   tst->arch.m_eip     = frame->m_eip;
 
    if (VG_(needs).shadow_regs) {
-      tst->sh_eax     = frame->sh_eax;
-      tst->sh_ecx     = frame->sh_ecx;
-      tst->sh_edx     = frame->sh_edx;
-      tst->sh_ebx     = frame->sh_ebx;
-      tst->sh_ebp     = frame->sh_ebp; 
-      tst->sh_esp     = frame->sh_esp;
-      tst->sh_esi     = frame->sh_esi;
-      tst->sh_edi     = frame->sh_edi;
-      tst->sh_eflags  = frame->sh_eflags;
+      tst->arch.sh_eax     = frame->sh_eax;
+      tst->arch.sh_ecx     = frame->sh_ecx;
+      tst->arch.sh_edx     = frame->sh_edx;
+      tst->arch.sh_ebx     = frame->sh_ebx;
+      tst->arch.sh_ebp     = frame->sh_ebp; 
+      tst->arch.sh_esp     = frame->sh_esp;
+      tst->arch.sh_esi     = frame->sh_esi;
+      tst->arch.sh_edi     = frame->sh_edi;
+      tst->arch.sh_eflags  = frame->sh_eflags;
    }
    
    /* don't use the copy exposed to the handler; it might have changed
@@ -1473,24 +1473,24 @@ static void fill_prstatus(const ThreadState *tst, struct elf_prstatus *prs, cons
       regs->fs = VG_(baseBlock)[VGOFF_(m_fs)];
       regs->gs = VG_(baseBlock)[VGOFF_(m_gs)];
    } else {
-      regs->eflags = tst->m_eflags;
-      regs->esp = tst->m_esp;
-      regs->eip = tst->m_eip;
+      regs->eflags = tst->arch.m_eflags;
+      regs->esp = tst->arch.m_esp;
+      regs->eip = tst->arch.m_eip;
 
-      regs->ebx = tst->m_ebx;
-      regs->ecx = tst->m_ecx;
-      regs->edx = tst->m_edx;
-      regs->esi = tst->m_esi;
-      regs->edi = tst->m_edi;
-      regs->ebp = tst->m_ebp;
-      regs->eax = tst->m_eax;
+      regs->ebx = tst->arch.m_ebx;
+      regs->ecx = tst->arch.m_ecx;
+      regs->edx = tst->arch.m_edx;
+      regs->esi = tst->arch.m_esi;
+      regs->edi = tst->arch.m_edi;
+      regs->ebp = tst->arch.m_ebp;
+      regs->eax = tst->arch.m_eax;
 
-      regs->cs = tst->m_cs;
-      regs->ds = tst->m_ds;
-      regs->ss = tst->m_ss;
-      regs->es = tst->m_es;
-      regs->fs = tst->m_fs;
-      regs->gs = tst->m_gs;
+      regs->cs = tst->arch.m_cs;
+      regs->ds = tst->arch.m_ds;
+      regs->ss = tst->arch.m_ss;
+      regs->es = tst->arch.m_es;
+      regs->fs = tst->arch.m_fs;
+      regs->gs = tst->arch.m_gs;
    }
 }
 
@@ -1501,7 +1501,7 @@ static void fill_fpu(const ThreadState *tst, elf_fpregset_t *fpu)
    if (VG_(is_running_thread)(tst->tid)) {
       from = (const Char *)&VG_(baseBlock)[VGOFF_(m_ssestate)];
    } else {
-      from = (const Char *)&tst->m_sse;
+      from = (const Char *)&tst->arch.m_sse;
    }
 
    if (VG_(have_ssestate)) {
@@ -1527,7 +1527,7 @@ static void fill_xfpu(const ThreadState *tst, elf_fpxregset_t *xfpu)
    if (VG_(is_running_thread)(tst->tid)) 
       from = (UShort *)&VG_(baseBlock)[VGOFF_(m_ssestate)];
    else 
-      from = (UShort *)tst->m_sse;
+      from = (UShort *)tst->arch.m_sse;
 
    VG_(memcpy)(xfpu, from, sizeof(*xfpu));
 }
@@ -1867,8 +1867,8 @@ void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *info, Bool async 
 
       if (tst->status == VgTs_WaitSys) {
 	 /* blocked in a syscall; we assume it should be interrupted */
-	 if (tst->m_eax == -VKI_ERESTARTSYS)
-	    tst->m_eax = -VKI_EINTR;
+	 if (tst->arch.m_eax == -VKI_ERESTARTSYS)
+	    tst->arch.m_eax = -VKI_EINTR;
       }
 
       VG_(proxy_sigack)(tid, &tst->sig_mask);
@@ -2076,7 +2076,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
       ThreadId tid = VG_(get_current_or_recent_tid)();
       Addr fault = (Addr)info->_sifields._sigfault._addr;
       Addr esp = VG_(is_running_thread)(tid) ?
-	 VG_(baseBlock)[VGOFF_(m_esp)] : VG_(threads)[tid].m_esp;
+	 VG_(baseBlock)[VGOFF_(m_esp)] : VG_(threads)[tid].arch.m_esp;
       Segment *seg;
 
       seg = VG_(find_segment)(fault);

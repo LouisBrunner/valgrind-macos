@@ -722,7 +722,7 @@ void mc_set_perms (Addr a, UInt len, Bool rr, Bool ww, Bool xx)
 static void mc_post_regs_write_init ( void )
 {
    UInt i;
-   for (i = R_EAX; i <= R_EDI; i++)
+   for (i = FIRST_ARCH_REG; i <= LAST_ARCH_REG; i++)
       VG_(set_shadow_archreg)( i, VGM_WORD_VALID );
    VG_(set_shadow_eflags)( VGM_EFLAGS_VALID );
 }

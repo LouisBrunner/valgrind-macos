@@ -40,6 +40,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 /usr/include/valgrind/tool_asm.h
 /usr/include/valgrind/vg_kerneliface.h
 /usr/include/valgrind/vg_skin.h
+/usr/include/valgrind/x86/tool_arch.h
 /usr/bin/valgrind
 /usr/bin/cg_annotate
 /usr/lib/valgrind

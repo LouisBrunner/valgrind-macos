@@ -3427,14 +3427,14 @@ UInt VG_(get_thread_archreg) ( ThreadId tid, UInt arch )
    tst = & VG_(threads)[tid];
 
    switch (arch) {
-      case R_EAX: return tst->m_eax;
-      case R_ECX: return tst->m_ecx;
-      case R_EDX: return tst->m_edx;
-      case R_EBX: return tst->m_ebx;
-      case R_ESP: return tst->m_esp;
-      case R_EBP: return tst->m_ebp;
-      case R_ESI: return tst->m_esi;
-      case R_EDI: return tst->m_edi;
+      case R_EAX: return tst->arch.m_eax;
+      case R_ECX: return tst->arch.m_ecx;
+      case R_EDX: return tst->arch.m_edx;
+      case R_EBX: return tst->arch.m_ebx;
+      case R_ESP: return tst->arch.m_esp;
+      case R_EBP: return tst->arch.m_ebp;
+      case R_ESI: return tst->arch.m_esi;
+      case R_EDI: return tst->arch.m_edi;
       default:    VG_(core_panic)( "get_thread_archreg");
    }
 }
@@ -3491,14 +3491,14 @@ UInt VG_(get_thread_shadow_archreg) ( ThreadId tid, UInt archreg )
    tst = & VG_(threads)[tid];
 
    switch (archreg) {
-      case R_EAX: return tst->sh_eax;
-      case R_ECX: return tst->sh_ecx;
-      case R_EDX: return tst->sh_edx; 
-      case R_EBX: return tst->sh_ebx; 
-      case R_ESP: return tst->sh_esp; 
-      case R_EBP: return tst->sh_ebp; 
-      case R_ESI: return tst->sh_esi; 
-      case R_EDI: return tst->sh_edi; 
+      case R_EAX: return tst->arch.sh_eax;
+      case R_ECX: return tst->arch.sh_ecx;
+      case R_EDX: return tst->arch.sh_edx; 
+      case R_EBX: return tst->arch.sh_ebx; 
+      case R_ESP: return tst->arch.sh_esp; 
+      case R_EBP: return tst->arch.sh_ebp; 
+      case R_ESI: return tst->arch.sh_esi; 
+      case R_EDI: return tst->arch.sh_edi; 
       default:    VG_(core_panic)( "get_thread_shadow_archreg");
    }
 }
@@ -3511,14 +3511,14 @@ void VG_(set_thread_shadow_archreg) ( ThreadId tid, UInt archreg, UInt val )
    tst = & VG_(threads)[tid];
 
    switch (archreg) {
-      case R_EAX: tst->sh_eax = val; break;
-      case R_ECX: tst->sh_ecx = val; break;
-      case R_EDX: tst->sh_edx = val; break;
-      case R_EBX: tst->sh_ebx = val; break;
-      case R_ESP: tst->sh_esp = val; break;
-      case R_EBP: tst->sh_ebp = val; break;
-      case R_ESI: tst->sh_esi = val; break;
-      case R_EDI: tst->sh_edi = val; break;
+      case R_EAX: tst->arch.sh_eax = val; break;
+      case R_ECX: tst->arch.sh_ecx = val; break;
+      case R_EDX: tst->arch.sh_edx = val; break;
+      case R_EBX: tst->arch.sh_ebx = val; break;
+      case R_ESP: tst->arch.sh_esp = val; break;
+      case R_EBP: tst->arch.sh_ebp = val; break;
+      case R_ESI: tst->arch.sh_esi = val; break;
+      case R_EDI: tst->arch.sh_edi = val; break;
       default:    VG_(core_panic)( "set_thread_shadow_archreg");
    }
 }

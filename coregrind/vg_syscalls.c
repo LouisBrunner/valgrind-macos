@@ -1010,14 +1010,14 @@ static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid, Bool soft)
 #define POSTALIAS(new, old)	\
 	POST(new) __attribute__((alias(STR(after_##old))))
 
-#define SYSNO	(tst->m_eax)		/* in PRE(x)  */
-#define res	(tst->m_eax)	/* in POST(x) */
-#define arg1	(tst->m_ebx)
-#define arg2	(tst->m_ecx)
-#define arg3	(tst->m_edx)
-#define arg4	(tst->m_esi)
-#define arg5	(tst->m_edi)
-#define arg6	(tst->m_ebp)
+#define SYSNO	(tst->arch.m_eax)	/* in PRE(x)  */
+#define res	(tst->arch.m_eax)	/* in POST(x) */
+#define arg1	(tst->arch.m_ebx)
+#define arg2	(tst->arch.m_ecx)
+#define arg3	(tst->arch.m_edx)
+#define arg4	(tst->arch.m_esi)
+#define arg5	(tst->arch.m_edi)
+#define arg6	(tst->arch.m_ebp)
 
 PRE(exit_group)
 {
@@ -6284,7 +6284,7 @@ static void restart_syscall(ThreadId tid)
    vg_assert(tst->syscallno != -1);
 
    SYSNO = tst->syscallno;
-   tst->m_eip -= 2;		/* sizeof(int $0x80) */
+   tst->arch.m_eip -= 2;		/* sizeof(int $0x80) */
 
    /* Make sure our caller is actually sane, and we're really backing
       back over a syscall.
@@ -6292,12 +6292,12 @@ static void restart_syscall(ThreadId tid)
       int $0x80 == CD 80 
    */
    {
-      UChar *p = (UChar *)tst->m_eip;
+      UChar *p = (UChar *)tst->arch.m_eip;
       
       if (p[0] != 0xcd || p[1] != 0x80)
 	 VG_(message)(Vg_DebugMsg, 
 		      "?! restarting over syscall at %p %02x %02x\n",
-		      tst->m_eip, p[0], p[1]);
+		      tst->arch.m_eip, p[0], p[1]);
 
       vg_assert(p[0] == 0xcd && p[1] == 0x80);
    }

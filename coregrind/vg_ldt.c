@@ -320,7 +320,7 @@ Int read_ldt ( ThreadId tid, UChar* ptr, UInt bytecount )
       VG_(printf)("read_ldt: tid = %d, ptr = %p, bytecount = %d\n",
                   tid, ptr, bytecount );
 
-   ldt = (Char*)(VG_(threads)[tid].ldt);
+   ldt = (Char*)(VG_(threads)[tid].arch.ldt);
    err = 0;
    if (ldt == NULL)
       /* LDT not allocated, meaning all entries are null */
@@ -351,7 +351,7 @@ Int write_ldt ( ThreadId tid, void* ptr, UInt bytecount, Int oldmode )
                   "bytecount = %d, oldmode = %d\n",
                   tid, ptr, bytecount, oldmode );
 
-   ldt      = VG_(threads)[tid].ldt;
+   ldt      = VG_(threads)[tid].arch.ldt;
    ldt_info = (struct vki_modify_ldt_ldt_s*)ptr;
 
    error = -VKI_EINVAL;
@@ -372,7 +372,7 @@ Int write_ldt ( ThreadId tid, void* ptr, UInt bytecount, Int oldmode )
       now. */
    if (ldt == NULL) {
       ldt = VG_(allocate_LDT_for_thread)( NULL );
-      VG_(threads)[tid].ldt = ldt;
+      VG_(threads)[tid].arch.ldt = ldt;
    }
 
    /* Install the new entry ...  */
@@ -417,7 +417,7 @@ Int VG_(sys_set_thread_area) ( ThreadId tid,
 
    if (idx == -1) {
       for (idx = 0; idx < VKI_GDT_TLS_ENTRIES; idx++) {
-         VgLdtEntry* tls = VG_(threads)[tid].tls + idx;
+         VgLdtEntry* tls = VG_(threads)[tid].arch.tls + idx;
 
          if (tls->LdtEnt.Words.word1 == 0 && tls->LdtEnt.Words.word2 == 0)
             break;
@@ -431,7 +431,7 @@ Int VG_(sys_set_thread_area) ( ThreadId tid,
       idx = info->entry_number - VKI_GDT_TLS_MIN;
    }
 
-   translate_to_hw_format(info, VG_(threads)[tid].tls + idx, 0);
+   translate_to_hw_format(info, VG_(threads)[tid].arch.tls + idx, 0);
 
    VG_TRACK( pre_mem_write, Vg_CoreSysCall, tid,
              "set_thread_area(info->entry)",
@@ -453,7 +453,7 @@ Int VG_(sys_get_thread_area) ( ThreadId tid,
    if (idx < VKI_GDT_TLS_MIN || idx > VKI_GDT_TLS_MAX)
       return -VKI_EINVAL;
 
-   tls = VG_(threads)[tid].tls + idx - VKI_GDT_TLS_MIN;
+   tls = VG_(threads)[tid].arch.tls + idx - VKI_GDT_TLS_MIN;
 
    info->base_addr = ( tls->LdtEnt.Bits.BaseHi << 24 ) |
                      ( tls->LdtEnt.Bits.BaseMid << 16 ) |

@@ -85,6 +85,7 @@
 
 #include "core_asm.h"      // asm stuff
 #include "tool.h"          // tool stuff
+#include "core_arch.h"     // arch-specific stuff;  eg. x86/arch.h
 
 #include "valgrind.h"
 
@@ -574,62 +575,11 @@ struct vg_mallocfunc_info {
 };
 
 /* ---------------------------------------------------------------------
-   Constants pertaining to the simulated CPU state, VG_(baseBlock),
-   which need to go here to avoid ugly circularities.
-   ------------------------------------------------------------------ */
-
-/* How big is the saved SSE/SSE2 state?  Note that this subsumes the
-   FPU state.  On machines without SSE, we just save/restore the FPU
-   state into the first part of this area. */
-/* A general comment about SSE save/restore: It appears that the 7th
-   word (which is the MXCSR) has to be &ed with 0x0000FFBF in order
-   that restoring from it later does not cause a GP fault (which is
-   delivered as a segfault).  I guess this will have to be done
-   any time we do fxsave :-(  7th word means word offset 6 or byte
-   offset 24 from the start address of the save area.
- */
-#define VG_SIZE_OF_SSESTATE 512
-/* ... and in words ... */
-#define VG_SIZE_OF_SSESTATE_W ((VG_SIZE_OF_SSESTATE+3)/4)
-
-
-/* ---------------------------------------------------------------------
    Exports of vg_defaults.c
    ------------------------------------------------------------------ */
 
 extern Bool VG_(sk_malloc_called_by_scheduler);
 
-
-/* ---------------------------------------------------------------------
-   Exports of vg_ldt.c
-   ------------------------------------------------------------------ */
-
-/* This is the hardware-format for a segment descriptor, ie what the
-   x86 actually deals with.  It is 8 bytes long.  It's ugly.  */
-
-typedef struct _LDT_ENTRY {
-    union {
-       struct {
-          UShort      LimitLow;
-          UShort      BaseLow;
-          unsigned    BaseMid         : 8;
-          unsigned    Type            : 5;
-          unsigned    Dpl             : 2;
-          unsigned    Pres            : 1;
-          unsigned    LimitHi         : 4;
-          unsigned    Sys             : 1;
-          unsigned    Reserved_0      : 1;
-          unsigned    Default_Big     : 1;
-          unsigned    Granularity     : 1;
-          unsigned    BaseHi          : 8;
-       } Bits;
-       struct {
-          UInt word1;
-          UInt word2;
-       } Words;
-    } 
-    LdtEnt;
-} VgLdtEntry;
 
 /* Maximum number of LDT entries supported (by the x86). */
 #define VG_M_LDT_ENTRIES     8192
@@ -893,57 +843,8 @@ typedef
    /* Alternate signal stack */
    vki_kstack_t altstack;
 
-   /* Pointer to this thread's Local (Segment) Descriptor Table.
-      Starts out as NULL, indicating there is no table, and we hope to
-      keep it that way.  If the thread does __NR_modify_ldt to create
-      entries, we allocate a 8192-entry table at that point.  This is
-      a straight copy of the Linux kernel's scheme.  Don't forget to
-      deallocate this at thread exit. */
-   VgLdtEntry* ldt;
-
-   /* TLS table. This consists of a small number (currently 3) of
-      entries from the Global Descriptor Table. */
-   VgLdtEntry tls[VKI_GDT_TLS_ENTRIES];
-
-   /* Saved machine context.  Note the FPU state, %EIP and segment
-      registers are not shadowed.
-
-      Although the segment registers are 16 bits long, storage
-      management here and in VG_(baseBlock) is
-      simplified if we pretend they are 32 bits. */
-   UInt m_cs;
-   UInt m_ss;
-   UInt m_ds;
-   UInt m_es;
-   UInt m_fs;
-   UInt m_gs;
-
-   UInt m_eax;
-   UInt m_ebx;
-   UInt m_ecx;
-   UInt m_edx;
-   UInt m_esi;
-   UInt m_edi;
-   UInt m_ebp;
-   UInt m_esp;
-   UInt m_eflags;
-   UInt m_eip;
-
-   /* The SSE/FPU state.  This array does not (necessarily) have the
-      required 16-byte alignment required to get stuff in/out by
-      fxsave/fxrestore.  So we have to do it "by hand".
-   */
-   UInt m_sse[VG_SIZE_OF_SSESTATE_W];
-
-   UInt sh_eax;
-   UInt sh_ebx;
-   UInt sh_ecx;
-   UInt sh_edx;
-   UInt sh_esi;
-   UInt sh_edi;
-   UInt sh_ebp;
-   UInt sh_esp;
-   UInt sh_eflags;
+   /* Architecture-specific thread state */
+   arch_thread_t arch;
 } 
 ThreadState;
 
@@ -1007,7 +908,7 @@ extern void VG_(scheduler_handle_fatal_signal)( Int sigNo );
 
 /* Write a value to a client's thread register, and shadow (if necessary) */
 #define SET_THREAD_REG( zztid, zzval, zzreg, zzREG, zzevent, zzargs... ) \
-   do { VG_(threads)[zztid].m_##zzreg = (zzval);                  \
+   do { VG_(threads)[zztid].arch.m_##zzreg = (zzval);             \
         VG_TRACK( zzevent, zztid, R_##zzREG, ##zzargs );          \
    } while (0)
 
@@ -1668,7 +1569,12 @@ extern Int VGOFF_(tls_ptr);
 
 extern Int VGOFF_(helper_undefined_instruction);
 
-#endif /* ndef __CORE_H */
+// ---------------------------------------------------------------------
+// Architecture-specific things defined in eg. x86/*.c
+// ---------------------------------------------------------------------
+
+extern void VGA_(load_state) ( arch_thread_t*, ThreadId tid );
+extern void VGA_(save_state) ( arch_thread_t*, ThreadId tid );
 
 
 /* ---------------------------------------------------------------------
@@ -1676,6 +1582,8 @@ extern Int VGOFF_(helper_undefined_instruction);
    ------------------------------------------------------------------ */
 
 #include "config.h"
+
+#endif /* ndef __CORE_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

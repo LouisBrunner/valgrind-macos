@@ -314,9 +314,9 @@ void get_needed_regs(ThreadId tid, Addr* eip, Addr* ebp, Addr* esp,
    } else {
       /* thread in thread table */
       ThreadState* tst = & VG_(threads)[ tid ];
-      *eip                = tst->m_eip;
-      *ebp                = tst->m_ebp;
-      *esp                = tst->m_esp; 
+      *eip                = tst->arch.m_eip;
+      *ebp                = tst->arch.m_ebp;
+      *esp                = tst->arch.m_esp; 
       *stack_highest_word = tst->stack_highest_word;
    }
 
@@ -370,7 +370,7 @@ Addr VG_(get_EIP) ( ThreadId tid )
    if (VG_(is_running_thread)(tid))
       ret = VG_(baseBlock)[VGOFF_(m_eip)];
    else
-      ret = VG_(threads)[ tid ].m_eip;
+      ret = VG_(threads)[ tid ].arch.m_eip;
 
    return ret;
 }

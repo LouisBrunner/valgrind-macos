@@ -266,22 +266,22 @@ void VG_(start_debugger) ( Int tid )
       } else {
          ThreadState* tst = & VG_(threads)[ tid ];
          
-         regs.cs  = tst->m_cs;
-         regs.ss  = tst->m_ss;
-         regs.ds  = tst->m_ds;
-         regs.es  = tst->m_es;
-         regs.fs  = tst->m_fs;
-         regs.gs  = tst->m_gs;
-         regs.eax = tst->m_eax;
-         regs.ebx = tst->m_ebx;
-         regs.ecx = tst->m_ecx;
-         regs.edx = tst->m_edx;
-         regs.esi = tst->m_esi;
-         regs.edi = tst->m_edi;
-         regs.ebp = tst->m_ebp;
-         regs.esp = tst->m_esp;
-         regs.eflags = tst->m_eflags;
-         regs.eip = tst->m_eip;
+         regs.cs  = tst->arch.m_cs;
+         regs.ss  = tst->arch.m_ss;
+         regs.ds  = tst->arch.m_ds;
+         regs.es  = tst->arch.m_es;
+         regs.fs  = tst->arch.m_fs;
+         regs.gs  = tst->arch.m_gs;
+         regs.eax = tst->arch.m_eax;
+         regs.ebx = tst->arch.m_ebx;
+         regs.ecx = tst->arch.m_ecx;
+         regs.edx = tst->arch.m_edx;
+         regs.esi = tst->arch.m_esi;
+         regs.edi = tst->arch.m_edi;
+         regs.ebp = tst->arch.m_ebp;
+         regs.esp = tst->arch.m_esp;
+         regs.eflags = tst->arch.m_eflags;
+         regs.eip = tst->arch.m_eip;
       }
 
       if ((res = VG_(waitpid)(pid, &status, 0)) == pid &&

@@ -1,7 +1,7 @@
 include $(top_srcdir)/Makefile.all.am
 include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
 
-SUBDIRS = $(VG_ARCH) $(VG_PLATFORM) demangle . docs
+SUBDIRS = $(VG_ARCH) $(VG_OS) $(VG_PLATFORM) demangle . docs
 
 AM_CPPFLAGS += -DVG_LIBDIR="\"$(valdir)"\" -I$(srcdir)/demangle \
 		-DKICKSTART_BASE=@KICKSTART_BASE@ \
@@ -23,6 +23,7 @@ noinst_LIBRARIES = lib_replace_malloc.a
 noinst_HEADERS = \
 	core.h			\
 	core_asm.h		\
+	syscall_wrappers.h	\
 	ume.h			\
 	vg_symtab2.h		\
 	vg_symtypes.h		\
@@ -77,10 +78,12 @@ stage2_SOURCES = \
 	vg_translate.c \
 	vg_transtab.c
 
+## libplatform.a must be before libarch.a and libos.a, it seems.
 stage2_extra= \
 	demangle/libdemangle.a \
+	${VG_PLATFORM}/libplatform.a \
 	${VG_ARCH}/libarch.a \
-	${VG_PLATFORM}/libplatform.a
+	${VG_OS}/libos.a
 
 ## Test repeated in both arms of the if-then-else because older versions of
 ## automake don't seem to like having += within an if-then-else.

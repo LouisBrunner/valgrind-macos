@@ -42,72 +42,7 @@
    having the simulator retain control.
 */
 
-#define X(syscallname, argname)  syscallname"("#argname")"
-
-#define PRRSN \
-      SK_(pre_reg_read)(Vg_CoreSysCall, tid, "(syscallno)", \
-                        R_SYSCALL_NUM, sizeof(UWord));
-
-#define PRRAn(n,s,t,a) \
-      SK_(pre_reg_read)(Vg_CoreSysCall, tid, X(s,a), \
-                        R_SYSCALL_ARG##n, sizeof(t));
-
-#define PRE_REG_READ0(tr, s) \
-   if (VG_(defined_pre_reg_read)()) { \
-      PRRSN; \
-   }
-
-#define PRE_REG_READ1(tr, s, t1, a1) \
-   if (VG_(defined_pre_reg_read)()) { \
-      PRRSN; \
-      PRRAn(1,s,t1,a1); \
-   }
-
-#define PRE_REG_READ2(tr, s, t1, a1, t2, a2) \
-   if (VG_(defined_pre_reg_read)()) { \
-      PRRSN; \
-      PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); \
-   }
-
-#define PRE_REG_READ3(tr, s, t1, a1, t2, a2, t3, a3) \
-   if (VG_(defined_pre_reg_read)()) { \
-      PRRSN; \
-      PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
-   }
-
-#define PRE_REG_READ4(tr, s, t1, a1, t2, a2, t3, a3, t4, a4) \
-   if (VG_(defined_pre_reg_read)()) { \
-      PRRSN; \
-      PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
-      PRRAn(4,s,t4,a4); \
-   }
-
-#define PRE_REG_READ5(tr, s, t1, a1, t2, a2, t3, a3, t4, a4, t5, a5) \
-   if (VG_(defined_pre_reg_read)()) { \
-      PRRSN; \
-      PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
-      PRRAn(4,s,t4,a4); PRRAn(5,s,t5,a5); \
-   }
-
-#define PRE_REG_READ6(tr, s, t1, a1, t2, a2, t3, a3, t4, a4, t5, a5, t6, a6) \
-   if (VG_(defined_pre_reg_read)()) { \
-      PRRSN; \
-      PRRAn(1,s,t1,a1); PRRAn(2,s,t2,a2); PRRAn(3,s,t3,a3); \
-      PRRAn(4,s,t4,a4); PRRAn(5,s,t5,a5); PRRAn(6,s,t6,a6); \
-   }
-
-
-#define PRE_MEM_READ(zzname, zzaddr, zzlen) \
-   VG_TRACK( pre_mem_read, Vg_CoreSysCall, tid, zzname, zzaddr, zzlen)
-
-#define PRE_MEM_RASCIIZ(zzname, zzaddr) \
-   VG_TRACK( pre_mem_read_asciiz, Vg_CoreSysCall, tid, zzname, zzaddr)
-
-#define PRE_MEM_WRITE(zzname, zzaddr, zzlen) \
-   VG_TRACK( pre_mem_write, Vg_CoreSysCall, tid, zzname, zzaddr, zzlen)
-
-#define POST_MEM_WRITE(zzaddr, zzlen) \
-   VG_TRACK( post_mem_write, zzaddr, zzlen)
+#include "syscall_wrappers.h"
 
 /* ---------------------------------------------------------------------
    A simple atfork() facility for Valgrind's internal use
@@ -174,7 +109,8 @@ static void do_atfork_child(ThreadId tid)
 
 /* return true if address range entirely contained within client
    address space */
-static Bool valid_client_addr(Addr start, SizeT size, ThreadId tid, const Char *syscallname)
+Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
+                                   const Char *syscallname)
 {
    Addr end = start+size;
    Addr cl_base = VG_(client_base);
@@ -274,7 +210,7 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
    if (PGROUNDDN(old_addr) != old_addr)
       return -VKI_EINVAL;
 
-   if (!valid_client_addr(old_addr, old_size, tid, "mremap(old_addr)"))
+   if (!VG_(valid_client_addr)(old_addr, old_size, tid, "mremap(old_addr)"))
       return -VKI_EFAULT;
 
    /* fixed at the current address means we don't move it */
@@ -285,7 +221,7 @@ Addr mremap_segment ( Addr old_addr, SizeT old_size,
       if (PGROUNDDN(new_addr) != new_addr)
 	 return -VKI_EINVAL;
 
-      if (!valid_client_addr(new_addr, new_size, tid, "mremap(new_addr)"))
+      if (!VG_(valid_client_addr)(new_addr, new_size, tid, "mremap(new_addr)"))
 	 return -VKI_ENOMEM;
 
       /* check for overlaps */
@@ -1050,10 +986,10 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
    ------------------------------------------------------------------ */
 
 /* Note: the PRE() and POST() wrappers are for the actual functions
-   implementing the system calls in the Linux kernel.  These mostly have
+   implementing the system calls in the OS kernel.  These mostly have
    names like sys_write();  a few have names like old_mmap().  See the
-   comment for sys_info[] and related arrays for important info about the
-   __NR_foo constants and their relationship to the sys_foo() functions.
+   comment for VGA_(syscall_table)[] for important info about the __NR_foo
+   constants and their relationship to the sys_foo() functions.
 
    Some notes about names used for syscalls and args:
    - For the --trace-syscalls=yes output, we use the sys_foo() name to avoid
@@ -1066,7 +1002,7 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
      
    - Also, for error messages the arg names are mostly taken from the man
      pages (even though many of those man pages are really for glibc
-     functions of the same name), rather than from the Linux kernel source,
+     functions of the same name), rather than from the OS kernel source,
      for the same reason -- a user presented with a "bogus foo(bar)" arg
      will most likely look at the "foo" man page to see which is the "bar"
      arg.
@@ -1085,10 +1021,10 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 #define PostOnFail (1 << 3)
 
 #define PRE(x,f) \
-   static UInt flags_##x = f; \
-   static void before_##x(ThreadId tid, ThreadState *tst)
+   UInt VGA_(gen_##x##_flags) = f; \
+   void VGA_(gen_##x##_before)(ThreadId tid, ThreadState *tst)
 #define POST(x) \
-   static void  after_##x(ThreadId tid, ThreadState *tst)
+   void VGA_(gen_##x##_after) (ThreadId tid, ThreadState *tst)
 
 #define SYSNO	PLATFORM_SYSCALL_NUM(tst->arch)    // in PRE(x)
 #define res	PLATFORM_SYSCALL_RET(tst->arch)	   // in POST(x)
@@ -1130,7 +1066,8 @@ PRE(sys_ni_syscall, Special)
    set_result( -VKI_ENOSYS );
 }
 
-// XXX: I think this is x86/linux-specific
+// XXX: I think this is x86/linux-specific... at least some of the entries
+// are non-generic
 // XXX: Why is the memory pointed to by arg3 never checked?
 PRE(sys_ptrace, 0)
 {
@@ -1192,80 +1129,6 @@ POST(sys_ptrace)
    }
 }
 
-PRE(sys_mount, MayBlock)
-{
-   // Nb: depending on 'flags', the 'type' and 'data' args may be ignored.
-   // We are conservative and check everything, except the memory pointed to
-   // by 'data'.
-   PRINT( "sys_mount( %p, %p, %p, %p, %p )" ,arg1,arg2,arg3);
-   PRE_REG_READ5(long, "mount",
-                 char *, source, char *, target, char *, type,
-                 unsigned long, flags, void *, data);
-   PRE_MEM_RASCIIZ( "mount(source)", arg1);
-   PRE_MEM_RASCIIZ( "mount(target)", arg2);
-   PRE_MEM_RASCIIZ( "mount(type)", arg3);
-}
-
-PRE(sys_oldumount, 0)
-{
-   PRINT("sys_oldumount( %p )", arg1);
-   PRE_REG_READ1(long, "umount", char *, path);
-   PRE_MEM_RASCIIZ( "umount(path)", arg1);
-}
-
-PRE(sys_umount, 0)
-{
-   PRINT("sys_umount( %p )", arg1);
-   PRE_REG_READ2(long, "umount2", char *, path, int, flags);
-   PRE_MEM_RASCIIZ( "umount2(path)", arg1);
-}
-
-PRE(sys_modify_ldt, Special)
-{
-   PRINT("sys_modify_ldt ( %d, %p, %d )", arg1,arg2,arg3);
-   PRE_REG_READ3(int, "modify_ldt", int, func, void *, ptr,
-                 unsigned long, bytecount);
-   
-   if (arg1 == 0) {
-      /* read the LDT into ptr */
-      PRE_MEM_WRITE( "modify_ldt(ptr)", arg2, arg3 );
-   }
-   if (arg1 == 1 || arg1 == 0x11) {
-      /* write the LDT with the entry pointed at by ptr */
-      PRE_MEM_READ( "modify_ldt(ptr)", arg2, sizeof(vki_modify_ldt_t) );
-   }
-   /* "do" the syscall ourselves; the kernel never sees it */
-   res = VG_(sys_modify_ldt)( tid, arg1, (void*)arg2, arg3 );
-
-   if (arg1 == 0 && !VG_(is_kerror)(res) && res > 0) {
-      POST_MEM_WRITE( arg2, res );
-   }
-}
-
-PRE(sys_set_thread_area, Special)
-{
-   PRINT("sys_set_thread_area ( %p )", arg1);
-   PRE_REG_READ1(int, "set_thread_area", struct user_desc *, u_info)
-   PRE_MEM_READ( "set_thread_area(u_info)", arg1, sizeof(vki_modify_ldt_t) );
-
-   /* "do" the syscall ourselves; the kernel never sees it */
-   set_result( VG_(sys_set_thread_area)( tid, (void *)arg1 ) );
-}
-
-PRE(sys_get_thread_area, Special)
-{
-   PRINT("sys_get_thread_area ( %p )", arg1);
-   PRE_REG_READ1(int, "get_thread_area", struct user_desc *, u_info)
-   PRE_MEM_WRITE( "get_thread_area(u_info)", arg1, sizeof(vki_modify_ldt_t) );
-
-   /* "do" the syscall ourselves; the kernel never sees it */
-   set_result( VG_(sys_get_thread_area)( tid, (void *)arg1 ) );
-
-   if (!VG_(is_kerror)(res)) {
-      POST_MEM_WRITE( arg1, sizeof(vki_modify_ldt_t) );
-   }
-}
-
 PRE(sys_set_tid_address, Special)
 {
    PRINT("sys_set_tid_address ( %p )", arg1);
@@ -1284,12 +1147,6 @@ PRE(sys_setresgid, 0)
    PRINT("sys_setresgid ( %d, %d, %d )", arg1, arg2, arg3);
    PRE_REG_READ3(long, "setresgid",
                  vki_gid_t, rgid, vki_gid_t, egid, vki_gid_t, sgid);
-}
-
-PRE(sys_vhangup, 0)
-{
-   PRINT("sys_vhangup ( )");
-   PRE_REG_READ0(long, "vhangup");
 }
 
 PRE(sys_iopl, 0)
@@ -1590,36 +1447,6 @@ POST(sys_setitimer)
    }
 }
 
-PRE(sys_syslog, MayBlock)
-{
-   PRINT("sys_syslog (%d, %p, %d)", arg1,arg2,arg3);
-   PRE_REG_READ3(long, "syslog", int, type, char *, bufp, int, len);
-   switch (arg1) {
-   case 2: case 3: case 4:
-      PRE_MEM_WRITE( "syslog(bufp)", arg2, arg3);
-      break;
-   default: 
-      break;
-   }
-}
-
-POST(sys_syslog)
-{
-   switch (arg1) {
-   case 2: case 3: case 4:
-      POST_MEM_WRITE( arg2, arg3 );
-      break;
-   default:
-      break;
-   }
-}
-
-PRE(sys_personality, 0)
-{
-   PRINT("sys_personality ( %llu )", (ULong)arg1);
-   PRE_REG_READ1(long, "personality", vki_u_long, persona);
-}
-
 PRE(sys_chroot, 0)
 {
    PRINT("sys_chroot ( %p )", arg1);
@@ -1651,24 +1478,6 @@ PRE(sys_nice, 0)
 {
    PRINT("sys_nice ( %d )", arg1);
    PRE_REG_READ1(long, "nice", int, inc);
-}
-
-PRE(sys_setfsuid, 0)
-{
-   PRINT("sys_setfsuid ( %d )", arg1);
-   PRE_REG_READ1(long, "setfsuid", vki_uid_t, uid);
-}
-
-PRE(sys_sysctl, 0)
-{
-   PRINT("sys_sysctl ( %p )", arg1 );
-   PRE_REG_READ1(long, "sysctl", struct __sysctl_args *, args);
-   PRE_MEM_WRITE( "sysctl(args)", arg1, sizeof(struct __vki_sysctl_args) );
-}
-
-POST(sys_sysctl)
-{
-   POST_MEM_WRITE( arg1, sizeof(struct __vki_sysctl_args) );
 }
 
 PRE(sys_sched_getscheduler, 0)
@@ -1735,12 +1544,6 @@ PRE(sys_getpriority, 0)
    PRE_REG_READ2(long, "getpriority", int, which, int, who);
 }
 
-PRE(sys_setfsgid16, 0)
-{
-   PRINT("sys_setfsgid16 ( %d )", arg1);
-   PRE_REG_READ1(long, "setfsgid16", vki_old_gid_t, gid);
-}
-
 PRE(sys_setregid16, 0)
 {
    PRINT("sys_setregid16 ( %d, %d )", arg1, arg2);
@@ -1759,12 +1562,6 @@ PRE(sys_setresuid, 0)
    PRINT("sys_setresuid ( %d, %d, %d )", arg1, arg2, arg3);
    PRE_REG_READ3(long, "setresuid",
                  vki_uid_t, ruid, vki_uid_t, euid, vki_uid_t, suid);
-}
-
-PRE(sys_setfsuid16, 0)
-{
-   PRINT("sys_setfsuid16 ( %d )", arg1);
-   PRE_REG_READ1(long, "setfsuid16", vki_old_uid_t, uid);
 }
 
 PRE(sys_sendfile, MayBlock)
@@ -1887,13 +1684,6 @@ PRE(sys_init_module, MayBlock)
                  void *, umod, unsigned long, len, const char *, uargs);
    PRE_MEM_READ( "init_module(umod)", arg1, arg2 );
    PRE_MEM_RASCIIZ( "init_module(uargs)", arg3 );
-}
-
-PRE(sys_ioperm, 0)
-{
-   PRINT("sys_ioperm ( %d, %d, %d )", arg1, arg2, arg3 );
-   PRE_REG_READ3(long, "ioperm",
-                 unsigned long, from, unsigned long, num, int, turn_on);
 }
 
 PRE(sys_capget, 0)
@@ -2330,9 +2120,9 @@ PRE(sys_clone, Special)
        (arg1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
      || arg1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
    {
-      before_sys_fork(tid, tst);
+      VGA_(gen_sys_fork_before)(tid, tst);
       set_result( VG_(do_syscall)(SYSNO, arg1, arg2, arg3, arg4, arg5) );
-      after_sys_fork(tid, tst);
+      VGA_(gen_sys_fork_after) (tid, tst);
    } else {
       VG_(unimplemented)
          ("clone(): not supported by Valgrind.\n   "
@@ -2893,12 +2683,12 @@ PRE(sys_ipc, 0)
 	 like an mmap. */
       if (arg5 == 0)
 	 arg5 = VG_(find_map_space)(0, segmentSize, True);
-      else if (!valid_client_addr(arg5, segmentSize, tid, "shmat"))
+      else if (!VG_(valid_client_addr)(arg5, segmentSize, tid, "shmat"))
 	 set_result( -VKI_EINVAL );
       break;
    }
    case 22: /* IPCOP_shmdt */
-      if (!valid_client_addr(arg5, 1, tid, "shmdt"))
+      if (!VG_(valid_client_addr)(arg5, 1, tid, "shmdt"))
 	 set_result( -VKI_EINVAL );
       break;
    case 23: /* IPCOP_shmget */
@@ -4450,22 +4240,6 @@ PRE(sys_lseek, 0)
                  unsigned int, fd, vki_off_t, offset, unsigned int, whence);
 }
 
-PRE(sys_llseek, 0)
-{
-   PRINT("sys_llseek ( %d, 0x%x, 0x%x, %p, %d )", arg1,arg2,arg3,arg4,arg5);
-   PRE_REG_READ5(long, "llseek",
-                 unsigned int, fd, unsigned long, offset_high,
-                 unsigned long, offset_low, vki_loff_t *, result,
-                 unsigned int, whence);
-   PRE_MEM_WRITE( "llseek(result)", arg4, sizeof(vki_loff_t));
-}
-
-POST(sys_llseek)
-{
-   if (res == 0)
-      POST_MEM_WRITE( arg4, sizeof(vki_loff_t) );
-}
-
 PRE(sys_newlstat, 0)
 {
    PRINT("sys_newlstat ( %p(%s), %p )", arg1,arg1,arg2);
@@ -4517,7 +4291,7 @@ PRE(sys_mmap2, 0)
                  unsigned long, fd,    unsigned long, offset);
 
    if (arg4 & VKI_MAP_FIXED) {
-      if (!valid_client_addr(arg1, arg2, tid, "mmap2"))
+      if (!VG_(valid_client_addr)(arg1, arg2, tid, "mmap2"))
 	 set_result( -VKI_ENOMEM );
    } else {
       arg1 = VG_(find_map_space)(arg1, arg2, True);
@@ -4530,7 +4304,7 @@ PRE(sys_mmap2, 0)
 
 POST(sys_mmap2)
 {
-   vg_assert(valid_client_addr(res, arg2, tid, "mmap2"));
+   vg_assert(VG_(valid_client_addr)(res, arg2, tid, "mmap2"));
    mmap_segment( (Addr)res, arg2, arg3, arg4, arg5,
                  arg6 * (ULong)VKI_PAGE_SIZE );
 }
@@ -4554,7 +4328,7 @@ PRE(old_mmap, Special)
          a1, (ULong)a2, a3, a4, a5, a6 );
 
    if (a4 & VKI_MAP_FIXED) {
-      if (!valid_client_addr(a1, a2, tid, "old_mmap")) {
+      if (!VG_(valid_client_addr)(a1, a2, tid, "old_mmap")) {
          PRINT("old_mmap failing: %p-%p\n", a1, a1+a2);
          set_result( -VKI_ENOMEM );
       }
@@ -4570,7 +4344,7 @@ PRE(old_mmap, Special)
       PLATFORM_DO_MMAP(res, a1, a2, a3, a4, a5, a6);
 
       if (!VG_(is_kerror)(res)) {
-         vg_assert(valid_client_addr(res, a2, tid, "old_mmap"));
+         vg_assert(VG_(valid_client_addr)(res, a2, tid, "old_mmap"));
          mmap_segment( (Addr)res, a2, a3, a4, a5, a6 );
       }
    }
@@ -4582,7 +4356,7 @@ PRE(sys_mprotect, 0)
    PRE_REG_READ3(long, "mprotect",
                  unsigned long, addr, vki_size_t, len, unsigned long, prot);
 
-   if (!valid_client_addr(arg1, arg2, tid, "mprotect"))
+   if (!VG_(valid_client_addr)(arg1, arg2, tid, "mprotect"))
       set_result( -VKI_ENOMEM );
 }
 
@@ -4605,7 +4379,7 @@ PRE(sys_munmap, 0)
    PRINT("sys_munmap ( %p, %llu )", arg1,(ULong)arg2);
    PRE_REG_READ2(long, "munmap", unsigned long, start, vki_size_t, length);
 
-   if (!valid_client_addr(arg1, arg2, tid, "munmap"))
+   if (!VG_(valid_client_addr)(arg1, arg2, tid, "munmap"))
       set_result( -VKI_EINVAL );
 }
 
@@ -4979,12 +4753,6 @@ PRE(sys_select, MayBlock)
 		     arg4, arg1/8 /* __FD_SETSIZE/8 */ );
    if (arg5 != 0)
       PRE_MEM_READ( "select(timeout)", arg5, sizeof(struct vki_timeval) );
-}
-
-PRE(sys_setfsgid, 0)
-{
-   PRINT("sys_setfsgid ( %d )", arg1);
-   PRE_REG_READ1(long, "setfsgid", vki_gid_t, gid);
 }
 
 PRE(sys_setgid16, 0)
@@ -5524,18 +5292,6 @@ POST(sys_fstat64)
    POST_MEM_WRITE( arg2, sizeof(struct vki_stat64) );
 }
 
-PRE(sys_sysinfo, 0)
-{
-   PRINT("sys_sysinfo ( %p )",arg1);
-   PRE_REG_READ1(long, "sysinfo", struct sysinfo *, info);
-   PRE_MEM_WRITE( "sysinfo(info)", arg1, sizeof(struct vki_sysinfo) );
-}
-
-POST(sys_sysinfo)
-{
-   POST_MEM_WRITE( arg1, sizeof(struct vki_sysinfo) );
-}
-
 PRE(sys_time, 0)
 {
    /* time_t time(time_t *t); */
@@ -5662,45 +5418,6 @@ PRE(sys_writev, MayBlock)
                            (Addr)vec[i].iov_base, vec[i].iov_len );
       }
    }
-}
-
-PRE(sys_prctl, MayBlock)
-{
-   PRINT( "prctl ( %d, %d, %d, %d, %d )", arg1, arg2, arg3, arg4, arg5 );
-   // XXX: too simplistic, often not all args are used
-   // Nb: can't use "arg2".."arg5" here because that's our own macro...
-   PRE_REG_READ5(long, "prctl",
-                 int, option, unsigned long, parg2, unsigned long, parg3,
-                 unsigned long, parg4, unsigned long, parg5);
-   // XXX: totally wrong... we need to look at the 'option' arg, and do
-   // PRE_MEM_READs/PRE_MEM_WRITEs as necessary...
-}
-
-PRE(sys_adjtimex, 0)
-{
-   struct vki_timex *tx = (struct vki_timex *)arg1;
-   PRINT("sys_adjtimex ( %p )", arg1);
-   PRE_REG_READ1(long, "adjtimex", struct timex *, buf);
-   PRE_MEM_READ( "adjtimex(timex->modes)", arg1, sizeof(tx->modes));
-
-#define ADJX(bit,field) 				\
-   if (tx->modes & bit)					\
-      PRE_MEM_READ( "adjtimex(timex->"#field")",	\
-		    (Addr)&tx->field, sizeof(tx->field))
-   ADJX(ADJ_FREQUENCY, freq);
-   ADJX(ADJ_MAXERROR, maxerror);
-   ADJX(ADJ_ESTERROR, esterror);
-   ADJX(ADJ_STATUS, status);
-   ADJX(ADJ_TIMECONST, constant);
-   ADJX(ADJ_TICK, tick);
-#undef ADJX
-   
-   PRE_MEM_WRITE( "adjtimex(timex)", arg1, sizeof(struct vki_timex));
-}
-
-POST(sys_adjtimex)
-{
-   VG_TRACK(post_mem_write, arg1, sizeof(struct vki_timex));
 }
 
 PRE(sys_utimes, 0)
@@ -6015,159 +5732,6 @@ POST(sys_rt_sigpending)
    POST_MEM_WRITE( arg1, sizeof(vki_sigset_t) ) ;
 }
 
-// Nb: this wrapper is "Special" because we have to pad/unpad memory around
-// the syscall itself, and this allows us to control exactly the code that
-// gets run while the padding is in place.
-PRE(sys_io_setup, Special)
-{
-   SizeT size;
-   Addr addr;
-
-   PRINT("sys_io_setup ( %u, %p )", arg1,arg2);
-   PRE_REG_READ2(long, "io_setup",
-                 unsigned, nr_events, vki_aio_context_t *, ctxp);
-   PRE_MEM_WRITE( "io_setup(ctxp)", arg2, sizeof(vki_aio_context_t) );
-   
-   size = PGROUNDUP(sizeof(struct vki_aio_ring) +
-                    arg1*sizeof(struct vki_io_event));
-   addr = VG_(find_map_space)(0, size, True);
-   VG_(map_segment)(addr, size, VKI_PROT_READ|VKI_PROT_EXEC, SF_FIXED);
-   
-   VG_(pad_address_space)();
-   set_result( VG_(do_syscall)(SYSNO, arg1, arg2) );
-   VG_(unpad_address_space)();
-
-   if (res == 0) {
-      struct vki_aio_ring *r = *(struct vki_aio_ring **)arg2;
-        
-      vg_assert(addr == (Addr)r);
-      vg_assert(valid_client_addr(addr, size, tid, "io_setup"));
-                
-      VG_TRACK( new_mem_mmap, addr, size, True, True, False );
-      POST_MEM_WRITE( arg2, sizeof(vki_aio_context_t) );
-   }
-   else {
-      VG_(unmap_range)(addr, size);
-   }
-}
-
-// Nb: This wrapper is "Special" because we need 'size' to do the unmap
-// after the syscall.  We must get 'size' from the aio_ring structure,
-// before the syscall, while the aio_ring structure still exists.  (And we
-// know that we must look at the aio_ring structure because Tom inspected the
-// kernel and glibc sources to see what they do, yuk.)
-PRE(sys_io_destroy, Special)
-{     
-   Segment *s = VG_(find_segment)(arg1);
-   struct vki_aio_ring *r;
-   SizeT size;
-      
-   PRINT("sys_io_destroy ( %llu )", (ULong)arg1);
-   PRE_REG_READ1(long, "io_destroy", vki_aio_context_t, ctx);
-
-   // If we are going to seg fault (due to a bogus arg1) do it as late as
-   // possible...
-   r = *(struct vki_aio_ring **)arg1;
-   size = PGROUNDUP(sizeof(struct vki_aio_ring) + 
-                    r->nr*sizeof(struct vki_io_event));
-
-   set_result( VG_(do_syscall)(SYSNO, arg1) );
-
-   if (res == 0 && s != NULL && VG_(seg_contains)(s, arg1, size)) { 
-      VG_TRACK( die_mem_munmap, arg1, size );
-      VG_(unmap_range)(arg1, size);
-   }  
-}  
-
-PRE(sys_io_getevents, MayBlock)
-{
-   PRINT("sys_io_getevents ( %llu, %lld, %lld, %p, %p )",
-         (ULong)arg1,(Long)arg2,(Long)arg3,arg4,arg5);
-   PRE_REG_READ5(long, "io_getevents",
-                 vki_aio_context_t, ctx_id, long, min_nr, long, nr,
-                 struct io_event *, events,
-                 struct timespec *, timeout);
-   if (arg3 > 0)
-      PRE_MEM_WRITE( "io_getevents(events)",
-                     arg4, sizeof(struct vki_io_event)*arg3 );
-   if (arg5 != (UWord)NULL)
-      PRE_MEM_READ( "io_getevents(timeout)",
-                     arg5, sizeof(struct vki_timespec));
-}
-
-POST(sys_io_getevents)
-{
-   int i;
-
-   if (res > 0) {
-      POST_MEM_WRITE( arg4, sizeof(struct vki_io_event)*res );
-      for (i = 0; i < res; i++) {
-         const struct vki_io_event *vev = ((struct vki_io_event *)arg4) + i;
-         const struct vki_iocb *cb = (struct vki_iocb *)(Addr)vev->obj;
-
-         switch (cb->aio_lio_opcode) {
-         case VKI_IOCB_CMD_PREAD:
-            if (vev->result > 0)
-               POST_MEM_WRITE( cb->aio_buf, vev->result );
-            break;
-            
-         case VKI_IOCB_CMD_PWRITE:
-            break;
-           
-         default:
-            VG_(message)(Vg_DebugMsg,"Warning: unhandled io_getevents opcode: %u\n",cb->aio_lio_opcode);
-            break;
-         }
-      }
-   }
-}
-
-PRE(sys_io_submit, 0)
-{
-   int i;
-
-   PRINT("sys_io_submit( %llu, %lld, %p )", (ULong)arg1,(Long)arg2,arg3);
-   PRE_REG_READ3(long, "io_submit",
-                 vki_aio_context_t, ctx_id, long, nr,
-                 struct iocb **, iocbpp);
-   PRE_MEM_READ( "io_submit(iocbpp)", arg3, arg2*sizeof(struct vki_iocb *) );
-   if (arg3 != (UWord)NULL) {
-      for (i = 0; i < arg2; i++) {
-         struct vki_iocb *cb = ((struct vki_iocb **)arg3)[i];
-         PRE_MEM_READ( "io_submit(iocb)", (Addr)cb, sizeof(struct vki_iocb) );
-         switch (cb->aio_lio_opcode) {
-         case VKI_IOCB_CMD_PREAD:
-            PRE_MEM_WRITE( "io_submit(PREAD)", cb->aio_buf, cb->aio_nbytes );
-            break;
-
-         case VKI_IOCB_CMD_PWRITE:
-            PRE_MEM_READ( "io_submit(PWRITE)", cb->aio_buf, cb->aio_nbytes );
-            break;
-           
-         default:
-            VG_(message)(Vg_DebugMsg,"Warning: unhandled io_submit opcode: %u\n",
-                         cb->aio_lio_opcode);
-            break;
-         }
-      }
-   }
-}
-
-PRE(sys_io_cancel, 0)
-{
-   PRINT("sys_io_cancel( %llu, %p, %p )", (ULong)arg1,arg2,arg3);
-   PRE_REG_READ3(long, "io_cancel",
-                 vki_aio_context_t, ctx_id, struct iocb *, iocb,
-                 struct io_event *, result);
-   PRE_MEM_READ( "io_cancel(iocb)", arg2, sizeof(struct vki_iocb) );
-   PRE_MEM_WRITE( "io_cancel(result)", arg3, sizeof(struct vki_io_event) );
-}
-
-POST(sys_io_cancel)
-{
-   POST_MEM_WRITE( arg3, sizeof(struct vki_io_event) );
-}
-
 PRE(sys_mq_open, 0)
 {
    PRINT("sys_mq_open( %p(%s), %d, %lld, %p )",
@@ -6386,33 +5950,8 @@ POST(sys_clock_getres)
 
 
 /* ---------------------------------------------------------------------
-   Summary info about syscalls
+   Executing the syscalls
    ------------------------------------------------------------------ */
-
-/* Important point: for each arch/Linux platform, the name of the constant
-   for a syscall (eg. __NR_write) usually matches the name of the function
-   in the Linux kernel that implements it (eg. sys_write()).  However, this
-   is not always the case.  For example:
-      
-      __NR_lchown       --> sys_lchown16()
-      __NR_lchown32     --> sys_lchown()
-      __NR_select       --> old_select()
-      __NR__newselect   --> sys_select()
-
-   Therefore part of the role of the arrays below is to provide a mapping
-   from the __NR_foo constants to the sys_foo() PRE/POST wrappers above.
-
-   XXX: some of these are arch-specific, and should be factored out.
-*/
-
-struct sys_info {
-   UInt *flags_ptr;
-   void	(*before)(ThreadId tid, ThreadState *tst);
-   void	(*after) (ThreadId tid, ThreadState *tst);
-};
-
-#define SYSX_(const, name)   [const] = { &flags_##name, before_##name, NULL }
-#define SYSXY(const, name)   [const] = { &flags_##name, before_##name, after_##name }
 
 static UInt bad_flags = Special;
 static void bad_before(ThreadId tid, ThreadState *tst)
@@ -6431,386 +5970,15 @@ static void bad_before(ThreadId tid, ThreadState *tst)
    set_result( -VKI_ENOSYS );
 }
 
-static const struct sys_info bad_sys = { &bad_flags, bad_before, NULL };
+static const struct SyscallTableEntry bad_sys =
+   { &bad_flags, bad_before, NULL };
 
-// XXX: temporary: I've started labelled each entry with the target of its
-// __NR_foo-->sys_foo() mapping, and the __NR_foo number (for x86), and
-// properties of the sys_foo() function:
-//   '*' ones are Linux-generic (ie. present in
-//       linux-2.6.8.1/include/linux/syscalls.h);  non-generic ones have an
-//       indication of which architecture they are specific to.
-//   "##" ones are Linux-generic, but within a "#ifdef CONFIG_UID16".
-//   "%%" ones are Linux-generic, but within a "#if BITS_PER_LONG == 32"
-//   'P' ones are POSIX-generic, according to man pages.  
-//   'L' ones are Linux-specific, according to man pages.
-
-// XXX: this does duplicate the vki_unistd.h file somewhat -- could make
-// this table replace that somehow...
-
-// This table maps from __NR_xxx syscall numbers to the appropriate
-// PRE/POST sys_foo() wrappers on x86.
-static const struct sys_info sys_info[] = {
-   // 0 is restart_syscall
-   SYSX_(__NR_exit,             sys_exit),         // 1 * P
-   SYSXY(__NR_fork,             sys_fork),         // 2 (quasi-generic...) P
-   SYSXY(__NR_read,             sys_read),         // 3 * P
-   SYSX_(__NR_write,            sys_write),        // 4 * P
-
-   SYSXY(__NR_open,             sys_open),         // 5 * P
-   SYSXY(__NR_close,            sys_close),        // 6 * P
-   SYSXY(__NR_waitpid,          sys_waitpid),      // 7 * P
-   SYSXY(__NR_creat,            sys_creat),        // 8 * P
-   SYSX_(__NR_link,             sys_link),         // 9 * P
-
-   SYSX_(__NR_unlink,           sys_unlink),       // 10 * P
-   SYSX_(__NR_execve,           sys_execve),       // 11 (*??) P
-   SYSX_(__NR_chdir,            sys_chdir),        // 12 * P
-   SYSXY(__NR_time,             sys_time),         // 13 * P
-   SYSX_(__NR_mknod,            sys_mknod),        // 14 * P
-
-   SYSX_(__NR_chmod,            sys_chmod),        // 15 * P
-   //   (__NR_lchown,           sys_lchown16),     // 16 ## P
-   SYSX_(__NR_break,            sys_ni_syscall),   // 17 * P -- unimplemented
-   //   (__NR_oldstat,          sys_stat),         // 18 * L -- obsolete
-   SYSX_(__NR_lseek,            sys_lseek),        // 19 * P
-
-   SYSX_(__NR_getpid,           sys_getpid),       // 20 * P
-   SYSX_(__NR_mount,            sys_mount),        // 21 * L
-   SYSX_(__NR_umount,           sys_oldumount),    // 22 * L
-   SYSX_(__NR_setuid,           sys_setuid16),     // 23 ## P
-   SYSX_(__NR_getuid,           sys_getuid16),     // 24 ## P
-
-   //   (__NR_stime,            sys_stime),        // 25 * (SVr4,SVID,X/OPEN)
-   SYSXY(__NR_ptrace,           sys_ptrace),       // 26 (x86?) (L?)
-   SYSX_(__NR_alarm,            sys_alarm),        // 27 * P
-   //   (__NR_oldfstat,         sys_fstat),        // 28 * L -- obsolete
-   SYSX_(__NR_pause,            sys_pause),        // 29 * P
-
-   SYSX_(__NR_utime,            sys_utime),        // 30 * P
-   SYSX_(__NR_stty,             sys_ni_syscall),   // 31 * P -- unimplemented
-   SYSX_(__NR_gtty,             sys_ni_syscall),   // 32 * P -- unimplemented
-   SYSX_(__NR_access,           sys_access),       // 33 * P
-   SYSX_(__NR_nice,             sys_nice),         // 34 * (almost P)
-
-   SYSX_(__NR_ftime,            sys_ni_syscall),   // 35 * P -- unimplemented
-   SYSX_(__NR_sync,             sys_sync),         // 36 * (almost P)
-   SYSXY(__NR_kill,             sys_kill),         // 37 * P
-   SYSX_(__NR_rename,           sys_rename),       // 38 * P
-   SYSX_(__NR_mkdir,            sys_mkdir),        // 39 * P
-
-   SYSX_(__NR_rmdir,            sys_rmdir),        // 40 * P
-   SYSXY(__NR_dup,              sys_dup),          // 41 * P
-   SYSXY(__NR_pipe,             sys_pipe),         // 42 (x86) P
-   SYSXY(__NR_times,            sys_times),        // 43 * P
-   SYSX_(__NR_prof,             sys_ni_syscall),   // 44 * P -- unimplemented
-
-   SYSX_(__NR_brk,              sys_brk),          // 45 * non-P
-   SYSX_(__NR_setgid,           sys_setgid16),     // 46 ## (SVr4,SVID)
-   SYSX_(__NR_getgid,           sys_getgid16),     // 47 ## P
-   //   (__NR_signal,           sys_signal),       // 48 * (ANSI C?)
-   SYSX_(__NR_geteuid,          sys_geteuid16),    // 49 ## P
-
-   SYSX_(__NR_getegid,          sys_getegid16),    // 50 ## (P16)
-   SYSX_(__NR_acct,             sys_acct),         // 51 * (SVR4, non-POSIX)
-   SYSX_(__NR_umount2,          sys_umount),       // 52 * L
-   SYSX_(__NR_lock,             sys_ni_syscall),   // 53 * P -- unimplemented
-   SYSXY(__NR_ioctl,            sys_ioctl),        // 54 */x86 (varying)
-
-   SYSXY(__NR_fcntl,            sys_fcntl),        // 55 * (P...complex)
-   SYSX_(__NR_mpx,              sys_ni_syscall),   // 56 * P -- unimplemented
-   SYSXY(__NR_setpgid,          sys_setpgid),      // 57 * P
-   SYSX_(__NR_ulimit,           sys_ni_syscall),   // 58 * P -- unimplemented
-   //   (__NR_oldolduname,      sys_olduname),     // 59 (?) L -- obsolete
-
-   SYSX_(__NR_umask,            sys_umask),        // 60 * P
-   SYSX_(__NR_chroot,           sys_chroot),       // 61 * (almost P)
-   //   (__NR_ustat,            sys_ustat)         // 62 * (SVr4) -- deprecated
-   SYSXY(__NR_dup2,             sys_dup2),         // 63 * P
-   SYSX_(__NR_getppid,          sys_getppid),      // 64 * P
-
-   SYSX_(__NR_getpgrp,          sys_getpgrp),      // 65 * P
-   SYSX_(__NR_setsid,           sys_setsid),       // 66 * P
-   SYSXY(__NR_sigaction,        sys_sigaction),    // 67 (x86) P
-   //   (__NR_sgetmask,         sys_sgetmask),     // 68 * (ANSI C)
-   //   (__NR_ssetmask,         sys_ssetmask),     // 69 * (ANSI C)
-
-   SYSX_(__NR_setreuid,         sys_setreuid16),   // 70 ## (BSD4.3)
-   SYSX_(__NR_setregid,         sys_setregid16),   // 71 ## (BSD4.3)
-   SYSX_(__NR_sigsuspend,       sys_sigsuspend),   // 72 () P
-   SYSXY(__NR_sigpending,       sys_sigpending),   // 73 * P
-   //   (__NR_sethostname,      sys_sethostname),  // 74 * (almost P)
-
-   SYSX_(__NR_setrlimit,        sys_setrlimit),    // 75 * (SVr4,BSD4.3)
-   SYSXY(__NR_getrlimit,        sys_old_getrlimit),// 76 * (SVr4,BSD4.3)
-   SYSXY(__NR_getrusage,        sys_getrusage),    // 77 * (SVr4,BSD4.3)
-   SYSXY(__NR_gettimeofday,     sys_gettimeofday), // 78 * P
-   SYSX_(__NR_settimeofday,     sys_settimeofday), // 79 * almost-P
-
-   SYSXY(__NR_getgroups,        sys_getgroups16),  // 80 ## P
-   SYSX_(__NR_setgroups,        sys_setgroups16),  // 81 ## almost-P
-   SYSX_(__NR_select,           old_select),       // 82 (x86) (4.4BSD)
-   SYSX_(__NR_symlink,          sys_symlink),      // 83 * P
-   //   (__NR_oldlstat,         sys_lstat),        // 84 * L -- obsolete
-
-   SYSXY(__NR_readlink,         sys_readlink),     // 85 * (X/OPEN,4.4BSD)
-   //   (__NR_uselib,           sys_uselib),       // 86 * L
-   //   (__NR_swapon,           sys_swapon),       // 87 * L
-   //   (__NR_reboot,           sys_reboot),       // 88 * L
-   //   (__NR_readdir,          old_readdir),      // 89 () L -- superseded
-
-   SYSX_(__NR_mmap,             old_mmap),         // 90 (x86) (P but not...)
-   SYSXY(__NR_munmap,           sys_munmap),       // 91 * P
-   SYSX_(__NR_truncate,         sys_truncate),     // 92 * P
-   SYSX_(__NR_ftruncate,        sys_ftruncate),    // 93 * P
-   SYSX_(__NR_fchmod,           sys_fchmod),       // 94 * P
-
-   SYSX_(__NR_fchown,           sys_fchown16),     // 95 ## (SVr4,BSD4.3)
-   SYSX_(__NR_getpriority,      sys_getpriority),  // 96 * (SVr4,4.4BSD)
-   SYSX_(__NR_setpriority,      sys_setpriority),  // 97 * (SVr4,4.4BSD)
-   SYSX_(__NR_profil,           sys_ni_syscall),   // 98 * P -- unimplemented
-   SYSXY(__NR_statfs,           sys_statfs),       // 99 * (P-ish)
-
-   SYSXY(__NR_fstatfs,          sys_fstatfs),      // 100 * (P-ish)
-   SYSX_(__NR_ioperm,           sys_ioperm),       // 101 * L
-   SYSXY(__NR_socketcall,       sys_socketcall),   // 102 * L
-   SYSXY(__NR_syslog,           sys_syslog),       // 103 * L
-   SYSXY(__NR_setitimer,        sys_setitimer),    // 104 * (SVr4,4.4BSD)
-
-   SYSXY(__NR_getitimer,        sys_getitimer),    // 105 * (SVr4,4.4BSD)
-   SYSXY(__NR_stat,             sys_newstat),      // 106 * P
-   SYSXY(__NR_lstat,            sys_newlstat),     // 107 *
-   SYSXY(__NR_fstat,            sys_newfstat),     // 108 * P (SVr4,BSD4.3)
-   //   (__NR_olduname,         sys_uname),        // 109 (?) L -- obsolete
-
-   SYSX_(__NR_iopl,             sys_iopl),         // 110 (x86/amd64) L
-   SYSX_(__NR_vhangup,          sys_vhangup),      // 111 * L
-   SYSX_(__NR_idle,             sys_ni_syscall),   // 112 * P -- unimplemented
-   //   (__NR_vm86old,          sys_vm86old),      // 113 (x86) L
-   SYSXY(__NR_wait4,            sys_wait4),        // 114 * P
-
-   //   (__NR_swapoff,          sys_swapoff),      // 115 * L 
-   SYSXY(__NR_sysinfo,          sys_sysinfo),      // 116 * L
-   SYSXY(__NR_ipc,              sys_ipc),          // 117 (x86) L
-   SYSX_(__NR_fsync,            sys_fsync),        // 118 * L
-   //   (__NR_sigreturn,        sys_sigreturn),    // 119 () L
-
-   SYSX_(__NR_clone,            sys_clone),        // 120 (x86) L
-   //   (__NR_setdomainname,    sys_setdomainname),// 121 * (non-P?)
-   SYSXY(__NR_uname,            sys_newuname),     // 122 * P
-   SYSX_(__NR_modify_ldt,       sys_modify_ldt),   // 123 (x86,amd64) L
-   SYSXY(__NR_adjtimex,         sys_adjtimex),     // 124 * L
-
-   SYSXY(__NR_mprotect,         sys_mprotect),     // 125 * P
-   SYSXY(__NR_sigprocmask,      sys_sigprocmask),  // 126 * P
-   // Nb: create_module() was removed 2.4-->2.6
-   SYSX_(__NR_create_module,    sys_ni_syscall),   // 127 * P -- unimplemented
-   SYSX_(__NR_init_module,      sys_init_module),  // 128 * L?
-   //   (__NR_delete_module,    sys_delete_module),// 129 () (L?)
-
-   // Nb: get_kernel_syms() was removed 2.4-->2.6
-   SYSX_(__NR_get_kernel_syms,  sys_ni_syscall),   // 130 * P -- unimplemented
-   SYSX_(__NR_quotactl,         sys_quotactl),     // 131 * (?)
-   SYSX_(__NR_getpgid,          sys_getpgid),      // 132 * P
-   SYSX_(__NR_fchdir,           sys_fchdir),       // 133 * (almost-P)
-   //   (__NR_bdflush,          sys_bdflush),      // 134 * L
-
-   //   (__NR_sysfs,            sys_sysfs),        // 135 * (SVr4)
-   SYSX_(__NR_personality,      sys_personality),  // 136 * L
-   SYSX_(__NR_afs_syscall,      sys_ni_syscall),   // 137 * P
-   SYSX_(__NR_setfsuid,         sys_setfsuid16),   // 138 ## L
-   SYSX_(__NR_setfsgid,         sys_setfsgid16),   // 139 ## L
-
-   SYSXY(__NR__llseek,          sys_llseek),       // 140 * L
-   SYSXY(__NR_getdents,         sys_getdents),     // 141 * (SVr4,SVID)
-   SYSX_(__NR__newselect,       sys_select),       // 142 * (4.4BSD...)
-   SYSX_(__NR_flock,            sys_flock),        // 143 * (4.4BSD...)
-   SYSX_(__NR_msync,            sys_msync),        // 144 * P
-
-   SYSXY(__NR_readv,            sys_readv),        // 145 * P
-   SYSX_(__NR_writev,           sys_writev),       // 146 * P
-   SYSX_(__NR_getsid,           sys_getsid),       // 147 * P
-   SYSX_(__NR_fdatasync,        sys_fdatasync),    // 148 * P
-   SYSXY(__NR__sysctl,          sys_sysctl),       // 149 * L
-
-   SYSX_(__NR_mlock,            sys_mlock),           // 150 * P
-   SYSX_(__NR_munlock,          sys_munlock),         // 151 * P
-   SYSX_(__NR_mlockall,         sys_mlockall),        // 152 * P
-   SYSX_(__NR_munlockall,       sys_munlockall),      // 153 * P
-   SYSXY(__NR_sched_setparam,   sys_sched_setparam),  // 154 * P
-
-   SYSXY(__NR_sched_getparam,        sys_sched_getparam),         // 155 * P
-   SYSX_(__NR_sched_setscheduler,    sys_sched_setscheduler),     // 156 * P
-   SYSX_(__NR_sched_getscheduler,    sys_sched_getscheduler),     // 157 * P
-   SYSX_(__NR_sched_yield,           sys_sched_yield),            // 158 * P
-   SYSX_(__NR_sched_get_priority_max,sys_sched_get_priority_max), // 159 * P
-
-   SYSX_(__NR_sched_get_priority_min,sys_sched_get_priority_min), // 160 * P
-   //   (__NR_sched_rr_get_interval,   sys_sched_rr_get_interval), // 161 *
-   SYSXY(__NR_nanosleep,        sys_nanosleep),    // 162 * P
-   SYSX_(__NR_mremap,           sys_mremap),       // 163 * P
-   SYSX_(__NR_setresuid,        sys_setresuid16),  // 164 ## (non-standard)
-
-   SYSXY(__NR_getresuid,        sys_getresuid16),  // 165 ## L
-   //   (__NR_vm86,             sys_vm86),         // 166 (x86) L
-   SYSX_(__NR_query_module,     sys_ni_syscall),   // 167 * P -- unimplemented
-   SYSXY(__NR_poll,             sys_poll),         // 168 * (XPG4-UNIX)
-   //   (__NR_nfsservctl,       sys_nfsservctl),   // 169 * L
-
-   SYSX_(__NR_setresgid,        sys_setresgid16),  // 170 ## (non-standard)
-   SYSXY(__NR_getresgid,        sys_getresgid16),  // 171 ## L
-   SYSX_(__NR_prctl,            sys_prctl),        // 172 * L
-   //   (__NR_rt_sigreturn,     sys_rt_sigreturn), // 173 (x86) ()
-   SYSXY(__NR_rt_sigaction,     sys_rt_sigaction), // 174 (x86) ()
-
-   SYSXY(__NR_rt_sigprocmask,   sys_rt_sigprocmask),  // 175 * ?
-   SYSXY(__NR_rt_sigpending,    sys_rt_sigpending),   // 176 * ?
-   SYSXY(__NR_rt_sigtimedwait,  sys_rt_sigtimedwait), // 177 * ?
-   SYSXY(__NR_rt_sigqueueinfo,  sys_rt_sigqueueinfo), // 178 * ?
-   SYSX_(__NR_rt_sigsuspend,    sys_rt_sigsuspend),   // 179 () ()
-   SYSXY(__NR_pread64,          sys_pread64),         // 180 * (Unix98?)
-
-   SYSX_(__NR_pwrite64,         sys_pwrite64),     // 181 * (Unix98?)
-   SYSX_(__NR_chown,            sys_chown16),      // 182 * P
-   SYSXY(__NR_getcwd,           sys_getcwd),       // 183 * P
-   SYSXY(__NR_capget,           sys_capget),       // 184 * L?
-
-   SYSX_(__NR_capset,           sys_capset),       // 185 * L?
-   SYSXY(__NR_sigaltstack,      sys_sigaltstack),  // 186 (x86) (XPG4-UNIX)
-   SYSXY(__NR_sendfile,         sys_sendfile),     // 187 * L
-   SYSXY(__NR_getpmsg,          sys_getpmsg),      // 188 (?) (?)
-   SYSX_(__NR_putpmsg,          sys_putpmsg),      // 189 (?) (?)
-
-   // Nb: we convert vfork() to fork() in VG_(pre_syscall)().
-   //   (__NR_vfork,            sys_vfork),        // 190 -- Valgrind avoids
-   SYSXY(__NR_ugetrlimit,       sys_getrlimit),    // 191 * (?)
-   SYSXY(__NR_mmap2,            sys_mmap2),        // 192 (x86?) P?
-   SYSX_(__NR_truncate64,       sys_truncate64),   // 193 %% (P?)
-   SYSX_(__NR_ftruncate64,      sys_ftruncate64),  // 194 %% (P?)
-   
-   SYSXY(__NR_stat64,           sys_stat64),       // 195 %% (?)
-   SYSXY(__NR_lstat64,          sys_lstat64),      // 196 %% (?)
-   SYSXY(__NR_fstat64,          sys_fstat64),      // 197 %% (?)
-   SYSX_(__NR_lchown32,         sys_lchown),       // 198 * (L?)
-   SYSX_(__NR_getuid32,         sys_getuid),       // 199 *
-
-   SYSX_(__NR_getgid32,         sys_getgid),       // 200 *
-   SYSX_(__NR_geteuid32,        sys_geteuid),      // 201 *
-   SYSX_(__NR_getegid32,        sys_getegid),      // 202 *
-   SYSX_(__NR_setreuid32,       sys_setreuid),     // 203 * (BSD4.3)
-   SYSX_(__NR_setregid32,       sys_setregid),     // 204 * (BSD4.3)
-
-   SYSXY(__NR_getgroups32,      sys_getgroups),    // 205 * P
-   SYSX_(__NR_setgroups32,      sys_setgroups),    // 206 * almost-P
-   SYSX_(__NR_fchown32,         sys_fchown),       // 207 * (SVr4,BSD4.3)
-   SYSX_(__NR_setresuid32,      sys_setresuid),    // 208 * (non-standard)
-   SYSXY(__NR_getresuid32,      sys_getresuid),    // 209 * L
-
-   SYSX_(__NR_setresgid32,      sys_setresgid),    // 210 * (non-standard)
-   SYSXY(__NR_getresgid32,      sys_getresgid),    // 211 * L
-   SYSX_(__NR_chown32,          sys_chown),        // 212 * P
-   SYSX_(__NR_setuid32,         sys_setuid),       // 213 *
-   SYSX_(__NR_setgid32,         sys_setgid),       // 214 * (SVr4,SVID)
-
-   SYSX_(__NR_setfsuid32,       sys_setfsuid),     // 215 * L
-   SYSX_(__NR_setfsgid32,       sys_setfsgid),     // 216 * L
-   //   (__NR_pivot_root,       sys_pivot_root),   // 217 * L
-   SYSXY(__NR_mincore,          sys_mincore),      // 218 * non-P?
-   SYSX_(__NR_madvise,          sys_madvise),      // 219 * P
-
-   SYSXY(__NR_getdents64,       sys_getdents64),   // 220 * (SVr4,SVID?)
-   SYSXY(__NR_fcntl64,          sys_fcntl64),      // 221 * P?
-   // Nb: 222 is reserved for TUX (whatever that means --njn)
-   SYSX_(222,                   sys_ni_syscall),   // 222 * P -- reserved
-   SYSX_(223,                   sys_ni_syscall),   // 223 * P -- unused
-   //   (__NR_gettid,           sys_gettid),       // 224 * L
-
-   //   (__NR_readahead,        sys_readahead),    // 225 * ()
-   SYSX_(__NR_setxattr,         sys_setxattr),     // 226 * L?
-   SYSX_(__NR_lsetxattr,        sys_lsetxattr),    // 227 * L?
-   SYSX_(__NR_fsetxattr,        sys_fsetxattr),    // 228 * L?
-   SYSXY(__NR_getxattr,         sys_getxattr),     // 229 * L?
-
-   SYSXY(__NR_lgetxattr,        sys_lgetxattr),    // 230 * L?
-   SYSXY(__NR_fgetxattr,        sys_fgetxattr),    // 231 * L?
-   SYSXY(__NR_listxattr,        sys_listxattr),    // 232 * L?
-   SYSXY(__NR_llistxattr,       sys_llistxattr),   // 233 * L?
-   SYSXY(__NR_flistxattr,       sys_flistxattr),   // 234 * L?
-
-   SYSX_(__NR_removexattr,      sys_removexattr),  // 235 * L?
-   SYSX_(__NR_lremovexattr,     sys_lremovexattr), // 236 * L?
-   SYSX_(__NR_fremovexattr,     sys_fremovexattr), // 237 * L?
-   //   (__NR_tkill,            sys_tkill),        // 238 * L
-   SYSXY(__NR_sendfile64,       sys_sendfile64),   // 239 * L
-
-   SYSXY(__NR_futex,            sys_futex),              // 240 * L
-   SYSX_(__NR_sched_setaffinity,sys_sched_setaffinity),  // 241 * L?
-   SYSXY(__NR_sched_getaffinity,sys_sched_getaffinity),  // 242 * L?
-   SYSX_(__NR_set_thread_area,  sys_set_thread_area), // 243 (x86-only) L
-   SYSX_(__NR_get_thread_area,  sys_get_thread_area), // 244 (x86-only) L
-
-   SYSX_(__NR_io_setup,         sys_io_setup),        // 245 * L
-   SYSX_(__NR_io_destroy,       sys_io_destroy),      // 246 * L
-   SYSXY(__NR_io_getevents,     sys_io_getevents),    // 247 * L
-   SYSX_(__NR_io_submit,        sys_io_submit),       // 248 * L
-   SYSXY(__NR_io_cancel,        sys_io_cancel),       // 249 * L
-
-   //   (__NR_fadvise64,        sys_fadvise64),       // 250 * ()
-   SYSX_(251,                   sys_ni_syscall),      // 251 * P -- unused
-   SYSX_(__NR_exit_group,       sys_exit_group),      // 252 *
-   SYSXY(__NR_lookup_dcookie,   sys_lookup_dcookie),  // 253 (*/32/64) L
-   SYSXY(__NR_epoll_create,     sys_epoll_create),    // 254 * L
-
-   SYSX_(__NR_epoll_ctl,        sys_epoll_ctl),       // 255 * L
-   SYSXY(__NR_epoll_wait,       sys_epoll_wait),      // 256 * L
-   //   (__NR_remap_file_pages, sys_remap_file_pages),// 257 * L
-   SYSX_(__NR_set_tid_address,  sys_set_tid_address), // 258 * ?
-   SYSXY(__NR_timer_create,     sys_timer_create),    // 259 (?) P
-
-   SYSXY(__NR_timer_settime,    sys_timer_settime),   // (timer_create+1) * P
-   SYSXY(__NR_timer_gettime,    sys_timer_gettime),   // (timer_create+2) * P
-   SYSX_(__NR_timer_getoverrun, sys_timer_getoverrun),// (timer_create+3) * P
-   SYSX_(__NR_timer_delete,     sys_timer_delete),    // (timer_create+4) * P
-   SYSX_(__NR_clock_settime,    sys_clock_settime),   // (timer_create+5) * P
-
-   SYSXY(__NR_clock_gettime,    sys_clock_gettime),   // (timer_create+6) * P
-   SYSXY(__NR_clock_getres,     sys_clock_getres),    // (timer_create+7) * P
-   //   (__NR_clock_nanosleep,  sys_clock_nanosleep), // (timer_create+8) * P
-
-   SYSXY(__NR_statfs64,         sys_statfs64),     // 268 * (?)
-   SYSXY(__NR_fstatfs64,        sys_fstatfs64),    // 269 * (?)
-
-   //   (__NR_tgkill,           sys_tgkill),       // 270 * ()
-   SYSX_(__NR_utimes,           sys_utimes),       // 271 * (4.3BSD)
-   //   (__NR_fadvise64_64,     sys_fadvise64_64), // 272 * ()
-   SYSX_(__NR_vserver,          sys_ni_syscall),   // 273 * P -- unimplemented
-   //   (__NR_mbind,            sys_mbind),        // 274 () ()
-
-   //   (__NR_get_mempolicy,    sys_get_mempolicy),// 275 () ()
-   //   (__NR_set_mempolicy,    sys_set_mempolicy),// 276 () ()
-   SYSXY(__NR_mq_open,          sys_mq_open),      // 277 * P?
-   SYSX_(__NR_mq_unlink,        sys_mq_unlink),    // (mq_open+1) * P?
-   SYSX_(__NR_mq_timedsend,     sys_mq_timedsend), // (mq_open+2) * P?
-
-   SYSXY(__NR_mq_timedreceive,  sys_mq_timedreceive), // (mq_open+3) * P?
-   SYSX_(__NR_mq_notify,        sys_mq_notify),       // (mq_open+4) * P?
-   SYSXY(__NR_mq_getsetattr,    sys_mq_getsetattr),    // (mq_open+5) * P?
-   SYSX_(__NR_sys_kexec_load,   sys_ni_syscall),      // 283 * P
-};
-#define MAX_SYS_INFO    (sizeof(sys_info)/sizeof(sys_info[0]))
-
-#undef SYSX_
-#undef SYSXY
-
-
-/* ---------------------------------------------------------------------
-   Executing the syscalls
-   ------------------------------------------------------------------ */
 
 Bool VG_(pre_syscall) ( ThreadId tid )
 {
    ThreadState* tst;
    UInt         syscallno, flags;
-   const struct sys_info *sys;
+   const struct SyscallTableEntry *sys;
    Bool isSpecial    = False;
    Bool mayBlock     = False;
    Bool runInLWP     = False;
@@ -6852,8 +6020,10 @@ Bool VG_(pre_syscall) ( ThreadId tid )
    tst->syscallno = syscallno;
    vg_assert(tst->status == VgTs_Runnable);
 
-   if (syscallno < MAX_SYS_INFO && sys_info[syscallno].before != NULL) {
-      sys = &sys_info[syscallno];
+   if (syscallno < VGA_(syscall_table_size) &&
+       VGA_(syscall_table)[syscallno].before != NULL)
+   {
+      sys = &VGA_(syscall_table)[syscallno];
    } else {
       sys = &bad_sys;
    }
@@ -6944,7 +6114,7 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
 {
    ThreadState* tst;
    UInt syscallno, flags;
-   const struct sys_info *sys;
+   const struct SyscallTableEntry *sys;
    Bool isSpecial = False;
    Bool restarted = False;
    void *pre_res;
@@ -6962,8 +6132,10 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
 
    vg_assert(syscallno != -1);			/* must be a current syscall */
 
-   if (syscallno < MAX_SYS_INFO && sys_info[syscallno].before != NULL) {
-      sys = &sys_info[syscallno];
+   if (syscallno < VGA_(syscall_table_size) &&
+       VGA_(syscall_table)[syscallno].before != NULL)
+   {
+      sys = &VGA_(syscall_table)[syscallno];
    } else {
       sys = &bad_sys;
    }
@@ -7025,6 +6197,6 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
 #undef arg6
 
 /*--------------------------------------------------------------------*/
-/*--- end                                            vg_syscalls.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
 

@@ -27,7 +27,7 @@ val_DATA = $(SUPP_FILES) default.supp
 
 BUILT_SOURCES = default.supp
 
-DISTCLEANFILES = default.supp
+CLEANFILES = default.supp
 
 default.supp: $(SUPP_FILES)
 

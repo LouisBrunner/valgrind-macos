@@ -139,13 +139,14 @@ TranslateResult LibVEX_Translate (
       return TransAccessFail;
    }
    sanityCheckIRBB(irbb, Ity_I32);
-return TransOK;
+
    /* Get the thing instrumented. */
    if (instrument)
       irbb = (*instrument)(irbb);
 
    /* Turn it into virtual-registerised code. */
    vcode = iselBB ( irbb );
+return TransOK;
 
    vex_printf("\n-------- Virtual registerised code --------\n");
    for (i = 0; i < vcode->arr_used; i++) {

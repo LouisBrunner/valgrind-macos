@@ -387,9 +387,25 @@ X86Instr* X86Instr_Sh32 ( X86ShiftOp op, UInt src, X86RM* dst ) {
    return i;
 }
 
-X86Instr* X86Instr_RET ( void ) {
+X86Instr* X86Instr_Push( X86RMI* src ) {
    X86Instr* i     = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag          = Xin_RET;
+   i->tag          = Xin_Push;
+   i->Xin.Push.src = src;
+   return i;
+}
+
+X86Instr* X86Instr_Call ( HReg target ) {
+   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag             = Xin_Call;
+   i->Xin.Call.target = target;
+   return i;
+}
+
+X86Instr* X86Instr_GotoNZ ( Bool onlyWhenNZ, X86RI* dst ) {
+   X86Instr* i              = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag                   = Xin_GotoNZ;
+   i->Xin.GotoNZ.onlyWhenNZ = onlyWhenNZ;
+   i->Xin.GotoNZ.dst        = dst;
    return i;
 }
 
@@ -418,8 +434,24 @@ void ppX86Instr ( X86Instr* i ) {
             vex_printf(" $%d,", i->Xin.Sh32.src);
          ppX86RM(i->Xin.Sh32.dst);
          return;
-      case Xin_RET:
-         vex_printf("ret");
+      case Xin_Push:
+         vex_printf("pushl ");
+         ppX86RMI(i->Xin.Push.src);
+         return;
+      case Xin_Call:
+         vex_printf("call *");
+         ppHRegX86(i->Xin.Call.target);
+         break;
+      case Xin_GotoNZ:
+         if (i->Xin.GotoNZ.onlyWhenNZ) {
+            vex_printf("if (%%eflags.Z) { movl ");
+            ppX86RI(i->Xin.GotoNZ.dst);
+            vex_printf(",%%eax ; ret }");
+         } else {
+            vex_printf("movl ");
+            ppX86RI(i->Xin.GotoNZ.dst);
+            vex_printf(",%%eax ; ret");
+         }
          return;
       default:
          vpanic("ppX86Instr");
@@ -448,12 +480,21 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          if (i->Xin.Sh32.src == 0)
             addHRegUse(u, HRmRead, hregX86_ECX());
          return;
-      case Xin_RET:
-         /* Using our calling conventions, %eax is live into a ret,
-            because we know the dispatcher -- to which we're returning
-            -- uses that value as the next guest address.  Hmm.  What
-            if we're simulating a 64-bit guest on an x86 host? */
-         addHRegUse(u, HRmRead, hregX86_EAX());
+      case Xin_Push:
+         addRegUsage_X86RMI(u, i->Xin.Push.src);
+         addHRegUse(u, HRmModify, hregX86_ESP());
+         return;
+      case Xin_Call:
+         addHRegUse(u, HRmRead, i->Xin.Call.target);
+         /* claim it trashes all the callee-saved regs */
+         /* except I have no idea what they are */
+         addHRegUse(u, HRmWrite, hregX86_EAX());
+         addHRegUse(u, HRmWrite, hregX86_ECX());
+         addHRegUse(u, HRmWrite, hregX86_EDX());
+         return;
+      case Xin_GotoNZ:
+         addRegUsage_X86RI(u, i->Xin.GotoNZ.dst);
+         addHRegUse(u, HRmWrite, hregX86_EAX());
          return;
       default:
          ppX86Instr(i);
@@ -475,7 +516,8 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
       case Xin_Sh32:
          mapRegs_X86RM(m, i->Xin.Sh32.dst);
          return;
-      case Xin_RET:
+      case Xin_GotoNZ:
+         mapRegs_X86RI(m, i->Xin.GotoNZ.dst);
          return;
       default:
          ppX86Instr(i);

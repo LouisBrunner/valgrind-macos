@@ -30,7 +30,8 @@ extern void ppIRType ( IRType );
 /* ------------------ Constants ------------------ */
 
 typedef
-   enum { Ico_U8, Ico_U16, Ico_U32, Ico_U64 }
+   enum { Ico_U8=0x12000, 
+          Ico_U16, Ico_U32, Ico_U64 }
    IRConstTag;
 
 typedef
@@ -68,7 +69,7 @@ typedef
    enum { 
       /* Do not change this ordering.  The IR generators
          rely on (eg) Iop_Add64 == IopAdd8 + 3. */
-      Iop_Add8=0x12000,  
+      Iop_Add8=0x13000,  
                  Iop_Add16,  Iop_Add32,  Iop_Add64,
       Iop_Sub8,  Iop_Sub16,  Iop_Sub32,  Iop_Sub64,
       Iop_Adc8,  Iop_Adc16,  Iop_Adc32,  Iop_Adc64,
@@ -256,7 +257,7 @@ extern void ppIRStmt ( IRStmt* );
 
 typedef
    enum { 
-      Ijk_Boring=0x13000, /* not interesting; just goto next */
+      Ijk_Boring=0x14000, /* not interesting; just goto next */
       Ijk_Call,           /* guest is doing a call */
       Ijk_Ret,            /* guest is doing a return */
       Ijk_ClientReq,      /* do guest client req before continuing */

@@ -160,7 +160,8 @@ extern void ppX86RM ( X86RM* );
 
 /* --------- */
 typedef 
-   enum { 
+   enum {
+      Xalu_INVALID,
       Xalu_MOV,
       Xalu_ADD, Xalu_SUB, Xalu_ADC, Xalu_SBB, 
       Xalu_AND, Xalu_OR, Xalu_XOR 
@@ -173,6 +174,7 @@ extern void ppX86AluOp ( X86AluOp );
 /* --------- */
 typedef
    enum {
+      Xsh_INVALID,
       Xsh_SHL, Xsh_SHR, Xsh_SAR, 
       Xsh_ROL, Xsh_ROR
    }
@@ -187,7 +189,9 @@ typedef
       Xin_Alu32R,    /* 32-bit mov/arith/logical, dst=REG */
       Xin_Alu32M,    /* 32-bit mov/arith/logical, dst=MEM */
       Xin_Sh32,      /* 32-bit shift/rotate, dst=REG or MEM */
-      Xin_RET
+      Xin_Push,      /* push (32-bit?) value on stack */
+      Xin_Call,      /* call to address in register */
+      Xin_GotoNZ     /* conditional/unconditional jmp to dst */
    }
    X86InstrTag;
 
@@ -212,8 +216,18 @@ typedef
             UInt       src;  /* shift amount, or 0 means %cl */
             X86RM*     dst;
          } Sh32;
- 	 struct {
-	 } RET;
+         struct {
+            X86RMI* src;
+         } Push;
+         struct {
+            HReg target;
+         } Call;
+         /* Pseudo-insn.  Goto dst, optionally only when Z flag is
+            clear. */
+         struct {
+            Bool   onlyWhenNZ;
+            X86RI* dst;
+         } GotoNZ;
       } Xin;
    }
    X86Instr;
@@ -221,7 +235,9 @@ typedef
 extern X86Instr* X86Instr_Alu32R ( X86AluOp, X86RMI*, HReg );
 extern X86Instr* X86Instr_Alu32M ( X86AluOp, X86RI*,  X86AMode* );
 extern X86Instr* X86Instr_Sh32   ( X86ShiftOp, UInt, X86RM* );
-extern X86Instr* X86Instr_RET    ( void );
+extern X86Instr* X86Instr_Push   ( X86RMI* );
+extern X86Instr* X86Instr_Call   ( HReg );
+extern X86Instr* X86Instr_GotoNZ ( Bool onlyWhenNZ, X86RI* dst );
 
 extern void ppX86Instr ( X86Instr* );
 

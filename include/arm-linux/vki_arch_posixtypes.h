@@ -1,7 +1,7 @@
 
 /*--------------------------------------------------------------------*/
 /*--- ARM/Linux-specific kernel interface: posix types.            ---*/
-/*---                                        vki_arch_posixtypes.h ---*/
+/*---                              arm-linux/vki_arch_posixtypes.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -60,7 +60,6 @@ typedef long long	        __vki_kernel_loff_t;
 typedef struct {
 	int	val[2];
 } __vki_kernel_fsid_t;
-
 
 #endif // __ARM_LINUX_VKI_ARCH_POSIXTYPES_H
 

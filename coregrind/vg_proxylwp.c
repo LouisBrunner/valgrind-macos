@@ -1215,7 +1215,7 @@ void VG_(proxy_waitsig)(void)
 }
 
 /* Issue a syscall to the thread's ProxyLWP */
-Int VG_(sys_issue)(int tid)
+Int VG_(sys_issue)(ThreadId tid)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
    ProxyLWP *proxy = tst->proxy;
@@ -1249,7 +1249,7 @@ Int VG_(sys_issue)(int tid)
    res = VG_(write)(proxy->topx, &req, sizeof(req));
 
    if (res != sizeof(req)) {
-      VG_(message)(Vg_DebugMsg, "sys_issue: write to tid %d failed %d (not %d)\n",
+      VG_(message)(Vg_DebugMsg, "sys_issue: write to tid %u failed %d (not %d)\n",
 		   tid, res, sizeof(req));
    }
    return 0;
@@ -1258,7 +1258,7 @@ Int VG_(sys_issue)(int tid)
 /* Relatively expensive sanity tests for the syscall machinery */
 void VG_(sanity_check_proxy)(void)
 {
-   Int tid;
+   ThreadId tid;
    Bool sane = True;
    static const struct PX_Request req = { .request = PX_Ping };
 

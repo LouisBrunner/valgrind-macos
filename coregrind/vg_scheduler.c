@@ -465,7 +465,7 @@ void handle_signal_return ( ThreadId tid )
        VG_(threads)[tid].associated_mx->__vg_m_count == 0) {
       vg_pthread_mutex_t* mutex = VG_(threads)[tid].associated_mx;
       mutex->__vg_m_count = 1;
-      mutex->__vg_m_owner = (/*_pthread_descr*/void*)tid;
+      mutex->__vg_m_owner = (/*_pthread_descr*/void*)(ULong)tid;
       VG_(threads)[tid].status        = VgTs_Runnable;
       VG_(threads)[tid].associated_mx = NULL;
       /* m_edx already holds pth_mx_lock() success (0) */
@@ -1227,7 +1227,7 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
          VG_(threads)[tid].status        = VgTs_Runnable;
          VG_(threads)[tid].associated_cv = NULL;
          VG_(threads)[tid].associated_mx = NULL;
-         mx->__vg_m_owner = (/*_pthread_descr*/void*)tid;
+         mx->__vg_m_owner = (/*_pthread_descr*/void*)(ULong)tid;
          mx->__vg_m_count = 1;
          /* .m_edx already holds pth_cond_wait success value (0) */
 
@@ -1944,7 +1944,7 @@ void release_one_thread_waiting_on_mutex ( vg_pthread_mutex_t* mutex,
          break;
    }
 
-   VG_TRACK( post_mutex_unlock, (ThreadId)mutex->__vg_m_owner, mutex );
+   VG_TRACK( post_mutex_unlock, (ThreadId)(ULong)mutex->__vg_m_owner, mutex );
 
    vg_assert(i <= VG_N_THREADS);
    if (i == VG_N_THREADS) {
@@ -1956,7 +1956,7 @@ void release_one_thread_waiting_on_mutex ( vg_pthread_mutex_t* mutex,
          pthread_mutex_lock() call now returns with 0 (success). */
       /* The .count is already == 1. */
       vg_assert(VG_(threads)[i].associated_mx == mutex);
-      mutex->__vg_m_owner = (/*_pthread_descr*/void*)i;
+      mutex->__vg_m_owner = (/*_pthread_descr*/void*)(ULong)i;
       VG_(threads)[i].status        = VgTs_Runnable;
       VG_(threads)[i].associated_mx = NULL;
       /* m_edx already holds pth_mx_lock() success (0) */
@@ -2024,7 +2024,7 @@ void do_pthread_mutex_lock( ThreadId tid,
    }
 
    if (mutex->__vg_m_count > 0) {
-      if (!VG_(is_valid_tid)((ThreadId)mutex->__vg_m_owner)) {
+      if (!VG_(is_valid_tid)((ThreadId)(ULong)mutex->__vg_m_owner)) {
          VG_(record_pthread_error)( tid, 
             "pthread_mutex_lock/trylock: mutex has invalid owner");
          SET_PTHREQ_RETVAL(tid, VKI_EINVAL);
@@ -2032,7 +2032,7 @@ void do_pthread_mutex_lock( ThreadId tid,
       }	 
 
       /* Someone has it already. */
-      if ((ThreadId)mutex->__vg_m_owner == tid && ms_end == 0xFFFFFFFF) {
+      if ((ThreadId)(ULong)mutex->__vg_m_owner == tid && ms_end == 0xFFFFFFFF) {
          /* It's locked -- by me! */
          if (mutex->__vg_m_kind == PTHREAD_MUTEX_RECURSIVE_NP) {
             /* return 0 (success). */
@@ -2082,7 +2082,7 @@ void do_pthread_mutex_lock( ThreadId tid,
 
       /* We get it! [for the first time]. */
       mutex->__vg_m_count = 1;
-      mutex->__vg_m_owner = (/*_pthread_descr*/void*)tid;
+      mutex->__vg_m_owner = (/*_pthread_descr*/void*)(ULong)tid;
 
       /* return 0 (success). */
       SET_PTHREQ_RETVAL(tid, 0);
@@ -2143,7 +2143,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       return;
    }
 
-   if ((ThreadId)mutex->__vg_m_owner != tid) {
+   if ((ThreadId)(ULong)mutex->__vg_m_owner != tid) {
       /* we don't hold it */
       VG_(record_pthread_error)( tid, 
          "pthread_mutex_unlock: mutex is locked by a different thread");
@@ -2163,7 +2163,7 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    /* Now we're sure it is locked exactly once, and by the thread who
       is now doing an unlock on it.  */
    vg_assert(mutex->__vg_m_count == 1);
-   vg_assert((ThreadId)mutex->__vg_m_owner == tid);
+   vg_assert((ThreadId)(ULong)mutex->__vg_m_owner == tid);
 
    /* Release at max one thread waiting on this mutex. */
    release_one_thread_waiting_on_mutex ( mutex, "pthread_mutex_lock" );
@@ -2209,7 +2209,7 @@ void do_pthread_cond_timedwait_TIMEOUT ( ThreadId tid )
       SET_PTHREQ_RETVAL(tid, ETIMEDOUT);  /* pthread_cond_wait return value */
       VG_(threads)[tid].associated_cv = NULL;
       VG_(threads)[tid].associated_mx = NULL;
-      mx->__vg_m_owner = (/*_pthread_descr*/void*)tid;
+      mx->__vg_m_owner = (/*_pthread_descr*/void*)(ULong)tid;
       mx->__vg_m_count = 1;
 
       VG_TRACK( post_mutex_lock, tid, mx );
@@ -2278,7 +2278,7 @@ void release_N_threads_waiting_on_cond ( vg_pthread_cond_t* cond,
          VG_(threads)[i].status        = VgTs_Runnable;
          VG_(threads)[i].associated_cv = NULL;
          VG_(threads)[i].associated_mx = NULL;
-         mx->__vg_m_owner = (/*_pthread_descr*/void*)i;
+         mx->__vg_m_owner = (/*_pthread_descr*/void*)(ULong)i;
          mx->__vg_m_count = 1;
          /* .m_edx already holds pth_cond_wait success value (0) */
 
@@ -2375,7 +2375,7 @@ void do_pthread_cond_wait ( ThreadId tid,
       return;
    }
 
-   if ((ThreadId)mutex->__vg_m_owner != tid /* we don't hold it */) {
+   if ((ThreadId)(ULong)mutex->__vg_m_owner != tid /* we don't hold it */) {
          VG_(record_pthread_error)( tid, 
             "pthread_cond_wait/timedwait: mutex is locked by another thread");
       SET_PTHREQ_RETVAL(tid, VKI_EPERM);
@@ -2575,7 +2575,7 @@ void do_pthread_getspecific_ptr ( ThreadId tid )
    }
 
    specifics_ptr = VG_(threads)[tid].specifics_ptr;
-   vg_assert(specifics_ptr == NULL || IS_ALIGNED4_ADDR(specifics_ptr));
+   vg_assert(specifics_ptr == NULL || IS_WORD_ALIGNED_ADDR(specifics_ptr));
 
    SET_PTHREQ_RETVAL(tid, (UWord)specifics_ptr);
 }
@@ -3334,8 +3334,8 @@ void scheduler_sanity ( void )
          vg_assert(cv == NULL);
          /* 1 */ vg_assert(mx != NULL);
 	 /* 2 */ vg_assert(mx->__vg_m_count > 0);
-         /* 3 */ vg_assert(VG_(is_valid_tid)((ThreadId)mx->__vg_m_owner));
-         /* 4 */ vg_assert((UInt)i != (ThreadId)mx->__vg_m_owner ||
+         /* 3 */ vg_assert(VG_(is_valid_tid)((ThreadId)(ULong)mx->__vg_m_owner));
+         /* 4 */ vg_assert((UInt)i != (ThreadId)(ULong)mx->__vg_m_owner ||
                            VG_(threads)[i].awaken_at != 0xFFFFFFFF); 
       } else 
       if (VG_(threads)[i].status == VgTs_WaitCV) {

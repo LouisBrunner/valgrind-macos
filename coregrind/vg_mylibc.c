@@ -195,7 +195,7 @@ Int VG_(kill)( Int pid, Int signo )
 }
 
 
-Int VG_(tkill)( Int tid, Int signo )
+Int VG_(tkill)( ThreadId tid, Int signo )
 {
    Int ret = -VKI_ENOSYS;
 
@@ -216,8 +216,16 @@ Int VG_(tkill)( Int tid, Int signo )
 
 Int VG_(sigpending) ( vki_sigset_t* set )
 {
+// Nb: AMD64/Linux doesn't have __NR_sigpending;  it only provides
+// __NR_rt_sigpending.  This function will have to be abstracted in some
+// way to account for this.  In the meantime, the easy option is to forget
+// about it for AMD64 until it's needed.
+#ifdef __amd64__
+   I_die_here;
+#else
    Int res = VG_(do_syscall)(__NR_sigpending, (UWord)set);
    return VG_(is_kerror)(res) ? -1 : 0;
+#endif
 }
 
 Int VG_(waitpid)(Int pid, Int *status, Int options)
@@ -1314,7 +1322,7 @@ Int VG_(unlink) ( Char* file_name )
    buffer if buf==NULL, because we don't want Linux calling malloc() */
 Char* VG_(getcwd) ( Char* buf, SizeT size )
 {
-   Int res;
+   Word res;
    vg_assert(buf != NULL);
    res = VG_(do_syscall)(__NR_getcwd, (UWord)buf, size);
    return VG_(is_kerror)(res) ? ((Char*)NULL) : (Char*)res;
@@ -1936,6 +1944,11 @@ Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port )
 static
 Int my_socket ( Int domain, Int type, Int protocol )
 {
+// AMD64/Linux doesn't define __NR_socketcall... see comment above
+// VG_(sigpending)() for more details.
+#ifdef __amd64__
+   I_die_here;
+#else
    Int res;
    UWord args[3];
    args[0] = domain;
@@ -1945,12 +1958,18 @@ Int my_socket ( Int domain, Int type, Int protocol )
    if (VG_(is_kerror)(res)) 
       res = -1;
    return res;
+#endif
 }
 
 static
 Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, 
                  Int addrlen )
 {
+// AMD64/Linux doesn't define __NR_socketcall... see comment above
+// VG_(sigpending)() for more details.
+#ifdef __amd64__
+   I_die_here;
+#else
    Int res;
    UWord args[3];
    args[0] = sockfd;
@@ -1960,10 +1979,16 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr,
    if (VG_(is_kerror)(res)) 
       res = -1;
    return res;
+#endif
 }
 
 Int VG_(write_socket)( Int sd, void *msg, Int count )
 {
+// AMD64/Linux doesn't define __NR_socketcall... see comment above
+// VG_(sigpending)() for more details.
+#ifdef __amd64__
+   I_die_here;
+#else
    /* This is actually send(). */
 
    /* Requests not to send SIGPIPE on errors on stream oriented
@@ -1981,10 +2006,16 @@ Int VG_(write_socket)( Int sd, void *msg, Int count )
    if (VG_(is_kerror)(res)) 
       res = -1;
    return res;
+#endif
 }
 
 Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
+// AMD64/Linux doesn't define __NR_socketcall... see comment above
+// VG_(sigpending)() for more details.
+#ifdef __amd64__
+   I_die_here;
+#else
    Int res;
    UWord args[3];
    args[0] = sd;
@@ -1994,10 +2025,16 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
    if(VG_(is_kerror)(res))
       res = -1;
    return res;
+#endif
 }
 
 Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 {
+// AMD64/Linux doesn't define __NR_socketcall... see comment above
+// VG_(sigpending)() for more details.
+#ifdef __amd64__
+   I_die_here;
+#else
    Int res;
    UWord args[3];
    args[0] = sd;
@@ -2007,11 +2044,17 @@ Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
    if(VG_(is_kerror)(res))
       res = -1;
    return res;
+#endif
 }
 
 Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
                       Int *optlen)
 {
+// AMD64/Linux doesn't define __NR_socketcall... see comment above
+// VG_(sigpending)() for more details.
+#ifdef __amd64__
+   I_die_here;
+#else
    Int res;
    UWord args[5];
    args[0] = sd;
@@ -2023,9 +2066,9 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
    if(VG_(is_kerror)(res))
       res = -1;
    return res;
+#endif
 }
 
-
 /*--------------------------------------------------------------------*/
-/*--- end                                              vg_mylibc.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

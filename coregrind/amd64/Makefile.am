@@ -1,0 +1,33 @@
+include $(top_srcdir)/Makefile.all.am
+include $(top_srcdir)/Makefile.core-AM_CPPFLAGS.am
+
+AM_CFLAGS = $(WERROR) -Winline -Wall -Wshadow -O -fomit-frame-pointer -g
+
+noinst_HEADERS = \
+	core_arch.h \
+	core_arch_asm.h \
+	amd64_private.h \
+	amd64_private_asm.h
+
+noinst_LIBRARIES = libarch.a
+
+EXTRA_DIST = \
+	jmp_with_stack.c \
+	libpthread.c
+
+BUILT_SOURCES = stage2.lds
+CLEANFILES = stage2.lds
+
+libarch_a_SOURCES = \
+	cpuid.S \
+	helpers.S \
+	dispatch.S \
+	signals.c \
+	state.c
+
+# Extract ld's default linker script and hack it to our needs
+stage2.lds: Makefile
+	$(CC) -Wl,--verbose -nostdlib 2>&1 | sed \
+		-e '1,/^=====\+$$/d' \
+		-e '/^=====\+$$/d' \
+		-e 's/0x00400000/kickstart_base/g' > $@ || rm -f $@

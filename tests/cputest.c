@@ -15,12 +15,42 @@
 typedef int    Bool;
 
 char* all_archs[] = {
-   "x86",
-   "arm",
    "amd64",
+   "arm",
    "ppc",
+   "x86",
    NULL
 };
+
+#ifdef __amd64
+static Bool go(char* cpu)
+{
+   if ( strcmp( cpu, "amd64" ) == 0 )
+      return True;
+   else 
+      return False;
+}
+#endif // __amd64
+
+#ifdef __arm__
+static Bool go(char* cpu)
+{
+   if ( strcmp( cpu, "arm" ) == 0 )
+      return True;
+   else 
+      return False;
+}
+#endif // __arm__
+
+#ifdef __ppc__
+static Bool go(char* cpu)
+{
+   if ( strcmp( cpu, "ppc" ) == 0 )
+      return True;
+   else 
+      return False;
+}
+#endif // __ppc__
 
 #ifdef __x86__
 static __inline__ void cpuid(unsigned int n,
@@ -73,26 +103,6 @@ static Bool go(char* cpu)
 }
 #endif // __x86__
 
-
-#ifdef __arm__
-static Bool go(char* cpu)
-{
-   if ( strcmp( cpu, "arm" ) == 0 )
-      return True;
-   else 
-      return False;
-}
-#endif // __arm__
-
-#ifdef __ppc__
-static Bool go(char* cpu)
-{
-   if ( strcmp( cpu, "ppc" ) == 0 )
-      return True;
-   else 
-      return False;
-}
-#endif // __ppc__
 
 int main(int argc, char **argv)
 {

@@ -274,9 +274,10 @@ extern void VGP_(popcc)  ( UInt cc );
 /* 64-bit counter for the number of basic blocks done. */
 extern ULong VG_(bbs_done);
 
-/* Check if an address is 4-byte aligned */
-#define IS_ALIGNED4_ADDR(aaa_p) (0 == (((UInt)(aaa_p)) & 3))
-#define IS_ALIGNED8_ADDR(aaa_p) (0 == (((UInt)(aaa_p)) & 7))
+/* Check if an address is aligned */
+#define IS_ALIGNED4_ADDR(aaa_p)     (0 == (((Addr)(aaa_p)) & 3))
+#define IS_ALIGNED8_ADDR(aaa_p)     (0 == (((Addr)(aaa_p)) & 7))
+#define IS_WORD_ALIGNED_ADDR(aaa_p) (0 == (((Addr)(aaa_p)) & (sizeof(Addr)-1)))
 
 
 /* ------------------------------------------------------------------ */
@@ -541,7 +542,7 @@ extern Int VG_(signal)      ( Int signum, void (*sighandler)(Int) );
 extern Int VG_(sigaltstack) ( const vki_stack_t* ss, vki_stack_t* oss );
 
 extern Int VG_(kill)        ( Int pid, Int signo );
-extern Int VG_(tkill)       ( Int pid, Int signo );
+extern Int VG_(tkill)       ( ThreadId tid, Int signo );
 extern Int VG_(sigpending)  ( vki_sigset_t* set );
 
 extern Int VG_(waitpid)	    ( Int pid, Int *status, Int options );

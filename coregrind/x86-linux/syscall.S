@@ -31,8 +31,6 @@
 #include "core_asm.h"
 #include "vki_unistd.h"
 
-.globl	VG_(do_syscall)
-
 /*
 	Perform a Linux syscall with int 0x80
 	
@@ -43,6 +41,7 @@
 	that the syscall mechanism makes no useful changes to any
 	register except %eax, which is returned.
  */
+.globl	VG_(do_syscall)
 VG_(do_syscall):
 	push	%esi
 	push	%edi

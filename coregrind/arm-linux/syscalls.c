@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- ARM/Linux-specific syscalls, etc.       arm-linux/syscalls.c ---*/
+/*--- Platform-specific syscalls stuff.       arm-linux/syscalls.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -123,6 +123,15 @@ PRE(sys_clone, Special)
 #endif
 }
 
+PRE(sys_ipc, Special)
+{
+   // XXX: the situation is complicated by the fact that ARM's ipc
+   // super-syscall, which encompasses shmdt, shmat, getsem, etc, seems to
+   // be the same (or at least similar?) to x86's, and so we want to avoid
+   // duplicating the x86 wrapper here, since it's so big...
+   I_die_here;
+}
+
 #undef PRE
 #undef POST
 
@@ -130,23 +139,23 @@ PRE(sys_clone, Special)
    The ARM/Linux syscall table
    ------------------------------------------------------------------ */
 
-// Macros for adding ARM/Linux-specific wrappers to the syscall table.
-#define PLAX_(const, name)    SYS_WRAPPER_ENTRY_X_(arm_linux, const, name) 
-#define PLAXY(const, name)    SYS_WRAPPER_ENTRY_XY(arm_linux, const, name) 
+// Macros for adding ARM/Linux-specific wrappers to the syscall table.  Note
+// that ARM syscall numbers start at __NR_SYSCALL_BASE.
+#define PLAX_(const, name) \
+   SYS_WRAPPER_ENTRY_X_(arm_linux, const - __NR_SYSCALL_BASE, name) 
+#define PLAXY(const, name) \
+   SYS_WRAPPER_ENTRY_XY(arm_linux, const - __NR_SYSCALL_BASE, name) 
 
 // This table maps from __NR_xxx syscall numbers (from
 // linux/include/asm-arm/unistd.h) to the appropriate PRE/POST sys_foo()
 // wrappers on ARM (as per sys_call_table in linux/arch/arm/kernel/entry.S).
-//
-// For those syscalls not handled by Valgrind, the annotation indicate its
-// arch/OS combination, eg. */* (generic), */Linux (Linux only), ?/?
-// (unknown).
 
 const struct SyscallTableEntry VGA_(syscall_table)[] = {
    //   (restart_syscall)                             // 0
    GENX_(__NR_exit,              sys_exit),           // 1
    LINX_(__NR_mount,             sys_mount),          // 21
    PLAX_(__NR_syscall,           sys_syscall),        // 113
+   PLAXY(__NR_ipc,               sys_ipc),            // 117
    PLAX_(__NR_clone,             sys_clone),          // 120
 };
 

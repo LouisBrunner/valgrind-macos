@@ -65,7 +65,7 @@ static void init(void)
    circumstance, presumably).
 */
 static __inline__
-Bool is_overlap ( void* dst, const void* src, UInt dstlen, UInt srclen )
+Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
 {
    Addr loS, hiS, loD, hiD;
 
@@ -155,11 +155,11 @@ char* strcat ( char* dst, const char* src )
    return dst_orig;
 }
 
-char* strncat ( char* dst, const char* src, unsigned int n )
+char* strncat ( char* dst, const char* src, SizeT n )
 {
    const Char* src_orig = src;
          Char* dst_orig = dst;
-   UInt  m = 0;
+   SizeT m = 0;
 
    while (*dst) dst++;
    while (m   < n && *src) { m++; *dst++ = *src++; } /* concat <= n chars */
@@ -176,16 +176,16 @@ char* strncat ( char* dst, const char* src, unsigned int n )
    return dst_orig;
 }
 
-unsigned int strnlen ( const char* str, unsigned int n )
+SizeT strnlen ( const char* str, SizeT n )
 {
-   UInt i = 0;
+   SizeT i = 0;
    while (i < n && str[i] != 0) i++;
    return i;
 }
 
-unsigned int strlen ( const char* str )
+SizeT strlen ( const char* str )
 {
-   UInt i = 0;
+   SizeT i = 0;
    while (str[i] != 0) i++;
    return i;
 }
@@ -209,11 +209,11 @@ char* strcpy ( char* dst, const char* src )
    return dst_orig;
 }
 
-char* strncpy ( char* dst, const char* src, unsigned int n )
+char* strncpy ( char* dst, const char* src, SizeT n )
 {
    const Char* src_orig = src;
          Char* dst_orig = dst;
-   UInt  m = 0;
+   SizeT m = 0;
 
    while (m   < n && *src) { m++; *dst++ = *src++; }
    /* Check for overlap after copying; all n bytes of dst are relevant,
@@ -225,9 +225,9 @@ char* strncpy ( char* dst, const char* src, unsigned int n )
    return dst_orig;
 }
 
-int strncmp ( const char* s1, const char* s2, unsigned int nmax )
+int strncmp ( const char* s1, const char* s2, SizeT nmax )
 {
-   unsigned int n = 0;
+   SizeT n = 0;
    while (True) {
       if (n >= nmax) return 0;
       if (*s1 == 0 && *s2 == 0) return 0;
@@ -257,9 +257,9 @@ int strcmp ( const char* s1, const char* s2 )
    return 0;
 }
 
-void* memchr(const void *s, int c, unsigned int n)
+void* memchr(const void *s, int c, SizeT n)
 {
-   unsigned int i;
+   SizeT i;
    UChar c0 = (UChar)c;
    UChar* p = (UChar*)s;
    for (i = 0; i < n; i++)
@@ -267,7 +267,7 @@ void* memchr(const void *s, int c, unsigned int n)
    return NULL;
 }
 
-void* memcpy( void *dst, const void *src, unsigned int len )
+void* memcpy( void *dst, const void *src, SizeT len )
 {
    register char *d;
    register char *s;
@@ -308,7 +308,7 @@ void* memcpy( void *dst, const void *src, unsigned int len )
    return dst;
 }
 
-int memcmp ( const void *s1V, const void *s2V, unsigned int n )
+int memcmp ( const void *s1V, const void *s2V, SizeT n )
 {
    int res;
    unsigned char a0;

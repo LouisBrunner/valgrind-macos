@@ -211,7 +211,7 @@ static Int ptrace_setregs(Int pid, ThreadId tid)
    poke around and look at parameters, memory, etc.  You can't
    meaningfully get the debugger to continue the program, though; to
    continue, quit the debugger.  */
-void VG_(start_debugger) ( Int tid )
+void VG_(start_debugger) ( ThreadId tid )
 {
    Int pid;
 
@@ -1110,6 +1110,8 @@ static Addr setup_client_stack(void* init_sp,
    *auxv = *orig_auxv;
    vg_assert(auxv->a_type == AT_NULL);
 
+// XXX: what architectures is this necessary for?  x86 yes, PPC no, others ?
+// Perhaps a per-arch VGA_NEEDS_TRAMPOLINE constant is necessary?
 #ifdef __x86__
    /* --- trampoline page --- */
    VG_(memcpy)( (void *)VG_(client_trampoline_code),
@@ -1671,6 +1673,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
      config_error("Please use absolute paths in "
                   "./configure --prefix=... or --libdir=...");
 
+// XXX: what architectures is this necessary for?  x86 yes, PPC no, others ?
 #ifdef __x86__
    {
       Int *auxp;

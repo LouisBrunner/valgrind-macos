@@ -85,7 +85,7 @@ AC_CANONICAL_HOST
 AC_MSG_CHECKING([for a supported CPU])
 AC_SUBST(VG_ARCH)
 AC_SUBST(VG_ARCH_ALL)
-VG_ARCH_ALL="arm x86"
+VG_ARCH_ALL="amd64 arm x86"
 AC_SUBST(KICKSTART_BASE)
 AC_SUBST(ARCH_CORE_AM_CFLAGS)
 AC_SUBST(ARCH_TOOL_AM_CFLAGS)
@@ -104,12 +104,18 @@ case "${host_cpu}" in
      x86_64) 
         AC_MSG_RESULT([ok (${host_cpu})])
         VG_ARCH="amd64"
-        # OOO: relocations under x86-64 small model are 32-bit signed
+        # XXX: relocations under amd64's "small model" are 32-bit signed
         # quantities; therefore going above 0x7fffffff doesn't work... this is
         # a problem.
         KICKSTART_BASE="0x70000000"
         ARCH_CORE_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -DELFSZ=64" 
-        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@"
+        # XXX: need to use -fpic, otherwise when linking tools I get this error
+        # message:
+        #   relocation R_X86_64_32 can not be used when making a shared object;
+        #   recompile with -fPIC
+        #
+        # I don't understand...  --njn
+        ARCH_TOOL_AM_CFLAGS="-fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -fpic"
         ARCH_CORE_AM_CCASFLAGS=""
         ;;
 
@@ -186,7 +192,7 @@ esac
 AC_MSG_CHECKING([for a supported CPU/OS combination])
 AC_SUBST(VG_PLATFORM)
 AC_SUBST(VG_PLATFORM_ALL)
-VG_PLATFORM_ALL="arm-linux x86-linux"
+VG_PLATFORM_ALL="amd64-linux arm-linux x86-linux"
 
 VG_PLATFORM="$VG_ARCH-$VG_OS"
 
@@ -355,34 +361,41 @@ AC_OUTPUT(
    tests/unused/Makefile 
    include/valgrind.h 
    include/Makefile 
-   include/x86/Makefile 
+   include/amd64/Makefile 
    include/arm/Makefile 
+   include/x86/Makefile 
    include/linux/Makefile 
-   include/x86-linux/Makefile 
+   include/amd64-linux/Makefile 
    include/arm-linux/Makefile 
+   include/x86-linux/Makefile 
    auxprogs/Makefile
    coregrind/Makefile 
    coregrind/demangle/Makefile 
    coregrind/docs/Makefile
-   coregrind/x86/Makefile
+   coregrind/amd64/Makefile
    coregrind/arm/Makefile
+   coregrind/x86/Makefile
    coregrind/linux/Makefile
-   coregrind/x86-linux/Makefile
+   coregrind/amd64-linux/Makefile
    coregrind/arm-linux/Makefile
+   coregrind/x86-linux/Makefile
    addrcheck/Makefile
    addrcheck/tests/Makefile
    addrcheck/docs/Makefile
    memcheck/Makefile
    memcheck/tests/Makefile
-   memcheck/tests/x86/Makefile
+   memcheck/tests/amd64/Makefile
    memcheck/tests/arm/Makefile
+   memcheck/tests/x86/Makefile
    memcheck/docs/Makefile
    cachegrind/Makefile
-   cachegrind/x86/Makefile
+   cachegrind/amd64/Makefile
    cachegrind/arm/Makefile
+   cachegrind/x86/Makefile
    cachegrind/tests/Makefile
-   cachegrind/tests/x86/Makefile
+   cachegrind/tests/amd64/Makefile
    cachegrind/tests/arm/Makefile
+   cachegrind/tests/x86/Makefile
    cachegrind/docs/Makefile
    cachegrind/cg_annotate
    helgrind/Makefile
@@ -400,8 +413,9 @@ AC_OUTPUT(
    lackey/docs/Makefile
    none/Makefile
    none/tests/Makefile
-   none/tests/x86/Makefile
+   none/tests/amd64/Makefile
    none/tests/arm/Makefile
+   none/tests/x86/Makefile
    none/docs/Makefile
 ) 
 

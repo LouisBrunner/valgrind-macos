@@ -433,7 +433,7 @@ struct vki_termios {
 // From linux-2.6.8.1/include/asm-i386/ioctl.h
 //----------------------------------------------------------------------
 
-#define _VKI_IOC_NRBITS	8
+#define _VKI_IOC_NRBITS		8
 #define _VKI_IOC_TYPEBITS	8
 #define _VKI_IOC_SIZEBITS	14
 #define _VKI_IOC_DIRBITS	2
@@ -693,6 +693,20 @@ struct vki_ipc_kludge {
 	long msgtyp;
 };
 
+#define VKI_SEMOP		 1
+#define VKI_SEMGET		 2
+#define VKI_SEMCTL		 3
+#define VKI_SEMTIMEDOP	 	 4
+#define VKI_MSGSND		11
+#define VKI_MSGRCV		12
+#define VKI_MSGGET		13
+#define VKI_MSGCTL		14
+#define VKI_SHMAT		21
+#define VKI_SHMDT		22
+#define VKI_SHMGET		23
+#define VKI_SHMCTL		24
+
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/asm-i386/shmbuf.h
 //----------------------------------------------------------------------
@@ -726,7 +740,7 @@ struct vki_shminfo64 {
 };
 
 //----------------------------------------------------------------------
-// From linux-2.6.9/include/asm-i386/shmbuf.h
+// From linux-2.6.9/include/asm-i386/ptrace.h
 //----------------------------------------------------------------------
 
 #define VKI_PTRACE_GETREGS            12

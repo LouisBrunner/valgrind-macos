@@ -98,6 +98,50 @@
    eg. x86/ subdirectories like we do within the rest of Valgrind.
 */
 
+#ifdef __arm__
+// XXX: termporary, until MAGIC_SEQUENCE is written properly
+extern int printf (__const char *__restrict __format, ...);
+extern void exit (int __status);
+#define VALGRIND_MAGIC_SEQUENCE(                                        \
+        _zzq_rlval, _zzq_default, _zzq_request,                         \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
+                                                                        \
+  { volatile unsigned int _zzq_args[5];                                 \
+    _zzq_args[0] = (volatile unsigned int)(_zzq_request);               \
+    _zzq_args[1] = (volatile unsigned int)(_zzq_arg1);                  \
+    _zzq_args[2] = (volatile unsigned int)(_zzq_arg2);                  \
+    _zzq_args[3] = (volatile unsigned int)(_zzq_arg3);                  \
+    _zzq_args[4] = (volatile unsigned int)(_zzq_arg4);                  \
+    (_zzq_rlval) = (_zzq_default);/* temporary only */  \
+    printf("argh: MAGIC_SEQUENCE"); exit(1); \
+    asm volatile("");                                                   \
+  }
+// XXX: make sure that the register holding the args and the register taking
+// the return value match ARCH_CLREQ_ARGS and ARCH_CLREQ_RET in
+// arm/core_arch.h!
+#endif  // __arm__
+#ifdef __amd64__
+// XXX: termporary, until MAGIC_SEQUENCE is written properly
+extern int printf (__const char *__restrict __format, ...);
+extern void exit (int __status);
+#define VALGRIND_MAGIC_SEQUENCE(                                        \
+        _zzq_rlval, _zzq_default, _zzq_request,                         \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
+                                                                        \
+  { volatile unsigned long _zzq_args[5];                                \
+    _zzq_args[0] = (volatile unsigned long)(_zzq_request);              \
+    _zzq_args[1] = (volatile unsigned long)(_zzq_arg1);                 \
+    _zzq_args[2] = (volatile unsigned long)(_zzq_arg2);                 \
+    _zzq_args[3] = (volatile unsigned long)(_zzq_arg3);                 \
+    _zzq_args[4] = (volatile unsigned long)(_zzq_arg4);                 \
+    (_zzq_rlval) = (_zzq_default);/* temporary only */  \
+    printf("argh: MAGIC_SEQUENCE"); exit(1); \
+    asm volatile("");                                                   \
+  }
+// XXX: make sure that the register holding the args and the register taking
+// the return value match ARCH_CLREQ_ARGS and ARCH_CLREQ_RET in
+// amd64/core_arch.h!
+#endif  // __amd64__
 #ifdef __x86__
 #define VALGRIND_MAGIC_SEQUENCE(                                        \
         _zzq_rlval, _zzq_default, _zzq_request,                         \
@@ -121,29 +165,6 @@
                 );                                                      \
   }
 #endif  // __x86__
-#ifdef __arm__
-// XXX: termporary, until MAGIC_SEQUENCE is written properly
-extern int printf (__const char *__restrict __format, ...);
-extern void exit (int __status);
-#define VALGRIND_MAGIC_SEQUENCE(                                        \
-        _zzq_rlval, _zzq_default, _zzq_request,                         \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
-                                                                        \
-  { volatile unsigned int _zzq_args[5];                                 \
-    _zzq_args[0] = (volatile unsigned int)(_zzq_request);               \
-    _zzq_args[1] = (volatile unsigned int)(_zzq_arg1);                  \
-    _zzq_args[2] = (volatile unsigned int)(_zzq_arg2);                  \
-    _zzq_args[3] = (volatile unsigned int)(_zzq_arg3);                  \
-    _zzq_args[4] = (volatile unsigned int)(_zzq_arg4);                  \
-    (_zzq_rlval) = (_zzq_default);/* temporary only */  \
-    printf("argh: MAGIC_SEQUENCE"); exit(1); \
-    asm volatile("");                                                   \
-  }
-// XXX: make sure that the register holding the args and the register taking
-// the return value match ARCH_CLREQ_ARGS and ARCH_CLREQ_RET in
-// arm/core_arch.h!
-#endif  // __arm__
-
 // Insert assembly code for other architectures here...
 
 #else  /* NVALGRIND */
@@ -241,13 +262,13 @@ __attribute__((weak))
 int
 VALGRIND_PRINTF(const char *format, ...)
 {
-   unsigned int _qzz_res;
+   unsigned long _qzz_res;
    va_list vargs;
    va_start(vargs, format);
    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__PRINTF,
-                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+                           (unsigned long)format, (unsigned long)vargs, 0, 0);
    va_end(vargs);
-   return _qzz_res;
+   return (int)_qzz_res;
 }
 
 int VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
@@ -256,13 +277,13 @@ __attribute__((weak))
 int
 VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 {
-   unsigned int _qzz_res;
+   unsigned long _qzz_res;
    va_list vargs;
    va_start(vargs, format);
    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0, VG_USERREQ__PRINTF_BACKTRACE,
-                           (unsigned int)format, (unsigned int)vargs, 0, 0);
+                           (unsigned long)format, (unsigned long)vargs, 0, 0);
    va_end(vargs);
-   return _qzz_res;
+   return (int)_qzz_res;
 }
 
 #else /* NVALGRIND */
@@ -275,7 +296,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 /* These requests allow control to move from the simulated CPU to the
    real CPU, calling an arbitary function */
 #define VALGRIND_NON_SIMD_CALL0(_qyy_fn)                       \
-   ({unsigned int _qyy_res;                                    \
+   ({unsigned long _qyy_res;                                   \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
                             VG_USERREQ__CLIENT_CALL0,          \
                             _qyy_fn,                           \
@@ -284,7 +305,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    })
 
 #define VALGRIND_NON_SIMD_CALL1(_qyy_fn, _qyy_arg1)            \
-   ({unsigned int _qyy_res;                                    \
+   ({unsigned long _qyy_res;                                   \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
                             VG_USERREQ__CLIENT_CALL1,          \
                             _qyy_fn,                           \
@@ -293,7 +314,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    })
 
 #define VALGRIND_NON_SIMD_CALL2(_qyy_fn, _qyy_arg1, _qyy_arg2) \
-   ({unsigned int _qyy_res;                                    \
+   ({unsigned long _qyy_res;                                   \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,  \
                             VG_USERREQ__CLIENT_CALL2,          \
                             _qyy_fn,                           \
@@ -302,7 +323,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
    })
 
 #define VALGRIND_NON_SIMD_CALL3(_qyy_fn, _qyy_arg1, _qyy_arg2, _qyy_arg3)  \
-   ({unsigned int _qyy_res;                                          \
+   ({unsigned long _qyy_res;                                         \
     VALGRIND_MAGIC_SEQUENCE(_qyy_res, 0 /* default return */,        \
                             VG_USERREQ__CLIENT_CALL3,                \
                             _qyy_fn,                                 \

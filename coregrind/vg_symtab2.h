@@ -94,7 +94,7 @@ struct _Sym {
 
    /* a value, depending on kind */
    union {
-      Int	offset;		/* offset on stack (-ve -> ebp; +ve -> esp) */
+      OffT	offset;		/* offset on stack (-ve -> ebp; +ve -> esp) */
       Int	regno;		/* register number */
       Addr	addr;		/* static or global address */
    } u;
@@ -129,7 +129,7 @@ struct _SegInfo {
    Addr   start;
    UInt   size;
    Char*  filename; /* in mallocville */
-   UInt   foffset;
+   OffT   foffset;
    Char*  soname;
 
    /* An expandable array of symbols. */
@@ -157,7 +157,7 @@ struct _SegInfo {
    /* offset    is what we need to add to symbol table entries
       to get the real location of that symbol in memory.
    */
-   UInt   offset;
+   OffT   offset;
 
    /* Bounds of data, BSS, PLT and GOT, so that tools can see what
       section an address is in */

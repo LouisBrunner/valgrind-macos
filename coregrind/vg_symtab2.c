@@ -2506,6 +2506,7 @@ void VG_(setup_code_redirect_table) ( void )
                        "soname:libpthread.so.0", redirects[i].to);
    }
 
+// XXX: what architectures is this necessary for?  x86 yes, PPC no, others ?
 #ifdef __x86__
    /* Redirect _dl_sysinfo_int80, which is glibc's default system call
       routine, to the routine in our trampoline page so that the

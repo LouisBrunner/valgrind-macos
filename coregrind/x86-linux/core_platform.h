@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- x86-Linux-specific stuff for the core.                       ---*/
+/*--- Platform-specific stuff for the core.                        ---*/
 /*---                                    x86-linux/core_platform.h ---*/
 /*--------------------------------------------------------------------*/
 
@@ -103,7 +103,7 @@ extern Addr VG_(do_useseg) ( UInt seg_selector, Addr virtual_addr );
    __args[5] = (offset);                                                \
                                                                         \
    ret = VG_(do_syscall)(__NR_mmap, (UWord)(&(__args[0])) );            \
-}
+} while (0)
 
 #define PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do {\
    UInt *arg_block = (UInt*)SYSCALL_ARG1(tst->arch);            \

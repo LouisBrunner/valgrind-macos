@@ -1230,7 +1230,7 @@ extern void VG_(unimplemented) ( Char* msg )
             __attribute__((__noreturn__));
 
 /* Something of a function looking for a home ... start up debugger. */
-extern void VG_(start_debugger) ( Int tid );
+extern void VG_(start_debugger) ( ThreadId tid );
 
 /* Counts downwards in vg_run_innerloop. */
 extern UInt VG_(dispatch_ctr);
@@ -1316,7 +1316,7 @@ extern REGPARM(2)
    ------------------------------------------------------------------ */
 
 /* Issue a syscall for thread tid */
-extern Int  VG_(sys_issue)(int tid);
+extern Int  VG_(sys_issue)(ThreadId tid);
 
 extern void VG_(proxy_init)     ( void );
 extern void VG_(proxy_create)   ( ThreadId tid );
@@ -1369,7 +1369,7 @@ Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
 // Return true if we're allowed to use or create this fd.
 Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft);
 
-void VG_(record_fd_open)(Int tid, Int fd, char *pathname);
+void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname);
    
 // Flags describing syscall wrappers
 #define Special    (1 << 0)

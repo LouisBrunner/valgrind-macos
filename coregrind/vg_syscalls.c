@@ -400,7 +400,7 @@ Char *VG_(resolve_filename)(Int fd)
 /* Note the fact that a file descriptor was just closed. */
 
 static
-void record_fd_close(Int tid, Int fd)
+void record_fd_close(ThreadId tid, Int fd)
 {
    OpenFd *i = allocated_fds;
 
@@ -432,7 +432,7 @@ void record_fd_close(Int tid, Int fd)
    already open, then we're probably doing a dup2() to an existing fd,
    so just overwrite the existing one. */
 
-void VG_(record_fd_open)(Int tid, Int fd, char *pathname)
+void VG_(record_fd_open)(ThreadId tid, Int fd, char *pathname)
 {
    OpenFd *i;
 
@@ -647,33 +647,6 @@ out:
 }
 
 static
-UInt get_shm_size ( Int shmid )
-{
-   struct vki_shmid_ds buf;
-   long __res = VG_(do_syscall)(__NR_ipc, 24 /* IPCOP_shmctl */, shmid, VKI_IPC_STAT, 0, &buf);
-    if ( VG_(is_kerror) ( __res ) )
-       return 0;
- 
-   return buf.shm_segsz;
-}
-
-static
-UInt get_sem_count( Int semid )
-{
-  struct vki_semid_ds buf;
-  union vki_semun arg;
-  long res;
-
-  arg.buf = &buf;
-  
-  res = VG_(do_syscall)(__NR_ipc, 3 /* IPCOP_semctl */, semid, 0, VKI_IPC_STAT, &arg);
-  if ( VG_(is_kerror)(res) )
-    return 0;
-
-  return buf.sem_nsems;
-}
- 
-static
 Char *strdupcat ( const Char *s1, const Char *s2, ArenaId aid )
 {
    UInt len = VG_(strlen) ( s1 ) + VG_(strlen) ( s2 ) + 1;
@@ -746,7 +719,7 @@ void msghdr_foreachfield (
                      (Addr)msg->msg_control, msg->msg_controllen );
 }
 
-void check_cmsg_for_fds(Int tid, struct vki_msghdr *msg)
+void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
 {
    struct vki_cmsghdr *cm = VKI_CMSG_FIRSTHDR(msg);
 
@@ -1862,7 +1835,7 @@ PRE(sys_fchmod, 0)
    PRE_REG_READ2(long, "fchmod", unsigned int, fildes, vki_mode_t, mode);
 }
 
-void common_pre_fcntl(Bool is64, ThreadId tid, ThreadState* tst)
+PRE(sys_fcntl, 0)
 {
    switch (ARG2) {
    // These ones ignore ARG3.
@@ -1873,13 +1846,8 @@ void common_pre_fcntl(Bool is64, ThreadId tid, ThreadState* tst)
    case VKI_F_GETSIG:
    case VKI_F_SETSIG:
    case VKI_F_GETLEASE:
-      if (is64) {
-         PRINT("sys_fcntl64 ( %d, %d )", ARG1,ARG2);
-         PRE_REG_READ2(long, "fcntl64", unsigned int, fd, unsigned int, cmd);
-      } else {
-         PRINT("sys_fcntl ( %d, %d )", ARG1,ARG2);
-         PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);
-      }
+      PRINT("sys_fcntl ( %d, %d )", ARG1,ARG2);
+      PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);
       break;
 
    // These ones use ARG3 as "arg".
@@ -1888,42 +1856,27 @@ void common_pre_fcntl(Bool is64, ThreadId tid, ThreadState* tst)
    case VKI_F_SETFL:
    case VKI_F_SETLEASE:
    case VKI_F_NOTIFY:
-      if (is64) {
-         PRINT("sys_fcntl64[ARG3=='arg'] ( %d, %d, %d )", ARG1,ARG2,ARG3);
-         PRE_REG_READ3(long, "fcntl64",
-                       unsigned int, fd, unsigned int, cmd, unsigned long, arg);
-      } else {
-         PRINT("sys_fcntl[ARG3=='arg'] ( %d, %d, %d )", ARG1,ARG2,ARG3);
-         PRE_REG_READ3(long, "fcntl",
-                       unsigned int, fd, unsigned int, cmd, unsigned long, arg);
-      }
+      PRINT("sys_fcntl[ARG3=='arg'] ( %d, %d, %d )", ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd, unsigned long, arg);
       break;
 
    // These ones use ARG3 as "lock".
    case VKI_F_GETLK:
    case VKI_F_SETLK:
    case VKI_F_SETLKW:
+#ifndef __amd64__
    case VKI_F_GETLK64:
    case VKI_F_SETLK64:
    case VKI_F_SETLKW64:
-      if (is64) {
-         PRINT("sys_fcntl64[ARG3=='lock'] ( %d, %d, %p )", ARG1,ARG2,ARG3);
-         PRE_REG_READ3(long, "fcntl64",
-                       unsigned int, fd, unsigned int, cmd,
-                       struct flock64 *, lock);
-      } else {
-         PRINT("sys_fcntl[ARG3=='lock'] ( %d, %d, %p )", ARG1,ARG2,ARG3);
-         PRE_REG_READ3(long, "fcntl",
-                       unsigned int, fd, unsigned int, cmd,
-                       struct flock64 *, lock);
-      }
+#else
+#endif
+      PRINT("sys_fcntl[ARG3=='lock'] ( %d, %d, %p )", ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    struct flock64 *, lock);
       break;
    }
-}
-
-PRE(sys_fcntl, 0)
-{
-   common_pre_fcntl(/*is64*/False, tid, tst);
 
    if (ARG2 == VKI_F_SETLKW)
       tst->sys_flags |= MayBlock;
@@ -1945,10 +1898,53 @@ POST(sys_fcntl)
 // XXX: wrapper only suitable for 32-bit systems
 PRE(sys_fcntl64, 0)
 {
-   common_pre_fcntl(/*is64*/True, tid, tst);
+   switch (ARG2) {
+   // These ones ignore ARG3.
+   case VKI_F_GETFD:
+   case VKI_F_GETFL:
+   case VKI_F_GETOWN:
+   case VKI_F_SETOWN:
+   case VKI_F_GETSIG:
+   case VKI_F_SETSIG:
+   case VKI_F_GETLEASE:
+      PRINT("sys_fcntl64 ( %d, %d )", ARG1,ARG2);
+      PRE_REG_READ2(long, "fcntl64", unsigned int, fd, unsigned int, cmd);
+      break;
+
+   // These ones use ARG3 as "arg".
+   case VKI_F_DUPFD:
+   case VKI_F_SETFD:
+   case VKI_F_SETFL:
+   case VKI_F_SETLEASE:
+   case VKI_F_NOTIFY:
+      PRINT("sys_fcntl64[ARG3=='arg'] ( %d, %d, %d )", ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "fcntl64",
+                    unsigned int, fd, unsigned int, cmd, unsigned long, arg);
+      break;
+
+   // These ones use ARG3 as "lock".
+   case VKI_F_GETLK:
+   case VKI_F_SETLK:
+   case VKI_F_SETLKW:
+#ifndef __amd64__
+   case VKI_F_GETLK64:
+   case VKI_F_SETLK64:
+   case VKI_F_SETLKW64:
+#endif
+      PRINT("sys_fcntl64[ARG3=='lock'] ( %d, %d, %p )", ARG1,ARG2,ARG3);
+      PRE_REG_READ3(long, "fcntl64",
+                    unsigned int, fd, unsigned int, cmd,
+                    struct flock64 *, lock);
+      break;
+   }
    
+#ifndef __amd64__
    if (ARG2 == VKI_F_SETLKW || ARG2 == VKI_F_SETLKW64)
       tst->sys_flags |= MayBlock;
+#else
+   if (ARG2 == VKI_F_SETLKW)
+      tst->sys_flags |= MayBlock;
+#endif
 }
 
 POST(sys_fcntl64)
@@ -2289,450 +2285,6 @@ PRE(sys_getuid, 0)
 {
    PRINT("sys_getuid ( )");
    PRE_REG_READ0(long, "getuid");
-}
-
-// XXX: x86-specific
-// XXX: should use the constants here (eg. SHMAT), not the numbers directly!
-PRE(sys_ipc, 0)
-{
-   PRINT("sys_ipc ( %d, %d, %d, %d, %p, %d )", ARG1,ARG2,ARG3,ARG4,ARG5,ARG6);
-   // XXX: this is simplistic -- some args are not used in all circumstances.
-   PRE_REG_READ6(int, "ipc",
-                 vki_uint, call, int, first, int, second, int, third,
-                 void *, ptr, long, fifth)
-
-   switch (ARG1 /* call */) {
-   case 1: /* IPCOP_semop */
-      PRE_MEM_READ( "semop(sops)", ARG5, ARG3 * sizeof(struct vki_sembuf) );
-      tst->sys_flags |= MayBlock;
-      break;
-   case 2: /* IPCOP_semget */
-      break;
-   case 3: /* IPCOP_semctl */
-   {
-      union vki_semun *arg = (union vki_semun *)ARG5;
-      switch (ARG4 /* cmd */) {
-      case VKI_IPC_INFO:
-      case VKI_SEM_INFO:
-      {
-         Addr buf = deref_Addr( tid, (Addr)&arg->__buf, "semctl(IPC_INFO, arg)" );
-	 PRE_MEM_WRITE( "semctl(IPC_INFO, arg->buf)", buf, 
-			sizeof(struct vki_seminfo) );
-	 break;
-      }
-      case VKI_IPC_STAT:
-      case VKI_SEM_STAT:
-      {
-         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(IPC_STAT, arg)" );
-	 PRE_MEM_WRITE( "semctl(IPC_STAT, arg->buf)", buf, 
-			sizeof(struct vki_semid_ds) );
-	 break;
-      }
-      case VKI_IPC_SET:
-      {
-         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(IPC_SET, arg)" );
-	 PRE_MEM_READ( "semctl(IPC_SET, arg->buf)", buf, 
-			sizeof(struct vki_semid_ds) );
-	 break;
-      }
-      case VKI_GETALL:
-      {
-         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(IPC_GETALL, arg)" );
-         UInt nsems = get_sem_count( ARG2 );
-	 PRE_MEM_WRITE( "semctl(IPC_GETALL, arg->array)", array, 
-			sizeof(short) * nsems );
-	 break;
-      }
-      case VKI_SETALL:
-      {
-         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(IPC_SETALL, arg)" );
-         UInt nsems = get_sem_count( ARG2 );
-	 PRE_MEM_READ( "semctl(IPC_SETALL, arg->array)", array, 
-			sizeof(short) * nsems );
-	 break;
-      }
-      case VKI_SETVAL:
-      {
-	 PRE_MEM_READ( "semctl(IPC_SETVAL, arg->array)",
-                        (Addr)&arg->val, sizeof(arg->val) );
-	 break;
-      }
-      case VKI_IPC_INFO|VKI_IPC_64:
-      case VKI_SEM_INFO|VKI_IPC_64:
-      {
-         Addr buf = deref_Addr( tid, (Addr)&arg->__buf, "semctl(IPC_INFO, arg)" );
-	 PRE_MEM_WRITE( "semctl(IPC_INFO, arg->buf)", buf, 
-			sizeof(struct vki_seminfo) );
-	 break;
-      }
-      case VKI_IPC_STAT|VKI_IPC_64:
-      case VKI_SEM_STAT|VKI_IPC_64:
-      {
-         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(IPC_STAT, arg)" );
-	 PRE_MEM_WRITE( "semctl(IPC_STAT, arg->buf)", buf, 
-			sizeof(struct vki_semid64_ds) );
-	 break;
-      }
-      case VKI_IPC_SET|VKI_IPC_64:
-      {
-         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(IPC_SET, arg)" );
-	 PRE_MEM_READ( "semctl(IPC_SET, arg->buf)", buf, 
-			sizeof(struct vki_semid64_ds) );
-	 break;
-      }
-      case VKI_GETALL|VKI_IPC_64:
-      {
-         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(IPC_GETALL, arg)" );
-         UInt nsems = get_sem_count( ARG2 );
-	 PRE_MEM_WRITE( "semctl(IPC_GETALL, arg->array)", array, 
-			sizeof(short) * nsems );
-	 break;
-      }
-      case VKI_SETALL|VKI_IPC_64:
-      {
-         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(IPC_SETALL, arg)" );
-         UInt nsems = get_sem_count( ARG2 );
-	 PRE_MEM_READ( "semctl(IPC_SETALL, arg->array)", array, 
-			sizeof(short) * nsems );
-	 break;
-      }
-      case VKI_SETVAL|VKI_IPC_64:
-      {
-	 PRE_MEM_READ( "semctl(IPC_SETVAL, arg->array)",
-                        (Addr)&arg->val, sizeof(arg->val) );
-	 break;
-      }
-      default:
-	 break;
-      }
-      break;
-   }
-   case 4: /* IPCOP_semtimedop */
-      PRE_MEM_READ( "semtimedop(sops)", ARG5, 
-		     ARG3 * sizeof(struct vki_sembuf) );
-      if (ARG6 != 0)
-         PRE_MEM_READ( "semtimedop(timeout)", ARG6, 
-                        sizeof(struct vki_timespec) );
-      tst->sys_flags |= MayBlock;
-      break;
-   case 11: /* IPCOP_msgsnd */
-   {
-      struct vki_msgbuf *msgp = (struct vki_msgbuf *)ARG5;
-      Int msgsz = ARG3;
-
-      PRE_MEM_READ( "msgsnd(msgp->mtype)", 
-		     (Addr)&msgp->mtype, sizeof(msgp->mtype) );
-      PRE_MEM_READ( "msgsnd(msgp->mtext)", 
-		     (Addr)msgp->mtext, msgsz );
-
-      if ((ARG4 & VKI_IPC_NOWAIT) == 0)
-         tst->sys_flags |= MayBlock;
-      break;
-   }
-   case 12: /* IPCOP_msgrcv */
-   {
-      struct vki_msgbuf *msgp;
-      Int msgsz = ARG3;
- 
-      msgp = (struct vki_msgbuf *)deref_Addr( tid,
-					  (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgp),
-					  "msgrcv(msgp)" );
-
-      PRE_MEM_WRITE( "msgrcv(msgp->mtype)", 
-		     (Addr)&msgp->mtype, sizeof(msgp->mtype) );
-      PRE_MEM_WRITE( "msgrcv(msgp->mtext)", 
-		     (Addr)msgp->mtext, msgsz );
-
-      if ((ARG4 & VKI_IPC_NOWAIT) == 0)
-         tst->sys_flags |= MayBlock;
-      break;
-   }
-   case 13: /* IPCOP_msgget */
-      break;
-   case 14: /* IPCOP_msgctl */
-   {
-      switch (ARG3 /* cmd */) {
-      case VKI_IPC_INFO:
-      case VKI_MSG_INFO:
-	 PRE_MEM_WRITE( "msgctl(IPC_INFO, buf)", ARG5, 
-			sizeof(struct vki_msginfo) );
-	 break;
-      case VKI_IPC_STAT:
-      case VKI_MSG_STAT:
-	 PRE_MEM_WRITE( "msgctl(IPC_STAT, buf)", ARG5, 
-			sizeof(struct vki_msqid_ds) );
-	 break;
-      case VKI_IPC_SET:
-	 PRE_MEM_READ( "msgctl(IPC_SET, buf)", ARG5, 
-			sizeof(struct vki_msqid_ds) );
-	 break;
-      case VKI_IPC_INFO|VKI_IPC_64:
-      case VKI_MSG_INFO|VKI_IPC_64:
-	 PRE_MEM_WRITE( "msgctl(IPC_INFO, buf)", ARG5, 
-			sizeof(struct vki_msginfo) );
-	 break;
-      case VKI_IPC_STAT|VKI_IPC_64:
-      case VKI_MSG_STAT|VKI_IPC_64:
-	 PRE_MEM_WRITE( "msgctl(IPC_STAT, buf)", ARG5, 
-			sizeof(struct vki_msqid64_ds) );
-	 break;
-      case VKI_IPC_SET|VKI_IPC_64:
-	 PRE_MEM_READ( "msgctl(IPC_SET, buf)", ARG5, 
-			sizeof(struct vki_msqid64_ds) );
-	 break;
-      default:
-	 break;
-      }
-      break;
-   }
-   case 21: /* IPCOP_shmat */
-   {
-      UInt shmid = ARG2;
-      UInt segmentSize = get_shm_size ( shmid );
-      
-      /* If they didn't ask for a particular address, then place it
-	 like an mmap. */
-      if (ARG5 == 0)
-	 ARG5 = VG_(find_map_space)(0, segmentSize, True);
-      else if (!VG_(valid_client_addr)(ARG5, segmentSize, tid, "shmat"))
-	 SET_RESULT( -VKI_EINVAL );
-      break;
-   }
-   case 22: /* IPCOP_shmdt */
-      if (!VG_(valid_client_addr)(ARG5, 1, tid, "shmdt"))
-	 SET_RESULT( -VKI_EINVAL );
-      break;
-   case 23: /* IPCOP_shmget */
-      break;
-   case 24: /* IPCOP_shmctl */
-   {
-      switch (ARG3 /* cmd */) {
-      case VKI_IPC_INFO:
-	 PRE_MEM_WRITE( "shmctl(IPC_INFO, buf)", ARG5, 
-			sizeof(struct vki_shminfo) );
-	 break;
-      case VKI_SHM_INFO:
-	 PRE_MEM_WRITE( "shmctl(SHM_INFO, buf)", ARG5, 
-			sizeof(struct vki_shm_info) );
-	 break;
-      case VKI_IPC_STAT:
-      case VKI_SHM_STAT:
-	 PRE_MEM_WRITE( "shmctl(IPC_STAT, buf)", ARG5, 
-			sizeof(struct vki_shmid_ds) );
-	 break;
-      case VKI_IPC_SET:
-	 PRE_MEM_READ( "shmctl(IPC_SET, buf)", ARG5, 
-			sizeof(struct vki_shmid_ds) );
-	 break;
-      case VKI_IPC_INFO|VKI_IPC_64:
-	 PRE_MEM_WRITE( "shmctl(IPC_INFO, buf)", ARG5, 
-			sizeof(struct vki_shminfo64) );
-	 break;
-      case VKI_SHM_INFO|VKI_IPC_64:
-	 PRE_MEM_WRITE( "shmctl(SHM_INFO, buf)", ARG5, 
-			sizeof(struct vki_shm_info) );
-	 break;
-      case VKI_IPC_STAT|VKI_IPC_64:
-      case VKI_SHM_STAT|VKI_IPC_64:
-	 PRE_MEM_WRITE( "shmctl(IPC_STAT, buf)", ARG5, 
-			sizeof(struct vki_shmid64_ds) );
-	 break;
-      case VKI_IPC_SET|VKI_IPC_64:
-	 PRE_MEM_READ( "shmctl(IPC_SET, buf)", ARG5, 
-			sizeof(struct vki_shmid_ds) );
-	 break;
-      default:
-	 break;
-      }
-      break;
-   }
-   default:
-      VG_(message)(Vg_DebugMsg,
-		   "FATAL: unhandled syscall(ipc) %d",
-		   ARG1 );
-      VG_(core_panic)("... bye!\n");
-      break; /*NOTREACHED*/
-   }   
-}
-
-POST(sys_ipc)
-{
-   switch (ARG1 /* call */) {
-   case 1: /* IPCOP_semop */
-   case 2: /* IPCOP_semget */
-      break;
-   case 3: /* IPCOP_semctl */
-   {
-      union vki_semun *arg = (union vki_semun *)ARG5;
-      switch (ARG4 /* cmd */) {
-      case VKI_IPC_INFO:
-      case VKI_SEM_INFO:
-      {
-         Addr buf = deref_Addr( tid, (Addr)&arg->__buf, "semctl(arg)" );
-	 POST_MEM_WRITE( buf, sizeof(struct vki_seminfo) );
-	 break;
-      }
-      case VKI_IPC_STAT:
-      case VKI_SEM_STAT:
-      {
-         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(arg)" );
-	 POST_MEM_WRITE( buf, sizeof(struct vki_semid_ds) );
-	 break;
-      }
-      case VKI_GETALL:
-      {
-         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(arg)" );
-         UInt nsems = get_sem_count( ARG2 );
-	 POST_MEM_WRITE( array, sizeof(short) * nsems );
-	 break;
-      }
-      case VKI_IPC_INFO|VKI_IPC_64:
-      case VKI_SEM_INFO|VKI_IPC_64:
-      {
-         Addr buf = deref_Addr( tid, (Addr)&arg->__buf, "semctl(arg)" );
-	 POST_MEM_WRITE( buf, sizeof(struct vki_seminfo) );
-	 break;
-      }
-      case VKI_IPC_STAT|VKI_IPC_64:
-      case VKI_SEM_STAT|VKI_IPC_64:
-      {
-         Addr buf = deref_Addr( tid, (Addr)&arg->buf, "semctl(arg)" );
-	 POST_MEM_WRITE( buf, sizeof(struct vki_semid64_ds) );
-	 break;
-      }
-      case VKI_GETALL|VKI_IPC_64:
-      {
-         Addr array = deref_Addr( tid, (Addr)&arg->array, "semctl(arg)" );
-         UInt nsems = get_sem_count( ARG2 );
-	 POST_MEM_WRITE( array, sizeof(short) * nsems );
-	 break;
-      }
-      default:
-	 break;
-      }
-      break;
-   }
-   case 4: /* IPCOP_semtimedop */
-      break;
-   case 11: /* IPCOP_msgsnd */
-      break;
-   case 12: /* IPCOP_msgrcv */
-   {
-      struct vki_msgbuf *msgp;
- 
-      msgp = (struct vki_msgbuf *)deref_Addr( tid,
-					  (Addr) (&((struct vki_ipc_kludge *)ARG5)->msgp),
-					  "msgrcv(msgp)" );
-      if ( RES > 0 ) {
-	 POST_MEM_WRITE( (Addr)&msgp->mtype, sizeof(msgp->mtype) );
-	 POST_MEM_WRITE( (Addr)msgp->mtext, RES );
-      }
-      break;
-   }
-   case 13: /* IPCOP_msgget */
-      break;
-   case 14: /* IPCOP_msgctl */
-   {
-      switch (ARG3 /* cmd */) {
-      case VKI_IPC_INFO:
-      case VKI_MSG_INFO:
-	 POST_MEM_WRITE( ARG5, sizeof(struct vki_msginfo) );
-	 break;
-      case VKI_IPC_STAT:
-      case VKI_MSG_STAT:
-	 POST_MEM_WRITE( ARG5, sizeof(struct vki_msqid_ds) );
-	 break;
-      case VKI_IPC_SET:
-	 break;
-      case VKI_IPC_INFO|VKI_IPC_64:
-      case VKI_MSG_INFO|VKI_IPC_64:
-	 POST_MEM_WRITE( ARG5, sizeof(struct vki_msginfo) );
-	 break;
-      case VKI_IPC_STAT|VKI_IPC_64:
-      case VKI_MSG_STAT|VKI_IPC_64:
-	 POST_MEM_WRITE( ARG5, sizeof(struct vki_msqid64_ds) );
-	 break;
-      case VKI_IPC_SET|VKI_IPC_64:
-	 break;
-      default:
-	 break;
-      }
-      break;
-   }
-   case 21: /* IPCOP_shmat */
-   {
-      Int shmid = ARG2;
-      Int shmflag = ARG3;
-      Addr addr;
-
-      /* force readability. before the syscall it is
-       * indeed uninitialized, as can be seen in
-       * glibc/sysdeps/unix/sysv/linux/shmat.c */
-      POST_MEM_WRITE( ARG4, sizeof( ULong ) );
-
-      addr = deref_Addr ( tid, ARG4, "shmat(addr)" );
-      if ( addr > 0 ) { 
-	 UInt segmentSize = get_shm_size ( shmid );
-	 if ( segmentSize > 0 ) {
-	    UInt prot = VKI_PROT_READ|VKI_PROT_WRITE;
-	    /* we don't distinguish whether it's read-only or
-	     * read-write -- it doesn't matter really. */
-	    VG_TRACK( new_mem_mmap, addr, segmentSize, True, True, False );
-
-	    if (!(shmflag & 010000)) /* = SHM_RDONLY */
-	       prot &= ~VKI_PROT_WRITE;
-	    VG_(map_segment)(addr, segmentSize, prot, SF_SHARED|SF_SHM);
-	 }
-      }
-      break;
-   }
-   case 22: /* IPCOP_shmdt */
-   {
-      Segment *s = VG_(find_segment)(ARG5);
-
-      if (s != NULL && (s->flags & SF_SHM) && VG_(seg_contains)(s, ARG5, 1)) {
-	 VG_TRACK( die_mem_munmap, s->addr, s->len );
-	 VG_(unmap_range)(s->addr, s->len);
-      }
-      break;
-   }
-   case 23: /* IPCOP_shmget */
-      break;
-   case 24: /* IPCOP_shmctl */
-   {
-      switch (ARG3 /* cmd */) {
-      case VKI_IPC_INFO:
-	 POST_MEM_WRITE( ARG5, sizeof(struct vki_shminfo) );
-	 break;
-      case VKI_SHM_INFO:
-	 POST_MEM_WRITE( ARG5, sizeof(struct vki_shm_info) );
-	 break;
-      case VKI_IPC_STAT:
-      case VKI_SHM_STAT:
-	 POST_MEM_WRITE( ARG5, sizeof(struct vki_shmid_ds) );
-	 break;
-      case VKI_IPC_INFO|VKI_IPC_64:
-	 POST_MEM_WRITE( ARG5, sizeof(struct vki_shminfo64) );
-	 break;
-      case VKI_SHM_INFO|VKI_IPC_64:
-	 POST_MEM_WRITE( ARG5, sizeof(struct vki_shm_info) );
-	 break;
-      case VKI_IPC_STAT|VKI_IPC_64:
-      case VKI_SHM_STAT|VKI_IPC_64:
-	 POST_MEM_WRITE( ARG5, sizeof(struct vki_shmid64_ds) );
-	 break;
-      default:
-	 break;
-      }
-      break;
-   }
-   default:
-      VG_(message)(Vg_DebugMsg,
-		   "FATAL: unhandled syscall(ipc) %d",
-		   ARG1 );
-      VG_(core_panic)("... bye!\n");
-      break; /*NOTREACHED*/
-   }
 }
 
 // XXX: I reckon some of these cases must be x86-specific
@@ -4062,6 +3614,11 @@ POST(sys_newlstat)
    }
 }
 
+// XXX: this syscall is generic, but not necessarily applicable to every
+// architecture -- I think only to 32-bit archs.  We're going to need
+// something like linux/core_os32.h for such things, eventually, I think.
+// --njn
+#ifndef __amd64__
 PRE(sys_lstat64, 0)
 {
    PRINT("sys_lstat64 ( %p(%s), %p )",ARG1,ARG1,ARG2);
@@ -4076,6 +3633,7 @@ POST(sys_lstat64)
       POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
    }
 }
+#endif
 
 PRE(sys_mkdir, MayBlock)
 {
@@ -5011,6 +4569,8 @@ PRE(sys_symlink, MayBlock)
    PRE_MEM_RASCIIZ( "symlink(newpath)", ARG2 );
 }
 
+// See comment above PRE(sys_lstat64) for an explanation of this #ifdef.
+#ifndef __amd64__
 PRE(sys_stat64, 0)
 {
    PRINT("sys_stat64 ( %p, %p )",ARG1,ARG2);
@@ -5035,6 +4595,7 @@ POST(sys_fstat64)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
 }
+#endif
 
 PRE(sys_time, 0)
 {
@@ -5315,28 +4876,6 @@ POST(sys_sigaltstack)
 }
 
 // XXX: x86-specific
-PRE(sys_sigaction, SIG_SIM)
-{
-   PRINT("sys_sigaction ( %d, %p, %p )", ARG1,ARG2,ARG3);
-   PRE_REG_READ3(int, "sigaction",
-                 int, signum, const struct old_sigaction *, act,
-                 struct old_sigaction *, oldact)
-   if (ARG2 != 0)
-      PRE_MEM_READ( "sigaction(act)", ARG2, sizeof(struct vki_old_sigaction));
-   if (ARG3 != 0)
-      PRE_MEM_WRITE( "sigaction(oldact)", ARG3, sizeof(struct vki_old_sigaction));
-
-   if (SIGNAL_SIMULATION)
-      VG_(do_sys_sigaction)(tid);
-}
-
-POST(sys_sigaction)
-{
-   if (RES == 0 && ARG3 != 0)
-      POST_MEM_WRITE( ARG3, sizeof(struct vki_old_sigaction));
-}
-
-// XXX: x86-specific
 PRE(sys_rt_sigaction, SIG_SIM)
 {
    PRINT("sys_rt_sigaction ( %d, %p, %p, %d )", ARG1,ARG2,ARG3,ARG4);
@@ -5360,6 +4899,10 @@ POST(sys_rt_sigaction)
       POST_MEM_WRITE( ARG3, sizeof(struct vki_sigaction));
 }
 
+// XXX: This syscall is not used on amd64 -- it only provides
+//      sys_rt_sigprocmask, which uses sigset_t rather than old_sigset_t.
+// This wrapper is only suitable for 32-bit architectures.
+#ifndef __amd64__
 PRE(sys_sigprocmask, SIG_SIM)
 {
    PRINT("sys_sigprocmask ( %d, %p, %p )",ARG1,ARG2,ARG3);
@@ -5396,6 +4939,7 @@ POST(sys_sigprocmask)
    if (RES == 0 && ARG3 != 0)
       POST_MEM_WRITE( ARG3, sizeof(vki_old_sigset_t));
 }
+#endif
 
 PRE(sys_rt_sigprocmask, SIG_SIM)
 {

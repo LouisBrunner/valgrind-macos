@@ -139,6 +139,7 @@ typedef
    struct _MAC_Chunk {
       struct _MAC_Chunk* next;
       Addr          data;           // ptr to actual block
+      // XXX: not 64-bit clean!
       UInt          size : 30;      // size requested
       MAC_AllocKind allockind : 2;  // which wrapper did the allocation
       ExeContext*   where;          // where it was allocated

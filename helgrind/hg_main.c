@@ -153,6 +153,7 @@ typedef enum
    VgeInitStatus;
 
 
+// XXX: not 64-bit clean!
 /* Should add up to 32 to fit in one word */
 #define OTHER_BITS      30
 #define STATE_BITS      2
@@ -242,11 +243,6 @@ static inline UInt packEC(ExeContext *ec)
 {
    TL_ASSERT(((UWord)ec & ((1 << STATE_BITS)-1)) == 0);
    return ((UWord)ec) >> STATE_BITS;
-}
-
-static inline ExeContext *unpackEC(UInt i)
-{
-   return (ExeContext *)(i << STATE_BITS);
 }
 
 /* Lose 2 LSB of IP */

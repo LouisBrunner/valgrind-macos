@@ -103,7 +103,7 @@ void foreach_map(int (*fn)(char *start, char *end,
 
    while(bufptr && bufptr < buf+ret) {
       char perm[5];
-      off_t offset;
+      ULong offset;
       int maj, min;
       int ino;
       void *segstart, *segend;

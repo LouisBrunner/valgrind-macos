@@ -39,8 +39,14 @@ make install DESTDIR=$RPM_BUILD_ROOT
 /usr/include/valgrind/basic_types.h
 /usr/include/valgrind/tool.h
 /usr/include/valgrind/tool_asm.h
+/usr/include/valgrind/amd64/tool_arch.h
+/usr/include/valgrind/arm/tool_arch.h
 /usr/include/valgrind/x86/tool_arch.h
 /usr/include/valgrind/linux/vki.h
+/usr/include/valgrind/amd64-linux/vki_arch.h
+/usr/include/valgrind/amd64-linux/vki_arch_posixtypes.h
+/usr/include/valgrind/arm-linux/vki_arch.h
+/usr/include/valgrind/arm-linux/vki_arch_posixtypes.h
 /usr/include/valgrind/x86-linux/vki_arch.h
 /usr/include/valgrind/x86-linux/vki_arch_posixtypes.h
 /usr/bin/valgrind

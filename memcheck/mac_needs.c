@@ -320,8 +320,8 @@ void MAC_(pp_shared_Error) ( Error* err )
       }
       case LeakErr: {
          /* Totally abusing the types of these spare fields... oh well. */
-         UInt n_this_record   = (UInt)VG_(get_error_address)(err);
-         UInt n_total_records = (UInt)VG_(get_error_string) (err);
+         UInt n_this_record   = (UWord)VG_(get_error_address)(err);
+         UInt n_total_records = (UWord)VG_(get_error_string) (err);
 
          MAC_(pp_LeakError)(err_extra, n_this_record, n_total_records);
          break;

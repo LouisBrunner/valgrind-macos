@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- ARM-Linux-specific stuff for the core.                       ---*/
+/*--- Platform-specific stuff for the core.                        ---*/
 /*---                                    arm-linux/core_platform.h ---*/
 /*--------------------------------------------------------------------*/
 
@@ -73,7 +73,7 @@
 
 #define PLATFORM_DO_MMAP(ret, start, length, prot, flags, fd, offset) { \
    I_die_here; \
-}
+} while (0)
 
 #define PLATFORM_GET_MMAP_ARGS(tst, a1, a2, a3, a4, a5, a6) do { \
    I_die_here; \

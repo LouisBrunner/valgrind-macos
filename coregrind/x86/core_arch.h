@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- x86-specific stuff for the core.             x86/core_arch.h ---*/
+/*--- Arch-specific stuff for the core.            x86/core_arch.h ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -68,16 +68,12 @@
    asm("movl %%ebp, %0" : "=r" (ebp));       \
 } while (0)
 
-// So the dispatch loop can find %EIP
-extern Int vgoff_m_eip;
-
-
 /* ---------------------------------------------------------------------
    Elf stuff
    ------------------------------------------------------------------ */
 
 #define VG_ELF_ENDIANNESS     ELFDATA2LSB
-#define VG_ELF_MACHINE        EM_386       
+#define VG_ELF_MACHINE        EM_386
 #define VG_ELF_CLASS          ELFCLASS32
 
 

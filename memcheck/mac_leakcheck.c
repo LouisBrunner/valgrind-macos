@@ -501,7 +501,7 @@ void MAC_(do_detect_memory_leaks) (
       print_record = ( MAC_(clo_show_reachable) || Proper != p_min->loss_mode );
       is_suppressed = 
          VG_(unique_error) ( tid, LeakErr, (UInt)i+1,
-                             (Char*)n_lossrecords, (void*) p_min,
+                             (Char*)(UWord)n_lossrecords, (void*) p_min,
                              p_min->allocated_at, print_record,
                              /*allow_GDB_attach*/False, /*count_error*/False );
 

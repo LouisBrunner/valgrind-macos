@@ -2871,6 +2871,7 @@ ULong dis_Grp2 ( Prefix pfx,
       IRTemp res64     = newTemp(Ity_I64);
       IRTemp res64ss   = newTemp(Ity_I64);
       IRTemp shift_amt = newTemp(Ity_I8);
+      UChar  mask      = sz==8 ? 63 : 31;
       IROp   op64;
 
       switch (gregOfRM(modrm)) { 
@@ -2884,30 +2885,33 @@ ULong dis_Grp2 ( Prefix pfx,
          narrow back down.  This seems surprisingly long-winded, but
          unfortunately the AMD semantics requires that 8/16/32-bit
          shifts give defined results for shift values all the way up
-         to 64, and this seems the simplest way to do it.  It has the
+         to 32, and this seems the simplest way to do it.  It has the
          advantage that the only IR level shifts generated are of 64
          bit values, and the shift amount is guaranteed to be in the
          range 0 .. 63, thereby observing the IR semantics requiring
-         all shift values to be in the range 0 .. 2^word_size-1. */
+         all shift values to be in the range 0 .. 2^word_size-1. 
 
-      /* shift_amt = shift_expr & 63, regardless of operation size */
-      assign( shift_amt, binop(Iop_And8, shift_expr, mkU8(63)) );
+         Therefore the shift amount is masked with 63 for 64-bit shifts
+         and 31 for all others.
+      */
+      /* shift_amt = shift_expr & MASK, regardless of operation size */
+      assign( shift_amt, binop(Iop_And8, shift_expr, mkU8(mask)) );
 
-      /* suitably widen the value to be shifted to 32 bits. */
+      /* suitably widen the value to be shifted to 64 bits. */
       assign( pre64, op64==Iop_Sar64 ? widenSto64(mkexpr(dst0))
                                      : widenUto64(mkexpr(dst0)) );
 
       /* res64 = pre64 `shift` shift_amt */
       assign( res64, binop(op64, mkexpr(pre64), mkexpr(shift_amt)) );
 
-      /* res64ss = pre64 `shift` ((shift_amt - 1) & 63) */
+      /* res64ss = pre64 `shift` ((shift_amt - 1) & MASK) */
       assign( res64ss,
               binop(op64,
                     mkexpr(pre64), 
                     binop(Iop_And8,
                           binop(Iop_Sub8,
                                 mkexpr(shift_amt), mkU8(1)),
-                          mkU8(63))) );
+                          mkU8(mask))) );
 
       /* Build the flags thunk. */
       setFlags_DEP1_DEP2_shift(op64, res64, res64ss, ty, shift_amt);
@@ -2925,12 +2929,13 @@ ULong dis_Grp2 ( Prefix pfx,
       IRTemp rot_amt   = newTemp(Ity_I8);
       IRTemp rot_amt64 = newTemp(Ity_I8);
       IRTemp oldFlags  = newTemp(Ity_I64);
+      UChar  mask      = sz==8 ? 63 : 31;
 
       /* rot_amt = shift_expr & mask */
       /* By masking the rotate amount thusly, the IR-level Shl/Shr
          expressions never shift beyond the word size and thus remain
          well defined. */
-      assign(rot_amt64, binop(Iop_And8, shift_expr, mkU8(63)));
+      assign(rot_amt64, binop(Iop_And8, shift_expr, mkU8(mask)));
 
       if (ty == Ity_I64)
          assign(rot_amt, mkexpr(rot_amt64));

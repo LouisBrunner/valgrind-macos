@@ -559,6 +559,12 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
             is_FPU_R = True;
             break;
 
+         case SSE3a1_MemRd:
+            sk_assert(u_in->size == 16);
+            t_read = u_in->val3;
+            is_FPU_R = True;
+            break;
+
          case SSE3ag_MemRd_RegWr:
             sk_assert(u_in->size == 4 || u_in->size == 8);
             t_read = u_in->val1;
@@ -806,6 +812,15 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 
          case SSE3a_MemRd:
             sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
+            t_read = u_in->val3;
+            t_read_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
+            data_size = u_in->size;
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+
+         case SSE3a1_MemRd:
+            sk_assert(u_in->size == 16);
             t_read = u_in->val3;
             t_read_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);

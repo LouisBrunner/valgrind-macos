@@ -329,14 +329,14 @@ static X86Instr* mk_vMOVsd_RR ( HReg src, HReg dst )
 
 /* Advance/retreat %esp by n. */
 
-static void move_esp_up ( ISelEnv* env, Int n )
+static void add_to_esp ( ISelEnv* env, Int n )
 {
    vassert(n > 0 && n < 256 && (n%4) == 0);
    addInstr(env, 
             X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(n), hregX86_ESP()));
 }
 
-static void move_esp_down ( ISelEnv* env, Int n )
+static void sub_from_esp ( ISelEnv* env, Int n )
 {
    vassert(n > 0 && n < 256 && (n%4) == 0);
    addInstr(env, 
@@ -399,9 +399,7 @@ void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc,
 
    addInstr(env, X86Instr_Call( cc, (UInt)cee->addr, cee->regparms));
    if (n_arg_ws > 0)
-      addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-                       X86RMI_Imm(4*n_arg_ws),
-                       hregX86_ESP()));
+      add_to_esp(env, 4*n_arg_ws);
 }
 
 
@@ -666,8 +664,7 @@ void set_FPU_rounding_default ( ISelEnv* env )
    X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
    addInstr(env, X86Instr_Push(X86RMI_Imm(0x037F)));
    addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
-   addInstr(env, 
-            X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(4), hregX86_ESP()));
+   add_to_esp(env, 4);
 }
 
 
@@ -697,8 +694,7 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
    addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(0x037F), rrm2));
    addInstr(env, X86Instr_Push(X86RMI_Reg(rrm2)));
    addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
-   addInstr(env, 
-            X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(4), hregX86_ESP()));
+   add_to_esp(env, 4);
 }
 
 
@@ -965,8 +961,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
          /* Create a space for the format conversion. */
          /* subl $4, %esp */
-         addInstr(env, 
-                  X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(4), hregX86_ESP()));
+         sub_from_esp(env, 4);
 
 	 /* Set host rounding mode */
 	 set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
@@ -988,8 +983,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          set_FPU_rounding_default( env );
 
          /* addl $4, %esp */
-         addInstr(env, 
-                  X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(4), hregX86_ESP()));
+	 add_to_esp(env, 4);
          return dst;
       }
 
@@ -1002,7 +996,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          HReg srcL = iselDblExpr(env, e->Iex.Binop.arg1);
          HReg srcR = iselDblExpr(env, e->Iex.Binop.arg2);
          addInstr(env, X86Instr_FpBinary(
-                           e->Iex.Binop.op==Iop_PRemC3210F64 ? Xfp_PREM : Xfp_PREM1,
+                           e->Iex.Binop.op==Iop_PRemC3210F64 
+                              ? Xfp_PREM : Xfp_PREM1,
                            srcL,srcR,junk
                  ));
          /* The previous pseudo-insn will have left the FPU's C3210
@@ -1838,13 +1833,11 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       X86AMode* esp0  = X86AMode_IR(0,     hregX86_ESP());
       X86AMode* espLO = X86AMode_IR(off,   hregX86_ESP());
       X86AMode* espHI = X86AMode_IR(off+4, hregX86_ESP());
-      addInstr(env, 
-         X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(16), hregX86_ESP()));
+      sub_from_esp(env, 16);
       addInstr(env, X86Instr_SseLdSt(False/*store*/, vec, esp0));
       addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(espLO), tLo ));
       addInstr(env, X86Instr_Alu32R( Xalu_MOV, X86RMI_Mem(espHI), tHi ));
-      addInstr(env, 
-         X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(16), hregX86_ESP()));
+      add_to_esp(env, 16);
       *rHi = tHi;
       *rLo = tLo;
       return;
@@ -1907,8 +1900,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       /* paranoia */
       set_FPU_rounding_default(env);
       /* subl $8, %esp */
-      addInstr(env, 
-               X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(8), hregX86_ESP()));
+      sub_from_esp(env, 8);
       /* gstD %rf, 0(%esp) */
       addInstr(env,
                X86Instr_FpLdSt(False/*store*/, 8, rf, zero_esp));
@@ -1919,8 +1911,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       addInstr(env, 
                X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(four_esp), tHi));
       /* addl $8, %esp */
-      addInstr(env, 
-               X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(8), hregX86_ESP()));
+      add_to_esp(env, 8);
       *rHi = tHi;
       *rLo = tLo;
       return;
@@ -2036,8 +2027,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
       /* Create a space for the format conversion. */
       /* subl $8, %esp */
-      addInstr(env, 
-               X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(8), hregX86_ESP()));
+      sub_from_esp(env, 8);
 
       /* Set host rounding mode */
       set_FPU_rounding_mode( env, e->Iex.Binop.arg1 );
@@ -2056,8 +2046,7 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       set_FPU_rounding_default( env );
 
       /* addl $8, %esp */
-      addInstr(env, 
-               X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(8), hregX86_ESP()));
+      add_to_esp(env, 8);
 
       *rHi = tHi;
       *rLo = tLo;
@@ -2217,9 +2206,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       addInstr(env, X86Instr_Push(X86RMI_Imm(u.u32x2[0])));
       addInstr(env, X86Instr_FpLdSt(True/*load*/, 8, freg, 
                                     X86AMode_IR(0, hregX86_ESP())));
-      addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-                                    X86RMI_Imm(8),
-                                    hregX86_ESP()));
+      add_to_esp(env, 8);
       return freg;
    }
 
@@ -2302,9 +2289,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
       /* Restore default FPU rounding. */
       set_FPU_rounding_default( env );
 
-      addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-                                       X86RMI_Imm(8),
-                                       hregX86_ESP()));
+      add_to_esp(env, 8);
       return dst;
    }
 
@@ -2338,9 +2323,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, X86Instr_FpLdStI(
                              True/*load*/, 4, dst, 
                              X86AMode_IR(0, hregX86_ESP())));
-	    addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-                                          X86RMI_Imm(4),
-                                          hregX86_ESP()));
+	    add_to_esp(env, 4);
             return dst;
          }
          case Iop_ReinterpI64asF64: {
@@ -2356,9 +2339,7 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, X86Instr_FpLdSt(
                              True/*load*/, 8, dst, 
                              X86AMode_IR(0, hregX86_ESP())));
-	    addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-                                          X86RMI_Imm(8),
-                                          hregX86_ESP()));
+	    add_to_esp(env, 8);
             return dst;
 	 }
          case Iop_F32toF64:
@@ -2480,7 +2461,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          X86RMI*   rmi  = iselIntExpr_RMI(env, e->Iex.Unop.arg);
          addInstr(env, X86Instr_Push(rmi));
 	 addInstr(env, X86Instr_SseLdzLO(4, dst, esp0));
-         move_esp_up(env, 4);
+         add_to_esp(env, 4);
          return dst;
       }
 
@@ -2497,11 +2478,11 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          HReg srcV = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg srcI = iselIntExpr_R(env, e->Iex.Binop.arg2);
          X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
-         move_esp_down(env, 16);
+         sub_from_esp(env, 16);
          addInstr(env, X86Instr_SseLdSt(False/*store*/, srcV, esp0));
          addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(srcI), esp0));
          addInstr(env, X86Instr_SseLdSt(True/*load*/, dst, esp0));
-         move_esp_up(env, 16);
+         add_to_esp(env, 16);
          return dst;
       }
 
@@ -2513,7 +2494,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          X86AMode* esp12 = advance4(esp8);
          HReg dst = newVRegV(env);
 	 /* do this via the stack (easy, convenient, etc) */
-         move_esp_down(env, 16);
+         sub_from_esp(env, 16);
          /* Do the less significant 64 bits */
          iselInt64Expr(&r1, &r0, env, e->Iex.Binop.arg2);
          addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r0), esp0));
@@ -2524,7 +2505,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(r3), esp12));
 	 /* Fetch result back from stack. */
          addInstr(env, X86Instr_SseLdSt(True/*load*/, dst, esp0));
-         move_esp_up(env, 16);
+         add_to_esp(env, 16);
          return dst;
       }
 

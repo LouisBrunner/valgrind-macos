@@ -780,8 +780,14 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       case VEX_TRC_JMP_YIELD:
 	 /* Explicit yield, because this thread is in a spin-lock
-	    or something.  Let another thread run ASAP. */
-	 VG_(dispatch_ctr) = 1;
+	    or something.  Only let the thread run for a short while
+            longer.  Because swapping to another thread is expensive,
+            we're prepared to let this thread eat a little more CPU
+            before swapping to another.  That means that short term
+            spins waiting for hardware to poke memory won't cause a
+            thread swap. */
+	 if (VG_(dispatch_ctr) > 100) 
+            VG_(dispatch_ctr) = 100;
 	 break;
 
       case VG_TRC_INNER_COUNTERZERO:

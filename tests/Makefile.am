@@ -29,4 +29,5 @@ EXTRA_DIST = \
 	pth_threadpool.c pth_specific.c pth_mutexspeed.c malloc3.c \
 	pth_once.c weirdioctl.c pth_signal1.c pth_signal2.c \
 	discard.c pth_semaphore1.c new_override.cpp pth_yield.c \
-	sigaltstack.c erringfds.c sigwait_all.c
+	sigaltstack.c erringfds.c sigwait_all.c \
+	pth_cancel1.c pth_cancel2.c

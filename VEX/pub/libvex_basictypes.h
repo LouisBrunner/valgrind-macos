@@ -103,7 +103,9 @@ typedef  unsigned long HWord;
 
 
 /* This is so useful it should be visible absolutely everywhere. */
-#define offsetof(type,memb) ((Int)&((type*)0)->memb)
+#if !defined(offsetof)
+#   define offsetof(type,memb) ((Int)&((type*)0)->memb)
+#endif
 
 
 /* We need to know the host word size in order to write Ptr_to_ULong

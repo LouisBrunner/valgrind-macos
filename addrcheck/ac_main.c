@@ -1013,13 +1013,13 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
 
 	    //         case SSE2a1_MemRd:
 	    //         case SSE2a1_MemWr:
-         case SSE3e1_RegRd:
 	   //         case SSE3a1_MemRd:
 	   //         case SSE3a1_MemWr:
 	    VG_(pp_UInstr)(0,u_in);
 	    VG_(skin_panic)("AddrCheck: unhandled SSE uinstr");
 	    break;
 
+         case SSE3e1_RegRd:
          case SSE3e_RegWr:
          case SSE3g1_RegWr:
          case SSE5:

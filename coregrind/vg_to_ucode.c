@@ -3659,14 +3659,18 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* CVTTSD2SI (0xF2,0x0F,0x2C) -- convert a double-precision float value in
-      memory or xmm reg to int and put it in an ireg.  Truncate. */
-   /* CVTTSS2SI (0xF3,0x0F,0x2C) -- convert a single-precision float value in
-      memory or xmm reg to int and put it in an ireg.  Truncate. */
-   /* CVTSD2SI (0xF2,0x0F,0x2D) -- convert a double-precision float value in
-      memory or xmm reg to int and put it in an ireg.  Round as per MXCSR. */
-   /* CVTSS2SI (0xF3,0x0F,0x2D) -- convert a single-precision float value in
-      memory or xmm reg to int and put it in an ireg.  Round as per MXCSR. */
+   /* CVTTSD2SI (0xF2,0x0F,0x2C) -- convert a double-precision float
+      value in memory or xmm reg to int and put it in an ireg.
+      Truncate. */
+   /* CVTTSS2SI (0xF3,0x0F,0x2C) -- convert a single-precision float
+      value in memory or xmm reg to int and put it in an ireg.
+      Truncate. */
+   /* CVTSD2SI (0xF2,0x0F,0x2D) -- convert a double-precision float
+      value in memory or xmm reg to int and put it in an ireg.  Round
+      as per MXCSR. */
+   /* CVTSS2SI (0xF3,0x0F,0x2D) -- convert a single-precision float
+      value in memory or xmm reg to int and put it in an ireg.  Round
+      as per MXCSR. */
    if ((insn[0] == 0xF2 || insn[0] == 0xF3)
        && insn[1] == 0x0F 
        && (insn[2] == 0x2C || insn[2] == 0x2D)) {
@@ -3804,10 +3808,27 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    }
 
    /* MULPS */
+   /* 0x66: MULPD */
    if (insn[0] == 0x0F && insn[1] == 0x59) {
-      vg_assert(sz == 4);
-      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "mulps",
-                                      insn[0], insn[1] );
+      vg_assert(sz == 4 || sz == 2);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "mulps",
+                                         insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "mulpd",
+                                         0x66, insn[0], insn[1] );
+      }
+      goto decode_success;
+   }
+
+   /* 0x66: SUBPD */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x5C) {
+      vg_assert(sz == 2);
+      {
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "subpd",
+                                         0x66, insn[0], insn[1] );
+      }
       goto decode_success;
    }
 
@@ -3844,10 +3865,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    }
 
    /* ADDPS */
+   /* 0x66: ADDPD */
    if (insn[0] == 0x0F && insn[1] == 0x58) {
-      vg_assert(sz == 4);
-      eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "addps",
-                                      insn[0], insn[1] );
+      vg_assert(sz == 4 || sz == 2);
+      if (sz == 4) {
+         eip = dis_SSE2_reg_or_mem ( cb, sorb, eip+2, 16, "addps",
+                                         insn[0], insn[1] );
+      } else {
+         eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "addpd",
+                                         0x66, insn[0], insn[1] );
+      }
       goto decode_success;
    }
 
@@ -3855,6 +3882,22 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    if (sz == 2
        && insn[0] == 0x0F && insn[1] == 0x57) {
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "xorpd",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* ANDPD (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x54) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "andpd",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* ORPD (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x56) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "orpd",
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
@@ -3941,6 +3984,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
        && (insn[1] == 0x68 || insn[1] == 0x69 || insn[1] == 0x6A)) {
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
                                       "punpckh{bw,wd,dq}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0x14: UNPCKLPD (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x15: UNPCKHPD (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0x14 || insn[1] == 0x15)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
+                                      "unpck{l,h}pd",
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
@@ -4187,6 +4241,19 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       Bool is_store = insn[1]==0x7F;
       eip = dis_SSE3_load_store_or_mov
                (cb, sorb, eip+2, 16, is_store, "movdqa", 
+                    0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* MOVLPD -- 8-byte load/store. */
+   if (sz == 2 
+       && insn[0] == 0x0F 
+       && (insn[1] == 0x12 || insn[1] == 0x13)) {
+      Bool is_store = insn[1]==0x13;
+      /* Cannot be used for reg-reg moves, according to Intel docs. */
+      vg_assert(!epartIsReg(insn[2]));
+      eip = dis_SSE3_load_store_or_mov
+               (cb, sorb, eip+2, 16, is_store, "movlpd", 
                     0x66, insn[0], insn[1] );
       goto decode_success;
    }

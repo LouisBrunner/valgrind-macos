@@ -290,7 +290,7 @@ void MAC_(handle_free) ( Addr p, UInt rzB, MAC_AllocKind kind )
    cmalloc_n_frees++;
 
    mc = (MAC_Chunk*)VG_(HT_get_node) ( MAC_(malloc_list), (UInt)p,
-                                       (VgHashNode***)&prev_chunks_next_ptr );
+                                       (void*)&prev_chunks_next_ptr );
    if (mc == NULL) {
       MAC_(record_free_error) ( tid, p );
       VGP_POPCC(VgpCliMalloc);
@@ -342,7 +342,7 @@ void* SK_(realloc) ( void* p, Int new_size )
 
    /* First try and find the block. */
    mc = (MAC_Chunk*)VG_(HT_get_node) ( MAC_(malloc_list), (UInt)p,
-                                       (VgHashNode***)&prev_chunks_next_ptr );
+                                       (void*)&prev_chunks_next_ptr );
 
    if (mc == NULL) {
       MAC_(record_free_error) ( tid, (Addr)p );
@@ -449,7 +449,7 @@ void MAC_(destroy_mempool)(Addr pool)
 
    mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list),
                                          (UInt)pool,
-                                         (VgHashNode***)&prev_next );
+                                         (void*)&prev_next );
 
    if (mp == NULL) {
       ThreadId      tid = VG_(get_current_or_recent_tid)();
@@ -471,7 +471,7 @@ void MAC_(mempool_alloc)(Addr pool, Addr addr, UInt size)
    MAC_Mempool** prev_next;
 
    mp = (MAC_Mempool*)VG_(HT_get_node) ( MAC_(mempool_list), (UInt)pool,
-                                        (VgHashNode***)&prev_next );
+                                        (void*)&prev_next );
 
    if (mp == NULL) {
       ThreadId      tid = VG_(get_current_or_recent_tid)();
@@ -494,7 +494,7 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
 
 
    mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list), (UInt)pool,
-                                       (VgHashNode***)&prev_pool);
+                                       (void*)&prev_pool);
 
    if (mp == NULL) {
       MAC_(record_illegal_mempool_error)(tid, pool);
@@ -502,7 +502,7 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
    }
 
    mc = (MAC_Chunk*)VG_(HT_get_node)(mp->chunks, (UInt)addr,
-                                     (VgHashNode***)&prev_chunk);
+                                     (void*)&prev_chunk);
 
    if (mc == NULL) {
       MAC_(record_free_error)(tid, (Addr)addr);

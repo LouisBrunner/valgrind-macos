@@ -147,7 +147,7 @@ Bool MC_(client_perm_maybe_describe)( Addr a, AddrInfo* ai )
          /* OK - maybe it's a mempool, too? */
          mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list),
                                              (UInt)vg_cgbs[i].start,
-                                             (VgHashNode***)&d);
+                                             (void*)&d);
          if(mp != NULL) {
             if(mp->chunks != NULL) {
                MAC_Chunk *mc;

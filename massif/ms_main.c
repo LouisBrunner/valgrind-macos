@@ -244,7 +244,7 @@ static Char buf [BUF_LEN];
 static Char buf2[BUF_LEN];
 static Char buf3[BUF_LEN];
 
-static UInt sigstacks_space = 0;    // Current signal stacks space sum
+static SizeT sigstacks_space = 0;    // Current signal stacks space sum
 
 static VgHashTable malloc_list  = NULL;   // HP_Chunks
 
@@ -1113,12 +1113,12 @@ static void hp_census(void)
 /*--- Tracked events                                       ---*/
 /*------------------------------------------------------------*/
 
-static void new_mem_stack_signal(Addr a, UInt len)
+static void new_mem_stack_signal(Addr a, SizeT len)
 {
    sigstacks_space += len;
 }
 
-static void die_mem_stack_signal(Addr a, UInt len)
+static void die_mem_stack_signal(Addr a, SizeT len)
 {
    sk_assert(sigstacks_space >= len);
    sigstacks_space -= len;

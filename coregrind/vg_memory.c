@@ -154,7 +154,7 @@ Segment *VG_(split_segment)(Addr a)
 
 /* This unmaps all the segments in the range [addr, addr+len); any
    partial mappings at the ends are truncated. */
-void VG_(unmap_range)(Addr addr, UInt len)
+void VG_(unmap_range)(Addr addr, SizeT len)
 {
    Segment *s;
    Segment *next;
@@ -281,7 +281,7 @@ static inline Bool neighbours(Segment *s1, Segment *s2)
 
 /* If possible, merge segment with its neighbours - some segments,
    including s, may be destroyed in the process */
-static void merge_segments(Addr a, UInt len)
+static void merge_segments(Addr a, SizeT len)
 {
    Segment *s;
    Segment *next;
@@ -314,7 +314,7 @@ static void merge_segments(Addr a, UInt len)
    }
 }
 
-void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags, 
+void VG_(map_file_segment)(Addr addr, SizeT len, UInt prot, UInt flags, 
 			   UInt dev, UInt ino, ULong off, const Char *filename)
 {
    Segment *s;
@@ -322,8 +322,8 @@ void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags,
    Bool recycled;
 
    if (debug)
-      VG_(printf)("map_file_segment(%p, %d, %x, %x, %4x, %d, %ld, %s)\n",
-		  addr, len, prot, flags, dev, ino, off, filename);
+      VG_(printf)("map_file_segment(%p, %llu, %x, %x, %4x, %d, %ld, %s)\n",
+		  addr, (ULong)len, prot, flags, dev, ino, off, filename);
 
    /* Everything must be page-aligned */
    vg_assert((addr & (VKI_PAGE_SIZE-1)) == 0);
@@ -421,7 +421,7 @@ void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags,
    merge_segments(addr, len);
 }
 
-void VG_(map_fd_segment)(Addr addr, UInt len, UInt prot, UInt flags, 
+void VG_(map_fd_segment)(Addr addr, SizeT len, UInt prot, UInt flags, 
 			 Int fd, ULong off, const Char *filename)
 {
    struct vki_stat st;
@@ -449,7 +449,7 @@ void VG_(map_fd_segment)(Addr addr, UInt len, UInt prot, UInt flags,
       VG_(arena_free)(VG_AR_CORE, name);
 }
 
-void VG_(map_segment)(Addr addr, UInt len, UInt prot, UInt flags)
+void VG_(map_segment)(Addr addr, SizeT len, UInt prot, UInt flags)
 {
    flags &= ~SF_FILE;
 
@@ -457,7 +457,7 @@ void VG_(map_segment)(Addr addr, UInt len, UInt prot, UInt flags)
 }
 
 /* set new protection flags on an address range */
-void VG_(mprotect_range)(Addr a, UInt len, UInt prot)
+void VG_(mprotect_range)(Addr a, SizeT len, UInt prot)
 {
    Segment *s, *next;
    static const Bool debug = False || mem_debug;
@@ -486,7 +486,7 @@ void VG_(mprotect_range)(Addr a, UInt len, UInt prot)
    merge_segments(a, len);
 }
 
-Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
+Addr VG_(find_map_space)(Addr addr, SizeT len, Bool for_client)
 {
    static const Bool debug = False || mem_debug;
    Segment *s;

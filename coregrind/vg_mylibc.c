@@ -273,7 +273,7 @@ static Int munmap_inner(void *start, UInt length)
    return VG_(do_syscall)(__NR_munmap, (UInt)start, (UInt)length );
 }
 
-static Addr mmap_inner(void *start, UInt length, UInt prot, UInt flags, UInt fd, UInt offset)
+static Addr mmap_inner(void *start, SizeT length, UInt prot, UInt flags, UInt fd, UInt offset)
 {
    Int ret;
    
@@ -284,7 +284,7 @@ static Addr mmap_inner(void *start, UInt length, UInt prot, UInt flags, UInt fd,
 }
 
 /* Returns -1 on failure. */
-void* VG_(mmap)( void* start, UInt length,
+void* VG_(mmap)( void* start, SizeT length,
                  UInt prot, UInt flags, UInt sf_flags, UInt fd, UInt offset)
 {
    Addr  res;
@@ -321,7 +321,7 @@ void* VG_(mmap)( void* start, UInt length,
 }
 
 /* Returns -1 on failure. */
-Int VG_(munmap)( void* start, Int length )
+Int VG_(munmap)( void* start, SizeT length )
 {
    Int res = munmap_inner(start, length);
    if (!VG_(is_kerror)(res))
@@ -329,9 +329,9 @@ Int VG_(munmap)( void* start, Int length )
    return VG_(is_kerror)(res) ? -1 : 0;
 }
 
-Int VG_(mprotect)( void *start, Int length, UInt prot )
+Int VG_(mprotect)( void *start, SizeT length, UInt prot )
 {
-   Int res = VG_(do_syscall)(__NR_mprotect, (UInt)start, (UInt)length, prot );
+   Int res = VG_(do_syscall)(__NR_mprotect, (UWord)start, length, prot );
    if (!VG_(is_kerror)(res))
       VG_(mprotect_range)((Addr)start, length, prot);
    return VG_(is_kerror)(res) ? -1 : 0;
@@ -1682,9 +1682,9 @@ UInt VG_(read_millisecond_timer) ( void )
    Primitive support for bagging memory via mmap.
    ------------------------------------------------------------------ */
 
-void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
+void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who )
 {
-   static UInt tot_alloc = 0;
+   static SizeT tot_alloc = 0;
    void* p;
    p = VG_(mmap)(0, nBytes,
                  VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
@@ -1695,16 +1695,16 @@ void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
       tot_alloc += (UInt)nBytes;
       if (0)
          VG_(printf)(
-            "get_memory_from_mmap: %d tot, %d req = %p .. %p, caller %s\n",
-            tot_alloc, nBytes, p, ((char*)p) + nBytes - 1, who );
+            "get_memory_from_mmap: %llu tot, %llu req = %p .. %p, caller %s\n",
+            (ULong)tot_alloc, (ULong)nBytes, p, ((char*)p) + nBytes - 1, who );
       return p;
    }
 
    VG_(printf)("\n");
-   VG_(printf)("VG_(get_memory_from_mmap): %s's request for %d bytes failed.\n",
-               who, nBytes);
-   VG_(printf)("VG_(get_memory_from_mmap): %d bytes already allocated.\n", 
-               tot_alloc);
+   VG_(printf)("VG_(get_memory_from_mmap): %s's request for %llu bytes failed.\n",
+               who, (ULong)nBytes);
+   VG_(printf)("VG_(get_memory_from_mmap): %llu bytes already allocated.\n", 
+               (ULong)tot_alloc);
    VG_(printf)("\n");
    VG_(printf)("Sorry.  You could try using a tool that uses less memory;\n");
    VG_(printf)("eg. addrcheck instead of memcheck.\n");

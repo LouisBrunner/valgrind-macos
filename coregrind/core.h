@@ -1012,10 +1012,10 @@ extern Int VG_(fcntl) ( Int fd, Int cmd, Int arg );
 extern Int VG_(poll)( struct vki_pollfd *, UInt nfds, Int timeout);
 
 /* system/mman.h */
-extern void* VG_(mmap)( void* start, UInt length, UInt prot, UInt flags,
+extern void* VG_(mmap)( void* start, SizeT length, UInt prot, UInt flags,
                         UInt sf_flags, UInt fd, UInt offset );
-extern Int  VG_(munmap)( void* start, Int length );
-extern Int  VG_(mprotect)( void *start, Int length, UInt prot );
+extern Int  VG_(munmap)( void* start, SizeT length );
+extern Int  VG_(mprotect)( void *start, SizeT length, UInt prot );
 
 
 /* Move an fd into the Valgrind-safe range */
@@ -1308,19 +1308,19 @@ struct _Segment {
 };
 
 /* segment mapped from a file descriptor */
-extern void VG_(map_fd_segment)  (Addr addr, UInt len, UInt prot, UInt flags, 
+extern void VG_(map_fd_segment)  (Addr addr, SizeT len, UInt prot, UInt flags, 
 				  Int fd, ULong off, const Char *filename);
 
 /* segment mapped from a file */
-extern void VG_(map_file_segment)(Addr addr, UInt len, UInt prot, UInt flags, 
+extern void VG_(map_file_segment)(Addr addr, SizeT len, UInt prot, UInt flags, 
 				  UInt dev, UInt ino, ULong off, const Char *filename);
 
 /* simple segment */
-extern void VG_(map_segment)     (Addr addr, UInt len, UInt prot, UInt flags);
+extern void VG_(map_segment)     (Addr addr, SizeT len, UInt prot, UInt flags);
 
-extern void VG_(unmap_range)   (Addr addr, UInt len);
-extern void VG_(mprotect_range)(Addr addr, UInt len, UInt prot);
-extern Addr VG_(find_map_space)(Addr base, UInt len, Bool for_client);
+extern void VG_(unmap_range)   (Addr addr, SizeT len);
+extern void VG_(mprotect_range)(Addr addr, SizeT len, UInt prot);
+extern Addr VG_(find_map_space)(Addr base, SizeT len, Bool for_client);
 
 extern Segment *VG_(find_segment)(Addr a);
 extern Segment *VG_(first_segment)(void);

@@ -485,7 +485,7 @@ extern void VG_(skin_assert_fail) ( const Char* expr, const Char* file,
 
 /* ------------------------------------------------------------------ */
 /* Get memory by anonymous mmap. */
-extern void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who );
+extern void* VG_(get_memory_from_mmap) ( SizeT nBytes, Char* who );
 
 extern Bool VG_(is_client_addr) (Addr a);
 extern Addr VG_(get_client_base)(void);

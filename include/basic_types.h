@@ -37,7 +37,7 @@
 
 // By choosing the right types, we can get these right for 32-bit and 64-bit
 // platforms without having to do any conditional compilation or anything.
-//
+// 
 // Size in bits on:                          32-bit archs   64-bit archs
 //                                           ------------   ------------
 typedef unsigned char          UChar;     //  8              8

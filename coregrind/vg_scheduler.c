@@ -1625,6 +1625,7 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
 {
    Char msg_buf[100];
    vg_assert(VG_(is_valid_tid)(tid));
+
    /* Push PTHREAD_CANCELED on the stack and jump to the cancellation
       handler -- which is really thread_exit_wrapper() in
       vg_libpthread.c. */
@@ -1632,7 +1633,17 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
    VG_(threads)[tid].m_esp -= 4;
    * (UInt*)(VG_(threads)[tid].m_esp) = (UInt)PTHREAD_CANCELED;
    VG_(threads)[tid].m_eip = (UInt)VG_(threads)[tid].cancel_pend;
+
+   /* Clear out the waited-for-signals set, if needed, so as not to
+      cause the sanity checker to bomb before
+      cleanup_after_thread_exited() really cleans up properly for this
+      thread. */
+   if (VG_(threads)[tid].status == VgTs_WaitSIG) {
+      VG_(ksigemptyset)( & VG_(threads)[tid].sigs_waited_for );
+   }
+
    VG_(threads)[tid].status = VgTs_Runnable;
+
    /* Make sure we aren't cancelled again whilst handling this
       cancellation. */
    VG_(threads)[tid].cancel_st = False;

@@ -605,6 +605,11 @@ static IRExpr* getXMMRegLane32F ( UInt xmmreg, Int laneno )
    return IRExpr_Get( xmmGuestRegLane32offset(xmmreg,laneno), Ity_F32 );
 }
 
+static IRExpr* getXMMRegLane32 ( UInt xmmreg, Int laneno )
+{
+   return IRExpr_Get( xmmGuestRegLane32offset(xmmreg,laneno), Ity_I32 );
+}
+
 static void putXMMReg ( UInt xmmreg, IRExpr* e )
 {
    vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_V128);
@@ -620,6 +625,12 @@ static void putXMMRegLane64 ( UInt xmmreg, Int laneno, IRExpr* e )
 static void putXMMRegLane32F ( UInt xmmreg, Int laneno, IRExpr* e )
 {
    vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_F32);
+   stmt( IRStmt_Put( xmmGuestRegLane32offset(xmmreg,laneno), e ) );
+}
+
+static void putXMMRegLane32 ( UInt xmmreg, Int laneno, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I32);
    stmt( IRStmt_Put( xmmGuestRegLane32offset(xmmreg,laneno), e ) );
 }
 
@@ -6927,7 +6938,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
                             /*OUT*/ Addr64* whereNext )
 {
    IRType    ty;
-   IRTemp    addr, t1, t2, t3, t4;
+   IRTemp    addr, t0, t1, t2, t3, t4;
    Int       alen;
    UChar     opc, modrm, abyte;
    UInt      d32;
@@ -6955,7 +6966,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       assert. */
    *size = 0;
 
-   addr = t1 = t2 = t3 = t4 = IRTemp_INVALID; 
+   addr = t0 = t1 = t2 = t3 = t4 = IRTemp_INVALID; 
 
    DIP("\t0x%x:  ", guest_eip_bbstart+delta);
 
@@ -7040,69 +7051,82 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    insn = (UChar*)&guest_code[delta];
 
    /* 0F 12 = MOVLPS -- move from mem to low half of XMM. */
+   /* OF 12 = MOVHLPS -- from from hi half to lo half of XMM. */
    if (insn[0] == 0x0F && insn[1] == 0x12) {
-      delta += 2;
-      addr = disAMode ( &alen, sorb, delta, dis_buf );
-      delta += alen;
-
-      putXMMRegLane64( gregOfRM(insn[2]),  0/*lower lane*/,
-                       loadLE(Ity_I64, mkexpr(addr)) );
-
-      DIP("movlps %s, %s\n", 
-          dis_buf, nameXMMReg( gregOfRM(insn[2]) ));
-
+      vassert(sz == 4);
+      modrm = getIByte(delta+2);
+      if (epartIsReg(modrm)) {
+         delta += 2+1;
+         putXMMRegLane64( gregOfRM(modrm),  
+                          0/*lower lane*/,
+                          getXMMRegLane64( eregOfRM(modrm), 1 ));
+         DIP("movhlps %s, %s\n", nameXMMReg(eregOfRM(modrm)), 
+                                 nameXMMReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         delta += 2+alen;
+         putXMMRegLane64( gregOfRM(modrm),  0/*lower lane*/,
+                          loadLE(Ity_I64, mkexpr(addr)) );
+         DIP("movlps %s, %s\n", 
+             dis_buf, nameXMMReg( gregOfRM(modrm) ));
+      }
       goto decode_success;
    }
 
    /* 0F 13 = MOVLPS -- move from low half of XMM to mem. */
    if (insn[0] == 0x0F && insn[1] == 0x13) {
-      delta += 2;
-      addr = disAMode ( &alen, sorb, delta, dis_buf );
-      delta += alen;
-
-      storeLE( mkexpr(addr), 
-               getXMMRegLane64( gregOfRM(insn[2]), 
-                                0/*lower lane*/ ) );
-
-      DIP("movlps %s, %s\n", 
-          nameXMMReg( gregOfRM(insn[2]) ),
-          dis_buf);
-
-      goto decode_success;
+      if (!epartIsReg(insn[2])) {
+         vassert(sz == 4);
+         delta += 2;
+         addr = disAMode ( &alen, sorb, delta, dis_buf );
+         delta += alen;
+         storeLE( mkexpr(addr), 
+                  getXMMRegLane64( gregOfRM(insn[2]), 
+                                   0/*lower lane*/ ) );
+         DIP("movlps %s, %s\n", nameXMMReg( gregOfRM(insn[2]) ),
+                                dis_buf);
+         goto decode_success;
+      }
+      /* else fall through */
    }
 
    /* 0F 16 = MOVHPS -- move from mem to high half of XMM. */
+   /* 0F 16 = MOVLHPS -- move from lo half to hi half of XMM. */
    if (insn[0] == 0x0F && insn[1] == 0x16) {
       vassert(sz == 4);
-      delta += 2;
-      addr = disAMode ( &alen, sorb, delta, dis_buf );
-      delta += alen;
-
-      putXMMRegLane64( gregOfRM(insn[2]), 1/*upper lane*/,
-                       loadLE(Ity_I64, mkexpr(addr)) );
-
-      DIP("movhps %s, %s\n", 
-          dis_buf, nameXMMReg( gregOfRM(insn[2]) ));
-
+      modrm = getIByte(delta+2);
+      if (epartIsReg(modrm)) {
+         delta += 2+1;
+         putXMMRegLane64( gregOfRM(modrm), 1/*upper lane*/,
+                          getXMMRegLane64( eregOfRM(modrm), 0 ) );
+         DIP("movhps %s,%s\n", nameXMMReg(eregOfRM(modrm)), 
+                               nameXMMReg(gregOfRM(modrm)));
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         delta += 2+alen;
+         putXMMRegLane64( gregOfRM(modrm), 1/*upper lane*/,
+                          loadLE(Ity_I64, mkexpr(addr)) );
+         DIP("movhps %s,%s\n", dis_buf, 
+                               nameXMMReg( gregOfRM(insn[2]) ));
+      }
       goto decode_success;
    }
 
    /* 0F 17 = MOVHPS -- move from high half of XMM to mem. */
    if (insn[0] == 0x0F && insn[1] == 0x17) {
-      vassert(sz == 4);
-      delta += 2;
-      addr = disAMode ( &alen, sorb, delta, dis_buf );
-      delta += alen;
-
-      storeLE( mkexpr(addr), 
-               getXMMRegLane64( gregOfRM(insn[2]),
-                                1/*upper lane*/ ) );
-
-      DIP("movhps %s, %s\n", 
-          nameXMMReg( gregOfRM(insn[2]) ),
-          dis_buf);
-
-      goto decode_success;
+      if (!epartIsReg(insn[2])) {
+         vassert(sz == 4);
+         delta += 2;
+         addr = disAMode ( &alen, sorb, delta, dis_buf );
+         delta += alen;
+         storeLE( mkexpr(addr), 
+                  getXMMRegLane64( gregOfRM(insn[2]),
+                                   1/*upper lane*/ ) );
+         DIP("movhps %s,%s\n", nameXMMReg( gregOfRM(insn[2]) ),
+                               dis_buf);
+         goto decode_success;
+      }
+      /* else fall through */
    }
 
    /* 0F 58 = ADDPS -- add 32Fx4 from R/M to R */
@@ -7390,6 +7414,158 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x5D) {
       vassert(sz == 4);
       delta = dis_SSE_E_to_G( sorb, delta+3, "minss", Iop_Min32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F 28 = MOVAPS -- move from E (mem or xmm) to G (xmm). */
+   /* 0F 10 = MOVAPS -- move from E (mem or xmm) to G (xmm). */
+   if (insn[0] == 0x0F && (insn[1] == 0x28 || insn[1] == 0x10)) {
+      vassert(sz == 4);
+      modrm = getIByte(delta+2);
+
+      if (epartIsReg(modrm)) {
+         putXMMReg( gregOfRM(modrm), 
+                    getXMMReg( eregOfRM(modrm) ));
+         DIP("mov[ua]ps %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                                  nameXMMReg(gregOfRM(modrm)));
+         delta += 2+1;
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         putXMMReg( gregOfRM(modrm), 
+                    loadLE(Ity_V128, mkexpr(addr)) );
+         DIP("mov[ua]ps %s,%s\n", dis_buf,
+                                  nameXMMReg(gregOfRM(modrm)));
+         delta += 2+alen;
+      }
+      goto decode_success;
+   }
+
+   /* 0F 50 = MOVMSKPS - move 4 sign bits from 4 x F32 in xmm(E)
+      to 4 lowest bits of ireg(G) */
+   if (insn[0] == 0x0F && insn[1] == 0x50) {
+      t0 = newTemp(Ity_I32);
+      t1 = newTemp(Ity_I32);
+      t2 = newTemp(Ity_I32);
+      t3 = newTemp(Ity_I32);
+      Int src;
+      vassert(sz == 4);
+      modrm = getIByte(delta+2);
+      delta += 2+1;
+      src = eregOfRM(modrm);
+      assign( t0, binop( Iop_And32,
+                         binop(Iop_Shr32, getXMMRegLane32(src,0), mkU8(31)),
+                         mkU32(1) ));
+      assign( t1, binop( Iop_And32,
+                         binop(Iop_Shr32, getXMMRegLane32(src,1), mkU8(30)),
+                         mkU32(2) ));
+      assign( t2, binop( Iop_And32,
+                         binop(Iop_Shr32, getXMMRegLane32(src,2), mkU8(29)),
+                         mkU32(4) ));
+      assign( t3, binop( Iop_And32,
+                         binop(Iop_Shr32, getXMMRegLane32(src,3), mkU8(28)),
+                         mkU32(8) ));
+      putIReg(4, gregOfRM(modrm),
+                 binop(Iop_Or32,
+                       binop(Iop_Or32, mkexpr(t0), mkexpr(t1)),
+                       binop(Iop_Or32, mkexpr(t2), mkexpr(t3))
+                      )
+              );
+      DIP("movmskps %s,%s\n", nameXMMReg(src), 
+                              nameIReg(4, gregOfRM(modrm)));
+      goto decode_success;
+   }
+
+   /* 0F 2B = MOVNTPS -- for us, just a plain SSE store. */
+   if (insn[0] == 0x0F && insn[1] == 0x2B) {
+      modrm = getIByte(delta+2);
+      if (!epartIsReg(modrm)) {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         storeLE( mkexpr(addr), getXMMReg(gregOfRM(modrm)) );
+         DIP("movntps %s,%s\n", dis_buf,
+                                nameXMMReg(gregOfRM(modrm)));
+         delta += 2+alen;
+         goto decode_success;
+      }
+      /* else fall through */
+   }
+
+   /* 0F E7 = MOVNTQ -- for us, just a plain MMX store.  Note, the
+      Intel manual does not say anything about the usual business of
+      the FP reg tags getting trashed whenever an MMX insn happens.
+      So we just leave them alone. 
+   */
+   if (insn[0] == 0x0F && insn[1] == 0xE7) {
+      modrm = getIByte(delta+2);
+      if (!epartIsReg(modrm)) {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+         storeLE( mkexpr(addr), getMMXReg(gregOfRM(modrm)) );
+         DIP("movntq %s,%s\n", dis_buf,
+                               nameMMXReg(gregOfRM(modrm)));
+         delta += 2+alen;
+         goto decode_success;
+      }
+      /* else fall through */
+   }
+
+   /* F3 0F 10 = MOVSS -- move 32 bits from E (mem or lo 1/4 xmm) to G
+      (lo 1/4 xmm).  If E is mem, upper 3/4 of G is zeroed out. */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x10) {
+      vassert(sz == 4);
+      modrm = getIByte(delta+3);
+      if (epartIsReg(modrm)) {
+         putXMMRegLane32( gregOfRM(modrm), 0,
+                          getXMMRegLane32( eregOfRM(modrm), 0 ));
+         DIP("movss %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                              nameXMMReg(gregOfRM(modrm)));
+         delta += 3+1;
+      } else {
+         addr = disAMode ( &alen, sorb, delta+3, dis_buf );
+         putXMMReg( gregOfRM(modrm), mkV128(0) );
+         putXMMRegLane32( gregOfRM(modrm), 0,
+                          loadLE(Ity_I32, mkexpr(addr)) );
+         DIP("movss %s,%s\n", dis_buf,
+                              nameXMMReg(gregOfRM(modrm)));
+         delta += 3+alen;
+      }
+      goto decode_success;
+   }
+
+   /* F3 0F 11 = MOVSS -- move 32 bits from G (lo 1/4 xmm) to E (mem
+      or lo 1/4 xmm). */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x11) {
+      vassert(sz == 4);
+      modrm = getIByte(delta+3);
+      if (epartIsReg(modrm)) {
+         /* fall through, we don't yet have a test case */
+      } else {
+         addr = disAMode ( &alen, sorb, delta+3, dis_buf );
+         storeLE( mkexpr(addr),
+                  getXMMRegLane32(eregOfRM(modrm), 0) );
+         DIP("movss %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                              dis_buf);
+         delta += 3+alen;
+         goto decode_success;
+      }
+   }
+
+   /* 0F 59 = MULPS -- mul 32Fx4 from R/M to R */
+   if (insn[0] == 0x0F && insn[1] == 0x59) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+2, "mulps", Iop_Mul32Fx4 );
+      goto decode_success;
+   }
+
+   /* F3 0F 59 = MULSS -- mul 32F0x4 from R/M to R */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0x59) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+3, "mulss", Iop_Mul32F0x4 );
+      goto decode_success;
+   }
+
+   /* 0F 56 = ORPS -- G = G and E */
+   if (insn[0] == 0x0F && insn[1] == 0x56) {
+      vassert(sz == 4);
+      delta = dis_SSE_E_to_G( sorb, delta+2, "orps", Iop_Or128 );
       goto decode_success;
    }
 

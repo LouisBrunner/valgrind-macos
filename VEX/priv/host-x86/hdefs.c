@@ -2353,6 +2353,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
    case Xin_Sse128:
       *p++ = 0x0F;
       switch (i->Xin.Sse128.op) {
+         case Xsse_OR:  *p++ = 0x56; break;
          case Xsse_XOR: *p++ = 0x57; break;
          case Xsse_AND: *p++ = 0x54; break;
          default: goto bad;
@@ -2369,6 +2370,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_DIVF:   *p++ = 0x5E; break;
          case Xsse_MAXF:   *p++ = 0x5F; break;
          case Xsse_MINF:   *p++ = 0x5D; break;
+         case Xsse_MULF:   *p++ = 0x59; break;
          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
@@ -2389,6 +2391,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_DIVF:   *p++ = 0x5E; break;
          case Xsse_MAXF:   *p++ = 0x5F; break;
          case Xsse_MINF:   *p++ = 0x5D; break;
+         case Xsse_MULF:   *p++ = 0x59; break;
          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;

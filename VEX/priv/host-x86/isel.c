@@ -2475,6 +2475,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       case Iop_And128: op = Xsse_AND; goto do_128;
+      case Iop_Or128:  op = Xsse_OR;  goto do_128;
       case Iop_Xor128: op = Xsse_XOR; goto do_128;
       do_128: 
       {
@@ -2493,6 +2494,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Div32Fx4:   op = Xsse_DIVF;   goto do_32Fx4;
       case Iop_Max32Fx4:   op = Xsse_MAXF;   goto do_32Fx4;
       case Iop_Min32Fx4:   op = Xsse_MINF;   goto do_32Fx4;
+      case Iop_Mul32Fx4:   op = Xsse_MULF;   goto do_32Fx4;
       do_32Fx4:
       {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
@@ -2510,6 +2512,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       case Iop_Div32F0x4:   op = Xsse_DIVF;   goto do_32F0x4;
       case Iop_Max32F0x4:   op = Xsse_MAXF;   goto do_32F0x4;
       case Iop_Min32F0x4:   op = Xsse_MINF;   goto do_32F0x4;
+      case Iop_Mul32F0x4:   op = Xsse_MULF;   goto do_32F0x4;
       do_32F0x4: {
          HReg argL = iselVecExpr(env, e->Iex.Binop.arg1);
          HReg argR = iselVecExpr(env, e->Iex.Binop.arg2);
@@ -2579,6 +2582,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
                           Xalu_MOV, X86RI_Reg(vLo), X86AMode_IR(0, rA)));
          addInstr(env, X86Instr_Alu32M(
                           Xalu_MOV, X86RI_Reg(vHi), X86AMode_IR(4, rA)));
+         return;
+      }
+      if (tyd == Ity_V128) {
+         HReg r = iselVecExpr(env, stmt->Ist.STle.data);
+         addInstr(env, X86Instr_SseLdSt(False/*store*/, r, am));
          return;
       }
       break;

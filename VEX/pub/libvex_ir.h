@@ -160,6 +160,7 @@ typedef
       Iop_64HIto32,   // :: I64 -> I32, high half
       Iop_32HLto64,   // :: (I32,I32) -> I64
       /* 1-bit stuff */
+      Iop_Not1,   /* :: Ity_Bit -> Ity_Bit */
       Iop_32to1,  /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
       Iop_1Uto8,  /* :: Ity_Bit -> Ity_I8, unsigned widen */
       Iop_1Uto32, /* :: Ity_Bit -> Ity_I32, unsigned widen */

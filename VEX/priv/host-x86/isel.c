@@ -1169,6 +1169,12 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_Bit);
 
+   /* Not1(...) */
+   if (e->tag == Iex_Unop && e->Iex.Unop.op == Iop_Not1) {
+      /* Generate code for the arg, and negate the test condition */
+      return 1 ^ iselCondCode(env, e->Iex.Unop.arg);
+   }
+
    /* 32to1(1Uto32(expr1)) -- the casts are pointless, ignore them */
    DEFINE_PATTERN(p_1Uto32_then_32to1,
                   unop(Iop_32to1,unop(Iop_1Uto32,bind(0))));

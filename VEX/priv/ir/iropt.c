@@ -2800,8 +2800,8 @@ static IRBB* maybe_loop_unroll_BB ( IRBB* bb0, Addr64 my_addr )
       con->Ico.U64 = (UInt)yyy_value;
    }
 
-   /* negate the test condition; blargh */
-   st->Ist.Exit.cond = IRExpr_Unop(Iop_32to1,IRExpr_Unop(Iop_Not32,IRExpr_Unop(Iop_1Uto32,dopyIRExpr(st->Ist.Exit.cond))));
+   /* negate the test condition */
+   st->Ist.Exit.cond = IRExpr_Unop(Iop_Not1,dopyIRExpr(st->Ist.Exit.cond));
 
    /* --- The unroller proper.  Both idioms are by now --- */
    /* --- now converted to idiom 1. --- */
@@ -3012,7 +3012,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
 
    bb2 = maybe_loop_unroll_BB( bb, guest_addr );
    if (bb2) {
-     //show_res = True;
+     show_res = True;
       bb = cheap_transformations( bb2, specHelper );
       if (do_expensive) {
          bb = expensive_transformations( bb );

@@ -1,3 +1,5 @@
+SUBDIRS =  ${VG_ARCH} .
+
 noinst_SCRIPTS = filter_cpuid filter_none_discards filter_stderr filter_int
 
 EXTRA_DIST = $(noinst_SCRIPTS) \

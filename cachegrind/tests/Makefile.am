@@ -1,3 +1,5 @@
+SUBDIRS =  ${VG_ARCH} .
+
 noinst_SCRIPTS = filter_stderr filter_cachesim_discards
 
 EXTRA_DIST = $(noinst_SCRIPTS) \

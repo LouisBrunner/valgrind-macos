@@ -737,6 +737,7 @@ static void process_cmd_line_options ( void )
    }
 #  endif
 
+#  if defined(GLIBC_2_2)
    /* These offsets (5,6,7) are right for my RedHat 7.2 (glibc-2.2.4)
       box. */
 
@@ -766,6 +767,9 @@ static void process_cmd_line_options ( void )
         (Addr)VG_(client_envp) >= 0x8000000)
       goto argc_argv_envp_OK;
 
+#  endif /* defined(GLIBC_2_2) */
+
+#  if defined(GLIBC_2_1)
    /* Doesn't look promising.  Try offsets for RedHat 6.2
       (glibc-2.1.3) instead.  In this case, the argv and envp vectors
       are actually on the stack (bizarrely). */
@@ -793,6 +797,11 @@ static void process_cmd_line_options ( void )
         (Addr)VG_(client_argv) >= 0x8000000 &&
         (Addr)VG_(client_envp) >= 0x8000000)
       goto argc_argv_envp_OK;
+#  endif /* defined(GLIBC_2_1) */
+
+#  if !defined(GLIBC_2_2) && !defined(GLIBC_2_1)
+   config_error("autoconf/configure detected neither glibc 2.1.X nor 2.2.X");
+#  endif
 
    /* VG_(printf)("%d %p %p\n", VG_(client_argc), VG_(client_argv), 
                                                   VG_(client_envp));

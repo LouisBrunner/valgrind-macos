@@ -493,13 +493,6 @@ void do_details( instr_info* n, Bool bbSeenBefore,
    }
 }
 
-// XXX: very x86-specific...
-static Bool is_valid_data_size(Int data_size)
-{
-   return (4 == data_size || 2  == data_size || 1 == data_size || 
-           8 == data_size || 10 == data_size || MIN_LINE_SIZE == data_size);
-}
-
 static Bool loadStoreAddrsMatch(IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
 {
   // I'm assuming that for 'modify' instructions, that Vex always makes
@@ -545,6 +538,11 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
               (instrLen >= VGA_MIN_INSTR_SIZE && 
                instrLen <= VGA_MAX_INSTR_SIZE) );
 
+   // Large (eg. 28B, 108B, 512B on x86) data-sized instructions will be
+   // done inaccurately, but they're very rare and this avoids errors from
+   // hitting more than two cache lines in the simulation.
+   if (dataSize > MIN_LINE_SIZE) dataSize = MIN_LINE_SIZE;
+
    // Setup 1st arg: instr_info node's address
    // Believed to be 64-bit clean
    do_details(i_node, bbSeenBefore, instrAddr, instrLen, dataSize );
@@ -560,7 +558,6 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
 
    } else if (loadAddrExpr && !storeAddrExpr) {
       // load
-      tl_assert( is_valid_data_size(dataSize) );
       tl_assert( isIRAtom(loadAddrExpr) );
       helperName = "log_1I_1Dr_cache_access";
       helperAddr = &log_1I_1Dr_cache_access;
@@ -570,7 +567,6 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
 
    } else if (!loadAddrExpr && storeAddrExpr) {
       // store
-      tl_assert( is_valid_data_size(dataSize) );
       tl_assert( isIRAtom(storeAddrExpr) );
       helperName = "log_1I_1Dw_cache_access";
       helperAddr = &log_1I_1Dw_cache_access;
@@ -580,7 +576,6 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
  
    } else {
       tl_assert( loadAddrExpr && storeAddrExpr );
-      tl_assert( is_valid_data_size(dataSize) );
       tl_assert( isIRAtom(loadAddrExpr) );
       tl_assert( isIRAtom(storeAddrExpr) );
 

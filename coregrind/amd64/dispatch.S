@@ -60,7 +60,11 @@ VG_(run_innerloop):
 	pushq	%r15
 	pushq	%rdi
 
-	/* 0(%rsp) holds cached copy of guest_state */
+	movq	VG_(dispatch_ctr)@GOTPCREL(%rip), %rsi
+	pushq	(%rsi)
+
+	/* 8(%rsp) holds cached copy of guest_state */
+	/* 0(%rsp) holds cached copy of VG_(dispatch_ctr) */
 
 	/* Set up the guest state pointer */
 	movq	%rdi, %rbp
@@ -95,17 +99,19 @@ dispatch_boring:
 	movq	%rax, OFFSET_amd64_RIP(%rbp)
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
-	subl $1, VG_(dispatch_ctr)
+	subl	$1, 0(%rsp)
 	jz	counter_is_zero
 
 	/* try a fast lookup in the translation cache */
 	movq %rax, %rbx
 	andq $VG_TT_FAST_MASK, %rbx
-	movq VG_(tt_fast)(,%rbx,8), %rcx
+	movq VG_(tt_fast)@GOTPCREL(%rip), %rcx
+	movq (%rcx,%rbx,8), %rcx
 	cmpq %rax, (%rcx)
 	jnz  fast_lookup_failed
 	/* increment bb profile counter */
-	movq VG_(tt_fastN)(,%rbx,8), %rdx
+	movq VG_(tt_fastN)@GOTPCREL(%rip), %rdx
+	movq (%rdx,%rbx,8), %rdx
 	incl (%rdx)
 
 	/* Found a match.  Call tce[1], which is 8 bytes along, since
@@ -118,13 +124,13 @@ dispatch_boring:
 	   %rbp indicates further details of the control transfer
 	   requested to the address in %rax.
 	
-	   If rbp is unchanged (== * 0(%rsp)), just jump next to %rax.
+	   If rbp is unchanged (== * 8(%rsp)), just jump next to %rax.
 
 	   Otherwise fall out, back to the scheduler, and let it
 	   figure out what to do next.
 	*/
 
-	cmpq	0(%rsp), %rbp
+	cmpq	8(%rsp), %rbp
 	jz	dispatch_boring
 
 	jmp	dispatch_exceptional
@@ -157,6 +163,8 @@ invariant_violation:
 	jmp	run_innerloop_exit_REALLY
 
 run_innerloop_exit_REALLY:
+	movq	VG_(dispatch_ctr)@GOTPCREL(%rip), %rsi
+	popq	(%rsi)
 	popq	%rdi
 	popq	%r15
 	popq	%r14
@@ -184,20 +192,20 @@ dispatch_exceptional:
 	jz	counter_is_zero
 
 	/* save %rax in %RIP and defer to sched */
-	movq	0(%rsp), %rdi
+	movq	8(%rsp), %rdi
 	movq	%rax, OFFSET_amd64_RIP(%rdi)
 	movq	%rbp, %rax
 	jmp	run_innerloop_exit
 
 fast_lookup_failed:
 	/* %RIP is up to date here since dispatch_boring dominates */
-	addl	$1, VG_(dispatch_ctr)
+	addl	$1, 0(%rsp)
 	movq	$VG_TRC_INNER_FASTMISS, %rax
 	jmp	run_innerloop_exit
 
 counter_is_zero:
 	/* %RIP is up to date here since dispatch_boring dominates */
-	addl	$1, VG_(dispatch_ctr)
+	addl	$1, 0(%rsp)
 	movq	$VG_TRC_INNER_COUNTERZERO, %rax
 	jmp	run_innerloop_exit
 

@@ -6,11 +6,21 @@
 
 #define ZILLION 1000000
 
+void foo ( void );
+void bar ( void );
+
 int main ( void )
 {
    int i;
    char* a = malloc(ZILLION * sizeof(char));
-   for (i = 0; i <= ZILLION; i++) a[i] = 0;
+   for (i = 0; i <= ZILLION; i++) {
+      foo();
+      a[i] = 0;
+      bar();
+   }
    a = (char*)177;
    _exit(1);
 }
+
+void foo ( void ) { }
+void bar ( void ) { }

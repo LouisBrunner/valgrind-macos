@@ -75,7 +75,9 @@ typedef
       /* Invalid read/write attempt at given size */
       Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp,
       /* Invalid or mismatching free */
-      FreeSupp
+      FreeSupp,
+      /* Something to be suppressed in a leak check. */
+      LeakSupp
    } 
    MemCheckSuppKind;
 
@@ -200,8 +202,8 @@ extern Bool MC_(clo_cleanup);
    inlined strlen() are visible in the basic block.  default: YES */
 extern Bool MC_(clo_avoid_strlen_errors);
 
-
 extern Bool MC_(process_common_cmd_line_option)(Char* arg);
+
 
 /*------------------------------------------------------------*/
 /*--- Functions                                            ---*/

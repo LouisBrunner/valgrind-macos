@@ -1204,7 +1204,8 @@ extern void VG_(generic_detect_memory_leaks) (
           Bool is_valid_address ( Addr ),
           ExeContext* get_where ( ShadowChunk* ),
           VgRes leak_resolution,
-          Bool  show_reachable
+          Bool  show_reachable,
+          UInt /*CoreErrorKind*/ leakSupp
        );
 
 

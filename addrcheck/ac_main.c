@@ -1146,7 +1146,8 @@ static void ac_detect_memory_leaks ( void )
       ac_is_valid_address,
       MC_(get_where),
       MC_(clo_leak_resolution),
-      MC_(clo_show_reachable)
+      MC_(clo_show_reachable),
+      (UInt)LeakSupp
    );
 }
 

@@ -791,6 +791,73 @@ void vg_detect_memory_leaks_notify_addr ( Addr a, UInt word_at_a )
 }
 
 
+/* Stuff for figuring out if a leak report should be suppressed. */
+static
+Bool leaksupp_matches_callers(Supp* su, Char caller_obj[][M_VG_ERRTXT], 
+                                        Char caller_fun[][M_VG_ERRTXT])
+{
+   Int i;
+
+   for (i = 0; su->caller[i] != NULL; i++) {
+      switch (su->caller_ty[i]) {
+         case ObjName: if (VG_(string_match)(su->caller[i],
+                                             caller_obj[i])) break;
+                       return False;
+         case FunName: if (VG_(string_match)(su->caller[i], 
+                                             caller_fun[i])) break;
+                       return False;
+         default: VG_(skin_panic)("leaksupp_matches_callers");
+      }
+   }
+
+   /* If we reach here, it's a match */
+   return True;
+}
+
+
+/* Does a leak record match a suppression?  ie is this a suppressible
+   leak?  Tries to minimise the number of symbol searches since they
+   are expensive.  Copy n paste (more or less) of
+   is_suppressible_error.  We have to pass in the actual value of
+   LeakSupp for comparison since this is the core and LeakSupp is a
+   skin-specific value. */
+static
+Bool is_suppressible_leak ( ExeContext* allocated_at, 
+                            UInt /*CoreErrorKind*/ leakSupp )
+{
+   Int i;
+
+   Char caller_obj[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
+   Char caller_fun[VG_N_SUPP_CALLERS][M_VG_ERRTXT];
+
+   Supp* su;
+
+   /* get_objname_fnname() writes the function name and object name if
+      it finds them in the debug info.  so the strings in the suppression
+      file should match these.
+   */
+
+   /* Initialise these strs so they are always safe to compare, even
+      if get_objname_fnname doesn't write anything to them. */
+   for (i = 0; i < VG_N_SUPP_CALLERS; i++)
+      caller_obj[i][0] = caller_fun[i][0] = 0;
+
+   for (i = 0; i < VG_N_SUPP_CALLERS && i < VG_(clo_backtrace_size); i++) {
+      VG_(get_objname_fnname) ( allocated_at->eips[i], 
+                                caller_obj[i], M_VG_ERRTXT,
+                                caller_fun[i], M_VG_ERRTXT );
+   }
+
+   /* See if the leak record any suppression. */
+   for (su = VG_(get_suppressions)(); su != NULL; su = su->next) {
+      if (VG_(get_supp_kind)(su) == (CoreErrorKind)leakSupp
+          && leaksupp_matches_callers(su, caller_obj, caller_fun)) {
+         return True;
+      }
+   }
+   return False;      /* no matches */
+}
+
 /* Top level entry point to leak detector.  Call here, passing in
    suitable address-validating functions (see comment at top of
    vg_scan_all_valid_memory above).  All this is to avoid duplication
@@ -805,13 +872,15 @@ void VG_(generic_detect_memory_leaks) (
    Bool is_valid_address ( Addr ),
    ExeContext* get_where ( ShadowChunk* ),
    VgRes leak_resolution,
-   Bool  show_reachable
+   Bool  show_reachable,
+   UInt /*CoreErrorKind*/ leakSupp
 )
 {
    Int    i;
    Int    blocks_leaked, bytes_leaked;
    Int    blocks_dubious, bytes_dubious;
    Int    blocks_reachable, bytes_reachable;
+   Int    blocks_suppressed, bytes_suppressed;
    Int    n_lossrecords;
    UInt   bytes_notified;
    
@@ -861,34 +930,6 @@ void VG_(generic_detect_memory_leaks) (
 
    VG_(message)(Vg_UserMsg, "checked %d bytes.", bytes_notified);
 
-   blocks_leaked    = bytes_leaked    = 0;
-   blocks_dubious   = bytes_dubious   = 0;
-   blocks_reachable = bytes_reachable = 0;
-
-   for (i = 0; i < vglc_n_shadows; i++) {
-      if (vglc_reachedness[i] == Unreached) {
-         blocks_leaked++;
-         bytes_leaked += vglc_shadows[i]->size;
-      }
-      else if (vglc_reachedness[i] == Interior) {
-         blocks_dubious++;
-         bytes_dubious += vglc_shadows[i]->size;
-      }
-      else if (vglc_reachedness[i] == Proper) {
-         blocks_reachable++;
-         bytes_reachable += vglc_shadows[i]->size;
-      }
-   }
-
-   VG_(message)(Vg_UserMsg, "");
-   VG_(message)(Vg_UserMsg, "definitely lost: %d bytes in %d blocks.", 
-                            bytes_leaked, blocks_leaked );
-   VG_(message)(Vg_UserMsg, "possibly lost:   %d bytes in %d blocks.", 
-                            bytes_dubious, blocks_dubious );
-   VG_(message)(Vg_UserMsg, "still reachable: %d bytes in %d blocks.", 
-                            bytes_reachable, blocks_reachable );
-
-
    /* Common up the lost blocks so we can print sensible error
       messages. */
 
@@ -922,7 +963,14 @@ void VG_(generic_detect_memory_leaks) (
          errlist         = p;
       }
    }
+
+   /* Print out the commoned-up blocks and collect summary stats. */
    
+   blocks_leaked     = bytes_leaked     = 0;
+   blocks_dubious    = bytes_dubious    = 0;
+   blocks_reachable  = bytes_reachable  = 0;
+   blocks_suppressed = bytes_suppressed = 0;
+
    for (i = 0; i < n_lossrecords; i++) {
       LossRecord* p_min = NULL;
       UInt        n_min = 0xFFFFFFFF;
@@ -933,6 +981,31 @@ void VG_(generic_detect_memory_leaks) (
          }
       }
       sk_assert(p_min != NULL);
+
+      if (is_suppressible_leak(p_min->allocated_at, leakSupp)) {
+         blocks_suppressed += p_min->num_blocks;
+         bytes_suppressed += p_min->total_bytes;
+         p_min->num_blocks = 0;
+         continue;
+      } else {
+         switch (p_min->loss_mode) {
+            case Unreached:
+               blocks_leaked += p_min->num_blocks;
+               bytes_leaked  += p_min->total_bytes;
+               break;
+            case Interior:
+               blocks_dubious += p_min->num_blocks;
+               bytes_dubious  += p_min->total_bytes;
+               break;
+            case Proper:
+               blocks_reachable  += p_min->num_blocks;
+               bytes_reachable += p_min->total_bytes;
+               break;
+            default: 
+               VG_(core_panic)("generic_detect_memory_leaks: "
+                               "unknown loss mode");
+         }
+      }
 
       if ( (!show_reachable) && (p_min->loss_mode == Proper)) {
          p_min->num_blocks = 0;
@@ -961,6 +1034,8 @@ void VG_(generic_detect_memory_leaks) (
                             bytes_dubious, blocks_dubious );
    VG_(message)(Vg_UserMsg, "   still reachable: %d bytes in %d blocks.", 
                             bytes_reachable, blocks_reachable );
+   VG_(message)(Vg_UserMsg, "        suppressed: %d bytes in %d blocks.", 
+                            bytes_suppressed, blocks_suppressed );
    if (!show_reachable) {
       VG_(message)(Vg_UserMsg, 
          "Reachable blocks (those to which a pointer was found) are not shown.");

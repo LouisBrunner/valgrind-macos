@@ -377,7 +377,7 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp *su )
 #define STREQ(s1,s2) (s1 != NULL && s2 != NULL \
                       && VG_(strcmp)((s1),(s2))==0)
 
-extern Bool SK_(error_matches_suppression)(Error* err, Supp* su)
+Bool SK_(error_matches_suppression)(Error* err, Supp* su)
 {
    UInt su_size;
    MemCheckError* err_extra = VG_(get_error_extra)(err);
@@ -680,6 +680,7 @@ void  SK_(post_syscall) ( ThreadId tid, UInt syscallno,
       VG_(skin_panic)("aborting due to the above ... bye!");
    }
 }
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                              mc_common.c ---*/

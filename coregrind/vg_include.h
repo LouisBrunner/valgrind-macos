@@ -1216,6 +1216,15 @@ extern void VG_(record_pthread_error) ( ThreadId tid, Char* msg );
 
 extern void VG_(show_all_errors)      ( void );
 
+extern void VG_(get_objname_fnname) ( Addr a,
+                                      Char* obj_buf, Int n_obj_buf,
+                                      Char* fun_buf, Int n_fun_buf );
+
+/* Get hold of the suppression list ... just so we don't have to
+   make it global. */
+extern Supp* VG_(get_suppressions) ( void );
+
+
 /* ---------------------------------------------------------------------
    Exports of vg_procselfmaps.c
    ------------------------------------------------------------------ */

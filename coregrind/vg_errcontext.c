@@ -42,6 +42,9 @@ static Error* vg_errors = NULL;
    suppressions file. */
 static Supp* vg_suppressions = NULL;
 
+/* And a helper function so the leak detector can get hold of it. */
+Supp* VG_(get_suppressions) ( void ) { return vg_suppressions; }
+
 /* Running count of unsuppressed errors detected. */
 static UInt vg_n_errs_found = 0;
 
@@ -672,11 +675,10 @@ void VG_(load_suppressions) ( void )
    for comparing against the contents of a suppressions file. 
    Doesn't demangle the fn name, because we want to refer to 
    mangled names in the suppressions file.
-*/    
-static
-void get_objname_fnname ( Addr a,
-                          Char* obj_buf, Int n_obj_buf,
-                          Char* fun_buf, Int n_fun_buf )
+*/
+void VG_(get_objname_fnname) ( Addr a,
+                               Char* obj_buf, Int n_obj_buf,
+                               Char* fun_buf, Int n_fun_buf )
 {     
    (void)VG_(get_objname)          ( a, obj_buf, n_obj_buf );
    (void)VG_(get_fnname_nodemangle)( a, fun_buf, n_fun_buf );
@@ -747,9 +749,9 @@ static Supp* is_suppressible_error ( Error* err )
       caller_obj[i][0] = caller_fun[i][0] = 0;
 
    for (i = 0; i < VG_N_SUPP_CALLERS && i < VG_(clo_backtrace_size); i++) {
-      get_objname_fnname ( err->where->eips[i], 
-                           caller_obj[i], M_VG_ERRTXT,
-                           caller_fun[i], M_VG_ERRTXT );
+      VG_(get_objname_fnname) ( err->where->eips[i], 
+                                caller_obj[i], M_VG_ERRTXT,
+                                caller_fun[i], M_VG_ERRTXT );
    }
 
    /* See if the error context matches any suppression. */

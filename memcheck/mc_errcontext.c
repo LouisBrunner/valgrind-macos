@@ -242,7 +242,7 @@ void MC_(record_user_error) ( ThreadState* tst, Addr a, Bool isWrite )
 Bool SK_(recognised_suppression) ( Char* name, Supp* su )
 {
    SuppKind skind;
-   
+
    if      (STREQ(name, "Param"))   skind = ParamSupp;
    else if (STREQ(name, "CoreMem")) skind = CoreMemSupp;
    else if (STREQ(name, "Value0"))  skind = Value0Supp; /* backwards compat */ 
@@ -256,6 +256,7 @@ Bool SK_(recognised_suppression) ( Char* name, Supp* su )
    else if (STREQ(name, "Addr4"))   skind = Addr4Supp;
    else if (STREQ(name, "Addr8"))   skind = Addr8Supp;
    else if (STREQ(name, "Free"))    skind = FreeSupp;
+   else if (STREQ(name, "Leak"))    skind = LeakSupp;
    else 
       return False;
 

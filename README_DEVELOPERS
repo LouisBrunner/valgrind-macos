@@ -1,11 +1,12 @@
 
 Building and not installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To run Valgrind without having to install it, run coregrind/valgrind (prefix
-with "sh" because it's not executable) with the --in-place=<dir> option, where
-<dir> is the root of the source tree (and must be an absolute path).  Eg:
 
-  sh ~/grind/head4/coregrind/valgrind --in-place=/homes/njn25/grind/head4
+To run Valgrind without having to install it, run coregrind/valgrind
+with the VALGRINDLIB environment variable set, where <dir> is the root
+of the source tree (and must be an absolute path).  Eg:
+
+  VALGRINDLIB=~/grind/head4/.in_place ~/grind/head4/coregrind/valgrind 
 
 This allows you to compile and run with "make" instead of "make install",
 saving you time.
@@ -49,7 +50,3 @@ you want and do this in gdb:
 
   jump *$eip
 
-Code that runs in the target program such as the pthread replacement
-code or the malloc replacement code would have to be debugged as part
-of the target program, probably by attaching a debugger after it has
-started.  We are not sure if this would work, however.

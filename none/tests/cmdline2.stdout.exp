@@ -2,7 +2,7 @@ usage: valgrind --tool=<toolname> [options] prog-and-args
 
   common user options for all Valgrind tools, with defaults in [ ]:
     --tool=<name>             Use the Valgrind tool named <name>
-    --help                    show this message
+    -h --help                 show this message
     --help-debug              show this message, plus debugging options
     --version                 show version
     -q --quiet                run silently; only print error msgs

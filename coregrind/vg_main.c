@@ -1509,7 +1509,7 @@ void usage ( Bool debug_help )
 "\n"
 "  common user options for all Valgrind tools, with defaults in [ ]:\n"
 "    --tool=<name>             Use the Valgrind tool named <name>\n"
-"    --help                    show this message\n"
+"    -h --help                 show this message\n"
 "    --help-debug              show this message, plus debugging options\n"
 "    --version                 show version\n"
 "    -q --quiet                run silently; only print error msgs\n"
@@ -1616,7 +1616,8 @@ static void pre_process_cmd_line_options
          printf("valgrind-" VERSION "\n");
          exit(0);
 
-      } else if (VG_CLO_STREQ(VG_(vg_argv)[i], "--help")) {
+      } else if (VG_CLO_STREQ(VG_(vg_argv)[i], "--help") ||
+                 VG_CLO_STREQ(VG_(vg_argv)[i], "-h")) {
          *need_help = 1;
 
       } else if (VG_CLO_STREQ(VG_(vg_argv)[i], "--help-debug")) {

@@ -329,8 +329,8 @@ PRE(sys_personality, 0)
 
 PRE(sys_sysctl, 0)
 {
-   PRINT("sys_sysctl ( %p )", ARG1 );
    struct __vki_sysctl_args *args;
+   PRINT("sys_sysctl ( %p )", ARG1 );
    args = (struct __vki_sysctl_args *)ARG1;
    PRE_REG_READ1(long, "sysctl", struct __sysctl_args *, args);
    PRE_MEM_WRITE( "sysctl(args)", ARG1, sizeof(struct __vki_sysctl_args) );

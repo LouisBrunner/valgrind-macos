@@ -19,25 +19,27 @@
 
 
 __attribute__ ((noreturn))
+static
 void failure_exit ( void )
 {
    fprintf(stdout, "VEX did failure_exit.  Bye.\n");
    exit(1);
 }
 
+static
 void log_bytes ( Char* bytes, Int nbytes )
 {
    fwrite ( bytes, 1, nbytes, stdout );
 }
 
 #define N_LINEBUF 10000
-Char linebuf[N_LINEBUF];
+static Char linebuf[N_LINEBUF];
 
 #define N_ORIGBUF 200
 #define N_TRANSBUF 1000
 
-UChar origbuf[N_ORIGBUF];
-UChar transbuf[N_TRANSBUF];
+static Char origbuf[N_ORIGBUF];
+static Char transbuf[N_TRANSBUF];
 
 
 int main ( int argc, char** argv )

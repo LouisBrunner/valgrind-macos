@@ -44,26 +44,48 @@ void ppIRTemp ( IRTemp tmp )
    if (tmp == INVALID_IRTEMP)
       vex_printf("INVALID_IRTEMP");
    else
-      vex_printf( "t%d", tmp);
+      vex_printf( "t%d", (Int)tmp);
 }
-
 
 void ppIROp ( IROp op )
 {
-  switch (op) {
-    case Iop_Add32: vex_printf( "Add32"); break;
-    case Iop_Sub32: vex_printf( "Sub32"); break;
-    case Iop_Mul32: vex_printf( "Mul32"); break;
-    case Iop_Or32:  vex_printf( "Or32");  break;
-    case Iop_And32: vex_printf( "And32"); break;
-    case Iop_Xor32: vex_printf( "Xor32"); break;
-    case Iop_Shl32: vex_printf( "Shl32"); break;
-    case Iop_Shr32: vex_printf( "Shr32"); break;
-    case Iop_Sar32: vex_printf( "Sar32"); break;
-    case Iop_Not32: vex_printf( "Not32"); break;
-    case Iop_Neg32: vex_printf( "Neg32"); break;
-    default: vpanic("ppIROp");
-  }
+   Char* str; 
+   IROp  base;
+   switch (op) {
+      case Iop_Add8 ... Iop_Add64:
+         str = "Add"; base = Iop_Add8; break;
+      case Iop_Sub8 ... Iop_Sub64:
+         str = "Sub"; base = Iop_Sub8; break;
+      case Iop_Mul8 ... Iop_Mul64:
+         str = "Mul"; base = Iop_Mul8; break;
+      case Iop_Or8 ... Iop_Or64:
+         str = "Or"; base = Iop_Or8; break;
+      case Iop_And8 ... Iop_And64:
+         str = "And"; base = Iop_And8; break;
+      case Iop_Xor8 ... Iop_Xor64:
+         str = "Xor"; base = Iop_Xor8; break;
+      case Iop_Shl8 ... Iop_Shl64:
+         str = "Shl"; base = Iop_Shl8; break;
+      case Iop_Shr8 ... Iop_Shr64:
+         str = "Shr"; base = Iop_Shr8; break;
+      case Iop_Sar8 ... Iop_Sar64:
+         str = "Sar"; base = Iop_Sar8; break;
+      case Iop_Neg8 ... Iop_Neg64:
+         str = "Neg"; base = Iop_Neg8; break;
+      case Iop_Not8 ... Iop_Not64:
+         str = "Not"; base = Iop_Not8; break;
+      /* other cases must explicitly "return;" */
+      default: 
+         vpanic("ppIROp(1)");
+   }
+  
+   switch (op - base) {
+      case 0: vex_printf(str); vex_printf("8"); break;
+      case 1: vex_printf(str); vex_printf("16"); break;
+      case 2: vex_printf(str); vex_printf("32"); break;
+      case 3: vex_printf(str); vex_printf("64"); break;
+      default: vpanic("ppIROp(2)");
+   }
 }
 
 void ppIRExpr ( IRExpr* e )

@@ -37,8 +37,10 @@ extern void vpanic ( Char* str );
 /* Printing */
 
 __attribute__ ((format (printf, 1, 2)))
-extern UInt vex_printf ( const char *format, ... );
+extern UInt vex_printf ( const Char *format, ... );
 
+__attribute__ ((format (printf, 2, 3)))
+extern UInt vex_sprintf ( Char* buf, const Char *format, ... );
 
 #endif /* ndef __VEX_UTIL_H */
 

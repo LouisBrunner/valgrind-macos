@@ -88,7 +88,7 @@ TranslateResult LibVEX_Translate (
    void (*ppInstr) ( HInstr* );
    void (*ppReg) ( HReg );
    HInstrArray* (*iselBB) ( IRBB* );
-   IRBB* (*bbToIR) ( Char*, Addr64, Int*, Bool(*)(Addr64), Bool );
+   IRBB* (*bbToIR) ( UChar*, Addr64, Int*, Bool(*)(Addr64), Bool );
 
    Bool         host_is_bigendian = False;
    IRBB*        irbb;

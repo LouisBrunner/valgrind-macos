@@ -20,7 +20,7 @@
 /*---------------------------------------------------------*/
 
 extern
-IRBB* bbToIR_X86Instr ( Char*  x86code, 
+IRBB* bbToIR_X86Instr ( UChar* x86code, 
                         Addr64 eip, 
                         Int*   guest_bytes_read, 
                         Bool   (*byte_accessible)(Addr64),

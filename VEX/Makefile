@@ -27,8 +27,20 @@ PRIV_INCLUDES = -Ipriv/ir -Ipriv/main -Ipriv/host-generic \
 APP_OBJS =	test_main.o
 
 
-CC = gcc341
-CCFLAGS = -g -Wall -Wshadow
+#CC = gcc341
+#CCFLAGS = -g -Wall -Wshadow
+
+CC = icc
+CCFLAGS = -g  -Wbrief -Wall -wd981 -wd279 -wd1287 -wd869 \
+	  -wd810 -wd1419 -wd181 -wd111 -wd167
+# 981: operands are evaluated in unspecified order
+# 279: controlling expression is constant
+# 1287: invalid attribute for parameter
+# 869: parameter "..." was never referenced
+# 810: conversion from "int" to "Char={char}" may lose significant bits
+# 181: argument is incompatible with corresponding format string conversion
+# 111: statement is unreachable
+# 167: argument of type unsigned char incompatible with formal of type char
 
 all: libvex.a $(APP_OBJS)
 	$(CC) $(CCFLAGS) -o vex $(APP_OBJS) libvex.a

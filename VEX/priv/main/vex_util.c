@@ -7,6 +7,8 @@
 /*---------------------------------------------------------------*/
 
 #include "libvex_basictypes.h"
+#include "libvex.h"
+
 #include "vex_globals.h"
 #include "vex_util.h"
 
@@ -67,7 +69,8 @@ void LibVEX_Clear ( Bool verb )
    storage_count_allocs_TOT += (ULong)storage_count_allocs;
    if (verb) {
       vex_printf("vex storage: total %lld (%lld), curr %d (%d)\n",
-	 	 storage_bytes_allocd_TOT, storage_count_allocs_TOT,
+	 	 (Long)storage_bytes_allocd_TOT, 
+                 (Long)storage_count_allocs_TOT,
 		 storage_bytes_allocd, storage_count_allocs );
    }
    storage_used = 0;
@@ -418,6 +421,36 @@ UInt vex_printf ( const char *format, ... )
 
    return ret;
 }
+
+
+/* A general replacement for sprintf(). */
+
+static Char *vg_sprintf_ptr;
+
+static void add_to_vg_sprintf_buf ( Char c )
+{
+   *vg_sprintf_ptr++ = c;
+}
+
+UInt vex_sprintf ( Char* buf, const Char *format, ... )
+{
+   Int ret;
+   va_list vargs;
+
+   vg_sprintf_ptr = buf;
+
+   va_start(vargs,format);
+
+   ret = vprintf_wrk ( add_to_vg_sprintf_buf, format, vargs );
+   add_to_vg_sprintf_buf(0);
+
+   va_end(vargs);
+
+   vassert(vex_strlen(buf) == ret);
+   return ret;
+}
+
+
 
 
 /*---------------------------------------------------------------*/

@@ -177,29 +177,29 @@ static IRExpr* getIReg ( Int sz, UInt archreg )
 }
 
 /* Ditto, but write to a reg instead. */
-static IRStmt* putIReg ( Int sz, UInt archreg, IRExpr* e )
+static void putIReg ( Int sz, UInt archreg, IRExpr* e )
 {
    vassert(sz == 1 || sz == 2 || sz == 4);
    vassert(archreg < 8);
 
    vassert(!host_is_bigendian);
    vassert(sz == 4);
-   return IRStmt_Put(OFFB_EAX + 4*archreg, e);
+   stmt( IRStmt_Put(OFFB_EAX + 4*archreg, e) );
 }
 
-static IRStmt* assign ( IRTemp dst, IRExpr* e )
+static void assign ( IRTemp dst, IRExpr* e )
 {
-   return IRStmt_Tmp(dst, e);
+   stmt( IRStmt_Tmp(dst, e) );
 }
 
-static IRStmt* storeLE ( IRExpr* addr, IRExpr* data )
+static void storeLE ( IRExpr* addr, IRExpr* data )
 {
-   return IRStmt_STle(addr,data);
+   stmt( IRStmt_STle(addr,data) );
 }
 
-static IRStmt* copyToFrom ( IRTemp dst, IRTemp src )
+static void copyToFrom ( IRTemp dst, IRTemp src )
 {
-   return IRStmt_Tmp(dst, IRExpr_Tmp(src));
+   stmt( IRStmt_Tmp(dst, IRExpr_Tmp(src)) );
 }
 
 static IRExpr* binop ( IROp op, IRExpr* a1, IRExpr* a2 )
@@ -215,6 +215,65 @@ static IRExpr* mkexpr ( IRTemp tmp )
 static IRExpr* mkU32 ( UInt i )
 {
    return IRExpr_Const(IRConst_U32(i));
+}
+
+static IRExpr* mkU ( IRType ty, UInt i )
+{
+   if (ty == Ity_I8)  return IRExpr_Const(IRConst_U8(i));
+   if (ty == Ity_I16) return IRExpr_Const(IRConst_U16(i));
+   if (ty == Ity_I32) return IRExpr_Const(IRConst_U32(i));
+   vpanic("mkU(x86)");
+}
+
+static IRExpr* loadLE ( IRType ty, IRExpr* data )
+{
+   return IRExpr_LDle(ty,data);
+}
+
+static IROp mkSizedOp ( IRType ty, IROp op8 )
+{
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
+   vassert(op8 == Iop_Add8 || op8 == Iop_Sub8 
+           || op8 == Iop_Adc8 || op8 == Iop_Sbb8 
+           || op8 == Iop_Mul8 
+           || op8 == Iop_Or8 || op8 == Iop_And8 || op8 == Iop_Xor8
+           || op8 == Iop_Shl8 || op8 == Iop_Shr8 || op8 == Iop_Sar8
+           || op8 == Iop_Not8 || op8 == Iop_Neg8 );
+   return (IROp)(
+             ((Int)op8) + (ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2))
+          );
+}
+
+static IRType szToTy ( Int n )
+{
+   switch (n) {
+      case 1: return Ity_I8;
+      case 2: return Ity_I16;
+      case 4: return Ity_I32;
+      default: vpanic("szToTy(x86)");
+   }
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Helpers for %eflags.                                 ---*/
+/*------------------------------------------------------------*/
+
+static void setFlagsARITH ( IRTemp dstAfter,
+                            IRTemp src,
+                            IRTemp dstBefore,
+                            IRType ty,
+                            IROp   op8 )
+{
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
+   switch (op8) {
+      case Iop_Sub8:
+         /* CC_SRC = %s, CC_DST = %d afterwards */
+
+      default: 
+         ppIROp(op8);
+         vpanic("setFlagsARITH(x86)");
+   }
 }
 
 
@@ -480,15 +539,15 @@ static IRExpr* mkU32 ( UInt i )
 //-- }
 
 
-//-- 
-//-- static Char* nameGrp1 ( Int opc_aux )
-//-- {
-//--    static Char* grp1_names[8] 
-//--      = { "add", "or", "adc", "sbb", "and", "sub", "xor", "cmp" };
-//--    if (opc_aux < 0 || opc_aux > 7) VG_(core_panic)("nameGrp1");
-//--    return grp1_names[opc_aux];
-//-- }
-//-- 
+
+static Char* nameGrp1 ( Int opc_aux )
+{
+   static Char* grp1_names[8] 
+     = { "add", "or", "adc", "sbb", "and", "sub", "xor", "cmp" };
+   if (opc_aux < 0 || opc_aux > 7) vpanic("nameGrp1(x86)");
+   return grp1_names[opc_aux];
+}
+
 //-- static Char* nameGrp2 ( Int opc_aux )
 //-- {
 //--    static Char* grp2_names[8] 
@@ -583,8 +642,7 @@ const Char* nameIReg ( Int size, Int reg )
 //--    }
 //-- }
 
-static
-const Char nameISize ( Int size )
+static Char nameISize ( Int size )
 {
    switch (size) {
       case 4: return 'l';
@@ -792,6 +850,7 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          { UChar rm = mod_reg_rm;
            DIS(buf, "%s(%s)", sorbTxt(sorb), nameIReg(4,rm));
            *len = 1;
+	   vpanic("amode 1");
 	   return handleSegOverride(sorb, getIReg(4,rm));
          }
 
@@ -804,6 +863,7 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
            UInt  d  = getSDisp8(delta);
            DIS(buf, "%s%d(%s)", sorbTxt(sorb), d, nameIReg(4,rm));
 	   *len = 2;
+	   vpanic("amode 2");
 	   return handleSegOverride(sorb,
                      binop(Iop_Add32,getIReg(4,rm),mkU32(d)));
          }
@@ -817,6 +877,7 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
            UInt  d  = getUDisp32(delta);
            DIS(buf, "%s0x%x(%s)", sorbTxt(sorb), d, nameIReg(4,rm));
 	   *len = 5;
+	   vpanic("amode 3");
 	   return handleSegOverride(sorb,
                      binop(Iop_Add32,getIReg(4,rm),mkU32(d)));
          }
@@ -833,6 +894,7 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          { UInt d = getUDisp32(delta);
            *len = 5;
            DIS(buf, "%s(0x%x)", sorbTxt(sorb), d);
+	   vpanic("amode 4");
            return handleSegOverride(sorb, mkU32(d));
          }
 
@@ -866,6 +928,7 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
             DIS(buf, "%s(%s,%s,%d)", sorbTxt(sorb), 
                       nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
 	    *len = 2;
+	    vpanic("amode 5");
             return 
 	       handleSegOverride(sorb,
 	          binop(Iop_Add32, 
@@ -879,6 +942,7 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
             DIS(buf, "%s0x%x(,%s,%d)", sorbTxt(sorb), d, 
                       nameIReg(4,index_r), 1<<scale);
             *len = 6;
+	    vpanic("amode 6");
             return
                handleSegOverride(sorb, 
 	          binop(Iop_Add32,
@@ -889,6 +953,7 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          if (index_r == R_ESP && base_r != R_EBP) {
             DIS(buf, "%s(%s,,)", sorbTxt(sorb), nameIReg(4,base_r));
 	    *len = 2;
+	    vpanic("amode 7");
 	    return handleSegOverride(sorb, getIReg(4,base_r));
          }
 
@@ -896,6 +961,7 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
             UInt d = getUDisp32(delta);
             DIS(buf, "%s0x%x()", sorbTxt(sorb), d);
 	    *len = 6;
+	    vpanic("amode 8");
 	    return handleSegOverride(sorb, mkU32(d));
          }
 
@@ -921,12 +987,14 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          if (index_r == R_ESP) {
             DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), d, nameIReg(4,base_r));
 	    *len = 3;
+	    vpanic("amode 9");
 	    return handleSegOverride(sorb, 
                       binop(Iop_Add32, getIReg(4,base_r), mkU32(d)) );
          } else {
             DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), d, 
                      nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
 	    *len = 3;
+	    vpanic("amode 10");
 	    return handleSegOverride(sorb,
                      binop(Iop_Add32,
 			   binop(Iop_Add32, 
@@ -956,12 +1024,14 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
          if (index_r == R_ESP) {
             DIS(buf, "%s%d(%s,,)", sorbTxt(sorb), d, nameIReg(4,base_r));
 	    *len = 6;
+	    vpanic("amode 11");
 	    return handleSegOverride(sorb, 
                       binop(Iop_Add32, getIReg(4,base_r), mkU32(d)) );
          } else {
             DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), d, 
                       nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
 	    *len = 6;
+	    vpanic("amode 12");
 	    return handleSegOverride(sorb,
                      binop(Iop_Add32,
 			   binop(Iop_Add32, 
@@ -1326,7 +1396,7 @@ UInt dis_mov_G_E ( UChar       sorb,
    //   UChar dis_buf[50];
 
    if (epartIsReg(rm)) {
-      stmt( putIReg(size, eregOfRM(rm), getIReg(size, gregOfRM(rm))) );
+      putIReg(size, eregOfRM(rm), getIReg(size, gregOfRM(rm)));
       DIP("mov%c %s,%s\n", nameISize(size), 
                            nameIReg(size,gregOfRM(rm)),
                            nameIReg(size,eregOfRM(rm)));
@@ -1470,79 +1540,71 @@ UInt dis_mov_G_E ( UChar       sorb,
 //--    }
 //--    uInstr0(cb, CALLM_E, 0);
 //-- }
-//-- 
-//-- 
-//-- static 
-//-- Addr dis_Grp1 ( UCodeBlock* cb, 
-//--                 UChar       sorb,
-//--                 Addr eip, UChar modrm, 
-//--                 Int am_sz, Int d_sz, Int sz, UInt d32 )
-//-- {
-//--    Int   t1, t2, uopc;
-//--    UInt  pair;
-//--    UChar dis_buf[50];
-//--    if (epartIsReg(modrm)) {
-//--       vg_assert(am_sz == 1);
-//--       t1  = newTemp(cb);
-//--       uInstr2(cb, GET, sz, ArchReg, eregOfRM(modrm), TempReg, t1);
-//--       switch (gregOfRM(modrm)) {
-//--          case 0: uopc = ADD; break;  case 1: uopc = OR;  break;
-//--          case 2: uopc = ADC; break;  case 3: uopc = SBB; break;
-//--          case 4: uopc = AND; break;  case 5: uopc = SUB; break;
-//--          case 6: uopc = XOR; break;  case 7: uopc = SUB; break;
-//--          default: VG_(core_panic)("dis_Grp1(Reg): unhandled case");
-//--       }
-//--       if (uopc == AND || uopc == OR) {
-//--          Int tao = newTemp(cb);
-//--          uInstr2(cb, MOV, sz, Literal, 0, TempReg, tao);
-//--          uLiteral(cb, d32);
-//--          uInstr2(cb, uopc, sz, TempReg, tao, TempReg, t1);
-//--          setFlagsFromUOpcode(cb, uopc);
-//--       } else {
-//--          uInstr2(cb, uopc, sz, Literal, 0, TempReg, t1);
-//--          uLiteral(cb, d32);
-//--          setFlagsFromUOpcode(cb, uopc);
-//--       }
-//--       if (gregOfRM(modrm) < 7)
-//--          uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, eregOfRM(modrm));
-//--       eip += (am_sz + d_sz);
-//--       DIP("%s%c $0x%x, %s\n", nameGrp1(gregOfRM(modrm)), nameISize(sz), d32, 
-//--                               nameIReg(sz,eregOfRM(modrm)));
-//--    } else {
-//--       pair = disAMode ( cb, sorb, eip, dis_buf);
-//--       t1   = LOW24(pair);
-//--       t2   = newTemp(cb);
-//--       eip  += HI8(pair);
-//--       eip  += d_sz;
-//--       uInstr2(cb, LOAD, sz, TempReg, t1, TempReg, t2);
-//--       switch (gregOfRM(modrm)) {
-//--          case 0: uopc = ADD; break;  case 1: uopc = OR;  break;
-//--          case 2: uopc = ADC; break;  case 3: uopc = SBB; break;
-//--          case 4: uopc = AND; break;  case 5: uopc = SUB; break;
-//--          case 6: uopc = XOR; break;  case 7: uopc = SUB; break;
-//--          default: VG_(core_panic)("dis_Grp1(Mem): unhandled case");
-//--       }
-//--       if (uopc == AND || uopc == OR) {
-//--          Int tao = newTemp(cb);
-//--          uInstr2(cb, MOV, sz, Literal, 0, TempReg, tao);
-//--          uLiteral(cb, d32);
-//--          uInstr2(cb, uopc, sz, TempReg, tao, TempReg, t2);
-//--          setFlagsFromUOpcode(cb, uopc);
-//--       } else {
-//--          uInstr2(cb, uopc, sz, Literal, 0, TempReg, t2);
-//--          uLiteral(cb, d32);
-//--          setFlagsFromUOpcode(cb, uopc);
-//--       }
-//--       if (gregOfRM(modrm) < 7) {
-//--          uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t1);
-//--       }
-//--       DIP("%s%c $0x%x, %s\n", nameGrp1(gregOfRM(modrm)), nameISize(sz),
-//--                               d32, dis_buf);
-//--    }
-//--    return eip;
-//-- }
-//-- 
-//-- 
+
+
+static 
+UInt dis_Grp1 ( UChar       sorb,
+                UInt delta, UChar modrm, 
+                Int am_sz, Int d_sz, Int sz, UInt d32 )
+{
+   IRExpr* addr;
+   IRTemp  dst1, src, dst0;
+   IRType  ty;
+   IROp    uopc;
+   Int     len;
+   UChar   dis_buf[50];
+
+   ty = szToTy(sz);
+
+   switch (gregOfRM(modrm)) {
+      case 0: uopc = Iop_Add8; break;  case 1: uopc = Iop_Or8;  break;
+      case 2: uopc = Iop_Adc8; break;  case 3: uopc = Iop_Sbb8; break;
+      case 4: uopc = Iop_And8; break;  case 5: uopc = Iop_Sub8; break;
+      case 6: uopc = Iop_Xor8; break;  case 7: uopc = Iop_Sub8; break;
+      default: vpanic("dis_Grp1: unhandled case");
+   }
+   vassert(uopc != Iop_Adc8 && uopc != Iop_Sbb8);
+
+   dst0 = newTemp(ty);
+   dst1 = newTemp(ty);
+   src  = newTemp(ty);
+
+   if (epartIsReg(modrm)) {
+      vassert(am_sz == 1);
+
+      assign(dst0, getIReg(sz,eregOfRM(modrm)));
+      assign(src,  mkU(ty,d32));
+      assign(dst1, binop(mkSizedOp(ty,uopc), mkexpr(dst0), mkexpr(src)));
+
+      setFlagsARITH(dst1, dst0, src, ty, uopc);
+
+      if (gregOfRM(modrm) < 7)
+         putIReg(ty, eregOfRM(modrm), mkexpr(dst1));
+
+      delta += (am_sz + d_sz);
+      DIP("%s%c $0x%x, %s\n", nameGrp1(gregOfRM(modrm)), nameISize(sz), d32, 
+                              nameIReg(sz,eregOfRM(modrm)));
+   } else {
+      vassert(0==334);
+      addr  = disAMode ( &len, sorb, delta, dis_buf);
+
+      assign(dst0, loadLE(ty,addr));
+      assign(src, mkU(ty,d32));
+      assign(dst1, binop(mkSizedOp(ty,uopc), mkexpr(dst0), mkexpr(src)));
+
+      setFlagsARITH(dst1, dst0, src, ty, uopc);
+
+      if (gregOfRM(modrm) < 7)
+          storeLE(addr, mkexpr(dst1));
+
+      delta += (len+d_sz);
+      DIP("%s%c $0x%x, %s\n", nameGrp1(gregOfRM(modrm)), nameISize(sz),
+                              d32, dis_buf);
+   }
+   return delta;
+}
+
+
 //-- /* Group 2 extended opcodes. */
 //-- static
 //-- Addr dis_Grp2 ( UCodeBlock* cb, 
@@ -3924,7 +3986,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    UInt   d32 /*, pair*/;
    //   UChar  dis_buf[50];
    Int    am_sz, d_sz;
-   IRTemp t1, t2, t3, t4;
+   IRTemp t1, t2; //, t3, t4;
    IRType ty;
    //Char  loc_buf[M_VG_ERRTXT];
 
@@ -3945,7 +4007,8 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    IRStmt* first_stmt = last_stmt;
 
    *isEnd = False;
-   t1 = t2 = t3 = t4 = INVALID_IRTEMP;
+   t1 = t2 = INVALID_IRTEMP; 
+   //t3 = t4 = INVALID_IRTEMP;
 
    DIP("\t0x%x:  ", guest_eip+delta);
 
@@ -5358,9 +5421,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       {
          /* The normal sequence for a call. */
          t1 = newTemp(Ity_I32); 
-         stmt( assign(t1, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4))) );
-         stmt( putIReg(4, R_ESP, mkexpr(t1)) );
-	 stmt( storeLE( mkexpr(t1), mkU32(guest_eip+delta)) );
+         assign(t1, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
+         putIReg(4, R_ESP, mkexpr(t1));
+	 storeLE( mkexpr(t1), mkU32(guest_eip+delta));
 	 jmp_lit(d32);
 	 //         LAST_UINSTR(cb).jmpkind = JmpCall;
          *isEnd = True;
@@ -6118,10 +6181,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       vassert(sz == 2 || sz == 4);
       ty = sz==2 ? Ity_I16 : Ity_I32;
       t1 = newTemp(ty); t2 = newTemp(ty);
-      stmt( assign(t1, getIReg(sz, opc-0x50)) );
-      stmt( assign(t2, binop(Iop_Sub32, getIReg(4, R_ESP), mkU32(sz))) );
-      stmt( putIReg(4, R_ESP, mkexpr(t2) ) );
-      stmt( storeLE(mkexpr(t2),mkexpr(t1)) );
+      assign(t1, getIReg(sz, opc-0x50));
+      assign(t2, binop(Iop_Sub32, getIReg(4, R_ESP), mkU32(sz)));
+      putIReg(4, R_ESP, mkexpr(t2) );
+      storeLE(mkexpr(t2),mkexpr(t1));
       DIP("push%c %s\n", nameISize(sz), nameIReg(sz,opc-0x50));
       break;
 
@@ -7417,7 +7480,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 /* Disassemble a complete basic block, starting at eip, and dumping
    the ucode into cb.  Returns the size, in bytes, of the basic
    block. */
-IRBB* bbToIR_X86Instr ( Char*  x86code, 
+IRBB* bbToIR_X86Instr ( UChar* x86code, 
                         Addr64 eip, 
                         Int*   guest_bytes_read, 
                         Bool   (*byte_accessible)(Addr64),

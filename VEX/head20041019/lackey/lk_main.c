@@ -97,17 +97,6 @@ void SK_(post_clo_init)(void)
 {
 }
 
-HWord SK_(tool_findhelper) ( Char* function_name )
-{
-   if (0 == VG_(strcmp)(function_name, "add_one_BB"))
-      return (HWord) & add_one_BB;
-   if (0 == VG_(strcmp)(function_name, "add_one_Jcc"))
-      return (HWord) & add_one_Jcc;
-   if (0 == VG_(strcmp)(function_name, "add_one_Jcc_untaken"))
-      return (HWord) & add_one_Jcc_untaken;
-   return 0; /* not found */
-}
-
 
 /* Note: x86 instructions are marked by an INCEIP at the end of each one,
    except for the final one in the basic block which ends in an
@@ -179,7 +168,7 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
 #endif
 
    /* Count this basic block */
-   di = unsafeIRDirty_0_N( "add_one_BB", mkIRExprVec_0() );
+   di = unsafeIRDirty_0_N( 0, "add_one_BB", &add_one_BB, mkIRExprVec_0() );
    addStmtToIRBB( bb, IRStmt_Dirty(di) );
 
    for (i = 0; i < bb_in->stmts_used; i++) {
@@ -192,14 +181,16 @@ IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
             addStmtToIRBB( 
                bb,
                IRStmt_Dirty(
-                  unsafeIRDirty_0_N( "add_one_Jcc", mkIRExprVec_0() )
+                  unsafeIRDirty_0_N( 0, "add_one_Jcc", &add_one_Jcc, 
+                                        mkIRExprVec_0() )
             ));
             addStmtToIRBB( bb, dopyIRStmt(st) );
             /* Count non-taken Jcc */
             addStmtToIRBB( 
                bb,
                IRStmt_Dirty(
-                  unsafeIRDirty_0_N( "add_one_Jcc_untaken", mkIRExprVec_0() )
+                  unsafeIRDirty_0_N( 0, "add_one_Jcc_untaken", &add_one_Jcc_untaken, 
+                                        mkIRExprVec_0() )
             ));
             break;
 

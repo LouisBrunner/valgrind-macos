@@ -204,8 +204,6 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
 /*--- Offsets of various parts of the x86 guest state.     ---*/
 /*------------------------------------------------------------*/
 
-#define offsetof(type,memb) ((Int)&((type*)0)->memb)
-
 #define OFFB_FPREGS  offsetof(VexGuestX86State,guest_FPREG[0])
 #define OFFB_FPTAGS  offsetof(VexGuestX86State,guest_FPTAG[0])
 #define OFFB_EAX     offsetof(VexGuestX86State,guest_EAX)

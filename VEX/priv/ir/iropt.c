@@ -1146,7 +1146,11 @@ static void redundant_get_removal_BB ( IRBB* bb )
    overlapping ranges listed in env.  Due to the flattening phase, the
    only stmt kind we expect to find a Get on is IRStmt_Tmp. */
 
-static void handle_gets_Stmt ( HashHW* env, IRStmt* st )
+static void handle_gets_Stmt ( 
+               HashHW* env, 
+               IRStmt* st,
+               Bool (*preciseMemExnsFn)(Int,Int)
+            )
 {
    Int     j;
    UInt    key = 0; /* keep gcc -O happy */
@@ -1225,17 +1229,22 @@ static void handle_gets_Stmt ( HashHW* env, IRStmt* st )
          be reordered with respect to memory references.  That means
          at least the stack pointer. */
       for (j = 0; j < env->used; j++) {
-#if 0
-         if (env->inuse[j]
-             && env->key[j] == (HWord)((16 << 16) | 19)) {
-            //vex_printf("found esp assignment\n");
+         if (!env->inuse[j])
+            continue;
+         if (vex_control.iropt_precise_memory_exns) {
+            /* Precise exceptions required.  Flush all guest state. */
             env->inuse[j] = False;
-	 }
-#else
-         env->inuse[j] = False;
-#endif
+         } else {
+            /* Just flush the minimal amount required, as computed by
+               preciseMemExnsFn. */
+            HWord k_lo = (env->key[j] >> 16) & 0xFFFF;
+            HWord k_hi = env->key[j] & 0xFFFF;
+            if (preciseMemExnsFn( k_lo, k_hi ))
+               env->inuse[j] = False;
+         }
       }
-   }
+   } /* if (memRW) */
+
 }
 
 
@@ -1253,7 +1262,10 @@ static void handle_gets_Stmt ( HashHW* env, IRStmt* st )
    overlapping (minoff,maxoff).
 */
 
-static void redundant_put_removal_BB ( IRBB* bb )
+static void redundant_put_removal_BB ( 
+               IRBB* bb,
+               Bool (*preciseMemExnsFn)(Int,Int)
+            )
 {
    Int     i, j;
    Bool    isPut;
@@ -1320,7 +1332,7 @@ static void redundant_put_removal_BB ( IRBB* bb )
       /* Deal with Gets.  These remove bits of the environment since
          appearance of a Get means that the next event for that slice
          of the guest state is no longer a write, but a read. */
-      handle_gets_Stmt( env, st );
+      handle_gets_Stmt( env, st, preciseMemExnsFn );
    }
 }
 
@@ -3055,7 +3067,9 @@ static Bool iropt_verbose = False; //True;
 static 
 IRBB* cheap_transformations ( 
          IRBB* bb,
-         IRExpr* (*specHelper) ( Char*, IRExpr**) )
+         IRExpr* (*specHelper) ( Char*, IRExpr**),
+         Bool (*preciseMemExnsFn)(Int,Int)
+      )
 {
    redundant_get_removal_BB ( bb );
    if (iropt_verbose) {
@@ -3063,7 +3077,7 @@ IRBB* cheap_transformations (
       ppIRBB(bb);
    }
 
-   redundant_put_removal_BB ( bb );
+   redundant_put_removal_BB ( bb, preciseMemExnsFn );
    if (iropt_verbose) {
       vex_printf("\n========= REDUNDANT PUT\n\n" );
       ppIRBB(bb);
@@ -3171,6 +3185,7 @@ static Bool hasGetIorPutI ( IRBB* bb )
 
 IRBB* do_iropt_BB ( IRBB* bb0,
                     IRExpr* (*specHelper) ( Char*, IRExpr**),
+                    Bool (*preciseMemExnsFn)(Int,Int),
                     Addr64 guest_addr )
 {
    static UInt n_total     = 0;
@@ -3201,7 +3216,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
       If needed, do expensive transformations and then another cheap
       cleanup pass. */
 
-   bb = cheap_transformations( bb, specHelper );
+   bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
 
    if (vex_control.iropt_level > 1) {
       do_expensive = hasGetIorPutI(bb);
@@ -3211,7 +3226,7 @@ IRBB* do_iropt_BB ( IRBB* bb0,
          if (DEBUG_IROPT)
             vex_printf("***** EXPENSIVE %d %d\n", n_total, n_expensive);
          bb = expensive_transformations( bb );
-         bb = cheap_transformations( bb, specHelper );
+         bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
       }
 
       /* Now have a go at unrolling simple (single-BB) loops.  If
@@ -3220,10 +3235,10 @@ IRBB* do_iropt_BB ( IRBB* bb0,
       bb2 = maybe_loop_unroll_BB( bb, guest_addr );
       if (bb2) {
          show_res = False; //True;
-         bb = cheap_transformations( bb2, specHelper );
+         bb = cheap_transformations( bb2, specHelper, preciseMemExnsFn );
          if (do_expensive) {
             bb = expensive_transformations( bb );
-            bb = cheap_transformations( bb, specHelper );
+            bb = cheap_transformations( bb, specHelper, preciseMemExnsFn );
          } else {
             /* at least do CSE and dead code removal */
             cse_BB( bb );

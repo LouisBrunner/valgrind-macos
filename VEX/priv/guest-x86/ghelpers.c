@@ -1439,6 +1439,41 @@ static void dirtyhelper_CPUID ( VexGuestX86State* st )
    }
 }
 
+/*-----------------------------------------------------------*/
+/*--- Describing the x86 guest state, for the benefit     ---*/
+/*--- of iropt and instrumenters.                         ---*/
+/*-----------------------------------------------------------*/
+
+/* Figure out if any part of the guest state contained in minoff
+   .. maxoff requires precise memory exceptions.  If in doubt return
+   True (but this is generates significantly slower code).  
+
+   We enforce precise exns for guest %ESP and %EIP only.
+*/
+Bool guest_x86_state_requires_precise_mem_exns ( Int minoff, 
+                                                 Int maxoff)
+{
+   Int esp_min = offsetof(VexGuestX86State, guest_ESP);
+   Int esp_max = esp_min + 4 - 1;
+   Int eip_min = offsetof(VexGuestX86State, guest_EIP);
+   Int eip_max = eip_min + 4 - 1;
+
+   if (maxoff < esp_min || minoff > esp_max) {
+     /* no overlap with esp */
+   } else {
+     return True;
+   }
+
+   if (maxoff < eip_min || minoff > eip_max) {
+     /* no overlap with eip */
+   } else {
+     return True;
+   }
+
+   return False;
+}
+
+
 /*---------------------------------------------------------------*/
 /*--- end                                guest-x86/ghelpers.c ---*/
 /*---------------------------------------------------------------*/

@@ -49,6 +49,10 @@ typedef  ULong     Addr64;
 typedef  unsigned long HWord;
 
 
+/* This is so useful it should be visible absolutely everywhere. */
+#define offsetof(type,memb) ((Int)&((type*)0)->memb)
+
+
 #endif /* ndef __LIBVEX_BASICTYPES_H */
 
 

@@ -7,6 +7,7 @@
 /*---------------------------------------------------------------*/
 
 #include "libvex.h"
+#include "libvex_guest_x86.h"
 
 #include "main/vex_globals.h"
 #include "main/vex_util.h"
@@ -151,6 +152,7 @@ TranslateResult LibVEX_Translate (
    Int          (*emit)        ( UChar*, Int, HInstr* );
    Addr64       (*findHelper)  ( Char* );
    IRExpr*      (*specHelper)  ( Char*, IRExpr** );
+   Bool         (*preciseMemExnsFn) ( Int, Int );
 
    Bool         host_is_bigendian = False;
    IRBB*        irbb;
@@ -173,6 +175,7 @@ TranslateResult LibVEX_Translate (
    emit                   = NULL;
    findHelper             = NULL;
    specHelper             = NULL;
+   preciseMemExnsFn       = NULL;
 
    saved_verbosity = vex_verbosity;
    if (bb_verbosity > 0)
@@ -204,9 +207,10 @@ TranslateResult LibVEX_Translate (
 
    switch (iset_guest) {
       case InsnSetX86:
-         bbToIR     = bbToIR_X86Instr;
-         findHelper = x86guest_findhelper;
-         specHelper = x86guest_spechelper;
+         preciseMemExnsFn = guest_x86_state_requires_precise_mem_exns;
+         bbToIR           = bbToIR_X86Instr;
+         findHelper       = x86guest_findhelper;
+         specHelper       = x86guest_spechelper;
          break;
       default:
          vpanic("LibVEX_Translate: unsupported guest insn set");
@@ -239,7 +243,8 @@ TranslateResult LibVEX_Translate (
    sanityCheckIRBB(irbb, Ity_I32);
 
    /* Clean it up, hopefully a lot. */
-   irbb = do_iropt_BB ( irbb, specHelper, guest_bytes_addr );
+   irbb = do_iropt_BB ( irbb, specHelper, preciseMemExnsFn, 
+                              guest_bytes_addr );
    sanityCheckIRBB(irbb, Ity_I32);
 
    if (vex_verbosity > 0) {

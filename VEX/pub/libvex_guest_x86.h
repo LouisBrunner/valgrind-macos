@@ -106,9 +106,20 @@ typedef
    VexGuestX86State;
 
 
+/* This is logically part of the guest state description. */
+/* Not visible to library client. */
+extern Bool guest_x86_state_requires_precise_mem_exns ( Int, Int );
+
+
+
 /*---------------------------------------------------------------*/
 /*--- Utility functions for x86 guest stuff.                  ---*/
 /*---------------------------------------------------------------*/
+
+
+
+
+/* ALL THE FOLLOWING ARE VISIBLE TO LIBRARY CLIENT */
 
 /* Convert a saved x87 FPU image (as created by fsave) and write it
    into the supplied VexGuestX86State structure.  The non-FP parts of

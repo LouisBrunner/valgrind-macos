@@ -21,7 +21,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	pth_cancel2.stderr.exp pth_cancel2.vgtest \
 	pth_cvsimple.stderr.exp pth_cvsimple.stdout.exp pth_cvsimple.vgtest \
 	pth_empty.stderr.exp pth_empty.vgtest \
-	pth_exit.stderr.exp pth_exit.stdout.exp pth_exit.vgtest \
+	pth_exit.stderr.exp pth_exit.vgtest \
 	pth_mutexspeed.stderr.exp \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \

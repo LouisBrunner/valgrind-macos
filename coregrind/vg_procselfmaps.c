@@ -133,9 +133,12 @@ void VG_(read_procselfmaps) (
    UInt   foffset;
    UChar  rr, ww, xx, pp, ch, tmp;
 
-   if (read_from_file) {
+   static Int depth = 0;
+
+   if (read_from_file && depth == 0) {
       VG_(read_procselfmaps_contents)();
    }
+   depth++;
 
    if (0)
       VG_(message)(Vg_DebugMsg, "raw:\n%s", procmap_buf );
@@ -215,6 +218,7 @@ void VG_(read_procselfmaps) (
 
       i = i_eol + 1;
    }
+   depth--;
 }
 
 /*--------------------------------------------------------------------*/

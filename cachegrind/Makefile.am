@@ -24,10 +24,9 @@ EXTRA_DIST = $(val_DATA) \
 	README_KDE3_FOLKS \
 	README_MISSING_SYSCALL_OR_IOCTL TODO
 
-val_PROGRAMS = valgrind.so valgrinq.so libpthread.so libpthread.so.0
+val_PROGRAMS = valgrind.so valgrinq.so libpthread.so
 
 libpthread_so_SOURCES = vg_libpthread.c
-libpthread_so_0_SOURCES = vg_libpthread.c
 
 valgrinq_so_SOURCES = vg_valgrinq_dummy.c
 
@@ -92,5 +91,6 @@ valgrinq.so: $(valgrinq_so_OBJECTS)
 libpthread.so: $(libpthread_so_OBJECTS)
 	$(CC) -Wall -g -O -shared -fpic -o libpthread.so $(libpthread_so_OBJECTS)
 
-libpthread.so.0: libpthread.so
-	ln -s libpthread.so libpthread.so.0
+install-exec-hook:
+	rm -f $(DESTDIR)$(valdir)/libpthread.so.0
+	cd $(DESTDIR)$(valdir) && $(LN_S) libpthread.so libpthread.so.0

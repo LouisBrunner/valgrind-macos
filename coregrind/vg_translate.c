@@ -412,6 +412,16 @@ Bool VG_(translate) ( ThreadId tid,
    if (!debugging_translation)
       VG_TRACK( pre_mem_read, Vg_CoreTranslate, tid, "", orig_addr, 1 );
 
+   /* If doing any code printing, print a basic block start marker */
+   if (VG_(clo_trace_flags) || debugging_translation) {
+      Char fnname[64] = "";
+      VG_(get_fnname_w_offset)(orig_addr, fnname, 64);
+      VG_(printf)(
+              "==== BB %d %s(0x%llx) approx BBs exec'd %lld ====\n",
+              VG_(get_bbs_translated)(), fnname, orig_addr, 
+              VG_(bbs_done));
+   }
+
    if (seg == NULL ||
        !VG_(seg_contains)(seg, orig_addr, 1) || 
        (seg->prot & (VKI_PROT_READ|VKI_PROT_EXEC)) == 0) {
@@ -427,16 +437,6 @@ Bool VG_(translate) ( ThreadId tid,
       return False;
    } else
       seg->flags |= SF_CODE;        /* contains cached code */
-
-   /* If doing any code printing, print a basic block start marker */
-   if (VG_(clo_trace_flags) || debugging_translation) {
-      Char fnname[64] = "";
-      VG_(get_fnname_w_offset)(orig_addr, fnname, 64);
-      VG_(printf)(
-              "==== BB %d %s(0x%llx) approx BBs exec'd %lld ====\n",
-              VG_(get_bbs_translated)(), fnname, orig_addr, 
-              VG_(bbs_done));
-   }
 
    /* True if a debug trans., or if bit N set in VG_(clo_trace_codegen). */
    verbosity = 0;

@@ -113,6 +113,7 @@ typedef __vki_kernel_pid_t	vki_pid_t;
 typedef __vki_kernel_key_t	vki_key_t;
 typedef __vki_kernel_suseconds_t	vki_suseconds_t;
 typedef __vki_kernel_timer_t	vki_timer_t;
+typedef __vki_kernel_clockid_t	vki_clockid_t;
 typedef __vki_kernel_mqd_t	vki_mqd_t;
 
 // [[Nb: it's a bit unclear due to a #ifdef, but I think this is right. --njn]]

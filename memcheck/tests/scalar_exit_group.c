@@ -5,6 +5,7 @@ int main(void)
    // uninitialised, but we know px[0] is 0x0
    long* px  = malloc(sizeof(long));
    long  x0  = px[0];
+   int   res;
 
    // All __NR_xxx numbers are taken from x86
    

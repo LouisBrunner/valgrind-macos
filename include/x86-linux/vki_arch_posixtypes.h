@@ -47,6 +47,7 @@ typedef long		__vki_kernel_time_t;
 typedef long		__vki_kernel_suseconds_t;
 typedef long		__vki_kernel_clock_t;
 typedef int		__vki_kernel_timer_t;
+typedef int		__vki_kernel_clockid_t;
 typedef char *		__vki_kernel_caddr_t;
 typedef unsigned int	__vki_kernel_uid32_t;
 typedef unsigned int	__vki_kernel_gid32_t;

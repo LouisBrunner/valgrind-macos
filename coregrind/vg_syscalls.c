@@ -1055,14 +1055,21 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
    comment for sys_info[] and related arrays for important info about the
    __NR_foo constants and their relationship to the sys_foo() functions.
 
-   Note that for the PRE_REG_READ tests, we pass a somewhat generic name
-   for the syscall (eg. "write")... this should be good enough for the
-   average user to understand what is happening, without confusing them 
-   with names like "sys_write".  Also, the arg names sometimes are taken
-   from the man pages for the glibc equivalent functions, rather than those
-   used in the Linux source code, for the same reason.  However, for the
-   --trace-syscalls=yes output, we use the sys_foo() name to avoid
-   ambiguity.
+   Some notes about names used for syscalls and args:
+   - For the --trace-syscalls=yes output, we use the sys_foo() name to avoid
+     ambiguity.
+      
+   - For error messages, we generally use a somewhat generic name
+     for the syscall (eg. "write" rather than "sys_write").  This should be
+     good enough for the average user to understand what is happening,
+     without confusing them with names like "sys_write".
+     
+   - Also, for error messages the arg names are mostly taken from the man
+     pages (even though many of those man pages are really for glibc
+     functions of the same name), rather than from the Linux kernel source,
+     for the same reason -- a user presented with a "bogus foo(bar)" arg
+     will most likely look at the "foo" man page to see which is the "bar"
+     arg.
 
    Note that we use our own vki_* types.  The one exception is in
    PRE_REG_READn calls, where pointer types haven't been changed, because
@@ -5823,15 +5830,16 @@ POSTx(sys_rt_sigtimedwait)
       POST_MEM_WRITE( arg2, sizeof(vki_siginfo_t) );
 }
 
-PRE(rt_sigqueueinfo)
+PREx(sys_rt_sigqueueinfo, 0)
 {
-   /*  long sys_rt_sigqueueinfo(int pid, int sig, siginfo_t *uinfo) */
-   PRINT("rt_sigqueueinfo(%d, %d, %p)", arg1, arg2, arg3);
+   PRINT("sys_rt_sigqueueinfo(%d, %d, %p)", arg1, arg2, arg3);
+   PRE_REG_READ3(long, "rt_sigqueueinfo", 
+                 int, pid, int, sig, vki_siginfo_t *, uinfo);
    if (arg2 != (UWord)NULL)
-      PRE_MEM_READ( "sigqueueinfo(uinfo)", arg3, sizeof(vki_siginfo_t) );
+      PRE_MEM_READ( "rt_sigqueueinfo(uinfo)", arg3, sizeof(vki_siginfo_t) );
 }
 
-POST(rt_sigqueueinfo)
+POSTx(sys_rt_sigqueueinfo)
 {
    if (res >= 0 && 
        arg2 != 0 &&
@@ -6278,27 +6286,29 @@ POSTx(sys_mq_getsetattr)
       POST_MEM_WRITE( arg3, sizeof(struct vki_mq_attr) );
 }
 
-PRE(timer_create)
+PREx(sys_timer_create, 0)
 {
-   /* int timer_create(clockid_t clock_id, struct sigevent *restrict evp,
-                       timer_t *restrict timerid); */
-   PRINT("timer_create( %d, %p, %p )", arg1,arg2,arg3);
+   PRINT("sys_timer_create( %d, %p, %p )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "timer_create",
+                 vki_clockid_t, clockid, struct sigevent *, evp,
+                 vki_timer_t *, timerid);
    if (arg2 != 0)
       PRE_MEM_READ( "timer_create(evp)", arg2, sizeof(struct vki_sigevent) );
    PRE_MEM_WRITE( "timer_create(timerid)", arg3, sizeof(vki_timer_t) );
 }
 
-POST(timer_create)
+POSTx(sys_timer_create)
 {
    POST_MEM_WRITE( arg3, sizeof(vki_timer_t) );
 }
 
-PRE(timer_settime)
+PREx(sys_timer_settime, 0)
 {
-   /* int timer_settime(timer_t timerid, int flags,
-                        const struct itimerspec *restrict value,
-                        struct itimerspec *restrict ovalue); */
-   PRINT("timer_settime( %p, %d, %p, %p )", arg1,arg2,arg3,arg4);
+   PRINT("sys_timer_settime( %lld, %d, %p, %p )", (ULong)arg1,arg2,arg3,arg4);
+   PRE_REG_READ4(long, "timer_settime", 
+                 vki_timer_t, timerid, int, flags,
+                 const struct itimerspec *, value,
+                 struct itimerspec *, ovalue);
    PRE_MEM_READ( "timer_settime(value)", arg3,
                   sizeof(struct vki_itimerspec) );
    if (arg4 != 0)
@@ -6306,66 +6316,72 @@ PRE(timer_settime)
                       sizeof(struct vki_itimerspec) );
 }
 
-POST(timer_settime)
+POSTx(sys_timer_settime)
 {
    if (arg4 != 0)
       POST_MEM_WRITE( arg4, sizeof(struct vki_itimerspec) );
 }
 
-PRE(timer_gettime)
+PREx(sys_timer_gettime, 0)
 {
-   /* int timer_gettime(timer_t timerid, struct itimerspec *value); */
-   PRINT("timer_gettime( %p, %p )", arg1,arg2);
+   PRINT("sys_timer_gettime( %lld, %p )", (ULong)arg1,arg2);
+   PRE_REG_READ2(long, "timer_gettime", 
+                 vki_timer_t, timerid, struct itimerspec *, value);
    PRE_MEM_WRITE( "timer_gettime(value)", arg2,
                   sizeof(struct vki_itimerspec));
 }
 
-POST(timer_gettime)
+POSTx(sys_timer_gettime)
 {
    POST_MEM_WRITE( arg2, sizeof(struct vki_itimerspec) );
 }
 
-PRE(timer_getoverrun)
+PREx(sys_timer_getoverrun, 0)
 {
-   /* int timer_getoverrun(timer_t timerid); */
-   PRINT("timer_getoverrun( %p )", arg1);
+   PRINT("sys_timer_getoverrun( %p )", arg1);
+   PRE_REG_READ1(long, "timer_getoverrun", vki_timer_t, timerid);
 }
 
-PRE(timer_delete)
+PREx(sys_timer_delete, 0)
 {
-   /* int timer_delete(timer_t timerid); */
-   PRINT("timer_delete( %p )", arg1);
+   PRINT("sys_timer_delete( %p )", arg1);
+   PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
 }
 
-PRE(clock_settime)
+PREx(sys_clock_settime, 0)
 {
-    /* int clock_settime(clockid_t clk_id, const struct timespec *tp); */
-    PRINT("clock_settime( %d, %p )", arg1,arg2);
-    PRE_MEM_READ( "clock_gettime(tp)", arg2, sizeof(struct vki_timespec) );
+   PRINT("sys_clock_settime( %d, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "clock_settime", 
+                 vki_clockid_t, clk_id, const struct timespec *, tp);
+   PRE_MEM_READ( "clock_settime(tp)", arg2, sizeof(struct vki_timespec) );
 }
 
-PRE(clock_gettime)
+PREx(sys_clock_gettime, 0)
 {
-    /* int clock_gettime(clockid_t clk_id, struct timespec *tp); */
-    PRINT("clock_gettime( %d, %p )" , arg1,arg2);
-    PRE_MEM_WRITE( "clock_gettime(tp)", arg2, sizeof(struct vki_timespec) );
+   PRINT("sys_clock_gettime( %d, %p )" , arg1,arg2);
+   PRE_REG_READ2(long, "clock_gettime", 
+                 vki_clockid_t, clk_id, struct timespec *, tp);
+   PRE_MEM_WRITE( "clock_gettime(tp)", arg2, sizeof(struct vki_timespec) );
 }
 
-POST(clock_gettime)
+POSTx(sys_clock_gettime)
 {
-    POST_MEM_WRITE( arg2, sizeof(struct vki_timespec) );
+   POST_MEM_WRITE( arg2, sizeof(struct vki_timespec) );
 }
 
-PRE(clock_getres)
+PREx(sys_clock_getres, 0)
 {
-    /* int clock_getres(clockid_t clk_id, struct timespec *res); */
-    PRINT("clock_getres( %d, %p )" , arg1,arg2);
-    PRE_MEM_WRITE( "clock_getres(res)", arg2, sizeof(struct vki_timespec) );
+   PRINT("sys_clock_getres( %d, %p )" , arg1,arg2);
+   // Nb: we can't use "res" as the param name because that's a macro
+   // defined above!
+   PRE_REG_READ2(long, "clock_getres", 
+                 vki_clockid_t, clk_id, struct timespec *, cres);
+   PRE_MEM_WRITE( "clock_getres(cres)", arg2, sizeof(struct vki_timespec) );
 }
 
-POST(clock_getres)
+POSTx(sys_clock_getres)
 {
-    POST_MEM_WRITE( arg2, sizeof(struct vki_timespec) );
+   POST_MEM_WRITE( arg2, sizeof(struct vki_timespec) );
 }
 
 
@@ -6654,7 +6670,7 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_rt_sigprocmask,   sys_rt_sigprocmask),  // 175 * ?
    SYSXY(__NR_rt_sigpending,    sys_rt_sigpending),   // 176 * ?
    SYSXY(__NR_rt_sigtimedwait,  sys_rt_sigtimedwait), // 177 * ?
-   SYSBA(__NR_rt_sigqueueinfo,  sys_rt_sigqueueinfo, 0), // 178 *
+   SYSXY(__NR_rt_sigqueueinfo,  sys_rt_sigqueueinfo), // 178 * ?
    SYSX_(__NR_rt_sigsuspend,    sys_rt_sigsuspend),   // 179 () ()
    SYSXY(__NR_pread64,          sys_pread64),         // 180 * (Unix98?)
 
@@ -6733,9 +6749,9 @@ static const struct sys_info sys_info[] = {
    //   (__NR_tkill,            sys_tkill),        // 238 * L
    SYSXY(__NR_sendfile64,       sys_sendfile64),   // 239 * L
 
-   SYSXY(__NR_futex,            sys_futex),        // 240 * L
-   SYSX_(__NR_sched_setaffinity,sys_sched_setaffinity), // 241 * L?
-   SYSXY(__NR_sched_getaffinity,sys_sched_getaffinity), // 242 * L?
+   SYSXY(__NR_futex,            sys_futex),              // 240 * L
+   SYSX_(__NR_sched_setaffinity,sys_sched_setaffinity),  // 241 * L?
+   SYSXY(__NR_sched_getaffinity,sys_sched_getaffinity),  // 242 * L?
    SYSB_(__NR_set_thread_area,  sys_set_thread_area, Special), // 243 
    SYSB_(__NR_get_thread_area,  sys_get_thread_area, Special), // 244  
 
@@ -6753,19 +6769,19 @@ static const struct sys_info sys_info[] = {
 
    SYSX_(__NR_epoll_ctl,        sys_epoll_ctl),       // 255 * L
    SYSXY(__NR_epoll_wait,       sys_epoll_wait),      // 256 * L
-   //   (__NR_remap_file_pages, sys_remap_file_pages),   // 257 * L
+   //   (__NR_remap_file_pages, sys_remap_file_pages),// 257 * L
    SYSX_(__NR_set_tid_address,  sys_set_tid_address), // 258 * ?
-   SYSBA(__NR_timer_create,     sys_timer_create, 0), // 259 
+   SYSXY(__NR_timer_create,     sys_timer_create),    // 259 (?) P
 
-   SYSBA(__NR_timer_settime,    sys_timer_settime, 0), // (timer_create+1) *
-   SYSBA(__NR_timer_gettime,    sys_timer_gettime, 0), // (timer_create+2) *
-   SYSB_(__NR_timer_getoverrun, sys_timer_getoverrun, 0), // (timer_create+3) *
-   SYSB_(__NR_timer_delete,     sys_timer_delete, 0), // (timer_create+4) *
-   SYSB_(__NR_clock_settime,    sys_clock_settime, 0), // (timer_create+5) *
+   SYSXY(__NR_timer_settime,    sys_timer_settime),   // (timer_create+1) * P
+   SYSXY(__NR_timer_gettime,    sys_timer_gettime),   // (timer_create+2) * P
+   SYSX_(__NR_timer_getoverrun, sys_timer_getoverrun),// (timer_create+3) * P
+   SYSX_(__NR_timer_delete,     sys_timer_delete),    // (timer_create+4) * P
+   SYSX_(__NR_clock_settime,    sys_clock_settime),   // (timer_create+5) * P
 
-   SYSBA(__NR_clock_gettime,    sys_clock_gettime, 0), // (timer_create+6) *
-   SYSBA(__NR_clock_getres,     sys_clock_getres, 0), // (timer_create+7) *
-   //   (__NR_clock_nanosleep,  sys_clock_nanosleep), // (timer_create+8) * P?
+   SYSXY(__NR_clock_gettime,    sys_clock_gettime),   // (timer_create+6) * P
+   SYSXY(__NR_clock_getres,     sys_clock_getres),    // (timer_create+7) * P
+   //   (__NR_clock_nanosleep,  sys_clock_nanosleep), // (timer_create+8) * P
 
    SYSXY(__NR_statfs64,         sys_statfs64),     // 268 * (?)
    SYSXY(__NR_fstatfs64,        sys_fstatfs64),    // 269 * (?)

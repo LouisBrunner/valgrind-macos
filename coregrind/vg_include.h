@@ -493,6 +493,9 @@ extern Bool  VG_(is_inside_segment_mmapd_by_low_level_MM)( Addr aa );
 /* Hook for replace_malloc.o to get malloc functions */
 #define VG_USERREQ__GET_MALLOCFUNCS	    0x3030
 
+/* Get stack information for a thread. */
+#define VG_USERREQ__GET_STACK_INFO          0x3033
+
 /* Cosmetic ... */
 #define VG_USERREQ__GET_PTHREAD_TRACE_LEVEL 0x3101
 /* Log a pthread error from client-space.  Cosmetic. */
@@ -714,6 +717,15 @@ typedef
    }
    CleanupType;
 
+/* Information on a thread's stack. */
+typedef
+   struct {
+      Addr base;
+      UInt size;
+      UInt guardsize;
+   }
+   StackInfo;
+
 /* An entry in a threads's cleanup stack. */
 typedef
    struct {
@@ -860,6 +872,10 @@ typedef
       not allocated yet.
    */
    Addr stack_base;
+
+   /* The allocated size of this thread's stack's guard area (permanently
+      zero if this is ThreadId == 0, since we didn't allocate its stack) */
+   UInt stack_guard_size;
 
    /* Address of the highest legitimate word in this stack.  This is
       used for error messages only -- not critical for execution

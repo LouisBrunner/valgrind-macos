@@ -596,6 +596,7 @@ void VG_(scheduler_init) ( void )
       mostly_clear_thread_record(i);
       VG_(threads)[i].stack_size           = 0;
       VG_(threads)[i].stack_base           = (Addr)NULL;
+      VG_(threads)[i].stack_guard_size     = 0;
       VG_(threads)[i].stack_highest_word   = (Addr)NULL;
    }
 
@@ -1291,9 +1292,6 @@ void VG_(need_resched) ( ThreadId prefer )
 #include <pthread.h>
 #include <errno.h>
 
-#define VG_PTHREAD_STACK_MIN \
-   (VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB)
-
 /*  /usr/include/bits/pthreadtypes.h:
     typedef unsigned long int pthread_t;
 */
@@ -1876,7 +1874,8 @@ void do__apply_in_new_thread_bogusRA ( void )
 static
 void do__apply_in_new_thread ( ThreadId parent_tid,
                                void* (*fn)(void *), 
-                               void* arg )
+                               void* arg,
+                               StackInfo *si )
 {
    Addr     new_stack;
    UInt     new_stk_szb;
@@ -1927,16 +1926,17 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
 
    /* Consider allocating the child a stack, if the one it already has
       is inadequate. */
-   new_stk_szb = VG_PTHREAD_STACK_MIN;
+   new_stk_szb = si->size + VG_AR_CLIENT_STACKBASE_REDZONE_SZB + si->guardsize;
+   new_stk_szb = (new_stk_szb + VKI_BYTES_PER_PAGE - 1) & ~VKI_BYTES_PER_PAGE;
+    
+   VG_(threads)[tid].stack_guard_size = si->guardsize;
 
    if (new_stk_szb > VG_(threads)[tid].stack_size) {
       /* Again, for good measure :) We definitely don't want to be
          allocating a stack for the main thread. */
       vg_assert(tid != 1);
-      /* for now, we don't handle the case of anything other than
-         assigning it for the first time. */
-      vg_assert(VG_(threads)[tid].stack_size == 0);
-      vg_assert(VG_(threads)[tid].stack_base == (Addr)NULL);
+      if (VG_(threads)[tid].stack_size > 0)
+         VG_(client_free)(VG_(threads)[tid].stack_base);
       new_stack = VG_(client_alloc)(0, new_stk_szb, 
 				    VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC, 
 				    SF_STACK);
@@ -1957,7 +1957,8 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
                        - VG_AR_CLIENT_STACKBASE_REDZONE_SZB);
 
    VG_TRACK ( die_mem_stack, VG_(threads)[tid].stack_base, 
-                           + new_stk_szb - VG_AR_CLIENT_STACKBASE_REDZONE_SZB);
+                             VG_(threads)[tid].stack_size
+                             - VG_AR_CLIENT_STACKBASE_REDZONE_SZB);
    VG_TRACK ( ban_mem_stack, VG_(threads)[tid].m_esp, 
                              VG_AR_CLIENT_STACKBASE_REDZONE_SZB );
    
@@ -2918,6 +2919,34 @@ void do__get_fhstack_entry ( ThreadId tid, Int n, /*OUT*/
    VG_TRACK( post_mem_write, (Addr)fh, sizeof(ForkHandlerEntry) );
 }
 
+
+static
+void do__get_stack_info ( ThreadId tid, ThreadId which, StackInfo* si )
+{
+   Char msg_buf[100];
+   
+   vg_assert(VG_(is_valid_tid)(tid) 
+             && VG_(threads)[tid].status == VgTs_Runnable);
+   
+   if (VG_(clo_trace_sched)) {
+      VG_(sprintf)(msg_buf, "get_stack_info for tid %d", which );
+      print_pthread_event(tid, msg_buf);
+   }
+
+   if (!VG_(is_valid_tid)(which)) {
+      SET_PTHREQ_RETVAL(tid, -1);
+      return;
+   }
+
+   si->base = VG_(threads)[which].stack_base;
+   si->size = VG_(threads)[which].stack_size
+              - VG_AR_CLIENT_STACKBASE_REDZONE_SZB
+              - VG_(threads)[which].stack_guard_size;
+   si->guardsize = VG_(threads)[which].stack_guard_size;
+
+   SET_PTHREQ_RETVAL(tid, 0);
+}
+
 /* ---------------------------------------------------------------------
    Specifying shadow register values
    ------------------------------------------------------------------ */
@@ -3153,7 +3182,7 @@ void do_client_request ( ThreadId tid )
 
       case VG_USERREQ__APPLY_IN_NEW_THREAD:
          do__apply_in_new_thread ( tid, (void*(*)(void*))arg[1], 
-                                        (void*)arg[2] );
+                                        (void*)arg[2], (StackInfo*)(arg[3]) );
          break;
 
       case VG_USERREQ__GET_KEY_D_AND_S:
@@ -3193,6 +3222,10 @@ void do_client_request ( ThreadId tid )
       case VG_USERREQ__SIGNAL_RETURNS: 
          handle_signal_return(tid);
 	 break;
+
+      case VG_USERREQ__GET_STACK_INFO:
+         do__get_stack_info( tid, (Int)(arg[1]), (StackInfo*)(arg[2]) );
+         break;
 
 
       case VG_USERREQ__GET_SIGRT_MIN:
@@ -3374,18 +3407,20 @@ void scheduler_sanity ( void )
          Int
          stack_used = (Addr)VG_(threads)[i].stack_highest_word 
                       - (Addr)VG_(threads)[i].m_esp;
-
+         Int
+         stack_avail = VG_(threads)[i].stack_size
+                       - VG_AR_CLIENT_STACKBASE_REDZONE_SZB
+                       - VG_(threads)[i].stack_guard_size;
 	 /* This test is a bit bogus - it doesn't take into account
 	    alternate signal stacks, for a start.  Also, if a thread
 	    has it's stack pointer somewhere strange, killing Valgrind
 	    isn't the right answer. */
          if (0 && i > 1 /* not the root thread */ 
-             && stack_used 
-                >= (VG_PTHREAD_STACK_MIN - 1000 /* paranoia */)) {
+             && stack_used >= stack_avail) {
             VG_(message)(Vg_UserMsg,
                "Error: STACK OVERFLOW: "
                "thread %d: stack used %d, available %d", 
-               i, stack_used, VG_PTHREAD_STACK_MIN );
+               i, stack_used, stack_avail );
             VG_(message)(Vg_UserMsg,
                "Terminating Valgrind.  If thread(s) "
                "really need more stack, increase");

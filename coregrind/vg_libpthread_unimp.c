@@ -225,8 +225,8 @@ weak_alias(_IO_ftrylockfile, ftrylockfile)
 
 //__attribute__((weak)) void pthread_attr_getguardsize ( void )
 //                      { vgPlain_unimp("pthread_attr_getguardsize"); }
-__attribute__((weak)) void pthread_attr_getstack ( void )
-                      { vgPlain_unimp("pthread_attr_getstack"); }
+//__attribute__((weak)) void pthread_attr_getstack ( void )
+//                      { vgPlain_unimp("pthread_attr_getstack"); }
 __attribute__((weak)) void pthread_attr_getstackaddr ( void )
                       { vgPlain_unimp("pthread_attr_getstackaddr"); }
 __attribute__((weak)) void pthread_attr_getstacksize ( void )

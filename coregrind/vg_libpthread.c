@@ -415,6 +415,9 @@ int pthread_attr_init(pthread_attr_t *attr)
    /* Linuxthreads sets this field to the value __getpagesize(), so I
       guess the following is OK. */
    vg_attr->__vg_guardsize = VKI_BYTES_PER_PAGE;
+   /* No special stack yet. */
+   vg_attr->__vg_stackaddr = 0;
+   vg_attr->__vg_stacksize = VG_PTHREAD_STACK_SIZE;
    return 0;
 }
 
@@ -437,7 +440,6 @@ int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
 {
    vg_pthread_attr_t* vg_attr;
    CONVERT(attr, attr, vg_attr);
-
    *detachstate = vg_attr->__vg_detachstate;
    return 0;
 }
@@ -451,22 +453,13 @@ int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit)
 }
 
 WEAK
-int pthread_attr_setstacksize (pthread_attr_t *__attr,
-                               size_t __stacksize)
+int pthread_attr_setstacksize (pthread_attr_t *attr,
+                               size_t stacksize)
 {
-   size_t limit;
-   char buf[1024];
-
-   ensure_valgrind("pthread_attr_setstacksize");
-   limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB 
-                                 - 1000; /* paranoia */
-   if (__stacksize < limit)
-      return 0;
-   snprintf(buf, sizeof(buf), "pthread_attr_setstacksize: "
-            "requested size %d >= VG_PTHREAD_STACK_SIZE\n   "
-            "edit vg_include.h and rebuild.", __stacksize);
-   buf[sizeof(buf)-1] = '\0'; /* Make sure it is zero terminated */
-   barf(buf);
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
+   vg_attr->__vg_stacksize = stacksize;
+   return 0;
 }
 
 
@@ -527,24 +520,26 @@ int pthread_attr_getscope ( const pthread_attr_t *attr, int *scope )
 /* Pretty bogus.  Avoid if possible. */
 int pthread_getattr_np (pthread_t thread, pthread_attr_t *attr)
 {
+   StackInfo si;
+   int res;
    int    detached;
-   size_t limit;
    vg_pthread_attr_t* vg_attr;
    CONVERT(attr, attr, vg_attr);
 
    ensure_valgrind("pthread_getattr_np");
    kludged("pthread_getattr_np", NULL);
-   limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB 
-                                 - 1000; /* paranoia */
    vg_attr->__vg_detachstate = PTHREAD_CREATE_JOINABLE;
    vg_attr->__vg_schedpolicy = SCHED_OTHER;
    vg_attr->__vg_schedparam.sched_priority = 0;
    vg_attr->__vg_inheritsched = PTHREAD_EXPLICIT_SCHED;
    vg_attr->__vg_scope = PTHREAD_SCOPE_SYSTEM;
-   vg_attr->__vg_guardsize = VKI_BYTES_PER_PAGE;
-   vg_attr->__vg_stackaddr = NULL;
+   VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
+                           VG_USERREQ__GET_STACK_INFO,
+                           thread, &si, 0, 0 );
+   vg_attr->__vg_guardsize = si.guardsize;
+   vg_attr->__vg_stackaddr = (void *)si.base;
    vg_attr->__vg_stackaddr_set = 0;
-   vg_attr->__vg_stacksize = limit;
+   vg_attr->__vg_stacksize = si.size;
    VALGRIND_MAGIC_SEQUENCE(detached, (-1) /* default */,
                            VG_USERREQ__SET_OR_GET_DETACH, 
                            2 /* get */, thread, 0, 0);
@@ -555,29 +550,42 @@ int pthread_getattr_np (pthread_t thread, pthread_attr_t *attr)
 }
 
 
-/* Bogus ... */
+WEAK
+int pthread_attr_getstack ( const pthread_attr_t * attr,
+                            void ** stackaddr,
+                            size_t *stacksize )
+{
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
+   ensure_valgrind("pthread_attr_getstack");
+   if (stackaddr)
+      *stackaddr = vg_attr->__vg_stackaddr;
+   if (stacksize)
+      *stacksize = vg_attr->__vg_stacksize;
+   return 0;
+}
+
 WEAK
 int pthread_attr_getstackaddr ( const pthread_attr_t * attr,
                                 void ** stackaddr )
 {
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
    ensure_valgrind("pthread_attr_getstackaddr");
-   kludged("pthread_attr_getstackaddr", "(it always sets stackaddr to zero)");
    if (stackaddr)
-      *stackaddr = NULL;
+      *stackaddr = vg_attr->__vg_stackaddr;
    return 0;
 }
 
-/* Not bogus (!) */
 WEAK
-int pthread_attr_getstacksize ( const pthread_attr_t * _attr, 
-                                size_t * __stacksize )
+int pthread_attr_getstacksize ( const pthread_attr_t * attr, 
+                                size_t * stacksize )
 {
-   size_t limit;
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
    ensure_valgrind("pthread_attr_getstacksize");
-   limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB 
-                                 - 1000; /* paranoia */
-   if (__stacksize)
-      *__stacksize = limit;
+   if (stacksize)
+      *stacksize = vg_attr->__vg_stacksize;
    return 0;
 }
 
@@ -600,25 +608,15 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
 }
 
 
-/* This is completely bogus.  We reject all attempts to change it from
-   VKI_BYTES_PER_PAGE.  I don't have a clue what it's for so it seems
-   safest to be paranoid. */
 WEAK 
 int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize)
 {
-   static int moans = N_MOANS;
-
-   if (guardsize == VKI_BYTES_PER_PAGE)
-      return 0;
-
-   if (moans-- > 0) 
-       ignored("pthread_attr_setguardsize",
-               "(it ignores any guardsize != 4096)");
-
+   vg_pthread_attr_t* vg_attr;
+   CONVERT(attr, attr, vg_attr);
+   vg_attr->__vg_guardsize = guardsize;
    return 0;
 }
 
-/* A straight copy of the LinuxThreads code. */
 WEAK 
 int pthread_attr_getguardsize(const pthread_attr_t *attr, size_t *guardsize)
 {
@@ -1121,6 +1119,7 @@ pthread_create (pthread_t *__restrict __thredd,
    int            tid_child;
    NewThreadInfo* info;
    int            gs;
+   StackInfo      si;
    vg_pthread_attr_t* __vg_attr;
    CONVERT(attr, __attr, __vg_attr);
 
@@ -1168,9 +1167,19 @@ pthread_create (pthread_t *__restrict __thredd,
    info->arg     = __arg;
    sigprocmask(SIG_SETMASK, NULL, &info->sigmask);
 
+   if (__attr) {
+      si.base = (Addr)__vg_attr->__vg_stackaddr;
+      si.size = __vg_attr->__vg_stacksize;
+      si.guardsize = __vg_attr->__vg_guardsize;
+   } else {
+      si.base = (Addr)NULL;
+      si.size = VG_PTHREAD_STACK_SIZE;
+      si.guardsize = VKI_BYTES_PER_PAGE;
+   }
+   
    VALGRIND_MAGIC_SEQUENCE(tid_child, VG_INVALID_THREADID /* default */,
                            VG_USERREQ__APPLY_IN_NEW_THREAD,
-                           &thread_wrapper, info, 0, 0);
+                           &thread_wrapper, info, &si, 0);
    my_assert(tid_child != VG_INVALID_THREADID);
 
    if (__thredd)

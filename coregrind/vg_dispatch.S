@@ -181,13 +181,24 @@ dispatch_clientreq:
 	jmp	run_innerloop_exit
 
 
-/* This is the translation chainer, our run-time linker, if you like.
-	
-   This enters with %eax pointing to next eip we want.  If
-   we've already compiled that eip (ie, get a fast hit), we
-   backpatch the call instruction with a jump, and jump there.
-   Otherwise, we do a slow hit/compile through the normal path
-   (and get to do a backpatch next time through). 
+/*
+	This is the translation chainer, our run-time linker, if you like.
+
+	VG_(patch_me) patches the call instruction in the jump site
+	with a jump to the generated code for the branch target.  %eax
+	contains the original program's EIP - if we get a hit in
+	tt_fast, then the call is patched into a jump; otherwise it
+	simply drops back into the dispatch loop for normal
+	processing.
+
+	The callsite is expected to look like:
+		call	VG_(patch_me)
+	it will be transformed into
+		jmp	$TARGETADDR
+
+	The environment we're expecting on entry is:
+		%eax    = branch target address (original code EIP)
+		*(%esp) = just after call
 */
 .globl VG_(patch_me)
 VG_(patch_me):

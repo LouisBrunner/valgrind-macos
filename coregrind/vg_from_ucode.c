@@ -1053,6 +1053,17 @@ Bool VG_(is_chained_jumpsite)(Addr a)
    return (*cp == 0xE9);		/* 0xE9 -- jmp */
 }
 
+static 
+Bool is_fresh_jumpsite(UChar *cp)
+{
+   return
+      cp[0] == 0x0F &&		/* UD2 */
+      cp[1] == 0x0B &&
+      cp[2] == 0x0F &&		/* UD2 */
+      cp[3] == 0x0B &&
+      cp[4] == 0x90;		/* NOP */
+}
+
 /* Predicate used in sanity checks elsewhere - returns true if all
    jump-sites are calls to VG_(patch_me) */
 Bool VG_(is_unchained_jumpsite)(Addr a)
@@ -1098,12 +1109,14 @@ void VG_(unchain_jumpsite)(Addr a)
    if (VG_(is_unchained_jumpsite)(a))
       return;			/* don't write unnecessarily */
 
+   if (!is_fresh_jumpsite(cp))
+      VG_(bb_dechain_count)++;     /* update stats */
+
    *cp++ = 0xE8;		/* call */
    *cp++ = (delta >>  0) & 0xff;
    *cp++ = (delta >>  8) & 0xff;
    *cp++ = (delta >> 16) & 0xff;
    *cp++ = (delta >> 24) & 0xff;
-   VG_(bb_dechain_count)++;     /* update stats */
 }
 
 /* This doesn't actually generate a call to VG_(patch_me), but
@@ -1569,11 +1582,10 @@ static void synth_jcond_lit ( Condcode cond, Addr addr )
 		mov    $0x4000d190,%eax			// 5
 		mov    %eax, VGOFF_(m_eip)(%ebp)	// 3
 		call   0x40050f9a <vgPlain_patch_me>	// 5
-		$01					// 1
 	1:	mov    $0x4000d042,%eax
 		call   0x40050f9a <vgPlain_patch_me>
       */
-      delta = 5+3+5+1 -1;
+      delta = 5+3+5;
    } else
       delta = 5+1;
    

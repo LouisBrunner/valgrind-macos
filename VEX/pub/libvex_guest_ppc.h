@@ -80,23 +80,35 @@ typedef
       UInt guest_GPR30;
       UInt guest_GPR31;
 
+      UInt guest_CIA;    // Current Instruction Address (no architecturally visible register)
       UInt guest_LR;     // Link Register
       UInt guest_CTR;    // Count Register
 
-      // CR0: Use last result for delayed calc of CR0[0,1,2] (neg,pos,zero)
-      // (bit3 is just a redundant copy of XER_SO)
+      /* CR0: Use last result for delayed calc of CR0[0,1,2] (neg,pos,zero)
+        (bit3 is just a redundant copy of XER_SO) */
       UInt guest_Result; // Result of last op
 
-      // XER: Simpler representation:
-      Bool guest_XER_SO; // Summary Overflow
-      Bool guest_XER_OV; // Overflow
-      Bool guest_XER_CA; // Carry
-//      UChar guest_XER_ByteCount;
+      // CR1: Used for FP - don't need yet.
+      // CR2:7: Used for 'compare' instructions
+      UChar guest_CR2;
+      UChar guest_CR3;
+      UChar guest_CR4;
+      UChar guest_CR5;
+      UChar guest_CR6;
+      UChar guest_CR7;
+
+      /* XER */
+      UChar guest_XER_SO;  // Summary Overflow
+      UChar guest_XER_OV;  // Overflow
+      UChar guest_XER_CA;  // Carry
+//    UChar guest_XER_ByteCount;
 
       /* Emulation warnings */
       UInt guest_EMWARN;
 
       /* Padding to make it have an 8-aligned size */
+      UChar padding_1b;
+      UChar padding_1b;
       UChar padding_1b;
       UInt  padding_4b;
    }

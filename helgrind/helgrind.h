@@ -57,12 +57,13 @@
 #ifndef __HELGRIND_H
 #define __HELGRIND_H
 
+#define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"
 
 typedef
    enum {
       VG_USERREQ__HG_CLEAN_MEMORY = VG_USERREQ_SKIN_BASE('H','G'),
-      VG_USERREQ__HG_KNOWN_RACE,
+      VG_USERREQ__HG_KNOWN_RACE
    } Vg_HelgrindClientRequest;
 
 /* Clean memory state.  This makes Helgrind forget everything it knew

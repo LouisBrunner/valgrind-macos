@@ -31,6 +31,7 @@
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 VALGRIND="@libdir@/valgrind"
+nptl_threading="@NPTL_THREADING@"
 
 # Other stuff ...
 version="@VERSION@"
@@ -82,6 +83,16 @@ fi
 VG_ARGS="$VALGRIND_OPTS $vgsupp $vgopts"
 
 export VG_ARGS
+
+# Red Hat Linux 9 uses NPTL, which has a kernel interface 
+# unlike the linuxthreads interface valgrind expects. we can
+# tell the dynamic loader to disable this interface using
+# an environment variable.
+
+if [ z"$nptl_threading" = zyes ]; then
+   LD_ASSUME_KERNEL=2.2.5
+   export LD_ASSUME_KERNEL 
+fi
 
 # A bit subtle.  The LD_PRELOAD added entry must be absolute
 # and not depend on LD_LIBRARY_PATH.  This is so that we can

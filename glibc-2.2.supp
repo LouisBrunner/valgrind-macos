@@ -24,6 +24,29 @@
 #     if Param: name of system call param
 #     if Free: name of free-ing fn)
 
+#-------- For SuSE 8.2 (gcc 3.3, glibc 2.3.2)
+{
+   __GI___stpcpy/*
+   Memcheck:Cond
+   fun:__GI___stpcpy
+   fun:*
+}
+{
+   strlen/__GI__dl_open/dlopen_doit
+   Memcheck:Cond
+   fun:strlen
+   fun:__GI__dl_open
+   fun:dlopen_doit
+}
+{
+   strlen/_dl_signal_cerror/_dl_lookup_symbol_internal/do_dlsym
+   Memcheck:Cond
+   fun:_dl_signal_cerror
+   fun:_dl_lookup_symbol_internal
+   fun:do_dlsym
+}
+
+
 #-------- For R H 8.0
 {
    elf_dynamic_do_rel.7/_dl_relocate_object_internal/dl_open_worker(Cond)

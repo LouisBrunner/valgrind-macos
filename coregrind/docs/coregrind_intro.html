@@ -120,8 +120,10 @@ concentrate on what we believe to be a widely used platform: Linux on
 x86s.  Valgrind uses the standard Unix <code>./configure</code>,
 <code>make</code>, <code>make install</code> mechanism, and we have
 attempted to ensure that it works on machines with kernel 2.2 or 2.4
-and glibc 2.1.X, 2.2.X or 2.3.X.  This should cover the vast majority
-of modern Linux installations.
+and glibc 2.1.X, 2.2.X or 2.3.1.  This should cover the vast majority
+of modern Linux installations.  Note that glibc-2.3.2+, with the
+NPTL (next generation posix threads?) package won't work.  We hope to
+be able to fix this, but it won't be easy.
 
 
 <p>

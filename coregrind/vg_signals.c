@@ -32,6 +32,10 @@
 
 #include "vg_include.h"
 #include "vg_unsafe.h"
+
+/* Sidestep the normal check which disallows using valgrind.h
+   directly. */
+#define __VALGRIND_SOMESKIN_H
 #include "valgrind.h"  /* for VALGRIND_MAGIC_SEQUENCE */
 
 /* Define to give more sanity checking for signals. */

@@ -60,6 +60,17 @@
 #define __VALGRIND_H
 
 
+#ifndef __VALGRIND_SOMESKIN_H
+  #warning  For valgrind versions 1.9.0 and after, 
+  #warning  you should not include valgrind.h directly.
+  #warning  Instead include the .h relevant to the skin 
+  #warning  you want to use.  For most people this means 
+  #warning  you need to include memcheck.h instead of
+  #warning  valgrind.h.
+  #error    Compilation of your source will now abort.
+#endif
+
+
 /* This file is for inclusion into client (your!) code.
 
    You can use these macros to manipulate and query Valgrind's 
@@ -67,12 +78,12 @@
 
    The resulting executables will still run without Valgrind, just a
    little bit more slowly than they otherwise would, but otherwise
-   unchanged.  
-
-   When run on Valgrind with --client-perms=yes, Valgrind observes
-   these macro calls and takes appropriate action.  When run on
-   Valgrind with --client-perms=no (the default), Valgrind observes
-   these macro calls but does not take any action as a result.  */
+   unchanged.  When not running on valgrind, each client request
+   consumes about 9 x86 instructions, so the resulting performance
+   loss is negligible unless you plan to execute client requests
+   millions of times per second.  Nevertheless, if that is still a
+   problem, you can compile with the NVALGRIND symbol defined (gcc
+   -DNVALGRIND) so that client requests are not even compiled in.  */
 
 
 
@@ -140,7 +151,7 @@
 typedef
    enum { VG_USERREQ__RUNNING_ON_VALGRIND = 0x1001,
           VG_USERREQ__DISCARD_TRANSLATIONS,
-          VG_USERREQ__FINAL_DUMMY_CLIENT_REQUEST,
+          VG_USERREQ__FINAL_DUMMY_CLIENT_REQUEST
    } Vg_ClientRequest;
 
 

@@ -1221,12 +1221,6 @@ void VG_(read_procselfmaps) (
    Exports of vg_symtab2.c
    ------------------------------------------------------------------ */
 
-/* We assume the executable is loaded here ... can't really find
-   out.  There is a hacky sanity check in VG_(init_memory)()
-   which should trip up most stupidities.
-*/
-#define VG_ASSUMED_EXE_BASE  (Addr)0x8048000
-
 extern void VG_(maybe_read_symbols)   ( void );
 extern void VG_(read_symtab_callback) ( Addr start, UInt size, 
                                         Char rr, Char ww, Char xx,
@@ -1325,6 +1319,11 @@ extern UInt VG_(sigstack)[10000];
 /* Holds client's %esp at the point we gained control.  From this the
    client's argc, argv and envp are deduced. */
 extern Addr   VG_(esp_at_startup);
+
+/* Indicates presence, and holds address of client's sysinfo page, a
+   feature of some modern kernels used to provide vsyscalls, etc. */
+extern Bool VG_(sysinfo_page_exists);
+extern Addr VG_(sysinfo_page_addr);
 
 /* Remove valgrind.so and skin's .so from a LD_PRELOAD=... string so child
    processes don't get traced into.  Also mess up $libdir/valgrind so that

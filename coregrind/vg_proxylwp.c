@@ -1053,7 +1053,7 @@ void VG_(proxy_delete)(ThreadId tid, Bool force)
    sys_wait_results(True, tid, PX_Exiting);
    res = proxy_wait(proxy, True, &status);
 
-   if (!res || status != 0)
+   if ((!res || status != 0) && VG_(clo_verbosity) > 1)
       VG_(printf)("proxy %d for tid %d exited status %d, res %d\n",
 		  lwp, tid, status, res);
 

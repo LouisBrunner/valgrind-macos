@@ -717,6 +717,14 @@ static Bool haveF2orF3 ( Prefix pfx ) {
    pfx &= 0x0000FFFF;
    return (pfx & (PFX_F2|PFX_F3)) > 0;
 }
+static Bool haveF2 ( Prefix pfx ) {
+   pfx &= 0x0000FFFF;
+   return (pfx & PFX_F2) > 0;
+}
+static Bool haveF3 ( Prefix pfx ) {
+   pfx &= 0x0000FFFF;
+   return (pfx & PFX_F3) > 0;
+}
 
 /* Clear all the segment-override bits in a prefix. */
 static Prefix clearSegBits ( Prefix p )
@@ -3098,7 +3106,7 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
    IRTemp  addr;
    IRType  ty = szToITy(sz);
    IRTemp  t1 = newTemp(ty);
-//..    IRTemp dst1, src, dst0;
+   IRTemp dst1, src, dst0;
    modrm = getUChar(delta);
    if (epartIsReg(modrm)) {
       switch (gregOfRM(modrm)) {
@@ -3113,25 +3121,27 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 //..                                       nameIReg(sz, eregOfRM(modrm)));
 //..             break;
 //..          }
-//..          case 2: /* NOT */
-//..             delta++;
-//..             putIReg(sz, eregOfRM(modrm),
-//..                         unop(mkSizedOp(ty,Iop_Not8),
-//..                              getIReg(sz, eregOfRM(modrm))));
-//..             DIP("not%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
-//..             break;
-//..          case 3: /* NEG */
-//..             delta++;
-//..             dst0 = newTemp(ty);
-//..             src  = newTemp(ty);
-//..             dst1 = newTemp(ty);
-//..             assign(dst0, mkU(ty,0));
-//..             assign(src,  getIReg(sz,eregOfRM(modrm)));
-//..             assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
-//..             setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
-//..             putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
-//..             DIP("neg%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
-//..             break;
+         case 2: /* NOT */
+            delta++;
+            putIRegB(pfx, sz, 
+                          eregOfRM(modrm),
+                          unop(mkSizedOp(ty,Iop_Not8),
+                               getIRegB(pfx, sz, eregOfRM(modrm))));
+            DIP("not%c %s\n", nameISize(sz), 
+                              nameIRegB(pfx, sz, eregOfRM(modrm)));
+            break;
+         case 3: /* NEG */
+            delta++;
+            dst0 = newTemp(ty);
+            src  = newTemp(ty);
+            dst1 = newTemp(ty);
+            assign(dst0, mkU(ty,0));
+            assign(src,  getIRegB(pfx, sz,eregOfRM(modrm)));
+            assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
+            setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
+            putIRegB(pfx, sz, eregOfRM(modrm), mkexpr(dst1));
+            DIP("neg%c %s\n", nameISize(sz), nameIRegB(pfx, sz, eregOfRM(modrm)));
+            break;
 //..          case 4: /* MUL (unsigned widening) */
 //..             delta++;
 //..             src = newTemp(ty);
@@ -10758,10 +10768,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       DIP("ret %d\n", d32);
 //..       break;
    case 0xC3: /* RET */
-      if (haveF2orF3(pfx)) goto decode_failure;
+      if (haveF2(pfx)) goto decode_failure;
+      /* F3 is acceptable on AMD. */
       dis_ret(0);
       whatNext = Dis_StopHere;
-      DIP("ret\n");
+      DIP(haveF3(pfx) ? "rep ret\n" : "ret\n");
       break;
       
    case 0xE8: /* CALL J4 */
@@ -11406,10 +11417,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0x08: /* OR Gb,Eb */
 //..       delta = dis_op2_G_E ( sorb, False, Iop_Or8, True, 1, delta, "or" );
 //..       break;
-//..    case 0x09: /* OR Gv,Ev */
-//..       delta = dis_op2_G_E ( sorb, False, Iop_Or8, True, sz, delta, "or" );
-//..       break;
-//.. 
+   case 0x09: /* OR Gv,Ev */
+      if (haveF2orF3(pfx)) goto decode_failure;
+      delta = dis_op2_G_E ( pfx, False, Iop_Or8, True, sz, delta, "or" );
+      break;
+
 //..    case 0x10: /* ADC Gb,Eb */
 //..       delta = dis_op2_G_E ( sorb, True, Iop_Add8, True, 1, delta, "adc" );
 //..       break;
@@ -11455,25 +11467,28 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       delta = dis_op2_G_E ( pfx, False, Iop_Sub8, False, sz, delta, "cmp" );
       break;
 
-//..    /* ------------------------ POP ------------------------ */
-//.. 
-//..    case 0x58: /* POP eAX */
-//..    case 0x59: /* POP eCX */
-//..    case 0x5A: /* POP eDX */
-//..    case 0x5B: /* POP eBX */
-//..    case 0x5D: /* POP eBP */
-//..    case 0x5E: /* POP eSI */
-//..    case 0x5F: /* POP eDI */
-//..    case 0x5C: /* POP eSP */
-//..       vassert(sz == 2 || sz == 4);
-//..       t1 = newTemp(szToITy(sz)); t2 = newTemp(Ity_I32);
-//..       assign(t2, getIReg(4, R_ESP));
-//..       assign(t1, loadLE(szToITy(sz),mkexpr(t2)));
-//..       putIReg(4, R_ESP, binop(Iop_Add32, mkexpr(t2), mkU32(sz)));
-//..       putIReg(sz, opc-0x58, mkexpr(t1));
-//..       DIP("pop%c %s\n", nameISize(sz), nameIReg(sz,opc-0x58));
-//..       break;
-//.. 
+   /* ------------------------ POP ------------------------ */
+
+   case 0x58: /* POP eAX */
+   case 0x59: /* POP eCX */
+   case 0x5A: /* POP eDX */
+   case 0x5B: /* POP eBX */
+   case 0x5D: /* POP eBP */
+   case 0x5E: /* POP eSI */
+   case 0x5F: /* POP eDI */
+   case 0x5C: /* POP eSP */
+      vassert(sz == 2 || sz == 4 || sz == 8);
+      if (sz == 4)
+         sz = 8; /* there is no encoding for 32-bit pop in 64-bit mode */
+      t1 = newTemp(szToITy(sz)); 
+      t2 = newTemp(Ity_I64);
+      assign(t2, getIReg64(R_RSP));
+      assign(t1, loadLE(szToITy(sz),mkexpr(t2)));
+      putIReg64(R_RSP, binop(Iop_Add64, mkexpr(t2), mkU64(sz)));
+      putIRegB(pfx, sz, opc-0x58, mkexpr(t1));
+      DIP("pop%c %s\n", nameISize(sz), nameIRegB(pfx,sz,opc-0x58));
+      break;
+
 //..    case 0x9D: /* POPF */
 //..       vassert(sz == 2 || sz == 4);
 //..       vassert(sz == 4); // until we know a sz==2 test case exists
@@ -11586,31 +11601,34 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. //--       dis_pop_segreg( cb, R_ES, sz ); break;
 //.. //--    case 0x17: /* POP %SS */
 //.. //--       dis_pop_segreg( cb, R_SS, sz ); break;
-//.. 
-//..    /* ------------------------ PUSH ----------------------- */
-//.. 
-//..    case 0x50: /* PUSH eAX */
-//..    case 0x51: /* PUSH eCX */
-//..    case 0x52: /* PUSH eDX */
-//..    case 0x53: /* PUSH eBX */
-//..    case 0x55: /* PUSH eBP */
-//..    case 0x56: /* PUSH eSI */
-//..    case 0x57: /* PUSH eDI */
-//..    case 0x54: /* PUSH eSP */
-//..       /* This is the Right Way, in that the value to be pushed is
-//..          established before %esp is changed, so that pushl %esp
-//..          correctly pushes the old value. */
-//..       vassert(sz == 2 || sz == 4);
-//..       ty = sz==2 ? Ity_I16 : Ity_I32;
-//..       t1 = newTemp(ty); t2 = newTemp(Ity_I32);
-//..       assign(t1, getIReg(sz, opc-0x50));
-//..       assign(t2, binop(Iop_Sub32, getIReg(4, R_ESP), mkU32(sz)));
-//..       putIReg(4, R_ESP, mkexpr(t2) );
-//..       storeLE(mkexpr(t2),mkexpr(t1));
-//..       DIP("push%c %s\n", nameISize(sz), nameIReg(sz,opc-0x50));
-//..       break;
-//.. 
-//.. 
+
+   /* ------------------------ PUSH ----------------------- */
+
+   case 0x50: /* PUSH eAX */
+   case 0x51: /* PUSH eCX */
+   case 0x52: /* PUSH eDX */
+   case 0x53: /* PUSH eBX */
+   case 0x55: /* PUSH eBP */
+   case 0x56: /* PUSH eSI */
+   case 0x57: /* PUSH eDI */
+   case 0x54: /* PUSH eSP */
+      /* This is the Right Way, in that the value to be pushed is
+         established before %rsp is changed, so that pushq %rsp
+         correctly pushes the old value. */
+      vassert(sz == 2 || sz == 4 || sz == 8);
+      if (sz == 4)
+         sz = 8; /* there is no encoding for 32-bit push in 64-bit mode */
+      ty = sz==2 ? Ity_I16 : Ity_I64;
+      t1 = newTemp(ty); 
+      t2 = newTemp(Ity_I64);
+      assign(t1, getIRegB(pfx, sz, opc-0x50));
+      assign(t2, binop(Iop_Sub64, getIReg64(R_RSP), mkU64(sz)));
+      putIReg64(R_RSP, mkexpr(t2) );
+      storeLE(mkexpr(t2),mkexpr(t1));
+      DIP("push%c %s\n", nameISize(sz), nameIRegB(pfx,sz,opc-0x50));
+      break;
+
+
 //..    case 0x68: /* PUSH Iv */
 //..       d32 = getUDisp(sz,delta); delta += sz;
 //..       goto do_push_I;

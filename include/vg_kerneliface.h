@@ -461,40 +461,6 @@ typedef struct {
 } vki_fd_set;
 
 
-/* Gawd ...
-   Copied from /usr/src/linux-2.4.9-31/./include/asm-i386/posix_types.h
-*/
-#undef  VKI_FD_SET
-#define VKI_FD_SET(fd,fdsetp) \
-                __asm__ __volatile__("btsl %1,%0": \
-                        "=m" (*(vki_fd_set *) (fdsetp)):"r" ((int) (fd)))
-
-#undef  VKI_FD_CLR
-#define VKI_FD_CLR(fd,fdsetp) \
-                __asm__ __volatile__("btrl %1,%0": \
-                        "=m" (*(vki_fd_set *) (fdsetp)):"r" ((int) (fd)))
-
-#undef  VKI_FD_ISSET
-#define VKI_FD_ISSET(fd,fdsetp) (__extension__ ({ \
-                unsigned char __result; \
-                __asm__ __volatile__("btl %1,%2 ; setb %0" \
-                        :"=q" (__result) :"r" ((int) (fd)), \
-                        "m" (*(vki_fd_set *) (fdsetp))); \
-                __result; }))
-
-#undef  VKI_FD_ZERO
-#define VKI_FD_ZERO(fdsetp) \
-do { \
-        int __d0, __d1; \
-        __asm__ __volatile__("cld ; rep ; stosl" \
-                        :"=m" (*(vki_fd_set *) (fdsetp)), \
-                          "=&c" (__d0), "=&D" (__d1) \
-                        :"a" (0), "1" (VKI_FDSET_LONGS), \
-                        "2" ((vki_fd_set *) (fdsetp)) : "memory"); \
-} while (0)
-
-
-
 struct vki_pollfd {
    Int		fd;
    Short	events;

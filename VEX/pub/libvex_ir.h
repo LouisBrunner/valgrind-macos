@@ -53,7 +53,7 @@ extern void ppIRConst ( IRConst* );
 
 /* ------------------ Temporaries ------------------ */
 
-typedef int IRTemp;
+typedef Int IRTemp;
 
 extern void ppIRTemp ( IRTemp );
 

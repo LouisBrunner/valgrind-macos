@@ -552,7 +552,7 @@ Addr VG_(find_map_space)(Addr addr, UInt len, Bool for_client)
 
    This is designed for use around system calls which allocate
    memory in the process address space without providing a way to
-   control it's location such as io_setup. By choosing a suitable
+   control its location such as io_setup. By choosing a suitable
    address with VG_(find_map_space) and then adding a segment for
    it and padding the address space valgrind can ensure that the
    kernel has no choice but to put the memory where we want it. */

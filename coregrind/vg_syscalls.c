@@ -450,7 +450,7 @@ static OpenFd *allocated_fds;
 
 static int fd_count = 0;
 
-/* Given a file descriptor, attempt to deduce it's filename.  To do this,
+/* Given a file descriptor, attempt to deduce its filename.  To do this,
    we use /proc/self/fd/<FD>.  If this doesn't point to a file, or if it
    doesn't exist, we just return NULL.  Otherwise, we return a pointer
    to the file name, which the caller is responsible for freeing. */

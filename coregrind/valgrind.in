@@ -122,7 +122,17 @@ if [ $# != 0 ] ; then
      exit 1 ;;
    esac
 fi
-   
+
+# Ensure that there is no suid or sgid flag
+if [ `stat -c %a "$1"` -gt 2000 ] ; then
+  echo "\`$1' is suid/sgid."
+  echo "Valgrind can't handle these executables, as it"
+  echo "requires the LD_PRELOAD feature in order to work."
+  echo ""
+  echo "Remove those flags and try again."
+  exit 1
+fi
+
 # A bit subtle.  The LD_PRELOAD added entry must be absolute
 # and not depend on LD_LIBRARY_PATH.  This is so that we can
 # mess with LD_LIBRARY_PATH for child processes, which makes

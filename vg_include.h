@@ -142,6 +142,10 @@
    knows.) */
 #define VG_N_WAITING_FDS 10
 
+/* Stack size for a thread.  We try and check that they do not go
+   beyond it. */
+#define VG_PTHREAD_STACK_SIZE 65536
+
 
 /* ---------------------------------------------------------------------
    Basic types

@@ -553,14 +553,15 @@ void VG_(scheduler_init) ( void )
    vg_threads[tid_main].associated_mx = NULL;
    vg_threads[tid_main].associated_cv = NULL;
    vg_threads[tid_main].retval        = NULL; /* not important */
-   vg_threads[tid_main].stack_highest_word 
-      = vg_threads[tid_main].m_esp /* -4  ??? */;
    for (i = 0; i < VG_N_THREAD_KEYS; i++)
       vg_threads[tid_main].specifics[i] = NULL;
 
    /* Copy VG_(baseBlock) state to tid_main's slot. */
    vg_tid_currently_in_baseBlock = tid_main;
    VG_(save_thread_state) ( tid_main );
+
+   vg_threads[tid_main].stack_highest_word 
+      = vg_threads[tid_main].m_esp /* -4  ??? */;
 
    /* So now ... */
    vg_assert(vg_tid_currently_in_baseBlock == VG_INVALID_THREADID);
@@ -1488,9 +1489,8 @@ VgSchedReturnCode VG_(scheduler) ( void )
 #include <pthread.h>
 #include <errno.h>
 
-#if !defined(PTHREAD_STACK_MIN)
-#  define PTHREAD_STACK_MIN (16384 - VG_AR_CLIENT_STACKBASE_REDZONE_SZB)
-#endif
+#define VG_PTHREAD_STACK_MIN \
+             (VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB)
 
 /*  /usr/include/bits/pthreadtypes.h:
     typedef unsigned long int pthread_t;
@@ -1717,7 +1717,7 @@ void do_pthread_create ( ThreadId parent_tid,
 
    /* Consider allocating the child a stack, if the one it already has
       is inadequate. */
-   new_stk_szb = PTHREAD_STACK_MIN;
+   new_stk_szb = VG_PTHREAD_STACK_MIN;
 
    if (new_stk_szb > vg_threads[tid].stack_size) {
       /* Again, for good measure :) We definitely don't want to be
@@ -2537,15 +2537,15 @@ void scheduler_sanity ( void )
       mx = vg_threads[i].associated_mx;
       cv = vg_threads[i].associated_cv;
       if (vg_threads[i].status == VgTs_WaitMX) {
-	/* If we're waiting on a MX: (1) the mx is not null, (2, 3)
-           it's actually held by someone, since otherwise this thread
-           is deadlocked, (4) the mutex's owner is not us, since
-           otherwise this thread is also deadlocked.  The logic in
-           do_pthread_mutex_lock rejects attempts by a thread to lock
-           a (non-recursive) mutex which it already owns. 
+	 /* If we're waiting on a MX: (1) the mx is not null, (2, 3)
+            it's actually held by someone, since otherwise this thread
+            is deadlocked, (4) the mutex's owner is not us, since
+            otherwise this thread is also deadlocked.  The logic in
+            do_pthread_mutex_lock rejects attempts by a thread to lock
+            a (non-recursive) mutex which it already owns.
 
-           (2) has been seen to fail sometimes.  I don't know why.
-           Possibly to do with signals. */
+            (2) has been seen to fail sometimes.  I don't know why.
+            Possibly to do with signals. */
          vg_assert(cv == NULL);
          /* 1 */ vg_assert(mx != NULL);
 	 /* 2 */ vg_assert(mx->__m_count > 0);
@@ -2560,6 +2560,26 @@ void scheduler_sanity ( void )
             running.  To be fixed. */
          /* vg_assert(cv == NULL); */
          /* vg_assert(mx == NULL); */
+      }
+
+      if (vg_threads[i].status != VgTs_Empty) {
+         Int
+         stack_used = (Addr)vg_threads[i].stack_highest_word 
+                      - (Addr)vg_threads[i].m_esp;
+         if (i > 1 /* not the root thread */ 
+             && stack_used 
+                >= (VG_PTHREAD_STACK_MIN - 1000 /* paranoia */)) {
+            VG_(message)(Vg_UserMsg,
+               "Warning: STACK OVERFLOW: "
+               "thread %d: stack used %d, available %d", 
+               i, stack_used, VG_PTHREAD_STACK_MIN );
+            VG_(message)(Vg_UserMsg,
+               "Terminating Valgrind.  If thread(s) "
+               "really need more stack, increase");
+            VG_(message)(Vg_UserMsg,
+               "VG_PTHREAD_STACK_SIZE in vg_include.h and recompile.");
+            VG_(exit)(1);
+	 }
       }
    }
 

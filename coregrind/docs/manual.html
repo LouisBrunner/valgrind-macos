@@ -1982,24 +1982,8 @@ info (the <code>-g</code> flag).  But by contrast with normal Valgrind use, you
 probably <b>do</b> want to turn optimisation on, since you should profile your
 program as it will be normally run.
 
-The three steps are:
+The two steps are:
 <ol>
-  <li>Generate a cache simulator for your machine's cache
-      configuration with the supplied <code>vg_cachegen</code>
-      program, and recompile Valgrind with <code>make install</code>.
-      <p>
-      The default settings are for an AMD Athlon, and you will get
-      useful information with the defaults, so you can skip this step
-      if you want.  Nevertheless, for accurate cache profiles you will
-      need use <code>vg_cachegen</code> to customise
-      <code>cachegrind</code> for your system.
-      <p>
-      This step only needs to be done once, unless you are interested
-      in simulating different cache configurations (eg. first
-      concentrating on instruction cache misses, then on data cache
-      misses).      
-  </li>
-  <p>
   <li>Run your program with <code>cachegrind</code> in front of the
       normal command line invocation.  When the program finishes,
       Valgrind will print summary cache statistics. It also collects
@@ -2025,56 +2009,12 @@ The three steps are:
 The steps are described in detail in the following sections.<p>
 
 
-<a name="generate"></a>
-<h3>7.3&nbsp; Generating a cache simulator</h3>
+<h3>7.3&nbsp; Cache simulation specifics</h3>
 
-Although Valgrind comes with a pre-generated cache simulator, it most
-likely won't match the cache configuration of your machine, so you
-should generate a new simulator.<p>
-
-You need to generate three files, one for each of the I1, D1 and L2
-caches.  For each cache, you need to know the:
-<ul>
-  <li>Cache size (bytes);
-  <li>Line size (bytes);
-  <li>Associativity.
-</ul>
-
-vg_cachegen takes three options:
-<ul>
-  <li><code>--I1=size,line_size,associativity</code>
-  <li><code>--D1=size,line_size,associativity</code>
-  <li><code>--L2=size,line_size,associativity</code>
-</ul>
-
-You can specify one, two or all three caches per invocation of
-vg_cachegen.  It checks that the configuration is sensible before
-generating the simulators; to see the allowed values, run
-<code>vg_cachegen -h</code>.<p>
-
-An example invocation would be:
-
-<blockquote><code>
-  vg_cachegen --I1=65536,64,2 --D1=65536,64,2 --L2=262144,64,8
-</code></blockquote>
-
-This simulates a machine with a 128KB split L1 2-way associative
-cache, and a 256KB unified 8-way associative L2 cache.  Both caches
-have 64B lines.<p>
-
-If you don't know your cache configuration, you'll have to find it
-out.  (Ideally <code>vg_cachegen</code> could auto-identify your cache
-configuration using the CPUID instruction, which could be done
-automatically during installation, and this whole step could be
-skipped.)<p>
-
-
-<h3>7.4&nbsp; Cache simulation specifics</h3>
-
-<code>vg_cachegen</code> only generates simulations for a machine with
-a split L1 cache and a unified L2 cache.  This configuration is used
-for all (modern) x86-based machines we are aware of.  Old Cyrix CPUs
-had a unified I and D L1 cache, but they are ancient history now.<p>
+Cachegrind uses a simulation for a machine with a split L1 cache and a unified
+L2 cache.  This configuration is used for all (modern) x86-based machines we
+are aware of.  Old Cyrix CPUs had a unified I and D L1 cache, but they are
+ancient history now.<p>
 
 The more specific characteristics of the simulation are as follows.
 
@@ -2096,6 +2036,15 @@ The more specific characteristics of the simulation are as follows.
       Athlons use an exclusive L2 cache that only holds blocks evicted
       from L1.  Ditto AMD Durons and most modern VIAs.</li><p>
 </ul>
+
+The cache configuration simulated (cache size, associativity and line size) is
+determined automagically using the CPUID instruction.  If you have an old
+machine that (a) doesn't support the CPUID instruction, or (b) supports it in
+an early incarnation that doesn't give any cache information, then Cachegrind
+will fall back to using a default configuration (that of a model 3/4 Athlon).
+Cachegrind will tell you if this happens.  You can manually specify one, two or
+all three levels (I1/D1/L2) of the cache from the command line using the
+<code>--I1</code>, <code>--D1</code> and <code>--L2</code> options.<p>
 
 Other noteworthy behaviour:
 
@@ -2119,19 +2068,18 @@ Other noteworthy behaviour:
 </ul>
 
 If you are interested in simulating a cache with different properties, it is
-not particularly hard to write your own cache simulator, or to modify existing
-ones in <code>vg_cachesim_I1.c</code>, <code>vg_cachesim_I1.c</code> and
-<code>vg_cachesim_I1.c</code>.  We'd be interested to hear from anyone who
-does.
-
+not particularly hard to write your own cache simulator, or to modify the
+existing ones in <code>vg_cachesim_I1.c</code>, <code>vg_cachesim_D1.c</code>,
+<code>vg_cachesim_L2.c</code> and <code>vg_cachesim_gen.c</code>.  We'd be
+interested to hear from anyone who does.
 
 <a name="profile"></a>
-<h3>7.5&nbsp; Profiling programs</h3>
+<h3>7.4&nbsp; Profiling programs</h3>
 
 Cache profiling is enabled by using the <code>--cachesim=yes</code>
 option to the <code>valgrind</code> shell script.  Alternatively, it
 is probably more convenient to use the <code>cachegrind</code> script.
-This automatically turns off Valgrind's memory checking functions,
+Either way automatically turns off Valgrind's memory checking functions,
 since the cache simulation is slow enough already, and you probably
 don't want to do both at once.
 <p>
@@ -2173,7 +2121,7 @@ to the row's total).<p>
 Combined instruction and data figures for the L2 cache follow that.<p>
 
 
-<h3>7.6&nbsp; Output file</h3>
+<h3>7.5&nbsp; Output file</h3>
 
 As well as printing summary information, Cachegrind also writes
 line-by-line cache profiling information to a file named
@@ -2192,6 +2140,30 @@ Things to note about the <code>cachegrind.out</code> file:
       built with full debugging information generates a file
       of around 15 MB.</li>
 </ul>
+
+<a name="profile"></a>
+<h3>7.6&nbsp; Cachegrind options</h3>
+Cachegrind accepts all the options that Valgrind does, although some of them
+(ones related to memory checking) don't do anything when cache profiling.<p>
+
+The interesting cache-simulation specific options are:
+
+  <li><code>--I1=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><p>
+      <code>--D1=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><p> 
+      <code>--L2=&lt;size&gt;,&lt;associativity&gt,&lt;line_size&gt;</code><p> 
+      [default: uses CPUID for cache configuration]<p>
+
+      Manually specifies the I1/D1/L2 cache configuration, where
+      <code>size</code> and <code>line_size</code> are measured in bytes.  The
+      three items must be comma-separated, but with no space, eg:
+
+      <blockquote><code>cachegrind --I1=65535,2,64</code></blockquote>
+
+      You can specify one, two or three of the caches.  Any level not manually
+      specified will be simulated using the configuration found in the normal
+      way (via the CPUID instruction, or failing that, via defaults).
+</ul>
+  
 
 
 <a name="annotate"></a>
@@ -2517,7 +2489,7 @@ There are a couple of situations in which vg_annotate issues warnings.
 </ul>
 
 
-<h3>7.10&nbsp; Things to watch out for</h3>
+<h3>7.11&nbsp; Things to watch out for</h3>
 Some odd things that can occur during annotation:
 
 <ul>
@@ -2600,7 +2572,7 @@ annotations that look like might be caused by a bug in the stabs reader,
 please let us know.<p>
 
 
-<h3>7.11&nbsp; Accuracy</h3>
+<h3>7.12&nbsp; Accuracy</h3>
 Valgrind's cache profiling has a number of shortcomings:
 
 <ul>
@@ -2640,12 +2612,8 @@ While these factors mean you shouldn't trust the results to be super-accurate,
 hopefully they should be close enough to be useful.<p>
 
 
-<h3>7.12&nbsp; Todo</h3>
+<h3>7.13&nbsp; Todo</h3>
 <ul>
-  <li>Use CPUID instruction to auto-identify cache configuration during 
-      installation.  This would save the user from having to know their cache
-      configuration and using vg_cachegen.</li>
-  <p>
   <li>Program start-up/shut-down calls a lot of functions that aren't
       interesting and just complicate the output.  Would be nice to exclude
       these somehow.</li>

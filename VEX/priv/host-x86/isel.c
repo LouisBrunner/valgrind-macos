@@ -1691,10 +1691,17 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       HReg  tLo = newVRegI(env);
       HReg  tHi = newVRegI(env);
       vassert(e->Iex.Const.con->tag == Ico_U64);
-      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(wHi), tHi));
-      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(wLo), tLo));
-      *rHi = tHi;
-      *rLo = tLo;
+      if (wLo == wHi) {
+         /* Save a precious Int register in this special case. */
+         addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(wLo), tLo));
+         *rHi = tLo;
+         *rLo = tLo;
+      } else {
+         addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(wHi), tHi));
+         addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(wLo), tLo));
+         *rHi = tHi;
+         *rLo = tLo;
+      }
       return;
    }
 

@@ -792,7 +792,7 @@ extern void VG_(wait_for_threadstate)(Bool (*pred)(void *), void *arg);
 
 #define vg_assert(expr)                                               \
   ((void) ((expr) ? 0 :						      \
-	   (VG_(core_assert_fail) (VG__STRING(expr),	              \
+	   (VG_(core_assert_fail) (VG_STRINGIFY(expr),	              \
 			           __FILE__, __LINE__,                \
                                    __PRETTY_FUNCTION__), 0)))
 __attribute__ ((__noreturn__))

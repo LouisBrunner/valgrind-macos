@@ -48,12 +48,6 @@
 /* Tool-specific ones.  Note that final name still starts with "vg". */
 #define TL_(str)    VGAPPEND(vgTool_,str)
 
-/* This is specifically for stringifying VG_(x) function names.  We
-   need to do two macroexpansions to get the VG_ macro expanded before
-   stringifying */
-#define _STR(x)	#x
-#define STR(x)	_STR(x)
-
 #endif /* ndef __TOOL_ASM_H */
 
 /*--------------------------------------------------------------------*/

@@ -67,7 +67,7 @@ void VG_(sanity_check_needs) ( void)
 #define CHECK_NOT(var, value)                               \
    if ((var)==(value)) {                                    \
       VG_(printf)("\nTool error: `%s' not initialised\n",   \
-                  VG__STRING(var));                         \
+                  VG_STRINGIFY(var));                       \
       VG_(tool_panic)("Uninitialised details field\n");     \
    }
    

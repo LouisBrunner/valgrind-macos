@@ -80,12 +80,12 @@ static void my_assert_fail ( const Char* expr, const Char* file, Int line, const
 }
 
 #undef assert
-#undef VG__STRING
+#undef STRINGIFY
 
-#define VG__STRING(__str)  #__str
+#define STRINGIFY(__str)  #__str
 #define assert(expr)                                             \
   ((void) ((expr) ? 0 :					         \
-	   (my_assert_fail (VG__STRING(expr),	                 \
+	   (my_assert_fail (STRINGIFY(expr),	                 \
                             __FILE__, __LINE__,                  \
                             __PRETTY_FUNCTION__), 0)))
 

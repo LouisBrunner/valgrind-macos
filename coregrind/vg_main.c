@@ -1244,7 +1244,7 @@ static void load_tool( const char *toolname, void** handle_out,
    }
 
    // Set redzone size for V's allocator
-   vg_malloc_redzonep = dlsym(handle, STR(VG_(vg_malloc_redzone_szB)));
+   vg_malloc_redzonep = dlsym(handle, VG_STRINGIFY(VG_(vg_malloc_redzone_szB)));
    if ( NULL != vg_malloc_redzonep ) {
       VG_(vg_malloc_redzone_szB) = *vg_malloc_redzonep;
    }

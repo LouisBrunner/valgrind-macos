@@ -1500,10 +1500,9 @@ int __pthread_once ( pthread_once_t *once_control,
 
    res = __pthread_mutex_lock(&once_masterlock);
 
-   if (res != 0) {
-      barf("pthread_once: Looks like your program's "
-           "init routine calls back to pthread_once() ?!");
-   }
+   /* init routine called us again ? */
+   if (res != 0)
+       return 0;
 
    if (*once_control == 0) {
       *once_control = 1;

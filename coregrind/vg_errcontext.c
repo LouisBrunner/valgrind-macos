@@ -466,16 +466,31 @@ static void VG_(maybe_add_context) ( ErrContext* ec )
 
    vg_assert(ec->tid >= 0 && ec->tid < VG_N_THREADS);
 
-   /* After M_VG_COLLECT_NO_ERRORS_AFTER different errors have been
-      found, just refuse to collect any more. */
-   if (vg_n_errs_shown >= M_VG_COLLECT_NO_ERRORS_AFTER) {
+   /* After M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN different errors have
+      been found, or M_VG_COLLECT_NO_ERRORS_AFTER_FOUND total errors
+      have been found, just refuse to collect any more.  This stops
+      the burden of the error-management system becoming excessive in
+      extremely buggy programs, although it does make it pretty
+      pointless to continue the Valgrind run after this point. */
+   if (vg_n_errs_shown >= M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN
+       || vg_n_errs_found >= M_VG_COLLECT_NO_ERRORS_AFTER_FOUND) {
       if (!stopping_message) {
          VG_(message)(Vg_UserMsg, "");
+
+	 if (vg_n_errs_shown >= M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN) {
+            VG_(message)(Vg_UserMsg, 
+               "More than %d different errors detected.  "
+               "I'm not reporting any more.",
+               M_VG_COLLECT_NO_ERRORS_AFTER_SHOWN );
+         } else {
+            VG_(message)(Vg_UserMsg, 
+               "More than %d total errors detected.  "
+               "I'm not reporting any more.",
+               M_VG_COLLECT_NO_ERRORS_AFTER_FOUND );
+	 }
+
          VG_(message)(Vg_UserMsg, 
-            "More than %d errors detected.  I'm not reporting any more.",
-            M_VG_COLLECT_NO_ERRORS_AFTER);
-         VG_(message)(Vg_UserMsg, 
-            "Final error counts may be inaccurate.  Go fix your program!");
+            "Final error counts will be inaccurate.  Go fix your program!");
          VG_(message)(Vg_UserMsg, "");
          stopping_message = True;
          vg_ignore_errors = True;

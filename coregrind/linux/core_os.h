@@ -82,6 +82,8 @@ LINUX_SYSCALL_WRAPPER(sys_epoll_create);
 LINUX_SYSCALL_WRAPPER(sys_epoll_ctl);
 LINUX_SYSCALL_WRAPPER(sys_epoll_wait);
 
+LINUX_SYSCALL_WRAPPER(sys_tgkill);
+
 LINUX_SYSCALL_WRAPPER(sys_io_setup);
 LINUX_SYSCALL_WRAPPER(sys_io_destroy);
 LINUX_SYSCALL_WRAPPER(sys_io_getevents);

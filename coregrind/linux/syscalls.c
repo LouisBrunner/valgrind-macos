@@ -475,6 +475,25 @@ POST(sys_epoll_wait)
       POST_MEM_WRITE( ARG2, sizeof(struct epoll_event)*RES ) ;
 }
 
+PRE(sys_tgkill, 0)
+{
+   /* int tgkill(pid_t tgid, pid_t tid, int sig); */
+   PRINT("sys_tgkill ( %d, %d, %d )", ARG1,ARG2,ARG3);
+   PRE_REG_READ3(long, "tgkill", int, tgid, int, tid, int, sig);
+   if (!VG_(client_signal_OK)(ARG3))
+      SET_RESULT( -VKI_EINVAL );
+}
+
+POST(sys_tgkill)
+{
+   if (VG_(clo_trace_signals))
+      VG_(message)(Vg_DebugMsg, "tgkill: sent signal %d to pid %d/%d",
+                   ARG3, ARG1, ARG2);
+   // Check to see if this kill gave us a pending signal
+   VG_(poll_signals)(tid);
+}
+
+
 // Nb: this wrapper is "Special" because we have to pad/unpad memory around
 // the syscall itself, and this allows us to control exactly the code that
 // gets run while the padding is in place.

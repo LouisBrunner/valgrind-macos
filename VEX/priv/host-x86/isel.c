@@ -2095,6 +2095,14 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
       return iselDblExpr(env, e->Iex.Unop.arg);
    }
 
+   if (e->tag == Iex_Get) {
+      X86AMode* am = X86AMode_IR( e->Iex.Get.offset,
+                                  hregX86_EBP() );
+      HReg res = newVRegF(env);
+      addInstr(env, X86Instr_FpLdSt( True/*load*/, 4, res, am ));
+      return res;
+   }
+
    ppIRExpr(e);
    vpanic("iselFltExpr_wrk");
 }

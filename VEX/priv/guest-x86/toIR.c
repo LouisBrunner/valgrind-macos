@@ -473,13 +473,17 @@ static IRType szToITy ( Int n )
    }
 }
 
+/* On a little-endian host, less significant bits of the guest
+   registers are at lower addresses.  Therefore, if a reference to a
+   register low half has the safe guest state offset as a reference to
+   the full register.
+*/
 static Int integerGuestRegOffset ( Int sz, UInt archreg )
 {
    vassert(archreg < 8);
 
-   vassert(!host_is_bigendian);
-
    /* Correct for little-endian host only. */
+   vassert(!host_is_bigendian);
 
    if (sz == 4 || sz == 2 || (sz == 1 && archreg < 4)) {
       switch (archreg) {
@@ -536,6 +540,25 @@ static Int xmmGuestRegOffset ( UInt xmmreg )
    }
 }
 
+/* Lanes of vector registers are always numbered from zero being the
+   least significant lane (rightmost in the register).  */
+
+static Int xmmGuestRegLane32offset ( UInt xmmreg, Int laneno )
+{
+   /* Correct for little-endian host only. */
+   vassert(!host_is_bigendian);
+   vassert(laneno >= 0 && laneno < 4);
+   return xmmGuestRegOffset( xmmreg ) + 4 * laneno;
+}
+
+static Int xmmGuestRegLane64offset ( UInt xmmreg, Int laneno )
+{
+   /* Correct for little-endian host only. */
+   vassert(!host_is_bigendian);
+   vassert(laneno >= 0 && laneno < 2);
+   return xmmGuestRegOffset( xmmreg ) + 8 * laneno;
+}
+
 static IRExpr* getIReg ( Int sz, UInt archreg )
 {
    vassert(sz == 1 || sz == 2 || sz == 4);
@@ -572,10 +595,32 @@ static IRExpr* getXMMReg ( UInt xmmreg )
    return IRExpr_Get( xmmGuestRegOffset(xmmreg), Ity_V128 );
 }
 
+static IRExpr* getXMMRegLane64 ( UInt xmmreg, Int laneno )
+{
+   return IRExpr_Get( xmmGuestRegLane64offset(xmmreg,laneno), Ity_I64 );
+}
+
+static IRExpr* getXMMRegLane32F ( UInt xmmreg, Int laneno )
+{
+   return IRExpr_Get( xmmGuestRegLane32offset(xmmreg,laneno), Ity_F32 );
+}
+
 static void putXMMReg ( UInt xmmreg, IRExpr* e )
 {
    vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_V128);
    stmt( IRStmt_Put( xmmGuestRegOffset(xmmreg), e ) );
+}
+
+static void putXMMRegLane64 ( UInt xmmreg, Int laneno, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I64);
+   stmt( IRStmt_Put( xmmGuestRegLane64offset(xmmreg,laneno), e ) );
+}
+
+static void putXMMRegLane32 ( UInt xmmreg, Int laneno, IRExpr* e )
+{
+   vassert(typeOfIRExpr(irbb->tyenv,e) == Ity_I32);
+   stmt( IRStmt_Put( xmmGuestRegLane32offset(xmmreg,laneno), e ) );
 }
 
 static void assign ( IRTemp dst, IRExpr* e )
@@ -3578,7 +3623,7 @@ static void fp_pop ( void )
 
 static void clear_C2 ( void )
 {
-  put_C3210( binop(Iop_And32, get_C3210(), mkU32(~X86G_FC_MASK_C2)) );
+   put_C3210( binop(Iop_And32, get_C3210(), mkU32(~X86G_FC_MASK_C2)) );
 }
 
 
@@ -6726,26 +6771,6 @@ void dis_ret ( UInt d32 )
 
 /* ------ SSE/SSE2/SSE3 helpers ----- */
 
-static void putXMMRegLO64( Int xmmreg, IRExpr* e64 )
-{
-   putXMMReg( 
-      xmmreg,
-      binop(Iop_64HLto128,
-            unop(Iop_128HIto64, getXMMReg(xmmreg)),
-            e64 ) 
-   );
-}
-
-static void putXMMRegHI64( Int xmmreg, IRExpr* e64 )
-{
-   putXMMReg( 
-      xmmreg,
-      binop(Iop_64HLto128,
-            e64, 
-            unop(Iop_128to64, getXMMReg(xmmreg)))
-   );
-}
-
 static UInt dis_SSE_E_to_G_wrk ( 
                UChar sorb, UInt delta, 
                HChar* opname, IROp op,
@@ -7007,8 +7032,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       addr = disAMode ( &alen, sorb, delta, dis_buf );
       delta += alen;
 
-      putXMMRegLO64( gregOfRM(insn[2]),  
-                     loadLE(Ity_I64, mkexpr(addr)) );
+      putXMMRegLane64( gregOfRM(insn[2]),  0/*lower lane*/,
+                       loadLE(Ity_I64, mkexpr(addr)) );
 
       DIP("movlps %s, %s\n", 
           dis_buf, nameXMMReg( gregOfRM(insn[2]) ));
@@ -7023,7 +7048,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       delta += alen;
 
       storeLE( mkexpr(addr), 
-               unop(Iop_128to64, getXMMReg( gregOfRM(insn[2]) )) );
+               getXMMRegLane64( gregOfRM(insn[2]), 
+                                0/*lower lane*/ ) );
 
       DIP("movlps %s, %s\n", 
           nameXMMReg( gregOfRM(insn[2]) ),
@@ -7039,8 +7065,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       addr = disAMode ( &alen, sorb, delta, dis_buf );
       delta += alen;
 
-      putXMMRegHI64( gregOfRM(insn[2]),  
-                     loadLE(Ity_I64, mkexpr(addr)) );
+      putXMMRegLane64( gregOfRM(insn[2]), 1/*upper lane*/,
+                       loadLE(Ity_I64, mkexpr(addr)) );
 
       DIP("movhps %s, %s\n", 
           dis_buf, nameXMMReg( gregOfRM(insn[2]) ));
@@ -7056,7 +7082,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       delta += alen;
 
       storeLE( mkexpr(addr), 
-               unop(Iop_128HIto64, getXMMReg( gregOfRM(insn[2]) )) );
+               getXMMRegLane64( gregOfRM(insn[2]),
+                                1/*upper lane*/ ) );
 
       DIP("movhps %s, %s\n", 
           nameXMMReg( gregOfRM(insn[2]) ),
@@ -7107,6 +7134,39 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       goto decode_success;
    }
 
+   /* 0F 2F = COMISS -- 32F0x4 comparison G,E, and set ZCP */
+   if (insn[0] == 0x0F && insn[1] == 0x2F) {
+      IRTemp argL = newTemp(Ity_F32);
+      IRTemp argR = newTemp(Ity_F32);
+      vassert(sz == 4);
+      modrm = getIByte(delta+2);
+      if (epartIsReg(modrm)) {
+         assign( argR, getXMMRegLane32F( eregOfRM(modrm), 0/*lowest lane*/ ) );
+         delta += 2+1;
+         DIP("comiss %s,%s\n", nameXMMReg(eregOfRM(modrm)),
+                               nameXMMReg(gregOfRM(modrm)) );
+      } else {
+         addr = disAMode ( &alen, sorb, delta+2, dis_buf );
+	 assign( argR, loadLE(Ity_F32, mkexpr(addr)) );
+         delta += 2+alen;
+         DIP("comiss %s,%s\n", dis_buf,
+                               nameXMMReg(gregOfRM(modrm)) );
+      }
+      assign( argL, getXMMRegLane32F( gregOfRM(modrm), 0/*lowest lane*/ ) );
+
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+      stmt( IRStmt_Put( 
+               OFFB_CC_DEP1,
+               binop( Iop_And32,
+                      binop(Iop_CmpF64, 
+                            unop(Iop_F32toF64,mkexpr(argL)),
+                            unop(Iop_F32toF64,mkexpr(argR))),
+                      mkU32(0x45)
+          )));
+
+      goto decode_success;
+   }
 
 //-- 
 //--    /* FXSAVE/FXRSTOR m32 -- load/store the FPU/MMX/SSE state. */

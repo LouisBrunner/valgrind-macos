@@ -805,6 +805,13 @@ extern UInt VG_(written_shadow_reg);
    } while (0)
 
 
+/* This is or'd into a pthread mutex's __m_kind field if it is used
+   before Valgrind is up and running (prehistory).  This is used so
+   that if some early code (like the dynamic linker) takes a lock
+   before Valgrind starts and then releases it afterwards, we can work
+   out what's happening. */
+#define VG_PTHREAD_PREHISTORY		0x80000000
+
 /* ---------------------------------------------------------------------
    Exports of vg_signals.c
    ------------------------------------------------------------------ */

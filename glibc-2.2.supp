@@ -138,6 +138,7 @@
 #}
 
 #-------- Threading bugs?
+# glibc 'knows' that destroying a locked mutex will unlock it
 {
    pthread_error/__pthread_mutex_destroy/__closedir
    core:PThread
@@ -159,13 +160,6 @@
    core:PThread
    fun:__pthread_mutex_unlock
    fun:_IO_funlockfile
-}
-
-{
-   __pthread_mutex_unlock/__register_frame_info
-   core:PThread
-   fun:__pthread_mutex_unlock
-   fun:__register_frame_info
 }
 
 # even more glibc suppressions ?

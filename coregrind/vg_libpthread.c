@@ -198,11 +198,6 @@ static void kludged ( char* msg )
 }
 
 
-static void not_inside ( char* msg )
-{
-   VG_(startup)();
-}
-
 __attribute__((noreturn))
 void vgPlain_unimp ( char* what )
 {
@@ -896,15 +891,19 @@ int __pthread_mutex_init(pthread_mutex_t *mutex,
 int __pthread_mutex_lock(pthread_mutex_t *mutex)
 {
    int res;
-   static int moans = N_MOANS;
+
    if (RUNNING_ON_VALGRIND) {
       VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                               VG_USERREQ__PTHREAD_MUTEX_LOCK,
                               mutex, 0, 0, 0);
       return res;
    } else {
-      if (moans-- > 0)
-         not_inside("pthread_mutex_lock");
+      /* Play at locking */
+      if (0)
+	 kludged("prehistoric lock");
+      mutex->__m_owner = (_pthread_descr)1;
+      mutex->__m_count = 1;
+      mutex->__m_kind |= VG_PTHREAD_PREHISTORY;
       return 0; /* success */
    }
 }
@@ -913,16 +912,20 @@ int __pthread_mutex_lock(pthread_mutex_t *mutex)
 int __pthread_mutex_trylock(pthread_mutex_t *mutex)
 {
    int res;
-   static int moans = N_MOANS;
+
    if (RUNNING_ON_VALGRIND) {
       VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                               VG_USERREQ__PTHREAD_MUTEX_TRYLOCK,
                               mutex, 0, 0, 0);
       return res;
    } else {
-      if (moans-- > 0)
-         not_inside("pthread_mutex_trylock");
-      return 0;
+      /* Play at locking */
+      if (0)
+	 kludged("prehistoric trylock");
+      mutex->__m_owner = (_pthread_descr)1;
+      mutex->__m_count = 1;
+      mutex->__m_kind |= VG_PTHREAD_PREHISTORY;
+      return 0; /* success */
    }
 }
 
@@ -930,16 +933,20 @@ int __pthread_mutex_trylock(pthread_mutex_t *mutex)
 int __pthread_mutex_unlock(pthread_mutex_t *mutex)
 {
    int res;
-   static int moans = N_MOANS;
+
    if (RUNNING_ON_VALGRIND) {
       VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                               VG_USERREQ__PTHREAD_MUTEX_UNLOCK,
                               mutex, 0, 0, 0);
       return res;
    } else {
-      if (moans-- > 0)
-         not_inside("pthread_mutex_unlock");
-      return 0;
+      /* Play at locking */
+      if (0)
+	 kludged("prehistoric unlock");
+      mutex->__m_owner = 0;
+      mutex->__m_count = 0;
+      mutex->__m_kind &= ~VG_PTHREAD_PREHISTORY;
+      return 0; /* success */
    }
 }
 
@@ -949,9 +956,13 @@ int __pthread_mutex_destroy(pthread_mutex_t *mutex)
    /* Valgrind doesn't hold any resources on behalf of the mutex, so no
       need to involve it. */
    if (mutex->__m_count > 0) {
-       pthread_error("pthread_mutex_destroy: "
-                     "mutex is still in use");
-       return EBUSY;
+      /* Oh, the horror.  glibc's internal use of pthreads "knows"
+	 that destroying a lock does an implicit unlock.  Make it
+	 explicit. */
+      __pthread_mutex_unlock(mutex);
+      pthread_error("pthread_mutex_destroy: "
+		    "mutex is still in use");
+      return EBUSY;
    }
    mutex->__m_count = 0;
    mutex->__m_owner = (_pthread_descr)VG_INVALID_THREADID;
@@ -2254,6 +2265,7 @@ pid_t __fork(void)
    if (pid == 0) {
       /* I am the child */
       run_fork_handlers(2 /* child */);
+      __pthread_mutex_unlock(&pthread_atfork_lock);
       __pthread_mutex_init(&pthread_atfork_lock, NULL);
    } else {
       /* I am the parent */

@@ -78,6 +78,15 @@ Bool VG_(isfullsigset)( const vki_sigset_t* set )
    return True;
 }
 
+Bool VG_(iseqsigset)( const vki_sigset_t* set1, const vki_sigset_t* set2 )
+{
+   Int i;
+   vg_assert(set1 != NULL && set2 != NULL);
+   for (i = 0; i < _VKI_NSIG_WORDS; i++)
+      if (set1->sig[i] != set2->sig[i]) return False;
+   return True;
+}
+
 
 Int VG_(sigaddset)( vki_sigset_t* set, Int signum )
 {

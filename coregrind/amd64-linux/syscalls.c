@@ -534,6 +534,27 @@ PRE(sys_clone, Special)
    }
 }
 
+PRE(sys_rt_sigreturn, Special)
+{
+   PRINT("rt_sigreturn ( )");
+
+   /* Adjust esp to point to start of frame; skip back up over handler
+      ret addr */
+   tst->arch.vex.guest_RSP -= sizeof(Addr);
+
+   /* This is only so that the RIP is (might be) useful to report if
+      something goes wrong in the sigreturn */
+   VGA_(restart_syscall)(&tst->arch);
+
+   VGA_(signal_return)(tid, True);
+
+   /* Keep looking for signals until there are none */
+   VG_(poll_signals)(tid);
+
+   /* placate return-must-be-set assertion */
+   SET_RESULT(RES);
+}
+
 PRE(sys_arch_prctl, 0)
 {
    PRINT( "arch_prctl ( %d, %llx )", ARG1, ARG2 );
@@ -1122,7 +1143,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    GENXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 13 
    GENXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 14 
 
-   //   (__NR_rt_sigreturn,      stub_rt_sigreturn),  // 15 
+   PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),   // 15 
    GENXY(__NR_ioctl,             sys_ioctl),          // 16 
    GENXY(__NR_pread64,           sys_pread64),        // 17 
    //   (__NR_pwrite64,          sys_pwrite64),       // 18 
@@ -1384,7 +1405,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    LINX_(__NR_exit_group,        sys_exit_group),     // 231 
    //   (__NR_epoll_wait,        sys_epoll_wait),     // 232 
    //   (__NR_epoll_ctl,         sys_epoll_ctl),      // 233 
-   //   (__NR_tgkill,            sys_tgkill),         // 234 
+   LINXY(__NR_tgkill,            sys_tgkill),         // 234 
 
    //   (__NR_utimes,            sys_utimes),         // 235 
    //   (__NR_vserver,           sys_ni_syscall),     // 236 

@@ -6014,8 +6014,7 @@ void VG_(client_syscall) ( ThreadId tid )
 
    /* Make sure the tmp signal mask matches the real signal
       mask; sigsuspend may change this. */
-   vg_assert(tst->sig_mask.sig[0] == tst->tmp_sig_mask.sig[0]);
-   vg_assert(tst->sig_mask.sig[1] == tst->tmp_sig_mask.sig[1]);
+   vg_assert(VG_(iseqsigset)(&tst->sig_mask, &tst->tmp_sig_mask));
 
    sys = get_syscall_entry(syscallno);
    flags = *(sys->flags_ptr);

@@ -1212,12 +1212,15 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                }
             case 12: /* IPCOP_msgrcv */
                {
-                  struct msgbuf *msgp = ((struct ipc_kludge *)arg5)->msgp;
+                  struct msgbuf *msgp;
                   Int msgsz = arg3;
+ 
+                  msgp = (struct msgbuf *)safe_dereference( 
+                            (Addr) (&((struct ipc_kludge *)arg5)->msgp), 0 );
 
-                  must_be_writable ( tst, "msgsnd(msgp->mtype)", 
+                  must_be_writable ( tst, "msgrcv(msgp->mtype)", 
                                      (UInt)&msgp->mtype, sizeof(msgp->mtype) );
-                  must_be_writable ( tst, "msgsnd(msgp->mtext)", 
+                  must_be_writable ( tst, "msgrcv(msgp->mtext)", 
                                      (UInt)msgp->mtext, msgsz );
 
                   KERNEL_DO_SYSCALL(tid,res);

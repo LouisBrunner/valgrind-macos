@@ -118,7 +118,7 @@ static fileCC *CC_table[N_FILE_ENTRIES];
 // - Holds the cached info about each instr that is used for simulation.
 // - table(BB_start_addr, list(instr_info))
 // - For each BB, each instr_info in the list holds info about the
-//   instruction (instr_size, instr_addr, etc), plue a pointer to its line
+//   instruction (instr_size, instr_addr, etc), plus a pointer to its line
 //   CC.  This node is what's passed to the simulation function.
 // - When BBs are discarded the relevant list(instr_details) is freed.
 

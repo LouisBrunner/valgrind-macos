@@ -930,6 +930,7 @@ static void ach_STOREN ( Addr addr, SizeT size )
    ac_fpu_ACCESS_check ( addr, size, /*isWrite*/True );
 }
 
+
 /* ---------------------------------------------------------------------
    Slow, general cases for FPU access checks.
    ------------------------------------------------------------------ */
@@ -1190,12 +1191,12 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* arg, UWord *ret )
 
    /* Overload memcheck client reqs */
    if (!VG_IS_TOOL_USERREQ('M','C',arg[0])
-    && VG_USERREQ__MALLOCLIKE_BLOCK != arg[0]
-    && VG_USERREQ__FREELIKE_BLOCK   != arg[0]
-    && VG_USERREQ__CREATE_MEMPOOL   != arg[0]
-    && VG_USERREQ__DESTROY_MEMPOOL  != arg[0]
-    && VG_USERREQ__MEMPOOL_ALLOC    != arg[0]
-    && VG_USERREQ__MEMPOOL_FREE     != arg[0])
+       && VG_USERREQ__MALLOCLIKE_BLOCK != arg[0]
+       && VG_USERREQ__FREELIKE_BLOCK   != arg[0]
+       && VG_USERREQ__CREATE_MEMPOOL   != arg[0]
+       && VG_USERREQ__DESTROY_MEMPOOL  != arg[0]
+       && VG_USERREQ__MEMPOOL_ALLOC    != arg[0]
+       && VG_USERREQ__MEMPOOL_FREE     != arg[0])
       return False;
 
    switch (arg[0]) {

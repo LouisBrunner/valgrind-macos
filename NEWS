@@ -96,7 +96,9 @@ connected to any bug report numbers, AFAICS:
   in the soft limit causing assertions when valgrind tries to allocate
   descriptors from the reserved area.
 
-* Major overhaul of Cachegrind implementation (not user-visible)
+* Major overhaul of Cachegrind implementation.  Only user visible change
+  is that cachegrind.out files are now typically 90% smaller than they
+  used to be.  Code annotation times are correspondingly much smaller.
 
 * Client requests for telling valgrind about memory pools.
 

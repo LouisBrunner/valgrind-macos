@@ -86,12 +86,21 @@ typedef
       /* Tags for unary ops */
       Iop_Not8,  Iop_Not16,  Iop_Not32,  Iop_Not64,
       Iop_Neg8,  Iop_Neg16,  Iop_Neg32,  Iop_Neg64,
-      /* Conversions */
+      /* Widening multiplies */
+      Iop_MullS8, Iop_MullS16, Iop_MullS32,
+      Iop_MullU8, Iop_MullU16, Iop_MullU32,
+      /* Ordering not important after here. */
+      /* Division */
+      Iop_DivModU64to32, // :: I64,I32 -> I64
+                         // of which lo half is div and hi half is mod
+      Iop_DivModS64to32, // ditto, signed
+      /* Widening conversions */
       Iop_8Uto16, Iop_8Uto32, Iop_16Uto32,
       Iop_8Sto16, Iop_8Sto32, Iop_16Sto32,
-      /* Widening multiplies */
-      Iop_MullS8, Iop_MullS16, Iop_MullS32_hi32,
-      Iop_MullU8, Iop_MullU16, Iop_MullU32_hi32,
+      /* 32 <-> 64 bit conversions */
+      Iop_64LOto32,   // :: I64 -> I32, low half
+      Iop_64HIto32,   // :: I64 -> I32, high half
+      Iop_32HLto64,   // :: (I32,I32) -> I64
       /* 1-bit stuff */
       Iop_32to1, /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
       Iop_1Uto8  /* :: Ity_Bit -> Ity_I8, unsigned widen */

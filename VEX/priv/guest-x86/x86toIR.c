@@ -1784,12 +1784,27 @@ UInt dis_movx_E_G ( UChar       sorb,
    }
 }
 
-//-- 
-//-- /* Generate code to divide ArchRegs EDX:EAX / DX:AX / AX by the 32 /
-//--    16 / 8 bit quantity in the given TempReg.  */
-//-- static
-//-- void codegen_div ( UCodeBlock* cb, Int sz, Int t, Bool signed_divide )
-//-- {
+
+/* Generate code to divide ArchRegs EDX:EAX / DX:AX / AX by the 32 /
+   16 / 8 bit quantity in the given IRTemp.  */
+static
+void codegen_div ( Int sz, IRTemp t, Bool signed_divide )
+{
+   switch (sz) {
+      case 4: {
+         IROp   op    = signed_divide ? Iop_DivModS64to32 : Iop_DivModU64to32;
+         IRTemp src64 = newTemp(Ity_I64);
+         IRTemp dst64 = newTemp(Ity_I64);
+         assign( src64, binop(Iop_32HLto64, 
+                 getIReg(4,R_EDX), getIReg(4,R_EAX)) );
+         assign( dst64, binop(op, mkexpr(src64), mkexpr(t)) );
+         putIReg( 4, R_EAX, unop(Iop_64LOto32,mkexpr(dst64)) );
+         putIReg( 4, R_EDX, unop(Iop_64HIto32,mkexpr(dst64)) );
+         break;
+      }
+      default: vpanic("codegen_div(x86)");
+   }
+}
 //--    Int  helper;
 //--    Int  ta = newTemp(cb);
 //--    Int  td = newTemp(cb);
@@ -2133,7 +2148,6 @@ static void codegen_mul_A_D_Reg ( Int sz,
    IRType ty = szToITy(sz);
    IRTemp t1 = newTemp(ty);
    IRTemp t2 = newTemp(ty);
-   IRTemp tr = newTemp(ty);
 
 //--    uInstr0(cb, CALLM_S, 0);
 //--    uInstr2(cb, GET,   sz, ArchReg, eregOfRM(modrm), TempReg, t1);
@@ -2142,14 +2156,13 @@ static void codegen_mul_A_D_Reg ( Int sz,
 
    switch (ty) {
    case Ity_I32: {
-      IROp   hiOp   = signed_multiply ? Iop_MullS32_hi32 : Iop_MullU32_hi32;
-      IRTemp trHi32 = newTemp(Ity_I32);
-      setFlags_MUL ( Ity_I32, t1, t2, 
-                     signed_multiply ? CC_OP_MULLSB : CC_OP_MULLUB );
-      assign( tr,     binop(Iop_Mul32, mkexpr(t1), mkexpr(t2) ) );
-      assign( trHi32, binop(hiOp,  mkexpr(t1), mkexpr(t2) ) );
-      putIReg(4, R_EAX, mkexpr(tr));
-      putIReg(4, R_EDX, mkexpr(trHi32));
+      IRTemp res64   = newTemp(Ity_I64);
+      IROp   mulOp   = signed_multiply ? Iop_MullS32 : Iop_MullU32;
+      UInt   thunkOp = signed_multiply ? CC_OP_MULLSB : CC_OP_MULLUB;
+      setFlags_MUL ( Ity_I32, t1, t2, thunkOp );
+      assign( res64, binop(mulOp, mkexpr(t1), mkexpr(t2)) );
+      putIReg(4, R_EDX, unop(Iop_64HIto32,mkexpr(res64)));
+      putIReg(4, R_EAX, unop(Iop_64LOto32,mkexpr(res64)));
       break;
    }
    default:
@@ -2327,10 +2340,10 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 //--          case 5: /* IMUL */
 //--             codegen_mul_A_D_Temp ( cb, sz, t1, True, dis_buf );
 //--             break;
-//--          case 6: /* DIV */
-//--             codegen_div ( cb, sz, t1, False );
-//--             DIP("div%c %s\n", nameISize(sz), dis_buf);
-//--             break;
+         case 6: /* DIV */
+            codegen_div ( sz, t1, False );
+            DIP("div%c %s\n", nameISize(sz), dis_buf);
+            break;
 //--          case 7: /* IDIV */
 //--             codegen_div ( cb, sz, t1, True );
 //--             DIP("idiv%c %s\n", nameISize(sz), dis_buf);

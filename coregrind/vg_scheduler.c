@@ -1334,8 +1334,6 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
 
    VG_(proxy_abort_syscall)(tid);
 
-   VG_(threads)[tid].status = VgTs_Runnable;
-
    /* Make sure we aren't cancelled again whilst handling this
       cancellation. */
    VG_(threads)[tid].cancel_st = False;
@@ -1344,6 +1342,51 @@ void make_thread_jump_to_cancelhdlr ( ThreadId tid )
          "jump to cancellation handler (hdlr = %p)", 
          VG_(threads)[tid].cancel_pend);
       print_sched_event(tid, msg_buf);
+   }
+
+   if(VG_(threads)[tid].status == VgTs_WaitCV) {
+      /* posix says we must reaquire mutex before handling cancelation */
+      vg_pthread_mutex_t* mx;
+      vg_pthread_cond_t* cond;
+      
+      mx = VG_(threads)[tid].associated_mx;
+      cond = VG_(threads)[tid].associated_cv;
+      VG_TRACK( pre_mutex_lock, tid, mx );
+
+      if (mx->__vg_m_owner == VG_INVALID_THREADID) {
+         /* Currently unheld; hand it out to thread tid. */
+         vg_assert(mx->__vg_m_count == 0);
+         VG_(threads)[tid].status        = VgTs_Runnable;
+         VG_(threads)[tid].associated_cv = NULL;
+         VG_(threads)[tid].associated_mx = NULL;
+         mx->__vg_m_owner = (_pthread_descr)tid;
+         mx->__vg_m_count = 1;
+         /* .m_edx already holds pth_cond_wait success value (0) */
+
+         VG_TRACK( post_mutex_lock, tid, mx );
+
+         if (VG_(clo_trace_pthread_level) >= 1) {
+            VG_(sprintf)(msg_buf, "%s   cv %p: RESUME with mx %p",
+                                  "pthread_cancel", cond, mx );
+            print_pthread_event(tid, msg_buf);
+         }
+
+      } else {
+         /* Currently held.  Make thread tid be blocked on it. */
+         vg_assert(mx->__vg_m_count > 0);
+         VG_(threads)[tid].status        = VgTs_WaitMX;
+         VG_(threads)[tid].associated_cv = NULL;
+         VG_(threads)[tid].associated_mx = mx;
+         SET_PTHREQ_RETVAL(tid, 0); /* pth_cond_wait success value */
+
+         if (VG_(clo_trace_pthread_level) >= 1) {
+            VG_(sprintf)(msg_buf, "%s   cv %p: BLOCK for mx %p",
+                                  "pthread_cancel", cond, mx );
+            print_pthread_event(tid, msg_buf);
+         }
+      }
+   } else {
+      VG_(threads)[tid].status = VgTs_Runnable;
    }
 }
 
@@ -1698,8 +1741,11 @@ void do__set_cancelpend ( ThreadId tid,
    SET_PTHREQ_RETVAL(tid, 0);
 
    /* Perhaps we can nuke the cancellee right now? */
-   if (!VG_(threads)[cee].cancel_ty) /* if PTHREAD_CANCEL_ASYNCHRONOUS */
+   if (!VG_(threads)[cee].cancel_ty || /* if PTHREAD_CANCEL_ASYNCHRONOUS */
+       (VG_(threads)[cee].status != VgTs_Runnable &&
+        VG_(threads)[cee].status != VgTs_WaitMX)) {
       do__testcancel(cee);
+   }
 }
 
 
@@ -1751,22 +1797,27 @@ void do_pthread_join ( ThreadId tid,
       }
    }
 
-   /* Mark this thread as waiting for the joinee. */
-   VG_(threads)[tid].status = VgTs_WaitJoinee;
-   VG_(threads)[tid].joiner_thread_return = thread_return;
-   VG_(threads)[tid].joiner_jee_tid = jee;
-
-   /* Look for matching joiners and joinees and do the right thing. */
-   maybe_rendezvous_joiners_and_joinees();
-
-   /* Return value is irrelevant since this this thread becomes
-      non-runnable.  maybe_resume_joiner() will cause it to return the
-      right value when it resumes. */
-
-   if (VG_(clo_trace_sched)) {
-      VG_(sprintf)(msg_buf, 
-         "wait for joinee %d (may already be ready)", jee);
-      print_sched_event(tid, msg_buf);
+   if(VG_(threads)[tid].cancel_pend != NULL &&
+      VG_(threads)[tid].cancel_st) {
+      make_thread_jump_to_cancelhdlr ( tid );
+   } else {
+      /* Mark this thread as waiting for the joinee. */
+      VG_(threads)[tid].status = VgTs_WaitJoinee;
+      VG_(threads)[tid].joiner_thread_return = thread_return;
+      VG_(threads)[tid].joiner_jee_tid = jee;
+   
+      /* Look for matching joiners and joinees and do the right thing. */
+      maybe_rendezvous_joiners_and_joinees();
+   
+      /* Return value is irrelevant since this this thread becomes
+         non-runnable.  maybe_resume_joiner() will cause it to return the
+         right value when it resumes. */
+   
+      if (VG_(clo_trace_sched)) {
+         VG_(sprintf)(msg_buf, 
+            "wait for joinee %d (may already be ready)", jee);
+         print_sched_event(tid, msg_buf);
+      }
    }
 }
 
@@ -2431,23 +2482,28 @@ void do_pthread_cond_wait ( ThreadId tid,
       return;
    }
 
-   /* Queue ourselves on the condition. */
-   VG_(threads)[tid].status        = VgTs_WaitCV;
-   VG_(threads)[tid].associated_cv = cond;
-   VG_(threads)[tid].associated_mx = mutex;
-   VG_(threads)[tid].awaken_at     = ms_end;
-   if (ms_end != 0xFFFFFFFF)
-      VG_(add_timeout)(tid, ms_end);
+   if(VG_(threads)[tid].cancel_pend != NULL &&
+      VG_(threads)[tid].cancel_st) {
+      make_thread_jump_to_cancelhdlr ( tid );
+   } else {
+      /* Queue ourselves on the condition. */
+      VG_(threads)[tid].status        = VgTs_WaitCV;
+      VG_(threads)[tid].associated_cv = cond;
+      VG_(threads)[tid].associated_mx = mutex;
+      VG_(threads)[tid].awaken_at     = ms_end;
+      if (ms_end != 0xFFFFFFFF)
+         VG_(add_timeout)(tid, ms_end);
 
-   if (VG_(clo_trace_pthread_level) >= 1) {
-      VG_(sprintf)(msg_buf, 
-                   "pthread_cond_wait        cv %p, mx %p: BLOCK", 
-                   cond, mutex );
-      print_pthread_event(tid, msg_buf);
+      if (VG_(clo_trace_pthread_level) >= 1) {
+         VG_(sprintf)(msg_buf, 
+                      "pthread_cond_wait        cv %p, mx %p: BLOCK", 
+                      cond, mutex );
+         print_pthread_event(tid, msg_buf);
+      }
+
+      /* Release the mutex. */
+      release_one_thread_waiting_on_mutex ( mutex, "pthread_cond_wait " );
    }
-
-   /* Release the mutex. */
-   release_one_thread_waiting_on_mutex ( mutex, "pthread_cond_wait " );
 }
 
 

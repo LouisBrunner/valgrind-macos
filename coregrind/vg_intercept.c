@@ -593,7 +593,8 @@ int VGR_(select) ( int n,
       ms_end += (timeout->tv_usec / 1000);
       ms_end += (timeout->tv_sec * 1000);
       /* Stay sane ... */
-      my_assert (ms_end >= ms_now);
+      if (ms_end < ms_now)
+         ms_end = ms_now;
    }
 
    /* fprintf(stderr, "MY_SELECT: before loop\n"); */

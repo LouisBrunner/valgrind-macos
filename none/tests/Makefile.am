@@ -27,7 +27,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	discard.stderr.exp discard.stdout.exp \
 	discard.vgtest \
 	exec-sigmask.vgtest exec-sigmask.stdout.exp exec-sigmask.stderr.exp \
-	execve.vgtext execve.stdout.exp execve.stderr.exp \
+	execve.vgtest execve.stdout.exp execve.stderr.exp \
 	floored.stderr.exp floored.stdout.exp \
 	floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \

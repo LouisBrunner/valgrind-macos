@@ -1383,16 +1383,17 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                 break;
             case 24: /* IPCOP_shmctl */
                if ( arg3 ) {
-                       if ( arg2 == SHM_STAT )
-                               must_be_writable( tst, "shmctl(SHM_STAT,buf)", arg3,
-                                               sizeof(struct shmid_ds) );
-                       else
-                               must_be_readable( tst, "shmctl(SHM_XXXX,buf)", arg3,
-                                               sizeof(struct shmid_ds) );
+                  if ( arg2 == SHM_STAT )
+                     must_be_writable( tst, "shmctl(SHM_STAT,buf)", arg3,
+                                       sizeof(struct shmid_ds) );
+                  else
+                     must_be_readable( tst, "shmctl(SHM_XXXX,buf)", arg3,
+                                       sizeof(struct shmid_ds) );
                }
                KERNEL_DO_SYSCALL(tid,res);
-               if ( arg3 && !VG_(is_kerror)(res) && res == 0 /*&& arg2 == SHM_STAT*/ )
-                       make_readable( arg3, sizeof(struct shmid_ds) );
+               if ( arg3 && !VG_(is_kerror)(res) 
+                    && res == 0 && arg2 == SHM_STAT )
+                  make_readable( arg3, sizeof(struct shmid_ds) );
                break;
             default:
                VG_(message)(Vg_DebugMsg,

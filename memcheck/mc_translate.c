@@ -1532,6 +1532,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Yl2xF64:
       case Iop_Yl2xp1F64:
       case Iop_PRemF64:
+      case Iop_PRem1F64:
       case Iop_AtanF64:
       case Iop_AddF64:
       case Iop_DivF64:

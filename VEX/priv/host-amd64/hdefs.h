@@ -71,7 +71,7 @@ extern HReg hregAMD64_FAKE5 ( void );
 
 extern HReg hregAMD64_XMM0  ( void );
 extern HReg hregAMD64_XMM1  ( void );
-extern HReg hregAMD64_XMM2  (  void );
+extern HReg hregAMD64_XMM2  ( void );
 extern HReg hregAMD64_XMM3  ( void );
 extern HReg hregAMD64_XMM4  ( void );
 extern HReg hregAMD64_XMM5  ( void );
@@ -364,6 +364,7 @@ extern HChar* showAMD64ShiftOp ( AMD64ShiftOp );
 /* --------- */
 typedef
    enum {
+      Ain_Imm64,     /* Generate 64-bit literal to register */
       Ain_Alu64R,    /* 64-bit mov/arith/logical, dst=REG */
       Ain_Alu64M,    /* 64-bit mov/arith/logical, dst=MEM */
       Ain_Sh64,      /* 64-bit shift/rotate, dst=REG or MEM */
@@ -412,6 +413,10 @@ typedef
    struct {
       AMD64InstrTag tag;
       union {
+         struct {
+            ULong imm64;
+            HReg  dst;
+         } Imm64;
          struct {
             AMD64AluOp op;
             AMD64RMI*  src;
@@ -635,6 +640,7 @@ typedef
    }
    AMD64Instr;
 
+extern AMD64Instr* AMD64Instr_Imm64     ( ULong imm64, HReg dst );
 extern AMD64Instr* AMD64Instr_Alu64R    ( AMD64AluOp, AMD64RMI*, HReg );
 extern AMD64Instr* AMD64Instr_Alu64M    ( AMD64AluOp, AMD64RI*,  AMD64AMode* );
 //.. extern AMD64Instr* AMD64Instr_Unary32   ( AMD64UnaryOp op, AMD64RM* dst );

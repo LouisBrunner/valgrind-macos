@@ -94,7 +94,7 @@ Bool VGA_(has_tls)(void)
 }  
 
 
-void VGA_(thread_create)(arch_thread_aux_t *aux)
+void VGA_(thread_create)(ThreadArchAux *aux)
 {
    if (VGA_(has_tls)()) {
       tcbhead_t *tcb = get_tcb();
@@ -118,7 +118,7 @@ void VGA_(thread_create)(arch_thread_aux_t *aux)
    }
 }
    
-void VGA_(thread_wrapper)(arch_thread_aux_t *aux)
+void VGA_(thread_wrapper)(ThreadArchAux *aux)
 {
    void*         tls_data;
    int           tls_segment;

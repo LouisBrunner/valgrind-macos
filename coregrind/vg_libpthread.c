@@ -726,7 +726,7 @@ typedef
       void*         (*root_fn) ( void* );
       void*         arg;
       sigset_t	    sigmask;
-      arch_thread_aux_t aux;
+      ThreadArchAux aux;
    }
    NewThreadInfo;
 

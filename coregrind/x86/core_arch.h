@@ -158,7 +158,7 @@ typedef VexGuestX86State VexGuestArchState;
    libpthread stuff
    ------------------------------------------------------------------ */
 
-struct arch_thread_aux {
+struct _ThreadArchAux {
    void*         tls_data;
    int           tls_segment;
    unsigned long sysinfo;

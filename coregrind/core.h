@@ -1795,10 +1795,10 @@ extern void VGA_(push_signal_frame) ( ThreadId tid, Addr sp_top_of_frame,
 extern Int  VGA_(pop_signal_frame)  ( ThreadId tid );
 
 // libpthread stuff
-typedef struct arch_thread_aux arch_thread_aux_t;
+typedef struct _ThreadArchAux ThreadArchAux;
 
-void VGA_(thread_create) ( arch_thread_aux_t *aux );
-void VGA_(thread_wrapper)( arch_thread_aux_t *aux );
+void VGA_(thread_create) ( ThreadArchAux *aux );
+void VGA_(thread_wrapper)( ThreadArchAux *aux );
 void VGA_(thread_exit)   ( void );
 
 Bool VGA_(has_tls)       ( void );

@@ -1144,6 +1144,77 @@ Bool isPlausibleType ( IRType ty )
 
 
 /*---------------------------------------------------------------*/
+/*--- Sanity checking -- FLATNESS                             ---*/
+/*---------------------------------------------------------------*/
+
+/* Check that the canonical flatness constraints hold on an
+   IRStmt. The only place where any expression is allowed to be
+   non-atomic is the RHS of IRStmt_Tmp. */
+
+/* Relies on:
+   inline static Bool isAtom ( IRExpr* e ) {
+      return e->tag == Iex_Tmp || e->tag == Iex_Const;
+   }
+*/
+
+Bool isFlatIRStmt ( IRStmt* st )
+{
+   Int      i;
+   IRExpr*  e;
+   IRDirty* di;
+
+   switch (st->tag) {
+      case Ist_Put:
+         return isAtom(st->Ist.Put.data);
+      case Ist_PutI:
+         return isAtom(st->Ist.PutI.ix) && isAtom(st->Ist.PutI.data);
+      case Ist_Tmp:
+         /* This is the only interesting case.  The RHS can be any
+            expression, *but* all its subexpressions *must* be
+            atoms. */
+         e = st->Ist.Tmp.data;
+         switch (e->tag) {
+            case Iex_Binder: return True;
+            case Iex_Get:    return True;
+            case Iex_GetI:   return isAtom(e->Iex.GetI.ix);
+            case Iex_Tmp:    return True;
+            case Iex_Binop:  return isAtom(e->Iex.Binop.arg1) 
+                                    && isAtom(e->Iex.Binop.arg2);
+            case Iex_Unop:   return isAtom(e->Iex.Unop.arg);
+            case Iex_LDle:   return isAtom(e->Iex.LDle.addr);
+            case Iex_Const:  return True;
+            case Iex_CCall:  for (i = 0; e->Iex.CCall.args[i]; i++)
+                                if (!isAtom(e->Iex.CCall.args[i])) 
+                                   return False;
+                             return True;
+            case Iex_Mux0X:  return isAtom(e->Iex.Mux0X.cond) 
+                                    && isAtom(e->Iex.Mux0X.expr0) 
+                                    && isAtom(e->Iex.Mux0X.exprX);
+            default:         vpanic("isFlatIRStmt(e)");
+         }
+         /*notreached*/
+         vassert(0);
+      case Ist_STle:
+         return isAtom(st->Ist.STle.addr) && isAtom(st->Ist.STle.data);
+      case Ist_Dirty:
+         di = st->Ist.Dirty.details;
+         if (!isAtom(di->guard)) 
+            return False;
+         for (i = 0; di->args[i]; i++)
+            if (!isAtom(di->args[i])) 
+               return False;
+         if (di->mAddr && !isAtom(di->mAddr)) 
+            return False;
+         return True;
+      case Ist_Exit:
+         return isAtom(st->Ist.Exit.cond);
+      default: 
+         vpanic("isFlatIRStmt(st)");
+   }
+}
+
+
+/*---------------------------------------------------------------*/
 /*--- Sanity checking                                         ---*/
 /*---------------------------------------------------------------*/
 
@@ -1357,7 +1428,7 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
       case Iex_CCall:
          if (!saneIRCallee(expr->Iex.CCall.cee))
             sanityCheckFail(bb,stmt,"Iex.CCall.cee: bad IRCallee");
-	 if (expr->Iex.CCall.cee->regparms > countArgs(expr->Iex.CCall.args)) 
+         if (expr->Iex.CCall.cee->regparms > countArgs(expr->Iex.CCall.args)) 
             sanityCheckFail(bb,stmt,"Iex.CCall.cee: #regparms > #args");
          for (i = 0; expr->Iex.CCall.args[i]; i++)
             tcExpr(bb,stmt, expr->Iex.CCall.args[i], gWordTy);
@@ -1429,7 +1500,7 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          d = stmt->Ist.Dirty.details;
          if (d->cee == NULL) goto bad_dirty;
          if (!saneIRCallee(d->cee)) goto bad_dirty;
-	 if (d->cee->regparms > countArgs(d->args)) goto bad_dirty;
+         if (d->cee->regparms > countArgs(d->args)) goto bad_dirty;
          if (d->mFx == Ifx_None) {
             if (d->mAddr != NULL || d->mSize != 0)
                goto bad_dirty;
@@ -1516,7 +1587,7 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
          def_counts[stmt->Ist.Tmp.tmp]++;
          if (def_counts[stmt->Ist.Tmp.tmp] > 1)
             sanityCheckFail(bb, stmt, 
-               "IRStmt.Tmp: destinatiion tmp is assigned more than once");
+               "IRStmt.Tmp: destination tmp is assigned more than once");
       }
       else 
       if (stmt->tag == Ist_Dirty 

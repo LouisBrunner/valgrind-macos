@@ -190,6 +190,7 @@ typedef
       Iop_32to1,  /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
       Iop_1Uto8,  /* :: Ity_Bit -> Ity_I8, unsigned widen */
       Iop_1Uto32, /* :: Ity_Bit -> Ity_I32, unsigned widen */
+      Iop_1Sto32, /* :: Ity_Bit -> Ity_I32, signed widen */
 
       /* ------ Floating point.  We try and be IEEE754 compliant. ------ */
 
@@ -700,6 +701,7 @@ extern IRType typeOfIRExpr  ( IRTypeEnv*, IRExpr* );
 
 /* Sanity check a BB of IR */
 extern void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size );
+extern Bool isFlatIRStmt ( IRStmt* );
 
 /* Is this any value actually in the enumeration 'IRType' ? */
 extern Bool isPlausibleType ( IRType ty );

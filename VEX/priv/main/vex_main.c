@@ -126,8 +126,8 @@ TranslateResult LibVEX_Translate (
    /* OUT: how much of the output area is used. */
    Int* host_bytes_used,
    /* IN: optionally, two instrumentation functions. */
-   IRBB* (*instrument1) ( IRBB*, VexGuestLayout* ),
-   IRBB* (*instrument2) ( IRBB*, VexGuestLayout* ),
+   IRBB* (*instrument1) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
+   IRBB* (*instrument2) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
    /* IN: debug: trace vex activity at various points */
@@ -160,7 +160,8 @@ TranslateResult LibVEX_Translate (
    HInstrArray*    rcode;
    Int             i, j, k, out_used, guest_sizeB;
    UChar           insn_bytes[32];
-   IRType          guest_word_size;
+   IRType          guest_word_type;
+   IRType          host_word_type;
 
    guest_layout           = NULL;
    available_real_regs    = NULL;
@@ -177,7 +178,8 @@ TranslateResult LibVEX_Translate (
    emit                   = NULL;
    specHelper             = NULL;
    preciseMemExnsFn       = NULL;
-   guest_word_size        = Ity_INVALID;
+   guest_word_type        = Ity_INVALID;
+   host_word_type         = Ity_INVALID;
 
    vex_traceflags = traceflags;
 
@@ -200,6 +202,7 @@ TranslateResult LibVEX_Translate (
          iselBB      = iselBB_X86;
          emit        = (Int(*)(UChar*,Int,HInstr*)) emit_X86Instr;
 	 host_is_bigendian = False;
+         host_word_type    = Ity_I32;
          break;
       default:
          vpanic("LibVEX_Translate: unsupported target insn set");
@@ -211,7 +214,7 @@ TranslateResult LibVEX_Translate (
          bbToIR           = bbToIR_X86Instr;
          specHelper       = x86guest_spechelper;
          guest_sizeB      = sizeof(VexGuestX86State);
-	 guest_word_size  = Ity_I32;
+         guest_word_type  = Ity_I32;
          guest_layout     = &x86guest_layout;
          break;
       default:
@@ -246,12 +249,12 @@ TranslateResult LibVEX_Translate (
    }
 
    /* Sanity check the initial IR. */
-   sanityCheckIRBB(irbb, guest_word_size);
+   sanityCheckIRBB(irbb, guest_word_type);
 
    /* Clean it up, hopefully a lot. */
    irbb = do_iropt_BB ( irbb, specHelper, preciseMemExnsFn, 
                               guest_bytes_addr );
-   sanityCheckIRBB(irbb, guest_word_size);
+   sanityCheckIRBB(irbb, guest_word_type);
 
    if (vex_traceflags & VEX_TRACE_OPT1) {
       vex_printf("\n------------------------" 
@@ -263,9 +266,9 @@ TranslateResult LibVEX_Translate (
 
    /* Get the thing instrumented. */
    if (instrument1)
-      irbb = (*instrument1)(irbb, guest_layout);
+      irbb = (*instrument1)(irbb, guest_layout, host_word_type);
    if (instrument2)
-      irbb = (*instrument2)(irbb, guest_layout);
+      irbb = (*instrument2)(irbb, guest_layout, host_word_type);
       
    if (vex_traceflags & VEX_TRACE_INST) {
       vex_printf("\n------------------------" 
@@ -276,7 +279,7 @@ TranslateResult LibVEX_Translate (
    }
 
    if (instrument1 || instrument2)
-      sanityCheckIRBB(irbb, guest_word_size);
+      sanityCheckIRBB(irbb, guest_word_type);
 
    /* Turn it into virtual-registerised code. */
    do_deadcode_BB( irbb );

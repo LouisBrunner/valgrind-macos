@@ -102,14 +102,15 @@ extern void* LibVEX_Alloc ( Int nbytes );
 
 typedef
    struct {
-      /* Total size of the guest state, in bytes. */
+      /* Total size of the guest state, in bytes.  Must be
+         8-aligned. */
       Int total_sizeB;
       /* Whereabouts is the stack pointer? */
       Int offset_SP;
       Int sizeof_SP; /* 4 or 8 */
-      /* Describe the indexed sections */
-      Int     n_descrs; /* must be 0 .. VEXG_N_DESCRS */
-      IRArray descrs[VEXGLO_N_DESCRS];
+      /* Whereabouts is the instruction pointer? */
+      Int offset_IP;
+      Int sizeof_IP; /* 4 or 8 */
       /* Describe parts of the guest state regarded as 'always
          defined'. */
       Int n_alwaysDefd;
@@ -147,8 +148,8 @@ TranslateResult LibVEX_Translate (
    /* OUT: how much of the output area is used. */
    Int* host_bytes_used,
    /* IN: optionally, two instrumentation functions. */
-   IRBB* (*instrument1) ( IRBB*, VexGuestLayout* ),
-   IRBB* (*instrument2) ( IRBB*, VexGuestLayout* ),
+   IRBB* (*instrument1) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
+   IRBB* (*instrument2) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
    /* IN: debug: trace vex activity at various points */

@@ -1473,10 +1473,9 @@ VexGuestLayout
           .offset_SP = offsetof(VexGuestX86State,guest_ESP),
           .sizeof_SP = 4,
 
-          /* Describe any indexable sections */
-          .n_descrs = 2,
-          .descrs[0] = { offsetof(VexGuestX86State,guest_FPREG), Ity_F64, 8 },
-          .descrs[1] = { offsetof(VexGuestX86State,guest_FPTAG), Ity_I8, 8 },
+          /* Describe the instruction pointer. */
+          .offset_IP = offsetof(VexGuestX86State,guest_EIP),
+          .sizeof_IP = 4,
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */

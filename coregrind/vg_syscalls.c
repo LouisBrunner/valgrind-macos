@@ -5701,8 +5701,8 @@ POSTx(sys_adjtimex)
 PREx(sys_utimes, 0)
 {
    PRINT("sys_utimes ( %p, %p )", arg1,arg2);
-   PRE_MEM_RASCIIZ( "utimes(filename)", arg1 );
    PRE_REG_READ2(long, "utimes", char *, filename, struct timeval *, tvp);
+   PRE_MEM_RASCIIZ( "utimes(filename)", arg1 );
    if (arg2 != (UWord)NULL)
       PRE_MEM_READ( "utimes(tvp)", arg2, sizeof(struct vki_timeval) );
 }
@@ -5995,10 +5995,10 @@ POSTx(sys_sigpending)
 
 PREx(sys_rt_sigpending, NBRunInLWP)
 {
-   PRINT( "sys_sigpending ( %p )", arg1 );
+   PRINT( "sys_rt_sigpending ( %p )", arg1 );
    PRE_REG_READ2(long, "rt_sigpending", 
                  vki_sigset_t *, set, vki_size_t, sigsetsize);
-   PRE_MEM_WRITE( "sigpending(set)", arg1, sizeof(vki_sigset_t));
+   PRE_MEM_WRITE( "rt_sigpending(set)", arg1, sizeof(vki_sigset_t));
 }
 
 POSTx(sys_rt_sigpending)

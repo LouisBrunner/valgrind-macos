@@ -484,8 +484,8 @@ int main(void)
    SY(__NR_wait4, x0, x0+1, x0, x0+1);
 
    // __NR_swapoff 115
- //GO(__NR_swapoff, ".s .m");
- //SY(__NR_swapoff);
+   GO(__NR_swapoff, "n/a");
+ //SY(__NR_swapoff); // (Not yet handled by Valgrind)
 
    // __NR_sysinfo 116
    GO(__NR_sysinfo, "1s 1m");
@@ -576,8 +576,8 @@ int main(void)
    SY(__NR_fchdir, x0-1);
 
    // __NR_bdflush 134
- //GO(__NR_bdflush, ".s .m");
- //SY(__NR_bdflush);
+   GO(__NR_bdflush, "n/a");
+ //SY(__NR_bdflush); // (Not yet handled by Valgrind)
 
    // __NR_sysfs 135
  //GO(__NR_sysfs, ".s .m");
@@ -744,12 +744,12 @@ int main(void)
    SY(__NR_rt_sigprocmask, x0, x0+1, x0+1, x0);
 
    // __NR_rt_sigpending 176
- //GO(__NR_rt_sigpending, ".s .m");
- //SY(__NR_rt_sigpending);
+   GO(__NR_rt_sigpending, "2s 1m");
+   SY(__NR_rt_sigpending, x0, x0+1);
 
    // __NR_rt_sigtimedwait 177
- //GO(__NR_rt_sigtimedwait, ".s .m");
- //SY(__NR_rt_sigtimedwait);
+   GO(__NR_rt_sigtimedwait, "4s 3m");
+   SY(__NR_rt_sigtimedwait, x0+1, x0+1, x0+1, x0);
 
    // __NR_rt_sigqueueinfo 178
  //GO(__NR_rt_sigqueueinfo, ".s .m");
@@ -760,20 +760,20 @@ int main(void)
  //SY(__NR_rt_sigsuspend);
 
    // __NR_pread64 180
- //GO(__NR_pread64, ".s .m");
- //SY(__NR_pread64);
+   GO(__NR_pread64, "5s 1m");
+   SY(__NR_pread64, x0, x0, x0+1, x0, x0);
 
    // __NR_pwrite64 181
- //GO(__NR_pwrite64, ".s .m");
- //SY(__NR_pwrite64);
+   GO(__NR_pwrite64, "5s 1m");
+   SY(__NR_pwrite64, x0, x0, x0+1, x0, x0);
 
    // __NR_chown 182
    GO(__NR_chown, "3s 1m");
    SY(__NR_chown, x0, x0, x0);
 
    // __NR_getcwd 183
- //GO(__NR_getcwd, ".s .m");
- //SY(__NR_getcwd);
+   GO(__NR_getcwd, "2s 1m");
+   SY(__NR_getcwd, x0, x0+1);
 
    // __NR_capget 184
    GO(__NR_capget, "2s 2m");
@@ -788,8 +788,8 @@ int main(void)
  //SY(__NR_sigaltstack);
 
    // __NR_sendfile 187
- //GO(__NR_sendfile, ".s .m");
- //SY(__NR_sendfile);
+   GO(__NR_sendfile, "4s 1m");
+   SY(__NR_sendfile, x0, x0, x0+1, x0);
 
    // __NR_getpmsg 188
  //GO(__NR_getpmsg, ".s .m");
@@ -912,12 +912,12 @@ int main(void)
  //SY(__NR_pivot_root); // (Not yet handled by Valgrind)
 
    // __NR_mincore 218
- //GO(__NR_mincore, ".s .m");
- //SY(__NR_mincore);
+   GO(__NR_mincore, "3s 1m");
+   SY(__NR_mincore, x0, x0+40960, x0);
 
    // __NR_madvise 219
- //GO(__NR_madvise, ".s .m");
- //SY(__NR_madvise);
+   GO(__NR_madvise, "3s 0m");
+   SY(__NR_madvise, x0, x0, x0);
 
    // __NR_getdents64 220
    GO(__NR_getdents64, "3s 1m");
@@ -996,12 +996,16 @@ int main(void)
  //SY(__NR_tkill); // (Not yet handled by Valgrind)
 
    // __NR_sendfile64 239
- //GO(__NR_sendfile64, ".s .m");
- //SY(__NR_sendfile64);
+   GO(__NR_sendfile64, "4s 1m");
+   SY(__NR_sendfile64, x0, x0, x0+1, x0);
 
    // __NR_futex 240
- //GO(__NR_futex, ".s .m");
- //SY(__NR_futex);
+   #ifndef FUTEX_WAIT
+   #define FUTEX_WAIT   0
+   #endif
+   // XXX: again, glibc not doing 6th arg means we have only 5s errors
+   GO(__NR_futex, "5s 2m");
+   SY(__NR_futex, x0+FUTEX_WAIT, x0, x0, x0+1, x0, x0);
 
    // __NR_sched_setaffinity 241
    GO(__NR_sched_setaffinity, "3s 1m");
@@ -1068,8 +1072,8 @@ int main(void)
    SY(__NR_epoll_wait, x0, x0, x0+1, x0);
 
    // __NR_remap_file_pages 257
- //GO(__NR_remap_file_pages, ".s .m");
- //SY(__NR_remap_file_pages);
+   GO(__NR_remap_file_pages, "n/a");
+ //SY(__NR_remap_file_pages); // (Not yet handled by Valgrind)
 
    // __NR_set_tid_address 258
    GO(__NR_set_tid_address, "1s 0m");
@@ -1124,8 +1128,8 @@ int main(void)
  //SY(__NR_tgkill); // (Not yet handled by Valgrind)
 
    // __NR_utimes 271
- //GO(__NR_utimes, ".s .m");
- //SY(__NR_utimes);
+   GO(__NR_utimes, "2s 2m");
+   SY(__NR_utimes, x0, x0+1);
 
    // __NR_fadvise64_64 272
    GO(__NR_fadvise64_64, "n/a");

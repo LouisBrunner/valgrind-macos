@@ -114,8 +114,8 @@ static void freeseg(Segment *s)
    VG_(SkipNode_Free)(&sk_segments, s);
 }
 
-/* Split a segment at address a */
-static Segment *split_segment(Addr a)
+/* Split a segment at address a, returning the new segment */
+Segment *VG_(split_segment)(Addr a)
 {
    Segment *s = VG_(SkipList_Find)(&sk_segments, &a);
    Segment *ns;
@@ -157,6 +157,7 @@ void VG_(unmap_range)(Addr addr, UInt len)
    Segment *s;
    Segment *next;
    static const Bool debug = False || mem_debug;
+   Addr end = addr+len;
 
    if (len == 0)
       return;
@@ -174,19 +175,25 @@ void VG_(unmap_range)(Addr addr, UInt len)
    for(s = VG_(SkipList_Find)(&sk_segments, &addr); 
        s != NULL && s->addr < (addr+len); 
        s = next) {
+      Addr seg_end = s->addr + s->len;
 
       /* fetch next now in case we end up deleting this segment */
       next = VG_(SkipNode_Next)(&sk_segments, s);
 
       if (debug)
-	 VG_(printf)("unmap: addr=%p s=%p ->addr=%p len=%d end=%p\n",
-		     addr, s, s->addr, s->len, s->addr+s->len);
+	 VG_(printf)("unmap: addr=%p-%p s=%p ->addr=%p-%p len=%d\n",
+		     addr, addr+len, s, s->addr, s->addr+s->len, s->len);
 
-      if (!VG_(seg_overlaps)(s, addr, len))
+      if (!VG_(seg_overlaps)(s, addr, len)) {
+	 if (debug)
+	    VG_(printf)("   (no overlap)\n");
 	 continue;
+      }
 
       /* 4 cases: */
-      if (addr > s->addr && addr < (s->addr + s->len)) {
+      if (addr > s->addr &&
+	  addr < seg_end &&
+	  end >= seg_end) {
 	 /* this segment's tail is truncated by [addr, addr+len)
 	    -> truncate tail
 	 */
@@ -194,7 +201,7 @@ void VG_(unmap_range)(Addr addr, UInt len)
 
 	 if (debug)
 	    VG_(printf)("  case 1: s->len=%d\n", s->len);
-      } else if (addr <= s->addr && (addr+len) >= (s->addr + s->len)) {
+      } else if (addr <= s->addr && end >= seg_end) {
 	 /* this segment is completely contained within [addr, addr+len)
 	    -> delete segment
 	 */
@@ -204,7 +211,7 @@ void VG_(unmap_range)(Addr addr, UInt len)
 
 	 if (debug)
 	    VG_(printf)("  case 2: s==%p deleted\n", s);
-      } else if ((addr+len) > s->addr && (addr+len) < (s->addr+s->len)) {
+      } else if (addr <= s->addr && end > s->addr && end < seg_end) {
 	 /* this segment's head is truncated by [addr, addr+len)
 	    -> truncate head
 	 */
@@ -216,14 +223,14 @@ void VG_(unmap_range)(Addr addr, UInt len)
 
 	 if (debug)
 	    VG_(printf)("  case 3: s->addr=%p s->len=%d delta=%d\n", s->addr, s->len, delta);
-      } else if (addr > s->addr && (addr+len) < (s->addr + s->len)) {
+      } else if (addr > s->addr && end < seg_end) {
 	 /* [addr, addr+len) is contained within a single segment
 	    -> split segment into 3, delete middle portion
 	  */
 	 Segment *middle, *rs;
 
-	 middle = split_segment(addr);
-	 split_segment(addr+len);
+	 middle = VG_(split_segment)(addr);
+	 VG_(split_segment)(addr+len);
 
 	 vg_assert(middle->addr == addr);
 	 rs = VG_(SkipList_Remove)(&sk_segments, &addr);
@@ -455,8 +462,8 @@ void VG_(mprotect_range)(Addr a, UInt len, UInt prot)
    vg_assert((a & (VKI_BYTES_PER_PAGE-1)) == 0);
    vg_assert((len & (VKI_BYTES_PER_PAGE-1)) == 0);
 
-   split_segment(a);
-   split_segment(a+len);
+   VG_(split_segment)(a);
+   VG_(split_segment)(a+len);
 
    for(s = VG_(SkipList_Find)(&sk_segments, &a);
        s != NULL && s->addr < a+len;

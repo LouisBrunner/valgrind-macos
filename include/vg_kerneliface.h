@@ -316,6 +316,10 @@ struct vki_ucontext {
 #define VKI_MAP_NOSYMS     0x40000000	   /* internal pseudo-flag to disable symbol loading */
 #define VKI_MAP_CLIENT     0x80000000	   /* internal pseudo-flag to distinguish client mappings */
 
+/* linux/mman.h */
+#define VKI_MREMAP_MAYMOVE	1
+#define VKI_MREMAP_FIXED	2
+
 /* Copied from linux-2.4.19/include/asm-i386/fcntl.h */
 
 #define VKI_O_ACCMODE	       0003

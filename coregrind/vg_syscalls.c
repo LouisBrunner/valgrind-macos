@@ -117,6 +117,42 @@ static void do_atfork_child(ThreadId tid)
 	 (*atforks[i].child)(tid);
 }
 
+/* return true if address range entirely contained within client
+   address space */
+static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *syscall)
+{
+   Addr end = start+size;
+   Addr cl_base = VG_(client_base);
+   Bool ret;
+
+   if (size == 0)
+      return True;
+
+   if (cl_base < 0x10000)
+      cl_base = 0x10000;
+
+   ret =
+      (end >= start) && 
+      start >= cl_base && start < VG_(client_end) &&
+      (end <= VG_(client_end));
+
+   if (0)
+      VG_(printf)("%s: test=%p-%p client=%p-%p ret=%d\n",
+		  syscall, start, end, cl_base, VG_(client_end), ret);
+
+   if (!ret && syscall != NULL) {
+      VG_(message)(Vg_UserMsg, "Warning: client syscall %s tried to modify addresses %p-%p",
+		   syscall, start, end);
+
+      if (VG_(clo_verbosity) > 1) {
+	 ExeContext *ec = VG_(get_ExeContext)(tid);
+	 VG_(pp_ExeContext)(ec);
+      }
+   }
+
+   return ret;
+}
+
 /* ---------------------------------------------------------------------
    Doing mmap, munmap, mremap, mprotect
    ------------------------------------------------------------------ */
@@ -162,9 +198,9 @@ void mmap_segment ( Addr a, UInt len, UInt prot, UInt mm_flags, Int fd, ULong of
 
    VG_(map_fd_segment)(a, len, prot, flags, fd, offset, NULL);
 
-   rr = prot & PROT_READ;
-   ww = prot & PROT_WRITE;
-   xx = prot & PROT_EXEC;
+   rr = prot & VKI_PROT_READ;
+   ww = prot & VKI_PROT_WRITE;
+   xx = prot & VKI_PROT_EXEC;
 
    VG_TRACK( new_mem_mmap, a, len, rr, ww, xx );
 }
@@ -195,9 +231,9 @@ void mprotect_segment ( Addr a, UInt len, Int prot )
 
    VG_(mprotect_range)(a, len, prot);
 
-   rr = prot & PROT_READ;
-   ww = prot & PROT_WRITE;
-   xx = prot & PROT_EXEC;
+   rr = prot & VKI_PROT_READ;
+   ww = prot & VKI_PROT_WRITE;
+   xx = prot & VKI_PROT_EXEC;
 
    // if removing exe permission, should check and remove from exe_seg list
    // if adding, should check and add to exe_seg list
@@ -207,34 +243,139 @@ void mprotect_segment ( Addr a, UInt len, Int prot )
 }
 
 static 
-void mremap_segment ( Addr old_addr, UInt old_size, Addr new_addr,
-                      UInt new_size )
+Addr mremap_segment ( Addr old_addr, UInt old_size,
+		      Addr new_addr, UInt new_size,
+		      UInt flags, ThreadId tid)
 {
-   /* If the block moves, assume new and old blocks can't overlap; seems to
-    * be valid judging from Linux kernel code in mm/mremap.c */
-   vg_assert(old_addr == new_addr         ||
-             old_addr+old_size < new_addr ||
-             new_addr+new_size < old_addr);
+   Addr ret;
+   Segment *seg, *next;
 
-   if (new_size < old_size) {
-      // if exe_seg
-      //    unmap old symbols from old_addr+new_size..old_addr+new_size
-      //    update exe_seg size = new_size
-      //    update exe_seg addr = new_addr...
-      VG_TRACK( copy_mem_remap, old_addr, new_addr, new_size );
-      VG_TRACK( die_mem_munmap, old_addr+new_size, old_size-new_size );
+   old_size = PGROUNDUP(old_size);
+   new_size = PGROUNDUP(new_size);
 
-   } else {
-      // if exe_seg
-      //    map new symbols from new_addr+old_size..new_addr+new_size
-      //    update exe_seg size = new_size
-      //    update exe_seg addr = new_addr...
-      VG_TRACK( copy_mem_remap, old_addr, new_addr, old_size );
-      // what should the permissions on the new extended part be??
-      // using 'rwx'
-      VG_TRACK( new_mem_mmap,   new_addr+old_size, new_size-old_size,
-                                True, True, True );
+   if (PGROUNDDN(old_addr) != old_addr)
+      return -VKI_EINVAL;
+
+   if (!valid_client_addr(old_addr, old_size, tid, "mremap(old_addr)"))
+      return -VKI_EFAULT;
+
+   /* fixed at the current address means we don't move it */
+   if ((flags & VKI_MREMAP_FIXED) && (old_addr == new_addr))
+      flags &= ~(VKI_MREMAP_FIXED|VKI_MREMAP_MAYMOVE);
+
+   if (flags & VKI_MREMAP_FIXED) {
+      if (PGROUNDDN(new_addr) != new_addr)
+	 return -VKI_EINVAL;
+
+      if (!valid_client_addr(new_addr, new_size, tid, "mremap(new_addr)"))
+	 return -VKI_ENOMEM;
+
+      /* check for overlaps */
+      if ((old_addr < (new_addr+new_size) &&
+	   (old_addr+old_size) > new_addr) ||
+	  (new_addr < (old_addr+new_size) &&
+	   (new_addr+new_size) > old_addr))
+	 return -VKI_EINVAL;
    }
+
+   /* Do nothing */
+   if (!(flags & VKI_MREMAP_FIXED) && new_size == old_size)
+      return old_addr;
+
+   seg = VG_(find_segment)(old_addr);
+
+   /* range must be contained within segment */
+   if (seg == NULL || !VG_(seg_contains)(seg, old_addr, old_size))
+      return -VKI_EINVAL;
+
+   next = VG_(next_segment)(seg);
+
+   if (0)
+      VG_(printf)("mremap: old_addr+new_size=%p next->addr=%p flags=%d\n",
+		  old_addr+new_size, next->addr, flags);
+   
+   if ((flags & VKI_MREMAP_FIXED) ||
+       (next != NULL && (old_addr+new_size) > next->addr)) {
+      /* we're moving the block */
+      Addr a;
+      
+      if ((flags & (VKI_MREMAP_FIXED|VKI_MREMAP_MAYMOVE)) == 0)
+	 return -VKI_ENOMEM;	/* not allowed to move */
+
+      if ((flags & VKI_MREMAP_FIXED) == 0)
+	  new_addr = 0;
+
+      a = VG_(find_map_space)(new_addr, new_size, True);
+
+      if ((flags & VKI_MREMAP_FIXED) && a != new_addr)
+	 return -VKI_ENOMEM;	/* didn't find the place we wanted */
+
+      new_addr = a;
+      ret = a;
+
+      /* we've nailed down the location */
+      flags |=  VKI_MREMAP_FIXED|VKI_MREMAP_MAYMOVE;
+
+      ret = VG_(do_syscall)(__NR_mremap, old_addr, old_size, new_size, 
+			    flags, new_addr);
+
+      if (ret != new_addr) {
+	 vg_assert(VG_(is_kerror)(ret));
+	 return ret;
+      }
+
+      VG_TRACK(copy_mem_remap, old_addr, new_addr, 
+	       (old_size < new_size) ? old_size : new_size);
+
+      if (new_size > old_size)
+	 VG_TRACK(new_mem_mmap, new_addr+old_size, new_size-old_size,
+		  seg->prot & VKI_PROT_READ, 
+		  seg->prot & VKI_PROT_WRITE, 
+		  seg->prot & VKI_PROT_EXEC);
+      VG_TRACK(die_mem_munmap, old_addr, old_size);
+
+      VG_(map_file_segment)(new_addr, new_size,
+			    seg->prot, 
+			    seg->flags,
+			    seg->dev, seg->ino,
+			    seg->offset, seg->filename);
+
+      VG_(munmap)((void *)old_addr, old_size);
+   } else {
+      /* staying in place */
+      ret = old_addr;
+
+      if (new_size < old_size) {
+	 VG_TRACK(die_mem_munmap, old_addr+new_size, old_size-new_size);
+	 VG_(munmap)((void *)(old_addr+new_size), old_size-new_size);
+      } else {
+	 /* we've nailed down the location */
+	 flags &= ~VKI_MREMAP_MAYMOVE;
+
+	 if (0)
+	    VG_(printf)("mremap: old_addr=%p old_size=%d new_size=%d flags=%d\n",
+			old_addr, old_size, new_size, flags);
+
+	 ret = VG_(do_syscall)(__NR_mremap, old_addr, old_size, new_size, 
+			       flags, 0);
+
+	 if (ret != old_addr)
+	    return ret;
+
+	 VG_TRACK(new_mem_mmap, old_addr+old_size, new_size-old_size,
+		  seg->prot & VKI_PROT_READ, 
+		  seg->prot & VKI_PROT_WRITE, 
+		  seg->prot & VKI_PROT_EXEC);
+
+	 VG_(map_file_segment)(old_addr+old_size, new_size-old_size,
+			       seg->prot, 
+			       seg->flags,
+			       seg->dev, seg->ino,
+			       seg->offset, seg->filename);	 
+      }
+   }
+
+   return ret;
 }
 
 
@@ -846,42 +987,6 @@ static Addr do_brk(Addr newbrk)
 }
 
 
-/* return true if address range entirely contained within client
-   address space */
-static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *syscall)
-{
-   Addr end = start+size;
-   Addr cl_base = VG_(client_base);
-   Bool ret;
-
-   if (size == 0)
-      return True;
-
-   if (cl_base < 0x10000)
-      cl_base = 0x10000;
-
-   ret =
-      (end >= start) && 
-      start >= cl_base && start < VG_(client_end) &&
-      (end <= VG_(client_end));
-
-   if (0)
-      VG_(printf)("%s: test=%p-%p client=%p-%p ret=%d\n",
-		  syscall, start, end, cl_base, VG_(client_end), ret);
-
-   if (!ret && syscall != NULL) {
-      VG_(message)(Vg_UserMsg, "Warning: client syscall %s tried to modify addresses %p-%p",
-		   syscall, start, end);
-
-      if (VG_(clo_verbosity) > 1) {
-	 ExeContext *ec = VG_(get_ExeContext)(tid);
-	 VG_(pp_ExeContext)(ec);
-      }
-   }
-
-   return ret;
-}
-
 /* ---------------------------------------------------------------------
    Vet file descriptors for sanity
    ------------------------------------------------------------------ */
@@ -1364,15 +1469,11 @@ PRE(madvise)
 PRE(mremap)
 {
    /* void* mremap(void * old_address, size_t old_size, 
-      size_t new_size, unsigned long flags); */
-   MAYBE_PRINTF("mremap ( %p, %d, %d, 0x%x )\n", 
-		arg1, arg2, arg3, arg4);
-   SYSCALL_TRACK( pre_mem_write, tid, "mremap(old_address)", arg1, arg2 );
-}
-
-POST(mremap)
-{
-   mremap_segment( arg1, arg2, (Addr)res, arg3 );
+      size_t new_size, unsigned long flags, void * new_address); */
+   MAYBE_PRINTF("mremap ( %p, %d, %d, 0x%x, %p )\n", 
+		arg1, arg2, arg3, arg4, arg5);
+   
+   res = mremap_segment((Addr)arg1, arg2, (Addr)arg5, arg3, arg4, tid);
 }
 
 PRE(nice)
@@ -2380,6 +2481,8 @@ PRE(ipc)
       break;
    }
    case 22: /* IPCOP_shmdt */
+      if (!valid_client_addr(arg1, 1, tid, "shmdt"))
+	 res = -VKI_EINVAL;
       break;
    case 23: /* IPCOP_shmget */
       break;
@@ -2517,14 +2620,9 @@ POST(ipc)
    }
    case 22: /* IPCOP_shmdt */
    {
-      /* ### FIXME: this should call make_noaccess on the
-       * area passed to shmdt. But there's no way to
-       * figure out the size of the shared memory segment
-       * just from the address...  Maybe we want to keep a
-       * copy of the exiting mappings inside valgrind? */
       Segment *s = VG_(find_segment)(arg1);
 
-      if (s->addr == arg1 && (s->flags & SF_SHM)) {
+      if (s != NULL && (s->flags & SF_SHM) && VG_(seg_contains)(s, arg1, 1)) {
 	 VG_TRACK( die_mem_munmap, s->addr, s->len );
 	 VG_(unmap_range)(s->addr, s->len);
       }
@@ -4781,6 +4879,7 @@ static const struct sys_info special_sys[] = {
    SYSB_(execve,		False),
    SYSB_(brk,			False),
    SYSB_(mmap,			False),
+   SYSB_(mremap,		False),
 
 #if SIGNAL_SIMULATION
    SYSBA(sigaltstack,		False),
@@ -4828,7 +4927,6 @@ static const struct sys_info sys_info[] = {
    SYSB_(personality,		False),
    SYSB_(chroot,		False),
    SYSB_(madvise,		True),
-   SYSBA(mremap,		False),
    SYSB_(nice,			False),
    SYSB_(setresgid32,		False),
    SYSB_(setfsuid32,		False),

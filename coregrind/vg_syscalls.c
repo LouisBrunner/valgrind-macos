@@ -4056,18 +4056,18 @@ PRE(statfs)
 		  arg2, sizeof(struct statfs) );
 }
 
+POST(statfs)
+{
+   VG_TRACK( post_mem_write, arg2, sizeof(struct statfs) );
+}
+
 PRE(statfs64)
 {
    /* int statfs64(const char *path, struct statfs *buf); */
    MAYBE_PRINTF("statfs64 ( %p, %p )\n",arg1,arg2);
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "statfs64(path)", arg1 );
    SYSCALL_TRACK( pre_mem_write, tid, "statfs64(buf)", 
-		  arg2, sizeof(struct statfs) );
-}
-
-POST(statfs)
-{
-   VG_TRACK( post_mem_write, arg2, sizeof(struct statfs) );
+		  arg2, sizeof(struct statfs64) );
 }
 
 POST(statfs64)

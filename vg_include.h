@@ -102,7 +102,7 @@
 
 /* These many bytes below %ESP are considered addressible if we're
    doing the --workaround-gcc296-bugs hack. */
-#define VG_GCC296_BUG_STACK_SLOP /*256*/ 1024
+#define VG_GCC296_BUG_STACK_SLOP 256
 
 /* The maximum number of calls we're prepared to save in a
    backtrace. */
@@ -119,14 +119,14 @@
 /* Defines the thread-scheduling timeslice, in terms of the number of
    basic blocks we attempt to run each thread for.  Smaller values
    give finer interleaving but much increased scheduling overheads. */
-#define VG_SCHEDULING_QUANTUM   10000
+#define VG_SCHEDULING_QUANTUM   20000
 
 /* The maximum number of pthreads that we support.  This is
    deliberately not very high since our implementation of some of the
    scheduler algorithms is surely O(N) in the number of threads, since
    that's simple, at least.  And (in practice) we hope that most
    programs do not need many threads. */
-#define VG_N_THREADS 100
+#define VG_N_THREADS 30
 
 /* Maximum number of pthread keys available.  Again, we start low until
    the need for a higher number presents itself. */

@@ -251,8 +251,8 @@ sub do_one_test($$)
         } else {
             unlink("$name.$ext.out", "$name.$ext.diff");
         }
+        $num_tests_done++;
     }
-    $num_tests_done++;
 }
 
 #----------------------------------------------------------------------------
@@ -319,12 +319,8 @@ sub summarise_results
 # main(), sort of
 #----------------------------------------------------------------------------
 
-# undefine $VALGRIND_OPTS
-# (Commented out 2002-Oct-30;  was causing "Use of uninitialized value in undef
-#  operator" warning  --njn)
-# if ( exists $ENV{VALGRIND_OPTS} ) {
-#   undef $ENV{VALGRIND_OPTS};
-# }
+# nuke VALGRIND_OPTS
+$ENV{"VALGRIND_OPTS"} = "";
 
 my @fs = process_command_line();
 foreach my $f (@fs) {

@@ -136,7 +136,7 @@ typedef
       Pcf_FX  = 4,   /* neg  | lt          */
       Pcf_FEX = 5,   /* pos  | gt          */
       Pcf_VX  = 6,   /* zero | equal       */
-      Pcf_OX  = 7,   /* summary overflow   */
+      Pcf_OX  = 7    /* summary overflow   */
    }
    PPC32CondFlag;
 
@@ -231,16 +231,6 @@ extern void ppPPC32RI ( PPC32RI* );
 
 /* --------- Instructions. --------- */
 
-//.. /* --------- */
-//.. typedef
-//..    enum {
-//..       Xss_16,
-//..       Xss_32
-//..    }
-//..    X86ScalarSz;
-//.. 
-//.. extern HChar* showX86ScalarSz ( X86ScalarSz );
-
 /* --------- */
 typedef
    enum {
@@ -258,7 +248,6 @@ typedef
    enum {
       Palu_INVALID,
       Palu_ADD,
-//      Palu_ADC, Palu_SBB,
       Palu_AND, Palu_OR, Palu_XOR
    }
    PPC32AluOp;
@@ -353,9 +342,9 @@ typedef
             PPC32RI*   src2;
          } Alu32;
          struct {
-            HReg       dst;    // for a PPC32 sub:
-            PPC32RI*   src1;   // - argL is an RI
-            HReg       src2;   // - argR is a reg
+            HReg       dst;    // PPC32 sub args are switched:
+            PPC32RI*   src1;   // argL => RI
+            HReg       src2;   // argR => R
          } Sub32;
          struct {
             PPC32ShiftOp op;
@@ -375,7 +364,6 @@ typedef
             HReg         dst;
             HReg         src;
          } Unary32;
-         /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
          struct {
             Bool     syned;
             Bool     word;   /* low=0, high=1 */
@@ -383,7 +371,7 @@ typedef
             HReg     src1;
             PPC32RI* src2;
          } MulL;
-         /* ppc32 div/idiv instruction. */
+         /* ppc32 div/divu instruction. */
          struct {
             Bool syned;
             HReg dst;
@@ -431,7 +419,7 @@ typedef
             HReg        dst;
             PPC32AMode* src;
          } Load;
-         /* 16/8 bit stores, which are troublesome (particularly 8-bit) */
+         /* 16/8 bit stores */
          struct {
             UChar       sz; /* 1|2|4 */
             PPC32AMode* dst;

@@ -823,8 +823,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || Ity_I16 || Ity_I8);
 
-//   vex_printf("@iselIntExpr_R_wrk: tag=%d\n", e->tag);
-
    switch (e->tag) {
 
    /* --------- TEMP --------- */
@@ -1325,9 +1323,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
    /* --------- LITERAL --------- */
    /* 32/16/8-bit literals */
    case Iex_Const: {
-
-// CAB: Can do better - many instr's take literals...
-
       HReg dst    = newVRegI(env);
       addInstr(env, mk_iMOVds_RRI(env, dst, iselIntExpr_RI ( env, e )));
       return dst;
@@ -1338,13 +1333,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if ((ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8)
           && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
          PPC32CondCode cc;
-         HReg r8;
+         HReg r_cond;
          HReg rX     = iselIntExpr_R(env, e->Iex.Mux0X.exprX);
          PPC32RI* r0 = iselIntExpr_RI(env, e->Iex.Mux0X.expr0);
          HReg dst    = newVRegI(env);
+
          addInstr(env, mk_iMOVds_RR(dst,rX));
-         r8 = iselIntExpr_R(env, e->Iex.Mux0X.cond);
-         addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, r8, PPC32RI_Imm(0)));
+         r_cond = iselIntExpr_R(env, e->Iex.Mux0X.cond);
+         addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, r_cond, PPC32RI_Imm(0)));
          cc = mk_PPCCondCode( Pct_TRUE, Pcf_EQ );
          addInstr(env, PPC32Instr_CMov32(cc,dst,r0));
          return dst;
@@ -1404,8 +1400,6 @@ static PPC32AMode* iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32);
    
-//   vex_printf("@iselIntExpr_AMode_wrk\n");
-
    /* Add32(expr,i), where i<0x10000 */
    if (e->tag == Iex_Binop 
        && e->Iex.Binop.op == Iop_Add32
@@ -1460,8 +1454,6 @@ static PPC32RI* iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
-//   vex_printf("@iselIntExpr_RI_wrk\n");
-
    /* special case: immediate */
    if (e->tag == Iex_Const) {
       UInt u;
@@ -1504,8 +1496,6 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I1);
-
-//   vex_printf("@iselCondCode_wrk\n");
 
    /* Constant 1:Bit */
    if (e->tag == Iex_Const && e->Iex.Const.con->Ico.U1 == True) {
@@ -1716,8 +1706,6 @@ static void iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 //   HWord fn = 0; /* helper fn for most SIMD64 stuff */
    vassert(e);
    vassert(typeOfIRExpr(env->type_env,e) == Ity_I64);
-
-//   vex_printf("@iselInt64Expr_wrk: tag=%d\n", e->tag);
 
 //..    /* 64-bit literal */
 //..    if (e->tag == Iex_Const) {
@@ -3195,8 +3183,6 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       vex_printf("\n");
    }
    
-//   vex_printf("@iselStmt: tag=%d\n", stmt->tag);
-
    switch (stmt->tag) {
 
    /* --------- STORE --------- */

@@ -1,7 +1,7 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (host-generic/reg_alloc.c) is                 ---*/
+/*--- This file (host-generic/reg_alloc2.c) is                ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
@@ -190,7 +190,7 @@ static void ensureRRIspace ( RRegInfo** info, Int* size, Int used )
    Takes an expandable array of pointers to unallocated insns.
    Returns an expandable array of pointers to allocated insns.
 */
-HInstrArray* doRegisterAllocation_OLD (
+HInstrArray* doRegisterAllocation (
 
    /* Incoming virtual-registerised code. */ 
    HInstrArray* instrs_in,
@@ -542,7 +542,7 @@ HInstrArray* doRegisterAllocation_OLD (
       rreg = rreg_info[j].rreg;
       vassert(!hregIsVirtual(rreg));
       /* rreg is involved in a HLR.  Record this info in the array, if
-	 there is space. */
+         there is space. */
       for (k = 0; k < n_state; k++)
          if (state[k].rreg == rreg)
             break;
@@ -661,7 +661,7 @@ HInstrArray* doRegisterAllocation_OLD (
       vex_printf("\n");
 #     endif
 
-      /* ------ Sanity checks ------ */
+      /* ------------ Sanity checks ------------ */
 
       /* Sanity check 1: all rregs with a hard live range crossing
          this insn must be marked as unavailable in the running
@@ -728,7 +728,7 @@ HInstrArray* doRegisterAllocation_OLD (
          vassert(!hregIsVirtual(state[j].rreg));
       }
 
-      /* ------ end of Sanity checks ------ */
+      /* ------------ end of Sanity checks ------------ */
 
       /* Do various optimisations pertaining to register coalescing
          and preferencing:
@@ -769,12 +769,33 @@ HInstrArray* doRegisterAllocation_OLD (
          /* Finally, we can do the coalescing.  It's trivial -- merely
             claim vregS's register for vregD. */
          state[m].vreg = vregD;
-         /* Don't bother to copy this insn, just move on to the post-
-            insn actions to do with fixed regs.  IOW, skip the main
-            part of the insn processing entirely. */
-         goto post_insn_actions;
+
+         /* Move on to the next insn.  We skip the post-insn stuff for
+            fixed registers, since this move should not interact with
+            them in any way. */
+         continue;
       }
      cannot_coalesce:
+
+      /* ------ Free up rregs bound to dead vregs ------ */
+
+      /* Look for vregs whose live range has just ended, and 
+	 mark the associated rreg as free. */
+
+      for (j = 0; j < n_state; j++) {
+         if (state[j].disp != Bound)
+            continue;
+         vreg = hregNumber(state[j].vreg);
+         vassert(vreg >= 0 && vreg < n_vregs);
+         if (vreg_info[vreg].dead_before <= ii) {
+            state[j].disp = Free;
+            if (DEBUG_REGALLOC) {
+               vex_printf("free up "); 
+               (*ppReg)(state[j].rreg); 
+               vex_printf("\n");
+            }
+         }
+      }
 
       /* ------ Pre-instruction actions for fixed rreg uses ------ */
 
@@ -786,11 +807,6 @@ HInstrArray* doRegisterAllocation_OLD (
 
          Note we could do better:
          * Could move it into some other free rreg, if one is available 
-         * Don't bother to spill if the spill-slot value is known to
-           be consistent.
-         * If the associated vreg live range ends at this insn,
-           no point in spilling or moving, since (in principle) the
-           rreg will be free anyway after that.
 
          Simplest way to do this is to iterate over the collection
          of rreg live ranges.
@@ -915,50 +931,6 @@ HInstrArray* doRegisterAllocation_OLD (
             continue;
          }
 
-         /* There are no free rregs, but perhaps we can find one which
-            is bound to a vreg which is now dead.  If so, use that.
-            Optimisation: prefer a rreg which is not marked as having
-            any HLRs.  */
-         k_suboptimal = -1;
-         for (k = 0; k < n_state; k++) {
-            if (state[k].disp != Bound
-                || hregClass(state[k].rreg) != hregClass(vreg))
-               continue;
-            m = hregNumber(state[k].vreg);
-            vassert(m >= 0 && m < n_vregs);
-            if (!(vreg_info[m].dead_before <= ii)) 
-               continue;
-            /* Ok, it's gone dead before the current insn.  We can use
-               it.  If it's not marked as involved in any HLRs, use it
-               with no further ado. */
-            if (state[k].has_hlrs) {
-               /* Well, at least we can use k_suboptimal if we really
-                  have to.  Keep on looking for a better candidate. */
-               k_suboptimal = k;
-            } else {
-               /* Found a preferable reg.  Use it. */
-               k_suboptimal = -1;
-               break;
-            }
-         }
-         if (k_suboptimal >= 0)
-            k = k_suboptimal;
-
-         if (k < n_state) {
-            vassert(state[k].disp == Bound);
-            state[k].vreg = vreg;
-            addToHRegRemap(&remap, vreg, state[k].rreg);
-            /* Generate a reload if needed. */
-            if (reg_usage.mode[j] != HRmWrite) {
-               m = hregNumber(vreg);
-               vassert(m >= 0 && m < n_vregs);
-               vassert(vreg_info[m].reg_class != HRcINVALID);
-               EMIT_INSTR( (*genReload)( state[k].rreg,
-                                         vreg_info[m].spill_offset ) );
-            }
-            continue;
-         }
-
          /* Well, now we have no option but to spill a vreg.  It's
             important to make a good choice of vreg to spill, and of
             course we need to be careful not to spill a vreg which is
@@ -1031,7 +1003,6 @@ HInstrArray* doRegisterAllocation_OLD (
             vassert(vreg_info[m].reg_class != HRcINVALID);
             EMIT_INSTR( (*genReload)( state[spillee].rreg,
                                       vreg_info[m].spill_offset ) );
-                                      
          }
 
          /* So after much twisting and turning, we have vreg mapped to
@@ -1065,7 +1036,6 @@ HInstrArray* doRegisterAllocation_OLD (
 
       /* Now we need to check for rregs exiting fixed live ranges
          after this instruction, and if so mark them as free. */
-     post_insn_actions:
       for (j = 0; j < rreg_info_used; j++) {
          if (rreg_info[j].dead_before == ii+1) {
             /* rreg_info[j].rreg is exiting a hard live range.  Mark
@@ -1110,5 +1080,5 @@ HInstrArray* doRegisterAllocation_OLD (
 
 
 /*---------------------------------------------------------------*/
-/*---                                host-generic/reg_alloc.c ---*/
+/*---                               host-generic/reg_alloc2.c ---*/
 /*---------------------------------------------------------------*/

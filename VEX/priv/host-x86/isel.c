@@ -698,6 +698,25 @@ void set_FPU_rounding_mode ( ISelEnv* env, IRExpr* mode )
 }
 
 
+/* Generate !src into a new vector register, and be sure that the code
+   is SSE1 compatible.  Amazing that Intel doesn't offer a less crappy
+   way to do this. 
+*/
+static HReg do_sse_Not128 ( ISelEnv* env, HReg src )
+{
+   HReg dst = newVRegV(env);
+   /* Set dst to zero.  Not strictly necessary, but the idea of doing
+      a FP comparison on whatever junk happens to be floating around
+      in it is just too scary. */
+   addInstr(env, X86Instr_SseReRg(Xsse_XOR, dst, dst));
+   /* And now make it all 1s ... */
+   addInstr(env, X86Instr_Sse32Fx4(Xsse_CMPEQF, dst, dst));
+   /* Finally, xor 'src' into it. */
+   addInstr(env, X86Instr_SseReRg(Xsse_XOR, src, dst));
+   return dst;
+}
+
+
 /*---------------------------------------------------------*/
 /*--- ISEL: Integer expressions (32/16/8 bit)           ---*/
 /*---------------------------------------------------------*/
@@ -2461,8 +2480,13 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
    if (e->tag == Iex_Unop) {
    switch (e->Iex.Unop.op) {
 
+      case Iop_Not128: {
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         return do_sse_Not128(env, arg);
+      }
+
       case Iop_CmpNEZ64x2: {
-         /* only needed for sse2, so can use sse2 code */
+         /* We can use SSE2 instructions for this. */
          /* Ideally, we want to do a 64Ix2 comparison against zero of
             the operand.  Problem is no such insn exists.  Solution
             therefore is to do a 32Ix4 comparison instead, and bitwise-
@@ -2477,29 +2501,20 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
             literal value is 0xB1, that is, 
             (2 << 6) | (3 << 4) | (0 << 2) | (1 << 0) 
          */
-         X86AMode* esp0 = X86AMode_IR(0, hregX86_ESP());
          HReg arg  = iselVecExpr(env, e->Iex.Unop.arg);
          HReg tmp  = newVRegV(env);
          HReg dst  = newVRegV(env);
-         HReg ones = newVRegV(env);
-         HReg r32  = newVRegI(env);
-         addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0xFFFFFFFF), r32));
-         addInstr(env, X86Instr_Push(X86RMI_Reg(r32)));
-         addInstr(env, X86Instr_Push(X86RMI_Reg(r32)));
-         addInstr(env, X86Instr_Push(X86RMI_Reg(r32)));
-         addInstr(env, X86Instr_Push(X86RMI_Reg(r32)));
-         addInstr(env, X86Instr_SseLdSt(True/*load*/, ones, esp0));
-         add_to_esp(env, 16);
          addInstr(env, X86Instr_SseReRg(Xsse_XOR, tmp, tmp));
          addInstr(env, X86Instr_SseReRg(Xsse_CMPEQ32, arg, tmp));
-         addInstr(env, X86Instr_SseReRg(Xsse_XOR, ones, tmp));
+         tmp = do_sse_Not128(env, tmp);
          addInstr(env, X86Instr_SseShuf(0xB1, tmp, dst));
          addInstr(env, X86Instr_SseReRg(Xsse_OR, tmp, dst));
          return dst;
       }
 
       case Iop_CmpNEZ32x4: {
-         /* sigh, we have to generate crappy code for SSE1 */
+         /* Sigh, we have to generate lousy code since this has to
+            work on SSE1 hosts */
          /* basically, the idea is: for each lane:
                movl lane, %r ; negl %r   (now CF = lane==0 ? 0 : 1)
                sbbl %r, %r               (now %r = 1Sto32(CF))
@@ -2522,6 +2537,31 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
          }
          addInstr(env, X86Instr_SseLdSt(True/*load*/, dst, esp0));
          add_to_esp(env, 16);
+         return dst;
+      }
+
+      case Iop_CmpNEZ8x16:
+      case Iop_CmpNEZ16x8: {
+         /* We can use SSE2 instructions for this. */
+         HReg arg;
+         HReg vec0 = newVRegV(env);
+         HReg vec1 = newVRegV(env);
+         HReg dst  = newVRegV(env);
+         X86SseOp cmpOp 
+            = e->Iex.Unop.op==Iop_CmpNEZ16x8 ? Xsse_CMPEQ16
+                                             : Xsse_CMPEQ8;
+         addInstr(env, X86Instr_SseReRg(Xsse_XOR, vec0, vec0));
+         addInstr(env, mk_vMOVsd_RR(vec0, vec1));
+         addInstr(env, X86Instr_Sse32Fx4(Xsse_CMPEQF, vec1, vec1));
+         /* defer arg computation to here so as to give CMPEQF as long
+            as possible to complete */
+         arg = iselVecExpr(env, e->Iex.Unop.arg);
+         /* vec0 is all 0s; vec1 is all 1s */
+         addInstr(env, mk_vMOVsd_RR(arg, dst));
+         /* 16x8 or 8x16 comparison == */
+         addInstr(env, X86Instr_SseReRg(cmpOp, vec0, dst));
+         /* invert result */
+         addInstr(env, X86Instr_SseReRg(Xsse_XOR, vec1, dst));
          return dst;
       }
 

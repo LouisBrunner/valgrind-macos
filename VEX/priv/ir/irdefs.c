@@ -297,9 +297,12 @@ void ppIROp ( IROp op )
       case Iop_128to32:    vex_printf("128to32"); return;
       case Iop_Set128lo32: vex_printf("Set128lo32"); return;
 
+      case Iop_Not128:     vex_printf("Not128"); return;
       case Iop_And128:     vex_printf("And128"); return;
       case Iop_Or128:      vex_printf("Or128");  return;
       case Iop_Xor128:     vex_printf("Xor128"); return;
+      case Iop_CmpNEZ8x16: vex_printf("CmpNEZ8x16"); return;
+      case Iop_CmpNEZ16x8: vex_printf("CmpNEZ16x8"); return;
       case Iop_CmpNEZ32x4: vex_printf("CmpNEZ32x4"); return;
       case Iop_CmpNEZ64x2: vex_printf("CmpNEZ64x2"); return;
 
@@ -1274,12 +1277,14 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_InterleaveLO32x4: case Iop_InterleaveLO64x2:
          BINARY(Ity_V128, Ity_V128,Ity_V128);
 
+      case Iop_Not128:
       case Iop_Recip32Fx4: case Iop_Recip32F0x4:
       case Iop_Recip64Fx2: case Iop_Recip64F0x2:
       case Iop_RSqrt32Fx4: case Iop_RSqrt32F0x4:
       case Iop_RSqrt64Fx2: case Iop_RSqrt64F0x2:
       case Iop_Sqrt32Fx4:  case Iop_Sqrt32F0x4:
       case Iop_Sqrt64Fx2:  case Iop_Sqrt64F0x2:
+      case Iop_CmpNEZ8x16: case Iop_CmpNEZ16x8:
       case Iop_CmpNEZ32x4: case Iop_CmpNEZ64x2:
          UNARY(Ity_V128, Ity_V128);
 

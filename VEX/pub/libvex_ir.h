@@ -393,10 +393,11 @@ typedef
       /* ------------------ 128-bit SIMD Integer. ------------------ */
 
       /* BITWISE OPS */
+      Iop_Not128,
       Iop_And128, Iop_Or128, Iop_Xor128, 
 
-      /* MISC (32x4 integer cmp != 0) */
-      Iop_CmpNEZ32x4, Iop_CmpNEZ64x2,
+      /* MISC (vector integer cmp != 0) */
+      Iop_CmpNEZ8x16, Iop_CmpNEZ16x8, Iop_CmpNEZ32x4, Iop_CmpNEZ64x2,
 
       /* ADDITION (normal / unsigned sat / signed sat) */
       Iop_Add8x16,   Iop_Add16x8,   Iop_Add32x4,  Iop_Add64x2,

@@ -6283,9 +6283,7 @@ static UInt dis_SSE_E_to_G_all_wrk (
    IRTemp  addr;
    UChar   rm = getIByte(delta);
    IRExpr* gpart
-      = invertG ? binop( Iop_Xor128, 
-                         getXMMReg(gregOfRM(rm)), 
-                         mkV128(0xFFFF) )
+      = invertG ? unop(Iop_Not128, getXMMReg(gregOfRM(rm)))
                 : getXMMReg(gregOfRM(rm));
    if (epartIsReg(rm)) {
       putXMMReg( gregOfRM(rm), 
@@ -6638,14 +6636,20 @@ static UInt dis_SSEcmp_E_to_G ( UChar sorb, UInt delta,
                             nameXMMReg(gregOfRM(rm)) );
    }
 
-   if (needNot && all_lanes)
-      mask = 0xFFFF;
-   if (needNot && !all_lanes)
+   if (needNot && all_lanes) {
+      putXMMReg( gregOfRM(rm), 
+                 unop(Iop_Not128, mkexpr(plain)) );
+   }
+   else
+   if (needNot && !all_lanes) {
       mask = sz==4 ? 0x000F : 0x00FF;
+      putXMMReg( gregOfRM(rm), 
+                 binop(Iop_Xor128, mkexpr(plain), mkV128(mask)) );
+   }
+   else {
+      putXMMReg( gregOfRM(rm), mkexpr(plain) );
+   }
 
-   putXMMReg( gregOfRM(rm), 
-              needNot ? binop(Iop_Xor128, mkexpr(plain), mkV128(mask))
-                      : mkexpr(plain) );
    return delta;
 }
 

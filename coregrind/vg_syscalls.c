@@ -1803,7 +1803,8 @@ PRE(execve)
    MAYBE_PRINTF("execve ( %p(%s), %p, %p )\n", arg1, arg1, arg2, arg3);
 
    SYSCALL_TRACK( pre_mem_read_asciiz, tid, "execve(filename)", arg1 );
-   pre_argv_envp( arg2, tid, "execve(argv)", "execve(argv[i])" );
+   if (arg2 != (UInt)NULL)
+      pre_argv_envp( arg2, tid, "execve(argv)", "execve(argv[i])" );
    if (arg3 != (UInt)NULL)
       pre_argv_envp( arg3, tid, "execve(envp)", "execve(envp[i])" );
 

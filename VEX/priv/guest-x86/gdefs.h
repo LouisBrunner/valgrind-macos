@@ -42,6 +42,9 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 extern 
 Bool guest_x86_state_requires_precise_mem_exns ( Int, Int );
 
+extern
+VexGuestLayoutInfo x86guest_layout;
+
 
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/

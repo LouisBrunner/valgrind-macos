@@ -416,6 +416,15 @@ extern IRExpr** mkIRExprVec_2 ( IRExpr* arg1, IRExpr* arg2 );
 extern IRExpr** sopyIRExprVec ( IRExpr** );
 extern IRExpr** dopyIRExprVec ( IRExpr** );
 
+/* Make a constant expression from the given host word,
+   taking into account of course the host word size. */
+extern IRExpr* mkIRExpr_HWord ( HWord );
+
+
+inline static Bool isAtom ( IRExpr* e ) {
+   return e->tag == Iex_Tmp || e->tag == Iex_Const;
+}
+
 
 /* ------------------ Dirty helper calls ------------------ */
 

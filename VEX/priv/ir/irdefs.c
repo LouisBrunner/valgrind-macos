@@ -278,14 +278,16 @@ void ppIRDirty ( IRDirty* d )
    if (d->needsBBP)
       vex_printf(" NeedsBBP");
    if (d->mFx != Ifx_None) {
+      vex_printf(" ");
       ppIREffect(d->mFx);
       vex_printf("-mem(");
       ppIRExpr(d->mAddr);
-      vex_printf(",%d) ", d->mSize);
+      vex_printf(",%d)", d->mSize);
    }
    for (i = 0; i < d->nFxState; i++) {
+      vex_printf(" ");
       ppIREffect(d->fxState[i].fx);
-      vex_printf("-gst(%d,%d) ", d->fxState[i].offset, d->fxState[i].size);
+      vex_printf("-gst(%d,%d)", d->fxState[i].offset, d->fxState[i].size);
    }
    vex_printf(" ::: ");
    if (d->tmp != INVALID_IRTEMP) {
@@ -1506,12 +1508,22 @@ Int sizeofIRType ( IRType ty )
       case Ity_I8:  return 1;
       case Ity_I16: return 2;
       case Ity_I32: return 4;
+      case Ity_I64: return 8;
+      case Ity_F32: return 4;
       case Ity_F64: return 8;
       default: vex_printf("\n"); ppIRType(ty); vex_printf("\n");
                vpanic("sizeofIRType");
    }
 }
 
+IRExpr* mkIRExpr_HWord ( HWord hw )
+{
+   if (sizeof(HWord) == 4)
+      return IRExpr_Const(IRConst_U32((UInt)hw));
+   if (sizeof(HWord) == 8)
+      return IRExpr_Const(IRConst_U64((Long)hw));
+   vpanic("mkIRExpr_HWord");
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                                         ir/irdefs.c ---*/

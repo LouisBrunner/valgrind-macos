@@ -129,8 +129,9 @@ TranslateResult LibVEX_Translate (
    Int    host_bytes_size,
    /* OUT: how much of the output area is used. */
    Int* host_bytes_used,
-   /* IN: optionally, an instrumentation function. */
-   IRBB* (*instrument) ( IRBB* ),
+   /* IN: optionally, two instrumentation functions. */
+   IRBB* (*instrument1) ( IRBB*, VexGuestLayoutInfo* ),
+   IRBB* (*instrument2) ( IRBB*, VexGuestLayoutInfo* ),
    HWord (*tool_findhelper) ( Char* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),
@@ -158,14 +159,16 @@ TranslateResult LibVEX_Translate (
    IRExpr*      (*specHelper)  ( Char*, IRExpr** );
    Bool         (*preciseMemExnsFn) ( Int, Int );
 
-   Bool         host_is_bigendian = False;
-   IRBB*        irbb;
-   HInstrArray* vcode;
-   HInstrArray* rcode;
-   Int          i, j, k, out_used, saved_verbosity, guest_sizeB;
-   UChar        insn_bytes[32];
-   IRType       guest_word_size;
+   VexGuestLayoutInfo* guest_layout;
+   Bool                host_is_bigendian = False;
+   IRBB*               irbb;
+   HInstrArray*        vcode;
+   HInstrArray*        rcode;
+   Int                 i, j, k, out_used, saved_verbosity, guest_sizeB;
+   UChar               insn_bytes[32];
+   IRType              guest_word_size;
 
+   guest_layout           = NULL;
    available_real_regs    = NULL;
    n_available_real_regs  = 0;
    isMove                 = NULL;
@@ -219,6 +222,7 @@ TranslateResult LibVEX_Translate (
          specHelper       = x86guest_spechelper;
          guest_sizeB      = sizeof(VexGuestX86State);
 	 guest_word_size  = Ity_I32;
+         guest_layout     = &x86guest_layout;
          break;
       default:
          vpanic("LibVEX_Translate: unsupported guest insn set");
@@ -262,12 +266,17 @@ TranslateResult LibVEX_Translate (
    }
 
    /* Get the thing instrumented. */
-   if (instrument) {
-      irbb = (*instrument)(irbb);
+   if (instrument1)
+      irbb = (*instrument1)(irbb, guest_layout);
+   if (instrument2)
+      irbb = (*instrument2)(irbb, guest_layout);
+      
+   if (instrument1 || instrument2)
       sanityCheckIRBB(irbb, guest_word_size);
-   }
 
    /* Turn it into virtual-registerised code. */
+   do_deadcode_BB( irbb );
+   do_treebuild_BB( irbb );
    vcode = iselBB ( irbb, findHelper, tool_findhelper );
 
    if (vex_verbosity > 0) {

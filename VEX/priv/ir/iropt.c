@@ -151,13 +151,6 @@ static void addToHHW ( HashHW* h, HWord key, HWord val )
 /*--- Flattening out a BB into pure SSA form                  ---*/
 /*---------------------------------------------------------------*/
 
-inline
-static Bool isAtom ( IRExpr* e )
-{
-   return e->tag == Iex_Tmp || e->tag == Iex_Const;
-}
-
-
 /* Non-critical helper, heuristic for reducing the number of tmp-tmp
    copies made by flattening.  If in doubt return False. */
 
@@ -274,8 +267,15 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
    IRDirty *d,  *d2;
    switch (st->tag) {
       case Ist_Put:
-         e1 = flatten_Expr(bb, st->Ist.Put.data);
-         addStmtToIRBB(bb, IRStmt_Put(st->Ist.Put.offset, e1));
+         if (isAtom(st->Ist.Put.data)) {
+            /* optimisation to reduce the amount of heap wasted
+               by the flattener */
+            addStmtToIRBB(bb, st);
+         } else {
+            /* general case, always correct */
+            e1 = flatten_Expr(bb, st->Ist.Put.data);
+            addStmtToIRBB(bb, IRStmt_Put(st->Ist.Put.offset, e1));
+         }
          break;
       case Ist_PutI:
          e1 = flatten_Expr(bb, st->Ist.PutI.off);
@@ -945,7 +945,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
    E', delete the binding if it is not used.  Otherwise, add any temp
    uses to the set and keep on moving backwards. */
 
-static void dead_BB ( IRBB* bb )
+/* notstatic */ void do_deadcode_BB ( IRBB* bb )
 {
    Int     i;
    Int     n_tmps = bb->tyenv->types_used;
@@ -1736,7 +1736,7 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
 
 
 
-static void treebuild_BB ( IRBB* bb )
+/* notstatic */ void do_treebuild_BB ( IRBB* bb )
 {
    Int      i, j, k;
    Bool     invPut, invStore;
@@ -3102,14 +3102,14 @@ IRBB* cheap_transformations (
       ppIRBB(bb);
    }
 
-   dead_BB ( bb );
+   do_deadcode_BB ( bb );
    if (iropt_verbose) {
       vex_printf("\n========= DEAD\n\n" );
       ppIRBB(bb);
    }
 
    spec_helpers_BB ( bb, specHelper );
-   dead_BB ( bb );
+   do_deadcode_BB ( bb );
    if (iropt_verbose) {
       vex_printf("\n========= SPECd \n\n" );
       ppIRBB(bb);
@@ -3129,7 +3129,7 @@ IRBB* expensive_transformations( IRBB* bb )
    collapse_AddSub_chains_BB( bb );
    do_PutI_GetI_forwarding_BB( bb );
    do_redundant_PutI_elimination( bb );
-   dead_BB( bb );
+   do_deadcode_BB( bb );
    return flatten_BB( bb );
 }
 
@@ -3255,22 +3255,16 @@ IRBB* do_iropt_BB ( IRBB* bb0,
          } else {
             /* at least do CSE and dead code removal */
             cse_BB( bb );
-            dead_BB( bb );
+            do_deadcode_BB( bb );
          }
          if (0) vex_printf("vex iropt: unrolled a loop\n");
       }
 
    }
 
-   /* Finally, rebuild trees, for the benefit of instruction
-      selection. */
-   dead_BB(bb);
-   treebuild_BB( bb );
-   if (show_res || iropt_verbose) {
-      vex_printf("\n========= TREEd \n\n" );
-      ppIRBB(bb);
-   }
-
+   /* sigh; flatten the block out (yet again) for the benefit of
+      instrumenters. */
+   bb = flatten_BB( bb );
    return bb;
 }
 

@@ -9,6 +9,7 @@
 #include "libvex_basictypes.h"
 #include "libvex_guest_x86.h"
 #include "libvex_ir.h"
+#include "libvex.h"
 
 #include "main/vex_util.h"
 #include "guest-x86/gdefs.h"
@@ -1493,6 +1494,12 @@ Bool guest_x86_state_requires_precise_mem_exns ( Int minoff,
 
    return False;
 }
+
+
+VexGuestLayoutInfo 
+   x86guest_layout 
+      = { .offset_SP = offsetof(VexGuestX86State, guest_ESP),
+          .sizeof_SP   = 4 };
 
 
 /*---------------------------------------------------------------*/

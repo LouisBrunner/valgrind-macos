@@ -91,6 +91,18 @@ extern void LibVEX_ClearTemporary ( Bool show_stats );
 extern void* LibVEX_Alloc ( Int nbytes );
 
 
+/* Describe the guest state enough that the instrumentation
+   functions can work. */
+
+typedef
+   struct {
+      /* Whereabouts is the stack pointer? */
+      Int offset_SP;
+      Int sizeof_SP; /* 4 or 8 */
+   }
+   VexGuestLayoutInfo;
+
+
 /* Translate a basic block. */
 
 typedef 
@@ -116,8 +128,9 @@ TranslateResult LibVEX_Translate (
    Int    host_bytes_size,
    /* OUT: how much of the output area is used. */
    Int* host_bytes_used,
-   /* IN: optionally, an instrumentation function. */
-   IRBB* (*instrument) ( IRBB* ),
+   /* IN: optionally, two instrumentation functions. */
+   IRBB* (*instrument1) ( IRBB*, VexGuestLayoutInfo* ),
+   IRBB* (*instrument2) ( IRBB*, VexGuestLayoutInfo* ),
    HWord (*tool_findhelper) ( Char* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 ),

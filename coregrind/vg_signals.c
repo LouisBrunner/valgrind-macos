@@ -1717,6 +1717,7 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 
    if (terminate) {
       struct vki_rlimit corelim;
+      Bool could_core = core;
 
       if (core) {
 	 /* If they set the core-size limit to zero, don't generate a
@@ -1728,7 +1729,7 @@ static void vg_default_action(const vki_ksiginfo_t *info, ThreadId tid)
 	    core = False;
       }
 
-      if (VG_(clo_verbosity) != 0 && (core || VG_(clo_verbosity) > 1)) {
+      if (VG_(clo_verbosity) != 0 && (could_core || VG_(clo_verbosity) > 1)) {
 	 VG_(message)(Vg_UserMsg, "");
 	 VG_(message)(Vg_UserMsg, "Process terminating with default action of signal %d (%s)%s", 
 		      sigNo, signame(sigNo), core ? ": dumping core" : "");

@@ -93,24 +93,6 @@ VG_(run_innerloop):
 	movl	VGOFF_(m_eip), %esi
 	movl	(%ebp, %esi, 4), %eax
 	
-dispatch_main:
-	/* Jump here to do a new dispatch.
-	   %eax holds destination (original) address.
-	   %ebp indicates further details of the control transfer
-	   requested to the address in %eax.
-	
-	   If ebp == & VG_(baseBlock), just jump next to %eax.
-	 
-	   If ebp == VG_EBP_JMP_SYSCALL, do a system call before 
-	   continuing at eax.
-	
-	   If ebp == VG_EBP_JMP_CLIENTREQ, do a client request before 
-	   continuing at eax.
-	
-	   If %ebp has any other value, we panic.
-	*/
-	/*cmpl	$VG_(baseBlock), %ebp*/
-	/*jnz	dispatch_exceptional*/
 	/* fall into main loop */
 
 
@@ -132,6 +114,22 @@ dispatch_boring:
 	incl	VG_(unchained_jumps_done)	      /* update stats */
 	call	*%ebx
 	
+	/* 
+	   %eax holds destination (original) address.
+	   %ebp indicates further details of the control transfer
+	   requested to the address in %eax.
+	
+	   If ebp == & VG_(baseBlock), just jump next to %eax.
+	 
+	   If ebp == VG_EBP_JMP_SYSCALL, do a system call before 
+	   continuing at eax.
+	
+	   If ebp == VG_EBP_JMP_CLIENTREQ, do a client request before 
+	   continuing at eax.
+	
+	   If %ebp has any other value, we panic.
+	*/
+
 	cmpl	$VG_(baseBlock), %ebp
 	jz	dispatch_boring
 

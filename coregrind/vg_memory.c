@@ -759,7 +759,7 @@ Addr VG_(get_shadow_size)(void)
 }
 
 /*--------------------------------------------------------------------*/
-/*--- manage allocation of memory on behalf of the client          ---*/
+/*--- Handling shadow memory                                       ---*/
 /*--------------------------------------------------------------------*/
 
 void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init)

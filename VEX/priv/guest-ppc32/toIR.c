@@ -418,13 +418,6 @@ static UInt extend_s_8to32( UInt x )
 }
 #endif
 
-#if 0
-static UInt extend_s_14to32 ( UInt x )
-{
-   return (UInt)((((Int)x) << 14) >> 14);
-}
-#endif
-
 static UInt extend_s_16to32 ( UInt x )
 {
    return (UInt)((((Int)x) << 16) >> 16);
@@ -895,7 +888,6 @@ static IRExpr* getReg_masked ( PPC32Reg reg, UInt mask )
    IRExpr* irx_tmp3 = mkU32(0);
    IRExpr* irx_tmp4 = mkU32(0);
    
-   vassert( mask > 0 );
    vassert( reg < REG_NUMBER );
     
    switch (reg) {
@@ -908,12 +900,14 @@ static IRExpr* getReg_masked ( PPC32Reg reg, UInt mask )
       break;
 
    case REG_CR:
+      irx_tmp1 = IRExpr_Get(OFFB_CR0to6, Ity_I32);
       if (mask & 0xF0000000) {
          // Call helper function to calculate latest CR7 from thunk:
-         irx_tmp1 = mk_ppc32g_calculate_cr7_all();
+         irx_tmp2 = mk_ppc32g_calculate_cr7_all();
+         assign( val, binop(Iop_Or32, irx_tmp2, irx_tmp1) );
+      } else {
+         assign( val, irx_tmp1 );
       }
-      irx_tmp2 = IRExpr_Get(OFFB_CR0to6, Ity_I32);
-      assign( val, binop(Iop_Or32, irx_tmp1, irx_tmp2) );
       break;
 
    case REG_XER:
@@ -949,7 +943,7 @@ static IRExpr* getReg_masked ( PPC32Reg reg, UInt mask )
 static IRExpr* getReg ( PPC32Reg reg )
 {
    vassert( reg < REG_NUMBER );
-   return getReg_masked( reg, 0x0FFFFFFF );
+   return getReg_masked( reg, 0xFFFFFFFF );
 }
 
 
@@ -990,13 +984,9 @@ static void putReg_masked ( PPC32Reg reg, IRExpr* src, UInt mask )
 {
    vassert( reg < REG_NUMBER );
    vassert( typeOfIRExpr(irbb->tyenv,src ) == Ity_I32 );
-   vassert( mask > 0 );
    
    IRTemp src_mskd = newTemp(Ity_I32);
    IRTemp old      = newTemp(Ity_I32);
-   IRTemp tmp      = newTemp(Ity_I32);
-
-   assign( src_mskd, binop(Iop_And32, src, mkU32(mask)) );
 
    switch (reg) {
    case REG_LR:
@@ -1009,13 +999,14 @@ static void putReg_masked ( PPC32Reg reg, IRExpr* src, UInt mask )
 
    case REG_CR:
       if (mask & 0xF0000000) { // CR 7:
-         setFlags_CR7_Imm( mkexpr(src_mskd) );
+         setFlags_CR7_Imm( src );
       }
       // CR 0 to 6:
-      assign( old, binop(Iop_And32, getReg( REG_CR ), mkU32(~mask)) );
-      assign( tmp, binop(Iop_And32, mkexpr(src_mskd), mkU32(0x0FFFFFFF)) );
-      stmt( IRStmt_Put( OFFB_CR0to6, binop(Iop_Or32,
-                                           mkexpr(tmp),mkexpr(old)) ));
+      assign( src_mskd, binop(Iop_And32, src, mkU32(mask & 0x0FFFFFFF)) );
+      assign( old, getReg_masked( REG_CR, (~mask & 0x0FFFFFFF) ) );
+
+      stmt( IRStmt_Put( OFFB_CR0to6,
+                        binop(Iop_Or32, mkexpr(src_mskd), mkexpr(old)) ));
       break;
 
    case REG_XER:
@@ -1068,9 +1059,12 @@ static void putReg_field ( PPC32Reg reg, UInt field_idx, IRExpr* src )
 
    IRTemp val = newTemp(Ity_I32);
    
-   assign( val, binop(Iop_Shl32,
-                      binop(Iop_And32, src, mkU32(0xF)),
-                      mkU8(bit_idx)) );
+   // About to be masked, so don't bother here.
+   if (bit_idx != 0) {
+      assign( val, binop(Iop_Shl32, src, mkU8(bit_idx)) );
+   } else {
+      assign( val, src );
+   }
    
    switch (reg) {
    case REG_CR:
@@ -1149,7 +1143,23 @@ static Bool dis_int_arith ( UInt theInstr )
    switch (opc1) {
 
    /* D-Form */
-   case 0x0C: // addi   (Add Immediate, p380)
+   case 0x0C: // addic  (Add Immediate Carrying, p381)
+      DIP("addic r%d,r%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
+      assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
+      op = PPC32G_FLAG_OP_ADD;
+      do_ca = True;
+      break;
+      
+   case 0x0D: // addic. (Add Immediate Carrying and Record, p382)
+      DIP("addic. r%d,r%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
+      assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
+      op = PPC32G_FLAG_OP_ADD;
+      do_ca = True;
+      do_rc = True;
+      flag_Rc = 1;
+      break;
+
+   case 0x0E: // addi   (Add Immediate, p380)
       // li rD,val   == addi rD,0,val
       // la disp(rA) == addi rD,rA,disp
       DIP("addi %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
@@ -1158,22 +1168,6 @@ static Bool dis_int_arith ( UInt theInstr )
       } else {
          assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
       }
-      break;
-
-   case 0x0D: // addic  (Add Immediate Carrying, p381)
-      DIP("addic r%d,r%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
-      assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
-      op = PPC32G_FLAG_OP_ADD;
-      do_ca = True;
-      break;
-      
-   case 0x0E: // addic. (Add Immediate Carrying and Record, p382)
-      DIP("addic. r%d,r%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
-      assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
-      op = PPC32G_FLAG_OP_ADD;
-      do_ca = True;
-      do_rc = True;
-      flag_Rc = 1;
       break;
 
    case 0x0F: // addis  (Add Immediate Shifted, p383)
@@ -1457,8 +1451,8 @@ static Bool dis_int_cmp ( UInt theInstr )
    IRTemp Rb    = newTemp(Ity_I32);
    IRTemp tmp   = newTemp(Ity_I32);
    IRTemp cr_f7 = newTemp(Ity_I32);
-   IRTemp tst1  = newTemp(Ity_I1);
-   IRTemp tst2  = newTemp(Ity_I1);
+   IRExpr* irx_tst1;
+   IRExpr* irx_tst2;
 
    assign( Ra, getIReg(Ra_addr) );
    
@@ -1476,14 +1470,14 @@ static Bool dis_int_cmp ( UInt theInstr )
    case 0x0B: // cmpi (Compare Immediate, p398)
       DIP("cmpi crf%d,%u,r%d,0x%x\n", crfD, flag_L, Ra_addr, SIMM_16);
       EXTS_SIMM = extend_s_16to32(SIMM_16);
-      assign( tst1, binop(Iop_CmpEQ32, mkU32(EXTS_SIMM), mkexpr(Ra)) );
-      assign( tst2, binop(Iop_CmpLT32S, mkU32(EXTS_SIMM), mkexpr(Ra)) );
+      irx_tst1 = binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(EXTS_SIMM));
+      irx_tst2 = binop(Iop_CmpLT32S, mkexpr(Ra), mkU32(EXTS_SIMM));
       break;
           
    case 0x0A: // cmpli (Compare Logical Immediate, p400)
       DIP("cmpli crf%d,%u,r%d,0x%x\n", crfD, flag_L, Ra_addr, UIMM_16);
-      assign( tst1, binop(Iop_CmpEQ32, mkU32(UIMM_16), mkexpr(Ra)) );
-      assign( tst2, binop(Iop_CmpLT32U, mkU32(UIMM_16), mkexpr(Ra)) );
+      irx_tst1 = binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(UIMM_16));
+      irx_tst2 = binop(Iop_CmpLT32U, mkexpr(Ra), mkU32(UIMM_16));
       break;
       
    /* X Form */
@@ -1498,16 +1492,16 @@ static Bool dis_int_cmp ( UInt theInstr )
          DIP("cmp crf%d,%u,r%d,r%d\n", crfD, flag_L,
              Ra_addr, Rb_addr);
          assign( Rb, getIReg(Rb_addr) );
-         assign( tst1, binop(Iop_CmpEQ32, mkexpr(Rb), mkexpr(Ra)) );
-         assign( tst2, binop(Iop_CmpLT32S, mkexpr(Rb), mkexpr(Ra)) );
+         irx_tst1 = binop(Iop_CmpEQ32, mkexpr(Ra), mkexpr(Rb));
+         irx_tst2 = binop(Iop_CmpLT32S, mkexpr(Ra), mkexpr(Rb));
          break;
          
        case 0x020: // cmpl (Compare Logical, p399)
           DIP("cmpl crf%d,%u,r%d,r%d\n", crfD, flag_L,
               Ra_addr, Rb_addr);
           assign( Rb, getIReg(Rb_addr) );
-          assign( tst1, binop(Iop_CmpEQ32, mkexpr(Rb), mkexpr(Ra)) );
-          assign( tst2, binop(Iop_CmpLT32U, mkexpr(Rb), mkexpr(Ra)) );
+          irx_tst1 = binop(Iop_CmpEQ32, mkexpr(Ra), mkexpr(Rb));
+          irx_tst2 = binop(Iop_CmpLT32U, mkexpr(Ra), mkexpr(Rb));
           break;
 
        default:
@@ -1521,9 +1515,10 @@ static Bool dis_int_cmp ( UInt theInstr )
       return False;
    }
    
-   assign( tmp, IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(tst1)),
-                              IRExpr_Mux0X( unop(Iop_1Uto8, mkexpr(tst2)),
-                                            mkU32(8), mkU32(4) ),
+   assign( tmp, IRExpr_Mux0X( unop(Iop_1Uto8, irx_tst1),
+                              IRExpr_Mux0X( unop(Iop_1Uto8, irx_tst2),
+                                            mkU32(4),
+                                            mkU32(8) ),
                               mkU32(2) ));
    
    assign( cr_f7, binop(Iop_Or32, mkexpr(tmp),
@@ -1560,7 +1555,7 @@ static Bool dis_int_logic ( UInt theInstr )
    
    switch (opc1) {
    case 0x1C: // andi. (AND Immediate, p388)
-      DIP("andi r%d,r%d,0x%x\n", Ra_addr, Rs_addr, UIMM_16);
+      DIP("andi. r%d,r%d,0x%x\n", Ra_addr, Rs_addr, UIMM_16);
       assign( Ra, binop(Iop_And32, mkexpr(Rs), mkU32(UIMM_16)) );
       putIReg( Ra_addr, mkexpr(Ra) );
       do_rc = True;
@@ -2007,7 +2002,7 @@ static Bool dis_int_store ( UInt theInstr )
    } else {
       assign( Ra_or_0, mkexpr(Ra) );
    }
-   assign( EA_imm, binop(Iop_And32, mkexpr(Ra_or_0), mkU32(exts_d_imm)) );
+   assign( EA_imm, binop(Iop_Add32, mkexpr(Ra_or_0), mkU32(exts_d_imm)) );
    
    switch (opc1) {
    case 0x26: // stb (Store B, p576)
@@ -2374,12 +2369,12 @@ static IRExpr* branch_cond_ok( UInt BO, UInt BI )
       assign( ok, mkU1(1) );
    } else {
       // ok = (CR[31-BI] == BO[3])
-      assign( cr_bi, getReg_masked( REG_CR, (0x80000000 >> BI)) );
+      assign( cr_bi, getReg_masked( REG_CR, (1 << (31-BI))) );
       assign( tmp, binop(Iop_CmpNE32, mkU32(0), mkexpr(cr_bi)) );
       
-      if ((BO >> 3) & 1) {
+      if ((BO >> 3) & 1) {  // cond.test = True
          assign( ok, mkexpr(tmp) );
-      } else {
+      } else {              // cond.test = False
          assign( ok, unop(Iop_Not1, mkexpr(tmp)) );
       }
    }
@@ -2400,8 +2395,8 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
    UChar flag_AA  = toUChar((theInstr >>  1) & 1);       /* theInstr[1]     */
    UChar flag_LK  = toUChar((theInstr >>  0) & 1);       /* theInstr[0]     */
    
-   UInt exts_BD = extend_s_24to32(BD << 2);
-   UInt exts_LI = extend_s_24to32(LI_24 << 2);
+   Int exts_BD = (Int)extend_s_16to32(BD << 2);
+   Int exts_LI = (Int)extend_s_24to32(LI_24 << 2);
    
    Addr32 nia = 0;
    
@@ -2413,11 +2408,14 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
    IRTemp cond_ok   = newTemp(Ity_I1);
    
    assign( ctr, IRExpr_Get(OFFB_CTR, Ity_I32) );
+
+#if 0
+   vex_printf("\ndis_branch(ppc32): instr:   0x%x\n", theInstr);
+   vex_printf("dis_branch(ppc32): instr:   ");
+   vex_printf_binary( theInstr, 32, True );
+   vex_printf("\n");
+#endif
    
-//    vex_printf("disInstr(ppc32): In: 0x%8x, %,031b\n", theInstr, theInstr );
-//    vex_printf("disInstr(ppc32): LI: %,039b\n", LI_24);
-//    vex_printf("disInstr(ppc32): LI: %,039b\n", LI_24 << 2);
-//    vex_printf("disInstr(ppc32): LI: %,031b\n", extend_s_24to32(LI_24 << 2));
 
 #if 1
    /* Hack to pass through code that just wants to read the PC */
@@ -2431,9 +2429,10 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
    switch (opc1) {
    case 0x12: // b     (Branch, p390)
 // DIP("b%s%s 0x%x\n", flag_LK ? "l" : "", flag_AA ? "a" : "", LI_24);
-      nia = exts_LI;
-      if (!flag_AA) {
-         nia += guest_cia_curr_instr;
+      if (flag_AA) {
+         nia = (UInt)exts_LI;
+      } else {
+         nia = (UInt)((Int)guest_cia_curr_instr + exts_LI);
       }
       if (flag_LK) {
          stmt( IRStmt_Put( OFFB_LR, mkU32(guest_cia_curr_instr+4) ));
@@ -2446,7 +2445,7 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
       
    case 0x10: // bc    (Branch Conditional, p391)
       DIP("bc%s%s 0x%x, 0x%x, 0x%x\n",
-          flag_LK ? "l" : "", flag_AA ? "a" : "", BO, BI, BD);
+          flag_LK ? "l" : "", flag_AA ? "a" : "", BO, BI, exts_BD);
       
       if (!(BO & 0x4)) {
          stmt( IRStmt_Put(OFFB_CTR, binop(Iop_Sub32,
@@ -2458,11 +2457,11 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
       assign( do_branch, binop(Iop_And32,
                                unop(Iop_1Uto32, mkexpr(ctr_ok)),
                                unop(Iop_1Uto32, mkexpr(cond_ok))) );
-      nia = exts_BD;
-      if (!flag_AA) {
-         nia += guest_cia_curr_instr;
+      if (flag_AA) {
+         nia = (UInt)exts_BD;
+      } else {
+         nia = (UInt)((Int)guest_cia_curr_instr + exts_BD);
       }
-      
       if (flag_LK) {
          assign( lr, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(do_branch)),
                                    IRExpr_Get(OFFB_LR, Ity_I32),
@@ -3257,9 +3256,9 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    /*
      Integer Arithmetic Instructions
    */
-   case 0x0C: // addi
-   case 0x0D: // addic
-   case 0x0E: // addic.
+   case 0x0C: // addic
+   case 0x0D: // addic.
+   case 0x0E: // addi
    case 0x0F: // addis
    case 0x07: // mulli
    case 0x08: // subfic

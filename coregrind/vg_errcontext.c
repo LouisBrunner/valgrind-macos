@@ -380,6 +380,8 @@ static void gen_suppression(Error* err)
 static 
 void do_actions_on_error(Error* err, Bool allow_db_attach)
 {
+   Bool still_noisy = True;
+
    /* Perhaps we want a debugger attach at this point? */
    if (allow_db_attach &&
        VG_(is_action_requested)( "Attach to debugger", & VG_(clo_db_attach) )) 
@@ -388,9 +390,14 @@ void do_actions_on_error(Error* err, Bool allow_db_attach)
       VG_(start_debugger)( err->tid );
    }
    /* Or maybe we want to generate the error's suppression? */
-   if (VG_(is_action_requested)( "Print suppression",
-                                 & VG_(clo_gen_suppressions) )) {
+   if (VG_(clo_gen_suppressions) == 2
+       || (VG_(clo_gen_suppressions) == 1
+           && VG_(is_action_requested)( "Print suppression",
+                                        &still_noisy ))
+      ) {
       gen_suppression(err);
+      if (VG_(clo_gen_suppressions) == 1 && !still_noisy)
+         VG_(clo_gen_suppressions) = 0;
    }
 }
 

@@ -729,9 +729,12 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     <para><computeroutput>--gen-suppressions=no</computeroutput>
     [default]</para>
     <para><computeroutput>--gen-suppressions=yes</computeroutput></para>
-    <para>When enabled, Valgrind will pause after every error
-    shown, and print the line: <computeroutput>---- Print
-    suppression ?  --- [Return/N/n/Y/y/C/c] ----</computeroutput></para>
+    <para><computeroutput>--gen-suppressions=all</computeroutput></para>
+
+    <para>When set to <computeroutput>yes<computeroutput>, Valgrind
+    will pause after every error shown, and print the line:
+    <computeroutput>---- Print suppression ?  --- [Return/N/n/Y/y/C/c]
+    ----</computeroutput></para>
 
     <para>The prompt's behaviour is the same as for the 
     <computeroutput>--db-attach</computeroutput> option.</para>
@@ -740,6 +743,10 @@ errors, e.g. Memcheck, but not Cachegrind.</para>
     for this error.  You can then cut and paste it into a
     suppression file if you don't want to hear about the error in
     the future.</para>
+
+    <para>When set to <computeroutput>all<computeroutput>, Valgrind
+    will print a suppression for every reported error, without
+    querying the user.</para>
 
     <para>This option is particularly useful with C++ programs,
     as it prints out the suppressions with mangled names, as

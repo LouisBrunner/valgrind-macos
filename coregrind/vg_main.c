@@ -1464,7 +1464,7 @@ VexControl VG_(clo_vex_control);
 Bool   VG_(clo_error_limit)    = True;
 Bool   VG_(clo_db_attach)      = False;
 Char*  VG_(clo_db_command)     = VG_CLO_DEFAULT_DBCOMMAND;
-Bool   VG_(clo_gen_suppressions) = False;
+Int    VG_(clo_gen_suppressions) = 0;
 Int    VG_(clo_sanity_level)   = 1;
 Int    VG_(clo_verbosity)      = 1;
 Bool   VG_(clo_demangle)       = True;
@@ -1547,7 +1547,7 @@ void usage ( Bool debug_help )
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
 "    --show-below-main=no|yes  continue stack traces below main() [no]\n"
 "    --suppressions=<filename> suppress errors described in <filename>\n"
-"    --gen-suppressions=no|yes print suppressions for errors detected [no]\n"
+"    --gen-suppressions=no|yes|all    print suppressions for errors? [no]\n"
 "    --db-attach=no|yes        start debugger when errors detected? [no]\n"
 "    --db-command=<command>    command to start debugger [gdb -nw %%f %%p]\n"
 "    --input-fd=<number>       file descriptor for input [0=stdin]\n"
@@ -1746,7 +1746,6 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_BOOL_CLO("--db-attach",        VG_(clo_db_attach))
       else VG_BOOL_CLO("--demangle",         VG_(clo_demangle))
       else VG_BOOL_CLO("--error-limit",      VG_(clo_error_limit))
-      else VG_BOOL_CLO("--gen-suppressions", VG_(clo_gen_suppressions))
       else VG_BOOL_CLO("--lowlat-signals",   VG_(clo_lowlat_signals))
       else VG_BOOL_CLO("--lowlat-syscalls",  VG_(clo_lowlat_syscalls))
       else VG_BOOL_CLO("--pointercheck",     VG_(clo_pointercheck))
@@ -1859,6 +1858,13 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          VG_(clo_trace_pthread_level) = 1;
       else if (VG_CLO_STREQ(arg, "--trace-pthread=all"))
          VG_(clo_trace_pthread_level) = 2;
+
+      else if (VG_CLO_STREQ(arg, "--gen-suppressions=no"))
+         VG_(clo_gen_suppressions) = 0;
+      else if (VG_CLO_STREQ(arg, "--gen-suppressions=yes"))
+         VG_(clo_gen_suppressions) = 1;
+      else if (VG_CLO_STREQ(arg, "--gen-suppressions=all"))
+         VG_(clo_gen_suppressions) = 2;
 
       else if ( ! VG_(needs).command_line_options
              || ! TL_(process_cmd_line_option)(arg) ) {
@@ -2069,13 +2075,13 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       VG_(clo_n_suppressions)++;
    }
 
-   if (VG_(clo_gen_suppressions) && 
+   if (VG_(clo_gen_suppressions) > 0 && 
        !VG_(needs).core_errors && !VG_(needs).tool_errors) {
       VG_(message)(Vg_UserMsg, 
-                   "Can't use --gen-suppressions=yes with this tool,");
+                   "Can't use --gen-suppressions= with this tool,");
       VG_(message)(Vg_UserMsg, 
                    "as it doesn't generate errors.");
-      VG_(bad_option)("--gen-suppressions=yes");
+      VG_(bad_option)("--gen-suppressions=");
    }
 }
 

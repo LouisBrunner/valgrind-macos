@@ -247,8 +247,9 @@ extern Bool  VG_(clo_error_limit);
 extern Bool  VG_(clo_db_attach);
 /* The debugger command?  default: whatever gdb ./configure found */
 extern Char* VG_(clo_db_command);
-/* Enquire about generating a suppression for each error?   default: NO */
-extern Bool  VG_(clo_gen_suppressions);
+/* Generating a suppression for each error?   default: 0 (NO)
+   Other values: 1 (yes, but ask user), 2 (yes, don't ask user) */
+extern Int  VG_(clo_gen_suppressions);
 /* Sanity-check level: 0 = none, 1 (default), > 1 = expensive. */
 extern Int   VG_(clo_sanity_level);
 /* Automatically attempt to demangle C++ names?  default: YES */

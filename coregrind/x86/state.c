@@ -509,18 +509,18 @@ void VGA_(thread_initial_stack)(ThreadId tid, UWord arg, Addr ret)
    Addr esp = (Addr)ARCH_STACK_PTR(VG_(threads)[tid].arch);
 
    /* push two args */
-   esp -= 8;
+   esp -= 2 * sizeof(UWord);
    SET_PTHREQ_ESP(tid, esp);
    
-   VG_TRACK ( new_mem_stack, esp, 2 * 4 );
+   VG_TRACK ( new_mem_stack, esp, 2 * sizeof(UWord) );
    VG_TRACK ( pre_mem_write, Vg_CorePThread, tid, "new thread: stack",
-                             esp, 2 * 4 );
+                             esp, 2 * sizeof(UWord) );
 
    /* push arg and (bogus) return address */
-   *(UWord*)(esp+4) = arg;
-   *(UWord*)(esp)   = ret;
+   *(UWord*)(esp+sizeof(UWord)) = arg;
+   *(UWord*)(esp)               = ret;
 
-   VG_TRACK ( post_mem_write, esp, 2 * 4 );
+   VG_TRACK ( post_mem_write, esp, 2 * sizeof(UWord) );
 }
 
 

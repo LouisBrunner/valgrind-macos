@@ -255,8 +255,8 @@ arch_thread_t;
    Miscellaneous constants
    ------------------------------------------------------------------ */
 
-// Total number of spill slots available for register allocation.
-#define VG_MAX_SPILLSLOTS     24
+// Total number of spill words available for register allocation.
+#define VG_MAX_SPILLSLOTS     100
 
 // Valgrind's signal stack size, in words.
 #define VG_SIGSTACK_SIZE_W    10000

@@ -1,3 +1,16 @@
+
+// These #defines attempt to ensure that posix_memalign() is declared, and
+// so no spurious warning is given about using it.
+
+// Advertise compliance of the code to the XSI (a POSIX superset that
+// defines what a system must be like to be called "UNIX")
+#undef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 600 
+   
+// Advertise compliance to POSIX
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200112L 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -32,24 +45,25 @@ int main ( void )
    p = memalign(4096, 100);   assert(0 == (long)p % 4096);
    p = memalign(4097, 100);   assert(0 == (long)p % 8192);
 
-   res = posix_memalign(&p, -1,100);      assert(EINVAL == res);
-   res = posix_memalign(&p, 0, 100);      assert(0 == res && 0 == (long)p % 8);
-   res = posix_memalign(&p, 1, 100);      assert(EINVAL == res);
-   res = posix_memalign(&p, 2, 100);      assert(EINVAL == res);
-   res = posix_memalign(&p, 3, 100);      assert(EINVAL == res);
-   res = posix_memalign(&p, sizeof(void*), 100);
-                                          assert(0 == res && 
-                                                 0 == (long)p % sizeof(void*));
+   #define PM(a,b,c) posix_memalign((void**)a, b, c)
 
-   res = posix_memalign(&p, 31, 100);     assert(EINVAL == res);
-   res = posix_memalign(&p, 32, 100);     assert(0 == res &&
+   res = PM(&p, -1,100);      assert(EINVAL == res);
+   res = PM(&p, 0, 100);      assert(0 == res && 0 == (long)p % 8);
+   res = PM(&p, 1, 100);      assert(EINVAL == res);
+   res = PM(&p, 2, 100);      assert(EINVAL == res);
+   res = PM(&p, 3, 100);      assert(EINVAL == res);
+   res = PM(&p, sizeof(void*), 100);
+                              assert(0 == res && 0 == (long)p % sizeof(void*));
+
+   res = PM(&p, 31, 100);     assert(EINVAL == res);
+   res = PM(&p, 32, 100);     assert(0 == res &&
                                                  0 == (long)p % 32);
-   res = posix_memalign(&p, 33, 100);     assert(EINVAL == res);
+   res = PM(&p, 33, 100);     assert(EINVAL == res);
 
-   res = posix_memalign(&p, 4095, 100);   assert(EINVAL == res);
-   res = posix_memalign(&p, 4096, 100);   assert(0 == res &&
+   res = PM(&p, 4095, 100);   assert(EINVAL == res);
+   res = PM(&p, 4096, 100);   assert(0 == res &&
                                                  0 == (long)p % 4096); 
-   res = posix_memalign(&p, 4097, 100);   assert(EINVAL == res);
+   res = PM(&p, 4097, 100);   assert(EINVAL == res);
    
    return 0;
 }

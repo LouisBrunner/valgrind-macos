@@ -1,13 +1,13 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (libjit_basictypes.h) is                      ---*/
+/*--- This file (libvex_basictypes.h) is                      ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#ifndef __LIBJIT_BASICTYPES_H
-#define __LIBJIT_BASICTYPES_H
+#ifndef __LIBVEX_BASICTYPES_H
+#define __LIBVEX_BASICTYPES_H
 
 typedef  unsigned char   UChar;
 typedef           char   Char;        /* platform-dependent signfulness */
@@ -31,9 +31,9 @@ typedef  UInt      Addr32;
 typedef  ULong     Addr64;
 
 
-#endif /* ndef __LIBJIT_BASICTYPES_H */
+#endif /* ndef __LIBVEX_BASICTYPES_H */
 
 
 /*---------------------------------------------------------------*/
-/*---                                     libjit_basictypes.h ---*/
+/*---                                     libvex_basictypes.h ---*/
 /*---------------------------------------------------------------*/

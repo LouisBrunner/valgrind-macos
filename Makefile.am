@@ -1,5 +1,5 @@
 
-SUBDIRS = 	core . docs tests include \
+SUBDIRS = 	coregrind . docs tests include \
 		addrcheck \
 		memcheck \
 		cachegrind \

@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(core/vg_clientmalloc.c)   # give me a source file, any source file...
+AC_INIT(coregrind/vg_clientmalloc.c)   # give me a source file, any source file...
 AM_CONFIG_HEADER(config.h)
 AM_INIT_AUTOMAKE(valgrind, HEAD)
 
@@ -296,10 +296,10 @@ AC_OUTPUT(
    docs/Makefile 
    tests/Makefile 
    include/Makefile 
-   core/Makefile 
-   core/demangle/Makefile 
-   core/docs/Makefile
-   core/valgrind
+   coregrind/Makefile 
+   coregrind/demangle/Makefile 
+   coregrind/docs/Makefile
+   coregrind/valgrind
    addrcheck/Makefile
    memcheck/Makefile
    memcheck/tests/Makefile

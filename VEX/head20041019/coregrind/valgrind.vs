@@ -14,6 +14,7 @@ VALGRIND_2.1 {
 		*IRTemp*;
 		*IRConst*;
 		*IRCallee*;
+		*IRArray*;
 		LibVEX_Alloc;
 
 	local:

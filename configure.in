@@ -295,6 +295,7 @@ AC_OUTPUT(
    valgrind.spec
    docs/Makefile 
    tests/Makefile 
+   tests/vg_regtest 
    tests/unused/Makefile 
    include/Makefile 
    coregrind/Makefile 

@@ -2,13 +2,38 @@
 ##--------------------------------------------------------------------##
 ##--- Valgrind regression testing script                vg_regtest ---##
 ##--------------------------------------------------------------------##
+
+#  This file is part of Valgrind, an x86 protected-mode emulator 
+#  designed for debugging and profiling binaries on x86-Unixes.
+#
+#  Copyright (C) 2002 Nicholas Nethercote
+#     njn25@cam.ac.uk
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as
+#  published by the Free Software Foundation; either version 2 of the
+#  License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+#  02111-1307, USA.
+#
+#  The GNU General Public License is contained in the file COPYING.
+
+#----------------------------------------------------------------------------
 # usage: vg_regtest [options] <dirs | files>
 #
 # Options:
 #   --stable:   use stable-branch stderr results (*.stderr.exp.hd)
 #   --dev:      use dev-branch stderr results    (*.stderr.exp - default)
 #   --all:      run tests in all subdirs
-#   --valgrind: valgrind to use.  Default is in ./inst/bin/valgrind
+#   --valgrind: valgrind to use.  Default is one built from this source tree.
 #
 # You can specify individual files to test, or whole directories, or both.
 # The stable-branch/dev-branch distinction allows slight differences in stderr
@@ -61,8 +86,10 @@ my @failures;           # List of failed tests
 
 my $exp = "";           # --dev is default
 
-# Assumes we're in valgrind/
-my $valgrind = "inst/bin/valgrind";
+# Default valgrind to use is this build tree's one
+my $prefix="@prefix@";
+my $exec_prefix="@exec_prefix@";
+my $valgrind = "@bindir@/valgrind";
 
 chomp(my $tests_dir = `pwd`);
 
@@ -324,4 +351,6 @@ foreach my $f (@fs) {
 }
 summarise_results();
 
-
+##--------------------------------------------------------------------##
+##--- end                                               vg_regtest ---##
+##--------------------------------------------------------------------##

@@ -247,7 +247,7 @@ extern void LibVEX_ShowStats ( void );
    %ecx, %edx, %esi, %edi, all the FP registers and control state, and
    all the XMM registers.
 
-   On entry, the FPU control word shouldbe set to 0x027F, and the SSE
+   On entry, the FPU control word should be set to 0x027F, and the SSE
    control word (%mxcsr) should be set to 0x1F80.  On exit, they
    should still have those values (after masking off the lowest 6 bits
    of %mxcsr).  If they don't, there is a bug in VEX-generated code.

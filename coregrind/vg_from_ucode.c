@@ -931,7 +931,7 @@ void VG_(emit_movb_lit_offregmem) ( UInt lit, Int off, Int memreg )
 static void emit_nonshiftopb_offregmem_reg ( Bool upd_cc, Opcode opc, 
                                              Int off, Int areg, Int reg )
 {
-   VG_(new_emit)(upd_cc, (opc == ADC || opc == SBB) ? FlagC : FlagsEmpty, True);
+   VG_(new_emit)(upd_cc, nonshiftop_use(opc), nonshiftop_set(opc));
    VG_(emitB) ( 2 + mkPrimaryOpcode(opc) ); /* op Eb, Gb */
    VG_(emit_amode_offregmem_reg) ( off, areg, reg );
    if (dis)
@@ -1851,6 +1851,7 @@ static void synth_jcond_lit ( Condcode cond,
       simd = True;
       cond = invertCondition(cond);
    } else {
+      Bool parity = False;	/* test Z or P */
 
       /* The simd state contains the most recent version, so we emit a
          sequence to calculate the relevant condition directly out of
@@ -1899,18 +1900,14 @@ static void synth_jcond_lit ( Condcode cond,
                ( 4, VGOFF_(m_eflags) * 4, R_EBP, R_EAX );
             /* eax == %EFLAGS */
 
-            VG_(emit_shiftopv_lit_reg)( False, 4, SHR, 11-7, R_EAX );
-            /* eax has OF in SF's place */
+            VG_(emit_shiftopv_lit_reg)( False, 4, SHR, 7, R_EAX );
+            /* eax has OF and SF in lower byte */
 
-            emit_nonshiftopv_offregmem_reg 
-               ( False, 4, XOR, VGOFF_(m_eflags) * 4, R_EBP, R_EAX );
-            /* eax has (OF xor SF) in SF's place */
+	    VG_(emit_testb_lit_reg) ( False, 0x11, R_EAX);
+	    /* PF = OF == SF */
 
-            VG_(emit_nonshiftopv_lit_reg)( False, 4, AND, 1 << 7, R_EAX );
-            /* Z is now set iff (OF xor SF) == 1 */
-
-            if (cond == CondL) cond = CondZ; else cond = CondNZ;
-            break;
+            if (cond == CondL) cond = CondP; else cond = CondNP;
+	    break;
 
          case CondB: 
          case CondNB: 
@@ -1965,10 +1962,7 @@ static void synth_jcond_lit ( Condcode cond,
                               mask, VGOFF_(m_eflags) * 4);
             }
 
-            if (cond & 1)
-               cond = CondNZ;
-            else
-               cond = CondZ;
+	    cond = (parity ? CondP : CondZ) | (cond & 1);
             break;
       }
    }

@@ -159,7 +159,7 @@ struct _SegInfo {
    */
    UInt   offset;
 
-   /* Bounds of data, BSS, PLT and GOT, so that skins can see what
+   /* Bounds of data, BSS, PLT and GOT, so that tools can see what
       section an address is in */
    Addr	  plt_start;
    UInt   plt_size;

@@ -676,7 +676,7 @@ static void describe_addr_addbuf(Char c) {
       else
          describe_addr_bufsz *= 2;
     
-      /* use tool malloc so that the skin client can free it */
+      /* use tool malloc so that the tool can free it */
       n = VG_(malloc)(describe_addr_bufsz);
       if (describe_addr_buf != NULL && describe_addr_bufidx != 0)
          VG_(memcpy)(n, describe_addr_buf, describe_addr_bufidx);

@@ -56,7 +56,7 @@ static Supp* is_suppressible_error ( Error* err );
 /*--- Error type                                           ---*/
 /*------------------------------------------------------------*/
 
-/* Note: it is imperative this doesn't overlap with (0..) at all, as skins
+/* Note: it is imperative this doesn't overlap with (0..) at all, as tools
  * effectively extend it by defining their own enums in the (0..) range. */
 typedef
    enum { 
@@ -319,7 +319,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    else
       err->where = where;
 
-   /* Skin-relevant parts */
+   /* Tool-relevant parts */
    err->ekind  = ekind;
    err->addr   = a;
    err->extra  = extra;

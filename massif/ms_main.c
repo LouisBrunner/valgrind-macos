@@ -1,10 +1,10 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Massif: a heap profiling skin.                     ms_main.c ---*/
+/*--- Massif: a heap profiling tool.                     ms_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Massif, a Valgrind skin for profiling memory
+   This file is part of Massif, a Valgrind tool for profiling memory
    usage of programs.
 
    Copyright (C) 2003-2004 Nicholas Nethercote

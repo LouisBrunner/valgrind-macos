@@ -1126,9 +1126,9 @@ Bool ac_is_valid_address ( Addr a )
 }
 
 
-/* Leak detector for this skin.  We don't actually do anything, merely
+/* Leak detector for this tool.  We don't actually do anything, merely
    run the generic leak detector with suitable parameters for this
-   skin. */
+   tool. */
 static void ac_detect_memory_leaks ( void )
 {
    MAC_(do_detect_memory_leaks) ( ac_is_valid_64k_chunk, ac_is_valid_address );

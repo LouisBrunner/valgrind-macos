@@ -1,5 +1,5 @@
 /*-*- c -*- ----------------------------------------------------------*/
-/*--- The only header your skin will ever need to #include...      ---*/
+/*--- The only header your tool will ever need to #include...      ---*/
 /*---                                                    vg_skin.h ---*/
 /*--------------------------------------------------------------------*/
 
@@ -119,11 +119,11 @@ extern const Char *VG_(libdir);
 
 
 /*====================================================================*/
-/*=== Core/skin interface version                                  ===*/
+/*=== Core/tool interface version                                  ===*/
 /*====================================================================*/
 
 /* The major version number indicates binary-incompatible changes to the
-   interface;  if the core and skin major versions don't match, Valgrind
+   interface;  if the core and tool major versions don't match, Valgrind
    will abort.  The minor version indicates binary-compatible changes.
 */
 #define VG_CORE_INTERFACE_MAJOR_VERSION   6
@@ -134,7 +134,7 @@ typedef struct _ToolInfo {
    Int	interface_major_version;
    Int	interface_minor_version;
 
-   /* Initialise skin.   Must do the following:
+   /* Initialise tool.   Must do the following:
       - initialise the `details' struct, via the VG_(details_*)() functions
       - register any helpers called by generated code
       
@@ -142,8 +142,8 @@ typedef struct _ToolInfo {
       - initialise the `needs' struct to indicate certain requirements, via
       the VG_(needs_*)() functions
       - initialize all the tool's entrypoints via the VG_(init_*)() functions
-      - register any skin-specific profiling events
-      - any other skin-specific initialisation
+      - register any tool-specific profiling events
+      - any other tool-specific initialisation
    */
    void        (*sk_pre_clo_init) ( void );
 
@@ -152,7 +152,7 @@ typedef struct _ToolInfo {
    float	shadow_ratio;
 } ToolInfo;
 
-/* Every skin must include this macro somewhere, exactly once. */
+/* Every tool must include this macro somewhere, exactly once. */
 #define VG_DETERMINE_INTERFACE_VERSION(pre_clo_init, shadow)		\
    const ToolInfo SK_(tool_info) = {					\
       .sizeof_ToolInfo         = sizeof(ToolInfo),			\
@@ -170,7 +170,7 @@ typedef struct _ToolInfo {
 #define VG_STREQ(s1,s2) (s1 != NULL && s2 != NULL \
                          && VG_(strcmp)((s1),(s2))==0)
 
-/* Use these for recognising skin command line options -- stops comparing
+/* Use these for recognising tool command line options -- stops comparing
    once whitespace is reached. */
 #define VG_CLO_STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
 #define VG_CLO_STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
@@ -275,20 +275,20 @@ extern int VG_(vmessage)   ( VgMsgKind kind, Char* format, va_list vargs );
    VGP_PAIR(VgpDemangle,    "demangle"),              \
    VGP_PAIR(VgpCoreCheapSanity,     "core-cheap-sanity"),     \
    VGP_PAIR(VgpCoreExpensiveSanity, "core-expensive-sanity"), \
-   /* These ones depend on the skin */                \
+   /* These ones depend on the tool */                \
    VGP_PAIR(VgpPreCloInit,  "pre-clo-init"),          \
    VGP_PAIR(VgpPostCloInit, "post-clo-init"),         \
    VGP_PAIR(VgpInstrument,  "instrument"),            \
-   VGP_PAIR(VgpSkinSysWrap, "skin-syscall-wrapper"),  \
-   VGP_PAIR(VgpSkinCheapSanity,     "skin-cheap-sanity"),     \
-   VGP_PAIR(VgpSkinExpensiveSanity, "skin-expensive-sanity"), \
+   VGP_PAIR(VgpSkinSysWrap, "tool-syscall-wrapper"),  \
+   VGP_PAIR(VgpSkinCheapSanity,     "tool-cheap-sanity"),     \
+   VGP_PAIR(VgpSkinExpensiveSanity, "tool-expensive-sanity"), \
    VGP_PAIR(VgpFini,        "fini")
 
 #define VGP_PAIR(n,name) n
 typedef enum { VGP_CORE_LIST } VgpCoreCC;
 #undef  VGP_PAIR
 
-/* When registering skin profiling events, ensure that the 'n' value is in
+/* When registering tool profiling events, ensure that the 'n' value is in
  * the range (VgpFini+1..) */
 extern void VGP_(register_profile_event) ( Int n, Char* name );
 
@@ -899,7 +899,7 @@ typedef
          CCALL(arg1, arg2, ret )    UInt f(UInt arg1, UInt arg2) */
       CCALL,
 
-      /* This opcode makes it easy for skins that extend UCode to do this to
+      /* This opcode makes it easy for tools that extend UCode to do this to
          avoid opcode overlap:
 
            enum { EU_OP1 = DUMMY_FINAL_UOPCODE + 1, ... }
@@ -1045,7 +1045,7 @@ typedef
       /* Additional properties for UInstrs that call C functions:
            - CCALL
            - PUT (when %ESP is the target)
-           - possibly skin-specific UInstrs
+           - possibly tool-specific UInstrs
       */
       UChar   argc:2;          /* Number of args, max 3 */
       UChar   regparms_n:2;    /* Number of args passed in registers */
@@ -1218,7 +1218,7 @@ extern UCodeBlock* VG_(setup_UCodeBlock) ( UCodeBlock* cb );
 extern void        VG_(free_UCodeBlock)  ( UCodeBlock* cb );
 
 /* ------------------------------------------------------------------ */
-/* UCode pretty/ugly printing.  Probably only useful to call from a skin
+/* UCode pretty/ugly printing.  Probably only useful to call from a tool
    if VG_(needs).extended_UCode == True. */
 
 /* When True, all generated code is/should be printed. */
@@ -1307,7 +1307,7 @@ extern Int VGOFF_(helper_cmpxchg8b);
 /*=== Generating x86 code from UCode                               ===*/
 /*====================================================================*/
 
-/* All this only necessary for skins with VG_(needs).extends_UCode == True. */
+/* All this only necessary for tools with VG_(needs).extends_UCode == True. */
 
 /* This is the Intel register encoding -- integer regs. */
 #define R_EAX 0
@@ -1494,7 +1494,7 @@ extern Addr VG_(get_EIP_from_ExeContext) ( ExeContext* e, UInt n );
 */
 extern Addr VG_(get_EIP)( ThreadId tid );
 
-/* For skins needing more control over stack traces:  walks the stack to get
+/* For tools needing more control over stack traces:  walks the stack to get
    %eips from the top stack frames for thread 'tid'.  Maximum of 'n_eips'
    addresses put into 'eips';  0 is the top of the stack, 1 is its caller,
    etc. */
@@ -1521,7 +1521,7 @@ typedef
    Int         /* Do not make this unsigned! */
    SuppKind;
 
-/* The skin-relevant parts of a suppression are:
+/* The tool-relevant parts of a suppression are:
      kind:   what kind of suppression; must be in the range (0..)
      string: use is optional.  NULL by default.
      extra:  use is optional.  NULL by default.  void* so it's extensible.
@@ -1553,7 +1553,7 @@ typedef
    Int         /* Do not make this unsigned! */
    ErrorKind;
 
-/* The skin-relevant parts of an Error are:
+/* The tool-relevant parts of an Error are:
      kind:   what kind of error; must be in the range (0..)
      addr:   use is optional.  0 by default.
      string: use is optional.  NULL by default.
@@ -1597,7 +1597,7 @@ extern Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind,
 
 /* Gets a non-blank, non-comment line of at most nBuf chars from fd.
    Skips leading spaces on the line.  Returns True if EOF was hit instead.
-   Useful for reading in extra skin-specific suppression lines.  */
+   Useful for reading in extra tool-specific suppression lines.  */
 extern Bool VG_(get_line) ( Int fd, Char* buf, Int nBuf );
 
 
@@ -1681,9 +1681,9 @@ extern VgSectKind VG_(seg_sect_kind)(Addr);
 /*====================================================================*/
 
 /* Generic type for a separately-chained hash table.  Via a kind of dodgy
-   C-as-C++ style inheritance, skins can extend the VgHashNode type, so long
+   C-as-C++ style inheritance, tools can extend the VgHashNode type, so long
    as the first two fields match the sizes of these two fields.  Requires
-   a bit of casting by the skin. */
+   a bit of casting by the tool. */
 typedef
    struct _VgHashNode {
       struct _VgHashNode * next;
@@ -1828,13 +1828,13 @@ extern UInt VG_(get_exit_status_shadow) ( void );
 /*=== Specific stuff for replacing malloc() and friends            ===*/
 /*====================================================================*/
 
-/* If a skin replaces malloc() et al, the easiest way to do so is to
+/* If a tool replaces malloc() et al, the easiest way to do so is to
    link with vg_replace_malloc.o into its vgpreload_*.so file, and
    follow the following instructions.  You can do it from scratch,
    though, if you enjoy that sort of thing. */
 
 /* Arena size for valgrind's own malloc();  default value is 0, but can
-   be overridden by skin -- but must be done so *statically*, eg:
+   be overridden by tool -- but must be done so *statically*, eg:
 
      Int VG_(vg_malloc_redzone_szB) = 4;
 
@@ -1850,8 +1850,8 @@ extern void  VG_(cli_free)   ( void* p );
 extern Bool VG_(addr_is_in_block)( Addr a, Addr start, UInt size );
 
 /* ------------------------------------------------------------------ */
-/* Some options that can be used by a skin if malloc() et al are replaced.
-   The skin should call the functions in the appropriate places to give
+/* Some options that can be used by a tool if malloc() et al are replaced.
+   The tool should call the functions in the appropriate places to give
    control over these aspects of Valgrind's version of malloc(). */
 
 /* Round malloc sizes upwards to integral number of words? default: NO */
@@ -1868,7 +1868,7 @@ extern void VG_(replacement_malloc_print_debug_usage)       ( void );
 
 
 /*====================================================================*/
-/*=== Skin-specific stuff                                          ===*/
+/*=== Tool-specific stuff                                          ===*/
 /*====================================================================*/
 
 /* ------------------------------------------------------------------ */
@@ -1880,10 +1880,10 @@ extern void VG_(replacement_malloc_print_debug_usage)       ( void );
 
 /* Information used in the startup message.  `name' also determines the
    string used for identifying suppressions in a suppression file as
-   belonging to this skin.  `version' can be NULL, in which case (not
+   belonging to this tool.  `version' can be NULL, in which case (not
    surprisingly) no version info is printed; this mechanism is designed for
-   skins distributed with Valgrind that share a version number with
-   Valgrind.  Other skins not distributed as part of Valgrind should
+   tools distributed with Valgrind that share a version number with
+   Valgrind.  Other tools not distributed as part of Valgrind should
    probably have their own version number.  */
 extern void VG_(details_name)                  ( Char* name );
 extern void VG_(details_version)               ( Char* version );
@@ -1905,7 +1905,7 @@ extern void VG_(details_bug_reports_to)   ( Char* bug_reports_to );
 /* Booleans that decide core behaviour, but don't require extra
    operations to be defined if `True' */
 
-/* Should __libc_freeres() be run?  Bugs in it can crash the skin. */
+/* Should __libc_freeres() be run?  Bugs in it can crash the tool. */
 extern void VG_(needs_libc_freeres) ( void );
 
 /* Want to have errors detected by Valgrind's core reported?  Includes:
@@ -1919,7 +1919,7 @@ extern void VG_(needs_core_errors) ( void );
    the corresponding template functions (given below) must be defined.  A
    lot like being a member of a type class. */
 
-/* Want to report errors from skin?  This implies use of suppressions, too. */
+/* Want to report errors from tool?  This implies use of suppressions, too. */
 extern void VG_(needs_skin_errors) ( void );
 
 /* Is information kept about specific individual basic blocks?  (Eg. for
@@ -1930,28 +1930,28 @@ extern void VG_(needs_skin_errors) ( void );
    to be used for more than one instruction in one program run...  */
 extern void VG_(needs_basic_block_discards) ( void );
 
-/* Skin maintains information about each register? */
+/* Tool maintains information about each register? */
 extern void VG_(needs_shadow_regs) ( void );
 
-/* Skin defines its own command line options? */
+/* Tool defines its own command line options? */
 extern void VG_(needs_command_line_options) ( void );
 
-/* Skin defines its own client requests? */
+/* Tool defines its own client requests? */
 extern void VG_(needs_client_requests) ( void );
 
-/* Skin defines its own UInstrs? */
+/* Tool defines its own UInstrs? */
 extern void VG_(needs_extended_UCode) ( void );
 
-/* Skin does stuff before and/or after system calls? */
+/* Tool does stuff before and/or after system calls? */
 extern void VG_(needs_syscall_wrapper) ( void );
 
-/* Are skin-state sanity checks performed? */
+/* Are tool-state sanity checks performed? */
 extern void VG_(needs_sanity_checks) ( void );
 
 /* Do we need to see data symbols? */
 extern void VG_(needs_data_syms) ( void );
 
-/* Does the skin need shadow memory allocated (if you set this, you must also statically initialize 
+/* Does the tool need shadow memory allocated (if you set this, you must also statically initialize 
    float SK_(shadow_ratio) = n./m;
    to define how many shadow bits you need per client address space bit.
 */

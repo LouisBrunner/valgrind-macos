@@ -43,8 +43,8 @@
 
 #include "vg_constants.h"
 
-/* All stuff visible to core and skins goes in vg_skin.h.  Things
- * visible to core but not visible to any skins should go in this
+/* All stuff visible to core and tools goes in vg_skin.h.  Things
+ * visible to core but not visible to any tools should go in this
  * file, vg_include.h. */
 #include "vg_skin.h"
 #include "valgrind.h"
@@ -252,7 +252,7 @@ extern Bool  VG_(clo_track_fds);
 /* Should we run __libc_freeres at exit?  Sometimes causes crashes.
    Default: YES.  Note this is subservient to VG_(needs).libc_freeres;
    if the latter says False, then the setting of VG_(clo_weird_hacks)
-   is ignored.  Ie if a skin says no, I don't want this to run, that
+   is ignored.  Ie if a tool says no, I don't want this to run, that
    cannot be overridden from the command line. */
 extern Bool  VG_(clo_run_libc_freeres);
 /* Use the basic-block chaining optimisation?  Default: YES */
@@ -281,10 +281,10 @@ extern void VGP_(done_profiling) ( void );
 #define VGP_POPCC(x)    if (VG_(clo_profile)) VGP_(popcc)(x)
 
 /* ---------------------------------------------------------------------
-   Skin-related types
+   Tool-related types
    ------------------------------------------------------------------ */
-/* These structs are not exposed to skins to mitigate possibility of
-   binary-incompatibilities when the core/skin interface changes.  Instead,
+/* These structs are not exposed to tools to mitigate possibility of
+   binary-incompatibilities when the core/tool interface changes.  Instead,
    set functions are provided (see include/vg_skin.h). */
 typedef
    struct {
@@ -345,8 +345,8 @@ void VG_(sanity_check_needs)(void);
       TOOL      for the tool to use (and the only one it uses).
       SYMTAB    for Valgrind's symbol table storage.
       JITTER    for small storage during translation.
-      CLIENT    for the client's mallocs/frees, if the skin replaces glibc's
-                    malloc() et al -- redzone size is chosen by the skin.
+      CLIENT    for the client's mallocs/frees, if the tool replaces glibc's
+                    malloc() et al -- redzone size is chosen by the tool.
       DEMANGLE  for the C++ demangler.
       EXECTXT   for storing ExeContexts.
       ERRORS    for storing CoreErrors.
@@ -391,7 +391,7 @@ extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 /* This doesn't export code or data that valgrind.so needs to link
    against.  However, the scheduler does need to know the following
    request codes.  A few, publically-visible, request codes are also
-   defined in valgrind.h, and similar headers for some skins. */
+   defined in valgrind.h, and similar headers for some tools. */
 
 #define VG_USERREQ__MALLOC                  0x2001
 #define VG_USERREQ__FREE                    0x2002
@@ -1270,7 +1270,7 @@ extern Addr VG_(client_trampoline_code);
 
 extern Addr VG_(brk_base);	/* start of brk */
 extern Addr VG_(brk_limit);	/* current brk */
-extern Addr VG_(shadow_base);	/* skin's shadow memory */
+extern Addr VG_(shadow_base);	/* tool's shadow memory */
 extern Addr VG_(shadow_end);
 extern Addr VG_(valgrind_base);	/* valgrind's address range */
 extern Addr VG_(valgrind_end);
@@ -1561,7 +1561,7 @@ extern const Int  VG_(tramp_sigreturn_offset);
 extern const Int  VG_(tramp_syscall_offset);
 
 /* ---------------------------------------------------------------------
-   Things relating to the used skin
+   Things relating to the used tool
    ------------------------------------------------------------------ */
 
 #define VG_TRACK(fn, args...) 			\
@@ -1646,7 +1646,7 @@ extern Int VGOFF_(ldt);
 /* This thread's TLS pointer. */
 extern Int VGOFF_(tls);
 
-/* Nb: Most helper offsets are in include/vg_skin.h, for use by skins */
+/* Nb: Most helper offsets are in include/vg_skin.h, for use by tools */
 
 extern Int VGOFF_(helper_undefined_instruction);
 

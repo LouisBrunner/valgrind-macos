@@ -1390,7 +1390,7 @@ void* VG_(arena_realloc) ( ArenaId aid, void* ptr,
 
 
 /*------------------------------------------------------------*/
-/*--- Skin-visible functions.                              ---*/
+/*--- Tool-visible functions.                              ---*/
 /*------------------------------------------------------------*/
 
 /* All just wrappers to avoid exposing arenas to tools */

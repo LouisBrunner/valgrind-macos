@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-/* The quick sanity check of Memcheck (and other skins with shadow memory)
+/* The quick sanity check of Memcheck (and other tools with shadow memory)
    relies on the first 64KB of memory never being used.  So our mmap()
    refuses to touch this area.  This program tests for that. */
 

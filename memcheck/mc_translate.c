@@ -573,7 +573,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             still addressible.  Hence the optionalisation of the V
             check.  15 Dec 02: optionalisation removed, since it no
             longer makes much sense given we also have an addrcheck
-            skin.
+            tool.
 
             The LOADV/STOREV does an addressibility check for the
             address. */

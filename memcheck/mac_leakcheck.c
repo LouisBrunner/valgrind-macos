@@ -64,8 +64,8 @@ void vg_scan_all_valid_memory_sighandler ( Int sigNo )
    on the page is valid.  Only if so are that address and its contents
    passed to notify_word.
 
-   This is all to avoid duplication of this machinery between the
-   memcheck and addrcheck skins.  
+   This is all to avoid duplication of this machinery between
+   Memcheck and Addrcheck.  
 */
 static
 UInt vg_scan_all_valid_memory ( Bool is_valid_64k_chunk ( UInt ),
@@ -368,8 +368,8 @@ static Int lc_compar(void* n1, void* n2)
 /* Top level entry point to leak detector.  Call here, passing in
    suitable address-validating functions (see comment at top of
    vg_scan_all_valid_memory above).  All this is to avoid duplication
-   of the leak-detection code for the Memcheck and Addrcheck skins.
-   Also pass in a skin-specific function to extract the .where field
+   of the leak-detection code for Memcheck and Addrcheck.
+   Also pass in a tool-specific function to extract the .where field
    for allocated blocks, an indication of the resolution wanted for
    distinguishing different allocation points, and whether or not
    reachable blocks should be shown.

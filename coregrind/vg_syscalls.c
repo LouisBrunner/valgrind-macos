@@ -37,7 +37,7 @@
 
 /* All system calls are channelled through here, doing two things:
 
-   * notify the skin of the memory events (reads, writes) happening
+   * notify the tool of the memory events (reads, writes) happening
 
    * perform the syscall, usually by passing it along to the kernel
      unmodified.
@@ -5864,7 +5864,7 @@ void VG_(post_syscall) ( ThreadId tid, Bool restart )
 
    tst = VG_(get_ThreadState)(tid);
 
-   /* Tell the skin about the syscall return value */
+   /* Tell the tool about the syscall return value */
    SET_SYSCALL_RETVAL(tst->tid, tst->m_eax);
 
    syscallno = tst->syscallno;

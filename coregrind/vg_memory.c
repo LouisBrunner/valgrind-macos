@@ -670,7 +670,7 @@ Segment *VG_(next_segment)(Segment *s)
 #define VG_HUGE_DELTA            (VG_PLAUSIBLE_STACK_SIZE / 4)
 
 /* This function gets called if new_mem_stack and/or die_mem_stack are
-   tracked by the skin, and one of the specialised cases (eg. new_mem_stack_4)
+   tracked by the tool, and one of the specialised cases (eg. new_mem_stack_4)
    isn't used in preference */
 __attribute__((regparm(1)))
 void VG_(unknown_esp_update)(Addr new_ESP)
@@ -841,7 +841,7 @@ void VG_(init_shadow_range)(Addr p, UInt sz, Bool call_init)
    
    if (call_init) 
       while(sz) {
-	 /* ask the skin to initialize each page */
+	 /* ask the tool to initialize each page */
 	 VG_TRACK( init_shadow_page, PGROUNDDN(p) );
 	 
 	 p += VKI_BYTES_PER_PAGE;

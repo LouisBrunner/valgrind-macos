@@ -74,7 +74,7 @@ UCodeBlock* VG_(alloc_UCodeBlock) ( void )
    return cb;
 }
 
-/* This one is called by skins */
+/* This one is called by tools */
 UCodeBlock* VG_(setup_UCodeBlock) ( UCodeBlock* cb_in )
 {
    UCodeBlock* cb = VG_(arena_malloc)(VG_AR_CORE, sizeof(UCodeBlock));
@@ -1459,7 +1459,7 @@ Int containingArchRegOf ( Int sz, Int aregno )
 
 /* If u reads an ArchReg, return the number of the containing arch
    reg.  Otherwise return -1.  Used in redundant-PUT elimination.
-   Note that this is not required for skins extending UCode because
+   Note that this is not required for tools extending UCode because
    this happens before instrumentation. */
 static
 Int maybe_uinstrReadsArchReg ( UInstr* u )
@@ -1846,9 +1846,9 @@ static void vg_improve ( UCodeBlock* cb )
 /*--- %ESP-update pass                                     ---*/
 /*------------------------------------------------------------*/
 
-/* For skins that want to know about %ESP changes, this pass adds
-   in the appropriate hooks.  We have to do it after the skin's
-   instrumentation, so the skin doesn't have to worry about the CCALLs
+/* For tools that want to know about %ESP changes, this pass adds
+   in the appropriate hooks.  We have to do it after the tool's
+   instrumentation, so the tool doesn't have to worry about the CCALLs
    it adds in, and we must do it before register allocation because
    spilled temps make it much harder to work out the %esp deltas.
    Thus we have it as an extra phase between the two. 
@@ -2053,7 +2053,7 @@ UCodeBlock* vg_do_register_allocation ( UCodeBlock* c1 )
             if (temp_info[tno].live_after == VG_NOTHING) {
                VG_(printf)("At instr %d...\n", i);
                VG_(core_panic)("First use of tmp not a write,"
-                               " probably a skin instrumentation error");
+                               " probably a tool instrumentation error");
             }
             /* Reads only hold it live until before this insn. */
             if (temp_info[tno].dead_before < i)
@@ -2491,7 +2491,7 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
    VG_(saneUCodeBlock)( cb );
    VGP_POPCC(VgpInstrument);
 
-   /* Add %ESP-update hooks if the skin requires them */
+   /* Add %ESP-update hooks if the tool requires them */
    /* Nb: We don't print out this phase, because it doesn't do much */
    if (VG_(need_to_handle_esp_assignment)()) {
       VGP_PUSHCC(VgpESPUpdate);

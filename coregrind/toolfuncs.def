@@ -8,7 +8,7 @@
 # Lines starting with : set the prefix
 
 ## These are the parameterised functions in the core.  The default definitions
-## are overridden by LD_PRELOADed skin version.  At the very least, a skin
+## are overridden by LD_PRELOADed tool version.  At the very least, a tool
 ## must define the fundamental template functions.  Depending on what needs
 ## are set, extra template functions will be used too.  Functions are
 ## grouped under the needs that govern their use.
@@ -108,10 +108,10 @@ void,	discard_basic_block_info,		Addr a, UInt size
 ## record the option as well.
 Bool,	process_cmd_line_option,	Char* argv
 
-## Print out command line usage for options for normal skin operation.
+## Print out command line usage for options for normal tool operation.
 void,	print_usage
 
-## Print out command line usage for options for debugging the skin.
+## Print out command line usage for options for debugging the tool.
 void,	print_debug_usage
 
 ## ------------------------------------------------------------------
@@ -123,7 +123,7 @@ void,	print_debug_usage
 ## requests should follow.
 
 ## This function should use the VG_IS_SKIN_USERREQ macro (in
-## include/valgrind.h) to first check if it's a request for this skin.  Then
+## include/valgrind.h) to first check if it's a request for this tool.  Then
 ## should handle it if it's recognised (and return True), or return False if
 ## not recognised.  arg_block[0] holds the request number, any further args
 ## from the request are in arg_block[1..].  'ret' is for the return value...
@@ -155,7 +155,7 @@ void, post_syscall, ThreadId tid, UInt syscallno, void* pre_result, Int res, Boo
 ## ---------------------------------------------------------------------
 ##   VG_(needs).sanity_checks
 
-## Can be useful for ensuring a skin's correctness.  SK_(cheap_sanity_check)
+## Can be useful for ensuring a tool's correctness.  SK_(cheap_sanity_check)
 ## is called very frequently;  SK_(expensive_sanity_check) is called less
 ## frequently and can be more involved.
 Bool, cheap_sanity_check
@@ -176,7 +176,7 @@ Bool, expensive_sanity_check
 ## VG_(get_current_or_recent_tid)() might not give the right ThreadId in
 ## that case.
 
-## Memory events (Nb: to track heap allocation/freeing, a skin must replace
+## Memory events (Nb: to track heap allocation/freeing, a tool must replace
 ## malloc() et al.  See above how to do this.)
 
 ## These ones occur at startup, upon some signals, and upon some syscalls
@@ -191,7 +191,7 @@ void,	die_mem_stack_signal,	Addr a, UInt len
 void,	die_mem_brk,	Addr a, UInt len
 void,	die_mem_munmap,	Addr a, UInt len
 
-## These ones are called when %esp changes.  A skin could track these itself
+## These ones are called when %esp changes.  A tool could track these itself
 ## (except for ban_mem_stack) but it's much easier to use the core's help.
 
 ## The specialised ones are called in preference to the general one, if they
@@ -241,7 +241,7 @@ void,	post_reg_write_syscall_return,	ThreadId tid, UInt reg
 void,	post_reg_write_deliver_signal,	ThreadId tid, UInt reg
 void,	post_reg_write_pthread_return,	ThreadId tid, UInt reg
 void,	post_reg_write_clientreq_return,	ThreadId tid, UInt reg
-## This one is called for malloc() et al if they are replaced by a skin.
+## This one is called for malloc() et al if they are replaced by a tool.
 void,	post_reg_write_clientcall_return,	ThreadId tid, UInt reg, Addr f
 
 

@@ -104,7 +104,7 @@ Addr VG_(clstk_end);
 Addr VG_(brk_base);	         /* start of brk */
 Addr VG_(brk_limit);	         /* current brk */
 
-Addr VG_(shadow_base);	         /* skin's shadow memory */
+Addr VG_(shadow_base);	         /* tool's shadow memory */
 Addr VG_(shadow_end);
 
 Addr VG_(valgrind_base);	 /* valgrind's address range */
@@ -1316,9 +1316,9 @@ static void load_tool( const char *toolname, void** handle_out,
               toolinfo->sizeof_ToolInfo);
       fprintf(stderr, "  You need to at least recompile, and possibly update,\n");
       if (VG_CORE_INTERFACE_MAJOR_VERSION > toolinfo->interface_major_version)
-         fprintf(stderr, "  your skin to work with this version of Valgrind.\n");
+         fprintf(stderr, "  your tool to work with this version of Valgrind.\n");
       else
-         fprintf(stderr, "  your version of Valgrind to work with this skin.\n");
+         fprintf(stderr, "  your version of Valgrind to work with this tool.\n");
       goto bad_load;
    }
 
@@ -1917,7 +1917,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       results of a run which encompasses multiple processes. */
 
    if (VG_(clo_verbosity > 0)) {
-      /* Skin details */
+      /* Tool details */
       VG_(message)(Vg_UserMsg, "%s%s%s, %s for x86-linux.",
                    VG_(details).name, 
                    NULL == VG_(details).version ?        "" : "-",
@@ -1979,7 +1979,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 
    if (VG_(clo_n_suppressions) < VG_CLO_MAX_SFILES-1 &&
        (VG_(needs).core_errors || VG_(needs).skin_errors)) {
-      /* If there are no suppression files specified and the skin
+      /* If there are no suppression files specified and the tool
 	 needs one, load the default */
       static const Char default_supp[] = "default.supp";
       Int len = VG_(strlen)(VG_(libdir)) + 1 + sizeof(default_supp);
@@ -2192,7 +2192,7 @@ void VG_(register_noncompact_helper)(Addr a)
    VG_(n_noncompact_helpers)++;
 }
 
-/* Allocate offsets in baseBlock for the skin helpers */
+/* Allocate offsets in baseBlock for the tool helpers */
 static 
 void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
 {
@@ -2588,7 +2588,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 
 /*
   This code decides on the layout of the client and Valgrind address
-  spaces, loads valgrind.so and the skin.so into the valgrind part,
+  spaces, loads valgrind.so and the tool.so into the valgrind part,
   loads the client executable (and the dynamic linker, if necessary)
   into the client part, and calls into Valgrind proper.
 
@@ -2609,7 +2609,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
                  | redzone                 |
   shadow_base    +-------------------------+
                  |                         |
-	         : shadow memory for skins :
+	         : shadow memory for tools :
 	         | (may be 0 sized)        |
   shadow_end     +-------------------------+
                  : gap (may be 0 sized)    :

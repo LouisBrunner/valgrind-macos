@@ -2342,7 +2342,7 @@ void VG_(emit_AMD_prefetch_reg) ( Int reg )
 /*--- Helper offset -> addr translation            ---*/
 /*----------------------------------------------------*/
 
-/* Finds the baseBlock offset of a skin-specified helper.
+/* Finds the baseBlock offset of a tool-specified helper.
  * Searches through compacts first, then non-compacts. */
 Int VG_(helper_offset)(Addr a)
 {

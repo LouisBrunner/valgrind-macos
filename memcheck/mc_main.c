@@ -1457,9 +1457,9 @@ Bool mc_is_valid_address ( Addr a )
 }
 
 
-/* Leak detector for this skin.  We don't actually do anything, merely
+/* Leak detector for this tool.  We don't actually do anything, merely
    run the generic leak detector with suitable parameters for this
-   skin. */
+   tool. */
 void MC_(detect_memory_leaks) ( void )
 {
    MAC_(do_detect_memory_leaks) ( mc_is_valid_64k_chunk, mc_is_valid_address );

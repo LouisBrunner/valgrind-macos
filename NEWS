@@ -1,4 +1,72 @@
 
+Stable release 2.4.0 (March 2005) -- CHANGES RELATIVE TO 2.2.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+2.4.0 represents another architectural change for Valgrind.  The most
+significant user-visible change is that we no longer emulate
+libpthread; this has both pluses and minuses.
+
+* Memcheck is now the default tool
+
+* The default stack backtrace is now 12 call frames
+
+* Suppressions can have up to 25 call frame matches, rather than
+  just 4
+
+* libpthread has gone along with all the bugs associated with it.
+  Instead, Valgrind now emulates the kernel's threading syscalls
+  (clone, etc), and lets you use your standard system libpthread.
+  This means:
+
+    - There should be many fewer system dependencies and strange
+      library-related bugs.  There is a small performance improvement,
+      and a large stability improvement.
+
+    - On the downside, this means that Valgrind can no longer report
+      on problems with how your program uses threads.  It also means
+      that Helgrind is currently non-functional.  We're hoping to
+      fix these for a (near) future release.
+
+* Addrcheck and memcheck use a lot less memory for many programs.
+  These tools no longer need to allocate shadow memory if there are
+  large regions of memory with the same A/V states - such as an
+  mmaped file.
+
+* Addrcheck and memcheck's leak-detector has been improved.  It now
+  reports many more types of memory leak, including leaked cycles.
+  When reporting leaked memory, it can distinguish between directly
+  leaked memory (memory with no references), and indirectly leaked
+  memory (memory only referred to by other leaked memory).
+
+* Memcheck's confusion over the effect of mprotect() has been fixed;
+  previously mprotect could erroneously make undefined data defined.
+
+* State passed to signal handlers may be modified so that it will take
+  effect when the signal returns.  You will need run with --single-step=yes
+  to make this useful.
+
+* In general, signal handling should now be indistinguishable from
+  running natively.
+
+* Valgrind is built in Position Independent Executable (PIE) format if
+  the toolchain supports it.  This allows it to take advantage of all
+  the available address space on systems with 4Gbyte user address
+  spaces.
+
+* Valgrind can now run itself (requires PIE support).
+
+* Syscall arguments are now checked for validity.  Previously all memory
+  used by syscalls was checked, but now the actual values passed
+  are also checked.
+
+* Syscall wrappers are now more robust against bad addresses being
+  passed to syscalls; they will fail with EFAULT rather than killing
+  Valgrind with SIGSEGV.
+
+* Because clone() is directly supported, many non-pthread uses of
+  it will work.  Partial sharing (where some resources are shared,
+  and some are not) is not supported.
+
 Stable release 2.2.0 (31 August 2004) -- CHANGES RELATIVE TO 2.0.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 2.2.0 brings nine months worth of improvements and bug fixes.  We

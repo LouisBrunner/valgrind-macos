@@ -218,7 +218,7 @@ EOF
 	*version=3*) 
 	   AC_MSG_RESULT([XFree 3.x family])
 	   AC_DEFINE(XFREE_3)
-	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
+	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
 	   ;;
 
 	*) AC_MSG_RESULT([unknown XFree86 server (${xfree})])

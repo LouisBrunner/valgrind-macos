@@ -21,6 +21,12 @@ int main(void)
    s  = &x[1];
    os = &x[4];
 
+   // Make sure the system is in a known state with no signals
+   // blocked as perl has been known to leave some signals blocked
+   // when starting child processes which can cause failures in
+   // this test unless we reset things here.
+   syscall(__NR_sigprocmask, SIG_SETMASK, os, NULL);
+
    fprintf(stderr, "before\n");
    for (i = 0; i < 6; i++) {
       fprintf(stderr, "%x ", x[i]);

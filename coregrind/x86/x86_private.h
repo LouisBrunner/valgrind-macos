@@ -43,20 +43,13 @@
 
 /* Is this a SSE/SSE2-capable CPU?  If so, we had better save/restore
    the SSE state all over the place.  This is set up very early, since we
-   can't even correctly snapshot the startup machine state without it. */
+   can't even correctly snapshot the startup machine state without it. 
+*/
 extern Bool VG_(have_ssestate);
 
-/* ---------------------------------------------------------------------
-   Exports of vg_ldt.c
-   ------------------------------------------------------------------ */
-
-/* Alloc & copy, and dealloc. */
-extern VexGuestX86SegDescr* 
-       VG_(allocate_LDT_for_thread)   ( VexGuestX86SegDescr* parent_ldt );
-extern void
-       VG_(deallocate_LDT_for_thread) ( VexGuestX86SegDescr* ldt );
-extern void
-       VG_(clear_TLS_for_thread)      ( VexGuestX86SegDescr* tls );
+/* Create LDT/GDT arrays, as specified in libvex_guest_x86.h. */
+extern VexGuestX86SegDescr* VG_(alloc_zeroed_x86_GDT) ( void );
+extern VexGuestX86SegDescr* VG_(alloc_zeroed_x86_LDT) ( void );
 
 
 #endif   // __X86_PRIVATE_H

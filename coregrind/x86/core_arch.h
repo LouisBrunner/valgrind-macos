@@ -80,47 +80,12 @@
 } while (0)
 
 /* ---------------------------------------------------------------------
-   LDT type             
-   ------------------------------------------------------------------ */
-
-// XXX: eventually this will be x86-private, not seen by the core(?)
-
-/* This is the hardware-format for a segment descriptor, ie what the
-   x86 actually deals with.  It is 8 bytes long.  It's ugly.  */
-#if 0
-typedef struct _LDT_ENTRY {
-    union {
-       struct {
-          UShort      LimitLow;
-          UShort      BaseLow;
-          unsigned    BaseMid         : 8;
-          unsigned    Type            : 5;
-          unsigned    Dpl             : 2;
-          unsigned    Pres            : 1;
-          unsigned    LimitHi         : 4;
-          unsigned    Sys             : 1;
-          unsigned    Reserved_0      : 1;
-          unsigned    Default_Big     : 1;
-          unsigned    Granularity     : 1;
-          unsigned    BaseHi          : 8;
-       } Bits;
-       struct {
-          UInt word1;
-          UInt word2;
-       } Words;
-    } 
-    LdtEnt;
-} VgLdtEntry;
-#endif
-
-/* ---------------------------------------------------------------------
    Architecture-specific part of a ThreadState
    ------------------------------------------------------------------ */
 
 // Architecture-specific part of a ThreadState
 // XXX: eventually this should be made abstract, ie. the fields not visible
-//      to the core...  then VgLdtEntry can be made non-visible to the core
-//      also.
+//      to the core...
 typedef 
    struct {
       /* --- BEGIN vex-mandated guest state --- */

@@ -1550,18 +1550,15 @@ void VG_(ssort)( void* base, UInt nmemb, UInt size,
    #define SORT \
    for ( ; hp >= 0; hp--) { \
       h = incs[hp]; \
-      i = lo + h; \
-      while (1) { \
-         if (i > hi) break; \
+      for (i = lo + h; i <= hi; i++) { \
          ASSIGN(v,0, a,i); \
          j = i; \
-        while (COMPAR(a,(j-h), v,0) > 0) { \
+         while (COMPAR(a,(j-h), v,0) > 0) { \
             ASSIGN(a,j, a,(j-h)); \
             j = j - h; \
             if (j <= (lo + h - 1)) break; \
          } \
          ASSIGN(a,j, v,0); \
-         i++; \
       } \
    }
 
@@ -1596,16 +1593,14 @@ void VG_(ssort)( void* base, UInt nmemb, UInt size,
 
    // General case
    } else {
-      void* a = (void*)base;
-      Char  vc[size];      // will be at least 'size' bytes
-      void* v = (void*)vc;
+      char* a = base;
+      char  v[size];      // will be at least 'size' bytes
 
       #define ASSIGN(dst, dsti, src, srci) \
-      VG_(memcpy)( (void*)((dst) + size*(dsti)), \
-                   (void*)((src) + size*(srci)), (size) );
+      VG_(memcpy)( &dst[size*(dsti)], &src[size*(srci)], size );
 
       #define COMPAR(dst, dsti, src, srci) \
-      compar( (void*)((dst) + size*(dsti)), (void*)((src) + size*(srci)) )
+      compar( &dst[size*(dsti)], &src[size*(srci)] )
 
       SORT;
 

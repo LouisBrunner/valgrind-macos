@@ -526,6 +526,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        ((Int)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
                         <= (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
+            case Iop_CmpLT32S:
+               e2 = IRExpr_Const(IRConst_Bit(
+                       ((Int)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U32)
+                        < (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
+               break;
 
             case Iop_32HLto64:
                e2 = IRExpr_Const(IRConst_U64(

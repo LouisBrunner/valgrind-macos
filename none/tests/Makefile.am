@@ -17,7 +17,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	coolo_strlen.stderr.exp coolo_strlen.vgtest \
 	discard.stderr.exp discard.stdout.exp \
 	discard.vgtest \
-	exec-sigmask.vgtest exec-sigmask.stdout.exp exec-sigmask.stderr.exp \
+	exec-sigmask.vgtest exec-sigmask.stdout.exp 
+	exec-sigmask.stdout.exp2 exec-sigmask.stderr.exp \
 	execve.vgtest execve.stdout.exp execve.stderr.exp \
 	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
 	floored.stderr.exp floored.stdout.exp \

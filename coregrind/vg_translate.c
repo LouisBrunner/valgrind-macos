@@ -2386,7 +2386,7 @@ void VG_(translate) ( /*IN*/  ThreadId tid,
       notrace_until_limit to be the number of translations to be made
       before --trace-codegen= style printing takes effect. */
    notrace_until_done
-      = VG_(overall_in_count) > notrace_until_limit;
+      = VG_(overall_in_count) >= notrace_until_limit;
 
    seg = VG_(find_segment)(orig_addr);
 

@@ -7,7 +7,7 @@
 <a name="cg-top"></a>
 <h2>4&nbsp; <b>Cachegrind</b>: a cache-miss profiler</h2>
 
-To use this skin, you must specify <code>--skin=cachegrind</code>
+To use this tool, you must specify <code>--tool=cachegrind</code>
 on the Valgrind command line.
 
 <p>
@@ -44,7 +44,7 @@ should profile your program as it will be normally run.
 
 The two steps are:
 <ol>
-  <li>Run your program with <code>valgrind --skin=cachegrind</code> in front of
+  <li>Run your program with <code>valgrind --tool=cachegrind</code> in front of
       the normal command line invocation.  When the program finishes,
       Cachegrind will print summary cache statistics. It also collects
       line-by-line information in a file
@@ -144,11 +144,10 @@ interested to hear from anyone who does.
 <a name="profile"></a>
 <h3>4.4&nbsp; Profiling programs</h3>
 
-Cache profiling is enabled by using the <code>--skin=cachegrind</code>
-option to the <code>valgrind</code> shell script.  To gather cache profiling
-information about the program <code>ls -l</code>, type:
+To gather cache profiling information about the program <code>ls -l</code>,
+invoke Cachegrind like this:
 
-<blockquote><code>valgrind --skin=cachegrind ls -l</code></blockquote>
+<blockquote><code>valgrind --tool=cachegrind ls -l</code></blockquote>
 
 The program will execute (slowly).  Upon completion, summary statistics
 that look like this will be printed:
@@ -193,7 +192,7 @@ described in the next section.
 <p>
 Things to note about the <code>cachegrind.out.<i>pid</i></code> file:
 <ul>
-  <li>It is written every time <code>valgrind --skin=cachegrind</code>
+  <li>It is written every time Cachegrind
       is run, and will overwrite any existing
       <code>cachegrind.out.<i>pid</i></code> in the current directory (but
       that won't happen very often because it takes some time for process ids
@@ -229,7 +228,7 @@ Cache-simulation specific options are:
       three items must be comma-separated, but with no spaces, eg:
 
       <blockquote>
-      <code>valgrind --skin=cachegrind --I1=65535,2,64</code>
+      <code>valgrind --tool=cachegrind --I1=65535,2,64</code>
       </blockquote>
 
       You can specify one, two or three of the I1/D1/L2 caches.  Any level not
@@ -350,7 +349,7 @@ First up is a summary of the annotation options:
 </ul>
 
 Then follows summary statistics for the whole program. These are similar
-to the summary provided when running <code>valgrind --skin=cachegrind</code>.<p>
+to the summary provided when running <code>valgrind --tool=cachegrind</code>.<p>
   
 Then follows function-by-function statistics. Each function is
 identified by a <code>file_name:function_name</code> pair. If a column

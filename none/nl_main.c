@@ -1,10 +1,10 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Nulgrind: The null skin.                           nl_main.c ---*/
+/*--- Nulgrind: The null tool.                           nl_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Nulgrind, the simplest possible Valgrind skin,
+   This file is part of Nulgrind, the simplest possible Valgrind tool,
    which does nothing.
 
    Copyright (C) 2002-2003 Nicholas Nethercote

@@ -7,11 +7,11 @@
 <a name="hg-top"></a>
 <h2>6&nbsp; Helgrind: a data-race detector</h2>
 
-To use this skin, you must specify <code>--skin=helgrind</code> on the
+To use this tool, you must specify <code>--tool=helgrind</code> on the
 Valgrind command line.
 <p>
 
-Helgrind is a Valgrind skin for detecting data races in C and C++ programs
+Helgrind is a Valgrind tool for detecting data races in C and C++ programs
 that use the Pthreads library.
 <p>
 It uses the Eraser algorithm described in 
@@ -51,7 +51,7 @@ threads cannot overlap -- for example, if your main thread waits on another
 thread with a <code>pthread_join()</code> operation -- they can both access the
 same variable without holding a lock.
 <p>
-There's a lot of other sophistication in the Helgrind skin, aimed at
+There's a lot of other sophistication in Helgrind, aimed at
 reducing the number of false reports, and at producing useful error
 reports.  We hope to have more documentation one day...
 

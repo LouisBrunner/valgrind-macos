@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- An example skin.                                   ex_main.c ---*/
+/*--- An example tool.                                   ex_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 #include "vg_skin.h"
@@ -11,7 +11,7 @@ void SK_(pre_clo_init)()
 {
    VG_(details_name)            ("Example");
    VG_(details_version)         ("0.0.1");
-   VG_(details_description)     ("an example Valgrind skin");
+   VG_(details_description)     ("an example Valgrind tool");
    VG_(details_copyright_author)(
       "Copyright (C) 2002-2003, and put in the public domain, by Santa Claus.");
    VG_(details_bug_reports_to)  ("santa.claus@northpole.org");

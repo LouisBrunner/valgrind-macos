@@ -212,7 +212,7 @@ void VG_(gen_suppression)(Error* err)
       Char* name = SK_(get_error_name)(err);
       if (NULL == name) {
          VG_(message)(Vg_UserMsg, 
-                      "(skin does not allow error to be suppressed)");
+                      "(tool does not allow error to be suppressed)");
          return;
       }
       VG_(printf)("   %s:%s\n", VG_(details).name, name);

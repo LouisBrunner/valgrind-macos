@@ -60,8 +60,8 @@
 # If results don't match, the output can be found in <test>.std<strm>.out,
 # and the diff between expected and actual in <test>.std<strm>.diff.
 #
-# Notes on adding regression tests for a new skin are in
-# coregrind/docs/skins.html.
+# Notes on adding regression tests for a new tool are in
+# coregrind/docs/coregrind_tools.html.
 #----------------------------------------------------------------------------
 
 use warnings;
@@ -205,11 +205,11 @@ sub mysystem($)
     (system($_[0]) != 2) or exit 1;      # 2 is SIGINT
 }
 
-# from a directory name like "/foo/cachesim/tests/" determine the skin name
-sub determine_skin()
+# from a directory name like "/foo/cachesim/tests/" determine the tool name
+sub determine_tool()
 {
     my $dir = `pwd`;
-    $dir =~ /.*\/([^\/]+)\/tests.*/;   # foo/skin_name/tests/foo
+    $dir =~ /.*\/([^\/]+)\/tests.*/;   # foo/tool_name/tests/foo
     return $1;
 }
 
@@ -224,12 +224,12 @@ sub do_one_test($$)
 
     printf("%-16s valgrind $vgopts $prog $args\n", "$name:");
 
-    # Pass the appropriate --skin option for the directory (can be overridden
+    # Pass the appropriate --tool option for the directory (can be overridden
     # by an "args:" or "args.dev:" line, though).  
     # Also, because the default valgrind is coregrind/valgrind which isn't
     # executable, prepend `sh'.
-    my $skin=determine_skin();
-    mysystem("sh $valgrind --skin=$skin --in-place=$tests_dir $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
+    my $tool=determine_tool();
+    mysystem("sh $valgrind --tool=$tool --in-place=$tests_dir $vgopts $prog $args > $name.stdout.out 2> $name.stderr.out");
 
     if (defined $stdout_filter) {
         mysystem("$stdout_filter < $name.stdout.out > $tmp");

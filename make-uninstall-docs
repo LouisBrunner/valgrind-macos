@@ -7,7 +7,7 @@
 
 cp  Inst/share/doc/valgrind/coregrind_core.html   coregrind/docs
 cp  Inst/share/doc/valgrind/coregrind_intro.html  coregrind/docs
-cp  Inst/share/doc/valgrind/coregrind_skins.html  coregrind/docs
+cp  Inst/share/doc/valgrind/coregrind_tools.html  coregrind/docs
 cp  Inst/share/doc/valgrind/manual.html           docs
 cp  Inst/share/doc/valgrind/ac_main.html          addrcheck/docs
 cp  Inst/share/doc/valgrind/mc_main.html          memcheck/docs

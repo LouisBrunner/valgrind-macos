@@ -88,7 +88,7 @@ A5. Valgrind doesn't work out-of-the-box with programs that are entirely
 
     If you absolutely cannot use dynamic libraries, you can try statically
     linking together all the .o files in coregrind/, all the .o files of the
-    skin of your choice (eg. those in memcheck/), and the .o files of your
+    tool of your choice (eg. those in memcheck/), and the .o files of your
     program.  You'll end up with a statically linked binary that runs
     permanently under Valgrind's control.  Note that we haven't tested this
     procedure thoroughly.

@@ -637,7 +637,7 @@ static void usage ( void )
 "usage: valgrind [options] prog-and-args\n"
 "\n"
 "  core user options, with defaults in [ ], are:\n"
-"    --skin=<name>             main task (skin to use) [Valgrind]\n"
+"    --tool=<name>             Use the Valgrind tool named <name> [memcheck]\n"
 
 "    --help                    show this message\n"
 "    --version                 show version\n"
@@ -674,7 +674,7 @@ static void usage ( void )
 "			       syscall completes [no]\n"
 "    --assume-2.4=no|yes       assume we're running on a 2.4 kernel [no]\n"
 "\n"
-"  %s skin user options:\n";
+"  %s tool user options:\n";
 
 
    Char* usage2 = 
@@ -683,7 +683,7 @@ static void usage ( void )
 "    --sanity-level=<number>   level of sanity checking to do [1]\n"
 "    --single-step=no|yes      translate each instr separately? [no]\n"
 "    --optimise=no|yes         improve intermediate code? [yes]\n"
-"    --profile=no|yes          profile? (skin must be built for it) [no]\n"
+"    --profile=no|yes          profile? (tool must be built for it) [no]\n"
 "    --chain-bb=no|yes         do basic-block chaining? [yes]\n"
 "    --trace-codegen=<XXXXX>   show generated code? (X = 0|1) [00000]\n"
 "    --trace-syscalls=no|yes   show all system calls? [no]\n"
@@ -698,7 +698,7 @@ static void usage ( void )
 "                              error context [0=don't show any]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "\n"
-"  %s skin debugging options:\n";
+"  %s tool debugging options:\n";
 
    Char* usage3 =
 "\n"
@@ -708,8 +708,8 @@ static void usage ( void )
 "  and licensed under the GNU General Public License, version 2.\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n"
-"  Skins are copyright and licensed by their authors.  See each\n"
-"  skin's start-up message for more information.\n"
+"  Tools are copyright and licensed by their authors.  See each\n"
+"  tool's start-up message for more information.\n"
 "\n";
 
    VG_(printf)(usage1, VG_(details).name);
@@ -1535,9 +1535,9 @@ void VG_(main) ( void )
    /* Check skin and core versions are compatible */
    if (VG_CORE_INTERFACE_MAJOR_VERSION != VG_(skin_interface_major_version)) {
       VG_(printf)("Error:\n"
-                  "  Skin and core interface versions do not match.\n"
+                  "  Tool and core interface versions do not match.\n"
                   "  Interface version used by core is: %d.%d\n"
-                  "  Interface version used by skin is: %d.%d\n"
+                  "  Interface version used by tool is: %d.%d\n"
                   "  The major version numbers must match.\n",
                   VG_CORE_INTERFACE_MAJOR_VERSION,
                   VG_CORE_INTERFACE_MINOR_VERSION,

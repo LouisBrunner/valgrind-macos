@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Dummy profiling machinery -- overridden by skins when they   ---*/
+/*--- Dummy profiling machinery -- overridden by tools when they   ---*/
 /*--- want profiling.                                              ---*/
 /*---                                           vg_dummy_profile.c ---*/
 /*--------------------------------------------------------------------*/
@@ -36,9 +36,9 @@ static void vgp_die(void)
 {
    VG_(printf)(
       "\nProfiling error:\n"
-      "  The --profile=yes option was specified, but the skin\n"
+      "  The --profile=yes option was specified, but the tool\n"
       "  wasn't built for profiling.  #include \"vg_profile.c\"\n"
-      "  into the skin and rebuild to allow profiling.\n\n");
+      "  into the tool and rebuild to allow profiling.\n\n");
    VG_(exit)(1);
 }
 

@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Default panicky definitions of template functions that skins ---*/
+/*--- Default panicky definitions of template functions that tools ---*/
 /*--- should override.                                             ---*/
 /*---                                                vg_defaults.c ---*/
 /*--------------------------------------------------------------------*/
@@ -32,49 +32,49 @@
 
 
 /* These functions aren't intended to be run.  Replacement functions used by
- * the chosen skin are substituted by compiling the skin into a .so and
+ * the chosen tool are substituted by compiling the tool into a .so and
  * LD_PRELOADing it.  Nasty :) */
 
 #include "vg_include.h"
 
 /* ---------------------------------------------------------------------
-   Error messages (for malformed skins)
+   Error messages (for malformed tools)
    ------------------------------------------------------------------ */
 
-/* If the skin fails to define one or more of the required functions,
+/* If the tool fails to define one or more of the required functions,
  * make it very clear what went wrong! */
 
 static __attribute__ ((noreturn))
 void fund_panic ( const Char* fn )
 {
    VG_(printf)(
-      "\nSkin error:\n"
-      "  The skin you have selected is missing the function `%s',\n"
+      "\nTool error:\n"
+      "  The tool you have selected is missing the function `%s',\n"
       "  which is required.\n\n",
       fn);
-   VG_(skin_panic)("Missing skin function");
+   VG_(skin_panic)("Missing tool function");
 }
 
 static __attribute__ ((noreturn))
 void non_fund_panic ( const Char* fn )
 {
    VG_(printf)(
-      "\nSkin error:\n"
-      "  The skin you have selected is missing the function `%s'\n"
+      "\nTool error:\n"
+      "  The tool you have selected is missing the function `%s'\n"
       "  required by one of its needs.\n\n",
       fn);
-   VG_(skin_panic)("Missing skin function");
+   VG_(skin_panic)("Missing tool function");
 }
 
 static __attribute__ ((noreturn))
 void malloc_panic ( const Char* fn )
 {
    VG_(printf)(
-      "\nSkin error:\n"
-      "  The skin you have selected is missing the function `%s'\n"
+      "\nTool error:\n"
+      "  The tool you have selected is missing the function `%s'\n"
       "  required because it is replacing malloc() et al.\n\n",
       fn);
-   VG_(skin_panic)("Missing skin function");
+   VG_(skin_panic)("Missing tool function");
 }
 
 #define FUND(proto)                       \
@@ -163,11 +163,11 @@ UInt VG_(vg_malloc_redzone_szB) = 4;
 
 Bool VG_(sk_malloc_called_by_scheduler) = False;
 
-/* If the skin hasn't replaced malloc(), this one can be called from the
+/* If the tool hasn't replaced malloc(), this one can be called from the
    scheduler, for the USERREQ__MALLOC user request used by vg_libpthread.c. 
    (Nb: it cannot call glibc's malloc().)  The lock variable ensures that the
    scheduler is the only place this can be called from;  this ensures that a
-   malloc()-replacing skin cannot forget to implement SK_(malloc)() or
+   malloc()-replacing tool cannot forget to implement SK_(malloc)() or
    SK_(free)().  */
 __attribute__ ((weak))
 void* SK_(malloc)( Int size )

@@ -7,13 +7,13 @@
 <a name="mc-top"></a>
 <h2>3&nbsp; <b>Memcheck</b>: a heavyweight memory checker</h2>
 
-To use this skin, you may specify <code>--skin=memcheck</code> on the
+To use this tool, you may specify <code>--tool=memcheck</code> on the
 Valgrind command line.  But you don't have to, since this is the
-default skin.
+default tool.
 
 <h3>3.1&nbsp; Kinds of bugs that memcheck can find</h3>
 
-Memcheck is Valgrind-1.0.X's checking mechanism bundled up into a skin.
+Memcheck is Valgrind-1.0.X's checking mechanism bundled up into a tool.
     All reads and writes of memory are checked, and calls to
     malloc/new/free/delete are intercepted. As a result, memcheck can
     detect the following problems:
@@ -382,7 +382,7 @@ The suppression (2nd) line should have the form:
 <pre>
 Memcheck:suppression_type
 </pre>
-Or, since some of the suppressions are shared with the Addrcheck skin:
+Or, since some of the suppressions are shared with Addrcheck:
 <pre>
 Memcheck,Addrcheck:suppression_type
 </pre>
@@ -772,7 +772,7 @@ actually valid.
 <h3>3.7&nbsp; Client Requests</h3>
 
 The following client requests are defined in <code>memcheck.h</code>.  They
-also work for the Addrcheck skin.  See <code>memcheck.h</code> for exact
+also work for Addrcheck.  See <code>memcheck.h</code> for exact
 details of their arguments.
 
 <ul>

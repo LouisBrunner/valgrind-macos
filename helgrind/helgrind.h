@@ -8,7 +8,7 @@
 
    ----------------------------------------------------------------
 
-   This file is part of helgrind, a Valgrind skin for detecting
+   This file is part of helgrind, a Valgrind tool for detecting
    data races in threaded programs.
 
    Copyright (C) 2002-2003 Nicholas Nethercote.  All rights reserved.

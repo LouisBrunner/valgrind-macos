@@ -1,11 +1,11 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Generate code for skin-specific UInstrs.                     ---*/
+/*--- Generate code for tool-specific UInstrs.                     ---*/
 /*---                                              mc_from_ucode.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of MemCheck, a heavyweight Valgrind skin for
+   This file is part of MemCheck, a heavyweight Valgrind tool for
    detecting memory errors.
 
    Copyright (C) 2000-2003 Julian Seward 

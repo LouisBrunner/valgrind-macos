@@ -1,11 +1,11 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Simple skin for counting UInstrs, using a C helper.          ---*/
+/*--- Simple tool for counting UInstrs, using a C helper.          ---*/
 /*---                                                    lk_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Lackey, an example Valgrind skin that does
+   This file is part of Lackey, an example Valgrind tool that does
    some simple program measurement.
 
    Copyright (C) 2002-2003 Nicholas Nethercote
@@ -78,7 +78,7 @@ void SK_(pre_clo_init)(void)
 {
    VG_(details_name)            ("Lackey");
    VG_(details_version)         (NULL);
-   VG_(details_description)     ("an example Valgrind skin");
+   VG_(details_description)     ("an example Valgrind tool");
    VG_(details_copyright_author)(
       "Copyright (C) 2002-2003, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  ("njn25@cam.ac.uk");

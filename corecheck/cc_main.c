@@ -1,11 +1,11 @@
 
 /*--------------------------------------------------------------------*/
-/*--- CoreCheck: a skin reporting errors detected in core.         ---*/
+/*--- CoreCheck: a tool reporting errors detected in core.         ---*/
 /*---                                                    cc_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of CoreCheck, a rudimentary Valgrind skin for
+   This file is part of CoreCheck, a rudimentary Valgrind tool for
    detecting certain basic program errors.
 
    Copyright (C) 2002-2003 Nicholas Nethercote

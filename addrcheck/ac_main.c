@@ -1,12 +1,12 @@
 
 /*--------------------------------------------------------------------*/
-/*--- The AddrCheck skin: like MemCheck, but only does address     ---*/
+/*--- The AddrCheck tool: like MemCheck, but only does address     ---*/
 /*--- checking.  No definedness checking.                          ---*/
 /*---                                                    ac_main.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of AddrCheck, a lightweight Valgrind skin for
+   This file is part of AddrCheck, a lightweight Valgrind tool for
    detecting memory errors.
 
    Copyright (C) 2000-2003 Julian Seward 
@@ -1193,7 +1193,7 @@ Bool SK_(handle_client_request) ( ThreadId tid, UInt* arg_block, UInt *ret )
          VG_(message)(Vg_UserMsg,                                       \
             "Warning: Addrcheck: ignoring `%s' request.", what);     \
          VG_(message)(Vg_UserMsg,                                       \
-            "   To honour this request, rerun with --skin=memcheck.");  \
+            "   To honour this request, rerun with --tool=memcheck.");  \
       }                                                                 \
    } while (0)
 

@@ -5,7 +5,7 @@
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Cachegrind, a Valgrind skin for cache
+   This file is part of Cachegrind, a Valgrind tool for cache
    profiling programs.
 
    Copyright (C) 2002-2003 Nicholas Nethercote

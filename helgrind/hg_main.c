@@ -5,7 +5,7 @@
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Helgrind, a Valgrind skin for detecting
+   This file is part of Helgrind, a Valgrind tool for detecting
    data races in threaded programs.
 
    Copyright (C) 2002-2003 Nicholas Nethercote

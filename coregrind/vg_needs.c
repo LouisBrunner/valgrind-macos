@@ -120,7 +120,7 @@ void VG_(sanity_check_needs) ( void)
 {
 #define CHECK_NOT(var, value)                               \
    if ((var)==(value)) {                                    \
-      VG_(printf)("\nSkin error: `%s' not initialised\n",   \
+      VG_(printf)("\nTool error: `%s' not initialised\n",   \
                   VG__STRING(var));                         \
       VG_(skin_panic)("Uninitialised details field\n");     \
    }
@@ -139,7 +139,7 @@ void VG_(sanity_check_needs) ( void)
          VG_(track_events).new_mem_stack_32) &&
        ! VG_(track_events).new_mem_stack) 
    {
-      VG_(printf)("\nSkin error: one of the specialised `new_mem_stack_n'\n"
+      VG_(printf)("\nTool error: one of the specialised `new_mem_stack_n'\n"
                   "events tracked, but not the generic `new_mem_stack' one.\n");
       VG_(skin_panic)("`new_mem_stack' should be defined\n");
    }
@@ -151,7 +151,7 @@ void VG_(sanity_check_needs) ( void)
          VG_(track_events).die_mem_stack_32) &&
        ! VG_(track_events).die_mem_stack) 
    {
-      VG_(printf)("\nSkin error: one of the specialised `die_mem_stack_n'\n"
+      VG_(printf)("\nTool error: one of the specialised `die_mem_stack_n'\n"
                   "events tracked, but not the generic `die_mem_stack' one.\n");
       VG_(skin_panic)("`die_mem_stack' should be defined\n");
    }
@@ -163,7 +163,7 @@ void VG_(sanity_check_needs) ( void)
          VG_(track_events).post_reg_write_clientcall_return) &&
        ! VG_(needs).shadow_regs) 
    {
-      VG_(printf)("\nSkin error: one of the `post_reg_write'\n"
+      VG_(printf)("\nTool error: one of the `post_reg_write'\n"
                   "events tracked, but `shadow_regs' need not set.\n");
       VG_(skin_panic)("`shadow_regs' should be set\n");
    }

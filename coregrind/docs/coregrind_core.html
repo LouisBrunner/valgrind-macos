@@ -4,7 +4,7 @@
 <h2>2&nbsp; Using and understanding the Valgrind core services</h2>
 
 This section describes the core services, flags and behaviours.  That
-means it is relevant regardless of what particular skin you are using.
+means it is relevant regardless of what particular tool you are using.
 A point of terminology: most references to "valgrind" in the rest of
 this section (Section 2) refer to the valgrind core services.
 
@@ -16,21 +16,21 @@ Valgrind is designed to be as non-intrusive as possible. It works
 directly with existing executables. You don't need to recompile,
 relink, or otherwise modify, the program to be checked. Simply place
 the word <code>valgrind</code> at the start of the command line
-normally used to run the program, and tell it what skin you want to
+normally used to run the program, and tell it what tool you want to
 use.
 
 <p>
 So, for example, if you want to run the command <code>ls -l</code>
 using the heavyweight memory-checking tool, issue the command:
-<code>valgrind --skin=memcheck ls -l</code>.  The <code>--skin=</code>
-parameter tells the core which skin is to be used.
+<code>valgrind --tool=memcheck ls -l</code>.  The <code>--tool=</code>
+parameter tells the core which tool is to be used.
 
 <p>
 To preserve compatibility with the 1.0.X series, if you do not specify
-a skin, the default is to use the memcheck skin.  That means the above
+a tool, the default is to use Memcheck.  That means the above
 example simplifies to: <code>valgrind ls -l</code>.
 
-<p>Regardless of which skin is in use, Valgrind takes control of your
+<p>Regardless of which tool is in use, Valgrind takes control of your
 program before it starts.  Debugging information is read from the
 executable and associated libraries, so that error messages can be
 phrased in terms of source code locations (if that is appropriate).
@@ -38,29 +38,29 @@ phrased in terms of source code locations (if that is appropriate).
 <p>
 Your program is then run on a synthetic x86 CPU provided by the
 valgrind core.  As new code is executed for the first time, the core
-hands the code to the selected skin.  The skin adds its own
+hands the code to the selected tool.  The tool adds its own
 instrumentation code to this and hands the result back to the core,
 which coordinates the continued execution of this instrumented code.
 
 <p>
-The amount of instrumentation code added varies widely between skins.
-At one end of the scale, the memcheck skin adds code to check every
+The amount of instrumentation code added varies widely between tools.
+At one end of the scale, Memcheck adds code to check every
 memory access and every value computed, increasing the size of the
 code at least 12 times, and making it run 25-50 times slower than
 natively.  At the other end of the spectrum, the ultra-trivial "none"
-skin adds no instrumentation at all and causes in total "only" about a
+tool adds no instrumentation at all and causes in total "only" about a
 4 times slowdown.  
 
 <p>
 Valgrind simulates every single instruction your program executes.
-Because of this, the active skin checks, or profiles, not only the
+Because of this, the active tool checks, or profiles, not only the
 code in your application but also in all supporting dynamically-linked
 (<code>.so</code>-format) libraries, including the GNU C library, the
 X client libraries, Qt, if you work with KDE, and so on.  
 
 <p>
 If -- as is usually the case -- you're using one of the
-error-detection skins, valgrind will often detect errors in
+error-detection tools, valgrind will often detect errors in
 libraries, for example the GNU C or X11 libraries, which you have to
 use.  Since you're probably using valgrind to debug your own
 application, and not those libraries, you don't want to see those
@@ -78,8 +78,8 @@ print out a suppression for each error that appears, which you can
 then copy into a suppressions file.
 
 <p>
-Different skins report different kinds of errors.  The suppression
-mechanism therefore allows you to say which skin or skin(s) each
+Different tools report different kinds of errors.  The suppression
+mechanism therefore allows you to say which tool or tool(s) each
 suppression applies to.
 
 
@@ -109,18 +109,18 @@ like this already, if you intended to debug your program with GNU gdb,
 or some other debugger.
 
 <p>
-This paragraph applies only if you plan to use the memcheck
-skin (which is the default): On rare occasions, optimisation levels
+This paragraph applies only if you plan to use Memcheck
+(which is the default): On rare occasions, optimisation levels
 at <code>-O2</code> and above have been observed to generate code which
-fools memcheck into wrongly reporting uninitialised value
+fools Memcheck into wrongly reporting uninitialised value
 errors.  We have looked in detail into fixing this, and unfortunately 
 the result is that doing so would give a further significant slowdown
-in what is already a slow skin.  So the best solution is to turn off
+in what is already a slow tool.  So the best solution is to turn off
 optimisation altogether.  Since this often makes things unmanagably
 slow, a plausible compromise is to use <code>-O</code>.  This gets 
 you the majority of the benefits of higher optimisation levels whilst
-keeping relatively small the chances of false complaints from memcheck.
-All other skins (as far as we know) are unaffected by optimisation
+keeping relatively small the chances of false complaints from Memcheck.
+All other tools (as far as we know) are unaffected by optimisation
 level.
 
 <p>
@@ -132,7 +132,7 @@ newer DWARF2 reader.
 
 <p>
 When you're ready to roll, just run your application as you would
-normally, but place <code>valgrind --skin=the-selected-skin</code> in
+normally, but place <code>valgrind --tool=the-selected-tool</code> in
 front of your usual command-line invocation.  Note that you should run
 the real (machine-code) executable here.  If your application is
 started by, for example, a shell or perl script, you'll need to modify
@@ -234,11 +234,11 @@ does about where that stream is sent to.  You have three options:
 </ul>
 <p>
 Here is an important point about the relationship between the
-commentary and profiling output from skins.  The commentary contains a
-mix of messages from the valgrind core and the selected skin.  If the
-skin reports errors, it will report them to the commentary.  However,
-if the skin does profiling, the profile data will be written to a file
-of some kind, depending on the skin, and independent of what
+commentary and profiling output from tools.  The commentary contains a
+mix of messages from the valgrind core and the selected tool.  If the
+tool reports errors, it will report them to the commentary.  However,
+if the tool does profiling, the profile data will be written to a file
+of some kind, depending on the tool, and independent of what
 <code>--log*</code> options are in force.  The commentary is intended
 to be a low-bandwidth, human-readable channel.  Profiling data, on the
 other hand, is usually voluminous and not meaningful without further
@@ -248,7 +248,7 @@ processing, which is why we have chosen this arrangement.
 <a name="report"></a>
 <h3>2.4&nbsp; Reporting of errors</h3>
 
-When one of the error-checking skins (memcheck, addrcheck, helgrind)
+When one of the error-checking tools (Memcheck, Addrcheck, Helgrind)
 detects something bad happening in the program, an error message is
 written to the commentary.  For example:<br>
 <pre>
@@ -262,7 +262,7 @@ written to the commentary.  For example:<br>
 
 <p>
 This message says that the program did an illegal 4-byte read of
-address 0xBFFFF74C, which, as far as memcheck can tell, is not a valid
+address 0xBFFFF74C, which, as far as Memcheck can tell, is not a valid
 stack address, nor corresponds to any currently malloc'd or free'd
 blocks.  The read is happening at line 45 of <code>bogon.cpp</code>,
 called from line 66 of the same file, etc.  For errors associated with
@@ -284,9 +284,9 @@ makes it easy to see which errors have occurred most frequently.
 
 <p>
 Errors are reported before the associated operation actually happens.
-If you're using a skin (memcheck, addrcheck) which does address
+If you're using a tool (Memcheck, Addrcheck) which does address
 checking, and your program attempts to read from address zero, the
-skin will emit a message to this effect, and the program will then
+tool will emit a message to this effect, and the program will then
 duly die with a segmentation fault.
 
 <p>
@@ -294,7 +294,7 @@ In general, you should try and fix errors in the order that they are
 reported.  Not doing so can be confusing.  For example, a program
 which copies uninitialised values to several memory locations, and
 later uses them, will generate several error messages, when run on
-memcheck.  The first such error message may well give the most direct
+Memcheck.  The first such error message may well give the most direct
 clue to the root cause of the problem.
 
 <p>
@@ -319,7 +319,7 @@ on performance.
 <a name="suppress"></a>
 <h3>2.5&nbsp; Suppressing errors</h3>
 
-The error-checking skins detect numerous problems in the base
+The error-checking tools detect numerous problems in the base
 libraries, such as the GNU C library, and the XFree86 client
 libraries, which come pre-installed on your GNU/Linux system.  You
 can't easily fix these, but you don't want to see these errors (and
@@ -350,7 +350,7 @@ specification of errors to suppress.
 If you use the <code>-v</code> flag, at the end of execution, Valgrind
 prints out one line for each used suppression, giving its name and the
 number of times it got used.  Here's the suppressions used by a run of
-<code>valgrind --skin=memcheck ls -l</code>:
+<code>valgrind --tool=memcheck ls -l</code>:
 <pre>
   --27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getgrgid_r
   --27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getpwuid_r
@@ -378,24 +378,24 @@ examples.
       </li>
       <p>
 
-  <li>Second line: name of the skin(s) that the suppression is for (if more
+  <li>Second line: name of the tool(s) that the suppression is for (if more
       than one, comma-separated), and the name of the suppression itself,
       separated by a colon, eg:
       <pre>
-      skin_name1,skin_name2:suppression_name
+      tool_name1,tool_name2:suppression_name
       </pre>
       (Nb: no spaces are allowed).
       <p>      
       Recall that valgrind-2.0.X is a modular system, in which
       different instrumentation tools can observe your program whilst
       it is running.  Since different tools detect different kinds of
-      errors, it is necessary to say which skin(s) the suppression is
+      errors, it is necessary to say which tool(s) the suppression is
       meaningful to.
       <p>
-      Skins will complain, at startup, if a skin does not understand
-      any suppression directed to it.  Skins ignore suppressions which
+      Tools will complain, at startup, if a tool does not understand
+      any suppression directed to it.  Tools ignore suppressions which
       are not directed to them.  As a result, it is quite practical to
-      put suppressions for all skins into the same suppression file.
+      put suppressions for all tools into the same suppression file.
       <p>
       Valgrind's core can detect certain PThreads API errors, for which this
       line reads:
@@ -439,7 +439,7 @@ details in the suppression.  Here's an example:
   }
 </pre>
 
-<p>What is means is: in the Memcheck skin only, suppress a
+<p>What is means is: for Memcheck only, suppress a
 use-of-uninitialised-value error, when the data size is 4, when it
 occurs in the function <code>__gconv_transform_ascii_internal</code>,
 when that is called from any function of name matching
@@ -451,7 +451,7 @@ __gconv_transform_ascii_internal/__mbrtowc/mbtowc.
 (See <a href="mc_main.html#suppfiles">this section</a> for more details on
 the specifics of Memcheck's suppression kinds.)
 
-<p>Another example, again for the Memcheck skin:
+<p>Another example, again for the Memcheck tool:
 <pre>
   {
     libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0
@@ -479,8 +479,8 @@ styles of description within a single suppression record.
 
 
 As mentioned above, valgrind's core accepts a common set of flags.
-The skins also accept skin-specific flags, which are documented
-seperately for each skin.  
+The tools also accept tool-specific flags, which are documented
+seperately for each tool.  
 
 You invoke Valgrind like this:
 <pre>
@@ -490,34 +490,34 @@ You invoke Valgrind like this:
 <p>Note that Valgrind also reads options from the environment variable
 <code>$VALGRIND_OPTS</code>, and processes them before the command-line
 options.  Options for the valgrind core may be freely mixed with those
-for the selected skin.
+for the selected tool.
 
 <p>Valgrind's default settings succeed in giving reasonable behaviour
 in most cases.  We group the available options by rough categories.
 
-<h4>Skin-selection option</h4>
+<h4>Tool-selection option</h4>
 The single most important option.
 <ul>
-  <li><code>--skin=<i>name</i></code><br>
+  <li><code>--tool=<i>name</i></code><br>
       <p>Run the Valgrind tool called <i>name</i>, e.g. Memcheck, Addrcheck,
       Cachegrind, etc.
       </li><br><p>
 </ul>
 
 <h4>Basic Options</h4>
-These options work with all skins.
+These options work with all tools.
 
 <ul>
   <li><code>--help</code><br>
       <p>Show help for all options, both for the core and for the
-      selected skin. </li><br><p>
+      selected tool. </li><br><p>
 
   <li><code>--version</code><br> <p>Show the version number of the
-      valgrind core.  Skins can have their own version numbers.  There
-      is a scheme in place to ensure that skins only execute when the
+      valgrind core.  Tools can have their own version numbers.  There
+      is a scheme in place to ensure that tools only execute when the
       core version is one they are known to work with.  This was done
       to minimise the chances of strange problems arising from
-      skin-vs-core version incompatibilities.  </li><br><p>
+      tool-vs-core version incompatibilities.  </li><br><p>
 
   <li><code>-v --verbose</code><br> <p>Be more verbose.  Gives extra
       information on various aspects of your program, such as: the
@@ -567,7 +567,7 @@ These options work with all skins.
 </ul>
 
 <h4>Error-related options</h4>
-These options are used by all skins that can report errors, e.g. Memcheck, but
+These options are used by all tools that can report errors, e.g. Memcheck, but
 not Cachegrind.
 <ul>
   <li><code>--demangle=no</code><br>
@@ -706,7 +706,7 @@ not Cachegrind.
 </ul>
 
 <h4><code>malloc()</code>-related options</h4>
-For skins that use their own version of <code>malloc()</code> (e.g. Memcheck
+For tools that use their own version of <code>malloc()</code> (e.g. Memcheck
 and Addrcheck), the following options apply.
 <ul>
   <li><code>--alignment=&lt;number&gt;</code> [default: 4]<br> <p>By
@@ -743,7 +743,7 @@ and Addrcheck), the following options apply.
 </ul>
 
 <h4>Rare options</h4>
-These options apply to all skins, as they affect certain obscure workings of
+These options apply to all tools, as they affect certain obscure workings of
 the Valgrind core.  Most people won't need to use these.
 <ul>
   <li><code>--run-libc-freeres=yes</code> [default]<br>
@@ -760,7 +760,7 @@ the Valgrind core.  Most people won't need to use these.
       when a leak check is done at exit.  In order to avoid this, they
       provided a routine called <code>__libc_freeres</code>
       specifically to make glibc release all memory it has allocated.
-      The MemCheck and AddrCheck skins therefore try and run
+      Memcheck and Addrcheck therefore try and run
       <code>__libc_freeres</code> at exit.
       <p>
       Unfortunately, in some versions of glibc,
@@ -888,7 +888,7 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
       <p>When enabled, does crude internal profiling of valgrind 
       itself.  This is not for profiling your programs.  Rather it is
       to allow the developers to assess where valgrind is spending
-      its time.  The skins must be built for profiling for this to
+      its time.  The tools must be built for profiling for this to
       work.
       </li><br><p>
 
@@ -953,7 +953,7 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
 <h3>2.7&nbsp; The Client Request mechanism</h3>
 
 Valgrind has a trapdoor mechanism via which the client program can
-pass all manner of requests and queries to Valgrind and the current skin.
+pass all manner of requests and queries to Valgrind and the current tool.
 Internally, this is used extensively to make malloc, free, signals, threads,
 etc, work, although you don't see that.
 <p>
@@ -967,7 +967,7 @@ get Valgrind to do arbitrary custom checks.
 Clients need to include a header file to make this work.  Which header file
 depends on which client requests you use.  Some client requests are handled by
 the core, and are defined in the header file <code>valgrind.h</code>.
-Skin-specific header files are named after the skin, e.g.
+Tool-specific header files are named after the tool, e.g.
 <code>memcheck.h</code>.  All header files can be found in the
 <code>include</code> directory of wherever Valgrind was installed.
 <p>
@@ -979,8 +979,8 @@ Also, you are not required to link your program with any extra
 supporting libraries.
 <p>
 Here is a brief description of the macros available in
-<code>valgrind.h</code>, which work with more than one skin (see the
-skin-specific documentation for explanations of the skin-specific macros).
+<code>valgrind.h</code>, which work with more than one tool (see the
+tool-specific documentation for explanations of the tool-specific macros).
 <ul>
 <li><code>RUNNING_ON_VALGRIND</code>: returns 1 if running on
     Valgrind, 0 if running on the real CPU.
@@ -1000,19 +1000,19 @@ skin-specific documentation for explanations of the skin-specific macros).
     fresh memory, and just call this occasionally to discard large
     chunks of old code all at once.
     <p>
-    Warning: minimally tested, especially for skins other than Memcheck.
+    Warning: minimally tested, especially for tools other than Memcheck.
 <p>
 <li><code>VALGRIND_COUNT_ERRORS</code>: returns the number of errors
     found so far by Valgrind.  Can be useful in test harness code when
     combined with the <code>--logfile-fd=-1</code> option;  this runs
     Valgrind silently, but the client program can detect when errors
-    occur.  Only useful for skins that report errors, e.g. it's useful for
+    occur.  Only useful for tools that report errors, e.g. it's useful for
     Memcheck, but for Cachegrind it will always return zero because 
     Cachegrind doesn't report errors.
 <p>
 <li><code>VALGRIND_MALLOCLIKE_BLOCK</code>: If your program manages its own
     memory instead of using the standard
-    <code>malloc()</code>/<code>new</code>/<code>new[]</code>, skins that track
+    <code>malloc()</code>/<code>new</code>/<code>new[]</code>, tools that track
     information about heap blocks will not do nearly as good a
     job.  For example, Memcheck won't detect nearly as many errors, and the
     error messages won't be as informative.  To improve this situation, use
@@ -1040,9 +1040,9 @@ skin-specific documentation for explanations of the skin-specific macros).
     Returns the number of characters output.
 <p>
 </ul>
-Note that <code>valgrind.h</code> is included by all the skin-specific header
+Note that <code>valgrind.h</code> is included by all the tool-specific header
 files (such as <code>memcheck.h</code>), so you don't need to include it in
-your client if you include a skin-specific header.
+your client if you include a tool-specific header.
 <p>
 
 
@@ -1200,7 +1200,7 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       badly.</li>
       <p>
 
-  <li>The memcheck skin assumes that the floating point registers are
+  <li>Memcheck assumes that the floating point registers are
       not used as intermediaries in memory-to-memory copies, so it
       immediately checks definedness of values loaded from memory by
       floating-point loads.  If you want to write code which copies
@@ -1443,8 +1443,8 @@ gruesome fakery; see vg_signals.c for details.
 
 <a name="example"></a>
 <h3>2.14&nbsp; An example run</h3>
-This is the log for a run of a small program using the memcheck
-skin. The program is in fact correct, and the reported error is as the
+This is the log for a run of a small program using Memcheck
+The program is in fact correct, and the reported error is as the
 result of a potentially serious code generation bug in GNU g++
 (snapshot 20010527).
 <pre>

@@ -7,12 +7,12 @@
 <a name="ac-top"></a>
 <h2>5&nbsp; <b>Addrcheck</b>: a lightweight memory checker</h2>
 
-To use this skin, you must specify <code>--skin=addrcheck</code>
+To use this tool, you must specify <code>--tool=addrcheck</code>
 on the Valgrind command line.
 
 <h3>5.1&nbsp; Kinds of bugs that Addrcheck can find</h3>
 
-Addrcheck is a simplified version of the Memcheck skin described
+Addrcheck is a simplified version of the Memcheck tool described
 in Section 3.  It is identical in every way to Memcheck, except for
 one important detail: it does not do the undefined-value checks that
 Memcheck does.  This means Addrcheck is about twice as fast as
@@ -31,7 +31,7 @@ errors:
 
 <p>
 Rather than duplicate much of the Memcheck docs here (a.k.a. since I
-am a lazy b'stard), users of the Addrcheck skin are advised to read
+am a lazy b'stard), users of Addrcheck are advised to read
 the section on Memcheck.  Some important points:
 <ul>
 <li>Addrcheck is exactly like Memcheck, except that all the
@@ -44,8 +44,8 @@ the section on Memcheck.  Some important points:
     the exception of ... (to be filled in).
 <p>
 <li>Like Memcheck, Addrcheck will do memory leak checking (internally,
-    the same code does leak checking for both skins).  The only
-    difference is how the two skins decide which memory locations
+    the same code does leak checking for both tools).  The only
+    difference is how the two tools decide which memory locations
     to consider when searching for pointers to blocks.  Memcheck will
     only consider 4-byte aligned locations which are validly
     addressible and which hold defined values.  Addrcheck does not

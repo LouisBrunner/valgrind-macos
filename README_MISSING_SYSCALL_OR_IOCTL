@@ -22,17 +22,17 @@ program does.  When a system call happens, for example a request to read
 part of a file, control passes to the Linux kernel, which fulfills the
 request, and returns control to your program.  The problem is that the
 kernel will often change the status of some part of your program's memory
-as a result, and skins (instrumentation plug-ins) may need to know about
+as a result, and tools (instrumentation plug-ins) may need to know about
 this.
 
 Syscall and ioctl wrappers have two jobs: 
 
-1. Tell a skin what's about to happen, before the syscall takes place.  A
-   skin could perform checks beforehand, eg. if memory about to be written
+1. Tell a tool what's about to happen, before the syscall takes place.  A
+   tool could perform checks beforehand, eg. if memory about to be written
    is actually writeable.  This part is useful, but not strictly
    essential.
 
-2. Tell a skin what just happened, after a syscall takes place.  This is
+2. Tell a tool what just happened, after a syscall takes place.  This is
    so it can update its view of the program's state, eg. that memory has
    just been written to.  This step is essential.
 
@@ -58,7 +58,7 @@ Removing the debug printing clutter, it looks like this:
      break;
 
 The first thing we do is, if a non-NULL buffer is passed in as the argument,
-tell the skin that the buffer is about to be written to:
+tell the tool that the buffer is about to be written to:
 
      if (arg1 != (UInt)NULL) {
         SYSCALL_TRACK( pre_mem_write, tst, "time", arg1, sizeof(time_t) );
@@ -70,7 +70,7 @@ identified by thread ID "tid", depositing the return value in "res":
      KERNEL_DO_SYSCALL(tid, res);
 
 Finally, the really important bit.  If, and only if, the system call
-was successful, tell the skin that the memory was written:
+was successful, tell the tool that the memory was written:
 
      if (!VG_(is_kerror)(res) && arg1 != (UInt)NULL) {
         VG_TRACK( post_mem_write, arg1, sizeof(time_t) );

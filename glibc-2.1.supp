@@ -5,7 +5,7 @@
 # Format of this file is:
 # {
 #     name_of_suppression
-#     skin_name:supp_kind
+#     tool_name:supp_kind
 #     (optional extra info for some suppression types)
 #     caller0 name, or /name/of/so/file.so
 #     caller1 name, or ditto

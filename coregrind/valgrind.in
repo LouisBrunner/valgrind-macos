@@ -42,24 +42,25 @@ vgsupp="--suppressions=$VALGRIND/default.supp"
 # Valgrind options
 vgopts=
 
-# --skin=<foo> arg, specifying skin used
-skin_arg=
+# Tool to use, chosen by --tool=<foo>, defaults to Memcheck 
+tool=memcheck
 
 # --in-place=<dir> arg, for using non-installed version
 in_place_arg=
 
-# Default core+skin to use are the installed ones
+# Default core+tool to use are the installed ones
 coredir=$VALGRIND
-skindir=$VALGRIND
+tooldir=$VALGRIND
 
 # Collect up args for Valgrind.  Only some are intercepted here;
-# the rest are passed to vg_main.c.
+# the rest are passed to vg_main.c.  Allow --skin for backwards compatibility.
 while [ $# != 0 ]
 do
   arg=$1
   case "$arg" in
     --version)              echo "valgrind-$version"; exit 1 ;;
-    --skin=*)               skin_arg=$arg;            shift;;
+    --tool=*)               tool=`echo $arg | sed 's/--tool=//'`;  shift;;
+    --skin=*)               tool=`echo $arg | sed 's/--skin=//'`;  shift;;
     --in-place=*)           in_place_arg=$arg;        shift;;
     -*)                     vgopts="$vgopts $arg";    shift;;
     *)                      break;;
@@ -67,30 +68,22 @@ do
 done
 
 
-# Decide on the skin.  Default to memory checking if not specified.
-if [ z"$skin_arg" = z ]; then
-   skin=memcheck
-else
-   # Hack off the "--skin=" prefix.
-   skin=`echo $skin_arg | sed 's/--skin=//'`
-fi
-
 # If running uninstalled version in-place...
 if [ z"$in_place_arg" != z ]; then
    in_place_dir=`echo $in_place_arg | sed 's/--in-place=//'`
-   skindir="$in_place_dir/$skin"
+   tooldir="$in_place_dir/$tool"
    coredir="$in_place_dir/coregrind/.in_place"
    vgsupp="--suppressions=$in_place_dir/default.supp"
 fi
 
-# Setup skin shared object.
-skin_so="vgskin_${skin}.so"
-if [ ! -r "$skindir/$skin_so" ] ; then
+# Setup tool shared object.
+tool_so="vgskin_${tool}.so"
+if [ ! -r "$tooldir/$tool_so" ] ; then
    echo
-   echo "Skin error:"
-   echo "  The shared library \`$skin_so' for the chosen"
-   echo "  skin \`$skin' could not be found in"
-   echo "  $skindir"
+   echo "Tool error:"
+   echo "  The shared library \`$tool_so' for the chosen"
+   echo "  tool \`$tool' could not be found in"
+   echo "  $tooldir"
    echo
    exit 1
 fi
@@ -155,8 +148,8 @@ fi
 LD_LIBRARY_PATH=$coredir:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 
-# Insert skin .so before valgrind.so to override template functions.
-LD_PRELOAD=$skindir/$skin_so:$coredir/valgrind.so:$LD_PRELOAD
+# Insert tool .so before valgrind.so to override template functions.
+LD_PRELOAD=$tooldir/$tool_so:$coredir/valgrind.so:$LD_PRELOAD
 export LD_PRELOAD
 #LD_DEBUG=files
 #LD_DEBUG=symbols

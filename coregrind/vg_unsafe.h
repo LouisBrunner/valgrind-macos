@@ -48,7 +48,7 @@
 #include <sys/socket.h>   /* for struct msghdr */
 #include <linux/sockios.h>/* for SIOCOUTQ */
 #include <sys/un.h>       /* for sockaddr_un */
-#include <net/if.h>       /* for struct ifreq et al */
+#include <linux/if.h>       /* for struct ifreq et al */
 #include <net/if_arp.h>   /* for struct arpreq */
 #include <net/route.h>    /* for struct rtentry */
 #ifdef HAVE_LINUX_COMPILER_H

@@ -134,7 +134,7 @@ static void newShadowTmp ( MCEnv* mce, IRTemp orig )
 /*------------------------------------------------------------*/
 
 /* An atom is either an IRExpr_Const or an IRExpr_Tmp, as defined by
-   isAtom() in libvex_ir.h.  Because this instrumenter expects flat
+   isIRAtom() in libvex_ir.h.  Because this instrumenter expects flat
    input, most of this code deals in atoms.  Usefully, a value atom
    always has a V-value which is also an atom: constants are shadowed
    by constants, and temps are shadowed by the corresponding shadow
@@ -701,7 +701,7 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom )
    /* Set the shadow tmp to be defined.  First, update the
       orig->shadow tmp mapping to reflect the fact that this shadow is
       getting a new value. */
-   tl_assert(isAtom(vatom));
+   tl_assert(isIRAtom(vatom));
    /* sameKindedAtoms ... */
    if (vatom->tag == Iex_Tmp) {
       tl_assert(atom->tag == Iex_Tmp);
@@ -2293,7 +2293,7 @@ static Bool isBogusAtom ( IRAtom* at )
 {
    ULong n = 0;
    IRConst* con;
-   tl_assert(isAtom(at));
+   tl_assert(isIRAtom(at));
    if (at->tag == Iex_Tmp)
       return False;
    tl_assert(at->tag == Iex_Const);

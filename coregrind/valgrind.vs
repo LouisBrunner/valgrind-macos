@@ -14,8 +14,8 @@ VALGRIND_2.1 {
 		*IRConst*;
 		*IRCallee*;
 		*IRArray*;
+		*IRAtom*;
 		LibVEX_Alloc;
-
 	local:
 		*;		# default to hidden
 };

@@ -1003,7 +1003,7 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
    bb->jumpkind = bb_in->jumpkind;
 
    /* No loads to consider in ->next. */
-   tl_assert(isAtom(bb_in->next));
+   tl_assert(isIRAtom(bb_in->next));
 
    for (i = 0; i <  bb_in->stmts_used; i++) {
       st = bb_in->stmts[i];
@@ -1031,23 +1031,23 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
          case Ist_STle:
             data  = st->Ist.STle.data;
             aexpr = st->Ist.STle.addr;
-            tl_assert(isAtom(data));
-            tl_assert(isAtom(aexpr));
+            tl_assert(isIRAtom(data));
+            tl_assert(isIRAtom(aexpr));
             hsz    = sizeofIRType(typeOfIRExpr(bb_in->tyenv, data));
 	    isLoad = False;
             break;
 
          case Ist_Put:
-            tl_assert(isAtom(st->Ist.Put.data));
+            tl_assert(isIRAtom(st->Ist.Put.data));
             break;
 
          case Ist_PutI:
-            tl_assert(isAtom(st->Ist.PutI.ix));
-            tl_assert(isAtom(st->Ist.PutI.data));
+            tl_assert(isIRAtom(st->Ist.PutI.ix));
+            tl_assert(isIRAtom(st->Ist.PutI.data));
             break;
 
          case Ist_Exit:
-            tl_assert(isAtom(st->Ist.Exit.guard));
+            tl_assert(isIRAtom(st->Ist.Exit.guard));
             break;
 
          case Ist_Dirty:
@@ -1057,7 +1057,7 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
                hsz    = st->Ist.Dirty.details->mSize;
                aexpr  = st->Ist.Dirty.details->mAddr;
                guard  = st->Ist.Dirty.details->guard;
-               tl_assert(isAtom(aexpr));
+               tl_assert(isIRAtom(aexpr));
              }
              break;
 

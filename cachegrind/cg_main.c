@@ -408,7 +408,7 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
       IRExpr* data = st->Ist.Tmp.data;
       if (data->tag == Iex_LDle) {
          IRExpr* aexpr = data->Iex.LDle.addr;
-         tl_assert( isAtom(aexpr) );
+         tl_assert( isIRAtom(aexpr) );
 
          // XXX: repe cmpsb does two loads... the first one is ignored here!
          //tl_assert( NULL == *loadAddrExpr );          // XXX: ???
@@ -422,7 +422,7 @@ void handleOneStatement(IRTypeEnv* tyenv, IRBB* bbOut, IRStmt* st,
    case Ist_STle: {
       IRExpr* data  = st->Ist.STle.data;
       IRExpr* aexpr = st->Ist.STle.addr;
-      tl_assert( isAtom(aexpr) );
+      tl_assert( isIRAtom(aexpr) );
       tl_assert( NULL == *storeAddrExpr );          // XXX: ???
       *storeAddrExpr = aexpr;
       *dataSize = sizeofIRType(typeOfIRExpr(tyenv, data));
@@ -478,18 +478,9 @@ static Bool loadStoreAddrsMatch(IRExpr* loadAddrExpr, IRExpr* storeAddrExpr)
   // I'm assuming that for 'modify' instructions, that Vex always makes
   // the loadAddrExpr and storeAddrExpr be of the same type, ie. both Tmp
   // expressions, or both Const expressions.
-   if ( (Iex_Tmp ==  loadAddrExpr->tag && 
-         Iex_Tmp == storeAddrExpr->tag &&
-         loadAddrExpr->Iex.Tmp.tmp == storeAddrExpr->Iex.Tmp.tmp)
-      ||
-        (Iex_Const ==  loadAddrExpr->tag && 
-         Iex_Const == storeAddrExpr->tag &&
-         loadAddrExpr->Iex.Const.con == storeAddrExpr->Iex.Const.con) ) 
-   {
-      return True;
-   } else {
-      return False;
-   }
+  tl_assert(isIRAtom(loadAddrExpr));
+  tl_assert(isIRAtom(storeAddrExpr));
+  return eqIRAtom(loadAddrExpr, storeAddrExpr);
 }
 
 // Instrumentation for the end of each original instruction.
@@ -524,7 +515,7 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
    } else if (loadAddrExpr && !storeAddrExpr) {
       // load
       tl_assert( is_valid_data_size(dataSize) );
-      tl_assert( isAtom(loadAddrExpr) );
+      tl_assert( isIRAtom(loadAddrExpr) );
       helperName = "log_1I_1Dr_cache_access";
       helperAddr = &log_1I_1Dr_cache_access;
       argc = 2;
@@ -534,7 +525,7 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
    } else if (!loadAddrExpr && storeAddrExpr) {
       // store
       tl_assert( is_valid_data_size(dataSize) );
-      tl_assert( isAtom(storeAddrExpr) );
+      tl_assert( isIRAtom(storeAddrExpr) );
       helperName = "log_1I_1Dw_cache_access";
       helperAddr = &log_1I_1Dw_cache_access;
       argc = 2;
@@ -544,8 +535,8 @@ void endOfInstr(IRBB* bbOut, instr_info* i_node, Bool bbSeenBefore,
    } else {
       tl_assert( loadAddrExpr && storeAddrExpr );
       tl_assert( is_valid_data_size(dataSize) );
-      tl_assert( isAtom(loadAddrExpr) );
-      tl_assert( isAtom(storeAddrExpr) );
+      tl_assert( isIRAtom(loadAddrExpr) );
+      tl_assert( isIRAtom(storeAddrExpr) );
 
       if ( loadStoreAddrsMatch(loadAddrExpr, storeAddrExpr) ) {
          // modify

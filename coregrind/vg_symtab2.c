@@ -2238,15 +2238,18 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
 
    i = 0;
    do {
+      Addr eip = ec->eips[i];
       n = 0;
-      know_fnname  = get_fnname (True, ec->eips[i], buf_fn,  M_VG_ERRTXT, True, False);
-      know_objname = VG_(get_objname)(ec->eips[i], buf_obj, M_VG_ERRTXT);
-      know_srcloc  = VG_(get_filename_linenum)(ec->eips[i], 
+      if (i > 0)
+	 eip--;			/* point to calling line */
+      know_fnname  = get_fnname (True, eip, buf_fn,  M_VG_ERRTXT, True, False);
+      know_objname = VG_(get_objname)(eip, buf_obj, M_VG_ERRTXT);
+      know_srcloc  = VG_(get_filename_linenum)(eip, 
                                                buf_srcloc, M_VG_ERRTXT, 
                                                &lineno);
       if (i == 0) APPEND("   at ") else APPEND("   by ");
       
-      VG_(sprintf)(ibuf,"0x%x: ", ec->eips[i]);
+      VG_(sprintf)(ibuf,"0x%x: ", eip);
       APPEND(ibuf);
       if (know_fnname) { 
          APPEND(buf_fn);

@@ -653,14 +653,14 @@ static UChar getUChar ( ULong delta )
    return v;
 }
 
-//.. static UInt getUDisp16 ( UInt delta )
+//.. static UInt getUDisp16 ( ULong delta )
 //.. {
 //..    UInt v = guest_code[delta+1]; v <<= 8;
 //..    v |= guest_code[delta+0];
 //..    return v & 0xFFFF;
 //.. }
 //.. 
-//.. static UInt getUDisp ( Int size, UInt delta )
+//.. static UInt getUDisp ( Int size, ULong delta )
 //.. {
 //..    switch (size) {
 //..       case 4: return getUDisp32(delta);
@@ -4169,7 +4169,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //.. 
 //.. 
 //.. static
-//.. UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
+//.. UInt dis_FPU ( Bool* decode_ok, UChar sorb, ULong delta )
 //.. {
 //..    Int    len;
 //..    UInt   r_src, r_dst;
@@ -5765,7 +5765,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //.. /* Vector by scalar shift of G by the amount specified at the bottom
 //..    of E.  This is a straight copy of dis_SSE_shiftG_byE. */
 //.. 
-//.. static UInt dis_MMX_shiftG_byE ( UChar sorb, UInt delta, 
+//.. static UInt dis_MMX_shiftG_byE ( UChar sorb, ULong delta, 
 //..                                  HChar* opname, IROp op )
 //.. {
 //..    HChar   dis_buf[50];
@@ -5841,7 +5841,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..    straight copy of dis_SSE_shiftE_imm. */
 //.. 
 //.. static 
-//.. UInt dis_MMX_shiftE_imm ( UInt delta, HChar* opname, IROp op )
+//.. UInt dis_MMX_shiftE_imm ( ULong delta, HChar* opname, IROp op )
 //.. {
 //..    Bool    shl, shr, sar;
 //..    UChar   rm   = getUChar(delta);
@@ -5896,7 +5896,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //.. /* Completely handle all MMX instructions except emms. */
 //.. 
 //.. static
-//.. UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, UInt delta )
+//.. UInt dis_MMX ( Bool* decode_ok, UChar sorb, Int sz, ULong delta )
 //.. {
 //..    Int   len;
 //..    UChar modrm;
@@ -6212,7 +6212,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //..    v-size (no b- variant). */
 //.. static
 //.. UInt dis_SHLRD_Gv_Ev ( UChar sorb,
-//..                        UInt delta, UChar modrm,
+//..                        ULong delta, UChar modrm,
 //..                        Int sz,
 //..                        IRExpr* shift_amt,
 //..                        Bool amt_is_literal,
@@ -6346,7 +6346,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //.. 
 //.. 
 //.. static
-//.. UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
+//.. UInt dis_bt_G_E ( UChar sorb, Int sz, ULong delta, BtOp op )
 //.. {
 //..    HChar  dis_buf[50];
 //..    UChar  modrm;
@@ -6475,7 +6475,7 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
 //.. 
 //.. /* Handle BSF/BSR.  Only v-size seems necessary. */
 //.. static
-//.. UInt dis_bs_E_G ( UChar sorb, Int sz, UInt delta, Bool fwds )
+//.. UInt dis_bs_E_G ( UChar sorb, Int sz, ULong delta, Bool fwds )
 //.. {
 //..    Bool   isReg;
 //..    UChar  modrm;
@@ -6832,7 +6832,7 @@ ULong dis_cmov_E_G ( Prefix        pfx,
 
 
 //.. static
-//.. UInt dis_xadd_G_E ( UChar sorb, Int sz, UInt delta0 )
+//.. UInt dis_xadd_G_E ( UChar sorb, Int sz, ULong delta0 )
 //.. {
 //..    Int   len;
 //..    UChar rm = getUChar(delta0);
@@ -6876,7 +6876,7 @@ ULong dis_cmov_E_G ( Prefix        pfx,
 //.. /* Move 16 bits from Ew (ireg or mem) to G (a segment register). */
 //.. 
 //.. static
-//.. UInt dis_mov_Ew_Sw ( UChar sorb, UInt delta0 )
+//.. UInt dis_mov_Ew_Sw ( UChar sorb, ULong delta0 )
 //.. {
 //..    Int    len;
 //..    IRTemp addr;
@@ -6976,52 +6976,52 @@ void dis_ret ( ULong d64 )
    Handles full width G = G `op` E   and   G = (not G) `op` E.
 */
 
-//.. static UInt dis_SSE_E_to_G_all_wrk ( 
-//..                UChar sorb, UInt delta, 
-//..                HChar* opname, IROp op,
-//..                Bool   invertG
-//..             )
-//.. {
-//..    HChar   dis_buf[50];
-//..    Int     alen;
-//..    IRTemp  addr;
-//..    UChar   rm = getUChar(delta);
-//..    IRExpr* gpart
-//..       = invertG ? unop(Iop_Not128, getXMMReg(gregOfRM(rm)))
-//..                 : getXMMReg(gregOfRM(rm));
-//..    if (epartIsReg(rm)) {
-//..       putXMMReg( gregOfRM(rm), 
-//..                  binop(op, gpart,
-//..                            getXMMReg(eregOfRM(rm))) );
-//..       DIP("%s %s,%s\n", opname,
-//..                         nameXMMReg(eregOfRM(rm)),
-//..                         nameXMMReg(gregOfRM(rm)) );
-//..       return delta+1;
-//..    } else {
-//..       addr = disAMode ( &alen, sorb, delta, dis_buf );
-//..       putXMMReg( gregOfRM(rm), 
-//..                  binop(op, gpart,
-//..                            loadLE(Ity_V128, mkexpr(addr))) );
-//..       DIP("%s %s,%s\n", opname,
-//..                         dis_buf,
-//..                         nameXMMReg(gregOfRM(rm)) );
-//..       return delta+alen;
-//..    }
-//.. }
-//.. 
-//.. 
-//.. /* All lanes SSE binary operation, G = G `op` E. */
-//.. 
-//.. static
-//.. UInt dis_SSE_E_to_G_all ( UChar sorb, UInt delta, HChar* opname, IROp op )
-//.. {
-//..    return dis_SSE_E_to_G_all_wrk( sorb, delta, opname, op, False );
-//.. }
-//.. 
+static UInt dis_SSE_E_to_G_all_wrk ( 
+               Prefix pfx, ULong delta, 
+               HChar* opname, IROp op,
+               Bool   invertG
+            )
+{
+   HChar   dis_buf[50];
+   Int     alen;
+   IRTemp  addr;
+   UChar   rm = getUChar(delta);
+   IRExpr* gpart
+      = invertG ? unop(Iop_NotV128, getXMMReg(gregOfRexRM(pfx,rm)))
+                : getXMMReg(gregOfRexRM(pfx,rm));
+   if (epartIsReg(rm)) {
+      putXMMReg( gregOfRexRM(pfx,rm), 
+                 binop(op, gpart,
+                           getXMMReg(eregOfRexRM(pfx,rm))) );
+      DIP("%s %s,%s\n", opname,
+                        nameXMMReg(eregOfRexRM(pfx,rm)),
+                        nameXMMReg(gregOfRexRM(pfx,rm)) );
+      return delta+1;
+   } else {
+      addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
+      putXMMReg( gregOfRexRM(pfx,rm), 
+                 binop(op, gpart,
+                           loadLE(Ity_V128, mkexpr(addr))) );
+      DIP("%s %s,%s\n", opname,
+                        dis_buf,
+                        nameXMMReg(gregOfRexRM(pfx,rm)) );
+      return delta+alen;
+   }
+}
+
+
+/* All lanes SSE binary operation, G = G `op` E. */
+
+static
+UInt dis_SSE_E_to_G_all ( Prefix pfx, ULong delta, HChar* opname, IROp op )
+{
+   return dis_SSE_E_to_G_all_wrk( pfx, delta, opname, op, False );
+}
+
 //.. /* All lanes SSE binary operation, G = (not G) `op` E. */
 //.. 
 //.. static
-//.. UInt dis_SSE_E_to_G_all_invG ( UChar sorb, UInt delta, 
+//.. UInt dis_SSE_E_to_G_all_invG ( UChar sorb, ULong delta, 
 //..                                HChar* opname, IROp op )
 //.. {
 //..    return dis_SSE_E_to_G_all_wrk( sorb, delta, opname, op, True );
@@ -7030,7 +7030,7 @@ void dis_ret ( ULong d64 )
 //.. 
 //.. /* Lowest 32-bit lane only SSE binary operation, G = G `op` E. */
 //.. 
-//.. static UInt dis_SSE_E_to_G_lo32 ( UChar sorb, UInt delta, 
+//.. static UInt dis_SSE_E_to_G_lo32 ( UChar sorb, ULong delta, 
 //..                                   HChar* opname, IROp op )
 //.. {
 //..    HChar   dis_buf[50];
@@ -7065,7 +7065,7 @@ void dis_ret ( ULong d64 )
 
 /* Lower 64-bit lane only SSE binary operation, G = G `op` E. */
 
-static UInt dis_SSE_E_to_G_lo64 ( Prefix pfx, UInt delta, 
+static UInt dis_SSE_E_to_G_lo64 ( Prefix pfx, ULong delta, 
                                   HChar* opname, IROp op )
 {
    HChar   dis_buf[50];
@@ -7101,7 +7101,7 @@ static UInt dis_SSE_E_to_G_lo64 ( Prefix pfx, UInt delta,
 //.. /* All lanes unary SSE operation, G = op(E). */
 //.. 
 //.. static UInt dis_SSE_E_to_G_unary_all ( 
-//..                UChar sorb, UInt delta, 
+//..                UChar sorb, ULong delta, 
 //..                HChar* opname, IROp op
 //..             )
 //.. {
@@ -7131,7 +7131,7 @@ static UInt dis_SSE_E_to_G_lo64 ( Prefix pfx, UInt delta,
 //.. /* Lowest 32-bit lane only unary SSE operation, G = op(E). */
 //.. 
 //.. static UInt dis_SSE_E_to_G_unary_lo32 ( 
-//..                UChar sorb, UInt delta, 
+//..                UChar sorb, ULong delta, 
 //..                HChar* opname, IROp op
 //..             )
 //.. {
@@ -7174,7 +7174,7 @@ static UInt dis_SSE_E_to_G_lo64 ( Prefix pfx, UInt delta,
 /* Lowest 64-bit lane only unary SSE operation, G = op(E). */
 
 static UInt dis_SSE_E_to_G_unary_lo64 ( 
-               Prefix pfx, UInt delta, 
+               Prefix pfx, ULong delta, 
                HChar* opname, IROp op
             )
 {
@@ -7219,7 +7219,7 @@ static UInt dis_SSE_E_to_G_unary_lo64 (
 //..       G = E `op` G   (eLeft == True)
 //.. */
 //.. static UInt dis_SSEint_E_to_G( 
-//..                UChar sorb, UInt delta, 
+//..                UChar sorb, ULong delta, 
 //..                HChar* opname, IROp op,
 //..                Bool   eLeft
 //..             )
@@ -7305,7 +7305,7 @@ static UInt dis_SSE_E_to_G_unary_lo64 (
 //.. 
 //.. /* Handles SSE 32F comparisons. */
 //.. 
-//.. static UInt dis_SSEcmp_E_to_G ( UChar sorb, UInt delta, 
+//.. static UInt dis_SSEcmp_E_to_G ( UChar sorb, ULong delta, 
 //.. 				HChar* opname, Bool all_lanes, Int sz )
 //.. {
 //..    HChar   dis_buf[50];
@@ -7361,7 +7361,7 @@ static UInt dis_SSE_E_to_G_unary_lo64 (
 //.. /* Vector by scalar shift of G by the amount specified at the bottom
 //..    of E. */
 //.. 
-//.. static UInt dis_SSE_shiftG_byE ( UChar sorb, UInt delta, 
+//.. static UInt dis_SSE_shiftG_byE ( UChar sorb, ULong delta, 
 //..                                  HChar* opname, IROp op )
 //.. {
 //..    HChar   dis_buf[50];
@@ -7435,7 +7435,7 @@ static UInt dis_SSE_E_to_G_unary_lo64 (
 //.. /* Vector by scalar shift of E by an immediate byte. */
 //.. 
 //.. static 
-//.. UInt dis_SSE_shiftE_imm ( UInt delta, HChar* opname, IROp op )
+//.. UInt dis_SSE_shiftE_imm ( ULong delta, HChar* opname, IROp op )
 //.. {
 //..    Bool    shl, shr, sar;
 //..    UChar   rm   = getUChar(delta);
@@ -10052,13 +10052,13 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //.. 
 //..       goto decode_success;
 //..    }
-//.. 
-//..    /* 66 0F 57 = XORPD -- G = G and E */
-//..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x57) {
-//..       delta = dis_SSE_E_to_G_all( sorb, delta+2, "xorpd", Iop_Xor128 );
-//..       goto decode_success;
-//..    }
-//.. 
+
+   /* 66 0F 57 = XORPD -- G = G xor E */
+   if (have66noF2noF3(pfx) && insn[0] == 0x0F && insn[1] == 0x57) {
+      delta = dis_SSE_E_to_G_all( pfx, delta+2, "xorpd", Iop_XorV128 );
+      goto decode_success;
+   }
+
 //..    /* 66 0F 6B = PACKSSDW */
 //..    if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x6B) {
 //..       delta = dis_SSEint_E_to_G( sorb, delta+2, 
@@ -11155,7 +11155,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..    case 0xDD:
 //..    case 0xDE:
 //..    case 0xDF: {
-//..       UInt delta0    = delta;
+//..       ULong delta0    = delta;
 //..       Bool decode_OK = False;
 //..       delta = dis_FPU ( &decode_OK, sorb, delta );
 //..       if (!decode_OK) {
@@ -12892,7 +12892,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       case 0xE1: /* PSRAgg (src)mmxreg-or-mem, (dst)mmxreg */
 //..       case 0xE2: 
 //..       {
-//..          UInt delta0    = delta-1;
+//..          ULong delta0    = delta-1;
 //..          Bool decode_OK = False;
 //.. 
 //..          /* If sz==2 this is SSE, and we assume sse idec has

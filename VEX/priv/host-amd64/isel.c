@@ -2646,15 +2646,15 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       add_to_esp(env, 8);
 //..       return freg;
 //..    }
-//.. 
-//..    if (e->tag == Iex_LDle) {
-//..       X86AMode* am;
-//..       HReg res = newVRegF(env);
-//..       vassert(e->Iex.LDle.ty == Ity_F64);
-//..       am = iselIntExpr_AMode(env, e->Iex.LDle.addr);
-//..       addInstr(env, X86Instr_FpLdSt(True/*load*/, 8, res, am));
-//..       return res;
-//..    }
+
+   if (e->tag == Iex_LDle) {
+      AMD64AMode* am;
+      HReg res = newVRegV(env);
+      vassert(e->Iex.LDle.ty == Ity_F64);
+      am = iselIntExpr_AMode(env, e->Iex.LDle.addr);
+      addInstr(env, AMD64Instr_SseLdSt( True/*load*/, 8, res, am ));
+      return res;
+   }
 
    if (e->tag == Iex_Get) {
       AMD64AMode* am = AMD64AMode_IR( e->Iex.Get.offset,
@@ -2842,7 +2842,7 @@ static HReg iselVecExpr ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY */
 static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 {
-//..    Bool     arg1isEReg = False;
+   Bool     arg1isEReg = False;
    AMD64SseOp op = Asse_INVALID;
    IRType     ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
@@ -3206,7 +3206,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //.. 
 //..       case Iop_And128:     op = Xsse_AND;      goto do_SseReRg;
 //..       case Iop_Or128:      op = Xsse_OR;       goto do_SseReRg;
-//..       case Iop_Xor128:     op = Xsse_XOR;      goto do_SseReRg;
+      case Iop_XorV128:    op = Asse_XOR;      goto do_SseReRg;
 //..       case Iop_Add8x16:    op = Xsse_ADD8;     goto do_SseReRg;
 //..       case Iop_Add16x8:    op = Xsse_ADD16;    goto do_SseReRg;
 //..       case Iop_Add32x4:    op = Xsse_ADD32;    goto do_SseReRg;
@@ -3238,22 +3238,21 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       case Iop_QSub16Sx8:  op = Xsse_QSUB16S;  goto do_SseReRg;
 //..       case Iop_QSub8Ux16:  op = Xsse_QSUB8U;   goto do_SseReRg;
 //..       case Iop_QSub16Ux8:  op = Xsse_QSUB16U;  goto do_SseReRg;
-//..       do_SseReRg: {
-//..          HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
-//..          HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
-//..          HReg dst = newVRegV(env);
-//..          if (op != Xsse_OR && op != Xsse_AND && op != Xsse_XOR)
-//..             REQUIRE_SSE2;
-//..          if (arg1isEReg) {
-//..             addInstr(env, mk_vMOVsd_RR(arg2, dst));
-//..             addInstr(env, X86Instr_SseReRg(op, arg1, dst));
-//..          } else {
-//..             addInstr(env, mk_vMOVsd_RR(arg1, dst));
-//..             addInstr(env, X86Instr_SseReRg(op, arg2, dst));
-//..          }
-//..          return dst;
-//..       }
-//.. 
+      do_SseReRg: {
+         HReg arg1 = iselVecExpr(env, e->Iex.Binop.arg1);
+         HReg arg2 = iselVecExpr(env, e->Iex.Binop.arg2);
+         HReg dst = newVRegV(env);
+         if (arg1isEReg) {
+            goto vec_fail; /* awaiting test case */
+            addInstr(env, mk_vMOVsd_RR(arg2, dst));
+            addInstr(env, AMD64Instr_SseReRg(op, arg1, dst));
+         } else {
+            addInstr(env, mk_vMOVsd_RR(arg1, dst));
+            addInstr(env, AMD64Instr_SseReRg(op, arg2, dst));
+         }
+         return dst;
+      }
+
 //..       case Iop_ShlN16x8: op = Xsse_SHL16; goto do_SseShift;
 //..       case Iop_ShlN32x4: op = Xsse_SHL32; goto do_SseShift;
 //..       case Iop_ShlN64x2: op = Xsse_SHL64; goto do_SseShift;
@@ -3296,7 +3295,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..       return dst;
 //..    }
 //.. 
-//..    vec_fail:
+   vec_fail:
    vex_printf("iselVecExpr (amd64, subarch = %s): can't reduce\n",
               LibVEX_ppVexSubArch(env->subarch));
    ppIRExpr(e);

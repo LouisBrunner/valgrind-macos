@@ -3039,7 +3039,7 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
       switch (i->Ain.SseReRg.op) {
          case Asse_MOV:     /*movups*/ XX(rex); XX(0x0F); XX(0x10); break;
 //..          case Xsse_OR:                 XX(rex); XX(0x0F); XX(0x56); break;
-//..          case Xsse_XOR:                XX(rex); XX(0x0F); XX(0x57); break;
+         case Asse_XOR:                XX(rex); XX(0x0F); XX(0x57); break;
 //..          case Xsse_AND:                XX(rex); XX(0x0F); XX(0x54); break;
 //..          case Xsse_PACKSSD:  XX(0x66); XX(rex); XX(0x0F); XX(0x6B); break;
 //..          case Xsse_PACKSSW:  XX(0x66); XX(rex); XX(0x0F); XX(0x63); break;

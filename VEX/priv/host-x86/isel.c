@@ -269,6 +269,7 @@ static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
    return X86Instr_Alu32R(Xalu_MOV, X86RMI_Reg(src), dst);
 }
 
+
 /* Push an arg onto the host stack, in preparation for a call to a
    helper function of some kind.  Returns the number of 32-bit words
    pushed. */
@@ -298,17 +299,103 @@ static Int pushArg ( ISelEnv* env, IRExpr* arg )
 static 
 void callHelperAndClearArgs ( ISelEnv* env, IRCallee* cee, Int n_arg_ws )
 {
+   HReg freg;
+
+   /* Complication.  Need to decide which reg to use as the fn address
+      pointer, in a way that doesn't trash regparm-passed
+      parameters. */
    vassert(sizeof(HWord) == 4);
+
+   switch (cee->regparms) {
+      case 0: freg = hregX86_EAX(); break;
+      case 1: freg = hregX86_EDX(); break;
+      case 2: freg = hregX86_ECX(); break;
+      case 3: freg = hregX86_EDI(); break;
+      default: vpanic("callHelperAndClearArgs(x86): > 3 regparms");
+   }
+
    addInstr(env, X86Instr_Alu32R(
                     Xalu_MOV,
                     X86RMI_Imm(cee->addr),
-                    hregX86_EAX()));
-   addInstr(env, X86Instr_Call(hregX86_EAX()));
+                    freg));
+   addInstr(env, X86Instr_Call(freg, cee->regparms));
    if (n_arg_ws > 0)
       addInstr(env, X86Instr_Alu32R(Xalu_ADD,
                        X86RMI_Imm(4*n_arg_ws),
                        hregX86_ESP()));
 }
+
+
+/* Do a complete function call. */
+
+static
+void doHelperCall ( ISelEnv* env, 
+                    Bool passBBP, IRCallee* cee, IRExpr** args )
+{
+   HReg argregs[3];
+   Int n_args, n_arg_ws, stack_limit, i, argreg;
+
+   /* Marshal args for a call, do the call, and clear the stack.
+      Complexities to consider:
+
+      * if passBBP is True, %ebp (the baseblock pointer) is to be
+        passed as the first arg.
+
+      * If the callee claims regparmness of 1, 2 or 3, we must pass the
+        first 1, 2 or 3 args in registers (EAX, EDX, and ECX
+        respectively).  To keep things relatively simple, only args of
+        type I32 may be passed as regparms -- just bomb out if anything
+        else turns up.  Clearly this depends on the front ends not
+        trying to pass any other types as regparms.  
+   */
+
+   vassert(cee->regparms >= 0 && cee->regparms <= 3);
+
+   n_args = n_arg_ws = 0;
+   while (args[n_args]) n_args++;
+
+   stack_limit = cee->regparms;
+   if (cee->regparms > 0 && passBBP) stack_limit--;
+
+   /* Push the stack-passed args */
+   for (i = n_args-1; i >= stack_limit; i--)
+      n_arg_ws += pushArg(env, args[i]);
+
+   /* args [stack_limit-1 .. 0] and possibly %ebp are to be passed in
+      registers. */
+   vassert(stack_limit + (passBBP ? 1 : 0) == cee->regparms);
+
+   if (cee->regparms > 0) {
+      /* deal with regparms, not forgetting %ebp if needed. */
+      argregs[0] = hregX86_EAX();
+      argregs[1] = hregX86_EDX();
+      argregs[2] = hregX86_ECX();
+      argreg = cee->regparms;
+
+      for (i = stack_limit-1; i >= 0; i--) {
+         argreg--;
+         vassert(argreg >= 0);
+         vassert(typeOfIRExpr(env->type_env, args[i]) == Ity_I32);
+         addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
+                                       iselIntExpr_RMI(env, args[i]),
+                                       argregs[argreg]));
+      }
+      if (passBBP) {
+         vassert(argreg == 1);
+         addInstr(env, mk_MOVsd_RR( hregX86_EBP(), argregs[0]));
+      }
+   } else {
+      /* No regparms.  Heave %ebp on the stack if needed. */
+      if (passBBP) {
+         addInstr(env, X86Instr_Push(X86RMI_Reg(hregX86_EBP())));
+         n_arg_ws++;
+      }
+   }
+
+   /* call the helper, and get the args off the stack afterwards. */
+   callHelperAndClearArgs( env, cee, n_arg_ws );
+}
+
 
 /* Given a guest-state array descriptor, an index expression and a
    bias, generate an X86AMode holding the relevant guest state
@@ -862,7 +949,6 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- CCALL --------- */
    case Iex_CCall: {
-      Int     i, n_args, n_arg_ws;
       HReg    dst = newVRegI(env);
       vassert(ty == Ity_I32);
 
@@ -871,15 +957,8 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       if (e->Iex.CCall.retty != Ity_I32)
          goto irreducible;
 
-      /* push args on the stack, right to left. */
-      n_arg_ws = n_args = 0;
-      while (e->Iex.CCall.args[n_args]) n_args++;
-
-      for (i = n_args-1; i >= 0; i--)
-         n_arg_ws += pushArg(env, e->Iex.CCall.args[i]);
-
-      /* call the helper, and get the args off the stack afterwards. */
-      callHelperAndClearArgs( env, e->Iex.CCall.cee, n_arg_ws );
+      /* Marshal args, do the call, clear stack. */
+      doHelperCall( env, False, e->Iex.CCall.cee, e->Iex.CCall.args );
 
       addInstr(env, mk_MOVsd_RR(hregX86_EAX(), dst));
       return dst;
@@ -1602,19 +1681,11 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
    /* --------- CCALL --------- */
    if (e->tag == Iex_CCall) {
-      Int     i, n_args, n_arg_ws;
-      HReg tLo  = newVRegI(env);
-      HReg tHi  = newVRegI(env);
+      HReg tLo = newVRegI(env);
+      HReg tHi = newVRegI(env);
 
-      /* push args on the stack, right to left. */
-      n_arg_ws = n_args = 0;
-      while (e->Iex.CCall.args[n_args]) n_args++;
-
-      for (i = n_args-1; i >= 0; i--)
-         n_arg_ws += pushArg(env, e->Iex.CCall.args[i]);
-
-      /* call the helper, and get the args off the stack afterwards. */
-      callHelperAndClearArgs( env, e->Iex.CCall.cee, n_arg_ws );
+      /* Marshal args, do the call, clear stack. */
+      doHelperCall( env, False, e->Iex.CCall.cee, e->Iex.CCall.args );
 
       addInstr(env, mk_MOVsd_RR(hregX86_EDX(), tHi));
       addInstr(env, mk_MOVsd_RR(hregX86_EAX(), tLo));
@@ -2112,28 +2183,16 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 
    /* --------- Call to DIRTY helper --------- */
    case Ist_Dirty: {
-      Int      i, n_arg_ws, n_args;
       IRType   retty;
       IRDirty* d = stmt->Ist.Dirty.details;
-
-      /* push args on the stack, right to left. */
-      n_arg_ws = n_args = 0;
-      while (d->args[n_args] != NULL) n_args++;
-
-      for (i = n_args-1; i >= 0; i--)
-         n_arg_ws += pushArg(env, d->args[i]);
+      Bool     passBBP = False;
 
       if (d->nFxState == 0)
          vassert(!d->needsBBP);
-      if (d->nFxState > 0 && d->needsBBP) {
-         /* If the helper claims it accesses guest state, give it a
-            first argument which is the guest state pointer (%ebp). */
-         addInstr(env, X86Instr_Push(X86RMI_Reg(hregX86_EBP())));
-         n_arg_ws++;
-      }
+      passBBP = d->nFxState > 0 && d->needsBBP;
 
-      /* call the helper, and get the args off the stack afterwards. */
-      callHelperAndClearArgs( env, d->cee, n_arg_ws );
+      /* Marshal args, do the call, clear stack. */
+      doHelperCall( env, passBBP, d->cee, d->args );
 
       /* Now figure out what to do with the returned value, if any. */
       if (d->tmp == INVALID_IRTEMP)

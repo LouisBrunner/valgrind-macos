@@ -504,10 +504,12 @@ X86Instr* X86Instr_Push( X86RMI* src ) {
    i->Xin.Push.src = src;
    return i;
 }
-X86Instr* X86Instr_Call ( HReg target ) {
-   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
-   i->tag             = Xin_Call;
-   i->Xin.Call.target = target;
+X86Instr* X86Instr_Call ( HReg target, Int regparms ) {
+   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag               = Xin_Call;
+   i->Xin.Call.target   = target;
+   i->Xin.Call.regparms = regparms;
+   vassert(regparms >= 0 && regparms <= 3);
    return i;
 }
 X86Instr* X86Instr_Goto ( IRJumpKind jk, X86CondCode cond, X86RI* dst ) {
@@ -695,7 +697,7 @@ void ppX86Instr ( X86Instr* i ) {
          ppX86RMI(i->Xin.Push.src);
          return;
       case Xin_Call:
-         vex_printf("call *");
+         vex_printf("call[%d] *", i->Xin.Call.regparms);
          ppHRegX86(i->Xin.Call.target);
          break;
       case Xin_Goto:
@@ -875,6 +877,13 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          addHRegUse(u, HRmWrite, hregX86_EAX());
          addHRegUse(u, HRmWrite, hregX86_ECX());
          addHRegUse(u, HRmWrite, hregX86_EDX());
+         switch (i->Xin.Call.regparms) {
+            case 3: addHRegUse(u, HRmRead, hregX86_ECX()); /*fallthru*/
+            case 2: addHRegUse(u, HRmRead, hregX86_EDX()); /*fallthru*/
+            case 1: addHRegUse(u, HRmRead, hregX86_EAX()); break;
+            case 0: break;
+            default: vpanic("getRegUsage_X86Instr:Call:regparms");
+         }
          return;
       case Xin_Goto:
          addRegUsage_X86RI(u, i->Xin.Goto.dst);

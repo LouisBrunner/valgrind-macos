@@ -73,7 +73,7 @@ extern Bool eqIRConst ( IRConst*, IRConst* );
 /* ------------------ Call targets ------------------ */
 
 /* Describes a helper function to call.  The name part is purely for
-   pretty printing and not actually used.  regparm=n tells the back
+   pretty printing and not actually used.  regparms=n tells the back
    end that the callee has been declared
    "__attribute__((regparm(n)))".  On some targets (x86) the back end
    will need to construct a non-standard sequence to call a function
@@ -81,13 +81,13 @@ extern Bool eqIRConst ( IRConst*, IRConst* );
 
 typedef
    struct {
-      Int   regparm;
+      Int   regparms;
       Char* name;
       HWord addr;
    }
    IRCallee;
 
-extern IRCallee* mkIRCallee ( Int regparm, Char* name, HWord addr );
+extern IRCallee* mkIRCallee ( Int regparms, Char* name, HWord addr );
 
 extern IRCallee* dopyIRCallee ( IRCallee* );
 

@@ -51,8 +51,8 @@ void ppIRConst ( IRConst* con )
 void ppIRCallee ( IRCallee* ce )
 {
    vex_printf("%s", ce->name);
-   if (ce->regparm > 0)
-      vex_printf("[%d]", ce->regparm);
+   if (ce->regparms > 0)
+      vex_printf("[%d]", ce->regparms);
    vex_printf("{%p}", (void*)ce->addr);
 }
 
@@ -465,13 +465,13 @@ IRConst* IRConst_F64i ( ULong f64i )
 
 /* Constructors -- IRCallee */
 
-IRCallee* mkIRCallee ( Int regparm, Char* name, HWord addr )
+IRCallee* mkIRCallee ( Int regparms, Char* name, HWord addr )
 {
    IRCallee* ce = LibVEX_Alloc(sizeof(IRCallee));
-   ce->regparm = regparm;
-   ce->name = name;
-   ce->addr = addr;
-   vassert(regparm >= 0);
+   ce->regparms = regparms;
+   ce->name     = name;
+   ce->addr     = addr;
+   vassert(regparms >= 0 && regparms <= 3);
    vassert(name != NULL);
    vassert(addr != 0);
    return ce;
@@ -749,7 +749,7 @@ IRConst* dopyIRConst ( IRConst* c )
 
 IRCallee* dopyIRCallee ( IRCallee* ce )
 {
-   return mkIRCallee(ce->regparm, ce->name, ce->addr);
+   return mkIRCallee(ce->regparms, ce->name, ce->addr);
 }
 
 IRArray* dopyIRArray ( IRArray* d )
@@ -1180,7 +1180,7 @@ static Bool saneIRCallee ( IRCallee* cee )
       return False;
    if (cee->addr == 0)
       return False;
-   if (cee->regparm < 0 || cee->regparm > 3)
+   if (cee->regparms < 0 || cee->regparms > 3)
       return False;
    return True;
 }

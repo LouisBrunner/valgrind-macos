@@ -178,33 +178,39 @@ void barf ( const char* str )
 }
 
 
-static void cat_n_send ( char* pre, char* msg )
+static void cat_n_send ( char* s1, char* s2, char* s3 )
 {
    char  buf[1000];
    if (get_pt_trace_level() >= 0) {
-      snprintf(buf, sizeof(buf), "%s%s", pre, msg );
+      snprintf(buf, sizeof(buf), "%s%s%s", s1, s2, s3);
       buf[sizeof(buf)-1] = '\0';
       VALGRIND_NON_SIMD_CALL2(VG_(message), Vg_UserMsg, buf);
    }
 }
 
-static void ignored ( char* msg )
+static void oh_dear ( char* fn, char* aux, char* s )
 {
-   cat_n_send ( "valgrind's libpthread.so: IGNORED call to: ", msg );
+   cat_n_send    ( "warning: Valgrind's ", fn, s );
+   if (NULL != aux)
+      cat_n_send ( "         ", aux, "" );
+   cat_n_send    ( "         your program may misbehave as a result", "", "" );
 }
 
-
-static void kludged ( char* msg )
+static void ignored ( char* fn, char* aux )
 {
-   cat_n_send ( "valgrind's libpthread.so: KLUDGED call to: ", msg );
+   oh_dear ( fn, aux, " does nothing" );
+}
+
+static void kludged ( char* fn, char* aux )
+{
+   oh_dear ( fn, aux, " is incomplete" );
 }
 
 
 __attribute__((noreturn))
-void vgPlain_unimp ( char* what )
+void vgPlain_unimp ( char* fn )
 {
-   cat_n_send ( 
-      "valgrind's libpthread.so: UNIMPLEMENTED FUNCTION: ", what );
+   cat_n_send ( "valgrind's libpthread.so: UNIMPLEMENTED FUNCTION: ", fn, "" );
    barf("Please report this bug to me at: jseward@acm.org");
 }
 
@@ -219,10 +225,8 @@ void my_assert_fail ( const Char* expr, const Char* file, Int line, const Char* 
    entered = True;
    sprintf(buf, "\n%s: %s:%d (%s): Assertion `%s' failed.\n",
                 "valgrind", file, line, fn, expr );
-   cat_n_send ( "", buf );
-   sprintf(buf, "Please report this bug to me at: %s\n\n", 
-                 VG_EMAIL_ADDR);
-   cat_n_send ( "", buf );
+   cat_n_send ( "", buf, "" );
+   sprintf(buf, "Please report this bug to me at: %s\n\n", VG_EMAIL_ADDR);
    my_exit(1);
 }
 
@@ -328,7 +332,7 @@ int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit)
 {
    static int moans = N_MOANS;
    if (moans-- > 0) 
-      ignored("pthread_attr_setinheritsched");
+      ignored("pthread_attr_setinheritsched", NULL);
    return 0;
 }
 
@@ -357,7 +361,7 @@ int  pthread_attr_getschedparam(const  pthread_attr_t  *attr,
 {
    static int moans = N_MOANS;
    if (moans-- > 0) 
-      kludged("pthread_attr_getschedparam");
+      kludged("pthread_attr_getschedparam", NULL);
 #  ifdef HAVE_SCHED_PRIORITY
    if (param) param->sched_priority = 0; /* who knows */
 #  else
@@ -371,7 +375,7 @@ int  pthread_attr_setschedparam(pthread_attr_t  *attr,
 {
    static int moans = N_MOANS;
    if (moans-- > 0) 
-      ignored("pthread_attr_setschedparam");
+      ignored("pthread_attr_setschedparam", "(scheduling not changeable)");
    return 0;
 }
 
@@ -379,7 +383,7 @@ int pthread_attr_destroy(pthread_attr_t *attr)
 {
    static int moans = N_MOANS;
    if (moans-- > 0) 
-      ignored("pthread_attr_destroy");
+      ignored("pthread_attr_destroy", NULL);
    return 0;
 }
 
@@ -411,7 +415,7 @@ int pthread_getattr_np (pthread_t thread, pthread_attr_t *attr)
    int    detached;
    size_t limit;
    ensure_valgrind("pthread_getattr_np");
-   kludged("pthread_getattr_np");
+   kludged("pthread_getattr_np", NULL);
    limit = VG_PTHREAD_STACK_SIZE - VG_AR_CLIENT_STACKBASE_REDZONE_SZB 
                                  - 1000; /* paranoia */
    attr->__detachstate = PTHREAD_CREATE_JOINABLE;
@@ -439,7 +443,7 @@ int pthread_attr_getstackaddr ( const pthread_attr_t * attr,
                                 void ** stackaddr )
 {
    ensure_valgrind("pthread_attr_getstackaddr");
-   kludged("pthread_attr_getstackaddr");
+   kludged("pthread_attr_getstackaddr", "(it always sets stackaddr to zero)");
    if (stackaddr)
       *stackaddr = NULL;
    return 0;
@@ -486,7 +490,8 @@ int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize)
       return 0;
 
    if (moans-- > 0) 
-       ignored("pthread_attr_setguardsize: ignoring guardsize != 4096");
+       ignored("pthread_attr_setguardsize",
+               "(it ignores any guardsize != 4096)");
 
    return 0;
 }
@@ -938,7 +943,7 @@ int __pthread_mutex_lock(pthread_mutex_t *mutex)
    } else {
       /* Play at locking */
       if (0)
-	 kludged("prehistoric lock");
+	 kludged("prehistoric lock", NULL);
       mutex->__m_owner = (_pthread_descr)1;
       mutex->__m_count = 1;
       mutex->__m_kind |= VG_PTHREAD_PREHISTORY;
@@ -959,7 +964,7 @@ int __pthread_mutex_trylock(pthread_mutex_t *mutex)
    } else {
       /* Play at locking */
       if (0)
-	 kludged("prehistoric trylock");
+	 kludged("prehistoric trylock", NULL);
       mutex->__m_owner = (_pthread_descr)1;
       mutex->__m_count = 1;
       mutex->__m_kind |= VG_PTHREAD_PREHISTORY;
@@ -980,7 +985,7 @@ int __pthread_mutex_unlock(pthread_mutex_t *mutex)
    } else {
       /* Play at locking */
       if (0)
-	 kludged("prehistoric unlock");
+	 kludged("prehistoric unlock", NULL);
       mutex->__m_owner = 0;
       mutex->__m_count = 0;
       mutex->__m_kind &= ~VG_PTHREAD_PREHISTORY;
@@ -1037,7 +1042,8 @@ int pthread_cond_destroy(pthread_cond_t *cond)
    /* should check that no threads are waiting on this CV */
    static int moans = N_MOANS;
    if (moans-- > 0) 
-      kludged("pthread_cond_destroy");
+      kludged("pthread_cond_destroy", 
+              "(it doesn't check if the cond is waited on)" );
    return 0;
 }
 
@@ -1052,7 +1058,7 @@ int   pthread_getschedparam(pthread_t  target_thread,
 {
    static int moans = N_MOANS;
    if (moans-- > 0) 
-      kludged("pthread_getschedparam");
+      kludged("pthread_getschedparam", NULL);
    if (policy) *policy = SCHED_OTHER;
 #  ifdef HAVE_SCHED_PRIORITY
    if (param) param->sched_priority = 0; /* who knows */
@@ -1068,7 +1074,7 @@ int pthread_setschedparam(pthread_t target_thread,
 {
    static int moans = N_MOANS;
    if (moans-- > 0) 
-      ignored("pthread_setschedparam");
+      ignored("pthread_setschedparam", "(scheduling not changeable)");
    return 0;
 }
 
@@ -2154,7 +2160,7 @@ extern void __libc_siglongjmp (sigjmp_buf env, int val)
                                __attribute__ ((noreturn));
 void siglongjmp(sigjmp_buf env, int val)
 {
-   kludged("siglongjmp (cleanup handlers are ignored)");
+   kludged("siglongjmp", "(it ignores cleanup handlers)");
    __libc_siglongjmp(env, val);
 }
 
@@ -2380,7 +2386,7 @@ int sem_getvalue(sem_t* sem, int * sval)
 
 int sem_destroy(sem_t * sem)
 {
-   kludged("sem_destroy");
+   kludged("sem_destroy", "(it always succeeds, even if semaphore waited on)");
    /* if someone waiting on this semaphore, errno = EBUSY, return -1 */
    return 0;
 }

@@ -131,11 +131,13 @@ enum test_flags {
 #define FDPRINTF(fmt, args...) do { } while (0)
 #endif
 
+#if !defined (NO_FLOAT)
 register double f14 __asm__ ("f14");
 register double f15 __asm__ ("f15");
 register double f16 __asm__ ("f16");
 register double f17 __asm__ ("f17");
 register double f18 __asm__ ("f18");
+#endif
 register uint32_t r14 __asm__ ("r14");
 register uint32_t r15 __asm__ ("r15");
 register uint32_t r16 __asm__ ("r16");
@@ -3777,6 +3779,7 @@ static void test_int_one_arg (const unsigned char *name, test_func_t func)
         r14 = iargs[i];
         r18 = 0;
         __asm__ __volatile__ ("mtcr 18");
+//        r18 = 0x20000000;                // set xer_ca
         __asm__ __volatile__ ("mtxer 18");
         (*func)();
         res = r17;
@@ -4574,6 +4577,24 @@ int main (int argc, char **argv)
     build_iargs_table();
     build_fargs_table();
     build_ii16_table();
+
+#if 1
+    one_arg=1; 
+    two_args=1; 
+    three_args=1;
+
+    arith=1;
+    logical=1;
+    compare=1;
+
+    integer=1;
+    floats=0;
+
+    p405=0;
+    altivec=0;
+    faltivec=0;
+#endif
+
     do_tests(one_arg, two_args, three_args,
              arith, logical, compare,
              integer, floats, p405, altivec, faltivec,

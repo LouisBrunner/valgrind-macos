@@ -1603,6 +1603,7 @@ void codegen_XOR_reg_with_itself ( Int size, Int ge_reg )
 */
 static
 UInt dis_op2_E_G ( UChar       sorb,
+                   Bool        addSubCarry,
                    IROp        op8, 
                    Bool        keep,
                    Int         size, 
@@ -1618,6 +1619,13 @@ UInt dis_op2_E_G ( UChar       sorb,
    UChar   rm   = getUChar(delta0);
    IRTemp  addr = INVALID_IRTEMP;
 
+   /* addSubCarry == True indicates the intended operation is
+      add-with-carry or subtract-with-borrow. */
+   if (addSubCarry) {
+      vassert(op8 == Iop_Add8 || op8 == Iop_Sub8);
+      vassert(keep);
+   }
+
    if (epartIsReg(rm)) {
       /* Specially handle XOR reg,reg, because that doesn't really
          depend on reg, and doing the obvious thing potentially
@@ -1629,11 +1637,22 @@ UInt dis_op2_E_G ( UChar       sorb,
       }
       assign( dst0, getIReg(size,gregOfRM(rm)) );
       assign( src,  getIReg(size,eregOfRM(rm)) );
-      assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-      setFlags_SRC_DST1(op8, src, dst1, ty);
 
-      if (keep)
+      if (addSubCarry && op8 == Iop_Add8) {
+         vassert(0);
+         helper_ADC( size, dst1, dst0, src );
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
+      } else
+      if (addSubCarry && op8 == Iop_Sub8) {
+         vassert(0);
+         helper_SBB( size, dst1, dst0, src );
+         putIReg(size, gregOfRM(rm), mkexpr(dst1));
+      } else {
+         assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
+         setFlags_SRC_DST1(op8, src, dst1, ty);
+         if (keep)
+            putIReg(size, gregOfRM(rm), mkexpr(dst1));
+      }
 
       DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
                           nameIReg(size,eregOfRM(rm)),
@@ -1644,11 +1663,21 @@ UInt dis_op2_E_G ( UChar       sorb,
       addr = disAMode ( &len, sorb, delta0, dis_buf);
       assign( dst0, getIReg(size,gregOfRM(rm)) );
       assign( src,  loadLE(szToITy(size), mkexpr(addr)) );
-      assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-      setFlags_SRC_DST1(op8, src, dst1, ty);
 
-      if (keep)
+      if (addSubCarry && op8 == Iop_Add8) {
+         vassert(0);
+         helper_ADC( size, dst1, dst0, src );
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
+      } else
+      if (addSubCarry && op8 == Iop_Sub8) {
+         helper_SBB( size, dst1, dst0, src );
+         putIReg(size, gregOfRM(rm), mkexpr(dst1));
+      } else {
+         assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
+         setFlags_SRC_DST1(op8, src, dst1, ty);
+         if (keep)
+            putIReg(size, gregOfRM(rm), mkexpr(dst1));
+      }
 
       DIP("%s%c %s,%s\n", t_x86opc, nameISize(size), 
                           dis_buf,nameIReg(size,gregOfRM(rm)));
@@ -1997,6 +2026,7 @@ UInt dis_Grp1 ( UChar sorb,
    IRTemp  dst0 = newTemp(ty);
    IRTemp  addr = INVALID_IRTEMP;
    IROp    op8  = Iop_INVALID;
+   UInt    mask = sz==1 ? 0xFF : (sz==2 ? 0xFFFF : 0xFFFFFFFF);
 
    switch (gregOfRM(modrm)) {
       case 0: op8 = Iop_Add8; break;  case 1: op8 = Iop_Or8;  break;
@@ -2009,13 +2039,19 @@ UInt dis_Grp1 ( UChar sorb,
 
    if (epartIsReg(modrm)) {
       vassert(am_sz == 1);
-      vassert(op8 != Iop_INVALID);
 
       assign(dst0, getIReg(sz,eregOfRM(modrm)));
-      assign(src,  mkU(ty,d32));
+      assign(src,  mkU(ty,d32 & mask));
 
-      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-      setFlags_SRC_DST1(op8, src, dst1, ty);
+      if (gregOfRM(modrm) == 2 /* ADC */) {
+         helper_ADC( sz, dst1, dst0, src );
+      } else 
+      if (gregOfRM(modrm) == 3 /* SBB */) {
+         helper_SBB( sz, dst1, dst0, src );
+      } else {
+         assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
+         setFlags_SRC_DST1(op8, src, dst1, ty);
+      }
 
       if (gregOfRM(modrm) < 7)
          putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
@@ -2027,7 +2063,7 @@ UInt dis_Grp1 ( UChar sorb,
       addr = disAMode ( &len, sorb, delta, dis_buf);
 
       assign(dst0, loadLE(ty,mkexpr(addr)));
-      assign(src, mkU(ty,d32));
+      assign(src, mkU(ty,d32 & mask));
 
       if (gregOfRM(modrm) == 2 /* ADC */) {
          helper_ADC( sz, dst1, dst0, src );
@@ -6340,9 +6376,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
                                 d32, nameIReg(sz,R_EAX));
       break;
 
-//--    case 0xA2: /* MOV AL,Ob */
-//--       sz = 1;
-//--       /* Fall through ... */
+   case 0xA2: /* MOV Ob,AL */
+      sz = 1;
+      /* Fall through ... */
    case 0xA3: /* MOV eAX,Ov */
       d32 = getUDisp32(delta); delta += 4;
       ty = szToITy(sz);
@@ -6353,8 +6389,8 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
                                 sorbTxt(sorb), d32);
       break;
 
-#if 0
    case 0xB0: /* MOV imm,AL */
+#if 0
    case 0xB1: /* MOV imm,CL */
 #endif
    case 0xB2: /* MOV imm,DL */
@@ -6475,73 +6511,73 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    /* ------------------------ opl Ev, Gv ----------------- */
 //-- 
 //--    case 0x02: /* ADD Eb,Gb */
-//--       delta = dis_op2_E_G ( cb, sorb, ADD, True, 1, delta, "add" );
+//--       delta = dis_op2_E_G ( cb, sorb, False, ADD, True, 1, delta, "add" );
 //--       break;
    case 0x03: /* ADD Ev,Gv */
-      delta = dis_op2_E_G ( sorb, Iop_Add8, True, sz, delta, "add" );
+      delta = dis_op2_E_G ( sorb, False, Iop_Add8, True, sz, delta, "add" );
       break;
 
    case 0x0A: /* OR Eb,Gb */
-      delta = dis_op2_E_G ( sorb, Iop_Or8, True, 1, delta, "or" );
+      delta = dis_op2_E_G ( sorb, False, Iop_Or8, True, 1, delta, "or" );
       break;
    case 0x0B: /* OR Ev,Gv */
-      delta = dis_op2_E_G ( sorb, Iop_Or8, True, sz, delta, "or" );
+      delta = dis_op2_E_G ( sorb, False, Iop_Or8, True, sz, delta, "or" );
       break;
 //-- 
 //--    case 0x12: /* ADC Eb,Gb */
-//--       delta = dis_op2_E_G ( sorb, ADC, True, 1, delta, "adc" );
+//--       delta = dis_op2_E_G ( sorb, True, ADC, True, 1, delta, "adc" );
 //--       break;
 //--    case 0x13: /* ADC Ev,Gv */
-//--       delta = dis_op2_E_G ( sorb, ADC, True, sz, delta, "adc" );
+//--       delta = dis_op2_E_G ( sorb, True, ADC, True, sz, delta, "adc" );
 //--       break;
 //-- 
 //--    case 0x1A: /* SBB Eb,Gb */
-//--       delta = dis_op2_E_G ( sorb, SBB, True, 1, delta, "sbb" );
+//--       delta = dis_op2_E_G ( sorb, True, SBB, True, 1, delta, "sbb" );
 //--       break;
-//--    case 0x1B: /* SBB Ev,Gv */
-//--       delta = dis_op2_E_G ( sorb, SBB, True, sz, delta, "sbb" );
-//--       break;
-//-- 
-//--    case 0x22: /* AND Eb,Gb */
-//--       delta = dis_op2_E_G ( sorb, AND, True, 1, delta, "and" );
-//--       break;
-   case 0x23: /* AND Ev,Gv */
-      delta = dis_op2_E_G ( sorb, Iop_And8, True, sz, delta, "and" );
+   case 0x1B: /* SBB Ev,Gv */
+      delta = dis_op2_E_G ( sorb, True, Iop_Sub8, True, sz, delta, "sbb" );
       break;
 
-//--    case 0x2A: /* SUB Eb,Gb */
-//--       delta = dis_op2_E_G ( sorb, SUB, True, 1, delta, "sub" );
+//--    case 0x22: /* AND Eb,Gb */
+//--       delta = dis_op2_E_G ( sorb, False, AND, True, 1, delta, "and" );
 //--       break;
+   case 0x23: /* AND Ev,Gv */
+      delta = dis_op2_E_G ( sorb, False, Iop_And8, True, sz, delta, "and" );
+      break;
+
+   case 0x2A: /* SUB Eb,Gb */
+      delta = dis_op2_E_G ( sorb, False, Iop_Sub8, True, 1, delta, "sub" );
+      break;
    case 0x2B: /* SUB Ev,Gv */
-      delta = dis_op2_E_G ( sorb, Iop_Sub8, True, sz, delta, "sub" );
+      delta = dis_op2_E_G ( sorb, False, Iop_Sub8, True, sz, delta, "sub" );
       break;
 
    case 0x32: /* XOR Eb,Gb */
-      delta = dis_op2_E_G ( sorb, Iop_Xor8, True, 1, delta, "xor" );
+      delta = dis_op2_E_G ( sorb, False, Iop_Xor8, True, 1, delta, "xor" );
       break;
    case 0x33: /* XOR Ev,Gv */
-      delta = dis_op2_E_G ( sorb, Iop_Xor8, True, sz, delta, "xor" );
+      delta = dis_op2_E_G ( sorb, False, Iop_Xor8, True, sz, delta, "xor" );
       break;
 
    case 0x3A: /* CMP Eb,Gb */
-      delta = dis_op2_E_G ( sorb, Iop_Sub8, False, 1, delta, "cmp" );
+      delta = dis_op2_E_G ( sorb, False, Iop_Sub8, False, 1, delta, "cmp" );
       break;
    case 0x3B: /* CMP Ev,Gv */
-      delta = dis_op2_E_G ( sorb, Iop_Sub8, False, sz, delta, "cmp" );
+      delta = dis_op2_E_G ( sorb, False, Iop_Sub8, False, sz, delta, "cmp" );
       break;
 
    case 0x84: /* TEST Eb,Gb */
-      delta = dis_op2_E_G ( sorb, Iop_And8, False, 1, delta, "test" );
+      delta = dis_op2_E_G ( sorb, False, Iop_And8, False, 1, delta, "test" );
       break;
    case 0x85: /* TEST Ev,Gv */
-      delta = dis_op2_E_G ( sorb, Iop_And8, False, sz, delta, "test" );
+      delta = dis_op2_E_G ( sorb, False, Iop_And8, False, sz, delta, "test" );
       break;
 
-//--    /* ------------------------ opl Gv, Ev ----------------- */
-//-- 
-//--    case 0x00: /* ADD Gb,Eb */
-//--       delta = dis_op2_G_E ( sorb, ADD, True, 1, delta, "add" );
-//--       break;
+   /* ------------------------ opl Gv, Ev ----------------- */
+
+   case 0x00: /* ADD Gb,Eb */
+      delta = dis_op2_G_E ( sorb, False, Iop_Add8, True, 1, delta, "add" );
+      break;
    case 0x01: /* ADD Gv,Ev */
       delta = dis_op2_G_E ( sorb, False, Iop_Add8, True, sz, delta, "add" );
       break;
@@ -6574,9 +6610,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       delta = dis_op2_G_E ( sorb, False, Iop_And8, True, sz, delta, "and" );
       break;
 
-//--    case 0x28: /* SUB Gb,Eb */
-//--       delta = dis_op2_G_E ( sorb, False, SUB, True, 1, delta, "sub" );
-//--       break;
+   case 0x28: /* SUB Gb,Eb */
+      delta = dis_op2_G_E ( sorb, False, Iop_Sub8, True, 1, delta, "sub" );
+      break;
    case 0x29: /* SUB Gv,Ev */
       delta = dis_op2_G_E ( sorb, False, Iop_Sub8, True, sz, delta, "sub" );
       break;
@@ -6895,10 +6931,11 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       switch (abyte) {
       /* According to the Intel manual, "repne movs" should never occur, but
        * in practice it has happened, so allow for it here... */
-//--       case 0xA4: sz = 1;   /* REPNE MOVS<sz> */
+      case 0xA4: sz = 1;   /* REPNE MOVS<sz> */
 //--       case 0xA5: 
-//--          dis_REP_op ( cb, CondNZ, dis_MOVS, sz, eip_orig, eip, "repne movs" );
-//--          break;
+	//         dis_REP_op ( CondNZ, dis_MOVS, sz, eip_orig,
+	//                              guest_eip+delta, "repne movs" );
+	//         break;
 //-- 
 //--       case 0xA6: sz = 1;   /* REPNE CMPS<sz> */
 //--       case 0xA7:
@@ -7135,7 +7172,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       modrm = getIByte(delta);
       am_sz = lengthAMode(delta);
       d_sz  = 1;
-      d32   = getSDisp8(delta + am_sz);
+      d32   = getUChar(delta + am_sz);
       sz    = 1;
       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
                          mkU8(d32 & 0xFF), NULL );
@@ -7145,19 +7182,20 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       modrm = getIByte(delta);
       am_sz = lengthAMode(delta);
       d_sz  = 1;
-      d32   = getSDisp8(delta + am_sz);
+      d32   = getUChar(delta + am_sz);
       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
                          mkU8(d32 & 0xFF), NULL );
       break;
 
-//--    case 0xD0: /* Grp2 1,Eb */
-//--       modrm = getUChar(eip);
-//--       am_sz = lengthAMode(eip);
-//--       d_sz  = 0;
-//--       d32   = 1;
-//--       sz    = 1;
-//--       eip   = dis_Grp2 ( cb, sorb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
-//--       break;
+   case 0xD0: /* Grp2 1,Eb */
+      modrm = getIByte(delta);
+      am_sz = lengthAMode(delta);
+      d_sz  = 0;
+      d32   = 1;
+      sz    = 1;
+      delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
+                         mkU8(d32), NULL );
+      break;
 
    case 0xD1: /* Grp2 1,Ev */
       modrm = getUChar(delta);
@@ -7463,15 +7501,17 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
          }
          break;
 
-//--       /* =-=-=-=-=-=-=-=-=- SHLD/SHRD -=-=-=-=-=-=-=-=-= */
-//-- 
-//--       case 0xA4: /* SHLDv imm8,Gv,Ev */
-//--          modrm = getUChar(eip);
-//--          eip = dis_SHLRD_Gv_Ev ( 
-//--                   cb, sorb, eip, modrm, sz, 
-//--                   Literal, getUChar(eip + lengthAMode(eip)),
-//--                   True );
-//--          break;
+      /* =-=-=-=-=-=-=-=-=- SHLD/SHRD -=-=-=-=-=-=-=-=-= */
+
+      case 0xA4: /* SHLDv imm8,Gv,Ev */
+         modrm = getIByte(delta);
+         d32   = delta + lengthAMode(delta);
+         vex_sprintf(dis_buf, "$%d", delta);
+         delta = dis_SHLRD_Gv_Ev ( 
+                  sorb, delta, modrm, sz, 
+                  mkU8(getIByte(d32)), True, /* literal */
+                  dis_buf, True );
+         break;
       case 0xA5: /* SHLDv %cl,Gv,Ev */
          modrm = getIByte(delta);
          delta = dis_SHLRD_Gv_Ev ( 

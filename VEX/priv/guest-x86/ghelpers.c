@@ -234,7 +234,8 @@ static inline int lshift(int x, int n)
          return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z 
                           | CC_MASK_A | CC_MASK_C | CC_MASK_O);
 
-      case CC_OP_ADDL:   ACTIONS_ADD(32,UInt,Int);
+      case CC_OP_ADDB:   ACTIONS_ADD(8, UChar,SChar);
+      case CC_OP_ADDL:   ACTIONS_ADD(32,UInt, Int);
 
       case CC_OP_SUBB:   ACTIONS_SUB( 8,UChar, SChar);
       case CC_OP_SUBW:   ACTIONS_SUB(16,UShort,Short);

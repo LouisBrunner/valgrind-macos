@@ -5712,6 +5712,15 @@ PREx(sys_pause, MayBlock)
 // XXX: x86-specific
 PREx(sys_sigsuspend, MayBlock)
 {
+   /* The C library interface to sigsuspend just takes a pointer to
+      a signal mask but this system call has three arguments - the first
+      two don't appear to be used by the kernel and are always passed as
+      zero by glibc and the third is the first word of the signal mask
+      so only 32 signals are supported.
+     
+      In fact glibc normally uses rt_sigsuspend if it is available as
+      that takes a pointer to the signal mask so supports more signals.
+    */
    PRINT("sys_sigsuspend ( %d, %d, %d )", arg1,arg2,arg3 );
    PRE_REG_READ3(int, "sigsuspend",
                  int, history0, int, history1,
@@ -5721,6 +5730,12 @@ PREx(sys_sigsuspend, MayBlock)
 // XXX: x86-specific
 PREx(sys_rt_sigsuspend, MayBlock)
 {
+   /* The C library interface to sigsuspend just takes a pointer to
+      a signal mask but this system call has two arguments - a pointer
+      to the mask and the number of bytes used by it. The kernel insists
+      on the size being equal to sizeof(sigset_t) however and will just
+      return EINVAL if it isn't.
+    */
    PRINT("sys_rt_sigsuspend ( %p, %d )", arg1,arg2 );
    PRE_REG_READ2(int, "rt_sigsuspend", vki_sigset_t *, mask, vki_size_t, size)
    if (arg1 != (Addr)NULL) {

@@ -1302,7 +1302,7 @@ int raise (int sig)
   if (retcode == 0) {
     return 0;
   } else {
-    errno = retcode;
+    *(__errno_location()) = retcode;
     return -1;
   }
 }
@@ -1338,7 +1338,7 @@ int pause ( void )
                            (int)(&nanosleep_interval), (int)NULL);
    }
 
-   * (__errno_location()) = EINTR;
+   *(__errno_location()) = EINTR;
    return -1;
 }
 
@@ -1589,6 +1589,8 @@ static int thread_specific_h_errno[VG_N_THREADS];
 static struct __res_state
            thread_specific_res_state[VG_N_THREADS];
 
+#undef errno
+extern int errno;
 int* __errno_location ( void )
 {
    int tid;
@@ -1599,9 +1601,13 @@ int* __errno_location ( void )
    /* 'cos I'm paranoid ... */
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__errno_location: invalid ThreadId");
+   if (tid == 1)
+      return &errno;
    return & thread_specific_errno[tid];
 }
 
+#undef h_errno
+extern int h_errno;
 int* __h_errno_location ( void )
 {
    int tid;
@@ -1612,13 +1618,14 @@ int* __h_errno_location ( void )
    /* 'cos I'm paranoid ... */
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__h_errno_location: invalid ThreadId");
+   if (tid == 1)
+      return &h_errno;
    return & thread_specific_h_errno[tid];
 }
 
 
 #undef _res
 extern struct __res_state _res;
-
 struct __res_state* __res_state ( void )
 {
    int tid;
@@ -1907,14 +1914,14 @@ static inline int _open(const char *pathname, int flags, mode_t mode,
       if (flags & VKI_O_NONBLOCK)
 	 return fd;
 
-      saved_errno = errno;
+      saved_errno = *(__errno_location());
 
       if (fd != -1)
 	 break;			/* open worked */
 
       /* If we got ENXIO and we're opening WRONLY, and it turns out
 	 to really be a FIFO, then poll waiting for open to succeed */
-      if (errno == ENXIO &&
+      if (*(__errno_location()) == ENXIO &&
 	  (flags & VKI_O_ACCMODE) == VKI_O_WRONLY &&
 	  (stat(pathname, &st) == 0 && S_ISFIFO(st.st_mode))) {
 
@@ -1927,7 +1934,7 @@ static inline int _open(const char *pathname, int flags, mode_t mode,
 			      (int)(&nanosleep_interval), (int)NULL);
       } else {
 	 /* it was just an error */
-	 errno = saved_errno;
+	 *(__errno_location()) = saved_errno;
 	 return -1;
       }
    }
@@ -1943,7 +1950,7 @@ static inline int _open(const char *pathname, int flags, mode_t mode,
    */
    if ((flags & VKI_O_ACCMODE) != VKI_O_RDONLY ||
        (fstat(fd, &st) == -1 || !S_ISFIFO(st.st_mode))) {
-      errno = saved_errno;
+      *(__errno_location()) = saved_errno;
       return fd;
    }
 
@@ -1983,7 +1990,7 @@ static inline int _open(const char *pathname, int flags, mode_t mode,
 			   (int)(&nanosleep_interval), (int)NULL);
    }
 
-   errno = saved_errno;
+   *(__errno_location()) = saved_errno;
    return fd;
 }
 
@@ -2434,7 +2441,7 @@ int sem_init(sem_t *sem, int pshared, unsigned int value)
    ensure_valgrind("sem_init");
    if (pshared != 0) {
       pthread_error("sem_init: unsupported pshared value");
-      errno = ENOSYS;
+      *(__errno_location()) = ENOSYS;
       return -1;
    }
    vg_sem = se_remap(sem);
@@ -2499,7 +2506,7 @@ int sem_trywait ( sem_t* sem )
       ret = 0; 
    } else { 
       ret = -1; 
-      errno = EAGAIN; 
+      *(__errno_location()) = EAGAIN; 
    }
    res = __pthread_mutex_unlock(&vg_sem->se_mx);
    my_assert(res == 0);

@@ -215,10 +215,12 @@ void VG_(addLineInfo) ( SegInfo* si,
     * correspond to one line, unlike with C-level debug info where
     * multiple instructions can map to the one line), but avoid
     * catching any other instructions bogusly. */
-   if (this > next && VG_(clo_verbosity) > 2) {
-       VG_(message)(Vg_DebugMsg, 
-                    "warning: line info addresses out of order "
-                    "at entry %d: 0x%x 0x%x", entry, this, next);
+   if (this > next) {
+       if (VG_(clo_verbosity) > 2) {
+           VG_(message)(Vg_DebugMsg, 
+                        "warning: line info addresses out of order "
+                        "at entry %d: 0x%x 0x%x", entry, this, next);
+       }
        size = 1;
    }
 

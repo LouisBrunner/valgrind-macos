@@ -254,6 +254,9 @@ static void maybe_emit_put_eflags( void )
    }
 }
 
+
+/* evidently unused */
+#if 0
 static void maybe_emit_get_eflags( void )
 {
    if (eflags_state == UPD_Simd) {
@@ -261,6 +264,7 @@ static void maybe_emit_get_eflags( void )
       emit_get_eflags();
    }
 }
+#endif
 
 /* Call this before emitting each instruction.
 
@@ -703,6 +707,8 @@ static void emit_nonshiftopv_offregmem_reg ( Bool upd_cc, Int sz, Opcode opc,
                    off, nameIReg(4,areg), nameIReg(sz,reg));
 }
 
+#if 0
+/* evidently unused */
 static void emit_nonshiftopv_reg_offregmem ( Bool upd_cc, Int sz, Opcode opc, 
                                              Int off, Int areg, Int reg )
 {
@@ -715,6 +721,7 @@ static void emit_nonshiftopv_reg_offregmem ( Bool upd_cc, Int sz, Opcode opc,
                    VG_(name_UOpcode)(False,opc), nameISize(sz),
                    nameIReg(sz,reg), off, nameIReg(4,areg));
 }
+#endif
 
 void VG_(emit_nonshiftopv_reg_reg) ( Bool upd_cc, Int sz, Opcode opc, 
 				     Int reg1, Int reg2 )
@@ -952,6 +959,8 @@ static void emit_nonshiftopb_lit_offregmem ( Bool upd_cc, Opcode opc,
                    VG_(name_UOpcode)(False,opc), lit, off, nameIReg(4,areg));
 }
 
+#if 0
+/* evidently unused */
 static void emit_nonshiftopb_reg_offregmem ( Bool upd_cc, Opcode opc, 
                                              Int off, Int areg, Int reg )
 {
@@ -964,6 +973,7 @@ static void emit_nonshiftopb_reg_offregmem ( Bool upd_cc, Opcode opc,
 		   nameIReg(1,reg),
 		   off, nameIReg(4,areg));
 }
+#endif
 
 void VG_(emit_movb_reg_offregmem) ( Int reg, Int off, Int areg )
 {
@@ -1192,7 +1202,8 @@ static void emit_call_star_EBP_off ( Bool upd_cc, Int byte_off, FlagSet use_flag
       VG_(printf)( "\n\t\tcall * %d(%%ebp)\n", byte_off );
 }
 
-
+#if 0
+/* evidently unused */
 static void emit_addlit8_offregmem ( Int lit8, Int regmem, Int off )
 {
    vg_assert(lit8 >= -128 && lit8 < 128);
@@ -1205,7 +1216,7 @@ static void emit_addlit8_offregmem ( Int lit8, Int regmem, Int off )
       VG_(printf)( "\n\t\taddl $%d, %d(%s)\n", lit8, off, 
                                                nameIReg(4,regmem));
 }
-
+#endif
 
 void VG_(emit_add_lit_to_esp) ( Int lit )
 {
@@ -2195,7 +2206,8 @@ static void synth_nonshiftop_reg_reg ( Bool upd_cc,
    }
 }
 
-
+#if 0
+/* evidently unused */
 static void synth_nonshiftop_reg_offregmem (
    Bool upd_cc,
    Opcode opcode, Int size, 
@@ -2221,6 +2233,7 @@ static void synth_nonshiftop_reg_offregmem (
          VG_(core_panic)("synth_nonshiftop_reg_offregmem");
    }
 }
+#endif
 
 static void synth_nonshiftop_offregmem_reg ( 
    Bool upd_cc,

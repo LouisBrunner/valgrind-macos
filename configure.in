@@ -312,8 +312,11 @@ AC_OUTPUT(
    cachegrind/docs/Makefile
    corecheck/Makefile
    corecheck/tests/Makefile
+   corecheck/docs/Makefile
    helgrind/Makefile
+   helgrind/docs/Makefile
    lackey/Makefile
+   lackey/docs/Makefile
    none/Makefile
    none/tests/Makefile
    none/docs/Makefile

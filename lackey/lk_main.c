@@ -77,9 +77,9 @@ static void add_one_Jcc_untaken(void)
 
 void SK_(pre_clo_init)(VgNeeds* needs, VgTrackEvents* not_used)
 {
-   needs->name        = "lackey";
-   needs->description = "a UInstr counter";
-   needs->description = "njn25@cam.ac.uk";
+   needs->name           = "lackey";
+   needs->description    = "an example Valgrind skin";
+   needs->bug_reports_to = "njn25@cam.ac.uk";
 
    VG_(register_compact_helper)((Addr) & add_one_dlrr_call);
    VG_(register_compact_helper)((Addr) & add_one_BB);

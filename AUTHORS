@@ -2,12 +2,12 @@
 Julian Seward, jseward@acm.org, is the main author.
 
 Nicholas Nethercote, njn25@cam.ac.uk, did the core/skin
-generalisation, and wrote Cachegrind.
+generalisation, and wrote Cachegrind and some of the other skins.
 
 readelf's dwarf2 source line reader, written by Nick Clifton, was
 modified to be used in Valgrind by Daniel Berlin.
 
-Michael Matz and Simon Hausmann modified in the GNU binutils
+Michael Matz and Simon Hausmann modified the GNU binutils
 demangler(s) for use in Valgrind.
 
 Dirk Mueller contrib'd the malloc-free mismatch checking stuff.

@@ -1797,7 +1797,7 @@ extern void *VG_(SkipList_Remove)(      SkipList *l, void *key);
 
    You can iterate through a SkipList like this:
 
-      for(x = VG_(SkipNode_First)(&list);
+      for(x = VG_(SkipNode_First)(&list);	// or SkipList_Find
 	  x != NULL;
 	  x = VG_(SkipNode_Next)(&list, x)) { ... }
 */

@@ -285,7 +285,7 @@ fi
 AC_MSG_CHECKING([if this is an NPTL-based system])
 safe_LIBS="$LIBS"
 LIBS="$LIBS -lpthread"
-AC_RUN_IFELSE([
+AC_TRY_RUN([
 #include <pthread.h>
 #include <stdio.h>
 int main (int argc, char * argv [])

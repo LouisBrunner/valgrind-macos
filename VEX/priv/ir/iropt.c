@@ -13,6 +13,9 @@
 #include "main/vex_util.h"
 #include "ir/iropt.h"
 
+/* Set to 1 to completely disable iropt, for drastic debugging. */
+#define DISABLE_IROPT 0
+
 /* Set to 1 for lots of debugging output. */
 #define DEBUG_IROPT 0
 
@@ -22,7 +25,6 @@
    disable the unroller. */
 
 #define UNROLL_TARGET 120
-//#define UNROLL_TARGET 0
 
 /* Set to 1 to get details of loop unrolling. */
 #define UNROLL_VERBOSE 0
@@ -3174,6 +3176,9 @@ IRBB* do_iropt_BB ( IRBB* bb0,
    Bool show_res = False;
    Bool do_expensive;
    IRBB *bb, *bb2;
+
+   /* Completely disable iropt? */
+   if (DISABLE_IROPT) return bb0;
 
    n_total++;
 

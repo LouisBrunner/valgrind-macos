@@ -27,11 +27,7 @@
 #ifndef __X86_LINUX_VKI_UNISTD_H_
 #define __X86_LINUX_VKI_UNISTD_H_
 
-/* Taken from Linux 2.6.0-test1 include/asm-i386/unistd.h */
-
-/*
- * This file contains the system call numbers.
- */
+// From linux-2.6.0-test1/include/asm-i386/unistd.h
 
 #define __NR_restart_syscall      0
 #define __NR_exit		  1
@@ -317,7 +313,5 @@
 #define __NR_mq_notify		(__NR_mq_open+4)
 #define __NR_mq_getsetattr	(__NR_mq_open+5)
 #define __NR_sys_kexec_load	283
-
-#define NR_syscalls 284
 
 #endif /* __X86_LINUX_VKI_UNISTD_H_ */

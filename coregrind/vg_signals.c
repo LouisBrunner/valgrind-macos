@@ -711,20 +711,6 @@ void VG_(do_sys_sigprocmask) ( ThreadId tid,
 }
 
 
-void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid,
-                                        Int how, 
-                                        vki_sigset_t* set,
-                                        vki_sigset_t* oldset )
-{
-   /* Assume that how has been validated by caller. */
-   vg_assert(how == VKI_SIG_BLOCK || how == VKI_SIG_UNBLOCK 
-                                  || how == VKI_SIG_SETMASK);
-   vg_assert(VG_(is_valid_tid)(tid));
-   do_setmask ( tid, how, set, oldset );
-   /* The request return code is set in do_pthread_sigmask */
-}
-
-
 /* ---------------------------------------------------------------------
    LOW LEVEL STUFF TO DO WITH SIGNALS: IMPLEMENTATION
    ------------------------------------------------------------------ */

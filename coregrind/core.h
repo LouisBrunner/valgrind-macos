@@ -816,9 +816,6 @@ extern Int  VG_(do_sys_sigaction)     ( Int signo,
 extern void VG_(do_sys_sigprocmask)   ( ThreadId tid, Int how, 
                                         vki_sigset_t* set,
                                         vki_sigset_t* oldset );
-extern void VG_(do_pthread_sigmask_SCSS_upd) ( ThreadId tid, Int how, 
-                                               vki_sigset_t* set,
-                                               vki_sigset_t* oldset );
 
 /* Handy utilities to block/restore all host signals. */
 extern void VG_(block_all_host_signals) 

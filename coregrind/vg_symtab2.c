@@ -1095,7 +1095,9 @@ Addr open_debug_file( Char* name, UInt crc, UInt* size )
    *size = stat_buf.st_size;
    
    if ((addr = (Addr)VG_(mmap)(NULL, *size, VKI_PROT_READ,
-                               VKI_MAP_PRIVATE|VKI_MAP_NOSYMS, fd, 0)) == (Addr)-1) {
+                               VKI_MAP_PRIVATE|VKI_MAP_NOSYMS, 
+                               0, fd, 0)) == (Addr)-1) 
+   {
       VG_(close)(fd);
       return 0;
    }
@@ -1182,7 +1184,8 @@ Bool vg_read_lib_symbols ( SegInfo* si )
    }
 
    oimage = (Addr)VG_(mmap)( NULL, n_oimage, 
-                             VKI_PROT_READ, VKI_MAP_PRIVATE|VKI_MAP_NOSYMS, fd, 0 );
+                             VKI_PROT_READ, VKI_MAP_PRIVATE|VKI_MAP_NOSYMS, 
+                             0, fd, 0 );
 
    VG_(close)(fd);
 

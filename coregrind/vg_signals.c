@@ -2141,15 +2141,13 @@ void vg_sync_signalhandler ( Int sigNo, vki_ksiginfo_t *info, struct vki_ucontex
 	    then extend the stack segment. 
 	 */
 	 Addr base = PGROUNDDN(esp);
-	 Char *ret = VG_(mmap)((Char *)base, seg->addr - base, 
-			       VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC,
-			       VKI_MAP_PRIVATE | VKI_MAP_FIXED | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,
-			       -1, 0);
-	 if ((Addr)ret == base) {
-	    VG_(map_segment)(base, seg->addr - base,
-			     VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
-			     SF_STACK|SF_GROWDOWN);
-	    return;		/* restart instruction */
+        if ((void*)-1 != VG_(mmap)((Char *)base, seg->addr - base,
+                              VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
+                              VKI_MAP_PRIVATE|VKI_MAP_FIXED|VKI_MAP_ANONYMOUS|VKI_MAP_CLIENT,
+                              SF_STACK|SF_GROWDOWN,
+                              -1, 0))
+         {
+           return;             // extension succeeded, restart instruction
 	 }
 	 /* Otherwise fall into normal signal handling */
       } else if (info->si_code == 2 && /* SEGV_ACCERR */

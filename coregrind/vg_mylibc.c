@@ -264,52 +264,40 @@ static Addr mmap_inner(void *start, UInt length, UInt prot, UInt flags, UInt fd,
 }
 
 /* Returns -1 on failure. */
-void* VG_(mmap)( void* start, UInt length, 
-                 UInt prot, UInt flags, UInt fd, UInt offset)
+void* VG_(mmap)( void* start, UInt length,
+                 UInt prot, UInt flags, UInt sf_flags, UInt fd, UInt offset)
 {
    Addr  res;
 
    if (!(flags & VKI_MAP_FIXED)) {
       start = (void *)VG_(find_map_space)((Addr)start, length, !!(flags & VKI_MAP_CLIENT));
-      if (start == 0)
-	 return (void *)-1;
 
       flags |= VKI_MAP_FIXED;
    }
+   if (start == 0)
+      return (void *)-1;
 
    res = mmap_inner(start, length, prot, flags, fd, offset);
 
+   // Check it ended up in the right place.
    if (!VG_(is_kerror)(res)) {
-      UInt sf_flags = SF_MMAP;
-
-      if (flags & VKI_MAP_FIXED)
-	 sf_flags |= SF_FIXED;
-      if (flags & VKI_MAP_SHARED)
-	 sf_flags |= SF_SHARED;
-      if (!(flags & VKI_MAP_ANONYMOUS))
-	 sf_flags |= SF_FILE;
-      if (!(flags & VKI_MAP_CLIENT))
-	 sf_flags |= SF_VALGRIND;
-      if (flags & VKI_MAP_NOSYMS)
-	 sf_flags |= SF_NOSYMS;
-
-      /* placeholder - caller will update flags etc if they want */
-      VG_(map_fd_segment)(res, length, prot, sf_flags, fd, offset, NULL);
-
       if (flags & VKI_MAP_CLIENT) {
-	 if (res < VG_(client_base) || res >= VG_(client_end)) {
-	    VG_(munmap)((void *)res, length);
-	    res = -1;
-	 }
+         vg_assert(VG_(client_base) <= res && res+length < VG_(client_end));
       } else {
-	 if (res < VG_(valgrind_base) || res >= VG_(valgrind_end)) {
-	    VG_(munmap)((void *)res, length);
-	    res = -1;
-	 }
+         vg_assert(VG_(valgrind_base) <= res && res+length < VG_(valgrind_end));
       }
    }
 
-   
+   if (!VG_(is_kerror)(res)) {
+      sf_flags |= SF_MMAP;
+      if (  flags & VKI_MAP_FIXED)      sf_flags |= SF_FIXED;
+      if (  flags & VKI_MAP_SHARED)     sf_flags |= SF_SHARED;
+      if (!(flags & VKI_MAP_ANONYMOUS)) sf_flags |= SF_FILE;
+      if (!(flags & VKI_MAP_CLIENT))    sf_flags |= SF_VALGRIND;
+      if (  flags & VKI_MAP_NOSYMS)     sf_flags |= SF_NOSYMS;
+
+      VG_(map_fd_segment)(res, length, prot, sf_flags, fd, offset, NULL);
+   }
 
    return VG_(is_kerror)(res) ? ((void*)(-1)) : (void*)res;
 }

@@ -1150,8 +1150,8 @@ extern Int VG_(nanosleep)( const struct vki_timespec *req,
                            struct vki_timespec *rem );
 
 /* system/mman.h */
-extern void* VG_(mmap)( void* start, UInt length,
-                        UInt prot, UInt flags, UInt fd, UInt offset );
+extern void* VG_(mmap)( void* start, UInt length, UInt prot, UInt flags,
+                        UInt sf_flags, UInt fd, UInt offset );
 extern Int  VG_(munmap)( void* start, Int length );
 extern Int  VG_(mprotect)( void *start, Int length, UInt prot );
 

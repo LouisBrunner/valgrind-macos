@@ -1020,12 +1020,11 @@ static Addr do_brk(Addr newbrk)
 
 	 if (newaddr == current) {
 	    ret = newbrk;
-	 } else if (VG_(mmap)((void *)current , newaddr-current,
-			      VKI_PROT_READ | VKI_PROT_WRITE | VKI_PROT_EXEC,
-			      VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS | VKI_MAP_FIXED | VKI_MAP_CLIENT,
-			      -1, 0) >= 0) {
-	    VG_(map_segment)(current, newaddr-current, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
-			     SF_FIXED|SF_BRK);
+         } else if ((void*)-1 != VG_(mmap)((void*)current, newaddr-current,
+               VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
+               VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS|VKI_MAP_FIXED|VKI_MAP_CLIENT,
+               SF_FIXED|SF_BRK, -1, 0)) 
+         {
 	    ret = newbrk;
 	 }
       } else {
@@ -3992,11 +3991,8 @@ PRE(mmap2)
 POST(mmap2)
 {
    if (!VG_(is_kerror)(res)) {
-      if (!valid_client_addr(res, arg2, tid, "mmap2")) {
-         VG_(munmap)((void *)res, arg2);
-         res = -VKI_ENOMEM;
-      } else
-         mmap_segment( (Addr)res, arg2, arg3, arg4, arg5, arg6 * (ULong)VKI_BYTES_PER_PAGE );
+      vg_assert(valid_client_addr(res, arg2, tid, "mmap2"));
+      mmap_segment( (Addr)res, arg2, arg3, arg4, arg5, arg6 * (ULong)VKI_BYTES_PER_PAGE );
    }
 }
 
@@ -4046,11 +4042,8 @@ PRE(mmap)
       res = VG_(do_syscall)(__NR_mmap, new_arg_block);
 
       if (!VG_(is_kerror)(res)) {
-         if (!valid_client_addr(res, a2, tid, "mmap")) {
-	    VG_(munmap)((void *)res, a2);
-	    res = -VKI_ENOMEM;
-         } else
-	    mmap_segment( (Addr)res, a2, a3, a4, a5, a6 );
+         vg_assert(valid_client_addr(res, a2, tid, "mmap"));
+         mmap_segment( (Addr)res, a2, a3, a4, a5, a6 );
       }
    }
 }

@@ -677,23 +677,21 @@ Bool VG_(is_addressable)(Addr p, Int size)
 /*--------------------------------------------------------------------*/
 
 // Returns 0 on failure.
-Addr VG_(client_alloc)(Addr addr, UInt len, UInt prot, UInt flags)
+Addr VG_(client_alloc)(Addr addr, UInt len, UInt prot, UInt sf_flags)
 {
    len = PGROUNDUP(len);
 
-   if (!(flags & SF_FIXED))
+   if (!(sf_flags & SF_FIXED))
       addr = VG_(find_map_space)(addr, len, True);
 
    // Don't do the mapping if we couldn't find space!
    if (0 == addr)
       return 0;
 
-   flags |= SF_CORE;
-
    if (VG_(mmap)((void *)addr, len, prot,
 		 VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,
-		 -1, 0) == (void *)addr) {
-      VG_(map_segment)(addr, len, prot, flags);
+                 sf_flags | SF_CORE, -1, 0) == (void *)addr) 
+   {
       return addr;
    }
 

@@ -1,6 +1,6 @@
 
-Release notes for Valgrind, version 1.0
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Release notes for Valgrind, version 1.0.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 KDE3 developers: please read also README_KDE3_FOLKS for guidance
 about how to debug KDE3 applications with Valgrind.
 
@@ -8,6 +8,12 @@ If you are building a binary package of Valgrind for distribution,
 please read README_PACKAGERS.  It contains some important information.
 
 For instructions on how to build/install, see the end of this file.
+
+Valgrind works best on systems with glibc-2.1.X or 2.2.X, and with gcc
+versions prior to 3.1.  gcc-3.1 works, but generates code which causes
+valgrind to report many false errors.  For now, try to use a gcc prior
+to 3.1; if you can't, at least compile your application without
+optimisation.  Valgrind-1.0.X also can't handle glibc-2.3.X systems.
 
 
 Executive Summary

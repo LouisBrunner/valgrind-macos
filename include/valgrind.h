@@ -118,6 +118,9 @@
    form 0x1000 + small_number.
 */
 
+#define VG_USERREQ_SKIN_BASE(a,b)	((unsigned int)(((a)&0xff) << 24 | ((b)&0xff) << 16))
+#define VG_IS_SKIN_USERREQ(a, b, v)	(VG_USERREQ_SKIN_BASE(a,b) == ((v) & 0xffff0000))
+
 typedef
    enum { VG_USERREQ__RUNNING_ON_VALGRIND = 0x1001,
           VG_USERREQ__DISCARD_TRANSLATIONS,

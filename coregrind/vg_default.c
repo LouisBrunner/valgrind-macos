@@ -179,7 +179,7 @@ Char* SK_(usage)(void)
    ------------------------------------------------------------------ */
 
 __attribute__ ((weak))
-UInt SK_(handle_client_request)(ThreadState* tst, UInt* arg_block)
+Bool SK_(handle_client_request)(ThreadState* tst, UInt* arg_block, UInt *ret)
 {
    non_fund_panic("SK_(handle_client_request)");
 }

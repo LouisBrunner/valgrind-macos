@@ -1442,7 +1442,7 @@ extern Char* SK_(usage)                  ( void );
 /* ------------------------------------------------------------------ */
 /* VG_(needs).client_requests */
 
-extern UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block );
+extern Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret );
 
 
 /* ------------------------------------------------------------------ */

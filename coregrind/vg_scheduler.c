@@ -3472,20 +3472,25 @@ void do_client_request ( ThreadId tid )
 
       default:
          if (VG_(needs).client_requests) {
+	    UInt ret;
+
             if (VG_(clo_verbosity) > 2)
                VG_(printf)("client request: code %d,  addr %p,  len %d\n",
                            arg[0], (void*)arg[1], arg[2] );
 
-            SET_EDX(tid,
-                    SK_(handle_client_request) ( &VG_(threads)[tid], arg )
-            );
+	    if (SK_(handle_client_request) ( &VG_(threads)[tid], arg, &ret ))
+		SET_EDX(tid, ret);
          } else {
-            VG_(printf)("\nError:\n"
-                        "  unhandled client request: 0x%x.  Perhaps\n" 
-                        "  VG_(needs).client_requests should be set?\n",
-                        arg[0]);
-            VG_(core_panic)("do_client_request: unknown request");
-            /*NOTREACHED*/
+	    static Bool whined = False;
+
+	    if (!whined) {
+	       VG_(message)(Vg_UserMsg, "Warning:\n"
+			    "  unhandled client request: 0x%x (%c%c+%d).  Perhaps\n" 
+			    "  VG_(needs).client_requests should be set?\n",
+			    arg[0], (arg[0] >> 24) & 0xff, (arg[0] >> 16) & 0xff,
+			    arg[0] & 0xffff);
+	       whined = True;
+	    }
          }
          break;
    }

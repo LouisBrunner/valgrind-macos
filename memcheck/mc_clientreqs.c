@@ -288,29 +288,35 @@ void SK_(delete_client_stack_blocks_following_ESP_change) ( void )
 }
 
 
-UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
+Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
 {
    Int   i;
    Bool  ok;
    Addr  bad_addr;
    UInt* arg = arg_block;
 
+   if (!VG_IS_SKIN_USERREQ('M','C',arg[0]))
+      return False;
+
    switch (arg[0]) {
       case VG_USERREQ__CHECK_WRITABLE: /* check writable */
          ok = SK_(check_writable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
             SK_(record_user_error) ( tst, bad_addr, True );
-         return ok ? (UInt)NULL : bad_addr;
+         *ret = ok ? (UInt)NULL : bad_addr;
+	 break;
 
       case VG_USERREQ__CHECK_READABLE: /* check readable */
          ok = SK_(check_readable) ( arg[1], arg[2], &bad_addr );
          if (!ok)
             SK_(record_user_error) ( tst, bad_addr, False );
-         return ok ? (UInt)NULL : bad_addr;
+         *ret = ok ? (UInt)NULL : bad_addr;
+	 break;
 
       case VG_USERREQ__DO_LEAK_CHECK:
          SK_(detect_memory_leaks)();
-         return 0; /* return value is meaningless */
+	 *ret = 0; /* return value is meaningless */
+	 break;
 
       case VG_USERREQ__MAKE_NOACCESS: /* make no access */
          i = vg_alloc_client_block();
@@ -320,7 +326,8 @@ UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where = VG_(get_ExeContext) ( tst );
          SK_(make_noaccess) ( arg[1], arg[2] );
-         return i;
+	 *ret = i;
+	 break;
 
       case VG_USERREQ__MAKE_WRITABLE: /* make writable */
          i = vg_alloc_client_block();
@@ -329,7 +336,8 @@ UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where = VG_(get_ExeContext) ( tst );
          SK_(make_writable) ( arg[1], arg[2] );
-         return i;
+         *ret = i;
+	 break;
 
       case VG_USERREQ__MAKE_READABLE: /* make readable */
          i = vg_alloc_client_block();
@@ -338,8 +346,9 @@ UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          vg_cgbs[i].size  = arg[2];
          vg_cgbs[i].where = VG_(get_ExeContext) ( tst );
          SK_(make_readable) ( arg[1], arg[2] );
-         return i;
-         
+	 *ret = i;
+         break;
+
       case VG_USERREQ__DISCARD: /* discard */
          if (vg_cgbs == NULL 
              || arg[2] >= vg_cgb_used || vg_cgbs[arg[2]].kind == CG_NotInUse)
@@ -347,18 +356,21 @@ UInt SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          sk_assert(arg[2] >= 0 && arg[2] < vg_cgb_used);
          vg_cgbs[arg[2]].kind = CG_NotInUse;
          vg_cgb_discards++;
-         return 0;
+	 *ret = 0;
+	 break;
 
       case VG_USERREQ__MAKE_NOACCESS_STACK: /* make noaccess stack block */
          vg_add_client_stack_block ( tst, arg[1], arg[2] );
-         return 0;
+	 *ret = 0;
+	 break;
 
       default:
          VG_(message)(Vg_UserMsg, 
                       "Warning: unknown memcheck client request code %d",
                       arg[0]);
-         return 1;
+         return False;
    }
+   return True;
 }
 
 

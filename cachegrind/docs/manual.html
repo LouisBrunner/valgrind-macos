@@ -127,7 +127,12 @@ modern Linux installations.
 
 <p>
 Valgrind is licensed under the GNU General Public License, version
-2. Read the file LICENSE in the source distribution for details.
+2. Read the file LICENSE in the source distribution for details.  Some
+of the PThreads test cases, <code>test/pth_*.c</code>, are taken from
+"Pthreads Programming" by Bradford Nichols, Dick Buttlar & Jacqueline
+Proulx Farrell, ISBN 1-56592-115-1, published by O'Reilly &
+Associates, Inc.
+
 
 <a name="whatdoes">
 <h3>1.2&nbsp; What it does with your program</h3>
@@ -1309,6 +1314,11 @@ known bug.  The intention was to detect the version of the current
 XFree86 client libraries, so that correct suppressions could be
 selected for them, but instead the test checks the server version.
 This is just plain wrong.
+
+<p>
+If you are building a binary package of Valgrind for distribution,
+please read <code>README_PACKAGERS</code>.  It contains some important
+information.
 
 <p>
 Apart from that there is no excitement here.  Let me know if you have

@@ -1,9 +1,11 @@
 
 Release notes for Valgrind, version 1.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 KDE3 developers: please read also README_KDE3_FOLKS for guidance
 about how to debug KDE3 applications with Valgrind.
+
+If you are building a binary package of Valgrind for distribution,
+please read README_PACKAGERS.  It contains some important information.
 
 For instructions on how to build/install, see the end of this file.
 
@@ -38,10 +40,9 @@ difficult to make it portable, so I have chosen at the outset to
 concentrate on what I believe to be a widely used platform: Red Hat
 Linux 7.2, on x86s. I believe that it will work without significant
 difficulty on other x86 GNU/Linux systems which use the 2.4 kernel and
-GNU libc 2.2.X, for example SuSE 7.1 and Mandrake 8.0.  Red Hat 6.2 is
-also supported.  It has worked in the past, and probably still does,
-on RedHat 7.1 and 6.2.  Note that I haven't compiled it on RedHat 7.1
-and 6.2 for a while, so they may no longer work now.
+GNU libc 2.2.X, for example SuSE 7.1 and Mandrake 8.0.  This version
+1.0 release is known to work on Red Hats 6.2, 7.2 and 7.3, at the very
+least.
 
 Valgrind is licensed under the GNU General Public License, version 2. 
 Read the file LICENSE in the source distribution for details.
@@ -87,4 +88,4 @@ fork/exec calls.
 
 
 Julian Seward (jseward@acm.org)
-19 June 2002
+1 July 2002

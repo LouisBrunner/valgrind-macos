@@ -1,0 +1,1270 @@
+
+
+<a name="core"></a>
+<h2>2&nbsp; Using and understanding the valgrind core services</h2>
+
+This section describes the core services, flags and behaviours.  That
+means it is relevant regardless of what particular skin you are using.
+A point of terminology: most references to "valgrind" in the rest of
+this section (Section 2) refer to the valgrind core services.
+
+
+<a name="core-whatdoes"></a>
+<h3>2.1&nbsp; What it does with your program</h3>
+
+Valgrind is designed to be as non-intrusive as possible. It works
+directly with existing executables. You don't need to recompile,
+relink, or otherwise modify, the program to be checked. Simply place
+the word <code>valgrind</code> at the start of the command line
+normally used to run the program, and tell it what skin you want to
+use.
+
+<p>
+So, for example, if you want to run the command <code>ls -l</code>
+using the heavyweight memory-checking tool, issue the command:
+<code>valgrind --skin=memcheck ls -l</code>.  The <code>--skin=</code>
+parameter tells the core which skin is to be used.
+
+<p>
+To preserve compatibility with the 1.0.X series, if you do not specify
+a skin, the default is to use the memcheck skin.  That means the above
+example simplifies to: <code>valgrind ls -l</code>.
+
+<p>Regardless of which skin is in use, Valgrind takes control of your
+program before it starts.  Debugging information is read from the
+executable and associated libraries, so that error messages can be
+phrased in terms of source code locations (if that is appropriate).
+
+<p>
+Your program is then run on a synthetic x86 CPU provided by the
+valgrind core.  As new code is executed for the first time, the core
+hands the code to the selected skin.  The skin adds its own
+instrumentation code to this and hands the result back to the core,
+which coordinates the continued execution of this instrumented code.
+
+<p>
+The amount of instrumentation code added varies widely between skins.
+At one end of the scale, the memcheck skin adds code to check every
+memory access and every value computed, increasing the size of the
+code at least 12 times, and making it run 25-50 times slower than
+natively.  At the other end of the spectrum, the ultra-trivial "none"
+skin adds no instrumentation at all and causes in total "only" about a
+4 times slowdown.  
+
+<p>
+Valgrind simulates every single instruction your program executes.
+Because of this, the active skin checks, or profiles, not only the
+code in your application but also in all supporting dynamically-linked
+(<code>.so</code>-format) libraries, including the GNU C library, the
+X client libraries, Qt, if you work with KDE, and so on.  
+
+<p>
+If -- as is usually the case -- you're using one of the
+error-detection skins, valgrind will often detect errors in
+libraries, for example the GNU C or X11 libraries, which you have to
+use.  Since you're probably using valgrind to debug your own
+application, and not those libraries, you don't want to see those
+errors and probably can't fix them anyway.
+
+<p>
+So, rather than swamping you with errors in which you are not
+interested, Valgrind allows you to selectively suppress errors, by
+recording them in a suppressions file which is read when Valgrind
+starts up.  The build mechanism attempts to select suppressions which
+give reasonable behaviour for the libc and XFree86 versions detected
+on your machine.
+
+<p>
+Different skins report different kinds of errors.  The suppression
+mechanism therefore allows you to say which skin or skin(s) each
+suppression applies to.
+
+
+
+<a name="starta"></a>
+<h3>2.2&nbsp; Getting started</h3>
+
+First off, consider whether it might be beneficial to recompile your
+application and supporting libraries with debugging info enabled (the
+<code>-g</code> flag).  Without debugging info, the best valgrind
+will be able to do is guess which function a particular piece of code
+belongs to, which makes both error messages and profiling output
+nearly useless.  With <code>-g</code>, you'll potentially get messages
+which point directly to the relevant source code lines.
+
+<p>
+You don't have to do this, but doing so helps Valgrind produce more
+accurate and less confusing error reports.  Chances are you're set up
+like this already, if you intended to debug your program with GNU gdb,
+or some other debugger.
+
+<p>
+This paragraph applies only if you plan to use the memcheck
+skin (which is the default).  On rare occasions, optimisation levels
+at <code>-O2</code> and above have been observed to generate code which
+fools memcheck into wrongly reporting uninitialised value
+errors.  We have looked in detail into fixing this, and unfortunately 
+the result is that doing so would give a further significant slowdown
+in what is already a slow skin.  So the best solution is to turn off
+optimisation altogether.  Since this often makes things unmanagably
+slow, a plausible compromise is to use <code>-O</code>.  This gets 
+you the majority of the benefits of higher optimisation levels whilst
+keeping relatively small the chances of false complaints from memcheck.
+All other skins (as far as we know) are unaffected by optimisation
+level.
+
+<p>
+Valgrind understands both the older "stabs" debugging format, used by
+gcc versions prior to 3.1, and the newer DWARF2 format used by gcc 3.1
+and later.  We continue to refine and debug our debug-info readers,
+although the majority of effort will naturally enough go into the 
+newer DWARF2 reader.
+
+<p>
+Then just run your application, but place <code>valgrind
+--skin=the-selected-skin</code> in front of your usual command-line
+invokation.  Note that you should run the real (machine-code)
+executable here.  If your application is started by, for example, a
+shell or perl script, you'll need to modify it to invoke Valgrind on
+the real executables.  Running such scripts directly under Valgrind
+will result in you getting error reports pertaining to
+<code>/bin/sh</code>, <code>/usr/bin/perl</code>, or whatever
+interpreter you're using.  This almost certainly isn't what you want
+and can be confusing.  You can probably force the issue by 
+giving the flag <code>--trace-children=yes</code>, but confusion is
+still highly likely.
+
+
+<a name="core-comment"></a>
+<h3>2.3&nbsp; The commentary</h3>
+
+Valgrind writes a commentary, a stream of text, detailing error
+reports and other significant events.  All lines in the commentary
+have following form:<br>
+<pre>
+  ==12345== some-message-from-Valgrind
+</pre>
+
+<p>The <code>12345</code>  is the process ID.  This scheme makes it easy
+to distinguish program output from Valgrind commentary, and also easy
+to differentiate commentaries from different processes which have
+become merged together, for whatever reason.
+
+<p>By default, Valgrind writes only essential messages to the commentary,
+so as to avoid flooding you with information of secondary importance.
+If you want more information about what is happening, re-run, passing
+the <code>-v</code> flag to Valgrind.
+
+<p>
+Version 2 of valgrind gives significantly more flexibility than 1.0.X
+does about where that stream is sent to.  You have three options:
+
+<ul>
+<li>The default: send it to a file descriptor, which is by default 2
+    (stderr).  So, if you give the core no options, it will write 
+    commentary to the standard error stream.  If you want to send 
+    it to some other file descriptor, for example number 9,
+    you can specify <code>--logfile-fd=9</code>.
+<p>
+<li>A less intrusive option is to write the commentary to a file, 
+    which you specify by <code>--logfile=filename</code>.  Note 
+    carefully that the commentary is <b>not</b> written to the file
+    you specify, but instead to one called
+    <code>filename.pid12345</code>, if for example the pid of the
+    traced process is 12345.  This is helpful when valgrinding a whole
+    tree of processes at once, since it means that each process writes
+    to its own logfile, rather than the result being jumbled up in one
+    big logfile.
+<p>
+<li>The least intrusive option is to send the commentary to a network
+    socket.  The socket is specified as an IP address and port number
+    pair, like this: <code>--logsocket=192.168.0.1:12345</code> if you
+    want to send the output to host IP 192.168.0.1 port 12345 (I have
+    no idea if 12345 is a port of pre-existing significance).  You can
+    also omit the port number: <code>--logsocket=192.168.0.1</code>, 
+    in which case a default port of 1500 is used.  This default is
+    defined by the constant <code>VG_CLO_DEFAULT_LOGPORT</code>
+    in the sources.
+    <p>
+    Note, unfortunately, that you have to use an IP address here --
+    for technical reasons, valgrind's core itself can't use the GNU C
+    library, and this makes it difficult to do hostname-to-IP lookups.
+    <p>
+    Writing to a network socket it pretty useless if you don't have
+    something listening at the other end.  We provide a simple
+    listener program, <code>valgrind-listener</code>, which accepts 
+    connections on the specified port and copies whatever it is sent
+    to stdout.  Probably someone will tell us this is a horrible
+    security risk.  It seems likely that people will write more
+    sophisticated listeners in the fullness of time.
+    <p>
+    valgrind-listener can accept simultaneous connections from up to 50
+    valgrinded processes.  In front of each line of output it prints
+    the current number of active connections in round brackets.  
+    <p>
+    valgrind-listener accepts two command-line flags:
+    <ul>
+    <li><code>-e</code> or <code>--exit-at-zero</code>: when the
+        number of connected processes falls back to zero, exit.
+        Without this, it will run forever, that is, until you send it
+        Control-C.
+    <p>
+    <li><code>portnumber</code>: changes the port it listens on from
+        the default (1500).  The specified port must be in the range
+        1024 to 65535.  The same restriction applies to port numbers
+        specified by a <code>--logsocket=</code> to valgrind itself.
+    </ul>
+    <p>
+    If a valgrinded process fails to connect to a listener, for
+    whatever reason (the listener isn't running, invalid or
+    unreachable host or port, etc), valgrind switches back to writing
+    the commentary to stderr.  The same goes for any process which
+    loses an established connection to a listener.  In other words,
+    killing the listener doesn't kill the processes sending data to
+    it.
+</ul>
+<p>
+Here is an important point about the relationship between the
+commentary and profiling output from skins.  The commentary contains a
+mix of messages from the valgrind core and the selected skin.  If the
+skin reports errors, it will report them to the commentary.  However,
+if the skin does profiling, the profile data will be written to a file
+of some kind, depending on the skin, and independent of what
+<code>--log*</code> options are in force.  The commentary is intended
+to be a low-bandwidth, human-readable channel.  Profiling data, on the
+other hand, is usually voluminous and not meaningful without further
+processing, which is why we have chosen this arrangement.
+
+
+<a name="report"></a>
+<h3>2.4&nbsp; Reporting of errors</h3>
+
+When one of the error-checking skins (memcheck, addrcheck, helgrind)
+detects something bad happening in the program, an error message is
+written to the commentary.  For example:<br>
+<pre>
+  ==25832== Invalid read of size 4
+  ==25832==    at 0x8048724: BandMatrix::ReSize(int, int, int) (bogon.cpp:45)
+  ==25832==    by 0x80487AF: main (bogon.cpp:66)
+  ==25832==    by 0x40371E5E: __libc_start_main (libc-start.c:129)
+  ==25832==    by 0x80485D1: (within /home/sewardj/newmat10/bogon)
+  ==25832==    Address 0xBFFFF74C is not stack'd, malloc'd or free'd
+</pre>
+
+<p>
+This message says that the program did an illegal 4-byte read of
+address 0xBFFFF74C, which, as far as memcheck can tell, is not a valid
+stack address, nor corresponds to any currently malloc'd or free'd
+blocks.  The read is happening at line 45 of <code>bogon.cpp</code>,
+called from line 66 of the same file, etc.  For errors associated with
+an identified malloc'd/free'd block, for example reading free'd
+memory, Valgrind reports not only the location where the error
+happened, but also where the associated block was malloc'd/free'd.
+
+<p>
+Valgrind remembers all error reports.  When an error is detected,
+it is compared against old reports, to see if it is a duplicate.  If
+so, the error is noted, but no further commentary is emitted.  This
+avoids you being swamped with bazillions of duplicate error reports.
+
+<p>
+If you want to know how many times each error occurred, run with the
+<code>-v</code> option.  When execution finishes, all the reports are
+printed out, along with, and sorted by, their occurrence counts.  This
+makes it easy to see which errors have occurred most frequently.
+
+<p>
+Errors are reported before the associated operation actually happens.
+If you're using a skin (memcheck, addrcheck) which does address
+checking, and your program attempts to read from address zero, the
+skin will emit a message to this effect, and the program will then
+duly die with a segmentation fault.
+
+<p>
+In general, you should try and fix errors in the order that they are
+reported.  Not doing so can be confusing.  For example, a program
+which copies uninitialised values to several memory locations, and
+later uses them, will generate several error messages, when run on
+memcheck.  The first such error message may well give the most direct
+clue to the root cause of the problem.
+
+<p>
+The process of detecting duplicate errors is quite an expensive one
+and can become a significant performance overhead if your program
+generates huge quantities of errors.  To avoid serious problems here,
+Valgrind will simply stop collecting errors after 300 different errors
+have been seen, or 30000 errors in total have been seen.  In this
+situation you might as well stop your program and fix it, because
+Valgrind won't tell you anything else useful after this.  Note that
+the 300/30000 limits apply after suppressed errors are removed.  These
+limits are defined in <code>vg_include.h</code> and can be increased
+if necessary.
+
+<p>
+To avoid this cutoff you can use the <code>--error-limit=no</code>
+flag.  Then valgrind will always show errors, regardless of how many
+there are.  Use this flag carefully, since it may have a dire effect
+on performance.
+
+
+<a name="suppress"></a>
+<h3>2.5&nbsp; Suppressing errors</h3>
+
+The error-checking skins detect numerous problems in the base
+libraries, such as the GNU C library, and the XFree86 client
+libraries, which come pre-installed on your GNU/Linux system.  You
+can't easily fix these, but you don't want to see these errors (and
+yes, there are many!)  So Valgrind reads a list of errors to suppress
+at startup.  A default suppression file is cooked up by the
+<code>./configure</code> script when the system is built.
+
+<p>
+You can modify and add to the suppressions file at your leisure,
+or, better, write your own.  Multiple suppression files are allowed.
+This is useful if part of your project contains errors you can't or
+don't want to fix, yet you don't want to continuously be reminded of
+them.
+
+<p>
+Each error to be suppressed is described very specifically, to
+minimise the possibility that a suppression-directive inadvertantly
+suppresses a bunch of similar errors which you did want to see.  The
+suppression mechanism is designed to allow precise yet flexible
+specification of errors to suppress.
+
+<p>
+If you use the <code>-v</code> flag, at the end of execution, Valgrind
+prints out one line for each used suppression, giving its name and the
+number of times it got used.  Here's the suppressions used by a run of
+<code>valgrind --skin=memcheck ls -l</code>:
+<pre>
+  --27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getgrgid_r
+  --27579-- supp: 1 socketcall.connect(serv_addr)/__libc_connect/__nscd_getpwuid_r
+  --27579-- supp: 6 strrchr/_dl_map_object_from_fd/_dl_map_object
+</pre>
+
+
+<a name="flags"></a>
+<h3>2.6&nbsp; Command-line flags for the valgrind core</h3>
+
+
+As mentioned above, valgrind's core accepts a common set of flags.
+The skins also accept skin-specific flags, which are documented
+seperately for each skin.  
+
+You invoke Valgrind like this:
+<pre>
+  valgrind [options-for-Valgrind] your-prog [options for your-prog]
+</pre>
+
+<p>Note that Valgrind also reads options from the environment variable
+<code>$VALGRIND_OPTS</code>, and processes them before the command-line
+options.  Options for the valgrind core may be freely mixed with those
+for the selected skin.
+
+<p>Valgrind's default settings succeed in giving reasonable behaviour
+in most cases.  Available options, in no particular order, are as
+follows:
+<ul>
+  <li><code>--help</code><br>
+      <p>Show help for all options, both for the core and for the
+      selected skin.
+
+  <li><code>--version</code><br> <p>Show the version number of the
+      valgrind core.  Skins can have their own version numbers.  There
+      is a scheme in place to ensure that skins only execute when the
+      core version is one they are known to work with.  This was done
+      to minimise the chances of strange problems arising from
+      skin-vs-core version incompatibilities.  </li><br><p>
+
+  <li><code>-v --verbose</code><br> <p>Be more verbose.  Gives extra
+      information on various aspects of your program, such as: the
+      shared objects loaded, the suppressions used, the progress of
+      the instrumentation and execution engines, and warnings about
+      unusual behaviour.  Repeating the flag increases the verbosity
+      level.  </li><br><p>
+
+  <li><code>-q --quiet</code><br>
+      <p>Run silently, and only print error messages.  Useful if you
+      are running regression tests or have some other automated test
+      machinery.
+      </li><br><p>
+
+  <li><code>--demangle=no</code><br>
+      <code>--demangle=yes</code> [the default]
+      <p>Disable/enable automatic demangling (decoding) of C++ names.
+      Enabled by default.  When enabled, Valgrind will attempt to
+      translate encoded C++ procedure names back to something
+      approaching the original.  The demangler handles symbols mangled
+      by g++ versions 2.X and 3.X.
+
+      <p>An important fact about demangling is that function
+      names mentioned in suppressions files should be in their mangled
+      form.  Valgrind does not demangle function names when searching
+      for applicable suppressions, because to do otherwise would make
+      suppressions file contents dependent on the state of Valgrind's
+      demangling machinery, and would also be slow and pointless.
+      </li><br><p>
+
+  <li><code>--num-callers=&lt;number&gt;</code> [default=4]<br>
+      <p>By default, Valgrind shows four levels of function call names
+      to help you identify program locations.  You can change that
+      number with this option.  This can help in determining the
+      program's location in deeply-nested call chains.  Note that errors
+      are commoned up using only the top three function locations (the
+      place in the current function, and that of its two immediate
+      callers).  So this doesn't affect the total number of errors
+      reported.  
+      <p>
+      The maximum value for this is 50.  Note that higher settings
+      will make Valgrind run a bit more slowly and take a bit more
+      memory, but can be useful when working with programs with
+      deeply-nested call chains.  
+      </li><br><p>
+
+  <li><code>--gdb-attach=no</code> [the default]<br>
+      <code>--gdb-attach=yes</code>
+      <p>When enabled, Valgrind will pause after every error shown,
+      and print the line
+      <br>
+      <code>---- Attach to GDB ? --- [Return/N/n/Y/y/C/c] ----</code>
+      <p>
+      Pressing <code>Ret</code>, or <code>N</code> <code>Ret</code>
+      or <code>n</code> <code>Ret</code>, causes Valgrind not to
+      start GDB for this error.
+      <p>
+      <code>Y</code> <code>Ret</code>
+      or <code>y</code> <code>Ret</code> causes Valgrind to
+      start GDB, for the program at this point.  When you have
+      finished with GDB, quit from it, and the program will continue.
+      Trying to continue from inside GDB doesn't work.
+      <p>
+      <code>C</code> <code>Ret</code>
+      or <code>c</code> <code>Ret</code> causes Valgrind not to
+      start GDB, and not to ask again.
+      <p>
+      <code>--gdb-attach=yes</code> conflicts with
+      <code>--trace-children=yes</code>.  You can't use them together.
+      Valgrind refuses to start up in this situation.  1 May 2002:
+      this is a historical relic which could be easily fixed if it
+      gets in your way.  Mail me and complain if this is a problem for
+      you.
+      <p>
+      Nov 2002: if you're sending output to a logfile or to a network
+      socket, I guess this option doesn't make any sense.  Caveat emptor.
+      </li><br><p>
+
+  <li><code>--alignment=&lt;number></code> [default: 4]<br> <p>By
+      default valgrind's <code>malloc</code>, <code>realloc</code>,
+      etc, return 4-byte aligned addresses.  These are suitable for
+      any accesses on x86 processors. 
+      Some programs might however assume that <code>malloc</code> et
+      al return 8- or more aligned memory.
+      These programs are broken and should be fixed, but
+      if this is impossible for whatever reason the alignment can be
+      increased using this parameter.  The supplied value must be
+      between 4 and 4096 inclusive, and must be a power of two.</li><br><p>
+
+  <li><code>--sloppy-malloc=no</code> [the default]<br>
+      <code>--sloppy-malloc=yes</code>
+      <p>When enabled, all requests for malloc/calloc are rounded up
+      to a whole number of machine words -- in other words, made
+      divisible by 4.  For example, a request for 17 bytes of space
+      would result in a 20-byte area being made available.  This works
+      around bugs in sloppy libraries which assume that they can
+      safely rely on malloc/calloc requests being rounded up in this
+      fashion.  Without the workaround, these libraries tend to
+      generate large numbers of errors when they access the ends of
+      these areas.  
+      <p>
+      Valgrind snapshots dated 17 Feb 2002 and later are
+      cleverer about this problem, and you should no longer need to 
+      use this flag.  To put it bluntly, if you do need to use this
+      flag, your program violates the ANSI C semantics defined for
+      <code>malloc</code> and <code>free</code>, even if it appears to
+      work correctly, and you should fix it, at least if you hope for
+      maximum portability.
+      </li><br><p>
+
+  <li><code>--trace-children=no</code> [the default]<br>
+      <code>--trace-children=yes</code>
+      <p>When enabled, Valgrind will trace into child processes.  This
+      is confusing and usually not what you want, so is disabled by
+      default.
+      </li><br><p>
+
+  <li><code>--logfile-fd=&lt;number></code> [default: 2, stderr]
+      <p>Specifies that Valgrind should send all of its
+      messages to the specified file descriptor.  The default, 2, is
+      the standard error channel (stderr).  Note that this may
+      interfere with the client's own use of stderr.  
+      </li><br><p>
+
+  <li><code>--logfile=&lt;filename></code>
+      <p>Specifies that Valgrind should send all of its
+      messages to the specified file.  In fact, the file name used
+      is created by concatenating the text <code>filename</code>,
+      ".pid" and the process ID, so as to create a file per process.
+      The specified file name may not be the empty string.
+      </li><br><p>
+
+  <li><code>--logsocket=&lt;ip-address:port-number></code>
+      <p>Specifies that Valgrind should send all of its messages to
+      the specified port at the specified IP address.  The port may be
+      omitted, in which case port 1500 is used.  If a connection
+      cannot be made to the specified socket, valgrind falls back to
+      writing output to the standard error (stderr).  This option is
+      intended to be used in conjunction with the
+      <code>valgrind-listener</code> program.  For further details,
+      see section <a href="#core-comment">2.3</a>.
+      </li><br><p>
+
+  <li><code>--suppressions=&lt;filename></code> 
+      [default: $PREFIX/lib/valgrind/default.supp]
+      <p>Specifies an extra
+      file from which to read descriptions of errors to suppress.  You
+      may use as many extra suppressions files as you
+      like.
+      </li><br><p>
+
+  <li><code>--error-limit=yes</code> [default]<br>
+      <code>--error-limit=no</code> <p>When enabled, valgrind stops
+      reporting errors after 30000 in total, or 300 different ones,
+      have been seen.  This is to stop the error tracking machinery
+      from becoming a huge performance overhead in programs with many
+      errors.  
+      </li><br><p>
+
+  <li><code>--run-libc-freeres=yes</code> [the default]<br>
+      <code>--run-libc-freeres=no</code>
+      <p>The GNU C library (<code>libc.so</code>), which is used by
+      all programs, may allocate memory for its own uses.  Usually it
+      doesn't bother to free that memory when the program ends - there
+      would be no point, since the Linux kernel reclaims all process
+      resources when a process exits anyway, so it would just slow
+      things down.
+      <p>
+      The glibc authors realised that this behaviour causes leak
+      checkers, such as Valgrind, to falsely report leaks in glibc,
+      when a leak check is done at exit.  In order to avoid this, they
+      provided a routine called <code>__libc_freeres</code>
+      specifically to make glibc release all memory it has allocated.
+      The MemCheck and AddrCheck skins therefore try and run
+      <code>__libc_freeres</code> at exit.
+      <p>
+      Unfortunately, in some versions of glibc,
+      <code>__libc_freeres</code> is sufficiently buggy to cause
+      segmentation faults.  This is particularly noticeable on Red Hat
+      7.1.  So this flag is provided in order to inhibit the run of
+      <code>__libc_freeres</code>.  If your program seems to run fine
+      on valgrind, but segfaults at exit, you may find that
+      <code>--run-libc-freeres=no</code> fixes that, although at the
+      cost of possibly falsely reporting space leaks in
+      <code>libc.so</code>.
+      </li><br><p>
+
+  <li><code>--weird-hacks=hack1,hack2,...</code>
+      Pass miscellaneous hints to Valgrind which slightly modify the
+      simulated behaviour in nonstandard or dangerous ways, possibly
+      to help the simulation of strange features.  By default no hacks
+      are enabled.  Use with caution!  Currently known hacks are:
+      <p>
+      <ul>
+      <li><code>ioctl-VTIME</code> Use this if you have a program
+          which sets readable file descriptors to have a timeout by
+          doing <code>ioctl</code> on them with a
+          <code>TCSETA</code>-style command <b>and</b> a non-zero
+          <code>VTIME</code> timeout value.  This is considered
+          potentially dangerous and therefore is not engaged by
+          default, because it is (remotely) conceivable that it could
+          cause threads doing <code>read</code> to incorrectly block
+          the entire process.
+          <p>
+          You probably want to try this one if you have a program
+          which unexpectedly blocks in a <code>read</code> from a file
+          descriptor which you know to have been messed with by
+          <code>ioctl</code>.  This could happen, for example, if the
+          descriptor is used to read input from some kind of screen
+          handling library.
+          <p>
+          To find out if your program is blocking unexpectedly in the
+          <code>read</code> system call, run with
+          <code>--trace-syscalls=yes</code> flag.
+      <p>
+      <li><code>truncate-writes</code> Use this if you have a threaded
+          program which appears to unexpectedly block whilst writing
+          into a pipe.  The effect is to modify all calls to
+          <code>write()</code> so that requests to write more than
+          4096 bytes are treated as if they only requested a write of
+          4096 bytes.  Valgrind does this by changing the
+          <code>count</code> argument of <code>write()</code>, as
+          passed to the kernel, so that it is at most 4096.  The
+          amount of data written will then be less than the client
+          program asked for, but the client should have a loop around
+          its <code>write()</code> call to check whether the requested
+          number of bytes have been written.  If not, it should issue
+          further <code>write()</code> calls until all the data is
+          written.
+          <p>
+          This all sounds pretty dodgy to me, which is why I've made
+          this behaviour only happen on request.  It is not the
+          default behaviour.  At the time of writing this (30 June
+          2002) I have only seen one example where this is necessary,
+          so either the problem is extremely rare or nobody is using
+          Valgrind :-)
+          <p>
+          On experimentation I see that <code>truncate-writes</code>
+          doesn't interact well with <code>ioctl-VTIME</code>, so you
+          probably don't want to try both at once.
+          <p>
+          As above, to find out if your program is blocking
+          unexpectedly in the <code>write()</code> system call, you
+          may find the <code>--trace-syscalls=yes
+          --trace-sched=yes</code> flags useful.
+      </ul>
+      </li><br><p>
+</ul>
+
+There are also some options for debugging Valgrind itself.  You
+shouldn't need to use them in the normal run of things.  Nevertheless:
+
+<ul>
+
+  <li><code>--single-step=no</code> [default]<br>
+      <code>--single-step=yes</code>
+      <p>When enabled, each x86 insn is translated separately into
+      instrumented code.  When disabled, translation is done on a
+      per-basic-block basis, giving much better translations.</li><br>
+      <p>
+
+  <li><code>--optimise=no</code><br>
+      <code>--optimise=yes</code> [default]
+      <p>When enabled, various improvements are applied to the
+      intermediate code, mainly aimed at allowing the simulated CPU's
+      registers to be cached in the real CPU's registers over several
+      simulated instructions.</li><br>
+      <p>
+
+  <li><code>--profile=no</code><br>
+      <code>--profile=yes</code> [default]
+      <p>When enabled, does crude internal profiling of valgrind 
+      itself.  This is not for profiling your programs.  Rather it is
+      to allow the developers to assess where valgrind is spending
+      its time.  The skins must be built for profiling for this to
+      work.
+      </li><br><p>
+
+  <li><code>--trace-syscalls=no</code> [default]<br>
+      <code>--trace-syscalls=yes</code>
+      <p>Enable/disable tracing of system call intercepts.</li><br>
+      <p>
+
+  <li><code>--trace-signals=no</code> [default]<br>
+      <code>--trace-signals=yes</code>
+      <p>Enable/disable tracing of signal handling.</li><br>
+      <p>
+
+  <li><code>--trace-sched=no</code> [default]<br>
+      <code>--trace-sched=yes</code>
+      <p>Enable/disable tracing of thread scheduling events.</li><br>
+      <p>
+
+  <li><code>--trace-pthread=none</code> [default]<br>
+      <code>--trace-pthread=some</code> <br>
+      <code>--trace-pthread=all</code>
+      <p>Specifies amount of trace detail for pthread-related events.</li><br>
+      <p>
+
+  <li><code>--trace-symtab=no</code> [default]<br>
+      <code>--trace-symtab=yes</code>
+      <p>Enable/disable tracing of symbol table reading.</li><br>
+      <p>
+
+  <li><code>--trace-malloc=no</code> [default]<br>
+      <code>--trace-malloc=yes</code>
+      <p>Enable/disable tracing of malloc/free (et al) intercepts.
+      </li><br>
+      <p>
+
+  <li><code>--stop-after=&lt;number></code> 
+      [default: infinity, more or less]
+      <p>After &lt;number> basic blocks have been executed, shut down
+      Valgrind and switch back to running the client on the real CPU.
+      </li><br>
+      <p>
+
+  <li><code>--dump-error=&lt;number></code> [default: inactive]
+      <p>After the program has exited, show gory details of the
+      translation of the basic block containing the &lt;number>'th
+      error context.  When used with <code>--single-step=yes</code>,
+      can show the exact x86 instruction causing an error.  This is
+      all fairly dodgy and doesn't work at all if threads are
+      involved.</li><br>
+      <p>
+</ul>
+
+
+<a name="clientreq"></a>
+<h3>2.8&nbsp; The Client Request mechanism</h3>
+
+Valgrind has a trapdoor mechanism via which the client program can
+pass all manner of requests and queries to Valgrind.  Internally, this
+is used extensively to make malloc, free, signals, threads, etc, work,
+although you don't see that.
+<p>
+For your convenience, a subset of these so-called client requests is
+provided to allow you to tell Valgrind facts about the behaviour of
+your program, and conversely to make queries.  In particular, your
+program can tell Valgrind about changes in memory range permissions
+that Valgrind would not otherwise know about, and so allows clients to
+get Valgrind to do arbitrary custom checks.
+<p>
+Clients need to include the header file <code>valgrind.h</code> to
+make this work.  The macros therein have the magical property that
+they generate code in-line which Valgrind can spot.  However, the code
+does nothing when not run on Valgrind, so you are not forced to run
+your program on Valgrind just because you use the macros in this file.
+Also, you are not required to link your program with any extra
+supporting libraries.
+<p>
+A brief description of the available macros:
+<ul>
+<li><code>VALGRIND_MAKE_NOACCESS</code>,
+    <code>VALGRIND_MAKE_WRITABLE</code> and
+    <code>VALGRIND_MAKE_READABLE</code>.  These mark address
+    ranges as completely inaccessible, accessible but containing
+    undefined data, and accessible and containing defined data,
+    respectively.  Subsequent errors may have their faulting
+    addresses described in terms of these blocks.  Returns a
+    "block handle".  Returns zero when not run on Valgrind.
+<p>
+<li><code>VALGRIND_DISCARD</code>: At some point you may want
+    Valgrind to stop reporting errors in terms of the blocks
+    defined by the previous three macros.  To do this, the above
+    macros return a small-integer "block handle".  You can pass
+    this block handle to <code>VALGRIND_DISCARD</code>.  After
+    doing so, Valgrind will no longer be able to relate
+    addressing errors to the user-defined block associated with
+    the handle.  The permissions settings associated with the
+    handle remain in place; this just affects how errors are
+    reported, not whether they are reported.  Returns 1 for an
+    invalid handle and 0 for a valid handle (although passing
+    invalid handles is harmless).  Always returns 0 when not run
+    on Valgrind.
+<p>
+<li><code>VALGRIND_CHECK_NOACCESS</code>,
+    <code>VALGRIND_CHECK_WRITABLE</code> and
+    <code>VALGRIND_CHECK_READABLE</code>: check immediately
+    whether or not the given address range has the relevant
+    property, and if not, print an error message.  Also, for the
+    convenience of the client, returns zero if the relevant
+    property holds; otherwise, the returned value is the address
+    of the first byte for which the property is not true.
+    Always returns 0 when not run on Valgrind.
+<p>
+<li><code>VALGRIND_CHECK_NOACCESS</code>: a quick and easy way
+    to find out whether Valgrind thinks a particular variable
+    (lvalue, to be precise) is addressible and defined.  Prints
+    an error message if not.  Returns no value.
+<p>
+<li><code>VALGRIND_MAKE_NOACCESS_STACK</code>: a highly
+    experimental feature.  Similarly to
+    <code>VALGRIND_MAKE_NOACCESS</code>, this marks an address
+    range as inaccessible, so that subsequent accesses to an
+    address in the range gives an error.  However, this macro
+    does not return a block handle.  Instead, all annotations
+    created like this are reviewed at each client
+    <code>ret</code> (subroutine return) instruction, and those
+    which now define an address range block the client's stack
+    pointer register (<code>%esp</code>) are automatically
+    deleted.
+    <p>
+    In other words, this macro allows the client to tell
+    Valgrind about red-zones on its own stack.  Valgrind
+    automatically discards this information when the stack
+    retreats past such blocks.  Beware: hacky and flaky, and
+    probably interacts badly with the new pthread support.
+<p>
+<li><code>RUNNING_ON_VALGRIND</code>: returns 1 if running on
+    Valgrind, 0 if running on the real CPU.
+<p>
+<li><code>VALGRIND_DO_LEAK_CHECK</code>: run the memory leak detector
+    right now.  Returns no value.  I guess this could be used to
+    incrementally check for leaks between arbitrary places in the
+    program's execution.  Warning: not properly tested!
+<p>
+<li><code>VALGRIND_DISCARD_TRANSLATIONS</code>: discard translations
+    of code in the specified address range.  Useful if you are
+    debugging a JITter or some other dynamic code generation system.
+    After this call, attempts to execute code in the invalidated
+    address range will cause valgrind to make new translations of that
+    code, which is probably the semantics you want.  Note that this is
+    implemented naively, and involves checking all 200191 entries in
+    the translation table to see if any of them overlap the specified
+    address range.  So try not to call it often, or performance will
+    nosedive.  Note that you can be clever about this: you only need
+    to call it when an area which previously contained code is
+    overwritten with new code.  You can choose to write code into
+    fresh memory, and just call this occasionally to discard large
+    chunks of old code all at once.
+    <p>
+    Warning: minimally tested, especially for the cache simulator.
+</ul>
+<p>
+
+
+<a name="pthreads"></a>
+<h3>2.9&nbsp; Support for POSIX Pthreads</h3>
+
+As of late April 02, Valgrind supports programs which use POSIX
+pthreads.  Doing this has proved technically challenging but is now
+mostly complete.  It works well enough for significant threaded
+applications to work.
+<p>
+It works as follows: threaded apps are (dynamically) linked against
+<code>libpthread.so</code>.  Usually this is the one installed with
+your Linux distribution.  Valgrind, however, supplies its own
+<code>libpthread.so</code> and automatically connects your program to
+it instead.
+<p>
+The fake <code>libpthread.so</code> and Valgrind cooperate to
+implement a user-space pthreads package.  This approach avoids the 
+horrible implementation problems of implementing a truly
+multiprocessor version of Valgrind, but it does mean that threaded
+apps run only on one CPU, even if you have a multiprocessor machine.
+<p>
+Valgrind schedules your threads in a round-robin fashion, with all
+threads having equal priority.  It switches threads every 50000 basic
+blocks (typically around 300000 x86 instructions), which means you'll
+get a much finer interleaving of thread executions than when run
+natively.  This in itself may cause your program to behave differently
+if you have some kind of concurrency, critical race, locking, or
+similar, bugs.
+<p>
+The current (valgrind-1.0 release) state of pthread support is as
+follows:
+<ul>
+<li>Mutexes, condition variables, thread-specific data,
+    <code>pthread_once</code>, reader-writer locks, semaphores,
+    cleanup stacks, cancellation and thread detaching currently work.
+    Various attribute-like calls are handled but ignored; you get a
+    warning message.
+<p>
+<li>Currently the following syscalls are thread-safe (nonblocking):
+    <code>write</code> <code>read</code> <code>nanosleep</code>
+    <code>sleep</code> <code>select</code> <code>poll</code> 
+    <code>recvmsg</code> and
+    <code>accept</code>.
+<p>
+<li>Signals in pthreads are now handled properly(ish): 
+    <code>pthread_sigmask</code>, <code>pthread_kill</code>,
+    <code>sigwait</code> and <code>raise</code> are now implemented.
+    Each thread has its own signal mask, as POSIX requires.
+    It's a bit kludgey -- there's a system-wide pending signal set,
+    rather than one for each thread.  But hey.
+</ul>
+
+
+As of 18 May 02, the following threaded programs now work fine on my
+RedHat 7.2 box: Opera 6.0Beta2, KNode in KDE 3.0, Mozilla-0.9.2.1 and
+Galeon-0.11.3, both as supplied with RedHat 7.2.  Also Mozilla 1.0RC2.
+OpenOffice 1.0.  MySQL 3.something (the current stable release).
+
+<a name="install"></a>
+<h3>2.10&nbsp; Building and installing</h3>
+
+We now use the standard Unix <code>./configure</code>,
+<code>make</code>, <code>make install</code> mechanism, and I have
+attempted to ensure that it works on machines with kernel 2.2 or 2.4
+and glibc 2.1.X or 2.2.X.  I don't think there is much else to say.
+There are no options apart from the usual <code>--prefix</code> that
+you should give to <code>./configure</code>.
+
+<p>
+The <code>configure</code> script tests the version of the X server
+currently indicated by the current <code>$DISPLAY</code>.  This is a
+known bug.  The intention was to detect the version of the current
+XFree86 client libraries, so that correct suppressions could be
+selected for them, but instead the test checks the server version.
+This is just plain wrong.
+
+<p>
+If you are building a binary package of Valgrind for distribution,
+please read <code>README_PACKAGERS</code>.  It contains some important
+information.
+
+<p>
+Apart from that there is no excitement here.  Let me know if you have
+build problems.
+
+
+
+<a name="problems"></a>
+<h3>2.11&nbsp; If you have problems</h3>
+Mail me (<a href="mailto:jseward@acm.org">jseward@acm.org</a>).
+
+<p>See <a href="#limits">Section 4</a> for the known limitations of
+Valgrind, and for a list of programs which are known not to work on
+it.
+
+<p>The translator/instrumentor has a lot of assertions in it.  They
+are permanently enabled, and I have no plans to disable them.  If one
+of these breaks, please mail me!
+
+<p>If you get an assertion failure on the expression
+<code>chunkSane(ch)</code> in <code>vg_free()</code> in
+<code>vg_malloc.c</code>, this may have happened because your program
+wrote off the end of a malloc'd block, or before its beginning.
+Valgrind should have emitted a proper message to that effect before
+dying in this way.  This is a known problem which I should fix.
+<p>
+
+<hr width="100%">
+
+
+<a name="signals"></a>
+<h3>3.4&nbsp; Signals</h3>
+
+Valgrind provides suitable handling of signals, so, provided you stick
+to POSIX stuff, you should be ok.  Basic sigaction() and sigprocmask()
+are handled.  Signal handlers may return in the normal way or do
+longjmp(); both should work ok.  As specified by POSIX, a signal is
+blocked in its own handler.  Default actions for signals should work
+as before.  Etc, etc.
+
+<p>Under the hood, dealing with signals is a real pain, and Valgrind's
+simulation leaves much to be desired.  If your program does
+way-strange stuff with signals, bad things may happen.  If so, let me
+know.  I don't promise to fix it, but I'd at least like to be aware of
+it.
+
+
+
+<a name="limits"></a>
+<h2>4&nbsp; Limitations</h2>
+
+The following list of limitations seems depressingly long.  However,
+most programs actually work fine.
+
+<p>Valgrind will run x86-GNU/Linux ELF dynamically linked binaries, on
+a kernel 2.2.X or 2.4.X system, subject to the following constraints:
+
+<ul>
+  <li>No MMX, SSE, SSE2, 3DNow instructions.  If the translator
+      encounters these, Valgrind will simply give up.  It may be
+      possible to add support for them at a later time. Intel added a
+      few instructions such as "cmov" to the integer instruction set
+      on Pentium and later processors, and these are supported.
+      Nevertheless it's safest to think of Valgrind as implementing
+      the 486 instruction set.</li><br>
+      <p>
+
+  <li>Pthreads support is improving, but there are still significant
+      limitations in that department.  See the section above on
+      Pthreads.  Note that your program must be dynamically linked
+      against <code>libpthread.so</code>, so that Valgrind can
+      substitute its own implementation at program startup time.  If
+      you're statically linked against it, things will fail
+      badly.</li><br>
+      <p>
+
+  <li>Valgrind assumes that the floating point registers are not used
+      as intermediaries in memory-to-memory copies, so it immediately
+      checks V bits in floating-point loads/stores.  If you want to
+      write code which copies around possibly-uninitialised values,
+      you must ensure these travel through the integer registers, not
+      the FPU.</li><br>
+      <p>
+
+  <li>If your program does its own memory management, rather than
+      using malloc/new/free/delete, it should still work, but
+      Valgrind's error checking won't be so effective.</li><br>
+      <p>
+
+  <li>Valgrind's signal simulation is not as robust as it could be.
+      Basic POSIX-compliant sigaction and sigprocmask functionality is
+      supplied, but it's conceivable that things could go badly awry
+      if you do wierd things with signals.  Workaround: don't.
+      Programs that do non-POSIX signal tricks are in any case
+      inherently unportable, so should be avoided if
+      possible.</li><br>
+      <p>
+
+  <li>Programs which switch stacks are not well handled.  Valgrind
+      does have support for this, but I don't have great faith in it.
+      It's difficult -- there's no cast-iron way to decide whether a
+      large change in %esp is as a result of the program switching
+      stacks, or merely allocating a large object temporarily on the
+      current stack -- yet Valgrind needs to handle the two situations
+      differently.  1 May 02: this probably interacts badly with the
+      new pthread support.  I haven't checked properly.</li><br>
+      <p>
+
+  <li>x86 instructions, and system calls, have been implemented on
+      demand.  So it's possible, although unlikely, that a program
+      will fall over with a message to that effect.  If this happens,
+      please mail me ALL the details printed out, so I can try and
+      implement the missing feature.</li><br>
+      <p>
+
+  <li>x86 floating point works correctly, but floating-point code may
+      run even more slowly than integer code, due to my simplistic
+      approach to FPU emulation.</li><br>
+      <p>
+
+  <li>You can't Valgrind-ize statically linked binaries.  Valgrind
+      relies on the dynamic-link mechanism to gain control at
+      startup.</li><br>
+      <p>
+
+  <li>Memory consumption of your program is majorly increased whilst
+      running under Valgrind.  This is due to the large amount of
+      adminstrative information maintained behind the scenes.  Another
+      cause is that Valgrind dynamically translates the original
+      executable.  Translated, instrumented code is 14-16 times larger
+      than the original (!) so you can easily end up with 30+ MB of
+      translations when running (eg) a web browser.
+      </li>
+</ul>
+
+Programs which are known not to work are:
+
+<ul>
+  <li>emacs starts up but immediately concludes it is out of memory
+      and aborts.  Emacs has it's own memory-management scheme, but I
+      don't understand why this should interact so badly with
+      Valgrind.  Emacs works fine if you build it to use the standard
+      malloc/free routines.</li><br>
+      <p>
+</ul>
+
+Known platform-specific limitations, as of release 1.0.0:
+
+<ul>
+  <li>On Red Hat 7.3, there have been reports of link errors (at
+      program start time) for threaded programs using
+      <code>__pthread_clock_gettime</code> and
+      <code>__pthread_clock_settime</code>.  This appears to be due to
+      <code>/lib/librt-2.2.5.so</code> needing them.  Unfortunately I
+      do not understand enough about this problem to fix it properly,
+      and I can't reproduce it on my test RedHat 7.3 system.  Please
+      mail me if you have more information / understanding.  </li><br>
+      <p>
+  <li>
+      1.0.0 now partially works on Red Hat 7.3.92 ("Limbo"
+      public beta).  However, don't expect a smooth ride.
+      Basically valgrind won't work as-is with any 
+      glibc-2.3 based system.  Limbo is just a little pre glibc-2.3 
+      and it just about works.  Limbo is also gcc-3.1 based and so
+      suffers from the problems in the following point.</li><br>
+      <p>
+  <li>
+      Inlining of string functions with gcc-3.1 or above causes a
+      large number of false reports of uninitialised value uses.  I
+      know what the problem is and roughly how to fix it, but I need
+      to devise a reasonably efficient fix.  Try to reduce the
+      optimisation level, or use <code>-fno-builtin-strlen</code> in
+      the meantime.  Or use an earlier gcc.</li><br>
+      <p>
+</ul>
+
+
+<p><hr width="100%">
+
+
+<a name="howitworks"></a>
+<h2>5&nbsp; How it works -- a rough overview</h2>
+Some gory details, for those with a passion for gory details.  You
+don't need to read this section if all you want to do is use Valgrind.
+
+<a name="startb"></a>
+<h3>5.1&nbsp; Getting started</h3>
+
+Valgrind is compiled into a shared object, valgrind.so.  The shell
+script valgrind sets the LD_PRELOAD environment variable to point to
+valgrind.so.  This causes the .so to be loaded as an extra library to
+any subsequently executed dynamically-linked ELF binary, viz, the
+program you want to debug.
+
+<p>The dynamic linker allows each .so in the process image to have an
+initialisation function which is run before main().  It also allows
+each .so to have a finalisation function run after main() exits.
+
+<p>When valgrind.so's initialisation function is called by the dynamic
+linker, the synthetic CPU to starts up.  The real CPU remains locked
+in valgrind.so for the entire rest of the program, but the synthetic
+CPU returns from the initialisation function.  Startup of the program
+now continues as usual -- the dynamic linker calls all the other .so's
+initialisation routines, and eventually runs main().  This all runs on
+the synthetic CPU, not the real one, but the client program cannot
+tell the difference.
+
+<p>Eventually main() exits, so the synthetic CPU calls valgrind.so's
+finalisation function.  Valgrind detects this, and uses it as its cue
+to exit.  It prints summaries of all errors detected, possibly checks
+for memory leaks, and then exits the finalisation routine, but now on
+the real CPU.  The synthetic CPU has now lost control -- permanently
+-- so the program exits back to the OS on the real CPU, just as it
+would have done anyway.
+
+<p>On entry, Valgrind switches stacks, so it runs on its own stack.
+On exit, it switches back.  This means that the client program
+continues to run on its own stack, so we can switch back and forth
+between running it on the simulated and real CPUs without difficulty.
+This was an important design decision, because it makes it easy (well,
+significantly less difficult) to debug the synthetic CPU.
+
+
+<a name="engine"></a>
+<h3>5.2&nbsp; The translation/instrumentation engine</h3>
+
+Valgrind does not directly run any of the original program's code.  Only
+instrumented translations are run.  Valgrind maintains a translation
+table, which allows it to find the translation quickly for any branch
+target (code address).  If no translation has yet been made, the
+translator - a just-in-time translator - is summoned.  This makes an
+instrumented translation, which is added to the collection of
+translations.  Subsequent jumps to that address will use this
+translation.
+
+<p>Valgrind no longer directly supports detection of self-modifying
+code.  Such checking is expensive, and in practice (fortunately)
+almost no applications need it.  However, to help people who are
+debugging dynamic code generation systems, there is a Client Request 
+(basically a macro you can put in your program) which directs Valgrind
+to discard translations in a given address range.  So Valgrind can
+still work in this situation provided the client tells it when
+code has become out-of-date and needs to be retranslated.
+
+<p>The JITter translates basic blocks -- blocks of straight-line-code
+-- as single entities.  To minimise the considerable difficulties of
+dealing with the x86 instruction set, x86 instructions are first
+translated to a RISC-like intermediate code, similar to sparc code,
+but with an infinite number of virtual integer registers.  Initially
+each insn is translated seperately, and there is no attempt at
+instrumentation.
+
+<p>The intermediate code is improved, mostly so as to try and cache
+the simulated machine's registers in the real machine's registers over
+several simulated instructions.  This is often very effective.  Also,
+we try to remove redundant updates of the simulated machines's
+condition-code register.
+
+<p>The intermediate code is then instrumented, giving more
+intermediate code.  There are a few extra intermediate-code operations
+to support instrumentation; it is all refreshingly simple.  After
+instrumentation there is a cleanup pass to remove redundant value
+checks.
+
+<p>This gives instrumented intermediate code which mentions arbitrary
+numbers of virtual registers.  A linear-scan register allocator is
+used to assign real registers and possibly generate spill code.  All
+of this is still phrased in terms of the intermediate code.  This
+machinery is inspired by the work of Reuben Thomas (Mite).
+
+<p>Then, and only then, is the final x86 code emitted.  The
+intermediate code is carefully designed so that x86 code can be
+generated from it without need for spare registers or other
+inconveniences.
+
+<p>The translations are managed using a traditional LRU-based caching
+scheme.  The translation cache has a default size of about 14MB.
+
+<a name="track"></a>
+
+<h3>5.3&nbsp; Tracking the status of memory</h3> Each byte in the
+process' address space has nine bits associated with it: one A bit and
+eight V bits.  The A and V bits for each byte are stored using a
+sparse array, which flexibly and efficiently covers arbitrary parts of
+the 32-bit address space without imposing significant space or
+performance overheads for the parts of the address space never
+visited.  The scheme used, and speedup hacks, are described in detail
+at the top of the source file vg_memory.c, so you should read that for
+the gory details.
+
+<a name="sys_calls"></a>
+
+<h3>5.4 System calls</h3>
+All system calls are intercepted.  The memory status map is consulted
+before and updated after each call.  It's all rather tiresome.  See
+vg_syscall_mem.c for details.
+
+<a name="sys_signals"></a>
+
+<h3>5.5&nbsp; Signals</h3>
+All system calls to sigaction() and sigprocmask() are intercepted.  If
+the client program is trying to set a signal handler, Valgrind makes a
+note of the handler address and which signal it is for.  Valgrind then
+arranges for the same signal to be delivered to its own handler.
+
+<p>When such a signal arrives, Valgrind's own handler catches it, and
+notes the fact.  At a convenient safe point in execution, Valgrind
+builds a signal delivery frame on the client's stack and runs its
+handler.  If the handler longjmp()s, there is nothing more to be said.
+If the handler returns, Valgrind notices this, zaps the delivery
+frame, and carries on where it left off before delivering the signal.
+
+<p>The purpose of this nonsense is that setting signal handlers
+essentially amounts to giving callback addresses to the Linux kernel.
+We can't allow this to happen, because if it did, signal handlers
+would run on the real CPU, not the simulated one.  This means the
+checking machinery would not operate during the handler run, and,
+worse, memory permissions maps would not be updated, which could cause
+spurious error reports once the handler had returned.
+
+<p>An even worse thing would happen if the signal handler longjmp'd
+rather than returned: Valgrind would completely lose control of the
+client program.
+
+<p>Upshot: we can't allow the client to install signal handlers
+directly.  Instead, Valgrind must catch, on behalf of the client, any
+signal the client asks to catch, and must delivery it to the client on
+the simulated CPU, not the real one.  This involves considerable
+gruesome fakery; see vg_signals.c for details.
+<p>
+
+<hr width="100%">
+
+<a name="example"></a>
+<h2>6&nbsp; Example</h2>
+This is the log for a run of a small program. The program is in fact
+correct, and the reported error is as the result of a potentially serious
+code generation bug in GNU g++ (snapshot 20010527).
+<pre>
+sewardj@phoenix:~/newmat10$
+~/Valgrind-6/valgrind -v ./bogon 
+==25832== Valgrind 0.10, a memory error detector for x86 RedHat 7.1.
+==25832== Copyright (C) 2000-2001, and GNU GPL'd, by Julian Seward.
+==25832== Startup, with flags:
+==25832== --suppressions=/home/sewardj/Valgrind/redhat71.supp
+==25832== reading syms from /lib/ld-linux.so.2
+==25832== reading syms from /lib/libc.so.6
+==25832== reading syms from /mnt/pima/jrs/Inst/lib/libgcc_s.so.0
+==25832== reading syms from /lib/libm.so.6
+==25832== reading syms from /mnt/pima/jrs/Inst/lib/libstdc++.so.3
+==25832== reading syms from /home/sewardj/Valgrind/valgrind.so
+==25832== reading syms from /proc/self/exe
+==25832== loaded 5950 symbols, 142333 line number locations
+==25832== 
+==25832== Invalid read of size 4
+==25832==    at 0x8048724: _ZN10BandMatrix6ReSizeEiii (bogon.cpp:45)
+==25832==    by 0x80487AF: main (bogon.cpp:66)
+==25832==    by 0x40371E5E: __libc_start_main (libc-start.c:129)
+==25832==    by 0x80485D1: (within /home/sewardj/newmat10/bogon)
+==25832==    Address 0xBFFFF74C is not stack'd, malloc'd or free'd
+==25832==
+==25832== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+==25832== malloc/free: in use at exit: 0 bytes in 0 blocks.
+==25832== malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
+==25832== For a detailed leak analysis, rerun with: --leak-check=yes
+==25832==
+==25832== exiting, did 1881 basic blocks, 0 misses.
+==25832== 223 translations, 3626 bytes in, 56801 bytes out.
+</pre>
+<p>The GCC folks fixed this about a week before gcc-3.0 shipped.
+<hr width="100%">
+<p>
+
+</body>
+</html>
+

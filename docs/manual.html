@@ -1,0 +1,92 @@
+<html>
+  <head>
+    <style type="text/css">
+      body      { background-color: #ffffff;
+                  color:            #000000;
+                  font-family:      Times, Helvetica, Arial;
+                  font-size:        14pt}
+      h4        { margin-bottom:    0.3em}
+      code      { color:            #000000;
+                  font-family:      Courier; 
+                  font-size:        13pt }
+      pre       { color:            #000000;
+                  font-family:      Courier; 
+                  font-size:        13pt }
+      a:link    { color:            #0000C0;
+                  text-decoration:  none; }
+      a:visited { color:            #0000C0; 
+                  text-decoration:  none; }
+      a:active  { color:            #0000C0;
+                  text-decoration:  none; }
+    </style>
+    <title>Valgrind</title>
+  </head>
+
+<body bgcolor="#ffffff">
+
+<a name="title">&nbsp;</a>
+<h1 align=center>Valgrind, version 2.0.0</h1>
+<center>This manual was last updated on 10 November 2002</center>
+<p>
+
+<center>
+<a href="mailto:jseward@acm.org">jseward@acm.org</a>,
+   <a href="mailto:njn25@cam.ac.uk">njn25@cam.ac.uk</a><br>
+Copyright &copy; 2000-2002 Julian Seward, Nick Nethercote
+<p>
+
+Valgrind is licensed under the GNU General Public License, version
+2<br>
+
+An open-source tool for debugging and profiling Linux-x86 executables.
+</center>
+
+<p>
+
+<hr width="100%">
+<a name="contents"></a>
+<h2>Contents of this manual</h2>
+
+<h4>1&nbsp; <a href="#intro">Introduction</a></h4>
+    1.1&nbsp; <a href="#whatfor">What Valgrind is for</a><br>
+    1.2&nbsp; <a href="#whatdoes">What it does with your program</a>
+
+<h4>2&nbsp; <a href="#howtouse">How to use it, and how to make sense 
+    of the results</a></h4>
+    2.1&nbsp; <a href="#starta">Getting started</a><br>
+    2.2&nbsp; <a href="#comment">The commentary</a><br>
+    2.3&nbsp; <a href="#report">Reporting of errors</a><br>
+    2.4&nbsp; <a href="#suppress">Suppressing errors</a><br>
+    2.5&nbsp; <a href="#flags">Command-line flags</a><br>
+    2.6&nbsp; <a href="#errormsgs">Explaination of error messages</a><br>
+    2.7&nbsp; <a href="#suppfiles">Writing suppressions files</a><br>
+    2.8&nbsp; <a href="#clientreq">The Client Request mechanism</a><br>
+    2.9&nbsp; <a href="#pthreads">Support for POSIX pthreads</a><br>
+    2.10&nbsp; <a href="#install">Building and installing</a><br>
+    2.11&nbsp; <a href="#problems">If you have problems</a><br>
+
+<h4>3&nbsp; <a href="#machine">Details of the checking machinery</a></h4>
+    3.1&nbsp; <a href="#vvalue">Valid-value (V) bits</a><br>
+    3.2&nbsp; <a href="#vaddress">Valid-address (A)&nbsp;bits</a><br>
+    3.3&nbsp; <a href="#together">Putting it all together</a><br>
+    3.4&nbsp; <a href="#signals">Signals</a><br>
+    3.5&nbsp; <a href="#leaks">Memory leak detection</a><br>
+
+<h4>4&nbsp; <a href="#limits">Limitations</a></h4>
+
+<h4>5&nbsp; <a href="#howitworks">How it works -- a rough overview</a></h4>
+    5.1&nbsp; <a href="#startb">Getting started</a><br>
+    5.2&nbsp; <a href="#engine">The translation/instrumentation engine</a><br>
+    5.3&nbsp; <a href="#track">Tracking the status of memory</a><br>
+    5.4&nbsp; <a href="#sys_calls">System calls</a><br>
+    5.5&nbsp; <a href="#sys_signals">Signals</a><br>
+
+<h4>6&nbsp; <a href="#example">An example</a></h4>
+
+<h4>7&nbsp; <a href="#cache">Cache profiling</a></h4>
+
+<h4>8&nbsp; <a href="techdocs.html">The design and implementation of Valgrind</a></h4>
+
+<hr width="100%">
+
+

@@ -1,0 +1,830 @@
+
+---------------------------
+     
+  <li><code>--partial-loads-ok=yes</code> [the default]<br>
+      <code>--partial-loads-ok=no</code>
+      <p>Controls how Valgrind handles word (4-byte) loads from
+      addresses for which some bytes are addressible and others
+      are not.  When <code>yes</code> (the default), such loads
+      do not elicit an address error.  Instead, the loaded V bytes
+      corresponding to the illegal addresses indicate undefined, and
+      those corresponding to legal addresses are loaded from shadow 
+      memory, as usual.
+      <p>
+      When <code>no</code>, loads from partially
+      invalid addresses are treated the same as loads from completely
+      invalid addresses: an illegal-address error is issued,
+      and the resulting V bytes indicate valid data.
+      </li><br><p>
+
+  <li><code>--freelist-vol=&lt;number></code> [default: 1000000]
+      <p>When the client program releases memory using free (in C) or
+      delete (C++), that memory is not immediately made available for
+      re-allocation.  Instead it is marked inaccessible and placed in
+      a queue of freed blocks.  The purpose is to delay the point at
+      which freed-up memory comes back into circulation.  This
+      increases the chance that Valgrind will be able to detect
+      invalid accesses to blocks for some significant period of time
+      after they have been freed.  
+      <p>
+      This flag specifies the maximum total size, in bytes, of the
+      blocks in the queue.  The default value is one million bytes.
+      Increasing this increases the total amount of memory used by
+      Valgrind but may detect invalid uses of freed blocks which would
+      otherwise go undetected.</li><br><p>
+
+  <li><code>--leak-check=no</code> [default]<br>
+      <code>--leak-check=yes</code> 
+      <p>When enabled, search for memory leaks when the client program
+      finishes.  A memory leak means a malloc'd block, which has not
+      yet been free'd, but to which no pointer can be found.  Such a
+      block can never be free'd by the program, since no pointer to it
+      exists.  Leak checking is disabled by default because it tends
+      to generate dozens of error messages.  </li><br><p>
+
+  <li><code>--show-reachable=no</code> [default]<br>
+      <code>--show-reachable=yes</code> 
+      <p>When disabled, the memory leak detector only shows blocks for
+      which it cannot find a pointer to at all, or it can only find a
+      pointer to the middle of.  These blocks are prime candidates for
+      memory leaks.  When enabled, the leak detector also reports on
+      blocks which it could find a pointer to.  Your program could, at
+      least in principle, have freed such blocks before exit.
+      Contrast this to blocks for which no pointer, or only an
+      interior pointer could be found: they are more likely to
+      indicate memory leaks, because you do not actually have a
+      pointer to the start of the block which you can hand to
+      <code>free</code>, even if you wanted to.  </li><br><p>
+
+  <li><code>--leak-resolution=low</code> [default]<br>
+      <code>--leak-resolution=med</code> <br>
+      <code>--leak-resolution=high</code>
+      <p>When doing leak checking, determines how willing Valgrind is
+      to consider different backtraces to be the same.  When set to
+      <code>low</code>, the default, only the first two entries need
+      match.  When <code>med</code>, four entries have to match.  When
+      <code>high</code>, all entries need to match.  
+      <p>
+      For hardcore leak debugging, you probably want to use
+      <code>--leak-resolution=high</code> together with 
+      <code>--num-callers=40</code> or some such large number.  Note
+      however that this can give an overwhelming amount of
+      information, which is why the defaults are 4 callers and
+      low-resolution matching.
+      <p>
+      Note that the <code>--leak-resolution=</code> setting does not
+      affect Valgrind's ability to find leaks.  It only changes how
+      the results are presented.
+      </li><br><p>
+
+  <li><code>--workaround-gcc296-bugs=no</code> [default]<br>
+      <code>--workaround-gcc296-bugs=yes</code> <p>When enabled,
+      assume that reads and writes some small distance below the stack
+      pointer <code>%esp</code> are due to bugs in gcc 2.96, and does
+      not report them.  The "small distance" is 256 bytes by default.
+      Note that gcc 2.96 is the default compiler on some popular Linux
+      distributions (RedHat 7.X, Mandrake) and so you may well need to
+      use this flag.  Do not use it if you do not have to, as it can
+      cause real errors to be overlooked.  Another option is to use a
+      gcc/g++ which does not generate accesses below the stack
+      pointer.  2.95.3 seems to be a good choice in this respect.
+      <p>
+      Unfortunately (27 Feb 02) it looks like g++ 3.0.4 has a similar
+      bug, so you may need to issue this flag if you use 3.0.4.  A
+      while later (early Apr 02) this is confirmed as a scheduling bug
+      in g++-3.0.4.
+      </li><br><p>
+
+  <li><code>--cleanup=no</code><br>
+      <code>--cleanup=yes</code> [default]
+      <p>When enabled, various improvments are applied to the
+      post-instrumented intermediate code, aimed at removing redundant
+      value checks.</li><br>
+      <p>
+
+
+
+
+<a name="errormsgs"></a>
+<h3>2.6&nbsp; Explaination of error messages</h3>
+
+Despite considerable sophistication under the hood, Valgrind can only
+really detect two kinds of errors, use of illegal addresses, and use
+of undefined values.  Nevertheless, this is enough to help you
+discover all sorts of memory-management nasties in your code.  This
+section presents a quick summary of what error messages mean.  The
+precise behaviour of the error-checking machinery is described in
+<a href="#machine">Section 4</a>.
+
+
+<h4>2.6.1&nbsp; Illegal read / Illegal write errors</h4>
+For example:
+<pre>
+  Invalid read of size 4
+     at 0x40F6BBCC: (within /usr/lib/libpng.so.2.1.0.9)
+     by 0x40F6B804: (within /usr/lib/libpng.so.2.1.0.9)
+     by 0x40B07FF4: read_png_image__FP8QImageIO (kernel/qpngio.cpp:326)
+     by 0x40AC751B: QImageIO::read() (kernel/qimage.cpp:3621)
+     Address 0xBFFFF0E0 is not stack'd, malloc'd or free'd
+</pre>
+
+<p>This happens when your program reads or writes memory at a place
+which Valgrind reckons it shouldn't.  In this example, the program did
+a 4-byte read at address 0xBFFFF0E0, somewhere within the
+system-supplied library libpng.so.2.1.0.9, which was called from
+somewhere else in the same library, called from line 326 of
+qpngio.cpp, and so on.
+
+<p>Valgrind tries to establish what the illegal address might relate
+to, since that's often useful.  So, if it points into a block of
+memory which has already been freed, you'll be informed of this, and
+also where the block was free'd at.  Likewise, if it should turn out
+to be just off the end of a malloc'd block, a common result of
+off-by-one-errors in array subscripting, you'll be informed of this
+fact, and also where the block was malloc'd.
+
+<p>In this example, Valgrind can't identify the address.  Actually the
+address is on the stack, but, for some reason, this is not a valid
+stack address -- it is below the stack pointer, %esp, and that isn't
+allowed.  In this particular case it's probably caused by gcc
+generating invalid code, a known bug in various flavours of gcc.
+
+<p>Note that Valgrind only tells you that your program is about to
+access memory at an illegal address.  It can't stop the access from
+happening.  So, if your program makes an access which normally would
+result in a segmentation fault, you program will still suffer the same
+fate -- but you will get a message from Valgrind immediately prior to
+this.  In this particular example, reading junk on the stack is
+non-fatal, and the program stays alive.
+
+
+<h4>2.6.2&nbsp; Use of uninitialised values</h4>
+For example:
+<pre>
+  Conditional jump or move depends on uninitialised value(s)
+     at 0x402DFA94: _IO_vfprintf (_itoa.h:49)
+     by 0x402E8476: _IO_printf (printf.c:36)
+     by 0x8048472: main (tests/manuel1.c:8)
+     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
+</pre>
+
+<p>An uninitialised-value use error is reported when your program uses
+a value which hasn't been initialised -- in other words, is undefined.
+Here, the undefined value is used somewhere inside the printf()
+machinery of the C library.  This error was reported when running the
+following small program:
+<pre>
+  int main()
+  {
+    int x;
+    printf ("x = %d\n", x);
+  }
+</pre>
+
+<p>It is important to understand that your program can copy around
+junk (uninitialised) data to its heart's content.  Valgrind observes
+this and keeps track of the data, but does not complain.  A complaint
+is issued only when your program attempts to make use of uninitialised
+data.  In this example, x is uninitialised.  Valgrind observes the
+value being passed to _IO_printf and thence to _IO_vfprintf, but makes
+no comment.  However, _IO_vfprintf has to examine the value of x so it
+can turn it into the corresponding ASCII string, and it is at this
+point that Valgrind complains.
+
+<p>Sources of uninitialised data tend to be:
+<ul>
+  <li>Local variables in procedures which have not been initialised,
+      as in the example above.</li><br><p>
+
+  <li>The contents of malloc'd blocks, before you write something
+      there.  In C++, the new operator is a wrapper round malloc, so
+      if you create an object with new, its fields will be
+      uninitialised until you (or the constructor) fill them in, which
+      is only Right and Proper.</li>
+</ul>
+
+
+
+<h4>2.6.3&nbsp; Illegal frees</h4>
+For example:
+<pre>
+  Invalid free()
+     at 0x4004FFDF: free (ut_clientmalloc.c:577)
+     by 0x80484C7: main (tests/doublefree.c:10)
+     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
+     by 0x80483B1: (within tests/doublefree)
+     Address 0x3807F7B4 is 0 bytes inside a block of size 177 free'd
+     at 0x4004FFDF: free (ut_clientmalloc.c:577)
+     by 0x80484C7: main (tests/doublefree.c:10)
+     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
+     by 0x80483B1: (within tests/doublefree)
+</pre>
+<p>Valgrind keeps track of the blocks allocated by your program with
+malloc/new, so it can know exactly whether or not the argument to
+free/delete is legitimate or not.  Here, this test program has
+freed the same block twice.  As with the illegal read/write errors,
+Valgrind attempts to make sense of the address free'd.  If, as
+here, the address is one which has previously been freed, you wil
+be told that -- making duplicate frees of the same block easy to spot.
+
+
+<h4>2.6.4&nbsp; When a block is freed with an inappropriate
+deallocation function</h4>
+In the following example, a block allocated with <code>new[]</code>
+has wrongly been deallocated with <code>free</code>:
+<pre>
+  Mismatched free() / delete / delete []
+     at 0x40043249: free (vg_clientfuncs.c:171)
+     by 0x4102BB4E: QGArray::~QGArray(void) (tools/qgarray.cpp:149)
+     by 0x4C261C41: PptDoc::~PptDoc(void) (include/qmemarray.h:60)
+     by 0x4C261F0E: PptXml::~PptXml(void) (pptxml.cc:44)
+     Address 0x4BB292A8 is 0 bytes inside a block of size 64 alloc'd
+     at 0x4004318C: __builtin_vec_new (vg_clientfuncs.c:152)
+     by 0x4C21BC15: KLaola::readSBStream(int) const (klaola.cc:314)
+     by 0x4C21C155: KLaola::stream(KLaola::OLENode const *) (klaola.cc:416)
+     by 0x4C21788F: OLEFilter::convert(QCString const &amp;) (olefilter.cc:272)
+</pre>
+The following was told to me be the KDE 3 developers.  I didn't know
+any of it myself.  They also implemented the check itself.
+<p>
+In C++ it's important to deallocate memory in a way compatible with
+how it was allocated.  The deal is:
+<ul>
+<li>If allocated with <code>malloc</code>, <code>calloc</code>,
+    <code>realloc</code>, <code>valloc</code> or
+    <code>memalign</code>, you must deallocate with <code>free</code>.
+<li>If allocated with <code>new[]</code>, you must deallocate with
+    <code>delete[]</code>.
+<li>If allocated with <code>new</code>, you must deallocate with
+    <code>delete</code>.
+</ul>
+The worst thing is that on Linux apparently it doesn't matter if you
+do muddle these up, and it all seems to work ok, but the same program
+may then crash on a different platform, Solaris for example.  So it's
+best to fix it properly.  According to the KDE folks "it's amazing how
+many C++ programmers don't know this".  
+<p>
+Pascal Massimino adds the following clarification:
+<code>delete[]</code> must be called associated with a
+<code>new[]</code> because the compiler stores the size of the array
+and the pointer-to-member to the destructor of the array's content
+just before the pointer actually returned.  This implies a
+variable-sized overhead in what's returned by <code>new</code> or
+<code>new[]</code>.  It rather surprising how compilers [Ed:
+runtime-support libraries?] are robust to mismatch in
+<code>new</code>/<code>delete</code>
+<code>new[]</code>/<code>delete[]</code>.
+
+
+<h4>2.6.5&nbsp; Passing system call parameters with inadequate
+read/write permissions</h4>
+
+Valgrind checks all parameters to system calls.  If a system call
+needs to read from a buffer provided by your program, Valgrind checks
+that the entire buffer is addressible and has valid data, ie, it is
+readable.  And if the system call needs to write to a user-supplied
+buffer, Valgrind checks that the buffer is addressible.  After the
+system call, Valgrind updates its administrative information to
+precisely reflect any changes in memory permissions caused by the
+system call.
+
+<p>Here's an example of a system call with an invalid parameter:
+<pre>
+  #include &lt;stdlib.h>
+  #include &lt;unistd.h>
+  int main( void )
+  {
+    char* arr = malloc(10);
+    (void) write( 1 /* stdout */, arr, 10 );
+    return 0;
+  }
+</pre>
+
+<p>You get this complaint ...
+<pre>
+  Syscall param write(buf) contains uninitialised or unaddressable byte(s)
+     at 0x4035E072: __libc_write
+     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
+     by 0x80483B1: (within tests/badwrite)
+     by &lt;bogus frame pointer> ???
+     Address 0x3807E6D0 is 0 bytes inside a block of size 10 alloc'd
+     at 0x4004FEE6: malloc (ut_clientmalloc.c:539)
+     by 0x80484A0: main (tests/badwrite.c:6)
+     by 0x402A6E5E: __libc_start_main (libc-start.c:129)
+     by 0x80483B1: (within tests/badwrite)
+</pre>
+
+<p>... because the program has tried to write uninitialised junk from
+the malloc'd block to the standard output.
+
+
+<h4>2.6.6&nbsp; Warning messages you might see</h4>
+
+Most of these only appear if you run in verbose mode (enabled by
+<code>-v</code>):
+<ul>
+<li> <code>More than 50 errors detected.  Subsequent errors
+     will still be recorded, but in less detail than before.</code>
+     <br>
+     After 50 different errors have been shown, Valgrind becomes 
+     more conservative about collecting them.  It then requires only 
+     the program counters in the top two stack frames to match when
+     deciding whether or not two errors are really the same one.
+     Prior to this point, the PCs in the top four frames are required
+     to match.  This hack has the effect of slowing down the
+     appearance of new errors after the first 50.  The 50 constant can
+     be changed by recompiling Valgrind.
+<p>
+<li> <code>More than 300 errors detected.  I'm not reporting any more.
+     Final error counts may be inaccurate.  Go fix your
+     program!</code>
+     <br>
+     After 300 different errors have been detected, Valgrind ignores
+     any more.  It seems unlikely that collecting even more different
+     ones would be of practical help to anybody, and it avoids the
+     danger that Valgrind spends more and more of its time comparing
+     new errors against an ever-growing collection.  As above, the 300
+     number is a compile-time constant.
+<p>
+<li> <code>Warning: client switching stacks?</code>
+     <br>
+     Valgrind spotted such a large change in the stack pointer, %esp,
+     that it guesses the client is switching to a different stack.
+     At this point it makes a kludgey guess where the base of the new
+     stack is, and sets memory permissions accordingly.  You may get
+     many bogus error messages following this, if Valgrind guesses
+     wrong.  At the moment "large change" is defined as a change of
+     more that 2000000 in the value of the %esp (stack pointer)
+     register.
+<p>
+<li> <code>Warning: client attempted to close Valgrind's logfile fd &lt;number>
+     </code>
+     <br>
+     Valgrind doesn't allow the client
+     to close the logfile, because you'd never see any diagnostic
+     information after that point.  If you see this message,
+     you may want to use the <code>--logfile-fd=&lt;number></code> 
+     option to specify a different logfile file-descriptor number.
+<p>
+<li> <code>Warning: noted but unhandled ioctl &lt;number></code>
+     <br>
+     Valgrind observed a call to one of the vast family of
+     <code>ioctl</code> system calls, but did not modify its
+     memory status info (because I have not yet got round to it).
+     The call will still have gone through, but you may get spurious
+     errors after this as a result of the non-update of the memory info.
+<p>
+<li> <code>Warning: set address range perms: large range &lt;number></code>
+     <br> 
+     Diagnostic message, mostly for my benefit, to do with memory 
+     permissions.
+</ul>
+
+
+<a name="suppfiles"></a>
+<h3>2.7&nbsp; Writing suppressions files</h3>
+
+A suppression file describes a bunch of errors which, for one reason
+or another, you don't want Valgrind to tell you about.  Usually the
+reason is that the system libraries are buggy but unfixable, at least
+within the scope of the current debugging session.  Multiple
+suppressions files are allowed.  By default, Valgrind uses
+<code>$PREFIX/lib/valgrind/default.supp</code>.
+
+<p>
+You can ask to add suppressions from another file, by specifying
+<code>--suppressions=/path/to/file.supp</code>.
+
+<p>Each suppression has the following components:<br>
+<ul>
+
+  <li>Its name.  This merely gives a handy name to the suppression, by
+      which it is referred to in the summary of used suppressions
+      printed out when a program finishes.  It's not important what
+      the name is; any identifying string will do.
+      <p>
+
+  <li>The nature of the error to suppress.  Either: 
+      <code>Value1</code>, 
+      <code>Value2</code>,
+      <code>Value4</code> or
+      <code>Value8</code>,
+      meaning an uninitialised-value error when
+      using a value of 1, 2, 4 or 8 bytes.
+      Or
+      <code>Cond</code> (or its old name, <code>Value0</code>),
+      meaning use of an uninitialised CPU condition code.  Or: 
+      <code>Addr1</code>,
+      <code>Addr2</code>, 
+      <code>Addr4</code> or 
+      <code>Addr8</code>, meaning an invalid address during a
+      memory access of 1, 2, 4 or 8 bytes respectively.  Or 
+      <code>Param</code>,
+      meaning an invalid system call parameter error.  Or
+      <code>Free</code>, meaning an invalid or mismatching free.
+      Or <code>PThread</code>, meaning any kind of complaint to do
+      with the PThreads API.</li><br>
+      <p>
+
+  <li>The "immediate location" specification.  For Value and Addr
+      errors, it is either the name of the function in which the error
+      occurred, or, failing that, the full path of the .so file or
+      executable containing the error location.  For Param errors,
+      is the name of the offending system call parameter.  For Free
+      errors, is the name of the function doing the freeing (eg,
+      <code>free</code>, <code>__builtin_vec_delete</code>, etc)</li><br>
+      <p>
+
+  <li>The caller of the above "immediate location".  Again, either a
+      function or shared-object/executable name.</li><br>
+      <p>
+
+  <li>Optionally, one or two extra calling-function or object names,
+      for greater precision.</li>
+</ul>
+
+<p>
+Locations may be either names of shared objects/executables or wildcards
+matching function names.  They begin <code>obj:</code> and <code>fun:</code>
+respectively.  Function and object names to match against may use the 
+wildcard characters <code>*</code> and <code>?</code>.
+
+A suppression only suppresses an error when the error matches all the
+details in the suppression.  Here's an example:
+<pre>
+  {
+    __gconv_transform_ascii_internal/__mbrtowc/mbtowc
+    Value4
+    fun:__gconv_transform_ascii_internal
+    fun:__mbr*toc
+    fun:mbtowc
+  }
+</pre>
+
+<p>What is means is: suppress a use-of-uninitialised-value error, when
+the data size is 4, when it occurs in the function
+<code>__gconv_transform_ascii_internal</code>, when that is called
+from any function of name matching <code>__mbr*toc</code>, 
+when that is called from
+<code>mbtowc</code>.  It doesn't apply under any other circumstances.
+The string by which this suppression is identified to the user is
+__gconv_transform_ascii_internal/__mbrtowc/mbtowc.
+
+<p>Another example:
+<pre>
+  {
+    libX11.so.6.2/libX11.so.6.2/libXaw.so.7.0
+    Value4
+    obj:/usr/X11R6/lib/libX11.so.6.2
+    obj:/usr/X11R6/lib/libX11.so.6.2
+    obj:/usr/X11R6/lib/libXaw.so.7.0
+  }
+</pre>
+
+<p>Suppress any size 4 uninitialised-value error which occurs anywhere
+in <code>libX11.so.6.2</code>, when called from anywhere in the same
+library, when called from anywhere in <code>libXaw.so.7.0</code>.  The
+inexact specification of locations is regrettable, but is about all
+you can hope for, given that the X11 libraries shipped with Red Hat
+7.2 have had their symbol tables removed.
+
+<p>Note -- since the above two examples did not make it clear -- that
+you can freely mix the <code>obj:</code> and <code>fun:</code>
+styles of description within a single suppression record.
+
+
+
+
+
+<a name="machine"></a>
+<h2>3&nbsp; Details of the checking machinery</h2>
+
+Read this section if you want to know, in detail, exactly what and how
+Valgrind is checking.
+
+<a name="vvalue"></a>
+<h3>3.1&nbsp; Valid-value (V) bits</h3>
+
+It is simplest to think of Valgrind implementing a synthetic Intel x86
+CPU which is identical to a real CPU, except for one crucial detail.
+Every bit (literally) of data processed, stored and handled by the
+real CPU has, in the synthetic CPU, an associated "valid-value" bit,
+which says whether or not the accompanying bit has a legitimate value.
+In the discussions which follow, this bit is referred to as the V
+(valid-value) bit.
+
+<p>Each byte in the system therefore has a 8 V bits which follow
+it wherever it goes.  For example, when the CPU loads a word-size item
+(4 bytes) from memory, it also loads the corresponding 32 V bits from
+a bitmap which stores the V bits for the process' entire address
+space.  If the CPU should later write the whole or some part of that
+value to memory at a different address, the relevant V bits will be
+stored back in the V-bit bitmap.
+
+<p>In short, each bit in the system has an associated V bit, which
+follows it around everywhere, even inside the CPU.  Yes, the CPU's
+(integer and <code>%eflags</code>) registers have their own V bit
+vectors.
+
+<p>Copying values around does not cause Valgrind to check for, or
+report on, errors.  However, when a value is used in a way which might
+conceivably affect the outcome of your program's computation, the
+associated V bits are immediately checked.  If any of these indicate
+that the value is undefined, an error is reported.
+
+<p>Here's an (admittedly nonsensical) example:
+<pre>
+  int i, j;
+  int a[10], b[10];
+  for (i = 0; i &lt; 10; i++) {
+    j = a[i];
+    b[i] = j;
+  }
+</pre>
+
+<p>Valgrind emits no complaints about this, since it merely copies
+uninitialised values from <code>a[]</code> into <code>b[]</code>, and
+doesn't use them in any way.  However, if the loop is changed to
+<pre>
+  for (i = 0; i &lt; 10; i++) {
+    j += a[i];
+  }
+  if (j == 77) 
+     printf("hello there\n");
+</pre>
+then Valgrind will complain, at the <code>if</code>, that the
+condition depends on uninitialised values.
+
+<p>Most low level operations, such as adds, cause Valgrind to 
+use the V bits for the operands to calculate the V bits for the
+result.  Even if the result is partially or wholly undefined,
+it does not complain.
+
+<p>Checks on definedness only occur in two places: when a value is
+used to generate a memory address, and where control flow decision
+needs to be made.  Also, when a system call is detected, valgrind
+checks definedness of parameters as required.
+
+<p>If a check should detect undefinedness, an error message is
+issued.  The resulting value is subsequently regarded as well-defined.
+To do otherwise would give long chains of error messages.  In effect,
+we say that undefined values are non-infectious.
+
+<p>This sounds overcomplicated.  Why not just check all reads from
+memory, and complain if an undefined value is loaded into a CPU register? 
+Well, that doesn't work well, because perfectly legitimate C programs routinely
+copy uninitialised values around in memory, and we don't want endless complaints
+about that.  Here's the canonical example.  Consider a struct
+like this:
+<pre>
+  struct S { int x; char c; };
+  struct S s1, s2;
+  s1.x = 42;
+  s1.c = 'z';
+  s2 = s1;
+</pre>
+
+<p>The question to ask is: how large is <code>struct S</code>, in
+bytes?  An int is 4 bytes and a char one byte, so perhaps a struct S
+occupies 5 bytes?  Wrong.  All (non-toy) compilers I know of will
+round the size of <code>struct S</code> up to a whole number of words,
+in this case 8 bytes.  Not doing this forces compilers to generate
+truly appalling code for subscripting arrays of <code>struct
+S</code>'s.
+
+<p>So s1 occupies 8 bytes, yet only 5 of them will be initialised.
+For the assignment <code>s2 = s1</code>, gcc generates code to copy
+all 8 bytes wholesale into <code>s2</code> without regard for their
+meaning.  If Valgrind simply checked values as they came out of
+memory, it would yelp every time a structure assignment like this
+happened.  So the more complicated semantics described above is
+necessary.  This allows gcc to copy <code>s1</code> into
+<code>s2</code> any way it likes, and a warning will only be emitted
+if the uninitialised values are later used.
+
+<p>One final twist to this story.  The above scheme allows garbage to
+pass through the CPU's integer registers without complaint.  It does
+this by giving the integer registers V tags, passing these around in
+the expected way.  This complicated and computationally expensive to
+do, but is necessary.  Valgrind is more simplistic about
+floating-point loads and stores.  In particular, V bits for data read
+as a result of floating-point loads are checked at the load
+instruction.  So if your program uses the floating-point registers to
+do memory-to-memory copies, you will get complaints about
+uninitialised values.  Fortunately, I have not yet encountered a
+program which (ab)uses the floating-point registers in this way.
+
+<a name="vaddress"></a>
+<h3>3.2&nbsp; Valid-address (A) bits</h3>
+
+Notice that the previous section describes how the validity of values
+is established and maintained without having to say whether the
+program does or does not have the right to access any particular
+memory location.  We now consider the latter issue.
+
+<p>As described above, every bit in memory or in the CPU has an
+associated valid-value (V) bit.  In addition, all bytes in memory, but
+not in the CPU, have an associated valid-address (A) bit.  This
+indicates whether or not the program can legitimately read or write
+that location.  It does not give any indication of the validity or the
+data at that location -- that's the job of the V bits -- only whether
+or not the location may be accessed.
+
+<p>Every time your program reads or writes memory, Valgrind checks the
+A bits associated with the address.  If any of them indicate an
+invalid address, an error is emitted.  Note that the reads and writes
+themselves do not change the A bits, only consult them.
+
+<p>So how do the A bits get set/cleared?  Like this:
+
+<ul>
+  <li>When the program starts, all the global data areas are marked as
+      accessible.</li><br>
+      <p>
+
+  <li>When the program does malloc/new, the A bits for the exactly the
+      area allocated, and not a byte more, are marked as accessible.
+      Upon freeing the area the A bits are changed to indicate
+      inaccessibility.</li><br>
+      <p>
+
+  <li>When the stack pointer register (%esp) moves up or down, A bits
+      are set.  The rule is that the area from %esp up to the base of
+      the stack is marked as accessible, and below %esp is
+      inaccessible.  (If that sounds illogical, bear in mind that the
+      stack grows down, not up, on almost all Unix systems, including
+      GNU/Linux.)  Tracking %esp like this has the useful side-effect
+      that the section of stack used by a function for local variables
+      etc is automatically marked accessible on function entry and
+      inaccessible on exit.</li><br>
+      <p>
+
+  <li>When doing system calls, A bits are changed appropriately.  For
+      example, mmap() magically makes files appear in the process's
+      address space, so the A bits must be updated if mmap()
+      succeeds.</li><br>
+      <p>
+
+  <li>Optionally, your program can tell Valgrind about such changes
+      explicitly, using the client request mechanism described above.
+</ul>
+
+
+<a name="together"></a>
+<h3>3.3&nbsp; Putting it all together</h3>
+Valgrind's checking machinery can be summarised as follows:
+
+<ul>
+  <li>Each byte in memory has 8 associated V (valid-value) bits,
+      saying whether or not the byte has a defined value, and a single
+      A (valid-address) bit, saying whether or not the program
+      currently has the right to read/write that address.</li><br>
+      <p>
+
+  <li>When memory is read or written, the relevant A bits are
+      consulted.  If they indicate an invalid address, Valgrind emits
+      an Invalid read or Invalid write error.</li><br>
+      <p>
+
+  <li>When memory is read into the CPU's integer registers, the
+      relevant V bits are fetched from memory and stored in the
+      simulated CPU.  They are not consulted.</li><br>
+      <p>
+
+  <li>When an integer register is written out to memory, the V bits
+      for that register are written back to memory too.</li><br>
+      <p>
+
+  <li>When memory is read into the CPU's floating point registers, the
+      relevant V bits are read from memory and they are immediately
+      checked.  If any are invalid, an uninitialised value error is
+      emitted.  This precludes using the floating-point registers to
+      copy possibly-uninitialised memory, but simplifies Valgrind in
+      that it does not have to track the validity status of the
+      floating-point registers.</li><br>
+      <p>
+
+  <li>As a result, when a floating-point register is written to
+      memory, the associated V bits are set to indicate a valid
+      value.</li><br>
+      <p>
+
+  <li>When values in integer CPU registers are used to generate a
+      memory address, or to determine the outcome of a conditional
+      branch, the V bits for those values are checked, and an error
+      emitted if any of them are undefined.</li><br>
+      <p>
+
+  <li>When values in integer CPU registers are used for any other
+      purpose, Valgrind computes the V bits for the result, but does
+      not check them.</li><br>
+      <p>
+
+  <li>One the V bits for a value in the CPU have been checked, they
+      are then set to indicate validity.  This avoids long chains of
+      errors.</li><br>
+      <p>
+
+  <li>When values are loaded from memory, valgrind checks the A bits
+      for that location and issues an illegal-address warning if
+      needed.  In that case, the V bits loaded are forced to indicate
+      Valid, despite the location being invalid.
+      <p>
+      This apparently strange choice reduces the amount of confusing
+      information presented to the user.  It avoids the
+      unpleasant phenomenon in which memory is read from a place which
+      is both unaddressible and contains invalid values, and, as a
+      result, you get not only an invalid-address (read/write) error,
+      but also a potentially large set of uninitialised-value errors,
+      one for every time the value is used.
+      <p>
+      There is a hazy boundary case to do with multi-byte loads from
+      addresses which are partially valid and partially invalid.  See
+      details of the flag <code>--partial-loads-ok</code> for details.
+      </li><br>
+</ul>
+
+Valgrind intercepts calls to malloc, calloc, realloc, valloc,
+memalign, free, new and delete.  The behaviour you get is:
+
+<ul>
+
+  <li>malloc/new: the returned memory is marked as addressible but not
+      having valid values.  This means you have to write on it before
+      you can read it.</li><br>
+      <p>
+
+  <li>calloc: returned memory is marked both addressible and valid,
+      since calloc() clears the area to zero.</li><br>
+      <p>
+
+  <li>realloc: if the new size is larger than the old, the new section
+      is addressible but invalid, as with malloc.</li><br>
+      <p>
+
+  <li>If the new size is smaller, the dropped-off section is marked as
+      unaddressible.  You may only pass to realloc a pointer
+      previously issued to you by malloc/calloc/realloc.</li><br>
+      <p>
+
+  <li>free/delete: you may only pass to free a pointer previously
+      issued to you by malloc/calloc/realloc, or the value
+      NULL. Otherwise, Valgrind complains.  If the pointer is indeed
+      valid, Valgrind marks the entire area it points at as
+      unaddressible, and places the block in the freed-blocks-queue.
+      The aim is to defer as long as possible reallocation of this
+      block.  Until that happens, all attempts to access it will
+      elicit an invalid-address error, as you would hope.</li><br>
+</ul>
+
+
+
+
+<a name="leaks"></a>
+<h3>3.5&nbsp; Memory leak detection</h3>
+
+Valgrind keeps track of all memory blocks issued in response to calls
+to malloc/calloc/realloc/new.  So when the program exits, it knows
+which blocks are still outstanding -- have not been returned, in other
+words.  Ideally, you want your program to have no blocks still in use
+at exit.  But many programs do.
+
+<p>For each such block, Valgrind scans the entire address space of the
+process, looking for pointers to the block.  One of three situations
+may result:
+
+<ul>
+  <li>A pointer to the start of the block is found.  This usually
+      indicates programming sloppiness; since the block is still
+      pointed at, the programmer could, at least in principle, free'd
+      it before program exit.</li><br>
+      <p>
+
+  <li>A pointer to the interior of the block is found.  The pointer
+      might originally have pointed to the start and have been moved
+      along, or it might be entirely unrelated.  Valgrind deems such a
+      block as "dubious", that is, possibly leaked,
+      because it's unclear whether or
+      not a pointer to it still exists.</li><br>
+      <p>
+
+  <li>The worst outcome is that no pointer to the block can be found.
+      The block is classified as "leaked", because the
+      programmer could not possibly have free'd it at program exit,
+      since no pointer to it exists.  This might be a symptom of
+      having lost the pointer at some earlier point in the
+      program.</li>
+</ul>
+
+Valgrind reports summaries about leaked and dubious blocks.
+For each such block, it will also tell you where the block was
+allocated.  This should help you figure out why the pointer to it has
+been lost.  In general, you should attempt to ensure your programs do
+not have any leaked or dubious blocks at exit.
+
+<p>The precise area of memory in which Valgrind searches for pointers
+is: all naturally-aligned 4-byte words for which all A bits indicate
+addressibility and all V bits indicated that the stored value is
+actually valid.
+
+<p><hr width="100%">

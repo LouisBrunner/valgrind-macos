@@ -430,17 +430,21 @@ Char* showX86FpOp ( X86FpOp op ) {
       case Xfp_SUB:    return "sub";
       case Xfp_MUL:    return "mul";
       case Xfp_DIV:    return "div";
+      case Xfp_SCALE:  return "scale";
+      case Xfp_ATAN:   return "atan";
+      case Xfp_YL2X:   return "yl2x";
+      case Xfp_YL2XP1: return "yl2xp1";
+      case Xfp_PREM:   return "prem";
+      case Xfp_PREM1:  return "prem1";
       case Xfp_SQRT:   return "sqrt";
-      case Xfp_NEG:    return "chs";
       case Xfp_ABS:    return "abs";
+      case Xfp_NEG:    return "chs";
       case Xfp_MOV:    return "mov";
       case Xfp_SIN:    return "sin";
       case Xfp_COS:    return "cos";
       case Xfp_TAN:    return "tan";
+      case Xfp_ROUND:  return "round";
       case Xfp_2XM1:   return "2xm1";
-      case Xfp_ATAN:   return "atan";
-      case Xfp_PREM:   return "prem";
-      case Xfp_PREM1:  return "prem1";
       default: vpanic("showX86FpOp");
    }
 }

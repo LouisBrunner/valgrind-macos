@@ -6,10 +6,7 @@
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <malloc.h>
-
-#include "basictypes.h"
+#include "libjit_basictypes.h"
 #include "host_regs.h"
 #include "x86h_defs.h"
 

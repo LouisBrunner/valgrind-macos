@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "basictypes.h"
+#include "libjit_basictypes.h"
 #include "ir_defs.h"
 #include "host_regs.h"
 #include "x86h_defs.h"

@@ -6,8 +6,8 @@
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#ifndef __X86H_DEFS_H
-#define __X86H_DEFS_H
+#ifndef __LIBJIT_X86H_DEFS_H
+#define __LIBJIT_X86H_DEFS_H
 
 
 /* --------- Registers. --------- */
@@ -231,4 +231,4 @@ extern X86Instr* genSpill_X86         ( HReg rreg, Int offset );
 extern X86Instr* genReload_X86        ( HReg rreg, Int offset );
 
 
-#endif /* ndef __X86H_DEFS_H */
+#endif /* ndef __LIBJIT_X86H_DEFS_H */

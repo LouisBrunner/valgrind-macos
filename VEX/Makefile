@@ -1,42 +1,39 @@
 
-INCLUDES = include/arena.h				\
-	   include/basictypes.h include/ir_defs.h 	\
-	   include/host_regs.h include/x86h_defs.h
+PUB_HEADERS = 	pub/libjit_basictypes.h 		\
+		pub/libjit_ir.h				\
+		pub/libjit.h
 
-##OBJS = basictypes.o ir_defs.o arena.o linker.o dispatch.o
-OBJS = basictypes.o ir_defs.o host_regs.o \
-	x86h_defs.o isel_x86.o reg_alloc.o test_main.o
+PRIV_HEADERS = 	priv/ir/ir_defs.h			\
+		priv/host-x86/x86h_defs.h		\
+		priv/host-generic/host_regs.h
 
-GCC = gcc341
-##GCC = gcc
-CC_OPTS = -g -Wall -Wshadow -Iinclude
+LIB_OBJS = 	priv/ir/ir_defs.o			\
+		priv/host-x86/x86h_defs.o		\
+		priv/host-x86/isel_x86.o		\
+		priv/host-generic/host_regs.o		\
+		priv/host-generic/reg_alloc.o
 
-all: $(OBJS)
-	$(GCC) $(CC_OPTS) -o vex $(OBJS)
+PUB_INCLUDES = -Ipub
+
+PRIV_INCLUDES = -Ipub -Ipriv/ir -Ipriv/host-generic -Ipriv/host-x86
+
+APP_OBJS =	test_main.o
+
+
+CC = gcc341
+CCFLAGS = -g -Wall -Wshadow
+
+all: libjit.a $(APP_OBJS)
+	$(CC) $(CCFLAGS) -o vex $(APP_OBJS) libjit.a
+
+libjit.a: $(LIB_OBJS)
+	ar clq libjit.a $(LIB_OBJS)
+
+%.o: %.c
+	$(CC) $(CCFLAGS) $(PRIV_INCLUDES) -c -o $@ $<
 
 clean:
-	rm -f *.o vex
+	rm -f $(APP_OBJS) $(LIB_OBJS) libjit.a vex
 
-basictypes.o: basictypes.c $(INCLUDES)
-	$(GCC) $(CC_OPTS) -c basictypes.c
-ir_defs.o: ir_defs.c $(INCLUDES)
-	$(GCC) $(CC_OPTS) -c ir_defs.c
-host_regs.o: host_regs.c $(INCLUDES)
-	$(GCC) $(CC_OPTS) -c host_regs.c
-x86h_defs.o: x86h_defs.c $(INCLUDES)
-	$(GCC) $(CC_OPTS) -c x86h_defs.c
-isel_x86.o: isel_x86.c $(INCLUDES)
-	$(GCC) $(CC_OPTS) -c isel_x86.c
-reg_alloc.o: reg_alloc.c $(INCLUDES)
-	$(GCC) $(CC_OPTS) -c reg_alloc.c
-arena.o: arena.c $(INCLUDES)
-	$(GCC) $(CC_OPTS) -c arena.c
-linker.o: linker.c $(INCLUDES)
-	$(GCC) $(CC_OPTS) -c linker.c
-dispatch.o: dispatch.c $(INCLUDES)
-	$(GCC) $(CC_OPTS) -c dispatch.c
-
-test_main.o: test_main.c $(INCLUDES)
-	$(GCC) $(CC_OPTS) -c test_main.c
 
 

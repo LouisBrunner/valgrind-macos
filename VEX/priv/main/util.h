@@ -1,29 +1,15 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (basictypes.h) is                             ---*/
+/*--- This file (util.h) is                                   ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#ifndef __BASICTYPES_H
-#define __BASICTYPES_H
+#ifndef __LIBJIT_UTIL_H
+#define __LIBJIT_UTIL_H
 
-typedef  unsigned char   UChar;
-typedef           char   Char;        /* platform-dependent signfulness */
-
-typedef  unsigned short  UShort;
-typedef    signed short  Short;
-
-typedef  unsigned int    UInt;
-typedef    signed int    Int;
-
-typedef  unsigned long long int   ULong;
-typedef    signed long long int   Long;
-
-typedef  unsigned char  Bool;
-#define  True   ((Bool)1)
-#define  False  ((Bool)0)
+#include "libjit_basictypes.h"
 
 
 /* Stuff for panicking and assertion. */
@@ -43,4 +29,8 @@ __attribute__ ((__noreturn__))
 extern void panic ( Char* str );
 
 
-#endif /* ndef __BASICTYPES_H */
+#endif /* ndef __LIBJIT_UTIL_H */
+
+/*---------------------------------------------------------------*/
+/*---                                                  util.h ---*/
+/*---------------------------------------------------------------*/

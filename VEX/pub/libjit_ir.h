@@ -1,13 +1,15 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (ir_defs.h) is                                ---*/
+/*--- This file (libjit_ir.h) is                              ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#ifndef __IR_DEFS_H
-#define __IR_DEFS_H
+#ifndef __LIBJIT_IR_H
+#define __LIBJIT_IR_H
+
+#include "libjit_basictypes.h"
 
 
 /*---------------------------------------------------------------*/
@@ -265,4 +267,9 @@ extern IRType     lookupIRTypeEnv ( IRTypeEnv*, IRTemp );
 extern IRType typeOfIRExpr ( IRTypeEnv*, IRExpr* );
 
 
-#endif /* ndef __IR_DEFS_H */
+#endif /* ndef __LIBJIT_IR_H */
+
+
+/*---------------------------------------------------------------*/
+/*---                                             libjit_ir.h ---*/
+/*---------------------------------------------------------------*/

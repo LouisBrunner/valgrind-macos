@@ -259,7 +259,7 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h malloc.h stdlib.h string.h sys/socket.h sys/statfs.h sys/time.h termios.h unistd.h utime.h])
+AC_CHECK_HEADERS([fcntl.h malloc.h stdlib.h string.h sys/socket.h sys/statfs.h sys/time.h termios.h unistd.h utime.h asm/atomic.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UID_T

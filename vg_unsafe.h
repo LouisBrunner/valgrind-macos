@@ -50,6 +50,9 @@
 #include <linux/sem.h>    /* for struct sembuf */
 
 #include <linux/isdn.h>   /* for ISDN ioctls */
+#ifdef HAVE_ASM_ATOMIC_H
+#include <asm/atomic.h>   /* necessary for module.h */
+#endif
 #include <linux/module.h> /* for struct module */
 #include <scsi/sg.h>      /* for the SG_* ioctls */
 #include <sched.h>        /* for struct sched_param */

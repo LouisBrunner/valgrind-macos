@@ -66,10 +66,6 @@ void malloc_panic ( const Char* fn )
 /*--- Replacing malloc et al                               ---*/
 /*------------------------------------------------------------*/
 
-/* Default redzone size for CLIENT arena of Valgrind's malloc() */
-__attribute__ ((weak))
-SizeT VG_(vg_malloc_redzone_szB) = 8;
-
 Bool VG_(tl_malloc_called_deliberately) = False;
 
 /* If the tool hasn't replaced malloc(), this one can be called

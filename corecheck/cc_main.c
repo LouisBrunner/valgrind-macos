@@ -40,12 +40,14 @@ void TL_(pre_clo_init)(void)
       "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
+   VG_(basic_tool_funcs)          (TL_(post_clo_init),
+                                   TL_(instrument),
+                                   TL_(fini));
+
    VG_(needs_core_errors)();
 
    /* No core events to track */
 }
-
-VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
 
 void TL_(post_clo_init)(void)
 {
@@ -60,6 +62,8 @@ IRBB* TL_(instrument)(IRBB* bb_in, VexGuestLayout* layout,
 void TL_(fini)(Int exitcode)
 {
 }
+
+VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                cc_main.c ---*/

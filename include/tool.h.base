@@ -331,8 +331,8 @@ extern void* VG_(calloc)         ( SizeT n, SizeT bytes_per_elem );
 extern void* VG_(realloc)        ( void* p, SizeT size );
 
 /* terminate everything */
-extern void  VG_(exit)( Int status )
-             __attribute__ ((__noreturn__));
+extern void VG_(exit)( Int status )
+            __attribute__ ((__noreturn__));
 
 /* terminate the calling thread - probably not what you want */
 extern void  VG_(exit_single)( Int status )
@@ -908,15 +908,6 @@ extern UInt VG_(get_exit_status_shadow) ( ThreadId );
    follow the following instructions.  You can do it from scratch,
    though, if you enjoy that sort of thing. */
 
-/* Arena size for valgrind's own malloc();  default value is 0, but can
-   be overridden by tool -- but must be done so *statically*, eg:
-
-     SizeT VG_(vg_malloc_redzone_szB) = 4;
-
-   It can't be done from a function like TL_(pre_clo_init)().  So it can't,
-   for example, be controlled with a command line option, unfortunately. */
-extern SizeT VG_(vg_malloc_redzone_szB);
-
 /* Can be called from TL_(malloc) et al to do the actual alloc/freeing. */
 extern void* VG_(cli_malloc) ( SizeT align, SizeT nbytes );
 extern void  VG_(cli_free)   ( void* p );
@@ -945,6 +936,16 @@ extern void VG_(replacement_malloc_print_debug_usage)       ( void );
 /*====================================================================*/
 /*=== Tool-specific stuff                                          ===*/
 /*====================================================================*/
+
+/* ------------------------------------------------------------------ */
+/* Basic tool functions */
+
+extern void VG_(basic_tool_funcs)(
+   void(*post_clo_init)(void),
+   IRBB*(*instrument)(IRBB* bb_in, VexGuestLayout* layout, 
+                      IRType gWordTy, IRType hWordTy ),
+   void(*fini)(Int)
+);
 
 /* ------------------------------------------------------------------ */
 /* Details */
@@ -995,7 +996,52 @@ extern void VG_(needs_core_errors) ( void );
    lot like being a member of a type class. */
 
 /* Want to report errors from tool?  This implies use of suppressions, too. */
-extern void VG_(needs_tool_errors) ( void );
+extern void VG_(needs_tool_errors) (
+   // Identify if two errors are equal, or equal enough.  `res' indicates how
+   // close is "close enough".  `res' should be passed on as necessary, eg. if
+   // the Error's `extra' part contains an ExeContext, `res' should be
+   // passed to VG_(eq_ExeContext)() if the ExeContexts are considered.  Other
+   // than that, probably don't worry about it unless you have lots of very
+   // similar errors occurring.
+   Bool (*eq_Error)(VgRes res, Error* e1, Error* e2),
+
+   // Print error context.
+   void (*pp_Error)(Error* err),
+
+   // Should fill in any details that could be postponed until after the
+   // decision whether to ignore the error (ie. details not affecting the
+   // result of TL_(eq_Error)()).  This saves time when errors are ignored.
+   // Yuk.
+   // Return value: must be the size of the `extra' part in bytes -- used by
+   // the core to make a copy.
+   UInt (*update_extra)(Error* err),
+
+   // Return value indicates recognition.  If recognised, must set skind using
+   // VG_(set_supp_kind)().
+   Bool (*recognised_suppression)(Char* name, Supp* su),
+
+   // Read any extra info for this suppression kind.  Most likely for filling
+   // in the `extra' and `string' parts (with VG_(set_supp_{extra, string})())
+   // of a suppression if necessary.  Should return False if a syntax error
+   // occurred, True otherwise.
+   Bool (*read_extra_suppression_info)(Int fd, Char* buf, Int nBuf, Supp* su),
+
+   // This should just check the kinds match and maybe some stuff in the
+   // `string' and `extra' field if appropriate (using VG_(get_supp_*)() to
+   // get the relevant suppression parts).
+   Bool (*error_matches_suppression)(Error* err, Supp* su),
+
+   // This should return the suppression name, for --gen-suppressions, or NULL
+   // if that error type cannot be suppressed.  This is the inverse of
+   // TL_(recognised_suppression)().
+   Char* (*get_error_name)(Error* err),
+
+   // This should print any extra info for the error, for --gen-suppressions,
+   // including the newline.  This is the inverse of
+   // TL_(read_extra_suppression_info)().
+   void (*print_extra_suppression_info)(Error* err)
+);
+
 
 /* Is information kept about specific individual basic blocks?  (Eg. for
    cachegrind there are cost-centres for every instruction, stored at a
@@ -1003,19 +1049,57 @@ extern void VG_(needs_tool_errors) ( void );
    .so mmap/munmap-ping or self-modifying code (informed by the
    DISCARD_TRANSLATIONS user request) can cause one instruction address
    to be used for more than one instruction in one program run...  */
-extern void VG_(needs_basic_block_discards) ( void );
+extern void VG_(needs_basic_block_discards) (
+   // Should discard any information that pertains to specific basic blocks
+   // or instructions within the address range given.
+   void (*discard_basic_block_info)(Addr a, SizeT size)
+);
 
 /* Tool defines its own command line options? */
-extern void VG_(needs_command_line_options) ( void );
+extern void VG_(needs_command_line_options) (
+   // Return True if option was recognised.  Presumably sets some state to
+   // record the option as well.
+   Bool (*process_cmd_line_option)(Char* argv),
+
+   // Print out command line usage for options for normal tool operation.
+   void (*print_usage)(void),
+
+   // Print out command line usage for options for debugging the tool.
+   void (*print_debug_usage)(void)
+);
 
 /* Tool defines its own client requests? */
-extern void VG_(needs_client_requests) ( void );
+extern void VG_(needs_client_requests) (
+   // If using client requests, the number of the first request should be equal
+   // to VG_USERREQ_TOOL_BASE('X', 'Y'), where 'X' and 'Y' form a suitable two
+   // character identification for the string.  The second and subsequent
+   // requests should follow.
+   //
+   // This function should use the VG_IS_TOOL_USERREQ macro (in
+   // include/valgrind.h) to first check if it's a request for this tool.  Then
+   // should handle it if it's recognised (and return True), or return False if
+   // not recognised.  arg_block[0] holds the request number, any further args
+   // from the request are in arg_block[1..].  'ret' is for the return value...
+   // it should probably be filled, if only with 0.
+   Bool (*handle_client_request)(ThreadId tid, UWord* arg_block, UWord* ret)
+);
 
 /* Tool does stuff before and/or after system calls? */
-extern void VG_(needs_syscall_wrapper) ( void );
+// Nb: If either of the pre_ functions malloc() something to return, the
+// corresponding post_ function had better free() it!
+extern void VG_(needs_syscall_wrapper) (
+   void (* pre_syscall)(ThreadId tid, UInt syscallno),
+   void (*post_syscall)(ThreadId tid, UInt syscallno, Int res)
+);
 
 /* Are tool-state sanity checks performed? */
-extern void VG_(needs_sanity_checks) ( void );
+// Can be useful for ensuring a tool's correctness.  TL_(cheap_sanity_check)
+// is called very frequently;  TL_(expensive_sanity_check) is called less
+// frequently and can be more involved.
+extern void VG_(needs_sanity_checks) (
+   Bool(*cheap_sanity_check)(void),
+   Bool(*expensive_sanity_check)(void)
+);
 
 /* Do we need to see data symbols? */
 extern void VG_(needs_data_syms) ( void );
@@ -1026,6 +1110,23 @@ extern void VG_(needs_data_syms) ( void );
 */
 extern void VG_(needs_shadow_memory)( void );
 extern float TL_(shadow_ratio);
+
+/* ------------------------------------------------------------------ */
+/* Malloc replacement */
+
+// The 'p' prefix avoids GCC complaints about overshadowing global names.
+extern void VG_(malloc_funcs)(
+   void* (*pmalloc)               ( ThreadId tid, SizeT n ),
+   void* (*p__builtin_new)        ( ThreadId tid, SizeT n ),
+   void* (*p__builtin_vec_new)    ( ThreadId tid, SizeT n ),
+   void* (*pmemalign)             ( ThreadId tid, SizeT align, SizeT n ),
+   void* (*pcalloc)               ( ThreadId tid, SizeT nmemb, SizeT size1 ),
+   void  (*pfree)                 ( ThreadId tid, void* p ),
+   void  (*p__builtin_delete)     ( ThreadId tid, void* p ),
+   void  (*p__builtin_vec_delete) ( ThreadId tid, void* p ),
+   void* (*prealloc)              ( ThreadId tid, void* p, SizeT new_size ),
+   SizeT client_malloc_redzone_szB
+);
 
 /* ------------------------------------------------------------------ */
 /* Core events to track */

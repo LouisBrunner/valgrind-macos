@@ -290,6 +290,8 @@ extern Bool MAC_(process_common_cmd_line_option) ( Char* arg );
 extern void MAC_(print_common_usage)             ( void );
 extern void MAC_(print_common_debug_usage)       ( void );
 
+/* We want a 16B redzone on heap blocks for Addrcheck and Memcheck */
+#define MALLOC_REDZONE_SZB    16
 
 /*------------------------------------------------------------*/
 /*--- Variables                                            ---*/

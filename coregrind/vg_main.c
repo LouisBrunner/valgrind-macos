@@ -1172,7 +1172,7 @@ static void list_tools(void)
 
 /* Find and load a tool, and check it looks ok.  Also looks to see if there's 
  * a matching vgpreload_*.so file, and returns its name in *preloadpath. */
-static void load_tool( const char *toolname, void** handle_out,
+static void load_tool( const char *toolname,
                        ToolInfo** toolinfo_out, char **preloadpath_out )
 {
    Bool      ok;
@@ -1181,7 +1181,6 @@ static void load_tool( const char *toolname, void** handle_out,
    void*     handle;
    ToolInfo* toolinfo;
    char*     preloadpath = NULL;
-   Int*      vg_malloc_redzonep;
 
    // XXX: allowing full paths for --tool option -- does it make sense?
    // Doesn't allow for vgpreload_<tool>.so.
@@ -1240,14 +1239,7 @@ static void load_tool( const char *toolname, void** handle_out,
       goto bad_load;
    }
 
-   // Set redzone size for V's allocator
-   vg_malloc_redzonep = dlsym(handle, VG_STRINGIFY(VG_(vg_malloc_redzone_szB)));
-   if ( NULL != vg_malloc_redzonep ) {
-      VG_(vg_malloc_redzone_szB) = *vg_malloc_redzonep;
-   }
-
-   vg_assert(NULL != handle && NULL != toolinfo);
-   *handle_out      = handle;
+   vg_assert(NULL != toolinfo);
    *toolinfo_out    = toolinfo;
    *preloadpath_out = preloadpath;
    return;
@@ -2419,7 +2411,6 @@ int main(int argc, char **argv, char **envp)
    Int need_help = 0;      // 0 = no, 1 = --help, 2 = --help-debug
    struct exeinfo info;
    ToolInfo *toolinfo = NULL;
-   void *tool_dlhandle;
    Addr client_eip;
    Addr sp_at_startup;     /* client's SP at the point we gained control. */
    UInt * client_auxv;
@@ -2492,7 +2483,7 @@ int main(int argc, char **argv, char **envp)
    //   p: set-libdir                     [for VG_(libdir)]
    //   p: pre_process_cmd_line_options() [for 'tool']
    //--------------------------------------------------------------
-   load_tool(tool, &tool_dlhandle, &toolinfo, &preload);
+   load_tool(tool, &toolinfo, &preload);
 
    //==============================================================
    // Can use VG_(malloc)() and VG_(arena_malloc)() only after load_tool()
@@ -2569,13 +2560,12 @@ int main(int argc, char **argv, char **envp)
    //--------------------------------------------------------------
    // Init tool: pre_clo_init, process cmd line, post_clo_init
    //   p: setup_client_stack()      [for 'VG_(client_arg[cv]']
-   //   p: load_tool()               [for 'tool']
+   //   p: load_tool()               [for 'toolinfo']
    //   p: setup_file_descriptors()  [for 'VG_(fd_xxx_limit)']
    //   p: parse_procselfmaps        [so VG segments are setup so tool can
    //                                 call VG_(malloc)]
    //--------------------------------------------------------------
    (*toolinfo->tl_pre_clo_init)();
-   VG_(tool_init_dlsym)(tool_dlhandle);
    VG_(sanity_check_needs)();
 
    // If --tool and --help/--help-debug was given, now give the core+tool

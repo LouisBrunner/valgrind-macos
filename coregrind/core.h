@@ -337,8 +337,6 @@ typedef
 
 extern VgNeeds VG_(needs);
 
-extern void VG_(tool_init_dlsym)(void *dlhandle);
-
 #include "vg_toolint.h"
 
 
@@ -391,6 +389,10 @@ extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
 extern void* VG_(arena_calloc)  ( ArenaId arena, 
                                   SizeT nmemb, SizeT bytes_per_memb );
 extern void* VG_(arena_realloc) ( ArenaId arena, void* ptr, SizeT size );
+
+/* Sets the size of the redzones at the start and end of heap blocks.  This
+   must be called before any of VG_(malloc) and friends are called. */
+extern void  VG_(set_client_malloc_redzone_szB) ( SizeT rz_szB );
 
 extern SizeT VG_(arena_payload_szB) ( ArenaId aid, void* payload );
 

@@ -166,32 +166,6 @@ EOF
 	print "void VG_(init_$func)($ret (*func)($args));\n";
     };
     $headerguard=$output;
-} elsif ($output eq "initdlsym") {
-    $pre = sub () {
-	print <<EOF;
-#include <dlfcn.h>
-void VG_(tool_init_dlsym)(void *dlhandle)
-{
-   void *ret;
-
-EOF
-    };
-    $post = sub () {
-	print "}\n";
-    };
-    $generate = sub ($$$@) {
-	my ($pfx, $ret, $func, @args) = @_;
-	my $args = join ", ", getargtypes(@args);
-
-	print <<EOF;
-   ret = dlsym(dlhandle, "vgTool_$func");
-   if (ret != NULL)
-      VG_(init_$func)(($ret (*)($args))ret);
-
-EOF
-    };
-
-    $passcomment = 0;
 }
 
 die "Unknown output format \"$output\"" unless defined $generate;

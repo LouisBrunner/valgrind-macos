@@ -36,6 +36,23 @@
    Tool data structure initialisation
    ------------------------------------------------------------------ */
 
+/*--------------------------------------------------------------------*/
+/* Setting basic functions */
+
+void VG_(basic_tool_funcs)(
+   void(*post_clo_init)(void),
+   IRBB*(*instrument)(IRBB*, VexGuestLayout*, IRType, IRType ),
+   void(*fini)(Int)
+)
+{
+   VG_(tool_interface).tool_post_clo_init = post_clo_init;
+   VG_(tool_interface).tool_instrument    = instrument;
+   VG_(tool_interface).tool_fini          = fini;
+}
+
+/*--------------------------------------------------------------------*/
+/* Setting details */
+
 /* Init with default values. */
 VgDetails VG_(details) = {
    .name                  = NULL,
@@ -45,6 +62,23 @@ VgDetails VG_(details) = {
    .bug_reports_to        = NULL,
    .avg_translation_sizeB = VG_DEFAULT_TRANS_SIZEB,
 };
+
+/* Use macro because they're so repetitive */
+#define DETAILS(type, detail)                       \
+   extern void VG_(details_##detail)(type detail)   \
+   {                                                \
+      VG_(details).detail = detail;                 \
+   }
+
+DETAILS(Char*, name)
+DETAILS(Char*, version)
+DETAILS(Char*, description)
+DETAILS(Char*, copyright_author)
+DETAILS(Char*, bug_reports_to)
+DETAILS(UInt,  avg_translation_sizeB)
+
+/*--------------------------------------------------------------------*/
+/* Setting needs */
 
 VgNeeds VG_(needs) = {
    .core_errors          = False,
@@ -115,26 +149,6 @@ void VG_(sanity_check_needs) ( void)
 #undef CHECK_NOT
 }
 
-/*--------------------------------------------------------------------*/
-/* Setting details */
-
-/* Use macro because they're so repetitive */
-#define DETAILS(type, detail)                       \
-   extern void VG_(details_##detail)(type detail)   \
-   {                                                \
-      VG_(details).detail = detail;                 \
-   }
-
-DETAILS(Char*, name)
-DETAILS(Char*, version)
-DETAILS(Char*, description)
-DETAILS(Char*, copyright_author)
-DETAILS(Char*, bug_reports_to)
-DETAILS(UInt,  avg_translation_sizeB)
-
-/*--------------------------------------------------------------------*/
-/* Setting needs */
-
 /* Use macro because they're so repetitive */
 #define NEEDS(need)  \
    extern void VG_(needs_##need)(void) \
@@ -142,16 +156,110 @@ DETAILS(UInt,  avg_translation_sizeB)
       VG_(needs).need = True;          \
    }
 
+// These ones don't require any tool-supplied functions
 NEEDS(libc_freeres)
 NEEDS(core_errors)
-NEEDS(tool_errors)
-NEEDS(basic_block_discards)
-NEEDS(command_line_options)
-NEEDS(client_requests)
-NEEDS(syscall_wrapper)
-NEEDS(sanity_checks)
 NEEDS(data_syms)
 NEEDS(shadow_memory)
+
+void VG_(needs_basic_block_discards)(
+   void (*discard)(Addr, SizeT)
+)
+{
+   VG_(needs).basic_block_discards = True;
+   VG_(tool_interface).tool_discard_basic_block_info = discard;
+}
+
+void VG_(needs_tool_errors)(
+   Bool (*eq)         (VgRes, Error*, Error*),
+   void (*pp)         (Error*),
+   UInt (*update)     (Error*),
+   Bool (*recog)      (Char*, Supp*),
+   Bool (*read_extra) (Int, Char*, Int, Supp*),
+   Bool (*matches)    (Error*, Supp*),
+   Char* (*name)      (Error*),
+   void (*print_extra)(Error*)
+)
+{
+   VG_(needs).tool_errors = True;
+   VG_(tool_interface).tool_eq_Error                     = eq;
+   VG_(tool_interface).tool_pp_Error                     = pp;
+   VG_(tool_interface).tool_update_extra                 = update;
+   VG_(tool_interface).tool_recognised_suppression       = recog;
+   VG_(tool_interface).tool_read_extra_suppression_info  = read_extra;
+   VG_(tool_interface).tool_error_matches_suppression    = matches;
+   VG_(tool_interface).tool_get_error_name               = name;
+   VG_(tool_interface).tool_print_extra_suppression_info = print_extra;
+}
+
+void VG_(needs_command_line_options)(
+   Bool (*process)(Char*),
+   void (*usage)(void),
+   void (*debug_usage)(void)
+)
+{
+   VG_(needs).command_line_options = True;
+   VG_(tool_interface).tool_process_cmd_line_option = process;
+   VG_(tool_interface).tool_print_usage             = usage;
+   VG_(tool_interface).tool_print_debug_usage       = debug_usage;
+}
+
+void VG_(needs_client_requests)(
+   Bool (*handle)(ThreadId, UWord*, UWord*)
+)
+{
+   VG_(needs).client_requests = True;
+   VG_(tool_interface).tool_handle_client_request = handle;
+}
+
+void VG_(needs_syscall_wrapper)(
+   void(*pre) (ThreadId, UInt),
+   void(*post)(ThreadId, UInt, Int res)
+)
+{
+   VG_(needs).syscall_wrapper = True;
+   VG_(tool_interface).tool_pre_syscall  = pre;
+   VG_(tool_interface).tool_post_syscall = post;
+}
+
+void VG_(needs_sanity_checks)(
+   Bool(*cheap)(void),
+   Bool(*expen)(void)
+)
+{
+   VG_(needs).sanity_checks = True;
+   VG_(tool_interface).tool_cheap_sanity_check     = cheap;
+   VG_(tool_interface).tool_expensive_sanity_check = expen;
+}
+
+
+/* Replacing malloc() */
+
+extern void VG_(malloc_funcs)(
+   void* (*malloc)               ( ThreadId, SizeT ),
+   void* (*__builtin_new)        ( ThreadId, SizeT ),
+   void* (*__builtin_vec_new)    ( ThreadId, SizeT ),
+   void* (*memalign)             ( ThreadId, SizeT, SizeT ),
+   void* (*calloc)               ( ThreadId, SizeT, SizeT ),
+   void  (*free)                 ( ThreadId, void* ),
+   void  (*__builtin_delete)     ( ThreadId, void* ),
+   void  (*__builtin_vec_delete) ( ThreadId, void* ),
+   void* (*realloc)              ( ThreadId, void*, SizeT ),
+   SizeT client_malloc_redzone_szB
+)
+{
+   VG_(tool_interface).malloc_malloc               = malloc;
+   VG_(tool_interface).malloc___builtin_new        = __builtin_new;
+   VG_(tool_interface).malloc___builtin_vec_new    = __builtin_vec_new;
+   VG_(tool_interface).malloc_memalign             = memalign;
+   VG_(tool_interface).malloc_calloc               = calloc;
+   VG_(tool_interface).malloc_free                 = free;
+   VG_(tool_interface).malloc___builtin_delete     = __builtin_delete;
+   VG_(tool_interface).malloc___builtin_vec_delete = __builtin_vec_delete;
+   VG_(tool_interface).malloc_realloc              = realloc;
+
+   VG_(set_client_malloc_redzone_szB)( client_malloc_redzone_szB );
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                               vg_needs.c ---*/

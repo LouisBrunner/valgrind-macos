@@ -81,6 +81,10 @@ void TL_(pre_clo_init)(void)
       "Copyright (C) 2002-2005, and GNU GPL'd, by Nicholas Nethercote.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 175 );
+
+   VG_(basic_tool_funcs)          (TL_(post_clo_init),
+                                   TL_(instrument),
+                                   TL_(fini));
 }
 
 void TL_(post_clo_init)(void)
@@ -279,7 +283,6 @@ void TL_(fini)(Int exitcode)
 }
 
 VG_DETERMINE_INTERFACE_VERSION(TL_(pre_clo_init), 0)
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                lk_main.c ---*/

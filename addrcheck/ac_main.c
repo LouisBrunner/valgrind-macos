@@ -1318,13 +1318,38 @@ void TL_(pre_clo_init)(void)
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 135 );
 
+   VG_(basic_tool_funcs)          (TL_(post_clo_init),
+                                   TL_(instrument),
+                                   TL_(fini));
+
    VG_(needs_core_errors)         ();
-   VG_(needs_tool_errors)         ();
+   VG_(needs_tool_errors)         (TL_(eq_Error),
+                                   TL_(pp_Error),
+                                   TL_(update_extra),
+                                   TL_(recognised_suppression),
+                                   TL_(read_extra_suppression_info),
+                                   TL_(error_matches_suppression),
+                                   TL_(get_error_name),
+                                   TL_(print_extra_suppression_info));
    VG_(needs_libc_freeres)        ();
-   VG_(needs_command_line_options)();
-   VG_(needs_client_requests)     ();
-   VG_(needs_sanity_checks)       ();
+   VG_(needs_command_line_options)(TL_(process_cmd_line_option),
+                                   TL_(print_usage),
+                                   TL_(print_debug_usage));
+   VG_(needs_client_requests)     (TL_(handle_client_request));
+   VG_(needs_sanity_checks)       (TL_(cheap_sanity_check),
+                                   TL_(expensive_sanity_check));
    VG_(needs_shadow_memory)       ();
+
+   VG_(malloc_funcs)              (TL_(malloc),
+                                   TL_(__builtin_new),
+                                   TL_(__builtin_vec_new),
+                                   TL_(memalign),
+                                   TL_(calloc),
+                                   TL_(free),
+                                   TL_(__builtin_delete),
+                                   TL_(__builtin_vec_delete),
+                                   TL_(realloc),
+                                   MALLOC_REDZONE_SZB );
 
    MAC_( new_mem_heap)             = & ac_new_mem_heap;
    MAC_( ban_mem_heap)             = & ac_make_noaccess;

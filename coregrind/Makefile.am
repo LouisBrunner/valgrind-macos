@@ -124,7 +124,6 @@ vg_toolint.c: $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile
 	$(PERL) $(srcdir)/gen_toolint.pl callwrap     < $(srcdir)/toolfuncs.def >  $@ || rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl missingfuncs < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl initfunc     < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
-	$(PERL) $(srcdir)/gen_toolint.pl initdlsym    < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
 	$(PERL) $(srcdir)/gen_toolint.pl structdef    < $(srcdir)/toolfuncs.def >> $@ || rm -f $@
 
 vg_toolint.h:  $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile

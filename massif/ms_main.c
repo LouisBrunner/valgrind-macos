@@ -1159,8 +1159,6 @@ Bool TL_(handle_client_request) ( ThreadId tid, UWord* argv, UWord* ret )
 // Current directory at startup.
 static Char* base_dir;
 
-SizeT VG_(vg_malloc_redzone_szB) = 0;
-
 void TL_(pre_clo_init)()
 { 
    VG_(details_name)            ("Massif");
@@ -1169,10 +1167,29 @@ void TL_(pre_clo_init)()
    VG_(details_copyright_author)("Copyright (C) 2003, Nicholas Nethercote");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
+   // Basic functions
+   VG_(basic_tool_funcs)          (TL_(post_clo_init),
+                                   TL_(instrument),
+                                   TL_(fini));
+
    // Needs
    VG_(needs_libc_freeres)();
-   VG_(needs_command_line_options)();
-   VG_(needs_client_requests)     ();
+   VG_(needs_command_line_options)(TL_(process_cmd_line_option),
+                                   TL_(print_usage),
+                                   TL_(print_debug_usage));
+   VG_(needs_client_requests)     (TL_(handle_client_request));
+
+   // Malloc replacement
+   VG_(malloc_funcs)              (TL_(malloc),
+                                   TL_(__builtin_new),
+                                   TL_(__builtin_vec_new),
+                                   TL_(memalign),
+                                   TL_(calloc),
+                                   TL_(free),
+                                   TL_(__builtin_delete),
+                                   TL_(__builtin_vec_delete),
+                                   TL_(realloc),
+                                   0 );
 
    // Events to track
    VG_(init_new_mem_stack_signal) ( new_mem_stack_signal );

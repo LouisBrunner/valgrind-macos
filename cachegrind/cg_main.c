@@ -1132,8 +1132,14 @@ void TL_(pre_clo_init)(void)
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 155 );
 
-   VG_(needs_basic_block_discards)();
-   VG_(needs_command_line_options)();
+   VG_(basic_tool_funcs)          (TL_(post_clo_init),
+                                   TL_(instrument),
+                                   TL_(fini));
+
+   VG_(needs_basic_block_discards)(TL_(discard_basic_block_info));
+   VG_(needs_command_line_options)(TL_(process_cmd_line_option),
+                                   TL_(print_usage),
+                                   TL_(print_debug_usage));
 
    /* Get working directory */
    tl_assert( VG_(getcwd_alloc)(&base_dir) );

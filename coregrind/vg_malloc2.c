@@ -378,6 +378,29 @@ void VG_(print_all_arena_stats) ( void )
    }
 }
 
+static Bool init_done = False;
+static SizeT client_malloc_redzone_szB = 8;   // default: be paranoid
+
+// Nb: this must be called before the client arena is initialised, ie.
+// before any memory is allocated.
+void VG_(set_client_malloc_redzone_szB)(SizeT rz_szB)
+{
+   if (init_done) {
+      VG_(printf)(
+         "\nTool error:\n"
+         "  __FUNCTION__ cannot be called after the first allocation.\n");
+      VG_(exit)(1);
+   }
+   // This limit is no special figure, just something not too big
+   if (rz_szB > 128) {
+      VG_(printf)(
+         "\nTool error:\n"
+         "  __FUNCTION__ passed a too-big value (%llu)", (ULong)rz_szB);
+      VG_(exit)(1);
+   }
+   client_malloc_redzone_szB = rz_szB;
+}
+
 /* This library is self-initialising, as it makes this more self-contained,
    less coupled with the outside world.  Hence VG_(arena_malloc)() and
    VG_(arena_free)() below always call ensure_mm_init() to ensure things are
@@ -385,20 +408,9 @@ void VG_(print_all_arena_stats) ( void )
 static
 void ensure_mm_init ( void )
 {
-   static SizeT client_rz_szB;
-   static Bool  init_done = False;
-   
    if (init_done) {
-      // Make sure the client arena's redzone size never changes.  Could
-      // happen if VG_(arena_malloc) was called too early, ie. before the
-      // tool was loaded.
-      vg_assert(client_rz_szB == VG_(vg_malloc_redzone_szB));
       return;
    }
-
-   /* No particular reason for this figure, it's just smallish */
-   tl_assert(VG_(vg_malloc_redzone_szB) < 128);
-   client_rz_szB = VG_(vg_malloc_redzone_szB);
 
    /* Use checked red zones (of various sizes) for our internal stuff,
       and an unchecked zone of arbitrary size for the client.  Of
@@ -415,7 +427,7 @@ void ensure_mm_init ( void )
    arena_init ( VG_AR_CORE,      "core",     4, CORE_ARENA_MIN_SZB );
    arena_init ( VG_AR_TOOL,      "tool",     4,            1048576 );
    arena_init ( VG_AR_SYMTAB,    "symtab",   4,            1048576 );
-   arena_init ( VG_AR_CLIENT,    "client",  client_rz_szB, 1048576 );
+   arena_init ( VG_AR_CLIENT,    "client", client_malloc_redzone_szB, 1048576 );
    arena_init ( VG_AR_DEMANGLE,  "demangle", 12/*paranoid*/, 65536 );
    arena_init ( VG_AR_EXECTXT,   "exectxt",  4,              65536 );
    arena_init ( VG_AR_ERRORS,    "errors",   4,              65536 );
@@ -1354,8 +1366,8 @@ void VG_(cli_free) ( void* p )
 
 Bool VG_(addr_is_in_block)( Addr a, Addr start, SizeT size )
 {  
-   return (start - VG_(vg_malloc_redzone_szB) <= a
-           && a < start + size + VG_(vg_malloc_redzone_szB));
+   return (start - client_malloc_redzone_szB <= a
+           && a < start + size + client_malloc_redzone_szB);
 }
 
 

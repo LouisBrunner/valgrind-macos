@@ -21,7 +21,6 @@ libarch_a_SOURCES = \
 	cpuid.S \
 	helpers.S \
 	dispatch.S \
-	syscall.S \
 	signal.c \
 	state.c
 

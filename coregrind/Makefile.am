@@ -111,8 +111,8 @@ vg_toolint.h:  $(srcdir)/gen_toolint.pl $(srcdir)/toolfuncs.def ./Makefile
 libpthread_so_SOURCES = \
 	vg_libpthread.c \
 	vg_libpthread_unimp.c \
-	${VG_ARCH}/syscall.S \
-	${VG_ARCH}/libpthread.c 
+	${VG_ARCH}/libpthread.c \
+	${VG_PLATFORM}/syscall.S
 libpthread_so_DEPENDENCIES = $(srcdir)/vg_libpthread.vs
 libpthread_so_LDFLAGS	   = -Werror -fno-omit-frame-pointer -UVG_LIBDIR \
 	-shared -fpic -ldl \

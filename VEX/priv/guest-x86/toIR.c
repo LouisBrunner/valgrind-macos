@@ -3296,6 +3296,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 	       put_ST(0, mkexpr(t1));
                break;
 
+            case 0xE8: /* FLD1 */
+               DIP("fldz");
+               fp_push();
+               put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
+               break;
+
             case 0xEE: /* FLDZ */
                DIP("fldz");
                fp_push();
@@ -3316,14 +3322,29 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
           /* bits 5,4,3 are an opcode extension, and the modRM also
             specifies an address. */
+         IROp   fop;
          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
          delta += len;
-
          switch (gregOfRM(modrm)) {
+
             case 1: /* FIMUL m32int */ /* ST(0) *= m32int */
                DIP("fimull %s", dis_buf);
+	       fop = Iop_MulF64;
+	       goto do_fop_m32;
+
+            case 4: /* FISUB m32int */ /* ST(0) -= m32int */
+               DIP("fisubl %s", dis_buf);
+	       fop = Iop_SubF64;
+	       goto do_fop_m32;
+
+            case 6: /* FIDIV m32int */ /* ST(0) /= m32int */
+               DIP("fisubl %s", dis_buf);
+	       fop = Iop_DivF64;
+	       goto do_fop_m32;
+
+            do_fop_m32:
                put_ST_UNCHECKED(0, 
-                  binop(Iop_MulF64, 
+                  binop(fop, 
                         get_ST(0),
                         unop(Iop_I64toF64,
                              unop(Iop_32Sto64,
@@ -4015,61 +4036,110 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
 //--  
 //--    return eip;
 //-- }
-//-- 
-//-- 
-//-- 
-//-- /* Handle BSF/BSR.  Only v-size seems necessary. */
-//-- static
-//-- Addr dis_bs_E_G ( UCodeBlock* cb, 
-//--                   UChar       sorb,
-//--                   Int sz, Addr eip, Bool fwds )
-//-- {
-//--    Int   t, t1, ta, helper;
-//--    UInt  pair;
-//--     Char dis_buf[50];
-//--    UChar modrm;
-//--    Bool  isReg;
-//-- 
-//--    vg_assert(sz == 2 || sz == 4);
-//-- 
-//--    if (fwds)
-//--       helper = sz == 2 ? VGOFF_(helper_bsfw) : VGOFF_(helper_bsfl);
-//--    else
-//--       helper = sz == 2 ? VGOFF_(helper_bsrw) : VGOFF_(helper_bsrl);
-//--    
-//--    modrm  = getUChar(eip);
-//--    t1     = newTemp(cb);
-//--    t      = newTemp(cb);
-//-- 
-//--    uInstr0(cb, CALLM_S, 0);
-//--    uInstr2(cb, GET,  sz, ArchReg, gregOfRM(modrm), TempReg, t1);
-//--    uInstr1(cb, PUSH, sz, TempReg, t1);
-//-- 
-//--    isReg = epartIsReg(modrm);
-//--    if (isReg) {
-//--       eip++;
-//--       uInstr2(cb, GET, sz, ArchReg, eregOfRM(modrm), TempReg, t);
-//--    } else {
-//--       pair = disAMode ( cb, sorb, eip, dis_buf );
-//--       ta   = LOW24(pair);
-//--       eip  += HI8(pair);
-//--       uInstr2(cb, LOAD, sz, TempReg, ta, TempReg, t);
-//--    }
-//--    DIP("bs%c%c %s, %s\n",
-//--        fwds ? 'f' : 'r', nameISize(sz), 
-//--        ( isReg ? nameIReg(sz, eregOfRM(modrm)) : dis_buf ), 
-//--        nameIReg(sz, gregOfRM(modrm)));
-//-- 
-//--    uInstr1(cb, PUSH,  sz,  TempReg, t);
-//--    uInstr1(cb, CALLM, 0,   Lit16, helper);
-//--    uFlagsRWU(cb, FlagsEmpty, FlagZ, FlagsOSACP);
-//--    uInstr1(cb, POP,   sz,  TempReg, t);
-//--    uInstr1(cb, POP,   sz,  TempReg, t);
-//--    uInstr2(cb, PUT,   sz,  TempReg, t, ArchReg, gregOfRM(modrm));
-//--    uInstr0(cb, CALLM_E, 0);
-//-- 
-//--    return eip;
-//-- }
+
+
+
+/* Handle BSF/BSR.  Only v-size seems necessary. */
+static
+UInt dis_bs_E_G ( UChar sorb, Int sz, UInt delta, Bool fwds )
+{
+   Bool   isReg;
+   UChar  modrm;
+   Char   dis_buf[50];
+   
+   IRType ty  = szToITy(sz);
+   IRTemp src = newTemp(ty);
+   IRTemp dst = newTemp(ty);
+
+   IRTemp src32 = newTemp(Ity_I32);
+   IRTemp dst32 = newTemp(Ity_I32);
+   IRTemp src8  = newTemp(Ity_I8);
+
+   vassert(sz == 4 || sz == 2);
+   vassert(sz == 4);
+
+   modrm = getIByte(delta);
+
+   isReg = epartIsReg(modrm);
+   if (isReg) {
+      delta++;
+      assign( src, getIReg(sz, eregOfRM(modrm)) );
+   } else {
+      Int    len;
+      IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
+      delta += len;
+      assign( src, loadLE(ty, mkexpr(addr)) );
+   }
+
+   DIP("bs%c%c %s, %s\n",
+       fwds ? 'f' : 'r', nameISize(sz), 
+       ( isReg ? nameIReg(sz, eregOfRM(modrm)) : dis_buf ), 
+       nameIReg(sz, gregOfRM(modrm)));
+
+   /* Generate an 8-bit expression which is zero iff the 
+      original is zero, and nonzero otherwise */
+   assign( src8,
+           unop(Iop_1Uto8, binop(mkSizedOp(ty,Iop_CmpNE8),
+                           mkexpr(src), mkU(ty,0))) );
+
+   /* Flags: Z is 1 iff source value is zero.  All others 
+      are undefined -- we force them to zero. */
+   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DST, mkU32(0) ));
+   stmt( IRStmt_Put( 
+            OFFB_CC_SRC,
+            IRExpr_Mux0X( mkexpr(src8),
+                          /* src==0 */
+                          mkU32(CC_MASK_Z),
+                          /* src!=0 */
+                          mkU32(0)
+                        )
+       ));
+
+   /* Result: iff source value is zero, we can't use
+      Iop_Clz32/Iop_Ctz32 as they have no defined result in that case.
+      But anyway, Intel x86 semantics say the result is undefined in
+      such situations.  Hence handle the zero case specially. */
+
+   /* Bleh.  What we compute:
+
+          bsf32:  if src == 0 then 0 else  Ctz32(src)
+          bsr32:  if src == 0 then 0 else  31 - Clz32(src)
+
+          bsf16:  if src == 0 then 0 else  Ctz32(16Uto32(src))
+          bsr16:  if src == 0 then 0 else  31 - Clz32(16Uto32(src))
+
+      First, widen src to 32 bits if it is not already.
+   */
+   if (sz == 2)
+      assign( src32, unop(Iop_16Uto32, mkexpr(src)) );
+   else
+      assign( src32, mkexpr(src) );
+
+   /* The main computation, guarding against zero. */
+   assign( dst32,   
+           IRExpr_Mux0X( 
+              mkexpr(src8),
+              /* src == 0 */
+              mkU32(0),
+              /* src != 0 */
+              fwds ? unop(Iop_Ctz32, mkexpr(src32))
+                   : binop(Iop_Sub32, 
+                           mkU32(31), 
+                           unop(Iop_Clz32, mkexpr(src32)))
+           )
+         );
+
+   if (sz == 2)
+      assign( dst, unop(Iop_32to16, mkexpr(dst32)) );
+   else
+      assign( dst, mkexpr(dst32) );
+
+   /* dump result back */
+   putIReg( sz, gregOfRM(modrm), mkexpr(dst) );
+
+   return delta;
+}
 
 
 static 
@@ -7761,15 +7831,15 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          d32   = getSDisp8(eip + am_sz);
 //--          eip = dis_Grp8_BT ( cb, sorb, eip, modrm, am_sz, sz, d32 );
 //--          break;
-//-- 
-//--       /* =-=-=-=-=-=-=-=-=- BSF/BSR -=-=-=-=-=-=-=-=-=-= */
-//-- 
-//--       case 0xBC: /* BSF Gv,Ev */
-//--          eip = dis_bs_E_G ( cb, sorb, sz, eip, True );
-//--          break;
-//--       case 0xBD: /* BSR Gv,Ev */
-//--          eip = dis_bs_E_G ( cb, sorb, sz, eip, False );
-//--          break;
+
+      /* =-=-=-=-=-=-=-=-=- BSF/BSR -=-=-=-=-=-=-=-=-=-= */
+
+      case 0xBC: /* BSF Gv,Ev */
+         delta = dis_bs_E_G ( sorb, sz, delta, True );
+         break;
+      case 0xBD: /* BSR Gv,Ev */
+         delta = dis_bs_E_G ( sorb, sz, delta, False );
+         break;
 
       /* =-=-=-=-=-=-=-=-=- BSWAP -=-=-=-=-=-=-=-=-=-=-= */
 
@@ -7834,7 +7904,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       case 0x45: /* CMOVNZb/CMOVNEb (cmov not zero) */
       case 0x46: /* CMOVBEb/CMOVNAb (cmov below or equal) */
       case 0x47: /* CMOVNBEb/CMOVAb (cmov not below or equal) */
-//--       case 0x48: /* CMOVSb (cmov negative) */
+      case 0x48: /* CMOVSb (cmov negative) */
       case 0x49: /* CMOVSb (cmov not negative) */
 //--       case 0x4A: /* CMOVP (cmov parity even) */
 //--       case 0x4B: /* CMOVNP (cmov parity odd) */

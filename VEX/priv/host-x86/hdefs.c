@@ -544,6 +544,15 @@ X86Instr* X86Instr_Set32 ( X86CondCode cond, HReg dst ) {
    i->Xin.Set32.dst  = dst;
    return i;
 }
+X86Instr* X86Instr_Bsfr32 ( Bool isFwds, HReg src, HReg dst )
+{
+   X86Instr* i          = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag               = Xin_Bsfr32;
+   i->Xin.Bsfr32.isFwds = isFwds;
+   i->Xin.Bsfr32.src    = src;
+   i->Xin.Bsfr32.dst    = dst;
+   return i;
+}
 X86Instr* X86Instr_FpUnary ( X86FpOp op, HReg src, HReg dst ) {
    X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
    i->tag             = Xin_FpUnary;
@@ -695,6 +704,12 @@ void ppX86Instr ( X86Instr* i ) {
          vex_printf("setl%s ", showX86CondCode(i->Xin.Set32.cond));
          ppHRegX86(i->Xin.Set32.dst);
          return;
+      case Xin_Bsfr32:
+         vex_printf("bs%cl ", i->Xin.Bsfr32.isFwds ? 'f' : 'r');
+         ppHRegX86(i->Xin.Bsfr32.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.Bsfr32.dst);
+         return;
       case Xin_FpUnary:
          vex_printf("g%sD ", showX86FpOp(i->Xin.FpUnary.op));
          ppHRegX86(i->Xin.FpUnary.src);
@@ -829,6 +844,10 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
       case Xin_Set32:
          addHRegUse(u, HRmWrite, i->Xin.Set32.dst);
          return;
+      case Xin_Bsfr32:
+         addHRegUse(u, HRmRead, i->Xin.Bsfr32.src);
+         addHRegUse(u, HRmWrite, i->Xin.Bsfr32.dst);
+         return;
       case Xin_FpUnary:
          addHRegUse(u, HRmRead, i->Xin.FpUnary.src);
          addHRegUse(u, HRmWrite, i->Xin.FpUnary.dst);
@@ -922,6 +941,10 @@ void mapRegs_X86Instr (HRegRemap* m, X86Instr* i)
          return;
       case Xin_Set32:
          mapReg(m, &i->Xin.Set32.dst);
+         return;
+      case Xin_Bsfr32:
+         mapReg(m, &i->Xin.Bsfr32.src);
+         mapReg(m, &i->Xin.Bsfr32.dst);
          return;
       case Xin_FpBinary:
          mapReg(m, &i->Xin.FpBinary.srcL);
@@ -1187,7 +1210,9 @@ static UChar* do_fop_st ( UChar* p, X86FpOp op, Int i )
    Int subopc;
    switch (op) {
       case Xfp_ADD: subopc = 0; break;
+      case Xfp_SUB: subopc = 4; break;
       case Xfp_MUL: subopc = 1; break;
+      case Xfp_DIV: subopc = 6; break;
       default: vpanic("do_fop_st: unknown op");
    }
    *p++ = 0xD8;
@@ -1646,6 +1671,16 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          *p++ = 0x90 + (UChar)(i->Xin.Set32.cond);
          p = doAMode_R(p, fake(0), i->Xin.Set32.dst);
       }
+      goto done;
+
+   case Xin_Bsfr32:
+      *p++ = 0x0F;
+      if (i->Xin.Bsfr32.isFwds) {
+         *p++ = 0xBC;
+      } else {
+         *p++ = 0xBD;
+      }
+      p = doAMode_R(p, i->Xin.Bsfr32.dst, i->Xin.Bsfr32.src);
       goto done;
 
    case Xin_Store:

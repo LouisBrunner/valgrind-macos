@@ -587,6 +587,27 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, X86Instr_Set32(cond,dst));
             return dst;
          }
+         case Iop_Ctz32: {
+            /* Count trailing zeroes, implemented by x86 'bsfl' */
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, X86Instr_Bsfr32(True,src,dst));
+            return dst;
+         }
+         case Iop_Clz32: {
+            /* Count leading zeroes.  Do 'bsrl' to establish the index
+               of the highest set bit, and subtract that value from
+               31. */
+            HReg tmp = newVRegI(env);
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, X86Instr_Bsfr32(False,src,tmp));
+            addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
+                                          X86RMI_Imm(31), dst));
+            addInstr(env, X86Instr_Alu32R(Xalu_SUB,
+                                          X86RMI_Reg(tmp), dst));
+            return dst;
+         }
          case Iop_16to8:
          case Iop_32to8:
          case Iop_32to16:
@@ -1352,7 +1373,9 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
       X86FpOp fpop = Xfp_INVALID;
       switch (e->Iex.Binop.op) {
          case Iop_AddF64: fpop = Xfp_ADD; break;
+         case Iop_SubF64: fpop = Xfp_SUB; break;
          case Iop_MulF64: fpop = Xfp_MUL; break;
+         case Iop_DivF64: fpop = Xfp_DIV; break;
          default: break;
       }
       if (fpop != Xfp_INVALID) {

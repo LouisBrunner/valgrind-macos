@@ -98,6 +98,9 @@ typedef
       /* Widening multiplies */
       Iop_MullS8, Iop_MullS16, Iop_MullS32,
       Iop_MullU8, Iop_MullU16, Iop_MullU32,
+      /* Wierdo integer stuff */
+      Iop_Clz32,   /* count leading zeroes */
+      Iop_Ctz32,   /* count trailing zeros */
       /* Ordering not important after here. */
       Iop_CmpLT32S,
       Iop_CmpLE32S,
@@ -134,6 +137,11 @@ typedef
       Iop_I64toF64, Iop_F64toI64
    }
    IROp;
+
+/* Notes.
+    Ctz32/Clz32 are UNDEFINED when given arguments of zero.
+    You must ensure they are never given a zero argument. 
+*/
 
 extern void ppIROp ( IROp );
 

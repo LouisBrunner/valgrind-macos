@@ -109,10 +109,6 @@ Addr VG_(valgrind_last);
 struct vki_rlimit VG_(client_rlimit_data);
 struct vki_rlimit VG_(client_rlimit_stack);
 
-/* This is set early to indicate whether this CPU has the
-   SSE/fxsave/fxrestor features.  */
-Bool VG_(have_ssestate);
-
 /* stage1 (main) executable */
 static Int vgexecfd = -1;
 

@@ -1178,12 +1178,6 @@ extern Addr VG_(code_redirect) ( Addr orig );
    Exports of vg_main.c
    ------------------------------------------------------------------ */
 
-/* Is this a SSE/SSE2-capable CPU?  If so, we had better save/restore
-   the SSE state all over the place.  This is set up very early, in
-   main().  We have to determine it early since we can't even
-   correctly snapshot the startup machine state without it. */
-extern Bool VG_(have_ssestate);
-
 /* Tell the logging mechanism whether we are logging to a file
    descriptor or a socket descriptor. */
 extern Bool VG_(logging_to_filedes);
@@ -1747,9 +1741,19 @@ extern void VG_(sigreturn)(void);
    Exports of vg_dispatch.S
    ------------------------------------------------------------------ */
 
-/* Run a thread for a (very short) while, until some event happens
-   which means we need to defer to the scheduler.  This is passed
-   a pointer to the VEX guest state (arch.vex). */
+/* This subroutine is called from the C world.  It is passed
+   a pointer to the VEX guest state (arch.vex).  It must run code
+   from the instruction pointer in the guest state, and exit when
+   VG_(dispatch_ctr) reaches zero, or we need to defer to the scheduler.
+   The return value must indicate why it returned back to the scheduler.
+   It can also be exited if the executing code throws a non-resumable
+   signal, for example SIGSEGV, in which case control longjmp()s back past
+   here.
+
+   This code simply handles the common case fast -- when the translation
+   address is found in the translation cache.  For anything else, the
+   scheduler does the work.
+*/
 extern UInt VG_(run_innerloop) ( void* guest_state );
 
 /* ---------------------------------------------------------------------

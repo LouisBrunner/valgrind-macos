@@ -34,22 +34,8 @@
 
 
 /*------------------------------------------------------------*/
-/*--- The normal-case dispatch machinery.                  ---*/
+/*--- The dispatch loop.                                   ---*/
 /*------------------------------------------------------------*/
-	
-/* To transfer to an (original) code address, load it into %eax and
-   jump to vg_dispatch.  This fragment of code tries to find the
-   address of the corresponding translation by searching the translation
-   table.   If it fails, a new translation is made, added to the
-   translation table, and then jumped to.  Almost all the hard
-   work is done by C routines; this code simply handles the
-   common case fast -- when the translation address is found in
-   the translation cache.
-
-   At entry, %eax is the only live (real-machine) register; the
-   entire simulated state is tidily saved in vg_m_state.  
-*/
-
 	
 #define TT_LOOKUP(reg, fail)				\
 	movl %eax, reg;					\
@@ -58,13 +44,6 @@
 	cmpl %eax, (reg);				\
 	jnz  fail
 	
-/* The C world needs a way to get started simulating.  So we provide
-   a function void vg_run_innerloop ( void ), which starts running
-   from vg_m_eip, and exits when the counter reaches zero.  This loop
-   can also exit if vg_oursignalhandler() catches a non-resumable
-   signal, for example SIGSEGV.  It then longjmp()s back past here.
-*/
-
 /* signature: UInt VG_(run_innerloop) ( void* guest_state ) */
 
 .globl VG_(run_innerloop)
@@ -84,11 +63,14 @@ VG_(run_innerloop):
 	/* Set up the guest state pointer */
 	movl	28(%esp), %ebp
 	
-	/* fetch m_eip into %eax */
+	/* fetch %EIP into %eax */
 	movl	VG_(instr_ptr_offset), %esi
 	movl	(%ebp, %esi, 1), %eax
 	
 	/* fall into main loop */
+
+	/* Here, %eax is the only live (real) register.  The entire
+	   simulated state is saved in the ThreadState. */
 
 dispatch_boring:
 	/* save the jump address in the guest state */

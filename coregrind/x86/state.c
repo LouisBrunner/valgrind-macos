@@ -34,6 +34,10 @@
 
 #include "libvex_guest_x86.h"
 
+/* This is set early to indicate whether this CPU has the
+   SSE/fxsave/fxrestor features.  */
+Bool VG_(have_ssestate);
+
 /*------------------------------------------------------------*/
 /*--- Initialising the first thread                        ---*/
 /*------------------------------------------------------------*/

@@ -1576,6 +1576,7 @@ Int parse_inet_addr_and_port ( UChar* str, UInt* ip_addr, UShort* port )
       if (j > 65535) goto syntaxerr;
    }
    if (any == 0 || c != 0) goto syntaxerr;
+   if (j < 1024) goto syntaxerr;
    *port = (UShort)j;
  ok:
    return 1;

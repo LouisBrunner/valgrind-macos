@@ -641,13 +641,13 @@ void VG_(send_signal_to_thread) ( ThreadId thread, Int sig )
    
    switch ((UInt)(vg_scss.scss_per_sig[sig].scss_handler)) {
 
-      case VKI_SIG_IGN:
+      case ((UInt)VKI_SIG_IGN):
          if (VG_(clo_trace_signals)) 
             VG_(message)(Vg_DebugMsg, 
                "send_signal %d to_thread %d: IGN, ignored", sig, thread );
          break;
 
-      case VKI_SIG_DFL:
+      case ((UInt)VKI_SIG_DFL):
          /* This is the tricky case.  Since we don't handle default
             actions, the simple thing is to send someone round to the
             front door and signal there.  Then the kernel will do

@@ -3866,7 +3866,6 @@ PRE(sys_pipe, 0)
 
 POST(sys_pipe)
 {
-   // XXX: use of Int here -- 32-bit-specific?
    Int *p = (Int *)ARG1;
 
    if (!VG_(fd_allowed)(p[0], "pipe", tid, True) ||

@@ -254,6 +254,36 @@ int pthread_cancel(pthread_t thread)
 }
 
 
+
+int pthread_key_create(pthread_key_t *key,  
+                       void  (*destr_function)  (void *))
+{
+   char* str = "IGNORED pthread_key_create\n";
+   write(2, str, strlen(str));
+   return 0;
+}
+
+int pthread_key_delete(pthread_key_t key)
+{
+   char* str = "IGNORED pthread_key_delete\n";
+   write(2, str, strlen(str));
+   return 0;
+}
+
+int pthread_setspecific(pthread_key_t key, const void *pointer)
+{
+   char* str = "IGNORED pthread_setspecific\n";
+   write(2, str, strlen(str));
+   return 0;
+}
+
+void * pthread_getspecific(pthread_key_t key)
+{
+   char* str = "IGNORED pthread_setspecific\n";
+   write(2, str, strlen(str));
+   return NULL;
+}
+
 /* ---------------------------------------------------------------------
    These are here (I think) because they are deemed cancellation
    points by POSIX.  For the moment we'll simply pass the call along

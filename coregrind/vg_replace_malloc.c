@@ -290,6 +290,10 @@ int __posix_memalign ( void **memptr, UInt alignment, UInt size )
     return VKI_ENOMEM /*12*/ /*ENOMEM*/;
 }
 
+# define weak_alias(name, aliasname) \
+  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
+weak_alias(__posix_memalign, posix_memalign);
+
 Int malloc_usable_size ( void* p )
 { 
    Int pszB;

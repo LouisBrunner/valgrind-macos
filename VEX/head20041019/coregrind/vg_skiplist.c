@@ -87,7 +87,7 @@
 #include <stdlib.h>
 
 /* ----------------- Hacky allocator -----------------*/
-#define HACKY_SIZE 100000
+#define HACKY_SIZE 1000000
 static Int   hacky_used = 0;
 static UChar hacky[HACKY_SIZE];
 

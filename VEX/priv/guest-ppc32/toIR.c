@@ -787,16 +787,16 @@ void setFlags_CR0_Flags ( IRTemp flags_cr0 )
 */
 static Bool dis_int_arith ( UInt theInstr, UChar form )
 {
-    UChar opc1    = (theInstr >> 26) & 0x3F;    /* theInstr[0:5]   -> [26:31] */
-    UChar Rd_addr = (theInstr >> 21) & 0x1F;    /* theInstr[6:10]  -> [21:25] */
-    UChar Ra_addr = (theInstr >> 16) & 0x1F;    /* theInstr[11:15] -> [16:20] */
+    UChar opc1    = (theInstr >> 26) & 0x3F;    /* theInstr[26:31] */
+    UChar Rd_addr = (theInstr >> 21) & 0x1F;    /* theInstr[21:25] */
+    UChar Ra_addr = (theInstr >> 16) & 0x1F;    /* theInstr[16:20] */
 
-    UInt  SIMM_16 = (theInstr >>  0) & 0xFFFF;  /* theInstr[16:31] -> [0:15] */
+    UInt  SIMM_16 = (theInstr >>  0) & 0xFFFF;  /* theInstr[0:15]  */
 
-    UChar Rb_addr = (theInstr >> 11) & 0x1F;    /* theInstr[16:20] -> [11:15] */
-    UChar flag_OE = (theInstr >> 10) & 1;       /* theInstr[21]    -> [10] */
-    UInt  opc2    = (theInstr >>  1) & 0x1FF;   /* theInstr[22:30] -> [1:9] */
-    UChar flag_Rc = (theInstr >>  0) & 1;       /* theInstr[31]    -> [0] */
+    UChar Rb_addr = (theInstr >> 11) & 0x1F;    /* theInstr[11:15] */
+    UChar flag_OE = (theInstr >> 10) & 1;       /* theInstr[10]    */
+    UInt  opc2    = (theInstr >>  1) & 0x1FF;   /* theInstr[1:9]   */
+    UChar flag_Rc = (theInstr >>  0) & 1;       /* theInstr[0]     */
 
     UInt EXTS_SIMM = 0;
 
@@ -933,20 +933,20 @@ static Bool dis_int_arith ( UInt theInstr, UChar form )
 
 static Bool dis_int_cmp ( UInt theInstr )
 {
-    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[0:5]   -> [26:31] */
-    UChar crfD    = (theInstr >> 23) & 0x1F;      /* theInstr[6:8]   -> [23:26] */
-    UChar b9      = (theInstr >> 22) & 0x1;       /* theInstr[9]     -> [22] */
-    UChar flag_L  = (theInstr >> 21) & 0x1;       /* theInstr[10]    -> [21] */
-    UChar Ra_addr = (theInstr >> 14) & 0x1F;      /* theInstr[11:15] -> [14:20] */
+    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar crfD    = (theInstr >> 23) & 0x1F;      /* theInstr[23:26] */
+    UChar b9      = (theInstr >> 22) & 0x1;       /* theInstr[22]    */
+    UChar flag_L  = (theInstr >> 21) & 0x1;       /* theInstr[21]    */
+    UChar Ra_addr = (theInstr >> 14) & 0x1F;      /* theInstr[14:20] */
 
     /* D-Form */
-    UInt  SIMM_16 = (theInstr >>  0) & 0xFFFF;    /* theInstr[16:31] -> [0:15] */
-    UInt  UIMM_16 = (theInstr >>  0) & 0xFFFF;    /* theInstr[16:31] -> [0:15] */
+    UInt  SIMM_16 = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15]  */
+    UInt  UIMM_16 = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15]  */
 
     /* X-Form */
-    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[16:20] -> [11:15] */
-    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[21:30] -> [1:10] */
-    UChar b31     = (theInstr >>  0) & 1;         /* theInstr[31]    -> [0] */
+    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UChar b0      = (theInstr >>  0) & 1;         /* theInstr[0]     */
 
     UInt EXTS_SIMM = 0;
     IRTemp Ra = newTemp(Ity_I32);
@@ -991,7 +991,7 @@ static Bool dis_int_cmp ( UInt theInstr )
 
     /* X Form */
     case 0x1F:
-	if (b31 != 0) { return False; }
+	if (b0 != 0) { return False; }
 
 	switch (opc2) {
 	case 0x000: // cmp (Compare, p397)
@@ -1036,17 +1036,17 @@ static Bool dis_int_cmp ( UInt theInstr )
 
 static Bool dis_int_logic ( UInt theInstr )
 {
-    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[0:5]   -> [26:31] */
-    UChar Rs_addr = (theInstr >> 21) & 0x1F;      /* theInstr[6:10]  -> [21:25] */
-    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[11:15] -> [16:20] */
+    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar Rs_addr = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
 
     /* D-Form */
-    UInt  UIMM_16 = (theInstr >>  0) & 0xFFFF;    /* theInstr[16:31] -> [0:15]  */
+    UInt  UIMM_16 = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15]  */
 
     /* X-Form */
-    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[16:20] -> [11:15] */
-    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[21:30] -> [1:10]  */
-    UChar flag_Rc = (theInstr >>  0) & 1;         /* theInstr[31]    -> [0]     */
+    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UChar flag_Rc = (theInstr >>  0) & 1;         /* theInstr[0]     */
 
     IRTemp Rs = newTemp(Ity_I32);
 //    IRTemp Ra = newTemp(Ity_I32);
@@ -1144,17 +1144,17 @@ static Bool dis_int_logic ( UInt theInstr )
 
 static Bool dis_int_store ( UInt theInstr )
 {
-    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[0:5]   -> [26:31] */
-    UChar Rs_addr = (theInstr >> 21) & 0x1F;      /* theInstr[6:10]  -> [21:25] */
-    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[11:15] -> [16:20] */
+    UChar opc1    = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar Rs_addr = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar Ra_addr = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
 
     /* D-Form */
-    UInt  d_16    = (theInstr >>  0) & 0xFFFF;    /* theInstr[16:31] -> [0:15] */
+    UInt  d_16    = (theInstr >>  0) & 0xFFFF;    /* theInstr[0:15]  */
 
     /* X-Form */
-    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[16:20] -> [11:15] */
-    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[21:30] -> [1:10] */
-    UChar b31     = (theInstr >>  0) & 1;         /* theInstr[31]    -> [0] */
+    UChar Rb_addr = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  opc2    = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UChar b0      = (theInstr >>  0) & 1;         /* theInstr[0]     */
 
     IRTemp Rs   = newTemp(Ity_I32);
     IRTemp tmp1 = newTemp(Ity_I32);
@@ -1191,7 +1191,7 @@ static Bool dis_int_store ( UInt theInstr )
 
     /* X Form */
     case 0x1F:
-	if (b31 != 0) { return False; }
+	if (b0 != 0) { return False; }
 	switch (opc2) {
 	case 0x0F7: // stbux
 	    return False;
@@ -1225,15 +1225,15 @@ static Bool dis_int_store ( UInt theInstr )
 
 static Bool dis_branch ( theInstr )
 {
-    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[0:5]   -> [26:31] */
-    UChar BO       = (theInstr >> 21) & 0x1F;      /* theInstr[6:10]  -> [21:25] */
-    UChar BI       = (theInstr >> 16) & 0x1F;      /* theInstr[11:15] -> [16:20] */
-    UInt  BD       = (theInstr >>  2) & 0x3FFF;    /* theInstr[16:29] -> [2:15]  */
-    UChar b16to20  = (theInstr >> 11) & 0x1F;      /* theInstr[16:20] -> [11:15] */
-    UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[21:30] -> [1:10]  */
-    UInt  LI_24    = (theInstr >>  2) & 0xFFFFFF;  /* theInstr[6:29]  -> [2:25]  */
-    UChar flag_AA  = (theInstr >>  1) & 1;         /* theInstr[30]    -> [1]     */
-    UChar flag_LK  = (theInstr >>  0) & 1;         /* theInstr[31]    -> [0]     */
+    UChar opc1     = (theInstr >> 26) & 0x3F;      /* theInstr[26:31] */
+    UChar BO       = (theInstr >> 21) & 0x1F;      /* theInstr[21:25] */
+    UChar BI       = (theInstr >> 16) & 0x1F;      /* theInstr[16:20] */
+    UInt  BD       = (theInstr >>  2) & 0x3FFF;    /* theInstr[2:15]  */
+    UChar b11to15  = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
+    UInt  opc2     = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
+    UInt  LI_24    = (theInstr >>  2) & 0xFFFFFF;  /* theInstr[2:25]  */
+    UChar flag_AA  = (theInstr >>  1) & 1;         /* theInstr[1]     */
+    UChar flag_LK  = (theInstr >>  0) & 1;         /* theInstr[0]     */
 
     IRTemp ctr = newTemp(Ity_I32);
     IRTemp cia = newTemp(Ity_I32);
@@ -1341,7 +1341,7 @@ static Bool dis_branch ( theInstr )
 	return False;
 
     case 0x13:
-	if (b16to20!=0) { return False; }
+	if (b11to15!=0) { return False; }
 
 	switch (opc2) {
         case 0x210: // bcctr         (Branch Conditional to Count Register) 
@@ -1485,8 +1485,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    }
 
 
-   opc1 = (theInstr >> 26) & 0x3F;     /* opcode1: [0:5] -> [26:31] */
-   opc2 = (theInstr >> 1 ) & 0x3FF;    /* opcode2: [21:30] -> [1:10] */
+   opc1 = (theInstr >> 26) & 0x3F;     /* theInstr[26:31] */
+   opc2 = (theInstr >> 1 ) & 0x3FF;    /* theInstr[1:10]  */
 
 //   vex_printf("\n");
 //   vex_printf("disInstr(ppc32): instr:   0x%8x, %,039b\n", theInstr, theInstr );
@@ -1567,7 +1567,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
 
     case 0x1F:
-       opc2 = (theInstr >> 1) & 0x1FF;    /* [22:30] -> [1:9] */
+       opc2 = (theInstr >> 1) & 0x1FF;    /* [1:9] */
        switch (opc2) {
 
        /*
@@ -1586,7 +1586,7 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
        }
 
 
-       opc2 = (theInstr >> 1) & 0x3FF;    /* [21:30] -> [1:10] */
+       opc2 = (theInstr >> 1) & 0x3FF;    /* [1:10] */
        switch (opc2) {
 
        /*

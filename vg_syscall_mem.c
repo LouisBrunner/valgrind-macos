@@ -1627,6 +1627,15 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                   make_readable ( arg3, sizeof(pid_t) );
+               break;
+            case TIOCSPGRP:
+               /* Set a process group ID? */
+               must_be_writable( tst, "ioctl(TIOCGPGRP)", arg3,
+                                 sizeof(pid_t) );
+               KERNEL_DO_SYSCALL(tid,res); 
+               if (!VG_(is_kerror)(res) && res == 0)
+                  make_readable ( arg3, sizeof(pid_t) );
+               break;
             case TIOCGPTN: /* Get Pty Number (of pty-mux device) */
                must_be_writable(tst, "ioctl(TIOCGPTN)", arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
@@ -1974,11 +1983,14 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                     sizeof(struct cdrom_msf));
                  KERNEL_DO_SYSCALL(tid,res);
                  break;
-
             /* We don't have any specific information on it, so
                try to do something reasonable based on direction and
                size bits.  The encoding scheme is described in
-               /usr/include/asm/ioctl.h. */
+               /usr/include/asm/ioctl.h.  
+
+               According to Simon Hausmann, _IOC_READ means the kernel
+               writes a value to the ioctl value passed from the user
+               space and the other way around with _IOC_WRITE. */
             default: {
                UInt dir  = _IOC_DIR(arg2);
                UInt size = _IOC_SIZE(arg2);
@@ -1994,13 +2006,13 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                      "   See README_MISSING_SYSCALL_OR_IOCTL for guidance on"
                      " writing a proper wrapper." );
                } else {
-                  if ((dir & _IOC_READ) && size > 0)
-                     must_be_readable(tst, "ioctl(generic)", arg3, size);
                   if ((dir & _IOC_WRITE) && size > 0)
+                     must_be_readable(tst, "ioctl(generic)", arg3, size);
+                  if ((dir & _IOC_READ) && size > 0)
                      must_be_writable(tst, "ioctl(generic)", arg3, size);
                }
                KERNEL_DO_SYSCALL(tid,res);
-               if (size > 0 && (dir & _IOC_WRITE)
+               if (size > 0 && (dir & _IOC_READ)
                    && !VG_(is_kerror)(res) && res == 0)
                   make_readable (arg3, size);
                break;
@@ -2254,7 +2266,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                          int timeout) 
          */
          if (VG_(clo_trace_syscalls))
-            VG_(printf)("poll ( %d, %d, %d )\n",arg1,arg2,arg3);
+            VG_(printf)("poll ( %p, %d, %d )\n",arg1,arg2,arg3);
          /* In fact some parts of this struct should be readable too.
             This should be fixed properly. */
          must_be_writable( tst, "poll(ufds)", 

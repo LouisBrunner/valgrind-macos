@@ -1635,14 +1635,12 @@ static PPC32CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 //..       }
 //..    }
 
-//..    /* var */
-//..    if (e->tag == Iex_Tmp) {
-//..       HReg r32 = lookupIRTemp(env, e->Iex.Tmp.tmp);
-//..       HReg dst = newVRegI(env);
-//..       addInstr(env, mk_iMOVsd_RR(r32,dst));
-//..       addInstr(env, X86Instr_Alu32R(Xalu_AND,X86RMI_Imm(1),dst));
-//..       return Xcc_NZ;
-//..    }
+   /* var */
+   if (e->tag == Iex_Tmp) {
+      HReg src = lookupIRTemp(env, e->Iex.Tmp.tmp);
+      addInstr(env, PPC32Instr_Cmp32(Pcmp_U, 7, src, PPC32RI_Imm(0)));
+      return mk_PPCCondCode( Pct_FALSE, Pcf_EQ );
+   }
 
    ppIRExpr(e);
    vpanic("iselCondCode(ppc32)");
@@ -3280,12 +3278,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //..          addInstr(env, mk_iMOVsd_RR(rLo,dstLo) );
 //..          return;
 //..       }
-//..       if (ty == Ity_I1) {
-//..          X86CondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
-//..          HReg dst = lookupIRTemp(env, tmp);
-//..          addInstr(env, X86Instr_Set32(cond, dst));
-//..          return;
-//..       }
+      if (ty == Ity_I1) {
+         PPC32CondCode cond = iselCondCode(env, stmt->Ist.Tmp.data);
+         HReg dst = lookupIRTemp(env, tmp);
+         addInstr(env, PPC32Instr_Set32(cond, dst));
+         return;
+      }
 //..       if (ty == Ity_F64) {
 //..          HReg dst = lookupIRTemp(env, tmp);
 //..          HReg src = iselDblExpr(env, stmt->Ist.Tmp.data);

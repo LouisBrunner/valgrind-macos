@@ -395,15 +395,15 @@ typedef
 //..             X86RMI* src;
 //..          } Push;
          /* Pseudo-insn.  Call target (an absolute address), on given
-            condition (which could be Pcc_ALWAYS). */
+            condition (which could be Pct_ALWAYS). */
          struct {
             PPC32CondCode cond;
             Addr32        target;
             Int           regparms; /* 0 .. 9 */
          } Call;
          /* Pseudo-insn.  Goto dst, on given condition (which could be
-            Pcc_ALWAYS).  Note importantly that if the jump is 
-            conditional (not Pcc_ALWAYS) the jump kind *must* be
+            Pct_ALWAYS).  Note importantly that if the jump is 
+            conditional (not Pct_ALWAYS) the jump kind *must* be
             Ijk_Boring.  Ie non-Boring conditional jumps are
             not allowed. */
          struct {
@@ -412,7 +412,7 @@ typedef
             PPC32RI*      dst;
          } Goto;
          /* Mov src to dst on the given condition, which may not
-            be the bogus Pcc_ALWAYS. */
+            be the bogus Pct_ALWAYS. */
          struct {
             PPC32CondCode cond;
             HReg          dst;

@@ -57,16 +57,15 @@ typedef
    enum {
       /* no warning indicated */
       EmWarn_NONE=0,
+
       /* unmasking x87 FP exceptions is not supported */
       EmWarn_X86_x87exns,
-      /* use of unsupported x87 FP rounding mode */
-      EmWarn_X86_x87rounding,
+
       /* change of x87 FP precision away from 64-bit (mantissa) */
       EmWarn_X86_x87precision,
+
       /* unmasking SSE FP exceptions is not supported */
       EmWarn_X86_sseExns,
-      /* use of unsupported SSE FP rounding mode */
-      EmWarn_X86_sseRounding,
       
       EmWarn_NUMBER
    }

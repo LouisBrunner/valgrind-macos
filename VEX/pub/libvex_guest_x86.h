@@ -91,9 +91,11 @@
    * fst from st(0) to st(i) does not take an overflow fault even if the
      destination is already full.
 
-   FPRTZ[0] is the FPU's notional rounding mode -- 0 "to nearest" (the
-   default), 1 "to zero".  FPRTZ[31:1] is unused.  Round to
-   +infinity/-infinity is not supported.
+   FPROUND[1:0] is the FPU's notional rounding mode, encoded as per
+   the IRRoundingMode type (see libvex_ir.h).  This just happens to be
+   the Intel encoding.  Note carefully, the rounding mode is only
+   observed on float-to-int conversions, and not for float-to-float
+   operations.
 
    FC3210 contains the C3, C2, C1 and C0 bits in the same place they
    are in the FPU's status word.  (bits 14, 10, 9, 8 respectively).
@@ -126,7 +128,7 @@ typedef
       UInt  guest_FTOP;
       ULong guest_FPREG[8];
       UChar guest_FPTAG[8];
-      UInt  guest_FPRTZ;
+      UInt  guest_FPROUND;
       UInt  guest_FC3210;
       /* Segment registers. */
       UShort guest_CS;

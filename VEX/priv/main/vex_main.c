@@ -451,14 +451,10 @@ HChar* LibVEX_EmWarn_string ( VexEmWarn ew )
         return "none";
      case EmWarn_X86_x87exns:
         return "Unmasking x87 FP exceptions";
-     case EmWarn_X86_x87rounding:
-        return "Selection of unsupported x87 FP rounding mode (+inf/-inf)";
      case EmWarn_X86_x87precision:
         return "Selection of non-80-bit x87 FP precision";
      case EmWarn_X86_sseExns:
         return "Unmasking SSE FP exceptionss";
-     case EmWarn_X86_sseRounding:
-        return "Selection of unsupported SSE FP rounding mode";
      default: 
         vpanic("LibVEX_EmWarn_string: unknown warning");
    }

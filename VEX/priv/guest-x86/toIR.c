@@ -120,7 +120,7 @@ static IRBB* irbb;
 #define OFFB_IDFLAG   offsetof(VexGuestX86State,guest_IDFLAG)
 #define OFFB_FTOP     offsetof(VexGuestX86State,guest_FTOP)
 #define OFFB_FC3210   offsetof(VexGuestX86State,guest_FC3210)
-#define OFFB_FPRTZ    offsetof(VexGuestX86State,guest_FPRTZ)
+#define OFFB_FPROUND  offsetof(VexGuestX86State,guest_FPROUND)
 
 #define OFFB_EMWARN   offsetof(VexGuestX86State,guest_EMWARN)
 
@@ -3398,31 +3398,26 @@ static void put_C3210 ( IRExpr* e )
 }
 
 /* --------- Get/put the FPU rounding mode. --------- */
-static IRExpr* /* :: Ity_I32 */ get_fprtz ( void )
+static IRExpr* /* :: Ity_I32 */ get_fpround ( void )
 {
-   return IRExpr_Get( OFFB_FPRTZ, Ity_I32 );
+   return IRExpr_Get( OFFB_FPROUND, Ity_I32 );
 }
 
-static void put_fprtz ( IRExpr* /* :: Ity_I32 */ e )
+static void put_fpround ( IRExpr* /* :: Ity_I32 */ e )
 {
-   stmt( IRStmt_Put( OFFB_FPRTZ, e ) );
+   stmt( IRStmt_Put( OFFB_FPROUND, e ) );
 }
 
 
 /* --------- Synthesise a 2-bit FPU rounding mode. --------- */
 /* Produces a value in 0 .. 3, which is encoded as per the type
-   IRRoundingMode.  Since 11b means round-to-zero and 00b means
-   round-to-nearest, this means the value can be synthesised from
-   bit 0 of guest_FPRTZ as (w<<31) >>s 31, where w = guest_FPRTZ.
+   IRRoundingMode.  Since the guest_FPROUND value is also encoded as
+   per IRRoundingMode, we merely need to get it and mask it for
+   safety.
 */
 static IRExpr* /* :: Ity_I32 */ get_roundingmode ( void )
 {
-   return 
-      binop( Iop_And32,
-             binop( Iop_Sar32,
-                    binop(Iop_Shl32, get_fprtz(), mkU8(31)),
-                    mkU8(31) ),
-             mkU32(3) );
+   return binop( Iop_And32, get_fpround(), mkU32(3) );
 }
 
 
@@ -3820,12 +3815,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 5: {/* FLDCW */
                /* The only thing we observe in the control word is the
-                  rounding mode, and even that only two values of.
-                  Therefore, pass the 16-bit value (x87 native-format
-                  control word) to a clean helper, getting back a
-                  64-bit value, the lower half of which is the FPRTZ
-                  value to store, and the upper half of which is the
-                  emulation-warning token which may be generated.
+                  rounding mode.  Therefore, pass the 16-bit value
+                  (x87 native-format control word) to a clean helper,
+                  getting back a 64-bit value, the lower half of which
+                  is the FPROUND value to store, and the upper half of
+                  which is the emulation-warning token which may be
+                  generated.
                */
                /* ULong x86h_check_fldcw ( UInt ); */
                IRTemp t64 = newTemp(Ity_I64);
@@ -3842,7 +3837,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                             )
                      );
 
-               put_fprtz( unop(Iop_64to32, mkexpr(t64)) );
+               put_fpround( unop(Iop_64to32, mkexpr(t64)) );
                assign( ew, unop(Iop_64HIto32, mkexpr(t64) ) );
                put_emwarn( mkexpr(ew) );
                /* Finally, if an emulation warning was reported,
@@ -3860,9 +3855,9 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 7: /* FNSTCW */
               /* Fake up a native x87 FPU control word.  The only
-                 thing it depends on is FPRTZ[0], so call a clean
+                 thing it depends on is FPROUND[1:0], so call a clean
                  helper to cook it up. */
-               /* UInt x86h_create_fpucw ( UInt fptrz ) */
+               /* UInt x86h_create_fpucw ( UInt fpround ) */
                DIP("fnstcw %s", dis_buf);
                storeLE(
                   mkexpr(addr), 
@@ -3870,7 +3865,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                         mkIRExprCCall(
                            Ity_I32, 0/*regp*/,
                            "x86h_create_fpucw", &x86h_create_fpucw, 
-                           mkIRExprVec_1( get_fprtz() ) 
+                           mkIRExprVec_1( get_fpround() ) 
                         ) 
                   ) 
                );
@@ -4469,7 +4464,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                d->fxState[2].size   = 8 * sizeof(UChar);
 
                d->fxState[3].fx     = Ifx_Write;
-               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPRTZ);
+               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPROUND);
                d->fxState[3].size   = sizeof(UInt);
 
                d->fxState[4].fx     = Ifx_Write;
@@ -4526,7 +4521,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                d->fxState[2].size   = 8 * sizeof(UChar);
 
                d->fxState[3].fx     = Ifx_Read;
-               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPRTZ);
+               d->fxState[3].offset = offsetof(VexGuestX86State,guest_FPROUND);
                d->fxState[3].size   = sizeof(UInt);
 
                d->fxState[4].fx     = Ifx_Read;

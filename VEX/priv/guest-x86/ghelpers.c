@@ -1388,16 +1388,15 @@ typedef
 
 
 /* native_fpucw[15:0] contains a x87 native format FPU control word.
-   Extract from it the required FPRTZ value and any resulting
-   emulation warning, and return (warn << 32) | fprtz value. */
+   Extract from it the required FPROUND value and any resulting
+   emulation warning, and return (warn << 32) | fpround value. 
+*/
 /* CLEAN HELPER */
 ULong x86h_check_fldcw ( UInt fpucw )
 {
-   /* Decide on a rounding mode.  fpucw[11:10] must be either
-      00b(round to nearest) or 11b(round to zero).  No others
-      supported.  Others are mapped to round-to-nearest. */
+   /* Decide on a rounding mode.  fpucw[11:10] holds it. */
+   /* NOTE, encoded exactly as per enum IRRoundingMode. */
    UInt rmode = (fpucw >> 10) & 3;
-   UInt fprtz = rmode==0 ? 0 : 1;
 
    /* Detect any required emulation warnings. */
    VexEmWarn ew = EmWarn_NONE;
@@ -1407,25 +1406,21 @@ ULong x86h_check_fldcw ( UInt fpucw )
       ew = EmWarn_X86_x87exns;
    }
    else 
-   if (rmode != 0 && rmode != 3) {
-      /* unsupported rounding mode */
-      ew = EmWarn_X86_x87rounding;
-   }
-   else
    if (((fpucw >> 8) & 3) != 3) {
       /* unsupported precision */
       ew = EmWarn_X86_x87precision;
    }
 
-   return (((ULong)ew) << 32) | ((ULong)fprtz);
+   return (((ULong)ew) << 32) | ((ULong)rmode);
 }
 
 /* CLEAN HELPER */
 /* Given fprtz as 1 or 0, create a suitable x87 native format
    FPU control word. */
-UInt x86h_create_fpucw ( UInt fprtz )
+UInt x86h_create_fpucw ( UInt fpround )
 {
-   return (fprtz & 1) ? 0x0F7F : 0x037F;
+   fpround &= 3;
+   return 0x037F | (fpround << 10);
 }
 
 
@@ -1443,7 +1438,7 @@ VexEmWarn LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
    UInt       fpucw   = x87->env[FP_ENV_CTRL];
    UInt       c3210   = x87->env[FP_ENV_STAT] & 0x4700;
    VexEmWarn  ew;
-   UInt       fprtz;
+   UInt       fpround;
    ULong      pair;
 
    /* Copy registers and tags */
@@ -1466,13 +1461,13 @@ VexEmWarn LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
    /* status word */
    vex_state->guest_FC3210 = c3210;
 
-   /* handle the control word, setting FPRTZ and detecting any 
+   /* handle the control word, setting FPROUND and detecting any
       emulation warnings. */
-   pair  = x86h_check_fldcw ( (UInt)fpucw );
-   fprtz = (UInt)pair;
-   ew    = (VexEmWarn)(pair >> 32);
+   pair    = x86h_check_fldcw ( (UInt)fpucw );
+   fpround = (UInt)pair;
+   ew      = (VexEmWarn)(pair >> 32);
    
-   vex_state->guest_FPRTZ = fprtz & 1;
+   vex_state->guest_FPROUND = fpround & 3;
 
    /* emulation warnings --> caller */
    return ew;
@@ -1497,7 +1492,7 @@ void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state,
    x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
    x87->env[FP_ENV_STAT] = ((ftop & 7) << 11) | (c3210 & 0x4700);
    x87->env[FP_ENV_CTRL] 
-      = (UShort)x86h_create_fpucw( vex_state->guest_FPRTZ );
+      = (UShort)x86h_create_fpucw( vex_state->guest_FPROUND );
 
    tagw = 0;
    for (r = 0; r < 8; r++) {
@@ -1583,8 +1578,8 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
       vex_state->guest_FPTAG[i] = 0; /* empty */
       vex_state->guest_FPREG[i] = 0; /* IEEE754 64-bit zero */
    }
-   vex_state->guest_FPRTZ  = 0; /* round to nearest */
-   vex_state->guest_FC3210 = 0;
+   vex_state->guest_FPROUND = (UInt)Irrm_NEAREST;
+   vex_state->guest_FC3210  = 0;
 
    vex_state->guest_CS = 0;
    vex_state->guest_DS = 0;
@@ -2502,7 +2497,7 @@ VexGuestLayout
                  /*  4 */ ALWAYSDEFD(guest_EIP),
                  /*  5 */ ALWAYSDEFD(guest_FTOP),
                  /*  6 */ ALWAYSDEFD(guest_FPTAG),
-                 /*  7 */ ALWAYSDEFD(guest_FPRTZ),
+                 /*  7 */ ALWAYSDEFD(guest_FPROUND),
                  /*  8 */ ALWAYSDEFD(guest_FC3210),
                  /*  9 */ ALWAYSDEFD(guest_CS),
                  /* 10 */ ALWAYSDEFD(guest_DS),

@@ -274,23 +274,23 @@ extern void ppAMD64RM ( AMD64RM* );
 //..    X86UnaryOp;
 //.. 
 //.. extern HChar* showX86UnaryOp ( X86UnaryOp );
-//.. 
-//.. 
-//.. /* --------- */
-//.. typedef 
-//..    enum {
-//..       Xalu_INVALID,
-//..       Xalu_MOV,
-//..       Xalu_CMP,
-//..       Xalu_ADD, Xalu_SUB, Xalu_ADC, Xalu_SBB, 
-//..       Xalu_AND, Xalu_OR, Xalu_XOR,
-//..       Xalu_MUL
-//..    }
-//..    X86AluOp;
-//.. 
-//.. extern HChar* showX86AluOp ( X86AluOp );
-//.. 
-//.. 
+
+
+/* --------- */
+typedef 
+   enum {
+      Aalu_INVALID,
+      Aalu_MOV,
+      Aalu_CMP,
+      Aalu_ADD, Aalu_SUB, Aalu_ADC, Aalu_SBB, 
+      Aalu_AND, Aalu_OR, Aalu_XOR,
+      Aalu_MUL
+   }
+   AMD64AluOp;
+
+extern HChar* showAMD64AluOp ( AMD64AluOp );
+
+
 //.. /* --------- */
 //.. typedef
 //..    enum {
@@ -411,17 +411,17 @@ typedef
 typedef
    struct {
       AMD64InstrTag tag;
-//..       union {
-//..          struct {
-//..             X86AluOp op;
-//..             X86RMI*  src;
-//..             HReg     dst;
-//..          } Alu32R;
-//..          struct {
-//..             X86AluOp  op;
-//..             X86RI*    src;
-//..             X86AMode* dst;
-//..          } Alu32M;
+      union {
+         struct {
+            AMD64AluOp op;
+            AMD64RMI*  src;
+            HReg       dst;
+         } Alu64R;
+         struct {
+            AMD64AluOp  op;
+            AMD64RI*    src;
+            AMD64AMode* dst;
+         } Alu64M;
 //..          struct {
 //..             X86ShiftOp op;
 //..             UInt       src;  /* shift amount, or 0 means %cl */
@@ -629,50 +629,50 @@ typedef
 //..             HReg   src;
 //..             HReg   dst;
 //..          } SseShuf;
-//.. 
-//..       } Xin;
+
+      } Ain;
    }
    AMD64Instr;
 
-//.. extern X86Instr* X86Instr_Alu32R    ( X86AluOp, X86RMI*, HReg );
-//.. extern X86Instr* X86Instr_Alu32M    ( X86AluOp, X86RI*,  X86AMode* );
-//.. extern X86Instr* X86Instr_Unary32   ( X86UnaryOp op, X86RM* dst );
-//.. extern X86Instr* X86Instr_Sh32      ( X86ShiftOp, UInt, X86RM* );
-//.. extern X86Instr* X86Instr_Test32    ( X86RI* src, X86RM* dst );
-//.. extern X86Instr* X86Instr_MulL      ( Bool syned, X86ScalarSz, X86RM* );
-//.. extern X86Instr* X86Instr_Div       ( Bool syned, X86ScalarSz, X86RM* );
-//.. extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_Push      ( X86RMI* );
-//.. extern X86Instr* X86Instr_Call      ( X86CondCode, Addr32, Int );
-//.. extern X86Instr* X86Instr_Goto      ( IRJumpKind, X86CondCode cond, X86RI* dst );
-//.. extern X86Instr* X86Instr_CMov32    ( X86CondCode, X86RM* src, HReg dst );
-//.. extern X86Instr* X86Instr_LoadEX    ( UChar szSmall, Bool syned,
-//..                                       X86AMode* src, HReg dst );
-//.. extern X86Instr* X86Instr_Store     ( UChar sz, HReg src, X86AMode* dst );
-//.. extern X86Instr* X86Instr_Set32     ( X86CondCode cond, HReg dst );
-//.. extern X86Instr* X86Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_MFence    ( VexSubArch );
+extern AMD64Instr* AMD64Instr_Alu64R    ( AMD64AluOp, AMD64RMI*, HReg );
+//.. extern AMD64Instr* AMD64Instr_Alu32M    ( AMD64AluOp, AMD64RI*,  AMD64AMode* );
+//.. extern AMD64Instr* AMD64Instr_Unary32   ( AMD64UnaryOp op, AMD64RM* dst );
+//.. extern AMD64Instr* AMD64Instr_Sh32      ( AMD64ShiftOp, UInt, AMD64RM* );
+//.. extern AMD64Instr* AMD64Instr_Test32    ( AMD64RI* src, AMD64RM* dst );
+//.. extern AMD64Instr* AMD64Instr_MulL      ( Bool syned, AMD64ScalarSz, AMD64RM* );
+//.. extern AMD64Instr* AMD64Instr_Div       ( Bool syned, AMD64ScalarSz, AMD64RM* );
+//.. extern AMD64Instr* AMD64Instr_Sh3232    ( AMD64ShiftOp, UInt amt, HReg src, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_Push      ( AMD64RMI* );
+//.. extern AMD64Instr* AMD64Instr_Call      ( AMD64CondCode, Addr32, Int );
+//.. extern AMD64Instr* AMD64Instr_Goto      ( IRJumpKind, AMD64CondCode cond, AMD64RI* dst );
+//.. extern AMD64Instr* AMD64Instr_CMov32    ( AMD64CondCode, AMD64RM* src, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_LoadEX    ( UChar szSmall, Bool syned,
+//..                                       AMD64AMode* src, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_Store     ( UChar sz, HReg src, AMD64AMode* dst );
+//.. extern AMD64Instr* AMD64Instr_Set32     ( AMD64CondCode cond, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_Bsfr32    ( Bool isFwds, HReg src, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_MFence    ( VexSubArch );
 //.. 
-//.. extern X86Instr* X86Instr_FpUnary   ( X86FpOp op, HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_FpBinary  ( X86FpOp op, HReg srcL, HReg srcR, HReg dst );
-//.. extern X86Instr* X86Instr_FpLdSt    ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
-//.. extern X86Instr* X86Instr_FpLdStI   ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
-//.. extern X86Instr* X86Instr_Fp64to32  ( HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_FpCMov    ( X86CondCode, HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_FpLdStCW  ( Bool isLoad, X86AMode* );
-//.. extern X86Instr* X86Instr_FpStSW_AX ( void );
-//.. extern X86Instr* X86Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_FpUnary   ( AMD64FpOp op, HReg src, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_FpBinary  ( AMD64FpOp op, HReg srcL, HReg srcR, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_FpLdSt    ( Bool isLoad, UChar sz, HReg reg, AMD64AMode* );
+//.. extern AMD64Instr* AMD64Instr_FpLdStI   ( Bool isLoad, UChar sz, HReg reg, AMD64AMode* );
+//.. extern AMD64Instr* AMD64Instr_Fp64to32  ( HReg src, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_FpCMov    ( AMD64CondCode, HReg src, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_FpLdStCW  ( Bool isLoad, AMD64AMode* );
+//.. extern AMD64Instr* AMD64Instr_FpStSW_AX ( void );
+//.. extern AMD64Instr* AMD64Instr_FpCmp     ( HReg srcL, HReg srcR, HReg dst );
 //.. 
-//.. extern X86Instr* X86Instr_SseConst  ( UShort con, HReg dst );
-//.. extern X86Instr* X86Instr_SseLdSt   ( Bool isLoad, HReg, X86AMode* );
-//.. extern X86Instr* X86Instr_SseLdzLO  ( Int sz, HReg, X86AMode* );
-//.. extern X86Instr* X86Instr_Sse32Fx4  ( X86SseOp, HReg, HReg );
-//.. extern X86Instr* X86Instr_Sse32FLo  ( X86SseOp, HReg, HReg );
-//.. extern X86Instr* X86Instr_Sse64Fx2  ( X86SseOp, HReg, HReg );
-//.. extern X86Instr* X86Instr_Sse64FLo  ( X86SseOp, HReg, HReg );
-//.. extern X86Instr* X86Instr_SseReRg   ( X86SseOp, HReg, HReg );
-//.. extern X86Instr* X86Instr_SseCMov   ( X86CondCode, HReg src, HReg dst );
-//.. extern X86Instr* X86Instr_SseShuf   ( Int order, HReg src, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_SseConst  ( UShort con, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_SseLdSt   ( Bool isLoad, HReg, AMD64AMode* );
+//.. extern AMD64Instr* AMD64Instr_SseLdzLO  ( Int sz, HReg, AMD64AMode* );
+//.. extern AMD64Instr* AMD64Instr_Sse32Fx4  ( AMD64SseOp, HReg, HReg );
+//.. extern AMD64Instr* AMD64Instr_Sse32FLo  ( AMD64SseOp, HReg, HReg );
+//.. extern AMD64Instr* AMD64Instr_Sse64Fx2  ( AMD64SseOp, HReg, HReg );
+//.. extern AMD64Instr* AMD64Instr_Sse64FLo  ( AMD64SseOp, HReg, HReg );
+//.. extern AMD64Instr* AMD64Instr_SseReRg   ( AMD64SseOp, HReg, HReg );
+//.. extern AMD64Instr* AMD64Instr_SseCMov   ( AMD64CondCode, HReg src, HReg dst );
+//.. extern AMD64Instr* AMD64Instr_SseShuf   ( Int order, HReg src, HReg dst );
 
 
 extern void ppAMD64Instr ( AMD64Instr* );

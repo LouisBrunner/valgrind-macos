@@ -156,16 +156,16 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 //..    *vrLO = env->vregmap[tmp];
 //..    *vrHI = env->vregmapHI[tmp];
 //.. }
-//.. 
-//.. static void addInstr ( ISelEnv* env, X86Instr* instr )
-//.. {
-//..    addHInstr(env->code, instr);
-//..    if (vex_traceflags & VEX_TRACE_VCODE) {
-//..       ppX86Instr(instr);
-//..       vex_printf("\n");
-//..    }
-//.. }
-//.. 
+
+static void addInstr ( ISelEnv* env, AMD64Instr* instr )
+{
+   addHInstr(env->code, instr);
+   if (vex_traceflags & VEX_TRACE_VCODE) {
+      ppAMD64Instr(instr);
+      vex_printf("\n");
+   }
+}
+
 //.. static HReg newVRegI ( ISelEnv* env )
 //.. {
 //..    HReg reg = mkHReg(env->vreg_ctr, HRcInt32, True/*virtual reg*/);
@@ -186,55 +186,80 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 //..    env->vreg_ctr++;
 //..    return reg;
 //.. }
-//.. 
-//.. 
-//.. /*---------------------------------------------------------*/
-//.. /*--- ISEL: Forward declarations                        ---*/
-//.. /*---------------------------------------------------------*/
-//.. 
-//.. /* These are organised as iselXXX and iselXXX_wrk pairs.  The
-//..    iselXXX_wrk do the real work, but are not to be called directly.
-//..    For each XXX, iselXXX calls its iselXXX_wrk counterpart, then
-//..    checks that all returned registers are virtual.  You should not
-//..    call the _wrk version directly.
-//.. */
-//.. static X86RMI*     iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e );
-//.. static X86RMI*     iselIntExpr_RMI     ( ISelEnv* env, IRExpr* e );
-//.. 
-//.. static X86RI*      iselIntExpr_RI_wrk ( ISelEnv* env, IRExpr* e );
-//.. static X86RI*      iselIntExpr_RI     ( ISelEnv* env, IRExpr* e );
-//.. 
-//.. static X86RM*      iselIntExpr_RM_wrk ( ISelEnv* env, IRExpr* e );
-//.. static X86RM*      iselIntExpr_RM     ( ISelEnv* env, IRExpr* e );
-//.. 
-//.. static HReg        iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e );
-//.. static HReg        iselIntExpr_R     ( ISelEnv* env, IRExpr* e );
-//.. 
-//.. static X86AMode*   iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e );
-//.. static X86AMode*   iselIntExpr_AMode     ( ISelEnv* env, IRExpr* e );
-//.. 
-//.. static void        iselInt64Expr_wrk ( HReg* rHi, HReg* rLo, 
-//..                                        ISelEnv* env, IRExpr* e );
-//.. static void        iselInt64Expr     ( HReg* rHi, HReg* rLo, 
-//..                                        ISelEnv* env, IRExpr* e );
-//.. 
-//.. static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e );
-//.. static X86CondCode iselCondCode     ( ISelEnv* env, IRExpr* e );
-//.. 
-//.. static HReg        iselDblExpr_wrk ( ISelEnv* env, IRExpr* e );
-//.. static HReg        iselDblExpr     ( ISelEnv* env, IRExpr* e );
-//.. 
-//.. static HReg        iselFltExpr_wrk ( ISelEnv* env, IRExpr* e );
-//.. static HReg        iselFltExpr     ( ISelEnv* env, IRExpr* e );
-//.. 
-//.. static HReg        iselVecExpr_wrk ( ISelEnv* env, IRExpr* e );
-//.. static HReg        iselVecExpr     ( ISelEnv* env, IRExpr* e );
-//.. 
-//.. 
-//.. /*---------------------------------------------------------*/
-//.. /*--- ISEL: Misc helpers                                ---*/
-//.. /*---------------------------------------------------------*/
-//.. 
+
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Forward declarations                        ---*/
+/*---------------------------------------------------------*/
+
+/* These are organised as iselXXX and iselXXX_wrk pairs.  The
+   iselXXX_wrk do the real work, but are not to be called directly.
+   For each XXX, iselXXX calls its iselXXX_wrk counterpart, then
+   checks that all returned registers are virtual.  You should not
+   call the _wrk version directly.
+*/
+static AMD64RMI*     iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e );
+static AMD64RMI*     iselIntExpr_RMI     ( ISelEnv* env, IRExpr* e );
+
+static AMD64RI*      iselIntExpr_RI_wrk  ( ISelEnv* env, IRExpr* e );
+static AMD64RI*      iselIntExpr_RI      ( ISelEnv* env, IRExpr* e );
+
+static AMD64RM*      iselIntExpr_RM_wrk  ( ISelEnv* env, IRExpr* e );
+static AMD64RM*      iselIntExpr_RM      ( ISelEnv* env, IRExpr* e );
+
+static HReg          iselIntExpr_R_wrk   ( ISelEnv* env, IRExpr* e );
+static HReg          iselIntExpr_R       ( ISelEnv* env, IRExpr* e );
+
+static AMD64AMode*   iselIntExpr_AMode_wrk ( ISelEnv* env, IRExpr* e );
+static AMD64AMode*   iselIntExpr_AMode     ( ISelEnv* env, IRExpr* e );
+
+static AMD64CondCode iselCondCode_wrk    ( ISelEnv* env, IRExpr* e );
+static AMD64CondCode iselCondCode        ( ISelEnv* env, IRExpr* e );
+
+static HReg          iselDblExpr_wrk     ( ISelEnv* env, IRExpr* e );
+static HReg          iselDblExpr         ( ISelEnv* env, IRExpr* e );
+
+static HReg          iselFltExpr_wrk     ( ISelEnv* env, IRExpr* e );
+static HReg          iselFltExpr         ( ISelEnv* env, IRExpr* e );
+
+static HReg          iselVecExpr_wrk     ( ISelEnv* env, IRExpr* e );
+static HReg          iselVecExpr         ( ISelEnv* env, IRExpr* e );
+
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Misc helpers                                ---*/
+/*---------------------------------------------------------*/
+
+static Bool sane_AMode ( AMD64AMode* am )
+{
+   switch (am->tag) {
+      case Aam_IR:
+         return hregClass(am->Aam.IR.reg) == HRcInt64
+                && (hregIsVirtual(am->Aam.IR.reg)
+                    || am->Aam.IR.reg == hregAMD64_RBP());
+      case Aam_IRRS:
+         return hregClass(am->Aam.IRRS.base) == HRcInt64
+                && hregIsVirtual(am->Aam.IRRS.base)
+                && hregClass(am->Aam.IRRS.index) == HRcInt64
+                && hregIsVirtual(am->Aam.IRRS.index);
+      default:
+        vpanic("sane_AMode: unknown amd64 amode tag");
+   }
+}
+
+
+/* Can the lower 32 bits be signedly widened to produce the whole
+   64-bit value?  In other words, are the top 33 bits either all 0 or
+   all 1 ? */
+static Bool fitsIn32Bits ( ULong x )
+{
+   Long y0 = (Long)x;
+   Long y1 = y0;
+   y1 <<= 32;
+   y1 >>=/*s*/ 32;
+   return toBool(x == y1);
+}
+
 //.. /* Is this a 32-bit zero expression? */
 //.. 
 //.. static Bool isZero32 ( IRExpr* e )
@@ -1213,36 +1238,19 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 //..    ppIRExpr(e);
 //..    vpanic("iselIntExpr_R: cannot reduce tree");
 //.. }
-//.. 
-//.. 
-//.. /*---------------------------------------------------------*/
-//.. /*--- ISEL: Integer expression auxiliaries              ---*/
-//.. /*---------------------------------------------------------*/
-//.. 
-//.. /* --------------------- AMODEs --------------------- */
-//.. 
-//.. /* Return an AMode which computes the value of the specified
-//..    expression, possibly also adding insns to the code list as a
-//..    result.  The expression may only be a 32-bit one.
-//.. */
-//.. 
-//.. static Bool sane_AMode ( X86AMode* am )
-//.. {
-//..    switch (am->tag) {
-//..       case Xam_IR:
-//..          return hregClass(am->Xam.IR.reg) == HRcInt32
-//..                 && (hregIsVirtual(am->Xam.IR.reg)
-//..                     || am->Xam.IR.reg == hregX86_EBP());
-//..       case Xam_IRRS:
-//..          return hregClass(am->Xam.IRRS.base) == HRcInt32
-//..                 && hregIsVirtual(am->Xam.IRRS.base)
-//..                 && hregClass(am->Xam.IRRS.index) == HRcInt32
-//..                 && hregIsVirtual(am->Xam.IRRS.index);
-//..       default:
-//..         vpanic("sane_AMode: unknown x86 amode tag");
-//..    }
-//.. }
-//.. 
+
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Integer expression auxiliaries              ---*/
+/*---------------------------------------------------------*/
+
+/* --------------------- AMODEs --------------------- */
+
+/* Return an AMode which computes the value of the specified
+   expression, possibly also adding insns to the code list as a
+   result.  The expression may only be a 32-bit one.
+*/
+
 //.. static X86AMode* iselIntExpr_AMode ( ISelEnv* env, IRExpr* e )
 //.. {
 //..    X86AMode* am = iselIntExpr_AMode_wrk(env, e);
@@ -1287,66 +1295,75 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 //..       return X86AMode_IR(0, r1);
 //..    }
 //.. }
-//.. 
-//.. 
-//.. /* --------------------- RMIs --------------------- */
-//.. 
-//.. /* Similarly, calculate an expression into an X86RMI operand.  As with
-//..    iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
-//.. 
-//.. static X86RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    X86RMI* rmi = iselIntExpr_RMI_wrk(env, e);
-//..    /* sanity checks ... */
-//..    switch (rmi->tag) {
-//..       case Xrmi_Imm:
-//..          return rmi;
-//..       case Xrmi_Reg:
-//..          vassert(hregClass(rmi->Xrmi.Reg.reg) == HRcInt32);
-//..          vassert(hregIsVirtual(rmi->Xrmi.Reg.reg));
-//..          return rmi;
-//..       case Xrmi_Mem:
-//..          vassert(sane_AMode(rmi->Xrmi.Mem.am));
-//..          return rmi;
-//..       default:
-//..          vpanic("iselIntExpr_RMI: unknown x86 RMI tag");
-//..    }
-//.. }
-//.. 
-//.. /* DO NOT CALL THIS DIRECTLY ! */
-//.. static X86RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e )
-//.. {
-//..    IRType ty = typeOfIRExpr(env->type_env,e);
-//..    vassert(ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
-//.. 
-//..    /* special case: immediate */
-//..    if (e->tag == Iex_Const) {
-//..       UInt u;
-//..       switch (e->Iex.Const.con->tag) {
-//..          case Ico_U32: u = e->Iex.Const.con->Ico.U32; break;
-//..          case Ico_U16: u = 0xFFFF & (e->Iex.Const.con->Ico.U16); break;
-//..          case Ico_U8:  u = 0xFF   & (e->Iex.Const.con->Ico.U8); break;
-//..          default: vpanic("iselIntExpr_RMI.Iex_Const(x86h)");
-//..       }
-//..       return X86RMI_Imm(u);
-//..    }
-//.. 
-//..    /* special case: 32-bit GET */
-//..    if (e->tag == Iex_Get && ty == Ity_I32) {
-//..       return X86RMI_Mem(X86AMode_IR(e->Iex.Get.offset,
-//..                                     hregX86_EBP()));
-//..    }
-//.. 
-//..    /* special case: load from memory */
-//.. 
-//..    /* default case: calculate into a register and return that */
-//..    {
-//..       HReg r = iselIntExpr_R ( env, e );
-//..       return X86RMI_Reg(r);
-//..    }
-//.. }
-//.. 
-//.. 
+
+
+/* --------------------- RMIs --------------------- */
+
+/* Similarly, calculate an expression into an X86RMI operand.  As with
+   iselIntExpr_R, the expression can have type 32, 16 or 8 bits.  */
+
+static AMD64RMI* iselIntExpr_RMI ( ISelEnv* env, IRExpr* e )
+{
+   AMD64RMI* rmi = iselIntExpr_RMI_wrk(env, e);
+   /* sanity checks ... */
+   switch (rmi->tag) {
+      case Armi_Imm:
+         return rmi;
+      case Armi_Reg:
+         vassert(hregClass(rmi->Armi.Reg.reg) == HRcInt64);
+         vassert(hregIsVirtual(rmi->Armi.Reg.reg));
+         return rmi;
+      case Armi_Mem:
+         vassert(sane_AMode(rmi->Armi.Mem.am));
+         return rmi;
+      default:
+         vpanic("iselIntExpr_RMI: unknown amd64 RMI tag");
+   }
+}
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static AMD64RMI* iselIntExpr_RMI_wrk ( ISelEnv* env, IRExpr* e )
+{
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I64 || ty == Ity_I32 
+           || ty == Ity_I16 || ty == Ity_I8);
+
+   /* special case: immediate 64/32/16/8 */
+   if (e->tag == Iex_Const) {
+      switch (e->Iex.Const.con->tag) {
+        case Ico_U64:
+           if (fitsIn32Bits(e->Iex.Const.con->Ico.U64)) {
+              return AMD64RMI_Imm(0xFFFFFFFF & e->Iex.Const.con->Ico.U64);
+           }
+           break;
+         case Ico_U32:
+            return AMD64RMI_Imm(e->Iex.Const.con->Ico.U32); break;
+         case Ico_U16:
+            return AMD64RMI_Imm(0xFFFF & e->Iex.Const.con->Ico.U16); break;
+         case Ico_U8:
+            return AMD64RMI_Imm(0xFF & e->Iex.Const.con->Ico.U8); break;
+         default:
+            vpanic("iselIntExpr_RMI.Iex_Const(amd64)");
+      }
+   }
+
+   /* special case: 64-bit GET */
+   if (e->tag == Iex_Get && ty == Ity_I64) {
+      return AMD64RMI_Mem(AMD64AMode_IR(e->Iex.Get.offset,
+                                        hregAMD64_RBP()));
+   }
+
+   /* special case: load from memory */
+
+   /* default case: calculate into a register and return that */
+vassert(0);
+   //{
+   //   HReg r = iselIntExpr_R ( env, e );
+   //   return X86RMI_Reg(r);
+   //}
+}
+
+
 //.. /* --------------------- RIs --------------------- */
 //.. 
 //.. /* Calculate an expression into an X86RI operand.  As with
@@ -3264,17 +3281,17 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //..       }
 //..       break;
 //..    }
-//.. 
-//..    /* --------- TMP --------- */
-//..    case Ist_Tmp: {
-//..       IRTemp tmp = stmt->Ist.Tmp.tmp;
-//..       IRType ty = typeOfIRTemp(env->type_env, tmp);
-//..       if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
-//..          X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.data);
-//..          HReg dst = lookupIRTemp(env, tmp);
-//..          addInstr(env, X86Instr_Alu32R(Xalu_MOV,rmi,dst));
-//..          return;
-//..       }
+
+   /* --------- TMP --------- */
+   case Ist_Tmp: {
+      IRTemp tmp = stmt->Ist.Tmp.tmp;
+      IRType ty = typeOfIRTemp(env->type_env, tmp);
+      if (ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
+         AMD64RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.data);
+         HReg dst = lookupIRTemp(env, tmp);
+         addInstr(env, AMD64Instr_Alu64R(Aalu_MOV,rmi,dst));
+         return;
+      }
 //..       if (ty == Ity_I64) {
 //..          HReg rHi, rLo, dstHi, dstLo;
 //..          iselInt64Expr(&rHi,&rLo, env, stmt->Ist.Tmp.data);
@@ -3307,9 +3324,9 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //..          addInstr(env, mk_vMOVsd_RR(src,dst));
 //..          return;
 //..       }
-//..       break;
-//..    }
-//.. 
+      break;
+   }
+
 //..    /* --------- Call to DIRTY helper --------- */
 //..    case Ist_Dirty: {
 //..       IRType   retty;

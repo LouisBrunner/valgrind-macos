@@ -79,12 +79,12 @@ fi
 # Setup tool shared object.
 tool_so="vgskin_${tool}.so"
 if [ ! -r "$tooldir/$tool_so" ] ; then
-   echo
-   echo "Tool error:"
-   echo "  The shared library \`$tool_so' for the chosen"
-   echo "  tool \`$tool' could not be found in"
-   echo "  $tooldir"
-   echo
+   echo >&2
+   echo "Tool error:" >&2
+   echo "  The shared library \`$tool_so' for the chosen" >&2
+   echo "  tool \`$tool' could not be found in" >&2
+   echo "  $tooldir" >&2
+   echo >&2
    exit 1
 fi
 
@@ -114,27 +114,27 @@ if [ $# != 0 ] ; then
    fi
 
    if  [ z$which_prog = z ]; then
-      echo "$0: '$1' not found in \$PATH, aborting."
-      exit
+      echo "$0: '$1' not found in \$PATH, aborting." >&2
+      exit 1
    fi
 
    if [ $# != 0 ] ; then
       case `file -L "$which_prog"` in       # must follow symlinks, hence -L
       # Ensure the program isn't statically linked.
       *"statically linked"*)
-        echo "\`$which_prog' is statically linked"
-        echo "Valgrind only works on dynamically linked executables;  your"
-        echo "program must rely on at least one shared object for Valgrind"
-        echo "to work with it.  Read FAQ #5 for more information."
+        echo "\`$which_prog' is statically linked" >&2
+        echo "Valgrind only works on dynamically linked executables;  your" >&2
+        echo "program must rely on at least one shared object for Valgrind" >&2
+        echo "to work with it.  Read FAQ #5 for more information." >&2
         exit 1 ;;
       # Ensure that there are no setuid or gid flags
       *:\ set?id\ ELF*)
-        echo "\`$which_prog' is suid/sgid."
-        echo "Valgrind can't handle these executables, as it"
-        echo "requires the LD_PRELOAD feature in order to work."
-        echo ""
-        echo "Remove those flags and try again."
-        echo ""
+        echo "\`$which_prog' is suid/sgid." >&2
+        echo "Valgrind can't handle these executables, as it" >&2
+        echo "requires the LD_PRELOAD feature in order to work." >&2
+        echo "" >&2
+        echo "Remove those flags and try again." >&2
+        echo "" >&2
         exit 1
         ;;
       esac

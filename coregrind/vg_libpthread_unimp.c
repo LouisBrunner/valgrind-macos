@@ -95,7 +95,7 @@ void _IO_ftrylockfile ( void )  { unimp("_IO_ftrylockfile"); }
 //void pthread_atfork ( void )  { unimp("pthread_atfork"); }
 //void pthread_attr_destroy ( void )  { unimp("pthread_attr_destroy"); }
 //void pthread_attr_getdetachstate ( void )  { unimp("pthread_attr_getdetachstate"); }
-void pthread_attr_getinheritsched ( void )  { unimp("pthread_attr_getinheritsched"); }
+//void pthread_attr_getinheritsched ( void )  { unimp("pthread_attr_getinheritsched"); }
 //void pthread_attr_getschedparam ( void )  { unimp("pthread_attr_getschedparam"); }
 //void pthread_attr_getschedpolicy ( void )  { unimp("pthread_attr_getschedpolicy"); }
 //void pthread_attr_getscope ( void )  { unimp("pthread_attr_getscope"); }

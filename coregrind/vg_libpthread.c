@@ -444,6 +444,15 @@ int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
    return 0;
 }
 
+int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inherit)
+{
+   static int moans = N_MOANS;
+   if (moans-- > 0) 
+      kludged("pthread_attr_getinheritsched", NULL);
+   *inherit = PTHREAD_EXPLICIT_SCHED;
+   return 0;
+}
+
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inherit)
 {
    static int moans = N_MOANS;

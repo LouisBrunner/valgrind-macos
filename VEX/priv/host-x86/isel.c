@@ -113,7 +113,6 @@ static Bool matchWrk ( MatchInfo* mi, IRExpr* p/*attern*/, IRExpr* e/*xpr*/ )
                                    ? (p->Iex.Const.con->Ico.F64 
                                       == e->Iex.Const.con->Ico.F64) 
                                    : False;
-           case Ico_NaN64: return e->Iex.Const.con->tag == Ico_NaN64;
 	}
         vpanic("matchIRExpr.Iex_Const");
         /*NOTREACHED*/
@@ -243,15 +242,6 @@ static HReg newVRegF ( ISelEnv* env )
    return reg;
 }
 
-/* Misc helpers looking for a proper home. */
-
-static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
-{
-   vassert(hregClass(src) == HRcInt);
-   vassert(hregClass(dst) == HRcInt);
-   return X86Instr_Alu32R(Xalu_MOV, X86RMI_Reg(src), dst);
-}
-
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Forward declarations                        ---*/
@@ -287,6 +277,68 @@ static X86CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e );
 static X86CondCode iselCondCode     ( ISelEnv* env, IRExpr* e );
 
 static HReg iselDblExpr ( ISelEnv* env, IRExpr* e );
+
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Misc helpers                                ---*/
+/*---------------------------------------------------------*/
+
+/* Make a int reg-reg move. */
+
+static X86Instr* mk_MOVsd_RR ( HReg src, HReg dst )
+{
+   vassert(hregClass(src) == HRcInt);
+   vassert(hregClass(dst) == HRcInt);
+   return X86Instr_Alu32R(Xalu_MOV, X86RMI_Reg(src), dst);
+}
+
+/* Push an arg onto the host stack, in preparation for a call to a
+   helper function of some kind.  Returns the number of 32-bit words
+   pushed. */
+
+static Int pushArg ( ISelEnv* env, IRExpr* arg )
+{
+   IRType arg_ty = typeOfIRExpr(env->type_env, arg);
+   if (arg_ty == Ity_I32) {
+      addInstr(env, X86Instr_Push(iselIntExpr_RMI(env, arg)));
+      return 1;
+   } else 
+   if (arg_ty == Ity_I64) {
+      HReg rHi, rLo;
+      iselIntExpr64(&rHi, &rLo, env, arg);
+      addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
+      addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
+      return 2;
+   }
+   ppIRExpr(arg);
+   vpanic("pushArg(x86): can't handle arg of this type");
+}
+
+/* Complete the call to a helper function, by calling the 
+   helper and clearing the args off the stack. */
+
+static 
+void callHelperAndClearArgs ( ISelEnv* env, Char* name, Int n_arg_ws )
+{
+   Addr64 helper;
+   UInt   target;
+
+   /* Find the function to call.  Since the host -- for which we are
+      generating code -- is a 32-bit machine (x86) -- the upper 32
+      bits of the helper address should be zero. */
+   helper = env->find_helper(name);
+   vassert((helper & 0xFFFFFFFF00000000LL) == 0);
+   target = helper & 0xFFFFFFFF;
+   addInstr(env, X86Instr_Alu32R(
+                    Xalu_MOV,
+                    X86RMI_Imm(target),
+                    hregX86_EAX()));
+   addInstr(env, X86Instr_Call(hregX86_EAX()));
+   if (n_arg_ws > 0)
+      addInstr(env, X86Instr_Alu32R(Xalu_ADD,
+                       X86RMI_Imm(4*n_arg_ws),
+                       hregX86_ESP()));
+}
 
 
 /*---------------------------------------------------------*/
@@ -797,11 +849,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 
    /* --------- CCALL --------- */
    case Iex_CCall: {
-      Addr64 helper;
       Int     i, n_args, n_arg_ws;
-      UInt    target;
-      IRExpr* arg;
-      IRType  arg_ty;
       HReg    dst = newVRegI(env);
       vassert(ty == Ity_I32);
 
@@ -814,38 +862,12 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       n_arg_ws = n_args = 0;
       while (e->Iex.CCall.args[n_args]) n_args++;
 
-      for (i = n_args-1; i >= 0; i--) {
-         arg    = e->Iex.CCall.args[i];
-         arg_ty = typeOfIRExpr(env->type_env, arg);
-         if (arg_ty == Ity_I32) {
-            addInstr(env, X86Instr_Push(iselIntExpr_RMI(env, arg)));
-            n_arg_ws ++;
-	 } else 
-         if (arg_ty == Ity_I64) {
-            HReg rHi, rLo;
-            iselIntExpr64(&rHi, &rLo, env, arg);
-            addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
-            addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
-            n_arg_ws += 2;
-         }
-         else goto irreducible;
-      }
+      for (i = n_args-1; i >= 0; i--)
+         n_arg_ws += pushArg(env, e->Iex.CCall.args[i]);
 
-      /* Find the function to call.  Since the host -- for which we
-         are generating code -- is a 32-bit machine (x86) -- the upper
-         32 bit of the helper address should be zero. */
-      helper = env->find_helper(e->Iex.CCall.name);
-      vassert((helper & 0xFFFFFFFF00000000LL) == 0);
-      target = helper & 0xFFFFFFFF;
-      addInstr(env, X86Instr_Alu32R(
-                       Xalu_MOV,
-                       X86RMI_Imm(target),
-                       hregX86_EAX()));
-      addInstr(env, X86Instr_Call(hregX86_EAX()));
-      if (n_arg_ws > 0)
-         addInstr(env, X86Instr_Alu32R(Xalu_ADD,
-                          X86RMI_Imm(4*n_arg_ws),
-                          hregX86_ESP()));
+      /* call the helper, and get the args off the stack afterwards. */
+      callHelperAndClearArgs( env, e->Iex.CCall.name, n_arg_ws );
+
       addInstr(env, mk_MOVsd_RR(hregX86_EAX(), dst));
       return dst;
    }
@@ -1365,6 +1387,36 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
+   /* ReinterpF64asI64(e) */
+   /* Given an IEEE754 double, produce an I64 with the same bit
+      pattern. */
+   if (e->tag == Iex_Unop
+       && e->Iex.Unop.op == Iop_ReinterpF64asI64) {
+      HReg rf   = iselDblExpr(env, e->Iex.Unop.arg);
+      HReg tLo  = newVRegI(env);
+      HReg tHi  = newVRegI(env);
+      X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+      X86AMode* four_esp = X86AMode_IR(4, hregX86_ESP());
+      /* subl $8, %esp */
+      addInstr(env, 
+               X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(8), hregX86_ESP()));
+      /* gstD %rf, 0(%esp) */
+      addInstr(env,
+               X86Instr_FpLdSt(False/*store*/, 8, rf, zero_esp));
+      /* movl 0(%esp), %tLo */
+      addInstr(env, 
+               X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(zero_esp), tLo));
+      /* movl 4(%esp), %tHi */
+      addInstr(env, 
+               X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(four_esp), tHi));
+      /* addl $8, %esp */
+      addInstr(env, 
+               X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(8), hregX86_ESP()));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
    /* 64-bit shifts */
    if (e->tag == Iex_Binop
        && e->Iex.Binop.op == Iop_Shl64) {
@@ -1617,30 +1669,24 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
    }
 
    if (e->tag == Iex_Const) {
-      union { UInt i64[2]; Double f64; } u;
+      union { UInt u32x2[2]; ULong u64; Double f64; } u;
       HReg freg = newVRegF(env);
       vassert(sizeof(u) == 8);
-      vassert(sizeof(u.i64) == 8);
+      vassert(sizeof(u.u64) == 8);
       vassert(sizeof(u.f64) == 8);
+      vassert(sizeof(u.u32x2) == 8);
 
       if (e->Iex.Const.con->tag == Ico_F64) {
          u.f64 = e->Iex.Const.con->Ico.F64;
-      } 
-      else if (e->Iex.Const.con->tag == Ico_NaN64) {
-         /* QNaN is 0 2047 1 0(51times) 
-            == 0b 11111111111b 1 0(51times)
-            == 0x7FF8 0000 0000 0000
-         */
-         /* Since we're running on a little-endian target, and
-            generating code for one: */
-         u.i64[1] = 0x7FF80000;
-         u.i64[0] = 0x00000000;
+      }
+      else if (e->Iex.Const.con->tag == Ico_F64i) {
+         u.u64 = e->Iex.Const.con->Ico.F64i;
       }
       else
          vpanic("iselDblExpr(x86): const");
 
-      addInstr(env, X86Instr_Push(X86RMI_Imm(u.i64[1])));
-      addInstr(env, X86Instr_Push(X86RMI_Imm(u.i64[0])));
+      addInstr(env, X86Instr_Push(X86RMI_Imm(u.u32x2[1])));
+      addInstr(env, X86Instr_Push(X86RMI_Imm(u.u32x2[0])));
       addInstr(env, X86Instr_FpLdSt(True/*load*/, 8, freg, 
                                     X86AMode_IR(0, hregX86_ESP())));
       addInstr(env, X86Instr_Alu32R(Xalu_ADD,
@@ -1818,13 +1864,28 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
                                           hregX86_ESP()));
             return dst;
          }
+         case Iop_ReinterpI64asF64: {
+            /* Given an I64, produce an IEEE754 double with the same
+               bit pattern. */
+            HReg dst = newVRegF(env);
+            HReg rHi, rLo;
+	    iselIntExpr64( &rHi, &rLo, env, e->Iex.Unop.arg);
+            addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
+            addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
+            addInstr(env, X86Instr_FpLdSt(
+                             True/*load*/, 8, dst, 
+                             X86AMode_IR(0, hregX86_ESP())));
+	    addInstr(env, X86Instr_Alu32R(Xalu_ADD,
+                                          X86RMI_Imm(8),
+                                          hregX86_ESP()));
+            return dst;
+	 }
          case Iop_F32toF64:
             /* this is a no-op */
             return iselFltExpr(env, e->Iex.Unop.arg);
          default: 
             break;
       }
-
    }
 
    /* --------- MULTIPLEX --------- */
@@ -1959,7 +2020,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    /* --------- TMP --------- */
    case Ist_Tmp: {
       IRTemp tmp = stmt->Ist.Tmp.tmp;
-      IRType ty = lookupIRTypeEnv(env->type_env, tmp);
+      IRType ty = typeOfIRTemp(env->type_env, tmp);
       if (ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
          X86RMI* rmi = iselIntExpr_RMI(env, stmt->Ist.Tmp.expr);
          HReg dst = lookupIRTemp(env, tmp);
@@ -1984,6 +2045,40 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          HReg dst = lookupIRTemp(env, tmp);
          HReg src = iselDblExpr(env, stmt->Ist.Tmp.expr);
          addInstr(env, X86Instr_FpUnary(Xfp_MOV,src,dst));
+         return;
+      }
+      break;
+   }
+
+   /* --------- Call to DIRTY helper --------- */
+   case Ist_Dirty: {
+      Int      i, n_arg_ws, n_args;
+      IRType   retty;
+      IRDirty* d = stmt->Ist.Dirty.details;
+
+      /* push args on the stack, right to left. */
+      n_arg_ws = n_args = 0;
+      while (d->args[n_args] != NULL) n_args++;
+
+      for (i = n_args-1; i >= 0; i--)
+         n_arg_ws += pushArg(env, d->args[i]);
+
+      /* call the helper, and get the args off the stack afterwards. */
+      callHelperAndClearArgs( env, d->name, n_arg_ws );
+
+      /* Now figure out what to do with the returned value, if any. */
+      if (d->tmp == INVALID_IRTEMP)
+         /* No return value.  Nothing to do. */
+         return;
+
+      retty = typeOfIRTemp(env->type_env, d->tmp);
+      if (retty == Ity_I64) {
+         HReg dstHi, dstLo;
+         /* The returned value is in %edx:%eax.  Park it in the
+            register-pair associated with tmp. */
+         lookupIRTemp64( &dstHi, &dstLo, env, d->tmp);
+         addInstr(env, mk_MOVsd_RR(hregX86_EDX(),dstHi) );
+         addInstr(env, mk_MOVsd_RR(hregX86_EAX(),dstLo) );
          return;
       }
       break;

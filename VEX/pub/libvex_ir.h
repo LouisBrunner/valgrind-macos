@@ -33,8 +33,10 @@ extern void ppIRType ( IRType );
 
 typedef
    enum { Ico_Bit=0x12000,
-          Ico_U8, Ico_U16, Ico_U32, Ico_U64, Ico_F64,
-          Ico_NaN64 /* 64-bit IEEE QNaN. */
+          Ico_U8, Ico_U16, Ico_U32, Ico_U64,
+          Ico_F64, /* 64-bit IEEE754 floating */
+          Ico_F64i /* 64-bit unsigned int to be interpreted literally
+                      as a IEEE754 double value. */
    }
    IRConstTag;
 
@@ -48,17 +50,18 @@ typedef
          UInt   U32;
          ULong  U64;
          Double F64;
+         ULong  F64i;
       } Ico;
    }
    IRConst;
 
-extern IRConst* IRConst_Bit   ( Bool );
-extern IRConst* IRConst_U8    ( UChar );
-extern IRConst* IRConst_U16   ( UShort );
-extern IRConst* IRConst_U32   ( UInt );
-extern IRConst* IRConst_U64   ( ULong );
-extern IRConst* IRConst_F64   ( Double );
-extern IRConst* IRConst_NaN64 ( void );
+extern IRConst* IRConst_Bit  ( Bool );
+extern IRConst* IRConst_U8   ( UChar );
+extern IRConst* IRConst_U16  ( UShort );
+extern IRConst* IRConst_U32  ( UInt );
+extern IRConst* IRConst_U64  ( ULong );
+extern IRConst* IRConst_F64  ( Double );
+extern IRConst* IRConst_F64i ( ULong );
 
 extern void ppIRConst ( IRConst* );
 
@@ -203,7 +206,11 @@ typedef
       Iop_RoundF64,
 
       /* double <-> float.  What does this mean -- does it round? */
-      Iop_F32toF64, Iop_F64toF32
+      Iop_F32toF64, Iop_F64toF32,
+
+      /* Reinterpretation.  Take an F64 and produce an I64 with 
+         the same bit pattern, or vice versa. */
+      Iop_ReinterpF64asI64, Iop_ReinterpI64asF64
    }
    IROp;
 
@@ -419,10 +426,10 @@ extern void ppIRExpr ( IRExpr* );
 
 typedef
    enum {
-      Ifx_None,   /* no effect */
-      Ifx_Read,   /* reads the resource */
-      Ifx_Write,  /* writes the resource */
-      Ifx_Modify, /* modifies the resource */
+      Ifx_None = 0x15000,   /* no effect */
+      Ifx_Read,             /* reads the resource */
+      Ifx_Write,            /* writes the resource */
+      Ifx_Modify,           /* modifies the resource */
    }
    IREffect;
 
@@ -433,17 +440,16 @@ typedef
    struct {
       /* What to call, and details of args/results */
       Char*    name;   /* name of the function to call */
-      IRTemp*  args;   /* arg list, ends in INVALID_IRTEMP */
-      IRType   retty;  /* type of returned value, or IRType_INVALID if none */
+      IRExpr** args;   /* arg list, ends in NULL */
       IRTemp   tmp;    /* to assign result to, or INVALID_IRTEMP if none */
 
       /* Mem effects; we allow only one R/W/M region to be stated */
       IREffect mFx;    /* indicates memory effects, if any */
-      IRTemp   mAddr;  /* of access, or INVALID_IRTEMP if mFx==Ifx_None */
+      IRExpr*  mAddr;  /* of access, or NULL if mFx==Ifx_None */
       Int      mSize;  /* of access, or zero if mFx==Ifx_None */
 
       /* Guest state effects; up to N allowed */
-      Int     nFxState; /* must be 0 .. VEX_N_FXSTATE */
+      Int nFxState; /* must be 0 .. VEX_N_FXSTATE */
       struct {
          IREffect fx;   /* read, write or modify? */
          Int      offset;
@@ -583,11 +589,11 @@ extern void ppIRBB ( IRBB* );
 /* For messing with IR type environments */
 extern IRTypeEnv* emptyIRTypeEnv  ( void );
 extern IRTemp     newIRTemp       ( IRTypeEnv*, IRType );
-extern IRType     lookupIRTypeEnv ( IRTypeEnv*, IRTemp );
 extern IRTypeEnv* copyIRTypeEnv   ( IRTypeEnv* );
 
 /* What is the type of this expression? */
 extern IRType typeOfIRConst ( IRConst* );
+extern IRType typeOfIRTemp  ( IRTypeEnv*, IRTemp );
 extern IRType typeOfIRExpr  ( IRTypeEnv*, IRExpr* );
 
 /* Sanity check a BB of IR */

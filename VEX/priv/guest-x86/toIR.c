@@ -2998,11 +2998,15 @@ UInt dis_imul_I_E_G ( UChar       sorb,
 
 /* --- Helper functions for dealing with the register stack. --- */
 
-/* --- Produce an IRExpr* denoting a 64-bit NaN. --- */
+/* --- Produce an IRExpr* denoting a 64-bit QNaN. --- */
 
-static IRExpr* mkNaN64 ( void )
+static IRExpr* mkQNaN64 ( void )
 {
-   return IRExpr_Const(IRConst_NaN64());
+  /* QNaN is 0 2047 1 0(51times) 
+     == 0b 11111111111b 1 0(51times)
+     == 0x7FF8 0000 0000 0000
+   */
+   return IRExpr_Const(IRConst_F64i(0x7FF8000000000000ULL));
 }
 
 /* --------- Get/set the top-of-stack pointer. --------- */
@@ -3143,7 +3147,7 @@ static void put_ST ( Int i, IRExpr* value )
                                    /* 0 means empty */
                                    value,
                                    /* non-0 means full */
-                                   mkNaN64()
+                                   mkQNaN64()
                    )
    );
 }
@@ -3157,11 +3161,6 @@ static IRExpr* get_ST_UNCHECKED ( Int i )
       IRExpr_GetI( off_ST(i), Ity_F64, OFFB_F0, OFFB_F7+8-1 );
 }
 
-static IRExpr* get_ST_UNCHECKED_as_ULong ( Int i )
-{
-   return
-      IRExpr_GetI( off_ST(i), Ity_I64, OFFB_F0, OFFB_F7+8-1 );
-}
 
 /* Given i, generate an expression yielding 
   is_full(i) ? ST(i) : NaN
@@ -3172,7 +3171,7 @@ static IRExpr* get_ST ( Int i )
    return
       IRExpr_Mux0X( get_ST_TAG(i),
                     /* 0 means empty */
-                    mkNaN64(),
+                    mkQNaN64(),
                     /* non-0 means full */
                     get_ST_UNCHECKED(i));
 }
@@ -3485,7 +3484,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                DIP("fxam");
                args = LibVEX_Alloc(3 * sizeof(IRExpr*));
                args[0] = unop(Iop_8Uto32, get_ST_TAG(0));
-               args[1] = get_ST_UNCHECKED_as_ULong(0);
+               args[1] = unop(Iop_ReinterpF64asI64, get_ST_UNCHECKED(0));
                args[2] = NULL;
                put_C3210(IRExpr_CCall("calculate_FXAM", Ity_I32, args));
                break;
@@ -3724,32 +3723,58 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                         binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
 	       fp_pop();
                break;
-#if 0
+
             case 5: { /* FLD extended-real */
+               /* Uses dirty helper: ULong loadF80le ( UInt ) */
                /* addr holds the address.  First, do a dirty call to
                   get hold of the data. */
                /* give details of args, and where to call */
-               IRDirty* d = emptyIRDirty();
+               IRDirty* d;
+               DIP("fldt %s", dis_buf);
+               d          = emptyIRDirty();
                d->name    = "loadF80le";
                d->args    = LibVEX_Alloc(2 * sizeof(IRTemp));
-               d->args[0] = addr;
-               d->args[1] = INVALID_IRTEMP;
-               d->retty   = Ity_I64;
-               d->tmp     = newTmp(Ity_I64);
+               d->args[0] = mkexpr(addr);
+               d->args[1] = NULL;
+               d->tmp     = newTemp(Ity_I64);
                /* declare that we're reading memory */
                d->mFx   = Ifx_Read;
-               d->mAddr = addr;
+               d->mAddr = mkexpr(addr);
                d->mSize = 10;
                /* declare that we don't mess with guest state */
                d->nFxState = 0;
                /* execute the dirty call, dumping the result in d->tmp. */
                stmt( IRStmt_Dirty(d) );
                fp_push();
-               put_ST(0, d->tmp);
-               DIP("fldt %s", dis_buf);
+               put_ST(0, unop(Iop_ReinterpI64asF64, mkexpr(d->tmp)));
                break;
             }
-#endif
+
+            case 7: { /* FSTP extended-real */
+               /* Uses dirty helper: void storeF80le ( UInt, ULong ) */
+               IRDirty* d;
+               DIP("fldt %s", dis_buf);
+               d          = emptyIRDirty();
+               d->name    = "storeF80le";
+               /* takes 2 args */
+               d->args = LibVEX_Alloc(3 * sizeof(IRTemp));
+               d->args[0] = mkexpr(addr);
+               d->args[1] = unop(Iop_ReinterpF64asI64, get_ST(0));
+               d->args[2] = NULL;
+               /* returns nothing */
+               d->tmp = INVALID_IRTEMP;
+               /* declare we're writing memory */
+               d->mFx   = Ifx_Write;
+               d->mAddr = mkexpr(addr);
+               d->mSize = 10;
+               /* declare that we don't mess with guest state */
+               d->nFxState = 0;
+               /* execute the dirty call. */
+               stmt( IRStmt_Dirty(d) );
+               fp_pop();
+               break;
+            }
+
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
                vex_printf("first_opcode == 0xDB\n");
@@ -3767,7 +3792,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             default:
                goto decode_fail;
-	 }
+         }
       }
    }
 

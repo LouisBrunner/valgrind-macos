@@ -145,7 +145,7 @@ static void addToH64 ( Hash64* h, ULong key, ULong val )
 /* Clone the NULL-terminated vector of IRExpr*s attached to a
    CCall. */
 
-static IRExpr** copyIexCCallArgs ( IRExpr** vec )
+static IRExpr** copyIRExprCallArgs ( IRExpr** vec )
 {
    Int      i;
    IRExpr** newvec;
@@ -210,7 +210,7 @@ static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
          return IRExpr_Tmp(t1);
 
       case Iex_CCall:
-         newargs = copyIexCCallArgs(ex->Iex.CCall.args);
+         newargs = copyIRExprCallArgs(ex->Iex.CCall.args);
          for (i = 0; newargs[i]; i++)
             newargs[i] = flatten_Expr(bb, newargs[i]);
          t1 = newIRTemp(bb->tyenv, ty);
@@ -245,7 +245,9 @@ static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
 
 static void flatten_Stmt ( IRBB* bb, IRStmt* st )
 {
-   IRExpr *e1, *e2;
+   Int i;
+   IRExpr  *e1, *e2;
+   IRDirty *d,  *d2;
    switch (st->tag) {
       case Ist_Put:
          e1 = flatten_Expr(bb, st->Ist.Put.expr);
@@ -266,6 +268,20 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
          e1 = flatten_Expr(bb, st->Ist.STle.addr);
          e2 = flatten_Expr(bb, st->Ist.STle.data);
          addStmtToIRBB(bb, IRStmt_STle(e1,e2));
+         break;
+      case Ist_Dirty:
+         d = st->Ist.Dirty.details;
+         d2 = emptyIRDirty();
+         *d2 = *d;
+         d2->args = copyIRExprCallArgs(d2->args);
+         if (d2->mFx != Ifx_None) {
+            d2->mAddr = flatten_Expr(bb, d2->mAddr);
+         } else {
+            vassert(d2->mAddr == NULL);
+         }
+         for (i = 0; d2->args[i]; i++)
+            d2->args[i] = flatten_Expr(bb, d2->args[i]);
+         addStmtToIRBB(bb, IRStmt_Dirty(d2));
          break;
       case Ist_Exit:
          e1 = flatten_Expr(bb, st->Ist.Exit.cond);
@@ -556,7 +572,7 @@ static IRExpr* subst_Expr ( Hash64* env, IRExpr* ex )
 
    if (ex->tag == Iex_CCall) {
       Int      i;
-      IRExpr** args2 = copyIexCCallArgs ( ex->Iex.CCall.args );
+      IRExpr** args2 = copyIRExprCallArgs ( ex->Iex.CCall.args );
       for (i = 0; args2[i]; i++) {
          vassert(isAtom(args2[i]));
          args2[i] = subst_Expr(env, args2[i]);
@@ -634,6 +650,24 @@ static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
              );
    }
 
+   if (st->tag == Ist_Dirty) {
+      Int     i;
+      IRDirty *d, *d2;
+      d = st->Ist.Dirty.details;
+      d2 = emptyIRDirty();
+      *d2 = *d;
+      d2->args = copyIRExprCallArgs(d2->args);
+      if (d2->mFx != Ifx_None) {
+         vassert(isAtom(d2->mAddr));
+         d2->mAddr = fold_Expr(subst_Expr(env, d2->mAddr));
+      }
+      for (i = 0; d2->args[i]; i++) {
+         vassert(isAtom(d2->args[i]));
+         d2->args[i] = fold_Expr(subst_Expr(env, d2->args[i]));
+      }
+      return IRStmt_Dirty(d2);
+   }
+
    if (st->tag == Ist_Exit) {
       IRExpr* fcond;
       vassert(isAtom(st->Ist.Exit.cond));
@@ -651,7 +685,7 @@ static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
                it is for now, since we'd have to truncate the BB at
                this point, which is tricky. */
             /* fall out into the reconstruct-the-exit code. */
-            vex_printf("subst_and_fold_Stmt: IRStmt_Exit became unconditional\n");
+            vex_printf("vex iropt: IRStmt_Exit became unconditional\n");
          }
       }
       return IRStmt_Exit(fcond,st->Ist.Exit.dst);
@@ -738,6 +772,11 @@ static IRBB* cprop_BB ( IRBB* in )
    -- really just operating a set or IRTemps.
 */
 
+static void addUses_Temp ( Hash64* set, IRTemp tmp )
+{
+   addToH64(set, (ULong)tmp, 0);
+}
+
 static void addUses_Expr ( Hash64* set, IRExpr* e )
 {
    Int i;
@@ -765,7 +804,7 @@ static void addUses_Expr ( Hash64* set, IRExpr* e )
          addUses_Expr(set, e->Iex.Unop.arg);
          return;
       case Iex_Tmp:
-         addToH64(set, (ULong)(e->Iex.Tmp.tmp), 0);
+         addUses_Temp(set, e->Iex.Tmp.tmp);
          return;
       case Iex_Const:
       case Iex_Get:
@@ -779,13 +818,12 @@ static void addUses_Expr ( Hash64* set, IRExpr* e )
 
 static void addUses_Stmt ( Hash64* set, IRStmt* st )
 {
+   Int      i;
+   IRDirty* d;
    switch (st->tag) {
       case Ist_PutI:
          addUses_Expr(set, st->Ist.PutI.offset);
          addUses_Expr(set, st->Ist.PutI.expr);
-         return;
-      case Ist_Exit:
-         addUses_Expr(set, st->Ist.Exit.cond);
          return;
       case Ist_Tmp:
          addUses_Expr(set, st->Ist.Tmp.expr);
@@ -796,6 +834,16 @@ static void addUses_Stmt ( Hash64* set, IRStmt* st )
       case Ist_STle:
          addUses_Expr(set, st->Ist.STle.addr);
          addUses_Expr(set, st->Ist.STle.data);
+         return;
+      case Ist_Dirty:
+         d = st->Ist.Dirty.details;
+         if (d->mFx != Ifx_None)
+            addUses_Expr(set, d->mAddr);
+         for (i = 0; d->args[i] != NULL; i++)
+            addUses_Expr(set, d->args[i]);
+         return;
+      case Ist_Exit:
+         addUses_Expr(set, st->Ist.Exit.cond);
          return;
       default:
          vex_printf("\n");
@@ -1028,6 +1076,9 @@ static void handle_gets_Stmt ( Hash64* env, IRStmt* st )
          vassert(isAtom(st->Ist.STle.data));
          return;
 
+      case Ist_Dirty:
+         return;
+
       case Ist_Exit:
          vassert(isAtom(st->Ist.Exit.cond));
          return;
@@ -1193,28 +1244,33 @@ typedef
    Add the use-occurrences of temps in this expression 
    to the environment. 
 */
+static void occCount_Temp ( Hash64* env, IRTemp tmp )
+{
+   ULong    res;
+   TmpInfo* ti;
+   if (lookupH64(env, &res, (ULong)tmp)) {
+      ti = (TmpInfo*)res;
+      ti->occ++;
+   } else {
+      ti               = LibVEX_Alloc(sizeof(TmpInfo));
+      ti->occ          = 1;
+      ti->expr         = NULL;
+      ti->eDoesLoad    = False;
+      ti->eDoesGet     = False;
+      ti->invalidateMe = False;
+      ti->origPos      = -1; /* filed in properly later */
+      addToH64(env, (ULong)tmp, (ULong)ti );
+   }
+}
+
 static void occCount_Expr ( Hash64* env, IRExpr* e )
 {
-   Int      i;
-   TmpInfo* ti;
-   ULong    res;
+   Int i;
 
    switch (e->tag) {
 
       case Iex_Tmp: /* the only interesting case */
-         if (lookupH64(env, &res, (ULong)(e->Iex.Tmp.tmp))) {
-            ti = (TmpInfo*)res;
-            ti->occ++;
-         } else {
-            ti = LibVEX_Alloc(sizeof(TmpInfo));
-            ti->occ = 1;
-            ti->expr = NULL;
-            ti->eDoesLoad = False;
-            ti->eDoesGet = False;
-            ti->invalidateMe = False;
-            ti->origPos = -1; /* filed in properly later */
-            addToH64(env, (ULong)(e->Iex.Tmp.tmp), (ULong)ti );
-         }
+         occCount_Temp(env, e->Iex.Tmp.tmp);
          return;
 
       case Iex_Mux0X:
@@ -1262,6 +1318,8 @@ static void occCount_Expr ( Hash64* env, IRExpr* e )
 */
 static void occCount_Stmt ( Hash64* env, IRStmt* st )
 {
+   Int      i;
+   IRDirty* d;
    switch (st->tag) {
       case Ist_Tmp: 
          occCount_Expr(env, st->Ist.Tmp.expr); 
@@ -1277,6 +1335,13 @@ static void occCount_Stmt ( Hash64* env, IRStmt* st )
          occCount_Expr(env, st->Ist.STle.addr);
          occCount_Expr(env, st->Ist.STle.data);
          return;
+      case Ist_Dirty:
+         d = st->Ist.Dirty.details;
+         if (d->mFx != Ifx_None)
+            occCount_Expr(env, d->mAddr);
+         for (i = 0; d->args[i]; i++)
+            occCount_Expr(env, d->args[i]);
+         return;
       case Ist_Exit:
          occCount_Expr(env, st->Ist.Exit.cond);
          return;
@@ -1286,6 +1351,28 @@ static void occCount_Stmt ( Hash64* env, IRStmt* st )
    }
 }
 
+/* Look up a binding for tmp in the env.  If found, return the bound
+   expression, and set the env's binding to NULL so it is marked as
+   used.  If not found, return NULL. */
+
+static IRExpr* tbSubst_Temp ( Hash64* env, IRTemp tmp )
+{
+   TmpInfo* ti;
+   ULong    res;
+   IRExpr*  e;
+   if (lookupH64(env, &res, (ULong)tmp)) {
+      ti = (TmpInfo*)res;
+      e  = ti->expr;
+      if (e) {
+         ti->expr = NULL;
+         return e;
+      } else {
+         return NULL;
+      }
+   } else {
+      return NULL;
+   }
+}
 
 /* Traverse e, looking for temps.  For each observed temp, see if env
    contains a binding for the temp, and if so return the bound value.
@@ -1295,8 +1382,6 @@ static void occCount_Stmt ( Hash64* env, IRStmt* st )
 
 static IRExpr* tbSubst_Expr ( Hash64* env, IRExpr* e )
 {
-   TmpInfo* ti;
-   ULong    res;
    IRExpr*  e2;
    IRExpr** args2;
    Int      i;
@@ -1304,7 +1389,7 @@ static IRExpr* tbSubst_Expr ( Hash64* env, IRExpr* e )
    switch (e->tag) {
 
       case Iex_CCall:
-         args2 = copyIexCCallArgs(e->Iex.CCall.args);
+         args2 = copyIRExprCallArgs(e->Iex.CCall.args);
          for (i = 0; args2[i]; i++)
             args2[i] = tbSubst_Expr(env,args2[i]);
          return IRExpr_CCall(e->Iex.CCall.name,
@@ -1312,18 +1397,8 @@ static IRExpr* tbSubst_Expr ( Hash64* env, IRExpr* e )
                    args2
                 );
       case Iex_Tmp:
-         if (lookupH64(env, &res, (ULong)(e->Iex.Tmp.tmp))) {
-            ti = (TmpInfo*)res;
-            e2 = ti->expr;
-            if (e2) {
-               ti->expr = NULL;
-               return e2;
-            } else {
-               return e;
-            }
-         } else {
-            return e;
-         }
+         e2 = tbSubst_Temp(env, e->Iex.Tmp.tmp);
+         return e2 ? e2 : e;
       case Iex_Mux0X:
          return IRExpr_Mux0X(
                    tbSubst_Expr(env, e->Iex.Mux0X.cond),
@@ -1366,12 +1441,15 @@ static IRExpr* tbSubst_Expr ( Hash64* env, IRExpr* e )
 
 static IRStmt* tbSubst_Stmt ( Hash64* env, IRStmt* st )
 {
+   Int      i;
+   IRDirty* d;
+   IRDirty* d2;
    switch (st->tag) {
-   case Ist_STle:
-     return IRStmt_STle(
-                        tbSubst_Expr(env, st->Ist.STle.addr),
-                        tbSubst_Expr(env, st->Ist.STle.data)
-                        );
+      case Ist_STle:
+         return IRStmt_STle(
+                   tbSubst_Expr(env, st->Ist.STle.addr),
+                   tbSubst_Expr(env, st->Ist.STle.data)
+                );
       case Ist_Tmp:
          return IRStmt_Tmp(
                    st->Ist.Tmp.tmp,
@@ -1395,6 +1473,15 @@ static IRStmt* tbSubst_Stmt ( Hash64* env, IRStmt* st )
                    tbSubst_Expr(env, st->Ist.Exit.cond),
                    st->Ist.Exit.dst
                 );
+      case Ist_Dirty:
+         d = st->Ist.Dirty.details;
+         d2 = emptyIRDirty();
+         *d2 = *d;
+         if (d2->mFx != Ifx_None)
+            d2->mAddr = tbSubst_Expr(env, d2->mAddr);
+         for (i = 0; d2->args[i]; i++)
+            d2->args[i] = tbSubst_Expr(env, d2->args[i]);
+         return IRStmt_Dirty(d2);
       default: 
          vex_printf("\n"); ppIRStmt(st); vex_printf("\n");
          vpanic("tbSubst_Stmt");
@@ -1602,8 +1689,10 @@ static void treebuild_BB ( IRBB* bb )
          appeared.  (Stupid algorithm): first, mark all bindings which
          need to be dumped.  Then, dump them in the order in which
          they were defined. */
-      invPut = st->tag == Ist_Put || st->tag == Ist_PutI;
-      invStore = st->tag == Ist_STle;
+      invPut = st->tag == Ist_Put 
+               || st->tag == Ist_PutI || st->tag == Ist_Dirty;
+      invStore = st->tag == Ist_STle
+               || st->tag == Ist_Dirty;
 
       for (k = 0; k < env->used; k++) {
          if (!env->inuse[k])

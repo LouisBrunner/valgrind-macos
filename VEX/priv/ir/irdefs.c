@@ -36,13 +36,13 @@ void ppIRType ( IRType ty )
 void ppIRConst ( IRConst* con )
 {
   switch (con->tag) {
-    case Ico_Bit:   vex_printf( "%d:Bit",     con->Ico.Bit ? 1 : 0); break;
-    case Ico_U8:    vex_printf( "0x%x:I8",    (UInt)(con->Ico.U8)); break;
-    case Ico_U16:   vex_printf( "0x%x:I16",   (UInt)(con->Ico.U16)); break;
-    case Ico_U32:   vex_printf( "0x%x:I32",   (UInt)(con->Ico.U32)); break;
-    case Ico_U64:   vex_printf( "0x%llx:I64", (ULong)(con->Ico.U64)); break;
-    case Ico_F64:   vex_printf( "(f64 value)"); break;
-    case Ico_NaN64: vex_printf( "NaN:F64"); break;
+    case Ico_Bit:  vex_printf( "%d:Bit",       con->Ico.Bit ? 1 : 0); break;
+    case Ico_U8:   vex_printf( "0x%x:I8",      (UInt)(con->Ico.U8)); break;
+    case Ico_U16:  vex_printf( "0x%x:I16",     (UInt)(con->Ico.U16)); break;
+    case Ico_U32:  vex_printf( "0x%x:I32",     (UInt)(con->Ico.U32)); break;
+    case Ico_U64:  vex_printf( "0x%llx:I64",   (ULong)(con->Ico.U64)); break;
+    case Ico_F64:  vex_printf( "F64{0x%llx}",  *(ULong*)(&con->Ico.F64)); break;
+    case Ico_F64i: vex_printf( "F64i{0x%llx}", con->Ico.F64i); break;
     default: vpanic("ppIRConst");
   }
 }
@@ -162,6 +162,9 @@ void ppIROp ( IROp op )
       case Iop_F32toF64: vex_printf("F32toF64"); return;
       case Iop_F64toF32: vex_printf("F64toF32"); return;
 
+      case Iop_ReinterpF64asI64: vex_printf("ReinterpF64asI64"); return;
+      case Iop_ReinterpI64asF64: vex_printf("ReinterpI64asF64"); return;
+
       default:           vpanic("ppIROp(1)");
    }
   
@@ -243,39 +246,82 @@ void ppIRExpr ( IRExpr* e )
   }
 }
 
+void ppIREffect ( IREffect fx )
+{
+   switch (fx) {
+      case Ifx_None:   vex_printf("noFX"); return;
+      case Ifx_Read:   vex_printf("RdFX"); return;
+      case Ifx_Write:  vex_printf("WrFX"); return;
+      case Ifx_Modify: vex_printf("MoFX"); return;
+      default: vpanic("ppIREffect");
+   }
+}
+
+void ppIRDirty ( IRDirty* d )
+{
+   Int i;
+   vex_printf("DIRTY ");
+   if (d->mFx != Ifx_None) {
+      ppIREffect(d->mFx);
+      vex_printf("-mem(");
+      ppIRExpr(d->mAddr);
+      vex_printf(",%d) ", d->mSize);
+   }
+   for (i = 0; i < d->nFxState; i++) {
+      ppIREffect(d->fxState[i].fx);
+      vex_printf("-gst(%d,%d) ", d->fxState[i].offset, d->fxState[i].size);
+   }
+   vex_printf("::: ");
+   if (d->tmp != INVALID_IRTEMP) {
+      ppIRTemp(d->tmp);
+      vex_printf(" = ");
+   }
+   vex_printf("%s(", d->name);
+   for (i = 0; d->args[i] != NULL; i++) {
+      ppIRExpr(d->args[i]);
+      if (d->args[i+1] != NULL) {
+         vex_printf(",");
+      }
+   }
+   vex_printf(")");
+}
+
 void ppIRStmt ( IRStmt* s )
 {
-  switch (s->tag) {
-    case Ist_Put:
-      vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
-      ppIRExpr(s->Ist.Put.expr);
-      break;
-    case Ist_PutI:
-      vex_printf( "PUTI[%d,%d](", s->Ist.PutI.minoff, s->Ist.PutI.maxoff);
-      ppIRExpr(s->Ist.PutI.offset);
-      vex_printf( ") = " );
-      ppIRExpr(s->Ist.PutI.expr);
-      break;
-    case Ist_Tmp:
-      ppIRTemp(s->Ist.Tmp.tmp);
-      vex_printf( " = " );
-      ppIRExpr(s->Ist.Tmp.expr);
-      break;
-    case Ist_STle:
-      vex_printf( "STle(");
-      ppIRExpr(s->Ist.STle.addr);
-      vex_printf( ") = ");
-      ppIRExpr(s->Ist.STle.data);
-      break;
-    case Ist_Exit:
-      vex_printf( "if (" );
-      ppIRExpr(s->Ist.Exit.cond);
-      vex_printf( ") goto ");
-      ppIRConst(s->Ist.Exit.dst);
-      break;
-    default: 
-      vpanic("ppIRStmt");
-  }
+   switch (s->tag) {
+      case Ist_Put:
+         vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
+         ppIRExpr(s->Ist.Put.expr);
+         break;
+      case Ist_PutI:
+         vex_printf( "PUTI[%d,%d](", s->Ist.PutI.minoff, s->Ist.PutI.maxoff);
+         ppIRExpr(s->Ist.PutI.offset);
+         vex_printf( ") = " );
+         ppIRExpr(s->Ist.PutI.expr);
+         break;
+      case Ist_Tmp:
+         ppIRTemp(s->Ist.Tmp.tmp);
+         vex_printf( " = " );
+         ppIRExpr(s->Ist.Tmp.expr);
+         break;
+      case Ist_STle:
+         vex_printf( "STle(");
+         ppIRExpr(s->Ist.STle.addr);
+         vex_printf( ") = ");
+         ppIRExpr(s->Ist.STle.data);
+         break;
+      case Ist_Dirty:
+         ppIRDirty(s->Ist.Dirty.details);
+         break;
+      case Ist_Exit:
+         vex_printf( "if (" );
+         ppIRExpr(s->Ist.Exit.cond);
+         vex_printf( ") goto ");
+         ppIRConst(s->Ist.Exit.dst);
+         break;
+      default: 
+         vpanic("ppIRStmt");
+   }
 }
 
 void ppIRJumpKind ( IRJumpKind kind )
@@ -288,7 +334,7 @@ void ppIRJumpKind ( IRJumpKind kind )
       case Ijk_Syscall:   vex_printf("Syscall"); break;
       case Ijk_Yield:     vex_printf("Yield"); break;
       default:            vpanic("ppIRJumpKind");
-  }
+   }
 }
 
 void ppIRTypeEnv ( IRTypeEnv* env ) {
@@ -307,9 +353,6 @@ void ppIRTypeEnv ( IRTypeEnv* env ) {
    if (env->types_used > 0 && env->types_used % 8 != 7) 
       vex_printf( "\n"); 
 }
-
-
-
 
 void ppIRBB ( IRBB* bb )
 {
@@ -381,10 +424,11 @@ IRConst* IRConst_F64 ( Double f64 )
    c->Ico.F64 = f64;
    return c;
 }
-IRConst* IRConst_NaN64 ( void )
+IRConst* IRConst_F64i ( ULong f64i )
 {
-   IRConst* c = LibVEX_Alloc(sizeof(IRConst));
-   c->tag     = Ico_NaN64;
+   IRConst* c  = LibVEX_Alloc(sizeof(IRConst));
+   c->tag      = Ico_F64i;
+   c->Ico.F64i = f64i;
    return c;
 }
 
@@ -466,6 +510,22 @@ IRExpr* IRExpr_Mux0X ( IRExpr* cond, IRExpr* expr0, IRExpr* exprX ) {
 }
 
 
+/* Constructors -- IRDirty */
+
+IRDirty* emptyIRDirty ( void )
+{
+   IRDirty* d = LibVEX_Alloc(sizeof(IRDirty));
+   d->name     = NULL;
+   d->args     = NULL;
+   d->tmp      = INVALID_IRTEMP;
+   d->mFx      = Ifx_None;
+   d->mAddr    = NULL;
+   d->mSize    = 0;
+   d->nFxState = 0;
+   return d;
+}
+
+
 /* Constructors -- IRStmt */
 
 IRStmt* IRStmt_Put ( Int off, IRExpr* value ) {
@@ -497,6 +557,13 @@ IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value ) {
    s->tag           = Ist_STle;
    s->Ist.STle.addr = addr;
    s->Ist.STle.data = value;
+   return s;
+}
+IRStmt* IRStmt_Dirty ( IRDirty* d )
+{
+   IRStmt* s            = LibVEX_Alloc(sizeof(IRStmt));
+   s->tag               = Ist_Dirty;
+   s->Ist.Dirty.details = d;
    return s;
 }
 IRStmt* IRStmt_Exit ( IRExpr* cond, IRConst* dst ) {
@@ -555,20 +622,20 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
    *t_arg1 = Ity_INVALID;
    *t_arg2 = Ity_INVALID;
    switch (op) {
-      case Iop_Add8: case Iop_Sub8: //case Iop_Adc8: case Iop_Sbb8:
-      case Iop_Mul8: case Iop_Or8:  case Iop_And8: case Iop_Xor8:
+      case Iop_Add8: case Iop_Sub8: case Iop_Mul8: 
+      case Iop_Or8:  case Iop_And8: case Iop_Xor8:
          BINARY(Ity_I8,Ity_I8,Ity_I8);
 
-      case Iop_Add16: case Iop_Sub16: //case Iop_Adc16: case Iop_Sbb16:
-      case Iop_Mul16: case Iop_Or16:  case Iop_And16: case Iop_Xor16:
+      case Iop_Add16: case Iop_Sub16: case Iop_Mul16:
+      case Iop_Or16:  case Iop_And16: case Iop_Xor16:
          BINARY(Ity_I16,Ity_I16,Ity_I16);
 
-      case Iop_Add32: case Iop_Sub32: //case Iop_Adc32: case Iop_Sbb32:
-      case Iop_Mul32: case Iop_Or32:  case Iop_And32: case Iop_Xor32:
+      case Iop_Add32: case Iop_Sub32: case Iop_Mul32:
+      case Iop_Or32:  case Iop_And32: case Iop_Xor32:
          BINARY(Ity_I32,Ity_I32,Ity_I32);
 
-      case Iop_Add64: case Iop_Sub64: //case Iop_Adc64: case Iop_Sbb64:
-      case Iop_Mul64: case Iop_Or64:  case Iop_And64: case Iop_Xor64:
+      case Iop_Add64: case Iop_Sub64: case Iop_Mul64:
+      case Iop_Or64:  case Iop_And64: case Iop_Xor64:
          BINARY(Ity_I64,Ity_I64,Ity_I64);
 
       case Iop_Shl8: case Iop_Shr8: case Iop_Sar8:
@@ -594,10 +661,8 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_CmpEQ16: case Iop_CmpNE16:
          COMPARISON(Ity_I16);
       case Iop_CmpEQ32: case Iop_CmpNE32:
-      case Iop_CmpLT32S:
-      case Iop_CmpLE32S:
-      case Iop_CmpLT32U:
-      case Iop_CmpLE32U:
+      case Iop_CmpLT32S: case Iop_CmpLE32S:
+      case Iop_CmpLT32U: case Iop_CmpLE32U:
          COMPARISON(Ity_I32);
       case Iop_CmpEQ64: case Iop_CmpNE64:
          COMPARISON(Ity_I64);
@@ -609,12 +674,10 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_MullU32: case Iop_MullS32:
          BINARY(Ity_I64,Ity_I32,Ity_I32);
 
-      case Iop_Clz32:
-      case Iop_Ctz32:
+      case Iop_Clz32: case Iop_Ctz32:
          UNARY(Ity_I32,Ity_I32);
 
-      case Iop_DivModU64to32:
-      case Iop_DivModS64to32:
+      case Iop_DivModU64to32: case Iop_DivModS64to32:
          BINARY(Ity_I64,Ity_I64,Ity_I32);
 
       case Iop_16HIto8: case Iop_16to8:
@@ -632,29 +695,27 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_32HLto64:
          BINARY(Ity_I64,Ity_I32,Ity_I32);
 
-      case Iop_1Uto8:   UNARY(Ity_I8,Ity_Bit);
-      case Iop_1Uto32:  UNARY(Ity_I32,Ity_Bit);
-      case Iop_32to1:   UNARY(Ity_Bit,Ity_I32);
+      case Iop_1Uto8:  UNARY(Ity_I8,Ity_Bit);
+      case Iop_1Uto32: UNARY(Ity_I32,Ity_Bit);
+      case Iop_32to1:  UNARY(Ity_Bit,Ity_I32);
 
-      case Iop_8Uto32:  UNARY(Ity_I32,Ity_I8);
-      case Iop_8Sto32:  UNARY(Ity_I32,Ity_I8);
+      case Iop_8Uto32: case Iop_8Sto32:
+         UNARY(Ity_I32,Ity_I8);
 
-      case Iop_8Uto16:  UNARY(Ity_I16,Ity_I8);
-      case Iop_8Sto16:  UNARY(Ity_I16,Ity_I8);
+      case Iop_8Uto16: case Iop_8Sto16:
+         UNARY(Ity_I16,Ity_I8);
 
-      case Iop_16Uto32: UNARY(Ity_I32,Ity_I16);
-      case Iop_16Sto32: UNARY(Ity_I32,Ity_I16);
-      case Iop_32Sto64: UNARY(Ity_I64,Ity_I32);
-      case Iop_32Uto64: UNARY(Ity_I64,Ity_I32);
-      case Iop_32to8:   UNARY(Ity_I8,Ity_I32);
+      case Iop_16Uto32: case Iop_16Sto32: 
+         UNARY(Ity_I32,Ity_I16);
 
-      case Iop_ScaleF64:
-      case Iop_PRemF64:
-      case Iop_AtanF64:
-      case Iop_Yl2xF64:
-      case Iop_Yl2xp1F64:
-      case Iop_AddF64: case Iop_SubF64: 
-      case Iop_MulF64: case Iop_DivF64:
+      case Iop_32Sto64: case Iop_32Uto64:
+         UNARY(Ity_I64,Ity_I32);
+
+      case Iop_32to8: UNARY(Ity_I8,Ity_I32);
+
+      case Iop_ScaleF64: case Iop_PRemF64:
+      case Iop_AtanF64: case Iop_Yl2xF64:  case Iop_Yl2xp1F64: 
+      case Iop_AddF64: case Iop_SubF64: case Iop_MulF64: case Iop_DivF64:
          BINARY(Ity_F64,Ity_F64,Ity_F64);
       case Iop_PRemC3210F64:
       case Iop_CmpF64:
@@ -664,7 +725,9 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
          UNARY(Ity_F64,Ity_F64);
 
       case Iop_I32toF64: UNARY(Ity_F64,Ity_I32);
-      case Iop_I64toF64: UNARY(Ity_F64,Ity_I64);
+      case Iop_I64toF64: case Iop_ReinterpI64asF64:
+         UNARY(Ity_F64,Ity_I64);
+      case Iop_ReinterpF64asI64: UNARY(Ity_I64, Ity_F64);
 
       case Iop_F64toI64: BINARY(Ity_I64, Ity_I32,Ity_F64);
       case Iop_F64toI32: BINARY(Ity_I32, Ity_I32,Ity_F64);
@@ -738,20 +801,18 @@ IRTemp newIRTemp ( IRTypeEnv* env, IRType ty )
    }
 }
 
-/* Find the type of a temporary previously allocated in an
-   environment. */
 
-IRType lookupIRTypeEnv ( IRTypeEnv* env, IRTemp tmp )
+/*---------------------------------------------------------------*/
+/*--- Helper functions for the IR -- finding types of exprs   ---*/
+/*---------------------------------------------------------------*/
+
+IRType typeOfIRTemp ( IRTypeEnv* env, IRTemp tmp )
 {
    vassert(tmp >= 0);
    vassert(tmp < env->types_used);
    return env->types[tmp];
 }
 
-
-/*---------------------------------------------------------------*/
-/*--- Helper functions for the IR -- finding types of exprs   ---*/
-/*---------------------------------------------------------------*/
 
 IRType typeOfIRConst ( IRConst* con )
 {
@@ -762,7 +823,7 @@ IRType typeOfIRConst ( IRConst* con )
       case Ico_U32:   return Ity_I32;
       case Ico_U64:   return Ity_I64;
       case Ico_F64:   return Ity_F64;
-      case Ico_NaN64: return Ity_F64;
+      case Ico_F64i:  return Ity_F64;
       default: vpanic("typeOfIRConst");
    }
 }
@@ -778,7 +839,7 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
       case Iex_GetI:
          return e->Iex.GetI.ty;
       case Iex_Tmp:
-         return lookupIRTypeEnv(tyenv, e->Iex.Tmp.tmp);
+         return typeOfIRTemp(tyenv, e->Iex.Tmp.tmp);
       case Iex_Const:
 	 return typeOfIRConst(e->Iex.Const.con);
       case Iex_Binop:
@@ -846,6 +907,15 @@ void sanityCheckFail ( IRBB* bb, IRStmt* stmt, Char* what )
    def_count is zero. */
 
 static
+void useBeforeDef_Temp ( IRBB* bb, IRStmt* stmt, IRTemp tmp, Int* def_counts )
+{
+   if (tmp < 0 || tmp >= bb->tyenv->types_used)
+      sanityCheckFail(bb,stmt, "out of range Temp in IRExpr");
+   if (def_counts[tmp] < 1)
+      sanityCheckFail(bb,stmt, "IRTemp use before def in IRExpr");
+}
+
+static
 void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
 {
    Int i;
@@ -855,11 +925,8 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
       case Iex_GetI:
          useBeforeDef_Expr(bb,stmt,expr->Iex.GetI.offset,def_counts);
          break;
-      case Iex_Tmp: 
-         if (expr->Iex.Tmp.tmp < 0 || expr->Iex.Tmp.tmp >= bb->tyenv->types_used)
-            sanityCheckFail(bb,stmt, "out of range Temp in IRExpr");
-         if (def_counts[expr->Iex.Tmp.tmp] < 1)
-            sanityCheckFail(bb,stmt, "IRTemp use before def in IRExpr");
+      case Iex_Tmp:
+         useBeforeDef_Temp(bb,stmt,expr->Iex.Tmp.tmp,def_counts);
          break;
       case Iex_Binop:
          useBeforeDef_Expr(bb,stmt,expr->Iex.Binop.arg1,def_counts);
@@ -890,6 +957,8 @@ void useBeforeDef_Expr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, Int* def_counts )
 static
 void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
 {
+   Int      i;
+   IRDirty* d;
    switch (stmt->tag) {
       case Ist_Put:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Put.expr,def_counts);
@@ -904,6 +973,13 @@ void useBeforeDef_Stmt ( IRBB* bb, IRStmt* stmt, Int* def_counts )
       case Ist_STle:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.STle.addr,def_counts);
          useBeforeDef_Expr(bb,stmt,stmt->Ist.STle.data,def_counts);
+         break;
+      case Ist_Dirty:
+         d = stmt->Ist.Dirty.details;
+         for (i = 0; d->args[i] != NULL; i++)
+            useBeforeDef_Expr(bb,stmt,d->args[i],def_counts);
+         if (d->mFx != Ifx_None)
+            useBeforeDef_Expr(bb,stmt,d->mAddr,def_counts);
          break;
       case Ist_Exit:
          useBeforeDef_Expr(bb,stmt,stmt->Ist.Exit.cond,def_counts);
@@ -1007,6 +1083,8 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
 static
 void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
 {
+   Int        i;
+   IRDirty*   d;
    IRTypeEnv* tyenv = bb->tyenv;
    switch (stmt->tag) {
       case Ist_Put:
@@ -1024,7 +1102,7 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
           break;
       case Ist_Tmp:
          tcExpr( bb, stmt, stmt->Ist.Tmp.expr, gWordTy );
-         if (lookupIRTypeEnv(tyenv, stmt->Ist.Tmp.tmp)
+         if (typeOfIRTemp(tyenv, stmt->Ist.Tmp.tmp)
              != typeOfIRExpr(tyenv, stmt->Ist.Tmp.expr))
             sanityCheckFail(bb,stmt,"IRStmt.Put.Tmp: tmp and expr do not match");
          break;
@@ -1036,6 +1114,35 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          if (typeOfIRExpr(tyenv, stmt->Ist.STle.data) == Ity_Bit)
             sanityCheckFail(bb,stmt,"IRStmt.STle.data: cannot STle :: Ity_Bit");
          break;
+      case Ist_Dirty:
+         /* Mostly check for various kinds of ill-formed dirty calls. */
+         d = stmt->Ist.Dirty.details;
+         if (d->name == NULL) goto bad_dirty;
+         if (d->mFx == Ifx_None) {
+            if (d->mAddr != NULL || d->mSize != 0)
+               goto bad_dirty;
+         } else {
+            if (d->mAddr == NULL || d->mSize == 0)
+               goto bad_dirty;
+         }
+         if (d->nFxState < 0 || d->nFxState > VEX_N_FXSTATE)
+            goto bad_dirty;
+         for (i = 0; i < d->nFxState; i++) {
+            if (d->fxState[i].fx == Ifx_None) goto bad_dirty;
+            if (d->fxState[i].size <= 0) goto bad_dirty;
+         }
+         /* check types, minimally */
+         if (d->tmp != INVALID_IRTEMP
+             && typeOfIRTemp(tyenv, d->tmp) == Ity_Bit)
+            sanityCheckFail(bb,stmt,"IRStmt.Dirty.dst :: Ity_Bit");
+         for (i = 0; d->args[i] != NULL; i++) {
+            if (typeOfIRExpr(tyenv, d->args[i]) == Ity_Bit)
+               sanityCheckFail(bb,stmt,"IRStmt.Dirty.arg[i] :: Ity_Bit");
+         }
+         break;
+         bad_dirty:
+         sanityCheckFail(bb,stmt,"IRStmt.Dirty: ill-formed");
+
       case Ist_Exit:
          tcExpr( bb, stmt, stmt->Ist.Exit.cond, gWordTy );
          if (typeOfIRExpr(tyenv,stmt->Ist.Exit.cond) != Ity_Bit)
@@ -1065,7 +1172,7 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
 
    /* Ensure each temp has a plausible type. */
    for (i = 0; i < n_temps; i++) {
-      IRType ty = lookupIRTypeEnv(bb->tyenv,(IRTemp)i);
+      IRType ty = typeOfIRTemp(bb->tyenv,(IRTemp)i);
       if (!isPlausibleType(ty)) {
          vex_printf("Temp t%d declared with implausible type 0x%x\n",
                     i, (UInt)ty);
@@ -1084,12 +1191,27 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
       if (!stmt)
          continue;
       useBeforeDef_Stmt(bb,stmt,def_counts);
+
       if (stmt->tag == Ist_Tmp) {
          if (stmt->Ist.Tmp.tmp < 0 || stmt->Ist.Tmp.tmp >= n_temps)
-            sanityCheckFail(bb, stmt, "Invalid temp in Tmp assignment");
+            sanityCheckFail(bb, stmt, 
+               "IRStmt.Tmp: destination tmp is out of range");
          def_counts[stmt->Ist.Tmp.tmp]++;
          if (def_counts[stmt->Ist.Tmp.tmp] > 1)
-            sanityCheckFail(bb, stmt, "Tmp assigned more than once");
+            sanityCheckFail(bb, stmt, 
+               "IRStmt.Tmp: destinatiion tmp is assigned more than once");
+      }
+      else 
+      if (stmt->tag == Ist_Dirty 
+          && stmt->Ist.Dirty.details->tmp != INVALID_IRTEMP) {
+         IRDirty* d = stmt->Ist.Dirty.details;
+         if (d->tmp < 0 || d->tmp >= n_temps)
+            sanityCheckFail(bb, stmt, 
+               "IRStmt.Dirty: destination tmp is out of range");
+         def_counts[d->tmp]++;
+         if (def_counts[d->tmp] > 1)
+            sanityCheckFail(bb, stmt, 
+               "IRStmt.Dirty: destination tmp is assigned more than once");
       }
    }
 

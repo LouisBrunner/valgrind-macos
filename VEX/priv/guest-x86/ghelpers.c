@@ -14,11 +14,13 @@
 #include "guest-x86/gdefs.h"
 
 /* --- Forwardses --- */
-UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst );
-UInt calculate_eflags_c   ( UInt cc_op, UInt cc_src, UInt cc_dst );
-UInt calculate_condition  ( UInt/*Condcode*/ cond, 
-                            UInt cc_op, UInt cc_src, UInt cc_dst );
-UInt calculate_FXAM ( UInt tag, ULong dbl );
+       UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst );
+static UInt calculate_eflags_c   ( UInt cc_op, UInt cc_src, UInt cc_dst );
+static UInt calculate_condition  ( UInt/*Condcode*/ cond, 
+                                   UInt cc_op, UInt cc_src, UInt cc_dst );
+static UInt calculate_FXAM ( UInt tag, ULong dbl );
+static ULong loadF80le ( UInt );
+static void  storeF80le ( UInt, ULong );
 
 
 /* This file contains helper functions for x86 guest code.
@@ -576,18 +578,20 @@ static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
 }
 
 
-/* The only exported function. */
-
 Addr64 x86guest_findhelper ( Char* function_name )
 {
-   if (vex_streq(function_name, "calculate_eflags_all"))
-      return (Addr64)(& calculate_eflags_all);
-   if (vex_streq(function_name, "calculate_eflags_c"))
-      return (Addr64)(& calculate_eflags_c);
    if (vex_streq(function_name, "calculate_condition"))
       return (Addr64)(& calculate_condition);
+   if (vex_streq(function_name, "calculate_eflags_c"))
+      return (Addr64)(& calculate_eflags_c);
+   if (vex_streq(function_name, "calculate_eflags_all"))
+      return (Addr64)(& calculate_eflags_all);
    if (vex_streq(function_name, "calculate_FXAM"))
       return (Addr64)(& calculate_FXAM);
+   if (vex_streq(function_name, "storeF80le"))
+      return (Addr64)(& storeF80le);
+   if (vex_streq(function_name, "loadF80le"))
+      return (Addr64)(& loadF80le);
    vex_printf("\nx86 guest: can't find helper: %s\n", function_name);
    vpanic("x86guest_findhelper");
 }
@@ -831,7 +835,7 @@ static inline Bool host_is_little_endian ( void )
    return (*p == 0x10);
 }
 
-UInt calculate_FXAM ( UInt tag, ULong dbl ) 
+static UInt calculate_FXAM ( UInt tag, ULong dbl ) 
 {
    Bool   mantissaIsZero;
    Int    bexp;
@@ -1161,6 +1165,22 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
       }
       /* else we don't round, but we should. */
    }
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (reads guest memory) */
+static ULong loadF80le ( UInt addrU )
+{
+   ULong f64;
+   convert_f80le_to_f64le ( (UChar*)addrU, (UChar*)&f64 );
+   return f64;
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (writes guest memory) */
+static void storeF80le ( UInt addrU, ULong f64 )
+{
+   convert_f64le_to_f80le( (UChar*)&f64, (UChar*)addrU );
 }
 
 

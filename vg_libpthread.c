@@ -1115,6 +1115,17 @@ __off64_t lseek64(int fildes, __off64_t offset, int whence)
 }
 
 
+extern 
+ssize_t __libc_pread64 (int __fd, void *__buf, size_t __nbytes,
+                        __off64_t __offset);
+ssize_t __pread64 (int __fd, void *__buf, size_t __nbytes,
+                   __off64_t __offset)
+{
+   return __libc_pread64(__fd, __buf, __nbytes, __offset);
+}
+
+
+
 extern  
 void __libc_longjmp(jmp_buf env, int val) __attribute((noreturn));
 /* not weak: __attribute__((weak)) */
@@ -1541,6 +1552,7 @@ strong_alias(write, __write)
 strong_alias(connect, __connect)
 strong_alias(send, __send)
 
+weak_alias (__pread64, pread64)
 weak_alias(__fork, fork)
 //weak_alias(__vfork, vfork)
 

@@ -52,7 +52,7 @@ void __libc_current_sigrtmin ( void )  { unimp("__libc_current_sigrtmin"); }
 //void __lseek ( void )  { unimp("__lseek"); }
 //void __open ( void )  { unimp("__open"); }
 //void __open64 ( void )  { unimp("__open64"); }
-void __pread64 ( void )  { unimp("__pread64"); }
+//void __pread64 ( void )  { unimp("__pread64"); }
 //void __pthread_atfork ( void )  { unimp("__pthread_atfork"); }
 //void __pthread_getspecific ( void )  { unimp("__pthread_getspecific"); }
 //void __pthread_key_create ( void )  { unimp("__pthread_key_create"); }
@@ -193,7 +193,6 @@ void pthread_attr_init@GLIBC_2.0 ( void )  { unimp("pthread_attr_init@GLIBC_2.0"
 # define weak_alias(name, aliasname) \
   extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
 
-weak_alias (__pread64, pread64)
 weak_alias (__pwrite64, pwrite64)
 
 weak_alias(pthread_rwlock_destroy, __pthread_rwlock_destroy)

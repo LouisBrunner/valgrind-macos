@@ -667,6 +667,8 @@ static int do_exec_inner(const char *exe, struct exeinfo *info)
    return ret;
 }
 
+// See ume.h for an indication of which entries of 'info' are inputs, which
+// are outputs, and which are both.
 int do_exec(const char *exe, struct exeinfo *info)
 {
    info->interp_name = NULL;

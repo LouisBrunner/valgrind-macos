@@ -54,26 +54,32 @@ typedef ESZ(Addr) addr_t;
 /*--- Loading ELF files                                    ---*/
 /*------------------------------------------------------------*/
 
+// Info needed to load and run a program.  IN/INOUT/OUT refers to the
+// inputs/outputs of do_exec().
 struct exeinfo
 {
-   addr_t map_base;     // INPUT: if non-zero, base address of mappings
-   char** argv;         // INPUT: the original argv
+   addr_t map_base;     // IN: if non-zero, base address of mappings
+   char** argv;         // IN: the original argv
 
    addr_t exe_base;     // INOUT: lowest (allowed) address of exe
    addr_t exe_end;      // INOUT: highest (allowed) address
 
-   addr_t phdr;         // address phdr was mapped at
-   int    phnum;        // number of phdrs
-   addr_t interp_base;  // where interpreter (ld.so) was mapped
-   addr_t entry;        // entrypoint in main executable
-   addr_t init_eip;     // initial eip
-   addr_t brkbase;      // base address of brk segment
+   addr_t phdr;         // OUT: address phdr was mapped at
+   int    phnum;        // OUT: number of phdrs
+   addr_t interp_base;  // OUT: where interpreter (ld.so) was mapped
+   addr_t entry;        // OUT: entrypoint in main executable
+   addr_t init_eip;     // OUT: initial eip
+   addr_t brkbase;      // OUT: base address of brk segment
 
    // These are the extra args added by #! scripts
-   char*  interp_name;  // INPUT: the interpreter name
-   char*  interp_args;  // INPUT: the args for the interpreter
+   char*  interp_name;  // OUT: the interpreter name
+   char*  interp_args;  // OUT: the args for the interpreter
 };
 
+// Does everything short of actually running 'exe': finds the file,
+// checks execute permissions, sets up interpreter if program is a script, 
+// reads headers, maps file into memory, and returns important info about
+// the program.
 int do_exec(const char *exe, struct exeinfo *info);
 
 /*------------------------------------------------------------*/
@@ -84,6 +90,7 @@ void foreach_map(int (*fn)(void *start, void *end,
 			   const char *perm, off_t offset,
 			   int maj, int min, int ino));
 
+// Padding functions used at startup to force things where we want them.
 void as_pad(void *start, void *end);
 void as_unpad(void *start, void *end);
 void as_closepadfile(void);

@@ -1445,13 +1445,13 @@ static void load_client(char* cl_argv[], const char* exec, Int need_help,
    }
 
    info->map_base = VG_(client_mapbase);
-
    info->exe_base = VG_(client_base);
    info->exe_end  = VG_(client_end);
    info->argv     = cl_argv;
 
    if (need_help) {
       VG_(clexecfd) = -1;
+      // Set the minimal number of entries in 'info' to continue.
       info->interp_name = NULL;
       info->interp_args = NULL;
    } else {
@@ -1459,7 +1459,8 @@ static void load_client(char* cl_argv[], const char* exec, Int need_help,
       VG_(clexecfd) = VG_(open)(exec, O_RDONLY, VKI_S_IRUSR);
       ret = do_exec(exec, info);
       if (ret != 0) {
-         fprintf(stderr, "valgrind: do_exec(%s) failed: %s\n", exec, strerror(ret));
+         fprintf(stderr, "valgrind: do_exec(%s) failed: %s\n",
+                         exec, strerror(ret));
          exit(127);
       }
    }

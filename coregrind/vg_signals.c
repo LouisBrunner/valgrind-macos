@@ -2381,52 +2381,6 @@ void VG_(sigstartup_actions) ( void )
 
 }
 
-
-/* Copy the process' sim signal state to the real state,
-   for when we transfer from the simulated to real CPU.
-   PROBLEM: what if we're running a signal handler when we
-   get here?  Hmm.
-   I guess we wind up in vg_signalreturn_bogusRA, *or* the
-   handler has done/will do a longjmp, in which case we're ok.
-*/
-void VG_(sigshutdown_actions) ( void )
-{
-   Int i, ret;
-
-   vki_ksigset_t  saved_procmask;
-   vki_ksigaction sa;
-
-   VG_(block_all_host_signals)( &saved_procmask );
-
-   /* Copy per-signal settings from SCSS. */
-   for (i = 1; i <= VKI_KNSIG; i++) {
-
-      sa.ksa_handler  = vg_scss.scss_per_sig[i].scss_handler;
-      sa.ksa_flags    = vg_scss.scss_per_sig[i].scss_flags;
-      sa.ksa_mask     = vg_scss.scss_per_sig[i].scss_mask;
-      sa.ksa_restorer = vg_scss.scss_per_sig[i].scss_restorer;
-
-      if (VG_(clo_trace_signals))
-         VG_(printf)("restoring handler 0x%x for signal %d\n", 
-                     (Addr)(sa.ksa_handler), i );
-
-      /* Set the old host action */
-      ret = VG_(ksigaction)(i, &sa, NULL);
-      if (i != VKI_SIGKILL && i != VKI_SIGSTOP) 
-         vg_assert(ret == 0);
-   }
-
-   /* Restore the sig alt stack. */
-   ret = VG_(ksigaltstack)(&VG_(threads)[1].altstack, NULL);
-   vg_assert(ret == 0);
-
-   /* A bit of a kludge -- set the sigmask to that of the root
-      thread. */
-   vg_assert(VG_(threads)[1].status != VgTs_Empty);
-   VG_(restore_all_host_signals)( &VG_(threads)[1].sig_mask );
-}
-
-
 /*--------------------------------------------------------------------*/
 /*--- end                                             vg_signals.c ---*/
 /*--------------------------------------------------------------------*/

@@ -985,7 +985,6 @@ extern Int  VG_(sig_rtmax);
 extern Int  VG_(sig_alloc_rtsig) ( Int high );
 
 extern void VG_(sigstartup_actions) ( void );
-extern void VG_(sigshutdown_actions) ( void );
 
 extern void VG_(deliver_signal) ( ThreadId tid, const vki_ksiginfo_t *, Bool async );
 extern void VG_(unblock_host_signal) ( Int sigNo );

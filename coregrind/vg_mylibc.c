@@ -390,43 +390,50 @@ void* VG_(brk) ( void* end_data_segment )
 #define VG_MSG_SIGNED    1 /* The value is signed. */
 #define VG_MSG_ZJUSTIFY  2 /* Must justify with '0'. */
 #define VG_MSG_LJUSTIFY  4 /* Must justify on the left. */
-
+#define VG_MSG_PAREN     8 /* Parenthesize if present (for %y) */
 
 /* Copy a string into the buffer. */
-static void
+static UInt
 myvprintf_str ( void(*send)(Char), Int flags, Int width, Char* str, 
                 Bool capitalise )
 {
 #  define MAYBE_TOUPPER(ch) (capitalise ? VG_(toupper)(ch) : (ch))
-
+   UInt ret = 0;
    Int i, extra;
    Int len = VG_(strlen)(str);
 
    if (width == 0) {
+      ret += len;
       for (i = 0; i < len; i++)
          send(MAYBE_TOUPPER(str[i]));
-      return;
+      return ret;
    }
 
    if (len > width) {
+      ret += width;
       for (i = 0; i < width; i++)
          send(MAYBE_TOUPPER(str[i]));
-      return;
+      return ret;
    }
 
    extra = width - len;
    if (flags & VG_MSG_LJUSTIFY) {
+      ret += extra;
       for (i = 0; i < extra; i++)
          send(' ');
    }
+   ret += len;
    for (i = 0; i < len; i++)
       send(MAYBE_TOUPPER(str[i]));
    if (!(flags & VG_MSG_LJUSTIFY)) {
+      ret += extra;
       for (i = 0; i < extra; i++)
          send(' ');
    }
 
 #  undef MAYBE_TOUPPER
+
+   return ret;
 }
 
 /* Write P into the buffer according to these args:
@@ -435,7 +442,7 @@ myvprintf_str ( void(*send)(Char), Int flags, Int width, Char* str,
  *  If WITH_ZERO is true, '0' must be added.
  *  WIDTH is the width of the field.
  */
-static void
+static UInt
 myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
 {
    Char buf[40];
@@ -443,9 +450,10 @@ myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
    Int  i;
    Bool neg = False;
    Char *digits = "0123456789ABCDEF";
- 
+   UInt ret = 0;
+
    if (base < 2 || base > 16)
-      return;
+      return ret;
  
    if ((flags & VG_MSG_SIGNED) && (Long)p < 0) {
       p   = - (Long)p;
@@ -472,20 +480,24 @@ myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
    }
 
    /* Reverse copy to buffer.  */
+   ret += ind;
    for (i = ind -1; i >= 0; i--)
       send(buf[i]);
-
    if (width > 0 && (flags & VG_MSG_LJUSTIFY)) {
-      for(; ind < width; ind++)
+      for(; ind < width; ind++) {
+	 ret++;
          send((flags & VG_MSG_ZJUSTIFY) ? '0': ' ');
+      }
    }
+   return ret;
 }
 
 
 /* A simple vprintf().  */
-void
+UInt
 VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
 {
+   UInt ret = 0;
    int i;
    int flags;
    int width;
@@ -499,6 +511,7 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
    for (i = 0; format[i] != 0; i++) {
       if (format[i] != '%') {
          send(format[i]);
+	 ret++;
          continue;
       }
       i++;
@@ -508,11 +521,16 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
       if (format[i] == '%') {
          /* `%%' is replaced by `%'. */
          send('%');
+	 ret++;
          continue;
       }
       flags = 0;
       is_long = False;
       width = 0; /* length of the field. */
+      if (format[i] == '(') {
+	 flags |= VG_MSG_PAREN;
+	 i++;
+      }
       /* If '-' follows '%', justify on the left. */
       if (format[i] == '-') {
          flags |= VG_MSG_LJUSTIFY;
@@ -537,47 +555,68 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
          case 'd': /* %d */
             flags |= VG_MSG_SIGNED;
             if (is_long)
-               myvprintf_int64(send, flags, 10, width, 
-                               (ULong)(va_arg (vargs, Long)));
+               ret += myvprintf_int64(send, flags, 10, width, 
+				      (ULong)(va_arg (vargs, Long)));
             else
-               myvprintf_int64(send, flags, 10, width, 
-                               (ULong)(va_arg (vargs, Int)));
+               ret += myvprintf_int64(send, flags, 10, width, 
+				      (ULong)(va_arg (vargs, Int)));
             break;
          case 'u': /* %u */
             if (is_long)
-               myvprintf_int64(send, flags, 10, width, 
-                               (ULong)(va_arg (vargs, ULong)));
+               ret += myvprintf_int64(send, flags, 10, width, 
+				      (ULong)(va_arg (vargs, ULong)));
             else
-               myvprintf_int64(send, flags, 10, width, 
-                               (ULong)(va_arg (vargs, UInt)));
+               ret += myvprintf_int64(send, flags, 10, width, 
+				      (ULong)(va_arg (vargs, UInt)));
             break;
          case 'p': /* %p */
+	    ret += 2;
             send('0');
             send('x');
-            myvprintf_int64(send, flags, 16, width, 
-                            (ULong)((UInt)va_arg (vargs, void *)));
+            ret += myvprintf_int64(send, flags, 16, width, 
+				   (ULong)((UInt)va_arg (vargs, void *)));
             break;
          case 'x': /* %x */
             if (is_long)
-               myvprintf_int64(send, flags, 16, width, 
-                               (ULong)(va_arg (vargs, ULong)));
+               ret += myvprintf_int64(send, flags, 16, width, 
+				      (ULong)(va_arg (vargs, ULong)));
             else
-               myvprintf_int64(send, flags, 16, width, 
-                               (ULong)(va_arg (vargs, UInt)));
+               ret += myvprintf_int64(send, flags, 16, width, 
+				      (ULong)(va_arg (vargs, UInt)));
             break;
          case 'c': /* %c */
+	    ret++;
             send(va_arg (vargs, int));
             break;
          case 's': case 'S': { /* %s */
             char *str = va_arg (vargs, char *);
             if (str == (char*) 0) str = "(null)";
-            myvprintf_str(send, flags, width, str, format[i]=='S');
+            ret += myvprintf_str(send, flags, width, str, format[i]=='S');
             break;
-         }
+	 }
+	 case 'y': { /* %y - print symbol */
+	    Char buf[100];
+	    Char *cp = buf;
+	    Addr a = va_arg(vargs, Addr);
+
+	    if (flags & VG_MSG_PAREN)
+	       *cp++ = '(';
+	    if (VG_(get_fnname)(a, cp, sizeof(buf)-2)) {
+	       if (flags & VG_MSG_PAREN) {
+		  cp += VG_(strlen)(cp);
+		  *cp++ = ')';
+		  *cp = '\0';
+	       }
+	       ret += myvprintf_str(send, flags, width, buf, 0);
+	    }
+
+	    break;
+	 }
          default:
             break;
       }
    }
+   return ret;
 }
 
 
@@ -601,20 +640,23 @@ static void add_to_myprintf_buf ( Char c )
    myprintf_buf[n_myprintf_buf] = 0;
 }
 
-void VG_(printf) ( const char *format, ... )
+UInt VG_(printf) ( const char *format, ... )
 {
+   UInt ret;
    va_list vargs;
    va_start(vargs,format);
    
    n_myprintf_buf = 0;
    myprintf_buf[n_myprintf_buf] = 0;      
-   VG_(vprintf) ( add_to_myprintf_buf, format, vargs );
+   ret = VG_(vprintf) ( add_to_myprintf_buf, format, vargs );
 
    if (n_myprintf_buf > 0 && VG_(clo_logfile_fd) >= 0)
       VG_(write)
-         ( VG_(clo_logfile_fd), myprintf_buf, VG_(strlen)(myprintf_buf));
+         ( VG_(clo_logfile_fd), myprintf_buf, ret);
 
    va_end(vargs);
+
+   return ret;
 }
 
 
@@ -626,16 +668,21 @@ static void add_to_vg_sprintf_buf ( Char c )
    *vg_sprintf_ptr++ = c;
 }
 
-void VG_(sprintf) ( Char* buf, Char *format, ... )
+UInt VG_(sprintf) ( Char* buf, Char *format, ... )
 {
+   UInt ret;
+
    va_list vargs;
    va_start(vargs,format);
 
    vg_sprintf_ptr = buf;
-   VG_(vprintf) ( add_to_vg_sprintf_buf, format, vargs );
+   ret = VG_(vprintf) ( add_to_vg_sprintf_buf, format, vargs );
    add_to_vg_sprintf_buf(0);
 
    va_end(vargs);
+
+   vg_assert(VG_(strlen)(buf) == ret);
+   return ret;
 }
 
 

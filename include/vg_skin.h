@@ -281,10 +281,10 @@ extern ThreadState* VG_(get_ThreadState)           ( ThreadId tid );
  * --logfile-fd=N argument, which defaults to 2 (stderr).  Hence no
  * need for VG_(fprintf)().  
  */
-extern void VG_(printf)  ( const char *format, ... );
+extern UInt VG_(printf)  ( const char *format, ... );
 /* too noisy ...  __attribute__ ((format (printf, 1, 2))) ; */
-extern void VG_(sprintf) ( Char* buf, Char *format, ... );
-extern void VG_(vprintf) ( void(*send)(Char), 
+extern UInt VG_(sprintf) ( Char* buf, Char *format, ... );
+extern UInt VG_(vprintf) ( void(*send)(Char), 
                            const Char *format, va_list vargs );
 
 extern Int  VG_(rename) ( Char* old_name, Char* new_name );

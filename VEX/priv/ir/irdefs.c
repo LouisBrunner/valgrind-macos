@@ -1151,7 +1151,15 @@ Bool isPlausibleType ( IRType ty )
    bit expression, depending on the guest's word size.
 
    Each temp is assigned only once, before its uses.
- */
+*/
+
+static inline Int countArgs ( IRExpr** args )
+{
+   Int i;
+   for (i = 0; args[i]; i++)
+      ;
+   return i;
+}
 
 static
 __attribute((noreturn))
@@ -1344,6 +1352,10 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
             sanityCheckFail(bb,stmt,"Iex.LDle.addr: not :: guest word type");
          break;
       case Iex_CCall:
+         if (!saneIRCallee(expr->Iex.CCall.cee))
+            sanityCheckFail(bb,stmt,"Iex.CCall.cee: bad IRCallee");
+	 if (expr->Iex.CCall.cee->regparms > countArgs(expr->Iex.CCall.args)) 
+            sanityCheckFail(bb,stmt,"Iex.CCall.cee: #regparms > #args");
          for (i = 0; expr->Iex.CCall.args[i]; i++)
             tcExpr(bb,stmt, expr->Iex.CCall.args[i], gWordTy);
          if (expr->Iex.CCall.retty == Ity_Bit)
@@ -1414,6 +1426,7 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          d = stmt->Ist.Dirty.details;
          if (d->cee == NULL) goto bad_dirty;
          if (!saneIRCallee(d->cee)) goto bad_dirty;
+	 if (d->cee->regparms > countArgs(d->args)) goto bad_dirty;
          if (d->mFx == Ifx_None) {
             if (d->mAddr != NULL || d->mSize != 0)
                goto bad_dirty;

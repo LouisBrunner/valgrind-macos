@@ -44,21 +44,58 @@
 
 #define X(syscallname, argname)  syscallname"("#argname")"
 
-#define PRE_REG_READ3(tr, s, t1, a1, t2, a2, t3, a3) \
-   do { \
-   VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid, "(syscallno)", R_SYSCALL_NUM, sizeof(t1)); \
-   VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid, X(s,a1), R_SYSCALL_ARG1, sizeof(t1)); \
-   VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid, X(s,a2), R_SYSCALL_ARG2, sizeof(t2)); \
-   VG_TRACK( pre_reg_read, Vg_CoreSysCall, tid, X(s,a3), R_SYSCALL_ARG3, sizeof(t3)); \
-   } while (0);
+#define PRRSN \
+      SK_(pre_reg_read)(Vg_CoreSysCall, tid, "(syscallno)", \
+                        R_SYSCALL_NUM, sizeof(UWord));
 
-#if 0
-   do {						\
-      if (VG_(defined_)()) {		\
-	 SK_(pre_reg_read)(args);				\
-      }                                         \
-   } while(0)
-#endif
+#define PRRAn(n,s,a,t) \
+      SK_(pre_reg_read)(Vg_CoreSysCall, tid, X(s,a), \
+                        R_SYSCALL_ARG##n, sizeof(t));
+
+#define PRE_REG_READ0(tr, s) \
+   if (VG_(defined_pre_reg_read)()) { \
+      PRRSN; \
+   }
+
+#define PRE_REG_READ1(tr, s, t1, a1) \
+   if (VG_(defined_pre_reg_read)()) { \
+      PRRSN; \
+      PRRAn(1,s,); \
+   }
+
+#define PRE_REG_READ2(tr, s, t1, a1, t2, a2) \
+   if (VG_(defined_pre_reg_read)()) { \
+      PRRSN; \
+      PRRAn(1,s,a1,t1); PRRAn(2,s,a2,t2); \
+   }
+
+#define PRE_REG_READ3(tr, s, t1, a1, t2, a2, t3, a3) \
+   if (VG_(defined_pre_reg_read)()) { \
+      PRRSN; \
+      PRRAn(1,s,a1,t1); PRRAn(2,s,a2,t2); PRRAn(3,s,a3,t3); \
+   }
+
+#define PRE_REG_READ4(tr, s, t1, a1, t2, a2, t3, a3, t4, a4) \
+   if (VG_(defined_pre_reg_read)()) { \
+      PRRSN; \
+      PRRAn(1,s,a1,t1); PRRAn(2,s,a2,t2); PRRAn(3,s,a3,t3); \
+      PRRAn(4,s,a4,t4); \
+   }
+
+#define PRE_REG_READ5(tr, s, t1, a1, t2, a2, t3, a3, t4, a4, t5, a5) \
+   if (VG_(defined_pre_reg_read)()) { \
+      PRRSN; \
+      PRRAn(1,s,a1,t1); PRRAn(2,s,a2,t2); PRRAn(3,s,a3,t3); \
+      PRRAn(4,s,a4,t4); PRRAn(5,s,a5,t5); \
+   }
+
+#define PRE_REG_READ6(tr, s, t1, a1, t2, a2, t3, a3, t4, a4, t5, a5, t6, a6) \
+   if (VG_(defined_pre_reg_read)()) { \
+      PRRSN; \
+      PRRAn(1,s,a1,t1); PRRAn(2,s,a2,t2); PRRAn(3,s,a3,t3); \
+      PRRAn(4,s,a4,t4); PRRAn(5,s,a5,t5); PRRAn(6,s,a6,t6); \
+   }
+
 
 #define PRE_MEM_READ(zzname, zzaddr, zzlen) \
    VG_TRACK( pre_mem_read, Vg_CoreSysCall, tid, zzname, zzaddr, zzlen)
@@ -4093,20 +4130,23 @@ PRE(_newselect)
       PRE_MEM_READ( "newselect(timeout)", arg5, sizeof(struct vki_timeval) );
 }
 
-PRE(open)
+PRE(sys_open)
 {
-   /* int open(const char *pathname, int flags, mode_t mode); */
    if (arg2 & VKI_O_CREAT) {
-      /* int open(const char *pathname, int flags, mode_t mode); */
-      PRINT("open ( %p(%s), %d, %d )",arg1,arg1,arg2,arg3);
+      // 3-arg version
+      PRINT("sys_open ( %p(%s), %d, %d )",arg1,arg1,arg2,arg3);
+      PRE_REG_READ3(long, "open",
+                    const char __user *, filename, int, flags, int, mode);
    } else {
-      /* int open(const char *pathname, int flags); */
-      PRINT("open ( %p(%s), %d )",arg1,arg1,arg2);
+      // 2-arg version
+      PRINT("sys_open ( %p(%s), %d )",arg1,arg1,arg2);
+      PRE_REG_READ2(long, "open",
+                    const char __user *, filename, int, flags);
    }
-   PRE_MEM_RASCIIZ( "open(pathname)", arg1 );
+   PRE_MEM_RASCIIZ( "open(filename)", arg1 );
 }
 
-POST(open)
+POST(sys_open)
 {
    if (!fd_allowed(res, "open", tid, True)) {
       VG_(close)(res);
@@ -5879,9 +5919,7 @@ static const struct sys_info sys_info[] = {
    SYSBA(mincore,		0),
    SYSBA(nanosleep,		MayBlock|PostOnFail),
    SYSB_(_newselect,		MayBlock),
-   SYSBA(open,			MayBlock),
-//   SYSBA(read,			MayBlock),
-//   SYSB_(write,			MayBlock),
+   SYSXY(__NR_open,             sys_open,       MayBlock),
    SYSXY(__NR_read,             sys_read,       MayBlock),
    SYSX_(__NR_write,            sys_write,      MayBlock),
    SYSBA(creat,			MayBlock),

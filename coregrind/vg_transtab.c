@@ -103,8 +103,39 @@ Addr VG_(tt_fast)[VG_TT_FAST_SIZE];
 
 /* For reading/writing the misaligned TT-index word at immediately
    preceding every translation in TC. */
-#define VG_READ_MISALIGNED_WORD(aaa) (*((UInt*)(aaa)))
-#define VG_WRITE_MISALIGNED_WORD(aaa,vvv) *((UInt*)(aaa)) = ((UInt)(vvv))
+#if 0
+   /* Big sigh.  However reasonable this seems, there are those who
+      set AC in %EFLAGS (Alignment Check) to 1, causing bus errors.  A
+      proper solution is for valgrind to properly virtualise AC, like
+      the other flags (DOSZACP).  The current cheap hack simply avoids
+      all misaligned accesses, so valgrind doesn't fault even if AC is
+      set. */
+#  define VG_READ_MISALIGNED_WORD(aaa) (*((UInt*)(aaa)))
+#  define VG_WRITE_MISALIGNED_WORD(aaa,vvv) *((UInt*)(aaa)) = ((UInt)(vvv))
+#else
+  static __inline__
+  UInt VG_READ_MISALIGNED_WORD ( Addr aaa )
+  {
+     UInt w = 0;
+     UChar* p = (UChar*)aaa;
+     w = 0xFF & ((UInt)(p[3]));
+     w = (w << 8) | (0xFF & ((UInt)(p[2])));
+     w = (w << 8) | (0xFF & ((UInt)(p[1])));
+     w = (w << 8) | (0xFF & ((UInt)(p[0])));
+     return w;
+  }
+
+  static __inline__
+  void VG_WRITE_MISALIGNED_WORD ( Addr aaa, UInt vvv )
+  {
+     UChar* p = (UChar*)aaa;
+     p[0] = vvv & 0xFF;
+     p[1] = (vvv >> 8) & 0xFF;
+     p[2] = (vvv >> 16) & 0xFF;
+     p[3] = (vvv >> 24) & 0xFF;
+  }
+#endif
+
 
 /* Used for figuring out an age threshold for translations. */
 static Int vg_bytes_in_epoch[VG_N_EPOCHS];
@@ -237,7 +268,8 @@ void VG_(maybe_do_lru_pass) ( void )
          the start of the code proper, not at this 4-byte index, so
          that we don't constantly have to keep adding 4 in the main
          lookup/dispatch loop. */
-      ttno = VG_READ_MISALIGNED_WORD(&vg_tc[r]);
+
+      ttno = VG_READ_MISALIGNED_WORD((Addr)(&vg_tc[r]));
       vg_assert(ttno >= 0 && ttno < VG_TT_SIZE);
       tte = & vg_tt[ ttno ];
       vg_assert(tte->orig_addr != VG_TTE_EMPTY);

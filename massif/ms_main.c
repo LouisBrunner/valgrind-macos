@@ -290,11 +290,11 @@ static XFormat clo_format   = XText;
 
 Bool TL_(process_cmd_line_option)(Char* arg)
 {
-        VG_BOOL_CLO("--heap",       clo_heap)
-   else VG_BOOL_CLO("--stacks",     clo_stacks)
+        VG_BOOL_CLO(arg, "--heap",       clo_heap)
+   else VG_BOOL_CLO(arg, "--stacks",     clo_stacks)
 
-   else VG_NUM_CLO ("--heap-admin",  clo_heap_admin)
-   else VG_BNUM_CLO("--depth",       clo_depth, 1, MAX_DEPTH)
+   else VG_NUM_CLO (arg, "--heap-admin",  clo_heap_admin)
+   else VG_BNUM_CLO(arg, "--depth",       clo_depth, 1, MAX_DEPTH)
 
    else if (VG_CLO_STREQN(11, arg, "--alloc-fn=")) {
       alloc_fns[n_alloc_fns] = & arg[11];

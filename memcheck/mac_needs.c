@@ -56,11 +56,11 @@ Bool          MAC_(clo_workaround_gcc296_bugs) = False;
 
 Bool MAC_(process_common_cmd_line_option)(Char* arg)
 {
-	VG_BOOL_CLO("--partial-loads-ok",      MAC_(clo_partial_loads_ok))
-   else VG_BOOL_CLO("--show-reachable",        MAC_(clo_show_reachable))
-   else VG_BOOL_CLO("--workaround-gcc296-bugs",MAC_(clo_workaround_gcc296_bugs))
+	VG_BOOL_CLO(arg, "--partial-loads-ok",      MAC_(clo_partial_loads_ok))
+   else VG_BOOL_CLO(arg, "--show-reachable",        MAC_(clo_show_reachable))
+   else VG_BOOL_CLO(arg, "--workaround-gcc296-bugs",MAC_(clo_workaround_gcc296_bugs))
    
-   else VG_BNUM_CLO("--freelist-vol",  MAC_(clo_freelist_vol), 0, 1000000000)
+   else VG_BNUM_CLO(arg, "--freelist-vol",  MAC_(clo_freelist_vol), 0, 1000000000)
    
    else if (VG_CLO_STREQ(arg, "--leak-check=no"))
       MAC_(clo_leak_check) = LC_Off;

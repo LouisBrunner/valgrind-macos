@@ -651,7 +651,7 @@ static void get_command_line( int argc, char** argv,
 	    vg_argc0++;
 	    break;
 	 }
-         VG_BOOL_CLO("--command-line-only", noaugment)
+         VG_BOOL_CLO(arg, "--command-line-only", noaugment)
       }
       cl_argv = &argv[vg_argc0];
 
@@ -1665,15 +1665,11 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       }
       
       /* Ignore these options - they've already been handled */
-      if (VG_CLO_STREQN(7, arg, "--tool="))
-	 goto skip_arg;
-      if (VG_CLO_STREQN(7, arg, "--exec="))
-	 goto skip_arg;
-      if (VG_CLO_STREQN(20, arg, "--command-line-only="))
-	 goto skip_arg;
+      if (VG_CLO_STREQN( 7, arg, "--tool="))              goto skip_arg;
+      if (VG_CLO_STREQN( 7, arg, "--exec="))              goto skip_arg;
+      if (VG_CLO_STREQN(20, arg, "--command-line-only=")) goto skip_arg;
 
-      if (     VG_CLO_STREQ(arg, "--"))
-	 goto skip_arg;
+      if (     VG_CLO_STREQ(arg, "--"))                  goto skip_arg;
 
       else if (VG_CLO_STREQ(arg, "-v") ||
                VG_CLO_STREQ(arg, "--verbose"))
@@ -1683,48 +1679,48 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
                VG_CLO_STREQ(arg, "--quiet"))
          VG_(clo_verbosity)--;
 
-      else VG_BOOL_CLO("--branchpred",       VG_(clo_branchpred))
-      else VG_BOOL_CLO("--db-attach",        VG_(clo_db_attach))
-      else VG_BOOL_CLO("--demangle",         VG_(clo_demangle))
-      else VG_BOOL_CLO("--error-limit",      VG_(clo_error_limit))
-      else VG_BOOL_CLO("--pointercheck",     VG_(clo_pointercheck))
-      else VG_BOOL_CLO("--support-elan3",    VG_(clo_support_elan3))
-      else VG_BOOL_CLO("--show-emwarns",     VG_(clo_show_emwarns))
-      else VG_BOOL_CLO("--profile",          VG_(clo_profile))
-      else VG_BOOL_CLO("--run-libc-freeres", VG_(clo_run_libc_freeres))
-      else VG_BOOL_CLO("--show-below-main",  VG_(clo_show_below_main))
-      else VG_BOOL_CLO("--time-stamp",       VG_(clo_time_stamp))
-      else VG_BOOL_CLO("--track-fds",        VG_(clo_track_fds))
-      else VG_BOOL_CLO("--trace-children",   VG_(clo_trace_children))
-      else VG_BOOL_CLO("--trace-sched",      VG_(clo_trace_sched))
-      else VG_BOOL_CLO("--trace-signals",    VG_(clo_trace_signals))
-      else VG_BOOL_CLO("--trace-symtab",     VG_(clo_trace_symtab))
-      else VG_BOOL_CLO("--trace-redir",      VG_(clo_trace_redir))
-      else VG_BOOL_CLO("--trace-syscalls",   VG_(clo_trace_syscalls))
-      else VG_BOOL_CLO("--trace-pthreads",   VG_(clo_trace_pthreads))
-      else VG_BOOL_CLO("--wait-for-gdb",     VG_(clo_wait_for_gdb))
-      else VG_BOOL_CLO("--model-pthreads",   VG_(clo_model_pthreads))
+      else VG_BOOL_CLO(arg, "--branchpred",       VG_(clo_branchpred))
+      else VG_BOOL_CLO(arg, "--db-attach",        VG_(clo_db_attach))
+      else VG_BOOL_CLO(arg, "--demangle",         VG_(clo_demangle))
+      else VG_BOOL_CLO(arg, "--error-limit",      VG_(clo_error_limit))
+      else VG_BOOL_CLO(arg, "--pointercheck",     VG_(clo_pointercheck))
+      else VG_BOOL_CLO(arg, "--support-elan3",    VG_(clo_support_elan3))
+      else VG_BOOL_CLO(arg, "--show-emwarns",     VG_(clo_show_emwarns))
+      else VG_BOOL_CLO(arg, "--profile",          VG_(clo_profile))
+      else VG_BOOL_CLO(arg, "--run-libc-freeres", VG_(clo_run_libc_freeres))
+      else VG_BOOL_CLO(arg, "--show-below-main",  VG_(clo_show_below_main))
+      else VG_BOOL_CLO(arg, "--time-stamp",       VG_(clo_time_stamp))
+      else VG_BOOL_CLO(arg, "--track-fds",        VG_(clo_track_fds))
+      else VG_BOOL_CLO(arg, "--trace-children",   VG_(clo_trace_children))
+      else VG_BOOL_CLO(arg, "--trace-sched",      VG_(clo_trace_sched))
+      else VG_BOOL_CLO(arg, "--trace-signals",    VG_(clo_trace_signals))
+      else VG_BOOL_CLO(arg, "--trace-symtab",     VG_(clo_trace_symtab))
+      else VG_BOOL_CLO(arg, "--trace-redir",      VG_(clo_trace_redir))
+      else VG_BOOL_CLO(arg, "--trace-syscalls",   VG_(clo_trace_syscalls))
+      else VG_BOOL_CLO(arg, "--trace-pthreads",   VG_(clo_trace_pthreads))
+      else VG_BOOL_CLO(arg, "--wait-for-gdb",     VG_(clo_wait_for_gdb))
+      else VG_BOOL_CLO(arg, "--model-pthreads",   VG_(clo_model_pthreads))
 
-      else VG_STR_CLO ("--db-command",        VG_(clo_db_command))
-      else VG_STR_CLO ("--weird-hacks",       VG_(clo_weird_hacks))
+      else VG_STR_CLO (arg, "--db-command",       VG_(clo_db_command))
+      else VG_STR_CLO (arg, "--weird-hacks",      VG_(clo_weird_hacks))
 
-      else VG_NUM_CLO ("--dump-error",        VG_(clo_dump_error))
-      else VG_NUM_CLO ("--input-fd",          VG_(clo_input_fd))
-      else VG_NUM_CLO ("--sanity-level",      VG_(clo_sanity_level))
-      else VG_BNUM_CLO("--num-callers",       VG_(clo_backtrace_size), 1,
-                                                VG_DEEPEST_BACKTRACE)
+      else VG_NUM_CLO (arg, "--dump-error",       VG_(clo_dump_error))
+      else VG_NUM_CLO (arg, "--input-fd",         VG_(clo_input_fd))
+      else VG_NUM_CLO (arg, "--sanity-level",     VG_(clo_sanity_level))
+      else VG_BNUM_CLO(arg, "--num-callers",      VG_(clo_backtrace_size), 1,
+                                                  VG_DEEPEST_BACKTRACE)
 
-      else VG_BNUM_CLO("--vex-iropt-verbosity",
+      else VG_BNUM_CLO(arg, "--vex-iropt-verbosity",
                        VG_(clo_vex_control).iropt_verbosity, 0, 10)
-      else VG_BNUM_CLO("--vex-iropt-level",
+      else VG_BNUM_CLO(arg, "--vex-iropt-level",
                        VG_(clo_vex_control).iropt_level, 0, 2)
-      else VG_BOOL_CLO("--vex-iropt-precise-memory-exns",
+      else VG_BOOL_CLO(arg, "--vex-iropt-precise-memory-exns",
                        VG_(clo_vex_control).iropt_precise_memory_exns)
-      else VG_BNUM_CLO("--vex-iropt-unroll-thresh",
+      else VG_BNUM_CLO(arg, "--vex-iropt-unroll-thresh",
                        VG_(clo_vex_control).iropt_unroll_thresh, 0, 400)
-      else VG_BNUM_CLO("--vex-guest-max-insns",
+      else VG_BNUM_CLO(arg, "--vex-guest-max-insns",
                        VG_(clo_vex_control).guest_max_insns, 1, 100)
-      else VG_BNUM_CLO("--vex-guest-chase-thresh",
+      else VG_BNUM_CLO(arg, "--vex-guest-chase-thresh",
                        VG_(clo_vex_control).guest_chase_thresh, 0, 99)
 
       else if (VG_CLO_STREQN(9,  arg, "--log-fd=")) {
@@ -1801,7 +1797,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
          }
       }
 
-      else VG_NUM_CLO ("--trace-notbelow",        VG_(clo_trace_notbelow))
+      else VG_NUM_CLO (arg, "--trace-notbelow",   VG_(clo_trace_notbelow))
 
       else if (VG_CLO_STREQ(arg, "--gen-suppressions=no"))
          VG_(clo_gen_suppressions) = 0;

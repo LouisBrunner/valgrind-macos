@@ -1582,7 +1582,7 @@ Bool  MC_(clo_avoid_strlen_errors)    = True;
 
 Bool TL_(process_cmd_line_option)(Char* arg)
 {
-        VG_BOOL_CLO("--avoid-strlen-errors", MC_(clo_avoid_strlen_errors))
+        VG_BOOL_CLO(arg, "--avoid-strlen-errors", MC_(clo_avoid_strlen_errors))
    else
       return MAC_(process_common_cmd_line_option)(arg);
 

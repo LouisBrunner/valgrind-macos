@@ -137,24 +137,24 @@ typedef struct _ToolInfo {
 
 /* Higher-level command-line option recognisers;  use in if/else chains */
 
-#define VG_BOOL_CLO(qq_option, qq_var) \
-   if (VG_CLO_STREQ(arg, qq_option"=yes")) { (qq_var) = True; } \
-   else if (VG_CLO_STREQ(arg, qq_option"=no"))  { (qq_var) = False; }
+#define VG_BOOL_CLO(qq_arg, qq_option, qq_var) \
+        if (VG_CLO_STREQ(qq_arg, qq_option"=yes")) { (qq_var) = True; } \
+   else if (VG_CLO_STREQ(qq_arg, qq_option"=no"))  { (qq_var) = False; }
 
-#define VG_STR_CLO(qq_option, qq_var) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, arg, qq_option"=")) { \
-      (qq_var) = &arg[ VG_(strlen)(qq_option)+1 ]; \
+#define VG_STR_CLO(qq_arg, qq_option, qq_var) \
+   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
+      (qq_var) = &qq_arg[ VG_(strlen)(qq_option)+1 ]; \
    }
 
-#define VG_NUM_CLO(qq_option, qq_var) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, arg, qq_option"=")) { \
-      (qq_var) = (Int)VG_(atoll)( &arg[ VG_(strlen)(qq_option)+1 ] ); \
+#define VG_NUM_CLO(qq_arg, qq_option, qq_var) \
+   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
+      (qq_var) = (Int)VG_(atoll)( &qq_arg[ VG_(strlen)(qq_option)+1 ] ); \
    }
 
 /* Bounded integer arg */
-#define VG_BNUM_CLO(qq_option, qq_var, qq_lo, qq_hi) \
-   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, arg, qq_option"=")) { \
-      (qq_var) = (Int)VG_(atoll)( &arg[ VG_(strlen)(qq_option)+1 ] ); \
+#define VG_BNUM_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
+   if (VG_CLO_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) { \
+      (qq_var) = (Int)VG_(atoll)( &qq_arg[ VG_(strlen)(qq_option)+1 ] ); \
       if ((qq_var) < (qq_lo)) (qq_var) = (qq_lo); \
       if ((qq_var) > (qq_hi)) (qq_var) = (qq_hi); \
    }

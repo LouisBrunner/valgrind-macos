@@ -87,8 +87,8 @@ dispatch_boring:
 	/* Found a match.  Call the tce.payload field.  The magic 8
 	   value is offsetof(TCEntry,payload) on a 32-bit platform. */
 	
-	addl $8, %ebx
-	call *%ebx
+	addl 	$8, %ebx
+	call 	*%ebx
 	
 	/* 
 	   %eax holds destination (original) address.

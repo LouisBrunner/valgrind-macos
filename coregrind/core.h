@@ -1224,7 +1224,7 @@ extern void VG_(start_debugger) ( ThreadId tid );
 extern UInt VG_(dispatch_ctr);
 
 /* Instruction pointer guest state offset, used by $VG_ARCH/dispatch.S. */
-extern UInt VG_(instr_ptr_offset);
+extern OffT VG_(instr_ptr_offset);
 
 /* Stats ... */
 extern void VG_(print_scheduler_stats) ( void );

@@ -33,123 +33,111 @@
 #include "amd64_private_asm.h"
 
 /*------------------------------------------------------------*/
-/*--- The normal-case dispatch machinery.                  ---*/
+/*--- The dispatch loop.                                   ---*/
 /*------------------------------------------------------------*/
+
+#define TT_LOOKUP(reg, fail)                            \
+        movq %rax, reg;                                 \
+        andq $VG_TT_FAST_MASK, reg;                     \
+        movq VG_(tt_fast)(,reg,8), reg;                 \
+        cmpq %rax, (reg);                               \
+        jnz  fail
 	
-/* To transfer to an (original) code address, load it into %eax and
-   jump to vg_dispatch.  This fragment of code tries to find the
-   address of the corresponding translation by searching the translation
-   table.   If it fails, a new translation is made, added to the
-   translation table, and then jumped to.  Almost all the hard
-   work is done by C routines; this code simply handles the
-   common case fast -- when the translation address is found in
-   the translation cache.
-
-   At entry, %eax is the only live (real-machine) register; the
-   entire simulated state is tidily saved in vg_m_state.  
-*/
-
 .globl VG_(run_innerloop)
 VG_(run_innerloop):
-    ud2
-
-#if 0	
-#define TT_LOOKUP(reg, fail)				\
-	movl %eax, reg;					\
-	andl $VG_TT_FAST_MASK, reg;			\
-	movl VG_(tt_fast)(,reg,4), reg;			\
-	cmpl %eax, (reg);				\
-	jnz  fail
-	
-/* The C world needs a way to get started simulating.  So we provide
-   a function void vg_run_innerloop ( void ), which starts running
-   from vg_m_eip, and exits when the counter reaches zero.  This loop
-   can also exit if vg_oursignalhandler() catches a non-resumable
-   signal, for example SIGSEGV.  It then longjmp()s back past here.
-*/
-
-/* signature: UInt VG_(run_innerloop) ( void* guest_state ) */
-
-.globl VG_(run_innerloop)
-VG_(run_innerloop):
-	/* 4(%esp) holds guest_state */
+	/* %rdi holds guest_state */
 	
 	/* ----- entry point to VG_(run_innerloop) ----- */
-	pushl	%ebx
-	pushl	%ecx
-	pushl	%edx
-	pushl	%esi
-	pushl	%edi
-	pushl	%ebp
-	
-	/* 28(%esp) holds guest_state */
+	pushq	%rbx
+	pushq	%rcx
+	pushq	%rdx
+	pushq	%rsi
+	pushq	%rbp
+	pushq	%r8
+	pushq	%r9
+	pushq	%r10
+	pushq	%r11
+	pushq	%r12
+	pushq	%r13
+	pushq	%r14
+	pushq	%r15
+	pushq	%rdi
+
+	/* 0(%rsp) holds cached copy of guest_state */
 
 	/* Set up the guest state pointer */
-	movl	28(%esp), %ebp
+	movq	%rdi, %rbp
 	
-	/* fetch m_eip into %eax */
-	movl	VG_(instr_ptr_offset), %esi
-	movl	(%ebp, %esi, 1), %eax
+	/* fetch %RIP into %rax */
+	movq	VG_(instr_ptr_offset), %rsi
+	movq	(%rbp, %rsi, 1), %rax
 	
 	/* fall into main loop */
 
+	/* Here, %rax is the only live (real) register.  The entire
+	   simulated state is saved in the ThreadState. */
+
 dispatch_boring:
 	/* save the jump address in the guest state */
-	movl	VG_(instr_ptr_offset), %esi
-	movl	%eax, (%ebp, %esi, 1)
+	movq	VG_(instr_ptr_offset), %rsi
+	movq	%rax, (%rbp, %rsi, 1)
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
 	subl $1, VG_(dispatch_ctr)
 	
 	jz	counter_is_zero
 	/* try a fast lookup in the translation cache */
-	TT_LOOKUP(%ebx, fast_lookup_failed)
+	TT_LOOKUP(%rbx, fast_lookup_failed)
 
-	/* Found a match.  Call the tce.payload field (+VG_CODE_OFFSET) */
-	addl	$VG_CODE_OFFSET, %ebx
-	call	*%ebx
+	/* Found a match.  Call the tce.payload field.  The magic 12
+	   value is offsetof(TCEntry,payload) on a 64-bit platform. */
+	addq	$12, %rbx
+	call 	*%rbx
 	
 	/* 
-	   %eax holds destination (original) address.
-	   %ebp indicates further details of the control transfer
-	   requested to the address in %eax.
+	   %rax holds destination (original) address.
+	   %rbp indicates further details of the control transfer
+	   requested to the address in %rax.
 	
-	   If ebp is unchanged (== * 28(%esp)), just jump next to %eax.
-	 
-	   If ebp == VG_EBP_JMP_SYSCALL, do a system call before 
-	   continuing at eax.
-	
-	   If ebp == VG_EBP_JMP_CLIENTREQ, do a client request before 
-	   continuing at eax.
-	
-	   If %ebp has any other value, we panic.
+	   If rbp is unchanged (== * 0(%rsp)), just jump next to %rax.
+
+	   Otherwise fall out, back to the scheduler, and let it
+	   figure out what to do next.
 	*/
 
-	cmpl	28(%esp), %ebp
+	cmpq	0(%rsp), %rbp
 	jz	dispatch_boring
 
 	jmp	dispatch_exceptional
 
 	
 fast_lookup_failed:
-	/* %EIP is up to date here since dispatch_boring dominates */
+	/* %RIP is up to date here since dispatch_boring dominates */
 	addl	$1, VG_(dispatch_ctr)
-	movl	$VG_TRC_INNER_FASTMISS, %eax
+	movq	$VG_TRC_INNER_FASTMISS, %rax
 	jmp	run_innerloop_exit
 
 counter_is_zero:
-	/* %EIP is up to date here since dispatch_boring dominates */
+	/* %RIP is up to date here since dispatch_boring dominates */
 	addl	$1, VG_(dispatch_ctr)
-	movl	$VG_TRC_INNER_COUNTERZERO, %eax
+	movq	$VG_TRC_INNER_COUNTERZERO, %rax
 	jmp	run_innerloop_exit
 	
 run_innerloop_exit:
-	popl	%ebp
-	popl	%edi
-	popl	%esi
-	popl	%edx
-	popl	%ecx
-	popl	%ebx
+	popq	%rdi
+	popq	%r15
+	popq	%r14
+	popq	%r13
+	popq	%r12
+	popq	%r11
+	popq	%r10
+	popq	%r9
+	popq	%r8
+	popq	%rbp
+	popq	%rsi
+	popq	%rdx
+	popq	%rcx
+	popq	%rbx
 	ret	
 
 
@@ -159,20 +147,18 @@ run_innerloop_exit:
 */
 dispatch_exceptional:
 	/* this is jumped to only, not fallen-through from above */
-	cmpl	$VG_TRC_INNER_COUNTERZERO, %ebp
+	cmpq	$VG_TRC_INNER_COUNTERZERO, %rbp
 	jz	counter_is_zero
 
-	/* save %eax in %EIP and defer to sched */
-	movl	VG_(instr_ptr_offset), %esi
-	movl	28(%esp), %edi
-	movl	%eax, (%edi, %esi, 1)
-	movl	%ebp, %eax
+	/* save %rax in %RIP and defer to sched */
+	movq	VG_(instr_ptr_offset), %rsi
+	movq	0(%rsp), %rdi
+	movq	%rax, (%rdi, %rsi, 1)
+	movq	%rbp, %rax
 	jmp	run_innerloop_exit
 
-	
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
-#endif
 
 ##--------------------------------------------------------------------##
 ##--- end                                                          ---##

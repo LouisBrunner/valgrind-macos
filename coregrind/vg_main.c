@@ -139,7 +139,7 @@ Char** VG_(client_argv);
 Char** VG_(client_envp);
 
 // Instruction pointer guest state offset, used by $VG_ARCH/dispatch.S.
-UInt VG_(instr_ptr_offset);
+OffT VG_(instr_ptr_offset);
 
 /* ---------------------------------------------------------------------
    Running stuff                            

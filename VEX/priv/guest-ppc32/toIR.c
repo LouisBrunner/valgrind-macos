@@ -1690,7 +1690,7 @@ static Bool dis_int_rot ( UInt theInstr )
    UChar MaskEnd   = toUChar((theInstr >>  1) & 0x1F); /* theInstr[1:5]   */
    UChar flag_Rc   = toUChar((theInstr >>  0) & 1);    /* theInstr[0]     */
    
-   UInt mask = MASK(31-MaskBegin, 31-MaskEnd);
+   UInt mask = MASK(31-MaskEnd, 31-MaskBegin);
    IRTemp rot_amt = newTemp(Ity_I8);
    IRTemp Rs = newTemp(Ity_I32);
    IRTemp Ra = newTemp(Ity_I32);

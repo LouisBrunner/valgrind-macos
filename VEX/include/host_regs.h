@@ -10,6 +10,10 @@
 #define __HOST_REGS_H
 
 
+/*---------------------------------------------------------*/
+/*--- Representing HOST REGISTERS                       ---*/
+/*---------------------------------------------------------*/
+
 /* Host registers.  Stuff to represent:
 
    - The register number
@@ -46,5 +50,66 @@ extern HRegClass hregClass     ( HReg );
 extern Bool      hregIsVirtual ( HReg );
 extern UInt      hregNumber    ( HReg );
 
+#define INVALID_HREG ((HReg)0xFFFFFFFF)
+
+
+/*---------------------------------------------------------*/
+/*--- Recording register usage (for reg-alloc)          ---*/
+/*---------------------------------------------------------*/
+
+typedef
+   enum { HRmRead, HRmWrite, HRmModify }
+   HRegMode;
+
+
+/* A struct for recording the usage of registers in instructions.
+   This can get quite large, but we don't expect to allocate them
+   dynamically, so there's no problem. 
+*/
+#define N_HREG_USAGE 4
+
+typedef
+   struct {
+      HReg     hreg[N_HREG_USAGE];
+      HRegMode mode[N_HREG_USAGE];
+      Int      n_used;
+   }
+   HRegUsage;
+
+extern void ppHRegUsage ( FILE*, HRegUsage* );
+
+extern void initHRegUsage ( HRegUsage* );
+
+/* Add a register to a usage table.  Combine incoming read uses with
+   existing write uses into a modify use, and vice versa.  Do not
+   create duplicate entries -- each reg should only be mentioned once.  
+*/
+extern void addToHRegUsage ( HRegUsage*, HReg, HRegMode );
+
+
+
+/*---------------------------------------------------------*/
+/*--- Indicating register remappings (for reg-alloc)    ---*/
+/*---------------------------------------------------------*/
+
+#define N_HREG_REMAP 4
+
+typedef
+   struct {
+      HReg orig       [N_HREG_REMAP];
+      HReg replacement[N_HREG_REMAP];
+      Int  n_used;
+   }
+   HRegRemap;
+
+extern void ppHRegRemap     ( FILE*, HRegRemap* );
+extern void initHRegRemap   ( HRegRemap* );
+extern void addToHRegRemap  ( HRegRemap*, HReg, HReg );
+extern HReg lookupHRegRemap ( HRegRemap*, HReg );
+
 
 #endif /* ndef __HOST_REGS_H */
+
+/*---------------------------------------------------------------*/
+/*---                                             host_regs.h ---*/
+/*---------------------------------------------------------------*/

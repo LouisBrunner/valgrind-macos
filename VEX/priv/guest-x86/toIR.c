@@ -387,10 +387,16 @@ static IRExpr* calculate_condition ( Condcode cond )
 
 /* -------------- Building the flags-thunk. -------------- */
 
-/* Build the flag-thunk following a flag-setting operation.  If guard
-   is non-NULL, it is regarded as a controlling expression of type
-   Ity_Bit, and the thunk is only updated iff guard evaluates to 1 at
-   run-time.  If guard is NULL, the update is always done. */
+/* The machinery in this section builds the flag-thunk following a
+   flag-setting operation.  Hence the various setFlags_* functions.
+   Note, in reality setFlags_ADD_SUB and setFlags_MUL are pretty much
+   the same -- they just store the two operands.  
+*/
+
+static Bool isAddSub ( IROp op8 )
+{
+   return op8 == Iop_Add8 || op8 == Iop_Sub8;
+}
 
 /* U-widen 8/16/32 bit int expr to 32. */
 static IRExpr* widenUto32 ( IRExpr* e )
@@ -435,38 +441,59 @@ static IRExpr* narrowTo ( IRType dst_ty, IRExpr* e )
 }
 
 
-/* This is for add/sub/adc/sbb/and/or/xor, where we need to
-   store the result value and the non-lvalue operand. */
+/* This is for add/sub/adc/sbb, where (like multiply) we simply store
+   the two arguments.  Note, the args are reversed, so if op8
+   indicates subtract, then the value the program is trying to compute
+   is src1 - src2. */
 
-static void setFlags_SRC_DST1 ( IROp    op8,
-                                IRTemp  src,
-                                IRTemp  dst1,
-                                IRType  ty )
+static void setFlags_ADD_SUB ( IROp    op8,
+                               IRTemp  src2,
+                               IRTemp  src1,
+                               IRType  ty )
 {
-   Bool logic = False;
-   Int  ccOp  = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+   Int ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
+
+   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
+
+   switch (op8) {
+      case Iop_Add8: ccOp += CC_OP_ADDB;   break;
+      case Iop_Sub8: ccOp += CC_OP_SUBB;   break;
+      default:       ppIROp(op8);
+                     vpanic("setFlags_ADD_SUB(x86)");
+   }
+   stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(ccOp)) );
+   stmt( IRStmt_Put( OFFB_CC_SRC, widenUto32(mkexpr(src2))) );
+   stmt( IRStmt_Put( OFFB_CC_DST, widenUto32(mkexpr(src1))) );
+}
+
+
+/* For and/or/xor, only the result is important.  However, put zero in
+   CC_SRC to keep memcheck happy. */
+
+static void setFlags_LOGIC ( IROp    op8,
+                             IRTemp  dst1,
+                             IRType  ty )
+{
+   Int ccOp = ty==Ity_I8 ? 0 : (ty==Ity_I16 ? 1 : 2);
 
    vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
 
    switch (op8) {
       case Iop_Or8:
       case Iop_And8:
-      case Iop_Xor8: ccOp += CC_OP_LOGICB; logic = True; break;
-      case Iop_Add8: ccOp += CC_OP_ADDB;   break;
-      case Iop_Sub8: ccOp += CC_OP_SUBB;   break;
+      case Iop_Xor8: ccOp += CC_OP_LOGICB; break;
       default:       ppIROp(op8);
-                     vpanic("setFlags_SRC_DST1(x86)");
+                     vpanic("setFlags_LOGIC(x86)");
    }
    stmt( IRStmt_Put( OFFB_CC_OP,  mkU32(ccOp)) );
-   stmt( IRStmt_Put( OFFB_CC_SRC, logic ? mkU32(0) 
-                                        : widenUto32(mkexpr(src))) );
+   stmt( IRStmt_Put( OFFB_CC_SRC, mkU32(0)) );
    stmt( IRStmt_Put( OFFB_CC_DST, widenUto32(mkexpr(dst1))) );
 }
 
 
-/* This is for shl/shr/sar, where we store the result value and the
-   result except shifted one bit less.  And then only when the guard
-   is non-zero. */
+/* For all shift and rotate cases, store the result value and the
+   result except shifted or rotated one bit less ("undershifted",
+   hence US).  And then only when the guard is non-zero. */
 
 static void setFlags_DSTus_DST1 ( IROp    op32,
                                   IRTemp  dstUS,
@@ -717,7 +744,7 @@ static void helper_ADC ( Int sz,
 
    stmt( IRStmt_Put( OFFB_CC_OP,  thunkExpr ) );
    stmt( IRStmt_Put( OFFB_CC_SRC, mkexpr(ta2) ) );
-   stmt( IRStmt_Put( OFFB_CC_DST, mkexpr(tdst) ) );
+   stmt( IRStmt_Put( OFFB_CC_DST, mkexpr(ta1) ) );
 }
 
 
@@ -756,7 +783,7 @@ static void helper_SBB ( Int sz,
 
    stmt( IRStmt_Put( OFFB_CC_OP,  thunkExpr ) );
    stmt( IRStmt_Put( OFFB_CC_SRC, mkexpr(ta2) ) );
-   stmt( IRStmt_Put( OFFB_CC_DST, mkexpr(tdst) ) );
+   stmt( IRStmt_Put( OFFB_CC_DST, mkexpr(ta1) ) );
 }
 
 
@@ -1656,7 +1683,10 @@ UInt dis_op2_E_G ( UChar       sorb,
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-         setFlags_SRC_DST1(op8, src, dst1, ty);
+	 if (isAddSub(op8))
+            setFlags_ADD_SUB(op8, src, dst0, ty);
+         else
+            setFlags_LOGIC(op8, dst1, ty);
          if (keep)
             putIReg(size, gregOfRM(rm), mkexpr(dst1));
       }
@@ -1681,7 +1711,10 @@ UInt dis_op2_E_G ( UChar       sorb,
          putIReg(size, gregOfRM(rm), mkexpr(dst1));
       } else {
          assign( dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-         setFlags_SRC_DST1(op8, src, dst1, ty);
+	 if (isAddSub(op8))
+            setFlags_ADD_SUB(op8, src, dst0, ty);
+         else
+            setFlags_LOGIC(op8, dst1, ty);
          if (keep)
             putIReg(size, gregOfRM(rm), mkexpr(dst1));
       }
@@ -1759,7 +1792,10 @@ UInt dis_op2_G_E ( UChar       sorb,
          putIReg(size, eregOfRM(rm), mkexpr(dst1));
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-         setFlags_SRC_DST1(op8, src, dst1, ty);
+	 if (isAddSub(op8))
+            setFlags_ADD_SUB(op8, src, dst0, ty);
+         else
+            setFlags_LOGIC(op8, dst1, ty);
          if (keep)
             putIReg(size, eregOfRM(rm), mkexpr(dst1));
       }
@@ -1785,7 +1821,10 @@ UInt dis_op2_G_E ( UChar       sorb,
          storeLE(mkexpr(addr), mkexpr(dst1));
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-         setFlags_SRC_DST1(op8, src, dst1, ty);
+	 if (isAddSub(op8))
+            setFlags_ADD_SUB(op8, src, dst0, ty);
+         else
+            setFlags_LOGIC(op8, dst1, ty);
          if (keep)
             storeLE(mkexpr(addr), mkexpr(dst1));
       }
@@ -1906,7 +1945,10 @@ UInt dis_op_imm_A ( Int    size,
    assign(dst0, getIReg(size,R_EAX));
    assign(src,  mkU(ty,lit));
    assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)) );
-   setFlags_SRC_DST1(op8, src, dst1, ty);
+   if (isAddSub(op8))
+      setFlags_ADD_SUB(op8, src, dst0, ty);
+   else
+      setFlags_LOGIC(op8, dst1, ty);
 
    if (keep)
       putIReg(size, R_EAX, mkexpr(dst1));
@@ -2057,7 +2099,10 @@ UInt dis_Grp1 ( UChar sorb,
          helper_SBB( sz, dst1, dst0, src );
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-         setFlags_SRC_DST1(op8, src, dst1, ty);
+	 if (isAddSub(op8))
+            setFlags_ADD_SUB(op8, src, dst0, ty);
+         else
+            setFlags_LOGIC(op8, dst1, ty);
       }
 
       if (gregOfRM(modrm) < 7)
@@ -2079,7 +2124,10 @@ UInt dis_Grp1 ( UChar sorb,
          vassert(0);
       } else {
          assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
-         setFlags_SRC_DST1(op8, src, dst1, ty);
+	 if (isAddSub(op8))
+            setFlags_ADD_SUB(op8, src, dst0, ty);
+         else
+            setFlags_LOGIC(op8, dst1, ty);
       }
 
       if (gregOfRM(modrm) < 7)
@@ -2095,29 +2143,6 @@ UInt dis_Grp1 ( UChar sorb,
 
 /* Group 2 extended opcodes.  shift_expr must be an 8-bit typed
    expression. */
-
-#if 0
-/* Generate specialised inline versions of this function:
-   static inline int lshift(int x, int n)
-   {
-       if (n >= 0)
-           return x << n;
-       else
-           return x >> (-n);
-   }
-*/
-static IRExpr* mkLShift ( IRType ty, IRExpr* e, Int shift )
-{
-   if (shift > 0)
-      /* left */
-      return binop(mkSizedOp(ty,Iop_Shl8), e, mkU8(shift));
-   if (shift < 0)
-      /* right */
-      return binop(mkSizedOp(ty,Iop_Sar8), e, mkU8(-shift));
-   /* shift == 0 */
-   return e;
-}
-#endif
 
 static
 UInt dis_Grp2 ( UChar  sorb,
@@ -2492,7 +2517,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 	    assign(dst1, binop(mkSizedOp(ty,Iop_And8),
 			       getIReg(sz,eregOfRM(modrm)),
                                mkU(ty,d32)));
-	    setFlags_SRC_DST1( Iop_And8, INVALID_IRTEMP, dst1, ty );
+	    setFlags_LOGIC( Iop_And8, dst1, ty );
             DIP("test%c $0x%x, %s\n", nameISize(sz), d32, 
                                       nameIReg(sz, eregOfRM(modrm)));
             break;
@@ -2512,7 +2537,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 	    assign(dst0, mkU(ty,0));
             assign(src,  getIReg(sz,eregOfRM(modrm)));
 	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
-            setFlags_SRC_DST1(Iop_Sub8, src, dst1, ty);
+            setFlags_ADD_SUB(Iop_Sub8, src, dst0, ty);
 	    putIReg(sz, eregOfRM(modrm), mkexpr(dst1));
             DIP("neg%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
             break;
@@ -2556,7 +2581,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 	    dst1 = newTemp(ty);
 	    assign(dst1, binop(mkSizedOp(ty,Iop_And8),
 			       mkexpr(t1), mkU(ty,d32)));
-	    setFlags_SRC_DST1( Iop_And8, INVALID_IRTEMP, dst1, ty );
+	    setFlags_LOGIC( Iop_And8, dst1, ty );
             DIP("test%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
             break;
          }
@@ -2574,7 +2599,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 	    assign(dst0, mkU(ty,0));
             assign(src,  mkexpr(t1));
 	    assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
-            setFlags_SRC_DST1(Iop_Sub8, src, dst1, ty);
+            setFlags_ADD_SUB(Iop_Sub8, src, dst0, ty);
 	    storeLE( mkexpr(addr), mkexpr(dst1) );
             DIP("neg%c %s\n", nameISize(sz), dis_buf);
             break;
@@ -2871,13 +2896,11 @@ void dis_CMPS ( Int sz, IRTemp t_inc )
    assign( tdv, loadLE(ty,mkexpr(td)) );
 
    //uInstr2(cb, LOAD, sz, TempReg, ts,    TempReg, tsv);
-   //assign( tsv, loadLE(ty,mkexpr(ts)) );
+   assign( tsv, loadLE(ty,mkexpr(ts)) );
 
    //uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, tsv); 
    //setFlagsFromUOpcode(cb, SUB);
-
-   assign( tsv, binop(mkSizedOp(ty,Iop_Sub8), loadLE(ty,mkexpr(ts)), mkexpr(tdv)) );
-   setFlags_SRC_DST1 ( Iop_Sub8, tdv, tsv, ty );
+   setFlags_ADD_SUB ( Iop_Sub8, tdv, tsv, ty );
 
    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, ts);
@@ -2898,7 +2921,7 @@ void dis_SCAS ( Int sz, IRTemp t_inc )
    IRTemp tdv = newTemp(ty);       /* (EDI) */
 
    //uInstr2(cb, GET,  sz, ArchReg, R_EAX, TempReg, ta);
-   //assign( ta, getIReg(sz, R_EAX) );
+   assign( ta, getIReg(sz, R_EAX) );
 
    //uInstr2(cb, GET,   4, ArchReg, R_EDI, TempReg, td);
    assign( td, getIReg(4, R_EDI) );
@@ -2906,12 +2929,9 @@ void dis_SCAS ( Int sz, IRTemp t_inc )
    //uInstr2(cb, LOAD, sz, TempReg, td,    TempReg, tdv);
    assign( tdv, loadLE(ty,mkexpr(td)) );
 
-   /* next uinstr kills ta, but that's ok -- don't need it again */
    //uInstr2(cb, SUB,  sz, TempReg, tdv,   TempReg, ta);
    //setFlagsFromUOpcode(cb, SUB);
-
-   assign( ta, binop(mkSizedOp(ty,Iop_Sub8), getIReg(sz, R_EAX), mkexpr(tdv)) );
-   setFlags_SRC_DST1( Iop_Sub8, tdv, ta, ty );
+   setFlags_ADD_SUB( Iop_Sub8, tdv, ta, ty );
 
    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
    //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);

@@ -356,6 +356,11 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         | e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
+            case Iop_Mul32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        * e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
             case Iop_Shl32:
                vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
                shift = (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8);

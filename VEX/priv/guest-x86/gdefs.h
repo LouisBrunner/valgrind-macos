@@ -53,31 +53,31 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 enum {
     CC_OP_COPY, /* nothing to do -- ccs are in CC_SRC and up to date */
 
-    CC_OP_ADDB, /* modify all flags, CC_DST = res, CC_SRC = src1 */
+    CC_OP_ADDB, /* modify all flags, CC_DST = src1, CC_SRC = src2 */
     CC_OP_ADDW,
     CC_OP_ADDL, /* 3 */
 
-    CC_OP_ADCB, /* modify all flags, CC_DST = res, CC_SRC = src1 */
+    CC_OP_ADCB, /* modify all flags, CC_DST = src1, CC_SRC = src2 */
     CC_OP_ADCW,
     CC_OP_ADCL, /* 6 */
 
-    CC_OP_SUBB, /* modify all flags, CC_DST = res, CC_SRC = src1 */
+    CC_OP_SUBB, /* modify all flags, CC_DST = src1, CC_SRC = src2 */
     CC_OP_SUBW,
     CC_OP_SUBL, /* 9 */
 
-    CC_OP_SBBB, /* modify all flags, CC_DST = res, CC_SRC = src1 */
+    CC_OP_SBBB, /* modify all flags, CC_DST = src1, CC_SRC = src2 */
     CC_OP_SBBW,
     CC_OP_SBBL, /* 12 */
 
-    CC_OP_LOGICB, /* modify all flags, CC_DST = res */
+    CC_OP_LOGICB, /* modify all flags, CC_DST = res, CC_SRC not used */
     CC_OP_LOGICW,
     CC_OP_LOGICL, /* 15 */
 
-    CC_OP_INCB, /* modify all flags except, CC_DST = res, CC_SRC = C */
+    CC_OP_INCB, /* modify all flags except C, CC_DST = res, CC_SRC = old C */
     CC_OP_INCW,
     CC_OP_INCL, /* 18 */
 
-    CC_OP_DECB, /* modify all flags except, CC_DST = res, CC_SRC = C  */
+    CC_OP_DECB, /* modify all flags except C, CC_DST = res, CC_SRC = old C  */
     CC_OP_DECW,
     CC_OP_DECL, /* 21 */
 

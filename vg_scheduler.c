@@ -59,6 +59,15 @@ suitable for use by anyone at all!
 - Get rid of restrictions re use of sigaltstack; they are no longer
   needed.  
 
+- Fix signals properly, so that each thread has its own blocking mask.
+  Currently this isn't done, and (worse?) signals are delivered to
+  Thread 1 (the root thread) regardless.  
+
+  So, what's the deal with signals and mutexes?  If a thread is
+  blocked on a mutex, or for a condition variable for that matter, can
+  signals still be delivered to it?  This has serious consequences --
+  deadlocks, etc.
+
 */
 
 
@@ -70,7 +79,9 @@ suitable for use by anyone at all!
 
 /* struct ThreadState is defined in vg_include.h. */
 
-/* Private globals.  A statically allocated array of threads. */
+/* Private globals.  A statically allocated array of threads.  NOTE:
+   [0] is never used, to simplify the simulation of initialisers for
+   LinuxThreads. */
 static ThreadState vg_threads[VG_N_THREADS];
 
 /* The tid of the thread currently in VG_(baseBlock). */
@@ -111,6 +122,8 @@ static VgWaitedOnFd vg_waiting_fds[VG_N_WAITING_FDS];
 /* Forwards */
 static void do_nontrivial_clientreq ( ThreadId tid );
 
+static void scheduler_sanity ( void );
+
 
 /* ---------------------------------------------------------------------
    Helper functions for the scheduler.
@@ -120,8 +133,8 @@ static __inline__
 Bool is_valid_tid ( ThreadId tid )
 {
    /* tid is unsigned, hence no < 0 test. */
+   if (tid == 0) return False;
    if (tid >= VG_N_THREADS) return False;
-   if (vg_threads[tid].status == VgTs_Empty) return False;
    return True;
 }
 
@@ -148,7 +161,7 @@ ThreadId VG_(identify_stack_addr)( Addr a )
          tid_to_skip = tid;
    }
 
-   for (tid = 0; tid < VG_N_THREADS; tid++) {
+   for (tid = 1; tid < VG_N_THREADS; tid++) {
       if (vg_threads[tid].status == VgTs_Empty) continue;
       if (tid == tid_to_skip) continue;
       if (vg_threads[tid].m_esp <= a 
@@ -164,18 +177,20 @@ void VG_(pp_sched_status) ( void )
 {
    Int i; 
    VG_(printf)("\nsched status:\n"); 
-   for (i = 0; i < VG_N_THREADS; i++) {
+   for (i = 1; i < VG_N_THREADS; i++) {
       if (vg_threads[i].status == VgTs_Empty) continue;
       VG_(printf)("\nThread %d: status = ", i);
       switch (vg_threads[i].status) {
-         case VgTs_Runnable:   VG_(printf)("Runnable\n"); break;
-         case VgTs_WaitFD:     VG_(printf)("WaitFD\n"); break;
-         case VgTs_WaitJoiner: VG_(printf)("WaitJoiner(%d)\n", 
+         case VgTs_Runnable:   VG_(printf)("Runnable"); break;
+         case VgTs_WaitFD:     VG_(printf)("WaitFD"); break;
+         case VgTs_WaitJoiner: VG_(printf)("WaitJoiner(%d)", 
                                            vg_threads[i].joiner); break;
-         case VgTs_WaitJoinee: VG_(printf)("WaitJoinee\n"); break;
-         case VgTs_Sleeping:   VG_(printf)("Sleeping\n"); break;
+         case VgTs_WaitJoinee: VG_(printf)("WaitJoinee"); break;
+         case VgTs_Sleeping:   VG_(printf)("Sleeping"); break;
+         case VgTs_WaitMX:     VG_(printf)("WaitMX"); break;
          default: VG_(printf)("???"); break;
       }
+      VG_(printf)(", waited_on_mx = %p\n", vg_threads[i].waited_on_mx );
       VG_(pp_ExeContext)( 
          VG_(get_ExeContext)( False, vg_threads[i].m_eip, 
                                      vg_threads[i].m_ebp ));
@@ -284,7 +299,7 @@ static
 ThreadId vg_alloc_ThreadState ( void )
 {
    Int i;
-   for (i = 0; i < VG_N_THREADS; i++) {
+   for (i = 1; i < VG_N_THREADS; i++) {
       if (vg_threads[i].status == VgTs_Empty)
          return i;
    }
@@ -297,7 +312,7 @@ ThreadId vg_alloc_ThreadState ( void )
 
 ThreadState* VG_(get_thread_state) ( ThreadId tid )
 {
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   vg_assert(is_valid_tid(tid));
    vg_assert(vg_threads[tid].status != VgTs_Empty);
    return & vg_threads[tid];
 }
@@ -306,7 +321,7 @@ ThreadState* VG_(get_thread_state) ( ThreadId tid )
 ThreadState* VG_(get_current_thread_state) ( void )
 {
    vg_assert(vg_tid_currently_in_baseBlock != VG_INVALID_THREADID);
-   return VG_(get_thread_state) ( VG_INVALID_THREADID );
+   return VG_(get_thread_state) ( vg_tid_currently_in_baseBlock );
 }
 
 
@@ -412,12 +427,12 @@ void VG_(save_thread_state) ( ThreadId tid )
 
 /* Run the thread tid for a while, and return a VG_TRC_* value to the
    scheduler indicating what happened. */
-static 
+static
 UInt run_thread_for_a_while ( ThreadId tid )
 {
    UInt trc = 0;
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
-   vg_assert(vg_threads[tid].status != VgTs_Empty);
+   vg_assert(is_valid_tid(tid));
+   vg_assert(vg_threads[tid].status == VgTs_Runnable);
    vg_assert(VG_(bbs_to_go) > 0);
 
    VG_(load_thread_state) ( tid );
@@ -466,7 +481,7 @@ void increment_epoch ( void )
 
 
 /* Initialise the scheduler.  Create a single "main" thread ready to
-   run, with special ThreadId of zero.  This is called at startup; the
+   run, with special ThreadId of one.  This is called at startup; the
    caller takes care to park the client's state is parked in
    VG_(baseBlock).  
 */
@@ -483,7 +498,8 @@ void VG_(scheduler_init) ( void )
       VG_(panic)("unexpected %esp at startup");
    }
 
-   for (i = 0; i < VG_N_THREADS; i++) {
+   for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
+      vg_threads[i].status     = VgTs_Empty;
       vg_threads[i].stack_size = 0;
       vg_threads[i].stack_base = (Addr)NULL;
       vg_threads[i].tid        = i;
@@ -495,12 +511,12 @@ void VG_(scheduler_init) ( void )
    /* Assert this is thread zero, which has certain magic
       properties. */
    tid_main = vg_alloc_ThreadState();
-   vg_assert(tid_main == 0); 
+   vg_assert(tid_main == 1); 
 
-   vg_threads[tid_main].status      = VgTs_Runnable;
-   vg_threads[tid_main].joiner      = VG_INVALID_THREADID;
-   vg_threads[tid_main].q_next      = VG_INVALID_THREADID;
-   vg_threads[tid_main].retval      = NULL; /* not important */
+   vg_threads[tid_main].status       = VgTs_Runnable;
+   vg_threads[tid_main].joiner       = VG_INVALID_THREADID;
+   vg_threads[tid_main].waited_on_mx = NULL;
+   vg_threads[tid_main].retval       = NULL; /* not important */
    vg_threads[tid_main].stack_highest_word 
       = vg_threads[tid_main].m_esp /* -4  ??? */;
 
@@ -614,6 +630,48 @@ Bool maybe_do_trivial_clientreq ( ThreadId tid )
 }
 
 
+/* vthread tid is returning from a signal handler; modify its
+   stack/regs accordingly. */
+static
+void handle_signal_return ( ThreadId tid )
+{
+   Char msg_buf[100];
+   Bool restart_blocked_syscalls;
+
+   vg_assert(is_valid_tid(tid));
+
+   restart_blocked_syscalls = VG_(signal_returns)(tid);
+
+   if (restart_blocked_syscalls)
+      /* Easy; we don't have to do anything. */
+      return;
+
+   if (vg_threads[tid].status == VgTs_WaitFD) {
+      vg_assert(vg_threads[tid].m_eax == __NR_read 
+                || vg_threads[tid].m_eax == __NR_write);
+      /* read() or write() interrupted.  Force a return with EINTR. */
+      vg_threads[tid].m_eax = -VKI_EINTR;
+      vg_threads[tid].status = VgTs_Runnable;
+      if (VG_(clo_trace_sched)) {
+         VG_(sprintf)(msg_buf, 
+            "read() / write() interrupted by signal; return EINTR" );
+         print_sched_event(tid, msg_buf);
+      }
+      return;
+   }
+
+   if (vg_threads[tid].status == VgTs_WaitFD) {
+      vg_assert(vg_threads[tid].m_eax == __NR_nanosleep);
+      /* We interrupted a nanosleep().  The right thing to do is to
+         write the unused time to nanosleep's second param and return
+         EINTR, but I'm too lazy for that. */
+      return;
+   }
+
+   /* All other cases?  Just return. */
+}
+
+
 static
 void sched_do_syscall ( ThreadId tid )
 {
@@ -624,7 +682,7 @@ void sched_do_syscall ( ThreadId tid )
    Bool orig_fd_blockness;
    Char msg_buf[100];
 
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   vg_assert(is_valid_tid(tid));
    vg_assert(vg_threads[tid].status == VgTs_Runnable);
 
    syscall_no = vg_threads[tid].m_eax; /* syscall number */
@@ -761,27 +819,35 @@ void poll_for_ready_fds ( void )
    ULong                t_now;
 
    /* Awaken any sleeping threads whose sleep has expired. */
-   t_now = VG_(read_microsecond_timer)();
-   for (tid = 0; tid < VG_N_THREADS; tid++) {
-      if (vg_threads[tid].status != VgTs_Sleeping)
-         continue;
-      if (t_now >= vg_threads[tid].awaken_at) {
-         /* Resume this thread.  Set to zero the remaining-time (second)
-            arg of nanosleep, since it's used up all its time. */
-         vg_assert(vg_threads[tid].m_eax == __NR_nanosleep);
-         rem = (struct vki_timespec *)vg_threads[tid].m_ecx; /* arg2 */
-         if (rem != NULL) {
-	    rem->tv_sec = 0;
-            rem->tv_nsec = 0;
- 	 }
-         /* Make the syscall return 0 (success). */
-         vg_threads[tid].m_eax = 0;
-	 /* Reschedule this thread. */
-	 vg_threads[tid].status = VgTs_Runnable;
-         if (VG_(clo_trace_sched)) {
-            VG_(sprintf)(msg_buf, "at %lu: nanosleep done", 
-                                  t_now);
-            print_sched_event(tid, msg_buf);
+   for (tid = 1; tid < VG_N_THREADS; tid++)
+     if (vg_threads[tid].status == VgTs_Sleeping)
+        break;
+
+   /* Avoid pointless calls to VG_(read_microsecond_timer). */
+   if (tid < VG_N_THREADS) {
+      t_now = VG_(read_microsecond_timer)();
+      for (tid = 1; tid < VG_N_THREADS; tid++) {
+         if (vg_threads[tid].status != VgTs_Sleeping)
+            continue;
+         if (t_now >= vg_threads[tid].awaken_at) {
+            /* Resume this thread.  Set to zero the remaining-time
+               (second) arg of nanosleep, since it's used up all its
+               time. */
+            vg_assert(vg_threads[tid].m_eax == __NR_nanosleep);
+            rem = (struct vki_timespec *)vg_threads[tid].m_ecx; /* arg2 */
+            if (rem != NULL) {
+	       rem->tv_sec = 0;
+               rem->tv_nsec = 0;
+            }
+            /* Make the syscall return 0 (success). */
+            vg_threads[tid].m_eax = 0;
+	    /* Reschedule this thread. */
+            vg_threads[tid].status = VgTs_Runnable;
+            if (VG_(clo_trace_sched)) {
+               VG_(sprintf)(msg_buf, "at %lu: nanosleep done", 
+                                     t_now);
+               print_sched_event(tid, msg_buf);
+            }
          }
       }
    }
@@ -806,7 +872,7 @@ void poll_for_ready_fds ( void )
       if (fd > fd_max) 
          fd_max = fd;
       tid = vg_waiting_fds[i].tid;
-      vg_assert(tid >= 0 && tid < VG_N_THREADS);
+      vg_assert(is_valid_tid(tid));
       syscall_no = vg_waiting_fds[i].syscall_no;
       switch (syscall_no) {
          case __NR_read: 
@@ -904,7 +970,7 @@ void complete_blocked_syscalls ( void )
 
       fd  = vg_waiting_fds[i].fd;
       tid = vg_waiting_fds[i].tid;
-      vg_assert(tid >= 0 && tid < VG_N_THREADS);
+      vg_assert(is_valid_tid(tid));
 
       /* The thread actually has to be waiting for the I/O event it
          requested before we can deliver the result! */
@@ -971,11 +1037,15 @@ VgSchedReturnCode VG_(scheduler) ( void )
 
    /* Start with the root thread.  tid in general indicates the
       currently runnable/just-finished-running thread. */
-   tid = 0;
+   tid = 1;
 
    /* This is the top level scheduler loop.  It falls into three
       phases. */
    while (True) {
+
+      /* ======================= Phase 0 of 3 =======================
+	 Be paranoid.  Always a good idea. */
+      scheduler_sanity();
 
       /* ======================= Phase 1 of 3 =======================
          Handle I/O completions and signals.  This may change the
@@ -1009,15 +1079,25 @@ VgSchedReturnCode VG_(scheduler) ( void )
          /* See if there are any signals which need to be delivered.  If
             so, choose thread(s) to deliver them to, and build signal
             delivery frames on those thread(s) stacks. */
-         VG_(deliver_signals)( 0 /*HACK*/ );
-         VG_(do_sanity_checks)(0 /*HACK*/, False);
+
+	 /* Be careful about delivering signals to a thread waiting
+            for a mutex.  In particular, when the handler is running,
+            that thread is temporarily apparently-not-waiting for the
+            mutex, so if it is unlocked by another thread whilst the
+            handler is running, this thread is not informed.  When the
+            handler returns, the thread resumes waiting on the mutex,
+            even if, as a result, it has missed the unlocking of it.
+            Potential deadlock.  This sounds all very strange, but the
+            POSIX standard appears to require this behaviour.  */
+         VG_(deliver_signals)( 1 /*HACK*/ );
+         VG_(do_sanity_checks)( 1 /*HACK*/, False );
 
          /* Try and find a thread (tid) to run. */
          tid_next = tid;
          n_in_fdwait_or_sleep = 0;
          while (True) {
             tid_next++;
-            if (tid_next >= VG_N_THREADS) tid_next = 0;
+            if (tid_next >= VG_N_THREADS) tid_next = 1;
             if (vg_threads[tid_next].status == VgTs_WaitFD
                 || vg_threads[tid_next].status == VgTs_Sleeping)
                n_in_fdwait_or_sleep ++;
@@ -1298,7 +1378,7 @@ void handle_pthread_return ( ThreadId tid, void* retval )
 
    /* Mark it as not in use.  Leave the stack in place so the next
       user of this slot doesn't reallocate it. */
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   vg_assert(is_valid_tid(tid));
    vg_assert(vg_threads[tid].status != VgTs_Empty);
 
    vg_threads[tid].retval = retval;
@@ -1321,7 +1401,7 @@ void handle_pthread_return ( ThreadId tid, void* retval )
          call.  TODO: free properly the slot (also below). 
       */
       jnr = vg_threads[tid].joiner;
-      vg_assert(jnr >= 0 && jnr < VG_N_THREADS);
+      vg_assert(is_valid_tid(jnr));
       vg_assert(vg_threads[jnr].status == VgTs_WaitJoinee);
       jnr_args = (UInt*)vg_threads[jnr].m_eax;
       jnr_thread_return = (void**)(jnr_args[2]);
@@ -1355,7 +1435,7 @@ void do_pthread_join ( ThreadId tid, ThreadId jee, void** thread_return )
 
    /* jee, the joinee, is the thread specified as an arg in thread
       tid's call to pthread_join.  So tid is the join-er. */
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   vg_assert(is_valid_tid(tid));
    vg_assert(vg_threads[tid].status == VgTs_Runnable);
 
    if (jee == tid) {
@@ -1439,7 +1519,8 @@ void do_pthread_create ( ThreadId parent_tid,
    tid = vg_alloc_ThreadState();
 
    /* If we've created the main thread's tid, we're in deep trouble :) */
-   vg_assert(tid != 0);
+   vg_assert(tid != 1);
+   vg_assert(is_valid_tid(tid));
 
    /* Copy the parent's CPU state into the child's, in a roundabout
       way (via baseBlock). */
@@ -1453,7 +1534,7 @@ void do_pthread_create ( ThreadId parent_tid,
    if (new_stk_szb > vg_threads[tid].stack_size) {
       /* Again, for good measure :) We definitely don't want to be
          allocating a stack for the main thread. */
-      vg_assert(tid != 0);
+      vg_assert(tid != 1);
       /* for now, we don't handle the case of anything other than
          assigning it for the first time. */
       vg_assert(vg_threads[tid].stack_size == 0);
@@ -1500,9 +1581,9 @@ void do_pthread_create ( ThreadId parent_tid,
    // ***** CHECK *thread is writable
    *thread = (pthread_t)tid;
 
-   vg_threads[tid].q_next = VG_INVALID_THREADID;
-   vg_threads[tid].joiner = VG_INVALID_THREADID;
-   vg_threads[tid].status = VgTs_Runnable;
+   vg_threads[tid].waited_on_mx = NULL;
+   vg_threads[tid].joiner       = VG_INVALID_THREADID;
+   vg_threads[tid].status       = VgTs_Runnable;
 
    /* return zero */
    vg_threads[tid].m_edx  = 0; /* success */
@@ -1512,22 +1593,6 @@ void do_pthread_create ( ThreadId parent_tid,
 /* -----------------------------------------------------------
    MUTEXes
    -------------------------------------------------------- */
-
-/* Add a tid to the end of a queue threaded through the vg_threads
-   entries on the q_next fields. */
-static 
-void add_to_queue ( ThreadId q_start, ThreadId tid_to_add )
-{
-   vg_assert(is_valid_tid(q_start));
-   vg_assert(is_valid_tid(tid_to_add));
-   vg_assert(vg_threads[tid_to_add].q_next = VG_INVALID_THREADID);
-   while (vg_threads[q_start].q_next != VG_INVALID_THREADID) {
-      q_start = vg_threads[q_start].q_next;
-      vg_assert(is_valid_tid(q_start));
-   }
-   vg_threads[q_start].q_next = tid_to_add;
-}
-
 
 /* pthread_mutex_t is a struct with at 5 words:
       typedef struct
@@ -1539,23 +1604,39 @@ void add_to_queue ( ThreadId q_start, ThreadId tid_to_add )
         struct _pthread_fastlock __m_lock;  -- Underlying fast lock
       } pthread_mutex_t;
 
-   How we use it: __m_kind never changes and indicates whether or not
-   it is recursive.  __m_count indicates the lock count; if 0, the
-   mutex is not owned by anybody.  __m_owner has a ThreadId value
-   stuffed into it, but this is only meaningful if __m_count > 0,
-   since otherwise the mutex is actually unowned.
+   #define PTHREAD_MUTEX_INITIALIZER \
+     {0, 0, 0, PTHREAD_MUTEX_TIMED_NP, __LOCK_INITIALIZER}
+   # define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP \
+     {0, 0, 0, PTHREAD_MUTEX_RECURSIVE_NP, __LOCK_INITIALIZER}
+   # define PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP \
+     {0, 0, 0, PTHREAD_MUTEX_ERRORCHECK_NP, __LOCK_INITIALIZER}
+   # define PTHREAD_ADAPTIVE_MUTEX_INITIALIZER_NP \
+     {0, 0, 0, PTHREAD_MUTEX_ADAPTIVE_NP, __LOCK_INITIALIZER}
 
-   This is important to make the static initialisers work properly.
-   They set __m_reserved, __m_count and __m_owner to zero, and
-   __m_kind to the relevant kind.  The problem is that __m_owner == 0
-   is a valid ThreadId, but we distinguish the unowned case by
-   __m_count == 0 rather than __m_owner being some special value.
+   How we use it:
 
-   Ours is just a single word, an index into vg_mutexes[].  
-   For now I'll park it in the __m_reserved field.
+   __m_kind  never changes and indicates whether or not it is recursive.
+
+   __m_count indicates the lock count; if 0, the mutex is not owned by 
+             anybody.  
+
+   __m_owner has a ThreadId value stuffed into it.  We carefully arrange 
+             that ThreadId == 0 is invalid (VG_INVALID_THREADID), so that
+             statically initialised mutexes correctly appear 
+             to belong to nobody.
+
+   In summary, a not-in-use mutex is distinguised by having __m_owner
+   == 0 (VG_INVALID_THREADID) and __m_count == 0 too.  If one of those
+   conditions holds, the other should too.
+
+   There is no linked list of threads waiting for this mutex.  Instead
+   a thread in WaitMX state points at the mutex with its waited_on_mx
+   field.  This makes _unlock() inefficient, but simple to implement the
+   right semantics viz-a-viz signals.
 
    We don't have to deal with mutex initialisation; the client side
-   deals with that for us.  */
+   deals with that for us.  
+*/
 
 
 static
@@ -1610,10 +1691,10 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
             return;
          }
       } else {
-         /* Someone else has it; we have to wait.  Add ourselves to
-            the end of the list of threads waiting for this mutex. */
-         vg_threads[tid].status = VgTs_WaitMX;
-         add_to_queue((ThreadId)mutex->__m_owner, tid);
+         /* Someone else has it; we have to wait.  Mark ourselves
+            thusly. */
+         vg_threads[tid].status       = VgTs_WaitMX;
+         vg_threads[tid].waited_on_mx = mutex;
          /* No assignment to %EDX, since we're blocking. */
          if (VG_(clo_trace_pthread_level) >= 1) {
             VG_(sprintf)(msg_buf, "pthread_mutex_lock   %p: BLOCK", 
@@ -1624,10 +1705,12 @@ void do_pthread_mutex_lock( ThreadId tid, pthread_mutex_t *mutex )
       }
 
    } else {
+      /* Nobody owns it.  Sanity check ... */
+      vg_assert(mutex->__m_owner == VG_INVALID_THREADID);
       /* We get it! [for the first time]. */
       mutex->__m_count = 1;
       mutex->__m_owner = (_pthread_descr)tid;
-      vg_threads[tid].q_next = VG_INVALID_THREADID;
+      vg_assert(vg_threads[tid].waited_on_mx == NULL);
       /* return 0 (success). */
       vg_threads[tid].m_edx = 0;
    }
@@ -1688,25 +1771,32 @@ void do_pthread_mutex_unlock ( ThreadId tid,
    /* Now we're sure it is locked exactly once, and by the thread who
       is now doing an unlock on it.  */
    vg_assert(mutex->__m_count == 1);
+   vg_assert((ThreadId)mutex->__m_owner == tid);
 
-   /* Hand ownership of the mutex to the next in the queue waiting for
-      it.  This queue starts from our .q_next field.  If none are
-      waiting, mark the mutex as not held. */
+   /* Find some arbitrary thread waiting on this mutex, and make it
+      runnable.  If none are waiting, mark the mutex as not held. */
+   for (i = 1; i < VG_N_THREADS; i++) {
+      if (vg_threads[i].status == VgTs_Empty) 
+         continue;
+      if (vg_threads[i].status == VgTs_WaitMX 
+          && vg_threads[i].waited_on_mx == mutex)
+         break;
+   }
 
-   if (vg_threads[tid].q_next == VG_INVALID_THREADID) {
+   vg_assert(i <= VG_N_THREADS);
+   if (i == VG_N_THREADS) {
       /* Nobody else is waiting on it. */
       mutex->__m_count = 0;
+      mutex->__m_owner = VG_INVALID_THREADID;
    } else {
       /* Notionally transfer the hold to thread i, whose
          pthread_mutex_lock() call now returns with 0 (success). */
       /* The .count is already == 1. */
-      i = vg_threads[tid].q_next;
-      vg_assert(is_valid_tid(i));
+      vg_assert(vg_threads[i].waited_on_mx == mutex);
       mutex->__m_owner = (_pthread_descr)i;
-      vg_threads[i].status = VgTs_Runnable;
+      vg_threads[i].status       = VgTs_Runnable;
+      vg_threads[i].waited_on_mx = NULL;
       vg_threads[i].m_edx = 0; /* pth_lock() success */
-      /* remove Me (tid) from the queue for the mutex */
-      vg_threads[tid].q_next = VG_INVALID_THREADID;
 
       if (VG_(clo_trace_pthread_level) >= 1) {
          VG_(sprintf)(msg_buf, "pthread_mutex_lock   %p: RESUME", 
@@ -1721,43 +1811,36 @@ void do_pthread_mutex_unlock ( ThreadId tid,
 }
 
 
+/* -----------------------------------------------------------
+   CONDITION VARIABLES
+   -------------------------------------------------------- */
 
-/* vthread tid is returning from a signal handler; modify its
-   stack/regs accordingly. */
-static
-void handle_signal_return ( ThreadId tid )
-{
-   Char msg_buf[100];
-   Bool restart_blocked_syscalls = VG_(signal_returns)(tid);
+/* The relevant native types are as follows:
+   (copied from /usr/include/bits/pthreadtypes.h)
 
-   if (restart_blocked_syscalls)
-      /* Easy; we don't have to do anything. */
-      return;
+   -- Conditions (not abstract because of PTHREAD_COND_INITIALIZER
+   typedef struct
+   {
+     struct _pthread_fastlock __c_lock; -- Protect against concurrent access
+     _pthread_descr __c_waiting;        -- Threads waiting on this condition
+   } pthread_cond_t;
 
-   if (vg_threads[tid].status == VgTs_WaitFD) {
-      vg_assert(vg_threads[tid].m_eax == __NR_read 
-                || vg_threads[tid].m_eax == __NR_write);
-      /* read() or write() interrupted.  Force a return with EINTR. */
-      vg_threads[tid].m_eax = -VKI_EINTR;
-      vg_threads[tid].status = VgTs_Runnable;
-      if (VG_(clo_trace_sched)) {
-         VG_(sprintf)(msg_buf, 
-            "read() / write() interrupted by signal; return EINTR" );
-         print_sched_event(tid, msg_buf);
-      }
-      return;
-   }
+   -- Attribute for conditionally variables.
+   typedef struct
+   {
+     int __dummy;
+   } pthread_condattr_t;
 
-   if (vg_threads[tid].status == VgTs_WaitFD) {
-      vg_assert(vg_threads[tid].m_eax == __NR_nanosleep);
-      /* We interrupted a nanosleep().  The right thing to do is to
-         write the unused time to nanosleep's second param and return
-         EINTR, but I'm too lazy for that. */
-      return;
-   }
+   #define PTHREAD_COND_INITIALIZER {__LOCK_INITIALIZER, 0}
 
-   /* All other cases?  Just return. */
-}
+   We'll just use the __c_waiting field to point to the head of the
+   list of threads waiting on this condition.  Note how the static
+   initialiser has __c_waiting == 0 == VG_INVALID_THREADID.
+
+   Linux pthreads supports no attributes on condition variables, so we
+   don't need to think too hard there.  
+*/
+
 
 
 /* ---------------------------------------------------------------------
@@ -1822,6 +1905,30 @@ void do_nontrivial_clientreq ( ThreadId tid )
                     "unknown request");
          /*NOTREACHED*/
          break;
+   }
+}
+
+
+/* ---------------------------------------------------------------------
+   Sanity checking.
+   ------------------------------------------------------------------ */
+
+/* Internal consistency checks on the sched/pthread structures. */
+static
+void scheduler_sanity ( void )
+{
+   pthread_mutex_t* mutex;
+   Int              i;
+   /* VG_(printf)("scheduler_sanity\n"); */
+   for (i = 1; i < VG_N_THREADS; i++) {
+      if (vg_threads[i].status == VgTs_WaitMX) {
+         mutex = vg_threads[i].waited_on_mx;
+         vg_assert(mutex != NULL);
+         vg_assert(mutex->__m_count > 0);
+         vg_assert(is_valid_tid((ThreadId)mutex->__m_owner));
+      } else {
+         vg_assert(vg_threads[i].waited_on_mx == NULL);
+      }
    }
 }
 

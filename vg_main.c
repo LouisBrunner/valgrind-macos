@@ -1032,7 +1032,7 @@ void VG_(main) ( void )
    }
    VG_(running_on_simd_CPU) = False;
 
-   VG_(do_sanity_checks)( 0 /* root thread */, 
+   VG_(do_sanity_checks)( 1 /* root thread */, 
                           True /*include expensive checks*/ );
 
    if (VG_(clo_verbosity) > 1)
@@ -1068,7 +1068,7 @@ void VG_(main) ( void )
    }
 
    /* Prepare to restore state to the real CPU. */
-   VG_(load_thread_state)(0);
+   VG_(load_thread_state)(1 /* root thread */);
    VG_(copy_baseBlock_to_m_state_static)();
 
    /* This pushes a return address on the simulator's stack, which

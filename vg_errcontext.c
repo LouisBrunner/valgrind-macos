@@ -315,7 +315,7 @@ static void pp_ErrContext ( ErrContext* ec, Bool printCount )
 {
    if (printCount)
       VG_(message)(Vg_UserMsg, "Observed %d times:", ec->count );
-   if (ec->tid > 0)
+   if (ec->tid > 1)
       VG_(message)(Vg_UserMsg, "Thread %d:", ec->tid );
    switch (ec->ekind) {
       case ValueErr:

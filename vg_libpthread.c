@@ -141,6 +141,12 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
    THREADs
    ------------------------------------------------ */
 
+int pthread_equal(pthread_t thread1, pthread_t thread2)
+{
+   return thread1 == thread2 ? 1 : 0;
+}
+
+
 int
 pthread_create (pthread_t *__restrict __thread,
                 __const pthread_attr_t *__restrict __attr,
@@ -269,7 +275,53 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex)
       need to involve it. */
     if (mutex->__m_count > 0)
        return EBUSY;
+    mutex->__m_count = 0;
+    mutex->__m_owner = (_pthread_descr)VG_INVALID_THREADID;
+    mutex->__m_kind  = PTHREAD_MUTEX_ERRORCHECK_NP;
     return 0;
+}
+
+
+/* ---------------------------------------------------
+   CONDITION VARIABLES
+   ------------------------------------------------ */
+
+/* LinuxThreads supports no attributes for conditions.  Hence ... */
+
+int pthread_condattr_init(pthread_condattr_t *attr)
+{
+   return 0;
+}
+
+
+int pthread_cond_init( pthread_cond_t *cond,
+                       const pthread_condattr_t *cond_attr)
+{
+   cond->__c_waiting = (_pthread_descr)VG_INVALID_THREADID;
+   return 0;
+}
+
+
+/* ---------------------------------------------------
+   SCHEDULING
+   ------------------------------------------------ */
+
+/* This is completely bogus. */
+int   pthread_getschedparam(pthread_t  target_thread,  
+                            int  *policy,
+                            struct sched_param *param)
+{
+   if (policy) *policy = SCHED_OTHER;
+   if (param) param->__sched_priority = 0; /* who knows */
+   return 0;
+}
+
+int pthread_setschedparam(pthread_t target_thread, 
+                          int policy, 
+                          const struct sched_param *param)
+{
+   ignored("pthread_setschedparam");
+   return 0;
 }
 
 

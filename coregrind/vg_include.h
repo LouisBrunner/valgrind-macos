@@ -432,8 +432,10 @@ typedef
    UInt 
    ThreadId;
 
-
-#define VG_INVALID_THREADID ((ThreadId)(-1))
+/* Special magic value for an invalid ThreadId.  It corresponds to
+   LinuxThreads using zero as the initial value for
+   pthread_mutex_t.__m_owner and pthread_cond_t.__c_waiting. */
+#define VG_INVALID_THREADID ((ThreadId)(0))
 
 typedef
    enum { 
@@ -449,8 +451,9 @@ typedef
  
 typedef
    struct {
-      /* The thread identity is simply the index in vg_threads[].
-         ThreadId == 0 is the root thread and has the special property
+      /* ThreadId == 0 (and hence vg_threads[0]) is NEVER USED.
+         The thread identity is simply the index in vg_threads[].
+         ThreadId == 1 is the root thread and has the special property
          that we don't try and allocate or deallocate its stack.  For
          convenience of generating error message, we also put the
          ThreadId in this tid field, but be aware that it should
@@ -464,10 +467,9 @@ typedef
          VG_INVALID_THREADID if no one asked to join yet. */
       ThreadId joiner;
 
-      /* Link to the next member of the queue of threads waiting on
-         the same mutex or condition variable.  Only meaningful if
-         .status == WaitMX or WaitCV. */
-      ThreadId q_next;
+      /* When .status == WaitMX, points to the mutex I am waiting
+         for. */
+      void* /* pthread_mutex_t* */ waited_on_mx;
 
       /* If VgTs_Sleeping, this is when we should wake up. */
       ULong awaken_at;

@@ -437,6 +437,34 @@ void gen_armle_goto ( char* fixup, char* dstP )
 #endif /* arm_TARGET_ARCH */
 
 
+#ifdef ppc32_TARGET_ARCH
+static void invalidate_icache(void *ptr, int nbytes)
+{
+   unsigned long startaddr = (unsigned long) ptr;
+   unsigned long endaddr = startaddr + nbytes;
+   unsigned long addr;
+   unsigned long cls = 16; //VG_(cache_line_size);
+
+   startaddr &= ~(cls - 1);
+   for (addr = startaddr; addr < endaddr; addr += cls)
+      asm volatile("dcbst 0,%0" : : "r" (addr));
+   asm volatile("sync");
+   for (addr = startaddr; addr < endaddr; addr += cls)
+      asm volatile("icbi 0,%0" : : "r" (addr));
+   asm volatile("sync; isync");
+}
+
+static UInt compute_ppc_HA ( UInt x ) {
+   return 0xFFFF & ( (x >> 16) + ((x & 0x8000) ? 1 : 0) );
+}
+static UInt compute_ppc_LO ( UInt x ) {
+   return 0xFFFF & x;
+}
+static UInt compute_ppc_HI ( UInt x ) {
+   return 0xFFFF & (x >> 16);
+}
+#endif /* ppc32_TARGET_ARCH */
+
 
 /* Do ELF relocations which lack an explicit addend.  All x86-linux
    relocations appear to be of this form. */
@@ -585,9 +613,10 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
                           target_shndx, symtab_shndx ));
 
    for (j = 0; j < nent; j++) {
-#if defined(DEBUG) || defined(sparc_TARGET_ARCH) \
-                   || defined(ia64_TARGET_ARCH) \
-                   || defined(x86_64_TARGET_ARCH)
+#if defined(DEBUG) || defined(sparc_TARGET_ARCH)  \
+                   || defined(ia64_TARGET_ARCH)   \
+                   || defined(x86_64_TARGET_ARCH) \
+                   || defined(ppc32_TARGET_ARCH)
       /* This #ifdef only serves to avoid unused-var warnings. */
       Elf_Addr  offset = rtab[j].r_offset;
       Elf_Addr  P      = targ + offset;
@@ -606,6 +635,10 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
 #     endif
 #     if defined(x86_64_TARGET_ARCH)
       ULong* pP = (ULong*)P;
+#     endif
+#     if defined(ppc32_TARGET_ARCH)
+      Int sI, sI2;
+      Elf_Word* pP = (Elf_Word*)P;
 #     endif
 
       IF_DEBUG(linker,belch( "Rel entry %3d is raw(%6p %6p %6p)   ",
@@ -725,7 +758,7 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
 	    break;
 	 case R_IA64_LDXMOV:
 	    /* This goes with R_IA64_LTOFF22X and points to the load to
-	     * convert into a move.  We don't implement relaxation. */
+	       convert into a move.  We don't implement relaxation. */
 	    break;
 #        endif
 #        if defined(x86_64_TARGET_ARCH)
@@ -740,6 +773,40 @@ do_Elf_Rela_relocations ( ObjectCode* oc, char* ehdrC,
             break;
          case R_X86_64_32S: /* 11 *//* Direct 32 bit sign extended */
             *((UInt*)pP) = (UInt)(S + A);
+            break;
+#        endif
+#        if defined(ppc32_TARGET_ARCH)
+         case R_PPC_ADDR32: /* 1 *//* 32bit absolute address */
+            *((UInt*)pP) = S+A;
+            invalidate_icache(pP,4);
+            break;
+         case R_PPC_ADDR16_LO: /* 4 *//* lower 16bit of absolute address */
+            *((UInt*)pP) &= 0x0000FFFF;
+            *((UInt*)pP) |= 0xFFFF0000 & (compute_ppc_LO(S+A) << 16);
+            invalidate_icache(pP,4);
+            break;
+         case R_PPC_ADDR16_HA: /* 6 *//* adjusted high 16bit */
+            *((UInt*)pP) &= 0x0000FFFF;
+            *((UInt*)pP) |= 0xFFFF0000 & (compute_ppc_HA(S+A) << 16);
+            invalidate_icache(pP,4);
+            break;
+         case R_PPC_REL24: /* 10 *//* PC relative 26 bit */
+            sI = S+A-P;
+	    sI >>= 2;
+	    /* the top 9 bits of sI must be the same (all 0s or
+	       all 1s) for this to be valid; else we have to fail. */
+            sI2 = sI >> 23; /* 23 == 32 - 9 */
+            if (sI2 != 0 && sI2 != 0xFFFFFFFF) {
+               fprintf(stderr, "%s: R_PPC_REL24 relocation failed\n", oc->fileName );
+	       return 0;
+            }
+            *((UInt*)pP) &= ~(0x00FFFFFF << 2);
+            *((UInt*)pP) |= (0xFFFFFF & sI) << 2;
+           invalidate_icache(pP,4);
+            break;
+         case R_PPC_REL32: /* 26 */
+            *((UInt*)pP) = S+A-P;
+            invalidate_icache(pP,4);
             break;
 #        endif
          default:
@@ -867,6 +934,7 @@ ocVerifyImage_ELF ( ObjectCode* oc )
       case EM_IA_64:  if (debug_linker) fprintf(stderr, "ia64\n" ); break;
 #endif
       case EM_X86_64: if (debug_linker) fprintf(stderr, "x86_64\n" ); break;
+      case EM_PPC:    if (debug_linker) fprintf(stderr, "ppc\n" ); break;
       default:        if (debug_linker) fprintf(stderr, "unknown\n" );
                       fprintf(stderr,"%s: unknown architecture\n", oc->fileName);
                       return 0;
@@ -1112,7 +1180,7 @@ ocGetNames_ELF ( ObjectCode* oc )
 #           else
             ad = calloc(1, stab[j].st_size);
 #           endif
-	    assert( ((ULong)ad) < 0xF0000000ULL );
+	    assert( Ptr_to_ULong(ad) < 0xF0000000ULL );
 
 	    if (0)
             fprintf(stderr, "COMMON symbol, size %lld name %s  allocd %p\n",
@@ -1277,7 +1345,7 @@ int loadObj( char *path )
    pagesize = getpagesize();
    p = memalign(pagesize, N_FIXUP_PAGES * pagesize
                           + oc->fileSize);
-   fprintf(stderr,"XXXX p = %p\n", p);
+   if (0) fprintf(stderr,"XXXX p = %p\n", p);
    if (p == NULL) {
       fprintf(stderr,"loadObj: failed to allocate space for `%s'\n", path);
       exit(1);
@@ -1309,6 +1377,10 @@ int loadObj( char *path )
 
    /* loaded, but not resolved yet */
    oc->status = OBJECT_LOADED;
+
+#ifdef ppc32_TARGET_ARCH
+   invalidate_icache(oc->image, oc->fileSize);
+#endif
 
    return 1;
 }

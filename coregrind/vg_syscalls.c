@@ -1086,16 +1086,6 @@ static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 #define POSTx(x) \
    static void  after_##x(ThreadId tid, ThreadState *tst)
 
-#define PREALIAS(new, old)	\
-	PRE(new) __attribute__((alias(STR(before___NR_##old))))
-#define POSTALIAS(new, old)	\
-	POST(new) __attribute__((alias(STR(after___NR_##old))))
-
-#define PREALIASx(new, old)	\
-	PRE(new) __attribute__((alias(STR(before_##old))))
-#define POSTALIASx(new, old)	\
-	POST(new) __attribute__((alias(STR(after_##old))))
-
 #define SYSNO	PLATFORM_SYSCALL_NUM(tst->arch)    // in PRE(x)
 #define res	PLATFORM_SYSCALL_RET(tst->arch)	   // in POST(x)
 #define arg1	PLATFORM_SYSCALL_ARG1(tst->arch)
@@ -5983,11 +5973,21 @@ PREx(sys_sigpending, NBRunInLWP)
 
 POSTx(sys_sigpending)
 {
-   POST_MEM_WRITE( arg1, sizeof( vki_old_sigset_t ) ) ;
+   POST_MEM_WRITE( arg1, sizeof(vki_old_sigset_t) ) ;
 }
 
-PREALIASx(rt_sigpending, sys_sigpending);
-POSTALIASx(rt_sigpending, sys_sigpending);
+PREx(sys_rt_sigpending, NBRunInLWP)
+{
+   PRINT( "sys_sigpending ( %p )", arg1 );
+   PRE_REG_READ2(long, "rt_sigpending", 
+                 vki_sigset_t *, set, vki_size_t, sigsetsize);
+   PRE_MEM_WRITE( "sigpending(set)", arg1, sizeof(vki_sigset_t));
+}
+
+POSTx(sys_rt_sigpending)
+{
+   POST_MEM_WRITE( arg1, sizeof(vki_sigset_t) ) ;
+}
 
 PRE(io_setup)
 {
@@ -6602,7 +6602,7 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_rt_sigaction,     sys_rt_sigaction), // 174 (x86) ()
 
    SYSXY(__NR_rt_sigprocmask,   sys_rt_sigprocmask),  // 175 * ?
-   SYSBA(__NR_rt_sigpending,    sys_rt_sigpending, NBRunInLWP), // 176 *
+   SYSXY(__NR_rt_sigpending,    sys_rt_sigpending),   // 176 * ?
    SYSBA(__NR_rt_sigtimedwait,  sys_rt_sigtimedwait, MayBlock), // 177 *
    SYSBA(__NR_rt_sigqueueinfo,  sys_rt_sigqueueinfo, 0), // 178 *
    SYSX_(__NR_rt_sigsuspend,    sys_rt_sigsuspend),   // 179 () ()

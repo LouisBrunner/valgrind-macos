@@ -535,10 +535,11 @@ static int load_ELF(char *hdr, int len, int fd, const char *name,
       mapelf(interp, (ESZ(Addr))baseoff);
 
       close(interp->fd);
-      free(interp);
 
       entry = baseoff + interp->e.e_entry;
       info->interp_base = (ESZ(Addr))base;
+
+      free(interp);
    } else
       entry = (void *)e->e.e_entry + exeoff;
 

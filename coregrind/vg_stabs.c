@@ -101,6 +101,7 @@ typedef struct _StabTypeTab {
    }		*headerhash[HEADER_HASHSZ];
 } StabTypeTab;
 
+static const Bool stabs_debug = True;
 
 static UInt header_hash(Char *filename, UInt instance)
 {
@@ -122,7 +123,7 @@ static UInt header_hash(Char *filename, UInt instance)
 */
 static SymType *structRef(StabTypeTab *tab, SymType *def, Bool isstruct, Char *name)
 {
-   static const Bool debug = False;
+   static const Bool debug = False || stabs_debug;
    struct structlist *sl;
    SymType *ty;
    static Int warnlen = 0;
@@ -167,7 +168,7 @@ static SymType *structRef(StabTypeTab *tab, SymType *def, Bool isstruct, Char *n
 /* Add a structural defintion for a struct/union reference */
 static SymType *structDef(StabTypeTab *tab, SymType *def, Bool isstruct, Char *name)
 {
-   static const Bool debug = False;
+   static const Bool debug = False || stabs_debug;
    SymType *ref = structRef(tab, NULL, isstruct, name);
 
    if (debug)
@@ -225,7 +226,7 @@ static StabFile *getStabFile(StabTypeTab *tab, Int file, StabFile *set)
 /* add a new index for a file */
 static void addFileAlias(StabTypeTab *tab, Char *filename, UInt instance, Int idx)
 {
-   static const Bool debug = False;
+   static const Bool debug = False || stabs_debug;
    struct header *hp;
 
    for(hp = tab->headerhash[header_hash(filename, instance)]; hp != NULL; hp = hp->next) {
@@ -244,7 +245,7 @@ static void addFileAlias(StabTypeTab *tab, Char *filename, UInt instance, Int id
 
 static void addHeader(StabTypeTab *tab, Char *filename, UInt instance, Int idx)
 {
-   static const Bool debug = False;
+   static const Bool debug = False || stabs_debug;
    struct header *hp, **bucket;
    
    if (debug)
@@ -495,7 +496,7 @@ static void parse_typeref(Char **pp, Int *filep, Int *symp)
 
 static void stab_resolve(SymType *st, void *data)
 {
-   static const Bool debug = False;
+   static const Bool debug = False || stabs_debug;
    Char *str = (Char *)data;
    vg_assert(!VG_(st_isresolved)(st));
 
@@ -512,7 +513,7 @@ static void stab_resolve(SymType *st, void *data)
    introduced anywhere, so we need to scan it all to pick them up. */
 static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 {
-   static const Bool debug = False;
+   static const Bool debug = False || stabs_debug;
    Char *p = *pp;
    Char t;
    SymType *type;
@@ -1034,7 +1035,7 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
 /* parse a symbol reference: NAME ':' DESC TYPE */
 static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int val)
 {
-   static const Bool debug = False;
+   static const Bool debug = False || stabs_debug;
    Char *name = *namep;
    Char *ty;
    Int len;
@@ -1093,7 +1094,6 @@ static Bool initSym(SegInfo *si, Sym *sym, stab_types kind, Char **namep, Int va
       if (isStruct && isTypedef) isStruct = False;
       sym->type = stabtype_parser(si, NULL, &ty);
       base = VG_(st_basetype)(sym->type, False);
-
       if (isStruct && (VG_(st_isstruct)(base) || VG_(st_isunion)(base))) {
 	 Char *sname = VG_(addStr)(si, name, len);
 	 structDef(si->stab_typetab, base, VG_(st_isstruct)(base), sname);
@@ -1166,7 +1166,7 @@ struct symlist {
    definitions helps a lot. */
 static Scope *addSymsToScope(Scope *sc, struct symlist *list, Int nsyms, Scope *outer)
 {
-   static const Bool debug = False;
+   static const Bool debug = False || stabs_debug;
    Int j;
    struct symlist *n;
    Int base;
@@ -1212,7 +1212,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 				 UChar* stabC,   Int stab_sz, 
 				 UChar* stabstr, Int stabstr_sz )
 {
-   static const Bool debug = False;
+   static const Bool debug = False || stabs_debug;
    Int    i;
    Int    n_stab_entries;
    struct nlist* stab = (struct nlist*)stabC;
@@ -1290,7 +1290,7 @@ void VG_(read_debuginfo_stabs) ( SegInfo* si,
 
       /* handle continued string stabs */
       {
-	 static const Bool contdebug = False;
+	 static const Bool contdebug = False || stabs_debug;
 	 Int buflen = 0;
 	 Int idx = 0;
 	 Char *buf = NULL;

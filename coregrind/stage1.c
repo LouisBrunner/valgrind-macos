@@ -132,6 +132,11 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info)
 	 seen |= 8;
 	 auxv->u.a_val = info->entry;
 	 break;
+
+      case AT_SYSINFO:
+      case AT_SYSINFO_EHDR:
+	 auxv->a_type = AT_IGNORE;
+	 break;
       }
    }
 

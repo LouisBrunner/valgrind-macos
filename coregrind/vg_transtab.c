@@ -391,6 +391,11 @@ Int maybe_commission_sector ( void )
          vg_tc[s] = VG_(get_memory_from_mmap) 
                        ( vg_tc_sector_szB, "trans-cache(sector)" );
 #else
+         // Alternative: put translations in an mmap'd file.  The main
+         // reason is to help OProfile -- OProfile can assign time spent in
+         // translations to a particular file.  The file format doesn't
+         // really matter, which is good because it's not really readable,
+         // being generated code but not a proper ELF file.
 	 Char buf[20];
 	 static Int count = 0;
 	 Int fd;
@@ -404,8 +409,7 @@ Int maybe_commission_sector ( void )
 	 VG_(close)(fd);
 #endif
          vg_tc_used[s] = 0;
-         VG_(sprintf)(msg, "after  allocation of sector %d "
-                           "(size %d)", 
+         VG_(sprintf)(msg, "after  allocation of sector %d (size %d)", 
                            s, vg_tc_sector_szB );
          pp_tt_tc_status ( msg );
          return maybe_commission_sector();

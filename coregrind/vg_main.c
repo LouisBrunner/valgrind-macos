@@ -144,12 +144,10 @@ static void align_BaB ( UInt align )
 }
 
 /* Allocate 1 word in baseBlock and set it to the given value. */
-static Int alloc_BaB_1_set ( Addr a, const Char* what )
+static Int alloc_BaB_1_set ( Addr a )
 {
    Int off = alloc_BaB(1);
    VG_(baseBlock)[off] = (UInt)a;
-   if ( VG_( clo_verbosity ) > 1 )
-     VG_(printf)( "Allocated %d for %s\n", off*4, what );
    return off;
 }
 
@@ -187,7 +185,7 @@ void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
 {
    UInt i;
    for (i = 0; i < n; i++) 
-      offsets[i] = alloc_BaB_1_set( addrs[i], "helper" );
+      offsets[i] = alloc_BaB_1_set( addrs[i] );
 }
 
 Bool VG_(need_to_handle_esp_assignment)(void)
@@ -313,79 +311,79 @@ static void vg_init_baseBlock ( void )
 
    /* Helper functions. */
    VGOFF_(helper_idiv_64_32)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_64_32), "idiv_64_32" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_64_32));
    VGOFF_(helper_div_64_32)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_div_64_32), "div_64_32" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_div_64_32));
    VGOFF_(helper_idiv_32_16)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_32_16), "idiv_32_16" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_32_16));
    VGOFF_(helper_div_32_16)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_div_32_16), "div_32_16" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_div_32_16));
    VGOFF_(helper_idiv_16_8)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_16_8), "idiv_16_8" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_idiv_16_8));
    VGOFF_(helper_div_16_8)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_div_16_8), "div_16_8" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_div_16_8));
 
    VGOFF_(helper_imul_32_64)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_32_64), "imul_32_64" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_32_64));
    VGOFF_(helper_mul_32_64)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_32_64), "mul_32_64" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_32_64));
    VGOFF_(helper_imul_16_32)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_16_32), "imul_16_32" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_16_32));
    VGOFF_(helper_mul_16_32)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_16_32), "mul_16_32" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_16_32));
    VGOFF_(helper_imul_8_16)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_8_16), "imul_8_16" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_imul_8_16));
    VGOFF_(helper_mul_8_16)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_8_16), "mul_8_16" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_mul_8_16));
 
    VGOFF_(helper_CLD)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_CLD), "helper_CLD" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_CLD));
    VGOFF_(helper_STD)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_STD), "helper_STD" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_STD));
    VGOFF_(helper_get_dirflag)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_get_dirflag), "get_dirflag" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_get_dirflag));
 
    VGOFF_(helper_CLC)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_CLC), "helper_CLC" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_CLC));
    VGOFF_(helper_STC)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_STC), "helper_STC" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_STC));
 
    VGOFF_(helper_shldl)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_shldl), "helper_shldl" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_shldl));
    VGOFF_(helper_shldw)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_shldw), "helper_shldw" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_shldw));
    VGOFF_(helper_shrdl)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_shrdl), "helper_shrdl" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_shrdl));
    VGOFF_(helper_shrdw)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_shrdw), "helper_shrdw" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_shrdw));
 
    VGOFF_(helper_RDTSC)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_RDTSC), "helper_RDTSC" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_RDTSC));
    VGOFF_(helper_CPUID)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_CPUID), "helper_CPUID" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_CPUID));
 
    VGOFF_(helper_bsf)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_bsf), "helper_bsf" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_bsf));
    VGOFF_(helper_bsr)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_bsr), "helper_bsr" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_bsr));
 
    VGOFF_(helper_fstsw_AX)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_fstsw_AX), "fstsw_AX" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_fstsw_AX));
    VGOFF_(helper_SAHF)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_SAHF), "SAHF" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_SAHF));
    VGOFF_(helper_LAHF)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_LAHF), "LAHF" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_LAHF));
    VGOFF_(helper_DAS)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_DAS), "DAS" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_DAS));
    VGOFF_(helper_DAA)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_DAA), "DAA" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_DAA));
    VGOFF_(helper_IN)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_IN), "IN" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_IN));
    VGOFF_(helper_OUT)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_OUT), "OUT" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_OUT));
 
    VGOFF_(helper_undefined_instruction)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_undefined_instruction), "undefined" );
+      = alloc_BaB_1_set( (Addr) & VG_(helper_undefined_instruction));
 
    /* Allocate slots for noncompact helpers */
    assign_helpers_in_baseBlock(VG_(n_noncompact_helpers), 

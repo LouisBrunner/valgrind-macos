@@ -89,36 +89,41 @@ typedef
 
 
 /* A structure which contains information pertaining to one mapped
-   text segment. */
-typedef
-   struct _SegInfo {
-      struct _SegInfo* next;
-      /* Description of the mapped segment. */
-      Addr   start;
-      UInt   size;
-      UChar* filename; /* in mallocville */
-      UInt   foffset;
-      /* An expandable array of symbols. */
-      RiSym* symtab;
-      UInt   symtab_used;
-      UInt   symtab_size;
-      /* An expandable array of locations. */
-      RiLoc* loctab;
-      UInt   loctab_used;
-      UInt   loctab_size;
-      /* An expandable array of characters -- the string table. */
-      Char*  strtab;
-      UInt   strtab_used;
-      UInt   strtab_size;
-      /* offset    is what we need to add to symbol table entries
-                   to get the real location of that symbol in memory.
-                   For executables, offset is zero.  
-                   For .so's, offset == base_addr.
-                   This seems like a giant kludge to me.
-      */
-      UInt   offset;
-   } 
-   SegInfo;
+   text segment. (typedef in vg_skin.h) */
+struct _SegInfo {
+   struct _SegInfo* next;
+   /* Description of the mapped segment. */
+   Addr   start;
+   UInt   size;
+   UChar* filename; /* in mallocville */
+   UInt   foffset;
+   /* An expandable array of symbols. */
+   RiSym* symtab;
+   UInt   symtab_used;
+   UInt   symtab_size;
+   /* An expandable array of locations. */
+   RiLoc* loctab;
+   UInt   loctab_used;
+   UInt   loctab_size;
+   /* An expandable array of characters -- the string table. */
+   Char*  strtab;
+   UInt   strtab_used;
+   UInt   strtab_size;
+   /* offset    is what we need to add to symbol table entries
+      to get the real location of that symbol in memory.
+      For executables, offset is zero.  
+      For .so's, offset == base_addr.
+      This seems like a giant kludge to me.
+   */
+   UInt   offset;
+
+   /* Bounds of PLT and GOT, so that skins can see what section an
+      address is in */
+   Addr	  plt_start;
+   UInt   plt_size;
+   Addr   got_start;
+   UInt   got_size;
+};
 
 
 static void freeSegInfo ( SegInfo* si )
@@ -331,7 +336,6 @@ void addLineInfo ( SegInfo* si,
 
    addLoc ( si, &loc );
 }
-
 
 /*------------------------------------------------------------*/
 /*--- Helpers                                              ---*/
@@ -1485,14 +1489,18 @@ void vg_read_lib_symbols ( SegInfo* si )
          */
          if (0 == VG_(strcmp)(".got",sh_strtab + shdr[i].sh_name)) {
             o_got    = (UChar*)(si->offset
-                                + shdr[i].sh_offset);
+                                + shdr[i].sh_addr);
             o_got_sz = shdr[i].sh_size;
+	    si->got_start= (Addr)o_got;
+	    si->got_size = o_got_sz;
             /* check image overrun here */
          }
          if (0 == VG_(strcmp)(".plt",sh_strtab + shdr[i].sh_name)) {
             o_plt    = (UChar*)(si->offset
-                                + shdr[i].sh_offset);
+                                + shdr[i].sh_addr);
             o_plt_sz = shdr[i].sh_size;
+	    si->plt_start= (Addr)o_plt;
+	    si->plt_size = o_plt_sz;
             /* check image overrun here */
          }
 
@@ -2138,6 +2146,65 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
 }
 
 #undef APPEND
+
+/*------------------------------------------------------------*/
+/*--- SegInfo accessor functions                           ---*/
+/*------------------------------------------------------------*/
+
+const SegInfo* VG_(next_seginfo)(const SegInfo* seg)
+{
+   ensure_debug_info_inited();
+
+   if (seg == NULL)
+      return segInfo;
+   return seg->next;
+}
+
+Addr VG_(seg_start)(const SegInfo* seg)
+{
+   return seg->start;
+}
+
+UInt VG_(seg_size)(const SegInfo* seg)
+{
+   return seg->size;
+}
+
+const UChar* VG_(seg_filename)(const SegInfo* seg)
+{
+   return seg->filename;
+}
+
+UInt VG_(seg_sym_offset)(const SegInfo* seg)
+{
+   return seg->offset;
+}
+
+VgSectKind VG_(seg_sect_kind)(Addr a)
+{
+   SegInfo* seg;
+   VgSectKind ret = Vg_SectUnknown;
+
+   ensure_debug_info_inited();
+
+   for(seg = segInfo; seg != NULL; seg = seg->next) {
+      if (a >= seg->start && a < (seg->start + seg->size)) {
+	 if (0)
+	    VG_(printf)("addr=%p seg=%p %s got=%p %d  plt=%p %d\n",
+			a, seg, seg->filename, 
+			seg->got_start, seg->got_size,
+			seg->plt_start, seg->plt_size);
+	 ret = Vg_SectText;
+
+	 if (a >= seg->plt_start && a < (seg->plt_start + seg->plt_size))
+	    ret = Vg_SectPLT;
+	 else if (a >= seg->got_start && a < (seg->got_start + seg->got_size))
+	    ret = Vg_SectGOT;
+      }
+   }
+
+   return ret;
+}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                             vg_symtab2.c ---*/

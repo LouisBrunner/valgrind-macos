@@ -1071,6 +1071,26 @@ extern Bool VG_(get_fnname_if_entry) ( Addr a, Char* filename, Int n_filename );
    It doesn't matter if debug info is present or not. */
 extern Bool VG_(get_objname)  ( Addr a, Char* objname,  Int n_objname  );
 
+/* A way to get information about what segments are mapped */
+typedef struct _SegInfo SegInfo;
+
+extern const SegInfo* VG_(next_seginfo)(const SegInfo *);
+extern Addr VG_(seg_start)(const SegInfo *);
+extern UInt VG_(seg_size)(const SegInfo *);
+extern const UChar* VG_(seg_filename)(const SegInfo *);
+extern UInt VG_(seg_sym_offset)(const SegInfo *);
+
+typedef
+   enum {
+      Vg_SectUnknown,
+      Vg_SectText,
+      Vg_SectGOT,
+      Vg_SectPLT
+   }
+   VgSectKind;
+
+extern VgSectKind VG_(seg_sect_kind)(Addr);
+
 
 /*====================================================================*/
 /*=== Shadow chunks and block-finding                              ===*/

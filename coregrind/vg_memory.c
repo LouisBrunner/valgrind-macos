@@ -680,21 +680,16 @@ Addr VG_(client_alloc)(Addr addr, UInt len, UInt prot, UInt sf_flags)
 {
    len = PGROUNDUP(len);
 
-   if (!(sf_flags & SF_FIXED))
-      addr = VG_(find_map_space)(addr, len, True);
+   sk_assert(!(sf_flags & SF_FIXED));
+   sk_assert(0 == addr);
 
-   // Don't do the mapping if we couldn't find space!
-   if (0 == addr)
-      return 0;
-
-   if (VG_(mmap)((void *)addr, len, prot,
-		 VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,
-                 sf_flags | SF_CORE, -1, 0) == (void *)addr) 
-   {
+   addr = (Addr)VG_(mmap)((void *)addr, len, prot, 
+                          VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS | VKI_MAP_CLIENT,
+                          sf_flags | SF_CORE, -1, 0);
+   if ((Addr)-1 != addr)
       return addr;
-   }
-
-   return 0;
+   else
+      return 0;
 }
 
 void VG_(client_free)(Addr addr)

@@ -1941,6 +1941,14 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
       new_stack = VG_(client_alloc)(0, new_stk_szb, 
 				    VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 
 				    SF_STACK);
+      // Given the low number of threads Valgrind can handle, stack
+      // allocation should pretty much always succeed, so having an
+      // assertion here isn't too bad.  However, probably better would be
+      // this:
+      //
+      //   if (0 == new_stack) 
+      //      SET_PTHREQ_RETVAL(parent_tid, -VKI_EAGAIN);
+      //   
       vg_assert(0 != new_stack);
       VG_(threads)[tid].stack_base = new_stack;
       VG_(threads)[tid].stack_size = new_stk_szb;

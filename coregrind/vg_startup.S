@@ -54,11 +54,23 @@
 	call VG_(startup)
 .section .fini
 	call VG_(shutdown)
+
+.section .data
+valgrind_already_initted:
+	.word	0
+	
 .section .text
 	
 
-
+.global VG_(startup)
 VG_(startup):
+	cmpl	$0, valgrind_already_initted
+	je	really_start_up
+	ret
+
+really_start_up:
+	movl	$1, valgrind_already_initted
+	
         # Record %esp as it was when we got here.  This is because argv/c
 	# and envp[] are passed as args to this function, and we need to see
 	# envp so we can get at the env var VG_ARGS without help from libc.

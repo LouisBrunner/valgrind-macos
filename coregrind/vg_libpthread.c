@@ -95,30 +95,18 @@ void myexit ( int arg )
 }
 
 
-/* Give up without using printf etc, since they seem to give
-   segfaults. */
+/* We need this guy -- it's in valgrind.so. */
+extern void VG_(startup) ( void );
+
+
+/* Just start up Valgrind if it's not already going.  VG_(startup)()
+   detects and ignores second and subsequent calls. */
 static __inline__
 void ensure_valgrind ( char* caller )
 {
    char* str;
-   int is_valgrind = RUNNING_ON_VALGRIND;
-   if (!is_valgrind) {
-      str = "\nvalgrind's libpthread.so: "
-            "pthread call when\n";
-      write(2, str, strlen(str));
-      str = "not running on valgrind; aborting!  "
-            "This is probably a bug in\n";
-      write(2, str, strlen(str));
-      str = "valgrind.  Please report it to me at: "
-            "jseward@acm.org.  Thanks.\n";
-      write(2, str, strlen(str));
-      str = "unexpectedly called function is: ";
-      write(2, str, strlen(str));
-      write(2, caller, strlen(caller));
-      str = "\n\n";
-      write(2, str, strlen(str));
-      myexit(1);
-   }
+   int is_valgrind; 
+   VG_(startup)();
 }
 
 
@@ -162,6 +150,8 @@ static void kludged ( char* msg )
 
 static void not_inside ( char* msg )
 {
+   VG_(startup)();
+   return;
    if (get_pt_trace_level() >= 0) {
       char* ig = "valgrind's libpthread.so: NOT INSIDE VALGRIND "
                  "during call to: ";
@@ -343,6 +333,7 @@ int __pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
       case PTHREAD_MUTEX_TIMED_NP:
       case PTHREAD_MUTEX_ADAPTIVE_NP:
 #     endif
+      case PTHREAD_MUTEX_FAST_NP:
       case PTHREAD_MUTEX_RECURSIVE_NP:
       case PTHREAD_MUTEX_ERRORCHECK_NP:
          attr->__mutexkind = type;
@@ -606,7 +597,7 @@ static pthread_mutex_t massacre_mx = PTHREAD_MUTEX_INITIALIZER;
 void __pthread_kill_other_threads_np ( void )
 {
    int i, res, me;
-   pthread_mutex_lock(&massacre_mx);
+   __pthread_mutex_lock(&massacre_mx);
    me = pthread_self();
    for (i = 1; i < VG_N_THREADS; i++) {
       if (i == me) continue;
@@ -614,7 +605,7 @@ void __pthread_kill_other_threads_np ( void )
       if (0 && res == 0)
          printf("----------- NUKED %d\n", i);
    }
-   pthread_mutex_unlock(&massacre_mx);
+   __pthread_mutex_unlock(&massacre_mx);
 }
 
 
@@ -675,18 +666,20 @@ int __pthread_once ( pthread_once_t *once_control,
    int res;
    ensure_valgrind("pthread_once");
 
-   res = pthread_mutex_lock(&once_masterlock);
+   res = __pthread_mutex_lock(&once_masterlock);
 
-   if (res != 0)
+   if (res != 0) {
+     printf("res = %d\n",res);
       barf("pthread_once: Looks like your program's "
            "init routine calls back to pthread_once() ?!");
+   }
 
    if (*once_control == 0) {
       *once_control = 1;
       init_routine();
    }
 
-   pthread_mutex_unlock(&once_masterlock);
+   __pthread_mutex_unlock(&once_masterlock);
 
    return 0;
 }

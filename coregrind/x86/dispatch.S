@@ -66,6 +66,12 @@ VG_(run_innerloop):
 	/* fetch %EIP into %eax */
 	movl	VG_(instr_ptr_offset), %esi
 	movl	(%ebp, %esi, 1), %eax
+
+	/* set host FPU mode to the default mode expected 
+	   by VEX-generated code. */
+	pushl	$0x037F
+	fldcw	0(%esp)
+	addl	$4, %esp
 	
 	/* fall into main loop */
 

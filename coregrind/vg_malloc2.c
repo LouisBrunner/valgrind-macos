@@ -1178,7 +1178,7 @@ void* VG_(calloc) ( ArenaId aid, Int nmemb, Int nbytes )
    Int    i, size;
    UChar* p;
    size = nmemb * nbytes;
-   vg_assert(size > 0);
+   vg_assert(size >= 0);
    p = VG_(malloc) ( aid, size );
    for (i = 0; i < size; i++) p[i] = 0;
    return p;

@@ -177,8 +177,9 @@ extern Int VG_(main_pid);
 /* pgrp of process (global to all threads) */
 extern Int VG_(main_pgrp);
 
-/* Maximum allowed application-visible file descriptor */
-extern Int VG_(max_fd);
+/* Application-visible file descriptor limits */
+extern Int VG_(fd_soft_limit);
+extern Int VG_(fd_hard_limit);
 
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);

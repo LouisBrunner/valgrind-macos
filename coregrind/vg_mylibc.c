@@ -1263,15 +1263,15 @@ Int VG_(safe_fd)(Int oldfd)
 {
    Int newfd;
 
-   vg_assert(VG_(max_fd) != -1);
+   vg_assert(VG_(fd_hard_limit) != -1);
 
-   newfd = VG_(fcntl)(oldfd, VKI_F_DUPFD, VG_(max_fd)+1);
+   newfd = VG_(fcntl)(oldfd, VKI_F_DUPFD, VG_(fd_hard_limit));
    if (newfd != -1)
       VG_(close)(oldfd);
 
    VG_(fcntl)(newfd, VKI_F_SETFD, VKI_FD_CLOEXEC);
 
-   vg_assert(newfd > VG_(max_fd));
+   vg_assert(newfd >= VG_(fd_hard_limit));
    return newfd;
 }
 

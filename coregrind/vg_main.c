@@ -143,8 +143,9 @@ Int VG_(main_pid);
 /* PGRP of process */
 Int VG_(main_pgrp);
 
-/* Maximum allowed application-visible file descriptor */
-Int VG_(max_fd) = -1;
+/* Application-visible file descriptor limits */
+Int VG_(fd_soft_limit) = -1;
+Int VG_(fd_hard_limit) = -1;
 
 /* As deduced from esp_at_startup, the client's argc, argv[] and
    envp[] as extracted from the client's stack at startup-time. */
@@ -1905,7 +1906,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
    }
 
    /* Move log_fd into the safe range, so it doesn't conflict with any app fds */
-   eventually_log_fd = VG_(fcntl)(VG_(clo_log_fd), VKI_F_DUPFD, VG_(max_fd)+1);
+   eventually_log_fd = VG_(fcntl)(VG_(clo_log_fd), VKI_F_DUPFD, VG_(fd_hard_limit));
    if (eventually_log_fd < 0)
       VG_(message)(Vg_UserMsg, "valgrind: failed to move logfile fd into safe range");
    else {
@@ -2024,7 +2025,8 @@ static void setup_file_descriptors(void)
    }
 
    /* Reserve some file descriptors for our use. */
-   VG_(max_fd) = rl.rlim_cur - VG_N_RESERVED_FDS;
+   VG_(fd_soft_limit) = rl.rlim_cur - VG_N_RESERVED_FDS;
+   VG_(fd_hard_limit) = rl.rlim_cur - VG_N_RESERVED_FDS;
 
    /* Update the soft limit. */
    VG_(setrlimit)(VKI_RLIMIT_NOFILE, &rl);
@@ -2799,7 +2801,7 @@ int main(int argc, char **argv)
    //--------------------------------------------------------------
    // Process Valgrind's + tool's command-line options
    //   p: load_tool()               [for 'tool']
-   //   p: setup_file_descriptors()  [for 'VG_(max_fd)']
+   //   p: setup_file_descriptors()  [for 'VG_(fd_xxx_limit)']
    //   p: sk_pre_clo_init           [to set 'command_line_options' need]
    //--------------------------------------------------------------
    process_cmd_line_options(client_auxv, tool);

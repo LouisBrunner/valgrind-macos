@@ -42,6 +42,7 @@ rcl_assert
 rcrl
 readline1
 resolv
+rlimit_nofile
 seg_override
 sem
 semlimit

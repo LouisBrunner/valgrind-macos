@@ -513,7 +513,7 @@ void record_fd_close(Int tid, Int fd)
 {
    OpenFd *i = allocated_fds;
 
-   if (fd > VG_(max_fd))
+   if (fd >= VG_(fd_hard_limit))
       return;			/* Valgrind internal */
 
    while(i) {
@@ -546,7 +546,7 @@ void record_fd_open(Int tid, Int fd, char *pathname)
 {
    OpenFd *i;
 
-   if (fd > VG_(max_fd))
+   if (fd >= VG_(fd_hard_limit))
       return;			/* Valgrind internal */
 
    /* Check to see if this fd is already open. */
@@ -1055,9 +1055,9 @@ static Addr do_brk(Addr newbrk)
    ------------------------------------------------------------------ */
 
 /* Return true if we're allowed to use or create this fd */
-static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid)
+static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid, Bool soft)
 {
-   if (fd < 0 || fd > VG_(max_fd) || fd == VG_(clo_log_fd)) {
+   if (fd < 0 || fd >= VG_(fd_hard_limit) || fd == VG_(clo_log_fd)) {
       VG_(message)(Vg_UserMsg, 
          "Warning: invalid file descriptor %d in syscall %s()",
          fd, syscall);
@@ -1068,6 +1068,9 @@ static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid)
 	 ExeContext *ec = VG_(get_ExeContext)(tid);
 	 VG_(pp_ExeContext)(ec);
       }
+      return False;
+   }
+   else if (soft && fd >= VG_(fd_soft_limit)) {
       return False;
    }
    return True;
@@ -2099,7 +2102,7 @@ PRE(close)
    /* int close(int fd); */
    MAYBE_PRINTF("close ( %d )\n",arg1);
    /* Detect and negate attempts by the client to close Valgrind's log fd */
-   if (!fd_allowed(arg1, "close", tid))
+   if (!fd_allowed(arg1, "close", tid, False))
       res = -VKI_EBADF;
 }
 
@@ -2117,7 +2120,7 @@ PRE(dup)
 POST(dup)
 {
    MAYBE_PRINTF("%d\n", res);
-   if (!fd_allowed(res, "dup", tid)) {
+   if (!fd_allowed(res, "dup", tid, True)) {
       VG_(close)(res);
       res = -VKI_EMFILE;
    } else {
@@ -2130,7 +2133,7 @@ PRE(dup2)
 {
    /* int dup2(int oldfd, int newfd); */
    MAYBE_PRINTF("dup2 ( %d, %d ) ...\n", arg1,arg2);
-   if (!fd_allowed(arg2, "dup2", tid))
+   if (!fd_allowed(arg2, "dup2", tid, True))
       res = -VKI_EBADF;
 }
 
@@ -2152,7 +2155,7 @@ PRE(fcntl)
 POST(fcntl)
 {
    if (arg2 == VKI_F_DUPFD) {
-      if (!fd_allowed(res, "fcntl(DUPFD)", tid)) {
+      if (!fd_allowed(res, "fcntl(DUPFD)", tid, True)) {
          VG_(close)(res);
          res = -VKI_EMFILE;
       } else {
@@ -2191,7 +2194,7 @@ PRE(fcntl64)
 POST(fcntl64)
 {
    if (arg2 == VKI_F_DUPFD) {
-      if (!fd_allowed(res, "fcntl64(DUPFD)", tid)) {
+      if (!fd_allowed(res, "fcntl64(DUPFD)", tid, True)) {
          VG_(close)(res);
          res = -VKI_EMFILE;
       } else {
@@ -2512,7 +2515,8 @@ POST(getrlimit)
 
     switch(arg1) {
     case VKI_RLIMIT_NOFILE:
-	((vki_rlimit *)arg2)->rlim_cur = VG_(max_fd);
+	((vki_rlimit *)arg2)->rlim_cur = VG_(fd_soft_limit);
+	((vki_rlimit *)arg2)->rlim_max = VG_(fd_hard_limit);
 	break;
 
     case VKI_RLIMIT_DATA:
@@ -4145,7 +4149,7 @@ PRE(open)
 
 POST(open)
 {
-   if (!fd_allowed(res, "open", tid)) {
+   if (!fd_allowed(res, "open", tid, True)) {
       VG_(close)(res);
       res = -VKI_EMFILE;
    } else {
@@ -4160,7 +4164,7 @@ PRE(read)
    /* size_t read(int fd, void *buf, size_t count); */
    MAYBE_PRINTF("read ( %d, %p, %d )\n", arg1, arg2, arg3);
 
-   if (!fd_allowed(arg1, "read", tid))
+   if (!fd_allowed(arg1, "read", tid, False))
       res = -VKI_EBADF;   
 }
 
@@ -4174,7 +4178,7 @@ PRE(write)
 {
    /* size_t write(int fd, const void *buf, size_t count); */
    MAYBE_PRINTF("write ( %d, %p, %d )\n", arg1, arg2, arg3);
-   if (!fd_allowed(arg1, "write", tid))
+   if (!fd_allowed(arg1, "write", tid, False))
       res = -VKI_EBADF;
    else
       SYSCALL_TRACK( pre_mem_read, tid, "write(buf)", arg2, arg3 );
@@ -4189,7 +4193,7 @@ PRE(creat)
 
 POST(creat)
 {
-   if (!fd_allowed(res, "creat", tid)) {
+   if (!fd_allowed(res, "creat", tid, True)) {
       VG_(close)(res);
       res = -VKI_EMFILE;
    } else {
@@ -4211,8 +4215,8 @@ POST(pipe)
 {
    Int *p = (Int *)arg1;
 
-   if (!fd_allowed(p[0], "pipe", tid) ||
-       !fd_allowed(p[1], "pipe", tid)) {
+   if (!fd_allowed(p[0], "pipe", tid, True) ||
+       !fd_allowed(p[1], "pipe", tid, True)) {
       VG_(close)(p[0]);
       VG_(close)(p[1]);
       res = -VKI_EMFILE;
@@ -4265,7 +4269,7 @@ PRE(epoll_create)
 
 POST(epoll_create)
 {
-   if (!fd_allowed(res, "open", tid)) {
+   if (!fd_allowed(res, "open", tid, True)) {
       VG_(close)(res);
       res = -VKI_EMFILE;
    } else {
@@ -4322,7 +4326,7 @@ PRE(readv)
    Int i;
    struct iovec * vec;
    MAYBE_PRINTF("readv ( %d, %p, %d )\n",arg1,arg2,arg3);
-   if (!fd_allowed(arg1, "readv", tid)) {
+   if (!fd_allowed(arg1, "readv", tid, False)) {
       res = -VKI_EBADF;
    } else {
       SYSCALL_TRACK( pre_mem_read, tid, "readv(vector)", 
@@ -4527,7 +4531,17 @@ PRE(setrlimit)
    SYSCALL_TRACK( pre_mem_read, tid, "setrlimit(rlim)", 
 		  arg2, sizeof(struct vki_rlimit) );
 
-   if (arg1 == VKI_RLIMIT_DATA) {
+   if (arg1 == VKI_RLIMIT_NOFILE) {
+      if (((vki_rlimit *)arg2)->rlim_cur > VG_(fd_hard_limit) ||
+          ((vki_rlimit *)arg2)->rlim_max != VG_(fd_hard_limit)) {
+         res = -VKI_EPERM;
+      }
+      else {
+         VG_(fd_soft_limit) = ((vki_rlimit *)arg2)->rlim_cur;
+         res = 0;
+      }
+   }
+   else if (arg1 == VKI_RLIMIT_DATA) {
       VG_(client_rlimit_data) = *(vki_rlimit *)arg2;
       res = 0;
    }
@@ -4771,8 +4785,8 @@ POST(socketcall)
       Int fd1 = ((UInt*)((UInt*)arg2)[3])[0];
       Int fd2 = ((UInt*)((UInt*)arg2)[3])[1];
       VG_TRACK( post_mem_write, ((UInt*)arg2)[3], 2*sizeof(int) );
-      if (!fd_allowed(fd1, "socketcall.socketpair", tid) ||
-          !fd_allowed(fd2, "socketcall.socketpair", tid)) {
+      if (!fd_allowed(fd1, "socketcall.socketpair", tid, True) ||
+          !fd_allowed(fd2, "socketcall.socketpair", tid, True)) {
          VG_(close)(fd1);
          VG_(close)(fd2);
          res = -VKI_EMFILE;
@@ -4787,7 +4801,7 @@ POST(socketcall)
    }
 
    case SYS_SOCKET:
-      if (!fd_allowed(res, "socket", tid)) {
+      if (!fd_allowed(res, "socket", tid, True)) {
 	 VG_(close)(res);
 	 res = -VKI_EMFILE;
       } else {
@@ -4807,7 +4821,7 @@ POST(socketcall)
 
    case SYS_ACCEPT: {
       /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-      if (!fd_allowed(res, "accept", tid)) {
+      if (!fd_allowed(res, "accept", tid, True)) {
 	 VG_(close)(res);
 	 res = -VKI_EMFILE;
       } else {
@@ -5124,7 +5138,7 @@ PRE(writev)
    Int i;
    struct iovec * vec;
    MAYBE_PRINTF("writev ( %d, %p, %d )\n",arg1,arg2,arg3);
-   if (!fd_allowed(arg1, "writev", tid)) {
+   if (!fd_allowed(arg1, "writev", tid, False)) {
       res = -VKI_EBADF;
    } else {
       SYSCALL_TRACK( pre_mem_read, tid, "writev(vector)", 
@@ -5214,9 +5228,9 @@ POST(futex)
    if (!VG_(is_kerror)(res)) {
       VG_TRACK( post_mem_write, arg1, sizeof(int) );
       if (arg2 == VKI_FUTEX_FD) {
-         if (!fd_allowed(res, "futex", tid)) {
+         if (!fd_allowed(res, "futex", tid, True)) {
             VG_(close)(res);
-            res = -VKI_ENFILE;
+            res = -VKI_EMFILE;
          } else {
             if (VG_(clo_track_fds))
                record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));

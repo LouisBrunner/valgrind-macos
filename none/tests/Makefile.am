@@ -50,6 +50,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	readline1.stderr.exp readline1.stdout.exp \
 	readline1.vgtest \
 	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
+	rlimit_nofile.stderr.exp rlimit_nofile.stdout.exp rlimit_nofile.vgtest \
 	seg_override.stderr.exp \
 	seg_override.stdout.exp seg_override.vgtest \
 	sem.stderr.exp sem.stdout.exp sem.vgtest \
@@ -69,8 +70,8 @@ check_PROGRAMS = \
 	args badseg bitfield1 bt_everything bt_literal closeall coolo_strlen \
 	cpuid dastest discard exec-sigmask execve floored fork \
 	fpu_lazy_eflags fucomip $(INSN_TESTS) \
-	int munmap_exe map_unmap mremap rcl_assert \
-	rcrl readline1 resolv seg_override sem semlimit sha1_test \
+	int munmap_exe map_unmap mremap rcl_assert rcrl readline1 \
+	resolv rlimit_nofile seg_override sem semlimit sha1_test \
 	shortpush shorts smc1 susphello pth_blockedsig pushpopseg \
 	syscall-restart1 syscall-restart2 system \
 	coolo_sigaction gxx304 yield
@@ -119,6 +120,7 @@ rcl_assert_SOURCES 	= rcl_assert.S
 rcrl_SOURCES 		= rcrl.c
 readline1_SOURCES 	= readline1.c
 resolv_SOURCES 		= resolv.c
+rlimit_nofile_SOURCES	= rlimit_nofile.c
 seg_override_SOURCES 	= seg_override.c
 sem_SOURCES		= sem.c
 semlimit_SOURCES	= semlimit.c

@@ -18,6 +18,7 @@ PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
 		priv/host-generic/h_generic_simd64.h	\
 		priv/main/vex_globals.h			\
 		priv/main/vex_util.h			\
+		priv/guest-generic/g_generic_x87.h	\
 		priv/guest-x86/gdefs.h			\
 		priv/guest-amd64/gdefs.h		\
 		priv/guest-arm/gdefs.h			\
@@ -42,6 +43,7 @@ LIB_OBJS = 	priv/ir/irdefs.o			\
 		priv/host-generic/h_generic_regs.o	\
 		priv/host-generic/h_generic_simd64.o	\
 		priv/host-generic/reg_alloc2.o		\
+		priv/guest-generic/g_generic_x87.o	\
 		priv/guest-x86/ghelpers.o		\
 		priv/guest-amd64/ghelpers.o		\
 		priv/guest-arm/ghelpers.o		\
@@ -66,7 +68,7 @@ CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline \
 		$(EXTRA_CFLAGS)
 
 #CC = icc
-#CCFLAGS = -g -Wall -wd981 -wd279 -wd1287 -wd869 -wd111 -wd188
+#CCFLAGS = -g -Wall -wd981 -wd279 -wd1287 -wd869 -wd111 -wd188 -wd186
 # 981: operands are evaluated in unspecified order
 # 279: controlling expression is constant
 # 1287: invalid attribute for parameter
@@ -74,6 +76,7 @@ CCFLAGS = -g -O -Wall -Wmissing-prototypes -Wshadow -Winline \
 # 111: statement is unreachable
 # 188: enumerated type mixed with another type
 # (the above are for icc 8.0 -- 8.0.0.55 I think)
+# 186: pointless comparison of unsigned integer with zero
 
 
 all: vex
@@ -195,6 +198,10 @@ priv/host-generic/reg_alloc2.o: $(ALL_HEADERS) priv/host-generic/reg_alloc2.c
 priv/guest-x86/toIR.o: $(ALL_HEADERS) priv/guest-x86/toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-x86/toIR.o \
 					 -c priv/guest-x86/toIR.c
+
+priv/guest-generic/g_generic_x87.o: $(ALL_HEADERS) priv/guest-generic/g_generic_x87.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-generic/g_generic_x87.o \
+					 -c priv/guest-generic/g_generic_x87.c
 
 priv/guest-x86/ghelpers.o: $(ALL_HEADERS) priv/guest-x86/ghelpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest-x86/ghelpers.o \

@@ -96,8 +96,8 @@ void *bullet_proof(void *id_p)
   }
 
   /* loop forever until picked off with a cancel */
-  for(;;i++) {
-    if (i%1000 == 0) 
+  for(i = 0; i < 10000000; i++) {
+    if (i%10000 == 0) 
       print_count(messagep, *my_id, i); 
     if (i%100000 == 0) {
       printf("\n%s This is the thread that never ends... #%d\n",
@@ -147,10 +147,10 @@ void *ask_for_it(void *id_p)
 
   /* loop forever until picked off with a cancel */
   for(;;i++) {
-    if (i%1000 == 0)
+    if (i%10000 == 0)
       print_count(messagep, *my_id, i);
-    if (i%10000 == 0) {
-      printf("\n%s\tLook, %d, I'll tell you when you can cancel me.\n",
+    if (i%100000 == 0) {
+      printf("\n%s\t%d Look, I'll tell you when you can cancel me.\n",
              messagep, i);
     }
     pthread_testcancel();

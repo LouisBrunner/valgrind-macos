@@ -1503,7 +1503,6 @@ VexEmWarn put_x87 ( Bool moveRegs,
    ULong      pair;
 
    /* Copy registers and tags */
-   tagw = 0;
    for (stno = 0; stno < 8; stno++) {
       preg = (stno + ftop) & 7;
       tag = (tagw >> (2*preg)) & 3;

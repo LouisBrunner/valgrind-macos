@@ -686,9 +686,9 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
    vex_printf("\n");
 #  endif
 
-   /* --------- specialising "calculate_eflags_c" --------- */
+   /* --------- specialising "x86g_calculate_eflags_c" --------- */
 
-   if (vex_streq(function_name, "calculate_eflags_c")) {
+   if (vex_streq(function_name, "x86g_calculate_eflags_c")) {
       /* specialise calls to above "calculate_eflags_c" function */
       IRExpr *cc_op, *cc_dep1, *cc_dep2, *cc_ndep;
       vassert(arity == 4);
@@ -719,9 +719,9 @@ IRExpr* guest_x86_spechelper ( Char* function_name,
       return NULL;
    }
 
-   /* --------- specialising "calculate_condition" --------- */
+   /* --------- specialising "x86g_calculate_condition" --------- */
 
-   if (vex_streq(function_name, "calculate_condition")) {
+   if (vex_streq(function_name, "x86g_calculate_condition")) {
       /* specialise calls to above "calculate condition" function */
       IRExpr *cond, *cc_op, *cc_dep1, *cc_dep2, *cc_ndep;
       vassert(arity == 5);

@@ -45,6 +45,7 @@ EXTRA_DIST = \
 	nanoleak.stderr.exp nanoleak.vgtest \
 	nanoleak_supp.stderr.exp nanoleak_supp.vgtest nanoleak.supp \
 	new_override.stderr.exp new_override.vgtest \
+	null_socket.stderr.exp null_socket.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest
 	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
@@ -64,7 +65,8 @@ check_PROGRAMS = \
 	badaddrvalue badfree badjump badloop buflen_check clientperm \
 	doublefree error_counts errs1 exitprog fprw fwrite inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
-	memalign_test memcmptest mmaptest nanoleak overlap pushfpopf \
+	memalign_test memcmptest mmaptest nanoleak null_socket \
+	overlap pushfpopf \
 	realloc1 realloc2 sigaltstack signal2 supp1 supp2 suppfree \
 	trivialleak tronical weirdioctl	\
 	mismatches new_override
@@ -98,6 +100,7 @@ mmaptest_SOURCES 	= mmaptest.c
 memalign_test_SOURCES 	= memalign_test.c
 memcmptest_SOURCES 	= memcmptest.c
 nanoleak_SOURCES 	= nanoleak.c
+null_socket_SOURCES 	= null_socket.c
 overlap_SOURCES 	= overlap.c
 pushfpopf_SOURCES 	= pushfpopf_c.c pushfpopf_s.s
 realloc1_SOURCES 	= realloc1.c

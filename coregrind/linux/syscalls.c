@@ -367,7 +367,7 @@ PRE(sys_prctl, MayBlock)
                  int, option, unsigned long, arg2, unsigned long, arg3,
                  unsigned long, arg4, unsigned long, arg5);
    // XXX: totally wrong... we need to look at the 'option' arg, and do
-   // SYS_PRE_MEM_READs/SYS_PRE_MEM_WRITEs as necessary...
+   // PRE_MEM_READs/PRE_MEM_WRITEs as necessary...
 }
 
 PRE(sys_sendfile, MayBlock)
@@ -404,15 +404,43 @@ POST(sys_sendfile64)
 
 PRE(sys_futex, MayBlock)
 {
+   /* 
+      arg    param                              used by ops
+
+      ARG1 - u32 *futex				all
+      ARG2 - int op
+      ARG3 - int val				WAIT,WAKE,FD,REQUEUE,CMP_REQUEUE
+      ARG4 - struct timespec *utime		WAIT:time*	REQUEUE,CMP_REQUEUE:val2
+      ARG5 - u32 *uaddr2			REQUEUE,CMP_REQUEUE
+      ARG6 - int val3				CMP_REQUEUE
+    */
    PRINT("sys_futex ( %p, %d, %d, %p, %p )", ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ6(long, "futex", 
                  vki_u32 *, futex, int, op, int, val,
                  struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
-   PRE_MEM_READ( "futex(futex)", ARG1, sizeof(int) );
-   if (ARG2 == VKI_FUTEX_WAIT && ARG4 != 0)
-      PRE_MEM_READ( "futex(timeout)", ARG4, sizeof(struct vki_timespec) );
-   if (ARG2 == VKI_FUTEX_REQUEUE)
-      PRE_MEM_READ( "futex(futex2)", ARG4, sizeof(int) );
+
+   PRE_MEM_READ( "futex(futex)", ARG1, sizeof(Int) );
+
+   switch(ARG2) {
+   case VKI_FUTEX_WAIT:
+      if (ARG4 != 0)
+	 PRE_MEM_READ( "futex(timeout)", ARG4, sizeof(struct vki_timespec) );
+      break;
+
+   case VKI_FUTEX_REQUEUE:
+   case VKI_FUTEX_CMP_REQUEUE:
+      PRE_MEM_READ( "futex(futex2)", ARG5, sizeof(Int) );
+      break;
+
+   case VKI_FUTEX_WAKE:
+   case VKI_FUTEX_FD:
+      /* no additional pointers */
+      break;
+
+   default:
+      SET_RESULT(-VKI_ENOSYS);   // some futex function we don't understand
+      break;
+   }
 }
 
 POST(sys_futex)

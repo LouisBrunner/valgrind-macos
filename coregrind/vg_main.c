@@ -1645,8 +1645,7 @@ static void pre_process_cmd_line_options
       } else if (VG_CLO_STREQ(vg_argv[i], "--help-debug")) {
          *need_help = 2;
 
-      } else if (VG_CLO_STREQN(7, vg_argv[i], "--tool=") ||
-	         VG_CLO_STREQN(7, vg_argv[i], "--skin=")) {
+      } else if (VG_CLO_STREQN(7, vg_argv[i], "--tool=")) {
 	 *tool = &vg_argv[i][7];
 	 
       } else if (VG_CLO_STREQN(7, vg_argv[i], "--exec=")) {
@@ -1717,8 +1716,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       }
       
       /* Ignore these options - they've already been handled */
-      if (VG_CLO_STREQN(7, arg, "--tool=") ||
-	  VG_CLO_STREQN(7, arg, "--skin="))
+      if (VG_CLO_STREQN(7, arg, "--tool="))
 	 continue;
       if (VG_CLO_STREQN(7, arg, "--exec="))
 	 continue;

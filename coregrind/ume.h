@@ -60,11 +60,6 @@ extern void *ume_exec_esp;	/* esp on entry at exec time */
 // Jump to a new 'ip' with the stack 'sp'.
 void jmp_with_stack(addr_t ip, addr_t sp) __attribute__((noreturn));
 
-void foreach_map(int (*fn)(char *start, char *end,
-			   const char *perm, off_t offset,
-			   int maj, int min, int ino, void* extra),
-                 void* extra);
-
 /*------------------------------------------------------------*/
 /*--- Loading ELF files                                    ---*/
 /*------------------------------------------------------------*/

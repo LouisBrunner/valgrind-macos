@@ -91,7 +91,8 @@ typedef
 
 /* ALL THE FOLLOWING ARE VISIBLE TO LIBRARY CLIENT */
 
-/* Initialise all guest x86 state.  The FPU is put in default mode. */
+/* Initialise all guest amd64 state.  The FPU is put in default
+   mode. */
 extern
 void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state );
 

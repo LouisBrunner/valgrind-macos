@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
 
 static void handler(int sig, siginfo_t *info, void *v)

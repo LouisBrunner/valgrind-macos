@@ -65,10 +65,12 @@ esac
 AC_CANONICAL_HOST
 
 AC_MSG_CHECKING([for a supported CPU])
+AC_SUBST(VG_ARCH)
 
 case "${host_cpu}" in
      i?86) 
 	AC_MSG_RESULT([ok (${host_cpu})])
+        VG_ARCH="x86"
         ;;
 
      *) 
@@ -78,12 +80,12 @@ case "${host_cpu}" in
 esac
 
 AC_MSG_CHECKING([for a supported OS])
-AC_SUBST(VG_PLATFORM)
+AC_SUBST(VG_OS)
 
 case "${host_os}" in
      *linux*)
 	AC_MSG_RESULT([ok (${host_os})])
-        VG_PLATFORM="x86-linux"
+        VG_OS="linux"
 
         # Ok, this is linux. Check the kernel version
         AC_MSG_CHECKING([for the kernel version])
@@ -116,8 +118,7 @@ case "${host_os}" in
 
      *freebsd*)
         AC_MSG_RESULT([ok (${host_os})])
-        VG_PLATFORM="x86-freebsd"
-
+        VG_OS="freebsd"
         ;;
 
      *) 
@@ -126,6 +127,22 @@ case "${host_os}" in
 	;;
 esac
 
+AC_MSG_CHECKING([for a supported CPU/OS combination])
+AC_SUBST(VG_PLATFORM)
+
+VG_PLATFORM="$VG_ARCH-$VG_OS"
+
+case $VG_PLATFORM in
+    x86-linux)
+        AC_MSG_RESULT([ok (${host_cpu}-${host_os})])
+        ;;
+
+    *)
+        AC_MSG_RESULT([no (${host_cpu}-${host_os})])
+        AC_MSG_ERROR([Valgrind is platform specific. Sorry. Please consider doin
+g a port.])
+        ;;
+esac
 
 AC_SUBST(DEFAULT_SUPP)
 

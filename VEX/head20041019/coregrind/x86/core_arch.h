@@ -89,13 +89,6 @@
 /* State of the simulated CPU. */
 extern Int VGOFF_(m_vex);
 
-extern Int VGOFF_(m_cs);
-extern Int VGOFF_(m_ss);
-extern Int VGOFF_(m_ds);
-extern Int VGOFF_(m_es);
-extern Int VGOFF_(m_fs);
-extern Int VGOFF_(m_gs);
-
 /* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
 extern Int VGOFF_(spillslots);
 
@@ -218,24 +211,11 @@ typedef struct {
       deallocate this at thread exit. */
    VgLdtEntry* ldt;
 
-
    /* TLS table. This consists of a small number (currently 3) of
       entries from the Global Descriptor Table. */
    VgLdtEntry tls[VKI_GDT_TLS_ENTRIES];
 
-   /* Saved machine context.  Note the FPU state, %EIP and segment
-      registers are not shadowed.
-
-      Although the segment registers are 16 bits long, storage
-      management here and in VG_(baseBlock) is
-      simplified if we pretend they are 32 bits. */
-   UInt m_cs;
-   UInt m_ss;
-   UInt m_ds;
-   UInt m_es;
-   UInt m_fs;
-   UInt m_gs;
-
+   /* Saved machine context. */
    VexGuestX86State vex;
 
    UInt sh_eax;

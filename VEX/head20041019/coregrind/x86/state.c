@@ -43,12 +43,6 @@ Int VGOFF_(m_vex) = INVALID_OFFSET;
 
 Int VGOFF_(ldt)   = INVALID_OFFSET;
 Int VGOFF_(tls_ptr) = INVALID_OFFSET;
-Int VGOFF_(m_cs)  = INVALID_OFFSET;
-Int VGOFF_(m_ss)  = INVALID_OFFSET;
-Int VGOFF_(m_ds)  = INVALID_OFFSET;
-Int VGOFF_(m_es)  = INVALID_OFFSET;
-Int VGOFF_(m_fs)  = INVALID_OFFSET;
-Int VGOFF_(m_gs)  = INVALID_OFFSET;
 Int VGOFF_(m_eip) = INVALID_OFFSET;
 
 Int VGOFF_(spillslots) = INVALID_OFFSET;
@@ -135,6 +129,13 @@ void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
 
    BASEBLOCK_VEX->guest_DFLAG = 1; /* forwards */
 
+   BASEBLOCK_VEX->guest_CS = BASEBLOCK_VEX->guest_DS
+                           = BASEBLOCK_VEX->guest_ES
+                           = BASEBLOCK_VEX->guest_FS
+                           = BASEBLOCK_VEX->guest_GS
+                           = BASEBLOCK_VEX->guest_SS
+                           = 0;
+
    /* set up an initial FPU state (doesn't really matter what it is,
       so long as it's somewhat valid) */
    vex_initialise_x87(BASEBLOCK_VEX);
@@ -199,25 +200,17 @@ void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
    /* TLS pointer: pretend the root thread has no TLS array for now. */
    VGOFF_(tls_ptr) = VG_(alloc_BaB_1_set)((UInt)NULL);
 
-   /* segment registers */
-   VGOFF_(m_cs)  = VG_(alloc_BaB_1_set)(0);
-   VGOFF_(m_ss)  = VG_(alloc_BaB_1_set)(0);
-   VGOFF_(m_ds)  = VG_(alloc_BaB_1_set)(0);
-   VGOFF_(m_es)  = VG_(alloc_BaB_1_set)(0);
-   VGOFF_(m_fs)  = VG_(alloc_BaB_1_set)(0);
-   VGOFF_(m_gs)  = VG_(alloc_BaB_1_set)(0);
-
    /* initialise %cs, %ds and %ss to point at the operating systems
       default code, data and stack segments */
    asm volatile("movw %%cs, %0"
                 :
-                : "m" (VG_(baseBlock)[VGOFF_(m_cs)]));
+                : "m" (BASEBLOCK_VEX->guest_CS));
    asm volatile("movw %%ds, %0"
                 :
-                : "m" (VG_(baseBlock)[VGOFF_(m_ds)]));
+                : "m" (BASEBLOCK_VEX->guest_DS));
    asm volatile("movw %%ss, %0"
                 :
-                : "m" (VG_(baseBlock)[VGOFF_(m_ss)]));
+                : "m" (BASEBLOCK_VEX->guest_SS));
 
    VG_(register_noncompact_helper)( (Addr) & VG_(do_useseg) );
 
@@ -247,12 +240,6 @@ void VGA_(load_state) ( arch_thread_t* arch, ThreadId tid )
 {
    VG_(baseBlock)[VGOFF_(ldt)]  = (UInt)arch->ldt;
    VG_(baseBlock)[VGOFF_(tls_ptr)]  = (UInt)arch->tls;
-   VG_(baseBlock)[VGOFF_(m_cs)] = arch->m_cs;
-   VG_(baseBlock)[VGOFF_(m_ss)] = arch->m_ss;
-   VG_(baseBlock)[VGOFF_(m_ds)] = arch->m_ds;
-   VG_(baseBlock)[VGOFF_(m_es)] = arch->m_es;
-   VG_(baseBlock)[VGOFF_(m_fs)] = arch->m_fs;
-   VG_(baseBlock)[VGOFF_(m_gs)] = arch->m_gs;
 
    *BASEBLOCK_VEX = arch->vex;
 
@@ -312,13 +299,6 @@ n",
    vg_assert((void*)arch->tls 
              == (void*)VG_(baseBlock)[VGOFF_(tls_ptr)]);
 
-   arch->m_cs = VG_(baseBlock)[VGOFF_(m_cs)];
-   arch->m_ss = VG_(baseBlock)[VGOFF_(m_ss)];
-   arch->m_ds = VG_(baseBlock)[VGOFF_(m_ds)];
-   arch->m_es = VG_(baseBlock)[VGOFF_(m_es)];
-   arch->m_fs = VG_(baseBlock)[VGOFF_(m_fs)];
-   arch->m_gs = VG_(baseBlock)[VGOFF_(m_gs)];
-
    arch->vex = *BASEBLOCK_VEX;
 
    if (VG_(needs).shadow_regs) {
@@ -346,12 +326,6 @@ n",
    /* Fill it up with junk. */
    VG_(baseBlock)[VGOFF_(ldt)] = junk;
    VG_(baseBlock)[VGOFF_(tls_ptr)] = junk;
-   VG_(baseBlock)[VGOFF_(m_cs)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ss)] = junk;
-   VG_(baseBlock)[VGOFF_(m_ds)] = junk;
-   VG_(baseBlock)[VGOFF_(m_es)] = junk;
-   VG_(baseBlock)[VGOFF_(m_fs)] = junk;
-   VG_(baseBlock)[VGOFF_(m_gs)] = junk;
 
    for (i = 0; i < (3 + sizeof(VexGuestX86State)) / 4; i++)
       VG_(baseBlock)[VGOFF_(m_vex) + i] = junk;
@@ -503,12 +477,12 @@ Int VGA_(ptrace_setregs_from_BB)(Int pid)
 {
    struct user_regs_struct regs;
 
-   regs.cs     = VG_(baseBlock)[VGOFF_(m_cs)];
-   regs.ss     = VG_(baseBlock)[VGOFF_(m_ss)];
-   regs.ds     = VG_(baseBlock)[VGOFF_(m_ds)];
-   regs.es     = VG_(baseBlock)[VGOFF_(m_es)];
-   regs.fs     = VG_(baseBlock)[VGOFF_(m_fs)];
-   regs.gs     = VG_(baseBlock)[VGOFF_(m_gs)];
+   regs.cs     = BASEBLOCK_VEX->guest_CS;
+   regs.ss     = BASEBLOCK_VEX->guest_SS;
+   regs.ds     = BASEBLOCK_VEX->guest_DS;
+   regs.es     = BASEBLOCK_VEX->guest_ES;
+   regs.fs     = BASEBLOCK_VEX->guest_FS;
+   regs.gs     = BASEBLOCK_VEX->guest_GS;
    regs.eax    = BASEBLOCK_VEX->guest_EAX;
    regs.ebx    = BASEBLOCK_VEX->guest_EBX;
    regs.ecx    = BASEBLOCK_VEX->guest_ECX;
@@ -527,12 +501,12 @@ Int VGA_(ptrace_setregs_from_tst)(Int pid, arch_thread_t* arch)
 {
    struct user_regs_struct regs;
 
-   regs.cs     = arch->m_cs;
-   regs.ss     = arch->m_ss;
-   regs.ds     = arch->m_ds;
-   regs.es     = arch->m_es;
-   regs.fs     = arch->m_fs;
-   regs.gs     = arch->m_gs;
+   regs.cs     = arch->vex.guest_CS;
+   regs.ss     = arch->vex.guest_SS;
+   regs.ds     = arch->vex.guest_DS;
+   regs.es     = arch->vex.guest_ES;
+   regs.fs     = arch->vex.guest_FS;
+   regs.gs     = arch->vex.guest_GS;
    regs.eax    = arch->vex.guest_EAX;
    regs.ebx    = arch->vex.guest_EBX;
    regs.ecx    = arch->vex.guest_ECX;

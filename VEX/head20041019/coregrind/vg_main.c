@@ -32,6 +32,7 @@
 
 #include "core.h"
 #include "ume.h"
+#include "../../pub/libvex.h"
 
 #include <dirent.h>
 #include <dlfcn.h>

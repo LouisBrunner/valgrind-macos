@@ -127,12 +127,11 @@ static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si,
    uc->uc_sigmask = *set;
    uc->uc_stack = tst->altstack;
 
-#define SC(reg)       sc->reg = tst->arch.m_##reg
 #define SC2(reg,REG)  sc->reg = tst->arch.vex.guest_##REG
-   SC(gs);
-   SC(fs);
-   SC(es);
-   SC(ds);
+   SC2(gs,GS);
+   SC2(fs,FS);
+   SC2(es,ES);
+   SC2(ds,DS);
 
    SC2(edi,EDI);
    SC2(esi,ESI);
@@ -144,13 +143,12 @@ static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si,
    SC2(eax,EAX);
 
    SC2(eip,EIP);
-   SC(cs);
+   SC2(cs,CS);
    sc->eflags = vex_to_eflags(&tst->arch.vex);
-   SC(ss);
+   SC2(ss,SS);
    /* XXX esp_at_signal */
    /* XXX trapno */
    /* XXX err */
-#undef SC
 #undef SC2
 
    sc->cr2 = (UInt)si->_sifields._sigfault._addr;
@@ -348,12 +346,12 @@ void VGA_(fill_elfregs_from_BB)(struct user_regs_struct* regs)
    regs->ebp    = BASEBLOCK_VEX->guest_EBP;
    regs->eax    = BASEBLOCK_VEX->guest_EAX;
 
-   regs->cs     = VG_(baseBlock)[VGOFF_(m_cs)];
-   regs->ds     = VG_(baseBlock)[VGOFF_(m_ds)];
-   regs->ss     = VG_(baseBlock)[VGOFF_(m_ss)];
-   regs->es     = VG_(baseBlock)[VGOFF_(m_es)];
-   regs->fs     = VG_(baseBlock)[VGOFF_(m_fs)];
-   regs->gs     = VG_(baseBlock)[VGOFF_(m_gs)];
+   regs->cs     = BASEBLOCK_VEX->guest_CS;
+   regs->ds     = BASEBLOCK_VEX->guest_DS;
+   regs->ss     = BASEBLOCK_VEX->guest_SS;
+   regs->es     = BASEBLOCK_VEX->guest_ES;
+   regs->fs     = BASEBLOCK_VEX->guest_FS;
+   regs->gs     = BASEBLOCK_VEX->guest_GS;
 }
 
 
@@ -372,12 +370,12 @@ void VGA_(fill_elfregs_from_tst)(struct user_regs_struct* regs,
    regs->ebp    = arch->vex.guest_EBP;
    regs->eax    = arch->vex.guest_EAX;
 
-   regs->cs     = arch->m_cs;
-   regs->ds     = arch->m_ds;
-   regs->ss     = arch->m_ss;
-   regs->es     = arch->m_es;
-   regs->fs     = arch->m_fs;
-   regs->gs     = arch->m_gs;
+   regs->cs     = arch->vex.guest_CS;
+   regs->ds     = arch->vex.guest_DS;
+   regs->ss     = arch->vex.guest_SS;
+   regs->es     = arch->vex.guest_ES;
+   regs->fs     = arch->vex.guest_FS;
+   regs->gs     = arch->vex.guest_GS;
 }
 
 #if 0

@@ -33,4 +33,8 @@ sed "s/ __sigaction / sigaction /"                                     |
 sed "s/ __GI___/ __/"                                                  |
 
 # Remove line info out of order warnings
-sed "/warning: line info addresses out of order/d"
+sed "/warning: line info addresses out of order/d"                     |
+
+# Remove any ": dumping core" message as the user might have a
+# limit set that prevents the core dump
+sed "s/\(signal [0-9]* (SIG[A-Z]*)\): dumping core/\1/"

@@ -2249,12 +2249,15 @@ static void describe_addr ( Addr a, AddrInfo* ai )
 
    /* Look in recently freed memory */
    for(i = 0; i < N_FREED_CHUNKS; i++) {
-      Addr sc_data = VG_(get_sc_data)(sc);
-      UInt sc_size = VG_(get_sc_size)(sc);
+      Addr sc_data;
+      UInt sc_size;
       
       sc = freechunks[i];
       if (sc == NULL)
 	 continue;
+
+      sc_data = VG_(get_sc_data)(sc);
+      sc_size = VG_(get_sc_size)(sc);
 
       if (a >= sc_data && a <  sc_data + sc_size) {
 	 ai->akind      = Freed;

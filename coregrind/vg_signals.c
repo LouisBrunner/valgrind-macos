@@ -2045,7 +2045,7 @@ void VG_(sigstartup_actions) ( void )
 
    /* Register an alternative stack for our own signal handler to run on. */
    altstack_info.ss_sp = &(sigstack[0]);
-   altstack_info.ss_size = VG_SIGSTACK_SIZE_W * sizeof(UInt);
+   altstack_info.ss_size = sizeof(sigstack);
    altstack_info.ss_flags = 0;
    ret = VG_(sigaltstack)(&altstack_info, NULL);
    if (ret != 0) {

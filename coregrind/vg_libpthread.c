@@ -2253,6 +2253,7 @@ typedef
       pthread_mutex_t se_mx;
       pthread_cond_t se_cv;
       int count;
+      int waiters;
    }
    vg_sem_t;
 
@@ -2287,6 +2288,29 @@ static vg_sem_t* se_remap ( sem_t* orig )
    return &se_remap_new[i];
 }
 
+static void se_unmap( sem_t* orig )
+{
+   int res, i;
+   res = __pthread_mutex_lock(&se_remap_mx);
+   my_assert(res == 0);
+
+   for (i = 0; i < se_remap_used; i++) {
+      if (se_remap_orig[i] == orig)
+         break;
+   }
+   if (i == se_remap_used) {
+      res = pthread_mutex_unlock(&se_remap_mx);
+      my_assert(res == 0);
+      barf("se_unmap: unmapping invalid semaphore");
+   } else {
+      se_remap_orig[i] = se_remap_orig[--se_remap_used];
+      se_remap_orig[se_remap_used] = 0;
+      memset(&se_remap_new[se_remap_used], 0,
+             sizeof(se_remap_new[se_remap_used]));
+   }
+   res = pthread_mutex_unlock(&se_remap_mx);
+   my_assert(res == 0);
+}
 
 int sem_init(sem_t *sem, int pshared, unsigned int value)
 {
@@ -2317,7 +2341,9 @@ int sem_wait ( sem_t* sem )
    res = __pthread_mutex_lock(&vg_sem->se_mx);
    my_assert(res == 0);
    while (vg_sem->count == 0) {
+      ++vg_sem->waiters;
       res = pthread_cond_wait(&vg_sem->se_cv, &vg_sem->se_mx);
+      --vg_sem->waiters;
       my_assert(res == 0);
    }
    vg_sem->count--;
@@ -2370,18 +2396,42 @@ int sem_trywait ( sem_t* sem )
 
 int sem_getvalue(sem_t* sem, int * sval)
 {
+   int res;
    vg_sem_t* vg_sem; 
-   ensure_valgrind("sem_trywait");
+   ensure_valgrind("sem_getvalue");
    vg_sem = se_remap(sem);
+   res = __pthread_mutex_lock(&vg_sem->se_mx);
+   my_assert(res == 0);
    *sval = vg_sem->count;
+   res = __pthread_mutex_unlock(&vg_sem->se_mx);
+   my_assert(res == 0);
    return 0;
 }
 
 
 int sem_destroy(sem_t * sem)
 {
-   kludged("sem_destroy", "(it always succeeds, even if semaphore waited on)");
    /* if someone waiting on this semaphore, errno = EBUSY, return -1 */
+   vg_sem_t* vg_sem;
+   int res;
+   ensure_valgrind("sem_destroy");
+   vg_sem = se_remap(sem);
+   res = __pthread_mutex_lock(&vg_sem->se_mx);
+   my_assert(res == 0);
+   if (vg_sem->waiters > 0)
+   {
+      *(__errno_location()) = EBUSY;
+      res = __pthread_mutex_unlock(&vg_sem->se_mx);
+      my_assert(res == 0);
+      return -1;
+   }
+   res = pthread_cond_destroy(&vg_sem->se_cv);
+   my_assert(res == 0);
+   res = __pthread_mutex_unlock(&vg_sem->se_mx);
+   my_assert(res == 0);
+   res = pthread_mutex_destroy(&vg_sem->se_mx);
+   my_assert(res == 0);
+   se_unmap(sem);
    return 0;
 }
 
@@ -2395,7 +2445,9 @@ int sem_timedwait(sem_t* sem, const struct timespec *abstime)
    res = __pthread_mutex_lock(&vg_sem->se_mx); 
    my_assert(res == 0); 
    while ( vg_sem->count == 0 && res != ETIMEDOUT ) { 
+      ++vg_sem->waiters;
       res = pthread_cond_timedwait(&vg_sem->se_cv, &vg_sem->se_mx, abstime); 
+      --vg_sem->waiters;
    } 
    if ( vg_sem->count > 0 ) { 
       vg_sem->count--; 

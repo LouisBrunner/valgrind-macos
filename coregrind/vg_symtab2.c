@@ -2197,7 +2197,7 @@ Char* VG_(describe_eip)(Addr eip, Char* buf, Int n_buf)
    Bool  know_objname = VG_(get_objname)(eip, buf_obj, M_VG_ERRTXT);
    Bool  know_srcloc  = VG_(get_filename_linenum)(eip, buf_srcloc, M_VG_ERRTXT, 
                                                   &lineno);
-   VG_(sprintf)(ibuf,"0x%x: ", eip);
+   VG_(sprintf)(ibuf,"0x%llx: ", (ULong)eip);
    APPEND(ibuf);
    if (know_fnname) { 
       APPEND(buf_fn);
@@ -2495,7 +2495,7 @@ static void add_redirect_sym(const Char *from_lib, const Char *from_sym,
    }
 }
 
-/* Redirect a lib/symbol reference to a function at lib/symbol */
+/* Redirect a lib/symbol reference to an addr */
 static void add_redirect_addr(const Char *from_lib, const Char *from_sym,
 			      Addr to_addr)
 {
@@ -2524,6 +2524,17 @@ static void add_redirect_addr(const Char *from_lib, const Char *from_sym,
 Addr VG_(code_redirect)(Addr a)
 {
    CodeRedirect *r = VG_(SkipList_Find)(&sk_resolved_redir, &a);
+
+#ifdef __amd64__
+   /* HACK.  0xFFFFFFFFFF600000 is the entry point for 
+      __NR_vgettimeofday.  Therefore the code at 
+      VG_(client_trampoline_code)+VG_(tramp_syscall_offset)
+      must be the magic conversion code to turn it into a normal
+      __NR_gettimeofday call. 
+   */
+   if (a == 0xFFFFFFFFFF600000ULL)
+      return VG_(client_trampoline_code)+VG_(tramp_syscall_offset);
+#endif
 
    if (r == NULL || r->from_addr != a)
       return a;
@@ -2561,7 +2572,7 @@ void VG_(setup_code_redirect_table) ( void )
    add_redirect_addr("soname:ld-linux.so.2", "_dl_sysinfo_int80",
                      VG_(client_trampoline_code)+VG_(tramp_syscall_offset));
 #endif
-   
+
    /* Overenthusiastic use of PLT bypassing by the glibc people also
       means we need to patch the following functions to our own
       implementations of said, in mac_replace_strmem.c.

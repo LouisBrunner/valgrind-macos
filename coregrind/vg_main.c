@@ -1121,7 +1121,7 @@ static Addr setup_client_stack(void* init_sp,
 
 // XXX: what architectures is this necessary for?  x86 yes, PPC no, others ?
 // Perhaps a per-arch VGA_NEEDS_TRAMPOLINE constant is necessary?
-#ifdef __x86__
+#if defined(__i386__) || defined(__amd64__)
    /* --- trampoline page --- */
    VG_(memcpy)( (void *)VG_(client_trampoline_code),
                 &VG_(trampoline_code_start), VG_(trampoline_code_length) );
@@ -1690,7 +1690,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
 // XXX: what architectures is this necessary for?  x86 yes, PPC no, others ?
 #ifdef __x86__
    {
-      Int *auxp;
+      Word *auxp;
       for (auxp = client_auxv; auxp[0] != AT_NULL; auxp += 2) {
          switch(auxp[0]) {
          case AT_SYSINFO:
@@ -2669,7 +2669,7 @@ int main(int argc, char **argv)
    VG_(parse_procselfmaps) ( build_segment_map_callback );  /* everything */
    sp_at_startup___global_arg = 0;
    
-#ifdef __i386__
+#if defined(__i386__) || defined(__amd64__)
    //--------------------------------------------------------------
    // Protect client trampoline page (which is also sysinfo stuff)
    //   p: segment stuff   [otherwise get seg faults...]

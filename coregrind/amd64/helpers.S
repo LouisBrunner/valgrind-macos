@@ -27,7 +27,6 @@
   The GNU General Public License is contained in the file COPYING.
 */
 
-#if 0
 #include "core_asm.h"
 
 /* ------------------ SIMULATED CPU HELPERS ------------------ */
@@ -69,8 +68,10 @@ sigreturn_start:
 
 	# We can point our sysinfo stuff here
 	.align 16
-syscall_start:	
-	int	$0x80
+syscall_start:
+	/* Rerouted entry point for __NR_vgettimeofday */
+	movq	$96 /*__NR_gettimeofday*/, %rax
+	syscall
 	ret
 tramp_code_end:
 			
@@ -86,7 +87,6 @@ VG_(tramp_syscall_offset):
 
 /* Let the linker know we don't need an executable stack */
 .section .note.GNU-stack,"",@progbits
-#endif
 		
 ##--------------------------------------------------------------------##
 ##--- end                                                          ---##

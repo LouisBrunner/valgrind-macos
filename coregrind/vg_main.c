@@ -1763,7 +1763,7 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_NUM_CLO ("--dump-error",        VG_(clo_dump_error))
       else VG_NUM_CLO ("--input-fd",          VG_(clo_input_fd))
       else VG_NUM_CLO ("--sanity-level",      VG_(clo_sanity_level))
-      else VG_NUM_CLO ("--signal­polltime",   VG_(clo_signal_polltime))
+      else VG_NUM_CLO ("--signal-polltime",   VG_(clo_signal_polltime))
       else VG_BNUM_CLO("--num-callers",       VG_(clo_backtrace_size), 1,
                                                 VG_DEEPEST_BACKTRACE)
 

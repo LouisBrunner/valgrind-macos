@@ -2668,11 +2668,11 @@ UInt dis_Grp4 ( UChar sorb, UInt delta )
       IRTemp addr = disAMode ( &alen, sorb, delta, dis_buf );
       assign( t1, loadLE(ty, mkexpr(addr)) );
       switch (gregOfRM(modrm)) {
-//--          case 0: /* INC */ 
-//--             uInstr1(cb, INC, 1, TempReg, t1);
-//--             setFlagsFromUOpcode(cb, INC);
-//--             uInstr2(cb, STORE, 1, TempReg, t1, TempReg, t2);
-//--             break;
+         case 0: /* INC */
+            assign(t2, binop(Iop_Add8, mkexpr(t1), mkU8(1)));
+            storeLE( mkexpr(addr), mkexpr(t2) );
+            setFlags_INC_DEC( True, t2, ty );
+            break;
          case 1: /* DEC */
             assign(t2, binop(Iop_Sub8, mkexpr(t1), mkU8(1)));
             storeLE( mkexpr(addr), mkexpr(t2) );
@@ -3403,6 +3403,14 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_do_op_mem_ST_0 ( addr, "mul", dis_buf, Iop_MulF64, False );
                break;
 
+            case 4: /* FSUB single-real */
+               fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, False );
+               break;
+
+            case 5: /* FSUBR single-real */
+               fp_do_oprev_mem_ST_0 ( addr, "subr", dis_buf, Iop_SubF64, False );
+               break;
+
             case 6: /* FDIV single-real */
                fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, False );
                break;
@@ -3461,19 +3469,24 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                               loadLE(Ity_F32, mkexpr(addr))));
                break;
 
+            case 2: /* FST single-real */
+               DIP("fstS %s", dis_buf);
+	       storeLE(mkexpr(addr), unop(Iop_F64toF32, get_ST(0)));
+               break;
+
             case 3: /* FSTP single-real */
                DIP("fstpS %s", dis_buf);
 	       storeLE(mkexpr(addr), unop(Iop_F64toF32, get_ST(0)));
 	       fp_pop();
                break;
 
-            case 5: 
+            case 5: /* FLDCW */
                DIP("fldcw %s", dis_buf);
                put_fpucw( unop(Iop_16Uto32, loadLE(Ity_I16, mkexpr(addr))) );
                break;
 
-            case 7:
-               DIP("fstcw %s", dis_buf);
+            case 7: /* FNSTCW */
+               DIP("fnstcw %s", dis_buf);
                storeLE(mkexpr(addr), unop(Iop_32to16, get_fpucw()));
                break;
 
@@ -8415,9 +8428,15 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          eip = dis_cmpxchg8b ( cb, sorb, eip );
 //--          break;
 //-- 
-//--       /* =-=-=-=-=-=-=-=-=- CPUID -=-=-=-=-=-=-=-=-=-=-= */
-//-- 
-//--       case 0xA2: /* CPUID */
+      /* =-=-=-=-=-=-=-=-=- CPUID -=-=-=-=-=-=-=-=-=-=-= */
+
+      case 0xA2: /* CPUID */
+         vex_printf("vex x86->IR: hacked CPUID\n");
+         putIReg(4, R_EAX, mkU32(0));
+         putIReg(4, R_EBX, mkU32(0x756e6547));
+         putIReg(4, R_ECX, mkU32(0x49656e69));
+         putIReg(4, R_EDX, mkU32(0x6c65746e));
+         break;
 //-- 	 if (!VG_(cpu_has_feature)(VG_X86_FEAT_CPUID))
 //-- 	    goto decode_failure;
 //-- 

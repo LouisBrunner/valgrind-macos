@@ -58,10 +58,12 @@ HReg hregX86_FAKE0 ( void ) { return mkHReg(0, HRcFloat, False); }
 HReg hregX86_FAKE1 ( void ) { return mkHReg(1, HRcFloat, False); }
 HReg hregX86_FAKE2 ( void ) { return mkHReg(2, HRcFloat, False); }
 HReg hregX86_FAKE3 ( void ) { return mkHReg(3, HRcFloat, False); }
+HReg hregX86_FAKE4 ( void ) { return mkHReg(4, HRcFloat, False); }
+HReg hregX86_FAKE5 ( void ) { return mkHReg(5, HRcFloat, False); }
 
 void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
 {
-   *nregs = 10;
+   *nregs = 12;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
    (*arr)[0] = hregX86_EAX();
    (*arr)[1] = hregX86_EBX();
@@ -73,6 +75,8 @@ void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
    (*arr)[7] = hregX86_FAKE1();
    (*arr)[8] = hregX86_FAKE2();
    (*arr)[9] = hregX86_FAKE3();
+   (*arr)[10] = hregX86_FAKE4();
+   (*arr)[11] = hregX86_FAKE5();
 }
 
 
@@ -1127,7 +1131,7 @@ static UInt fregNo ( HReg r )
    vassert(hregClass(r) == HRcFloat);
    vassert(!hregIsVirtual(r));
    n = hregNumber(r);
-   vassert(n <= 3);
+   vassert(n <= 5);
    return n;
 }
 
@@ -1254,10 +1258,10 @@ static UChar* do_ffree_st7 ( UChar* p )
    return p;
 }
 
-/* Emit fstp %st(i), 1 <= i <= 5 */
+/* Emit fstp %st(i), 1 <= i <= 7 */
 static UChar* do_fstp_st ( UChar* p, Int i )
 {
-   vassert(1 <= i && i <= 5);
+   vassert(1 <= i && i <= 7);
    *p++ = 0xDD;
    *p++ = 0xD8+i;
    return p;

@@ -494,12 +494,23 @@ UInt calculate_eflags_all ( UInt cc_op, UInt cc_src_formal, UInt cc_dst_formal )
 static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
    /* Fast-case some common ones. */
-   if (cc_op == CC_OP_LOGICL)
-      return 0;
-   if (cc_op == CC_OP_DECL)
-      return cc_src;
-   if (cc_op == CC_OP_SUBL)
-      return ( ((UInt)cc_src) > ((UInt)cc_dst) ) ? CC_MASK_C : 0;
+   switch (cc_op) {
+      case CC_OP_LOGICL: case CC_OP_LOGICW: case CC_OP_LOGICB:
+         return 0;
+      case CC_OP_DECL:
+         return cc_src;
+      case CC_OP_SUBL:
+         return ( ((UInt)cc_src) > ((UInt)cc_dst) ) 
+                   ? CC_MASK_C : 0;
+      case CC_OP_ADDL:
+         return ( ((UInt)cc_src + (UInt)cc_dst) < ((UInt)cc_src) ) 
+                   ? CC_MASK_C : 0;
+      case CC_OP_SUBB:
+         return ( ((UInt)(cc_src & 0xFF)) > ((UInt)(cc_dst & 0xFF)) ) 
+                   ? CC_MASK_C : 0;
+      default: 
+         break;
+   }
 
 #  if PROFILE_EFLAGS
    if (!initted)

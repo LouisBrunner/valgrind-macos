@@ -1448,10 +1448,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             VG_(printf)("ioctl ( %d, 0x%x, %p )\n",arg1,arg2,arg3);
          switch (arg2 /* request */) {
             case TCSETS:
-            case TCSETAW:
             case TCSETSW:
             case TCSETSF:
-               must_be_readable( tst, "ioctl(TCSET{S,AW,SW,SF})", arg3, 
+               must_be_readable( tst, "ioctl(TCSET{S,SW,SF})", arg3, 
                                  VKI_SIZEOF_STRUCT_TERMIOS );
                KERNEL_DO_SYSCALL(tid,res);
                break; 
@@ -1463,7 +1462,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   make_readable ( arg3, VKI_SIZEOF_STRUCT_TERMIOS );
                break;
             case TCSETA:
-               must_be_readable( tst, "ioctl(TCSETA)", arg3,
+            case TCSETAW:
+            case TCSETAF:
+               must_be_readable( tst, "ioctl(TCSET{A,AW,AF})", arg3,
                                  VKI_SIZEOF_STRUCT_TERMIO );
                KERNEL_DO_SYSCALL(tid,res);
                break;

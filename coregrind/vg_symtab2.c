@@ -982,17 +982,14 @@ Bool vg_read_lib_symbols ( SegInfo* si )
          if (0 == VG_(strcmp)(sec_name, sh_strtab + shdr[i].sh_name)) { \
             if (0 != sec_data) \
                VG_(core_panic)("repeated section!\n"); \
-            if (in_exec) { \
+            if (in_exec) \
                sec_data = (type)(si->offset + shdr[i].sh_addr); \
-               sec_size = shdr[i].sh_size; \
-            } else { \
+            else \
                sec_data = (type)(oimage + shdr[i].sh_offset); \
-               sec_size = shdr[i].sh_size; \
-            } \
+            sec_size = shdr[i].sh_size; \
             TRACE_SYMTAB( "%18s: %p .. %p\n", \
                           sec_name, sec_data, sec_data + sec_size - 1); \
-            if ( sec_size  + (UChar*)sec_data > n_oimage + (UChar*)oimage) \
-            { \
+            if ( shdr[i].sh_offset + sec_size > n_oimage ) { \
                VG_(symerr)("   section beyond image end?!"); \
                goto out; \
             } \

@@ -228,8 +228,10 @@ vg_esp_saved_over_GDB_start:
 	.long	0
 .text
 	
+.type VG_(swizzle_esp_then_start_GDB),@function
 .global VG_(swizzle_esp_then_start_GDB)	
 VG_(swizzle_esp_then_start_GDB):
+	.cfi_startproc
 	pushal
 
 	# remember the simulators current stack/frame pointers
@@ -256,17 +258,21 @@ VG_(swizzle_esp_then_start_GDB):
 
 	# push %EBP.  This is a faked %ebp-chain pointer.
 	pushl	%eax
+	.cfi_adjust_cfa_offset 0x4
 
 	movl	%esp, %ebp
+	.cfi_def_cfa_register ebp
 	
 	call	VG_(start_GDB_whilst_on_client_stack)
 
 	# restore the simulators stack/frame pointer
 	movl	vg_ebp_saved_over_GDB_start, %ebp
 	movl	vg_esp_saved_over_GDB_start, %esp
+	.cfi_adjust_cfa_offset -0x4
 	
 	popal
 	ret
+	.cfi_endproc
 
 # gcc puts this construction at the end of every function.  I think it
 # allows the linker to figure out the size of the function.  So we do

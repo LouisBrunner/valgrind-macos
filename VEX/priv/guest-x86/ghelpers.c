@@ -2329,15 +2329,25 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    .. maxoff requires precise memory exceptions.  If in doubt return
    True (but this is generates significantly slower code).  
 
-   We enforce precise exns for guest %ESP and %EIP only.
+   By default we enforce precise exns for guest %ESP, %EBP and %EIP
+   only.  These are the minimum needed to extract correct stack
+   backtraces from x86 code.
 */
 Bool guest_x86_state_requires_precise_mem_exns ( Int minoff, 
                                                  Int maxoff)
 {
+   Int ebp_min = offsetof(VexGuestX86State, guest_EBP);
+   Int ebp_max = ebp_min + 4 - 1;
    Int esp_min = offsetof(VexGuestX86State, guest_ESP);
    Int esp_max = esp_min + 4 - 1;
    Int eip_min = offsetof(VexGuestX86State, guest_EIP);
    Int eip_max = eip_min + 4 - 1;
+
+   if (maxoff < ebp_min || minoff > ebp_max) {
+      /* no overlap with ebp */
+   } else {
+      return True;
+   }
 
    if (maxoff < esp_min || minoff > esp_max) {
       /* no overlap with esp */

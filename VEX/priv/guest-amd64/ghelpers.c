@@ -1316,15 +1316,25 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    .. maxoff requires precise memory exceptions.  If in doubt return
    True (but this is generates significantly slower code).  
 
-   We enforce precise exns for guest %RSP and %RIP only.
+   By default we enforce precise exns for guest %RSP, %RBP and %RIP
+   only.  These are the minimum needed to extract correct stack
+   backtraces from amd64 code.
 */
 Bool guest_amd64_state_requires_precise_mem_exns ( Int minoff,
                                                    Int maxoff)
 {
+   Int rbp_min = offsetof(VexGuestAMD64State, guest_RBP);
+   Int rbp_max = rbp_min + 8 - 1;
    Int rsp_min = offsetof(VexGuestAMD64State, guest_RSP);
    Int rsp_max = rsp_min + 8 - 1;
    Int rip_min = offsetof(VexGuestAMD64State, guest_RIP);
    Int rip_max = rip_min + 8 - 1;
+
+   if (maxoff < rbp_min || minoff > rbp_max) {
+      /* no overlap with rbp */
+   } else {
+      return True;
+   }
 
    if (maxoff < rsp_min || minoff > rsp_max) {
       /* no overlap with rsp */

@@ -1469,6 +1469,7 @@ void as_closepadfile(int padfile)
 /*====================================================================*/
 
 /* Define, and set defaults. */
+VexControl VG_(clo_vex_control);
 Bool   VG_(clo_error_limit)    = True;
 Bool   VG_(clo_db_attach)      = False;
 Char*  VG_(clo_db_command)     = VG_CLO_DEFAULT_DBCOMMAND;
@@ -1577,6 +1578,12 @@ void usage ( Bool debug_help )
 "    --trace-pthread=none|some|all  show pthread event details? [none]\n"
 "    --wait-for-gdb=yes|no     pause on startup to wait for gdb attach\n"
 "\n"
+"    --vex-iropt-level                 0 .. 2 [2]\n"
+"    --vex-iropt-precise-memory-exns   [no]\n"
+"    --vex-iropt-unroll-thresh         0 .. 400 [120]\n"
+"    --vex-guest-max-insns             1 .. 100 [50]\n"
+"    --vex-guest-chase-thresh          0 .. 99  [10]\n"
+"\n"
 "  debugging options for Valgrind tools that report errors\n"
 "    --dump-error=<number>     show translation for basic block associated\n"
 "                              with <number>'th error context [0=show none]\n"
@@ -1622,6 +1629,8 @@ static void pre_process_cmd_line_options
       ( Int* need_help, const char** tool, const char** exec )
 {
    UInt i;
+
+   LibVEX_default_VexControl(& VG_(clo_vex_control));
 
    /* parse the options we have (only the options we care about now) */
    for (i = 1; i < vg_argc; i++) {
@@ -1762,6 +1771,19 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
       else VG_NUM_CLO ("--signal­polltime",   VG_(clo_signal_polltime))
       else VG_BNUM_CLO("--num-callers",       VG_(clo_backtrace_size), 1,
                                                 VG_DEEPEST_BACKTRACE)
+
+      else VG_BNUM_CLO("--vex-iropt-verbosity", 
+                       VG_(clo_vex_control).iropt_verbosity, 0, 10)
+      else VG_BNUM_CLO("--vex-iropt-level", 
+                       VG_(clo_vex_control).iropt_level, 0, 2)
+      else VG_BOOL_CLO("--vex-iropt-precise-memory-exns", 
+                       VG_(clo_vex_control).iropt_precise_memory_exns)
+      else VG_BNUM_CLO("--vex-iropt-unroll-thresh", 
+                       VG_(clo_vex_control).iropt_unroll_thresh, 0, 400)
+      else VG_BNUM_CLO("--vex-guest-max-insns", 
+                       VG_(clo_vex_control).guest_max_insns, 1, 100)
+      else VG_BNUM_CLO("--vex-guest-chase-thresh", 
+                       VG_(clo_vex_control).guest_chase_thresh, 0, 99)
 
       // for backwards compatibility, replaced by --log-fd
       else if (VG_CLO_STREQN(13, arg, "--logfile-fd=")) {

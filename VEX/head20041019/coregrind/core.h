@@ -91,6 +91,8 @@
 
 #include "valgrind.h"
 
+#include "../../pub/libvex.h"
+
 #undef SK_
 #define SK_(x)	vgSkinInternal_##x
 
@@ -234,6 +236,8 @@ extern Int VG_(main_pgrp);
 extern Int VG_(fd_soft_limit);
 extern Int VG_(fd_hard_limit);
 
+/* Vex iropt control */
+extern VexControl VG_(clo_vex_control);
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);
 /* Enquire about whether to attach to a debugger at errors?   default: NO */

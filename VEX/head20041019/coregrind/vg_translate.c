@@ -1438,7 +1438,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
                     1,     /* debug_paranoia */ 
                     0,     /* verbosity */
                     False, /* valgrind support */
-                    50     /* max insns per bb */ );
+                    &VG_(clo_vex_control) );
       vex_init_done = True;
    }
 

@@ -1918,6 +1918,7 @@ void VG_(route_signals)(void)
    static const struct vki_timespec zero = { 0, 0 };
    static ThreadId start_tid = 1;	/* tid to start scanning from */
    vki_ksigset_t set;
+   vki_ksiginfo_t siset[VKI_KNSIG];
    vki_ksiginfo_t si;
    Int sigNo;
 
@@ -1933,8 +1934,10 @@ void VG_(route_signals)(void)
    VG_(block_all_host_signals) ( &set );
 
    /* grab any pending signals and add them to the pending signal set */
-   while(VG_(ksigtimedwait)(&set, &si, &zero) > 0)
+   while(VG_(ksigtimedwait)(&set, &si, &zero) > 0) {
       VG_(ksigaddset)(&proc_pending, si.si_signo);
+      siset[si.si_signo] = si;
+   }
 
    /* transfer signals from the process pending set to a particular
       thread which has it unblocked */
@@ -1969,9 +1972,13 @@ void VG_(route_signals)(void)
       
       /* found one - deliver it and be done */
       if (target != -1) {
+	 ThreadState *tst = &VG_(threads)[target];
 	 if (VG_(clo_trace_signals))
 	    VG_(message)(Vg_DebugMsg, "Routing signal %d to tid %d",
 			 sigNo, tid);
+         tst->sigqueue[tst->sigqueue_head] = siset[sigNo];
+         tst->sigqueue_head = (tst->sigqueue_head + 1) % VG_N_SIGNALQUEUE;
+         vg_assert(tst->sigqueue_head != tst->sigqueue_tail);
 	 VG_(proxy_sendsig)(target, sigNo);
 	 VG_(ksigdelset)(&proc_pending, sigNo);
       }

@@ -1153,7 +1153,26 @@ static void sys_wait_results(Bool block, ThreadId tid, enum RequestType reqtype,
 	    break;
 
 	 case PX_Signal:
-	    if (VG_(clo_trace_signals) || VG_(clo_trace_syscalls))
+            if (VG_(do_signal_routing) &&
+                res.u.siginfo.si_code == VKI_SI_USER &&
+                res.u.siginfo._sifields._kill._pid == VG_(getpid)()) {
+               Int ptr = tst->sigqueue_tail;
+
+               while (tst->sigqueue[ptr].si_signo != res.u.siginfo.si_signo) {
+                  vg_assert(ptr != tst->sigqueue_head);
+                  ptr = (ptr + 1) % VG_N_SIGNALQUEUE;
+               }
+               
+               res.u.siginfo = tst->sigqueue[ptr];
+               tst->sigqueue[ptr].si_signo = 0;
+
+               while (tst->sigqueue_tail != tst->sigqueue_head &&
+                      tst->sigqueue[tst->sigqueue_tail].si_signo == 0) {
+                  tst->sigqueue_tail = (tst->sigqueue_tail + 1) % VG_N_SIGNALQUEUE;
+               }
+            }
+
+            if (VG_(clo_trace_signals) || VG_(clo_trace_syscalls))
 	       VG_(message)(Vg_DebugMsg, "sys_wait_results: got PX_Signal for TID %d, signal %d",
 			    res.tid, res.u.siginfo.si_signo);
 

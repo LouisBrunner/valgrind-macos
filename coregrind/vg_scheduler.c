@@ -372,6 +372,8 @@ void mostly_clear_thread_record ( ThreadId tid )
    VG_(threads)[tid].custack_used = 0;
    VG_(ksigemptyset)(&VG_(threads)[tid].sig_mask);
    VG_(ksigfillset)(&VG_(threads)[tid].eff_sig_mask);
+   VG_(threads)[tid].sigqueue_head = 0;
+   VG_(threads)[tid].sigqueue_tail = 0;
    VG_(threads)[tid].specifics_ptr = NULL;
 
    VG_(threads)[tid].syscallno		  = -1;

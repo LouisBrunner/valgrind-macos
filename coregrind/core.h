@@ -176,6 +176,9 @@
 /* Max number of callers for context in a suppression. */
 #define VG_N_SUPP_CALLERS  4
 
+/* Numer of entries in each thread's signal queue. */
+#define VG_N_SIGNALQUEUE 8
+
 /* Useful macros */
 /* a - alignment - must be a power of 2 */
 #define ROUNDDN(p, a)	((Addr)(p) & ~((a)-1))
@@ -811,6 +814,15 @@ typedef
       handler is running.
     */
    vki_ksigset_t eff_sig_mask;
+
+   /* Signal queue.  This is used when the kernel doesn't route
+      signals properly in order to remember the signal information
+      while we are routing the signal.  It is a circular queue with
+      insertions performed at the head and removals at the tail.
+    */
+   vki_ksiginfo_t sigqueue[VG_N_SIGNALQUEUE];
+   Int sigqueue_head;
+   Int sigqueue_tail;
 
    /* Stacks.  When a thread slot is freed, we don't deallocate its
       stack; we just leave it lying around for the next use of the

@@ -176,6 +176,7 @@
 {
    my_malloc/get_or_allocate_specifics_ptr/pthread_key_create(Leak)
    Memcheck:Leak
+   fun:malloc
    fun:my_malloc
    fun:get_or_allocate_specifics_ptr
    fun:pthread_key_create

@@ -25,7 +25,10 @@ libpthread_so_SOURCES = \
 	vg_libpthread.c \
 	vg_libpthread_unimp.c
 libpthread_so_DEPENDENCIES = $(srcdir)/vg_libpthread.vs
-libpthread_so_LDFLAGS	   = -Werror -fno-omit-frame-pointer -UVG_LIBDIR -shared -fpic -Wl,-version-script $(srcdir)/vg_libpthread.vs
+libpthread_so_LDFLAGS	   = -Werror -fno-omit-frame-pointer -UVG_LIBDIR -shared -fpic \
+	-Wl,-version-script $(srcdir)/vg_libpthread.vs \
+	-Wl,-z,nodelete,-z,initfirst \
+	-Wl,--soname=libpthread.so.0
 
 valgrinq_so_SOURCES = vg_valgrinq_dummy.c
 valgrinq_so_LDFLAGS = -shared
@@ -58,7 +61,7 @@ valgrind_so_SOURCES = \
 	vg_translate.c \
 	vg_transtab.c \
 	vg_ldt.c
-valgrind_so_LDFLAGS = -Wl,-z -Wl,initfirst -shared
+valgrind_so_LDFLAGS = -Wl,-z,initfirst -shared
 valgrind_so_LDADD = \
 	demangle/cp-demangle.o \
 	demangle/cplus-dem.o \

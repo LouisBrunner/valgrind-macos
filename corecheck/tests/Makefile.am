@@ -4,7 +4,7 @@
 ## blocking syscalls, etc.
 ##---------------------------------------------------------------------------
 
-noinst_SCRIPTS = filter_stderr
+noinst_SCRIPTS = filter_stderr filter_fdleak
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \

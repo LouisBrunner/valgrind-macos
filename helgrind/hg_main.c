@@ -1832,11 +1832,14 @@ static void add_HG_Chunk ( ThreadId tid, Addr p, UInt size )
 
 /* Allocate memory and note change in memory available */
 static __inline__
-void* alloc_and_new_mem ( UInt size, UInt alignment, Bool is_zeroed )
+void* alloc_and_new_mem ( Int size, UInt alignment, Bool is_zeroed )
 {
    Addr p;
 
+   if (size < 0) return NULL;
+
    p = (Addr)VG_(cli_malloc)(alignment, size);
+   if (is_zeroed) VG_(memset)((void*)p, 0, size);
    add_HG_Chunk ( VG_(get_current_or_recent_tid)(), p, size );
    eraser_new_mem_heap( p, size, is_zeroed );
 
@@ -1863,17 +1866,10 @@ void* SK_(memalign) ( Int align, Int n )
    return alloc_and_new_mem ( n, align,              /*is_zeroed*/False );
 }
 
-void* SK_(calloc) ( Int nmemb, Int size1 )
+void* SK_(calloc) ( Int nmemb, Int size )
 {
-   void* p;
-   Int  size, i;
-
-   size = nmemb * size1;
-
-   p = alloc_and_new_mem ( size, VG_(clo_alignment), /*is_zeroed*/True );
-   for (i = 0; i < size; i++)    /* calloc() is zeroed */
-      ((UChar*)p)[i] = 0;
-   return p;
+   return alloc_and_new_mem ( nmemb*size, VG_(clo_alignment),
+                              /*is_zeroed*/True );
 }
 
 static

@@ -392,7 +392,16 @@ VG_(helper_STD):
 	std
 	ret
 
+/* Clear/set the carry flag. */
+.global VG_(helper_CLC)
+VG_(helper_CLC):
+        clc
+        ret
 
+.global VG_(helper_STC)  
+VG_(helper_STC):
+        stc
+        ret
 
 /* Signed 32-to-64 multiply. */
 .globl VG_(helper_imul_32_64)

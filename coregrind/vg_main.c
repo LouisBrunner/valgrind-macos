@@ -77,6 +77,8 @@ Int VGOFF_(helper_mul_8_16) = INVALID_OFFSET;
 Int VGOFF_(helper_CLD) = INVALID_OFFSET;
 Int VGOFF_(helper_STD) = INVALID_OFFSET;
 Int VGOFF_(helper_get_dirflag) = INVALID_OFFSET;
+Int VGOFF_(helper_CLC) = INVALID_OFFSET;
+Int VGOFF_(helper_STC) = INVALID_OFFSET;
 Int VGOFF_(helper_shldl) = INVALID_OFFSET;
 Int VGOFF_(helper_shldw) = INVALID_OFFSET;
 Int VGOFF_(helper_shrdl) = INVALID_OFFSET;
@@ -268,6 +270,11 @@ static void vg_init_baseBlock ( void )
       = alloc_BaB_1_set( (Addr) & VG_(helper_STD) );
    VGOFF_(helper_get_dirflag)
       = alloc_BaB_1_set( (Addr) & VG_(helper_get_dirflag) );
+
+   VGOFF_(helper_CLC)
+      = alloc_BaB_1_set( (Addr) & VG_(helper_CLC) );
+    VGOFF_(helper_STC)
+      = alloc_BaB_1_set( (Addr) & VG_(helper_STC) );
 
    VGOFF_(helper_shldl)
       = alloc_BaB_1_set( (Addr) & VG_(helper_shldl) );

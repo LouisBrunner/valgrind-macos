@@ -1744,6 +1744,9 @@ extern void VG_(helper_CLD);
 extern void VG_(helper_STD);
 extern void VG_(helper_get_dirflag);
 
+extern void VG_(helper_CLC);
+extern void VG_(helper_STC);
+
 extern void VG_(helper_shldl);
 extern void VG_(helper_shldw);
 extern void VG_(helper_shrdl);
@@ -1886,6 +1889,9 @@ extern Int VGOFF_(helper_mul_8_16);
 extern Int VGOFF_(helper_CLD);
 extern Int VGOFF_(helper_STD);
 extern Int VGOFF_(helper_get_dirflag);
+
+extern Int VGOFF_(helper_CLC);
+extern Int VGOFF_(helper_STC);
 
 extern Int VGOFF_(helper_shldl);
 extern Int VGOFF_(helper_shldw);

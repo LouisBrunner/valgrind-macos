@@ -4051,6 +4051,22 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (dis) VG_(printf)("std\n");
       break;
 
+   case 0xF8: /* CLC */
+      uInstr0(cb, CALLM_S, 0);
+      uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_CLC));
+      uFlagsRWU(cb, FlagsEmpty, FlagC, FlagsOSZAP);
+      uInstr0(cb, CALLM_E, 0);
+      if (dis) VG_(printf)("clc\n");
+      break;
+
+   case 0xF9: /* STC */
+      uInstr0(cb, CALLM_S, 0);
+      uInstr1(cb, CALLM, 0, Lit16, VGOFF_(helper_STC));
+      uFlagsRWU(cb, FlagsEmpty, FlagC, FlagsOSZCP);
+      uInstr0(cb, CALLM_E, 0);
+      if (dis) VG_(printf)("stc\n");
+      break;
+
    case 0xF2: { /* REPNE prefix insn */
       Addr eip_orig = eip - 1;
       abyte = getUChar(eip); eip++;

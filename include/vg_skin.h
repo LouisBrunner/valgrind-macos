@@ -116,7 +116,7 @@ typedef unsigned char          Bool;
    interface;  if the core and skin major versions don't match, Valgrind
    will abort.  The minor version indicates binary-compatible changes.
 */
-#define VG_CORE_INTERFACE_MAJOR_VERSION   4
+#define VG_CORE_INTERFACE_MAJOR_VERSION   5
 #define VG_CORE_INTERFACE_MINOR_VERSION   0
 
 extern const Int VG_(skin_interface_major_version);

@@ -2066,14 +2066,14 @@ int sigaction(int signum,
 }
 
 typedef 
-int (*__accept_t)(int fd, struct sockaddr *addr, socklen_t *len);
+int (*accept_t)(int fd, struct sockaddr *addr, socklen_t *len);
 
-WEAK int __accept(int fd, struct sockaddr *addr, socklen_t *len)
+WEAK
+int accept(int fd, struct sockaddr *addr, socklen_t *len)
 {
    __my_pthread_testcancel();
-   return FORWARD(__accept, fd, addr, len);
+   return FORWARD(accept, fd, addr, len);
 }
-strong_alias(__accept, accept);
 
 typedef
 int (*connect_t)(int sockfd,  

@@ -391,6 +391,7 @@ void* VG_(brk) ( void* end_data_segment )
 #define VG_MSG_ZJUSTIFY  2 /* Must justify with '0'. */
 #define VG_MSG_LJUSTIFY  4 /* Must justify on the left. */
 #define VG_MSG_PAREN     8 /* Parenthesize if present (for %y) */
+#define VG_MSG_COMMA    16 /* Add commas to numbers (for %d, %u) */
 
 /* Copy a string into the buffer. */
 static UInt
@@ -447,7 +448,7 @@ myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
 {
    Char buf[40];
    Int  ind = 0;
-   Int  i;
+   Int  i, nc = 0;
    Bool neg = False;
    Char *digits = "0123456789ABCDEF";
    UInt ret = 0;
@@ -464,9 +465,15 @@ myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
       buf[ind++] = '0';
    else {
       while (p > 0) {
+         if (flags & VG_MSG_COMMA && 10 == base &&
+             0 == (ind-nc) % 3 && 0 != ind) 
+         {
+            buf[ind++] = ',';
+            nc++;
+         }
          buf[ind++] = digits[p % base];
          p /= base;
-       }
+      }
    }
 
    if (neg)
@@ -481,12 +488,13 @@ myvprintf_int64 ( void(*send)(Char), Int flags, Int base, Int width, ULong p)
 
    /* Reverse copy to buffer.  */
    ret += ind;
-   for (i = ind -1; i >= 0; i--)
+   for (i = ind -1; i >= 0; i--) {
       send(buf[i]);
+   }
    if (width > 0 && (flags & VG_MSG_LJUSTIFY)) {
       for(; ind < width; ind++) {
 	 ret++;
-         send((flags & VG_MSG_ZJUSTIFY) ? '0': ' ');
+         send(' ');  // Never pad with zeroes on RHS -- changes the value!
       }
    }
    return ret;
@@ -530,6 +538,11 @@ VG_(vprintf) ( void(*send)(Char), const Char *format, va_list vargs )
       if (format[i] == '(') {
 	 flags |= VG_MSG_PAREN;
 	 i++;
+      }
+      /* If ',' follows '%', commas will be inserted. */
+      if (format[i] == ',') {
+         flags |= VG_MSG_COMMA;
+         i++;
       }
       /* If '-' follows '%', justify on the left. */
       if (format[i] == '-') {

@@ -1135,7 +1135,6 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x01: case 0x02: case 0x03: case 0x04:
       case 0x50: case 0x51: case 0x52: case 0x5b: case 0x5c: case 0x5d:
       case 0xb0: case 0xb3:
-
           break;      
 
       case 0x06: *I1c = (cache_t) {  8, 4, 32 }; break;
@@ -1211,8 +1210,8 @@ Int Intel_cache_info(Int level, cache_t* I1c, cache_t* D1c, cache_t* L2c)
       case 0x83: *L2c = (cache_t) {  512, 8, 32 };  L2_found = True;  break;
       case 0x84: *L2c = (cache_t) { 1024, 8, 32 };  L2_found = True;  break;
       case 0x85: *L2c = (cache_t) { 2048, 8, 32 };  L2_found = True;  break;
-      case 0x86: *L2c = (cache_t) {  512, 4, 64 };  L2_found = True; break;
-      case 0x87: *L2c = (cache_t) { 1024, 8, 64 };  L2_found = True; break;
+      case 0x86: *L2c = (cache_t) {  512, 4, 64 };  L2_found = True;  break;
+      case 0x87: *L2c = (cache_t) { 1024, 8, 64 };  L2_found = True;  break;
 
       default:
           VG_(message)(Vg_DebugMsg, 
@@ -1704,36 +1703,14 @@ static void fprint_BBCC_table_and_calc_totals(void)
    VG_(close)(fd);
 }
 
-/* Adds commas to ULong, right justifying in a field field_width wide, returns
- * the string in buf. */
-static
-Int commify(ULong n, int field_width, char buf[COMMIFY_BUF_LEN])
+static UInt ULong_width(ULong n)
 {
-   int len, n_commas, i, j, new_len, space;
-
-   VG_(sprintf)(buf, "%llu", n);
-   len = VG_(strlen)(buf);
-   n_commas = (len - 1) / 3;
-   new_len = len + n_commas;
-   space = field_width - new_len;
-
-   /* Allow for printing a number in a field_width smaller than it's size */
-   if (space < 0) space = 0;    
-
-   /* Make j = -1 because we copy the '\0' before doing the numbers in groups
-    * of three. */
-   for (j = -1, i = len ; i >= 0; i--) {
-      buf[i + n_commas + space] = buf[i];
-
-      if (3 == ++j) {
-         j = 0;
-         n_commas--;
-         buf[i + n_commas + space] = ',';
-      }
+   UInt w = 0;
+   while (n > 0) {
+      n = n / 10;
+      w++;
    }
-   /* Right justify in field. */
-   for (i = 0; i < space; i++)  buf[i] = ' ';
-   return new_len;
+   return w + (w-1)/3;   // add space for commas
 }
 
 static
@@ -1754,12 +1731,14 @@ void percentify(Int n, Int ex, Int field_width, char buf[])
 
 void SK_(fini)(Int exitcode)
 {
+   static char buf1[RESULTS_BUF_LEN], 
+               buf2[RESULTS_BUF_LEN], 
+               buf3[RESULTS_BUF_LEN],
+               fmt [RESULTS_BUF_LEN];
+
    CC D_total;
    ULong L2_total_m, L2_total_mr, L2_total_mw,
          L2_total, L2_total_r, L2_total_w;
-   char buf1[RESULTS_BUF_LEN], 
-        buf2[RESULTS_BUF_LEN], 
-        buf3[RESULTS_BUF_LEN];
    Int l1, l2, l3;
    Int p;
 
@@ -1770,14 +1749,16 @@ void SK_(fini)(Int exitcode)
 
    /* I cache results.  Use the I_refs value to determine the first column
     * width. */
-   l1 = commify(Ir_total.a, 0, buf1);
-   VG_(message)(Vg_UserMsg, "I   refs:      %s", buf1);
+   l1 = ULong_width(Ir_total.a);
+   l2 = ULong_width(Dr_total.a);
+   l3 = ULong_width(Dw_total.a);
 
-   commify(Ir_total.m1, l1, buf1);
-   VG_(message)(Vg_UserMsg, "I1  misses:    %s", buf1);
-
-   commify(Ir_total.m2, l1, buf1);
-   VG_(message)(Vg_UserMsg, "L2i misses:    %s", buf1);
+   /* Make format string, getting width right for numbers */
+   VG_(sprintf)(fmt, "%%s %%,%dld", l1);
+   
+   VG_(message)(Vg_UserMsg, fmt, "I   refs:     ", Ir_total.a);
+   VG_(message)(Vg_UserMsg, fmt, "I1  misses:   ", Ir_total.m1);
+   VG_(message)(Vg_UserMsg, fmt, "L2i misses:   ", Ir_total.m2);
 
    p = 100;
 
@@ -1795,23 +1776,15 @@ void SK_(fini)(Int exitcode)
    D_total.m1 = Dr_total.m1 + Dw_total.m1;
    D_total.m2 = Dr_total.m2 + Dw_total.m2;
        
-        commify( D_total.a, l1, buf1);
-   l2 = commify(Dr_total.a, 0,  buf2);
-   l3 = commify(Dw_total.a, 0,  buf3);
-   VG_(message)(Vg_UserMsg, "D   refs:      %s  (%s rd + %s wr)",
-                buf1,  buf2,  buf3);
+   /* Make format string, getting width right for numbers */
+   VG_(sprintf)(fmt, "%%s %%,%dld  (%%,%dld rd + %%,%dld wr)", l1, l2, l3);
 
-   commify( D_total.m1, l1, buf1);
-   commify(Dr_total.m1, l2, buf2);
-   commify(Dw_total.m1, l3, buf3);
-   VG_(message)(Vg_UserMsg, "D1  misses:    %s  (%s rd + %s wr)",
-                buf1, buf2, buf3);
-
-   commify( D_total.m2, l1, buf1);
-   commify(Dr_total.m2, l2, buf2);
-   commify(Dw_total.m2, l3, buf3);
-   VG_(message)(Vg_UserMsg, "L2d misses:    %s  (%s rd + %s wr)",
-                buf1, buf2, buf3);
+   VG_(message)(Vg_UserMsg, fmt, "D   refs:     ", 
+                            D_total.a, Dr_total.a, Dw_total.a);
+   VG_(message)(Vg_UserMsg, fmt, "D1  misses:   ",
+                            D_total.m1, Dr_total.m1, Dw_total.m1);
+   VG_(message)(Vg_UserMsg, fmt, "L2d misses:   ",
+                            D_total.m2, Dr_total.m2, Dw_total.m2);
 
    p = 10;
    
@@ -1834,20 +1807,14 @@ void SK_(fini)(Int exitcode)
    L2_total   = Dr_total.m1 + Dw_total.m1 + Ir_total.m1;
    L2_total_r = Dr_total.m1 + Ir_total.m1;
    L2_total_w = Dw_total.m1;
-   commify(L2_total,   l1, buf1);
-   commify(L2_total_r, l2, buf2);
-   commify(L2_total_w, l3, buf3);
-   VG_(message)(Vg_UserMsg, "L2 refs:       %s  (%s rd + %s wr)",
-                buf1, buf2, buf3);
+   VG_(message)(Vg_UserMsg, fmt, "L2 refs:      ",
+                            L2_total, L2_total_r, L2_total_w);
 
    L2_total_m  = Dr_total.m2 + Dw_total.m2 + Ir_total.m2;
    L2_total_mr = Dr_total.m2 + Ir_total.m2;
    L2_total_mw = Dw_total.m2;
-   commify(L2_total_m,  l1, buf1);
-   commify(L2_total_mr, l2, buf2);
-   commify(L2_total_mw, l3, buf3);
-   VG_(message)(Vg_UserMsg, "L2 misses:     %s  (%s rd + %s wr)",
-                buf1, buf2, buf3);
+   VG_(message)(Vg_UserMsg, fmt, "L2 misses:    ",
+                            L2_total_m, L2_total_mr, L2_total_mw);
 
    percentify(L2_total_m  * 100 * p / (Ir_total.a + D_total.a),  p, l1+1, buf1);
    percentify(L2_total_mr * 100 * p / (Ir_total.a + Dr_total.a), p, l2+1, buf2);
@@ -2023,7 +1990,7 @@ void SK_(print_debug_usage)(void)
 void SK_(pre_clo_init)(void)
 {
    Char* base_dir = NULL;
-   
+
    VG_(details_name)            ("Cachegrind");
    VG_(details_version)         (NULL);
    VG_(details_description)     ("an I1/D1/L2 cache profiler");

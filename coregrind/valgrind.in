@@ -67,7 +67,7 @@ do
     --suppressions=*)       vgopts="$vgopts $arg"; shift;;
     --cachesim=yes)         vgopts="$vgopts $arg"; shift;;
     --cachesim=no)          vgopts="$vgopts $arg"; shift;;
-    --wierd-hacks=*)        vgopts="$vgopts $arg"; shift;;
+    --weird-hacks=*)        vgopts="$vgopts $arg"; shift;;
 #   options for debugging Valgrind
     --sanity-level=*)       vgopts="$vgopts $arg"; shift;;
     --single-step=yes)      vgopts="$vgopts $arg"; shift;;
@@ -133,7 +133,7 @@ if [ $# = 0 ] || [ z"$dousage" = z1 ]; then
    echo "    --check-addrVs=no|yes     experimental lighterweight checking? [yes]"
    echo "                              yes == Valgrind's original behaviour"
    echo "    --cachesim=no|yes         do cache profiling? [no]"
-   echo "    --wierd-hacks=hack1,hack2,...  [no hacks selected]"
+   echo "    --weird-hacks=hack1,hack2,...  [no hacks selected]"
    echo "         recognised hacks are: ioctl-VTIME"
    echo ""
    echo

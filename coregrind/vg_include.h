@@ -263,7 +263,7 @@ extern Int   VG_(clo_dump_error);
 /* Number of parents of a backtrace.  Default: 8.  */
 extern Int   VG_(clo_backtrace_size);
 /* Engage miscellaneous wierd hacks needed for some progs. */
-extern Char* VG_(clo_wierd_hacks);
+extern Char* VG_(clo_weird_hacks);
 
 
 /* ---------------------------------------------------------------------

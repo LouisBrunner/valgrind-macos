@@ -979,7 +979,7 @@ void poll_for_ready_fds ( void )
                writable, for some reason.  Ask me not why.  Since this
                is strange and potentially troublesome we only do it if
                the user asks specially. */
-            if (VG_(strstr)(VG_(clo_wierd_hacks), "ioctl-VTIME") != NULL)
+            if (VG_(strstr)(VG_(clo_weird_hacks), "ioctl-VTIME") != NULL)
                VKI_FD_SET(fd, &writefds);
             VKI_FD_SET(fd, &readfds); break;
          case __NR_write: 

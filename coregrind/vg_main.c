@@ -453,9 +453,9 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
    VG_(client_mapbase) = VG_(client_base) +
          PGROUNDDN((addr_t)(client_size * CLIENT_HEAP_PROPORTION));
 
-   shadow_size         = PGROUNDUP(client_size * ratio);
    VG_(shadow_base)    = VG_(client_end) + REDZONE_SIZE;
-   VG_(shadow_end)     = VG_(shadow_base) + shadow_size;
+   VG_(shadow_end)     = VG_(valgrind_base);
+   shadow_size         = VG_(shadow_end) - VG_(shadow_base);
 
 #define SEGSIZE(a,b) ((VG_(b) - VG_(a))/(1024*1024))
 
@@ -465,14 +465,14 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
          "client_mapbase     %8x (%dMB)\n"
          "client_end         %8x (%dMB)\n"
          "shadow_base        %8x (%dMB)\n"
-         "shadow_end         %8x (%dMB)\n"
+         "shadow_end         %8x\n"
          "valgrind_base      %8x (%dMB)\n"
          "valgrind_end       %8x\n",
          VG_(client_base),       SEGSIZE(client_base,       client_mapbase),
          VG_(client_mapbase),    SEGSIZE(client_mapbase,    client_end),
          VG_(client_end),        SEGSIZE(client_end,        shadow_base),
          VG_(shadow_base),       SEGSIZE(shadow_base,       shadow_end),
-         VG_(shadow_end),        SEGSIZE(shadow_end,        valgrind_base),
+         VG_(shadow_end),
          VG_(valgrind_base),     SEGSIZE(valgrind_base,     valgrind_end),
          VG_(valgrind_end)
       );
@@ -2716,7 +2716,6 @@ void VG_(sanity_check_general) ( Bool force_expensive )
 	         : shadow memory for tools :
 	         | (may be 0 sized)        |
   shadow_end     +-------------------------+
-                 : gap (may be 0 sized)    :
   valgrind_base  +-------------------------+
                  | kickstart executable    |
                  | valgrind heap  vvvvvvvvv| (barely used)

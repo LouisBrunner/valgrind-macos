@@ -88,7 +88,8 @@ typedef struct _LDT_ENTRY {
 
 // Architecture-specific part of a ThreadState
 // XXX: eventually this should be made abstract, ie. the fields not visible
-//      to the core...
+//      to the core...  then VgLdtEntry can be made non-visible to the core
+//      also.
 typedef struct {
    /* Pointer to this thread's Local (Segment) Descriptor Table.
       Starts out as NULL, indicating there is no table, and we hope to

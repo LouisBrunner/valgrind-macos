@@ -2023,34 +2023,35 @@ static void dumpInvalidated ( TmpInfo** env, IRBB* bb, /*INOUT*/Int* j )
 
 typedef
    struct {
-      enum { Ut, Btt, Btc, Cf64i, Ld } tag;
+      enum { Ut, Btt, Btc, Bct, Cf64i } tag;
       union {
          /* unop(tmp) */
          struct {
-            IROp op;
+            IROp   op;
             IRTemp arg;
          } Ut;
          /* binop(tmp,tmp) */
          struct {
-            IROp op;
+            IROp   op;
             IRTemp arg1;
             IRTemp arg2;
          } Btt;
          /* binop(tmp,const) */
          struct {
-            IROp op;
-            IRTemp arg1;
+            IROp    op;
+            IRTemp  arg1;
             IRConst con2;
          } Btc;
+         /* binop(const,tmp) */
+         struct {
+            IROp    op;
+            IRConst con1;
+            IRTemp  arg2;
+         } Bct;
          /* F64i-style const */
          struct {
             ULong f64i;
          } Cf64i;
-         /* LoadLE(tmp):ty */
-         struct {
-            IRTemp addr;
-            IRType ty;
-         } Ld;
       } u;
    }
    AvailExpr;
@@ -2060,17 +2061,23 @@ static Bool eq_AvailExpr ( AvailExpr* a1, AvailExpr* a2 )
    if (a1->tag != a2->tag)
       return False;
    switch (a1->tag) {
-      case Ut: return a1->u.Ut.op == a2->u.Ut.op 
-                      && a1->u.Ut.arg == a2->u.Ut.arg;
-      case Btt: return a1->u.Btt.op == a2->u.Btt.op
-                       && a1->u.Btt.arg1 == a2->u.Btt.arg1
-                       && a1->u.Btt.arg2 == a2->u.Btt.arg2;
-      case Btc: return a1->u.Btc.op == a2->u.Btc.op
-                       && a1->u.Btc.arg1 == a2->u.Btc.arg1
-                       && eqIRConst(&a1->u.Btc.con2, &a2->u.Btc.con2);
-      case Cf64i: return a1->u.Cf64i.f64i == a2->u.Cf64i.f64i;
-      case Ld: return a1->u.Ld.ty == a2->u.Ld.ty
-                      && a1->u.Ld.addr == a2->u.Ld.addr;
+      case Ut: 
+         return a1->u.Ut.op == a2->u.Ut.op 
+                && a1->u.Ut.arg == a2->u.Ut.arg;
+      case Btt: 
+         return a1->u.Btt.op == a2->u.Btt.op
+                && a1->u.Btt.arg1 == a2->u.Btt.arg1
+                && a1->u.Btt.arg2 == a2->u.Btt.arg2;
+      case Btc: 
+         return a1->u.Btc.op == a2->u.Btc.op
+                && a1->u.Btc.arg1 == a2->u.Btc.arg1
+                && eqIRConst(&a1->u.Btc.con2, &a2->u.Btc.con2);
+      case Bct: 
+         return a1->u.Bct.op == a2->u.Bct.op
+                && a1->u.Bct.arg2 == a2->u.Bct.arg2
+                && eqIRConst(&a1->u.Bct.con1, &a2->u.Bct.con1);
+      case Cf64i: 
+         return a1->u.Cf64i.f64i == a2->u.Cf64i.f64i;
       default: vpanic("eq_AvailExpr");
    }
 }
@@ -2090,10 +2097,13 @@ static IRExpr* availExpr_to_IRExpr ( AvailExpr* ae )
          *con = ae->u.Btc.con2;
          return IRExpr_Binop( ae->u.Btc.op,
                               IRExpr_Tmp(ae->u.Btc.arg1), IRExpr_Const(con) );
+      case Bct:
+         con = LibVEX_Alloc(sizeof(IRConst));
+         *con = ae->u.Bct.con1;
+         return IRExpr_Binop( ae->u.Bct.op,
+                              IRExpr_Const(con), IRExpr_Tmp(ae->u.Bct.arg2) );
       case Cf64i:
          return IRExpr_Const(IRConst_F64i(ae->u.Cf64i.f64i));
-      case Ld:
-         return IRExpr_LDle( ae->u.Ld.ty, IRExpr_Tmp(ae->u.Ld.addr) );
       default:
          vpanic("availExpr_to_IRExpr");
    }
@@ -2124,10 +2134,10 @@ static void subst_AvailExpr ( HashHW* env, AvailExpr* ae )
       case Btc:
          ae->u.Btc.arg1 = subst_AvailExpr_Temp( env, ae->u.Btc.arg1 );
          break;
-      case Cf64i:
+      case Bct:
+         ae->u.Bct.arg2 = subst_AvailExpr_Temp( env, ae->u.Bct.arg2 );
          break;
-      case Ld:
-         ae->u.Ld.addr = subst_AvailExpr_Temp( env, ae->u.Ld.addr );
+      case Cf64i:
          break;
       default: 
          vpanic("subst_AvailExpr");
@@ -2169,23 +2179,22 @@ static AvailExpr* irExpr_to_AvailExpr ( IRExpr* e )
       return ae;
    }
 
+   if (e->tag == Iex_Binop
+      && e->Iex.Binop.arg1->tag == Iex_Const
+      && e->Iex.Binop.arg2->tag == Iex_Tmp) {
+      ae = LibVEX_Alloc(sizeof(AvailExpr));
+      ae->tag        = Bct;
+      ae->u.Bct.op   = e->Iex.Binop.op;
+      ae->u.Bct.arg2 = e->Iex.Binop.arg2->Iex.Tmp.tmp;
+      ae->u.Bct.con1 = *(e->Iex.Binop.arg1->Iex.Const.con);
+      return ae;
+   }
+
    if (e->tag == Iex_Const
        && e->Iex.Const.con->tag == Ico_F64i) {
       ae = LibVEX_Alloc(sizeof(AvailExpr));
       ae->tag          = Cf64i;
       ae->u.Cf64i.f64i = e->Iex.Const.con->Ico.F64i;
-      return ae;
-   }
-
-   /* Not right ... need to invalidate Ld-cses at store points and
-      dirty helper calls. */
-   if (0 && 
-       e->tag == Iex_LDle
-       && e->Iex.LDle.addr->tag == Iex_Tmp) {
-      ae = LibVEX_Alloc(sizeof(AvailExpr));
-      ae->tag       = Ld;
-      ae->u.Ld.addr = e->Iex.LDle.addr->Iex.Tmp.tmp;
-      ae->u.Ld.ty   = e->Iex.LDle.ty;
       return ae;
    }
 

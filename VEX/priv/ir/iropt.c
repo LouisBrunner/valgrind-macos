@@ -2939,7 +2939,7 @@ static void deltaIRStmt ( IRStmt* st, Int delta )
          deltaIRExpr(d->guard, delta);
          for (i = 0; d->args[i]; i++)
             deltaIRExpr(d->args[i], delta);
-         if (d->tmp != INVALID_IRTEMP)
+         if (d->tmp != IRTemp_INVALID)
             d->tmp += delta;
          if (d->mAddr)
             deltaIRExpr(d->mAddr, delta);

@@ -155,7 +155,7 @@ typedef UInt IRTemp;
 
 extern void ppIRTemp ( IRTemp );
 
-#define INVALID_IRTEMP ((IRTemp)0xFFFFFFFF)
+#define IRTemp_INVALID ((IRTemp)0xFFFFFFFF)
 
 
 /* ------------------ Binary and unary ops ------------------ */
@@ -557,7 +557,7 @@ typedef
       IRCallee* cee;    /* where to call */
       IRExpr*   guard;  /* :: Ity_Bit.  Controls whether call happens */
       IRExpr**  args;   /* arg list, ends in NULL */
-      IRTemp    tmp;    /* to assign result to, or INVALID_IRTEMP if none */
+      IRTemp    tmp;    /* to assign result to, or IRTemp_INVALID if none */
 
       /* Mem effects; we allow only one R/W/M region to be stated */
       IREffect  mFx;    /* indicates memory effects, if any */

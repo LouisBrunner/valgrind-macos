@@ -2365,7 +2365,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
       doHelperCall( env, passBBP, d->guard, d->cee, d->args );
 
       /* Now figure out what to do with the returned value, if any. */
-      if (d->tmp == INVALID_IRTEMP)
+      if (d->tmp == IRTemp_INVALID)
          /* No return value.  Nothing to do. */
          return;
 

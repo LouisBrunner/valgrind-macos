@@ -102,7 +102,7 @@ typedef
 static IRTemp findShadowTmp ( MCEnv* mce, IRTemp orig )
 {
    sk_assert(orig < mce->n_originalTmps);
-   if (mce->tmpMap[orig] == INVALID_IRTEMP) {
+   if (mce->tmpMap[orig] == IRTemp_INVALID) {
       mce->tmpMap[orig] 
          = newIRTemp(mce->bb->tyenv, 
                      shadowType(mce->bb->tyenv->types[orig]));
@@ -1394,7 +1394,7 @@ void do_shadow_Dirty ( MCEnv* mce, IRDirty* d )
       results to all destinations. */
 
    /* Outputs: the destination temporary, if there is one. */
-   if (d->tmp != INVALID_IRTEMP) {
+   if (d->tmp != IRTemp_INVALID) {
       dst   = findShadowTmp(mce, d->tmp);
       tyDst = typeOfIRTemp(mce->bb->tyenv, d->tmp);
       assign( mce->bb, dst, mkPCastTo( mce, tyDst, curr) );
@@ -1535,7 +1535,7 @@ IRBB* SK_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
    mce.hWordTy        = hWordTy;
    mce.tmpMap         = LibVEX_Alloc(mce.n_originalTmps * sizeof(IRTemp));
    for (i = 0; i < mce.n_originalTmps; i++)
-      mce.tmpMap[i] = INVALID_IRTEMP;
+      mce.tmpMap[i] = IRTemp_INVALID;
 
    /* Iterate over the stmts. */
 

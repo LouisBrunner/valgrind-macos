@@ -94,8 +94,8 @@ void ppIRArray ( IRArray* arr )
 
 void ppIRTemp ( IRTemp tmp )
 {
-   if (tmp == INVALID_IRTEMP)
-      vex_printf("INVALID_IRTEMP");
+   if (tmp == IRTemp_INVALID)
+      vex_printf("IRTemp_INVALID");
    else
       vex_printf( "t%d", (Int)tmp);
 }
@@ -314,7 +314,7 @@ void ppIREffect ( IREffect fx )
 void ppIRDirty ( IRDirty* d )
 {
    Int i;
-   if (d->tmp != INVALID_IRTEMP) {
+   if (d->tmp != IRTemp_INVALID) {
       ppIRTemp(d->tmp);
       vex_printf(" = ");
    }
@@ -662,7 +662,7 @@ IRDirty* emptyIRDirty ( void ) {
    d->cee      = NULL;
    d->guard    = NULL;
    d->args     = NULL;
-   d->tmp      = INVALID_IRTEMP;
+   d->tmp      = IRTemp_INVALID;
    d->mFx      = Ifx_None;
    d->mAddr    = NULL;
    d->mSize    = 0;
@@ -1569,7 +1569,7 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          if (d->guard == NULL) goto bad_dirty;
          if (typeOfIRExpr(tyenv, d->guard) != Ity_Bit)
             sanityCheckFail(bb,stmt,"IRStmt.Dirty.guard not :: Ity_Bit");
-         if (d->tmp != INVALID_IRTEMP
+         if (d->tmp != IRTemp_INVALID
              && typeOfIRTemp(tyenv, d->tmp) == Ity_Bit)
             sanityCheckFail(bb,stmt,"IRStmt.Dirty.dst :: Ity_Bit");
          for (i = 0; d->args[i] != NULL; i++) {
@@ -1642,7 +1642,7 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
       }
       else 
       if (stmt->tag == Ist_Dirty 
-          && stmt->Ist.Dirty.details->tmp != INVALID_IRTEMP) {
+          && stmt->Ist.Dirty.details->tmp != IRTemp_INVALID) {
          IRDirty* d = stmt->Ist.Dirty.details;
          if (d->tmp < 0 || d->tmp >= n_temps)
             sanityCheckFail(bb, stmt, 

@@ -1852,7 +1852,7 @@ UInt dis_op2_E_G ( UChar       sorb,
    IRTemp  src  = newTemp(ty);
    IRTemp  dst0 = newTemp(ty);
    UChar   rm   = getUChar(delta0);
-   IRTemp  addr = INVALID_IRTEMP;
+   IRTemp  addr = IRTemp_INVALID;
 
    /* addSubCarry == True indicates the intended operation is
       add-with-carry or subtract-with-borrow. */
@@ -1961,7 +1961,7 @@ UInt dis_op2_G_E ( UChar       sorb,
    IRTemp  src  = newTemp(ty);
    IRTemp  dst0 = newTemp(ty);
    UChar   rm   = getIByte(delta0);
-   IRTemp  addr = INVALID_IRTEMP;
+   IRTemp  addr = IRTemp_INVALID;
 
    /* addSubCarry == True indicates the intended operation is
       add-with-carry or subtract-with-borrow. */
@@ -2294,7 +2294,7 @@ UInt dis_Grp1 ( UChar sorb,
    IRTemp  dst1 = newTemp(ty);
    IRTemp  src  = newTemp(ty);
    IRTemp  dst0 = newTemp(ty);
-   IRTemp  addr = INVALID_IRTEMP;
+   IRTemp  addr = IRTemp_INVALID;
    IROp    op8  = Iop_INVALID;
    UInt    mask = sz==1 ? 0xFF : (sz==2 ? 0xFFFF : 0xFFFFFFFF);
 
@@ -2378,7 +2378,7 @@ UInt dis_Grp2 ( UChar  sorb,
    IRType ty    = szToITy(sz);
    IRTemp dst0  = newTemp(ty);
    IRTemp dst1  = newTemp(ty);
-   IRTemp addr  = INVALID_IRTEMP;
+   IRTemp addr  = IRTemp_INVALID;
 
    vassert(sz == 1 || sz == 2 || sz == 4);
 
@@ -2773,7 +2773,7 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
    IRTemp  addr;
    IRType  ty = szToITy(sz);
    IRTemp  t1 = newTemp(ty);
-   //   IRTemp  t2 = INVALID_IRTEMP;
+   //   IRTemp  t2 = IRTemp_INVALID;
    IRTemp dst1, src, dst0;
    modrm = getIByte(delta);
    if (epartIsReg(modrm)) {
@@ -2958,10 +2958,10 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, DisResult* whatNext )
    Int     len;
    UChar   modrm;
    UChar   dis_buf[50];
-   IRTemp  addr = INVALID_IRTEMP;
+   IRTemp  addr = IRTemp_INVALID;
    IRType  ty = szToITy(sz);
    IRTemp  t1 = newTemp(ty);
-   IRTemp  t2 = INVALID_IRTEMP;
+   IRTemp  t2 = IRTemp_INVALID;
 
    modrm = getIByte(delta);
    if (epartIsReg(modrm)) {
@@ -4877,11 +4877,11 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
    IRType ty       = szToITy(sz);
    IRTemp gsrc     = newTemp(ty);
    IRTemp esrc     = newTemp(ty);
-   IRTemp addr     = INVALID_IRTEMP;
+   IRTemp addr     = IRTemp_INVALID;
    IRTemp tmpSH    = newTemp(Ity_I8);
-   IRTemp tmpL     = INVALID_IRTEMP;
-   IRTemp tmpRes   = INVALID_IRTEMP;
-   IRTemp tmpSubSh = INVALID_IRTEMP;
+   IRTemp tmpL     = IRTemp_INVALID;
+   IRTemp tmpRes   = IRTemp_INVALID;
+   IRTemp tmpSubSh = IRTemp_INVALID;
    IROp   mkpair;
    IROp   getres;
    IROp   shift;
@@ -5007,7 +5007,7 @@ UInt dis_bt_G_E ( UChar sorb, Int sz, UInt delta, BtOp op )
    vassert(sz == 2 || sz == 4);
 
    t_fetched = t_bitno0 = t_bitno1 = t_bitno2 
-             = t_addr0 = t_addr1 = t_esp = t_mask = INVALID_IRTEMP;
+             = t_addr0 = t_addr1 = t_esp = t_mask = IRTemp_INVALID;
 
    t_fetched = newTemp(Ity_I8);
    t_bitno0  = newTemp(Ity_I32);
@@ -5304,7 +5304,7 @@ UInt dis_cmpxchg_G_E ( UChar       sorb,
    IRTemp dest2 = newTemp(ty);
    IRTemp acc2  = newTemp(ty);
    IRTemp cond8 = newTemp(Ity_I8);
-   IRTemp addr  = INVALID_IRTEMP;
+   IRTemp addr  = IRTemp_INVALID;
    UChar  rm    = getUChar(delta0);
 
    if (epartIsReg(rm)) {
@@ -6245,8 +6245,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       assert. */
    *size = 0;
 
-   addr = t1 = t2 = INVALID_IRTEMP; 
-   //t3 = t4 = INVALID_IRTEMP;
+   addr = t1 = t2 = IRTemp_INVALID; 
+   //t3 = t4 = IRTemp_INVALID;
 
    DIP("\t0x%x:  ", guest_eip_bbstart+delta);
 

@@ -1391,7 +1391,7 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
    bb->next     = dopyIRExpr(bb_in->next);
    bb->jumpkind = bb_in->jumpkind;
 
-   IRTemp curr  = INVALID_IRTEMP;
+   IRTemp curr  = IRTemp_INVALID;
    Long   delta = 0;
 
    Int    sizeof_SP = layout->sizeof_SP;

@@ -1488,23 +1488,28 @@ extern UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 // Architecture-specific things defined in eg. x86/*.c
 // ---------------------------------------------------------------------
 
-/* For setting up the baseBlock */    
+// For setting up the baseBlock
 extern void VGA_(init_low_baseBlock)  ( Addr client_eip, Addr esp_at_startup );
 extern void VGA_(init_high_baseBlock) ( Addr client_eip, Addr esp_at_startup );
 
+// Register state moving
 extern void VGA_(load_state) ( arch_thread_t*, ThreadId tid );
 extern void VGA_(save_state) ( arch_thread_t*, ThreadId tid );
 
+// Thread stuff
 extern void VGA_(clear_thread)   ( arch_thread_t* );
 extern void VGA_(init_thread)    ( arch_thread_t* );
 extern void VGA_(cleanup_thread) ( arch_thread_t* );
 extern void VGA_(setup_child)    ( arch_thread_t*, arch_thread_t* );
 
+// Symtab stuff
 extern UInt* VGA_(reg_addr_from_BB)  ( Int reg );
 extern UInt* VGA_(reg_addr_from_tst) ( Int reg, arch_thread_t* );
 
+// Pointercheck
 extern Bool VGA_(setup_pointercheck) ( void );
 
+// For attaching the debugger
 extern Int  VGA_(ptrace_setregs_from_BB)  ( Int pid );
 extern Int  VGA_(ptrace_setregs_from_tst) ( Int pid, arch_thread_t* arch );
 

@@ -10,9 +10,9 @@ noinst_HEADERS = \
 
 noinst_LIBRARIES = libarch.a
 
-EXTRA_DIST =		\
-	ume_entry.S	\
-	ume_go.c
+EXTRA_DIST = \
+	jmp_with_stack.c \
+	ume_entry.S
 
 BUILT_SOURCES = stage2.lds
 CLEANFILES = stage2.lds

@@ -42,9 +42,7 @@
 #include <unistd.h>
 
 #include "core.h"
-
 #include "ume.h"
-#include "ume_arch.h"
 
 static int stack[SIGSTKSZ*4];
 
@@ -293,7 +291,7 @@ static void hoops(void)
       foreach_map(prmap, /*dummy*/NULL);
    }
 
-   ume_go(info.init_eip, (addr_t)esp);   
+   jmp_with_stack(info.init_eip, (addr_t)esp);   
 }
 
 int main(void)
@@ -313,7 +311,7 @@ int main(void)
    setrlimit(RLIMIT_AS, &rlim);
 
    /* move onto another stack so we can play with the main one */
-   ume_go((addr_t)hoops, (addr_t)stack + sizeof(stack));
+   jmp_with_stack((addr_t)hoops, (addr_t)stack + sizeof(stack));
 }
 
 /*--------------------------------------------------------------------*/

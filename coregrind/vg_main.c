@@ -32,7 +32,6 @@
 
 #include "core.h"
 #include "ume.h"
-#include "ume_arch.h"
 
 #include <dirent.h>
 #include <dlfcn.h>

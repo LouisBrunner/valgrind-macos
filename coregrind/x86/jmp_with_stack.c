@@ -24,14 +24,14 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
-#include "ume_arch.h"
+#include "ume.h"
 
 /* 
-   Jump to a particular EIP with a particular ESP.  This is intended
+   Jump to a particular IP with a particular SP.  This is intended
    to simulate the initial CPU state when the kernel starts an program
    after exec; it therefore also clears all the other registers.
  */
-void ume_go(addr_t eip, addr_t esp)
+void jmp_with_stack(addr_t eip, addr_t esp)
 {
    asm volatile ("movl %1, %%esp;"	/* set esp */
 		 "pushl %%eax;"		/* push esp */

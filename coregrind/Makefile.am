@@ -29,10 +29,11 @@ BUILT_SOURCES = vg_toolint.c vg_toolint.h
 CLEANFILES = vg_toolint.c vg_toolint.h vg_replace_malloc.c vg_intercept.c
 
 valgrind_SOURCES = \
-	stage1.c \
 	ume.c \
-	x86/ume_entry.S \
-	x86/ume_go.c 
+	${VG_ARCH}/ume_entry.S \
+	\
+	stage1.c \
+	${VG_ARCH}/jmp_with_stack.c 
 valgrind_DEPENDENCIES =
 valgrind_LDFLAGS=-static -g -Wl,-e,_ume_entry
 valgrind_LDADD=
@@ -45,7 +46,7 @@ KICKSTART_BASE=0xb0000000
 
 stage2_SOURCES = \
 	ume.c \
-	x86/ume_entry.S \
+	${VG_ARCH}/ume_entry.S \
 	\
 	vg_scheduler.c \
 	vg_default.c \
@@ -141,7 +142,6 @@ noinst_HEADERS = \
 	core.h			\
 	core_asm.h		\
 	ume.h			\
-	ume_arch.h		\
 	vg_symtab2.h		\
 	vg_symtypes.h		\
 	vg_toolint.h		\

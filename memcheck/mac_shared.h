@@ -327,7 +327,7 @@ extern void MAC_(record_freemismatch_error)( ThreadId tid, Addr a );
 extern void MAC_(record_overlap_error)     ( Char* function, OverlapExtra* oe );
 extern void MAC_(record_illegal_mempool_error) ( ThreadId tid, Addr pool );
 
-extern void MAC_(pp_shared_SkinError)      ( Error* err);
+extern void MAC_(pp_shared_Error)          ( Error* err);
 
 extern MAC_Chunk* MAC_(first_matching_freed_MAC_Chunk)( Bool (*p)(MAC_Chunk*, void*), void* d );
 

@@ -137,7 +137,7 @@ static Bool eq_AddrInfo ( VgRes res, AddrInfo* ai1, AddrInfo* ai2 )
    are otherwise the same, the faulting addrs and associated rwoffsets
    are allowed to be different.  */
 
-Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
+Bool SK_(eq_Error) ( VgRes res, Error* e1, Error* e2 )
 {
    MAC_Error* e1_extra = VG_(get_error_extra)(e1);
    MAC_Error* e2_extra = VG_(get_error_extra)(e2);
@@ -193,7 +193,7 @@ Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
          return True;
 
       case LeakErr:
-         VG_(skin_panic)("Shouldn't get LeakErr in SK_(eq_SkinError),\n"
+         VG_(skin_panic)("Shouldn't get LeakErr in SK_(eq_Error),\n"
                          "since it's handled with VG_(unique_error)()!");
 
       case IllegalMempoolErr:
@@ -202,7 +202,7 @@ Bool SK_(eq_SkinError) ( VgRes res, Error* e1, Error* e2 )
       default: 
          VG_(printf)("Error:\n  unknown error code %d\n",
                      VG_(get_error_kind)(e1));
-         VG_(skin_panic)("unknown error code in SK_(eq_SkinError)");
+         VG_(skin_panic)("unknown error code in SK_(eq_Error)");
    }
 }
 
@@ -266,7 +266,7 @@ void MAC_(pp_AddrInfo) ( Addr a, AddrInfo* ai )
 
 /* This prints out the message for the error types where Memcheck and
    Addrcheck have identical messages */
-void MAC_(pp_shared_SkinError) ( Error* err )
+void MAC_(pp_shared_Error) ( Error* err )
 {
    MAC_Error* err_extra = VG_(get_error_extra)(err);
 
@@ -297,7 +297,7 @@ void MAC_(pp_shared_SkinError) ( Error* err )
                                         "stated on the next line");
                break;
             default: 
-               VG_(skin_panic)("SK_(pp_shared_SkinError)(axskind)");
+               VG_(skin_panic)("SK_(pp_shared_Error)(axskind)");
          }
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
          MAC_(pp_AddrInfo)(VG_(get_error_address)(err), &err_extra->addrinfo);
@@ -336,7 +336,7 @@ void MAC_(pp_shared_SkinError) ( Error* err )
       default: 
          VG_(printf)("Error:\n  unknown Memcheck/Addrcheck error code %d\n",
                      VG_(get_error_kind)(err));
-         VG_(skin_panic)("unknown error code in MAC_(pp_shared_SkinError)");
+         VG_(skin_panic)("unknown error code in MAC_(pp_shared_Error)");
    }
 }
 

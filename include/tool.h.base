@@ -1465,7 +1465,7 @@ typedef
    struct _Error
    Error;
 
-/* Useful in SK_(error_matches_suppression)(), SK_(pp_SkinError)(), etc */
+/* Useful in SK_(error_matches_suppression)(), SK_(pp_Error)(), etc */
 ExeContext* VG_(get_error_where)   ( Error* err );
 SuppKind    VG_(get_error_kind)    ( Error* err );
 Addr        VG_(get_error_address) ( Error* err );

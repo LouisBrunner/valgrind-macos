@@ -46,14 +46,14 @@ void,	fini,	Int exitcode
 ## passed to VG_(eq_ExeContext)() if the ExeContexts are considered.  Other
 ## than that, probably don't worry about it unless you have lots of very
 ## similar errors occurring.
-Bool,	eq_SkinError,	VgRes res, Error* e1, Error* e2
+Bool,	eq_Error,	VgRes res, Error* e1, Error* e2
 
 ## Print error context.
-void,	pp_SkinError,	Error* err
+void,	pp_Error,	Error* err
 
 ## Should fill in any details that could be postponed until after the
 ## decision whether to ignore the error (ie. details not affecting the
-## result of SK_(eq_SkinError)()).  This saves time when errors are ignored.
+## result of SK_(eq_Error)()).  This saves time when errors are ignored.
 ## Yuk.
 
 ## Return value: must be the size of the `extra' part in bytes -- used by

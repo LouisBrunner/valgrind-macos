@@ -214,7 +214,7 @@ static Bool eq_Error ( VgRes res, Error* e1, Error* e2 )
          return False;
       default: 
          if (VG_(needs).tool_errors)
-            return SK_(eq_SkinError)(res, e1, e2);
+            return SK_(eq_Error)(res, e1, e2);
          else {
             VG_(printf)("\nUnhandled error type: %u. VG_(needs).tool_errors\n"
                         "probably needs to be set.\n",
@@ -239,7 +239,7 @@ static void pp_Error ( Error* err, Bool printCount )
          break;
       default: 
          if (VG_(needs).tool_errors)
-            SK_(pp_SkinError)( err );
+            SK_(pp_Error)( err );
          else {
             VG_(printf)("\nUnhandled error type: %u.  VG_(needs).tool_errors\n"
                         "probably needs to be set?\n",

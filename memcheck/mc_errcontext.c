@@ -35,7 +35,7 @@
 /*--- Printing errors                                      ---*/
 /*------------------------------------------------------------*/
 
-void SK_(pp_SkinError) ( Error* err )
+void SK_(pp_Error) ( Error* err )
 {
    MAC_Error* err_extra = VG_(get_error_extra)(err);
 
@@ -85,7 +85,7 @@ void SK_(pp_SkinError) ( Error* err )
          break;
       }
       default: 
-         MAC_(pp_shared_SkinError)(err);
+         MAC_(pp_shared_Error)(err);
          break;
    }
 }

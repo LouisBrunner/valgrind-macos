@@ -2536,7 +2536,7 @@ static void record_lockgraph_error(ThreadId tid, Mutex *mutex,
    VG_(maybe_record_error)(tid, LockGraphErr, mutex->mutexp, "", &err_extra);
 }
 
-Bool SK_(eq_SkinError) ( VgRes not_used, Error* e1, Error* e2 )
+Bool SK_(eq_Error) ( VgRes not_used, Error* e1, Error* e2 )
 {
    Char *e1s, *e2s;
 
@@ -2645,7 +2645,7 @@ static Char *lockset_str(const Char *prefix, const LockSet *lockset)
    return buf;
 }
 
-void SK_(pp_SkinError) ( Error* err )
+void SK_(pp_Error) ( Error* err )
 {
    HelgrindError *extra = (HelgrindError *)VG_(get_error_extra)(err);
    Char buf[100];

@@ -105,7 +105,7 @@ Int VGOFF_(helper_undefined_instruction) = INVALID_OFFSET;
 /* MAX_NONCOMPACT_HELPERS can be increased easily.  If MAX_COMPACT_HELPERS is
  * increased too much, they won't really be compact any more... */
 #define  MAX_COMPACT_HELPERS     8
-#define  MAX_NONCOMPACT_HELPERS  24 
+#define  MAX_NONCOMPACT_HELPERS  50 
 
 UInt VG_(n_compact_helpers)    = 0;
 UInt VG_(n_noncompact_helpers) = 0;

@@ -569,7 +569,7 @@ sub print_events ($)
         my $event_width = length($event);
         my $col_width   = $CC_col_widths->[$i];
         my $space       = ' ' x ($col_width - $event_width);
-        print("$event$space ");
+        print("$space$event ");
     }
 }
 

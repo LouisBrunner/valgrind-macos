@@ -2546,17 +2546,18 @@ POSTx(sys_getrlimit)
    common_post_getrlimit(arg1, arg2);
 }
 
-PRE(getrusage)
+PREx(sys_getrusage, 0)
 {
    /* int getrusage (int who, struct rusage *usage); */
-   PRINT("getrusage ( %d, %p )", arg1,arg2);
+   PRINT("sys_getrusage ( %d, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "getrusage", int, who, struct rusage *, usage);
    PRE_MEM_WRITE( "getrusage(usage)", arg2, sizeof(struct vki_rusage) );
 }
 
-POST(getrusage)
+POSTx(sys_getrusage)
 {
    if (res == 0)
-      VG_TRACK( post_mem_write,arg2, sizeof(struct vki_rusage) );
+      VG_TRACK( post_mem_write, arg2, sizeof(struct vki_rusage) );
 }
 
 PREx(sys_gettimeofday, 0)
@@ -4545,26 +4546,6 @@ POST(nanosleep)
       POST_MEM_WRITE( arg2, sizeof(struct vki_timespec) );
 }
 
-PRE(_newselect)
-{
-   /* int select(int n,  
-		 fd_set *readfds, fd_set *writefds, fd_set *exceptfds, 
-		 struct timeval *timeout);
-   */
-   PRINT("newselect ( %d, %p, %p, %p, %p )", arg1,arg2,arg3,arg4,arg5);
-   if (arg2 != 0)
-      PRE_MEM_READ( "newselect(readfds)",   
-		     arg2, arg1/8 /* __FD_SETSIZE/8 */ );
-   if (arg3 != 0)
-      PRE_MEM_READ( "newselect(writefds)",  
-		     arg3, arg1/8 /* __FD_SETSIZE/8 */ );
-   if (arg4 != 0)
-      PRE_MEM_READ( "newselect(exceptfds)", 
-		     arg4, arg1/8 /* __FD_SETSIZE/8 */ );
-   if (arg5 != 0)
-      PRE_MEM_READ( "newselect(timeout)", arg5, sizeof(struct vki_timeval) );
-}
-
 PREx(sys_open, MayBlock)
 {
    if (arg2 & VKI_O_CREAT) {
@@ -4838,16 +4819,16 @@ PRE(sched_yield)
    PRINT("sched_yield ()" );
 }
 
-PRE(select)
+PREx(old_select, MayBlock)
 {
    /* struct sel_arg_struct {
       unsigned long n;
       fd_set *inp, *outp, *exp;
       struct timeval *tvp;
       };
-      int old_select(struct sel_arg_struct *arg);
    */
-   PRE_MEM_READ( "select(args)", arg1, 5*sizeof(UInt) );
+   PRE_REG_READ1(long, "old_select", struct sel_arg_struct *, args);
+   PRE_MEM_READ( "old_select(args)", arg1, 5*sizeof(UInt) );
 
    {
       UInt* arg_struct = (UInt*)arg1;
@@ -4859,16 +4840,36 @@ PRE(select)
       a4 = arg_struct[3];
       a5 = arg_struct[4];
 
-      PRINT("select ( %d, %p, %p, %p, %p )", a1,a2,a3,a4,a5);
+      PRINT("old_select ( %d, %p, %p, %p, %p )", a1,a2,a3,a4,a5);
       if (a2 != (Addr)NULL)
-	 PRE_MEM_READ( "select(readfds)",   a2, a1/8 /* __FD_SETSIZE/8 */ );
+	 PRE_MEM_READ( "old_select(readfds)",   a2, a1/8 /* __FD_SETSIZE/8 */ );
       if (a3 != (Addr)NULL)
-	 PRE_MEM_READ( "select(writefds)",  a3, a1/8 /* __FD_SETSIZE/8 */ );
+	 PRE_MEM_READ( "old_select(writefds)",  a3, a1/8 /* __FD_SETSIZE/8 */ );
       if (a4 != (Addr)NULL)
-	 PRE_MEM_READ( "select(exceptfds)", a4, a1/8 /* __FD_SETSIZE/8 */ );
+	 PRE_MEM_READ( "old_select(exceptfds)", a4, a1/8 /* __FD_SETSIZE/8 */ );
       if (a5 != (Addr)NULL)
-	 PRE_MEM_READ( "select(timeout)", a5, sizeof(struct vki_timeval) );
+	 PRE_MEM_READ( "old_select(timeout)", a5, sizeof(struct vki_timeval) );
    }
+}
+
+PREx(sys_select, MayBlock)
+{
+   PRINT("sys_select ( %d, %p, %p, %p, %p )", arg1,arg2,arg3,arg4,arg5);
+   PRE_REG_READ5(long, "select",
+                 int, n, vki_fd_set *, readfds, vki_fd_set *, writefds,
+                 vki_fd_set *, exceptfds, struct timeval *, timeout);
+   // XXX: this possibly understates how much memory is read.
+   if (arg2 != 0)
+      PRE_MEM_READ( "select(readfds)",   
+		     arg2, arg1/8 /* __FD_SETSIZE/8 */ );
+   if (arg3 != 0)
+      PRE_MEM_READ( "select(writefds)",  
+		     arg3, arg1/8 /* __FD_SETSIZE/8 */ );
+   if (arg4 != 0)
+      PRE_MEM_READ( "select(exceptfds)", 
+		     arg4, arg1/8 /* __FD_SETSIZE/8 */ );
+   if (arg5 != 0)
+      PRE_MEM_READ( "select(timeout)", arg5, sizeof(struct vki_timeval) );
 }
 
 PRE(setitimer)
@@ -6352,15 +6353,15 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_sigpending,       sys_sigpending),   // 73 * P
    //   (__NR_sethostname,      sys_sethostname),  // 74 * (almost P)
 
-   SYSX_(__NR_setrlimit,        sys_setrlimit),       // 75 * (SVr4,BSD4.3)
-   SYSXY(__NR_getrlimit,        sys_old_getrlimit),   // 76 * (SVr4,BSD4.3)
-   SYSBA(__NR_getrusage,        sys_getrusage, 0),    // 77 *
-   SYSXY(__NR_gettimeofday,     sys_gettimeofday),    // 78 * P
-   SYSX_(__NR_settimeofday,     sys_settimeofday),    // 79 * almost-P
+   SYSX_(__NR_setrlimit,        sys_setrlimit),    // 75 * (SVr4,BSD4.3)
+   SYSXY(__NR_getrlimit,        sys_old_getrlimit),// 76 * (SVr4,BSD4.3)
+   SYSXY(__NR_getrusage,        sys_getrusage),    // 77 * (SVr4,BSD4.3)
+   SYSXY(__NR_gettimeofday,     sys_gettimeofday), // 78 * P
+   SYSX_(__NR_settimeofday,     sys_settimeofday), // 79 * almost-P
 
-   SYSXY(__NR_getgroups,        sys_getgroups16),     // 80 ## P
-   SYSX_(__NR_setgroups,        sys_setgroups16),     // 81 ## almost-P
-   SYSB_(__NR_select,           old_select, MayBlock), // 82 old_select
+   SYSXY(__NR_getgroups,        sys_getgroups16),  // 80 ## P
+   SYSX_(__NR_setgroups,        sys_setgroups16),  // 81 ## almost-P
+   SYSX_(__NR_select,           old_select),       // 82 (x86) (4.4BSD)
    SYSB_(__NR_symlink,          sys_symlink, MayBlock), // 83 *
    //   (__NR_oldlstat,         sys_lstat),        // 84 * L -- obsolete
 
@@ -6434,7 +6435,7 @@ static const struct sys_info sys_info[] = {
 
    SYSBA(__NR__llseek,          sys_llseek, 0),    // 140 *
    SYSBA(__NR_getdents,         sys_getdents, MayBlock), // 141 *
-   SYSB_(__NR__newselect,       sys_select, MayBlock), // 142 *
+   SYSX_(__NR__newselect,       sys_select),       // 142 * (4.4BSD...)
    SYSB_(__NR_flock,            sys_flock, MayBlock), // 143 *
    SYSB_(__NR_msync,            sys_msync, MayBlock),   // 144 *
 

@@ -311,8 +311,8 @@ int main(void)
    SY(__NR_getrlimit, x0, x0);
 
    // __NR_getrusage 77
- //GO(__NR_getrusage, ".s .m");
- //SY(__NR_getrusage);
+   GO(__NR_getrusage, "2s 1m");
+   SY(__NR_getrusage, x0, x0);
 
    // __NR_gettimeofday 78 --> sys_gettimeofday()
    GO(__NR_gettimeofday, "2s 2m");
@@ -330,9 +330,12 @@ int main(void)
    GO(__NR_setgroups, "2s 1m");
    SY(__NR_setgroups, x0+1, x0+1);
 
-   // __NR_select 82
- //GO(__NR_select, ".s .m");
- //SY(__NR_select);
+   // __NR_select 82 --> old_select()
+   {
+      long args[5] = { x0+8, x0+0xffffffee, x0+1, x0+1, x0+1 };
+      GO(__NR_select, "1s 4m");
+      SY(__NR_select, args+x0);
+   }
 
    // __NR_symlink 83
  //GO(__NR_symlink, ".s .m");
@@ -564,9 +567,9 @@ int main(void)
  //GO(__NR_getdents, ".s .m");
  //SY(__NR_getdents);
 
-   // __NR__newselect 142
- //GO(__NR__newselect, ".s .m");
- //SY(__NR__newselect);
+   // __NR__newselect 142 --> sys_select()
+   GO(__NR__newselect, "5s 4m");
+   SY(__NR__newselect, x0+8, x0+0xffffffff, x0+1, x0+1, x0+1);
 
    // __NR_flock 143
  //GO(__NR_flock, ".s .m");

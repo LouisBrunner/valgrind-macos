@@ -80,12 +80,32 @@
 // From linux-2.6.8.1/include/linux/posix_types.h
 //----------------------------------------------------------------------
 
+#undef __VKI_NFDBITS
+#define __VKI_NFDBITS	(8 * sizeof(unsigned long))
+
+#undef __VKI_FD_SETSIZE
+#define __VKI_FD_SETSIZE	1024
+
+#undef __VKI_FDSET_LONGS
+#define __VKI_FDSET_LONGS	(__VKI_FD_SETSIZE/__VKI_NFDBITS)
+
+#undef __VKI_FDELT
+#define	__VKI_FDELT(d)	((d) / __VKI_NFDBITS)
+
+#undef __VKI_FDMASK
+#define	__VKI_FDMASK(d)	(1UL << ((d) % __VKI_NFDBITS))
+
+typedef struct {
+	unsigned long fds_bits [__VKI_FDSET_LONGS];
+} __vki_kernel_fd_set;
+
 typedef int __vki_kernel_key_t;
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/types.h
 //----------------------------------------------------------------------
 
+typedef __vki_kernel_fd_set	vki_fd_set;
 typedef __vki_kernel_mode_t	vki_mode_t;
 typedef __vki_kernel_off_t	vki_off_t;
 typedef __vki_kernel_pid_t	vki_pid_t;

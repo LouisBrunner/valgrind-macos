@@ -1239,6 +1239,9 @@ extern void VG_(start_debugger) ( Int tid );
 /* Counts downwards in vg_run_innerloop. */
 extern UInt VG_(dispatch_ctr);
 
+// Instruction pointer guest state offset, used by $VG_ARCH/dispatch.S.
+extern UInt VG_(instr_ptr_offset);
+
 /* --- Counters, for informational purposes only. --- */
 
 // These counters must be declared here because they're maintained by
@@ -1753,7 +1756,7 @@ extern void VG_(missing_tool_func) ( const Char* fn );
 #define PTHREQ_RET(regs)   ((regs).vex.ARCH_PTHREQ_RET)
 #define CLREQ_RET(regs)    ((regs).vex.ARCH_CLREQ_RET)
 
-// Offsets for the shadow state
+// Offsets for the Vex state
 #define O_STACK_PTR        (offsetof(VexGuestArchState, ARCH_STACK_PTR))
 #define O_FRAME_PTR        (offsetof(VexGuestArchState, ARCH_FRAME_PTR))
 

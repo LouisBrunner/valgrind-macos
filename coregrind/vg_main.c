@@ -142,6 +142,9 @@ Int    VG_(client_argc);
 Char** VG_(client_argv);
 Char** VG_(client_envp);
 
+// Instruction pointer guest state offset, used by $VG_ARCH/dispatch.S.
+UInt VG_(instr_ptr_offset);
+
 /* ---------------------------------------------------------------------
    Running stuff                            
    ------------------------------------------------------------------ */
@@ -2617,6 +2620,7 @@ int main(int argc, char **argv)
    //      setup_scheduler()      [for the rest of state 1 stuff]
    //--------------------------------------------------------------
    VGA_(init_thread1state)(client_eip, sp_at_startup, &VG_(threads)[1].arch );
+   VG_(instr_ptr_offset) = offsetof(VexGuestArchState, ARCH_INSTR_PTR);
 
    //--------------------------------------------------------------
    // Set up the ProxyLWP machinery

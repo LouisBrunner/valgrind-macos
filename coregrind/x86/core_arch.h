@@ -69,7 +69,7 @@
 } while (0)
 
 // So the dispatch loop can find %EIP
-extern Int VGOFF_(m_eip);
+extern Int vgoff_m_eip;
 
 
 /* ---------------------------------------------------------------------

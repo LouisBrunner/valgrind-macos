@@ -38,9 +38,6 @@
 /*--- Initialising the first thread                        ---*/
 /*------------------------------------------------------------*/
 
-Int VGOFF_(m_eip) = INVALID_OFFSET;
-
-
 /* Given a pointer to the ThreadArchState for thread 1 (the root
    thread), initialise the VEX guest state, and copy in essential
    starting values.
@@ -51,49 +48,7 @@ void VGA_(init_thread1state) ( Addr client_eip,
 {
    I_die_here;
 #if 0
-   vg_assert(0 == sizeof(VexGuestX86State) % 8);
-
-   /* Zero out the initial state, and set up the simulated FPU in a
-      sane way. */
-   LibVEX_GuestX86_initialise(&arch->vex);
-
-   /* Zero out the shadow area. */
-   VG_(memset)(&arch->vex_shadow, 0, sizeof(VexGuestX86State));
-
-   /* Put essential stuff into the new state. */
-   /* initialise %cs, %ds and %ss to point at the operating systems
-      default code, data and stack segments */
-   arch->vex.guest_ESP = esp_at_startup;
-   arch->vex.guest_EIP = client_eip;
-
-   asm volatile("movw %%cs, %0"
-                :
-                : "m" (arch->vex.guest_CS));
-   asm volatile("movw %%ds, %0"
-                :
-                : "m" (arch->vex.guest_DS));
-   asm volatile("movw %%ss, %0"
-                :
-                : "m" (arch->vex.guest_SS));
-
-   /* The dispatch loop needs to be able to find %EIP given a pointer
-      to the start of the .vex field. */
-   VGOFF_(m_eip) = offsetof(VexGuestX86State,guest_EIP)/4;
-
-   VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
-             sizeof(VexGuestArchState));
-
-   /* I assume that if we have SSE2 we also have SSE */
-   VG_(have_ssestate) = False;
-   //      VG_(cpu_has_feature)(VG_X86_FEAT_FXSR) &&
-   //   VG_(cpu_has_feature)(VG_X86_FEAT_SSE);
-
-   if (0) {
-      if (VG_(have_ssestate))
-         VG_(printf)("Looks like a SSE-capable CPU\n");
-      else
-         VG_(printf)("Looks like a MMX-only CPU\n");
-   }
+   // When implementing this, look at x86/state.c
 #endif
 }
 
@@ -108,14 +63,6 @@ void VGA_(clear_thread)( ThreadArchState *arch )
 #if 0
    arch->ldt = NULL;
    VG_(clear_TLS_for_thread)(arch->tls);
-#endif
-}  
-
-void VGA_(init_thread)( ThreadArchState *arch )
-{
-   I_die_here;
-#if 0
-   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt)arch->tls;
 #endif
 }  
 
@@ -136,19 +83,7 @@ void VGA_(setup_child) ( ThreadArchState *regs, ThreadArchState *parent_regs )
 {  
    I_die_here;
 #if 0
-   /* We inherit our parent's LDT. */
-   if (parent_regs->ldt == NULL) {
-      /* We hope this is the common case. */
-      VG_(baseBlock)[VGOFF_(ldt)] = 0;
-   } else {
-      /* No luck .. we have to take a copy of the parent's. */
-      regs->ldt = VG_(allocate_LDT_for_thread)( parent_regs->ldt );
-      VG_(baseBlock)[VGOFF_(ldt)] = (UInt) regs->ldt;
-   }
-
-   /* Initialise the thread's TLS array */
-   VG_(clear_TLS_for_thread)( regs->tls );
-   VG_(baseBlock)[VGOFF_(tls_ptr)] = (UInt) regs->tls;
+   // XXX: look at x86/state.c
 #endif
 }  
 

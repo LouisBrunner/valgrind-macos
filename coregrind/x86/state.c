@@ -38,9 +38,6 @@
 /*--- Initialising the first thread                        ---*/
 /*------------------------------------------------------------*/
 
-Int VGOFF_(m_eip) = INVALID_OFFSET;
-
-
 /* Given a pointer to the ThreadArchState for thread 1 (the root
    thread), initialise the VEX guest state, and copy in essential
    starting values.
@@ -73,10 +70,6 @@ void VGA_(init_thread1state) ( Addr client_eip,
    asm volatile("movw %%ss, %0"
                 :
                 : "m" (arch->vex.guest_SS));
-
-   /* The dispatch loop needs to be able to find %EIP given a pointer
-      to the start of the .vex field. */
-   VGOFF_(m_eip) = offsetof(VexGuestX86State,guest_EIP)/4;
 
    VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
              sizeof(VexGuestArchState));
@@ -253,3 +246,4 @@ Int VGA_(ptrace_setregs_from_tst)(Int pid, ThreadArchState* arch)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+

@@ -42,7 +42,6 @@
    name can safely be used across different macros. */
 #define VG_(str)    VGAPPEND(vgPlain_,str)
 #define VGP_(str)   VGAPPEND(vgProf_,str)
-#define VGOFF_(str) VGAPPEND(vgOff_,str)
 #define VGA_(str)   VGAPPEND(vgArch_,str)
 
 /* Tool-specific ones.  Note that final name still starts with "vg". */

@@ -3,7 +3,6 @@ VALGRIND_2.1 {
 		vgPlain_*;
 		vgTool_*;
 		vgProf_*;
-                vgOff_*;
                 vgArch_*;
 		*IROp*;
 		*IRExpr*;

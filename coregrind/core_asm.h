@@ -50,14 +50,10 @@
 #define VG_TRC_INNER_COUNTERZERO  29 /* TRC only; means bb ctr == 0 */
 #define VG_TRC_UNRESUMABLE_SIGNAL 37 /* TRC only; got sigsegv/sigbus */
 
-
 /* Constants for the fast translation lookup cache. */
 #define VG_TT_FAST_BITS 15
 #define VG_TT_FAST_SIZE (1 << VG_TT_FAST_BITS)
 #define VG_TT_FAST_MASK ((VG_TT_FAST_SIZE) - 1)
-
-/* Constants for the fast original-code-write check cache. */
-
 
 /* Assembly code stubs make this request */
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001

@@ -85,15 +85,15 @@ VG_(run_innerloop):
 	movl	28(%esp), %ebp
 	
 	/* fetch m_eip into %eax */
-	movl	VGOFF_(m_eip), %esi
-	movl	(%ebp, %esi, 4), %eax
+	movl	VG_(instr_ptr_offset), %esi
+	movl	(%ebp, %esi, 1), %eax
 	
 	/* fall into main loop */
 
 dispatch_boring:
 	/* save the jump address in the guest state */
-	movl	VGOFF_(m_eip), %esi
-	movl	%eax, (%ebp, %esi, 4)
+	movl	VG_(instr_ptr_offset), %esi
+	movl	%eax, (%ebp, %esi, 1)
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
 	subl $1, VG_(dispatch_ctr)
@@ -160,9 +160,9 @@ dispatch_exceptional:
 	jz	counter_is_zero
 
 	/* save %eax in %EIP and defer to sched */
-	movl	VGOFF_(m_eip), %esi
+	movl	VG_(instr_ptr_offset), %esi
 	movl	28(%esp), %edi
-	movl	%eax, (%edi, %esi, 4)
+	movl	%eax, (%edi, %esi, 1)
 	movl	%ebp, %eax
 	jmp	run_innerloop_exit
 

@@ -284,11 +284,13 @@ static void set_address_range_perms ( Addr a, UInt len,
    if (len == 0)
       return;
 
-   if (len > 100 * 1000 * 1000) {
-      VG_(message)(Vg_UserMsg, 
-                   "Warning: set address range perms: "
-                   "large range %u, a %d, v %d",
-                   len, example_a_bit, example_v_bit );
+   if (VG_(clo_verbosity) > 0) {
+      if (len > 100 * 1000 * 1000) {
+         VG_(message)(Vg_UserMsg, 
+                      "Warning: set address range perms: "
+                      "large range %u, a %d, v %d",
+                      len, example_a_bit, example_v_bit );
+      }
    }
 
    VGP_PUSHCC(VgpSetMem);

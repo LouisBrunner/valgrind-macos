@@ -9,7 +9,7 @@
 #ifndef __HOST_REGS_H
 #define __HOST_REGS_H
 
-#include "libjit_basictypes.h"
+#include "libvex_basictypes.h"
 
 
 /*---------------------------------------------------------*/

@@ -6,8 +6,8 @@
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#include "libjit_basictypes.h"
-#include "jit_globals.h"
+#include "libvex_basictypes.h"
+#include "vex_globals.h"
 #include "vex_util.h"
 
 
@@ -54,7 +54,7 @@ void* LibVEX_Alloc ( Int nbytes )
 
 /* Exported to library client. */
 
-void LibJIT_Clear ( Bool verb )
+void LibVEX_Clear ( Bool verb )
 {
    vassert(vex_initdone);
    storage_bytes_allocd_TOT += (ULong)storage_bytes_allocd;

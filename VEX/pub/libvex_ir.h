@@ -1,15 +1,15 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (libjit_ir.h) is                              ---*/
+/*--- This file (libvex_ir.h) is                              ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#ifndef __LIBJIT_IR_H
-#define __LIBJIT_IR_H
+#ifndef __LIBVEX_IR_H
+#define __LIBVEX_IR_H
 
-#include "libjit_basictypes.h"
+#include "libvex_basictypes.h"
 
 
 /*---------------------------------------------------------------*/
@@ -267,9 +267,9 @@ extern IRType     lookupIRTypeEnv ( IRTypeEnv*, IRTemp );
 extern IRType typeOfIRExpr ( IRTypeEnv*, IRExpr* );
 
 
-#endif /* ndef __LIBJIT_IR_H */
+#endif /* ndef __LIBVEX_IR_H */
 
 
 /*---------------------------------------------------------------*/
-/*---                                             libjit_ir.h ---*/
+/*---                                             libvex_ir.h ---*/
 /*---------------------------------------------------------------*/

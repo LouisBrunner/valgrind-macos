@@ -1,17 +1,17 @@
 
-PUB_HEADERS = 	pub/libjit_basictypes.h 		\
-		pub/libjit_ir.h				\
-		pub/libjit.h
+PUB_HEADERS = 	pub/libvex_basictypes.h 		\
+		pub/libvex_ir.h				\
+		pub/libvex.h
 
 PRIV_HEADERS = 	priv/host-x86/x86h_defs.h		\
 		priv/host-generic/host_regs.h		\
-		priv/main/jit_globals.h			\
+		priv/main/vex_globals.h			\
 		priv/main/vex_util.h
 
 LIB_OBJS = 						\
 		priv/ir/ir_defs.o			\
-		priv/main/jit_main.o			\
-		priv/main/jit_globals.o			\
+		priv/main/vex_main.o			\
+		priv/main/vex_globals.o			\
 		priv/main/vex_util.o			\
 		priv/host-x86/x86h_defs.o		\
 		priv/host-x86/isel_x86.o		\
@@ -28,15 +28,15 @@ APP_OBJS =	test_main.o
 CC = gcc341
 CCFLAGS = -g -Wall -Wshadow -O
 
-all: libjit.a $(APP_OBJS)
-	$(CC) $(CCFLAGS) -o vex $(APP_OBJS) libjit.a
+all: libvex.a $(APP_OBJS)
+	$(CC) $(CCFLAGS) -o vex $(APP_OBJS) libvex.a
 
-libjit.a: $(LIB_OBJS)
-	rm -f libjit.a
-	ar clq libjit.a $(LIB_OBJS)
+libvex.a: $(LIB_OBJS)
+	rm -f libvex.a
+	ar clq libvex.a $(LIB_OBJS)
 
 clean:
-	rm -f $(APP_OBJS) $(LIB_OBJS) libjit.a vex
+	rm -f $(APP_OBJS) $(LIB_OBJS) libvex.a vex
 
 
 
@@ -52,13 +52,13 @@ priv/ir/ir_defs.o: $(ALL_HEADERS) priv/ir/ir_defs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir/ir_defs.o \
 					 -c priv/ir/ir_defs.c
 
-priv/main/jit_main.o: $(ALL_HEADERS) priv/main/jit_main.c
-	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main/jit_main.o \
-					 -c priv/main/jit_main.c
+priv/main/vex_main.o: $(ALL_HEADERS) priv/main/vex_main.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main/vex_main.o \
+					 -c priv/main/vex_main.c
 
-priv/main/jit_globals.o: $(ALL_HEADERS) priv/main/jit_globals.c
-	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main/jit_globals.o \
-					 -c priv/main/jit_globals.c
+priv/main/vex_globals.o: $(ALL_HEADERS) priv/main/vex_globals.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main/vex_globals.o \
+					 -c priv/main/vex_globals.c
 
 priv/main/vex_util.o: $(ALL_HEADERS) priv/main/vex_util.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main/vex_util.o \

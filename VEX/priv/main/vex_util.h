@@ -9,7 +9,7 @@
 #ifndef __VEX_UTIL_H
 #define __VEX_UTIL_H
 
-#include "libjit_basictypes.h"
+#include "libvex_basictypes.h"
 
 
 /* Misc. */

@@ -6,8 +6,8 @@
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#include "libjit_basictypes.h"
-#include "libjit.h"
+#include "libvex_basictypes.h"
+#include "libvex.h"
 
 #include "vex_util.h"
 #include "host_regs.h"

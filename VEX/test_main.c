@@ -15,8 +15,8 @@
 /*--- Test                                                    ---*/
 /*---------------------------------------------------------------*/
 
-#include "libjit_basictypes.h"
-#include "libjit.h"
+#include "libvex_basictypes.h"
+#include "libvex.h"
 
 void failure_exit ( void )
 {
@@ -33,17 +33,17 @@ int main ( void )
 {
    Int* p;
    Int i, j, n = 0;
-   LibJIT_Init ( &failure_exit, &log_bytes, 
+   LibVEX_Init ( &failure_exit, &log_bytes, 
                  1, 1, False, 10 );
    for (j = 0; j < 5000; j++) {
-      LibJIT_Clear(False);
+      LibVEX_Clear(False);
       for (i = 0; i < 2000; i++) {
          n++;
          p = LibVEX_Alloc(16);
          p[0] = p[1] = p[2] = p[3] = 44;
       }
    }
-   LibJIT_Clear(True);
+   LibVEX_Clear(True);
    printf("Did %d allocs\n", n);
    return 0;
 }
@@ -54,7 +54,7 @@ int main ( void )
 
 #if 0
 
-#include "libjit_basictypes.h"
+#include "libvex_basictypes.h"
 #include "ir_defs.h"
 #include "host_regs.h"
 #include "x86h_defs.h"

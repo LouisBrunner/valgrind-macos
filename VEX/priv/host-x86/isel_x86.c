@@ -6,9 +6,9 @@
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#include "libjit_basictypes.h"
-#include "libjit_ir.h"
-#include "libjit.h"
+#include "libvex_basictypes.h"
+#include "libvex_ir.h"
+#include "libvex.h"
 
 #include "vex_util.h"
 #include "host_regs.h"
@@ -375,3 +375,8 @@ HInstrArray* iselBB_X86 ( IRBB* bb )
    env->code->n_vregs = env->vreg_ctr;
    return env->code;
 }
+
+
+/*---------------------------------------------------------------*/
+/*--- end                                          isel_x86.c ---*/
+/*---------------------------------------------------------------*/

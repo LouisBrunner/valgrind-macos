@@ -1,17 +1,17 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (libjit.h) is                                 ---*/
+/*--- This file (libvex.h) is                                 ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#ifndef __LIBJIT_H
-#define __LIBJIT_H
+#ifndef __LIBVEX_H
+#define __LIBVEX_H
 
 
-#include "libjit_basictypes.h"
-#include "libjit_ir.h"
+#include "libvex_basictypes.h"
+#include "libvex_ir.h"
 
 
 /*---------------------------------------------------------------*/
@@ -21,7 +21,7 @@
 
 /* Initialise the translator. */
 
-extern void LibJIT_Init (
+extern void LibVEX_Init (
    /* failure exit function */
    void (*failure_exit) ( void ),
    /* logging output function */
@@ -39,7 +39,7 @@ extern void LibJIT_Init (
 
 /* Storage management: clear the area, and allocate from it. */
 
-extern void LibJIT_Clear ( Bool show_stats );
+extern void LibVEX_Clear ( Bool show_stats );
 
 extern void* LibVEX_Alloc ( Int nbytes );
 
@@ -55,7 +55,7 @@ typedef
    TranslateResult;
 
 extern 
-TranslateResult LibJIT_Translate (
+TranslateResult LibVEX_Translate (
    /* The instruction sets we are translating from and to. */
    InsnSet iset_guest,
    InsnSet iset_host,
@@ -78,11 +78,11 @@ TranslateResult LibJIT_Translate (
 
 /* Show accumulated statistics. */
 
-extern void LibJIT_ShowStats ( void );
+extern void LibVEX_ShowStats ( void );
 
 
-#endif /* ndef __LIBJIT_H */
+#endif /* ndef __LIBVEX_H */
 
 /*---------------------------------------------------------------*/
-/*---                                                libjit.h ---*/
+/*---                                                libvex.h ---*/
 /*---------------------------------------------------------------*/

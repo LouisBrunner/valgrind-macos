@@ -6,9 +6,9 @@
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#include "libjit_basictypes.h"
-#include "libjit_ir.h"
-#include "libjit.h"
+#include "libvex_basictypes.h"
+#include "libvex_ir.h"
+#include "libvex.h"
 
 #include "vex_util.h"
 
@@ -390,3 +390,7 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
    ppIRExpr(e);
    vpanic("typeOfIRExpr");
 }
+
+/*---------------------------------------------------------------*/
+/*--- end                                           ir_defs.c ---*/
+/*---------------------------------------------------------------*/

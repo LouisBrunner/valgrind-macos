@@ -1,14 +1,14 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (jit_main.c) is                               ---*/
+/*--- This file (vex_main.c) is                               ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#include "libjit.h"
+#include "libvex.h"
 
-#include "jit_globals.h"
+#include "vex_globals.h"
 #include "vex_util.h"
 #include "host_regs.h"
 #include "x86h_defs.h"
@@ -20,7 +20,7 @@
 
 /* Exported to library client. */
 
-void LibJIT_Init (
+void LibVEX_Init (
    /* failure exit function */
    void (*failure_exit) ( void ),
    /* logging output function */
@@ -55,7 +55,7 @@ void LibJIT_Init (
 
 /* Exported to library client. */
 
-TranslateResult LibJIT_Translate (
+TranslateResult LibVEX_Translate (
    /* The instruction sets we are translating from and to. */
    InsnSet iset_guest,
    InsnSet iset_host,
@@ -91,7 +91,7 @@ TranslateResult LibJIT_Translate (
    HInstrArray* rcode;
 
    vassert(vex_initdone);
-   LibJIT_Clear(False);
+   LibVEX_Clear(False);
 
    /* First off, check that the guest and host insn sets
       are supported. */
@@ -107,7 +107,7 @@ TranslateResult LibJIT_Translate (
          iselBB      = iselBB_X86;
          break;
       default:
-         vpanic("LibJIT_Translate: unsupported target insn set");
+         vpanic("LibVEX_Translate: unsupported target insn set");
    }
 
    switch (iset_guest) {
@@ -115,7 +115,7 @@ TranslateResult LibJIT_Translate (
          bbToIR = NULL; //bbToIR_X86Instr;
          break;
       default:
-         vpanic("LibJIT_Translate: unsupported guest insn set");
+         vpanic("LibVEX_Translate: unsupported guest insn set");
    }
 
    irbb = bbToIR ( guest_bytes, 
@@ -125,7 +125,7 @@ TranslateResult LibJIT_Translate (
 
    if (irbb == NULL) {
       /* Access failure. */
-      LibJIT_Clear(False);
+      LibVEX_Clear(False);
       return TransAccessFail;
    }
 
@@ -143,7 +143,7 @@ TranslateResult LibJIT_Translate (
 			          genSpill, genReload );
 
    /* Assemble, etc. */
-   LibJIT_Clear(True);
+   LibVEX_Clear(True);
 
    return TransOK;
 }
@@ -151,5 +151,5 @@ TranslateResult LibJIT_Translate (
 
 
 /*---------------------------------------------------------------*/
-/*--- end                                          jit_main.c ---*/
+/*--- end                                          vex_main.c ---*/
 /*---------------------------------------------------------------*/

@@ -1,44 +1,42 @@
 
 /*---------------------------------------------------------------*/
 /*---                                                         ---*/
-/*--- This file (jit_globals.h) is                            ---*/
+/*--- This file (vex_globals.c) is                            ---*/
 /*--- Copyright (c) 2004 OpenWorks LLP.  All rights reserved. ---*/
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#ifndef __JIT_GLOBALS_H
-#define __JIT_GLOBALS_H
+#include "libvex_basictypes.h"
 
-#include "libjit_basictypes.h"
+#include "vex_util.h"
 
 
-/* Global settings for the JIT library.  These are the
+/* Global settings for the VEX library.  These are the
    only library-wide globals. */
 
 /* Are we started yet? */
-extern Bool vex_initdone;
+Bool vex_initdone = False;
 
 /* failure exit function */
-extern void (*vex_failure_exit) ( void );
+void (*vex_failure_exit) ( void ) = NULL;
 
 /* logging output function */
-extern void (*vex_log_bytes) ( Char*, Int nbytes );
+void (*vex_log_bytes) ( Char*, Int nbytes ) = NULL;
 
 /* debug paranoia level */
-extern Int vex_debuglevel;
+Int vex_debuglevel = 0;
 
 /* verbosity level */
-extern Int vex_verbosity;
+Int vex_verbosity = 0;
 
 /* Are we supporting valgrind checking? */
-extern Bool vex_valgrind_support;
+Bool vex_valgrind_support = False;
 
 /* Max # guest insns per bb */
-extern Int vex_guest_insns_per_bb;
+Int vex_guest_insns_per_bb = 0;
 
 
-#endif /* ndef __JIT_GLOBALS_H */
 
 /*---------------------------------------------------------------*/
-/*--- end                                       jit_globals.h ---*/
+/*--- end                                       vex_globals.c ---*/
 /*---------------------------------------------------------------*/

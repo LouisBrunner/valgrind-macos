@@ -6,8 +6,8 @@
 /*---                                                         ---*/
 /*---------------------------------------------------------------*/
 
-#ifndef __LIBJIT_X86H_DEFS_H
-#define __LIBJIT_X86H_DEFS_H
+#ifndef __LIBVEX_X86H_DEFS_H
+#define __LIBVEX_X86H_DEFS_H
 
 
 /* --------- Registers. --------- */
@@ -25,7 +25,7 @@ extern HReg hregX86_EDX ( void );
 extern HReg hregX86_ESP ( void );
 extern HReg hregX86_EBP ( void );
 extern HReg hregX86_ESI ( void );
-extern HReg hregX86_EDIa ( void );
+extern HReg hregX86_EDI ( void );
 
 
 /* --------- Memory address expressions (amodes). --------- */
@@ -235,4 +235,8 @@ extern X86Instr*    genReload_X86        ( HReg rreg, Int offset );
 extern void         getAllocableRegs_X86 ( Int*, HReg** );
 extern HInstrArray* iselBB_X86           ( IRBB* );
 
-#endif /* ndef __LIBJIT_X86H_DEFS_H */
+#endif /* ndef __LIBVEX_X86H_DEFS_H */
+
+/*---------------------------------------------------------------*/
+/*--- end                                         x86h_defs.h ---*/
+/*---------------------------------------------------------------*/

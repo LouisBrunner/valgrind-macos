@@ -78,6 +78,27 @@ static IRBB* irbb;
 
 
 /*------------------------------------------------------------*/
+/*--- Offsets of various parts of the x86 guest state.     ---*/
+/*------------------------------------------------------------*/
+
+#define OFFB_FPREGS  offsetof(VexGuestX86State,guest_FPREG[0])
+#define OFFB_FPTAGS  offsetof(VexGuestX86State,guest_FPTAG[0])
+#define OFFB_EAX     offsetof(VexGuestX86State,guest_EAX)
+#define OFFB_EBX     offsetof(VexGuestX86State,guest_EBX)
+#define OFFB_ECX     offsetof(VexGuestX86State,guest_ECX)
+#define OFFB_EDX     offsetof(VexGuestX86State,guest_EDX)
+#define OFFB_EIP     offsetof(VexGuestX86State,guest_EIP)
+#define OFFB_CC_OP   offsetof(VexGuestX86State,guest_CC_OP)
+#define OFFB_CC_SRC  offsetof(VexGuestX86State,guest_CC_SRC)
+#define OFFB_CC_DST  offsetof(VexGuestX86State,guest_CC_DST)
+#define OFFB_DFLAG   offsetof(VexGuestX86State,guest_DFLAG)
+#define OFFB_IDFLAG  offsetof(VexGuestX86State,guest_IDFLAG)
+#define OFFB_FTOP    offsetof(VexGuestX86State,guest_FTOP)
+#define OFFB_FC3210  offsetof(VexGuestX86State,guest_FC3210)
+#define OFFB_FPUCW   offsetof(VexGuestX86State,guest_FPUCW)
+
+
+/*------------------------------------------------------------*/
 /*--- Disassemble an entire basic block                    ---*/
 /*------------------------------------------------------------*/
 
@@ -100,6 +121,8 @@ typedef
 
 /* forward decls .. */
 static IRExpr* mkU32 ( UInt i );
+static void stmt ( IRStmt* st );
+
 
 /* disInstr disassembles an instruction located at &guest_code[delta],
    and sets *size to its size.  If the returned value is Dis_Resteer,
@@ -124,7 +147,7 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
                         Bool   host_bigendian )
 {
    UInt       delta;
-   Int        n_instrs, size;
+   Int        i, n_instrs, size, first_stmt_idx;
    Addr64     guest_next;
    Bool       resteerOK;
    DisResult  dres;
@@ -159,7 +182,37 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
 
       guest_next = 0;
       resteerOK = n_instrs < vex_control.guest_chase_thresh;
+      first_stmt_idx = irbb->stmts_used;
+
+      if (n_instrs > 0) {
+         /* for the first insn, the dispatch loop will have set
+	    %EIP, but for all the others we have to do it ourselves. */
+         stmt( IRStmt_Put( OFFB_EIP, mkU32(guest_eip_bbstart + delta)) );
+      }
+
       dres = disInstr( resteerOK, delta, &size, &guest_next );
+
+      /* Print the resulting IR, if needed. */
+      if (print_codegen) {
+         for (i = first_stmt_idx; i < irbb->stmts_used; i++) {
+            vex_printf("              ");
+            ppIRStmt(irbb->stmts[i]);
+            vex_printf("\n");
+         }
+      }
+   
+      if (dres == Dis_StopHere) {
+         vassert(irbb->next != NULL);
+         if (print_codegen) {
+            vex_printf("              ");
+            vex_printf( "goto {");
+            ppIRJumpKind(irbb->jumpkind);
+            vex_printf( "} ");
+            ppIRExpr( irbb->next );
+            vex_printf( "\n");
+         }
+      }
+
       delta += size;
       *guest_bytes_read += size;
       n_instrs++;
@@ -198,26 +251,6 @@ IRBB* bbToIR_X86Instr ( UChar* x86code,
       }
    }
 }
-
-
-/*------------------------------------------------------------*/
-/*--- Offsets of various parts of the x86 guest state.     ---*/
-/*------------------------------------------------------------*/
-
-#define OFFB_FPREGS  offsetof(VexGuestX86State,guest_FPREG[0])
-#define OFFB_FPTAGS  offsetof(VexGuestX86State,guest_FPTAG[0])
-#define OFFB_EAX     offsetof(VexGuestX86State,guest_EAX)
-#define OFFB_EBX     offsetof(VexGuestX86State,guest_EBX)
-#define OFFB_ECX     offsetof(VexGuestX86State,guest_ECX)
-#define OFFB_EDX     offsetof(VexGuestX86State,guest_EDX)
-#define OFFB_CC_OP   offsetof(VexGuestX86State,guest_CC_OP)
-#define OFFB_CC_SRC  offsetof(VexGuestX86State,guest_CC_SRC)
-#define OFFB_CC_DST  offsetof(VexGuestX86State,guest_CC_DST)
-#define OFFB_DFLAG   offsetof(VexGuestX86State,guest_DFLAG)
-#define OFFB_IDFLAG  offsetof(VexGuestX86State,guest_IDFLAG)
-#define OFFB_FTOP    offsetof(VexGuestX86State,guest_FTOP)
-#define OFFB_FC3210  offsetof(VexGuestX86State,guest_FC3210)
-#define OFFB_FPUCW   offsetof(VexGuestX86State,guest_FPUCW)
 
 
 /*------------------------------------------------------------*/
@@ -6128,9 +6161,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       indicating the prefix.  */
    UChar sorb = 0;
 
-   /* For printing the stmts after each insn. */
-   Int first_stmt_idx = irbb->stmts_used;
-
    /* If we don't set *size properly, this causes bbToIR_X86Instr to
       assert. */
    *size = 0;
@@ -9688,26 +9718,6 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
   decode_success:
    /* All decode successes end up here. */
    DIP("\n");
-   { Int i;
-     if (print_codegen) {
-        for (i = first_stmt_idx; i < irbb->stmts_used; i++) {
-           vex_printf("              ");
-           ppIRStmt(irbb->stmts[i]);
-           vex_printf("\n");
-        }
-     }
-   }
-   if (whatNext == Dis_StopHere) {
-      vassert(irbb->next != NULL);
-      if (print_codegen) {
-         vex_printf("              ");
-         vex_printf( "goto {");
-         ppIRJumpKind(irbb->jumpkind);
-         vex_printf( "} ");
-         ppIRExpr( irbb->next );
-         vex_printf( "\n");
-      }
-   }
 
    *size = delta - delta_start;
    return whatNext;

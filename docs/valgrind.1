@@ -1,0 +1,691 @@
+.TH VALGRIND  "1" "" ""
+
+.SH NAME
+\fBvalgrind \fP- a memory debugger for x86-linux
+
+.SH SYNOPSIS
+.nf
+.fam C
+\fIvalgrind\fP [\fIvalgrind\fP \fIoptions\fP] \fIyour-program\fP [\fIyour-program\fP \fIoptions\fP]
+.fam T
+.fi
+
+.SH DESCRIPTION
+\fBvalgrind\fP is a flexible program for debugging and profiling Linux-x86
+executables. It consists of a core, which provides a synthetic x86 CPU
+in software, and a series of "tools", each of which is a debugging or
+profiling tool. The architecture is modular, so that new tools can be
+created easily and without disturbing the existing structure.
+
+.PP
+This manual page covers only basic usage and options.  Please see the
+HTML documentation for more comprehensive information.
+
+.SH INVOCATION
+\fBvalgrind\fP is typically invoked as follows:
+
+    valgrind program args
+
+This runs \fBprogram\fP (with arguments \fBargs\fP) under valgrind
+using the \fBmemcheck\fP tool.  \fBmemcheck\fP performs a range of
+memory-checking functions, including detecting accesses to uninitialized
+memory, misuse of allocated memory (double frees, access after free,
+etc.) and detecting memory leaks.
+
+To use a different tool, use the \fB--tool\fP option:
+
+    valgrind --tool=toolname program args
+
+The following tools are available:
+
+.RS
+.TP
+.B
+- addrcheck
+\fBaddrcheck\fP is similar to memcheck, but does not perform the same
+granularity of memory checking.  This will run faster and use less memory,
+but may miss some problems that \fBmemcheck\fP would catch.
+.TP
+.B
+- cachegrind
+\fBcachegrind\fP is a cache simulator.
+." .TP
+." .B
+." - helgrind
+." \fBhelgrind\fP spots potential race conditions in your program.
+.TP
+.B
+- lackey
+\fBlackey\fP is a sample tool that can be used as a template for
+generating your own tools. After the program terminates, it prints out
+some basic statistics about the program execution.
+.TP
+.B
+- massif
+\fBmassif\fP is a heap profiler.  It measures how much heap memory your
+program uses.
+.TP
+.B
+- memcheck
+\fBmemcheck\fP is a fine-grained memory checker.
+.TP
+.B
+- none
+\fBnone\fP performs no function - it simply runs the program under
+\fBvalgrind\fP.  This is typically used for debugging and benchmarking
+\fBvalgrind\fP.
+.RE
+
+.SH COMMON CORE OPTIONS
+
+.TP
+.B
+--db-attach=<yes|no> [default: no]
+When enabled, \fBvalgrind\fP will pause after every error shown and
+print the line:
+
+.PP
+.nf
+.fam C
+       ---- Attach to debugger ? --- [Return/N/n/Y/y/C/c] ----
+
+.fam T
+.fi
+
+.RS
+Pressing Ret, or N Ret or n Ret, causes \fBvalgrind\fP not to start a
+debugger for this error.
+
+.PP
+Pressing Y Ret or y Ret causes \fBvalgrind\fP to start the debugger
+(specified by the \fB--db-command\fP option) for the program at this
+point. When you have finished with the debugger, quit from it, and
+the program will continue. Trying to continue from inside the debugger
+doesn't work.
+
+.PP
+Pressing C Ret or c Ret causes \fBvalgrind\fP not to start the debugger
+and \fBvalgrind\fP will not ask again.
+
+.PP
+--db-attach=yes conflicts with --trace-children=yes. You can't use them
+together. \fBvalgrind\fP refuses to start up in this situation. 1 May
+2002: this is a historical relic which could be easily fixed if it gets
+in your way. Mail me and complain if this is a problem for you.
+
+.PP
+Nov 2002: if you're sending output to a logfile or to a network socket,
+I guess this option doesn't make any sense. Caveat emptor.
+.RE
+
+.TP
+.B
+--db-command=<command> [default: gdb -nw %f %p]
+Specify the debugger to use with the --db-attach command. The
+default debugger is gdb. This option is a template that is expanded by
+\fBvalgrind\fP at runtime.  \fB%f\fP is replaced with the executable's
+file name and \fB%p\fP is replaced by the process ID of the executable.
+.TP
+.B
+
+--error-limit=<yes|no> [default: yes]
+When enabled, \fBvalgrind\fP stops reporting errors after 30000 in total,
+or 300 different ones, have been seen. This is to stop the error tracking
+machinery from becoming a huge performance overhead in programs with
+many errors.
+.TP
+.B
+
+--gen-suppressions=<yes|no> [default: no]
+When enabled, \fBvalgrind\fP will pause after every error shown and
+print the line:
+
+.PP
+.nf
+.fam C
+       ---- Print suppression ? --- [Return/N/n/Y/y/C/c] ----
+
+.fam T
+.fi
+
+.RS
+Pressing Y Ret or y Ret will cause a suppression for this error to be
+printed. This suppression can be cut-and-paste into a custom suppressions
+file and used to suppress this error in subsequent runs.
+
+.P
+Pressing Ret or n Ret or N Ret will cause no suppression to be printed.
+
+.P
+Pressing C Ret or c Ret will cause no suppression to be printed and
+\fBvalgrind\fP will not ask again.
+.RE
+
+.TP
+.B
+-h --help
+Show help for all options, both for the core and for the selected tool.
+
+.TP
+.B
+--help-debug
+Show help for all options, both for the core and for the selected tool,
+including options for debugging \fBvalgrind\fP.
+
+.TP
+.B
+--log-file=<filename>
+Specifies that \fBvalgrind\fP should send all of its messages to the
+specified file. In fact, the file name used is created by concatenating
+the text filename, ".pid" and the process ID, so as to create a file
+per process.  The specified file name may not be the empty string.
+
+.TP
+.B
+--num-callers=<number> [default=12]
+By default, \fBvalgrind\fP shows 12 levels of function call names to
+help you identify program locations. You can change that number with
+this option. This can help in determining the program's location in
+deeply-nested call chains. Note that errors are commoned up using only
+the top three function locations (the place in the current function,
+and that of its two immediate callers). So this doesn't affect the total
+number of errors reported.
+
+.RS
+.PP
+The maximum value for this is 50. Note that higher settings will make
+\fBvalgrind\fP run a bit more slowly and take a bit more memory, but
+can be useful when working with programs with deeply-nested call chains.
+.RE
+
+.TP
+.B
+-q --quiet
+Run silently, and only print error messages. Useful if you are running
+regression tests or have some other automated test machinery.
+
+.TP
+.B
+--suppressions=<filename> [default: $PREFIX/lib/\fBvalgrind\fP/default.supp]
+Specifies an extra file from which to read descriptions of errors to
+suppress. You may specify up to 10 additional suppression files.
+
+.TP
+.B
+--tool=<toolname> [default: memcheck]
+Specify which tool to use. The default tool is memcheck.
+
+.TP
+.B
+--trace-children=<yes|no> [default: no]
+When enabled, \fBvalgrind\fP will trace into child processes. This is
+confusing and usually not what you want, so is disabled by default.
+
+.TP
+.B
+--track-fds=<yes|no> [default: no]
+Track file descriptor creation and deletion and produce a summary at the
+end of the program execution of file descriptors that are still in use.
+
+.TP
+.B
+-v --verbose
+Be more verbose. Gives extra information on various aspects of your
+program, such as: the shared objects loaded, the suppressions used,
+the progress of the instrumentation and execution engines, and warnings
+about unusual behaviour. Repeating the flag increases the verbosity level.
+
+.TP
+.B
+--version
+Show the version number of the \fBvalgrind\fP core. Tools can have
+their own version numbers. There is a scheme in place to ensure that
+tools only execute when the core version is one they are known to work
+with. This was done to minimise the chances of strange problems arising
+from tool-vs-core version incompatibilities.
+
+.SH ADDRCHECK OPTIONS
+
+.TP
+.B
+--freelist-vol=<number> [default: 1000000]
+When the client program releases memory using free (in C) or delete
+(C++), that memory is not immediately made available for re-allocation.
+Instead it is marked inaccessible and placed in a queue of freed blocks.
+The purpose is to delay the point at which freed-up memory comes back
+into circulation.  This increases the chance that \fBaddrcheck\fP will
+be able to detect invalid accesses to blocks for some significant period
+of time after they have been freed.
+
+.RS
+This flag specifies the maximum total size, in bytes, of the blocks in
+the queue.  The default value is one million bytes.  Increasing this
+increases the total amount of memory used by \fBaddrcheck\fP but may
+detect invalid uses of freed blocks which would otherwise go undetected.
+.RE
+
+.TP
+.B
+--leak-check=<yes|no|summary|full> [default: summary]
+Enables full, summary or no leak checking.  When full (\fBfull\fP or
+\fByes\fP options) checking is performed, details on all leaked blocks
+are printed after the program finishes executing.  When summary checking
+is enabled, a summary of all leaked memory is printed.  When no leak
+checking is performed, no leaked memory details are produced.  Disabling
+leak checking can speed up your program execution.
+
+.TP
+.B
+--leak-resolution=<low|med|high> [default: low]
+When doing leak checking, determines how willing \fBaddrcheck\fP is to
+consider different backtraces to be the same.  When set to \fBlow\fP,
+the default, only the first two entries need match.  When \fBmed\fP,
+four entries have to match.  When \fBhigh\fP, all entries need to match.
+
+.TP
+.B
+--partial-loads-ok=<yes|no> [default: yes]
+Controls how \fBaddrcheck\fP handles word (4-byte) loads from addresses
+for which some bytes are addressible and others are not.  When enabled,
+such loads do not elicit an address error.  Instead, \fBaddrcheck\fP
+considers the bytes corresponding to the illegal addresses as undefined,
+and those corresponding to legal addresses are considered defined.
+
+.RS
+When disabled, loads from partially invalid addresses are treated the
+same as loads from completely invalid addresses: an illegal-address error
+is issued, and the \fBaddrcheck\fP considers all bytes as invalid data.
+.RE
+
+.TP
+.B
+--show-reachable=<yes|no> [default: no]
+When performing full leak checking, print out details of blocks that are
+leaked but still reachable.  For details of what a reachable block is,
+see the HTML documentation.
+
+.TP
+.B
+--workaround-gcc296-bugs=<yes|no> [default: no]
+When enabled, assume that reads and writes some small distance below
+the stack pointer \fB%esp\fP are due to bugs in gcc 2.96, and does not
+report them.  The "small distance" is 256 bytes by default.  Note that gcc
+2.96 is the default compiler on some older Linux distributions (RedHat
+7.X, Mandrake) and so you may well need to use this flag.  Do not use
+it if you do not have to, as it can cause real errors to be overlooked.
+Another option is to use a gcc/g++ which does not generate accesses below
+the stack pointer.  2.95.3 seems to be a good choice in this respect.
+
+.SH MEMCHECK OPTIONS
+\fBmemcheck\fP understands the same options as \fBaddrcheck\fP, along
+with the following options:
+
+.TP
+.B
+--avoid-strlen-errors=<yes|no> [default: yes]
+Enable or disable a heuristic for dealing with highly-optimized versions
+of \fBstrlen\fP.  These versions of \fBstrlen\fP can cause spurious
+errors to be reported by \fBmemcheck\fP, so it's usually a good idea to
+leave this enabled.
+
+.TP
+.B
+--cleanup=<yes|no> [default: yes]
+\fBThis is a flag to help debug valgrind itself.  It is of no use to
+end-users\fP. When enabled, various improvments are applied to the
+post-instrumented intermediate code, aimed at removing redundant value
+checks.
+
+.SH CACHEGRIND OPTIONS
+
+.TP
+.B
+--D1=<size>,<associativity>,<line size>
+Specify the size, associativity and line size of the level 1 data cache.
+All values are measured in bytes.  If this options is not specified,
+the system value (as retrieved by the \fBCPUID\fP instruction) is used.
+
+.TP
+.B
+--I1=<size>,<associativity>,<line size>
+Specify the size, associativity and line size of the level 1 instruction
+cache.  All values are measured in bytes.  If this options is not
+specified, the system value (as retrieved by the \fBCPUID\fP instruction)
+is used.
+
+.TP
+.B
+--L2=<size>,<associativity>,<line size>
+Specify the size, associativity and line size of the level 2 cache.
+All values are measured in bytes.  If this options is not specified,
+the system value (as retrieved by the \fBCPUID\fP instruction) is used.
+
+.SH MASSIF OPTIONS
+
+.TP
+.B
+--alloc-fn=<name>
+Specify a function that allocates memory.  This is useful for functions
+that are wrappers to \fBmalloc()\fP, which can fill up the context
+information uselessly (and give very uninformative bands on the graph).
+Functions specified will be ignored in contexts, i.e. treated as though
+they were \fBmalloc()\fP.  This option can be specified multiple times
+on the command line, to name multiple functions.
+
+.TP
+.B
+--depth=<number> [default: 3]
+Depth of call chains to present in the detailed heap information.
+Increasing it will give more information, but \fBmassif\fP will run the
+program more slowly, using more memory, and produce a bigger \fB.txt\fP
+or \fB.hp\fP file.
+
+.TP
+.B
+--format=<text|html> [default: text]
+Produce the detailed heap information in text or HTML format.  The file
+suffix used will be either \fB.txt\fP or \fB.html\fP.
+
+.TP
+.B
+--heap=<yes|no> [default: yes]
+When enabled, profile heap usage in detail.  Without it, the \fB.txt\fP
+or \fB.html\fP file will be very short.
+
+.TP
+.B
+--heap-admin=<number> [default: 8]
+The number of admin bytes per block to use.  This can only be an
+estimate of the average, since it may vary.  The allocator used
+by \fBglibc\fP requires somewhere between 4 to 15 bytes per block,
+depending on various factors.  It also requires admin space for freed
+blocks, although \fBmassif\fP does not count this.
+
+.TP
+.B
+--stacks=<yes|no> [default: yes]
+When enabled, include stack(s) in the profile.  Threaded programs can
+have multiple stacks.
+
+." .SH HELGRIND OPTIONS
+
+." .TP
+." .B
+." --private-stacks=<yes|no> [default: no]
+." Assume thread stacks are used privately.
+
+." .TP
+." .B
+." --show-last-access=<yes|some|no> [default: no]
+." Show location of last word access on error.
+
+.SH LESS FREQUENTLY USED CORE OPTIONS
+
+.TP
+.B
+--alignment=<number> [default: 8]
+By default \fBvalgrind\fP's malloc, realloc, etc, return 8-byte aligned
+addresses. These are suitable for any accesses on x86 processors. Some
+programs might however assume that malloc et al return 16- or more
+aligned memory. These programs are broken and should be fixed, but if
+this is impossible for whatever reason the alignment can be increased
+using this parameter. The supplied value must be between 8 and 4096
+inclusive, and must be a power of two.
+
+.TP
+.B
+--branchpred=<yes|no> [default: no]
+This option enables the generation of static branch prediction hints.
+In theory this allows the real CPU to do a better job of running the
+generated code, but in practice it makes almost no measurable difference.
+It may have a large effect on some x86 implementations.
+
+.TP
+.B
+--chain-bb=<yes|no> [default: yes]
+Enables basic-block chaining.  If basic-block chaining is disabled,
+the synthetic CPU returns to the scheduler after interpreting each basic
+block.  With basic block chaining enabled, it can immediately proceed to
+the next basic block.  This almost always results in a performance gain,
+so it is enabled by default.
+
+.TP
+.B
+--command-line-only=<yes|no> [default: no]
+Normally, \fBvalgrind\fP will look for command-line options in the
+following locations:
+.RS
+.TP
+- The \fBvalgrind\fP command line
+.TP
+- The \fB\.valgrindrc\fP file in the invocation directory
+.TP
+- The \fB\.valgrindrc\fP file in users home directory
+.TP
+- The \fB$VALGRIND_OPTS\fP environment variable
+.P
+
+When this option is enabled, \fBvalgrind\fP will only look at the command
+line for options.
+.RE
+
+.TP
+.B
+--demangle=<yes|no> [default: yes]
+Enable or disable automatic demangling (decoding) of C++ names. Enabled by
+default. When enabled, \fBvalgrind\fP will attempt to translate encoded
+C++ procedure names back to something approaching the original. The
+demangler handles symbols mangled by g++ versions 2.X and 3.X.
+
+.TP
+.B
+--dump-error=<number>
+After the program has exited, show gory details of the translation of
+the basic block containing the \fB<number>\fP'th error context. When
+used with --single-step=yes, can show the exact x86 instruction causing
+an error. This is all fairly dodgy and doesn't work at all if threads
+are involved.
+
+.TP
+.B
+--exec=<filename>
+Specify the executable to run. If this is specified, it takes precedence
+over the \fByour-program\fP executable from the command-line.  If this is
+not specified, \fBvalgrind\fP searches the path for the \fByour-program\fP
+executable, just like a regular shell would.
+
+.TP
+.B
+--input-fd=<number> [default: 0, stdin]
+Specify the file descriptor to use for reading input from the user. This
+is used whenever \fBvalgrind\fP needs to prompt the user for a decision.
+
+.TP
+.B
+--log-fd=<number> [default: 2, stderr]
+Specifies that \fBvalgrind\fP should send all of its messages to
+the specified file descriptor. The default, 2, is the standard error
+channel (stderr).  Note that this may interfere with the client's own
+use of stderr.
+
+.TP
+.B
+--log-socket=<ip-address:port-number>
+Specifies that \fBvalgrind\fP should send all of its messages to the
+specified port at the specified IP address. The port may be omitted,
+in which case port 1500 is used. If a connection cannot be made to
+the specified socket, \fBvalgrind\fP falls back to writing output to
+the standard error (stderr).  This option is intended to be used in
+conjunction with the \fBvalgrind-listener\fP program. For further details,
+see section 2.3 of the user manual.
+
+.TP
+.B
+--optimise=<yes|no> [default: yes]
+When enabled, various improvements are applied to the intermediate code,
+mainly aimed at allowing the simulated CPU's registers to be cached in
+the real CPU's registers over several simulated instructions.
+
+.TP
+.B
+--pointercheck=<yes|no> [default: yes]
+When enabled, enforces client address space limits. If this option is
+disabled, the client program has full and unfettered access to the part
+of the address space used internally by \fBvalgrind\fP.  This can cause
+unexplained crashes and false error reports, so it is best left enabled.
+
+.TP
+.B
+--run-libc-freeres=<yes|no> [default: yes]
+The GNU C library (libc.so), which is used by all programs, may allocate 
+memory for its own uses. Usually it doesn't bother to free that memory when 
+the program ends - there would be no point, since the Linux kernel reclaims 
+all process resources when a process exits anyway, so it would just slow 
+things down.
+
+.RS
+.PP
+The glibc authors realised that this behaviour causes leak checkers,
+such as \fBvalgrind\fP, to falsely report leaks in glibc, when a leak
+check is done at exit.  In order to avoid this, they provided a routine
+called __libc_freeres specifically to make glibc release all memory it
+has allocated. The MemCheck and AddrCheck tools therefore try and run
+__libc_freeres at exit.
+
+.PP
+Unfortunately, in some versions of glibc, __libc_freeres is sufficiently
+buggy to cause segmentation faults. This is particularly noticeable on
+Red Hat 7.1. So this flag is provided in order to inhibit the run of
+__libc_freeres. If your program seems to run fine on \fBvalgrind\fP, but
+segfaults at exit, you may find that --run-libc-freeres=no fixes that,
+although at the cost of possibly falsely reporting space leaks in libc.so.
+.RE
+
+.TP
+.B
+--show-below-main=<yes|no> [default: no]
+When enabled, this option causes full stack backtraces to be emited,
+including the part before \fBmain\fP in your program (subject to the
+\fB--num-callers\fP option.)  When disabled, only the part of the stack
+backtrace up to and including main is printed.
+
+.TP
+.B
+--single-step=<yes|no> [default: no]
+When enabled, each x86 insn is translated separately into instrumented
+code.  When disabled, translation is done on a per-basic-block basis,
+giving much better translations. This is needed when running
+\fBvalgrind\fP under \fBvalgrind\fP.
+
+.TP
+.B
+--sloppy-malloc=<yes|no> [default: no]
+When enabled, \fBvalgrind\fP rounds all memory allocation request sizes
+up to 4 bytes.
+
+.TP
+.B
+--time-stamp=<yes|no> [default: no]
+When enabled, a time-stamp is added to all log messages.
+
+.TP
+.B
+--weird-hacks=hack1,hack2,\.\.\.
+Pass miscellaneous hints to \fBvalgrind\fP which slightly modify the
+simulated behaviour in nonstandard or dangerous ways, possibly to help
+the simulation of strange features. By default no hacks are enabled. Use
+with caution!  Currently known hacks are:
+
+.RS
+.TP
+.B
+- lax-ioctls
+If \fBvalgrind\fP encounters an \fBioctl\fP that it doesn't understand,
+it normally prints a warning message before continuing.  Specifying the
+lax-ioctls hack tells \fBvalgrind\fP to be very lax about ioctl handling
+and assume that unknown ioctls just behave correctly.
+.TP
+.B
+- ioctl-mmap
+Tell \fBvalgrind\fP to search for new memory mappings after an unknown
+\fBioctl\fP call.
+.RE
+
+.SH CORE DEBUGGING OPTIONS
+
+.TP
+.B
+--profile=<yes|no> [default: no]
+When enabled, does crude internal profiling of \fBvalgrind\fP itself. This
+is not for profiling your programs. Rather it is to allow the developers
+to assess where \fBvalgrind\fP is spending its time. The tools must be
+built for profiling for this to work.
+
+.TP
+.B
+--sanity-level=<number> [default: 1]
+Set the level of sanity checking to perform. This is used for debugging
+\fBvalgrind\fP. Setting this to 2 or higher can cause more internal
+sanity checks to be performed, but can slow your program down
+appreciably. Setting this to 0 disables sanity checks.
+
+.TP
+.B
+--trace-codegen=<bitmask>
+Produce lots of output showing exactly how \fBvalgrind\fP is translating
+each basic block.  The argument to this option is a 5-bit wide bitmask.
+Each bit refers to a specific feature to trace.  If the bit is 1, the
+feature is traced.  If it is 0, the feature is not traced.
+
+.RS
+The traced features are:
+.TP
+Bit 1: basic-block disassembly
+.TP
+Bit 2: optimization phase
+.TP
+Bit 3: tool instrumentation
+.TP
+Bit 4: register allocation
+.TP
+Bit 5: final code generation
+.RE
+
+.TP
+.B
+--trace-malloc=<yes|no> [default: no]
+Enable or disable tracing of malloc, free and other memory-manager calls.
+
+.TP
+.B
+--trace-redir=<yes|no> [default: no]
+Enable or disable tracing of function redirection.
+
+.TP
+.B
+--trace-sched=<yes|no> [default: no]
+Enable or disable tracing of thread scheduling events.
+
+.TP
+.B
+--trace-signals=<yes|no> [default: no]
+Enable or disable tracing of signal handling.
+
+.TP
+.B
+--trace-syscalls=<yes|no> [default: no]
+Enable or disable tracing of system call intercepts.
+
+.TP
+.B
+--trace-symtab=<yes|no> [default: no]
+Enable or disable tracing of symbol table reading.
+
+.SH SEE ALSO
+/usr/share/doc/\fBvalgrind\fP/html/manual.html
+
+.SH AUTHOR
+This manpage has been written by Andres Roldan <aroldan@debian.org>
+for the Debian Project, but can be used for any other distribution.
+Updated, rearranged and expanded by Robert Walsh <rjwalsh@durables.org>
+for the 2.4.0 release.

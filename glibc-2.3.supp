@@ -68,14 +68,14 @@
    realpath is inefficiently coded
    Memcheck:Overlap
    fun:memcpy
-   fun:realpath@@GLIBC_2.3
+   fun:realpath*
 }
 
 {
    realpath stupidity part II
    Memcheck:Overlap
    fun:strcpy
-   fun:realpath@@GLIBC_2.3
+   fun:realpath*
 }
 {
    strlen/decompose_rpath/_dl_map_object

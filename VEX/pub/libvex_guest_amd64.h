@@ -46,31 +46,31 @@
 
 typedef
    struct {
-      ULong  guest_RAX;
-      ULong  guest_RCX;
-      ULong  guest_RDX;
-      ULong  guest_RBX;
-      ULong  guest_RSP;
-      ULong  guest_RBP;
-      ULong  guest_RSI;
-      ULong  guest_RDI;
-      ULong  guest_R8;
-      ULong  guest_R9;
-      ULong  guest_R10;
-      ULong  guest_R11;
-      ULong  guest_R12;
-      ULong  guest_R13;
-      ULong  guest_R14;
-      ULong  guest_R15;
+      /*   0 */ ULong  guest_RAX;
+      /*   8 */ ULong  guest_RCX;
+      /*  16 */ ULong  guest_RDX;
+      /*  24 */ ULong  guest_RBX;
+      /*  32 */ ULong  guest_RSP;
+      /*  40 */ ULong  guest_RBP;
+      /*  48 */ ULong  guest_RSI;
+      /*  56 */ ULong  guest_RDI;
+      /*  64 */ ULong  guest_R8;
+      /*  72 */ ULong  guest_R9;
+      /*  80 */ ULong  guest_R10;
+      /*  88 */ ULong  guest_R11;
+      /*  96 */ ULong  guest_R12;
+      /* 104 */ ULong  guest_R13;
+      /* 112 */ ULong  guest_R14;
+      /* 120 */ ULong  guest_R15;
       /* 4-word thunk used to calculate O S Z A C P flags. */
-      ULong  guest_CC_OP;
-      ULong  guest_CC_DEP1;
-      ULong  guest_CC_DEP2;
-      ULong  guest_CC_NDEP;
+      /* 128 */ ULong  guest_CC_OP;
+      /* 136 */ ULong  guest_CC_DEP1;
+      /* 144 */ ULong  guest_CC_DEP2;
+      /* 152 */ ULong  guest_CC_NDEP;
       /* The D flag is stored here, encoded as either -1 or +1 */
-      ULong  guest_DFLAG;       /* 48 */
+      /* 160 */ ULong  guest_DFLAG;       /* 48 */
       /* RIP */
-      ULong  guest_RIP;
+      /* 168 */ ULong  guest_RIP;
       /* Probably a lot more stuff too. 
          D,ID flags
          16  128-bit SSE registers
@@ -99,6 +99,12 @@ extern
 void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state );
 
 
+/* Extract from the supplied VexGuestAMD64State structure the
+   corresponding native %rflags value. */
+extern 
+ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/VexGuestAMD64State* vex_state );
+
+
 #if 0
 /* Convert a saved x87 FPU image (as created by fsave) and write it
    into the supplied VexGuestX86State structure.  The non-FP parts of
@@ -123,11 +129,6 @@ extern
 void LibVEX_GuestX86_put_eflags ( UInt eflags_native,
                                   /*OUT*/VexGuestX86State* vex_state );
 
-/* Extract from the supplied VexGuestX86State structure the
-   corresponding native %eflags value. */
-
-extern 
-UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state );
 #endif /* 0 */
 
 #endif /* ndef __LIBVEX_PUB_GUEST_AMD64_H */

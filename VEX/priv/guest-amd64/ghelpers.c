@@ -333,7 +333,7 @@ inline static Long lshift ( Long x, Int n )
    PREAMBLE(DATA_BITS);						\
    { Long fl 							\
         = (CC_NDEP & ~(AMD64G_CC_MASK_O | AMD64G_CC_MASK_C))	\
-          | (AMD64G_CC_MASK_C & CC_DEP1)				\
+          | (AMD64G_CC_MASK_C & CC_DEP1)			\
           | (AMD64G_CC_MASK_O & (lshift(CC_DEP1,  		\
                                       11-(DATA_BITS-1)) 	\
                      ^ lshift(CC_DEP1, 11)));			\
@@ -516,14 +516,17 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
       case AMD64G_CC_OP_INCB:   ACTIONS_INC(  8, UChar  );
       case AMD64G_CC_OP_INCW:   ACTIONS_INC( 16, UShort );
       case AMD64G_CC_OP_INCL:   ACTIONS_INC( 32, UInt   );
+      case AMD64G_CC_OP_INCQ:   ACTIONS_INC( 64, ULong  );
 
       case AMD64G_CC_OP_DECB:   ACTIONS_DEC(  8, UChar  );
       case AMD64G_CC_OP_DECW:   ACTIONS_DEC( 16, UShort );
       case AMD64G_CC_OP_DECL:   ACTIONS_DEC( 32, UInt   );
+      case AMD64G_CC_OP_DECQ:   ACTIONS_DEC( 64, ULong  );
 
       case AMD64G_CC_OP_SHLB:   ACTIONS_SHL(  8, UChar  );
       case AMD64G_CC_OP_SHLW:   ACTIONS_SHL( 16, UShort );
       case AMD64G_CC_OP_SHLL:   ACTIONS_SHL( 32, UInt   );
+      case AMD64G_CC_OP_SHLQ:   ACTIONS_SHL( 64, ULong  );
 
       case AMD64G_CC_OP_SHRB:   ACTIONS_SHR(  8, UChar  );
       case AMD64G_CC_OP_SHRW:   ACTIONS_SHR( 16, UShort );
@@ -700,7 +703,6 @@ ULong amd64g_calculate_condition ( ULong/*AMD64Condcode*/ cond,
 
 
 /* VISIBLE TO LIBVEX CLIENT */
-#if 0
 ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/VexGuestAMD64State* vex_state )
 {
    ULong rflags = amd64g_calculate_rflags_all_WRK(
@@ -709,18 +711,14 @@ ULong LibVEX_GuestAMD64_get_rflags ( /*IN*/VexGuestAMD64State* vex_state )
                      vex_state->guest_CC_DEP2,
                      vex_state->guest_CC_NDEP
                   );
-   //   UInt dflag = vex_state->guest_DFLAG;
-   vassert(0); //FIXME
-#if 0
-   vassert(dflag == 1 || dflag == 0xFFFFFFFF);
-   if (dflag == 0xFFFFFFFF)
+   Long dflag = vex_state->guest_DFLAG;
+   vassert(dflag == 1 || dflag == -1);
+   if (dflag == -1)
       rflags |= (1<<10);
-   if (vex_state->guest_IDFLAG == 1)
-      rflags |= (1<<21);
-#endif					     
+//   if (vex_state->guest_IDFLAG == 1)
+//      rflags |= (1<<21);
    return rflags;
 }
-#endif
 
 
 /*---------------------------------------------------------------*/

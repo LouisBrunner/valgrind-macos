@@ -789,7 +789,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Xor8: case Iop_Xor16: case Iop_Xor32: case Iop_Xor64: 
             aluOp = Aalu_XOR; break;
 //..          case Iop_Mul16: case Iop_Mul32: 
-         case Iop_Mul64:
+         case Iop_Mul32: case Iop_Mul64:
             aluOp = Aalu_MUL; break;
          default:
             aluOp = Aalu_INVALID; break;
@@ -874,7 +874,52 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          return dst;
       }
 
-//..       /* Handle misc other ops. */
+      /* Handle misc other ops. */
+
+      if (e->Iex.Binop.op == Iop_DivModS64to32
+          || e->Iex.Binop.op == Iop_DivModU64to32) {
+         /* 64 x 32 -> (32(rem),32(div)) division */
+         /* Get the 64-bit operand into edx:eax, and the other into
+            any old R/M. */
+         HReg      rax     = hregAMD64_RAX();
+         HReg      rdx     = hregAMD64_RDX();
+         HReg      dst     = newVRegI(env);
+         Bool      syned   = e->Iex.Binop.op == Iop_DivModS64to32;
+         AMD64RM*  rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
+         AMD64RMI* mask    = AMD64RMI_Imm(0xFFFFFFFF);
+         /* Compute the left operand into a reg, and then 
+            put the top half in edx and the bottom in eax. */
+         HReg left64 = iselIntExpr_R(env, e->Iex.Binop.arg1);
+
+         addInstr(env, mk_iMOVsd_RR(left64, rdx));
+         addInstr(env, mk_iMOVsd_RR(left64, rax));
+         addInstr(env, AMD64Instr_Sh64(Ash_SAR, 32, AMD64RM_Reg(rdx)));
+         addInstr(env, AMD64Instr_Div(syned, 4, rmRight));
+         addInstr(env, AMD64Instr_Alu64R(Aalu_AND, mask, rdx));
+         addInstr(env, AMD64Instr_Alu64R(Aalu_AND, mask, rax));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, AMD64RM_Reg(rdx)));
+         addInstr(env, mk_iMOVsd_RR(rax, dst));
+         addInstr(env, AMD64Instr_Alu64R(Aalu_OR, AMD64RMI_Reg(rdx), dst));
+         return dst;
+      }
+
+      if (e->Iex.Binop.op == Iop_32HLto64) {
+         HReg hi32  = newVRegI(env);
+         HReg lo32  = newVRegI(env);
+         HReg hi32s = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg lo32s = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_iMOVsd_RR(hi32s, hi32));
+         addInstr(env, mk_iMOVsd_RR(lo32s, lo32));
+         addInstr(env, AMD64Instr_Sh64(Ash_SHL, 32, AMD64RM_Reg(hi32)));
+         addInstr(env, AMD64Instr_Alu64R(
+                          Aalu_AND, AMD64RMI_Imm(0xFFFFFFFF), lo32));
+         addInstr(env, AMD64Instr_Alu64R(
+                          Aalu_OR, AMD64RMI_Reg(lo32), hi32));
+         return hi32;
+      }
+
+
+
 //..       if (e->Iex.Binop.op == Iop_8HLto16) {
 //..          HReg hi8  = newVRegI(env);
 //..          HReg lo8  = newVRegI(env);
@@ -943,7 +988,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..          /* Used several times ... */
 //..          X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
 //.. 
-//.. 	 /* rf now holds the value to be converted, and rrm holds the
+//..          /* rf now holds the value to be converted, and rrm holds the
 //.. 	    rounding mode value, encoded as per the IRRoundingMode
 //.. 	    enum.  The first thing to do is set the FPU's rounding
 //.. 	    mode accordingly. */
@@ -1081,20 +1126,20 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             iselInt128Expr(&rHi,&rLo, env, e->Iex.Unop.arg);
             return rLo; /* and abandon rHi */
          }
-//..          case Iop_8Uto16:
+         case Iop_8Uto16: {
 //..          case Iop_8Uto32:
 //..          case Iop_16Uto32: {
-//..             HReg dst = newVRegI(env);
-//..             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-//..             UInt mask = e->Iex.Unop.op==Iop_16Uto32 ? 0xFFFF : 0xFF;
-//..             addInstr(env, mk_iMOVsd_RR(src,dst) );
-//..             addInstr(env, X86Instr_Alu32R(Xalu_AND,
-//..                                           X86RMI_Imm(mask), dst));
-//..             return dst;
-//..          }
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            UInt mask = e->Iex.Unop.op==Iop_16Uto32 ? 0xFFFF : 0xFF;
+            addInstr(env, mk_iMOVsd_RR(src,dst) );
+            addInstr(env, AMD64Instr_Alu64R(Aalu_AND,
+                                            AMD64RMI_Imm(mask), dst));
+            return dst;
+         }
 //..          case Iop_8Sto16:
-         case Iop_8Sto32: {
-//..          case Iop_16Sto32: {
+         case Iop_8Sto32:
+         case Iop_16Sto32: {
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             UInt amt = e->Iex.Unop.op==Iop_16Sto32 ? 48 : 56;
@@ -1105,7 +1150,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          }
 //.. 	 case Iop_Not8:
 //.. 	 case Iop_Not16:
-//..          case Iop_Not32:
+         case Iop_Not32:
          case Iop_Not64: {
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
@@ -1124,14 +1169,20 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..             return rLo; /* similar stupid comment to the above ... */
 //..          }
 //..          case Iop_16HIto8:
-//..          case Iop_32HIto16: {
-//..             HReg dst  = newVRegI(env);
-//..             HReg src  = iselIntExpr_R(env, e->Iex.Unop.arg);
-//..             Int shift = e->Iex.Unop.op == Iop_16HIto8 ? 8 : 16;
-//..             addInstr(env, mk_iMOVsd_RR(src,dst) );
-//..             addInstr(env, X86Instr_Sh32(Xsh_SHR, shift, X86RM_Reg(dst)));
-//..             return dst;
-//..          }
+//..          case Iop_32HIto16:
+         case Iop_64HIto32: {
+            HReg dst  = newVRegI(env);
+            HReg src  = iselIntExpr_R(env, e->Iex.Unop.arg);
+            Int shift = 0;
+            switch (e->Iex.Unop.op) {
+               case Iop_64HIto32: shift = 32; break;
+               default: vassert(0);
+            }
+            addInstr(env, mk_iMOVsd_RR(src,dst) );
+            addInstr(env, AMD64Instr_Sh64(
+                             Ash_SHR, shift, AMD64RM_Reg(dst)));
+            return dst;
+         }
 //..          case Iop_1Uto32:
 //..          case Iop_1Uto8: {
 //..             HReg dst         = newVRegI(env);
@@ -1185,7 +1236,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //.. 
 //..          case Iop_16to8:
 //..          case Iop_32to8:
-//..          case Iop_32to16:
+         case Iop_32to16:
          case Iop_64to32:
             /* These are no-ops. */
             return iselIntExpr_R(env, e->Iex.Unop.arg);
@@ -1866,7 +1917,7 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
    /* --------- BINARY ops --------- */
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
-         /* 32 x 32 -> 64 multiply */
+         /* 64 x 64 -> 128 multiply */
          case Iop_MullU64:
          case Iop_MullS64: {
             /* get one operand into %rax, and the other into a R/M.
@@ -1886,28 +1937,7 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
             *rLo = tLo;
             return;
          }
-//.. 
-//..          /* 64 x 32 -> (32(rem),32(div)) division */
-//..          case Iop_DivModU64to32:
-//..          case Iop_DivModS64to32: {
-//..             /* Get the 64-bit operand into edx:eax, and the other into
-//..                any old R/M. */
-//..             HReg sHi, sLo;
-//..             HReg   tLo     = newVRegI(env);
-//..             HReg   tHi     = newVRegI(env);
-//..             Bool   syned   = e->Iex.Binop.op == Iop_DivModS64to32;
-//..             X86RM* rmRight = iselIntExpr_RM(env, e->Iex.Binop.arg2);
-//..             iselInt64Expr(&sHi,&sLo, env, e->Iex.Binop.arg1);
-//..             addInstr(env, mk_iMOVsd_RR(sHi, hregX86_EDX()));
-//..             addInstr(env, mk_iMOVsd_RR(sLo, hregX86_EAX()));
-//..             addInstr(env, X86Instr_Div(syned, Xss_32, rmRight));
-//..             addInstr(env, mk_iMOVsd_RR(hregX86_EDX(), tHi));
-//..             addInstr(env, mk_iMOVsd_RR(hregX86_EAX(), tLo));
-//..             *rHi = tHi;
-//..             *rLo = tLo;
-//..             return;
-//..          }
-//.. 
+
 //..          /* Or64/And64/Xor64 */
 //..          case Iop_Or64:
 //..          case Iop_And64:

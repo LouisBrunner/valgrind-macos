@@ -360,7 +360,7 @@ typedef
       Ain_Test64,    /* 64-bit test (AND, set flags, discard result) */
       Ain_Unary64,   /* 64-bit not and neg */
       Ain_MulL,      /* widening multiply */
-//..       Xin_Div,       /* div and mod */
+      Ain_Div,       /* div and mod */
 //..       Xin_Sh3232,    /* shldl or shrdl */
 //..       Xin_Push,      /* push (32-bit?) value on stack */
       Ain_Call,      /* call to address in register */
@@ -437,12 +437,13 @@ typedef
             Int      sz; /* 2, 4 or 8 only */
             AMD64RM* src;
          } MulL;
-//..          /* x86 div/idiv instruction.  Modifies EDX and EAX and reads src. */
-//..          struct {
-//..             Bool        syned;
-//..             X86ScalarSz ssz;
-//..             X86RM*      src;
-//..          } Div;
+          /* amd64 div/idiv instruction.  Modifies RDX and RAX and
+	     reads src. */
+         struct {
+            Bool     syned;
+            Int      sz; /* 4 or 8 only */
+            AMD64RM* src;
+         } Div;
 //..          /* shld/shrd.  op may only be Xsh_SHL or Xsh_SHR */
 //..          struct {
 //..             X86ShiftOp op;
@@ -632,7 +633,7 @@ extern AMD64Instr* AMD64Instr_Unary64   ( AMD64UnaryOp op, AMD64RM* dst );
 extern AMD64Instr* AMD64Instr_Sh64      ( AMD64ShiftOp, UInt, AMD64RM* );
 extern AMD64Instr* AMD64Instr_Test64    ( AMD64RI* src, AMD64RM* dst );
 extern AMD64Instr* AMD64Instr_MulL      ( Bool syned, Int sz, AMD64RM* );
-//.. extern AMD64Instr* AMD64Instr_Div       ( Bool syned, AMD64ScalarSz, AMD64RM* );
+extern AMD64Instr* AMD64Instr_Div       ( Bool syned, Int sz, AMD64RM* );
 //.. extern AMD64Instr* AMD64Instr_Sh3232    ( AMD64ShiftOp, UInt amt, HReg src, HReg dst );
 //.. extern AMD64Instr* AMD64Instr_Push      ( AMD64RMI* );
 extern AMD64Instr* AMD64Instr_Call      ( AMD64CondCode, Addr64, Int );

@@ -145,9 +145,18 @@ HReg hregAMD64_XMM15 ( void ) { return mkHReg(15, HRcVec128, False); }
 
 void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
 {
+#if 1
+   *nregs = 6;
+   *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
+   (*arr)[ 0] = hregAMD64_RDI();
+   (*arr)[ 1] = hregAMD64_R8();
+   (*arr)[ 2] = hregAMD64_R9();
+   (*arr)[ 3] = hregAMD64_XMM7();
+   (*arr)[ 4] = hregAMD64_XMM8();
+   (*arr)[ 5] = hregAMD64_XMM9();
+#else
    *nregs = 30;
    *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
-#if 1
    (*arr)[ 0] = hregAMD64_RAX();
    (*arr)[ 1] = hregAMD64_RBX();
    (*arr)[ 2] = hregAMD64_RCX();
@@ -162,23 +171,6 @@ void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
    (*arr)[11] = hregAMD64_R13();
    (*arr)[12] = hregAMD64_R14();
    (*arr)[13] = hregAMD64_R15();
-#else
-   /* For testing the assembler */
-   (*arr)[ 0] = hregAMD64_RDI();
-   (*arr)[ 1] = hregAMD64_R8();
-   (*arr)[ 2] = hregAMD64_RSI();
-   (*arr)[ 3] = hregAMD64_R9();
-   (*arr)[ 4] = hregAMD64_RAX();
-   (*arr)[ 5] = hregAMD64_RBX();
-   (*arr)[ 6] = hregAMD64_RCX();
-   (*arr)[ 7] = hregAMD64_RDX();
-   (*arr)[ 8] = hregAMD64_R10();
-   (*arr)[ 9] = hregAMD64_R11();
-   (*arr)[10] = hregAMD64_R12();
-   (*arr)[11] = hregAMD64_R13();
-   (*arr)[12] = hregAMD64_R14();
-   (*arr)[13] = hregAMD64_R15();
-#endif
    //   (*arr)[6] = hregAMD64_FAKE0();
    //(*arr)[7] = hregAMD64_FAKE1();
    //(*arr)[8] = hregAMD64_FAKE2();
@@ -201,6 +193,7 @@ void getAllocableRegs_AMD64 ( Int* nregs, HReg** arr )
    (*arr)[27] = hregAMD64_XMM13();
    (*arr)[28] = hregAMD64_XMM14();
    (*arr)[29] = hregAMD64_XMM15();
+#endif
 }
 
 
@@ -533,7 +526,7 @@ HChar* showAMD64AluOp ( AMD64AluOp op ) {
       case Aalu_AND:  return "and";
       case Aalu_OR:   return "or";
       case Aalu_XOR:  return "xor";
-      case Aalu_MUL:  return "mul";
+      case Aalu_MUL:  return "imul";
       default: vpanic("showAMD64AluOp");
    }
 }
@@ -701,14 +694,15 @@ AMD64Instr* AMD64Instr_MulL ( Bool syned, Int sz, AMD64RM* src ) {
    vassert(sz == 2 || sz == 4 || sz == 8);
    return i;
 }
-//.. AMD64Instr* AMD64Instr_Div ( Bool syned, AMD64ScalarSz ssz, AMD64RM* src ) {
-//..    AMD64Instr* i        = LibVEX_Alloc(sizeof(AMD64Instr));
-//..    i->tag             = Xin_Div;
-//..    i->Xin.Div.syned   = syned;
-//..    i->Xin.Div.ssz     = ssz;
-//..    i->Xin.Div.src     = src;
-//..    return i;
-//.. }
+AMD64Instr* AMD64Instr_Div ( Bool syned, Int sz, AMD64RM* src ) {
+   AMD64Instr* i     = LibVEX_Alloc(sizeof(AMD64Instr));
+   i->tag            = Ain_Div;
+   i->Ain.Div.syned  = syned;
+   i->Ain.Div.sz     = sz;
+   i->Ain.Div.src    = src;
+   vassert(sz == 4 || sz == 8);
+   return i;
+}
 //.. AMD64Instr* AMD64Instr_Sh3232  ( AMD64ShiftOp op, UInt amt, HReg src, HReg dst ) {
 //..    AMD64Instr* i       = LibVEX_Alloc(sizeof(AMD64Instr));
 //..    i->tag            = Xin_Sh3232;
@@ -1007,12 +1001,12 @@ void ppAMD64Instr ( AMD64Instr* i )
                     showAMD64ScalarSz(i->Ain.MulL.sz));
          ppAMD64RM(i->Ain.MulL.src);
          return;
-//..       case Xin_Div:
-//..          vex_printf("%cdiv%s ",
-//..                     i->Xin.Div.syned ? 's' : 'u',
-//..                     showAMD64ScalarSz(i->Xin.Div.ssz));
-//..          ppAMD64RM(i->Xin.Div.src);
-//..          return;
+      case Ain_Div:
+         vex_printf("%cdiv%s ",
+                    i->Ain.Div.syned ? 's' : 'u',
+                    showAMD64ScalarSz(i->Ain.Div.sz));
+         ppAMD64RM(i->Ain.Div.src);
+         return;
 //..       case Xin_Sh3232:
 //..          vex_printf("%sdl ", showAMD64ShiftOp(i->Xin.Sh3232.op));
 //..          if (i->Xin.Sh3232.amt == 0)
@@ -1282,11 +1276,11 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, AMD64Instr* i )
          addHRegUse(u, HRmModify, hregAMD64_RAX());
          addHRegUse(u, HRmWrite, hregAMD64_RDX());
          return;
-//..       case Xin_Div:
-//..          addRegUsage_AMD64RM(u, i->Xin.Div.src, HRmRead);
-//..          addHRegUse(u, HRmModify, hregAMD64_EAX());
-//..          addHRegUse(u, HRmModify, hregAMD64_EDX());
-//..          return;
+      case Ain_Div:
+         addRegUsage_AMD64RM(u, i->Ain.Div.src, HRmRead);
+         addHRegUse(u, HRmModify, hregAMD64_RAX());
+         addHRegUse(u, HRmModify, hregAMD64_RDX());
+         return;
 //..       case Xin_Sh3232:
 //..          addHRegUse(u, HRmRead, i->Xin.Sh3232.src);
 //..          addHRegUse(u, HRmModify, i->Xin.Sh3232.dst);
@@ -1511,9 +1505,9 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i )
       case Ain_MulL:
          mapRegs_AMD64RM(m, i->Ain.MulL.src);
          return;
-//..       case Xin_Div:
-//..          mapRegs_AMD64RM(m, i->Xin.Div.src);
-//..          return;
+      case Ain_Div:
+         mapRegs_AMD64RM(m, i->Ain.Div.src);
+         return;
 //..       case Xin_Sh3232:
 //..          mapReg(m, &i->Xin.Sh3232.src);
 //..          mapReg(m, &i->Xin.Sh3232.dst);
@@ -1805,7 +1799,9 @@ static Bool fits8bits ( UInt w32 )
                        =  01 greg 100, 0x24, d8
                        (lowest bit of rex distinguishes R12/RSP)
 
-     There's also a d32 version of the above rule should we need it.
+     greg,  d32(ereg)  |  ereg is either: RSP R12
+                       =  10 greg 100, 0x24, d32
+                       (lowest bit of rex distinguishes R12/RSP)
 
      -----------------------------------------------
 
@@ -1850,6 +1846,14 @@ static UChar* doAMode_M ( UChar* p, HReg greg, AMD64AMode* am )
  	 *p++ = mkModRegRM(1, iregNo(greg), 4);
          *p++ = 0x24;
          *p++ = am->Aam.IR.imm & 0xFF;
+         return p;
+      }
+      if (/* (am->Aam.IR.reg == hregAMD64_RSP()
+	     || wait for test case for RSP case */
+          am->Aam.IR.reg == hregAMD64_R12()) {
+ 	 *p++ = mkModRegRM(2, iregNo(greg), 4);
+         *p++ = 0x24;
+         p = emit32(p, am->Aam.IR.imm);
          return p;
       }
       ppAMD64AMode(am);
@@ -2082,12 +2086,14 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
       /* MUL */
       if (i->Ain.Alu64R.op == Aalu_MUL) {
          switch (i->Ain.Alu64R.src->tag) {
-//..             case Xrmi_Reg:
-//..                *p++ = 0x0F;
-//..                *p++ = 0xAF;
-//..                p = doAMode_R(p, i->Xin.Alu32R.dst,
-//..                                 i->Xin.Alu32R.src->Xrmi.Reg.reg);
-//..                goto done;
+            case Armi_Reg:
+               *p++ = rexAMode_R( i->Ain.Alu64R.dst,
+                                  i->Ain.Alu64R.src->Armi.Reg.reg);
+               *p++ = 0x0F;
+               *p++ = 0xAF;
+               p = doAMode_R(p, i->Ain.Alu64R.dst,
+                                i->Ain.Alu64R.src->Armi.Reg.reg);
+               goto done;
             case Armi_Mem:
                *p++ = rexAMode_M(i->Ain.Alu64R.dst,
                                  i->Ain.Alu64R.src->Armi.Mem.am);
@@ -2096,17 +2102,19 @@ Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
                p = doAMode_M(p, i->Ain.Alu64R.dst,
                                 i->Ain.Alu64R.src->Armi.Mem.am);
                goto done;
-//..             case Xrmi_Imm:
-//..                if (fits8bits(i->Xin.Alu32R.src->Xrmi.Imm.imm32)) {
-//..                   *p++ = 0x6B;
-//..                   p = doAMode_R(p, i->Xin.Alu32R.dst, i->Xin.Alu32R.dst);
-//..                   *p++ = 0xFF & i->Xin.Alu32R.src->Xrmi.Imm.imm32;
-//..                } else {
-//..                   *p++ = 0x69;
-//..                   p = doAMode_R(p, i->Xin.Alu32R.dst, i->Xin.Alu32R.dst);
-//..                   p = emit32(p, i->Xin.Alu32R.src->Xrmi.Imm.imm32);
-//..                }
-//..                goto done;
+            case Armi_Imm:
+               if (fits8bits(i->Ain.Alu64R.src->Armi.Imm.imm32)) {
+                  *p++ = rexAMode_R(i->Ain.Alu64R.dst, i->Ain.Alu64R.dst);
+                  *p++ = 0x6B;
+                  p = doAMode_R(p, i->Ain.Alu64R.dst, i->Ain.Alu64R.dst);
+                  *p++ = 0xFF & i->Ain.Alu64R.src->Armi.Imm.imm32;
+               } else {
+                  *p++ = rexAMode_R(i->Ain.Alu64R.dst, i->Ain.Alu64R.dst);
+                  *p++ = 0x69;
+                  p = doAMode_R(p, i->Ain.Alu64R.dst, i->Ain.Alu64R.dst);
+                  p = emit32(p, i->Ain.Alu64R.src->Armi.Imm.imm32);
+               }
+               goto done;
             default:
                goto bad;
          }
@@ -2232,7 +2240,8 @@ vassert(0);
          default: goto bad;
       }
       if (i->Ain.Sh64.src == 0) {
-vassert(0);
+         *p++ = rexAMode_R(fake(0), 
+                           i->Ain.Sh64.dst->Arm.Reg.reg);
          *p++ = opc_cl;
          switch (i->Ain.Sh64.dst->tag) {
             case Arm_Reg:
@@ -2315,25 +2324,29 @@ vassert(0);
       }
       break;
 
-//..    case Xin_Div:
-//..       subopc = i->Xin.Div.syned ? 7 : 6;
-//..       if (i->Xin.Div.ssz == Xss_32) {
-//..          *p++ = 0xF7;
-//..          switch (i->Xin.Div.src->tag)  {
-//..             case Xrm_Mem:
-//..                p = doAMode_M(p, fake(subopc),
-//..                                 i->Xin.Div.src->Xrm.Mem.am);
-//..                goto done;
-//..             case Xrm_Reg:
-//..                p = doAMode_R(p, fake(subopc), 
-//..                                 i->Xin.Div.src->Xrm.Reg.reg);
-//..                goto done;
-//..             default:
-//..                goto bad;
-//..          }
-//..       }
-//..       break;
-//.. 
+   case Ain_Div:
+      subopc = i->Ain.Div.syned ? 7 : 6;
+      if (i->Ain.Div.sz == 4) {
+         switch (i->Ain.Div.src->tag)  {
+            case Arm_Mem:
+               vassert(0);
+               *p++ = 0xF7;
+               p = doAMode_M(p, fake(subopc),
+                                i->Ain.Div.src->Arm.Mem.am);
+               goto done;
+            case Arm_Reg:
+               *p++ = clearWBit(
+                      rexAMode_R( fake(0), i->Ain.Div.src->Arm.Reg.reg));
+               *p++ = 0xF7;
+               p = doAMode_R(p, fake(subopc), 
+                                i->Ain.Div.src->Arm.Reg.reg);
+               goto done;
+            default:
+               goto bad;
+         }
+      }
+      break;
+
 //..    case Xin_Sh3232:
 //..       vassert(i->Xin.Sh3232.op == Xsh_SHL || i->Xin.Sh3232.op == Xsh_SHR);
 //..       if (i->Xin.Sh3232.amt == 0) {

@@ -3287,7 +3287,13 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
             vpanic("Grp3(amd64)");
       }
    } else {
-      addr = disAMode ( &len, pfx, delta, dis_buf, 0 );
+      addr = disAMode ( &len, pfx, delta, dis_buf,
+                        /* we have to inform disAMode of any immediate
+			   bytes used */
+                        gregOfRM(modrm)==0/*TEST*/
+                           ? imin(4,sz)
+                           : 0
+                      );
       t1   = newTemp(ty);
       delta += len;
       assign(t1, loadLE(ty,mkexpr(addr)));
@@ -3308,17 +3314,17 @@ ULong dis_Grp3 ( Prefix pfx, Int sz, ULong delta )
 //..             storeLE( mkexpr(addr), unop(mkSizedOp(ty,Iop_Not8), mkexpr(t1)));
 //..             DIP("not%c %s\n", nameISize(sz), dis_buf);
 //..             break;
-//..          case 3: /* NEG */
-//..             dst0 = newTemp(ty);
-//..             src  = newTemp(ty);
-//..             dst1 = newTemp(ty);
-//..             assign(dst0, mkU(ty,0));
-//..             assign(src,  mkexpr(t1));
-//..             assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
-//..             setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
-//..             storeLE( mkexpr(addr), mkexpr(dst1) );
-//..             DIP("neg%c %s\n", nameISize(sz), dis_buf);
-//..             break;
+         case 3: /* NEG */
+            dst0 = newTemp(ty);
+            src  = newTemp(ty);
+            dst1 = newTemp(ty);
+            assign(dst0, mkU(ty,0));
+            assign(src,  mkexpr(t1));
+            assign(dst1, binop(mkSizedOp(ty,Iop_Sub8), mkexpr(dst0), mkexpr(src)));
+            setFlags_DEP1_DEP2(Iop_Sub8, dst0, src, ty);
+            storeLE( mkexpr(addr), mkexpr(dst1) );
+            DIP("neg%c %s\n", nameISize(sz), dis_buf);
+            break;
 //..          case 4: /* MUL */
 //..             codegen_mulL_A_D ( sz, False, t1, dis_buf );
 //..             break;
@@ -3783,7 +3789,8 @@ ULong dis_imul_I_E_G ( Prefix      pfx,
       assign(te, getIRegB(pfx, size, eregOfRM(rm)));
       delta++;
    } else {
-      IRTemp addr = disAMode( &alen, pfx, delta, dis_buf, 0 );
+      IRTemp addr = disAMode( &alen, pfx, delta, dis_buf, 
+                                     imin(4,litsize) );
       assign(te, loadLE(ty, mkexpr(addr)));
       delta += alen;
    }
@@ -11222,9 +11229,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    case 0x69: /* IMUL Iv, Ev, Gv */
       delta = dis_imul_I_E_G ( pfx, sz, delta, sz );
       break;
-//..    case 0x6B: /* IMUL Ib, Ev, Gv */
-//..       delta = dis_imul_I_E_G ( sorb, sz, delta, 1 );
-//..       break;
+   case 0x6B: /* IMUL Ib, Ev, Gv */
+      delta = dis_imul_I_E_G ( pfx, sz, delta, 1 );
+      break;
 
    /* ------------------------ MOV ------------------------ */
 
@@ -12039,36 +12046,37 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       }
 //..       break;
 //..    }
-//.. 
-//..    /* ------------------------ XCHG ----------------------- */
-//.. 
+
+   /* ------------------------ XCHG ----------------------- */
+
 //..    case 0x86: /* XCHG Gb,Eb */
 //..       sz = 1;
 //..       /* Fall through ... */
-//..    case 0x87: /* XCHG Gv,Ev */
-//..       modrm = getUChar(delta);
-//..       ty = szToITy(sz);
-//..       t1 = newTemp(ty); t2 = newTemp(ty);
-//..       if (epartIsReg(modrm)) {
-//..          assign(t1, getIReg(sz, eregOfRM(modrm)));
-//..          assign(t2, getIReg(sz, gregOfRM(modrm)));
-//..          putIReg(sz, gregOfRM(modrm), mkexpr(t1));
-//..          putIReg(sz, eregOfRM(modrm), mkexpr(t2));
-//..          delta++;
-//..          DIP("xchg%c %s, %s\n", 
-//..              nameISize(sz), nameIReg(sz,gregOfRM(modrm)), 
-//..                             nameIReg(sz,eregOfRM(modrm)));
-//..       } else {
-//..          addr = disAMode ( &alen, sorb, delta, dis_buf );
-//..          assign( t1, loadLE(ty,mkexpr(addr)) );
-//..          assign( t2, getIReg(sz,gregOfRM(modrm)) );
-//..          storeLE( mkexpr(addr), mkexpr(t2) );
-//..          putIReg( sz, gregOfRM(modrm), mkexpr(t1) );
-//..          delta += alen;
-//..          DIP("xchg%c %s, %s\n", nameISize(sz), 
-//..                                 nameIReg(sz,gregOfRM(modrm)), dis_buf);
-//..       }
-//..       break;
+   case 0x87: /* XCHG Gv,Ev */
+      modrm = getUChar(delta);
+      ty = szToITy(sz);
+      t1 = newTemp(ty); t2 = newTemp(ty);
+      if (epartIsReg(modrm)) {
+         assign(t1, getIRegB(pfx, sz, eregOfRM(modrm)));
+         assign(t2, getIRegR(pfx, sz, gregOfRM(modrm)));
+         putIRegR(pfx, sz, gregOfRM(modrm), mkexpr(t1));
+         putIRegB(pfx, sz, eregOfRM(modrm), mkexpr(t2));
+         delta++;
+         DIP("xchg%c %s, %s\n", 
+             nameISize(sz), nameIRegR(pfx, sz, gregOfRM(modrm)), 
+                            nameIRegB(pfx, sz, eregOfRM(modrm)));
+      } else {
+         goto decode_failure; /* awaiting test case */
+         addr = disAMode ( &alen, pfx, delta, dis_buf, 0 );
+         assign( t1, loadLE(ty,mkexpr(addr)) );
+         assign( t2, getIRegR(pfx,sz,gregOfRM(modrm)) );
+         storeLE( mkexpr(addr), mkexpr(t2) );
+         putIRegR( pfx, sz, gregOfRM(modrm), mkexpr(t1) );
+         delta += alen;
+         DIP("xchg%c %s, %s\n", nameISize(sz), 
+                                nameIRegR(pfx, sz,gregOfRM(modrm)), dis_buf);
+      }
+      break;
 
    case 0x90: /* XCHG eAX,eAX */
       if (!haveREX(pfx)) {

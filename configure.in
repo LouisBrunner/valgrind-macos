@@ -76,7 +76,7 @@ case "${host_cpu}" in
 
      *) 
 	AC_MSG_RESULT([no (${host_cpu})])
-	AC_MSG_ERROR([Valgrind is ix86 specific. Sorry])
+	AC_MSG_ERROR([Unsupported host architecture. Sorry])
 	;;
 esac
 

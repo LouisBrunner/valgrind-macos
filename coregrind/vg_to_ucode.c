@@ -5499,6 +5499,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x91: /* XCHG eAX,eCX */
    case 0x92: /* XCHG eAX,eDX */
    case 0x93: /* XCHG eAX,eBX */
+   case 0x94: /* XCHG eAX,eSP */
    case 0x96: /* XCHG eAX,eSI */
    case 0x97: /* XCHG eAX,eDI */
       codegen_xchg_eAX_Reg ( cb, sz, opc - 0x90 );

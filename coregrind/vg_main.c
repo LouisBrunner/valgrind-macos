@@ -616,6 +616,28 @@ static void usage ( void )
    VG_(exit)(1);
 }
 
+
+/* Callback for lookiing for the stackl segment. */
+static Addr vg_foundstack_start = (Addr)NULL;
+static UInt vg_foundstack_size  = 0;
+
+static void vg_findstack_callback ( Addr start, UInt size, 
+                              Char r, Char w, Char x, 
+                              UInt foffset, UChar* filename )
+{
+   Addr lastword;
+   if (size == 0) return;
+   if (r != 'r' || w != 'w' || x != 'x') return;
+   lastword = start + size - 4;
+   if (start <= VG_(esp_at_startup) && VG_(esp_at_startup) <= lastword) {
+     vg_foundstack_start = start;
+     vg_foundstack_size = size;
+  vg_assert(vg_foundstack_size > 0);
+   }
+}
+
+
+
 static void process_cmd_line_options ( void )
 {
    Char* argv[M_VG_CMDLINE_OPTS];
@@ -646,7 +668,7 @@ static void process_cmd_line_options ( void )
       change less often than the libc ones. */
    {
        UInt* sp = 0; /* bogus init to keep gcc -O happy */
-
+#if 0
        /* locate the top of the stack */
        if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
                                   VG_STARTUP_STACK_BASE_1 )) {
@@ -669,9 +691,33 @@ static void process_cmd_line_options ( void )
              "constants defined in vg_include.h.  You should investigate."
           );
        }
- 
+ #endif
        /* we locate: NEW_AUX_ENT(1, AT_PAGESZ, ELF_EXEC_PAGESIZE) in
           the elf interpreter table */
+
+
+       /* Look for the stack by reading /proc/self/maps and looking
+	  for a section bracketing VG_(esp_at_startup) which has rwx
+	  permissions. */
+
+       /* Appalling hack for Gentoo; round up to the next page. */
+       sp = (UInt*)VG_(esp_at_startup);
+
+       VG_(read_procselfmaps)( vg_findstack_callback );
+       /* make vg_foundstack_start  and 
+static UInt vg_foundstack_size  = 0;
+be the stack. */
+       if (vg_foundstack_size == 0)
+	 args_grok_error("Cannot determine stack segment "
+                         "from /proc/self/maps");
+
+       if (0)
+       VG_(printf)("stack segment is %p .. %p\n", vg_foundstack_start, vg_foundstack_start + vg_foundstack_size - 4 );
+
+       sp = (UInt*)(vg_foundstack_start+ vg_foundstack_size);
+       vg_assert((((UInt)(sp)) %  VKI_BYTES_PER_PAGE) == 0);
+
+
        sp -= 2;
        while (sp[0] != VKI_AT_PAGESZ || sp[1] != 4096) {
            /* VG_(printf)("trying %p\n", sp); */
@@ -1308,6 +1354,15 @@ void VG_(main) ( void )
       VG_(stack)[10000-1-i] = (UInt)(&VG_(stack)[10000-i-1]) ^ 0xABCD4321;
    }
 
+   /* Hook to delay things long enough so we can get the pid and
+      attach GDB in another shell. */
+   if (0) {
+      Int p, q;
+      VG_(printf)("pid=%d\n", VG_(getpid)());
+      for (p = 0; p < 50000; p++)
+         for (q = 0; q < 50000; q++) ;
+   }
+
    /* Setup stuff that depends on the skin.  Must be before:
       - vg_init_baseBlock(): to register helpers
       - process_cmd_line_options(): to register skin name and description,
@@ -1326,15 +1381,6 @@ void VG_(main) ( void )
    /* Set up baseBlock offsets and copy the saved machine's state into it. 
       Comes after SK_(post_clo_init) in case it registers helpers. */
    vg_init_baseBlock();
-
-   /* Hook to delay things long enough so we can get the pid and
-      attach GDB in another shell. */
-   if (0) { 
-      Int p, q;
-      VG_(printf)("pid=%d\n", VG_(getpid)());
-      for (p = 0; p < 5000; p++)
-         for (q = 0; q < 50000; q++) ;
-   }
 
    /* Initialise the scheduler, and copy the client's state from
       baseBlock into VG_(threads)[1].  This has to come before signal

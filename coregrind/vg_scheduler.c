@@ -626,6 +626,7 @@ void VG_(scheduler_init) ( void )
 
    startup_esp = VG_(baseBlock)[VGOFF_(m_esp)];
 
+#if 0
    if (VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_1)
        || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_2) 
        || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_3)
@@ -642,6 +643,7 @@ void VG_(scheduler_init) ( void )
       );
       VG_(core_panic)("unexpected %esp at startup");
    }
+#endif
 
    for (i = 0 /* NB; not 1 */; i < VG_N_THREADS; i++) {
       mostly_clear_thread_record(i);

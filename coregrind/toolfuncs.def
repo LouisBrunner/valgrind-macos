@@ -26,8 +26,7 @@ void,		post_clo_init
 IRBB*,  instrument,  IRBB* bb,  VexGuestLayout* layout,  IRType hWordTy
 
 ## Finish up, print out any results, etc.  `exitcode' is program's exit
-## code.  The shadow (if the `shadow_regs' need is set) can be found with
-## VG_(get_exit_status_shadow)().
+## code.  The shadow can be found with VG_(get_exit_status_shadow)().
 void,	fini,	Int exitcode
 
 
@@ -92,12 +91,6 @@ void,	print_extra_suppression_info,	Error* err
 ## or instructions within the address range given.
 void,	discard_basic_block_info,		Addr a, SizeT size
 
-
-## ------------------------------------------------------------------
-## VG_(needs).shadow_regs
-
-## No functions must be defined, but the post_reg[s]_write_* events should
-## be tracked.
 
 ## ------------------------------------------------------------------
 ## VG_(needs).command_line_options
@@ -210,9 +203,8 @@ void,	pre_mem_write,	    CorePart part, ThreadId tid, Char* s, Addr a, SizeT siz
 void,	post_mem_write,	    CorePart part, ThreadId tid, Addr a, SizeT size
 
 
-## Register events -- if `shadow_regs' need is set, these should probably be
-## used.  Use VG_(set_shadow_state_area)() to set the shadow regs for these
-## events.
+## Register events.  Use VG_(set_shadow_state_area)() to set the shadow regs
+## for these events.
 
 void,	pre_reg_read,	CorePart part, ThreadId tid, Char* s, OffT guest_state_offset, SizeT size
 void,	post_reg_write,	CorePart part, ThreadId tid, OffT guest_state_offset, SizeT size

@@ -562,18 +562,6 @@ extern void VG_(cpuid) ( UInt eax,
                          UInt *eax_ret, UInt *ebx_ret,
                          UInt *ecx_ret, UInt *edx_ret );
 
-
-/* ------------------------------------------------------------------ */
-/* Accessing archregs and their shadows */
-
-// For get/set, 'area' is where the asked-for shadow state will be copied
-// into/from.
-
-extern void VG_(get_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
-                                        SizeT size, UChar* area );
-extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
-                                        SizeT size, const UChar* area );
-
 /*====================================================================*/
 /*=== Execution contexts                                           ===*/
 /*====================================================================*/
@@ -932,11 +920,17 @@ extern void  VG_(SkipNode_Free)  (const SkipList *l, void *p);
 extern void *VG_(SkipNode_First) (const SkipList *l);
 extern void *VG_(SkipNode_Next)  (const SkipList *l, void *data);
 
+
 /*====================================================================*/
 /*=== Functions for shadow registers                               ===*/
 /*====================================================================*/
 
-/* Nb: make sure the shadow_regs 'need' is set before using these! */
+// For get/set, 'area' is where the asked-for shadow state will be copied
+// into/from.
+extern void VG_(get_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
+                                        SizeT size, UChar* area );
+extern void VG_(set_shadow_regs_area) ( ThreadId tid, OffT guest_state_offset,
+                                        SizeT size, const UChar* area );
 
 /* This one lets you override the shadow of the return value register for a
    syscall.  Call it from TL_(post_syscall)() (not TL_(pre_syscall)()!) to
@@ -1054,9 +1048,6 @@ extern void VG_(needs_tool_errors) ( void );
    DISCARD_TRANSLATIONS user request) can cause one instruction address
    to be used for more than one instruction in one program run...  */
 extern void VG_(needs_basic_block_discards) ( void );
-
-/* Tool maintains information about each register? */
-extern void VG_(needs_shadow_regs) ( void );
 
 /* Tool defines its own command line options? */
 extern void VG_(needs_command_line_options) ( void );

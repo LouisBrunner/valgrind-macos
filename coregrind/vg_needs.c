@@ -51,7 +51,7 @@ VgNeeds VG_(needs) = {
    .tool_errors          = False,
    .libc_freeres         = False,
    .basic_block_discards = False,
-   .shadow_regs          = False,
+   .no_longer_used_1     = False,
    .command_line_options = False,
    .client_requests      = False,
    .no_longer_used_0     = False,
@@ -102,15 +102,6 @@ void VG_(sanity_check_needs) ( void)
       VG_(tool_panic)("`die_mem_stack' should be defined\n");
    }
 
-   if ( (VG_(defined_post_reg_write)()    ||
-         VG_(defined_post_reg_write_clientcall_return)()) &&
-       ! VG_(needs).shadow_regs) 
-   {
-      VG_(printf)("\nTool error: one of the `post_reg_write'\n"
-                  "events tracked, but `shadow_regs' need not set.\n");
-      VG_(tool_panic)("`shadow_regs' should be set\n");
-   }
-
    if (VG_(needs).shadow_memory != (VG_(get_shadow_size)() != 0)) {
       if (VG_(get_shadow_size)() != 0)
 	 VG_(printf)("\nTool error: tool allocated shadow memory, but apparently doesn't "
@@ -155,7 +146,6 @@ NEEDS(libc_freeres)
 NEEDS(core_errors)
 NEEDS(tool_errors)
 NEEDS(basic_block_discards)
-NEEDS(shadow_regs)
 NEEDS(command_line_options)
 NEEDS(client_requests)
 NEEDS(syscall_wrapper)

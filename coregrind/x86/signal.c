@@ -223,9 +223,8 @@ void VGA_(push_signal_frame)(ThreadId tid, Addr esp_top_of_frame,
 
    frame->magicPI    = 0x31415927;
 
-   frame->vex = tst->arch.vex;
-   if (VG_(needs).shadow_regs)
-      frame->vex_shadow = tst->arch.vex_shadow;
+   frame->vex        = tst->arch.vex;
+   frame->vex_shadow = tst->arch.vex_shadow;
 
    frame->mask = tst->sig_mask;
 
@@ -281,9 +280,8 @@ Int VGA_(pop_signal_frame)(ThreadId tid)
    VG_TRACK( die_mem_stack_signal, (Addr)frame, sizeof(VgSigFrame) );
 
    /* restore machine state */
-   tst->arch.vex = frame->vex;
-   if (VG_(needs).shadow_regs)
-      tst->arch.vex_shadow = frame->vex_shadow;
+   tst->arch.vex        = frame->vex;
+   tst->arch.vex_shadow = frame->vex_shadow;
 
    /* And restore the thread's status to what it was before the signal
       was delivered. */

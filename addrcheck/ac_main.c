@@ -1318,7 +1318,7 @@ void TL_(pre_clo_init)(void)
    VG_(init_pre_mem_read)         ( & ac_check_is_readable );
    VG_(init_pre_mem_read_asciiz)  ( & ac_check_is_readable_asciiz );
    VG_(init_pre_mem_write)        ( & ac_check_is_writable );
-   VG_(init_post_mem_write)       ( & ac_make_accessible );
+   VG_(init_post_mem_write)       ( & ac_post_mem_write );
 
    VGP_(register_profile_event) ( VgpSetMem,   "set-mem-perms" );
    VGP_(register_profile_event) ( VgpCheckMem, "check-mem-perms" );

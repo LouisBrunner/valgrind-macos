@@ -1815,7 +1815,6 @@ void TL_(pre_clo_init)(void)
    VG_(needs_core_errors)         ();
    VG_(needs_tool_errors)         ();
    VG_(needs_libc_freeres)        ();
-   VG_(needs_shadow_regs)         ();
    VG_(needs_command_line_options)();
    VG_(needs_client_requests)     ();
    VG_(needs_sanity_checks)       ();

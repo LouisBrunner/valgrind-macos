@@ -388,7 +388,7 @@ typedef
       Bool core_errors;
       Bool tool_errors;
       Bool basic_block_discards;
-      Bool shadow_regs;
+      Bool no_longer_used_1;     // for backwards compatibility
       Bool command_line_options;
       Bool client_requests;
       Bool no_longer_used_0;     // for backwards compatibility

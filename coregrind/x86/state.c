@@ -78,10 +78,8 @@ void VGA_(init_thread1state) ( Addr client_eip,
       to the start of the .vex field. */
    VGOFF_(m_eip) = offsetof(VexGuestX86State,guest_EIP)/4;
 
-   if (VG_(needs).shadow_regs) {
-      VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
-                sizeof(VexGuestArchState));
-   }
+   VG_TRACK( post_reg_write, Vg_CoreStartup, /*tid*/1, /*offset*/0,
+             sizeof(VexGuestArchState));
 
    /* I assume that if we have SSE2 we also have SSE */
    VG_(have_ssestate) = False;

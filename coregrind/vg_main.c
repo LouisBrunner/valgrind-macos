@@ -466,8 +466,10 @@ static void config_error ( Char* msg )
 {
    VG_(shutdown_logging)();
    VG_(clo_logfile_fd) = 2; /* stderr */
-   VG_(printf)("valgrind.so: Startup or configuration error:\n\t%s\n", msg);
-   VG_(printf)("valgrind.so: Unable to start up properly.  Giving up.\n");
+   VG_(printf)(
+      "valgrind.so: Startup or configuration error:\n   %s\n", msg);
+   VG_(printf)(
+      "valgrind.so: Unable to start up properly.  Giving up.\n");
    VG_(exit)(1);
 }
 
@@ -531,6 +533,11 @@ static void process_cmd_line_options ( void )
       to failures in initialisation. */
    VG_(startup_logging)();
 
+   /* Check for sane path in ./configure --prefix=... */
+   if (VG_(strlen)(VG_LIBDIR) < 1 
+       || VG_LIBDIR[0] != '/') 
+     config_error("Please use absolute paths in "
+                  "./configure --prefix=... or --libdir=...");
 
    /* (Suggested by Fabrice Bellard ... )
       We look for the Linux ELF table and go down until we find the
@@ -1231,7 +1238,9 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
       "   p_prel              = `%s'\n"
       "   p_path              = `%s'\n"
       "   VG_LIBDIR           = `%s'\n",
-       what, ld_preload_str, ld_library_path_str, p_prel, p_path, VG_LIBDIR );
+      what, ld_preload_str, ld_library_path_str, 
+      p_prel, p_path, VG_LIBDIR 
+   );
    VG_(panic)("VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) failed\n");
 }
 

@@ -353,6 +353,33 @@ char* stpcpy ( char* dst, const char* src )
 }
 
 
+/* Find the first occurrence of C in S or the final NUL byte.  */
+
+char* glibc232_strchrnul (const char* s, int c_in)
+{
+   unsigned char  c        = (unsigned char) c_in;
+   unsigned char* char_ptr = (unsigned char *)s;
+   while (1) {
+      if (*char_ptr == 0) return char_ptr;
+      if (*char_ptr == c) return char_ptr;
+      char_ptr++;
+   }
+}
+
+
+/* Find the first occurrence of C in S.  */
+
+char* glibc232_rawmemchr (const char* s, int c_in)
+{
+   unsigned char  c        = (unsigned char) c_in;
+   unsigned char* char_ptr = (unsigned char *)s;
+   while (1) {
+      if (*char_ptr == c) return char_ptr;
+      char_ptr++;
+   }
+}
+
+
 /*--------------------------------------------------------------------*/
 /*--- end                                     mac_replace_strmem.c ---*/
 /*--------------------------------------------------------------------*/

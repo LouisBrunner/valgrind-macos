@@ -161,10 +161,16 @@ extern VexEmWarn
 #define X86G_CC_MASK_P    (1 << X86G_CC_SHIFT_P)
 
 /* FPU flag masks */
-#define X86G_FC_MASK_C3   (1 << 14)
-#define X86G_FC_MASK_C2   (1 << 10)
-#define X86G_FC_MASK_C1   (1 << 9)
-#define X86G_FC_MASK_C0   (1 << 8)
+#define X86G_FC_SHIFT_C3   14
+#define X86G_FC_SHIFT_C2   10
+#define X86G_FC_SHIFT_C1   9
+#define X86G_FC_SHIFT_C0   8
+
+#define X86G_FC_MASK_C3    (1 << X86G_FC_SHIFT_C3)
+#define X86G_FC_MASK_C2    (1 << X86G_FC_SHIFT_C2)
+#define X86G_FC_MASK_C1    (1 << X86G_FC_SHIFT_C1)
+#define X86G_FC_MASK_C0    (1 << X86G_FC_SHIFT_C0)
+
 
 /* %EFLAGS thunk descriptors.  A four-word thunk is used to record
    details of the most recent flag-setting operation, so the flags can

@@ -1156,7 +1156,8 @@ UInt x86g_calculate_FXAM ( UInt tag, ULong dbl )
       return 1,0,sign,1 */
    if (tag == 0) {
       /* vex_printf("Empty\n"); */
-      return X86G_FC_MASK_C3 | 0 | sign | X86G_FC_MASK_C0;
+      return X86G_FC_MASK_C3 | 0 | (sign << X86G_FC_SHIFT_C1) 
+                                 | X86G_FC_MASK_C0;
    }
 
    bexp = (f64[7] << 4) | ((f64[6] >> 4) & 0x0F);
@@ -1172,35 +1173,38 @@ UInt x86g_calculate_FXAM ( UInt tag, ULong dbl )
       Return 1,0,sign,0. */
    if (bexp == 0 && mantissaIsZero) {
       /* vex_printf("Zero\n"); */
-      return X86G_FC_MASK_C3 | 0 | sign | 0;
+      return X86G_FC_MASK_C3 | 0 
+                             | (sign << X86G_FC_SHIFT_C1) | 0;
    }
    
    /* If exponent is zero but mantissa isn't, it's a denormal.
       Return 1,1,sign,0. */
    if (bexp == 0 && !mantissaIsZero) {
       /* vex_printf("Denormal\n"); */
-      return X86G_FC_MASK_C3 | X86G_FC_MASK_C2 | sign | 0;
+      return X86G_FC_MASK_C3 | X86G_FC_MASK_C2 
+                             | (sign << X86G_FC_SHIFT_C1) | 0;
    }
 
    /* If the exponent is 7FF and the mantissa is zero, this is an infinity.
       Return 0,1,sign,1. */
    if (bexp == 0x7FF && mantissaIsZero) {
       /* vex_printf("Inf\n"); */
-      return 0 | X86G_FC_MASK_C2 | sign | X86G_FC_MASK_C0;
+      return 0 | X86G_FC_MASK_C2 | (sign << X86G_FC_SHIFT_C1) 
+                                 | X86G_FC_MASK_C0;
    }
 
    /* If the exponent is 7FF and the mantissa isn't zero, this is a NaN.
       Return 0,0,sign,1. */
    if (bexp == 0x7FF && !mantissaIsZero) {
       /* vex_printf("NaN\n"); */
-      return 0 | 0 | sign | X86G_FC_MASK_C0;
+      return 0 | 0 | (sign << X86G_FC_SHIFT_C1) | X86G_FC_MASK_C0;
    }
 
    /* Uh, ok, we give up.  It must be a normal finite number.
       Return 0,1,sign,0.
    */
    /* vex_printf("normal\n"); */
-   return 0 | X86G_FC_MASK_C2 | sign | 0;
+   return 0 | X86G_FC_MASK_C2 | (sign << X86G_FC_SHIFT_C1) | 0;
 }
 
 

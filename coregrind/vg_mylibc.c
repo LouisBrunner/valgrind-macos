@@ -11,7 +11,6 @@
 
    Copyright (C) 2000-2002 Julian Seward 
       jseward@acm.org
-      Julian_Seward@muraroa.demon.co.uk
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

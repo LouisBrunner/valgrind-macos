@@ -2252,13 +2252,19 @@ void ** (*__libc_internal_tsd_address)
    to the corresponding thread-unaware (?) libc routine.
    ------------------------------------------------------------------ */
 
+static void *libpthread_handle;
+
 #define FORWARD(name, altname, args...) \
   ({ \
     static name##_t name##_ptr = NULL; \
+    if (libpthread_handle == NULL) { \
+      libpthread_handle = dlopen("libpthread.so.0", RTLD_LAZY); \
+      my_assert(libpthread_handle != NULL); \
+    } \
     if (name##_ptr == NULL) { \
       if ((name##_ptr = (name##_t)dlsym(RTLD_NEXT, #name)) == NULL) \
         name##_ptr = (name##_t)dlsym(RTLD_DEFAULT, #altname); \
-      my_assert(name##_ptr != NULL && name##_ptr != name); \
+      my_assert(name##_ptr != NULL && name##_ptr != dlsym(libpthread_handle, #name)); \
     } \
     name##_ptr(args); \
   })

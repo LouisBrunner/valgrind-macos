@@ -3410,30 +3410,40 @@ PRE(ioctl)
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPSETMODE)", arg3,
                      sizeof(int) );
       break;
+#ifdef PPGETMODE
    case PPGETMODE:
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPGETMODE)", arg3,
                      sizeof(int) );
       break;
+#endif
    case PPSETPHASE:
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPSETPHASE)", arg3,
                      sizeof(int) );
       break;
+#ifdef PPGETPHASE
    case PPGETPHASE:
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPGETPHASE)", arg3,
                      sizeof(int) );
       break;
+#endif
+#ifdef PPGETMODES
    case PPGETMODES:
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPGETMODES)", arg3,
                      sizeof(unsigned int) );
       break;
+#endif
+#ifdef PPSETFLAGS
    case PPSETFLAGS:
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(PPSETFLAGS)", arg3,
                      sizeof(int) );
       break;
+#endif
+#ifdef PPGETFLAGS
    case PPGETFLAGS:
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPGETFLAGS)", arg3,
                      sizeof(int) );
       break;
+#endif
    case PPRSTATUS:
       SYSCALL_TRACK( pre_mem_write, tid, "ioctl(PPRSTATUS)", arg3,
                      sizeof(unsigned char) );
@@ -3928,7 +3938,9 @@ POST(ioctl)
    case PPRELEASE:
    case PPSETMODE:
    case PPSETPHASE:
+#ifdef PPSETFLAGS
    case PPSETFLAGS:
+#endif
    case PPWDATA:
    case PPWCONTROL:
    case PPFCONTROL:
@@ -3937,18 +3949,26 @@ POST(ioctl)
    case PPWCTLONIRQ:
    case PPSETTIME:
       break;
+#ifdef PPGETMODE
    case PPGETMODE:
       VG_TRACK( post_mem_write, arg3, sizeof(int) );
       break;
+#endif
+#ifdef PPGETPHASE
    case PPGETPHASE:
       VG_TRACK( post_mem_write, arg3, sizeof(int) );
       break;
+#endif
+#ifdef PPGETMODES
    case PPGETMODES:
       VG_TRACK( post_mem_write, arg3, sizeof(unsigned int) );
       break;
+#endif
+#ifdef PPGETFLAGS
    case PPGETFLAGS:
       VG_TRACK( post_mem_write, arg3, sizeof(int) );
       break;
+#endif
    case PPRSTATUS:
       VG_TRACK( post_mem_write, arg3, sizeof(unsigned char) );
       break;

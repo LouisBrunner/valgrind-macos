@@ -1375,6 +1375,8 @@ int __pthread_mutex_timedlock(pthread_mutex_t *mutex,
         + ((unsigned long long int)(abstime->tv_nsec / 1000000));
    if (ull_ms_end_after_1970 < ull_ms_now_after_1970)
       ull_ms_end_after_1970 = ull_ms_now_after_1970;
+   ull_ms_now = ((unsigned long long int)(ms_now));
+   ull_ms_end = ull_ms_now + (ull_ms_end_after_1970 - ull_ms_now_after_1970);
    if (ull_ms_end >= (unsigned long long int)(0xFFFFFFFFUL)) {
       /* use 0xFFFFFFFEUL because 0xFFFFFFFFUL is reserved for no timeout
          (the fine difference between a long wait and a possible abort

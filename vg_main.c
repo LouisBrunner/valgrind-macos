@@ -531,18 +531,76 @@ static void process_cmd_line_options ( void )
       to failures in initialisation. */
    VG_(startup_logging)();
 
+
+   /* We look for the Linux ELF table and go down until we find the
+      envc & envp. It is not full proof, but these structures should
+      change less often than the libc ones. */
+   {
+       unsigned long *sp;
+       int i;
+       /* locate the top of the stack */
+       sp = (unsigned long *)(((unsigned long)VG_(esp_at_startup) & 
+                               0xF0000000) + 0x10000000);
+       /* we locate: NEW_AUX_ENT(1, AT_PAGESZ, ELF_EXEC_PAGESIZE) in
+          the elf interpreter table */
+       sp -= 2;
+
+#define VKI_AT_PAGESZ 6
+
+       while (sp[0] != VKI_AT_PAGESZ || sp[1] != 4096) {
+	 /*  VG_(printf)("trying %p\n", sp); */
+           sp--;
+       }
+#define VKI_AT_BASE   7     /* base address of interpreter */
+#define VKI_AT_PAGESZ 6     /* system page size */
+#define VKI_AT_PHNUM  5     /* number of program headers */
+#define VKI_AT_PHENT  4     /* size of program header entry */
+#define VKI_AT_PHDR   3     /* program headers for program */
+
+       if (sp[2] == VKI_AT_BASE 
+           && sp[0] == VKI_AT_PAGESZ
+           && sp[-2] == VKI_AT_PHNUM
+           && sp[-4] == VKI_AT_PHENT
+           && sp[-6] == VKI_AT_PHDR) {
+          VG_(printf)("Looks like you've got a 2.2.X kernel here.\n");
+          sp -= 6;
+       }
+
+       sp--;
+       vg_assert(*sp == 0);
+       /* sp now points to NULL at the end of env[] */
+       while (True) {
+           sp --;
+           if (*sp == 0) break;
+       }
+       /* sp now points to NULL at the end of argv[] */
+       VG_(client_envp) = sp+1;
+
+       VG_(client_argc) = 0;
+       while (True) {
+          sp--;
+          if (*sp == VG_(client_argc))
+             break;
+          VG_(client_argc)++;
+       }
+
+       VG_(client_argv) = sp+1;
+   }
+
+
+#if 0
    /* Magically find the client's argc/argv/envp.  This kludge is
       entirely dependent on the stack layout imposed by libc at
       startup.  Hence the magic offsets.  Then check (heuristically)
       that the results are plausible.  There must be a better way to
       do this ... */
 
-#  if 0
+#  if 1
    /* Use this to search for the correct offsets if the tests below
       barf. */
    { Int i;
      VG_(printf)("startup %%esp is %p\n", VG_(esp_at_startup) );
-     for (i = 0; i < 10; i++) {
+     for (i = -10; i < 20; i++) {
         Char* p = ((Char**)VG_(esp_at_startup))[i];
         VG_(printf)("%d:  %p\n", i, p);
      }
@@ -627,6 +685,7 @@ static void process_cmd_line_options ( void )
    /* NOTREACHED */
 
   argc_argv_envp_OK:
+#endif
 
    /* Now that VG_(client_envp) has been set, we can extract the args
       for Valgrind itself.  Copy into global var so that we don't have to

@@ -38,7 +38,8 @@ VgLdtEntry* VG_(allocate_LDT_for_thread) ( VgLdtEntry* parent_ldt )
    UInt        nbytes, i;
    VgLdtEntry* ldt;
 
-   VG_(printf)("allocate_LDT_for_thread: parent = %p\n", parent_ldt );
+   if (VG_(clo_verbosity) > 1)
+      VG_(printf)("allocate_LDT_for_thread: parent = %p\n", parent_ldt );
    vg_assert(VG_LDT_ENTRY_SIZE == sizeof(VgLdtEntry));
    nbytes = VG_M_LDT_ENTRIES * VG_LDT_ENTRY_SIZE;
  
@@ -57,7 +58,8 @@ VgLdtEntry* VG_(allocate_LDT_for_thread) ( VgLdtEntry* parent_ldt )
 /* Free an LDT created by the above function. */
 void VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt )
 {
-   VG_(printf)("deallocate_LDT_for_thread: ldt = %p\n", ldt );
+   if (VG_(clo_verbosity) > 1)
+      VG_(printf)("deallocate_LDT_for_thread: ldt = %p\n", ldt );
    if (ldt != NULL)
       VG_(arena_free)(VG_AR_CORE, ldt);
 }
@@ -152,8 +154,9 @@ Int read_ldt ( ThreadId tid, UChar* ptr, UInt bytecount )
    UInt i, size;
    Char* ldt;
 
-   VG_(printf)("read_ldt: tid = %d, ptr = %p, bytecount = %d\n",
-               tid, ptr, bytecount );
+   if (VG_(clo_verbosity) > 1)
+      VG_(printf)("read_ldt: tid = %d, ptr = %p, bytecount = %d\n",
+                  tid, ptr, bytecount );
 
    ldt = (Char*)(VG_(threads)[tid].ldt);
    err = 0;
@@ -181,9 +184,10 @@ Int write_ldt ( ThreadId tid, void* ptr, UInt bytecount, Int oldmode )
    VgLdtEntry* ldt;
    struct vki_modify_ldt_ldt_s* ldt_info; 
 
-   VG_(printf)("write_ldt: tid = %d, ptr = %p, "
-               "bytecount = %d, oldmode = %d\n",
-               tid, ptr, bytecount, oldmode );
+   if (VG_(clo_verbosity) > 1)
+      VG_(printf)("write_ldt: tid = %d, ptr = %p, "
+                  "bytecount = %d, oldmode = %d\n",
+                  tid, ptr, bytecount, oldmode );
 
    ldt      = VG_(threads)[tid].ldt;
    ldt_info = (struct vki_modify_ldt_ldt_s*)ptr;

@@ -110,6 +110,19 @@ if [ z"$nptl_threading" = zyes ]; then
    export LD_ASSUME_KERNEL 
 fi
 
+# Ensure the program isn't statically linked.
+if [ $# != 0 ] ; then
+   which_prog="`which $1`"
+   case `ldd "$which_prog"` in
+   *"not a dynamic executable"*)
+     echo "\`$which_prog' is statically linked"
+     echo "Valgrind only works on dynamically linked executables;  your"
+     echo "program must rely on at least one shared object for Valgrind"
+     echo "to work with it.  Read FAQ #5 for more information."
+     exit 1 ;;
+   esac
+fi
+   
 # A bit subtle.  The LD_PRELOAD added entry must be absolute
 # and not depend on LD_LIBRARY_PATH.  This is so that we can
 # mess with LD_LIBRARY_PATH for child processes, which makes

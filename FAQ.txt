@@ -87,18 +87,17 @@ A4. Known issue with RHAS 2.1, due to funny stack permissions at
 Q5. I try running "valgrind my_program", but my_program runs normally,
     and Valgrind doesn't emit any output at all.
 
-A5. Is my_program statically linked?  Valgrind doesn't work with
-    statically linked binaries.  my_program must rely on at least one 
-    shared object.  To determine if a my_program is statically linked, 
-    run:
+A5. This should no longer happen, as a check for this takes place
+    when Valgrind starts up.
 
-      ldd my_program
+    However, Valgrind still doesn't work with programs that are entirely
+    statically linked.  If you still want static linking, you can ask 
+    gcc to link certain libraries statically.  Try the following options:
 
-    It will show what shared objects my_program relies on, or say:
+        -Wl,-Bstatic -lmyLibrary1 -lotherLibrary -Wl,-Bdynamic
 
-      not a dynamic executable
-
-    if my_program is statically linked.
+    Just make sure you end with -Wl,-Bdynamic so that libc is dynamically
+    linked.
 
 -----------------------------------------------------------------
 

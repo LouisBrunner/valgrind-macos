@@ -562,7 +562,39 @@ follows:
   <li><code>--cachesim=no</code> [default]<br>
       <code>--cachesim=yes</code> <p>When enabled, turns off memory
       checking, and turns on cache profiling.  Cache profiling is
-      described in detail in <a href="#cache">Section 7</a>.  </li><p>
+      described in detail in <a href="#cache">Section 7</a>.
+      </li><br><p>
+
+  <li><code>--wierd-hacks=hack1,hack2,...</code>
+      Pass miscellaneous hints to Valgrind which slightly modify the
+      simulated behaviour in nonstandard or dangerous ways, possibly
+      to help the simulation of strange features.  By default no hacks
+      are enabled.  Use with caution!  Currently known hacks are:
+      <p>
+      <ul>
+      <li><code>ioctl-VTIME</code> Use this if you have a program
+          which sets readable file descriptors to have a timeout by
+          doing <code>ioctl</code> on them with a
+          <code>TCSETA</code>-style command <b>and</b> a non-zero
+          <code>VTIME</code> timeout value.  This is considered
+          potentially dangerous and therefore is not engaged by
+          default, because it is (remotely) conceivable that it could
+          cause threads doing <code>read</code> to incorrectly block
+          the entire process.
+          <p>
+          You probably want to try this one if you have a program
+          which unexpectedly blocks in a <code>read</code> from a file
+          descriptor which you know to have been messed with by
+          <code>ioctl</code>.  This could happen, for example, if the
+          descriptor is used to read input from some kind of screen
+          handling library.
+          <p>
+          To find out if your program is blocking unexpectedly in the
+          <code>read</code> system call, run with
+          <code>--trace-syscalls=yes</code> flag.
+      </ul>
+
+      </li><p>
 </ul>
 
 There are also some options for debugging Valgrind itself.  You

@@ -441,6 +441,7 @@ Int    VG_(clo_trace_pthread_level);
 ULong  VG_(clo_stop_after);
 Int    VG_(clo_dump_error);
 Int    VG_(clo_backtrace_size);
+Char*  VG_(clo_wierd_hacks);
 
 /* This Bool is needed by wrappers in vg_clientmalloc.c to decide how
    to behave.  Initially we say False. */
@@ -533,6 +534,7 @@ static void process_cmd_line_options ( void )
    VG_(clo_stop_after)       = 1000000000000LL;
    VG_(clo_dump_error)       = 0;
    VG_(clo_backtrace_size)   = 4;
+   VG_(clo_wierd_hacks)      = NULL;
 
    eventually_logfile_fd = VG_(clo_logfile_fd);
 
@@ -796,6 +798,9 @@ static void process_cmd_line_options ( void )
          VG_(clo_trace_pthread_level) = 1;
       else if (STREQ(argv[i], "--trace-pthread=all"))
          VG_(clo_trace_pthread_level) = 2;
+
+      else if (STREQN(14, argv[i], "--wierd-hacks="))
+         VG_(clo_wierd_hacks) = &argv[i][14];
 
       else if (STREQN(13, argv[i], "--stop-after="))
          VG_(clo_stop_after) = VG_(atoll)(&argv[i][13]);

@@ -740,7 +740,10 @@ Int VG_(strncmp_ws) ( const Char* s1, const Char* s2, Int nmax )
 
 Char* VG_(strstr) ( const Char* haystack, Char* needle )
 {
-   Int n = VG_(strlen)(needle);
+   Int n; 
+   if (haystack == NULL)
+      return NULL;
+   n = VG_(strlen)(needle);
    while (True) {
       if (haystack[0] == 0) 
          return NULL;

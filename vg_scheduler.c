@@ -972,7 +972,15 @@ void poll_for_ready_fds ( void )
       vg_assert(is_valid_tid(tid));
       syscall_no = vg_waiting_fds[i].syscall_no;
       switch (syscall_no) {
-         case __NR_read: 
+         case __NR_read:
+            /* In order to catch timeout events on fds which are
+               readable and which have been ioctl(TCSETA)'d with a
+               VTIMEout, we appear to need to ask if the fd is
+               writable, for some reason.  Ask me not why.  Since this
+               is strange and potentially troublesome we only do it if
+               the user asks specially. */
+            if (VG_(strstr)(VG_(clo_wierd_hacks), "ioctl-VTIME") != NULL)
+               VKI_FD_SET(fd, &writefds);
             VKI_FD_SET(fd, &readfds); break;
          case __NR_write: 
             VKI_FD_SET(fd, &writefds); break;

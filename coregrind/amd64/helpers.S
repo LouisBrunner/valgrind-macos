@@ -44,18 +44,10 @@
 */
 .global VG_(trampoline_code_start)
 .global VG_(trampoline_code_length)
-.global VG_(tramp_sigreturn_offset)
+.global VG_(tramp_rt_sigreturn_offset)
 .global VG_(tramp_syscall_offset)
 	
 VG_(trampoline_code_start):
-sigreturn_start:
-        /* This is a very specific sequence which GDB uses to
-           recognize signal handler frames. */
-        popq    %rax
-        movq    $__NR_rt_sigreturn, %rax
-        syscall
-        ud2
-
 rt_sigreturn_start:
         /* Likewise for rt signal frames */
         movq    $__NR_rt_sigreturn, %rax
@@ -71,8 +63,8 @@ tramp_code_end:
 .data
 VG_(trampoline_code_length):
 	.long tramp_code_end - VG_(trampoline_code_start)
-VG_(tramp_sigreturn_offset):
-	.long sigreturn_start - VG_(trampoline_code_start)
+VG_(tramp_rt_sigreturn_offset):
+	.long rt_sigreturn_start - VG_(trampoline_code_start)
 VG_(tramp_syscall_offset):
 	.long syscall_start - VG_(trampoline_code_start)
 .text

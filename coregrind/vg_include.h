@@ -908,9 +908,6 @@ extern Bool VG_(is_running_thread)(ThreadId tid);
 /* Get the ThreadState for a particular thread */
 extern ThreadState *VG_(get_ThreadState)(ThreadId tid);
 
-/* And for the currently running one, if valid. */
-extern ThreadState* VG_(get_current_thread_state) ( void );
-
 /* Similarly ... */
 extern ThreadId VG_(get_current_tid) ( void );
 

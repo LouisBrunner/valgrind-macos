@@ -30,6 +30,10 @@
 
   </setinfo>
 
+  <!-- Quick Start Guide -->
+  <xi:include href="quick-start-guide.xml" parse="xml"  
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
+
   <!-- User Manual -->
   <xi:include href="manual.xml" parse="xml"  
       xmlns:xi="http://www.w3.org/2001/XInclude" />

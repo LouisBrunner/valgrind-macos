@@ -1,0 +1,195 @@
+<?xml version="1.0"?> <!-- -*- sgml -*- -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+  "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd"
+[ <!ENTITY % vg-entities SYSTEM "vg-entities.xml"> %vg-entities; ]>
+
+<book id="quick-start" xreflabel="Valgrind Quick Start Guide">
+
+  <bookinfo>
+    <title>Valgrind Quick Start Guide</title>
+  </bookinfo>
+
+
+<title>Valgrind Quick Start Guide</title>
+
+<para>The Valgrind distribution has multiple tools.  The memory checking
+tool (called Memcheck) can detect many common memory errors such as:
+</para>
+
+<itemizedlist>
+ <listitem><para>touching memory you shouldn't (eg. overrunning heap block 
+    boundaries);</para>
+ </listitem>
+ <listitem><para>using values before they have been initialized;</para>
+ </listitem>
+ <listitem><para>incorrect freeing of memory, such as double-freeing heap
+  blocks;</para>
+ </listitem>
+ <listitem><para>memory leaks;</para>
+ </listitem>
+</itemizedlist>
+
+<para>What follows is the minimum information you need to start detecting
+memory errors in your program with Memcheck.  Note that this guide applies
+to Valgrind version 2.4.0;  some of the information is not quite right for
+earlier versions.</para>
+
+<sect1>
+<title>Preparing your program</title>
+<para>Compile your program with <computeroutput>-g</computeroutput> to include
+debugging information so that Memcheck's error messages include exact line
+numbers.</para>
+</sect1>
+
+<sect1>
+<title>Running your program under Memcheck</title>
+<para>If you normally run your program like this:
+
+<programlisting>
+  myprog arg1 arg2
+</programlisting>
+
+Use this command line:
+
+<programlisting>
+  valgrind --leak-check=yes myprog arg1 arg2
+</programlisting>
+
+Memcheck is the default tool.  The
+<computeroutput>--leak-check</computeroutput> option turns on the memory
+leak detector.</para>
+
+<para>Your program will run much slower (eg. 20 to 30 times) than normal,
+and use a lot more memory.  Memcheck will issue messages about memory errors
+and leaks that it detects.</para>
+</sect1>
+
+<sect1>
+<title>Interpreting Memcheck's output</title>
+<para>Here's an example C program with a memory error and a memory leak.
+
+<programlisting>
+  #include &lt;stdlib.h&gt;
+
+  void f(void)
+  {
+     int* x = malloc(10 * sizeof(int));
+     x[10] = 0;        // problem 1: heap block overrun
+  }                    // problem 2: memory leak -- x not freed
+
+  int main(void)
+  {
+     f();
+     return 0;
+  }
+</programlisting>
+
+Most error messages look like the following, which describes problem 1, the
+heap block overrun:
+
+<programlisting>
+  ==19182== Invalid write of size 4
+  ==19182==    at 0x804838F: f (example.c:6)
+  ==19182==    by 0x80483AB: main (example.c:11)
+  ==19182==  Address 0x1BA45050 is 0 bytes after a block of size 40 alloc'd
+  ==19182==    at 0x1B8FF5CD: malloc (vg_replace_malloc.c:130)
+  ==19182==    by 0x8048385: f (example.c:5)
+  ==19182==    by 0x80483AB: main (example.c:11)
+</programlisting>
+
+Things to notice:
+
+<itemizedlist>
+ <listitem>
+ <para>There is a lot of information in each error message;  read it
+ carefully.</para> 
+ </listitem>
+
+ <listitem>
+ <para>The 19182 is the process ID;  it's usually unimportant.</para>
+ </listitem>
+
+ <listitem>
+ <para>The first line ("Invalid write...") tells you what kind of error it
+ is.  Here, the program wrote to some memory it should not have due to a
+ heap block overrun.</para>
+ </listitem>
+
+ <listitem>
+ <para>Below the first line is a stack trace telling you where the problem
+   occurred.  Stack traces can get quite large, and be confusing, especially
+   if you are using the C++ STL.  Reading them from the bottom up can help.
+   If the stack trace is not big enough, use the
+   <computeroutput>--num-callers</computeroutput> option to make it
+   bigger.</para>
+ </listitem>
+
+ <listitem>
+ <para>The addresses (eg. 0x804838F) are usually unimportant, but occasionally
+   crucial for tracking down weirder bugs.</para>
+ </listitem>
+
+ <listitem>
+ <para>Some error messages have a second component which describes the memory
+   address involved.  This one shows that the written memory is just past
+   the end of a block allocated with malloc() on line 7 of example.c.</para>
+ </listitem>
+</itemizedlist>
+
+It's worth fixing errors in the order they are reported, as later
+errors can be caused by earlier errors.</para>
+
+<para>Memory leak messages look like this:
+
+<programlisting>
+  ==19182== 40 bytes in 1 blocks are definitely lost in loss record 1 of 1
+  ==19182==    at 0x1B8FF5CD: malloc (vg_replace_malloc.c:130)
+  ==19182==    by 0x8048385: f (a.c:7)
+  ==19182==    by 0x80483AB: main (a.c:14)
+</programlisting>
+
+The stack trace tells you where the leaked memory was allocated.
+Memcheck cannot tell you why the memory leaked, unfortunately.  (Ignore the
+"vg_replace_malloc.c", that's an implementation detail.)</para>
+
+<para>There are several kinds of leaks;  the two most important categories are:
+
+<itemizedlist>
+ <listitem><para>"definitely lost":  your program is leaking memory -- fix
+ it!</para>
+ </listitem>
+
+ <listitem><para>"probably lost":  your program is leaking memory, unless
+   you're doing funny things with pointers (such as moving them to point to
+   the middle of a heap block).</para>
+ </listitem>
+</itemizedlist>
+
+If you don't understand an error message, please consult
+<xref linkend="mc-manual.flags"/> in the <xref linkend="manual"/> which has
+examples of all the error messages Memcheck produces.</para>
+</sect1>
+
+<sect1>
+<title>Caveats</title>
+<para>Memcheck is not perfect;  it occasionally produces false positives,
+and there are mechanisms for suppressing these (see
+<xref linkend="manual-core.suppress"/> in the <xref linkend="manual"/>).
+However, it is typically right 99% of the time, so you should be wary of
+ignoring its error messages.  After all, you wouldn't ignore warning
+messages produced by a compiler, right?</para>
+
+<para>Memcheck also cannot detect every memory error your program has.  For
+example, it can't detect if you overrun the bounds of an array that is
+allocated statically or on the stack.</para>
+</sect1>
+
+<sect1>
+<title>More information</title>
+<para>Please consult the <xref linkend="FAQ"/> and the
+<xref linkend="manual"/>, which have much more information.  Note that the
+other tools in the Valgrind distribution can be invoked with the
+<computeroutput>--tool</computeroutput> option.</para>
+</sect1>
+
+</book>

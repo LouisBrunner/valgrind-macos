@@ -1219,7 +1219,7 @@ Addr dis_Grp2 ( UCodeBlock* cb, Addr eip, UChar modrm,
 }
 
 
-
+#if 0
 /* Group 8 extended opcodes. */
 static
 Addr dis_Grp8 ( UCodeBlock* cb, Addr eip, UChar modrm,
@@ -1285,7 +1285,7 @@ Addr dis_Grp8 ( UCodeBlock* cb, Addr eip, UChar modrm,
 	uInstr0(cb, CALLM_E, 0);
    return eip;
 }
-
+#endif
 
 
 
@@ -2536,71 +2536,6 @@ static Char* nameBtOp ( BtOp op )
       default: VG_(panic)("nameBtOp");
    }
 }
-
-#if 0
-static
-Addr dis_bt_G_E ( UCodeBlock* cb, Int sz, Addr eip, BtOp op )
-{
-   Int   t, t2, ta, helper;
-   UInt  pair;
-   UChar dis_buf[50];
-   UChar modrm;
-
-   vg_assert(sz == 2 || sz == 4);
-   vg_assert(sz == 4);
-   switch (op) {
-      case BtOpNone:  helper = VGOFF_(helper_bt); break;
-      case BtOpSet:   helper = VGOFF_(helper_bts); break;
-      case BtOpReset: helper = VGOFF_(helper_btr); break;
-      case BtOpComp:  helper = VGOFF_(helper_btc); break;
-      default: VG_(panic)("dis_bt_G_E");
-   }
-
-   modrm  = getUChar(eip);
-
-   t = newTemp(cb);
-   t2 = newTemp(cb);
-   uInstr0(cb, CALLM_S, 0);
-   uInstr2(cb, GET,  sz, ArchReg, gregOfRM(modrm), TempReg, t);
-   uInstr1(cb, PUSH, sz, TempReg, t);
-
-   if (epartIsReg(modrm)) {
-      eip++;
-      uInstr2(cb, GET,   sz, ArchReg, eregOfRM(modrm), TempReg, t2);
-      uInstr1(cb, PUSH,  sz, TempReg, t2);
-      uInstr1(cb, CALLM, 0,  Lit16, helper);
-      uFlagsRWU(cb, FlagsEmpty, FlagC, FlagsOSZAP);
-      uInstr1(cb, POP,   sz, TempReg, t);
-      uInstr2(cb, PUT,   sz, TempReg, t, ArchReg, eregOfRM(modrm));
-      if (dis)
-         VG_(printf)("bt%s%c %s, %s\n",
-                     nameBtOp(op),
-                     nameISize(sz), nameIReg(sz, gregOfRM(modrm)), 
-                     nameIReg(sz, eregOfRM(modrm)));
-   } else {
-      pair = disAMode ( cb, eip, dis?dis_buf:NULL );
-      ta   = LOW24(pair);
-      eip  += HI8(pair);
-      uInstr2(cb, LOAD,  sz, TempReg, ta,     TempReg, t2);
-      uInstr1(cb, PUSH,  sz, TempReg, t2);
-      uInstr1(cb, CALLM, 0,  Lit16, helper);
-      uFlagsRWU(cb, FlagsEmpty, FlagC, FlagsOSZAP);
-      uInstr1(cb, POP,   sz, TempReg, t);
-      uInstr2(cb, STORE, sz, TempReg, t,      TempReg, ta);
-      SMC_IF_ALL(cb);
-      if (dis)
-         VG_(printf)("bt%s%c %s, %s\n",
-                     nameBtOp(op),
-                     nameISize(sz), nameIReg(sz, gregOfRM(modrm)), 
-                     dis_buf);
-   }
-  
-   uInstr1(cb, CLEAR, 0, Lit16, 4);
-   uInstr0(cb, CALLM_E, 0);
-
-   return eip;
-}
-#endif
 
 
 static
@@ -4109,13 +4044,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
       /* =-=-=-=-=-=-=-=-=- Grp8 =-=-=-=-=-=-=-=-=-=-=-= */
 
+#if 0
       case 0xBA: /* Grp8 Ib,Ev */
          modrm = getUChar(eip);
          am_sz = lengthAMode(eip);
          d32   = getSDisp8(eip + am_sz);
          eip = dis_Grp8 ( cb, eip, modrm, am_sz, sz, d32 );
          break;
-
+#endif
       /* =-=-=-=-=-=-=-=-=- BSF/BSR -=-=-=-=-=-=-=-=-=-= */
 
       case 0xBC: /* BSF Gv,Ev */

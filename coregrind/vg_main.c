@@ -85,10 +85,6 @@ Int VGOFF_(helper_shrdw) = INVALID_OFFSET;
 Int VGOFF_(helper_RDTSC) = INVALID_OFFSET;
 Int VGOFF_(helper_CPUID) = INVALID_OFFSET;
 Int VGOFF_(helper_BSWAP) = INVALID_OFFSET;
-Int VGOFF_(helper_bt) = INVALID_OFFSET;
-Int VGOFF_(helper_bts) = INVALID_OFFSET;
-Int VGOFF_(helper_btr) = INVALID_OFFSET;
-Int VGOFF_(helper_btc) = INVALID_OFFSET;
 Int VGOFF_(helper_bsf) = INVALID_OFFSET;
 Int VGOFF_(helper_bsr) = INVALID_OFFSET;
 Int VGOFF_(helper_fstsw_AX) = INVALID_OFFSET;
@@ -279,15 +275,6 @@ static void vg_init_baseBlock ( void )
       = alloc_BaB_1_set( (Addr) & VG_(helper_RDTSC) );
    VGOFF_(helper_CPUID)
       = alloc_BaB_1_set( (Addr) & VG_(helper_CPUID) );
-
-   VGOFF_(helper_bt)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_bt) );
-   VGOFF_(helper_bts)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_bts) );
-   VGOFF_(helper_btr)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_btr) );
-   VGOFF_(helper_btc)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_btc) );
 
    VGOFF_(helper_bsf)
       = alloc_BaB_1_set( (Addr) & VG_(helper_bsf) );

@@ -358,53 +358,6 @@ VG_(helper_bsf):
 	ret
 
 
-/* Bit test and set/reset/complement.  Sets flags.
-   On entry:
-	src
-	dst
-	RA   <- %esp
-	
-   NOTE all these are basically misimplemented, since for memory
-   operands it appears the index value can be arbitrary, and the
-   address should be calculated accordingly.  Here, we assume (by
-   forcing the register- and memory- versions to be handled by
-   the same helper) that the offset is always in the range
-   0 .. word-size-1, or to be more precise by implementing the
-   client's memory- version of this using the register- version,
-   we impose the condition that the offset is used
-   modulo-wordsize.  This is just plain wrong and should be
-   fixed.
-*/
-.global VG_(helper_bt)
-VG_(helper_bt):
-	pushl	%eax
-	movl	12(%esp), %eax
-	btl	%eax, 8(%esp)
-	popl	%eax
-	ret
-.global VG_(helper_bts)
-VG_(helper_bts):
-	pushl	%eax
-	movl	12(%esp), %eax
-	btsl	%eax, 8(%esp)
-	popl	%eax
-	ret
-.global VG_(helper_btr)
-VG_(helper_btr):
-	pushl	%eax
-	movl	12(%esp), %eax
-	btrl	%eax, 8(%esp)
-	popl	%eax
-	ret
-.global VG_(helper_btc)
-VG_(helper_btc):
-	pushl	%eax
-	movl	12(%esp), %eax
-	btcl	%eax, 8(%esp)
-	popl	%eax
-	ret
-	
-	
 /* 32-bit double-length shift left/right.
    On entry:
 	amount

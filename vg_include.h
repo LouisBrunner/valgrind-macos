@@ -1511,11 +1511,6 @@ extern void VG_(helper_shrdw);
 extern void VG_(helper_RDTSC);
 extern void VG_(helper_CPUID);
 
-extern void VG_(helper_bt);
-extern void VG_(helper_bts);
-extern void VG_(helper_btr);
-extern void VG_(helper_btc);
-
 extern void VG_(helper_bsf);
 extern void VG_(helper_bsr);
 
@@ -1641,11 +1636,6 @@ extern Int VGOFF_(helper_shrdw);
 
 extern Int VGOFF_(helper_RDTSC);
 extern Int VGOFF_(helper_CPUID);
-
-extern Int VGOFF_(helper_bt);
-extern Int VGOFF_(helper_bts);
-extern Int VGOFF_(helper_btr);
-extern Int VGOFF_(helper_btc);
 
 extern Int VGOFF_(helper_bsf);
 extern Int VGOFF_(helper_bsr);

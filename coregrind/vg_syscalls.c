@@ -3238,9 +3238,14 @@ PRE(ioctl)
 		     sizeof(struct ifreq));
       break;
 
+   case SIOCGPGRP:
+      SYSCALL_TRACK( pre_mem_write, tid, "ioctl(SIOCGPGRP)", arg3, 
+		     sizeof(int) );
+      break;
    case SIOCSPGRP:
       SYSCALL_TRACK( pre_mem_read, tid, "ioctl(SIOCSPGRP)", arg3, 
 		     sizeof(int) );
+      tst->sys_flags &= ~MayBlock;
       break;
 
       /* linux/soundcard interface (OSS) */
@@ -3817,6 +3822,9 @@ POST(ioctl)
    case SIOCDARP:            /* delete ARP table entry       */
       break;
 
+   case SIOCGPGRP:
+      VG_TRACK( post_mem_write,arg3, sizeof(int));
+      break;
    case SIOCSPGRP:
       break;
 

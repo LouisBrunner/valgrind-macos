@@ -744,6 +744,7 @@ typedef
       UInt  m_fpucw;
       UInt  m_ftag74;
       UInt  m_ftag30;
+      UInt  m_fc320;
 
       UInt sh_eax;
       UInt sh_ebx;
@@ -1988,6 +1989,7 @@ extern Int VGOFF_(m_f6);
 extern Int VGOFF_(m_f7);
 extern Int VGOFF_(m_ftag0);
 extern Int VGOFF_(m_fpucw);
+extern Int VGOFF_(m_fc320);
 
 /* Reg-alloc spill area (VG_MAX_SPILLSLOTS words long). */
 extern Int VGOFF_(spillslots);

@@ -206,6 +206,10 @@ typedef
 
    FPUCW[15:0] is the FPU's control word.  FPUCW[31:16] is unused.
 
+   FC320 contains the C3, C2 and C0 bits in the same place they are in
+   the FPU's status word.  (bits 14, 10 and 8 respectively).  All other
+   bits should be zero.  The relevant mask to select just those bits
+   is 0x4500.
 */
 #define OFFB_FTOP    (13*4)
 #define OFFB_F0      (14*4)
@@ -218,9 +222,10 @@ typedef
 #define OFFB_F7      (28*4)
 #define OFFB_FTAG0   (30*4) // up to 30*4 + 7
 #define OFFB_FPUCW   (32*4)
+#define OFFB_FC320   (33*4)
 
 /* Don't forget to keep this up to date. */
-#define SIZEOF_X86H_STATE  (OFFB_FPUCW + 4)
+#define SIZEOF_X86H_STATE  (OFFB_FC320 + 4)
 
 
 

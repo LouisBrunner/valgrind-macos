@@ -1016,12 +1016,12 @@ Bool isMove_X86Instr ( X86Instr* i, HReg* src, HReg* dst )
 
 
 /* x86 spill/reload using the hacked104 testbed.  Spill slots
-   start at word 54, and there are 100 in total. 
+   start at word 55, and there are 100 in total. 
 */
 
 X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 {
-   Int base = 4 * 54;
+   Int base = 4 * 55;
    vassert(offset >= 0);
    vassert(offset <= 4*(100-1));
    vassert(!hregIsVirtual(rreg));
@@ -1039,7 +1039,7 @@ X86Instr* genSpill_X86 ( HReg rreg, Int offset )
 
 X86Instr* genReload_X86 ( HReg rreg, Int offset )
 {
-   Int base = 4 * 54;
+   Int base = 4 * 55;
    vassert(offset >= 0);
    vassert(offset <= 4*(100-1));
    vassert(!hregIsVirtual(rreg));

@@ -30,12 +30,11 @@ CLEANFILES = vg_toolint.c vg_toolint.h vg_replace_malloc.c vg_intercept.c
 
 valgrind_SOURCES = \
 	ume.c \
-	${VG_ARCH}/ume_entry.S \
 	\
 	stage1.c \
 	${VG_ARCH}/jmp_with_stack.c 
 valgrind_DEPENDENCIES =
-valgrind_LDFLAGS=-static -g -Wl,-e,_ume_entry
+valgrind_LDFLAGS=-static -g
 valgrind_LDADD=
 
 # Where stage2 will be put.
@@ -46,7 +45,6 @@ KICKSTART_BASE=0xb0000000
 
 stage2_SOURCES = \
 	ume.c \
-	${VG_ARCH}/ume_entry.S \
 	\
 	vg_scheduler.c \
 	vg_default.c \
@@ -81,7 +79,7 @@ stage2_SOURCES = \
 	vg_transtab.c \
 	vg_cpuid.S
 stage2_DEPENDENCIES = $(srcdir)/valgrind.vs ${VG_ARCH}/stage2.lds
-stage2_LDFLAGS=-Wl,--export-dynamic -Wl,-e,_ume_entry  -g \
+stage2_LDFLAGS=-Wl,--export-dynamic -g \
 	-Wl,-defsym,kickstart_base=$(KICKSTART_BASE) \
 	-Wl,-T,${VG_ARCH}/stage2.lds \
 	-Wl,-version-script $(srcdir)/valgrind.vs 

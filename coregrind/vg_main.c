@@ -362,9 +362,9 @@ static void newpid(ThreadId unused)
 /*====================================================================*/
 
 /* Look for our AUXV table */
-int scan_auxv(void)
+int scan_auxv(void* init_sp)
 {
-   const struct ume_auxv *auxv = find_auxv((int *)ume_exec_esp);
+   const struct ume_auxv *auxv = find_auxv((int *)init_sp);
    int padfile = -1, found = 0;
 
    for (; auxv->a_type != AT_NULL; auxv++)
@@ -908,7 +908,8 @@ static char *copy_str(char **tab, const char *str)
                   | undefined       |
 		  :                 :
  */
-static Addr setup_client_stack(char **orig_argv, char **orig_envp, 
+static Addr setup_client_stack(void* init_sp,
+                               char **orig_argv, char **orig_envp, 
 			       const struct exeinfo *info,
                                UInt** client_auxv)
 {
@@ -928,7 +929,7 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    addr_t cl_esp;		/* client stack base (initial esp) */
 
    /* use our own auxv as a prototype */
-   orig_auxv = find_auxv(ume_exec_esp);
+   orig_auxv = find_auxv(init_sp);
 
    /* ==================== compute sizes ==================== */
 
@@ -2576,7 +2577,10 @@ int main(int argc, char **argv)
    // Check we were launched by stage1
    //   p: n/a
    //--------------------------------------------------------------
-   padfile = scan_auxv();
+   {
+      void* init_sp = argv - 1;
+      padfile = scan_auxv(init_sp);
+   }
 
    if (0) {
       printf("========== main() ==========\n");
@@ -2650,7 +2654,11 @@ int main(int argc, char **argv)
    //   p: load_client()     [for 'info']
    //   p: fix_environment() [for 'env']
    //--------------------------------------------------------------
-   esp_at_startup = setup_client_stack(cl_argv, env, &info, &client_auxv);
+   { 
+      void* init_sp = argv - 1;
+      esp_at_startup = setup_client_stack(init_sp, cl_argv, env, &info,
+                                          &client_auxv);
+   }
 
    if (0)
       printf("entry=%p client esp=%p vg_argc=%d brkbase=%p\n",

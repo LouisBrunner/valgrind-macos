@@ -55,8 +55,6 @@ void foreach_map(int (*fn)(char *start, char *end,
 /* Integer type the same size as a pointer */
 typedef ESZ(Addr) addr_t;
 
-extern void *ume_exec_esp;	/* esp on entry at exec time */
-
 // Jump to a new 'ip' with the stack 'sp'.
 void jmp_with_stack(addr_t ip, addr_t sp) __attribute__((noreturn));
 

@@ -165,9 +165,7 @@ hello_SOURCES		= hello.c
 hello_LDFLAGS		= -Wl,-defsym,kickstart_base=0x50000000 \
 			  -Wl,-T,../../coregrind/${VG_ARCH}/stage2.lds
 vgtest_ume_SOURCES	= vgtest_ume.c
-vgtest_ume_LDFLAGS	= -Wl,-e,_ume_entry
 vgtest_ume_LDADD	= ../../coregrind/ume.o \
-			  ../../coregrind/ume_entry.o \
 			  ../../coregrind/jmp_with_stack.o
 
 # must be built with these flags -- bug only occurred with them

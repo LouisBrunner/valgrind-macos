@@ -1,6 +1,6 @@
 #define ELFSZ  32
 
-// This file is a unit self-test for ume.c, ume_entry.c, jmp_with_stack.c
+// This file is a unit self-test for ume.c, jmp_with_stack.c
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,26 +10,28 @@
 
 #define STKSZ   (64*1024)
 
+static void* init_sp;
+
 //-------------------------------------------------------------------
 // Test foreach_map()
 //-------------------------------------------------------------------
 
-static int x;
+static int x[8];
 
 static int f(char *start, char *end, const char *perm, off_t off,
              int maj, int min, int ino, void* dummy) {
    // Just do some nonsense action with each of the values so that Memcheck
    // checks that they are valid.
-   x = ( start == 0 ? 0 : 1 );
-   x = ( end   == 0 ? 0 : 1 );
-   x = ( perm  == 0 ? 0 : 1 );
-   x = ( off   == 0 ? 0 : 1 );
-   x = ( maj   == 0 ? 0 : 1 );
-   x = ( min   == 0 ? 0 : 1 );
-   x = ( ino   == 0 ? 0 : 1 );
-   x = ( dummy == 0 ? 0 : 1 );
+   x[0] = ( start == 0 ? 0 : 1 );
+   x[1] = ( end   == 0 ? 0 : 1 );
+   x[2] = ( perm  == 0 ? 0 : 1 );
+   x[3] = ( off   == 0 ? 0 : 1 );
+   x[4] = ( maj   == 0 ? 0 : 1 );
+   x[5] = ( min   == 0 ? 0 : 1 );
+   x[6] = ( ino   == 0 ? 0 : 1 );
+   x[7] = ( dummy == 0 ? 0 : 1 );
 
-   return /*True*/1;
+   return /*True*/1 + x[0] + x[1] + x[2] + x[3] + x[4] + x[5] + x[6] + x[7];
 }  
 
 static void test__foreach_map(void)
@@ -46,14 +48,14 @@ static void test__find_auxv(void)
 {
    struct ume_auxv *auxv;
 
-   assert(ume_exec_esp != NULL);
+   assert(init_sp != NULL);
    
    fprintf(stderr, "Calling find_auxv()\n");
-   auxv = find_auxv((int*)ume_exec_esp);
+   auxv = find_auxv((int*)init_sp);
 
    // Check the auxv value looks sane
-   assert((void*)auxv > (void*)ume_exec_esp);
-   assert((unsigned int)auxv - (unsigned int)ume_exec_esp < 0x10000);
+   assert((void*)auxv > (void*)init_sp);
+   assert((unsigned int)auxv - (unsigned int)init_sp < 0x10000);
 
    // Scan the auxv, check it looks sane
    for (; auxv->a_type != AT_NULL; auxv++) {
@@ -136,8 +138,10 @@ static void test__do_exec(void)
    assert(0);  // UNREACHABLE
 }
 
-int main(void)
+int main(int argc, char** argv)
 {
+   init_sp = argv - 1;
+   
    test__foreach_map();
    test__find_auxv();
    test__do_exec();

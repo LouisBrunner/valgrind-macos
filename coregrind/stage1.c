@@ -46,6 +46,9 @@
 
 static int stack[SIGSTKSZ*4];
 
+// Initial stack pointer, which points to argc.
+static void* init_sp;
+
 /* Where we expect to find all our aux files (namely, stage2) */
 static const char *valgrind_lib = VG_LIBDIR;
 
@@ -257,7 +260,7 @@ static void main2(void)
    char buf[strlen(valgrind_lib) + sizeof(stage2) + 16];
 
    info.exe_base = PGROUNDUP(&_end);
-   info.exe_end  = PGROUNDDN(ume_exec_esp);
+   info.exe_end  = PGROUNDDN(init_sp);
 
    /* XXX FIXME: how can stage1 know where stage2 wants things placed?
       Options:
@@ -283,7 +286,7 @@ static void main2(void)
    padfile = as_openpadfile();
    as_pad(0, (void *)info.map_base, padfile);
    
-   esp = fix_auxv(ume_exec_esp, &info, padfile);
+   esp = fix_auxv(init_sp, &info, padfile);
 
    if (0) {
       printf("---------- launch stage 2 ----------\n");
@@ -294,7 +297,7 @@ static void main2(void)
    jmp_with_stack(info.init_eip, (addr_t)esp);   
 }
 
-int main(void)
+int main(int argc, char** argv)
 {
    struct rlimit rlim;
    const char *cp = getenv(VALGRINDLIB);
@@ -302,7 +305,9 @@ int main(void)
    if (cp != NULL)
       valgrind_lib = cp;
 
-   assert(ume_exec_esp != NULL);
+   // Initial stack pointer is to argc, which is immediately before argv[0]
+   // on the stack.
+   init_sp = argv - 1;
 
    /* Set the address space limit as high as it will go, since we make
       a lot of very large mappings. */

@@ -470,7 +470,9 @@ VexTranslateResult LibVEX_Translate (
       vex_printf("\n");
    }
 
+   /* HACK */
    if (0) { *host_bytes_used = 0; return VexTransOK; }
+   /* end HACK */
 
    if (vex_traceflags & VEX_TRACE_VCODE)
       vex_printf("\n------------------------" 
@@ -509,6 +511,10 @@ VexTranslateResult LibVEX_Translate (
       }
       vex_printf("\n");
    }
+
+   /* HACK */
+   if (0) { *host_bytes_used = 0; return VexTransOK; }
+   /* end HACK */
 
    /* Assemble */
    if (vex_traceflags & VEX_TRACE_ASM) {

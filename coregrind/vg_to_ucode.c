@@ -3593,6 +3593,35 @@ Addr dis_SSE2_load_store_or_mov ( UCodeBlock* cb,
    return eip;
 }
 
+static 
+void dis_push_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
+{
+    vg_assert(sz == 4);
+    Int t1 = newTemp(cb), t2 = newTemp(cb);
+    uInstr2(cb, GETSEG, 2, ArchRegS, sreg,  TempReg, t1);
+    uInstr2(cb, GET,    4, ArchReg,  R_ESP, TempReg, t2);
+    uInstr2(cb, SUB,    4, Literal,  0,     TempReg, t2);
+    uLiteral(cb, 4);
+    uInstr2(cb, PUT,    4, TempReg,  t2,    ArchReg, R_ESP);
+    uInstr2(cb, STORE,  2, TempReg,  t1,    TempReg, t2);
+    if (dis)
+       VG_(printf)("push %s\n", VG_(name_of_seg_reg)(sreg));
+}
+
+static
+void dis_pop_segreg ( UCodeBlock* cb, UInt sreg, Int sz )
+{
+   vg_assert(sz == 4);
+   Int t1 = newTemp(cb), t2 = newTemp(cb);
+   uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg,  t2);
+   uInstr2(cb, LOAD,   2, TempReg, t2,       TempReg,  t1);
+   uInstr2(cb, ADD,    4, Literal, 0,        TempReg,  t2);
+   uLiteral(cb, sz);
+   uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg,  R_ESP);
+   uInstr2(cb, PUTSEG, 2, TempReg, t1,       ArchRegS, sreg);
+   if (dis) 
+      VG_(printf)("pop %s\n", VG_(name_of_seg_reg)(sreg));
+}
 
 /*------------------------------------------------------------*/
 /*--- Disassembling entire basic blocks                    ---*/
@@ -5534,28 +5563,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
      }
 
    case 0x1F: /* POP %DS */
+      dis_pop_segreg( cb, R_DS, sz ); break;
    case 0x07: /* POP %ES */
+      dis_pop_segreg( cb, R_ES, sz ); break;
    case 0x17: /* POP %SS */
-   {
-      Int sreg = INVALID_TEMPREG;
-      vg_assert(sz == 4);
-      switch(opc) {
-      case 0x1F: sreg = R_DS; break;
-      case 0x07: sreg = R_ES; break;
-      case 0x17: sreg = R_SS; break;
-      }
-
-      t1 = newTemp(cb); t2 = newTemp(cb);
-      uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg,  t2);
-      uInstr2(cb, LOAD,   2, TempReg, t2,       TempReg,  t1);
-      uInstr2(cb, ADD,    4, Literal, 0,        TempReg,  t2);
-      uLiteral(cb, sz);
-      uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg,  R_ESP);
-      uInstr2(cb, PUTSEG, 2, TempReg, t1,       ArchRegS, sreg);
-      if (dis) 
-         VG_(printf)("pop %s\n", VG_(name_of_seg_reg)(sreg));
-      break;
-   }      
+      dis_pop_segreg( cb, R_SS, sz ); break;
 
    /* ------------------------ PUSH ----------------------- */
 
@@ -5659,31 +5671,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       if (dis)
          VG_(printf)("pusha%c\n", nameISize(sz));
       break;
-    }
+   }
 
-    case 0x06: /* PUSH %ES */
-    case 0x16: /* PUSH %SS */
-    case 0x1E: /* PUSH %DS */
-    {
-       Int sreg = INVALID_TEMPREG;
-       switch(opc) {
-	   case 0x06: sreg = R_ES; break;
-	   case 0x16: sreg = R_SS; break;
-           case 0x1E: sreg = R_DS; break;
-       }
- 
-       vg_assert(sz == 4);
-       t1 = newTemp(cb); t2 = newTemp(cb);
-       uInstr2(cb, GETSEG, 2, ArchRegS, sreg,  TempReg, t1);
-       uInstr2(cb, GET,    4, ArchReg,  R_ESP, TempReg, t2);
-       uInstr2(cb, SUB,    4, Literal,  0,     TempReg, t2);
-       uLiteral(cb, 4);
-       uInstr2(cb, PUT,    4, TempReg,  t2,    ArchReg, R_ESP);
-       uInstr2(cb, STORE,  2, TempReg,  t1,    TempReg, t2);
-       if(dis)
-          VG_(printf)("push %s\n", VG_(name_of_seg_reg)(sreg));
-       break;
-    }
+   case 0x0E: /* PUSH %CS */
+      dis_push_segreg( cb, R_CS, sz ); break;
+   case 0x1E: /* PUSH %DS */
+      dis_push_segreg( cb, R_DS, sz ); break;
+   case 0x06: /* PUSH %ES */
+      dis_push_segreg( cb, R_ES, sz ); break;
+   case 0x16: /* PUSH %SS */
+      dis_push_segreg( cb, R_SS, sz ); break;
 
    /* ------------------------ SCAS et al ----------------- */
 
@@ -6679,6 +6676,16 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          vg_assert(sz == 4);
          eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psra", True );
          break;
+
+      case 0xA1: /* POP %FS */
+         dis_pop_segreg( cb, R_FS, sz ); break;
+      case 0xA9: /* POP %GS */
+         dis_pop_segreg( cb, R_GS, sz ); break;
+
+      case 0xA0: /* PUSH %FS */
+         dis_push_segreg( cb, R_FS, sz ); break;
+      case 0xA8: /* PUSH %GS */
+         dis_push_segreg( cb, R_GS, sz ); break;
 
       /* =-=-=-=-=-=-=-=-=- unimp2 =-=-=-=-=-=-=-=-=-=-= */
 

@@ -2804,7 +2804,6 @@ static Bool dis_int_shift ( UInt theInstr )
          assign( Ra, binop(Iop_Or32, mkexpr(sext),
                            IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),
                                          mkU32(0), mkexpr(Rs_sh))) );
-         putIReg( Ra_addr, mkexpr(Ra) );
          op = PPC32G_FLAG_OP_SRAW;
          do_ca = True;
          break;
@@ -2827,7 +2826,6 @@ static Bool dis_int_shift ( UInt theInstr )
                                      unop(Iop_Not32, mkexpr(mask)) ));
          // Ra = Rs_shift | sext
          assign( Ra, binop(Iop_Or32, mkexpr(sext), mkexpr(Rs_sh)) );
-         putIReg( Ra_addr, mkexpr(Ra) );
          op = PPC32G_FLAG_OP_SRAWI;
          do_ca = True;
          break;
@@ -2841,7 +2839,6 @@ static Bool dis_int_shift ( UInt theInstr )
          assign( rb_b5, binop(Iop_And32, mkexpr(Rb), mkU32(1<<5)) );
          assign( Ra, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),
                                    mkU32(0), mkexpr(Rs_sh) ));
-         putIReg( Ra_addr, mkexpr(Ra) );
          break;
          
       default:
@@ -2852,6 +2849,8 @@ static Bool dis_int_shift ( UInt theInstr )
       vex_printf("dis_int_shift(PPC32)(opc1)\n");
       return False;
    }
+
+   putIReg( Ra_addr, mkexpr(Ra) );
    
    if (do_ca) {
       vassert(op < PPC32G_FLAG_OP_NUMBER);

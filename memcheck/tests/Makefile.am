@@ -1,8 +1,7 @@
 SUBDIRS =  ${VG_ARCH} .
 
 noinst_SCRIPTS = filter_allocs filter_leak_check_size \
-		 filter_stderr filter_stderr_backtrace filter_pushfpopf \
-		 filter_tronical
+		 filter_stderr filter_stderr_backtrace
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	badaddrvalue.stderr.exp \
@@ -25,7 +24,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	exitprog.stderr.exp exitprog.vgtest \
 	execve.stderr.exp execve.vgtest \
 	execve2.stderr.exp execve2.vgtest \
-	fpeflags.stderr.exp fpeflags.vgtest \
 	fprw.stderr.exp fprw.vgtest \
 	fwrite.stderr.exp fwrite.stdout.exp fwrite.vgtest \
 	inits.stderr.exp inits.vgtest \
@@ -49,7 +47,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	null_socket.stderr.exp null_socket.vgtest \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
 	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
-	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
@@ -62,7 +59,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	suppfree.stderr.exp suppfree.vgtest \
 	toobig-allocs.stderr.exp toobig-allocs.vgtest \
 	trivialleak.stderr.exp trivialleak.vgtest \
-	tronical.stderr.exp tronical.vgtest \
 	weirdioctl.stderr.exp weirdioctl.stdout.exp weirdioctl.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
@@ -76,13 +72,13 @@ check_PROGRAMS = \
 	badloop badrw brk brk2 buflen_check \
 	clientperm custom_alloc \
 	doublefree error_counts errs1 exitprog execve execve2 \
-	fpeflags fprw fwrite hello inits inline \
+	fprw fwrite hello inits inline \
 	malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	memalign_test memalign2 memcmptest mempool mmaptest \
 	nanoleak new_nothrow \
-	null_socket overlap pushfpopf \
+	null_socket overlap \
 	realloc1 realloc2 realloc3 sigaltstack signal2 supp1 supp2 suppfree \
-	trivialleak tronical weirdioctl	\
+	trivialleak weirdioctl	\
 	mismatches new_override metadata threadederrno \
 	vgtest_ume \
 	writev zeropage
@@ -110,7 +106,6 @@ errs1_SOURCES 		= errs1.c
 execve_SOURCES 		= execve.c
 execve2_SOURCES 	= execve2.c
 exitprog_SOURCES 	= exitprog.c
-fpeflags_SOURCES	= fpeflags.c
 fprw_SOURCES 		= fprw.c
 fwrite_SOURCES 		= fwrite.c
 inits_SOURCES		= inits.c
@@ -129,7 +124,6 @@ mempool_SOURCES 	= mempool.c
 nanoleak_SOURCES 	= nanoleak.c
 null_socket_SOURCES 	= null_socket.c
 overlap_SOURCES 	= overlap.c
-pushfpopf_SOURCES 	= pushfpopf_c.c pushfpopf_s.s
 realloc1_SOURCES 	= realloc1.c
 realloc2_SOURCES 	= realloc2.c
 realloc3_SOURCES 	= realloc3.c
@@ -139,7 +133,6 @@ supp2_SOURCES 		= supp.c
 suppfree_SOURCES 	= suppfree.c
 sigaltstack_SOURCES 	= sigaltstack.c
 trivialleak_SOURCES 	= trivialleak.c
-tronical_SOURCES 	= tronical.S
 weirdioctl_SOURCES 	= weirdioctl.c
 metadata_SOURCES	= metadata.c
 threadederrno_SOURCES	= threadederrno.c
@@ -160,5 +153,3 @@ vgtest_ume_SOURCES	= vgtest_ume.c
 vgtest_ume_LDADD	= ../../coregrind/ume.o \
 			  ../../coregrind/jmp_with_stack.o
 
-# must be built with these flags -- bug only occurred with them
-fpeflags.o: CFLAGS += -march=i686

@@ -75,6 +75,7 @@
    ------------------------------------------------------------------ */
 
 static void wait_for_fd_to_be_readable_or_erring ( int fd );
+static void wait_for_fd_to_be_writable_or_erring ( int fd );
 
 static
 int my_do_syscall1 ( int syscallno, int arg1 );

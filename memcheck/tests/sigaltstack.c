@@ -14,7 +14,7 @@ int main(int argv, char** argc) {
   int res, i;
   stack_t sigstk;
   struct sigaction act;
-  static const int size = SIGSTKSZ*8;
+  static const int size = SIGSTKSZ*2;
   char *stk = (char *)mmap(0, size, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
   sigstk.ss_sp = stk;
 

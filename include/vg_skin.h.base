@@ -1188,6 +1188,7 @@ EV VG_(ccall_LL_R)  ( CB_F, UInt L1, UInt L2, UInt R_ret, RPn );
 
 EV VG_(ccall_RRR_0) ( CB_F, UInt R1, UInt R2, UInt R3,    RPn );
 EV VG_(ccall_RLL_0) ( CB_F, UInt R1, UInt L2, UInt L3,    RPn );
+EV VG_(ccall_LRR_0) ( CB_F, UInt L1, UInt R2, UInt R3,    RPn );
 EV VG_(ccall_LLR_0) ( CB_F, UInt L1, UInt L2, UInt R3,    RPn );
 EV VG_(ccall_LLL_0) ( CB_F, UInt L1, UInt L2, UInt L3,    RPn );
 

@@ -182,6 +182,14 @@ void VG_(ccall_RLL_0)(UCodeBlock* cb, Addr f, UInt t1, UInt lit2,
    VG_(ccall_RRR_0)(cb, f, t1, t2, t3, regparms_n);
 }
 
+// f(lit, reg, reg)
+void VG_(ccall_LRR_0)(UCodeBlock* cb, Addr f, UInt lit1, UInt t2,
+                      UInt t3, UInt regparms_n)
+{
+   UInt t1 = VG_(lit_to_newreg)(cb, lit1);
+   VG_(ccall_RRR_0)(cb, f, t1, t2, t3, regparms_n);
+}
+
 // f(lit, lit, reg)
 void VG_(ccall_LLR_0)(UCodeBlock* cb, Addr f, UInt lit1, UInt lit2,
                       UInt t3, UInt regparms_n)

@@ -286,8 +286,13 @@ typedef
    struct _ThreadState
    ThreadState;
 
+/* Use this one from generated code */
 extern ThreadId     VG_(get_current_tid)           ( void );
+
+/* Use this one from non-generated code -- if you use VG_(get_current_tid)(),
+   it will return 0 for the invalid thread, which is not what you want. */
 extern ThreadId     VG_(get_current_or_recent_tid) ( void );
+
 extern ThreadId     VG_(get_tid_from_ThreadState)  ( ThreadState* );
 extern ThreadState* VG_(get_ThreadState)           ( ThreadId tid );
 

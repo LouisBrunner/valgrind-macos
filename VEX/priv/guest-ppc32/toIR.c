@@ -891,9 +891,9 @@ static IRExpr* getReg_CR ( )
     IRTemp cr0 = newTemp(Ity_I32);
     IRTemp cr1to7 = newTemp(Ity_I32);
     
-    assign( cr0, binop(Iop_And32, mkU32(0xF<<28)
+    assign( cr0, binop(Iop_And32, mkU32(0xF<<28),
 		       mk_ppc32g_calculate_cr0_all()) );
-    assign( cr1to7, binop(Iop_And32, mkU32(-1>>4)
+    assign( cr1to7, binop(Iop_And32, mkU32(-1>>4),
 			  IRExpr_Get(OFFB_CR1to7, Ity_I32)) );
     return binop(Iop_Or32, mkexpr(cr1to7), mkexpr(cr0));
 }

@@ -43,7 +43,6 @@
 
 #include "valgrind.h"            /* for VALGRIND_NON_SIMD_CALL[12] */
 #include "core.h"
-#include "vg_skin.h"
 
 #define LIBALIAS(ret, name, args) \
    ret VG_INTERCEPT(soname:libstdc++*, __libc_##name) args \

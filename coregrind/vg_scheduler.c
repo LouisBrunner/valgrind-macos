@@ -1760,12 +1760,14 @@ void maybe_rendezvous_joiners_and_joinees ( void )
       /* Joinee is discarded */
       VG_(threads)[jee].status = VgTs_Empty; /* bye! */
       cleanup_after_thread_exited ( jee );
-         if (VG_(clo_trace_sched)) {
-            VG_(sprintf)(msg_buf,
-               "rendezvous with joinee %d.  %d resumes, %d exits.",
-               jee, jnr, jee );
+      if (VG_(clo_trace_sched)) {
+	 VG_(sprintf)(msg_buf,
+		      "rendezvous with joinee %d.  %d resumes, %d exits.",
+		      jee, jnr, jee );
          print_sched_event(jnr, msg_buf);
       }
+      
+      VG_TRACK( post_thread_join, jnr, jee );
 
       /* joiner returns with success */
       VG_(threads)[jnr].status = VgTs_Runnable;
@@ -2171,6 +2173,9 @@ void do__apply_in_new_thread ( ThreadId parent_tid,
    /* If we've created the main thread's tid, we're in deep trouble :) */
    vg_assert(tid != 1);
    vg_assert(VG_(is_valid_or_empty_tid)(tid));
+
+   /* do this early, before the child gets any memory writes */
+   VG_TRACK ( post_thread_create, parent_tid, tid );
 
    /* Copy the parent's CPU state into the child's, in a roundabout
       way (via baseBlock). */

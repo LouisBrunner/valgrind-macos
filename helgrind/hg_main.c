@@ -130,10 +130,10 @@ typedef enum
  * Must be different to virgin_word.other */
 #define TID_INDICATING_NONVIRGIN    1
 
-/* Magic TID used for error suppression; if word state is Excl and tid
-   is this, then it means all access are OK without changing state and
-   without raising any more errors  */
-#define TID_INDICATING_ALL          ((1 << OTHER_BITS) - 1)
+/* Magic packed TLS used for error suppression; if word state is Excl
+   and tid is this, then it means all access are OK without changing
+   state and without raising any more errors  */
+#define TLSP_INDICATING_ALL          ((1 << OTHER_BITS) - 1)
 
 /* Number of entries must fit in STATE_BITS bits */
 typedef enum { Vge_Virgin, Vge_Excl, Vge_Shar, Vge_SharMod } pth_state;
@@ -154,7 +154,7 @@ static ESecMap* primary_map[ 65536 ];
 static ESecMap  distinguished_secondary_map;
 
 static const shadow_word virgin_sword = { 0, Vge_Virgin };
-static const shadow_word error_sword = { TID_INDICATING_ALL, Vge_Excl };
+static const shadow_word error_sword = { TLSP_INDICATING_ALL, Vge_Excl };
 
 #define VGE_IS_DISTINGUISHED_SM(smap) \
    ((smap) == &distinguished_secondary_map)
@@ -216,6 +216,169 @@ static inline EC_EIP getExeContext(Addr a)
 }
 
 /*------------------------------------------------------------*/
+/*--- Thread lifetime segments                             ---*/
+/*------------------------------------------------------------*/
+
+/*
+ * This mechanism deals with the common case of a parent thread
+ * creating a structure for a child thread, and then passing ownership
+ * of the structure to that thread.  It similarly copes with a child
+ * thread passing information back to another thread waiting to join
+ * on it.
+ *
+ * Each thread's lifetime can be partitioned into segments.  Those
+ * segments are arranged to form an interference graph which indicates
+ * whether two thread lifetime segments can possibly be concurrent.
+ * If not, then memory with is exclusively accessed by one TLS can be
+ * passed on to another TLS without an error occuring, and without
+ * moving it from Excl state.
+ *
+ * At present this only considers thread creation and join as
+ * synchronisation events for creating new lifetime segments, but
+ * others may be possible (like mutex operations).
+ */
+
+typedef struct _ThreadLifeSeg ThreadLifeSeg;
+
+struct _ThreadLifeSeg {
+   ThreadId	         tid;
+   ThreadLifeSeg	*prior[2];	/* Previous lifetime segments */
+   UInt	                 refcount;	/* Number of memory locations pointing here */
+   UInt	                 mark;		/* mark used for graph traversal */
+   ThreadLifeSeg	*next;	        /* list of all TLS */
+};
+
+static ThreadLifeSeg *all_tls;
+static UInt tls_since_gc;
+#define TLS_SINCE_GC	10000
+
+/* current mark used for TLS graph traversal */
+static UInt tlsmark;
+
+static ThreadLifeSeg *thread_seg[VG_N_THREADS];
+
+
+static void tls_gc(void)
+{
+   /* XXX later.  Walk through all TLSs and look for ones with 0
+      refcount and remove them from the structure and free them.
+      Could probably get rid of ThreadLifeSeg.refcount and simply use
+      mark-sweep from the shadow table. */
+   VG_(printf)("WRITEME: TLS GC\n");
+}
+
+static void newTLS(ThreadId tid)
+{
+   static const Bool debug = False;
+   ThreadLifeSeg *tls;
+
+   /* Initial NULL */
+   if (thread_seg[tid] == NULL) {
+      tls = VG_(malloc)(sizeof(*tls));
+      tls->tid = tid;
+      tls->prior[0] = tls->prior[1] = NULL;
+      tls->refcount = 0;
+      tls->mark = tlsmark-1;
+
+      tls->next = all_tls;
+      all_tls = tls;
+      tls_since_gc++;
+
+      thread_seg[tid] = tls;
+      return;
+   }
+   
+   /* Previous TLS was unused, so just recycle */
+   if (thread_seg[tid]->refcount == 0) {
+      if (debug)
+	 VG_(printf)("newTLS; recycling TLS %p for tid %u\n", 
+		     thread_seg[tid], tid);
+      return;
+   }
+
+   /* Use existing TLS for this tid as a prior for new TLS */
+   tls = VG_(malloc)(sizeof(*tls));
+   tls->tid = tid;
+   tls->prior[0] = thread_seg[tid];
+   tls->prior[1] = NULL;
+   tls->refcount = 0;
+   tls->mark = tlsmark-1;
+
+   tls->next = all_tls;
+   all_tls = tls;
+   if (++tls_since_gc > TLS_SINCE_GC) {
+      tls_gc();
+      tls_since_gc = 0;
+   }
+   
+   if (debug)
+      VG_(printf)("newTLS: made new TLS %p for tid %u (prior %p(%u))\n",
+		  tls, tid, tls->prior[0], tls->prior[0]->tid);
+
+   thread_seg[tid] = tls;
+}
+
+/* clear out a TLS for a thread that's died */
+static void clearTLS(ThreadId tid)
+{
+   newTLS(tid);
+
+   thread_seg[tid]->prior[0] = NULL;
+   thread_seg[tid]->prior[1] = NULL;
+}
+
+static void addPriorTLS(ThreadId tid, ThreadId prior)
+{
+   static const Bool debug = False;
+   ThreadLifeSeg *tls = thread_seg[tid];
+
+   if (debug)
+      VG_(printf)("making TLS %p(%u) prior to TLS %p(%u)\n",
+		  thread_seg[prior], prior, tls, tid);
+
+   sk_assert(thread_seg[tid] != NULL);
+   sk_assert(thread_seg[prior] != NULL);
+
+   if (tls->prior[0] == NULL)
+      tls->prior[0] = thread_seg[prior];
+   else {
+      sk_assert(tls->prior[1] == NULL);
+      tls->prior[1] = thread_seg[prior];
+   }
+}
+
+/* Return True if prior is definitely not concurrent with tls */
+static Bool tlsIsDisjoint(const ThreadLifeSeg *tls, 
+			  const ThreadLifeSeg *prior)
+{
+   Bool isPrior(const ThreadLifeSeg *t) {
+      if (t == NULL || t->mark == tlsmark)
+	 return False;
+
+      if (t == prior)
+	 return True;
+
+      ((ThreadLifeSeg *)t)->mark = tlsmark;
+
+      return isPrior(t->prior[0]) || isPrior(t->prior[1]);
+   }
+   tlsmark++;			/* new traversal mark */
+
+   return isPrior(tls);
+}
+
+static inline UInt packTLS(ThreadLifeSeg *tls)
+{
+   sk_assert(((UInt)tls & ((1 << STATE_BITS)-1)) == 0);
+   return ((UInt)tls) >> STATE_BITS;
+}
+
+static inline ThreadLifeSeg *unpackTLS(UInt i)
+{
+   return (ThreadLifeSeg *)(i << STATE_BITS);
+}
+
+/*------------------------------------------------------------*/
 /*--- Low-level support for memory tracking.               ---*/
 /*------------------------------------------------------------*/
 
@@ -272,6 +435,7 @@ static __inline__
 void set_sword ( Addr a, shadow_word sword )
 {
    ESecMap* sm;
+   shadow_word *oldsw;
 
    //PROF_EVENT(23); PPP
    ENSURE_MAPPABLE(a, "VGE_(set_sword)");
@@ -279,6 +443,17 @@ void set_sword ( Addr a, shadow_word sword )
    /* Use bits 31..16 for primary, 15..2 for secondary lookup */
    sm     = primary_map[a >> 16];
    sk_assert(sm != &distinguished_secondary_map);
+   oldsw = &sm->swords[(a & 0xFFFC) >> 2];
+   if (oldsw->state == Vge_Excl && oldsw->other != TLSP_INDICATING_ALL) {
+      ThreadLifeSeg *tls = unpackTLS(oldsw->other);
+      tls->refcount--;
+   }
+
+   if (sword.state == Vge_Excl && sword.other != TLSP_INDICATING_ALL) {
+      ThreadLifeSeg *tls = unpackTLS(sword.other);
+      tls->refcount++;
+   }
+   
    sm->swords[(a & 0xFFFC) >> 2] = sword;
 
    if (VGE_IS_DISTINGUISHED_SM(sm)) {
@@ -347,9 +522,12 @@ void init_nonvirgin_sword(Addr a)
 {
    shadow_word sword;
    ThreadId tid = VG_(get_current_or_recent_tid)();
+   ThreadLifeSeg *tls;
 
    sk_assert(tid != VG_INVALID_THREADID);
-   sword.other = tid;
+   tls = thread_seg[tid];
+
+   sword.other = packTLS(tls);
    sword.state = Vge_Excl;
    set_sword(a, sword);
 }
@@ -1925,6 +2103,7 @@ void SK_(dup_extra_and_update)(SkinError* err)
 static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
 				  shadow_word prevstate )
 {
+   shadow_word *sw;
    HelgrindError err_extra;
 
    n_eraser_warnings++;
@@ -1938,6 +2117,12 @@ static void record_eraser_error ( ThreadState *tst, Addr a, Bool is_write,
    VG_(maybe_record_error)( tst, EraserErr, a, 
                             (is_write ? "writing" : "reading"),
                             &err_extra);
+
+   sw = get_sword_addr(a);
+   if (sw->state == Vge_Excl && sw->other != TLSP_INDICATING_ALL) {
+      ThreadLifeSeg *tls = unpackTLS(sw->other);
+      tls->refcount--;
+   }
 
    set_sword(a, error_sword);
 }
@@ -2095,10 +2280,13 @@ void SK_(pp_SkinError) ( SkinError* err, void (*pp_ExeContext)(void) )
 	 VG_(sprintf)(buf, "virgin!?");
 	 break;
 
-      case Vge_Excl:
-	 sk_assert(extra->prevstate.other != TID_INDICATING_ALL);
-	 VG_(sprintf)(buf, "exclusively owned by thread %d", extra->prevstate.other);
+      case Vge_Excl: {
+	 ThreadLifeSeg *tls = unpackTLS(extra->prevstate.other);
+
+	 sk_assert(tls != unpackTLS(TLSP_INDICATING_ALL));
+	 VG_(sprintf)(buf, "exclusively owned by thread %u", tls->tid);
 	 break;
+      }
 
       case Vge_Shar:
       case Vge_SharMod:
@@ -2345,6 +2533,7 @@ Int compute_num_words_accessed(Addr a, UInt size)
 static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
 {
    ThreadId tid;
+   ThreadLifeSeg *tls;
    shadow_word* sword;
    Addr     end = a + 4*compute_num_words_accessed(a, size);
    shadow_word  prevstate;
@@ -2354,6 +2543,9 @@ static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
       tid = VG_(get_current_tid)();
    else
       tid = VG_(get_tid_from_ThreadState)(tst);
+
+   tls = thread_seg[tid];
+   sk_assert(tls != NULL && tls->tid == tid);
 
    for ( ; a < end; a += 4) {
 
@@ -2380,22 +2572,32 @@ static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
             DEBUG_STATE("Read  SPECIAL --> EXCL:  %8x, %u\n", a, tid);
          }
          sword->state = Vge_Excl;
-         sword->other = tid;       /* remember exclusive owner */
+         sword->other = packTLS(tls);       /* remember exclusive owner */
+	 tls->refcount++;
          break;
 
-      case Vge_Excl:
-         if (tid == sword->other) {
+      case Vge_Excl: {
+	 ThreadLifeSeg *sw_tls = unpackTLS(sword->other);
+
+         if (tls == sw_tls) {
             DEBUG_STATE("Read  EXCL:              %8x, %u\n", a, tid);
-         } else if (TID_INDICATING_ALL == sword->other) {
+         } else if (unpackTLS(TLSP_INDICATING_ALL) == sw_tls) {
             DEBUG_STATE("Read  EXCL/ERR:          %8x, %u\n", a, tid);
+	 } else if (tlsIsDisjoint(tls, sw_tls)) {
+            DEBUG_STATE("Read  EXCL(%u) --> EXCL:  %8x, %u\n", sw_tls->tid, a, tid);
+	    sword->other = packTLS(tls);
+	    sw_tls->refcount--;
+	    tls->refcount++;
 	 } else {
-            DEBUG_STATE("Read  EXCL(%u) --> SHAR:  %8x, %u\n", sword->other, a, tid);
+            DEBUG_STATE("Read  EXCL(%u) --> SHAR:  %8x, %u\n", sw_tls->tid, a, tid);
+	    sw_tls->refcount--;
             sword->state = Vge_Shar;
             sword->other = getLockSetId(thread_locks[tid]);
 	    if (DEBUG_MEM_LOCKSET_CHANGES)
 	       print_LockSet("excl read locks", getLockSet(sword->other));
          }
          break;
+      }
 
       case Vge_Shar:
          DEBUG_STATE("Read  SHAR:              %8x, %u\n", a, tid);
@@ -2433,6 +2635,7 @@ static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
 static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
 {
    ThreadId tid;
+   ThreadLifeSeg *tls;
    shadow_word* sword;
    Addr     end = a + 4*compute_num_words_accessed(a, size);
    shadow_word  prevstate;
@@ -2442,6 +2645,9 @@ static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
    else
       tid = VG_(get_tid_from_ThreadState)(tst);
    
+   tls = thread_seg[tid];
+   sk_assert(tls != NULL && tls->tid == tid);
+
    for ( ; a < end; a += 4) {
 
       sword = get_sword_addr(a);
@@ -2459,24 +2665,35 @@ static void eraser_mem_write(Addr a, UInt size, ThreadState *tst)
          else
             DEBUG_STATE("Write SPECIAL --> EXCL:  %8x, %u\n", a, tid);
          sword->state = Vge_Excl;
-         sword->other = tid;       /* remember exclusive owner */
+         sword->other = packTLS(tls);       /* remember exclusive owner */
+	 tls->refcount++;
          break;
 
-      case Vge_Excl:
-         if (tid == sword->other) {
+      case Vge_Excl: {
+	 ThreadLifeSeg *sw_tls = unpackTLS(sword->other);
+
+         if (tls == sw_tls) {
             DEBUG_STATE("Write EXCL:              %8x, %u\n", a, tid);
             break;
-         } else if (TID_INDICATING_ALL == sword->other) {
+         } else if (unpackTLS(TLSP_INDICATING_ALL) == sw_tls) {
             DEBUG_STATE("Write EXCL/ERR:          %8x, %u\n", a, tid);
 	    break;
+	 } else if (tlsIsDisjoint(tls, sw_tls)) {
+            DEBUG_STATE("Write EXCL(%u) --> EXCL: %8x, %u\n", sw_tls->tid, a, tid);
+	    sword->other = packTLS(tls);
+	    sw_tls->refcount--;
+	    tls->refcount++;
+	    break;
          } else {
-            DEBUG_STATE("Write EXCL(%u) --> SHAR_MOD: %8x, %u\n", sword->other, a, tid);
+            DEBUG_STATE("Write EXCL(%u) --> SHAR_MOD: %8x, %u\n", sw_tls->tid, a, tid);
+	    sw_tls->refcount--;
             sword->state = Vge_SharMod;
             sword->other = getLockSetId(thread_locks[tid]);
 	    if(DEBUG_MEM_LOCKSET_CHANGES)
 	       print_LockSet("excl write locks", getLockSet(sword->other));
             goto SHARED_MODIFIED;
          }
+      }
 
       case Vge_Shar:
          DEBUG_STATE("Write SHAR --> SHAR_MOD: %8x, %u\n", a, tid);
@@ -2551,6 +2768,28 @@ static void eraser_mem_help_write_4(Addr a, UInt val)
 static void eraser_mem_help_write_N(Addr a, UInt size)
 {
    eraser_mem_write(a, size, NULL);
+}
+
+static void hg_thread_create(ThreadId parent, ThreadId child)
+{
+   if (0)
+      VG_(printf)("CREATE: %u creating %u\n", parent, child);
+
+   newTLS(child);
+   addPriorTLS(child, parent);
+
+   newTLS(parent);
+}
+
+static void hg_thread_join(ThreadId joiner, ThreadId joinee)
+{
+   if (0)
+      VG_(printf)("JOIN: %u joining on %u\n", joiner, joinee);
+
+   newTLS(joiner);
+   addPriorTLS(joiner, joinee);
+
+   clearTLS(joinee);
 }
 
 /*--------------------------------------------------------------------*/
@@ -2634,6 +2873,9 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    track->post_mutex_lock       = & eraser_post_mutex_lock;
    track->post_mutex_unlock     = & eraser_post_mutex_unlock;
 
+   track->post_thread_create    = & hg_thread_create;
+   track->post_thread_join      = & hg_thread_join;
+
    VG_(register_compact_helper)((Addr) & eraser_mem_help_read_1);
    VG_(register_compact_helper)((Addr) & eraser_mem_help_read_2);
    VG_(register_compact_helper)((Addr) & eraser_mem_help_read_4);
@@ -2651,39 +2893,14 @@ void SK_(pre_clo_init)(VgDetails* details, VgNeeds* needs, VgTrackEvents* track)
    insert_LockSet(empty);
    emptyset = empty;
 
-   /* Init lock table */
-   for (i = 0; i < VG_N_THREADS; i++) 
+   /* Init lock table and thread segments */
+   for (i = 0; i < VG_N_THREADS; i++) {
       thread_locks[i] = empty;
 
+      newTLS(i);
+   }
+
    init_shadow_memory();
-}
-
-static Bool match_Bool(Char *arg, Char *argstr, Bool *ret)
-{
-   Int len = VG_(strlen)(argstr);
-
-   if (VG_(strncmp)(arg, argstr, len) == 0) {
-      if (VG_(strcmp)(arg+len, "yes") == 0) {
-	 *ret = True;
-	 return True;
-      } else if (VG_(strcmp)(arg+len, "no") == 0) {
-	 *ret = False;
-	 return True;
-      } else
-	 VG_(bad_option)(arg);
-   }
-   return False;
-}
-
-static Bool match_Int(Char *arg, Char *argstr, Int *ret)
-{
-   Int len = VG_(strlen)(argstr);
-
-   if (VG_(strncmp)(arg, argstr, len) == 0) {
-      *ret = (Int)VG_(atoll)(arg+len);
-	 return True;
-   }
-   return False;
 }
 
 static Bool match_str(Char *arg, Char *argstr, Char **ret)

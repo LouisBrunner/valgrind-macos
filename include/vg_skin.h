@@ -1350,6 +1350,8 @@ typedef
       void (*post_mutex_unlock) ( ThreadId tid, 
                                   void* /*pthread_mutex_t* */ mutex );
 
+      void (*post_thread_create)( ThreadId tid, ThreadId child );
+      void (*post_thread_join)  ( ThreadId joiner, ThreadId joinee );
       
       /* Others... thread, condition variable, signal events... */
       /* ... */

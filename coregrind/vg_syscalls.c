@@ -5849,7 +5849,7 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_getuid,           sys_getuid16),     // 24 ## P
 
    //   (__NR_stime,            sys_stime),        // 25 * (SVr4,SVID,X/OPEN)
-   SYSXY(__NR_ptrace,		sys_ptrace),       // 26 (x86?) (L?)
+   SYSXY(__NR_ptrace,           sys_ptrace),       // 26 (x86?) (L?)
    SYSX_(__NR_alarm,            sys_alarm),        // 27 * P
    //   (__NR_oldfstat,         sys_fstat),        // 28 * L -- obsolete
    SYSX_(__NR_pause,            sys_pause),        // 29 * P

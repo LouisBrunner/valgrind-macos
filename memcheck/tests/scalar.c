@@ -2,13 +2,9 @@
 
 int main(void)
 {
-   // uninitialised, but we know pi[0] is 0x0
-   int* pi  = malloc(sizeof(int));
-   int  i0  = pi[0];
-
-   // uninitialised, but we know pc[0] points to 0x0
-   char** pc = malloc(sizeof(char*));
-   char*  s0 = pc[0];
+   // uninitialised, but we know px[0] is 0x0
+   long* px  = malloc(sizeof(long));
+   long  x0  = px[0];
 
    // All __NR_xxx numbers are taken from x86
    
@@ -23,60 +19,60 @@ int main(void)
    // __NR_read 3 --> sys_read()
    // Nb: here we are also getting an error from the syscall arg itself.
    GO(__NR_read, "1+3s 1m");
-   SY(__NR_read+i0, i0, s0, i0+1);
+   SY(__NR_read+x0, x0, x0, x0+1);
 
    // __NR_write 4 --> sys_write()
    GO(__NR_write, "3s 1m");
-   SY(__NR_write, i0, s0, i0+1);
+   SY(__NR_write, x0, x0, x0+1);
 
    // __NR_open 5 --> sys_open()
    GO(__NR_open, "(2-args) 2s 1m");
-   SY(__NR_open, s0, i0, i0+1);
+   SY(__NR_open, x0, x0, x0+1);
 
    GO(__NR_open, "(3-args) 1s 0m");
-   SY(__NR_open, "tmp_write_file_foo", O_CREAT, i0);
+   SY(__NR_open, "tmp_write_file_foo", O_CREAT, x0);
 
    // __NR_close 6 --> sys_close()
    GO(__NR_close, "1s 0m");
-   SY(__NR_close, i0-1);
+   SY(__NR_close, x0-1);
 
    // __NR_waitpid 7 --> sys_waitpid()
    GO(__NR_waitpid, "3s 1m");
-   SY(__NR_waitpid, i0-1);
+   SY(__NR_waitpid, x0-1);
 
    // __NR_creat 8 --> sys_creat()
    GO(__NR_creat, "2s 1m");
-   SY(__NR_creat, s0, i0);
+   SY(__NR_creat, x0, x0);
 
    // __NR_link 9 --> sys_link()
    GO(__NR_link, "2s 2m");
-   SY(__NR_link, s0, s0);
+   SY(__NR_link, x0, x0);
 
    // __NR_unlink 10 --> sys_unlink()
    GO(__NR_unlink, "1s 1m");
-   SY(__NR_unlink, s0);
+   SY(__NR_unlink, x0);
 
    // __NR_execve 11 --> sys_execve()
-   // Nb: could have 3 memory errors if we pass s0+1 as the 2nd and 3rd
+   // Nb: could have 3 memory errors if we pass x0+1 as the 2nd and 3rd
    // args, except for bug #93174.
    GO(__NR_execve, "3s 1m");
-   SY(__NR_execve, s0, s0, s0);
+   SY(__NR_execve, x0, x0, x0);
 
    // __NR_chdir 12 --> sys_chdir()
    GO(__NR_chdir, "1s 1m");
-   SY(__NR_chdir, s0);
+   SY(__NR_chdir, x0);
 
    // __NR_time 13 --> sys_time()
    GO(__NR_time, "1s 1m");
-   SY(__NR_time, s0+1);
+   SY(__NR_time, x0+1);
 
    // __NR_mknod 14 --> sys_mknod()
    GO(__NR_mknod, "3s 1m");
-   SY(__NR_mknod, s0, i0, i0);
+   SY(__NR_mknod, x0, x0, x0);
 
    // __NR_chmod 15 --> sys_chmod()
    GO(__NR_chmod, "2s 1m");
-   SY(__NR_chmod, s0, i0);
+   SY(__NR_chmod, x0, x0);
 
    // __NR_lchown 16
    // (Not yet handled by Valgrind)
@@ -90,7 +86,7 @@ int main(void)
 
    // __NR_lseek 19 --> sys_lseek()
    GO(__NR_lseek, "3s 0m");
-   SY(__NR_lseek, i0, i0, i0);
+   SY(__NR_lseek, x0, x0, x0);
 
    // __NR_getpid 20 --> sys_getpid()
    GO(__NR_getpid, "0s 0m");
@@ -98,15 +94,15 @@ int main(void)
 
    // __NR_mount 21 --> sys_mount()
    GO(__NR_mount, "5s 3m");
-   SY(__NR_mount, s0, s0, s0, i0, s0);
+   SY(__NR_mount, x0, x0, x0, x0, x0);
    
    // __NR_umount 22 --> sys_oldumount()
    GO(__NR_umount, "1s 1m");
-   SY(__NR_umount, s0);
+   SY(__NR_umount, x0);
 
    // __NR_setuid 23 --> sys_setuid16()
    GO(__NR_setuid, "1s 0m");
-   SY(__NR_setuid, i0);
+   SY(__NR_setuid, x0);
 
    // __NR_getuid 24 --> sys_getuid16()
    GO(__NR_getuid, "0e");
@@ -118,11 +114,11 @@ int main(void)
    // __NR_ptrace 26 --> arch/sys_ptrace()
    // XXX: memory pointed to be arg3 is never checked...
    GO(__NR_ptrace, "4s 2m");
-   SY(__NR_ptrace, i0+PTRACE_GETREGS, i0, s0, s0);
+   SY(__NR_ptrace, x0+PTRACE_GETREGS, x0, x0, x0);
 
    // __NR_alarm 27 --> sys_alarm()
    GO(__NR_alarm, "1s 0m");
-   SY(__NR_alarm, i0);
+   SY(__NR_alarm, x0);
 
    // __NR_oldfstat 28
    // (obsolete, not handled by Valgrind)
@@ -132,7 +128,7 @@ int main(void)
 
    // __NR_utime 30 --> sys_utime()
    GO(__NR_utime, "2s 2m");
-   SY(__NR_utime, s0, s0+1);
+   SY(__NR_utime, x0, x0+1);
 
    // __NR_stty 31 --> sys_ni_syscall()
    GO(__NR_stty, "0e");
@@ -144,11 +140,11 @@ int main(void)
 
    // __NR_access 33 --> sys_access()
    GO(__NR_access, "2s 1m");
-   SY(__NR_access, s0, i0);
+   SY(__NR_access, x0, x0);
 
    // __NR_nice 34 --> sys_nice()
    GO(__NR_nice, "1s 0m");
-   SY(__NR_nice, i0);
+   SY(__NR_nice, x0);
 
    // __NR_ftime 35 --> sys_ni_syscall()
    GO(__NR_ftime, "0e");
@@ -160,31 +156,31 @@ int main(void)
 
    // __NR_kill 37 --> sys_kill()
    GO(__NR_kill, "2s 0m");
-   SY(__NR_kill, i0, i0);
+   SY(__NR_kill, x0, x0);
 
    // __NR_rename 38 --> sys_rename()
    GO(__NR_rename, "2s 2m");
-   SY(__NR_rename, s0, s0);
+   SY(__NR_rename, x0, x0);
 
    // __NR_mkdir 39 --> sys_mkdir()
    GO(__NR_mkdir, "2s 1m");
-   SY(__NR_mkdir, s0, i0);
+   SY(__NR_mkdir, x0, x0);
 
    // __NR_rmdir 40 --> sys_rmdir()
    GO(__NR_rmdir, "1s 1m");
-   SY(__NR_rmdir, s0);
+   SY(__NR_rmdir, x0);
 
    // __NR_dup 41 --> sys_dup()
    GO(__NR_dup, "1s 0m");
-   SY(__NR_dup, i0);
+   SY(__NR_dup, x0);
 
    // __NR_pipe 42 --> arch/sys_pipe()
    GO(__NR_pipe, "1s 1m");
-   SY(__NR_pipe, s0);
+   SY(__NR_pipe, x0);
 
    // __NR_times 43 --> sys_times()
    GO(__NR_times, "1s 1m");
-   SY(__NR_times, s0);
+   SY(__NR_times, x0);
 
    // __NR_prof 44 --> sys_ni_syscall()
    GO(__NR_prof, "0e");
@@ -192,7 +188,7 @@ int main(void)
 
    // __NR_brk 45 --> sys_brk()
    GO(__NR_brk, "1s 0m");
-   SY(__NR_brk, i0);
+   SY(__NR_brk, x0);
 
    // __NR_setgid 46 --> sys_setgid16()
    GO(__NR_setgid, "1s 0m");
@@ -215,11 +211,11 @@ int main(void)
 
    // __NR_acct 51 --> sys_acct()
    GO(__NR_acct, "1s 1m");
-   SY(__NR_acct, s0);
+   SY(__NR_acct, x0);
 
    // __NR_umount2 52 --> sys_umount()
    GO(__NR_umount2, "2s 1m");
-   SY(__NR_umount2, s0, i0);
+   SY(__NR_umount2, x0, x0);
 
    // __NR_lock 53 --> sys_ni_syscall()
    GO(__NR_lock, "0e");
@@ -228,11 +224,11 @@ int main(void)
    // __NR_ioctl 54 --> sys_ioctl()
    #include <asm/ioctls.h>
    GO(__NR_ioctl, "3s 1m");
-   SY(__NR_ioctl, i0, i0+TCSETS, s0);
+   SY(__NR_ioctl, x0, x0+TCSETS, x0);
 
    // __NR_fcntl 55 --> sys_fcntl()
    GO(__NR_fcntl, "3s 0m");
-   SY(__NR_fcntl, i0, i0, i0);
+   SY(__NR_fcntl, x0, x0, x0);
 
    // __NR_mpx 56 --> sys_ni_syscall()
    GO(__NR_mpx, "0e");
@@ -240,7 +236,7 @@ int main(void)
 
    // __NR_setpgid 57
    GO(__NR_setpgid, "2s 0m");
-   SY(__NR_setpgid, i0, i0);
+   SY(__NR_setpgid, x0, x0);
 
    // __NR_ulimit 58 --> sys_ni_syscall()
    GO(__NR_ulimit, "0e");
@@ -251,7 +247,7 @@ int main(void)
 
    // __NR_umask 60
    GO(__NR_umask, "1s 0m");
-   SY(__NR_umask, i0);
+   SY(__NR_umask, x0);
 
    // __NR_chroot 61
    // __NR_ustat 62
@@ -340,7 +336,7 @@ int main(void)
 
    // __NR_uname 122
    GO(__NR_uname, "1s 1m");
-   SY(__NR_uname, s0);
+   SY(__NR_uname, x0);
 
    // __NR_modify_ldt 123
    // __NR_adjtimex 124
@@ -468,7 +464,7 @@ int main(void)
 
    // __NR_setuid32 213 --> sys_setuid()
    GO(__NR_setuid32, "1s 0m");
-   SY(__NR_setuid32, i0);
+   SY(__NR_setuid32, x0);
 
    // __NR_setgid32 214
    GO(__NR_setgid32, "1s 0m");
@@ -528,7 +524,7 @@ int main(void)
 
    // __NR_lookup_dcookie 253 --> sys_lookup_dcookie()
    GO(__NR_lookup_dcookie, "4s 1m");
-   SY(__NR_lookup_dcookie, i0, i0, s0, i0+1);
+   SY(__NR_lookup_dcookie, x0, x0, x0, x0+1);
 
    // __NR_epoll_create 254
    // __NR_epoll_ctl 255
@@ -573,7 +569,7 @@ int main(void)
 
    // __NR_exit 1 --> sys_exit()
    GO(__NR_exit, "1s 0m");
-   SY(__NR_exit, i0);
+   SY(__NR_exit, x0);
 
    assert(0);
 }

@@ -1478,8 +1478,12 @@ void VG_(wrap_syscall) ( void )
             case SOUND_PCM_WRITE_FILTER:
             case SNDCTL_DSP_SUBDIVIDE:
             case SNDCTL_DSP_SETFRAGMENT:
+#           if defined(SNDCTL_DSP_GETCHANNELMASK)
             case SNDCTL_DSP_GETCHANNELMASK:
+#           endif
+#           if defined(SNDCTL_DSP_BIND_CHANNEL)
             case SNDCTL_DSP_BIND_CHANNEL:
+#           endif
             case SNDCTL_TMR_TIMEBASE:
             case SNDCTL_TMR_TEMPO:
             case SNDCTL_TMR_SOURCE:

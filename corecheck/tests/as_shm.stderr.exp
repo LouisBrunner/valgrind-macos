@@ -1,5 +1,5 @@
 
-Warning: client syscall shmat tried to modify addresses 0xB0000000-0xB0010000
+Warning: client syscall shmat tried to modify addresses 0x........-0x........
 shmat @ top: Invalid argument
 
 ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -60,7 +60,6 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
 	pointer-trace.vgtest pointer-trace.stdout.exp pointer-trace.stderr.exp \
 	post-syscall.stderr.exp post-syscall.stdout.exp post-syscall.vgtest \
-	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \

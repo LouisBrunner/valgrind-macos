@@ -246,7 +246,7 @@ AC_PATH_X
 
 if test "${no_x}" != 'yes' ; then
 
-   AC_MSG_CHECKING([XFree version])
+   AC_MSG_CHECKING([X version])
 
    cat<<EOF > conftest.c
 #include <X11/Xlib.h>
@@ -272,36 +272,45 @@ EOF
 
      case "${xfree}" in
 	*XFree86*) 
-	   ;;
+	   case "${xfree}" in
+	      *version=4*) 
+		 AC_MSG_RESULT([XFree 4.x family])
+		 AC_DEFINE([XFREE_4], 1, [Define to 1 if you're using XFree 4.x])
+		 DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
+		 # haaaaaaack!
+		 DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
+		 ;;
 
+	      *version=3*) 
+		 AC_MSG_RESULT([XFree 3.x family])
+		 AC_DEFINE([XFREE_3], 1, [Define to 1 if you're using XFree86 3.x])
+		 DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
+		 # haaaaaaack!
+		 DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
+		 ;;
+
+	      *) AC_MSG_RESULT([unknown XFree86 server (${xfree})])
+		 # haaaaaaack!
+		 DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
+		 DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
+		 ;;
+	   esac
+	   ;;
+        *X.Org*)
+	   case "${xfree}" in
+	      *version=6*) 
+		 AC_MSG_RESULT([X.Org 6.x family])
+		 AC_DEFINE([XFREE_4], 1, [Define to 1 if you're using XFree 4.x])
+		 DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
+		 # haaaaaaack!
+		 DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
+		 ;;
+	   esac
+	   ;;
 	*) AC_MSG_RESULT([not a XFree86 server])
 	   ;;
      esac
 
-     case "${xfree}" in
-
-	*version=4*) 
-	   AC_MSG_RESULT([XFree 4.x family])
-	   AC_DEFINE([XFREE_4], 1, [Define to 1 if you're using XFree 4.x])
-	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
-	   # haaaaaaack!
-	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
-	   ;;
-
-	*version=3*) 
-	   AC_MSG_RESULT([XFree 3.x family])
-	   AC_DEFINE([XFREE_3], 1, [Define to 1 if you're using XFree86 3.x])
-	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
-	   # haaaaaaack!
-	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
-	   ;;
-
-	*) AC_MSG_RESULT([unknown XFree86 server (${xfree})])
-	   # haaaaaaack!
-	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-3.supp"
-	   DEFAULT_SUPP="${DEFAULT_SUPP} xfree-4.supp"
-	   ;;
-     esac
    fi
 
    rm -f conftest conftest.c

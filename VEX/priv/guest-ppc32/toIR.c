@@ -2838,7 +2838,7 @@ static Bool dis_int_shift ( UInt theInstr )
          assign( Rs_sh, binop(Iop_Shr32, mkexpr(Rs), mkexpr(sh_amt)) );
          assign( rb_b5, binop(Iop_And32, mkexpr(Rb), mkU32(1<<5)) );
          assign( Ra, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),
-                                   mkU32(0), mkexpr(Rs_sh) ));
+                                   mkexpr(Rs_sh), mkU32(0) ));
          break;
          
       default:

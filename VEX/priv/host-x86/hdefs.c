@@ -580,6 +580,15 @@ X86Instr* X86Instr_FpI64 ( Bool toInt, HReg freg, HReg iregHi, HReg iregLo ) {
    i->Xin.FpI64.iregLo = iregLo;
    return i;
 }
+X86Instr* X86Instr_FpCMov ( X86CondCode cond, HReg src, HReg dst ) {
+   X86Instr* i        = LibVEX_Alloc(sizeof(X86Instr));
+   i->tag             = Xin_FpCMov;
+   i->Xin.FpCMov.cond = cond;
+   i->Xin.FpCMov.src  = src;
+   i->Xin.FpCMov.dst  = dst;
+   vassert(cond != Xcc_ALWAYS);
+   return i;
+}
 
 
 void ppX86Instr ( X86Instr* i ) {
@@ -724,6 +733,12 @@ void ppX86Instr ( X86Instr* i ) {
             vex_printf(", ");
             ppHRegX86(i->Xin.FpI64.freg);
          }
+         return;
+      case Xin_FpCMov:
+         vex_printf("gcmov%s ", showX86CondCode(i->Xin.FpCMov.cond));
+         ppHRegX86(i->Xin.FpCMov.src);
+         vex_printf(",");
+         ppHRegX86(i->Xin.FpCMov.dst);
          return;
       default:
          vpanic("ppX86Instr");

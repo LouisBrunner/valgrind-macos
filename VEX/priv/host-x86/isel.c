@@ -622,6 +622,22 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       break;
    }
 
+   case Iex_GetI: {
+      /* First off, compute the index expression into an integer reg.
+         The referenced address will then be 0 + ebp + reg*1, that is,
+         an X86AMode_IRRS. */
+      HReg idx = iselIntExpr_R(env, e->Iex.GetI.offset);
+      HReg dst = newVRegI(env);
+      if (ty == Ity_I8) {
+         addInstr(env, 
+                  X86Instr_LoadEX( 
+                     1, False,
+                     X86AMode_IRRS(0, hregX86_EBP(), idx, 0),
+                     dst ));
+         return dst;
+      }
+   }
+
    /* --------- CCALL --------- */
    case Iex_CCall: {
       Addr64 helper;
@@ -1251,9 +1267,10 @@ static void iselIntExpr64_wrk ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
 
 static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
 {
-  //   MatchInfo mi;
+   //   MatchInfo mi;
+   IRType ty = typeOfIRExpr(env->type_env,e);
    vassert(e);
-   vassert(typeOfIRExpr(env->type_env,e) == Ity_F64);
+   vassert(ty == Ity_F64);
 
    if (e->tag == Iex_Tmp) {
       return lookupIRTemp(env, e->Iex.Tmp.tmp);
@@ -1288,8 +1305,8 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
 
    if (e->tag == Iex_GetI) {
       /* First off, compute the index expression into an integer reg.
-         The written address will then be 0 + ebp + reg*1, that is, an
-         X86AMode_IRRS. */
+         The referenced address will then be 0 + ebp + reg*1, that is,
+         an X86AMode_IRRS. */
       HReg idx = iselIntExpr_R(env, e->Iex.GetI.offset);
       HReg res = newVRegF(env);
       addInstr(env, 
@@ -1321,6 +1338,21 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
          iselIntExpr64(&iHi, &iLo, env, e->Iex.Unop.arg);
          addInstr(env, X86Instr_FpI64(False/*i->f*/,dst,iHi,iLo));
          return dst;
+      }
+   }
+
+   /* --------- MULTIPLEX --------- */
+   if (e->tag == Iex_Mux0X) {
+     if (ty == Ity_F64
+         && typeOfIRExpr(env->type_env,e->Iex.Mux0X.cond) == Ity_I8) {
+        HReg r8  = iselIntExpr_R(env, e->Iex.Mux0X.cond);
+        HReg rX  = iselDblExpr(env, e->Iex.Mux0X.exprX);
+        HReg r0  = iselDblExpr(env, e->Iex.Mux0X.expr0);
+        HReg dst = newVRegF(env);
+        addInstr(env, X86Instr_FpCMov(Xcc_ALWAYS,rX,dst));
+        addInstr(env, X86Instr_Test32(X86RI_Imm(0xFF), X86RM_Reg(r8)));
+        addInstr(env, X86Instr_FpCMov(Xcc_Z,r0,dst));
+        return dst;
       }
    }
 

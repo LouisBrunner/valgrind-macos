@@ -277,7 +277,8 @@ typedef
       Xin_FpUnary,   /* FP fake unary op */
       Xin_FpBinary,  /* FP fake binary op */
       Xin_FpLdSt,    /* FP fake load/store */
-      Xin_FpI64      /* FP fake to/from 64-bit signed int */
+      Xin_FpI64,     /* FP fake to/from 64-bit signed int */
+      Xin_FpCMov     /* FP fake floating point conditional move */
    }
    X86InstrTag;
 
@@ -396,7 +397,14 @@ typedef
             HReg iregHi;
             HReg iregLo;
          } FpI64;
-     } Xin;
+         /* Mov src to dst on the given condition, which may not
+            be the bogus Xcc_ALWAYS. */
+         struct {
+            X86CondCode cond;
+            HReg        src;
+            HReg        dst;
+         } FpCMov;
+      } Xin;
    }
    X86Instr;
 
@@ -421,6 +429,7 @@ extern X86Instr* X86Instr_FpBinary ( X86FpOp op, HReg srcL, HReg srcR, HReg dst 
 extern X86Instr* X86Instr_FpLdSt   ( Bool isLoad, UChar sz, HReg reg, X86AMode* );
 extern X86Instr* X86Instr_FpI64    ( Bool toInt, HReg freg, 
                                      HReg iregHi, HReg iregLo );
+extern X86Instr* X86Instr_FpCMov   ( X86CondCode, HReg src, HReg dst );
 
 extern void ppX86Instr ( X86Instr* );
 

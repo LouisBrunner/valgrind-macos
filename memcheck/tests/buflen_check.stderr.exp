@@ -1,4 +1,3 @@
-
 Syscall param socketcall.getsockname(name) contains unaddressable byte(s)
    at 0x........: getsockname (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
@@ -12,9 +11,3 @@ Syscall param socketcall.getsockname(namelen_in) contains uninitialised or unadd
    Address 0x........ is not stack'd, malloc'd or free'd
 getsockname(1) failed
 getsockname(2) failed
-
-ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 0 bytes in 0 blocks.
-malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v

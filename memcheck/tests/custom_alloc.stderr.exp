@@ -1,4 +1,3 @@
-
 Invalid write of size 4
    at 0x........: main (custom_alloc.c:79)
    by 0x........: __libc_start_main (...libc...)
@@ -36,9 +35,3 @@ Invalid read of size 4
    by 0x........: custom_alloc (custom_alloc.c:40)
    by 0x........: main (custom_alloc.c:76)
    by 0x........: __libc_start_main (...libc...)
-
-ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)
-malloc/free: in use at exit: 40 bytes in 1 blocks.
-malloc/free: 3 allocs, 3 frees, 120 bytes allocated.
-For a detailed leak analysis,  rerun with: --leak-check=yes
-For counts of detected errors, rerun with: -v

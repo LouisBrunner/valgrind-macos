@@ -99,13 +99,29 @@ static inline int lshift(int x, int n)
       return cf | pf | af | zf | sf | of;				   \
    }
 
+#define ACTIONS_LOGIC(DATA_BITS,DATA_TYPE,DATA_STYPE)	\
+   {							\
+      PREAMBLE(DATA_BITS);				\
+      int cf, pf, af, zf, sf, of;			\
+      cf = 0;						\
+      pf = parity_table[(uint8_t)CC_DST];		\
+      af = 0;						\
+      zf = ((DATA_TYPE)CC_DST == 0) << 6;		\
+      sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;	\
+      of = 0;						\
+      return cf | pf | af | zf | sf | of;		\
+   }
 
-/* RUNS AS PART OF GENERATED CODE */
+
+/* CALLED FROM GENERATED CODE */
 /*static*/ UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
    switch (cc_op) {
-      case CC_OP_SUBL: ACTIONS_SUB(32,UChar,Char);
+   case CC_OP_COPY:
+     return cc_src & (CC_MASK_O | CC_MASK_S | CC_MASK_Z | CC_MASK_A | CC_MASK_C | CC_MASK_O);
 
+      case CC_OP_SUBL:   ACTIONS_SUB(32,UChar,Char);
+      case CC_OP_LOGICL: ACTIONS_LOGIC(32,UChar,Char);
       default:
          /* shouldn't really make these calls from generated code */
          vex_printf("calculate_eflags_all( %d, 0x%x, 0x%x )\n",
@@ -114,7 +130,7 @@ static inline int lshift(int x, int n)
    }
 }
 
-/* RUNS AS PART OF GENERATED CODE */
+/* CALLED FROM GENERATED CODE */
 static UInt calculate_eflags_c ( UInt cc_op, UInt cc_src, UInt cc_dst )
 {
    return calculate_eflags_all(cc_op,cc_src,cc_dst) & CC_MASK_C;

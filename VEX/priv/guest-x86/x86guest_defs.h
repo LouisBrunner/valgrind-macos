@@ -62,11 +62,11 @@ enum {
 
     CC_OP_SBBB, /* modify all flags, CC_DST = res, CC_SRC = src1 */
     CC_OP_SBBW,
-    CC_OP_SBBL,
+    CC_OP_SBBL, /* 12 */
 
     CC_OP_LOGICB, /* modify all flags, CC_DST = res */
     CC_OP_LOGICW,
-    CC_OP_LOGICL,
+    CC_OP_LOGICL, /* 15 */
 
     CC_OP_INCB, /* modify all flags except, CC_DST = res, CC_SRC = C */
     CC_OP_INCW,

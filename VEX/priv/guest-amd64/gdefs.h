@@ -123,9 +123,9 @@ extern UInt  amd64g_calculate_sse_pmovmskb ( ULong w64hi, ULong w64lo );
 
 /* --- DIRTY HELPERS --- */
 
-//extern ULong amd64g_loadF80le  ( ULong/*addr*/ );
+extern ULong amd64g_loadF80le  ( ULong/*addr*/ );
 
-//extern void  amd64g_storeF80le ( ULong/*addr*/, ULong );
+extern void  amd64g_storeF80le ( ULong/*addr*/, ULong/*data*/ );
 
 extern void amd64g_dirtyhelper_CPUID ( VexGuestAMD64State* st );
 

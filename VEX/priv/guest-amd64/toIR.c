@@ -5092,57 +5092,59 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_pop();
                break;
 
-//..             case 5: { /* FLD extended-real */
-//..                /* Uses dirty helper: 
-//..                      ULong loadF80le ( VexGuestX86State*, UInt )
-//..                   addr holds the address.  First, do a dirty call to
-//..                   get hold of the data. */
-//..                IRTemp   val  = newTemp(Ity_I64);
-//..                IRExpr** args = mkIRExprVec_1 ( mkexpr(addr) );
-//.. 
-//..                IRDirty* d = unsafeIRDirty_1_N ( 
-//..                                val, 
-//..                                0/*regparms*/, 
-//..                                "x86g_loadF80le", &x86g_loadF80le, 
-//..                                args 
-//..                             );
-//..                /* declare that we're reading memory */
-//..                d->mFx   = Ifx_Read;
-//..                d->mAddr = mkexpr(addr);
-//..                d->mSize = 10;
-//.. 
-//..                /* execute the dirty call, dumping the result in val. */
-//..                stmt( IRStmt_Dirty(d) );
-//..                fp_push();
-//..                put_ST(0, unop(Iop_ReinterpI64asF64, mkexpr(val)));
-//.. 
-//..                DIP("fldt %s\n", dis_buf);
-//..                break;
-//..             }
-//.. 
-//..             case 7: { /* FSTP extended-real */
-//..                /* Uses dirty helper: void x86g_storeF80le ( UInt, ULong ) */
-//..                IRExpr** args 
-//..                   = mkIRExprVec_2( mkexpr(addr), 
-//..                                    unop(Iop_ReinterpF64asI64, get_ST(0)) );
-//.. 
-//..                IRDirty* d = unsafeIRDirty_0_N ( 
-//..                                0/*regparms*/, 
-//..                                "x86g_storeF80le", &x86g_storeF80le,
-//..                                args 
-//..                             );
-//..                /* declare we're writing memory */
-//..                d->mFx   = Ifx_Write;
-//..                d->mAddr = mkexpr(addr);
-//..                d->mSize = 10;
-//.. 
-//..                /* execute the dirty call. */
-//..                stmt( IRStmt_Dirty(d) );
-//..                fp_pop();
-//.. 
-//..                DIP("fstpt\n %s", dis_buf);
-//..                break;
-//..             }
+            case 5: { /* FLD extended-real */
+               /* Uses dirty helper: 
+                     ULong amd64g_loadF80le ( ULong )
+                  addr holds the address.  First, do a dirty call to
+                  get hold of the data. */
+               IRTemp   val  = newTemp(Ity_I64);
+               IRExpr** args = mkIRExprVec_1 ( mkexpr(addr) );
+
+               IRDirty* d = unsafeIRDirty_1_N ( 
+                               val, 
+                               0/*regparms*/, 
+                               "amd64g_loadF80le", &amd64g_loadF80le, 
+                               args 
+                            );
+               /* declare that we're reading memory */
+               d->mFx   = Ifx_Read;
+               d->mAddr = mkexpr(addr);
+               d->mSize = 10;
+
+               /* execute the dirty call, dumping the result in val. */
+               stmt( IRStmt_Dirty(d) );
+               fp_push();
+               put_ST(0, unop(Iop_ReinterpI64asF64, mkexpr(val)));
+
+               DIP("fldt %s\n", dis_buf);
+               break;
+            }
+
+            case 7: { /* FSTP extended-real */
+               /* Uses dirty helper: 
+                     void amd64g_storeF80le ( ULong addr, ULong data ) 
+               */
+               IRExpr** args 
+                  = mkIRExprVec_2( mkexpr(addr), 
+                                   unop(Iop_ReinterpF64asI64, get_ST(0)) );
+
+               IRDirty* d = unsafeIRDirty_0_N ( 
+                               0/*regparms*/, 
+                               "amd64g_storeF80le", &amd64g_storeF80le,
+                               args 
+                            );
+               /* declare we're writing memory */
+               d->mFx   = Ifx_Write;
+               d->mAddr = mkexpr(addr);
+               d->mSize = 10;
+
+               /* execute the dirty call. */
+               stmt( IRStmt_Dirty(d) );
+               fp_pop();
+
+               DIP("fstpt\n %s", dis_buf);
+               break;
+            }
 
             default:
                vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
@@ -5164,17 +5166,17 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                                          mk_x86g_calculate_condition(X86CondNB)), 
 //..                                     get_ST(0), get_ST(r_src)) );
 //..                break;
-//.. 
-//..             case 0xC8 ... 0xCF: /* FCMOVNE(NZ) ST(i), ST(0) */
-//..                r_src = (UInt)modrm - 0xC8;
-//..                DIP("fcmovnz %%st(%d), %%st(0)\n", r_src);
-//..                put_ST_UNCHECKED(0, 
-//..                                 IRExpr_Mux0X( 
-//..                                     unop(Iop_1Uto8,
-//..                                          mk_x86g_calculate_condition(X86CondNZ)), 
-//..                                     get_ST(0), get_ST(r_src)) );
-//..                break;
-//.. 
+
+            case 0xC8 ... 0xCF: /* FCMOVNE(NZ) ST(i), ST(0) */
+               r_src = (UInt)modrm - 0xC8;
+               DIP("fcmovnz %%st(%d), %%st(0)\n", r_src);
+               put_ST_UNCHECKED(0, 
+                                IRExpr_Mux0X( 
+                                    unop(Iop_1Uto8,
+                                         mk_amd64g_calculate_condition(AMD64CondNZ)), 
+                                    get_ST(0), get_ST(r_src)) );
+               break;
+
 //..             case 0xD0 ... 0xD7: /* FCMOVNBE ST(i), ST(0) */
 //..                r_src = (UInt)modrm - 0xD0;
 //..                DIP("fcmovnbe %%st(%d), %%st(0)\n", r_src);
@@ -5743,11 +5745,11 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..                              binop(Iop_And32, get_C3210(), mkU32(0x4700))
 //..                )));
 //..                break;
-//.. 
-//..             case 0xE8 ... 0xEF: /* FUCOMIP %st(0),%st(?) */
-//..                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, True );
-//..                break;
-//.. 
+
+            case 0xE8 ... 0xEF: /* FUCOMIP %st(0),%st(?) */
+               fp_do_ucomi_ST0_STi( (UInt)modrm - 0xE8, True );
+               break;
+
 //..             case 0xF0 ... 0xF7: /* FCOMIP %st(0),%st(?) */
 //..                /* not really right since COMIP != UCOMIP */
 //..                fp_do_ucomi_ST0_STi( (UInt)modrm - 0xF0, True );

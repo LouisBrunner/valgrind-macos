@@ -1343,6 +1343,21 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return dst;
          }
 
+         /* ReinterpF64asI64(e) */
+         /* Given an IEEE754 double, produce an I64 with the same bit
+            pattern. */
+         case Iop_ReinterpF64asI64: {
+            AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
+            HReg        dst    = newVRegI(env);
+            HReg        src    = iselDblExpr(env, e->Iex.Unop.arg);
+            /* paranoia */
+            set_SSE_rounding_default(env);
+            addInstr(env, AMD64Instr_SseLdSt(False/*store*/, 8, src, m8_rsp));
+            addInstr(env, AMD64Instr_Alu64R(
+                             Aalu_MOV, AMD64RMI_Mem(m8_rsp), dst));
+            return dst;
+         }
+
          case Iop_16to8:
          case Iop_32to8:
          case Iop_32to16:
@@ -2473,35 +2488,6 @@ static void iselInt128Expr_wrk ( HReg* rHi, HReg* rLo,
 //..             return;
 //..          }
 //.. 
-//..          /* ReinterpF64asI64(e) */
-//..          /* Given an IEEE754 double, produce an I64 with the same bit
-//..             pattern. */
-//..          case Iop_ReinterpF64asI64: {
-//..             HReg rf   = iselDblExpr(env, e->Iex.Unop.arg);
-//..             HReg tLo  = newVRegI(env);
-//..             HReg tHi  = newVRegI(env);
-//..             X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
-//..             X86AMode* four_esp = X86AMode_IR(4, hregX86_ESP());
-//..             /* paranoia */
-//..             set_FPU_rounding_default(env);
-//..             /* subl $8, %esp */
-//..             sub_from_esp(env, 8);
-//..             /* gstD %rf, 0(%esp) */
-//..             addInstr(env,
-//..                      X86Instr_FpLdSt(False/*store*/, 8, rf, zero_esp));
-//..             /* movl 0(%esp), %tLo */
-//..             addInstr(env, 
-//..                      X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(zero_esp), tLo));
-//..             /* movl 4(%esp), %tHi */
-//..             addInstr(env, 
-//..                      X86Instr_Alu32R(Xalu_MOV, X86RMI_Mem(four_esp), tHi));
-//..             /* addl $8, %esp */
-//..             add_to_esp(env, 8);
-//..             *rHi = tHi;
-//..             *rLo = tLo;
-//..             return;
-//..          }
-//.. 
 //..          case Iop_CmpNEZ32x2:
 //..             fn = (HWord)h_generic_calc_CmpNEZ32x2; goto unish;
 //..          case Iop_CmpNEZ16x4:
@@ -2853,22 +2839,18 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
 //..             add_to_esp(env, 4);
 //..             return dst;
 //..          }
-//..          case Iop_ReinterpI64asF64: {
-//..             /* Given an I64, produce an IEEE754 double with the same
-//..                bit pattern. */
-//..             HReg dst = newVRegF(env);
-//..             HReg rHi, rLo;
-//..             iselInt64Expr( &rHi, &rLo, env, e->Iex.Unop.arg);
-//..             /* paranoia */
-//..             set_FPU_rounding_default(env);
-//..             addInstr(env, X86Instr_Push(X86RMI_Reg(rHi)));
-//..             addInstr(env, X86Instr_Push(X86RMI_Reg(rLo)));
-//..             addInstr(env, X86Instr_FpLdSt(
-//..                              True/*load*/, 8, dst, 
-//..                              X86AMode_IR(0, hregX86_ESP())));
-//..             add_to_esp(env, 8);
-//..             return dst;
-//..          }
+         case Iop_ReinterpI64asF64: {
+            /* Given an I64, produce an IEEE754 double with the same
+               bit pattern. */
+            AMD64AMode* m8_rsp = AMD64AMode_IR(-8, hregAMD64_RSP());
+            HReg        dst    = newVRegV(env);
+            AMD64RI*    src    = iselIntExpr_RI(env, e->Iex.Unop.arg);
+            /* paranoia */
+            set_SSE_rounding_default(env);
+            addInstr(env, AMD64Instr_Alu64M(Aalu_MOV, src, m8_rsp));
+            addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 8, dst, m8_rsp));
+            return dst;
+         }
          case Iop_F32toF64: {
             HReg f32;
             HReg f64 = newVRegV(env);

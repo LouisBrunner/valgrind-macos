@@ -1509,7 +1509,7 @@ static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
 ULong x86g_loadF80le ( UInt addrU )
 {
    ULong f64;
-   convert_f80le_to_f64le ( (UChar*)addrU, (UChar*)&f64 );
+   convert_f80le_to_f64le ( (UChar*)ULong_to_Ptr(addrU), (UChar*)&f64 );
    return f64;
 }
 
@@ -1517,7 +1517,7 @@ ULong x86g_loadF80le ( UInt addrU )
 /* DIRTY HELPER (writes guest memory) */
 void x86g_storeF80le ( UInt addrU, ULong f64 )
 {
-   convert_f64le_to_f80le( (UChar*)&f64, (UChar*)addrU );
+   convert_f64le_to_f80le( (UChar*)&f64, (UChar*)ULong_to_Ptr(addrU) );
 }
 
 

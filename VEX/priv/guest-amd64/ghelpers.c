@@ -182,7 +182,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_R14 = 0;
    vex_state->guest_R15 = 0;
 
-   vex_state->guest_CC_OP   = 999;//X86G_CC_OP_COPY;  // XXX ???
+   vex_state->guest_CC_OP   = AMD64G_CC_OP_COPY;
    vex_state->guest_CC_DEP1 = 0;
    vex_state->guest_CC_DEP2 = 0;
    vex_state->guest_CC_NDEP = 0;

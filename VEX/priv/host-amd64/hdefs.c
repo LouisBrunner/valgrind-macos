@@ -1044,7 +1044,7 @@ void ppAMD64Instr ( AMD64Instr* i )
          if (i->Ain.Goto.jk != Ijk_Boring) {
             vex_printf("movl $");
             ppIRJumpKind(i->Ain.Goto.jk);
-            vex_printf(",%%rbp ; ");
+            vex_printf(",%%ebp ; ");
          }
          vex_printf("movq ");
          ppAMD64RI(i->Ain.Goto.dst);
@@ -2020,7 +2020,7 @@ static UChar rexAMode_R ( HReg greg, HReg ereg )
 
 Int emit_AMD64Instr ( UChar* buf, Int nbuf, AMD64Instr* i )
 {
-   UInt irno, opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
+   UInt /*irno,*/ opc, opc_rr, subopc_imm, opc_imma, opc_cl, opc_imm, subopc;
 //.. 
 //..    UInt   xtra;
    UChar* p = &buf[0];
@@ -2417,8 +2417,10 @@ vassert(0);
 
       /* Get the destination address into %rax */
       if (i->Ain.Goto.dst->tag == Ari_Imm) {
-         /* movl $immediate, %eax ; ret */
-         *p++ = 0xB8;
+         /* movl sign-ext($immediate), %rax ; ret */
+         *p++ = 0x48;
+         *p++ = 0xC7;
+         *p++ = 0xC0;
          p = emit32(p, i->Ain.Goto.dst->Ari.Imm.imm32);
       } else {
          vassert(i->Ain.Goto.dst->tag == Ari_Reg);

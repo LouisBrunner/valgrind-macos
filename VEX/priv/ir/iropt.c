@@ -988,11 +988,18 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         - e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
+
             case Iop_Add32:
                e2 = IRExpr_Const(IRConst_U32(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         + e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
                break;
+            case Iop_Add64:
+               e2 = IRExpr_Const(IRConst_U64(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
+                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
+               break;
+
             case Iop_Xor32:
                e2 = IRExpr_Const(IRConst_U32(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32

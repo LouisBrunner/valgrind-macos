@@ -323,7 +323,7 @@ IRBB* bbToIR_PPC32 ( UChar*           ppc32code,
             if (0 && (n_resteers & 0xFF) == 0)
             vex_printf("resteer[%d,%d] to %p (delta = %d)\n",
                        n_resteers, d_resteers,
-                       (void*)(UInt)(guest_next), delta);
+                       ULong_to_Ptr(guest_next), delta);
             break;
       }
    }

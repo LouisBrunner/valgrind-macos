@@ -216,14 +216,14 @@ static AMD64AMode*   iselIntExpr_AMode     ( ISelEnv* env, IRExpr* e );
 static AMD64CondCode iselCondCode_wrk    ( ISelEnv* env, IRExpr* e );
 static AMD64CondCode iselCondCode        ( ISelEnv* env, IRExpr* e );
 
-static HReg          iselDblExpr_wrk     ( ISelEnv* env, IRExpr* e );
-static HReg          iselDblExpr         ( ISelEnv* env, IRExpr* e );
+//static HReg          iselDblExpr_wrk     ( ISelEnv* env, IRExpr* e );
+//static HReg          iselDblExpr         ( ISelEnv* env, IRExpr* e );
 
-static HReg          iselFltExpr_wrk     ( ISelEnv* env, IRExpr* e );
-static HReg          iselFltExpr         ( ISelEnv* env, IRExpr* e );
+//static HReg          iselFltExpr_wrk     ( ISelEnv* env, IRExpr* e );
+//static HReg          iselFltExpr         ( ISelEnv* env, IRExpr* e );
 
-static HReg          iselVecExpr_wrk     ( ISelEnv* env, IRExpr* e );
-static HReg          iselVecExpr         ( ISelEnv* env, IRExpr* e );
+//static HReg          iselVecExpr_wrk     ( ISelEnv* env, IRExpr* e );
+//static HReg          iselVecExpr         ( ISelEnv* env, IRExpr* e );
 
 
 /*---------------------------------------------------------*/
@@ -2725,18 +2725,18 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 //.. /* DO NOT CALL THIS DIRECTLY */
 //.. static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
 //.. {
-//.. 
-//.. #  define REQUIRE_SSE1                                  \
-//..       do { if (env->subarch == VexSubArchX86_sse0)      \
-//..               goto vec_fail;                            \
-//..       } while (0)
-//.. 
-//.. #  define REQUIRE_SSE2                                  \
-//..       do { if (env->subarch == VexSubArchX86_sse0       \
-//..                || env->subarch == VexSubArchX86_sse1)   \
-//..               goto vec_fail;                            \
-//..       } while (0)
-//.. 
+#if 0
+#  define REQUIRE_SSE1                                  \
+      do { if (env->subarch == VexSubArchX86_sse0)      \
+              goto vec_fail;                            \
+      } while (0)
+
+#  define REQUIRE_SSE2                                  \
+      do { if (env->subarch == VexSubArchX86_sse0       \
+               || env->subarch == VexSubArchX86_sse1)   \
+              goto vec_fail;                            \
+      } while (0)
+#endif
 //..    Bool     arg1isEReg = False;
 //..    X86SseOp op = Xsse_INVALID;
 //..    IRType   ty = typeOfIRExpr(env->type_env,e);

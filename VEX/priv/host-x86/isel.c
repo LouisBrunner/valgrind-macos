@@ -350,7 +350,8 @@ void callHelperAndClearArgs ( ISelEnv* env, X86CondCode cc,
       parameters. */
    vassert(sizeof(void*) == 4);
 
-   addInstr(env, X86Instr_Call( cc, (UInt)cee->addr, cee->regparms));
+   addInstr(env, X86Instr_Call( cc, (UInt)Ptr_to_ULong(cee->addr), 
+                                    cee->regparms));
    if (n_arg_ws > 0)
       add_to_esp(env, 4*n_arg_ws);
 }

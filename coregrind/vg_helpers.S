@@ -190,76 +190,43 @@ out_done:
 	dummy, replaced by %EDX value
 	RA   <- %esp
 
-   For simulating the cpuid instruction, we will
-   issue a "real" cpuid instruction and then mask out
-   the bits of the features we do not support currently (3dnow mostly).
-   We also claim to not support most CPUID operations.
-	
-   Dirk Mueller <mueller@kde.org>
-
-   http://www.sandpile.org/ia32/cpuid.htm
-
-   references: 
-
-   pre-MMX pentium:
-
-   <werner> cpuid words (0): 0x1 0x756e6547 0x6c65746e 0x49656e69
-   <werner> cpuid words (1): 0x52b 0x0 0x0 0x1bf
+   We save registers and package up the args so we can call a C helper
+   for all this.
 */
 .global VG_(helper_CPUID)
 VG_(helper_CPUID):
+	pushl	%ebp
+	movl	%esp,%ebp
 	pushl	%eax
 	pushl	%ebx
 	pushl	%ecx
 	pushl	%edx
-	movl	32(%esp), %eax
-
-	/* eax==0 - max valid request+processor vendor */
-	cmpl	$0, %eax
-	jne	1f
-
-	movl	$1, %eax	/* only support request 1 */
-	movl	valgrind_brand+0, %ebx
-	movl	valgrind_brand+4, %edx
-	movl	valgrind_brand+8, %ecx
-	jmp	99f
-
-	/* eax==1 - CPU features and model ID */
-1:	cmpl	$1, %eax
-	jne	2f
-
-	cpuid	/* get host CPU's capabilities */
-
-	movl	$0111, %eax
-	movl	$0, %ebx			/* clear APIC id, CLFLUSH size, Brand ID */
-	movl	$0, %ecx			/* clear extended feature bits */
-	andl	$VG_SUPPORTED_FEATURES, %edx	/* mask off feature bits we don't support */
-	jmp	99f
-
-	/* eax=0x80000000 - extended cpuid functions */
-2:	cmpl	$0x80000000, %eax
-	jne	99f
-
-	/* leave eax==0x80000000 - we don't support any other extended operations */
-	movl	valgrind_brand+0, %ebx	/* AMD load the brand string again - */
-	movl	valgrind_brand+4, %edx	/* Intel leaves them "reserved" */
-	movl	valgrind_brand+8, %ecx
+	pushl	%esi
+	pushl	%edi
+	pushf
 	
-	
-99:	movl	%edx, 20(%esp)
-	movl	%ecx, 24(%esp)
-	movl	%ebx, 28(%esp)
-	movl	%eax, 32(%esp)
+	lea	2*4(%ebp),%eax	/* &edx */
+	pushl	%eax
+	addl	$4,%eax		/* &ecx */
+	pushl	%eax
+	addl	$4,%eax		/* &ebx */
+	pushl	%eax
+	addl	$4,%eax		/* &eax */
+	pushl	%eax
+	pushl	(%eax)		/* eax */
 
+	call	VG_(helperc_CPUID)
+	addl	$20,%esp
+
+	popf
+	popl	%edi
+	popl	%esi
 	popl	%edx
 	popl	%ecx
 	popl	%ebx
 	popl	%eax
+	popl	%ebp
 	ret
-.data
-valgrind_brand:
-	.ascii "ValgrindVCPU"
-.text
 
 /* Fetch the FPU status register.
    On entry:

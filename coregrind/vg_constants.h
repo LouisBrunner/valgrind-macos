@@ -94,53 +94,70 @@
 /* Assembly code stubs make this request */
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 
-/* CPU features */
-#define VG_X86_FEAT_FPU		(0*32 + 0)
-#define VG_X86_FEAT_VME		(0*32 + 1)
-#define VG_X86_FEAT_DE		(0*32 + 2)
-#define VG_X86_FEAT_PSE		(0*32 + 3)
-#define VG_X86_FEAT_TSC		(0*32 + 4)
-#define VG_X86_FEAT_MSR		(0*32 + 5)
-#define VG_X86_FEAT_PAE		(0*32 + 6)
-#define VG_X86_FEAT_MCE		(0*32 + 7)
-#define VG_X86_FEAT_CX8		(0*32 + 8)
-#define VG_X86_FEAT_APIC	(0*32 + 9)
-#define VG_X86_FEAT_SEP		(0*32 + 11)
-#define VG_X86_FEAT_MTRR	(0*32 + 12)
-#define VG_X86_FEAT_PGE		(0*32 + 13)
-#define VG_X86_FEAT_MCA		(0*32 + 14)
-#define VG_X86_FEAT_CMOV	(0*32 + 15)
-#define VG_X86_FEAT_PAT		(0*32 + 16)
-#define VG_X86_FEAT_PSE36	(0*32 + 17)
-#define VG_X86_FEAT_CLFSH	(0*32 + 19)
-#define VG_X86_FEAT_DS		(0*32 + 21)
-#define VG_X86_FEAT_ACPI	(0*32 + 22)
-#define VG_X86_FEAT_MMX		(0*32 + 23)
-#define VG_X86_FEAT_FXSR	(0*32 + 24)
-#define VG_X86_FEAT_SSE		(0*32 + 25)
-#define VG_X86_FEAT_SSE2	(0*32 + 26)
-#define VG_X86_FEAT_SS		(0*32 + 27)
-#define VG_X86_FEAT_HT		(0*32 + 28)
-#define VG_X86_FEAT_TM		(0*32 + 29)
-#define VG_X86_FEAT_PBE		(0*32 + 31)
+/* 
+   0 - standard feature flags
+   1 - Intel extended flags
+   2 - Valgrind internal flags
+   3 - AMD-specific flags
+ */
+#define VG_N_FEATURE_WORDS	4
 
-#define VG_X86_FEAT_EST		(1*32 + 7)
-#define VG_X86_FEAT_TM2		(1*32 + 8)
-#define VG_X86_FEAT_CNXTID	(1*32 + 10)
+#define VG_X86_FEAT		0
+#define VG_EXT_FEAT		1
+#define VG_INT_FEAT		2
+#define VG_AMD_FEAT		3
+
+/* CPU features (generic) */
+#define VG_X86_FEAT_FPU		(VG_X86_FEAT*32 + 0)
+#define VG_X86_FEAT_VME		(VG_X86_FEAT*32 + 1)
+#define VG_X86_FEAT_DE		(VG_X86_FEAT*32 + 2)
+#define VG_X86_FEAT_PSE		(VG_X86_FEAT*32 + 3)
+#define VG_X86_FEAT_TSC		(VG_X86_FEAT*32 + 4)
+#define VG_X86_FEAT_MSR		(VG_X86_FEAT*32 + 5)
+#define VG_X86_FEAT_PAE		(VG_X86_FEAT*32 + 6)
+#define VG_X86_FEAT_MCE		(VG_X86_FEAT*32 + 7)
+#define VG_X86_FEAT_CX8		(VG_X86_FEAT*32 + 8)
+#define VG_X86_FEAT_APIC	(VG_X86_FEAT*32 + 9)
+#define VG_X86_FEAT_SEP		(VG_X86_FEAT*32 + 11)
+#define VG_X86_FEAT_MTRR	(VG_X86_FEAT*32 + 12)
+#define VG_X86_FEAT_PGE		(VG_X86_FEAT*32 + 13)
+#define VG_X86_FEAT_MCA		(VG_X86_FEAT*32 + 14)
+#define VG_X86_FEAT_CMOV	(VG_X86_FEAT*32 + 15)
+#define VG_X86_FEAT_PAT		(VG_X86_FEAT*32 + 16)
+#define VG_X86_FEAT_PSE36	(VG_X86_FEAT*32 + 17)
+#define VG_X86_FEAT_CLFSH	(VG_X86_FEAT*32 + 19)
+#define VG_X86_FEAT_DS		(VG_X86_FEAT*32 + 21)
+#define VG_X86_FEAT_ACPI	(VG_X86_FEAT*32 + 22)
+#define VG_X86_FEAT_MMX		(VG_X86_FEAT*32 + 23)
+#define VG_X86_FEAT_FXSR	(VG_X86_FEAT*32 + 24)
+#define VG_X86_FEAT_SSE		(VG_X86_FEAT*32 + 25)
+#define VG_X86_FEAT_SSE2	(VG_X86_FEAT*32 + 26)
+#define VG_X86_FEAT_SS		(VG_X86_FEAT*32 + 27)
+#define VG_X86_FEAT_HT		(VG_X86_FEAT*32 + 28)
+#define VG_X86_FEAT_TM		(VG_X86_FEAT*32 + 29)
+#define VG_X86_FEAT_IA64	(VG_X86_FEAT*32 + 30)
+#define VG_X86_FEAT_PBE		(VG_X86_FEAT*32 + 31)
+
+/* Intel extended feature word */
+#define VG_X86_FEAT_SSE3	(VG_EXT_FEAT*32 + 0)
+#define VG_X86_FEAT_MON		(VG_EXT_FEAT*32 + 3)
+#define VG_X86_FEAT_DSCPL	(VG_EXT_FEAT*32 + 4)
+#define VG_X86_FEAT_EST		(VG_EXT_FEAT*32 + 7)
+#define VG_X86_FEAT_TM2		(VG_EXT_FEAT*32 + 8)
+#define VG_X86_FEAT_CNXTID	(VG_EXT_FEAT*32 + 10)
 
 /* Used internally to mark whether CPUID is even implemented */
-#define VG_X86_FEAT_CPUID	(2*32 + 0)
+#define VG_X86_FEAT_CPUID	(VG_INT_FEAT*32 + 0)
 
-/* The set of features we're willing to support for the client */
-#define VG_SUPPORTED_FEATURES			\
-	((1 << VG_X86_FEAT_FPU)  |		\
-	 (1 << VG_X86_FEAT_TSC)  |		\
-	 (1 << VG_X86_FEAT_CMOV) |		\
-	 (1 << VG_X86_FEAT_MMX)  |		\
-	 (1 << VG_X86_FEAT_FXSR) |		\
-	 (1 << VG_X86_FEAT_SSE)  |		\
-	 (1 << VG_X86_FEAT_SSE2))
- 
+/* AMD special features */
+#define VG_AMD_FEAT_SYSCALL	(VG_AMD_FEAT*32 + 11)
+#define VG_AMD_FEAT_NXP		(VG_AMD_FEAT*32 + 20)
+#define VG_AMD_FEAT_MMXEXT	(VG_AMD_FEAT*32 + 22)
+#define VG_AMD_FEAT_FFXSR	(VG_AMD_FEAT*32 + 25)
+#define VG_AMD_FEAT_LONGMODE	(VG_AMD_FEAT*32 + 29)
+#define VG_AMD_FEAT_3DNOWEXT	(VG_AMD_FEAT*32 + 30)
+#define VG_AMD_FEAT_3DNOW	(VG_AMD_FEAT*32 + 31)
+
 /* Various environment variables we pay attention to */
 
 /* The directory we look for all our auxillary files in */

@@ -659,7 +659,7 @@ IRExpr* x86guest_spechelper ( Char* function_name,
       }
       if (isU32(cc_op, CC_OP_DECL) || isU32(cc_op, CC_OP_INCL)) {
          /* If the thunk is dec or inc, the cflag is supplied as CC_SRC. */
-         return cc_dep1;
+         return cc_ndep;
       }
 #     if 0
       if (cc_op->tag == Iex_Const) {

@@ -1089,7 +1089,7 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             Bool is_load;
             Int t_size;
 
-            sk_assert(u_in->size == 4 || u_in->size == 16);
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16);
 
             t_size = INVALID_TEMPREG;
             is_load = u_in->opcode==SSE2a_MemRd

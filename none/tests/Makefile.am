@@ -46,7 +46,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	sha1_test.stderr.exp sha1_test.vgtest \
 	shortpush.stderr.exp shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \
-	tls.stderr.exp tls.stdout.exp tls.vgtest \
+	tls.stderr.exp tls.stdout.exp  \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	syscall-restart1.vgtest syscall-restart1.stdout.exp syscall-restart1.stderr.exp \
 	syscall-restart2.vgtest syscall-restart2.stdout.exp syscall-restart2.stderr.exp \

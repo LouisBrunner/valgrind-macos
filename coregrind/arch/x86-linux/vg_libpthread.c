@@ -409,3 +409,185 @@ void _IO_funlockfile ( _IO_FILE * file )
   //barf("_IO_funlockfile");
 }
 
+/*--------------------------------------------------*/
+
+#include "vg_kerneliface.h"
+
+static
+__inline__
+int is_kerror ( int res )
+{
+   if (res >= -4095 && res <= -1)
+      return 1;
+   else
+      return 0;
+}
+
+
+static
+int my_do_syscall1 ( int syscallno, int arg1 )
+{ 
+   int __res;
+   __asm__ volatile ("pushl %%ebx; movl %%edx,%%ebx ; int $0x80 ; popl %%ebx"
+                     : "=a" (__res)
+                     : "0" (syscallno),
+                       "d" (arg1) );
+   return __res;
+}
+
+static
+int my_do_syscall2 ( int syscallno, 
+                      int arg1, int arg2 )
+{ 
+   int __res;
+   __asm__ volatile ("pushl %%ebx; movl %%edx,%%ebx ; int $0x80 ; popl %%ebx"
+                     : "=a" (__res)
+                     : "0" (syscallno),
+                       "d" (arg1),
+                       "c" (arg2) );
+   return __res;
+}
+
+static
+int do_syscall_select( int n, 
+                       vki_fd_set* readfds, 
+                       vki_fd_set* writefds, 
+                       vki_fd_set* exceptfds, 
+                       struct vki_timeval * timeout )
+{
+   int res;
+   int args[5];
+   args[0] = n;
+   args[1] = (int)readfds;
+   args[2] = (int)writefds;
+   args[3] = (int)exceptfds;
+   args[4] = (int)timeout;
+   res = my_do_syscall1(__NR_select, (int)(&(args[0])) );
+   if (is_kerror(res)) {
+      * (__errno_location()) = -res;
+      return -1;
+   } else {
+      return res;
+   }
+}
+
+
+/* This is a wrapper round select(), which makes it thread-safe,
+   meaning that only this thread will block, rather than the entire
+   process.  This wrapper in turn depends on nanosleep() not to block
+   the entire process, but I think (hope? suspect?) that POSIX
+   pthreads guarantees that to be the case.
+
+   Basic idea is: modify the timeout parameter to select so that it
+   returns immediately.  Poll like this until select returns non-zero,
+   indicating something interesting happened, or until our time is up.
+   Space out the polls with nanosleeps of say 20 milliseconds, which
+   is required to be nonblocking; this allows other threads to run.  
+*/
+#include <assert.h>
+
+
+int select ( int n, 
+             fd_set *rfds, 
+             fd_set *wfds, 
+             fd_set *xfds, 
+             struct timeval *timeout )
+{
+   int    res;
+   fd_set rfds_copy;
+   fd_set wfds_copy;
+   fd_set xfds_copy;
+   struct vki_timeval  t_now;
+   struct vki_timeval  t_end;
+   struct vki_timeval  zero_timeout;
+   struct vki_timespec nanosleep_interval;
+
+   ensure_valgrind("select");
+
+   /* We assume that the kernel and libc data layouts are identical
+      for the following types.  These asserts provide a crude
+      check. */
+   if (sizeof(fd_set) != sizeof(vki_fd_set)
+       || sizeof(struct timeval) != sizeof(struct vki_timeval))
+      barf("valgrind's hacky non-blocking select(): data sizes error");
+
+   /* If a zero timeout specified, this call is harmless. */
+   if (timeout && timeout->tv_sec == 0 && timeout->tv_usec == 0)
+      return do_syscall_select( n, (vki_fd_set*)rfds, 
+                                   (vki_fd_set*)wfds, 
+                                   (vki_fd_set*)xfds, 
+                                   (struct vki_timeval*)timeout);
+
+   /* If a timeout was specified, set t_end to be the end wallclock
+      time. */
+   if (timeout) {
+      res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
+      assert(res == 0);
+      t_end = t_now;
+      t_end.tv_usec += timeout->tv_usec;
+      t_end.tv_sec  += timeout->tv_sec;
+      if (t_end.tv_usec >= 1000000) {
+         t_end.tv_usec -= 1000000;
+         t_end.tv_sec += 1;
+      }
+      /* Stay sane ... */
+      assert (t_end.tv_sec > t_now.tv_sec
+              || (t_end.tv_sec == t_now.tv_sec 
+                  && t_end.tv_usec >= t_now.tv_usec));
+   }
+
+   /* fprintf(stderr, "MY_SELECT: before loop\n"); */
+
+   /* Either timeout == NULL, meaning wait indefinitely, or timeout !=
+      NULL, in which case t_end holds the end time. */
+   while (1) {
+      if (timeout) {
+         res = my_do_syscall2(__NR_gettimeofday, (int)&t_now, (int)NULL);
+         assert(res == 0);
+         if (t_now.tv_sec > t_end.tv_sec
+             || (t_now.tv_sec == t_end.tv_sec 
+                 && t_now.tv_usec > t_end.tv_usec)) {
+            /* timeout; nothing interesting happened. */
+            if (rfds) FD_ZERO(rfds);
+            if (wfds) FD_ZERO(wfds);
+            if (xfds) FD_ZERO(xfds);
+            return 0;
+         }
+      }
+
+      /* These could be trashed each time round the loop, so restore
+         them each time. */
+      if (rfds) rfds_copy = *rfds;
+      if (wfds) wfds_copy = *wfds;
+      if (xfds) xfds_copy = *xfds;
+
+      zero_timeout.tv_sec = zero_timeout.tv_usec = 0;
+
+      res = do_syscall_select( n, 
+                               rfds ? (vki_fd_set*)(&rfds_copy) : NULL,
+                               wfds ? (vki_fd_set*)(&wfds_copy) : NULL,
+                               xfds ? (vki_fd_set*)(&xfds_copy) : NULL,
+                               & zero_timeout );
+      if (res < 0) {
+         /* some kind of error (including EINTR); errno is set, so just
+            return.  The sets are unspecified in this case. */
+         return res;
+      }
+      if (res > 0) {
+         /* one or more fds is ready.  Copy out resulting sets and
+            return. */
+         if (rfds) *rfds = rfds_copy;
+         if (wfds) *wfds = wfds_copy;
+         if (xfds) *xfds = xfds_copy;
+         return res;
+      }
+      /* fprintf(stderr, "MY_SELECT: nanosleep\n"); */
+      /* nanosleep and go round again */
+      nanosleep_interval.tv_sec = 0;
+      nanosleep_interval.tv_nsec = 20 * 1000 * 1000; /* 20 milliseconds */
+      /* It's critical here that valgrind's nanosleep implementation
+         is nonblocking. */
+      (void)my_do_syscall2(__NR_nanosleep, 
+                           (int)(&nanosleep_interval), (int)NULL);
+   }
+}

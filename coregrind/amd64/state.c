@@ -45,6 +45,7 @@
 Bool VGA_(getArchAndSubArch)( /*OUT*/VexArch*    vex_arch, 
                               /*OUT*/VexSubArch* vex_subarch )
 {
+   vg_assert(VG_(has_cpuid)());
    *vex_arch = VexArchAMD64;
    *vex_subarch = VexSubArch_NONE;
    return True;

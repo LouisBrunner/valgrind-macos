@@ -70,23 +70,23 @@ enum {
 
     CC_OP_INCB, /* modify all flags except, CC_DST = res, CC_SRC = C */
     CC_OP_INCW,
-    CC_OP_INCL,
+    CC_OP_INCL, /* 18 */
 
     CC_OP_DECB, /* modify all flags except, CC_DST = res, CC_SRC = C  */
     CC_OP_DECW,
-    CC_OP_DECL,
+    CC_OP_DECL, /* 21 */
 
     CC_OP_SHLB, /* modify all flags, CC_DST = res, CC_SRC = res' */
     CC_OP_SHLW, /* where res' is like res but shifted one bit less */
-    CC_OP_SHLL,
+    CC_OP_SHLL, /* 24 */
 
     CC_OP_SARB, /* modify all flags, CC_DST = res, CC_SRC = res' */
     CC_OP_SARW, /* where res' is like res but shifted one bit less */
-    CC_OP_SARL,
+    CC_OP_SARL, /* 27 */
 
     CC_OP_MULB, /* modify all flags, CC_DST = one arg */
     CC_OP_MULW, /* CC_SRC = the other arg */
-    CC_OP_MULL,
+    CC_OP_MULL, /* 30 */
 
     CC_OP_MULLSB, /* modify all flags, CC_DST = one arg */
     CC_OP_MULLSW, /* CC_SRC = the other arg */

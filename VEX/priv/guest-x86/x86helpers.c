@@ -127,6 +127,36 @@ static inline int lshift(int x, int n)
       return cf | pf | af | zf | sf | of;		\
    }
 
+#define ACTIONS_SHL(DATA_BITS,DATA_TYPE,DATA_STYPE)		\
+{								\
+  PREAMBLE(DATA_BITS);						\
+    int cf, pf, af, zf, sf, of;					\
+    cf = (CC_SRC >> (DATA_BITS - 1)) & CC_C;			\
+    pf = parity_table[(uint8_t)CC_DST];				\
+    af = 0; /* undefined */					\
+    zf = ((DATA_TYPE)CC_DST == 0) << 6;				\
+    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;			\
+    /* of is defined if shift count == 1 */			\
+    of = lshift(CC_SRC ^ CC_DST, 12 - DATA_BITS) & CC_O;	\
+    return cf | pf | af | zf | sf | of;				\
+}
+
+
+
+#define ACTIONS_SAR(DATA_BITS,DATA_TYPE,DATA_STYPE)		\
+{								\
+    PREAMBLE(DATA_BITS);  					\
+    int cf, pf, af, zf, sf, of;					\
+    cf = CC_SRC & 1;						\
+    pf = parity_table[(uint8_t)CC_DST];				\
+    af = 0; /* undefined */					\
+    zf = ((DATA_TYPE)CC_DST == 0) << 6;				\
+    sf = lshift(CC_DST, 8 - DATA_BITS) & 0x80;			\
+    /* of is defined if shift count == 1 */			\
+    of = lshift(CC_SRC ^ CC_DST, 12 - DATA_BITS) & CC_O; 	\
+    return cf | pf | af | zf | sf | of;				\
+}
+
 
 /* CALLED FROM GENERATED CODE */
 /*static*/ UInt calculate_eflags_all ( UInt cc_op, UInt cc_src, UInt cc_dst )
@@ -141,6 +171,9 @@ static inline int lshift(int x, int n)
       case CC_OP_SUBL:   ACTIONS_SUB(32,UInt,Int);
       case CC_OP_LOGICB: ACTIONS_LOGIC(8,UChar,Char);
       case CC_OP_LOGICL: ACTIONS_LOGIC(32,UInt,Int);
+
+   case CC_OP_SHLL: ACTIONS_SHL(32,UInt,Int);
+   case CC_OP_SARL: ACTIONS_SAR(32,UInt,Int);
       default:
          /* shouldn't really make these calls from generated code */
          vex_printf("calculate_eflags_all( %d, 0x%x, 0x%x )\n",

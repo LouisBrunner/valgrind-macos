@@ -2765,9 +2765,9 @@ Bool SK_(read_extra_suppression_info) ( Int fd, Char* buf, Int nBuf, Supp* su )
 
 Bool SK_(error_matches_suppression)(Error* err, Supp* su)
 {
-   sk_assert(VG_(get_supp_kind) (su)  == EraserSupp);
-   sk_assert(VG_(get_error_kind)(err) == EraserErr);
-   return True;
+   sk_assert(VG_(get_supp_kind)(su) == EraserSupp);
+
+   return (VG_(get_error_kind)(err) == EraserErr);
 }
 
 extern Char* SK_(get_error_name) ( Error* err )

@@ -893,18 +893,24 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          }
 
          if (trc == VEX_TRC_JMP_EMWARN) {
-            static Int counts[EmWarn_NUMBER]
-               = { 0, 0, 0, 0, 0 };
-            VexEmWarn ew
-               = (VexEmWarn)VG_(threads)[tid].arch.vex.guest_EMWARN;
-            HChar* what
-               = (ew < 0 || ew >= EmWarn_NUMBER)
-                    ? "unknown (?!)"
-                    : LibVEX_EmWarn_string(ew);
-            Bool show
-               = (ew < 0 || ew >= EmWarn_NUMBER)
-                    ? True
-                    : counts[ew]++ < 3;
+            static Int  counts[EmWarn_NUMBER];
+            static Bool counts_initted = False;
+            VexEmWarn ew;
+            HChar*    what;
+            Bool      show;
+            Int       q;
+            if (!counts_initted) {
+               counts_initted = True;
+               for (q = 0; q < EmWarn_NUMBER; q++)
+                  counts[q] = 0;
+            }
+            ew   = (VexEmWarn)VG_(threads)[tid].arch.vex.guest_EMWARN;
+            what = (ew < 0 || ew >= EmWarn_NUMBER)
+                      ? "unknown (?!)"
+                      : LibVEX_EmWarn_string(ew);
+            show = (ew < 0 || ew >= EmWarn_NUMBER)
+                      ? True
+                      : counts[ew]++ < 3;
             if (show) {
                VG_(message)( Vg_UserMsg, 
                              "Emulation warning: unsupported action:");

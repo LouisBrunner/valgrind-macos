@@ -670,11 +670,16 @@ typedef struct
 typedef struct
 {
   struct _vg_pthread_fastlock __vg_c_lock; /* Protect against concurrent access */
-  /*_pthread_descr*/ void* __vg_c_waiting;        /* Threads waiting on this condition */
+  /*_pthread_descr*/ void* __vg_c_waiting; /* Threads waiting on this condition */
+
+  // Nb: the following padding removed because it was missing from an
+  // earlier glibc, so the size test in the CONVERT macro was failing.
+  // --njn
+
   // Padding ensures the size is 48 bytes
-  char __vg_padding[48 - sizeof(struct _vg_pthread_fastlock)
+  /*char __vg_padding[48 - sizeof(struct _vg_pthread_fastlock)
          - sizeof(void*) - sizeof(long long)];
-  long long __vg_align;
+  long long __vg_align;*/
 } vg_pthread_cond_t;
 
 

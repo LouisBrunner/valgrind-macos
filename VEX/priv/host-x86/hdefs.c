@@ -2354,7 +2354,6 @@ vex_printf("EMIT FENCE\n");
             *p++ = 0x24; *p++ = 0x00; *p++ = 0x00;
             goto done;
          case VexSubArchX86_sse2:
-            vassert(0); /* awaiting test case */
             /* mfence */
             *p++ = 0x0F; *p++ = 0xAE; *p++ = 0xF0;
             goto done;

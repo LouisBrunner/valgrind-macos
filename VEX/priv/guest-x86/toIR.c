@@ -6873,6 +6873,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
    /* 2005 Jan 06: the following insns are observed to sometimes
       have a LOCK prefix:
          cmpxchgl %ecx,(%edx)
+         cmpxchgl %edx,0x278(%ebx) etc
          xchgl %eax, (%ecx)
          xaddl %eax, (%ecx)
       We need to catch any such which appear to be being used as

@@ -7,7 +7,8 @@ PRIV_HEADERS = 	priv/host-x86/hdefs.h			\
 		priv/host-generic/h_generic_regs.h	\
 		priv/main/vex_globals.h			\
 		priv/main/vex_util.h			\
-		priv/guest-x86/gdefs.h
+		priv/guest-x86/gdefs.h			\
+		priv/ir/iropt.h
 
 LIB_OBJS = 	priv/ir/irdefs.o			\
 		priv/ir/iropt.o				\

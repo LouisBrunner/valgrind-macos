@@ -1062,7 +1062,7 @@ Bool VG_(deliver_signals) ( void )
          /* Is tid waiting for a signal?  If not, ignore. */
          if (tst->status != VgTs_WaitSIG)
             continue;
-	 /* Is the signal directed at a specific thread other than
+         /* Is the signal directed at a specific thread other than
             this one?  If yes, ignore. */
          if (vg_dcss.dcss_destthread[sigNo] != VG_INVALID_THREADID
              && vg_dcss.dcss_destthread[sigNo] != tid)

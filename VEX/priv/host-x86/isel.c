@@ -337,6 +337,23 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_Alu32R(aluOp, rmi, dst));
          return dst;
       }
+      /* Could do better here; forcing the first arg into a reg
+         isn't always clever.
+         -- t70 = Xor32(And32(Xor32(LDle:I32(Add32(t41,0xFFFFFFA0:I32)),
+                        LDle:I32(Add32(t41,0xFFFFFFA4:I32))),LDle:I32(Add32(
+                        t41,0xFFFFFFA8:I32))),LDle:I32(Add32(t41,0xFFFFFFA0:I32)))
+            movl 0xFFFFFFA0(%vr41),%vr107
+            movl 0xFFFFFFA4(%vr41),%vr108
+            movl %vr107,%vr106
+            xorl %vr108,%vr106
+            movl 0xFFFFFFA8(%vr41),%vr109
+            movl %vr106,%vr105
+            andl %vr109,%vr105
+            movl 0xFFFFFFA0(%vr41),%vr110
+            movl %vr105,%vr104
+            xorl %vr110,%vr104
+            movl %vr104,%vr70
+      */
 
       /* Perhaps a shift op? */
       switch (e->Iex.Binop.op) {

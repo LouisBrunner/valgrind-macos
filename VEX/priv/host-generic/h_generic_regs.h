@@ -63,7 +63,14 @@ extern void ppHRegClass ( HRegClass );
 extern void ppHReg ( HReg );
 
 /* Construct/destruct. */
-extern HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual );
+static inline HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual ) {
+   UInt r24 = regno & 0x00FFFFFF;
+   /* This is critical.  The register number field may only
+      occupy 24 bits. */
+   if (r24 != regno)
+      vpanic("mkHReg: regno exceeds 2^24");
+   return regno | (((UInt)rc) << 28) | (virtual ? (1<<24) : 0);
+}
 
 static inline HRegClass hregClass ( HReg r ) {
    UInt rc = r;
@@ -111,7 +118,9 @@ typedef
 
 extern void ppHRegUsage ( HRegUsage* );
 
-extern void initHRegUsage ( HRegUsage* );
+static inline void initHRegUsage ( HRegUsage* tab ) {
+   tab->n_used = 0;
+}
 
 /* Add a register to a usage table.  Combine incoming read uses with
    existing write uses into a modify use, and vice versa.  Do not

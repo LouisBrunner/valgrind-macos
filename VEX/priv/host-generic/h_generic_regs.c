@@ -13,16 +13,6 @@
 #include "host-generic/h_generic_regs.h"
 
 
-HReg mkHReg ( UInt regno, HRegClass rc, Bool virtual )
-{
-   UInt r24 = regno & 0x00FFFFFF;
-   /* This is critical.  The register number field may only
-      occupy 24 bits. */
-   if (r24 != regno)
-      vpanic("mkHReg: regno exceeds 2^24");
-   return regno | (((UInt)rc) << 28) | (virtual ? (1<<24) : 0);
-}
-
 void ppHRegClass ( HRegClass hrc )
 {
    switch (hrc) {
@@ -72,12 +62,6 @@ void ppHRegUsage ( HRegUsage* tab )
       vex_printf("\n");
    }
    vex_printf("}\n");
-}
-
-
-void initHRegUsage ( HRegUsage* tab )
-{
-   tab->n_used = 0;
 }
 
 

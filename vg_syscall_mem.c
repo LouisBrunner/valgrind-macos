@@ -480,6 +480,24 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          break;
 #     endif
 
+#if   defined(__NR_sched_get_priority_min)
+      case __NR_sched_get_priority_min: /* syscall 160 */
+         /* int sched_get_priority_min(int policy); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("sched_get_priority_min ( %d )\n", arg1);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
+#if   defined(__NR_setpriority)
+      case __NR_setpriority: /* syscall 97 */
+         /* int setpriority(int which, int who, int prio); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("setpriority ( %d, %d, %d )\n", arg1, arg2, arg3);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
 #     if defined(__NR_setfsgid)
       case __NR_setfsgid: /* syscall 139 */
          /* int setfsgid(gid_t gid); */
@@ -2007,7 +2025,6 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_sched_setparam:
       case __NR_sched_getparam:
       case __NR_sched_yield:
-      case __NR_sched_get_priority_min:
          if (VG_(clo_instrument)) {
             VG_(message)(Vg_UserMsg, 
                "Warning: noted but unhandled __NR_sched_* syscall (%d).", 

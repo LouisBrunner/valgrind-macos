@@ -2126,23 +2126,45 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    break;
 	 }
 
+         case MMX2_MemRd:
          case FPU_R: {
             sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
-                      8 == u_in->size || 10 == u_in->size);
+                      8 == u_in->size || 10 == u_in->size || 108 == u_in->size);
 	    
-	       t_size = newTemp(cb);
-	       uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
-	       uLiteral(cb, (UInt)u_in->size);
+	    t_size = newTemp(cb);
+	    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, (UInt)u_in->size);
 
-	       /* XXX all registers should be flushed to baseblock
-		  here */
-	       uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
-	       uCCall(cb, (Addr) & eraser_mem_help_read_N, 2, 2, False);
-
-	       VG_(copy_UInstr)(cb, u_in);
-	       t_size = INVALID_TEMPREG;
-	       break;
+	    /* XXX all registers should be flushed to baseblock
+	       here */
+	    uInstr2(cb, CCALL, 0, TempReg, u_in->val2, TempReg, t_size);
+	    uCCall(cb, (Addr) & eraser_mem_help_read_N, 2, 2, False);
+	    
+	    VG_(copy_UInstr)(cb, u_in);
+	    t_size = INVALID_TEMPREG;
+	    break;
 	 } 
+
+         case SSE2a_MemRd:
+         case SSE2a1_MemRd:
+         case SSE3a_MemRd:
+         case SSE3a1_MemRd:
+         case SSE3ag_MemRd_RegWr: {
+	    Int addr = (u_in->opcode == SSE3ag_MemRd_RegWr) ? u_in->val1 : u_in->val3;
+
+            sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
+	    
+	    t_size = newTemp(cb);
+	    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, (UInt)u_in->size);
+
+	    uInstr2(cb, CCALL, 0, TempReg, addr, TempReg, t_size);
+	    uCCall(cb, (Addr) & eraser_mem_help_read_N, 2, 2, False);
+	    
+	    VG_(copy_UInstr)(cb, u_in);
+	    t_size = INVALID_TEMPREG;
+	    break;
+         }
 
          case STORE: {
 	    void (*help)(Addr, UInt);
@@ -2172,9 +2194,10 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    break;
 	 }
 
+         case MMX2_MemWr:
          case FPU_W: {
             sk_assert(1 == u_in->size || 2 == u_in->size || 4 == u_in->size || 
-                      8 == u_in->size || 10 == u_in->size);
+                      8 == u_in->size || 10 == u_in->size || 108 == u_in->size);
 
 	    t_size = newTemp(cb);
 	    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
@@ -2189,12 +2212,23 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    break;
 	 }
 
-         case MMX1: case MMX2: case MMX3:
-         case MMX2_MemRd: case MMX2_MemWr:
-         case MMX2_ERegRd: case MMX2_ERegWr:
-            VG_(skin_panic)(
-               "I don't know how to instrument MMXish stuff (yet)");
-            break;
+         case SSE2a_MemWr:
+         case SSE3a_MemWr: {
+            sk_assert(4 == u_in->size || 8 == u_in->size || 16 == u_in->size ||
+		      512 == u_in->size);
+
+	    t_size = newTemp(cb);
+	    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, (UInt)u_in->size);
+	       /* XXX all registers should be flushed to baseblock
+		  here */
+	    uInstr2(cb, CCALL, 0, TempReg, u_in->val3, TempReg, t_size);
+	    uCCall(cb, (Addr) & eraser_mem_help_write_N, 2, 2, False);
+
+	    VG_(copy_UInstr)(cb, u_in);
+	    t_size = INVALID_TEMPREG;
+	    break;
+	 }
 
          default:
 	    /* conservative tromping */
@@ -3392,8 +3426,9 @@ void SK_(fini)(Int exitcode)
    if (LOCKSET_SANITY)
       sanity_check_locksets("SK_(fini)");
 
-   VG_(message)(Vg_UserMsg, "%u possible data races found; %u lock order problems",
-		n_eraser_warnings, n_lockorder_warnings);
+   if (VG_(clo_verbosity) > 0)
+      VG_(message)(Vg_UserMsg, "%u possible data races found; %u lock order problems",
+		   n_eraser_warnings, n_lockorder_warnings);
 
    if (0)
       VG_(printf)("stk_ld:%u+stk_st:%u = %u  nonstk_ld:%u+nonstk_st:%u = %u  %u%%\n",

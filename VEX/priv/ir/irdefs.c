@@ -240,6 +240,9 @@ void ppIROp ( IROp op )
       case Iop_Mul32Fx4:  vex_printf("Mul32Fx4"); return;
       case Iop_Mul32F0x4: vex_printf("Mul32F0x4"); return;
 
+      case Iop_Recip32Fx4:  vex_printf("Recip32Fx4"); return;
+      case Iop_Recip32F0x4: vex_printf("Recip32F0x4"); return;
+
       case Iop_CmpEQ32Fx4: vex_printf("CmpEQ32Fx4"); return;
       case Iop_CmpLT32Fx4: vex_printf("CmpLT32Fx4"); return;
       case Iop_CmpLE32Fx4: vex_printf("CmpLE32Fx4"); return;
@@ -1121,6 +1124,9 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_Mul32Fx4: case Iop_Mul32F0x4:
       case Iop_And128: case Iop_Or128: case Iop_Xor128:
          BINARY(Ity_V128, Ity_V128,Ity_V128);
+
+      case Iop_Recip32Fx4: case Iop_Recip32F0x4:
+         UNARY(Ity_V128, Ity_V128);
 
       default:
          ppIROp(op);

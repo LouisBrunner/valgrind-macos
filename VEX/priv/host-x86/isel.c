@@ -2426,6 +2426,32 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, IRExpr* e )
       return dst;
    }
 
+   if (e->tag == Iex_Unop) {
+   switch (e->Iex.Unop.op) {
+
+      case Iop_Recip32Fx4: op = Xsse_RCPF; goto do_32Fx4_unary;
+      do_32Fx4_unary:
+      {
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg dst = newVRegV(env);
+         addInstr(env, X86Instr_Sse32Fx4(op, arg, dst));
+         return dst;
+      }
+
+      case Iop_Recip32F0x4: op = Xsse_RCPF; goto do_32F0x4_unary;
+      do_32F0x4_unary:
+      {
+         HReg arg = iselVecExpr(env, e->Iex.Unop.arg);
+         HReg dst = newVRegV(env);
+         addInstr(env, X86Instr_Sse32FLo(op, arg, dst));
+         return dst;
+      }
+
+      default:
+         break;
+   } /* switch (e->Iex.Unop.op) */
+   } /* if (e->tag == Iex_Unop) */
+
    if (e->tag == Iex_Binop) {
    switch (e->Iex.Binop.op) {
       case Iop_64HLto128: {

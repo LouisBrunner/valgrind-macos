@@ -341,8 +341,8 @@ typedef
 
       /* unary */
       Iop_Recip32Fx4, Iop_Sqrt32Fx4, Iop_RSqrt32Fx4,
-      Iop_ItoF32x4, /* first arg is IRRoundingMode (Ity_I32) */
-      Iop_FtoI32x4, /* first arg is IRRoundingMode (Ity_I32) */
+      //Iop_ItoF32x4, /* first arg is IRRoundingMode (Ity_I32) */
+      //Iop_FtoI32x4, /* first arg is IRRoundingMode (Ity_I32) */
 
       /* --- 32x4 lowest-lane-only scalar FP --- */
 
@@ -355,8 +355,8 @@ typedef
 
       /* unary */
       Iop_Recip32F0x4, Iop_Sqrt32F0x4, Iop_RSqrt32F0x4,
-      Iop_ItoF320x4, /* first arg is IRRoundingMode (Ity_I32) */
-      Iop_FtoI320x4, /* first arg is IRRoundingMode (Ity_I32) */
+      //Iop_ItoF320x4, /* first arg is IRRoundingMode (Ity_I32) */
+      //Iop_FtoI320x4, /* first arg is IRRoundingMode (Ity_I32) */
 
       /* --- pack / unpack --- */
 

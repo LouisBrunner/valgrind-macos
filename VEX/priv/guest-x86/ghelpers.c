@@ -2008,6 +2008,19 @@ static inline UChar min8U ( UChar xx, UChar yy )
    return (xx < yy) ? xx : yy;
 }
 
+static inline UShort mull16uHI ( UShort xx, UShort yy )
+{
+   UInt xxi = (UInt)xx;
+   UInt yyi = (UInt)yy;
+   UInt r   = (xxi * yyi) >> 16;
+   return (UShort)r;
+}
+
+static inline UChar abdU8 ( UChar xx, UChar yy )
+{
+   return xx>yy ? xx-yy : yy-xx;
+}
+
 /* ------------ Normal addition ------------ */
 
 ULong x86g_calculate_add32x2 ( ULong xx, ULong yy )
@@ -2568,8 +2581,32 @@ UInt x86g_calculate_pmovmskb ( ULong xx )
    return r;
 }
 
+ULong x86g_calculate_psadbw ( ULong xx, ULong yy )
+{
+   UInt t = 0;
+   t += (UInt)abdU8( sel8x8_7(xx), sel8x8_7(yy) );
+   t += (UInt)abdU8( sel8x8_6(xx), sel8x8_6(yy) );
+   t += (UInt)abdU8( sel8x8_5(xx), sel8x8_5(yy) );
+   t += (UInt)abdU8( sel8x8_4(xx), sel8x8_4(yy) );
+   t += (UInt)abdU8( sel8x8_3(xx), sel8x8_3(yy) );
+   t += (UInt)abdU8( sel8x8_2(xx), sel8x8_2(yy) );
+   t += (UInt)abdU8( sel8x8_1(xx), sel8x8_1(yy) );
+   t += (UInt)abdU8( sel8x8_0(xx), sel8x8_0(yy) );
+   t &= 0xFFFF;
+   return (ULong)t;
+}
+
 /* ------------ MMX insns from SSE1: multiply ------------ */
 
+ULong x86g_calculate_mull16uHIx4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             mull16uHI( sel16x4_3(xx), sel16x4_3(yy) ),
+             mull16uHI( sel16x4_2(xx), sel16x4_2(yy) ),
+             mull16uHI( sel16x4_1(xx), sel16x4_1(yy) ),
+             mull16uHI( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
 
 
 /*-----------------------------------------------------------*/

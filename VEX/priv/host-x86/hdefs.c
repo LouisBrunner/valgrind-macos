@@ -511,6 +511,7 @@ HChar* showX86SseOp ( X86SseOp op ) {
       case Xsse_DIVF:   return "div";
       case Xsse_MAXF:   return "max";
       case Xsse_MINF:   return "min";
+      case Xsse_RCPF:   return "rcp";
       case Xsse_CMPEQF: return "cmpFeq";
       case Xsse_CMPLTF: return "cmpFlt";
       case Xsse_CMPLEF: return "cmpFle";
@@ -998,6 +999,7 @@ void ppX86Instr ( X86Instr* i ) {
 
 void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
 {
+   Bool unary;
    initHRegUsage(u);
    switch (i->tag) {
       case Xin_Alu32R:
@@ -1158,13 +1160,17 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          return;
       case Xin_Sse32Fx4:
          vassert(i->Xin.Sse32Fx4.op != Xsse_MOV);
-         addHRegUse(u, HRmRead,   i->Xin.Sse32Fx4.src);
-         addHRegUse(u, HRmModify, i->Xin.Sse32Fx4.dst);
+         unary = i->Xin.Sse32Fx4.op == Xsse_RCPF;
+         addHRegUse(u, HRmRead, i->Xin.Sse32Fx4.src);
+         addHRegUse(u, unary ? HRmWrite : HRmModify, 
+                       i->Xin.Sse32Fx4.dst);
          return;
       case Xin_Sse32FLo:
          vassert(i->Xin.Sse32FLo.op != Xsse_MOV);
-         addHRegUse(u, HRmRead,   i->Xin.Sse32FLo.src);
-         addHRegUse(u, HRmModify, i->Xin.Sse32FLo.dst);
+         unary = i->Xin.Sse32Fx4.op == Xsse_RCPF;
+         addHRegUse(u, HRmRead, i->Xin.Sse32FLo.src);
+         addHRegUse(u, unary ? HRmWrite : HRmModify, 
+                       i->Xin.Sse32FLo.dst);
          return;
       default:
          ppX86Instr(i);
@@ -2410,6 +2416,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_MAXF:   *p++ = 0x5F; break;
          case Xsse_MINF:   *p++ = 0x5D; break;
          case Xsse_MULF:   *p++ = 0x59; break;
+         case Xsse_RCPF:   *p++ = 0x53; break;
          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;
@@ -2431,6 +2438,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          case Xsse_MAXF:   *p++ = 0x5F; break;
          case Xsse_MINF:   *p++ = 0x5D; break;
          case Xsse_MULF:   *p++ = 0x59; break;
+         case Xsse_RCPF:   *p++ = 0x53; break;
          case Xsse_CMPEQF: *p++ = 0xC2; xtra = 0x100; break;
          case Xsse_CMPLTF: *p++ = 0xC2; xtra = 0x101; break;
          case Xsse_CMPLEF: *p++ = 0xC2; xtra = 0x102; break;

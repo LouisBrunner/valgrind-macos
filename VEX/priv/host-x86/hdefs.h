@@ -310,6 +310,7 @@ typedef
       Xsse_MOV, Xsse_AND, Xsse_OR, Xsse_XOR, Xsse_ANDN,
       Xsse_ADDF, Xsse_SUBF, Xsse_MULF, Xsse_DIVF,
       Xsse_MAXF, Xsse_MINF,
+      Xsse_RCPF,
       Xsse_CMPEQF, Xsse_CMPLTF, Xsse_CMPLEF, Xsse_CMPUNF
    }
    X86SseOp;

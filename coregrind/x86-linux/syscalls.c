@@ -579,6 +579,27 @@ PRE(sys_sigreturn, Special)
    SET_RESULT(RES);
 }
 
+PRE(sys_rt_sigreturn, Special)
+{
+   PRINT("rt_sigreturn ( )");
+
+   /* Adjust esp to point to start of frame; skip back up over handler
+      ret addr */
+   tst->arch.vex.guest_ESP -= sizeof(Addr);
+
+   /* This is only so that the EIP is (might be) useful to report if
+      something goes wrong in the sigreturn */
+   VGA_(restart_syscall)(&tst->arch);
+
+   VGA_(signal_return)(tid, True);
+
+   /* Keep looking for signals until there are none */
+   VG_(poll_signals)(tid);
+
+   /* placate return-must-be-set assertion */
+   SET_RESULT(RES);
+}
+
 PRE(sys_modify_ldt, Special)
 {
    PRINT("sys_modify_ldt ( %d, %p, %d )", ARG1,ARG2,ARG3);
@@ -1472,7 +1493,7 @@ const struct SyscallTableEntry VGA_(syscall_table)[] = {
    LINX_(__NR_setresgid,         sys_setresgid16),    // 170
    LINXY(__NR_getresgid,         sys_getresgid16),    // 171
    LINX_(__NR_prctl,             sys_prctl),          // 172
-   //   (__NR_rt_sigreturn,      sys_rt_sigreturn),   // 173 x86/Linux only?
+   PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),   // 173 x86/Linux only?
    GENXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 174
 
    GENXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 175

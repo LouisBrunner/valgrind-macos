@@ -4667,6 +4667,15 @@ UInt dis_MMXop_regmem_to_reg ( UChar sorb,
 
       case 0xE5: XXX(calculate_vmulhi16x4); break;
       case 0xD5: XXX(calculate_vmullo16x4); break;
+      case 0xF5: XXX(calculate_pmaddwd); break;
+
+      case 0x74: XXX(calculate_vcmpeq8x8); break;
+      case 0x75: XXX(calculate_vcmpeq16x4); break;
+      case 0x76: XXX(calculate_vcmpeq32x2); break;
+
+      case 0x64: XXX(calculate_vcmpge8Sx8); break;
+      case 0x65: XXX(calculate_vcmpge16Sx4); break;
+      case 0x66: XXX(calculate_vcmpge32Sx2); break;
 
       default: 
          vex_printf("\n0x%x\n", (Int)opc);
@@ -4769,38 +4778,40 @@ vassert(0);
          }
          break;
 
-      case 0xFC: case 0xFD: case 0xFE: 
-         /* PADDgg (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0xFC: 
+      case 0xFD: 
+      case 0xFE: /* PADDgg (src)mmxreg-or-mem, (dst)mmxreg */
          vassert(sz == 4);
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "padd", True );
          break;
 
-      case 0xEC: case 0xED:
-         /* PADDSgg (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0xEC: 
+      case 0xED: /* PADDSgg (src)mmxreg-or-mem, (dst)mmxreg */
          vassert(sz == 4);
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "padds", True );
          break;
 
-      case 0xDC: case 0xDD:
-         /* PADDUSgg (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0xDC: 
+      case 0xDD: /* PADDUSgg (src)mmxreg-or-mem, (dst)mmxreg */
          vassert(sz == 4);
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "paddus", True );
          break;
 
-      case 0xF8: case 0xF9: case 0xFA:
-         /* PSUBgg (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0xF8: 
+      case 0xF9: 
+      case 0xFA: /* PSUBgg (src)mmxreg-or-mem, (dst)mmxreg */
          vassert(sz == 4);
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psub", True );
          break;
 
-      case 0xE8: case 0xE9:
-         /* PSUBSgg (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0xE8: 
+      case 0xE9: /* PSUBSgg (src)mmxreg-or-mem, (dst)mmxreg */
          vassert(sz == 4);
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psubs", True );
          break;
 
-      case 0xD8: case 0xD9:
-         /* PSUBUSgg (src)mmxreg-or-mem, (dst)mmxreg */
+      case 0xD8: 
+      case 0xD9: /* PSUBUSgg (src)mmxreg-or-mem, (dst)mmxreg */
          vassert(sz == 4);
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "psubus", True );
          break;
@@ -4813,6 +4824,25 @@ vassert(0);
       case 0xD5: /* PMULLW (src)mmxreg-or-mem, (dst)mmxreg */
          vassert(sz == 4);
          delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pmullw", False );
+         break;
+
+      case 0xF5: /* PMADDWD (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pmaddwd", False );
+         break;
+
+      case 0x74: 
+      case 0x75: 
+      case 0x76: /* PCMPEQgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pcmpeq", True );
+         break;
+
+      case 0x64: 
+      case 0x65: 
+      case 0x66: /* PCMPGTgg (src)mmxreg-or-mem, (dst)mmxreg */
+         vassert(sz == 4);
+         delta = dis_MMXop_regmem_to_reg ( sorb, delta, opc, "pcmpgt", True );
          break;
 
       default:
@@ -9447,6 +9477,16 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 
       case 0xE5: /* PMULHW (src)mmxreg-or-mem, (dst)mmxreg */
       case 0xD5: /* PMULLW (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0xF5: /* PMADDWD (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0x74: 
+      case 0x75: 
+      case 0x76: /* PCMPEQgg (src)mmxreg-or-mem, (dst)mmxreg */
+
+      case 0x64: 
+      case 0x65: 
+      case 0x66: /* PCMPGTgg (src)mmxreg-or-mem, (dst)mmxreg */
 
       case 0x6F: /* MOVQ (src)mmxreg-or-mem, (dst)mmxreg */
       {

@@ -114,6 +114,16 @@ extern ULong calculate_vqsub8Ux8  ( ULong, ULong );
 extern ULong calculate_vmulhi16x4 ( ULong, ULong );
 extern ULong calculate_vmullo16x4 ( ULong, ULong );
 
+extern ULong calculate_pmaddwd ( ULong, ULong );
+
+extern ULong calculate_vcmpeq32x2  ( ULong, ULong );
+extern ULong calculate_vcmpeq16x4  ( ULong, ULong );
+extern ULong calculate_vcmpeq8x8   ( ULong, ULong );
+extern ULong calculate_vcmpge32Sx2 ( ULong, ULong );
+extern ULong calculate_vcmpge16Sx4 ( ULong, ULong );
+extern ULong calculate_vcmpge8Sx8  ( ULong, ULong );
+
+
 /* --- DIRTY HELPERS --- */
 
 extern ULong loadF80le  ( UInt );

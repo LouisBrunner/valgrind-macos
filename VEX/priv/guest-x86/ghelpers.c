@@ -1785,16 +1785,47 @@ static inline Short mullo16S ( Short xx, Short yy )
    return (Short)t;
 }
 
+static inline UInt cmpeq32 ( UInt xx, UInt yy )
+{
+   return xx==yy ? 0xFFFFFFFF : 0;
+}
+
+static inline UShort cmpeq16 ( UShort xx, UShort yy )
+{
+   return xx==yy ? 0xFFFF : 0;
+}
+
+static inline UChar cmpeq8 ( UChar xx, UChar yy )
+{
+   return xx==yy ? 0xFF : 0;
+}
+
+static inline UInt cmpge32S ( Int xx, Int yy )
+{
+   return xx>yy ? 0xFFFFFFFF : 0;
+}
+
+static inline UShort cmpge16S ( Short xx, Short yy )
+{
+   return xx>yy ? 0xFFFF : 0;
+}
+
+static inline UChar cmpge8S ( SChar xx, SChar yy )
+{
+   return xx>yy ? 0xFF : 0;
+}
+
+
 
 /* Actually do something interesting! */
 
 /* Normal adds. */
 
-ULong calculate_vadd32x2 ( ULong xxL, ULong yyL )
+ULong calculate_vadd32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(
-             sel32x2_1(xxL) + sel32x2_1(yyL),
-             sel32x2_0(xxL) + sel32x2_0(yyL)
+             sel32x2_1(xx) + sel32x2_1(yy),
+             sel32x2_0(xx) + sel32x2_0(yy)
           );
 }
 
@@ -1874,11 +1905,11 @@ ULong calculate_vqadd8Ux8 ( ULong xx, ULong yy )
 
 /* Normal subtracts. */
 
-ULong calculate_vsub32x2 ( ULong xxL, ULong yyL )
+ULong calculate_vsub32x2 ( ULong xx, ULong yy )
 {
    return mk32x2(
-             sel32x2_1(xxL) - sel32x2_1(yyL),
-             sel32x2_0(xxL) - sel32x2_0(yyL)
+             sel32x2_1(xx) - sel32x2_1(yy),
+             sel32x2_0(xx) - sel32x2_0(yy)
           );
 }
 
@@ -1977,6 +2008,84 @@ ULong calculate_vmullo16x4 ( ULong xx, ULong yy )
              mullo16S( sel16x4_0(xx), sel16x4_0(yy) )
           );
 }
+
+ULong calculate_pmaddwd ( ULong xx, ULong yy )
+{
+   return
+      mk32x2( 
+         (((Int)(Short)sel16x4_3(xx)) * ((Int)(Short)sel16x4_3(yy)))
+            + (((Int)(Short)sel16x4_2(xx)) * ((Int)(Short)sel16x4_2(yy))),
+         (((Int)(Short)sel16x4_1(xx)) * ((Int)(Short)sel16x4_1(yy)))
+            + (((Int)(Short)sel16x4_0(xx)) * ((Int)(Short)sel16x4_0(yy)))
+      );
+}
+
+/* Comparison. */
+
+ULong calculate_vcmpeq32x2 ( ULong xx, ULong yy )
+{
+   return mk32x2(
+             cmpeq32( sel32x2_1(xx), sel32x2_1(yy) ),
+             cmpeq32( sel32x2_0(xx), sel32x2_0(yy) )
+          );
+}
+
+ULong calculate_vcmpeq16x4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             cmpeq16( sel16x4_3(xx), sel16x4_3(yy) ),
+             cmpeq16( sel16x4_2(xx), sel16x4_2(yy) ),
+             cmpeq16( sel16x4_1(xx), sel16x4_1(yy) ),
+             cmpeq16( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong calculate_vcmpeq8x8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             cmpeq8( sel8x8_7(xx), sel8x8_7(yy) ),
+             cmpeq8( sel8x8_6(xx), sel8x8_6(yy) ),
+             cmpeq8( sel8x8_5(xx), sel8x8_5(yy) ),
+             cmpeq8( sel8x8_4(xx), sel8x8_4(yy) ),
+             cmpeq8( sel8x8_3(xx), sel8x8_3(yy) ),
+             cmpeq8( sel8x8_2(xx), sel8x8_2(yy) ),
+             cmpeq8( sel8x8_1(xx), sel8x8_1(yy) ),
+             cmpeq8( sel8x8_0(xx), sel8x8_0(yy) )
+          );
+}
+
+ULong calculate_vcmpge32Sx2 ( ULong xx, ULong yy )
+{
+   return mk32x2(
+             cmpge32S( sel32x2_1(xx), sel32x2_1(yy) ),
+             cmpge32S( sel32x2_0(xx), sel32x2_0(yy) )
+          );
+}
+
+ULong calculate_vcmpge16Sx4 ( ULong xx, ULong yy )
+{
+   return mk16x4(
+             cmpge16S( sel16x4_3(xx), sel16x4_3(yy) ),
+             cmpge16S( sel16x4_2(xx), sel16x4_2(yy) ),
+             cmpge16S( sel16x4_1(xx), sel16x4_1(yy) ),
+             cmpge16S( sel16x4_0(xx), sel16x4_0(yy) )
+          );
+}
+
+ULong calculate_vcmpge8Sx8 ( ULong xx, ULong yy )
+{
+   return mk8x8(
+             cmpge8S( sel8x8_7(xx), sel8x8_7(yy) ),
+             cmpge8S( sel8x8_6(xx), sel8x8_6(yy) ),
+             cmpge8S( sel8x8_5(xx), sel8x8_5(yy) ),
+             cmpge8S( sel8x8_4(xx), sel8x8_4(yy) ),
+             cmpge8S( sel8x8_3(xx), sel8x8_3(yy) ),
+             cmpge8S( sel8x8_2(xx), sel8x8_2(yy) ),
+             cmpge8S( sel8x8_1(xx), sel8x8_1(yy) ),
+             cmpge8S( sel8x8_0(xx), sel8x8_0(yy) )
+          );
+}
+
 
 
 /*-----------------------------------------------------------*/

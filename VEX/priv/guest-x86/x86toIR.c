@@ -70,6 +70,7 @@ static void stmt ( IRStmt* stmt )
 /* Generate a new temporary of the given type. */
 static IRTemp newTemp ( IRType ty )
 {
+   vassert(isPlausibleType(ty));
    return newIRTemp( irbb->tyenv, ty );
 }
 
@@ -583,7 +584,7 @@ static IRExpr* flag_to_bit0 ( UInt ccmask, IRTemp eflags )
    if (shifts == 0)
       return mkexpr(eflags);
    else
-      return binop(Iop_Shr32, mkexpr(eflags), mkU32(shifts));
+      return binop(Iop_Shr32, mkexpr(eflags), mkU8(shifts));
 }
 
 
@@ -1315,7 +1316,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
 	          binop(Iop_Add32, 
                         getIReg(4,base_r),
                         binop(Iop_Shl32, getIReg(4,index_r),
-                              mkU32(scale)))));
+                              mkU8(scale)))));
          }
 
          if (index_r != R_ESP && base_r == R_EBP) {
@@ -1327,7 +1328,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
                disAMode_copy2tmp(
                handleSegOverride(sorb, 
 	          binop(Iop_Add32,
-		        binop(Iop_Shl32, getIReg(4,index_r), mkU32(scale)),
+		        binop(Iop_Shl32, getIReg(4,index_r), mkU8(scale)),
                         mkU32(d))));
          }
 
@@ -1383,7 +1384,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
                         binop(Iop_Add32, 
                               getIReg(4,base_r), 
                               binop(Iop_Shl32, 
-                                    getIReg(4,index_r), mkU32(scale))),
+                                    getIReg(4,index_r), mkU8(scale))),
                         mkU32(d))));
          }
          vassert(0);
@@ -1422,7 +1423,7 @@ IRTemp disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
                         binop(Iop_Add32, 
                               getIReg(4,base_r), 
                               binop(Iop_Shl32, 
-                                    getIReg(4,index_r), mkU32(scale))),
+                                    getIReg(4,index_r), mkU8(scale))),
                         mkU32(d))));
          }
          vassert(0);
@@ -1963,25 +1964,24 @@ UInt dis_Grp1 ( UChar sorb,
 }
 
 
-/* Group 2 extended opcodes. */
+/* Group 2 extended opcodes.  shift_expr must be an 8-bit typed
+   expression. */
+
 static
 UInt dis_Grp2 ( UChar  sorb,
                 UInt delta, UChar modrm,
-                Int am_sz, Int d_sz, Int sz, IRExpr* shift_expr )
+                Int am_sz, Int d_sz, Int sz, IRExpr* shift_expr,
+                Char* shift_expr_txt )
 {
    /* delta on entry points at the modrm byte. */
-   UChar dis_buf[50];
-   Int len;
-   IROp op8;
-   IRType ty        = szToITy(sz);
-   IRTemp dst0      = newTemp(ty);
-   IRTemp dst1      = newTemp(ty);
-   IRTemp addr = INVALID_IRTEMP;
-   Bool isShift;
-
-   //   IRTemp  dst1 = newTemp(ty);
-   //   IRTemp  src  = newTemp(ty);
-   //   IRTemp  dst0 = newTemp(ty);
+   UChar  dis_buf[50];
+   Int    len;
+   IROp   op8;
+   Bool   isShift;
+   IRType ty    = szToITy(sz);
+   IRTemp dst0  = newTemp(ty);
+   IRTemp dst1  = newTemp(ty);
+   IRTemp addr  = INVALID_IRTEMP;
 
    vassert(sz == 1 || sz == 2 || sz == 4);
 
@@ -2011,7 +2011,7 @@ UInt dis_Grp2 ( UChar  sorb,
    if (isShift) {
 
       IRTemp subshift  = newTemp(ty);
-      IRTemp shift_amt = newTemp(ty);
+      IRTemp shift_amt = newTemp(Ity_I8);
       IRTemp guard     = newTemp(Ity_Bit);
 
       switch (gregOfRM(modrm)) { 
@@ -2022,8 +2022,8 @@ UInt dis_Grp2 ( UChar  sorb,
       }
 
       /* shift_amt = shift_expr & mask */
-      assign(shift_amt, binop(mkSizedOp(ty,Iop_And8), 
-                              shift_expr, mkU(ty,8*sz-1)));
+      assign(shift_amt, binop(Iop_And8, 
+                              shift_expr, mkU8(8*sz-1)));
       /* dst1 = dst0 `shift` shift_amt */
       assign(dst1, binop(mkSizedOp(ty,op8), 
                          mkexpr(dst0), mkexpr(shift_amt)));
@@ -2031,11 +2031,13 @@ UInt dis_Grp2 ( UChar  sorb,
       assign(subshift, 
              binop(mkSizedOp(ty,op8), 
                    mkexpr(dst0), 
-                   binop(mkSizedOp(ty,Iop_Sub8),
-                         mkexpr(shift_amt), mkU(ty,1))));
+                   binop(Iop_And8,
+                         binop(Iop_Sub8,
+                               mkexpr(shift_amt), mkU8(1)),
+                         mkU8(8*sz-1))));
       /* guard = (shift_amt != 0) */
-      assign(guard, binop(mkSizedOp(ty,Iop_CmpNE8), 
-                    mkexpr(shift_amt), mkU(ty,0)));
+      assign(guard, binop(Iop_CmpNE8, 
+                           mkexpr(shift_amt), mkU8(0)));
 
       /* Build the flags thunk. */
       setFlags_DSTus_DST1(op8, subshift, dst1, ty, guard);
@@ -2050,7 +2052,10 @@ UInt dis_Grp2 ( UChar  sorb,
       if (print_codegen) {
          vex_printf("%s%c ",
                     nameGrp2(gregOfRM(modrm)), nameISize(sz) );
-	 ppIRExpr(shift_expr);
+         if (shift_expr_txt)
+            vex_printf("%s", shift_expr_txt);
+         else
+            ppIRExpr(shift_expr);
          vex_printf(", %s\n", nameIReg(sz,eregOfRM(modrm)));
       }
    } else {
@@ -2058,7 +2063,10 @@ UInt dis_Grp2 ( UChar  sorb,
       if (print_codegen) {
          vex_printf("%s%c ",
                     nameGrp2(gregOfRM(modrm)), nameISize(sz) );
-	 ppIRExpr(shift_expr);
+         if (shift_expr_txt)
+            vex_printf("%s", shift_expr_txt);
+         else
+            ppIRExpr(shift_expr);
          vex_printf(", %s\n", dis_buf);
       }
    }
@@ -2585,7 +2593,7 @@ void dis_string_op_increment(Int sz, Int t_inc)
    if (sz == 4 || sz == 2) {
       assign( t_inc, 
               binop(Iop_Shl32, IRExpr_Get( OFFB_DFLAG, Ity_I32 ),
-                               mkU32(sz/2) ) );
+                               mkU8(sz/2) ) );
    } else {
       assign( t_inc, 
               IRExpr_Get( OFFB_DFLAG, Ity_I32 ) );
@@ -2659,7 +2667,7 @@ void dis_STOS ( Int sz, IRTemp t_inc )
    assign( td, getIReg(4, R_EDI) );
 
    //uInstr2(cb, STORE, sz, TempReg, ta,    TempReg, td);
-   storeLE( mkexpr(ta), mkexpr(td) );
+   storeLE( mkexpr(td), mkexpr(ta) );
 
    //uInstr2(cb, ADD,   4, TempReg, t_inc, TempReg, td);
    //uInstr2(cb, PUT,   4, TempReg, td,    ArchReg, R_EDI);
@@ -2670,8 +2678,8 @@ static
 void dis_CMPS ( Int sz, IRTemp t_inc )
 {
    IRType ty  = szToITy(sz);
-   IRTemp tdv = newTemp(sz);      /* (EDI) */
-   IRTemp tsv = newTemp(sz);      /* (ESI) */
+   IRTemp tdv = newTemp(ty);      /* (EDI) */
+   IRTemp tsv = newTemp(ty);      /* (ESI) */
    IRTemp td  = newTemp(Ity_I32); /*  EDI  */
    IRTemp ts  = newTemp(Ity_I32); /*  ESI  */
 
@@ -2786,8 +2794,8 @@ UInt dis_mul_E_G ( UChar       sorb,
    UChar  rm = getIByte(delta0);
    IRType ty = szToITy(size);
    //IRTemp ta = INVALID_IRTEMP;
-   IRTemp te = newTemp(size);
-   IRTemp tg = newTemp(size);
+   IRTemp te = newTemp(ty);
+   IRTemp tg = newTemp(ty);
 
    if (epartIsReg(rm)) {
       vassert(signed_multiply);
@@ -3172,14 +3180,14 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
    Int len;
    UChar dis_buf[50];
 
-   IRType ty = szToITy(sz);
-   IRTemp gsrc = newTemp(ty);
-   IRTemp esrc = newTemp(ty);
-   IRTemp addr = INVALID_IRTEMP;
-   IRTemp tmpSH = newTemp(Ity_I8);
-   IRTemp guard = newTemp(Ity_I32);
-   IRTemp tmpL = INVALID_IRTEMP;
-   IRTemp tmpRes = INVALID_IRTEMP;
+   IRType ty       = szToITy(sz);
+   IRTemp gsrc     = newTemp(ty);
+   IRTemp esrc     = newTemp(ty);
+   IRTemp addr     = INVALID_IRTEMP;
+   IRTemp tmpSH    = newTemp(Ity_I8);
+   IRTemp guard    = newTemp(Ity_Bit);
+   IRTemp tmpL     = INVALID_IRTEMP;
+   IRTemp tmpRes   = INVALID_IRTEMP;
    IRTemp tmpSubSh = INVALID_IRTEMP;
    IROp   mkpair;
    IROp   getres;
@@ -6013,7 +6021,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       putIReg(sz, R_EDX,
                   binop(mkSizedOp(ty,Iop_Sar8), 
                         getIReg(sz, R_EAX),
-			mkU(ty,sz == 2 ? 15  : 31)) );
+			mkU8(sz == 2 ? 15  : 31)) );
       DIP(sz == 2 ? "cwdq\n" : "cdqq\n");
       break;
 
@@ -7034,7 +7042,8 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       d_sz  = 1;
       d32   = getSDisp8(delta + am_sz);
       sz    = 1;
-      delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, mkU32(d32) );
+      delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
+                         mkU8(d32 & 0xFF), NULL );
       break;
 
    case 0xC1: /* Grp2 Ib,Ev */
@@ -7042,7 +7051,8 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       am_sz = lengthAMode(delta);
       d_sz  = 1;
       d32   = getSDisp8(delta + am_sz);
-      delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, mkU32(d32) );
+      delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
+                         mkU8(d32 & 0xFF), NULL );
       break;
 
 //--    case 0xD0: /* Grp2 1,Eb */
@@ -7059,7 +7069,8 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       am_sz = lengthAMode(delta);
       d_sz  = 0;
       d32   = 1;
-      delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, mkU32(d32) );
+      delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
+                         mkU8(d32), NULL );
       break;
 
 //--    case 0xD2: /* Grp2 CL,Eb */
@@ -7075,7 +7086,7 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       am_sz = lengthAMode(delta);
       d_sz  = 0;
       delta = dis_Grp2 ( sorb, delta, modrm, am_sz, d_sz, sz, 
-                         getIReg(sz,R_ECX) );
+                         getIReg(1,R_ECX), "%cl" );
       break;
 
    /* ------------------------ (Grp3 extensions) ---------- */

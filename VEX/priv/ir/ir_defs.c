@@ -25,7 +25,8 @@ void ppIRType ( IRType ty )
     case Ity_I16:     vex_printf( "I16"); break;
     case Ity_I32:     vex_printf( "I32"); break;
     case Ity_I64:     vex_printf( "I64"); break;
-    default: vpanic("ppIRType");
+    default: vex_printf("ty = 0x%x\n", (Int)ty);
+             vpanic("ppIRType");
   }
 }
 
@@ -452,6 +453,22 @@ void typeOfPrimop ( IROp op, IRType* t_dst, IRType* t_arg1, IRType* t_arg2 )
       case Iop_CmpEQ64: case Iop_CmpNE64:
          COMPARISON(Ity_I64);
 
+      case Iop_MullU32: case Iop_MullS32:
+         BINARY(Ity_I64,Ity_I32,Ity_I32);
+
+      case Iop_DivModU64to32:
+         BINARY(Ity_I64,Ity_I64,Ity_I32);
+
+      case Iop_64HIto32: case Iop_64LOto32:
+         UNARY(Ity_I32, Ity_I64);
+      case Iop_32HLto64:
+         BINARY(Ity_I64,Ity_I32,Ity_I32);
+
+      case Iop_1Uto8:   UNARY(Ity_I8,Ity_Bit);
+      case Iop_32to1:   UNARY(Ity_Bit,Ity_I32);
+      case Iop_8Uto32:  UNARY(Ity_I32,Ity_I8);
+      case Iop_16Uto32: UNARY(Ity_I32,Ity_I16);
+
       default:
          ppIROp(op);
          vpanic("typeOfPrimop");
@@ -541,6 +558,18 @@ IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
       default:
          ppIRExpr(e);
          vpanic("typeOfIRExpr");
+   }
+}
+
+/* Is this any value actually in the enumeration 'IRType' ? */
+Bool isPlausibleType ( IRType ty )
+{
+   switch (ty) {
+      case Ity_INVALID: case Ity_Bit:
+      case Ity_I8: case Ity_I16: case Ity_I32: case Ity_I64: 
+         return True;
+      default: 
+         return False;
    }
 }
 
@@ -643,16 +672,36 @@ void tcExpr ( IRBB* bb, IRStmt* stmt, IRExpr* expr, IRType gWordTy )
       case Iex_Get:
       case Iex_Tmp:
          break;
-      case Iex_Binop:
+      case Iex_Binop: {
+         IRType ttarg1, ttarg2;
          tcExpr(bb,stmt, expr->Iex.Binop.arg1, gWordTy );
          tcExpr(bb,stmt, expr->Iex.Binop.arg2, gWordTy );
          typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2);
          if (t_arg1 == Ity_INVALID || t_arg2 == Ity_INVALID)
             sanityCheckFail(bb,stmt,"Iex.Binop: wrong arity op");
-         if (t_arg1 != typeOfIRExpr(tyenv, expr->Iex.Binop.arg1)
-             || t_arg2 != typeOfIRExpr(tyenv, expr->Iex.Binop.arg1))
-         sanityCheckFail(bb,stmt,"Iex.Binop: arg tys don't match op tys");
+         ttarg1 = typeOfIRExpr(tyenv, expr->Iex.Binop.arg1);
+         ttarg2 = typeOfIRExpr(tyenv, expr->Iex.Binop.arg2);
+         if (t_arg1 != ttarg1 || t_arg2 != ttarg2) {
+            vex_printf(" op name: ");
+            ppIROp(expr->Iex.Binop.op);
+            vex_printf("\n");
+            vex_printf(" op type is (");
+            ppIRType(t_arg1);
+            vex_printf(",");
+            ppIRType(t_arg2);
+            vex_printf(") -> ");
+            ppIRType (t_dst);
+            vex_printf("\narg tys are (");
+            ppIRType(ttarg1);
+            vex_printf(",");
+            ppIRType(ttarg2);
+            vex_printf(")\n");
+            sanityCheckFail(bb,stmt,
+               "Iex.Binop: arg tys don't match op tys\n"
+               "... additional details precede BB printout\n");
+	 }
          break;
+      }
       case Iex_Unop:
          tcExpr(bb,stmt, expr->Iex.Unop.arg, gWordTy );
          typeOfPrimop(expr->Iex.Binop.op, &t_dst, &t_arg1, &t_arg2);
@@ -702,7 +751,7 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
          tcExpr( bb, stmt, stmt->Ist.Tmp.expr, gWordTy );
          if (lookupIRTypeEnv(tyenv, stmt->Ist.Tmp.tmp)
              != typeOfIRExpr(tyenv, stmt->Ist.Tmp.expr))
-            sanityCheckFail(bb,stmt,"IRStmt.Put.TMp: tmp and expr do not match");
+            sanityCheckFail(bb,stmt,"IRStmt.Put.Tmp: tmp and expr do not match");
          break;
       case Ist_STle:
          tcExpr( bb, stmt, stmt->Ist.STle.addr, gWordTy );
@@ -724,7 +773,6 @@ void tcStmt ( IRBB* bb, IRStmt* stmt, IRType gWordTy )
    }
 }
 
-
 void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
 {
    Int     i;
@@ -735,11 +783,22 @@ void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size )
    vassert(guest_word_size == Ity_I32
 	   || guest_word_size == Ity_I64);
 
-   for (i = 0; i < n_temps; i++)
-      def_counts[i] = 0;
+   /* Ensure each temp has a plausible type. */
+   for (i = 0; i < n_temps; i++) {
+      IRType ty = lookupIRTypeEnv(bb->tyenv,(IRTemp)i);
+      if (!isPlausibleType(ty)) {
+         vex_printf("Temp t%d declared with implausible type 0x%x\n",
+                    i, (UInt)ty);
+         sanityCheckFail(bb,NULL,"Temp declared with implausible type");
+      }
+   }
 
    /* Count the defs of each temp.  Only one def is allowed.
       Also, check that each used temp has already been defd. */
+
+   for (i = 0; i < n_temps; i++)
+      def_counts[i] = 0;
+
    for (stmt = bb->stmts; stmt; stmt=stmt->link) {
       useBeforeDef_Stmt(bb,stmt,def_counts);
       if (stmt->tag == Ist_Tmp) {

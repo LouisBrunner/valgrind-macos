@@ -315,6 +315,9 @@ extern IRType typeOfIRExpr  ( IRTypeEnv*, IRExpr* );
 /* Sanity check a BB of IR */
 extern void sanityCheckIRBB ( IRBB* bb, IRType guest_word_size );
 
+/* Is this any value actually in the enumeration 'IRType' ? */
+extern Bool isPlausibleType ( IRType ty );
+
 #endif /* ndef __LIBVEX_IR_H */
 
 

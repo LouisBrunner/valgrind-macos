@@ -1238,6 +1238,8 @@ void VG_(main) ( void )
          "------ Valgrind's client block stats follow ---------------" );
       VG_(show_client_block_stats)();
    }
+
+   LibVEX_ClearTemporary(True);
  
 #  ifdef VG_PROFILE
    VGP_(done_profiling)();

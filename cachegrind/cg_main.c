@@ -679,29 +679,28 @@ static cache_t clo_L2_cache = UNDEFINED_CACHE;
 
 /* Checks cache config is ok;  makes it so if not. */
 static 
-void check_cache(cache_t* cache, cache_t* dflt, Char *name)
+void check_cache(cache_t* cache, Char *name)
 {
    /* First check they're all powers of two */
    if (-1 == VG_(log2)(cache->size)) {
       VG_(message)(Vg_UserMsg,
-         "warning: %s size of %dB not a power of two; "
-         "defaulting to %dB", name, cache->size, dflt->size);
-      cache->size = dflt->size;
+         "error: %s size of %dB not a power of two; aborting.",
+         name, cache->size);
+      VG_(exit)(1);
    }
 
    if (-1 == VG_(log2)(cache->assoc)) {
       VG_(message)(Vg_UserMsg,
-         "warning: %s associativity of %d not a power of two; "
-         "defaulting to %d-way", name, cache->assoc, dflt->assoc);
-      cache->assoc = dflt->assoc;
+         "error: %s associativity of %d not a power of two; aborting.",
+         name, cache->assoc);
+      VG_(exit)(1);
    }
 
    if (-1 == VG_(log2)(cache->line_size)) {
       VG_(message)(Vg_UserMsg,
-         "warning: %s line size of %dB not a power of two; "
-         "defaulting to %dB", 
-         name, cache->line_size, dflt->line_size);
-      cache->line_size = dflt->line_size;
+         "error: %s line size of %dB not a power of two; aborting.",
+         name, cache->line_size);
+      VG_(exit)(1);
    }
 
    /* Then check line size >= 16 -- any smaller and a single instruction could
@@ -709,27 +708,24 @@ void check_cache(cache_t* cache, cache_t* dflt, Char *name)
     * stupid anyway. */
    if (cache->line_size < MIN_LINE_SIZE) {
       VG_(message)(Vg_UserMsg,
-         "warning: %s line size of %dB too small; "
-         "increasing to %dB", name, cache->line_size, MIN_LINE_SIZE);
-      cache->line_size = MIN_LINE_SIZE;
+         "error: %s line size of %dB too small; aborting.", 
+         name, cache->line_size);
+      VG_(exit)(1);
    }
 
    /* Then check cache size > line size (causes seg faults if not). */
    if (cache->size <= cache->line_size) {
       VG_(message)(Vg_UserMsg,
-         "warning: %s cache size of %dB <= line size of %dB; "
-         "increasing to %dB", name, cache->size, cache->line_size,
-                              cache->line_size * 2);
-      cache->size = cache->line_size * 2;
+         "error: %s cache size of %dB <= line size of %dB; aborting.",
+         name, cache->size, cache->line_size);
+      VG_(exit)(1);
    }
 
    /* Then check assoc <= (size / line size) (seg faults otherwise). */
    if (cache->assoc > (cache->size / cache->line_size)) {
       VG_(message)(Vg_UserMsg,
-         "warning: %s associativity > (size / line size); "
-         "increasing size to %dB", 
-            name, cache->assoc * cache->line_size);
-      cache->size = cache->assoc * cache->line_size;
+         "warning: %s associativity > (size / line size); aborting.", name);
+      VG_(exit)(1);
    }
 }
 
@@ -739,17 +735,15 @@ void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 #define DEFINED(L)   (-1 != L.size  || -1 != L.assoc || -1 != L.line_size)
 
    Int n_clos = 0;
-   cache_t I1_dflt, D1_dflt, L2_dflt;
 
    // Count how many were defined on the command line.
    if (DEFINED(clo_I1_cache)) { n_clos++; }
    if (DEFINED(clo_D1_cache)) { n_clos++; }
    if (DEFINED(clo_L2_cache)) { n_clos++; }
 
-   // Set the default cache config (using auto-detection, if supported by
-   // current arch)
-   VGA_(configure_caches)( I1c, D1c, L2c, &I1_dflt, &D1_dflt, &L2_dflt,
-                           (3 == n_clos) );
+   // Set the cache config (using auto-detection, if supported by the
+   // architecture)
+   VGA_(configure_caches)( I1c, D1c, L2c, (3 == n_clos) );
 
    // Then replace with any defined on the command line.
    if (DEFINED(clo_I1_cache)) { *I1c = clo_I1_cache; }
@@ -757,9 +751,9 @@ void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    if (DEFINED(clo_L2_cache)) { *L2c = clo_L2_cache; }
 
    // Then check values and fix if not acceptable.
-   check_cache(I1c, &I1_dflt, "I1");
-   check_cache(D1c, &D1_dflt, "D1");
-   check_cache(L2c, &L2_dflt, "L2");
+   check_cache(I1c, "I1");
+   check_cache(D1c, "D1");
+   check_cache(L2c, "L2");
 
    if (VG_(clo_verbosity) > 1) {
       VG_(message)(Vg_UserMsg, "Cache configuration used:");

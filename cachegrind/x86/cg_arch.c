@@ -331,18 +331,14 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 
 
 void VGA_(configure_caches)(cache_t* I1c, cache_t* D1c, cache_t* L2c,
-                         cache_t* I1_dflt, cache_t* D1_dflt, cache_t* L2_dflt,
-                         Bool all_caches_clo_defined)
+                            Bool all_caches_clo_defined)
 {
    Int res;
    
    // Set caches to default.
-   *I1_dflt = (cache_t) {  65536, 2, 64 };
-   *D1_dflt = (cache_t) {  65536, 2, 64 };
-   *L2_dflt = (cache_t) { 262144, 8, 64 };
-   *I1c = *I1_dflt;
-   *D1c = *D1_dflt;
-   *L2c = *L2_dflt;
+   *I1c = (cache_t) {  65536, 2, 64 };
+   *D1c = (cache_t) {  65536, 2, 64 };
+   *L2c = (cache_t) { 262144, 8, 64 };
 
    // Then replace with any info we can get from CPUID.
    res = get_caches_from_CPUID(I1c, D1c, L2c);

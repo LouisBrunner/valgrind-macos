@@ -2648,7 +2648,7 @@ PRE(ipc)
       break;
    }
    case 22: /* IPCOP_shmdt */
-      if (!valid_client_addr(arg1, 1, tid, "shmdt"))
+      if (!valid_client_addr(arg5, 1, tid, "shmdt"))
 	 res = -VKI_EINVAL;
       break;
    case 23: /* IPCOP_shmget */
@@ -2787,9 +2787,9 @@ POST(ipc)
    }
    case 22: /* IPCOP_shmdt */
    {
-      Segment *s = VG_(find_segment)(arg1);
+      Segment *s = VG_(find_segment)(arg5);
 
-      if (s != NULL && (s->flags & SF_SHM) && VG_(seg_contains)(s, arg1, 1)) {
+      if (s != NULL && (s->flags & SF_SHM) && VG_(seg_contains)(s, arg5, 1)) {
 	 VG_TRACK( die_mem_munmap, s->addr, s->len );
 	 VG_(unmap_range)(s->addr, s->len);
       }

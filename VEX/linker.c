@@ -1360,7 +1360,7 @@ int n_transtab_used = 0;
 TTEntry transtab[N_TT_ENTRIES];
 
 
-/* Called by Haskell to add a translation to the trans cache.
+/* Call here to add a translation to the trans cache.
    Supplied translation is in mallocville.  add_translation should
    copy it out as the caller will free it on return.  */
 
@@ -1378,7 +1378,9 @@ void add_translation ( char* orig, int orig_size, char* trans, int trans_size )
    for (i = 0; i < trans_size; i++)
       transtab[n_transtab_used].trans[i] = trans[i];
 
+#ifdef arm_TARGET_ARCH
    arm_notify_new_code(transtab[n_transtab_used].trans, trans_size);
+#endif
 
    n_transtab_used++;
 }

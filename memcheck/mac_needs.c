@@ -829,6 +829,50 @@ static void done_prof_mem ( void ) { }
 #endif
 
 /*------------------------------------------------------------*/
+/*--- Statistics printing                                  ---*/
+/*------------------------------------------------------------*/
+
+typedef
+   struct {
+      UInt  nblocks;
+      SizeT nbytes;
+   }
+   MallocStats;
+
+static void malloc_stats_count_chunk(VgHashNode* node, void* d) {
+   MAC_Chunk* mc = (MAC_Chunk*)node;
+   MallocStats *ms = (MallocStats *)d;
+
+   ms->nblocks ++;
+   ms->nbytes  += mc->size;
+}
+
+static void print_malloc_stats ( void )
+{
+   MallocStats ms;
+  
+   ms.nblocks = 0;
+   ms.nbytes = 0;
+   
+   /* Mmm... more lexical scoping */
+   if (VG_(clo_verbosity) == 0)
+      return;
+
+   /* Count memory still in use. */
+   VG_(HT_apply_to_all_nodes)(MAC_(malloc_list), malloc_stats_count_chunk, &ms);
+
+   VG_(message)(Vg_UserMsg, 
+                "malloc/free: in use at exit: %d bytes in %d blocks.",
+                ms.nbytes, ms.nblocks);
+   VG_(message)(Vg_UserMsg, 
+                "malloc/free: %d allocs, %d frees, %u bytes allocated.",
+                cmalloc_n_mallocs,
+                cmalloc_n_frees, cmalloc_bs_mallocd);
+   if (VG_(clo_verbosity) > 1)
+      VG_(message)(Vg_UserMsg, "");
+}
+
+/*------------------------------------------------------------*/
 /*--- Common initialisation + finalisation                 ---*/
 /*------------------------------------------------------------*/
 
@@ -841,7 +885,7 @@ void MAC_(common_pre_clo_init)(void)
 
 void MAC_(common_fini)(void (*leak_check)(LeakCheckMode mode))
 {
-   MAC_(print_malloc_stats)();
+   print_malloc_stats();
 
    if (VG_(clo_verbosity) == 1) {
       if (MAC_(clo_leak_check) == LC_Off)

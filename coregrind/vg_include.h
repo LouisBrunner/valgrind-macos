@@ -764,8 +764,8 @@ typedef
    */
    vki_ksigset_t sig_mask;
 
-   /* Effective signal mask.  This is the mask which is currently
-      applying; it may be different from sig_mask while a signal
+   /* Effective signal mask.  This is the mask which currently
+      applies; it may be different from sig_mask while a signal
       handler is running.
     */
    vki_ksigset_t eff_sig_mask;

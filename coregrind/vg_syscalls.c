@@ -1877,6 +1877,29 @@ PRE(execve)
 	 VG_(printf)("env: %s\n", *cpp);
    }
 
+   /* Set our real sigmask to match the client's sigmask so that the
+      exec'd child will get the right mask.  First we need to clear
+      out any pending signals so they they don't get delivered, which
+      would confuse things.
+
+      XXX This is a bug - the signals should remain pending, and be
+      delivered to the new process after exec.  There's also a
+      race-condition, since if someone delivers us a signal between
+      the sigprocmask and the execve, we'll still get the signal. Oh
+      well.
+   */
+   {
+      vki_ksigset_t allsigs;
+      vki_ksiginfo_t info;
+      static const struct vki_timespec zero = { 0, 0 };
+    
+      VG_(ksigfillset)(&allsigs);
+      while(VG_(ksigtimedwait)(&allsigs, &info, &zero) > 0)
+	 ;
+
+      VG_(ksigprocmask)(VKI_SIG_SETMASK, &tst->sig_mask, NULL);
+   }
+
    res = VG_(do_syscall)(__NR_execve, arg1, arg2, arg3);
 
    /* If we got here, then the execve failed.  We've already made too much of a mess

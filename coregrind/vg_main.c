@@ -1664,7 +1664,7 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
 {
    Char* vg_prel  = NULL;
    Char* sk_prel  = NULL;
-   Char* pth_path = NULL;
+   Char* coredir2 = NULL;
    Char* p;
    Char* coredir_first;
    Char* coredir_last;
@@ -1678,19 +1678,22 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
 
    /* VG_(printf)("pre:\n%s\n%s\n", ld_preload_str, ld_library_path_str); */
 
+   /* LD_PRELOAD      = "<skindir>/vgskin_foo.so:<coredir>/valgrind.so:X"
+      LD_LIBRARY_PATH = "<coredir>:Y"  */
+
    /* Setting up, finding things */
 
    /* LD_PRELOAD: Search for "valgrind.so" */
    vg_prel = VG_(strstr)(ld_preload_str, "valgrind.so");
 
    /* LD_PRELOAD: if "valgrind.so" not found, has been done before;
-      "valgrindq.so" should be there instead.  Then stop. */
+      "valgrinq.so" should be there instead.  Then stop. */
    if (NULL == vg_prel) {
       if (VG_(strstr)(ld_preload_str, "valgrinq.so") == NULL) MUTANCY(1);
       return;
    }
 
-   /* LD_PRELOAD: coredir == directory containing "valgrind.so" */
+   /* LD_PRELOAD: find start of <coredir> */
    p = vg_prel;
 
    for (p = vg_prel;  *p != ':' && p > ld_preload_str;  p--) { }
@@ -1703,10 +1706,10 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
    sk_prel = VG_(strstr)(ld_preload_str, "vgskin_");
    if (sk_prel == NULL) MUTANCY(4);
 
-   /* LD_LIBRARY_PATH: find coredir */
+   /* LD_LIBRARY_PATH: find <coredir> */
    *coredir_last = '\0';      /* Temporarily zero-terminate coredir */
-   pth_path = VG_(strstr)(ld_library_path_str, coredir_first);
-   if (pth_path == NULL) MUTANCY(5);
+   coredir2 = VG_(strstr)(ld_library_path_str, coredir_first);
+   if (coredir2 == NULL) MUTANCY(5);
    *coredir_last = '/';       /* Undo zero-termination */
 
    /* Changing things */
@@ -1715,15 +1718,15 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
    if (vg_prel[7] != 'd') MUTANCY(6);
    vg_prel[7] = 'q';
 
-   /* LD_PRELOAD: "/.../vgskin_foo.so" --> blank */
-   /* Blank from "vgskin_" back to prev. LD_PRELOAD entry, or start */
-   p = sk_prel;
+   /* LD_PRELOAD: "<skindir>/vgskin_foo.so:<coredir>/valgrinq.so:X" -->
+                  "          vgskin_foo.so:<coredir>/valgrinq.so:X" */
+   p = sk_prel-1;
    while (*p != ':' && p >= ld_preload_str) { 
       *p = ' ';
       p--;
    }
-   /* Blank from "vgskin_" to next LD_PRELOAD entry (must be one, since
-      the valgrind.so entry must follow).  But leave the colon. */
+   /* LD_PRELOAD: "          vgskin_foo.so:<coredir>/valgrinq.so:X" -->
+                  "                       :<coredir>/valgrinq.so:X" */
    p = sk_prel;
    while (*p != ':' && *p != '\0') { 
       *p = ' ';
@@ -1731,9 +1734,9 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
    }
    if (*p == '\0') MUTANCY(7);    /* valgrind.so has disappeared?! */
 
-   /* LD_LIBRARY_PATH: coredir --> blank (but leave the colon) */
+   /* LD_LIBRARY_PATH: "<coredir>:Y" --> "         :Y"  */
    for (i = 0; i < coredir_len; i++)
-      pth_path[i] = ' ';
+      coredir2[i] = ' ';
       
    /* VG_(printf)("post:\n%s\n%s\n", ld_preload_str, ld_library_path_str); */
 
@@ -1748,10 +1751,10 @@ mutancy:
       "   ld_library_path_str = `%s'\n"
       "   vg_prel             = `%s'\n"
       "   sk_prel             = `%s'\n"
-      "   pth_path            = `%s'\n"
+      "   coredir2            = `%s'\n"
       "   VG_LIBDIR           = `%s'\n",
       what, ld_preload_str, ld_library_path_str, 
-      vg_prel, sk_prel, pth_path, VG_LIBDIR 
+      vg_prel, sk_prel, coredir2, VG_LIBDIR 
    );
    VG_(printf)(
       "\n"

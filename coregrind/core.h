@@ -1097,7 +1097,7 @@ extern Addr   VG_(get_jmp_dest)           ( Addr jumpsite );
 
 Bool VG_(cpu_has_feature)(UInt feat);
 
-extern Int   VG_(disBB)          ( UCodeBlock* cb, Addr eip0 );
+extern Int   VG_(disBB)          ( UCodeBlock* cb, Addr ip0 );
 
 /* ---------------------------------------------------------------------
    Exports of vg_translate.c
@@ -1122,7 +1122,7 @@ extern void VG_(print_reg_alloc_stats) ( void );
    Exports of vg_execontext.c.
    ------------------------------------------------------------------ */
 
-/* Records the PC and a bit of the call chain.  The first 4 %eip
+/* Records the PC and a bit of the call chain.  The first 4 IP
    values are used in comparisons do remove duplicate errors, and for
    comparing against suppression specifications.  The rest are purely
    informational (but often important). */
@@ -1183,7 +1183,7 @@ void VG_(parse_procselfmaps) (
 typedef struct _Segment Segment;
 
 extern Bool VG_(is_object_file)   ( const void *hdr );
-extern void VG_(mini_stack_dump)  ( Addr eips[], UInt n_eips );
+extern void VG_(mini_stack_dump)  ( Addr ips[], UInt n_ips );
 extern SegInfo * VG_(read_seg_symbols) ( Segment *seg );
 extern void VG_(symtab_incref)	  ( SegInfo * );
 extern void VG_(symtab_decref)	  ( SegInfo *, Addr a, UInt len );
@@ -1238,8 +1238,8 @@ extern Int  VG_(clexecfd);
 Char* VG_(build_child_VALGRINDCLO) ( Char* exename );
 Char* VG_(build_child_exename)     ( void );
 
-/* Determine if %esp adjustment must be noted */
-extern Bool VG_(need_to_handle_esp_assignment) ( void );
+/* Determine if SP adjustment must be noted */
+extern Bool VG_(need_to_handle_SP_assignment) ( void );
 
 /* Called when some unhandleable client behaviour is detected.
    Prints a msg and aborts. */
@@ -1333,7 +1333,7 @@ extern void VG_(pad_address_space)(void);
 extern void VG_(unpad_address_space)(void);
 
 extern REGPARM(1)
-       void VG_(unknown_esp_update) ( Addr new_ESP );
+       void VG_(unknown_SP_update) ( Addr new_SP );
 
 /* ---------------------------------------------------------------------
    Exports of vg_proxylwp.c
@@ -1487,8 +1487,8 @@ extern UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 // ---------------------------------------------------------------------
 
 // For setting up the baseBlock
-extern void VGA_(init_low_baseBlock)  ( Addr client_eip, Addr esp_at_startup );
-extern void VGA_(init_high_baseBlock) ( Addr client_eip, Addr esp_at_startup );
+extern void VGA_(init_low_baseBlock)  ( Addr client_ip, Addr sp_at_startup );
+extern void VGA_(init_high_baseBlock) ( Addr client_ip, Addr sp_at_startup );
 
 // Register state moving
 extern void VGA_(load_state) ( arch_thread_t*, ThreadId tid );
@@ -1526,7 +1526,7 @@ extern void VGA_(fill_elffpxregs_from_tst) ( elf_fpxregset_t* xfpu,
                                              const arch_thread_t* arch );
 
 // Signal stuff
-extern void VGA_(push_signal_frame) ( ThreadId tid, Addr esp_top_of_frame,
+extern void VGA_(push_signal_frame) ( ThreadId tid, Addr sp_top_of_frame,
                                       const vki_ksiginfo_t *siginfo,
                                       void *handler, UInt flags,
                                       const vki_ksigset_t *mask);

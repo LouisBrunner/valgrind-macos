@@ -1930,7 +1930,7 @@ UCodeBlock* vg_ESP_update_pass(UCodeBlock* cb_in)
                if (VG_(defined_new_mem_stack)() ||		\
                    VG_(defined_die_mem_stack)()) {		\
                   uInstr1(cb, CCALL, 0, TempReg, u->val1);	\
-                  uCCall(cb, (Addr) VG_(unknown_esp_update),	\
+                  uCCall(cb, (Addr) VG_(unknown_SP_update),	\
                          1, 1, False);				\
                } 
 
@@ -2536,7 +2536,7 @@ Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
 
    /* Add %ESP-update hooks if the tool requires them */
    /* Nb: We don't print out this phase, because it doesn't do much */
-   if (VG_(need_to_handle_esp_assignment)()) {
+   if (VG_(need_to_handle_SP_assignment)()) {
       VGP_PUSHCC(VgpESPUpdate);
       cb = vg_ESP_update_pass ( cb );
       VGP_POPCC(VgpESPUpdate);

@@ -136,7 +136,7 @@ Int VG_(main_pgrp);
 Int VG_(fd_soft_limit) = -1;
 Int VG_(fd_hard_limit) = -1;
 
-/* As deduced from esp_at_startup, the client's argc, argv[] and
+/* As deduced from sp_at_startup, the client's argc, argv[] and
    envp[] as extracted from the client's stack at startup-time. */
 Int    VG_(client_argc);
 Char** VG_(client_argv);
@@ -913,7 +913,7 @@ static char *copy_str(char **tab, const char *str)
 		  | argv            |
 		  +-----------------+
 		  | argc            |
-   lower address  +-----------------+ <- esp
+   lower address  +-----------------+ <- sp
                   | undefined       |
 		  :                 :
  */
@@ -2242,7 +2242,7 @@ void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
       offsets[i] = VG_(alloc_BaB_1_set)( addrs[i] );
 }
 
-Bool VG_(need_to_handle_esp_assignment)(void)
+Bool VG_(need_to_handle_SP_assignment)(void)
 {
    return ( VG_(defined_new_mem_stack_4)()  ||
             VG_(defined_die_mem_stack_4)()  ||
@@ -2262,16 +2262,16 @@ Bool VG_(need_to_handle_esp_assignment)(void)
 // The low/high split is for x86, so that the more common helpers can be
 // in the first 128 bytes of the start, which allows the use of a more
 // compact addressing mode.
-static void init_baseBlock ( Addr client_eip, Addr esp_at_startup )
+static void init_baseBlock ( Addr client_eip, Addr sp_at_startup )
 {
-   VGA_(init_low_baseBlock)(client_eip, esp_at_startup);
+   VGA_(init_low_baseBlock)(client_eip, sp_at_startup);
 
    /* Allocate slots for compact helpers */
    assign_helpers_in_baseBlock(VG_(n_compact_helpers), 
                                VG_(compact_helper_offsets), 
                                VG_(compact_helper_addrs));
 
-   VGA_(init_high_baseBlock)(client_eip, esp_at_startup);
+   VGA_(init_high_baseBlock)(client_eip, sp_at_startup);
 
 #define REG(kind, size) \
    if (VG_(defined_##kind##_mem_stack##size)()) \
@@ -2289,8 +2289,8 @@ static void init_baseBlock ( Addr client_eip, Addr esp_at_startup )
    REG(die, );
 #undef REG
 
-   if (VG_(need_to_handle_esp_assignment)())
-      VG_(register_noncompact_helper)((Addr) VG_(unknown_esp_update));
+   if (VG_(need_to_handle_SP_assignment)())
+      VG_(register_noncompact_helper)((Addr) VG_(unknown_SP_update));
 
    VGOFF_(helper_undefined_instruction)
       = VG_(alloc_BaB_1_set)( (Addr) & VG_(helper_undefined_instruction));
@@ -2361,7 +2361,7 @@ static void build_valgrind_map_callback
 }
 
 // Global var used to pass local data to callback
-Addr esp_at_startup___global_arg = 0;
+Addr sp_at_startup___global_arg = 0;
 
 static void build_segment_map_callback 
       ( Addr start, UInt size, Char rr, Char ww, Char xx,
@@ -2396,7 +2396,7 @@ static void build_segment_map_callback
       VG_TRACK( new_mem_startup, start, size, rr=='r', ww=='w', xx=='x' );
 
    /* If this is the stack segment mark all below %esp as noaccess. */
-   r_esp = esp_at_startup___global_arg;
+   r_esp = sp_at_startup___global_arg;
    vg_assert(0 != r_esp);
    if (is_stack_segment) {
       if (0)
@@ -2546,7 +2546,7 @@ int main(int argc, char **argv)
    ToolInfo *toolinfo = NULL;
    void *tool_dlhandle;
    Addr client_eip;
-   Addr esp_at_startup;    /* client's %esp at the point we gained control. */
+   Addr sp_at_startup;     /* client's SP at the point we gained control. */
    UInt * client_auxv;
    VgSchedReturnCode src;
    Int exitcode = 0;
@@ -2665,13 +2665,13 @@ int main(int argc, char **argv)
    //--------------------------------------------------------------
    { 
       void* init_sp = argv - 1;
-      esp_at_startup = setup_client_stack(init_sp, cl_argv, env, &info,
-                                          &client_auxv);
+      sp_at_startup = setup_client_stack(init_sp, cl_argv, env, &info,
+                                         &client_auxv);
    }
 
    if (0)
       printf("entry=%p client esp=%p vg_argc=%d brkbase=%p\n",
-	     (void*)client_eip, (void*)esp_at_startup, vg_argc, 
+	     (void*)client_eip, (void*)sp_at_startup, vg_argc, 
              (void*)VG_(brk_base));
 
    //==============================================================
@@ -2732,12 +2732,12 @@ int main(int argc, char **argv)
 
    //--------------------------------------------------------------
    // Build segment map (all segments)
-   //   p: setup_client_stack()  [for 'esp_at_startup']
+   //   p: setup_client_stack()  [for 'sp_at_startup']
    //   p: init tool             [for 'new_mem_startup']
    //--------------------------------------------------------------
-   esp_at_startup___global_arg = esp_at_startup;
+   sp_at_startup___global_arg = sp_at_startup;
    VG_(parse_procselfmaps) ( build_segment_map_callback );  /* everything */
-   esp_at_startup___global_arg = 0;
+   sp_at_startup___global_arg = 0;
    
    //--------------------------------------------------------------
    // Protect client trampoline page (which is also sysinfo stuff)
@@ -2766,9 +2766,9 @@ int main(int argc, char **argv)
    // Set up baseBlock
    //   p: {pre,post}_clo_init()  [for tool helper registration]
    //      load_client()          [for 'client_eip']
-   //      setup_client_stack()   [for 'esp_at_startup']
+   //      setup_client_stack()   [for 'sp_at_startup']
    //--------------------------------------------------------------
-   init_baseBlock(client_eip, esp_at_startup);
+   init_baseBlock(client_eip, sp_at_startup);
 
    //--------------------------------------------------------------
    // Search for file descriptors that are inherited from our parent

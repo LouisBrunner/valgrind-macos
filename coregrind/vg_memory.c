@@ -676,7 +676,7 @@ Segment *VG_(next_segment)(Segment *s)
    tracked by the tool, and one of the specialised cases (eg. new_mem_stack_4)
    isn't used in preference */
 REGPARM(1)
-void VG_(unknown_esp_update)(Addr new_SP)
+void VG_(unknown_SP_update)(Addr new_SP)
 {
    Addr old_SP = VG_(get_archreg)(R_STACK_PTR);
    Int  delta  = (Int)new_SP - (Int)old_SP;

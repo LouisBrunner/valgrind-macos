@@ -10,7 +10,7 @@
    This file is part of LibVEX, a library for dynamic binary
    instrumentation and translation.
 
-   Copyright (C) 2004 OpenWorks, LLP.
+   Copyright (C) 2004-2005 OpenWorks, LLP.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -288,7 +288,7 @@ extern void  x86g_dirtyhelper_FXSAVE ( VexGuestX86State*, HWord );
      both results (flags and actual value).
 */
 enum {
-    X86G_CC_OP_COPY,    /* DEP1 = current flags, DEP2 = 0, NDEP = unused */
+    X86G_CC_OP_COPY=0,  /* DEP1 = current flags, DEP2 = 0, NDEP = unused */
                         /* just copy DEP1 to output */
 
     X86G_CC_OP_ADDB,    /* 1 */

@@ -3130,7 +3130,7 @@ UInt VG_(get_archreg) ( UInt arch )
       case R_EBP: return VG_(baseBlock)[ VGOFF_(m_ebp) ];
       case R_ESI: return VG_(baseBlock)[ VGOFF_(m_esi) ];
       case R_EDI: return VG_(baseBlock)[ VGOFF_(m_edi) ];
-      default:    VG_(core_panic)( "get_thread_archreg");
+      default:    VG_(core_panic)( "get_archreg");
    }
 }
 

@@ -29,7 +29,6 @@
 */
 
 #include "core.h"
-#include "syscall_wrappers.h"
 
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for arch-generic, Linux-specific syscalls
@@ -338,6 +337,111 @@ PRE(sys_prctl, MayBlock)
                  unsigned long, parg4, unsigned long, parg5);
    // XXX: totally wrong... we need to look at the 'option' arg, and do
    // PRE_MEM_READs/PRE_MEM_WRITEs as necessary...
+}
+
+PRE(sys_sendfile, MayBlock)
+{
+   PRINT("sys_sendfile ( %d, %d, %p, %llu )", arg1,arg2,arg3,(ULong)arg4);
+   PRE_REG_READ4(ssize_t, "sendfile",
+                 int, out_fd, int, in_fd, vki_off_t *, offset,
+                 vki_size_t, count);
+   if (arg3 != (UWord)NULL)
+      PRE_MEM_WRITE( "sendfile(offset)", arg3, sizeof(vki_off_t) );
+}
+
+POST(sys_sendfile)
+{
+   POST_MEM_WRITE( arg3, sizeof( vki_off_t ) );
+}
+
+PRE(sys_sendfile64, MayBlock)
+{
+   PRINT("sendfile64 ( %d, %d, %p, %llu )",arg1,arg2,arg3,(ULong)arg4);
+   PRE_REG_READ4(ssize_t, "sendfile64",
+                 int, out_fd, int, in_fd, vki_loff_t *, offset,
+                 vki_size_t, count);
+   if (arg3 != (UWord)NULL)
+      PRE_MEM_WRITE( "sendfile64(offset)", arg3, sizeof(vki_loff_t) );
+}
+
+POST(sys_sendfile64)
+{
+   if (arg3 != (UWord)NULL ) {
+      POST_MEM_WRITE( arg3, sizeof(vki_loff_t) );
+   }
+}
+
+PRE(sys_futex, MayBlock)
+{
+   PRINT("sys_futex ( %p, %d, %d, %p, %p )", arg1,arg2,arg3,arg4,arg5);
+   PRE_REG_READ6(long, "futex", 
+                 vki_u32 *, futex, int, op, int, val,
+                 struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
+   PRE_MEM_READ( "futex(futex)", arg1, sizeof(int) );
+   if (arg2 == VKI_FUTEX_WAIT && arg4 != (UWord)NULL)
+      PRE_MEM_READ( "futex(timeout)", arg4, sizeof(struct vki_timespec) );
+   if (arg2 == VKI_FUTEX_REQUEUE)
+      PRE_MEM_READ( "futex(futex2)", arg4, sizeof(int) );
+}
+
+POST(sys_futex)
+{
+   POST_MEM_WRITE( arg1, sizeof(int) );
+   if (arg2 == VKI_FUTEX_FD) {
+      if (!VG_(fd_allowed)(res, "futex", tid, True)) {
+         VG_(close)(res);
+         set_result( -VKI_EMFILE );
+      } else {
+         if (VG_(clo_track_fds))
+            VG_(record_fd_open)(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
+      }
+   }
+}
+
+PRE(sys_epoll_create, 0)
+{
+   PRINT("sys_epoll_create ( %d )", arg1);
+   PRE_REG_READ1(long, "epoll_create", int, size);
+}
+
+POST(sys_epoll_create)
+{
+   if (!VG_(fd_allowed)(res, "epoll_create", tid, True)) {
+      VG_(close)(res);
+      set_result( -VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         VG_(record_fd_open) (tid, res, NULL);
+   }
+}
+
+PRE(sys_epoll_ctl, 0)
+{
+   static const char* epoll_ctl_s[3] = {
+      "EPOLL_CTL_ADD",
+      "EPOLL_CTL_DEL",
+      "EPOLL_CTL_MOD"
+   };
+   PRINT("sys_epoll_ctl ( %d, %s, %d, %p )", 
+         arg1, ( arg2<3 ? epoll_ctl_s[arg2] : "?" ), arg3, arg4);
+   PRE_REG_READ4(long, "epoll_ctl",
+                 int, epfd, int, op, int, fd, struct epoll_event *, event);
+   PRE_MEM_READ( "epoll_ctl(event)", arg4, sizeof(struct epoll_event) );
+}
+
+PRE(sys_epoll_wait, MayBlock)
+{
+   PRINT("sys_epoll_wait ( %d, %p, %d, %d )", arg1, arg2, arg3, arg4);
+   PRE_REG_READ4(long, "epoll_wait",
+                 int, epfd, struct epoll_event *, events,
+                 int, maxevents, int, timeout);
+   PRE_MEM_WRITE( "epoll_wait(events)", arg2, sizeof(struct epoll_event)*arg3);
+}
+
+POST(sys_epoll_wait)
+{
+   if (res > 0)
+      POST_MEM_WRITE( arg2, sizeof(struct epoll_event)*res ) ;
 }
 
 // Nb: this wrapper is "Special" because we have to pad/unpad memory around

@@ -1406,6 +1406,11 @@ extern void VG_(show_open_fds) ( void );
 // address space.
 Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
                             const Char *syscallname);
+
+// Return true if we're allowed to use or create this fd.
+Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft);
+
+void VG_(record_fd_open)(Int tid, Int fd, char *pathname);
    
 // Flags describing syscall wrappers
 #define Special    (1 << 0)
@@ -1424,8 +1429,8 @@ Bool VG_(valid_client_addr)(Addr start, SizeT size, ThreadId tid,
 // Generic (platform-independent) syscall wrappers.  These are generally
 // POSIX or something like that;  those that are not POSIX are annotated
 // with what standards they are part of, as stated in the Linux man pages.
-// Unless otherwise indicated, all those here are generic across all
-// architectures at least for Linux.
+// For many of them, it's unclear if they are generic, or Linux-specific, or
+// x86/Linux-specific, or something else again.
 //
 // Nb: This list may change over time... ones thought at first to be generic
 // may turn out not to be, and so be moved into OS-specific or
@@ -1445,7 +1450,7 @@ GEN_SYSCALL_WRAPPER(sys_waitpid);
 GEN_SYSCALL_WRAPPER(sys_creat);
 GEN_SYSCALL_WRAPPER(sys_link);
 GEN_SYSCALL_WRAPPER(sys_unlink);
-GEN_SYSCALL_WRAPPER(sys_execve);    // 11 (*??) P
+GEN_SYSCALL_WRAPPER(sys_execve);    // (*??) P
 GEN_SYSCALL_WRAPPER(sys_chdir);
 GEN_SYSCALL_WRAPPER(sys_time);
 GEN_SYSCALL_WRAPPER(sys_mknod);
@@ -1495,6 +1500,7 @@ GEN_SYSCALL_WRAPPER(sys_getuid);
 GEN_SYSCALL_WRAPPER(sys_getgid);
 GEN_SYSCALL_WRAPPER(sys_geteuid);
 GEN_SYSCALL_WRAPPER(sys_getegid);
+GEN_SYSCALL_WRAPPER(sys_getpgid);
 GEN_SYSCALL_WRAPPER(sys_fsync);
 GEN_SYSCALL_WRAPPER(sys_wait4);
 GEN_SYSCALL_WRAPPER(sys_mprotect);
@@ -1508,6 +1514,14 @@ GEN_SYSCALL_WRAPPER(sys_clock_settime);
 GEN_SYSCALL_WRAPPER(sys_clock_gettime);
 GEN_SYSCALL_WRAPPER(sys_clock_getres);
 GEN_SYSCALL_WRAPPER(sys_getcwd);
+GEN_SYSCALL_WRAPPER(sys_symlink);
+GEN_SYSCALL_WRAPPER(sys_getgroups);
+GEN_SYSCALL_WRAPPER(sys_setgroups);             // SVr4, SVID, X/OPEN, 4.3BSD
+GEN_SYSCALL_WRAPPER(sys_chown);
+GEN_SYSCALL_WRAPPER(sys_setuid);
+GEN_SYSCALL_WRAPPER(sys_gettimeofday);
+GEN_SYSCALL_WRAPPER(sys_madvise);
+GEN_SYSCALL_WRAPPER(sys_sigpending);
 
 // These ones aren't POSIX, but are in some standard and look reasonably
 // generic, and are the same for all architectures under Linux.
@@ -1516,7 +1530,23 @@ GEN_SYSCALL_WRAPPER(sys_sync);      // SVr4, SVID, X/OPEN, BSD 4.3
 GEN_SYSCALL_WRAPPER(sys_brk);       // 4.3BSD
 GEN_SYSCALL_WRAPPER(sys_acct);      // SVR4, non-POSIX
 GEN_SYSCALL_WRAPPER(sys_chroot);    // SVr4, SVID, 4.4BSD, X/OPEN
-
+GEN_SYSCALL_WRAPPER(sys_readlink);  // X/OPEN, 4.4BSD
+GEN_SYSCALL_WRAPPER(sys_fchdir);    // SVr4, SVID, POSIX, X/OPEN, 4.4BSD
+GEN_SYSCALL_WRAPPER(sys_getdents);  // SVr4,SVID
+GEN_SYSCALL_WRAPPER(sys_select);    // 4.4BSD
+GEN_SYSCALL_WRAPPER(sys_flock);     // 4.4BSD
+GEN_SYSCALL_WRAPPER(sys_poll);      // XPG4-UNIX
+GEN_SYSCALL_WRAPPER(sys_getrusage); // SVr4, 4.3BSD
+GEN_SYSCALL_WRAPPER(sys_settimeofday); // SVr4, 4.3BSD (non-POSIX)
+GEN_SYSCALL_WRAPPER(sys_getpriority);  // SVr4, 4.4BSD
+GEN_SYSCALL_WRAPPER(sys_setpriority);  // SVr4, 4.4BSD
+GEN_SYSCALL_WRAPPER(sys_setitimer);    // SVr4, 4.4BSD
+GEN_SYSCALL_WRAPPER(sys_getitimer);    // SVr4, 4.4BSD
+GEN_SYSCALL_WRAPPER(sys_setreuid);     // 4.3BSD
+GEN_SYSCALL_WRAPPER(sys_setregid);     // 4.3BSD
+GEN_SYSCALL_WRAPPER(sys_fchown);       // SVr4,4.3BSD
+GEN_SYSCALL_WRAPPER(sys_setgid);       // SVr4,SVID
+GEN_SYSCALL_WRAPPER(sys_utimes);       // 4.3BSD
 
 // These ones may be Linux specific... not sure.  They use 16-bit gid_t and
 // uid_t types.  The similarly named (minus the "16" suffix) ones below use
@@ -1534,63 +1564,36 @@ GEN_SYSCALL_WRAPPER(sys_setgroups16);           // ## SVr4, SVID, X/OPEN, 4.3BSD
 GEN_SYSCALL_WRAPPER(sys_fchown16);              // ## SVr4,BSD4.3
 GEN_SYSCALL_WRAPPER(sys_chown16);               // ## P
 
-GEN_SYSCALL_WRAPPER(sys_ptrace);                // (x86?) (almost-P)
-
-
-// Some archs on Linux do not match the generic wrapper for sys_pipe().
-GEN_SYSCALL_WRAPPER(sys_pipe);
-
-GEN_SYSCALL_WRAPPER(sys_ioctl);                 // */x86 (various)
-
-
-// May not be generic for every architecture under Linux.
-GEN_SYSCALL_WRAPPER(sys_sigaction);             // (x86) P
-
-GEN_SYSCALL_WRAPPER(sys_sigsuspend);            // POSIX, but LLL (proto varies across archs)
-GEN_SYSCALL_WRAPPER(sys_sigpending);
-GEN_SYSCALL_WRAPPER(sys_setrlimit);             // SVr4, 4.3BSD
-
-GEN_SYSCALL_WRAPPER(sys_old_getrlimit);         // SVr4, 4.3BSD LLL?
-
-GEN_SYSCALL_WRAPPER(sys_getrusage);             // SVr4, 4.3BSD
-GEN_SYSCALL_WRAPPER(sys_gettimeofday);
-GEN_SYSCALL_WRAPPER(sys_settimeofday);          // SVr4, 4.3BSD (non-POSIX)
-
-GEN_SYSCALL_WRAPPER(old_select);                // (x86) (4.4BSD) LLL
-
-GEN_SYSCALL_WRAPPER(sys_symlink);
-GEN_SYSCALL_WRAPPER(sys_readlink);              // * (X/OPEN,4.4BSD)
-GEN_SYSCALL_WRAPPER(old_mmap);                  // (x86) (P but not...)
-GEN_SYSCALL_WRAPPER(sys_getpriority);           // SVr4,4.4BSD
-GEN_SYSCALL_WRAPPER(sys_setpriority);           // SVr4,4.4BSD
-GEN_SYSCALL_WRAPPER(sys_statfs);                // * L?
-GEN_SYSCALL_WRAPPER(sys_fstatfs);               // * L?
-
 // Linux's funny many-in-one socketcall is certainly not generic, but I
 // didn't want to move it until necessary because it's big and has a lot of
 // associated junk.
 GEN_SYSCALL_WRAPPER(sys_socketcall);
 
-GEN_SYSCALL_WRAPPER(sys_setitimer);             // * (SVr4,4.4BSD)
-GEN_SYSCALL_WRAPPER(sys_getitimer);             // * (SVr4,4.4BSD)
+// Some archs on Linux do not match the generic wrapper for sys_pipe().
+GEN_SYSCALL_WRAPPER(sys_pipe);
 
-// XXX: funny names...
+// May not be generic for every architecture under Linux.
+GEN_SYSCALL_WRAPPER(sys_sigaction);             // (x86) P
+
+// Funny names, not sure...
 GEN_SYSCALL_WRAPPER(sys_newstat);               // * P
 GEN_SYSCALL_WRAPPER(sys_newlstat);              // *
 GEN_SYSCALL_WRAPPER(sys_newfstat);              // * P (SVr4,BSD4.3)
 
+// For the remainder, not really sure yet
+GEN_SYSCALL_WRAPPER(old_mmap);                  // x86, weird arg passing
+GEN_SYSCALL_WRAPPER(sys_ptrace);                // (x86?) (almost-P)
+GEN_SYSCALL_WRAPPER(sys_sigsuspend);            // POSIX, but L (proto varies across archs)
+GEN_SYSCALL_WRAPPER(sys_setrlimit);             // SVr4, 4.3BSD
+GEN_SYSCALL_WRAPPER(sys_ioctl);                 // x86? (various)
+GEN_SYSCALL_WRAPPER(sys_old_getrlimit);         // SVr4, 4.3BSD L?
+GEN_SYSCALL_WRAPPER(sys_statfs);                // * L?
+GEN_SYSCALL_WRAPPER(sys_fstatfs);               // * L?
 GEN_SYSCALL_WRAPPER(sys_iopl);                  // (x86/amd64) L
 GEN_SYSCALL_WRAPPER(sys_ipc);                   // (x86) L
-GEN_SYSCALL_WRAPPER(sys_clone);                 // (x86/Linux) TTT
 GEN_SYSCALL_WRAPPER(sys_newuname);              // * P
 GEN_SYSCALL_WRAPPER(sys_init_module);           // * L?
 GEN_SYSCALL_WRAPPER(sys_quotactl);              // * (?)
-GEN_SYSCALL_WRAPPER(sys_getpgid);
-GEN_SYSCALL_WRAPPER(sys_fchdir);                // * (almost-P)
-GEN_SYSCALL_WRAPPER(sys_getdents);              // * (SVr4,SVID)
-GEN_SYSCALL_WRAPPER(sys_select);                // * (4.4BSD...)
-GEN_SYSCALL_WRAPPER(sys_flock);                 // * (4.4BSD...)
-GEN_SYSCALL_WRAPPER(sys_poll);                  // * (XPG4-UNIX)
 GEN_SYSCALL_WRAPPER(sys_rt_sigaction);          // (x86) ()
 GEN_SYSCALL_WRAPPER(sys_rt_sigprocmask);        // * ?
 GEN_SYSCALL_WRAPPER(sys_rt_sigpending);         // * ?
@@ -1602,7 +1605,6 @@ GEN_SYSCALL_WRAPPER(sys_pwrite64);              // * (Unix98?)
 GEN_SYSCALL_WRAPPER(sys_capget);                // * L?
 GEN_SYSCALL_WRAPPER(sys_capset);                // * L?
 GEN_SYSCALL_WRAPPER(sys_sigaltstack);           // (x86) (XPG4-UNIX)
-GEN_SYSCALL_WRAPPER(sys_sendfile);              // * L
 GEN_SYSCALL_WRAPPER(sys_getpmsg);               // (?) (?)
 GEN_SYSCALL_WRAPPER(sys_putpmsg);               // (?) (?)
 GEN_SYSCALL_WRAPPER(sys_getrlimit);             // * (?)
@@ -1613,16 +1615,7 @@ GEN_SYSCALL_WRAPPER(sys_stat64);                // %% (?)
 GEN_SYSCALL_WRAPPER(sys_lstat64);               // %% (?)
 GEN_SYSCALL_WRAPPER(sys_fstat64);               // %% (?)
 GEN_SYSCALL_WRAPPER(sys_lchown);                // * (L?)
-GEN_SYSCALL_WRAPPER(sys_setreuid);              // * (BSD4.3)
-GEN_SYSCALL_WRAPPER(sys_setregid);              // * (BSD4.3)
-GEN_SYSCALL_WRAPPER(sys_getgroups);             // * P
-GEN_SYSCALL_WRAPPER(sys_setgroups);             // * almost-P
-GEN_SYSCALL_WRAPPER(sys_fchown);                // * (SVr4,BSD4.3)
-GEN_SYSCALL_WRAPPER(sys_chown);                 // * P
-GEN_SYSCALL_WRAPPER(sys_setuid);                // *
-GEN_SYSCALL_WRAPPER(sys_setgid);                // * (SVr4,SVID)
-GEN_SYSCALL_WRAPPER(sys_mincore);               // * non-P?
-GEN_SYSCALL_WRAPPER(sys_madvise);               // * P
+GEN_SYSCALL_WRAPPER(sys_mincore);               // * L?
 GEN_SYSCALL_WRAPPER(sys_getdents64);            // * (SVr4,SVID?)
 GEN_SYSCALL_WRAPPER(sys_fcntl64);               // * P?
 GEN_SYSCALL_WRAPPER(sys_setxattr);              // * L?
@@ -1637,19 +1630,13 @@ GEN_SYSCALL_WRAPPER(sys_flistxattr);            // * L?
 GEN_SYSCALL_WRAPPER(sys_removexattr);           // * L?
 GEN_SYSCALL_WRAPPER(sys_lremovexattr);          // * L?
 GEN_SYSCALL_WRAPPER(sys_fremovexattr);          // * L?
-GEN_SYSCALL_WRAPPER(sys_sendfile64);            // * L
-GEN_SYSCALL_WRAPPER(sys_futex);                 // * L
 GEN_SYSCALL_WRAPPER(sys_sched_setaffinity);     // * L?
 GEN_SYSCALL_WRAPPER(sys_sched_getaffinity);     // * L?
-GEN_SYSCALL_WRAPPER(sys_exit_group);            // *
+GEN_SYSCALL_WRAPPER(sys_exit_group);            // * ?
 GEN_SYSCALL_WRAPPER(sys_lookup_dcookie);        // (*/32/64) L
-GEN_SYSCALL_WRAPPER(sys_epoll_create);          // * L
-GEN_SYSCALL_WRAPPER(sys_epoll_ctl);             // * L
-GEN_SYSCALL_WRAPPER(sys_epoll_wait);            // * L
 GEN_SYSCALL_WRAPPER(sys_set_tid_address);       // * ?
 GEN_SYSCALL_WRAPPER(sys_statfs64);              // * (?)
 GEN_SYSCALL_WRAPPER(sys_fstatfs64);             // * (?)
-GEN_SYSCALL_WRAPPER(sys_utimes);                // * (4.3BSD)
 GEN_SYSCALL_WRAPPER(sys_mq_open);               // * P?
 GEN_SYSCALL_WRAPPER(sys_mq_unlink);             // * P?
 GEN_SYSCALL_WRAPPER(sys_mq_timedsend);          // * P?

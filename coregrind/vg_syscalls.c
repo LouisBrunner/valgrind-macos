@@ -42,8 +42,6 @@
    having the simulator retain control.
 */
 
-#include "syscall_wrappers.h"
-
 /* ---------------------------------------------------------------------
    A simple atfork() facility for Valgrind's internal use
    ------------------------------------------------------------------ */
@@ -434,8 +432,7 @@ void record_fd_close(Int tid, Int fd)
    already open, then we're probably doing a dup2() to an existing fd,
    so just overwrite the existing one. */
 
-static
-void record_fd_open(Int tid, Int fd, char *pathname)
+void VG_(record_fd_open)(Int tid, Int fd, char *pathname)
 {
    OpenFd *i;
 
@@ -613,7 +610,7 @@ void do_hacky_preopened()
 
    for (i = 0; i < count; i++)
       if(VG_(fcntl)(i, VKI_F_GETFL, 0) != -1)
-         record_fd_open(-1, i, NULL);
+         VG_(record_fd_open)(-1, i, NULL);
 }
 
 /* Initialize the list of open file descriptors with the file descriptors
@@ -639,7 +636,7 @@ void VG_(init_preopened_fds)()
 
          if(fno != f)
             if(VG_(clo_track_fds))
-               record_fd_open(-1, fno, VG_(resolve_filename)(fno));
+               VG_(record_fd_open)(-1, fno, VG_(resolve_filename)(fno));
       }
 
       VG_(lseek)(f, d.d_off, VKI_SEEK_SET);
@@ -764,8 +761,8 @@ void check_cmsg_for_fds(Int tid, struct vki_msghdr *msg)
          for (i = 0; i < fdc; i++)
             if(VG_(clo_track_fds))
                // XXX: must we check the range on these fds with
-               //      fd_allowed()?
-               record_fd_open (tid, fds[i], VG_(resolve_filename)(fds[i]));
+               //      VG_(fd_allowed)()?
+               VG_(record_fd_open) (tid, fds[i], VG_(resolve_filename)(fds[i]));
       }
 
       cm = VKI_CMSG_NXTHDR(msg, cm);
@@ -959,7 +956,7 @@ static Addr do_brk(Addr newbrk)
    ------------------------------------------------------------------ */
 
 /* Return true if we're allowed to use or create this fd */
-static Bool fd_allowed(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
+Bool VG_(fd_allowed)(Int fd, const Char *syscallname, ThreadId tid, Bool soft)
 {
    if (fd < 0 || fd >= VG_(fd_hard_limit) || fd == VG_(clo_log_fd)) {
       VG_(message)(Vg_UserMsg, 
@@ -1536,38 +1533,6 @@ PRE(sys_setregid16, 0)
    PRE_REG_READ2(long, "setregid16", vki_old_gid_t, rgid, vki_old_gid_t, egid);
 }
 
-PRE(sys_sendfile, MayBlock)
-{
-   PRINT("sys_sendfile ( %d, %d, %p, %llu )", arg1,arg2,arg3,(ULong)arg4);
-   PRE_REG_READ4(ssize_t, "sendfile",
-                 int, out_fd, int, in_fd, vki_off_t *, offset,
-                 vki_size_t, count);
-   if (arg3 != (UWord)NULL)
-      PRE_MEM_WRITE( "sendfile(offset)", arg3, sizeof(vki_off_t) );
-}
-
-POST(sys_sendfile)
-{
-   POST_MEM_WRITE( arg3, sizeof( vki_off_t ) );
-}
-
-PRE(sys_sendfile64, MayBlock)
-{
-   PRINT("sendfile64 ( %d, %d, %p, %llu )",arg1,arg2,arg3,(ULong)arg4);
-   PRE_REG_READ4(ssize_t, "sendfile64",
-                 int, out_fd, int, in_fd, vki_loff_t *, offset,
-                 vki_size_t, count);
-   if (arg3 != (UWord)NULL)
-      PRE_MEM_WRITE( "sendfile64(offset)", arg3, sizeof(vki_loff_t) );
-}
-
-POST(sys_sendfile64)
-{
-   if (arg3 != (UWord)NULL ) {
-      POST_MEM_WRITE( arg3, sizeof(vki_loff_t) );
-   }
-}
-
 // XXX: only for 32-bit archs
 PRE(sys_pwrite64, MayBlock)
 {
@@ -1910,7 +1875,7 @@ PRE(sys_close, 0)
    PRE_REG_READ1(long, "close", unsigned int, fd);
 
    /* Detect and negate attempts by the client to close Valgrind's log fd */
-   if (!fd_allowed(arg1, "close", tid, False))
+   if (!VG_(fd_allowed)(arg1, "close", tid, False))
       set_result( -VKI_EBADF );
 }
 
@@ -1927,12 +1892,12 @@ PRE(sys_dup, 0)
 
 POST(sys_dup)
 {
-   if (!fd_allowed(res, "dup", tid, True)) {
+   if (!VG_(fd_allowed)(res, "dup", tid, True)) {
       VG_(close)(res);
       set_result( -VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         record_fd_open(tid, res, VG_(resolve_filename)(res));
+         VG_(record_fd_open)(tid, res, VG_(resolve_filename)(res));
    }
 }
 
@@ -1940,14 +1905,14 @@ PRE(sys_dup2, 0)
 {
    PRINT("sys_dup2 ( %d, %d )", arg1,arg2);
    PRE_REG_READ2(long, "dup2", unsigned int, oldfd, unsigned int, newfd);
-   if (!fd_allowed(arg2, "dup2", tid, True))
+   if (!VG_(fd_allowed)(arg2, "dup2", tid, True))
       set_result( -VKI_EBADF );
 }
 
 POST(sys_dup2)
 {
    if (VG_(clo_track_fds))
-      record_fd_open(tid, res, VG_(resolve_filename)(res));
+      VG_(record_fd_open)(tid, res, VG_(resolve_filename)(res));
 }
 
 PRE(sys_fcntl, 0)
@@ -1962,12 +1927,12 @@ PRE(sys_fcntl, 0)
 POST(sys_fcntl)
 {
    if (arg2 == VKI_F_DUPFD) {
-      if (!fd_allowed(res, "fcntl(DUPFD)", tid, True)) {
+      if (!VG_(fd_allowed)(res, "fcntl(DUPFD)", tid, True)) {
          VG_(close)(res);
          set_result( -VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            record_fd_open(tid, res, VG_(resolve_filename)(res));
+            VG_(record_fd_open)(tid, res, VG_(resolve_filename)(res));
       }
    }
 }
@@ -2011,12 +1976,12 @@ PRE(sys_fcntl64, 0)
 POST(sys_fcntl64)
 {
    if (arg2 == VKI_F_DUPFD) {
-      if (!fd_allowed(res, "fcntl64(DUPFD)", tid, True)) {
+      if (!VG_(fd_allowed)(res, "fcntl64(DUPFD)", tid, True)) {
          VG_(close)(res);
          set_result( -VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            record_fd_open(tid, res, VG_(resolve_filename)(res));
+            VG_(record_fd_open)(tid, res, VG_(resolve_filename)(res));
       }
    }
 }
@@ -2075,32 +2040,6 @@ POST(sys_fork)
 
       /* restore signal mask */
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
-   }
-}
-
-// XXX: x86-specific
-PRE(sys_clone, Special)
-{
-   PRINT("sys_clone ( %d, %p, %p, %p, %p )",arg1,arg2,arg3,arg4,arg5);
-   // XXX: really not sure about the last two args... if they are really
-   // there, we should do PRE_MEM_READs for both of them...
-   PRE_REG_READ4(int, "clone",
-                 unsigned long, flags, void *, child_stack,
-                 int *, parent_tidptr, int *, child_tidptr);
-
-   if (arg2 == 0 &&
-       (arg1 == (VKI_CLONE_CHILD_CLEARTID|VKI_CLONE_CHILD_SETTID|VKI_SIGCHLD)
-     || arg1 == (VKI_CLONE_PARENT_SETTID|VKI_SIGCHLD))) 
-   {
-      VGA_(gen_sys_fork_before)(tid, tst);
-      set_result( VG_(do_syscall)(SYSNO, arg1, arg2, arg3, arg4, arg5) );
-      VGA_(gen_sys_fork_after) (tid, tst);
-   } else {
-      VG_(unimplemented)
-         ("clone(): not supported by Valgrind.\n   "
-          "We do support programs linked against\n   "
-          "libpthread.so, though.  Re-run with -v and ensure that\n   "
-          "you are picking up Valgrind's implementation of libpthread.so.");
    }
 }
 
@@ -4171,38 +4110,6 @@ PRE(sys_mkdir, MayBlock)
    PRE_MEM_RASCIIZ( "mkdir(pathname)", arg1 );
 }
 
-PRE(sys_mmap2, 0)
-{
-   // Exactly like old_mmap() except:
-   //  - all 6 args are passed in regs, rather than in a memory-block.
-   //  - the file offset is specified in pagesize units rather than bytes,
-   //    so that it can be used for files bigger than 2^32 bytes.
-   PRINT("sys_mmap2 ( %p, %llu, %d, %d, %d, %d )",
-         arg1, (ULong)arg2, arg3, arg4, arg5, arg6 );
-   PRE_REG_READ6(long, "mmap2",
-                 unsigned long, start, unsigned long, length,
-                 unsigned long, prot,  unsigned long, flags,
-                 unsigned long, fd,    unsigned long, offset);
-
-   if (arg4 & VKI_MAP_FIXED) {
-      if (!VG_(valid_client_addr)(arg1, arg2, tid, "mmap2"))
-	 set_result( -VKI_ENOMEM );
-   } else {
-      arg1 = VG_(find_map_space)(arg1, arg2, True);
-      if (arg1 == 0)
-	 set_result( -VKI_ENOMEM );
-      else 
-         arg4 |= VKI_MAP_FIXED;
-   }
-}
-
-POST(sys_mmap2)
-{
-   vg_assert(VG_(valid_client_addr)(res, arg2, tid, "mmap2"));
-   mmap_segment( (Addr)res, arg2, arg3, arg4, arg5,
-                 arg6 * (ULong)VKI_PAGE_SIZE );
-}
-
 PRE(old_mmap, Special)
 {
    /* struct mmap_arg_struct {           
@@ -4242,6 +4149,38 @@ PRE(old_mmap, Special)
          mmap_segment( (Addr)res, a2, a3, a4, a5, a6 );
       }
    }
+}
+
+PRE(sys_mmap2, 0)
+{
+   // Exactly like old_mmap() except:
+   //  - all 6 args are passed in regs, rather than in a memory-block.
+   //  - the file offset is specified in pagesize units rather than bytes,
+   //    so that it can be used for files bigger than 2^32 bytes.
+   PRINT("sys_mmap2 ( %p, %llu, %d, %d, %d, %d )",
+         arg1, (ULong)arg2, arg3, arg4, arg5, arg6 );
+   PRE_REG_READ6(long, "mmap2",
+                 unsigned long, start, unsigned long, length,
+                 unsigned long, prot,  unsigned long, flags,
+                 unsigned long, fd,    unsigned long, offset);
+
+   if (arg4 & VKI_MAP_FIXED) {
+      if (!VG_(valid_client_addr)(arg1, arg2, tid, "mmap2"))
+	 set_result( -VKI_ENOMEM );
+   } else {
+      arg1 = VG_(find_map_space)(arg1, arg2, True);
+      if (arg1 == 0)
+	 set_result( -VKI_ENOMEM );
+      else 
+         arg4 |= VKI_MAP_FIXED;
+   }
+}
+
+POST(sys_mmap2)
+{
+   vg_assert(VG_(valid_client_addr)(res, arg2, tid, "mmap2"));
+   mmap_segment( (Addr)res, arg2, arg3, arg4, arg5,
+                 arg6 * (ULong)VKI_PAGE_SIZE );
 }
 
 PRE(sys_mprotect, 0)
@@ -4335,12 +4274,12 @@ PRE(sys_open, MayBlock)
 
 POST(sys_open)
 {
-   if (!fd_allowed(res, "open", tid, True)) {
+   if (!VG_(fd_allowed)(res, "open", tid, True)) {
       VG_(close)(res);
       set_result( -VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
+         VG_(record_fd_open)(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
    }
 }
 
@@ -4350,7 +4289,7 @@ PRE(sys_read, MayBlock)
    PRE_REG_READ3(ssize_t, "read",
                  unsigned int, fd, char *, buf, size_t, count);
 
-   if (!fd_allowed(arg1, "read", tid, False))
+   if (!VG_(fd_allowed)(arg1, "read", tid, False))
       set_result( -VKI_EBADF );
    else
       PRE_MEM_WRITE( "read(buf)", arg2, arg3 );
@@ -4366,7 +4305,7 @@ PRE(sys_write, MayBlock)
    PRINT("sys_write ( %d, %p, %llu )", arg1, arg2, (ULong)arg3);
    PRE_REG_READ3(ssize_t, "write",
                  unsigned int, fd, const char *, buf, size_t, count);
-   if (!fd_allowed(arg1, "write", tid, False))
+   if (!VG_(fd_allowed)(arg1, "write", tid, False))
       set_result( -VKI_EBADF );
    else
       PRE_MEM_READ( "write(buf)", arg2, arg3 );
@@ -4381,12 +4320,12 @@ PRE(sys_creat, MayBlock)
 
 POST(sys_creat)
 {
-   if (!fd_allowed(res, "creat", tid, True)) {
+   if (!VG_(fd_allowed)(res, "creat", tid, True)) {
       VG_(close)(res);
       set_result( -VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
+         VG_(record_fd_open)(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
    }
 }
 
@@ -4403,16 +4342,16 @@ POST(sys_pipe)
    // XXX: use of Int here -- 32-bit-specific?
    Int *p = (Int *)arg1;
 
-   if (!fd_allowed(p[0], "pipe", tid, True) ||
-       !fd_allowed(p[1], "pipe", tid, True)) {
+   if (!VG_(fd_allowed)(p[0], "pipe", tid, True) ||
+       !VG_(fd_allowed)(p[1], "pipe", tid, True)) {
       VG_(close)(p[0]);
       VG_(close)(p[1]);
       set_result( -VKI_EMFILE );
    } else {
       POST_MEM_WRITE( arg1, 2*sizeof(int) );
       if (VG_(clo_track_fds)) {
-         record_fd_open(tid, p[0], NULL);
-         record_fd_open(tid, p[1], NULL);
+         VG_(record_fd_open)(tid, p[0], NULL);
+         VG_(record_fd_open)(tid, p[1], NULL);
       }
    }
 }
@@ -4454,52 +4393,6 @@ POST(sys_poll)
    }
 }
 
-PRE(sys_epoll_create, 0)
-{
-   PRINT("sys_epoll_create ( %d )", arg1);
-   PRE_REG_READ1(long, "epoll_create", int, size);
-}
-
-POST(sys_epoll_create)
-{
-   if (!fd_allowed(res, "epoll_create", tid, True)) {
-      VG_(close)(res);
-      set_result( -VKI_EMFILE );
-   } else {
-      if (VG_(clo_track_fds))
-         record_fd_open (tid, res, NULL);
-   }
-}
-
-PRE(sys_epoll_ctl, 0)
-{
-   static const char* epoll_ctl_s[3] = {
-      "EPOLL_CTL_ADD",
-      "EPOLL_CTL_DEL",
-      "EPOLL_CTL_MOD"
-   };
-   PRINT("sys_epoll_ctl ( %d, %s, %d, %p )", 
-         arg1, ( arg2<3 ? epoll_ctl_s[arg2] : "?" ), arg3, arg4);
-   PRE_REG_READ4(long, "epoll_ctl",
-                 int, epfd, int, op, int, fd, struct epoll_event *, event);
-   PRE_MEM_READ( "epoll_ctl(event)", arg4, sizeof(struct epoll_event) );
-}
-
-PRE(sys_epoll_wait, MayBlock)
-{
-   PRINT("sys_epoll_wait ( %d, %p, %d, %d )", arg1, arg2, arg3, arg4);
-   PRE_REG_READ4(long, "epoll_wait",
-                 int, epfd, struct epoll_event *, events,
-                 int, maxevents, int, timeout);
-   PRE_MEM_WRITE( "epoll_wait(events)", arg2, sizeof(struct epoll_event)*arg3);
-}
-
-POST(sys_epoll_wait)
-{
-   if (res > 0)
-      POST_MEM_WRITE( arg2, sizeof(struct epoll_event)*res ) ;
-}
-
 PRE(sys_readlink, 0)
 {
    PRINT("sys_readlink ( %p, %p, %llu )", arg1,arg2,(ULong)arg3);
@@ -4522,7 +4415,7 @@ PRE(sys_readv, MayBlock)
    PRE_REG_READ3(ssize_t, "readv",
                  unsigned long, fd, const struct iovec *, vector,
                  unsigned long, count);
-   if (!fd_allowed(arg1, "readv", tid, False)) {
+   if (!VG_(fd_allowed)(arg1, "readv", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
       PRE_MEM_READ( "readv(vector)", arg2, arg3 * sizeof(struct vki_iovec) );
@@ -4594,39 +4487,6 @@ PRE(sys_sched_getparam, 0)
 POST(sys_sched_getparam)
 {
    POST_MEM_WRITE( arg2, sizeof(struct vki_sched_param) );
-}
-
-PRE(old_select, MayBlock)
-{
-   /* struct sel_arg_struct {
-      unsigned long n;
-      fd_set *inp, *outp, *exp;
-      struct timeval *tvp;
-      };
-   */
-   PRE_REG_READ1(long, "old_select", struct sel_arg_struct *, args);
-   PRE_MEM_READ( "old_select(args)", arg1, 5*sizeof(UWord) );
-
-   {
-      UInt* arg_struct = (UInt*)arg1;
-      UInt a1, a2, a3, a4, a5;
-
-      a1 = arg_struct[0];
-      a2 = arg_struct[1];
-      a3 = arg_struct[2];
-      a4 = arg_struct[3];
-      a5 = arg_struct[4];
-
-      PRINT("old_select ( %d, %p, %p, %p, %p )", a1,a2,a3,a4,a5);
-      if (a2 != (Addr)NULL)
-	 PRE_MEM_READ( "old_select(readfds)",   a2, a1/8 /* __FD_SETSIZE/8 */ );
-      if (a3 != (Addr)NULL)
-	 PRE_MEM_READ( "old_select(writefds)",  a3, a1/8 /* __FD_SETSIZE/8 */ );
-      if (a4 != (Addr)NULL)
-	 PRE_MEM_READ( "old_select(exceptfds)", a4, a1/8 /* __FD_SETSIZE/8 */ );
-      if (a5 != (Addr)NULL)
-	 PRE_MEM_READ( "old_select(timeout)", a5, sizeof(struct vki_timeval) );
-   }
 }
 
 PRE(sys_select, MayBlock)
@@ -4973,28 +4833,28 @@ POST(sys_socketcall)
       Int fd1 = ((Int*)((UWord*)arg2)[3])[0];
       Int fd2 = ((Int*)((UWord*)arg2)[3])[1];
       POST_MEM_WRITE( ((UWord*)arg2)[3], 2*sizeof(int) );
-      if (!fd_allowed(fd1, "socketcall.socketpair", tid, True) ||
-          !fd_allowed(fd2, "socketcall.socketpair", tid, True)) {
+      if (!VG_(fd_allowed)(fd1, "socketcall.socketpair", tid, True) ||
+          !VG_(fd_allowed)(fd2, "socketcall.socketpair", tid, True)) {
          VG_(close)(fd1);
          VG_(close)(fd2);
          set_result( -VKI_EMFILE );
       } else {
          POST_MEM_WRITE( ((UWord*)arg2)[3], 2*sizeof(int) );
          if (VG_(clo_track_fds)) {
-            record_fd_open(tid, fd1, NULL);
-            record_fd_open(tid, fd2, NULL);
+            VG_(record_fd_open)(tid, fd1, NULL);
+            VG_(record_fd_open)(tid, fd2, NULL);
          }
       }
       break;
    }
 
    case VKI_SYS_SOCKET:
-      if (!fd_allowed(res, "socket", tid, True)) {
+      if (!VG_(fd_allowed)(res, "socket", tid, True)) {
 	 VG_(close)(res);
 	 set_result( -VKI_EMFILE );
       } else {
          if (VG_(clo_track_fds))
-            record_fd_open(tid, res, NULL);
+            VG_(record_fd_open)(tid, res, NULL);
       }
       break;
 
@@ -5009,7 +4869,7 @@ POST(sys_socketcall)
 
    case VKI_SYS_ACCEPT: {
       /* int accept(int s, struct sockaddr *addr, int *addrlen); */
-      if (!fd_allowed(res, "accept", tid, True)) {
+      if (!VG_(fd_allowed)(res, "accept", tid, True)) {
 	 VG_(close)(res);
 	 set_result( -VKI_EMFILE );
       } else {
@@ -5020,7 +4880,7 @@ POST(sys_socketcall)
 	    buf_and_len_post_check ( tid, res, addr_p, addrlen_p,
 				     "socketcall.accept(addrlen_out)" );
          if (VG_(clo_track_fds))
-            record_fd_open(tid, res, NULL);
+            VG_(record_fd_open)(tid, res, NULL);
       }
       break;
    }
@@ -5299,7 +5159,7 @@ PRE(sys_writev, MayBlock)
    PRE_REG_READ3(ssize_t, "writev",
                  unsigned long, fd, const struct iovec *, vector,
                  unsigned long, count);
-   if (!fd_allowed(arg1, "writev", tid, False)) {
+   if (!VG_(fd_allowed)(arg1, "writev", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
       PRE_MEM_READ( "writev(vector)", 
@@ -5321,33 +5181,6 @@ PRE(sys_utimes, 0)
    PRE_MEM_RASCIIZ( "utimes(filename)", arg1 );
    if (arg2 != (UWord)NULL)
       PRE_MEM_READ( "utimes(tvp)", arg2, sizeof(struct vki_timeval) );
-}
-
-PRE(sys_futex, MayBlock)
-{
-   PRINT("sys_futex ( %p, %d, %d, %p, %p )", arg1,arg2,arg3,arg4,arg5);
-   PRE_REG_READ6(long, "futex", 
-                 vki_u32 *, futex, int, op, int, val,
-                 struct timespec *, utime, vki_u32 *, uaddr2, int, val3);
-   PRE_MEM_READ( "futex(futex)", arg1, sizeof(int) );
-   if (arg2 == VKI_FUTEX_WAIT && arg4 != (UWord)NULL)
-      PRE_MEM_READ( "futex(timeout)", arg4, sizeof(struct vki_timespec) );
-   if (arg2 == VKI_FUTEX_REQUEUE)
-      PRE_MEM_READ( "futex(futex2)", arg4, sizeof(int) );
-}
-
-POST(sys_futex)
-{
-   POST_MEM_WRITE( arg1, sizeof(int) );
-   if (arg2 == VKI_FUTEX_FD) {
-      if (!fd_allowed(res, "futex", tid, True)) {
-         VG_(close)(res);
-         set_result( -VKI_EMFILE );
-      } else {
-         if (VG_(clo_track_fds))
-            record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
-      }
-   }
 }
 
 PRE(sys_sched_setaffinity, 0)
@@ -5645,12 +5478,12 @@ PRE(sys_mq_open, 0)
 
 POST(sys_mq_open)
 {
-   if (!fd_allowed(res, "mq_open", tid, True)) {
+   if (!VG_(fd_allowed)(res, "mq_open", tid, True)) {
       VG_(close)(res);
       set_result( -VKI_EMFILE );
    } else {
       if (VG_(clo_track_fds))
-         record_fd_open(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
+         VG_(record_fd_open)(tid, res, VG_(arena_strdup)(VG_AR_CORE, (Char*)arg1));
    }
 }
 
@@ -5668,7 +5501,7 @@ PRE(sys_mq_timedsend, MayBlock)
    PRE_REG_READ5(long, "mq_timedsend",
                  vki_mqd_t, mqdes, const char *, msg_ptr, vki_size_t, msg_len,
                  unsigned int, msg_prio, const struct timespec *, abs_timeout);
-   if (!fd_allowed(arg1, "mq_timedsend", tid, False)) {
+   if (!VG_(fd_allowed)(arg1, "mq_timedsend", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
       PRE_MEM_READ( "mq_timedsend(msg_ptr)", arg2, arg3 );
@@ -5686,7 +5519,7 @@ PRE(sys_mq_timedreceive, MayBlock)
                  vki_mqd_t, mqdes, char *, msg_ptr, vki_size_t, msg_len,
                  unsigned int *, msg_prio,
                  const struct timespec *, abs_timeout);
-   if (!fd_allowed(arg1, "mq_timedreceive", tid, False)) {
+   if (!VG_(fd_allowed)(arg1, "mq_timedreceive", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
       PRE_MEM_WRITE( "mq_timedreceive(msg_ptr)", arg2, arg3 );
@@ -5711,7 +5544,7 @@ PRE(sys_mq_notify, 0)
    PRINT("sys_mq_notify( %d, %p )", arg1,arg2 );
    PRE_REG_READ2(long, "mq_notify",
                  vki_mqd_t, mqdes, const struct sigevent *, notification);
-   if (!fd_allowed(arg1, "mq_notify", tid, False))
+   if (!VG_(fd_allowed)(arg1, "mq_notify", tid, False))
       set_result( -VKI_EBADF );
    else if (arg2 != 0)
       PRE_MEM_READ( "mq_notify(notification)",
@@ -5724,7 +5557,7 @@ PRE(sys_mq_getsetattr, 0)
    PRE_REG_READ3(long, "mq_getsetattr",
                  vki_mqd_t, mqdes, const struct mq_attr *, mqstat,
                  struct mq_attr *, omqstat);
-   if (!fd_allowed(arg1, "mq_getsetattr", tid, False)) {
+   if (!VG_(fd_allowed)(arg1, "mq_getsetattr", tid, False)) {
       set_result( -VKI_EBADF );
    } else {
       if (arg2 != 0) {

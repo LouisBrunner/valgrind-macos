@@ -23,7 +23,6 @@ noinst_LIBRARIES = lib_replace_malloc.a
 noinst_HEADERS = \
 	core.h			\
 	core_asm.h		\
-	syscall_wrappers.h	\
 	ume.h			\
 	vg_symtab2.h		\
 	vg_symtypes.h		\

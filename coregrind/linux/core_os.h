@@ -67,6 +67,14 @@ LINUX_SYSCALL_WRAPPER(sys_personality);
 LINUX_SYSCALL_WRAPPER(sys_sysctl);
 LINUX_SYSCALL_WRAPPER(sys_prctl);
 
+LINUX_SYSCALL_WRAPPER(sys_sendfile);
+LINUX_SYSCALL_WRAPPER(sys_sendfile64);
+LINUX_SYSCALL_WRAPPER(sys_futex);
+
+LINUX_SYSCALL_WRAPPER(sys_epoll_create);
+LINUX_SYSCALL_WRAPPER(sys_epoll_ctl);
+LINUX_SYSCALL_WRAPPER(sys_epoll_wait);
+
 LINUX_SYSCALL_WRAPPER(sys_io_setup);
 LINUX_SYSCALL_WRAPPER(sys_io_destroy);
 LINUX_SYSCALL_WRAPPER(sys_io_getevents);

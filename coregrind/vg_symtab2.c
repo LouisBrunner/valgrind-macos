@@ -35,7 +35,7 @@
 #include <elf.h>          /* ELF defns                      */
 
 static Bool
-VG_(intercept_demangle)(const Char*, Char*, Int);
+intercept_demangle(const Char*, Char*, Int);
 
 /* Majorly rewritten Sun 3 Feb 02 to enable loading symbols from
    dlopen()ed libraries, which is something that KDE3 does a lot.
@@ -491,7 +491,7 @@ void canonicaliseSymtab ( SegInfo* si )
                       VG_INTERCEPT_PREFIX_LEN) == 0) {
          int len = VG_(strlen)(si->symtab[i].name);
          char *buf = VG_(malloc)(len), *colon;
-         VG_(intercept_demangle)(si->symtab[i].name, buf, len);
+         intercept_demangle(si->symtab[i].name, buf, len);
 	 colon = buf + VG_(strlen)(buf) - 1;
 	 while(*colon != ':') colon--;
 	 VG_(strncpy_safely)(si->symtab[i].name, colon+1, len);
@@ -782,7 +782,7 @@ Bool VG_(is_object_file)(const void *buf)
  */
 
 static Bool
-VG_(intercept_demangle)(const Char* symbol, Char* result, Int nbytes)
+intercept_demangle(const Char* symbol, Char* result, Int nbytes)
 {
    int i, j = 0;
    int len = VG_(strlen)(symbol);
@@ -841,7 +841,7 @@ void handle_intercept( SegInfo* si, Char* symbol, Elf32_Sym* sym)
    char *lib = VG_(malloc)(len);
    Char *func;
 
-   VG_(intercept_demangle)(symbol, lib, len);
+   intercept_demangle(symbol, lib, len);
    func = lib + VG_(strlen)(lib)-1;
 
    while(*func != ':') func--;
@@ -1124,7 +1124,7 @@ Addr open_debug_file( Char* name, UInt crc, UInt* size )
 }
 
 /*
- * Try and find a seperated debug file for a given object file.
+ * Try to find a separate debug file for a given object file.
  */
 static
 Addr find_debug_file( Char* objpath, Char* debugname, UInt crc, UInt* size )

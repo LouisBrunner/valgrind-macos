@@ -66,14 +66,14 @@
 }
 {
    realpath is inefficiently coded
-   Memcheck:Overlap
+   Addrcheck,Memcheck:Overlap
    fun:memcpy
    fun:realpath*
 }
 
 {
    realpath stupidity part II
-   Memcheck:Overlap
+   Addrcheck,Memcheck:Overlap
    fun:strcpy
    fun:realpath*
 }

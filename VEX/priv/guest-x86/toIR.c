@@ -11072,7 +11072,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       /* and move %ESP back up */
       putIReg( 4, R_ESP, binop(Iop_Add32, mkexpr(t5), mkU32(8*4)) );
 
-      DIP("pusha%c\n", nameISize(sz));
+      DIP("popa%c\n", nameISize(sz));
       break;
 
    case 0x8F: /* POPL/POPW m32 */

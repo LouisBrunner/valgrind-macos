@@ -827,8 +827,10 @@ pid_t waitpid(pid_t pid, int *status, int options)
 void VG_(__libc_freeres_wrapper)( void )
 {
    int res;
+#ifndef __UCLIBC__
    extern void __libc_freeres(void);
    __libc_freeres();
+#endif
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__LIBC_FREERES_DONE, 0, 0, 0, 0);
    /*NOTREACHED*/

@@ -3123,6 +3123,7 @@ weak_alias(pthread_rwlock_trywrlock, __pthread_rwlock_trywrlock)
 /* I've no idea what these are, but they get called quite a lot.
    Anybody know? */
 
+#ifndef __UCLIBC__
 #undef _IO_flockfile
 void _IO_flockfile ( _IO_FILE * file )
 {
@@ -3130,13 +3131,13 @@ void _IO_flockfile ( _IO_FILE * file )
 }
 weak_alias(_IO_flockfile, flockfile);
 
-
 #undef _IO_funlockfile
 void _IO_funlockfile ( _IO_FILE * file )
 {
    pthread_mutex_unlock(file->_lock);
 }
 weak_alias(_IO_funlockfile, funlockfile);
+#endif
 
 
 /* This doesn't seem to be needed to simulate libpthread.so's external

@@ -1422,7 +1422,7 @@ pthread_rwlock_wrlock (void* /* pthread_rwlock_t* */ rwlock)
    return 0;
 }
 
-weak_alias(pthread_rwlock_wrlock, __pthread_wrlock_unlock)
+weak_alias(pthread_rwlock_wrlock, __pthread_rwlock_wrlock)
 
 
 /* I've no idea what these are, but they get called quite a lot.

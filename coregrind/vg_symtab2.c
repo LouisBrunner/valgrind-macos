@@ -1895,8 +1895,7 @@ Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
    if (demangle) {
       VG_(demangle) ( si->symtab[sno].name, buf, nbuf );
    } else {
-      VG_(strncpy_safely) 
-         ( buf, si->symtab[sno].name, nbuf );
+      VG_(strncpy_safely) ( buf, si->symtab[sno].name, nbuf );
    }
 
    offset = a - si->symtab[sno].addr;
@@ -1996,8 +1995,7 @@ Bool VG_(get_filename)( Addr a, Char* filename, Int n_filename )
    search_all_loctabs ( a, &si, &locno );
    if (si == NULL) 
       return False;
-   VG_(strncpy_safely)(filename, si->loctab[locno].filename, 
-                       n_filename);
+   VG_(strncpy_safely)(filename, si->loctab[locno].filename, n_filename);
    return True;
 }
 
@@ -2026,8 +2024,7 @@ Bool VG_(get_filename_linenum)( Addr a,
    search_all_loctabs ( a, &si, &locno );
    if (si == NULL) 
       return False;
-   VG_(strncpy_safely)(filename, si->loctab[locno].filename, 
-                       n_filename);
+   VG_(strncpy_safely)(filename, si->loctab[locno].filename, n_filename);
    *lineno = si->loctab[locno].lineno;
 
    return True;

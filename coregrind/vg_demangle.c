@@ -32,12 +32,6 @@
 #include "core.h"
 #include "demangle.h"
 
-static void add_to_result ( Char* result, Char* s, Int result_size )
-{
-   VG_(strncpy)(result, s, result_size);
-   result[result_size-1] = 0;    // just in case no NUL was copied
-}
-
 void VG_(demangle) ( Char* orig, Char* result, Int result_size )
 {
    Char* demangled = NULL;
@@ -48,10 +42,10 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
       demangled = VG_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
 
    if (demangled) {
-      add_to_result(result, demangled, result_size);
+      VG_(strncpy_safely)(result, demangled, result_size);
       VG_(arena_free) (VG_AR_DEMANGLE, demangled);
    } else {
-      add_to_result(result, orig, result_size);
+      VG_(strncpy_safely)(result, orig, result_size);
    }
 
    // 13 Mar 2005: We used to check here that the demangler wasn't leaking

@@ -864,13 +864,12 @@ void VG_(strncpy_safely) ( Char* dest, const Char* src, Int ndest )
    Int i;
    vg_assert(ndest > 0);
    i = 0;
-   dest[i] = 0;
    while (True) {
+      dest[i] = 0;
       if (src[i] == 0) return;
       if (i >= ndest-1) return;
       dest[i] = src[i];
       i++;
-      dest[i] = 0;
    }
 }
 

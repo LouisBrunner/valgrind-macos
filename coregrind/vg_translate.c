@@ -380,17 +380,9 @@ Bool VG_(translate) ( ThreadId tid,
       Char name2[64] = "";
       name1[0] = name2[0] = 0;
       ok = VG_(get_fnname_w_offset)(orig_addr, name1, 64);
-      if (ok) {
-         name1[63] = 0;
-      } else {
-         VG_(strcpy)(name1, "???");
-      }
+      if (!ok) VG_(strcpy)(name1, "???");
       ok = VG_(get_fnname_w_offset)(redir, name2, 64);
-      if (ok) {
-         name2[63] = 0;
-      } else {
-         VG_(strcpy)(name2, "???");
-      }
+      if (!ok) VG_(strcpy)(name2, "???");
       VG_(message)(Vg_DebugMsg, 
                    "TRANSLATE: 0x%llx (%s) redirected to 0x%llx (%s)",
                    orig_addr, name1,

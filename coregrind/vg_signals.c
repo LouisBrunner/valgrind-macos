@@ -1099,6 +1099,22 @@ Bool VG_(deliver_signals) ( void )
          are delivering the signal in the usual way.  And that the
          client really has a handler for this thread! */
       vg_assert(vg_dcss.dcss_sigpending[sigNo]);
+
+      /* A recent addition, so as to stop seriously wierd progs dying
+         at the following assertion (which this renders redundant,
+         btw). */
+      if (vg_scss.scss_per_sig[sigNo].scss_handler == VKI_SIG_IGN
+          || vg_scss.scss_per_sig[sigNo].scss_handler == VKI_SIG_DFL) {
+         /* Strange; perhaps the handler disappeared before we could
+            deliver the signal. */
+         VG_(message)(Vg_DebugMsg,
+            "discarding signal %d for thread %d because handler missing",
+            sigNo, tid );
+         vg_dcss.dcss_sigpending[sigNo] = False;
+         vg_dcss.dcss_destthread[sigNo] = VG_INVALID_THREADID;
+         continue; /* for (sigNo = 1; ...) loop */
+      }
+
       vg_assert(vg_scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_IGN
                 && vg_scss.scss_per_sig[sigNo].scss_handler != VKI_SIG_DFL);
 

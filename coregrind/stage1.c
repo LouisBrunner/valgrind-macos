@@ -133,12 +133,16 @@ static void *fix_auxv(void *v_init_esp, const struct exeinfo *info)
 	 auxv->u.a_val = info->entry;
 	 break;
 
+#if (defined(AT_SYSINFO) || defined(AT_SYSINFO_EHDR))
+#ifdef AT_SYSINFO
       case AT_SYSINFO:
+#endif
 #ifdef AT_SYSINFO_EHDR
       case AT_SYSINFO_EHDR:
 #endif
 	 auxv->a_type = AT_IGNORE;
 	 break;
+#endif
       }
    }
 

@@ -522,8 +522,14 @@ These options work with all tools.
   <li><code>--trace-children=no</code> [default]<br>
       <code>--trace-children=yes</code>
       <p>When enabled, Valgrind will trace into child processes.  This
-      is confusing and usually not what you want, so is disabled by
+      is confusing and often not what you want, so is disabled by
       default.
+
+      <p>Note that the name of this option is slightly misleading.
+      It actually controls whether programs started with
+      <code>exec()</code> are run under Valgrind's control.  If your
+      program calls <code>fork()</code>, both the parent and the child
+      will run under Valgrind's control.
       </li><br><p>
 
   <li><code>--log-fd=&lt;number&gt;</code> [default: 2, stderr]

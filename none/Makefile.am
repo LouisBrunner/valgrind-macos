@@ -6,7 +6,7 @@ CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
 
 valdir = $(libdir)/valgrind
 
-INCLUDES = -I$(srcdir)/demangle -I$(top_srcdir)/include
+INCLUDES = -I$(top_srcdir)/include
 
 val_PROGRAMS = vgskin_none.so
 

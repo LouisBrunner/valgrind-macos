@@ -1,4 +1,6 @@
 
+SUBDIRS = .
+
 INCLUDES = -I$(top_srcdir)/include
 
 CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \

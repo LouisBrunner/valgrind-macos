@@ -1,8 +1,7 @@
 
-
 SUBDIRS = . tests docs
 
-INCLUDES = -I$(srcdir)/demangle -I$(top_srcdir)/include
+INCLUDES = -I$(top_srcdir)/include
 
 CFLAGS = $(WERROR) -DVG_LIBDIR="\"$(libdir)"\" \
 		-Winline -Wall -Wshadow -O -fomit-frame-pointer @PREFERRED_STACK_BOUNDARY@ -g

@@ -64,11 +64,7 @@ static void add_timestamp ( Char *buf )
    return;
 }
 
-
-/* Publically visible from here onwards. */
-
-int
-VG_(add_to_msg) ( const Char *format, ... )
+int add_to_msg ( const Char *format, ... )
 {
    int count;
    va_list vargs;
@@ -78,12 +74,50 @@ VG_(add_to_msg) ( const Char *format, ... )
    return count;
 }
 
+int start_msg ( VgMsgKind kind )
+{
+   Char ts[32];
+   Char c;
+   static const Char pfx[] = ">>>>>>>>>>>>>>>>";
+   vg_n_mbuf = 0;
+   vg_mbuf[vg_n_mbuf] = 0;
+
+   if (VG_(clo_time_stamp))
+     add_timestamp(ts);
+   else
+     VG_(strcpy)(ts, "");
+   switch (kind) {
+      case Vg_UserMsg:       c = '='; break;
+      case Vg_DebugMsg:      c = '-'; break;
+      case Vg_DebugExtraMsg: c = '+'; break;
+      case Vg_ClientMsg:     c = '*'; break;
+      default:               c = '?'; break;
+   }
+   // The pfx trick prints one or more '>' characters in front of the
+   // messages when running Valgrind under Valgrind, one per level of
+   // self-hosting.
+   return add_to_msg( "%s%c%c%s%d%c%c ", 
+                      &pfx[sizeof(pfx)-1-RUNNING_ON_VALGRIND],
+                      c,c, ts, VG_(getpid)(), c,c );
+}
+
+int end_msg ( void )
+{
+   int count = 0;
+   if (VG_(clo_log_fd) >= 0) {
+      add_to_buf('\n',0);
+      VG_(send_bytes_to_logging_sink) ( vg_mbuf, VG_(strlen)(vg_mbuf) );
+      count = 1;
+   }
+   return count;
+}
+
 int VG_(vmessage) ( VgMsgKind kind, const Char* format, va_list vargs )
 {
    int count;
-   count = VG_(start_msg) ( kind );
+   count = start_msg ( kind );
    count += VG_(vprintf) ( add_to_buf, format, vargs, 0 );
-   count += VG_(end_msg)();
+   count += end_msg();
    return count;
 }
 
@@ -97,43 +131,6 @@ int VG_(message) ( VgMsgKind kind, const Char* format, ... )
    va_end(vargs);
    return count;
 }
-
-int VG_(start_msg) ( VgMsgKind kind )
-{
-   Char ts[32];
-   Char c;
-   static const Char pfx[] = ">>>>>>>>>>>>>>>>";
-   vg_n_mbuf = 0;
-   vg_mbuf[vg_n_mbuf] = 0;
-   if (VG_(clo_time_stamp))
-     add_timestamp(ts);
-   else
-     VG_(strcpy)(ts, "");
-   switch (kind) {
-      case Vg_UserMsg:       c = '='; break;
-      case Vg_DebugMsg:      c = '-'; break;
-      case Vg_DebugExtraMsg: c = '+'; break;
-      case Vg_ClientMsg:     c = '*'; break;
-      default:               c = '?'; break;
-   }
-   return VG_(add_to_msg)( "%s%c%c%s%d%c%c ", 
-			   &pfx[sizeof(pfx)-1-RUNNING_ON_VALGRIND],
-			   c,c, ts, VG_(getpid)(), c,c );
-}
-
-
-int VG_(end_msg) ( void )
-{
-   int count = 0;
-   if (VG_(clo_log_fd) >= 0) {
-      add_to_buf('\n',0);
-      VG_(send_bytes_to_logging_sink) ( 
-         vg_mbuf, VG_(strlen)(vg_mbuf) );
-      count = 1;
-   }
-   return count;
-}
-
 
 /* Do the low-level send of a message to the logging sink. */
 void VG_(send_bytes_to_logging_sink) ( Char* msg, Int nbytes )

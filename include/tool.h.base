@@ -193,12 +193,6 @@ typedef
    }
    VgMsgKind;
 
-/* Functions for building a message from multiple parts. */
-extern int VG_(start_msg)  ( VgMsgKind kind );
-extern int VG_(add_to_msg) ( const Char* format, ... );
-/* Ends and prints the message.  Appends a newline. */
-extern int VG_(end_msg)    ( void );
-
 /* Send a single-part message.  Appends a newline. */
 extern int VG_(message)    ( VgMsgKind kind, const Char* format, ... );
 extern int VG_(vmessage)   ( VgMsgKind kind, const Char* format, va_list vargs );

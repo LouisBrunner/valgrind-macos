@@ -64,21 +64,36 @@ int main ( void )
    IRBB*        bb;
    IRTypeEnv*   env = newIRTypeEnv();
 
+   IRTemp t0 = 0;
    IRTemp t1 = 1;
    IRTemp t2 = 2;
 
+   addToIRTypeEnv ( env, t0, Ity_I32 );
    addToIRTypeEnv ( env, t1, Ity_I32 );
    addToIRTypeEnv ( env, t2, Ity_I32 );
 
-   IRStmt* s10 = IRStmt_Tmp(t1, IRExpr_Const(IRConst_U32(1001)));
-   IRStmt* s11 = IRStmt_Tmp(t2, IRExpr_Const(IRConst_U32(2002)));
+   IRStmt* s10 = IRStmt_Tmp(t0, IRExpr_Const(IRConst_U32(0x2000)));
+   IRStmt* s11 = IRStmt_Tmp(t1, IRExpr_Const(IRConst_U32(0x2001)));
+   IRStmt* s12 = IRStmt_Tmp(t2, IRExpr_Const(IRConst_U32(0x2002)));
 
    IRStmt* s1 = IRStmt_Put(8,4, IRExpr_Const(IRConst_U32(99)) );
+#if 0
    IRStmt* s2 = IRStmt_Put(7,4, IRExpr_Binop(Iop_Add32,
                                              IRExpr_Tmp(t1),
 					     IRExpr_Const(IRConst_U32(55))));
+#endif
+
+   IRStmt* s2 = IRStmt_Put(9,4,
+			   IRExpr_Binop(Iop_Shl32,
+					IRExpr_Tmp(t0),
+					IRExpr_Binop(Iop_Add32,
+						     IRExpr_Tmp(t1), 
+						     IRExpr_Tmp(t2))));
+
+
    s10->link = s11;
-   s11->link = s1;
+   s11->link = s12;
+   s12->link = s1;
    s1->link = s2;
 
    bb = mk_IRBB(env, s10, IRNext_UJump(IRConst_U32(-65565)));
@@ -87,7 +102,9 @@ int main ( void )
    ppIRBB(stdout, bb);
    printf("\n");
 
-   //   vcode = iselBB(bb);
+   if (1)
+   vcode = iselBB(bb);
+   else
    {
      Int i;
      HReg vr0 = mkHReg(0, HRcInt, True);
@@ -145,9 +162,9 @@ int main ( void )
      rregs_to_use[3] = hregX86_EDX();
 
      rcode =
-     doRegisterAllocation(vcode, 4, /* vregs */
+     doRegisterAllocation(vcode, 5, /* vregs */
                           rregs_to_use, 4, /* rregs */
-			  NULL, /* ismove */
+			  isMove_X86Instr,
 			  getRegUsage_X86Instr,
 			  mapRegs_X86Instr,
 			  genSpill_X86,

@@ -492,12 +492,8 @@ ESecMap* alloc_secondary_map ( __attribute__ ((unused)) Char* caller )
    UInt  i;
    //PROF_EVENT(10); PPP
 
-   /* It just happens that a SecMap occupies exactly 18 pages --
-      although this isn't important, so the following assert is
-      spurious. (SSS: not true for ESecMaps -- they're 16 pages) */
-   sk_assert(0 == (sizeof(ESecMap) % VKI_BYTES_PER_PAGE));
+   // Mark all words as virgin.
    map = (ESecMap *)VG_(shadow_alloc)(sizeof(ESecMap));
-
    for (i = 0; i < ESEC_MAP_WORDS; i++)
       map->swords[i] = virgin_sword;
 

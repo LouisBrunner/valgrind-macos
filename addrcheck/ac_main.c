@@ -184,13 +184,7 @@ static AcSecMap* alloc_secondary_map ( __attribute__ ((unused))
    PROF_EVENT(10);
 
    /* Mark all bytes as invalid access and invalid value. */
-
-   /* It just happens that a AcSecMap occupies exactly 18 pages --
-      although this isn't important, so the following assert is
-      spurious. */
-   sk_assert(0 == (sizeof(AcSecMap) % VKI_BYTES_PER_PAGE));
    map = (AcSecMap *)VG_(shadow_alloc)(sizeof(AcSecMap));
-
    for (i = 0; i < 8192; i++)
       map->abits[i] = VGM_BYTE_INVALID; /* Invalid address */
 

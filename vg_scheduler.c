@@ -1368,10 +1368,17 @@ VgSchedReturnCode VG_(scheduler) ( void )
             }
 #           endif
 
-            if (VG_(threads)[tid].status == VgTs_Runnable)
+            if (VG_(threads)[tid].status == VgTs_Runnable) {
+               /* Better do a signal check, since if in a tight loop
+                  with a slow syscall it may be a very long time
+                  before we get back to the main signal check in Stage 1. */
+               sigs_delivered = VG_(deliver_signals)();
+               if (sigs_delivered)
+                  VG_(do_sanity_checks)( False );
                continue; /* with this thread */
-            else
-               goto stage1;          
+            } else {
+               goto stage1;
+            }
 	 }
 
 	 /* It's an event we can't quickly deal with.  Give up running

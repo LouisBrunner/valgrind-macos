@@ -123,6 +123,17 @@ typedef
 
       /* Emulation warnings */
       UInt   guest_EMWARN;
+
+      /* Translation-invalidation area description.  Not used on amd64
+         (there is no invalidate-icache insn), but needed so as to
+         allow users of the library to uniformly assume that the guest
+         state contains these two fields -- otherwise there is
+         compilation breakage.  On amd64, these two fields are set to
+         zero by LibVEX_GuestAMD64_initialise and then should be
+         ignored forever thereafter. */
+      ULong guest_TISTART;
+      ULong guest_TILEN;
+
       /* Padding to make it have an 8-aligned size */
       /* UInt   padding; */
    }

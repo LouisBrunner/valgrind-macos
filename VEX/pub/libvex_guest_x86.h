@@ -186,8 +186,20 @@ typedef
       /* LDT/GDT stuff. */
       HWord  guest_LDT; /* host addr, a VexGuestX86SegDescr* */
       HWord  guest_GDT; /* host addr, a VexGuestX86SegDescr* */
+
       /* Emulation warnings */
       UInt   guest_EMWARN;
+
+      /* Translation-invalidation area description.  Not used on x86
+         (there is no invalidate-icache insn), but needed so as to
+         allow users of the library to uniformly assume that the guest
+         state contains these two fields -- otherwise there is
+         compilation breakage.  On x86, these two fields are set to
+         zero by LibVEX_GuestX86_initialise and then should be ignored
+         forever thereafter. */
+      UInt guest_TISTART;
+      UInt guest_TILEN;
+
       /* Padding to make it have an 8-aligned size */
       UInt   padding;
    }

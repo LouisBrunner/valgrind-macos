@@ -257,7 +257,7 @@ static X86RI* iselIntExpr_RI ( ISelEnv* env, IRExpr* e )
 /*--- ISEL: Statements                                  ---*/
 /*---------------------------------------------------------*/
 
-void iselStmt ( ISelEnv* env, IRStmt* stmt )
+static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 {
    vex_printf("-- ");
    ppIRStmt(stmt);
@@ -303,7 +303,7 @@ void iselStmt ( ISelEnv* env, IRStmt* stmt )
 /*--- ISEL: Basic block terminators (Nexts)             ---*/
 /*---------------------------------------------------------*/
 
-void iselNext ( ISelEnv* env, IRNext* next )
+static void iselNext ( ISelEnv* env, IRNext* next )
 {
    vex_printf("-- ");
    ppIRNext(next);
@@ -332,7 +332,7 @@ void iselNext ( ISelEnv* env, IRNext* next )
 
 /* Translate an entire BB to x86 code. */
 
-HInstrArray* iselBB_X86Instr ( IRBB* bb )
+HInstrArray* iselBB_X86 ( IRBB* bb )
 {
    Int     i;
    HReg    hreg;

@@ -70,7 +70,7 @@ TranslateResult LibJIT_Translate (
    /* OUT: how much of the output area is used. */
    Int* host_bytes_used,
    /* IN: optionally, an instrumentation function. */
-   IRBB (*instrument) ( IRBB* ),
+   IRBB* (*instrument) ( IRBB* ),
    /* IN: optionally, an access check function for guest code. */
    Bool (*byte_accessible) ( Addr64 )
 );

@@ -49,7 +49,22 @@ HReg hregX86_EAX ( void ) { return mkHReg(0, HRcInt, False); }
 HReg hregX86_EBX ( void ) { return mkHReg(3, HRcInt, False); }
 HReg hregX86_ECX ( void ) { return mkHReg(1, HRcInt, False); }
 HReg hregX86_EDX ( void ) { return mkHReg(2, HRcInt, False); }
+HReg hregX86_ESP ( void ) { return mkHReg(4, HRcInt, False); }
 HReg hregX86_EBP ( void ) { return mkHReg(5, HRcInt, False); }
+HReg hregX86_ESI ( void ) { return mkHReg(6, HRcInt, False); }
+HReg hregX86_EDI ( void ) { return mkHReg(7, HRcInt, False); }
+
+void getAllocableRegs_X86 ( Int* nregs, HReg** arr )
+{
+   *nregs = 6;
+   *arr = LibVEX_Alloc(*nregs * sizeof(HReg));
+   *arr[0] = hregX86_EAX();
+   *arr[1] = hregX86_EBX();
+   *arr[2] = hregX86_ECX();
+   *arr[3] = hregX86_EDX();
+   *arr[4] = hregX86_ESI();
+   *arr[5] = hregX86_EDI();
+}
 
 
 /* --------- X86AMode: memory address expressions. --------- */

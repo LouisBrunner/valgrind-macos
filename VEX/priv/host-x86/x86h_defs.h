@@ -22,7 +22,10 @@ extern HReg hregX86_EAX ( void );
 extern HReg hregX86_EBX ( void );
 extern HReg hregX86_ECX ( void );
 extern HReg hregX86_EDX ( void );
+extern HReg hregX86_ESP ( void );
 extern HReg hregX86_EBP ( void );
+extern HReg hregX86_ESI ( void );
+extern HReg hregX86_EDIa ( void );
 
 
 /* --------- Memory address expressions (amodes). --------- */
@@ -222,13 +225,14 @@ extern X86Instr* X86Instr_RET    ( void );
 
 extern void ppX86Instr ( X86Instr* );
 
-/* Five functions that insulate the register allocator from details
+/* Some functions that insulate the register allocator from details
    of the underlying instruction set. */
-extern void      getRegUsage_X86Instr ( HRegUsage*, X86Instr* );
-extern void      mapRegs_X86Instr     ( HRegRemap*, X86Instr* );
-extern Bool      isMove_X86Instr      ( X86Instr*, HReg*, HReg* );
-extern X86Instr* genSpill_X86         ( HReg rreg, Int offset );
-extern X86Instr* genReload_X86        ( HReg rreg, Int offset );
-
+extern void         getRegUsage_X86Instr ( HRegUsage*, X86Instr* );
+extern void         mapRegs_X86Instr     ( HRegRemap*, X86Instr* );
+extern Bool         isMove_X86Instr      ( X86Instr*, HReg*, HReg* );
+extern X86Instr*    genSpill_X86         ( HReg rreg, Int offset );
+extern X86Instr*    genReload_X86        ( HReg rreg, Int offset );
+extern void         getAllocableRegs_X86 ( Int*, HReg** );
+extern HInstrArray* iselBB_X86           ( IRBB* );
 
 #endif /* ndef __LIBJIT_X86H_DEFS_H */

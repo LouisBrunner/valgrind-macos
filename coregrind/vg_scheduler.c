@@ -2149,14 +2149,6 @@ void do_pthread_mutex_unlock ( ThreadId tid,
       return;
    }
 
-   /* If this was locked before the dawn of time, pretend it was
-      locked now so that it balances with unlocks */
-   if (mutex->__vg_m_kind & VG_PTHREAD_PREHISTORY) {
-      mutex->__vg_m_kind &= ~VG_PTHREAD_PREHISTORY;
-      VG_TRACK( pre_mutex_lock, (ThreadId)mutex->__vg_m_owner, mutex );
-      VG_TRACK( post_mutex_lock, (ThreadId)mutex->__vg_m_owner, mutex );
-   }
-
    /* More paranoia ... */
    switch (mutex->__vg_m_kind) {
 #     ifndef GLIBC_2_1    

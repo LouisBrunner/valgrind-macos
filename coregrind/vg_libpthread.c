@@ -1162,20 +1162,10 @@ int __pthread_mutex_lock(pthread_mutex_t *mutex)
    vg_pthread_mutex_t* vg_mutex;
    CONVERT(mutex, mutex, vg_mutex);
    
-   if (RUNNING_ON_VALGRIND) {
-      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                              VG_USERREQ__PTHREAD_MUTEX_LOCK,
-                              vg_mutex, 0, 0, 0);
-      return res;
-   } else {
-      /* Play at locking */
-      if (0)
-	 kludged("prehistoric lock", NULL);
-      vg_mutex->__vg_m_owner = (/*_pthread_descr*/void*)1;
-      vg_mutex->__vg_m_count = 1;
-      vg_mutex->__vg_m_kind |= VG_PTHREAD_PREHISTORY;
-      return 0; /* success */
-   }
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_MUTEX_LOCK,
+                           vg_mutex, 0, 0, 0);
+   return res;
 }
 
 
@@ -1185,20 +1175,10 @@ int __pthread_mutex_trylock(pthread_mutex_t *mutex)
    vg_pthread_mutex_t* vg_mutex;
    CONVERT(mutex, mutex, vg_mutex);
    
-   if (RUNNING_ON_VALGRIND) {
-      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                              VG_USERREQ__PTHREAD_MUTEX_TRYLOCK,
-                              vg_mutex, 0, 0, 0);
-      return res;
-   } else {
-      /* Play at locking */
-      if (0)
-	 kludged("prehistoric trylock", NULL);
-      vg_mutex->__vg_m_owner = (/*_pthread_descr*/void*)1;
-      vg_mutex->__vg_m_count = 1;
-      vg_mutex->__vg_m_kind |= VG_PTHREAD_PREHISTORY;
-      return 0; /* success */
-   }
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_MUTEX_TRYLOCK,
+                           vg_mutex, 0, 0, 0);
+   return res;
 }
 
 
@@ -1208,20 +1188,10 @@ int __pthread_mutex_unlock(pthread_mutex_t *mutex)
    vg_pthread_mutex_t* vg_mutex;
    CONVERT(mutex, mutex, vg_mutex);
    
-   if (RUNNING_ON_VALGRIND) {
-      VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
-                              VG_USERREQ__PTHREAD_MUTEX_UNLOCK,
-                              vg_mutex, 0, 0, 0);
-      return res;
-   } else {
-      /* Play at locking */
-      if (0)
-	 kludged("prehistoric unlock", NULL);
-      vg_mutex->__vg_m_owner = 0;
-      vg_mutex->__vg_m_count = 0;
-      vg_mutex->__vg_m_kind &= ~VG_PTHREAD_PREHISTORY;
-      return 0; /* success */
-   }
+   VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
+                           VG_USERREQ__PTHREAD_MUTEX_UNLOCK,
+                           vg_mutex, 0, 0, 0);
+   return res;
 }
 
 

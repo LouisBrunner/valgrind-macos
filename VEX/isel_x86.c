@@ -127,6 +127,15 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_Alu32R(Xalu_ADD, rmi, dst));
          return dst;
       }
+      if (e->Iex.Binop.op == Iop_Shl32) {
+         HReg dst    = newVRegI(env);
+         HReg regL   = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg regR   = iselIntExpr_R(env, e->Iex.Binop.arg2);
+	 addInstr(env, mk_MOV_RR(regL,dst));
+	 addInstr(env, mk_MOV_RR(regR,hregX86_ECX()));
+	 addInstr(env, X86Instr_Sh32(Xsh_SHL, 0/* %cl */, X86RM_Reg(dst)));
+	 return dst;
+      }
 
 #if 0
    /* 32-bit literals */

@@ -1689,11 +1689,14 @@ static void process_cmd_line_options( UInt* client_auxv, const char* toolname )
    for (i = 1; i < VG_(vg_argc); i++) {
 
       Char* arg = VG_(vg_argv)[i];
+      Char* colon = arg;
 
-      // XXX: allow colons in options, for Josef
+      /* Look for a colon in the switch name */
+      while (*colon && *colon != ':' && *colon != '=')
+         colon++;
 
       /* Look for matching "--toolname:foo" */
-      if (VG_(strstr)(arg, ":")) {
+      if (*colon == ':') {
          if (VG_CLO_STREQN(2,            arg,                "--") && 
              VG_CLO_STREQN(toolname_len, arg+2,              toolname) &&
              VG_CLO_STREQN(1,            arg+2+toolname_len, ":"))

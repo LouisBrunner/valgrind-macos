@@ -815,14 +815,14 @@ static Bool dis_int_arith ( UInt theInstr, UChar form )
 
     case 0x0D: // addic    (Add Immediate Carrying)
 	assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
-	mk_ppc32g_set_xer_ca( PPC_FLAG_OP_ADD, Rd, Ra, Rb );
+	mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
 
 	DIP("addic %i,%i,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	break;
 	
     case 0x0E: // addic.   (Add Immediate Carrying and Record)
 	assign( Rd, binop( Iop_Add32, mkexpr(Ra), mkU32(EXTS_SIMM) ) );
-	mk_ppc32g_set_xer_ca( PPC_FLAG_OP_ADD, Rd, Ra, Rb );
+	mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
 	setFlags_CR0_Result( Rd );
 
 	DIP("addic. %i,%i,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
@@ -845,7 +845,7 @@ static Bool dis_int_arith ( UInt theInstr, UChar form )
        case 0x10A: // add       (Add)
 	   assign( Rd, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
 	   if (flag_Rc)	{ setFlags_CR0_Result( Rd ); }
-	   if (flag_OE) { mk_ppc32g_set_xer_ov_so( PPC_FLAG_OP_ADD, Rd, Ra, Rb ); }
+	   if (flag_OE) { mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb ); }
 
 	   DIP("add%s%s %i,%i,%i\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
@@ -855,8 +855,8 @@ static Bool dis_int_arith ( UInt theInstr, UChar form )
        case 0x00A: // addc      (Add Carrying)
 	   assign( Rd, binop(Iop_Add32, mkexpr(Ra), mkexpr(Rb)) );
 	   if (flag_Rc)	{ setFlags_CR0_Result( Rd ); }
-	   mk_ppc32g_set_xer_ca( PPC_FLAG_OP_ADD, Rd, Ra, Rb );
-	   if (flag_OE) { mk_ppc32g_set_xer_ov_so( PPC_FLAG_OP_ADD, Rd, Ra, Rb ); }
+	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb );
+	   if (flag_OE) { mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADD, Rd, Ra, Rb ); }
 
 	   DIP("addc%s%s %i,%i,%i\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
@@ -871,8 +871,8 @@ static Bool dis_int_arith ( UInt theInstr, UChar form )
 			     mkexpr(tmp)) );
 
 	   if (flag_Rc)	{ setFlags_CR0_Result( Rd ); }
-	   mk_ppc32g_set_xer_ca( PPC_FLAG_OP_ADDE, Rd, Ra, Rb );
-	   if (flag_OE) { mk_ppc32g_set_xer_ov_so( PPC_FLAG_OP_ADDE, Rd, Ra, Rb ); }
+	   mk_ppc32g_set_xer_ca( PPC32G_FLAG_OP_ADDE, Rd, Ra, Rb );
+	   if (flag_OE) { mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_ADDE, Rd, Ra, Rb ); }
 
 	   DIP("adde%s%s %i,%i,%i\n",
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",

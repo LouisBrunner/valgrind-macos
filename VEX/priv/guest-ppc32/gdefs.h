@@ -92,21 +92,21 @@ extern UInt ppc32g_calculate_xer_ca  ( UInt op, UInt res, UInt arg1, UInt arg2, 
   Handy enumeration for flag calculation helper functions (xer_ca, ov)
  */
 enum {
-    PPC_FLAG_OP_ADD,     // addc, addo, addic
-    PPC_FLAG_OP_ADDE,    // adde, addeo
-    PPC_FLAG_OP_ADDME,   // addme, addmeo
-    PPC_FLAG_OP_ADDZE,   // addze, addzeo
-    PPC_FLAG_OP_DIVW,    // divwo
-    PPC_FLAG_OP_DIVWU,   // divwuo
-    PPC_FLAG_OP_MULLW,   // mullwo
-    PPC_FLAG_OP_NEG,     // nego
-    PPC_FLAG_OP_SUBF,    // subfo
-    PPC_FLAG_OP_SUBFC,   // subfc, subfco
-    PPC_FLAG_OP_SUBFE,   // subfe, subfeo
-    PPC_FLAG_OP_SUBFI,   // subfic
-    PPC_FLAG_OP_SUBFME,  // subfme, subfmeo
-    PPC_FLAG_OP_SUBZE,   // subfze, subfzeo
-    PPC_FLAG_OP_SHR      // srawi
+    PPC32G_FLAG_OP_ADD,     // addc, addo, addic
+    PPC32G_FLAG_OP_ADDE,    // adde, addeo
+    PPC32G_FLAG_OP_ADDME,   // addme, addmeo
+    PPC32G_FLAG_OP_ADDZE,   // addze, addzeo
+    PPC32G_FLAG_OP_DIVW,    // divwo
+    PPC32G_FLAG_OP_DIVWU,   // divwuo
+    PPC32G_FLAG_OP_MULLW,   // mullwo
+    PPC32G_FLAG_OP_NEG,     // nego
+    PPC32G_FLAG_OP_SUBF,    // subfo
+    PPC32G_FLAG_OP_SUBFC,   // subfc, subfco
+    PPC32G_FLAG_OP_SUBFE,   // subfe, subfeo
+    PPC32G_FLAG_OP_SUBFI,   // subfic
+    PPC32G_FLAG_OP_SUBFME,  // subfme, subfmeo
+    PPC32G_FLAG_OP_SUBZE,   // subfze, subfzeo
+    PPC32G_FLAG_OP_SHR      // srawi
 };
 
 

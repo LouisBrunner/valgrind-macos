@@ -24,19 +24,27 @@ echo >> log.short
 echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ") started at" $ABT_START >> log.verbose
 echo >> log.verbose
 
-echo -n "   Checking out source tree  ... " >> log.short
-cvs co valgrind 2>&1 >> log.verbose
+echo -n "   Checking out vex source tree       ... " >> log.short
+svn co svn://svn.valgrind.org/vex/trunk vex 2>&1 >> log.verbose
 echo "done" >> log.short
 
-echo -n "   Configuring               ... " >> log.short
-(cd valgrind && ./autogen.sh 2>&1  && ./configure --prefix=`pwd`/Inst  2>&1 ) >> log.verbose
+echo -n "   Building vex                       ... " >> log.short
+(cd vex && make clean version all 2>&1 ) >> log.verbose
 echo "done" >> log.short
 
-echo -n "   Building                  ... " >> log.short
+echo -n "   Checking out valgrind source tree  ... " >> log.short
+svn co svn://svn.valgrind.org/valgrind/trunk valgrind 2>&1 >> log.verbose
+echo "done" >> log.short
+
+echo -n "   Configuring valgrind               ... " >> log.short
+(cd valgrind && ./autogen.sh 2>&1  && ./configure --prefix=`pwd`/Inst --with-vex=`pwd`/../vex 2>&1 ) >> log.verbose
+echo "done" >> log.short
+
+echo -n "   Building valgrind                  ... " >> log.short
 (cd valgrind && make install 2>&1 ) >> log.verbose
 echo "done" >> log.short
 
-echo -n "   Running regression tests  ... " >> log.short
+echo -n "   Running regression tests           ... " >> log.short
 (cd valgrind && make regtest 2>&1 ) >> log.verbose
 echo "done" >> log.short
 

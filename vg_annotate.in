@@ -26,7 +26,7 @@
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 #  02111-1307, USA.
 #
-#  The GNU General Public License is contained in the file LICENSE.
+#  The GNU General Public License is contained in the file COPYING.
 
 #----------------------------------------------------------------------------
 # Annotator for cachegrind. 
@@ -134,14 +134,14 @@ my $context = 8;
 my @include_dirs = ("");
 
 # Input file name
-my $input_file = "cachegrind.out";
+my $input_file = undef;
 
 # Version number
 my $version = "@VERSION@";
 
 # Usage message.
 my $usage = <<END
-usage: vg_annotate [options] [source-files]
+usage: vg_annotate [options] --<pid> [source-files]
 
   options for the user, with defaults in [ ], are:
     -h --help             show this message
@@ -223,12 +223,20 @@ sub process_cmd_line()
                 $inc =~ s|/$||;         # trim trailing '/'
                 push(@include_dirs, "$inc/");
 
+            } elsif ($arg =~ /^--(\d+)$/) {
+                my $pid = $1;
+                if (not defined $input_file) {
+                    $input_file = "cachegrind.out.$pid";
+                } else {
+                    die("One cachegrind.out.<pid> file at a time, please\n");
+                }
+
             } else {            # -h and --help fall under this case
                 die($usage);
             }
 
         # Argument handling -- annotation file checking and selection.
-        # Stick filenames into a hash for quick 'n easy lookup throughout
+        # Stick filenames into a hash for quick 'n easy lookup throughout.
         } else {
             my $readable = 0;
             foreach my $include_dir (@include_dirs) {
@@ -238,7 +246,12 @@ sub process_cmd_line()
             }
             $readable or die("File $arg not found in any of: @include_dirs\n");
             $user_ann_files{$arg} = 1;
-        } 
+        }
+    }
+
+    # Must have chosen an input file
+    if (not defined $input_file) {
+        die($usage);
     }
 }
 

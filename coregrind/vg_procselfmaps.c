@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 
@@ -102,7 +102,7 @@ void VG_(read_procselfmaps) (
    UChar  rr, ww, xx, pp, ch;
 
    /* Read the initial memory mapping from the /proc filesystem. */
-   fd = VG_(open_read) ( "/proc/self/maps" );
+   fd = VG_(open) ( "/proc/self/maps", VKI_O_RDONLY, 0 );
    if (fd == -1) {
       VG_(message)(Vg_UserMsg, "FATAL: can't open /proc/self/maps");
       VG_(exit)(1);
@@ -172,6 +172,7 @@ void VG_(read_procselfmaps) (
        VG_(exit)(1);
 
     read_line_ok:
+
       /* Try and find the name of the file mapped to this segment, if
          it exists. */
       while (procmap_buf[i] != '\n' && i < M_PROCMAP_BUF-1) i++;

@@ -27,7 +27,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -177,7 +177,7 @@ Int VG_(ksigaddset)( vki_ksigset_t* set, Int signum )
 {
    if (set == NULL)
       return -1;
-   if (signum < 1 && signum > VKI_KNSIG)
+   if (signum < 1 || signum > VKI_KNSIG)
       return -1;
    signum--;
    set->ws[signum / VKI_KNSIG_BPW] |= (1 << (signum % VKI_KNSIG_BPW));
@@ -188,7 +188,7 @@ Int VG_(ksigdelset)( vki_ksigset_t* set, Int signum )
 {
    if (set == NULL)
       return -1;
-   if (signum < 1 && signum > VKI_KNSIG)
+   if (signum < 1 || signum > VKI_KNSIG)
       return -1;
    signum--;
    set->ws[signum / VKI_KNSIG_BPW] &= ~(1 << (signum % VKI_KNSIG_BPW));
@@ -199,7 +199,7 @@ Int VG_(ksigismember) ( vki_ksigset_t* set, Int signum )
 {
    if (set == NULL)
       return 0;
-   if (signum < 1 && signum > VKI_KNSIG)
+   if (signum < 1 || signum > VKI_KNSIG)
       return 0;
    signum--;
    if (1 & ((set->ws[signum / VKI_KNSIG_BPW]) >> (signum % VKI_KNSIG_BPW)))
@@ -675,22 +675,49 @@ Long VG_(atoll) ( Char* str )
 }
 
 
-Long VG_(atoll36) ( Char* str )
+Long VG_(atoll16) ( Char* str )
 {
    Bool neg = False;
    Long n = 0;
    if (*str == '-') { str++; neg = True; };
    while (True) {
       if (*str >= '0' && *str <= '9') {
-         n = 36*n + (Long)(*str - '0');
+         n = 16*n + (Long)(*str - '0');
       }
       else 
-      if (*str >= 'A' && *str <= 'Z') {
-         n = 36*n + (Long)((*str - 'A') + 10);
+      if (*str >= 'A' && *str <= 'F') {
+         n = 16*n + (Long)((*str - 'A') + 10);
       }
       else 
-      if (*str >= 'a' && *str <= 'z') {
-         n = 36*n + (Long)((*str - 'a') + 10);
+      if (*str >= 'a' && *str <= 'f') {
+         n = 16*n + (Long)((*str - 'a') + 10);
+      }
+      else {
+	break;
+      }
+      str++;
+   }
+   if (neg) n = -n;
+   return n;
+}
+
+Long VG_(atoll36) ( UInt base, Char* str )
+{
+   Bool neg = False;
+   Long n = 0;
+   vg_assert(base >= 2 && base <= 36);
+   if (*str == '-') { str++; neg = True; };
+   while (True) {
+      if (*str >= '0' && *str <=('9' - (10 - base))) {
+         n = base*n + (Long)(*str - '0');
+      }
+      else 
+      if (base > 10 && *str >= 'A' && *str <= ('Z' - (36 - base))) {
+         n = base*n + (Long)((*str - 'A') + 10);
+      }
+      else 
+      if (base > 10 && *str >= 'a' && *str <= ('z' - (36 - base))) {
+         n = base*n + (Long)((*str - 'a') + 10);
       }
       else {
 	break;
@@ -763,9 +790,18 @@ void VG_(strncpy_safely) ( Char* dest, const Char* src, Int ndest )
 }
 
 
-void VG_(strncpy) ( Char* dest, const Char* src, Int ndest )
+Char* VG_(strncpy) ( Char* dest, const Char* src, Int ndest )
 {
-   VG_(strncpy_safely)( dest, src, ndest+1 ); 
+   Int i = 0;
+   while (True) {
+      if (i >= ndest) return dest;     /* reached limit */
+      dest[i] = src[i];
+      if (src[i++] == 0) {
+         /* reached NUL;  pad rest with zeroes as required */
+         while (i < ndest) dest[i++] = 0;
+         return dest;
+      }
+   }
 }
 
 
@@ -868,16 +904,22 @@ Char VG_(toupper) ( Char c )
 }
 
 
-Char* VG_(strdup) ( ArenaId aid, const Char* s )
+/* Inline just for the wrapper VG_(strdup) below */
+__inline__ Char* VG_(arena_strdup) ( ArenaId aid, const Char* s )
 {
-    Int   i;
-    Int   len = VG_(strlen)(s) + 1;
-    Char* res = VG_(malloc) (aid, len);
-    for (i = 0; i < len; i++)
-       res[i] = s[i];
-    return res;
+   Int   i;
+   Int   len = VG_(strlen)(s) + 1;
+   Char* res = VG_(arena_malloc) (aid, len);
+   for (i = 0; i < len; i++)
+      res[i] = s[i];
+   return res;
 }
 
+/* Wrapper to avoid exposing skins to ArenaId's */
+Char* VG_(strdup) ( const Char* s )
+{
+   return VG_(arena_strdup) ( VG_AR_SKIN, s ); 
+}
 
 /* ---------------------------------------------------------------------
    A simple string matching routine, purloined from Hugs98.
@@ -966,66 +1008,32 @@ void VG_(panic) ( Char* str )
    VG_(exit)(1);
 }
 
+void VG_(skin_error) ( Char* str )
+{
+   VG_(printf)("\n%s: misconfigured skin:\n   %s\n\n", VG_(needs).name, str);
+   //VG_(printf)("Please report this bug to me at: %s\n\n", VG_EMAIL_ADDR);
+   VG_(shutdown_logging)();
+   VG_(exit)(1);
+}
+
 
 /* ---------------------------------------------------------------------
    Primitive support for reading files.
    ------------------------------------------------------------------ */
 
 /* Returns -1 on failure. */
-Int VG_(open_read) ( Char* pathname )
-{
+Int VG_(open) ( const Char* pathname, Int flags, Int mode )
+{  
    Int fd;
-   /* VG_(printf)("vg_open_read %s\n", pathname ); */
 
+   /* (old comment, not sure if it still applies  NJN 2002-sep-09) */
    /* This gets a segmentation fault if pathname isn't a valid file.
       I don't know why.  It seems like the call to open is getting
       intercepted and messed with by glibc ... */
    /* fd = open( pathname, O_RDONLY ); */
    /* ... so we go direct to the horse's mouth, which seems to work
       ok: */
-   const int O_RDONLY = 0; /* See /usr/include/bits/fcntl.h */
-   fd = vg_do_syscall3(__NR_open, (UInt)pathname, O_RDONLY, 0);
-   /* VG_(printf)("result = %d\n", fd); */
-   if (VG_(is_kerror)(fd)) fd = -1;
-   return fd;
-}
-
-/* Returns -1 on failure. */
-static Int VG_(chmod_u_rw) ( Int fd )
-{
-   Int res;
-   const int O_IRUSR_IWUSR = 000600; /* See /usr/include/cpio.h */
-   res = vg_do_syscall2(__NR_fchmod, fd, O_IRUSR_IWUSR);
-   if (VG_(is_kerror)(res)) res = -1;
-   return res;
-}
- 
-/* Returns -1 on failure. */
-Int VG_(create_and_write) ( Char* pathname )
-{
-   Int fd;
-
-   const int O_CR_AND_WR_ONLY = 0101; /* See /usr/include/bits/fcntl.h */
-   fd = vg_do_syscall3(__NR_open, (UInt)pathname, O_CR_AND_WR_ONLY, 0);
-   /* VG_(printf)("result = %d\n", fd); */
-   if (VG_(is_kerror)(fd)) {
-      fd = -1;
-   } else {
-      VG_(chmod_u_rw)(fd);
-      if (VG_(is_kerror)(fd)) {
-         fd = -1;
-      }
-   }
-   return fd;
-}
- 
-/* Returns -1 on failure. */
-Int VG_(open_write) ( Char* pathname )
-{  
-   Int fd;
-
-   const int O_WRONLY_AND_TRUNC = 01001; /* See /usr/include/bits/fcntl.h */
-   fd = vg_do_syscall3(__NR_open, (UInt)pathname, O_WRONLY_AND_TRUNC, 0);
+   fd = vg_do_syscall3(__NR_open, (UInt)pathname, flags, mode);
    /* VG_(printf)("result = %d\n", fd); */
    if (VG_(is_kerror)(fd)) {
       fd = -1;
@@ -1068,7 +1076,7 @@ Int VG_(stat) ( Char* file_name, struct vki_stat* buf )
 /* Misc functions looking for a proper home. */
 
 /* We do getenv without libc's help by snooping around in
-   VG_(client_env) as determined at startup time. */
+   VG_(client_envp) as determined at startup time. */
 Char* VG_(getenv) ( Char* varname )
 {
    Int i, n;
@@ -1266,10 +1274,39 @@ void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
             tot_alloc, nBytes, p, ((char*)p) + nBytes - 1, who );
       return p;
    }
-   VG_(printf)("vg_get_memory_from_mmap failed on request of %d\n", 
+   VG_(printf)("\n");
+   VG_(printf)("VG_(get_memory_from_mmap): request for %d bytes failed.\n", 
                nBytes);
-   VG_(panic)("vg_get_memory_from_mmap: out of memory!  Fatal!  Bye!\n");
+   VG_(printf)("VG_(get_memory_from_mmap): %d bytes already allocated.\n", 
+               tot_alloc);
+   VG_(printf)("\n");
+   VG_(printf)("This may mean that you have run out of swap space,\n");
+   VG_(printf)("since running programs on valgrind increases their memory\n");
+   VG_(printf)("usage at least 3 times.  You might want to use 'top'\n");
+   VG_(printf)("to determine whether you really have run out of swap.\n");
+   VG_(printf)("If so, you may be able to work around it by adding a\n");
+   VG_(printf)("temporary swap file -- this is easier than finding a\n");
+   VG_(printf)("new swap partition.  Go ask your sysadmin(s) [politely!]\n");
+   VG_(printf)("\n");
+   VG_(printf)("VG_(get_memory_from_mmap): out of memory!  Fatal!  Bye!\n");
+   VG_(printf)("\n");
+   VG_(exit)(1);
 }
+
+/* ---------------------------------------------------------------------
+   Generally useful...
+   ------------------------------------------------------------------ */
+
+Int VG_(log2) ( Int x ) 
+{
+   Int i;
+   /* Any more than 32 and we overflow anyway... */
+   for (i = 0; i < 32; i++) {
+      if (1 << i == x) return i;
+   }
+   return -1;
+}
+
 
 
 /*--------------------------------------------------------------------*/

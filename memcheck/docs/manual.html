@@ -345,7 +345,7 @@ You invoke Valgrind like this:
 </pre>
 
 <p>Note that Valgrind also reads options from the environment variable
-<code>$VALGRIND</code>, and processes them before the command-line
+<code>$VALGRIND_OPTS</code>, and processes them before the command-line
 options.
 
 <p>Valgrind's default settings succeed in giving reasonable behaviour
@@ -838,8 +838,8 @@ point that Valgrind complains.
   <li>The contents of malloc'd blocks, before you write something
       there.  In C++, the new operator is a wrapper round malloc, so
       if you create an object with new, its fields will be
-      uninitialised until you fill them in, which is only Right and
-      Proper.</li>
+      uninitialised until you (or the constructor) fill them in, which
+      is only Right and Proper.</li>
 </ul>
 
 
@@ -1066,16 +1066,16 @@ You can ask to add suppressions from another file, by specifying
       <p>
 
   <li>The "immediate location" specification.  For Value and Addr
-      errors, is either the name of the function in which the error
-      occurred, or, failing that, the full path the the .so file
-      containing the error location.  For Param errors, is the name of
-      the offending system call parameter.  For Free errors, is the
-      name of the function doing the freeing (eg, <code>free</code>,
-      <code>__builtin_vec_delete</code>, etc)</li><br>
+      errors, it is either the name of the function in which the error
+      occurred, or, failing that, the full path of the .so file or
+      executable containing the error location.  For Param errors,
+      is the name of the offending system call parameter.  For Free
+      errors, is the name of the function doing the freeing (eg,
+      <code>free</code>, <code>__builtin_vec_delete</code>, etc)</li><br>
       <p>
 
   <li>The caller of the above "immediate location".  Again, either a
-      function or shared-object name.</li><br>
+      function or shared-object/executable name.</li><br>
       <p>
 
   <li>Optionally, one or two extra calling-function or object names,
@@ -1083,8 +1083,8 @@ You can ask to add suppressions from another file, by specifying
 </ul>
 
 <p>
-Locations may be either names of shared objects or wildcards matching
-function names.  They begin <code>obj:</code> and <code>fun:</code>
+Locations may be either names of shared objects/executables or wildcards
+matching function names.  They begin <code>obj:</code> and <code>fun:</code>
 respectively.  Function and object names to match against may use the 
 wildcard characters <code>*</code> and <code>?</code>.
 
@@ -1617,11 +1617,11 @@ memalign, free, new and delete.  The behaviour you get is:
 
   <li>If the new size is smaller, the dropped-off section is marked as
       unaddressible.  You may only pass to realloc a pointer
-      previously issued to you by malloc/calloc/new/realloc.</li><br>
+      previously issued to you by malloc/calloc/realloc.</li><br>
       <p>
 
   <li>free/delete: you may only pass to free a pointer previously
-      issued to you by malloc/calloc/new/realloc, or the value
+      issued to you by malloc/calloc/realloc, or the value
       NULL. Otherwise, Valgrind complains.  If the pointer is indeed
       valid, Valgrind marks the entire area it points at as
       unaddressible, and places the block in the freed-blocks-queue.
@@ -2058,7 +2058,9 @@ The two steps are:
   <li>Run your program with <code>cachegrind</code> in front of the
       normal command line invocation.  When the program finishes,
       Valgrind will print summary cache statistics. It also collects
-      line-by-line information in a file <code>cachegrind.out</code>.
+      line-by-line information in a file
+      <code>cachegrind.out.<i>pid</i></code>, where <code><i>pid</i></code>
+      is the program's process id.
       <p>
       This step should be done every time you want to collect
       information about a new program, a changed program, or about the
@@ -2197,21 +2199,30 @@ Combined instruction and data figures for the L2 cache follow that.<p>
 
 As well as printing summary information, Cachegrind also writes
 line-by-line cache profiling information to a file named
-<code>cachegrind.out</code>.  This file is human-readable, but is best
-interpreted by the accompanying program <code>vg_annotate</code>,
+<code>cachegrind.out.<i>pid</i></code>.  This file is human-readable, but is
+best interpreted by the accompanying program <code>vg_annotate</code>,
 described in the next section.
 <p>
-Things to note about the <code>cachegrind.out</code> file:
+Things to note about the <code>cachegrind.out.<i>pid</i></code> file:
 <ul>
   <li>It is written every time <code>valgrind --cachesim=yes</code> or
       <code>cachegrind</code> is run, and will overwrite any existing
-      <code>cachegrind.out</code> in the current directory.</li>
+      <code>cachegrind.out.<i>pid</i></code> in the current directory (but
+      that won't happen very often because it takes some time for process ids
+      to be recycled).</li>
   <p>
   <li>It can be huge: <code>ls -l</code> generates a file of about
       350KB.  Browsing a few files and web pages with a Konqueror
       built with full debugging information generates a file
       of around 15 MB.</li>
 </ul>
+
+Note that older versions of Cachegrind used a log file named
+<code>cachegrind.out</code> (i.e. no <code><i>.pid</i></code> suffix).
+The suffix serves two purposes.  Firstly, it means you don't have to rename old
+log files that you don't want to overwrite.  Secondly, and more importantly,
+it allows correct profiling with the <code>--trace-children=yes</code> option
+of programs that spawn child processes.
 
 <a name="profileflags"></a>
 <h3>7.5&nbsp; Cachegrind options</h3>
@@ -2245,9 +2256,13 @@ Before using <code>vg_annotate</code>, it is worth widening your
 window to be at least 120-characters wide if possible, as the output
 lines can be quite long.
 <p>
-To get a function-by-function summary, run <code>vg_annotate</code> in
-directory containing a <code>cachegrind.out</code> file.  The output
-looks like this:
+To get a function-by-function summary, run <code>vg_annotate
+--<i>pid</i></code> in a directory containing a
+<code>cachegrind.out.<i>pid</i></code> file.  The <code>--<i>pid</i></code>
+is required so that <code>vg_annotate</code> knows which log file to use when
+several are present.
+<p>
+The output looks like this:
 
 <pre>
 --------------------------------------------------------------------------------
@@ -2468,8 +2483,9 @@ source files if the filenames found from the debugging information aren't
 specific enough.
 
 Beware that vg_annotate can take some time to digest large
-<code>cachegrind.out</code> files, eg. 30 seconds or more.  Also beware that
-auto-annotation can produce a lot of output if your program is large!
+<code>cachegrind.out.<i>pid</i></code> files, e.g. 30 seconds or more.  Also
+beware that auto-annotation can produce a lot of output if your program is
+large!
 
 
 <h3>7.7&nbsp; Annotating assembler programs</h3>
@@ -2492,13 +2508,18 @@ programs.
 
 <h3>7.8&nbsp; <code>vg_annotate</code> options</h3>
 <ul>
+  <li><code>--<i>pid</i></code></li><p>
+
+      Indicates which <code>cachegrind.out.<i>pid</i></code> file to read.
+      Not actually an option -- it is required.
+    
   <li><code>-h, --help</code></li><p>
   <li><code>-v, --version</code><p>
 
       Help and version, as usual.</li>
 
   <li><code>--sort=A,B,C</code> [default: order in 
-      <code>cachegrind.out</code>]<p>
+      <code>cachegrind.out.<i>pid</i></code>]<p>
       Specifies the events upon which the sorting of the function-by-function
       entries will be based.  Useful if you want to concentrate on eg. I cache
       misses (<code>--sort=I1mr,I2mr</code>), or D cache misses
@@ -2506,10 +2527,10 @@ programs.
       (<code>--sort=D2mr,I2mr</code>).</li><p>
 
   <li><code>--show=A,B,C</code> [default: all, using order in
-      <code>cachegrind.out</code>]<p>
+      <code>cachegrind.out.<i>pid</i></code>]<p>
       Specifies which events to show (and the column order). Default is to use
-      all present in the <code>cachegrind.out</code> file (and use the order in
-      the file).</li><p>
+      all present in the <code>cachegrind.out.<i>pid</i></code> file (and use
+      the order in the file).</li><p>
 
   <li><code>--threshold=X</code> [default: 99%] <p>
       Sets the threshold for the function-by-function summary.  Functions are
@@ -2547,17 +2568,18 @@ programs.
 There are a couple of situations in which vg_annotate issues warnings.
 
 <ul>
-  <li>If a source file is more recent than the <code>cachegrind.out</code>
-      file.  This is because the information in <code>cachegrind.out</code> is
-      only recorded with line numbers, so if the line numbers change at all in
-      the source (eg. lines added, deleted, swapped), any annotations will be 
+  <li>If a source file is more recent than the
+      <code>cachegrind.out.<i>pid</i></code> file.  This is because the
+      information in <code>cachegrind.out.<i>pid</i></code> is only recorded
+      with line numbers, so if the line numbers change at all in the source
+      (eg.  lines added, deleted, swapped), any annotations will be
       incorrect.<p>
 
   <li>If information is recorded about line numbers past the end of a file.
       This can be caused by the above problem, ie. shortening the source file
-      while using an old <code>cachegrind.out</code> file.  If this happens,
-      the figures for the bogus lines are printed anyway (clearly marked as
-      bogus) in case they are important.</li><p>
+      while using an old <code>cachegrind.out.<i>pid</i></code> file.  If this
+      happens, the figures for the bogus lines are printed anyway (clearly
+      marked as bogus) in case they are important.</li><p>
 </ul>
 
 
@@ -2677,6 +2699,13 @@ Valgrind's cache profiling has a number of shortcomings:
       <blockquote><code>btsl %eax, %edx</code></blockquote>
 
       This should only happen rarely.
+      </li><p>
+
+  <li>FPU instructions with data sizes of 28 and 108 bytes (e.g.
+      <code>fsave</code>) are treated as though they only access 16 bytes.
+      These instructions seem to be rare so hopefully this won't affect
+      accuracy much.
+      </li><p>
 </ul>
 
 Another thing worth nothing is that results are very sensitive.  Changing the

@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -49,12 +49,14 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
    Int   n_result  = 0;
    Char* demangled = NULL;
 
+   VGP_PUSHCC(VgpDemangle);
+
    if (VG_(clo_demangle))
       demangled = VG_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
 
    if (demangled) {
       ADD_TO_RESULT(demangled, VG_(strlen)(demangled));
-      VG_(free) (VG_AR_DEMANGLE, demangled);
+      VG_(arena_free) (VG_AR_DEMANGLE, demangled);
    } else {
       ADD_TO_RESULT(orig, VG_(strlen)(orig));
    }
@@ -65,6 +67,8 @@ void VG_(demangle) ( Char* orig, Char* result, Int result_size )
    vg_assert(VG_(is_empty_arena)(VG_AR_DEMANGLE));
 
    /* VG_(show_all_arena_stats)(); */
+
+   VGP_POPCC(VgpDemangle);
 }
 
 

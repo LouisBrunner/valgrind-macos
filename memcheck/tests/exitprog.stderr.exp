@@ -1,0 +1,16 @@
+
+Invalid write of size 1
+   at 0x........: main (exitprog.c:15)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/memcheck/exitprog)
+   Address 0x........ is 0 bytes after a block of size 1000000 alloc'd
+   at 0x........: malloc (vg_clientfuncs.c:...)
+   by 0x........: main (exitprog.c:12)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: (within /.../tests/memcheck/exitprog)
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 1000000 bytes in 1 blocks.
+malloc/free: 1 allocs, 0 frees, 1000000 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v

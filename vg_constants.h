@@ -26,29 +26,16 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #ifndef __VG_CONSTANTS_H
 #define __VG_CONSTANTS_H
 
+#include "vg_constants_skin.h"
 
 /* This file is included in all Valgrind source files, including
    assembly ones. */
-
-/* All symbols externally visible from valgrind.so are prefixed
-   as specified here.  The prefix can be changed, so as to avoid
-   namespace conflict problems.
-*/
-#define VGAPPEND(str1,str2) str1##str2
-
-/* These macros should add different prefixes so the same base
-   name can safely be used across different macros. */
-#define VG_(str)    VGAPPEND(vgPlain_,str)
-#define VGM_(str)   VGAPPEND(vgMem_,str)
-#define VGP_(str)   VGAPPEND(vgProf_,str)
-#define VGOFF_(str) VGAPPEND(vgOff_,str)
-
 
 /* Magic values that %ebp might be set to when returning to the
    dispatcher.  The only other legitimate value is to point to the
@@ -59,13 +46,12 @@
    returns to the dispatch loop.  TRC means that this value is a valid
    thread return code, which the dispatch loop may return to the
    scheduler.  */
-#define VG_TRC_EBP_JMP_STKADJ     17 /* EBP only; handled by dispatcher */
 #define VG_TRC_EBP_JMP_SYSCALL    19 /* EBP and TRC */
 #define VG_TRC_EBP_JMP_CLIENTREQ  23 /* EBP and TRC */
 
-#define VG_TRC_INNER_COUNTERZERO  29  /* TRC only; means bb ctr == 0 */
-#define VG_TRC_INNER_FASTMISS     31  /* TRC only; means fast-cache miss. */
-#define VG_TRC_UNRESUMABLE_SIGNAL 37  /* TRC only; got sigsegv/sigbus */
+#define VG_TRC_INNER_FASTMISS     31 /* TRC only; means fast-cache miss. */
+#define VG_TRC_INNER_COUNTERZERO  29 /* TRC only; means bb ctr == 0 */
+#define VG_TRC_UNRESUMABLE_SIGNAL 37 /* TRC only; got sigsegv/sigbus */
 
 
 /* Debugging hack for assembly code ... sigh. */
@@ -93,7 +79,7 @@
 /* Assembly code stubs make this request */
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 
-#endif /* ndef __VG_INCLUDE_H */
+#endif /* ndef __VG_CONSTANTS_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                           vg_constants.h ---*/

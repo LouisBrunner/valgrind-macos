@@ -1,0 +1,4 @@
+#! /bin/sh
+
+# Anonymise paths like "/local/foo/bar/tests/baz/quux" (note "tests" is there)
+sed "s/\/.*\/tests\//\/...\/tests\//"

@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -38,15 +38,9 @@
 
 /* #define DEBUG_CLIENTMALLOC */
 
-/* Holds malloc'd but not freed blocks. */
+/* Holds malloc'd but not freed blocks.  Static, so zero-inited by default. */
 #define VG_MALLOCLIST_NO(aa) (((UInt)(aa)) % VG_N_MALLOCLISTS)
 static ShadowChunk* vg_malloclist[VG_N_MALLOCLISTS];
-static Bool         vg_client_malloc_init_done = False;
-
-/* Holds blocks after freeing. */
-static ShadowChunk* vg_freed_list_start   = NULL;
-static ShadowChunk* vg_freed_list_end     = NULL;
-static Int          vg_freed_list_volume  = 0;
 
 /* Stats ... */
 static UInt         vg_cmalloc_n_mallocs  = 0;
@@ -60,6 +54,105 @@ static UInt         vg_mlist_tries = 0;
 /*------------------------------------------------------------*/
 /*--- Fns                                                  ---*/
 /*------------------------------------------------------------*/
+
+static __inline__
+Bool needs_shadow_chunks ( void )
+{
+   return VG_(needs).core_errors             ||
+          VG_(needs).alternative_free        ||
+          VG_(needs).sizeof_shadow_block > 0 ||
+          VG_(track_events).bad_free         ||
+          VG_(track_events).mismatched_free  ||
+          VG_(track_events).copy_mem_heap    ||
+          VG_(track_events).die_mem_heap;
+}
+
+#ifdef DEBUG_CLIENTMALLOC
+static 
+Int count_malloclists ( void )
+{
+   ShadowChunk* sc;
+   UInt ml_no;
+   Int  n = 0;
+
+   for (ml_no = 0; ml_no < VG_N_MALLOCLISTS; ml_no++) 
+      for (sc = vg_malloclist[ml_no]; sc != NULL; sc = sc->next)
+         n++;
+   return n;
+}
+#endif
+
+/*------------------------------------------------------------*/
+/*--- Shadow chunks, etc                                   ---*/
+/*------------------------------------------------------------*/
+
+/* Allocate a user-chunk of size bytes.  Also allocate its shadow
+   block, make the shadow block point at the user block.  Put the
+   shadow chunk on the appropriate list, and set all memory
+   protections correctly. */
+static void addShadowChunk ( ThreadState* tst,
+                             Addr p, UInt size, VgAllocKind kind )
+{
+   ShadowChunk* sc;
+   UInt         ml_no = VG_MALLOCLIST_NO(p);
+
+#  ifdef DEBUG_CLIENTMALLOC
+   VG_(printf)("[m %d, f %d (%d)] addShadowChunk "
+               "( sz %d, addr %p, list %d )\n", 
+               count_malloclists(), 
+               0/*count_freelist()*/, 0/*vg_freed_list_volume*/,
+               size, p, ml_no );
+#  endif
+
+   sc = VG_(arena_malloc)(VG_AR_CORE, 
+                          sizeof(ShadowChunk)
+                           + VG_(needs).sizeof_shadow_block);
+   sc->size      = size;
+   sc->allockind = kind;
+   sc->data      = p;
+   /* Fill in any skin-specific shadow chunk stuff */
+   if (VG_(needs).sizeof_shadow_block > 0)
+      SK_(complete_shadow_chunk) ( sc, tst );
+
+   sc->next  = vg_malloclist[ml_no];
+   vg_malloclist[ml_no] = sc;
+}
+
+/* Get the sc, and return the address of the previous node's next pointer
+   which allows sc to be removed from the list later without having to look
+   it up again.  */
+static ShadowChunk* getShadowChunk ( Addr a, /*OUT*/ShadowChunk*** next_ptr )
+{
+   ShadowChunk *prev, *curr;
+   Int ml_no;
+   
+   ml_no = VG_MALLOCLIST_NO(a);
+
+   prev = NULL;
+   curr = vg_malloclist[ml_no];
+   while (True) {
+      if (curr == NULL) 
+         break;
+      if (a == curr->data)
+         break;
+      prev = curr;
+      curr = curr->next;
+   }
+
+   if (NULL == prev)
+      *next_ptr = &vg_malloclist[ml_no];
+   else
+      *next_ptr = &prev->next;
+
+   return curr;
+}
+
+void VG_(freeShadowChunk) ( ShadowChunk* sc )
+{
+   VG_(arena_free) ( VG_AR_CLIENT, (void*)sc->data );
+   VG_(arena_free) ( VG_AR_CORE,   sc );
+}
+
 
 /* Allocate a suitably-sized array, copy all the malloc-d block
    shadows into it, and return both the array and the size of it.
@@ -78,8 +171,7 @@ ShadowChunk** VG_(get_malloc_shadows) ( /*OUT*/ UInt* n_shadows )
    }
    if (*n_shadows == 0) return NULL;
 
-   arr = VG_(malloc)( VG_AR_PRIVATE, 
-                      *n_shadows * sizeof(ShadowChunk*) );
+   arr = VG_(malloc)( *n_shadows * sizeof(ShadowChunk*) );
 
    i = 0;
    for (scn = 0; scn < VG_N_MALLOCLISTS; scn++) {
@@ -91,405 +183,284 @@ ShadowChunk** VG_(get_malloc_shadows) ( /*OUT*/ UInt* n_shadows )
    return arr;
 }
 
-static void client_malloc_init ( void )
+Bool VG_(addr_is_in_block)( Addr a, Addr start, UInt size )
+{
+   return (start - VG_AR_CLIENT_REDZONE_SZB <= a
+           && a < start + size + VG_AR_CLIENT_REDZONE_SZB);
+}
+
+/* Return the first shadow chunk satisfying the predicate p. */
+ShadowChunk* VG_(any_matching_mallocd_ShadowChunks)
+                        ( Bool (*p) ( ShadowChunk* ))
 {
    UInt ml_no;
-   if (vg_client_malloc_init_done) return;
+   ShadowChunk* sc;
+
    for (ml_no = 0; ml_no < VG_N_MALLOCLISTS; ml_no++)
-      vg_malloclist[ml_no] = NULL;
-   vg_client_malloc_init_done = True;
-}
-
-
-static __attribute__ ((unused))
-       Int count_freelist ( void )
-{
-   ShadowChunk* sc;
-   Int n = 0;
-   for (sc = vg_freed_list_start; sc != NULL; sc = sc->next)
-      n++;
-   return n;
-}
-
-static __attribute__ ((unused))
-       Int count_malloclists ( void )
-{
-   ShadowChunk* sc;
-   UInt ml_no;
-   Int  n = 0;
-   for (ml_no = 0; ml_no < VG_N_MALLOCLISTS; ml_no++) 
       for (sc = vg_malloclist[ml_no]; sc != NULL; sc = sc->next)
-         n++;
-   return n;
-}
+         if (p(sc))
+            return sc;
 
-static __attribute__ ((unused))
-       void freelist_sanity ( void )
-{
-   ShadowChunk* sc;
-   Int n = 0;
-   /* VG_(printf)("freelist sanity\n"); */
-   for (sc = vg_freed_list_start; sc != NULL; sc = sc->next)
-      n += sc->size;
-   vg_assert(n == vg_freed_list_volume);
-}
-
-/* Remove sc from malloc list # sc.  It is an unchecked error for
-   sc not to be present in the list. 
-*/
-static void remove_from_malloclist ( UInt ml_no, ShadowChunk* sc )
-{
-   ShadowChunk *sc1, *sc2;
-   if (sc == vg_malloclist[ml_no]) {
-      vg_malloclist[ml_no] = vg_malloclist[ml_no]->next;
-   } else {
-      sc1 = vg_malloclist[ml_no];
-      vg_assert(sc1 != NULL);
-      sc2 = sc1->next;
-      while (sc2 != sc) {
-         vg_assert(sc2 != NULL);
-         sc1 = sc2;
-         sc2 = sc2->next;
-      }
-      vg_assert(sc1->next == sc);
-      vg_assert(sc2 == sc);
-      sc1->next = sc2->next;
-   }
+   return NULL;
 }
 
 
-/* Put a shadow chunk on the freed blocks queue, possibly freeing up
-   some of the oldest blocks in the queue at the same time. */
-
-static void add_to_freed_queue ( ShadowChunk* sc )
-{
-   ShadowChunk* sc1;
-
-   /* Put it at the end of the freed list */
-   if (vg_freed_list_end == NULL) {
-      vg_assert(vg_freed_list_start == NULL);
-      vg_freed_list_end = vg_freed_list_start = sc;
-      vg_freed_list_volume = sc->size;
-   } else {
-      vg_assert(vg_freed_list_end->next == NULL);
-      vg_freed_list_end->next = sc;
-      vg_freed_list_end = sc;
-      vg_freed_list_volume += sc->size;
-   }
-   sc->next = NULL;
-
-   /* Release enough of the oldest blocks to bring the free queue
-      volume below vg_clo_freelist_vol. */
-
-   while (vg_freed_list_volume > VG_(clo_freelist_vol)) {
-      /* freelist_sanity(); */
-      vg_assert(vg_freed_list_start != NULL);
-      vg_assert(vg_freed_list_end != NULL);
-
-      sc1 = vg_freed_list_start;
-      vg_freed_list_volume -= sc1->size;
-      /* VG_(printf)("volume now %d\n", vg_freed_list_volume); */
-      vg_assert(vg_freed_list_volume >= 0);
-
-      if (vg_freed_list_start == vg_freed_list_end) {
-         vg_freed_list_start = vg_freed_list_end = NULL;
-      } else {
-         vg_freed_list_start = sc1->next;
-      }
-      sc1->next = NULL; /* just paranoia */
-      VG_(free)(VG_AR_CLIENT,  (void*)(sc1->data));
-      VG_(free)(VG_AR_PRIVATE, sc1);
-   }
-}
-
-
-/* Allocate a user-chunk of size bytes.  Also allocate its shadow
-   block, make the shadow block point at the user block.  Put the
-   shadow chunk on the appropriate list, and set all memory
-   protections correctly. */
-
-static ShadowChunk* client_malloc_shadow ( ThreadState* tst,
-                                           UInt align, UInt size, 
-                                           VgAllocKind kind )
-{
-   ShadowChunk* sc;
-   Addr         p;
-   UInt         ml_no;
-
-#  ifdef DEBUG_CLIENTMALLOC
-   VG_(printf)("[m %d, f %d (%d)] client_malloc_shadow ( al %d, sz %d )\n", 
-               count_malloclists(), 
-               count_freelist(), vg_freed_list_volume,
-               align, size );
-#  endif
-
-   vg_assert(align >= 4);
-   if (align == 4)
-      p = (Addr)VG_(malloc)(VG_AR_CLIENT, size);
-   else
-      p = (Addr)VG_(malloc_aligned)(VG_AR_CLIENT, align, size);
-
-   sc        = VG_(malloc)(VG_AR_PRIVATE, sizeof(ShadowChunk));
-   sc->where = VG_(get_ExeContext)(False, tst->m_eip, tst->m_ebp);
-   sc->size  = size;
-   sc->allockind = kind;
-   sc->data  = p;
-   ml_no     = VG_MALLOCLIST_NO(p);
-   sc->next  = vg_malloclist[ml_no];
-   vg_malloclist[ml_no] = sc;
-
-   VGM_(make_writable)(p, size);
-   VGM_(make_noaccess)(p + size, 
-                       VG_AR_CLIENT_REDZONE_SZB);
-   VGM_(make_noaccess)(p - VG_AR_CLIENT_REDZONE_SZB, 
-                       VG_AR_CLIENT_REDZONE_SZB);
-
-   return sc;
-}
-
+/*------------------------------------------------------------*/
+/*--- client_malloc(), etc                                 ---*/
+/*------------------------------------------------------------*/
 
 /* Allocate memory, noticing whether or not we are doing the full
    instrumentation thing. */
-
-void* VG_(client_malloc) ( ThreadState* tst, UInt size, VgAllocKind kind )
+static __inline__
+void* alloc_and_new_mem ( ThreadState* tst, UInt size, UInt alignment,
+                          Bool is_zeroed, VgAllocKind kind )
 {
-   ShadowChunk* sc;
+   Addr p;
 
    VGP_PUSHCC(VgpCliMalloc);
-   client_malloc_init();
-#  ifdef DEBUG_CLIENTMALLOC
-   VG_(printf)("[m %d, f %d (%d)] client_malloc ( %d, %x )\n", 
-               count_malloclists(), 
-               count_freelist(), vg_freed_list_volume,
-               size, raw_alloc_kind );
-#  endif
 
    vg_cmalloc_n_mallocs ++;
    vg_cmalloc_bs_mallocd += size;
 
-   if (!VG_(clo_instrument)) {
-      VGP_POPCC;
-      return VG_(malloc) ( VG_AR_CLIENT, size );
-   }
+   vg_assert(alignment >= 4);
+   if (alignment == 4)
+      p = (Addr)VG_(arena_malloc)(VG_AR_CLIENT, size);
+   else
+      p = (Addr)VG_(arena_malloc_aligned)(VG_AR_CLIENT, alignment, size);
 
-   sc = client_malloc_shadow ( tst, VG_(clo_alignment), size, kind );
-   VGP_POPCC;
-   return (void*)(sc->data);
+   if (needs_shadow_chunks())
+      addShadowChunk ( tst, p, size, kind );
+
+   VG_TRACK( ban_mem_heap, p-VG_AR_CLIENT_REDZONE_SZB, 
+                           VG_AR_CLIENT_REDZONE_SZB );
+   VG_TRACK( new_mem_heap, p, size, is_zeroed );
+   VG_TRACK( ban_mem_heap, p+size, VG_AR_CLIENT_REDZONE_SZB );
+
+   VGP_POPCC(VgpCliMalloc);
+   return (void*)p;
+}
+
+void* VG_(client_malloc) ( ThreadState* tst, UInt size, VgAllocKind kind )
+{
+   void* p = alloc_and_new_mem ( tst, size, VG_(clo_alignment), 
+                                 /*is_zeroed*/False, kind );
+#  ifdef DEBUG_CLIENTMALLOC
+   VG_(printf)("[m %d, f %d (%d)] client_malloc ( %d, %x ) = %p\n", 
+               count_malloclists(), 
+               0/*count_freelist()*/, 0/*vg_freed_list_volume*/,
+               size, kind, p );
+#  endif
+   return p;
 }
 
 
 void* VG_(client_memalign) ( ThreadState* tst, UInt align, UInt size )
 {
-   ShadowChunk* sc;
-   VGP_PUSHCC(VgpCliMalloc);
-   client_malloc_init();
+   void* p = alloc_and_new_mem ( tst, size, align, 
+                                 /*is_zeroed*/False, Vg_AllocMalloc );
 #  ifdef DEBUG_CLIENTMALLOC
-   VG_(printf)("[m %d, f %d (%d)] client_memalign ( al %d, sz %d )\n", 
+   VG_(printf)("[m %d, f %d (%d)] client_memalign ( al %d, sz %d ) = %p\n", 
                count_malloclists(), 
-               count_freelist(), vg_freed_list_volume,
-               align, size );
+               0/*count_freelist()*/, 0/*vg_freed_list_volume*/,
+               align, size, p );
 #  endif
-
-   vg_cmalloc_n_mallocs ++;
-   vg_cmalloc_bs_mallocd += size;
-
-   if (!VG_(clo_instrument)) {
-      VGP_POPCC;
-      return VG_(malloc_aligned) ( VG_AR_CLIENT, align, size );
-   }
-   sc = client_malloc_shadow ( tst, align, size, Vg_AllocMalloc );
-   VGP_POPCC;
-   return (void*)(sc->data);
+   return p;
 }
-
-
-void VG_(client_free) ( ThreadState* tst, void* ptrV, VgAllocKind kind )
-{
-   ShadowChunk* sc;
-   UInt         ml_no;
-
-   VGP_PUSHCC(VgpCliMalloc);
-   client_malloc_init();
-#  ifdef DEBUG_CLIENTMALLOC
-   VG_(printf)("[m %d, f %d (%d)] client_free ( %p, %x )\n", 
-               count_malloclists(), 
-               count_freelist(), vg_freed_list_volume,
-               ptrV, raw_alloc_kind );
-#  endif
-
-   vg_cmalloc_n_frees ++;
-
-   if (!VG_(clo_instrument)) {
-      VGP_POPCC;
-      VG_(free) ( VG_AR_CLIENT, ptrV );
-      return;
-   }
-
-   /* first, see if ptrV is one vg_client_malloc gave out. */
-   ml_no = VG_MALLOCLIST_NO(ptrV);
-   vg_mlist_frees++;
-   for (sc = vg_malloclist[ml_no]; sc != NULL; sc = sc->next) {
-      vg_mlist_tries++;
-      if ((Addr)ptrV == sc->data)
-         break;
-   }
-
-   if (sc == NULL) {
-      VG_(record_free_error) ( tst, (Addr)ptrV );
-      VGP_POPCC;
-      return;
-   }
-
-   /* check if its a matching free() / delete / delete [] */
-   if (kind != sc->allockind)
-      VG_(record_freemismatch_error) ( tst, (Addr) ptrV );
-
-   /* Remove the shadow chunk from the mallocd list. */
-   remove_from_malloclist ( ml_no, sc );
-
-   /* Declare it inaccessible. */
-   VGM_(make_noaccess) ( sc->data - VG_AR_CLIENT_REDZONE_SZB, 
-                         sc->size + 2*VG_AR_CLIENT_REDZONE_SZB );
-   VGM_(make_noaccess) ( (Addr)sc, sizeof(ShadowChunk) );
-   sc->where = VG_(get_ExeContext)(False, tst->m_eip, tst->m_ebp);
-
-   /* Put it out of harm's way for a while. */
-   add_to_freed_queue ( sc );
-   VGP_POPCC;
-}
-
 
 
 void* VG_(client_calloc) ( ThreadState* tst, UInt nmemb, UInt size1 )
 {
-   ShadowChunk* sc;
-   Addr         p;
-   UInt         size, i, ml_no;
+   void*        p;
+   UInt         size, i;
 
-   VGP_PUSHCC(VgpCliMalloc);
-   client_malloc_init();
+   size = nmemb * size1;
 
-#  ifdef DEBUG_CLIENTMALLOC
-   VG_(printf)("[m %d, f %d (%d)] client_calloc ( %d, %d )\n", 
-               count_malloclists(), 
-               count_freelist(), vg_freed_list_volume,
-               nmemb, size1 );
-#  endif
-
-   vg_cmalloc_n_mallocs ++;
-   vg_cmalloc_bs_mallocd += nmemb * size1;
-
-   if (!VG_(clo_instrument)) {
-      VGP_POPCC;
-      return VG_(calloc) ( VG_AR_CLIENT, nmemb, size1 );
-   }
-
-   size      = nmemb * size1;
-   p         = (Addr)VG_(malloc)(VG_AR_CLIENT, size);
-   sc        = VG_(malloc)(VG_AR_PRIVATE, sizeof(ShadowChunk));
-   sc->where = VG_(get_ExeContext)(False, tst->m_eip, tst->m_ebp);
-   sc->size  = size;
-   sc->allockind = Vg_AllocMalloc; /* its a lie - but true. eat this :) */
-   sc->data  = p;
-   ml_no     = VG_MALLOCLIST_NO(p);
-   sc->next  = vg_malloclist[ml_no];
-   vg_malloclist[ml_no] = sc;
-
-   VGM_(make_readable)(p, size);
-   VGM_(make_noaccess)(p + size, 
-                       VG_AR_CLIENT_REDZONE_SZB);
-   VGM_(make_noaccess)(p - VG_AR_CLIENT_REDZONE_SZB, 
-                       VG_AR_CLIENT_REDZONE_SZB);
-
+   p = alloc_and_new_mem ( tst, size, VG_(clo_alignment), 
+                              /*is_zeroed*/True, Vg_AllocMalloc );
+   /* Must zero block for calloc! */
    for (i = 0; i < size; i++) ((UChar*)p)[i] = 0;
 
-   VGP_POPCC;
-   return (void*)p;
+#  ifdef DEBUG_CLIENTMALLOC
+   VG_(printf)("[m %d, f %d (%d)] client_calloc ( %d, %d ) = %p\n", 
+               count_malloclists(), 
+               0/*count_freelist()*/, 0/*vg_freed_list_volume*/,
+               nmemb, size1, p );
+#  endif
+
+   return p;
+}
+
+static
+void die_and_free_mem ( ThreadState* tst, ShadowChunk* sc,
+                        ShadowChunk** prev_chunks_next_ptr )
+{
+   /* Note: ban redzones again -- just in case user de-banned them
+      with a client request... */
+   VG_TRACK( ban_mem_heap, sc->data-VG_AR_CLIENT_REDZONE_SZB, 
+                           VG_AR_CLIENT_REDZONE_SZB );
+   VG_TRACK( die_mem_heap, sc->data, sc->size );
+   VG_TRACK( ban_mem_heap, sc->data+sc->size, VG_AR_CLIENT_REDZONE_SZB );
+
+   /* Remove sc from the malloclist using prev_chunks_next_ptr to
+      avoid repeating the hash table lookup.  Can't remove until at least
+      after free and free_mismatch errors are done because they use
+      describe_addr() which looks for it in malloclist. */
+   *prev_chunks_next_ptr = sc->next;
+
+   if (VG_(needs).alternative_free)
+      SK_(alt_free) ( sc, tst );
+   else
+      VG_(freeShadowChunk) ( sc );
 }
 
 
-void* VG_(client_realloc) ( ThreadState* tst, void* ptrV, UInt size_new )
+void VG_(client_free) ( ThreadState* tst, void* p, VgAllocKind kind )
 {
-   ShadowChunk *sc, *sc_new;
-   UInt         i, ml_no;
+   ShadowChunk*  sc;
+   ShadowChunk** prev_chunks_next_ptr;
 
    VGP_PUSHCC(VgpCliMalloc);
-   client_malloc_init();
 
 #  ifdef DEBUG_CLIENTMALLOC
-   VG_(printf)("[m %d, f %d (%d)] client_realloc ( %p, %d )\n", 
+   VG_(printf)("[m %d, f %d (%d)] client_free ( %p, %x )\n", 
                count_malloclists(), 
-               count_freelist(), vg_freed_list_volume,
-               ptrV, size_new );
+               0/*count_freelist()*/, 0/*vg_freed_list_volume*/,
+               p, kind );
 #  endif
 
    vg_cmalloc_n_frees ++;
-   vg_cmalloc_n_mallocs ++;
-   vg_cmalloc_bs_mallocd += size_new;
 
-   if (!VG_(clo_instrument)) {
-      vg_assert(ptrV != NULL && size_new != 0);
-      VGP_POPCC;
-      return VG_(realloc) ( VG_AR_CLIENT, ptrV, size_new );
-   }
+   if (! needs_shadow_chunks()) {
+      VG_(arena_free) ( VG_AR_CLIENT, p );
 
-   /* First try and find the block. */
-   ml_no = VG_MALLOCLIST_NO(ptrV);
-   for (sc = vg_malloclist[ml_no]; sc != NULL; sc = sc->next) {
-      if ((Addr)ptrV == sc->data)
-         break;
-   }
-  
-   if (sc == NULL) {
-      VG_(record_free_error) ( tst, (Addr)ptrV );
-      /* Perhaps we should keep going regardless. */
-      VGP_POPCC;
-      return NULL;
-   }
-
-   if (sc->allockind != Vg_AllocMalloc) {
-      /* can not realloc a range that was allocated with new or new [] */
-      VG_(record_freemismatch_error) ( tst, (Addr)ptrV );
-      /* but keep going anyway */
-   }
-
-   if (sc->size == size_new) {
-      /* size unchanged */
-      VGP_POPCC;
-      return ptrV;
-   }
-   if (sc->size > size_new) {
-      /* new size is smaller */
-      VGM_(make_noaccess)( sc->data + size_new, 
-                           sc->size - size_new );
-      sc->size = size_new;
-      VGP_POPCC;
-      return ptrV;
    } else {
-      /* new size is bigger */
-      sc_new = client_malloc_shadow ( tst, VG_(clo_alignment), 
-                                      size_new, Vg_AllocMalloc );
-      for (i = 0; i < sc->size; i++)
-         ((UChar*)(sc_new->data))[i] = ((UChar*)(sc->data))[i];
-      VGM_(copy_address_range_perms) ( 
-         sc->data, sc_new->data, sc->size );
-      remove_from_malloclist ( VG_MALLOCLIST_NO(sc->data), sc );
-      VGM_(make_noaccess) ( sc->data - VG_AR_CLIENT_REDZONE_SZB, 
-                            sc->size + 2*VG_AR_CLIENT_REDZONE_SZB );
-      VGM_(make_noaccess) ( (Addr)sc, sizeof(ShadowChunk) );
-      add_to_freed_queue ( sc );
-      VGP_POPCC;
-      return (void*)sc_new->data;
-   }  
+      sc = getShadowChunk ( (Addr)p, &prev_chunks_next_ptr );
+
+      if (sc == NULL) {
+         VG_TRACK( bad_free, tst, (Addr)p );
+         VGP_POPCC(VgpCliMalloc);
+         return;
+      }
+
+      /* check if its a matching free() / delete / delete [] */
+      if (kind != sc->allockind)
+         VG_TRACK( mismatched_free, tst, (Addr)p );
+
+      die_and_free_mem ( tst, sc, prev_chunks_next_ptr );
+   } 
+   VGP_POPCC(VgpCliMalloc);
 }
 
 
-void VG_(clientmalloc_done) ( void )
+void* VG_(client_realloc) ( ThreadState* tst, void* p, UInt new_size )
+{
+   ShadowChunk  *sc;
+   ShadowChunk **prev_chunks_next_ptr;
+   UInt          i;
+
+   VGP_PUSHCC(VgpCliMalloc);
+
+   vg_cmalloc_n_frees ++;
+   vg_cmalloc_n_mallocs ++;
+   vg_cmalloc_bs_mallocd += new_size;
+
+   if (! needs_shadow_chunks()) {
+      vg_assert(p != NULL && new_size != 0);
+      p = VG_(arena_realloc) ( VG_AR_CLIENT, p, VG_(clo_alignment), 
+                               new_size );
+      VGP_POPCC(VgpCliMalloc);
+      return p;
+
+   } else {
+      /* First try and find the block. */
+      sc = getShadowChunk ( (Addr)p, &prev_chunks_next_ptr );
+
+      if (sc == NULL) {
+         VG_TRACK( bad_free, tst, (Addr)p );
+         /* Perhaps we should return to the program regardless. */
+         VGP_POPCC(VgpCliMalloc);
+         return NULL;
+      }
+     
+      /* check if its a matching free() / delete / delete [] */
+      if (Vg_AllocMalloc != sc->allockind) {
+         /* can not realloc a range that was allocated with new or new [] */
+         VG_TRACK( mismatched_free, tst, (Addr)p );
+         /* but keep going anyway */
+      }
+
+      if (sc->size == new_size) {
+         /* size unchanged */
+         VGP_POPCC(VgpCliMalloc);
+         return p;
+         
+      } else if (sc->size > new_size) {
+         /* new size is smaller */
+         VG_TRACK( die_mem_heap, sc->data+new_size, sc->size-new_size );
+         sc->size = new_size;
+         VGP_POPCC(VgpCliMalloc);
+#        ifdef DEBUG_CLIENTMALLOC
+         VG_(printf)("[m %d, f %d (%d)] client_realloc_smaller ( %p, %d ) = %p\n", 
+                     count_malloclists(), 
+                     0/*count_freelist()*/, 0/*vg_freed_list_volume*/,
+                     p, new_size, p );
+#        endif
+         return p;
+
+      } else {
+         /* new size is bigger */
+         Addr p_new;
+         
+         /* Get new memory */
+         vg_assert(VG_(clo_alignment) >= 4);
+         if (VG_(clo_alignment) == 4)
+            p_new = (Addr)VG_(arena_malloc)(VG_AR_CLIENT, new_size);
+         else
+            p_new = (Addr)VG_(arena_malloc_aligned)(VG_AR_CLIENT, 
+                                            VG_(clo_alignment), new_size);
+
+         /* First half kept and copied, second half new, 
+            red zones as normal */
+         VG_TRACK( ban_mem_heap, p_new-VG_AR_CLIENT_REDZONE_SZB, 
+                                 VG_AR_CLIENT_REDZONE_SZB );
+         VG_TRACK( copy_mem_heap, (Addr)p, p_new, sc->size );
+         VG_TRACK( new_mem_heap, p_new+sc->size, new_size-sc->size, 
+                   /*inited=*/False );
+         VG_TRACK( ban_mem_heap, p_new+new_size, VG_AR_CLIENT_REDZONE_SZB );
+
+         /* Copy from old to new */
+         for (i = 0; i < sc->size; i++)
+            ((UChar*)p_new)[i] = ((UChar*)p)[i];
+
+         /* Free old memory */
+         die_and_free_mem ( tst, sc, prev_chunks_next_ptr );
+
+         /* this has to be after die_and_free_mem, otherwise the
+            former succeeds in shorting out the new block, not the
+            old, in the case when both are on the same list.  */
+         addShadowChunk ( tst, p_new, new_size, Vg_AllocMalloc );
+
+         VGP_POPCC(VgpCliMalloc);
+#        ifdef DEBUG_CLIENTMALLOC
+         VG_(printf)("[m %d, f %d (%d)] client_realloc_bigger ( %p, %d ) = %p\n", 
+                     count_malloclists(), 
+                     0/*count_freelist()*/, 0/*vg_freed_list_volume*/,
+                     p, new_size, (void*)p_new );
+#        endif
+         return (void*)p_new;
+      }  
+   }
+}
+
+void VG_(print_malloc_stats) ( void )
 {
    UInt         nblocks, nbytes, ml_no;
    ShadowChunk* sc;
 
-   client_malloc_init();
+   if (VG_(clo_verbosity) == 0)
+      return;
+
+   vg_assert(needs_shadow_chunks());
 
    nblocks = nbytes = 0;
 
@@ -500,9 +471,6 @@ void VG_(clientmalloc_done) ( void )
       }
    }
 
-   if (VG_(clo_verbosity) == 0)
-     return;
-
    VG_(message)(Vg_UserMsg, 
                 "malloc/free: in use at exit: %d bytes in %d blocks.",
                 nbytes, nblocks);
@@ -510,9 +478,6 @@ void VG_(clientmalloc_done) ( void )
                 "malloc/free: %d allocs, %d frees, %d bytes allocated.",
                 vg_cmalloc_n_mallocs,
                 vg_cmalloc_n_frees, vg_cmalloc_bs_mallocd);
-   if (!VG_(clo_leak_check))
-      VG_(message)(Vg_UserMsg, 
-                   "For a detailed leak analysis,  rerun with: --leak-check=yes");
    if (0)
       VG_(message)(Vg_DebugMsg,
                    "free search: %d tries, %d frees", 
@@ -521,58 +486,6 @@ void VG_(clientmalloc_done) ( void )
    if (VG_(clo_verbosity) > 1)
       VG_(message)(Vg_UserMsg, "");
 }
-
-
-/* Describe an address as best you can, for error messages,
-   putting the result in ai. */
-
-void VG_(describe_addr) ( Addr a, AddrInfo* ai )
-{
-   ShadowChunk* sc;
-   UInt         ml_no;
-   Bool         ok;
-   ThreadId     tid;
-
-   /* Perhaps it's a user-def'd block ? */
-   ok = VG_(client_perm_maybe_describe)( a, ai );
-   if (ok)
-      return;
-   /* Perhaps it's on a thread's stack? */
-   tid = VG_(identify_stack_addr)(a);
-   if (tid != VG_INVALID_THREADID) {
-      ai->akind     = Stack;
-      ai->stack_tid = tid;
-      return;
-   }
-   /* Search for a freed block which might bracket it. */
-   for (sc = vg_freed_list_start; sc != NULL; sc = sc->next) {
-      if (sc->data - VG_AR_CLIENT_REDZONE_SZB <= a
-          && a < sc->data + sc->size + VG_AR_CLIENT_REDZONE_SZB) {
-         ai->akind      = Freed;
-         ai->blksize    = sc->size;
-         ai->rwoffset   = (Int)(a) - (Int)(sc->data);
-         ai->lastchange = sc->where;
-         return;
-      }
-   }
-   /* Search for a mallocd block which might bracket it. */
-   for (ml_no = 0; ml_no < VG_N_MALLOCLISTS; ml_no++) {
-      for (sc = vg_malloclist[ml_no]; sc != NULL; sc = sc->next) {
-         if (sc->data - VG_AR_CLIENT_REDZONE_SZB <= a
-             && a < sc->data + sc->size + VG_AR_CLIENT_REDZONE_SZB) {
-            ai->akind      = Mallocd;
-            ai->blksize    = sc->size;
-            ai->rwoffset   = (Int)(a) - (Int)(sc->data);
-            ai->lastchange = sc->where;
-            return;
-         }
-      }
-   }
-   /* Clueless ... */
-   ai->akind = Unknown;
-   return;
-}
-
 
 /*--------------------------------------------------------------------*/
 /*--- end                                        vg_clientmalloc.c ---*/

@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -40,12 +40,12 @@
 #define uInstr1   VG_(newUInstr1)
 #define uInstr2   VG_(newUInstr2)
 #define uInstr3   VG_(newUInstr3)
-#define dis       VG_(disassemble)
 #define nameIReg  VG_(nameOfIntReg)
 #define nameISize VG_(nameOfIntSize)
 #define newTemp   VG_(getNewTemp)
 #define uLiteral  VG_(setLiteralField)
 
+#define dis       VG_(print_codegen)
 
 /*------------------------------------------------------------*/
 /*--- Here so it can be inlined everywhere.                ---*/
@@ -65,21 +65,6 @@ Int VG_(getNewShadow) ( UCodeBlock* cb )
    cb->nextTemp += 2;
    return SHADOW(t);
 }
-
-/* Handy predicates. */
-#define SMC_IF_SOME(cb)                              \
-   do {                                              \
-      if (VG_(clo_smc_check) >= VG_CLO_SMC_SOME) {   \
-           LAST_UINSTR((cb)).smc_check = True;       \
-      }                                              \
-   } while (0)
-
-#define SMC_IF_ALL(cb)                               \
-   do {                                              \
-      if (VG_(clo_smc_check) == VG_CLO_SMC_ALL) {    \
-         LAST_UINSTR((cb)).smc_check = True;         \
-      }                                              \
-   } while (0)
 
 
 /*------------------------------------------------------------*/
@@ -818,7 +803,6 @@ Addr dis_op2_G_E ( UCodeBlock* cb,
       }
       if (keep) {
          uInstr2(cb, STORE, size, TempReg, tmpv, TempReg, tmpa);
-         SMC_IF_ALL(cb);
       }
       if (dis) VG_(printf)("%s%c %s,%s\n", t_x86opc, nameISize(size), 
                            nameIReg(size,gregOfRM(rm)), dis_buf);
@@ -916,7 +900,6 @@ Addr dis_mov_G_E ( UCodeBlock* cb,
       Int  tmpv = newTemp(cb);
       uInstr2(cb, GET,   size, ArchReg, gregOfRM(rm), TempReg, tmpv);
       uInstr2(cb, STORE, size, TempReg, tmpv, TempReg, tmpa);
-      SMC_IF_SOME(cb);
       if (dis) VG_(printf)("mov%c %s,%s\n", nameISize(size), 
                            nameIReg(size,gregOfRM(rm)), dis_buf);
       return HI8(pair)+eip0;
@@ -1113,7 +1096,6 @@ Addr dis_Grp1 ( UCodeBlock* cb, Addr eip, UChar modrm,
       }
       if (gregOfRM(modrm) < 7) {
          uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t1);
-         SMC_IF_ALL(cb);
       }
       if (dis)
          VG_(printf)("%s%c $0x%x, %s\n",
@@ -1201,7 +1183,6 @@ Addr dis_Grp2 ( UCodeBlock* cb, Addr eip, UChar modrm,
       }
       setFlagsFromUOpcode(cb, uopc);
       uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t1);
-      SMC_IF_ALL(cb);
       if (dis) {
          if (orig_src_tag == Literal)
             VG_(printf)("%s%c $0x%x, %s\n",
@@ -1321,7 +1302,6 @@ Addr dis_Grp8_BT ( UCodeBlock* cb, Addr eip, UChar modrm,
       /* Dump the result back, if non-BT. */
       if (gregOfRM(modrm) != 4 /* BT */) {
          uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t1);
-         SMC_IF_ALL(cb);
       }
       if (dis)
             VG_(printf)("%s%c $0x%x, %s\n",
@@ -1512,7 +1492,6 @@ Addr dis_Grp3 ( UCodeBlock* cb, Int sz, Addr eip )
             uInstr1(cb, NOT, sz, TempReg, t1);
             setFlagsFromUOpcode(cb, NOT);
             uInstr2(cb, STORE, sz, TempReg, t1, TempReg, t2);
-            SMC_IF_ALL(cb);
             if (dis)
                VG_(printf)("not%c %s\n", nameISize(sz), dis_buf);
             break;
@@ -1520,7 +1499,6 @@ Addr dis_Grp3 ( UCodeBlock* cb, Int sz, Addr eip )
             uInstr1(cb, NEG, sz, TempReg, t1);
             setFlagsFromUOpcode(cb, NEG);
             uInstr2(cb, STORE, sz, TempReg, t1, TempReg, t2);
-            SMC_IF_ALL(cb);
             if (dis)
                VG_(printf)("neg%c %s\n", nameISize(sz), dis_buf);
             break;
@@ -1595,13 +1573,11 @@ Addr dis_Grp4 ( UCodeBlock* cb, Addr eip )
             uInstr1(cb, INC, 1, TempReg, t1);
             setFlagsFromUOpcode(cb, INC);
             uInstr2(cb, STORE, 1, TempReg, t1, TempReg, t2);
-            SMC_IF_ALL(cb);
             break;
          case 1: /* DEC */
             uInstr1(cb, DEC, 1, TempReg, t1);
             setFlagsFromUOpcode(cb, DEC);
             uInstr2(cb, STORE, 1, TempReg, t1, TempReg, t2);
-            SMC_IF_ALL(cb);
             break;
          default: 
             VG_(printf)(
@@ -1650,7 +1626,6 @@ Addr dis_Grp5 ( UCodeBlock* cb, Int sz, Addr eip, Bool* isEnd )
             uInstr2(cb, MOV,   4, Literal, 0,     TempReg, t4);
 	    uLiteral(cb, eip+1);
             uInstr2(cb, STORE, 4, TempReg, t4,    TempReg, t3);
-            SMC_IF_ALL(cb);
             uInstr1(cb, JMP,   0, TempReg, t1);
             uCond(cb, CondAlways);
             LAST_UINSTR(cb).jmpkind = JmpCall;
@@ -1680,13 +1655,11 @@ Addr dis_Grp5 ( UCodeBlock* cb, Int sz, Addr eip, Bool* isEnd )
             uInstr1(cb, INC, sz, TempReg, t1);
             setFlagsFromUOpcode(cb, INC);
             uInstr2(cb, STORE, sz, TempReg, t1, TempReg, t2);
-            SMC_IF_ALL(cb);
             break;
          case 1: /* DEC */
             uInstr1(cb, DEC, sz, TempReg, t1);
             setFlagsFromUOpcode(cb, DEC);
             uInstr2(cb, STORE, sz, TempReg, t1, TempReg, t2);
-            SMC_IF_ALL(cb);
             break;
          case 2: /* call Ev */
             t3 = newTemp(cb); t4 = newTemp(cb);
@@ -1697,7 +1670,6 @@ Addr dis_Grp5 ( UCodeBlock* cb, Int sz, Addr eip, Bool* isEnd )
             uInstr2(cb, MOV,   4, Literal, 0,     TempReg, t4);
 	         uLiteral(cb, eip+HI8(pair));
             uInstr2(cb, STORE, 4, TempReg, t4,    TempReg, t3);
-            SMC_IF_ALL(cb);
             uInstr1(cb, JMP,   0, TempReg, t1);
             uCond(cb, CondAlways);
             LAST_UINSTR(cb).jmpkind = JmpCall;
@@ -1715,7 +1687,6 @@ Addr dis_Grp5 ( UCodeBlock* cb, Int sz, Addr eip, Bool* isEnd )
 	    uLiteral(cb, sz);
             uInstr2(cb, PUT,    4, TempReg, t3,    ArchReg, R_ESP);
             uInstr2(cb, STORE, sz, TempReg, t1,    TempReg, t3);
-            SMC_IF_ALL(cb);
             break;
          default: 
             VG_(printf)(
@@ -1864,7 +1835,6 @@ void codegen_REPE_MOVS ( UCodeBlock* cb, Int sz, Addr eip, Addr eip_next )
 
    uInstr2(cb, LOAD,  sz, TempReg, ts,    TempReg, tv);
    uInstr2(cb, STORE, sz, TempReg, tv,    TempReg, td);
-   SMC_IF_SOME(cb);
 
    uInstr0(cb, CALLM_S, 0);
    uInstr2(cb, MOV,   4, Literal, 0,     TempReg, tv);
@@ -1912,7 +1882,6 @@ void codegen_REPE_STOS ( UCodeBlock* cb, Int sz, Addr eip, Addr eip_next )
    uInstr2(cb, GET,   sz, ArchReg, R_EAX, TempReg, ta);
    uInstr2(cb, GET,    4, ArchReg, R_EDI, TempReg, td);
    uInstr2(cb, STORE, sz, TempReg, ta,    TempReg, td);
-   SMC_IF_SOME(cb);
 
    uInstr0(cb, CALLM_S, 0);
    uInstr2(cb, MOV,   4, Literal, 0,     TempReg, ta);
@@ -1996,7 +1965,6 @@ void codegen_MOVS ( UCodeBlock* cb, Int sz )
 
    uInstr2(cb, LOAD,  sz, TempReg, ts,    TempReg, tv);
    uInstr2(cb, STORE, sz, TempReg, tv,    TempReg, td);
-   SMC_IF_SOME(cb);
 
    uInstr0(cb, CALLM_S, 0);
    uInstr2(cb, MOV,   4, Literal, 0,     TempReg, tv);
@@ -2032,7 +2000,6 @@ void codegen_STOS ( UCodeBlock* cb, Int sz )
    uInstr2(cb, GET,   sz, ArchReg, R_EAX, TempReg, ta);
    uInstr2(cb, GET,    4, ArchReg, R_EDI, TempReg, td);
    uInstr2(cb, STORE, sz, TempReg, ta,    TempReg, td);
-   SMC_IF_SOME(cb);
 
    uInstr0(cb, CALLM_S, 0);
    uInstr2(cb, MOV,   4, Literal, 0,     TempReg, ta);
@@ -2269,7 +2236,6 @@ Addr dis_fpu_mem ( UCodeBlock* cb, Int size, Bool is_write,
                Lit16, 
                (((UShort)first_byte) << 8) | ((UShort)second_byte),
                TempReg, ta);
-   if (is_write) SMC_IF_ALL(cb);
    if (dis) {
       if (is_write)
          VG_(printf)("fpu_w_%d 0x%x:0x%x, %s\n",
@@ -2485,7 +2451,13 @@ Addr dis_fpu ( UCodeBlock* cb, UChar first_byte, Addr eip )
                return dis_fpu_mem(cb, 8, rd, eip, first_byte); 
             case 2: /* FST double-real */
             case 3: /* FSTP double-real */
-               return dis_fpu_mem(cb, 8, wr, eip, first_byte); 
+               return dis_fpu_mem(cb, 8, wr, eip, first_byte);
+            case 4: /* FRSTOR */
+               return dis_fpu_mem(cb, 108, rd, eip, first_byte);
+            case 6: /* FSAVE */
+               return dis_fpu_mem(cb, 108, wr, eip, first_byte);
+            case 7: /* FSTSW */
+               return dis_fpu_mem(cb, 2, wr, eip, first_byte);
             default: 
                goto unhandled;
          }
@@ -2585,7 +2557,6 @@ Addr dis_SHLRD_Gv_Ev ( UCodeBlock* cb, Addr eip, UChar modrm,
       uFlagsRWU(cb, FlagsEmpty, FlagsOSZACP, FlagsEmpty);
       uInstr1(cb, POP,   sz, TempReg, t);
       uInstr2(cb, STORE, sz, TempReg, t,      TempReg, ta);
-      SMC_IF_ALL(cb);
       if (dis)
          VG_(printf)("shld%c %%cl, %s, %s\n",
                      nameISize(sz), nameIReg(sz, gregOfRM(modrm)), 
@@ -3010,7 +2981,6 @@ Addr dis_xadd_G_E ( UCodeBlock* cb,
       uInstr2(cb,  ADD, sz, TempReg, tmpd, TempReg, tmpt);
       setFlagsFromUOpcode(cb, ADD);
       uInstr2(cb, STORE, sz, TempReg, tmpt, TempReg, tmpa);
-      SMC_IF_SOME(cb);
       uInstr2(cb, PUT, sz, TempReg, tmpd, ArchReg, gregOfRM(rm));
       if (dis)
          VG_(printf)("xadd%c %s, %s\n", nameISize(sz), 
@@ -3167,7 +3137,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          uInstr2(cb, MOV,   4, Literal, 0,     TempReg, t2);
 	 uLiteral(cb, eip);
          uInstr2(cb, STORE, 4, TempReg, t2,    TempReg, t1);
-         SMC_IF_ALL(cb);
          uInstr1(cb, JMP,   0, Literal, 0);
 	 uLiteral(cb, d32);
          uCond(cb, CondAlways);
@@ -3472,7 +3441,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, MOV,    4, Literal, 0,     TempReg, t2);
       uLiteral(cb, d32);
       uInstr2(cb, STORE, sz, TempReg, t1,    TempReg, t2);
-      SMC_IF_SOME(cb);
       if (dis) VG_(printf)("mov%c %s,0x%x\n", nameISize(sz), 
                            nameIReg(sz,R_EAX), d32);
       break;
@@ -3535,7 +3503,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          uInstr2(cb, MOV, sz, Literal, 0, TempReg, t1);
 	 uLiteral(cb, d32);
          uInstr2(cb, STORE, sz, TempReg, t1, TempReg, t2);
-         SMC_IF_SOME(cb);
          if (dis) VG_(printf)("mov%c $0x%x, %s\n", nameISize(sz), d32, dis_buf);
       }
       break;
@@ -3554,6 +3521,10 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       break;
    case 0x0D: /* OR Iv, eAX */
       eip = dis_op_imm_A(cb, sz, OR, True, eip, "or" );
+      break;
+
+   case 0x15: /* ADC Iv, eAX */
+      eip = dis_op_imm_A(cb, sz, ADC, True, eip, "adc" );
       break;
 
    case 0x1C: /* SBB Ib, AL */
@@ -3718,40 +3689,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x5D: /* POP eBP */
    case 0x5E: /* POP eSI */
    case 0x5F: /* POP eDI */
-    { Int   n_pops;
-      Addr  eipS, eipE;
-      UChar ch;
-      if (sz != 4)           goto normal_pop_case;
-      if (VG_(clo_cachesim)) goto normal_pop_case;
-      /* eip points at first pop insn + 1.  Make eipS and eipE
-         bracket the sequence. */
-      eipE = eipS = eip - 1;
-      while (True) { 
-         ch = getUChar(eipE+1);
-         if (ch < 0x58 || ch > 0x5F || ch == 0x5C) break;
-         eipE++;
-      }
-      n_pops = eipE - eipS + 1;
-      if (0 && n_pops > 1) VG_(printf)("%d pops\n", n_pops);
-      t1 = newTemp(cb); t3 = newTemp(cb);
-      uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg, t1);
-      for (; eipS <= eipE; eipS++) {
-         ch = getUChar(eipS);
-	 uInstr2(cb, LOAD, 4, TempReg, t1, TempReg, t3);
-         uInstr2(cb, PUT,  4, TempReg, t3, ArchReg, ch-0x58);
-         uInstr2(cb, ADD,  4, Literal, 0,        TempReg, t1);
-         uLiteral(cb, 4);
-         SMC_IF_ALL(cb);
-         if (dis) 
-            VG_(printf)("popl %s\n", nameIReg(4,ch-0x58));
-      }
-      uInstr2(cb, PUT,    4, TempReg, t1,       ArchReg, R_ESP);
-      eip = eipE + 1;
-      break;
-    }
-
    case 0x5C: /* POP eSP */
-   normal_pop_case:
       t1 = newTemp(cb); t2 = newTemp(cb);
       uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg, t2);
       uInstr2(cb, LOAD,  sz, TempReg, t2,       TempReg, t1);
@@ -3863,43 +3801,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0x55: /* PUSH eBP */
    case 0x56: /* PUSH eSI */
    case 0x57: /* PUSH eDI */
-    { Int   n_pushes;
-      Addr  eipS, eipE;
-      UChar ch;
-      if (sz != 4)           goto normal_push_case;
-      if (VG_(clo_cachesim)) goto normal_push_case;
-      /* eip points at first push insn + 1.  Make eipS and eipE
-         bracket the sequence. */
-      eipE = eipS = eip - 1;
-      while (True) { 
-         ch = getUChar(eipE+1);
-         if (ch < 0x50 || ch > 0x57 || ch == 0x54) break;
-         eipE++;
-      }
-      n_pushes = eipE - eipS + 1;
-      if (0 && n_pushes > 1) VG_(printf)("%d pushes\n", n_pushes);
-      t1 = newTemp(cb); t2 = newTemp(cb); t3 = newTemp(cb);
-      uInstr2(cb, GET,    4, ArchReg, R_ESP,    TempReg, t1);
-      uInstr2(cb, MOV,    4, TempReg, t1,       TempReg, t2);
-      uInstr2(cb, SUB,    4, Literal, 0,        TempReg, t2);
-      uLiteral(cb, 4 * n_pushes);
-      uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg, R_ESP);
-      for (; eipS <= eipE; eipS++) {
-         ch = getUChar(eipS);
-         uInstr2(cb, SUB,    4, Literal, 0,        TempReg, t1);
-         uLiteral(cb, 4);
-         uInstr2(cb, GET, 4, ArchReg, ch-0x50, TempReg, t3);
-	 uInstr2(cb, STORE, 4, TempReg, t3, TempReg, t1);
-         SMC_IF_ALL(cb);
-         if (dis) 
-            VG_(printf)("pushl %s\n", nameIReg(4,ch-0x50));
-      }
-      eip = eipE + 1;
-      break;
-    }
-
    case 0x54: /* PUSH eSP */
-   normal_push_case:
       /* This is the Right Way, in that the value to be pushed is
          established before %esp is changed, so that pushl %esp
          correctly pushes the old value. */
@@ -3911,7 +3813,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uLiteral(cb, sz);
       uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg, R_ESP);
       uInstr2(cb, STORE, sz, TempReg, t1,       TempReg, t2);
-      SMC_IF_ALL(cb);
       if (dis) 
          VG_(printf)("push%c %s\n", nameISize(sz), nameIReg(sz,opc-0x50));
       break;
@@ -3931,7 +3832,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uInstr2(cb, MOV,   sz, Literal, 0,     TempReg, t2);
       uLiteral(cb, d32);
       uInstr2(cb, STORE, sz, TempReg, t2,    TempReg, t1);
-      SMC_IF_ALL(cb);
       if (dis) 
          VG_(printf)("push%c $0x%x\n", nameISize(sz), d32);
       break;
@@ -3948,7 +3848,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       uLiteral(cb, sz);
       uInstr2(cb, PUT,    4, TempReg, t2,       ArchReg, R_ESP);
       uInstr2(cb, STORE, sz, TempReg, t1,       TempReg, t2);
-      SMC_IF_ALL(cb);
       if (dis) 
          VG_(printf)("pushf%c\n", nameISize(sz));
       break;
@@ -3980,20 +3879,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          uInstr2(cb, SUB,    4, Literal,   0, TempReg, t2);
          uLiteral(cb, sz);
          uInstr2(cb, STORE, sz, TempReg,  t1, TempReg, t2);
-         SMC_IF_ALL(cb);
       }
       /* Push old value of %esp */
       uInstr2(cb, SUB,    4, Literal,   0, TempReg, t2);
       uLiteral(cb, sz);
       uInstr2(cb, STORE, sz, TempReg,  t3, TempReg, t2);
-      SMC_IF_ALL(cb);
       /* Do %ebp, %esi, %edi */
       for (reg = 5; reg <= 7; reg++) {
          uInstr2(cb, GET,   sz, ArchReg, reg, TempReg, t1);
          uInstr2(cb, SUB,    4, Literal,   0, TempReg, t2);
          uLiteral(cb, sz);
          uInstr2(cb, STORE, sz, TempReg,  t1, TempReg, t2);
-         SMC_IF_ALL(cb);
       }
       if (dis)
          VG_(printf)("pusha%c\n", nameISize(sz));
@@ -4149,7 +4045,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          uInstr2(cb, LOAD, sz, TempReg, t3, TempReg, t1);
          uInstr2(cb, GET, sz, ArchReg, gregOfRM(modrm), TempReg, t2);
          uInstr2(cb, STORE, sz, TempReg, t2, TempReg, t3);
-         SMC_IF_SOME(cb);
          uInstr2(cb, PUT, sz, TempReg, t1, ArchReg, gregOfRM(modrm));
          eip += HI8(pair);
          if (dis)
@@ -4229,6 +4124,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       d_sz  = 0;
       d32   = 1;
       eip   = dis_Grp2 ( cb, eip, modrm, am_sz, d_sz, sz, Literal, d32 );
+      break;
+
+   case 0xD2: /* Grp2 CL,Eb */
+      modrm = getUChar(eip);
+      am_sz = lengthAMode(eip);
+      d_sz  = 0;
+      sz    = 1;
+      eip   = dis_Grp2 ( cb, eip, modrm, am_sz, d_sz, sz, ArchReg, R_ECX );
       break;
 
    case 0xD3: /* Grp2 CL,Ev */
@@ -4499,7 +4402,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
             uCond(cb, (Condcode)(opc-0x90));
             uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
             uInstr2(cb, STORE, 1, TempReg, t1, TempReg, t2);
-            SMC_IF_ALL(cb);
             if (dis) VG_(printf)("set%s %s\n", 
                                  VG_(nameCondcode)(opc-0x90), 
                                  dis_buf);
@@ -4568,10 +4470,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    if (dis)
       VG_(printf)("\n");
    for (; first_uinstr < cb->used; first_uinstr++) {
-      Bool sane = VG_(saneUInstr)(True, &cb->instrs[first_uinstr]);
-      if (dis || !sane) 
-         VG_(ppUInstr)(sane ? first_uinstr : -1,
-                       &cb->instrs[first_uinstr]);
+      Bool sane = VG_(saneUInstr)(True, True, &cb->instrs[first_uinstr]);
+      if (dis) 
+         VG_(ppUInstr)(first_uinstr, &cb->instrs[first_uinstr]);
+      else if (!sane)
+         VG_(upUInstr)(-1, &cb->instrs[first_uinstr]);
       vg_assert(sane);
    }
 
@@ -4588,28 +4491,17 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
    Addr eip   = eip0;
    Bool isEnd = False;
    Bool block_sane;
-   Int INCEIP_allowed_lag = 4;
    Int delta = 0;
 
-   if (dis) VG_(printf)("\n");
+   if (dis) VG_(printf)("Original x86 code to UCode:\n\n");
 
-   /* When cache simulating, to ensure cache misses are attributed to the
-    * correct line we ensure EIP is always correct.   This is done by:
+   /* After every x86 instruction do an INCEIP, except for the final one
+    * in the basic block.  For them we patch in the x86 instruction size 
+    * into the `extra4b' field of the basic-block-ending JMP. 
     *
-    * a) Using eager INCEIP updating to cope with all instructions except those
-    *    at the end of a basic block.
-    *
-    * b) Patching in the size of the original x86 instr in the `extra4b' field
-    *    of JMPs at the end of a basic block.  Two cases:
-    *       - Jcond followed by Juncond:  patch the Jcond
-    *       - Juncond alone:              patch the Juncond
-    *
-    * See vg_cachesim_instrument() for how this is used. 
+    * The INCEIPs and JMP.extra4b fields allows a skin to track x86
+    * instruction sizes, important for some skins (eg. cache simulation).
     */
-   if (VG_(clo_cachesim)) {
-       INCEIP_allowed_lag = 0;
-   }
-
    if (VG_(clo_single_step)) {
       eip = disInstr ( cb, eip, &isEnd );
 
@@ -4620,15 +4512,17 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
          uInstr1(cb, JMP, 0, Literal, 0);
          uLiteral(cb, eip);
          uCond(cb, CondAlways);
+         /* Print added JMP */
          if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
       }
+      if (dis) VG_(printf)("\n");
       delta = eip - eip0;
 
    } else {
       Addr eip2;
       while (!isEnd) {
          eip2 = disInstr ( cb, eip, &isEnd );
-         delta += (eip2 - eip);
+         delta = (eip2 - eip);
          eip = eip2;
          /* Split up giant basic blocks into pieces, so the
             translations fall within 64k. */
@@ -4639,27 +4533,23 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
             uInstr1(cb, JMP, 0, Literal, 0);
             uLiteral(cb, eip);
             uCond(cb, CondAlways);
+            /* Print added JMP */
             if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
             isEnd = True;
 
-         } else if (delta > INCEIP_allowed_lag && !isEnd) {
+         } else if (!isEnd) {
             uInstr1(cb, INCEIP, 0, Lit16, delta);
+            /* Print added INCEIP */
             if (dis) VG_(ppUInstr)(cb->used-1, &cb->instrs[cb->used-1]);
-            delta = 0;
          }
          if (dis) VG_(printf)("\n");
       }
    }
-   if (VG_(clo_cachesim)) {
-      /* Patch instruction size into earliest JMP. */
-      if (cb->used >= 2 && JMP == cb->instrs[cb->used - 2].opcode) {
-         cb->instrs[cb->used - 2].extra4b = delta;
-      } else {
-         LAST_UINSTR(cb).extra4b = delta;
-      }
-   }
 
-   block_sane = VG_(saneUCodeBlock)(cb);
+   /* Patch instruction size into final JMP. */
+   LAST_UINSTR(cb).extra4b = delta;
+
+   block_sane = VG_(saneUCodeBlockCalls)(cb);
    if (!block_sane) {
       VG_(ppUCodeBlock)(cb, "block failing sanity check");
       vg_assert(block_sane);
@@ -4668,6 +4558,7 @@ Int VG_(disBB) ( UCodeBlock* cb, Addr eip0 )
    return eip - eip0;
 }
 
+#undef dis
 
 /*--------------------------------------------------------------------*/
 /*--- end                                            vg_to_ucode.c ---*/

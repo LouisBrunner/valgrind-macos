@@ -1,0 +1,19 @@
+
+discard ... (... -> ...) translations in range 0x........ .. 0x........
+discard syms in /.../tests/cachesim/myprint.so due to munmap()
+
+I   refs:
+I1  misses:
+L2i misses:
+I1  miss rate:
+L2i miss rate:
+
+D   refs:
+D1  misses:
+L2d misses:
+D1  miss rate:
+L2d miss rate:
+
+L2 refs:
+L2 misses:
+L2 miss rate:

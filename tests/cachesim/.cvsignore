@@ -1,0 +1,9 @@
+Makefile.in
+Makefile
+dlclose
+fpu-28-108
+cachegrind.out.*
+*.stdout.diff
+*.stderr.diff
+*.stdout.out
+*.stderr.out

@@ -26,12 +26,11 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 
 #include "vg_include.h"
-#include "vg_constants.h"
 #include "vg_unsafe.h"
 #include "valgrind.h"  /* for VALGRIND_MAGIC_SEQUENCE */
 
@@ -598,16 +597,18 @@ void VG_(do__NR_sigaction) ( ThreadId tid )
    return;
 
   bad_signo:
-   VG_(message)(Vg_UserMsg,
-                "Warning: bad signal number %d in __NR_sigaction.", 
-                signo);
+   if (VG_(needs).core_errors)
+      VG_(message)(Vg_UserMsg,
+                   "Warning: bad signal number %d in __NR_sigaction.", 
+                   signo);
    SET_EAX(tid, -VKI_EINVAL);
    return;
 
   bad_sigkill_or_sigstop:
-   VG_(message)(Vg_UserMsg,
-      "Warning: attempt to set %s handler in __NR_sigaction.", 
-      signo == VKI_SIGKILL ? "SIGKILL" : "SIGSTOP" );
+   if (VG_(needs).core_errors)
+      VG_(message)(Vg_UserMsg,
+         "Warning: attempt to set %s handler in __NR_sigaction.", 
+         signo == VKI_SIGKILL ? "SIGKILL" : "SIGSTOP" );
 
    SET_EAX(tid, -VKI_EINVAL);
    return;
@@ -939,11 +940,19 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
    esp = esp_top_of_frame;
    esp -= sizeof(VgSigFrame);
    frame = (VgSigFrame*)esp;
+
+   /* For tracking memory events, indicate the entire frame has been
+    * allocated, but pretend that only the first four words are written */
+   VG_TRACK( new_mem_stack_signal, (Addr)frame, sizeof(VgSigFrame) );
+
    /* Assert that the frame is placed correctly. */
    vg_assert( (sizeof(VgSigFrame) & 0x3) == 0 );
    vg_assert( ((Char*)(&frame->magicE)) + sizeof(UInt) 
               == ((Char*)(esp_top_of_frame)) );
 
+   /* retaddr, sigNo, psigInfo, puContext fields are to be written */
+   VG_TRACK( pre_mem_write, Vg_CoreSignal, tst, "signal handler frame", 
+                            (Addr)esp, 16 );
    frame->retaddr    = (UInt)(&VG_(signalreturn_bogusRA));
    frame->sigNo      = sigNo;
    frame->psigInfo   = (Addr)NULL;
@@ -974,14 +983,9 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
    /* This thread needs to be marked runnable, but we leave that the
       caller to do. */
 
-   /* Make retaddr, sigNo, psigInfo, puContext fields readable -- at
-      0(%ESP) .. 12(%ESP) */
-   if (VG_(clo_instrument)) {
-      VGM_(make_readable) ( ((Addr)esp)+0,  4 );
-      VGM_(make_readable) ( ((Addr)esp)+4,  4 );
-      VGM_(make_readable) ( ((Addr)esp)+8,  4 );
-      VGM_(make_readable) ( ((Addr)esp)+12, 4 );
-   }
+   /* retaddr, sigNo, psigInfo, puContext fields have been written -- 
+      at 0(%ESP) .. 12(%ESP) */
+   VG_TRACK( post_mem_write, (Addr)esp, 16 );
 
    /* 
    VG_(printf)("pushed signal frame; %%ESP now = %p, next %%EBP = %p\n", 
@@ -1021,8 +1025,7 @@ Int vg_pop_signal_frame ( ThreadId tid )
       tst->m_fpu[i] = frame->fpustate[i];
 
    /* Mark the frame structure as nonaccessible. */
-   if (VG_(clo_instrument))
-      VGM_(make_noaccess)( (Addr)frame, sizeof(VgSigFrame) );
+   VG_TRACK( die_mem_stack_signal, (Addr)frame, sizeof(VgSigFrame) );
 
    /* Restore machine state from the saved context. */
    tst->m_eax     = frame->eax;
@@ -1140,9 +1143,7 @@ Bool VG_(deliver_signals) ( void )
          sigwait_args = (UInt*)(tst->m_eax);
          if (NULL != (UInt*)(sigwait_args[2])) {
             *(Int*)(sigwait_args[2]) = sigNo;
-            if (VG_(clo_instrument))
-               VGM_(make_readable)( (Addr)(sigwait_args[2]), 
-                                    sizeof(UInt));
+            VG_TRACK( post_mem_write, (Addr)sigwait_args[2], sizeof(UInt));
          }
 	 SET_EDX(tid, 0);
          tst->status = VgTs_Runnable;
@@ -1194,7 +1195,11 @@ Bool VG_(deliver_signals) ( void )
             vg_dcss.dcss_sigpending[sigNo] = False;
             vg_dcss.dcss_destthread[sigNo] = VG_INVALID_THREADID;
             continue; /* for (sigNo = 1; ...) loop */
-	 }
+	 } else if (VG_(ksigismember)(&(tst->sig_mask), sigNo)) {
+            /* signal blocked in specific thread, so we can't
+               deliver it just now */
+            continue; /* for (sigNo = 1; ...) loop */
+         }
       } else {
          /* not directed to a specific thread, so search for a
             suitable candidate */

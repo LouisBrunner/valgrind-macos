@@ -1,0 +1,4 @@
+#! /bin/sh
+
+./filter_stderr | \
+sed "s/checked [0-9]\+ bytes./checked ... bytes./"

@@ -26,11 +26,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
-#include "vg_constants.h"
 
 /* #define DEBUG_TRANSTAB */
 
@@ -319,14 +318,13 @@ void VG_(maybe_do_lru_pass) ( void )
          vg_tt_used, vg_tc_used / 1000
       );
 
-   /* Reconstruct the SMC detection structures. */
 #  ifdef DEBUG_TRANSTAB
    for (i = 0; i < VG_TT_SIZE; i++)
       vg_assert(vg_tt[i].orig_addr != VG_TTE_DELETED);
 #  endif
    VG_(sanity_check_tc_tt)();
 
-   VGP_POPCC;
+   VGP_POPCC(VgpDoLRU);
 }
 
 
@@ -460,7 +458,7 @@ Addr VG_(search_transtab) ( Addr original_addr )
    if (tte == NULL) {
       /* We didn't find it.  vg_run_innerloop will have to request a
          translation. */
-      VGP_POPCC;
+      VGP_POPCC(VgpSlowFindT);
       return (Addr)0;
    } else {
       /* Found it.  Put the search result into the fast cache now.
@@ -469,7 +467,7 @@ Addr VG_(search_transtab) ( Addr original_addr )
       VG_(tt_fast)[cno] = (Addr)tte;
       VG_(tt_fast_misses)++;
       tte->mru_epoch = VG_(current_epoch);
-      VGP_POPCC;
+      VGP_POPCC(VgpSlowFindT);
       return tte->trans_addr;
    }
 }
@@ -498,8 +496,11 @@ void VG_(invalidate_translations) ( Addr start, UInt range )
       o_end = o_start + vg_tt[i].orig_size - 1;
       if (o_end < i_start || o_start > i_end)
          continue;
-      if (VG_(clo_cachesim))
-         VG_(cachesim_notify_discard)( & vg_tt[i] );
+
+      if (VG_(needs).basic_block_discards)
+         SK_(discard_basic_block_info)( vg_tt[i].orig_addr, 
+                                         vg_tt[i].orig_size );
+
       vg_tt[i].orig_addr = VG_TTE_DELETED;
       VG_(this_epoch_out_count) ++;
       VG_(this_epoch_out_osize) += vg_tt[i].orig_size;

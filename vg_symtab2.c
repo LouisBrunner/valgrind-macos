@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -37,16 +37,11 @@
 /* Majorly rewritten Sun 3 Feb 02 to enable loading symbols from
    dlopen()ed libraries, which is something that KDE3 does a lot.
 
-   Stabs reader greatly improved by Nick Nethercode, Apr 02.
-
-   16 May 02: when notified about munmap, return a Bool indicating
-   whether or not the area being munmapped had executable permissions.
-   This is then used to determine whether or not
-   VG_(invalid_translations) should be called for that area.  In order
-   that this work even if --instrument=no, in this case we still keep
-   track of the mapped executable segments, but do not load any debug
-   info or symbols.
+   Stabs reader greatly improved by Nick Nethercote, Apr 02.
 */
+
+/* Set to True when first debug info search is performed */
+Bool VG_(using_debug_info) = False;
 
 /*------------------------------------------------------------*/
 /*--- Structs n stuff                                      ---*/
@@ -126,23 +121,14 @@ typedef
    SegInfo;
 
 
-/* -- debug helper -- */
-static void ppSegInfo ( SegInfo* si )
-{
-   VG_(printf)("name: %s\n"
-               "start %p, size %d, foffset %d\n",
-               si->filename?si->filename : (UChar*)"NULL",
-               si->start, si->size, si->foffset );
-}
-
 static void freeSegInfo ( SegInfo* si )
 {
    vg_assert(si != NULL);
-   if (si->filename) VG_(free)(VG_AR_SYMTAB, si->filename);
-   if (si->symtab) VG_(free)(VG_AR_SYMTAB, si->symtab);
-   if (si->loctab) VG_(free)(VG_AR_SYMTAB, si->loctab);
-   if (si->strtab) VG_(free)(VG_AR_SYMTAB, si->strtab);
-   VG_(free)(VG_AR_SYMTAB, si);
+   if (si->filename) VG_(arena_free)(VG_AR_SYMTAB, si->filename);
+   if (si->symtab)   VG_(arena_free)(VG_AR_SYMTAB, si->symtab);
+   if (si->loctab)   VG_(arena_free)(VG_AR_SYMTAB, si->loctab);
+   if (si->strtab)   VG_(arena_free)(VG_AR_SYMTAB, si->strtab);
+   VG_(arena_free)(VG_AR_SYMTAB, si);
 }
 
 
@@ -151,23 +137,54 @@ static void freeSegInfo ( SegInfo* si )
 /*------------------------------------------------------------*/
 
 /* Add a str to the string table, including terminating zero, and
-   return offset of the string in vg_strtab. */
+   return offset of the string in vg_strtab.  Unless it's been seen
+   recently, in which case we find the old index and return that.
+   This avoids the most egregious duplications. */
 
 static __inline__
 Int addStr ( SegInfo* si, Char* str )
 {
+#  define EMPTY    0xffffffff
+#  define NN       5
+   
+   /* prevN[0] has the most recent, prevN[NN-1] the least recent */
+   static UInt     prevN[] = { EMPTY, EMPTY, EMPTY, EMPTY, EMPTY };
+   static SegInfo* curr_si = NULL;
+
    Char* new_tab;
    Int   new_sz, i, space_needed;
-   
+
+   /* Avoid gratuitous duplication:  if we saw `str' within the last NN,
+    * within this segment, return that index.  Saves about 200KB in glibc,
+    * extra time taken is too small to measure.  --NJN 2002-Aug-30 */
+   if (curr_si == si) {
+      for (i = NN-1; i >= 0; i--) {
+         if (EMPTY != prevN[i] &&
+             (0 == VG_(strcmp)(str, &si->strtab[prevN[i]]))) {
+            return prevN[i];
+         }
+      }
+   } else {
+      /* New segment */
+      curr_si = si;
+      for (i = 0; i < 5; i++) prevN[i] = EMPTY;
+   }
+   /* Shuffle prevous ones along, put new one in. */
+   for (i = NN-1; i > 0; i--) prevN[i] = prevN[i-1];
+   prevN[0] = si->strtab_used;
+
+#  undef EMPTY
+
    space_needed = 1 + VG_(strlen)(str);
+
    if (si->strtab_used + space_needed > si->strtab_size) {
       new_sz = 2 * si->strtab_size;
       if (new_sz == 0) new_sz = 5000;
-      new_tab = VG_(malloc)(VG_AR_SYMTAB, new_sz);
+      new_tab = VG_(arena_malloc)(VG_AR_SYMTAB, new_sz);
       if (si->strtab != NULL) {
          for (i = 0; i < si->strtab_used; i++)
             new_tab[i] = si->strtab[i];
-         VG_(free)(VG_AR_SYMTAB, si->strtab);
+         VG_(arena_free)(VG_AR_SYMTAB, si->strtab);
       }
       si->strtab      = new_tab;
       si->strtab_size = new_sz;
@@ -178,6 +195,7 @@ Int addStr ( SegInfo* si, Char* str )
 
    si->strtab_used += space_needed;
    vg_assert(si->strtab_used <= si->strtab_size);
+
    return si->strtab_used - space_needed;
 }
 
@@ -195,11 +213,11 @@ void addSym ( SegInfo* si, RiSym* sym )
    if (si->symtab_used == si->symtab_size) {
       new_sz = 2 * si->symtab_size;
       if (new_sz == 0) new_sz = 500;
-      new_tab = VG_(malloc)(VG_AR_SYMTAB, new_sz * sizeof(RiSym) );
+      new_tab = VG_(arena_malloc)(VG_AR_SYMTAB, new_sz * sizeof(RiSym) );
       if (si->symtab != NULL) {
          for (i = 0; i < si->symtab_used; i++)
             new_tab[i] = si->symtab[i];
-         VG_(free)(VG_AR_SYMTAB, si->symtab);
+         VG_(arena_free)(VG_AR_SYMTAB, si->symtab);
       }
       si->symtab = new_tab;
       si->symtab_size = new_sz;
@@ -224,11 +242,11 @@ void addLoc ( SegInfo* si, RiLoc* loc )
    if (si->loctab_used == si->loctab_size) {
       new_sz = 2 * si->loctab_size;
       if (new_sz == 0) new_sz = 500;
-      new_tab = VG_(malloc)(VG_AR_SYMTAB, new_sz * sizeof(RiLoc) );
+      new_tab = VG_(arena_malloc)(VG_AR_SYMTAB, new_sz * sizeof(RiLoc) );
       if (si->loctab != NULL) {
          for (i = 0; i < si->loctab_used; i++)
             new_tab[i] = si->loctab[i];
-         VG_(free)(VG_AR_SYMTAB, si->loctab);
+         VG_(arena_free)(VG_AR_SYMTAB, si->loctab);
       }
       si->loctab = new_tab;
       si->loctab_size = new_sz;
@@ -732,8 +750,7 @@ void read_debuginfo_stabs ( SegInfo* si,
                      next_addr = (UInt)stab[i+1].n_value;
                      break;
 
-                  /* Boring one: skip, look for something more
-                     useful. */
+                  /* Boring one: skip, look for something more useful. */
                   case N_RSYM: case N_LSYM: case N_LBRAC: case N_RBRAC: 
                   case N_STSYM: case N_LCSYM: case N_GSYM:
                      i++;
@@ -1006,10 +1023,10 @@ int process_extended_line_op( SegInfo *si, UInt** fnames,
       ++ state_machine_regs.last_file_entry;
       name = data;
       if (*fnames == NULL)
-        *fnames = VG_(malloc)(VG_AR_SYMTAB, sizeof (UInt) * 2);
+        *fnames = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof (UInt) * 2);
       else
-        *fnames = VG_(realloc)(
-                     VG_AR_SYMTAB, *fnames, 
+        *fnames = VG_(arena_realloc)(
+                     VG_AR_SYMTAB, *fnames, /*alignment*/4,
                      sizeof(UInt) 
                         * (state_machine_regs.last_file_entry + 1));
       (*fnames)[state_machine_regs.last_file_entry] = addStr (si,name);
@@ -1136,9 +1153,9 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 		semantics, we need to malloc the first time. */
 
              if (fnames == NULL)
-               fnames = VG_(malloc)(VG_AR_SYMTAB, sizeof (UInt) * 2);
+               fnames = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof (UInt) * 2);
              else
-               fnames = VG_(realloc)(VG_AR_SYMTAB, fnames, 
+               fnames = VG_(arena_realloc)(VG_AR_SYMTAB, fnames, /*alignment*/4,
                            sizeof(UInt) 
                               * (state_machine_regs.last_file_entry + 1));
              data += VG_(strlen) ((Char *) data) + 1;
@@ -1281,7 +1298,7 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
              break;
            }
        }
-      VG_(free)(VG_AR_SYMTAB, fnames);
+      VG_(arena_free)(VG_AR_SYMTAB, fnames);
       fnames = NULL;
     }
 }
@@ -1327,7 +1344,7 @@ void vg_read_lib_symbols ( SegInfo* si )
    }
    n_oimage = stat_buf.st_size;
 
-   fd = VG_(open_read)(si->filename);
+   fd = VG_(open)(si->filename, VKI_O_RDONLY, 0);
    if (fd == -1) {
       vg_symerr("Can't open .so/.exe to read symbols?!");
       return;
@@ -1650,8 +1667,7 @@ void vg_read_lib_symbols ( SegInfo* si )
 static SegInfo* segInfo = NULL;
 
 
-static
-void read_symtab_callback ( 
+void VG_(read_symtab_callback) ( 
         Addr start, UInt size, 
         Char rr, Char ww, Char xx, 
         UInt foffset, UChar* filename )
@@ -1686,14 +1702,14 @@ void read_symtab_callback (
    }
 
    /* Get the record initialised right. */
-   si = VG_(malloc)(VG_AR_SYMTAB, sizeof(SegInfo));
+   si = VG_(arena_malloc)(VG_AR_SYMTAB, sizeof(SegInfo));
    si->next = segInfo;
    segInfo = si;
 
    si->start    = start;
    si->size     = size;
    si->foffset  = foffset;
-   si->filename = VG_(malloc)(VG_AR_SYMTAB, 1 + VG_(strlen)(filename));
+   si->filename = VG_(arena_malloc)(VG_AR_SYMTAB, 1 + VG_(strlen)(filename));
    VG_(strcpy)(si->filename, filename);
 
    si->symtab = NULL;
@@ -1704,15 +1720,12 @@ void read_symtab_callback (
    si->strtab_size = si->strtab_used = 0;
 
    /* Kludge ... */
-   si->offset 
-      = si->start==VG_ASSUMED_EXE_BASE ? 0 : si->start;
+   si->offset = si->start==VG_ASSUMED_EXE_BASE ? 0 : si->start;
 
    /* And actually fill it up. */
-   if (VG_(clo_instrument) || VG_(clo_cachesim)) {
-      vg_read_lib_symbols ( si );
-      canonicaliseSymtab ( si );
-      canonicaliseLoctab ( si );
-   }
+   vg_read_lib_symbols ( si );
+   canonicaliseSymtab ( si );
+   canonicaliseLoctab ( si );
 }
 
 
@@ -1724,56 +1737,28 @@ void read_symtab_callback (
    libraries as they are dlopen'd.  Conversely, when the client does
    munmap(), vg_symtab_notify_munmap() throws away any symbol tables
    which happen to correspond to the munmap()d area.  */
-void VG_(read_symbols) ( void )
+void VG_(maybe_read_symbols) ( void )
 {
-   VG_(read_procselfmaps) ( read_symtab_callback );
+   if (!VG_(using_debug_info))
+      return;
 
-   /* Do a sanity check on the symbol tables: ensure that the address
-      space pieces they cover do not overlap (otherwise we are severely
-      hosed).  This is a quadratic algorithm, but there shouldn't be
-      many of them.  
-   */
-   { SegInfo *si, *si2;
-     for (si = segInfo; si != NULL; si = si->next) {
-        /* Check no overlap between *si and those in the rest of the
-           list. */
-        for (si2 = si->next; si2 != NULL; si2 = si2->next) {
-           Addr lo = si->start;
-           Addr hi = si->start + si->size - 1;
-           Addr lo2 = si2->start;
-           Addr hi2 = si2->start + si2->size - 1;
-           Bool overlap;
-           vg_assert(lo < hi);
-	   vg_assert(lo2 < hi2);
-           /* the main assertion */
-           overlap = (lo <= lo2 && lo2 <= hi)
-                      || (lo <= hi2 && hi2 <= hi);
-	   if (overlap) {
-              VG_(printf)("\n\nOVERLAPPING SEGMENTS\n" );
-              ppSegInfo ( si );
-              ppSegInfo ( si2 );
-              VG_(printf)("\n\n"); 
-              vg_assert(! overlap);
-	   }
-        }
-     }
-   }    
+   VGP_PUSHCC(VgpReadSyms);
+      VG_(read_procselfmaps) ( VG_(read_symtab_callback) );
+   VGP_POPCC(VgpReadSyms);
 }
-
 
 /* When an munmap() call happens, check to see whether it corresponds
    to a segment for a .so, and if so discard the relevant SegInfo.
    This might not be a very clever idea from the point of view of
    accuracy of error messages, but we need to do it in order to
    maintain the no-overlapping invariant.
-
-   16 May 02: Returns a Bool indicating whether or not the discarded
-   range falls inside a known executable segment.  See comment at top
-   of file for why.
 */
-Bool VG_(symtab_notify_munmap) ( Addr start, UInt length )
+void VG_(maybe_unload_symbols) ( Addr start, UInt length )
 {
    SegInfo *prev, *curr;
+
+   if (!VG_(using_debug_info))
+      return;
 
    prev = NULL;
    curr = segInfo;
@@ -1784,7 +1769,7 @@ Bool VG_(symtab_notify_munmap) ( Addr start, UInt length )
       curr = curr->next;
    }
    if (curr == NULL) 
-      return False;
+      return;
 
    VG_(message)(Vg_UserMsg, 
                 "discard syms in %s due to munmap()", 
@@ -1799,7 +1784,7 @@ Bool VG_(symtab_notify_munmap) ( Addr start, UInt length )
    }
 
    freeSegInfo(curr);
-   return True;
+   return;
 }
 
 
@@ -1808,13 +1793,22 @@ Bool VG_(symtab_notify_munmap) ( Addr start, UInt length )
 /*--- plausible-looking stack dumps.                       ---*/
 /*------------------------------------------------------------*/
 
+static __inline__ void ensure_debug_info_inited ( void )
+{
+   if (!VG_(using_debug_info)) {
+      VG_(using_debug_info) = True;
+      VG_(maybe_read_symbols)();
+   }
+}
+
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-static Int search_one_symtab ( SegInfo* si, Addr ptr )
+static Int search_one_symtab ( SegInfo* si, Addr ptr,
+                               Bool match_anywhere_in_fun )
 {
    Addr a_mid_lo, a_mid_hi;
-   Int  mid, 
+   Int  mid, size, 
         lo = 0, 
         hi = si->symtab_used-1;
    while (True) {
@@ -1822,7 +1816,10 @@ static Int search_one_symtab ( SegInfo* si, Addr ptr )
       if (lo > hi) return -1; /* not found */
       mid      = (lo + hi) / 2;
       a_mid_lo = si->symtab[mid].addr;
-      a_mid_hi = ((Addr)si->symtab[mid].addr) + si->symtab[mid].size - 1;
+      size = ( match_anywhere_in_fun
+             ? si->symtab[mid].size
+             : 1);
+      a_mid_hi = ((Addr)si->symtab[mid].addr) + size - 1;
 
       if (ptr < a_mid_lo) { hi = mid-1; continue; } 
       if (ptr > a_mid_hi) { lo = mid+1; continue; }
@@ -1836,21 +1833,29 @@ static Int search_one_symtab ( SegInfo* si, Addr ptr )
    *psi to the relevant SegInfo, and *symno to the symtab entry number
    within that.  If not found, *psi is set to NULL.  */
 
-static void search_all_symtabs ( Addr ptr, SegInfo** psi, Int* symno )
+static void search_all_symtabs ( Addr ptr, /*OUT*/SegInfo** psi, 
+                                           /*OUT*/Int* symno,
+                                 Bool match_anywhere_in_fun )
 {
    Int      sno;
    SegInfo* si;
+
+   ensure_debug_info_inited();
+   VGP_PUSHCC(VgpSearchSyms);
+   
    for (si = segInfo; si != NULL; si = si->next) {
       if (si->start <= ptr && ptr < si->start+si->size) {
-         sno = search_one_symtab ( si, ptr );
+         sno = search_one_symtab ( si, ptr, match_anywhere_in_fun );
          if (sno == -1) goto not_found;
          *symno = sno;
          *psi = si;
+         VGP_POPCC(VgpSearchSyms);
          return;
       }
    }
   not_found:
    *psi = NULL;
+   VGP_POPCC(VgpSearchSyms);
 }
 
 
@@ -1882,54 +1887,84 @@ static Int search_one_loctab ( SegInfo* si, Addr ptr )
    *psi to the relevant SegInfo, and *locno to the loctab entry number
    within that.  If not found, *psi is set to NULL.
 */
-static void search_all_loctabs ( Addr ptr, SegInfo** psi, Int* locno )
+static void search_all_loctabs ( Addr ptr, /*OUT*/SegInfo** psi,
+                                           /*OUT*/Int* locno )
 {
    Int      lno;
    SegInfo* si;
+
+   VGP_PUSHCC(VgpSearchSyms);
+
+   ensure_debug_info_inited();
    for (si = segInfo; si != NULL; si = si->next) {
       if (si->start <= ptr && ptr < si->start+si->size) {
          lno = search_one_loctab ( si, ptr );
          if (lno == -1) goto not_found;
          *locno = lno;
          *psi = si;
+         VGP_POPCC(VgpSearchSyms);
          return;
       }
    }
   not_found:
    *psi = NULL;
+   VGP_POPCC(VgpSearchSyms);
 }
 
 
 /* The whole point of this whole big deal: map a code address to a
    plausible symbol name.  Returns False if no idea; otherwise True.
-   Caller supplies buf and nbuf.  If no_demangle is True, don't do
+   Caller supplies buf and nbuf.  If demangle is False, don't do
    demangling, regardless of vg_clo_demangle -- probably because the
    call has come from vg_what_fn_or_object_is_this. */
-Bool VG_(what_fn_is_this) ( Bool no_demangle, Addr a, 
-                            Char* buf, Int nbuf )
+static
+Bool get_fnname ( Bool demangle, Addr a, Char* buf, Int nbuf,
+                  Bool match_anywhere_in_fun )
 {
    SegInfo* si;
    Int      sno;
-   search_all_symtabs ( a, &si, &sno );
+   search_all_symtabs ( a, &si, &sno, match_anywhere_in_fun );
    if (si == NULL) 
       return False;
-   if (no_demangle) {
+   if (demangle) {
+      VG_(demangle) ( & si->strtab[si->symtab[sno].nmoff], buf, nbuf );
+   } else {
       VG_(strncpy_safely) 
          ( buf, & si->strtab[si->symtab[sno].nmoff], nbuf );
-   } else {
-      VG_(demangle) ( & si->strtab[si->symtab[sno].nmoff], buf, nbuf );
    }
    return True;
 }
 
+/* This is available to skins... always demangle C++ names */
+Bool VG_(get_fnname) ( Addr a, Char* buf, Int nbuf )
+{
+   return get_fnname ( /*demangle*/True, a, buf, nbuf,
+                       /*match_anywhere_in_fun*/True );
+}
 
-/* Map a code address to the name of a shared object file.  Returns
-   False if no idea; otherwise False.  Caller supplies buf and
-   nbuf. */
-static
-Bool vg_what_object_is_this ( Addr a, Char* buf, Int nbuf )
+/* This is available to skins... always demangle C++ names,
+   only succeed if 'a' matches first instruction of function. */
+Bool VG_(get_fnname_if_entry) ( Addr a, Char* buf, Int nbuf )
+{
+   return get_fnname ( /*demangle*/True, a, buf, nbuf,
+                       /*match_anywhere_in_fun*/False );
+}
+
+/* This is only available to core... don't demangle C++ names */
+Bool VG_(get_fnname_nodemangle) ( Addr a, Char* buf, Int nbuf )
+{
+   return get_fnname ( /*demangle*/False, a, buf, nbuf,
+                       /*match_anywhere_in_fun*/True );
+}
+
+/* Map a code address to the name of a shared object file or the executable.
+   Returns False if no idea; otherwise True.  Doesn't require debug info.
+   Caller supplies buf and nbuf. */
+Bool VG_(get_objname) ( Addr a, Char* buf, Int nbuf )
 {
    SegInfo* si;
+
+   ensure_debug_info_inited();
    for (si = segInfo; si != NULL; si = si->next) {
       if (si->start <= a && a < si->start+si->size) {
          VG_(strncpy_safely)(buf, si->filename, nbuf);
@@ -1939,27 +1974,39 @@ Bool vg_what_object_is_this ( Addr a, Char* buf, Int nbuf )
    return False;
 }
 
-/* Return the name of an erring fn in a way which is useful
-   for comparing against the contents of a suppressions file. 
-   Always writes something to buf.  Also, doesn't demangle the
-   name, because we want to refer to mangled names in the 
-   suppressions file.
-*/
-void VG_(what_obj_and_fun_is_this) ( Addr a,
-                                     Char* obj_buf, Int n_obj_buf,
-                                     Char* fun_buf, Int n_fun_buf )
+
+/* Map a code address to a filename.  Returns True if successful.  */
+Bool VG_(get_filename)( Addr a, Char* filename, Int n_filename )
 {
-   (void)vg_what_object_is_this ( a, obj_buf, n_obj_buf );
-   (void)VG_(what_fn_is_this) ( True, a, fun_buf, n_fun_buf );
+   SegInfo* si;
+   Int      locno;
+   search_all_loctabs ( a, &si, &locno );
+   if (si == NULL) 
+      return False;
+   VG_(strncpy_safely)(filename, & si->strtab[si->loctab[locno].fnmoff], 
+                       n_filename);
+   return True;
 }
 
+/* Map a code address to a line number.  Returns True if successful. */
+Bool VG_(get_linenum)( Addr a, UInt* lineno )
+{
+   SegInfo* si;
+   Int      locno;
+   search_all_loctabs ( a, &si, &locno );
+   if (si == NULL) 
+      return False;
+   *lineno = si->loctab[locno].lineno;
+
+   return True;
+}
 
 /* Map a code address to a (filename, line number) pair.  
    Returns True if successful.
 */
-Bool VG_(what_line_is_this)( Addr a, 
-                             UChar* filename, Int n_filename, 
-                             UInt* lineno )
+Bool VG_(get_filename_linenum)( Addr a, 
+                                Char* filename, Int n_filename, 
+                                UInt* lineno )
 {
    SegInfo* si;
    Int      locno;
@@ -2001,11 +2048,13 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
 
    n = 0;
 
-   know_fnname  = VG_(what_fn_is_this)(False,ec->eips[0], buf_fn, M_VG_ERRTXT);
-   know_objname = vg_what_object_is_this(ec->eips[0], buf_obj, M_VG_ERRTXT);
-   know_srcloc  = VG_(what_line_is_this)(ec->eips[0], 
-                                         buf_srcloc, M_VG_ERRTXT, 
-                                         &lineno);
+   // SSS: factor this repeated code out!
+
+   know_fnname  = VG_(get_fnname) (ec->eips[0], buf_fn,  M_VG_ERRTXT);
+   know_objname = VG_(get_objname)(ec->eips[0], buf_obj, M_VG_ERRTXT);
+   know_srcloc  = VG_(get_filename_linenum)(ec->eips[0], 
+                                            buf_srcloc, M_VG_ERRTXT, 
+                                            &lineno);
 
    APPEND("   at ");
    VG_(sprintf)(ibuf,"0x%x: ", ec->eips[0]);
@@ -2035,11 +2084,11 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
    VG_(message)(Vg_UserMsg, "%s", buf);
 
    for (i = 1; i < stop_at && ec->eips[i] != 0; i++) {
-      know_fnname  = VG_(what_fn_is_this)(False,ec->eips[i], buf_fn, M_VG_ERRTXT);
-      know_objname = vg_what_object_is_this(ec->eips[i],buf_obj, M_VG_ERRTXT);
-      know_srcloc  = VG_(what_line_is_this)(ec->eips[i], 
-                                          buf_srcloc, M_VG_ERRTXT, 
-                                          &lineno);
+      know_fnname  = VG_(get_fnname) (ec->eips[i], buf_fn,  M_VG_ERRTXT);
+      know_objname = VG_(get_objname)(ec->eips[i], buf_obj, M_VG_ERRTXT);
+      know_srcloc  = VG_(get_filename_linenum)(ec->eips[i], 
+                                               buf_srcloc, M_VG_ERRTXT, 
+                                               &lineno);
       n = 0;
       APPEND("   by ");
       VG_(sprintf)(ibuf,"0x%x: ",ec->eips[i]);

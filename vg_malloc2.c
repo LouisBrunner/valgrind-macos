@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 
@@ -178,13 +178,14 @@ void VG_(show_all_arena_stats) ( void )
 /* It is important that this library is self-initialising, because it
    may get called very early on -- as a result of C++ static
    constructor initialisations -- before Valgrind itself is
-   initialised.  Hence vg_malloc() and vg_free() below always call
-   ensure_mm_init() to ensure things are correctly initialised.  */
+   initialised.  Hence VG_(arena_malloc)() and VG_(arena_free)() below always
+   call ensure_mm_init() to ensure things are correctly initialised.  */
 
 static
 void ensure_mm_init ( void )
 {
    static Bool init_done = False;
+
    if (init_done) return;
 
    /* Use a checked red zone size of 1 word for our internal stuff,
@@ -194,22 +195,28 @@ void ensure_mm_init ( void )
       which merely checks at the time of freeing that the red zone
       words are unchanged. */
 
-   arena_init ( &vg_arena[VG_AR_PRIVATE], "private ", 
+   arena_init ( &vg_arena[VG_AR_CORE],      "core    ", 
                 1, True, 262144 );
 
-   arena_init ( &vg_arena[VG_AR_SYMTAB],  "symtab  ", 
+   arena_init ( &vg_arena[VG_AR_SKIN],      "skin    ", 
                 1, True, 262144 );
 
-   arena_init ( &vg_arena[VG_AR_CLIENT],  "client  ",  
+   arena_init ( &vg_arena[VG_AR_SYMTAB],    "symtab  ", 
+                1, True, 262144 );
+
+   arena_init ( &vg_arena[VG_AR_JITTER],    "JITter  ", 
+                1, True, 8192 );
+
+   arena_init ( &vg_arena[VG_AR_CLIENT],    "client  ",  
                 VG_AR_CLIENT_REDZONE_SZW, False, 262144 );
 
-   arena_init ( &vg_arena[VG_AR_DEMANGLE], "demangle",  
+   arena_init ( &vg_arena[VG_AR_DEMANGLE],  "demangle",  
                 4 /*paranoid*/, True, 16384 );
 
-   arena_init ( &vg_arena[VG_AR_EXECTXT],  "exectxt ",  
+   arena_init ( &vg_arena[VG_AR_EXECTXT],   "exectxt ",  
                 1, True, 16384 );
 
-   arena_init ( &vg_arena[VG_AR_ERRCTXT],  "errctxt ",  
+   arena_init ( &vg_arena[VG_AR_ERRORS],    "errors  ",  
                 1, True, 16384 );
 
    arena_init ( &vg_arena[VG_AR_TRANSIENT], "transien",  
@@ -692,7 +699,7 @@ void ppSuperblocks ( Arena* a )
 
 
 /* Sanity check both the superblocks and the chains. */
-void VG_(mallocSanityCheckArena) ( ArenaId aid )
+static void mallocSanityCheckArena ( ArenaId aid )
 {
    Int         i, superblockctr, b_bszW, b_pszW, blockctr_sb, blockctr_li;
    Int         blockctr_sb_free, listno, list_min_pszW, list_max_pszW;
@@ -703,7 +710,7 @@ void VG_(mallocSanityCheckArena) ( ArenaId aid )
    UInt        arena_bytes_on_loan;
    Arena*      a;
 
-#  define BOMB VG_(panic)("vg_mallocSanityCheckArena")
+#  define BOMB VG_(panic)("mallocSanityCheckArena")
 
    a = arenaId_to_ArenaP(aid);
    
@@ -722,15 +729,15 @@ void VG_(mallocSanityCheckArena) ( ArenaId aid )
          b     = &sb->payload_words[i];
          b_bszW = get_bszW_lo(b);
          if (!blockSane(a, b)) {
-            VG_(printf)( "mallocSanityCheck: sb %p, block %d (bszW %d): "
-                         "BAD\n",
+            VG_(printf)("mallocSanityCheckArena: sb %p, block %d (bszW %d): "
+                        " BAD\n",
                          sb, i, b_bszW );
             BOMB;
          }
          thisFree = !is_inuse_bszW(b_bszW);
          if (thisFree && lastWasFree) {
-            VG_(printf)( "mallocSanityCheck: sb %p, block %d (bszW %d): "
-                         "UNMERGED FREES\n",
+            VG_(printf)("mallocSanityCheckArena: sb %p, block %d (bszW %d): "
+                        "UNMERGED FREES\n",
                          sb, i, b_bszW );
             BOMB;
          }
@@ -741,7 +748,7 @@ void VG_(mallocSanityCheckArena) ( ArenaId aid )
          i += mk_plain_bszW(b_bszW);
       }
       if (i > sb->n_payload_words) {
-         VG_(printf)( "mallocSanityCheck: sb %p: last block "
+         VG_(printf)( "mallocSanityCheckArena: sb %p: last block "
                       "overshoots end\n", sb);
          BOMB;
       }
@@ -750,7 +757,7 @@ void VG_(mallocSanityCheckArena) ( ArenaId aid )
 
    if (arena_bytes_on_loan != a->bytes_on_loan) {
             VG_(printf)( 
-                    "mallocSanityCheck: a->bytes_on_loan %d, "
+                    "mallocSanityCheckArena: a->bytes_on_loan %d, "
                     "arena_bytes_on_loan %d: "
                     "MISMATCH\n", a->bytes_on_loan, arena_bytes_on_loan);
       ppSuperblocks(a);
@@ -770,7 +777,7 @@ void VG_(mallocSanityCheckArena) ( ArenaId aid )
          b_prev = b;
          b = get_next_p(b);
          if (get_prev_p(b) != b_prev) {
-            VG_(printf)( "mallocSanityCheck: list %d at %p: "
+            VG_(printf)( "mallocSanityCheckArena: list %d at %p: "
                          "BAD LINKAGE\n", 
                          listno, b );
             BOMB;
@@ -778,7 +785,7 @@ void VG_(mallocSanityCheckArena) ( ArenaId aid )
          b_pszW = bszW_to_pszW(a, mk_plain_bszW(get_bszW_lo(b)));
          if (b_pszW < list_min_pszW || b_pszW > list_max_pszW) {
             VG_(printf)( 
-               "mallocSanityCheck: list %d at %p: "
+               "mallocSanityCheckArena: list %d at %p: "
                "WRONG CHAIN SIZE %d (%d, %d)\n", 
                listno, b, b_pszW, list_min_pszW, list_max_pszW );
             BOMB;
@@ -790,7 +797,7 @@ void VG_(mallocSanityCheckArena) ( ArenaId aid )
 
    if (blockctr_sb_free != blockctr_li) {
       VG_(printf)( 
-         "mallocSanityCheck: BLOCK COUNT MISMATCH "
+         "mallocSanityCheckArena: BLOCK COUNT MISMATCH "
          "(via sbs %d, via lists %d)\n",
          blockctr_sb_free, blockctr_li );
       ppSuperblocks(a);
@@ -813,7 +820,7 @@ void VG_(mallocSanityCheckAll) ( void )
 {
    Int i;
    for (i = 0; i < VG_N_ARENAS; i++)
-      VG_(mallocSanityCheckArena) ( i );
+      mallocSanityCheckArena ( i );
 }
 
 
@@ -828,6 +835,7 @@ Bool VG_(is_empty_arena) ( ArenaId aid )
    Superblock* sb;
    WordF*      b;
    Int         b_bszW;
+
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
    for (sb = a->sblocks; sb != NULL; sb = sb->next) {
@@ -845,10 +853,10 @@ Bool VG_(is_empty_arena) ( ArenaId aid )
 
 
 /*------------------------------------------------------------*/
-/*--- Externally-visible functions.                        ---*/
+/*--- Core-visible functions.                              ---*/
 /*------------------------------------------------------------*/
 
-void* VG_(malloc) ( ArenaId aid, Int req_pszB )
+void* VG_(arena_malloc) ( ArenaId aid, Int req_pszB )
 {
    Int         req_pszW, req_bszW, frag_bszW, b_bszW, lno;
    Superblock* new_sb;
@@ -943,15 +951,15 @@ void* VG_(malloc) ( ArenaId aid, Int req_pszB )
       a->bytes_on_loan_max = a->bytes_on_loan;
 
 #  ifdef DEBUG_MALLOC
-   VG_(mallocSanityCheckArena)(aid);
+   mallocSanityCheckArena(aid);
 #  endif
 
-   VGP_POPCC;
+   VGP_POPCC(VgpMalloc);
    return first_to_payload(a, b);
 }
 
  
-void VG_(free) ( ArenaId aid, void* ptr )
+void VG_(arena_free) ( ArenaId aid, void* ptr )
 {
    Superblock* sb;
    UInt*       sb_payl_firstw;
@@ -966,8 +974,11 @@ void VG_(free) ( ArenaId aid, void* ptr )
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
 
-   if (ptr == NULL) return;
-
+   if (ptr == NULL) {
+      VGP_POPCC(VgpMalloc);
+      return;
+   }
+      
    ch = payload_to_first(a, ptr);
 
 #  ifdef DEBUG_MALLOC
@@ -1026,10 +1037,10 @@ void VG_(free) ( ArenaId aid, void* ptr )
    }
 
 #  ifdef DEBUG_MALLOC
-   VG_(mallocSanityCheckArena)(aid);
+   mallocSanityCheckArena(aid);
 #  endif
 
-   VGP_POPCC;
+   VGP_POPCC(VgpMalloc);
 }
 
 
@@ -1065,12 +1076,14 @@ void VG_(free) ( ArenaId aid, void* ptr )
    .    .               .   .   .               .   .
 
 */
-void* VG_(malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
+void* VG_(arena_malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
 {
    Int    req_alignW, req_pszW, base_pszW_req, base_pszW_act, frag_bszW;
    Word   *base_b, *base_p, *align_p;
    UInt   saved_bytes_on_loan;
    Arena* a;
+
+   VGP_PUSHCC(VgpMalloc);
 
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
@@ -1091,7 +1104,7 @@ void* VG_(malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
          break;
       default:
          VG_(printf)("vg_malloc_aligned(%p, %d, %d)\nbad alignment request", 
-                     a, req_pszB, req_alignB );
+                     a, req_alignB, req_pszB );
          VG_(panic)("vg_malloc_aligned");
          /*NOTREACHED*/
    }
@@ -1112,7 +1125,7 @@ void* VG_(malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
    /* Payload ptr for the block we are going to split.  Note this
       changes a->bytes_on_loan; we save and restore it ourselves. */
    saved_bytes_on_loan = a->bytes_on_loan;
-   base_p = VG_(malloc) ( aid, base_pszW_req * VKI_BYTES_PER_WORD );
+   base_p = VG_(arena_malloc) ( aid, base_pszW_req * VKI_BYTES_PER_WORD );
    a->bytes_on_loan = saved_bytes_on_loan;
 
    /* Block ptr for the block we are going to split. */
@@ -1163,8 +1176,10 @@ void* VG_(malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
       a->bytes_on_loan_max = a->bytes_on_loan;
 
 #  ifdef DEBUG_MALLOC
-   VG_(mallocSanityCheckArena)(aid);
+   mallocSanityCheckArena(aid);
 #  endif
+
+   VGP_POPCC(VgpMalloc);
 
    return align_p;
 }
@@ -1174,24 +1189,33 @@ void* VG_(malloc_aligned) ( ArenaId aid, Int req_alignB, Int req_pszB )
 /*--- Services layered on top of malloc/free.              ---*/
 /*------------------------------------------------------------*/
 
-void* VG_(calloc) ( ArenaId aid, Int nmemb, Int nbytes )
+void* VG_(arena_calloc) ( ArenaId aid, Int nmemb, Int nbytes )
 {
    Int    i, size;
    UChar* p;
+
+   VGP_PUSHCC(VgpMalloc);
+
    size = nmemb * nbytes;
    vg_assert(size >= 0);
-   p = VG_(malloc) ( aid, size );
+   p = VG_(arena_malloc) ( aid, size );
    for (i = 0; i < size; i++) p[i] = 0;
+
+   VGP_POPCC(VgpMalloc);
+   
    return p;
 }
 
 
-void* VG_(realloc) ( ArenaId aid, void* ptr, Int req_pszB )
+void* VG_(arena_realloc) ( ArenaId aid, void* ptr, 
+                          Int req_alignB, Int req_pszB )
 {
    Arena* a;
    Int    old_bszW, old_pszW, old_pszB, i;
    UChar  *p_old, *p_new;
    UInt*  ch;
+
+   VGP_PUSHCC(VgpMalloc);
 
    ensure_mm_init();
    a = arenaId_to_ArenaP(aid);
@@ -1208,15 +1232,56 @@ void* VG_(realloc) ( ArenaId aid, void* ptr, Int req_pszB )
    old_pszW = bszW_to_pszW(a, old_bszW);
    old_pszB = old_pszW * VKI_BYTES_PER_WORD;
 
-   if (req_pszB <= old_pszB) return ptr;
+   if (req_pszB <= old_pszB) {
+      VGP_POPCC(VgpMalloc);
+      return ptr;
+   }
 
-   p_new = VG_(malloc) ( aid, req_pszB );
+   if (req_alignB == 4)
+      p_new = VG_(arena_malloc) ( aid, req_pszB );
+   else
+      p_new = VG_(arena_malloc_aligned) ( aid, req_alignB, req_pszB );
+
    p_old = (UChar*)ptr;
    for (i = 0; i < old_pszB; i++)
       p_new[i] = p_old[i];
 
-   VG_(free)(aid, p_old);
+   VG_(arena_free)(aid, p_old);
+
+   VGP_POPCC(VgpMalloc);
    return p_new;
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Skin-visible functions.                              ---*/
+/*------------------------------------------------------------*/
+
+/* All just wrappers to avoid exposing arenas to skins */
+
+void* VG_(malloc) ( Int nbytes )
+{
+   return VG_(arena_malloc) ( VG_AR_SKIN, nbytes );
+}
+
+void  VG_(free) ( void* ptr )
+{
+   VG_(arena_free) ( VG_AR_SKIN, ptr );
+}
+
+void* VG_(calloc) ( Int nmemb, Int nbytes )
+{
+   return VG_(arena_calloc) ( VG_AR_SKIN, nmemb, nbytes );
+}
+
+void* VG_(realloc) ( void* ptr, Int size )
+{
+   return VG_(arena_realloc) ( VG_AR_SKIN, ptr, /*alignment*/4, size );
+}
+
+void* VG_(malloc_aligned) ( Int req_alignB, Int req_pszB )
+{
+   return VG_(arena_malloc_aligned) ( VG_AR_SKIN, req_alignB, req_pszB );
 }
 
 
@@ -1243,7 +1308,7 @@ int main ( int argc, char** argv )
 {
    Int i, j, k, nbytes, qq;
    unsigned char* chp;
-   Arena* a = &arena[VG_AR_PRIVATE];
+   Arena* a = &arena[VG_AR_CORE];
    srandom(1);
    for (i = 0; i < N_TEST_ARR; i++)
       test_arr[i] = NULL;

@@ -26,11 +26,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
-#include "vg_constants.h"
 
 #include "valgrind.h"   /* for VALGRIND_MAGIC_SEQUENCE */
 
@@ -72,7 +71,7 @@
    the real one, this is because the dynamic linker is running the
    static initialisers for C++, before starting up Valgrind itself.
    In this case it is safe to route calls through to
-   VG_(malloc)/vg_free, since that is self-initialising.
+   VG_(arena_malloc)/VG_(arena_free), since they are self-initialising.
 
    Once Valgrind is initialised, vg_running_on_simd_CPU becomes True.
    The call needs to be transferred from the simulated CPU back to the
@@ -91,15 +90,16 @@ void* malloc ( Int n )
                   (UInt)VG_(running_on_simd_CPU), n );
    if (n < 0) {
       v = NULL;
-      VG_(message)(Vg_UserMsg, 
-         "Warning: silly arg (%d) to malloc()", n );
+      if (VG_(needs).core_errors)
+         VG_(message)(Vg_UserMsg, 
+                      "Warning: silly arg (%d) to malloc()", n );
    } else {
       if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
 
       if (VG_(running_on_simd_CPU)) {
          v = (void*)SIMPLE_REQUEST1(VG_USERREQ__MALLOC, n);
       } else {
-         v = VG_(malloc)(VG_AR_CLIENT, n);
+         v = VG_(arena_malloc)(VG_AR_CLIENT, n);
       }
    }
    if (VG_(clo_trace_malloc)) 
@@ -116,15 +116,16 @@ void* __builtin_new ( Int n )
                   (UInt)VG_(running_on_simd_CPU), n );
    if (n < 0) {
       v = NULL;
-      VG_(message)(Vg_UserMsg, 
-         "Warning: silly arg (%d) to __builtin_new()", n );
+      if (VG_(needs).core_errors)
+         VG_(message)(Vg_UserMsg, 
+                      "Warning: silly arg (%d) to __builtin_new()", n );
    } else {
       if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
 
       if (VG_(running_on_simd_CPU)) {
          v = (void*)SIMPLE_REQUEST1(VG_USERREQ__BUILTIN_NEW, n);
       } else {
-         v = VG_(malloc)(VG_AR_CLIENT, n);
+         v = VG_(arena_malloc)(VG_AR_CLIENT, n);
       }
    }
    if (VG_(clo_trace_malloc)) 
@@ -147,15 +148,16 @@ void* __builtin_vec_new ( Int n )
                   (UInt)VG_(running_on_simd_CPU), n );
    if (n < 0) {
       v = NULL;
-      VG_(message)(Vg_UserMsg, 
-         "Warning: silly arg (%d) to __builtin_vec_new()", n );
+      if (VG_(needs).core_errors)
+         VG_(message)(Vg_UserMsg, 
+                      "Warning: silly arg (%d) to __builtin_vec_new()", n );
    } else {
       if (VG_(clo_sloppy_malloc)) { while ((n % 4) > 0) n++; }
 
       if (VG_(running_on_simd_CPU)) {
          v = (void*)SIMPLE_REQUEST1(VG_USERREQ__BUILTIN_VEC_NEW, n);
       } else {
-         v = VG_(malloc)(VG_AR_CLIENT, n);
+         v = VG_(arena_malloc)(VG_AR_CLIENT, n);
       }
    }
    if (VG_(clo_trace_malloc)) 
@@ -179,7 +181,7 @@ void free ( void* p )
    if (VG_(running_on_simd_CPU)) {
       (void)SIMPLE_REQUEST1(VG_USERREQ__FREE, p);
    } else {
-      VG_(free)(VG_AR_CLIENT, p);      
+      VG_(arena_free)(VG_AR_CLIENT, p);      
    }
 }
 
@@ -193,7 +195,7 @@ void __builtin_delete ( void* p )
    if (VG_(running_on_simd_CPU)) {
       (void)SIMPLE_REQUEST1(VG_USERREQ__BUILTIN_DELETE, p);
    } else {
-      VG_(free)(VG_AR_CLIENT, p);
+      VG_(arena_free)(VG_AR_CLIENT, p);
    }
 }
 
@@ -213,7 +215,7 @@ void __builtin_vec_delete ( void* p )
    if (VG_(running_on_simd_CPU)) {
       (void)SIMPLE_REQUEST1(VG_USERREQ__BUILTIN_VEC_DELETE, p);
    } else {
-      VG_(free)(VG_AR_CLIENT, p);
+      VG_(arena_free)(VG_AR_CLIENT, p);
    }
 }
 
@@ -232,13 +234,14 @@ void* calloc ( Int nmemb, Int size )
                   (UInt)VG_(running_on_simd_CPU), nmemb, size );
    if (nmemb < 0 || size < 0) {
       v = NULL;
-      VG_(message)(Vg_UserMsg, "Warning: silly args (%d,%d) to calloc()", 
-                               nmemb, size );
+      if (VG_(needs).core_errors)
+         VG_(message)(Vg_UserMsg, "Warning: silly args (%d,%d) to calloc()", 
+                                  nmemb, size );
    } else {
       if (VG_(running_on_simd_CPU)) {
          v = (void*)SIMPLE_REQUEST2(VG_USERREQ__CALLOC, nmemb, size);
       } else {
-         v = VG_(calloc)(VG_AR_CLIENT, nmemb, size);
+         v = VG_(arena_calloc)(VG_AR_CLIENT, nmemb, size);
       }
    }
    if (VG_(clo_trace_malloc)) 
@@ -269,7 +272,7 @@ void* realloc ( void* ptrV, Int new_size )
    if (VG_(running_on_simd_CPU)) {
       v = (void*)SIMPLE_REQUEST2(VG_USERREQ__REALLOC, ptrV, new_size);
    } else {
-      v = VG_(realloc)(VG_AR_CLIENT, ptrV, new_size);
+      v = VG_(arena_realloc)(VG_AR_CLIENT, ptrV, /*alignment*/4, new_size);
    }
    if (VG_(clo_trace_malloc)) 
       VG_(printf)(" = %p\n", v );
@@ -292,7 +295,7 @@ void* memalign ( Int alignment, Int n )
       if (VG_(running_on_simd_CPU)) {
          v = (void*)SIMPLE_REQUEST2(VG_USERREQ__MEMALIGN, alignment, n);
       } else {
-         v = VG_(malloc_aligned)(VG_AR_CLIENT, alignment, n);
+         v = VG_(arena_malloc_aligned)(VG_AR_CLIENT, alignment, n);
       }
    }
    if (VG_(clo_trace_malloc)) 
@@ -579,7 +582,7 @@ void VG_(__libc_freeres_wrapper)( void )
 {
    int res;
    extern void __libc_freeres(void);
-   __libc_freeres();
+   //__libc_freeres();
    VALGRIND_MAGIC_SEQUENCE(res, 0 /* default */,
                            VG_USERREQ__LIBC_FREERES_DONE, 0, 0, 0, 0);
    /*NOTREACHED*/

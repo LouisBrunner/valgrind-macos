@@ -26,12 +26,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
-#include "vg_constants.h"
-
 
 /* ---------------------------------------------------------------------
    Compute offsets into baseBlock.  See comments in vg_include.h.
@@ -62,6 +60,7 @@ Int VGOFF_(sh_ebp) = INVALID_OFFSET;
 Int VGOFF_(sh_esi) = INVALID_OFFSET;
 Int VGOFF_(sh_edi) = INVALID_OFFSET;
 Int VGOFF_(sh_eflags) = INVALID_OFFSET;
+
 Int VGOFF_(helper_idiv_64_32) = INVALID_OFFSET;
 Int VGOFF_(helper_div_64_32) = INVALID_OFFSET;
 Int VGOFF_(helper_idiv_32_16) = INVALID_OFFSET;
@@ -92,24 +91,24 @@ Int VGOFF_(helper_fstsw_AX) = INVALID_OFFSET;
 Int VGOFF_(helper_SAHF) = INVALID_OFFSET;
 Int VGOFF_(helper_DAS) = INVALID_OFFSET;
 Int VGOFF_(helper_DAA) = INVALID_OFFSET;
-Int VGOFF_(helper_value_check4_fail) = INVALID_OFFSET;
-Int VGOFF_(helper_value_check2_fail) = INVALID_OFFSET;
-Int VGOFF_(helper_value_check1_fail) = INVALID_OFFSET;
-Int VGOFF_(helper_value_check0_fail) = INVALID_OFFSET;
-Int VGOFF_(helperc_LOADV4) = INVALID_OFFSET;
-Int VGOFF_(helperc_LOADV2) = INVALID_OFFSET;
-Int VGOFF_(helperc_LOADV1) = INVALID_OFFSET;
-Int VGOFF_(helperc_STOREV4) = INVALID_OFFSET;
-Int VGOFF_(helperc_STOREV2) = INVALID_OFFSET;
-Int VGOFF_(helperc_STOREV1) = INVALID_OFFSET;
 Int VGOFF_(handle_esp_assignment) = INVALID_OFFSET;
-Int VGOFF_(fpu_write_check) = INVALID_OFFSET;
-Int VGOFF_(fpu_read_check) = INVALID_OFFSET;
-Int VGOFF_(cachesim_log_non_mem_instr) = INVALID_OFFSET;
-Int VGOFF_(cachesim_log_mem_instr)     = INVALID_OFFSET;
+
+/* MAX_NONCOMPACT_HELPERS can be increased easily.  If MAX_COMPACT_HELPERS is
+ * increased too much, they won't really be compact any more... */
+#define  MAX_COMPACT_HELPERS     8
+#define  MAX_NONCOMPACT_HELPERS  8 
+
+UInt VG_(n_compact_helpers)    = 0;
+UInt VG_(n_noncompact_helpers) = 0;
+
+Addr VG_(compact_helper_addrs)  [MAX_COMPACT_HELPERS];
+Int  VG_(compact_helper_offsets)[MAX_COMPACT_HELPERS];
+Addr VG_(noncompact_helper_addrs)  [MAX_NONCOMPACT_HELPERS];
+Int  VG_(noncompact_helper_offsets)[MAX_NONCOMPACT_HELPERS];
 
 /* This is the actual defn of baseblock. */
 UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
+
 
 /* Words. */
 static Int baB_off = 0;
@@ -133,6 +132,41 @@ static Int alloc_BaB_1_set ( Addr a )
    return off;
 }
 
+/* Registers a function in compact_helper_addrs;  compact_helper_offsets is
+ * filled in later.
+ */
+void VG_(register_compact_helper)(Addr a)
+{
+   if (MAX_COMPACT_HELPERS <= VG_(n_compact_helpers)) {
+      VG_(printf)("Can only register %d compact helpers\n", 
+                  MAX_COMPACT_HELPERS);
+      VG_(panic)("Too many compact helpers registered");
+   }
+   VG_(compact_helper_addrs)[VG_(n_compact_helpers)] = a;
+   VG_(n_compact_helpers)++;
+}
+
+/* Registers a function in noncompact_helper_addrs;  noncompact_helper_offsets
+ * is filled in later.
+ */
+void VG_(register_noncompact_helper)(Addr a)
+{
+   if (MAX_NONCOMPACT_HELPERS <= VG_(n_noncompact_helpers)) {
+      VG_(printf)("Can only register %d non-compact helpers\n", 
+                  MAX_NONCOMPACT_HELPERS);
+      VG_(printf)("Try increasing MAX_NON_COMPACT_HELPERS\n");
+      VG_(panic)("Too many non-compact helpers registered");
+   }
+   VG_(noncompact_helper_addrs)[VG_(n_noncompact_helpers)] = a;
+   VG_(n_noncompact_helpers)++;
+}
+
+/* Allocate offsets in baseBlock for the skin helpers */
+static void assign_helpers_in_baseBlock(UInt n, Int offsets[], Addr addrs[])
+{
+   Int i;
+   for (i = 0; i < n; i++) offsets[i] = alloc_BaB_1_set( addrs[i] );
+}
 
 /* Here we assign actual offsets.  It's important to get the most
    popular referents within 128 bytes of the start, so we can take
@@ -143,8 +177,6 @@ static Int alloc_BaB_1_set ( Addr a )
 
 static void vg_init_baseBlock ( void )
 {
-   baB_off = 0;
-
    /* Those with offsets under 128 are carefully chosen. */
 
    /* WORD offsets in this column */
@@ -158,82 +190,42 @@ static void vg_init_baseBlock ( void )
    /* 7   */ VGOFF_(m_edi)     = alloc_BaB(1);
    /* 8   */ VGOFF_(m_eflags)  = alloc_BaB(1);
 
-   /* 9   */ VGOFF_(sh_eax)    = alloc_BaB(1);
-   /* 10  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
-   /* 11  */ VGOFF_(sh_edx)    = alloc_BaB(1);
-   /* 12  */ VGOFF_(sh_ebx)    = alloc_BaB(1);
-   /* 13  */ VGOFF_(sh_esp)    = alloc_BaB(1);
-   /* 14  */ VGOFF_(sh_ebp)    = alloc_BaB(1);
-   /* 15  */ VGOFF_(sh_esi)    = alloc_BaB(1);
-   /* 16  */ VGOFF_(sh_edi)    = alloc_BaB(1);
-   /* 17  */ VGOFF_(sh_eflags) = alloc_BaB(1);
+   if (VG_(needs).shadow_regs) {
+      /* 9   */ VGOFF_(sh_eax)    = alloc_BaB(1);
+      /* 10  */ VGOFF_(sh_ecx)    = alloc_BaB(1);
+      /* 11  */ VGOFF_(sh_edx)    = alloc_BaB(1);
+      /* 12  */ VGOFF_(sh_ebx)    = alloc_BaB(1);
+      /* 13  */ VGOFF_(sh_esp)    = alloc_BaB(1);
+      /* 14  */ VGOFF_(sh_ebp)    = alloc_BaB(1);
+      /* 15  */ VGOFF_(sh_esi)    = alloc_BaB(1);
+      /* 16  */ VGOFF_(sh_edi)    = alloc_BaB(1);
+      /* 17  */ VGOFF_(sh_eflags) = alloc_BaB(1);
+   }
 
-   /* 17a */ 
-   VGOFF_(cachesim_log_non_mem_instr)  
-      = alloc_BaB_1_set( (Addr) & VG_(cachesim_log_non_mem_instr) );
-   /* 17b */ 
-   VGOFF_(cachesim_log_mem_instr)  
-      = alloc_BaB_1_set( (Addr) & VG_(cachesim_log_mem_instr) );
+   /* 9,10,11 or 18,19,20... depends on number whether shadow regs are used
+    * and on compact helpers registered */ 
 
-   /* 18  */ 
-   VGOFF_(helper_value_check4_fail) 
-      = alloc_BaB_1_set( (Addr) & VG_(helper_value_check4_fail) );
-   /* 19 */
-   VGOFF_(helper_value_check0_fail)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_value_check0_fail) );
+   /* (9 or 18) + n_compact_helpers  */
+   /* Register VG_(handle_esp_assignment) if needed. */
+   if (VG_(track_events).new_mem_stack_aligned || 
+       VG_(track_events).die_mem_stack_aligned) 
+      VG_(register_compact_helper)( (Addr) & VG_(handle_esp_assignment) );
 
-   /* 20  */
-   VGOFF_(helperc_STOREV4)
-      = alloc_BaB_1_set( (Addr) & VG_(helperc_STOREV4) );
-   /* 21  */
-   VGOFF_(helperc_STOREV1)
-      = alloc_BaB_1_set( (Addr) & VG_(helperc_STOREV1) );
+   /* Allocate slots for compact helpers */
+   assign_helpers_in_baseBlock(VG_(n_compact_helpers), 
+                               VG_(compact_helper_offsets), 
+                               VG_(compact_helper_addrs));
 
-   /* 22  */
-   VGOFF_(helperc_LOADV4)
-      = alloc_BaB_1_set( (Addr) & VG_(helperc_LOADV4) );
-   /* 23  */
-   VGOFF_(helperc_LOADV1)
-      = alloc_BaB_1_set( (Addr) & VG_(helperc_LOADV1) );
-
-   /* 24  */
-   VGOFF_(handle_esp_assignment)
-      = alloc_BaB_1_set( (Addr) & VGM_(handle_esp_assignment) );
-
-   /* 25 */
+   /* (9/10 or 18/19) + n_compact_helpers */
    VGOFF_(m_eip) = alloc_BaB(1);
 
    /* There are currently 24 spill slots */
-   /* 26 .. 49  This overlaps the magic boundary at >= 32 words, but
-      most spills are to low numbered spill slots, so the ones above
-      the boundary don't see much action. */
+   /* (11+/20+ .. 32+/43+) + n_compact_helpers.  This can overlap the magic
+    * boundary at >= 32 words, but most spills are to low numbered spill
+    * slots, so the ones above the boundary don't see much action. */
    VGOFF_(spillslots) = alloc_BaB(VG_MAX_SPILLSLOTS);
 
-   /* These two pushed beyond the boundary because 2-byte transactions
-      are rare. */
-   /* 50  */
-   VGOFF_(helperc_STOREV2)
-      = alloc_BaB_1_set( (Addr) & VG_(helperc_STOREV2) );
-   /* 51  */
-   VGOFF_(helperc_LOADV2)
-      = alloc_BaB_1_set( (Addr) & VG_(helperc_LOADV2) );
-
-   /* 52  */
-   VGOFF_(fpu_write_check)
-      = alloc_BaB_1_set( (Addr) & VGM_(fpu_write_check) );
-   /* 53  */
-   VGOFF_(fpu_read_check)
-      = alloc_BaB_1_set( (Addr) & VGM_(fpu_read_check) );
-
-   /* Actually I don't think these two are ever used. */
-   /* 54  */ 
-   VGOFF_(helper_value_check2_fail)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_value_check2_fail) );
-   /* 55  */ 
-   VGOFF_(helper_value_check1_fail)
-      = alloc_BaB_1_set( (Addr) & VG_(helper_value_check1_fail) );
-
-   /* I gave up counting at this point.  Since they're way above the
+   /* I gave up counting at this point.  Since they're above the
       short-amode-boundary, there's no point. */
 
    VGOFF_(m_fpustate) = alloc_BaB(VG_SIZE_OF_FPUSTATE_W);
@@ -303,6 +295,31 @@ static void vg_init_baseBlock ( void )
       = alloc_BaB_1_set( (Addr) & VG_(helper_DAS) );
    VGOFF_(helper_DAA)
       = alloc_BaB_1_set( (Addr) & VG_(helper_DAA) );
+
+   /* Allocate slots for compact helpers */
+   assign_helpers_in_baseBlock(VG_(n_noncompact_helpers), 
+                               VG_(noncompact_helper_offsets), 
+                               VG_(noncompact_helper_addrs));
+}
+
+static void vg_init_shadow_regs ( void )
+{
+   if (VG_(needs).shadow_regs) {
+      UInt eflags;
+   
+      SK_(written_shadow_regs_values) ( & VG_(written_shadow_reg), & eflags );
+      VG_(baseBlock)[VGOFF_(sh_esp)]    = 
+      VG_(baseBlock)[VGOFF_(sh_ebp)]    =
+      VG_(baseBlock)[VGOFF_(sh_eax)]    =
+      VG_(baseBlock)[VGOFF_(sh_ecx)]    =
+      VG_(baseBlock)[VGOFF_(sh_edx)]    =
+      VG_(baseBlock)[VGOFF_(sh_ebx)]    =
+      VG_(baseBlock)[VGOFF_(sh_esi)]    =
+      VG_(baseBlock)[VGOFF_(sh_edi)]    = VG_(written_shadow_reg);
+      VG_(baseBlock)[VGOFF_(sh_eflags)] = eflags;
+
+   } else
+      VG_(written_shadow_reg) = VG_UNUSED_SHADOW_REG_VALUE;
 }
 
 
@@ -330,14 +347,16 @@ ULong VG_(bbs_done);
 /* 64-bit counter for the number of bbs to go before a debug exit. */
 ULong VG_(bbs_to_go);
 
-/* Produce debugging output? */
-Bool VG_(disassemble) = False;
-
 /* The current LRU epoch. */
 UInt VG_(current_epoch) = 0;
 
 /* This is the ThreadId of the last thread the scheduler ran. */
 ThreadId VG_(last_run_tid) = 0;
+
+/* This is the argument to __NR_exit() supplied by the first thread to
+   call that syscall.  We eventually pass that to __NR_exit() for
+   real. */
+UInt VG_(exitcode) = 0;
 
 
 /* ---------------------------------------------------------------------
@@ -396,46 +415,111 @@ UInt VG_(num_scheduling_events_MAJOR) = 0;
 
 
 /* ---------------------------------------------------------------------
+   Skin data structure initialisation
+   ------------------------------------------------------------------ */
+
+/* Init with default values. */
+VgNeeds VG_(needs) = {
+   .name                    = NULL,
+   .description             = NULL,
+
+   .core_errors             = False,
+   .skin_errors             = False,
+   .run_libc_freeres        = False,
+
+   .sizeof_shadow_block     = 0,
+
+   .basic_block_discards    = False,
+   .shadow_regs             = False,
+   .command_line_options    = False,
+   .client_requests         = False,
+   .extended_UCode          = False,
+   .syscall_wrapper         = False,
+   .alternative_free        = False,
+   .sanity_checks           = False,
+};
+
+VgTrackEvents VG_(track_events) = {
+   /* Memory events */
+   .new_mem_startup       = NULL,
+   .new_mem_heap          = NULL,
+   .new_mem_stack         = NULL,
+   .new_mem_stack_aligned = NULL,
+   .new_mem_stack_signal  = NULL,
+   .new_mem_brk           = NULL,
+   .new_mem_mmap          = NULL,
+
+   .copy_mem_heap         = NULL,
+   .change_mem_mprotect   = NULL,
+
+   .ban_mem_heap          = NULL,
+   .ban_mem_stack         = NULL,
+
+   .die_mem_heap          = NULL,
+   .die_mem_stack         = NULL,
+   .die_mem_stack_aligned = NULL,
+   .die_mem_stack_signal  = NULL,
+   .die_mem_brk           = NULL,
+   .die_mem_munmap        = NULL,
+
+   .bad_free              = NULL,
+   .mismatched_free       = NULL,
+
+   .pre_mem_read          = NULL,
+   .pre_mem_read_asciiz   = NULL,
+   .pre_mem_write         = NULL,
+   .post_mem_write        = NULL,
+
+   /* Mutex events */
+   .post_mutex_lock       = NULL,
+   .post_mutex_unlock     = NULL,
+};
+
+static void sanity_check_needs ( void )
+{
+#define CHECK_NOT(var, value)                                     \
+   if ((var)==(value)) {                                          \
+      VG_(printf)("\n`%s' not initialised\n", VG__STRING(var));   \
+      VG_(skin_error)("Uninitialised needs field\n");             \
+   }
+   
+   CHECK_NOT(VG_(needs).name,        NULL);
+   CHECK_NOT(VG_(needs).description, NULL);
+
+#undef CHECK_NOT
+#undef INVALID_Bool
+}
+
+/* ---------------------------------------------------------------------
    Values derived from command-line options.
    ------------------------------------------------------------------ */
 
-Bool   VG_(clo_error_limit);
-Bool   VG_(clo_check_addrVs);
-Bool   VG_(clo_GDB_attach);
-Int    VG_(sanity_level);
-Int    VG_(clo_verbosity);
-Bool   VG_(clo_demangle);
-Bool   VG_(clo_leak_check);
-Bool   VG_(clo_show_reachable);
-Int    VG_(clo_leak_resolution);
-Bool   VG_(clo_sloppy_malloc);
-Int    VG_(clo_alignment);
-Bool   VG_(clo_partial_loads_ok);
-Bool   VG_(clo_trace_children);
-Int    VG_(clo_logfile_fd);
-Int    VG_(clo_freelist_vol);
-Bool   VG_(clo_workaround_gcc296_bugs);
-Int    VG_(clo_n_suppressions);
+/* Define, and set defaults. */
+Bool   VG_(clo_error_limit)    = True;
+Bool   VG_(clo_GDB_attach)     = False;
+Int    VG_(sanity_level)       = 1;
+Int    VG_(clo_verbosity)      = 1;
+Bool   VG_(clo_demangle)       = True;
+Bool   VG_(clo_sloppy_malloc)  = False;
+Int    VG_(clo_alignment)      = 4;
+Bool   VG_(clo_trace_children) = False;
+Int    VG_(clo_logfile_fd)     = 2;
+Int    VG_(clo_n_suppressions) = 0;
 Char*  VG_(clo_suppressions)[VG_CLO_MAX_SFILES];
-Bool   VG_(clo_single_step);
-Bool   VG_(clo_optimise);
-Bool   VG_(clo_instrument);
-Bool   VG_(clo_cleanup);
-Bool   VG_(clo_cachesim);
-cache_t VG_(clo_I1_cache);
-cache_t VG_(clo_D1_cache);
-cache_t VG_(clo_L2_cache);
-Int    VG_(clo_smc_check);
-Bool   VG_(clo_trace_syscalls);
-Bool   VG_(clo_trace_signals);
-Bool   VG_(clo_trace_symtab);
-Bool   VG_(clo_trace_malloc);
-Bool   VG_(clo_trace_sched);
-Int    VG_(clo_trace_pthread_level);
-ULong  VG_(clo_stop_after);
-Int    VG_(clo_dump_error);
-Int    VG_(clo_backtrace_size);
-Char*  VG_(clo_weird_hacks);
+Bool   VG_(clo_profile)        = False;
+Bool   VG_(clo_single_step)    = False;
+Bool   VG_(clo_optimise)       = True;
+UChar  VG_(clo_trace_codegen)  = 0; // 00000000b
+Bool   VG_(clo_trace_syscalls) = False;
+Bool   VG_(clo_trace_signals)  = False;
+Bool   VG_(clo_trace_symtab)   = False;
+Bool   VG_(clo_trace_malloc)   = False;
+Bool   VG_(clo_trace_sched)    = False;
+Int    VG_(clo_trace_pthread_level) = 0;
+ULong  VG_(clo_stop_after)     = 1000000000000LL;
+Int    VG_(clo_dump_error)     = 0;
+Int    VG_(clo_backtrace_size) = 4;
+Char*  VG_(clo_weird_hacks)    = NULL;
 
 /* This Bool is needed by wrappers in vg_clientmalloc.c to decide how
    to behave.  Initially we say False. */
@@ -454,12 +538,11 @@ Char** VG_(client_envp);
    don't have to modify the original. */
 static Char vg_cmdline_copy[M_VG_CMDLINE_STRLEN];
 
-
 /* ---------------------------------------------------------------------
    Processing of command-line options.
    ------------------------------------------------------------------ */
 
-static void bad_option ( Char* opt )
+void VG_(bad_option) ( Char* opt )
 {
    VG_(shutdown_logging)();
    VG_(clo_logfile_fd) = 2; /* stderr */
@@ -487,90 +570,84 @@ static void args_grok_error ( Char* msg )
    config_error("couldn't find client's argc/argc/envp");
 }   
 
-static void parse_cache_opt ( cache_t* cache, char* orig_opt, int opt_len )
+static void usage ( void )
 {
-   int   i1, i2, i3;
-   int   i;
-   char *opt = VG_(strdup)(VG_AR_PRIVATE, orig_opt);
+   Char* usage1 = 
+"usage: valgrind [options] prog-and-args\n"
+"\n"
+"  core user options, with defaults in [ ], are:\n"
+"    --help                    show this message\n"
+"    --version                 show version\n"
+"    --skin=<name>             main task (skin to use) [Valgrind]\n"
+"    -q --quiet                run silently; only print error msgs\n"
+"    -v --verbose              be more verbose, incl counts of errors\n"
+"    --gdb-attach=no|yes       start GDB when errors detected? [no]\n"
+"    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
+"    --num-callers=<number>    show <num> callers in stack traces [4]\n"
+"    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
+"    --sloppy-malloc=no|yes    round malloc sizes to next word? [no]\n"
+"    --alignment=<number>      set minimum alignment of allocations [4]\n"
+"    --trace-children=no|yes   Valgrind-ise child processes? [no]\n"
+"    --logfile-fd=<number>     file descriptor for messages [2=stderr]\n"
+"    --suppressions=<filename> suppress errors described in\n"
+"                              suppressions file <filename>\n"
+"    --weird-hacks=hack1,hack2,...  [no hacks selected]\n"
+"         recognised hacks are: ioctl-VTIME truncate-writes\n"
+"\n"
+"  %s skin user options:\n";
 
-   i = i1 = opt_len;
 
-   /* Option looks like "--I1=65536,2,64".
-    * Find commas, replace with NULs to make three independent 
-    * strings, then extract numbers.  Yuck. */
-   while (VG_(isdigit)(opt[i])) i++;
-   if (',' == opt[i]) {
-      opt[i++] = '\0';
-      i2 = i;
-   } else goto bad;
-   while (VG_(isdigit)(opt[i])) i++;
-   if (',' == opt[i]) {
-      opt[i++] = '\0';
-      i3 = i;
-   } else goto bad;
-   while (VG_(isdigit)(opt[i])) i++;
-   if ('\0' != opt[i]) goto bad;
+   Char* usage2 = 
+"\n"
+"  core options for debugging Valgrind itself are:\n"
+"    --sanity-level=<number>   level of sanity checking to do [1]\n"
+"    --single-step=no|yes      translate each instr separately? [no]\n"
+"    --optimise=no|yes         improve intermediate code? [yes]\n"
+"    --profile=no|yes          profile? (skin must be built for it) [no]\n"
+"    --trace-codegen=<XXXXX>   show generated code? (X = 0|1) [00000]\n"
+"    --trace-syscalls=no|yes   show all system calls? [no]\n"
+"    --trace-signals=no|yes    show signal handling details? [no]\n"
+"    --trace-symtab=no|yes     show symbol table details? [no]\n"
+"    --trace-malloc=no|yes     show client malloc details? [no]\n"
+"    --trace-sched=no|yes      show thread scheduler details? [no]\n"
+"    --trace-pthread=none|some|all  show pthread event details? [no]\n"
+"    --stop-after=<number>     switch to real CPU after executing\n"
+"                              <number> basic blocks [infinity]\n"
+"    --dump-error=<number>     show translation for basic block\n"
+"                              associated with <number>'th\n"
+"                              error context [0=don't show any]\n"
+"\n"
+"  Extra options are read from env variable $VALGRIND_OPTS\n"
+"\n"
+"  Valgrind is Copyright (C) 2000-2002 Julian Seward\n"
+"  and licensed under the GNU General Public License, version 2.\n"
+"  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
+"\n";
 
-   cache->size      = (Int)VG_(atoll)(opt + i1);
-   cache->assoc     = (Int)VG_(atoll)(opt + i2);
-   cache->line_size = (Int)VG_(atoll)(opt + i3);
+   VG_(printf)(usage1, VG_(needs).name);
+   /* Don't print skin string directly for security, ha! */
+   if (VG_(needs).command_line_options)
+      VG_(printf)("%s", SK_(usage)());
+   else
+      VG_(printf)("    (none)\n");
+   VG_(printf)(usage2, VG_EMAIL_ADDR);
 
-   VG_(free)(VG_AR_PRIVATE, opt);
-   return;
-
-  bad:    
-   bad_option(orig_opt);
+   VG_(shutdown_logging)();
+   VG_(clo_logfile_fd) = 2; /* stderr */
+   VG_(exit)(1);
 }
 
 static void process_cmd_line_options ( void )
 {
-   UChar* argv[M_VG_CMDLINE_OPTS];
-   UInt   argc;
-   UChar* p;
-   UChar* str;
-   Int    i, eventually_logfile_fd, ctr;
+   Char* argv[M_VG_CMDLINE_OPTS];
+   UInt  argc;
+   Char* p;
+   Char* str;
+   Int   i, eventually_logfile_fd, ctr;
 
 #  define ISSPACE(cc)      ((cc) == ' ' || (cc) == '\t' || (cc) == '\n')
 #  define STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
 #  define STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
-
-   /* Set defaults. */
-   VG_(clo_error_limit)      = True;
-   VG_(clo_check_addrVs)     = True;
-   VG_(clo_GDB_attach)       = False;
-   VG_(sanity_level)         = 1;
-   VG_(clo_verbosity)        = 1;
-   VG_(clo_demangle)         = True;
-   VG_(clo_leak_check)       = False;
-   VG_(clo_show_reachable)   = False;
-   VG_(clo_leak_resolution)  = 2;
-   VG_(clo_sloppy_malloc)    = False;
-   VG_(clo_alignment)        = 4;
-   VG_(clo_partial_loads_ok) = True;
-   VG_(clo_trace_children)   = False;
-   VG_(clo_logfile_fd)       = 2; /* stderr */
-   VG_(clo_freelist_vol)     = 1000000;
-   VG_(clo_workaround_gcc296_bugs) = False;
-   VG_(clo_n_suppressions)   = 0;
-   VG_(clo_single_step)      = False;
-   VG_(clo_optimise)         = True;
-   VG_(clo_instrument)       = True;
-   VG_(clo_cachesim)         = False;
-   VG_(clo_I1_cache)         = UNDEFINED_CACHE;
-   VG_(clo_D1_cache)         = UNDEFINED_CACHE;
-   VG_(clo_L2_cache)         = UNDEFINED_CACHE;
-   VG_(clo_cleanup)          = True;
-   VG_(clo_smc_check)        = /* VG_CLO_SMC_SOME */ VG_CLO_SMC_NONE;
-   VG_(clo_trace_syscalls)   = False;
-   VG_(clo_trace_signals)    = False;
-   VG_(clo_trace_symtab)     = False;
-   VG_(clo_trace_malloc)     = False;
-   VG_(clo_trace_sched)      = False;
-   VG_(clo_trace_pthread_level) = 0;
-   VG_(clo_stop_after)       = 1000000000000LL;
-   VG_(clo_dump_error)       = 0;
-   VG_(clo_backtrace_size)   = 4;
-   VG_(clo_weird_hacks)      = NULL;
 
    eventually_logfile_fd = VG_(clo_logfile_fd);
 
@@ -603,7 +680,10 @@ static void process_cmd_line_options ( void )
        if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
                                   VG_STARTUP_STACK_BASE_3 )) {
           sp = (UInt*)VG_STARTUP_STACK_BASE_3;
- 
+       } else 
+       if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
+                                  VG_STARTUP_STACK_BASE_4 )) {
+          sp = (UInt*)VG_STARTUP_STACK_BASE_4;
        } else {
           args_grok_error(
              "startup %esp is not near any VG_STARTUP_STACK_BASE_*\n   "
@@ -723,7 +803,7 @@ static void process_cmd_line_options ( void )
 
    for (i = 0; i < argc; i++) {
 
-      if (STREQ(argv[i], "-v") || STREQ(argv[i], "--verbose"))
+      if      (STREQ(argv[i], "-v") || STREQ(argv[i], "--verbose"))
          VG_(clo_verbosity)++;
       else if (STREQ(argv[i], "-q") || STREQ(argv[i], "--quiet"))
          VG_(clo_verbosity)--;
@@ -732,11 +812,6 @@ static void process_cmd_line_options ( void )
          VG_(clo_error_limit) = True;
       else if (STREQ(argv[i], "--error-limit=no"))
          VG_(clo_error_limit) = False;
-
-      else if (STREQ(argv[i], "--check-addrVs=yes"))
-         VG_(clo_check_addrVs) = True;
-      else if (STREQ(argv[i], "--check-addrVs=no"))
-         VG_(clo_check_addrVs) = False;
 
       else if (STREQ(argv[i], "--gdb-attach=yes"))
          VG_(clo_GDB_attach) = True;
@@ -747,28 +822,6 @@ static void process_cmd_line_options ( void )
          VG_(clo_demangle) = True;
       else if (STREQ(argv[i], "--demangle=no"))
          VG_(clo_demangle) = False;
-
-      else if (STREQ(argv[i], "--partial-loads-ok=yes"))
-         VG_(clo_partial_loads_ok) = True;
-      else if (STREQ(argv[i], "--partial-loads-ok=no"))
-         VG_(clo_partial_loads_ok) = False;
-
-      else if (STREQ(argv[i], "--leak-check=yes"))
-         VG_(clo_leak_check) = True;
-      else if (STREQ(argv[i], "--leak-check=no"))
-         VG_(clo_leak_check) = False;
-
-      else if (STREQ(argv[i], "--show-reachable=yes"))
-         VG_(clo_show_reachable) = True;
-      else if (STREQ(argv[i], "--show-reachable=no"))
-         VG_(clo_show_reachable) = False;
-
-      else if (STREQ(argv[i], "--leak-resolution=low"))
-         VG_(clo_leak_resolution) = 2;
-      else if (STREQ(argv[i], "--leak-resolution=med"))
-         VG_(clo_leak_resolution) = 4;
-      else if (STREQ(argv[i], "--leak-resolution=high"))
-         VG_(clo_leak_resolution) = VG_DEEPEST_BACKTRACE;
 
       else if (STREQ(argv[i], "--sloppy-malloc=yes"))
          VG_(clo_sloppy_malloc) = True;
@@ -783,32 +836,27 @@ static void process_cmd_line_options ( void )
       else if (STREQ(argv[i], "--trace-children=no"))
          VG_(clo_trace_children) = False;
 
-      else if (STREQ(argv[i], "--workaround-gcc296-bugs=yes"))
-         VG_(clo_workaround_gcc296_bugs) = True;
-      else if (STREQ(argv[i], "--workaround-gcc296-bugs=no"))
-         VG_(clo_workaround_gcc296_bugs) = False;
-
       else if (STREQN(15, argv[i], "--sanity-level="))
          VG_(sanity_level) = (Int)VG_(atoll)(&argv[i][15]);
 
       else if (STREQN(13, argv[i], "--logfile-fd="))
          eventually_logfile_fd = (Int)VG_(atoll)(&argv[i][13]);
 
-      else if (STREQN(15, argv[i], "--freelist-vol=")) {
-         VG_(clo_freelist_vol) = (Int)VG_(atoll)(&argv[i][15]);
-         if (VG_(clo_freelist_vol) < 0) VG_(clo_freelist_vol) = 2;
-      }
-
       else if (STREQN(15, argv[i], "--suppressions=")) {
          if (VG_(clo_n_suppressions) >= VG_CLO_MAX_SFILES) {
-            VG_(message)(Vg_UserMsg, "Too many logfiles specified.");
+            VG_(message)(Vg_UserMsg, "Too many suppression files specified.");
             VG_(message)(Vg_UserMsg, 
                          "Increase VG_CLO_MAX_SFILES and recompile.");
-            bad_option(argv[i]);
+            VG_(bad_option)(argv[i]);
          }
          VG_(clo_suppressions)[VG_(clo_n_suppressions)] = &argv[i][15];
          VG_(clo_n_suppressions)++;
       }
+      else if (STREQ(argv[i], "--profile=yes"))
+         VG_(clo_profile) = True;
+      else if (STREQ(argv[i], "--profile=no"))
+         VG_(clo_profile) = False;
+
       else if (STREQ(argv[i], "--single-step=yes"))
          VG_(clo_single_step) = True;
       else if (STREQ(argv[i], "--single-step=no"))
@@ -819,35 +867,26 @@ static void process_cmd_line_options ( void )
       else if (STREQ(argv[i], "--optimise=no"))
          VG_(clo_optimise) = False;
 
-      else if (STREQ(argv[i], "--instrument=yes"))
-         VG_(clo_instrument) = True;
-      else if (STREQ(argv[i], "--instrument=no"))
-         VG_(clo_instrument) = False;
-
-      else if (STREQ(argv[i], "--cleanup=yes"))
-         VG_(clo_cleanup) = True;
-      else if (STREQ(argv[i], "--cleanup=no"))
-         VG_(clo_cleanup) = False;
-
-      else if (STREQ(argv[i], "--cachesim=yes"))
-         VG_(clo_cachesim) = True;     
-      else if (STREQ(argv[i], "--cachesim=no"))
-         VG_(clo_cachesim) = False;
-
-      /* 5 is length of "--I1=" */
-      else if (0 == VG_(strncmp)(argv[i], "--I1=",    5))
-         parse_cache_opt(&VG_(clo_I1_cache), argv[i], 5);
-      else if (0 == VG_(strncmp)(argv[i], "--D1=",    5))
-         parse_cache_opt(&VG_(clo_D1_cache), argv[i], 5);
-      else if (0 == VG_(strncmp)(argv[i], "--L2=",    5))
-         parse_cache_opt(&VG_(clo_L2_cache), argv[i], 5);
-
-      else if (STREQ(argv[i], "--smc-check=none"))
-         VG_(clo_smc_check) = VG_CLO_SMC_NONE;
-      else if (STREQ(argv[i], "--smc-check=some"))
-         VG_(clo_smc_check) = VG_CLO_SMC_SOME;
-      else if (STREQ(argv[i], "--smc-check=all"))
-         VG_(clo_smc_check) = VG_CLO_SMC_ALL;
+      /* "vwxyz" --> 000zyxwv (binary) */
+      else if (STREQN(16, argv[i], "--trace-codegen=")) {
+         Int j;
+         char* opt = & argv[i][16];
+   
+         if (5 != VG_(strlen)(opt)) {
+            VG_(message)(Vg_UserMsg, 
+                         "--trace-codegen argument must have 5 digits");
+            VG_(bad_option)(argv[i]);
+         }
+         for (j = 0; j < 5; j++) {
+            if      ('0' == opt[j]) { /* do nothing */ }
+            else if ('1' == opt[j]) VG_(clo_trace_codegen) |= (1 << j);
+            else {
+               VG_(message)(Vg_UserMsg, "--trace-codegen argument can only "
+                                        "contain 0s and 1s");
+               VG_(bad_option)(argv[i]);
+            }
+         }
+      }
 
       else if (STREQ(argv[i], "--trace-syscalls=yes"))
          VG_(clo_trace_syscalls) = True;
@@ -899,8 +938,13 @@ static void process_cmd_line_options ( void )
             VG_(clo_backtrace_size) = VG_DEEPEST_BACKTRACE;
       }
 
+      else if (VG_(needs).command_line_options) {
+         Bool ok = SK_(process_cmd_line_option)(argv[i]);
+         if (!ok)
+            usage();
+      }
       else
-         bad_option(argv[i]);
+         usage();
    }
 
 #  undef ISSPACE
@@ -917,7 +961,7 @@ static void process_cmd_line_options ( void )
       VG_(message)(Vg_UserMsg, 
          "Invalid --alignment= setting.  "
          "Should be a power of 2, >= 4, <= 4096.");
-      bad_option("--alignment");
+      VG_(bad_option)("--alignment");
    }
 
    if (VG_(clo_GDB_attach) && VG_(clo_trace_children)) {
@@ -926,26 +970,14 @@ static void process_cmd_line_options ( void )
          "--gdb-attach=yes conflicts with --trace-children=yes");
       VG_(message)(Vg_UserMsg, 
          "Please choose one or the other, but not both.");
-      bad_option("--gdb-attach=yes and --trace-children=yes");
+      VG_(bad_option)("--gdb-attach=yes and --trace-children=yes");
    }
 
    VG_(clo_logfile_fd) = eventually_logfile_fd;
 
-   /* Don't do memory checking if simulating the cache. */
-   if (VG_(clo_cachesim)) {
-       VG_(clo_instrument) = False;
-   }
-
    if (VG_(clo_verbosity > 0)) {
-      if (VG_(clo_cachesim)) {
-         VG_(message)(Vg_UserMsg, 
-            "cachegrind-%s, an I1/D1/L2 cache profiler for x86 GNU/Linux.",
-            VERSION);
-      } else {
-         VG_(message)(Vg_UserMsg, 
-            "valgrind-%s, a memory error detector for x86 GNU/Linux.",
-            VERSION);
-      }
+      VG_(message)(Vg_UserMsg, "%s-%s, %s for x86 GNU/Linux.",
+         VG_(needs).name, VERSION, VG_(needs).description);
    }
 
    if (VG_(clo_verbosity > 0))
@@ -958,11 +990,11 @@ static void process_cmd_line_options ( void )
       }
    }
 
-   if (VG_(clo_n_suppressions) == 0 && !VG_(clo_cachesim)) {
+   if (VG_(clo_n_suppressions) == 0 && 
+       (VG_(needs).core_errors || VG_(needs).skin_errors)) {
       config_error("No error-suppression files were specified.");
    }
 }
-
 
 /* ---------------------------------------------------------------------
    Copying to/from m_state_static.
@@ -1015,10 +1047,39 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
          = VG_(m_state_static)[40/4 + i];
 }
 
+Addr VG_(get_stack_pointer) ( void )
+{
+   return VG_(baseBlock)[VGOFF_(m_esp)];
+}
+
+/* Some random tests needed for leak checking */
+
+Bool VG_(within_stack)(Addr a)
+{
+   if (a >= ((Addr)(&VG_(stack)))
+       && a <= ((Addr)(&VG_(stack))) + sizeof(VG_(stack)))
+      return True;
+   else
+      return False;
+}
+
+Bool VG_(within_m_state_static)(Addr a)
+{
+   if (a >= ((Addr)(&VG_(m_state_static)))
+       && a <= ((Addr)(&VG_(m_state_static))) + sizeof(VG_(m_state_static)))
+      return True;
+   else
+      return False;
+}
 
 /* ---------------------------------------------------------------------
    Show accumulated counts.
    ------------------------------------------------------------------ */
+
+static __inline__ Int safe_idiv(Int a, Int b)
+{
+   return (b == 0 ? 0 : a / b);
+}
 
 static void vg_show_counts ( void )
 {
@@ -1027,13 +1088,17 @@ static void vg_show_counts ( void )
 		VG_(current_epoch),
                 VG_(number_of_lrus) );
    VG_(message)(Vg_DebugMsg,
-                "translate: new %d (%d -> %d), discard %d (%d -> %d).",
+                "translate: new     %d (%d -> %d; ratio %d:10)",
                 VG_(overall_in_count),
                 VG_(overall_in_osize),
                 VG_(overall_in_tsize),
+                safe_idiv(10*VG_(overall_in_tsize), VG_(overall_in_osize)));
+   VG_(message)(Vg_DebugMsg,
+                "           discard %d (%d -> %d; ratio %d:10).",
                 VG_(overall_out_count),
                 VG_(overall_out_osize),
-                VG_(overall_out_tsize) );
+                VG_(overall_out_tsize),
+                safe_idiv(10*VG_(overall_out_tsize), VG_(overall_out_osize)));
    VG_(message)(Vg_DebugMsg,
       " dispatch: %lu basic blocks, %d/%d sched events, %d tt_fast misses.", 
       VG_(bbs_done), VG_(num_scheduling_events_MAJOR), 
@@ -1050,6 +1115,7 @@ static void vg_show_counts ( void )
                 "   sanity: %d cheap, %d expensive checks.",
                 VG_(sanity_fast_count), 
                 VG_(sanity_slow_count) );
+   VG_(print_ccall_stats)();
 }
 
 
@@ -1072,21 +1138,32 @@ void VG_(main) ( void )
       VG_(stack)[10000-1-i] = (UInt)(&VG_(stack)[10000-i-1]) ^ 0xABCD4321;
    }
 
-   /* Set up baseBlock offsets and copy the saved machine's state into
-      it. */
+   /* Setup stuff that depends on the skin.  Must be before:
+      - vg_init_baseBlock(): to register helpers
+      - process_cmd_line_options(): to register skin name and description,
+        and turn on/off 'command_line_options' need
+      - init_memory() (to setup memory event trackers).
+    */
+   SK_(pre_clo_init) ( & VG_(needs), & VG_(track_events) );
+   sanity_check_needs();
+
+   /* Set up baseBlock offsets and copy the saved machine's state into it. */
    vg_init_baseBlock();
    VG_(copy_m_state_static_to_baseBlock)();
+   vg_init_shadow_regs();
 
    /* Process Valgrind's command-line opts (from env var VG_OPTS). */
    process_cmd_line_options();
 
    /* Hook to delay things long enough so we can get the pid and
       attach GDB in another shell. */
-   if (0) { 
+#if 0
+   { 
       Int p, q;
       for (p = 0; p < 50000; p++)
          for (q = 0; q < 50000; q++) ;
    }
+#endif
 
    /* Initialise the scheduler, and copy the client's state from
       baseBlock into VG_(threads)[1].  This has to come before signal
@@ -1098,31 +1175,34 @@ void VG_(main) ( void )
    VG_(sigstartup_actions)();
 
    /* Perhaps we're profiling Valgrind? */
-#  ifdef VG_PROFILE
-   VGP_(init_profiling)();
-#  endif
+   if (VG_(clo_profile))
+      VGP_(init_profiling)();
 
    /* Start calibration of our RDTSC-based clock. */
    VG_(start_rdtsc_calibration)();
 
-   if (VG_(clo_instrument) || VG_(clo_cachesim)) {
-      VGP_PUSHCC(VgpInitAudit);
-      VGM_(init_memory_audit)();
-      VGP_POPCC;
-   }
+   /* Do this here just to give rdtsc calibration more time */
+   SK_(post_clo_init)();
 
-   VGP_PUSHCC(VgpReadSyms);
-   VG_(read_symbols)();
-   VGP_POPCC;
+   /* Must come after SK_(init) so memory handler accompaniments (eg.
+    * shadow memory) can be setup ok */
+   VGP_PUSHCC(VgpInitMem);
+   VG_(init_memory)();
+   VGP_POPCC(VgpInitMem);
+
+   /* Read the list of errors to suppress.  This should be found in
+      the file specified by vg_clo_suppressions. */
+   if (VG_(needs).core_errors || VG_(needs).skin_errors)
+      VG_(load_suppressions)();
 
    /* End calibration of our RDTSC-based clock, leaving it as long as
       we can. */
    VG_(end_rdtsc_calibration)();
 
-   /* This should come after init_memory_audit; otherwise the latter
-      carefully sets up the permissions maps to cover the anonymous
-      mmaps for the translation table and translation cache, which
-      wastes > 20M of virtual address space. */
+   /* This should come after init_memory_and_symbols(); otherwise the 
+      latter carefully sets up the permissions maps to cover the 
+      anonymous mmaps for the translation table and translation cache, 
+      which wastes > 20M of virtual address space. */
    VG_(init_tt_tc)();
 
    if (VG_(clo_verbosity) == 1) {
@@ -1132,26 +1212,18 @@ void VG_(main) ( void )
 
    /* Now it is safe for malloc et al in vg_clientmalloc.c to act
       instrumented-ly. */
-   VG_(running_on_simd_CPU) = True;
-   if (VG_(clo_instrument)) {
-      VGM_(make_readable) ( (Addr)&VG_(running_on_simd_CPU), 1 );
-      VGM_(make_readable) ( (Addr)&VG_(clo_instrument), 1 );
-      VGM_(make_readable) ( (Addr)&VG_(clo_trace_malloc), 1 );
-      VGM_(make_readable) ( (Addr)&VG_(clo_sloppy_malloc), 1 );
-   }
-
-   if (VG_(clo_cachesim)) 
-      VG_(init_cachesim)();
-
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "");
 
    VG_(bbs_to_go) = VG_(clo_stop_after);
 
+
    /* Run! */
+   VG_(running_on_simd_CPU) = True;
    VGP_PUSHCC(VgpSched);
    src = VG_(scheduler)();
-   VGP_POPCC;
+   VGP_POPCC(VgpSched);
+   VG_(running_on_simd_CPU) = False;
 
    if (VG_(clo_verbosity) > 0)
       VG_(message)(Vg_UserMsg, "");
@@ -1161,24 +1233,18 @@ void VG_(main) ( void )
         "Warning: pthread scheduler exited due to deadlock");
    }
 
-   if (VG_(clo_instrument)) {
+   if (VG_(needs).core_errors || VG_(needs).skin_errors)
       VG_(show_all_errors)();
-      VG_(clientmalloc_done)();
-      if (VG_(clo_verbosity) == 1) {
-         VG_(message)(Vg_UserMsg, 
-                      "For counts of detected errors, rerun with: -v");
-      }
-      if (VG_(clo_leak_check)) VG_(detect_memory_leaks)();
-   }
-   VG_(running_on_simd_CPU) = False;
 
-   if (VG_(clo_cachesim))
-      VG_(do_cachesim_results)(VG_(client_argc), VG_(client_argv));
+   SK_(fini)();
 
    VG_(do_sanity_checks)( True /*include expensive checks*/ );
 
    if (VG_(clo_verbosity) > 1)
       vg_show_counts();
+
+   if (VG_(clo_verbosity) > 2)
+      VG_(print_UInstr_histogram)();
 
    if (0) {
       VG_(message)(Vg_DebugMsg, "");
@@ -1189,16 +1255,10 @@ void VG_(main) ( void )
       VG_(message)(Vg_DebugMsg, 
          "------ Valgrind's ExeContext management stats follow ------" );
       VG_(show_ExeContext_stats)();
-      VG_(message)(Vg_DebugMsg, 
-         "------ Valgrind's client block stats follow ---------------" );
-      VG_(show_client_block_stats)();
    }
  
-#  ifdef VG_PROFILE
-   VGP_(done_profiling)();
-#  endif
-
-   VG_(done_prof_mem)();
+   if (VG_(clo_profile))
+      VGP_(done_profiling)();
 
    VG_(shutdown_logging)();
 
@@ -1220,9 +1280,10 @@ void VG_(main) ( void )
                    && VG_(last_run_tid) < VG_N_THREADS);
          tst = & VG_(threads)[VG_(last_run_tid)];
          vg_assert(tst->status == VgTs_Runnable);
-         /* The thread's %EBX will hold the arg to exit(), so we just
-            do exit with that arg. */
-         VG_(exit)( tst->m_ebx );
+         /* The thread's %EBX at the time it did __NR_exit() will hold
+            the arg to __NR_exit(), so we just do __NR_exit() with
+            that arg. */
+         VG_(exit)( VG_(exitcode) );
          /* NOT ALIVE HERE! */
          VG_(panic)("entered the afterlife in vg_main() -- ExitSyscall");
          break; /* what the hell :) */
@@ -1267,6 +1328,10 @@ void VG_(oynk) ( Int n )
    tracing into child processes.  To make this work the build system
    also supplies a dummy file, "valgrinq.so". 
 
+   Also replace "vgskin_<foo>.so" with whitespace, for the same reason;
+   without it, child processes try to find valgrind.so symbols in the 
+   skin .so.
+
    Also look for $(libdir)/lib/valgrind in LD_LIBRARY_PATH and change
    it to $(libdir)/lib/valgrinq, so as to make our libpthread.so
    disappear.  
@@ -1274,20 +1339,22 @@ void VG_(oynk) ( Int n )
 void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
                                                 Char* ld_library_path_str )
 {
-   Char* p_prel = NULL;
-   Char* p_path = NULL;
-   Int   what = 0;
+   Char* p_prel  = NULL;
+   Char* sk_prel = NULL;
+   Char* p_path  = NULL;
+   Int   what    = 0;
    if (ld_preload_str == NULL || ld_library_path_str == NULL)
       goto mutancy;
 
    /* VG_(printf)("%s %s\n", ld_preload_str, ld_library_path_str); */
 
    p_prel = VG_(strstr)(ld_preload_str, "valgrind.so");
+   sk_prel = VG_(strstr)(ld_preload_str, "vgskin_");
    p_path = VG_(strstr)(ld_library_path_str, VG_LIBDIR);
 
+   what = 1;
    if (p_prel == NULL) {
       /* perhaps already happened? */
-      what = 1;
       if (VG_(strstr)(ld_preload_str, "valgrinq.so") == NULL)
          goto mutancy;
       if (VG_(strstr)(ld_library_path_str, "lib/valgrinq") == NULL)
@@ -1296,10 +1363,30 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
    }
 
    what = 2;
+   if (sk_prel == NULL) goto mutancy;
+
+   what = 3;
    if (p_path == NULL) goto mutancy;
 
+   what = 4;
+   {  
+      /* Blank from "vgskin_" back to prev. LD_PRELOAD entry, or start */
+      Char* p = sk_prel;
+      while (*p != ':' && p > ld_preload_str) { 
+         *p = ' ';
+         p--;
+      }
+      /* Blank from "vgskin_" to next LD_PRELOAD entry */
+      while (*p != ':' && *p != '\0') { 
+         *p = ' ';
+         p++;
+      }
+      if (*p == '\0') goto mutancy;    /* valgrind.so has disappeared?! */
+      *p = ' ';                        /* blank ending ':' */
+   }
+
    /* in LD_PRELOAD, turn valgrind.so into valgrinq.so. */
-   what = 3;
+   what = 5;
    if (p_prel[7] != 'd') goto mutancy;
    p_prel[7] = 'q';
 
@@ -1307,10 +1394,10 @@ void VG_(mash_LD_PRELOAD_and_LD_LIBRARY_PATH) ( Char* ld_preload_str,
       .../lib/valgrind .../lib/valgrinq, which doesn't exist,
       so that our own libpthread.so goes out of scope. */
    p_path += VG_(strlen)(VG_LIBDIR);
-   what = 4;
+   what = 6;
    if (p_path[0] != '/') goto mutancy;
    p_path++; /* step over / */
-   what = 5;
+   what = 7;
    if (p_path[7] != 'd') goto mutancy;
    p_path[7] = 'q';
    return;
@@ -1406,6 +1493,70 @@ void VG_(nvidia_moan) ( void)
 }
 
 
+/* ---------------------------------------------------------------------
+   Sanity check machinery (permanently engaged).
+   ------------------------------------------------------------------ */
+
+/* A fast sanity check -- suitable for calling circa once per
+   millisecond. */
+
+void VG_(do_sanity_checks) ( Bool force_expensive )
+{
+   Int          i;
+
+   if (VG_(sanity_level) < 1) return;
+
+   /* --- First do all the tests that we can do quickly. ---*/
+
+   VG_(sanity_fast_count)++;
+
+   /* Check that we haven't overrun our private stack. */
+   for (i = 0; i < 10; i++) {
+      vg_assert(VG_(stack)[i]
+                == ((UInt)(&VG_(stack)[i]) ^ 0xA4B3C2D1));
+      vg_assert(VG_(stack)[10000-1-i] 
+                == ((UInt)(&VG_(stack)[10000-i-1]) ^ 0xABCD4321));
+   }
+
+   /* Check stuff pertaining to the memory check system. */
+
+   /* Check that nobody has spuriously claimed that the first or
+      last 16 pages of memory have become accessible [...] */
+   if (VG_(needs).sanity_checks)
+      vg_assert(SK_(cheap_sanity_check)());
+
+   /* --- Now some more expensive checks. ---*/
+
+   /* Once every 25 times, check some more expensive stuff. */
+   if ( force_expensive
+     || VG_(sanity_level) > 1
+     || (VG_(sanity_level) == 1 && (VG_(sanity_fast_count) % 25) == 0)) {
+
+      VG_(sanity_slow_count)++;
+
+#     if 0
+      { void zzzmemscan(void); zzzmemscan(); }
+#     endif
+
+      if ((VG_(sanity_fast_count) % 250) == 0)
+         VG_(sanity_check_tc_tt)();
+
+      if (VG_(needs).sanity_checks) {
+          vg_assert(SK_(expensive_sanity_check)());
+      }
+      /* 
+      if ((VG_(sanity_fast_count) % 500) == 0) VG_(mallocSanityCheckAll)(); 
+      */
+   }
+
+   if (VG_(sanity_level) > 1) {
+      /* Check sanity of the low-level memory manager.  Note that bugs
+         in the client's code can cause this to fail, so we don't do
+         this check unless specially asked for.  And because it's
+         potentially very expensive. */
+      VG_(mallocSanityCheckAll)();
+   }
+}
 /*--------------------------------------------------------------------*/
 /*--- end                                                vg_main.c ---*/
 /*--------------------------------------------------------------------*/

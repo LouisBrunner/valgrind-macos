@@ -1,0 +1,16 @@
+
+Syscall param write(buf) contains uninitialised or unaddressable byte(s)
+   at 0x........: __libc_write (...libc...)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main@@GLIBC_2.0 (...libc...)
+   Address 0x........ is 0 bytes inside a block of size 10 alloc'd
+   at 0x........: malloc (vg_clientfuncs.c:...)
+   by 0x........: main (fwrite.c:6)
+   by 0x........: __libc_start_main (...libc...)
+   by 0x........: __libc_start_main@@GLIBC_2.0 (...libc...)
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 10 bytes in 1 blocks.
+malloc/free: 1 allocs, 0 frees, 10 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v

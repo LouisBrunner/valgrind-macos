@@ -1,0 +1,2 @@
+vgopts: --suppressions=supp.supp
+prog: supp1

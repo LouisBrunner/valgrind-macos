@@ -26,7 +26,7 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
   02111-1307, USA.
 
-  The GNU General Public License is contained in the file LICENSE.
+  The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_constants.h"
@@ -85,36 +85,6 @@ signalreturn_bogusRA_panic_msg:
    underneath the return address, the callee saves _all_ registers,
    and the incoming parameters can be modified, to return results.
 */
-
-
-.global VG_(helper_value_check0_fail)
-VG_(helper_value_check0_fail):
-	pushal
-	call	VG_(helperc_value_check0_fail)
-	popal
-	ret
-
-.global VG_(helper_value_check1_fail)
-VG_(helper_value_check1_fail):
-	pushal
-	call	VG_(helperc_value_check1_fail)
-	popal
-	ret
-
-.global VG_(helper_value_check2_fail)
-VG_(helper_value_check2_fail):
-	pushal
-	call	VG_(helperc_value_check2_fail)
-	popal
-	ret
-
-.global VG_(helper_value_check4_fail)
-VG_(helper_value_check4_fail):
-	pushal
-	call	VG_(helperc_value_check4_fail)
-	popal
-	ret
-
 
 /* Fetch the time-stamp-ctr reg.
    On entry:

@@ -27,7 +27,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #ifndef __VG_KERNELIFACE_H
@@ -138,6 +138,40 @@ typedef
 #define VKI_MAP_ANONYMOUS  0x20            /* Don't use a file.  */
 #define VKI_MAP_PRIVATE    0x02            /* Changes are private.  */
 #define VKI_MAP_FIXED      0x10            /* Interpret addr exactly */
+
+/* Copied from linux-2.4.19/include/asm-i386/fcntl.h */
+
+#define VKI_O_RDONLY             00
+#define VKI_O_WRONLY             01
+#define VKI_O_RDWR               02
+#define VKI_O_CREAT            0100 /* not fcntl */
+#define VKI_O_EXCL             0200 /* not fcntl */
+#define VKI_O_TRUNC           01000 /* not fcntl */
+#define VKI_O_APPEND          02000
+#define VKI_O_NONBLOCK        04000
+#define VKI_O_SYNC           010000
+#define VKI_FASYNC           020000 /* fcntl, for BSD compatibility */
+#define VKI_O_DIRECT         040000 /* direct disk access hint */
+#define VKI_O_LARGEFILE     0100000
+#define VKI_O_DIRECTORY     0200000 /* must be a directory */
+#define VKI_O_NOFOLLOW      0400000 /* don't follow links */
+
+/* Copied from linux-2.4.19/include/linux/stat.h */
+
+#define VKI_S_IRWXU 00700
+#define VKI_S_IRUSR 00400
+#define VKI_S_IWUSR 00200
+#define VKI_S_IXUSR 00100
+
+#define VKI_S_IRWXG 00070
+#define VKI_S_IRGRP 00040
+#define VKI_S_IWGRP 00020
+#define VKI_S_IXGRP 00010
+
+#define VKI_S_IRWXO 00007
+#define VKI_S_IROTH 00004
+#define VKI_S_IWOTH 00002
+#define VKI_S_IXOTH 00001
 
 
 /* Copied from /usr/src/linux-2.4.9-13/include/asm/errno.h */

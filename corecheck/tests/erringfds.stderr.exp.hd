@@ -1,0 +1,8 @@
+
+Warning: invalid file descriptor -1 in syscall read()
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+malloc/free: in use at exit: 0 bytes in 0 blocks.
+malloc/free: 0 allocs, 0 frees, 0 bytes allocated.
+For a detailed leak analysis,  rerun with: --leak-check=yes
+For counts of detected errors, rerun with: -v

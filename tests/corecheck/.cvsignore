@@ -1,0 +1,10 @@
+Makefile.in
+Makefile
+erringfds
+malloc3
+sigkill
+pth_empty
+*.stdout.diff
+*.stderr.diff
+*.stdout.out
+*.stderr.out

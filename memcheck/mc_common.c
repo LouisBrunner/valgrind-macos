@@ -52,7 +52,6 @@ VgRes MC_(clo_leak_resolution)        = Vg_LowRes;
 Bool  MC_(clo_show_reachable)         = False;
 Bool  MC_(clo_workaround_gcc296_bugs) = False;
 Bool  MC_(clo_cleanup)                = True;
-Bool  MC_(clo_check_addrVs)           = True;
 Bool  MC_(clo_avoid_strlen_errors)    = True;
 
 Bool MC_(process_common_cmd_line_option)(Char* arg)

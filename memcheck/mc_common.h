@@ -196,9 +196,6 @@ extern Bool MC_(clo_workaround_gcc296_bugs);
 /* DEBUG: clean up instrumented code?  default: YES */
 extern Bool MC_(clo_cleanup);
 
-/* Shall we V-check addrs? (they are always A checked too)   default: YES */
-extern Bool MC_(clo_check_addrVs);
-
 /* When instrumenting, omit some checks if tell-tale literals for
    inlined strlen() are visible in the basic block.  default: YES */
 extern Bool MC_(clo_avoid_strlen_errors);

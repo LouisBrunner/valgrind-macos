@@ -580,16 +580,16 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             really much point in doing the V-check too, unless you
             think that you might use addresses which are undefined but
             still addressible.  Hence the optionalisation of the V
-            check.
+            check.  15 Dec 02: optionalisation removed, since it no
+            longer makes much sense given we also have an addrcheck
+            skin.
 
             The LOADV/STOREV does an addressibility check for the
             address. */
 
          case LOAD: 
-            if (MC_(clo_check_addrVs)) {
-               uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val1));
-               uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val1));
-            }
+            uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val1));
+            uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val1));
             uInstr2(cb, LOADV, u_in->size, 
                         TempReg, u_in->val1,
                         TempReg, SHADOW(u_in->val2));
@@ -597,10 +597,8 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             break;
 
          case STORE:
-            if (MC_(clo_check_addrVs)) {
-               uInstr1(cb, TESTV,  4, TempReg, SHADOW(u_in->val2));
-               uInstr1(cb, SETV,   4, TempReg, SHADOW(u_in->val2));
-            }
+            uInstr1(cb, TESTV,  4, TempReg, SHADOW(u_in->val2));
+            uInstr1(cb, SETV,   4, TempReg, SHADOW(u_in->val2));
             uInstr2(cb, STOREV, u_in->size,
                         TempReg, SHADOW(u_in->val1), 
                         TempReg, u_in->val2);
@@ -1151,36 +1149,36 @@ static void vg_delete_redundant_SETVs ( UCodeBlock* cb )
    for (i = VG_(get_num_instrs)(cb) - 1; i >= 0; i--) {
       u = VG_(get_instr)(cb, i);
 
-      /* If we're not checking address V bits, there will be a lot of
-         GETVs, TAG1s and TAG2s calculating values which are never
-         used.  These first three cases get rid of them. */
+      /* Occasionally there will be GETVs, TAG1s and TAG2s calculating
+         values which are never used.  These first three cases get rid
+         of them. */
 
       if (u->opcode == GETV && VGC_IS_SHADOW(u->val2) 
-                            && next_is_write[u->val2]
-                            && !MC_(clo_check_addrVs)) {
+                            && next_is_write[u->val2]) {
+         sk_assert(u->val2 < n_temps);
          VG_(new_NOP)(u);
          if (dis) 
             VG_(printf)("   at %2d: delete GETV\n", i);
       } else
 
       if (u->opcode == TAG1 && VGC_IS_SHADOW(u->val1) 
-                            && next_is_write[u->val1]
-                            && !MC_(clo_check_addrVs)) {
+                            && next_is_write[u->val1]) {
+         sk_assert(u->val1 < n_temps);
          VG_(new_NOP)(u);
          if (dis) 
             VG_(printf)("   at %2d: delete TAG1\n", i);
       } else
 
       if (u->opcode == TAG2 && VGC_IS_SHADOW(u->val2) 
-                            && next_is_write[u->val2]
-                            && !MC_(clo_check_addrVs)) {
+                            && next_is_write[u->val2]) {
+         sk_assert(u->val2 < n_temps);
          VG_(new_NOP)(u);
          if (dis) 
             VG_(printf)("   at %2d: delete TAG2\n", i);
       } else
 
-      /* We do the rest of these regardless of whether or not
-         addresses are V-checked. */
+      /* The bulk of the cleanup work of this function is done by
+         the code from here downwards. */
 
       if (u->opcode == MOV && VGC_IS_SHADOW(u->val2) 
                            && next_is_write[u->val2]) {

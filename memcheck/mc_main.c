@@ -1486,12 +1486,7 @@ Bool SK_(process_cmd_line_option)(Char* arg)
 #  define STREQ(s1,s2)     (0==VG_(strcmp_ws)((s1),(s2)))
 #  define STREQN(nn,s1,s2) (0==VG_(strncmp_ws)((s1),(s2),(nn)))
 
-   if (STREQ(arg, "--check-addrVs=yes"))
-      MC_(clo_check_addrVs) = True;
-   else if (STREQ(arg, "--check-addrVs=no"))
-      MC_(clo_check_addrVs) = False;
-
-   else if (STREQ(arg, "--avoid-strlen-errors=yes"))
+   if (STREQ(arg, "--avoid-strlen-errors=yes"))
       MC_(clo_avoid_strlen_errors) = True;
    else if (STREQ(arg, "--avoid-strlen-errors=no"))
       MC_(clo_avoid_strlen_errors) = False;
@@ -1515,8 +1510,6 @@ Char* SK_(usage)(void)
 "                              amount of bt merging in leak check [low]\n"
 "    --show-reachable=no|yes   show reachable blocks in leak check? [no]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
-"    --check-addrVs=no|yes     experimental lighterweight checking? [yes]\n"
-"                              yes == Valgrind's original behaviour\n"
 "\n"
 "    --cleanup=no|yes          improve after instrumentation? [yes]\n"
 "    --avoid-strlen-errors=no|yes  suppress errs from inlined strlen [yes]\n";

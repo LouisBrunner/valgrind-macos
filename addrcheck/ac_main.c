@@ -1243,8 +1243,6 @@ Char* SK_(usage)(void)
 "                              amount of bt merging in leak check [low]\n"
 "    --show-reachable=no|yes   show reachable blocks in leak check? [no]\n"
 "    --workaround-gcc296-bugs=no|yes  self explanatory [no]\n"
-"    --check-addrVs=no|yes     experimental lighterweight checking? [yes]\n"
-"                              yes == Valgrind's original behaviour\n"
 "\n"
 "    --cleanup=no|yes          improve after instrumentation? [yes]\n";
 }

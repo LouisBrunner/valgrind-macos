@@ -821,12 +821,13 @@ static IRBB* cprop_BB ( IRBB* in )
    -- really just operating a set or IRTemps.
 */
 
-static void addUses_Temp ( Hash64* set, IRTemp tmp )
+inline
+static void addUses_Temp ( Bool* set, IRTemp tmp )
 {
-   addToH64(set, (ULong)tmp, 0);
+   set[(Int)tmp] = True;
 }
 
-static void addUses_Expr ( Hash64* set, IRExpr* e )
+static void addUses_Expr ( Bool* set, IRExpr* e )
 {
    Int i;
    switch (e->tag) {
@@ -865,7 +866,7 @@ static void addUses_Expr ( Hash64* set, IRExpr* e )
    }
 }
 
-static void addUses_Stmt ( Hash64* set, IRStmt* st )
+static void addUses_Stmt ( Bool* set, IRStmt* st )
 {
    Int      i;
    IRDirty* d;
@@ -898,7 +899,7 @@ static void addUses_Stmt ( Hash64* set, IRStmt* st )
          vex_printf("\n");
          ppIRStmt(st);
          vpanic("addUses_Stmt");
-      }
+   }
 }
 
 
@@ -913,8 +914,12 @@ static void addUses_Stmt ( Hash64* set, IRStmt* st )
 static void dead_BB ( IRBB* bb )
 {
    Int     i;
-   Hash64* set = newH64();
+   Int     n_tmps = bb->tyenv->types_used;
+   Bool*   set = LibVEX_Alloc(n_tmps * sizeof(Bool));
    IRStmt* st;
+
+   for (i = 0; i < n_tmps; i++)
+      set[i] = False;
 
    /* start off by recording IRTemp uses in the next field. */
    addUses_Expr(set, bb->next);
@@ -925,7 +930,7 @@ static void dead_BB ( IRBB* bb )
       if (!st)
          continue;
       if (st->tag == Ist_Tmp
-          && !lookupH64(set, NULL, (ULong)(st->Ist.Tmp.tmp))) {
+          && set[(Int)(st->Ist.Tmp.tmp)] == False) {
           /* it's an IRTemp which never got used.  Delete it. */
          if (DEBUG_IROPT) {
             vex_printf("DEAD: ");

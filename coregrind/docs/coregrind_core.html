@@ -710,7 +710,7 @@ not Cachegrind.
 For tools that use their own version of <code>malloc()</code> (e.g. Memcheck
 and Addrcheck), the following options apply.
 <ul>
-  <li><code>--alignment=&lt;number&gt;</code> [default: 4]<br> <p>By
+  <li><code>--alignment=&lt;number&gt;</code> [default: 8]<br> <p>By
       default Valgrind's <code>malloc</code>, <code>realloc</code>,
       etc, return 4-byte aligned addresses.  These are suitable for
       any accesses on x86 processors. 

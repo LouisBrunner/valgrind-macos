@@ -46,7 +46,7 @@ Bool VG_(clo_sloppy_malloc)  = False;
 Bool VG_(clo_trace_malloc)   = False;
 
 /* Minimum alignment in functions that don't specify alignment explicitly.
-   default: 0, i.e. use default of the machine (== 4) */
+   default: 0, i.e. use default of the machine (== 8) */
 Int  VG_(clo_alignment) = 8;
 
 
@@ -86,7 +86,7 @@ void VG_(replacement_malloc_print_usage)(void)
 {
    VG_(printf)(
 "    --sloppy-malloc=no|yes    round malloc sizes to next word? [no]\n"
-"    --alignment=<number>      set minimum alignment of allocations [4]\n"
+"    --alignment=<number>      set minimum alignment of allocations [8]\n"
    );
 }
 

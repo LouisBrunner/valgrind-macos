@@ -410,13 +410,13 @@ static void layout_remaining_space(Addr argc_addr, float ratio)
 
    if (0)
       VG_(printf)(
-         "client_base        %8x (%dMB)\n"
-         "client_mapbase     %8x (%dMB)\n"
-         "client_end         %8x (%dMB)\n"
-         "shadow_base        %8x (%dMB)\n"
-         "shadow_end         %8x\n"
-         "valgrind_base      %8x (%dMB)\n"
-         "valgrind_last      %8x\n",
+         "client_base        %p (%dMB)\n"
+         "client_mapbase     %p (%dMB)\n"
+         "client_end         %p (%dMB)\n"
+         "shadow_base        %p (%dMB)\n"
+         "shadow_end         %p\n"
+         "valgrind_base      %p (%dMB)\n"
+         "valgrind_last      %p\n",
          VG_(client_base),       SEGSIZE(client_base,       client_mapbase),
          VG_(client_mapbase),    SEGSIZE(client_mapbase,    client_end),
          VG_(client_end),        SEGSIZE(client_end,        shadow_base),

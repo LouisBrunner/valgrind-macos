@@ -952,9 +952,6 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size, Bool isWrite )
 
 IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayout* layout)
 {
-/* Use this rather than eg. -1 because it's a UInt. */
-#define INVALID_DATA_SIZE   999999
-
    Int         i, hsz;
    IRStmt*     st;
    IRExpr*     data;

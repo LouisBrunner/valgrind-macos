@@ -35,6 +35,7 @@
 
 #include "libvex_basictypes.h"
 #include "libvex.h"
+#include "libvex_trc_values.h"
 
 #include "main/vex_util.h"
 #include "host-generic/h_generic_regs.h"
@@ -1718,9 +1719,8 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       goto done;
 
    case Xin_Goto:
-      /* If a non-boring unconditional jump, set %ebp appropriately.
-         The magic numbers here have to match those defined in
-         vg_constants.h. */
+      /* If a non-boring unconditional jump, set %ebp (the guest state
+         pointer) appropriately. */
       if (i->Xin.Goto.cond == Xcc_ALWAYS
           && (i->Xin.Goto.jk == Ijk_ClientReq 
               || i->Xin.Goto.jk == Ijk_Syscall
@@ -1729,14 +1729,11 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          *p++ = 0xBD;
          switch (i->Xin.Goto.jk) {
             case Ijk_ClientReq: 
-               /* 23 == VG_TRC_EBP_JMP_CLIENTREQ */
-               p = emit32(p, 23); break;
+               p = emit32(p, VEX_TRC_JMP_CLIENTREQ); break;
             case Ijk_Syscall: 
-               /* 19 == VG_TRC_EBP_JMP_SYSCALL */
-               p = emit32(p, 19); break;
+               p = emit32(p, VEX_TRC_JMP_SYSCALL); break;
             case Ijk_Yield: 
-               /* 27 == VG_TRC_EBP_JMP_YIELD */
-               p = emit32(p, 27); break;
+               p = emit32(p, VEX_TRC_JMP_YIELD); break;
             default: 
                ppIRJumpKind(i->Xin.Goto.jk);
                vpanic("emit_X86Instr.Xin_Goto: unknown jump kind");

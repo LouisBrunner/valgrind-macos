@@ -2,6 +2,7 @@
 PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_ir.h				\
 		pub/libvex.h				\
+		pub/libvex_trc_values.h			\
 		pub/libvex_guest_x86.h			\
 		pub/libvex_guest_amd64.h		\
 		pub/libvex_guest_arm.h

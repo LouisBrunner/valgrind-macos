@@ -3875,6 +3875,14 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
+   /* PANDN (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0xDF) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pandn",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
    /* POR (src)xmmreg-or-mem, (dst)xmmreg */
    if (sz == 2
        && insn[0] == 0x0F && insn[1] == 0xEB) {
@@ -3883,23 +3891,214 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       goto decode_success;
    }
 
-   /* PUNPCKLgg (src)xmmreg-or-mem, (dst)xmmreg */
-   /* 60 is BW, 61 is WD, 62 is DQ */
+   /* 0xDA: PMINUB(src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xEA: PMINSW(src)xmmreg-or-mem, (dst)xmmreg */
    if (sz == 2
        && insn[0] == 0x0F 
-       && (insn[1] == 0x61 || insn[1] == 0x62)) {
+       && (insn[1] == 0xDA || insn[1] == 0xEA)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmin{ub,sw}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xDE: PMAXUB(src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xEE: PMAXSW(src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xDE || insn[1] == 0xEE)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmax{ub,sw}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xE0: PAVGB(src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xE3: PAVGW(src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xE0 || insn[1] == 0xE3)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pavg{b,w}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0x60: PUNPCKLBW (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x61: PUNPCKLWD (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x62: PUNPCKLDQ (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0x60 || insn[1] == 0x61 || insn[1] == 0x62)) {
       eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
                                       "punpckl{bw,wd,dq}",
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
 
-   /* PADDgg (src)xmmreg-or-mem, (dst)xmmreg */
-   /* FC is B, FD is W, FE is D */
+   /* 0x68: PUNPCKHBW (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x69: PUNPCKHWD (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x6A: PUNPCKHDQ (src)xmmreg-or-mem, (dst)xmmreg */
    if (sz == 2
        && insn[0] == 0x0F 
-       && (insn[1] == 0xFC || insn[1] == 0xFD || insn[1] == 0xFE)) {
-      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "padd{b,w,d}",
+       && (insn[1] == 0x68 || insn[1] == 0x69 || insn[1] == 0x6A)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, 
+                                      "punpckh{bw,wd,dq}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xFC: PADDB (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xFD: PADDW (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xFE: PADDD (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xD4: PADDQ (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xFC || insn[1] == 0xFD 
+           || insn[1] == 0xFE || insn[1] == 0xD4)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "padd{b,w,d,q}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xEC: PADDSB (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xED: PADDSW (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xEC || insn[1] == 0xED)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "padds{b,w}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xDC: PADDUSB (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xDD: PADDUSW (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xDC || insn[1] == 0xDD)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "paddus{b,w}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xF8: PSUBB (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xF9: PSUBW (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xFA: PSUBD (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xFB: PSUBQ (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xF8 || insn[1] == 0xF9 
+           || insn[1] == 0xFA || insn[1] == 0xFB)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psub{b,w,d,q}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xE8: PSUBSB (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xE9: PSUBSW (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xE8 || insn[1] == 0xE9)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psubs{b,w}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xD8: PSUBUSB (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xD9: PSUBUSW (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xD8 || insn[1] == 0xD9)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psubus{b,w}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xE5: PMULHW(src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xD5: PMULLW(src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xE5 || insn[1] == 0xD5)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmul{h,l}w",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xF5: PMADDWD(src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && insn[1] == 0xF5) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pmaddwd",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0x74: PCMPEQB (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x75: PCMPEQW (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x76: PCMPEQD (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0x74 || insn[1] == 0x75 || insn[1] == 0x76)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pcmpeq{b,w,d}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0x64: PCMPGTB (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x65: PCMPGTW (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x66: PCMPGTD (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0x64 || insn[1] == 0x65 || insn[1] == 0x66)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "pcmpgt{b,w,d}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0x63: PACKSSWB (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0x6B: PACKSSDW (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0x63 || insn[1] == 0x6B)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "packss{wb,dw}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0x67: PACKUSWB (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && insn[1] == 0x67) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "packuswb",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xF1: PSLLW (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xF2: PSLLD (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xF3: PSLLQ (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xF1 || insn[1] == 0xF2 || insn[1] == 0xF3)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psll{b,w,d}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xD1: PSRLW (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xD2: PSRLD (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xD3: PSRLQ (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xD1 || insn[1] == 0xD2 || insn[1] == 0xD3)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psrl{b,w,d}",
+                                      0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* 0xE1: PSRAW (src)xmmreg-or-mem, (dst)xmmreg */
+   /* 0xE2: PSRAD (src)xmmreg-or-mem, (dst)xmmreg */
+   if (sz == 2
+       && insn[0] == 0x0F 
+       && (insn[1] == 0xE1 || insn[1] == 0xE2)) {
+      eip = dis_SSE3_reg_or_mem ( cb, sorb, eip+2, 16, "psra{w,d}",
                                       0x66, insn[0], insn[1] );
       goto decode_success;
    }
@@ -3989,6 +4188,17 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_SSE3_load_store_or_mov
                (cb, sorb, eip+2, 16, is_store, "movdqa", 
                     0x66, insn[0], insn[1] );
+      goto decode_success;
+   }
+
+   /* MOVDQU -- unaligned 16-byte load/store. */
+   if (insn[0] == 0xF3
+       && insn[1] == 0x0F 
+       && (insn[2] == 0x6F || insn[2] == 0x7F)) {
+      Bool is_store = insn[2]==0x7F;
+      eip = dis_SSE3_load_store_or_mov
+               (cb, sorb, eip+3, 16, is_store, "movdqu", 
+                    insn[0], insn[1], insn[2] );
       goto decode_success;
    }
 

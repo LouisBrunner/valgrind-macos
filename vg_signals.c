@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 
@@ -874,13 +874,30 @@ void VG_(restore_all_host_signals) ( /* IN */ vki_ksigset_t* saved_mask )
 
 typedef
    struct {
-      /* These are parameters to the signal handler. */
-      UInt retaddr;   /* Sig handler's (bogus) return address */
-      Int  sigNo;     /* The arg to the sig handler.  */
-      Addr psigInfo;  /* ptr to siginfo_t; NULL for now. */
-      Addr puContext; /* ptr to ucontext; NULL for now. */
+      /* These 4 are parameters to the signal handler.  The order of
+         them is important, since this whole struct is pushed onto the
+         client's stack at delivery time.  The first 4 words -- which
+         will be at the top of the stack -- constitute 4 arg words to
+         the handler. */
+
+      /* Sig handler's (bogus) return address */
+      Addr retaddr;
+      /* The arg to the sig handler.  We need to inspect this after
+         the handler returns, but it's unreasonable to assume that the
+         handler won't change it.  So we keep a second copy of it in
+         sigNo_private. */
+      Int  sigNo;
+      /* ptr to siginfo_t; NULL for now. */
+      Addr psigInfo;
+      /* ptr to ucontext; NULL for now. */
+      Addr puContext;
+
+      /* The rest are private fields which the handler is unaware of. */
+
       /* Sanity check word. */
       UInt magicPI;
+      /* Safely-saved version of sigNo, as described above. */
+      Int  sigNo_private;
       /* Saved processor state. */
       UInt fpustate[VG_SIZE_OF_FPUSTATE_W];
       UInt eax;
@@ -946,6 +963,7 @@ void vg_push_signal_frame ( ThreadId tid, int sigNo )
 
    frame->retaddr    = (UInt)(&VG_(signalreturn_bogusRA));
    frame->sigNo      = sigNo;
+   frame->sigNo_private = sigNo;
    frame->psigInfo   = (Addr)NULL;
    frame->puContext  = (Addr)NULL;
    frame->magicPI    = 0x31415927;
@@ -1035,7 +1053,10 @@ Int vg_pop_signal_frame ( ThreadId tid )
    tst->m_edi     = frame->edi;
    tst->m_eflags  = frame->eflags;
    tst->m_eip     = frame->eip;
-   sigNo          = frame->sigNo;
+
+   /* don't use the copy exposed to the handler; it might have changed
+      it. */
+   sigNo          = frame->sigNo_private; 
 
    /* And restore the thread's status to what it was before the signal
       was delivered. */
@@ -1194,7 +1215,11 @@ Bool VG_(deliver_signals) ( void )
             vg_dcss.dcss_sigpending[sigNo] = False;
             vg_dcss.dcss_destthread[sigNo] = VG_INVALID_THREADID;
             continue; /* for (sigNo = 1; ...) loop */
-	 }
+	 } else if (VG_(ksigismember)(&(tst->sig_mask), sigNo)) {
+            /* signal blocked in specific thread, so we can't
+               deliver it just now */
+            continue; /* for (sigNo = 1; ...) loop */
+         }
       } else {
          /* not directed to a specific thread, so search for a
             suitable candidate */

@@ -27,7 +27,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -177,7 +177,7 @@ Int VG_(ksigaddset)( vki_ksigset_t* set, Int signum )
 {
    if (set == NULL)
       return -1;
-   if (signum < 1 && signum > VKI_KNSIG)
+   if (signum < 1 || signum > VKI_KNSIG)
       return -1;
    signum--;
    set->ws[signum / VKI_KNSIG_BPW] |= (1 << (signum % VKI_KNSIG_BPW));
@@ -188,7 +188,7 @@ Int VG_(ksigdelset)( vki_ksigset_t* set, Int signum )
 {
    if (set == NULL)
       return -1;
-   if (signum < 1 && signum > VKI_KNSIG)
+   if (signum < 1 || signum > VKI_KNSIG)
       return -1;
    signum--;
    set->ws[signum / VKI_KNSIG_BPW] &= ~(1 << (signum % VKI_KNSIG_BPW));
@@ -199,7 +199,7 @@ Int VG_(ksigismember) ( vki_ksigset_t* set, Int signum )
 {
    if (set == NULL)
       return 0;
-   if (signum < 1 && signum > VKI_KNSIG)
+   if (signum < 1 || signum > VKI_KNSIG)
       return 0;
    signum--;
    if (1 & ((set->ws[signum / VKI_KNSIG_BPW]) >> (signum % VKI_KNSIG_BPW)))
@@ -763,9 +763,18 @@ void VG_(strncpy_safely) ( Char* dest, const Char* src, Int ndest )
 }
 
 
-void VG_(strncpy) ( Char* dest, const Char* src, Int ndest )
+Char* VG_(strncpy) ( Char* dest, const Char* src, Int ndest )
 {
-   VG_(strncpy_safely)( dest, src, ndest+1 ); 
+   Int i = 0;
+   while (True) {
+      if (i >= ndest) return dest;     /* reached limit */
+      dest[i] = src[i];
+      if (src[i++] == 0) {
+         /* reached NUL;  pad rest with zeroes as required */
+         while (i < ndest) dest[i++] = 0;
+         return dest;
+      }
+   }
 }
 
 
@@ -1266,9 +1275,23 @@ void* VG_(get_memory_from_mmap) ( Int nBytes, Char* who )
             tot_alloc, nBytes, p, ((char*)p) + nBytes - 1, who );
       return p;
    }
-   VG_(printf)("vg_get_memory_from_mmap failed on request of %d\n", 
+   VG_(printf)("\n");
+   VG_(printf)("VG_(get_memory_from_mmap): request for %d bytes failed.\n", 
                nBytes);
-   VG_(panic)("vg_get_memory_from_mmap: out of memory!  Fatal!  Bye!\n");
+   VG_(printf)("VG_(get_memory_from_mmap): %d bytes already allocated.\n", 
+               tot_alloc);
+   VG_(printf)("\n");
+   VG_(printf)("This may mean that you have run out of swap space,\n");
+   VG_(printf)("since running programs on valgrind increases their memory\n");
+   VG_(printf)("usage at least 3 times.  You might want to use 'top'\n");
+   VG_(printf)("to determine whether you really have run out of swap.\n");
+   VG_(printf)("If so, you may be able to work around it by adding a\n");
+   VG_(printf)("temporary swap file -- this is easier than finding a\n");
+   VG_(printf)("new swap partition.  Go ask your sysadmin(s) [politely!]\n");
+   VG_(printf)("\n");
+   VG_(printf)("VG_(get_memory_from_mmap): out of memory!  Fatal!  Bye!\n");
+   VG_(printf)("\n");
+   VG_(exit)(1);
 }
 
 

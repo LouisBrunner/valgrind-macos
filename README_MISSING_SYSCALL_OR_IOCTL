@@ -48,8 +48,8 @@ Removing the debug printing clutter, it looks like this:
 
    case __NR_read: /* syscall 3 */
       /* size_t read(int fd, void *buf, size_t count); */
-      must_be_writable( "read(buf)", arg2, arg3 );
-      KERNEL_DO_SYSCALL(res);
+      must_be_writable( tst, "read(buf)", arg2, arg3 );
+      KERNEL_DO_SYSCALL(tid,res);
       if (!VG_(is_kerror)(res) && res > 0) {
          make_readable( arg2, res );
       }
@@ -59,7 +59,7 @@ The first thing we do is check that the buffer, which you planned to
 have the result written to, really is addressible ("writable", here).
 Hence:
 
-      must_be_writable( "read(buf)", arg2, arg3 );
+      must_be_writable( tst, "read(buf)", arg2, arg3 );
 
 which causes Valgrind to issue a warning if the address range 
 [arg2 .. arg2 + arg3 - 1] is not writable.  This is one of those
@@ -71,7 +71,7 @@ to "count".
 Now Valgrind asks the kernel to do the system call, depositing the
 return code in "res":
 
-      KERNEL_DO_SYSCALL(res);
+      KERNEL_DO_SYSCALL(tid,res);
 
 Finally, the really important bit.  If, and only if, the system call
 was successful, mark the buffer as readable (ie, as having valid
@@ -122,7 +122,7 @@ following:
     Note that a common error is to call make_readable or make_writable 
     with 0 (NULL) as the first (address) argument.  This usually means your
     logic is slightly inadequate.  It's a sufficiently common bug that
-    there's a built-in check for it, and you'll get a "probably sanity 
+    there's a built-in check for it, and you'll get a "probable sanity 
     check failure" for the syscall wrapper you just made, if this is
     the case.
 

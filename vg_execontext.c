@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -113,6 +113,8 @@ Bool VG_(eq_ExeContext_all) ( ExeContext* e1, ExeContext* e2 )
 {
    vg_ec_cmpAlls++;
    /* Just do pointer comparison. */
+   if (e1 == NULL || e2 == NULL) 
+      return False;
    if (e1 != e2) return False;
    return True;
 }
@@ -122,6 +124,8 @@ Bool VG_(eq_ExeContext_all) ( ExeContext* e1, ExeContext* e2 )
 Bool VG_(eq_ExeContext_top2) ( ExeContext* e1, ExeContext* e2 )
 {
    vg_ec_cmp2s++;
+   if (e1 == NULL || e2 == NULL) 
+      return False;
    if (e1->eips[0] != e2->eips[0]
        || e1->eips[1] != e2->eips[1]) return False;
    return True;
@@ -132,6 +136,8 @@ Bool VG_(eq_ExeContext_top2) ( ExeContext* e1, ExeContext* e2 )
 Bool VG_(eq_ExeContext_top4) ( ExeContext* e1, ExeContext* e2 )
 {
    vg_ec_cmp4s++;
+   if (e1 == NULL || e2 == NULL) 
+      return False;
    if (e1->eips[0] != e2->eips[0]
        || e1->eips[1] != e2->eips[1]) return False;
 

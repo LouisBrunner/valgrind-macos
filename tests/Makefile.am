@@ -31,4 +31,5 @@ EXTRA_DIST = \
 	discard.c pth_semaphore1.c new_override.cpp pth_yield.c \
 	sigaltstack.c erringfds.c sigwait_all.c \
 	pth_cancel1.c pth_cancel2.c pth_signal_gober.c nanoleak.c \
-	pth_pause.c pth_sigpending.c pth_atfork1.c
+	pth_pause.c pth_sigpending.c pth_atfork1.c \
+	fpu_28_108.S pth_blockedsig.c

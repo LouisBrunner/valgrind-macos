@@ -27,7 +27,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #ifndef __VG_KERNELIFACE_H
@@ -324,7 +324,9 @@ struct vki_stat {
 #define VKI_AT_PHNUM  5     /* number of program headers */
 #define VKI_AT_PHENT  4     /* size of program header entry */
 #define VKI_AT_PHDR   3     /* program headers for program */
-
+#define VKI_AT_USER_AUX_SEGMENT 23  /* tell glibc what address segment
+                                       0x3B points to.  (Needed for
+                                       Red Hat Limbo, 7.3.92) */
 
 /* Including <linux/module.h> leads to loads of hassle because then we
    need <asm/atomic.h> sometimes (RedHat 7.3) and that is a

@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -416,6 +416,159 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #     endif
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
+
+#     if defined(__NR_mount)
+      case __NR_mount:
+         /* int mount(const char *specialfile, const char *dir,
+            const char *filesystemtype, unsigned long rwflag,
+            const void *data); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("mount()\n");
+         must_be_readable_asciiz(tst,"mount(specialfile)",arg1);
+         must_be_readable_asciiz(tst,"mount(dir)",arg2);
+         must_be_readable_asciiz(tst,"mount(filesystemtype)",arg3);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
+#     if defined(__NR_umount)
+      case __NR_umount:
+         /* int umount(const char *path) */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("umount()\n");
+         must_be_readable_asciiz(tst,"umount(path)",arg1);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
+#     if defined(__NR_ptrace)
+      case __NR_ptrace: { /* syscall 26 */
+         /* long ptrace (enum __ptrace_request request, pid_t pid, 
+                         void *addr, void *data); ... sort of. */
+         /* Sigh ... the /usr/include/sys/user.h on R H 6.2 doesn't 
+            define struct user_fpxregs_struct.  On the basis that it 
+            is defined as follows on my R H 7.2 (glibc-2.2.4) box, 
+            I kludge it.
+
+            struct user_fpxregs_struct
+            {
+               unsigned short int cwd;
+               unsigned short int swd;
+               unsigned short int twd;
+               unsigned short int fop;
+               long int fip;
+               long int fcs;
+               long int foo;
+               long int fos;
+               long int mxcsr;
+               long int reserved;
+               long int st_space[32];  8*16 bytes for each FP-reg = 128 bytes
+               long int xmm_space[32]; 8*16 bytes for each XMM-reg = 128 bytes
+               long int padding[56];
+            };
+         */
+         const Int sizeof_struct_user_fpxregs_struct
+            = sizeof(unsigned short) * (1 + 1 + 1 + 1) 
+              + sizeof(long int) * (1 + 1 + 1 + 1 + 1 + 1 + 32 + 32 + 56);
+
+         switch (arg1) {
+             case 12:   /* PTRACE_GETREGS */
+                 must_be_writable (tst, "ptrace(getregs)", arg4, 
+                                   sizeof (struct user_regs_struct));
+                 break;
+             case 14:   /* PTRACE_GETFPREGS */
+                 must_be_writable (tst, "ptrace(getfpregs)", arg4, 
+                                   sizeof (struct user_fpregs_struct));
+                 break;
+             case 18:   /* PTRACE_GETFPXREGS */
+                 must_be_writable (tst, "ptrace(getfpxregs)", arg4, 
+                                   sizeof_struct_user_fpxregs_struct);
+                 break;
+             case 1: case 2: case 3:    /* PTRACE_PEEK{TEXT,DATA,USER} */
+                 must_be_writable (tst, "ptrace(peek)", arg4, sizeof (long));
+                 break;
+             case 13:   /* PTRACE_SETREGS */
+                 must_be_readable (tst, "ptrace(setregs)", arg4, 
+                                   sizeof (struct user_regs_struct));
+                 break;
+             case 15:   /* PTRACE_SETFPREGS */
+                 must_be_readable (tst, "ptrace(setfpregs)", arg4, 
+                                   sizeof (struct user_fpregs_struct));
+                 break;
+             case 19:   /* PTRACE_SETFPXREGS */
+                 must_be_readable (tst, "ptrace(setfpxregs)", arg4, 
+                                   sizeof_struct_user_fpxregs_struct);
+                 break;
+             default:
+                 break;
+         }
+         KERNEL_DO_SYSCALL(tid, res);
+         if (!VG_(is_kerror)(res)) {
+             switch (arg1) {
+                 case 12:  /* PTRACE_GETREGS */
+                     make_readable (arg4, sizeof (struct user_regs_struct));
+                     break;
+                 case 14:  /* PTRACE_GETFPREGS */
+                     make_readable (arg4, sizeof (struct user_fpregs_struct));
+                     break;
+                 case 18:  /* PTRACE_GETFPXREGS */
+                     make_readable (arg4, sizeof_struct_user_fpxregs_struct);
+                     break;
+                 case 1: case 2: case 3:    /* PTRACE_PEEK{TEXT,DATA,USER} */
+                     make_readable (arg4, sizeof (long));
+                     break;
+                 default:
+                     break;
+             }
+         }
+         }
+         break;
+#     endif
+
+#     if defined(__NR_setresgid)
+      case __NR_setresgid: /* syscall 170 */
+         /* int setresgid(gid_t rgid, gid_t egid, gid_t sgid); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("setresgid ( %d, %d, %d )\n", arg1, arg2, arg3);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
+#     if defined(__NR_vhangup)
+      case __NR_vhangup: /* syscall 111 */
+         /* int vhangup(void); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("vhangup()\n");
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
+#     if defined(__NR_iopl)
+      case __NR_iopl: /* syscall 110 */
+         /* int iopl(int level); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("iopl ( %d )\n", arg1);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+#     endif
+
+#     if defined(__NR_getxattr)
+      case __NR_getxattr: /* syscall 229 */
+         /* ssize_t getxattr (const char *path, const char* name,
+                              void* value, size_t size); */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("getxattr ( %p, %p, %p, %d )\n", 
+                        arg1,arg2,arg3, arg4);
+         must_be_readable_asciiz( tst, "getxattr(path)", arg1 );
+         must_be_readable_asciiz( tst, "getxattr(name)", arg2 );
+         must_be_writable( tst, "getxattr(value)", arg3, arg4 );
+         KERNEL_DO_SYSCALL(tid,res);
+         if (!VG_(is_kerror)(res) && res > 0 
+                                  && arg3 != (Addr)NULL) {
+            make_readable( arg3, res );
+         }
+         break;
+#     endif
       
 #     if defined(__NR_quotactl)
       case __NR_quotactl: /* syscall 131 */
@@ -612,9 +765,11 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             while ((start % VKI_BYTES_PER_PAGE) > 0) { start--; length++; }
             while (((start+length) % VKI_BYTES_PER_PAGE) > 0) { length++; }
             make_noaccess( start, length );
-            munmap_exe = VG_(symtab_notify_munmap) ( start, length );
-            if (munmap_exe)
+            munmap_exe = VG_(is_munmap_exe) ( start, length );
+            if (munmap_exe) {
+               VG_(symtab_notify_munmap)    ( start, length );
                VG_(invalidate_translations) ( start, length );
+            }
             approximate_mmap_permissions( (Addr)res, arg3, arg4 );
          }
          break;         
@@ -1057,6 +1212,8 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             VG_(message)(Vg_UserMsg, 
               "   Use --logfile-fd=<number> to select an "
               "alternative logfile fd." );
+            /* Pretend the close succeeded, regardless.  (0 == success) */
+            SET_EAX(tid, 0);
          } else {
             KERNEL_DO_SYSCALL(tid,res);
          }
@@ -1675,6 +1832,16 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                  sizeof(struct winsize) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
+            case TIOCLINUX:
+               must_be_readable( tst, "ioctl(TIOCLINUX)", arg3, 
+                                 sizeof(char *) );
+               if (VGM_(check_readable)(arg3,1,NULL) && *(char *)arg3 == 11)
+                  must_be_readable( tst, "ioctl(TIOCLINUX, 11)", arg3, 
+                                    2 * sizeof(char *) );
+               KERNEL_DO_SYSCALL(tid,res);
+               if (!VG_(is_kerror)(res) && res == 0)
+                  make_readable ( arg3, sizeof(char *) );
+               break;
             case TIOCGPGRP:
                /* Get process group ID for foreground processing group. */
                must_be_writable( tst, "ioctl(TIOCGPGRP)", arg3,
@@ -2262,9 +2429,11 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             /* Tell our symbol table machinery about this, so that if
                this happens to be a .so being unloaded, the relevant
                symbols are removed too. */
-            munmap_exe = VG_(symtab_notify_munmap) ( start, length );
-            if (munmap_exe)
+            munmap_exe = VG_(is_munmap_exe) ( start, length );
+            if (munmap_exe) {
                VG_(invalidate_translations) ( start, length );
+               VG_(symtab_notify_munmap)    ( start, length );
+            }
          }
          break;
 

@@ -1674,22 +1674,6 @@ void * __pthread_getspecific(pthread_key_t key)
 }
 
 
-#ifdef GLIBC_2_3
-static
-void ** __pthread_getspecific_addr(pthread_key_t key)
-{
-   void** specifics_ptr;
-   ensure_valgrind("pthread_getspecific_addr");
-
-   if (!key_is_valid(key))
-      return NULL;
-
-   specifics_ptr = get_or_allocate_specifics_ptr(pthread_self());
-   return &(specifics_ptr[key]);
-}
-#endif
-
-
 /* ---------------------------------------------------
    ONCEry
    ------------------------------------------------ */

@@ -117,22 +117,22 @@ if [ $# != 0 ] ; then
    # Ensure the program exists.  Ignore any error messages from 'which'.
    which_prog=`which $1 2> /dev/null`
    if [ z$which_prog = z ] ; then
-       echo "'$1' not found in \$PATH, aborting."
-       exit
+      echo "'$1' not found in \$PATH, aborting."
+      exit
    fi
 
-   # Ensure the program isn't statically linked.
    if [ $# != 0 ] ; then
-      case `file "$which_prog"` in
+      case `file -L "$which_prog"` in       # must follow symlinks, hence -L
+      # Ensure the program isn't statically linked.
       *"statically linked"*)
         echo "\`$which_prog' is statically linked"
         echo "Valgrind only works on dynamically linked executables;  your"
         echo "program must rely on at least one shared object for Valgrind"
         echo "to work with it.  Read FAQ #5 for more information."
         exit 1 ;;
-     # ensure that there are no setuid or gid flags
+      # Ensure that there are no setuid or gid flags
       *:\ set?id\ ELF*)
-     echo "\`$which_prog' is suid/sgid."
+        echo "\`$which_prog' is suid/sgid."
         echo "Valgrind can't handle these executables, as it"
         echo "requires the LD_PRELOAD feature in order to work."
         echo ""

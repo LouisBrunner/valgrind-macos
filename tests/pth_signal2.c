@@ -27,7 +27,7 @@ int mean, samples, total;
 
 void *report_stats(void *p)
 {
-  int caught;
+  int caught, i;
   sigset_t  sigs_to_catch;
 
   /* Identify our thread */
@@ -41,12 +41,6 @@ void *report_stats(void *p)
    * handle it.
    */ 
 
-  /* JRS 13 May 2002: this has a race condition, which is obvious if
-     you fire SIGUSR1s at it fast enough -- once sigwait returns,
-     there is no hander whilst it does the rest of the loop, so if a
-     signal arrives then, the program is killed, since that's the
-     default action for SIGUSR1. */
-
   /* set this thread's signal mask to block out SIGUSR1 */
   sigemptyset(&sigs_to_catch);
   sigaddset(&sigs_to_catch, SIGUSR1);
@@ -58,6 +52,11 @@ void *report_stats(void *p)
      mean = total/samples;
      printf("\nreport_stats(): mean = %d, samples = %d\n", mean, samples);
      pthread_mutex_unlock(&stats_lock);
+
+     /* Delay for a while so it's obvious whether or not SIGUSR1 is
+	still blocked here (it should be). */
+     //     for (i = 0; i < 100000; i++) ;
+
   }
   return NULL;
 }

@@ -1529,6 +1529,7 @@ VgSchedReturnCode VG_(scheduler) ( void )
 static
 void cleanup_after_thread_exited ( ThreadId tid )
 {
+   vki_ksigset_t irrelevant_sigmask;
    vg_assert(VG_(is_valid_or_empty_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Empty);
    /* Mark its stack no-access */
@@ -1538,6 +1539,7 @@ void cleanup_after_thread_exited ( ThreadId tid )
    /* Forget about any pending signals directed specifically at this
       thread, and get rid of signal handlers specifically arranged for
       this thread. */
+   VG_(block_all_host_signals)( &irrelevant_sigmask );
    VG_(handle_SCSS_change)( False /* lazy update */ );
 }
 
@@ -2506,6 +2508,10 @@ void do_pthread_sigmask ( ThreadId tid,
    }
 
    VG_(do_pthread_sigmask_SCSS_upd) ( tid, vki_how, newmask, oldmask );
+
+   if (newmask && VG_(clo_instrument)) {
+      VGM_(make_readable)( (Addr)newmask, sizeof(vki_ksigset_t) );
+   }
 
    /* Success. */
    SET_EDX(tid, 0);

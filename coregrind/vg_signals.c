@@ -557,8 +557,9 @@ void do_setmask ( ThreadId tid,
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg, 
-         "do_setmask: tid = %d (0 means ALL), how = %d (%s), set = %p", 
+         "do_setmask: tid = %d (%d means ALL), how = %d (%s), set = %p", 
          tid,
+         VG_INVALID_THREADID,
          how,
          how==VKI_SIG_BLOCK ? "SIG_BLOCK" : (
             how==VKI_SIG_UNBLOCK ? "SIG_UNBLOCK" : (

@@ -5266,13 +5266,13 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
    if (first_opcode == 0xDC) {
       if (modrm < 0xC0) {
 
-//..          /* bits 5,4,3 are an opcode extension, and the modRM also
-//..             specifies an address. */
-//..          IRTemp addr = disAMode( &len, sorb, delta, dis_buf );
-//..          delta += len;
-//.. 
-//..          switch (gregOfRM(modrm)) {
-//.. 
+         /* bits 5,4,3 are an opcode extension, and the modRM also
+            specifies an address. */
+         IRTemp addr = disAMode( &len, pfx, delta, dis_buf, 0 );
+         delta += len;
+
+         switch (gregLO3ofRM(modrm)) {
+
 //..             case 0: /* FADD double-real */
 //..                fp_do_op_mem_ST_0 ( addr, "add", dis_buf, Iop_AddF64, True );
 //..                break;
@@ -5313,11 +5313,11 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..             case 4: /* FSUB double-real */
 //..                fp_do_op_mem_ST_0 ( addr, "sub", dis_buf, Iop_SubF64, True );
 //..                break;
-//.. 
-//..             case 5: /* FSUBR double-real */
-//..                fp_do_oprev_mem_ST_0 ( addr, "subr", dis_buf, Iop_SubF64, True );
-//..                break;
-//.. 
+
+            case 5: /* FSUBR double-real */
+               fp_do_oprev_mem_ST_0 ( addr, "subr", dis_buf, Iop_SubF64, True );
+               break;
+
 //..             case 6: /* FDIV double-real */
 //..                fp_do_op_mem_ST_0 ( addr, "div", dis_buf, Iop_DivF64, True );
 //..                break;
@@ -5325,12 +5325,12 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 //..             case 7: /* FDIVR double-real */
 //..                fp_do_oprev_mem_ST_0 ( addr, "divr", dis_buf, Iop_DivF64, True );
 //..                break;
-//.. 
-//..             default:
-//..                vex_printf("unhandled opc_aux = 0x%2x\n", gregOfRM(modrm));
-//..                vex_printf("first_opcode == 0xDC\n");
-//..                goto decode_fail;
-//..          }
+
+            default:
+               vex_printf("unhandled opc_aux = 0x%2x\n", gregLO3ofRM(modrm));
+               vex_printf("first_opcode == 0xDC\n");
+               goto decode_fail;
+         }
 
       } else {
 
@@ -5345,10 +5345,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                fp_do_op_ST_ST ( "mul", Iop_MulF64, 0, modrm - 0xC8, False );
                break;
 
-//..             case 0xE0 ... 0xE7: /* FSUBR %st(0),%st(?) */
-//..                fp_do_oprev_ST_ST ( "subr", Iop_SubF64, 0, modrm - 0xE0, False );
-//..                break;
-//.. 
+            case 0xE0 ... 0xE7: /* FSUBR %st(0),%st(?) */
+               fp_do_oprev_ST_ST ( "subr", Iop_SubF64, 0, modrm - 0xE0, False );
+               break;
+
 //..             case 0xE8 ... 0xEF: /* FSUB %st(0),%st(?) */
 //..                fp_do_op_ST_ST ( "sub", Iop_SubF64, 0, modrm - 0xE8, False );
 //..                break;
@@ -5692,14 +5692,14 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
 
          switch (gregLO3ofRM(modrm)) {
 
-//..             case 0: /* FILD m16int */
-//..                DIP("fildw %s\n", dis_buf);
-//..                fp_push();
-//..                put_ST(0, unop(Iop_I32toF64,
-//..                               unop(Iop_16Sto32,
-//..                                    loadLE(Ity_I16, mkexpr(addr)))));
-//..                break;
-//.. 
+            case 0: /* FILD m16int */
+               DIP("fildw %s\n", dis_buf);
+               fp_push();
+               put_ST(0, unop(Iop_I32toF64,
+                              unop(Iop_16Sto32,
+                                   loadLE(Ity_I16, mkexpr(addr)))));
+               break;
+
 //..             case 2: /* FIST m16 */
 //..                DIP("fistp %s\n", dis_buf);
 //..                storeLE( mkexpr(addr), 

@@ -1195,7 +1195,18 @@ Bool SK_(expensive_sanity_check) ( void )
  */
 Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
 {
+#define IGNORE(what)                                                    \
+   do {                                                                 \
+      if (moans-- > 0) {                                                \
+         VG_(message)(Vg_UserMsg,                                       \
+            "Warning: Addrcheck: ignoring `%s' request.", what);     \
+         VG_(message)(Vg_UserMsg,                                       \
+            "   To honour this request, rerun with --skin=memcheck.");  \
+      }                                                                 \
+   } while (0)
+
    UInt* arg = arg_block;
+   static Int moans = 3;
 
    /* Overload memcheck client reqs */
    if (!VG_IS_SKIN_USERREQ('M','C',arg[0]))
@@ -1207,14 +1218,25 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
 	 *ret = 0; /* return value is meaningless */
 	 break;
 
-	 /* Ignore these quietly */
+      /* Ignore these */
       case VG_USERREQ__CHECK_WRITABLE: /* check writable */
+         IGNORE("VALGRIND_CHECK_WRITABLE");
+         return False;
       case VG_USERREQ__CHECK_READABLE: /* check readable */
+         IGNORE("VALGRIND_CHECK_READABLE");
+         return False;
       case VG_USERREQ__MAKE_NOACCESS: /* make no access */
+         IGNORE("VALGRIND_MAKE_NOACCESS");
+         return False;
       case VG_USERREQ__MAKE_WRITABLE: /* make writable */
+         IGNORE("VALGRIND_MAKE_WRITABLE");
+         return False;
       case VG_USERREQ__MAKE_READABLE: /* make readable */
+         IGNORE("VALGRIND_MAKE_READABLE");
+         return False;
       case VG_USERREQ__DISCARD: /* discard */
-	 return False;
+         IGNORE("VALGRIND_CHECK_DISCARD");
+         return False;
 
       default:
          VG_(message)(Vg_UserMsg, 
@@ -1223,6 +1245,8 @@ Bool SK_(handle_client_request) ( ThreadState* tst, UInt* arg_block, UInt *ret )
          return False;
    }
    return True;
+
+#undef IGNORE
 }
 
 /*------------------------------------------------------------*/

@@ -381,7 +381,7 @@ extern Int   VG_(arena_payload_szB) ( ArenaId aid, void* payload );
 
 extern void  VG_(mallocSanityCheckAll)   ( void );
 
-extern void  VG_(show_all_arena_stats) ( void );
+extern void  VG_(print_all_arena_stats) ( void );
 extern Bool  VG_(is_empty_arena) ( ArenaId aid );
 
 /* ---------------------------------------------------------------------
@@ -1155,7 +1155,7 @@ struct _ExeContext {
 
 
 /* Print stats (informational only). */
-extern void VG_(show_ExeContext_stats) ( void );
+extern void VG_(print_ExeContext_stats) ( void );
 
 /* Like VG_(get_ExeContext), but with a slightly different type */
 extern ExeContext* VG_(get_ExeContext2) ( Addr eip, Addr ebp,
@@ -1427,7 +1427,7 @@ extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child);
 
 /* fd leakage calls. */
 extern void VG_(init_preopened_fds) ( void );
-extern void VG_(fd_stats) ( void );
+extern void VG_(show_open_fds) ( void );
 
 /* ---------------------------------------------------------------------
    Exports of vg_transtab.c

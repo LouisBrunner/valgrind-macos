@@ -563,15 +563,12 @@ getsockdetails(int fd)
 }
 
 
-/* Dump out a summary, and optionally a more detailed list, of open file
-   descriptors. */
-
-void VG_(fd_stats) ()
+/* Dump out a summary, and a more detailed list, of open file descriptors. */
+void VG_(show_open_fds) ()
 {
    OpenFd *i = allocated_fds;
 
-   VG_(message)(Vg_UserMsg,
-                "FILE DESCRIPTORS: %d open at exit.", fd_count);
+   VG_(message)(Vg_UserMsg, "FILE DESCRIPTORS: %d open at exit.", fd_count);
 
    while(i) {
       if(i->pathname) {

@@ -49,10 +49,12 @@ static UInt n_total_reg_rank; // total of register ranks over all translations
 void VG_(print_reg_alloc_stats)(void)
 {
    VG_(message)(Vg_DebugMsg, 
-                "reg-alloc: %d t-req-spill, "
-                "%d+%d orig+spill uis, %d total-reg-r.",
+                "reg-alloc: %d t-req-spill, %d+%d orig+spill uis,",
                 n_translations_needing_spill, 
-                n_uinstrs_prealloc, n_uinstrs_spill, n_total_reg_rank );
+                n_uinstrs_prealloc, n_uinstrs_spill );
+   VG_(message)(Vg_DebugMsg, 
+                "           %d total-reg-rank",
+                n_total_reg_rank );
 }
 
 /*------------------------------------------------------------*/

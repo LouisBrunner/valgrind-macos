@@ -206,11 +206,14 @@ static __inline__ Int safe_idiv(Int a, Int b)
    return (b == 0 ? 0 : a / b);
 }
 
-static void show_counts ( void )
+static void print_all_stats ( void )
 {
+   // Translation stats
    VG_(message)(Vg_DebugMsg,
-		"    TT/TC: %d tc sectors discarded.",
+                "    TT/TC: %d tc sectors discarded.",
                 VG_(number_of_tc_discards) );
+   VG_(message)(Vg_DebugMsg,
+                "           %d tt_fast misses.", VG_(tt_fast_misses));
    VG_(message)(Vg_DebugMsg,
                 "           %d chainings, %d unchainings.",
                 VG_(bb_enchain_count), VG_(bb_dechain_count) );
@@ -227,22 +230,40 @@ static void show_counts ( void )
                 VG_(overall_out_tsize),
                 safe_idiv(10*VG_(overall_out_tsize), VG_(overall_out_osize)));
    VG_(message)(Vg_DebugMsg,
-      " dispatch: %llu jumps (bb entries), of which %u (%lu%%) were unchained.",
+      " dispatch: %llu jumps (bb entries); of them %u (%lu%%) unchained.",
       VG_(bbs_done), 
       VG_(unchained_jumps_done),
       ((ULong)(100) * (ULong)(VG_(unchained_jumps_done)))
          / ( VG_(bbs_done)==0 ? 1 : VG_(bbs_done) )
    );
 
+   // Scheduler stats
    VG_(print_scheduler_stats)();
-   VG_(message)(Vg_DebugMsg,
-      "           %d tt_fast misses.", VG_(tt_fast_misses));
 
+   // Reg-alloc stats
    VG_(print_reg_alloc_stats)();
    VG_(message)(Vg_DebugMsg, 
                 "   sanity: %d cheap, %d expensive checks.",
                 sanity_fast_count, sanity_slow_count );
+
+   // C call stats
    VG_(print_ccall_stats)();
+
+   // UInstr histogram 
+   if (VG_(clo_verbosity) > 3)
+      VG_(print_UInstr_histogram)();
+
+   // Memory stats
+   if (0) {
+      VG_(message)(Vg_DebugMsg, "");
+      VG_(message)(Vg_DebugMsg, 
+         "------ Valgrind's internal memory use stats follow ------" );
+      VG_(mallocSanityCheckAll)();
+      VG_(print_all_arena_stats)();
+      VG_(message)(Vg_DebugMsg, 
+         "------ Valgrind's ExeContext management stats follow ------" );
+      VG_(print_ExeContext_stats)();
+   }
 }
 
 
@@ -3011,7 +3032,7 @@ int main(int argc, char **argv)
 
    /* Print out file descriptor summary and stats. */
    if (VG_(clo_track_fds))
-      VG_(fd_stats)();
+      VG_(show_open_fds)();
 
    if (VG_(needs).core_errors || VG_(needs).skin_errors)
       VG_(show_all_errors)();
@@ -3021,22 +3042,8 @@ int main(int argc, char **argv)
    VG_(do_sanity_checks)( True /*include expensive checks*/ );
 
    if (VG_(clo_verbosity) > 1)
-      show_counts();
+      print_all_stats();
 
-   if (VG_(clo_verbosity) > 3)
-      VG_(print_UInstr_histogram)();
-
-   if (0) {
-      VG_(message)(Vg_DebugMsg, "");
-      VG_(message)(Vg_DebugMsg, 
-         "------ Valgrind's internal memory use stats follow ------" );
-      VG_(mallocSanityCheckAll)();
-      VG_(show_all_arena_stats)();
-      VG_(message)(Vg_DebugMsg, 
-         "------ Valgrind's ExeContext management stats follow ------" );
-      VG_(show_ExeContext_stats)();
-   }
- 
    if (VG_(clo_profile))
       VGP_(done_profiling)();
 

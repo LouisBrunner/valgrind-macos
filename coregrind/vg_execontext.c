@@ -81,8 +81,8 @@ static void init_ExeContext_storage ( void )
 }
 
 
-/* Show stats. */
-void VG_(show_ExeContext_stats) ( void )
+/* Print stats. */
+void VG_(print_ExeContext_stats) ( void )
 {
    init_ExeContext_storage();
    VG_(message)(Vg_DebugMsg, 

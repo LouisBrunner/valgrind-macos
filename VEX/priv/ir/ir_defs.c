@@ -86,6 +86,7 @@ void ppIROp ( IROp op )
       case Iop_8Sto32:  vex_printf("8Sto32");  return;
       case Iop_16Sto32: vex_printf("16Sto32"); return;
       case Iop_32to1:   vex_printf("32to1");   return;
+      case Iop_1Uto8:   vex_printf("1Uto8");   return;
       default:        vpanic("ppIROp(1)");
    }
   

@@ -90,7 +90,8 @@ typedef
       Iop_8Uto16, Iop_8Uto32, Iop_16Uto32,
       Iop_8Sto16, Iop_8Sto32, Iop_16Sto32,
       /* Specials */
-      Iop_32to1 /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
+      Iop_32to1, /* :: Ity_I32 -> Ity_Bit, just select bit[0] */
+      Iop_1Uto8  /* :: Ity_Bit -> Ity_I8, unsigned widen */
    }
    IROp;
 

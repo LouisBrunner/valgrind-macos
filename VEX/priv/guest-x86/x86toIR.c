@@ -6,9 +6,21 @@
 /*---                                                              ---*/
 /*--------------------------------------------------------------------*/
 
-/* TODO
+/* TODO:
    fix jmpkind fields 
    XOR reg with itself
+   CALL pic idiom
+
+   CSEing of address computations:
+        0x3A972EAA:  orl %eax,0xFFFFFE0C(%ebp)
+
+              t10 = LDle:I32(Add32(GET(20,I32),0xFFFFFE0C))
+              t9 = GET(0,I32)
+              t8 = Or32(t10,t9)
+              PUT(32) = 0x12
+              PUT(36) = t9
+              PUT(40) = t8
+              STle(Add32(GET(20,I32),0xFFFFFE0C)) = t8
 */
 
 /* Translates x86 code to IR. */
@@ -349,7 +361,7 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
 /* -------------- Evaluating the flags-thunk. -------------- */
 
 /* Build IR to calculate all the eflags from stored
-   CC_OP/CC_SRC/CC_DST. */
+   CC_OP/CC_SRC/CC_DST.  Returns an expression :: Ity_I32. */
 static IRExpr* mk_calculate_eflags_all ( void )
 {
    IRExpr** args = LibVEX_Alloc(4 * sizeof(IRExpr*));
@@ -361,7 +373,7 @@ static IRExpr* mk_calculate_eflags_all ( void )
 }
 
 /* Build IR to calculate just the carry flags from stored
-   CC_OP/CC_SRC/CC_DST. */
+   CC_OP/CC_SRC/CC_DST.  Returns an expression :: Ity_I32. */
 static IRExpr* mk_calculate_eflags_c ( void )
 {
    IRExpr** args = LibVEX_Alloc(4 * sizeof(IRExpr*));
@@ -462,18 +474,25 @@ typedef
    enum {
       CondO      = 0,  /* overflow           */
       CondNO     = 1,  /* no overflow        */
+
       CondB      = 2,  /* below              */
       CondNB     = 3,  /* not below          */
+
       CondZ      = 4,  /* zero               */
       CondNZ     = 5,  /* not zero           */
+
       CondBE     = 6,  /* below or equal     */
       CondNBE    = 7,  /* not below or equal */
+
       CondS      = 8,  /* negative           */
       CondNS     = 9,  /* not negative       */
+
       CondP      = 10, /* parity even        */
       CondNP     = 11, /* not parity even    */
+
       CondL      = 12, /* jump less          */
       CondNL     = 13, /* not less           */
+
       CondLE     = 14, /* less or equal      */
       CondNLE    = 15  /* not less or equal  */
    }
@@ -538,25 +557,26 @@ static IRExpr* flag_to_bit0 ( UInt ccmask, IRTemp eflags )
 
 /* Calculate the eflags, and hence return a 1-bit expression
    which is 1 iff the given condition-code test would succeed. 
-   Note, we can only do the positive (... = 1) condition. 
+   Returns a value :: Ity_Bit.
 */
 static IRExpr* calculate_condition ( Condcode cond )
 {
    IRExpr *e;
-   IRTemp eflags;
-   vassert((cond & 1) == 0);
-   eflags = newTemp(Ity_I32);
+   IRTemp eflags = newTemp(Ity_I32);
+   Bool   invert = (cond & 1) == 1;
 
    assign( eflags, cond == CondB ? mk_calculate_eflags_c()
                                  : mk_calculate_eflags_all() );
  
    switch (cond) {
+      case CondNZ:
       case CondZ: /* ZF == 1 */
          e = flag_to_bit0( CC_MASK_Z, eflags );
          break;
       case CondB: /* CF == 1 */
          e = flag_to_bit0( CC_MASK_C, eflags );
          break;
+      case CondNBE:
       case CondBE: /* (CF or ZF) == 1 */
          e = binop(Iop_Or32,
                    flag_to_bit0(CC_MASK_C,eflags),
@@ -577,7 +597,9 @@ static IRExpr* calculate_condition ( Condcode cond )
          vex_printf("calculate_condition(%d)\n", (Int)cond);
          vpanic("calculate_condition(x86)");
    }
-   return unop(Iop_32to1, e);
+   return 
+      invert ? unop(Iop_32to1, unop(Iop_Not32, e))
+             : unop(Iop_32to1, e);
 }
 
 
@@ -1249,13 +1271,14 @@ IRExpr* disAMode ( Int* len, UChar sorb, UInt delta, UChar* buf )
             DIS(buf, "%s%d(%s,%s,%d)", sorbTxt(sorb), d, 
                      nameIReg(4,base_r), nameIReg(4,index_r), 1<<scale);
 	    *len = 3;
-	    vpanic("amode 10");
-	    return handleSegOverride(sorb,
-                     binop(Iop_Add32,
-			   binop(Iop_Add32, 
-                                 getIReg(4,base_r), 
-				 binop(Iop_Shl32, getIReg(4,index_r), mkU32(scale))),
-			   mkU32(d)));
+	    return 
+               handleSegOverride(sorb,
+                  binop(Iop_Add32,
+                        binop(Iop_Add32, 
+                              getIReg(4,base_r), 
+                              binop(Iop_Shl32, 
+                                    getIReg(4,index_r), mkU32(scale))),
+                  mkU32(d)));
          }
          vassert(0);
       }
@@ -2388,23 +2411,21 @@ UInt dis_Grp5 ( UChar sorb, Int sz, UInt delta, Bool* isEnd )
 //--             setFlagsFromUOpcode(cb, DEC);
 //--             uInstr2(cb, STORE, sz, TempReg, t1, TempReg, t2);
 //--             break;
-//--          case 2: /* call Ev */
-//--             t3 = newTemp(cb); t4 = newTemp(cb);
-//--             uInstr2(cb, GET,   4, ArchReg, R_ESP, TempReg, t3);
-//--             uInstr2(cb, SUB,   4, Literal, 0,     TempReg, t3);
-//--             uLiteral(cb, 4);
-//--             uInstr2(cb, PUT,   4, TempReg, t3,    ArchReg, R_ESP);
-//--             uInstr2(cb, MOV,   4, Literal, 0,     TempReg, t4);
-//-- 	         uLiteral(cb, eip+HI8(pair));
-//--             uInstr2(cb, STORE, 4, TempReg, t4,    TempReg, t3);
-//--             jmp_treg(cb, t1);
-//--             LAST_UINSTR(cb).jmpkind = JmpCall;
-//--             *isEnd = True;
-//--             break;
-//--          case 4: /* JMP Ev */
-//--             jmp_treg(cb, t1);
-//--             *isEnd = True;
-//--             break;
+         case 2: /* call Ev */
+            vassert(sz == 4);
+            t2 = newTemp(Ity_I32);
+            assign(t2, binop(Iop_Sub32, getIReg(4,R_ESP), mkU32(4)));
+            putIReg(4, R_ESP, mkexpr(t2));
+	    storeLE( mkexpr(t2), mkU32(guest_eip+delta+len));
+	    jmp_treg(t1);
+	    //            LAST_UINSTR(cb).jmpkind = JmpCall;
+            *isEnd = True;
+            break;
+         case 4: /* JMP Ev */
+            vassert(sz == 4);
+            jmp_treg(t1);
+            *isEnd = True;
+            break;
 //--          case 6: /* PUSH Ev */
 //--             t3 = newTemp(cb);
 //--             uInstr2(cb, GET,    4, ArchReg, R_ESP, TempReg, t3);
@@ -5881,14 +5902,15 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       DIP("int $0x80\n");
       break;
 
-//--    /* ------------------------ Jcond, byte offset --------- */
-//-- 
-//--    case 0xEB: /* Jb (jump, byte offset) */
-//--       d32 = (eip+1) + getSDisp8(eip); eip++;
-//--       jmp_lit(cb, d32);
-//--       *isEnd = True;
-//--       DIP("jmp-8 0x%x\n", d32);
-//--       break;
+   /* ------------------------ Jcond, byte offset --------- */
+
+   case 0xEB: /* Jb (jump, byte offset) */
+      d32 = (((Addr32)guest_code)+delta+1) + getSDisp8(delta); 
+      delta++;
+      jmp_lit(d32);
+      *isEnd = True;
+      DIP("jmp-8 0x%x\n", d32);
+      break;
 
    case 0xE9: /* Jv (jump, 16/32 offset) */
       vassert(sz == 4); /* JRS added 2004 July 11 */
@@ -6064,9 +6086,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       DIP("mov%c $0x%x,%s\n", nameISize(sz), d32, nameIReg(sz,opc-0xB8));
       break;
 
-      //   case 0xC6: /* MOV Ib,Eb */
-      //      sz = 1;
-      //      goto do_Mov_I_E;
+   case 0xC6: /* MOV Ib,Eb */
+      sz = 1;
+      goto do_Mov_I_E;
    case 0xC7: /* MOV Iv,Ev */
       goto do_Mov_I_E;
 
@@ -6091,66 +6113,66 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--    /* ------------------------ opl imm, A ----------------- */
 //-- 
 //--    case 0x04: /* ADD Ib, AL */
-//--       delta = dis_op_imm_A(cb, 1, ADD, True, delta, "add" );
+//--       delta = dis_op_imm_A( 1, ADD, True, delta, "add" );
 //--       break;
-//--    case 0x05: /* ADD Iv, eAX */
-//--       delta = dis_op_imm_A(cb, sz, ADD, True, delta, "add" );
-//--       break;
-//-- 
+   case 0x05: /* ADD Iv, eAX */
+      delta = dis_op_imm_A(sz, Iop_Add8, True, delta, "add" );
+      break;
+
 //--    case 0x0C: /* OR Ib, AL */
-//--       delta = dis_op_imm_A(cb, 1, OR, True, delta, "or" );
+//--       delta = dis_op_imm_A( 1, OR, True, delta, "or" );
 //--       break;
 //--    case 0x0D: /* OR Iv, eAX */
-//--       delta = dis_op_imm_A(cb, sz, OR, True, delta, "or" );
+//--       delta = dis_op_imm_A( sz, OR, True, delta, "or" );
 //--       break;
 //-- 
 //--    case 0x14: /* ADC Ib, AL */
-//--       delta = dis_op_imm_A(cb, 1, ADC, True, delta, "adc" );
+//--       delta = dis_op_imm_A( 1, ADC, True, delta, "adc" );
 //--       break;
 //--    case 0x15: /* ADC Iv, eAX */
-//--       delta = dis_op_imm_A(cb, sz, ADC, True, delta, "adc" );
+//--       delta = dis_op_imm_A( sz, ADC, True, delta, "adc" );
 //--       break;
 //-- 
 //--    case 0x1C: /* SBB Ib, AL */
-//--       delta = dis_op_imm_A(cb, 1, SBB, True, delta, "sbb" );
+//--       delta = dis_op_imm_A( 1, SBB, True, delta, "sbb" );
 //--       break;
 //--    case 0x1D: /* SBB Iv, eAX */
-//--       delta = dis_op_imm_A(cb, sz, SBB, True, delta, "sbb" );
+//--       delta = dis_op_imm_A( sz, SBB, True, delta, "sbb" );
 //--       break;
 //-- 
 //--    case 0x24: /* AND Ib, AL */
-//--       delta = dis_op_imm_A(cb, 1, AND, True, delta, "and" );
+//--       delta = dis_op_imm_A( 1, AND, True, delta, "and" );
 //--       break;
 //--    case 0x25: /* AND Iv, eAX */
-//--       delta = dis_op_imm_A(cb, sz, AND, True, delta, "and" );
+//--       delta = dis_op_imm_A( sz, AND, True, delta, "and" );
 //--       break;
 
    case 0x2C: /* SUB Ib, AL */
       delta = dis_op_imm_A(1, Iop_Sub8, True, delta, "sub" );
       break;
 //--    case 0x2D: /* SUB Iv, eAX */
-//--       delta = dis_op_imm_A(cb, sz, SUB, True, delta, "sub" );
+//--       delta = dis_op_imm_A( sz, SUB, True, delta, "sub" );
 //--       break;
 //-- 
 //--    case 0x34: /* XOR Ib, AL */
-//--       delta = dis_op_imm_A(cb, 1, XOR, True, delta, "xor" );
+//--       delta = dis_op_imm_A( 1, XOR, True, delta, "xor" );
 //--       break;
 //--    case 0x35: /* XOR Iv, eAX */
-//--       delta = dis_op_imm_A(cb, sz, XOR, True, delta, "xor" );
+//--       delta = dis_op_imm_A( sz, XOR, True, delta, "xor" );
 //--       break;
 //-- 
    case 0x3C: /* CMP Ib, AL */
-      delta = dis_op_imm_A(1, Iop_Sub8, False, delta, "cmp" );
+      delta = dis_op_imm_A( 1, Iop_Sub8, False, delta, "cmp" );
       break;
    case 0x3D: /* CMP Iv, eAX */
-      delta = dis_op_imm_A(sz, Iop_Sub8, False, delta, "cmp" );
+      delta = dis_op_imm_A( sz, Iop_Sub8, False, delta, "cmp" );
       break;
 
-//--    case 0xA8: /* TEST Ib, AL */
-//--       delta = dis_op_imm_A(cb, 1, AND, False, delta, "test" );
-//--       break;
+   case 0xA8: /* TEST Ib, AL */
+      delta = dis_op_imm_A( 1, Iop_And8, False, delta, "test" );
+      break;
 //--    case 0xA9: /* TEST Iv, eAX */
-//--       delta = dis_op_imm_A(cb, sz, AND, False, delta, "test" );
+//--       delta = dis_op_imm_A( sz, AND, False, delta, "test" );
 //--       break;
 //-- 
 //--    /* ------------------------ opl Ev, Gv ----------------- */
@@ -7116,35 +7138,34 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--          uInstr0(cb, CALLM_E, 0);
 //--          DIP("rdtsc\n");
 //--          break;
-//-- 
-//--       /* =-=-=-=-=-=-=-=-=- SETcc Eb =-=-=-=-=-=-=-=-=-= */
-//--       case 0x90:
-//--       case 0x91:
-//--       case 0x92: /* set-Bb/set-NAEb (jump below) */
-//--       case 0x93: /* set-NBb/set-AEb (jump not below) */
-//--       case 0x94: /* set-Zb/set-Eb (jump zero) */
-//--       case 0x95: /* set-NZb/set-NEb (jump not zero) */
-//--       case 0x96: /* set-BEb/set-NAb (jump below or equal) */
-//--       case 0x97: /* set-NBEb/set-Ab (jump not below or equal) */
-//--       case 0x98: /* set-Sb (jump negative) */
-//--       case 0x99: /* set-Sb (jump not negative) */
-//--       case 0x9A: /* set-P (jump parity even) */
-//--       case 0x9B: /* set-NP (jump parity odd) */
-//--       case 0x9C: /* set-Lb/set-NGEb (jump less) */
-//--       case 0x9D: /* set-GEb/set-NLb (jump greater or equal) */
-//--       case 0x9E: /* set-LEb/set-NGb (jump less or equal) */
-//--       case 0x9F: /* set-Gb/set-NLEb (jump greater) */
-//--          modrm = getUChar(eip);
-//--          t1 = newTemp(cb);
-//--          if (epartIsReg(modrm)) {
-//--             eip++;
-//--             uInstr1(cb, CC2VAL, 1, TempReg, t1);
-//--             uCond(cb, (Condcode)(opc-0x90));
-//--             uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
-//--             uInstr2(cb, PUT, 1, TempReg, t1, ArchReg, eregOfRM(modrm));
-//--             DIP("set%s %s\n", VG_(name_UCondcode)(opc-0x90), 
-//--                               nameIReg(1,eregOfRM(modrm)));
-//--          } else {
+
+      /* =-=-=-=-=-=-=-=-=- SETcc Eb =-=-=-=-=-=-=-=-=-= */
+      case 0x90:
+      case 0x91:
+      case 0x92: /* set-Bb/set-NAEb (jump below) */
+      case 0x93: /* set-NBb/set-AEb (jump not below) */
+      case 0x94: /* set-Zb/set-Eb (jump zero) */
+      case 0x95: /* set-NZb/set-NEb (jump not zero) */
+      case 0x96: /* set-BEb/set-NAb (jump below or equal) */
+      case 0x97: /* set-NBEb/set-Ab (jump not below or equal) */
+      case 0x98: /* set-Sb (jump negative) */
+      case 0x99: /* set-Sb (jump not negative) */
+      case 0x9A: /* set-P (jump parity even) */
+      case 0x9B: /* set-NP (jump parity odd) */
+      case 0x9C: /* set-Lb/set-NGEb (jump less) */
+      case 0x9D: /* set-GEb/set-NLb (jump greater or equal) */
+      case 0x9E: /* set-LEb/set-NGb (jump less or equal) */
+      case 0x9F: /* set-Gb/set-NLEb (jump greater) */
+	 t1 = newTemp(Ity_I8);
+	 assign( t1, unop(Iop_1Uto8,calculate_condition(opc-0x90)) );
+         modrm = getIByte(delta);
+         if (epartIsReg(modrm)) {
+            delta++;
+	    putIReg(1, eregOfRM(modrm), mkexpr(t1));
+            DIP("set%s %s\n", name_Condcode(opc-0x90), 
+                              nameIReg(1,eregOfRM(modrm)));
+         } else {
+            vassert(0);
 //--             pair = disAMode ( cb, sorb, eip, dis_buf );
 //--             t2 = LOW24(pair);
 //--             eip += HI8(pair);
@@ -7153,9 +7174,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
 //--             uFlagsRWU(cb, FlagsOSZACP, FlagsEmpty, FlagsEmpty);
 //--             uInstr2(cb, STORE, 1, TempReg, t1, TempReg, t2);
 //--             DIP("set%s %s\n", VG_(name_UCondcode)(opc-0x90), dis_buf);
-//--          }
-//--          break;
-//-- 
+         }
+         break;
+
 //--       /* =-=-=-=-=-=-=-=-=- SHLD/SHRD -=-=-=-=-=-=-=-=-= */
 //-- 
 //--       case 0xA4: /* SHLDv imm8,Gv,Ev */

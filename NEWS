@@ -20,13 +20,11 @@ there.
 
 76869   Crashes when running any tool under Fedora Core 2 test1
         This fixes the problem with returning from a signal handler 
-        when VDSOs are turned off in FC2.  Note that we don't
-        (yet) support VDSOs being on 
-        (use "echo 0 > /proc/sys/kernel/vdso").
+        when VDSOs are turned off in FC2.
 
-69508   java 1.4.2 client fails with erroneous "stack size too small"
-        (make more of the pthread stack attribute related functions
-        work properly)
+69508   java 1.4.2 client fails with erroneous "stack size too small".
+        This fix makes more of the pthread stack attribute related 
+        functions work properly.  Java still doesn't work though.
 
 71906   malloc alignment should be 8, not 4
         All memory returned by malloc/new etc is now at least

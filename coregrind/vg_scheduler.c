@@ -330,8 +330,6 @@ void create_translation_for ( ThreadId tid, Addr orig_addr )
    VG_(overall_in_count) ++;
    VG_(overall_in_osize) += orig_size;
    VG_(overall_in_tsize) += trans_size;
-   /* Record translated area for SMC detection. */
-   VG_(smc_mark_original) ( orig_addr, orig_size );
 }
 
 
@@ -2684,6 +2682,7 @@ void do_nontrivial_clientreq ( ThreadId tid )
       case VG_USERREQ__MAKE_NOACCESS_STACK:
       case VG_USERREQ__RUNNING_ON_VALGRIND:
       case VG_USERREQ__DO_LEAK_CHECK:
+      case VG_USERREQ__DISCARD_TRANSLATIONS:
          SET_EDX(
             tid, 
             VG_(handle_client_request) ( &VG_(threads)[tid], arg )

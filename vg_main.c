@@ -381,22 +381,6 @@ UInt VG_(translations_needing_spill) = 0;
 UInt VG_(total_reg_rank) = 0;
 
 
-/* Counts pertaining to the self-modifying-code detection machinery. */
-
-/* Total number of writes checked. */
-UInt VG_(smc_total_check4s) = 0;
-
-/* Number of writes which the fast smc check couldn't show were
-   harmless. */
-UInt VG_(smc_cache_passed) = 0;
-
-/* Numnber of writes which really did write on original code. */
-UInt VG_(smc_fancy_passed) = 0;
-
-/* Number of translations discarded as a result. */
-UInt VG_(smc_discard_count) = 0;
-
-
 /* Counts pertaining to internal sanity checking. */
 UInt VG_(sanity_fast_count) = 0;
 UInt VG_(sanity_slow_count) = 0;
@@ -955,13 +939,6 @@ static void vg_show_counts ( void )
                 VG_(uinstrs_spill),
                 VG_(total_reg_rank) );
    VG_(message)(Vg_DebugMsg, 
-                "smc-check: %d checks, %d fast pass, "
-                "%d slow pass, %d discards.",
-		VG_(smc_total_check4s),
-		VG_(smc_cache_passed),
-		VG_(smc_fancy_passed),
-		VG_(smc_discard_count) );
-   VG_(message)(Vg_DebugMsg, 
                 "   sanity: %d cheap, %d expensive checks.",
                 VG_(sanity_fast_count), 
                 VG_(sanity_slow_count) );
@@ -1020,10 +997,11 @@ void VG_(main) ( void )
       VGP_PUSHCC(VgpInitAudit);
       VGM_(init_memory_audit)();
       VGP_POPCC;
-      VGP_PUSHCC(VgpReadSyms);
-      VG_(read_symbols)();
-      VGP_POPCC;
    }
+
+   VGP_PUSHCC(VgpReadSyms);
+   VG_(read_symbols)();
+   VGP_POPCC;
 
    /* End calibration of our RDTSC-based clock, leaving it as long as
       we can. */
@@ -1033,7 +1011,7 @@ void VG_(main) ( void )
       carefully sets up the permissions maps to cover the anonymous
       mmaps for the translation table and translation cache, which
       wastes > 20M of virtual address space. */
-   VG_(init_transtab_and_SMC)();
+   VG_(init_tt_tc)();
 
    if (VG_(clo_verbosity) == 1) {
       VG_(message)(Vg_UserMsg, 

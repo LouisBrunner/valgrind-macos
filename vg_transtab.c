@@ -32,6 +32,8 @@
 #include "vg_include.h"
 #include "vg_constants.h"
 
+/* #define DEBUG_TRANSTAB */
+
 
 /*------------------------------------------------------------*/
 /*--- Management of the LRU-based translation table+cache. ---*/
@@ -42,7 +44,7 @@
    of code retranslation.  */
 
 /* Size of the translation cache, in bytes. */
-#define VG_TC_SIZE /*16000000*/ 32000000 /*40000000*/
+#define VG_TC_SIZE /*1000000*/ /*16000000*/ 32000000 /*40000000*/
 
 /* Do a LRU pass when the translation cache becomes this full. */
 #define VG_TC_LIMIT_PERCENT 98
@@ -52,7 +54,7 @@
 
 /* Number of entries in the translation table.  This must be a prime
    number in order to make the hashing work properly. */
-#define VG_TT_SIZE /*100129*/ 200191 /*250829*/
+#define VG_TT_SIZE /*5281*/ /*100129*/ 200191 /*250829*/
 
 /* Do an LRU pass when the translation table becomes this full. */
 #define VG_TT_LIMIT_PERCENT /*67*/ 80
@@ -64,9 +66,12 @@
    N_EPOCHS-1 means used the epoch N_EPOCHS-1 or more ago.  */
 #define VG_N_EPOCHS /*2000*/ /*4000*/ 20000
 
-/* This TT entry is empty. */
+/* This TT entry is empty.  There is no associated TC storage. */
 #define VG_TTE_EMPTY   ((Addr)1)
-/* This TT entry has been deleted. */
+/* This TT entry has been deleted, in the sense that it does not
+   contribute to the orig->trans mapping.  However, the ex-translation
+   it points at still occupies space in TC.  This slot cannot be
+   re-used without doing an LRU pass. */
 #define VG_TTE_DELETED ((Addr)3)
 
 /* The TC.  This used to be statically allocated, but that forces many
@@ -77,7 +82,8 @@
 */
 static UChar* vg_tc = NULL;
 
-/* Count of bytes used in the TC. */
+/* Count of bytes used in the TC.  This includes those pointed to from
+   VG_TTE_DELETED entries. */
 static Int vg_tc_used = 0;
 
 /* The TT.  Like TC, for the same reason, is dynamically allocated at
@@ -86,7 +92,7 @@ static Int vg_tc_used = 0;
 */
 static TTEntry* vg_tt = NULL;
 
-/* Count of non-empty, non-deleted TT entries. */
+/* Count of non-empty TT entries.  This includes deleted ones. */
 static Int vg_tt_used = 0;
 
 /* Fast helper for the TT.  A direct-mapped cache which holds a
@@ -135,6 +141,10 @@ void VG_(maybe_do_lru_pass) ( void )
    if (vg_tc_used <= tc_limit && vg_tt_used <= tt_limit)
       return;
 
+#  ifdef DEBUG_TRANSTAB
+   VG_(sanity_check_tc_tt)();
+#  endif
+
    VGP_PUSHCC(VgpDoLRU);
    /*   
    VG_(printf)(
@@ -157,8 +167,9 @@ void VG_(maybe_do_lru_pass) ( void )
       vg_bytes_in_epoch[i] = vg_entries_in_epoch[i] = 0;
 
    for (i = 0; i < VG_TT_SIZE; i++) {
-      if (vg_tt[i].orig_addr == VG_TTE_EMPTY || 
-          vg_tt[i].orig_addr == VG_TTE_DELETED) continue;
+      if (vg_tt[i].orig_addr == VG_TTE_EMPTY 
+          || vg_tt[i].orig_addr == VG_TTE_DELETED) 
+            continue;
       j = vg_tt[i].mru_epoch;
       vg_assert(j <= VG_(current_epoch));
       j = VG_(current_epoch) - j;
@@ -200,11 +211,11 @@ void VG_(maybe_do_lru_pass) ( void )
       recently used at most thresh epochs ago.  Traverse the TT and
       mark such entries as deleted. */
    for (i = 0; i < VG_TT_SIZE; i++) {
-      if (vg_tt[i].orig_addr == VG_TTE_EMPTY || 
-         vg_tt[i].orig_addr == VG_TTE_DELETED) continue;
+      if (vg_tt[i].orig_addr == VG_TTE_EMPTY 
+          || vg_tt[i].orig_addr == VG_TTE_DELETED) 
+         continue;
       if (vg_tt[i].mru_epoch <= thresh) {
          vg_tt[i].orig_addr = VG_TTE_DELETED;
-         vg_tt_used--;
 	 VG_(this_epoch_out_count) ++;
 	 VG_(this_epoch_out_osize) += vg_tt[i].orig_size;
 	 VG_(this_epoch_out_tsize) += vg_tt[i].trans_size;
@@ -213,9 +224,6 @@ void VG_(maybe_do_lru_pass) ( void )
 	 VG_(overall_out_tsize) += vg_tt[i].trans_size;
       }
    }
-
-   vg_assert(vg_tt_used >= 0);
-   vg_assert(vg_tt_used <= tt_target);
 
    /* Now compact the TC, sliding live entries downwards to fill spaces
       left by deleted entries.  In this loop, r is the offset in TC of
@@ -241,6 +249,9 @@ void VG_(maybe_do_lru_pass) ( void )
             vg_tc[w+i] = vg_tc[r+i];
          tte->trans_addr = (Addr)&vg_tc[w+4];
          w += 4+tte->trans_size;
+      } else {
+         tte->orig_addr = VG_TTE_EMPTY;
+         vg_tt_used--;
       }
       r += 4+tte->trans_size;
    }
@@ -251,6 +262,9 @@ void VG_(maybe_do_lru_pass) ( void )
    vg_assert(w <= r);
    vg_assert(w <= tc_target);
    vg_tc_used = w;
+
+   vg_assert(vg_tt_used >= 0);
+   vg_assert(vg_tt_used <= tt_target);
 
    /* Invalidate the fast cache, since it is now out of date.  It will get
       reconstructed incrementally when the client resumes. */
@@ -274,6 +288,11 @@ void VG_(maybe_do_lru_pass) ( void )
       );
 
    /* Reconstruct the SMC detection structures. */
+#  ifdef DEBUG_TRANSTAB
+   for (i = 0; i < VG_TT_SIZE; i++)
+      vg_assert(vg_tt[i].orig_addr != VG_TTE_DELETED);
+#  endif
+   VG_(sanity_check_tc_tt)();
 
    VGP_POPCC;
 }
@@ -290,7 +309,6 @@ void VG_(sanity_check_tc_tt) ( void )
    for (i = 0; i < VG_TT_SIZE; i++) {
       tte = &vg_tt[i];
       if (tte->orig_addr == VG_TTE_EMPTY) continue;
-      if (tte->orig_addr == VG_TTE_DELETED) continue;
       vg_assert(tte->mru_epoch >= 0);
       vg_assert(tte->mru_epoch <= VG_(current_epoch));
       counted_entries++;
@@ -323,8 +341,7 @@ extern void VG_(add_to_trans_tab) ( TTEntry* tte )
    while (True) {
       if (vg_tt[i].orig_addr == tte->orig_addr)
          VG_(panic)("add_to_trans_tab: duplicate");
-      if (vg_tt[i].orig_addr == VG_TTE_DELETED ||
-          vg_tt[i].orig_addr == VG_TTE_EMPTY) {
+      if (vg_tt[i].orig_addr == VG_TTE_EMPTY) {
          /* Put it here, and set the back pointer. */
          vg_tt[i] = *tte;
          VG_WRITE_MISALIGNED_WORD(tte->trans_addr-4, i);
@@ -377,8 +394,8 @@ void VG_(invalidate_tt_fast)( void )
 */
 static __inline__ TTEntry* search_trans_table ( Addr orig_addr )
 {
-  //static Int queries = 0;
-  //static Int probes = 0;
+   //static Int queries = 0;
+   //static Int probes = 0;
    Int i;
    /* Hash to get initial probe point. */
    //   if (queries == 10000) {
@@ -388,7 +405,7 @@ static __inline__ TTEntry* search_trans_table ( Addr orig_addr )
    //queries++;
    i = ((UInt)orig_addr) % VG_TT_SIZE;
    while (True) {
-     //probes++;
+      //probes++;
       if (vg_tt[i].orig_addr == orig_addr)
          return &vg_tt[i];
       if (vg_tt[i].orig_addr == VG_TTE_EMPTY)
@@ -426,228 +443,58 @@ Addr VG_(search_transtab) ( Addr original_addr )
 }
 
 
-/*------------------------------------------------------------*/
-/*--- Detecting and handling self-modifying code.          ---*/
-/*------------------------------------------------------------*/
-
-/* This mechanism uses two data structures:
-
-   vg_oldmap -- array[64k] of Bool, which approximately records
-   parts of the address space corresponding to code for which
-   a translation exists in the translation table.  vg_oldmap is
-   consulted at each write, to determine whether that write might
-   be writing a code address; if so, the program is stopped at 
-   the next jump, and the corresponding translations are invalidated.
-
-   Precise semantics: vg_oldmap[(a >> 8) & 0xFFFF] is true for all
-   addresses a containing a code byte which has been translated.  So
-   it acts kind-of like a direct-mapped cache with 64k entries.
-
-   The second structure is vg_CAW, a small array of addresses at which
-   vg_oldmap indicates a code write may have happened.  This is
-   (effectively) checked at each control transfer (jump), so that
-   translations can be discarded before going on.  An array is
-   somewhat overkill, since it strikes me as very unlikely that a
-   single basic block will do more than one code write.  Nevertheless
-   ...  
-
-   ToDo: make this comment up-to-date.
+/* Invalidate translations of original code [start .. start + range - 1].
+   This is slow, so you *really* don't want to call it very often. 
 */
-
-
-/* Definitions for the self-modifying-code detection cache, intended
-   as a fast check which clears the vast majority of writes.  */
-
-#define VG_SMC_CACHE_HASH(aaa) \
-   ((((UInt)a) >> VG_SMC_CACHE_SHIFT) & VG_SMC_CACHE_MASK)
-
-Bool VG_(smc_cache)[VG_SMC_CACHE_SIZE];
-
-
-/* Definitions for the fallback mechanism, which, more slowly,
-   provides a precise record of which words in the address space
-   belong to original code. */
-
-typedef struct { UChar chars[2048]; } VgSmcSecondary;
-
-static VgSmcSecondary* vg_smc_primary[65536];
-
-static VgSmcSecondary* vg_smc_new_secondary ( void )
+void VG_(invalidate_translations) ( Addr start, UInt range )
 {
-   Int i;
-   VgSmcSecondary* sec 
-      = VG_(malloc) ( VG_AR_PRIVATE, sizeof(VgSmcSecondary) );
-   for (i = 0; i < 2048; i++)
-      sec->chars[i] = 0;
-   return sec;
-}
+   Addr  i_start, i_end, o_start, o_end;
+   UInt  out_count, out_osize, out_tsize;
+   Int   i;
 
-#define GET_BIT_ARRAY(arr,indx)                      \
-   (1 & (  ((UChar*)arr)[((UInt)indx) / 8]           \
-           >> ( ((UInt)indx) % 8) ) )
-
-#define SET_BIT_ARRAY(arr,indx)                      \
-   ((UChar*)arr)[((UInt)indx) / 8] |= (1 << ((UInt)indx) % 8)
-
-
-/* Finally, a place to record the original-code-write addresses
-   detected in a basic block. */
-
-#define VG_ORIGWRITES_SIZE 10
-
-static Addr vg_origwrites[VG_ORIGWRITES_SIZE];
-static Int  vg_origwrites_used;
-
-
-/* Call here to check a written address. */
-
-void VG_(smc_check4) ( Addr a )
-{
-   UInt bit_index;
-   VgSmcSecondary* smc_secondary;
-
-#  if VG_SMC_FASTCHECK_IN_C
-   VG_(smc_total_check4s)++;
-
-   /* Try the fast check first. */
-   if (VG_(smc_cache)[VG_SMC_CACHE_HASH(a)] == False) return;
+#  ifdef DEBUG_TRANSTAB
+   VG_(sanity_check_tc_tt)();
 #  endif
+   i_start = start;
+   i_end   = start + range - 1;
+   out_count = out_osize = out_tsize = 0;
 
-   VG_(smc_cache_passed)++;
-
-   /* Need to do a slow check. */
-   smc_secondary = vg_smc_primary[a >> 16];
-   if (smc_secondary == NULL) return;
-
-   bit_index = (a & 0xFFFF) >> 2;
-   if (GET_BIT_ARRAY(smc_secondary->chars, bit_index) == 0) return;
-
-   VG_(smc_fancy_passed)++;
-
-   /* Detected a Real Live write to code which has been translated.
-      Note it. */
-   if (vg_origwrites_used == VG_ORIGWRITES_SIZE)
-      VG_(panic)("VG_ORIGWRITES_SIZE is too small; "
-                 "increase and recompile.");
-   vg_origwrites[vg_origwrites_used] = a;
-   vg_origwrites_used++;
-
-   VG_(message)(Vg_DebugMsg, "self-modifying-code write at %p", a);
-
-   /* Force an exit before the next basic block, so the translation
-      cache can be flushed appropriately. */
-   //   VG_(dispatch_ctr_SAVED) = VG_(dispatch_ctr);
-   //VG_(dispatch_ctr)       = 1;
-   //VG_(interrupt_reason)   = VG_Y_SMC;
-}
-
-
-/* Mark an address range as containing an original translation,
-   updating both the fast-check cache and the slow-but-correct data
-   structure.  
-*/
-void VG_(smc_mark_original) ( Addr orig_addr, Int orig_size )
-{
-   Addr a;
-   VgSmcSecondary* smc_secondary;
-   UInt bit_index;
-
-   for (a = orig_addr; a < orig_addr+orig_size; a++) {
-
-      VG_(smc_cache)[VG_SMC_CACHE_HASH(a)] = True;
-
-      smc_secondary = vg_smc_primary[a >> 16];
-      if (smc_secondary == NULL)
-         smc_secondary = 
-         vg_smc_primary[a >> 16] = vg_smc_new_secondary();
-
-      bit_index = (a & 0xFFFF) >> 2;
-      SET_BIT_ARRAY(smc_secondary->chars, bit_index);      
+   for (i = 0; i < VG_TT_SIZE; i++) {
+      if (vg_tt[i].orig_addr == VG_TTE_EMPTY
+          || vg_tt[i].orig_addr == VG_TTE_DELETED) continue;
+      o_start = vg_tt[i].orig_addr;
+      o_end = o_start + vg_tt[i].orig_size - 1;
+      if (o_end < i_start || o_start > i_end)
+         continue;
+      if (VG_(clo_cachesim))
+         VG_(cachesim_notify_discard)( & vg_tt[i] );
+      vg_tt[i].orig_addr = VG_TTE_DELETED;
+      VG_(this_epoch_out_count) ++;
+      VG_(this_epoch_out_osize) += vg_tt[i].orig_size;
+      VG_(this_epoch_out_tsize) += vg_tt[i].trans_size;
+      VG_(overall_out_count) ++;
+      VG_(overall_out_osize) += vg_tt[i].orig_size;
+      VG_(overall_out_tsize) += vg_tt[i].trans_size;
+      out_count ++;
+      out_osize += vg_tt[i].orig_size;
+      out_tsize += vg_tt[i].trans_size;
    }
-}
 
-
-/* Discard any translations whose original code overlaps with the
-   range w_addr .. w_addr+3 inclusive. 
-*/
-__attribute__ ((unused))
-static void discard_translations_bracketing ( Addr w_addr )
-{
-#  if 0
-   Int      i, rd, wr;
-   Addr     o_start, o_end;
-   TTEntry* tt;
-
-   for (i = 0; i < VG_TRANSTAB_SLOW_SIZE; i++) {
-      tt = vg_transtab[i];
-      wr = 0;
-      for (rd = 0; rd < vg_transtab_used[i]; rd++) {
-         o_start = tt[rd].orig_addr;
-         o_end   = o_start + tt[rd].orig_size;
-         if (w_addr > o_end || (w_addr+3) < o_start) {
-            /* No collision possible; keep this translation */
-            VG_(smc_mark_original) ( tt[rd].orig_addr, tt[rd].orig_size );
-            if (wr < rd) vg_transtab[wr] = vg_transtab[rd];
-            wr++;
-	 } else {
-            /* Possible collision; discard. */
-            vg_smc_discards++;
-            VG_(message) (Vg_DebugMsg, 
-                             "discarding translation of %p .. %p",
-                             tt[rd].orig_addr, 
-                             tt[rd].orig_addr + tt[rd].orig_size - 1);
-            VG_(free)((void*)tt[rd].trans_addr);
-         }         
+   if (out_count > 0) {
+      VG_(invalidate_tt_fast)();
+      VG_(sanity_check_tc_tt)();
+#     ifdef DEBUG_TRANSTAB
+      { Addr aa;
+        for (aa = i_start; aa <= i_end; aa++)
+           vg_assert(search_trans_table ( aa ) == NULL);
       }
-      vg_transtab_used[i] = wr;
-   }
-#  endif   
-}
-
-
-/* Top-level function in charge of discarding out-of-date translations
-   following the discovery of a (potential) original-code-write. 
-*/
-void VG_(flush_transtab) ( void )
-{
-#  if 0
-   Addr w_addr;
-   Int  i, j;
-
-   /* We shouldn't be here unless a code write was detected. */
-   vg_assert(vg_origwrites_used > 0);
-
-   /* Instead of incrementally fixing up the translation table cache,
-      just invalidate the whole darn thing.  Pray this doesn't happen
-      very often :) */
-   for (i = 0; i < VG_TRANSTAB_CACHE_SIZE; i++)
-      VG_(transtab_cache_orig)[i] = 
-      VG_(transtab_cache_trans)[i] = (Addr)0;
-
-   /* Clear out the fast cache; discard_translations_bracketing
-      reconstructs it. */
-   for (i = 0; i < VG_SMC_CACHE_SIZE; i++) 
-      VG_(smc_cache)[i] = False;
-
-   /* And also clear the slow-but-correct table. */
-   for (i = 0; i < 65536; i++) {
-      VgSmcSecondary* sec = vg_smc_primary[i];
-      if (sec)
-         for (j = 0; j < 2048; j++)
-            sec->chars[j] = 0;         
+#     endif
    }
 
-   /* This doesn't need to be particularly fast, since we (presumably)
-      don't have to handle particularly frequent writes to code
-      addresses. */
-   while (vg_origwrites_used > 0) {
-      vg_origwrites_used--;
-      w_addr = vg_origwrites[vg_origwrites_used];
-      discard_translations_bracketing ( w_addr );
-   }
-
-   vg_assert(vg_origwrites_used == 0);
-#  endif
+   if (1|| VG_(clo_verbosity) > 1)
+      VG_(message)(Vg_UserMsg,   
+         "discard %d (%d -> %d) translations in range %p .. %p",
+         out_count, out_osize, out_tsize, i_start, i_end );
 }
 
 
@@ -655,7 +502,7 @@ void VG_(flush_transtab) ( void )
 /*--- Initialisation.                                      ---*/
 /*------------------------------------------------------------*/
 
-void VG_(init_transtab_and_SMC) ( void )
+void VG_(init_tt_tc) ( void )
 {
    Int i;
 
@@ -678,17 +525,6 @@ void VG_(init_transtab_and_SMC) ( void )
       at the first TT entry, which is, of course, empty. */
    for (i = 0; i < VG_TT_FAST_SIZE; i++)
       VG_(tt_fast)[i] = (Addr)(&vg_tt[0]);
-
-   /* No part of the address space has any translations. */
-   for (i = 0; i < 65536; i++)
-      vg_smc_primary[i] = NULL;
-
-   /* ... and the associated fast-check cache reflects this. */
-   for (i = 0; i < VG_SMC_CACHE_SIZE; i++) 
-      VG_(smc_cache)[i] = False;
-
-   /* Finally, no original-code-writes have been recorded. */
-   vg_origwrites_used = 0;
 }
 
 /*--------------------------------------------------------------------*/

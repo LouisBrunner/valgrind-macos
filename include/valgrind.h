@@ -64,11 +64,11 @@
         _zzq_arg4     /* request fourth param */ )                      \
                                                                         \
   { volatile unsigned int _zzq_args[5];                                 \
-    _zzq_args[0] = (volatile unsigned int)_zzq_request;                 \
-    _zzq_args[1] = (volatile unsigned int)_zzq_arg1;                    \
-    _zzq_args[2] = (volatile unsigned int)_zzq_arg2;                    \
-    _zzq_args[3] = (volatile unsigned int)_zzq_arg3;                    \
-    _zzq_args[4] = (volatile unsigned int)_zzq_arg4;                    \
+    _zzq_args[0] = (volatile unsigned int)(_zzq_request);               \
+    _zzq_args[1] = (volatile unsigned int)(_zzq_arg1);                  \
+    _zzq_args[2] = (volatile unsigned int)(_zzq_arg2);                  \
+    _zzq_args[3] = (volatile unsigned int)(_zzq_arg3);                  \
+    _zzq_args[4] = (volatile unsigned int)(_zzq_arg4);                  \
     asm volatile("movl %1, %%eax\n\t"                                   \
                  "movl %2, %%edx\n\t"                                   \
                  "roll $29, %%eax ; roll $3, %%eax\n\t"                 \
@@ -95,8 +95,8 @@
 #define VG_USERREQ__CHECK_READABLE       0x1006
 #define VG_USERREQ__MAKE_NOACCESS_STACK  0x1007
 #define VG_USERREQ__RUNNING_ON_VALGRIND  0x1008
-#define VG_USERREQ__DO_LEAK_CHECK        0x1009 /* unimplemented */
-
+#define VG_USERREQ__DO_LEAK_CHECK        0x1009 /* untested */
+#define VG_USERREQ__DISCARD_TRANSLATIONS 0x100A
 
 
 /* Client-code macros to manipulate the state of memory. */
@@ -226,5 +226,18 @@
                             VG_USERREQ__DO_LEAK_CHECK,             \
                             0, 0, 0, 0);                           \
    }
+
+
+/* Discard translation of code in the range [_qzz_addr .. _qzz_addr +
+   _qzz_len - 1].  Useful if you are debugging a JITter or some such,
+   since it provides a way to make sure valgrind will retranslate the
+   invalidated area.  Returns no value. */
+#define VALGRIND_DISCARD_TRANSLATIONS(_qzz_addr,_qzz_len)          \
+   {unsigned int _qzz_res;                                         \
+    VALGRIND_MAGIC_SEQUENCE(_qzz_res, 0,                           \
+                            VG_USERREQ__DISCARD_TRANSLATIONS,      \
+                            _qzz_addr, _qzz_len, 0, 0);            \
+   }
+
 
 #endif

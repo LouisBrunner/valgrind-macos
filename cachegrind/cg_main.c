@@ -1,3 +1,4 @@
+
 /*--------------------------------------------------------------------*/
 /*--- The cache simulation framework: instrumentation, recording   ---*/
 /*--- and results printing.                                        ---*/
@@ -10,7 +11,6 @@
 
    Copyright (C) 2000-2002 Julian Seward 
       jseward@acm.org
-      Julian_Seward@muraroa.demon.co.uk
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -29,8 +29,6 @@
 
    The GNU General Public License is contained in the file LICENSE.
 */
-
-#include <string.h>
 
 #include "vg_include.h"
 
@@ -311,7 +309,7 @@ static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb,
    filename_hash = hash(filename, N_FILE_ENTRIES);
    curr_file_node = BBCC_table[filename_hash];
    while (NULL != curr_file_node && 
-          strcmp(filename, curr_file_node->filename) != 0) {
+          VG_(strcmp)(filename, curr_file_node->filename) != 0) {
       curr_file_node = curr_file_node->next;
    }
    if (NULL == curr_file_node) {
@@ -323,7 +321,7 @@ static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb,
    fnname_hash = hash(fn_name, N_FN_ENTRIES);
    curr_fn_node = curr_file_node->fns[fnname_hash];
    while (NULL != curr_fn_node && 
-          strcmp(fn_name, curr_fn_node->fn_name) != 0) {
+          VG_(strcmp)(fn_name, curr_fn_node->fn_name) != 0) {
       curr_fn_node = curr_fn_node->next;
    }
    if (NULL == curr_fn_node) {
@@ -790,7 +788,7 @@ static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl,
 
       /* Allow for filename switching in the middle of a BB;  if this happens,
        * must print the new filename with the function name. */
-      if (0 != strcmp(fl_buf, curr_file)) {
+      if (0 != VG_(strcmp)(fl_buf, curr_file)) {
          VG_(strcpy)(curr_file, fl_buf);
          VG_(sprintf)(fbuf, "fi=%s\n", curr_file);
          VG_(write)(fd, (void*)fbuf, VG_(strlen)(fbuf));
@@ -798,7 +796,7 @@ static void fprint_BBCC(Int fd, BBCC* BBCC_node, Char *first_instr_fl,
 
       /* If the function name for this instruction doesn't match that of the
        * first instruction in the BB, print warning. */
-      if (VG_(clo_trace_symtab) && 0 != strcmp(fn_buf, first_instr_fn)) {
+      if (VG_(clo_trace_symtab) && 0 != VG_(strcmp)(fn_buf, first_instr_fn)) {
          VG_(printf)("Mismatched function names\n");
          VG_(printf)("  filenames: BB:%s, instr:%s;"
                      "  fn_names:  BB:%s, instr:%s;"
@@ -1071,3 +1069,13 @@ void VG_(show_cachesim_results)(Int client_argc, Char** client_argv)
    VGP_POPCC;
 }
 
+
+void VG_(cachesim_notify_discard) ( TTEntry* tte )
+{
+  VG_(printf)( "cachesim_notify_discard: %p for %d\n", 
+               tte->orig_addr, (Int)tte->orig_size);
+}
+
+/*--------------------------------------------------------------------*/
+/*--- end                                            vg_cachesim.c ---*/
+/*--------------------------------------------------------------------*/

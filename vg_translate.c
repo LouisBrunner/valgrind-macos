@@ -297,7 +297,7 @@ Bool VG_(anyFlagUse) ( UInstr* u )
 
    Important!  If you change the set of allocatable registers from
    %eax, %ebx, %ecx, %edx, %esi you must change the
-   save/restore sequences in vg_helper_smc_check4 to match!  
+   save/restore sequences in various places to match!  
 */
 __inline__ Int VG_(rankToRealRegNo) ( Int rank )
 {

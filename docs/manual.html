@@ -24,8 +24,9 @@
 <body bgcolor="#ffffff">
 
 <a name="title">&nbsp;</a>
-<h1 align=center>Valgrind, snapshot 20020501</h1>
+<h1 align=center>Valgrind, snapshot 20020516</h1>
 <center>This manual was majorly updated on 20020501</center>
+<center>This manual was minorly updated on 20020516</center>
 <p>
 
 <center>
@@ -102,7 +103,9 @@ detect problems such as:
   <li>Reading/writing memory after it has been free'd</li>
   <li>Reading/writing off the end of malloc'd blocks</li>
   <li>Reading/writing inappropriate areas on the stack</li>
-  <li>Memory leaks -- where pointers to malloc'd blocks are lost forever</li>
+  <li>Memory leaks -- where pointers to malloc'd blocks are lost
+  forever</li>
+  <li>Mismatched use of malloc/new/new [] vs free/delete/delete []</li>
 </ul>
 
 Problems like these can be difficult to find by other means, often
@@ -677,25 +680,6 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
       all fairly dodgy and doesn't work at all if threads are
       involved.</li><br>
       <p>
-
-  <li><code>--smc-check=none</code><br>
-      <code>--smc-check=some</code> [default]<br>
-      <code>--smc-check=all</code>
-      <p>How carefully should Valgrind check for self-modifying code
-      writes, so that translations can be discarded?&nbsp; When
-      "none", no writes are checked.  When "some", only writes
-      resulting from moves from integer registers to memory are
-      checked.  When "all", all memory writes are checked, even those
-      with which are no sane program would generate code -- for
-      example, floating-point writes.
-      <p>
-      NOTE that this is all a bit bogus.  This mechanism has never
-      been enabled in any snapshot of Valgrind which was made
-      available to the general public, because the extra checks reduce
-      performance, increase complexity, and I have yet to come across
-      any programs which actually use self-modifying code.  I think
-      the flag is ignored.
-      </li>
 </ul>
 
 
@@ -1185,6 +1169,24 @@ A brief description of the available macros:
     right now.  Returns no value.  I guess this could be used to
     incrementally check for leaks between arbitrary places in the
     program's execution.  Warning: not properly tested!
+<p>
+<li><code>VALGRIND_DISCARD_TRANSLATIONS</code>: discard translations
+    of code in the specified address range.  Useful if you are
+    debugging a JITter or some other dynamic code generation system.
+    After this call, attempts to execute code in the invalidated
+    address range will cause valgrind to make new translations of that
+    code, which is probably the semantics you want.  Note that this is
+    implemented naively, and involves checking all 200191 entries in
+    the translation table to see if any of them overlap the specified
+    address range.  So try not to call it often, or performance will
+    nosedive.  Note that you can be clever about this: you only need
+    to call it when an area which previously contained code is
+    overwritten with new code.  You can choose to write code into
+    fresh memory, and just call this occasionally to discard large
+    chunks of old code all at once.
+    <p>
+    Warning: minimally tested.  Also, doesn't interact well with the
+    cache simulator.
 </ul>
 <p>
 
@@ -1255,7 +1257,7 @@ bug in Mozilla which assumes that memory returned from
 <code>malloc</code> is 8-aligned.  Valgrind's allocator only
 guarantees 4-alignment, so without the patch Mozilla makes an illegal
 memory access, which Valgrind of course spots, and then bombs.
-
+Mozilla 1.0RC2 works fine out-of-the-box.
 
 
 <a name="install"></a>
@@ -1730,10 +1732,8 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       running under Valgrind.  This is due to the large amount of
       adminstrative information maintained behind the scenes.  Another
       cause is that Valgrind dynamically translates the original
-      executable and never throws any translation away, except in
-      those rare cases where self-modifying code is detected.
-      Translated, instrumented code is 12-14 times larger than the
-      original (!) so you can easily end up with 15+ MB of
+      executable.  Translated, instrumented code is 14-16 times larger
+      than the original (!) so you can easily end up with 30+ MB of
       translations when running (eg) a web browser.
       </li>
 </ul>
@@ -1809,14 +1809,14 @@ instrumented translation, which is added to the collection of
 translations.  Subsequent jumps to that address will use this
 translation.
 
-<p>Valgrind can optionally check writes made by the application, to
-see if they are writing an address contained within code which has
-been translated.  Such a write invalidates translations of code
-bracketing the written address.  Valgrind will discard the relevant
-translations, which causes them to be re-made, if they are needed
-again, reflecting the new updated data stored there.  In this way,
-self modifying code is supported.  In practice I have not found any
-Linux applications which use self-modifying-code.
+<p>Valgrind no longer directly supports detection of self-modifying
+code.  Such checking is expensive, and in practice (fortunately)
+almost no applications need it.  However, to help people who are
+debugging dynamic code generation systems, there is a Client Request 
+(basically a macro you can put in your program) which directs Valgrind
+to discard translations in a given address range.  So Valgrind can
+still work in this situation provided the client tells it when
+code has become out-of-date and needs to be retranslated.
 
 <p>The JITter translates basic blocks -- blocks of straight-line-code
 -- as single entities.  To minimise the considerable difficulties of

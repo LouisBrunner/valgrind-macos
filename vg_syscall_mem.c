@@ -487,12 +487,15 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res)) {
             /* Copied from munmap() wrapper. */
+            Bool munmap_exe;
             Addr start  = arg1;
             Addr length = arg2;
             while ((start % VKI_BYTES_PER_PAGE) > 0) { start--; length++; }
             while (((start+length) % VKI_BYTES_PER_PAGE) > 0) { length++; }
             make_noaccess( start, length );
-            VG_(symtab_notify_munmap) ( start, length );
+            munmap_exe = VG_(symtab_notify_munmap) ( start, length );
+            if (munmap_exe)
+               VG_(invalidate_translations) ( start, length );
             approximate_mmap_permissions( (Addr)res, arg3, arg4 );
          }
          break;         
@@ -2070,6 +2073,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                pages.  If we don't do that, our idea of addressible
                memory diverges from that of the kernel's, which causes
                the leak detector to crash. */
+            Bool munmap_exe;
             Addr start = arg1;
             Addr length = arg2;
             while ((start % VKI_BYTES_PER_PAGE) > 0) { start--; length++; }
@@ -2083,7 +2087,9 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
             /* Tell our symbol table machinery about this, so that if
                this happens to be a .so being unloaded, the relevant
                symbols are removed too. */
-            VG_(symtab_notify_munmap) ( start, length );
+            munmap_exe = VG_(symtab_notify_munmap) ( start, length );
+            if (munmap_exe)
+               VG_(invalidate_translations) ( start, length );
          }
          break;
 

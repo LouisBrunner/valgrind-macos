@@ -1301,7 +1301,7 @@ extern Bool VG_(what_line_is_this) ( Addr a,
 extern Bool VG_(what_fn_is_this) ( Bool no_demangle, Addr a,
                                      Char* fn_name, Int n_fn_name);
 
-extern void VG_(symtab_notify_munmap) ( Addr start, UInt length );
+extern Bool VG_(symtab_notify_munmap) ( Addr start, UInt length );
 
 
 /* ---------------------------------------------------------------------
@@ -1459,21 +1459,6 @@ extern UInt VG_(translations_needing_spill);
 /* total of register ranks over all translations */
 extern UInt VG_(total_reg_rank);
 
-/* Counts pertaining to the self-modifying-code detection machinery. */
-
-/* Total number of writes checked. */
-//extern UInt VG_(smc_total_check4s);
-
-/* Number of writes which the fast smc check couldn't show were
-   harmless. */
-extern UInt VG_(smc_cache_passed);
-
-/* Numnber of writes which really did write on original code. */
-extern UInt VG_(smc_fancy_passed);
-
-/* Number of translations discarded as a result. */
-//extern UInt VG_(smc_discard_count);
-
 /* Counts pertaining to internal sanity checking. */
 extern UInt VG_(sanity_fast_count);
 extern UInt VG_(sanity_slow_count);
@@ -1590,11 +1575,9 @@ extern void VG_(maybe_do_lru_pass) ( void );
 extern void VG_(flush_transtab) ( void );
 extern Addr VG_(copy_to_transcache) ( Addr trans_addr, Int trans_size );
 extern void VG_(add_to_trans_tab) ( TTEntry* tte );
+extern void VG_(invalidate_translations) ( Addr start, UInt range );
 
-extern void VG_(smc_mark_original) ( Addr original_addr, 
-                                     Int original_len );
-
-extern void VG_(init_transtab_and_SMC) ( void );
+extern void VG_(init_tt_tc) ( void );
 
 extern void VG_(sanity_check_tc_tt) ( void );
 extern Addr VG_(search_transtab) ( Addr original_addr );
@@ -1667,9 +1650,6 @@ extern UInt VG_(run_innerloop) ( void );
    Exports of vg_helpers.S
    ------------------------------------------------------------------ */
 
-/* SMC fast checks. */
-extern void VG_(helper_smc_check4);
-
 /* Mul, div, etc, -- we don't codegen these directly. */
 extern void VG_(helper_idiv_64_32);
 extern void VG_(helper_div_64_32);
@@ -1728,6 +1708,9 @@ extern void VG_(show_cachesim_results)( Int client_argc, Char** client_argv );
 
 extern void VG_(cachesim_log_non_mem_instr)(  iCC* cc );
 extern void VG_(cachesim_log_mem_instr)    ( idCC* cc, Addr data_addr );
+
+extern void VG_(cachesim_notify_discard) ( TTEntry* tte );
+
 
 /* ---------------------------------------------------------------------
    The state of the simulated CPU.

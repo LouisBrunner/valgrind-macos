@@ -385,6 +385,10 @@ UInt VG_(handle_client_request) ( ThreadState* tst, UInt* arg_block )
          VG_(detect_memory_leaks)();
          return 0; /* return value is meaningless */
 
+      case VG_USERREQ__DISCARD_TRANSLATIONS:
+         VG_(invalidate_translations)( arg[1], arg[2] );
+         return 0;  /* return value is meaningless */
+
       default:
          VG_(message)(Vg_UserMsg, 
                       "Warning: unknown client request code %d", arg[0]);

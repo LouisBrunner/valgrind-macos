@@ -1524,56 +1524,6 @@ static void synth_cmovl_reg_reg ( Condcode cond, Int src, Int dst )
 }
 
 
-/* A word in memory containing a pointer to vg_helper_smc_check4.
-   Never changes. 
-*/
-static const Addr vg_helper_smc_check4_ADDR
-   = (Addr)&VG_(helper_smc_check4);
-
-static void synth_orig_code_write_check ( Int sz, Int reg )
-{
-   UInt offset;
-
-   /*
-     In this example, reg is %eax and sz == 8:
-
-     -- check the first four bytes
-     0087 89C5                  movl    %eax, %ebp
-     0089 FF1544332211          call    * 0x11223344
-                  
-     -- check the second four
-     008f 89C5                  movl    %eax, %ebp
-     0091 83C504                addl    $4, %ebp
-     0094 FF1544332211          call    * 0x11223344
-
-     Because we can't call an absolute address (alas), the
-     address called is stored in memory at 0x11223344 in this
-     example, and it just contains the address of 
-     vg_helper_smc_check4 -- which is where we really want
-     to get to.
-   */
-   vg_assert(0);
-
-   if (sz < 4) sz = 4;
-
-   for (offset = 0; offset < sz; offset += 4) {
-
-      emit_movl_reg_reg ( reg, R_EBP );
-
-      if (offset > 0) {
-         newEmit();
-         emitB ( 0x83 ); emitB ( 0xC5 ); emitB ( offset );
-         if (dis) VG_(printf)("\n");
-      }
-
-      newEmit();
-      emitB ( 0xFF ); emitB ( 0x15 ); 
-      emitL ( (Addr)&vg_helper_smc_check4_ADDR );
-      if (dis) VG_(printf)("\n");
-   }
-}
-
-
 /* Synthesise a minimal test (and which discards result) of reg32
    against lit.  It's always safe do simply
       emit_testv_lit_reg ( 4, lit, reg32 )
@@ -2264,8 +2214,10 @@ static void emitUInstr ( Int i, UInstr* u )
          vg_assert(u->tag1 == RealReg);
          vg_assert(u->tag2 == RealReg);
          synth_mov_reg_memreg ( u->size, u->val1, u->val2 );
+	 /* No longer possible, but retained for illustrative purposes.
          if (u->smc_check) 
             synth_orig_code_write_check ( u->size, u->val2 );
+	 */
          break;
       }
 
@@ -2598,8 +2550,10 @@ static void emitUInstr ( Int i, UInstr* u )
          synth_fpu_regmem ( (u->val1 >> 8) & 0xFF,
                             u->val1 & 0xFF,
                             u->val2 );
+         /* No longer possible, but retained for illustrative purposes.
          if (u->opcode == FPU_W && u->smc_check) 
             synth_orig_code_write_check ( u->size, u->val2 );
+         */
          break;
 
       case FPU:

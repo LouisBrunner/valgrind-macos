@@ -90,16 +90,6 @@
 /* Constants for the fast original-code-write check cache. */
 
 
-/* Usually you want this to be zero. */
-#define VG_SMC_FASTCHECK_IN_C 0
-
-#define VG_SMC_CACHE_BITS  19
-#define VG_SMC_CACHE_SIZE  (1 << VG_SMC_CACHE_BITS)
-#define VG_SMC_CACHE_MASK  ((VG_SMC_CACHE_SIZE) - 1)
-
-#define VG_SMC_CACHE_SHIFT 6
-
-
 /* Assembly code stubs make these requests ... */
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 #define VG_USERREQ__PTHREAD_RETURNS         0x4002

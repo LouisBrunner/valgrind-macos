@@ -146,51 +146,6 @@ VG_(helper_value_check4_fail):
 	ret
 
 
-/* Do a original-code-write check for the address in %ebp. */
-.global VG_(helper_smc_check4)
-VG_(helper_smc_check4):
-#if VG_SMC_FASTCHECK_IN_C
-
-	# save the live regs
-	pushl	%eax
-	pushl	%ebx
-	pushl	%ecx
-	pushl	%edx
-	pushl	%esi
-	pushl	%edi
-	
-	pushl	%ebp
-	call	VG_(smc_check4)
-	addl	$4, %esp
-
-	popl	%edi
-	popl	%esi
-	popl	%edx
-	popl	%ecx
-	popl	%ebx
-	popl	%eax
-	
-	ret
-#else	
-	incl	VG_(smc_total_check4s)
-	pushl	%ebp
-	shrl	$VG_SMC_CACHE_SHIFT, %ebp
-	andl	$VG_SMC_CACHE_MASK, %ebp
-	cmpb	$0, VG_(smc_cache)(%ebp)
-	jnz	vg_smc_cache_failure
-	addl	$4, %esp
-	ret
-      vg_smc_cache_failure:
-	popl	%ebp
-	pushal
-	pushl	%ebp
-	call	VG_(smc_check4)
-	addl	$4, %esp
-	popal
-	ret
-#endif
-
-	
 /* Fetch the time-stamp-ctr reg.
    On entry:
 	dummy, replaced by %EAX value

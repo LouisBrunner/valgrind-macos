@@ -36,13 +36,16 @@
 
 /* Majorly rewritten Sun 3 Feb 02 to enable loading symbols from
    dlopen()ed libraries, which is something that KDE3 does a lot.
-   Still kludgey, though less than before:
 
-   * we don't check whether we should throw away some symbol tables 
-     when munmap() happens
+   Stabs reader greatly improved by Nick Nethercode, Apr 02.
 
-   * symbol table reading code for ELF binaries is a shambles.  
-     Use GHC's fptools/ghc/rts/Linker.c as the basis for something better.
+   16 May 02: when notified about munmap, return a Bool indicating
+   whether or not the area being munmapped had executable permissions.
+   This is then used to determine whether or not
+   VG_(invalid_translations) should be called for that area.  In order
+   that this work even if --instrument=no, in this case we still keep
+   track of the mapped executable segments, but do not load any debug
+   info or symbols.
 */
 
 /*------------------------------------------------------------*/
@@ -1181,9 +1184,11 @@ void read_symtab_callback (
       = si->start==VG_ASSUMED_EXE_BASE ? 0 : si->start;
 
    /* And actually fill it up. */
-   vg_read_lib_symbols ( si );
-   canonicaliseSymtab ( si );
-   canonicaliseLoctab ( si );
+   if (VG_(clo_instrument) || VG_(clo_cachesim)) {
+      vg_read_lib_symbols ( si );
+      canonicaliseSymtab ( si );
+      canonicaliseLoctab ( si );
+   }
 }
 
 
@@ -1197,9 +1202,6 @@ void read_symtab_callback (
    which happen to correspond to the munmap()d area.  */
 void VG_(read_symbols) ( void )
 {
-   if (! VG_(clo_instrument) && ! VG_(clo_cachesim)) 
-      return;
-
    VG_(read_procselfmaps) ( read_symtab_callback );
 
    /* Do a sanity check on the symbol tables: ensure that the address
@@ -1222,7 +1224,6 @@ void VG_(read_symbols) ( void )
            /* the main assertion */
            overlap = (lo <= lo2 && lo2 <= hi)
                       || (lo <= hi2 && hi2 <= hi);
-           //vg_assert(!overlap);
 	   if (overlap) {
               VG_(printf)("\n\nOVERLAPPING SEGMENTS\n" );
               ppSegInfo ( si );
@@ -1240,14 +1241,15 @@ void VG_(read_symbols) ( void )
    to a segment for a .so, and if so discard the relevant SegInfo.
    This might not be a very clever idea from the point of view of
    accuracy of error messages, but we need to do it in order to
-   maintain the no-overlapping invariant.  
+   maintain the no-overlapping invariant.
+
+   16 May 02: Returns a Bool indicating whether or not the discarded
+   range falls inside a known executable segment.  See comment at top
+   of file for why.
 */
-void VG_(symtab_notify_munmap) ( Addr start, UInt length )
+Bool VG_(symtab_notify_munmap) ( Addr start, UInt length )
 {
    SegInfo *prev, *curr;
-
-   if (! VG_(clo_instrument)) 
-     return;
 
    prev = NULL;
    curr = segInfo;
@@ -1257,7 +1259,8 @@ void VG_(symtab_notify_munmap) ( Addr start, UInt length )
       prev = curr;
       curr = curr->next;
    }
-   if (curr == NULL) return;
+   if (curr == NULL) 
+      return False;
 
    VG_(message)(Vg_UserMsg, 
                 "discard syms in %s due to munmap()", 
@@ -1272,6 +1275,7 @@ void VG_(symtab_notify_munmap) ( Addr start, UInt length )
    }
 
    freeSegInfo(curr);
+   return True;
 }
 
 

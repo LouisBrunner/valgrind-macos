@@ -635,7 +635,7 @@ void do_setmask ( ThreadId tid,
    vki_ksigset_t irrelevant_sigmask;
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, 
+      VG_(message)(Vg_DebugExtraMsg, 
          "do_setmask: tid = %d (%d means ALL), how = %d (%s), set = %p", 
          tid,
          VG_INVALID_THREADID,

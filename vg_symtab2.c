@@ -248,7 +248,8 @@ void addLineInfo ( SegInfo* si,
                    Addr     this,
                    Addr     next,
                    Int      lineno,
-                   Int      entry )
+                   Int      entry /* only needed for debug printing */
+                 )
 {
    RiLoc loc;
    Int size = next - this;
@@ -265,43 +266,44 @@ void addLineInfo ( SegInfo* si,
     * catching any other instructions bogusly. */
    if (this > next) {
        VG_(message)(Vg_DebugMsg, 
-                    "warning: stabs addresses out of order "
+                    "warning: line info addresses out of order "
                     "at entry %d: 0x%x 0x%x", entry, this, next);
        size = 1;
    }
 
    if (size > MAX_LOC_SIZE) {
        VG_(message)(Vg_DebugMsg, 
-                    "warning: stabs line address range too large "
+                    "warning: line info address range too large "
                     "at entry %d: %d", entry, size);
        size = 1;
    }
 
-   /* hack! */
-   if (this >= 0 && this <= 100) {
-       VG_(message)(Vg_DebugMsg, 
-                    "warning: ignoring bogus stabs entry "
-                    "%p %p %d: %d", this, next, entry, size);
-       return;
-   }
 
-   //vg_assert(this < si->start + si->size && next-1 >= si->start);
+#if 0
+   if (this >= 0 && this < 1000) {
+      this += si->start;
+      next += si->start;
+   }
+#endif
+
+   /* vg_assert(this < si->start + si->size && next-1 >= si->start); */
    if (this >= si->start + si->size || next-1 < si->start) {
-       VG_(message)(Vg_DebugMsg, "warning: ignoring stabs entry falling "
-                                 "outside current SegInfo: %x %x %x %x\n",
-                                 si->start, si->start + si->size, 
-                                 this, next-1);
+       VG_(message)(Vg_DebugMsg, 
+                    "warning: ignoring line info entry falling "
+                    "outside current SegInfo: %p %p %p %p",
+                    si->start, si->start + si->size, 
+                    this, next-1);
        return;
    }
 
    vg_assert(lineno >= 0);
    if (lineno > MAX_LINENO) {
        VG_(message)(Vg_UserMsg, 
-                    "warning: ignoring stabs entry with "
-                    "huge line number (%d)\n", lineno);
+                    "warning: ignoring line info entry with "
+                    "huge line number (%d)", lineno);
        VG_(message)(Vg_UserMsg, 
                     "         Can't handle line numbers "
-                    "greater than %d, sorry\n", MAX_LINENO);
+                    "greater than %d, sorry", MAX_LINENO);
        return;
    }
 
@@ -857,12 +859,12 @@ typedef struct
 DWARF2_External_LineInfo;
 typedef struct
 {
-  UInt  li_length;
+  UInt   li_length;
   UShort li_version;
   UInt   li_prologue_length;
   UChar  li_min_insn_length;
   UChar  li_default_is_stmt;
-  Int            li_line_base;
+  Int    li_line_base;
   UChar  li_line_range;
   UChar  li_opcode_base;
 }
@@ -896,15 +898,15 @@ enum dwarf_line_number_x_ops
 
 typedef struct State_Machine_Registers
 {
-  Addr address;
+  Addr  address;
   UInt  file;
   UInt  line;
   UInt  column;
   Int   is_stmt;
   Int   basic_block;
-  Int end_sequence;
-/* This variable hold the number of the last entry seen
-   in the File Table.  */
+  Int   end_sequence;
+  /* This variable hold the number of the last entry seen
+     in the File Table.  */
   UInt  last_file_entry;
 } SMR;
 
@@ -912,10 +914,10 @@ typedef struct State_Machine_Registers
 static 
 UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
 {
-  UInt result = 0;
-  UInt num_read = 0;
-  Int  shift = 0;
-  UChar     byte;
+  UInt   result = 0;
+  UInt   num_read = 0;
+  Int    shift = 0;
+  UChar  byte;
 
   do
     {
@@ -941,10 +943,10 @@ UInt read_leb128 ( UChar* data, Int* length_return, Int sign )
 
 static SMR state_machine_regs;
 
-static void
-reset_state_machine (is_stmt)
-     Int is_stmt;
+static 
+void reset_state_machine ( Int is_stmt )
 {
+  if (0) VG_(printf)("smr.a := %p (reset)\n", 0 );
   state_machine_regs.address = 0;
   state_machine_regs.file = 1;
   state_machine_regs.line = 1;
@@ -957,26 +959,23 @@ reset_state_machine (is_stmt)
 
 /* Handled an extend line op.  Returns true if this is the end
    of sequence.  */
-static int
-process_extended_line_op (si, fnames, data, is_stmt, pointer_size)
-     SegInfo *si;
-     UInt **fnames;
-     UChar * data;
-     Int is_stmt;
-     Int pointer_size;
+static 
+int process_extended_line_op( SegInfo *si, UInt** fnames, 
+                              UChar* data, Int is_stmt, Int pointer_size)
 {
   UChar   op_code;
-  Int             bytes_read;
+  Int     bytes_read;
   UInt    len;
   UChar * name;
-  Addr   adr;
+  Addr    adr;
 
   len = read_leb128 (data, & bytes_read, 0);
   data += bytes_read;
 
   if (len == 0)
     {
-      VG_(message) (Vg_UserMsg,"badly formed extended line op encountered!\n");
+      VG_(message)(Vg_UserMsg,
+         "badly formed extended line op encountered!\n");
       return bytes_read;
     }
 
@@ -987,31 +986,40 @@ process_extended_line_op (si, fnames, data, is_stmt, pointer_size)
   switch (op_code)
     {
     case DW_LNE_end_sequence:
-      addLineInfo (si, (*fnames)[state_machine_regs.file], si->offset + (state_machine_regs.address - 1), si->offset + (state_machine_regs.address), 0, 0);
+      if (0) VG_(printf)("1001: si->o %p, smr.a %p\n", 
+                         si->offset, state_machine_regs.address );
+      addLineInfo (si, (*fnames)[state_machine_regs.file], 
+                       si->offset + (state_machine_regs.address - 1), 
+                       si->offset + (state_machine_regs.address), 
+                       0, 0);
       reset_state_machine (is_stmt);
       break;
 
     case DW_LNE_set_address:
       /* XXX: Pointer size could be 8 */
+      vg_assert(pointer_size == 4);
       adr = *((Addr *)data);
+      if (0) VG_(printf)("smr.a := %p\n", adr );
       state_machine_regs.address = adr;
       break;
 
     case DW_LNE_define_file:
-
       ++ state_machine_regs.last_file_entry;
       name = data;
       if (*fnames == NULL)
         *fnames = VG_(malloc)(VG_AR_SYMTAB, sizeof (UInt) * 2);
       else
-        *fnames = VG_(realloc)(VG_AR_SYMTAB, *fnames, sizeof (UInt) * (state_machine_regs.last_file_entry + 1));
+        *fnames = VG_(realloc)(
+                     VG_AR_SYMTAB, *fnames, 
+                     sizeof(UInt) 
+                        * (state_machine_regs.last_file_entry + 1));
       (*fnames)[state_machine_regs.last_file_entry] = addStr (si,name);
       data += VG_(strlen) ((char *) data) + 1;
       read_leb128 (data, & bytes_read, 0);
       data += bytes_read;
       read_leb128 (data, & bytes_read, 0);
       data += bytes_read;
-       read_leb128 (data, & bytes_read, 0);
+      read_leb128 (data, & bytes_read, 0);
       break;
 
     default:
@@ -1031,7 +1039,7 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
   UChar *            data = dwarf2;
   UChar *            end  = dwarf2 + dwarf2_sz;
   UChar *            end_of_sequence;
-  UInt *fnames = NULL;
+  UInt  *            fnames = NULL;
 
 
   while (data < end)
@@ -1039,7 +1047,7 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
       external = (DWARF2_External_LineInfo *) data;
 
       /* Check the length of the block.  */
-      info.li_length =*((UInt *)(external->li_length));
+      info.li_length = * ((UInt *)(external->li_length));
 
       if (info.li_length == 0xffffffff)
        {
@@ -1049,15 +1057,17 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 
       if (info.li_length + sizeof (external->li_length) > dwarf2_sz)
        {
-        vg_symerr("DWARF line info appears to be corrupt - the section is too small");
+        vg_symerr("DWARF line info appears to be corrupt "
+                  "- the section is too small");
          return;
        }
 
       /* Check its version number.  */
-      info.li_version =*((UShort *) (external->li_version));
+      info.li_version = * ((UShort *) (external->li_version));
       if (info.li_version != 2)
        {
-         vg_symerr("Only DWARF version 2 line info is currently supported.");
+         vg_symerr("Only DWARF version 2 line info "
+                   "is currently supported.");
          return;
        }
 
@@ -1072,22 +1082,24 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
       info.li_line_base <<= 24;
       info.li_line_base >>= 24;
 
-         end_of_sequence = data + info.li_length + sizeof (external->li_length);
+      end_of_sequence = data + info.li_length 
+                             + sizeof (external->li_length);
 
       reset_state_machine (info.li_default_is_stmt);
 
       /* Read the contents of the Opcodes table.  */
       standard_opcodes = data + sizeof (* external);
 
-
-
       /* Read the contents of the Directory table.  */
       data = standard_opcodes + info.li_opcode_base - 1;
 
-      if (* data == 0);
+      if (* data == 0) 
+       {
+       }
       else
        {
-               /* We ignore the directory table, since gcc gives the entire path as part of the filename */
+         /* We ignore the directory table, since gcc gives the entire
+            path as part of the filename */
          while (* data != 0)
            {
              data += VG_(strlen) ((char *) data) + 1;
@@ -1098,24 +1110,28 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
       data ++;
 
       /* Read the contents of the File Name table.  */
-      if (* data == 0);
+      if (* data == 0)
+       {
+       }
       else
        {
-
          while (* data != 0)
            {
              UChar * name;
              Int bytes_read;
 
-            ++ state_machine_regs.last_file_entry;
+             ++ state_machine_regs.last_file_entry;
              name = data;
-             /* Since we don't have realloc (0, ....) == malloc (...) semantics, we need to malloc the first time. */
+             /* Since we don't have realloc (0, ....) == malloc (...)
+		semantics, we need to malloc the first time. */
 
              if (fnames == NULL)
                fnames = VG_(malloc)(VG_AR_SYMTAB, sizeof (UInt) * 2);
              else
-               fnames = VG_(realloc)(VG_AR_SYMTAB, fnames, sizeof (UInt) * (state_machine_regs.last_file_entry + 1));
-             data += VG_(strlen) ((char *) data) + 1;
+               fnames = VG_(realloc)(VG_AR_SYMTAB, fnames, 
+                           sizeof(UInt) 
+                              * (state_machine_regs.last_file_entry + 1));
+             data += VG_(strlen) ((Char *) data) + 1;
              fnames[state_machine_regs.last_file_entry] = addStr (si,name);
 
              read_leb128 (data, & bytes_read, 0);
@@ -1144,28 +1160,44 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
            {
              Int advAddr;
              op_code -= info.li_opcode_base;
-             adv      = (op_code / info.li_line_range) * info.li_min_insn_length;
+             adv      = (op_code / info.li_line_range) 
+                           * info.li_min_insn_length;
              advAddr = adv;
              state_machine_regs.address += adv;
+             if (0) VG_(printf)("smr.a += %p\n", adv );
              adv = (op_code % info.li_line_range) + info.li_line_base;
-             addLineInfo (si, fnames[state_machine_regs.file], si->offset + (state_machine_regs.address - advAddr), si->offset + (state_machine_regs.address), state_machine_regs.line, 0);
+             if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
+                                si->offset, state_machine_regs.address );
+             addLineInfo (si, fnames[state_machine_regs.file], 
+                              si->offset + (state_machine_regs.address 
+                                            - advAddr), 
+                              si->offset + (state_machine_regs.address), 
+                              state_machine_regs.line, 0);
              state_machine_regs.line += adv;
            }
          else switch (op_code)
            {
            case DW_LNS_extended_op:
-             data += process_extended_line_op (si, &fnames, data, info.li_default_is_stmt,
-                                               sizeof (Addr));
+             data += process_extended_line_op (
+                        si, &fnames, data, 
+                        info.li_default_is_stmt, sizeof (Addr));
              break;
 
            case DW_LNS_copy:
-             addLineInfo (si, fnames[state_machine_regs.file], si->offset + state_machine_regs.address, si->offset + (state_machine_regs.address + 1), state_machine_regs.line , 0);
+             if (0) VG_(printf)("1002: si->o %p, smr.a %p\n", 
+                                si->offset, state_machine_regs.address );
+             addLineInfo (si, fnames[state_machine_regs.file], 
+                              si->offset + state_machine_regs.address, 
+                              si->offset + (state_machine_regs.address + 1),
+                              state_machine_regs.line , 0);
              break;
 
            case DW_LNS_advance_pc:
-             adv = info.li_min_insn_length * read_leb128 (data, & bytes_read, 0);
+             adv = info.li_min_insn_length 
+                      * read_leb128 (data, & bytes_read, 0);
              data += bytes_read;
              state_machine_regs.address += adv;
+             if (0) VG_(printf)("smr.a += %p\n", adv );
              break;
 
            case DW_LNS_advance_line:
@@ -1200,6 +1232,7 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
              adv = (((255 - info.li_opcode_base) / info.li_line_range)
                     * info.li_min_insn_length);
              state_machine_regs.address += adv;
+             if (0) VG_(printf)("smr.a += %p\n", adv );
              break;
 
            case DW_LNS_fixed_advance_pc:
@@ -1207,6 +1240,7 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
              adv = *((UShort *)data);
              data += 2;
              state_machine_regs.address += adv;
+             if (0) VG_(printf)("smr.a += %p\n", adv );
              break;
 
            case DW_LNS_set_prologue_end:

@@ -2761,6 +2761,7 @@ static Bool dis_int_shift ( UInt theInstr )
    IRTemp sext   = newTemp(Ity_I32);
    IRTemp Rs     = newTemp(Ity_I32);
    IRTemp Rs_sh  = newTemp(Ity_I32);
+   IRTemp Rs_msk = newTemp(Ity_I32);
    IRTemp Ra     = newTemp(Ity_I32);
    IRTemp Rb     = newTemp(Ity_I32);
    IRTemp mask   = newTemp(Ity_I32);
@@ -2783,7 +2784,7 @@ static Bool dis_int_shift ( UInt theInstr )
              Ra_addr, Rs_addr, Rb_addr);
          
          assign( sh_amt, binop(Iop_And8, mkU8(0x1F),
-                               unop(Iop_32to8, getIReg(Rb_addr))) );
+                               unop(Iop_32to8, mkexpr(Rb))) );
          // Rs_shift = Rs >> sh_amt
          assign( Rs_sh, binop(Iop_Shr32, mkexpr(Rs), mkexpr(sh_amt)) );
          // rb_b5 = Rb[5]
@@ -2799,11 +2800,10 @@ static Bool dis_int_shift ( UInt theInstr )
          assign( sext, IRExpr_Mux0X( unop(Iop_32to8, mkexpr(sign)),
                                      mkU32(0),
                                      unop(Iop_Not32, mkexpr(mask)) ));
-         
-         // Ra = (rb_b5 == 0 ? Rs_sh : 0) | sext
-         assign( Ra, binop(Iop_Or32, mkexpr(sext),
-                           IRExpr_Mux0X( unop(Iop_32to8, mkexpr(rb_b5)),
-                                         mkU32(0), mkexpr(Rs_sh))) );
+         // Rs_msk = (Rs_sh & mask)
+         assign( Rs_msk, binop(Iop_And32, mkexpr(Rs_sh), mkexpr(mask)) );
+         // Ra = Rs_msk | sext
+         assign( Ra, binop(Iop_Or32, mkexpr(Rs_msk), mkexpr(sext)) );
          op = PPC32G_FLAG_OP_SRAW;
          do_ca = True;
          break;

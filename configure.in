@@ -350,9 +350,12 @@ AC_SUBST(PREFERRED_STACK_BOUNDARY)
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/socket.h sys/statfs.h sys/time.h sys/endian.h endian.h termios.h unistd.h utime.h linux/fb.h mqueue.h linux/compiler.h])
 
-AC_CHECK_HEADERS([linux/mii.h])
-AC_MSG_RESULT([           (Nb: Valgrind users, please ignore any warnings about mii.h)])
-AC_MSG_RESULT([           (They are not important)])
+AH_TEMPLATE([HAVE_LINUX_MII_H], [])
+AC_MSG_CHECKING([for linux/mii.h])
+AC_PREPROC_IFELSE([#include <linux/mii.h>],
+                   [AC_DEFINE([HAVE_LINUX_MII_H])
+                    AC_MSG_RESULT([yes])],
+                   [AC_MSG_RESULT([no])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_UID_T

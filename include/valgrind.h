@@ -171,7 +171,7 @@ typedef
 
           /* Allow printfs to valgrind log. */
           VG_USERREQ__PRINTF = 0x1401,
-          VG_USERREQ__PRINTF_BACKTRACE = 0x1402,
+          VG_USERREQ__PRINTF_BACKTRACE = 0x1402
    } Vg_ClientRequest;
 
 #ifndef __GNUC__

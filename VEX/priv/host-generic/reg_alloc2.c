@@ -492,15 +492,29 @@ HInstrArray* doRegisterAllocation (
                rreg_dead_before[k] = ii+1;
                break;
             case HRmRead:
-               if (rreg_live_after[k] == INVALID_INSTRNO)
+               if (rreg_live_after[k] == INVALID_INSTRNO) {
+                  vex_printf("\nOFFENDING RREG = ");
+                  (*ppReg)(available_real_regs[k]);
+                  vex_printf("\n");
+                  vex_printf("\nOFFENDING instr = ");
+                  (*ppInstr)(instrs_in->arr[ii]);
+                  vex_printf("\n");
                   vpanic("doRegisterAllocation: "
                          "first event for rreg is Read");
+               }
                rreg_dead_before[k] = ii+1;
                break;
             case HRmModify:
-               if (rreg_live_after[k] == INVALID_INSTRNO)
+               if (rreg_live_after[k] == INVALID_INSTRNO) {
+                  vex_printf("\nOFFENDING RREG = ");
+                  (*ppReg)(available_real_regs[k]);
+                  vex_printf("\n");
+                  vex_printf("\nOFFENDING instr = ");
+                  (*ppInstr)(instrs_in->arr[ii]);
+                  vex_printf("\n");
                   vpanic("doRegisterAllocation: "
                          "first event for rreg is Modify");
+               }
                rreg_dead_before[k] = ii+1;
                break;
             default:

@@ -35,7 +35,7 @@ void ppHRegX86 ( HReg reg )
          return;
       case HRcFloat:
          r = hregNumber(reg);
-         vassert(r >= 0 && r < 4);
+         vassert(r >= 0 && r < 6);
          vex_printf("%%fake%d", r);
          return;
       case HRcVector:

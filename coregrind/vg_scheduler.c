@@ -297,12 +297,22 @@ UInt run_thread_for_a_while ( ThreadId tid )
    /* Even more paranoia.  Check that what we have matches
       Vex's guest state layout requirements. */
 
-#  define IS_8_ALIGNED(_xx) (0 == ((_xx) & 7))
+#  define IS_4_ALIGNED(_xx)  (0 == ((_xx) & 3))
+#  define IS_8_ALIGNED(_xx)  (0 == ((_xx) & 7))
+#  define IS_16_ALIGNED(_xx) (0 == ((_xx) & 0xF))
+
+   if (0)
+   VG_(printf)("%p %d %p %d %p %d\n",
+	       (void*)a_vex, sz_vex, (void*)a_vexsh, sz_vexsh,
+	       (void*)a_spill, sz_spill );
 
    vg_assert(IS_8_ALIGNED(sz_vex));
    vg_assert(IS_8_ALIGNED(sz_vexsh));
-   vg_assert(IS_8_ALIGNED(a_vex));
-   vg_assert(IS_8_ALIGNED(a_vexsh));
+   vg_assert(IS_16_ALIGNED(sz_spill));
+
+   vg_assert(IS_4_ALIGNED(a_vex));
+   vg_assert(IS_4_ALIGNED(a_vexsh));
+   vg_assert(IS_4_ALIGNED(a_spill));
 
    vg_assert(sz_vex == sz_vexsh);
    vg_assert(a_vex + sz_vex == a_vexsh);
@@ -310,7 +320,9 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(sz_spill == LibVEX_N_SPILL_BYTES);
    vg_assert(a_vex + 2 * sz_vex == a_spill);
 
+#  undef IS_4_ALIGNED
 #  undef IS_8_ALIGNED
+#  undef IS_16_ALIGNED
 
    VGP_PUSHCC(VgpRun);
 

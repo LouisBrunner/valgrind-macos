@@ -27,7 +27,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -1142,7 +1142,7 @@ void VGM_(fpu_read_check) ( Addr addr, Int size )
       return;
    }
 
-   if (size == 28) {
+   if (size == 28 || size == 108) {
       PROF_EVENT(84); /* XXX assign correct event number */
       fpu_read_check_SLOWLY ( addr, 28 );
       return;
@@ -1229,7 +1229,7 @@ void VGM_(fpu_write_check) ( Addr addr, Int size )
       return;
    }
 
-   if (size == 28) {
+   if (size == 28 || size == 108) {
       PROF_EVENT(89); /* XXX assign correct event number */
       fpu_write_check_SLOWLY ( addr, 28 );
       return;

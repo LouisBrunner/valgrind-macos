@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -339,6 +339,11 @@ UInt VG_(current_epoch) = 0;
 /* This is the ThreadId of the last thread the scheduler ran. */
 ThreadId VG_(last_run_tid) = 0;
 
+/* This is the argument to __NR_exit() supplied by the first thread to
+   call that syscall.  We eventually pass that to __NR_exit() for
+   real. */
+UInt VG_(exitcode) = 0;
+
 
 /* ---------------------------------------------------------------------
    Counters, for informational purposes only.
@@ -603,7 +608,10 @@ static void process_cmd_line_options ( void )
        if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
                                   VG_STARTUP_STACK_BASE_3 )) {
           sp = (UInt*)VG_STARTUP_STACK_BASE_3;
- 
+       } else 
+       if (VG_STACK_MATCHES_BASE( VG_(esp_at_startup), 
+                                  VG_STARTUP_STACK_BASE_4 )) {
+          sp = (UInt*)VG_STARTUP_STACK_BASE_4;
        } else {
           args_grok_error(
              "startup %esp is not near any VG_STARTUP_STACK_BASE_*\n   "
@@ -1222,7 +1230,7 @@ void VG_(main) ( void )
          vg_assert(tst->status == VgTs_Runnable);
          /* The thread's %EBX will hold the arg to exit(), so we just
             do exit with that arg. */
-         VG_(exit)( tst->m_ebx );
+         VG_(exit)( VG_(exitcode) );
          /* NOT ALIVE HERE! */
          VG_(panic)("entered the afterlife in vg_main() -- ExitSyscall");
          break; /* what the hell :) */

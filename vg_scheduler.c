@@ -25,7 +25,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 #include "vg_include.h"
@@ -566,14 +566,18 @@ void VG_(scheduler_init) ( void )
 
    if (VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_1)
        || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_2) 
-       || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_3)) {
+       || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_3)
+       || VG_STACK_MATCHES_BASE(startup_esp, VG_STARTUP_STACK_BASE_4)) {
       /* Jolly good! */
    } else {
-      VG_(printf)("%%esp at startup = %p is not near %p, %p or %p; aborting\n", 
-                  (void*)startup_esp, 
-                  (void*)VG_STARTUP_STACK_BASE_1,
-                  (void*)VG_STARTUP_STACK_BASE_2,
-                  (void*)VG_STARTUP_STACK_BASE_3 );
+      VG_(printf)(
+         "%%esp at startup = %p is not near %p, %p, %p or %p; aborting\n", 
+         (void*)startup_esp, 
+         (void*)VG_STARTUP_STACK_BASE_1,
+         (void*)VG_STARTUP_STACK_BASE_2,
+         (void*)VG_STARTUP_STACK_BASE_3,
+         (void*)VG_STARTUP_STACK_BASE_4 
+      );
       VG_(panic)("unexpected %esp at startup");
    }
 
@@ -1377,8 +1381,27 @@ VgSchedReturnCode VG_(scheduler) ( void )
                then run VG_(__libc_freeres_wrapper).  That quits by
                doing VG_USERREQ__LIBC_FREERES_DONE, and at that point
                we really exit.  To be safe we nuke all other threads
-               currently running. */
+               currently running. 
+
+               If not valgrinding (cachegrinding, etc) don't do this.
+               __libc_freeres does some invalid frees which crash
+               the unprotected malloc/free system. */
+
+            /* If __NR_exit, remember the supplied argument. */
+            if (VG_(threads)[tid].m_eax == __NR_exit)
+               VG_(exitcode) = VG_(threads)[tid].m_ebx; /* syscall arg1 */
+
+            if (VG_(threads)[tid].m_eax == __NR_exit 
+                && !VG_(clo_instrument)) {
+               if (VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
+                  VG_(message)(Vg_DebugMsg, 
+                     "Caught __NR_exit; quitting");
+               }
+               return VgSrc_ExitSyscall;
+            }
+
             if (VG_(threads)[tid].m_eax == __NR_exit) {
+               vg_assert(VG_(clo_instrument));
                if (0 || VG_(clo_trace_syscalls) || VG_(clo_trace_sched)) {
                   VG_(message)(Vg_DebugMsg, 
                      "Caught __NR_exit; running __libc_freeres()");
@@ -2991,7 +3014,7 @@ void do__set_fhstack_entry ( ThreadId tid, Int n, ForkHandlerEntry* fh )
       }
    }
 
-   if (n < 0 && n >= VG_N_FORKHANDLERSTACK) {
+   if (n < 0 || n >= VG_N_FORKHANDLERSTACK) {
       SET_EDX(tid, -1);
       return;
    } 
@@ -3024,7 +3047,7 @@ void do__get_fhstack_entry ( ThreadId tid, Int n, /*OUT*/
       }
    }
 
-   if (n < 0 && n >= VG_N_FORKHANDLERSTACK) {
+   if (n < 0 || n >= VG_N_FORKHANDLERSTACK) {
       SET_EDX(tid, -1);
       return;
    } 

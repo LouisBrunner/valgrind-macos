@@ -1,0 +1,107 @@
+
+Release 1.0.1
+~~~~~~~~~~~~~
+Thank you to the hundreds of people who sent feedback, patches and/or
+bug reports for version 1.0.0.  I have fixed the following bugs
+(somewhat over half the total reported):
+
+- A bug in handling resolver (DNS-lookup) state in threaded programs,
+  which caused name-to-IP-addr lookups to fail in some circumstances.
+
+- Add support for C++ ABI for gccs > 3.1.
+
+- Implement pthread_attr_getdetachstate.
+
+- Fix bug causing exit status of programs to be incorrect when
+  running under valgrind.  Following this fix,
+     <prog> ; echo $?     and
+     valgrind <prog> ; echo $?
+  should give identical results.
+
+- Handle 0xD2 primary opcode (shift-Grp2 Eb, CL).  This fixes
+  some aborts when running GNU Ada programs:
+    disInstr: unhandled opcode 0xD2 then 0xE0
+
+- Handle primary opcode 0x15 (ADC Iv, eAX).  This fixes:
+    disInstr: unhandled opcode 0x15 then 0x0
+
+- Handle missing FPU operations:
+    FSTSW  m32
+    FSAVE  m32
+    FRSTOR m32
+
+- Handle syscall __NR_iopl (change I/O privilege level).  I suspect
+  this is pretty useless unless the x86 IN/OUT insns are also
+  implemented, but hey.
+
+- Handle syscall __NR_vhangup.
+
+- Cache simulator: add workaround for identifying cache params of
+  Duron stepping A0 which has a bug that causes CPUID to misreport L2
+  cache size.
+
+- Non-user-visible: Fix a bunch of bogus boundary checks of the form
+   if (n < lower_limit && n > upper_limit) {
+      /* error case */
+   }
+
+- Possibly-user-visible: fix buggy internal implementation of strncpy().
+  This may or may not fix some strange behaviour in the C++3 demangler.
+
+- Handle startup stacks starting at 0xE0000000.
+
+- Fix various documentation bugs.
+
+- For threaded programs: Give a binding for vfork() -- just behave
+  like fork().  I hope this is OK.
+
+- Fix the following:
+    vg_libpthread.c:1050 (__my_pthread_testcancel): 
+    Assertion `res == 0' failed.
+  which happened when running a threaded program linked with -pg.
+
+- Print a more helpful set of messages when we've run out of memory.
+
+- Change the license for valgrind.h ONLY to a BSD-style license.
+  The entire rest of the system stays GPL'd.
+
+- Add this file!
+
+The following bugs were reported in 1.0.0 and are NOT FIXED in 1.0.1,
+due to one or more of the following: lack of time, technical
+difficulty, or the report is really a feature request, in which case
+it will not make it into the 1.0.X branch.  Anyway, for the record:
+
+- Unimplemented _libc_current_sigrt_min for threaded programs.
+  (ought to be fixed in the 1.0.X series; any volunteers?)
+
+- Leak reports cannot be suppressed -- will definitely defer 
+  beyond 1.0.X.
+
+- modify_ldt syscall and supporting stuff for segment override 
+  prefixes.  Undecided whether to implement in 1.0.X series or
+  not; glibc-2.3.X will probably need it.
+
+- Missing symbols pthread_clock_{get,set}time.  Too difficult to
+  establish a fix which will work for all distros.  Help appreciated!
+
+- Primary opcodes 0xEC .. 0xEF.  These are the x86 IN/OUT insns.
+  Deferred beyond 1.0.X.
+
+- Primary opcode 0xF5 (Complement carry flag insn).
+
+- Request for machine-parseable output (error format).  
+
+- sigcontexts are not passed to signal handlers; the signal
+  context structure pointer is always NULL.
+
+- dlclose() / munmap() discards symbols and so leak reports sometimes
+  lack location information.  I know how to fix this, but will push
+  beyond 1.0.X.
+
+- pthread_{set,get}_concurrency.  Someone send me a patch for
+  this, please!
+
+- A few inexplicable segfaults.
+
+- Probably a few more; those are the main ones.

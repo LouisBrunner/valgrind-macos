@@ -26,7 +26,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
    02111-1307, USA.
 
-   The GNU General Public License is contained in the file LICENSE.
+   The GNU General Public License is contained in the file COPYING.
 */
 
 /* ALL THIS CODE RUNS ON THE SIMULATED CPU.
@@ -254,6 +254,12 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
       return EINVAL;
    }
    attr->__detachstate = detachstate;
+   return 0;
+}
+
+int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
+{
+   *detachstate = attr->__detachstate;
    return 0;
 }
 
@@ -1044,6 +1050,7 @@ static __inline__
 void __my_pthread_testcancel(void)
 {
    int res;
+   ensure_valgrind("__my_pthread_testcancel");
    VALGRIND_MAGIC_SEQUENCE(res, (-1) /* default */,
                            VG_USERREQ__TESTCANCEL,
                            0, 0, 0, 0);
@@ -1354,6 +1361,10 @@ int* __h_errno_location ( void )
    return & thread_specific_h_errno[tid];
 }
 
+
+#undef _res
+extern struct __res_state _res;
+
 struct __res_state* __res_state ( void )
 {
    int tid;
@@ -1364,6 +1375,8 @@ struct __res_state* __res_state ( void )
    /* 'cos I'm paranoid ... */
    if (tid < 1 || tid >= VG_N_THREADS)
       barf("__res_state: invalid ThreadId");
+   if (tid == 1)
+      return & _res;
    return & thread_specific_res_state[tid];
 }
 
@@ -1871,6 +1884,10 @@ pid_t __fork(void)
 }
 
 
+pid_t __vfork(void)
+{
+   return __fork();
+}
 
 
 /* ---------------------------------------------------------------------
@@ -2804,6 +2821,7 @@ strong_alias(send, __send)
 weak_alias (__pread64, pread64)
 weak_alias (__pwrite64, pwrite64)
 weak_alias(__fork, fork)
+weak_alias(__vfork, vfork)
 
 weak_alias (__pthread_kill_other_threads_np, pthread_kill_other_threads_np)
 

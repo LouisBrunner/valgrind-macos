@@ -609,11 +609,6 @@ extern Bool VG_(sk_malloc_called_by_scheduler);
    Exports of vg_ldt.c
    ------------------------------------------------------------------ */
 
-/* Alloc & copy, and dealloc. */
-extern VgLdtEntry* VG_(allocate_LDT_for_thread)   ( VgLdtEntry* parent_ldt );
-extern void        VG_(deallocate_LDT_for_thread) ( VgLdtEntry* ldt );
-extern void        VG_(clear_TLS_for_thread)      ( VgLdtEntry* tls );
-
 /* Simulate the modify_ldt syscall. */
 extern Int VG_(sys_modify_ldt) ( ThreadId tid,
                                  Int func, void* ptr, UInt bytecount );

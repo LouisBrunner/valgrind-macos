@@ -29,6 +29,7 @@
 */
 
 #include "core.h"
+#include "x86_private.h"
 #include <sys/ptrace.h>
 
 /*------------------------------------------------------------*/

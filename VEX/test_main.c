@@ -9,15 +9,56 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "libjit_basictypes.h"
-#include "ir_defs.h"
-#include "host_regs.h"
-#include "x86h_defs.h"
 
 
 /*---------------------------------------------------------------*/
 /*--- Test                                                    ---*/
 /*---------------------------------------------------------------*/
+
+#include "libjit_basictypes.h"
+#include "libjit.h"
+
+void failure_exit ( void )
+{
+   fprintf(stdout, "VEX did failure_exit.  Bye.\n");
+   exit(1);
+}
+
+void log_bytes ( Char* bytes, Int nbytes )
+{
+   fwrite ( bytes, 1, nbytes, stdout );
+}
+
+int main ( void )
+{
+   Int* p;
+   Int i, j, n = 0;
+   LibJIT_Init ( &failure_exit, &log_bytes, 
+                 1, 1, False, 10 );
+   for (j = 0; j < 5000; j++) {
+      LibJIT_Clear(False);
+      for (i = 0; i < 2000; i++) {
+         n++;
+         p = LibVEX_Alloc(16);
+         p[0] = p[1] = p[2] = p[3] = 44;
+      }
+   }
+   LibJIT_Clear(True);
+   printf("Did %d allocs\n", n);
+   return 0;
+}
+
+/*---------------------------------------------------------------*/
+/*--- Test (old)                                              ---*/
+/*---------------------------------------------------------------*/
+
+#if 0
+
+#include "libjit_basictypes.h"
+#include "ir_defs.h"
+#include "host_regs.h"
+#include "x86h_defs.h"
+
 
 /* HACK */
 extern
@@ -149,3 +190,4 @@ int main ( void )
 
    return 0;
 }
+#endif

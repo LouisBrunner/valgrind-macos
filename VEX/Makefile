@@ -26,20 +26,27 @@ APP_OBJS =	test_main.o
 
 
 CC = gcc341
-CCFLAGS = -g -Wall -Wshadow
+CCFLAGS = -g -Wall -Wshadow -O
 
 all: libjit.a $(APP_OBJS)
 	$(CC) $(CCFLAGS) -o vex $(APP_OBJS) libjit.a
 
 libjit.a: $(LIB_OBJS)
+	rm -f libjit.a
 	ar clq libjit.a $(LIB_OBJS)
 
 clean:
 	rm -f $(APP_OBJS) $(LIB_OBJS) libjit.a vex
 
 
+
+
 ALL_HEADERS  = $(PUB_HEADERS) $(PRIV_HEADERS)
 ALL_INCLUDES = $(PUB_INCLUDES) $(PRIV_INCLUDES)
+
+test_main.o: $(PUB_HEADERS) test_main.c
+	$(CC) $(CCFLAGS) $(PUB_INCLUDES) -o test_main.o \
+					 -c test_main.c
 
 priv/ir/ir_defs.o: $(ALL_HEADERS) priv/ir/ir_defs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir/ir_defs.o \

@@ -15,10 +15,26 @@
 /*--- Storage                                           ---*/
 /*---------------------------------------------------------*/
 
-#define N_STORAGE_BYTES 10000
+/* Try to keep this as low as possible -- in particular, less than the
+   size of the smallest L2 cache we might encounter.  At 50000, my VIA
+   Nehemiah 1 GHz (a weedy machine) can satisfy 27 million calls/
+   second to LibVEX_Alloc(16) -- that is, allocate memory at over 400
+   MByte/sec.  Once the size increases enough to fall out of the cache
+   into memory, the rate falls by about a factor of 3. 
+*/
+#define N_STORAGE_BYTES 50000
 
 static Char storage[N_STORAGE_BYTES];
 static Int  storage_used = 0;
+
+/* Gather statistics. */
+static Int storage_bytes_allocd = 0;
+static Int storage_count_allocs = 0;
+
+static ULong storage_bytes_allocd_TOT = 0;
+static ULong storage_count_allocs_TOT = 0;
+
+
 
 /* Exported to library client. */
 
@@ -26,20 +42,31 @@ void* LibVEX_Alloc ( Int nbytes )
 {
    vassert(vex_initdone);
    vassert(nbytes > 0);
-   nbytes = (nbytes + 7) & ~8;
+   nbytes = (nbytes + 7) & ~7;
    if (storage_used + nbytes > N_STORAGE_BYTES)
       vpanic("VEX storage exhausted.\n"
              "Increase N_STORAGE_BYTES and recompile.");
+   storage_count_allocs++;
+   storage_bytes_allocd += nbytes;
    storage_used += nbytes;
    return (void*)(&storage[storage_used - nbytes]);
 }
 
 /* Exported to library client. */
 
-void LibJIT_Clear ( void )
+void LibJIT_Clear ( Bool verb )
 {
    vassert(vex_initdone);
+   storage_bytes_allocd_TOT += (ULong)storage_bytes_allocd;
+   storage_count_allocs_TOT += (ULong)storage_count_allocs;
+   if (verb) {
+      vex_printf("vex storage: total %lld (%lld), curr %d (%d)\n",
+	 	 storage_bytes_allocd_TOT, storage_count_allocs_TOT,
+		 storage_bytes_allocd, storage_count_allocs );
+   }
    storage_used = 0;
+   storage_bytes_allocd = 0;
+   storage_count_allocs = 0;
 }
 
 
@@ -58,7 +85,7 @@ void vex_assert_fail ( const Char* expr,
 }
 
 __attribute__ ((noreturn))
-void panic ( Char* str )
+void vpanic ( Char* str )
 {
    vex_printf("\nvex: the `impossible' happened:\n   %s\n", str);
    (*vex_failure_exit)();

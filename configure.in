@@ -37,7 +37,7 @@ DEFAULT_SUPP=""
 # We don't want gcc 2.7
 AC_MSG_CHECKING([for a supported version of gcc])
 
-gcc_version=`${CC} --version`
+gcc_version=`${CC} --version | head -n 1`
 
 case "${gcc_version}" in
      gcc-2.7.*)

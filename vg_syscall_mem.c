@@ -1414,7 +1414,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 #                    if defined(IPC_64)
                      cmd = cmd & (~IPC_64);
 #                    endif
-                     out_arg = arg3 == SHM_STAT || arg3 == IPC_STAT;
+                     out_arg = cmd == SHM_STAT || cmd == IPC_STAT;
                      if ( out_arg )
                         must_be_writable( tst, 
                            "shmctl(SHM_STAT or IPC_STAT,buf)", 

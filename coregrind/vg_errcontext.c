@@ -191,7 +191,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    vg_assert( tid < VG_N_THREADS );
 }
 
-void gen_suppression(Error* err)
+static void gen_suppression(Error* err)
 {
    Int         i;
    UChar       buf[M_VG_ERRTXT];

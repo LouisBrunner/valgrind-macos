@@ -7805,7 +7805,11 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          delta += 3+1;
       } else {
          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
-         putXMMReg( gregOfRM(modrm), mkV128(0) );
+         /* zero bits 127:64 */
+         putXMMRegLane64( gregOfRM(modrm), 1, mkU64(0) ); 
+         /* zero bits 63:32 */
+         putXMMRegLane32( gregOfRM(modrm), 1, mkU32(0) ); 
+         /* write bits 31:0 */
          putXMMRegLane32( gregOfRM(modrm), 0,
                           loadLE(Ity_I32, mkexpr(addr)) );
          DIP("movss %s,%s\n", dis_buf,
@@ -9278,7 +9282,9 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          delta += 3+1;
       } else {
          addr = disAMode ( &alen, sorb, delta+3, dis_buf );
+         /* zero bits 127:64 */
          putXMMRegLane64( gregOfRM(modrm), 1, mkU64(0) );
+         /* write bits 63:0 */
          putXMMRegLane64( gregOfRM(modrm), 0,
                           loadLE(Ity_I64, mkexpr(addr)) );
          DIP("movsd %s,%s\n", dis_buf,

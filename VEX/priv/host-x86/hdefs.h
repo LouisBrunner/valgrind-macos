@@ -279,8 +279,7 @@ extern HChar* showX86AluOp ( X86AluOp );
 typedef
    enum {
       Xsh_INVALID,
-      Xsh_SHL, Xsh_SHR, Xsh_SAR, 
-      Xsh_ROL, Xsh_ROR
+      Xsh_SHL, Xsh_SHR, Xsh_SAR
    }
    X86ShiftOp;
 

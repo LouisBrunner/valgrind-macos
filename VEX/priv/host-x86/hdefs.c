@@ -467,8 +467,6 @@ HChar* showX86ShiftOp ( X86ShiftOp op ) {
       case Xsh_SHL: return "shl";
       case Xsh_SHR: return "shr";
       case Xsh_SAR: return "sar";
-      case Xsh_ROL: return "rol";
-      case Xsh_ROR: return "ror";
       default: vpanic("showX86ShiftOp");
    }
 }

@@ -1753,7 +1753,11 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
       act upon and immediately restart the faulting instruction.
     */
    if (info->si_signo == VKI_SIGSEGV) {
+      /* HACK */
+      //ThreadId tid = VG_(running_a_thread)() ? VG_(get_current_tid)() : 1;
       ThreadId tid = VG_(get_current_tid)();
+      /* end HACK */
+
       Addr fault = (Addr)info->_sifields._sigfault._addr;
       Addr esp   =  STACK_PTR(VG_(threads)[tid].arch);
       Segment *seg;

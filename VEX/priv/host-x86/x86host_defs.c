@@ -1127,7 +1127,16 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
                goto bad;
          }
       } else {
-         goto bad;
+         *p++ = opc_imm;
+         switch (i->Xin.Sh32.dst->tag) {
+            case Xrm_Reg:
+               p = doAMode_R(p, fake(subopc), 
+                                i->Xin.Sh32.dst->Xrm.Reg.reg);
+               *p++ = (UChar)(i->Xin.Sh32.src);
+               goto done;
+            default:
+               goto bad;
+         }
       }
       break;
 

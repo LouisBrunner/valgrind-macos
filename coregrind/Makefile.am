@@ -36,8 +36,7 @@ noinst_HEADERS = \
 
 EXTRA_DIST = \
 	valgrind.vs \
-	gen_toolint.pl toolfuncs.def \
-	gen_intercepts.pl
+	gen_toolint.pl toolfuncs.def
 
 BUILT_SOURCES = vg_toolint.c vg_toolint.h
 CLEANFILES = vg_toolint.c vg_toolint.h

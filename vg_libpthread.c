@@ -1909,8 +1909,14 @@ int select ( int n,
       nanosleep_interval.tv_nsec = 50 * 1000 * 1000; /* 50 milliseconds */
       /* It's critical here that valgrind's nanosleep implementation
          is nonblocking. */
-      (void)my_do_syscall2(__NR_nanosleep, 
+      res = my_do_syscall2(__NR_nanosleep, 
                            (int)(&nanosleep_interval), (int)NULL);
+      if (res == -VKI_EINTR) {
+         /* The nanosleep was interrupted by a signal.  So we do the
+            same. */
+         * (__errno_location()) = EINTR;
+         return -1;
+      }
    }
 }
 

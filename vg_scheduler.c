@@ -63,6 +63,9 @@
 
   TODO sometime:
 
+- poll() in the vg_libpthread.c -- should it handle the nanosleep
+  being interrupted by a signal?  Ditto accept?
+
 - Mutex scrubbing - clearup_after_thread_exit: look for threads
   blocked on mutexes held by the exiting thread, and release them
   appropriately. (??)
@@ -794,6 +797,7 @@ void handle_signal_return ( ThreadId tid )
 {
    Char msg_buf[100];
    Bool restart_blocked_syscalls;
+   struct vki_timespec * rem;
 
    vg_assert(VG_(is_valid_tid)(tid));
 
@@ -819,11 +823,19 @@ void handle_signal_return ( ThreadId tid )
       return;
    }
 
-   if (VG_(threads)[tid].status == VgTs_WaitFD
+   if (VG_(threads)[tid].status == VgTs_Sleeping
        && VG_(threads)[tid].m_eax == __NR_nanosleep) {
       /* We interrupted a nanosleep().  The right thing to do is to
-         write the unused time to nanosleep's second param and return
-         EINTR, but I'm too lazy for that. */
+         write the unused time to nanosleep's second param, but that's
+         too much effort ... we just say that 1 nanosecond was not
+         used, and return EINTR. */
+      rem = (struct vki_timespec *)VG_(threads)[tid].m_ecx; /* arg2 */
+      if (rem != NULL) {
+         rem->tv_sec = 0;
+         rem->tv_nsec = 1;
+      }
+      SET_EAX(tid, -VKI_EINTR);
+      VG_(threads)[tid].status = VgTs_Runnable;
       return;
    }
 

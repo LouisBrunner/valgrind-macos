@@ -190,19 +190,19 @@ static void invalidate_icache(void *ptr, int nbytes)
 
 asm(
 "switchback_asm:\n"
-// SP
+// gst
 "   lis  %r31,sb_helper1@ha\n"      // get hi-wd of guest_state_ptr addr
 "   lwz  %r31,sb_helper1@l(%r31)\n" // load word of guest_state_ptr to r31
 
 // LR
-"   lwz  %r3,412(%r31)\n"           // guest_LR
+"   lwz  %r3,388(%r31)\n"           // guest_LR
 "   mtlr %r3\n"                     // move to LR
 
 // CR
 "   lis  %r3,sb_helper2@ha\n"       // get hi-wd of flags addr
 "   lwz  %r3,sb_helper2@l(%r3)\n"   // load flags word to r3
 "   mtcr %r3\n"                     // move r3 to CR
-"   lwz  %r3,404(%r31)\n"           // guest_CR0to6
+"   lwz  %r3,408(%r31)\n"           // guest_CR0to6
 "   mtcrf 0x3F,%r3\n"               // set remaining fields of CR
 
 // CTR
@@ -210,13 +210,13 @@ asm(
 "   mtctr %r3\n"               // move r3 to CTR
 
 // XER
-"   lhz    %r3,412(%r31)\n"    // guest_XER_SO
+"   lhz    %r3,416(%r31)\n"    // guest_XER_SO
 "   rlwimi %r4,%r3,31,0,0\n"   // rotate and insert to XER[31]
-"   lhz    %r3,412(%r31)\n"    // guest_XER_OV
+"   lhz    %r3,417(%r31)\n"    // guest_XER_OV
 "   rlwimi %r4,%r3,30,1,1\n"   // rotate and insert to XER[30]
-"   lhz    %r3,412(%r31)\n"    // guest_XER_CA
+"   lhz    %r3,418(%r31)\n"    // guest_XER_CA
 "   rlwimi %r4,%r3,29,2,2\n"   // rotate and insert to XER[30]
-"   lhz    %r3,412(%r31)\n"    // guest_XER_BC
+"   lhz    %r3,419(%r31)\n"    // guest_XER_BC
 "   rlwimi %r4,%r3,0,25,31\n"  // rotate and insert to XER[0:6]
 "   mtxer  %r4\n"              // move r4 to XER
 
@@ -356,16 +356,79 @@ asm(
 asm(
 "run_translation_asm:\n"
 
-// CAB: todo
+// create new stack:
+// save old sp at first word & update sp
+"   stwu 1,-256(1)\n"
 
-// store registers to stack
+// save LR
+"   mflr %r0\n"
+"   stw  %r0,  4(%r1)\n"
+
+// store registers to stack: just the callee-saved regs
+"   stw %r13,  8(%r1)\n"
+"   stw %r14, 12(%r1)\n"
+"   stw %r15, 16(%r1)\n"
+"   stw %r16, 20(%r1)\n"
+"   stw %r17, 24(%r1)\n"
+"   stw %r18, 28(%r1)\n"
+"   stw %r19, 32(%r1)\n"
+"   stw %r20, 36(%r1)\n"
+"   stw %r21, 40(%r1)\n"
+"   stw %r22, 44(%r1)\n"
+"   stw %r23, 48(%r1)\n"
+"   stw %r24, 52(%r1)\n"
+"   stw %r25, 56(%r1)\n"
+"   stw %r26, 60(%r1)\n"
+"   stw %r27, 64(%r1)\n"
+"   stw %r28, 68(%r1)\n"
+"   stw %r29, 72(%r1)\n"
+"   stw %r30, 76(%r1)\n"
+"   stw %r31, 80(%r1)\n"
+
 // r31 (guest state ptr) := global var "gp"
-// call translation address in global var "f"
-// save return value (in r3) into global var "res"
-// reload registers from stack
-// return in usual way
+"   lis %r31,gp@ha\n"
+"   lwz %r31,gp@l(%r31)\n"
 
-"   "
+// call translation address in global var "f"
+"   lis %r4,f@ha\n"
+"   lwz %r4,f@l(%r4)\n"
+"   mtctr %r4\n"
+"   bctrl\n"
+
+// save return value (in r3) into global var "res"
+"   lis %r5,res@ha\n"
+"   stw %r3,res@l(%r5)\n"
+
+// restore LR
+"   lwz  %r0,  4(%r1)\n"
+"   mtlr %r0\n"
+
+// reload registers from stack
+"   lwz %r13,  8(%r1)\n"
+"   lwz %r14, 12(%r1)\n"
+"   lwz %r15, 16(%r1)\n"
+"   lwz %r16, 20(%r1)\n"
+"   lwz %r17, 24(%r1)\n"
+"   lwz %r18, 28(%r1)\n"
+"   lwz %r19, 32(%r1)\n"
+"   lwz %r20, 36(%r1)\n"
+"   lwz %r21, 40(%r1)\n"
+"   lwz %r22, 44(%r1)\n"
+"   lwz %r23, 48(%r1)\n"
+"   lwz %r24, 52(%r1)\n"
+"   lwz %r25, 56(%r1)\n"
+"   lwz %r26, 60(%r1)\n"
+"   lwz %r27, 64(%r1)\n"
+"   lwz %r28, 68(%r1)\n"
+"   lwz %r29, 72(%r1)\n"
+"   lwz %r30, 76(%r1)\n"
+"   lwz %r31, 80(%r1)\n"
+
+// restore stack pointer
+"   lwz %r1,0(%r1)\n"
+
+// return in usual way
+"   blr"
 );
 
 #else
@@ -375,8 +438,10 @@ asm(
 
 void run_translation ( HWord translation )
 {
-   if (0)
+   if (0) {
       printf(" run translation %p\n", (void*)translation );
+      printf(" simulated bb: %d\n", n_bbs_done);
+   }
    f = translation;
    gp = (HWord)&gst;
    run_translation_asm();
@@ -423,7 +488,7 @@ void make_translation ( Addr64 guest_addr, Bool verbose )
            NULL,          /* instrument2 */
            False,         /* cleanup after instrument */
            NULL, /* access checker */
-           verbose ? TEST_FLAGS : (1<<7)|(1<<3) //0
+           verbose ? TEST_FLAGS : (1<<7)|(1<<3|(1<<2)|(1<<1)|(1<<0)) //0
         );
    assert(tres == VexTransOK);
    ws_needed = (trans_used+7) / 8;
@@ -485,6 +550,9 @@ static void run_simulator ( void )
 
       next_guest = gst.GuestPC;
 
+      if (0)
+         printf("\nnext_guest: 0x%x\n", (UInt)next_guest);
+      
       if (next_guest == Ptr_to_ULong(&serviceFn)) {
          /* "do" the function call to serviceFn */
 #        if defined(__i386__)
@@ -505,13 +573,8 @@ static void run_simulator ( void )
          }
 #        elif defined(__powerpc__)
          {
-            HWord esp      = gst.guest_GPR1;
-            gst.guest_CIA  = *(UInt*)(esp+0);
-
-// CAB: ?
-            gst.guest_GPR2 = serviceFn( *(UInt*)(esp+4), *(UInt*)(esp+8) );
-
-            gst.guest_GPR1 = esp+4;
+            gst.guest_GPR3 = serviceFn( gst.guest_GPR4, gst.guest_GPR5 );
+            gst.guest_CIA  = gst.guest_LR;
             next_guest     = gst.guest_CIA;
          }
 #        else
@@ -591,7 +654,7 @@ int main ( Int argc, HChar** argv )
 
    printf("\n---START---\n");
 
-#if 0
+#if 1
    run_simulator();
 #else
    ( (void(*)(HWord(*)(HWord,HWord))) entry ) (serviceFn);

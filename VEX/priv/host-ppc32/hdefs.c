@@ -1810,7 +1810,8 @@ static UChar* mkFormD ( UChar* p, UInt op1, UInt r1, UInt r2, UInt imm )
    vassert(op1 < 0x40);
    vassert(r1  < 0x20);
    vassert(r2  < 0x20);
-   vassert(imm < 0x10000 || imm >= 0xFFFF0000);     // Pos|Neg
+   vassert(imm < 0x10000 || imm >= 0xFFFF8000);     // Pos|Neg
+   imm = imm & 0xFFFF;
    UInt theInstr = ((op1<<26) | (r1<<21) | (r2<<16) | (imm));
    return emit32(p, theInstr);
 }

@@ -1430,8 +1430,8 @@ static Bool dis_int_cmp ( UInt theInstr )
    
    switch (opc1) {
    case 0x0B: // cmpi (Compare Immediate, p398)
-      DIP("cmpi crf%d,%u,r%d,0x%x\n", crfD, flag_L, Ra_addr, SIMM_16);
       EXTS_SIMM = extend_s_16to32(SIMM_16);
+      DIP("cmpi crf%d,%u,r%d,0x%x\n", crfD, flag_L, Ra_addr, EXTS_SIMM);
       irx_tst1 = binop(Iop_CmpEQ32, mkexpr(Ra), mkU32(EXTS_SIMM));
       irx_tst2 = binop(Iop_CmpLT32S, mkexpr(Ra), mkU32(EXTS_SIMM));
       break;

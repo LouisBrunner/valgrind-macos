@@ -640,14 +640,41 @@ static SymType *stabtype_parser(SegInfo *si, SymType *def, Char **pp)
       p--;
       n = atoi(&p, 0);
       switch(n) {
-      case -16:	type = VG_(st_mkbool)(def, sizeof(int)); break;
+      case -1:	type = VG_(st_mkint)(def, 4, True); break;
+      case -2:	type = VG_(st_mkint)(def, 1, True); break;
+      case -3:	type = VG_(st_mkint)(def, 2, True); break;
+      case -4:	type = VG_(st_mkint)(def, 4, True); break;
+      case -5:	type = VG_(st_mkint)(def, 1, False); break;
+      case -6:	type = VG_(st_mkint)(def, 1, True); break;
+      case -7:	type = VG_(st_mkint)(def, 2, False); break;
+      case -8:	type = VG_(st_mkint)(def, 4, False); break;
+      case -9:	type = VG_(st_mkint)(def, 4, False); break;
+      case -10:	type = VG_(st_mkint)(def, 4, False); break;
+      case -11:	type = VG_(st_mkvoid)(def); break;
+      case -12:	type = VG_(st_mkfloat)(def, 32); break;
+      case -13:	type = VG_(st_mkfloat)(def, 64); break;
+      case -15:	type = VG_(st_mkint)(def, 4, True); break;
+      case -16:	type = VG_(st_mkbool)(def, 4); break;
+      case -17:	type = VG_(st_mkfloat)(def, 32); break;
+      case -18:	type = VG_(st_mkfloat)(def, 64); break;
+      case -20:	type = VG_(st_mkint)(def, 1, False); break;
+      case -21:	type = VG_(st_mkint)(def, 1, False); break;
+      case -22:	type = VG_(st_mkint)(def, 2, False); break;
+      case -23:	type = VG_(st_mkint)(def, 4, False); break;
+      case -24:	type = VG_(st_mkint)(def, 4, False); break;
+      case -27:	type = VG_(st_mkint)(def, 1, True); break;
+      case -28:	type = VG_(st_mkint)(def, 2, True); break;
+      case -29:	type = VG_(st_mkint)(def, 4, True); break;
+      case -31:	type = VG_(st_mkint)(def, 8, True); break;
+      case -32:	type = VG_(st_mkint)(def, 8, False); break;
+      case -33:	type = VG_(st_mkint)(def, 8, False); break;
+      case -34:	type = VG_(st_mkint)(def, 8, True); break;
 
       default:
 	 VG_(printf)(" @@ unrecognized negative type %d\n", n);
 	 type = NULL;
 	 break;
       }
-      EXPECT(';', "negative builtin type");
       break;
    }
 

@@ -716,6 +716,9 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
    UInt     trc;
    ThreadState *tst = VG_(get_ThreadState)(tid);
 
+   if (VG_(clo_trace_sched))
+      print_sched_event(tid, "entering VG_(scheduler)");      
+
    VGP_PUSHCC(VgpSched);
 
    /* set the proper running signal mask */
@@ -870,7 +873,10 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 
       } /* switch (trc) */
    }
-      
+
+   if (VG_(clo_trace_sched))
+      print_sched_event(tid, "exiting VG_(scheduler)");
+
    vg_assert(VG_(is_exiting)(tid));
 
    VGP_POPCC(VgpSched);

@@ -800,6 +800,49 @@ static void iselIntExpr64 ( HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e )
       return;
    }
 
+   if (e->tag == Iex_Binop
+       && e->Iex.Binop.op == Iop_Shr64) {
+      /* We use the same ingenious scheme as gcc.  Put the value
+         to be shifted into %hi:%lo, and the shift amount into %cl.
+         Then:
+ 
+            shrdl %cl, %hi, %lo   -- make %lo be right for the shift amt
+                                  -- %cl % 32
+            shrl  %cl, %hi        -- make %lo be right for the shift amt
+                                  -- %cl % 32
+
+         Now, if (shift amount % 64) is in the range 32 .. 63, we have 
+         to do a fixup, which puts the result high half into the result
+         low half, and zeroes the high half:
+
+            testl $32, %ecx
+
+            cmovnz %hi, %lo
+            movl $0, %tmp         -- sigh; need yet another reg
+            cmovnz %tmp, %hi
+      */
+      HReg rAmt, sHi, sLo, tHi, tLo, tTemp;
+      tLo = newVRegI(env);
+      tHi = newVRegI(env);
+      tTemp = newVRegI(env);
+      rAmt = iselIntExpr_R(env, e->Iex.Binop.arg2);
+      iselIntExpr64(&sHi,&sLo, env, e->Iex.Binop.arg1);
+      addInstr(env, mk_MOVsd_RR(rAmt, hregX86_ECX()));
+      addInstr(env, mk_MOVsd_RR(sHi, tHi));
+      addInstr(env, mk_MOVsd_RR(sLo, tLo));
+      /* Ok.  Now shift amt is in %ecx, and value is in tHi/tLo and
+         those regs are legitimately modifiable. */
+      addInstr(env, X86Instr_Sh3232(Xsh_SHR, 0/*%cl*/, tLo, tHi));
+      addInstr(env, X86Instr_Sh32(Xsh_SHR, 0/*%cl*/, X86RM_Reg(tHi)));
+      addInstr(env, X86Instr_Test32(X86RI_Imm(32), X86RM_Reg(hregX86_ECX())));
+      addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tHi), tLo));
+      addInstr(env, X86Instr_Alu32R(Xalu_MOV, X86RMI_Imm(0), tTemp));
+      addInstr(env, X86Instr_CMov32(Xcc_NZ, X86RM_Reg(tTemp), tHi));
+      *rHi = tHi;
+      *rLo = tLo;
+      return;
+   }
+
    ppIRExpr(e);
    vpanic("iselIntExpr64");
 }

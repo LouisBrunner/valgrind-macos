@@ -3121,20 +3121,22 @@ void VG_(translate) ( ThreadState* tst,
    UChar* final;
    Bool debugging_translation;
 
+static Bool vverb = False;
+
    TranslateResult tres;
    static Bool vex_init_done = False;
 
    if (!vex_init_done) {
       LibVEX_Init ( &failure_exit, &log_bytes, 
                     1,  /* debug_paranoia */ 
-                    1,  /* verbosity */
+                    vverb ? 1 : 0,  /* verbosity */
                     False, 
 		    //True, 
                     20 /* max insns per bb */ );
       vex_init_done = True;
    }
 
-   if (1) {
+   if (vverb) {
      VG_(printf)("\n\n");
          VG_(message)(Vg_UserMsg,
                      "=======================================================");
@@ -3144,6 +3146,12 @@ void VG_(translate) ( ThreadState* tst,
               VG_(bbs_done),
               VG_(overall_in_osize), VG_(overall_in_tsize) );
      VG_(printf)("\n");
+   } else {
+         VG_(message)(Vg_UserMsg,
+              "trans# %d, bb# %lu, in %d, out %d =======================",
+              VG_(overall_in_count), 
+              VG_(bbs_done),
+              VG_(overall_in_osize), VG_(overall_in_tsize) );
    }
 
    tres = LibVEX_Translate ( 

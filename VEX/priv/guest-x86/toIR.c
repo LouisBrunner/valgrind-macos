@@ -2460,12 +2460,12 @@ UInt dis_Grp3 ( UChar sorb, Int sz, UInt delta )
 //--             eip++;
 //--             codegen_mul_A_D_Reg ( cb, sz, modrm, True );
 //--             break;
-//--          case 6: /* DIV */
-//--             eip++;
-//--             uInstr2(cb, GET, sz, ArchReg, eregOfRM(modrm), TempReg, t1);
-//--             codegen_div ( cb, sz, t1, False );
-//--             DIP("div%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
-//--             break;
+         case 6: /* DIV */
+            delta++;
+            assign( t1, getIReg(sz, eregOfRM(modrm)) );
+            codegen_div ( sz, t1, False );
+            DIP("div%c %s\n", nameISize(sz), nameIReg(sz, eregOfRM(modrm)));
+            break;
 //--          case 7: /* IDIV */
 //--             eip++;
 //--             uInstr2(cb, GET, sz, ArchReg, eregOfRM(modrm), TempReg, t1);
@@ -3330,15 +3330,18 @@ UInt dis_SHLRD_Gv_Ev ( UChar sorb,
    if (epartIsReg(modrm)) {
       delta++;
       assign( esrc, getIReg(sz, eregOfRM(modrm)) );
-      DIP("sh%cd%c %%cl, %s, %s\n",
+      DIP("sh%cd%c %s, %s, %s\n",
           ( left_shift ? 'l' : 'r' ), nameISize(sz), 
+          shift_amt_txt,
           nameIReg(sz, gregOfRM(modrm)), nameIReg(sz, eregOfRM(modrm)));
    } else {
       addr = disAMode ( &len, sorb, delta, dis_buf );
       delta += len;
       assign( esrc, loadLE(ty, mkexpr(addr)) );
-      DIP("sh%cd%c %%cl, %s, %s\n", ( left_shift ? 'l' : 'r' ),
-          nameISize(sz), nameIReg(sz, gregOfRM(modrm)), dis_buf);
+      DIP("sh%cd%c %s, %s, %s\n", 
+          ( left_shift ? 'l' : 'r' ), nameISize(sz), 
+          shift_amt_txt,
+          nameIReg(sz, gregOfRM(modrm)), dis_buf);
    }
 
    /* Round up the relevant primops. */
@@ -6462,10 +6465,10 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
    case 0x2C: /* SUB Ib, AL */
       delta = dis_op_imm_A(1, Iop_Sub8, True, delta, "sub" );
       break;
-//--    case 0x2D: /* SUB Iv, eAX */
-//--       delta = dis_op_imm_A( sz, SUB, True, delta, "sub" );
-//--       break;
-//-- 
+   case 0x2D: /* SUB Iv, eAX */
+      delta = dis_op_imm_A( sz, Iop_Sub8, True, delta, "sub" );
+      break;
+
 //--    case 0x34: /* XOR Ib, AL */
 //--       delta = dis_op_imm_A( 1, XOR, True, delta, "xor" );
 //--       break;
@@ -7498,13 +7501,15 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
                     "%cl", True );
          break;
 
-//--       case 0xAC: /* SHRDv imm8,Gv,Ev */
-//--          modrm = getUChar(eip);
-//--          eip = dis_SHLRD_Gv_Ev ( 
-//--                   cb, sorb, eip, modrm, sz, 
-//--                   Literal, getUChar(eip + lengthAMode(eip)),
-//--                   False );
-//--          break;
+      case 0xAC: /* SHRDv imm8,Gv,Ev */
+         modrm = getIByte(delta);
+         d32   = delta + lengthAMode(delta);
+         vex_sprintf(dis_buf, "$%d", delta);
+         delta = dis_SHLRD_Gv_Ev ( 
+                    sorb, delta, modrm, sz, 
+                    mkU8(getIByte(d32)), True, /* literal */
+                    dis_buf, False );
+         break;
 //--       case 0xAD: /* SHRDv %cl,Gv,Ev */
 //--          modrm = getUChar(eip);
 //--          eip = dis_SHLRD_Gv_Ev ( 

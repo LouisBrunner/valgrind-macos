@@ -1208,10 +1208,13 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
       if (i->Xin.Sh3232.amt == 0) {
          /* shldl/shrdl by %cl */
          *p++ = 0x0F;
-         *p++ = i->Xin.Sh3232.op == Xsh_SHL ? 0xA5 : 0xAD;
-         p = doAMode_R(p, i->Xin.Sh3232.rLo, i->Xin.Sh3232.rHi);
-         if (i->Xin.Sh3232.op == Xsh_SHR) goto bad; // await test case
-         // Check carefully if rLo and rHi play opposite roles in SHR
+         if (i->Xin.Sh3232.op == Xsh_SHL) {
+            *p++ = 0xA5;
+            p = doAMode_R(p, i->Xin.Sh3232.rLo, i->Xin.Sh3232.rHi);
+         } else {
+            *p++ = 0xAD;
+            p = doAMode_R(p, i->Xin.Sh3232.rHi, i->Xin.Sh3232.rLo);
+         }
          goto done;
       }
       break;
@@ -1311,10 +1314,10 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
 
       switch (i->Xin.CMov32.src->tag) {
          case Xrm_Reg:
-            vassert(0); // waiting for test case
             *p++ = 0x89;
-            p = doAMode_R(p, i->Xin.CMov32.src->Xrm.Reg.reg,
-                             i->Xin.CMov32.dst);
+            p = doAMode_R(p, i->Xin.CMov32.dst,
+                             i->Xin.CMov32.src->Xrm.Reg.reg);
+                             
             break;
          case Xrm_Mem:
             *p++ = 0x8B;

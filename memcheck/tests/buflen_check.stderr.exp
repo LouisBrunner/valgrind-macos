@@ -8,6 +8,6 @@ Syscall param socketcall.getsockname(namelen_in) contains uninitialised or unadd
    at 0x........: getsockname (in /...libc...)
    by 0x........: __libc_start_main (...libc...)
    by 0x........: ...
- Address 0x........ is not stack'd, malloc'd or free'd
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 getsockname(1) failed
 getsockname(2) failed

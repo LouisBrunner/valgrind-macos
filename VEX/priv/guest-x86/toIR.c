@@ -3408,7 +3408,7 @@ static
 void fp_do_op_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
                          IROp op, Bool dbl )
 {
-   DIP("f%s%c %s", op_txt, dbl?'l':'s', dis_buf);
+   DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
    if (dbl) {
       put_ST_UNCHECKED(0, 
          binop( op, 
@@ -3432,7 +3432,7 @@ static
 void fp_do_oprev_mem_ST_0 ( IRTemp addr, UChar* op_txt, UChar* dis_buf, 
                             IROp op, Bool dbl )
 {
-   DIP("f%s%c %s", op_txt, dbl?'l':'s', dis_buf);
+   DIP("f%s%c %s\n", op_txt, dbl?'l':'s', dis_buf);
    if (dbl) {
       put_ST_UNCHECKED(0, 
          binop( op, 
@@ -3666,20 +3666,20 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          switch (gregOfRM(modrm)) {
 
             case 0: /* FLD single-real */
-               DIP("fldF %s\n", dis_buf);
+               DIP("flds %s\n", dis_buf);
                fp_push();
                put_ST(0, unop(Iop_F32toF64,
                               loadLE(Ity_F32, mkexpr(addr))));
                break;
 
             case 2: /* FST single-real */
-               DIP("fstS %s", dis_buf);
+               DIP("fsts %s\n", dis_buf);
                storeLE(mkexpr(addr),
                        binop(Iop_F64toF32, get_roundingmode(), get_ST(0)));
                break;
 
             case 3: /* FSTP single-real */
-               DIP("fstpS %s", dis_buf);
+               DIP("fstps %s\n", dis_buf);
                storeLE(mkexpr(addr), 
                        binop(Iop_F64toF32, get_roundingmode(), get_ST(0)));
                fp_pop();
@@ -3740,7 +3740,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                   )
                );
 
-               DIP("fldenv %s", dis_buf);
+               DIP("fldenv %s\n", dis_buf);
                break;
             }
 
@@ -3756,7 +3756,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                /* ULong x86h_check_fldcw ( UInt ); */
                IRTemp t64 = newTemp(Ity_I64);
                IRTemp ew = newTemp(Ity_I32);
-               DIP("fldcw %s", dis_buf);
+               DIP("fldcw %s\n", dis_buf);
                assign( t64, mkIRExprCCall(
                                Ity_I64, 0/*regparms*/, 
                                "x86g_check_fldcw",
@@ -3820,7 +3820,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
                stmt( IRStmt_Dirty(d) );
 
-               DIP("fnstenv %s", dis_buf);
+               DIP("fnstenv %s\n", dis_buf);
                break;
             }
 
@@ -3829,7 +3829,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                  thing it depends on is FPROUND[1:0], so call a clean
                  helper to cook it up. */
                /* UInt x86h_create_fpucw ( UInt fpround ) */
-               DIP("fnstcw %s", dis_buf);
+               DIP("fnstcw %s\n", dis_buf);
                storeLE(
                   mkexpr(addr), 
                   unop( Iop_32to16, 
@@ -3898,48 +3898,48 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                             "x86g_calculate_FXAM", &x86g_calculate_FXAM,
                             args
                         ));
-               DIP("fxam");
+               DIP("fxam\n");
                break;
             }
 
             case 0xE8: /* FLD1 */
-               DIP("fld1");
+               DIP("fld1\n");
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(1.0)));
                break;
 
             case 0xE9: /* FLDL2T */
-               DIP("fldl2t");
+               DIP("fldl2t\n");
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(3.32192809488736234781)));
                break;
 
             case 0xEA: /* FLDL2E */
-               DIP("fldl2e");
+               DIP("fldl2e\n");
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(1.44269504088896340739)));
                break;
 
             case 0xEB: /* FLDPI */
-               DIP("fldpi");
+               DIP("fldpi\n");
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(3.14159265358979323851)));
                break;
 
             case 0xEC: /* FLDLG2 */
-               DIP("fldlg2");
+               DIP("fldlg2\n");
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(0.301029995663981143)));
                break;
 
             case 0xED: /* FLDLN2 */
-               DIP("fldln2");
+               DIP("fldln2\n");
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(0.69314718055994530942)));
                break;
 
             case 0xEE: /* FLDZ */
-               DIP("fldz");
+               DIP("fldz\n");
                fp_push();
                put_ST(0, IRExpr_Const(IRConst_F64(0.0)));
                break;
@@ -4070,32 +4070,32 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          switch (gregOfRM(modrm)) {
 
             case 0: /* FIADD m32int */ /* ST(0) += m32int */
-               DIP("fiaddl %s", dis_buf);
+               DIP("fiaddl %s\n", dis_buf);
                fop = Iop_AddF64;
                goto do_fop_m32;
 
             case 1: /* FIMUL m32int */ /* ST(0) *= m32int */
-               DIP("fimull %s", dis_buf);
+               DIP("fimull %s\n", dis_buf);
                fop = Iop_MulF64;
                goto do_fop_m32;
 
             case 4: /* FISUB m32int */ /* ST(0) -= m32int */
-               DIP("fisubl %s", dis_buf);
+               DIP("fisubl %s\n", dis_buf);
                fop = Iop_SubF64;
                goto do_fop_m32;
 
             case 5: /* FISUBR m32int */ /* ST(0) = m32int - ST(0) */
-               DIP("fisubrl %s", dis_buf);
+               DIP("fisubrl %s\n", dis_buf);
                fop = Iop_SubF64;
                goto do_foprev_m32;
 
             case 6: /* FIDIV m32int */ /* ST(0) /= m32int */
-               DIP("fisubl %s", dis_buf);
+               DIP("fisubl %s\n", dis_buf);
                fop = Iop_DivF64;
                goto do_fop_m32;
 
             case 7: /* FIDIVR m32int */ /* ST(0) = m32int / ST(0) */
-               DIP("fidivrl %s", dis_buf);
+               DIP("fidivrl %s\n", dis_buf);
                fop = Iop_DivF64;
                goto do_foprev_m32;
 
@@ -4128,7 +4128,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC0 ... 0xC7: /* FCMOVB ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC0;
-               DIP("fcmovb %%st(%d), %%st(0)", r_src);
+               DIP("fcmovb %%st(%d), %%st(0)\n", r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4138,7 +4138,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC8 ... 0xCF: /* FCMOVE(Z) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
-               DIP("fcmovz %%st(%d), %%st(0)", r_src);
+               DIP("fcmovz %%st(%d), %%st(0)\n", r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4148,7 +4148,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xD0 ... 0xD7: /* FCMOVBE ST(i), ST(0) */
                r_src = (UInt)modrm - 0xD0;
-               DIP("fcmovbe %%st(%d), %%st(0)", r_src);
+               DIP("fcmovbe %%st(%d), %%st(0)\n", r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4197,13 +4197,13 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                break;
 
             case 2: /* FIST m32 */
-               DIP("fistl %s", dis_buf);
+               DIP("fistl %s\n", dis_buf);
                storeLE( mkexpr(addr), 
                         binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
                break;
 
             case 3: /* FISTP m32 */
-               DIP("fistpl %s", dis_buf);
+               DIP("fistpl %s\n", dis_buf);
                storeLE( mkexpr(addr), 
                         binop(Iop_F64toI32, get_roundingmode(), get_ST(0)) );
                fp_pop();
@@ -4233,7 +4233,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                fp_push();
                put_ST(0, unop(Iop_ReinterpI64asF64, mkexpr(val)));
 
-               DIP("fldt %s", dis_buf);
+               DIP("fldt %s\n", dis_buf);
                break;
             }
 
@@ -4257,7 +4257,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                stmt( IRStmt_Dirty(d) );
                fp_pop();
 
-               DIP("fstpt %s", dis_buf);
+               DIP("fstpt\n %s", dis_buf);
                break;
             }
 
@@ -4274,7 +4274,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC0 ... 0xC7: /* FCMOVNB ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC0;
-               DIP("fcmovnb %%st(%d), %%st(0)", r_src);
+               DIP("fcmovnb %%st(%d), %%st(0)\n", r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4284,7 +4284,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC8 ... 0xCF: /* FCMOVNE(NZ) ST(i), ST(0) */
                r_src = (UInt)modrm - 0xC8;
-               DIP("fcmovnz %%st(%d), %%st(0)", r_src);
+               DIP("fcmovnz %%st(%d), %%st(0)\n", r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4294,7 +4294,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xD0 ... 0xD7: /* FCMOVNBE ST(i), ST(0) */
                r_src = (UInt)modrm - 0xD0;
-               DIP("fcmovnbe %%st(%d), %%st(0)", r_src);
+               DIP("fcmovnbe %%st(%d), %%st(0)\n", r_src);
                put_ST_UNCHECKED(0, 
                                 IRExpr_Mux0X( 
                                     unop(Iop_1Uto8,
@@ -4342,7 +4342,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
                stmt( IRStmt_Dirty(d) );
 
-               DIP("fninit");
+               DIP("fninit\n");
                break;
             }
 
@@ -4481,18 +4481,18 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          switch (gregOfRM(modrm)) {
 
             case 0: /* FLD double-real */
-               DIP("fldD %s\n", dis_buf);
+               DIP("fldl %s\n", dis_buf);
                fp_push();
                put_ST(0, IRExpr_LDle(Ity_F64, mkexpr(addr)));
                break;
 
             case 2: /* FST double-real */
-               DIP("fstD %s", dis_buf);
+               DIP("fstl %s\n", dis_buf);
                storeLE(mkexpr(addr), get_ST(0));
                break;
 
             case 3: /* FSTP double-real */
-               DIP("fstpD %s", dis_buf);
+               DIP("fstpl %s\n", dis_buf);
                storeLE(mkexpr(addr), get_ST(0));
                fp_pop();
                break;
@@ -4552,7 +4552,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                   )
                );
 
-               DIP("frstor %s", dis_buf);
+               DIP("frstor %s\n", dis_buf);
                break;
             }
 
@@ -4596,7 +4596,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
                stmt( IRStmt_Dirty(d) );
 
-               DIP("fnsave %s", dis_buf);
+               DIP("fnsave %s\n", dis_buf);
                break;
             }
 
@@ -4676,32 +4676,32 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
          switch (gregOfRM(modrm)) {
 
             case 0: /* FIADD m16int */ /* ST(0) += m16int */
-               DIP("fiaddw %s", dis_buf);
+               DIP("fiaddw %s\n", dis_buf);
                fop = Iop_AddF64;
                goto do_fop_m16;
 
             case 1: /* FIMUL m16int */ /* ST(0) *= m16int */
-               DIP("fimulw %s", dis_buf);
+               DIP("fimulw %s\n", dis_buf);
                fop = Iop_MulF64;
                goto do_fop_m16;
 
             case 4: /* FISUB m16int */ /* ST(0) -= m16int */
-               DIP("fisubw %s", dis_buf);
+               DIP("fisubw %s\n", dis_buf);
                fop = Iop_SubF64;
                goto do_fop_m16;
 
             case 5: /* FISUBR m16int */ /* ST(0) = m16int - ST(0) */
-               DIP("fisubrw %s", dis_buf);
+               DIP("fisubrw %s\n", dis_buf);
                fop = Iop_SubF64;
                goto do_foprev_m16;
 
             case 6: /* FIDIV m16int */ /* ST(0) /= m16int */
-               DIP("fisubw %s", dis_buf);
+               DIP("fisubw %s\n", dis_buf);
                fop = Iop_DivF64;
                goto do_fop_m16;
 
             case 7: /* FIDIVR m16int */ /* ST(0) = m16int / ST(0) */
-               DIP("fidivrw %s", dis_buf);
+               DIP("fidivrw %s\n", dis_buf);
                fop = Iop_DivF64;
                goto do_foprev_m16;
 
@@ -4801,13 +4801,13 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                break;
 
             case 2: /* FIST m16 */
-               DIP("fistp %s", dis_buf);
+               DIP("fistp %s\n", dis_buf);
                storeLE( mkexpr(addr), 
                         binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
                break;
 
             case 3: /* FISTP m16 */
-               DIP("fistps %s", dis_buf);
+               DIP("fistps %s\n", dis_buf);
                storeLE( mkexpr(addr), 
                         binop(Iop_F64toI16, get_roundingmode(), get_ST(0)) );
                fp_pop();
@@ -4822,7 +4822,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                break;
 
             case 7: /* FISTP m64 */
-               DIP("fistpll %s", dis_buf);
+               DIP("fistpll %s\n", dis_buf);
                storeLE( mkexpr(addr), 
                         binop(Iop_F64toI64, get_roundingmode(), get_ST(0)) );
                fp_pop();
@@ -6966,7 +6966,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       addr = disAMode ( &alen, sorb, delta+2, dis_buf );
       delta += 2+alen;
 
-      DIP("fxsave %s", dis_buf);
+      DIP("fxsave %s\n", dis_buf);
 
       /* Uses dirty helper: 
             void x86g_do_FXSAVE ( VexGuestX86State*, UInt ) */
@@ -7303,7 +7303,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 
       addr = disAMode ( &alen, sorb, delta+2, dis_buf );
       delta += 2+alen;
-      DIP("ldmxcsr %s", dis_buf);
+      DIP("ldmxcsr %s\n", dis_buf);
 
       /* The only thing we observe in %mxcsr is the rounding mode.
          Therefore, pass the 32-bit value (SSE native-format control
@@ -7956,7 +7956,7 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
          on is SSEROUND[1:0], so call a clean helper to cook it up. 
       */
       /* UInt x86h_create_mxcsr ( UInt sseround ) */
-      DIP("stmxcsr %s", dis_buf);
+      DIP("stmxcsr %s\n", dis_buf);
       storeLE( mkexpr(addr), 
                mkIRExprCCall(
                   Ity_I32, 0/*regp*/,

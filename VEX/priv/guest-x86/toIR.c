@@ -72,7 +72,13 @@
    bit be set by PUSHF.
 
    This module uses global variables and so is not MT-safe (if that
-   should ever become relevant).  */
+   should ever become relevant).
+
+   The delta values are 32-bit ints, not 64-bit ints.  That means
+   this module may not work right if run on a 64-bit host.  That should
+   be fixed properly, really -- if anyone ever wants to use Vex to
+   translate x86 code for execution on a 64-bit host.
+*/
 
 /* Translates x86 code to IR. */
 
@@ -320,7 +326,13 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
       }
 
       delta += size;
-      vge->len[vge->n_used-1] += size;
+      /* If vex_control.guest_max_insns is required to be < 500 and
+	 each insn is at max 15 bytes long, this limit of 10000 then
+	 seems reasonable since the max possible extent length will be
+	 500 * 15 == 7500. */
+      vassert(vge->len[vge->n_used-1] < 10000);
+      vge->len[vge->n_used-1] 
+         = toUShort(toUInt( vge->len[vge->n_used-1] + size ));
       n_instrs++;
       DIP("\n");
 
@@ -347,7 +359,7 @@ IRBB* bbToIR_X86 ( UChar*           x86code,
             vassert(irbb->next == NULL);
             /* figure out a new delta to continue at. */
             vassert(chase_into_ok(guest_next));
-            delta = (UInt)(guest_next - guest_eip_start);
+            delta = toUInt(guest_next - guest_eip_start);
             /* we now have to start a new extent slot. */
 	    vge->n_used++;
 	    vassert(vge->n_used <= 3);

@@ -1,0 +1,11 @@
+Makefile.in
+Makefile
+massif.*.hp
+massif.*.aux
+massif.*.ps
+massif.*.txt
+massif.*.html
+*.stdout.diff
+*.stderr.diff
+*.stdout.out
+*.stderr.out

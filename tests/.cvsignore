@@ -1,4 +1,5 @@
 Makefile.in
 Makefile
+cputest
 vg_regtest
 true

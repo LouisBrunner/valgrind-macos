@@ -12,6 +12,7 @@ dir
 doublefree
 error_counts
 errs1
+execve
 exitprog
 filter_leak_check_size
 filter_stderr

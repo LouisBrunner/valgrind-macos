@@ -9,6 +9,7 @@ pth_cvsimple
 pth_empty
 pth_mutexspeed
 pth_once
+.ktemp
 *.stdout.diff
 *.stderr.diff
 *.stdout.out

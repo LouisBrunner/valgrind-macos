@@ -1,5 +1,6 @@
 Makefile.in
 Makefile
+chdir
 dlclose
 fpu-28-108
 cachegrind.out

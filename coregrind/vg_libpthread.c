@@ -1994,6 +1994,21 @@ int VGL_(recv)(int s, void *buf, size_t len, int flags)
    return __libc_recv(s, buf, len, flags);
 }
 
+int VGL_(readv)(int fd, const struct iovec *iov, int count)
+{
+   __my_pthread_testcancel();
+   wait_for_fd_to_be_readable_or_erring(fd);
+   __my_pthread_testcancel();
+   return my_do_syscall3(__NR_readv, fd, (unsigned)iov, count);
+}
+
+int VGL_(writev)(int fd, struct iovec *iov, int count)
+{
+   __my_pthread_testcancel();
+   wait_for_fd_to_be_writable_or_erring(fd);
+   __my_pthread_testcancel();
+   return my_do_syscall3(__NR_writev, fd, (unsigned)iov, count);
+}
 
 extern
 pid_t __libc_waitpid(pid_t pid, int *status, int options);
@@ -2666,6 +2681,25 @@ static void wait_for_fd_to_be_readable_or_erring ( int fd )
    (void)poll(&pfd, 1, -1 /* forever */);
 }
 
+static void wait_for_fd_to_be_writable_or_erring ( int fd )
+{
+   struct pollfd pfd;
+   int           res;
+
+   /* fprintf(stderr, "wait_for_fd_to_be_readable_or_erring %d\n", fd); */
+
+   /* First check to see if the fd is nonblocking, and/or invalid.  In
+      either case return immediately. */
+   res = __libc_fcntl(fd, F_GETFL, 0);
+   if (res == -1) return; /* fd is invalid somehow */
+   if (res & O_NONBLOCK) return; /* fd is nonblocking */
+
+   /* Ok, we'd better wait with poll. */
+   pfd.fd = fd;
+   pfd.events = POLLOUT | POLLERR | POLLHUP | POLLNVAL;
+   pfd.revents = 0;
+   (void)poll(&pfd, 1, -1 /* forever */);
+}
 
 /* ---------------------------------------------------------------------
    Hacky implementation of semaphores.

@@ -211,3 +211,33 @@ int select ( int n,
 }
 
 strong_alias(select, __select)
+
+/* -------------------------------- readv -------------------------------- */
+
+#include <sys/uio.h>
+
+WEAK int VGL_(readv)(int fd, const struct iovec *iov, int count)
+{
+   return my_do_syscall3(__NR_readv, fd, (unsigned)iov, count);
+}
+
+int readv (int fd, const struct iovec *iov, int count)
+{
+   return VGL_(readv)(fd, iov, count);
+}
+
+strong_alias(readv, __readv)
+
+/* -------------------------------- writev -------------------------------- */
+
+WEAK int VGL_(writev)(int fd, const struct iovec *iov, int count)
+{
+   return my_do_syscall3(__NR_writev, fd, (unsigned)iov, count);
+}
+
+int writev (int fd, const struct iovec *iov, int count)
+{
+   return VGL_(writev)(fd, iov, count);
+}
+
+strong_alias(writev, __writev)

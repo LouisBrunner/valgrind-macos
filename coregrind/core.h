@@ -798,11 +798,6 @@ extern Int VG_(max_signal);
 
 extern void VG_(sigstartup_actions) ( void );
 
-/* Modify a thread's state so that when it next runs it will be
-   running in the signal handler (or doing the default action if there
-   is none). */
-extern void VG_(deliver_signal) ( ThreadId tid, const vki_siginfo_t * );
-
 extern Bool VG_(is_sig_ign) ( Int sigNo );
 
 /* Poll a thread's set of pending signals, and update the Thread's context to deliver one */

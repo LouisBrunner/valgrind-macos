@@ -1404,57 +1404,6 @@ static void vg_default_action(const vki_siginfo_t *info, ThreadId tid)
    VG_(threads)[tid].os_state.fatalsig = sigNo;
 }
 
-static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
-{
-   vki_siginfo_t info;
-
-   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
-
-   info.si_signo = VKI_SIGSEGV;
-   info.si_code = si_code;
-   info._sifields._sigfault._addr = (void*)addr;
-
-   /* If they're trying to block the signal, force it to be delivered */
-   if (VG_(sigismember)(&VG_(threads)[tid].sig_mask, VKI_SIGSEGV))
-      VG_(set_default_handler)(VKI_SIGSEGV);
-
-   VG_(deliver_signal)(tid, &info);
-}
-
-// Synthesize a fault where the address is OK, but the page
-// permissions are bad.
-void VG_(synth_fault_perms)(ThreadId tid, Addr addr)
-{
-   synth_fault_common(tid, addr, 2);
-}
-
-// Synthesize a fault where the address there's nothing mapped at the address.
-void VG_(synth_fault_mapping)(ThreadId tid, Addr addr)
-{
-   synth_fault_common(tid, addr, 1);
-}
-
-// Synthesize a misc memory fault.
-void VG_(synth_fault)(ThreadId tid)
-{
-   synth_fault_common(tid, 0, 0x80);
-}
-
-// Synthesise a SIGILL.
-void VG_(synth_sigill)(ThreadId tid, Addr addr)
-{
-   vki_siginfo_t info;
-
-   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
-
-   info.si_signo = VKI_SIGILL;
-   info.si_code = 1; /* jrs: no idea what this should be */
-   info._sifields._sigfault._addr = (void*)addr;
-
-   VG_(resume_scheduler)(tid);
-   VG_(deliver_signal)(tid, &info);
-}
-
 /* 
    This does the business of delivering a signal to a thread.  It may
    be called from either a real signal handler, or from normal code to
@@ -1463,9 +1412,7 @@ void VG_(synth_sigill)(ThreadId tid, Addr addr)
    This updates the thread state, but it does not set it to be
    Runnable.
 */
-void VG_(deliver_signal) ( ThreadId tid, 
-			   const vki_siginfo_t *info )
-
+static void deliver_signal ( ThreadId tid, const vki_siginfo_t *info )
 {
    Int			sigNo = info->si_signo;
    SCSS_Per_Signal	*handler = &vg_scss.scss_per_sig[sigNo];
@@ -1487,7 +1434,7 @@ void VG_(deliver_signal) ( ThreadId tid,
 
    /* If the client specifies SIG_IGN, treat it as SIG_DFL.
 
-      If VG_(deliver_signal)() is being called on a thread, we want
+      If deliver_signal() is being called on a thread, we want
       the signal to get through no matter what; if they're ignoring
       it, then we do this override (this is so we can send it SIGSEGV,
       etc). */
@@ -1538,6 +1485,57 @@ void VG_(deliver_signal) ( ThreadId tid,
    }
 
    /* Thread state is ready to go - just add Runnable */
+}
+
+static void synth_fault_common(ThreadId tid, Addr addr, Int si_code)
+{
+   vki_siginfo_t info;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   info.si_signo = VKI_SIGSEGV;
+   info.si_code = si_code;
+   info._sifields._sigfault._addr = (void*)addr;
+
+   /* If they're trying to block the signal, force it to be delivered */
+   if (VG_(sigismember)(&VG_(threads)[tid].sig_mask, VKI_SIGSEGV))
+      VG_(set_default_handler)(VKI_SIGSEGV);
+
+   deliver_signal(tid, &info);
+}
+
+// Synthesize a fault where the address is OK, but the page
+// permissions are bad.
+void VG_(synth_fault_perms)(ThreadId tid, Addr addr)
+{
+   synth_fault_common(tid, addr, 2);
+}
+
+// Synthesize a fault where the address there's nothing mapped at the address.
+void VG_(synth_fault_mapping)(ThreadId tid, Addr addr)
+{
+   synth_fault_common(tid, addr, 1);
+}
+
+// Synthesize a misc memory fault.
+void VG_(synth_fault)(ThreadId tid)
+{
+   synth_fault_common(tid, 0, 0x80);
+}
+
+// Synthesise a SIGILL.
+void VG_(synth_sigill)(ThreadId tid, Addr addr)
+{
+   vki_siginfo_t info;
+
+   vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
+
+   info.si_signo = VKI_SIGILL;
+   info.si_code = 1; /* jrs: no idea what this should be */
+   info._sifields._sigfault._addr = (void*)addr;
+
+   VG_(resume_scheduler)(tid);
+   deliver_signal(tid, &info);
 }
 
 /* Make a signal pending for a thread, for later delivery.
@@ -1651,7 +1649,7 @@ void vg_async_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontex
 
    /* Set up the thread's state to deliver a signal */
    if (!VG_(is_sig_ign)(info->si_signo))
-      VG_(deliver_signal)(tid, info);
+      deliver_signal(tid, info);
 
    /* longjmp back to the thread's main loop to start executing the
       handler. */
@@ -1784,7 +1782,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
 
 	 /* It's a fatal signal, so we force the default handler. */
 	 VG_(set_default_handler)(sigNo);
-	 VG_(deliver_signal)(tid, info);
+	 deliver_signal(tid, info);
 	 VG_(resume_scheduler)(tid);
 	 VG_(exit)(99);		/* If we can't resume, then just exit */
       }
@@ -1893,7 +1891,7 @@ void vg_sync_signalhandler ( Int sigNo, vki_siginfo_t *info, struct vki_ucontext
       if (!VG_(my_fault)) {
 	 /* Can't continue; must longjmp back to the scheduler and thus
 	    enter the sighandler immediately. */
-	 VG_(deliver_signal)(tid, info);
+	 deliver_signal(tid, info);
 	 VG_(resume_scheduler)(tid);
       }
 
@@ -2040,7 +2038,7 @@ void VG_(poll_signals)(ThreadId tid)
 	 VG_(message)(Vg_DebugMsg, "Polling found signal %d for tid %d", 
 		      sip->si_signo, tid);
       if (!VG_(is_sig_ign)(sip->si_signo))
-	 VG_(deliver_signal)(tid, sip);
+	 deliver_signal(tid, sip);
       else if (VG_(clo_trace_signals))
 	 VG_(message)(Vg_DebugMsg, "   signal %d ignored", sip->si_signo);
 	 

@@ -35,7 +35,6 @@
 // Probably only works for Intel and AMD chips, and probably only for some of
 // them. 
 
-#if 0
 static void micro_ops_warn(Int actual_size, Int used_size, Int line_size)
 {
     VG_(message)(Vg_DebugMsg, 
@@ -245,25 +244,18 @@ Int AMD_cache_info(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 
    return 0;
 }
-#endif
 
 static 
 Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
-   VG_(message)(Vg_DebugMsg, "Can't auto-detect CPUID yet, giving up");
-   return -1;
-#if 0
    Int  level, ret;
    Char vendor_id[13];
-//   tl_assert(res == 0);
-//
-//   res = VG_(sigaction)( VKI_SIGILL, &sigill_new, &sigill_saved );
-//   tl_assert(res == 0);
 
    if (!VG_(has_cpuid)()) {
       VG_(message)(Vg_DebugMsg, "CPUID instruction not supported");
       return -1;
    }
+
    VG_(cpuid)(0, &level, (int*)&vendor_id[0], 
 	      (int*)&vendor_id[8], (int*)&vendor_id[4]);    
    vendor_id[12] = '\0';
@@ -305,7 +297,6 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
    L2c->size *= 1024;
       
    return ret;
-#endif
 }
 
 

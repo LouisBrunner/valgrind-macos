@@ -250,16 +250,15 @@ Int get_caches_from_CPUID(cache_t* I1c, cache_t* D1c, cache_t* L2c)
 {
    Int  level, ret;
    Char vendor_id[13];
-   /* Trap for illegal instruction, in case it's a really old processor that
-    * doesn't support CPUID. */
-   if (VG_(has_cpuid)()) {
-      VG_(cpuid)(0, &level, (int*)&vendor_id[0], 
-                            (int*)&vendor_id[8], (int*)&vendor_id[4]);    
-      vendor_id[12] = '\0';
-   } else  {
+
+   if (!VG_(has_cpuid)()) {
       VG_(message)(Vg_DebugMsg, "CPUID instruction not supported");
       return -1;
    }
+
+   VG_(cpuid)(0, &level, (int*)&vendor_id[0], 
+	      (int*)&vendor_id[8], (int*)&vendor_id[4]);    
+   vendor_id[12] = '\0';
 
    if (0 == level) {
       VG_(message)(Vg_DebugMsg, "CPUID level is 0, early Pentium?\n");

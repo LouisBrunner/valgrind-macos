@@ -153,7 +153,7 @@ Char** VG_(client_envp);
 UInt VG_(dispatch_ctr);
 
 /* 64-bit counter for the number of basic blocks done. */
-ULong VG_(bbs_done);
+ULong VG_(bbs_done) = 0;
 
 /* Tell the logging mechanism whether we are logging to a file
    descriptor or a socket descriptor. */

@@ -321,6 +321,9 @@ static
 UInt run_thread_for_a_while ( ThreadId tid )
 {
    volatile UInt trc = 0;
+   volatile Int dispatch_ctr_SAVED = VG_(dispatch_ctr);
+   volatile Int done_this_time;
+
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(VG_(threads)[tid].status == VgTs_Runnable);
    vg_assert(!scheduler_jmpbuf_valid);
@@ -348,6 +351,12 @@ UInt run_thread_for_a_while ( ThreadId tid )
    vg_assert(!scheduler_jmpbuf_valid);
 
    save_thread_state ( tid );
+
+   done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 1;
+
+   vg_assert(done_this_time >= 0);
+   VG_(bbs_done) += (ULong)done_this_time;
+
    VGP_POPCC(VgpRun);
    return trc;
 }
@@ -723,7 +732,6 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 {
    ThreadId tid, tid_next;
    UInt     trc;
-   UInt     dispatch_ctr_SAVED;
    Int      done_this_time, n_in_bounded_wait;
    Int	    n_exists, n_waiting_for_reaper;
    Addr     trans_addr;
@@ -842,9 +850,6 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          always get at least one decrement even if nothing happens.
       */
       VG_(dispatch_ctr) = VG_SCHEDULING_QUANTUM + 1;
-
-      /* ... and remember what we asked for. */
-      dispatch_ctr_SAVED = VG_(dispatch_ctr);
 
       /* paranoia ... */
       vg_assert(VG_(threads)[tid].tid == tid);
@@ -1039,10 +1044,6 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
          non-completely-trivial reason. First, update basic-block
          counters. */
 
-      done_this_time = (Int)dispatch_ctr_SAVED - (Int)VG_(dispatch_ctr) - 1;
-      vg_assert(done_this_time > 0);
-      VG_(bbs_done)    += (ULong)done_this_time;
-
       if (0 && trc != VG_TRC_INNER_FASTMISS)
          VG_(message)(Vg_DebugMsg, "thread %d:   completed %d bbs, trc %d", 
                                    tid, done_this_time, (Int)trc );
@@ -1150,7 +1151,6 @@ void VG_(need_resched) ( ThreadId prefer )
       thread over all others.  Naturally, this could lead to
       starvation or other unfairness.
     */
-
    if (VG_(dispatch_ctr) > 10)
       VG_(dispatch_ctr) = 2;
    prefer_sched = prefer;

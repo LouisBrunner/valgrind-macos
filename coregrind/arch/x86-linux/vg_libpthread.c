@@ -1690,6 +1690,8 @@ __attribute__((weak))
 int recv(int s, void *buf, size_t len, int flags)
 {
    __my_pthread_testcancel();
+   wait_for_fd_to_be_readable_or_erring(s);
+   __my_pthread_testcancel();
    return __libc_recv(s, buf, len, flags);
 }
 

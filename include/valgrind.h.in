@@ -67,7 +67,7 @@
 /* If we're not compiling for our target architecture, don't generate
    any inline asms.  This would be a bit neater if we used the same
    CPP symbols as the compiler for identifying architectures. */
-#if !(__x86__ && __i386__)
+#if !defined(__i386__) && !defined(__amd64__)
 #  ifndef NVALGRIND
 #    define NVALGRIND	1
 #  endif  /* NVALGRIND */
@@ -108,8 +108,56 @@
    eg. x86/ subdirectories like we do within the rest of Valgrind.
 */
 
+#ifdef __amd64__
+extern int printf (__const char *__restrict __format, ...);
+extern void exit (int __status);
+#define VALGRIND_MAGIC_SEQUENCE(                                \
+        _zzq_rlval, _zzq_default, _zzq_request,                 \
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)             \
+                                                                \
+  { volatile unsigned long long _zzq_args[5];                   \
+    _zzq_args[0] = (volatile unsigned long long)(_zzq_request); \
+    _zzq_args[1] = (volatile unsigned long long)(_zzq_arg1);    \
+    _zzq_args[2] = (volatile unsigned long long)(_zzq_arg2);    \
+    _zzq_args[3] = (volatile unsigned long long)(_zzq_arg3);    \
+    _zzq_args[4] = (volatile unsigned long long)(_zzq_arg4);    \
+    asm volatile("roll $29, %%eax ; roll $3, %%eax\n\t"		\
+                 "rorl $27, %%eax ; rorl $5, %%eax\n\t"		\
+                 "roll $13, %%eax ; roll $19, %%eax"		\
+                 : "=d" (_zzq_rlval)				\
+                 : "a" (&_zzq_args[0]), "0" (_zzq_default)	\
+                 : "cc", "memory"				\
+                );						\
+  }
+// XXX: make sure that the register holding the args and the register taking
+// the return value match ARCH_CLREQ_ARGS and ARCH_CLREQ_RET in
+// amd64/core_arch.h!
+#endif  // __amd64__
+
+#ifdef __i386__
+#define VALGRIND_MAGIC_SEQUENCE(				\
+        _zzq_rlval, _zzq_default, _zzq_request,			\
+        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)		\
+								\
+  { unsigned int _zzq_args[5];					\
+    _zzq_args[0] = (unsigned int)(_zzq_request);		\
+    _zzq_args[1] = (unsigned int)(_zzq_arg1);			\
+    _zzq_args[2] = (unsigned int)(_zzq_arg2);			\
+    _zzq_args[3] = (unsigned int)(_zzq_arg3);			\
+    _zzq_args[4] = (unsigned int)(_zzq_arg4);			\
+    asm volatile("roll $29, %%eax ; roll $3, %%eax\n\t"		\
+                 "rorl $27, %%eax ; rorl $5, %%eax\n\t"		\
+                 "roll $13, %%eax ; roll $19, %%eax"		\
+                 : "=d" (_zzq_rlval)				\
+                 : "a" (&_zzq_args[0]), "0" (_zzq_default)	\
+                 : "cc", "memory"				\
+                );						\
+  }
+#endif  // __i386__
+// Insert assembly code for other architectures here...
+
 #ifdef __arm__
-// XXX: termporary, until MAGIC_SEQUENCE is written properly
+// XXX: terporary, until MAGIC_SEQUENCE is written properly
 extern int printf (__const char *__restrict __format, ...);
 extern void exit (int __status);
 #define VALGRIND_MAGIC_SEQUENCE(                                        \
@@ -130,49 +178,6 @@ extern void exit (int __status);
 // the return value match ARCH_CLREQ_ARGS and ARCH_CLREQ_RET in
 // arm/core_arch.h!
 #endif  // __arm__
-#ifdef __amd64__
-// XXX: termporary, until MAGIC_SEQUENCE is written properly
-extern int printf (__const char *__restrict __format, ...);
-extern void exit (int __status);
-#define VALGRIND_MAGIC_SEQUENCE(                                        \
-        _zzq_rlval, _zzq_default, _zzq_request,                         \
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)                     \
-                                                                        \
-  { volatile unsigned long _zzq_args[5];                                \
-    _zzq_args[0] = (volatile unsigned long)(_zzq_request);              \
-    _zzq_args[1] = (volatile unsigned long)(_zzq_arg1);                 \
-    _zzq_args[2] = (volatile unsigned long)(_zzq_arg2);                 \
-    _zzq_args[3] = (volatile unsigned long)(_zzq_arg3);                 \
-    _zzq_args[4] = (volatile unsigned long)(_zzq_arg4);                 \
-    (_zzq_rlval) = (_zzq_default);/* temporary only */  \
-    printf("argh: MAGIC_SEQUENCE"); exit(1); \
-    asm volatile("");                                                   \
-  }
-// XXX: make sure that the register holding the args and the register taking
-// the return value match ARCH_CLREQ_ARGS and ARCH_CLREQ_RET in
-// amd64/core_arch.h!
-#endif  // __amd64__
-#ifdef __x86__
-#define VALGRIND_MAGIC_SEQUENCE(				\
-        _zzq_rlval, _zzq_default, _zzq_request,			\
-        _zzq_arg1, _zzq_arg2, _zzq_arg3, _zzq_arg4)		\
-								\
-  { unsigned int _zzq_args[5];					\
-    _zzq_args[0] = (unsigned int)(_zzq_request);		\
-    _zzq_args[1] = (unsigned int)(_zzq_arg1);			\
-    _zzq_args[2] = (unsigned int)(_zzq_arg2);			\
-    _zzq_args[3] = (unsigned int)(_zzq_arg3);			\
-    _zzq_args[4] = (unsigned int)(_zzq_arg4);			\
-    asm volatile("roll $29, %%eax ; roll $3, %%eax\n\t"		\
-                 "rorl $27, %%eax ; rorl $5, %%eax\n\t"		\
-                 "roll $13, %%eax ; roll $19, %%eax"		\
-                 : "=d" (_zzq_rlval)				\
-                 : "a" (&_zzq_args[0]), "0" (_zzq_default)	\
-                 : "cc", "memory"				\
-                );						\
-  }
-#endif  // __x86__
-// Insert assembly code for other architectures here...
 
 #else  /* NVALGRIND */
 /* Define NVALGRIND to completely remove the Valgrind magic sequence

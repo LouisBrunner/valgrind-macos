@@ -2459,30 +2459,37 @@ static void codegen_mulL_A_D ( Int sz, Bool syned,
    assign( t1, getIReg(sz, R_EAX) );
 
    switch (ty) {
-   case Ity_I32: {
-      IRTemp res64   = newTemp(Ity_I64);
-      IROp   mulOp   = syned ? Iop_MullS32 : Iop_MullU32;
-      UInt   thunkOp = syned ? CC_OP_SMULB : CC_OP_UMULB;
-      setFlags_MUL ( Ity_I32, t1, tmp, thunkOp );
-      assign( res64, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
-      putIReg(4, R_EDX, unop(Iop_64HIto32,mkexpr(res64)));
-      putIReg(4, R_EAX, unop(Iop_64to32,mkexpr(res64)));
-      break;
-   }
-#if 0
-   case Ity_I16: {
-      IRTemp res32   = newTemp(Ity_I32);
-      IROp   mulOp   = syned ? Iop_MullS16 : Iop_MullU16;
-      UInt   thunkOp = syned ? CC_OP_MULLSB : CC_OP_MULLUB;
-      setFlags_MUL ( Ity_I16, t1, tmp, thunkOp );
-      assign( res32, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
-      putIReg(2, R_EDX, unop(Iop_32HIto16,mkexpr(res32)));
-      putIReg(2, R_EAX, unop(Iop_32to16,mkexpr(res32)));
-      break;
-   }
-#endif
-   default:
-      vpanic("codegen_mulL_A_D(x86)");
+      case Ity_I32: {
+         IRTemp res64   = newTemp(Ity_I64);
+         IROp   mulOp   = syned ? Iop_MullS32 : Iop_MullU32;
+         UInt   tBaseOp = syned ? CC_OP_SMULB : CC_OP_UMULB;
+         setFlags_MUL ( Ity_I32, t1, tmp, tBaseOp );
+         assign( res64, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
+         putIReg(4, R_EDX, unop(Iop_64HIto32,mkexpr(res64)));
+         putIReg(4, R_EAX, unop(Iop_64to32,mkexpr(res64)));
+         break;
+      }
+      case Ity_I16: {
+         IRTemp res32   = newTemp(Ity_I32);
+         IROp   mulOp   = syned ? Iop_MullS16 : Iop_MullU16;
+         UInt   tBaseOp = syned ? CC_OP_SMULB : CC_OP_UMULB;
+         setFlags_MUL ( Ity_I16, t1, tmp, tBaseOp );
+         assign( res32, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
+         putIReg(2, R_EDX, unop(Iop_32HIto16,mkexpr(res32)));
+         putIReg(2, R_EAX, unop(Iop_32to16,mkexpr(res32)));
+         break;
+      }
+      case Ity_I8: {
+         IRTemp res16   = newTemp(Ity_I16);
+         IROp   mulOp   = syned ? Iop_MullS8 : Iop_MullU8;
+         UInt   tBaseOp = syned ? CC_OP_SMULB : CC_OP_UMULB;
+         setFlags_MUL ( Ity_I8, t1, tmp, tBaseOp );
+         assign( res16, binop(mulOp, mkexpr(t1), mkexpr(tmp)) );
+         putIReg(2, R_EAX, mkexpr(res16));
+         break;
+      }
+      default:
+         vpanic("codegen_mulL_A_D(x86)");
    }
    DIP("%s%c %s\n", syned ? "imul" : "mul", nameISize(sz), tmp_txt);
 }
@@ -3029,13 +3036,14 @@ UInt dis_imul_I_E_G ( UChar       sorb,
                       UInt        delta,
                       Int         litsize )
 {
-   Int   d32;
-   Char  dis_buf[50];
-   UChar rm = getIByte(delta);
-    //   ta = INVALID_TEMPREG;
+   Int    d32;
+   Char   dis_buf[50];
+   UChar  rm = getIByte(delta);
    IRType ty = szToITy(size);
    IRTemp te = newTemp(ty);
    IRTemp tl = newTemp(ty);
+
+   vassert(size == 1 || size == 2 || size == 4);
 
    if (epartIsReg(rm)) {
       assign(te, getIReg(size, eregOfRM(rm)));
@@ -3051,6 +3059,9 @@ UInt dis_imul_I_E_G ( UChar       sorb,
    }
    d32 = getSDisp(litsize,delta);
    delta += litsize;
+
+   if (size == 1) d32 &= 0xFF;
+   if (size == 2) d32 &= 0xFFFF;
 
    assign(tl, mkU(ty,d32));
    setFlags_MUL ( ty, te, tl, CC_OP_SMULB );

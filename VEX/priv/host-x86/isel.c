@@ -294,8 +294,10 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
             aluOp = Xalu_OR; break;
          case Iop_Xor8: case Iop_Xor16: case Iop_Xor32: 
             aluOp = Xalu_XOR; break;
-         case Iop_Mul32: aluOp = Xalu_MUL; break;
-         default:        aluOp = Xalu_INVALID; break;
+         case Iop_Mul16: case Iop_Mul32: 
+            aluOp = Xalu_MUL; break;
+         default:
+            aluOp = Xalu_INVALID; break;
       }
       /* For commutative ops we assume any literal
          values are on the second operand. */
@@ -356,6 +358,7 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
             nshift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
 	    vassert(nshift >= 0);
 	    if (nshift > 0)
+               /* Can't allow nshift==0 since that means %cl */
                addInstr(env, X86Instr_Sh32(
                                 shOp, 
                                 nshift,
@@ -381,6 +384,29 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
          addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(0xFFFF), lo16));
          addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Reg(lo16), hi16));
          return hi16;
+      }
+
+      if (e->Iex.Binop.op == Iop_MullS16 || e->Iex.Binop.op == Iop_MullS8
+          || e->Iex.Binop.op == Iop_MullU16 || e->Iex.Binop.op == Iop_MullU8) {
+         HReg a16   = newVRegI(env);
+         HReg b16   = newVRegI(env);
+         HReg a16s  = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg b16s  = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         Int  shift = (e->Iex.Binop.op == Iop_MullS8 
+                       || e->Iex.Binop.op == Iop_MullU8)
+                         ? 24 : 16;
+         X86ShiftOp shr_op = (e->Iex.Binop.op == Iop_MullS8 
+                              || e->Iex.Binop.op == Iop_MullS16)
+                                ? Xsh_SAR : Xsh_SHR;
+
+         addInstr(env, mk_MOVsd_RR(a16s, a16));
+         addInstr(env, mk_MOVsd_RR(b16s, b16));
+         addInstr(env, X86Instr_Sh32(Xsh_SHL, shift, X86RM_Reg(a16)));
+         addInstr(env, X86Instr_Sh32(Xsh_SHL, shift, X86RM_Reg(b16)));
+         addInstr(env, X86Instr_Sh32(shr_op,  shift, X86RM_Reg(a16)));
+         addInstr(env, X86Instr_Sh32(shr_op,  shift, X86RM_Reg(b16)));
+         addInstr(env, X86Instr_Alu32R(Xalu_MUL, X86RMI_Reg(a16), b16));
+         return b16;
       }
 
       break;
@@ -441,16 +467,19 @@ static HReg iselIntExpr_R ( ISelEnv* env, IRExpr* e )
             iselIntExpr64(&rHi,&rLo, env, e->Iex.Unop.arg);
             return rLo; /* similar stupid comment to the above ... */
          }
+         case Iop_16HIto8:
          case Iop_32HIto16: {
-            HReg dst = newVRegI(env);
-            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            HReg dst  = newVRegI(env);
+            HReg src  = iselIntExpr_R(env, e->Iex.Unop.arg);
+            Int shift = e->Iex.Unop.op == Iop_16HIto8 ? 8 : 16;
             addInstr(env, mk_MOVsd_RR(src,dst) );
-            addInstr(env, X86Instr_Sh32(Xsh_SHR, 16, X86RM_Reg(dst)));
+            addInstr(env, X86Instr_Sh32(Xsh_SHR, shift, X86RM_Reg(dst)));
             return dst;
          }
+         case Iop_16to8:
          case Iop_32to8:
          case Iop_32to16:
-            /* These are both no-ops. */
+            /* These are no-ops. */
             return iselIntExpr_R(env, e->Iex.Unop.arg);
 
          default: 

@@ -345,9 +345,13 @@ static inline int lshift(int x, int n)
       case CC_OP_RORW:   ACTIONS_ROR( 16, UShort );
       case CC_OP_RORL:   ACTIONS_ROR( 32, UInt   );
 
-      case CC_OP_UMULL:  ACTIONS_UMUL( 32, UInt, ULong );
+      case CC_OP_UMULB:  ACTIONS_UMUL(  8, UChar,  UShort );
+      case CC_OP_UMULW:  ACTIONS_UMUL( 16, UShort, UInt   );
+      case CC_OP_UMULL:  ACTIONS_UMUL( 32, UInt,   ULong  );
 
-      case CC_OP_SMULL:  ACTIONS_SMUL( 32, Int,  Long );
+      case CC_OP_SMULB:  ACTIONS_SMUL(  8, Char,  Short );
+      case CC_OP_SMULW:  ACTIONS_SMUL( 16, Short, Int   );
+      case CC_OP_SMULL:  ACTIONS_SMUL( 32, Int,   Long  );
 
       default:
          /* shouldn't really make these calls from generated code */

@@ -45,24 +45,26 @@
    "   movq $0, %r15\n"
 
 
-/* Call f(), but first switch stacks, using 'stack' as the new stack,
-   and use 'retaddr' as f's return-to address.  Also, clear all the
-   integer registers before entering f. */
+/* Jump to 'dst', but first set the stack pointer to 'stack'.  Also,
+   clear all the integer registers before entering 'dst'.  It's
+   important that the stack pointer is set to exactly 'stack' and not
+   (eg) stack - apparently_harmless_looking_small_offset.  Basically
+   because the code at 'dst' might be wanting to scan the area above
+   'stack' (viz, the auxv array), and putting spurious words on the
+   stack confuses it.
+*/
 /*
 __attribute__((noreturn))
-void call_on_new_stack_0_0 ( Addr stack,
-			     Addr retaddr,
-			     void (*f)(void) );
+void jump_and_switch_stacks ( Addr stack, Addr dst );
+
   %rdi == stack
-  %rsi == retaddr
-  %rdx == f
+  %rsi == dst
 */
 asm(
-".global call_on_new_stack_0_0\n"
-"call_on_new_stack_0_0:\n"
+".global jump_and_switch_stacks\n"
+"jump_and_switch_stacks:\n"
 "   movq   %rdi, %rsp\n"  /* set stack */
-"   pushq  %rsi\n"        /* retaddr to stack */
-"   pushq  %rdx\n"        /* f to stack*/
+"   pushq  %rsi\n"        /* f to stack*/
     ZERO_ALL_INT_REGS
 "   ret\n"                /* jump to f */
 "   ud2\n"                /* should never get here */

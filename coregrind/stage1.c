@@ -337,8 +337,8 @@ int main(int argc, char** argv)
 
    /* move onto another stack so we can play with the main one */
    jump_and_switch_stacks(
-      (Addr)stack + sizeof(stack),  /* stack */
-      main2                         /* where to */
+      (Addr) stack + sizeof(stack),  /* stack */
+      (Addr) main2                   /* where to */
    );
 
    /*NOTREACHED*/

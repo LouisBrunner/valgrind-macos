@@ -47,6 +47,7 @@
    Hook for running __libc_freeres once the program exits.
    ------------------------------------------------------------------ */
 
+void VG_WRAPPER(freeres)( void );
 void VG_WRAPPER(freeres)( void )
 {
    int res;

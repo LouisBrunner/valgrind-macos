@@ -755,6 +755,7 @@ Bool VG_(client_signal_OK)(Int sigNo)
 
 /* Set up a stack frame (VgSigContext) for the client's signal
    handler. */
+static
 void vg_push_signal_frame ( ThreadId tid, const vki_siginfo_t *siginfo )
 {
    Addr         esp_top_of_frame;
@@ -1537,6 +1538,7 @@ void VG_(deliver_signal) ( ThreadId tid,
    tid==0 means add it to the process-wide queue, and not sent it to a
    specific thread.
 */
+static 
 void queue_signal(ThreadId tid, const vki_siginfo_t *si)
 {
    ThreadState *tst;

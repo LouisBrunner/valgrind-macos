@@ -324,11 +324,6 @@ Addr VG_(get_stack_pointer) ( ThreadId tid )
    return STACK_PTR( VG_(threads)[tid].arch );
 }
 
-/* Debugging thing .. can be called from assembly with OYNK macro. */
-void VG_(oynk) ( Int n )
-{
-   OINK(n);
-}
 
 /*====================================================================*/
 /*=== Check we were launched by stage 1                            ===*/
@@ -1384,7 +1379,7 @@ static int killpad(char *segstart, char *segend, const char *perm, off_t off,
 }
 
 // Remove padding of 'padfile' from a range of address space.
-void as_unpad(void *start, void *end, int padfile)
+static void as_unpad(void *start, void *end, int padfile)
 {
    static struct stat padstat;
    killpad_extra extra;
@@ -1400,7 +1395,7 @@ void as_unpad(void *start, void *end, int padfile)
    foreach_map(killpad, &extra);
 }
 
-void as_closepadfile(int padfile)
+static void as_closepadfile(int padfile)
 {
    int res = close(padfile);
    vg_assert(0 == res);
@@ -1458,7 +1453,7 @@ Bool   VG_(clo_model_pthreads) = False;
 static Bool   VG_(clo_wait_for_gdb)   = False;
 
 
-void usage ( Bool debug_help )
+static void usage ( Bool debug_help )
 {
    Char* usage1 = 
 "usage: valgrind --tool=<toolname> [options] prog-and-args\n"

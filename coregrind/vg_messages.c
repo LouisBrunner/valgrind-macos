@@ -64,7 +64,7 @@ static void add_timestamp ( Char *buf )
    return;
 }
 
-int add_to_msg ( const Char *format, ... )
+static int add_to_msg ( const Char *format, ... )
 {
    int count;
    va_list vargs;
@@ -74,7 +74,7 @@ int add_to_msg ( const Char *format, ... )
    return count;
 }
 
-int start_msg ( VgMsgKind kind )
+static int start_msg ( VgMsgKind kind )
 {
    Char ts[32];
    Char c;
@@ -101,6 +101,7 @@ int start_msg ( VgMsgKind kind )
                       c,c, ts, VG_(getpid)(), c,c );
 }
 
+static 
 int end_msg ( void )
 {
    int count = 0;

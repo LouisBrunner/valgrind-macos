@@ -450,17 +450,6 @@ void *VG_(SkipList_Remove)(SkipList *l, void *k)
    return data_of_node(l, n);
 }
 
-void  VG_(SkipList_for_each_node)(const SkipList *l, 
-				  void (*fn)(void *node, void *arg), void *arg)
-{
-   void *n;
-
-   for(n = VG_(SkipNode_First)(l);
-       n != NULL;
-       n = VG_(SkipNode_Next)(l, n))
-      (*fn)(n, arg);
-}
-
 
 /* --------------------------------------------------
    Comparison functions

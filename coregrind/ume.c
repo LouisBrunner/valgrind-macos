@@ -142,6 +142,7 @@ struct ume_auxv *find_auxv(UWord* sp)
 /*--- Loading ELF files                                    ---*/
 /*------------------------------------------------------------*/
 
+static 
 struct elfinfo *readelf(int fd, const char *filename)
 {
    struct elfinfo *e = malloc(sizeof(*e));
@@ -197,6 +198,7 @@ struct elfinfo *readelf(int fd, const char *filename)
 }
 
 /* Map an ELF file.  Returns the brk address. */
+static
 ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base)
 {
    int i;

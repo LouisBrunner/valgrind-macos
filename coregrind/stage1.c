@@ -204,6 +204,7 @@ static int fillgap(char *segstart, char *segend, const char *perm, off_t off,
 }
 
 // Choose a name for the padfile, open it.
+static 
 int as_openpadfile(void)
 {
    char buf[256];
@@ -223,6 +224,7 @@ int as_openpadfile(void)
 }
 
 // Pad all the empty spaces in a range of address space to stop interlopers.
+static
 void as_pad(void *start, void *end, int padfile)
 {
    fillgap_extra extra;

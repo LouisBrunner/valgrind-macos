@@ -309,6 +309,7 @@ ExeContext* VG_(get_ExeContext2) ( Addr ip, Addr fp,
    return new_ec;
 }
 
+static
 void get_needed_regs(ThreadId tid, Addr* ip, Addr* fp, Addr* sp,
                      Addr* stack_highest_word)
 {
@@ -371,14 +372,6 @@ Addr VG_(get_EIP) ( ThreadId tid )
    return INSTR_PTR(VG_(threads)[ tid ].arch);
 }
 
-Addr VG_(get_thread_stack_pointer) ( ThreadId tid )
-{
-   Addr ret;
-
-   ret = STACK_PTR(VG_(threads)[ tid ].arch);
-
-   return ret;
-}
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

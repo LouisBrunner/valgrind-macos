@@ -577,12 +577,11 @@ void VG_(pthread_init)()
 
 #else  /* !0 */
 /* Stubs for now */
-
-void VG_(pthread_init)()
-{
-}
-
-void VG_(pthread_startfunc_wrapper)(Addr wrapper)
-{
-}
+//:: void VG_(pthread_init)()
+//:: {
+//:: }
+//:: 
+//:: void VG_(pthread_startfunc_wrapper)(Addr wrapper)
+//:: {
+//:: }
 #endif	/* 0 */

@@ -345,8 +345,9 @@ static __inline__ BBCC* get_BBCC(Addr bb_orig_addr, UCodeBlock* cb,
    } else {
       vg_assert(bb_orig_addr == curr_BBCC->orig_addr);
       vg_assert(curr_BBCC->array_size > 0 && curr_BBCC->array_size < 1000000);
-      if (VG_(clo_verbosity) > 1) {
-          VG_(message)(Vg_DebugMsg, "BB retranslation, retrieving from BBCC table");
+      if (VG_(clo_verbosity) > 2) {
+          VG_(message)(Vg_DebugMsg, 
+            "BB retranslation, retrieving from BBCC table");
       }
       *BB_seen_before = True;
       BB_retranslations++;

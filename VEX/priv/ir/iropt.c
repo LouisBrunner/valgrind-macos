@@ -7,9 +7,11 @@
 /*---------------------------------------------------------------*/
 
 #include "libvex_basictypes.h"
+#include "libvex_ir.h"
 #include "libvex.h"
 
 #include "main/vex_util.h"
+#include "ir/iropt.h"
 
 
 /*---------------------------------------------------------------*/
@@ -112,6 +114,25 @@ static void addToH64 ( Hash64* h, ULong key, ULong val )
    h->key[h->used] = val;
    h->used++;
 }
+
+
+/*---------------------------------------------------------------*/
+/*--- iropt main                                              ---*/
+/*---------------------------------------------------------------*/
+
+/* Rules of the game:
+
+   - IRExpr/IRStmt trees should be treated as immutable, as they
+     may get shared.  So never change a field of such a tree node;
+     instead construct and return a new one if needed.
+*/
+
+/* exported from this file */
+IRBB* do_iropt_BB ( IRBB* bb0 )
+{
+   return bb0;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- end                                          ir/iropt.c ---*/

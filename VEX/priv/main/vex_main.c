@@ -13,6 +13,7 @@
 #include "host-generic/h_generic_regs.h"
 #include "host-x86/hdefs.h"
 #include "guest-x86/gdefs.h"
+#include "ir/iropt.h"
 
 
 /* This file contains the top level interface to the library. */
@@ -170,6 +171,15 @@ TranslateResult LibVEX_Translate (
       return TransAccessFail;
    }
    sanityCheckIRBB(irbb, Ity_I32);
+
+   /* Clean it up, hopefully a lot. */
+   irbb = do_iropt_BB ( irbb );
+
+   if (vex_verbosity > 0) {
+      vex_printf("\n-------- After IR optimisation --------\n");
+      ppIRBB ( irbb );
+      vex_printf("\n");
+   }
 
    /* Get the thing instrumented. */
    if (instrument)

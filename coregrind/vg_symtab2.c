@@ -1117,7 +1117,28 @@ void read_debuginfo_dwarf2 ( SegInfo* si, UChar* dwarf2, Int dwarf2_sz )
 
       info.li_prologue_length = * ((UInt *) (external->li_prologue_length));
       info.li_min_insn_length = * ((UChar *)(external->li_min_insn_length));
-      info.li_default_is_stmt = * ((UChar *)(external->li_default_is_stmt));
+
+      info.li_default_is_stmt = True; 
+         /* WAS: = * ((UChar *)(external->li_default_is_stmt)); */
+         /* Josef Weidendorfer (20021021) writes:
+
+            It seems to me that the Intel Fortran compiler generates
+            bad DWARF2 line info code: It sets "is_stmt" of the state
+            machine in the the line info reader to be always
+            false. Thus, there is never a statement boundary generated
+            and therefore never a instruction range/line number
+            mapping generated for valgrind.
+
+            Please have a look at the DWARF2 specification, Ch. 6.2
+            (x86.ddj.com/ftp/manuals/tools/dwarf.pdf).  Perhaps I
+            understand this wrong, but I don't think so.
+
+            I just had a look at the GDB DWARF2 reader...  They
+            completly ignore "is_stmt" when recording line info ;-)
+            That's the reason "objdump -S" works on files from the the
+            intel fortran compiler.  
+         */
+
 
       /* JRS: changed (UInt*) to (UChar*) */
       info.li_line_base       = * ((UChar *)(external->li_line_base));

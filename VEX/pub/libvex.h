@@ -45,6 +45,33 @@
 /*--- Top-level interface to the library.                     ---*/
 /*---------------------------------------------------------------*/
 
+/* Describes architectures and subarchitecture variants. */
+
+typedef 
+   enum { 
+      VexArch_INVALID,
+      VexArchX86, 
+      VexArchAMD64, 
+      VexArchARM 
+   }
+   VexArch;
+
+typedef
+   enum {
+      VexSubArch_INVALID,
+      VexSubArch_NONE,    /* Arch has no variants */
+      VexSubArchX86_sse0, /* has SSE state but no insns (Pentium II) */
+      VexSubArchX86_sse1, /* SSE1 support (Pentium III) */
+      VexSubArchX86_sse2, /* SSE2 support (Pentium 4) */
+      VexSubArchARM_v4    /* ARM version 4 */
+   }
+   VexSubArch;
+
+/* These return statically allocated strings. */
+
+extern const HChar* LibVEX_ppVexArch    ( VexArch );
+extern const HChar* LibVEX_ppVexSubArch ( VexSubArch );
+
 
 /* Control of Vex's optimiser. */
 
@@ -78,6 +105,7 @@ typedef
 
 
 /* Write the default settings into *vcon. */
+
 extern void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon );
 
 
@@ -152,10 +180,6 @@ typedef
 
 /* Translate a basic block. */
 
-typedef 
-   enum { InsnSetX86, InsnSetAMD64, InsnSetARM }
-   InsnSet;
-
 typedef
    enum { TransOK, TransAccessFail, TransOutputFull }
    TranslateResult;
@@ -163,27 +187,29 @@ typedef
 extern 
 TranslateResult LibVEX_Translate (
    /* The instruction sets we are translating from and to. */
-   InsnSet iset_guest,
-   InsnSet iset_host,
+   VexArch    arch_guest,
+   VexSubArch subarch_guest,
+   VexArch    arch_host,
+   VexSubArch subarch_host,
    /* IN: the block to translate, and its guest address. */
-   UChar* guest_bytes,
-   Addr64 guest_bytes_addr,
-   Bool   (*chase_into_ok) ( Addr64 ),
+   UChar*  guest_bytes,
+   Addr64  guest_bytes_addr,
+   Bool    (*chase_into_ok) ( Addr64 ),
    /* OUT: the number of bytes actually read */
-   Int* guest_bytes_read,
+   Int*    guest_bytes_read,
    /* IN: a place to put the resulting code, and its size */
-   UChar* host_bytes,
-   Int    host_bytes_size,
+   UChar*  host_bytes,
+   Int     host_bytes_size,
    /* OUT: how much of the output area is used. */
-   Int* host_bytes_used,
+   Int*    host_bytes_used,
    /* IN: optionally, two instrumentation functions. */
-   IRBB* (*instrument1) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
-   IRBB* (*instrument2) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
-   Bool  cleanup_after_instrumentation,
+   IRBB*   (*instrument1) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
+   IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
+   Bool    cleanup_after_instrumentation,
    /* IN: optionally, an access check function for guest code. */
-   Bool (*byte_accessible) ( Addr64 ),
+   Bool    (*byte_accessible) ( Addr64 ),
    /* IN: debug: trace vex activity at various points */
-   Int  traceflags
+   Int     traceflags
 );
 
 

@@ -156,27 +156,29 @@ void LibVEX_Init (
 
 TranslateResult LibVEX_Translate (
    /* The instruction sets we are translating from and to. */
-   InsnSet iset_guest,
-   InsnSet iset_host,
+   VexArch    arch_guest,
+   VexSubArch subarch_guest,
+   VexArch    arch_host,
+   VexSubArch subarch_host,
    /* IN: the block to translate, and its guest address. */
-   UChar* guest_bytes,
-   Addr64 guest_bytes_addr,
-   Bool   (*chase_into_ok) ( Addr64 ),
+   UChar*  guest_bytes,
+   Addr64  guest_bytes_addr,
+   Bool    (*chase_into_ok) ( Addr64 ),
    /* OUT: the number of bytes actually read */
-   Int* guest_bytes_read,
+   Int*    guest_bytes_read,
    /* IN: a place to put the resulting code, and its size */
-   UChar* host_bytes,
-   Int    host_bytes_size,
+   UChar*  host_bytes,
+   Int     host_bytes_size,
    /* OUT: how much of the output area is used. */
-   Int* host_bytes_used,
+   Int*    host_bytes_used,
    /* IN: optionally, two instrumentation functions. */
-   IRBB* (*instrument1) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
-   IRBB* (*instrument2) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
-   Bool  cleanup_after_instrumentation,
+   IRBB*   (*instrument1) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
+   IRBB*   (*instrument2) ( IRBB*, VexGuestLayout*, IRType hWordTy ),
+   Bool    cleanup_after_instrumentation,
    /* IN: optionally, an access check function for guest code. */
-   Bool (*byte_accessible) ( Addr64 ),
+   Bool    (*byte_accessible) ( Addr64 ),
    /* IN: debug: trace vex activity at various points */
-   Int  traceflags
+   Int     traceflags
 )
 {
    /* This the bundle of functions we need to do the back-end stuff
@@ -236,9 +238,9 @@ TranslateResult LibVEX_Translate (
    /* First off, check that the guest and host insn sets
       are supported. */
 
-   switch (iset_host) {
+   switch (arch_host) {
 
-      case InsnSetX86:
+      case VexArchX86:
          getAllocableRegs_X86 ( &n_available_real_regs,
                                 &available_real_regs );
          isMove      = (Bool(*)(HInstr*,HReg*,HReg*)) isMove_X86Instr;
@@ -259,9 +261,9 @@ TranslateResult LibVEX_Translate (
    }
 
 
-   switch (iset_guest) {
+   switch (arch_guest) {
 
-      case InsnSetX86:
+      case VexArchX86:
          preciseMemExnsFn = guest_x86_state_requires_precise_mem_exns;
          bbToIR           = bbToIR_X86;
          specHelper       = guest_x86_spechelper;
@@ -270,7 +272,7 @@ TranslateResult LibVEX_Translate (
          guest_layout     = &x86guest_layout;
          break;
 
-      case InsnSetARM:
+      case VexArchARM:
          preciseMemExnsFn = guest_arm_state_requires_precise_mem_exns;
          bbToIR           = bbToIR_ARM;
          specHelper       = guest_arm_spechelper;
@@ -472,6 +474,32 @@ HChar* LibVEX_EmWarn_string ( VexEmWarn ew )
         return "Setting %mxcsr.daz (SSE treat-denormals-as-zero mode)";
      default: 
         vpanic("LibVEX_EmWarn_string: unknown warning");
+   }
+}
+
+/* --------- Arch/Subarch names. --------- */
+
+const HChar* LibVEX_ppVexArch ( VexArch arch )
+{
+   switch (arch) {
+      case VexArch_INVALID: return "INVALID";
+      case VexArchX86:      return "X86";
+      case VexArchAMD64:    return "AMD64";
+      case VexArchARM:      return "ARM";
+      default:              return "VexArch???";
+   }
+}
+
+const HChar* LibVEX_ppVexSubArch ( VexSubArch subarch )
+{
+   switch (subarch) {
+      case VexSubArch_INVALID: return "INVALID";
+      case VexSubArch_NONE:    return "NONE";
+      case VexSubArchX86_sse0: return "x86-sse0";
+      case VexSubArchX86_sse1: return "x86-sse1";
+      case VexSubArchX86_sse2: return "x86-sse2";
+      case VexSubArchARM_v4:   return "arm-v4";
+      default:                 return "VexSubArch???";
    }
 }
 

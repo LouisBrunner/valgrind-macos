@@ -664,6 +664,19 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
       }
 
       /* Handle misc other ops. */
+      if (e->Iex.Binop.op == Iop_8HLto16) {
+         HReg hi8  = newVRegI(env);
+         HReg lo8  = newVRegI(env);
+         HReg hi8s = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg lo8s = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, mk_MOVsd_RR(hi8s, hi8));
+         addInstr(env, mk_MOVsd_RR(lo8s, lo8));
+         addInstr(env, X86Instr_Sh32(Xsh_SHL, 8, X86RM_Reg(hi8)));
+         addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(0xFF), lo8));
+         addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Reg(lo8), hi8));
+         return hi8;
+      }
+
       if (e->Iex.Binop.op == Iop_16HLto32) {
          HReg hi16  = newVRegI(env);
          HReg lo16  = newVRegI(env);
@@ -880,6 +893,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, X86Instr_Set32(cond,dst));
             return dst;
          }
+         case Iop_1Sto8:
          case Iop_1Sto16:
          case Iop_1Sto32: {
             /* could do better than this, but for now ... */

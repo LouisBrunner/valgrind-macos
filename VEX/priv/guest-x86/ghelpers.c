@@ -60,10 +60,6 @@
    that prefix is not called from generated code.  Note that some
    LibVEX_* functions can however be called by VEX's client, but that
    is not the same as calling them from VEX-generated code.
-
-   Some of this code/logic is derived from QEMU, which is copyright
-   Fabrice Bellard, licensed under the LGPL.  It is used with
-   permission.  
 */
 
 

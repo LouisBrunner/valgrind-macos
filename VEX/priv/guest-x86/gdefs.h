@@ -35,9 +35,6 @@
 
 /* Only to be used within the guest-x86 directory. */
 
-/* Some of this stuff is taken from QEMU, which is Copyright (c) 2003
-   Fabrice Bellard, and licensed under the LGPL. */
-
 #ifndef __LIBVEX_GUEST_X86_DEFS_H
 #define __LIBVEX_GUEST_X86_DEFS_H
 
@@ -60,7 +57,7 @@ extern
 IRExpr* guest_x86_spechelper ( HChar* function_name,
                                IRExpr** args );
 
-/* Describes to the optimser which part of the guest state require
+/* Describes to the optimiser which part of the guest state require
    precise memory exceptions.  This is logically part of the guest
    state description. */
 extern 

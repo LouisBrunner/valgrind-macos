@@ -45,11 +45,15 @@ that there is indeed at least one lock which is used by all threads to
 protect that location.  If no such lock can be found, then there is 
 (apparently) no consistent locking strategy being applied for that
 location, and so a possible data race might result.
-
+<p>
+Helgrind also allows for "thread segment lifetimes".  If the execution of two
+threads cannot overlap -- for example, if your main thread waits on another
+thread with a <code>pthread_join()</code> operation -- they can both access the
+same variable without holding a lock.
 <p>
 There's a lot of other sophistication in the Helgrind skin, aimed at
 reducing the number of false reports, and at producing useful error
-reports.  We hope to have more documentation soon.
+reports.  We hope to have more documentation one day...
 
 </body>
 </html>

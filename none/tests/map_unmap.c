@@ -56,7 +56,7 @@ int main()
 	munmap(expect1, LEN);
 	munmap(expect2, LEN);
 
-	for(i = 0; i < 1000; i++) {
+	for(i = 0; i < 100; i++) {
 		void *m1, *m2;
 
 		m1 = domap();

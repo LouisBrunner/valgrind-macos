@@ -1024,6 +1024,9 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
       VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame (siginfo)", 
 		(Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
       VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_ksiginfo_t));
+      if (sigNo == VKI_SIGFPE) {
+         frame->sigInfo._sifields._sigfault._addr = (void *)tst->m_eip;
+      }
       VG_TRACK( post_mem_write, (Addr)&frame->sigInfo, sizeof(frame->sigInfo) );
 
       VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame (siginfo)", 

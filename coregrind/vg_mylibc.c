@@ -1108,17 +1108,17 @@ Bool VG_(string_match) ( const Char* pat, const Char* str )
 static inline ExeContext *get_real_execontext(Addr ret)
 {
    ExeContext *ec;
-   Addr esp, ebp;
+   Addr sp, fp;
    Addr stacktop, sigstack_low, sigstack_high;
 
-   ARCH_GET_REAL_STACK_PTR(esp);
-   ARCH_GET_REAL_FRAME_PTR(ebp);
+   ARCH_GET_REAL_STACK_PTR(sp);
+   ARCH_GET_REAL_FRAME_PTR(fp);
    stacktop = VG_(valgrind_last);
    VG_(get_sigstack_bounds)( &sigstack_low, &sigstack_high );
-   if (esp >= sigstack_low && esp < sigstack_high)
+   if (sp >= sigstack_low && sp < sigstack_high)
       stacktop = sigstack_high;
       
-   ec = VG_(get_ExeContext2)(ret, ebp, esp, stacktop);
+   ec = VG_(get_ExeContext2)(ret, fp, sp, stacktop);
 
    return ec;
 }

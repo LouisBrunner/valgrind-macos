@@ -507,9 +507,15 @@ int main(void)
    // __NR_clone 120
    #include <sched.h>
    #include <signal.h>
+#ifndef CLONE_PARENT_SETTID
+#define CLONE_PARENT_SETTID	0x00100000
+#endif
    // XXX: should really be "4s 2m"?  Not sure... (see PRE(sys_clone))
    GO(__NR_clone, "4s 0m");
-   SY(__NR_clone, x0|CLONE_PARENT_SETTID|SIGCHLD, x0, x0, x0);
+   if (SY(__NR_clone, x0|CLONE_PARENT_SETTID|SIGCHLD, x0, x0, x0) == 0)
+   {
+      SY(__NR_exit, 0);
+   }
 
    // __NR_setdomainname 121
    GO(__NR_setdomainname, "n/a");

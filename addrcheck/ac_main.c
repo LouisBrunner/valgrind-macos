@@ -169,11 +169,11 @@ static void init_shadow_memory ( void )
    Int i, a;
 
    /* check construction of the distinguished secondaries */
-   sk_assert(VGM_BIT_INVALID == 1);
-   sk_assert(VGM_BIT_VALID == 0);
+   tl_assert(VGM_BIT_INVALID == 1);
+   tl_assert(VGM_BIT_VALID == 0);
 
    for(a = 0; a <= 1; a++)
-      sk_assert(distinguished_secondary_maps[DSM_IDX(a)].abits[0] == BIT_EXPAND(a));
+      tl_assert(distinguished_secondary_maps[DSM_IDX(a)].abits[0] == BIT_EXPAND(a));
 
    /* These entries gradually get overwritten as the used address
       space expands. */
@@ -819,7 +819,7 @@ static void ac_ACCESS4_SLOWLY ( Addr a, Bool isWrite )
    if (!MAC_(clo_partial_loads_ok) 
        || ((a & 3) != 0)
        || (!a0ok && !a1ok && !a2ok && !a3ok)) {
-      MAC_(record_address_error)( VG_(get_VCPU_tid)(), a, 4, isWrite );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 4, isWrite );
       return;
    }
 
@@ -846,7 +846,7 @@ static void ac_ACCESS2_SLOWLY ( Addr a, Bool isWrite )
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( VG_(get_VCPU_tid)(), a, 2, isWrite );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 2, isWrite );
    }
 }
 
@@ -860,7 +860,7 @@ static void ac_ACCESS1_SLOWLY ( Addr a, Bool isWrite)
 
    /* If an address error has happened, report it. */
    if (aerr) {
-      MAC_(record_address_error)( VG_(get_VCPU_tid)(), a, 1, isWrite );
+      MAC_(record_address_error)( VG_(get_running_tid)(), a, 1, isWrite );
    }
 }
 
@@ -977,7 +977,7 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, SizeT size, Bool isWrite )
    }
 
    if (aerr) {
-      MAC_(record_address_error)( VG_(get_VCPU_tid)(), addr, size, isWrite );
+      MAC_(record_address_error)( VG_(get_running_tid)(), addr, size, isWrite );
    }
 }
 

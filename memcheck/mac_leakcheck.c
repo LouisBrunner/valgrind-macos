@@ -154,13 +154,13 @@ Int find_shadow_for ( Addr        ptr,
          lo = mid+1;
          continue;
       }
-      sk_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
+      tl_assert(ptr >= a_mid_lo && ptr <= a_mid_hi);
       retVal = mid;
       break;
    }
 
 #  if VG_DEBUG_LEAKCHECK
-   sk_assert(retVal == find_shadow_for_OLD ( ptr, shadows, n_shadows ));
+   tl_assert(retVal == find_shadow_for_OLD ( ptr, shadows, n_shadows ));
 #  endif
    /* VG_(printf)("%d\n", retVal); */
    return retVal;
@@ -246,15 +246,15 @@ static void _lc_markstack_push(Addr ptr, Int clique)
    if (sh_no == -1)
       return;
 
-   sk_assert(sh_no >= 0 && sh_no < lc_n_shadows);
-   sk_assert(ptr <= lc_shadows[sh_no]->data + lc_shadows[sh_no]->size);
+   tl_assert(sh_no >= 0 && sh_no < lc_n_shadows);
+   tl_assert(ptr <= lc_shadows[sh_no]->data + lc_shadows[sh_no]->size);
 
    if (lc_markstack[sh_no].state == Unreached) {
       if (0)
 	 VG_(printf)("pushing %p-%p\n", lc_shadows[sh_no]->data, 
 		     lc_shadows[sh_no]->data + lc_shadows[sh_no]->size);
 
-      sk_assert(lc_markstack[sh_no].next == -1);
+      tl_assert(lc_markstack[sh_no].next == -1);
       lc_markstack[sh_no].next = lc_markstack_top;
       lc_markstack_top = sh_no;
    }
@@ -387,8 +387,8 @@ static void lc_do_leakcheck(Int clique)
    Int top;
 
    while((top = lc_markstack_pop()) != -1) {
-      sk_assert(top >= 0 && top < lc_n_shadows);      
-      sk_assert(lc_markstack[top].state != Unreached);
+      tl_assert(top >= 0 && top < lc_n_shadows);      
+      tl_assert(lc_markstack[top].state != Unreached);
 
       _lc_scan_memory(lc_shadows[top]->data, lc_shadows[top]->size, clique);
    }
@@ -421,7 +421,7 @@ static void full_report()
       if (lc_markstack[i].state != Unreached)
 	 continue;
 
-      sk_assert(lc_markstack_top == -1);
+      tl_assert(lc_markstack_top == -1);
 
       if (VG_DEBUG_CLIQUE)
 	 VG_(printf)("%d: gathering clique %p\n", i, lc_shadows[i]->data);
@@ -430,8 +430,8 @@ static void full_report()
 
       lc_do_leakcheck(i);
 
-      sk_assert(lc_markstack_top == -1);
-      sk_assert(lc_markstack[i].state == IndirectLeak);
+      tl_assert(lc_markstack_top == -1);
+      tl_assert(lc_markstack[i].state == IndirectLeak);
 
       lc_markstack[i].state = Unreached; /* Return to unreached state,
 					    to indicate its a clique
@@ -480,7 +480,7 @@ static void full_report()
             p_min = p;
          }
       }
-      sk_assert(p_min != NULL);
+      tl_assert(p_min != NULL);
 
       /* Ok to have tst==NULL;  it's only used if --gdb-attach=yes, and
          we disallow that when --leak-check=yes.  
@@ -491,7 +491,7 @@ static void full_report()
       print_record = ( MAC_(clo_show_reachable) || 
 		       Unreached == p_min->loss_mode || Interior == p_min->loss_mode );
       is_suppressed = 
-         VG_(unique_error) ( VG_(get_VCPU_tid)(), LeakErr, (UInt)i+1,
+         VG_(unique_error) ( VG_(get_running_tid)(), LeakErr, (UInt)i+1,
                              (Char*)n_lossrecords, (void*) p_min,
                              p_min->allocated_at, print_record,
                              /*allow_GDB_attach*/False, /*count_error*/False );
@@ -517,7 +517,7 @@ static void full_report()
          MAC_(bytes_reachable) += p_min->total_bytes;
 
       } else {
-         VG_(skin_panic)("generic_detect_memory_leaks: unknown loss mode");
+         VG_(tool_panic)("generic_detect_memory_leaks: unknown loss mode");
       }
       p_min->num_blocks = 0;
    }
@@ -572,7 +572,7 @@ void MAC_(do_detect_memory_leaks) (
 {
    Int    i;
    
-   sk_assert(mode != LC_Off);
+   tl_assert(mode != LC_Off);
 
    /* VG_(HT_to_array) allocates storage for shadows */
    lc_shadows = (MAC_Chunk**)VG_(HT_to_array)( MAC_(malloc_list),
@@ -583,17 +583,17 @@ void MAC_(do_detect_memory_leaks) (
 
    /* Sanity check; assert that the blocks are now in order */
    for (i = 0; i < lc_n_shadows-1; i++) {
-      sk_assert( lc_shadows[i]->data <= lc_shadows[i+1]->data);
+      tl_assert( lc_shadows[i]->data <= lc_shadows[i+1]->data);
    }
 
    /* Sanity check -- make sure they don't overlap */
    for (i = 0; i < lc_n_shadows-1; i++) {
-      sk_assert( lc_shadows[i]->data + lc_shadows[i]->size
+      tl_assert( lc_shadows[i]->data + lc_shadows[i]->size
                  < lc_shadows[i+1]->data );
    }
 
    if (lc_n_shadows == 0) {
-      sk_assert(lc_shadows == NULL);
+      tl_assert(lc_shadows == NULL);
       if (VG_(clo_verbosity) >= 1) {
          VG_(message)(Vg_UserMsg, 
                       "No malloc'd blocks -- no leaks are possible.");

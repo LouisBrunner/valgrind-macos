@@ -469,7 +469,7 @@ void MAC_(destroy_mempool)(Addr pool)
                                          (void*)&prev_next );
 
    if (mp == NULL) {
-      ThreadId      tid = VG_(get_current_tid)();
+      ThreadId tid = VG_(get_running_tid)();
 
       MAC_(record_illegal_mempool_error) ( tid, pool );
       return;
@@ -505,7 +505,7 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
    MAC_Mempool** prev_pool;
    MAC_Chunk*    mc;
    MAC_Chunk**   prev_chunk;
-   ThreadId      tid = VG_(get_current_tid)();
+   ThreadId      tid = VG_(get_running_tid)();
 
    mp = (MAC_Mempool*)VG_(HT_get_node)(MAC_(mempool_list), (UWord)pool,
                                        (void*)&prev_pool);

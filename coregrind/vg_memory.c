@@ -566,17 +566,11 @@ void VG_(pad_address_space)(void)
    UInt args[6];
    Addr ret;
    
-   args[2] = 0;
-   args[3] = VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS;
-   args[4] = -1;
-   args[5] = 0;
-   
    while (s && addr <= VG_(valgrind_last)) {
       if (addr < s->addr) {
-         args[0] = (UInt)addr;
-         args[1] = s->addr - addr;
-         
-         ret = VG_(do_syscall)(__NR_mmap, (UInt)args);
+         PLATFORM_DO_MMAP(ret, addr, s->addr - addr, 0,
+                          VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
+                          -1, 0);
       }
         
       addr = s->addr + s->len;
@@ -584,10 +578,9 @@ void VG_(pad_address_space)(void)
    }
 
    if (addr <= VG_(valgrind_last)) {
-      args[0] = (UInt)addr;
-      args[1] = VG_(valgrind_last) - addr + 1;
-
-      ret = VG_(do_syscall)(__NR_mmap, (UInt)args);
+      PLATFORM_DO_MMAP(ret, addr, VG_(valgrind_last) - addr + 1, 0,
+                       VKI_MAP_FIXED | VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS,
+                       -1, 0);
    }
 
    return;

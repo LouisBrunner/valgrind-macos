@@ -32,10 +32,24 @@ Major changes in 20030716, as compared to 1.9.6:
 - Automatic generation of suppression records; you no longer
   need to write them by hand.  Use --gen-suppressions=yes.
 
+- strcpy/memcpy/etc check their arguments for overlaps, when
+  running with the Memcheck or Addrcheck skins.
+
+- malloc_usable_size() is now supported.
+
+- new client requests:
+    - VALGRIND_COUNT_ERRORS, VALGRIND_COUNT_LEAKS: 
+      useful with regression testing
+    - VALGRIND_NON_SIMD_CALL[0123]: for running arbitrary functions 
+      on real CPU (use with caution!)
+
 - The GDB attach mechanism is more flexible.  Allow the GDB to
   be run to be specified by --gdb-path=/path/to/gdb, and specify
   which file descriptor V will read its input from with
   --input-fd=<number>.
+
+- Cachegrind gives more accurate results (wasn't tracking instructions in
+  malloc() and friends previously, is now).
 
 - Complete support for the MMX instruction set.
 

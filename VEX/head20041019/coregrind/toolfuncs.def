@@ -26,10 +26,6 @@ void,		post_clo_init
 ## 'orig_addr' is the address of the first instruction in the block.
 IRBB*,	instrument,	IRBB* bb,   VexGuestLayoutInfo* layout
 
-## Return the address of a helper function name inserted by this tool
-## into the IR.  Return 0 if not found.
-HWord, tool_findhelper, Char* name
-
 ## Finish up, print out any results, etc.  `exitcode' is program's exit
 ## code.  The shadow (if the `shadow_regs' need is set) can be found with
 ## VG_(get_exit_status_shadow)().

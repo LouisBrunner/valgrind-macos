@@ -949,31 +949,6 @@ void ac_fpu_ACCESS_check_SLOWLY ( Addr addr, Int size, Bool isWrite )
 /*--- Our instrumenter                                     ---*/
 /*------------------------------------------------------------*/
 
-HWord SK_(tool_findhelper) ( Char* function_name )
-{
-   if (0 == VG_(strcmp)(function_name, "ac_helperc_LOAD4"))
-      return (HWord) & ac_helperc_LOAD4;
-   if (0 == VG_(strcmp)(function_name, "ac_helperc_STORE4"))
-      return (HWord) & ac_helperc_STORE4;
-
-   if (0 == VG_(strcmp)(function_name, "ac_helperc_LOAD1"))
-      return (HWord) & ac_helperc_LOAD1;
-   if (0 == VG_(strcmp)(function_name, "ac_helperc_STORE1"))
-      return (HWord) & ac_helperc_STORE1;
-
-   if (0 == VG_(strcmp)(function_name, "ac_helperc_LOAD2"))
-      return (HWord) & ac_helperc_LOAD2;
-   if (0 == VG_(strcmp)(function_name, "ac_helperc_STORE2"))
-      return (HWord) & ac_helperc_STORE2;
-
-   if (0 == VG_(strcmp)(function_name, "ac_helperc_LOADN"))
-      return (HWord) & ac_helperc_LOADN;
-   if (0 == VG_(strcmp)(function_name, "ac_helperc_STOREN"))
-      return (HWord) & ac_helperc_STOREN;
-
-   return 0; /* not found */
-}
-
 
 IRBB* SK_(instrument)(IRBB* bb_in, VexGuestLayoutInfo* layout)
 {

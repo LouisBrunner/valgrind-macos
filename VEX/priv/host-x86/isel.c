@@ -1614,6 +1614,58 @@ static HReg iselDblExpr ( ISelEnv* env, IRExpr* e )
       }
    }
 
+
+   if (e->tag == Iex_Binop && e->Iex.Binop.op == Iop_RoundF64) {
+      HReg rf   = iselDblExpr(env, e->Iex.Binop.arg2);
+      HReg rrm  = iselIntExpr_R(env, e->Iex.Binop.arg1);
+      HReg rrm2 = newVRegI(env);
+      HReg dst  = newVRegF(env);
+
+      /* Used several times ... */
+      /* Careful ... this sharing is only safe because
+	 zero_esp does not hold any registers which the
+	 register allocator could attempt to swizzle later. */
+      X86AMode* zero_esp = X86AMode_IR(0, hregX86_ESP());
+
+      /* rf now holds the value to be rounded, and rrm holds the
+         rounding mode value, encoded as per the IRRoundingMode enum.
+         The first thing to do is set the FPU's rounding mode
+         accordingly. */
+
+      /* subl $4, %esp */
+      addInstr(env, 
+               X86Instr_Alu32R(Xalu_SUB, X86RMI_Imm(4), hregX86_ESP()));
+      /* movl %rrm, %rrm2
+         andl $3, %rrm2   -- shouldn't be needed; paranoia
+         shll $10, %rrm2
+         orl  $0x037F, %rrm2
+         movl %rrm2, 0(%esp)
+         fldcw 0(%esp)
+      */
+      addInstr(env, mk_MOVsd_RR(rrm, rrm2));
+      addInstr(env, X86Instr_Alu32R(Xalu_AND, X86RMI_Imm(3), rrm2));
+      addInstr(env, X86Instr_Sh32(Xsh_SHL, 10, X86RM_Reg(rrm2)));
+      addInstr(env, X86Instr_Alu32R(Xalu_OR, X86RMI_Imm(0x037F), rrm2));
+      addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Reg(rrm2), zero_esp));
+      addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+
+      /* grndint %rf, %dst */
+      addInstr(env, X86Instr_FpUnary(Xfp_ROUND, rf, dst));
+
+      /* Restore default FPU control.
+            movl $0x037F, 0(%esp)
+            fldcw 0(%esp)
+      */
+      addInstr(env, X86Instr_Alu32M(Xalu_MOV, X86RI_Imm(0x037F), zero_esp));
+      addInstr(env, X86Instr_FpLdStCW(True/*load*/, zero_esp));
+
+      /* addl $4, %esp */
+      addInstr(env, 
+               X86Instr_Alu32R(Xalu_ADD, X86RMI_Imm(4), hregX86_ESP()));
+      return dst;
+   }
+
+
    if (e->tag == Iex_Unop) {
       X86FpOp fpop = Xfp_INVALID;
       switch (e->Iex.Unop.op) {

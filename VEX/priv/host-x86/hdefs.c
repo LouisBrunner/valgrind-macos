@@ -1260,6 +1260,7 @@ static UChar* do_fop1_st ( UChar* p, X86FpOp op )
    switch (op) {
       case Xfp_NEGATE: *p++ = 0xD9; *p++ = 0xE0; break;
       case Xfp_SQRT:   *p++ = 0xD9; *p++ = 0xFA; break;
+      case Xfp_ROUND:  *p++ = 0xD9; *p++ = 0xFC; break;
       case Xfp_SIN:    *p++ = 0xD9; *p++ = 0xFE; break;
       case Xfp_COS:    *p++ = 0xD9; *p++ = 0xFF; break;
       default: vpanic("do_fop1_st: unknown op");
@@ -1819,7 +1820,7 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
    case Xin_FpBinary:
       if (i->Xin.FpBinary.op == Xfp_ATANYX) {
          /* Have to do this specially. */
-         /*  ffree %st7 ; fld %st(srcL) ; fld %st(srcR+1) ; fpatan ; fstp(1+dst) */
+         /* ffree %st7 ; fld %st(srcL) ; fld %st(srcR+1) ; fpatan ; fstp(1+dst) */
          p = do_ffree_st7(p);
          p = do_fld_st(p, 0+hregNumber(i->Xin.FpBinary.srcL));
          p = do_fld_st(p, 1+hregNumber(i->Xin.FpBinary.srcR));

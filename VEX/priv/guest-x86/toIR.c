@@ -3564,6 +3564,12 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
                put_ST_UNCHECKED(0, unop(Iop_SqrtF64, get_ST(0)));
                break;
 
+            case 0xFC: /* FRNDINT */
+               DIP("frndint\n");
+               put_ST_UNCHECKED(0,
+                  binop(Iop_RoundF64, get_roundingmode(), get_ST(0)) );
+               break;
+
             case 0xFE: /* FSIN */
                DIP("fsin\n");
                put_ST_UNCHECKED(0, unop(Iop_SinF64, get_ST(0)));
@@ -8366,9 +8372,9 @@ static UInt disInstr ( UInt delta, Bool* isEnd )
       case 0xA3: /* BT Gv,Ev */
          delta = dis_bt_G_E ( sorb, sz, delta, BtOpNone );
          break;
-//--       case 0xB3: /* BTR Gv,Ev */
-//--          eip = dis_bt_G_E ( cb, sorb, sz, eip, BtOpReset );
-//--          break;
+      case 0xB3: /* BTR Gv,Ev */
+         delta = dis_bt_G_E ( sorb, sz, delta, BtOpReset );
+         break;
       case 0xAB: /* BTS Gv,Ev */
          delta = dis_bt_G_E ( sorb, sz, delta, BtOpSet );
          break;

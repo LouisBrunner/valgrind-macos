@@ -249,7 +249,8 @@ typedef
       /* Binary */
       Xfp_ADD, Xfp_SUB, Xfp_MUL, Xfp_DIV, Xfp_ATANYX,
       /* Unary */
-      Xfp_SQRT, Xfp_NEGATE, Xfp_MOV, Xfp_SIN, Xfp_COS
+      Xfp_SQRT, Xfp_NEGATE, Xfp_MOV, Xfp_SIN, Xfp_COS,
+      Xfp_ROUND
    }
    X86FpOp;
 

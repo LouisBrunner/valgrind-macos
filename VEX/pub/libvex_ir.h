@@ -202,6 +202,9 @@ typedef
          of the argument.
       */
       Iop_F64toI64, Iop_F64toI32, Iop_F64toI16,
+      /* F64 -> F64, also takes an I32 first argument encoding the
+         rounding mode. */
+      Iop_RoundF64,
 
       /* double <-> float.  What does this mean -- does it round? */
       Iop_F32toF64, Iop_F64toF32
@@ -241,8 +244,8 @@ obscure IR optimisation bugs.
 */
 
 typedef
-     enum { Iex_Binder, /* Used only in pattern matching.  
-                           Not an expression. */
+   enum { Iex_Binder, /* Used only in pattern matching.  
+                         Not an expression. */
           Iex_Get, Iex_GetI, Iex_Tmp, Iex_Binop, Iex_Unop, Iex_LDle, 
           Iex_Const, Iex_CCall, Iex_Mux0X }
    IRExprTag;

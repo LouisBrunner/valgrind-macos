@@ -12155,13 +12155,13 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
       t2 = newTemp(Ity_I32);
       assign( t2, mk_x86g_calculate_eflags_all() );
 
-      /* Patch in the D flag.  This can simply be the inversion
-         of bit 10 of baseBlock[OFFB_DFLAG]. */
+      /* Patch in the D flag.  This can simply be a copy of bit 10 of
+         baseBlock[OFFB_DFLAG]. */
       t3 = newTemp(Ity_I32);
       assign( t3, binop(Iop_Or32,
                         mkexpr(t2),
                         binop(Iop_And32,
-                              unop(Iop_Not32, IRExpr_Get(OFFB_DFLAG,Ity_I32)),
+                              IRExpr_Get(OFFB_DFLAG,Ity_I32),
                               mkU32(1<<10))) 
             );
 

@@ -1,7 +1,87 @@
 
-Cleanup notes.  JRS, started 2 March 05.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Notes pertaining to the 2.4.0 - 3.0 merge
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+As of 10 March (svn rev 3266, vex svn rev 1019) the merged code base
+can start and run programs with --tool=none.  Both threaded and
+unthreaded programs appear to work (knode, opera, konqueror).
 
+Known breakage is:
+
+* Basically only x86 works.  I was part-way through getting amd64
+  to work when I stopped to do the merge.  I think you can assume
+  amd64 is pretty much knackered right now.
+
+* No other tools work.  Memcheck worked fine in 3.0 prior to the
+  merge but needs to have Jeremy's space-saving hacks folded in.
+  Also the leak checker improvements.  Ditto addrcheck.
+  Cachegrind is broken because it is not Vex-aware, and Vex needs
+  to be changed to convey info on instruction boundaries to it.
+  Helgrind is not Vex aware.  Also, Helgrind will not work because
+  thread-event-modelling does not work (see below).  Memcheck
+  and Addrcheck could be made to work with minor effort, and
+  that should happen asap.  Cachegrind also needs to be fixed
+  shortly.
+
+* Function wrapping a la 2.4.0 is disabled, and will likely remain
+  disabled for an extended period until I consider the software
+  engineering consequences of it, specifically if a cleaner
+  implementation is possible.  Result of that is that thread-event
+  modelling and Helgrind are also disabled for that period.
+
+* --trace-children=yes no longer works.  This is presumably some
+  trivial bug which should be fixed asap.
+
+* signal contexts for x86 signal deliveries are partially broken.  On
+  delivery of an rt-signal, a context frame is built, but only the 8
+  integer registers and %eflags are written into it, no SSE and no FP
+  state.  Also, the vcpu state is restored on return to whatever it
+  was before the signal was delivered; it is not restored from the
+  sigcontext offered to the handler.  That means handlers which
+  expect to be able to modify the machine state will not work.
+  This will be fixed; it requires a small amount of work on the
+  Vex side.
+
+* I got rid of extra UInt* flags arg for syscall pre wrappers,
+  so they can't add MayBlock after examining the args.  Should
+  be reinstated.  I commented out various *flags |= MayBlock"
+  so they can easily enough be put back in.
+
+* Tracking of device segments is somehow broken (I forget how)
+
+
+Other notes I made:
+
+* Check tests/filter_stderr_basic; I got confused whilst merging it
+
+* Dubious use of setjmp in run_thread_for_a_while -- I thought it
+  was only OK to use setjmp as the arg of an if:  if (setjmp(...)) ...
+
+* EmWarn/Int confusion -- what type is it in the guest state?
+
+* Reinstate per-thread dispatch ctrs.  First find out what the
+  rationale for per-thread counters is.
+
+* main: TL_(fini) is not given exitcode and it should be.
+
+* Prototype for VG_(_client_syscall) [note leading _] is in a 
+  bad place.
+
+(It was a 3-way merge, using the most recent common ancestor
+ of the 2.4.0 and 3.0 lines:
+
+   cvs co -D "11/19/2004 17:45:00 GMT" valgrind
+
+ and the 2.4.0 line
+
+   obtained at Fri Mar  4 15:52:46 GMT 2005 by:
+   cvs co valgrind
+
+ and the 3.0 line, which is svn revision 3261.
+)
+
+
+Cleanup notes derived from making AMD64 work.  JRS, started 2 March 05.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 The following cleanups need to be done.
 
 AMD64 vsyscalls
@@ -28,11 +108,9 @@ startup code, and should not be visible in generic core service code.
 
 Redirection mechanism
 ~~~~~~~~~~~~~~~~~~~~~
-Uses the skiplist mechanism.  How it works is opaque and undocumented.
-This code should be ripped out and replaced with something
-maintainable.  The list of unresolved redirections should be a
-seperate data structure from the currently active (addr, addr)
-mapping.
+How this works is difficult to understand.  This should be fixed.  The
+list of unresolved redirections should be a seperate data structure
+from the currently active (addr, addr) mapping.
 
 There's a whole big #ifdef TEST section in vg_symtab2.c which has
 no apparent purpose.

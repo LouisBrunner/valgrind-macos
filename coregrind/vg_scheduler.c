@@ -881,8 +881,8 @@ void poll_for_ready_fds ( void )
 
    /* Awaken any sleeping threads whose sleep has expired. */
    for (tid = 1; tid < VG_N_THREADS; tid++)
-     if (vg_threads[tid].status == VgTs_Sleeping)
-        break;
+      if (vg_threads[tid].status == VgTs_Sleeping)
+         break;
 
    /* Avoid pointless calls to VG_(read_millisecond_timer). */
    if (tid < VG_N_THREADS) {
@@ -1442,21 +1442,34 @@ VgSchedReturnCode VG_(scheduler) ( void )
    -------------------------------------------------------- */
 
 static
-void do_pthread_cancel ( ThreadId  tid_canceller,
+void do_pthread_cancel ( ThreadId  tid,
                          pthread_t tid_cancellee )
 {
    Char msg_buf[100];
+
+   vg_assert(is_valid_tid(tid));
+   vg_assert(vg_threads[tid].status != VgTs_Empty);
+
+   if (!is_valid_tid(tid_cancellee)
+       || vg_threads[tid_cancellee].status == VgTs_Empty) {
+      vg_threads[tid].m_edx = ESRCH;
+      return;
+   }
+
    /* We want make is appear that this thread has returned to
       do_pthread_create_bogusRA with PTHREAD_CANCELED as the
       return value.  So: simple: put PTHREAD_CANCELED into %EAX
       and &do_pthread_create_bogusRA into %EIP and keep going! */
    if (VG_(clo_trace_sched)) {
-      VG_(sprintf)(msg_buf, "cancelled by %d", tid_canceller);
+      VG_(sprintf)(msg_buf, "cancelled by %d", tid);
       print_sched_event(tid_cancellee, msg_buf);
    }
    vg_threads[tid_cancellee].m_eax  = (UInt)PTHREAD_CANCELED;
    vg_threads[tid_cancellee].m_eip  = (UInt)&VG_(pthreadreturn_bogusRA);
    vg_threads[tid_cancellee].status = VgTs_Runnable;
+
+   /* We return with success (0). */
+   vg_threads[tid].m_edx = 0;
 }
 
 
@@ -1852,8 +1865,9 @@ void do_pthread_mutex_lock( ThreadId tid,
             /* return 0 (success). */
             mutex->__m_count++;
             vg_threads[tid].m_edx = 0;
-	    VG_(printf)("!!!!!! tid %d, mx %p -> locked %d\n", 
-                        tid, mutex, mutex->__m_count);
+            if (0)
+               VG_(printf)("!!!!!! tid %d, mx %p -> locked %d\n", 
+                           tid, mutex, mutex->__m_count);
             return;
          } else {
             if (is_trylock)

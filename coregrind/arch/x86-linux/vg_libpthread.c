@@ -259,6 +259,13 @@ pthread_t pthread_self(void)
 }
 
 
+int pthread_detach(pthread_t th)
+{
+   ignored("pthread_detach");
+   return 0;
+}
+
+
 /* ---------------------------------------------------
    MUTEX ATTRIBUTES
    ------------------------------------------------ */
@@ -493,12 +500,17 @@ int pthread_cond_broadcast(pthread_cond_t *cond)
    CANCELLATION
    ------------------------------------------------ */
 
+int pthread_setcancelstate(int state, int *oldstate)
+{
+   ignored("pthread_setcancelstate");
+   return 0;
+}
+
 int pthread_setcanceltype(int type, int *oldtype)
 {
    ignored("pthread_setcanceltype");
    return 0;
 }
-
 
 int pthread_cancel(pthread_t thread)
 {
@@ -508,6 +520,27 @@ int pthread_cancel(pthread_t thread)
                            VG_USERREQ__PTHREAD_CANCEL,
                            thread, 0, 0, 0);
    return res;
+}
+
+void pthread_testcancel(void)
+{
+}
+
+/*-------------------*/
+static pthread_mutex_t massacre_mx = PTHREAD_MUTEX_INITIALIZER;
+
+void __pthread_kill_other_threads_np ( void )
+{
+   int i, res, me;
+   pthread_mutex_lock(&massacre_mx);
+   me = pthread_self();
+   for (i = 1; i < VG_N_THREADS; i++) {
+      if (i == me) continue;
+      res = pthread_cancel(i);
+      if (res == 0)
+         printf("----------- NUKED %d\n", i);
+   }
+   pthread_mutex_unlock(&massacre_mx);
 }
 
 
@@ -579,6 +612,19 @@ int pthread_once ( pthread_once_t *once_control,
 
    pthread_mutex_unlock(&once_masterlock);
 
+   return 0;
+}
+
+
+/* ---------------------------------------------------
+   MISC
+   ------------------------------------------------ */
+
+int pthread_atfork ( void (*prepare)(void),
+                     void (*parent)(void),
+                     void (*child)(void) )
+{
+   ignored("pthread_atfork");
    return 0;
 }
 
@@ -698,18 +744,18 @@ ssize_t read(int fd, void *buf, size_t count)
 
  
 extern
-int __libc_open64(const char *pathname, int flags, ...);
-int open64(const char *pathname, int flags, ...)
+int __libc_open64(const char *pathname, int flags, mode_t mode);
+int open64(const char *pathname, int flags, mode_t mode)
 {
-   return __libc_open64(pathname, flags);
+   return __libc_open64(pathname, flags, mode);
 }
 
 
 extern
-int __libc_open(const char *pathname, int flags);
-int open(const char *pathname, int flags)
+int __libc_open(const char *pathname, int flags, mode_t mode);
+int open(const char *pathname, int flags, mode_t mode)
 {
-   return __libc_open(pathname, flags);
+   return __libc_open(pathname, flags, mode);
 }
 
 
@@ -1142,6 +1188,7 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
   extern __typeof (name) aliasname __attribute__ ((alias (#name)));
 
 strong_alias(pthread_mutex_lock, __pthread_mutex_lock)
+strong_alias(pthread_mutex_trylock, __pthread_mutex_trylock)
 strong_alias(pthread_mutex_unlock, __pthread_mutex_unlock)
 strong_alias(pthread_mutexattr_init, __pthread_mutexattr_init)
 strong_alias(pthread_mutexattr_settype, __pthread_mutexattr_settype)
@@ -1149,7 +1196,9 @@ strong_alias(pthread_mutex_init, __pthread_mutex_init)
 strong_alias(pthread_mutexattr_destroy, __pthread_mutexattr_destroy)
 strong_alias(pthread_mutex_destroy, __pthread_mutex_destroy)
 strong_alias(pthread_once, __pthread_once)
+strong_alias(pthread_atfork, __pthread_atfork)
 
+strong_alias(fork, __fork)
 strong_alias(close, __close)
 strong_alias(write, __write)
 strong_alias(read, __read)
@@ -1171,16 +1220,18 @@ strong_alias(connect, __connect)
 #undef _IO_flockfile
 void _IO_flockfile ( _IO_FILE * file )
 {
-   //   char* str = "_IO_flockfile\n";
-   //   write(2, str, strlen(str));
+   //char* str = "_IO_flockfile\n";
+   //write(2, str, strlen(str));
+   pthread_mutex_lock(file->_lock);
    //  barf("_IO_flockfile");
 }
 
 #undef _IO_funlockfile
 void _IO_funlockfile ( _IO_FILE * file )
 {
-   //   char* str = "_IO_funlockfile\n";
-   //   write(2, str, strlen(str));
+   //char* str = "_IO_funlockfile\n";
+   //write(2, str, strlen(str));
+   pthread_mutex_unlock(file->_lock);
    //  barf("_IO_funlockfile");
 }
 

@@ -220,8 +220,7 @@ typedef struct EC_EIP {
    union u_ec_eip {
       Addr		eip;
       ExeContext	*ec;
-   };
-
+   } uu_ec_eip;
    UInt			state:STATE_BITS;
    UInt			tls:OTHER_BITS;		/* packed TLS */
 } EC_EIP;
@@ -2504,10 +2503,11 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
       if (*msg)
 	 VG_(message)(Vg_UserMsg, "  Previous state: %s", msg);
 
-      if (clo_execontext == EC_Some && extra->lasttouched.eip != 0) {
+      if (clo_execontext == EC_Some 
+          && extra->lasttouched.uu_ec_eip.eip != 0) {
 	 Char file[100];
 	 UInt line;
-	 Addr eip = extra->lasttouched.eip;
+	 Addr eip = extra->lasttouched.uu_ec_eip.eip;
 	 
 	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state from %s by thread %u",
 		      err_addr,
@@ -2523,12 +2523,13 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
 	 } else {
 	    VG_(message)(Vg_UserMsg, "   at %p: %y", eip, eip);
 	 }
-      } else if (clo_execontext == EC_All && extra->lasttouched.ec != NULL) {
+      } else if (clo_execontext == EC_All 
+                 && extra->lasttouched.uu_ec_eip.ec != NULL) {
 	 VG_(message)(Vg_UserMsg, "  Word at %p last changed state from %s in tid %u",
 		      err_addr,
 		      pp_state(extra->lasttouched.state),
 		      unpackTLS(extra->lasttouched.tls)->tid);
-	 VG_(pp_ExeContext)(extra->lasttouched.ec);
+	 VG_(pp_ExeContext)(extra->lasttouched.uu_ec_eip.ec);
       }
       break;
    }
@@ -2539,9 +2540,9 @@ void SK_(pp_SkinError) ( Error* err, void (*pp_ExeContext)(void) )
 		   VG_(get_error_address)(err),
 		   VG_(get_error_string)(err));
       pp_ExeContext();
-      if (extra->lasttouched.ec != NULL) {
+      if (extra->lasttouched.uu_ec_eip.ec != NULL) {
 	 VG_(message)(Vg_UserMsg, "  last touched by thread %d", extra->lasttid);
-	 VG_(pp_ExeContext)(extra->lasttouched.ec);
+	 VG_(pp_ExeContext)(extra->lasttouched.uu_ec_eip.ec);
       }
       pp_AddrInfo(VG_(get_error_address)(err), &extra->addrinfo);
       break;
@@ -2727,7 +2728,7 @@ void dump_around_a(Addr a)
 
 static void eraser_mem_read_word(Addr a, ThreadId tid, ThreadState *tst)
 {
-   shadow_word* sword;
+   shadow_word* sword /* egcs-2.91.66 complains uninit */ = NULL; 
    shadow_word  prevstate;
    ThreadLifeSeg *tls;
    const LockSet *ls;
@@ -2847,7 +2848,7 @@ static void eraser_mem_read(Addr a, UInt size, ThreadState *tst)
 static void eraser_mem_write_word(Addr a, ThreadId tid, ThreadState *tst)
 {
    ThreadLifeSeg *tls;
-   shadow_word* sword;
+   shadow_word* sword /* egcs-2.91.66 complains uninit */ = NULL;
    shadow_word  prevstate;
    Bool statechange = False;
    static const void *const states[4] = {

@@ -100,7 +100,7 @@
     pthread_getconcurrency; pthread_setconcurrency;
 
     # Semaphores.
-    sem_destroy; sem_getvalue; sem_init; sem_post; sem_trywait; sem_wait;
+    #sem_destroy; sem_getvalue; sem_init; sem_post; sem_trywait; sem_wait;
 
     __libc_current_sigrtmin; __libc_current_sigrtmax;
     __libc_allocate_rtsig;

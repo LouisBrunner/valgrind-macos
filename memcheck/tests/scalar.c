@@ -337,6 +337,9 @@ int main(void)
    // __NR_mq_getsetattr (__NR_mq_open+5)
    // __NR_sys_kexec_load 283
 
+   GO("bogus constant, 1 message");
+   syscall(9999);
+
    // __NR_exit 1 --> sys_exit() 
    GO("__NR_exit, 1 scalar error");
    syscall(__NR_exit, i0);

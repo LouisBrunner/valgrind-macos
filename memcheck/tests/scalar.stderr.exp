@@ -109,6 +109,10 @@ Syscall param mount(type) points to unaddressable byte(s)
    by 0x........: ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 ---------- __NR_getppid, 0 errors
+---------- bogus constant, 1 message
+WARNING: unhandled syscall: 9999
+Do not panic.  You may be able to fix this easily.
+Read the file README_MISSING_SYSCALL_OR_IOCTL.
 ---------- __NR_exit, 1 scalar error
 
 Syscall param exit(error_code) contains uninitialised byte(s)

@@ -58,11 +58,14 @@ static
 IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout, 
                           IRType hWordTy )
 {
-   Int      i, j, minoff_ST, maxoff_ST;
+   Int      i, j, minoff_ST, maxoff_ST, sizeof_SP, offset_SP;
    IRDirty  *dcall, *d;
    IRStmt*  st;
    IRExpr*  e;
    IRArray* descr;
+   IRTemp   curr;
+   IRType   typeof_SP;
+   Long     delta;
 
    /* Set up BB */
    IRBB* bb     = emptyIRBB();
@@ -70,12 +73,12 @@ IRBB* vg_SP_update_pass ( IRBB* bb_in, VexGuestLayout* layout,
    bb->next     = dopyIRExpr(bb_in->next);
    bb->jumpkind = bb_in->jumpkind;
 
-   IRTemp curr  = IRTemp_INVALID;
-   Long   delta = 0;
+   curr  = IRTemp_INVALID;
+   delta = 0;
 
-   Int    sizeof_SP = layout->sizeof_SP;
-   Int    offset_SP = layout->offset_SP;
-   IRType typeof_SP = sizeof_SP==4 ? Ity_I32 : Ity_I64;
+   sizeof_SP = layout->sizeof_SP;
+   offset_SP = layout->offset_SP;
+   typeof_SP = sizeof_SP==4 ? Ity_I32 : Ity_I64;
    vg_assert(sizeof_SP == 4 || sizeof_SP == 8);
 
 #  define IS_ADD(op) (sizeof_SP==4 ? ((op)==Iop_Add32) : ((op)==Iop_Add64))

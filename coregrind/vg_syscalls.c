@@ -3521,9 +3521,9 @@ PRE(socketcall)
    }
 
    default:
-      VG_(message)(Vg_DebugMsg,"FATAL: unhandled socketcall 0x%x",arg1);
-      VG_(core_panic)("... bye!\n");
-      break; /*NOTREACHED*/
+      VG_(message)(Vg_DebugMsg,"Warning: unhandled socketcall 0x%x",arg1);
+      res = -VKI_EINVAL;
+      break;
    }
 }
 

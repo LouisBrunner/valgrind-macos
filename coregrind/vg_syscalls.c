@@ -958,7 +958,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
       case __NR_adjtimex: /* syscall 124 */
         /* int adjtimex(struct timex *buf) */
          MAYBE_PRINTF("adjtimex ( %p )\n",arg1);
-         SYSCALL_TRACK( pre_mem_write, tst, "adjtimex(buf)",
+         SYSCALL_TRACK( pre_mem_write, tid, "adjtimex(buf)",
                         arg1, sizeof(struct timex) );
          KERNEL_DO_SYSCALL(tid,res);
          if (!VG_(is_kerror)(res))
@@ -3655,3 +3655,4 @@ void VG_(post_known_blocking_syscall) ( ThreadId tid,
 /*--------------------------------------------------------------------*/
 /*--- end                                            vg_syscalls.c ---*/
 /*--------------------------------------------------------------------*/
+

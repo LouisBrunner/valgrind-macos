@@ -45,7 +45,7 @@ Int VG_(sigfillset)( vki_sigset_t* set )
    if (set == NULL)
       return -1;
    for (i = 0; i < _VKI_NSIG_WORDS; i++)
-      set->sig[i] = 0xFFFFFFFF;
+      set->sig[i] = ~(UWord)0x0;
    return 0;
 }
 

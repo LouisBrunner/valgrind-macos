@@ -415,7 +415,7 @@ static Bool is_alloc_fn(Addr eip)
 // to ensure this in certain cases.  See comments below.
 static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
 {
-   // Static to minimise stack size.  +1 for added 0xffffffff %eip.
+   // Static to minimise stack size.  +1 for added ~0 %eip.
    static Addr eips[MAX_DEPTH + MAX_ALLOC_FNS + 1];
 
    XPt* xpt = alloc_xpt;
@@ -440,7 +440,7 @@ static XPt* get_XCon( ThreadId tid, Bool custom_malloc )
       // wasn't a bottom-XPt (now or later) it would cause problems later (eg.
       // the parent's approx_ST wouldn't be equal [or almost equal] to the
       // total of the childrens' approx_STs).  
-      eips[ n_eips++ ] = 0xffffffff;
+      eips[ n_eips++ ] = ~((Addr)0);
 
       // Skip over alloc functions in eips[]. 
       for (L = 0; is_alloc_fn(eips[L]) && L < n_eips; L++) { }

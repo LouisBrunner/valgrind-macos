@@ -1067,7 +1067,6 @@ static Bool dis_int_arith ( UInt theInstr )
 	       flag_OE ? "o" : "", flag_Rc ? "." : "",
 	       Rd_addr, Ra_addr, Rb_addr);
            assign( Rd, binop(Iop_DivU32, mkexpr(Ra), mkexpr(Rb)) );
-
 	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
 	   if (flag_OE) {
 	       mk_ppc32g_set_xer_ov_so( PPC32G_FLAG_OP_DIVWU, Rd, Ra, Rb );
@@ -1853,13 +1852,13 @@ static Bool dis_int_store ( UInt theInstr )
 		return False;
 	    }
 	    DIP("stbux %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
-	    storeBE( mkexpr(EA_imm), mkexpr(Rs_8) );
-	    putIReg( Ra_addr, mkexpr(EA_imm) );
+	    storeBE( mkexpr(EA_reg), mkexpr(Rs_8) );
+	    putIReg( Ra_addr, mkexpr(EA_reg) );
 	    break;
 
 	case 0x0D7: // stbx (Store B Indexed, p579)
 	    DIP("stbx %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
-	    storeBE( mkexpr(EA_imm), mkexpr(Rs_8) );
+	    storeBE( mkexpr(EA_reg), mkexpr(Rs_8) );
 	    break;
 
 	case 0x1B7: // sthux (Store HW with Update Indexed, p598)
@@ -1868,13 +1867,13 @@ static Bool dis_int_store ( UInt theInstr )
 		return False;
 	    }
 	    DIP("sthux %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
-	    storeBE( mkexpr(EA_imm), mkexpr(Rs_16) );
-	    putIReg( Ra_addr, mkexpr(EA_imm) );
+	    storeBE( mkexpr(EA_reg), mkexpr(Rs_16) );
+	    putIReg( Ra_addr, mkexpr(EA_reg) );
 	    break;
 
 	case 0x197: // sthx (Store HW Indexed, p599)
 	    DIP("sthx %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
-	    storeBE( mkexpr(EA_imm), mkexpr(Rs_16) );
+	    storeBE( mkexpr(EA_reg), mkexpr(Rs_16) );
 	    break;
 
 	case 0x0B7: // stwux (Store W with Update Indexed, p608)
@@ -1883,13 +1882,13 @@ static Bool dis_int_store ( UInt theInstr )
 		return False;
 	    }
 	    DIP("stwux %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
-	    storeBE( mkexpr(EA_imm), mkexpr(Rs) );
-	    putIReg( Ra_addr, mkexpr(EA_imm) );
+	    storeBE( mkexpr(EA_reg), mkexpr(Rs) );
+	    putIReg( Ra_addr, mkexpr(EA_reg) );
 	    break;
 
 	case 0x097: // stwx (Store W Indexed, p609)
 	    DIP("stwx %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
-	    storeBE( mkexpr(EA_imm), mkexpr(Rs) );
+	    storeBE( mkexpr(EA_reg), mkexpr(Rs) );
 	    break;
 
 	default:
@@ -2345,32 +2344,18 @@ static Bool dis_branch ( UInt theInstr, DisResult *whatNext )
 
 static Bool dis_syslink ( UInt theInstr, DisResult *whatNext )
 {
-//    const UChar IP_bit = 6;
-    Addr32 base_ea = 0;
-    Addr32 nia;
-
-    // sc  (System Call, p565)
     if (theInstr != 0x44000002) {
 	vex_printf("dis_int_syslink(PPC32)(theInstr)\n");
 	return False;
     }
+
+    // sc  (System Call, p565)
     DIP("sc\n");
-
-    // CAB: how to get MSR[IP] ?
-    //
-    // I'm confused - no other ops in date.orig have anything to do with MSR
-    // And this op (or any other exception) doesn't change bit IP... (p237)
-    // Moreover, on start, bit IP is not guaranteed to be defined (p75)
-    // Where does MSR[IP] get set?!
-
-    // base_ea = (MSR[IP_bit] == 1) ? 0xFFF00000 : 0; // See p234, Table 6-5
-    nia = base_ea + 0xC00;
-
 
     /* It's important that all ArchRegs carry their up-to-date value
        at this point.  So we declare an end-of-block here, which
        forces any TempRegs caching ArchRegs to be flushed. */
-    irbb->next     = mkU32( nia );
+    irbb->next     = mkU32( guest_cia_curr_instr + 4 );
     irbb->jumpkind = Ijk_Syscall;
 
     *whatNext = Dis_StopHere;
@@ -2388,6 +2373,14 @@ static Bool dis_memsync ( UInt theInstr )
     UChar Rb_addr   = (theInstr >> 11) & 0x1F;      /* theInstr[11:15] */
     UInt  opc2      = (theInstr >>  1) & 0x3FF;     /* theInstr[1:10]  */
     UChar b0        = (theInstr >>  0) & 1;         /* theInstr[0]     */
+
+    IRTemp EA = newTemp(Ity_I32);
+    IRTemp Ra = newTemp(Ity_I32);
+    IRTemp Rb = newTemp(Ity_I32);
+    IRTemp Rs = newTemp(Ity_I32);
+    IRTemp xer_ov = newTemp(Ity_I32);
+    IRTemp cr0_flags = newTemp(Ity_I32);
+
 
     switch (opc1) {
     /* XL-Form */
@@ -2422,7 +2415,18 @@ static Bool dis_memsync ( UInt theInstr )
 		return False;
 	    }
 	    DIP("lwarx %d,%d,%d\n", Rd_addr, Ra_addr, Rb_addr);
-	    return False;
+	    assign( Rb, getIReg(Rb_addr) );
+	    if (Ra_addr == 0) {
+		assign( EA, mkexpr(Rb) );
+	    } else {
+		assign( Ra, getIReg(Ra_addr) );
+		assign( EA, binop(Iop_And32, mkexpr(Ra), mkexpr(Rb)) );
+	    }
+	    putIReg( Rd_addr, loadBE(Ity_I32, mkexpr(EA)) );
+	    /* Note: RESERVE, RESERVE_ADDR not implemented.
+	       stwcx. is assumed to be successful
+	     */
+	    break;
 
         case 0x096: // stwcx. (Store Word Conditional Indexed, p605)
 	    if (b0 != 1) {
@@ -2430,7 +2434,25 @@ static Bool dis_memsync ( UInt theInstr )
 		return False;
 	    }
 	    DIP("stwcx. %d,%d,%d\n", Rs_addr, Ra_addr, Rb_addr);
-	    return False;
+	    assign( Rb, getIReg(Rb_addr) );
+	    assign( Rs, getIReg(Rs_addr) );
+	    if (Ra_addr == 0) {
+		assign( EA, mkexpr(Rb) );
+	    } else {
+		assign( Ra, getIReg(Ra_addr) );
+		assign( EA, binop(Iop_And32, mkexpr(Ra), mkexpr(Rb)) );
+	    }
+	    storeBE( mkexpr(EA), mkexpr(Rs) );
+
+	    // Set CR0[LT GT EQ S0] = 0b001 || XER[SO]
+	    assign( xer_ov, unop(Iop_8Uto32, IRExpr_Get(OFFB_XER_OV, Ity_I8)) );
+	    assign( cr0_flags, binop(Iop_And32, mkU32(2), mkexpr(xer_ov)) );
+	    setFlags_CR0_Flags( binop(Iop_Shl32, mkexpr(cr0_flags), mkU8(28)) );
+
+	    /* Note: RESERVE, RESERVE_ADDR not implemented.
+	       stwcx. is assumed to be successful
+	     */
+	    break;
 
         case 0x256: // sync (Synchronize, p616)
 	    if (b11to25 != 0 || b0 != 0) {

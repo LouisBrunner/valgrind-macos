@@ -358,7 +358,6 @@ static IROp mkWidenOp ( Int szSmall, Int szBig, Bool signd )
 /*--- Helpers for %eflags.                                 ---*/
 /*------------------------------------------------------------*/
 
-
 /* -------------- Evaluating the flags-thunk. -------------- */
 
 /* Build IR to calculate all the eflags from stored
@@ -499,6 +498,8 @@ void setFlags_MUL ( IRType ty, IRTemp src1, IRTemp src2, UInt base_op )
    }
 }
 
+
+/* -------------- Condition codes. -------------- */
 
 /* Condition codes, using the Intel encoding.  */
 
@@ -646,6 +647,49 @@ static IRExpr* calculate_condition ( Condcode cond )
    return 
       invert ? unop(Iop_32to1, unop(Iop_Not32, e))
              : unop(Iop_32to1, e);
+}
+
+
+/* -------------- Helpers for ADD/SUB with carry. -------------- */
+
+/* Given ta1, ta2 and tdst, compute tdst = ADC(ta1,ta2) and set flags
+   appropriately.  Depends critically on the relative ordering of
+   CC_OP_ADD{B,W,L} vs CC_OP_ADC{B,W,L}.
+*/
+static void helper_ADC ( Int sz,
+			 IRTemp tdst, IRTemp ta1, IRTemp ta2 )
+{
+   UInt    thunkOp;
+   IRExpr* thunkExpr;
+   IRType ty   = szToITy(sz);
+   IRTemp oldc = newTemp(Ity_I32);
+   IROp   plus = mkSizedOp(ty,Iop_Add8);
+
+   /* oldc = old carry flag, 0 or 1 */
+   assign( oldc, binop(mkSizedOp(ty,Iop_And8),
+                       mk_calculate_eflags_c(),
+		       mkU(ty,1)) );
+
+   if (sz == 4) {
+      assign(tdst, binop(plus,
+                         mkexpr(ta1),
+	                 binop(plus,mkexpr(ta2),mkexpr(oldc))));
+      thunkOp = CC_OP_ADDL;
+   } else {
+      vassert(0);
+   }
+
+   /* This dynamically calculates the thunk op number.  
+      3 * the old carry flag is added, so (eg) it gives
+      CC_OP_ADDL if old carry was zero, and CC_OP_ADCL if
+      old carry was one. */
+   thunkExpr = binop(Iop_Add32, 
+                     mkU32(thunkOp),
+		     binop(Iop_Mul32, mkexpr(oldc), mkU32(3)));
+
+   stmt( IRStmt_Put( NULL, OFFB_CC_OP,  thunkExpr ) );
+   stmt( IRStmt_Put( NULL, OFFB_CC_SRC, mkexpr(ta2) ) );
+   stmt( IRStmt_Put( NULL, OFFB_CC_DST, mkexpr(tdst) ) );
 }
 
 
@@ -1870,7 +1914,7 @@ UInt dis_Grp1 ( UChar sorb,
 
    switch (gregOfRM(modrm)) {
       case 0: op8 = Iop_Add8; break;  case 1: op8 = Iop_Or8;  break;
-	//      case 2: op8 = Iop_Adc8; break;  case 3: op8 = Iop_Sbb8; break;
+      case 2: op8 = Iop_Adc8; break;  //case 3: op8 = Iop_Sbb8; break;
       case 4: op8 = Iop_And8; break;  case 5: op8 = Iop_Sub8; break;
       case 6: op8 = Iop_Xor8; break;  case 7: op8 = Iop_Sub8; break;
       default: vpanic("dis_Grp1: unhandled case");
@@ -1878,11 +1922,12 @@ UInt dis_Grp1 ( UChar sorb,
 
    if (epartIsReg(modrm)) {
       vassert(am_sz == 1);
+      vassert(op8 != Iop_Adc8 && op8 != Iop_Sbb8);
 
       assign(dst0, getIReg(sz,eregOfRM(modrm)));
       assign(src,  mkU(ty,d32));
-      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 
+      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
       setFlags_SRC_DST1(op8, src, dst1, ty);
 
       if (gregOfRM(modrm) < 7)
@@ -1896,9 +1941,16 @@ UInt dis_Grp1 ( UChar sorb,
 
       assign(dst0, loadLE(ty,mkexpr(addr)));
       assign(src, mkU(ty,d32));
-      assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
 
-      setFlags_SRC_DST1(op8, src, dst1, ty);
+      if (op8 == Iop_Adc8) {
+         helper_ADC( sz, dst1, dst0, src );
+      } else 
+      if (op8 == Iop_Sbb8) {
+         vassert(0);
+      } else {
+         assign(dst1, binop(mkSizedOp(ty,op8), mkexpr(dst0), mkexpr(src)));
+         setFlags_SRC_DST1(op8, src, dst1, ty);
+      }
 
       if (gregOfRM(modrm) < 7)
           storeLE(mkexpr(addr), mkexpr(dst1));
@@ -2721,33 +2773,6 @@ void dis_REP_op ( Condcode cond,
 /*------------------------------------------------------------*/
 /*--- Arithmetic, etc.                                     ---*/
 /*------------------------------------------------------------*/
-
-#if 0
-static
-void do_mul_and_setFlags ( IRType ty, 
-                           IRTemp dst, IRTemp src1, IRTemp src2 )
-{
-   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-   setFlags_MUL( ty, src1, src2, CC_OP_MULB );
-   assign( dst, binop( mkSizedOp(ty,Iop_Mul8), 
-                       mkexpr(src1),
-                       mkexpr(src2)) );
-}
-
-static
-void do_mull_and_setFlags ( IRType ty, 
-                            Bool   sign,
-                            IRTemp dst, IRTemp src1, IRTemp src2 )
-{
-   vassert(ty == Ity_I8 || ty == Ity_I16 || ty == Ity_I32);
-   setFlags_MUL( ty, src1, src2, 
-                 sign ? CC_OP_MULLSB : CC_OP_MULLUB );
-   assign( dst, 
-           binop( mkSizedOp(ty, sign ? Iop_MullS8 : Iop_MullU8), 
-                  mkexpr(src1), 
-                  mkexpr(src2)) );
-}
-#endif
 
 /* (I)MUL E, G.  Supplied eip points to the modR/M byte. */
 static

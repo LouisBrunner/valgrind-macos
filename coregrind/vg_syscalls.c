@@ -2334,6 +2334,13 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                     sizeof(struct cdrom_msf));
                  KERNEL_DO_SYSCALL(tid,res);
                  break;
+            /* The following two are probably bogus (should check args
+               for readability).  JRS 20021117 */
+            case CDROM_DRIVE_STATUS: /* 0x5326 */
+            case CDROM_CLEAR_OPTIONS: /* 0x5321 */
+               KERNEL_DO_SYSCALL(tid,res);
+               break;
+
             /* We don't have any specific information on it, so
                try to do something reasonable based on direction and
                size bits.  The encoding scheme is described in

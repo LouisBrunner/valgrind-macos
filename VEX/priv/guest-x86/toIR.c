@@ -4704,7 +4704,7 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, UInt delta )
 
             case 0xC0 ... 0xC7: /* FFREE %st(?) */
                r_dst = (UInt)modrm - 0xC0;
-               DIP("ffree %%st(%d)\n", r_dst);
+               DIP("ffree %%st(%d)\n", (Int)r_dst);
                put_ST_TAG ( r_dst, mkU8(0) );
                break;
 

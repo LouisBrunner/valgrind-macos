@@ -74,8 +74,8 @@ void ppHReg ( HReg r )
 
 void ppHRegUsage ( HRegUsage* tab )
 {
-   Int   i;
-   Char* str;
+   Int    i;
+   HChar* str;
    vex_printf("HRegUsage {\n");
    for (i = 0; i < tab->n_used; i++) {
       switch (tab->mode[i]) {

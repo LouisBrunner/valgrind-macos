@@ -147,7 +147,7 @@ static const UChar parity_table[256] = {
     0, AMD64G_CC_MASK_P, AMD64G_CC_MASK_P, 0, AMD64G_CC_MASK_P, 0, 0, AMD64G_CC_MASK_P,
 };
 
-/* n must be a constant to be efficient */
+/* generalised left-shifter */
 static inline Long lshift ( Long x, Int n )
 {
    if (n >= 0)

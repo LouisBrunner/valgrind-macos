@@ -107,13 +107,19 @@ static const UChar parity_table[256] = {
     0, X86G_CC_MASK_P, X86G_CC_MASK_P, 0, X86G_CC_MASK_P, 0, 0, X86G_CC_MASK_P,
 };
 
-/* n must be a constant to be efficient */
+/* generalised left-shifter */
 inline static Int lshift ( Int x, Int n )
 {
    if (n >= 0)
       return x << n;
    else
       return x >> (-n);
+}
+
+/* identity on ULong */
+static inline ULong idULong ( ULong x )
+{
+   return x;
 }
 
 
@@ -356,16 +362,20 @@ inline static Int lshift ( Int x, Int n )
 
 /*-------------------------------------------------------------*/
 
-#define ACTIONS_UMUL(DATA_BITS,DATA_UTYPE,DATA_U2TYPE)          \
+#define ACTIONS_UMUL(DATA_BITS, DATA_UTYPE,  NARROWtoU,         \
+                                DATA_U2TYPE, NARROWto2U)        \
 {                                                               \
    PREAMBLE(DATA_BITS);                                         \
    { Int cf, pf, af, zf, sf, of;                                \
      DATA_UTYPE  hi;                                            \
-     DATA_UTYPE  lo = ((DATA_UTYPE)CC_DEP1)                     \
-                      * ((DATA_UTYPE)CC_DEP2);                  \
-     DATA_U2TYPE rr = ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP1))      \
-                      * ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP2));   \
-     hi = (DATA_UTYPE)(rr >>/*u*/ DATA_BITS);                   \
+     DATA_UTYPE  lo                                             \
+        = NARROWtoU( ((DATA_UTYPE)CC_DEP1)                      \
+                     * ((DATA_UTYPE)CC_DEP2) );                 \
+     DATA_U2TYPE rr                                             \
+        = NARROWto2U(                                           \
+             ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP1))               \
+             * ((DATA_U2TYPE)((DATA_UTYPE)CC_DEP2)) );          \
+     hi = NARROWtoU(rr >>/*u*/ DATA_BITS);                      \
      cf = (hi != 0);                                            \
      pf = parity_table[(UChar)lo];                              \
      af = 0; /* undefined */                                    \
@@ -378,16 +388,20 @@ inline static Int lshift ( Int x, Int n )
 
 /*-------------------------------------------------------------*/
 
-#define ACTIONS_SMUL(DATA_BITS,DATA_STYPE,DATA_S2TYPE)          \
+#define ACTIONS_SMUL(DATA_BITS, DATA_STYPE,  NARROWtoS,         \
+                                DATA_S2TYPE, NARROWto2S)        \
 {                                                               \
    PREAMBLE(DATA_BITS);                                         \
    { Int cf, pf, af, zf, sf, of;                                \
      DATA_STYPE  hi;                                            \
-     DATA_STYPE  lo = ((DATA_STYPE)CC_DEP1)                     \
-                      * ((DATA_STYPE)CC_DEP2);                  \
-     DATA_S2TYPE rr = ((DATA_S2TYPE)((DATA_STYPE)CC_DEP1))      \
-                      * ((DATA_S2TYPE)((DATA_STYPE)CC_DEP2));   \
-     hi = (DATA_STYPE)(rr >>/*s*/ DATA_BITS);                   \
+     DATA_STYPE  lo                                             \
+        = NARROWtoS( ((DATA_STYPE)CC_DEP1)                      \
+                     * ((DATA_STYPE)CC_DEP2) );                 \
+     DATA_S2TYPE rr                                             \
+        = NARROWto2S(                                           \
+             ((DATA_S2TYPE)((DATA_STYPE)CC_DEP1))               \
+             * ((DATA_S2TYPE)((DATA_STYPE)CC_DEP2)) );          \
+     hi = NARROWtoS(rr >>/*s*/ DATA_BITS);                      \
      cf = (hi != (lo >>/*s*/ (DATA_BITS-1)));                   \
      pf = parity_table[(UChar)lo];                              \
      af = 0; /* undefined */                                    \
@@ -530,13 +544,19 @@ UInt x86g_calculate_eflags_all_WRK ( UInt cc_op,
       case X86G_CC_OP_RORW:   ACTIONS_ROR( 16, UShort );
       case X86G_CC_OP_RORL:   ACTIONS_ROR( 32, UInt   );
 
-      case X86G_CC_OP_UMULB:  ACTIONS_UMUL(  8, UChar,  UShort );
-      case X86G_CC_OP_UMULW:  ACTIONS_UMUL( 16, UShort, UInt   );
-      case X86G_CC_OP_UMULL:  ACTIONS_UMUL( 32, UInt,   ULong  );
+      case X86G_CC_OP_UMULB:  ACTIONS_UMUL(  8, UChar,  toUChar,
+                                                UShort, toUShort );
+      case X86G_CC_OP_UMULW:  ACTIONS_UMUL( 16, UShort, toUShort,
+                                                UInt,   toUInt );
+      case X86G_CC_OP_UMULL:  ACTIONS_UMUL( 32, UInt,   toUInt,
+                                                ULong,  idULong );
 
-      case X86G_CC_OP_SMULB:  ACTIONS_SMUL(  8, Char,   Short );
-      case X86G_CC_OP_SMULW:  ACTIONS_SMUL( 16, Short,  Int   );
-      case X86G_CC_OP_SMULL:  ACTIONS_SMUL( 32, Int,    Long  );
+      case X86G_CC_OP_SMULB:  ACTIONS_SMUL(  8, Char,   toUChar,
+                                                Short,  toUShort );
+      case X86G_CC_OP_SMULW:  ACTIONS_SMUL( 16, Short,  toUShort, 
+                                                Int,    toUInt   );
+      case X86G_CC_OP_SMULL:  ACTIONS_SMUL( 32, Int,    toUInt,
+                                                Long,   idULong );
 
       default:
          /* shouldn't really make these calls from generated code */

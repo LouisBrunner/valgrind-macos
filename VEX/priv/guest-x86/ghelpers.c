@@ -7,6 +7,7 @@
 /*---------------------------------------------------------------*/
 
 #include "libvex_basictypes.h"
+#include "libvex_guest_x86.h"
 #include "libvex_ir.h"
 
 #include "main/vex_util.h"
@@ -775,6 +776,397 @@ IRExpr* x86guest_spechelper ( Char* function_name,
 #  undef mkU32
 
    return NULL;
+}
+
+
+/*-----------------------------------------------------------*/
+/*--- Utility functions for x87 FPU conversions.          ---*/
+/*-----------------------------------------------------------*/
+
+
+/* 80 and 64-bit floating point formats:
+
+   80-bit:
+
+    S  0       0-------0      zero
+    S  0       0X------X      denormals
+    S  1-7FFE  1X------X      normals (all normals have leading 1)
+    S  7FFF    10------0      infinity
+    S  7FFF    10X-----X      snan
+    S  7FFF    11X-----X      qnan
+
+   S is the sign bit.  For runs X----X, at least one of the Xs must be
+   nonzero.  Exponent is 15 bits, fractional part is 63 bits, and
+   there is an explicitly represented leading 1, and a sign bit,
+   giving 80 in total.
+
+   64-bit avoids the confusion of an explicitly represented leading 1
+   and so is simpler:
+
+    S  0      0------0   zero
+    S  0      X------X   denormals
+    S  1-7FE  any        normals
+    S  7FF    0------0   infinity
+    S  7FF    0X-----X   snan
+    S  7FF    1X-----X   qnan
+
+   Exponent is 11 bits, fractional part is 52 bits, and there is a 
+   sign bit, giving 64 in total.
+*/
+
+
+/* Convert a IEEE754 double (64-bit) into an x87 extended double
+   (80-bit), mimicing the hardware fairly closely.  Both numbers are
+   stored little-endian.  Limitations, all of which could be fixed,
+   given some level of hassle:
+
+   * Does not handle double precision denormals.  As a result, values
+     with magnitudes less than 1e-308 are flushed to zero when they
+     need not be.
+
+   * Identity of NaNs is not preserved.
+
+   See comments in the code for more details.  
+*/
+static void convert_f64le_to_f80le ( /*IN*/UChar* f64, /*OUT*/UChar* f80 )
+{
+   Bool  isInf;
+   Int   bexp;
+   UChar sign;
+
+   sign = (f64[7] >> 7) & 1;
+   bexp = (f64[7] << 4) | ((f64[6] >> 4) & 0x0F);
+   bexp &= 0x7FF;
+
+   /* If the exponent is zero, either we have a zero or a denormal.
+      Produce a zero.  This is a hack in that it forces denormals to
+      zero.  Could do better. */
+   if (bexp == 0) {
+      f80[9] = sign << 7;
+      f80[8] = f80[7] = f80[6] = f80[5] = f80[4]
+             = f80[3] = f80[2] = f80[1] = f80[0] = 0;
+      return;
+   }
+   
+   /* If the exponent is 7FF, this is either an Infinity, a SNaN or
+      QNaN, as determined by examining bits 51:0, thus:
+          0  ... 0    Inf
+          0X ... X    SNaN
+          1X ... X    QNaN
+      where at least one of the Xs is not zero.
+   */
+   if (bexp == 0x7FF) {
+      isInf = (f64[6] & 0x0F) == 0 
+              && f64[5] == 0 && f64[4] == 0 && f64[3] == 0 
+              && f64[2] == 0 && f64[1] == 0 && f64[0] == 0;
+      if (isInf) {
+         /* Produce an appropriately signed infinity:
+            S 1--1 (15)  1  0--0 (63)
+         */
+         f80[9] = (sign << 7) | 0x7F;
+         f80[8] = 0xFF;
+         f80[7] = 0x80;
+         f80[6] = f80[5] = f80[4] = f80[3] 
+                = f80[2] = f80[1] = f80[0] = 0;
+         return;
+      }
+      /* So it's either a QNaN or SNaN.  Distinguish by considering
+         bit 51.  Note, this destroys all the trailing bits
+         (identity?) of the NaN.  IEEE754 doesn't require preserving
+         these (it only requires that there be one QNaN value and one
+         SNaN value), but x87 does seem to have some ability to
+         preserve them.  Anyway, here, the NaN's identity is
+         destroyed.  Could be improved. */
+      if (f64[6] & 8) {
+         /* QNaN.  Make a QNaN:
+            S 1--1 (15)  1  1--1 (63) 
+         */
+         f80[9] = (sign << 7) | 0x7F;
+         f80[8] = 0xFF;
+         f80[7] = 0xFF;
+         f80[6] = f80[5] = f80[4] = f80[3] 
+                = f80[2] = f80[1] = f80[0] = 0xFF;
+      } else {
+         /* SNaN.  Make a SNaN:
+            S 1--1 (15)  0  1--1 (63) 
+         */
+         f80[9] = (sign << 7) | 0x7F;
+         f80[8] = 0xFF;
+         f80[7] = 0x7F;
+         f80[6] = f80[5] = f80[4] = f80[3] 
+                = f80[2] = f80[1] = f80[0] = 0xFF;
+      }
+      return;
+   }
+
+   /* It's not a zero, denormal, infinity or nan.  So it must be a
+      normalised number.  Rebias the exponent and build the new
+      number.  */
+   bexp += (16383 - 1023);
+
+   f80[9] = (sign << 7) | ((bexp >> 8) & 0xFF);
+   f80[8] = bexp & 0xFF;
+   f80[7] = (1 << 7) | ((f64[6] << 3) & 0x78) | ((f64[5] >> 5) & 7);
+   f80[6] = ((f64[5] << 3) & 0xF8) | ((f64[4] >> 5) & 7);
+   f80[5] = ((f64[4] << 3) & 0xF8) | ((f64[3] >> 5) & 7);
+   f80[4] = ((f64[3] << 3) & 0xF8) | ((f64[2] >> 5) & 7);
+   f80[3] = ((f64[2] << 3) & 0xF8) | ((f64[1] >> 5) & 7);
+   f80[2] = ((f64[1] << 3) & 0xF8) | ((f64[0] >> 5) & 7);
+   f80[1] = ((f64[0] << 3) & 0xF8);
+   f80[0] = 0;
+}
+
+
+/////////////////////////////////////////////////////////////////
+
+/* Convert a x87 extended double (80-bit) into an IEEE 754 double
+   (64-bit), mimicing the hardware fairly closely.  Both numbers are
+   stored little-endian.  Limitations, all of which could be fixed,
+   given some level of hassle:
+
+   * Does not create double precision denormals.  As a result, values
+     with magnitudes less than 1e-308 are flushed to zero when they
+     need not be.
+
+   * Rounding following truncation could be a bit better.
+
+   * Identity of NaNs is not preserved.
+
+   See comments in the code for more details.  
+*/
+static void convert_f80le_to_f64le ( /*IN*/UChar* f80, /*OUT*/UChar* f64 )
+{
+   Bool  isInf;
+   Int   bexp;
+   UChar sign;
+
+   sign = (f80[9] >> 7) & 1;
+   bexp = (((UInt)f80[9]) << 8) | (UInt)f80[8];
+   bexp &= 0x7FFF;
+
+   /* If the exponent is zero, either we have a zero or a denormal.
+      But an extended precision denormal becomes a double precision
+      zero, so in either case, just produce the appropriately signed
+      zero. */
+   if (bexp == 0) {
+      f64[7] = sign << 7;
+      f64[6] = f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
+      return;
+   }
+   
+   /* If the exponent is 7FFF, this is either an Infinity, a SNaN or
+      QNaN, as determined by examining bits 62:0, thus:
+          0  ... 0    Inf
+          0X ... X    SNaN
+          1X ... X    QNaN
+      where at least one of the Xs is not zero.
+   */
+   if (bexp == 0x7FFF) {
+      isInf = (f80[7] & 0x7F) == 0 
+              && f80[6] == 0 && f80[5] == 0 && f80[4] == 0 
+              && f80[3] == 0 && f80[2] == 0 && f80[1] == 0 && f80[0] == 0;
+      if (isInf) {
+         if (0 == (f80[7] & 0x80))
+            goto wierd_NaN;
+         /* Produce an appropriately signed infinity:
+            S 1--1 (11)  0--0 (52)
+         */
+         f64[7] = (sign << 7) | 0x7F;
+         f64[6] = 0xF0;
+         f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
+         return;
+      }
+      /* So it's either a QNaN or SNaN.  Distinguish by considering
+         bit 62.  Note, this destroys all the trailing bits
+         (identity?) of the NaN.  IEEE754 doesn't require preserving
+         these (it only requires that there be one QNaN value and one
+         SNaN value), but x87 does seem to have some ability to
+         preserve them.  Anyway, here, the NaN's identity is
+         destroyed.  Could be improved. */
+      if (f80[8] & 0x40) {
+         /* QNaN.  Make a QNaN:
+            S 1--1 (11)  1  1--1 (51) 
+         */
+         f64[7] = (sign << 7) | 0x7F;
+         f64[6] = 0xFF;
+         f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0xFF;
+      } else {
+         /* SNaN.  Make a SNaN:
+            S 1--1 (11)  0  1--1 (51) 
+         */
+         f64[7] = (sign << 7) | 0x7F;
+         f64[6] = 0xF7;
+         f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0xFF;
+      }
+      return;
+   }
+
+   /* If it's not a Zero, NaN or Inf, and the integer part (bit 62) is
+      zero, the x87 FPU appears to consider the number denormalised
+      and converts it to a QNaN. */
+   if (0 == (f80[7] & 0x80)) {
+      wierd_NaN:
+      /* Strange hardware QNaN:
+         S 1--1 (11)  1  0--0 (51) 
+      */
+      /* On a PIII, these QNaNs always appear with sign==1.  I have
+         no idea why. */
+      f64[7] = (1 /*sign*/ << 7) | 0x7F;
+      f64[6] = 0xF8;
+      f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
+      return;
+   }
+
+   /* It's not a zero, denormal, infinity or nan.  So it must be a 
+      normalised number.  Rebias the exponent and consider. */
+   bexp -= (16383 - 1023);
+   if (bexp >= 0x7FF) {
+      /* It's too big for a double.  Construct an infinity. */
+      f64[7] = (sign << 7) | 0x7F;
+      f64[6] = 0xF0;
+      f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
+      return;
+   }
+
+   if (bexp < 0) {
+   /* It's too small for a double.  Construct a zero.  Note, this
+      is a kludge since we could conceivably create a
+      denormalised number for bexp in -1 to -51, but we don't
+      bother.  This means the conversion flushes values
+      approximately in the range 1e-309 to 1e-324 ish to zero
+      when it doesn't actually need to.  This could be
+      improved. */
+      f64[7] = sign << 7;
+      f64[6] = f64[5] = f64[4] = f64[3] = f64[2] = f64[1] = f64[0] = 0;
+      return;
+   }
+
+   /* Ok, it's a normalised number which is representable as a double.
+      Copy the exponent and mantissa into place. */
+   /*
+   for (i = 0; i < 52; i++)
+      write_bit_array ( f64,
+                        i,
+                        read_bit_array ( f80, i+11 ) );
+   */
+   f64[0] = (f80[1] >> 3) | (f80[2] << 5);
+   f64[1] = (f80[2] >> 3) | (f80[3] << 5);
+   f64[2] = (f80[3] >> 3) | (f80[4] << 5);
+   f64[3] = (f80[4] >> 3) | (f80[5] << 5);
+   f64[4] = (f80[5] >> 3) | (f80[6] << 5);
+   f64[5] = (f80[6] >> 3) | (f80[7] << 5);
+
+   f64[6] = ((bexp << 4) & 0xF0) | ((f80[7] >> 3) & 0x0F);
+
+   f64[7] = (sign << 7) | ((bexp >> 4) & 0x7F);
+
+   /* Now consider any rounding that needs to happen as a result of
+      truncating the mantissa. */
+   if (f80[1] & 4) /* read_bit_array(f80, 10) == 1) */ {
+      /* Round upwards.  This is a kludge.  Once in every 64k
+         roundings (statistically) the bottom two bytes are both 0xFF
+         and so we don't round at all.  Could be improved. */
+      if (f64[0] != 0xFF) { 
+         f64[0]++; 
+      }
+      else 
+      if (f64[0] == 0xFF && f64[1] != 0xFF) {
+         f64[0] = 0;
+         f64[1]++;
+      }
+      /* else we don't round, but we should. */
+   }
+}
+
+
+/*----------------------------------------------*/
+/*--- The exported fns ..                    ---*/
+/*----------------------------------------------*/
+
+/* Layout of the real x87 state. */
+
+typedef
+   struct {
+      UShort env[14];
+      UChar  reg[80];
+   }
+   Fpu_State;
+
+/* Offsets, in 16-bit ints, into the FPU environment (env) area. */
+#define FP_ENV_CTRL   0
+#define FP_ENV_STAT   2
+#define FP_ENV_TAG    4
+#define FP_ENV_IP     6 /* and 7 */
+#define FP_ENV_CS     8
+#define FP_ENV_OPOFF  10 /* and 11 */
+#define FP_ENV_OPSEL  12
+#define FP_REG(ii)    (10*(7-(ii)))
+
+
+/* VISIBLE TO LIBVEX CLIENT */
+void x87_to_vex ( /*IN*/UChar* x87_state, /*OUT*/UChar* vex_state )
+{
+   Int        r;
+   UInt       tag;
+   Double*    vexRegs = (Double*)(vex_state + OFFB_F0);
+   UChar*     vexTags = (UChar*)(vex_state + OFFB_FTAG0);
+   Fpu_State* x87     = (Fpu_State*)x87_state;
+   UInt       ftop    = (x87->env[FP_ENV_STAT] >> 11) & 7;
+   UInt       tagw    = x87->env[FP_ENV_TAG];
+
+   /* Copy registers and tags */
+   for (r = 0; r < 8; r++) {
+      tag = (tagw >> (2*r)) & 3;
+      if (tag == 3) {
+         /* register is empty */
+         vexRegs[r] = 0.0;
+         vexTags[r] = 0;
+      } else {
+         /* register is non-empty */
+         convert_f80le_to_f64le( &x87->reg[FP_REG(r)], (UChar*)&vexRegs[r] );
+         vexTags[r] = 1;
+      }
+   }
+
+   /* stack pointer */
+   *(UInt*)(vex_state + OFFB_FTOP) = ftop;
+
+   /* TODO: Check the CW is 037F.  Or at least, bottom 6 bits are 1
+      (all exceptions masked), and 11:10, which is rounding control,
+      is set to ..?
+   */
+}
+
+/* VISIBLE TO LIBVEX CLIENT */
+void vex_to_x87 ( /*IN*/UChar* vex_state, /*OUT*/UChar* x87_state )
+{
+   Int        i, r;
+   UInt       tagw;
+   Double*    vexRegs = (Double*)(vex_state + OFFB_F0);
+   UChar*     vexTags = (UChar*)(vex_state + OFFB_FTAG0);
+   Fpu_State* x87     = (Fpu_State*)x87_state;
+   UInt       ftop    = *(UInt*)(vex_state + OFFB_FTOP);
+
+   for (i = 0; i < 14; i++)
+      x87->env[i] = 0;
+
+   x87->env[1] = x87->env[3] = x87->env[5] = x87->env[13] = 0xFFFF;
+   x87->env[FP_ENV_CTRL] = 0x037F;
+   x87->env[FP_ENV_STAT] = (ftop & 7) << 11;
+
+   tagw = 0;
+   for (r = 0; r < 8; r++) {
+      if (vexTags[r] == 0) {
+         /* register is empty */
+         tagw |= (3 << (2*r));
+         convert_f64le_to_f80le( (UChar*)&vexRegs[r], &x87->reg[FP_REG(r)] );
+      } else {
+         /* register is full. */
+         tagw |= (0 << (2*r));
+         convert_f64le_to_f80le( (UChar*)&vexRegs[r],  &x87->reg[FP_REG(r)] );
+      }
+   }
+   x87->env[FP_ENV_TAG] = tagw;
 }
 
 

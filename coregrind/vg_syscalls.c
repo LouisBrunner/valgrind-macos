@@ -1245,22 +1245,21 @@ PREx(sys_modify_ldt, Special)
    }
 }
 
-PRE(set_thread_area)
+PREx(sys_set_thread_area, Special)
 {
-   PRINT("set_thread_area ( %p )", arg1);
-
-   PRE_MEM_READ( "set_thread_area(ptr)", arg1, 
-		 sizeof(vki_modify_ldt_t) );
+   PRINT("sys_set_thread_area ( %p )", arg1);
+   PRE_REG_READ1(int, "set_thread_area", struct user_desc *, u_info)
+   PRE_MEM_READ( "set_thread_area(u_info)", arg1, sizeof(vki_modify_ldt_t) );
 
    /* "do" the syscall ourselves; the kernel never sees it */
    set_result( VG_(sys_set_thread_area)( tid, (void *)arg1 ) );
 }
 
-PRE(get_thread_area)
+PREx(sys_get_thread_area, Special)
 {
-   PRINT("get_thread_area ( %p )", arg1);
-   PRE_MEM_WRITE( "get_thread_area(ptr)", arg1, 
-		  sizeof(vki_modify_ldt_t) );
+   PRINT("sys_get_thread_area ( %p )", arg1);
+   PRE_REG_READ1(int, "get_thread_area", struct user_desc *, u_info)
+   PRE_MEM_WRITE( "get_thread_area(u_info)", arg1, sizeof(vki_modify_ldt_t) );
 
    /* "do" the syscall ourselves; the kernel never sees it */
    set_result( VG_(sys_get_thread_area)( tid, (void *)arg1 ) );
@@ -1502,22 +1501,23 @@ PREx(sys_msync, MayBlock)
 // versions of LiS (Linux Streams).  They are not part of the kernel.
 // Therefore, we have to provide this type ourself, rather than getting it
 // from the kernel sources.
-struct pmsg_strbuf {
+struct vki_pmsg_strbuf {
    int     maxlen;         /* no. of bytes in buffer */
    int     len;            /* no. of bytes returned */
    vki_caddr_t buf;        /* pointer to data */
 };
 
-PRE(getpmsg)
+PREx(sys_getpmsg, MayBlock)
 {
    /* LiS getpmsg from http://www.gcom.com/home/linux/lis/ */
-   /* int getpmsg(int fd, struct strbuf *ctrl, struct strbuf *data, 
-      int *bandp, int *flagsp); */
-   struct pmsg_strbuf *ctrl;
-   struct pmsg_strbuf *data;
-   PRINT("getpmsg ( %d, %p, %p, %p, %p )", arg1,arg2,arg3,arg4,arg5);
-   ctrl = (struct pmsg_strbuf *)arg2;
-   data = (struct pmsg_strbuf *)arg3;
+   struct vki_pmsg_strbuf *ctrl;
+   struct vki_pmsg_strbuf *data;
+   PRINT("sys_getpmsg ( %d, %p, %p, %p, %p )", arg1,arg2,arg3,arg4,arg5);
+   PRE_REG_READ5(int, "getpmsg",
+                 int, fd, struct strbuf *, ctrl, struct strbuf *, data, 
+                 int *, bandp, int *, flagsp);
+   ctrl = (struct vki_pmsg_strbuf *)arg2;
+   data = (struct vki_pmsg_strbuf *)arg3;
    if (ctrl && ctrl->maxlen > 0)
       PRE_MEM_WRITE( "getpmsg(ctrl)", (Addr)ctrl->buf, ctrl->maxlen);
    if (data && data->maxlen > 0)
@@ -1528,13 +1528,13 @@ PRE(getpmsg)
       PRE_MEM_WRITE( "getpmsg(flagsp)", (Addr)arg5, sizeof(int));
 }
 
-POST(getpmsg)
+POSTx(sys_getpmsg)
 {
-   struct pmsg_strbuf *ctrl;
-   struct pmsg_strbuf *data;
+   struct vki_pmsg_strbuf *ctrl;
+   struct vki_pmsg_strbuf *data;
 
-   ctrl = (struct pmsg_strbuf *)arg2;
-   data = (struct pmsg_strbuf *)arg3;
+   ctrl = (struct vki_pmsg_strbuf *)arg2;
+   data = (struct vki_pmsg_strbuf *)arg3;
    if (res == 0 && ctrl && ctrl->len > 0) {
       POST_MEM_WRITE( (Addr)ctrl->buf, ctrl->len);
    }
@@ -1543,16 +1543,17 @@ POST(getpmsg)
    }
 }
 
-PRE(putpmsg)
+PREx(sys_putpmsg, MayBlock)
 {
    /* LiS putpmsg from http://www.gcom.com/home/linux/lis/ */
-   /* int putpmsg(int fd, struct strbuf *ctrl, struct strbuf *data, 
-      int band, int flags); */
-   struct pmsg_strbuf *ctrl;
-   struct pmsg_strbuf *data;
-   PRINT("putpmsg ( %d, %p, %p, %d, %d )", arg1,arg2,arg3,arg4,arg5);
-   ctrl = (struct pmsg_strbuf *)arg2;
-   data = (struct pmsg_strbuf *)arg3;
+   struct vki_pmsg_strbuf *ctrl;
+   struct vki_pmsg_strbuf *data;
+   PRINT("sys_putpmsg ( %d, %p, %p, %d, %d )", arg1,arg2,arg3,arg4,arg5);
+   PRE_REG_READ5(int, "putpmsg",
+                 int, fd, struct strbuf *, ctrl, struct strbuf *, data, 
+                 int, band, int, flags);
+   ctrl = (struct vki_pmsg_strbuf *)arg2;
+   data = (struct vki_pmsg_strbuf *)arg3;
    if (ctrl && ctrl->len > 0)
       PRE_MEM_READ( "putpmsg(ctrl)", (Addr)ctrl->buf, ctrl->len);
    if (data && data->len > 0)
@@ -5858,10 +5859,13 @@ POSTx(sys_rt_sigqueueinfo)
 #define SIG_SIM   0
 #endif
 
-PRE(sigaltstack)
+// XXX: x86-specific
+PREx(sys_sigaltstack, SIG_SIM)
 {
    /* int sigaltstack(const stack_t *ss, stack_t *oss); */
    PRINT("sigaltstack ( %p, %p )",arg1,arg2);
+   PRE_REG_READ2(int, "sigaltstack",
+                 const vki_stack_t *, ss, vki_stack_t *, oss);
    if (arg1 != (UWord)NULL) {
       PRE_MEM_READ( "sigaltstack(ss)", arg1, sizeof(vki_stack_t) );
    }
@@ -5873,7 +5877,7 @@ PRE(sigaltstack)
       VG_(do_sys_sigaltstack) (tid);
 }
 
-POST(sigaltstack)
+POSTx(sys_sigaltstack)
 {
    if (res == 0 && arg2 != (UWord)NULL)
       POST_MEM_WRITE( arg2, sizeof(vki_stack_t));
@@ -6680,10 +6684,10 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_capget,           sys_capget),       // 184 * L?
 
    SYSX_(__NR_capset,           sys_capset),       // 185 * L?
-   SYSBA(__NR_sigaltstack,      sys_sigaltstack, SIG_SIM), // 186 
+   SYSXY(__NR_sigaltstack,      sys_sigaltstack),  // 186 (x86) (XPG4-UNIX)
    SYSXY(__NR_sendfile,         sys_sendfile),     // 187 * L
-   SYSBA(__NR_getpmsg,          sys_ni_syscall, MayBlock), // 188 ...
-   SYSB_(__NR_putpmsg,          sys_ni_syscall, MayBlock), // 189 ...
+   SYSXY(__NR_getpmsg,          sys_getpmsg),      // 188 (?) (?)
+   SYSX_(__NR_putpmsg,          sys_putpmsg),      // 189 (?) (?)
 
    // Nb: we convert vfork() to fork() in VG_(pre_syscall)().
    //   (__NR_vfork,            sys_vfork),        // 190 -- Valgrind avoids
@@ -6752,8 +6756,8 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_futex,            sys_futex),              // 240 * L
    SYSX_(__NR_sched_setaffinity,sys_sched_setaffinity),  // 241 * L?
    SYSXY(__NR_sched_getaffinity,sys_sched_getaffinity),  // 242 * L?
-   SYSB_(__NR_set_thread_area,  sys_set_thread_area, Special), // 243 
-   SYSB_(__NR_get_thread_area,  sys_get_thread_area, Special), // 244  
+   SYSX_(__NR_set_thread_area,  sys_set_thread_area), // 243 (x86-only) L
+   SYSX_(__NR_get_thread_area,  sys_get_thread_area), // 244 (x86-only) L
 
    SYSX_(__NR_io_setup,         sys_io_setup),        // 245 * L
    SYSX_(__NR_io_destroy,       sys_io_destroy),      // 246 * L

@@ -76,30 +76,34 @@ stage2_SOURCES = \
 	vg_toolint.c \
 	vg_translate.c \
 	vg_transtab.c
+
+stage2_extra= \
+	demangle/libdemangle.a \
+	${VG_ARCH}/libarch.a \
+	${VG_PLATFORM}/libplatform.a
+
 ## Test repeated in both arms of the if-then-else because older versions of
 ## automake don't seem to like having += within an if-then-else.
 if USE_PIE
 stage2_CFLAGS = $(AM_CFLAGS) -fpie
-stage2_DEPENDENCIES = $(srcdir)/valgrind.vs
+stage2_DEPENDENCIES = \
+	$(srcdir)/valgrind.vs \
+	$(stage2_extra)
 stage2_LDFLAGS = -Wl,--export-dynamic -g \
 	-Wl,-version-script $(srcdir)/valgrind.vs \
 	-pie
 else
 stage2_CFLAGS = $(AM_CFLAGS)
-stage2_DEPENDENCIES = $(srcdir)/valgrind.vs ${VG_ARCH}/stage2.lds
+stage2_DEPENDENCIES = \
+	$(srcdir)/valgrind.vs ${VG_ARCH}/stage2.lds \
+	$(stage2_extra)
 stage2_LDFLAGS = -Wl,--export-dynamic -g \
 	-Wl,-version-script $(srcdir)/valgrind.vs \
 	-Wl,-defsym,kickstart_base=@KICKSTART_BASE@ -Wl,-T,${VG_ARCH}/stage2.lds
 endif
 
-stage2_LDADD= \
-	demangle/cp-demangle.o \
-	demangle/cplus-dem.o \
-	demangle/dyn-string.o \
-	demangle/safe-ctype.o \
-	${VG_ARCH}/libarch.a \
-	${VG_PLATFORM}/libplatform.a \
-	-ldl
+stage2_LDADD= $(stage2_extra) -ldl
+
 
 vg_intercept.c: $(srcdir)/gen_intercepts.pl $(srcdir)/vg_intercept.c.base
 	rm -f $@

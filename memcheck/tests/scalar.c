@@ -798,20 +798,35 @@ int main(void)
    SY(__NR_capset, x0, x0); FAIL;
 
    // __NR_sigaltstack 186
- //GO(__NR_sigaltstack, ".s .m");
- //SY(__NR_sigaltstack); FAIL;
+   {
+      struct our_sigaltstack {
+              void *ss_sp;
+              int ss_flags;
+              size_t ss_size;
+      } ss;
+      ss.ss_sp     = NULL;
+      ss.ss_flags  = 0;
+      ss.ss_size   = 0;
+      VALGRIND_MAKE_NOACCESS(& ss, sizeof(struct our_sigaltstack));
+      GO(__NR_sigaltstack, "2s 2m");
+      SY(__NR_sigaltstack, x0+&ss, x0+&ss); SUCC;
+   }
 
    // __NR_sendfile 187
    GO(__NR_sendfile, "4s 1m");
    SY(__NR_sendfile, x0, x0, x0+1, x0); FAIL;
 
    // __NR_getpmsg 188
- //GO(__NR_getpmsg, ".s .m");
- //SY(__NR_getpmsg); FAIL;
+   // Could do 5s 4m with more effort, but I can't be bothered for this
+   // crappy non-standard syscall.
+   GO(__NR_getpmsg, "5s 0m");
+   SY(__NR_getpmsg, x0, x0, x0, x0); FAIL;
 
    // __NR_putpmsg 189
- //GO(__NR_putpmsg, ".s .m");
- //SY(__NR_putpmsg); FAIL;
+   // Could do 5s 2m with more effort, but I can't be bothered for this
+   // crappy non-standard syscall.
+   GO(__NR_putpmsg, "5s 0m");
+   SY(__NR_putpmsg, x0, x0, x0, x0, x0); FAIL;
 
    // __NR_vfork 190
    GO(__NR_vfork, "other");
@@ -1030,12 +1045,12 @@ int main(void)
    SY(__NR_sched_getaffinity, x0, x0+1, x0); FAIL;
 
    // __NR_set_thread_area 243
- //GO(__NR_set_thread_area, ".s .m");
- //SY(__NR_set_thread_area); FAIL;
+   GO(__NR_set_thread_area, "1s 1m");
+   SY(__NR_set_thread_area, x0); FAILx(EFAULT);
 
    // __NR_get_thread_area 244
- //GO(__NR_get_thread_area, ".s .m");
- //SY(__NR_get_thread_area); FAIL;
+   GO(__NR_get_thread_area, "1s 1m");
+   SY(__NR_get_thread_area, x0); FAILx(EFAULT);
 
    // __NR_io_setup 245
    GO(__NR_io_setup, "2s 1m");

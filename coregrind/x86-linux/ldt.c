@@ -420,7 +420,12 @@ Int VG_(sys_modify_ldt) ( ThreadId tid,
 Int VG_(sys_set_thread_area) ( ThreadId tid,
                                vki_modify_ldt_t* info )
 {
-   Int idx = info->entry_number;
+   Int idx;
+
+   if (info == NULL)
+      return -VKI_EFAULT;
+
+   idx = info->entry_number;
 
    if (idx == -1) {
       for (idx = 0; idx < VKI_GDT_ENTRY_TLS_ENTRIES; idx++) {
@@ -454,8 +459,13 @@ Int VG_(sys_set_thread_area) ( ThreadId tid,
 Int VG_(sys_get_thread_area) ( ThreadId tid,
                                vki_modify_ldt_t* info )
 {
-   Int idx = info->entry_number;
+   Int idx;
    VgLdtEntry* tls;
+
+   if (info == NULL)
+      return -VKI_EFAULT;
+
+   idx = info->entry_number;
 
    if (idx < VKI_GDT_ENTRY_TLS_MIN || idx > VKI_GDT_ENTRY_TLS_MAX)
       return -VKI_EINVAL;

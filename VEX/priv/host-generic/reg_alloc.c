@@ -749,7 +749,7 @@ HInstrArray* doRegisterAllocation (
                   still live. */
                m = hregNumber(state[k].vreg);
                vassert(m >= 0 && m < n_vregs);
-               if (vreg_info[m].dead_before > ii) {
+               if (vreg_info[m].dead_before >= ii) {
                   vassert(vreg_info[m].reg_class != HRcINVALID);
                   EMIT_INSTR( (*genSpill)( state[k].rreg,
                                            vreg_info[m].spill_offset ) );

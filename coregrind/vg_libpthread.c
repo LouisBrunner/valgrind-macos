@@ -1276,6 +1276,16 @@ int __pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type)
    }
 }
 
+int __pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type)
+{
+   vg_pthread_mutexattr_t* vg_attr;
+   CONVERT(mutexattr, attr, vg_attr);
+
+   *type = vg_attr->__vg_mutexkind;
+
+   return 0;
+}
+
 int __pthread_mutexattr_destroy(pthread_mutexattr_t *attr)
 {
    return 0;
@@ -3351,6 +3361,7 @@ strong_alias(__pthread_mutex_trylock, pthread_mutex_trylock)
 strong_alias(__pthread_mutex_unlock, pthread_mutex_unlock)
 strong_alias(__pthread_mutexattr_init, pthread_mutexattr_init)
   weak_alias(__pthread_mutexattr_settype, pthread_mutexattr_settype)
+  weak_alias(__pthread_mutexattr_gettype, pthread_mutexattr_gettype)
   weak_alias(__pthread_mutexattr_setpshared, pthread_mutexattr_setpshared)
 strong_alias(__pthread_mutex_init, pthread_mutex_init)
 strong_alias(__pthread_mutexattr_destroy, pthread_mutexattr_destroy)

@@ -28,9 +28,6 @@ Known breakage is:
   implementation is possible.  Result of that is that thread-event
   modelling and Helgrind are also disabled for that period.
 
-* --trace-children=yes no longer works.  This is presumably some
-  trivial bug which should be fixed asap.
-
 * signal contexts for x86 signal deliveries are partially broken.  On
   delivery of an rt-signal, a context frame is built, but only the 8
   integer registers and %eflags are written into it, no SSE and no FP

@@ -2004,7 +2004,7 @@ PRE(sys_execve, Special)
       VG_(env_setenv)( (Char***)&ARG3, VALGRINDLIB, VG_(libdir));
 
       // Create executable name: "/proc/self/fd/<vgexecfd>", update ARG1
-      ARG1 = (Addr)VG_(build_child_exename)();
+      path = VG_(build_child_exename)();
    }
 
    if (0) {

@@ -2066,69 +2066,34 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
 
    Int stop_at = VG_(clo_backtrace_size);
 
-   n = 0;
+   vg_assert(stop_at > 0);
 
-   // SSS: factor this repeated code out!
-
-   know_fnname  = VG_(get_fnname) (ec->eips[0], buf_fn,  M_VG_ERRTXT);
-   know_objname = VG_(get_objname)(ec->eips[0], buf_obj, M_VG_ERRTXT);
-   know_srcloc  = VG_(get_filename_linenum)(ec->eips[0], 
-                                            buf_srcloc, M_VG_ERRTXT, 
-                                            &lineno);
-
-   APPEND("   at ");
-   VG_(sprintf)(ibuf,"0x%x: ", ec->eips[0]);
-   APPEND(ibuf);
-   if (know_fnname) { 
-      APPEND(buf_fn);
-      if (!know_srcloc && know_objname) {
-         APPEND(" (in ");
-         APPEND(buf_obj);
-         APPEND(")");
-      }
-   } else if (know_objname && !know_srcloc) {
-      APPEND("(within ");
-      APPEND(buf_obj);
-      APPEND(")");
-   } else {
-      APPEND("???");
-   }
-   if (know_srcloc) {
-      APPEND(" (");
-      APPEND(buf_srcloc);
-      APPEND(":");
-      VG_(sprintf)(ibuf,"%d",lineno);
-      APPEND(ibuf);
-      APPEND(")");
-   }
-   VG_(message)(Vg_UserMsg, "%s", buf);
-
-   for (i = 1; i < stop_at && ec->eips[i] != 0; i++) {
+   i = 0;
+   do {
+      n = 0;
       know_fnname  = VG_(get_fnname) (ec->eips[i], buf_fn,  M_VG_ERRTXT);
       know_objname = VG_(get_objname)(ec->eips[i], buf_obj, M_VG_ERRTXT);
       know_srcloc  = VG_(get_filename_linenum)(ec->eips[i], 
                                                buf_srcloc, M_VG_ERRTXT, 
                                                &lineno);
-      n = 0;
-      APPEND("   by ");
-      VG_(sprintf)(ibuf,"0x%x: ",ec->eips[i]);
+      if (i == 0) APPEND("   at ") else APPEND("   by ");
+      
+      VG_(sprintf)(ibuf,"0x%x: ", ec->eips[i]);
       APPEND(ibuf);
       if (know_fnname) { 
-         APPEND(buf_fn) 
+         APPEND(buf_fn);
          if (!know_srcloc && know_objname) {
             APPEND(" (in ");
             APPEND(buf_obj);
             APPEND(")");
          }
+      } else if (know_objname && !know_srcloc) {
+         APPEND("(within ");
+         APPEND(buf_obj);
+         APPEND(")");
       } else {
-         if (know_objname && !know_srcloc) {
-            APPEND("(within ");
-            APPEND(buf_obj);
-            APPEND(")"); 
-         } else {
-            APPEND("???");
-         }
-      };
+         APPEND("???");
+      }
       if (know_srcloc) {
          APPEND(" (");
          APPEND(buf_srcloc);
@@ -2138,7 +2103,9 @@ void VG_(mini_stack_dump) ( ExeContext* ec )
          APPEND(")");
       }
       VG_(message)(Vg_UserMsg, "%s", buf);
-   }   
+      i++;
+
+   } while (i < stop_at && ec->eips[i] != 0);
 }
 
 #undef APPEND

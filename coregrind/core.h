@@ -1778,8 +1778,7 @@ extern UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 // ---------------------------------------------------------------------
 
 // For setting up the baseBlock
-extern void VGA_(init_low_baseBlock)  ( Addr client_ip, Addr sp_at_startup );
-extern void VGA_(init_high_baseBlock) ( Addr client_ip, Addr sp_at_startup );
+extern void VGA_(init_baseBlock)  ( Addr client_ip, Addr sp_at_startup );
 
 // Register state moving
 extern void VGA_(load_state) ( arch_thread_t*, ThreadId tid );

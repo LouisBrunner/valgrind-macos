@@ -50,13 +50,10 @@ Int VGOFF_(spillslots) = INVALID_OFFSET;
 
 
 
-/* Here we assign actual offsets.  It's important on x86 to get the most
-   popular referents within 128 bytes of the start, so we can take
-   advantage of short addressing modes relative to %ebp.  Popularity
-   of offsets was measured on 22 Feb 02 running a KDE application, and
-   the slots rearranged accordingly, with a 1.5% reduction in total
-   size of translations. */
-void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
+/* Here we assign actual offsets.  VEX dictates the layout (see
+   comment at the end of libvex.h).  
+*/
+void VGA_(init_baseBlock) ( Addr client_eip, Addr esp_at_startup )
 {
    vg_assert(0 == sizeof(VexGuestX86State) % 8);
 
@@ -88,17 +85,6 @@ void VGA_(init_low_baseBlock) ( Addr client_eip, Addr esp_at_startup )
    if (VG_(needs).shadow_regs) {
       VG_TRACK( post_regs_write_init );
    }
-}
-
-void VGA_(init_high_baseBlock)( Addr client_eip, Addr esp_at_startup )
-{
-   /* There are currently 24 spill slots */
-   /* (11+/20+ .. 32+/43+) + n_compact_helpers.  This can overlap the magic
-    * boundary at >= 32 words, but most spills are to low numbered spill
-    * slots, so the ones above the boundary don't see much action. */
-
-   /* I gave up counting at this point.  Since they're above the
-      short-amode-boundary, there's no point. */
 
    /* I assume that if we have SSE2 we also have SSE */
    VG_(have_ssestate) = False;

@@ -2220,8 +2220,7 @@ Bool VG_(need_to_handle_SP_assignment)(void)
 // compact addressing mode.
 static void init_baseBlock ( Addr client_eip, Addr sp_at_startup )
 {
-   VGA_(init_low_baseBlock)(client_eip, sp_at_startup);
-   VGA_(init_high_baseBlock)(client_eip, sp_at_startup);
+   VGA_(init_baseBlock)(client_eip, sp_at_startup);
 }
 
 

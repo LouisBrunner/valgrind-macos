@@ -322,7 +322,7 @@ ESZ(Addr) mapelf(struct elfinfo *e, ESZ(Addr) base, int setbrk)
 	 if (bb != b) {
 	    fprintf(stderr, "sbrk failed while adjusting brk base: "
 		    "perhaps we hit the datasize ulimit?\n");
-	    break;
+	    return 0;
 	 }
 	 b += delta;
       }
@@ -481,6 +481,9 @@ static int load_ELF(char *hdr, int len, int fd, const char *name, struct exeinfo
    }
 
    info->brkbase = mapelf(e, 0, info->setbrk);		/* map the executable */
+
+   if (info->brkbase == 0)
+      return ENOMEM;
 
    if (interp != NULL) {
       /* reserve a chunk of address space for interpreter */

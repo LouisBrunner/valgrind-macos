@@ -42,9 +42,13 @@
    at an arbitary address.  Therefore, this code must be completely
    position-independent.
 */
-.global VG_(signalreturn_bogusRA)
-.global VG_(signalreturn_bogusRA_length)
-VG_(signalreturn_bogusRA):
+.global VG_(trampoline_code_start)
+.global VG_(trampoline_code_length)
+.global VG_(tramp_sigreturn_offset)
+.global VG_(tramp_syscall_offset)
+	
+VG_(trampoline_code_start):
+sigreturn_start:	
 	subl	$20, %esp	# allocate arg block
 	movl	%esp, %edx	# %edx == &_zzq_args[0]
 	movl	$VG_USERREQ__SIGNAL_RETURNS, 0(%edx)	# request
@@ -63,9 +67,21 @@ VG_(signalreturn_bogusRA):
 	# should never get here
 	ud2
 
-VG_(signalreturn_bogusRA_length):
-	.long . - VG_(signalreturn_bogusRA)
-
+	# We can point our sysinfo stuff here
+	.align 16
+syscall_start:	
+	int	$0x80
+	ret
+tramp_code_end:
+			
+.data
+VG_(trampoline_code_length):
+	.long tramp_code_end - VG_(trampoline_code_start)
+VG_(tramp_sigreturn_offset):
+	.long sigreturn_start - VG_(trampoline_code_start)
+VG_(tramp_syscall_offset):
+	.long syscall_start - VG_(trampoline_code_start)
+.text
 
 	
 /* ------------------ REAL CPU HELPERS ------------------ */

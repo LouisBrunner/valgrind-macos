@@ -131,6 +131,8 @@ static char *copy_str(char **tab, const char *str)
    The format of the stack is:
 
    higher address +-----------------+
+		  | Trampoline code |
+		  +-----------------+
                   |                 |
 		  : string table    :
 		  |                 |
@@ -168,6 +170,7 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
    int envc;			/* total number of env vars */
    unsigned stacksize;		/* total client stack size */
    addr_t cl_esp;		/* client stack base (initial esp) */
+   addr_t cl_stacktop;		/* top of stack */
 
    /* ==================== compute sizes ==================== */
 
@@ -215,18 +218,25 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
       sizeof(char **)*envc +		/* envp */
       sizeof(char **) +			/* terminal NULL */
       auxsize +				/* auxv */
-      ROUNDUP(stringsize, sizeof(int));	/* strings (aligned) */
+      ROUNDUP(stringsize, sizeof(int)) +/* strings (aligned) */
+      VKI_BYTES_PER_PAGE;		/* page for trampoline code */
 
    /* cl_esp is the client's stack pointer */
    cl_esp = client_end - stacksize;
    cl_esp = ROUNDDN(cl_esp, 16); /* make stack 16 byte aligned */
 
+   cl_stacktop = client_end;
+   cl_stacktop -= VKI_BYTES_PER_PAGE;
+
+   kp.cl_tramp_code = cl_stacktop;
+
    if (0)
       printf("stringsize=%d auxsize=%d stacksize=%d\n",
 	     stringsize, auxsize, stacksize);
 
+
    /* base of the string table (aligned) */
-   stringbase = strtab = (char *)(client_end - ROUNDUP(stringsize, sizeof(int)));
+   stringbase = strtab = (char *)(cl_stacktop - ROUNDUP(stringsize, sizeof(int)));
 
    kp.clstk_base = PGROUNDDN(cl_esp);
    kp.clstk_end = client_end;
@@ -336,18 +346,15 @@ static Addr setup_client_stack(char **orig_argv, char **orig_envp,
 	 auxv->a_val = 0;
 	 break;
 
-#if 1
       case AT_SYSINFO:
+	 /* Leave this unmolested for now, but we'll update it later
+	    when we set up the client trapoline code page */
+	 break;
+
       case AT_SYSINFO_EHDR:
-	 /* trash vsyscalls for now
-				   
-  	    XXX should probably replace with our own sysinfo page so
-  	    we can intercept sysenter syscalls too - or at least note
-  	    the address so that we can catch jumps here
-	 */
+	 /* Trash this, because we don't reproduce it */
 	 auxv->a_type = AT_IGNORE;
 	 break;
-#endif
 
       default:
 	 /* stomp out anything we don't know about */

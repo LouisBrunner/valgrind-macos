@@ -1341,13 +1341,16 @@ typedef struct {
    Addr client_base;		/* start of client address space	*/
    Addr	client_end;		/* end of client address space		*/
    Addr client_mapbase;		/* base address of !MAP_FIXED mappings  */
+   Addr	clstk_base;		/* lowest address of client stack	*/
+   Addr	clstk_end;		/* highest address of client stack	*/
+   Addr cl_tramp_code;		/* syscall+signal trampoline code       */
+
    Addr	shadow_base;		/* start of skin's shadow memory	*/
    Addr shadow_end;		/* end of skin's shadow memory		*/
+
    Addr	vg_base;		/* start of Valgrind's memory		*/
    Addr vg_mmap_end;		/* end of Valgrind's mmap area		*/
    Addr	vg_end;			/* end of Valgrind's memory		*/
-   Addr	clstk_base;		/* lowest address of client stack	*/
-   Addr	clstk_end;		/* highest address of client stack	*/
 } KickstartParams;
 
 /* Entrypoint for kickstart */
@@ -1376,6 +1379,8 @@ extern Addr VG_(client_end);
 extern Addr VG_(client_mapbase); /* base of mappings */
 extern Addr VG_(clstk_base);	/* client stack range */
 extern Addr VG_(clstk_end);
+extern Addr VG_(client_trampoline_code);
+
 extern Addr VG_(brk_base);	/* start of brk */
 extern Addr VG_(brk_limit);	/* current brk */
 extern Addr VG_(shadow_base);	/* skin's shadow memory */
@@ -1742,9 +1747,11 @@ extern void VG_(helper_DAA);
 
 extern void VG_(helper_undefined_instruction);
 
-/* NOT A FUNCTION; this is a bogus RETURN ADDRESS. */
-extern Char VG_(signalreturn_bogusRA);
-extern Int  VG_(signalreturn_bogusRA_length);	/* length */
+/* Information about trampoline code (for signal return and syscalls) */
+extern const Char VG_(trampoline_code_start);
+extern const Int  VG_(trampoline_code_length);
+extern const Int  VG_(tramp_sigreturn_offset);
+extern const Int  VG_(tramp_syscall_offset);
 
 /* ---------------------------------------------------------------------
    Things relating to the used skin

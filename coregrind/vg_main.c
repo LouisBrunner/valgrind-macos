@@ -124,6 +124,7 @@ UInt VG_(baseBlock)[VG_BASEBLOCK_WORDS];
 Addr VG_(client_base);	/* client address space limits */
 Addr VG_(client_end);
 Addr VG_(client_mapbase);
+Addr VG_(client_trampoline_code);
 Addr VG_(clstk_base);
 Addr VG_(clstk_end);
 Addr VG_(brk_base);	/* start of brk */
@@ -777,6 +778,7 @@ static void process_cmd_line_options ( const KickstartParams *kp )
       switch(auxp[0]) {
       case VKI_AT_SYSINFO:
 	 VG_(sysinfo_page_exists) = True;
+	 auxp[1] = (Int)(VG_(client_trampoline_code) + VG_(tramp_syscall_offset));
 	 VG_(sysinfo_page_addr) = auxp[1];
 	 break;
       }
@@ -1392,6 +1394,7 @@ void VG_(main) ( const KickstartParams *kp, void (*tool_init)(void), void *tool_
    VG_(client_mapbase)    = kp->client_mapbase;
    VG_(clstk_base)        = kp->clstk_base;
    VG_(clstk_end)         = kp->clstk_end;
+   vg_assert(VG_(clstk_end) == VG_(client_end));
 
    VG_(shadow_base)	  = kp->shadow_base;
    VG_(shadow_end)	  = kp->shadow_end;
@@ -1401,7 +1404,7 @@ void VG_(main) ( const KickstartParams *kp, void (*tool_init)(void), void *tool_
 
    VG_(libdir)            = kp->libdir;
 
-   vg_assert(VG_(clstk_end) == VG_(client_end));
+   VG_(client_trampoline_code) = kp->cl_tramp_code;
 
    if (0) {
       if (VG_(have_ssestate))

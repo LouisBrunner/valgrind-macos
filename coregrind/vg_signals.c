@@ -950,8 +950,6 @@ static void synth_ucontext(ThreadId tid, const vki_ksiginfo_t *si,
    sc->cr2 = (UInt)si->_sifields._sigfault._addr;
 }
 
-static Addr signalreturn_stub_addr = 0;
-
 /* Set up a stack frame (VgSigContext) for the client's signal
    handler.  This includes the signal number and a bogus return
    address.  */
@@ -1009,30 +1007,10 @@ void vg_push_signal_frame ( ThreadId tid, const vki_ksiginfo_t *siginfo )
    vg_assert( ((Char*)(&frame->magicE)) + sizeof(UInt) 
               == ((Char*)(esp_top_of_frame)) );
 
-   /* if the sigreturn stub isn't in the client address space yet,
-      allocate space for it and copy it into place. */
-   if (signalreturn_stub_addr == 0) {
-      UInt len = PGROUNDUP(VG_(signalreturn_bogusRA_length));
-
-      signalreturn_stub_addr = VG_(client_alloc)(0, len,
-						 VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC,
-						 0);
-      VG_(memcpy)((void *)signalreturn_stub_addr, &VG_(signalreturn_bogusRA), 
-		  VG_(signalreturn_bogusRA_length));
-      VG_(mprotect)((void *)signalreturn_stub_addr, len, VKI_PROT_READ|VKI_PROT_EXEC);
-      VG_TRACK(new_mem_mmap, signalreturn_stub_addr, VG_(signalreturn_bogusRA_length),
-	       True, False, True);
-
-      if (VG_(clo_trace_signals))
-	 VG_(message)(Vg_DebugMsg, "Put sigreturn stub at %p-%p in client address space",
-		      signalreturn_stub_addr, 
-		      signalreturn_stub_addr + VG_(signalreturn_bogusRA_length));
-   }
-
    /* retaddr, sigNo, psigInfo, puContext fields are to be written */
    VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame", 
                             (Addr)frame, offsetof(VgSigFrame, handlerArgs) );
-   frame->retaddr    = (UInt)signalreturn_stub_addr;
+   frame->retaddr    = (UInt)VG_(client_trampoline_code)+VG_(tramp_sigreturn_offset);
    frame->sigNo      = sigNo;
    frame->sigNo_private = sigNo;
    VG_TRACK( post_mem_write, (Addr)frame, offsetof(VgSigFrame, handlerArgs) );

@@ -468,7 +468,7 @@ void VG_(mprotect_range)(Addr a, UInt len, UInt prot)
 
    /* Everything must be page-aligned */
    vg_assert((a & (VKI_BYTES_PER_PAGE-1)) == 0);
-   vg_assert((len & (VKI_BYTES_PER_PAGE-1)) == 0);
+   len = PGROUNDUP(len);
 
    VG_(split_segment)(a);
    VG_(split_segment)(a+len);
@@ -661,16 +661,12 @@ void VG_(init_memory) ( void )
    VG_(parse_procselfmaps) ( build_valgrind_map_callback );	/* just Valgrind mappings */
    VG_(parse_procselfmaps) ( build_segment_map_callback );	/* everything */
 
-   /* kludge: some newer kernels place a "sysinfo" page up high, with
-      vsyscalls in it, and possibly some other stuff in the future. */
-   if (VG_(sysinfo_page_exists)) {
-      // 2003-Sep-25, njn: Jeremy thinks the sysinfo page probably doesn't
-      // have any symbols that need to be loaded.  So just treat it like
-      // a non-executable page.
-      //VG_(new_exeseg_mmap)( VG_(sysinfo_page_addr), 4096 );
-      VG_TRACK( new_mem_startup, VG_(sysinfo_page_addr), 4096, 
-                True, True, True );
-     }
+   /* initialize our trampoline page (which is also sysinfo stuff) */
+   VG_(memcpy)((void *)VG_(client_trampoline_code), 
+	       &VG_(trampoline_code_start),
+	       VG_(trampoline_code_length));
+   VG_(mprotect)((void *)VG_(client_trampoline_code), VG_(trampoline_code_length), 
+		 VKI_PROT_READ|VKI_PROT_EXEC);
 }
 
 /*------------------------------------------------------------*/

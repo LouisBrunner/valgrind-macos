@@ -214,8 +214,8 @@ UInt VG_(total_reg_rank) = 0;
 
 
 /* Counts pertaining to internal sanity checking. */
-UInt VG_(sanity_fast_count) = 0;
-UInt VG_(sanity_slow_count) = 0;
+static UInt sanity_fast_count = 0;
+static UInt sanity_slow_count = 0;
 
 /* Counts pertaining to the scheduler. */
 UInt VG_(num_scheduling_events_MINOR) = 0;
@@ -270,8 +270,7 @@ static void show_counts ( void )
                 VG_(total_reg_rank) );
    VG_(message)(Vg_DebugMsg, 
                 "   sanity: %d cheap, %d expensive checks.",
-                VG_(sanity_fast_count), 
-                VG_(sanity_slow_count) );
+                sanity_fast_count, sanity_slow_count );
    VG_(print_ccall_stats)();
 }
 
@@ -2557,7 +2556,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
 
    /* --- First do all the tests that we can do quickly. ---*/
 
-   VG_(sanity_fast_count)++;
+   sanity_fast_count++;
 
    /* Check stuff pertaining to the memory check system. */
 
@@ -2574,10 +2573,10 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
    /* Once every 25 times, check some more expensive stuff. */
    if ( force_expensive
      || VG_(clo_sanity_level) > 1
-     || (VG_(clo_sanity_level) == 1 && (VG_(sanity_fast_count) % 25) == 0)) {
+     || (VG_(clo_sanity_level) == 1 && (sanity_fast_count % 25) == 0)) {
 
       VGP_PUSHCC(VgpCoreExpensiveSanity);
-      VG_(sanity_slow_count)++;
+      sanity_slow_count++;
 
       VG_(proxy_sanity)();
 
@@ -2585,7 +2584,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
       { void zzzmemscan(void); zzzmemscan(); }
 #     endif
 
-      if ((VG_(sanity_fast_count) % 250) == 0)
+      if ((sanity_fast_count % 250) == 0)
          VG_(sanity_check_tc_tt)();
 
       if (VG_(needs).sanity_checks) {
@@ -2594,7 +2593,7 @@ void VG_(do_sanity_checks) ( Bool force_expensive )
           VGP_POPCC(VgpSkinExpensiveSanity);
       }
       /* 
-      if ((VG_(sanity_fast_count) % 500) == 0) VG_(mallocSanityCheckAll)(); 
+      if ((sanity_fast_count % 500) == 0) VG_(mallocSanityCheckAll)(); 
       */
       VGP_POPCC(VgpCoreExpensiveSanity);
    }

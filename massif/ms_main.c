@@ -1211,9 +1211,9 @@ void TL_(post_clo_init)(void)
 /*--- Instrumentation                                      ---*/
 /*------------------------------------------------------------*/
 
-UCodeBlock* TL_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
+IRBB* TL_(instrument) ( IRBB* bb_in, VexGuestLayout* layout, IRType hWordTy )
 {
-   return cb_in;
+   return bb_in;
 }
 
 /*------------------------------------------------------------*/

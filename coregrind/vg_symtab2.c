@@ -2037,10 +2037,9 @@ static Addr reverse_search_one_symtab ( SegInfo* si,
 {
    UInt i;
    for (i = 0; i < si->symtab_used; i++) {
-      /*
-      VG_(printf)("%p %s\n",  si->symtab[i].addr, 
-                  &si->strtab[si->symtab[i].nmoff]);
-      */
+      if (0) 
+         VG_(printf)("%p %s\n",  si->symtab[i].addr, 
+                     &si->strtab[si->symtab[i].nmoff]);
       if (0 == VG_(strcmp)(name, &si->strtab[si->symtab[i].nmoff]))
          return si->symtab[i].addr;
    }
@@ -2367,7 +2366,7 @@ CodeRedirect VG_(code_redirect_table)[VG_N_CODE_REDIRECTS];
 
 Int VG_(setup_code_redirect_table) ( void )
 {
-#  define N_SUBSTS 3
+#  define N_SUBSTS 6
 
    Int     i, j;
    Addr    a_libc, a_pth;
@@ -2375,24 +2374,33 @@ Int VG_(setup_code_redirect_table) ( void )
 
    /* Original entry points to look for in libc. */
    static Char* libc_names[N_SUBSTS]
-     = { "__GI___errno_location",
-         "__GI___h_errno_location",
-         "__GI___res_state" };
+     = { "__GI___errno_location"
+       , "__errno_location"
+       , "__GI___h_errno_location"
+       , "__h_errno_location"
+       , "__GI___res_state" 
+       , "__res_state"
+       };
 
    /* Corresponding substitute address in our pthread lib. */
    static Char* pth_names[N_SUBSTS]
-     = { "__errno_location",
-         "__h_errno_location",
-         "__res_state" };
+     = { "__errno_location"
+       , "__errno_location"
+       , "__h_errno_location"
+       , "__h_errno_location"
+       , "__res_state" 
+       , "__res_state"
+       };
 
    /* Look for the SegInfo for glibc and our pthread library. */
 
    si_libc = si_pth = NULL;
 
    for (si = segInfo; si != NULL; si = si->next) {
-      if (NULL != VG_(strstr)(si->filename, "/libc.so"))
+      if (VG_(strstr)(si->filename, "/libc-2.3.2.so")
+          || VG_(strstr)(si->filename, "/libc.so"))
          si_libc = si;
-      if (NULL != VG_(strstr)(si->filename, "/libpthread.so"))
+      if (VG_(strstr)(si->filename, "/libpthread.so"))
          si_pth = si;
    }
 

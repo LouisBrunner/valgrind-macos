@@ -1475,10 +1475,11 @@ PRE(fdatasync)
    PRINT("fdatasync ( %d )", arg1);
 }
 
-PRE(msync)
+PREx(sys_msync, MayBlock)
 {
-   /* int msync(const void *start, size_t length, int flags); */
-   PRINT("msync ( %p, %llu, %d )", arg1,(ULong)arg2,arg3);
+   PRINT("sys_msync ( %p, %llu, %d )", arg1,(ULong)arg2,arg3);
+   PRE_REG_READ3(long, "msync",
+                 unsigned long, start, vki_size_t, length, int, flags);
    PRE_MEM_READ( "msync(start)", arg1, arg2 );
 }
 
@@ -1600,15 +1601,16 @@ PRE(madvise)
    PRINT("madvise ( %p, %llu, %d )", arg1,(ULong)arg2,arg3);
 }
 
-PRE(mremap)
+PREx(sys_mremap, Special)
 {
    // Nb: this is different to the glibc version described in the man pages,
    // which lacks the fifth 'new_address' argument.
-   /* void* mremap(void * old_address, size_t old_size, 
-      size_t new_size, unsigned long flags, void * new_address); */
-   PRINT("mremap ( %p, %llu, %d, 0x%x, %p )", 
-		arg1, (ULong)arg2, arg3, arg4, arg5);
-
+   PRINT("sys_mremap ( %p, %llu, %d, 0x%x, %p )", 
+         arg1, (ULong)arg2, arg3, arg4, arg5);
+   PRE_REG_READ5(unsigned long, "mremap",
+                 unsigned long, old_addr, unsigned long, old_size,
+                 unsigned long, new_size, unsigned long, flags,
+                 unsigned long, new_addr);
    set_result( mremap_segment((Addr)arg1, arg2, (Addr)arg5, arg3, arg4, tid) );
 }
 
@@ -1653,22 +1655,22 @@ PRE(sched_setscheduler)
 		    arg3, sizeof(struct vki_sched_param));
 }
 
-PRE(mlock)
+PREx(sys_mlock, MayBlock)
 {
-   /* int mlock(const void * addr, size_t len) */
-   PRINT("mlock ( %p, %llu )", arg1, (ULong)arg2);
+   PRINT("sys_mlock ( %p, %llu )", arg1, (ULong)arg2);
+   PRE_REG_READ2(long, "mlock", unsigned long, addr, vki_size_t, len);
 }
 
-PRE(munlock)
+PREx(sys_munlock, MayBlock)
 {
-   /* int munlock(const void * addr, size_t len) */
-   PRINT("munlock ( %p, %llu )", arg1, (ULong)arg2);
+   PRINT("sys_munlock ( %p, %llu )", arg1, (ULong)arg2);
+   PRE_REG_READ2(long, "munlock", unsigned long, addr, vki_size_t, len);
 }
 
-PRE(mlockall)
+PREx(sys_mlockall, MayBlock)
 {
-   /* int mlockall(int flags); */
-   PRINT("mlockall ( %x )", arg1);
+   PRINT("sys_mlockall ( %x )", arg1);
+   PRE_REG_READ1(long, "mlockall", int, flags);
 }
 
 PREx(sys_munlockall, MayBlock)
@@ -1830,10 +1832,10 @@ PREx(sys_mknod, 0)
    PRE_MEM_RASCIIZ( "mknod(pathname)", arg1 );
 }
 
-PRE(flock)
+PREx(sys_flock, MayBlock)
 {
-   /* int flock(int fd, int operation); */
-   PRINT("flock ( %d, %d )", arg1, arg2 );
+   PRINT("sys_flock ( %d, %d )", arg1, arg2 );
+   PRE_REG_READ2(long, "flock", unsigned int, fd, unsigned int, operation);
 }
 
 PRE(init_module)
@@ -2185,15 +2187,17 @@ PRE(fchmod)
    PRINT("fchmod ( %d, %d )", arg1,arg2);
 }
 
-PRE(fcntl64)
+// XXX: wrapper only suitable for 32-bit systems
+PREx(sys_fcntl64, 0)
 {
-   /* int fcntl64(int fd, int cmd, int arg); */
-   PRINT("fcntl64 ( %d, %d, %d )", arg1,arg2,arg3);
+   PRINT("sys_fcntl64 ( %d, %d, %d )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "fcntl64",
+                 unsigned int, fd, unsigned int, cmd, unsigned long, arg);
    if (arg2 == VKI_F_SETLKW || arg2 == VKI_F_SETLKW64)
       tst->sys_flags |= MayBlock;
 }
 
-POST(fcntl64)
+POSTx(sys_fcntl64)
 {
    if (arg2 == VKI_F_DUPFD) {
       if (!fd_allowed(res, "fcntl64(DUPFD)", tid, True)) {
@@ -2323,29 +2327,31 @@ PREx(sys_truncate64, MayBlock)
 }
 
 
-PRE(getdents)
+PREx(sys_getdents, MayBlock)
 {
-   /* int getdents(unsigned int fd, struct dirent *dirp, 
-      unsigned int count); */
-   PRINT("getdents ( %d, %p, %d )",arg1,arg2,arg3);
+   PRINT("sys_getdents ( %d, %p, %d )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "getdents",
+                 unsigned int, fd, struct linux_dirent *, dirp,
+                 unsigned int, count);
    PRE_MEM_WRITE( "getdents(dirp)", arg2, arg3 );
 }
 
-POST(getdents)
+POSTx(sys_getdents)
 {
    if (res > 0)
       POST_MEM_WRITE( arg2, res );
 }
 
-PRE(getdents64)
+PREx(sys_getdents64, MayBlock)
 {
-   /* int getdents(unsigned int fd, struct dirent64 *dirp, 
-      unsigned int count); */
    PRINT("getdents64 ( %d, %p, %d )",arg1,arg2,arg3);
+   PRE_REG_READ3(long, "getdents64",
+                 unsigned int, fd, struct linux_dirent64 *, dirp,
+                 unsigned int, count);
    PRE_MEM_WRITE( "getdents64(dirp)", arg2, arg3 );
 }
 
-POST(getdents64)
+POSTx(sys_getdents64)
 {
    if (res > 0)
       POST_MEM_WRITE( arg2, res );
@@ -4507,17 +4513,17 @@ PRE(mmap)
    }
 }
 
-PRE(mprotect)
+PREx(sys_mprotect, 0)
 {
-   /* int mprotect(const void *addr, size_t len, int prot); */
-   /* should addr .. addr+len-1 be checked before the call? */
-   PRINT("mprotect ( %p, %llu, %d )", arg1,(ULong)arg2,arg3);
+   PRINT("sys_mprotect ( %p, %llu, %d )", arg1,(ULong)arg2,arg3);
+   PRE_REG_READ3(long, "mprotect",
+                 unsigned long, addr, vki_size_t, len, unsigned long, prot);
 
    if (!valid_client_addr(arg1, arg2, tid, "mprotect"))
       set_result( -VKI_ENOMEM );
 }
 
-POST(mprotect)
+POSTx(sys_mprotect)
 {
    Addr a    = arg1;
    SizeT len = arg2;
@@ -4531,17 +4537,16 @@ POST(mprotect)
    VG_TRACK( change_mem_mprotect, a, len, rr, ww, xx );
 }
 
-PRE(munmap)
+PREx(sys_munmap, 0)
 {
-   /* int munmap(void *start, size_t length); */
-   /* should start .. start+length-1 be checked before the call? */
-   PRINT("munmap ( %p, %llu )", arg1,(ULong)arg2);
+   PRINT("sys_munmap ( %p, %llu )", arg1,(ULong)arg2);
+   PRE_REG_READ2(long, "munmap", unsigned long, start, vki_size_t, length);
 
    if (!valid_client_addr(arg1, arg2, tid, "munmap"))
       set_result( -VKI_EINVAL );
 }
 
-POST(munmap)
+POSTx(sys_munmap)
 {
    Addr  a   = arg1;
    SizeT len = arg2;
@@ -6392,7 +6397,7 @@ static const struct sys_info sys_info[] = {
    //   (__NR_readdir,          old_readdir),      // 89 () L -- superseded
 
    SYSB_(__NR_mmap,             old_mmap, Special), // 90  old_mmap
-   SYSBA(__NR_munmap,           sys_munmap, 0),    // 91 *
+   SYSXY(__NR_munmap,           sys_munmap),       // 91 * P
    SYSX_(__NR_truncate,         sys_truncate),     // 92 * P
    SYSX_(__NR_ftruncate,        sys_ftruncate),    // 93 * P
    SYSB_(__NR_fchmod,           sys_fchmod, 0),    // 94 *
@@ -6433,7 +6438,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(__NR_modify_ldt,       sys_modify_ldt, Special), // 123 (x86,amd64) L
    SYSBA(__NR_adjtimex,         sys_adjtimex, 0),  // 124 *
 
-   SYSBA(__NR_mprotect,         sys_mprotect, 0),  // 125 *
+   SYSXY(__NR_mprotect,         sys_mprotect),     // 125 * P
    SYSBA(__NR_sigprocmask,      sys_sigprocmask, SIG_SIM), // 126 *
    // Nb: create_module() was removed 2.4-->2.6
    SYSX_(__NR_create_module,    sys_ni_syscall),   // 127 * P -- unimplemented
@@ -6454,10 +6459,10 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_setfsgid,         sys_setfsgid16),   // 139 ## L
 
    SYSBA(__NR__llseek,          sys_llseek, 0),    // 140 *
-   SYSBA(__NR_getdents,         sys_getdents, MayBlock), // 141 *
+   SYSXY(__NR_getdents,         sys_getdents),     // 141 * (SVr4,SVID)
    SYSX_(__NR__newselect,       sys_select),       // 142 * (4.4BSD...)
-   SYSB_(__NR_flock,            sys_flock, MayBlock), // 143 *
-   SYSB_(__NR_msync,            sys_msync, MayBlock),   // 144 *
+   SYSX_(__NR_flock,            sys_flock),        // 143 * (4.4BSD...)
+   SYSX_(__NR_msync,            sys_msync),        // 144 * P
 
    SYSBA(__NR_readv,            sys_readv, MayBlock), // 145 *
    SYSB_(__NR_writev,           sys_writev, MayBlock), // 146 *
@@ -6465,9 +6470,9 @@ static const struct sys_info sys_info[] = {
    SYSB_(__NR_fdatasync,        sys_fdatasync, MayBlock),   // 148 *
    SYSBA(__NR__sysctl,          sys_sysctl, 0),    // 149 *
 
-   SYSB_(__NR_mlock,            sys_mlock, MayBlock), // 150 *
-   SYSB_(__NR_munlock,          sys_unlock, MayBlock), // 151 *
-   SYSB_(__NR_mlockall,         sys_mlockall, MayBlock), // 152 *
+   SYSX_(__NR_mlock,            sys_mlock),        // 150 * P
+   SYSX_(__NR_munlock,          sys_munlock),      // 151 * P
+   SYSX_(__NR_mlockall,         sys_mlockall),     // 152 * P
    SYSX_(__NR_munlockall,       sys_munlockall),   // 153 * P
    SYSBA(__NR_sched_setparam,   sys_sched_setparam, 0/*???*/), // 154 *
 
@@ -6480,7 +6485,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(__NR_sched_get_priority_min,sys_sched_get_priority_min, 0/*???*/), // 160 *
    //   (__NR_sched_rr_get_interval,   sys_sched_rr_get_interval), // 161 *
    SYSBA(__NR_nanosleep,        sys_nanosleep, MayBlock|PostOnFail), // 162 *
-   SYSB_(__NR_mremap,           sys_mremap, Special), // 163  *
+   SYSX_(__NR_mremap,           sys_mremap),       // 163 * P
    SYSX_(__NR_setresuid,        sys_setresuid16),  // 164 ## (non-standard)
 
    SYSXY(__NR_getresuid,        sys_getresuid16),  // 165 ## L
@@ -6550,10 +6555,10 @@ static const struct sys_info sys_info[] = {
    SYSBA(__NR_mincore,          sys_mincore, 0),   // 218 *
    SYSB_(__NR_madvise,          sys_madvise, MayBlock), // 219 *
 
-   SYSBA(__NR_getdents64,       sys_getdents64, MayBlock), // 220 *
+   SYSXY(__NR_getdents64,       sys_getdents64),   // 220 * (SVr4,SVID?)
    // XXX: This wrapped in a "#if BITS_PER_LONG == 32" in
    // include/linux/syscalls.h...
-   SYSBA(__NR_fcntl64,          sys_fcntl64, 0),   // 221 *
+   SYSXY(__NR_fcntl64,          sys_fcntl64),      // 221 * P?
    // Nb: 222 is reserved for TUX (whatever that means --njn)
    SYSX_(222,                   sys_ni_syscall),   // 222 * P -- reserved
    SYSX_(223,                   sys_ni_syscall),   // 223 * P -- unused

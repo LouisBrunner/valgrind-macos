@@ -366,9 +366,9 @@ int main(void)
  //GO(__NR_mmap, ".s .m");
  //SY(__NR_mmap);
 
-   // __NR_munmap 91
- //GO(__NR_munmap, ".s .m");
- //SY(__NR_munmap);
+   // __NR_munmap 91 --> sys_munmap()
+   GO(__NR_munmap, "2s 0m");
+   SY(__NR_munmap, x0, x0);
 
    // __NR_truncate 92 --> sys_truncate()
    GO(__NR_truncate, "2s 1m");
@@ -501,9 +501,9 @@ int main(void)
  //GO(__NR_adjtimex, ".s .m");
  //SY(__NR_adjtimex);
 
-   // __NR_mprotect 125
- //GO(__NR_mprotect, ".s .m");
- //SY(__NR_mprotect);
+   // __NR_mprotect 125 --> sys_mprotect()
+   GO(__NR_mprotect, "3s 0m");
+   SY(__NR_mprotect, x0, x0, x0);
 
    // __NR_sigprocmask 126
  //GO(__NR_sigprocmask, ".s .m");
@@ -565,21 +565,21 @@ int main(void)
  //GO(__NR__llseek, ".s .m");
  //SY(__NR__llseek);
 
-   // __NR_getdents 141
- //GO(__NR_getdents, ".s .m");
- //SY(__NR_getdents);
+   // __NR_getdents 141 --> sys_getdents()
+   GO(__NR_getdents, "3s 1m");
+   SY(__NR_getdents, x0, x0, x0+1);
 
    // __NR__newselect 142 --> sys_select()
    GO(__NR__newselect, "5s 4m");
    SY(__NR__newselect, x0+8, x0+0xffffffff, x0+1, x0+1, x0+1);
 
    // __NR_flock 143
- //GO(__NR_flock, ".s .m");
- //SY(__NR_flock);
+   GO(__NR_flock, "2s 0m");
+   SY(__NR_flock, x0, x0);
 
-   // __NR_msync 144
- //GO(__NR_msync, ".s .m");
- //SY(__NR_msync);
+   // __NR_msync 144 --> sys_msync()
+   GO(__NR_msync, "3s 0m");
+   SY(__NR_msync, x0, x0, x0);
 
    // __NR_readv 145
  //GO(__NR_readv, ".s .m");
@@ -601,17 +601,17 @@ int main(void)
  //GO(__NR__sysctl, ".s .m");
  //SY(__NR__sysctl);
 
-   // __NR_mlock 150
- //GO(__NR_mlock, ".s .m");
- //SY(__NR_mlock);
+   // __NR_mlock 150 --> sys_mlock()
+   GO(__NR_mlock, "2s 0m");
+   SY(__NR_mlock, x0, x0);
 
-   // __NR_munlock 151
- //GO(__NR_munlock, ".s .m");
- //SY(__NR_munlock);
+   // __NR_munlock 151 --> sys_munlock()
+   GO(__NR_munlock, "2s 0m");
+   SY(__NR_munlock, x0, x0);
 
-   // __NR_mlockall 152
- //GO(__NR_mlockall, ".s .m");
- //SY(__NR_mlockall);
+   // __NR_mlockall 152 --> sys_mlockall()
+   GO(__NR_mlockall, "2s 0m");
+   SY(__NR_mlockall);
 
    // __NR_munlockall 153 --> sys_munlockall()
    GO(__NR_munlockall, "0e");
@@ -881,9 +881,9 @@ int main(void)
  //GO(__NR_madvise, ".s .m");
  //SY(__NR_madvise);
 
-   // __NR_getdents64 220
- //GO(__NR_getdents64, ".s .m");
- //SY(__NR_getdents64);
+   // __NR_getdents64 220 --> sys_getdents64
+   GO(__NR_getdents64, "3s 1m");
+   SY(__NR_getdents64, x0, x0, x0+1);
 
    // __NR_fcntl64 221
  //GO(__NR_fcntl64, ".s .m");

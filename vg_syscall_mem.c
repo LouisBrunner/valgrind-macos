@@ -1603,6 +1603,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                   make_readable ( arg3, VKI_SIZEOF_STRUCT_TERMIO );
                break;
             case TCSBRK:
+            case TCXONC:
             case TCSBRKP:
             case TCFLSH:
                /* These just take an int by value */

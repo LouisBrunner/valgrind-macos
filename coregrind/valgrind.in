@@ -31,7 +31,6 @@
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 VALGRIND="@libdir@/valgrind"
-nptl_threading="@NPTL_THREADING@"
 
 # Other stuff ...
 version="@VERSION@"
@@ -105,9 +104,9 @@ export VG_ARGS
 # tell the dynamic loader to disable this interface using
 # an environment variable.
 
-if [ z"$nptl_threading" = zyes ]; then
-   LD_ASSUME_KERNEL=2.2.5
-   export LD_ASSUME_KERNEL 
+if getconf GNU_LIBPTHREAD_VERSION | grep -qi NPTL 2>/dev/null; then
+   LD_ASSUME_KERNEL=2.4.1
+   export LD_ASSUME_KERNEL
 fi
 
 which_prog="`which $1`"

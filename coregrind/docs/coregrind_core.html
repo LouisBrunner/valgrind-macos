@@ -1,7 +1,7 @@
 
 
 <a name="core"></a>
-<h2>2&nbsp; Using and understanding the valgrind core services</h2>
+<h2>2&nbsp; Using and understanding the Valgrind core services</h2>
 
 This section describes the core services, flags and behaviours.  That
 means it is relevant regardless of what particular skin you are using.
@@ -81,7 +81,7 @@ suppression applies to.
 
 
 
-<a name="starta"></a>
+<a name="started"></a>
 <h3>2.2&nbsp; Getting started</h3>
 
 First off, consider whether it might be beneficial to recompile your
@@ -89,7 +89,7 @@ application and supporting libraries with debugging info enabled (the
 <code>-g</code> flag).  Without debugging info, the best valgrind
 will be able to do is guess which function a particular piece of code
 belongs to, which makes both error messages and profiling output
-nearly useless.  With <code>-g</code>, you'll potentially get messages
+nearly useless.  With <code>-g</code>, you'll hopefully get messages
 which point directly to the relevant source code lines.
 
 <p>
@@ -100,7 +100,7 @@ or some other debugger.
 
 <p>
 This paragraph applies only if you plan to use the memcheck
-skin (which is the default).  On rare occasions, optimisation levels
+skin (which is the default): On rare occasions, optimisation levels
 at <code>-O2</code> and above have been observed to generate code which
 fools memcheck into wrongly reporting uninitialised value
 errors.  We have looked in detail into fixing this, and unfortunately 
@@ -121,21 +121,20 @@ although the majority of effort will naturally enough go into the
 newer DWARF2 reader.
 
 <p>
-Then just run your application, but place <code>valgrind
---skin=the-selected-skin</code> in front of your usual command-line
-invokation.  Note that you should run the real (machine-code)
-executable here.  If your application is started by, for example, a
-shell or perl script, you'll need to modify it to invoke Valgrind on
-the real executables.  Running such scripts directly under Valgrind
-will result in you getting error reports pertaining to
-<code>/bin/sh</code>, <code>/usr/bin/perl</code>, or whatever
-interpreter you're using.  This almost certainly isn't what you want
-and can be confusing.  You can probably force the issue by 
-giving the flag <code>--trace-children=yes</code>, but confusion is
-still highly likely.
+When you're ready to roll, just run your application as you would
+normally, but place <code>valgrind --skin=the-selected-skin</code> in
+front of your usual command-line invokation.  Note that you should run
+the real (machine-code) executable here.  If your application is
+started by, for example, a shell or perl script, you'll need to modify
+it to invoke Valgrind on the real executables.  Running such scripts
+directly under Valgrind will result in you getting error reports
+pertaining to <code>/bin/sh</code>, <code>/usr/bin/perl</code>, or
+whatever interpreter you're using.  This may not be what you want and
+can be confusing.  You can force the issue by giving the flag
+<code>--trace-children=yes</code>, but confusion is still likely.
 
 
-<a name="core-comment"></a>
+<a name="comment"></a>
 <h3>2.3&nbsp; The commentary</h3>
 
 Valgrind writes a commentary, a stream of text, detailing error
@@ -345,7 +344,7 @@ number of times it got used.  Here's the suppressions used by a run of
 
 
 <a name="flags"></a>
-<h3>2.6&nbsp; Command-line flags for the valgrind core</h3>
+<h3>2.6&nbsp; Command-line flags for the Valgrind core</h3>
 
 
 As mentioned above, valgrind's core accepts a common set of flags.
@@ -705,8 +704,12 @@ shouldn't need to use them in the normal run of things.  Nevertheless:
 
 
 <a name="clientreq"></a>
-<h3>2.8&nbsp; The Client Request mechanism</h3>
+<h3>2.7&nbsp; The Client Request mechanism</h3>
 
+(NOTE 20021117: this subsection is illogical here now; it jumbles up
+core and skin issues.  To be fixed.).
+
+<p>
 Valgrind has a trapdoor mechanism via which the client program can
 pass all manner of requests and queries to Valgrind.  Internally, this
 is used extensively to make malloc, free, signals, threads, etc, work,
@@ -814,7 +817,7 @@ A brief description of the available macros:
 
 
 <a name="pthreads"></a>
-<h3>2.9&nbsp; Support for POSIX Pthreads</h3>
+<h3>2.8&nbsp; Support for POSIX Pthreads</h3>
 
 As of late April 02, Valgrind supports programs which use POSIX
 pthreads.  Doing this has proved technically challenging but is now
@@ -870,6 +873,27 @@ RedHat 7.2 box: Opera 6.0Beta2, KNode in KDE 3.0, Mozilla-0.9.2.1 and
 Galeon-0.11.3, both as supplied with RedHat 7.2.  Also Mozilla 1.0RC2.
 OpenOffice 1.0.  MySQL 3.something (the current stable release).
 
+
+
+
+<a name="signals"></a>
+<h3>2.9&nbsp; Handling of signals</h3>
+
+Valgrind provides suitable handling of signals, so, provided you stick
+to POSIX stuff, you should be ok.  Basic sigaction() and sigprocmask()
+are handled.  Signal handlers may return in the normal way or do
+longjmp(); both should work ok.  As specified by POSIX, a signal is
+blocked in its own handler.  Default actions for signals should work
+as before.  Etc, etc.
+
+<p>Under the hood, dealing with signals is a real pain, and Valgrind's
+simulation leaves much to be desired.  If your program does
+way-strange stuff with signals, bad things may happen.  If so, let me
+know.  I don't promise to fix it, but I'd at least like to be aware of
+it.
+
+
+
 <a name="install"></a>
 <h3>2.10&nbsp; Building and installing</h3>
 
@@ -917,31 +941,13 @@ of these breaks, please mail me!
 wrote off the end of a malloc'd block, or before its beginning.
 Valgrind should have emitted a proper message to that effect before
 dying in this way.  This is a known problem which I should fix.
+
 <p>
-
-<hr width="100%">
-
-
-<a name="signals"></a>
-<h3>3.4&nbsp; Signals</h3>
-
-Valgrind provides suitable handling of signals, so, provided you stick
-to POSIX stuff, you should be ok.  Basic sigaction() and sigprocmask()
-are handled.  Signal handlers may return in the normal way or do
-longjmp(); both should work ok.  As specified by POSIX, a signal is
-blocked in its own handler.  Default actions for signals should work
-as before.  Etc, etc.
-
-<p>Under the hood, dealing with signals is a real pain, and Valgrind's
-simulation leaves much to be desired.  If your program does
-way-strange stuff with signals, bad things may happen.  If so, let me
-know.  I don't promise to fix it, but I'd at least like to be aware of
-it.
-
-
+Read the file <code>FAQ.txt</code> in the source distribution, for
+more advice about common problems, crashes, etc.
 
 <a name="limits"></a>
-<h2>4&nbsp; Limitations</h2>
+<h3>2.12&nbsp; Limitations</h3>
 
 The following list of limitations seems depressingly long.  However,
 most programs actually work fine.
@@ -968,12 +974,12 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       badly.</li><br>
       <p>
 
-  <li>Valgrind assumes that the floating point registers are not used
-      as intermediaries in memory-to-memory copies, so it immediately
-      checks V bits in floating-point loads/stores.  If you want to
-      write code which copies around possibly-uninitialised values,
-      you must ensure these travel through the integer registers, not
-      the FPU.</li><br>
+  <li>The memcheck skin assumes that the floating point registers are
+      not used as intermediaries in memory-to-memory copies, so it
+      immediately checks definedness of values loaded from memory by
+      floating-point loads.  If you want to write code which copies
+      around possibly-uninitialised values, you must ensure these
+      travel through the integer registers, not the FPU.</li><br>
       <p>
 
   <li>If your program does its own memory management, rather than
@@ -996,8 +1002,7 @@ a kernel 2.2.X or 2.4.X system, subject to the following constraints:
       large change in %esp is as a result of the program switching
       stacks, or merely allocating a large object temporarily on the
       current stack -- yet Valgrind needs to handle the two situations
-      differently.  1 May 02: this probably interacts badly with the
-      new pthread support.  I haven't checked properly.</li><br>
+      differently.</li><br>
       <p>
 
   <li>x86 instructions, and system calls, have been implemented on
@@ -1050,35 +1055,20 @@ Known platform-specific limitations, as of release 1.0.0:
       and I can't reproduce it on my test RedHat 7.3 system.  Please
       mail me if you have more information / understanding.  </li><br>
       <p>
-  <li>
-      1.0.0 now partially works on Red Hat 7.3.92 ("Limbo"
-      public beta).  However, don't expect a smooth ride.
-      Basically valgrind won't work as-is with any 
-      glibc-2.3 based system.  Limbo is just a little pre glibc-2.3 
-      and it just about works.  Limbo is also gcc-3.1 based and so
-      suffers from the problems in the following point.</li><br>
-      <p>
-  <li>
-      Inlining of string functions with gcc-3.1 or above causes a
-      large number of false reports of uninitialised value uses.  I
-      know what the problem is and roughly how to fix it, but I need
-      to devise a reasonably efficient fix.  Try to reduce the
-      optimisation level, or use <code>-fno-builtin-strlen</code> in
-      the meantime.  Or use an earlier gcc.</li><br>
-      <p>
 </ul>
 
 
-<p><hr width="100%">
 
-
-<a name="howitworks"></a>
-<h2>5&nbsp; How it works -- a rough overview</h2>
+<a name="howworks"></a>
+<h3>2.13&nbsp; How it works -- a rough overview</h3>
 Some gory details, for those with a passion for gory details.  You
 don't need to read this section if all you want to do is use Valgrind.
+What follows is an outline of the machinery.  A more detailed
+(and somewhat out of date) description is to be found
+<A HREF="mc_techdocs.html">here</A>.
 
 <a name="startb"></a>
-<h3>5.1&nbsp; Getting started</h3>
+<h4>2.13.1&nbsp; Getting started</h4>
 
 Valgrind is compiled into a shared object, valgrind.so.  The shell
 script valgrind sets the LD_PRELOAD environment variable to point to
@@ -1116,7 +1106,7 @@ significantly less difficult) to debug the synthetic CPU.
 
 
 <a name="engine"></a>
-<h3>5.2&nbsp; The translation/instrumentation engine</h3>
+<h4>2.13.2&nbsp; The translation/instrumentation engine</h4>
 
 Valgrind does not directly run any of the original program's code.  Only
 instrumented translations are run.  Valgrind maintains a translation
@@ -1172,7 +1162,7 @@ scheme.  The translation cache has a default size of about 14MB.
 
 <a name="track"></a>
 
-<h3>5.3&nbsp; Tracking the status of memory</h3> Each byte in the
+<h4>2.13.3&nbsp; Tracking the status of memory</h4> Each byte in the
 process' address space has nine bits associated with it: one A bit and
 eight V bits.  The A and V bits for each byte are stored using a
 sparse array, which flexibly and efficiently covers arbitrary parts of
@@ -1184,14 +1174,14 @@ the gory details.
 
 <a name="sys_calls"></a>
 
-<h3>5.4 System calls</h3>
+<h4>2.13.4 System calls</h4>
 All system calls are intercepted.  The memory status map is consulted
 before and updated after each call.  It's all rather tiresome.  See
-vg_syscall_mem.c for details.
+coregrind/vg_syscalls.c for details.
 
 <a name="sys_signals"></a>
 
-<h3>5.5&nbsp; Signals</h3>
+<h4>2.13.5&nbsp; Signals</h4>
 All system calls to sigaction() and sigprocmask() are intercepted.  If
 the client program is trying to set a signal handler, Valgrind makes a
 note of the handler address and which signal it is for.  Valgrind then
@@ -1223,13 +1213,14 @@ the simulated CPU, not the real one.  This involves considerable
 gruesome fakery; see vg_signals.c for details.
 <p>
 
-<hr width="100%">
+
 
 <a name="example"></a>
-<h2>6&nbsp; Example</h2>
-This is the log for a run of a small program. The program is in fact
-correct, and the reported error is as the result of a potentially serious
-code generation bug in GNU g++ (snapshot 20010527).
+<h3>2.14&nbsp; An example run</h3>
+This is the log for a run of a small program using the memcheck
+skin. The program is in fact correct, and the reported error is as the
+result of a potentially serious code generation bug in GNU g++
+(snapshot 20010527).
 <pre>
 sewardj@phoenix:~/newmat10$
 ~/Valgrind-6/valgrind -v ./bogon 
@@ -1268,3 +1259,68 @@ sewardj@phoenix:~/newmat10$
 </body>
 </html>
 
+
+<h2>Misc text looking for a home</h2>
+
+<h4>2.6.6&nbsp; Warning messages you might see</h4>
+
+Most of these only appear if you run in verbose mode (enabled by
+<code>-v</code>):
+<ul>
+<li> <code>More than 50 errors detected.  Subsequent errors
+     will still be recorded, but in less detail than before.</code>
+     <br>
+     After 50 different errors have been shown, Valgrind becomes 
+     more conservative about collecting them.  It then requires only 
+     the program counters in the top two stack frames to match when
+     deciding whether or not two errors are really the same one.
+     Prior to this point, the PCs in the top four frames are required
+     to match.  This hack has the effect of slowing down the
+     appearance of new errors after the first 50.  The 50 constant can
+     be changed by recompiling Valgrind.
+<p>
+<li> <code>More than 300 errors detected.  I'm not reporting any more.
+     Final error counts may be inaccurate.  Go fix your
+     program!</code>
+     <br>
+     After 300 different errors have been detected, Valgrind ignores
+     any more.  It seems unlikely that collecting even more different
+     ones would be of practical help to anybody, and it avoids the
+     danger that Valgrind spends more and more of its time comparing
+     new errors against an ever-growing collection.  As above, the 300
+     number is a compile-time constant.
+<p>
+<li> <code>Warning: client switching stacks?</code>
+     <br>
+     Valgrind spotted such a large change in the stack pointer, %esp,
+     that it guesses the client is switching to a different stack.
+     At this point it makes a kludgey guess where the base of the new
+     stack is, and sets memory permissions accordingly.  You may get
+     many bogus error messages following this, if Valgrind guesses
+     wrong.  At the moment "large change" is defined as a change of
+     more that 2000000 in the value of the %esp (stack pointer)
+     register.
+<p>
+<li> <code>Warning: client attempted to close Valgrind's logfile fd &lt;number>
+     </code>
+     <br>
+     Valgrind doesn't allow the client
+     to close the logfile, because you'd never see any diagnostic
+     information after that point.  If you see this message,
+     you may want to use the <code>--logfile-fd=&lt;number></code> 
+     option to specify a different logfile file-descriptor number.
+     Or 
+<p>
+<li> <code>Warning: noted but unhandled ioctl &lt;number></code>
+     <br>
+     Valgrind observed a call to one of the vast family of
+     <code>ioctl</code> system calls, but did not modify its
+     memory status info (because I have not yet got round to it).
+     The call will still have gone through, but you may get spurious
+     errors after this as a result of the non-update of the memory info.
+<p>
+<li> <code>Warning: set address range perms: large range &lt;number></code>
+     <br> 
+     Diagnostic message, mostly for benefit of the valgrind
+     developers, to do with memory permissions.
+</ul>

@@ -1,10 +1,101 @@
 <html>
   <head>
-    <title>AddrCheck</title>
+    <title>Addrcheck: a lightweight memory checker</title>
   </head>
 
 <body>
-(no docs yet, sorry)
+<a name="ac-top"></a>
+<h2>5&nbsp; <b>Addrcheck</b>: a lightweight memory checker</h2>
+
+To use this skin, you must specify <code>--skin=addrcheck</code>
+on the Valgrind command line.
+
+<h3>5.1&nbsp; Kinds of bugs that Addrcheck can find</h3>
+
+Addrcheck is a simplified version of the Memcheck skin described
+in Section 3.  It is identical in every way to Memcheck, except for
+one important detail: it does not do the undefined-value checks that
+Memcheck does.  This means Addrcheck is about twice as fast as
+Memcheck, and uses less memory.  Addrcheck can detect the following
+errors:
+    <ul>
+        <li>Reading/writing memory after it has been free'd</li>
+        <li>Reading/writing off the end of malloc'd blocks</li>
+        <li>Reading/writing inappropriate areas on the stack</li>
+        <li>Memory leaks -- where pointers to malloc'd blocks are lost
+            forever</li>
+        <li>Mismatched use of malloc/new/new [] vs free/delete/delete []</li>
+        <li>Some misuses of the POSIX pthreads API</li>
+    </ul>
+    <p>
+
+<p>
+Rather than duplicate much of the Memcheck docs here (a.k.a. since I
+am a lazy b'stard), users of the Addrcheck skin are advised to read
+the section on Memcheck.  Some important points:
+<ul>
+<li>Addrcheck is exactly like Memcheck, except that all the
+   value-definedness tracking machinery has been removed.  Therefore,
+   the Memcheck documentation which discusses definedess ("V-bits") is
+   irrelevant.  The stuff on addressibility ("A-bits") is still
+   relevant.
+<p>
+<li>Addrcheck accepts the same command-line flags as Memcheck, with
+    the exception of ... (to be filled in).
+<p>
+<li>Like Memcheck, Addrcheck will do memory leak checking (internally,
+    the same code does leak checking for both skins).  The only
+    difference is how the two skins decide which memory locations
+    to consider when searching for pointers to blocks.  Memcheck will
+    only consider 4-byte aligned locations which are validly
+    addressible and which hold defined values.  Addrcheck does not
+    track definedness and so cannot apply the last, "defined value",
+    criteria.  
+    <p>
+    The result is that Addrcheck's leak checker may "discover"
+    pointers to blocks that Memcheck would not.  So it is possible
+    that Memcheck could (correctly) conclude that a block is leaked,
+    yet Addrcheck would not conclude that.
+    <p>
+    Whether or not this has any effect in practice is unknown.  I
+    suspect not, but that is mere speculation at this stage.
+</ul>
+
+<p>
+Addrcheck is, therefore, a fine-grained address checker.  All it
+really does is check each memory reference to say whether or not that
+location may validly be addressed.  Addrcheck has a memory overhead of
+one bit per byte of used address space.  In contrast, Memcheck has an
+overhead of nine bits per byte.
+
+<p>
+Due to lazyness on the part of the implementor (Julian), error
+messages from Addrcheck do not distinguish reads from writes.  So it
+will say, for example, "Invalid memory access of size 4", whereas 
+Memcheck would have said whether the access is a read or a write.
+This could easily be remedied, if anyone is particularly bothered.
+
+<p>
+Addrcheck is quite pleasant to use.  It's faster than Memcheck, and
+the lack of valid-value checks has another side effect: the errors it
+does report are relatively easy to track down, compared to the 
+tedious and often confusing search sometimes needed to find the 
+cause of uninitialised-value errors reported by Memcheck.  
+
+<p>
+Because it is faster and lighter than Memcheck, our hope is that
+Addrcheck is more suitable for less-intrusive, larger scale testing
+than is viable with Memcheck.  As of mid-November 2002, we have
+experimented with running the KDE-3.1 desktop on Addrcheck (the entire
+process tree, starting from <code>startkde</code>).  Running on a
+512MB, 1.7 GHz P4, the result is nearly usable.  The ultimate aim is
+that is fast and unintrusive enough that (eg) KDE sessions may be
+unintrusively monitored for addressing errors whilst people do real
+work with their KDE desktop.
+
+<p>
+Addrcheck is a new experiment in the Valgrind world.  We'd be
+interested to hear your feedback on it.
+
 </body>
 </html>
-

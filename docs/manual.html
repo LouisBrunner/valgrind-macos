@@ -26,7 +26,7 @@
 
 <a name="title">&nbsp;</a>
 <h1 align=center>Valgrind, version 2.0.0</h1>
-<center>This manual was last updated on 10 November 2002</center>
+<center>This manual was last updated on 17 November 2002</center>
 <p>
 
 <center>
@@ -47,45 +47,68 @@ An open-source tool for debugging and profiling Linux-x86 executables.
 <a name="contents"></a>
 <h2>Contents of this manual</h2>
 
-<h4>1&nbsp; <a href="#intro">Introduction</a></h4>
-    1.1&nbsp; <a href="#whatfor">What Valgrind is for</a><br>
-    1.2&nbsp; <a href="#whatdoes">What it does with your program</a>
+<h4>1&nbsp; <a href="coregrind_intro.html#intro">Introduction</a></h4>
+    1.1&nbsp; <a href="coregrind_intro.html#intro-overview">
+              An overview of Valgrind</a><br>
+    1.2&nbsp; <a href="coregrind_intro.html#intro-navigation">
+              How to navigate this manual</a>
+              <br>
+    1.2.1&nbsp; <a href="coregrind_intro.html#intro-migrating">
+                For users migrating from valgrind-1.0.X</a>
 
-<h4>2&nbsp; <a href="#howtouse">How to use it, and how to make sense 
-    of the results</a></h4>
-    2.1&nbsp; <a href="#starta">Getting started</a><br>
-    2.2&nbsp; <a href="#comment">The commentary</a><br>
-    2.3&nbsp; <a href="#report">Reporting of errors</a><br>
-    2.4&nbsp; <a href="#suppress">Suppressing errors</a><br>
-    2.5&nbsp; <a href="#flags">Command-line flags</a><br>
-    2.6&nbsp; <a href="#errormsgs">Explaination of error messages</a><br>
-    2.7&nbsp; <a href="#suppfiles">Writing suppressions files</a><br>
-    2.8&nbsp; <a href="#clientreq">The Client Request mechanism</a><br>
-    2.9&nbsp; <a href="#pthreads">Support for POSIX pthreads</a><br>
-    2.10&nbsp; <a href="#install">Building and installing</a><br>
-    2.11&nbsp; <a href="#problems">If you have problems</a><br>
+<h4>2&nbsp; <a href="coregrind_core.html#core">
+            Using and understanding the Valgrind core services
+            </a></h4>
+    2.1&nbsp; <a href="coregrind_core.html#core-whatdoes">
+                      What it does with your program</a><br>
+    2.2&nbsp; <a href="coregrind_core.html#started">
+                      Getting started</a><br>
+    2.3&nbsp; <a href="coregrind_core.html#comment">
+                      The commentary</a><br>
+    2.4&nbsp; <a href="coregrind_core.html#report">
+                      Reporting of errors</a><br>
+    2.5&nbsp; <a href="coregrind_core.html#suppress">
+                      Suppressing errors</a><br>
+    2.6&nbsp; <a href="coregrind_core.html#flags">
+                      Command-line flags for the Valgrind code</a><br>
+    2.7&nbsp; <a href="coregrind_core.html#clientreq">
+                      The Client Request mechanism</a><br>
+    2.8&nbsp; <a href="coregrind_core.html#pthreads">
+                      Support for POSIX pthreads</a><br>
+    2.9&nbsp; <a href="coregrind_core.html#signals">
+                      Handling of signals</a><br>
+    2.10&nbsp; <a href="coregrind_core.html#install">
+                       Building and installing</a><br>
+    2.11&nbsp; <a href="coregrind_core.html#problems">
+                        If you have problems</a><br>
+    2.12&nbsp; <a href="coregrind_core.html#limits">
+                       Limitations</a><br>
+    2.13&nbsp; <a href="coregrind_core.html#howworks">
+                       How it works -- a rough overview</a><br>
+    2.14&nbsp; <a href="coregrind_core.html#example">
+                       An example run</a><br>
 
-<h4>3&nbsp; <a href="#machine">Details of the checking machinery</a></h4>
-    3.1&nbsp; <a href="#vvalue">Valid-value (V) bits</a><br>
-    3.2&nbsp; <a href="#vaddress">Valid-address (A)&nbsp;bits</a><br>
-    3.3&nbsp; <a href="#together">Putting it all together</a><br>
-    3.4&nbsp; <a href="#signals">Signals</a><br>
-    3.5&nbsp; <a href="#leaks">Memory leak detection</a><br>
+<h4>3&nbsp; <a href="mc_main.html#mc-top">
+            Memcheck: a heavyweight memory checker</a></h4>
 
-<h4>4&nbsp; <a href="#limits">Limitations</a></h4>
+<h4>4&nbsp; <a href="cg_main.html#cg-top">
+            Cachegrind: a cache-miss profiler</a></h4>
 
-<h4>5&nbsp; <a href="#howitworks">How it works -- a rough overview</a></h4>
-    5.1&nbsp; <a href="#startb">Getting started</a><br>
-    5.2&nbsp; <a href="#engine">The translation/instrumentation engine</a><br>
-    5.3&nbsp; <a href="#track">Tracking the status of memory</a><br>
-    5.4&nbsp; <a href="#sys_calls">System calls</a><br>
-    5.5&nbsp; <a href="#sys_signals">Signals</a><br>
+<h4>5&nbsp; <a href="ac_main.html#ac-top">
+            Addrcheck: a lightweight memory checker</a></h4>
 
-<h4>6&nbsp; <a href="#example">An example</a></h4>
+<h4>6&nbsp; <a href="hg_main.html#hg-top">
+            Helgrind: a data-race detector</a></h4>
 
-<h4>7&nbsp; <a href="#cache">Cache profiling</a></h4>
+The following are not part of the user manual.  They describe internal
+details of how Valgrind works.  Reading them may rot your mind.  You
+have been warned.
 
-<h4>8&nbsp; <a href="techdocs.html">The design and implementation of Valgrind</a></h4>
+<h4>7&nbsp; <a href="mc_techdocs.html#mc-techdocs">
+            The design and implementation of Valgrind</a></h4>
+
+<h4>8&nbsp; <a href="cg_techdocs.html#cg-techdocs">
+            How Cachegrind works</a></h4>
 
 <hr width="100%">
 

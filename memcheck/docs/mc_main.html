@@ -1,38 +1,38 @@
 
----------------------------
-     
-  <li><code>--partial-loads-ok=yes</code> [the default]<br>
-      <code>--partial-loads-ok=no</code>
-      <p>Controls how Valgrind handles word (4-byte) loads from
-      addresses for which some bytes are addressible and others
-      are not.  When <code>yes</code> (the default), such loads
-      do not elicit an address error.  Instead, the loaded V bytes
-      corresponding to the illegal addresses indicate undefined, and
-      those corresponding to legal addresses are loaded from shadow 
-      memory, as usual.
-      <p>
-      When <code>no</code>, loads from partially
-      invalid addresses are treated the same as loads from completely
-      invalid addresses: an illegal-address error is issued,
-      and the resulting V bytes indicate valid data.
-      </li><br><p>
+<html>
+  <head>
+    <title>Memcheck: a heavyweight memory checker</title>
+  </head>
 
-  <li><code>--freelist-vol=&lt;number></code> [default: 1000000]
-      <p>When the client program releases memory using free (in C) or
-      delete (C++), that memory is not immediately made available for
-      re-allocation.  Instead it is marked inaccessible and placed in
-      a queue of freed blocks.  The purpose is to delay the point at
-      which freed-up memory comes back into circulation.  This
-      increases the chance that Valgrind will be able to detect
-      invalid accesses to blocks for some significant period of time
-      after they have been freed.  
-      <p>
-      This flag specifies the maximum total size, in bytes, of the
-      blocks in the queue.  The default value is one million bytes.
-      Increasing this increases the total amount of memory used by
-      Valgrind but may detect invalid uses of freed blocks which would
-      otherwise go undetected.</li><br><p>
+<a name="mc-top"></a>
+<h2>3&nbsp; <b>Memcheck</b>: a heavyweight memory checker</h2>
 
+To use this skin, you may specify <code>--skin=memcheck</code> on the
+Valgrind command line.  But you don't have to, since this is the
+default skin.
+
+<h3>3.1&nbsp; Kinds of bugs that memcheck can find</h3>
+
+Memcheck is Valgrind-1.0.X checking mechanism bundled up into a skin.
+    All reads and writes of memory are checked, and calls to
+    malloc/new/free/delete are intercepted. As a result, memcheck can
+    detect the following problems:
+    <ul>
+        <li>Use of uninitialised memory</li>
+        <li>Reading/writing memory after it has been free'd</li>
+        <li>Reading/writing off the end of malloc'd blocks</li>
+        <li>Reading/writing inappropriate areas on the stack</li>
+        <li>Memory leaks -- where pointers to malloc'd blocks are lost
+            forever</li>
+        <li>Mismatched use of malloc/new/new [] vs free/delete/delete []</li>
+        <li>Some misuses of the POSIX pthreads API</li>
+    </ul>
+    <p>
+
+
+<h3>3.2&nbsp; Command-line flags specific to memcheck</h3>
+
+<ul>
   <li><code>--leak-check=no</code> [default]<br>
       <code>--leak-check=yes</code> 
       <p>When enabled, search for memory leaks when the client program
@@ -59,7 +59,7 @@
   <li><code>--leak-resolution=low</code> [default]<br>
       <code>--leak-resolution=med</code> <br>
       <code>--leak-resolution=high</code>
-      <p>When doing leak checking, determines how willing Valgrind is
+      <p>When doing leak checking, determines how willing Memcheck is
       to consider different backtraces to be the same.  When set to
       <code>low</code>, the default, only the first two entries need
       match.  When <code>med</code>, four entries have to match.  When
@@ -73,9 +73,25 @@
       low-resolution matching.
       <p>
       Note that the <code>--leak-resolution=</code> setting does not
-      affect Valgrind's ability to find leaks.  It only changes how
+      affect Memcheck's ability to find leaks.  It only changes how
       the results are presented.
       </li><br><p>
+
+  <li><code>--freelist-vol=&lt;number></code> [default: 1000000]
+      <p>When the client program releases memory using free (in C) or
+      delete (C++), that memory is not immediately made available for
+      re-allocation.  Instead it is marked inaccessible and placed in
+      a queue of freed blocks.  The purpose is to delay the point at
+      which freed-up memory comes back into circulation.  This
+      increases the chance that Memcheck will be able to detect
+      invalid accesses to blocks for some significant period of time
+      after they have been freed.  
+      <p>
+      This flag specifies the maximum total size, in bytes, of the
+      blocks in the queue.  The default value is one million bytes.
+      Increasing this increases the total amount of memory used by
+      Memcheck but may detect invalid uses of freed blocks which would
+      otherwise go undetected.</li><br><p>
 
   <li><code>--workaround-gcc296-bugs=no</code> [default]<br>
       <code>--workaround-gcc296-bugs=yes</code> <p>When enabled,
@@ -95,20 +111,36 @@
       in g++-3.0.4.
       </li><br><p>
 
+  <li><code>--partial-loads-ok=yes</code> [the default]<br>
+      <code>--partial-loads-ok=no</code>
+      <p>Controls how Memcheck handles word (4-byte) loads from
+      addresses for which some bytes are addressible and others
+      are not.  When <code>yes</code> (the default), such loads
+      do not elicit an address error.  Instead, the loaded V bytes
+      corresponding to the illegal addresses indicate undefined, and
+      those corresponding to legal addresses are loaded from shadow 
+      memory, as usual.
+      <p>
+      When <code>no</code>, loads from partially
+      invalid addresses are treated the same as loads from completely
+      invalid addresses: an illegal-address error is issued,
+      and the resulting V bytes indicate valid data.
+      </li><br><p>
+
   <li><code>--cleanup=no</code><br>
       <code>--cleanup=yes</code> [default]
-      <p>When enabled, various improvments are applied to the
-      post-instrumented intermediate code, aimed at removing redundant
-      value checks.</li><br>
+      <p><b>This is a flag to help debug valgrind itself.  It is of no
+      use to end-users.</b> When enabled, various improvments are
+      applied to the post-instrumented intermediate code, aimed at
+      removing redundant value checks.</li><br>
       <p>
-
-
+</ul>
 
 
 <a name="errormsgs"></a>
-<h3>2.6&nbsp; Explaination of error messages</h3>
+<h3>3.3&nbsp; Explaination of error messages from Memcheck</h3>
 
-Despite considerable sophistication under the hood, Valgrind can only
+Despite considerable sophistication under the hood, Memcheck can only
 really detect two kinds of errors, use of illegal addresses, and use
 of undefined values.  Nevertheless, this is enough to help you
 discover all sorts of memory-management nasties in your code.  This
@@ -117,7 +149,7 @@ precise behaviour of the error-checking machinery is described in
 <a href="#machine">Section 4</a>.
 
 
-<h4>2.6.1&nbsp; Illegal read / Illegal write errors</h4>
+<h4>3.3.1&nbsp; Illegal read / Illegal write errors</h4>
 For example:
 <pre>
   Invalid read of size 4
@@ -129,13 +161,13 @@ For example:
 </pre>
 
 <p>This happens when your program reads or writes memory at a place
-which Valgrind reckons it shouldn't.  In this example, the program did
+which Memcheck reckons it shouldn't.  In this example, the program did
 a 4-byte read at address 0xBFFFF0E0, somewhere within the
 system-supplied library libpng.so.2.1.0.9, which was called from
 somewhere else in the same library, called from line 326 of
 qpngio.cpp, and so on.
 
-<p>Valgrind tries to establish what the illegal address might relate
+<p>Memcheck tries to establish what the illegal address might relate
 to, since that's often useful.  So, if it points into a block of
 memory which has already been freed, you'll be informed of this, and
 also where the block was free'd at.  Likewise, if it should turn out
@@ -143,22 +175,22 @@ to be just off the end of a malloc'd block, a common result of
 off-by-one-errors in array subscripting, you'll be informed of this
 fact, and also where the block was malloc'd.
 
-<p>In this example, Valgrind can't identify the address.  Actually the
+<p>In this example, Memcheck can't identify the address.  Actually the
 address is on the stack, but, for some reason, this is not a valid
 stack address -- it is below the stack pointer, %esp, and that isn't
 allowed.  In this particular case it's probably caused by gcc
 generating invalid code, a known bug in various flavours of gcc.
 
-<p>Note that Valgrind only tells you that your program is about to
+<p>Note that Memcheck only tells you that your program is about to
 access memory at an illegal address.  It can't stop the access from
 happening.  So, if your program makes an access which normally would
 result in a segmentation fault, you program will still suffer the same
-fate -- but you will get a message from Valgrind immediately prior to
+fate -- but you will get a message from Memcheck immediately prior to
 this.  In this particular example, reading junk on the stack is
 non-fatal, and the program stays alive.
 
 
-<h4>2.6.2&nbsp; Use of uninitialised values</h4>
+<h4>3.3.2&nbsp; Use of uninitialised values</h4>
 For example:
 <pre>
   Conditional jump or move depends on uninitialised value(s)
@@ -182,14 +214,14 @@ following small program:
 </pre>
 
 <p>It is important to understand that your program can copy around
-junk (uninitialised) data to its heart's content.  Valgrind observes
+junk (uninitialised) data to its heart's content.  Memcheck observes
 this and keeps track of the data, but does not complain.  A complaint
 is issued only when your program attempts to make use of uninitialised
-data.  In this example, x is uninitialised.  Valgrind observes the
+data.  In this example, x is uninitialised.  Memcheck observes the
 value being passed to _IO_printf and thence to _IO_vfprintf, but makes
 no comment.  However, _IO_vfprintf has to examine the value of x so it
 can turn it into the corresponding ASCII string, and it is at this
-point that Valgrind complains.
+point that Memcheck complains.
 
 <p>Sources of uninitialised data tend to be:
 <ul>
@@ -205,30 +237,30 @@ point that Valgrind complains.
 
 
 
-<h4>2.6.3&nbsp; Illegal frees</h4>
+<h4>3.3.3&nbsp; Illegal frees</h4>
 For example:
 <pre>
   Invalid free()
-     at 0x4004FFDF: free (ut_clientmalloc.c:577)
+     at 0x4004FFDF: free (vg_clientmalloc.c:577)
      by 0x80484C7: main (tests/doublefree.c:10)
      by 0x402A6E5E: __libc_start_main (libc-start.c:129)
      by 0x80483B1: (within tests/doublefree)
      Address 0x3807F7B4 is 0 bytes inside a block of size 177 free'd
-     at 0x4004FFDF: free (ut_clientmalloc.c:577)
+     at 0x4004FFDF: free (vg_clientmalloc.c:577)
      by 0x80484C7: main (tests/doublefree.c:10)
      by 0x402A6E5E: __libc_start_main (libc-start.c:129)
      by 0x80483B1: (within tests/doublefree)
 </pre>
-<p>Valgrind keeps track of the blocks allocated by your program with
+<p>Memcheck keeps track of the blocks allocated by your program with
 malloc/new, so it can know exactly whether or not the argument to
 free/delete is legitimate or not.  Here, this test program has
 freed the same block twice.  As with the illegal read/write errors,
-Valgrind attempts to make sense of the address free'd.  If, as
+Memcheck attempts to make sense of the address free'd.  If, as
 here, the address is one which has previously been freed, you wil
 be told that -- making duplicate frees of the same block easy to spot.
 
 
-<h4>2.6.4&nbsp; When a block is freed with an inappropriate
+<h4>3.3.4&nbsp; When a block is freed with an inappropriate
 deallocation function</h4>
 In the following example, a block allocated with <code>new[]</code>
 has wrongly been deallocated with <code>free</code>:
@@ -276,15 +308,15 @@ runtime-support libraries?] are robust to mismatch in
 <code>new[]</code>/<code>delete[]</code>.
 
 
-<h4>2.6.5&nbsp; Passing system call parameters with inadequate
+<h4>3.3.5&nbsp; Passing system call parameters with inadequate
 read/write permissions</h4>
 
-Valgrind checks all parameters to system calls.  If a system call
-needs to read from a buffer provided by your program, Valgrind checks
+Memcheck checks all parameters to system calls.  If a system call
+needs to read from a buffer provided by your program, Memcheck checks
 that the entire buffer is addressible and has valid data, ie, it is
 readable.  And if the system call needs to write to a user-supplied
-buffer, Valgrind checks that the buffer is addressible.  After the
-system call, Valgrind updates its administrative information to
+buffer, Memcheck checks that the buffer is addressible.  After the
+system call, Memcheck updates its administrative information to
 precisely reflect any changes in memory permissions caused by the
 system call.
 
@@ -318,72 +350,13 @@ system call.
 the malloc'd block to the standard output.
 
 
-<h4>2.6.6&nbsp; Warning messages you might see</h4>
-
-Most of these only appear if you run in verbose mode (enabled by
-<code>-v</code>):
-<ul>
-<li> <code>More than 50 errors detected.  Subsequent errors
-     will still be recorded, but in less detail than before.</code>
-     <br>
-     After 50 different errors have been shown, Valgrind becomes 
-     more conservative about collecting them.  It then requires only 
-     the program counters in the top two stack frames to match when
-     deciding whether or not two errors are really the same one.
-     Prior to this point, the PCs in the top four frames are required
-     to match.  This hack has the effect of slowing down the
-     appearance of new errors after the first 50.  The 50 constant can
-     be changed by recompiling Valgrind.
-<p>
-<li> <code>More than 300 errors detected.  I'm not reporting any more.
-     Final error counts may be inaccurate.  Go fix your
-     program!</code>
-     <br>
-     After 300 different errors have been detected, Valgrind ignores
-     any more.  It seems unlikely that collecting even more different
-     ones would be of practical help to anybody, and it avoids the
-     danger that Valgrind spends more and more of its time comparing
-     new errors against an ever-growing collection.  As above, the 300
-     number is a compile-time constant.
-<p>
-<li> <code>Warning: client switching stacks?</code>
-     <br>
-     Valgrind spotted such a large change in the stack pointer, %esp,
-     that it guesses the client is switching to a different stack.
-     At this point it makes a kludgey guess where the base of the new
-     stack is, and sets memory permissions accordingly.  You may get
-     many bogus error messages following this, if Valgrind guesses
-     wrong.  At the moment "large change" is defined as a change of
-     more that 2000000 in the value of the %esp (stack pointer)
-     register.
-<p>
-<li> <code>Warning: client attempted to close Valgrind's logfile fd &lt;number>
-     </code>
-     <br>
-     Valgrind doesn't allow the client
-     to close the logfile, because you'd never see any diagnostic
-     information after that point.  If you see this message,
-     you may want to use the <code>--logfile-fd=&lt;number></code> 
-     option to specify a different logfile file-descriptor number.
-<p>
-<li> <code>Warning: noted but unhandled ioctl &lt;number></code>
-     <br>
-     Valgrind observed a call to one of the vast family of
-     <code>ioctl</code> system calls, but did not modify its
-     memory status info (because I have not yet got round to it).
-     The call will still have gone through, but you may get spurious
-     errors after this as a result of the non-update of the memory info.
-<p>
-<li> <code>Warning: set address range perms: large range &lt;number></code>
-     <br> 
-     Diagnostic message, mostly for my benefit, to do with memory 
-     permissions.
-</ul>
-
 
 <a name="suppfiles"></a>
-<h3>2.7&nbsp; Writing suppressions files</h3>
+<h3>3.4&nbsp; Writing suppressions files</h3>
 
+<b>This should be moved into the core documentation section.  JRS 20021117</b>
+
+<p>
 A suppression file describes a bunch of errors which, for one reason
 or another, you don't want Valgrind to tell you about.  Usually the
 reason is that the system libraries are buggy but unfixable, at least
@@ -394,6 +367,9 @@ suppressions files are allowed.  By default, Valgrind uses
 <p>
 You can ask to add suppressions from another file, by specifying
 <code>--suppressions=/path/to/file.supp</code>.
+
+<p>
+<b>20021117: the following is out of date and should be fixed.</b>
 
 <p>Each suppression has the following components:<br>
 <ul>
@@ -497,15 +473,15 @@ styles of description within a single suppression record.
 
 
 <a name="machine"></a>
-<h2>3&nbsp; Details of the checking machinery</h2>
+<h3>3.5&nbsp; Details of Memcheck's checking machinery</h3>
 
 Read this section if you want to know, in detail, exactly what and how
-Valgrind is checking.
+Memcheck is checking.
 
 <a name="vvalue"></a>
-<h3>3.1&nbsp; Valid-value (V) bits</h3>
+<h4>3.5.1&nbsp; Valid-value (V) bits</h4>
 
-It is simplest to think of Valgrind implementing a synthetic Intel x86
+It is simplest to think of Memcheck implementing a synthetic Intel x86
 CPU which is identical to a real CPU, except for one crucial detail.
 Every bit (literally) of data processed, stored and handled by the
 real CPU has, in the synthetic CPU, an associated "valid-value" bit,
@@ -526,7 +502,7 @@ follows it around everywhere, even inside the CPU.  Yes, the CPU's
 (integer and <code>%eflags</code>) registers have their own V bit
 vectors.
 
-<p>Copying values around does not cause Valgrind to check for, or
+<p>Copying values around does not cause Memcheck to check for, or
 report on, errors.  However, when a value is used in a way which might
 conceivably affect the outcome of your program's computation, the
 associated V bits are immediately checked.  If any of these indicate
@@ -542,7 +518,7 @@ that the value is undefined, an error is reported.
   }
 </pre>
 
-<p>Valgrind emits no complaints about this, since it merely copies
+<p>Memcheck emits no complaints about this, since it merely copies
 uninitialised values from <code>a[]</code> into <code>b[]</code>, and
 doesn't use them in any way.  However, if the loop is changed to
 <pre>
@@ -553,9 +529,14 @@ doesn't use them in any way.  However, if the loop is changed to
      printf("hello there\n");
 </pre>
 then Valgrind will complain, at the <code>if</code>, that the
-condition depends on uninitialised values.
+condition depends on uninitialised values.  Note that it
+<b>doesn't</b> complain at the <code>j += a[i];</code>, since 
+at that point the undefinedness is not "observable".  It's only
+when a decision has to be made as to whether or not to do the
+<code>printf</code> -- an observable action of your program -- that
+Memcheck complains.
 
-<p>Most low level operations, such as adds, cause Valgrind to 
+<p>Most low level operations, such as adds, cause Memcheck to 
 use the V bits for the operands to calculate the V bits for the
 result.  Even if the result is partially or wholly undefined,
 it does not complain.
@@ -586,7 +567,7 @@ like this:
 
 <p>The question to ask is: how large is <code>struct S</code>, in
 bytes?  An int is 4 bytes and a char one byte, so perhaps a struct S
-occupies 5 bytes?  Wrong.  All (non-toy) compilers I know of will
+occupies 5 bytes?  Wrong.  All (non-toy) compilers we know of will
 round the size of <code>struct S</code> up to a whole number of words,
 in this case 8 bytes.  Not doing this forces compilers to generate
 truly appalling code for subscripting arrays of <code>struct
@@ -595,7 +576,7 @@ S</code>'s.
 <p>So s1 occupies 8 bytes, yet only 5 of them will be initialised.
 For the assignment <code>s2 = s1</code>, gcc generates code to copy
 all 8 bytes wholesale into <code>s2</code> without regard for their
-meaning.  If Valgrind simply checked values as they came out of
+meaning.  If Memcheck simply checked values as they came out of
 memory, it would yelp every time a structure assignment like this
 happened.  So the more complicated semantics described above is
 necessary.  This allows gcc to copy <code>s1</code> into
@@ -606,7 +587,7 @@ if the uninitialised values are later used.
 pass through the CPU's integer registers without complaint.  It does
 this by giving the integer registers V tags, passing these around in
 the expected way.  This complicated and computationally expensive to
-do, but is necessary.  Valgrind is more simplistic about
+do, but is necessary.  Memcheck is more simplistic about
 floating-point loads and stores.  In particular, V bits for data read
 as a result of floating-point loads are checked at the load
 instruction.  So if your program uses the floating-point registers to
@@ -615,9 +596,9 @@ uninitialised values.  Fortunately, I have not yet encountered a
 program which (ab)uses the floating-point registers in this way.
 
 <a name="vaddress"></a>
-<h3>3.2&nbsp; Valid-address (A) bits</h3>
+<h4>3.5.2&nbsp; Valid-address (A) bits</h4>
 
-Notice that the previous section describes how the validity of values
+Notice that the previous subsection describes how the validity of values
 is established and maintained without having to say whether the
 program does or does not have the right to access any particular
 memory location.  We now consider the latter issue.
@@ -630,7 +611,7 @@ that location.  It does not give any indication of the validity or the
 data at that location -- that's the job of the V bits -- only whether
 or not the location may be accessed.
 
-<p>Every time your program reads or writes memory, Valgrind checks the
+<p>Every time your program reads or writes memory, Memcheck checks the
 A bits associated with the address.  If any of them indicate an
 invalid address, an error is emitted.  Note that the reads and writes
 themselves do not change the A bits, only consult them.
@@ -671,8 +652,8 @@ themselves do not change the A bits, only consult them.
 
 
 <a name="together"></a>
-<h3>3.3&nbsp; Putting it all together</h3>
-Valgrind's checking machinery can be summarised as follows:
+<h4>3.5.3&nbsp; Putting it all together</h4>
+Memcheck's checking machinery can be summarised as follows:
 
 <ul>
   <li>Each byte in memory has 8 associated V (valid-value) bits,
@@ -744,7 +725,7 @@ Valgrind's checking machinery can be summarised as follows:
       </li><br>
 </ul>
 
-Valgrind intercepts calls to malloc, calloc, realloc, valloc,
+Memcheck intercepts calls to malloc, calloc, realloc, valloc,
 memalign, free, new and delete.  The behaviour you get is:
 
 <ul>
@@ -781,15 +762,15 @@ memalign, free, new and delete.  The behaviour you get is:
 
 
 <a name="leaks"></a>
-<h3>3.5&nbsp; Memory leak detection</h3>
+<h3>3.6&nbsp; Memory leak detection</h3>
 
-Valgrind keeps track of all memory blocks issued in response to calls
+Memcheck keeps track of all memory blocks issued in response to calls
 to malloc/calloc/realloc/new.  So when the program exits, it knows
 which blocks are still outstanding -- have not been returned, in other
 words.  Ideally, you want your program to have no blocks still in use
 at exit.  But many programs do.
 
-<p>For each such block, Valgrind scans the entire address space of the
+<p>For each such block, Memcheck scans the entire address space of the
 process, looking for pointers to the block.  One of three situations
 may result:
 
@@ -802,7 +783,7 @@ may result:
 
   <li>A pointer to the interior of the block is found.  The pointer
       might originally have pointed to the start and have been moved
-      along, or it might be entirely unrelated.  Valgrind deems such a
+      along, or it might be entirely unrelated.  Memcheck deems such a
       block as "dubious", that is, possibly leaked,
       because it's unclear whether or
       not a pointer to it still exists.</li><br>
@@ -816,15 +797,14 @@ may result:
       program.</li>
 </ul>
 
-Valgrind reports summaries about leaked and dubious blocks.
+Memcheck reports summaries about leaked and dubious blocks.
 For each such block, it will also tell you where the block was
 allocated.  This should help you figure out why the pointer to it has
 been lost.  In general, you should attempt to ensure your programs do
 not have any leaked or dubious blocks at exit.
 
-<p>The precise area of memory in which Valgrind searches for pointers
+<p>The precise area of memory in which Memcheck searches for pointers
 is: all naturally-aligned 4-byte words for which all A bits indicate
 addressibility and all V bits indicated that the stored value is
 actually valid.
 
-<p><hr width="100%">

@@ -6,7 +6,7 @@
 <a name="intro-overview"></a>
 <h3>1.1&nbsp; An overview of Valgrind</h3>
 
-Valgrind is a flexible tool for profiling and debugging Linux-x86
+Valgrind is a flexible tool for debugging and profiling Linux-x86
 executables.  The tool consists of a core, which provides a synthetic
 x86 CPU in software, and a series of "skins", each of which is a
 debugging or profiling tool.  The architecture is modular, so that new
@@ -20,7 +20,7 @@ are:
 <ul>
 <li>The <b>memcheck</b> skin detects memory-management problems in
     your programs.  It provides services identical to those supplied
-    by the valgrind-1.0.X series.  Memcheck is basically
+    by the valgrind-1.0.X series.  Memcheck is essentially
     valgrind-1.0.X packaged up into a skin.
     <p>
     All reads and writes of memory are checked, and calls to
@@ -46,14 +46,14 @@ are:
     the I1, D1 and L2 caches in your CPU and so can accurately
     pinpoint the sources of cache misses in your code.  If you desire,
     it will show the number of cache misses, memory references and
-    instructions accrueing to each line of source code, with
+    instructions accruing to each line of source code, with
     per-function, per-module and whole-program summaries.  If you ask
     really nicely it will even show counts for each individual x86
     instruction.
     <p>
     Cachegrind auto-detects your machine's cache configuration
     using the <code>CPUID</code> instruction, and so needs no further
-    config info, in most cases.
+    configuration info, in most cases.
     <p>
     Cachegrind is nicely complemented by Josef Weidendorfer's
     amazing KCacheGrind visualisation tool (<A
@@ -89,7 +89,7 @@ are:
 <p>
 <li><b>helgrind</b> is a new debugging skin, designed to find data
     races in multithreaded programs.  What helgrind looks for
-    is memory locations which are accessed by more than on (POSIX
+    is memory locations which are accessed by more than one (POSIX
     p-)thread, but for which no consistently used (pthread_mutex_)lock
     can be found.  Such locations are indicative of missing
     synchronisation between threads, and could cause hard-to-find
@@ -145,9 +145,9 @@ core, how to use it, and the flags it supports.
 
 <p>
 The skins each have their own chapters in this manual.  You only need
-to read the documentation for the skin(s) you actually use, although
-you may find it helpful to be at least a little bit familar with what
-all skins do.
+to read the documentation for the core services and for the skin(s)
+you actually use, although you may find it helpful to be at least a
+little bit familar with what all skins do.
 
 <p>
 If you're new to all this, you're most likely to be using the Memcheck
@@ -156,13 +156,15 @@ this page, and the section Memcheck.
 
 <p>
 Be aware that the core understands some command line flags, and the
-skins then have their own flags which they know about.  This means
+skins have their own flags which they know about.  This means
 there is no central place describing all the flags that are accepted
--- you have to read the flags documentation both for valgrind's core
-(below) and for the skin you want to use.
+-- you have to read the flags documentation both for 
+<A HREF="coregrind_core.html#core">valgrind's core</A>
+and for the skin you want to use.
 
 <p>
-<h4>For users migrating from valgrind-1.0.X</h4>
+<a name="intro-migrating"></a>
+<h4>1.2.1&nbsp; For users migrating from valgrind-1.0.X</h4>
 <p>
 Valgrind-2.0.X is a major redesign of the 1.0.X series.  You should at
 least be familiar with the concept of the new core/skin division,

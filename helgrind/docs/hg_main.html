@@ -1,46 +1,15 @@
+
 <html>
   <head>
-    <style type="text/css">
-      body      { background-color: #ffffff;
-                  color:            #000000;
-                  font-family:      Times, Helvetica, Arial;
-                  font-size:        14pt}
-      h4        { margin-bottom:    0.3em}
-      code      { color:            #000000;
-                  font-family:      Courier; 
-                  font-size:        13pt }
-      pre       { color:            #000000;
-                  font-family:      Courier; 
-                  font-size:        13pt }
-      a:link    { color:            #0000C0;
-                  text-decoration:  none; }
-      a:visited { color:            #0000C0; 
-                  text-decoration:  none; }
-      a:active  { color:            #0000C0;
-                  text-decoration:  none; }
-    </style>
-    <title>Cachegrind</title>
+    <title>Helgrind: a data-race detector</title>
   </head>
 
-<body bgcolor="#ffffff">
+<a name="hg-top"></a>
+<h2>6&nbsp; Helgrind: a data-race detector</h2>
 
-<a name="title"></a>
-<h1 align=center>Helgrind</h1>
-<center>This manual was last updated on 2002-10-03</center>
+To use this skin, you must specify <code>--skin=helgrind</code> on the
+Valgrind command line.
 <p>
-
-<center>
-<a href="mailto:njn25@cam.ac.uk">njn25@cam.ac.uk</a><br>
-Copyright &copy; 2000-2002 Nicholas Nethercote
-<p>
-Helgrind is licensed under the GNU General Public License, 
-version 2<br>
-Helgrind is a Valgrind skin for detecting data races in threaded programs.
-</center>
-
-<p>
-
-<h2>1&nbsp; Helgrind</h2>
 
 Helgrind is a Valgrind skin for detecting data races in C and C++ programs
 that use the Pthreads library.
@@ -54,13 +23,7 @@ It uses the Eraser algorithm described in
     November 1997.
 </blockquote>
 
-It is unfortunately in a rather mangy state and probably doesn't work at all.
-We include it partly because it may serve as a useful example skin, and partly
-in case anybody is inspired to improve it and get it working.
-<p>
-If you are inspired, we'd love to hear from you.  And if you are successful,
-you might like to include some improvements to the basic Eraser algorithm
-described in Section 4.2 of
+We also incorporate significant improvements from this paper:
 
 <blockquote>
     Runtime Checking of Multithreaded Applications with Visual Threads
@@ -73,8 +36,21 @@ described in Section 4.2 of
     K. Havelund, J. Penix, and W. Visser, editors.<br>
 </blockquote>
 
+<p>
+Basically what Helgrind does is to look for memory locations which are
+accessed by more than one thread.  For each such location, Helgrind
+records which of the program's (pthread_mutex_)locks were held by the
+accessing thread at the time of the access.  The hope is to discover
+that there is indeed at least one lock which is used by all threads to
+protect that location.  If no such lock can be found, then there is 
+(apparently) no consistent locking strategy being applied for that
+location, and so a possible data race might result.
 
-<hr width="100%">
+<p>
+There's a lot of other sophistication in the Helgrind skin, aimed at
+reducing the number of false reports, and at producing useful error
+reports.  We hope to have more documentation soon.
+
 </body>
 </html>
 

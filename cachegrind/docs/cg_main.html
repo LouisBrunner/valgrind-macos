@@ -1,60 +1,24 @@
 <html>
   <head>
-    <style type="text/css">
-      body      { background-color: #ffffff;
-                  color:            #000000;
-                  font-family:      Times, Helvetica, Arial;
-                  font-size:        14pt}
-      h4        { margin-bottom:    0.3em}
-      code      { color:            #000000;
-                  font-family:      Courier; 
-                  font-size:        13pt }
-      pre       { color:            #000000;
-                  font-family:      Courier; 
-                  font-size:        13pt }
-      a:link    { color:            #0000C0;
-                  text-decoration:  none; }
-      a:visited { color:            #0000C0; 
-                  text-decoration:  none; }
-      a:active  { color:            #0000C0;
-                  text-decoration:  none; }
-    </style>
-    <title>Cachegrind</title>
+    <title>Cachegrind: a cache-miss profiler</title>
   </head>
 
-<body bgcolor="#ffffff">
+<body>
+<a name="cg-top"></a>
+<h2>4&nbsp; <b>Cachegrind</b>: a cache-miss profiler</h2>
 
-<a name="title">&nbsp;</a>
-<h1 align=center>Cachegrind, version 1.0.0</h1>
-<center>This manual was last updated on 20020726</center>
-<p>
-
-<center>
-<a href="mailto:jseward@acm.org">jseward@acm.org</a><br>
-Copyright &copy; 2000-2002 Julian Seward
-<p>
-Cachegrind is licensed under the GNU General Public License, 
-version 2<br>
-An open-source tool for finding memory-management problems in
-Linux-x86 executables.
-</center>
+To use this skin, you must specify <code>--skin=cachegrind</code>
+on the Valgrind command line.
 
 <p>
-
-<hr width="100%">
-<a name="contents"></a>
-<h2>Contents of this manual</h2>
-
-<h4>1&nbsp; <a href="#cache">How to use Cachegrind</a></h4>
-
-<h4>2&nbsp; <a href="techdocs.html">How Cachegrind works</a></h4>
-
-<hr width="100%">
+Detailed technical documentation on how Cachegrind works is available
+<A HREF="cg_techdocs.html">here</A>.  If you want to know how
+to <b>use</b> it, you only need to read this page.
 
 
 <a name="cache"></a>
-<h2>1&nbsp; Cache profiling</h2>
-Cachegrind is a tool for doing cache simulations and annotate your source
+<h3>4.1&nbsp; Cache profiling</h3>
+Cachegrind is a tool for doing cache simulations and annotating your source
 line-by-line with the number of cache misses.  In particular, it records:
 <ul>
   <li>L1 instruction cache reads and misses;
@@ -72,7 +36,7 @@ useful for traditional profiling and test coverage.<p>
 Any feedback, bug-fixes, suggestions, etc, welcome.
 
 
-<h3>1.1&nbsp; Overview</h3>
+<h3>4.2&nbsp; Overview</h3>
 First off, as for normal Valgrind use, you probably want to compile with
 debugging info (the <code>-g</code> flag).  But by contrast with normal
 Valgrind use, you probably <b>do</b> want to turn optimisation on, since you
@@ -82,7 +46,7 @@ The two steps are:
 <ol>
   <li>Run your program with <code>valgrind --skin=cachegrind</code> in front of
       the normal command line invocation.  When the program finishes,
-      Valgrind will print summary cache statistics. It also collects
+      Cachegrind will print summary cache statistics. It also collects
       line-by-line information in a file
       <code>cachegrind.out.<i>pid</i></code>, where <code><i>pid</i></code>
       is the program's process id.
@@ -93,7 +57,8 @@ The two steps are:
   </li>
   <p>
   <li>Generate a function-by-function summary, and possibly annotate
-      source files with 'cg_annotate'. Source files to annotate can be
+      source files, using the supplied
+      <code>cg_annotate</code> program. Source files to annotate can be
       specified manually, or manually on the command line, or
       "interesting" source files can be annotated automatically with
       the <code>--auto=yes</code> option.  You can annotate C/C++
@@ -108,7 +73,7 @@ The two steps are:
 The steps are described in detail in the following sections.<p>
 
 
-<h3>1.2&nbsp; Cache simulation specifics</h3>
+<h4>4.3&nbsp; Cache simulation specifics</h3>
 
 Cachegrind uses a simulation for a machine with a split L1 cache and a unified
 L2 cache.  This configuration is used for all (modern) x86-based machines we
@@ -172,8 +137,9 @@ existing ones in <code>vg_cachesim_I1.c</code>, <code>vg_cachesim_D1.c</code>,
 <code>vg_cachesim_L2.c</code> and <code>vg_cachesim_gen.c</code>.  We'd be
 interested to hear from anyone who does.
 
+
 <a name="profile"></a>
-<h3>1.3&nbsp; Profiling programs</h3>
+<h3>4.4&nbsp; Profiling programs</h3>
 
 Cache profiling is enabled by using the <code>--skin=cachegrind</code>
 option to the <code>valgrind</code> shell script.  To gather cache profiling
@@ -214,7 +180,7 @@ to the row's total).<p>
 Combined instruction and data figures for the L2 cache follow that.<p>
 
 
-<h3>1.4&nbsp; Output file</h3>
+<h3>4.5&nbsp; Output file</h3>
 
 As well as printing summary information, Cachegrind also writes
 line-by-line cache profiling information to a file named
@@ -238,17 +204,17 @@ Things to note about the <code>cachegrind.out.<i>pid</i></code> file:
 
 Note that older versions of Cachegrind used a log file named
 <code>cachegrind.out</code> (i.e. no <code><i>.pid</i></code> suffix).
-The suffix serves two purposes.  Firstly, it means you don't have to rename old
-log files that you don't want to overwrite.  Secondly, and more importantly,
-it allows correct profiling with the <code>--trace-children=yes</code> option
-of programs that spawn child processes.
+The suffix serves two purposes.  Firstly, it means you don't have to
+rename old log files that you don't want to overwrite.  Secondly, and
+more importantly, it allows correct profiling with the
+<code>--trace-children=yes</code> option of programs that spawn child
+processes.
+
 
 <a name="profileflags"></a>
-<h3>1.5&nbsp; Cachegrind options</h3>
-Cachegrind accepts all the options that Valgrind does, although some of them
-(ones related to memory checking) don't do anything when cache profiling.<p>
+<h3>4.6&nbsp; Cachegrind options</h3>
 
-The interesting cache-simulation specific options are:
+Cache-simulation specific options are:
 
 <ul>
   <li><code>--I1=&lt;size&gt;,&lt;associativity&gt;,&lt;line_size&gt;</code><br>
@@ -271,7 +237,7 @@ The interesting cache-simulation specific options are:
 
   
 <a name="annotate"></a>
-<h3>1.6&nbsp; Annotating C/C++ programs</h3>
+<h3>4.7&nbsp; Annotating C/C++ programs</h3>
 
 Before using <code>cg_annotate</code>, it is worth widening your
 window to be at least 120-characters wide if possible, as the output
@@ -509,7 +475,7 @@ beware that auto-annotation can produce a lot of output if your program is
 large!
 
 
-<h3>1.7&nbsp; Annotating assembler programs</h3>
+<h3>4.8&nbsp; Annotating assembler programs</h3>
 
 Valgrind can annotate assembler programs too, or annotate the
 assembler generated for your C program.  Sometimes this is useful for
@@ -527,7 +493,7 @@ You can then profile and annotate source files in the same way as for C/C++
 programs.
 
 
-<h3>1.8&nbsp; <code>cg_annotate</code> options</h3>
+<h3>4.9&nbsp; <code>cg_annotate</code> options</h3>
 <ul>
   <li><code>--<i>pid</i></code></li><p>
 
@@ -585,7 +551,7 @@ programs.
 </ul>
   
 
-<h3>1.9&nbsp; Warnings</h3>
+<h3>4.10&nbsp; Warnings</h3>
 There are a couple of situations in which cg_annotate issues warnings.
 
 <ul>
@@ -604,7 +570,7 @@ There are a couple of situations in which cg_annotate issues warnings.
 </ul>
 
 
-<h3>1.10&nbsp; Things to watch out for</h3>
+<h3>4.11&nbsp; Things to watch out for</h3>
 Some odd things that can occur during annotation:
 
 <ul>
@@ -687,7 +653,7 @@ annotations that look like might be caused by a bug in the stabs reader,
 please let us know.<p>
 
 
-<h3>1.11&nbsp; Accuracy</h3>
+<h3>4.12&nbsp; Accuracy</h3>
 Valgrind's cache profiling has a number of shortcomings:
 
 <ul>
@@ -739,14 +705,13 @@ While these factors mean you shouldn't trust the results to be super-accurate,
 hopefully they should be close enough to be useful.<p>
 
 
-<h3>1.12&nbsp; Todo</h3>
+<h3>4.13&nbsp; Todo</h3>
 <ul>
   <li>Program start-up/shut-down calls a lot of functions that aren't
       interesting and just complicate the output.  Would be nice to exclude
       these somehow.</li>
   <p>
 </ul> 
-<hr width="100%">
 </body>
 </html>
 

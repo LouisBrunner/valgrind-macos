@@ -31,6 +31,7 @@
 
 #include "core_asm.h"
 #include "amd64_private_asm.h"
+#include "libvex_guest_offsets.h"
 
 
 /*------------------------------------------------------------*/
@@ -63,8 +64,7 @@ VG_(run_innerloop):
 	movq	%rdi, %rbp
 	
 	/* fetch %RIP into %rax */
-	movq	VG_(instr_ptr_offset), %rsi
-	movq	(%rbp, %rsi, 1), %rax
+	movq	OFFSET_amd64_RIP(%rbp), %rax
 
 	/* set host FPU control word to the default mode expected 
            by VEX-generated code.  See comments in libvex.h for
@@ -90,8 +90,7 @@ VG_(run_innerloop):
 
 dispatch_boring:
 	/* save the jump address in the guest state */
-	movq	VG_(instr_ptr_offset), %rsi
-	movq	%rax, (%rbp, %rsi, 1)
+	movq	%rax, OFFSET_amd64_RIP(%rbp)
 
 	/* Are we out of timeslice?  If yes, defer to scheduler. */
 	subl $1, VG_(dispatch_ctr)
@@ -182,10 +181,9 @@ dispatch_exceptional:
 	cmpq	$VG_TRC_INNER_COUNTERZERO, %rbp
 	jz	counter_is_zero
 
-	/* save %eax in %EIP and defer to sched */
-	movq	VG_(instr_ptr_offset), %rsi
+	/* save %rax in %RIP and defer to sched */
 	movq	0(%rsp), %rdi
-	movq	%rax, (%rdi, %rsi, 1)
+	movq	%rax, OFFSET_amd64_RIP(%rdi)
 	movq	%rbp, %rax
 	jmp	run_innerloop_exit
 

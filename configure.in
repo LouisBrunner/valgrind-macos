@@ -22,6 +22,9 @@ fi
 # figure out where perl lives
 AC_PATH_PROG(PERL, perl)
 
+# figure out where gdb lives
+AC_PATH_PROG(GDB, gdb)
+
 # some older automake's don't have it so try something on our own
 ifdef([AM_PROG_AS],[AM_PROG_AS],
 [

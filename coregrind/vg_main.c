@@ -1683,9 +1683,12 @@ extern void VG_(start_GDB_whilst_on_client_stack) ( void )
 {
    Int   res;
    UChar buf[100];
-   VG_(sprintf)(buf,
-                "/usr/bin/gdb -nw /proc/%d/exe %d", 
-                VG_(getpid)(), VG_(getpid)());
+
+#define TO_STRING(x)    TO_STRING2(x)
+#define TO_STRING2(x)   #x
+   
+   VG_(sprintf)(buf, "%s -nw /proc/%d/exe %d",
+                TO_STRING(WHERE_IS_GDB), VG_(getpid)(), VG_(getpid)());
    VG_(message)(Vg_UserMsg, "starting GDB with cmd: %s", buf);
    res = VG_(system)(buf);
    if (res == 0) {      
@@ -1696,6 +1699,8 @@ extern void VG_(start_GDB_whilst_on_client_stack) ( void )
       VG_(message)(Vg_UserMsg, "Apparently failed!");
       VG_(message)(Vg_UserMsg, "");
    }
+#undef TO_STRING
+#undef TO_STRING2
 }
 
 

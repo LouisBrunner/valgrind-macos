@@ -89,3 +89,4 @@ vg_memory.o: vg_memory.c $(MANUAL_DEPS)
 
 vg_intercept.o vg_libpthread.o vg_replace_malloc.o: CFLAGS += -fno-omit-frame-pointer
 
+vg_main.o: CFLAGS += -DWHERE_IS_GDB=@GDB@

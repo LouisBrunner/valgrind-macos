@@ -205,9 +205,9 @@ static
 Char* name_of_sched_event ( UInt event )
 {
    switch (event) {
-      case VG_TRC_EBP_JMP_SYSCALL:    return "SYSCALL";
-      case VG_TRC_EBP_JMP_CLIENTREQ:  return "CLIENTREQ";
-      case VG_TRC_EBP_JMP_YIELD:      return "YIELD";
+      case VEX_TRC_JMP_SYSCALL:       return "SYSCALL";
+      case VEX_TRC_JMP_CLIENTREQ:     return "CLIENTREQ";
+      case VEX_TRC_JMP_YIELD:         return "YIELD";
       case VG_TRC_INNER_COUNTERZERO:  return "COUNTERZERO";
       case VG_TRC_INNER_FASTMISS:     return "FASTMISS";
       case VG_TRC_UNRESUMABLE_SIGNAL: return "FATALSIGNAL";
@@ -900,7 +900,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             continue; /* with this thread */
          }
 
-         if (trc == VG_TRC_EBP_JMP_CLIENTREQ) {
+         if (trc == VEX_TRC_JMP_CLIENTREQ) {
             UWord* args = (UWord*)(CLREQ_ARGS(VG_(threads)[tid].arch));
             UWord reqno = args[0];
             /* VG_(printf)("request 0x%x\n", reqno); */
@@ -925,7 +925,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
                goto stage1;
 	 }
 
-         if (trc == VG_TRC_EBP_JMP_SYSCALL) {
+         if (trc == VEX_TRC_JMP_SYSCALL) {
             /* Do a syscall for the vthread tid.  This could cause it
                to become non-runnable.  One special case: spot the
                client doing calls to exit() and take this as the cue
@@ -1056,7 +1056,7 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
 
       switch (trc) {
 
-         case VG_TRC_EBP_JMP_YIELD:
+         case VEX_TRC_JMP_YIELD:
             /* Explicit yield.  Let a new thread be scheduled,
                simply by doing nothing, causing us to arrive back at
                Phase 1. */

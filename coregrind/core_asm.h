@@ -37,23 +37,19 @@
 /* This file is included in all Valgrind source files, including
    assembly ones. */
 
-/* Magic values that %ebp might be set to when returning to the
+/* Magic values that the guest state might be set to when returning to the
    dispatcher.  The only other legitimate value is to point to the
-   start of the thread's VEX state.  These also are return values from
+   start of the thread's VEX guest state.  These also are return values from
    VG_(run_innerloop) to the scheduler.
-
-   EBP means %ebp can legitimately have this value when a basic block
-   returns to the dispatch loop.  TRC means that this value is a valid
-   thread return code, which the dispatch loop may return to the
-   scheduler.  
 */
-#define VG_TRC_EBP_JMP_SYSCALL    19 /* EBP and TRC */
-#define VG_TRC_EBP_JMP_CLIENTREQ  23 /* EBP and TRC */
-#define VG_TRC_EBP_JMP_YIELD      27 /* EBP and TRC */
+/* Defines values for JMP_SYSCALL, JMP_CLIENTREQ and JMP_YIELD */
+#include "libvex_trc_values.h"
 
+/* and some more of our own ... */
 #define VG_TRC_INNER_FASTMISS     31 /* TRC only; means fast-cache miss. */
 #define VG_TRC_INNER_COUNTERZERO  29 /* TRC only; means bb ctr == 0 */
 #define VG_TRC_UNRESUMABLE_SIGNAL 37 /* TRC only; got sigsegv/sigbus */
+
 
 /* Constants for the fast translation lookup cache. */
 #define VG_TT_FAST_BITS 15

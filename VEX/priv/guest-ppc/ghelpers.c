@@ -147,10 +147,18 @@ void LibVEX_GuestPPC_initialise ( /*OUT*/VexGuestPPCState* vex_state )
    vex_state->guest_GPR30 = 0;
    vex_state->guest_GPR31 = 0;
 
+   vex_state->guest_CIA  = 0;
    vex_state->guest_LR  = 0;
    vex_state->guest_CTR = 0;
 
    vex_state->guest_Result = 0;
+
+   vex_state->guest_CR2 = 0;
+   vex_state->guest_CR3 = 0;
+   vex_state->guest_CR4 = 0;
+   vex_state->guest_CR5 = 0;
+   vex_state->guest_CR6 = 0;
+   vex_state->guest_CR7 = 0;
 
    vex_state->guest_XER_SO = 0;
    vex_state->guest_XER_OV = 0;
@@ -191,10 +199,9 @@ VexGuestLayout
           .offset_SP = offsetof(VexGuestPPCState,guest_GPR1),
           .sizeof_SP = 4,
 
-// CAB: There isn't a PC on the PPC!
           /* Describe the instruction pointer. */
-//          .offset_IP = offsetof(VexGuestPPCState,guest_R15),
-//          .sizeof_IP = 4,
+          .offset_IP = offsetof(VexGuestPPCState,guest_CIA),
+          .sizeof_IP = 4,
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */

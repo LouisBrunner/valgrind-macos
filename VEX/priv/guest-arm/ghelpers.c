@@ -327,13 +327,14 @@ void LibVEX_GuestARM_put_flags ( UInt flags_native,
 /* VISIBLE TO LIBVEX CLIENT */
 UInt LibVEX_GuestARM_get_flags ( /*IN*/VexGuestARMState* vex_state )
 {
+   UInt flags;
    vassert(0); // FIXME
 
-   UInt flags = armg_calculate_flags_all(
-                    vex_state->guest_CC_OP,
-                    vex_state->guest_CC_DEP1,
-                    vex_state->guest_CC_DEP2
-                 );
+   flags = armg_calculate_flags_all(
+              vex_state->guest_CC_OP,
+              vex_state->guest_CC_DEP1,
+              vex_state->guest_CC_DEP2
+           );
    return flags;
 }
 

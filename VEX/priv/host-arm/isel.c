@@ -739,10 +739,11 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
    /* --------- STORE --------- */
    /* little-endian write to memory */
    case Ist_STle: {
+       HReg   reg;
        IRType tya = typeOfIRExpr(env->type_env, stmt->Ist.STle.addr);
        IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.STle.data);
        vassert(tya == Ity_I32);
-       HReg reg = iselIntExpr_R(env, stmt->Ist.STle.data);
+       reg = iselIntExpr_R(env, stmt->Ist.STle.data);
 
        if (tyd == Ity_I8) {
 	   ARMAMode2* am2 = iselIntExpr_AMode2(env, stmt->Ist.STle.addr);

@@ -1941,20 +1941,10 @@ int select ( int n,
 
    /* Either timeout == NULL, meaning wait indefinitely, or timeout !=
       NULL, in which case ms_end holds the end time. */
+
    while (1) {
-      if (timeout) {
-         VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
-                                 VG_USERREQ__READ_MILLISECOND_TIMER,
-                                 0, 0, 0, 0);
-         my_assert(ms_now != 0xFFFFFFFF);
-         if (ms_now >= ms_end) {
-            /* timeout; nothing interesting happened. */
-            if (rfds) FD_ZERO(rfds);
-            if (wfds) FD_ZERO(wfds);
-            if (xfds) FD_ZERO(xfds);
-            return 0;
-         }
-      }
+
+      /* First, do a return-immediately select(). */
 
       /* These could be trashed each time round the loop, so restore
          them each time. */
@@ -1983,6 +1973,10 @@ int select ( int n,
          if (xfds) *xfds = xfds_copy;
          return res;
       }
+
+      /* Nothing interesting happened, so we go to sleep for a
+         while. */
+
       /* fprintf(stderr, "MY_SELECT: nanosleep\n"); */
       /* nanosleep and go round again */
       nanosleep_interval.tv_sec  = 0;
@@ -1997,6 +1991,23 @@ int select ( int n,
          * (__errno_location()) = EINTR;
          return -1;
       }
+
+      /* Sleeping finished.  If a finite timeout, check to see if it
+         has expired yet. */
+      if (timeout) {
+         VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
+                                 VG_USERREQ__READ_MILLISECOND_TIMER,
+                                 0, 0, 0, 0);
+         my_assert(ms_now != 0xFFFFFFFF);
+         if (ms_now >= ms_end) {
+            /* timeout; nothing interesting happened. */
+            if (rfds) FD_ZERO(rfds);
+            if (wfds) FD_ZERO(wfds);
+            if (xfds) FD_ZERO(xfds);
+            return 0;
+         }
+      }
+
    }
 }
 
@@ -2055,9 +2066,38 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
 
    /* Either timeout < 0, meaning wait indefinitely, or timeout > 0,
       in which case t_end holds the end time. */
+
    my_assert(__timeout != 0);
 
    while (1) {
+
+      /* Do a return-immediately poll. */
+
+      res = my_do_syscall3(__NR_poll, (int)__fds, __nfds, 0 );
+      if (is_kerror(res)) {
+         /* Some kind of error.  Set errno and return.  */
+         * (__errno_location()) = -res;
+         return -1;
+      }
+      if (res > 0) {
+         /* One or more fds is ready.  Return now. */
+         return res;
+      }
+
+      /* Nothing interesting happened, so we go to sleep for a
+         while. */
+
+      /* fprintf(stderr, "MY_POLL: nanosleep\n"); */
+      /* nanosleep and go round again */
+      nanosleep_interval.tv_sec  = 0;
+      nanosleep_interval.tv_nsec = 51 * 1000 * 1000; /* 51 milliseconds */
+      /* It's critical here that valgrind's nanosleep implementation
+         is nonblocking. */
+      (void)my_do_syscall2(__NR_nanosleep, 
+                           (int)(&nanosleep_interval), (int)NULL);
+
+      /* Sleeping finished.  If a finite timeout, check to see if it
+         has expired yet. */
       if (__timeout > 0) {
          VALGRIND_MAGIC_SEQUENCE(ms_now, 0xFFFFFFFF /* default */,
                                  VG_USERREQ__READ_MILLISECOND_TIMER,
@@ -2071,25 +2111,6 @@ int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout)
          }
       }
 
-      /* Do a return-immediately poll. */
-      res = my_do_syscall3(__NR_poll, (int)__fds, __nfds, 0 );
-      if (is_kerror(res)) {
-         /* Some kind of error.  Set errno and return.  */
-         * (__errno_location()) = -res;
-         return -1;
-      }
-      if (res > 0) {
-         /* One or more fds is ready.  Return now. */
-         return res;
-      }
-      /* fprintf(stderr, "MY_POLL: nanosleep\n"); */
-      /* nanosleep and go round again */
-      nanosleep_interval.tv_sec  = 0;
-      nanosleep_interval.tv_nsec = 51 * 1000 * 1000; /* 51 milliseconds */
-      /* It's critical here that valgrind's nanosleep implementation
-         is nonblocking. */
-      (void)my_do_syscall2(__NR_nanosleep, 
-                           (int)(&nanosleep_interval), (int)NULL);
    }
 }
 

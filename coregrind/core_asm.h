@@ -54,29 +54,6 @@
 #define VG_TRC_INNER_COUNTERZERO  29 /* TRC only; means bb ctr == 0 */
 #define VG_TRC_UNRESUMABLE_SIGNAL 37 /* TRC only; got sigsegv/sigbus */
 
-/* maximum number of normal jumps which can appear in a basic block */
-#define VG_MAX_JUMPS		2
-
-/* Offset of code in a TCEntry */
-#define VG_CODE_OFFSET		(8 + VG_MAX_JUMPS * 2)
-
-/* Client address space segment limit descriptor entry */
-#define VG_POINTERCHECK_SEGIDX	1
-
-/* Debugging hack for assembly code ... sigh. */
-#if 0
-#define OYNK(nnn) pushal;  pushl $nnn; call VG_(oynk) ; addl $4,%esp; popal
-#else
-#define OYNK(nnn)
-#endif
-
-#if 0
-#define OYNNK(nnn) pushal;  pushl $nnn; call VG_(oynk) ; addl $4,%esp; popal
-#else
-#define OYNNK(nnn)
-#endif
-
-
 /* Constants for the fast translation lookup cache. */
 #define VG_TT_FAST_BITS 15
 #define VG_TT_FAST_SIZE (1 << VG_TT_FAST_BITS)
@@ -88,6 +65,7 @@
 /* Assembly code stubs make this request */
 #define VG_USERREQ__SIGNAL_RETURNS          0x4001
 
+// XXX: all this will go into x86/ eventually...
 /* 
    0 - standard feature flags
    1 - Intel extended flags
@@ -152,7 +130,7 @@
 #define VG_AMD_FEAT_3DNOWEXT	(VG_AMD_FEAT*32 + 30)
 #define VG_AMD_FEAT_3DNOW	(VG_AMD_FEAT*32 + 31)
 
-#endif /* ndef __CORE_ASM_H */
+#endif /* __CORE_ASM_H */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

@@ -707,6 +707,9 @@ void VG_(init_tt_tc) ( void )
       TCEntries. */
    vg_assert((VG_MAX_JUMPS % 2) == 0);
 
+   // Otherwise lots of things go wrong... 
+   vg_assert(VG_CODE_OFFSET == sizeof(TCEntry));
+   
    /* Figure out how big each sector should be.  */
    vg_tc_sector_szB 
       = (VG_TT_LIMIT /* max TT entries we expect */

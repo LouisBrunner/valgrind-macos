@@ -127,6 +127,8 @@ typedef __vki_kernel_time_t	vki_time_t;
 typedef __vki_kernel_clock_t	vki_clock_t;
 typedef __vki_kernel_caddr_t	vki_caddr_t;
 
+typedef unsigned long           vki_u_long;
+
 typedef unsigned int	        vki_uint;
 
 //----------------------------------------------------------------------
@@ -1839,6 +1841,13 @@ struct vki_kbd_repeat {
                                     * actually used values are returned */
 
 #define VKI_KDFONTOP       0x4B72  /* font operations */
+
+//----------------------------------------------------------------------
+// From linux-2.6.9/include/linux/kb.h
+//----------------------------------------------------------------------
+
+typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory */
+
 
 #endif // __LINUX_VKI_H
 

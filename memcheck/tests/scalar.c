@@ -420,13 +420,13 @@ int main(void)
    GO(__NR_syslog, "3s 1m");
    SY(__NR_syslog, x0+2, x0, x0+1);
 
-   // __NR_setitimer 104
- //GO(__NR_setitimer, ".s .m");
- //SY(__NR_setitimer);
+   // __NR_setitimer 104 --> sys_setitimer()
+   GO(__NR_setitimer, "3s 2m");
+   SY(__NR_setitimer, x0, x0+1, x0+1);
 
-   // __NR_getitimer 105
- //GO(__NR_getitimer, ".s .m");
- //SY(__NR_getitimer);
+   // __NR_getitimer 105 --> sys_getitimer()
+   GO(__NR_getitimer, "2s 1m");
+   SY(__NR_getitimer, x0, x0, x0);
 
    // __NR_stat 106 --> sys_newstat()
    GO(__NR_stat, "2s 2m");
@@ -528,24 +528,23 @@ int main(void)
  //SY(__NR_init_module);
 
    // __NR_delete_module 129
- //GO(__NR_delete_module, ".s .m");
- //SY(__NR_delete_module);
+   // (Not yet handled by Valgrind)
 
    // __NR_get_kernel_syms 130 --> sys_ni_syscall()
    GO(__NR_get_kernel_syms, "0e");
    SY(__NR_get_kernel_syms);
 
-   // __NR_quotactl 131
- //GO(__NR_quotactl, ".s .m");
- //SY(__NR_quotactl);
+   // __NR_quotactl 131 --> sys_quotactl()
+   GO(__NR_quotactl, "4s 1m");
+   SY(__NR_quotactl, x0, x0, x0, x0);
 
-   // __NR_getpgid 132
- //GO(__NR_getpgid, ".s .m");
- //SY(__NR_getpgid);
+   // __NR_getpgid 132 --> sys_getpgid()
+   GO(__NR_getpgid, "1s 0m");
+   SY(__NR_getpgid, x0);
 
-   // __NR_fchdir 133
- //GO(__NR_fchdir, ".s .m");
- //SY(__NR_fchdir);
+   // __NR_fchdir 133 --> sys_fchdir()
+   GO(__NR_fchdir, "1s 0m");
+   SY(__NR_fchdir, x0-1);
 
    // __NR_bdflush 134
  //GO(__NR_bdflush, ".s .m");
@@ -555,9 +554,9 @@ int main(void)
  //GO(__NR_sysfs, ".s .m");
  //SY(__NR_sysfs);
 
-   // __NR_personality 136
- //GO(__NR_personality, ".s .m");
- //SY(__NR_personality);
+   // __NR_personality 136 --> sys_personality()
+   GO(__NR_personality, "1s 0m");
+   SY(__NR_personality, x0);
 
    // __NR_afs_syscall 137 --> sys_ni_syscall()
    GO(__NR_afs_syscall, "0e");
@@ -599,9 +598,9 @@ int main(void)
  //GO(__NR_writev, ".s .m");
  //SY(__NR_writev);
 
-   // __NR_getsid 147
- //GO(__NR_getsid, ".s .m");
- //SY(__NR_getsid);
+   // __NR_getsid 147 --> sys_getsid()
+   GO(__NR_getsid, "1s 0m");
+   SY(__NR_getsid, x0);
 
    // __NR_fdatasync 148 --> sys_fdatasync()
    GO(__NR_fdatasync, "1s 0m");
@@ -627,41 +626,40 @@ int main(void)
    GO(__NR_munlockall, "0e");
    SY(__NR_munlockall);
 
-   // __NR_sched_setparam 154
- //GO(__NR_sched_setparam, ".s .m");
- //SY(__NR_sched_setparam);
+   // __NR_sched_setparam 154 --> sys_sched_setparam()
+   GO(__NR_sched_setparam, "2s 1m");
+   SY(__NR_sched_setparam, x0, x0);
 
-   // __NR_sched_getparam 155
- //GO(__NR_sched_getparam, ".s .m");
- //SY(__NR_sched_getparam);
+   // __NR_sched_getparam 155 --> sys_sched_getparam()
+   GO(__NR_sched_getparam, "2s 1m");
+   SY(__NR_sched_getparam, x0, x0);
 
-   // __NR_sched_setscheduler 156
- //GO(__NR_sched_setscheduler, ".s .m");
- //SY(__NR_sched_setscheduler);
+   // __NR_sched_setscheduler 156 --> sys_sched_setscheduler()
+   GO(__NR_sched_setscheduler, "3s 1m");
+   SY(__NR_sched_setscheduler, x0, x0, x0+1);
 
-   // __NR_sched_getscheduler 157
- //GO(__NR_sched_getscheduler, ".s .m");
- //SY(__NR_sched_getscheduler);
+   // __NR_sched_getscheduler 157 --> sys_sched_getscheduler()
+   GO(__NR_sched_getscheduler, "1s 0m");
+   SY(__NR_sched_getscheduler, x0);
 
    // __NR_sched_yield 158
  //GO(__NR_sched_yield, ".s .m");
  //SY(__NR_sched_yield);
 
-   // __NR_sched_get_priority_max 159
- //GO(__NR_sched_get_priority_max, ".s .m");
- //SY(__NR_sched_get_priority_max);
+   // __NR_sched_get_priority_max 159 --> sys_sched_get_priority_min()
+   GO(__NR_sched_get_priority_max, "1s 0m");
+   SY(__NR_sched_get_priority_max, x0);
 
-   // __NR_sched_get_priority_min 160
- //GO(__NR_sched_get_priority_min, ".s .m");
- //SY(__NR_sched_get_priority_min);
+   // __NR_sched_get_priority_min 160 --> sys_sched_get_priority_min()
+   GO(__NR_sched_get_priority_min, "1s 0m");
+   SY(__NR_sched_get_priority_min, x0);
 
    // __NR_sched_rr_get_interval 161
- //GO(__NR_sched_rr_get_interval, ".s .m");
- //SY(__NR_sched_rr_get_interval);
+   // (Not yet handled by Valgrind)
 
-   // __NR_nanosleep 162
- //GO(__NR_nanosleep, ".s .m");
- //SY(__NR_nanosleep);
+   // __NR_nanosleep 162 --> sys_nanosleep()
+   GO(__NR_nanosleep, "2s 2m");
+   SY(__NR_nanosleep, x0, x0+1);
 
    // __NR_mremap 163
  //GO(__NR_mremap, ".s .m");
@@ -747,13 +745,13 @@ int main(void)
  //GO(__NR_getcwd, ".s .m");
  //SY(__NR_getcwd);
 
-   // __NR_capget 184
- //GO(__NR_capget, ".s .m");
- //SY(__NR_capget);
+   // __NR_capget 184 --> sys_capget()
+   GO(__NR_capget, "2s 2m");
+   SY(__NR_capget, x0, x0);
 
-   // __NR_capset 185
- //GO(__NR_capset, ".s .m");
- //SY(__NR_capset);
+   // __NR_capset 185 --> sys_capset()
+   GO(__NR_capset, "2s 2m");
+   SY(__NR_capset, x0, x0);
 
    // __NR_sigaltstack 186
  //GO(__NR_sigaltstack, ".s .m");
@@ -908,8 +906,7 @@ int main(void)
    SY(223);
 
    // __NR_gettid 224
- //GO(__NR_gettid, ".s .m");
- //SY(__NR_gettid);
+   // (Not yet handled by Valgrind)
 
    // __NR_readahead 225
  //GO(__NR_readahead, ".s .m");
@@ -964,8 +961,7 @@ int main(void)
    SY(__NR_fremovexattr, x0, x0);
 
    // __NR_tkill 238
- //GO(__NR_tkill, ".s .m");
- //SY(__NR_tkill);
+   // (Not yet handled by Valgrind)
 
    // __NR_sendfile64 239
  //GO(__NR_sendfile64, ".s .m");
@@ -975,13 +971,13 @@ int main(void)
  //GO(__NR_futex, ".s .m");
  //SY(__NR_futex);
 
-   // __NR_sched_setaffinity 241
- //GO(__NR_sched_setaffinity, ".s .m");
- //SY(__NR_sched_setaffinity);
+   // __NR_sched_setaffinity 241 --> sched_setaffinity()
+   GO(__NR_sched_setaffinity, "3s 1m");
+   SY(__NR_sched_setaffinity, x0, x0+1, x0);
 
-   // __NR_sched_getaffinity 242
- //GO(__NR_sched_getaffinity, ".s .m");
- //SY(__NR_sched_getaffinity);
+   // __NR_sched_getaffinity 242 --> sched_getaffinity()
+   GO(__NR_sched_getaffinity, "3s 1m");
+   SY(__NR_sched_getaffinity, x0, x0+1, x0);
 
    // __NR_set_thread_area 243
  //GO(__NR_set_thread_area, ".s .m");
@@ -1042,9 +1038,9 @@ int main(void)
  //GO(__NR_remap_file_pages, ".s .m");
  //SY(__NR_remap_file_pages);
 
-   // __NR_set_tid_address 258
- //GO(__NR_set_tid_address, ".s .m");
- //SY(__NR_set_tid_address);
+   // __NR_set_tid_address 258 --> sys_set_tid_address()
+   GO(__NR_set_tid_address, "1s 0m");
+   SY(__NR_set_tid_address, x0);
 
    // __NR_timer_create 259
  //GO(__NR_timer_create, ".s .m");
@@ -1091,8 +1087,7 @@ int main(void)
    SY(__NR_fstatfs64, x0, x0+1, x0);
 
    // __NR_tgkill 270
- //GO(__NR_tgkill, ".s .m");
- //SY(__NR_tgkill);
+   // (Not yet handled by Valgrind)
 
    // __NR_utimes 271
  //GO(__NR_utimes, ".s .m");

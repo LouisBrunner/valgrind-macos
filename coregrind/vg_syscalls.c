@@ -1124,6 +1124,11 @@ PREx(sys_exit, Special)
    VG_(core_panic)("syscall exit() not caught by the scheduler?!");
 }
 
+PREx(sys_sched_yield, Special)
+{
+   VG_(core_panic)("syscall sched_yield() not caught by the scheduler?!");
+}
+
 PREx(sys_ni_syscall, Special)
 {
    PRINT("non-existent syscall! (ni_syscall)");
@@ -1266,9 +1271,10 @@ PRE(get_thread_area)
    }
 }
 
-PRE(set_tid_address)
+PREx(sys_set_tid_address, Special)
 {
-   PRINT("set_tid_address ( %p )", arg1);
+   PRINT("sys_set_tid_address ( %p )", arg1);
+   PRE_REG_READ1(long, "set_tid_address", int *, tidptr);
 }
 
 PREx(sys_setresgid16, 0)
@@ -1448,9 +1454,12 @@ PREx(sys_fremovexattr, MayBlock)
    PRE_MEM_RASCIIZ( "fremovexattr(name)", arg2 );
 }
 
-PRE(quotactl)
+PREx(sys_quotactl, 0)
 {
-   PRINT("quotactl (0x%x, %p, 0x%x, 0x%x )", arg1,arg2,arg3, arg4);
+   PRINT("sys_quotactl (0x%x, %p, 0x%x, 0x%x )", arg1,arg2,arg3, arg4);
+   PRE_REG_READ4(long, "quotactl",
+                 unsigned int, cmd, const char *, special, vki_qid_t, id,
+                 void *, addr);
    PRE_MEM_RASCIIZ( "quotactl(special)", arg2 );
 }
 
@@ -1551,17 +1560,36 @@ PRE(putpmsg)
       PRE_MEM_READ( "putpmsg(data)", (Addr)data->buf, data->len);
 }
 
-PRE(getitimer)
+PREx(sys_getitimer, NBRunInLWP)
 {
-   /* int getitimer(int which, struct itimerval *value); */
-   PRINT("getitimer ( %d, %p )", arg1, arg2);
-   PRE_MEM_WRITE( "getitimer(timer)", arg2, sizeof(struct vki_itimerval) );
+   PRINT("sys_getitimer ( %d, %p )", arg1, arg2);
+   PRE_REG_READ2(long, "getitimer", int, which, struct itimerval *, value);
+   PRE_MEM_WRITE( "getitimer(value)", arg2, sizeof(struct vki_itimerval) );
 }
 
-POST(getitimer)
+POSTx(sys_getitimer)
 {
    if (arg2 != (Addr)NULL) {
       VG_TRACK( post_mem_write,arg2, sizeof(struct vki_itimerval));
+   }
+}
+
+PREx(sys_setitimer, NBRunInLWP)
+{
+   PRINT("sys_setitimer ( %d, %p, %p )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "setitimer", 
+                 int, which,
+                 struct itimerval *, value, struct itimerval *, ovalue);
+   if (arg2 != (Addr)NULL)
+      PRE_MEM_READ( "setitimer(value)", arg2, sizeof(struct vki_itimerval) );
+   if (arg3 != (Addr)NULL)
+      PRE_MEM_WRITE( "setitimer(ovalue)", arg3, sizeof(struct vki_itimerval));
+}
+
+POSTx(sys_setitimer)
+{
+   if (arg3 != (Addr)NULL) {
+      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_itimerval));
    }
 }
 
@@ -1589,10 +1617,10 @@ POSTx(sys_syslog)
    }
 }
 
-PRE(personality)
+PREx(sys_personality, 0)
 {
-   /* int personality(unsigned long persona); */
-   PRINT("personality ( %d )", arg1);
+   PRINT("personality ( %llu )", (ULong)arg1);
+   PRE_REG_READ1(long, "personality", vki_u_long, persona);
 }
 
 PREx(sys_chroot, 0)
@@ -1646,19 +1674,19 @@ POST(_sysctl)
 
 }
 
-PRE(sched_getscheduler)
+PREx(sys_sched_getscheduler, 0/*???*/)
 {
-   /* int sched_getscheduler(pid_t pid); */
-   PRINT("sched_getscheduler ( %d )", arg1);
+   PRINT("sys_sched_getscheduler ( %d )", arg1);
+   PRE_REG_READ1(long, "sched_getscheduler", vki_pid_t, pid);
 }
 
-PRE(sched_setscheduler)
+PREx(sys_sched_setscheduler, 0/*???*/)
 {
-   /* int sched_setscheduler(pid_t pid, int policy, 
-      const struct sched_param *p); */
-   PRINT("sched_setscheduler ( %d, %d, %p )",arg1,arg2,arg3);
+   PRINT("sys_sched_setscheduler ( %d, %d, %p )", arg1,arg2,arg3);
+   PRE_REG_READ3(long, "sched_setscheduler", 
+                 vki_pid_t, pid, int, policy, struct sched_param *, p);
    if (arg3 != (UWord)NULL)
-      PRE_MEM_READ( "sched_setscheduler(struct sched_param *p)", 
+      PRE_MEM_READ( "sched_setscheduler(p)", 
 		    arg3, sizeof(struct vki_sched_param));
 }
 
@@ -1686,16 +1714,16 @@ PREx(sys_munlockall, MayBlock)
    PRE_REG_READ0(long, "munlockall");
 }
 
-PRE(sched_get_priority_max)
+PREx(sys_sched_get_priority_max, 0/*???*/)
 {
-   /* int sched_get_priority_max(int policy); */
    PRINT("sched_get_priority_max ( %d )", arg1);
+   PRE_REG_READ1(long, "sched_get_priority_max", int, policy);
 }
 
-PRE(sched_get_priority_min)
+PREx(sys_sched_get_priority_min, 0/*???*/)
 {
-   /* int sched_get_priority_min(int policy); */
    PRINT("sched_get_priority_min ( %d )", arg1);
+   PRE_REG_READ1(long, "sched_get_priority_min", int, policy);
 }
 
 PREx(sys_setpriority, 0)
@@ -1812,10 +1840,10 @@ POSTx(sys_fstatfs64)
    POST_MEM_WRITE( arg3, arg2 );
 }
 
-PRE(getsid)
+PREx(sys_getsid, 0)
 {
-   /* pid_t getsid(pid_t pid); */
-   PRINT("getsid ( %d )", arg1);
+   PRINT("sys_getsid ( %d )", arg1);
+   PRE_REG_READ1(long, "getsid", vki_pid_t, pid);
 }
 
 PRE(pread64)
@@ -1862,24 +1890,29 @@ PREx(sys_ioperm, 0)
                  unsigned long, from, unsigned long, num, int, turn_on);
 }
 
-PRE(capget)
+PREx(sys_capget, 0)
 {
-   /* int capget(cap_user_header_t header, cap_user_data_t data); */
    PRINT("capget ( %p, %p )", arg1, arg2 );
+   PRE_REG_READ2(long, "capget", 
+                 vki_cap_user_header_t, header, vki_cap_user_data_t, data);
    PRE_MEM_READ( "capget(header)", arg1, 
                   sizeof(struct __vki_user_cap_header_struct) );
    PRE_MEM_WRITE( "capget(data)", arg2, 
                   sizeof(struct __vki_user_cap_data_struct) );
 }
 
-POST(capget)
+POSTx(sys_capget)
 {
    if (arg2 != (Addr)NULL)
       POST_MEM_WRITE( arg2, sizeof(struct __vki_user_cap_data_struct) );
 }
 
-PRE(capset)
+PREx(sys_capset, 0)
 {
+   PRINT("sys_capset ( %p, %p )", arg1, arg2 );
+   PRE_REG_READ2(long, "capset", 
+                 vki_cap_user_header_t, header,
+                 const vki_cap_user_data_t, data);
    PRE_MEM_READ( "capset(header)", 
                   arg1, sizeof(struct __vki_user_cap_header_struct) );
    PRE_MEM_READ( "capset(data)", 
@@ -2171,10 +2204,10 @@ POSTx(sys_fcntl)
    }
 }
 
-PRE(fchdir)
+PREx(sys_fchdir, 0)
 {
-   /* int fchdir(int fd); */
-   PRINT("fchdir ( %d )", arg1);
+   PRINT("sys_fchdir ( %d )", arg1);
+   PRE_REG_READ1(long, "fchdir", unsigned int, fd);
 }
 
 PREx(sys_fchown16, 0)
@@ -2452,10 +2485,10 @@ PREx(sys_getpid, 0)
    PRE_REG_READ0(long, "getpid");
 }
 
-PRE(getpgid)
+PREx(sys_getpgid, 0)
 {
-   /* pid_t getpgid(pid_t pid); */
-   PRINT("getpgid ( %d )", arg1);
+   PRINT("sys_getpgid ( %d )", arg1);
+   PRE_REG_READ1(long, "getpgid", vki_pid_t, pid);
 }
 
 PREx(sys_getpgrp, 0)
@@ -4591,16 +4624,17 @@ POST(mincore)
    POST_MEM_WRITE( arg3, (arg2 + 4096 - 1) / 4096 );  
 }
 
-PRE(nanosleep)
+PREx(sys_nanosleep, MayBlock|PostOnFail)
 {
-   /* int nanosleep(const struct timespec *req, struct timespec *rem); */
    PRINT("nanosleep ( %p, %p )", arg1,arg2);
+   PRE_REG_READ2(long, "nanosleep", 
+                 struct timespec *, req, struct timespec *, rem);
    PRE_MEM_READ( "nanosleep(req)", arg1, sizeof(struct vki_timespec) );
    if (arg2 != (UWord)NULL)
       PRE_MEM_WRITE( "nanosleep(rem)", arg2, sizeof(struct vki_timespec) );
 }
 
-POST(nanosleep)
+POSTx(sys_nanosleep)
 {
    if (arg2 != (UWord)NULL && res == -VKI_EINTR)
       POST_MEM_WRITE( arg2, sizeof(struct vki_timespec) );
@@ -4849,35 +4883,30 @@ PREx(sys_rmdir, MayBlock)
    PRE_MEM_RASCIIZ( "rmdir(pathname)", arg1 );
 }
 
-PRE(sched_setparam)
+PREx(sys_sched_setparam, 0/*???*/)
 {
-   /* int sched_setparam(pid_t pid, const struct sched_param *p); */
    PRINT("sched_setparam ( %d, %p )", arg1, arg2 );
-   PRE_MEM_READ( "sched_setparam(ptr)", arg2, sizeof(struct vki_sched_param) );
+   PRE_REG_READ2(long, "sched_setparam", 
+                 vki_pid_t, pid, struct sched_param *, p);
+   PRE_MEM_READ( "sched_setparam(p)", arg2, sizeof(struct vki_sched_param) );
 }
 
-POST(sched_setparam)
+POSTx(sys_sched_setparam)
 {
    POST_MEM_WRITE( arg2, sizeof(struct vki_sched_param) );
 }
 
-PRE(sched_getparam)
+PREx(sys_sched_getparam, 0/*???*/)
 {
-   /* int sched_getparam(pid_t pid, struct sched_param *p); */
    PRINT("sched_getparam ( %d, %p )", arg1, arg2 );
-   PRE_MEM_WRITE( "sched_getparam(ptr)",
-		  arg2, sizeof(struct vki_sched_param) );
+   PRE_REG_READ2(long, "sched_getparam", 
+                 vki_pid_t, pid, struct sched_param *, p);
+   PRE_MEM_WRITE( "sched_getparam(p)", arg2, sizeof(struct vki_sched_param) );
 }
 
-POST(sched_getparam)
+POSTx(sys_sched_getparam)
 {
    POST_MEM_WRITE( arg2, sizeof(struct vki_sched_param) );
-}
-
-PRE(sched_yield)
-{
-   /* int sched_yield(void); */
-   PRINT("sched_yield ()" );
 }
 
 PREx(old_select, MayBlock)
@@ -4931,24 +4960,6 @@ PREx(sys_select, MayBlock)
 		     arg4, arg1/8 /* __FD_SETSIZE/8 */ );
    if (arg5 != 0)
       PRE_MEM_READ( "select(timeout)", arg5, sizeof(struct vki_timeval) );
-}
-
-PRE(setitimer)
-{
-   /* setitimer(int which, const struct itimerval *value,
-                           struct itimerval *ovalue); */
-   PRINT("setitimer ( %d, %p, %p )", arg1,arg2,arg3);
-   if (arg2 != (Addr)NULL)
-      PRE_MEM_READ( "setitimer(value)", arg2, sizeof(struct vki_itimerval) );
-   if (arg3 != (Addr)NULL)
-      PRE_MEM_WRITE( "setitimer(ovalue)", arg3, sizeof(struct vki_itimerval));
-}
-
-POST(setitimer)
-{
-   if (arg3 != (Addr)NULL) {
-      VG_TRACK( post_mem_write,arg3, sizeof(struct vki_itimerval));
-   }
 }
 
 PREx(sys_setfsgid, 0)
@@ -5698,21 +5709,23 @@ POST(futex)
    }
 }
 
-PRE(sched_setaffinity)
+PREx(sys_sched_setaffinity, 0)
 {
-   /* int sched_setaffinity(pid_t pid, unsigned int len, unsigned long *mask) */
    PRINT("sched_setaffinity ( %d, %d, %p )", arg1, arg2, arg3);
+   PRE_REG_READ3(long, "sched_setaffinity", 
+                 vki_pid_t, pid, unsigned int, len, unsigned long *, mask);
    PRE_MEM_READ( "sched_setaffinity(mask)", arg3, arg2);
 }
 
-PRE(sched_getaffinity)
+PREx(sys_sched_getaffinity, 0)
 {
-   /* int sched_setaffinity(pid_t pid, unsigned int len, unsigned long *mask) */
    PRINT("sched_getaffinity ( %d, %d, %p )", arg1, arg2, arg3);
+   PRE_REG_READ3(long, "sched_getaffinity", 
+                 vki_pid_t, pid, unsigned int, len, unsigned long *, mask);
    PRE_MEM_WRITE( "sched_getaffinity(mask)", arg3, arg2);
 }
 
-POST(sched_getaffinity)
+POSTx(sys_sched_getaffinity)
 {
    VG_TRACK(post_mem_write, arg3, arg2);
 }
@@ -6441,9 +6454,9 @@ static const struct sys_info sys_info[] = {
    SYSX_(__NR_ioperm,           sys_ioperm),       // 101 * L
    SYSXY(__NR_socketcall,       sys_socketcall),   // 102 * L
    SYSXY(__NR_syslog,           sys_syslog),       // 103 * L
-   SYSBA(__NR_setitimer,        sys_setitimer, NBRunInLWP), // 104 *
+   SYSXY(__NR_setitimer,        sys_setitimer),    // 104 * (SVr4,4.4BSD)
 
-   SYSBA(__NR_getitimer,        sys_getitimer, NBRunInLWP), // 105 *
+   SYSXY(__NR_getitimer,        sys_getitimer),    // 105 * (SVr4,4.4BSD)
    SYSXY(__NR_stat,             sys_newstat),      // 106 * P
    SYSXY(__NR_lstat,            sys_newlstat),     // 107 *
    SYSXY(__NR_fstat,            sys_newfstat),     // 108 * P (SVr4,BSD4.3)
@@ -6476,13 +6489,13 @@ static const struct sys_info sys_info[] = {
 
    // Nb: get_kernel_syms() was removed 2.4-->2.6
    SYSX_(__NR_get_kernel_syms,  sys_ni_syscall),   // 130 * P -- unimplemented
-   SYSB_(__NR_quotactl,         sys_quotactl, 0),  // 131 *
-   SYSB_(__NR_getpgid,          sys_getpgid, 0),   // 132 *
-   SYSB_(__NR_fchdir,           sys_fchdir, 0),    // 133 *
+   SYSX_(__NR_quotactl,         sys_quotactl),     // 131 * (?)
+   SYSX_(__NR_getpgid,          sys_getpgid),      // 132 * P
+   SYSX_(__NR_fchdir,           sys_fchdir),       // 133 * (almost-P)
    //   (__NR_bdflush,          sys_bdflush),      // 134 * L
 
    //   (__NR_sysfs,            sys_sysfs),        // 135 * (SVr4)
-   SYSB_(__NR_personality,      sys_personality, 0),  // 135 * (SVr4)
+   SYSX_(__NR_personality,      sys_personality),  // 136 * L
    SYSX_(__NR_afs_syscall,      sys_ni_syscall),   // 137 * P
    SYSX_(__NR_setfsuid,         sys_setfsuid16),   // 138 ## L
    SYSX_(__NR_setfsgid,         sys_setfsgid16),   // 139 ## L
@@ -6495,25 +6508,25 @@ static const struct sys_info sys_info[] = {
 
    SYSBA(__NR_readv,            sys_readv, MayBlock), // 145 *
    SYSB_(__NR_writev,           sys_writev, MayBlock), // 146 *
-   SYSB_(__NR_getsid,           sys_getsid, 0),    // 147 *
+   SYSX_(__NR_getsid,           sys_getsid),       // 147 * P
    SYSX_(__NR_fdatasync,        sys_fdatasync),    // 148 * P
    SYSBA(__NR__sysctl,          sys_sysctl, 0),    // 149 *
 
-   SYSX_(__NR_mlock,            sys_mlock),        // 150 * P
-   SYSX_(__NR_munlock,          sys_munlock),      // 151 * P
-   SYSX_(__NR_mlockall,         sys_mlockall),     // 152 * P
-   SYSX_(__NR_munlockall,       sys_munlockall),   // 153 * P
-   SYSBA(__NR_sched_setparam,   sys_sched_setparam, 0/*???*/), // 154 *
+   SYSX_(__NR_mlock,            sys_mlock),           // 150 * P
+   SYSX_(__NR_munlock,          sys_munlock),         // 151 * P
+   SYSX_(__NR_mlockall,         sys_mlockall),        // 152 * P
+   SYSX_(__NR_munlockall,       sys_munlockall),      // 153 * P
+   SYSXY(__NR_sched_setparam,   sys_sched_setparam),  // 154 * P
 
-   SYSBA(__NR_sched_getparam,        sys_sched_getparam, 0/*???*/), // 155 *
-   SYSB_(__NR_sched_setscheduler,    sys_sched_setscheduler, 0/*???*/), // 156 *
-   SYSB_(__NR_sched_getscheduler,    sys_sched_getscheduler, 0/*???*/), // 157 *
-   SYSB_(__NR_sched_yield,           sys_sched_yield, 0/*???*/), // 158 *
-   SYSB_(__NR_sched_get_priority_max,sys_sched_get_priority_max, 0/*???*/), // 159 *
+   SYSXY(__NR_sched_getparam,        sys_sched_getparam),         // 155 * P
+   SYSX_(__NR_sched_setscheduler,    sys_sched_setscheduler),     // 156 * P
+   SYSX_(__NR_sched_getscheduler,    sys_sched_getscheduler),     // 157 * P
+   SYSX_(__NR_sched_yield,           sys_sched_yield),            // 158 * P
+   SYSX_(__NR_sched_get_priority_max,sys_sched_get_priority_max), // 159 * P
 
-   SYSB_(__NR_sched_get_priority_min,sys_sched_get_priority_min, 0/*???*/), // 160 *
+   SYSX_(__NR_sched_get_priority_min,sys_sched_get_priority_min), // 160 * P
    //   (__NR_sched_rr_get_interval,   sys_sched_rr_get_interval), // 161 *
-   SYSBA(__NR_nanosleep,        sys_nanosleep, MayBlock|PostOnFail), // 162 *
+   SYSXY(__NR_nanosleep,        sys_nanosleep),    // 162 * P
    SYSX_(__NR_mremap,           sys_mremap),       // 163 * P
    SYSX_(__NR_setresuid,        sys_setresuid16),  // 164 ## (non-standard)
 
@@ -6539,9 +6552,9 @@ static const struct sys_info sys_info[] = {
    SYSB_(__NR_pwrite64,         sys_pwrite64, MayBlock), // 181 *
    SYSX_(__NR_chown,            sys_chown16),      // 182 * P
    SYSBA(__NR_getcwd,           sys_getcwd, 0),    // 183 *
-   SYSBA(__NR_capget,           sys_capget, 0),    // 184 *
+   SYSXY(__NR_capget,           sys_capget),       // 184 * L?
 
-   SYSB_(__NR_capset,           sys_capset, 0),    // 185 *
+   SYSX_(__NR_capset,           sys_capset),       // 185 * L?
    SYSBA(__NR_sigaltstack,      sys_sigaltstack, SIG_SIM), // 186 
    SYSBA(__NR_sendfile,         sys_sendfile, MayBlock), // 187 *
    SYSBA(__NR_getpmsg,          sys_ni_syscall, MayBlock), // 188 ...
@@ -6612,8 +6625,8 @@ static const struct sys_info sys_info[] = {
    SYSBA(__NR_sendfile64,       sys_sendfile64, MayBlock), // 239 *
 
    SYSBA(__NR_futex,            sys_futex, MayBlock), // 240 *
-   SYSB_(__NR_sched_setaffinity,sys_sched_setaffinity, 0), // 241 *
-   SYSBA(__NR_sched_getaffinity,sys_sched_getaffinity, 0), // 242 *
+   SYSX_(__NR_sched_setaffinity,sys_sched_setaffinity), // 241 * L?
+   SYSXY(__NR_sched_getaffinity,sys_sched_getaffinity), // 242 * L?
    SYSB_(__NR_set_thread_area,  sys_set_thread_area, Special), // 243 
    SYSB_(__NR_get_thread_area,  sys_get_thread_area, Special), // 244  
 
@@ -6632,7 +6645,7 @@ static const struct sys_info sys_info[] = {
    SYSB_(__NR_epoll_ctl,        sys_epoll_ctl, 0), // 255 *
    SYSBA(__NR_epoll_wait,       sys_epoll_wait, MayBlock), // 256 *
    //   (__NR_remap_file_pages, sys_remap_file_pages),   // 257 * L
-   SYSB_(__NR_set_tid_address,  sys_set_tid_address, Special), // 258 *
+   SYSX_(__NR_set_tid_address,  sys_set_tid_address), // 258 * ?
    SYSBA(__NR_timer_create,     sys_timer_create, 0), // 259 
 
    SYSBA(__NR_timer_settime,    sys_timer_settime, 0), // (timer_create+1) *

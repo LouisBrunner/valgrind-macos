@@ -2055,7 +2055,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                                             arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
                break;
-            case FIONREAD:
+            case FIONREAD:                /* identical to SIOCINQ */
                SYSCALL_TRACK( pre_mem_write, tst, "ioctl(FIONREAD)", 
                                              arg3, sizeof(int) );
                KERNEL_DO_SYSCALL(tid,res);
@@ -2196,6 +2196,17 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
                KERNEL_DO_SYSCALL(tid,res);
                if (!VG_(is_kerror)(res) && res == 0)
                   VG_TRACK( post_mem_write,arg3, sizeof(struct timeval));
+               break;
+            /* SIOCOUTQ is an ioctl that, when called on a socket, returns
+               the number of bytes currently in that socket's send buffer.
+               It writes this value as an int to the memory location
+               indicated by the third argument of ioctl(2). */
+            case SIOCOUTQ:
+               SYSCALL_TRACK( pre_mem_write,tst, "ioctl(SIOCOUTQ)", arg3, 
+                                sizeof(int));
+               KERNEL_DO_SYSCALL(tid,res);
+               if (!VG_(is_kerror)(res) && res == 0)
+                  VG_TRACK( post_mem_write,arg3, sizeof(int));
                break;
             case SIOCGRARP:           /* get RARP table entry         */
             case SIOCGARP:            /* get ARP table entry          */

@@ -1543,8 +1543,8 @@ static AMD64CondCode iselCondCode ( ISelEnv* env, IRExpr* e )
 /* DO NOT CALL THIS DIRECTLY ! */
 static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 {
-//..    MatchInfo mi;
-//..    DECLARE_PATTERN(p_32to1);
+   MatchInfo mi;
+   DECLARE_PATTERN(p_32to1_64to32);
 //..    DECLARE_PATTERN(p_1Uto32_then_32to1);
 //..    DECLARE_PATTERN(p_1Sto32_then_32to1);
 
@@ -1582,17 +1582,17 @@ static AMD64CondCode iselCondCode_wrk ( ISelEnv* env, IRExpr* e )
 //..       IRExpr* expr1 = mi.bindee[0];
 //..       return iselCondCode(env, expr1);
 //..    }
-//.. 
-//..    /* pattern: 32to1(expr32) */
-//..    DEFINE_PATTERN(p_32to1, 
-//..       unop(Iop_32to1,bind(0))
-//..    );
-//..    if (matchIRExpr(&mi,p_32to1,e)) {
-//..       X86RM* rm = iselIntExpr_RM(env, mi.bindee[0]);
-//..       addInstr(env, X86Instr_Test32(X86RI_Imm(1),rm));
-//..       return Xcc_NZ;
-//..    }
-//.. 
+
+   /* pattern: 32to1(64to32(expr64)) */
+   DEFINE_PATTERN(p_32to1_64to32, 
+      unop(Iop_32to1,unop(Iop_64to32, bind(0)))
+   );
+   if (matchIRExpr(&mi,p_32to1_64to32,e)) {
+      AMD64RM* rm = iselIntExpr_RM(env, mi.bindee[0]);
+      addInstr(env, AMD64Instr_Test64(AMD64RI_Imm(1),rm));
+      return Acc_NZ;
+   }
+
 //..    /* CmpEQ8 / CmpNE8 */
 //..    if (e->tag == Iex_Binop 
 //..        && (e->Iex.Binop.op == Iop_CmpEQ8
@@ -3434,18 +3434,18 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
 //..    case Ist_MFence:
 //..       addInstr(env, X86Instr_MFence(env->subarch));
 //..       return;
-//.. 
-//..    /* --------- EXIT --------- */
-//..    case Ist_Exit: {
-//..       X86RI*      dst;
-//..       X86CondCode cc;
-//..       if (stmt->Ist.Exit.dst->tag != Ico_U32)
-//..          vpanic("isel_x86: Ist_Exit: dst is not a 32-bit value");
-//..       dst = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
-//..       cc  = iselCondCode(env,stmt->Ist.Exit.guard);
-//..       addInstr(env, X86Instr_Goto(stmt->Ist.Exit.jk, cc, dst));
-//..       return;
-//..    }
+
+   /* --------- EXIT --------- */
+   case Ist_Exit: {
+      AMD64RI*      dst;
+      AMD64CondCode cc;
+      if (stmt->Ist.Exit.dst->tag != Ico_U64)
+         vpanic("iselStmt(amd64): Ist_Exit: dst is not a 64-bit value");
+      dst = iselIntExpr_RI(env, IRExpr_Const(stmt->Ist.Exit.dst));
+      cc  = iselCondCode(env,stmt->Ist.Exit.guard);
+      addInstr(env, AMD64Instr_Goto(stmt->Ist.Exit.jk, cc, dst));
+      return;
+   }
 
    default: break;
    }

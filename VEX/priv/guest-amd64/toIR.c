@@ -33,6 +33,9 @@
    USA.
 */
 
+/* EFLAGS after multiply-Q is wrong because there is no way to do
+   a 128-bit multiply in C (directly). */
+
 //.. /* TODO:
 //..    SBB reg with itself
 //.. 
@@ -11106,24 +11109,27 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
 //..       whatNext = Dis_StopHere;
 //..       DIP("int $0x80\n");
 //..       break;
-//.. 
-//..    /* ------------------------ Jcond, byte offset --------- */
-//.. 
-//..    case 0xEB: /* Jb (jump, byte offset) */
-//..       d32 = (((Addr32)guest_eip_bbstart)+delta+1) + getSDisp8(delta); 
-//..       delta++;
-//..       if (resteerOK && resteerOkFn((Addr64)(Addr32)d32)) {
-//..          whatNext   = Dis_Resteer;
-//..          *whereNext = d32;
-//..       } else {
-//..          jmp_lit(Ijk_Boring,d32);
-//..          whatNext = Dis_StopHere;
-//..       }
-//..       DIP("jmp-8 0x%x\n", d32);
-//..       break;
+
+   /* ------------------------ Jcond, byte offset --------- */
+
+   case 0xEB: /* Jb (jump, byte offset) */
+      if (sz != 4) 
+         goto decode_failure; /* JRS added 2004 July 11 */
+      d64 = (guest_rip_bbstart+delta+1) + getSDisp8(delta); 
+      delta++;
+      if (resteerOK && resteerOkFn(d64)) {
+         whatNext   = Dis_Resteer;
+         *whereNext = d64;
+      } else {
+         jmp_lit(Ijk_Boring,d64);
+         whatNext = Dis_StopHere;
+      }
+      DIP("jmp-8 0x%llx\n", d64);
+      break;
 
    case 0xE9: /* Jv (jump, 16/32 offset) */
-      if (sz != 4) goto decode_failure; /* JRS added 2004 July 11 */
+      if (sz != 4) 
+         goto decode_failure; /* JRS added 2004 July 11 */
       d64 = (guest_rip_bbstart+delta+sz) + getSDisp(sz,delta); 
       delta += sz;
       if (resteerOK && resteerOkFn(d64)) {
@@ -11136,29 +11142,31 @@ DisResult disInstr ( /*IN*/  Bool       resteerOK,
       DIP("jmp 0x%llx\n", d64);
       break;
 
-//..    case 0x70:
-//..    case 0x71:
-//..    case 0x72: /* JBb/JNAEb (jump below) */
-//..    case 0x73: /* JNBb/JAEb (jump not below) */
-//..    case 0x74: /* JZb/JEb (jump zero) */
-//..    case 0x75: /* JNZb/JNEb (jump not zero) */
-//..    case 0x76: /* JBEb/JNAb (jump below or equal) */
-//..    case 0x77: /* JNBEb/JAb (jump not below or equal) */
-//..    case 0x78: /* JSb (jump negative) */
-//..    case 0x79: /* JSb (jump not negative) */
-//..    case 0x7A: /* JP (jump parity even) */
-//..    case 0x7B: /* JNP/JPO (jump parity odd) */
-//..    case 0x7C: /* JLb/JNGEb (jump less) */
-//..    case 0x7D: /* JGEb/JNLb (jump greater or equal) */
-//..    case 0x7E: /* JLEb/JNGb (jump less or equal) */
-//..    case 0x7F: /* JGb/JNLEb (jump greater) */
-//..       d32 = (((Addr32)guest_eip_bbstart)+delta+1) + getSDisp8(delta); 
-//..       delta++;
-//..       jcc_01((X86Condcode)(opc - 0x70), (Addr32)(guest_eip_bbstart+delta), d32);
-//..       whatNext = Dis_StopHere;
-//..       DIP("j%s-8 0x%x\n", name_X86Condcode(opc - 0x70), d32);
-//..       break;
-//.. 
+   case 0x70:
+   case 0x71:
+   case 0x72: /* JBb/JNAEb (jump below) */
+   case 0x73: /* JNBb/JAEb (jump not below) */
+   case 0x74: /* JZb/JEb (jump zero) */
+   case 0x75: /* JNZb/JNEb (jump not zero) */
+   case 0x76: /* JBEb/JNAb (jump below or equal) */
+   case 0x77: /* JNBEb/JAb (jump not below or equal) */
+   case 0x78: /* JSb (jump negative) */
+   case 0x79: /* JSb (jump not negative) */
+   case 0x7A: /* JP (jump parity even) */
+   case 0x7B: /* JNP/JPO (jump parity odd) */
+   case 0x7C: /* JLb/JNGEb (jump less) */
+   case 0x7D: /* JGEb/JNLb (jump greater or equal) */
+   case 0x7E: /* JLEb/JNGb (jump less or equal) */
+   case 0x7F: /* JGb/JNLEb (jump greater) */
+      d64 = (guest_rip_bbstart+delta+1) + getSDisp8(delta); 
+      delta++;
+      jcc_01( (AMD64Condcode)(opc - 0x70), 
+              guest_rip_bbstart+delta,
+              d64 );
+      whatNext = Dis_StopHere;
+      DIP("j%s-8 0x%llx\n", name_AMD64Condcode(opc - 0x70), d64);
+      break;
+
 //..    case 0xE3: /* JECXZ or perhaps JCXZ, depending on OSO ?  Intel
 //..                  manual says it depends on address size override,
 //..                  which doesn't sound right to me. */

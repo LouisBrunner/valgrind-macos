@@ -112,12 +112,12 @@ X86AMode* X86AMode_IR ( UInt imm32, HReg reg ) {
    am->Xam.IR.reg = reg;
    return am;
 }
-X86AMode* X86AMode_IRRS ( UInt imm32, HReg base, HReg index, Int shift ) {
+X86AMode* X86AMode_IRRS ( UInt imm32, HReg base, HReg indEx, Int shift ) {
    X86AMode* am = LibVEX_Alloc(sizeof(X86AMode));
    am->tag = Xam_IRRS;
    am->Xam.IRRS.imm = imm32;
    am->Xam.IRRS.base = base;
-   am->Xam.IRRS.index = index;
+   am->Xam.IRRS.index = indEx;
    am->Xam.IRRS.shift = shift;
    vassert(shift >= 0 && shift <= 3);
    return am;

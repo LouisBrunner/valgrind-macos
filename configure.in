@@ -74,6 +74,12 @@ case "${host_cpu}" in
         VG_ARCH="x86"
         ;;
 
+     powerpc*)
+        AC_MSG_RESULT([no (${host_cpu})])
+        VG_ARCH="powerpc"
+        AC_MSG_ERROR([PowerPC not supported. Sorry])
+        ;;
+
      *) 
 	AC_MSG_RESULT([no (${host_cpu})])
 	AC_MSG_ERROR([Unsupported host architecture. Sorry])

@@ -2428,7 +2428,7 @@ static void vg_realreg_liveness_analysis ( UCodeBlock* cb )
 
    'tid' is the identity of the thread needing this block.
 */
-void VG_(translate) ( ThreadId tid, Addr orig_addr,
+Bool VG_(translate) ( ThreadId tid, Addr orig_addr,
                       Bool debugging_translation )
 {
    Addr        trans_addr, redir, orig_addr0 = orig_addr;
@@ -2484,7 +2484,7 @@ void VG_(translate) ( ThreadId tid, Addr orig_addr,
       } else
 	 VG_(synth_fault_mapping)(tid, orig_addr);
 
-      return;
+      return False;
    } else
       seg->flags |= SF_CODE;	/* contains cached code */
 
@@ -2583,6 +2583,8 @@ void VG_(translate) ( ThreadId tid, Addr orig_addr,
    VG_(arena_free)( VG_AR_JITTER, (void*)trans_addr );
 
    VGP_POPCC(VgpTranslate);
+
+   return True;
 }
 
 

@@ -15,6 +15,7 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	badfree-2trace.stderr.exp badfree-2trace.vgtest \
 	badfree.stderr.exp badfree.vgtest \
 	badjump.stderr.exp badjump.vgtest \
+	badjump2.stderr.exp badjump2.vgtest \
 	badloop.stderr.exp badloop.vgtest \
 	badrw.stderr.exp badrw.vgtest \
 	brk.stderr.exp brk.vgtest \
@@ -78,7 +79,8 @@ EXTRA_DIST = $(noinst_SCRIPTS) \
 	zeropage.stderr.exp zeropage.vgtest
 
 check_PROGRAMS = \
-	badaddrvalue badfree badjump badloop badrw brk brk2 buflen_check \
+	badaddrvalue badfree badjump badjump2 \
+	badloop badrw brk brk2 buflen_check \
 	clientperm custom_alloc \
 	doublefree error_counts errs1 exitprog execve execve2 \
 	fpeflags fprw fwrite inits inline \
@@ -98,6 +100,7 @@ AM_CXXFLAGS = $(AM_CFLAGS)
 badaddrvalue_SOURCES 	= badaddrvalue.c
 badfree_SOURCES 	= badfree.c
 badjump_SOURCES 	= badjump.c
+badjump2_SOURCES 	= badjump2.c
 badloop_SOURCES 	= badloop.c
 badrw_SOURCES		= badrw.c
 brk_SOURCES 		= brk.c

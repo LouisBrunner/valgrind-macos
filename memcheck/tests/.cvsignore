@@ -3,6 +3,7 @@ Makefile
 badaddrvalue
 badfree
 badjump
+badjump2
 badloop
 buflen_check
 clientperm

@@ -857,20 +857,29 @@ VgSchedReturnCode do_scheduler ( Int* exitcode, ThreadId* last_run_tid )
             thread. */
 
          if (trc == VG_TRC_INNER_FASTMISS) {
+            Addr ip = ARCH_INSTR_PTR(VG_(threads)[tid].arch);
+
             vg_assert(VG_(dispatch_ctr) > 0);
 
             /* Trivial event.  Miss in the fast-cache.  Do a full
                lookup for it. */
-            trans_addr = VG_(search_transtab) 
-                              ( ARCH_INSTR_PTR(VG_(threads)[tid].arch) );
+            trans_addr = VG_(search_transtab)( ip );
             if (trans_addr == (Addr)0) {
                /* Not found; we need to request a translation. */
-               VG_(translate)( tid, ARCH_INSTR_PTR(VG_(threads)[tid].arch),
-                               /*debug*/False ); 
-               trans_addr = VG_(search_transtab) 
-                                 ( ARCH_INSTR_PTR(VG_(threads)[tid].arch) ); 
-               if (trans_addr == (Addr)0)
-                  VG_(core_panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
+               if (VG_(translate)( tid, ip, /*debug*/False )) {
+                  trans_addr = VG_(search_transtab)( ip ); 
+                  if (trans_addr == (Addr)0)
+                     VG_(core_panic)("VG_TRC_INNER_FASTMISS: missing tt_fast entry");
+               } else {
+                  // If VG_(translate)() fails, it's because it had to throw
+                  // a signal because the client jumped to a bad address.
+                  // This means VG_(deliver_signal)() will have been called
+                  // by now, and the program counter will now be pointing to
+                  // the start of the signal handler (if there is no
+                  // handler, things would have been aborted by now), so do
+                  // nothing, and things will work out next time around the
+                  // scheduler loop.
+               }
             }
             continue; /* with this thread */
          }

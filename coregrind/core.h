@@ -1128,7 +1128,7 @@ struct _UCodeBlock {
    Int     nextTemp;
 };
 
-extern void VG_(translate)  ( ThreadId tid, Addr orig_addr, Bool debugging );
+extern Bool VG_(translate)  ( ThreadId tid, Addr orig_addr, Bool debugging );
 
 extern void VG_(sanity_check_UInstr) ( UInt n, UInstr* u );
 

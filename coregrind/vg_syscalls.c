@@ -815,7 +815,7 @@ static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid)
 	POST(new) __attribute__((alias(STR(after_##old))))
 
 #define SYSNO	(tst->m_eax)		/* in PRE(x)  */
-#define res	((Int)tst->m_eax)	/* in POST(x) */
+#define res	(tst->m_eax)	/* in POST(x) */
 #define arg1	(tst->m_ebx)
 #define arg2	(tst->m_ecx)
 #define arg3	(tst->m_edx)

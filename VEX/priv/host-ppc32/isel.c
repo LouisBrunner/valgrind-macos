@@ -1046,8 +1046,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Not32: {
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-            addInstr(env, mk_iMOVds_RR(dst,src) );
-            addInstr(env, PPC32Instr_Unary32(Pun_NOT,dst));
+            addInstr(env, PPC32Instr_Unary32(Pun_NOT,dst,src));
             return dst;
          }
          case Iop_64HIto32: {
@@ -1056,8 +1055,9 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             return rHi; /* and abandon rLo .. poor wee thing :-) */
          }
          case Iop_64to32: {
+
 #if 1
-// CAB: This right?
+// CAB: This right? Need to figure out sign issues...
 	    /* 64to32(MullS32(expr,expr)) */
 	    {
 		DECLARE_PATTERN(p_MullS32_then_64to32);
@@ -1072,11 +1072,29 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 		    return dst;
 		}
 	    }
-#else
+#endif
+
+#if 0
+// CAB: This right? Need to figure out sign issues...
+	    /* 64to32(MullU32(expr,expr)) */
+	    {
+		DECLARE_PATTERN(p_MullU32_then_64to32);
+		DEFINE_PATTERN(p_MullU32_then_64to32,
+			       unop(Iop_64to32,
+				    binop(Iop_MullU32, bind(0), bind(1))));
+		if (matchIRExpr(&mi,p_MullU32_then_64to32,e)) {
+		    HReg dst = newVRegI(env);
+		    HReg     src1 = iselIntExpr_R( env, mi.bindee[0] );
+		    PPC32RI* src2 = iselIntExpr_RI( env, mi.bindee[1] );
+		    addInstr(env, PPC32Instr_Alu32(Palu_MUL, dst, src1, src2));
+		    return dst;
+		}
+	    }
+#endif
+
             HReg rHi, rLo;
             iselInt64Expr(&rHi,&rLo, env, e->Iex.Unop.arg);
             return rLo; /* similar stupid comment to the above ... */
-#endif
          }
          case Iop_16HIto8:
          case Iop_32HIto16: {
@@ -1112,20 +1130,13 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
 //..             addInstr(env, X86Instr_Bsfr32(True,src,dst));
 //..             return dst;
 //..          }
-//..          case Iop_Clz32: {
-//..             /* Count leading zeroes.  Do 'bsrl' to establish the index
-//..                of the highest set bit, and subtract that value from
-//..                31. */
-//..             HReg tmp = newVRegI(env);
-//..             HReg dst = newVRegI(env);
-//..             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-//..             addInstr(env, X86Instr_Bsfr32(False,src,tmp));
-//..             addInstr(env, X86Instr_Alu32R(Xalu_MOV, 
-//..                                           X86RMI_Imm(31), dst));
-//..             addInstr(env, X86Instr_Alu32R(Xalu_SUB,
-//..                                           X86RMI_Reg(tmp), dst));
-//..             return dst;
-//..          }
+         case Iop_Clz32: {
+            /* Count leading zeroes. */
+            HReg dst = newVRegI(env);
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+            addInstr(env, PPC32Instr_Unary32(Pun_CLZ,dst,src));
+            return dst;
+         }
 
 //..          case Iop_128to32: {
 //..             HReg      dst  = newVRegI(env);

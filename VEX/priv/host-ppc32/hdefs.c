@@ -385,6 +385,7 @@ HChar* showPPC32UnaryOp ( PPC32UnaryOp op ) {
    switch (op) {
       case Pun_NOT: return "not";
       case Pun_NEG: return "neg";
+      case Pun_CLZ: return "cntlzw";
       default: vpanic("showPPC32UnaryOp");
    }
 }
@@ -464,11 +465,12 @@ PPC32Instr* PPC32Instr_Test32  ( HReg dst, PPC32RI* src ) {
    i->Pin.Test32.src = src;
    return i;
 }
-PPC32Instr* PPC32Instr_Unary32  ( PPC32UnaryOp op, HReg dst ) {
+PPC32Instr* PPC32Instr_Unary32  ( PPC32UnaryOp op, HReg dst, HReg src ) {
    PPC32Instr* i      = LibVEX_Alloc(sizeof(PPC32Instr));
    i->tag             = Pin_Unary32;
    i->Pin.Unary32.op  = op;
    i->Pin.Unary32.dst = dst;
+   i->Pin.Unary32.src = src;
    return i;
 }
 PPC32Instr* PPC32Instr_MulL ( Bool syned, Bool word, HReg dst,
@@ -696,8 +698,10 @@ void ppPPC32Instr ( PPC32Instr* i )
          ppPPC32RI(i->Pin.Test32.src);
          return;
       case Pin_Unary32:
-         vex_printf("%sl ", showPPC32UnaryOp(i->Pin.Unary32.op));
+         vex_printf("%s ", showPPC32UnaryOp(i->Pin.Unary32.op));
          ppHRegPPC32(i->Pin.Unary32.dst);
+         vex_printf(",");
+         ppHRegPPC32(i->Pin.Unary32.src);
          return;
       case Pin_MulL:
 	  if (i->Pin.MulL.src2->tag == Pri_Imm) {
@@ -981,7 +985,8 @@ void getRegUsage_PPC32Instr ( HRegUsage* u, PPC32Instr* i )
          addRegUsage_PPC32RI(u, i->Pin.Test32.src);
          return;
       case Pin_Unary32:
-	 addHRegUse(u, HRmModify, i->Pin.Unary32.dst);
+	 addHRegUse(u, HRmWrite, i->Pin.Unary32.dst);
+	 addHRegUse(u, HRmRead, i->Pin.Unary32.src);
          return;
       case Pin_MulL:
 	 addHRegUse(u, HRmWrite, i->Pin.MulL.dst);
@@ -1209,6 +1214,7 @@ void mapRegs_PPC32Instr (HRegRemap* m, PPC32Instr* i)
          return;
       case Pin_Unary32:
          mapReg(m, &i->Pin.Unary32.dst);
+         mapReg(m, &i->Pin.Unary32.src);
          return;
       case Pin_MulL:
          mapReg(m, &i->Pin.MulL.dst);
@@ -1366,47 +1372,48 @@ Bool isMove_PPC32Instr ( PPC32Instr* i, HReg* src, HReg* dst )
 }
 
 
-/* Generate x86 spill/reload instructions under the direction of the
+/* Generate ppc32 spill/reload instructions under the direction of the
    register allocator.  Note it's critical these don't write the
    condition codes. */
 
 PPC32Instr* genSpill_PPC32 ( HReg rreg, Int offsetB )
-{ vassert(0);
-//..    X86AMode* am;
-//..    vassert(offsetB >= 0);
-//..    vassert(!hregIsVirtual(rreg));
-//..    am = X86AMode_IR(offsetB, hregX86_EBP());
-//.. 
-//..    switch (hregClass(rreg)) {
-//..       case HRcInt32:
-//..          return X86Instr_Alu32M ( Xalu_MOV, X86RI_Reg(rreg), am );
-//..       case HRcFlt64:
-//..          return X86Instr_FpLdSt ( False/*store*/, 8, rreg, am );
-//..       case HRcVec128:
-//..          return X86Instr_SseLdSt ( False/*store*/, rreg, am );
-//..       default: 
-//..          ppHRegClass(hregClass(rreg));
-//..          vpanic("genSpill_X86: unimplemented regclass");
-//..    }
+{
+   PPC32AMode* am;
+   vassert(offsetB >= 0);
+   vassert(!hregIsVirtual(rreg));
+   am = PPC32AMode_IR(offsetB, GuestStatePtr);
+
+   switch (hregClass(rreg)) {
+      case HRcInt32:
+	 return PPC32Instr_Store( 4, am, rreg);
+	 //case HRcFlt64:
+         //   return PPC32Instr_FpLdSt ( False/*store*/, 8, rreg, am );
+	 //case HRcVec128:
+         //   return PPC32Instr_SseLdSt ( False/*store*/, rreg, am );
+      default: 
+         ppHRegClass(hregClass(rreg));
+         vpanic("genSpill_PPC32: unimplemented regclass");
+   }
 }
 
 PPC32Instr* genReload_PPC32 ( HReg rreg, Int offsetB )
-{ vassert(0);
-//..    X86AMode* am;
-//..    vassert(offsetB >= 0);
-//..    vassert(!hregIsVirtual(rreg));
-//..    am = X86AMode_IR(offsetB, hregX86_EBP());
-//..    switch (hregClass(rreg)) {
-//..       case HRcInt32:
-//..          return X86Instr_Alu32R ( Xalu_MOV, X86RMI_Mem(am), rreg );
-//..       case HRcFlt64:
-//..          return X86Instr_FpLdSt ( True/*load*/, 8, rreg, am );
-//..       case HRcVec128:
-//..          return X86Instr_SseLdSt ( True/*load*/, rreg, am );
-//..       default: 
-//..          ppHRegClass(hregClass(rreg));
-//..          vpanic("genReload_X86: unimplemented regclass");
-//..    }
+{
+   PPC32AMode* am;
+   vassert(offsetB >= 0);
+   vassert(!hregIsVirtual(rreg));
+   am = PPC32AMode_IR(offsetB, GuestStatePtr);
+
+   switch (hregClass(rreg)) {
+       case HRcInt32:
+	 return PPC32Instr_LoadEX( 4, False, rreg, am );
+	 //case HRcFlt64:
+	 //   return PPC32Instr_FpLdSt ( True/*load*/, 8, rreg, am );
+	 //case HRcVec128:
+	 //   return PPC32Instr_SseLdSt ( True/*load*/, rreg, am );
+      default: 
+         ppHRegClass(hregClass(rreg));
+         vpanic("genReload_PPC32: unimplemented regclass");
+   }
 }
 
 

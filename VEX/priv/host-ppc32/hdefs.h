@@ -234,7 +234,8 @@ extern void ppPPC32RI ( PPC32RI* );
 typedef
    enum {
       Pun_NEG,
-      Pun_NOT
+      Pun_NOT,
+      Pun_CLZ
    }
    PPC32UnaryOp;
 
@@ -342,6 +343,7 @@ typedef
          struct {
             PPC32UnaryOp op;
             HReg         dst;
+            HReg         src;
          } Unary32;
          /* DX:AX = AX *s/u r/m16,  or EDX:EAX = EAX *s/u r/m32 */
          struct {
@@ -493,7 +495,7 @@ typedef
 extern PPC32Instr* PPC32Instr_Alu32     ( PPC32AluOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Sh32      ( PPC32ShiftOp, HReg, HReg, PPC32RI* );
 extern PPC32Instr* PPC32Instr_Test32    ( HReg dst, PPC32RI* src );
-extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst );
+extern PPC32Instr* PPC32Instr_Unary32   ( PPC32UnaryOp op, HReg dst, HReg src );
 extern PPC32Instr* PPC32Instr_MulL      ( Bool syned, Bool word, HReg, HReg, PPC32RI* );
 //.. extern X86Instr* X86Instr_Div       ( Bool syned, X86ScalarSz, X86RM* );
 //.. extern X86Instr* X86Instr_Sh3232    ( X86ShiftOp, UInt amt, HReg src, HReg dst );

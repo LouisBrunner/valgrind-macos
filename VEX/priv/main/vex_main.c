@@ -94,6 +94,7 @@ TranslateResult LibVEX_Translate (
    IRBB*        irbb;
    HInstrArray* vcode;
    HInstrArray* rcode;
+   Int          i;
 
    vassert(vex_initdone);
    LibVEX_Clear(False);
@@ -145,12 +146,26 @@ TranslateResult LibVEX_Translate (
    /* Turn it into virtual-registerised code. */
    vcode = iselBB ( irbb );
 
+   vex_printf("\n-------- Virtual registerised code --------\n");
+   for (i = 0; i < vcode->arr_used; i++) {
+      ppInstr(vcode->arr[i]);
+      vex_printf("\n");
+   }
+   vex_printf("\n");
+
    /* Register allocate. */
    rcode = doRegisterAllocation ( vcode, available_real_regs,
                   	       	  n_available_real_regs,
 			          isMove, getRegUsage, mapRegs, 
 			          genSpill, genReload,
 				  ppInstr, ppReg );
+
+   vex_printf("\n-------- Post-regalloc code --------\n");
+   for (i = 0; i < rcode->arr_used; i++) {
+      ppInstr(rcode->arr[i]);
+      vex_printf("\n");
+   }
+   vex_printf("\n");
 
    /* Assemble, etc. */
    LibVEX_Clear(True);

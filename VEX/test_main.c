@@ -78,7 +78,8 @@ int main ( int argc, char** argv )
       assert(linebuf[0] == '.');
       /* second line is:   . byte byte byte etc */
       //printf("%s", linebuf);
-      printf("Basic Block %d, Start %x, nbytes %d\n", 
+      printf("\n\n============ Basic Block %d, "
+             "Start %x, nbytes %d ============\n\n", 
              bb_number, orig_addr, orig_nbytes);
       assert(orig_nbytes >= 1 && orig_nbytes <= N_ORIGBUF);
       for (i = 0; i < orig_nbytes; i++) {
@@ -250,8 +251,8 @@ int main ( void )
 
    printf("\nAfter\n");
    for (i = 0; i < rcode->arr_used; i++) {
-     ppX86Instr(stdout, rcode->arr[i]);
-     printf("\n");
+      ppX86Instr(stdout, rcode->arr[i]);
+      printf("\n");
    }
    printf("\n");
    }

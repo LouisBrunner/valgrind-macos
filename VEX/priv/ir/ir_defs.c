@@ -41,7 +41,10 @@ void ppIRConst ( IRConst* con )
 
 void ppIRTemp ( IRTemp tmp )
 {
-  vex_printf( "t%d", tmp);
+   if (tmp == INVALID_IRTEMP)
+      vex_printf("INVALID_IRTEMP");
+   else
+      vex_printf( "t%d", tmp);
 }
 
 
@@ -67,7 +70,9 @@ void ppIRExpr ( IRExpr* e )
 {
   switch (e->tag) {
     case Iex_Get:
-      vex_printf( "GET(%d,%d)", e->Iex.Get.offset, e->Iex.Get.size);
+      vex_printf( "GET(%d,", e->Iex.Get.offset);
+      ppIRType(e->Iex.Get.ty);
+      vex_printf(")");
       break;
     case Iex_Tmp:
       ppIRTemp(e->Iex.Tmp.tmp);
@@ -105,7 +110,7 @@ void ppIRStmt ( IRStmt* s )
 {
   switch (s->tag) {
     case Ist_Put:
-      vex_printf( "PUT(%d,%d) = ", s->Ist.Put.offset, s->Ist.Put.size);
+      vex_printf( "PUT(%d) = ", s->Ist.Put.offset);
       ppIRExpr(s->Ist.Put.expr);
       break;
     case Ist_Tmp:
@@ -220,11 +225,11 @@ IRConst* IRConst_U64 ( ULong u64 )
 
 /* Constructors -- IRExpr */
 
-IRExpr* IRExpr_Get ( Int off, Int sz ) {
+IRExpr* IRExpr_Get ( Int off, IRType ty ) {
    IRExpr* e         = LibVEX_Alloc(sizeof(IRExpr));
    e->tag            = Iex_Get;
    e->Iex.Get.offset = off;
-   e->Iex.Get.size   = sz;
+   e->Iex.Get.ty     = ty;
    return e;
 }
 IRExpr* IRExpr_Tmp ( IRTemp tmp ) {
@@ -265,12 +270,11 @@ IRExpr* IRExpr_Const ( IRConst* con ) {
 
 /* Constructors -- IRStmt */
 
-IRStmt* IRStmt_Put ( Int off, Int sz, IRExpr* value ) {
+IRStmt* IRStmt_Put ( Int off, IRExpr* value ) {
    IRStmt* s         = LibVEX_Alloc(sizeof(IRStmt));
    s->tag            = Ist_Put;
    s->link           = NULL;
    s->Ist.Put.offset = off;
-   s->Ist.Put.size   = sz;
    s->Ist.Put.expr   = value;
    return s;
 }
@@ -364,6 +368,8 @@ IRType lookupIRTypeEnv ( IRTypeEnv* env, IRTemp tmp )
 IRType typeOfIRExpr ( IRTypeEnv* tyenv, IRExpr* e )
 {
    switch (e->tag) {
+      case Iex_Get:
+         return e->Iex.Get.ty;
       case Iex_Tmp:
          return lookupIRTypeEnv(tyenv, e->Iex.Tmp.tmp);
       case Iex_Const:

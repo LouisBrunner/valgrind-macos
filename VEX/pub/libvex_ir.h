@@ -53,9 +53,11 @@ extern void ppIRConst ( IRConst* );
 
 /* ------------------ Temporaries ------------------ */
 
-typedef Int IRTemp;
+typedef UInt IRTemp;
 
 extern void ppIRTemp ( IRTemp );
+
+#define INVALID_IRTEMP ((IRTemp)0xFFFFFFFF)
 
 
 /* ------------------ Binary and unary ops ------------------ */
@@ -98,8 +100,8 @@ typedef
       IRExprTag tag;
       union {
          struct {
-            Int offset;
-            Int size;
+            Int    offset;
+            IRType ty;
          } Get;
          struct {
             IRTemp tmp;
@@ -124,7 +126,7 @@ typedef
    }
    IRExpr;
 
-extern IRExpr* IRExpr_Get   ( Int off, Int sz );
+extern IRExpr* IRExpr_Get   ( Int off, IRType ty );
 extern IRExpr* IRExpr_Tmp   ( IRTemp tmp );
 extern IRExpr* IRExpr_Binop ( IROp op, IRExpr* arg1, IRExpr* arg2 );
 extern IRExpr* IRExpr_Unop  ( IROp op, IRExpr* arg );
@@ -151,7 +153,6 @@ typedef
       union {
          struct {
             Int     offset;
-            Int     size;
             IRExpr* expr;
          } Put;
          struct {
@@ -167,7 +168,7 @@ typedef
    }
    IRStmt;
 
-extern IRStmt* IRStmt_Put  ( Int off, Int sz, IRExpr* value );
+extern IRStmt* IRStmt_Put  ( Int off, IRExpr* value );
 extern IRStmt* IRStmt_Tmp  ( IRTemp tmp, IRExpr* expr );
 extern IRStmt* IRStmt_STle ( IRExpr* addr, IRExpr* value );
 

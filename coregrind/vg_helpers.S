@@ -333,33 +333,34 @@ VG_(helper_shrdw):
 /* Get the direction flag, and return either 1 or -1. */
 .global VG_(helper_get_dirflag)
 VG_(helper_get_dirflag):
-	pushfl
 	pushl	%eax
 
-	pushfl
+	movl	VGOFF_(m_dflag), %eax
+	movl	(%ebp, %eax, 4), %eax
+	movl	%eax, 8(%esp)
+
 	popl	%eax
-	shrl	$10, %eax
-	andl	$1, %eax
-	jnz	L1
-	movl	$1, %eax
-	jmp	L2
-L1:	movl	$-1, %eax
-L2:	movl	%eax, 12(%esp)
-
-	popl %eax
-	popfl
 	ret
-
 
 /* Clear/set the direction flag. */
 .global VG_(helper_CLD)
 VG_(helper_CLD):
-	cld
+	pushl	%eax
+
+	movl	VGOFF_(m_dflag), %eax
+	movl	$1, (%ebp, %eax, 4)
+
+	popl	%eax
 	ret
 
 .global VG_(helper_STD)
 VG_(helper_STD):
-	std
+	pushl	%eax
+
+	movl	VGOFF_(m_dflag), %eax
+	movl	$-1, (%ebp, %eax, 4)
+
+	popl	%eax
 	ret
 
 /* Clear/set the carry flag. */

@@ -640,10 +640,11 @@ typedef UChar FlagSet;
 /* flag positions in eflags */
 #define EFlagC  (1 <<  0)       /* carry */
 #define EFlagP  (1 <<  2)       /* parity */
+#define EFlagA	(1 <<  4)	/* aux carry */
 #define EFlagZ  (1 <<  6)       /* zero */
 #define EFlagS  (1 <<  7)       /* sign */
+#define EFlagD  (1 << 10)	/* direction */
 #define EFlagO  (1 << 11)       /* overflow */
-
 
 /* Liveness of general purpose registers, useful for code generation.
    Reg rank order 0..N-1 corresponds to bits 0..N-1, ie. first
@@ -886,7 +887,7 @@ extern UInt  VG_(extend_s_8to32) ( UInt x );
 extern void VG_(emitB)    ( UInt b );
 extern void VG_(emitW)    ( UInt w );
 extern void VG_(emitL)    ( UInt l );
-extern void VG_(new_emit) ( void );
+extern void VG_(new_emit) ( Bool upd_cc, FlagSet uses_flags, FlagSet sets_flags );
 
 /* Finding offsets */
 extern Int  VG_(helper_offset)       ( Addr a );
@@ -899,7 +900,8 @@ extern Int VG_(realreg_to_rank) ( Int realreg );
 extern Int VG_(rank_to_realreg) ( Int rank    );
 
 /* Call a subroutine.  Does no argument passing, stack manipulations, etc. */
-extern void VG_(synth_call) ( Bool ensure_shortform, Int word_offset );
+extern void VG_(synth_call) ( Bool ensure_shortform, Int word_offset, 
+			      Bool upd_cc, FlagSet use_flags, FlagSet set_flags );
 
 /* For calling C functions -- saves caller save regs, pushes args, calls,
    clears the stack, restores caller save regs.  `fn' must be registered in
@@ -922,20 +924,20 @@ extern void VG_(emit_amode_ereg_greg)    ( Int e_reg, Int g_reg );
 extern void VG_(emit_movv_offregmem_reg) ( Int sz, Int off, Int areg, Int reg );
 extern void VG_(emit_movv_reg_offregmem) ( Int sz, Int reg, Int off, Int areg );
 extern void VG_(emit_movv_reg_reg)       ( Int sz, Int reg1, Int reg2 );
-extern void VG_(emit_nonshiftopv_lit_reg)( Int sz, Opcode opc, UInt lit,
+extern void VG_(emit_nonshiftopv_lit_reg)( Bool upd_cc, Int sz, Opcode opc, UInt lit,
                                            Int reg );
-extern void VG_(emit_shiftopv_lit_reg)   ( Int sz, Opcode opc, UInt lit,
+extern void VG_(emit_shiftopv_lit_reg)   ( Bool upd_cc, Int sz, Opcode opc, UInt lit,
                                            Int reg );
-extern void VG_(emit_nonshiftopv_reg_reg)( Int sz, Opcode opc,
+extern void VG_(emit_nonshiftopv_reg_reg)( Bool upd_cc, Int sz, Opcode opc,
                                            Int reg1, Int reg2 );
 extern void VG_(emit_movv_lit_reg)       ( Int sz, UInt lit, Int reg );
-extern void VG_(emit_unaryopv_reg)       ( Int sz, Opcode opc, Int reg );
+extern void VG_(emit_unaryopv_reg)       ( Bool upd_cc, Int sz, Opcode opc, Int reg );
 extern void VG_(emit_pushv_reg)          ( Int sz, Int reg );
 extern void VG_(emit_popv_reg)           ( Int sz, Int reg );
 
 extern void VG_(emit_pushl_lit32)        ( UInt int32 );
 extern void VG_(emit_pushl_lit8)         ( Int lit8 );
-extern void VG_(emit_cmpl_zero_reg)      ( Int reg );
+extern void VG_(emit_cmpl_zero_reg)      ( Bool upd_cc, Int reg );
 extern void VG_(emit_swapl_reg_EAX)      ( Int reg );
 extern void VG_(emit_movv_lit_offregmem) ( Int sz, UInt lit, Int off,
                                            Int memreg );
@@ -943,8 +945,8 @@ extern void VG_(emit_movv_lit_offregmem) ( Int sz, UInt lit, Int off,
 /* b-size (1 byte) instruction emitters */
 extern void VG_(emit_movb_lit_offregmem) ( UInt lit, Int off, Int memreg );
 extern void VG_(emit_movb_reg_offregmem) ( Int reg, Int off, Int areg );
-extern void VG_(emit_unaryopb_reg)       ( Opcode opc, Int reg );
-extern void VG_(emit_testb_lit_reg)      ( UInt lit, Int reg );
+extern void VG_(emit_unaryopb_reg)       ( Bool upd_cc, Opcode opc, Int reg );
+extern void VG_(emit_testb_lit_reg)      ( Bool upd_cc, UInt lit, Int reg );
 
 /* zero-extended load emitters */
 extern void VG_(emit_movzbl_offregmem_reg) ( Int off, Int regmem, Int reg );
@@ -953,7 +955,7 @@ extern void VG_(emit_movzwl_offregmem_reg) ( Int off, Int areg, Int reg );
 /* misc instruction emitters */
 extern void VG_(emit_call_reg)         ( Int reg );
 extern void VG_(emit_add_lit_to_esp)   ( Int lit );
-extern void VG_(emit_jcondshort_delta) ( Condcode cond, Int delta );
+extern void VG_(emit_jcondshort_delta) ( Bool simd_cc, Condcode cond, Int delta );
 extern void VG_(emit_pushal)           ( void );
 extern void VG_(emit_popal)            ( void );
 extern void VG_(emit_AMD_prefetch_reg) ( Int reg );

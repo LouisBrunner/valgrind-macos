@@ -1413,6 +1413,9 @@ extern UInt VG_(sanity_slow_count);
 extern UInt VG_(num_scheduling_events_MINOR);
 extern UInt VG_(num_scheduling_events_MAJOR);
 
+/* Insert and extract the D flag from eflags */
+UInt VG_(insertDflag)(UInt eflags, Int d);
+Int VG_(extractDflag)(UInt eflags);
 
 /* ---------------------------------------------------------------------
    Exports of vg_memory.c
@@ -1600,6 +1603,8 @@ extern Int VGOFF_(m_edi);
 extern Int VGOFF_(m_eflags);
 extern Int VGOFF_(m_fpustate);
 extern Int VGOFF_(m_eip);
+
+extern Int VGOFF_(m_dflag);	/* D flag is handled specially */
 
 extern Int VGOFF_(m_cs);
 extern Int VGOFF_(m_ss);

@@ -51,7 +51,7 @@
 
 static void emit_testv_lit_reg ( Int sz, UInt lit, Int reg )
 {
-   VG_(new_emit)();
+   VG_(new_emit)(False, FlagsEmpty, FlagsOSZACP);
    if (sz == 2) {
       VG_(emitB) ( 0x66 );
    } else {
@@ -67,7 +67,7 @@ static void emit_testv_lit_reg ( Int sz, UInt lit, Int reg )
 
 static void emit_testv_lit_offregmem ( Int sz, UInt lit, Int off, Int reg )
 {
-   VG_(new_emit)();
+   VG_(new_emit)(False, FlagsEmpty, FlagsOSZACP);
    if (sz == 2) {
       VG_(emitB) ( 0x66 );
    } else {
@@ -94,7 +94,7 @@ static void synth_minimal_test_lit_reg ( UInt lit, Int reg32 )
 {
    if ((lit & 0xFFFFFF00) == 0 && reg32 < 4) {
       /* We can get away with a byte insn. */
-      VG_(emit_testb_lit_reg) ( lit, reg32 );
+      VG_(emit_testb_lit_reg) ( False, lit, reg32 );
    }
    else 
    if ((lit & 0xFFFF0000) == 0) {
@@ -207,7 +207,7 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
                we might as well compare it against zero, which can be
                done with a shorter insn. */
             /* synth_minimal_test_lit_reg ( 0xFFFFFFFF, val ); */
-            VG_(emit_cmpl_zero_reg) ( val );
+            VG_(emit_cmpl_zero_reg) ( False, val );
             break;
          case 2:
             synth_minimal_test_lit_reg ( 0x0000FFFF, val );
@@ -222,7 +222,7 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
             VG_(skin_panic)("synth_TESTV(RealReg)");
       }
    }
-   VG_(emit_jcondshort_delta) ( CondZ, 3 );
+   VG_(emit_jcondshort_delta) ( False, CondZ, 3 );
    VG_(synth_call) (
       True, /* needed to guarantee that this insn is indeed 3 bytes long */
       ( sz==4 
@@ -231,7 +231,8 @@ static void synth_TESTV ( Int sz, Int tag, Int val )
         ? VG_(helper_offset)((Addr) & MC_(helper_value_check2_fail))
         : ( sz==1 
           ? VG_(helper_offset)((Addr) & MC_(helper_value_check1_fail))
-          : VG_(helper_offset)((Addr) & MC_(helper_value_check0_fail)))))
+	  : VG_(helper_offset)((Addr) & MC_(helper_value_check0_fail))))),
+      False, FlagsEmpty, FlagsOSZACP /* helpers don't preserve flags */
    );
 }
 
@@ -247,7 +248,7 @@ static void synth_GETV ( Int sz, Int arch, Int reg )
       case 2: 
          VG_(emit_movzwl_offregmem_reg) ( VG_(shadow_reg_offset)(arch),
                                           R_EBP, reg );
-         VG_(emit_nonshiftopv_lit_reg) ( 4, OR, 0xFFFF0000, reg );
+         VG_(emit_nonshiftopv_lit_reg) ( False, 4, OR, 0xFFFF0000, reg );
          break;
       case 1: 
          if (arch < 4) {
@@ -257,7 +258,7 @@ static void synth_GETV ( Int sz, Int arch, Int reg )
             VG_(emit_movzbl_offregmem_reg) ( VG_(shadow_reg_offset)(arch-4)+1,
                                              R_EBP, reg );
          }
-         VG_(emit_nonshiftopv_lit_reg) ( 4, OR, 0xFFFFFF00, reg );
+         VG_(emit_nonshiftopv_lit_reg) ( False, 4, OR, 0xFFFFFF00, reg );
          break;
       default: 
          VG_(skin_panic)("synth_GETV");
@@ -364,25 +365,25 @@ static void synth_TAG1_op ( TagOp op, Int reg, RRegSet regs_live_after )
             or 0xFFFFFFFE, %reg   -- invalidate all bits except lowest
       */
       case Tag_PCast40:
-         VG_(emit_unaryopv_reg)(4, NEG, reg);
-         VG_(emit_nonshiftopv_reg_reg)(4, SBB, reg, reg);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFFFFFE, reg);
+         VG_(emit_unaryopv_reg)(False, 4, NEG, reg);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, SBB, reg, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFFFFFE, reg);
          break;
       case Tag_PCast20:
-         VG_(emit_unaryopv_reg)(2, NEG, reg);
-         VG_(emit_nonshiftopv_reg_reg)(4, SBB, reg, reg);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFFFFFE, reg);
+         VG_(emit_unaryopv_reg)(False, 2, NEG, reg);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, SBB, reg, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFFFFFE, reg);
          break;
       case Tag_PCast10:
          if (reg >= 4) {
             VG_(emit_swapl_reg_EAX)(reg);
-            VG_(emit_unaryopb_reg)(NEG, R_EAX);
+            VG_(emit_unaryopb_reg)(False, NEG, R_EAX);
             VG_(emit_swapl_reg_EAX)(reg);
          } else {
-            VG_(emit_unaryopb_reg)(NEG, reg);
+            VG_(emit_unaryopb_reg)(False, NEG, reg);
          }
-         VG_(emit_nonshiftopv_reg_reg)(4, SBB, reg, reg);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFFFFFE, reg);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, SBB, reg, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFFFFFE, reg);
          break;
 
       /* Scheme is
@@ -391,18 +392,18 @@ static void synth_TAG1_op ( TagOp op, Int reg, RRegSet regs_live_after )
             and possibly an OR to invalidate unused bits.
       */
       case Tag_PCast04:
-         VG_(emit_nonshiftopv_lit_reg)(4, AND, 0x00000001, reg);
-         VG_(emit_unaryopv_reg)(4, NEG, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, AND, 0x00000001, reg);
+         VG_(emit_unaryopv_reg)(False, 4, NEG, reg);
          break;
       case Tag_PCast02:
-         VG_(emit_nonshiftopv_lit_reg)(4, AND, 0x00000001, reg);
-         VG_(emit_unaryopv_reg)(4, NEG, reg);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFF0000, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, AND, 0x00000001, reg);
+         VG_(emit_unaryopv_reg)(False, 4, NEG, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFF0000, reg);
          break;
       case Tag_PCast01:
-         VG_(emit_nonshiftopv_lit_reg)(4, AND, 0x00000001, reg);
-         VG_(emit_unaryopv_reg)(4, NEG, reg);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFFFF00, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, AND, 0x00000001, reg);
+         VG_(emit_unaryopv_reg)(False, 4, NEG, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFFFF00, reg);
          break;
 
       /* Scheme is
@@ -412,38 +413,39 @@ static void synth_TAG1_op ( TagOp op, Int reg, RRegSet regs_live_after )
             and possibly an OR to invalidate unused bits.
       */
       case Tag_PCast14:
-         VG_(emit_shiftopv_lit_reg)(4, SHL, 24, reg);
-         VG_(emit_unaryopv_reg)(4, NEG, reg);
-         VG_(emit_nonshiftopv_reg_reg)(4, SBB, reg, reg);
+         VG_(emit_shiftopv_lit_reg)(False, 4, SHL, 24, reg);
+         VG_(emit_unaryopv_reg)(False, 4, NEG, reg);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, SBB, reg, reg);
          break;
       case Tag_PCast12:
-         VG_(emit_shiftopv_lit_reg)(4, SHL, 24, reg);
-         VG_(emit_unaryopv_reg)(4, NEG, reg);
-         VG_(emit_nonshiftopv_reg_reg)(4, SBB, reg, reg);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFF0000, reg);
+         VG_(emit_shiftopv_lit_reg)(False, 4, SHL, 24, reg);
+         VG_(emit_unaryopv_reg)(False, 4, NEG, reg);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, SBB, reg, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFF0000, reg);
          break;
       case Tag_PCast11:
-         VG_(emit_shiftopv_lit_reg)(4, SHL, 24, reg);
-         VG_(emit_unaryopv_reg)(4, NEG, reg);
-         VG_(emit_nonshiftopv_reg_reg)(4, SBB, reg, reg);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFFFF00, reg);
+         VG_(emit_shiftopv_lit_reg)(False, 4, SHL, 24, reg);
+         VG_(emit_unaryopv_reg)(False, 4, NEG, reg);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, SBB, reg, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFFFF00, reg);
          break;
 
       /* We use any non-live reg (except %reg) as a temporary,
          or push/pop %ebp if none available:
-            (%dead_reg = any dead reg, else %ebp)
-            (pushl %ebp if all regs live)
+            (%dead_reg = any dead reg, else choose anything other than %reg)
+            (pushl %dead_reg if live)
             movl %reg, %dead_reg
             negl %dead_reg
             orl %dead_reg, %reg
-            (popl %ebp if all regs live)
+            (popl %dead_reg if live)
          This sequence turns out to be correct regardless of the 
          operation width.
       */
       case Tag_Left4:
       case Tag_Left2:
       case Tag_Left1: {
-         UInt dead_reg = R_EBP;
+	 Bool push = True;
+         UInt dead_reg = R_ESP;
          Int  i, reg_of_i;
 
          for (i = 0; i < VG_MAX_REALREGS; i++) {
@@ -451,17 +453,22 @@ static void synth_TAG1_op ( TagOp op, Int reg, RRegSet regs_live_after )
                reg_of_i = VG_(rank_to_realreg)(i);
                if (reg != reg_of_i) {
                   dead_reg = reg_of_i;
+		  push = False;
                   break;
                }
             }
          }
-
-         if (R_EBP == dead_reg)
+	 
+         if (push) {
+	    dead_reg = (reg != R_EAX) ? R_EAX : R_EBX;
             VG_(emit_pushv_reg)(4, dead_reg);
+	 }
+
          VG_(emit_movv_reg_reg)(4, reg, dead_reg);
-         VG_(emit_unaryopv_reg)(4, NEG, dead_reg);
-         VG_(emit_nonshiftopv_reg_reg)(4, OR, dead_reg, reg);
-         if (R_EBP == dead_reg)
+         VG_(emit_unaryopv_reg)(False, 4, NEG, dead_reg);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, OR, dead_reg, reg);
+
+         if (push)
             VG_(emit_popv_reg)(4, dead_reg);
          break;
       }
@@ -469,27 +476,27 @@ static void synth_TAG1_op ( TagOp op, Int reg, RRegSet regs_live_after )
       /* These are all fairly obvious; do the op and then, if
          necessary, invalidate unused bits. */
       case Tag_SWiden14:
-         VG_(emit_shiftopv_lit_reg)(4, SHL, 24, reg);
-         VG_(emit_shiftopv_lit_reg)(4, SAR, 24, reg);
+         VG_(emit_shiftopv_lit_reg)(False, 4, SHL, 24, reg);
+         VG_(emit_shiftopv_lit_reg)(False, 4, SAR, 24, reg);
          break;
       case Tag_SWiden24:
-         VG_(emit_shiftopv_lit_reg)(4, SHL, 16, reg);
-         VG_(emit_shiftopv_lit_reg)(4, SAR, 16, reg);
+         VG_(emit_shiftopv_lit_reg)(False, 4, SHL, 16, reg);
+         VG_(emit_shiftopv_lit_reg)(False, 4, SAR, 16, reg);
          break;
       case Tag_SWiden12:
-         VG_(emit_shiftopv_lit_reg)(4, SHL, 24, reg);
-         VG_(emit_shiftopv_lit_reg)(4, SAR, 24, reg);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFF0000, reg);
+         VG_(emit_shiftopv_lit_reg)(False, 4, SHL, 24, reg);
+         VG_(emit_shiftopv_lit_reg)(False, 4, SAR, 24, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFF0000, reg);
          break;
       case Tag_ZWiden14:
-         VG_(emit_nonshiftopv_lit_reg)(4, AND, 0x000000FF, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, AND, 0x000000FF, reg);
          break;
       case Tag_ZWiden24:
-         VG_(emit_nonshiftopv_lit_reg)(4, AND, 0x0000FFFF, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, AND, 0x0000FFFF, reg);
          break;
       case Tag_ZWiden12:
-         VG_(emit_nonshiftopv_lit_reg)(4, AND, 0x000000FF, reg);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFF0000, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, AND, 0x000000FF, reg);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFF0000, reg);
          break;
 
       default:
@@ -507,14 +514,14 @@ static void synth_TAG2_op ( TagOp op, Int regs, Int regd )
       case Tag_UifU2:
       case Tag_UifU1:
       case Tag_UifU0:
-         VG_(emit_nonshiftopv_reg_reg)(4, OR, regs, regd);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, OR, regs, regd);
          break;
 
       /* DifD is implemented by AND, since 0 means Defined. */
       case Tag_DifD4:
       case Tag_DifD2:
       case Tag_DifD1:
-         VG_(emit_nonshiftopv_reg_reg)(4, AND, regs, regd);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, AND, regs, regd);
          break;
 
       /* ImproveAND(value, tags) = value OR tags.
@@ -523,15 +530,15 @@ static void synth_TAG2_op ( TagOp op, Int regs, Int regd )
          Be paranoid and invalidate unused bits; I don't know whether 
          or not this is actually necessary. */
       case Tag_ImproveAND4_TQ:
-         VG_(emit_nonshiftopv_reg_reg)(4, OR, regs, regd);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, OR, regs, regd);
          break;
       case Tag_ImproveAND2_TQ:
-         VG_(emit_nonshiftopv_reg_reg)(4, OR, regs, regd);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFF0000, regd);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, OR, regs, regd);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFF0000, regd);
          break;
       case Tag_ImproveAND1_TQ:
-         VG_(emit_nonshiftopv_reg_reg)(4, OR, regs, regd);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFFFF00, regd);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, OR, regs, regd);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFFFF00, regd);
          break;
 
       /* ImproveOR(value, tags) = (not value) OR tags.
@@ -542,21 +549,21 @@ static void synth_TAG2_op ( TagOp op, Int regs, Int regd )
          Be paranoid and invalidate unused bits; I don't know whether 
          or not this is actually necessary. */
       case Tag_ImproveOR4_TQ:
-         VG_(emit_unaryopv_reg)(4, NOT, regd);
-         VG_(emit_nonshiftopv_reg_reg)(4, AND, regs, regd);
-         VG_(emit_unaryopv_reg)(4, NOT, regd);
+         VG_(emit_unaryopv_reg)(False, 4, NOT, regd);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, AND, regs, regd);
+         VG_(emit_unaryopv_reg)(False, 4, NOT, regd);
          break;
       case Tag_ImproveOR2_TQ:
-         VG_(emit_unaryopv_reg)(4, NOT, regd);
-         VG_(emit_nonshiftopv_reg_reg)(4, AND, regs, regd);
-         VG_(emit_unaryopv_reg)(4, NOT, regd);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFF0000, regd);
+         VG_(emit_unaryopv_reg)(False, 4, NOT, regd);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, AND, regs, regd);
+         VG_(emit_unaryopv_reg)(False, 4, NOT, regd);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFF0000, regd);
          break;
       case Tag_ImproveOR1_TQ:
-         VG_(emit_unaryopv_reg)(4, NOT, regd);
-         VG_(emit_nonshiftopv_reg_reg)(4, AND, regs, regd);
-         VG_(emit_unaryopv_reg)(4, NOT, regd);
-         VG_(emit_nonshiftopv_lit_reg)(4, OR, 0xFFFFFF00, regd);
+         VG_(emit_unaryopv_reg)(False, 4, NOT, regd);
+         VG_(emit_nonshiftopv_reg_reg)(False, 4, AND, regs, regd);
+         VG_(emit_unaryopv_reg)(False, 4, NOT, regd);
+         VG_(emit_nonshiftopv_lit_reg)(False, 4, OR, 0xFFFFFF00, regd);
          break;
 
       default:

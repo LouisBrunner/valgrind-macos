@@ -48,6 +48,7 @@ Int VGOFF_(m_ebp) = INVALID_OFFSET;
 Int VGOFF_(m_esi) = INVALID_OFFSET;
 Int VGOFF_(m_edi) = INVALID_OFFSET;
 Int VGOFF_(m_eflags) = INVALID_OFFSET;
+Int VGOFF_(m_dflag)  = INVALID_OFFSET;
 Int VGOFF_(m_fpustate) = INVALID_OFFSET;
 Int VGOFF_(ldt)   = INVALID_OFFSET;
 Int VGOFF_(m_cs)  = INVALID_OFFSET;
@@ -234,6 +235,8 @@ static void vg_init_baseBlock ( void )
 
    /* I gave up counting at this point.  Since they're above the
       short-amode-boundary, there's no point. */
+
+   VGOFF_(m_dflag) = alloc_BaB(1);
 
    VGOFF_(m_fpustate) = alloc_BaB(VG_SIZE_OF_FPUSTATE_W);
 
@@ -1098,6 +1101,29 @@ UInt VG_(m_state_static) [6 /* segment regs, Intel order */
                           + VG_SIZE_OF_FPUSTATE_W /* FPU state */
                          ];
 
+UInt VG_(insertDflag)(UInt eflags, Int d)
+{
+   vg_assert(d == 1 || d == -1);
+   eflags &= ~EFlagD;
+
+   if (d < 0)
+      eflags |= EFlagD;
+
+   return eflags;
+}
+
+Int VG_(extractDflag)(UInt eflags)
+{
+   Int ret;
+
+   if (eflags & EFlagD)
+      ret = -1;
+   else
+      ret = 1;
+
+   return ret;
+}
+
 void VG_(copy_baseBlock_to_m_state_static) ( void )
 {
    Int i;
@@ -1117,7 +1143,8 @@ void VG_(copy_baseBlock_to_m_state_static) ( void )
    VG_(m_state_static)[48/4] = VG_(baseBlock)[VGOFF_(m_esi)];
    VG_(m_state_static)[52/4] = VG_(baseBlock)[VGOFF_(m_edi)];
 
-   VG_(m_state_static)[56/4] = VG_(baseBlock)[VGOFF_(m_eflags)];
+   VG_(m_state_static)[56/4] = VG_(insertDflag)(VG_(baseBlock)[VGOFF_(m_eflags)],
+						VG_(baseBlock)[VGOFF_(m_dflag)]);
    VG_(m_state_static)[60/4] = VG_(baseBlock)[VGOFF_(m_eip)];
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
@@ -1145,7 +1172,9 @@ void VG_(copy_m_state_static_to_baseBlock) ( void )
    VG_(baseBlock)[VGOFF_(m_esi)] = VG_(m_state_static)[48/4];
    VG_(baseBlock)[VGOFF_(m_edi)] = VG_(m_state_static)[52/4];
 
-   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(m_state_static)[56/4];
+   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(m_state_static)[56/4] & ~EFlagD;
+   VG_(baseBlock)[VGOFF_(m_dflag)] = VG_(extractDflag)(VG_(m_state_static)[56/4]);
+
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(m_state_static)[60/4];
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
@@ -1299,7 +1328,7 @@ void VG_(main) ( void )
    if (0) { 
       Int p, q;
       VG_(printf)("pid=%d\n", VG_(getpid)());
-      for (p = 0; p < 50000; p++)
+      for (p = 0; p < 5000; p++)
          for (q = 0; q < 50000; q++) ;
    }
 

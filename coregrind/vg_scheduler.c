@@ -391,7 +391,6 @@ ThreadId VG_(get_tid_from_ThreadState) (ThreadState* tst)
    return tst->tid;
 }
 
-
 /* Copy the saved state of a thread into VG_(baseBlock), ready for it
    to be run. */
 __inline__
@@ -416,7 +415,8 @@ void VG_(load_thread_state) ( ThreadId tid )
    VG_(baseBlock)[VGOFF_(m_edi)] = VG_(threads)[tid].m_edi;
    VG_(baseBlock)[VGOFF_(m_ebp)] = VG_(threads)[tid].m_ebp;
    VG_(baseBlock)[VGOFF_(m_esp)] = VG_(threads)[tid].m_esp;
-   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(threads)[tid].m_eflags;
+   VG_(baseBlock)[VGOFF_(m_eflags)] = VG_(threads)[tid].m_eflags & ~EFlagD;
+   VG_(baseBlock)[VGOFF_(m_dflag)] = VG_(extractDflag)(VG_(threads)[tid].m_eflags);
    VG_(baseBlock)[VGOFF_(m_eip)] = VG_(threads)[tid].m_eip;
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)
@@ -490,7 +490,8 @@ void VG_(save_thread_state) ( ThreadId tid )
    VG_(threads)[tid].m_edi = VG_(baseBlock)[VGOFF_(m_edi)];
    VG_(threads)[tid].m_ebp = VG_(baseBlock)[VGOFF_(m_ebp)];
    VG_(threads)[tid].m_esp = VG_(baseBlock)[VGOFF_(m_esp)];
-   VG_(threads)[tid].m_eflags = VG_(baseBlock)[VGOFF_(m_eflags)];
+   VG_(threads)[tid].m_eflags = VG_(insertDflag)(VG_(baseBlock)[VGOFF_(m_eflags)],
+						 VG_(baseBlock)[VGOFF_(m_dflag)]);
    VG_(threads)[tid].m_eip = VG_(baseBlock)[VGOFF_(m_eip)];
 
    for (i = 0; i < VG_SIZE_OF_FPUSTATE_W; i++)

@@ -1767,9 +1767,11 @@ PRE(execve)
       its own new thread.) */
    VG_(nuke_all_threads_except)( VG_INVALID_THREADID );
 
-   if (!VG_(clo_trace_children)) {
+   {
       /* Make the LD_LIBRARY_PATH/LD_PRELOAD disappear so that the
-	 child doesn't get our libpthread and other stuff */
+	 child doesn't get our libpthread and other stuff.  This is
+	 done unconditionally, since if we are tracing the child,
+	 stage1/2 will set up the appropriate client environment. */
       Int i;
       Char** envp = (Char**)arg3;
       Char*  ld_preload_str = NULL;
@@ -1800,7 +1802,9 @@ PRE(execve)
 
 	 /* XXX if variable becomes empty, remove it completely? */
       }
-   } else {
+   }
+
+   if (VG_(clo_trace_children)) {
       /* If we're tracing the children, then we need to start it
 	 with our starter+arguments.
       */

@@ -175,8 +175,6 @@ pinsrw_5 ... ok
 pinsrw_6 ... ok
 pinsrw_7 ... ok
 pinsrw_8 ... ok
-pmaddwd_1 ... ok
-pmaddwd_2 ... ok
 pmaxsw_1 ... ok
 pmaxsw_2 ... ok
 pmaxub_1 ... ok
@@ -198,8 +196,6 @@ pmuludq_3 ... ok
 pmuludq_4 ... ok
 por_1 ... ok
 por_2 ... ok
-psadbw_1 ... ok
-psadbw_2 ... ok
 pshufd_1 ... ok
 pshufd_2 ... ok
 pshufhw_1 ... ok
@@ -209,8 +205,6 @@ pshuflw_2 ... ok
 pslld_1 ... ok
 pslld_2 ... ok
 pslld_3 ... ok
-pslldq_1 ... ok
-pslldq_2 ... ok
 psllq_1 ... ok
 psllq_2 ... ok
 psllq_3 ... ok

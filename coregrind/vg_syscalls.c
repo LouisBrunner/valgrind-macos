@@ -2751,8 +2751,7 @@ POST(ipc)
 	    UInt prot = VKI_PROT_READ|VKI_PROT_WRITE;
 	    /* we don't distinguish whether it's read-only or
 	     * read-write -- it doesn't matter really. */
-	    VG_TRACK( new_mem_mmap, addr, segmentSize, 
-		      True, True, False );
+	    VG_TRACK( new_mem_mmap, addr, segmentSize, True, True, False );
 
 	    if (!(shmflag & 010000)) /* = SHM_RDONLY */
 	       prot &= ~VKI_PROT_WRITE;

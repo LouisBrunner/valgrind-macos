@@ -893,17 +893,17 @@ void getRegUsage_X86Instr (HRegUsage* u, X86Instr* i)
          /* Finally, there is the issue that the insn trashes a
             register because the literal target address has to be
             loaded into a register.  Fortunately, for the 0/1/2
-            regparm case, we can use EAX, ECX and EDX respectively, so
+            regparm case, we can use EAX, EDX and ECX respectively, so
             this does not cause any further damage.  For the 3-regparm
             case, we'll have to choose another register arbitrarily --
-            since A,C and D are used for parameters -- and so we might
+            since A, D and C are used for parameters -- and so we might
             as well choose EDI. */
          if (i->Xin.Call.regparms == 3)
             addHRegUse(u, HRmWrite, hregX86_EDI());
          /* Upshot of this is that the assembler really must observe
             the here-stated convention of which register to use as an
             address temporary, depending on the regparmness: 0==EAX,
-            1==ECX, 2==EDX, 3==EDI. */
+            1==EDX, 2==ECX, 3==EDI. */
          return;
       case Xin_Goto:
          addRegUsage_X86RI(u, i->Xin.Goto.dst);
@@ -1644,8 +1644,8 @@ Int emit_X86Instr ( UChar* buf, Int nbuf, X86Instr* i )
          for explanation of this. */
       switch (i->Xin.Call.regparms) {
          case 0: irno = iregNo(hregX86_EAX()); break;
-         case 1: irno = iregNo(hregX86_ECX()); break;
-         case 2: irno = iregNo(hregX86_EDX()); break;
+         case 1: irno = iregNo(hregX86_EDX()); break;
+         case 2: irno = iregNo(hregX86_ECX()); break;
          case 3: irno = iregNo(hregX86_EDI()); break;
          default: vpanic(" emit_X86Instr:call:regparms");
       }

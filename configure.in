@@ -283,7 +283,7 @@ fi
 
 # check if the GNU as supports CFI directives
 AC_MSG_CHECKING([if gas accepts .cfi])
-AC_TRY_COMPILE(, [
+AC_TRY_LINK(, [
 
 __asm__ __volatile__ (".cfi_startproc\n"
                       ".cfi_adjust_cfa_offset 0x0\n"

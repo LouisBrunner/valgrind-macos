@@ -18,6 +18,13 @@
 ##----------------------------------------------------------------------##
 
 {
+   __pthread_mutex_unlock/__register_frame_info_bases
+   PThread
+   fun:__pthread_mutex_unlock
+   fun:__register_frame_info_bases
+}
+
+{
    socketcall.connect(serv_addr)/__libc_connect/*(Param)
    Param
    socketcall.connect(serv_addr)

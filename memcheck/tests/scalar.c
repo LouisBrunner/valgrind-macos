@@ -53,8 +53,12 @@ int main(void)
    GO(__NR_unlink, "1s 1m");
    SY(__NR_unlink, s0);
 
-   // __NR_execve 11
-   
+   // __NR_execve 11 --> sys_execve()
+   // Nb: could have 3 memory errors if we pass s0+1 as the 2nd and 3rd
+   // args, except for bug #93174.
+   GO(__NR_execve, "3s 1m");
+   SY(__NR_execve, s0, s0, s0);
+
    // __NR_chdir 12 --> sys_chdir()
    GO(__NR_chdir, "1s 1m");
    SY(__NR_chdir, s0);

@@ -1812,13 +1812,13 @@ void pre_argv_envp(Addr a, ThreadId tid, Char* s1, Char* s2)
    }
 }
 
-PRE(execve)
+// XXX: prototype here seemingly doesn't match the prototype for i386-linux,
+// but it seems to work nonetheless...
+PREx(sys_execve, Special)
 {
-   /* int execve (const char *filename, 
-      char *const argv [], 
-      char *const envp[]); */
-   PRINT("execve ( %p(%s), %p, %p )", arg1, arg1, arg2, arg3);
-
+   PRINT("sys_execve ( %p(%s), %p, %p )", arg1, arg1, arg2, arg3);
+   PRE_REG_READ3(vki_off_t, "execve",
+                 char *, filename, char **, argv, char **, envp);
    PRE_MEM_RASCIIZ( "execve(filename)", arg1 );
    if (arg2 != (UWord)NULL)
       pre_argv_envp( arg2, tid, "execve(argv)", "execve(argv[i])" );
@@ -5831,11 +5831,11 @@ static const struct sys_info sys_info[] = {
    SYSXY(__NR_creat,            sys_creat),        // 8 * P
    SYSX_(__NR_link,             sys_link),         // 9 * P
 
-   SYSX_(__NR_unlink,           sys_unlink), // 10 * P
-   SYSB_(execve,		Special), // 11  sys_execve () P
-   SYSX_(__NR_chdir,            sys_chdir), // 12 *
-   SYSXY(__NR_time,             sys_time), // 13 *
-   SYSX_(__NR_mknod,            sys_mknod), // 14 * P
+   SYSX_(__NR_unlink,           sys_unlink),       // 10 * P
+   SYSX_(__NR_execve,           sys_execve),       // 11 (*??) P
+   SYSX_(__NR_chdir,            sys_chdir),        // 12 * P
+   SYSXY(__NR_time,             sys_time),         // 13 * P
+   SYSX_(__NR_mknod,            sys_mknod),        // 14 * P
 
    SYSX_(__NR_chmod,            sys_chmod),        // 15 * P
    //   (__NR_lchown,           sys_lchown16),     // 16 ## P

@@ -121,6 +121,12 @@
    fun:_dl_relocate_object
    fun:dl_main
 }
+{
+   _dl_relocate_object/dl_open_worker
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:dl_open_worker
+}
 
 #-------- Data races
 {

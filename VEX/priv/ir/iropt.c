@@ -922,13 +922,17 @@ static IRExpr* fold_Expr ( IRExpr* e )
             e2 = IRExpr_Const(IRConst_U32( (UInt)w64 ));
             break;
          }
-
          case Iop_64HIto32: {
             ULong w64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
             w64 >>= 32;
             e2 = IRExpr_Const(IRConst_U32( (UInt)w64 ));
             break;
          }
+         case Iop_32Uto64:
+            e2 = IRExpr_Const(IRConst_U64(
+                    0xFFFFFFFFULL 
+                    & e->Iex.Unop.arg->Iex.Const.con->Ico.U32));
+            break;
 
          default: 
             goto unhandled;

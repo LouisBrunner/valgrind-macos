@@ -600,7 +600,7 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
          if (arg1 == 1 || arg1 == 0x11) {
             /* write the LDT with the entry pointed at by ptr */
             SYSCALL_TRACK( pre_mem_read, tst, 
-                           "modify_ldt(ptr)(func=1)", arg2, 
+                           "modify_ldt(ptr)(func=1 or 0x11)", arg2, 
                            sizeof(struct vki_modify_ldt_ldt_s) );
          }
          /* "do" the syscall ourselves; the kernel never sees it */

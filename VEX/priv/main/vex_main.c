@@ -451,7 +451,7 @@ VexTranslateResult LibVEX_Translate (
       vex_printf("\n");
    }
 
-   if (1) { *host_bytes_used = 0; return VexTransOK; }
+   if (0) { *host_bytes_used = 0; return VexTransOK; }
 
    if (vex_traceflags & VEX_TRACE_VCODE)
       vex_printf("\n------------------------" 

@@ -1843,7 +1843,7 @@ void dis_branch ( UInt theInstr )
     assign( dest, binop(Iop_Add32, getIReg(15), mkU32(branch_offset)) );
 
     irbb->jumpkind = link ? Ijk_Call : Ijk_Boring;
-    irbb->next     = mkexpr(dest);
+    irbb->next     = mkU32(dest);
 
     // Note: Not actually writing to R15 - let the IR stuff do that.
 
@@ -1920,6 +1920,8 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
    // Essentially a v. unlikely sequence of noops that we can catch
    {
       UInt* code = (UInt*)(guest_code + delta);
+
+      // CAB: easy way to rotate left?
 
       /* Spot this:                                       
          E1A00EE0                   mov  r0, r0, ror #29

@@ -899,6 +899,7 @@ static Bool dis_int_arith ( UInt theInstr )
     IRTemp tmp = newTemp(Ity_I32);
 
     IRTemp src1_64 = newTemp(Ity_I64);
+    IRTemp src2_64 = newTemp(Ity_I64);
     IRTemp res64 = newTemp(Ity_I64);
 
     assign( Ra, getIReg(Ra_addr) );
@@ -948,7 +949,7 @@ static Bool dis_int_arith ( UInt theInstr )
     case 0x07: // mulli    (Multiply Low Immediate, p544)
 	DIP("mulli %d,%d,0x%x\n", Rd_addr, Ra_addr, SIMM_16);
 	assign( res64, binop(Iop_MullS32, mkexpr(Ra), mkU32(EXTS_SIMM)) );
-	assign( Rd, unop(Iop_64to32, mkexpr(res64)) );
+	assign( Rd, unop(Iop_64HIto32, mkexpr(res64)) );
 	break;
 
     case 0x08: // subfic   (Subtract from Immediate Carrying, p613)
@@ -1048,8 +1049,9 @@ static Bool dis_int_arith ( UInt theInstr )
 	       Rd_addr, Ra_addr, Rb_addr);
 	   // CAB: Don't think this is right...
 	   assign( src1_64, binop(Iop_32HLto64, mkU32(0), mkexpr(Ra)) );
+	   assign( src2_64, binop(Iop_32HLto64, mkU32(0), mkexpr(Rb)) );
 	   assign( res64, binop(Iop_DivModS64to32,
-				mkexpr(src1_64), mkexpr(Rb)) );
+				mkexpr(src1_64), mkexpr(src2_64)) );
 	   assign( Rd, unop(Iop_64to32,mkexpr(res64)) );
 	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
 	   if (flag_OE) {
@@ -1066,8 +1068,9 @@ static Bool dis_int_arith ( UInt theInstr )
 	       Rd_addr, Ra_addr, Rb_addr);
 	   // CAB: Don't think this is right...
 	   assign( src1_64, binop(Iop_32HLto64, mkU32(0), mkexpr(Ra)) );
+	   assign( src2_64, binop(Iop_32HLto64, mkU32(0), mkexpr(Rb)) );
 	   assign( res64, binop(Iop_DivModU64to32,
-				mkexpr(src1_64), mkexpr(Rb)) );
+				mkexpr(src1_64), mkexpr(src2_64)) );
 	   assign( Rd, unop(Iop_64to32,mkexpr(res64)) );
 	   if (flag_Rc)	{ setFlags_CR0_Result( mkexpr(Rd) ); }
 	   if (flag_OE) {
@@ -2153,10 +2156,7 @@ static Bool dis_branch ( theInstr )
 //    vex_printf("disInstr(ppc32): LI: %,039b\n", LI_24 << 2);
 //    vex_printf("disInstr(ppc32): LI: %,031b\n", extend_s_24to32(LI_24 << 2));
 
-//    0xFFDE9C4:  429F0005  bcl 20,31,0xFFDE9C8
-//    0xFFDE9C4:            bcl 0x14, 0x1F, 0x1
-
-  switch (opc1) {
+    switch (opc1) {
     case 0x12: // b     (Branch, p390)
 	DIP("b%s%s 0x%x\n", flag_LK ? "l" : "", flag_AA ? "a" : "", LI_24);
 	nia = exts_LI;
@@ -2259,7 +2259,9 @@ static Bool dis_branch ( theInstr )
 		stmt( IRStmt_Put( OFFB_LR, mkexpr(lr) ));
 	    }
 
-	    stmt( IRStmt_Exit( unop(Iop_Not1, unop(Iop_32to1, mkexpr(cond_ok))),
+	    // CAB: Can't give ir_nia as IRConst, so reversing things...
+	    // Not sure about this at all...
+	    stmt( IRStmt_Exit( unop(Iop_32to1, unop(Iop_Not32, mkexpr(cond_ok))),
 			       Ijk_Boring,
 			       IRConst_U32(guest_cia_curr_instr + 4) ));
 
@@ -2312,7 +2314,9 @@ static Bool dis_branch ( theInstr )
 		stmt( IRStmt_Put( OFFB_LR, mkexpr(lr) ));
 	    }
 
-	    stmt( IRStmt_Exit( unop(Iop_Not1, unop(Iop_32to1, mkexpr(do_branch))),
+	    // CAB: Can't give ir_nia as IRConst, so reversing things...
+	    // Not sure about this at all...
+	    stmt( IRStmt_Exit( unop(Iop_32to1, unop(Iop_Not32, mkexpr(do_branch))),
 			       Ijk_Boring,
 			       IRConst_U32(guest_cia_curr_instr + 4) ));
 
@@ -2393,6 +2397,7 @@ static Bool dis_memsync ( UInt theInstr )
 	}
 	DIP("isync\n");
 	
+	// CAB: This right?  What's the diff from 'sync' ?
 	stmt( IRStmt_MFence() );
 	break;
 

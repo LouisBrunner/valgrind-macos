@@ -627,7 +627,9 @@ static void vg_findstack_callback ( Addr start, UInt size,
 {
    Addr lastword;
    if (size == 0) return;
-   if (r != 'r' || w != 'w' || x != 'x') return;
+   if (r != 'r' || w != 'w' 
+       /* || x != 'x'  --not necessarily so on x86-64*/
+      ) return;
    lastword = start + size - 4;
    if (start <= VG_(esp_at_startup) 
        && VG_(esp_at_startup) <= lastword) {

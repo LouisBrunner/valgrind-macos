@@ -23,6 +23,7 @@ my $SWITCHBACK = "./switchback";
 my $N_START = 0;
 my $N_LAST_GOOD = 0;
 my $N_LAST_BAD = -1;
+my $GIVEN_LAST_GOOD = -1;
 my $GIVEN_LAST_BAD = -1;
 my $TEST;
 
@@ -71,6 +72,7 @@ if ( ! -x "$SWITCHBACK" ) {
 
 if (@ARGV >1) {
     $N_LAST_GOOD = $ARGV[1];
+    $GIVEN_LAST_GOOD = $N_LAST_GOOD;
     if (! ($N_LAST_GOOD =~ /^\d*$/)) {
 	QuitUsage "Error: bad arg for #last_good\n";
     }
@@ -149,6 +151,9 @@ sub SwitchBack {
 
     if ($ret & 127) {
 	print "Ctrl-C pressed - Quitting...\n";
+	if (! DEBUG) {
+	    unlink($TMPFILE);
+	}
 	exit 0;
     }
 
@@ -165,6 +170,9 @@ sub SwitchBack {
 	}
     }
     if ($ret != 0) { # Err: maybe seg fault
+	if (! DEBUG) {
+	    unlink($TMPFILE);
+	}
 	return;
     }
 
@@ -175,7 +183,6 @@ sub SwitchBack {
     if (! DEBUG) {
 	unlink($TMPFILE);
     }
-
     return @results;
 }
 
@@ -221,6 +228,10 @@ sub TestOutput {
 		$line = $halfline.$line;
 		$halfline = "";
 	    }
+
+	    # Ignore Vex output
+	    if ($line =~ /^vex /) { next; }
+
 	    push(@newlines, $line);
 	}
 
@@ -276,7 +287,8 @@ if (DEBUG) {
     print "START:  N=$N_START\n";
     print "START: lg=$N_LAST_GOOD\n";
     print "START: lb=$N_LAST_BAD\n";
-    print "START: GIVEN_LAST_BAD=$GIVEN_LAST_BAD\n";
+    print "START: GIVEN_LAST_GOOD=$GIVEN_LAST_GOOD\n";
+    print "START: GIVEN_LAST_BAD =$GIVEN_LAST_BAD\n";
     print "\n";
 }
 
@@ -330,7 +342,9 @@ while (1) {
 		print "\nWe're either in a loop, or this is a big test program (increase N_MAX)\n\n";
 		Exit 1;
 	    }
-	    print "Looks good so far: Trying bigger N...\n\n";
+	    if (DEBUG) {
+		print "Looks good so far: Trying bigger N...\n\n";
+	    }
 	    next;
 	}
     }
@@ -374,7 +388,7 @@ print "\n============================================\n";
 print "Done searching.\n\n";
 
 if ($N_LAST_BAD != -1 && $N != $N_LAST_BAD) {
-    print "Get output for last bad bb:\n";
+    print "Getting output for last bad bb:\n";
     @sb_output = SwitchBack($N_LAST_BAD);
 }
 
@@ -387,8 +401,13 @@ if ($success) {
 	print "*** No failures detected within given bb range ***\n";
 	print " - check given 'last_bad' argument\n";
     } else {
-	print "*** Failure: Last failed switchback bb: $N_LAST_BAD ***\n";
-	print "Hence bad bb: ". ($N_LAST_BAD - 1) ."\n";
+	if ($N_LAST_BAD == $GIVEN_LAST_GOOD) {
+	    print "*** Failed on bb given as last_good ***\n";
+	    print " - decrease the 'last_good' argument\n";
+	} else {
+	    print "*** Failure: Last failed switchback bb: $N_LAST_BAD ***\n";
+	    print "Hence bad bb: ". ($N_LAST_BAD - 1) ."\n";
+	}
     }
 }
 print "\n";

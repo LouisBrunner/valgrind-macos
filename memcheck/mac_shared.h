@@ -374,6 +374,8 @@ extern Bool MAC_(handle_common_client_requests) ( ThreadId tid,
 extern void MAC_(pp_LeakError)(void* vl, UInt n_this_record, 
                                          UInt n_total_records); 
                            
+extern void MAC_(print_malloc_stats) ( void );
+
 extern void MAC_(do_detect_memory_leaks) (
           LeakCheckMode mode,
           Bool (*is_valid_64k_chunk) ( UInt ),

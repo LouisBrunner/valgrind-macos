@@ -352,7 +352,7 @@ char* stpcpy ( char* dst, const char* src )
    return dst;
 }
 
-void *memset(void *s, int c, size_t n)
+void *memset(void *s, Int c, SizeT n)
 {
    unsigned char *cp = s;
 

@@ -571,7 +571,7 @@ void ac_check_is_accessible ( CorePart part, ThreadId tid,
                               Char* s, Addr base, SizeT size, Bool isWrite )
 {
    Bool ok;
-   Addr bad_addr;
+   Addr bad_addr = 0;   // Initialise to shut gcc up
 
    VGP_PUSHCC(VgpCheckMem);
 
@@ -624,7 +624,7 @@ void ac_check_is_readable_asciiz ( CorePart part, ThreadId tid,
                                    Char* s, Addr str )
 {
    Bool ok = True;
-   Addr bad_addr;
+   Addr bad_addr = 0;   // Initialise to shut gcc up
 
    VGP_PUSHCC(VgpCheckMem);
 

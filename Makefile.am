@@ -5,7 +5,9 @@ include $(top_srcdir)/Makefile.all.am
 
 ## include must be first for tool.h
 ## addrcheck must come after memcheck, for mac_*.o
-TOOLS =		none \
+TOOLS =		memcheck \
+		addrcheck \
+		none \
 		lackey \
 		corecheck \
 		massif

@@ -526,6 +526,49 @@ void MAC_(mempool_free)(Addr pool, Addr addr)
    die_and_free_mem ( tid, mc, prev_chunk, mp->rzB );
 }
 
+/*------------------------------------------------------------*/
+/*--- Statistics printing                                  ---*/
+/*------------------------------------------------------------*/
+
+typedef
+   struct {
+      UInt  nblocks;
+      SizeT nbytes;
+   }
+   MallocStats;
+
+static void malloc_stats_count_chunk(VgHashNode* node, void* d) {
+   MAC_Chunk* mc = (MAC_Chunk*)node;
+   MallocStats *ms = (MallocStats *)d;
+
+   ms->nblocks ++;
+   ms->nbytes  += mc->size;
+}
+
+void MAC_(print_malloc_stats) ( void )
+{
+   MallocStats ms;
+  
+   ms.nblocks = 0;
+   ms.nbytes = 0;
+   
+   if (VG_(clo_verbosity) == 0)
+      return;
+
+   /* Count memory still in use. */
+   VG_(HT_apply_to_all_nodes)(MAC_(malloc_list), malloc_stats_count_chunk, &ms);
+
+   VG_(message)(Vg_UserMsg, 
+                "malloc/free: in use at exit: %d bytes in %d blocks.",
+                ms.nbytes, ms.nblocks);
+   VG_(message)(Vg_UserMsg, 
+                "malloc/free: %d allocs, %d frees, %u bytes allocated.",
+                cmalloc_n_mallocs,
+                cmalloc_n_frees, cmalloc_bs_mallocd);
+   if (VG_(clo_verbosity) > 1)
+      VG_(message)(Vg_UserMsg, "");
+}
+
 /*--------------------------------------------------------------------*/
-/*--- end                                    mac_malloc_wrappers.c ---*/
+/*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

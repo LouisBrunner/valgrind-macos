@@ -383,7 +383,7 @@ UInt vprintf_wrk ( void(*send)(Char), const Char *format, va_list vargs )
             send('0');
             send('x');
             ret += myvprintf_int64(send, flags, 16, width, 
-				   (ULong)((UInt)va_arg (vargs, void *)));
+				   (ULong)((HWord)va_arg (vargs, void *)));
             break;
          case 'x': /* %x */
             if (is_long)

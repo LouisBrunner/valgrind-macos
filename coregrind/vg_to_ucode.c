@@ -4954,6 +4954,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    case 0xB9: /* MOV imm,eCX */
    case 0xBA: /* MOV imm,eDX */
    case 0xBB: /* MOV imm,eBX */
+   case 0xBC: /* MOV imm,eSP */
    case 0xBD: /* MOV imm,eBP */
    case 0xBE: /* MOV imm,eSI */
    case 0xBF: /* MOV imm,eDI */

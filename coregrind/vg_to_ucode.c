@@ -4123,38 +4123,46 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
    /* ------------------------ SCAS et al ----------------- */
 
    case 0xA4: /* MOVSb, no REP prefix */
+      vg_assert(sorb == 0);
       codegen_MOVS ( cb, 1 );
       if (dis) VG_(printf)("movsb\n");
       break;
    case 0xA5: /* MOVSv, no REP prefix */
+      vg_assert(sorb == 0);
       codegen_MOVS ( cb, sz );
       if (dis) VG_(printf)("movs%c\n", nameISize(sz));
       break;
 
    case 0xA6: /* CMPSb, no REP prefix */
+      vg_assert(sorb == 0);
       codegen_CMPS ( cb, 1 );
       if (dis) VG_(printf)("cmpsb\n");
       break;
 
    case 0xAA: /* STOSb, no REP prefix */
+      vg_assert(sorb == 0);
       codegen_STOS ( cb, 1 );
       if (dis) VG_(printf)("stosb\n");
       break;
    case 0xAB: /* STOSv, no REP prefix */
+      vg_assert(sorb == 0);
       codegen_STOS ( cb, sz );
       if (dis) VG_(printf)("stos%c\n", nameISize(sz));
       break;
 
    case 0xAC: /* LODSb, no REP prefix */
+      vg_assert(sorb == 0);
       codegen_LODS ( cb, 1 );
       if (dis) VG_(printf)("lodsb\n");
       break;
    case 0xAD: /* LODSv, no REP prefix */
+      vg_assert(sorb == 0);
       codegen_LODS ( cb, sz );
       if (dis) VG_(printf)("lods%c\n", nameISize(sz));
       break;
 
    case 0xAE: /* SCASb, no REP prefix */
+      vg_assert(sorb == 0);
       codegen_SCAS ( cb, 1 );
       if (dis) VG_(printf)("scasb\n");
       break;
@@ -4193,10 +4201,11 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
    case 0xF2: { /* REPNE prefix insn */
       Addr eip_orig = eip - 1;
+      vg_assert(sorb == 0);
       abyte = getUChar(eip); eip++;
       if (abyte == 0x66) { sz = 2; abyte = getUChar(eip); eip++; }
 
-      if (abyte == 0xAE || 0xAF) { /* REPNE SCAS<sz> */
+      if (abyte == 0xAE || abyte == 0xAF) { /* REPNE SCAS<sz> */
          if (abyte == 0xAE) sz = 1;
          codegen_REPNE_SCAS ( cb, sz, eip_orig, eip );
          *isEnd = True;         
@@ -4211,6 +4220,7 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
 
    case 0xF3: { /* REPE prefix insn */
       Addr eip_orig = eip - 1;
+      vg_assert(sorb == 0);
       abyte = getUChar(eip); eip++;
       if (abyte == 0x66) { sz = 2; abyte = getUChar(eip); eip++; }
 

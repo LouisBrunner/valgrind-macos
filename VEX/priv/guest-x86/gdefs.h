@@ -199,6 +199,8 @@ extern void  x86g_dirtyhelper_CPUID_sse2 ( VexGuestX86State* );
 
 extern void  x86g_dirtyhelper_FSAVE ( VexGuestX86State*, HWord );
 
+extern void  x86g_dirtyhelper_FINIT ( VexGuestX86State* );
+
 extern VexEmWarn
             x86g_dirtyhelper_FRSTOR ( VexGuestX86State*, HWord );
 
@@ -206,6 +208,8 @@ extern void x86g_dirtyhelper_FSTENV ( VexGuestX86State*, HWord );
 
 extern VexEmWarn 
             x86g_dirtyhelper_FLDENV ( VexGuestX86State*, HWord );
+
+extern void  x86g_dirtyhelper_FXSAVE ( VexGuestX86State*, HWord );
 
 
 /*---------------------------------------------------------*/

@@ -700,7 +700,7 @@ extern void ppIRJumpKind ( IRJumpKind );
    evaluation.
 */
 
-#define VEX_N_FXSTATE  5   /* enough for FSAVE/FRSTOR on x86 */
+#define VEX_N_FXSTATE  7   /* enough for FXSAVE/FXRSTOR on x86 */
 
 typedef
    enum {

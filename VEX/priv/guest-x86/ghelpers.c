@@ -936,9 +936,7 @@ UInt x86g_calculate_FXAM ( UInt tag, ULong dbl )
    UInt   c1;
    UChar* f64;
 
-   if (!host_is_little_endian()) {
-      vassert(0);
-   }
+   vassert(host_is_little_endian());
 
    /* vex_printf("calculate_FXAM ( %d, %llx ) .. ", tag, dbl ); */
 
@@ -1388,7 +1386,7 @@ typedef
 
 
 /* CLEAN HELPER */
-/* native_fpucw[15:0] contains a x87 native format FPU control word.
+/* fpucw[15:0] contains a x87 native format FPU control word.
    Extract from it the required FPROUND value and any resulting
    emulation warning, and return (warn << 32) | fpround value. 
 */
@@ -1425,7 +1423,7 @@ UInt x86g_create_fpucw ( UInt fpround )
 
 
 /* CLEAN HELPER */
-/* native_fpucw[15:0] contains a SSE native format MXCSR value.
+/* mxcsr[15:0] contains a SSE native format MXCSR value.
    Extract from it the required SSEROUND value and any resulting
    emulation warning, and return (warn << 32) | sseround value.
 */
@@ -1467,6 +1465,22 @@ UInt x86g_create_mxcsr ( UInt sseround )
 }
 
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (writes guest state) */
+/* Initialise the x87 FPU state as per 'finit'. */
+void x86g_dirtyhelper_FINIT ( VexGuestX86State* gst )
+{
+   Int i;
+   gst->guest_FTOP = 0;
+   for (i = 0; i < 8; i++) {
+      gst->guest_FPTAG[i] = 0; /* empty */
+      gst->guest_FPREG[i] = 0; /* IEEE754 64-bit zero */
+   }
+   gst->guest_FPROUND = (UInt)Irrm_NEAREST;
+   gst->guest_FC3210  = 0;
+}
+
+
 /* This is used to implement both 'frstor' and 'fldenv'.  The latter
    appears to differ from the former only in that the 8 FP registers
    themselves are not transferred into the guest state. */
@@ -1475,7 +1489,7 @@ VexEmWarn put_x87 ( Bool moveRegs,
                     /*IN*/UChar* x87_state,
                     /*OUT*/VexGuestX86State* vex_state )
 {
-   Int        r;
+   Int        stno, preg;
    UInt       tag;
    Double*    vexRegs = (Double*)(&vex_state->guest_FPREG[0]);
    UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
@@ -1489,18 +1503,25 @@ VexEmWarn put_x87 ( Bool moveRegs,
    ULong      pair;
 
    /* Copy registers and tags */
-   for (r = 0; r < 8; r++) {
-      tag = (tagw >> (2*r)) & 3;
+   tagw = 0;
+   for (stno = 0; stno < 8; stno++) {
+      preg = (stno + ftop) & 7;
+      tag = (tagw >> (2*preg)) & 3;
       if (tag == 3) {
          /* register is empty */
-         vexRegs[r] = 0.0;
-         vexTags[r] = 0;
+         /* hmm, if it's empty, does it still get written?  Probably
+            safer to say it does.  If we don't, memcheck could get out
+            of sync, in that it thinks all FP registers are defined by
+            this helper, but in reality some have not been updated. */
+         if (True || moveRegs)
+            vexRegs[preg] = 0.0;
+         vexTags[preg] = 0;
       } else {
          /* register is non-empty */
          if (moveRegs)
-            convert_f80le_to_f64le( &x87->reg[FP_REG(r)], 
-                                    (UChar*)&vexRegs[r] );
-         vexTags[r] = 1;
+            convert_f80le_to_f64le( &x87->reg[10*stno], 
+                                    (UChar*)&vexRegs[preg] );
+         vexTags[preg] = 1;
       }
    }
 
@@ -1532,10 +1553,12 @@ VexEmWarn LibVEX_GuestX86_put_x87 ( /*IN*/UChar* x87_state,
 
 
 /* VISIBLE TO LIBVEX CLIENT */
+/* Create an x87 FPU state from the guest state, as close as
+   we can approximate it. */
 void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state,
                                /*OUT*/UChar* x87_state )
 {
-   Int        i, r;
+   Int        i, stno, preg;
    UInt       tagw;
    Double*    vexRegs = (Double*)(&vex_state->guest_FPREG[0]);
    UChar*     vexTags = (UChar*)(&vex_state->guest_FPTAG[0]);
@@ -1551,16 +1574,20 @@ void LibVEX_GuestX86_get_x87 ( /*IN*/VexGuestX86State* vex_state,
    x87->env[FP_ENV_CTRL] 
       = (UShort)x86g_create_fpucw( vex_state->guest_FPROUND );
 
+   /* Dump the register stack in ST order. */
    tagw = 0;
-   for (r = 0; r < 8; r++) {
-      if (vexTags[r] == 0) {
+   for (stno = 0; stno < 8; stno++) {
+      preg = (stno + ftop) & 7;
+      if (vexTags[preg] == 0) {
          /* register is empty */
-         tagw |= (3 << (2*r));
-         convert_f64le_to_f80le( (UChar*)&vexRegs[r], &x87->reg[FP_REG(r)] );
+         tagw |= (3 << (2*preg));
+         convert_f64le_to_f80le( (UChar*)&vexRegs[preg], 
+                                 &x87->reg[10*stno] );
       } else {
          /* register is full. */
-         tagw |= (0 << (2*r));
-         convert_f64le_to_f80le( (UChar*)&vexRegs[r], &x87->reg[FP_REG(r)] );
+         tagw |= (0 << (2*preg));
+         convert_f64le_to_f80le( (UChar*)&vexRegs[preg], 
+                                 &x87->reg[10*stno] );
       }
    }
    x87->env[FP_ENV_TAG] = tagw;
@@ -1610,8 +1637,6 @@ UInt LibVEX_GuestX86_get_eflags ( /*IN*/VexGuestX86State* vex_state )
 /* VISIBLE TO LIBVEX CLIENT */
 void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
 {
-   Int i;
-
    vex_state->guest_EAX = 0;
    vex_state->guest_ECX = 0;
    vex_state->guest_EDX = 0;
@@ -1630,14 +1655,10 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
 
    vex_state->guest_EIP = 0;
 
-   vex_state->guest_FTOP = 0;
-   for (i = 0; i < 8; i++) {
-      vex_state->guest_FPTAG[i] = 0; /* empty */
-      vex_state->guest_FPREG[i] = 0; /* IEEE754 64-bit zero */
-   }
-   vex_state->guest_FPROUND = (UInt)Irrm_NEAREST;
-   vex_state->guest_FC3210  = 0;
+   /* Initialise the simulated FPU */
+   x86g_dirtyhelper_FINIT( vex_state );
 
+   /* Initialse the SSE state. */
 #  define SSEZERO(_xmm) _xmm[0]=_xmm[1]=_xmm[2]=_xmm[3] = 0;
 
    vex_state->guest_SSEROUND = (UInt)Irrm_NEAREST;
@@ -1811,6 +1832,97 @@ void x86g_dirtyhelper_CPUID_sse2 ( VexGuestX86State* st )
          st->guest_EDX = 0x007b7040;
          break;
    }
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (reads guest state, writes guest mem) */
+void x86g_dirtyhelper_FXSAVE ( VexGuestX86State* gst, HWord addr )
+{
+   /* Somewhat roundabout, but at least it's simple. */
+   Fpu_State tmp;
+   UShort*   addrS = (UShort*)addr;
+   UChar*    addrC = (UChar*)addr;
+   U128*     xmm   = (U128*)(addr + 160);
+   UInt      mxcsr;
+   UShort    fp_tags;
+   UChar     summary_tags;
+   Int       r, stno;
+   UShort    *srcS, *dstS;
+
+   LibVEX_GuestX86_get_x87( gst, (UChar*)&tmp );
+   mxcsr = x86g_create_mxcsr( gst->guest_SSEROUND );
+
+   /* Now build the proper fxsave image from the x87 image we just
+      made. */
+
+   addrS[0]  = tmp.env[FP_ENV_CTRL]; /* FCW: fpu control word */
+   addrS[1]  = tmp.env[FP_ENV_STAT]; /* FCW: fpu status word */
+
+   /* set addrS[2] in an endian-independent way */
+   summary_tags = 0;
+   fp_tags = tmp.env[FP_ENV_TAG];
+   for (r = 0; r < 8; r++) {
+      if ( ((fp_tags >> (2*r)) & 3) != 3 )
+         summary_tags |= (1 << r);
+   }
+   addrC[4]  = summary_tags; /* FTW: tag summary byte */
+   addrC[5]  = 0; /* pad */
+
+   addrS[3]  = 0; /* FOP: fpu opcode (bogus) */
+   addrS[4]  = 0;
+   addrS[5]  = 0; /* FPU IP (bogus) */
+   addrS[6]  = 0; /* FPU IP's segment selector (bogus) (although we
+                     could conceivably dump %CS here) */
+
+   addrS[7]  = 0; /* Intel reserved */
+
+   addrS[8]  = 0; /* FPU DP (operand pointer) (bogus) */
+   addrS[9]  = 0; /* FPU DP (operand pointer) (bogus) */
+   addrS[10] = 0; /* segment selector for above operand pointer; %DS
+                     perhaps? */
+   addrS[11] = 0; /* Intel reserved */
+
+   addrS[12] = (UShort)mxcsr;  /* MXCSR */
+   addrS[13] = (UShort)(mxcsr >> 16);
+
+   addrS[14] = 0xFFFF; /* MXCSR mask (lo16); who knows what for */
+   addrS[15] = 0xFFFF; /* MXCSR mask (hi16); who knows what for */
+
+   /* Copy in the FP registers, in ST order. */
+   for (stno = 0; stno < 8; stno++) {
+      srcS = (UShort*)(&tmp.reg[10*stno]);
+      dstS = (UShort*)(&addrS[16 + 8*stno]);
+      dstS[0] = srcS[0];
+      dstS[1] = srcS[1];
+      dstS[2] = srcS[2];
+      dstS[3] = srcS[3];
+      dstS[4] = srcS[4];
+      dstS[5] = 0;
+      dstS[6] = 0;
+      dstS[7] = 0;
+   }
+
+   /* That's the first 160 bytes of the image done.  Now only %xmm0
+      .. %xmm7 remain to be copied.  If the host is big-endian, these
+      need to be byte-swapped. */
+   vassert(host_is_little_endian());
+
+#  define COPY_U128(_dst,_src)                       \
+      do { _dst[0] = _src[0]; _dst[1] = _src[1];     \
+           _dst[2] = _src[2]; _dst[3] = _src[3]; }   \
+      while (0)
+
+   COPY_U128( xmm[0], gst->guest_XMM0 );
+   COPY_U128( xmm[1], gst->guest_XMM1 );
+   COPY_U128( xmm[2], gst->guest_XMM2 );
+   COPY_U128( xmm[3], gst->guest_XMM3 );
+   COPY_U128( xmm[4], gst->guest_XMM4 );
+   COPY_U128( xmm[5], gst->guest_XMM5 );
+   COPY_U128( xmm[6], gst->guest_XMM6 );
+   COPY_U128( xmm[7], gst->guest_XMM7 );
+
+#  undef COPY_U128
 }
 
 

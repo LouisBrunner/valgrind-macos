@@ -1180,7 +1180,7 @@ UInt VG_(vg_malloc_redzone_szB) = 0;
 void SK_(pre_clo_init)()
 { 
    VG_(details_name)            ("Massif");
-   VG_(details_version)         ("0.0.3");
+   VG_(details_version)         (NULL);
    VG_(details_description)     ("a space profiler");
    VG_(details_copyright_author)("Copyright (C) 2003, Nicholas Nethercote");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);

@@ -1359,11 +1359,11 @@ static void vg_improve ( UCodeBlock* cb )
 
 #  undef BIND_ARCH_TO_TEMP
 
-   /* PASS 2: redundant PUT elimination.  If doing instrumentation,
-      don't annul (delay) puts of %ESP, since the memory check
-      machinery always requires the in-memory value of %ESP to be up
-      to date. 
-   */
+   /* PASS 2: redundant PUT elimination.  Don't annul (delay) puts of
+      %ESP, since the memory check machinery always requires the
+      in-memory value of %ESP to be up to date.  Although this isn't
+      actually required by other analyses (cache simulation), it's
+      simplest to be consistent for all end-uses. */
    for (j = 0; j < 8; j++)
       annul_put[j] = False;
 
@@ -1375,12 +1375,13 @@ static void vg_improve ( UCodeBlock* cb )
          vg_assert(u->tag2 == ArchReg);
          actual_areg = containingArchRegOf ( 4, u->val2 );
          if (annul_put[actual_areg]) {
+            vg_assert(actual_areg != R_ESP);
             u->opcode = NOP;
             u->tag1 = u->tag2 = NoValue;
             if (VG_(disassemble)) 
                VG_(printf)("at %d: delete PUT\n", i );
          } else {
-            if (!(VG_(clo_instrument) && actual_areg == R_ESP))
+            if (actual_areg != R_ESP)
                annul_put[actual_areg] = True;
          }
       } 

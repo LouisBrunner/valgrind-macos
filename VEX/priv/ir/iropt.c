@@ -15,6 +15,22 @@
 
 
 /*---------------------------------------------------------------*/
+/*--- Should be made public (to vex)                          ---*/
+/*---------------------------------------------------------------*/
+
+static Int sizeofIRType ( IRType ty )
+{
+   switch (ty) {
+      case Ity_I8:  return 1;
+      case Ity_I16: return 2;
+      case Ity_I32: return 4;
+      default: vex_printf("\n"); ppIRType(ty); vex_printf("\n");
+               vpanic("sizeofIType");
+   }
+}
+
+
+/*---------------------------------------------------------------*/
 /*--- Finite mappery, of a sort                               ---*/
 /*---------------------------------------------------------------*/
 
@@ -153,6 +169,15 @@ static IRExpr* flatten_Expr ( IRBB* bb, IRExpr* ex )
 
    switch (ex->tag) {
 
+      case Iex_GetI:
+         t1 = newIRTemp(bb->tyenv, ty);
+         addStmtToIRBB(bb, IRStmt_Tmp(t1,
+            IRExpr_GetI(flatten_Expr(bb, ex->Iex.GetI.offset),
+                        ex->Iex.GetI.ty,
+                        ex->Iex.GetI.minoff,
+                        ex->Iex.GetI.maxoff)));
+         return IRExpr_Tmp(t1);
+
       case Iex_Get:
          t1 = newIRTemp(bb->tyenv, ty);
          addStmtToIRBB(bb, 
@@ -223,14 +248,13 @@ static void flatten_Stmt ( IRBB* bb, IRStmt* st )
          e1 = flatten_Expr(bb, st->Ist.Put.expr);
          addStmtToIRBB(bb, IRStmt_Put(st->Ist.Put.offset, e1));
          break;
-#if 0
       case Ist_PutI:
-        e1 = flatten_Expr(bb, st->Ist.PutI.offset);
-        e2 = flatten_Expr(bb, st->Ist.PutI.expr);
-        addStmtToIRBB(bb, IRStmt_PutI(e1, e2, st->Ist.PutI.minoff,
-                          st->Ist.PutI.maxoff));
-        break;
-#endif
+         e1 = flatten_Expr(bb, st->Ist.PutI.offset);
+         e2 = flatten_Expr(bb, st->Ist.PutI.expr);
+         addStmtToIRBB(bb, IRStmt_PutI(e1, e2, 
+                                       st->Ist.PutI.minoff,
+                                       st->Ist.PutI.maxoff));
+         break;
       case Ist_Tmp:
          e1 = flatten_Expr(bb, st->Ist.Tmp.expr);
          addStmtToIRBB(bb, IRStmt_Tmp(st->Ist.Tmp.tmp, e1));
@@ -308,9 +332,32 @@ static IRExpr* fold_Expr ( IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
                         - e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)));
                break;
+            case Iop_Sub32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        - e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+            case Iop_Add32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+            case Iop_And32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        & e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+            case Iop_Shl32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
+                        << e->Iex.Binop.arg2->Iex.Const.con->Ico.U32)));
+               break;
+case Iop_CmpEQ32:
+  vex_printf("FOLD: warning, missed CmpEQ32\n");
+break;
            default:
               goto unhandled;
-	 }
+         }
       } else {
          /* other cases (identities, etc) */
          if (e->Iex.Binop.op == Iop_Add32
@@ -371,6 +418,16 @@ static IRExpr* subst_Expr ( Hash64* env, IRExpr* ex )
       return ex;
    if (ex->tag == Iex_Get)
       return ex;
+
+   if (ex->tag == Iex_GetI) {
+      vassert(isAtom(ex->Iex.GetI.offset));
+      return IRExpr_GetI(
+         subst_Expr(env, ex->Iex.GetI.offset),
+         ex->Iex.GetI.ty,
+         ex->Iex.GetI.minoff,
+         ex->Iex.GetI.maxoff
+      );
+   }
 
    if (ex->tag == Iex_Binop) {
       vassert(isAtom(ex->Iex.Binop.arg1));
@@ -445,6 +502,17 @@ static IRStmt* subst_and_fold_Stmt ( Hash64* env, IRStmt* st )
       return IRStmt_Put(
                 st->Ist.Put.offset, 
                 fold_Expr(subst_Expr(env, st->Ist.Put.expr)) 
+             );
+   }
+
+   if (st->tag == Ist_PutI) {
+      vassert(isAtom(st->Ist.PutI.offset));
+      vassert(isAtom(st->Ist.PutI.expr));
+      return IRStmt_PutI(
+                fold_Expr(subst_Expr(env, st->Ist.PutI.offset)),
+                fold_Expr(subst_Expr(env, st->Ist.PutI.expr)),
+                st->Ist.PutI.minoff,
+                st->Ist.PutI.maxoff
              );
    }
 
@@ -532,7 +600,6 @@ static IRBB* cprop_BB ( IRBB* in )
       }
    }
 
-
    out->next     = subst_Expr( env, in->next );
    out->jumpkind = in->jumpkind;
    return out;
@@ -552,6 +619,9 @@ static void addUses_Expr ( Hash64* set, IRExpr* e )
 {
    Int i;
    switch (e->tag) {
+      case Iex_GetI:
+         addUses_Expr(set, e->Iex.GetI.offset);
+         return;
       case Iex_Mux0X:
          addUses_Expr(set, e->Iex.Mux0X.cond);
          addUses_Expr(set, e->Iex.Mux0X.expr0);
@@ -587,6 +657,10 @@ static void addUses_Expr ( Hash64* set, IRExpr* e )
 static void addUses_Stmt ( Hash64* set, IRStmt* st )
 {
    switch (st->tag) {
+      case Ist_PutI:
+         addUses_Expr(set, st->Ist.PutI.offset);
+         addUses_Expr(set, st->Ist.PutI.expr);
+         return;
       case Ist_Exit:
          addUses_Expr(set, st->Ist.Exit.cond);
          return;
@@ -616,7 +690,7 @@ static void addUses_Stmt ( Hash64* set, IRStmt* st )
    E', delete the binding if it is not used.  Otherwise, add any temp
    uses to the set and keep on moving backwards. */
 
-void dead_BB ( IRBB* bb )
+static void dead_BB ( IRBB* bb )
 {
    Int     i;
    Hash64* set = newH64();
@@ -646,6 +720,125 @@ void dead_BB ( IRBB* bb )
 
 
 /*---------------------------------------------------------------*/
+/*--- In-place removal of redundant GETs                      ---*/
+/*---------------------------------------------------------------*/
+
+/* Scan forwards, building up an environment binding
+   (offset,length) pairs to values, which will either be
+   temps or constants.
+
+   On seeing 't = Get(off,len)', look up (off,len) in the env and if
+   it matches, replace the Get with the stored value.
+
+   On seeing 'Put (off,len) = t or c', first remove in the env any
+   binding which fully or partially overlaps with (off,len).  Then
+   add a new (off,len) :-> t or c binding.
+*/
+
+/* Create keys, of the form ((minoffset << 16) | maxoffset). */
+
+static UInt mk_key_GetPut ( Int offset, IRType ty )
+{
+   /* offset should fit in 16 bits. */
+   UInt minoff = offset;
+   UInt maxoff = minoff + sizeofIRType(ty) - 1;
+   vassert((minoff & 0xFFFF0000) == 0);
+   vassert((maxoff & 0xFFFF0000) == 0);
+   return (minoff << 16) | maxoff;
+}
+
+static UInt mk_key_GetIPutI ( UShort minoff16, UShort maxoff16 )
+{
+   UInt minoff = (UInt)minoff16;
+   UInt maxoff = (UInt)maxoff16;
+   return (minoff << 16) | maxoff;
+}
+
+
+static void redundant_get_removal_BB ( IRBB* bb )
+{
+   Hash64* env = newH64();
+   UInt key;
+   Int i, j;
+   Bool isPut;
+
+   for (i = 0; i < bb->stmts_used; i++) {
+      IRStmt* st = bb->stmts[i];
+
+      if (!st)
+         continue;
+
+      /* Deal with Gets */
+      if (st->tag == Ist_Tmp
+          && st->Ist.Tmp.expr->tag == Iex_Get) {
+         /* st is 't = Get(...)'.  Look up in the environment and see
+            if the Get can be replaced. */
+         ULong val;
+         IRExpr* get = st->Ist.Tmp.expr;
+         key = (ULong)mk_key_GetPut( get->Iex.Get.offset, 
+                                     get->Iex.Get.ty );
+         if (lookupH64(env, &val, (ULong)key)) {
+            /* found it */
+            if (1) {
+               vex_printf("rGET: "); ppIRExpr(get);
+               vex_printf("  ->  "); ppIRExpr((IRExpr*)val);
+               vex_printf("\n");
+	    }
+            bb->stmts[i] = IRStmt_Tmp(st->Ist.Tmp.tmp,
+                                      (IRExpr*)val);
+         }
+      }
+
+      /* Deal with Puts */
+      switch (st->tag) {
+         case Ist_Put: 
+            isPut = True;
+            key = mk_key_GetPut( st->Ist.Put.offset, 
+                                 typeOfIRExpr(bb->tyenv,st->Ist.Put.expr) );
+            break;
+         case Ist_PutI:
+            isPut = True;
+            key = mk_key_GetIPutI( st->Ist.PutI.minoff, 
+                                   st->Ist.PutI.maxoff );
+            break;
+         default: 
+            isPut = False;
+      }
+
+      /* invalidate any env entries overlapped by this Put */
+      if (isPut) {
+         UInt k_lo, k_hi, e_lo, e_hi;
+         k_lo = (key >> 16) & 0xFFFF;
+         k_hi = key & 0xFFFF;
+         vassert(k_lo <= k_hi);
+         /* invalidate any env entries which in any way overlap
+            (k_lo .. k_hi) */
+         for (j = 0; j < env->used; j++) {
+            if (!env->inuse[j]) 
+               continue;
+            e_lo = (((UInt)env->key[j]) >> 16) & 0xFFFF;
+            e_hi = ((UInt)env->key[j]) & 0xFFFF;
+            vassert(e_lo <= e_hi);
+            if (e_hi < k_lo || k_hi < e_lo)
+               continue; /* no overlap possible */
+            else
+               /* overlap; invalidate */
+               env->inuse[j] = False;
+         }
+      }
+
+      /* add this one to the env, if appropriate */
+      if (st->tag == Ist_Put) {
+         vassert(isAtom(st->Ist.Put.expr));
+         addToH64( env, (ULong)key, (ULong)(st->Ist.Put.expr));
+      }
+
+   } /* for (i = 0; i < bb->stmts_used; i++) */
+
+}
+
+
+/*---------------------------------------------------------------*/
 /*--- iropt main                                              ---*/
 /*---------------------------------------------------------------*/
 
@@ -666,7 +859,14 @@ IRBB* do_iropt_BB ( IRBB* bb0 )
       vex_printf("\n************************ FLAT\n\n" );
       ppIRBB(flat);
    }
-   cpd  = cprop_BB ( flat );
+
+   redundant_get_removal_BB ( flat );
+   if (verbose) {
+      vex_printf("\n========= REDUNDANT GET\n\n" );
+      ppIRBB(flat);
+   }
+
+   cpd = cprop_BB ( flat );
    if (verbose) {
       vex_printf("\n========= CPROPD\n\n" );
       ppIRBB(cpd);
@@ -677,6 +877,7 @@ IRBB* do_iropt_BB ( IRBB* bb0 )
       ppIRBB(cpd);
    }
    return cpd;
+
 }
 
 

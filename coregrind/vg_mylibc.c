@@ -1203,13 +1203,13 @@ Int VG_(safe_fd)(Int oldfd)
 {
    Int newfd;
 
-   newfd = VG_(fcntl)(oldfd, VKI_F_DUPFD, VG_MAX_FD+1);
+   newfd = VG_(fcntl)(oldfd, VKI_F_DUPFD, VG_(max_fd)+1);
    if (newfd != -1)
       VG_(close)(oldfd);
 
    VG_(fcntl)(newfd, VKI_F_SETFD, VKI_FD_CLOEXEC);
 
-   vg_assert(newfd > VG_MAX_FD);
+   vg_assert(newfd > VG_(max_fd));
    return newfd;
 }
 
@@ -1424,6 +1424,17 @@ Int VG_(getrlimit) (Int resource, struct vki_rlimit *rlim)
    Int res;
    /* res = getrlimit( resource, rlim ); */
    res = VG_(do_syscall)(__NR_getrlimit, (UInt)resource, (UInt)rlim);
+   if(VG_(is_kerror)(res)) res = -1;
+   return res;
+}
+
+
+/* Support for setrlimit. */
+Int VG_(setrlimit) (Int resource, struct vki_rlimit *rlim)
+{
+   Int res;
+   /* res = setrlimit( resource, rlim ); */
+   res = VG_(do_syscall)(__NR_setrlimit, (UInt)resource, (UInt)rlim);
    if(VG_(is_kerror)(res)) res = -1;
    return res;
 }

@@ -108,14 +108,9 @@
    give finer interleaving but much increased scheduling overheads. */
 #define VG_SCHEDULING_QUANTUM   50000
 
-/* Maximum FD Valgrind can use for its internal file descriptors. */
-#define VG_MAX_SAFE_FD	1024	/* usual ulimit */
-
-/* Maximum allowed application-visible file descriptor.  Valgrind's
-   internal fds hide above this (starting at VG_MAX_FD+1).  This is
-   derived from the default fd limit (1024) minus the 2 fds per thread
-   and a small number of extra fds. */
-#define VG_MAX_FD	(VG_MAX_SAFE_FD - (VG_N_THREADS*2 + 4))
+/* Number of file descriptors that Valgrind tries to reserve for
+   it's own use - two per thread plues a small number of extras. */
+#define VG_N_RESERVED_FDS (VG_N_THREADS*2 + 4)
 
 /* Stack size for a thread.  We try and check that they do not go
    beyond it. */
@@ -181,6 +176,9 @@ extern Int VG_(main_pid);
 
 /* pgrp of process (global to all threads) */
 extern Int VG_(main_pgrp);
+
+/* Maximum allowed application-visible file descriptor */
+extern Int VG_(max_fd);
 
 /* Should we stop collecting errors if too many appear?  default: YES */
 extern Bool  VG_(clo_error_limit);

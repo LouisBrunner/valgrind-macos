@@ -396,6 +396,9 @@ extern Char* VG_(getenv) ( Char* name );
 /* Get client resource limit*/
 extern Int VG_(getrlimit) ( Int resource, struct vki_rlimit *rlim );
 
+/* Set client resource limit*/
+extern Int VG_(setrlimit) ( Int resource, struct vki_rlimit *rlim );
+
 /* Crude stand-in for the glibc system() call. */
 extern Int   VG_(system) ( Char* cmd );
 

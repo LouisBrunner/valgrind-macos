@@ -311,7 +311,7 @@ void record_fd_close(Int tid, Int fd)
 {
    OpenFd *i = allocated_fds;
 
-   if (fd > VG_MAX_FD)
+   if (fd > VG_(max_fd))
       return;			/* Valgrind internal */
 
    while(i) {
@@ -344,7 +344,7 @@ void record_fd_open(Int tid, Int fd, char *pathname)
 {
    OpenFd *i;
 
-   if (fd > VG_MAX_FD)
+   if (fd > VG_(max_fd))
       return;			/* Valgrind internal */
 
    /* Check to see if this fd is already open. */
@@ -889,7 +889,7 @@ static Bool valid_client_addr(Addr start, UInt size, ThreadId tid, const Char *s
 /* Return true if we're allowed to use or create this fd */
 static Bool fd_allowed(Int fd, const Char *syscall, ThreadId tid)
 {
-   if (fd < 0 || fd > VG_MAX_FD || fd == VG_(clo_logfile_fd)) {
+   if (fd < 0 || fd > VG_(max_fd) || fd == VG_(clo_logfile_fd)) {
       VG_(message)(Vg_UserMsg, 
          "Warning: invalid file descriptor %d in syscall %s()",
          fd, syscall);
@@ -4155,7 +4155,7 @@ POST(socketcall)
    switch (arg1 /* request */) {
 
    case SYS_SOCKETPAIR:
-      /* XXX TODO: check return fd against VG_MAX_FD */
+      /* XXX TODO: check return fd against VG_(max_fd) */
       VG_TRACK( post_mem_write, ((UInt*)arg2)[3], 2*sizeof(int) );
       if(VG_(clo_track_fds)) {
          record_fd_open(tid, ((UInt*)((UInt*)arg2)[3])[0], NULL);

@@ -153,6 +153,9 @@ Int VG_(main_pid);
 /* PGRP of process */
 Int VG_(main_pgrp);
 
+/* Maximum allowed application-visible file descriptor */
+Int VG_(max_fd);
+
 /* Words. */
 static Int baB_off = 0;
 
@@ -1109,7 +1112,7 @@ static void process_cmd_line_options ( const KickstartParams *kp )
    }
 
    /* Move logfile_fd into the safe range, so it doesn't conflict with any app fds */
-   eventually_logfile_fd = VG_(fcntl)(VG_(clo_logfile_fd), VKI_F_DUPFD, VG_MAX_FD+1);
+   eventually_logfile_fd = VG_(fcntl)(VG_(clo_logfile_fd), VKI_F_DUPFD, VG_(max_fd)+1);
    if (eventually_logfile_fd < 0)
       VG_(message)(Vg_UserMsg, "valgrind: failed to move logfile fd into safe range");
    else {
@@ -1364,6 +1367,7 @@ static void newpid(ThreadId unused)
 void VG_(main) ( const KickstartParams *kp, void (*tool_init)(void), void *tool_dlhandle )
 {
    VgSchedReturnCode src;
+   struct vki_rlimit rl;
 
    /* initial state */
    if (0)
@@ -1413,6 +1417,25 @@ void VG_(main) ( const KickstartParams *kp, void (*tool_init)(void), void *tool_
 
    VG_(atfork)(NULL, NULL, newpid);
    newpid(VG_INVALID_THREADID);
+
+   /* Get the current file descriptor limits. */
+   if (VG_(getrlimit)(VKI_RLIMIT_NOFILE, &rl) < 0) {
+      rl.rlim_cur = 1024;
+      rl.rlim_max = 1024;
+   }
+
+   /* Work out where to move the soft limit to. */
+   if (rl.rlim_cur + VG_N_RESERVED_FDS <= rl.rlim_max) {
+      rl.rlim_cur = rl.rlim_cur + VG_N_RESERVED_FDS;
+   } else {
+      rl.rlim_cur = rl.rlim_max;
+   }
+
+   /* Reserve some file descriptors for our use. */
+   VG_(max_fd) = rl.rlim_cur - VG_N_RESERVED_FDS;
+
+   /* Update the soft limit. */
+   VG_(setrlimit)(VKI_RLIMIT_NOFILE, &rl);
 
    /* Read /proc/self/maps into a buffer.  Must be before:
       - SK_(pre_clo_init)(): so that if it calls VG_(malloc)(), any mmap'd

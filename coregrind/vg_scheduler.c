@@ -794,6 +794,13 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	    about to start in a signal handler). */
 	 break;
 
+      case VEX_TRC_JMP_MAPFAIL:
+         /* Failure of arch-specific address translation (x86/amd64
+            segment override use) */
+         /* jrs 2005 03 11: is this correct? */
+         VG_(synth_fault)(tid);
+         break;
+
       case VEX_TRC_JMP_EMWARN: {
          static Int  counts[EmWarn_NUMBER];
          static Bool counts_initted = False;

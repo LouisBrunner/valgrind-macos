@@ -955,7 +955,7 @@ void vg_read_lib_symbols ( SegInfo* si )
                      } else {
                         VG_(printf)("unhandled stabs case: N_FUN start %d %s\n",
                                    i, (stabstr + stab[i+1].n_un.n_strx) );
-                        VG_(panic)("argh");
+                        VG_(panic)("unhandled N_FUN stabs case");
                      }
                      break;
 
@@ -967,13 +967,13 @@ void vg_read_lib_symbols ( SegInfo* si )
                      } else {
                         VG_(printf)("unhandled N_SOL stabs case: %d %d %d", 
                                     stab[i+1].n_type, i, n_stab_entries);
-                        VG_(panic)("argh");
+                        VG_(panic)("unhandled N_SOL stabs case");
                      }
 
                   default:
                      VG_(printf)("unhandled stabs case: %d %d", 
                                  stab[i+1].n_type,i);
-                     VG_(panic)("argh");
+                     VG_(panic)("unhandled (other) stabs case");
                }
             }
             

@@ -907,29 +907,6 @@ Addrcheck), the following options apply.</para>
     and 4096 inclusive, and must be a power of two.</para>
    </listitem>
 
-   <listitem>
-    <para><computeroutput>--sloppy-malloc=no</computeroutput>
-     [default]</para>
-    <para><computeroutput>--sloppy-malloc=yes</computeroutput></para>
-    <para>When enabled, all requests for malloc/calloc are
-    rounded up to a whole number of machine words -- in other
-    words, made divisible by 4.  For example, a request for 17
-    bytes of space would result in a 20-byte area being made
-    available.  This works around bugs in sloppy libraries which
-    assume that they can safely rely on malloc/calloc requests
-    being rounded up in this fashion.  Without the workaround,
-    these libraries tend to generate large numbers of errors when
-    they access the ends of these areas.</para>
-
-    <para>Valgrind snapshots dated 17 Feb 2002 and later are
-    cleverer about this problem, and you should no longer need to
-    use this flag.  To put it bluntly, if you do need to use this
-    flag, your program violates the ANSI C semantics defined for
-    <computeroutput>malloc</computeroutput> and
-    <computeroutput>free</computeroutput>, even if it appears to
-    work correctly, and you should fix it, at least if you hope
-    for maximum portability.</para>
-   </listitem>
   </itemizedlist>
 
  </sect2>

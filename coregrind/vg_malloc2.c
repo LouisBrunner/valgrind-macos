@@ -518,13 +518,9 @@ Superblock* findSb ( Arena* a, Block* b )
 /*--- Command line options                                 ---*/
 /*------------------------------------------------------------*/
 
-/* Round malloc sizes up to a multiple of VG_SLOPPY_MALLOC_SZB bytes?
-     default: NO
-   Nb: the allocator always rounds blocks up to a multiple of
-   VG_MIN_MALLOC_SZB.  VG_(clo_sloppy_malloc) is relevant eg. for
-   Memcheck, which will be byte-precise with addressability maps on its
-   malloc allocations unless --sloppy-malloc=yes.  */
-Bool VG_(clo_sloppy_malloc) = False;
+/* Nb: the allocator always rounds blocks up to a multiple of
+   VG_MIN_MALLOC_SZB.
+*/
 
 /* DEBUG: print malloc details?  default: NO */
 Bool VG_(clo_trace_malloc)  = False;
@@ -550,7 +546,6 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
       }
    }
 
-   else VG_BOOL_CLO(arg, "--sloppy-malloc", VG_(clo_sloppy_malloc))
    else VG_BOOL_CLO(arg, "--trace-malloc",  VG_(clo_trace_malloc))
    else 
       return False;
@@ -561,9 +556,8 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(Char* arg)
 void VG_(replacement_malloc_print_usage)(void)
 {
    VG_(printf)(
-"    --sloppy-malloc=no|yes    round malloc sizes to multiple of %d? [no]\n"
 "    --alignment=<number>      set minimum alignment of allocations [%d]\n",
-   VG_SLOPPY_MALLOC_SZB, VG_MIN_MALLOC_SZB
+   VG_MIN_MALLOC_SZB
    );
 }
 

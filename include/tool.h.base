@@ -920,8 +920,6 @@ extern Bool VG_(addr_is_in_block)( Addr a, Addr start, SizeT size );
    The tool should call the functions in the appropriate places to give
    control over these aspects of Valgrind's version of malloc(). */
 
-/* Round malloc sizes upwards to integral number of words? default: NO */
-extern Bool VG_(clo_sloppy_malloc);
 /* DEBUG: print malloc details?  default: NO */
 extern Bool VG_(clo_trace_malloc);
 /* Minimum alignment in functions that don't specify alignment explicitly.

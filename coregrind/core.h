@@ -385,9 +385,6 @@ typedef Int ArenaId;
 // greater than 8.
 #define VG_MIN_MALLOC_SZB        8
 
-// Round-up size for --sloppy-malloc=yes.
-#define VG_SLOPPY_MALLOC_SZB     4
-
 extern void* VG_(arena_malloc)  ( ArenaId arena, SizeT nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
 extern void* VG_(arena_calloc)  ( ArenaId arena, 
@@ -500,7 +497,6 @@ struct vg_mallocfunc_info {
 
    SizeT (*arena_payload_szB)      (ArenaId aid, void* payload);
 
-   Bool	clo_sloppy_malloc;
    Bool	clo_trace_malloc;
 };
 

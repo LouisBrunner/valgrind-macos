@@ -153,12 +153,6 @@ internal_printf(char *format, ...)
    if (info.clo_trace_malloc)          \
       internal_printf(format, ## args )
 
-#define MAYBE_SLOPPIFY(n)           \
-   if (info.clo_sloppy_malloc) {    \
-      n = (n+(VG_SLOPPY_MALLOC_SZB-1)) & ~(VG_SLOPPY_MALLOC_SZB-1); \
-   }
-
-
 /* Below are new versions of malloc, __builtin_new, free, 
    __builtin_delete, calloc, realloc, memalign, and friends.
 
@@ -180,7 +174,6 @@ internal_printf(char *format, ...)
       void* v; \
       \
       MALLOC_TRACE(#fnname "(%llu)", (ULong)n ); \
-      MAYBE_SLOPPIFY(n); \
       if (!init_done) init(); \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
@@ -201,7 +194,6 @@ internal_printf(char *format, ...)
       void* v; \
       \
       MALLOC_TRACE(#fnname "(%llu)", (ULong)n ); \
-      MAYBE_SLOPPIFY(n); \
       if (!init_done) init(); \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
@@ -305,7 +297,6 @@ FREE(m_libc_dot_so_dot_6,      _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
       void* v; \
       \
       MALLOC_TRACE("calloc(%llu,%llu)", (ULong)nmemb, (ULong)size ); \
-      MAYBE_SLOPPIFY(size); \
       \
       if (!init_done) init(); \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_calloc, nmemb, size ); \
@@ -324,7 +315,6 @@ CALLOC(m_libc_dot_so_dot_6, calloc);
       void* v; \
       \
       MALLOC_TRACE("realloc(%p,%llu)", ptrV, (ULong)new_size ); \
-      MAYBE_SLOPPIFY(new_size); \
       \
       if (ptrV == NULL) \
          /* We need to call a malloc-like function; so let's use \
@@ -354,7 +344,6 @@ REALLOC(m_libc_dot_so_dot_6, realloc);
       \
       MALLOC_TRACE("memalign(al %llu, size %llu)", \
                    (ULong)alignment, (ULong)n ); \
-      MAYBE_SLOPPIFY(n); \
       \
       /* Round up to minimum alignment if necessary. */ \
       if (alignment < VG_MIN_MALLOC_SZB) \

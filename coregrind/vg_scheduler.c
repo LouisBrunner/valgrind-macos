@@ -62,6 +62,8 @@
 - Check memory permissions of client-space addresses passed from
   vg_libpthread.c.
 
+- Update assertion checking in scheduler_sanity().
+
   TODO sometime:
 
 - Mutex scrubbing - clearup_after_thread_exit: look for threads

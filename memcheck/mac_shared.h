@@ -139,8 +139,7 @@ typedef
    struct _MAC_Chunk {
       struct _MAC_Chunk* next;
       Addr          data;           // ptr to actual block
-      // XXX: not 64-bit clean!
-      UInt          size : 30;      // size requested
+      SizeT         size : (sizeof(UWord)*8)-2; // size requested; 30 or 62 bits
       MAC_AllocKind allockind : 2;  // which wrapper did the allocation
       ExeContext*   where;          // where it was allocated
    }
@@ -151,7 +150,7 @@ typedef
    struct _MAC_Mempool {
       struct _MAC_Mempool* next;
       Addr          pool;           // pool identifier
-      UInt          rzB;            // pool red-zone size
+      SizeT         rzB;            // pool red-zone size
       Bool          is_zeroed;      // allocations from this pool are zeroed
       VgHashTable   chunks;         // chunks associated with this pool
    }

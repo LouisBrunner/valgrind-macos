@@ -418,6 +418,12 @@ void VG_(perform_assumed_nonblocking_syscall) ( ThreadId tid )
 
       /* !!!!!!!!!! New, untested syscalls !!!!!!!!!!!!!!!!!!!!! */
 
+      case __NR_personality: /* syscall 136 */
+         if (VG_(clo_trace_syscalls))
+            VG_(printf)("personality ( %d )\n", arg1);
+         KERNEL_DO_SYSCALL(tid,res);
+         break;
+
       case __NR_chroot: /* syscall 61 */
          /* int chroot(const char *path); */
          if (VG_(clo_trace_syscalls))

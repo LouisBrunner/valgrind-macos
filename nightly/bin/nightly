@@ -4,6 +4,22 @@
 #   Use: two args, first is path to top of ValgrindABT tree
 #        second is name of machine
 
+runcmd () {
+   echo -n "   $1  ... " >> log.short
+   shift
+
+   (eval "$*") >> log.verbose 2>&1
+
+   if [ $? == 0 ]
+   then
+      echo "done" >> log.short
+      return 0
+   else
+      echo "failed" >> log.short
+      return 1
+   fi
+}
+
 ABT_TOP=$1
 ABT_MACHINE=$2
 
@@ -24,35 +40,35 @@ echo >> log.short
 echo "Nightly build on" $ABT_MACHINE "(" $ABT_DETAILS ") started at" $ABT_START >> log.verbose
 echo >> log.verbose
 
-echo -n "   Checking out vex source tree       ... " >> log.short
-svn co svn://svn.valgrind.org/vex/trunk vex 2>&1 >> log.verbose
-echo "done" >> log.short
+runcmd "Checking out vex source tree     " \
+       "svn co svn://svn.valgrind.org/vex/trunk vex" && \
+\
+runcmd "Building vex                     " \
+       "cd vex && pwd && make clean version all" && \
+\
+runcmd "Checking out valgrind source tree" \
+       "svn co svn://svn.valgrind.org/valgrind/trunk valgrind" && \
+\
+runcmd "Configuring valgrind             " \
+       "cd valgrind && ./autogen.sh  && ./configure --prefix=$ABT_TOP/Inst --with-vex=$ABT_TOP/vex" && \
+\
+runcmd "Building valgrind                " \
+       "cd valgrind && make install" && \
+\
+runcmd "Running regression tests         " \
+       "cd valgrind && make regtest"
 
-echo -n "   Building vex                       ... " >> log.short
-(cd vex && make clean version all 2>&1 ) >> log.verbose
-echo "done" >> log.short
-
-echo -n "   Checking out valgrind source tree  ... " >> log.short
-svn co svn://svn.valgrind.org/valgrind/trunk valgrind 2>&1 >> log.verbose
-echo "done" >> log.short
-
-echo -n "   Configuring valgrind               ... " >> log.short
-(cd valgrind && ./autogen.sh 2>&1  && ./configure --prefix=`pwd`/Inst --with-vex=`pwd`/../vex 2>&1 ) >> log.verbose
-echo "done" >> log.short
-
-echo -n "   Building valgrind                  ... " >> log.short
-(cd valgrind && make install 2>&1 ) >> log.verbose
-echo "done" >> log.short
-
-echo -n "   Running regression tests           ... " >> log.short
-(cd valgrind && make regtest 2>&1 ) >> log.verbose
-echo "done" >> log.short
-
-echo >> log.short
-echo "Last 20 lines of log.verbose follow" >> log.short
-echo >> log.short
-tail -20 log.verbose >> log.short
+egrep -q '^== [0-9]+ tests' log.verbose && (
+   echo >> log.short
+   echo "Regression test results follow" >> log.short
+   echo >> log.short
+   awk '/^== [0-9]+ tests/, /^$/ { print }' log.verbose >> log.short
+) || (
+   echo >> log.short
+   echo "Last 20 lines of log.verbose follow" >> log.short
+   echo >> log.short
+   tail -20 log.verbose >> log.short
+)
 
 $ABT_TOP/conf/$ABT_MACHINE.sendmail "$ABT_START nightly build ($ABT_MACHINE, $ABT_DETAILS)" \
 	$ABT_TOP/log.short
-

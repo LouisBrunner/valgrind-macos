@@ -11,3 +11,7 @@ GLIBC_2.2 {
 GLIBC_2.2.3 {
 } GLIBC_2.2;
 
+GLIBC_PRIVATE {
+   __pthread_clock_gettime;
+   __pthread_clock_settime;
+};

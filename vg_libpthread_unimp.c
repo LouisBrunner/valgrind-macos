@@ -161,6 +161,9 @@ void sem_unlink ( void )  { unimp("sem_unlink"); }
 void siglongjmp ( void )  { unimp("siglongjmp"); }
 //void sigwait ( void )  { unimp("sigwait"); }
 
+void __pthread_clock_gettime ( void ) { unimp("__pthread_clock_gettime"); }
+void __pthread_clock_settime ( void ) { unimp("__pthread_clock_settime"); }
+
 #if 0
 void pthread_create@@GLIBC_2.1 ( void )  { unimp("pthread_create@@GLIBC_2.1"); }
 void pthread_create@GLIBC_2.0 ( void )  { unimp("pthread_create@GLIBC_2.0"); }

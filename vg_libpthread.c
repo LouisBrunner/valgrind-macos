@@ -2034,64 +2034,23 @@ int sem_destroy(sem_t * sem)
 
 
 /* ---------------------------------------------------------------------
-   Hacky implementation of reader-writer locks.
+   Reader-writer locks.
    ------------------------------------------------------------------ */
 
-/*
-Errata from 7th printing:
-
-   Page 259, rwlock.c, line 27, the two "!=" should be ">", for
-   consistency with other similar tests. (The values should never be
-   negative; this isn't a fix, but an improvement to clarity and
-   consistency.)  
-
-      [27] if (rwl->r_wait > 0 || rwl->w_wait > 0) {
-
-   Page 259, rwlock.c, lines 39 and 40, in both lines, "==" should
-   become "!=":
-
-      [39] return (status != 0 ? status 
-      [40] : (status1 != 0 ? status1 : status2)); 
-*/
-
-/*
- * rwlock.h
- *
- * This header file describes the "reader/writer lock" synchronization
- * construct. The type rwlock_t describes the full state of the lock
- * including the POSIX 1003.1c synchronization objects necessary.
- *
- * A reader/writer lock allows a thread to lock shared data either for shared
- * read access or exclusive write access.
- *
- * The rwl_init() and rwl_destroy() functions, respectively, allow you to
- * initialize/create and destroy/free the reader/writer lock.
- */
-
-/*
- * Structure describing a read-write lock.
- */
-typedef struct {
-    pthread_mutex_t     mutex;
-    pthread_cond_t      read;           /* wait for read */
-    pthread_cond_t      write;          /* wait for write */
-    int                 valid;          /* set when valid */
-    int                 r_active;       /* readers active */
-    int                 w_active;       /* writer active */
-    int                 r_wait;         /* readers waiting */
-    int                 w_wait;         /* writers waiting */
-    int                 pref_writer;    /* != 0 --> prefer writer */
-} vg_rwlock_t;
-
-#define VG_RWLOCK_VALID    0xfacade
-
-
-/*
- * Support static initialization of barriers
- */
-#define VG_RWL_INITIALIZER \
-    {PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, \
-    PTHREAD_COND_INITIALIZER, VG_RWLOCK_VALID, 0, 0, 0, 0, 1}
+typedef 
+   struct {
+      int             initted;  /* != 0 --> in use; sanity check only */
+      int             prefer_w; /* != 0 --> prefer writer */
+      int             nwait_r;  /* # of waiting readers */
+      int             nwait_w;  /* # of waiting writers */
+      pthread_cond_t  cv_r;     /* for signalling readers */
+      pthread_cond_t  cv_w;     /* for signalling writers */
+      pthread_mutex_t mx;
+      int             status;
+      /* allowed range for status: >= -1.  -1 means 1 writer currently
+         active, >= 0 means N readers currently active. */
+   } 
+   vg_rwlock_t;
 
 
 static pthread_mutex_t rw_remap_mx = PTHREAD_MUTEX_INITIALIZER;
@@ -2099,6 +2058,23 @@ static pthread_mutex_t rw_remap_mx = PTHREAD_MUTEX_INITIALIZER;
 static int                 rw_remap_used = 0;
 static pthread_rwlock_t*   rw_remap_orig[VG_N_RWLOCKS];
 static vg_rwlock_t         rw_remap_new[VG_N_RWLOCKS];
+
+
+static 
+void init_vg_rwlock ( vg_rwlock_t* vg_rwl )
+{
+   int res = 0;
+   vg_rwl->initted = 1;
+   vg_rwl->prefer_w = 1;
+   vg_rwl->nwait_r = 0;
+   vg_rwl->nwait_w = 0;
+   vg_rwl->status = 0;
+   res = pthread_mutex_init(&vg_rwl->mx, NULL);
+   res |= pthread_cond_init(&vg_rwl->cv_r, NULL);
+   res |= pthread_cond_init(&vg_rwl->cv_w, NULL);
+   assert(res == 0);
+}
+
 
 /* Take the address of a LinuxThreads rwlock_t and return the shadow
    address of our version.  Further, if the LinuxThreads version
@@ -2120,333 +2096,34 @@ static vg_rwlock_t* rw_remap ( pthread_rwlock_t* orig )
    }
    if (i == rw_remap_used) {
       if (rw_remap_used == VG_N_RWLOCKS) {
-         res = pthread_mutex_unlock(&rw_remap_mx);
+         res = __pthread_mutex_unlock(&rw_remap_mx);
          assert(res == 0);
          barf("VG_N_RWLOCKS is too low.  Increase and recompile.");
       }
       rw_remap_used++;
       rw_remap_orig[i] = orig;
+      rw_remap_new[i].initted = 0;
       if (0) printf("allocated rwlock %d\n", i);
    }
    res = __pthread_mutex_unlock(&rw_remap_mx);
    assert(res == 0);
    vg_rwl = &rw_remap_new[i];
 
-   /* Mimic static initialisation of the original. */
+   /* Initialise the shadow, if required. */
    if (orig->__rw_readers == 0) {
-      const vg_rwlock_t default_rwl = VG_RWL_INITIALIZER;
       orig->__rw_readers = 1;
-      *vg_rwl = default_rwl;
-      vg_rwl->pref_writer = 1;
+      init_vg_rwlock(vg_rwl);
       if (orig->__rw_kind == PTHREAD_RWLOCK_PREFER_READER_NP)
-         vg_rwl->pref_writer = 0;
+         vg_rwl->prefer_w = 0;
    }
 
    return vg_rwl;
 }
 
 
-/*
- * rwlock.c
- *
- * This file implements the "read-write lock" synchronization
- * construct.
- *
- * A read-write lock allows a thread to lock shared data either
- * for shared read access or exclusive write access.
- *
- * The rwl_init() and rwl_destroy() functions, respectively,
- * allow you to initialize/create and destroy/free the
- * read-write lock.
- *
- * The rwl_readlock() function locks a read-write lock for
- * shared read access, and rwl_readunlock() releases the
- * lock. rwl_readtrylock() attempts to lock a read-write lock
- * for read access, and returns EBUSY instead of blocking.
- *
- * The rwl_writelock() function locks a read-write lock for
- * exclusive write access, and rwl_writeunlock() releases the
- * lock. rwl_writetrylock() attempts to lock a read-write lock
- * for write access, and returns EBUSY instead of blocking.
- */
-
-
-/*
- * Initialize a read-write lock
- */
-static int rwl_init ( vg_rwlock_t *rwl )
-{
-    int status;
-
-    rwl->r_active = 0;
-    rwl->r_wait = rwl->w_wait = 0;
-    rwl->w_active = 0;
-    status = pthread_mutex_init (&rwl->mutex, NULL);
-    if (status != 0)
-        return status;
-    status = pthread_cond_init (&rwl->read, NULL);
-    if (status != 0) {
-        /* if unable to create read CV, destroy mutex */
-        pthread_mutex_destroy (&rwl->mutex);
-        return status;
-    }
-    status = pthread_cond_init (&rwl->write, NULL);
-    if (status != 0) {
-        /* if unable to create write CV, destroy read CV and mutex */
-        pthread_cond_destroy (&rwl->read);
-        pthread_mutex_destroy (&rwl->mutex);
-        return status;
-    }
-    rwl->valid = VG_RWLOCK_VALID;
-    return 0;
-}
-
-/*
- * Destroy a read-write lock
- */
-static int rwl_destroy (vg_rwlock_t *rwl)
-{
-    int status, status1, status2;
-
-    if (rwl->valid != VG_RWLOCK_VALID)
-        return EINVAL;
-    status = pthread_mutex_lock (&rwl->mutex);
-    if (status != 0)
-        return status;
-
-    /*
-     * Check whether any threads own the lock; report "BUSY" if
-     * so.
-     */
-    if (rwl->r_active > 0 || rwl->w_active) {
-        pthread_mutex_unlock (&rwl->mutex);
-        return EBUSY;
-    }
-
-    /*
-     * Check whether any threads are known to be waiting; report
-     * EBUSY if so.
-     */
-    if (rwl->r_wait > 0 || rwl->w_wait > 0) {
-        pthread_mutex_unlock (&rwl->mutex);
-        return EBUSY;
-    }
-
-    rwl->valid = 0;
-    status = pthread_mutex_unlock (&rwl->mutex);
-    if (status != 0)
-        return status;
-    status = pthread_mutex_destroy (&rwl->mutex);
-    status1 = pthread_cond_destroy (&rwl->read);
-    status2 = pthread_cond_destroy (&rwl->write);
-    return (status != 0 ? status : (status1 != 0 ? status1 : status2));
-}
-
-/*
- * Handle cleanup when the read lock condition variable
- * wait is cancelled.
- *
- * Simply record that the thread is no longer waiting,
- * and unlock the mutex.
- */
-static void rwl_readcleanup (void *arg)
-{
-    vg_rwlock_t    *rwl = (vg_rwlock_t *)arg;
-
-    rwl->r_wait--;
-    pthread_mutex_unlock (&rwl->mutex);
-}
-
-/*
- * Lock a read-write lock for read access.
- */
-static int rwl_readlock (vg_rwlock_t *rwl)
-{
-    int status;
-
-    if (rwl->valid != VG_RWLOCK_VALID)
-        return EINVAL;
-    status = pthread_mutex_lock (&rwl->mutex);
-    if (status != 0)
-        return status;
-    if (rwl->w_active) {
-        rwl->r_wait++;
-        pthread_cleanup_push (rwl_readcleanup, (void*)rwl);
-        while (rwl->w_active) {
-            status = pthread_cond_wait (&rwl->read, &rwl->mutex);
-            if (status != 0)
-                break;
-        }
-        pthread_cleanup_pop (0);
-        rwl->r_wait--;
-    }
-    if (status == 0)
-        rwl->r_active++;
-    pthread_mutex_unlock (&rwl->mutex);
-    return status;
-}
-
-/*
- * Attempt to lock a read-write lock for read access (don't
- * block if unavailable).
- */
-static int rwl_readtrylock (vg_rwlock_t *rwl)
-{
-    int status, status2;
-
-    if (rwl->valid != VG_RWLOCK_VALID)
-        return EINVAL;
-    status = pthread_mutex_lock (&rwl->mutex);
-    if (status != 0)
-        return status;
-    if (rwl->w_active)
-        status = EBUSY;
-    else
-        rwl->r_active++;
-    status2 = pthread_mutex_unlock (&rwl->mutex);
-    return (status2 != 0 ? status2 : status);
-}
-
-/*
- * Handle cleanup when the write lock condition variable
- * wait is cancelled.
- *
- * Simply record that the thread is no longer waiting,
- * and unlock the mutex.
- */
-static void rwl_writecleanup (void *arg)
-{
-    vg_rwlock_t *rwl = (vg_rwlock_t *)arg;
-
-    rwl->w_wait--;
-    pthread_mutex_unlock (&rwl->mutex);
-}
-
-/*
- * Lock a read-write lock for write access.
- */
-static int rwl_writelock (vg_rwlock_t *rwl)
-{
-    int status;
-
-    if (rwl->valid != VG_RWLOCK_VALID)
-        return EINVAL;
-    status = pthread_mutex_lock (&rwl->mutex);
-    if (status != 0)
-        return status;
-    if (rwl->w_active || rwl->r_active > 0) {
-        rwl->w_wait++;
-        pthread_cleanup_push (rwl_writecleanup, (void*)rwl);
-        while (rwl->w_active || rwl->r_active > 0) {
-            status = pthread_cond_wait (&rwl->write, &rwl->mutex);
-            if (status != 0)
-                break;
-        }
-        pthread_cleanup_pop (0);
-        rwl->w_wait--;
-    }
-    if (status == 0)
-        rwl->w_active = 1;
-    pthread_mutex_unlock (&rwl->mutex);
-    return status;
-}
-
-/*
- * Attempt to lock a read-write lock for write access. Don't
- * block if unavailable.
- */
-static int rwl_writetrylock (vg_rwlock_t *rwl)
-{
-    int status, status2;
-
-    if (rwl->valid != VG_RWLOCK_VALID)
-        return EINVAL;
-    status = pthread_mutex_lock (&rwl->mutex);
-    if (status != 0)
-        return status;
-    if (rwl->w_active || rwl->r_active > 0)
-        status = EBUSY;
-    else
-        rwl->w_active = 1;
-    status2 = pthread_mutex_unlock (&rwl->mutex);
-    return (status != 0 ? status : status2);
-}
-
-/*
- * Unlock a read-write lock, using the r_active and w_active fields to
- * decide whether we're in a read or write lock.
- */
-static int rwl_unlock (vg_rwlock_t *rwl)
-{
-    int status, status2;
-
-    if (rwl->valid != VG_RWLOCK_VALID)
-        return EINVAL;
-    status = pthread_mutex_lock (&rwl->mutex);
-    if (status != 0)
-        return status;
-
-    if (rwl->r_active > 0) {
-
-       /* READ case */
-       assert(!rwl->w_active);
-       rwl->r_active--;
-       if (rwl->r_active == 0 && rwl->w_wait > 0)
-          status = pthread_cond_signal (&rwl->write);
-       /* END READ case */
-
-    } else {
-
-       /* WRITE case */
-       assert(rwl->w_active);
-       assert(rwl->r_active == 0);
-       rwl->w_active = 0;
-
-       if (rwl->pref_writer) {
-          /* Do writer-preference wakeups. */
-          if (rwl->w_wait > 0) {
-             status = pthread_cond_signal (&rwl->write);
-             if (status != 0) {
-                pthread_mutex_unlock (&rwl->mutex);
-                return status;
-             }
-          } else if (rwl->r_wait > 0) {
-             status = pthread_cond_broadcast (&rwl->read);
-             if (status != 0) {
-                pthread_mutex_unlock (&rwl->mutex);
-                return status;
-             }
-	  }
-       } else {
-          /* Do reader-preference wakeups. */
-          if (rwl->r_wait > 0) {
-             status = pthread_cond_broadcast (&rwl->read);
-             if (status != 0) {
-                pthread_mutex_unlock (&rwl->mutex);
-                return status;
-             }
-          } else if (rwl->w_wait > 0) {
-             status = pthread_cond_signal (&rwl->write);
-             if (status != 0) {
-                pthread_mutex_unlock (&rwl->mutex);
-                return status;
-             }
-          }
-       }
-       /* END WRITE case */
-
-    }
-
-    status2 = pthread_mutex_unlock (&rwl->mutex);
-    return (status2 == 0 ? status : status2);
-}
-
-/* -------------------------------- */
-
 int pthread_rwlock_init ( pthread_rwlock_t* orig,
                           const pthread_rwlockattr_t* attr )
 {
-   int res;
    vg_rwlock_t* rwl;
    if (0) printf ("pthread_rwlock_init\n");
    /* Force the remapper to initialise the shadow. */
@@ -2456,19 +2133,18 @@ int pthread_rwlock_init ( pthread_rwlock_t* orig,
    if (attr)
       orig->__rw_kind = attr->__lockkind;
    rwl = rw_remap ( orig );
-   res = rwl_init ( rwl );
-   return res;
+   return 0;
 }
 
-int pthread_rwlock_destroy ( pthread_rwlock_t *orig )
+
+static 
+void pthread_rwlock_rdlock_CANCEL_HDLR ( void* rwl_v )
 {
-   int res;
-   vg_rwlock_t* rwl;
-   if (0) printf ("pthread_rwlock_destroy\n");
-   rwl = rw_remap ( orig );
-   res = rwl_destroy ( rwl );
-   return res;
+   vg_rwlock_t* rwl = (vg_rwlock_t*)rwl_v;
+   rwl->nwait_r--;
+   pthread_mutex_unlock (&rwl->mx);
 }
+
 
 int pthread_rwlock_rdlock ( pthread_rwlock_t* orig )
 {
@@ -2476,9 +2152,32 @@ int pthread_rwlock_rdlock ( pthread_rwlock_t* orig )
    vg_rwlock_t* rwl;
    if (0) printf ("pthread_rwlock_rdlock\n");
    rwl = rw_remap ( orig );
-   res = rwl_readlock ( rwl );
-   return res;
+   res = __pthread_mutex_lock(&rwl->mx);
+   assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status < 0) {
+      assert(rwl->status == -1);
+      rwl->nwait_r++;
+      pthread_cleanup_push( pthread_rwlock_rdlock_CANCEL_HDLR, rwl );
+      while (1) {
+         if (rwl->status == 0) break;
+         res = pthread_cond_wait(&rwl->cv_r, &rwl->mx);
+         assert(res == 0);
+      }
+      pthread_cleanup_pop(0);
+      rwl->nwait_r--;
+   }
+   assert(rwl->status >= 0);
+   rwl->status++;
+   res = __pthread_mutex_unlock(&rwl->mx);
+   assert(res == 0);
+   return 0;
 }
+
 
 int pthread_rwlock_tryrdlock ( pthread_rwlock_t* orig )
 {
@@ -2486,9 +2185,36 @@ int pthread_rwlock_tryrdlock ( pthread_rwlock_t* orig )
    vg_rwlock_t* rwl;
    if (0) printf ("pthread_rwlock_tryrdlock\n");
    rwl = rw_remap ( orig );
-   res = rwl_readtrylock ( rwl );
-   return res;
+   res = __pthread_mutex_lock(&rwl->mx);
+   assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status == -1) {
+      /* Writer active; we have to give up. */
+      res = __pthread_mutex_unlock(&rwl->mx);
+      assert(res == 0);
+      return EBUSY;
+   }
+   /* Success */
+   assert(rwl->status >= 0);
+   rwl->status++;
+   res = __pthread_mutex_unlock(&rwl->mx);
+   assert(res == 0);
+   return 0;
 }
+
+
+static 
+void pthread_rwlock_wrlock_CANCEL_HDLR ( void* rwl_v )
+{
+   vg_rwlock_t* rwl = (vg_rwlock_t*)rwl_v;
+   rwl->nwait_w--;
+   pthread_mutex_unlock (&rwl->mx);
+}
+
 
 int pthread_rwlock_wrlock ( pthread_rwlock_t* orig )
 {
@@ -2496,19 +2222,59 @@ int pthread_rwlock_wrlock ( pthread_rwlock_t* orig )
    vg_rwlock_t* rwl;
    if (0) printf ("pthread_rwlock_wrlock\n");
    rwl = rw_remap ( orig );
-   res = rwl_writelock ( rwl );
-   return res;
+   res = __pthread_mutex_lock(&rwl->mx);
+   assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status != 0) {
+      rwl->nwait_w++;
+      pthread_cleanup_push( pthread_rwlock_wrlock_CANCEL_HDLR, rwl );
+      while (1) {
+         if (rwl->status == 0) break;
+         res = pthread_cond_wait(&rwl->cv_w, &rwl->mx);
+         assert(res == 0);
+      }
+      pthread_cleanup_pop(0);
+      rwl->nwait_w--;
+   }
+   assert(rwl->status == 0);
+   rwl->status = -1;
+   res = __pthread_mutex_unlock(&rwl->mx);
+   assert(res == 0);
+   return 0;
 }
+
 
 int pthread_rwlock_trywrlock ( pthread_rwlock_t* orig )
 {
    int res;
    vg_rwlock_t* rwl;
-   if (0) printf ("pthread_rwlock_trywrlock\n");
+   if (0) printf ("pthread_wrlock_trywrlock\n");
    rwl = rw_remap ( orig );
-   res = rwl_writetrylock ( rwl );
-   return res;
+   res = __pthread_mutex_lock(&rwl->mx);
+   assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status != 0) {
+      /* Reader(s) or a writer active; we have to give up. */
+      res = __pthread_mutex_unlock(&rwl->mx);
+      assert(res == 0);
+      return EBUSY;
+   }
+   /* Success */
+   assert(rwl->status == 0);
+   rwl->status = -1;
+   res = __pthread_mutex_unlock(&rwl->mx);
+   assert(res == 0);
+   return 0;
 }
+
 
 int pthread_rwlock_unlock ( pthread_rwlock_t* orig )
 {
@@ -2516,8 +2282,98 @@ int pthread_rwlock_unlock ( pthread_rwlock_t* orig )
    vg_rwlock_t* rwl;
    if (0) printf ("pthread_rwlock_unlock\n");
    rwl = rw_remap ( orig );
-   res = rwl_unlock ( rwl );
-   return res;
+   rwl = rw_remap ( orig );
+   res = __pthread_mutex_lock(&rwl->mx);
+   assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status == 0) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      assert(res == 0);
+      return EPERM;
+   }
+   assert(rwl->status != 0);
+   if (rwl->status == -1) {
+     rwl->status = 0;
+   } else {
+     assert(rwl->status > 0);
+     rwl->status--;
+   }
+
+   assert(rwl->status >= 0);
+
+   if (rwl->prefer_w) {
+
+      /* Favour waiting writers, if any. */
+      if (rwl->nwait_w > 0) {
+         /* Writer(s) are waiting. */
+         if (rwl->status == 0) {
+            /* We can let a writer in. */
+            res = pthread_cond_signal(&rwl->cv_w);
+            assert(res == 0);
+         } else {
+            /* There are still readers active.  Do nothing; eventually
+               they will disappear, at which point a writer will be
+               admitted. */
+         }
+      } 
+      else
+      /* No waiting writers. */
+      if (rwl->nwait_r > 0) {
+         /* Let in a waiting reader. */
+         res = pthread_cond_signal(&rwl->cv_r);
+         assert(res == 0);
+      }
+
+   } else {
+
+      /* Favour waiting readers, if any. */
+      if (rwl->nwait_r > 0) {
+         /* Reader(s) are waiting; let one in. */
+         res = pthread_cond_signal(&rwl->cv_r);
+         assert(res == 0);
+      } 
+      else
+      /* No waiting readers. */
+      if (rwl->nwait_w > 0 && rwl->status == 0) {
+         /* We have waiting writers and no active readers; let a
+            writer in. */
+         res = pthread_cond_signal(&rwl->cv_w);
+         assert(res == 0);
+      }
+   }
+
+   res = __pthread_mutex_unlock(&rwl->mx);
+   assert(res == 0);
+   return 0;   
+}
+
+
+int pthread_rwlock_destroy ( pthread_rwlock_t *orig )
+{
+   int res;
+   vg_rwlock_t* rwl;
+   if (0) printf ("pthread_rwlock_destroy\n");
+   rwl = rw_remap ( orig );
+   res = __pthread_mutex_lock(&rwl->mx);
+   assert(res == 0);
+   if (!rwl->initted) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      assert(res == 0);
+      return EINVAL;
+   }
+   if (rwl->status != 0 || rwl->nwait_r > 0 || rwl->nwait_w > 0) {
+      res = __pthread_mutex_unlock(&rwl->mx);
+      assert(res == 0);
+      return EBUSY;
+   }
+   rwl->initted = 0;
+   res = __pthread_mutex_unlock(&rwl->mx);
+   assert(res == 0);
+   return 0;
 }
 
 

@@ -8826,14 +8826,14 @@ static DisResult disInstr ( /*IN*/  Bool    resteerOK,
 //--       case 0xAF: 
 //--          dis_REP_op ( cb, CondZ, dis_SCAS, sz, eip_orig, eip, "repe scas" );
 //--          break;
-//--       
-//--       case 0x90:           /* REP NOP (PAUSE) */
-//--          /* a hint to the P4 re spin-wait loop */
-//--          DIP("rep nop (P4 pause)\n");
-//--          jmp_lit(cb, eip);
-//--          LAST_UINSTR(cb).jmpkind = JmpYield;
-//--          break;
-//-- 
+      
+      case 0x90:           /* REP NOP (PAUSE) */
+         /* a hint to the P4 re spin-wait loop */
+         DIP("rep nop (P4 pause)\n");
+         jmp_lit(Ijk_Yield, ((Addr32)guest_eip_bbstart)+delta);
+         whatNext = Dis_StopHere;
+         break;
+
 //--       case 0xC3:           /* REP RET */
 //--          /* AMD K7/K8-specific optimisation; faster than vanilla RET */
 //--          dis_ret(cb, 0);

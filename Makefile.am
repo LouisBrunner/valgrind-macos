@@ -57,7 +57,6 @@ include_HEADERS = valgrind.h
 noinst_HEADERS = \
         vg_kerneliface.h        \
         vg_include.h            \
-        vg_version.h            \
         vg_constants.h          \
         vg_unsafe.h
 

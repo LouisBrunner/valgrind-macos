@@ -555,14 +555,15 @@ Bool VG_(saneUInstr) ( Bool beforeRA, Bool beforeLiveness, UInstr* u )
                        (u->argc > 1                   ? TR2 : N2) && 
                        (u->argc > 2 || u->has_ret_val ? TR3 : N3) &&
                        u->regparms_n <= u->argc && XCCALL;
-   /* Fields checked:     lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
+   /* Fields checked:       lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
    case MMX1:
-   case MMX2:        return LIT0 && SZ0  && CC0 &&  Ls1 &&  N2 &&  N3 && XOTHER;
-   case MMX3:        return LIT0 && SZ0  && CC0 &&  Ls1 && Ls2 &&  N3 && XOTHER;
-   case MMX2_MemRd:  return LIT0 && SZ48 && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
-   case MMX2_MemWr:  return LIT0 && SZ48 && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
-   case MMX2_ERegRd: return LIT0 && SZ4  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
-   case MMX2_ERegWr: return LIT0 && SZ4  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
+   case MMX2:         return LIT0 && SZ0  && CC0 &&  Ls1 &&  N2 &&  N3 && XOTHER;
+   case MMX3:         return LIT0 && SZ0  && CC0 &&  Ls1 && Ls2 &&  N3 && XOTHER;
+   case MMX2_MemRd:   return LIT0 && SZ48 && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
+   case MMX2_MemWr:   return LIT0 && SZ48 && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
+   case MMX2a1_MemRd: return LIT0 && SZ8  && CC0 &&  Ls1 && Ls2 && TR3 && XOTHER;
+   case MMX2_ERegRd:  return LIT0 && SZ4  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
+   case MMX2_ERegWr:  return LIT0 && SZ4  && CC0 &&  Ls1 && TR2 &&  N3 && XOTHER;
 
    /* Fields checked:        lit32   size  flags_r/w tag1   tag2   tag3    (rest) */
    case SSE2a_MemWr:  return LIT0 && SZsse2 && CC0  && Ls1 && Ls2 && TR3 && XOTHER;
@@ -897,6 +898,7 @@ Char* VG_(name_UOpcode) ( Bool upper, Opcode opc )
       case MMX3:       return "MMX3" ;
       case MMX2_MemRd: return "MMX2_MRd" ;
       case MMX2_MemWr: return "MMX2_MWr" ;
+      case MMX2a1_MemRd: return "MMX2a1_MRd" ;
       case MMX2_ERegRd: return "MMX2_eRRd" ;
       case MMX2_ERegWr: return "MMX2_eRWr" ;
       case SSE2a_MemWr: return "SSE2a_MWr";
@@ -1065,6 +1067,12 @@ void pp_UInstrWorker ( Int instrNo, UInstr* u, Bool ppRegsLiveness )
           VG_(printf)("0x%x:0x%x",
                      (u->val1 >> 8) & 0xFF, u->val1 & 0xFF );
          VG_(pp_UOperand)(u, 2, 4, True);
+         break;
+
+      case MMX2a1_MemRd:
+          VG_(printf)("0x%x:0x%x:0x%x",
+                     (u->val1 >> 8) & 0xFF, u->val1 & 0xFF, u->val2 & 0xFF );
+         VG_(pp_UOperand)(u, 3, 4, True);
          break;
 
       case SSE2a_MemWr:
@@ -1296,6 +1304,7 @@ Int VG_(get_reg_usage) ( UInstr* u, Tag tag, Int* regs, Bool* isWrites )
 
       case SSE3ag_MemRd_RegWr: RD(1); WR(2); break;
 
+      case MMX2a1_MemRd: RD(3); break;
       case MMX2_ERegRd: RD(2); break;
       case MMX2_ERegWr: WR(2); break;
 
@@ -1451,7 +1460,7 @@ Int maybe_uinstrReadsArchReg ( UInstr* u )
       case JIFZ:
       case FPU: case FPU_R: case FPU_W:
       case MMX1: case MMX2: case MMX3:
-      case MMX2_MemRd: case MMX2_MemWr:
+      case MMX2_MemRd: case MMX2_MemWr: case MMX2a1_MemRd:
       case MMX2_ERegRd: case MMX2_ERegWr:
       case SSE2a_MemWr: case SSE2a_MemRd: case SSE2a1_MemRd:
       case SSE2g_RegWr: case SSE2g1_RegWr: case SSE2e1_RegRd:

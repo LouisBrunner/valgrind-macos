@@ -665,6 +665,15 @@ typedef
       MMX2_MemRd,
       MMX2_MemWr,
 
+      /* 3 bytes, reads/writes mem.  Insns of the form
+         bbbbbbbb:mod mmxreg r/m:bbbbbbbb
+         Held in val1[15:0] and val2[7:0], and mod and rm are to be
+         replaced at codegen time by a reference to the Temp/RealReg
+         holding the address.  Arg2 holds this Temp/Real Reg.
+         Transfer is always at size 8.
+      */
+      MMX2a1_MemRd,
+
       /* 2 bytes, reads/writes an integer ("E") register.  Insns of the form
          bbbbbbbb:11 mmxreg ireg.
          Held in val1[15:0], and ireg is to be replaced

@@ -1075,6 +1075,25 @@ static UCodeBlock* memcheck_instrument ( UCodeBlock* cb_in )
             break;
          }
 
+         case MMX2a1_MemRd: {
+            Int t_size = INVALID_TEMPREG;
+
+            sk_assert(u_in->size == 8);
+
+            sk_assert(u_in->tag3 == TempReg);
+            uInstr1(cb, TESTV, 4, TempReg, SHADOW(u_in->val3));
+            uInstr1(cb, SETV,  4, TempReg, SHADOW(u_in->val3));
+
+            t_size = newTemp(cb);
+            uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
+            uLiteral(cb, u_in->size);
+            uInstr2(cb, CCALL, 0, TempReg, u_in->val3, TempReg, t_size);
+            uCCall(cb, (Addr) & MC_(fpu_read_check), 2, 2, False);
+            
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+         }
+
 	 /* SSE ins referencing scalar integer registers */
          case SSE2g_RegWr:
          case SSE2g1_RegWr:

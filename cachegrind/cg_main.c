@@ -604,6 +604,13 @@ static Int compute_BBCC_array_size(UCodeBlock* cb)
             is_FPU_R = True;
             break;
 
+         case MMX2a1_MemRd:
+            sk_assert(u_in->size == 8);
+            sk_assert(!is_LOAD && !is_STORE && !is_FPU_R && !is_FPU_W);
+            t_read = u_in->val3;
+            is_FPU_R = True;
+            break;
+
          case SSE2a_MemRd:
          case SSE2a1_MemRd:
             sk_assert(u_in->size == 4 || u_in->size == 8 || u_in->size == 16 || u_in->size == 512);
@@ -852,6 +859,18 @@ UCodeBlock* SK_(instrument)(UCodeBlock* cb_in, Addr orig_addr)
             t_read      = u_in->val2;
             t_read_addr = newTemp(cb);
             uInstr2(cb, MOV, 4, TempReg, u_in->val2,  TempReg, t_read_addr);
+            data_size = ( u_in->size <= MIN_LINE_SIZE
+                        ? u_in->size
+                        : MIN_LINE_SIZE);
+            VG_(copy_UInstr)(cb, u_in);
+            break;
+            break;
+
+         case MMX2a1_MemRd:
+            sk_assert(u_in->size == 8);
+            t_read      = u_in->val3;
+            t_read_addr = newTemp(cb);
+            uInstr2(cb, MOV, 4, TempReg, u_in->val3,  TempReg, t_read_addr);
             data_size = ( u_in->size <= MIN_LINE_SIZE
                         ? u_in->size
                         : MIN_LINE_SIZE);

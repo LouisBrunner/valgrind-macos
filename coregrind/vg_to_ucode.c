@@ -3289,6 +3289,57 @@ Addr dis_MMXop_regmem_to_reg ( UCodeBlock* cb,
 }
 
 
+/* Simple MMX operations, either 
+       op   (src)mmxreg, (dst)mmxreg
+   or
+       op   (src)address, (dst)mmxreg
+   opc is the byte following the 0x0F prefix.
+*/
+static 
+Addr dis_MMXop_regmem_to_reg_Imm8 ( UCodeBlock* cb, 
+                                    UChar sorb,
+                                    Addr eip,
+                                    UChar opc,
+                                    Char* name,
+                                    Bool show_granularity )
+{
+    Char dis_buf[50];
+   UChar modrm = getUChar(eip);
+   UChar imm8;
+   Bool  isReg = epartIsReg(modrm);
+
+   if (isReg) {
+      eip++;
+      imm8 = getUChar(eip);
+      eip++;
+      uInstr2(cb, MMX3, 0, 
+                  Lit16, 
+                  (((UShort)(opc)) << 8) | ((UShort)modrm),
+                  Lit16,
+                  ((UShort)imm8));
+   } else {
+      UInt pair = disAMode ( cb, sorb, eip, dis_buf );
+      Int  tmpa = LOW24(pair);
+      eip += HI8(pair);
+      imm8 = getUChar(eip);
+      eip++;
+      uInstr3(cb, MMX2a1_MemRd, 8, 
+                  Lit16, 
+                  (((UShort)(opc)) << 8) | ((UShort)modrm),
+                  Lit16,
+                  ((UShort)imm8),
+                  TempReg, tmpa);
+   }
+
+   DIP("%s%s %s, %s, $%d\n", 
+       name, show_granularity ? nameMMXGran(opc & 3) : (Char*)"",
+       ( isReg ? nameMMXReg(eregOfRM(modrm)) : dis_buf ),
+       nameMMXReg(gregOfRM(modrm)), (Int)imm8 );
+
+   return eip;
+}
+
+
 
 /* Simple SSE operations, either 
        op   (src)xmmreg, (dst)xmmreg
@@ -4214,15 +4265,6 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
       eip = dis_SSE3_reg_or_mem_Imm8 ( cb, sorb, eip+3, 16, 
                                            "pshufhw",
                                            insn[0], insn[1], insn[2] );
-      goto decode_success;
-   }
-
-   /* PSHUFW */
-   if (sz == 4
-       && insn[0] == 0x0F && insn[1] == 0x70) {
-      eip = dis_SSE2_reg_or_mem_Imm8 ( cb, sorb, eip+2, 8, 
-                                           "pshufw",
-                                           insn[0], insn[1] );
       goto decode_success;
    }
 
@@ -7141,6 +7183,12 @@ static Addr disInstr ( UCodeBlock* cb, Addr eip, Bool* isEnd )
          /* PSADBW (src)mmxreg-or-mem, (dst)mmxreg */
          vg_assert(sz == 4);
          eip = dis_MMXop_regmem_to_reg ( cb, sorb, eip, opc, "psadbw", False );
+         break;
+
+      case 0x70:
+         /* PSHUFW imm8, (src)mmxreg-or-mem, (dst)mmxreg */
+         vg_assert(sz == 4);
+         eip = dis_MMXop_regmem_to_reg_Imm8 ( cb, sorb, eip, opc, "pshufw", False );
          break;
 
       case 0xD7:

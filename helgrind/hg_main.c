@@ -2145,6 +2145,23 @@ UCodeBlock* SK_(instrument) ( UCodeBlock* cb_in, Addr not_used )
 	    break;
 	 } 
 
+         case MMX2a1_MemRd: {
+            sk_assert(8 == u_in->size);
+	    
+	    t_size = newTemp(cb);
+	    uInstr2(cb, MOV,   4, Literal, 0, TempReg, t_size);
+	    uLiteral(cb, (UInt)u_in->size);
+
+	    /* XXX all registers should be flushed to baseblock
+	       here */
+	    uInstr2(cb, CCALL, 0, TempReg, u_in->val3, TempReg, t_size);
+	    uCCall(cb, (Addr) & eraser_mem_help_read_N, 2, 2, False);
+	    
+	    VG_(copy_UInstr)(cb, u_in);
+	    t_size = INVALID_TEMPREG;
+	    break;
+	 } 
+
          case SSE2a_MemRd:
          case SSE2a1_MemRd:
          case SSE3a_MemRd:
